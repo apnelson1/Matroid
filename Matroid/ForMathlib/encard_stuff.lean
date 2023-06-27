@@ -222,6 +222,9 @@ theorem Finite.eq_of_subset_of_encard_le' (hs : s.Finite) (hst : s ⊆ t)
     (hts : t.encard ≤ s.encard) : s = t :=
   (hs.Finite_of_encard_le hts).eq_of_subset_of_encard_le hst hts
 
+theorem encard_eq_one : s.encard = 1 ↔ ∃ x, s = {x} := by
+  rw [←Nat.cast_one, encard_eq_iff_ncard_eq_of_ne_zero (by simp), ncard_eq_one]
+
 end Set
 
 end encard
