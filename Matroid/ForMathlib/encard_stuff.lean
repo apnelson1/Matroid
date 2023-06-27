@@ -140,6 +140,10 @@ theorem encard_insert_of_not_mem (h : x ∉ s) : (insert x s).encard = s.encard 
       Nat.cast_one]
   · rw [hs.encard_eq, (hs.mono (subset_insert _ _)).encard_eq]; rfl
 
+theorem encard_diff_singleton_add_one (h : x ∈ s) : (s \ {x}).encard + 1 = s.encard := by
+  rw [←encard_insert_of_not_mem (_ : x ∉ s \ {x}), insert_diff_singleton, insert_eq_of_mem h]
+  simp only [mem_diff, mem_singleton_iff, not_true, and_false, not_false_eq_true]
+  
 theorem encard_eq_ite (s : Set α) [Decidable (s.Finite)] :
     s.encard = if s.Finite then (s.ncard : ℕ∞) else ⊤ := by
   obtain (h | h) := s.finite_or_infinite
