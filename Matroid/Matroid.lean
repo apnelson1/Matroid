@@ -847,7 +847,7 @@ end from_axioms
 
 section dual 
 
-def dual (M : Matroid α) : Matroid α := 
+def Dual (M : Matroid α) : Matroid α := 
   Matroid_of_Indep M.E (fun I ↦ I ⊆ M.E ∧ ∃ B, M.Base B ∧ Disjoint I B) 
 ⟨empty_subset M.E, M.exists_Base.imp (fun B hB ↦ ⟨hB, empty_disjoint _⟩)⟩ 
 ( by { 
@@ -920,61 +920,42 @@ def dual (M : Matroid α) : Matroid α :=
     exact heX (hJX heJ) } ) 
 ( by tauto )  
 
+
+/-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. -/
+class MDual (β : Type _) := (Dual : β → β)
+
+postfix:max "*" => MDual.Dual
+
+instance Matroid_MDual {α : Type _} : MDual (Matroid α) := ⟨Matroid.Dual⟩ 
+
+
+
+
+theorem Dual_Indep_iff_exists' : ((M*).Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) := 
+  by simp [MDual.Dual, Dual]
+
+@[simp] theorem Dual_ground : (M*).E = M.E := rfl 
+
+-- theorem dual_Indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) : 
+--   (M﹡.Indep I) ↔ (∃ B, M.Base B ∧ disjoint I B) := 
+-- by rw [dual_Indep_iff_exists', and_iff_right hI]
+
+-- @[simp] theorem dual_ground : M﹡.E = M.E := rfl 
+
+-- theorem dual_Dep_iff_forall : (M﹡.Dep I) ↔ I ⊆ M.E ∧ ∀ B, M.Base B → (I ∩ B).nonempty :=
+-- begin
+--   simp_rw [Dep_iff, dual_Indep_iff_exists', and_comm, dual_ground, and.congr_right_iff, not_and, 
+--     not_exists, not_and, not_disjoint_iff_nonempty_inter], 
+--   exact λ hIE, by rw [imp_iff_right hIE], 
+-- end   
+
+
 end dual 
+
 
 
 end Matroid 
 
-
-
-
-
-
-
-
-
-
-
-
-
--- section from_axioms
-
-
-
--- def Matroid_of_Indep_of_bdd' (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
--- (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
--- (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard →
---   ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) (h_bdd : ∃ n, ∀ I, Indep I → I.Finite ∧ I.ncard ≤ n )
--- (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
--- Matroid_of_Indep_of_bdd E Indep h_empty h_subset 
--- (begin
---   intros I J hI hIn hJ, 
---   by_contra' h', 
---   obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
---   { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
---     exact h' e ⟨heJ,heI⟩ hi },
---   obtain (h_eq | hlt) := hle.eq_or_lt, 
---   { refine hIn ⟨hI, λ K (hK : Indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
---       (λ h, h.symm.subset)⟩,
---     obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss _)), 
---     { exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
---     obtain ⟨n, hn⟩ := h_bdd, 
---     exact (hn K hK).1 },
---   obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
---     exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
--- end) h_bdd h_support 
-
--- @[simp] theorem Matroid_of_Indep_of_bdd'_apply (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
--- (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
--- (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard →
---   ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) (h_bdd : ∃ n, ∀ I, Indep I → I.Finite ∧ I.ncard ≤ n )
--- (h_support : ∀ I, Indep I → I ⊆ E) : 
--- (Matroid_of_Indep_of_bdd' E Indep h_empty h_subset ind_aug h_bdd h_support).Indep = Indep :=
--- by simp [Matroid_of_Indep_of_bdd']
-
-
-
--- end from_axioms 
 
 
 -- /-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. -/
