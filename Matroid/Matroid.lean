@@ -928,26 +928,57 @@ postfix:max "*" => MDual.Dual
 
 instance Matroid_MDual {α : Type _} : MDual (Matroid α) := ⟨Matroid.Dual⟩ 
 
-
-
-
 theorem Dual_Indep_iff_exists' : ((M*).Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) := 
   by simp [MDual.Dual, Dual]
 
 @[simp] theorem Dual_ground : (M*).E = M.E := rfl 
 
--- theorem dual_Indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) : 
---   (M﹡.Indep I) ↔ (∃ B, M.Base B ∧ disjoint I B) := 
--- by rw [dual_Indep_iff_exists', and_iff_right hI]
+@[simp] theorem Dual_Indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) : 
+  ((M*).Indep I) ↔ (∃ B, M.Base B ∧ Disjoint I B) := 
+by rw [Dual_Indep_iff_exists', and_iff_right hI]
 
--- @[simp] theorem dual_ground : M﹡.E = M.E := rfl 
+theorem Dual_Dep_iff_forall : ((M*).Dep I) ↔ (∀ B, M.Base B → (I ∩ B).Nonempty) ∧ I ⊆ M.E := 
+  by simp_rw [Dep_iff, Dual_Indep_iff_exists', Dual_ground, and_congr_left_iff, not_and, 
+    not_exists, not_and, not_disjoint_iff_nonempty_inter, imp_iff_right_iff, iff_true_intro Or.inl]
+  
+instance dual_finite [M.Finite] : (M*).Finite := 
+  ⟨M.ground_Finite⟩  
 
--- theorem dual_Dep_iff_forall : (M﹡.Dep I) ↔ I ⊆ M.E ∧ ∀ B, M.Base B → (I ∩ B).nonempty :=
--- begin
---   simp_rw [Dep_iff, dual_Indep_iff_exists', and_comm, dual_ground, and.congr_right_iff, not_and, 
---     not_exists, not_and, not_disjoint_iff_nonempty_inter], 
---   exact λ hIE, by rw [imp_iff_right hIE], 
--- end   
+theorem subset_ground_Dual (hX : X ⊆ M.E := by aesop_mat) : X ⊆ (M*).E := 
+  hX 
+
+theorem Dual_Base_iff (hB : B ⊆ M.E := by aesop_mat) : (M*).Base B ↔ M.Base (M.E \ B) := by
+  rw [Base_compl_iff_mem_maximals_disjoint_Base, Base_iff_maximal_Indep, Dual_Indep_iff_exists', 
+    mem_maximals_setOf_iff]
+  simp [Dual_Indep_iff_exists']
+
+theorem Dual_Base_iff' : (M*).Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E :=
+  (em (B ⊆ M.E)).elim (fun h ↦ by rw [Dual_Base_iff, and_iff_left h]) 
+    (fun h ↦ iff_of_false (h ∘ (fun h' ↦ h'.subset_ground)) (h ∘ And.right))
+
+theorem Base.compl_Base_Dual (h : (M*).Base B) : M.Base (M.E \ B) := 
+  (Dual_Base_iff'.1 h).1
+
+@[simp] theorem Dual_Dual (M : Matroid α) : M** = M :=  
+  eq_of_Base_iff_Base_forall rfl (fun B (h : B ⊆ M.E) ↦ 
+    by rw [Dual_Base_iff, Dual_Base_iff, Dual_ground, diff_diff_cancel_left h])
+
+theorem dual_Indep_iff_Coindep : (M*).Indep X ↔ M.Coindep X := by 
+  rw [Dual_Indep_iff_exists', and_comm]; rfl
+
+theorem Base.compl_inter_Basis_of_inter_Basis (hB : M.Base B) (hBX : M.Basis (B ∩ X) X) :
+    (M*).Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
+  refine' Indep.Basis_of_forall_insert _ (inter_subset_right _ _) (fun e he ↦ _)
+  · rw [Dual_Indep_iff_exists]
+    exact ⟨B, hB, disjoint_of_subset_left (inter_subset_left _ _) disjoint_sdiff_left⟩
+  simp only [diff_inter_self_eq_diff, mem_diff, not_and, not_not, imp_iff_right he.1.1] at he 
+  simp_rw [Dual_Dep_iff_forall, insert_subset, and_iff_right he.1.1, 
+    and_iff_left ((inter_subset_left _ _).trans (diff_subset _ _))]
+  refine' fun B' hB' ↦ by_contra (fun hem ↦ _)
+  rw [nonempty_iff_ne_empty, not_ne_iff, ←union_singleton, inter_distrib_right, 
+    union_empty_iff] at hem
+  
+
 
 
 end dual 
@@ -958,64 +989,9 @@ end Matroid
 
 
 
--- /-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. -/
--- @[class] structure has_matroid_dual (β : Type*) := (dual : β → β)
 
--- postfix `﹡`:(max+1) := has_matroid_dual.dual 
 
--- instance Matroid_dual {α : Type*} : has_matroid_dual (Matroid α) := ⟨Matroid.dual⟩ 
-
--- theorem dual_Indep_iff_exists' : (M﹡.Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ disjoint I B) := 
--- by simp [has_matroid_dual.dual, dual]
-
--- theorem dual_Indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) : 
---   (M﹡.Indep I) ↔ (∃ B, M.Base B ∧ disjoint I B) := 
--- by rw [dual_Indep_iff_exists', and_iff_right hI]
-
--- @[simp] theorem dual_ground : M﹡.E = M.E := rfl 
-
--- theorem dual_Dep_iff_forall : (M﹡.Dep I) ↔ I ⊆ M.E ∧ ∀ B, M.Base B → (I ∩ B).nonempty :=
--- begin
---   simp_rw [Dep_iff, dual_Indep_iff_exists', and_comm, dual_ground, and.congr_right_iff, not_and, 
---     not_exists, not_and, not_disjoint_iff_nonempty_inter], 
---   exact λ hIE, by rw [imp_iff_right hIE], 
--- end   
-
--- instance dual_finite [M.Finite] : M﹡.Finite := 
--- ⟨M.ground_finite⟩  
-
--- theorem set.subset_ground_dual (hX : X ⊆ M.E) : X ⊆ M﹡.E := hX 
-
--- theorem dual_Base_iff (hB : B ⊆ M.E := by aesop_mat) : M﹡.Base B ↔ M.Base (M.E \ B) := 
--- begin
---   rw [Base_compl_iff_mem_maximals_disjoint_Base', Base_iff_maximal_Indep, dual_Indep_iff_exists', 
---     mem_maximals_set_of_iff],
---   simp [dual_Indep_iff_exists'],
--- end 
-
--- theorem dual_Base_iff' : M﹡.Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E := 
--- begin
---   obtain (h | h) := em (B ⊆ M.E), 
---   { rw [dual_Base_iff, and_iff_left h] },
---   rw [iff_false_intro h, and_false, iff_false], 
---   exact λ h', h h'.subset_ground,  
--- end  
-
--- theorem Base.compl_Base_of_dual (h : M﹡.Base B) : M.Base (M.E \ B) := 
--- (dual_Base_iff (by { exact h.subset_ground })).mp h
-
--- @[simp] theorem dual_dual (M : Matroid α) : M﹡﹡ = M := 
--- begin
---   refine eq_of_Base_iff_Base_forall rfl (λ B hB, _), 
---   rw [dual_Base_iff, dual_Base_iff], 
---   rw [dual_ground] at *, 
---   simp only [sdiff_sdiff_right_self, inf_eq_inter, ground_inter_right], 
--- end 
-
--- theorem dual_Indep_iff_Coindep : M﹡.Indep X ↔ M.Coindep X := dual_Indep_iff_exists'
-
--- theorem Base.compl_Base_dual (hB : M.Base B) : M﹡.Base (M.E \ B) := 
--- by { haveI := fact.mk hB.subset_ground, simpa [dual_Base_iff] }
+-- 
 
 -- theorem Base.compl_inter_Basis_of_inter_Basis (hB : M.Base B) (hBX : M.Basis (B ∩ X) X) :
 --   M﹡.Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := 
