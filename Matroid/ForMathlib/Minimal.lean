@@ -1,4 +1,7 @@
 import Mathlib.Order.Minimal 
+import Mathlib.Order.Bounds.Basic 
+import Mathlib.Data.Set.Finite
+import Mathlib.Data.Nat.Interval
 
 variable {α : Type _} {r : α → α → Prop} {s : Set α} {x y : α} {P : α → Prop}
 
@@ -52,15 +55,29 @@ lemma mem_maximals_set_of_iff' {P : Set α → Prop} {x : Set α} :
     and_imp, not_imp_not]
   exact fun _ ↦ ⟨fun h' y hyx hy ↦ h' hy hyx, fun h' y hy hyx ↦ h' hyx hy⟩
   
+
+open Set
+/-- This seems a strict improvement over the nonprimed version in mathlib - only the image needs to 
+be finite, not the set itself.  -/
+lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → β) (s : Set α) 
+    (h : (f '' s).Finite) (h₀ : s.Nonempty) : 
+  (∃ a ∈ s, ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') := by
+  obtain  ⟨_ ,⟨a,ha,rfl⟩, hmax⟩ := Finite.exists_maximal_wrt id (f '' s) h (h₀.image f)
+  exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
+
+lemma Finite_iff_BddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
+    {s : Set α} : s.Finite ↔ BddAbove s :=
+⟨fun h ↦ ⟨h.toFinset.sup id, fun x hx ↦ Finset.le_sup (f := id) (by simpa : x ∈ h.toFinset)⟩,
+  fun ⟨m, hm⟩ ↦ (finite_Icc ⊥ m).subset (fun x hx ↦ ⟨bot_le, hm hx⟩)⟩
   
--- def maximal {α : Type*} (r : α → α → Prop) (P : α → Prop) (x : α) := 
---   x ∈ maximals r (set_of P)
+lemma Finite_iff_BddBelow {α : Type _} [SemilatticeInf α] [LocallyFiniteOrder α] [OrderTop α]
+    {s : Set α} : s.Finite ↔ ∃ a, ∀ x ∈ s, a ≤ x :=
+  Finite_iff_BddAbove (α := αᵒᵈ)
 
--- def minimal {α : Type*} (r : α → α → Prop) (P : α → Prop) (x : α) := 
---   x ∈ minimals r (set_of P)
-
--- lemma maximal.eq_of_le [IsAntisymm α r] (h : maximal r P x) (hr : r x y) (hy : P y) :
---   x = y := antisymm hr (h.2 hy hr)
-
--- lemma minimal.eq_of_le [IsAntisymm α r] (h : minimal r P x) (hr : r y x) (hy : P y) :
---   x = y := antisymm (h.2 hy hr) hr
+lemma Finite_iff_BddBelow_BddAbove {α : Type _} [Nonempty α] [Lattice α] [LocallyFiniteOrder α] 
+    {s : Set α} : s.Finite ↔ BddBelow s ∧ BddAbove s := by
+  obtain (rfl | hs) := s.eq_empty_or_nonempty; simp
+  refine' ⟨fun h ↦ _, fun ⟨⟨a,ha⟩,⟨b,hb⟩⟩ ↦ (finite_Icc a b).subset (fun x hx ↦ ⟨ha hx,hb hx⟩ )⟩
+  obtain ⟨s,rfl⟩ := h.exists_finset_coe
+  exact ⟨⟨s.inf' (by simpa using hs) id, fun x hx ↦ Finset.inf'_le id (by simpa using hx)⟩, 
+    ⟨s.sup' (by simpa using hs) id, fun x hx ↦ Finset.le_sup' id (by simpa using hx)⟩⟩
