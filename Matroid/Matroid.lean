@@ -935,7 +935,7 @@ def dual (M : Matroid α) : Matroid α :=
 /-- A notation typeclass for matroid duality, denoted by the `*` symbol. -/
 class Mdual (β : Type _) := (dual : β → β)
 
-postfix:max "*" => Mdual.dual
+postfix:1000 "*" => Mdual.dual
 
 instance Matroid_Mdual {α : Type _} : Mdual (Matroid α) := ⟨Matroid.dual⟩ 
 
