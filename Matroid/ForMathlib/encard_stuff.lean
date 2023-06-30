@@ -48,12 +48,6 @@ theorem exists_smaller_Set (s : Set α) (i : ℕ) (h : i ≤ s.ncard) :
   rw [hs.ncard, le_zero_iff] at h
   exact ⟨∅, empty_subset s, finite_empty, by simp [h]⟩
 
-theorem Finite_of_ncard_ne_zero (hs : s.ncard ≠ 0) : s.Finite :=
-  s.finite_or_infinite.elim id fun h ↦ (hs h.ncard).elim
-
-theorem Finite_of_ncard_pos (hs : 0 < s.ncard) : s.Finite :=
-  finite_of_ncard_ne_zero hs.ne.symm
-
 theorem Infinite.exists_supset_ncard_eq' {s t : Set α} (ht : t.Infinite) (hst : s ⊆ t)
     (hs : s.Finite) {k : ℕ} (hsk : s.ncard ≤ k) :
     ∃ s', s ⊆ s' ∧ s' ⊆ t ∧ s'.Finite ∧ s'.ncard = k := by
@@ -92,7 +86,7 @@ theorem encard_eq_coe_iff {k : ℕ} : s.encard = k ↔ s.Finite ∧ s.ncard = k 
 
 theorem encard_eq_iff_ncard_eq_of_ne_zero {k : ℕ} (hk : k ≠ 0) : s.encard = k ↔ s.ncard = k := by
   rw [encard_eq_coe_iff, and_iff_right_iff_imp]
-  exact fun h ↦ Finite_of_ncard_pos ((Nat.pos_of_ne_zero hk).trans_eq h.symm)
+  exact fun h ↦ finite_of_ncard_pos ((Nat.pos_of_ne_zero hk).trans_eq h.symm)
 
 theorem encard_eq_succ_iff_ncard_eq_succ {k : ℕ} : s.encard = k + 1 ↔ s.ncard = k + 1 :=
   encard_eq_iff_ncard_eq_of_ne_zero (Nat.succ_ne_zero _)
@@ -103,7 +97,7 @@ theorem Finite.encard_lt_top (hs : s.Finite) : s.encard < ⊤ :=
 theorem Finite.encard_ne_top (hs : s.Finite) : s.encard ≠ ⊤ :=
   encard_ne_top_iff_Finite.mpr hs
 
-theorem Finite_of_encard_le_coe {n : ℕ} (h : s.encard ≤ n) : s.Finite :=
+theorem finite_of_encard_le_coe {n : ℕ} (h : s.encard ≤ n) : s.Finite :=
   encard_lt_top_iff_Finite.mp (h.trans_lt (WithTop.coe_lt_top _))
 
 theorem encard_le_coe_iff {n : ℕ} : s.encard ≤ n ↔ s.Finite ∧ s.ncard ≤ n := by
@@ -131,7 +125,7 @@ theorem ncard_eq_ncard_of_encard_eq_encard (h : s.encard = t.encard) :
 theorem Finite.encard_eq_encard_of_ncard_eq_ncard (hs : s.Finite) (ht : t.Finite)
 (h : s.ncard = t.ncard) : s.encard = t.encard := by rw [hs.encard_eq, ht.encard_eq, h]
 
-theorem Finite.Finite_of_encard_le (hs : s.Finite) (h : t.encard ≤ s.encard) : t.Finite := by
+theorem Finite.finite_of_encard_le (hs : s.Finite) (h : t.encard ≤ s.encard) : t.Finite := by
   rw [←encard_lt_top_iff_Finite] at *; exact h.trans_lt hs
 
 theorem encard_insert_of_not_mem (h : x ∉ s) : (insert x s).encard = s.encard + 1 := by
@@ -170,7 +164,7 @@ theorem exists_supset_subset_encard_eq {k : ℕ∞} (hs : s.encard ≤ k) (ht : 
       exact ⟨r, hsr, hrt, htfin.subset hrt, rfl⟩
     · exact htfin
     exact htfin.subset hst
-  have hsfin := Finite_of_encard_le_coe hs
+  have hsfin := finite_of_encard_le_coe hs
   rw [hsfin.encard_eq, Nat.cast_le] at hs
   exact htinf.exists_supset_ncard_eq' hst hsfin hs
 
@@ -207,10 +201,10 @@ by rw [←diff_union_self, encard_union_eq disjoint_sdiff_left, add_right_comm,
 theorem encard_union_le (s t : Set α) : (s ∪ t).encard ≤ s.encard + t.encard := by
   rw [←encard_union_add_encard_inter]; exact le_self_add
 
-theorem Finite_iff_Finite_of_encard_eq_encard (h : s.encard = t.encard) : s.Finite ↔ t.Finite := by
+theorem finite_iff_finite_of_encard_eq_encard (h : s.encard = t.encard) : s.Finite ↔ t.Finite := by
   rw [←encard_lt_top_iff_Finite, ←encard_lt_top_iff_Finite, h]
 
-theorem Infinite_iff_Infinite_of_encard_eq_encard (h : s.encard = t.encard) :
+theorem infinite_iff_infinite_of_encard_eq_encard (h : s.encard = t.encard) :
     s.Infinite ↔ t.Infinite := by rw [←encard_eq_top_iff_Infinite, h, encard_eq_top_iff_Infinite]
 
 theorem Finite.eq_of_subset_of_encard_le (ht : t.Finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
@@ -220,7 +214,7 @@ theorem Finite.eq_of_subset_of_encard_le (ht : t.Finite) (hst : s ⊆ t) (hts : 
 
 theorem Finite.eq_of_subset_of_encard_le' (hs : s.Finite) (hst : s ⊆ t)
     (hts : t.encard ≤ s.encard) : s = t :=
-  (hs.Finite_of_encard_le hts).eq_of_subset_of_encard_le hst hts
+  (hs.finite_of_encard_le hts).eq_of_subset_of_encard_le hst hts
 
 theorem encard_eq_one : s.encard = 1 ↔ ∃ x, s = {x} := by
   rw [←Nat.cast_one, encard_eq_iff_ncard_eq_of_ne_zero (by simp), ncard_eq_one]

@@ -65,16 +65,16 @@ lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → 
   obtain  ⟨_ ,⟨a,ha,rfl⟩, hmax⟩ := Finite.exists_maximal_wrt id (f '' s) h (h₀.image f)
   exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
 
-lemma Finite_iff_BddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
+lemma finite_iff_bddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
     {s : Set α} : s.Finite ↔ BddAbove s :=
 ⟨fun h ↦ ⟨h.toFinset.sup id, fun x hx ↦ Finset.le_sup (f := id) (by simpa : x ∈ h.toFinset)⟩,
   fun ⟨m, hm⟩ ↦ (finite_Icc ⊥ m).subset (fun x hx ↦ ⟨bot_le, hm hx⟩)⟩
   
-lemma Finite_iff_BddBelow {α : Type _} [SemilatticeInf α] [LocallyFiniteOrder α] [OrderTop α]
+lemma finite_iff_bddBelow {α : Type _} [SemilatticeInf α] [LocallyFiniteOrder α] [OrderTop α]
     {s : Set α} : s.Finite ↔ ∃ a, ∀ x ∈ s, a ≤ x :=
-  Finite_iff_BddAbove (α := αᵒᵈ)
+  finite_iff_bddAbove (α := αᵒᵈ)
 
-lemma Finite_iff_BddBelow_BddAbove {α : Type _} [Nonempty α] [Lattice α] [LocallyFiniteOrder α] 
+lemma finite_iff_bddBelow_bddAbove {α : Type _} [Nonempty α] [Lattice α] [LocallyFiniteOrder α] 
     {s : Set α} : s.Finite ↔ BddBelow s ∧ BddAbove s := by
   obtain (rfl | hs) := s.eq_empty_or_nonempty; simp
   refine' ⟨fun h ↦ _, fun ⟨⟨a,ha⟩,⟨b,hb⟩⟩ ↦ (finite_Icc a b).subset (fun x hx ↦ ⟨ha hx,hb hx⟩ )⟩
