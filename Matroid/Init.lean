@@ -1,3 +1,3 @@
 import Aesop
 
-declare_aesop_rule_sets [Matroid, Matroid_Finish]
+declare_aesop_rule_sets [Matroid]

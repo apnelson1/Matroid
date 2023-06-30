@@ -18,7 +18,7 @@ section encard
 
 namespace Set
 
-variable {α : Type _} {s t : Set α}
+variable {α : Type _} {s t : Set α} {x : α}
 
 -------------------------- These can be removed after merging PR
 

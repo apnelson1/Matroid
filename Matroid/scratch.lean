@@ -1,11 +1,12 @@
-import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic
 
-def add_five : ℕ → ℕ := fun x ↦ x+5 
+structure pt where 
+  (n : ℕ)
+  (m : ℕ)
 
-postfix:max "*" => add_five
+def pt.left (P : pt) : ℕ := P.n
+pp_extended_field_notation pt.left
 
-lemma star_succ (n : ℕ) : (n*).succ = n.succ* := by 
-  simp [add_five]
+example (P : pt) : 0 ≤ P.left := by
+  simp
 
--- lemma star_succ' (n : ℕ) : n*.succ = n.succ* := by sorry
--- breaks without parentheses

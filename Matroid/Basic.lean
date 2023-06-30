@@ -79,25 +79,35 @@ section defs
 
 /-- We write `M.E` for the ground set of a matroid `M`-/
 def E (M : Matroid α) : Set α := M.ground
+pp_extended_field_notation Matroid.E
+
+pp_extended_field_notation Matroid.ground
+
+pp_extended_field_notation Base
 
 @[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
 
 /-- A set is independent if it is contained in a Base.  -/
 def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B
+pp_extended_field_notation Indep
 
 /-- A subset of `M.E` is Dependent if it is not independent . -/
 def Dep (M : Matroid α) (D : Set α) : Prop := ¬M.Indep D ∧ D ⊆ M.E   
+pp_extended_field_notation Dep
 
 /-- A Basis for a set `X ⊆ M.E` is a maximal independent subset of `X`
   (Often in the literature, the word 'Basis' is used to refer to what we call a 'Base'). -/
 def Basis (M : Matroid α) (I X : Set α) : Prop := 
   I ∈ maximals (· ⊆ ·) {A | M.Indep A ∧ A ⊆ X} ∧ X ⊆ M.E  
+pp_extended_field_notation Basis
 
 /-- A Circuit is a minimal Dependent set -/
 def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
+pp_extended_field_notation Circuit
 
 /-- A Coindependent set is a subset of `M.E` that is disjoint from some Base -/
 def Coindep (M : Matroid α) (I : Set α) : Prop := (∃ B, M.Base B ∧ Disjoint I B) ∧ I ⊆ M.E
+pp_extended_field_notation Coindep
 
 end defs
 
@@ -932,64 +942,65 @@ def dual (M : Matroid α) : Matroid α :=
     exact heX (hJX heJ) } ) 
 ( by tauto )  
 
-/-- A notation typeclass for matroid duality, denoted by the `*` symbol. -/
+/-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. (This is distinct from the 
+  usual `*` symbol for multiplication, due to precedence issues. )-/
 class Mdual (β : Type _) := (dual : β → β)
 
-postfix:1000 "*" => Mdual.dual
+postfix:max "﹡" => Mdual.dual
 
 instance Matroid_Mdual {α : Type _} : Mdual (Matroid α) := ⟨Matroid.dual⟩ 
 
-theorem dual_indep_iff_exists' : ((M*).Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) := 
+theorem dual_indep_iff_exists' : (M﹡.Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) := 
   by simp [Mdual.dual, dual]
 
-@[simp] theorem dual_ground : (M*).E = M.E := rfl 
+@[simp] theorem dual_ground : M﹡.E = M.E := rfl 
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
-theorem subset_dual_ground_of_subset_ground (hX : X ⊆ M.E) : X ⊆ (M*).E :=
+theorem subset_dual_ground_of_subset_ground (hX : X ⊆ M.E) : X ⊆ M﹡.E :=
   hX 
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
-theorem subset_ground_of_subset_dual_ground (hX : X ⊆ (M*).E) : X ⊆ M.E :=
+theorem subset_ground_of_subset_dual_ground (hX : X ⊆ M﹡.E) : X ⊆ M.E :=
   hX 
 
 @[simp] theorem dual_indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) : 
-  ((M*).Indep I) ↔ (∃ B, M.Base B ∧ Disjoint I B) := 
+  (M﹡.Indep I) ↔ (∃ B, M.Base B ∧ Disjoint I B) := 
 by rw [dual_indep_iff_exists', and_iff_right hI]
 
-theorem dual_dep_iff_forall : ((M*).Dep I) ↔ (∀ B, M.Base B → (I ∩ B).Nonempty) ∧ I ⊆ M.E := 
+theorem dual_dep_iff_forall : (M﹡.Dep I) ↔ (∀ B, M.Base B → (I ∩ B).Nonempty) ∧ I ⊆ M.E := 
   by simp_rw [dep_iff, dual_indep_iff_exists', dual_ground, and_congr_left_iff, not_and, 
     not_exists, not_and, not_disjoint_iff_nonempty_inter, imp_iff_right_iff, iff_true_intro Or.inl]
   
-instance dual_finite [M.Finite] : (M*).Finite := 
+instance dual_finite [M.Finite] : M﹡.Finite := 
   ⟨M.ground_finite⟩  
 
-theorem subset_ground_dual (hX : X ⊆ M.E := by aesop_mat) : X ⊆ (M*).E := 
+theorem subset_ground_dual (hX : X ⊆ M.E := by aesop_mat) : X ⊆ M﹡.E := 
   hX 
 
-@[simp] theorem dual_base_iff (hB : B ⊆ M.E := by aesop_mat) : (M*).Base B ↔ M.Base (M.E \ B) := by
+@[simp] theorem dual_base_iff (hB : B ⊆ M.E := by aesop_mat) : M﹡.Base B ↔ M.Base (M.E \ B) := by
   rw [base_compl_iff_mem_maximals_disjoint_base, base_iff_maximal_indep, dual_indep_iff_exists', 
     mem_maximals_setOf_iff]
   simp [dual_indep_iff_exists']
 
-theorem dual_base_iff' : (M*).Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E :=
+theorem dual_base_iff' : M﹡.Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E :=
   (em (B ⊆ M.E)).elim (fun h ↦ by rw [dual_base_iff, and_iff_left h]) 
     (fun h ↦ iff_of_false (h ∘ (fun h' ↦ h'.subset_ground)) (h ∘ And.right))
 
-@[simp] theorem dual_dual (M : Matroid α) : M** = M :=  
+@[simp] theorem dual_dual (M : Matroid α) : M﹡﹡ = M :=  
   eq_of_base_iff_base_forall rfl (fun B (h : B ⊆ M.E) ↦ 
     by rw [dual_base_iff, dual_base_iff, dual_ground, diff_diff_cancel_left h])
 
-theorem Base.compl_base_of_dual (h : (M*).Base B) : M.Base (M.E \ B) := 
+theorem Base.compl_base_of_dual (h : M﹡.Base B) : M.Base (M.E \ B) := 
   (dual_base_iff'.1 h).1
 
-theorem Base.compl_base_dual (h : M.Base B) : (M*).Base (M.E \ B) := by
+theorem Base.compl_base_dual (h : M.Base B) : M﹡.Base (M.E \ B) := by
   rwa [dual_base_iff, diff_diff_cancel_left h.subset_ground] 
 
-@[simp] theorem dual_indep_iff_Coindep : (M*).Indep X ↔ M.Coindep X := by 
+@[simp] theorem dual_indep_iff_Coindep : M﹡.Indep X ↔ M.Coindep X := by 
   rw [dual_indep_iff_exists', and_comm]; rfl
 
 theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B ∩ X) X) :
-    (M*).Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
+    M﹡.Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
   refine' Indep.basis_of_forall_insert _ (inter_subset_right _ _) (fun e he ↦ _)
   · rw [dual_indep_iff_exists]
     exact ⟨B, hB, disjoint_of_subset_left (inter_subset_left _ _) disjoint_sdiff_left⟩
@@ -1010,24 +1021,24 @@ theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B 
   exact hfb.2 (hBX.mem_of_insert_indep (hem.1 hfb) hi).1 
 
 theorem Base.inter_basis_iff_compl_inter_basis_dual (hB : M.Base B) (hX : X ⊆ M.E := by aesop_mat): 
-    M.Basis (B ∩ X) X ↔ (M*).Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
+    M.Basis (B ∩ X) X ↔ M﹡.Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
   refine' ⟨hB.compl_inter_basis_of_inter_basis, fun h ↦ _⟩
   simpa [inter_eq_self_of_subset_right hX, inter_eq_self_of_subset_right hB.subset_ground] using
     hB.compl_base_dual.compl_inter_basis_of_inter_basis h
     
-theorem dual_inj {M₁ M₂ : Matroid α} (h : M₁* = M₂*) : M₁ = M₂ :=
+theorem dual_inj {M₁ M₂ : Matroid α} (h : M₁﹡ = M₂﹡) : M₁ = M₂ :=
 by rw [←dual_dual M₁, h, dual_dual]
 
-@[simp] theorem dual_inj_iff {M₁ M₂ : Matroid α} : M₁* = M₂* ↔ M₁ = M₂ := ⟨dual_inj, congr_arg _⟩
+@[simp] theorem dual_inj_iff {M₁ M₂ : Matroid α} : M₁﹡ = M₂﹡ ↔ M₁ = M₂ := ⟨dual_inj, congr_arg _⟩
 
-theorem eq_dual_comm {M₁ M₂ : Matroid α} : M₁ = M₂* ↔ M₂ = M₁* := 
+theorem eq_dual_comm {M₁ M₂ : Matroid α} : M₁ = M₂﹡ ↔ M₂ = M₁﹡ := 
 by rw [←dual_inj_iff, dual_dual, eq_comm]
 
-theorem dual_eq_comm {M₁ M₂ : Matroid α} : M₁* = M₂ ↔ M₂* = M₁ := 
+theorem dual_eq_comm {M₁ M₂ : Matroid α} : M₁﹡ = M₂ ↔ M₂﹡ = M₁ := 
 by rw [←dual_inj_iff, dual_dual, eq_comm]
 
 theorem base_iff_dual_base_compl (hB : B ⊆ M.E := by aesop_mat) :
-    M.Base B ↔ (M*).Base (M.E \ B) := by 
+    M.Base B ↔ M﹡.Base (M.E \ B) := by 
   rw [dual_base_iff, diff_diff_cancel_left hB]
 
 end dual 
@@ -1057,7 +1068,7 @@ matroid_of_indep (X ∩ M.E) (fun I ↦ M.Indep I ∧ I ⊆ X ∩ M.E) ⟨M.empt
       (subset_union_of_subset_left (subset_union_right _ _) _))
     apply subset_union_right
 
-  have hi : (M*).Indep (M.E \ (B ∪ Y))
+  have hi : M﹡.Indep (M.E \ (B ∪ Y))
   · rw [dual_indep_iff_Coindep, coindep_iff_exists, 
       diff_diff_cancel_left (union_subset hB.subset_ground hY)]
     exact ⟨B, hB, subset_union_left _ _⟩ 
