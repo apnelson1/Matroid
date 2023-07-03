@@ -998,6 +998,13 @@ theorem dual_base_iff' : M﹡.Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E :=
   (em (B ⊆ M.E)).elim (fun h ↦ by rw [dual_base_iff, and_iff_left h]) 
     (fun h ↦ iff_of_false (h ∘ (fun h' ↦ h'.subset_ground)) (h ∘ And.right))
 
+theorem setOf_dual_base_eq : setOf M﹡.Base = (fun X ↦ M.E \ X) '' setOf M.Base := by
+  ext B
+  simp only [mem_setOf_eq, mem_image, dual_base_iff']
+  refine' ⟨fun h ↦ ⟨_, h.1, diff_diff_cancel_left h.2⟩, 
+    fun ⟨B', hB', h⟩ ↦ ⟨_,h.symm.trans_subset (diff_subset _ _)⟩⟩
+  rwa [←h, diff_diff_cancel_left hB'.subset_ground]
+
 @[simp] theorem dual_dual (M : Matroid α) : M﹡﹡ = M :=  
   eq_of_base_iff_base_forall rfl (fun B (h : B ⊆ M.E) ↦ 
     by rw [dual_base_iff, dual_base_iff, dual_ground, diff_diff_cancel_left h])
