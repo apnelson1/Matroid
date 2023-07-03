@@ -56,6 +56,97 @@ lemma mem_maximals_set_of_iff' {P : Set α → Prop} {x : Set α} :
   exact fun _ ↦ ⟨fun h' y hyx hy ↦ h' hy hyx, fun h' y hy hyx ↦ h' hyx hy⟩
   
 
+section image_preimage
+
+variable {s : β → β → Prop} {f : α → β} {x : Set α} {y : Set β}
+
+open Set 
+
+theorem minimals_image_of_rel_iff_rel (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) :
+    minimals s (f '' x) = f '' (minimals r x) := by
+  ext a
+  simp only [minimals, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  constructor
+  · rintro ⟨⟨a, ha, rfl⟩ , h⟩
+    exact ⟨a, ⟨ha, fun y hy hya ↦ (hf ha hy).mpr (h _ hy ((hf hy ha).mp hya))⟩, rfl⟩
+  rintro ⟨a,⟨⟨ha,h⟩,rfl⟩⟩ 
+  exact ⟨⟨_, ha, rfl⟩, fun y hy hya ↦ (hf ha hy).mp (h hy ((hf hy ha).mpr hya))⟩ 
+    
+theorem maximals_image_of_rel_iff_rel_on 
+    (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) : 
+    maximals s (f '' x) = f '' (maximals r x) :=
+minimals_image_of_rel_iff_rel (fun _ _ a_1 a_2 ↦ hf a_2 a_1)
+
+theorem RelEmbedding.minimals_image_eq (f : r ↪r s) (x : Set α) : 
+    minimals s (f '' x) = f '' (minimals r x) := by
+  rw [minimals_image_of_rel_iff_rel]; simp [f.map_rel_iff]
+
+theorem RelEmbedding.maximals_image_eq (f : r ↪r s) (x : Set α) : 
+    maximals s (f '' x) = f '' (maximals r x) := 
+  (f.swap).minimals_image_eq x
+
+lemma inter_minimals_preimage_inter_eq_of_rel_iff_rel_on
+    (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) (y : Set β) :
+    x ∩ f ⁻¹' (minimals s ((f '' x) ∩ y)) = minimals r (x ∩ f ⁻¹' y) := by
+  ext a
+  simp only [minimals, mem_inter_iff, mem_image, and_imp, forall_exists_index, 
+    forall_apply_eq_imp_iff₂, preimage_setOf_eq, mem_setOf_eq, mem_preimage]
+  exact ⟨fun ⟨hax,⟨_,hay⟩,h2⟩ ↦ ⟨⟨hax, hay⟩, fun a₁ ha₁ ha₁y ha₁a ↦ 
+          (hf hax ha₁).mpr (h2 _ ha₁ ha₁y ((hf ha₁ hax).mp ha₁a))⟩ ,
+        fun ⟨⟨hax,hay⟩,h⟩ ↦ ⟨hax, ⟨⟨_, hax, rfl⟩, hay⟩, fun a' ha' ha'y hsa' ↦ 
+          (hf hax ha').mp (h ha' ha'y ((hf ha' hax).mpr hsa'))⟩⟩ 
+
+lemma inter_preimage_minimals_eq_of_rel_iff_rel_on_of_subset 
+    (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) (hy : y ⊆ f '' x) : 
+    x ∩ f ⁻¹' (minimals s y) = minimals r (x ∩ f ⁻¹' y) := by
+  rw [←inter_eq_self_of_subset_right hy, inter_minimals_preimage_inter_eq_of_rel_iff_rel_on hf, 
+    preimage_inter, ←inter_assoc, inter_eq_self_of_subset_left (subset_preimage_image f x)]
+
+lemma RelEmbedding.inter_preimage_minimals_eq (f : r ↪r s) (x : Set α) (y : Set β) : 
+    x ∩ f⁻¹' (minimals s ((f '' x) ∩ y)) = minimals r (x ∩ f ⁻¹' y) :=
+  inter_minimals_preimage_inter_eq_of_rel_iff_rel_on (by simp [f.map_rel_iff]) y
+
+lemma RelEmbedding.inter_preimage_minimals_eq_of_subset (f : r ↪r s) (h : y ⊆ f '' x) : 
+    x ∩ f ⁻¹' (minimals s y) = minimals r (x ∩ f ⁻¹' y) := by
+  rw [inter_preimage_minimals_eq_of_rel_iff_rel_on_of_subset _ h]; simp [f.map_rel_iff]
+
+lemma RelEmbedding.minimals_preimage_eq (f : r ↪r s) (y : Set β) :
+  minimals r (f ⁻¹' y) = f ⁻¹' minimals s (y ∩ range f) := by
+  convert (f.inter_preimage_minimals_eq univ y).symm; simp [univ_inter]; simp [inter_comm]
+
+lemma inter_maximals_preimage_inter_eq_of_rel_iff_rel_on
+    (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) (y : Set β) :
+    x ∩ f ⁻¹' (maximals s ((f '' x) ∩ y)) = maximals r (x ∩ f ⁻¹' y) := by
+  apply inter_minimals_preimage_inter_eq_of_rel_iff_rel_on
+  exact fun _ _ a b ↦ hf b a
+  
+lemma inter_preimage_maximals_eq_of_rel_iff_rel_on_of_subset 
+    (hf : ∀ ⦃a a'⦄, a ∈ x → a' ∈ x → (r a a' ↔ s (f a) (f a'))) (hy : y ⊆ f '' x) : 
+    x ∩ f ⁻¹' (maximals s y) = maximals r (x ∩ f ⁻¹' y) := by
+  apply inter_preimage_minimals_eq_of_rel_iff_rel_on_of_subset _ hy
+  exact fun _ _ a b ↦ hf b a
+
+lemma RelEmbedding.inter_preimage_maximals_eq (f : r ↪r s) (x : Set α) (y : Set β) : 
+    x ∩ f⁻¹' (maximals s ((f '' x) ∩ y)) = maximals r (x ∩ f ⁻¹' y) :=
+  inter_minimals_preimage_inter_eq_of_rel_iff_rel_on (by simp [f.map_rel_iff]) y
+
+lemma RelEmbedding.inter_preimage_maximals_eq_of_subset (f : r ↪r s) (h : y ⊆ f '' x) : 
+    x ∩ f ⁻¹' (maximals s y) = maximals r (x ∩ f ⁻¹' y) := by
+  rw [inter_preimage_maximals_eq_of_rel_iff_rel_on_of_subset _ h]; simp [f.map_rel_iff]
+
+lemma RelEmbedding.maximals_preimage_eq (f : r ↪r s) (y : Set β) :
+  maximals r (f ⁻¹' y) = f ⁻¹' maximals s (y ∩ range f) := by
+  convert (f.inter_preimage_maximals_eq univ y).symm; simp [univ_inter]; simp [inter_comm]
+
+end image_preimage
+  
+    -- minimals r (f ⁻¹' x) = f ⁻¹' (minimals s x) := by
+  
+
+
+-- theorem foo {s : Set (Set α)} {f : α → β} (hf : )
+
+
 open Set
 /-- This seems a strict improvement over the nonprimed version in mathlib - only the image needs to 
 be finite, not the set itself.  -/

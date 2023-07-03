@@ -1,5 +1,6 @@
 import Mathlib.Data.Set.Finite
 import Matroid.ForMathlib.encard_stuff
+import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init
 import Matroid.ForMathlib.Minimal
@@ -88,7 +89,7 @@ pp_extended_field_notation Base
 @[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
 
 /-- A set is independent if it is contained in a Base.  -/
-def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B
+def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B 
 pp_extended_field_notation Indep
 
 /-- A subset of `M.E` is Dependent if it is not independent . -/
@@ -298,7 +299,11 @@ section dep_indep
 
 theorem indep_iff_subset_base : M.Indep I ↔ ∃ B, M.Base B ∧ I ⊆ B := Iff.rfl
 
+theorem setOf_indep_eq (M : Matroid α) : {I | M.Indep I} = lowerClosure ({B | M.Base B}) := rfl
+
 theorem dep_iff : M.Dep D ↔ ¬M.Indep D ∧ D ⊆ M.E := Iff.rfl  
+
+theorem setOf_dep_eq (M : Matroid α) : {D | M.Dep D} = {I | M.Indep I}ᶜ ∩ Iic M.E := rfl
 
 @[aesop unsafe 15% (rule_sets [Matroid])]
 theorem Indep.subset_ground (hI : M.Indep I) : I ⊆ M.E := by 
@@ -382,9 +387,12 @@ theorem base_iff_maximal_indep : M.Base B ↔ M.Indep B ∧ ∀ I, M.Indep I →
   obtain ⟨⟨B', hB', hBB'⟩, h⟩ := h
   rwa [h _ hB'.indep hBB']
 
-theorem base_iff_mem_maximals : M.Base B ↔ B ∈ maximals (· ⊆ ·) {I | M.Indep I} := by
-  rw [base_iff_maximal_indep, mem_maximals_setOf_iff]
+-- theorem base_iff_mem_maximals : M.Base B ↔ B ∈ maximals (· ⊆ ·) {I | M.Indep I} := by
+--   rw [base_iff_maximal_indep, mem_maximals_setOf_iff]
   
+lemma setOf_base_eq_maximals_setOf_indep : {B | M.Base B} = maximals (· ⊆ ·) {I | M.Indep I} := by
+  ext B; rw [mem_maximals_setOf_iff, mem_setOf, base_iff_maximal_indep]
+
 theorem Indep.base_of_maximal (hI : M.Indep I) (h : ∀ J, M.Indep J → I ⊆ J → I = J) : M.Base I := 
   base_iff_maximal_indep.mpr ⟨hI,h⟩
 
@@ -406,7 +414,7 @@ theorem Base.eq_exchange_of_diff_eq_singleton (hB : M.Base B) (hB' : M.Base B') 
 
 theorem Base.exchange_base_of_indep (hB : M.Base B) (hf : f ∉ B) 
     (hI : M.Indep (insert f (B \ {e}))) : M.Base (insert f (B \ {e})) := by
-  obtain ⟨B', hB', hIB'⟩ := hI
+  obtain ⟨B', hB', hIB'⟩ := hI.exists_base_supset
   have hcard := hB'.encard_diff_comm hB
   rw [insert_subset, ←diff_eq_empty, diff_diff_comm, diff_eq_empty, subset_singleton_iff_eq] at hIB'
   obtain ⟨hfB, (h | h)⟩ := hIB'
@@ -431,7 +439,7 @@ theorem Base.insert_dep (hB : M.Base B) (h : e ∈ M.E \ B) : M.Dep (insert e B)
   
 theorem Indep.exists_insert_of_not_base (hI : M.Indep I) (hI' : ¬M.Base I) (hB : M.Base B) : 
     ∃ e ∈ B \ I, M.Indep (insert e I) := by
-  obtain ⟨B', hB', hIB'⟩ := hI
+  obtain ⟨B', hB', hIB'⟩ := hI.exists_base_supset
   obtain ⟨x, hxB', hx⟩ := exists_of_ssubset (hIB'.ssubset_of_ne (by (rintro rfl; exact hI' hB'))) 
   obtain (hxB | hxB) := em (x ∈ B)
   · exact ⟨x, ⟨hxB, hx⟩ , ⟨B', hB', insert_subset.mpr ⟨hxB',hIB'⟩⟩⟩ 
@@ -463,6 +471,10 @@ theorem Basis.indep (hI : M.Basis I X) : M.Indep I := hI.1.1.1
 
 theorem Basis.subset (hI : M.Basis I X) : I ⊆ X := hI.1.1.2
 
+theorem setOf_basis_eq (M : Matroid α) (hX : X ⊆ M.E := by aesop_mat) : 
+    {I | M.Basis I X} = maximals (· ⊆ ·) ({I | M.Indep I} ∩ Iic X) := by
+  ext I; simp [Matroid.Basis, maximals, iff_true_intro hX] 
+  
 @[aesop unsafe 15% (rule_sets [Matroid])]
 theorem Basis.subset_ground (hI : M.Basis I X) : X ⊆ M.E :=
   hI.2 
@@ -765,7 +777,7 @@ instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
   obtain ⟨n, h_bdd⟩ := h_bdd
   simp_rw [encard_le_coe_iff] at h_bdd
   refine' hB.finiteRk_of_finite (h_bdd B _).1
-  rw [←matroid_of_indep_of_bdd_apply E Indep, Matroid.Indep]
+  rw [←matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
   exact ⟨_, hB, rfl.subset⟩
 
 def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
