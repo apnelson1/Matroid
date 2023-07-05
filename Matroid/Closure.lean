@@ -31,6 +31,10 @@ pp_extended_field_notation cl
 theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} :=
   rfl
 
+theorem cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) : 
+    M.cl X = ⋂₀ {F | M.Flat F ∧ X ⊆ F} := by
+  nth_rw 2 [←inter_eq_self_of_subset_left hX]; rfl 
+
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
   sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right _ _⟩ 
@@ -59,6 +63,25 @@ theorem subset_cl (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat)
 
 theorem Flat.cl (hF : M.Flat F) : M.cl F = F :=
   (sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F)
+-- Move back to `Flat`
+-- theorem Flat.iInter {ι : Type _} [Nonempty ι] {Fs : ι → Set α} (hFs -: ∀ i, M.Flat (Fs i)) : 
+--     M.Flat (⋂ i, Fs i) := by
+--   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
+--     (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩ 
+--   obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (iInter_subset _ i))
+--   refine' (subset_union_right _ _).trans ((hFs i).1 (X := Fs i ∪ X) hIJ _)
+--   convert hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ) using 1
+--   rw [←union_assoc, union_eq_self_of_subset_right hIJ.subset]
+
+-- theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs → M.Flat F) : 
+--     M.Flat (⋂₀ Fs) := by
+--   rw [sInter_eq_iInter]
+--   have : Nonempty Fs
+--   · exact Iff.mpr nonempty_coe_sort hF
+--   exact Flat.iInter (fun ⟨F, hF⟩ ↦ h _ hF)
+
+-- theorem cl_flat (M : Matroid α) (X : Set α) : M.Flat (M.cl X) :=
+--   Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left   
 
 @[simp] theorem cl_ground (M : Matroid α) : M.cl M.E = M.E := 
   (M.cl_subset_ground M.E).antisymm (M.subset_cl M.E) 
@@ -140,38 +163,144 @@ theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ 
 theorem mem_cl_self (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl {e} :=
   mem_cl_of_mem' _ rfl
 
+theorem Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
+    M.cl I = {x | M.Basis I (insert x I)} := by
+  set F := {x | M.Basis I (insert x I)}
+  have hIF : M.Basis I F := hI.basis_setOf_insert_basis
 
+  have hF : M.Flat F
+  · refine' ⟨fun J X hJF hJX e heX ↦ (_ : M.Basis _ _), hIF.subset_ground⟩
+    exact (hIF.basis_of_basis_of_subset_of_subset (hJX.basis_union hJF) hJF.subset
+      (hIF.subset.trans (subset_union_right _ _))).basis_subset (subset_insert _ _)
+      (insert_subset (Or.inl heX) (hIF.subset.trans (subset_union_right _ _)))
 
-theorem Indep.foo (hI : M.Indep I) : M.Flat {x | M.Basis I (insert x I)} := by
-  refine' ⟨fun J X h h' e heX ↦ _, fun e (he : M.Basis _ _) ↦ he.subset_ground (mem_insert _ _)⟩ 
-  have := h.basis_union h'
-  rw [mem_setOf]
+  rw [subset_antisymm_iff, cl_def, subset_sInter_iff, and_iff_right (sInter_subset_of_mem _)]
+  · rintro F' ⟨hF', hIF'⟩ e (he : M.Basis I (insert e I))
+    rw [inter_eq_left_iff_subset.mpr (hIF.subset.trans hIF.subset_ground)] at hIF' 
+    obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF' hF'.2
+    exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (Or.inr (mem_insert _ _))
+  exact ⟨hF, (inter_subset_left _ _).trans hIF.subset⟩ 
   
+theorem Indep.basis_cl (hI : M.Indep I) : M.Basis I (M.cl I) := by
+  rw [hI.cl_eq_setOf_basis_insert]; exact hI.basis_setOf_insert_basis
 
+theorem Basis.cl_eq_cl (h : M.Basis I X) : M.cl I = M.cl X := by 
+  refine' subset_antisymm (M.cl_subset_cl h.subset) _
+  rw [←M.cl_cl I, h.indep.cl_eq_setOf_basis_insert]
+  exact M.cl_subset_cl fun e he ↦ (h.basis_subset (subset_insert _ _) (insert_subset he h.subset))
 
-theorem Basis.basis_cl (hI : M.Basis I X) : M.Basis I (M.cl X) := by
-  refine' hI.indep.basis_of_forall_insert (M.subset_cl_of_subset hI.subset sorry) 
-    (fun e ⟨heX, heI⟩ ↦ _)
-  rw [Dep, and_iff_left (insert_subset (mem_ground_of_mem_cl heX) hI.indep.subset_ground)]
-  refine' fun h ↦ heI _
-  simp_rw [mem_cl_iff_forall_mem_flat _ hI.subset_ground, Flat] at heX
+theorem Indep.mem_cl_iff_insert_dep_or_mem (hI : M.Indep I) :
+    x ∈ M.cl I ↔ M.Dep (insert x I) ∨ x ∈ I := by 
+  rwa [hI.cl_eq_setOf_basis_insert, mem_setOf, basis_insert_iff]
 
-
-  -- have : I ⊆ M.E := by aesop_mat
+theorem Indep.insert_dep_iff (hI : M.Indep I) : M.Dep (insert e I) ↔ e ∈ M.cl I \ I := by 
+  rw [mem_diff, hI.mem_cl_iff_insert_dep_or_mem, or_and_right, and_not_self_iff, or_false, 
+    iff_self_and, imp_not_comm]
+  intro heI; rw [insert_eq_of_mem heI]; exact hI.not_dep
   
---   have := mem_ground_of_mem_cl heX
+theorem Indep.mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) :
+    e ∈ M.cl I ↔ M.Dep (insert e I) := by
+  rw [hI.insert_dep_iff, mem_diff, and_iff_left heI]
+
+
+section modular
+
+variable {ι : Type _} {Xs : ι → Set α}
+
+def Modular (M : Matroid α) (Xs : ι → Set α) := 
+  ∃ B, M.Base B ∧ ∀ A : Set ι, A.Nonempty → M.Basis ((⋂ i ∈ A, Xs i) ∩ B) (⋂ i ∈ A, (Xs i))
+pp_extended_field_notation Modular
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Modular.biInter_subset_ground (h : M.Modular Xs) {A : Set ι} (hA : A.Nonempty) : 
+    (⋂ i ∈ A, Xs i) ⊆ M.E := by
+  obtain ⟨B, -, h⟩ := h; exact (h A hA).subset_ground
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Modular.forall_subset_ground (h : M.Modular Xs) (i : ι) : Xs i ⊆ M.E := by
+  obtain ⟨B, -, h⟩ := h; convert (h {i} (by simp)).subset_ground; simp
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Modular.iUnion_subset_ground (h : M.Modular Xs) : (⋃ i, Xs i) ⊆ M.E := by
+  rw [iUnion_subset_iff]; exact h.forall_subset_ground
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Modular.iInter_subset_ground [Nonempty ι] (h : M.Modular Xs) : (⋂ i, Xs i) ⊆ M.E := 
+  let i₀ := Classical.arbitrary ι
+  subset_trans (iInter_subset _ _) (h.forall_subset_ground i₀) 
+
+theorem modular_of_iUnion_indep (h : M.Indep (⋃ i, Xs i)) : M.Modular Xs := by
+  obtain ⟨B, hB, huB⟩ := h.exists_base_supset
+  refine' ⟨B, hB, fun A ⟨a,ha⟩ ↦ _⟩
+  have hss : ⋂ i ∈ A, Xs i ⊆ B := (biInter_subset_of_mem ha).trans ((subset_iUnion _ _).trans huB)
+  rw [inter_eq_self_of_subset_left hss]
+  exact (hB.indep.subset hss).basis_self
+
+theorem foo [hι : Nonempty ι] (hXs : M.Modular Xs) : (⋂ i, M.cl (Xs i)) = M.cl (⋂ i, Xs i) := by
+  sorry
+
+end modular
+
+
+
+theorem iInter_cl_eq_cl_iInter_of_iUnion_indep {ι : Type _} (Is : ι → Set α) [hι : Nonempty ι]
+    (h : M.Indep (⋃ i, Is i)) : (⋂ i, M.cl (Is i)) = M.cl (⋂ i, Is i) := by
+  let i₀ := Classical.arbitrary ι
+  have his : ∀ i, M.Indep (Is i) := fun i ↦ h.subset (subset_iUnion _ _) 
+  have hii := (his i₀).subset (iInter_subset _ _)
   
-  -- rw [Dep, and_iff_left (insert_subset (by aesop_mat : e ∈ M.E) _)]
-
-
-
--- theorem Indep.cl_eq_setOf_basis (hI : M.Indep I) : M.cl I = {x | M.Basis I (insert x I)} := by
---   refine' subset_antisymm (fun e (he : e ∈ M.cl I) ↦ _) _
---   · have : M.Basis I (M.cl (insert e I))
---     · rw [cl_insert_eq_of_mem_cl]
-  -- simp_rw [mem_cl_iff_forall_mem_flat I] at he
+  rw [cl_def' _ _]
+  refine' subset_antisymm (subset_sInter _) (subset_sInter _)
+  · refine' fun F ⟨hF, hF'⟩ e he ↦ by_contra fun he' ↦ _
+    obtain ⟨J, hJF, hJ⟩ := hii.subset_basis_of_subset hF' hF.subset_ground
+    rw [←hF.cl, ←cl_subset_cl_iff_subset_cl hii.subset_ground, hF.cl] at hF'
+    refine' he' (hF.1 hJF (_ : M.Basis J (insert e J)) (mem_insert _ _))
+    rw [hJF.indep.basis_insert_iff, or_iff_left (not_mem_subset hJF.subset he')]
     
-    -- have := he (M.cl (insert e I)) (M.cl_flat _)
+
+
+    rw [mem_iInter] at he
+    have he'' := fun i ↦ ((his i).mem_cl_iff_insert_dep_or_mem.mp (he i)) 
+    apply hF'
+    rw [hii.mem_cl_iff_insert_dep_or_mem, mem_iInter, or_iff_not_imp_right, dep_iff, 
+      insert_subset_iff, and_iff_left hii.subset_ground, and_iff_left, not_imp_not]
+    intro hei i
+    have := he i
+
+
+
+    
+
+    -- simp_rw [mem_iInter] at he
+
+    -- have he' := fun i ↦ ((his i).mem_cl_iff_insert_dep_or_mem.mp (he i)) 
+    -- have := hF.1 
+    
+    
+    -- rintro ⟨i, hi, rfl⟩
+    -- by_contra' hei
+    -- simp only [mem_iInter] at he
+    -- obtain ⟨J, hJF, hJ⟩ := hii.subset_basis_of_subset hF' hF.subset_ground
+    
+    -- -- have h' := he i₀
+    -- -- rw [(his i₀).mem_cl_iff_insert_dep_or_mem, (his i₀).insert_dep_iff] at h'
+    -- have : M.Basis J (insert e J)
+    -- · rw [hJF.indep.basis_insert_iff]
+    --   specialize he i
+    --   rw [(his i).mem_cl_iff_insert_dep_or_mem, or_iff_left hei] at he
+    --   refine' Or.inl (he.supset _)
+      
+
+    -- have' := hF.1 hJF
+
+    
+  --   rw [←hF.cl, ←cl_subset_cl_iff_subset_cl, hF.cl] at hF'
+
+
+-- theorem iInter_cl_eq_cl_sInter_of_sUnion_indep {Is : Set (Set α)} (hIs : Is.Nonempty) 
+--     (h : M.Indep (⋃₀ Is)) : (⋂₀ (I ∈ Is), M.cl I) = M.cl (⋂₀ Is) := by
+  
+--     (h : M.indep (⋃ i, I i)) : (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 
 
 
@@ -179,49 +308,6 @@ end Matroid
   
 
 
-
--- @[simp]
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic matroid_in.ssE -/
--- /- need the assumption `e ∈ M.E` for otherwise
---   `e ∉ M.E` but `e ∈ M.cl {e} ⊆ M.E`, a contradiction -/
--- theorem Indep.cl_eq_setOf_basis (hI : M.indep I) : M.cl I = {x | M.Basis I (insert x I)} :=
---   by
---   set F := {x | M.basis I (insert x I)} with hF
---   have hIF : M.basis I F := by
---     rw [basis_iff]
---     refine'
---       ⟨hI, fun e he ↦ by rw [hF, mem_set_of, insert_eq_of_mem he]; exact hI.basis_self,
---         fun J hJ hIJ hJF ↦ hIJ.antisymm fun e he ↦ _⟩
---     rw [basis.eq_of_subset_indep (hJF he) (hJ.subset (insert_subset.mpr ⟨he, hIJ⟩))
---         (subset_insert _ _) subset.rfl]
---     exact mem_insert _ _
---     rw [hF]; rintro e ⟨_, he⟩
---     rw [← singleton_union] at he 
---     exact singleton_subset_iff.mp (union_subset_iff.mp he).1
---   have hF : M.flat F :=
---     by
---     refine'
---       ⟨fun J Y hJF hJY y hy ↦
---         indep.basis_of_forall_insert hI (subset_insert _ _) (fun e he ↦ _)
---           (insert_subset.mpr
---             ⟨hJY.subset_ground hy, by
---               run_tac
---                 ssE⟩),
---         hIF.subset_ground⟩
---     refine'
---       (basis.insert_dep (hIF.transfer hJF (subset_union_right _ _) (hJY.basis_union hJF))
---           (mem_of_mem_of_subset he _)).1
---     rw [diff_subset_iff, union_diff_self, insert_subset]
---     simp only [mem_union, subset_union_left, and_true_iff]
---     right; left; exact hy
---   rw [subset_antisymm_iff, cl, subset_sInter_iff]
---   refine' ⟨sInter_subset_of_mem ⟨hF, (inter_subset_left I M.E).trans hIF.subset⟩, _⟩
---   rintro F' ⟨hF', hIF'⟩ e (he : M.basis I (insert e I))
---   rw [inter_eq_left_iff_subset.mpr (hIF.subset.trans hIF.subset_ground)] at hIF' 
---   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF' hF'.2
---   exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (Or.inr (mem_insert _ _))
--- #align matroid_in.indep.cl_eq_set_of_basis Matroid.Indep.cl_eq_setOf_basis
 
 -- theorem cl_diff_self_eq_cl_inter_ground_diff (M : Matroid α) :
 --     M.cl X \ X = M.cl (X ∩ M.E) \ (X ∩ M.E) :=

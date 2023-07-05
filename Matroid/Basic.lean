@@ -585,6 +585,7 @@ theorem Basis.mem_of_insert_indep (hI : M.Basis I X) (he : e ∈ X) (hIe : M.Ind
     e ∈ I :=
   by_contra (fun heI ↦ (hI.insert_dep ⟨he, heI⟩).not_indep hIe) 
 
+
 theorem Basis.not_basis_of_ssubset (hI : M.Basis I X) (hJI : J ⊂ I) : ¬ M.Basis J X :=
   fun h ↦ hJI.ne (h.eq_of_subset_indep hI.indep hJI.subset hI.subset)
 
@@ -645,13 +646,26 @@ theorem Basis.exists_base (hI : M.Basis I X) : ∃ B, M.Base B ∧ I = B ∩ X :
 theorem Base.basis_ground (hB : M.Base B) : M.Basis B M.E :=
   basis_ground_iff.mpr hB
 
+theorem Indep.basis_iff_forall_insert_dep (hI : M.Indep I) (hIX : I ⊆ X) : 
+    M.Basis I X ↔ ∀ e ∈ X \ I, M.Dep (insert e I) := by
+  rw [basis_iff', and_iff_right hIX, and_iff_right hI]
+  refine' ⟨fun h e he ↦ ⟨fun hi ↦ he.2 _, insert_subset (h.2 he.1) hI.subset_ground⟩, 
+    fun h ↦ ⟨fun J hJ hIJ hJX ↦ hIJ.antisymm (fun e heJ ↦ by_contra (fun heI ↦ _)),_⟩⟩
+  · exact (h.1 _ hi (subset_insert _ _) (insert_subset he.1 hIX)).symm.subset (mem_insert e I)
+  · exact (h e ⟨hJX heJ, heI⟩).not_indep (hJ.subset (insert_subset heJ hIJ))
+  rw [←diff_union_of_subset hIX, union_subset_iff, and_iff_left hI.subset_ground]
+  exact fun e he ↦ (h e he).subset_ground (mem_insert _ _)
+
 theorem Indep.basis_of_forall_insert (hI : M.Indep I) (hIX : I ⊆ X) 
-    (he : ∀ e ∈ X \ I, M.Dep (insert e I)) : M.Basis I X := by
-  rw [basis_iff', and_iff_right hI, and_iff_right hIX]
-  refine' ⟨fun J hJ hIJ hJX ↦ hIJ.antisymm (fun e heJ ↦ by_contra (fun heI ↦ _)), 
-    fun e heX ↦ (em (e ∈ I)).elim (fun h ↦ hI.subset_ground h) (fun heI ↦ _)⟩
-  · exact (he e ⟨(hJX heJ), heI⟩).not_indep (hJ.subset (insert_subset heJ hIJ))
-  exact (he e ⟨heX, heI⟩).subset_ground (mem_insert _ _)
+    (he : ∀ e ∈ X \ I, M.Dep (insert e I)) : M.Basis I X :=
+  (hI.basis_iff_forall_insert_dep hIX).mpr he
+  
+theorem Indep.basis_insert_iff (hI : M.Indep I) :
+    M.Basis I (insert e I) ↔ M.Dep (insert e I) ∨ e ∈ I := by 
+  simp_rw [insert_subset_iff, and_iff_left hI.subset_ground, or_iff_not_imp_right, 
+    hI.basis_iff_forall_insert_dep (subset_insert _ _), dep_iff, insert_subset_iff, 
+    and_iff_left hI.subset_ground, mem_diff, mem_insert_iff, or_and_right, and_not_self, 
+    or_false, and_imp, forall_eq]
     
 theorem Basis.iUnion_basis_iUnion {ι : Type _} (X I : ι → Set α) (hI : ∀ i, M.Basis (I i) (X i)) 
     (h_ind : M.Indep (⋃ i, I i)) : M.Basis (⋃ i, I i) (⋃ i, X i) := by
@@ -668,6 +682,48 @@ theorem Basis.basis_iUnion {ι : Type _} [Nonempty ι] (X : ι → Set α) (hI :
   convert Basis.iUnion_basis_iUnion X (fun _ ↦ I) (fun i ↦ hI i) _ <;> rw [iUnion_const]
   exact (hI (Classical.arbitrary ι)).indep
   
+theorem Basis.basis_sUnion {Xs : Set (Set α)} (hne : Xs.Nonempty) (h : ∀ X ∈ Xs, M.Basis I X) :
+    M.Basis I (⋃₀ Xs) := by
+  rw [sUnion_eq_iUnion]
+  have := Iff.mpr nonempty_coe_sort hne
+  exact Basis.basis_iUnion _ fun X ↦ (h X X.prop)
+
+-- theorem Basis.basis_of_subset_of_forall_basis_insert (hIX : I ⊆ X) 
+--     (h : ∀ x ∈ X, M.Basis I (insert x I)) : M.Basis I X := by
+--   obtain (rfl | ⟨e,he⟩) := X.eq_empty_or_nonempty
+--   · obtain rfl := subset_empty_iff.mp hIX; exact M.empty_indep.basis_self
+--   have hne : {insert x I | x ∈ X}.Nonempty := ⟨_, ⟨e, he, rfl⟩⟩
+--   convert Basis.basis_sUnion (M := M) (I := I) hne _
+--   · ext f
+--     simp only [mem_sUnion, mem_setOf_eq, exists_exists_and_eq_and, mem_insert_iff]
+--     exact ⟨fun h ↦ ⟨_, h, Or.inl rfl⟩, 
+--       fun ⟨a, ha, h'⟩ ↦ h'.elim (fun ha ↦ by rwa [ha]) (fun hf ↦ hIX hf)⟩
+--   rintro Y ⟨f, hf, rfl⟩
+--   exact h f hf
+
+
+/- This follows from `Basis.basis_iUnion`, but the overhead seems too high. -/
+theorem Indep.basis_setOf_insert_basis (hI : M.Indep I) :
+    M.Basis I {x | M.Basis I (insert x I)} := by
+  refine' hI.basis_of_forall_insert (fun e he ↦ (_ : M.Basis _ _))
+    (fun e he ↦ ⟨fun hu ↦ he.2 _, he.1.subset_ground⟩)
+  · rw [insert_eq_of_mem he]; exact hI.basis_self
+  simpa using (hu.eq_of_basis he.1).symm
+  
+  -- refine' Basis.basis_of_subset_of_forall_basis_insert (fun e heI ↦ _) (fun _ ↦ id)
+  -- rw [mem_setOf, insert_eq_of_mem heI]
+  -- exact hI.basis_self
+  -- -- obtain (he | hne) := {x | M.Basis I (insert x I)}.eq_empty_or_nonempty
+  -- -- · rw [he, basis_empty_iff, ←subset_empty_iff, ←he]
+  -- --   rintro e he'; rw [mem_setOf, insert_eq_of_mem he']; exact hI.basis_self
+  -- -- -- have' := Basis.basis_sUnion hne
+  -- -- have := hne.coe_sort
+  -- -- rw [←iUnion_of_singleton_coe {x | M.Basis I (insert x I)}]
+  -- -- apply Basis.basis_iUnion
+  
+  
+
+
 theorem Basis.union_basis_union (hIX : M.Basis I X) (hJY : M.Basis J Y) (h : M.Indep (I ∪ J)) : 
     M.Basis (I ∪ J) (X ∪ Y) := by
   rw [union_eq_iUnion, union_eq_iUnion]
@@ -1199,11 +1255,15 @@ theorem Indep.of_restrict (h : (M ↾ R).Indep I) : M.Indep I :=
   simp_rw [base_iff_maximal_indep, basis_iff', restrict_indep_iff, and_iff_left hX, and_assoc]
   aesop
 
-@[simp] theorem restrict_base_iff_basis' : (M ↾ X).Base I ↔ M.Basis I (X ∩ M.E) := by
-  rw [restrict_base_iff]
-  -- simp_rw [base_iff_maximal_indep, basis_iff', restrict_indep_iff, and_iff_left hX, and_assoc]
-  -- aesop
-  
+theorem restrict_base_iff' : (M ↾ X).Base I ↔ M.Basis' I X := by
+  simp_rw [Basis', base_iff_maximal_indep, mem_maximals_setOf_iff, restrict_indep_iff]
+
+theorem Basis.restrict_base (h : M.Basis I X) : (M ↾ X).Base I := by
+  rw [basis_iff'] at h
+  simp_rw [base_iff_maximal_indep, restrict_indep_iff, and_imp, and_assoc, and_iff_right h.1.1, 
+    and_iff_right h.1.2.1] 
+  exact fun J hJ hJX hIJ ↦ h.1.2.2 _ hJ hIJ hJX
+ 
 instance restrict_finiteRk [M.FiniteRk] : (M ↾ R).FiniteRk := 
   let ⟨_, hB⟩ := (M ↾ R).exists_base
   hB.finiteRk_of_finite (hB.indep.of_restrict.finite)
@@ -1287,22 +1347,25 @@ theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (
   rw [←restrict_base_iff]; rw [← restrict_base_iff] at hJY
   exact hJY.base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY)
 
-theorem Basis.transfer' (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) (hIY : I ⊆ Y) :
-    M.Basis I Y := by
+theorem Basis.basis_of_basis_of_subset_of_subset (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) 
+    (hIY : I ⊆ Y) : M.Basis I Y := by
   have hI' := hI.basis_subset (subset_inter hI.subset hIY) (inter_subset_left _ _)
   have hJ' := hJ.basis_subset (subset_inter hJX hJ.subset) (inter_subset_right _ _)
   exact hI'.transfer hJ' (inter_subset_right _ _) hJ
+  
+  
+  -- exact hI'.transfer hJ' (inter_subset_right _ _) hJ
 
-theorem Basis.transfer'' (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) :
-    M.Basis I (I ∪ Y) := by
-  obtain ⟨J', hJ', hJJ'⟩ := hJ.indep.subset_basis_of_subset hJX
-  have hJ'Y := (hJ.basis_union_of_subset hJ'.indep hJJ').basis_union hJ'
-  refine' (hI.transfer' hJ'Y hJ'.subset _).basis_subset _ _
-  · exact subset_union_of_subset_right hI.subset _
-  · exact subset_union_left _ _
-  refine' union_subset (subset_union_of_subset_right hI.subset _) _
-  rw [union_right_comm]
-  exact subset_union_right _ _
+-- theorem Basis.transfer'' (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) :
+--     M.Basis I (I ∪ Y) := by
+--   obtain ⟨J', hJ', hJJ'⟩ := hJ.indep.subset_basis_of_subset hJX
+--   have hJ'Y := (hJ.basis_union_of_subset hJ'.indep hJJ').basis_union hJ'
+--   refine' (hI.transfer' hJ'Y hJ'.subset _).basis_subset _ _
+--   · exact subset_union_of_subset_right hI.subset _
+--   · exact subset_union_left _ _
+--   refine' union_subset (subset_union_of_subset_right hI.subset _) _
+--   rw [union_right_comm]
+--   exact subset_union_right _ _
 
 theorem Indep.exists_basis_subset_union_basis (hI : M.Indep I) (hIX : I ⊆ X) (hJ : M.Basis J X) :
     ∃ I', M.Basis I' X ∧ I ⊆ I' ∧ I' ⊆ I ∪ J := by
@@ -1322,13 +1385,12 @@ theorem Basis.base_of_base_subset (hIX : M.Basis I X) (hB : M.Base B) (hBX : B �
 
 theorem Basis.exchange (hIX : M.Basis I X) (hJX : M.Basis J X) (he : e ∈ I \ J) :
     ∃ f ∈ J \ I, M.Basis (insert f (I \ {e})) X := by
-  simp_rw [← restrict_base_iff] at *; exact Base.exchange hIX hJX he
-
-
+  obtain ⟨y,hy, h⟩ := hIX.restrict_base.exchange hJX.restrict_base he
+  exact ⟨y, hy, by rwa [restrict_base_iff] at h⟩ 
+  
 theorem Basis.eq_exchange_of_diff_eq_singleton (hI : M.Basis I X) (hJ : M.Basis J X)
     (hIJ : I \ J = {e}) : ∃ f ∈ J \ I, J = insert f I \ {e} := by
   rw [← restrict_base_iff] at hI hJ ; exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ
-#align matroid_in.basis.eq_exchange_of_diff_eq_singleton MatroidIn.Basis.eq_exchange_of_diff_eq_singleton
 
 end Basis
 
