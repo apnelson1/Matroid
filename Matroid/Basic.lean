@@ -585,7 +585,6 @@ theorem Basis.mem_of_insert_indep (hI : M.Basis I X) (he : e ∈ X) (hIe : M.Ind
     e ∈ I :=
   by_contra (fun heI ↦ (hI.insert_dep ⟨he, heI⟩).not_indep hIe) 
 
-
 theorem Basis.not_basis_of_ssubset (hI : M.Basis I X) (hJI : J ⊂ I) : ¬ M.Basis J X :=
   fun h ↦ hJI.ne (h.eq_of_subset_indep hI.indep hJI.subset hI.subset)
 
