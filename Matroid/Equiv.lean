@@ -1,6 +1,5 @@
-import Matroid.Basic
+import Matroid.DualRestrict
 import Mathlib.Logic.Equiv.LocalEquiv
-
 namespace Matroid
 
 open Set LocalEquiv
@@ -215,17 +214,6 @@ theorem Iso.on_dep_symm (e : Iso M N) (h : N.Dep (e '' D)) (hD : D ⊆ M.E := by
 theorem Iso.setOf_dep_eq (e : Iso M N) : setOf N.Dep = (image e) '' setOf M.Dep :=
   e.setOf_prop_eq Dep.subset_ground e.on_dep e.symm.on_dep
 
-theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
-  rw [Circuit, e.setOf_dep_eq, minimals_image_of_rel_iff_rel (r := (· ⊆ ·))]
-  · exact mem_image_of_mem _ h
-  exact e.prop_subset_iff_subset Dep.subset_ground
-  
-theorem Iso.on_circuit_symm (e : Iso M N) (h : N.Circuit (e '' C)) (hC : C ⊆ M.E := by aesop_mat) : 
-    M.Circuit C :=
-  e.on_prop_symm (e.symm.on_circuit) h
-
-theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setOf M.Circuit :=
-  e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
 
 /-- Restrictions of isomorphic matroids are isomorphic -/
 def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :

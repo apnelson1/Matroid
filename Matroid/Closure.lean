@@ -1,4 +1,5 @@
 import Matroid.Equiv
+import Matroid.DualRestrict
  
 open scoped BigOperators
 
@@ -225,6 +226,18 @@ theorem Indep.not_mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I)
     (he : e ∈ M.E := by aesop_mat) : e ∉ M.cl I ↔ M.Indep (insert e I) := by
   rw [hI.not_mem_cl_iff, and_iff_left heI]
 
+theorem Indep.insert_indep_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) : 
+    M.Indep (insert e I) ↔ e ∈ M.E \ M.cl I := by
+  rw [mem_diff, hI.mem_cl_iff_of_not_mem heI, dep_iff, not_and, not_imp_not, insert_subset_iff, 
+    and_iff_left hI.subset_ground]
+  exact ⟨fun h ↦ ⟨h.subset_ground (mem_insert e I), fun _ ↦ h⟩, fun h ↦ h.2 h.1⟩
+
+theorem Indep.insert_indep_iff (hI : M.Indep I) : 
+    M.Indep (insert e I) ↔ e ∈ M.E \ M.cl I ∨ e ∈ I := by 
+  obtain (h | h) := em (e ∈ I)
+  · simp_rw [insert_eq_of_mem h, iff_true_intro hI, true_iff, iff_true_intro h, or_true]
+  rw [hI.insert_indep_iff_of_not_mem h, or_iff_left h]
+
 theorem Indep.basis_of_subset_of_subset_cl (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.cl I) : 
     M.Basis I X :=
   hI.basis_cl.basis_subset hIX hXI
@@ -255,7 +268,7 @@ theorem Indep.cl_inter_eq_self_of_subset (hI : M.Indep I) (hJI : J ⊆ I) : M.cl
   rintro e ⟨heJ, heI⟩
   exact hJ.basis_cl.mem_of_insert_indep heJ (hI.subset (insert_subset heI hJI))
   
-theorem Indep.cl_sInter_eq_iInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M.Indep I) 
+theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M.Indep I) 
     (hne : Js.Nonempty) (hIs : ∀ J ∈ Js, J ⊆ I) : M.cl (⋂₀ Js) = (⋂ J ∈ Js, M.cl J)  := by
   rw [subset_antisymm_iff, subset_iInter₂_iff]
   have hiX : ⋂₀ Js ⊆ I := (sInter_subset_of_mem hne.some_mem).trans (hIs _ hne.some_mem)
@@ -288,13 +301,17 @@ theorem Indep.cl_sInter_eq_iInter_cl_of_forall_subset {Js : Set (Set α)} (hI : 
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_iInter_cl_of_iUnion_indep {ι : Type _} (Is : ι → Set α) [hι : Nonempty ι]
+theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type _} (Is : ι → Set α) [hι : Nonempty ι]
     (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
-  convert h.cl_sInter_eq_iInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
+  convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
 
+theorem cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.Nonempty)
+    (h : M.Indep (⋃₀ Is)) :  M.cl (⋂₀ Is) = (⋂ I ∈ Is, M.cl I) :=
+  h.cl_sInter_eq_biInter_cl_of_forall_subset hIs (fun _ ↦ subset_sUnion_of_mem)
+
 theorem Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by 
-  rw [inter_eq_iInter, cl_iInter_eq_iInter_cl_of_iUnion_indep, inter_eq_iInter]
+  rw [inter_eq_iInter, cl_iInter_eq_biInter_cl_of_iUnion_indep, inter_eq_iInter]
   · exact iInter_congr (by simp) 
   rwa [←union_eq_iUnion]
 
@@ -470,6 +487,8 @@ theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
   rw [Coindep, spanning_iff_supset_base, and_iff_left hI]
   simp_rw [subset_diff, ←and_assoc, and_iff_left_of_imp Base.subset_ground, disjoint_comm]
 
+
+end Spanning
 
 
 -- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/

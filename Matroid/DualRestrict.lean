@@ -383,11 +383,8 @@ section Basis
 
 theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (hJY : M.Basis J Y) :
     M.Basis I Y := by
-  refine' hIX.indep.basis_of_forall_insert (hIX.subset.trans hXY) (fun e he ↦ _)
-  rw [←not_indep_iff]; intro hi
-  
-  -- rw [←restrict_base_iff]; rw [← restrict_base_iff] at hJY
-  -- exact hJY.base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY)
+  rw [←restrict_base_iff]; rw [← restrict_base_iff] at hJY
+  exact hJY.base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY)
 
 theorem Basis.basis_of_basis_of_subset_of_subset (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) 
     (hIY : I ⊆ Y) : M.Basis I Y := by

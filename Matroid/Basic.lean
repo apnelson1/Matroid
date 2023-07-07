@@ -28,11 +28,42 @@ def Matroid.exists_maximal_subset_property {α : Type _} (P : Set α → Prop) (
   (maximality' : ∀ X, X ⊆ ground → 
     Matroid.exists_maximal_subset_property (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
   (subset_ground' : ∀ B, Base B → B ⊆ ground)
-  
+
 namespace Matroid
 
+
 variable {α : Type _} {M : Matroid α} 
---{I D J B B' B₁ B₂ X Y : Set α} {e f : α}
+
+pp_extended_field_notation Base
+
+/-- We write `M.E` for the ground set of a matroid `M`-/
+def E (M : Matroid α) : Set α := M.ground
+pp_extended_field_notation Matroid.E
+
+@[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
+
+/-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.Finite]`-/
+class Finite (M : Matroid α) : Prop := (ground_finite : M.E.Finite)
+
+theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite := ‹M.Finite›.ground_finite   
+
+theorem Set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
+  M.ground_finite.subset hX 
+
+instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M := 
+  ⟨Set.toFinite _⟩ 
+
+/-- A `FiniteRk` matroid is one with a finite Basis -/
+class FiniteRk (M : Matroid α) : Prop := (exists_finite_base : ∃ B, M.Base B ∧ B.Finite) 
+
+instance finiteRk_of_finite (M : Matroid α) [Finite M] : FiniteRk M := 
+  ⟨ M.exists_base'.imp (fun B hB ↦ ⟨hB, M.Set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
+
+/-- An `InfiniteRk` matroid is one whose Bases are infinite. -/
+class InfiniteRk (M : Matroid α) : Prop := (exists_infinite_base : ∃ B, M.Base B ∧ B.Infinite)
+
+/-- A `Rk_pos` matroid is one in which the empty set is not a Basis -/
+class Rk_pos (M : Matroid α) : Prop := (empty_not_base : ¬M.Base ∅)
 
 section exchange
 
@@ -76,58 +107,6 @@ rw [←encard_diff_add_encard_inter B₁ B₂, encard_diff_eq_of_exch exch hB₁
 
 end exchange
 
-section defs
-
-/-- We write `M.E` for the ground set of a matroid `M`-/
-def E (M : Matroid α) : Set α := M.ground
-pp_extended_field_notation Matroid.E
-
-pp_extended_field_notation Matroid.ground
-
-pp_extended_field_notation Base
-
-@[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
-
-/-- A set is independent if it is contained in a Base.  -/
-def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B 
-pp_extended_field_notation Indep
-
-/-- A subset of `M.E` is Dependent if it is not independent . -/
-def Dep (M : Matroid α) (D : Set α) : Prop := ¬M.Indep D ∧ D ⊆ M.E   
-pp_extended_field_notation Dep
-
-/-- A Circuit is a minimal Dependent set -/
-def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
-pp_extended_field_notation Circuit
-
-
-end defs
-
-/-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.Finite]`-/
-class Finite (M : Matroid α) : Prop := (ground_finite : M.E.Finite)
-
-theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite := ‹M.Finite›.ground_finite   
-
-theorem Set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
-  M.ground_finite.subset hX 
-
-instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M := 
-  ⟨Set.toFinite _⟩ 
-
-/-- A `FiniteRk` matroid is one with a finite Basis -/
-class FiniteRk (M : Matroid α) : Prop := (exists_finite_base : ∃ B, M.Base B ∧ B.Finite) 
-
-instance finiteRk_of_finite (M : Matroid α) [Finite M] : FiniteRk M := 
-  ⟨ M.exists_base'.imp (fun B hB ↦ ⟨hB, M.Set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
-
-/-- An `InfiniteRk` matroid is one whose Bases are infinite. -/
-class InfiniteRk (M : Matroid α) : Prop := (exists_infinite_base : ∃ B, M.Base B ∧ B.Infinite)
-
-/-- A `Finitary` matroid is one whose Circuits are finite -/
-class Finitary (M : Matroid α) : Prop := (cct_finite : ∀ (C : Set α), M.Circuit C → C.Finite) 
-
-/-- A `Rk_pos` matroid is one in which the empty set is not a Basis -/
-class Rk_pos (M : Matroid α) : Prop := (empty_not_base : ¬M.Base ∅)
 
 section aesop
 
@@ -138,8 +117,6 @@ macro (name := aesop_mat) "aesop_mat" c:Aesop.tactic_clause* : tactic =>
   aesop $c* (options := { terminal := true })
   (rule_sets [$(Lean.mkIdent `Matroid):ident]))
 
-/-- The `aesop_mat` tactic attempts to prove a set is contained in the ground set of a matroid. 
-  It uses a `[Matroid]` ruleset, and is allowed to fail. -/
 macro (name := aesop_mat?) "aesop_mat?" c:Aesop.tactic_clause* : tactic =>
 `(tactic|
   aesop? $c* (options := { terminal := true })
@@ -252,15 +229,6 @@ instance finite_rk_of_finite {M : Matroid α} [Finite M] : FiniteRk M :=
   let ⟨B, hB⟩ := M.exists_base
   ⟨⟨B, hB, (M.ground_finite).subset hB.subset_ground⟩⟩ 
 
-instance Finitary_of_FiniteRk {M : Matroid α} [FiniteRk M] : Finitary M := 
-⟨by {
-  intros C hC
-  obtain (rfl | ⟨e,heC⟩) := C.eq_empty_or_nonempty; exact finite_empty
-  have hi : M.Indep (C \ {e}) :=
-  by_contra (fun h ↦ (hC.2 ⟨h, (diff_subset _ _).trans hC.1.2⟩ (diff_subset C {e}) heC).2 rfl)
-  obtain ⟨B, hB, hCB⟩ := hi 
-  convert (hB.finite.subset hCB).insert e
-  rw [insert_diff_singleton, insert_eq_of_mem heC] } ⟩  
 
 theorem Base.diff_finite_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).Finite ↔ (B₂ \ B₁).Finite := 
@@ -294,10 +262,17 @@ theorem base_compl_iff_mem_maximals_disjoint_base (hB : B ⊆ M.E := by aesop_ma
   · simpa [hB'.subset_ground]
   simp [subset_diff, hB, hBB']
   
-
 end Base
 
 section dep_indep
+
+/-- A set is independent if it is contained in a Base.  -/
+def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B 
+pp_extended_field_notation Indep
+
+/-- A subset of `M.E` is Dependent if it is not independent . -/
+def Dep (M : Matroid α) (D : Set α) : Prop := ¬M.Indep D ∧ D ⊆ M.E   
+pp_extended_field_notation Dep
 
 theorem indep_iff_subset_base : M.Indep I ↔ ∃ B, M.Base B ∧ I ⊆ B := Iff.rfl
 
@@ -350,6 +325,9 @@ theorem Dep.supset (hD : M.Dep D) (hDX : D ⊆ X) (hXE : X ⊆ M.E := by aesop_m
 
 @[simp] theorem empty_indep (M : Matroid α) : M.Indep ∅ :=
   Exists.elim M.exists_base (fun B hB ↦ ⟨_, hB, B.empty_subset⟩)
+
+theorem Dep.nonempty (hD : M.Dep D) : D.Nonempty := by
+  rw [nonempty_iff_ne_empty]; rintro rfl; exact hD.not_indep M.empty_indep
 
 theorem Indep.finite [FiniteRk M] (hI : M.Indep I) : I.Finite := 
   let ⟨_, hB, hIB⟩ := hI
@@ -733,6 +711,7 @@ theorem Base.base_of_basis_supset (hB : M.Base B) (hBX : B ⊆ X) (hIX : M.Basis
   obtain ⟨e,heBI,he⟩ := hIX.indep.exists_insert_of_not_base h hB
   exact heBI.2 (hIX.mem_of_insert_indep (hBX heBI.1) he)
 
+
 theorem Indep.exists_base_subset_union_base (hI : M.Indep I) (hB : M.Base B) : 
     ∃ B', M.Base B' ∧ I ⊆ B' ∧ B' ⊆ I ∪ B := by
   obtain ⟨B', hB', hIB'⟩ := hI.subset_basis_of_subset (subset_union_left I B)
@@ -747,6 +726,7 @@ theorem Base.basis_of_subset (hX : X ⊆ M.E := by aesop_mat) (hB : M.Base B) (h
     M.Basis B X := by
   rw [basis_iff, and_iff_right hB.indep, and_iff_right hBX]
   exact fun J hJ hBJ _ ↦ hB.eq_of_subset_indep hJ hBJ
+
 
 end Basis
 section from_axioms
@@ -972,4 +952,28 @@ instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : 
 end from_axioms
 
 end Matroid 
+
+
+/- Restrict a matroid to a set containing a known basis. This is a special case of restriction
+  and only has auxiliary use -/
+-- def bRestr (M : Matroid α) {B₀ R : Set α} (hB₀ : M.Base B₀) (hB₀R : B₀ ⊆ R) (hR : R ⊆ M.E) : 
+--     Matroid α where
+--   ground := R
+--   Base B := M.Base B ∧ B ⊆ R
+--   exists_base' := ⟨B₀, ⟨hB₀, hB₀R⟩⟩ 
+--   base_exchange' := by
+--     rintro B B' ⟨hB, hBR⟩ ⟨hB', hB'R⟩ e he
+--     obtain ⟨f, hf⟩ := hB.exchange hB' he
+--     refine' ⟨f, hf.1, hf.2, insert_subset (hB'R hf.1.1) ((diff_subset _ _).trans hBR)⟩    
+--   maximality' := by
+--     rintro X hXR Y ⟨B, ⟨hB, -⟩, hYB⟩ hYX
+--     obtain ⟨J, ⟨⟨BJ, hBJ, hJBJ⟩, hJ⟩, hJmax⟩ := M.maximality' X (hXR.trans hR) Y ⟨B, hB, hYB⟩ hYX 
+--     simp only [mem_setOf_eq, and_imp, forall_exists_index] at hJmax 
+--     obtain ⟨BJ', hBJ', hJBJ'⟩ :=
+--       (hBJ.indep.subset hJBJ).subset_basis_of_subset (subset_union_left _ B₀) 
+--         (union_subset (hJ.2.trans (hXR.trans hR)) (hB₀R.trans hR))
+--     have' hBJ'b := hB₀.base_of_basis_supset (subset_union_right _ _) hBJ'
+--     refine' ⟨J, ⟨⟨BJ', ⟨hBJ'b, hBJ'.subset.trans (union_subset (hJ.2.trans hXR) hB₀R)⟩, hJBJ'⟩,hJ⟩, 
+--       fun K ⟨⟨BK, ⟨hBK, _⟩, hKBK⟩, hYK, hKX⟩ hKJ ↦ hJmax BK hBK hKBK hYK hKX hKJ⟩
+--   subset_ground' := by tauto
 
