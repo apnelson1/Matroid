@@ -122,9 +122,7 @@ theorem Finite.ncard_le_ncard_of_encard_le_encard (ht : t.Finite) (h : s.encard 
   rw [nonempty_iff_ne_empty, Ne.def, ←encard_eq_zero, ENat.one_le_iff_ne_zero]
    
 @[simp] theorem encard_pos_iff_nonempty : 0 < s.encard ↔ s.Nonempty := by 
-  rw [←ENat.one_le_iff_pos, one_le_encard_iff_nonempty]
-
-  --
+  rw [←ENat.one_le_iff_pos, one_le_encard_iff_nonempty]  --
 
 @[simp] theorem encard_singleton (x : α) : ({x} : Set α).encard = 1 := by
   rw [(finite_singleton x).encard_eq, ncard_singleton, ENat.coe_one]
