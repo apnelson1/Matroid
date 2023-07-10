@@ -3,59 +3,55 @@ import Mathlib.Order.Bounds.Basic
 import Mathlib.Data.Set.Finite
 import Mathlib.Data.Nat.Interval
 
-variable {α : Type _} {r : α → α → Prop} {s : Set α} {x y : α} {P : α → Prop}
+variable {α : Type _} {r : α → α → Prop} {P : α → Prop}
 
-instance [IsAntisymm α r] : IsAntisymm α (Function.swap r) := IsAntisymm.swap r
-  
-lemma mem_maximals_iff' [IsAntisymm α r] :
+lemma mem_maximals_iff [IsAntisymm α r] :
     x ∈ maximals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, y ∈ s → r x y → x = y := by
   simp only [maximals, Set.mem_sep_iff, and_congr_right_iff]
   refine' fun _ ↦ ⟨fun h y hys hxy ↦ antisymm hxy (h hys hxy), fun h y hys hxy ↦ _⟩ 
   convert hxy <;> rw [h hys hxy]
 
-lemma mem_minimals_iff' [IsAntisymm α r] :
-    x ∈ minimals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, y ∈ s → r y x → x = y := by 
-  rw [←maximals_swap, mem_maximals_iff'] 
-
-lemma maximals_dual [PartialOrder α] :
-    maximals (· ≤ ·) s = @minimals αᵒᵈ (· ≤ ·) s := by
-  ext x
-  rw [mem_maximals_iff', @mem_minimals_iff' αᵒᵈ (· ≤ ·) s x _, and_congr_right_iff]
-  exact fun _ ↦ ⟨id, id⟩
-
-lemma minimals_dual [PartialOrder α] :
-    minimals (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := by
-  simp [maximals_dual]; rfl 
-
-lemma mem_maximals_Prop_iff [IsAntisymm α r] : 
-    x ∈ maximals r P ↔ P x ∧ ∀ ⦃y⦄, P y → r x y → x = y :=
-  mem_maximals_iff'
-
 lemma mem_maximals_setOf_iff [IsAntisymm α r] : 
     x ∈ maximals r (setOf P) ↔ P x ∧ ∀ ⦃y⦄, P y → r x y → x = y :=
-  mem_maximals_iff'
+  mem_maximals_iff
 
-lemma mem_minimals_Prop_iff [IsAntisymm α r] : 
-    x ∈ minimals r P ↔ P x ∧ ∀ ⦃y⦄, P y → r y x → x = y :=
-  mem_minimals_iff'
+lemma mem_minimals_iff [IsAntisymm α r] :
+    x ∈ minimals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, y ∈ s → r y x → x = y := by 
+  rw [←maximals_swap, @mem_maximals_iff _ _ _ _ (IsAntisymm.swap r)] 
 
 lemma mem_minimals_setOf_iff [IsAntisymm α r] : 
     x ∈ minimals r (setOf P) ↔ P x ∧ ∀ ⦃y⦄, P y → r y x → x = y :=
-  mem_minimals_iff'
+  mem_minimals_iff
 
-lemma mem_minimals_setOf_iff' {P : Set α → Prop} {x : Set α} : 
-    x ∈ minimals (· ⊆ ·) (setOf P) ↔ P x ∧ ∀ ⦃y⦄, y ⊂ x → ¬ P y := by
-  simp only [mem_minimals_setOf_iff, and_congr_right_iff, ssubset_iff_subset_ne, Ne.def, 
-    and_imp, not_imp_not]
-  exact fun _ ↦ ⟨fun h' y hyx hy ↦ (h' hy hyx).symm, fun h' y hy hyx ↦ (h' hyx hy).symm⟩
-  
-lemma mem_maximals_set_of_iff' {P : Set α → Prop} {x : Set α} : 
-    x ∈ maximals (· ⊆ ·) (setOf P) ↔ P x ∧ ∀ ⦃y⦄, x ⊂ y → ¬ P y := by
-  simp only [mem_maximals_setOf_iff, and_congr_right_iff, ssubset_iff_subset_ne, Ne.def, 
-    and_imp, not_imp_not]
-  exact fun _ ↦ ⟨fun h' y hyx hy ↦ h' hy hyx, fun h' y hy hyx ↦ h' hyx hy⟩
-  
+lemma maximals_dual [PartialOrder α] (s : Set α) : 
+  @maximals α (· ≤ ·) s = @minimals αᵒᵈ (· ≤ ·) s := rfl 
 
+lemma minimals_dual [PartialOrder α] (s : Set α) :
+  @minimals α (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := rfl
+
+lemma mem_minimals_iff_forall_lt_not_mem {rlt : α → α → Prop} [IsAntisymm α r] [IsTrans α r] 
+    [IsNonstrictStrictOrder α r rlt] :
+    x ∈ minimals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, rlt y x → y ∉ s := by
+  simp [minimals, right_iff_left_not_left_of r rlt, not_imp_not, imp.swap (a := _ ∈ _)]
+  
+lemma mem_maximals_iff_forall_lt_not_mem {rlt : α → α → Prop} [IsAntisymm α r] [IsTrans α r] 
+    [IsNonstrictStrictOrder α r rlt] :
+    x ∈ maximals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, rlt x y → y ∉ s := by
+  simp [maximals, right_iff_left_not_left_of r rlt, not_imp_not, imp.swap (a := _ ∈ _)]
+
+lemma minimals_eq_minimals_of_subset_of_forall [IsAntisymm α r] [IsTrans α r] (hts : t ⊆ s) 
+    (h : ∀ x ∈ s, ∃ y ∈ t, r y x) : minimals r s = minimals r t := by
+  refine Set.ext fun a ↦ ⟨fun ⟨has, hmin⟩ ↦ ⟨?_,fun b hbt ↦ hmin (hts hbt)⟩, 
+    fun ⟨hat, hmin⟩ ↦ ⟨hts hat, fun b hbs hba ↦ ?_⟩⟩
+  · obtain ⟨a', ha', haa'⟩ := h _ has
+    rwa [antisymm (hmin (hts ha') haa') haa']
+  obtain ⟨b', hb't, hb'b⟩ := h b hbs
+  rwa [antisymm (hmin hb't (Trans.trans hb'b hba)) (Trans.trans hb'b hba)]
+  
+lemma maximals_eq_maximals_of_subset_of_forall [IsAntisymm α r] [IsTrans α r] (hts : t ⊆ s)
+    (h : ∀ x ∈ s, ∃ y ∈ t, r x y) : maximals r s = maximals r t := 
+  @minimals_eq_minimals_of_subset_of_forall _ _ _ _ (IsAntisymm.swap r) (IsTrans.swap r) hts h
+  
 section image_preimage
 
 variable {s : β → β → Prop} {f : α → β} {x : Set α} {y : Set β}
@@ -156,19 +152,23 @@ lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → 
   obtain  ⟨_ ,⟨a,ha,rfl⟩, hmax⟩ := Finite.exists_maximal_wrt id (f '' s) h (h₀.image f)
   exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
 
-lemma finite_iff_bddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
-    {s : Set α} : s.Finite ↔ BddAbove s :=
-⟨fun h ↦ ⟨h.toFinset.sup id, fun x hx ↦ Finset.le_sup (f := id) (by simpa : x ∈ h.toFinset)⟩,
-  fun ⟨m, hm⟩ ↦ (finite_Icc ⊥ m).subset (fun x hx ↦ ⟨bot_le, hm hx⟩)⟩
-  
-lemma finite_iff_bddBelow {α : Type _} [SemilatticeInf α] [LocallyFiniteOrder α] [OrderTop α]
-    {s : Set α} : s.Finite ↔ ∃ a, ∀ x ∈ s, a ≤ x :=
-  finite_iff_bddAbove (α := αᵒᵈ)
 
-lemma finite_iff_bddBelow_bddAbove {α : Type _} [Nonempty α] [Lattice α] [LocallyFiniteOrder α] 
-    {s : Set α} : s.Finite ↔ BddBelow s ∧ BddAbove s := by
-  obtain (rfl | hs) := s.eq_empty_or_nonempty; simp
-  refine' ⟨fun h ↦ _, fun ⟨⟨a,ha⟩,⟨b,hb⟩⟩ ↦ (finite_Icc a b).subset (fun x hx ↦ ⟨ha hx,hb hx⟩ )⟩
-  obtain ⟨s,rfl⟩ := h.exists_finset_coe
-  exact ⟨⟨s.inf' (by simpa using hs) id, fun x hx ↦ Finset.inf'_le id (by simpa using hx)⟩, 
-    ⟨s.sup' (by simpa using hs) id, fun x hx ↦ Finset.le_sup' id (by simpa using hx)⟩⟩
+
+
+
+-- lemma finite_iff_bddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
+--     {s : Set α} : s.Finite ↔ BddAbove s :=
+-- ⟨fun h ↦ ⟨h.toFinset.sup id, fun x hx ↦ Finset.le_sup (f := id) (by simpa : x ∈ h.toFinset)⟩,
+--   fun ⟨m, hm⟩ ↦ (finite_Icc ⊥ m).subset (fun x hx ↦ ⟨bot_le, hm hx⟩)⟩
+  
+-- lemma finite_iff_bddBelow {α : Type _} [SemilatticeInf α] [LocallyFiniteOrder α] [OrderTop α]
+--     {s : Set α} : s.Finite ↔ ∃ a, ∀ x ∈ s, a ≤ x :=
+--   finite_iff_bddAbove (α := αᵒᵈ)
+
+-- lemma finite_iff_bddBelow_bddAbove {α : Type _} [Nonempty α] [Lattice α] [LocallyFiniteOrder α] 
+--     {s : Set α} : s.Finite ↔ BddBelow s ∧ BddAbove s := by
+--   obtain (rfl | hs) := s.eq_empty_or_nonempty; simp
+--   refine' ⟨fun h ↦ _, fun ⟨⟨a,ha⟩,⟨b,hb⟩⟩ ↦ (finite_Icc a b).subset (fun x hx ↦ ⟨ha hx,hb hx⟩ )⟩
+--   obtain ⟨s,rfl⟩ := h.exists_finset_coe
+--   exact ⟨⟨s.inf' (by simpa using hs) id, fun x hx ↦ Finset.inf'_le id (by simpa using hx)⟩, 
+--     ⟨s.sup' (by simpa using hs) id, fun x hx ↦ Finset.le_sup' id (by simpa using hx)⟩⟩

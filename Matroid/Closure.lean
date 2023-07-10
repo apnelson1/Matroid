@@ -5,6 +5,7 @@ open scoped BigOperators
 
 open Set
 
+
 namespace Matroid
 
 -- variable {α : Type _} {M : Matroid α} {I J B C X Y : Set α} {e f x y : α}
@@ -16,7 +17,7 @@ def Flat (M : Matroid α) (F : Set α) : Prop :=
   (∀ ⦃I X⦄, M.Basis I F → M.Basis I X → X ⊆ F) ∧ F ⊆ M.E
 pp_extended_field_notation Flat
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets [Matroid])]
 theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E := 
   hF.2
 
@@ -398,6 +399,9 @@ theorem indep_iff_not_mem_cl_diff_forall' : M.Indep I ↔ I ⊆ M.E ∧ ∀ e �
   ⟨fun h ↦ ⟨h.subset_ground, (indep_iff_not_mem_cl_diff_forall h.subset_ground).mp h⟩, fun h ↦
     (indep_iff_not_mem_cl_diff_forall h.1).mpr h.2⟩
 
+theorem Indep.not_mem_cl_diff_of_mem (hI : M.Indep I) (he : e ∈ I) : e ∉ M.cl (I \ {e}) := 
+  (indep_iff_not_mem_cl_diff_forall'.1 hI).2 e he
+
 theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I := by
   rw [indep_iff_not_mem_cl_diff_forall']
   refine' ⟨fun ⟨hIE, h⟩ e heI h_eq ↦ h e heI (h_eq.symm.subset (M.mem_cl_of_mem heI)), 
@@ -484,9 +488,7 @@ theorem spanning_iff_supset_base (hS : S ⊆ M.E := by aesop_mat) :
 
 theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
     M.Coindep I ↔ M.Spanning (M.E \ I) := by
-  rw [Coindep, spanning_iff_supset_base, and_iff_left hI]
-  simp_rw [subset_diff, ←and_assoc, and_iff_left_of_imp Base.subset_ground, disjoint_comm]
-
+  rw [coindep_iff_exists, spanning_iff_supset_base]
 
 end Spanning
 
@@ -594,7 +596,7 @@ theorem iInter_cl_eq_cl_sInter_of_modular
   have := hne.coe_sort
   have eq1 : (⋂ X ∈ Xs, M.cl X) = (⋂ X ∈ Xs, M.cl (X ∩ I))
   · convert rfl using 4 with X hX; rw [(hI.inter_basis_of_mem hX).cl_eq_cl]  
-  rw [eq1, ←biInter_image, ←hI.indep.cl_sInter_eq_iInter_cl_of_forall_subset, 
+  rw [eq1, ←biInter_image, ←hI.indep.cl_sInter_eq_biInter_cl_of_forall_subset, 
     ←(hI.forall rfl.subset hne).cl_eq_cl, eq_comm, sInter_eq_iInter, iInter_inter]
   · convert rfl; simp
   · apply hne.image

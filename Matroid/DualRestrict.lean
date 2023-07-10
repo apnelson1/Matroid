@@ -8,6 +8,8 @@ variable {α : Type _} {M : Matroid α}
 
 section dual 
 
+/-- The dual of a matroid. Todo : refactor so that a dual base is definitionally the complement
+  of a base. -/
 def dual (M : Matroid α) : Matroid α := 
   matroid_of_indep M.E (fun I ↦ I ⊆ M.E ∧ ∃ B, M.Base B ∧ Disjoint I B) 
 ⟨empty_subset M.E, M.exists_base.imp (fun B hB ↦ ⟨hB, empty_disjoint _⟩)⟩ 
@@ -184,25 +186,31 @@ theorem base_iff_dual_base_compl (hB : B ⊆ M.E := by aesop_mat) :
     M.Base B ↔ M﹡.Base (M.E \ B) := by 
   rw [dual_base_iff, diff_diff_cancel_left hB]
 
-/-- A Coindependent set is a subset of `M.E` that is disjoint from some Base -/
-def Coindep (M : Matroid α) (I : Set α) : Prop := (∃ B, M.Base B ∧ Disjoint I B) ∧ I ⊆ M.E
-pp_extended_field_notation Coindep
+/-- A coindependent set of `M` is an independent set of the dual of `M﹡`. we give it a separate
+  definition to enable dot notation. -/
+@[reducible] def Coindep (M : Matroid α) (I : Set α) : Prop := M﹡.Indep I
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
-theorem Coindep.subset_ground (hX : M.Coindep X) : X ⊆ M.E :=
-  hX.2
+theorem coindep_def : M.Coindep X ↔ M﹡.Indep X := Iff.rfl
+
+theorem Coindep.indep (hX : M.Coindep X) : M﹡.Indep X := 
+  hX 
+
+theorem coindep_iff_exists' : M.Coindep X ↔ (∃ B, M.Base B ∧ B ⊆ M.E \ X) ∧ X ⊆ M.E :=
+  ⟨fun ⟨B, hB, hXB⟩ ↦ ⟨⟨M.E \ B, hB.compl_base_of_dual, diff_subset_diff_right hXB⟩, 
+      hXB.trans hB.subset_ground⟩, 
+    fun ⟨⟨B, hB, hBX⟩, hXE⟩ ↦ ⟨M.E \ B, hB.compl_base_dual, 
+      subset_diff.mpr ⟨hXE, (subset_diff.1 hBX).2.symm⟩⟩⟩ 
 
 theorem coindep_iff_exists (hX : X ⊆ M.E := by aesop_mat) : 
     M.Coindep X ↔ ∃ B, M.Base B ∧ B ⊆ M.E \ X := by
-  simp_rw [Coindep, and_iff_left hX, subset_diff]
-  exact ⟨fun ⟨B, hB⟩ ↦ ⟨B, hB.1, hB.1.subset_ground, hB.2.symm⟩, 
-    fun ⟨B, hB⟩ ↦ ⟨B, hB.1, hB.2.2.symm⟩⟩
+  rw [coindep_iff_exists', and_iff_left hX]
 
+@[aesop unsafe 10% (rule_sets [Matroid])]
+theorem Coindep.subset_ground (hX : M.Coindep X) : X ⊆ M.E :=
+  hX.indep.subset_ground 
+  
 theorem Coindep.exists_base_subset_compl (h : M.Coindep X) : ∃ B, M.Base B ∧ B ⊆ M.E \ X := 
   (coindep_iff_exists h.subset_ground).mp h
-
-@[simp] theorem dual_indep_iff_Coindep : M﹡.Indep X ↔ M.Coindep X := by 
-  rw [dual_indep_iff_exists', and_comm]; rfl
 
 end dual 
 
@@ -378,7 +386,7 @@ end restrict
 section Basis
 
 -- These lemmas are awkard positioned here, because they look like they belong in `Basic`, but
--- their proofs depend on the definition of restriction (and hence duality. ) Maybe refactoring 
+-- their proofs depend on the definition of restriction (and hence duality. Maybe refactoring 
 -- the proofs isn't too bad. 
 
 theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (hJY : M.Basis J Y) :
