@@ -437,6 +437,7 @@ variable {S T : Set α}
 /-- A set is `spanning` in `M` if its closure is equal to `M.E`, or equivalently if it contains 
   a base of `M`. -/
 def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
+pp_extended_field_notation Spanning
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
@@ -447,6 +448,10 @@ theorem Spanning.cl_eq (hS : M.Spanning S) : M.cl S = M.E :=
 
 theorem spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : M.Spanning S ↔ M.cl S = M.E :=
   ⟨And.left, fun h ↦ ⟨h, hS⟩⟩
+
+theorem spanning_iff_ground_subset_cl (hS : S ⊆ M.E := by aesop_mat) :
+    M.Spanning S ↔ M.E ⊆ M.cl S := by
+  rw [spanning_iff_cl, subset_antisymm_iff, and_iff_right (cl_subset_ground _ _)]
 
 theorem not_spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : ¬M.Spanning S ↔ M.cl S ⊂ M.E := by
   rw [spanning_iff_cl, ssubset_iff_subset_ne, Ne.def, iff_and_self,

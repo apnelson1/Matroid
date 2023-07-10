@@ -29,15 +29,31 @@ lemma maximals_dual [PartialOrder α] (s : Set α) :
 lemma minimals_dual [PartialOrder α] (s : Set α) :
   @minimals α (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := rfl
 
-lemma mem_minimals_iff_forall_lt_not_mem {rlt : α → α → Prop} [IsAntisymm α r] [IsTrans α r] 
+lemma mem_minimals_iff_forall_lt_not_mem' (rlt : α → α → Prop) [IsAntisymm α r] [IsTrans α r] 
     [IsNonstrictStrictOrder α r rlt] :
     x ∈ minimals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, rlt y x → y ∉ s := by
   simp [minimals, right_iff_left_not_left_of r rlt, not_imp_not, imp.swap (a := _ ∈ _)]
   
-lemma mem_maximals_iff_forall_lt_not_mem {rlt : α → α → Prop} [IsAntisymm α r] [IsTrans α r] 
+lemma mem_minimals_iff_forall_ssubset_not_mem (s : Set (Set α)) : 
+    x ∈ minimals (· ⊆ ·) s ↔ x ∈ s ∧ ∀ ⦃y⦄, y ⊂ x → y ∉ s := 
+  mem_minimals_iff_forall_lt_not_mem' (· ⊂ ·)
+
+lemma mem_minimals_iff_forall_lt_not_mem [PartialOrder α] {s : Set α} : 
+    x ∈ minimals (· ≤ ·) s ↔ x ∈ s ∧ ∀ ⦃y⦄, y < x → y ∉ s := 
+  mem_minimals_iff_forall_lt_not_mem' (· < ·)
+
+lemma mem_maximals_iff_forall_lt_not_mem' (rlt : α → α → Prop) [IsAntisymm α r] [IsTrans α r] 
     [IsNonstrictStrictOrder α r rlt] :
     x ∈ maximals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, rlt x y → y ∉ s := by
   simp [maximals, right_iff_left_not_left_of r rlt, not_imp_not, imp.swap (a := _ ∈ _)]
+
+lemma mem_maximals_iff_forall_ssubset_not_mem {s : Set (Set α)} : 
+    x ∈ maximals (· ⊆ ·) s ↔ x ∈ s ∧ ∀ ⦃y⦄, x ⊂ y → y ∉ s := 
+  mem_maximals_iff_forall_lt_not_mem' (· ⊂ ·)
+
+lemma mem_maximals_iff_forall_lt_not_mem [PartialOrder α] {s : Set α} : 
+    x ∈ maximals (· ≤ ·) s ↔ x ∈ s ∧ ∀ ⦃y⦄, x < y → y ∉ s := 
+  mem_maximals_iff_forall_lt_not_mem' (· < ·)
 
 lemma minimals_eq_minimals_of_subset_of_forall [IsAntisymm α r] [IsTrans α r] (hts : t ⊆ s) 
     (h : ∀ x ∈ s, ∃ y ∈ t, r y x) : minimals r s = minimals r t := by

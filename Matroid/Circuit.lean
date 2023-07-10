@@ -40,6 +40,15 @@ theorem Circuit.diff_singleton_basis (hC : M.Circuit C) (he : e ∈ C) : M.Basis
     insert_diff_singleton, insert_eq_of_mem he]
   exact Or.inl hC.dep 
 
+theorem Circuit.cl_diff_singleton_eq_cl (hC : M.Circuit C) (e : α) : M.cl (C \ {e}) = M.cl C :=
+  (em (e ∈ C)).elim (fun he ↦ by rw [(hC.diff_singleton_basis he).cl_eq_cl]) 
+    (fun he ↦ by rw [diff_singleton_eq_self he])
+
+theorem Circuit.subset_cl_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.cl (C \ {e}) := by
+  by_cases he : e ∈ C
+  · rw [(hC.diff_singleton_basis he).cl_eq_cl]; exact M.subset_cl _
+  rw [diff_singleton_eq_self he]; exact M.subset_cl _
+
 theorem circuit_iff_mem_minimals : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
 theorem Circuit.eq_of_dep_subset (hC : M.Circuit C) (hX : M.Dep X) (hXC : X ⊆ C) : X = C :=
@@ -54,6 +63,17 @@ theorem Circuit.nonempty (hC : M.Circuit C) : C.Nonempty :=
 theorem empty_not_circuit (M : Matroid α) : ¬M.Circuit ∅ := 
   fun h ↦ by simpa using h.nonempty 
 
+theorem Circuit.circuit_restrict_of_subset (hC : M.Circuit C) (hCR : C ⊆ R) :
+    (M ↾ R).Circuit C := by 
+  simp_rw [circuit_iff, restrict_dep_iff, dep_iff, and_imp] at *
+  refine' ⟨⟨hC.1.1, hCR⟩, fun I hI _ hIC ↦ hC.2 hI (hIC.trans hC.1.2) hIC⟩ 
+
+theorem restrict_circuit_iff (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Circuit C ↔ M.Circuit C ∧ C ⊆ R := by 
+  refine' ⟨_, fun h ↦ h.1.circuit_restrict_of_subset h.2⟩
+  simp_rw [circuit_iff, restrict_dep_iff, and_imp, dep_iff]
+  exact fun hC hCR h ↦ ⟨⟨⟨hC,hCR.trans hR⟩,fun I hI hIC ↦ h hI.1 (hIC.trans hCR) hIC⟩,hCR⟩ 
+
 theorem circuit_iff_dep_forall_diff_singleton_indep :
     M.Circuit C ↔ M.Dep C ∧ ∀ e ∈ C, M.Indep (C \ {e}) := by
   rw [circuit_iff_forall_ssubset, and_congr_right_iff]
@@ -66,16 +86,12 @@ theorem Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
   
-theorem Circuit.circuit_restrict_of_subset (hC : M.Circuit C) (hCX : C ⊆ X) :
-    (M ↾ X).Circuit C := by
-  simp_rw [circuit_iff_forall_ssubset, restrict_dep_iff, restrict_indep_iff, and_iff_left hCX, 
-    and_iff_right hC.dep.not_indep]
-  exact fun I hIC ↦ ⟨hC.sSubset_indep hIC, hIC.subset.trans hCX⟩   
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in 
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `univ` if `e ∉ M.cl I`. -/
 def fundCct (M : Matroid α) (e : α) (I : Set α) :=
   insert e (⋂₀ {J | J ⊆ I ∧ e ∈ M.cl J})
+pp_extended_field_notation fundCct
 
 theorem fundCct_subset_ground (heI : e ∈ M.cl I) : M.fundCct e I ⊆ M.E := by
   refine' insert_subset
@@ -139,11 +155,6 @@ theorem dep_iff_supset_circuit (hX : X ⊆ M.E := by aesop_mat) :
 
 theorem dep_iff_supset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) ∧ X ⊆ M.E :=
   ⟨fun h ↦ ⟨h.exists_circuit_subset, h.subset_ground⟩, fun ⟨⟨C, hCX, hC⟩, h⟩ ↦ hC.dep.supset hCX⟩ 
-
-theorem Circuit.subset_cl_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.cl (C \ {e}) := by
-  by_cases he : e ∈ C
-  · rw [(hC.diff_singleton_basis he).cl_eq_cl]; exact M.subset_cl _
-  rw [diff_singleton_eq_self he]; exact M.subset_cl _
 
 theorem indep_iff_forall_subset_not_circuit' :
     M.Indep I ↔ (∀ C, C ⊆ I → ¬M.Circuit C) ∧ I ⊆ M.E := by
@@ -275,6 +286,7 @@ section Dual
 
 /-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
 @[reducible] def Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
+pp_extended_field_notation Cocircuit
 
 theorem cocircuit_def : M.Cocircuit K ↔ M﹡.Circuit K := Iff.rfl 
 
@@ -308,7 +320,24 @@ theorem cocircuit_iff_mem_minimals_compl_nonspanning :
   convert cocircuit_iff_mem_minimals with K
   simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, not_and, subset_diff, not_and,
     not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, inter_comm K]
-  
+
+theorem cocircuit_inter_circuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) : 
+    (C ∩ K).encard ≠ 1 := by
+  rw [Ne.def, encard_eq_one, not_exists]
+  intro e he
+  have heCK := singleton_subset_iff.1 he.symm.subset
+  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, mem_minimals_iff_forall_ssubset_not_mem, 
+    mem_setOf, not_not] at hK
+  have' hKe := hK.2 (y := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
+  apply hK.1
+  rw [spanning_iff_ground_subset_cl]; nth_rw 1 [←hKe.cl_eq, diff_diff_eq_sdiff_union]
+  · refine' (M.cl_subset_cl (subset_union_left _ C)).trans _
+    rw [union_assoc, singleton_union, insert_eq_of_mem heCK.1, ←cl_union_cl_right_eq, 
+      ←hC.cl_diff_singleton_eq_cl e, cl_union_cl_right_eq, union_eq_self_of_subset_right]
+    rw [←he, diff_self_inter]
+    exact diff_subset_diff_left hC.subset_ground
+  rw [←he]; exact (inter_subset_left _ _).trans hC.subset_ground
+
 
 theorem dual_rkPos_iff_exists_circuit : M﹡.RkPos ↔ ∃ C, M.Circuit C := by
   simp only [rkPos_iff_empty_not_base, empty_subset, dual_base_iff, diff_empty, not_iff_comm, 
