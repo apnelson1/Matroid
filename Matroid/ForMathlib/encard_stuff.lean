@@ -213,7 +213,8 @@ theorem finite_iff_finite_of_encard_eq_encard (h : s.encard = t.encard) : s.Fini
   rw [←encard_lt_top_iff_Finite, ←encard_lt_top_iff_Finite, h]
 
 theorem infinite_iff_infinite_of_encard_eq_encard (h : s.encard = t.encard) :
-    s.Infinite ↔ t.Infinite := by rw [←encard_eq_top_iff_Infinite, h, encard_eq_top_iff_Infinite]
+    s.Infinite ↔ t.Infinite := by
+  rw [←encard_eq_top_iff_Infinite, h, encard_eq_top_iff_Infinite]
 
 theorem Finite.eq_of_subset_of_encard_le (ht : t.Finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
     s = t := by
