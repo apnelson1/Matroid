@@ -7,8 +7,7 @@ open Set
 namespace Matroid
 
 /-- A Circuit is a minimal Dependent set -/
-def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
-pp_extended_field_notation Circuit
+@[pp_dot] def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
 
 theorem circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl 
 
@@ -89,9 +88,8 @@ theorem Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in 
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `univ` if `e ∉ M.cl I`. -/
-def fundCct (M : Matroid α) (e : α) (I : Set α) :=
+@[pp_dot] def fundCct (M : Matroid α) (e : α) (I : Set α) :=
   insert e (⋂₀ {J | J ⊆ I ∧ e ∈ M.cl J})
-pp_extended_field_notation fundCct
 
 theorem fundCct_subset_ground (heI : e ∈ M.cl I) : M.fundCct e I ⊆ M.E := by
   refine' insert_subset
@@ -285,8 +283,7 @@ theorem eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E =
 section Dual
 
 /-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
-@[reducible] def Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
-pp_extended_field_notation Cocircuit
+@[pp_dot, reducible] def Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
 
 theorem cocircuit_def : M.Cocircuit K ↔ M﹡.Circuit K := Iff.rfl 
 
@@ -358,7 +355,7 @@ end Dual
 section Girth
 
 /-- The `girth` of `M` is the cardinality of the smallest circuit of `M`, or `⊤` if none exists.-/
-noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ setOf M.Circuit, C.encard
+@[pp_dot] noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ setOf M.Circuit, C.encard
 
 theorem one_le_girth (M : Matroid α) : 1 ≤ M.girth := by
   simp_rw [girth, le_iInf_iff, one_le_encard_iff_nonempty]; exact fun _ ↦ Circuit.nonempty

@@ -5,7 +5,6 @@ open scoped BigOperators
 
 open Set
 
-
 namespace Matroid
 
 -- variable {α : Type _} {M : Matroid α} {I J B C X Y : Set α} {e f x y : α}
@@ -13,9 +12,8 @@ namespace Matroid
 variable {α : Type _} {M : Matroid α}
 
 /-- A flat is a maximal set having a given basis  -/
-def Flat (M : Matroid α) (F : Set α) : Prop :=
+@[pp_dot] def Flat (M : Matroid α) (F : Set α) : Prop :=
   (∀ ⦃I X⦄, M.Basis I F → M.Basis I X → X ⊆ F) ∧ F ⊆ M.E
-pp_extended_field_notation Flat
 
 @[aesop unsafe 20% (rule_sets [Matroid])]
 theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E := 
@@ -26,9 +24,8 @@ theorem ground_flat (M : Matroid α) : M.Flat M.E :=
 
 /-- The closure of a subset of the ground set is the intersection of the flats containing it. 
   A set `X` that doesn't satisfy `X ⊆ M.E` has the junk value `M.cl X := M.cl (X ∩ M.E)`. -/
-def cl (M : Matroid α) (X : Set α) : Set α :=
+@[pp_dot] def cl (M : Matroid α) (X : Set α) : Set α :=
   ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
-pp_extended_field_notation cl
 
 theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} :=
   rfl
@@ -436,8 +433,7 @@ variable {S T : Set α}
 
 /-- A set is `spanning` in `M` if its closure is equal to `M.E`, or equivalently if it contains 
   a base of `M`. -/
-def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
-pp_extended_field_notation Spanning
+@[pp_dot] def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
@@ -495,56 +491,28 @@ theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
     M.Coindep I ↔ M.Spanning (M.E \ I) := by
   rw [coindep_iff_exists, spanning_iff_supset_base]
 
+theorem spanning_iff_compl_coindep (hS : S ⊆ M.E := by aesop_mat) : 
+    M.Spanning S ↔ M.Coindep (M.E \ S) := by 
+  rw [coindep_iff_compl_spanning, diff_diff_cancel_left hS]
+
+theorem Coindep.compl_spanning (hI : M.Coindep I) : M.Spanning (M.E \ I) :=
+  (coindep_iff_compl_spanning hI.subset_ground).mp hI
+
+theorem coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E := by aesop_mat) :
+    M.Coindep X ↔ M.cl (M.E \ X) = M.E := by
+  rw [coindep_iff_compl_spanning, spanning_iff_cl]
+
+theorem Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
+  (coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX
+
 end Spanning
-
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem spanning_iff_compl_coindep
---     (hI : S ⊆ M.E := by
---       run_tac
---         ssE) :
---     M.Spanning S ↔ M.Coindep (M.E \ S) := by simp [coindep_iff_compl_spanning]
--- #align matroid_in.spanning_iff_compl_coindep Matroid.spanning_iff_compl_coindep
-
--- theorem Coindep.compl_spanning (hI : M.Coindep I) : M.Spanning (M.E \ I) :=
---   coindep_iff_compl_spanning.mp hI
--- #align matroid_in.coindep.compl_spanning Matroid.Coindep.compl_spanning
-
--- theorem Spanning.compl_coindep (hS : M.Spanning S) : M.Coindep (M.E \ S) :=
---   spanning_iff_compl_coindep.mp hS
--- #align matroid_in.spanning.compl_coindep Matroid.Spanning.compl_coindep
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem coindep_iff_cl_compl_eq_ground
---     (hK : X ⊆ M.E := by
---       run_tac
---         ssE) :
---     M.Coindep X ↔ M.cl (M.E \ X) = M.E := by rw [coindep_iff_compl_spanning, spanning_iff_cl]
--- #align matroid_in.coindep_iff_cl_compl_eq_ground Matroid.coindep_iff_cl_compl_eq_ground
-
--- theorem Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
---   (coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX
--- #align matroid_in.coindep.cl_compl Matroid.Coindep.cl_compl
-
--- end Spanning
-    
-
-  
-  
-  
-
-
-  
-
-
 
 section modular
 
 variable {Xs Ys : Set (Set α)} 
 
-def Modular (M : Matroid α) (Xs : Set (Set α)) (I : Set α) := 
+@[pp_dot] def Modular (M : Matroid α) (Xs : Set (Set α)) (I : Set α) := 
   M.Base I ∧ ∀ ⦃Ys⦄, Ys ⊆ Xs → Ys.Nonempty → M.Basis ((⋂₀ Ys) ∩ I) (⋂₀ Ys)
-pp_extended_field_notation Modular
 
 theorem Modular.base (h : M.Modular Xs I) : M.Base I := h.1
 
@@ -609,7 +577,6 @@ theorem iInter_cl_eq_cl_sInter_of_modular
 
 theorem Indep.cl_diff_singleton_sSubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
   ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
-
 
 end modular
 

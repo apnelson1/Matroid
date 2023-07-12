@@ -8,9 +8,15 @@
     "name": "proofwidgets",
     "inputRev?": "v0.0.11"}},
   {"git":
+   {"url": "https://github.com/mhuisi/lean4-cli.git",
+    "subDir?": null,
+    "rev": "5a858c32963b6b19be0d477a30a1f4b6c120be7e",
+    "name": "Cli",
+    "inputRev?": "nightly"}},
+  {"git":
    {"url": "https://github.com/leanprover-community/mathlib4.git",
     "subDir?": null,
-    "rev": "cb02d09e1d5611d22efc2b406e7893f246b2f51e",
+    "rev": "1657aebc9db6d9b77e4a55afe7d5b33e56730bcb",
     "name": "mathlib",
     "inputRev?": null}},
   {"git":

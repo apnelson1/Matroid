@@ -1,5 +1,5 @@
 import Mathlib.Data.Set.Finite
-import Matroid.ForMathlib.encard_stuff
+import Matroid.ForMathlib.card
 import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init
@@ -9,12 +9,12 @@ open Set
 
 /-- A predicate `P` on sets satisfies the exchange property if, for all `X` and `Y` satisfying `P`
   and all `a ∈ X \ Y`, there exists `b ∈ Y \ X` so that swapping `a` for `b` in `X` maintains `P`.-/
-def Matroid.exchange_property {α : Type _} (P : Set α → Prop) : Prop :=
+def Matroid.ExchangeProperty {α : Type _} (P : Set α → Prop) : Prop :=
   ∀ X Y, P X → P Y → ∀ a ∈ X \ Y, ∃ b ∈ Y \ X, P (insert b (X \ {a}))
 
 /-- A set `X` has the maximal subset property for a predicate `P` if every subset of `X` satisfying
   `P` is contained in a maximal subset of `X` satisfying `P`.  -/
-def Matroid.exists_maximal_subset_property {α : Type _} (P : Set α → Prop) (X : Set α) : Prop := 
+def Matroid.ExistsMaximalSubsetProperty {α : Type _} (P : Set α → Prop) (X : Set α) : Prop := 
   ∀ I, P I → I ⊆ X → (maximals (· ⊆ ·) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).Nonempty 
 
 /-- A `Matroid α` is a `ground` set of type `Set α`, and a nonempty collection of its subsets 
@@ -24,9 +24,9 @@ def Matroid.exists_maximal_subset_property {α : Type _} (P : Set α → Prop) (
   (ground : Set α)
   (Base : Set α → Prop)
   (exists_base' : ∃ B, Base B)
-  (base_exchange' : Matroid.exchange_property Base)
+  (base_exchange' : Matroid.ExchangeProperty Base)
   (maximality' : ∀ X, X ⊆ ground → 
-    Matroid.exists_maximal_subset_property (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
+    Matroid.ExistsMaximalSubsetProperty (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
   (subset_ground' : ∀ B, Base B → B ⊆ ground)
 
 namespace Matroid
@@ -34,18 +34,18 @@ namespace Matroid
 
 variable {α : Type _} {M : Matroid α} 
 
-pp_extended_field_notation Base
+attribute [pp_dot] Base
 
 /-- We write `M.E` for the ground set of a matroid `M`-/
-def E (M : Matroid α) : Set α := M.ground
-pp_extended_field_notation Matroid.E
+@[pp_dot] def E (M : Matroid α) : Set α := M.ground
 
 @[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
 
 /-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.Finite]`-/
-class Finite (M : Matroid α) : Prop := (ground_finite : M.E.Finite)
+class Finite (M : Matroid α) : Prop where (ground_finite : M.E.Finite)
 
-theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite := ‹M.Finite›.ground_finite   
+theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite :=
+  ‹M.Finite›.ground_finite   
 
 theorem Set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
   M.ground_finite.subset hX 
@@ -72,22 +72,22 @@ theorem rkPos_iff_empty_not_base : M.RkPos ↔ ¬M.Base ∅ :=
 section exchange
 
 /-- A family of sets with the exchange property is an antichain. -/
-theorem antichain_of_exch {Base : Set α → Prop} (exch : exchange_property Base) 
+theorem antichain_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base) 
     (hB : Base B) (hB' : Base B') (h : B ⊆ B') : B = B' := 
   h.antisymm (fun x hx ↦ by_contra 
     (fun hxB ↦ by obtain ⟨y, hy, -⟩ := exch B' B hB' hB x ⟨hx, hxB⟩; exact hy.2 $ h hy.1))
 
-theorem encard_diff_le_aux {Base : Set α → Prop} (exch : exchange_property Base) 
+theorem encard_diff_le_aux {Base : Set α → Prop} (exch : ExchangeProperty Base) 
     {B₁ B₂ : Set α} (hB₁ : Base B₁) (hB₂ : Base B₂) : (B₁ \ B₂).encard ≤ (B₂ \ B₁).encard := by
-  obtain (hinf | hfin₂) := (B₂ \ B₁).finite_or_infinite.symm
-  · rw [hinf.encard_eq]; apply le_top
-  obtain (he | ⟨e,he⟩) := (B₂ \ B₁).eq_empty_or_nonempty
-  · simp [antichain_of_exch exch hB₂ hB₁ (diff_eq_empty.mp he)] 
-  obtain ⟨f, hf, hB'⟩ := exch B₂ B₁ hB₂ hB₁ e he
+  obtain (he | hinf | ⟨e, he, hcard⟩) := 
+    (B₂ \ B₁).eq_empty_or_encard_eq_top_or_encard_diff_singleton_lt 
+  · rw [antichain_of_exch exch hB₂ hB₁ (diff_eq_empty.mp he)]
+  · exact le_top.trans_eq hinf.symm 
   
-  have : ncard (insert f (B₂ \ {e}) \ B₁) < ncard (B₂ \ B₁) := by 
-    ( rw [insert_diff_of_mem _ hf.1, diff_diff_comm]; 
-      exact ncard_diff_singleton_lt_of_mem he hfin₂)
+  obtain ⟨f, hf, hB'⟩ := exch B₂ B₁ hB₂ hB₁ e he
+
+  have : encard (insert f (B₂ \ {e}) \ B₁) < encard (B₂ \ B₁) := by 
+    rw [insert_diff_of_mem _ hf.1, diff_diff_comm]; exact hcard
 
   have hencard := encard_diff_le_aux exch hB₁ hB'
   rw [insert_diff_of_mem _ hf.1, diff_diff_comm, ←union_singleton, ←diff_diff, diff_diff_right,
@@ -95,22 +95,21 @@ theorem encard_diff_le_aux {Base : Set α → Prop} (exch : exchange_property Ba
 
   rw [←encard_diff_singleton_add_one he, ←encard_diff_singleton_add_one hf]
   exact add_le_add_right hencard 1
-termination_by _ => (B₂ \ B₁).ncard
+termination_by _ => (B₂ \ B₁).encard
 
 /-- For any two sets `B₁,B₂` in a family with the exchange property, the differences `B₁ \ B₂` and
   `B₂ \ B₁` have the same `ℕ∞`-cardinality. -/
-theorem encard_diff_eq_of_exch {Base : Set α → Prop} (exch : exchange_property Base)
+theorem encard_diff_eq_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base)
     (hB₁ : Base B₁) (hB₂ : Base B₂) : (B₁ \ B₂).encard = (B₂ \ B₁).encard := 
 (encard_diff_le_aux exch hB₁ hB₂).antisymm (encard_diff_le_aux exch hB₂ hB₁)
 
 /-- Any two sets `B₁,B₂` in a family with the exchange property have the same `ℕ∞`-cardinality. -/
-theorem encard_base_eq_of_exch {Base : Set α → Prop} (exch : exchange_property Base)
+theorem encard_base_eq_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base)
     (hB₁ : Base B₁) (hB₂ : Base B₂) : B₁.encard = B₂.encard := by 
 rw [←encard_diff_add_encard_inter B₁ B₂, encard_diff_eq_of_exch exch hB₁ hB₂, inter_comm, 
      encard_diff_add_encard_inter]
 
 end exchange
-
 
 section aesop
 
@@ -150,6 +149,10 @@ private theorem singleton_subset_ground (he : e ∈ M.E) : {e} ⊆ M.E :=
 private theorem subset_ground_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : X ⊆ M.E := 
   hXY.trans hY
 
+@[aesop unsafe 5% (rule_sets [Matroid])]
+private theorem mem_ground_of_mem_of_subset (hX : X ⊆ M.E) (heX : e ∈ X) : e ∈ M.E := 
+  hX heX
+
 @[aesop safe (rule_sets [Matroid])]
 private theorem insert_subset_ground {e : α} {X : Set α} {M : Matroid α} 
     (he : e ∈ M.E) (hX : X ⊆ M.E) : insert e X ⊆ M.E := 
@@ -188,14 +191,14 @@ theorem Base.encard_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
 
 theorem Base.card_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).ncard = (B₂ \ B₁).ncard := by
-  rw [←encard_toNat_eq, hB₁.encard_diff_comm hB₂, encard_toNat_eq]
+  rw [ncard_def, hB₁.encard_diff_comm hB₂, ←ncard_def]
 
 theorem Base.encard_eq_encard_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     B₁.encard = B₂.encard := by
   rw [encard_base_eq_of_exch M.base_exchange' hB₁ hB₂]
 
 theorem Base.card_eq_card_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : B₁.ncard = B₂.ncard := by
-  rw [←encard_toNat_eq B₁, hB₁.encard_eq_encard_of_base hB₂, encard_toNat_eq]
+  rw [ncard_def B₁, hB₁.encard_eq_encard_of_base hB₂, ←ncard_def]
 
 theorem Base.finite_of_finite (hB : M.Base B) (h : B.Finite) (hB' : M.Base B') : B'.Finite :=
   (finite_iff_finite_of_encard_eq_encard (hB.encard_eq_encard_of_base hB')).mp h  
@@ -238,7 +241,7 @@ theorem Base.diff_infinite_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
   infinite_iff_infinite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
 
 theorem Base.ncard_eq_ncard_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : B₁.ncard = B₂.ncard :=
-by rw [←encard_toNat_eq, hB₁.encard_eq_encard_of_base hB₂, encard_toNat_eq]
+by rw [ncard_def, hB₁.encard_eq_encard_of_base hB₂, ←ncard_def]
 
 theorem eq_of_base_iff_base_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) 
     (h : ∀ B, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B)) : M₁ = M₂ := by
@@ -266,12 +269,10 @@ end Base
 section dep_indep
 
 /-- A set is independent if it is contained in a Base.  -/
-def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B 
-pp_extended_field_notation Indep
+@[pp_dot] def Indep (M : Matroid α) (I : Set α) : Prop := ∃ B, M.Base B ∧ I ⊆ B 
 
 /-- A subset of `M.E` is Dependent if it is not independent . -/
-def Dep (M : Matroid α) (D : Set α) : Prop := ¬M.Indep D ∧ D ⊆ M.E   
-pp_extended_field_notation Dep
+@[pp_dot] def Dep (M : Matroid α) (D : Set α) : Prop := ¬M.Indep D ∧ D ⊆ M.E   
 
 theorem indep_iff_subset_base : M.Indep I ↔ ∃ B, M.Base B ∧ I ⊆ B := Iff.rfl
 
@@ -438,15 +439,14 @@ end dep_indep
 
 section Basis
 
-def Basis' (M : Matroid α) (I X : Set α) : Prop := 
+@[pp_dot] def Basis' (M : Matroid α) (I X : Set α) : Prop := 
   I ∈ maximals (· ⊆ ·) {A | M.Indep A ∧ A ⊆ X}
-pp_extended_field_notation Basis'
+
 
 /-- A Basis for a set `X ⊆ M.E` is a maximal independent subset of `X`
   (Often in the literature, the word 'Basis' is used to refer to what we call a 'Base'). -/
-def Basis (M : Matroid α) (I X : Set α) : Prop := 
+@[pp_dot] def Basis (M : Matroid α) (I X : Set α) : Prop := 
   I ∈ maximals (· ⊆ ·) {A | M.Indep A ∧ A ⊆ X} ∧ X ⊆ M.E  
-pp_extended_field_notation Basis
 
 theorem Basis'.indep (hI : M.Basis' I X) : M.Indep I :=
   hI.1.1
@@ -735,14 +735,14 @@ section from_axioms
 /-- A constructor for matroids via the base axioms. 
   (In fact, just a wrapper for the definition of a matroid) -/
 def matroid_of_base (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, Base B) 
-    (base_exchange : exchange_property Base) 
-    (maximality : ∀ X, X ⊆ E → exists_maximal_subset_property (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
+    (base_exchange : ExchangeProperty Base) 
+    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
   ⟨E, Base, exists_base, base_exchange, maximality, support⟩
 
 @[simp] theorem matroid_of_base_apply (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, Base B)
-    (base_exchange : exchange_property Base) 
-    (maximality : ∀ X, X ⊆ E → exists_maximal_subset_property (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
+    (base_exchange : ExchangeProperty Base) 
+    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_base E Base exists_base base_exchange maximality support).Base = Base := rfl
 
@@ -751,7 +751,7 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
     (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
       B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
-    (h_maximal : ∀ X, X ⊆ E → exists_maximal_subset_property Indep X) 
+    (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X) 
     (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
   matroid_of_base E (· ∈ maximals (· ⊆ ·) (setOf Indep))
   ( by 
@@ -791,7 +791,7 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
     (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
       B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
-    (h_maximal : ∀ X, X ⊆ E → exists_maximal_subset_property Indep X) 
+    (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X) 
     (h_support : ∀ I, Indep I → I ⊆ E) : 
     (matroid_of_indep E Indep h_empty h_subset h_aug h_maximal h_support).Indep = Indep := by
   ext I
@@ -803,19 +803,22 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
 
 /-- If there is an absolute upper bound on the size of a set satisfying `P`, then the 
   maximal subset property always holds. -/
-theorem Matroid.exists_maximal_subset_property_of_bdd {P : Set α → Prop} 
-    (hP : ∃ (n : ℕ), ∀ Y, P Y → Y.encard ≤ n) (X : Set α) : exists_maximal_subset_property P X := by
+theorem Matroid.ExistsMaximalSubsetProperty_of_bdd {P : Set α → Prop} 
+    (hP : ∃ (n : ℕ), ∀ Y, P Y → Y.encard ≤ n) (X : Set α) : ExistsMaximalSubsetProperty P X := by
   obtain ⟨n, hP⟩ := hP
-  simp_rw [encard_le_coe_iff] at hP
+
   rintro I hI hIX
   have hfin : Set.Finite (ncard '' {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X})
-  · rw [Finset.finite_iff_bddAbove, bddAbove_def]
+  · rw [finite_iff_bddAbove, bddAbove_def]
+    simp_rw [ENat.le_coe_iff] at hP
     use n
     rintro x ⟨Y, ⟨hY,-,-⟩, rfl⟩
-    exact (hP Y hY).2
+    obtain ⟨n₀, heq, hle⟩ := hP Y hY 
+    rwa [ncard_def, heq, ENat.toNat_coe]
+    -- have := (hP Y hY).2
   obtain ⟨Y, hY, hY'⟩ := Finite.exists_maximal_wrt' ncard _ hfin ⟨I, hI, rfl.subset, hIX⟩
   refine' ⟨Y, hY, fun J ⟨hJ, hIJ, hJX⟩ (hYJ : Y ⊆ J) ↦ (_ : J ⊆ Y)⟩
-  have hJfin := (hP J hJ).1
+  have hJfin := finite_of_encard_le_coe (hP J hJ)
   refine' (eq_of_subset_of_ncard_le hYJ _ hJfin).symm.subset
   rw [hY' J ⟨hJ, hIJ, hJX⟩ (ncard_le_of_subset hYJ hJfin)]
 
@@ -828,7 +831,7 @@ def matroid_of_indep_of_bdd (E : Set α) (Indep : Set α → Prop) (h_empty : In
     (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n )
     (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
   matroid_of_indep E Indep h_empty h_subset h_aug 
-    (fun X _ ↦ Matroid.exists_maximal_subset_property_of_bdd h_bdd X) h_support 
+    (fun X _ ↦ Matroid.ExistsMaximalSubsetProperty_of_bdd h_bdd X) h_support 
 
 @[simp] theorem matroid_of_indep_of_bdd_apply (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
@@ -846,11 +849,11 @@ instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
     (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) 
     (h_support : ∀ I, Indep I → I ⊆ E) : 
     Matroid.FiniteRk (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
-  obtain ⟨B, hB⟩ := 
-    (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base
+  
+  refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base.elim 
+    (fun B hB ↦ hB.finiteRk_of_finite _)
   obtain ⟨n, h_bdd⟩ := h_bdd
-  simp_rw [encard_le_coe_iff] at h_bdd
-  refine' hB.finiteRk_of_finite (h_bdd B _).1
+  refine' finite_of_encard_le_coe (h_bdd _ _)
   rw [←matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
   exact ⟨_, hB, rfl.subset⟩
 
@@ -864,7 +867,7 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
     (by {
       simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, mem_diff,
         and_imp, and_assoc]
-      simp_rw [encard_le_coe_iff] at h_bdd; obtain ⟨n, h_bdd⟩ := h_bdd
+      simp_rw [encard_le_coe_iff_finite_ncard_le] at h_bdd; obtain ⟨n, h_bdd⟩ := h_bdd
       rintro I B hI hImax hB hBmax
       obtain ⟨J, hJ, hIJ, hne⟩ := hImax hI
       have hlt : I.ncard < J.ncard := ncard_lt_ncard (hIJ.ssubset_of_ne hne) (h_bdd J hJ).1
@@ -887,40 +890,40 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
 
 /-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
 def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop) 
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : exchange_property Base) 
+    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
   matroid_of_base E Base 
     (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange 
     (by {
       obtain ⟨B, hB, hfin⟩ := exists_finite_base
-      refine' fun X _ ↦ Matroid.exists_maximal_subset_property_of_bdd 
+      refine' fun X _ ↦ Matroid.ExistsMaximalSubsetProperty_of_bdd 
         ⟨B.ncard, fun Y ⟨B', hB', hYB'⟩ ↦ _⟩ X
-      rw [←hfin.encard_eq, encard_base_eq_of_exch base_exchange hB hB']
+      rw [hfin.cast_ncard_eq, encard_base_eq_of_exch base_exchange hB hB']
       exact encard_mono hYB' })
     support
 
 @[simp] theorem matroid_of_exists_finite_base_apply {α : Type _} (E : Set α) (Base : Set α → Prop) 
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : exchange_property Base) 
+    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base := 
   rfl 
 
 /-- A matroid constructed with a finite Base is `FiniteRk` -/
 instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite} 
-    {base_exchange : exchange_property Base} {support : ∀ B, Base B → B ⊆ E} : 
+    {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} : 
     Matroid.FiniteRk 
       (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) := 
   ⟨exists_finite_base⟩  
 
 def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : exchange_property Base)
+    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
     (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
   matroid_of_exists_finite_base E Base 
     (by { obtain ⟨B,hB⟩ := exists_base; exact ⟨B,hB, hE.subset (support _ hB)⟩ }) 
     base_exchange support
 
 @[simp] theorem matroid_of_base_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : exchange_property Base)
+    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl 
 
@@ -932,7 +935,7 @@ def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → 
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α := 
   matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono ind_aug
-  (⟨E.ncard, fun I hI ↦ by { rw [←hE.encard_eq]; exact encard_mono (h_support hI) }⟩ )
+  (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
   h_support
 
 instance matroid_of_indep_of_finite.Finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)

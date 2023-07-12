@@ -169,6 +169,8 @@ lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → 
   exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
 
 
+lemma foo (ι : Type _) (Xs : ι → Set α) (Ps : ι → (Set (Set α))) (h : ∀ i, )
+
 
 
 
