@@ -169,11 +169,6 @@ lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → 
   exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
 
 
-lemma foo (ι : Type _) (Xs : ι → Set α) (Ps : ι → (Set (Set α))) (h : ∀ i, )
-
-
-
-
 -- lemma finite_iff_bddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
 --     {s : Set α} : s.Finite ↔ BddAbove s :=
 -- ⟨fun h ↦ ⟨h.toFinset.sup id, fun x hx ↦ Finset.le_sup (f := id) (by simpa : x ∈ h.toFinset)⟩,

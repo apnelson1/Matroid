@@ -48,6 +48,10 @@ theorem Circuit.subset_cl_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.c
   · rw [(hC.diff_singleton_basis he).cl_eq_cl]; exact M.subset_cl _
   rw [diff_singleton_eq_self he]; exact M.subset_cl _
 
+theorem Circuit.mem_cl_diff_singleton_of_mem (hC : M.Circuit C) (heC : e ∈ C) :
+    e ∈ M.cl (C \ {e}) :=
+  (hC.subset_cl_diff_singleton e) heC
+
 theorem circuit_iff_mem_minimals : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
 theorem Circuit.eq_of_dep_subset (hC : M.Circuit C) (hX : M.Dep X) (hXC : X ⊆ C) : X = C :=
@@ -290,6 +294,9 @@ theorem cocircuit_def : M.Cocircuit K ↔ M﹡.Circuit K := Iff.rfl
 theorem Cocircuit.circuit (hK : M.Cocircuit K) : M﹡.Circuit K := 
   hK
 
+theorem Circuit.cocircuit (hC : M.Circuit C) : M﹡.Cocircuit C := by
+  rwa [cocircuit_def, dual_dual]
+  
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Cocircuit.subset_ground (hC : M.Cocircuit C) : C ⊆ M.E := 
   hC.circuit.subset_ground
@@ -318,7 +325,7 @@ theorem cocircuit_iff_mem_minimals_compl_nonspanning :
   simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, not_and, subset_diff, not_and,
     not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, inter_comm K]
 
-theorem cocircuit_inter_circuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) : 
+theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) : 
     (C ∩ K).encard ≠ 1 := by
   rw [Ne.def, encard_eq_one, not_exists]
   intro e he
@@ -334,7 +341,6 @@ theorem cocircuit_inter_circuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircui
     rw [←he, diff_self_inter]
     exact diff_subset_diff_left hC.subset_ground
   rw [←he]; exact (inter_subset_left _ _).trans hC.subset_ground
-
 
 theorem dual_rkPos_iff_exists_circuit : M﹡.RkPos ↔ ∃ C, M.Circuit C := by
   simp only [rkPos_iff_empty_not_base, empty_subset, dual_base_iff, diff_empty, not_iff_comm, 
@@ -391,7 +397,6 @@ theorem indep_of_encard_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := b
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
 
 end Girth 
-
 
 section BasisExchange
 

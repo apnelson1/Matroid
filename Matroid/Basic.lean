@@ -215,6 +215,12 @@ theorem Base.infinite [InfiniteRk M] (hB : M.Base B) : B.Infinite :=
   let ⟨B₀,hB₀⟩ := ‹InfiniteRk M›.exists_infinite_base
   hB₀.1.infinite_of_infinite hB₀.2 hB
 
+theorem empty_not_base [h : RkPos M] : ¬M.Base ∅ :=
+  h.empty_not_base
+
+theorem Base.nonempty [RkPos M] (hB : M.Base B) : B.Nonempty := by 
+  rw [nonempty_iff_ne_empty]; rintro rfl; exact M.empty_not_base hB 
+
 theorem Base.finiteRk_of_finite (hB : M.Base B) (hfin : B.Finite) : FiniteRk M := 
   ⟨⟨B, hB, hfin⟩⟩   
 

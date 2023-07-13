@@ -110,6 +110,10 @@ theorem subset_cl_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E := 
     X ⊆ M.cl Y := 
   hXY.trans (M.subset_cl Y)
 
+theorem subset_cl_of_subset' (M : Matroid α) (hXY : X ⊆ Y) (hX : X ⊆ M.E := by aesop_mat) : 
+    X ⊆ M.cl Y := by 
+  rw [cl_eq_cl_inter_ground]; exact M.subset_cl_of_subset (subset_inter hXY hX)
+
 theorem mem_cl_of_mem (M : Matroid α) (h : e ∈ X) (hX : X ⊆ M.E := by aesop_mat) : 
     e ∈ M.cl X := 
   (M.subset_cl X) h
@@ -142,6 +146,30 @@ theorem mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_gro
 @[simp] theorem cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
     M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by rw [cl_union_cl_left_eq, cl_union_cl_right_eq]
 
+theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) : 
+    M.cl (⋃ i, M.cl (Xs i)) = M.cl (⋃ i, Xs i) := by 
+  refine (M.cl_subset_cl_of_subset_cl 
+    (iUnion_subset (fun i ↦ M.cl_subset_cl (subset_iUnion _ _)))).antisymm ?_
+  rw [cl_eq_cl_inter_ground, iUnion_inter]
+  refine' M.cl_subset_cl (iUnion_subset (fun i ↦ (M.subset_cl _).trans _))
+  rw [←cl_eq_cl_inter_ground]
+  exact subset_iUnion (fun i ↦ M.cl (Xs i)) i
+    
+theorem cl_bUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) : 
+    M.cl (⋃ X ∈ Xs, M.cl X) = M.cl (⋃₀ Xs) := by 
+  refine subset_antisymm (M.cl_subset_cl_of_subset_cl (?_)) ?_
+  · simp_rw [iUnion_subset_iff]; exact fun X hX ↦ M.cl_subset_cl (subset_sUnion_of_mem hX) 
+  rw [cl_eq_cl_inter_ground, sUnion_eq_iUnion, iUnion_inter] 
+  refine' M.cl_subset_cl (iUnion_subset (fun ⟨X,hX⟩ ↦ (M.subset_cl _).trans _))
+  rw [←cl_eq_cl_inter_ground]
+  exact subset_biUnion_of_mem hX
+
+@[simp] theorem cl_cl_union_cl_eq_cl_union' (M : Matroid α) (X Y : Set α) :
+    M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by
+  rw [eq_comm, union_eq_iUnion, ←cl_iUnion_cl_eq_cl_iUnion, union_eq_iUnion]
+  convert rfl using 2; ext; simp
+
+  
 @[simp] theorem cl_insert_cl_eq_cl_insert (M : Matroid α) (e : α) (X : Set α) :
     M.cl (insert e (M.cl X)) = M.cl (insert e X) := by
   simp_rw [← singleton_union, cl_union_cl_right_eq]
