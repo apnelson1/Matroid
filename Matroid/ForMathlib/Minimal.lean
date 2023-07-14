@@ -23,11 +23,11 @@ lemma mem_minimals_setOf_iff [IsAntisymm α r] :
     x ∈ minimals r (setOf P) ↔ P x ∧ ∀ ⦃y⦄, P y → r y x → x = y :=
   mem_minimals_iff
 
-lemma maximals_dual [PartialOrder α] (s : Set α) : 
-  @maximals α (· ≤ ·) s = @minimals αᵒᵈ (· ≤ ·) s := rfl 
+-- lemma maximals_dual [PartialOrder α] (s : Set α) : 
+--   @maximals α (· ≤ ·) s = @minimals αᵒᵈ (· ≤ ·) s := rfl 
 
-lemma minimals_dual [PartialOrder α] (s : Set α) :
-  @minimals α (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := rfl
+-- lemma minimals_dual [PartialOrder α] (s : Set α) :
+--   @minimals α (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := rfl
 
 lemma mem_minimals_iff_forall_lt_not_mem' (rlt : α → α → Prop) [IsAntisymm α r] [IsTrans α r] 
     [IsNonstrictStrictOrder α r rlt] :

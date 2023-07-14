@@ -7,11 +7,11 @@ import Matroid.Loop
 
 
 open Set
+open ENat
 
 namespace Matroid
 
 variable {α : Type _} {M : Matroid α} 
-
 section Basic
 
 /-- The rank `erk M` of `M` is the cardinality of a base of `M`. -/
@@ -19,7 +19,7 @@ section Basic
   ⨅ B : {B | M.Base B}, (B : Set α).encard 
 
 /-- The rank `r X` of a set `X` is the cardinality of one of its bases -/
-@[pp_dot] noncomputable def er {α : Type _} (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X).erk 
+@[pp_dot] noncomputable def er (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X).erk 
   
 theorem erk_eq_er_ground (M : Matroid α) : M.erk = M.er M.E := by
   rw [er, restrict_ground_eq_self]
@@ -61,14 +61,14 @@ theorem Base.er (hB : M.Base B) : M.er B = M.erk := by
 theorem Base.encard (hB : M.Base B) : B.encard = M.erk := by
   rw [hB.basis_ground.encard, erk_eq_er_ground]
 
-theorem er_eq_er_inter_ground (M : Matroid α) (X : Set α) : M.er X = M.er (X ∩ M.E) := by
+@[simp] theorem er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [←hI.basis_inter_ground.encard, ←hI.encard]
 
 @[simp] theorem er_empty (M : Matroid α) : M.er ∅ = 0 := by
   rw [← M.empty_indep.basis_self.encard, encard_empty]
 
 @[simp] theorem er_cl_eq (M : Matroid α) (X : Set α) : M.er (M.cl X) = M.er X := by
-  rw [cl_eq_cl_inter_ground, M.er_eq_er_inter_ground X]
+  rw [cl_eq_cl_inter_ground, ←M.er_inter_ground_eq X]
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
   rw [← hI.er, ← hI.cl_eq_cl, hI.indep.basis_cl.er]
 
@@ -197,8 +197,8 @@ theorem basis'_iff_indep_encard_eq_of_finite (hIfin : I.Finite) :
   rw [basis'_iff_basis_inter_ground]
   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset (subset_inter hIX hI.subset_ground)
   apply hI.basis_of_subset_of_subset_cl (subset_inter hIX hI.subset_ground)
-  obtain rfl := hIfin.eq_of_subset_of_encard_le' hIJ (by rw [hcard, ←hJ.er_eq_encard, 
-    ←er_eq_er_inter_ground ])
+  obtain rfl := hIfin.eq_of_subset_of_encard_le' hIJ 
+    (by rw [hcard, ←hJ.er_eq_encard, er_inter_ground_eq ])
   exact hJ.subset_cl 
 
 theorem basis_iff_indep_encard_eq_of_finite (hIfin : I.Finite) (hX : X ⊆ M.E := by aesop_mat) :
@@ -226,7 +226,7 @@ theorem er_union_le_er_add_encard (M : Matroid α) (X Y : Set α) :
 
 theorem erk_le_encard_add_er_compl (M : Matroid α) (X : Set α) :
     M.erk ≤ X.encard + M.er (M.E \ X) := 
-  le_trans (by rw [M.er_eq_er_inter_ground, erk_eq_er_ground, union_diff_self, 
+  le_trans (by rw [←er_inter_ground_eq, erk_eq_er_ground, union_diff_self, 
     union_inter_cancel_right]) (M.er_union_le_encard_add_er X (M.E \ X))
   
 theorem er_augment (h : M.er X < M.er Z) : ∃ z ∈ Z \ X, M.er (insert z X) = M.er X + 1 := by
@@ -234,350 +234,294 @@ theorem er_augment (h : M.er X < M.er Z) : ∃ z ∈ Z \ X, M.er (insert z X) = 
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans (subset_union_left X Z)) 
   have hlt := h.trans_le (M.er_mono (subset_union_right X Z))
   rw [hI.er_eq_encard, hJ.er_eq_encard] at hlt
-  obtain ⟨e, he⟩ := exists_of_ssubset (hIJ.ssubset_of_ne (by rintro rfl; exact hlt.ne rfl))
-  
-  -- · 
+  obtain ⟨e, heJ, heI⟩ := exists_of_ssubset (hIJ.ssubset_of_ne (by rintro rfl; exact hlt.ne rfl))
+  have heIi : M.Indep (insert e I) := hJ.indep.subset (insert_subset heJ hIJ)
+  have heX : e ∉ X := fun h ↦ 
+    heI (hI.basis_inter_ground.mem_of_insert_indep ⟨h, hJ.indep.subset_ground heJ⟩ heIi) 
+  refine ⟨e, ⟨Or.elim (hJ.subset heJ) (False.elim ∘ heX) id, heX⟩, ?_⟩ 
+  rw [←hI.er_eq_er_insert, hI.er_eq_encard, heIi.er, encard_insert_of_not_mem heI]
 
+theorem er_eq_of_er_insert_le_forall (hXY : X ⊆ Y) (hY : ∀ e ∈ Y \ X, M.er (insert e X) ≤ M.er X) :
+    M.er X = M.er Y := by
+  refine (M.er_mono hXY).eq_of_not_lt (fun hlt ↦ ?_)
+  obtain ⟨e, he, hins⟩ := er_augment hlt
+  specialize hY e he
+  rw [←add_zero (M.er X), hins, 
+    WithTop.add_le_add_iff_left (fun htop ↦ not_top_lt (htop ▸ hlt))] at hY
+  simp at hY
+  
 end Basic
+
+section rFin
+
+@[pp_dot] def rFin (M : Matroid α) (X : Set α) :=
+  M.er X < ⊤
+
+@[simp] theorem er_lt_top_iff : M.er X < ⊤ ↔ M.rFin X := Iff.rfl
+
+@[simp] theorem er_ne_top_iff : M.er X ≠ ⊤ ↔ M.rFin X := 
+  by rw [rFin, ← lt_top_iff_ne_top]
+
+theorem rFin.ne (h : M.rFin X) : M.er X ≠ ⊤ :=
+  er_ne_top_iff.2 h
+
+theorem rFin.lt (h : M.rFin X) : M.er X < ⊤ :=
+  h
+
+theorem er_eq_top_iff : M.er X = ⊤ ↔ ¬M.rFin X := by rw [←er_ne_top_iff, not_ne_iff]
+
+@[simp] theorem rFin_inter_ground_iff : M.rFin (X ∩ M.E) ↔ M.rFin X := by
+  rw [rFin, er_inter_ground_eq, rFin]
+
+theorem rFin.to_inter_ground (h : M.rFin X) : M.rFin (X ∩ M.E) :=
+  rFin_inter_ground_iff.2 h
+
+theorem rFin.finite_of_basis' (h : M.rFin X) (hI : M.Basis' I X) : I.Finite := by
+  rwa [← encard_lt_top_iff, hI.encard]
+
+theorem rFin.finite_of_basis (h : M.rFin X) (hI : M.Basis I X) : I.Finite := by
+  rwa [← encard_lt_top_iff, hI.encard]
+
+theorem Basis'.finite_of_rFin (hI : M.Basis' I X) (h : M.rFin X) : I.Finite :=
+  h.finite_of_basis' hI
+
+theorem Basis.finite_of_rFin (hI : M.Basis I X) (h : M.rFin X) : I.Finite :=
+  h.finite_of_basis hI
+
+theorem rFin_iff' : M.rFin X ↔ ∃ I, M.Basis' I X ∧ I.Finite := 
+  ⟨fun h ↦ (M.exists_basis' X).elim (fun I hI ↦ ⟨I, hI, h.finite_of_basis' hI⟩), 
+    fun ⟨I, hI, hIfin⟩ ↦ by rwa [←er_lt_top_iff, hI.er_eq_encard, encard_lt_top_iff]⟩
+
+theorem rFin_iff (hX : X ⊆ M.E := by aesop_mat) : M.rFin X ↔ ∃ I, M.Basis I X ∧ I.Finite := by 
+  simp_rw [rFin_iff', M.basis'_iff_basis hX]
+
+theorem rFin.exists_finite_basis' (h : M.rFin X) : ∃ I, M.Basis' I X ∧ I.Finite :=
+  rFin_iff'.1 h
+
+theorem rFin.exists_finite_basis (h : M.rFin X) (hX : X ⊆ M.E := by aesop_mat) :
+    ∃ I, M.Basis I X ∧ I.Finite :=
+  (rFin_iff hX).1 h
+
+theorem Basis'.rFin_of_finite (hIX : M.Basis' I X) (h : I.Finite) : M.rFin X := by
+  rwa [←er_ne_top_iff, ← hIX.encard, encard_ne_top_iff]
+
+theorem Basis'.rFin_iff_finite (hIX : M.Basis' I X) : M.rFin X ↔ I.Finite :=
+  ⟨hIX.finite_of_rFin, hIX.rFin_of_finite⟩
+
+theorem Basis.rFin_of_finite (hIX : M.Basis I X) (h : I.Finite) : M.rFin X := by
+  rwa [←er_ne_top_iff, ← hIX.encard, encard_ne_top_iff]
+
+theorem Basis.rFin_iff_finite (hIX : M.Basis I X) : M.rFin X ↔ I.Finite :=
+  ⟨hIX.finite_of_rFin, hIX.rFin_of_finite⟩
+
+theorem Indep.rFin_iff_finite (hI : M.Indep I) : M.rFin I ↔ I.Finite :=
+  hI.basis_self.rFin_iff_finite
+
+theorem Indep.finite_of_rFin (hI : M.Indep I) (hfin : M.rFin I) : I.Finite :=
+  hI.basis_self.finite_of_rFin hfin
+
+theorem rFin_of_finite (M : Matroid α) (hX : X.Finite) : M.rFin X :=
+  (M.er_le_encard X).trans_lt (encard_lt_top_iff.mpr hX)
+
+theorem Indep.subset_finite_basis'_of_subset_of_rFin (hI : M.Indep I) (hIX : I ⊆ X) 
+    (hX : M.rFin X) : ∃ J, M.Basis' J X ∧ I ⊆ J ∧ J.Finite :=  
+  (hI.subset_basis'_of_subset hIX).imp fun _ hJ => ⟨hJ.1, hJ.2, hJ.1.finite_of_rFin hX⟩
+
+theorem Indep.subset_finite_basis_of_subset_of_rFin (hI : M.Indep I) (hIX : I ⊆ X) 
+    (hX : M.rFin X) (hXE : X ⊆ M.E := by aesop_mat) : ∃ J, M.Basis J X ∧ I ⊆ J ∧ J.Finite :=  
+  (hI.subset_basis_of_subset hIX).imp fun _ hJ => ⟨hJ.1, hJ.2, hJ.1.finite_of_rFin hX⟩
+
+theorem rFin_singleton (M : Matroid α) (e : α) : M.rFin {e} :=
+  M.rFin_of_finite (finite_singleton e)
+
+@[simp] theorem rFin_empty (M : Matroid α) : M.rFin ∅ :=
+  M.rFin_of_finite finite_empty
+
+theorem rFin.subset (h : M.rFin Y) (hXY : X ⊆ Y) : M.rFin X :=
+  (M.er_mono hXY).trans_lt h
+
+theorem not_rFin_supset (h : ¬M.rFin X) (hXY : X ⊆ Y) : ¬M.rFin Y :=
+  fun h' ↦ h (h'.subset hXY)
+
+theorem not_rFin_of_er_ge (h : ¬M.rFin X) (hXY : M.er X ≤ M.er Y) : ¬M.rFin Y := 
+  fun h' ↦ h (hXY.trans_lt h')
+
+theorem rFin.finite_of_indep_subset (hX : M.rFin X) (hI : M.Indep I) (hIX : I ⊆ X) : I.Finite :=
+  hI.finite_of_rFin (hX.to_inter_ground.subset (subset_inter hIX hI.subset_ground))
+
+@[simp] theorem rFin_ground_iff : M.rFin M.E ↔ M.FiniteRk := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  use fun h => ⟨⟨B, hB, h.finite_of_indep_subset hB.indep hB.subset_ground⟩⟩
+  simp_rw [rFin_iff (rfl.subset), basis_ground_iff]
+  exact fun ⟨h⟩ ↦ h
+
+theorem rFin_ground (M : Matroid α) [FiniteRk M] : M.rFin M.E := by 
+  rwa [rFin_ground_iff]
+
+theorem Indep.finite_of_subset_rFin (hI : M.Indep I) (hIX : I ⊆ X) (hX : M.rFin X) : I.Finite :=
+  hX.finite_of_indep_subset hI hIX
+
+theorem rFin.to_cl (h : M.rFin X) : M.rFin (M.cl X) := by
+  rwa [←er_lt_top_iff, er_cl_eq]
+
+@[simp] theorem rFin_cl_iff : M.rFin (M.cl X) ↔ M.rFin X := by
+  rw [←er_ne_top_iff, er_cl_eq, er_ne_top_iff]
+
+theorem rFin.union (hX : M.rFin X) (hY : M.rFin Y) : M.rFin (X ∪ Y) := by
+  rw [←er_lt_top_iff] at *
+  apply (M.er_union_le_er_add_er X Y).trans_lt
+  rw [WithTop.add_lt_top]
+  exact ⟨hX, hY⟩
+
+theorem rFin.rFin_union_iff (hX : M.rFin X) : M.rFin (X ∪ Y) ↔ M.rFin Y :=
+  ⟨fun h ↦ h.subset (subset_union_right _ _), fun h ↦ hX.union h⟩
+
+theorem rFin.rFin_diff_iff (hX : M.rFin X) : M.rFin (Y \ X) ↔ M.rFin Y := by 
+  rw [←hX.rFin_union_iff, union_diff_self, hX.rFin_union_iff] 
+
+theorem rFin.inter_right (hX : M.rFin X) (Y : Set α) : M.rFin (X ∩ Y) :=
+  hX.subset (inter_subset_left _ _)
+
+theorem rFin.inter_left (hX : M.rFin X) (Y : Set α) : M.rFin (Y ∩ X) :=
+  hX.subset (inter_subset_right _ _)
+
+theorem rFin.diff (hX : M.rFin X) (D : Set α) : M.rFin (X \ D) :=
+  hX.subset (diff_subset _ _)
+
+theorem rFin.insert (hX : M.rFin X) (e : α) : M.rFin (insert e X) := by 
+  rw [←union_singleton]; exact hX.union (M.rFin_singleton e)
+
+@[simp] theorem rFin_insert_iff : M.rFin (insert e X) ↔ M.rFin X := by 
+  rw [←singleton_union, (M.rFin_singleton e).rFin_union_iff]
+
+@[simp] theorem rFin_diff_singleton_iff : M.rFin (X \ {e}) ↔ M.rFin X := by 
+  rw [(M.rFin_singleton e).rFin_diff_iff]
+
+theorem to_rFin (M : Matroid α) [FiniteRk M] (X : Set α) : M.rFin X := by 
+  obtain ⟨I, hI⟩ := M.exists_basis' X 
+  rw [←er_lt_top_iff, hI.er_eq_encard, encard_lt_top_iff]
+  exact hI.indep.finite_of_subset_rFin hI.indep.subset_ground M.rFin_ground
+  
+theorem rFin.cl_eq_cl_of_subset_of_er_ge_er (hX : M.rFin X) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
+    M.cl X = M.cl Y := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans hXY) 
+  rw [hI.er_eq_encard, hJ.er_eq_encard] at hr
+  rw [cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground Y, ←hI.basis_inter_ground.cl_eq_cl, 
+    ←hJ.basis_inter_ground.cl_eq_cl, Finite.eq_of_subset_of_encard_le' 
+      (hI.indep.finite_of_subset_rFin hI.subset hX) hIJ hr]
+  
+theorem er_union_eq_of_subset_of_er_le_er (Z : Set α) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
+    M.er (X ∪ Z) = M.er (Y ∪ Z) := by 
+  obtain hX' | hX' := em (M.rFin X)
+  · rw [← er_union_cl_left_eq, hX'.cl_eq_cl_of_subset_of_er_ge_er hXY hr, er_union_cl_left_eq]
+  rw [er_eq_top_iff.2, er_eq_top_iff.2]
+  · exact not_rFin_of_er_ge hX' (M.er_mono (subset_union_of_subset_left hXY _))
+  exact not_rFin_of_er_ge hX' (M.er_mono (subset_union_left _ _))  
+
+theorem er_union_eq_of_subsets_of_ers_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' : M.er X' ≤ M.er X)
+    (hYY' : M.er Y' ≤ M.er Y) : M.er (X ∪ Y) = M.er (X' ∪ Y') := by
+  rw [er_union_eq_of_subset_of_er_le_er _ hX hXX', union_comm,
+    er_union_eq_of_subset_of_er_le_er _ hY hYY', union_comm]
+
+end rFin
+
+section Rank
+
+/-- The rank function. Intended to be used in a `FiniteRk` matroid; otherwise `er` is better.-/
+@[pp_dot] noncomputable def r (M : Matroid α) (X : Set α) : ℕ :=
+  ENat.toNat (M.er X)
+
+/-- The rank of the ground set of a matroid -/
+@[reducible] noncomputable def rk (M : Matroid α) : ℕ :=
+  ENat.toNat M.erk
+
+theorem rk_def (M : Matroid α) : M.rk = M.r M.E := by
+  rw [rk,r,er,restrict_ground_eq_self]
+  
+@[simp] theorem er_toNat_eq_r (M : Matroid α) (X : Set α) : ENat.toNat (M.er X) = M.r X :=
+  rfl  
+
+theorem rFin.coe_r_eq (hX : M.rFin X) : (M.r X : ℕ∞) = M.er X := by
+  rw [r, coe_toNat (by rwa [er_ne_top_iff])]
+
+theorem coe_r_eq_er_of_finite (M : Matroid α) (hX : X.Finite) : (M.r X : ℕ∞) = M.er X :=
+  (M.rFin_of_finite hX).coe_r_eq
+
+@[simp] theorem coe_r_eq (M : Matroid α) [FiniteRk M] (X : Set α) : (M.r X : ℕ∞) = M.er X :=
+  (M.to_rFin X).coe_r_eq
+
+theorem r_eq_of_er_eq (h : M.er X = M.er Y) : M.r X = M.r Y := by
+  rw [r, r, h]
+
+theorem rFin.er_eq_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X = M.er Y ↔ M.r X = M.r Y := by
+  rw [← hX.coe_r_eq, ← hY.coe_r_eq, Nat.cast_inj]
+
+theorem rFin.er_le_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X ≤ M.er Y ↔ M.r X ≤ M.r Y := by
+  rw [← hX.coe_r_eq, ← hY.coe_r_eq, Nat.cast_le]
+
+@[simp] theorem er_eq_er_iff [FiniteRk M] : M.er X = M.er Y ↔ M.r X = M.r Y :=
+  (M.to_rFin X).er_eq_er_iff (M.to_rFin Y)
+
+@[simp] theorem er_le_er_iff [FiniteRk M] : M.er X ≤ M.er Y ↔ M.r X ≤ M.r Y := by
+  rw [← coe_r_eq, ← coe_r_eq, Nat.cast_le]
+
+@[simp] theorem er_eq_coe_iff [FiniteRk M] {n : ℕ} : M.er X = n ↔ M.r X = n := by
+  rw [← coe_r_eq, Nat.cast_inj]
+
+@[simp] theorem er_le_coe_iff [FiniteRk M] {n : ℕ} : M.er X ≤ n ↔ M.r X ≤ n := by
+  rw [← coe_r_eq, Nat.cast_le]
+
+@[simp] theorem coe_le_er_iff [FiniteRk M] {n : ℕ} : (n : ℕ∞) ≤ M.er X ↔ n ≤ M.r X := by
+  rw [← coe_r_eq, Nat.cast_le]
+
+
+
+
+end Rank
+
 
 end Matroid
 
-
-
--- theorem er_augment (h : M.er X < M.er Z) : ∃ z ∈ Z \ X, M.er (insert z X) = M.er X + 1 :=
---   by
---   rw [M.er_eq_er_inter_ground Z, M.er_eq_er_inter_ground] at h 
---   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
---   obtain ⟨J, hJ⟩ := M.exists_basis (Z ∩ M.E)
---   obtain ⟨z, hzJ, hzI, h⟩ := hI.indep.augment_of_encard_lt hJ.indep (by rwa [hI.encard, hJ.encard])
---   refine' ⟨z, ⟨(hJ.subset hzJ).1, hzI ∘ fun hzX => _⟩, _⟩
---   · exact hI.mem_of_insert_indep ⟨hzX, hJ.indep.subset_ground hzJ⟩ h
---   rw [← er_insert_cl_eq_er_insert, cl_eq_cl_inter_ground, ← hI.cl, er_insert_cl_eq_er_insert, h.er,
---     er_eq_er_inter_ground, ← hI.encard, encard_insert_of_not_mem hzI]
--- #align matroid_in.er_augment Matroid.er_augment
-
--- theorem er_eq_of_er_insert_le_forall (hXY : X ⊆ Y) (hY : ∀ e ∈ Y \ X, M.er (insert e X) ≤ M.er X) :
---     M.er X = M.er Y :=
---   by
---   refine' (M.er_mono hXY).antisymm (le_of_not_lt fun hlt => _)
---   obtain ⟨z, hz, hr⟩ := er_augment hlt
---   have hle := hY z hz
---   rw [hr] at hle 
---   have := ENat.eq_of_top_of_add_pos_le (by simp) hle
---   rw [this] at hlt 
---   exact not_top_lt hlt
--- #align matroid_in.er_eq_of_er_insert_le_forall Matroid.er_eq_of_er_insert_le_forall
-
--- end Basic
-
--- section RFin
-
--- def RFin (M : Matroid α) (X : Set α) :=
---   M.er X < ⊤
--- #align matroid_in.r_fin Matroid.RFin
-
--- theorem rFin_iff_er_ne_top : M.RFin X ↔ M.er X ≠ ⊤ := by rw [r_fin, ← lt_top_iff_ne_top]
--- #align matroid_in.r_fin_iff_er_ne_top Matroid.rFin_iff_er_ne_top
-
--- theorem rFin_iff_er_lt_top : M.RFin X ↔ M.er X < ⊤ :=
---   Iff.rfl
--- #align matroid_in.r_fin_iff_er_lt_top Matroid.rFin_iff_er_lt_top
-
--- theorem RFin.ne (h : M.RFin X) : M.er X ≠ ⊤ :=
---   rFin_iff_er_ne_top.mp h
--- #align matroid_in.r_fin.ne Matroid.RFin.ne
-
--- theorem RFin.lt (h : M.RFin X) : M.er X < ⊤ :=
---   h
--- #align matroid_in.r_fin.lt Matroid.RFin.lt
-
--- theorem not_rFin_iff : ¬M.RFin X ↔ M.er X = ⊤ := by rw [r_fin_iff_er_ne_top, not_ne_iff]
--- #align matroid_in.not_r_fin_iff Matroid.not_rFin_iff
-
--- theorem rFin_iff_inter_ground : M.RFin X ↔ M.RFin (X ∩ M.E) := by
---   rw [r_fin, er_eq_er_inter_ground, r_fin]
--- #align matroid_in.r_fin_iff_inter_ground Matroid.rFin_iff_inter_ground
-
--- theorem RFin.to_inter_ground (h : M.RFin X) : M.RFin (X ∩ M.E) :=
---   rFin_iff_inter_ground.mp h
--- #align matroid_in.r_fin.to_inter_ground Matroid.RFin.to_inter_ground
-
--- theorem RFin.finite_of_basis (h : M.RFin X) (hI : M.Basis I X) : I.Finite := by
---   rwa [← encard_lt_top_iff_finite, hI.encard]
--- #align matroid_in.r_fin.finite_of_basis Matroid.RFin.finite_of_basis
-
--- theorem Basis.finite_of_rFin (hI : M.Basis I X) (h : M.RFin X) : I.Finite :=
---   h.finite_of_basis hI
--- #align matroid_in.basis.finite_of_r_fin Matroid.Basis.finite_of_rFin
-
--- theorem rFin_iff' : M.RFin X ↔ ∃ I, M.Basis I (X ∩ M.E) ∧ I.Finite :=
---   by
---   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
---   rw [r_fin_iff_er_ne_top, er_eq_er_inter_ground, ← hI.encard, encard_ne_top_iff_finite]
---   exact ⟨fun h => ⟨I, hI, h⟩, fun ⟨J, hJ, hJfin⟩ => hJ.finite_of_finite hJfin hI⟩
--- #align matroid_in.r_fin_iff' Matroid.rFin_iff'
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem rFin_iff_exists_finite_basis
---     (hX : X ⊆ M.E := by
---       run_tac
---         ssE) :
---     M.RFin X ↔ ∃ I, M.Basis I X ∧ I.Finite := by
---   simp_rw [r_fin_iff', inter_eq_self_of_subset_left hX]
--- #align matroid_in.r_fin_iff_exists_finite_basis Matroid.rFin_iff_exists_finite_basis
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem RFin.exists_finite_basis (h : M.RFin X)
---     (hX : X ⊆ M.E := by
---       run_tac
---         ssE) :
---     ∃ I, M.Basis I X ∧ I.Finite :=
---   (M.exists_basis X).imp fun I hI => ⟨hI, h.finite_of_basis hI⟩
--- #align matroid_in.r_fin.exists_finite_basis Matroid.RFin.exists_finite_basis
-
--- theorem Basis.rFin_of_finite (hIX : M.Basis I X) (h : I.Finite) : M.RFin X := by
---   rwa [r_fin_iff_er_ne_top, ← hIX.encard, encard_ne_top_iff_finite]
--- #align matroid_in.basis.r_fin_of_finite Matroid.Basis.rFin_of_finite
-
--- theorem Basis.rFin_iff_finite (hIX : M.Basis I X) : M.RFin X ↔ I.Finite :=
---   ⟨hIX.finite_of_rFin, hIX.rFin_of_finite⟩
--- #align matroid_in.basis.r_fin_iff_finite Matroid.Basis.rFin_iff_finite
-
--- theorem Indep.rFin_iff_finite (hI : M.indep I) : M.RFin I ↔ I.Finite :=
---   hI.basis_self.rFin_iff_finite
--- #align matroid_in.indep.r_fin_iff_finite Matroid.Indep.rFin_iff_finite
-
--- theorem Indep.finite_of_rFin (hI : M.indep I) (hfin : M.RFin I) : I.Finite :=
---   hI.basis_self.finite_of_rFin hfin
--- #align matroid_in.indep.finite_of_r_fin Matroid.Indep.finite_of_rFin
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem Indep.subset_finite_basis_of_subset_of_rFin (hI : M.indep I) (hIX : I ⊆ X) (hX : M.RFin X)
---     (hXE : X ⊆ M.E := by
---       run_tac
---         ssE) :
---     ∃ J, M.Basis J X ∧ I ⊆ J ∧ J.Finite :=
---   (hI.subset_basis_of_subset hIX).imp fun J hJ => ⟨hJ.1, hJ.2, hJ.1.finite_of_rFin hX⟩
--- #align matroid_in.indep.subset_finite_basis_of_subset_of_r_fin Matroid.Indep.subset_finite_basis_of_subset_of_rFin
-
--- theorem rFin_of_finite (M : Matroid α) (hX : X.Finite) : M.RFin X := by rw [r_fin_iff_er_lt_top];
---   exact (M.er_le_encard X).trans_lt (encard_lt_top_iff_finite.mpr hX)
--- #align matroid_in.r_fin_of_finite Matroid.rFin_of_finite
-
--- theorem rFin_singleton (M : Matroid α) (e : α) : M.RFin {e} :=
---   M.rFin_of_finite (finite_singleton e)
--- #align matroid_in.r_fin_singleton Matroid.rFin_singleton
-
--- @[simp]
--- theorem rFin_empty (M : Matroid α) : M.RFin ∅ :=
---   M.rFin_of_finite finite_empty
--- #align matroid_in.r_fin_empty Matroid.rFin_empty
-
--- theorem RFin.subset (h : M.RFin Y) (hXY : X ⊆ Y) : M.RFin X := by rw [r_fin_iff_er_lt_top] at h ⊢;
---   exact (M.er_mono hXY).trans_lt h
--- #align matroid_in.r_fin.subset Matroid.RFin.subset
-
--- theorem not_rFin_supset (h : ¬M.RFin X) (hXY : X ⊆ Y) : ¬M.RFin Y := fun h' => h (h'.Subset hXY)
--- #align matroid_in.not_r_fin_supset Matroid.not_rFin_supset
-
--- theorem not_rFin_of_er_ge (h : ¬M.RFin X) (hXY : M.er X ≤ M.er Y) : ¬M.RFin Y := fun h' =>
---   h (hXY.trans_lt h')
--- #align matroid_in.not_r_fin_of_er_ge Matroid.not_rFin_of_er_ge
-
--- theorem RFin.finite_of_indep_subset (hX : M.RFin X) (hI : M.indep I) (hIX : I ⊆ X) : I.Finite :=
---   hI.finite_of_rFin (hX.to_inter_ground.Subset (subset_inter hIX hI.subset_ground))
--- #align matroid_in.r_fin.finite_of_indep_subset Matroid.RFin.finite_of_indep_subset
-
--- @[simp]
--- theorem rFin_ground_iff : M.RFin M.E ↔ M.FiniteRk :=
---   by
---   obtain ⟨B, hB⟩ := M.exists_base
---   use fun h => ⟨⟨B, hB, h.finite_of_indep_subset hB.indep hB.subset_ground⟩⟩
---   simp_rw [r_fin_iff_exists_finite_basis, ← base_iff_basis_ground]
---   exact fun ⟨h⟩ => h
--- #align matroid_in.r_fin_ground_iff Matroid.rFin_ground_iff
-
--- theorem Indep.finite_of_subset_rFin (hI : M.indep I) (hIX : I ⊆ X) (hX : M.RFin X) : I.Finite :=
---   hX.finite_of_indep_subset hI hIX
--- #align matroid_in.indep.finite_of_subset_r_fin Matroid.Indep.finite_of_subset_rFin
-
--- theorem RFin.to_cl (h : M.RFin X) : M.RFin (M.cl X) := by rwa [r_fin_iff_er_lt_top, er_cl]
--- #align matroid_in.r_fin.to_cl Matroid.RFin.to_cl
-
--- theorem rFin_iff_cl : M.RFin X ↔ M.RFin (M.cl X) := by
---   rw [r_fin_iff_er_ne_top, ← er_cl, r_fin_iff_er_ne_top]
--- #align matroid_in.r_fin_iff_cl Matroid.rFin_iff_cl
-
--- theorem RFin.union (hX : M.RFin X) (hY : M.RFin Y) : M.RFin (X ∪ Y) :=
---   by
---   rw [r_fin_iff_er_lt_top] at *
---   apply (M.er_union_le_er_add_er X Y).trans_lt
---   rw [WithTop.add_lt_top]
---   exact ⟨hX, hY⟩
--- #align matroid_in.r_fin.union Matroid.RFin.union
-
--- theorem RFin.inter_right (hX : M.RFin X) (Y : Set α) : M.RFin (X ∩ Y) :=
---   hX.Subset (inter_subset_left _ _)
--- #align matroid_in.r_fin.inter_right Matroid.RFin.inter_right
-
--- theorem RFin.inter_left (hX : M.RFin X) (Y : Set α) : M.RFin (Y ∩ X) :=
---   hX.Subset (inter_subset_right _ _)
--- #align matroid_in.r_fin.inter_left Matroid.RFin.inter_left
-
--- theorem RFin.diff (hX : M.RFin X) (D : Set α) : M.RFin (X \ D) :=
---   hX.Subset (diff_subset _ _)
--- #align matroid_in.r_fin.diff Matroid.RFin.diff
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem RFin.insert (hX : M.RFin X) (e : α)
---     (he : e ∈ M.E := by
---       run_tac
---         ssE) :
---     M.RFin (insert e X) :=
---   (M.rFin_singleton e).union hX
--- #align matroid_in.r_fin.insert Matroid.RFin.insert
-
--- theorem to_rFin (M : Matroid α) [FiniteRk M] (X : Set α) : M.RFin X :=
---   by
---   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
---   rw [r_fin_iff_inter_ground, r_fin_iff_er_lt_top, ← hI.encard, encard_lt_top_iff_finite]
---   exact hI.finite
--- #align matroid_in.to_r_fin Matroid.to_rFin
-
--- theorem RFin.cl_eq_cl_of_subset_of_er_ge_er (hX : M.RFin X) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
---     M.cl X = M.cl Y :=
---   by
---   obtain ⟨I, J, hIX, hJY, hIJ⟩ := M.exists_basis_subset_basis (inter_subset_inter_left M.E hXY)
---   rw [er_eq_er_inter_ground, ← hJY.encard, er_eq_er_inter_ground, ← hIX.encard] at hr 
---   rw [cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground Y, ← hIX.cl, ← hJY.cl,
---     (hIX.indep.finite_of_subset_r_fin hIX.subset hX.to_inter_ground).eq_of_subset_of_encard_le' hIJ
---       hr]
--- #align matroid_in.r_fin.cl_eq_cl_of_subset_of_er_ge_er Matroid.RFin.cl_eq_cl_of_subset_of_er_ge_er
-
--- theorem RFin.cl_eq_cl_of_subset_of_er_ge_er' (hY : M.RFin Y) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
---     M.cl X = M.cl Y :=
---   (hY.Subset hXY).cl_eq_cl_of_subset_of_er_ge_er hXY hr
--- #align matroid_in.r_fin.cl_eq_cl_of_subset_of_er_ge_er' Matroid.RFin.cl_eq_cl_of_subset_of_er_ge_er'
-
--- theorem er_union_eq_of_subset_of_er_le_er (Z : Set α) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
---     M.er (X ∪ Z) = M.er (Y ∪ Z) :=
---   by
---   obtain hX' | hX' := em (M.r_fin X)
---   · rw [← er_union_cl_left_eq, hX'.cl_eq_cl_of_subset_of_er_ge_er hXY hr, er_union_cl_left_eq]
---   rw [not_r_fin_iff.mp, not_r_fin_iff.mp]
---   · exact not_r_fin_of_er_ge hX' (M.er_mono (subset_union_of_subset_left hXY _))
---   exact not_r_fin_of_er_ge hX' (M.er_mono (subset_union_left _ _))
--- #align matroid_in.er_union_eq_of_subset_of_er_le_er Matroid.er_union_eq_of_subset_of_er_le_er
-
--- theorem er_union_eq_of_subsets_of_er_les (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' : M.er X' ≤ M.er X)
---     (hYY' : M.er Y' ≤ M.er Y) : M.er (X ∪ Y) = M.er (X' ∪ Y') := by
---   rw [er_union_eq_of_subset_of_er_le_er _ hX hXX', union_comm,
---     er_union_eq_of_subset_of_er_le_er _ hY hYY', union_comm]
--- #align matroid_in.er_union_eq_of_subsets_of_er_les Matroid.er_union_eq_of_subsets_of_er_les
-
--- end RFin
-
--- section Rank
-
--- /-- The rank function. Intended to be used in a `finite_rk` matroid; otherwise `er` is better.-/
--- def r (M : Matroid α) (X : Set α) : ℕ :=
---   (M.er X).toNat
--- #align matroid_in.r Matroid.r
-
--- /-- The rank of the ground set of a matroid -/
--- @[reducible]
--- def rk (M : Matroid α) : ℕ :=
---   M.R M.e
--- #align matroid_in.rk Matroid.rk
-
--- theorem rk_def (M : Matroid α) : M.rk = M.R M.E :=
---   rfl
--- #align matroid_in.rk_def Matroid.rk_def
-
--- @[simp]
--- theorem er_toNat_eq_r (M : Matroid α) (X : Set α) : (M.er X).toNat = M.R X :=
---   rfl
--- #align matroid_in.er_to_nat_eq_r Matroid.er_toNat_eq_r
-
--- theorem RFin.coe_r_eq_er (hX : M.RFin X) : (M.R X : ℕ∞) = M.er X :=
---   by
---   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
---   rwa [r, er_eq_er_inter_ground, ← hI.encard, ENat.coe_toNat_eq_self, hI.encard, ←
---     er_eq_er_inter_ground, ← r_fin_iff_er_ne_top]
--- #align matroid_in.r_fin.coe_r_eq_er Matroid.RFin.coe_r_eq_er
-
--- theorem coe_r_eq_er_of_finite (M : Matroid α) (hX : X.Finite) : (M.R X : ℕ∞) = M.er X :=
---   (M.rFin_of_finite hX).coe_r_eq_er
--- #align matroid_in.coe_r_eq_er_of_finite Matroid.coe_r_eq_er_of_finite
-
--- @[simp]
--- theorem coe_r_eq_er (M : Matroid α) [FiniteRk M] (X : Set α) : (M.R X : ℕ∞) = M.er X :=
---   (M.to_rFin X).coe_r_eq_er
--- #align matroid_in.coe_r_eq_er Matroid.coe_r_eq_er
-
--- theorem r_eq_of_er_eq (h : M.er X = M.er Y) : M.R X = M.R Y := by rw [r, r, h]
+-- theorem r_eq_of_er_eq (h : M.er X = M.er Y) : M.r X = M.r Y := by rw [r, r, h]
 -- #align matroid_in.r_eq_of_er_eq Matroid.r_eq_of_er_eq
 
--- theorem RFin.er_eq_er_iff (hX : M.RFin X) (hY : M.RFin Y) : M.er X = M.er Y ↔ M.R X = M.R Y := by
+-- theorem rFin.er_eq_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X = M.er Y ↔ M.r X = M.r Y := by
 --   rw [← hX.coe_r_eq_er, ← hY.coe_r_eq_er, ENat.coe_inj]
--- #align matroid_in.r_fin.er_eq_er_iff Matroid.RFin.er_eq_er_iff
+-- #align matroid_in.rFin.er_eq_er_iff Matroid.rFin.er_eq_er_iff
 
--- theorem RFin.er_le_er_iff (hX : M.RFin X) (hY : M.RFin Y) : M.er X ≤ M.er Y ↔ M.R X ≤ M.R Y := by
+-- theorem rFin.er_le_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X ≤ M.er Y ↔ M.r X ≤ M.r Y := by
 --   rw [← hX.coe_r_eq_er, ← hY.coe_r_eq_er, ENat.coe_le_coe_iff]
--- #align matroid_in.r_fin.er_le_er_iff Matroid.RFin.er_le_er_iff
+-- #align matroid_in.rFin.er_le_er_iff Matroid.rFin.er_le_er_iff
 
--- @[simp]
--- theorem er_eq_er_iff [FiniteRk M] : M.er X = M.er Y ↔ M.R X = M.R Y :=
---   (M.to_rFin X).er_eq_er_iff (M.to_rFin Y)
--- #align matroid_in.er_eq_er_iff Matroid.er_eq_er_iff
 
--- @[simp]
--- theorem er_le_er_iff [FiniteRk M] : M.er X ≤ M.er Y ↔ M.R X ≤ M.R Y := by
---   rw [← coe_r_eq_er, ← coe_r_eq_er, ENat.coe_le_coe_iff]
--- #align matroid_in.er_le_er_iff Matroid.er_le_er_iff
+-- theorem rFin.r_le_r_of_er_le_er (hY : M.rFin Y) (hle : M.er X ≤ M.er Y) : M.r X ≤ M.r Y := by
+--   rwa [← rFin.er_le_er_iff _ hY]; exact hle.trans_lt hY.lt
+-- #align matroid_in.rFin.r_le_r_of_er_le_er Matroid.rFin.r_le_r_of_er_le_er
 
--- @[simp]
--- theorem er_eq_coe_iff [FiniteRk M] {n : ℕ} : M.er X = n ↔ M.R X = n := by
---   rw [← coe_r_eq_er, ENat.coe_inj]
--- #align matroid_in.er_eq_coe_iff Matroid.er_eq_coe_iff
+-- theorem rFin.er_le_er_of_r_le_r (hX : M.rFin X) (hle : M.r X ≤ M.r Y) : M.er X ≤ M.er Y := by
+--   obtain h | h := em (M.rFin Y); rwa [hX.er_le_er_iff h]; rw [not_rFin_iff.mp h]; simp
+-- #align matroid_in.rFin.er_le_er_of_r_le_r Matroid.rFin.er_le_er_of_r_le_r
 
--- @[simp]
--- theorem er_le_coe_iff [FiniteRk M] {n : ℕ} : M.er X ≤ n ↔ M.R X ≤ n := by
---   rw [← coe_r_eq_er, ENat.coe_le_coe_iff]
--- #align matroid_in.er_le_coe_iff Matroid.er_le_coe_iff
-
--- @[simp]
--- theorem coe_le_er_iff [FiniteRk M] {n : ℕ} : (n : ℕ∞) ≤ M.er X ↔ n ≤ M.R X := by
---   rw [← coe_r_eq_er, ENat.coe_le_coe_iff]
--- #align matroid_in.coe_le_er_iff Matroid.coe_le_er_iff
-
--- theorem RFin.r_le_r_of_er_le_er (hY : M.RFin Y) (hle : M.er X ≤ M.er Y) : M.R X ≤ M.R Y := by
---   rwa [← r_fin.er_le_er_iff _ hY]; exact hle.trans_lt hY.lt
--- #align matroid_in.r_fin.r_le_r_of_er_le_er Matroid.RFin.r_le_r_of_er_le_er
-
--- theorem RFin.er_le_er_of_r_le_r (hX : M.RFin X) (hle : M.R X ≤ M.R Y) : M.er X ≤ M.er Y := by
---   obtain h | h := em (M.r_fin Y); rwa [hX.er_le_er_iff h]; rw [not_r_fin_iff.mp h]; simp
--- #align matroid_in.r_fin.er_le_er_of_r_le_r Matroid.RFin.er_le_er_of_r_le_r
-
--- theorem r_eq_r_inter_ground (M : Matroid α) (X : Set α) : M.R X = M.R (X ∩ M.E) := by
---   rw [← er_to_nat_eq_r, er_eq_er_inter_ground, er_to_nat_eq_r]
+-- theorem r_eq_r_inter_ground (M : Matroid α) (X : Set α) : M.r X = M.r (X ∩ M.E) := by
+--   rw [← er_to_nat_eq_r, er_inter_ground_eq, er_to_nat_eq_r]
 -- #align matroid_in.r_eq_r_inter_ground Matroid.r_eq_r_inter_ground
 
 -- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
--- theorem le_r_iff [FiniteRk M] : n ≤ M.R X ↔ ∃ (I : _) (_ : I ⊆ X), M.indep I ∧ I.ncard = n :=
+-- theorem le_r_iff [FiniteRk M] : n ≤ M.r X ↔ ∃ (I : _) (_ : I ⊆ X), M.indep I ∧ I.ncard = n :=
 --   by
 --   simp_rw [← coe_le_er_iff, le_er_iff, encard_eq_coe_iff, exists_prop]
 --   exact exists_congr fun I => ⟨fun hI => by tauto, fun hI => ⟨hI.1, hI.2.1, hI.2.1.Finite, hI.2.2⟩⟩
 -- #align matroid_in.le_r_iff Matroid.le_r_iff
 
 -- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
--- theorem r_le_iff [FiniteRk M] : M.R X ≤ n ↔ ∀ (I) (_ : I ⊆ X), M.indep I → I.ncard ≤ n :=
+-- theorem r_le_iff [FiniteRk M] : M.r X ≤ n ↔ ∀ (I) (_ : I ⊆ X), M.indep I → I.ncard ≤ n :=
 --   by
 --   simp_rw [← ENat.coe_le_coe_iff, coe_r_eq_er, er_le_iff, encard_le_coe_iff, ENat.coe_le_coe_iff]
 --   exact forall_congr' fun I => ⟨by tauto, fun h hIX hI => ⟨hI.Finite, h hIX hI⟩⟩
 -- #align matroid_in.r_le_iff Matroid.r_le_iff
 
--- theorem r_mono (M : Matroid α) [FiniteRk M] : Monotone M.R := by rintro X Y (hXY : X ⊆ Y);
+-- theorem r_mono (M : Matroid α) [FiniteRk M] : Monotone M.r := by rintro X Y (hXY : X ⊆ Y);
 --   rw [← er_le_er_iff]; exact M.er_mono hXY
 -- #align matroid_in.r_mono Matroid.r_mono
 
@@ -586,22 +530,22 @@ end Matroid
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.R X ≤ X.ncard := by rw [r_le_iff]; exact fun I h _ => ncard_le_of_subset h (M.set_finite X)
+--     M.r X ≤ X.ncard := by rw [r_le_iff]; exact fun I h _ => ncard_le_of_subset h (M.set_finite X)
 -- #align matroid_in.r_le_card Matroid.r_le_card
 
--- theorem r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.R X ≤ M.rk := by
+-- theorem r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
 --   rw [r_eq_r_inter_ground]; exact M.r_mono (inter_subset_right _ _)
 -- #align matroid_in.r_le_rk Matroid.r_le_rk
 
--- theorem lt_rk_iff_ne_rk [FiniteRk M] : M.R X < M.rk ↔ M.R X ≠ M.rk :=
+-- theorem lt_rk_iff_ne_rk [FiniteRk M] : M.r X < M.rk ↔ M.r X ≠ M.rk :=
 --   (M.r_le_rk X).lt_iff_ne
 -- #align matroid_in.lt_rk_iff_ne_rk Matroid.lt_rk_iff_ne_rk
 
--- theorem Indep.r (hI : M.indep I) : M.R I = I.ncard := by
+-- theorem Indep.r (hI : M.indep I) : M.r I = I.ncard := by
 --   rw [← er_to_nat_eq_r, hI.er, encard_to_nat_eq]
 -- #align matroid_in.indep.r Matroid.Indep.r
 
--- theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.indep I) (h : I ⊆ X) : I.ncard ≤ M.R X := by
+-- theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
 --   rw [← hI.r]; exact M.r_mono h
 -- #align matroid_in.indep.card_le_r_of_subset Matroid.Indep.card_le_r_of_subset
 
@@ -609,29 +553,29 @@ end Matroid
 --   hI.R.symm.trans_le (M.r_le_rk I)
 -- #align matroid_in.indep.card_le_rk Matroid.Indep.card_le_rk
 
--- theorem Basis.card (h : M.Basis I X) : I.ncard = M.R X := by
+-- theorem Basis.card (h : M.Basis I X) : I.ncard = M.r X := by
 --   rw [← encard_to_nat_eq, ← er_to_nat_eq_r, h.encard]
 -- #align matroid_in.basis.card Matroid.Basis.card
 
--- theorem Basis.r (h : M.Basis I X) : M.R I = M.R X := by rw [← h.card, h.indep.r]
+-- theorem Basis.r (h : M.Basis I X) : M.r I = M.r X := by rw [← h.card, h.indep.r]
 -- #align matroid_in.basis.r Matroid.Basis.r
 
--- theorem Basis.r_eq_card (h : M.Basis I X) : M.R X = I.ncard := by rw [← h.r, ← h.indep.r]
+-- theorem Basis.r_eq_card (h : M.Basis I X) : M.r X = I.ncard := by rw [← h.r, ← h.indep.r]
 -- #align matroid_in.basis.r_eq_card Matroid.Basis.r_eq_card
 
--- theorem Base.r (hB : M.base B) : M.R B = M.rk := by rw [base_iff_basis_ground] at hB ; rw [hB.r, rk]
+-- theorem Base.r (hB : M.base B) : M.r B = M.rk := by rw [base_iff_basis_ground] at hB ; rw [hB.r, rk]
 -- #align matroid_in.base.r Matroid.Base.r
 
 -- theorem Base.card (hB : M.base B) : B.ncard = M.rk := by rw [(base_iff_basis_ground.mp hB).card, rk]
 -- #align matroid_in.base.card Matroid.Base.card
 
 -- @[simp]
--- theorem r_empty (M : Matroid α) : M.R ∅ = 0 := by
+-- theorem r_empty (M : Matroid α) : M.r ∅ = 0 := by
 --   rw [← M.empty_indep.basis_self.card, ncard_empty]
 -- #align matroid_in.r_empty Matroid.r_empty
 
 -- @[simp]
--- theorem r_cl (M : Matroid α) (X : Set α) : M.R (M.cl X) = M.R X :=
+-- theorem r_cl (M : Matroid α) (X : Set α) : M.r (M.cl X) = M.r X :=
 --   r_eq_of_er_eq (er_cl _ _)
 -- #align matroid_in.r_cl Matroid.r_cl
 
@@ -640,7 +584,7 @@ end Matroid
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.Basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.R X :=
+--     M.Basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.r X :=
 --   by
 --   refine'
 --     I.finite_or_infinite.symm.elim
@@ -650,7 +594,7 @@ end Matroid
 --     and_comm' (_ ⊆ _), ← coe_r_eq_er, hIfin.encard_eq, ENat.coe_inj]
 -- #align matroid_in.basis_iff_indep_card Matroid.basis_iff_indep_card
 
--- theorem indep_iff_r_eq_card_of_finite (hI : I.Finite) : M.indep I ↔ M.R I = I.ncard :=
+-- theorem indep_iff_r_eq_card_of_finite (hI : I.Finite) : M.indep I ↔ M.r I = I.ncard :=
 --   by
 --   obtain ⟨J, hJ⟩ := M.exists_basis (I ∩ M.E)
 --   rw [r_eq_r_inter_ground, ← hJ.card]
@@ -667,7 +611,7 @@ end Matroid
 --     (hI : I ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.indep I ↔ M.R I = I.ncard :=
+--     M.indep I ↔ M.r I = I.ncard :=
 --   indep_iff_r_eq_card_of_finite (M.set_finite I)
 -- #align matroid_in.indep_iff_r_eq_card Matroid.indep_iff_r_eq_card
 
@@ -676,7 +620,7 @@ end Matroid
 --     and_iff_left_of_imp indep.subset_ground]
 -- #align matroid_in.base_iff_indep_card Matroid.base_iff_indep_card
 
--- theorem base_iff_indep_r [FiniteRk M] : M.base B ↔ M.indep B ∧ M.R B = M.rk := by
+-- theorem base_iff_indep_r [FiniteRk M] : M.base B ↔ M.indep B ∧ M.r B = M.rk := by
 --   rw [base_iff_indep_card, and_congr_right_iff]; exact fun h => by rw [h.r]
 -- #align matroid_in.base_iff_indep_r Matroid.base_iff_indep_r
 
@@ -684,17 +628,17 @@ end Matroid
 --   base_iff_indep_card.mpr ⟨hI, h.antisymm' (by rw [← hI.r]; apply r_le_rk)⟩
 -- #align matroid_in.indep.base_of_rk_le_card Matroid.Indep.base_of_rk_le_card
 
--- theorem Basis.r_eq_r_union (hIX : M.Basis I X) (Y : Set α) : M.R (I ∪ Y) = M.R (X ∪ Y) :=
+-- theorem Basis.r_eq_r_union (hIX : M.Basis I X) (Y : Set α) : M.r (I ∪ Y) = M.r (X ∪ Y) :=
 --   r_eq_of_er_eq (hIX.er_eq_er_union _)
 -- #align matroid_in.basis.r_eq_r_union Matroid.Basis.r_eq_r_union
 
--- theorem Basis.r_eq_r_insert (hIX : M.Basis I X) (e : α) : M.R (insert e I) = M.R (insert e X) :=
+-- theorem Basis.r_eq_r_insert (hIX : M.Basis I X) (e : α) : M.r (insert e I) = M.r (insert e X) :=
 --   r_eq_of_er_eq (hIX.er_eq_er_insert _)
 -- #align matroid_in.basis.r_eq_r_insert Matroid.Basis.r_eq_r_insert
 
 -- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
 -- theorem Indep.basis_of_subset_of_r_le [FiniteRk M] (hI : M.indep I) (hIX : I ⊆ X)
---     (h : M.R X ≤ M.R I)
+--     (h : M.r X ≤ M.r I)
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
@@ -704,7 +648,7 @@ end Matroid
 
 -- /-- The submodularity axiom for the rank function -/
 -- theorem r_inter_add_r_union_le_r_add_r (M : Matroid α) [FiniteRk M] (X Y : Set α) :
---     M.R (X ∩ Y) + M.R (X ∪ Y) ≤ M.R X + M.R Y := by
+--     M.r (X ∩ Y) + M.r (X ∪ Y) ≤ M.r X + M.r Y := by
 --   simp_rw [← ENat.coe_le_coe_iff, ENat.coe_add, coe_r_eq_er]; apply er_submod
 -- #align matroid_in.r_inter_add_r_union_le_r_add_r Matroid.r_inter_add_r_union_le_r_add_r
 
@@ -731,23 +675,23 @@ end Matroid
 --   rw [← M₁.coe_r_eq_er_of_finite hI', ← M₂.coe_r_eq_er_of_finite hI', h _ hI]
 -- #align matroid_in.eq_of_r_eq_r_forall Matroid.eq_of_r_eq_r_forall
 
--- theorem r_inter_left_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.R (X ∩ Y) ≤ M.R X :=
+-- theorem r_inter_left_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.r (X ∩ Y) ≤ M.r X :=
 --   M.r_mono (inter_subset_left X Y)
 -- #align matroid_in.r_inter_left_le_r Matroid.r_inter_left_le_r
 
--- theorem r_inter_right_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.R (X ∩ Y) ≤ M.R Y :=
+-- theorem r_inter_right_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.r (X ∩ Y) ≤ M.r Y :=
 --   M.r_mono (inter_subset_right X Y)
 -- #align matroid_in.r_inter_right_le_r Matroid.r_inter_right_le_r
 
--- theorem r_le_r_union_left (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.R X ≤ M.R (X ∪ Y) :=
+-- theorem r_le_r_union_left (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.r X ≤ M.r (X ∪ Y) :=
 --   M.r_mono (subset_union_left X Y)
 -- #align matroid_in.r_le_r_union_left Matroid.r_le_r_union_left
 
--- theorem r_le_r_union_right (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.R Y ≤ M.R (X ∪ Y) :=
+-- theorem r_le_r_union_right (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.r Y ≤ M.r (X ∪ Y) :=
 --   M.r_mono (subset_union_right X Y)
 -- #align matroid_in.r_le_r_union_right Matroid.r_le_r_union_right
 
--- theorem r_diff_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.R (X \ Y) ≤ M.R X := by
+-- theorem r_diff_le_r (M : Matroid α) [FiniteRk M] (X Y : Set α) : M.r (X \ Y) ≤ M.r X := by
 --   rw [diff_eq]; apply r_inter_left_le_r
 -- #align matroid_in.r_diff_le_r Matroid.r_diff_le_r
 
@@ -756,17 +700,17 @@ end Matroid
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.R X < X.ncard ↔ ¬M.indep X :=
+--     M.r X < X.ncard ↔ ¬M.indep X :=
 --   by
 --   rw [lt_iff_not_le, not_iff_not, indep_iff_r_eq_card]
 --   exact ⟨(M.r_le_card X hX).antisymm, fun h => by rw [h]⟩
 -- #align matroid_in.r_lt_card_iff_not_indep Matroid.r_lt_card_iff_not_indep
 
--- theorem nonempty_of_r_nonzero (hX : M.R X ≠ 0) : X.Nonempty := by rw [nonempty_iff_ne_empty];
+-- theorem nonempty_of_r_nonzero (hX : M.r X ≠ 0) : X.Nonempty := by rw [nonempty_iff_ne_empty];
 --   rintro rfl; exact hX M.r_empty
 -- #align matroid_in.nonempty_of_r_nonzero Matroid.nonempty_of_r_nonzero
 
--- theorem r_singleton_le (M : Matroid α) (e : α) : M.R {e} ≤ 1 :=
+-- theorem r_singleton_le (M : Matroid α) (e : α) : M.r {e} ≤ 1 :=
 --   by
 --   have := M.er_singleton_le e
 --   rw [← ENat.coe_one, WithTop.le_coe_iff] at this 
@@ -774,7 +718,7 @@ end Matroid
 --   rwa [← er_to_nat_eq_r, hi, ENat.toNat_coe]
 -- #align matroid_in.r_singleton_le Matroid.r_singleton_le
 
--- theorem r_insert_le_add_one (M : Matroid α) (e : α) (X : Set α) : M.R (insert e X) ≤ M.R X + 1 :=
+-- theorem r_insert_le_add_one (M : Matroid α) (e : α) (X : Set α) : M.r (insert e X) ≤ M.r X + 1 :=
 --   by
 --   have hle := M.er_insert_le_add_one e X
 --   simp_rw [← er_to_nat_eq_r]
@@ -787,37 +731,37 @@ end Matroid
 --   rw [← ENat.coe_inj, ENat.coe_add, ENat.coe_toNat h, ENat.coe_toNat h', ENat.coe_one]
 -- #align matroid_in.r_insert_le_add_one Matroid.r_insert_le_add_one
 
--- theorem r_eq_r_of_subset_le [FiniteRk M] (hXY : X ⊆ Y) (hYX : M.R Y ≤ M.R X) : M.R X = M.R Y :=
+-- theorem r_eq_r_of_subset_le [FiniteRk M] (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : M.r X = M.r Y :=
 --   (M.r_mono hXY).antisymm hYX
 -- #align matroid_in.r_eq_r_of_subset_le Matroid.r_eq_r_of_subset_le
 
--- theorem r_eq_r_diff_r_le_zero [FiniteRk M] (X : Set α) (hY : M.R Y ≤ 0) : M.R (X \ Y) = M.R X := by
+-- theorem r_eq_r_diff_r_le_zero [FiniteRk M] (X : Set α) (hY : M.r Y ≤ 0) : M.r (X \ Y) = M.r X := by
 --   apply r_eq_of_er_eq; rw [er_eq_er_diff_er_le_zero]; rwa [← ENat.coe_zero, er_le_coe_iff]
 -- #align matroid_in.r_eq_r_diff_r_le_zero Matroid.r_eq_r_diff_r_le_zero
 
--- theorem r_eq_r_union_r_le_zero [FiniteRk M] (X : Set α) (hY : M.R Y ≤ 0) : M.R (X ∪ Y) = M.R X := by
+-- theorem r_eq_r_union_r_le_zero [FiniteRk M] (X : Set α) (hY : M.r Y ≤ 0) : M.r (X ∪ Y) = M.r X := by
 --   apply r_eq_of_er_eq; rw [er_eq_er_union_er_le_zero]; rwa [← ENat.coe_zero, er_le_coe_iff]
 -- #align matroid_in.r_eq_r_union_r_le_zero Matroid.r_eq_r_union_r_le_zero
 
--- theorem cl_eq_cl_of_subset_of_r_ge_r [FiniteRk M] (hXY : X ⊆ Y) (hr : M.R Y ≤ M.R X) :
+-- theorem cl_eq_cl_of_subset_of_r_ge_r [FiniteRk M] (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
 --     M.cl X = M.cl Y :=
 --   (M.to_rFin X).cl_eq_cl_of_subset_of_er_ge_er hXY (by rwa [er_le_er_iff])
 -- #align matroid_in.cl_eq_cl_of_subset_of_r_ge_r Matroid.cl_eq_cl_of_subset_of_r_ge_r
 
--- theorem r_union_eq_of_subset_of_r_le_r [FiniteRk M] (Z : Set α) (hXY : X ⊆ Y) (hr : M.R Y ≤ M.R X) :
---     M.R (X ∪ Z) = M.R (Y ∪ Z) :=
+-- theorem r_union_eq_of_subset_of_r_le_r [FiniteRk M] (Z : Set α) (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
+--     M.r (X ∪ Z) = M.r (Y ∪ Z) :=
 --   r_eq_of_er_eq (er_union_eq_of_subset_of_er_le_er Z hXY ((M.to_rFin Y).er_le_er_of_r_le_r hr))
 -- #align matroid_in.r_union_eq_of_subset_of_r_le_r Matroid.r_union_eq_of_subset_of_r_le_r
 
 -- theorem r_union_eq_of_subsets_of_r_les [FiniteRk M] (hX : X ⊆ X') (hY : Y ⊆ Y')
---     (hXX' : M.R X' ≤ M.R X) (hYY' : M.R Y' ≤ M.R Y) : M.R (X ∪ Y) = M.R (X' ∪ Y') :=
+--     (hXX' : M.r X' ≤ M.r X) (hYY' : M.r Y' ≤ M.r Y) : M.r (X ∪ Y) = M.r (X' ∪ Y') :=
 --   by
 --   rw [← er_eq_er_iff]; rw [← er_le_er_iff] at hXX' hYY' 
 --   apply er_union_eq_of_subsets_of_er_les <;> assumption
 -- #align matroid_in.r_union_eq_of_subsets_of_r_les Matroid.r_union_eq_of_subsets_of_r_les
 
 -- theorem r_union_le_add_r (M : Matroid α) [FiniteRk M] (X Y : Set α) :
---     M.R (X ∪ Y) ≤ M.R X + M.R Y := by linarith [M.r_submod X Y]
+--     M.r (X ∪ Y) ≤ M.r X + M.r Y := by linarith [M.r_submod X Y]
 -- #align matroid_in.r_union_le_add_r Matroid.r_union_le_add_r
 
 -- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
@@ -825,7 +769,7 @@ end Matroid
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.R (X ∪ Y) ≤ X.ncard + M.R Y :=
+--     M.r (X ∪ Y) ≤ X.ncard + M.r Y :=
 --   (M.r_union_le_add_r X Y).trans (add_le_add_right (M.r_le_card X hX) _)
 -- #align matroid_in.r_union_le_card_add_r Matroid.r_union_le_card_add_r
 
@@ -834,7 +778,7 @@ end Matroid
 --     (hY : Y ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.R (X ∪ Y) ≤ M.R X + Y.ncard := by rw [add_comm, union_comm]; exact M.r_union_le_card_add_r Y X
+--     M.r (X ∪ Y) ≤ M.r X + Y.ncard := by rw [add_comm, union_comm]; exact M.r_union_le_card_add_r Y X
 -- #align matroid_in.r_union_le_r_add_card Matroid.r_union_le_r_add_card
 
 -- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
@@ -842,7 +786,7 @@ end Matroid
 --     (hX : X ⊆ M.E := by
 --       run_tac
 --         ssE) :
---     M.rk ≤ X.ncard + M.R (M.E \ X) := by
+--     M.rk ≤ X.ncard + M.r (M.E \ X) := by
 --   simpa only [ground_inter_left, union_diff_self, M.r_eq_r_inter_ground (X ∪ _),
 --     union_inter_cancel_right, ← rk_def] using M.r_union_le_card_add_r (X ∩ M.E) (M.E \ X)
 -- #align matroid_in.rk_le_card_add_r_compl Matroid.rk_le_card_add_r_compl
@@ -949,31 +893,31 @@ end Matroid
 -- -- lemma r_lt_card_iff_dep [finite M] (hXE : X ⊆ M.E . ssE) : M.r X < X.ncard ↔ M.dep X :=
 -- -- r_lt_card_iff_dep_of_finite (M.set_finite _)
 -- -- end finite
--- -- lemma infinite_of_not_r_fin (hX : ¬M.r_fin X) (hXE : X ⊆ M.E . ssE) : X.infinite :=
--- -- λ hX', hX (M.r_fin_of_finite hX') 
--- -- lemma basis.infinite_of_not_r_fin (hIX : M.basis I X) (hX : ¬ M.r_fin X) : I.infinite :=
--- -- hX ∘ (λ hI, hIX.r_fin_of_finite hI)
+-- -- lemma infinite_of_not_rFin (hX : ¬M.rFin X) (hXE : X ⊆ M.E . ssE) : X.infinite :=
+-- -- λ hX', hX (M.rFin_of_finite hX') 
+-- -- lemma basis.infinite_of_not_rFin (hIX : M.basis I X) (hX : ¬ M.rFin X) : I.infinite :=
+-- -- hX ∘ (λ hI, hIX.rFin_of_finite hI)
 -- -- /-- A set with no finite basis has the junk rank value of zero -/
--- -- lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X) (hX : X ⊆ M.E . ssE) : M.r X = 0 :=
+-- -- lemma r_eq_zero_of_not_rFin (h : ¬M.rFin X) (hX : X ⊆ M.E . ssE) : M.r X = 0 :=
 -- -- begin
--- --   simp_rw [r_fin, not_exists, not_and] at h, 
+-- --   simp_rw [rFin, not_exists, not_and] at h, 
 -- --   obtain ⟨I, hI⟩ := M.exists_basis X, 
 -- --   rw [←hI.card, infinite.ncard (h _ hI)], 
 -- -- end
--- -- lemma r_fin_of_r_ne_zero (h : M.r X ≠ 0) (hX : X ⊆ M.E . ssE) : M.r_fin X := 
+-- -- lemma rFin_of_r_ne_zero (h : M.r X ≠ 0) (hX : X ⊆ M.E . ssE) : M.rFin X := 
 -- -- begin
 -- --   obtain ⟨I, hI⟩ := M.exists_basis X, 
 -- --   rw [←hI.card] at h, 
--- --   exact hI.r_fin_of_finite (finite_of_ncard_ne_zero h),  
+-- --   exact hI.rFin_of_finite (finite_of_ncard_ne_zero h),  
 -- -- end 
--- -- lemma indep.le_card_basis_of_r_fin (hI : M.indep I) (hIX : I ⊆ X) (hX : M.r_fin X) 
+-- -- lemma indep.le_card_basis_of_rFin (hI : M.indep I) (hIX : I ⊆ X) (hX : M.rFin X) 
 -- -- (hXJ : M.basis J X) : I.ncard ≤ J.ncard :=
 -- -- begin
--- --   obtain ⟨I', hI, h⟩ := hI.subset_finite_basis_of_subset_of_r_fin hIX hX, 
+-- --   obtain ⟨I', hI, h⟩ := hI.subset_finite_basis_of_subset_of_rFin hIX hX, 
 -- --   rw hXJ.card_eq_card_of_basis hI, 
--- --   exact ncard_le_of_subset h.1 (hI.finite_of_r_fin hX), 
+-- --   exact ncard_le_of_subset h.1 (hI.finite_of_rFin hX), 
 -- -- end 
--- -- lemma r_fin.le_r_iff (h : M.r_fin X) {n : ℕ} : n ≤ M.r X ↔ ∃ I ⊆ X, M.indep I ∧ I.ncard = n :=
+-- -- lemma rFin.le_r_iff (h : M.rFin X) {n : ℕ} : n ≤ M.r X ↔ ∃ I ⊆ X, M.indep I ∧ I.ncard = n :=
 -- -- begin
 -- --   obtain ⟨J, hJ⟩ := eq_r_iff.mp (@rfl _ (M.r X)),
 -- --   refine ⟨λ h, _, λ h, _⟩,
@@ -981,66 +925,66 @@ end Matroid
 -- --     exact ⟨I', hI'.trans hJ.1.subset, hJ.1.indep.subset hI', by simp⟩ },
 -- --   obtain ⟨I, hIX, hI, rfl⟩ := h,
 -- --   rw ←hJ.2,
--- --   exact hI.le_card_basis_of_r_fin hIX h hJ.1, 
+-- --   exact hI.le_card_basis_of_rFin hIX h hJ.1, 
 -- -- end 
--- -- lemma r_fin.r_le_iff (h : M.r_fin X) {n : ℕ} : M.r X ≤ n ↔ (∀ I ⊆ X, M.indep I → I.ncard ≤ n) :=
+-- -- lemma rFin.r_le_iff (h : M.rFin X) {n : ℕ} : M.r X ≤ n ↔ (∀ I ⊆ X, M.indep I → I.ncard ≤ n) :=
 -- -- begin
 -- --   obtain ⟨I, hIX, hI⟩ := eq_r_iff.mp (@rfl _ (M.r X)),
--- --   exact ⟨λ h' J hJX hJ, (hJ.le_card_basis_of_r_fin hJX h hIX).trans (hI.trans_le h'),
+-- --   exact ⟨λ h' J hJX hJ, (hJ.le_card_basis_of_rFin hJX h hIX).trans (hI.trans_le h'),
 -- --     λ h, hI.symm.trans_le (h I hIX.subset hIX.indep)⟩,
 -- -- end 
--- -- lemma r_fin.r_mono (hY : M.r_fin Y) (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
+-- -- lemma rFin.r_mono (hY : M.rFin Y) (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
 -- -- by { simp_rw [(hY.subset hXY).r_le_iff, hY.le_r_iff], exact λ I hIX hI, ⟨I,hIX.trans hXY,hI,rfl⟩ }
--- -- lemma r_fin.r_eq_r_of_subset_le (h : M.r_fin Y) (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : 
+-- -- lemma rFin.r_eq_r_of_subset_le (h : M.rFin Y) (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : 
 -- --   M.r X = M.r Y :=
 -- -- (h.r_mono hXY).antisymm hYX
--- -- lemma indep.card_le_r_of_subset_of_r_fin (hI : M.indep I) (h : I ⊆ X) (hX : M.r_fin X) : 
+-- -- lemma indep.card_le_r_of_subset_of_rFin (hI : M.indep I) (h : I ⊆ X) (hX : M.rFin X) : 
 -- --   I.ncard ≤ M.r X :=
 -- -- by { rw [←hI.r], exact hX.r_mono h }
--- -- lemma indep.basis_of_subset_of_r_le_of_r_fin (hI : M.indep I) (hIX : I ⊆ X) (h : M.r X ≤ M.r I) 
--- -- (hX : M.r_fin X) :
+-- -- lemma indep.basis_of_subset_of_r_le_of_rFin (hI : M.indep I) (hIX : I ⊆ X) (h : M.r X ≤ M.r I) 
+-- -- (hX : M.rFin X) :
 -- --   M.basis I X :=
 -- -- begin
 -- --   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIX,   
--- --   rwa eq_of_subset_of_ncard_le hIJ _ (hJ.finite_of_r_fin hX), 
+-- --   rwa eq_of_subset_of_ncard_le hIJ _ (hJ.finite_of_rFin hX), 
 -- --   rwa [hJ.card, ←hI.r], 
 -- -- end
 -- -- /-- The submodularity axiom for the rank function -/
--- -- lemma r_fin.r_inter_add_r_union_le_r_add_r (hX : M.r_fin X) (hY : M.r_fin Y) :
+-- -- lemma rFin.r_inter_add_r_union_le_r_add_r (hX : M.rFin X) (hY : M.rFin Y) :
 -- --   M.r (X ∩ Y) + M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 -- -- begin
 -- --   obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y),
 -- --   obtain ⟨IX, hIX, hIX', hIXfin⟩ :=
--- --     hIi.indep.subset_finite_basis_of_subset_of_r_fin (hIi.subset.trans (inter_subset_left _ _)) hX,
+-- --     hIi.indep.subset_finite_basis_of_subset_of_rFin (hIi.subset.trans (inter_subset_left _ _)) hX,
 -- --   obtain ⟨IY, hIY, hIY', hIYfin⟩ :=
--- --     hIi.indep.subset_finite_basis_of_subset_of_r_fin (hIi.subset.trans (inter_subset_right _ _)) hY,
+-- --     hIi.indep.subset_finite_basis_of_subset_of_rFin (hIi.subset.trans (inter_subset_right _ _)) hY,
 -- --   rw [←hIX.r_eq_r_union, union_comm, ←hIY.r_eq_r_union, ←hIi.card, ←hIX.card, ←hIY.card, 
 -- --    union_comm, ← ncard_union_add_ncard_inter _ _ hIXfin hIYfin, add_comm], 
 -- --   refine add_le_add (M.r_le_card_of_finite (hIXfin.union hIYfin)) _, 
 -- --   refine (ncard_le_of_subset (subset_inter hIX' hIY') (hIXfin.subset (inter_subset_left _ _))),
 -- -- end
--- -- alias r_fin.r_inter_add_r_union_le_r_add_r ← r_fin.submod 
--- -- lemma r_fin.r_union_le_add_r (hX : M.r_fin X) (hY : M.r_fin Y) : M.r (X ∪ Y) ≤ M.r X + M.r Y :=
+-- -- alias rFin.r_inter_add_r_union_le_r_add_r ← rFin.submod 
+-- -- lemma rFin.r_union_le_add_r (hX : M.rFin X) (hY : M.rFin Y) : M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 -- -- by linarith [hX.submod hY]
--- -- lemma r_fin.r_union_le_add_r' (hX : M.r_fin (X ∪ Y)) : M.r (X ∪ Y) ≤ M.r X + M.r Y := 
--- -- by { apply r_fin.r_union_le_add_r; 
+-- -- lemma rFin.r_union_le_add_r' (hX : M.rFin (X ∪ Y)) : M.r (X ∪ Y) ≤ M.r X + M.r Y := 
+-- -- by { apply rFin.r_union_le_add_r; 
 -- --   apply hX.subset, apply subset_union_left, apply subset_union_right }
--- -- lemma r_fin.basis_iff_finite_indep_card (hX : M.r_fin X) :
+-- -- lemma rFin.basis_iff_finite_indep_card (hX : M.rFin X) :
 -- --   M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.finite ∧ I.ncard = M.r X :=
 -- -- begin
 -- --   refine (I.finite_or_infinite.symm.elim _ (λ hI, ⟨λ hb, ⟨hb.indep,hb.subset,hI,hb.card⟩, λ h, _⟩)), 
--- --   { exact λ hI, iff_of_false (λ hb, hI (hb.finite_of_r_fin hX)) (by simp [iff_false_intro hI]) }, 
+-- --   { exact λ hI, iff_of_false (λ hb, hI (hb.finite_of_rFin hX)) (by simp [iff_false_intro hI]) }, 
 -- --   refine h.1.basis_of_maximal_subset h.2.1 (λ J hJ hIJ hJX, _), 
--- --   rw [←eq_of_subset_of_ncard_le hIJ _ (hJ.finite_of_subset_r_fin hJX hX)], 
+-- --   rw [←eq_of_subset_of_ncard_le hIJ _ (hJ.finite_of_subset_rFin hJX hX)], 
 -- --   rw [h.2.2.2, hX.le_r_iff], 
 -- --   exact ⟨J, hJX, hJ, rfl⟩, 
 -- -- end 
--- -- lemma indep.basis_of_r_fin_of_subset_of_r_ge (hI : M.indep I) (hIX : I ⊆ X) (hX : M.r_fin X) 
+-- -- lemma indep.basis_of_rFin_of_subset_of_r_ge (hI : M.indep I) (hIX : I ⊆ X) (hX : M.rFin X) 
 -- -- (hr : M.r X ≤ I.ncard) : 
 -- --   M.basis I X  :=
--- -- hX.basis_iff_finite_indep_card.mpr ⟨hI, hIX, hI.finite_of_subset_r_fin hIX hX, 
+-- -- hX.basis_iff_finite_indep_card.mpr ⟨hI, hIX, hI.finite_of_subset_rFin hIX hX, 
 -- --     hr.antisymm' (hX.le_r_iff.mpr ⟨I, hIX, hI,rfl⟩)⟩
--- -- lemma r_fin.r_eq_zero_iff_subset_loops (hX : M.r_fin X) : M.r X = 0 ↔ X ⊆ M.cl ∅ :=
+-- -- lemma rFin.r_eq_zero_iff_subset_loops (hX : M.rFin X) : M.r X = 0 ↔ X ⊆ M.cl ∅ :=
 -- -- begin
 -- --   obtain ⟨I, hI⟩ := M.exists_basis X,
 -- --   rw [←cl_subset_cl_iff_subset_cl, ←hI.cl], 
@@ -1049,38 +993,38 @@ end Matroid
 -- --   exact ⟨by { rintro rfl, exact subset.rfl }, 
 -- --     λ h, hI.1.eq_empty_of_subset_loops ((M.subset_cl I hI.1.subset_ground).trans h)⟩,
 -- -- end 
--- -- lemma r_fin.r_eq_r_diff_r_le_zero (hY : M.r_fin Y) (X) (hr : M.r Y ≤ 0) : M.r (X \ Y) = M.r X :=
+-- -- lemma rFin.r_eq_r_diff_r_le_zero (hY : M.rFin Y) (X) (hr : M.r Y ≤ 0) : M.r (X \ Y) = M.r X :=
 -- -- by rw [←r_cl, cl_diff_eq_cl_of_subset_loops (hY.r_eq_zero_iff_subset_loops.mp (le_zero_iff.mp hr)), 
 -- --   r_cl]
--- -- lemma r_fin.r_eq_r_union_r_le_zero (hY : M.r_fin Y) (X) (hr : M.r Y ≤ 0) : M.r (X ∪ Y) = M.r X :=
+-- -- lemma rFin.r_eq_r_union_r_le_zero (hY : M.rFin Y) (X) (hr : M.r Y ≤ 0) : M.r (X ∪ Y) = M.r X :=
 -- -- by rw [←r_cl, cl_union_eq_cl_of_subset_loops (hY.r_eq_zero_iff_subset_loops.mp (le_zero_iff.mp hr)), 
 -- --   r_cl]
--- -- lemma r_fin.r_le_r_inter_add_r_diff (hX : M.r_fin X) (Y : set α) : 
+-- -- lemma rFin.r_le_r_inter_add_r_diff (hX : M.rFin X) (Y : set α) : 
 -- --   M.r X ≤ M.r (X ∩ Y) + M.r (X \ Y) :=
 -- -- begin
--- --   convert r_fin.r_union_le_add_r (hX.subset (inter_subset_left _ _)) (hX.subset (diff_subset _ _)), 
+-- --   convert rFin.r_union_le_add_r (hX.subset (inter_subset_left _ _)) (hX.subset (diff_subset _ _)), 
 -- --   rw (inter_union_diff X Y), 
 -- -- end 
--- -- lemma r_fin.r_le_r_add_r_diff (hX : M.r_fin X) (hYX : Y ⊆ X) : M.r X ≤ M.r Y + M.r (X \ Y) :=
+-- -- lemma rFin.r_le_r_add_r_diff (hX : M.rFin X) (hYX : Y ⊆ X) : M.r X ≤ M.r Y + M.r (X \ Y) :=
 -- -- begin
 -- --   convert hX.r_le_r_inter_add_r_diff _, 
 -- --   rw [inter_eq_self_of_subset_right hYX], 
 -- -- end 
--- -- lemma r_fin.cl_eq_cl_of_subset_of_r_ge_r (hY : M.r_fin Y) (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) : 
+-- -- lemma rFin.cl_eq_cl_of_subset_of_r_ge_r (hY : M.rFin Y) (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) : 
 -- --   M.cl X = M.cl Y :=
 -- -- begin
 -- --   have hXE : X ⊆ M.E := hXY.trans hY.subset_ground, 
 -- --   obtain ⟨I, hI⟩ := M.exists_basis X, 
--- --   obtain ⟨J, hJ, hIJ, hJfin⟩ := hI.indep.subset_finite_basis_of_subset_of_r_fin 
+-- --   obtain ⟨J, hJ, hIJ, hJfin⟩ := hI.indep.subset_finite_basis_of_subset_of_rFin 
 -- --     (hI.subset.trans hXY) hY, 
 -- --   rw [←hI.cl, ←hJ.cl, eq_of_subset_of_ncard_le hIJ _ hJfin], 
 -- --   rwa [hI.card, hJ.card],
 -- -- end 
--- -- end r_fin
+-- -- end rFin
 -- -- lemma le_r_iff [finite_rk M] : n ≤ M.r X ↔ ∃ I ⊆ X, M.indep I ∧ I.ncard = n := 
 -- -- begin
 -- --   rw [r_eq_r_inter_ground], 
--- --   convert (M.to_r_fin (X ∩ M.E)).le_r_iff,
+-- --   convert (M.to_rFin (X ∩ M.E)).le_r_iff,
 -- --   ext I, 
 -- --   simp only [exists_prop, subset_inter_iff, and.congr_left_iff, iff_self_and, and_imp], 
 -- --   exact λ h _ _, h.subset_ground,  
@@ -1088,19 +1032,19 @@ end Matroid
 -- -- lemma r_le_iff [finite_rk M] : M.r X ≤ n ↔ (∀ I ⊆ X, M.indep I → I.ncard ≤ n) :=
 -- -- begin
 -- --   rw [r_eq_r_inter_ground], 
--- --   convert (M.to_r_fin (X ∩ M.E)).r_le_iff, 
+-- --   convert (M.to_rFin (X ∩ M.E)).r_le_iff, 
 -- --   simp only [subset_inter_iff, and_imp, eq_iff_iff], 
 -- --   exact forall_congr (λ I, ⟨λ h hIX hIE hI, h hIX hI, λ h hIX hI, h hIX (by ssE) hI⟩), 
 -- -- end 
 -- -- lemma r_mono (M : matroid_in α) [finite_rk M] {X Y : set α} (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
 -- -- begin
 -- --   rw [r_eq_r_inter_ground, M.r_eq_r_inter_ground Y], 
--- --   exact (M.to_r_fin _).r_mono (inter_subset_inter_left _ hXY), 
+-- --   exact (M.to_rFin _).r_mono (inter_subset_inter_left _ hXY), 
 -- -- end 
 -- -- lemma basis_iff_indep_card [finite_rk M] (hX : X ⊆ M.E . ssE) : 
 -- --   M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.r X :=
 -- -- begin
--- --   rw [r_eq_r_inter_ground, (M.to_r_fin X).basis_iff_finite_indep_card, and.congr_right_iff, 
+-- --   rw [r_eq_r_inter_ground, (M.to_rFin X).basis_iff_finite_indep_card, and.congr_right_iff, 
 -- --     and.congr_right_iff, r_eq_r_inter_ground, and_iff_right_iff_imp], 
 -- --   exact λ h _ _, h.finite,  
 -- -- end 
@@ -1130,14 +1074,14 @@ end Matroid
 -- -- by simp_rw [←union_singleton, hIX.r_eq_r_union]
 -- -- lemma indep.basis_of_subset_of_r_le [finite_rk M] (hI : M.indep I) (hIX : I ⊆ X)
 -- -- (h : M.r X ≤ M.r I) (hX : X ⊆ M.E . ssE) : M.basis I X :=
--- -- hI.basis_of_subset_of_r_le_of_r_fin hIX h (M.to_r_fin X)
+-- -- hI.basis_of_subset_of_r_le_of_rFin hIX h (M.to_rFin X)
 -- -- /-- The submodularity axiom for the rank function -/
 -- -- lemma r_inter_add_r_union_le_r_add_r (M : matroid_in α) [finite_rk M] (X Y : set α) :
 -- --   M.r (X ∩ Y) + M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 -- -- begin
 -- --   rw [r_eq_r_inter_ground, inter_inter_distrib_right, M.r_eq_r_inter_ground (X ∪ _), 
 -- --     inter_distrib_right, M.r_eq_r_inter_ground X, M.r_eq_r_inter_ground Y], 
--- --   exact (M.to_r_fin _).r_inter_add_r_union_le_r_add_r (M.to_r_fin _), 
+-- --   exact (M.to_rFin _).r_inter_add_r_union_le_r_add_r (M.to_rFin _), 
 -- -- end 
 -- -- alias r_inter_add_r_union_le_r_add_r ← r_submod 
 -- -- lemma eq_of_r_eq_r_forall {M₁ M₂ : matroid_in α} [finite_rk M₁] (hE : M₁.E = M₂.E) 
@@ -1180,12 +1124,12 @@ end Matroid
 -- -- begin
 -- --   rw [r_eq_r_inter_ground] at hY, 
 -- --   rw [r_eq_r_inter_ground, inter_diff_distrib_right, M.r_eq_r_inter_ground X, 
--- --     (M.to_r_fin (Y ∩ M.E)).r_eq_r_diff_r_le_zero _ hY], 
+-- --     (M.to_rFin (Y ∩ M.E)).r_eq_r_diff_r_le_zero _ hY], 
 -- -- end 
 -- -- lemma r_eq_r_union_r_le_zero [finite_rk M] (X : set α) (hY : M.r Y ≤ 0) : M.r (X ∪ Y) = M.r X :=
 -- -- begin
 -- --   rw [r_eq_r_inter_ground] at hY, 
--- --   rw [r_eq_r_inter_ground, inter_distrib_right, (M.to_r_fin _).r_eq_r_union_r_le_zero _ hY, 
+-- --   rw [r_eq_r_inter_ground, inter_distrib_right, (M.to_rFin _).r_eq_r_union_r_le_zero _ hY, 
 -- --     ←r_eq_r_inter_ground], 
 -- -- end 
 -- -- lemma cl_eq_cl_of_subset_of_r_ge_r [finite_rk M] (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) : 
@@ -1193,7 +1137,7 @@ end Matroid
 -- -- begin
 -- --   rw [←M.r_cl Y, ←M.r_cl X] at hr,  
 -- --   have hXY' := M.cl_subset hXY, 
--- --   convert (M.to_r_fin (M.cl Y)).cl_eq_cl_of_subset_of_r_ge_r hXY' hr using 1; simp,  
+-- --   convert (M.to_rFin (M.cl Y)).cl_eq_cl_of_subset_of_r_ge_r hXY' hr using 1; simp,  
 -- -- end 
 -- -- lemma r_union_eq_of_subset_of_r_le_r [finite_rk M] (Z : set α) (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
 -- --   M.r (X ∪ Z) = M.r (Y ∪ Z) :=
@@ -1232,10 +1176,10 @@ end Matroid
 -- -- begin
 -- --   rw [r_eq_r_inter_ground, M.r_eq_r_inter_ground (insert _ _)], 
 -- --   by_cases he : e ∈ M.E, 
--- --   refine (em (M.r_fin (X ∩ M.E))).elim (λ h, _) (λ h, _), 
+-- --   refine (em (M.rFin (X ∩ M.E))).elim (λ h, _) (λ h, _), 
 -- --   { rw [insert_inter_of_mem he], 
 -- --     exact (h.insert e he).r_mono (subset_insert _ _) },
--- --   { rw [r_eq_zero_of_not_r_fin h (inter_subset_right _ _)], apply zero_le }, 
+-- --   { rw [r_eq_zero_of_not_rFin h (inter_subset_right _ _)], apply zero_le }, 
 -- --   rw [insert_inter_of_not_mem he], 
 -- -- end 
 -- -- lemma r_insert_eq_of_not_mem_ground (X : set α) (he : e ∉ M.E) : M.r (insert e X) = M.r X :=
@@ -1304,14 +1248,14 @@ end Matroid
 -- --     inter_eq_left_iff_subset.mpr hXY, add_comm] at hsm,
 -- --   exact le_trans (add_le_add_left (M.r_le_r_union_left _ _) _) hsm,
 -- -- end
--- -- lemma r_fin.augment_of_not_r_fin (hX : M.r_fin X) (hZ : ¬M.r_fin Z) (hZ : Z ⊆ M.E . ssE): 
+-- -- lemma rFin.augment_of_not_rFin (hX : M.rFin X) (hZ : ¬M.rFin Z) (hZ : Z ⊆ M.E . ssE): 
 -- --   ∃ z ∈ Z \ X, M.r (insert z X) = M.r X + 1 := 
 -- -- begin
 -- --   obtain ⟨J, hJ⟩ := M.exists_basis Z, 
--- --   have hJinf : J.infinite, by rwa [set.infinite, ←hJ.r_fin_iff_finite], 
+-- --   have hJinf : J.infinite, by rwa [set.infinite, ←hJ.rFin_iff_finite], 
 -- --   obtain ⟨J', hJ'J, hJfin, hJcard⟩ := hJinf.exists_subset_ncard_eq (M.r X + 1), 
 -- --   obtain ⟨z, ⟨hzJ',hzX⟩, h⟩ := hX.r_augment 
--- --     (M.r_fin_of_finite hJfin (hJ'J.trans hJ.subset_ground_left)) 
+-- --     (M.rFin_of_finite hJfin (hJ'J.trans hJ.subset_ground_left)) 
 -- --     (((lt_add_one _).trans_eq hJcard.symm).trans_eq (hJ.indep.subset hJ'J).r.symm), 
 -- --   exact ⟨z, ⟨hJ.subset (hJ'J hzJ'),hzX⟩, h⟩, 
 -- -- end 
@@ -1331,10 +1275,10 @@ end Matroid
 -- -- begin
 -- --   simp_rw [M.r_eq_r_inter_ground X, M.r_eq_r_inter_ground Y, M.r_eq_r_inter_ground (insert _ _)] 
 -- --     at *,
--- --   refine (em' (M.r_fin (Y ∩ M.E))).elim (λ hY', _) (λ hY', _), 
--- --   { refine (em' (M.r_fin (X ∩ M.E))).elim (λ hX, _) (λ hX, _), 
--- --     { rw [r_eq_zero_of_not_r_fin hX, r_eq_zero_of_not_r_fin hY'] },
--- --     obtain ⟨z, hz, hr⟩ := hX.augment_of_not_r_fin hY', 
+-- --   refine (em' (M.rFin (Y ∩ M.E))).elim (λ hY', _) (λ hY', _), 
+-- --   { refine (em' (M.rFin (X ∩ M.E))).elim (λ hX, _) (λ hX, _), 
+-- --     { rw [r_eq_zero_of_not_rFin hX, r_eq_zero_of_not_rFin hY'] },
+-- --     obtain ⟨z, hz, hr⟩ := hX.augment_of_not_rFin hY', 
 -- --     have h' := hY z hz.1.1, 
 -- --     rw [←nat.lt_add_one_iff, ←hr, insert_inter_of_mem hz.1.2] at h', 
 -- --     exact (h'.ne rfl).elim },
@@ -1372,20 +1316,20 @@ end Matroid
 -- -- end basic 
 -- -- section circuit 
 -- -- variables {C : set α}
--- -- lemma circuit.finite_of_r_fin (hC : M.circuit C) (hCfin : M.r_fin C) : C.finite :=
+-- -- lemma circuit.finite_of_rFin (hC : M.circuit C) (hCfin : M.rFin C) : C.finite :=
 -- -- begin
 -- --   obtain ⟨e,he⟩ := hC.nonempty,
--- --   convert ((hC.diff_singleton_indep he).finite_of_r_fin (hCfin.subset (diff_subset _ _))).insert e, 
+-- --   convert ((hC.diff_singleton_indep he).finite_of_rFin (hCfin.subset (diff_subset _ _))).insert e, 
 -- --   rw [insert_diff_singleton, insert_eq_of_mem he],  
 -- -- end 
--- -- lemma circuit.r_fin_iff_finite (hC : M.circuit C) : M.r_fin C ↔ C.finite :=
--- -- ⟨hC.finite_of_r_fin, M.r_fin_of_finite⟩ 
+-- -- lemma circuit.rFin_iff_finite (hC : M.circuit C) : M.rFin C ↔ C.finite :=
+-- -- ⟨hC.finite_of_rFin, M.rFin_of_finite⟩ 
 -- -- lemma circuit.card_of_finite (hC : M.circuit C) (hfin : C.finite) : C.ncard = M.r C + 1 :=
 -- -- begin
 -- --   obtain ⟨e,he⟩ := hC.nonempty,
 -- --   have hss : C \ {e} ⊂ C, by {refine ssubset_of_ne_of_subset _ (diff_subset _ _),
 -- --     simpa only [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]},
--- --   have hlb := (M.r_fin_of_finite hfin).r_mono hss.subset,
+-- --   have hlb := (M.rFin_of_finite hfin).r_mono hss.subset,
 -- --   rw [(hC.ssubset_indep hss).r] at hlb,
 -- --   linarith [ncard_diff_singleton_add_one he hfin, r_lt_card_of_dep_of_finite hfin hC.dep],
 -- -- end 
@@ -1407,19 +1351,19 @@ end Matroid
 -- -- end circuit 
 -- -- section cl_flat
 -- -- variables {F F' F₁ F₂ H H₁ H₂ : set α}
--- -- lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) (he : e ∉ F) 
+-- -- lemma flat.r_insert_of_not_mem_of_rFin (hF : M.flat F) (hfin : M.rFin F) (he : e ∉ F) 
 -- -- (heE : e ∈ M.E . ssE) :
 -- --   M.r (insert e F) = M.r F + 1 :=
 -- -- begin
 -- --   obtain ⟨I, hI⟩ := M.exists_basis F, 
 -- --   rw [←hF.cl, ←hI.cl, hI.indep.not_mem_cl_iff] at he, 
 -- --   rw [←(hI.insert_basis_insert he.2).card, ←hI.card, 
--- --     ncard_insert_of_not_mem he.1 (hI.finite_of_r_fin hfin)],
+-- --     ncard_insert_of_not_mem he.1 (hI.finite_of_rFin hfin)],
 -- -- end
--- -- lemma flat.r_insert_of_mem_compl_of_r_fin (hF : M.flat F) (he : e ∈ M.E \ F) (hfin : M.r_fin F) :
--- --   M.r (insert e F) = M.r F + 1 := hF.r_insert_of_not_mem_of_r_fin hfin he.2 he.1 
+-- -- lemma flat.r_insert_of_mem_compl_of_rFin (hF : M.flat F) (he : e ∈ M.E \ F) (hfin : M.rFin F) :
+-- --   M.r (insert e F) = M.r F + 1 := hF.r_insert_of_not_mem_of_rFin hfin he.2 he.1 
 -- -- lemma flat.r_insert_of_mem_compl [finite_rk M] (hF : M.flat F) (he : e ∈ M.E \ F) :
--- --   M.r (insert e F) = M.r F + 1 := hF.r_insert_of_mem_compl_of_r_fin he (M.to_r_fin F)
+-- --   M.r (insert e F) = M.r F + 1 := hF.r_insert_of_mem_compl_of_rFin he (M.to_rFin F)
 -- -- lemma flat_iff_r_lt_r_insert_forall [finite_rk M] (hFE : F ⊆ M.E . ssE) : 
 -- --   M.flat F ↔ ∀ e ∈ M.E \ F, M.r F < M.r (insert e F) :=
 -- -- begin
@@ -1429,12 +1373,12 @@ end Matroid
 -- --   refine λ e he', (M.cl_subset (subset_insert _ _)).ssubset_of_ne (λ h_eq, (h e he').ne _), 
 -- --   rw [←r_cl, h_eq, r_cl], 
 -- -- end
--- -- lemma flat.mem_compl_iff_r_insert_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) : 
+-- -- lemma flat.mem_compl_iff_r_insert_of_rFin (hF : M.flat F) (hfin : M.rFin F) : 
 -- --   e ∈ M.E \ F ↔ M.r (insert e F) = M.r F + 1 :=
 -- -- begin
 -- --   refine (em' (e ∈ M.E)).elim (λ h, iff_of_false (not_mem_subset (diff_subset _ _) h) _) (λ heE, _), 
 -- --   { simp [r_insert_eq_of_not_mem_ground _ h] },
--- --   refine ⟨λ he, hF.r_insert_of_mem_compl_of_r_fin he hfin, λ h, _⟩,
+-- --   refine ⟨λ he, hF.r_insert_of_mem_compl_of_rFin he hfin, λ h, _⟩,
 -- --   rw [r_insert_eq_add_one_iff_r_ne] at h, 
 -- --   refine by_contra (λ hss, h _), 
 -- --   rw [mem_diff, not_and, not_not] at hss, 
@@ -1442,32 +1386,32 @@ end Matroid
 -- -- end
 -- -- lemma flat.mem_compl_iff_r_insert_eq [finite_rk M] (hF : M.flat F) : 
 -- --   e ∈ M.E \ F ↔ M.r (insert e F) = M.r F + 1 :=
--- -- hF.mem_compl_iff_r_insert_of_r_fin (M.to_r_fin F)
--- -- lemma flat.r_lt_r_of_ssubset_of_r_fin (hF : M.flat F) (hFX : F ⊂ X) (hX : M.r_fin X) : 
+-- -- hF.mem_compl_iff_r_insert_of_rFin (M.to_rFin F)
+-- -- lemma flat.r_lt_r_of_ssubset_of_rFin (hF : M.flat F) (hFX : F ⊂ X) (hX : M.rFin X) : 
 -- --   M.r F < M.r X :=
 -- -- begin
 -- --   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX, 
--- --   rw [nat.lt_iff_add_one_le, ←hF.r_insert_of_mem_compl_of_r_fin ⟨_, heF⟩ (hX.subset hFX.subset)], 
+-- --   rw [nat.lt_iff_add_one_le, ←hF.r_insert_of_mem_compl_of_rFin ⟨_, heF⟩ (hX.subset hFX.subset)], 
 -- --   { exact hX.r_mono (insert_subset.mpr ⟨heX, hFX.subset⟩) },
 -- --   exact hX.subset_ground heX,
 -- -- end 
--- -- lemma flat.eq_of_r_le_r_subset_of_r_fin (hF : M.flat F) (hFfin : M.r_fin X) (hFX : F ⊆ X) 
+-- -- lemma flat.eq_of_r_le_r_subset_of_rFin (hF : M.flat F) (hFfin : M.rFin X) (hFX : F ⊆ X) 
 -- -- (hr : M.r X ≤ M.r F) : 
 -- --   F = X :=
--- -- by_contra (λ hne, (hF.r_lt_r_of_ssubset_of_r_fin (hFX.ssubset_of_ne hne) hFfin).not_le hr)
+-- -- by_contra (λ hne, (hF.r_lt_r_of_ssubset_of_rFin (hFX.ssubset_of_ne hne) hFfin).not_le hr)
 -- -- lemma flat.r_lt_r_of_ssubset [finite_rk M] (hF : M.flat F) (hFX : F ⊂ X) (hX : X ⊆ M.E . ssE) :
--- --   M.r F < M.r X := hF.r_lt_r_of_ssubset_of_r_fin hFX (M.to_r_fin X)
+-- --   M.r F < M.r X := hF.r_lt_r_of_ssubset_of_rFin hFX (M.to_rFin X)
 -- -- lemma flat.eq_of_le_r_subset [finite_rk M] (hF : M.flat F) (hFX : F ⊆ X) (hr : M.r X ≤ M.r F) 
--- -- (hXE : X ⊆ M.E . ssE) : F = X := hF.eq_of_r_le_r_subset_of_r_fin (M.to_r_fin X) hFX hr  
+-- -- (hXE : X ⊆ M.E . ssE) : F = X := hF.eq_of_r_le_r_subset_of_rFin (M.to_rFin X) hFX hr  
 -- -- lemma flat.eq_ground_of_rk_le_r [finite_rk M] (hF : M.flat F) (hr : M.rk ≤ M.r F) : F = M.E :=
 -- -- hF.eq_of_le_r_subset hF.subset_ground hr
 -- -- lemma flat.r_eq_rk_iff_eq_ground [finite_rk M] (hF : M.flat F) : M.r F = M.rk ↔ F = M.E :=
 -- -- ⟨λ h, hF.eq_ground_of_rk_le_r h.symm.le, by { rintro rfl, refl }⟩
--- -- lemma r_fin.mem_cl_iff_r_insert (hX : M.r_fin X) (he : e ∈ M.E . ssE) : 
+-- -- lemma rFin.mem_cl_iff_r_insert (hX : M.rFin X) (he : e ∈ M.E . ssE) : 
 -- --   e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
 -- -- by rw [←not_iff_not, ←ne.def, not_mem_iff_mem_diff_of_mem he, ←r_insert_eq_add_one_iff_r_ne, 
--- --     ←r_insert_cl_eq_r_insert, ←M.r_cl X, (M.flat_of_cl X).mem_compl_iff_r_insert_of_r_fin hX.to_cl]
--- -- lemma r_fin.not_mem_cl_iff_r_insert (hX : M.r_fin X) :
+-- --     ←r_insert_cl_eq_r_insert, ←M.r_cl X, (M.flat_of_cl X).mem_compl_iff_r_insert_of_rFin hX.to_cl]
+-- -- lemma rFin.not_mem_cl_iff_r_insert (hX : M.rFin X) :
 -- --   e ∈ M.E \ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
 -- -- begin
 -- --   rw [r_insert_eq_add_one_iff_r_ne, ne.def], 
@@ -1478,10 +1422,10 @@ end Matroid
 -- -- lemma mem_cl_iff_r_insert [finite_rk M] (X : set α) (he : e ∈ M.E . ssE) : 
 -- --   e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
 -- -- by rw [cl_eq_cl_inter_ground, r_eq_r_inter_ground, insert_inter_of_mem he, 
--- --       M.r_eq_r_inter_ground X, (M.to_r_fin (X ∩ M.E)).mem_cl_iff_r_insert]
+-- --       M.r_eq_r_inter_ground X, (M.to_rFin (X ∩ M.E)).mem_cl_iff_r_insert]
 -- -- lemma mem_compl_cl_iff_r_insert [finite_rk M] : e ∈ M.E \ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
 -- -- by rw [r_insert_inter_ground, cl_eq_cl_inter_ground, M.r_eq_r_inter_ground X, 
--- --     (M.to_r_fin (X ∩ M.E)).not_mem_cl_iff_r_insert]
+-- --     (M.to_rFin (X ∩ M.E)).not_mem_cl_iff_r_insert]
 -- -- lemma subset_cl_iff_r_union_eq_r [finite_rk M] (hX : X ⊆ M.E . ssE) : 
 -- --   X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
 -- -- begin
@@ -1526,7 +1470,7 @@ end Matroid
 -- --   rw r_le_iff_cl,
 -- --   tauto, 
 -- -- end
--- -- lemma flat.covby_iff_r_of_r_fin (hF : M.flat F) (hFfin : M.r_fin F) (hF' : M.flat F') :
+-- -- lemma flat.covby_iff_r_of_rFin (hF : M.flat F) (hFfin : M.rFin F) (hF' : M.flat F') :
 -- --   M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
 -- -- begin
 -- --   rw hF.covby_iff_eq_cl_insert, 
@@ -1534,18 +1478,18 @@ end Matroid
 -- --   { rintro ⟨e, he, rfl⟩,
 -- --     rw [and_iff_right 
 -- --       (M.subset_cl_of_subset (subset_insert e F) (insert_subset.mpr ⟨he.1, hF.subset_ground⟩)), 
--- --       r_cl, (hF.mem_compl_iff_r_insert_of_r_fin hFfin).mp he],  }, 
+-- --       r_cl, (hF.mem_compl_iff_r_insert_of_rFin hFfin).mp he],  }, 
 -- --   have hss : F ⊂ F', from h.1.ssubset_of_ne (by { rintro rfl, simpa using h.2 }), 
 -- --   obtain ⟨e, heF', heF⟩ := exists_of_ssubset hss, 
 -- --   refine ⟨e, ⟨hF'.subset_ground heF',heF⟩, 
--- --     ((M.flat_of_cl _).eq_of_r_le_r_subset_of_r_fin _ _ _).symm⟩, 
--- --   { refine r_fin_of_r_ne_zero _, rw h.2, exact nat.succ_ne_zero _ },
+-- --     ((M.flat_of_cl _).eq_of_r_le_r_subset_of_rFin _ _ _).symm⟩, 
+-- --   { refine rFin_of_r_ne_zero _, rw h.2, exact nat.succ_ne_zero _ },
 -- --   { exact hF'.cl_subset_of_subset (insert_subset.mpr ⟨heF', h.1⟩) },
--- --   rw [h.2, r_cl, hF.r_insert_of_mem_compl_of_r_fin ⟨hF'.subset_ground heF',heF⟩ hFfin], 
+-- --   rw [h.2, r_cl, hF.r_insert_of_mem_compl_of_rFin ⟨hF'.subset_ground heF',heF⟩ hFfin], 
 -- -- end 
 -- -- lemma flat.covby_iff_r [finite_rk M] (hF : M.flat F) (hF' : M.flat F') : 
 -- --   M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
--- -- hF.covby_iff_r_of_r_fin (M.to_r_fin F) hF'  
+-- -- hF.covby_iff_r_of_rFin (M.to_rFin F) hF'  
 -- -- lemma hyperplane_iff_maximal_r [finite_rk M] (hH : H ⊆ M.E . ssE) : 
 -- --   M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → X ⊆ M.E → M.r X = M.rk :=
 -- -- begin
@@ -1572,7 +1516,7 @@ end Matroid
 -- --   nat.lt_one_iff]
 -- -- lemma loop.r (he : M.loop e) : M.r {e} = 0 := loop_iff_r.mp he 
 -- -- lemma r_eq_zero_iff_subset_loops [finite_rk M] (hX : X ⊆ M.E . ssE) : M.r X = 0 ↔ X ⊆ M.cl ∅ :=
--- -- (M.to_r_fin X).r_eq_zero_iff_subset_loops
+-- -- (M.to_rFin X).r_eq_zero_iff_subset_loops
 -- -- lemma r_eq_zero_iff_inter_ground_subset_loops [finite_rk M] : M.r X = 0 ↔ X ∩ M.E ⊆ M.cl ∅ :=
 -- -- by rw [←r_eq_zero_iff_subset_loops, r_eq_r_inter_ground]
 -- -- lemma r_eq_zero_iff_forall_loop [finite_rk M] (hX : X ⊆ M.E . ssE) :
@@ -1611,14 +1555,14 @@ end Matroid
 -- -- section flat_of_r
 -- -- variables {F F' P L : set α}
 -- -- /-- `M.flat_of_r k F` means that `F` is a flat in `r` with finite rank `k`. -/
--- -- def flat_of_r (M : matroid_in α) (k : ℕ) (F : set α) := M.flat F ∧ M.r F = k ∧ M.r_fin F  
+-- -- def flat_of_r (M : matroid_in α) (k : ℕ) (F : set α) := M.flat F ∧ M.r F = k ∧ M.rFin F  
 -- -- lemma flat_of_r.flat (h : M.flat_of_r k F) : M.flat F := h.1 
 -- -- @[ssE_finish_rules] lemma flat_of_r.subset_ground (h : M.flat_of_r k F) : F ⊆ M.E :=
 -- -- h.flat.subset_ground 
 -- -- lemma flat_of_r.r (h : M.flat_of_r k F) : M.r F = k := h.2.1 
--- -- lemma flat_of_r.r_fin (h : M.flat_of_r k F) : M.r_fin F := h.2.2 
+-- -- lemma flat_of_r.rFin (h : M.flat_of_r k F) : M.rFin F := h.2.2 
 -- -- lemma flat.flat_of_r_of_ne_zero (hF : M.flat F) (hk : M.r F ≠ 0) : M.flat_of_r (M.r F) F :=
--- -- ⟨hF, rfl, r_fin_of_r_ne_zero hk⟩  
+-- -- ⟨hF, rfl, rFin_of_r_ne_zero hk⟩  
 -- -- lemma flat.flat_of_r_of_ne_zero' (hF : M.flat F) (hr : M.r F = k) (hk : k ≠ 0) : 
 -- --   M.flat_of_r (M.r F) F :=
 -- -- hF.flat_of_r_of_ne_zero (by { subst hr, assumption } )   
@@ -1629,10 +1573,10 @@ end Matroid
 -- --   refine ⟨λ h,_, _⟩,
 -- --   { obtain ⟨I, hI⟩ := M.exists_basis F, 
 -- --     have hc := hI.card, 
--- --     rw [h.r, ncard_eq_zero (hI.finite_of_r_fin h.r_fin)] at hc, subst hc, 
+-- --     rw [h.r, ncard_eq_zero (hI.finite_of_rFin h.rFin)] at hc, subst hc, 
 -- --     rw [←h.flat.cl, hI.cl] },
 -- --   rintro rfl, 
--- --   exact ⟨M.flat_of_cl _, by simp, M.r_fin_empty.to_cl⟩,   
+-- --   exact ⟨M.flat_of_cl _, by simp, M.rFin_empty.to_cl⟩,   
 -- -- end
 -- -- lemma loops_flat_of_r_zero (M : matroid_in α) : M.flat_of_r 0 (M.cl ∅) :=
 -- -- by rw flat_of_r_zero_iff_loops
@@ -1641,9 +1585,9 @@ end Matroid
 -- --   refine (em (M.flat F')).symm.elim (λ hF', iff_of_false (mt covby.flat_right hF') _) (λ hF', _), 
 -- --   { exact mt (λ h, h.1.flat) hF' },
 -- --   have hr := hF.r, subst hr, 
--- --   simp_rw [hF.flat.covby_iff_r_of_r_fin hF.r_fin hF', flat_of_r, and_comm, and.congr_right_iff, 
+-- --   simp_rw [hF.flat.covby_iff_r_of_rFin hF.rFin hF', flat_of_r, and_comm, and.congr_right_iff, 
 -- --     ← and_assoc, iff_and_self, and_iff_right hF'], 
--- --   refine λ h hF', r_fin_of_r_ne_zero _, 
+-- --   refine λ h hF', rFin_of_r_ne_zero _, 
 -- --   rw hF', 
 -- --   simp,  
 -- -- end 
@@ -1840,7 +1784,7 @@ end Matroid
 -- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
 -- theorem le_er_iff {n : ℕ∞} : n ≤ M.er X ↔ ∃ (I : _) (_ : I ⊆ X), M.indep I ∧ I.encard = n :=
 --   by
---   rw [er_eq_er_inter_ground]
+--   rw [er_inter_ground_eq]
 --   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
 --   rw [← hI.encard]
 --   refine' ⟨fun h => _, fun h => _⟩
@@ -1855,6 +1799,6 @@ end Matroid
 --   by
 --   refine' ⟨fun h I hIX hI => (hI.encard_le_er_of_subset hIX).trans h, fun h => _⟩
 --   obtain ⟨J, hJ⟩ := M.exists_basis (X ∩ M.E)
---   rw [er_eq_er_inter_ground, ← hJ.encard]
+--   rw [er_inter_ground_eq, ← hJ.encard]
 --   exact h J (hJ.subset.trans (inter_subset_left _ _)) hJ.indep
 -- #align matroid_in.er_le_iff Matroid.er_le_iff

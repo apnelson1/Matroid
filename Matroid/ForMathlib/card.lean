@@ -1,9 +1,7 @@
 import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Nat.Cast.WithTop
 
-instance : WellFoundedRelation ℕ∞ where
-  rel := (· < ·)
-  wf := IsWellFounded.wf
+
 
 
 
@@ -13,6 +11,10 @@ instance : WellFoundedRelation ℕ∞ where
 -- theorem WithTop.eq_top_or_exists_eq_coe {α : Type _} (a : WithTop α) : a = ⊤ ∨ ∃ (a₀ : α), a₀ = a := 
 --   Option.eq_none_or_exists_eq_coe a
 
+instance : WellFoundedRelation ℕ∞ where
+  rel := (· < ·)
+  wf := IsWellFounded.wf
+
 theorem ENat.le_coe_iff {n : ℕ∞} {k : ℕ} : n ≤ ↑k ↔ ∃ (n₀ : ℕ), n = n₀ ∧ n₀ ≤ k :=
   WithTop.le_coe_iff
 
@@ -20,27 +22,33 @@ theorem PartENat.card_sum (α β : Type _) :
     PartENat.card (α ⊕ β) = PartENat.card α + PartENat.card β := by
   simp only [PartENat.card, Cardinal.mk_sum, map_add, Cardinal.toPartENat_lift]
 
+
 namespace Set
 
-theorem Function.invFunOn_injOn_image [Nonempty α] (f : α → β) (s : Set α) : 
-    Set.InjOn (Function.invFunOn f s) (f '' s) := by
+
+open Function
+
+theorem invFunOn_injOn_image [Nonempty α] (f : α → β) (s : Set α) : 
+    Set.InjOn (invFunOn f s) (f '' s) := by
   rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ he
-  rw [←Function.invFunOn_apply_eq (f := f) hx, he, Function.invFunOn_apply_eq (f := f) hx']
+  rw [←invFunOn_apply_eq (f := f) hx, he, invFunOn_apply_eq (f := f) hx']
 
-theorem Function.invFunOn_image_image_subset [Nonempty α] (f : α → β) (s : Set α) : 
-    (Function.invFunOn f s) '' (f '' s) ⊆ s := by 
-  rintro _ ⟨_, ⟨x,hx,rfl⟩, rfl⟩; exact Function.invFunOn_apply_mem hx
+theorem invFunOn_image_image_subset [Nonempty α] (f : α → β) (s : Set α) : 
+    (invFunOn f s) '' (f '' s) ⊆ s := by 
+  rintro _ ⟨_, ⟨x,hx,rfl⟩, rfl⟩; exact invFunOn_apply_mem hx
 
-theorem Function.injOn_iff_invFunOn_image_image_eq_self [Nonempty α] {f : α → β} {s : Set α} : 
-    InjOn f s ↔ (Function.invFunOn f s) '' (f '' s) = s := by 
-  refine' ⟨fun h ↦ _, fun h ↦ _⟩
-  · rw [h.invFunOn_image Subset.rfl]
+theorem injOn_iff_invFunOn_image_image_eq_self [Nonempty α] {f : α → β} {s : Set α} : 
+    InjOn f s ↔ (invFunOn f s) '' (f '' s) = s := by 
+  refine ⟨fun h ↦ by rw [h.invFunOn_image Subset.rfl], fun h ↦ ?_⟩
   rw [InjOn, ←h]
   rintro _ ⟨_, ⟨x,hx,rfl⟩, rfl⟩ _ ⟨_, ⟨x',hx',rfl⟩, rfl⟩ h
-  rw [Function.invFunOn_apply_eq (f := f) hx, Function.invFunOn_apply_eq (f := f) hx'] at h
+  rw [invFunOn_apply_eq (f := f) hx, invFunOn_apply_eq (f := f) hx'] at h
   rw [h]
 
-  
+
+
+
+
 variable {s t : Set α}
 
 noncomputable def encard (s : Set α) := PartENat.withTopEquiv (PartENat.card s)
@@ -368,17 +376,17 @@ theorem encard_le_of_embedding (e : s ↪ t) : s.encard ≤ t.encard := by
 theorem encard_image_le (f : α → β) (s : Set α) : (f '' s).encard ≤ s.encard := by 
   obtain (h | h) := isEmpty_or_nonempty α 
   · rw [s.eq_empty_of_isEmpty]; simp
-  rw [←encard_image_of_injOn (Function.invFunOn_injOn_image f s)]
+  rw [←encard_image_of_injOn (invFunOn_injOn_image f s)]
   apply encard_le_of_subset
-  exact Function.invFunOn_image_image_subset f s
+  exact invFunOn_image_image_subset f s
   
 theorem Finite.injOn_of_encard_image_eq (hs : s.Finite) (h : (f '' s).encard = s.encard) :
     InjOn f s := by 
   obtain (h' | hne) := isEmpty_or_nonempty α 
   · rw [s.eq_empty_of_isEmpty]; simp
-  rw [←encard_image_of_injOn (Function.invFunOn_injOn_image f s)] at h
-  rw [Function.injOn_iff_invFunOn_image_image_eq_self]
-  exact hs.eq_of_subset_of_encard_le (Function.invFunOn_image_image_subset f s) h.symm.le
+  rw [←encard_image_of_injOn (invFunOn_injOn_image f s)] at h
+  rw [injOn_iff_invFunOn_image_image_eq_self]
+  exact hs.eq_of_subset_of_encard_le (invFunOn_image_image_subset f s) h.symm.le
   
 theorem encard_preimage_of_injective_subset_range {f : α → β} {s : Set β} (hf : f.Injective) 
     (hs : s ⊆ range f) : (f ⁻¹' s).encard = s.encard := by 
