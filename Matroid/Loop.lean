@@ -243,6 +243,9 @@ theorem Coloop.dual_loop (he : M.Coloop e) : M﹡.Loop e :=
 theorem Coloop.cocircuit (he : M.Coloop e) : M.Cocircuit {e} := 
   Loop.circuit he
 
+@[simp] theorem singleton_cocircuit : M.Cocircuit {e} ↔ M.Coloop e := 
+  singleton_circuit
+
 theorem Loop.dual_coloop (he : M.Loop e) : M﹡.Coloop e := 
   by rwa [Coloop, dual_dual]
 
@@ -327,7 +330,7 @@ theorem cl_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M﹡.cl ∅) : M.
     ←inter_eq_self_of_subset_right hK, ←inter_assoc, cl_inter_coloops_eq, 
     inter_assoc] 
 
-theorem cl_insert_coloop_eq (X : Set α) {he : M.Coloop e} :
+theorem cl_insert_coloop_eq (X : Set α) (he : M.Coloop e) :
     M.cl (insert e X) = insert e (M.cl X) := by
   rw [ subset_antisymm_iff, insert_subset_iff, and_iff_left (M.cl_subset_cl (subset_insert _ _)), 
     and_iff_left (M.mem_cl_of_mem' (mem_insert _ _)), ←union_singleton (s := M.cl X), 
@@ -336,7 +339,7 @@ theorem cl_insert_coloop_eq (X : Set α) {he : M.Coloop e} :
   simp [insert_eq_of_mem heX] at hf
 
 theorem cl_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M﹡.cl ∅) : 
-    M.cl (X ∪ K) = M.cl X ∪ K := by 
+    M.cl (X ∪ K) = M.cl X ∪ K := by     
   rw [← cl_union_cl_left_eq]
   refine' (M.subset_cl _).antisymm' fun e he ↦ _
   obtain he' | ⟨C, hC, heC, hCss⟩ := (mem_cl_iff_mem_or_exists_circuit 
@@ -374,99 +377,57 @@ theorem cl_disjoint_coloops_of_disjoint_coloops (hX : Disjoint X (M﹡.cl ∅)) 
     Disjoint (M.cl X) (M﹡.cl ∅) :=
   cl_disjoint_of_disjoint_of_subset_coloops hX Subset.rfl  
 
+theorem cl_union_coloops_eq (M : Matroid α) (X : Set α) : M.cl (X ∪ M﹡.cl ∅) = M.cl X ∪ M﹡.cl ∅ :=
+  cl_union_eq_of_subset_coloops _ Subset.rfl
 
-  
+theorem Coloop.not_mem_cl_of_not_mem (he : M.Coloop e) (hX : e ∉ X) : e ∉ M.cl X :=
+  mt he.mem_cl_iff_mem.mp hX
 
-  
-  
-  -- rw [← union_singleton, ← union_singleton, cl_union_eq_of_subset_coloops]
-  -- rwa [singleton_subset_iff]
+theorem Coloop.insert_indep_of_indep (he : M.Coloop e) (hI : M.Indep I) : M.Indep (insert e I) := by
+  refine (em (e ∈ I)).elim (fun h ↦ by rwa [insert_eq_of_mem h]) fun h ↦ ?_
+  rw [←hI.not_mem_cl_iff_of_not_mem h]
+  exact he.not_mem_cl_of_not_mem h
 
+theorem union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) :
+    M.Indep (I ∪ K) ↔ M.Indep I := by
+  refine ⟨fun h ↦ h.subset (subset_union_left I K), fun h ↦ ?_⟩
+  obtain ⟨B, hB, hIB⟩ := h.exists_base_supset
+  exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ Coloop.mem_of_base he hB))
 
+theorem diff_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) :
+    M.Indep (I \ K) ↔ M.Indep I := by
+  rw [← union_indep_iff_indep_of_subset_coloops hK, diff_union_self,
+    union_indep_iff_indep_of_subset_coloops hK]
 
+theorem indep_iff_union_coloops_indep : M.Indep I ↔ M.Indep (I ∪ M﹡.cl ∅) :=
+  (union_indep_iff_indep_of_subset_coloops Subset.rfl).symm
 
+theorem indep_iff_diff_coloops_indep : M.Indep I ↔ M.Indep (I \ M﹡.cl ∅) :=
+  (diff_indep_iff_indep_of_subset_coloops Subset.rfl).symm
 
+theorem coloops_indep (M : Matroid α) : M.Indep (M﹡.cl ∅) := by
+  rw [indep_iff_diff_coloops_indep, diff_self]; exact M.empty_indep
 
--- #align matroid_in.cl_diff_eq_of_subset_coloops Matroid.cl_diff_eq_of_subset_coloops
+theorem indep_of_subset_coloops (h : I ⊆ M﹡.cl ∅) : M.Indep I :=
+  M.coloops_indep.subset h
 
--- 
--- #align matroid_in.cl_disjoint_of_disjoint_of_subset_coloops Matroid.cl_disjoint_of_disjoint_of_subset_coloops
+/-- If two matroids agree on loops and coloops, and have the same independent sets after 
+  loops/coloops are removed, they are equal. -/
+theorem eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+    (hl : M₁.cl ∅ = M₂.cl ∅) (hc : M₁﹡.cl ∅ = M₂﹡.cl ∅)
+    (h : ∀ I, I ⊆ M₁.E → Disjoint I (M₁.cl ∅ ∪ M₁﹡.cl ∅) → (M₁.Indep I ↔ M₂.Indep I)) :
+    M₁ = M₂ := by
+  refine' eq_of_indep_iff_indep_forall hE fun I hI ↦ _
+  rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ← hc]
+  obtain hdj | hndj := em (Disjoint I (M₁.cl ∅))
+  · rw [h _ ((diff_subset _ _).trans hI)]
+    rw [disjoint_union_right]
+    exact ⟨disjoint_of_subset_left (diff_subset _ _) hdj, disjoint_sdiff_left⟩
+  obtain ⟨e, heI, hel : M₁.Loop e⟩ := not_disjoint_iff_nonempty_inter.mp hndj
+  refine' iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) _
+  rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
+  exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
 
-
--- #align matroid_in.cl_disjoint_coloops_of_disjoint_coloops Matroid.cl_disjoint_coloops_of_disjoint_coloops
-
-
--- #align matroid_in.cl_insert_coloop_eq Matroid.cl_insert_coloop_eq
-
--- @[simp]
--- theorem cl_union_coloops_eq (M : Matroid α) (X : Set α) : M.cl (X ∪ M﹡.cl ∅) = M.cl X ∪ M﹡.cl ∅ :=
---   cl_union_eq_of_subset_coloops _ Subset.rfl
--- #align matroid_in.cl_union_coloops_eq Matroid.cl_union_coloops_eq
-
--- theorem Coloop.not_mem_cl_of_not_mem (he : M.Coloop e) (hX : e ∉ X) : e ∉ M.cl X :=
---   mt he.mem_cl_iff_mem.mp hX
--- #align matroid_in.coloop.not_mem_cl_of_not_mem Matroid.Coloop.not_mem_cl_of_not_mem
-
--- theorem Coloop.insert_indep_of_indep (he : M.Coloop e) (hI : M.Indep I) : M.Indep (insert e I) :=
---   (em (e ∈ I)).elim (fun h ↦ by rwa [insert_eq_of_mem h]) fun h ↦ by
---     rwa [hI.insert_indep_iff_of_not_mem h, he.mem_cl_iff_mem]
--- #align matroid_in.coloop.insert_indep_of_indep Matroid.Coloop.insert_indep_of_indep
-
--- theorem union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.Indep (I ∪ K) ↔ M.Indep I :=
---   by
---   refine' ⟨fun h ↦ h.Subset (subset_union_left I K), fun h ↦ _⟩
---   obtain ⟨B, hB, hIB⟩ := h.exists_base_supset
---   exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ coloop.mem_of_base he hB))
--- #align matroid_in.union_indep_iff_indep_of_subset_coloops Matroid.union_indep_iff_indep_of_subset_coloops
-
--- theorem diff_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.Indep (I \ K) ↔ M.Indep I :=
---   by
---   rw [← union_indep_iff_indep_of_subset_coloops hK, diff_union_self,
---     union_indep_iff_indep_of_subset_coloops hK]
--- #align matroid_in.diff_indep_iff_indep_of_subset_coloops Matroid.diff_indep_iff_indep_of_subset_coloops
-
--- theorem indep_iff_union_coloops_indep : M.Indep I ↔ M.Indep (I ∪ M﹡.cl ∅) :=
---   (union_indep_iff_indep_of_subset_coloops Subset.rfl).symm
--- #align matroid_in.indep_iff_union_coloops_indep Matroid.indep_iff_union_coloops_indep
-
--- theorem indep_iff_diff_coloops_indep : M.Indep I ↔ M.Indep (I \ M﹡.cl ∅) :=
---   (diff_indep_iff_indep_of_subset_coloops Subset.rfl).symm
--- #align matroid_in.indep_iff_diff_coloops_indep Matroid.indep_iff_diff_coloops_indep
-
--- theorem coloops_indep (M : Matroid α) : M.Indep (M﹡.cl ∅) := by
---   rw [indep_iff_diff_coloops_indep, diff_self]; exact M.empty_indep
--- #align matroid_in.coloops_indep Matroid.coloops_indep
-
--- theorem indep_of_subset_coloops (h : I ⊆ M﹡.cl ∅) : M.Indep I :=
---   M.coloops_indep.Subset h
--- #align matroid_in.indep_of_subset_coloops Matroid.indep_of_subset_coloops
-
--- theorem Coloop.cocircuit (he : M.Coloop e) : M.Cocircuit {e} := by
---   rwa [← dual_loop_iff_coloop, loop_iff_circuit, dual_circuit_iff_cocircuit] at he 
--- #align matroid_in.coloop.cocircuit Matroid.Coloop.cocircuit
-
--- theorem coloop_iff_cocircuit : M.Coloop e ↔ M.Cocircuit {e} := by
---   rw [← dual_loop_iff_coloop, loop_iff_circuit, dual_circuit_iff_cocircuit]
--- #align matroid_in.coloop_iff_cocircuit Matroid.coloop_iff_cocircuit
-
--- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » M₁.E) -/
--- /-- If two matroid_ins agree on loops and coloops, and have the same independent sets after 
---   loops/coloops are removed, they are equal. -/
--- theorem eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.e = M₂.e)
---     (hl : M₁.cl ∅ = M₂.cl ∅) (hc : M₁﹡.cl ∅ = M₂﹡.cl ∅)
---     (h : ∀ (I) (_ : I ⊆ M₁.e), Disjoint I (M₁.cl ∅ ∪ M₁﹡.cl ∅) → (M₁.indep I ↔ M₂.indep I)) :
---     M₁ = M₂ := by
---   refine' eq_of_indep_iff_indep_forall hE fun I hI ↦ _
---   rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ← hc]
---   obtain hdj | hndj := em (Disjoint I (M₁.cl ∅))
---   · rw [h _ ((diff_subset _ _).trans hI)]
---     rw [disjoint_union_right]
---     exact ⟨disjoint_of_subset_left (diff_subset _ _) hdj, disjoint_sdiff_left⟩
---   obtain ⟨e, heI, hel : M₁.loop e⟩ := not_disjoint_iff_nonempty_inter.mp hndj
---   refine' iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) _
---   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
---   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
--- #align matroid_in.eq_of_indep_iff_indep_forall_disjoint_loops_coloops Matroid.eq_of_indep_iff_indep_forall_disjoint_loops_coloops
 
 end Matroid
 

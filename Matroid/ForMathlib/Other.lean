@@ -30,6 +30,14 @@ lemma Set.InjOn.image_diff {f : α → β} (h : InjOn f s) (hst : t ⊆ s) :
     f '' (s \ t) = f '' s \ f '' t := by
   rw [h.image_diff', inter_eq_self_of_subset_right hst]
 
+section Lattice
+
+lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
+  have := hX.to_subtype
+  simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range, 
+    Subtype.range_coe_subtype, setOf_mem_eq]
+  
+  
   
 
 

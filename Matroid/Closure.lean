@@ -96,8 +96,8 @@ theorem cl_mono (M : Matroid α) : Monotone M.cl :=
   fun _ _ ↦ M.cl_subset_cl 
 
 @[simp] theorem cl_cl (M : Matroid α) (X : Set α) : M.cl (M.cl X) = M.cl X :=
-  (M.subset_cl _).antisymm'
-    (subset_sInter (fun F hF ↦ (cl_subset_cl _ (sInter_subset_of_mem hF)).trans hF.1.cl.subset)) 
+  (M.subset_cl _).antisymm' (subset_sInter 
+    (fun F hF ↦ (cl_subset_cl _  (sInter_subset_of_mem hF)).trans hF.1.cl.subset)) 
     
 theorem cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
     (M.cl_subset_cl hXY).trans_eq (M.cl_cl Y)
@@ -125,27 +125,6 @@ theorem mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aes
 -- @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he 
 
-@[simp] theorem cl_union_cl_right_eq (M : Matroid α) (X Y : Set α) : 
-    M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) := by
-  rw [cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground (X ∪ Y), inter_distrib_right, 
-   inter_distrib_right, subset_antisymm_iff] 
-  refine' ⟨M.cl_subset_cl_of_subset_cl 
-            (union_subset (M.subset_cl_of_subset (subset_union_left _ _)) _), 
-              M.cl_subset_cl_of_subset_cl 
-            (union_subset (M.subset_cl_of_subset (subset_union_left _ _)) _)⟩ 
-  · rw [←inter_distrib_right, ←cl_eq_cl_inter_ground]
-    exact (inter_subset_left _ _).trans (M.cl_subset_cl (subset_union_right _ _))
-  refine' M.subset_cl_of_subset (subset_union_of_subset_right _ _)
-  rw [cl_eq_cl_inter_ground]
-  exact subset_inter (M.subset_cl _) (inter_subset_right _ _)
-
-@[simp] theorem cl_union_cl_left_eq (M : Matroid α) (X Y : Set α) :
-    M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y) := by
-  rw [union_comm, cl_union_cl_right_eq, union_comm]
-
-@[simp] theorem cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
-    M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by rw [cl_union_cl_left_eq, cl_union_cl_right_eq]
-
 theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) : 
     M.cl (⋃ i, M.cl (Xs i)) = M.cl (⋃ i, Xs i) := by 
   refine (M.cl_subset_cl_of_subset_cl 
@@ -155,21 +134,23 @@ theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
   rw [←cl_eq_cl_inter_ground]
   exact subset_iUnion (fun i ↦ M.cl (Xs i)) i
     
-theorem cl_bUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) : 
+theorem cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) : 
     M.cl (⋃ X ∈ Xs, M.cl X) = M.cl (⋃₀ Xs) := by 
-  refine subset_antisymm (M.cl_subset_cl_of_subset_cl (?_)) ?_
-  · simp_rw [iUnion_subset_iff]; exact fun X hX ↦ M.cl_subset_cl (subset_sUnion_of_mem hX) 
-  rw [cl_eq_cl_inter_ground, sUnion_eq_iUnion, iUnion_inter] 
-  refine' M.cl_subset_cl (iUnion_subset (fun ⟨X,hX⟩ ↦ (M.subset_cl _).trans _))
-  rw [←cl_eq_cl_inter_ground]
-  exact subset_biUnion_of_mem hX
+  rw [sUnion_eq_iUnion, biUnion_eq_iUnion, cl_iUnion_cl_eq_cl_iUnion]
 
-@[simp] theorem cl_cl_union_cl_eq_cl_union' (M : Matroid α) (X Y : Set α) :
-    M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by
+@[simp] theorem cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
+    M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by 
   rw [eq_comm, union_eq_iUnion, ←cl_iUnion_cl_eq_cl_iUnion, union_eq_iUnion]
-  convert rfl using 2; ext; simp
-
+  simp_rw [Bool.cond_eq_ite, apply_ite]
   
+@[simp] theorem cl_union_cl_right_eq (M : Matroid α) (X Y : Set α) : 
+    M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) := by
+  rw [←cl_cl_union_cl_eq_cl_union, cl_cl, cl_cl_union_cl_eq_cl_union]
+  
+@[simp] theorem cl_union_cl_left_eq (M : Matroid α) (X Y : Set α) :
+    M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y) := by
+  rw [←cl_cl_union_cl_eq_cl_union, cl_cl, cl_cl_union_cl_eq_cl_union]
+
 @[simp] theorem cl_insert_cl_eq_cl_insert (M : Matroid α) (e : α) (X : Set α) :
     M.cl (insert e (M.cl X)) = M.cl (insert e X) := by
   simp_rw [← singleton_union, cl_union_cl_right_eq]
@@ -223,6 +204,9 @@ theorem Basis.cl_eq_cl (h : M.Basis I X) : M.cl I = M.cl X := by
   refine' subset_antisymm (M.cl_subset_cl h.subset) _
   rw [←M.cl_cl I, h.indep.cl_eq_setOf_basis_insert]
   exact M.cl_subset_cl fun e he ↦ (h.basis_subset (subset_insert _ _) (insert_subset he h.subset))
+
+theorem Basis'.cl_eq_cl (h : M.Basis' I X) : M.cl I = M.cl X := by 
+  rw [cl_eq_cl_inter_ground _ X, h.basis_inter_ground.cl_eq_cl]
 
 theorem Basis.subset_cl (h : M.Basis I X) : X ⊆ M.cl I := by 
   rw [←cl_subset_cl_iff_subset_cl, h.cl_eq_cl]

@@ -47,7 +47,7 @@ class Finite (M : Matroid α) : Prop where (ground_finite : M.E.Finite)
 theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite :=
   ‹M.Finite›.ground_finite   
 
-theorem Set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
+theorem set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
   M.ground_finite.subset hX 
 
 instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M := 
@@ -57,7 +57,7 @@ instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M :=
 class FiniteRk (M : Matroid α) : Prop := (exists_finite_base : ∃ B, M.Base B ∧ B.Finite) 
 
 instance finiteRk_of_finite (M : Matroid α) [Finite M] : FiniteRk M := 
-  ⟨ M.exists_base'.imp (fun B hB ↦ ⟨hB, M.Set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
+  ⟨ M.exists_base'.imp (fun B hB ↦ ⟨hB, M.set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
 
 /-- An `InfiniteRk` matroid is one whose Bases are infinite. -/
 class InfiniteRk (M : Matroid α) : Prop := (exists_infinite_base : ∃ B, M.Base B ∧ B.Infinite)
@@ -448,7 +448,6 @@ section Basis
 @[pp_dot] def Basis' (M : Matroid α) (I X : Set α) : Prop := 
   I ∈ maximals (· ⊆ ·) {A | M.Indep A ∧ A ⊆ X}
 
-
 /-- A Basis for a set `X ⊆ M.E` is a maximal independent subset of `X`
   (Often in the literature, the word 'Basis' is used to refer to what we call a 'Base'). -/
 @[pp_dot] def Basis (M : Matroid α) (I X : Set α) : Prop := 
@@ -509,6 +508,9 @@ theorem basis'_iff_basis_inter_ground : M.Basis' I X ↔ M.Basis I (X ∩ M.E) :
   ext I 
   simp only [subset_inter_iff, mem_setOf_eq, and_congr_right_iff, and_iff_left_iff_imp]
   exact fun h _ ↦ h.subset_ground
+
+theorem basis'_iff_basis (hX : X ⊆ M.E := by aesop_mat) : M.Basis' I X ↔ M.Basis I X := by 
+  rw [basis'_iff_basis_inter_ground, inter_eq_self_of_subset_left hX]
 
 theorem Basis'.basis_inter_ground (hIX : M.Basis' I X) : M.Basis I (X ∩ M.E) :=
   basis'_iff_basis_inter_ground.mp hIX
