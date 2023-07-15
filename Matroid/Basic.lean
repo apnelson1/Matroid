@@ -31,7 +31,6 @@ def Matroid.ExistsMaximalSubsetProperty {α : Type _} (P : Set α → Prop) (X :
 
 namespace Matroid
 
-
 variable {α : Type _} {M : Matroid α} 
 
 attribute [pp_dot] Base

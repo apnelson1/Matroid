@@ -326,6 +326,31 @@ instance restrict_finiteRk [M.FiniteRk] : (M ↾ R).FiniteRk :=
 theorem Basis.basis_restrict_of_subset (hI : M.Basis I X) (hXY : X ⊆ Y) : (M ↾ Y).Basis I X := by
   rwa [←restrict_base_iff, M.restrict_restrict_eq hXY, restrict_base_iff]
 
+theorem basis_restrict_iff' : (M ↾ R).Basis I X ↔ M.Basis I (X ∩ M.E) ∧ X ⊆ R := by 
+  refine' ⟨fun h ↦ ⟨_, h.subset_ground⟩, fun h ↦ _⟩
+  · rw [basis_iff', and_iff_right h.indep.of_restrict, and_iff_left (inter_subset_right _ _)]
+    simp_rw [basis_iff', restrict_indep_iff, restrict_ground_eq] at h
+    exact ⟨subset_inter h.1.2.1 h.1.1.1.subset_ground, 
+      fun J hJ hIJ hJX ↦ h.1.2.2 J ⟨hJ, (hJX.trans ((inter_subset_left _ _).trans h.2))⟩ hIJ 
+      (hJX.trans (inter_subset_left _ _)) ⟩ 
+  have' hb' := h.1.basis_restrict_of_subset ((inter_subset_left _ _).trans h.2)
+  rw [basis_iff]; simp_rw [restrict_indep_iff, and_imp]
+  exact ⟨⟨h.1.indep, hb'.indep.subset_ground⟩, hb'.subset.trans (inter_subset_left _ _), 
+    fun J hJ _ hIJ hJX ↦ h.1.eq_of_subset_indep hJ hIJ (subset_inter hJX hJ.subset_ground)⟩ 
+
+theorem basis_restrict_iff (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Basis I X ↔ M.Basis I X ∧ X ⊆ R := by
+  rw [basis_restrict_iff', and_congr_left_iff]
+  intro hXR
+  rw [←basis'_iff_basis_inter_ground, basis'_iff_basis]
+
+theorem restrict_eq_restrict_iff (M M' : Matroid α) (X : Set α) : 
+    M ↾ X = M' ↾ X ↔ ∀ I, I ⊆ X → (M.Indep I ↔ M'.Indep I) := by 
+  refine' ⟨fun h I hIX ↦ _, fun h ↦ eq_of_indep_iff_indep_forall rfl fun I (hI : I ⊆ X) ↦ _⟩
+  · rw [←and_iff_left (a := (M.Indep I)) hIX, ←and_iff_left (a := (M'.Indep I)) hIX, 
+      ←restrict_indep_iff, h, restrict_indep_iff]
+  rw [restrict_indep_iff, and_iff_left hI, restrict_indep_iff, and_iff_left hI, h _ hI]
+
 def Restriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊆ M.E
 
 def StrictRestriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊂ M.E
