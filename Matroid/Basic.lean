@@ -970,67 +970,6 @@ instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : 
     ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Indep = Indep := by
   simp [matroid_of_indep_of_finite]
 
--- -- Oxley's axiomatization (Axioms for infinite matroids, Theorem 5.2)
-def oxley_indep (E : Set α) (cI : Set (Set α)) :=
-  (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) (cI ∩ X.powerset)) ∧
-  (∀ I J, J ∈ cI → I ⊆ J → I ∈ cI) ∧
-  (∀ I I', I ∈ cI → I' ∈ (maximals (· ⊆ ·) cI) → ∃ B, B ∈ maximals (· ⊆ ·) cI ∧ I ⊆ B ∧ B ⊆ I ∪ I') ∧
-  (∀ I, I ∈ cI → I ⊆ E)
-
-def matroid_of_oxley (E : Set α) (cI : Set (Set α)) (hcI : oxley_indep E cI) : Matroid α :=
-  matroid_of_indep E (fun I ↦ I ∈ cI)
-  (by {
-    obtain ⟨Y, ⟨hY, h⟩⟩ := hcI.1 ∅ (empty_subset _)
-    rw [subset_empty_iff] at hY
-    subst hY
-    exact h.1.1
-  })
-  (fun I J hI hIJ ↦ hcI.2.1 I J hI hIJ)
-  (by {
-    rintro I B hI h'I hB
-    obtain ⟨B', hB'⟩ := hcI.2.2.1 I B hI hB
-    have : ∃ x, x ∈ B' \ I := by {
-      simp_rw [mem_diff]
-      by_contra' h
-      rw [←subset_def] at h
-      have : I = B' := subset_antisymm (hB'.2.1) (h)
-      subst this
-      exact h'I hB'.1
-    }
-    obtain ⟨x, hx⟩ := this
-    use x
-    have : x ∈ B := by
-      have := hB'.2.2 hx.1 
-      rw [mem_union] at this
-      rcases this with g | g
-      . { exfalso
-          exact hx.2 g }
-      . { exact g }
-    use ⟨this, hx.2⟩
-    have : insert x I ⊆ B' := by
-      rw [insert_eq, union_subset_iff, singleton_subset_iff]
-      exact ⟨hx.1, hB'.2.1⟩
-    exact hcI.2.1 (insert x I) B' hB'.1.1 this 
-  })
-  (by {
-    rintro X hX
-    -- rw [ExistsMaximalSubsetProperty]
-    -- rintro I hI hIX
-    obtain ⟨Y, hY⟩ := hcI.1 X hX
-    
-
-  })
-  (hcI.2.2.2)
-  
-  -- (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) (cI ∩ X.powerset)) ∧
-
--- def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
---     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
---     (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
---       B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
---     (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X) 
---     (h_support : ∀ I, Indep I → I ⊆ E)
-
 end from_axioms
 
 end Matroid 
