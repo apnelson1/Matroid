@@ -85,6 +85,12 @@ theorem Infinite.encard_eq {s : Set α} (h : s.Infinite) : s.encard = ⊤ := by
 theorem nonempty_of_encard_ne_zero (h : s.encard ≠ 0) : s.Nonempty := by 
   rwa [nonempty_iff_ne_empty, Ne.def, ←encard_eq_zero]
 
+@[simp] theorem encard_ne_zero : s.encard ≠ 0 ↔ s.Nonempty := by 
+  rw [ne_eq, encard_eq_zero, nonempty_iff_ne_empty]
+
+@[simp] theorem encard_pos : 0 < s.encard ↔ s.Nonempty := by 
+  rw [pos_iff_ne_zero, encard_ne_zero]
+
 @[simp] theorem encard_singleton (e : α) : ({e} : Set α).encard = 1 := by 
   rw [encard, ←PartENat.withTopEquiv.symm.injective.eq_iff, Equiv.symm_apply_apply, 
     PartENat.card_eq_coe_fintype_card, Fintype.card_ofSubsingleton, Nat.cast_one]; rfl 
@@ -399,6 +405,38 @@ theorem encard_le_encard_of_injOn {t : Set β} (hf : ∀ a ∈ s, f a ∈ t) (f_
   apply encard_le_of_subset
   rintro _ ⟨x, hx, rfl⟩
   exact hf _ hx
+
+theorem Finite.exists_injOn_of_encard_le [Nonempty β] {s : Set α} {t : Set β} (hs : s.Finite)
+    (hle : s.encard ≤ t.encard) : ∃ (f : α → β), s ⊆ f ⁻¹' t ∧ InjOn f s := by
+  classical
+  obtain (rfl | h | ⟨a, has, -⟩) := s.eq_empty_or_encard_eq_top_or_encard_diff_singleton_lt
+  · simp
+  · exact (encard_ne_top_iff.mpr hs h).elim
+  obtain ⟨b, hbt⟩ := encard_pos.1 ((encard_pos.2 ⟨_, has⟩).trans_le hle)
+  have hle' : (s \ {a}).encard ≤ (t \ {b}).encard
+  · rwa [←WithTop.add_le_add_iff_right WithTop.one_ne_top,
+    encard_diff_singleton_add_one has, encard_diff_singleton_add_one hbt]
+
+  obtain ⟨f₀, hf₀s, hinj⟩ := exists_injOn_of_encard_le (hs.diff {a}) hle'
+  simp only [preimage_diff, subset_def, mem_diff, mem_singleton_iff, mem_preimage, and_imp] at hf₀s
+
+  use Function.update f₀ a b
+  rw [←insert_eq_of_mem has, ←insert_diff_singleton, injOn_insert (fun h ↦ h.2 rfl)]
+  simp only [mem_diff, mem_singleton_iff, not_true, and_false, insert_diff_singleton, subset_def,
+    mem_insert_iff, mem_preimage, ne_eq, Function.update_apply, forall_eq_or_imp, ite_true, and_imp,
+    mem_image, ite_eq_left_iff, not_exists, not_and, not_forall, exists_prop, and_iff_right hbt]
+
+  refine ⟨?_,?_,fun x hxs hxa ↦ ⟨hxa, (hf₀s x hxs hxa).2⟩⟩
+  · rintro x hx; split_ifs with h; assumption; exact (hf₀s x hx h).1
+  exact InjOn.congr hinj (fun x ⟨_, hxa⟩ ↦ by rwa [Function.update_noteq])
+termination_by _ => encard s
+
+theorem Finite.exists_bijOn_of_encard_eq [Nonempty β] (hs : s.Finite) (h : s.encard = t.encard) :
+    ∃ (f : α → β), BijOn f s t := by
+  obtain ⟨f, hf, hinj⟩ := hs.exists_injOn_of_encard_le h.le; use f
+  convert hinj.bijOn_image
+  rw [(hs.image f).eq_of_subset_of_encard_le' (image_subset_iff.mpr hf)
+    (h.symm.trans (encard_image_of_injOn hinj).symm).le]
 
 end Function
 

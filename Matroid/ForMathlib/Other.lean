@@ -51,14 +51,13 @@ lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert 
   simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range, 
     Subtype.range_coe_subtype, setOf_mem_eq]
   
-theorem Finite.exists_localEquiv_fin {k : ℕ} [Nonempty α] {s : Set α} (hs : s.encard = k) : 
-    ∃ (e : LocalEquiv α (Fin k)), e.source = s ∧ e.target = univ := by 
+theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β} 
+    (hfin : s.Finite) (h : s.encard = t.encard) : 
+    ∃ (e : LocalEquiv α β), e.source = s ∧ e.target = t := by 
   
-
-
-theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] {s : Set α} {t : Set β} (hfin : s.Finite) 
-    (h : s.encard = t.encard) : ∃ (e : LocalEquiv α β), e.source = s ∧ e.target = t := by 
-
+  obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq h
+  exact ⟨hf.toLocalEquiv, rfl, hf.toLocalEquiv_target⟩
+  
 
 
 
