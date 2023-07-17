@@ -11,6 +11,45 @@ example (ι : Type _) (Xs : ι → Set α) (h : Pairwise (Disjoint on Xs)) (i j 
   
 
 
+def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
+  (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧
+    Y ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
+  (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+  (h_basis : ∀ ⦃I I'⦄, Indep I → I' ∈ maximals (· ⊆ ·) {I | Indep I} →
+    ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I')
+  (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
+  matroid_of_indep E Indep
+  (by {
+    obtain ⟨Y, ⟨hY, h⟩⟩ := h_exists_maximal_indep_subset ∅ (empty_subset _)
+    rw [←subset_empty_iff.mp hY]
+    exact h.1.1
+  })
+  (fun I J hI hIJ ↦ h_subset hI hIJ)
+  (by {
+    rintro I B hI h'I hB
+    obtain ⟨B', hB'⟩ := h_basis hI hB
+    obtain ⟨x, hx⟩ : ∃ x, x ∈ B' \ I := by {
+      simp_rw [mem_diff]
+      by_contra' h
+      rw [←subset_def] at h
+      have : I = B' := subset_antisymm (hB'.2.1) (h)
+      subst this
+      exact h'I hB'.1
+    }
+    have hxB : x ∈ B := by
+      have := hB'.2.2 hx.1 
+      rw [mem_union] at this
+      rcases this with g | g
+      . { exfalso
+          exact hx.2 g }
+      . { exact g }
+    have : insert x I ⊆ B' := by
+      rw [insert_eq, union_subset_iff, singleton_subset_iff]
+      exact ⟨hx.1, hB'.2.1⟩
+    exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
+  })
+  sorry
+  h_support
 
 -- -- -- Oxley's axiomatization (Axioms for infinite matroids, Theorem 5.2)
 -- def oxley_indep (E : Set α) (Indep : Set α → Prop) :=
