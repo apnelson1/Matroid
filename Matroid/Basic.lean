@@ -1011,8 +1011,24 @@ def matroid_of_oxley (E : Set α) (cI : Set (Set α)) (hcI : oxley_indep E cI) :
       exact ⟨hx.1, hB'.2.1⟩
     exact hcI.2.1 (insert x I) B' hB'.1.1 this 
   })
-  (sorry) (sorry)
+  (by {
+    rintro X hX
+    rw [ExistsMaximalSubsetProperty]
+    rintro I hI hIX
+    obtain ⟨I', hI'⟩ := hcI.1 X hX
+    have : I' ∈ maximals (fun x x_1 ↦ x ⊆ x_1) cI := by
+      sorry
+      -- from hI'
+    obtain ⟨B, hB⟩ := hcI.2.2 I I' hI this
+    use B
+    refine' ⟨⟨hB.1.1, hB.2.1, _⟩, fun S hS hBS ↦ hB.1.2 hS.1 hBS⟩
+    . { have : I ∪ I' ⊆ X := by
+          rw [union_subset_iff]
+          exact ⟨hIX, hI'.1⟩
+        exact hB.2.2.trans this }
+  }) (sorry)
   
+  -- (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) (cI ∩ X.powerset)) ∧
 
 -- def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
 --     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
