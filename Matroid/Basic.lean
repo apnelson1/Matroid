@@ -974,7 +974,8 @@ instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : 
 def oxley_indep (E : Set α) (cI : Set (Set α)) :=
   (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) (cI ∩ X.powerset)) ∧
   (∀ I J, J ∈ cI → I ⊆ J → I ∈ cI) ∧
-  (∀ I I', I ∈ cI → I' ∈ (maximals (· ⊆ ·) cI) → ∃ B, B ∈ maximals (· ⊆ ·) cI ∧ I ⊆ B ∧ B ⊆ I ∪ I')
+  (∀ I I', I ∈ cI → I' ∈ (maximals (· ⊆ ·) cI) → ∃ B, B ∈ maximals (· ⊆ ·) cI ∧ I ⊆ B ∧ B ⊆ I ∪ I') ∧
+  (∀ I, I ∈ cI → I ⊆ E)
 
 def matroid_of_oxley (E : Set α) (cI : Set (Set α)) (hcI : oxley_indep E cI) : Matroid α :=
   matroid_of_indep E (fun I ↦ I ∈ cI)
@@ -987,7 +988,7 @@ def matroid_of_oxley (E : Set α) (cI : Set (Set α)) (hcI : oxley_indep E cI) :
   (fun I J hI hIJ ↦ hcI.2.1 I J hI hIJ)
   (by {
     rintro I B hI h'I hB
-    obtain ⟨B', hB'⟩ := hcI.2.2 I B hI hB
+    obtain ⟨B', hB'⟩ := hcI.2.2.1 I B hI hB
     have : ∃ x, x ∈ B' \ I := by {
       simp_rw [mem_diff]
       by_contra' h
@@ -1013,20 +1014,13 @@ def matroid_of_oxley (E : Set α) (cI : Set (Set α)) (hcI : oxley_indep E cI) :
   })
   (by {
     rintro X hX
-    rw [ExistsMaximalSubsetProperty]
-    rintro I hI hIX
-    obtain ⟨I', hI'⟩ := hcI.1 X hX
-    have : I' ∈ maximals (fun x x_1 ↦ x ⊆ x_1) cI := by
-      sorry
-      -- from hI'
-    obtain ⟨B, hB⟩ := hcI.2.2 I I' hI this
-    use B
-    refine' ⟨⟨hB.1.1, hB.2.1, _⟩, fun S hS hBS ↦ hB.1.2 hS.1 hBS⟩
-    . { have : I ∪ I' ⊆ X := by
-          rw [union_subset_iff]
-          exact ⟨hIX, hI'.1⟩
-        exact hB.2.2.trans this }
-  }) (sorry)
+    -- rw [ExistsMaximalSubsetProperty]
+    -- rintro I hI hIX
+    obtain ⟨Y, hY⟩ := hcI.1 X hX
+    
+
+  })
+  (hcI.2.2.2)
   
   -- (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) (cI ∩ X.powerset)) ∧
 
