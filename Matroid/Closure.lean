@@ -332,6 +332,17 @@ theorem basis_iff_basis_cl_of_subset (hIX : I ⊆ X) (hX : X ⊆ M.E := by aesop
 theorem basis_iff_basis_cl_of_subset' (hIX : I ⊆ X) : M.Basis I X ↔ X ⊆ M.E ∧ M.Basis I (M.cl X) :=
   ⟨fun h ↦ ⟨h.subset_ground, h.basis_cl_right⟩, fun h ↦ h.2.basis_subset hIX (M.subset_cl X h.1)⟩
 
+theorem basis'_iff_basis_cl : M.Basis' I X ↔ M.Basis I (M.cl X) ∧ I ⊆ X := by 
+  rw [cl_eq_cl_inter_ground, basis'_iff_basis_inter_ground]
+  exact ⟨fun h ↦ ⟨h.basis_cl_right, h.subset.trans (inter_subset_left _ _)⟩, 
+    fun h ↦ h.1.basis_subset (subset_inter h.2 h.1.indep.subset_ground) (M.subset_cl _)⟩ 
+
+theorem exists_basis_inter_ground_basis_cl (M : Matroid α) (X : Set α) : 
+    ∃ I, M.Basis I (X ∩ M.E) ∧ M.Basis I (M.cl X) := by 
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
+  have hI' := hI.basis_cl_right; rw [←cl_eq_cl_inter_ground] at hI'
+  exact ⟨_, hI, hI'⟩
+
 theorem Basis.basis_of_cl_eq_cl (hI : M.Basis I X) (hY : I ⊆ Y) (h : M.cl X = M.cl Y) 
     (hYE : Y ⊆ M.E := by aesop_mat) : M.Basis I Y := by
   refine' hI.indep.basis_of_subset_of_subset_cl hY _
@@ -438,7 +449,47 @@ theorem eq_of_cl_eq_cl_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.cl X = M
   eq_of_indep_iff_indep_forall (by simpa using h univ) 
     (fun _ _ ↦ by simp_rw [indep_iff_cl_diff_ne_forall, h])
   
+@[simp] theorem restrict_cl_eq' (M : Matroid α) (X R : Set α) :
+    (M ↾ R).cl X = (M.cl (X ∩ R) ∩ R) ∪ (R \ M.E) := by
+  rw [cl_eq_cl_inter_ground, restrict_ground_eq]
+  ext e
+  obtain ⟨I, hI⟩ := (M ↾ R).exists_basis (X ∩ R) 
+  have hI' := (basis_restrict_iff'.mp hI).1
+  rw [←hI.cl_eq_cl, M.cl_eq_cl_inter_ground (X ∩ R), ←hI'.cl_eq_cl, mem_union, mem_inter_iff, 
+    hI'.indep.mem_cl_iff, hI.indep.mem_cl_iff, restrict_dep_iff, insert_subset_iff, 
+    dep_iff, insert_subset_iff, and_iff_left hI'.indep.subset_ground, mem_diff, 
+    and_iff_left (show I ⊆ R from hI.indep.subset_ground)]
+  have hIR : I ⊆ R := hI.indep.subset_ground
+  by_cases he : e ∈ M.E; aesop
+  simp only [iff_false_intro he, and_false, false_or, and_true, ←mem_inter_iff, ←mem_union, 
+    inter_eq_self_of_subset_left hIR, union_comm I, and_iff_right 
+      (show ¬M.Indep (insert e I) from fun hi ↦ he (hi.subset_ground (mem_insert _ _)))]
   
+theorem restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).cl X = M.cl X ∩ R := by 
+  rw [restrict_cl_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR]
+  
+  
+  
+    
+  -- constructor
+  -- · refine' (em (e ∈ M.E)).elim (fun he ↦ 
+  --     fun h ↦ h.elim (fun h' ↦ Or.inl ⟨Or.inl ⟨h'.1, he⟩, h'.2⟩) 
+  --       (fun heI ↦ Or.inl ⟨Or.inr heI, hI.indep.subset_ground heI⟩)) 
+  --     (fun he h ↦ h.elim (fun h' ↦ Or.inr ⟨h'.2, he⟩) 
+  --       (fun h' ↦ Or.inr ⟨hI.indep.subset_ground h', he⟩))
+  
+  
+  -- refine' fun e ↦ ⟨fun h ↦ ⟨_,_⟩, fun h ↦ _⟩
+
+  
+  
+  -- · 
+  --   rw [hI.indep.mem_cl_iff, restrict_dep_iff, insert_subset_iff, 
+  --     and_iff_left (hI.subset.trans (inter_subset_right _ _)), hI'.indep.mem_cl_iff]
+    
+
+
 section Spanning
 
 variable {S T : Set α}

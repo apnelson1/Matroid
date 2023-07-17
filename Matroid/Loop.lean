@@ -268,6 +268,9 @@ theorem Base.mem_of_coloop (hB : M.Base B) (he : M.Coloop e) : e ∈ B :=
 theorem Coloop.mem_of_base (he : M.Coloop e) (hB : M.Base B) : e ∈ B :=
   coloop_iff_forall_mem_base.mp he hB
 
+theorem Base.coloops_subset (hB : M.Base B) : M﹡.cl ∅ ⊆ B := 
+  fun _ he ↦ Coloop.mem_of_base he hB
+
 theorem Coloop.nonloop (h : M.Coloop e) : M.Nonloop e :=
   let ⟨_, hB⟩ := M.exists_base
   hB.indep.nonloop_of_mem ((coloop_iff_forall_mem_base.mp h) hB)

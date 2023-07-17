@@ -1,6 +1,20 @@
 import Mathlib.Tactic
+import Mathlib.Logic.Equiv.LocalEquiv
+import Matroid.ForMathlib.card
 
 open Set
+
+theorem diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t ∩ s = r ∩ s) := by
+  rw [←diff_inter_self_eq_diff, ←diff_inter_self_eq_diff (t := r)] 
+  refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
+  rw [←diff_diff_cancel_left (inter_subset_right t s), h, 
+    diff_diff_cancel_left (inter_subset_right r s)]
+
+@[simp] theorem Set.diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
+  simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
+
+theorem inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = (s \ r) ∩ t := by  
+  simp_rw [diff_eq, inter_right_comm]
 
 theorem pair_diff_left {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {x} = {y} := by 
   rw [insert_diff_of_mem _ (by exact rfl : x ∈ {x}), diff_singleton_eq_self (by simpa)]
@@ -37,8 +51,14 @@ lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert 
   simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range, 
     Subtype.range_coe_subtype, setOf_mem_eq]
   
+theorem Finite.exists_localEquiv_fin {k : ℕ} [Nonempty α] {s : Set α} (hs : s.encard = k) : 
+    ∃ (e : LocalEquiv α (Fin k)), e.source = s ∧ e.target = univ := by 
   
-  
+
+
+theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] {s : Set α} {t : Set β} (hfin : s.Finite) 
+    (h : s.encard = t.encard) : ∃ (e : LocalEquiv α β), e.source = s ∧ e.target = t := by 
+
 
 
 

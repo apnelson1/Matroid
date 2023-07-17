@@ -5,7 +5,6 @@ import Matroid.Loop
   general matroids, even though it is often the easiest way to do things for finite matroids. 
    -/
 
-
 open Set
 open ENat
 
@@ -28,7 +27,7 @@ theorem erk_eq_er_ground (M : Matroid α) : M.erk = M.er M.E := by
 
 theorem Basis'.encard (hI : M.Basis' I X) : I.encard = M.er X := by 
   rw [er,erk]
-  rw [←restrict_base_iff'] at hI
+  rw [←base_restrict_iff'] at hI
   have : Nonempty ↑{B | (M ↾ X).Base B} := ⟨I, hI⟩
   rw [iInf_congr (_ : ∀ B : ↑{B | (M ↾ X).Base B}, (B : Set α).encard = I.encard), iInf_const]
   simp only [mem_setOf_eq, Subtype.forall]
@@ -84,6 +83,15 @@ theorem Base.encard (hB : M.Base B) : B.encard = M.erk := by
     M.er (insert e (M.cl X)) = M.er (insert e X) := by
   rw [← union_singleton, er_union_cl_left_eq, union_singleton]
 
+@[simp] theorem restrict_er_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).er X = M.er (X ∩ R) := by 
+  obtain ⟨I, hI⟩ := (M ↾ R).exists_basis' X
+  rw [hI.er_eq_encard]
+  rw [basis'_iff_basis_inter_ground, basis_restrict_iff', restrict_ground_eq] at hI
+  rw [←er_inter_ground_eq, ←hI.1.er_eq_encard]
+
+@[simp] theorem restrict_er_eq (M : Matroid α) (h : X ⊆ R) : (M ↾ R).er X = M.er X := by 
+  rw [restrict_er_eq', inter_eq_self_of_subset_left h]
+
 theorem er_lt_top_of_finite (M : Matroid α) (hX : X.Finite) : M.er X < ⊤ := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   rw [hI.er_eq_encard, encard_lt_top_iff]
@@ -115,8 +123,26 @@ theorem er_mono (M : Matroid α) : Monotone M.er := by
   rw [hI.er_eq_encard, hJ.er_eq_encard]
   exact encard_mono hIJ
 
+theorem le_er_iff : n ≤ M.er X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.encard = n := by 
+  refine' ⟨fun h ↦ _, fun ⟨I, hIX, hI, hIc⟩ ↦ _⟩
+  · obtain ⟨J, hJ⟩ := M.exists_basis' X
+    rw [←hJ.encard] at h
+    obtain ⟨I, hIJ, rfl⟩ :=  exists_subset_encard_eq h
+    exact ⟨_, hIJ.trans hJ.subset, hJ.indep.subset hIJ, rfl⟩  
+  rw [←hIc, ←hI.er]
+  exact M.er_mono hIX
+
+theorem er_le_iff : M.er X ≤ n ↔ ∀ I, I ⊆ X → M.Indep I → I.encard ≤ n := by
+  refine ⟨fun h I hIX hI ↦ (hI.er.symm.trans_le ((M.er_mono hIX).trans h)), fun h ↦ ?_⟩
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [←hI.encard]
+  exact h I hI.subset hI.indep
+
 theorem Indep.encard_le_er_of_subset (hI : M.Indep I) (hIX : I ⊆ X) : I.encard ≤ M.er X := by
   rw [← hI.er]; exact M.er_mono hIX
+
+theorem Indep.encard_le_erk (hI : M.Indep I) : I.encard ≤ M.erk := by 
+  rw [←hI.er, erk_eq_er_ground]; exact M.er_mono hI.subset_ground
 
 /-- The submodularity axiom for the extended rank function -/
 theorem er_inter_add_er_union_le_er_add_er (M : Matroid α) (X Y : Set α) :
@@ -357,6 +383,9 @@ theorem rFin.finite_of_indep_subset (hX : M.rFin X) (hI : M.Indep I) (hIX : I �
 
 theorem rFin_ground (M : Matroid α) [FiniteRk M] : M.rFin M.E := by 
   rwa [rFin_ground_iff]
+
+theorem erk_lt_top (M : Matroid α) [FiniteRk M] : M.erk < ⊤ := by 
+  rw [erk_eq_er_ground, er_lt_top_iff]; exact M.rFin_ground
 
 theorem Indep.finite_of_subset_rFin (hI : M.Indep I) (hIX : I ⊆ X) (hX : M.rFin X) : I.Finite :=
   hX.finite_of_indep_subset hI hIX

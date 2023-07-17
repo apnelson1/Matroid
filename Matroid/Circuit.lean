@@ -441,7 +441,7 @@ theorem Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e
 theorem Basis.strong_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he : e ∈ I₁ \ I₂) :
     ∃ f ∈ I₂ \ I₁, M.Basis (insert e I₂ \ {f}) X ∧ M.Basis (insert f I₁ \ {e}) X := by
   obtain ⟨f, hf, h₁, h₂⟩ := hI₁.base_restrict.strong_exchange hI₂.base_restrict he
-  rw [restrict_base_iff] at h₁ h₂
+  rw [base_restrict_iff] at h₁ h₂
   exact ⟨f, hf, h₁, h₂⟩ 
 
 theorem Base.rev_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e ∈ B₁ \ B₂) :
