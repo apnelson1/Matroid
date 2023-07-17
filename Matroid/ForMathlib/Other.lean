@@ -53,12 +53,12 @@ lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert 
   
 theorem Finite.exists_localEquiv_fin {k : ℕ} [Nonempty α] {s : Set α} (hs : s.encard = k) : 
     ∃ (e : LocalEquiv α (Fin k)), e.source = s ∧ e.target = univ := by 
-  
+sorry
 
 
 theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] {s : Set α} {t : Set β} (hfin : s.Finite) 
     (h : s.encard = t.encard) : ∃ (e : LocalEquiv α β), e.source = s ∧ e.target = t := by 
-
+sorry
 
 
 
