@@ -422,16 +422,26 @@ theorem unif_dual (hab : a ≤ b) : (unif a b)﹡ = unif (b - a) b :=
 @[simp] theorem unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) := 
   unif_dual' (two_mul a).symm 
 
-theorem isIso_unif_iff {a b : ℕ} {M : Matroid α} : 
+theorem isIso_unif_iff {a b : ℕ} (hb0 : b ≠ 0) {M : Matroid α} : 
     M ≃ (unif a b) ↔ (M = unif_on M.E a ∧ M.E.encard = (b : ℕ∞)) := by 
   rw [eq_unif_on_iff, and_iff_right rfl]
-  refine ⟨fun ⟨e⟩ ↦ ⟨fun I ↦ ⟨fun hI ↦ ⟨?_,hI.subset_ground⟩,fun ⟨hle, hIE⟩ ↦ ?_⟩,?_⟩, fun h ↦ ⟨?_⟩⟩ 
+  refine ⟨fun ⟨e⟩ ↦ ⟨fun I ↦ ⟨fun hI ↦ ⟨?_,hI.subset_ground⟩,fun ⟨hle, hIE⟩ ↦ ?_⟩,?_⟩, 
+    fun ⟨hI, hb⟩ ↦ ?_⟩ 
   · have hi := e.on_indep hI
     rwa [unif_indep_iff, encard_image_of_injOn (e.injOn_ground.mono hI.subset_ground)] at hi
   · apply e.on_indep_symm 
     rwa [unif_indep_iff, encard_image_of_injOn (e.injOn_ground.mono hIE)]
   · rw [←encard_image_of_injOn (e.injOn_ground), e.image_ground, unif_ground_eq, encard_univ]
     simp
+  have hne : Nonempty (Fin b) := ⟨⟨0, Nat.pos_of_ne_zero hb0⟩⟩ 
+  
+  have hfin := finite_of_encard_eq_coe hb
+  rw [← (show (univ : Set (Fin b)).encard = b by simp [encard_univ])] at hb
+  obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq hb
+  
+  have := iso_of_forall_indep hf.toLocalEquiv
+  -- refine' ⟨iso_of_forall_indep hf.toLocalEquiv _ _ _ _, _⟩ 
+
   
   
 

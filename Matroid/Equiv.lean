@@ -132,7 +132,7 @@ theorem Iso.prop_subset_iff_subset (e : Iso M N) (hM : ∀ {X}, PM X → X ⊆ M
 end transfer
 
 /-- A `LocalEquiv` that respects bases is an isomorphism. -/
-def Iso_of_forall_base (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
+def iso_of_forall_base (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
     (on_base : ∀ B, M.Base B → N.Base (e '' B))
     (on_base_symm : ∀ B, N.Base B → M.Base (e.symm '' B)) : Iso M N where
   toLocalEquiv := e
@@ -145,7 +145,7 @@ def Iso_of_forall_base (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.targ
     exact on_base B hB }
 
 /-- A `LocalEquiv` that respects independence is an isomorphism. -/
-def Iso_of_forall_indep (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
+def iso_of_forall_indep (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
     (on_indep : ∀ I, M.Indep I → N.Indep (e '' I)) 
     (on_indep_symm : ∀ I, N.Indep I → M.Indep (e.symm '' I)) : Iso M N where 
   toLocalEquiv := e
@@ -162,14 +162,14 @@ def Iso_of_forall_indep (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.tar
     rw [e.injOn.image_subset_image_iff_of_subset (hI.subset_ground.trans hM.symm.subset) 
       (hJ.subset_ground.trans hM.symm.subset)] }
 
-@[simp] theorem Iso_of_forall_indep_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β) 
+@[simp] theorem iso_of_forall_indep_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β) 
     (hM : e.source = M.E) (hN : e.target = N.E) (on_indep : ∀ I, M.Indep I → N.Indep (e '' I)) 
     (on_indep_symm : ∀ I, N.Indep I → M.Indep (e.symm '' I)) : 
-  (Iso_of_forall_indep e hM hN on_indep on_indep_symm).toLocalEquiv = e := rfl 
+  (iso_of_forall_indep e hM hN on_indep on_indep_symm).toLocalEquiv = e := rfl 
 
-def Iso_of_forall_indep' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
+def iso_of_forall_indep' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E) 
     (on_indep : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (e '' I))) : Iso M N := 
-  Iso_of_forall_indep e hM hN (fun I hI ↦ (on_indep I hI.subset_ground).mp hI) 
+  iso_of_forall_indep e hM hN (fun I hI ↦ (on_indep I hI.subset_ground).mp hI) 
     (by {
       intro I hI
       have h' : e.symm '' I ⊆ M.E
@@ -177,10 +177,10 @@ def Iso_of_forall_indep' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.ta
       rwa [on_indep _ h', image_symm_image_of_subset_target _ 
         (by rw [hN]; exact hI.subset_ground)] })
 
-@[simp] theorem Iso_of_forall_indep'_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β)
+@[simp] theorem iso_of_forall_indep'_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β)
     (hM : e.source = M.E) (hN : e.target = N.E) 
     (on_indep : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (e '' I))) : 
-  (Iso_of_forall_indep' e hM hN on_indep).toLocalEquiv = e := rfl
+  (iso_of_forall_indep' e hM hN on_indep).toLocalEquiv = e := rfl
 
 theorem Iso.on_base (e : Iso M N) (hB : M.Base B) : N.Base (e '' B) := by 
   rwa [←e.on_base_iff]
@@ -218,7 +218,7 @@ theorem Iso.setOf_dep_eq (e : Iso M N) : setOf N.Dep = (image e) '' setOf M.Dep 
 /-- Restrictions of isomorphic matroids are isomorphic -/
 def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     Iso (M ↾ R) (N ↾ (e '' R)) := 
-  Iso_of_forall_indep (e.toLocalEquiv.restr R)
+  iso_of_forall_indep (e.toLocalEquiv.restr R)
   (by simpa [restrict_ground_eq]) 
   (by rw [restr_target, restrict_ground_eq,
     image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])] )
@@ -238,7 +238,7 @@ def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
 
 /-- The duals of isomorphic matroids are isomorphic -/
 def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ := 
-  Iso_of_forall_base e.toLocalEquiv 
+  iso_of_forall_base e.toLocalEquiv 
     (by simp) (by simp) 
     (by {
       simp_rw [dual_base_iff', image_subset_iff, and_imp]
