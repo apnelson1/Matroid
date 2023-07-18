@@ -55,16 +55,42 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by sorry
 
-    have aux2 : ∀ X B, X ⊆ E ∧ Base B →
+    have aux2 : ∀ X B, X ⊆ E → Base B →
       (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by sorry
 
+
+    -- (I3') holds for `Indep ∩ 2^X`
     have aux3 : ∀ X, X ⊆ E →
         (∀ I I', I ∈ {I | Indep I ∧ I ⊆ X } ∧ I' ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } →
         ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } ∧ I ⊆ B ∧ B ⊆ I ∪ I') := by
-      intro X
-      sorry
+      rintro X hX I I' ⟨hI, hI'⟩
 
+      obtain ⟨Bh, hBh⟩ := h_exists_maximal_indep_subset E (by rfl)
+
+      have : ∀ I, Indep I ∧ I ⊆ E ↔ Indep I := sorry
+      simp_rw [this] at hBh
+      obtain ⟨B', hB'⟩ := h_basis hI'.1.1 hBh
+
+      have I'eq : I' = B' ∩ X := sorry
+      rw [I'eq] at hI'
+      have hB'c := (aux2 X B' hX hB'.1).mp hI'
+
+      obtain ⟨B, hB⟩ := h_basis hI.1 hB'.1
+      
+      have h₁ : B ∩ (E \ X) ⊆ B' ∩ (E \ X) := sorry
+      -- from `I ⊆ X`
+      have h₂ : (E \ B') ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) := sorry
+      -- from previous
+      have h₃ : E \ B ∩ (E \ X) ∈ {I' | Indep' I' ∧ I' ⊆ E \ X} := sorry
+      have hBc := hB'c
+      rw [subset_antisymm h₂ (hB'c.2 h₃ h₂), ←aux2 X B hX hB.1] at hBc
+      refine' ⟨B ∩ X, hBc, subset_inter_iff.mpr ⟨hB.2.1, hI.2⟩, _⟩
+      . calc
+          B ∩ X ⊆ (I ∪ B') ∩ X    := inter_subset_inter_left X hB.2.2
+          _ = (I ∩ X) ∪ (B' ∩ X)  := inter_distrib_right _ _ _
+          _ = I ∪ (B' ∩ X)        := by rw [inter_eq_self_of_subset_left hI.2]
+          _ = I ∪ I'              := by rw [←I'eq]
 
     simp_rw [ExistsMaximalSubsetProperty]
     rintro X hX I hI hIX
