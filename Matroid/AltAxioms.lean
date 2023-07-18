@@ -73,13 +73,14 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       obtain ⟨Bh, hBh⟩ := h_exists_maximal_indep_subset E (by rfl)
 
       have : ∀ I, Indep I ∧ I ⊆ E ↔ Indep I :=
-        fun I ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h, h_support _⟩⟩
+        fun I ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h, h_support h⟩⟩
       simp_rw [this] at hBh
       obtain ⟨B', hB'⟩ := h_basis hI'.1.1 hBh
 
-      have I'eq : I' = B' ∩ X := by {
-        sorry
-      }
+      have I'eq : I' = B' ∩ X :=
+        subset_antisymm (subset_inter_iff.mpr ⟨hB'.2.1, hI'.1.2⟩)
+          (hI'.2 ⟨h_subset hB'.1.1 (inter_subset_left _ _), inter_subset_right _ _⟩
+          (subset_inter_iff.mpr ⟨hB'.2.1, hI'.1.2⟩))
       rw [I'eq] at hI'
       have hB'c := (aux2 X B' hX hB'.1).mp hI'
 
