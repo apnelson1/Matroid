@@ -10,12 +10,18 @@ example (ι : Type _) (Xs : ι → Set α) (h : Pairwise (Disjoint on Xs)) (i j 
   have : Disjoint (Xs i) (Xs j) := h hne 
   sorry
 
+lemma compl_subsets_inter {A B X E : Set α} (hA : A ⊆ E) (hB : B ⊆ E) :
+  A ∩ X ⊆ B ∩ X → (E \ B) ∩ X ⊆ (E \ A) ∩ X := by
+  sorry
+-- an iff but needs ground set assumptions
+
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
   (h_basis : ∀ ⦃I I'⦄, Indep I → I' ∈ maximals (· ⊆ ·) {I | Indep I} →
     ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I')
-  (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
+  (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
+  -- made `I` implicit in this def's `h_support`, unlike in that of `matroid_of_indep`
   matroid_of_indep E Indep
   (by {
     obtain ⟨I, ⟨hI, -⟩⟩ := h_exists_maximal_indep_subset ∅ (empty_subset _)
@@ -46,7 +52,6 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       exact ⟨hx.1, hB'.2.1⟩
     exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
   })
-  -- (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X) 
   (by {
     let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I } 
     let Base'  : Set α → Prop := { B | Base (E \ B) }
@@ -65,24 +70,38 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         (∀ I I', I ∈ {I | Indep I ∧ I ⊆ X } ∧ I' ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } →
         ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } ∧ I ⊆ B ∧ B ⊆ I ∪ I') := by
       rintro X hX I I' ⟨hI, hI'⟩
-
       obtain ⟨Bh, hBh⟩ := h_exists_maximal_indep_subset E (by rfl)
 
-      have : ∀ I, Indep I ∧ I ⊆ E ↔ Indep I := sorry
+      have : ∀ I, Indep I ∧ I ⊆ E ↔ Indep I :=
+        fun I ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h, h_support _⟩⟩
       simp_rw [this] at hBh
       obtain ⟨B', hB'⟩ := h_basis hI'.1.1 hBh
 
-      have I'eq : I' = B' ∩ X := sorry
+      have I'eq : I' = B' ∩ X := by {
+        sorry
+      }
       rw [I'eq] at hI'
       have hB'c := (aux2 X B' hX hB'.1).mp hI'
 
       obtain ⟨B, hB⟩ := h_basis hI.1 hB'.1
       
-      have h₁ : B ∩ (E \ X) ⊆ B' ∩ (E \ X) := sorry
-      -- from `I ⊆ X`
-      have h₂ : (E \ B') ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) := sorry
-      -- from previous
-      have h₃ : E \ B ∩ (E \ X) ∈ {I' | Indep' I' ∧ I' ⊆ E \ X} := sorry
+      have h₁ : B ∩ (E \ X) ⊆ B' ∩ (E \ X) := by {
+        have tmp := inter_subset_inter_left (E \ X) hB.2.2
+        have : I ∩ (E \ X) ⊆ X ∩ (E \ X) := inter_subset_inter_left _ hI.2
+        rw [inter_diff_self _ _, subset_empty_iff] at this
+        rw [inter_distrib_right, this, empty_union] at tmp
+        exact tmp
+      }
+      have h₂ : (E \ B') ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) := 
+        compl_subsets_inter (h_support hB.1.1) (h_support hB'.1.1) h₁
+      have h₃ : E \ B ∩ (E \ X) ∈ {I' | Indep' I' ∧ I' ⊆ E \ X} := by {
+        refine' ⟨⟨E \ B, _, inter_subset_left _ _⟩, inter_subset_right _ _⟩
+        have : Base (E \ (E \ B)) := by {
+          rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1.1)]
+          exact hB.1
+        }
+        exact this
+      }
       have hBc := hB'c
       rw [subset_antisymm h₂ (hB'c.2 h₃ h₂), ←aux2 X B hX hB.1] at hBc
       refine' ⟨B ∩ X, hBc, subset_inter_iff.mpr ⟨hB.2.1, hI.2⟩, _⟩
@@ -99,76 +118,6 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     exact ⟨B, ⟨hB.1.1.1, hB.2.1, hB.1.1.2⟩, fun Y hY hBY ↦ hB.1.2 ⟨hY.1, hY.2.2⟩ hBY⟩
   })
   h_support
-
--- -- -- Oxley's axiomatization (Axioms for infinite matroids, Theorem 5.2)
--- def oxley_indep (E : Set α) (Indep : Set α → Prop) :=
---   (∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧ Y ∈ maximals (· ⊆ ·) ({I | Indep I ∧ I ⊆ X})) ∧
---   (∀ I J, Indep J → I ⊆ J → Indep I) ∧
---   (∀ I I', Indep I → 
---       I' ∈ (maximals (· ⊆ ·) {I | Indep I}) 
---     → ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I') ∧
---   (∀ I, Indep I → I ⊆ E)
-
--- def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop) (hcI : oxley_indep E Indep) : 
---   Matroid α :=
---   matroid_of_indep E Indep
---   (by {
---     obtain ⟨Y, ⟨hY, h⟩⟩ := hcI.1 ∅ (empty_subset _)
---     rw [subset_empty_iff] at hY
---     subst hY
---     exact h.1.1
---   })
---   (fun I J hI hIJ ↦ hcI.2.1 I J hI hIJ)
---   (by {
---     rintro I B hI h'I hB
---     obtain ⟨B', hB'⟩ := hcI.2.2.1 I B hI hB
---     have : ∃ x, x ∈ B' \ I := by {
---       simp_rw [mem_diff]
---       by_contra' h
---       rw [←subset_def] at h
---       have : I = B' := subset_antisymm (hB'.2.1) (h)
---       subst this
---       exact h'I hB'.1
---     }
---     obtain ⟨x, hx⟩ := this
---     use x
---     have : x ∈ B := by
---       have := hB'.2.2 hx.1 
---       rw [mem_union] at this
---       rcases this with g | g
---       . { exfalso
---           exact hx.2 g }
---       . { exact g }
---     use ⟨this, hx.2⟩
---     have : insert x I ⊆ B' := by
---       rw [insert_eq, union_subset_iff, singleton_subset_iff]
---       exact ⟨hx.1, hB'.2.1⟩
---     exact hcI.2.1 (insert x I) B' hB'.1.1 this 
---   })
---   (by {
---     rintro X hX
---     -- rw [ExistsMaximalSubsetProperty]
---     -- rintro I hI hIX
---     obtain ⟨Y, hY⟩ := hcI.1 X hX
---     have := hcI.2.2
-    
---     rw [ExistsMaximalSubsetProperty]
---     sorry
---   })
---   (hcI.2.2.2)
-  
--- def matroid_of_direct_sum' {ι : Type _} (Ms : ι → Matroid α)
---   -- (hEs : Pairwise (fun i ↦ (Ms i).E) i j => Disjoint i j) :
---   (hEs : ∀ i j, i ≠ j → Disjoint (Ms i).E (Ms j).E) :=
---   matroid_of_oxley
---   (⋃ i, (Ms i).E)
---   (fun I ↦ I ⊆ (⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E))
---   (by {
---     sorry
---   })
-
-
-end from_axioms
 
 end Matroid 
 
