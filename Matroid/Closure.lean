@@ -508,6 +508,9 @@ theorem Spanning.cl_eq (hS : M.Spanning S) : M.cl S = M.E :=
 theorem spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : M.Spanning S ↔ M.cl S = M.E :=
   ⟨And.left, fun h ↦ ⟨h, hS⟩⟩
 
+theorem cl_spanning_iff (hS : S ⊆ M.E := by aesop_mat) : M.Spanning (M.cl S) ↔ M.Spanning S := by
+  rw [spanning_iff_cl, cl_cl, ←spanning_iff_cl]
+
 theorem spanning_iff_ground_subset_cl (hS : S ⊆ M.E := by aesop_mat) :
     M.Spanning S ↔ M.E ⊆ M.cl S := by
   rw [spanning_iff_cl, subset_antisymm_iff, and_iff_right (cl_subset_ground _ _)]
@@ -550,6 +553,9 @@ theorem spanning_iff_supset_base (hS : S ⊆ M.E := by aesop_mat) :
     M.Spanning S ↔ ∃ B, M.Base B ∧ B ⊆ S := by 
   rw [spanning_iff_supset_base', and_iff_left hS]
 
+theorem Spanning.exists_base_subset (hS : M.Spanning S) : ∃ B, M.Base B ∧ B ⊆ S := by 
+  rwa [spanning_iff_supset_base] at hS
+
 theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
     M.Coindep I ↔ M.Spanning (M.E \ I) := by
   rw [coindep_iff_exists, spanning_iff_supset_base]
@@ -568,6 +574,17 @@ theorem coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E := by aesop_mat) :
 theorem Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
   (coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX
 
+theorem eq_of_spanning_iff_spanning_forall {M M' : Matroid α} (h : M.E = M'.E) 
+    (hsp : ∀ S, S ⊆ M.E → (M.Spanning S ↔ M'.Spanning S )) : M = M' := by 
+  have hsp' : M.Spanning = M'.Spanning
+  · ext S
+    refine (em (S ⊆ M.E)).elim (fun hSE ↦ by rw [hsp _ hSE] ) 
+      (fun hSE ↦ iff_of_false (fun h ↦ hSE h.subset_ground) 
+      (fun h' ↦ hSE (h'.subset_ground.trans h.symm.subset)))
+  rw [←dual_inj_iff, eq_iff_indep_iff_indep_forall, dual_ground, dual_ground, and_iff_right h]
+  intro I hIE
+  rw [← coindep_def, ←coindep_def, coindep_iff_compl_spanning, coindep_iff_compl_spanning, hsp', h]
+  
 end Spanning
 
 section modular

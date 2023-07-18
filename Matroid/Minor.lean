@@ -406,6 +406,10 @@ theorem er_contract_add_er_eq_er_union (M : Matroid α) (C X : Set α) :
     hJ.er_contract hIC, ←er_inter_ground_eq, ← hIC.encard, ←er_inter_ground_eq ,
     inter_distrib_right, ← hJ.encard, encard_diff_add_encard_inter]
 
+-- theorem er_contract_eq_tsub (M : Matroid α) [FiniteRk M] (C X : Set α) : 
+--     (M ⟋ C).er X = M.er (X ∪ C) - M.er C := by 
+
+
 theorem Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ⟋ I).cl ∅ := by
   rw [diff_subset_iff, contract_loops_eq, union_diff_self,
     union_eq_self_of_subset_left (M.subset_cl I)]
@@ -469,7 +473,7 @@ lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X �
 
 instance contract_finiteRk [FiniteRk M] : FiniteRk (M ⟋ C) := by
   have h := ‹FiniteRk M›
-  rw [← rFin_ground_iff] at h ⊢
+  rw [← rFin_ground_iff_finiteRk] at h ⊢
   exact (h.contract_rFin C).subset (diff_subset _ _)
 
 -- Todo : Probably `Basis'` makes this shorter.
@@ -491,6 +495,26 @@ lemma contract_er_add_er_eq (M : Matroid α) (C X : Set α) :
       er_inter_ground_eq]
   exact disjoint_of_subset hJ.subset (hI.subset.trans (inter_subset_left _ _)) 
     (disjoint_of_subset_left ((inter_subset_left _ _).trans (diff_subset _ _)) disjoint_sdiff_left)
+
+theorem contract_spanning_iff' (M : Matroid α) (C X : Set α) : 
+    (M ⟋ C).Spanning X ↔ M.Spanning (X ∪ (C ∩ M.E)) ∧ Disjoint X C := by 
+  simp_rw [Spanning, contract_cl_eq, contract_ground, subset_diff, union_subset_iff, 
+    and_iff_left (inter_subset_right _ _), ←and_assoc, and_congr_left_iff, 
+    subset_antisymm_iff, subset_diff, diff_subset_iff, and_iff_left disjoint_sdiff_left, 
+    and_iff_right (M.cl_subset_ground _ ), 
+    and_iff_right (subset_union_of_subset_right (M.cl_subset_ground _) C)]
+  rw [←inter_eq_left_iff_subset (s := M.E), inter_distrib_left, 
+    inter_eq_self_of_subset_right (M.cl_subset_ground _), subset_antisymm_iff, union_subset_iff, 
+    and_iff_right (inter_subset_left _ _), union_eq_self_of_subset_left (s := M.E ∩ C), 
+    and_iff_right (M.cl_subset_ground _), Iff.comm, ←cl_union_cl_right_eq, ←cl_eq_cl_inter_ground, 
+    cl_union_cl_right_eq]
+  · exact fun _ _ ↦ Iff.rfl
+  exact (M.subset_cl _).trans 
+    (M.cl_subset_cl ((inter_subset_right _ _).trans (subset_union_right _ _))) 
+
+theorem contract_spanning_iff (hC : C ⊆ M.E := by aesop_mat) : 
+    (M ⟋ C).Spanning X ↔ M.Spanning (X ∪ C) ∧ Disjoint X C := by 
+  rw [contract_spanning_iff', inter_eq_self_of_subset_left hC] 
 
 end Contract
 

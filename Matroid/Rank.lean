@@ -123,6 +123,9 @@ theorem er_mono (M : Matroid α) : Monotone M.er := by
   rw [hI.er_eq_encard, hJ.er_eq_encard]
   exact encard_mono hIJ
 
+theorem er_le_erk (M : Matroid α) (X : Set α) : M.er X ≤ M.erk := by 
+  rw [erk_eq_er_ground, ←er_inter_ground_eq]; exact M.er_mono (inter_subset_right _ _)
+
 theorem le_er_iff : n ≤ M.er X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.encard = n := by 
   refine' ⟨fun h ↦ _, fun ⟨I, hIX, hI, hIc⟩ ↦ _⟩
   · obtain ⟨J, hJ⟩ := M.exists_basis' X
@@ -275,6 +278,25 @@ theorem er_eq_of_er_insert_le_forall (hXY : X ⊆ Y) (hY : ∀ e ∈ Y \ X, M.er
   rw [←add_zero (M.er X), hins, 
     WithTop.add_le_add_iff_left (fun htop ↦ not_top_lt (htop ▸ hlt))] at hY
   simp at hY
+
+theorem spanning_iff_er' [FiniteRk M] : M.Spanning X ↔ M.erk ≤ M.er X ∧ X ⊆ M.E := by 
+  refine' ⟨fun h ↦ _, fun ⟨hr, hX⟩ ↦ _⟩
+  · rw [erk_eq_er_ground, ←er_cl_eq _ X, h.cl_eq]; exact ⟨rfl.le, h.subset_ground⟩ 
+  obtain ⟨J, hJ⟩ := M.exists_basis X
+  obtain ⟨B, hB, hJB⟩ := hJ.indep.exists_base_supset
+  rw [←hJ.encard, ←hB.encard] at hr
+  obtain rfl := hB.finite.eq_of_subset_of_encard_le hJB hr
+  rw [spanning_iff_supset_base]
+  exact ⟨J, hB, hJ.subset⟩  
+
+theorem spanning_iff_er [FiniteRk M] (hX : X ⊆ M.E := by aesop_mat) : 
+    M.Spanning X ↔ M.erk ≤ M.er X := by
+  rw [spanning_iff_er', and_iff_left hX]
+
+theorem Spanning.er_eq (hX : M.Spanning X) : M.er X = M.erk := by 
+  obtain ⟨B, hB, hBX⟩ := hX.exists_base_subset 
+  rw [le_antisymm_iff, and_iff_right (M.er_le_erk _), ←hB.er]
+  exact M.er_mono hBX
   
 end Basic
 
@@ -375,14 +397,14 @@ theorem not_rFin_of_er_ge (h : ¬M.rFin X) (hXY : M.er X ≤ M.er Y) : ¬M.rFin 
 theorem rFin.finite_of_indep_subset (hX : M.rFin X) (hI : M.Indep I) (hIX : I ⊆ X) : I.Finite :=
   hI.finite_of_rFin (hX.to_inter_ground.subset (subset_inter hIX hI.subset_ground))
 
-@[simp] theorem rFin_ground_iff : M.rFin M.E ↔ M.FiniteRk := by
+@[simp] theorem rFin_ground_iff_finiteRk : M.rFin M.E ↔ M.FiniteRk := by
   obtain ⟨B, hB⟩ := M.exists_base
   use fun h => ⟨⟨B, hB, h.finite_of_indep_subset hB.indep hB.subset_ground⟩⟩
   simp_rw [rFin_iff (rfl.subset), basis_ground_iff]
   exact fun ⟨h⟩ ↦ h
 
 theorem rFin_ground (M : Matroid α) [FiniteRk M] : M.rFin M.E := by 
-  rwa [rFin_ground_iff]
+  rwa [rFin_ground_iff_finiteRk]
 
 theorem erk_lt_top (M : Matroid α) [FiniteRk M] : M.erk < ⊤ := by 
   rw [erk_eq_er_ground, er_lt_top_iff]; exact M.rFin_ground
