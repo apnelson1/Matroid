@@ -8,21 +8,19 @@ namespace Matroid
 example (ι : Type _) (Xs : ι → Set α) (h : Pairwise (Disjoint on Xs)) (i j : ι) (hne : i ≠ j) : 
     i = j := by
   have : Disjoint (Xs i) (Xs j) := h hne 
-  
-
+  sorry
 
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
-  (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ Y, Y ⊆ X ∧
-    Y ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
+  (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
   (h_basis : ∀ ⦃I I'⦄, Indep I → I' ∈ maximals (· ⊆ ·) {I | Indep I} →
     ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I')
   (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
   matroid_of_indep E Indep
   (by {
-    obtain ⟨Y, ⟨hY, h⟩⟩ := h_exists_maximal_indep_subset ∅ (empty_subset _)
-    rw [←subset_empty_iff.mp hY]
-    exact h.1.1
+    obtain ⟨I, ⟨hI, -⟩⟩ := h_exists_maximal_indep_subset ∅ (empty_subset _)
+    rw [←subset_empty_iff.mp hI.2]
+    exact hI.1
   })
   (fun I J hI hIJ ↦ h_subset hI hIJ)
   (by {
@@ -48,7 +46,32 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       exact ⟨hx.1, hB'.2.1⟩
     exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
   })
-  sorry
+  -- (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X) 
+  (by {
+    let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I } 
+    let Base'  : Set α → Prop := { B | Base (E \ B) }
+    let Indep' : Set α → Prop := { I' | ∃ B', Base' B' ∧ I' ⊆ B' }
+
+    have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
+                  ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by sorry
+
+    have aux2 : ∀ X B, X ⊆ E ∧ Base B →
+      (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
+       (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by sorry
+
+    have aux3 : ∀ X, X ⊆ E →
+        (∀ I I', I ∈ {I | Indep I ∧ I ⊆ X } ∧ I' ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } →
+        ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X } ∧ I ⊆ B ∧ B ⊆ I ∪ I') := by
+      intro X
+      sorry
+
+
+    simp_rw [ExistsMaximalSubsetProperty]
+    rintro X hX I hI hIX
+    obtain ⟨I', hI'⟩ := h_exists_maximal_indep_subset X hX
+    obtain ⟨B, hB⟩ := aux3 X hX I I' ⟨⟨hI, hIX⟩, hI'⟩
+    exact ⟨B, ⟨hB.1.1.1, hB.2.1, hB.1.1.2⟩, fun Y hY hBY ↦ hB.1.2 ⟨hY.1, hY.2.2⟩ hBY⟩
+  })
   h_support
 
 -- -- -- Oxley's axiomatization (Axioms for infinite matroids, Theorem 5.2)
