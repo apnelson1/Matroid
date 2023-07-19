@@ -14,6 +14,21 @@ lemma compl_subsets_inter {A B X E : Set α} (h : A ∩ X ⊆ B ∩ X) :
     (E \ B) ∩ X ⊆ (E \ A) ∩ X :=
   fun e he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
 
+lemma maximal_of_restriction {A B X} (P : Set α → Prop)
+    (hA  : A ∈ maximals (· ⊆ ·) {I | P I ∧ I ⊆ X})
+    (hB  : B ∈ maximals (· ⊆ ·) {I | P I})
+    (hAB : A ⊆ B) :
+    A = B ∩ X := by
+  sorry
+
+lemma ssubset_of_compl {A B E X : Set α}
+    (hA  : A ⊆ E)
+    (hB  : B ⊆ E)
+    (hX  : X ⊆ E)
+    (hAB : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
+    B ∩ X ⊂ A ∩ X := by
+  sorry 
+
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -57,12 +72,44 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     let Indep' : Set α → Prop := { I' | ∃ B', Base' B' ∧ I' ⊆ B' }
 
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
-                  ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by sorry
+                  ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
+      {
+        sorry
+      }
 
+    have aux2' : ∀ X B, X ⊆ E → Base B →
+        (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} →
+        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by 
+      rintro X B hX hB
+      . refine' fun hBX ↦ ⟨_, _⟩
+        . refine' ⟨_, inter_subset_right _ _⟩
+          . refine' ⟨(E \ B), _, inter_subset_left _ _⟩
+            have : Base (E \ (E \ B)) := by
+              rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1)]
+              exact hB
+            exact this
+        . by_contra' g
+          obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := sorry
+            -- aux1
+          obtain ⟨I', hI'⟩ := h_basis hBX.1.1 hB'.1
+          have : B ∩ X ⊂ I' ∩ X := by
+            refine' ⟨_, _⟩
+            . rw [subset_inter_iff]
+              exact ⟨hI'.2.1, inter_subset_right _ _⟩
+            . exfalso
+              have : B ∩ X ⊂ B' ∩ X :=
+                ssubset_of_compl (h_support hB'.1.1) (h_support hB.1) hX hB'.2
+              exact this.not_subset (hBX.2 ⟨h_subset hB'.1.1 (inter_subset_left _ _),
+                    inter_subset_right _ _⟩ this.subset)
+          exact this.not_subset (hBX.2 ⟨h_subset hI'.1.1
+            (inter_subset_left _ _), inter_subset_right _ _⟩ this.subset)
+    
     have aux2 : ∀ X B, X ⊆ E → Base B →
-      (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
-       (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by sorry
-
+        (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
+        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by 
+      {
+        refine' fun X B hX hB ↦ ⟨aux2' X B hX hB, sorry⟩
+      }
 
     -- (I3') holds for `Indep ∩ 2^X`
     have aux3 : ∀ X, X ⊆ E →
