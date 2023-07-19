@@ -24,6 +24,16 @@ lemma ssubset_of_compl {A B E X : Set α}
     B ∩ X ⊂ A ∩ X := by
   sorry 
 
+lemma compl_ground {A B E : Set α} (h : B ⊆ E) : A \ B = A ∩ (E \ B) := by
+  sorry
+
+lemma compl_subset {A B E : Set α}
+    (hA : A ⊆ E)
+    (hB : B ⊆ E)
+    (h  : A ⊆ B) :
+    E \ B ⊆ E \ A := by
+  sorry
+
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -76,13 +86,9 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         sorry
       }
 
-  
-
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
-      {
         rintro I' Bt ⟨hI', hBt⟩
-        -- Bt : B 'temporary'
 
         obtain ⟨T, hT⟩ := hI'
         let B := E \ T
@@ -107,18 +113,13 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           . exact g.2 he
           . exact (singleton_nonempty e).not_subset_empty
              (@hI'B {e} (singleton_subset_iff.mpr he) (singleton_subset_iff.mpr g))
-        . {
-          sorry
-        }
-
-/-
-∀ ⦃I I' : Set α⦄,
-  Indep I →
-    I' ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | Indep I} →
-      ∃ B, B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I'
--/
-
-      }
+        . have : I' ⊆ E := sorry
+          have a := hB''.2.1 
+          rw [compl_ground this] at a
+          have := compl_subset sorry (h_support hB''.1.1) a
+          have Bteq : Bt = E \ B' := sorry
+          rw [diff_inter, union_comm, diff_diff_cancel_left (hT.2.trans hT.1.1), ←Bteq] at this
+          exact this
     
 
     have aux2' : ∀ X B, X ⊆ E → Base B →
