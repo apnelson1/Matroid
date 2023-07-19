@@ -62,15 +62,64 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
   })
   (by {
-    let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I } 
-    let Base'  : Set α → Prop := { B | Base (E \ B) }
-    let Indep' : Set α → Prop := { I' | ∃ B', Base' B' ∧ I' ⊆ B' }
+    let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I }
+    let Base'  : Set α → Prop := { B | B ⊆ E ∧ Base (E \ B) }
+    let Indep' : Set α → Prop := { I | ∃ B, Base' B ∧ I ⊆ B }
+
+    have dual_base_compl : ∀ B, Base B → Base' (E \ B) := by
+      rintro B hB
+      rw [←diff_diff_cancel_left (h_support hB.1)] at hB
+      exact ⟨diff_subset _ _, hB⟩
+
+    have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I } = Base' := by
+      {
+        sorry
+      }
+
+  
 
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
       {
-        sorry
+        rintro I' Bt ⟨hI', hBt⟩
+        -- Bt : B 'temporary'
+
+        obtain ⟨T, hT⟩ := hI'
+        let B := E \ T
+        have hB : Base B := hT.1.2
+        have hI'B : Disjoint I' B := sorry
+
+        rw [dual_indep_maximals_eq_dual_base] at hBt
+        let B' := E \ Bt
+        have hB' : Base B' := hBt.2
+      
+        obtain ⟨B'', hB''⟩ := @h_basis (B' \ I') B (sorry) hB
+
+        refine' ⟨E \ B'', _, _, _⟩
+        . rw [dual_indep_maximals_eq_dual_base]
+          exact dual_base_compl B'' hB''.1
+        . rintro e he
+          use hT.1.1 (hT.2 he)
+          rintro he'
+          have := hB''.2.2 he'
+          rw [mem_union] at this
+          rcases this with g | g
+          . exact g.2 he
+          . exact (singleton_nonempty e).not_subset_empty
+             (@hI'B {e} (singleton_subset_iff.mpr he) (singleton_subset_iff.mpr g))
+        . {
+          sorry
+        }
+
+/-
+∀ ⦃I I' : Set α⦄,
+  Indep I →
+    I' ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | Indep I} →
+      ∃ B, B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I'
+-/
+
       }
+    
 
     have aux2' : ∀ X B, X ⊆ E → Base B →
         (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} →
@@ -84,7 +133,10 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
               exact hB
             exact this
         . by_contra' g
-          obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := sorry
+          obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
+            {
+              sorry
+            }
             -- aux1
           obtain ⟨I', hI'⟩ := h_basis hBX.1.1 hB'.1
           have : B ∩ X ⊂ I' ∩ X := by
