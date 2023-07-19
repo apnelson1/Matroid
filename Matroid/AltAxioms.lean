@@ -5,14 +5,9 @@ open Set
 
 namespace Matroid
 
--- example (ι : Type _) (Xs : ι → Set α) (h : Pairwise (Disjoint on Xs)) (i j : ι) (hne : i ≠ j) : 
---     i = j := by
---   have : Disjoint (Xs i) (Xs j) := h hne 
---   sorry
-
 lemma compl_subsets_inter {A B X E : Set α} (h : A ∩ X ⊆ B ∩ X) :
     (E \ B) ∩ X ⊆ (E \ A) ∩ X :=
-  fun e he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
+  fun _ he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
 
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})

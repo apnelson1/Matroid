@@ -482,83 +482,25 @@ theorem unif_on_dual_eq (hE : E.Finite) : (unif_on E k)﹡ = unif_on E (E.encard
   simp_rw [eq_unif_on_iff, delete_ground, unif_on_ground_eq, true_and, delete_indep_iff, 
     unif_on_indep_iff, subset_diff, and_assoc, imp_true_iff]
 
--- @[simp] theorem unif_on_contract_eq'' (E C : Set α) {k1 k2 : ℕ∞} (h1 : (E ∩ C).encard ): 
---     (unif_on E k) ⟋ C = unif_on (E \ C) (k - (E ∩ C).encard) := by 
-
-@[simp] theorem unif_on_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤): 
+theorem unif_on_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤): 
     (unif_on E k) ⟋ C = unif_on (E \ C) (k - (E ∩ C).encard) := by 
   lift k to ℕ using hk
-  rw [←contract_inter_ground_eq, unif_on_eq_unif_on_min, unif_on_ground_eq, inter_comm]
   refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
-  rw [contract_spanning_iff, unif_on_spanning_iff', unif_on_spanning_iff']
-  · simp only [ge_iff_le, contract_ground, unif_on_ground_eq, diff_self_inter, subset_diff] at hS  
-    simp only [ge_iff_le, min_le_iff, union_subset_iff, inter_subset_left, and_true, 
-      tsub_le_iff_right, subset_diff, subset_antisymm_iff (a := S), diff_subset_iff, 
-      and_iff_right hS, iff_true_intro hS.1, true_and, iff_true_intro hS.2]
+  simp only [ge_iff_le, contract_ground, unif_on_ground_eq, diff_self_inter, subset_diff] at hS  
+  rw [←contract_inter_ground_eq, unif_on_ground_eq, inter_comm, 
+    contract_spanning_iff, unif_on_spanning_iff', unif_on_spanning_iff', tsub_le_iff_right,
+    iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true, 
+     ←encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff, 
+    and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_distrib_left, 
+    and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left_iff_subset, 
+    subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
+  · exact ((tsub_le_self).trans_lt (WithTop.coe_lt_top k)).ne
+  exact WithTop.coe_ne_top
     
-    refine' ⟨fun ⟨h,hdj⟩ ↦ h.elim (fun h ↦ _) (fun h ↦ _), fun h ↦ _⟩
-    · sorry
-    · right; rw [← h, union_comm]; apply union_subset_union_left _ (inter_subset_right _ _)
-
-      
-
-      
-      
-      
-      
-      
-
+@[simp] theorem unif_on_contract_eq {k : ℕ} : 
+    (unif_on E k) ⟋ C = unif_on (E \ C) (k - (E ∩ C).encard) :=
+  unif_on_contract_eq' E C WithTop.coe_ne_top
   
-  
---   lift k to ℕ using hk
---   obtain (hle | hlt) := le_or_lt E.encard k
---   · have hle' := (encard_mono (inter_subset_left E C)).trans hle
---     rw [unif_on_eq_of_le hle, free_on_contract, unif_on_eq_of_le ]
---     rwa [←WithTop.add_le_add_iff_right (hle'.trans_lt (WithTop.coe_lt_top _)).ne, 
---       encard_diff_add_encard_inter, tsub_add_cancel_of_le hle']
---   obtain (hle' | hlt') := le_or_lt (k : ℕ∞) (E ∩ C).encard
---   · rw [tsub_eq_zero_of_le hle', unif_on_zero, ←contract_inter_ground_eq, 
---       contract_eq_loopy_on_of_spanning, unif_on_ground_eq, diff_inter_self_eq_diff]
---     rwa [unif_on_ground_eq, unif_on_spanning_iff hlt.le (inter_subset_right _ _), inter_comm]
---   obtain (hfin | hinf) := E.finite_or_infinite
---   · rw [← dual_inj_iff, contract_dual_eq_dual_delete, unif_on_dual_eq hfin, 
---       unif_on_dual_eq (hfin.diff C), unif_on_delete_eq]
---     convert rfl using 2
---     rw [←WithTop.add_right_cancel_iff (a := (k : ℕ∞) - encard (E ∩ C)), tsub_add_cancel_of_le]
-    
-    
-
-    
-
-    
-    
-    
-    
-  -- rw [tsub_eq_zero_of_le hle, max_eq_left (zero_le _), unif_on_encard, unif_on_eq_of_le hle, 
-  --   free_on_contract]
-  
-    
-
-  -- lift k to ℕ using (hlt.trans_le le_top).ne 
-  -- obtain (hinf | hfin) := E.finite_or_infinite.symm
-  -- · rw [hinf.encard_eq, ENat.top_sub_coe, max_eq_right le_top, unif_on_top]
-  -- rw [←dual_inj_iff, contract_dual_eq_dual_delete, unif_on_dual_eq]
-
-      
-  -- obtain (hlt | hle) := le_or_lt (encard (E ∩ C)) k
-  -- · obtain (hfin | hinf) := E.finite_or_infinite
-  --   · rw [←dual_inj_iff, contract_dual_eq_dual_delete, unif_on_dual_eq hfin, unif_on_delete_eq, 
-  --       unif_on_dual_eq (hfin.diff _), ←encard_diff_add_encard_inter E C]
-  --     sorry
-  --   sorry
-  -- rw [tsub_eq_zero_of_le hle.le, unif_on_zero, ←contract_inter_ground_eq, unif_on_ground_eq, 
-  --   contract_eq_loopy_on_of_spanning (Base.spanning _), unif_on_ground_eq, diff_inter_self_eq_diff]
-  
-  -- rw [unif_on_base_iff (hle.le.trans (encard_mono (inter_subset_left _ _))) (inter_subset_right _ _)]
-
-  -- simp_rw [eq_unif_on_iff, contract_ground, unif_on_ground_eq, true_and]
-  -- refine' fun⟨fun h ↦ _, fun h ↦ _⟩
-
 /-- A canonical uniform matroid, with rank `a` and ground type `Fin b`. -/
 def unif (a b : ℕ) := unif_on (univ : Set (Fin b)) a 
 
@@ -578,7 +520,7 @@ theorem unif_base_iff (hab : a ≤ b) : (unif a b).Base B ↔ B.encard = a := by
 @[simp] theorem unif_base_iff' : (unif a (a + b)).Base B ↔ B.encard = a := by 
   rw [unif_base_iff (Nat.le_add_right _ _)]
   
-@[simp] theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
+theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
   subst h
   refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _), 
@@ -662,6 +604,28 @@ theorem isIso_unif_iff {a b : ℕ} (hb0 : b ≠ 0) {M : Matroid α} :
 -- end 
 
 -- section relax
+
+
+lemma foo (hB : M.Base B) (heB : e ∈ B) (hC : M.Circuit C) (hC' : M.Cocircuit (M.E \ C)) : 
+    ∃ f, f ∈ C \ B ∧ M.Base (insert f (B \ {e})) := by
+  
+
+
+-- def relax_set (M : Matroid α) (Hs : Set (Set α)) := 
+--   matroid_of_base M.E 
+--     ( fun B ↦ M.Base B ∨ (B ∈ Hs ∧ M.Circuit B ∧ M.Cocircuit (M.E \ B)) ) 
+--     ( M.exists_base.imp fun _ ↦ Or.inl )
+--     ( by
+--         rintro B B' (hB | ⟨hBh, hBc, hBcc⟩) (hB' | ⟨hB'h, hB'c, hB'cc⟩) e he
+--         · obtain ⟨f, hf⟩:= hB.exchange hB' he
+--           exact ⟨f, hf.1, Or.inl hf.2⟩ 
+--         by_contra' h'
+--         · push_neg at h'
+
+
+--         )
+--   sorry
+  
 
 -- -- def relax_set (M : Matroid α) (Hs : Set (set α)) := 
 -- -- matroid_of_base M.E (λ B, M.base B ∨ (B ∈ Hs ∧ M.circuit B ∧ M.cocircuit (M.E \ B))) 

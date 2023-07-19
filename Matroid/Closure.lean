@@ -62,26 +62,7 @@ theorem subset_cl (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat)
 
 theorem Flat.cl (hF : M.Flat F) : M.cl F = F :=
   (sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F)
--- Move back to `Flat`
--- theorem Flat.iInter {ι : Type _} [Nonempty ι] {Fs : ι → Set α} (hFs -: ∀ i, M.Flat (Fs i)) : 
---     M.Flat (⋂ i, Fs i) := by
---   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
---     (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩ 
---   obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (iInter_subset _ i))
---   refine' (subset_union_right _ _).trans ((hFs i).1 (X := Fs i ∪ X) hIJ _)
---   convert hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ) using 1
---   rw [←union_assoc, union_eq_self_of_subset_right hIJ.subset]
-
--- theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs → M.Flat F) : 
---     M.Flat (⋂₀ Fs) := by
---   rw [sInter_eq_iInter]
---   have : Nonempty Fs
---   · exact Iff.mpr nonempty_coe_sort hF
---   exact Flat.iInter (fun ⟨F, hF⟩ ↦ h _ hF)
-
--- theorem cl_flat (M : Matroid α) (X : Set α) : M.Flat (M.cl X) :=
---   Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left   
-
+ 
 @[simp] theorem cl_ground (M : Matroid α) : M.cl M.E = M.E := 
   (M.cl_subset_ground M.E).antisymm (M.subset_cl M.E) 
 
