@@ -81,15 +81,16 @@ theorem Flat.cl_insert_eq_cl_insert_of_mem (hF : M.Flat F) (he : e ∈ M.cl (ins
 theorem Flat.cl_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.cl X ⊆ F := by
   have h' := M.cl_mono h; rwa [hF.cl] at h' 
 
+  -- TODO : Cyclic flats. 
+
 -- ### Covering
 /-- A flat is covered by another in a matroid if they are strictly nested, with no flat
   between them . TODO : Redefine in terms of `⋖` -/
 def Covby (M : Matroid α) (F₀ F₁ : Set α) : Prop :=
   M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁
 
-theorem covby_iff :
-    M.Covby F₀ F₁ ↔
-      M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ :=
+theorem covby_iff : M.Covby F₀ F₁ ↔
+    M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ :=
   Iff.rfl
 
 theorem Flat.covby_iff_of_flat (hF₀ : M.Flat F₀) (hF₁ : M.Flat F₁) :
@@ -129,8 +130,7 @@ theorem Covby.cl_insert_eq (h : M.Covby F₀ F₁) (he : e ∈ F₁ \ F₀) : M.
   exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
 
 theorem Flat.covby_iff_eq_cl_insert (hF₀ : M.Flat F₀) :
-    M.Covby F₀ F₁ ↔ ∃ e ∈ M.E \ F₀, F₁ = M.cl (insert e F₀) :=
-  by
+    M.Covby F₀ F₁ ↔ ∃ e ∈ M.E \ F₀, F₁ = M.cl (insert e F₀) := by
   refine' ⟨fun h ↦ _, _⟩
   · obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset
     simp_rw [← h.cl_insert_eq ⟨heF₁, heF₀⟩]
@@ -142,17 +142,12 @@ theorem Flat.covby_iff_eq_cl_insert (hF₀ : M.Flat F₀) :
       fun F hF hF₀F hFF₁ ↦ ?_⟩
   · rw [insert_eq, union_subset_iff, singleton_subset_iff]
     exact ⟨heF₀.1, hF₀.subset_ground⟩
-  · use e
-    refine' ⟨M.mem_cl_of_mem (mem_insert _ _) _, _⟩
-    · rw [insert_eq, union_subset_iff, singleton_subset_iff]
-      exact ⟨heF₀.1, hF₀.subset_ground⟩
-    exact heF₀.2
-  refine'
-    or_iff_not_imp_left.mpr fun hne ↦
-      hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩))
-  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (Ne.symm hne))
-  obtain ⟨he', -⟩ := hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩
-  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF, hF₀F⟩))
+  · exact fun h ↦ heF₀.2 (h.symm.subset (mem_cl_of_mem' _ (mem_insert _ _) heF₀.1)) 
+  refine hF₀F.eq_or_ssubset.elim (fun h ↦ Or.inl h.symm) 
+    (fun hss ↦ Or.inr (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset ?_ hF₀F))))
+  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset hss
+  exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩).1 
+    (hF.cl_subset_of_subset (insert_subset hfF hF₀F))
 
 theorem cl_covby_iff : M.Covby (M.cl X) F ↔ ∃ e ∈ M.E \ M.cl X, F = M.cl (insert e X) := by
   simp_rw [(M.cl_flat X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
@@ -249,17 +244,17 @@ theorem Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E
 --     exact (h.symm.subset he).2 he },
 --   exact (to_finite _).image _,
 -- end
-theorem Flat.cl_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.indep I) : M.cl I = F ↔ M.Basis I F :=
-  ⟨by rintro rfl; exact hI.basis_cl, fun h ↦ by rw [h.cl, hF.cl]⟩
+theorem Flat.cl_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.Indep I) : M.cl I = F ↔ M.Basis I F :=
+  ⟨by rintro rfl; exact hI.basis_cl, fun h ↦ by rw [h.cl_eq_cl, hF.cl]⟩
 
 -- ### Hyperplanes
 section Hyperplane
 
 /-- A hyperplane is a maximal set containing no base  -/
-def Hyperplane (M : Matroid α) (H : Set α) : Prop :=
+@[pp_dot] def Hyperplane (M : Matroid α) (H : Set α) : Prop :=
   M.Covby H M.E
 
-@[ssE_finish_rules]
+@[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Hyperplane.subset_ground (hH : M.Hyperplane H) : H ⊆ M.E :=
   hH.flat_left.subset_ground
 
@@ -270,37 +265,33 @@ theorem Hyperplane.covby (h : M.Hyperplane H) : M.Covby H M.E :=
   h
 
 theorem Hyperplane.flat (hH : M.Hyperplane H) : M.Flat H :=
-  hH.Covby.flat_left
+  hH.covby.flat_left
 
 theorem Hyperplane.ssubset_ground (hH : M.Hyperplane H) : H ⊂ M.E :=
-  hH.Covby.ssubset
+  hH.covby.ssubset
 
 theorem Hyperplane.ssubset_univ (hH : M.Hyperplane H) : H ⊂ univ :=
   hH.ssubset_ground.trans_subset (subset_univ _)
 
-theorem Hyperplane.cl_insert_eq (hH : M.Hyperplane H) (heH : e ∉ H)
-    (he : e ∈ M.E := by aesop_mat) :
+theorem Hyperplane.cl_insert_eq (hH : M.Hyperplane H) (heH : e ∉ H) (he : e ∈ M.E := by aesop_mat) :
     M.cl (insert e H) = M.E :=
-  hH.Covby.cl_insert_eq ⟨he, heH⟩
+  hH.covby.cl_insert_eq ⟨he, heH⟩
 
-theorem Hyperplane.cl_eq_univ_of_ssupset (hH : M.Hyperplane H) (hX : H ⊂ X)
-    (hX' : X ⊆ M.E := by aesop_mat) :
-    M.cl X = M.E := by
+theorem Hyperplane.cl_eq_ground_of_ssupset (hH : M.Hyperplane H) (hX : H ⊂ X)
+    (hX' : X ⊆ M.E := by aesop_mat) : M.cl X = M.E := by
   obtain ⟨e, heX, heH⟩ := exists_of_ssubset hX
-  exact
-    (M.cl_subset_ground _).antisymm
-      ((hH.cl_insert_eq heH (hX' heX)).symm.trans_subset
-        (M.cl_subset (insert_subset.mpr ⟨heX, hX.subset⟩)))
+  exact (M.cl_subset_ground _).antisymm ((hH.cl_insert_eq heH (hX' heX)).symm.trans_subset
+    (M.cl_subset_cl (insert_subset heX hX.subset)))
 
 theorem Hyperplane.spanning_of_ssupset (hH : M.Hyperplane H) (hX : H ⊂ X)
     (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Spanning X := by rw [spanning_iff_cl, hH.cl_eq_univ_of_ssupset hX]
+    M.Spanning X := by rw [spanning_iff_cl, hH.cl_eq_ground_of_ssupset hX]  
 
 theorem Hyperplane.not_spanning (hH : M.Hyperplane H) : ¬M.Spanning H := by
   rw [hH.flat.spanning_iff]; exact hH.ssubset_ground.ne
 
 theorem Hyperplane.flat_supset_eq_ground (hH : M.Hyperplane H) (hF : M.Flat F) (hHF : H ⊂ F) :
-    F = M.E := by rw [← hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+    F = M.E := by rw [← hF.cl, hH.cl_eq_ground_of_ssupset hHF]
 
 theorem hyperplane_iff_maximal_proper_flat :
     M.Hyperplane H ↔ M.Flat H ∧ H ⊂ M.E ∧ ∀ F, H ⊂ F → M.Flat F → F = M.E :=
@@ -308,14 +299,13 @@ theorem hyperplane_iff_maximal_proper_flat :
   rw [hyperplane_iff_covby, Covby, and_iff_right M.ground_flat, and_congr_right_iff,
     and_congr_right_iff]
   simp_rw [or_iff_not_imp_left, ssubset_iff_subset_ne, and_imp, ← Ne.def]
-  exact fun hH hHE hne ↦
-    ⟨fun h F hHF hne' hF ↦ h F hF hHF hF.subset_ground hne'.symm, fun h F hF hHF hFE hne' ↦
+  exact fun _ _ _  ↦
+    ⟨fun h F hHF hne' hF ↦ h F hF hHF hF.subset_ground hne'.symm, fun h F hF hHF _ hne' ↦
       h F hHF hne'.symm hF⟩
 
 theorem hyperplane_iff_maximal_nonspanning :
-    M.Hyperplane H ↔ H ∈ maximals (· ⊆ ·) {X | X ⊆ M.E ∧ ¬M.Spanning X} :=
-  by
-  simp_rw [mem_maximals_setOf_iff, and_imp]
+    M.Hyperplane H ↔ H ∈ maximals (· ⊆ ·) {X | ¬M.Spanning X ∧ X ⊆ M.E} := by
+  simp_rw [and_comm (b := _ ⊆ _), mem_maximals_setOf_iff, and_imp]
   refine' ⟨fun h ↦ ⟨⟨h.subset_ground, h.not_spanning⟩, fun X hX hX' hHX ↦ _⟩, fun h ↦ _⟩
   · exact by_contra fun hne ↦ hX' (h.spanning_of_ssupset (hHX.ssubset_of_ne hne))
   rw [hyperplane_iff_covby, covby_iff, and_iff_right M.ground_flat,
@@ -323,103 +313,87 @@ theorem hyperplane_iff_maximal_nonspanning :
   refine'
     ⟨fun e he ↦ _, h.1.1.ssubset_of_ne (by rintro rfl; exact h.1.2 M.ground_spanning),
       fun F hF hHF hFE ↦ or_iff_not_imp_right.mpr fun hFE' ↦ _⟩
-  · have h' := h.2 (insert_subset.mpr ⟨he.1, h.1.1⟩)
+  · have h' := h.2 (insert_subset he.1 h.1.1)
     simp_rw [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
-      imp_false, Classical.not_not, spanning_iff_cl] at h' 
+      imp_false, Classical.not_not, spanning_iff_cl]  at h' 
+    rw [spanning_iff_cl] at h'
     rw [h', ← not_spanning_iff_cl h.1.1]
     exact h.1.2
   have h' := h.2 hFE
   rw [hF.spanning_iff] at h' 
   rw [h' hFE' hHF]
 
--- lemma hyperplane_iff_maximal_nonspanning : 
---   M.hyperplane H ↔ H ∈ maximals (⊆) {X | X ⊆ M.E ∧ ¬ M.spanning X } :=
-@[simp]
-theorem compl_cocircuit_iff_hyperplane
-    (hH : H ⊆ M.E := by aesop_mat) :
-    M.Cocircuit (M.E \ H) ↔ M.Hyperplane H :=
-  by
-  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, hyperplane_iff_maximal_nonspanning,
-    mem_maximals_setOf_iff, mem_minimals_setOf_iff, sdiff_sdiff_right_self, inf_eq_inter,
-    ground_inter_right, and_imp, and_iff_right hH, and_congr_right_iff, subset_diff]
-  refine' fun hH' ↦ ⟨fun h X hX hXE hXH ↦ _, fun h X hX hXE ↦ _⟩
-  · rw [← diff_eq_diff_iff_eq (hXH.trans hX) hX]
-    exact
-      @h (M.E \ X) (by simpa) ⟨diff_subset _ _, disjoint_of_subset_right hXH disjoint_sdiff_left⟩
-  rw [@h (M.E \ X) (diff_subset _ _) hX, sdiff_sdiff_right_self, inf_eq_inter,
-    inter_eq_self_of_subset_right hXE.1]
-  rw [subset_diff, and_iff_right hH]
-  exact hXE.2.symm
-
-@[simp]
-theorem compl_hyperplane_iff_cocircuit
-    (h : K ⊆ M.E := by aesop_mat) :
+@[simp] theorem compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
+    M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by
+  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, hyperplane_iff_maximal_nonspanning, 
+    (and_comm (b := _ ⊆ _)), mem_minimals_setOf_iff, mem_maximals_setOf_iff, 
+    diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
+  refine' fun _ ↦ ⟨fun h X hXE hX hHX ↦ _, fun h X hX hXE hXH ↦ _⟩
+  · rw [←diff_diff_cancel_left hH, ←diff_diff_cancel_left hXE, 
+      h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) (diff_subset _ _)]
+    rw [←subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
+    exact hHX.trans (subset_union_right _ _)
+  rw [h (diff_subset _ _) hX, diff_diff_cancel_left hXE]
+  rw [subset_diff]
+  exact ⟨hH, hXH.symm⟩ 
+    
+@[simp] theorem compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by
   rw [← compl_cocircuit_iff_hyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
     inter_eq_left_iff_subset.mpr h]
 
--- added `K ⊆ M.E`
 theorem Hyperplane.compl_cocircuit (hH : M.Hyperplane H) : M.Cocircuit (M.E \ H) :=
-  compl_cocircuit_iff_hyperplane.mpr hH
+  (compl_cocircuit_iff_hyperplane hH.subset_ground).mpr hH
 
 theorem Cocircuit.compl_hyperplane {K : Set α} (hK : M.Cocircuit K) : M.Hyperplane (M.E \ K) :=
   (compl_hyperplane_iff_cocircuit hK.subset_ground).mpr hK
 
-theorem univ_not_hyperplane (M : Matroid α) : ¬M.Hyperplane univ := fun h ↦ h.ssubset_univ.Ne rfl
+theorem univ_not_hyperplane (M : Matroid α) : ¬M.Hyperplane univ := 
+  fun h ↦ h.ssubset_univ.ne rfl
 
 theorem Hyperplane.eq_of_subset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂) (h : H₁ ⊆ H₂) :
     H₁ = H₂ :=
-  (h₁.Covby.eq_or_eq h₂.Flat h h₂.subset_ground).elim Eq.symm fun h' ↦
-    (h₂.ssubset_ground.Ne h').elim
+  (h₁.covby.eq_or_eq h₂.flat h h₂.subset_ground).elim Eq.symm fun h' ↦
+    (h₂.ssubset_ground.ne h').elim
 
 theorem Hyperplane.not_ssubset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂) : ¬H₁ ⊂ H₂ :=
-  fun hss ↦ hss.Ne (h₁.eq_of_subset h₂ hss.Subset)
+  fun hss ↦ hss.ne (h₁.eq_of_subset h₂ hss.subset)
 
-theorem Hyperplane.exists_not_mem (hH : M.Hyperplane H) : ∃ e, e ∉ H := by by_contra' h;
+theorem Hyperplane.exists_not_mem (hH : M.Hyperplane H) : ∃ e, e ∉ H := by
+  by_contra' h;
   apply M.univ_not_hyperplane; convert hH; rwa [eq_comm, eq_univ_iff_forall]
 
-theorem Base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
+theorem Base.hyperplane_of_cl_diff_singleton (hB : M.Base B) (heB : e ∈ B) :
     M.Hyperplane (M.cl (B \ {e})) :=
   by
-  rw [hyperplane_iff_covby, flat.covby_iff_eq_cl_insert (M.cl_flat _)]
+  rw [hyperplane_iff_covby, Flat.covby_iff_eq_cl_insert (M.cl_flat _)]
   refine' ⟨e, ⟨hB.subset_ground heB, _⟩, _⟩
   · rw [(hB.indep.diff {e}).not_mem_cl_iff (hB.subset_ground heB)]
     simpa [insert_eq_of_mem heB] using hB.indep
-  simpa [insert_eq_of_mem heB] using hB.cl.symm
+  simpa [insert_eq_of_mem heB] using hB.cl_eq.symm
 
 theorem Hyperplane.ssupset_eq_univ_of_flat (hH : M.Hyperplane H) (hF : M.Flat F) (h : H ⊂ F) :
     F = M.E :=
-  hH.Covby.eq_of_ssubset_of_subset hF h hF.subset_ground
+  hH.covby.eq_of_ssubset_of_subset hF h hF.subset_ground
 
 theorem Hyperplane.cl_insert_eq_univ (hH : M.Hyperplane H) (he : e ∈ M.E \ H) :
-    M.cl (insert e H) = M.E :=
-  by
-  refine'
-    hH.ssupset_eq_univ_of_flat (M.cl_flat _)
-      ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
+    M.cl (insert e H) = M.E := by
+  refine' hH.ssupset_eq_univ_of_flat (M.cl_flat _) 
+    ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
   rw [insert_eq, union_subset_iff, singleton_subset_iff]
   exact ⟨he.1, hH.subset_ground⟩
 
--- changed `univ` to `M.E` 
--- hypothesis: changed `e ∉ H` to `e ∈ M.E \ H` 
--- change e ∈ M.E \ H
-theorem exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X)
-    (hX : X ⊆ M.E := by aesop_mat) :
-    ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H :=
-  by
+theorem exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E := by aesop_mat) :
+    ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_basis X
-  rw [← hI.cl] at h 
-  have h' := h.2
-  rw [hI.indep.not_mem_cl_iff] at h' 
-  obtain ⟨B, hB, heIB⟩ := h'.2.exists_base_supset
-  rw [insert_subset] at heIB 
-  exact
-    ⟨M.cl (B \ {e}), hB.hyperplane_of_cl_diff_singleton heIB.1,
-      hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h'.1)), fun hecl ↦
-      indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl)⟩
+  rw [← hI.cl_eq_cl, mem_diff, hI.indep.not_mem_cl_iff] at h 
+  obtain ⟨B, hB, heIB⟩ := h.2.1.exists_base_supset
+  rw [insert_subset_iff] at heIB
+  refine ⟨_, hB.hyperplane_of_cl_diff_singleton heIB.1, ?_, ?_⟩ 
+  · exact hI.subset_cl.trans (M.cl_subset_cl (subset_diff_singleton heIB.2 h.2.2))
+  exact hB.indep.not_mem_cl_diff_of_mem heIB.1
 
-theorem cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α)
-    (hX : X ⊆ M.E := by aesop_mat) :
+theorem cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {H | M.Hyperplane H ∧ X ⊆ H} ∩ M.E :=
   by
   refine' subset_antisymm (subset_inter _ (M.cl_subset_ground _)) _
@@ -429,43 +403,34 @@ theorem cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α)
   obtain ⟨H, hH, hXH, heH'⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨heE, hx⟩
   exact heH' (heH H ⟨hH, hXH⟩)
 
-theorem mem_cl_iff_forall_hyperplane
-    (hX : X ⊆ M.E := by aesop_mat)
-    (he : e ∈ M.E := by aesop_mat) :
-    e ∈ M.cl X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H :=
-  by
-  simp_rw [M.cl_eq_cl_inter_ground X, cl_eq_sInter_hyperplanes, mem_inter_iff, and_iff_left he,
-    mem_sInter, mem_set_of_eq, and_imp]
-  exact
-    ⟨fun h H hH hXH ↦ h _ hH ((inter_subset_left _ _).trans hXH), fun h H hH hXH ↦
-      h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
+theorem mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e ∈ M.E := by aesop_mat) :
+    e ∈ M.cl X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
+  simp_rw [M.cl_eq_cl_inter_ground X, 
+    M.cl_eq_sInter_hyperplanes _ ((inter_subset_left _ _).trans hX), mem_inter_iff, and_iff_left he,
+    mem_sInter, mem_setOf_eq, and_imp]
+  exact ⟨fun h H hH hXH ↦ h _ hH ((inter_subset_left _ _).trans hXH), 
+    fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
 
-theorem mem_dual_cl_iff_forall_circuit
-    (hX : X ⊆ M.E := by aesop_mat)
-    (he : e ∈ M.E := by aesop_mat) :
-    e ∈ M﹡.cl X ↔ ∀ C, M.Circuit C → e ∈ C → (X ∩ C).Nonempty :=
-  by
+theorem mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat) 
+  (he : e ∈ M.E := by aesop_mat) :
+    e ∈ M﹡.cl X ↔ ∀ C, M.Circuit C → e ∈ C → (X ∩ C).Nonempty := by
   rw [← dual_dual M]
-  simp_rw [dual_circuit_iff_cocircuit, dual_dual M, mem_cl_iff_forall_hyperplane]
-  refine' ⟨fun h C hC heC ↦ _, fun h H hH hXH ↦ by_contra fun heH ↦ _⟩
-  · specialize h _ hC.compl_hyperplane
-    rwa [imp_iff_not (fun he ↦ he.2 heC : e ∉ M﹡.e \ C), subset_diff, not_and, dual_ground,
-      imp_iff_right hX, not_disjoint_iff_nonempty_inter] at h 
-  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, heH⟩
-  exact hf.2.2 (hXH hf.1)
+  simp_rw [←cocircuit_def, dual_dual M, mem_cl_iff_forall_hyperplane (M := M﹡) hX he]
+  refine' ⟨fun h C hC heC ↦ by_contra fun hne ↦ _, fun h H hH hXE ↦ by_contra fun he' ↦ _⟩
+  · rw [nonempty_iff_ne_empty, not_not, ←disjoint_iff_inter_eq_empty] at hne
+    exact (h _ hC.compl_hyperplane (subset_diff.mpr ⟨hX, hne⟩)).2 heC
+  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, he'⟩  
+  exact hf.2.2 (hXE hf.1)
 
-theorem Flat.subset_hyperplane_of_ne_ground (hF : M.Flat F) (h : F ≠ M.e) :
-    ∃ H, M.Hyperplane H ∧ F ⊆ H :=
-  by
+theorem Flat.subset_hyperplane_of_ne_ground (hF : M.Flat F) (h : F ≠ M.E) :
+    ∃ H, M.Hyperplane H ∧ F ⊆ H := by
   obtain ⟨e, heE, heF⟩ := exists_of_ssubset (hF.subset_ground.ssubset_of_ne h)
   rw [← hF.cl] at heF 
   obtain ⟨H, hH, hFH, -⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨heE, heF⟩
   exact ⟨H, hH, hFH⟩
 
-theorem subset_hyperplane_iff_cl_ne_ground
-    (hY : Y ⊆ M.E := by aesop_mat) :
-    M.cl Y ≠ M.E ↔ ∃ H, M.Hyperplane H ∧ Y ⊆ H :=
-  by
+theorem subset_hyperplane_iff_cl_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
+    M.cl Y ≠ M.E ↔ ∃ H, M.Hyperplane H ∧ Y ⊆ H := by
   refine' ⟨fun h ↦ _, _⟩
   · obtain ⟨H, hH, hYH⟩ := (M.cl_flat Y).subset_hyperplane_of_ne_ground h
     exact ⟨H, hH, (M.subset_cl Y).trans hYH⟩
@@ -473,6 +438,23 @@ theorem subset_hyperplane_iff_cl_ne_ground
   refine' hH.ssubset_ground.not_subset _
   rw [← hH.flat.cl]
   exact hY.symm.trans_subset (M.cl_mono hYH)
+
+theorem Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
+    (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by 
+  have hcl := hH.cl_insert_eq hf.2 hf.1
+  rw [←cl_insert_cl_eq_cl_insert, ←hHc.cl_diff_singleton_eq_cl e, cl_insert_cl_eq_cl_insert, 
+    ←spanning_iff_cl (insert_subset hf.1 ((diff_subset _ _).trans hH.subset_ground))] at hcl
+  refine' hcl.base_of_indep _
+  rw [←(hHc.diff_singleton_indep he).not_mem_cl_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1), 
+    hHc.cl_diff_singleton_eq_cl e, hH.flat.cl]
+  exact hf.2 
+  
+theorem Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
+    (hHc : M.Circuit C) (he : e ∈ B) : ∃ f, f ∈ H \ B ∧ M.Base (insert f (B \ {e})) := by
+  by_contra' h
+  have h1 : H \ {e} ⊆ M.cl (B \ {e})
+  · intro f hf
+    
 
 end Hyperplane
 

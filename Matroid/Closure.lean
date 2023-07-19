@@ -555,6 +555,12 @@ theorem coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E := by aesop_mat) :
 theorem Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
   (coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX
 
+theorem Indep.base_of_spanning (hI : M.Indep I) (hIs : M.Spanning I) : M.Base I := by 
+  obtain ⟨B, hB, hBI⟩ := hIs.exists_base_subset; rwa [←hB.eq_of_subset_indep hI hBI]
+
+theorem Spanning.base_of_indep (hIs : M.Spanning I) (hI : M.Indep I) : M.Base I := 
+  hI.base_of_spanning hIs
+
 theorem eq_of_spanning_iff_spanning_forall {M M' : Matroid α} (h : M.E = M'.E) 
     (hsp : ∀ S, S ⊆ M.E → (M.Spanning S ↔ M'.Spanning S )) : M = M' := by 
   have hsp' : M.Spanning = M'.Spanning
