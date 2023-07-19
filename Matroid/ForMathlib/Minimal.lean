@@ -23,12 +23,6 @@ lemma mem_minimals_setOf_iff [IsAntisymm α r] :
     x ∈ minimals r (setOf P) ↔ P x ∧ ∀ ⦃y⦄, P y → r y x → x = y :=
   mem_minimals_iff
 
--- lemma maximals_dual [PartialOrder α] (s : Set α) : 
---   @maximals α (· ≤ ·) s = @minimals αᵒᵈ (· ≤ ·) s := rfl 
-
--- lemma minimals_dual [PartialOrder α] (s : Set α) :
---   @minimals α (· ≤ ·) s = @maximals αᵒᵈ (· ≤ ·) s := rfl
-
 lemma mem_minimals_iff_forall_lt_not_mem' (rlt : α → α → Prop) [IsAntisymm α r] [IsTrans α r] 
     [IsNonstrictStrictOrder α r rlt] :
     x ∈ minimals r s ↔ x ∈ s ∧ ∀ ⦃y⦄, rlt y x → y ∉ s := by
@@ -151,13 +145,6 @@ lemma RelEmbedding.maximals_preimage_eq (f : r ↪r s) (y : Set β) :
   convert (f.inter_preimage_maximals_eq univ y).symm; simp [univ_inter]; simp [inter_comm]
 
 end image_preimage
-  
-    -- minimals r (f ⁻¹' x) = f ⁻¹' (minimals s x) := by
-  
-
-
--- theorem foo {s : Set (Set α)} {f : α → β} (hf : )
-
 
 open Set
 
@@ -184,8 +171,6 @@ theorem maximals_Ioc (hab : a < b) : maximals (· ≤ ·) (Ioc a b) = {b} :=
 theorem minimals_Ico (hab : a < b) : minimals (· ≤ ·) (Ico a b) = {a} := by
   simp_rw [Ico, and_comm (a := _ ≤ _)]; exact maximals_Ioc (α := αᵒᵈ) hab
 
-
-
 /-- This seems a strict improvement over the nonprimed version in mathlib - only the image needs to 
 be finite, not the set itself.  -/
 lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → β) (s : Set α) 
@@ -193,7 +178,6 @@ lemma Finite.exists_maximal_wrt' {α β : Type _} [PartialOrder β] (f : α → 
   (∃ a ∈ s, ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') := by
   obtain  ⟨_ ,⟨a,ha,rfl⟩, hmax⟩ := Finite.exists_maximal_wrt id (f '' s) h (h₀.image f)
   exact ⟨a, ha, fun a' ha' hf ↦ hmax _ (mem_image_of_mem f ha') hf⟩
-
 
 -- lemma finite_iff_bddAbove {α : Type _} [SemilatticeSup α] [LocallyFiniteOrder α] [OrderBot α] 
 --     {s : Set α} : s.Finite ↔ BddAbove s :=

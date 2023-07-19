@@ -974,27 +974,3 @@ end from_axioms
 
 end Matroid 
 
-
-/- Restrict a matroid to a set containing a known basis. This is a special case of restriction
-  and only has auxiliary use -/
--- def bRestr (M : Matroid α) {B₀ R : Set α} (hB₀ : M.Base B₀) (hB₀R : B₀ ⊆ R) (hR : R ⊆ M.E) : 
---     Matroid α where
---   ground := R
---   Base B := M.Base B ∧ B ⊆ R
---   exists_base' := ⟨B₀, ⟨hB₀, hB₀R⟩⟩ 
---   base_exchange' := by
---     rintro B B' ⟨hB, hBR⟩ ⟨hB', hB'R⟩ e he
---     obtain ⟨f, hf⟩ := hB.exchange hB' he
---     refine' ⟨f, hf.1, hf.2, insert_subset (hB'R hf.1.1) ((diff_subset _ _).trans hBR)⟩    
---   maximality' := by
---     rintro X hXR Y ⟨B, ⟨hB, -⟩, hYB⟩ hYX
---     obtain ⟨J, ⟨⟨BJ, hBJ, hJBJ⟩, hJ⟩, hJmax⟩ := M.maximality' X (hXR.trans hR) Y ⟨B, hB, hYB⟩ hYX 
---     simp only [mem_setOf_eq, and_imp, forall_exists_index] at hJmax 
---     obtain ⟨BJ', hBJ', hJBJ'⟩ :=
---       (hBJ.indep.subset hJBJ).subset_basis_of_subset (subset_union_left _ B₀) 
---         (union_subset (hJ.2.trans (hXR.trans hR)) (hB₀R.trans hR))
---     have' hBJ'b := hB₀.base_of_basis_supset (subset_union_right _ _) hBJ'
---     refine' ⟨J, ⟨⟨BJ', ⟨hBJ'b, hBJ'.subset.trans (union_subset (hJ.2.trans hXR) hB₀R)⟩, hJBJ'⟩,hJ⟩, 
---       fun K ⟨⟨BK, ⟨hBK, _⟩, hKBK⟩, hYK, hKX⟩ hKJ ↦ hJmax BK hBK hKBK hYK hKX hKJ⟩
---   subset_ground' := by tauto
-

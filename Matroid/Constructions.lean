@@ -74,6 +74,9 @@ def loopy_on (E : Set α) : Matroid α := (empty_on α ↾ E)
   obtain ⟨I, hI⟩ := (loopy_on E).exists_basis' X 
   rw [hI.er_eq_encard, loopy_on_indep_iff.1 hI.indep, encard_empty]
 
+@[simp] theorem loopy_on_erk_eq (E : Set α) : (loopy_on E).erk = 0 := by 
+  rw [erk_eq_er_ground, loopy_on_er_eq]
+
 @[simp] theorem loopy_on_r_eq (E X : Set α) : (loopy_on E).r X = 0 := by 
   rw [←er_toNat_eq_r, loopy_on_er_eq]; rfl 
 
@@ -85,11 +88,23 @@ def loopy_on (E : Set α) : Matroid α := (empty_on α ↾ E)
   (cl_subset_ground _ _).antisymm 
     (subset_trans (by rw [(loopy_on_base_iff.2 rfl).cl_eq]) (cl_subset_cl _ (empty_subset _)))
 
-@[simp] theorem eq_loopy_on_iff_cl_empty_eq_ground : M = loopy_on E ↔ M.E = E ∧ M.cl ∅ = E := by
-  refine' ⟨fun h ↦ by simp [h], fun h ↦ eq_of_cl_eq_cl_forall (fun X ↦ _)⟩
-  rw [←h.1, loopy_on_cl_eq, subset_antisymm_iff, and_iff_right (M.cl_subset_ground _), 
-    h.1, ←h.2]
+@[simp] theorem cl_empty_eq_ground_iff : M.cl ∅ = M.E ↔ M = loopy_on M.E := by 
+  refine ⟨fun h ↦ eq_of_cl_eq_cl_forall ?_, fun h ↦ by rw [h, loopy_on_cl_eq, loopy_on_ground]⟩
+  refine fun X ↦ subset_antisymm (by simp [cl_subset_ground]) ?_ 
+  rw [loopy_on_cl_eq, ←h]
   exact M.cl_mono (empty_subset _)
+   
+@[simp] theorem erk_eq_zero_iff : M.erk = 0 ↔ M = loopy_on M.E := by 
+  refine ⟨fun h ↦ cl_empty_eq_ground_iff.1 ?_, fun h ↦ by rw [h, loopy_on_erk_eq]⟩
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [←hB.encard, encard_eq_zero] at h 
+  rw [←h, hB.cl_eq]
+
+theorem eq_loopy_on_iff_cl : M = loopy_on E ↔ M.cl ∅ = E ∧ M.E = E :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←cl_empty_eq_ground_iff, h, h']⟩
+  
+theorem eq_loopy_on_iff_erk : M = loopy_on E ↔ M.erk = 0 ∧ M.E = E := 
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←erk_eq_zero_iff, h]⟩
 
 instance : FiniteRk (loopy_on E) := 
   ⟨⟨∅, loopy_on_base_iff.2 rfl, finite_empty⟩⟩ 
@@ -98,19 +113,25 @@ theorem Finite.loopy_on_finite (hE : E.Finite) : Finite (loopy_on E) :=
   ⟨hE⟩ 
 
 @[simp] theorem loopy_on_restrict (E R : Set α) : (loopy_on E) ↾ R = loopy_on R := by
-  rw [eq_loopy_on_iff_cl_empty_eq_ground, restrict_ground_eq, and_iff_right rfl, restrict_cl_eq', 
-    empty_inter, loopy_on_cl_eq, loopy_on_ground, inter_comm, inter_union_diff]
+  have h0 : ((loopy_on E) ↾ R).erk = 0 
+  · rw [erk_eq_er_ground, restrict_er_eq', loopy_on_er_eq]
+  rwa [erk_eq_zero_iff, restrict_ground_eq] at h0
 
 @[simp] theorem loopy_on_delete (E X : Set α) : (loopy_on E) ⟍ X = loopy_on (E \ X) := by
   rw [←restrict_compl, loopy_on_restrict, loopy_on_ground]
 
-theorem loopy_on_contract (E X : Set α) : (loopy_on E) ⟋ X = loopy_on (E \ X) := by 
-  simp
+@[simp] theorem loopy_on_contract (E X : Set α) : (loopy_on E) ⟋ X = loopy_on (E \ X) := by 
+  simp_rw [eq_loopy_on_iff_cl, contract_cl_eq, empty_union, loopy_on_cl_eq, contract_ground, 
+    loopy_on_ground]
   
 @[simp] theorem loopy_on_minor : M ≤m loopy_on E ↔ M = loopy_on M.E ∧ M.E ⊆ E := by 
   refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
+  
   convert (loopy_on E).restrict_minor hss using 1
   rw [h, loopy_on_ground, loopy_on_restrict]
+
+theorem contract_eq_loopy_on_of_spanning (h : M.Spanning C) : M ⟋ C = loopy_on (M.E \ C) := by 
+  rw [eq_loopy_on_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
   
 end LoopyOn
 
@@ -269,7 +290,8 @@ theorem trivial_on_restrict (h : I ⊆ E) (R : Set α) :
 @[simp] theorem trivial_on_delete (I E D : Set α) : 
     (trivial_on I E) ⟍ D = trivial_on (I \ D) (E \ D) := by 
   rw [←restrict_compl, trivial_on_restrict', trivial_on_ground, inter_assoc, 
-    inter_eq_self_of_subset_left (diff_subset _ _), eq_comm, ←trivial_on_inter_ground_eq, diff_inter_diff_right, inter_diff_assoc]
+    inter_eq_self_of_subset_left (diff_subset _ _), eq_comm, ←trivial_on_inter_ground_eq, 
+    diff_inter_diff_right, inter_diff_assoc]
   
 @[simp] theorem trivial_on_contract (I E C : Set α) : 
     (trivial_on I E) ⟋ C = trivial_on (I \ C) (E \ C) := by 
@@ -305,9 +327,15 @@ def truncate (M : Matroid α) (k : ℕ∞) : Matroid α :=
 
 @[simp] theorem truncate_indep_iff : (M.truncate k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) := by 
   cases k <;> simp [truncate, WithTop.none_eq_top, WithTop.some_eq_coe, le_top]
-  
+
 @[simp] theorem truncate_ground_eq : (M.truncate k).E = M.E := by
   cases k <;> rfl
+
+@[simp] theorem truncate_zero (M : Matroid α) : M.truncate 0 = loopy_on M.E := by 
+  refine' eq_of_indep_iff_indep_forall rfl _
+  simp only [truncate_ground_eq, truncate_indep_iff, nonpos_iff_eq_zero, encard_eq_zero, 
+    loopy_on_indep_iff, and_iff_right_iff_imp]
+  rintro I - rfl; apply empty_indep
 
 theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncate k = M := by 
   refine eq_of_indep_iff_indep_forall truncate_ground_eq (fun I _ ↦ ?_)
@@ -372,18 +400,106 @@ def unif_on (E : Set α) (k : ℕ∞) : Matroid α := (free_on E).truncate k
 @[simp] theorem unif_on_indep_iff : (unif_on E k).Indep I ↔ I.encard ≤ k ∧ I ⊆ E := by
   simp [unif_on, and_comm]
 
-@[simp] theorem unif_on_base_iff (k : ℕ) (hk : k ≤ E.encard) (hBE : B ⊆ E) : 
+@[simp] theorem unif_on_top (E : Set α) : unif_on E ⊤ = free_on E := by 
+  rw [unif_on, truncate_top]
+
+@[simp] theorem unif_on_zero (E : Set α) : unif_on E 0 = loopy_on E := by 
+  simp [unif_on]
+ 
+theorem unif_on_eq_unif_on_min (E : Set α) (k : ℕ∞) : unif_on E k = unif_on E (min k E.encard) := by
+  simp only [ge_iff_le, eq_iff_indep_iff_indep_forall, unif_on_ground_eq, unif_on_indep_iff, 
+    le_min_iff, and_congr_left_iff, iff_self_and, true_and]
+  exact fun I hI _ _ ↦ encard_mono hI
+
+@[simp] theorem unif_on_encard : unif_on E E.encard = free_on E := by 
+  rw [unif_on, truncate_eq_self_of_rk_le (free_on_erk_eq _).le]
+
+theorem unif_on_eq_of_le (h : E.encard ≤ k) : unif_on E k = free_on E := by 
+  rw [unif_on, truncate_eq_self_of_rk_le (by rwa [free_on_erk_eq])]
+
+theorem unif_on_base_iff {k : ℕ} (hk : k ≤ E.encard) (hBE : B ⊆ E) : 
     (unif_on E k).Base B ↔ B.encard = k := by
   rw [unif_on, truncate_base_iff, free_on_indep_iff, and_iff_right hBE]; rwa [free_on_erk_eq]
+
+theorem unif_on_base_iff' (hktop : k ≠ ⊤) (hk : k ≤ E.encard) (hBE : B ⊆ E) : 
+    (unif_on E k).Base B ↔ B.encard = k := by
+  lift k to ℕ using hktop; rw [unif_on_base_iff hk hBE]
   
-theorem unif_on_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) :
-    (unif_on E k).er X = min X.encard k := by
+theorem unif_on_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unif_on E k).er X = min X.encard k := by
   rw [unif_on, truncate_er_eq, free_on_er_eq hX]
 
-theorem eq_unif_on_iff : 
-    M = unif_on E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.encard ≤ k ∧ I ⊆ E :=
+theorem unif_on_er_eq' (E : Set α) (k : ℕ∞) : (unif_on E k).er X = min (X ∩ E).encard k := by
+  rw [←er_inter_ground_eq, unif_on_er_eq _ _ (by rw [unif_on_ground_eq]; apply inter_subset_right), 
+    unif_on_ground_eq]
+
+instance {k : ℕ} {E : Set α} : FiniteRk (unif_on E k) := by
+  rw [←rFin_ground_iff_finiteRk, rFin, unif_on_er_eq _ _ (by simp [rfl.subset])]
+  exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
+  
+@[simp] theorem unif_on_spanning_iff' {k : ℕ∞} (hk : k ≠ ⊤) :
+    (unif_on E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E  := by 
+  lift k to ℕ using hk 
+  rw [spanning_iff_er', erk_eq_er_ground, unif_on_ground_eq, unif_on_er_eq', unif_on_er_eq', 
+    le_min_iff, min_le_iff, min_le_iff, iff_true_intro (le_refl _), or_true, and_true, inter_self]
+  refine' ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ _) (fun h ↦ Or.inl ⟨_,hXE⟩), 
+    fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) _⟩
+  · refine' X.finite_or_infinite.elim (fun hfin ↦ Or.inr _) (fun hinf ↦ Or.inl ⟨_, hXE⟩) 
+    · rw [←(hfin.inter_of_left E).eq_of_subset_of_encard_le' (inter_subset_right _ _) h, 
+        inter_eq_self_of_subset_left hXE]
+    rw [hinf.encard_eq]
+    apply le_top
+  · exact h.trans (encard_mono (inter_subset_left _ _))
+  rintro rfl
+  rw [inter_self]
+  exact ⟨Or.inl rfl.le, Subset.rfl⟩ 
+
+theorem unif_on_spanning_iff {k : ℕ} (hk : k ≤ E.encard) (hX : X ⊆ E) : 
+    (unif_on E k).Spanning X ↔ k ≤ X.encard := by
+  rw [← ENat.some_eq_coe, unif_on_spanning_iff' (WithTop.coe_lt_top k).ne, and_iff_left hX, 
+    or_iff_left_iff_imp]
+  rintro rfl
+  assumption
+  
+theorem eq_unif_on_iff : M = unif_on E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.encard ≤ k ∧ I ⊆ E :=
   ⟨by rintro rfl; simp, 
     fun ⟨hE, h⟩ ↦ eq_of_indep_iff_indep_forall (by simpa) fun I _↦ by simpa using h I⟩
+  
+theorem unif_on_dual_eq (hE : E.Finite) : (unif_on E k)﹡ = unif_on E (E.encard - k) := by
+  obtain (rfl | hk) := eq_or_ne k ⊤; simp
+  lift k to ℕ using hk 
+  obtain (hle | hlt) := le_or_lt E.encard k
+  · rw [unif_on_eq_of_le hle, free_on_dual_eq, tsub_eq_zero_of_le hle, unif_on_zero]
+  refine eq_of_base_iff_base_forall (by simp) (fun B hBE ↦ ?_)
+  simp only [dual_ground, unif_on_ground_eq] at hBE 
+  rw [dual_base_iff', unif_on_base_iff' ((tsub_le_self.trans_lt hE.encard_lt_top).ne) (by simp) hBE, 
+    unif_on_ground_eq, and_iff_left hBE, unif_on_base_iff hlt.le (diff_subset _ _), 
+    ←WithTop.add_right_cancel_iff (hE.subset hBE).encard_lt_top.ne, 
+    encard_diff_add_encard_of_subset hBE, Iff.comm, eq_comm, add_comm, 
+    ←WithTop.add_right_cancel_iff (hlt.trans_le le_top).ne, tsub_add_cancel_of_le hlt.le]
+  
+@[simp] theorem unif_on_delete_eq (E D : Set α) (k : ℕ∞) :
+    (unif_on E k) ⟍ D = unif_on (E \ D) k := by
+  simp_rw [eq_unif_on_iff, delete_ground, unif_on_ground_eq, true_and, delete_indep_iff, 
+    unif_on_indep_iff, subset_diff, and_assoc, imp_true_iff]
+
+theorem unif_on_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤): 
+    (unif_on E k) ⟋ C = unif_on (E \ C) (k - (E ∩ C).encard) := by 
+  lift k to ℕ using hk
+  refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
+  simp only [ge_iff_le, contract_ground, unif_on_ground_eq, diff_self_inter, subset_diff] at hS  
+  rw [←contract_inter_ground_eq, unif_on_ground_eq, inter_comm, 
+    contract_spanning_iff, unif_on_spanning_iff', unif_on_spanning_iff', tsub_le_iff_right,
+    iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true, 
+     ←encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff, 
+    and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_distrib_left, 
+    and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left_iff_subset, 
+    subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
+  · exact ((tsub_le_self).trans_lt (WithTop.coe_lt_top k)).ne
+  exact WithTop.coe_ne_top
+    
+@[simp] theorem unif_on_contract_eq {k : ℕ} : 
+    (unif_on E k) ⟋ C = unif_on (E \ C) (k - (E ∩ C).encard) :=
+  unif_on_contract_eq' E C WithTop.coe_ne_top
   
 /-- A canonical uniform matroid, with rank `a` and ground type `Fin b`. -/
 def unif (a b : ℕ) := unif_on (univ : Set (Fin b)) a 
@@ -404,7 +520,7 @@ theorem unif_base_iff (hab : a ≤ b) : (unif a b).Base B ↔ B.encard = a := by
 @[simp] theorem unif_base_iff' : (unif a (a + b)).Base B ↔ B.encard = a := by 
   rw [unif_base_iff (Nat.le_add_right _ _)]
   
-@[simp] theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
+theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
   subst h
   refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _), 
@@ -434,47 +550,16 @@ theorem isIso_unif_iff {a b : ℕ} (hb0 : b ≠ 0) {M : Matroid α} :
   · rw [←encard_image_of_injOn (e.injOn_ground), e.image_ground, unif_ground_eq, encard_univ]
     simp
   have hne : Nonempty (Fin b) := ⟨⟨0, Nat.pos_of_ne_zero hb0⟩⟩ 
-  
+  have hne' : Nonempty α := 
+    ⟨(nonempty_of_encard_ne_zero (hb.trans_ne (Nat.cast_ne_zero.2 hb0))).some⟩ 
   have hfin := finite_of_encard_eq_coe hb
   rw [← (show (univ : Set (Fin b)).encard = b by simp [encard_univ])] at hb
   obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq hb
-  
-  have := iso_of_forall_indep hf.toLocalEquiv
-  -- refine' ⟨iso_of_forall_indep hf.toLocalEquiv _ _ _ _, _⟩ 
-
-  
+  refine ⟨iso_of_forall_indep' hf.toLocalEquiv rfl rfl fun I hIE ↦ ?_⟩ 
+  simp only [BijOn.toLocalEquiv_apply, unif_indep_iff]
+  rw [encard_image_of_injOn (hf.injOn.mono hIE), hI, and_iff_left hIE]
   
 
--- theorem iso_unif_iff {a b : ℕ} {M : Matroid α} : 
---   nonempty (M ≃i (unif a b)) ↔ (M = M.E.unif_on a ∧ M.E.encard = (b : ℕ∞)) := 
--- begin
---   refine ⟨λ h, _, λ h, _⟩,
---   { obtain ⟨i⟩ := h,
---     Set e := i.to_equiv, 
---     rw [encard, part_enat.card_congr e, unif_ground_eq, part_enat.card_eq_coe_fintype_card, 
---       part_enat.with_top_equiv_coe, nat.cast_inj, ←set.to_finset_card, to_finset_univ, 
---       finset.card_fin, eq_self_iff_true, and_true, eq_iff_indep_iff_indep_forall, 
---       set.unif_on_ground_eq, and_iff_right rfl], 
---     intros I hI, 
---     rw [set.unif_on_indep_iff, and_iff_left hI, ←encard_le_coe_iff, i.on_indep hI, unif_indep_iff', 
---       iso.image, encard_image_of_injective _ (subtype.coe_injective), 
---       encard_image_of_injective _ (equiv_like.injective i), 
---       encard_preimage_of_injective_subset_range subtype.coe_injective], 
---     rwa subtype.range_coe },
---   rw [encard_eq_coe_iff, ncard] at h, 
---   obtain ⟨h1, hfin, h'⟩ := h, 
---   haveI := finite_coe_iff.mpr hfin, 
---   Set e := (finite.equiv_fin_of_card_eq h').trans (equiv.set.univ (fin b)).symm, 
---   refine ⟨@iso_of_indep _ _ M (unif a b) e (λ I, _)⟩,  
---   apply_fun indep at h1, 
---   rw [h1, set.unif_on_indep_iff'],  
---   simp only [image_subset_iff, subtype.coe_preimage_self, subset_univ, and_true, equiv.coe_trans, 
---     function.comp_app, equiv.set.univ_symm_apply, unif_indep_iff', 
---     encard_image_of_injective _ subtype.coe_injective],
---   rw [encard_image_of_injective], 
---   intros x y, 
---   simp,  
--- end 
 
 -- /-- Horrible proof. Should be improved using `simple` api -/
 -- theorem iso_line_iff {k : ℕ} (hk : 2 ≤ k) : 
@@ -519,6 +604,28 @@ theorem isIso_unif_iff {a b : ℕ} (hb0 : b ≠ 0) {M : Matroid α} :
 -- end 
 
 -- section relax
+
+
+lemma foo (hB : M.Base B) (heB : e ∈ B) (hC : M.Circuit C) (hC' : M.Cocircuit (M.E \ C)) : 
+    ∃ f, f ∈ C \ B ∧ M.Base (insert f (B \ {e})) := by
+  
+
+
+-- def relax_set (M : Matroid α) (Hs : Set (Set α)) := 
+--   matroid_of_base M.E 
+--     ( fun B ↦ M.Base B ∨ (B ∈ Hs ∧ M.Circuit B ∧ M.Cocircuit (M.E \ B)) ) 
+--     ( M.exists_base.imp fun _ ↦ Or.inl )
+--     ( by
+--         rintro B B' (hB | ⟨hBh, hBc, hBcc⟩) (hB' | ⟨hB'h, hB'c, hB'cc⟩) e he
+--         · obtain ⟨f, hf⟩:= hB.exchange hB' he
+--           exact ⟨f, hf.1, Or.inl hf.2⟩ 
+--         by_contra' h'
+--         · push_neg at h'
+
+
+--         )
+--   sorry
+  
 
 -- -- def relax_set (M : Matroid α) (Hs : Set (set α)) := 
 -- -- matroid_of_base M.E (λ B, M.base B ∨ (B ∈ Hs ∧ M.circuit B ∧ M.cocircuit (M.E \ B))) 
