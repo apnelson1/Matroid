@@ -36,6 +36,30 @@ lemma compl_subset {A B E : Set α}
     E \ B ⊆ E \ A :=
   fun e he ↦ ⟨he.1, fun he' ↦ he.2 (h he')⟩
 
+lemma ground_compl_inter {A B E : Set α} :
+    E \ (A ∩ B) = (E \ A) ∪ (E \ B) := by
+  ext e
+  refine' ⟨_, _⟩
+  . intro he
+    have := he.2
+    rw [mem_inter_iff] at this
+    push_neg at this
+    by_cases he' : e ∈ A
+    . right
+      exact ⟨he.1, this he'⟩
+    . left 
+      exact ⟨he.1, he'⟩
+  . intro he
+    rcases he with he' | he'
+    . use he'.1
+      rw [mem_inter_iff, not_and_or]
+      left
+      exact he'.2
+    . use he'.1
+      rw [mem_inter_iff, not_and_or]
+      right
+      exact he'.2
+
 lemma compl_ssubset {A B E : Set α}
     (hA : A ⊆ E)
     (hB : B ⊆ E)
@@ -154,13 +178,13 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           . exact g.2 he
           . exact (singleton_nonempty e).not_subset_empty
              (@hI'B {e} (singleton_subset_iff.mpr he) (singleton_subset_iff.mpr g))
-        . have a := hB''.2.1 
-          rw [compl_ground (hT.2.trans hT.1.1)] at a
-          have := compl_subset ((inter_subset_right _ _).trans (diff_subset _ _))
-            (h_support hB''.1.1) a
-          rw [diff_inter, union_comm, diff_diff_cancel_left (hT.2.trans hT.1.1),
-            diff_diff_cancel_left hBt.1] at this
+        . {
+          have : E \ B'' ⊆ E \ (B' \ I') := compl_subset hB''.2.1
+          rw [compl_ground (diff_subset E Bt), ground_compl_inter,
+              (diff_diff_cancel_left hBt.1), (diff_diff_cancel_left (hT.2.trans hT.1.1)),
+              union_comm] at this
           exact this
+        }
     
 
     have aux2' : ∀ X B, X ⊆ E → Base B →
