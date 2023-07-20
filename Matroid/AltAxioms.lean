@@ -41,6 +41,12 @@ lemma compl_ssubset {A B E : Set α}
     E \ B ⊂ E \ A := by
   sorry
 
+lemma disjoint_of_diff_subset {A B C : Set α}
+    (h : A ⊆ B) :
+    Disjoint A (C \ B) := by
+  rw [←subset_compl_iff_disjoint_right, diff_eq, compl_inter, compl_compl]
+  exact h.trans (subset_union_right _ _)
+
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -118,17 +124,18 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
         rintro I' Bt ⟨hI', hBt⟩
-
         obtain ⟨T, hT⟩ := hI'
+
         let B := E \ T
         have hB : Base B := hT.1.2
-        have hI'B : Disjoint I' B := sorry
+        have hI'B : Disjoint I' B :=
+          disjoint_of_diff_subset hT.2
 
         rw [dual_indep_maximals_eq_dual_base] at hBt
         let B' := E \ Bt
         have hB' : Base B' := hBt.2
       
-        obtain ⟨B'', hB''⟩ := @h_basis (B' \ I') B (sorry) hB
+        obtain ⟨B'', hB''⟩ := @h_basis (B' \ I') B (h_subset hB'.1 (diff_subset _ _)) hB
 
         refine' ⟨E \ B'', _, _, _⟩
         . rw [dual_indep_maximals_eq_dual_base]
