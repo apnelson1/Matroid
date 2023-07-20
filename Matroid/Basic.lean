@@ -5,6 +5,39 @@ import Mathlib.Order.Minimal
 import Matroid.Init
 import Matroid.ForMathlib.Minimal
 
+
+/-!
+# Matroid
+
+A `Matroid` is a combinatorial abstraction of the notion of linear independence and dependence; 
+matroids have connections with graph theory, discrete optimization, additive combinatorics and 
+algebraic geometry. Mathematically, a matroid `M` is a structure on a set `E` comprising a 
+collection of subsets of `E` called the bases of `M`, where the bases are required to obey certain 
+axioms. 
+
+This file gives a definition of a matroid `M` in terms of its bases, and some API relating 
+independent sets (subsets of bases) and the notion of a basis of a set `X` (a maximal independent 
+subset of a basis of `X`). We also provide a number of alternative constructors that allow matroids
+to be defined in terms of different equivalent sets of axioms, or simplified sets of axioms in 
+special cases. 
+
+## Main definitions 
+
+* a `Matroid α` on a type `α` is a structure comprising a 'ground set' and a 'base' predicate. 
+  Given `M : Matroid α` ...  
+* `M.E` denotes the ground set of `M`, which has type `Set α`
+* For `B : Set α`, `M.Base B` means that `B` is a base of `M`.
+* For `I : Set α`, `M.Indep I` means that `I` is independent in `M`, or equivalently is contained in 
+  a base of `M`.
+* For `I : Set α` and `X : Set α`, `M.Basis I X` means that `I` is a maximal independent 
+  subset of `X`. 
+* `Finite M` means that `M` has finite ground set. 
+* `FiniteRk M` means that `M` has a finite base. 
+* `RkPos M` means that `M` has a nonempty base. 
+
+-/
+
+
 open Set 
 
 /-- A predicate `P` on sets satisfies the exchange property if, for all `X` and `Y` satisfying `P`
