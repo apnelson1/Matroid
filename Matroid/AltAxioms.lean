@@ -10,36 +10,41 @@ lemma compl_subsets_inter {A B X E : Set α} (h : A ∩ X ⊆ B ∩ X) :
   fun _ he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
 
 lemma maximal_of_restriction {A B X} (P : Set α → Prop)
+    (hP  : ∀ S T, P S → T ⊆ S → P T)
     (hA  : A ∈ maximals (· ⊆ ·) {I | P I ∧ I ⊆ X})
     (hB  : B ∈ maximals (· ⊆ ·) {I | P I})
     (hAB : A ⊆ B) :
-    A = B ∩ X := by
-  sorry
+    A = B ∩ X :=
+  subset_antisymm (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩)
+    (hA.2 ⟨(hP (B) (B ∩ X) hB.1 (inter_subset_left _ _)), (inter_subset_right _ _)⟩
+    (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩))
 
-lemma ssubset_of_compl {A B E X : Set α}
-    (hA  : A ⊆ E)
-    (hB  : B ⊆ E)
-    (hX  : X ⊆ E)
-    (hAB : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
-    B ∩ X ⊂ A ∩ X := by
-  sorry 
-
-lemma compl_ground {A B E : Set α} (h : B ⊆ E) : A \ B = A ∩ (E \ B) := by
-  sorry
+-- lemma ssubset_of_compl {A B E X : Set α}
+--     (hA  : A ⊆ E)
+--     (hB  : B ⊆ E)
+--     (hX  : X ⊆ E)
+--     (hAB : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
+--     B ∩ X ⊂ A ∩ X := by
+--   refine' ⟨_, _⟩
+--   . intro e he
+    
+lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) :=
+  subset_antisymm (fun e he ↦ ⟨he.1, h he.1, he.2⟩) (fun e he ↦ ⟨he.1, he.2.2⟩)
 
 lemma compl_subset {A B E : Set α}
-    (hA : A ⊆ E)
-    (hB : B ⊆ E)
     (h  : A ⊆ B) :
-    E \ B ⊆ E \ A := by
-  sorry
+    E \ B ⊆ E \ A :=
+  fun e he ↦ ⟨he.1, fun he' ↦ he.2 (h he')⟩
 
 lemma compl_ssubset {A B E : Set α}
     (hA : A ⊆ E)
     (hB : B ⊆ E)
-    (h  : A ⊂ B) :
+    (hAB  : A ⊂ B) :
     E \ B ⊂ E \ A := by
-  sorry
+  refine' ⟨compl_subset hAB.1, fun h ↦ _⟩
+  have := @compl_subset α (E \ A) (E \ B) E h
+  rw [diff_diff_cancel_left hB, diff_diff_cancel_left hA] at this
+  exact hAB.not_subset this
 
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
@@ -149,12 +154,12 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           . exact g.2 he
           . exact (singleton_nonempty e).not_subset_empty
              (@hI'B {e} (singleton_subset_iff.mpr he) (singleton_subset_iff.mpr g))
-        . have : I' ⊆ E := sorry
-          have a := hB''.2.1 
-          rw [compl_ground this] at a
-          have := compl_subset sorry (h_support hB''.1.1) a
-          have Bteq : Bt = E \ B' := sorry
-          rw [diff_inter, union_comm, diff_diff_cancel_left (hT.2.trans hT.1.1), ←Bteq] at this
+        . have a := hB''.2.1 
+          rw [compl_ground (hT.2.trans hT.1.1)] at a
+          have := compl_subset ((inter_subset_right _ _).trans (diff_subset _ _))
+            (h_support hB''.1.1) a
+          rw [diff_inter, union_comm, diff_diff_cancel_left (hT.2.trans hT.1.1),
+            diff_diff_cancel_left hBt.1] at this
           exact this
     
 
@@ -168,7 +173,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
             have : Base (E \ (E \ B)) := by
               rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1)]
               exact hB
-            exact this
+            exact ⟨diff_subset _ _, this⟩
         . by_contra' g
           obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
             {
