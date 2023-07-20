@@ -34,6 +34,13 @@ lemma compl_subset {A B E : Set α}
     E \ B ⊆ E \ A := by
   sorry
 
+lemma compl_ssubset {A B E : Set α}
+    (hA : A ⊆ E)
+    (hB : B ⊆ E)
+    (h  : A ⊂ B) :
+    E \ B ⊂ E \ A := by
+  sorry
+
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -81,10 +88,32 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       rw [←diff_diff_cancel_left (h_support hB.1)] at hB
       exact ⟨diff_subset _ _, hB⟩
 
+    have dual_base_indep : ∀ ⦃B⦄, Base' B → Indep' B := by
+      sorry
+
     have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I } = Base' := by
-      {
-        sorry
-      }
+      ext X
+      refine' ⟨fun ⟨⟨B, hB⟩, hX⟩ ↦ _, _⟩
+      . by_contra' h
+        have hX' : X ⊂ B := by
+          rw [ssubset_iff_subset_ne]
+          refine' ⟨hB.2, _⟩
+          rintro rfl
+          exact h hB.1
+        exact hX'.not_subset (hX (dual_base_indep hB.1) hX'.subset)
+      . rintro hX
+        rw [maximals]
+        by_contra' h
+        dsimp at h
+        push_neg at h
+        obtain ⟨I, ⟨hI, hXI, hIX⟩⟩ := h ⟨X, hX, subset_refl X⟩
+        obtain ⟨B, ⟨hB, hIB⟩⟩ := hI
+
+        have hXc : Base (E \ X) := hX.2
+        have hBc : Base (E \ B) := hB.2
+        have hBcXc := (compl_ssubset hX.1 hB.1 (sorry))
+
+        exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
     have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
