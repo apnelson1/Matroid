@@ -111,7 +111,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
         have hXc : Base (E \ X) := hX.2
         have hBc : Base (E \ B) := hB.2
-        have hBcXc := (compl_ssubset hX.1 hB.1 (sorry))
+        have hBcXc := (compl_ssubset hX.1 hB.1 (ssubset_of_ssubset_of_subset ⟨hXI, hIX⟩ hIB))
 
         exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
