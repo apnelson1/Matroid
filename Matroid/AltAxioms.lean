@@ -88,8 +88,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       rw [←diff_diff_cancel_left (h_support hB.1)] at hB
       exact ⟨diff_subset _ _, hB⟩
 
-    have dual_base_indep : ∀ ⦃B⦄, Base' B → Indep' B := by
-      sorry
+    have dual_base_indep : ∀ ⦃B⦄, Base' B → Indep' B :=
+      fun B hB ↦ ⟨B, hB, subset_refl _⟩
 
     have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I } = Base' := by
       ext X
