@@ -1,4 +1,4 @@
-import Matroid.DualRestrict
+import Matroid.Restrict
 import Mathlib.Logic.Equiv.LocalEquiv
 namespace Matroid
 

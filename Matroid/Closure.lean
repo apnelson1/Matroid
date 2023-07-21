@@ -1,5 +1,5 @@
 import Matroid.Equiv
-import Matroid.DualRestrict
+import Matroid.Restrict
  
 open scoped BigOperators
 

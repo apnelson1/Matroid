@@ -1,12 +1,17 @@
 import Matroid.Closure
 
+
+/-!
+  A `Circuit` of a matroid is a minimal dependent set. 
+-/
+
 variable {α : Type _} {M : Matroid α}
 
 open Set
 
 namespace Matroid
 
-/-- A Circuit is a minimal Dependent set -/
+/-- A Circuit is a minimal dependent set -/
 @[pp_dot] def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
 
 theorem circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl 
