@@ -27,8 +27,8 @@ special cases.
   Given `M : Matroid α` ...  
 * `M.E` denotes the ground set of `M`, which has type `Set α`
 * For `B : Set α`, `M.Base B` means that `B` is a base of `M`.
-* For `I : Set α`, `M.Indep I` means that `I` is independent in `M`, or equivalently is contained in 
-  a base of `M`.
+* For `I : Set α`, `M.Indep I` means that `I` is independent in `M`, or equivalently is contained 
+  in a base of `M`.
 * For `D : Set α`, `M.Dep D` means that `D` is contained in the ground set of `M` but isn't 
   independent. 
 * For `I : Set α` and `X : Set α`, `M.Basis I X` means that `I` is a maximal independent 

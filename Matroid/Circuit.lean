@@ -345,8 +345,9 @@ theorem cocircuit_iff_mem_minimals :
 theorem cocircuit_iff_mem_minimals_compl_nonspanning :
     M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ¬M.Spanning (M.E \ X)} := by
   convert cocircuit_iff_mem_minimals with K
-  simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, not_and, subset_diff, not_and,
-    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, inter_comm K]
+  simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, subset_diff, not_and,
+    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, 
+      inter_comm K]
 
 theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) : 
     (C ∩ K).encard ≠ 1 := by
@@ -420,7 +421,6 @@ theorem indep_of_encard_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := b
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
 
 end Girth 
-
 section BasisExchange
 
 theorem Indep.rev_exchange_indep_iff (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
@@ -476,8 +476,6 @@ theorem Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he
   (hI₁.strong_exchange hI₂ he).imp (by simp_rw [exists_prop]; tauto)
 
 end BasisExchange
-
-
 section Iso
 
 theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
@@ -493,7 +491,6 @@ theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setO
   e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
 
 end Iso
-
 section Finitary
 
 /-- A `Finitary` matroid is one whose Circuits are finite -/
