@@ -298,6 +298,16 @@ theorem Spanning.er_eq (hX : M.Spanning X) : M.er X = M.erk := by
   rw [le_antisymm_iff, and_iff_right (M.er_le_erk _), ←hB.er]
   exact M.er_mono hBX
   
+theorem Loop.er_eq (he : M.Loop e) : M.er {e} = 0 := by 
+  rw [←er_cl_eq, he.cl, er_cl_eq, er_empty]
+
+theorem Nonloop.er_eq (he : M.Nonloop e) : M.er {e} = 1 := by 
+  rw [←he.indep.basis_self.encard, encard_singleton]
+
+theorem Loopless.er_singleton_eq (h : M.Loopless) (he : e ∈ M.E := by aesop_mat) : 
+    M.er {e} = 1 :=
+  (h.nonloop e he).er_eq 
+
 end Basic
 
 section rFin

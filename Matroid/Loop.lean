@@ -13,7 +13,7 @@ open Set
 
 namespace Matroid
 
--- ### Loops
+section Loop 
 /-- A loop is a member of the closure of the empty set -/
 @[pp_dot] def Loop (M : Matroid α) (e : α) : Prop :=
   e ∈ M.cl ∅
@@ -103,7 +103,10 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   obtain ⟨B, hB, heB⟩ := hei.exists_base_supset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
--- ### Nonloops
+end Loop
+
+section Nonloop
+
 /-- A `nonloop` is an element that is not a loop -/
 @[pp_dot] def Nonloop (M : Matroid α) (e : α) : Prop :=
   ¬M.Loop e ∧ e ∈ M.E
@@ -149,7 +152,7 @@ theorem loop_or_nonloop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_ma
   rw [Nonloop, ←singleton_dep, dep_iff, not_and, not_imp_not, singleton_subset_iff]
   exact ⟨fun h ↦ ⟨fun _ ↦ h, singleton_subset_iff.mp h.subset_ground⟩, fun h ↦ h.1 h.2⟩
 
-alias indep_singleton ↔ indep.nonloop nonloop.indep
+alias indep_singleton ↔ Indep.nonloop Nonloop.indep
 
 theorem Indep.nonloop_of_mem (hI : M.Indep I) (h : e ∈ I) : M.Nonloop e := by
   rw [← not_loop_iff (hI.subset_ground h)]; exact fun he ↦ (he.not_mem_of_indep hI) h
@@ -224,7 +227,38 @@ theorem exists_nonloop (M : Matroid α) [RkPos M] : ∃ e, M.Nonloop e :=
   let ⟨_, hB⟩ := M.exists_base
   ⟨_, hB.indep.nonloop_of_mem hB.nonempty.some_mem⟩  
 
--- ### Coloops
+end Nonloop 
+
+section Loopless
+
+/-- A Matroid is loopless if it has no loop -/
+@[pp_dot, reducible] def Loopless (M : Matroid α) : Prop :=
+  M.cl ∅ = ∅ 
+
+theorem Loopless.cl_empty (h : M.Loopless) : M.cl ∅ = ∅ := 
+  h
+
+theorem Loopless.nonloop (hM : M.Loopless) (e : α) (he : e ∈ M.E := by aesop_mat) :
+    M.Nonloop e := by
+  rw [←not_loop_iff, loop_iff_mem_cl_empty, hM.cl_empty]; exact not_mem_empty _
+
+theorem Loopless.not_loop (hM : M.Loopless) (e : α) : ¬ M.Loop e :=
+  fun h ↦ (hM.nonloop e).not_loop h
+
+theorem loopless_iff_forall_nonloop : M.Loopless ↔ ∀ e ∈ M.E, M.Nonloop e :=
+  ⟨fun h e he ↦ h.nonloop e he, 
+    fun h ↦ subset_empty_iff.1 (fun e (he : M.Loop e) ↦ (h e he.mem_ground).not_loop he)⟩
+
+theorem loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → 1 < C.encard := by 
+  simp_rw [lt_iff_not_le, encard_le_one_iff_eq, not_or, not_exists, ←nonempty_iff_ne_empty]
+  refine ⟨fun h C hC ↦ ⟨hC.nonempty, fun e ↦ ?_⟩, 
+    fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 fun hel ↦ 
+      (h _ (singleton_circuit.2 hel)).2 e rfl⟩
+  rintro rfl; rw [singleton_circuit] at hC; exact h.not_loop e hC
+  
+end Loopless
+section Coloop 
+
 /-- A coloop is a loop of the dual  -/
 @[pp_dot, reducible] def Coloop (M : Matroid α) (e : α) : Prop :=
   M﹡.Loop e
@@ -431,6 +465,7 @@ theorem eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid
   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
 
+end Coloop
 
 end Matroid
 
