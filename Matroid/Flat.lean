@@ -439,22 +439,10 @@ theorem subset_hyperplane_iff_cl_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
   rw [← hH.flat.cl]
   exact hY.symm.trans_subset (M.cl_mono hYH)
 
-theorem Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
-    (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by 
-  have hcl := hH.cl_insert_eq hf.2 hf.1
-  rw [←cl_insert_cl_eq_cl_insert, ←hHc.cl_diff_singleton_eq_cl e, cl_insert_cl_eq_cl_insert, 
-    ←spanning_iff_cl (insert_subset hf.1 ((diff_subset _ _).trans hH.subset_ground))] at hcl
-  refine' hcl.base_of_indep _
-  rw [←(hHc.diff_singleton_indep he).not_mem_cl_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1), 
-    hHc.cl_diff_singleton_eq_cl e, hH.flat.cl]
-  exact hf.2 
   
-theorem Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
-    (hHc : M.Circuit C) (he : e ∈ B) : ∃ f, f ∈ H \ B ∧ M.Base (insert f (B \ {e})) := by
-  by_contra' h
-  have h1 : H \ {e} ⊆ M.cl (B \ {e})
-  · intro f hf
-    
+
+
+
 
 end Hyperplane
 

@@ -1,5 +1,5 @@
 import Matroid.Equiv
-import Matroid.DualRestrict
+import Matroid.Restrict
  
 open scoped BigOperators
 
@@ -406,7 +406,8 @@ theorem Indep.not_mem_cl_diff_of_mem (hI : M.Indep I) (he : e ∈ I) : e ∉ M.c
 theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I := by
   rw [indep_iff_not_mem_cl_diff_forall']
   refine' ⟨fun ⟨hIE, h⟩ e heI h_eq ↦ h e heI (h_eq.symm.subset (M.mem_cl_of_mem heI)), 
-    fun h ↦ ⟨fun e heI ↦ by_contra fun heE ↦ h e heI _,fun e heI hin ↦ h e heI (by rw [cl_diff_singleton_eq_cl hin])⟩⟩ 
+    fun h ↦ ⟨fun e heI ↦ by_contra fun heE ↦ h e heI _,fun e heI hin ↦ h e heI 
+      (by rw [cl_diff_singleton_eq_cl hin])⟩⟩ 
   rw [cl_eq_cl_inter_ground, inter_comm, inter_diff_distrib_left, 
     inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, ←cl_eq_cl_inter_ground]
 
@@ -642,7 +643,7 @@ theorem iInter_cl_eq_cl_sInter_of_modular
   · apply hne.image
   simp
 
-theorem Indep.cl_diff_singleton_sSubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
+theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
   ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
 end modular

@@ -1,12 +1,17 @@
 import Matroid.Closure
 
+
+/-!
+  A `Circuit` of a matroid is a minimal dependent set. 
+-/
+
 variable {α : Type _} {M : Matroid α}
 
 open Set
 
 namespace Matroid
 
-/-- A Circuit is a minimal Dependent set -/
+/-- A Circuit is a minimal dependent set -/
 @[pp_dot] def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
 
 theorem circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl 
@@ -21,7 +26,7 @@ theorem Circuit.subset_ground (hC : M.Circuit C) : C ⊆ M.E :=
 theorem circuit_iff : M.Circuit C ↔ M.Dep C ∧ ∀ ⦃I⦄, M.Dep I → I ⊆ C → I = C := by
   simp [Circuit, mem_minimals_setOf_iff, and_congr_right_iff, eq_comm (b := C)]
 
-theorem Circuit.sSubset_indep (hC : M.Circuit C) (hXC : X ⊂ C) : M.Indep X := by
+theorem Circuit.ssubset_indep (hC : M.Circuit C) (hXC : X ⊂ C) : M.Indep X := by
   rw [← not_dep_iff (hXC.subset.trans hC.subset_ground)]
   exact fun h ↦ hXC.ne ((circuit_iff.1 hC).2 h hXC.subset)
 
@@ -31,7 +36,7 @@ theorem circuit_iff_forall_ssubset : M.Circuit C ↔ M.Dep C ∧ ∀ ⦃I⦄, I 
     fun h I hi _ hIC ↦ by_contra fun hne ↦ hi (h hIC hne)⟩
 
 theorem Circuit.diff_singleton_indep (hC : M.Circuit C) (he : e ∈ C) : M.Indep (C \ {e}) :=
-  hC.sSubset_indep (diff_singleton_sSubset.2 he)
+  hC.ssubset_indep (diff_singleton_sSubset.2 he)
 
 theorem Circuit.diff_singleton_basis (hC : M.Circuit C) (he : e ∈ C) : M.Basis (C \ {e}) C := by
   nth_rw 2 [←insert_eq_of_mem he]; 
@@ -39,6 +44,24 @@ theorem Circuit.diff_singleton_basis (hC : M.Circuit C) (he : e ∈ C) : M.Basis
     insert_diff_singleton, insert_eq_of_mem he]
   exact Or.inl hC.dep 
 
+theorem Circuit.basis_iff_eq_diff_singleton (hC : M.Circuit C) : 
+    M.Basis I C ↔ ∃ e ∈ C, I = C \ {e} := by 
+  refine' ⟨fun h ↦ _, _⟩
+  · obtain ⟨e, he⟩ := exists_of_ssubset 
+      (h.subset.ssubset_of_ne (by rintro rfl; exact hC.dep.not_indep h.indep)) 
+    exact ⟨e, he.1, h.eq_of_subset_indep (hC.diff_singleton_indep he.1) 
+      (subset_diff_singleton h.subset he.2) (diff_subset _ _)⟩ 
+  rintro ⟨e, he, rfl⟩ 
+  exact hC.diff_singleton_basis he
+
+theorem Circuit.basis_iff_insert_eq (hC : M.Circuit C) : 
+    M.Basis I C ↔ ∃ e ∈ C \ I, C = insert e I := by 
+  rw [hC.basis_iff_eq_diff_singleton]
+  refine' ⟨fun ⟨e, he, hI⟩ ↦ ⟨e, ⟨he, fun heI ↦ (hI.subset heI).2 rfl⟩, _⟩, 
+    fun ⟨e, he, hC⟩ ↦ ⟨e, he.1, _⟩⟩
+  · rw [hI, insert_diff_singleton, insert_eq_of_mem he] 
+  rw [hC, insert_diff_self_of_not_mem he.2]
+  
 theorem Circuit.cl_diff_singleton_eq_cl (hC : M.Circuit C) (e : α) : M.cl (C \ {e}) = M.cl C :=
   (em (e ∈ C)).elim (fun he ↦ by rw [(hC.diff_singleton_basis he).cl_eq_cl]) 
     (fun he ↦ by rw [diff_singleton_eq_self he])
@@ -55,9 +78,9 @@ theorem Circuit.mem_cl_diff_singleton_of_mem (hC : M.Circuit C) (heC : e ∈ C) 
 theorem circuit_iff_mem_minimals : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
 theorem Circuit.eq_of_dep_subset (hC : M.Circuit C) (hX : M.Dep X) (hXC : X ⊆ C) : X = C :=
-  eq_of_le_of_not_lt hXC (hX.not_indep ∘ hC.sSubset_indep)
+  eq_of_le_of_not_lt hXC (hX.not_indep ∘ hC.ssubset_indep)
 
-theorem Circuit.not_sSubset (hC : M.Circuit C) (hC' : M.Circuit C') : ¬C' ⊂ C := 
+theorem Circuit.not_ssubset (hC : M.Circuit C) (hC' : M.Circuit C') : ¬C' ⊂ C := 
   fun h' ↦ h'.ne (hC.eq_of_dep_subset hC'.dep h'.subset)
 
 theorem Circuit.nonempty (hC : M.Circuit C) : C.Nonempty := 
@@ -322,8 +345,9 @@ theorem cocircuit_iff_mem_minimals :
 theorem cocircuit_iff_mem_minimals_compl_nonspanning :
     M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ¬M.Spanning (M.E \ X)} := by
   convert cocircuit_iff_mem_minimals with K
-  simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, not_and, subset_diff, not_and,
-    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, inter_comm K]
+  simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, subset_diff, not_and,
+    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, 
+      inter_comm K]
 
 theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) : 
     (C ∩ K).encard ≠ 1 := by
@@ -397,7 +421,6 @@ theorem indep_of_encard_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := b
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
 
 end Girth 
-
 section BasisExchange
 
 theorem Indep.rev_exchange_indep_iff (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
@@ -453,8 +476,6 @@ theorem Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he
   (hI₁.strong_exchange hI₂ he).imp (by simp_rw [exists_prop]; tauto)
 
 end BasisExchange
-
-
 section Iso
 
 theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
@@ -470,7 +491,6 @@ theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setO
   e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
 
 end Iso
-
 section Finitary
 
 /-- A `Finitary` matroid is one whose Circuits are finite -/
