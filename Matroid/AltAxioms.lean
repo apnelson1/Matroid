@@ -88,7 +88,14 @@ lemma ssubset_of_subset_of_compl_ssubset {A B X E : Set α}
     (h₁ : A ∩ X ⊆ B ∩ X)
     (h₂ : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
     A ⊂ B := by
-  sorry
+  rw [ssubset_iff_subset_ne]
+  refine' ⟨_, _⟩
+  . intro e he
+    by_cases g : e ∈ X
+    . exact (h₁ ⟨he, g⟩).1
+    . exact (h₂.subset ⟨he, ⟨hA he, g⟩⟩).1
+  . rintro rfl
+    exact h₂.not_subset (subset_refl _)
 
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
@@ -257,13 +264,60 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         
         exact hI'B.not_subset (hI'.1.2 hB.1 hI'B.subset)
     
+    have aux2'' : ∀ X B, X ⊆ E → Base B →
+        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)} →
+        B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} := by
+      {
+        refine' fun X B hX hB hBX ↦ ⟨⟨h_subset hB.1 (inter_subset_left _ _),
+          inter_subset_right _ _⟩, _⟩
+        by_contra' g
+        obtain ⟨I, h⟩ := g
+
+        obtain ⟨Bt, hBt⟩ := h_exists_maximal_indep_subset E (subset_refl _)
+
+        have hBt : Base Bt :=
+          ⟨hBt.1.1, fun B hB hBtB ↦ hBt.2 ⟨hB, h_support hB⟩ hBtB⟩
+        
+        have h₁ : B ∩ X ⊂ I :=
+          ⟨h.2.1, h.2.2⟩
+        rw [←inter_eq_self_of_subset_left h.1.2] at h₁
+
+        have h₂ : (E \ I) ∩ X ⊂ (E \ B) ∩ X :=
+          sorry
+
+        sorry
+          -- compl_ssubset_inter ) (h_support h.1.1) h₁
+          -- have h₁ : (E \ B) ∩ (E \ X) ⊂ I :=
+          --   ⟨h.2.1, h.2.2⟩
+          -- rw [←inter_eq_self_of_subset_left h.1.2] at h₁
+          -- have h₂ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
+          --   have := compl_ssubset_inter (diff_subset _ _) (hBt.2.trans hBt.1.1) h₁
+          --   rw [diff_diff_cancel_left (h_support hB.1)] at this
+          --   exact this
+          -- }
+          -- use E \ Bt
+          -- use hBt.1.2
+          -- exact ssubset_of_subset_of_ssubset (inter_subset_inter_left _ (compl_subset hBt.2)) h₂
+        
+        
+        -- extend I to a basis
+        -- obtain ⟨Bt, hBt⟩ := h_basis h.1 
+        
+        -- obtain ⟨B', hB'⟩ := h_basis (h_subset hI.1.1 hI.2.1) hB
+        -- have : (B ∩ X) ∪ B = B := sorry
+        -- rw [this] at hB'
+        -- have : B' = B := by {
+        --   refine' subset_antisymm (hB'.2.2) (hB'.1.2 hB.1 hB'.2.2)
+        -- }
+        -- have : 
+
+
+      }
+
     have aux2 : ∀ X B, X ⊆ E → Base B →
         (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
-        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by 
-      {
-        refine' fun X B hX hB ↦ ⟨aux2' X B hX hB, sorry⟩
-        -- aux1 for the reverse direction
-      }
+        (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) :=
+      fun X B hX hB ↦ ⟨aux2' X B hX hB, aux2'' X B hX hB⟩
 
     -- (I3') holds for `Indep ∩ 2^X`
     have aux3 : ∀ X, X ⊆ E →
