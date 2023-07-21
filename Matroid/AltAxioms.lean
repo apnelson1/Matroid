@@ -45,7 +45,7 @@ lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) :=
 lemma compl_subset {A B E : Set α}
     (h  : A ⊆ B) :
     E \ B ⊆ E \ A :=
-  fun e he ↦ ⟨he.1, fun he' ↦ he.2 (h he')⟩
+  fun _ he ↦ ⟨he.1, fun he' ↦ he.2 (h he')⟩
 
 lemma ground_compl_inter {A B E : Set α} :
     E \ (A ∩ B) = (E \ A) ∪ (E \ B) := by
@@ -206,7 +206,6 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           exact this
         }
     
-
     have aux2' : ∀ X B, X ⊆ E → Base B →
         (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} →
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by 
@@ -220,39 +219,19 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           exact ⟨diff_subset _ _, this⟩
       . by_contra' g
         obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
-          {
-            obtain ⟨I, h⟩ := g
-
-            have h₁ : (E \ B) ∩ (E \ X) ⊂ I :=
-              ⟨h.2.1, h.2.2⟩
-            rw [←inter_eq_self_of_subset_left h.1.2] at h₁
-            have h₂ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
-              have := compl_ssubset_inter (diff_subset _ _) sorry h₁
-              rw [diff_diff_cancel_left (h_support hB.1)] at this
-              exact this
-            }
-
-            -- -- there is some coindep set `I'`, contained in a 
-            -- --    basis `B'` and in `E \ X`, such that `(E \ B) ∩ (E \ X) ⊂ I'`
-            -- obtain ⟨I, ⟨⟨⟨Bt, hBt⟩, hI⟩, h⟩⟩ := g
-
-            -- let B' := E \ Bt
-
-            -- have h₁ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
-            --   have : (E \ B) ∩ (E \ X) ⊂ I := sorry
-            --   have : I  
-            -- }
-
-            -- have h₂ : (E \ B') ⊆ (E \ I) :=
-            --   compl_subset hB'.2
-            -- have h₃ : (E \ B') ∩ (E \ X) ⊆ (E \ I) ∩ (E \ X) :=
-            --   inter_subset_inter_left _ h₂
-
-            -- use (E \ B')
-            -- use hB'.1.2
-            -- exact ssubset_of_subset_of_ssubset h₃ h₁ 
-
+          obtain ⟨I, h⟩ := g
+          obtain ⟨⟨Bt, hBt⟩, _⟩ := h.1
+          have h₁ : (E \ B) ∩ (E \ X) ⊂ I :=
+            ⟨h.2.1, h.2.2⟩
+          rw [←inter_eq_self_of_subset_left h.1.2] at h₁
+          have h₂ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
+            have := compl_ssubset_inter (diff_subset _ _) (hBt.2.trans hBt.1.1) h₁
+            rw [diff_diff_cancel_left (h_support hB.1)] at this
+            exact this
           }
+          use E \ Bt
+          use hBt.1.2
+          exact ssubset_of_subset_of_ssubset (inter_subset_inter_left _ (compl_subset hBt.2)) h₂
         obtain ⟨I', hI'⟩ := h_basis hBX.1.1 hB'.1
 
         have h₁I'B : I' ∩ X ⊆ B ∩ X := by {
