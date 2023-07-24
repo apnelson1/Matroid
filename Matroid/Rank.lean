@@ -28,7 +28,7 @@ theorem erk_eq_er_ground (M : Matroid α) : M.erk = M.er M.E := by
 theorem Basis'.encard (hI : M.Basis' I X) : I.encard = M.er X := by 
   rw [er,erk]
   rw [←base_restrict_iff'] at hI
-  have : Nonempty ↑{B | (M ↾ X).Base B} := ⟨I, hI⟩
+  have : _root_.Nonempty ↑{B | (M ↾ X).Base B} := ⟨I, hI⟩
   rw [iInf_congr (_ : ∀ B : ↑{B | (M ↾ X).Base B}, (B : Set α).encard = I.encard), iInf_const]
   simp only [mem_setOf_eq, Subtype.forall]
   exact fun B' hB' ↦ hB'.encard_eq_encard_of_base hI 
@@ -166,13 +166,6 @@ theorem er_eq_er_of_subset_le (hXY : X ⊆ Y) (hYX : M.er Y ≤ M.er X) : M.er X
 
 theorem er_union_le_er_add_er (M : Matroid α) (X Y : Set α) : M.er (X ∪ Y) ≤ M.er X + M.er Y :=
   le_add_self.trans (M.er_submod X Y)
-
-theorem er_eq_zero_iff_subset_loops (hX : X ⊆ M.E := by aesop_mat) : 
-    M.er X = 0 ↔ X ⊆ M.cl ∅ := by 
-  obtain ⟨I, hI⟩ := M.exists_basis X
-  rw [←hI.encard, encard_eq_zero]
-  exact ⟨by rintro rfl; exact hI.subset_cl, fun h ↦ eq_empty_of_forall_not_mem 
-    fun x hx ↦ (hI.indep.nonloop_of_mem hx).not_loop (h (hI.subset hx))⟩
   
 theorem er_eq_er_union_er_le_zero (X : Set α) (hY : M.er Y ≤ 0) : M.er (X ∪ Y) = M.er X :=
   (((M.er_union_le_er_add_er X Y).trans (add_le_add_left hY _)).trans_eq (add_zero _)).antisymm
@@ -304,9 +297,40 @@ theorem Loop.er_eq (he : M.Loop e) : M.er {e} = 0 := by
 theorem Nonloop.er_eq (he : M.Nonloop e) : M.er {e} = 1 := by 
   rw [←he.indep.basis_self.encard, encard_singleton]
 
-theorem Loopless.er_singleton_eq (h : M.Loopless) (he : e ∈ M.E := by aesop_mat) : 
+theorem er_singleton_eq [Loopless M] (he : e ∈ M.E := by aesop_mat) : 
     M.er {e} = 1 :=
-  (h.nonloop e he).er_eq 
+  (M.toNonloop he).er_eq 
+
+theorem er_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) : 
+    M.er X = 0 ↔ X ⊆ M.cl ∅ := by 
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  rw [←hI.encard, encard_eq_zero]
+  exact ⟨by rintro rfl; exact hI.subset_cl, fun h ↦ eq_empty_of_forall_not_mem 
+    fun x hx ↦ (hI.indep.nonloop_of_mem hx).not_loop (h (hI.subset hx))⟩
+
+theorem er_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) : 
+    M.er X = 1 ↔ ∃ e ∈ X, M.Nonloop e ∧ X ⊆ M.cl {e} := by 
+  refine ⟨?_, fun ⟨e, heX, he, hXe⟩ ↦ ?_⟩
+  · obtain ⟨I, hI⟩ := M.exists_basis X
+    rw [hI.er_eq_encard, encard_eq_one]
+    rintro ⟨e, rfl⟩ 
+    exact ⟨e, singleton_subset_iff.1 hI.subset, indep_singleton.1 hI.indep, hI.subset_cl⟩ 
+  rw [←he.er_eq]
+  exact ((M.er_mono hXe).trans (M.er_cl_eq _).le).antisymm (M.er_mono (singleton_subset_iff.2 heX))
+  
+theorem er_le_one_iff [_root_.Nonempty α] (hX : X ⊆ M.E := by aesop_mat) : 
+    M.er X ≤ 1 ↔ ∃ e, X ⊆ M.cl {e} := by 
+  refine' ⟨fun h ↦ _, fun ⟨e, he⟩ ↦ _⟩
+  · obtain ⟨I, hI⟩ := M.exists_basis X
+    rw [hI.er_eq_encard, encard_le_one_iff_eq] at h 
+    obtain (rfl | ⟨e, rfl⟩) := h
+    · exact ⟨Classical.arbitrary α, (hI.subset_cl.trans (M.cl_subset_cl (empty_subset _)))⟩ 
+    exact ⟨e, hI.subset_cl⟩ 
+  refine (M.er_mono he).trans ?_
+  rw [er_cl_eq, ←encard_singleton e]
+  exact M.er_le_encard {e}
+  
+  
 
 end Basic
 

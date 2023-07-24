@@ -227,34 +227,47 @@ theorem exists_nonloop (M : Matroid α) [RkPos M] : ∃ e, M.Nonloop e :=
   let ⟨_, hB⟩ := M.exists_base
   ⟨_, hB.indep.nonloop_of_mem hB.nonempty.some_mem⟩  
 
+theorem Nonloop.rkPos (h : M.Nonloop e) : M.RkPos := 
+  h.indep.rkPos_of_nonempty (singleton_nonempty e) 
+
 end Nonloop 
 
 section Loopless
 
 /-- A Matroid is loopless if it has no loop -/
-@[pp_dot, reducible] def Loopless (M : Matroid α) : Prop :=
-  M.cl ∅ = ∅ 
+@[pp_dot] class Loopless (M : Matroid α) : Prop where
+  cl_empty : M.cl ∅ = ∅ 
 
-theorem Loopless.cl_empty (h : M.Loopless) : M.cl ∅ = ∅ := 
-  h
+theorem loopless_iff_cl_empty : M.Loopless ↔ M.cl ∅ = ∅ :=
+  ⟨fun h ↦ h.cl_empty, fun h ↦ ⟨h⟩⟩ 
 
-theorem Loopless.nonloop (hM : M.Loopless) (e : α) (he : e ∈ M.E := by aesop_mat) :
+theorem cl_empty_eq_empty (M : Matroid α) [Loopless M] : M.cl ∅ = ∅ := 
+  ‹Loopless M›.cl_empty  
+
+theorem toNonloop [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.Nonloop e := by
-  rw [←not_loop_iff, loop_iff_mem_cl_empty, hM.cl_empty]; exact not_mem_empty _
+  rw [←not_loop_iff, loop_iff_mem_cl_empty, cl_empty_eq_empty]; exact not_mem_empty _
 
-theorem Loopless.not_loop (hM : M.Loopless) (e : α) : ¬ M.Loop e :=
-  fun h ↦ (hM.nonloop e).not_loop h
+theorem not_loop (M : Matroid α) [Loopless M] (e : α) : ¬ M.Loop e := 
+  fun h ↦ (toNonloop (e := e)).not_loop h
 
 theorem loopless_iff_forall_nonloop : M.Loopless ↔ ∀ e ∈ M.E, M.Nonloop e :=
-  ⟨fun h e he ↦ h.nonloop e he, 
-    fun h ↦ subset_empty_iff.1 (fun e (he : M.Loop e) ↦ (h e he.mem_ground).not_loop he)⟩
+  ⟨fun _ _ he ↦ toNonloop he, 
+    fun h ↦ ⟨subset_empty_iff.1 (fun e (he : M.Loop e) ↦ (h e he.mem_ground).not_loop he)⟩⟩ 
 
+theorem loopless_iff_forall_not_loop : M.Loopless ↔ ∀ e ∈ M.E, ¬M.Loop e :=
+  ⟨fun _ e _ ↦ M.not_loop e, 
+    fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 (h e he)⟩ 
+  
 theorem loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → 1 < C.encard := by 
   simp_rw [lt_iff_not_le, encard_le_one_iff_eq, not_or, not_exists, ←nonempty_iff_ne_empty]
   refine ⟨fun h C hC ↦ ⟨hC.nonempty, fun e ↦ ?_⟩, 
     fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 fun hel ↦ 
       (h _ (singleton_circuit.2 hel)).2 e rfl⟩
-  rintro rfl; rw [singleton_circuit] at hC; exact h.not_loop e hC
+  rintro rfl; rw [singleton_circuit] at hC; exact M.not_loop e hC
+  
+instance {M : Matroid α} [Nonempty M] [Loopless M] : RkPos M :=
+  M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
   
 end Loopless
 section Coloop 

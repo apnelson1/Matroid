@@ -516,6 +516,21 @@ theorem contract_spanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ⟋ C).Spanning X ↔ M.Spanning (X ∪ C) ∧ Disjoint X C := by 
   rw [contract_spanning_iff', inter_eq_self_of_subset_left hC] 
 
+theorem Nonloop.contract_er_add_one_eq (he : M.Nonloop e) (X : Set α) : 
+    (M ⟋ e).er X + 1 = M.er (insert e X) := by 
+  rw [contract_elem, ←he.er_eq, er_contract_add_er_eq_er_union, union_singleton]
+
+theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) : 
+    (M ⟋ e).er X = M.er (insert e X) - 1 := by 
+  rw [←WithTop.add_right_cancel_iff (by norm_num : (1 : ℕ∞) ≠ ⊤), he.contract_er_add_one_eq, 
+    tsub_add_cancel_iff_le.2]
+  rw [←he.er_eq, ←union_singleton]
+  exact M.er_mono (subset_union_right _ _)
+  
+  
+  
+  
+
 end Contract
 
 section Minor
@@ -705,7 +720,7 @@ variable {β : Type _} {N' M' : Matroid α}
 /-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is 
   defined to be type-heterogeneous.  -/
 def IsoMinor (N : Matroid β) (M : Matroid α) : Prop :=
-  ∃ M' : Matroid α, M' ≤m M ∧ Nonempty (Iso N M')
+  ∃ M' : Matroid α, M' ≤m M ∧ N ≃ M'
 
 infixl:50 " ≤i " => Matroid.IsoMinor
 

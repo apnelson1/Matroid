@@ -9,7 +9,7 @@ open Set
 section EmptyOn
 
 /-- The `Matroid α` with empty ground set-/
-def empty_on (α : Type) : Matroid α := 
+def empty_on (α : Type _) : Matroid α := 
   matroid_of_base_of_finite finite_empty (· = ∅) ⟨_,rfl⟩ (by rintro _ _ rfl; simp) (by simp)
 
 @[simp] theorem empty_on_ground : (empty_on α).E = ∅ := rfl
@@ -30,7 +30,7 @@ def empty_on (α : Type) : Matroid α :=
   rw [← ground_eq_empty_iff]; rfl 
   
 /-- Any two empty matroids are isomorphic -/
-noncomputable def Iso.of_empty (α β : Type _) [Nonempty α] [Nonempty β] : 
+noncomputable def Iso.of_empty (α β : Type _) [_root_.Nonempty α] [_root_.Nonempty β] : 
     Iso (empty_on α) (empty_on β) where
   toLocalEquiv := InjOn.toLocalEquiv _ _ (injOn_empty (Classical.arbitrary (α → β)))
   source_eq' := by simp
@@ -52,7 +52,14 @@ noncomputable def Iso.of_empty (α β : Type _) [Nonempty α] [Nonempty β] :
 @[simp] theorem minor_empty_iff : M ≤m empty_on α ↔ M = empty_on α :=
   ⟨fun h ↦ ground_eq_empty_iff.1 (eq_empty_of_subset_empty h.subset), 
     by rintro rfl; apply empty_minor⟩
-  
+
+
+
+theorem eq_empty_on_or_nonempty (M : Matroid α) : M = empty_on α ∨ Nonempty M := by 
+  rw [←ground_eq_empty_iff]
+  exact M.E.eq_empty_or_nonempty.elim Or.inl (fun h ↦ Or.inr ⟨h⟩)
+
+
 end EmptyOn
 
 section LoopyOn
@@ -100,11 +107,16 @@ def loopy_on (E : Set α) : Matroid α := (empty_on α ↾ E)
   rw [←hB.encard, encard_eq_zero] at h 
   rw [←h, hB.cl_eq]
 
+@[simp] theorem empty_base_iff : M.Base ∅ ↔ M = loopy_on M.E :=
+  ⟨fun h ↦ by rw [←cl_empty_eq_ground_iff, h.cl_eq], fun h ↦ by rw [h, loopy_on_base_iff]⟩
+  
 theorem eq_loopy_on_iff_cl : M = loopy_on E ↔ M.cl ∅ = E ∧ M.E = E :=
   ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←cl_empty_eq_ground_iff, h, h']⟩
   
 theorem eq_loopy_on_iff_erk : M = loopy_on E ↔ M.erk = 0 ∧ M.E = E := 
   ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←erk_eq_zero_iff, h]⟩
+
+
 
 instance : FiniteRk (loopy_on E) := 
   ⟨⟨∅, loopy_on_base_iff.2 rfl, finite_empty⟩⟩ 
@@ -132,6 +144,9 @@ theorem Finite.loopy_on_finite (hE : E.Finite) : Finite (loopy_on E) :=
 
 theorem contract_eq_loopy_on_of_spanning (h : M.Spanning C) : M ⟋ C = loopy_on (M.E \ C) := by 
   rw [eq_loopy_on_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
+  
+theorem eq_loopy_on_or_rkPos (M : Matroid α) : M = loopy_on M.E ∨ RkPos M := by 
+  rw [←empty_base_iff, rkPos_iff_empty_not_base]; apply em
   
 end LoopyOn
 

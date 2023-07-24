@@ -15,8 +15,8 @@ theorem Flat.eq_ground_of_spanning (hF : M.Flat F) (h : M.Spanning F) : F = M.E 
 theorem Flat.spanning_iff (hF : M.Flat F) : M.Spanning F ↔ F = M.E :=
   ⟨hF.eq_ground_of_spanning, by rintro rfl; exact M.ground_spanning⟩
 
-theorem Flat.iInter {ι : Type _} [Nonempty ι] {Fs : ι → Set α} (hFs : ∀ i, M.Flat (Fs i)) : 
-    M.Flat (⋂ i, Fs i) := by
+theorem Flat.iInter {ι : Type _} [_root_.Nonempty ι] {Fs : ι → Set α} 
+    (hFs : ∀ i, M.Flat (Fs i)) : M.Flat (⋂ i, Fs i) := by
   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
     (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩ 
   obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (iInter_subset _ i))
@@ -27,7 +27,7 @@ theorem Flat.iInter {ι : Type _} [Nonempty ι] {Fs : ι → Set α} (hFs : ∀ 
 theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs → M.Flat F) : 
     M.Flat (⋂₀ Fs) := by
   rw [sInter_eq_iInter]
-  have : Nonempty Fs
+  have : _root_.Nonempty Fs
   · exact Iff.mpr nonempty_coe_sort hF
   exact Flat.iInter (fun ⟨F, hF⟩ ↦ h _ hF)
 
@@ -82,6 +82,42 @@ theorem Flat.cl_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
   have h' := M.cl_mono h; rwa [hF.cl] at h' 
 
   -- TODO : Cyclic flats. 
+
+section LowRank
+
+@[reducible, pp_dot] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 1
+
+theorem Point.flat (hP : M.Point P) : M.Flat P := 
+  hP.1
+
+theorem Point.er (hP : M.Point P) : M.er P = 1 := 
+  hP.2
+
+@[aesop unsafe 10% (rule_sets [Matroid])] 
+theorem Point.subset_ground (hP : M.Point P) : P ⊆ M.E := 
+  hP.1.subset_ground
+
+@[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
+
+theorem Line.flat (hL : M.Line L) : M.Flat L := 
+  hL.1
+
+theorem Line.er (hL : M.Line L) : M.er L = 2 := 
+  hL.2
+
+@[aesop unsafe 10% (rule_sets [Matroid])] 
+theorem Line.subset_ground (hL : M.Line L) : L ⊆ M.E := 
+  hL.1.subset_ground
+
+@[reducible, pp_dot] def Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
+
+theorem Plane.flat (hP : M.Plane P) : M.Flat P := 
+  hP.1
+
+theorem Plane.er (hP : M.Plane P) : M.er P = 3 := 
+  hP.2
+
+end LowRank
 
 -- ### Covering
 /-- A flat is covered by another in a matroid if they are strictly nested, with no flat
@@ -439,12 +475,32 @@ theorem subset_hyperplane_iff_cl_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
   rw [← hH.flat.cl]
   exact hY.symm.trans_subset (M.cl_mono hYH)
 
-  
-
-
-
-
 end Hyperplane
+
+section Minor
+
+theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
+  rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ←M.cl_union_cl_right_eq, 
+    union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
+
+@[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) : 
+    (M ⟋ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
+  rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff, 
+    union_comm C, ←and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff, 
+    and_congr_right_iff]
+  exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC), 
+    fun h ↦ (subset_union_left _ _).trans h⟩
+  
+theorem flat_contract_iff' : 
+    (M ⟋ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
+  rw [←contract_inter_ground_eq, flat_contract_iff]
+
+theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
+    (M ⟋ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by 
+  rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
+
+
+end Minor
 
 -- section from_axioms
 -- lemma matroid_of_flat_aux [finite E] (flat : set α → Prop) (univ_flat : flat univ)

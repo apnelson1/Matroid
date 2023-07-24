@@ -33,7 +33,8 @@ special cases.
   independent. 
 * For `I : Set α` and `X : Set α`, `M.Basis I X` means that `I` is a maximal independent 
   subset of `X`. 
-* `Finite M` means that `M` has finite ground set. 
+* `Finite M` means that `M` has finite ground set.
+* `Nonempty M` means that `M` has nonempty ground set. 
 * `FiniteRk M` means that `M` has a finite base. 
 * `RkPos M` means that `M` has a nonempty base. 
 
@@ -143,13 +144,21 @@ attribute [pp_dot] Base
 
 @[simp] theorem ground_eq_E (M : Matroid α) : M.ground = M.E := rfl 
 
-/-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.Finite]`-/
-class Finite (M : Matroid α) : Prop where (ground_finite : M.E.Finite)
+/-- Typeclass for a matroid having finite ground set. Just a wrapper for `M.E.Finite`-/
+class Finite (M : Matroid α) : Prop where 
+  (ground_finite : M.E.Finite)
 
-theorem ground_finite (M : Matroid α) [M.Finite] : M.E.Finite :=
+/-- Typeclass for a matroid having nonempty ground set. Just a wrapper for `M.E.Nonempty`-/
+class Nonempty (M : Matroid α) : Prop where 
+  (ground_nonempty : M.E.Nonempty)
+
+theorem ground_nonempty (M : Matroid α) [Nonempty M] : M.E.Nonempty :=
+  Nonempty.ground_nonempty
+  
+theorem ground_finite (M : Matroid α) [Finite M] : M.E.Finite :=
   ‹M.Finite›.ground_finite   
 
-theorem set_finite (M : Matroid α) [M.Finite] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
+theorem set_finite (M : Matroid α) [Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop) : X.Finite :=
   M.ground_finite.subset hX 
 
 instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M := 
@@ -322,6 +331,12 @@ theorem empty_not_base [h : RkPos M] : ¬M.Base ∅ :=
 theorem Base.nonempty [RkPos M] (hB : M.Base B) : B.Nonempty := by 
   rw [nonempty_iff_ne_empty]; rintro rfl; exact M.empty_not_base hB 
 
+theorem Base.rkPos_of_nonempty (hB : M.Base B) (h : B.Nonempty) : M.RkPos := by 
+  rw [rkPos_iff_empty_not_base]
+  intro he
+  obtain rfl := he.eq_of_subset_base hB (empty_subset B)
+  simp at h
+
 theorem Base.finiteRk_of_finite (hB : M.Base B) (hfin : B.Finite) : FiniteRk M := 
   ⟨⟨B, hB, hfin⟩⟩   
 
@@ -442,6 +457,10 @@ theorem Dep.nonempty (hD : M.Dep D) : D.Nonempty := by
 theorem Indep.finite [FiniteRk M] (hI : M.Indep I) : I.Finite := 
   let ⟨_, hB, hIB⟩ := hI
   hB.finite.subset hIB  
+
+theorem Indep.rkPos_of_nonempty (hI : M.Indep I) (hne : I.Nonempty) : M.RkPos := by
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_supset
+  exact hB.rkPos_of_nonempty (hne.mono hIB)
 
 theorem Indep.inter_right (hI : M.Indep I) (X : Set α) : M.Indep (I ∩ X) :=
   hI.subset (inter_subset_left _ _)
@@ -754,8 +773,8 @@ theorem Basis.iUnion_basis_iUnion {ι : Type _} (X I : ι → Set α) (hI : ∀ 
   rw [insert_subset_iff, iUnion_subset_iff, and_iff_left (fun i ↦ (hI i).indep.subset_ground)]
   exact (hI i).subset_ground hes
 
-theorem Basis.basis_iUnion {ι : Type _} [Nonempty ι] (X : ι → Set α) (hI : ∀ i, M.Basis I (X i)) : 
-    M.Basis I (⋃ i, X i) := by
+theorem Basis.basis_iUnion {ι : Type _} [_root_.Nonempty ι] (X : ι → Set α) 
+    (hI : ∀ i, M.Basis I (X i)) : M.Basis I (⋃ i, X i) := by
   convert Basis.iUnion_basis_iUnion X (fun _ ↦ I) (fun i ↦ hI i) _ <;> rw [iUnion_const]
   exact (hI (Classical.arbitrary ι)).indep
   

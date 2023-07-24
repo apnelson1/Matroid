@@ -254,7 +254,7 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
 @[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toLocalEquiv = e.toLocalEquiv := rfl 
 
 /-- We write `M ≃ N` if there is an isomorphism from `M` to `N`. -/
-def IsIso : Matroid α → Matroid β → Prop := fun M N ↦ Nonempty (M.Iso N)
+def IsIso : Matroid α → Matroid β → Prop := fun M N ↦ _root_.Nonempty (M.Iso N)
 
 infixl:65  " ≃ " => IsIso 
 

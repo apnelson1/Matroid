@@ -136,6 +136,14 @@ theorem cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) :
     M.cl (insert e (M.cl X)) = M.cl (insert e X) := by
   simp_rw [← singleton_union, cl_union_cl_right_eq]
 
+@[simp] theorem cl_union_cl_empty_eq (M : Matroid α) (X : Set α) : 
+    M.cl X ∪ M.cl ∅ = M.cl X :=
+  union_eq_self_of_subset_right (M.cl_subset_cl (empty_subset _))
+
+@[simp] theorem cl_empty_union_cl_eq (M : Matroid α) (X : Set α) : 
+    M.cl ∅ ∪ M.cl X = M.cl X :=
+  union_eq_self_of_subset_left (M.cl_subset_cl (empty_subset _))
+ 
 theorem cl_insert_eq_of_mem_cl (he : e ∈ M.cl X) : M.cl (insert e X) = M.cl X := by
   rw [←cl_insert_cl_eq_cl_insert, insert_eq_of_mem he, cl_cl]
 
@@ -292,8 +300,8 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type _} (Is : ι → Set α) [hι : Nonempty ι]
-    (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
+theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type _} [hι : _root_.Nonempty ι] 
+    (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
 
