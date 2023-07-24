@@ -188,6 +188,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
         exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
+
     have aux0 : ∀ I, Base I → (E \ I) ∈ maximals (· ⊆ ·) { I | Indep' I } := by {
       rintro I hI
       rw [dual_indep_maximals_eq_dual_base]
@@ -196,6 +197,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       exact hI
     }
 
+    -- Indep' satisfies I3'
     have aux1 : ∀ I I', Indep' I → (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
         rintro I' Bt hI' hBt
@@ -400,16 +402,9 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   })
   h_support
 
-lemma subset_of_pairwise_disjoint
-   {ι : Type _}
-   (I J : Set α)
-   (Es : ι → Set α)
-   (hEs : Pairwise (Disjoint on Es))
-   (hJ : J ⊆ ⋃ i, Es i)
-   (hIJ : I ⊆ J)
-   (i : ι) :
-  (I ∩ Es i) ⊆ (J ∩ Es i) := by
-sorry
+lemma maximals_subset_maximals_disjoint
+  {ι : Type _}
+  ()
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
@@ -421,7 +416,8 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       sorry
     })
     (fun I J hJ hIJ ↦ ⟨hIJ.trans hJ.1,
-      fun i ↦ (hJ.2 i).subset (subset_of_pairwise_disjoint I J (fun i ↦ (Ms i).E) hEs hJ.1 hIJ i)⟩) 
+      fun i ↦ (hJ.2 i).subset
+      (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     sorry
     (fun _ hI ↦ hI.1)
 
