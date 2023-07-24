@@ -97,6 +97,15 @@ lemma ssubset_of_subset_of_compl_ssubset {A B X E : Set α}
   . rintro rfl
     exact h₂.not_subset (subset_refl _)
 
+lemma ssubset_of_subset_of_compl_ssubset' {A B X E : Set α}
+    (hA : A ⊆ E)
+    (hB : B ⊆ E)
+    (hX : X ⊆ E)
+    (h₁ : A ∩ (E \ X) ⊆ B ∩ (E \ X))
+    (h₂ : A ∩ X ⊂ B ∩ X) :
+    A ⊂ B := by
+sorry
+
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
     Disjoint A (C \ B) := by
@@ -177,9 +186,9 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
         exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
-    have aux1 : ∀ I I', Indep' I ∧ (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
+    have aux1 : ∀ I I', Indep' I → (I' ∈ maximals (· ⊆ ·) { I' | Indep' I' }) →
                   ∃ B, B ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ I ⊆ B ∧ B ⊆ I ∪ I' := by
-        rintro I' Bt ⟨hI', hBt⟩
+        rintro I' Bt hI' hBt
         obtain ⟨T, hT⟩ := hI'
 
         let B := E \ T
@@ -264,6 +273,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         
         exact hI'B.not_subset (hI'.1.2 hB.1 hI'B.subset)
     
+    have exists_base_contains_indep : ∀ I, Indep I → ∃ B, Base B ∧ I ⊆ B := sorry 
+
     have aux2'' : ∀ X B, X ⊆ E → Base B →
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)} →
         B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} := by
@@ -273,45 +284,45 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         by_contra' g
         obtain ⟨I, h⟩ := g
 
-        obtain ⟨Bt, hBt⟩ := h_exists_maximal_indep_subset E (subset_refl _)
+        obtain ⟨Bt, hBt⟩ := exists_base_contains_indep I h.1.1
 
-        have hBt : Base Bt :=
-          ⟨hBt.1.1, fun B hB hBtB ↦ hBt.2 ⟨hB, h_support hB⟩ hBtB⟩
-        
         have h₁ : B ∩ X ⊂ I :=
           ⟨h.2.1, h.2.2⟩
         rw [←inter_eq_self_of_subset_left h.1.2] at h₁
-
         have h₂ : (E \ I) ∩ X ⊂ (E \ B) ∩ X :=
-          sorry
+          compl_ssubset_inter (h_support hB.1) (h_support h.1.1) h₁
+        have h₃ : (E \ Bt) ∩ X ⊆ (E \ I) ∩ X :=
+           inter_subset_inter_left _ (compl_subset hBt.2)
+        have h₄ : (E \ Bt) ∩ X ⊂ (E \ B) ∩ X :=
+           ssubset_of_subset_of_ssubset h₃ h₂
+        obtain ⟨I', hI'⟩ := aux1 ((E \ B) ∩ (E \ X)) (E \ Bt) sorry sorry
 
-        sorry
-          -- compl_ssubset_inter ) (h_support h.1.1) h₁
-          -- have h₁ : (E \ B) ∩ (E \ X) ⊂ I :=
-          --   ⟨h.2.1, h.2.2⟩
-          -- rw [←inter_eq_self_of_subset_left h.1.2] at h₁
-          -- have h₂ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
-          --   have := compl_ssubset_inter (diff_subset _ _) (hBt.2.trans hBt.1.1) h₁
-          --   rw [diff_diff_cancel_left (h_support hB.1)] at this
-          --   exact this
-          -- }
-          -- use E \ Bt
-          -- use hBt.1.2
-          -- exact ssubset_of_subset_of_ssubset (inter_subset_inter_left _ (compl_subset hBt.2)) h₂
+        have h₅ : (E \ B) ∩ (E \ X) ⊆ I' ∩ (E \ X) := by
+          rw [←inter_eq_self_of_subset_left (inter_subset_right (E \ B) (E \ X))]
+          exact inter_subset_inter_left (E \ X) hI'.2.1
         
-        
-        -- extend I to a basis
-        -- obtain ⟨Bt, hBt⟩ := h_basis h.1 
-        
-        -- obtain ⟨B', hB'⟩ := h_basis (h_subset hI.1.1 hI.2.1) hB
-        -- have : (B ∩ X) ∪ B = B := sorry
-        -- rw [this] at hB'
-        -- have : B' = B := by {
-        --   refine' subset_antisymm (hB'.2.2) (hB'.1.2 hB.1 hB'.2.2)
-        -- }
-        -- have : 
+        have h₆ : I' ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) :=
+          hBX.2 ⟨sorry, inter_subset_right _ _⟩ h₅
 
+        have h₇ : I' ∩ X ⊆ (E \ Bt) ∩ X := by
+          {
+            calc
+              I' ∩ X ⊆ ((E \ B) ∩ (E \ X) ∪ (E \ Bt)) ∩ X  := inter_subset_inter_left X hI'.2.2
+              _ = ((E \ B) ∩ (E \ X)) ∩ X ∪ ((E \ Bt) ∩ X) := by rw [←inter_distrib_right _ _]
+              _ = (E \ B) ∩ ((E \ X) ∩ X) ∪ ((E \ Bt) ∩ X) := by rw [inter_assoc]
+              _ = (E \ B) ∩ (X ∩ (E \ X)) ∪ ((E \ Bt) ∩ X) := by rw [inter_comm (E \ X) X]
+              _ = ((E \ B) ∩ ∅) ∪ ((E \ Bt) ∩ X) := by rw [inter_diff_self _ _]
+              _ = ∅ ∪ ((E \ Bt) ∩ X) := by rw [inter_empty _]
+              _ = (E \ Bt) ∩ X := by rw [empty_union]
+          }
 
+        have h₈ : I' ∩ X ⊂ (E \ B) ∩ X :=
+          ssubset_of_subset_of_ssubset h₇ h₄
+
+        have h₉ : I' ⊂ (E \ B) :=
+          ssubset_of_subset_of_compl_ssubset' sorry sorry sorry h₆ h₈
+
+        exact h₉.not_subset (hI'.1.2 sorry h₉.subset)
       }
 
     have aux2 : ∀ X B, X ⊆ E → Base B →
