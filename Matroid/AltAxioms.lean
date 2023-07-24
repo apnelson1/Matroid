@@ -402,9 +402,9 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   })
   h_support
 
-lemma maximals_subset_maximals_disjoint
-  {ι : Type _}
-  ()
+-- lemma maximals_subset_maximals_disjoint
+--   {ι : Type _}
+--   ()
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
