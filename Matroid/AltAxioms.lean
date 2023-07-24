@@ -30,15 +30,6 @@ lemma maximal_of_restriction {A B X} (P : Set α → Prop)
     (hA.2 ⟨(hP (B) (B ∩ X) hB.1 (inter_subset_left _ _)), (inter_subset_right _ _)⟩
     (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩))
 
--- lemma ssubset_of_compl {A B E X : Set α}
---     (hA  : A ⊆ E)
---     (hB  : B ⊆ E)
---     (hX  : X ⊆ E)
---     (hAB : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
---     B ∩ X ⊂ A ∩ X := by
---   refine' ⟨_, _⟩
---   . intro e he
-    
 lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) :=
   subset_antisymm (fun e he ↦ ⟨he.1, h he.1, he.2⟩) (fun e he ↦ ⟨he.1, he.2.2⟩)
 
@@ -408,6 +399,21 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     exact ⟨B, ⟨hB.1.1.1, hB.2.1, hB.1.1.2⟩, fun Y hY hBY ↦ hB.1.2 ⟨hY.1, hY.2.2⟩ hBY⟩
   })
   h_support
+
+def directSum {ι : Type _} (Ms : ι → Matroid α)
+  (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
+  matroid_of_indep_of_forall_subset_base
+    (⋃ i, (Ms i).E)
+    (fun I ↦ (I ⊆ ⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E))
+    sorry
+    (by {
+      rintro I J hI hIJ 
+      refine' ⟨hIJ.trans hI.1, _⟩
+      rintro i
+      
+    }) 
+    sorry
+    (fun _ hI ↦ hI.1)
 
 end Matroid 
 
