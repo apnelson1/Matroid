@@ -933,6 +933,9 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
   simp_rw [mem_maximals_setOf_iff, and_imp] at hB
   exact ⟨B, ⟨hB.1.1, fun J hJ hBJ ↦ hB.2 hJ (hB.1.2.1.trans hBJ) (h_support J hJ) hBJ⟩, hB.1.2.1⟩  
 
+
+--- Def of dual goes here? 
+
 /-- If there is an absolute upper bound on the size of a set satisfying `P`, then the 
   maximal subset property always holds. -/
 theorem Matroid.existsMaximalSubsetProperty_of_bdd {P : Set α → Prop} 

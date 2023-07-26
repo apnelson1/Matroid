@@ -12,6 +12,10 @@ import Mathlib.Algebra.BigOperators.Finprod
 
 open Set
 
+-- theorem finsum_eq_finsum_iff_of_le {ι M : Type _} [inst : OrderedCancelAddCommMonoid M] 
+-- {s : Set ι} {f g : ι → M} (h : ∀ (i : ι), f i ≤ g i) :
+-- ((Finset.sum s fun i => f i) = Finset.sum s fun i => g i) ↔ ∀ (i : ι), i ∈ s → f i = g i
+
 variable {α : Type _} {s : Set α} {c : Set (Set α)}
 
 theorem ENat.finsum_mem_one_eq (hs : s.Finite) : ∑ᶠ i ∈ s, 1 = s.encard := by 
@@ -31,6 +35,9 @@ theorem ENat.finsum_mem_sUnion_eq (hc : c.PairwiseDisjoint id) (hfin : c.Finite)
     encard_union_eq]
   rw [disjoint_sUnion_right]
   exact fun t hts ↦ hdj (mem_insert _ _) (mem_insert_of_mem _ hts) (by rintro rfl; exact has hts)
+
+
+
   
 theorem PSetoid.IsPartition.sum_encard_eq (hc : PSetoid.IsPartition c s) (hs : s.Finite) : 
     ∑ᶠ t ∈ c, t.encard = s.encard := by 
