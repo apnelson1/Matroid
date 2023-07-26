@@ -89,6 +89,12 @@ lemma ssubset_of_subset_of_compl_ssubset' {A B X E : Set α}
     exact h₂
   exact ssubset_of_subset_of_compl_ssubset hA hB h₁ g₂ 
 
+lemma ssubset_of_subset_of_compl_ssubset'' {A B : Set α}
+    (h₁ : A ∩ X ⊂ B ∩ X)
+    (h₂ : A \ X ⊆ B \ X) :
+    A ⊂ B := by
+  sorry
+
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
     Disjoint A (C \ B) := by
@@ -114,7 +120,6 @@ lemma inter_singleton_eq_self {a : α} {S : Set α} :
 /- end of singleton API -/
 
 /- ExistsMaximalSubset reformulation -/
-lemma ExistsMaximalSubsetProperty 
 /- end of ExistsMaximalSubset reformulation-/
 
 
@@ -176,7 +181,7 @@ def dual' (M : Matroid α) : Matroid α :=
       let B := M.E \ Bs
       have hB : M.Base B :=
         hBs.2
-      have hIsB : Disjoint Is B :=
+      have hIsB : Disjoint Is B := by
         sorry
 
       /- `M.E \ X` has a maximal independent subset `I` -/
@@ -197,16 +202,34 @@ def dual' (M : Matroid α) : Matroid α :=
         exact this.2
       
       -- maximality
+      by_contra'
+      obtain ⟨B'', hB'', hB''B'⟩ : ∃ B'', M.Base B'' ∧ (B'' ∩ X ⊂ B' ∩ X) := by {
+        -- from this
+        sorry
+      }
 
-
-
+      let I' := (B'' ∩ X) ∪ (B' \ X)
+      have hI' : I' ⊂ B' := by
+        have h₁ : I' ∩ X ⊂ B' ∩ X := by
+          calc
+            I' ∩ X = (B'' ∩ X ∪ B' \ X) ∩ X  := by rfl
+              _ = B'' ∩ X := by rw [union_inter_distrib_right,
+                                        inter_eq_self_of_subset_left (inter_subset_right _ _),
+                                        inter_comm (B' \ X) X, inter_diff_self, union_empty]
+              _ ⊂ B' ∩ X := hB''B'
+        have h₂ : I' \ X = B' \ X := by
+          calc
+            I' \ X = (B'' ∩ X ∪ B' \ X) \ X  := by rfl
+              _ = B' \ X  := by rw [union_diff_distrib, diff_eq_empty.mpr (inter_subset_right _ _),
+                              empty_union, diff_diff, union_eq_self_of_subset_left (Subset.refl _)]
+        exact ssubset_of_subset_of_compl_ssubset'' h₁ h₂.subset
       
+      obtain ⟨I'', hI''⟩ := exists_base_subset_union_base' hB'.1 hI'.subset hB''
+      have hI'I'' : I' ⊂ I'' := by
+        sorry
 
-      -- refine' ⟨X ∩ B, ⟨⟨B, ⟨hB, inter_subset_right _ _⟩⟩, subset_inter hIX hIB, inter_subset_left _ _⟩, _⟩
-      -- rintro Y ⟨⟨Bt, ⟨hBt, hBtY⟩⟩, hY⟩ hXBY
-      -- refine' subset_inter hY.2 _
-      
-      -- have := M.maximality' X hX
+
+
     })
     (fun B hB ↦ hB.1)
 
