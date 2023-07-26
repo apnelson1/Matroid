@@ -95,6 +95,19 @@ lemma ssubset_of_subset_of_compl_ssubset'' {A B : Set α}
     A ⊂ B := by
   sorry
 
+
+lemma ssubset_of_ssubset_of_compl_subset'' {A B X : Set α}
+    (h₁ : A ∩ X ⊆ B ∩ X)
+    (h₂ : A \ X ⊂ B \ X) :
+    A ⊂ B := by
+  sorry
+
+lemma diff_ssubset_of_ssubset_of_subset_inter {A B X : Set α}
+  (h₁ : A ⊂ B)
+  (h₂ : A ∩ X ⊆ B ∩ X) :
+  A \ X ⊂ B \ X := by
+sorry
+
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
     Disjoint A (C \ B) := by
@@ -209,20 +222,27 @@ def dual' (M : Matroid α) : Matroid α :=
       }
 
       let I' := (B'' ∩ X) ∪ (B' \ X)
-      have hI' : I' ⊂ B' := by
-        have h₁ : I' ∩ X ⊂ B' ∩ X := by
-          calc
-            I' ∩ X = (B'' ∩ X ∪ B' \ X) ∩ X  := by rfl
-              _ = B'' ∩ X := by rw [union_inter_distrib_right,
-                                        inter_eq_self_of_subset_left (inter_subset_right _ _),
-                                        inter_comm (B' \ X) X, inter_diff_self, union_empty]
-              _ ⊂ B' ∩ X := hB''B'
-        have h₂ : I' \ X = B' \ X := by
-          calc
-            I' \ X = (B'' ∩ X ∪ B' \ X) \ X  := by rfl
-              _ = B' \ X  := by rw [union_diff_distrib, diff_eq_empty.mpr (inter_subset_right _ _),
-                              empty_union, diff_diff, union_eq_self_of_subset_left (Subset.refl _)]
-        exact ssubset_of_subset_of_compl_ssubset'' h₁ h₂.subset
+
+      have hI'X : I' ∩ X = B'' ∩ X := by
+        calc
+          I' ∩ X = (B'' ∩ X ∪ B' \ X) ∩ X  := by rfl
+            _ = B'' ∩ X := by rw [union_inter_distrib_right,
+                                      inter_eq_self_of_subset_left (inter_subset_right _ _),
+                                      inter_comm (B' \ X) X, inter_diff_self, union_empty]
+
+      have g₁ : I' ∩ X ⊂ B' ∩ X := by
+        calc
+          I' ∩ X = B'' ∩ X := by rw [hI'X]
+               _ ⊂ B' ∩ X := hB''B'
+              
+      have g₂ : I' \ X = B' \ X := by
+        calc
+          I' \ X = (B'' ∩ X ∪ B' \ X) \ X  := by rfl
+            _ = B' \ X  := by rw [union_diff_distrib, diff_eq_empty.mpr (inter_subset_right _ _),
+                            empty_union, diff_diff, union_eq_self_of_subset_left (Subset.refl _)]
+      
+      have hI' : I' ⊂ B' :=
+        ssubset_of_subset_of_compl_ssubset'' g₁ g₂.subset
       
       obtain ⟨I'', hI''⟩ := exists_base_subset_union_base' hB'.1 hI'.subset hB''
       have hI'I'' : I' ⊂ I'' := by
@@ -231,23 +251,23 @@ def dual' (M : Matroid α) : Matroid α :=
         exact not_base_of_ssubset hB'.1 hI' hI''.1
 
       have h₁ : I' \ X ⊂ I'' \ X := by
-        sorry
+        have : I' ∩ X = I'' ∩ X := by
+          refine' subset_antisymm (inter_subset_inter_left X hI''.2.1) _
+          have := inter_subset_inter_left X hI''.2.2
+          rw [union_inter_distrib_right, ←hI'X, union_self] at this
+          exact this
+        exact diff_ssubset_of_ssubset_of_subset_inter hI'I'' this.subset
       
       have h₂ : I ⊆ I' \ X := by
-        sorry
+        rw [g₂, diff_eq, subset_inter_iff]
+        refine' ⟨hB'.2.1, _⟩
+        have := hI.1.2.2
+        rw [diff_eq, subset_inter_iff] at this
+        exact this.2
       
-      have : I ⊂ I'' \ X := 
-        ssubset_of_subset_of_ssubset h₂ h₁
-
-      have : I'' \ X ∈ {Y | (fun x ↦ ∃ B, M.Base B ∧ x ⊆ B) Y ∧ ∅ ⊆ Y ∧ Y ⊆ M.E \ X} := by {
-        refine' ⟨_, _⟩
-        sorry
-      }
-
-      have := hI.2 
-      sorry
-
-
+      exact (ssubset_of_subset_of_ssubset h₂ h₁).not_subset (hI.2 ⟨⟨I'', hI''.1, diff_subset _ _⟩,
+            ⟨empty_subset _, diff_subset_diff hI''.1.subset_ground (Subset.refl _)⟩⟩
+                (ssubset_of_subset_of_ssubset h₂ h₁).subset)
     })
     (fun B hB ↦ hB.1)
 
