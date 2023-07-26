@@ -138,10 +138,10 @@ theorem exists_base_subset_union_base'
     ∃ B', M.Base B' ∧ I ⊆ B' ∧ B' ⊆ I ∪ B := by
   sorry
 
---     ∃ B', M.Base B' ∧ I ⊆ B' ∧ B' ⊆ I ∪ B := by
---   obtain ⟨B', hB', hIB'⟩ := hI.subset_basis_of_subset (subset_union_left I B)
---   exact ⟨B', hB.base_of_basis_supset (subset_union_right _ _) hB', hIB', hB'.subset⟩
-
+theorem not_base_of_ssubset
+    {M : Matroid α} {I B : Set α} (hB : M.Base B) (hI : I ⊂ B) :
+    ¬ M.Base I := by
+  sorry
 
 /- definition of dual where the bases of the dual
    are definitionally the complements of the
@@ -226,8 +226,26 @@ def dual' (M : Matroid α) : Matroid α :=
       
       obtain ⟨I'', hI''⟩ := exists_base_subset_union_base' hB'.1 hI'.subset hB''
       have hI'I'' : I' ⊂ I'' := by
-        sorry
+        refine' ssubset_iff_subset_ne.mpr ⟨hI''.2.1, _⟩
+        rintro rfl
+        exact not_base_of_ssubset hB'.1 hI' hI''.1
 
+      have h₁ : I' \ X ⊂ I'' \ X := by
+        sorry
+      
+      have h₂ : I ⊆ I' \ X := by
+        sorry
+      
+      have : I ⊂ I'' \ X := 
+        ssubset_of_subset_of_ssubset h₂ h₁
+
+      have : I'' \ X ∈ {Y | (fun x ↦ ∃ B, M.Base B ∧ x ⊆ B) Y ∧ ∅ ⊆ Y ∧ Y ⊆ M.E \ X} := by {
+        refine' ⟨_, _⟩
+        sorry
+      }
+
+      have := hI.2 
+      sorry
 
 
     })
