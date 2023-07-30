@@ -219,7 +219,9 @@ def dual' (M : Matroid α) : Matroid α :=
       obtain ⟨Bi, ⟨hBi, hIBi⟩⟩ := hI.1.1
       obtain ⟨B', hB'⟩ := exists_base_subset_union_base' hBi hIBi hB
 
-      have hIBIs : I ∪ B ⊆ (M.E \ Is) := by sorry
+      have hIBIs : I ∪ B ⊆ (M.E \ Is) := by
+        rw [union_subset_iff]
+        exact ⟨hI.1.2.2.trans (compl_subset hIsX), compl_subset hIsBs⟩
 
       -- membership
       refine' ⟨X \ B', ⟨⟨⟨M.E \ B', ⟨⟨diff_subset _ _,
