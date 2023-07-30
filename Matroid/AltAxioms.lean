@@ -182,16 +182,19 @@ def dual' (M : Matroid α) : Matroid α :=
       have hy := (compl_diff_compl_iff _ _ M.E).mpr hy
       refine' ⟨y, hy, _⟩
 
-      have : x ∈ {y}ᶜ := by {
+      have : x ∈ {y}ᶜ := by
         rw [mem_compl_singleton_iff]
         rintro rfl
         exact hx.1.2 hy.1
-      }
 
       simp only [mem_diff, mem_singleton_iff]
-      sorry
-      -- rwa [insert_eq, diff_eq, compl_union, diff_eq, compl_inter, compl_compl, ←inter_assoc, inter_distrib_left, inter_assoc, inter_comm _ B₁ᶜ, ←inter_assoc, ←diff_eq, ←diff_eq, inter_assoc, inter_comm _ {x}, ←inter_assoc,
-      --       inter_singleton_eq_self.mpr hx.1.1, inter_comm, inter_singleton_eq_self.mpr this, union_comm, ←insert_eq]
+      refine' ⟨_, _⟩
+      . rw [insert_eq, union_subset_iff, singleton_subset_iff]
+        exact ⟨hB₂.1 hy.1, (diff_subset B₁ {x}).trans hB₁.1⟩
+      rwa [insert_eq, diff_eq, compl_union, diff_eq, compl_inter, compl_compl, ←inter_assoc,
+        inter_distrib_left, inter_assoc, inter_comm _ B₁ᶜ, ←inter_assoc, ←diff_eq, ←diff_eq,
+        inter_assoc, inter_comm _ {x}, ←inter_assoc, inter_singleton_eq_self.mpr hx.1.1,
+        inter_comm, inter_singleton_eq_self.mpr this, union_comm, ←insert_eq]
     })
     (by {
       rintro X hX Is ⟨Bs, ⟨hBs, hIsBs⟩⟩ hIsX
