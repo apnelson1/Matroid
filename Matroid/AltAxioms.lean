@@ -124,6 +124,10 @@ lemma compl_diff_compl' {x : α} (A B E : Set α)
   x ∈ (E \ B) \ (E \ A) :=
 sorry
 
+lemma aux {X A B : Set α} :
+    X ∩ Aᶜ ⊂ X ∩ Bᶜ ↔ X ∩ B ⊂ X ∩ A := by
+  sorry
+
 /- end of complement API -/
 
 /- singleton API -/
@@ -195,10 +199,21 @@ def dual' (M : Matroid α) : Matroid α :=
       have hB : M.Base B :=
         hBs.2
       have hIsB : Disjoint Is B := by
-        sorry
+        simp only [disjoint_iff, ge_iff_le, le_eq_subset, sdiff_le_iff,
+          sup_eq_union, inf_eq_inter, bot_eq_empty, ←subset_empty_iff]
+        calc
+          Is ∩ (M.E \ Bs) ⊆ Bs ∩ (M.E \ Bs) :=
+            inter_subset_inter_left _ hIsBs
+          _ = (Bs ∩ M.E) \ Bs :=
+            by rw [inter_diff_assoc]
+          _ = Bs \ Bs :=
+            by rw [inter_eq_self_of_subset_left hBs.1]
+          _ = ∅ :=
+            diff_self
 
       /- `M.E \ X` has a maximal independent subset `I` -/
-      obtain ⟨I, hI⟩ := maximality' M (M.E \ X) (diff_subset _ _) ∅ ⟨B, _⟩ (empty_subset _)
+      obtain ⟨I, hI⟩ := maximality' M (M.E \ X) (diff_subset _ _) ∅ ⟨B, ⟨hB, empty_subset _⟩⟩
+        (empty_subset _)
 
       /- extend `I` into `B' ⊆ I ∪ B` -/
       obtain ⟨Bi, ⟨hBi, hIBi⟩⟩ := hI.1.1
@@ -207,7 +222,9 @@ def dual' (M : Matroid α) : Matroid α :=
       have hIBIs : I ∪ B ⊆ (M.E \ Is) := by sorry
 
       -- membership
-      refine' ⟨X \ B', ⟨⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rw [diff_diff_cancel_left hB'.1.subset_ground]; exact hB'.1 }⟩, diff_subset_diff hX (Subset.refl _)⟩⟩, _, diff_subset _ _⟩, _⟩⟩
+      refine' ⟨X \ B', ⟨⟨⟨M.E \ B', ⟨⟨diff_subset _ _,
+        by { rw [diff_diff_cancel_left hB'.1.subset_ground]; exact hB'.1 }⟩,
+        diff_subset_diff hX (Subset.refl _)⟩⟩, _, diff_subset _ _⟩, _⟩⟩
       . rw [diff_eq, subset_inter_iff]
         refine' ⟨hIsX, _⟩
         have := @compl_subset α B' (M.E \ Is) M.E (hB'.2.2.trans hIBIs)
@@ -217,8 +234,17 @@ def dual' (M : Matroid α) : Matroid α :=
       -- maximality
       by_contra'
       obtain ⟨B'', hB'', hB''B'⟩ : ∃ B'', M.Base B'' ∧ (B'' ∩ X ⊂ B' ∩ X) := by {
-        -- from this
-        sorry
+        obtain ⟨J, ⟨⟨⟨Bt, ⟨hBt, hJBt⟩⟩, ⟨hIsJ, hJX⟩⟩, hJ⟩⟩ := this
+        let B'' := M.E \ Bt
+        have hBtB'' : Bt = M.E \ B'' := by
+          rw [diff_diff_cancel_left hBt.1]
+        refine' ⟨B'', hBt.2, _⟩
+        have hXB'J : X \ B' ⊂ J := hJ
+        have hJXB'' : J ⊆ X \ B'' := by
+          rw [←inter_eq_self_of_subset_left hX, inter_diff_assoc]
+          exact subset_inter_iff.mpr ⟨hJX, by { rw [←hBtB'']; exact hJBt }⟩
+        rw [inter_comm , inter_comm _ X]
+        exact aux.mp (ssubset_of_ssubset_of_subset hXB'J hJXB'')
       }
 
       let I' := (B'' ∩ X) ∪ (B' \ X)
