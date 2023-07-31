@@ -111,17 +111,18 @@ lemma subset_of_subset_of_compl_subset {A B X : Set α}
     (h₁ : A ∩ X ⊆ B ∩ X)
     (h₂ : A \ X ⊆ B \ X) :
     A ⊆ B := by
-  sorry
+  have h := union_subset_union h₁.subset h₂
+  rw [inter_union_diff, inter_union_diff] at h
+  exact h
 
-lemma diff_ssubset_of_ssubset_of_subset_inter {A B X : Set α}
-  (h₁ : A ⊂ B)
-  (h₂ : A ∩ X ⊆ B ∩ X) :
-  A \ X ⊂ B \ X := by
-  refine' ⟨diff_subset_diff_left h₁.subset, _⟩
-  intro g
-  have : A \ X ⊆ B \ X := diff_subset_diff_left h₁.subset
-  have : A \ X = B \ X := subset_antisymm this g
-  sorry
+lemma diff_ssubset_of_ssubset_of_eq_inter {A B X : Set α}
+    (h₁ : A ⊂ B)
+    (h₂ : A ∩ X = B ∩ X) :
+    A \ X ⊂ B \ X := by
+  refine' ⟨diff_subset_diff_left h₁.subset, fun g ↦ _⟩
+  have : A \ X = B \ X := subset_antisymm (diff_subset_diff_left h₁.subset) g
+  rw [←inter_union_diff A X, h₂, this, inter_union_diff] at h₁
+  exact ssubset_irrfl h₁
 
 lemma disjoint_of_diff_subset {A B C : Set α}
     (h : A ⊆ B) :
@@ -303,7 +304,7 @@ def dual' (M : Matroid α) : Matroid α :=
           have := inter_subset_inter_left X hI''.2.2
           rw [union_inter_distrib_right, ←hI'X, union_self] at this
           exact this
-        exact diff_ssubset_of_ssubset_of_subset_inter hI'I'' this.subset
+        exact diff_ssubset_of_ssubset_of_eq_inter hI'I'' this
       
       have h₂ : I ⊆ I' \ X := by
         rw [g₂, diff_eq, subset_inter_iff]
