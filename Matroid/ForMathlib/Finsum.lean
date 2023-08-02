@@ -1,5 +1,5 @@
 import Mathlib.Algebra.BigOperators.Finprod
-import Matroid.ForMathlib.card
+import Mathlib.Data.Set.Ncard
 
 open Set Function 
 

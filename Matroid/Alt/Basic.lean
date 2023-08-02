@@ -1,3 +1,5 @@
+import Mathlib.Data.Set.Finite
+import Mathlib.Data.Set.Ncard
 import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init
@@ -7,20 +9,17 @@ import Matroid.ForMathlib.Minimal
 /-!
 # Matroid
 
-A `Matroid` is a combinatorial abstraction 
-of the notion of linear independence and dependence; 
-matroids have connections with graph theory, discrete optimization,
-additive combinatorics and algebraic geometry. 
-Mathematically, a matroid `M` is a structure on a set `E` comprising a 
-collection of subsets of `E` called the bases of `M`, 
-where the bases are required to obey certain axioms. 
+A `Matroid` is a combinatorial abstraction of the notion of linear independence and dependence; 
+matroids have connections with graph theory, discrete optimization, additive combinatorics and 
+algebraic geometry. Mathematically, a matroid `M` is a structure on a set `E` comprising a 
+collection of subsets of `E` called the bases of `M`, where the bases are required to obey certain 
+axioms. 
 
-This file gives a definition of a matroid `M` in terms of its bases, 
-and some API relating independent sets (subsets of bases) and the notion of a 
-basis of a set `X` (a maximal independent subset of a basis of `X`). 
-We also provide some alternative constructors that allow matroids to be 
-defined in terms of different equivalent sets of axioms, 
-or simplified sets of axioms in special cases. 
+This file gives a definition of a matroid `M` in terms of its bases, and some API relating 
+independent sets (subsets of bases) and the notion of a basis of a set `X` (a maximal independent 
+subset of a basis of `X`). We also provide a number of alternative constructors that allow matroids
+to be defined in terms of different equivalent sets of axioms, or simplified sets of axioms in 
+special cases. 
 
 ## Main definitions 
 
@@ -46,71 +45,57 @@ or simplified sets of axioms in special cases.
 There are two major design decisions made in how we set things up that might be considered unusual.
 
 ### Finiteness
-  The first is that our matroids are allowed to be infinite. 
-  Unlike with many mathematical structures, this isn't such an obvious choice. 
-  Finite matroids have been studied since the 1930's, 
-  and there was never controversy as to what is and isn't an example of a finite matroid - 
-  in fact, surprisingly many apparently different definitions of a matroid 
-  give rise to the same class of objects.
+  The first is that our matroids are allowed to be infinite. Unlike with many mathematical 
+  structures, this isn't such an obvious choice. Finite matroids have been studied since the 1930's, 
+  and there was never controversy as to what is and isn't an example of a matroid - in fact, 
+  surprisingly many apparently different definitions of a matroid give rise to the same class of 
+  objects.
 
-  However, generalizing different definitions of a finite matroid 
-  to the infinite in the obvious way (i.e. by simply allowing the ground set to be infinite) 
-  gives a number of different notions of 'infinite matroid' that disagree with eachother, 
-  and that all lack nice properties. 
-  Many different competing notions of infinite matroid were studied through the years; 
-  in fact, the problem of which definition is the best was only really solved in 2010, 
-  when Bruhn et al. showed that there is a unique 'reasonable' notion of an infinite matroid;
-  these objects had been previously called 'B-matroids'. 
-  These are defined by adding one carefully chosen axiom to the standard set, 
-  and adapting existing axioms to not mention set cardinalities; 
-  they enjoy nearly all the nice properties of standard finite matroids. 
+  However, generalizing different definitions of a finite matroid to the infinite in the obvious way
+  (i.e. by simply allowing the ground set to be infinite) gives a number of different notions of 
+  'infinite matroid' that disagree with eachother, and that all lack nice properties. Many different 
+  competing notions of infinite matroid were studied through the years; in fact, the problem of 
+  which definition is the best was only really solved in 2010, when Bruhn et al. showed that there 
+  is a unique 'reasonable' notion of an infinite matroid; these objects had been previously called 
+  'B-matroids'. These are defined by adding one carefully chosen axiom to the standard set, and 
+  adapting existing axioms to not mention set cardinalities, and enjoy nearly all the nice 
+  properties of standard finite matroids. 
 
-  Even though 90%+ of the literature is on finite matroids, 
-  B-matroids are the definition we use, because they allow for additional generality, 
-  nearly all theorems are still true and just as easy to state,
-  and (hopefully) the more general definition will prevent the need for a costly future refactor. 
-  The disadvantage is that developing API for the finite case is harder work 
-  (for instance, it is harder to prove that something is a matroid in the first place, 
-  and one must deal with `ℕ∞` rather than `ℕ`). 
-  For serious work on finite matroids, we provide the typeclasses 
-  `[Finite M]` and `[FiniteRk M]` and associated API. 
+  Even though 90%+ of the literature is on finite matroids, B-matroids are the definition we use, 
+  because they allow for additional generality, nearly all theorems are still true and just as easy
+  to state, and (hopefully) the more general definition will prevent the need for costly future 
+  refactor. The disadvantage is that developing API for the finite case is harder work 
+  (for instance, one must deal with `ℕ∞` rather than `ℕ`). For serious work on finite matroids, 
+  we provide the typeclasses `[Finite M]` and `[FiniteRk M]` and associated API. 
 
 ### The ground `Set`
-  A second place where we make a conscious choice is making the ground set of a matroid 
-  a structure field of type `Set α` (where `α` is the type of 'possible matroid elements') 
-  rather than just having a type `α` of all the matroid elements. 
-  This is because of how common it is to simultaneously consider
-  a number of matroids on different but related ground sets. 
-  For example, a matroid `M` on ground set `E` can have its structure 
-  'restricted' to some subset `R ⊆ E` to give a smaller matroid `M ↾ R` with ground set `R`. 
-  A statement like `(M ↾ R₁) ↾ R₂ = M ↾ R₂` is mathematically obvious. 
-  But if the ground set of a matroid is a type, this doesn't typecheck,
-  and is only true up to canonical isomorphism. 
-  Restriction is just the tip of the iceberg here; 
-  one can also 'contract' and 'delete' elements and sets of elements
-  in a matroid to give a smaller matroid, 
-  and in practice it is common to make statements like `M₁.E = M₂.E ∩ M₃.E` and 
-  `((M ⟋ e) ↾ R) ⟋ C = M ⟋ (C ∪ {e}) ↾ R`. 
-  Such things are a nightmare to work with unless `=` is actually propositional equality 
-  (especially because the relevant coercions are usually between sets and not just elements). 
+  A second place where we make a conscious choice is making the ground set of a matroid a structure 
+  field of type `Set α` (where `α` is the type of 'possible matroid elements') rather than just 
+  having a type `α` of all the matroid elements. This is because of how common it is to 
+  simultaneously consider a number of matroids on different but related ground sets. For example, a 
+  matroid `M` on ground set `E` can have its structure 'restricted' to some subset `R ⊆ E` to give 
+  a smaller matroid `M ↾ R` with ground set `R`. A statement like `(M ↾ R₁) ↾ R₂ = M ↾ R₂` is
+  mathematically obvious. But if the ground set of a matroid is a type, this doesn't typecheck,
+  and is only true up to canonical isomorphism. Restriction is just the tip of the iceberg here; 
+  one can also 'contract' and 'delete' elements and sets of elements in a matroid to give a smaller 
+  matroid, and in practice it is common to make statements like `M₁.E = M₂.E ∩ M₃.E` and 
+  `((M ⟋ e) ↾ R) ⟋ C = M ⟋ (C ∪ {e}) ↾ R`; such things are a nightmare to work with unless `=` 
+  is actually propositional equality (especially because the relevant coercions are usually 
+  between sets and not just elements). 
 
-  So the solution is that the ground set `M.E` has type `Set α`, 
-  and there are elements of type `α` that aren't in the matroid. 
-  The obvious tradeoff is that for many statements, one now has to add 
-  hypotheses of the form `X ⊆ M.E` to make sure than `X` is actually 'in the matroid', 
-  rather than letting a 'type of matroid elements' take care of this invisibly. 
-  It still seems that this is worth it. 
-  The tactic `aesop_mat` exists specifically to discharge such goals with minimal fuss 
-  (using default values), but getting this to 
-  work as smoothly as possible is still a work in progress. 
+  So the solution is that the ground set `M.E` has type `Set α`, and there are elements of type `α` 
+  that aren't in the matroid. The obvious tradeoff is that for many statements, one now has to add 
+  hypotheses of the form `X ⊆ M.E` to make sure than `X` is actually 'in the matroid', rather than 
+  letting a 'type of matroid elements' take care of this invisibly. It still seems that this is 
+  worth it. The tactic `aesop_mat` exists specifically discharge such goals with minimal fuss 
+  (using default values), but getting this to work as smoothly as possible is still a work in 
+  progress. 
 
-  A related decision is to not have matroids themselves be a typeclass. 
-  This would make things be notationally simpler 
-  (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for a term `M: Matroid α`) 
-  but is again just too awkward when one has multiple matroids on the same type. 
-  In fact, in regular written mathematics,
-  it is normal to explicitly indicate which matroid something is happening in, 
-  so our notation mirrors common practice. 
+  A related decision is to not have matroids themselves be a typeclass. This would make things be
+  notationally simpler (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for 
+  a term `M: Matroid α`) but this is again just too awkward when one has multiple matroids on the 
+  same type. In fact, in regular written mathematics, it is normal to explicitly indicate which 
+  matroid something is happening in, so our notation mirrors common practice. 
 
 ## References
 
@@ -949,168 +934,6 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
   exact ⟨B, ⟨hB.1.1, fun J hJ hBJ ↦ hB.2 hJ (hB.1.2.1.trans hBJ) (h_support J hJ) hBJ⟩, hB.1.2.1⟩  
 
 
---- Def of dual goes here? 
-
-/-- If there is an absolute upper bound on the size of a set satisfying `P`, then the 
-  maximal subset property always holds. -/
-theorem Matroid.existsMaximalSubsetProperty_of_bdd {P : Set α → Prop} 
-    (hP : ∃ (n : ℕ), ∀ Y, P Y → Y.encard ≤ n) (X : Set α) : ExistsMaximalSubsetProperty P X := by
-  obtain ⟨n, hP⟩ := hP
-
-  rintro I hI hIX
-  have hfin : Set.Finite (ncard '' {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X})
-  · rw [finite_iff_bddAbove, bddAbove_def]
-    simp_rw [ENat.le_coe_iff] at hP
-    use n
-    rintro x ⟨Y, ⟨hY,-,-⟩, rfl⟩
-    obtain ⟨n₀, heq, hle⟩ := hP Y hY 
-    rwa [ncard_def, heq, ENat.toNat_coe]
-    -- have := (hP Y hY).2
-  obtain ⟨Y, hY, hY'⟩ := Finite.exists_maximal_wrt' ncard _ hfin ⟨I, hI, rfl.subset, hIX⟩
-  refine' ⟨Y, hY, fun J ⟨hJ, hIJ, hJX⟩ (hYJ : Y ⊆ J) ↦ (_ : J ⊆ Y)⟩
-  have hJfin := finite_of_encard_le_coe (hP J hJ)
-  refine' (eq_of_subset_of_ncard_le hYJ _ hJfin).symm.subset
-  rw [hY' J ⟨hJ, hIJ, hJX⟩ (ncard_le_of_subset hYJ hJfin)]
-
-/-- If there is an absolute upper bound on the size of an independent set, then the maximality axiom 
-  isn't needed to define a matroid by independent sets. -/
-def matroid_of_indep_of_bdd (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
-    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
-    (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
-      B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
-    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n )
-    (h_support : ∀ I, Indep I → I ⊆ E) : Matroid α :=
-  matroid_of_indep E Indep h_empty h_subset h_aug 
-    (fun X _ ↦ Matroid.existsMaximalSubsetProperty_of_bdd h_bdd X) h_support 
-
-@[simp] theorem matroid_of_indep_of_bdd_apply (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
-    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
-    (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
-      B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
-    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n) (h_support : ∀ I, Indep I → I ⊆ E) : 
-    (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).Indep = Indep := by
-  simp [matroid_of_indep_of_bdd]
-
-/-- `matroid_of_indep_of_bdd` constructs a `FiniteRk` matroid. -/
-instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
-    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
-    (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
-      B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
-    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) 
-    (h_support : ∀ I, Indep I → I ⊆ E) : 
-    Matroid.FiniteRk (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
-  
-  refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base.elim 
-    (fun B hB ↦ hB.finiteRk_of_finite _)
-  obtain ⟨n, h_bdd⟩ := h_bdd
-  refine' finite_of_encard_le_coe (h_bdd _ _)
-  rw [←matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
-  exact ⟨_, hB, rfl.subset⟩
-
-/-- If there is an absolute upper bound on the size of an independent set, then matroids 
-  can be defined using an 'augmentation' axiom similar to the standard definition of finite matroids
-  for independent sets. -/
-def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
-    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
-      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
-    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) (h_support : ∀ I, Indep I → I ⊆ E) : 
-    Matroid α := 
-  matroid_of_indep_of_bdd E Indep h_empty h_subset 
-    (by 
-      simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, mem_diff,
-        and_imp, and_assoc]
-      rintro I B hI hImax hB hBmax
-      obtain ⟨J, hJ, hIJ, hne⟩ := hImax hI
-      obtain ⟨n, h_bdd⟩ := h_bdd 
-      
-      have hlt : I.encard < J.encard := 
-        (finite_of_encard_le_coe (h_bdd J hJ)).encard_lt_encard (hIJ.ssubset_of_ne hne) 
-      have hle : J.encard ≤ B.encard
-      · refine le_of_not_lt (fun hlt' ↦ ?_)
-        obtain ⟨e, he⟩ := ind_aug hB hJ hlt'
-        rw [hBmax he.2.2 (subset_insert _ _)] at he
-        exact he.2.1 (mem_insert _ _)
-      exact ind_aug hI hB (hlt.trans_le hle) )
-    h_bdd h_support 
-
-@[simp] theorem matroid_of_indep_of_bdd_augment_apply (E : Set α) (Indep : Set α → Prop) 
-    (h_empty : Indep ∅) (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
-      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
-    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) (h_support : ∀ I, Indep I → I ⊆ E) : 
-    (matroid_of_indep_of_bdd_augment E Indep h_empty h_subset ind_aug h_bdd h_support).Indep 
-      = Indep := by
-  simp [matroid_of_indep_of_bdd_augment]
-
-/-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
-def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop) 
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
-    (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
-  matroid_of_base E Base 
-    (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange 
-    (by {
-      obtain ⟨B, hB, hfin⟩ := exists_finite_base
-      refine' fun X _ ↦ Matroid.existsMaximalSubsetProperty_of_bdd 
-        ⟨B.ncard, fun Y ⟨B', hB', hYB'⟩ ↦ _⟩ X
-      rw [hfin.cast_ncard_eq, encard_base_eq_of_exch base_exchange hB hB']
-      exact encard_mono hYB' })
-    support
-
-@[simp] theorem matroid_of_exists_finite_base_apply {α : Type _} (E : Set α) (Base : Set α → Prop) 
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
-    (support : ∀ B, Base B → B ⊆ E) : 
-    (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base := 
-  rfl 
-
-/-- A matroid constructed with a finite Base is `FiniteRk` -/
-instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite} 
-    {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} : 
-    Matroid.FiniteRk 
-      (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) := 
-  ⟨exists_finite_base⟩  
-
-def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
-  matroid_of_exists_finite_base E Base 
-    (by { obtain ⟨B,hB⟩ := exists_base; exact ⟨B,hB, hE.subset (support _ hB)⟩ }) 
-    base_exchange support
-
-@[simp] theorem matroid_of_base_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) : 
-    (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl 
-
-/-- A collection of subsets of a finite ground set satisfying the usual independence axioms 
-  determines a matroid -/
-def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α := 
-  matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono 
-  ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
-      rwa [←Nat.cast_lt (α := ℕ∞), (hE.subset (h_support hJ)).cast_ncard_eq, 
-      (hE.subset (h_support hI)).cast_ncard_eq]) )
-  (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
-  h_support
-
-instance matroid_of_indep_of_finite.Finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : 
-    ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Finite := 
-  ⟨hE⟩ 
-
-instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : 
-    ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Indep = Indep := by
-  simp [matroid_of_indep_of_finite]
 
 end FromAxioms
 

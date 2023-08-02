@@ -1,6 +1,5 @@
-import Mathlib.Tactic
 import Mathlib.Logic.Equiv.LocalEquiv
-import Matroid.ForMathlib.card
+import Mathlib.Data.Set.Ncard
 
 open Set
 

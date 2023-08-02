@@ -1,5 +1,5 @@
 
-import Matroid.ForMathlib.card
+import Mathlib.Data.Set.Ncard
 import Matroid.ForMathlib.PartitionOf
 import Mathlib.Algebra.BigOperators.Finprod
 
