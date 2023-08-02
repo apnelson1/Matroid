@@ -147,8 +147,10 @@ lemma compl_diff_compl_iff {x : α} (A B E : Set α) :
 
 lemma aux {X A B : Set α} :
     X ∩ Aᶜ ⊂ X ∩ Bᶜ ↔ X ∩ B ⊂ X ∩ A := by
-  sorry
-
+  refine' ⟨_, sorry⟩
+  intro h
+  refine' ⟨fun e he ↦ (em (e ∈ A)).elim (fun g ↦ ⟨he.1, g⟩)
+      (fun g ↦ by {exfalso; exact (h.subset ⟨he.1, g⟩).2 he.2}), sorry⟩
 /- end of complement API -/
 
 /- singleton API -/
@@ -322,6 +324,7 @@ def dual' (M : Matroid α) : Matroid α :=
 
 /- end of dual matroid -/
 
+/-
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -632,7 +635,7 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     sorry
     (fun _ hI ↦ hI.1)
-
+-/
 
 end Matroid 
 
