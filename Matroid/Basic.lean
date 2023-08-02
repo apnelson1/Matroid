@@ -1,5 +1,3 @@
-import Mathlib.Data.Set.Finite
-import Matroid.ForMathlib.card
 import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init
@@ -9,17 +7,20 @@ import Matroid.ForMathlib.Minimal
 /-!
 # Matroid
 
-A `Matroid` is a combinatorial abstraction of the notion of linear independence and dependence; 
-matroids have connections with graph theory, discrete optimization, additive combinatorics and 
-algebraic geometry. Mathematically, a matroid `M` is a structure on a set `E` comprising a 
-collection of subsets of `E` called the bases of `M`, where the bases are required to obey certain 
-axioms. 
+A `Matroid` is a combinatorial abstraction 
+of the notion of linear independence and dependence; 
+matroids have connections with graph theory, discrete optimization,
+additive combinatorics and algebraic geometry. 
+Mathematically, a matroid `M` is a structure on a set `E` comprising a 
+collection of subsets of `E` called the bases of `M`, 
+where the bases are required to obey certain axioms. 
 
-This file gives a definition of a matroid `M` in terms of its bases, and some API relating 
-independent sets (subsets of bases) and the notion of a basis of a set `X` (a maximal independent 
-subset of a basis of `X`). We also provide a number of alternative constructors that allow matroids
-to be defined in terms of different equivalent sets of axioms, or simplified sets of axioms in 
-special cases. 
+This file gives a definition of a matroid `M` in terms of its bases, 
+and some API relating independent sets (subsets of bases) and the notion of a 
+basis of a set `X` (a maximal independent subset of a basis of `X`). 
+We also provide some alternative constructors that allow matroids to be 
+defined in terms of different equivalent sets of axioms, 
+or simplified sets of axioms in special cases. 
 
 ## Main definitions 
 
@@ -45,57 +46,71 @@ special cases.
 There are two major design decisions made in how we set things up that might be considered unusual.
 
 ### Finiteness
-  The first is that our matroids are allowed to be infinite. Unlike with many mathematical 
-  structures, this isn't such an obvious choice. Finite matroids have been studied since the 1930's, 
-  and there was never controversy as to what is and isn't an example of a matroid - in fact, 
-  surprisingly many apparently different definitions of a matroid give rise to the same class of 
-  objects.
+  The first is that our matroids are allowed to be infinite. 
+  Unlike with many mathematical structures, this isn't such an obvious choice. 
+  Finite matroids have been studied since the 1930's, 
+  and there was never controversy as to what is and isn't an example of a finite matroid - 
+  in fact, surprisingly many apparently different definitions of a matroid 
+  give rise to the same class of objects.
 
-  However, generalizing different definitions of a finite matroid to the infinite in the obvious way
-  (i.e. by simply allowing the ground set to be infinite) gives a number of different notions of 
-  'infinite matroid' that disagree with eachother, and that all lack nice properties. Many different 
-  competing notions of infinite matroid were studied through the years; in fact, the problem of 
-  which definition is the best was only really solved in 2010, when Bruhn et al. showed that there 
-  is a unique 'reasonable' notion of an infinite matroid; these objects had been previously called 
-  'B-matroids'. These are defined by adding one carefully chosen axiom to the standard set, and 
-  adapting existing axioms to not mention set cardinalities, and enjoy nearly all the nice 
-  properties of standard finite matroids. 
+  However, generalizing different definitions of a finite matroid 
+  to the infinite in the obvious way (i.e. by simply allowing the ground set to be infinite) 
+  gives a number of different notions of 'infinite matroid' that disagree with eachother, 
+  and that all lack nice properties. 
+  Many different competing notions of infinite matroid were studied through the years; 
+  in fact, the problem of which definition is the best was only really solved in 2010, 
+  when Bruhn et al. showed that there is a unique 'reasonable' notion of an infinite matroid;
+  these objects had been previously called 'B-matroids'. 
+  These are defined by adding one carefully chosen axiom to the standard set, 
+  and adapting existing axioms to not mention set cardinalities; 
+  they enjoy nearly all the nice properties of standard finite matroids. 
 
-  Even though 90%+ of the literature is on finite matroids, B-matroids are the definition we use, 
-  because they allow for additional generality, nearly all theorems are still true and just as easy
-  to state, and (hopefully) the more general definition will prevent the need for costly future 
-  refactor. The disadvantage is that developing API for the finite case is harder work 
-  (for instance, one must deal with `ℕ∞` rather than `ℕ`). For serious work on finite matroids, 
-  we provide the typeclasses `[Finite M]` and `[FiniteRk M]` and associated API. 
+  Even though 90%+ of the literature is on finite matroids, 
+  B-matroids are the definition we use, because they allow for additional generality, 
+  nearly all theorems are still true and just as easy to state,
+  and (hopefully) the more general definition will prevent the need for a costly future refactor. 
+  The disadvantage is that developing API for the finite case is harder work 
+  (for instance, it is harder to prove that something is a matroid in the first place, 
+  and one must deal with `ℕ∞` rather than `ℕ`). 
+  For serious work on finite matroids, we provide the typeclasses 
+  `[Finite M]` and `[FiniteRk M]` and associated API. 
 
 ### The ground `Set`
-  A second place where we make a conscious choice is making the ground set of a matroid a structure 
-  field of type `Set α` (where `α` is the type of 'possible matroid elements') rather than just 
-  having a type `α` of all the matroid elements. This is because of how common it is to 
-  simultaneously consider a number of matroids on different but related ground sets. For example, a 
-  matroid `M` on ground set `E` can have its structure 'restricted' to some subset `R ⊆ E` to give 
-  a smaller matroid `M ↾ R` with ground set `R`. A statement like `(M ↾ R₁) ↾ R₂ = M ↾ R₂` is
-  mathematically obvious. But if the ground set of a matroid is a type, this doesn't typecheck,
-  and is only true up to canonical isomorphism. Restriction is just the tip of the iceberg here; 
-  one can also 'contract' and 'delete' elements and sets of elements in a matroid to give a smaller 
-  matroid, and in practice it is common to make statements like `M₁.E = M₂.E ∩ M₃.E` and 
-  `((M ⟋ e) ↾ R) ⟋ C = M ⟋ (C ∪ {e}) ↾ R`; such things are a nightmare to work with unless `=` 
-  is actually propositional equality (especially because the relevant coercions are usually 
-  between sets and not just elements). 
+  A second place where we make a conscious choice is making the ground set of a matroid 
+  a structure field of type `Set α` (where `α` is the type of 'possible matroid elements') 
+  rather than just having a type `α` of all the matroid elements. 
+  This is because of how common it is to simultaneously consider
+  a number of matroids on different but related ground sets. 
+  For example, a matroid `M` on ground set `E` can have its structure 
+  'restricted' to some subset `R ⊆ E` to give a smaller matroid `M ↾ R` with ground set `R`. 
+  A statement like `(M ↾ R₁) ↾ R₂ = M ↾ R₂` is mathematically obvious. 
+  But if the ground set of a matroid is a type, this doesn't typecheck,
+  and is only true up to canonical isomorphism. 
+  Restriction is just the tip of the iceberg here; 
+  one can also 'contract' and 'delete' elements and sets of elements
+  in a matroid to give a smaller matroid, 
+  and in practice it is common to make statements like `M₁.E = M₂.E ∩ M₃.E` and 
+  `((M ⟋ e) ↾ R) ⟋ C = M ⟋ (C ∪ {e}) ↾ R`. 
+  Such things are a nightmare to work with unless `=` is actually propositional equality 
+  (especially because the relevant coercions are usually between sets and not just elements). 
 
-  So the solution is that the ground set `M.E` has type `Set α`, and there are elements of type `α` 
-  that aren't in the matroid. The obvious tradeoff is that for many statements, one now has to add 
-  hypotheses of the form `X ⊆ M.E` to make sure than `X` is actually 'in the matroid', rather than 
-  letting a 'type of matroid elements' take care of this invisibly. It still seems that this is 
-  worth it. The tactic `aesop_mat` exists specifically discharge such goals with minimal fuss 
-  (using default values), but getting this to work as smoothly as possible is still a work in 
-  progress. 
+  So the solution is that the ground set `M.E` has type `Set α`, 
+  and there are elements of type `α` that aren't in the matroid. 
+  The obvious tradeoff is that for many statements, one now has to add 
+  hypotheses of the form `X ⊆ M.E` to make sure than `X` is actually 'in the matroid', 
+  rather than letting a 'type of matroid elements' take care of this invisibly. 
+  It still seems that this is worth it. 
+  The tactic `aesop_mat` exists specifically to discharge such goals with minimal fuss 
+  (using default values), but getting this to 
+  work as smoothly as possible is still a work in progress. 
 
-  A related decision is to not have matroids themselves be a typeclass. This would make things be
-  notationally simpler (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for 
-  a term `M: Matroid α`) but this is again just too awkward when one has multiple matroids on the 
-  same type. In fact, in regular written mathematics, it is normal to explicitly indicate which 
-  matroid something is happening in, so our notation mirrors common practice. 
+  A related decision is to not have matroids themselves be a typeclass. 
+  This would make things be notationally simpler 
+  (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for a term `M: Matroid α`) 
+  but is again just too awkward when one has multiple matroids on the same type. 
+  In fact, in regular written mathematics,
+  it is normal to explicitly indicate which matroid something is happening in, 
+  so our notation mirrors common practice. 
 
 ## References
 

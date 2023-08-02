@@ -453,7 +453,7 @@ theorem Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e
     have hef : f ≠ e := by rintro rfl; exact hf.2 rfl
     rw [(hB₁.indep.diff {e}).mem_cl_iff, dep_iff, insert_subset_iff, 
       and_iff_left ((diff_subset _ _).trans hB₁.subset_ground), or_iff_not_imp_right, mem_diff,
-      and_iff_left (by aesop_mat : f ∈ M.E), mem_singleton_iff, 
+      and_iff_left (hC.subset_ground hf.1), mem_singleton_iff, 
       and_iff_left hef, insert_diff_singleton_comm hef]
     exact fun hfB₁ ↦ h _ ⟨hCss hf,hfB₁⟩ ((diff_subset _ _) hf)
 
