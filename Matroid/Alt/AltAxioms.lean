@@ -201,11 +201,16 @@ def dual' (M : Matroid α) : Matroid α :=
         inter_comm, inter_singleton_eq_self.mpr this, union_comm, ←insert_eq]
     })
     (by {
-      rintro X hX I' ⟨Bt, ⟨hBt, hI'Bt⟩⟩ hI'X
+      rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
 
-      set B := M.E \ Bt with h₁B
-      have hB : M.Base B :=
-        hBt.2
+      /- bookkeeping -/
+      set B := M.E \ Bt
+      have : Bt = M.E \ B :=
+        (diff_diff_cancel_left hBt.1).symm
+      rw [this] at hI'B; clear this
+      obtain ⟨-, hB⟩ := hBt
+      /- ----------- -/
+
       have hI'B : Disjoint I' B :=
         sorry
       
@@ -214,18 +219,40 @@ def dual' (M : Matroid α) : Matroid α :=
 
       refine' ⟨(X \ B') ∩ M.E,
         ⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rwa [diff_diff_cancel_left hB'.subset_ground] }⟩,
-         (inter_subset_left (X \ B') M.E).trans (diff_subset_diff_left hX)⟩⟩, _⟩, _⟩
-      . {
-        refine' ⟨_, _⟩
-        . {
-          sorry
-        }
+         (inter_subset_left (X \ B') M.E).trans (diff_subset_diff_left hX)⟩⟩,
+         ⟨subset_inter_iff.mpr ⟨sorry, hI'X.trans hX⟩,
+          (inter_subset_left (X \ B') M.E).trans (diff_subset X B')⟩⟩, _⟩
+      
+      simp only [mem_setOf_eq, subset_inter_iff, and_imp, forall_exists_index]
+
+      rintro J Bt h₁Bt hB'' hJBt _ hJX hssJ
+
+      /- bookkeeping -/
+      set B'' := M.E \ Bt
+      have hJE := hJBt.trans h₁Bt
+      have hdj : Disjoint J B'' :=
         sorry
-      }
-      
+      clear h₁Bt; clear hJBt
+      /- ----------- -/
 
+      rw [and_iff_left hJE]
+      rw [diff_eq, inter_right_comm, ←diff_eq, diff_subset_iff] at hssJ
+  
+      have hI' : (B'' ∩ X) ∪ (B' \ X) ⊆ B' :=
+        sorry
       
+      obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_base_subset_union_base hB''
+      rw [union_comm, ←union_assoc, union_eq_self_of_subset_right (inter_subset_left _ _)] at hB₁I
 
+      have : B₁ = B' :=
+        sorry
+      subst this 
+
+      refine' subset_diff.mpr ⟨hJX, by_contra (fun hne ↦ _)⟩
+      obtain ⟨e, heJ, heB'⟩ := not_disjoint_iff.mp hne
+      obtain (heB'' | ⟨-,heX⟩ ) := hB₁I heB'
+      · exact hdj.ne_of_mem heJ heB'' rfl
+      exact heX (hJX heJ)
       
 
     /- relies on circuits
