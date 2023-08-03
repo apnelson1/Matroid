@@ -1,5 +1,4 @@
 import Mathlib.Data.Set.Pairwise.Basic
-
 import Matroid.Alt.Basic
 
 open Set 
@@ -138,6 +137,8 @@ lemma ssubset_not_eq {A B : Set α} (h : A ⊂ B) : A ≠ B :=
 
 /- dual matroid -/
 
+-- only using independence
+
 /- (B2)* from Oxley -/
 theorem Base.exchange' {M : Matroid α} (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (hx : x ∈ B₂ \ B₁) :
     ∃ y ∈ B₁ \ B₂, M.Base (insert x (B₁ \ {y})) := by
@@ -200,6 +201,34 @@ def dual' (M : Matroid α) : Matroid α :=
         inter_comm, inter_singleton_eq_self.mpr this, union_comm, ←insert_eq]
     })
     (by {
+      rintro X hX I' ⟨Bt, ⟨hBt, hI'Bt⟩⟩ hI'X
+
+      set B := M.E \ Bt with h₁B
+      have hB : M.Base B :=
+        hBt.2
+      have hI'B : Disjoint I' B :=
+        sorry
+      
+      obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
+      obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
+
+      refine' ⟨(X \ B') ∩ M.E,
+        ⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rwa [diff_diff_cancel_left hB'.subset_ground] }⟩,
+         (inter_subset_left (X \ B') M.E).trans (diff_subset_diff_left hX)⟩⟩, _⟩, _⟩
+      . {
+        refine' ⟨_, _⟩
+        . {
+          sorry
+        }
+        sorry
+      }
+      
+
+      
+
+      
+
+    /- relies on circuits
       rintro X hX Is ⟨Bs, ⟨hBs, hIsBs⟩⟩ hIsX
       let B := M.E \ Bs
       have hB : M.Base B :=
@@ -289,6 +318,7 @@ def dual' (M : Matroid α) : Matroid α :=
       exact (ssubset_of_subset_of_ssubset h₂ h₁).not_subset (hI.2 ⟨⟨I'', hI''.1, diff_subset _ _⟩,
             ⟨empty_subset _, diff_subset_diff hI''.1.subset_ground (Subset.refl _)⟩⟩
                 (ssubset_of_subset_of_ssubset h₂ h₁).subset)
+    -/
     })
     (fun B hB ↦ hB.1)
 
