@@ -12,9 +12,6 @@ universe u v
 
 open scoped BigOperators ENNReal 
 
-class SummableForall (α : Type u) [TopologicalSpace α] [AddCommMonoid α] [SupSet α] where
-  (hasSum : ∀ (ι : Type v) (f : ι → α), HasSum f (⨆ s : Finset ι, ∑ a in s, f a))
-
 namespace ENat
 
 instance : TopologicalSpace ℕ∞ :=
@@ -22,81 +19,70 @@ instance : TopologicalSpace ℕ∞ :=
 
 instance : OrderTopology ℕ∞ := 
   ⟨rfl⟩  
+
+theorem ENat.tendsto_coe {α : Type u_1} {f : Filter α} {m : α → NNReal} {a : NNReal} :
+  Filter.Tendsto (fun a => ↑(m a)) f (nhds ↑a) ↔ Filter.Tendsto m f (nhds a)
+source
+
+theorem WithTop.induced [Preorder β] (t : TopologicalSpace β) [OrderTopology β]
+    (tw : TopologicalSpace (WithTop β)) [OrderTopology (WithTop β)] : 
+    t = TopologicalSpace.induced (↑) tw := by 
+  ext s
+  simp_rw [isOpen_induced_eq, mem_image, mem_setOf]
+  
+
+
+
+theorem WithTop.inducing_coe {β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β]
+    [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] : 
+    Inducing ((↑) : β → WithTop β) := by
+  rw [inducing_iff]
+
+theorem WithTop.embedding_coe {β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β]
+    [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] : 
+    Embedding ((↑) : β → WithTop β) := by
+  
+  
+
+-- theorem foo_tendsto_coe {α β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β] 
+--   [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] {f : Filter α} {m : α → β} {a : β} :
+--     Filter.Tendsto (fun a => (m a : WithTop β)) f (nhds (a : WithTop β)) ↔ Filter.Tendsto m f (nhds a) := by 
+--   have := embedding_coe.tendsto_nhds_iff
+
+
 
 variable {f : ι → ℕ∞}
 
+
+
+example {α : Type _} [OrderedAddCommMonoid α] [TopologicalSpace α] [OrderTopology α] 
+  [ContinuousAdd α] [TopologicalSpace (WithTop α)] [OrderTopology (WithTop α)] :
+    ContinuousAdd (WithTop α) := by 
+  apply continuousAdd_of_comm_of_nhds_zero
+  
+
+
+  
+
+  
+
 protected theorem hasSum : HasSum f (⨆ s : Finset ι, ∑ a in s, f a) :=
   tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
-
-noncomputable instance : SummableForall ℕ∞ where 
-  hasSum := fun _ _ ↦ tendsto_atTop_iSup fun _ _ ↦ Finset.sum_le_sum_of_subset
-
-noncomputable instance : SummableForall ℝ≥0∞ where 
-  hasSum := fun _ _ ↦ tendsto_atTop_iSup fun _ _ ↦ Finset.sum_le_sum_of_subset
-
-theorem toSummable {α : Type u} {ι : Type v} [TopologicalSpace α] [AddCommMonoid α] [SupSet α] 
-    [SummableForall α] (f : ι → α) : Summable f := 
-  ⟨(⨆ s : Finset ι, ∑ a in s, f a), by 
-    have h := ‹SummableForall α› 
-    have' := h.hasSum
-
-
-    -- exact ‹SummableForall α›.hasSum f 
-    ⟩ 
-
-
--- instance : SummableForall ℕ∞ where
---   summable := @fun ι f ↦ by
---     have : HasSum f (⨆ s : Finset ι, ∑ a in s, f a) 
---     · exact tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
---     exact ⟨_, this⟩ 
-
--- theorem hasSum {α ι : Type _} [CanonicallyLinearOrderedAddMonoid α] [CompleteLattice α] 
---     [TopologicalSpace α]  [OrderTopology α] {f : ι → α} : 
---     HasSum f (⨆ s : Finset ι, ∑ a in s, f a) := by 
---   sorry
-  -- Proof should be 
-  -- exact tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
-
--- open Set 
--- import Mathlib.Topology.Instances.ENNReal
--- import Matroid.ForMathlib.card
--- import Mathlib.Data.Finset.Sum
--- import Mathlib.Data.ENat.Basic
--- import Mathlib.Data.Nat.PartENat
-
-  -- apply tendsto_atTop_iSup
-  -- intro s s' (h : s ⊆ s')
-  -- convert @Finset.sum_le_sum_of_subset ι α _ f s s' h
-  -- ext
   
-  -- refine fun _ _ => Finset.sum_le_sum_of_subset 
-  
-  
+protected theorem summable : Summable f := 
+  ⟨_, ENat.hasSum⟩ 
 
--- theorem hasSum [CanonicallyOrderedAddMonoid α] [ConditionallyCompleteLinearOrderBot α]
---     [TopologicalSpace (WithTop α)] [h : OrderTopology (WithTop α)] {f : ι → WithTop α} : 
---     HasSum f (⨆ s : Finset ι, ∑ a in s, f a) := by
---   have :=  @tendsto_atTop_iSup (WithTop α) (Finset ι) _ _ _ 
---     (@LinearOrder.supConvergenceClass)
---   have := @tendsto_atTop_iSup (WithTop α) (Finset ι) _ _
-  
+theorem ENat.tsum_eq_iSup_sum : ∑' x, f x = (⨆ s : Finset ι, ∑ a in s, f a) :=
+  ENat.hasSum.tsum_eq
 
-namespace ENat
+theorem ENat.tsum_comm {f : α → β → ℕ∞} : 
+    ∑' (a : α) (b : β), f a b = ∑' (b : β) (a : α), f a b := by 
+  have : ContinuousAdd ℝ≥0∞
+  · exact
+    ENNReal.instContinuousAddENNRealInstTopologicalSpaceENNRealToAddToDistribToNonUnitalNonAssocSemiringToNonAssocSemiringToSemiringToOrderedSemiringToOrderedCommSemiringInstCanonicallyOrderedCommSemiringENNReal 
 
-instance : TopologicalSpace ℕ∞ :=
-  Preorder.topology ℕ∞
 
-instance : OrderTopology ℕ∞ := 
-  ⟨rfl⟩  
 
-variable {f : α → ℕ∞}
-
-protected theorem hasSum : HasSum f (⨆ s : Finset α, ∑ a in s, f a) :=
-  tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
-  
--- protected theorem summable : Summable f := 
---   ⟨_, ENat.hasSum⟩ 
 
 -- protected theorem tsum_eq_iSup_sum : ∑' a, f a = ⨆ s : Finset α, ∑ a in s, f a :=
 --   ENat.hasSum.tsum_eq
