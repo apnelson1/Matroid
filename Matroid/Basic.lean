@@ -1,14 +1,13 @@
-import Matroid.ForMathlib.Other
+import Mathlib.Data.Set.Card
 import Mathlib.Order.Minimal
 import Matroid.Init
 import Matroid.ForMathlib.Minimal
 
-
 /-!
 # Matroid
 
-A `Matroid` is a combinatorial abstraction 
-of the notion of linear independence and dependence; 
+A `Matroid` is a structure that combinatorially abstracts
+the notion of linear independence and dependence; 
 matroids have connections with graph theory, discrete optimization,
 additive combinatorics and algebraic geometry. 
 Mathematically, a matroid `M` is a structure on a set `E` comprising a 
@@ -24,26 +23,30 @@ or simplified sets of axioms in special cases.
 
 ## Main definitions 
 
-* a `Matroid α` on a type `α` is a structure comprising a 'ground set' and a 'base' predicate. 
-  Given `M : Matroid α` ...  
+* a `Matroid α` on a type `α` is a structure comprising a 'ground set' 
+  and a suitably behaved 'base' predicate. 
+
+Given `M : Matroid α` ...  
+
 * `M.E` denotes the ground set of `M`, which has type `Set α`
 * For `B : Set α`, `M.Base B` means that `B` is a base of `M`.
-* For `I : Set α`, `M.Indep I` means that `I` is independent in `M`, or equivalently is contained 
-  in a base of `M`.
-* For `D : Set α`, `M.Dep D` means that `D` is contained in the ground set of `M` but isn't 
-  independent. 
+* For `I : Set α`, `M.Indep I` means that `I` is independent in `M` 
+    (that is, `I` is contained in a base of `M`). 
+* For `D : Set α`, `M.Dep D` means that `D` is contained in the ground set of `M` 
+    but isn't independent. 
 * For `I : Set α` and `X : Set α`, `M.Basis I X` means that `I` is a maximal independent 
-  subset of `X`. 
+    subset of `X`. 
 * `Finite M` means that `M` has finite ground set.
-* `Nonempty M` means that `M` has nonempty ground set. 
-* `FiniteRk M` means that `M` has a finite base. 
-* `RkPos M` means that `M` has a nonempty base. 
+* `Nonempty M` means that the ground set of `M` is nonempty. 
+* `FiniteRk M` means that the bases of `M` are finite. 
+* `InfiniteRk M` means that the bases of `M` are infinite. 
+* `RkPos M` means that the bases of `M` are nonempty. 
 
 * `aesop_mat` : a tactic designed to prove `X ⊆ M.E` for some set `X` and matroid `M`.
 
 ## Implementation details
 
-There are two major design decisions made in how we set things up that might be considered unusual.
+There are a few design decisions worth discussing. 
 
 ### Finiteness
   The first is that our matroids are allowed to be infinite. 
@@ -75,8 +78,22 @@ There are two major design decisions made in how we set things up that might be 
   For serious work on finite matroids, we provide the typeclasses 
   `[Finite M]` and `[FiniteRk M]` and associated API. 
 
+### Cardinality 
+  Just as with bases of a vector space, 
+  all bases of a finite matroid `M` are finite and have the same cardinality; 
+  this cardinality is an important invariant known as the 'rank' of `M`. 
+  For infinite matroids, bases are not in general equicardinal; 
+  in fact the equicardinality of bases of infinite matroids has been shown 
+  to be independent of ZFC. 
+  What is still true is that either all bases are finite and equicardinal,
+  or all bases are infinite. This means that the natural notion of 'size' 
+  for a set in matroid theory is given by the function `Set.encard`, which 
+  is the cardinality as a term in `ℕ∞`. We use this function extensively 
+  in building the API; it is preferable to both `Set.ncard` and `Finset.card` 
+  because it allows infinite sets to be handled without splitting into cases. 
+
 ### The ground `Set`
-  A second place where we make a conscious choice is making the ground set of a matroid 
+  A last place where we make a consequential choice is making the ground set of a matroid 
   a structure field of type `Set α` (where `α` is the type of 'possible matroid elements') 
   rather than just having a type `α` of all the matroid elements. 
   This is because of how common it is to simultaneously consider
@@ -96,21 +113,22 @@ There are two major design decisions made in how we set things up that might be 
 
   So the solution is that the ground set `M.E` has type `Set α`, 
   and there are elements of type `α` that aren't in the matroid. 
-  The obvious tradeoff is that for many statements, one now has to add 
+  The tradeoff is that for many statements, one now has to add 
   hypotheses of the form `X ⊆ M.E` to make sure than `X` is actually 'in the matroid', 
   rather than letting a 'type of matroid elements' take care of this invisibly. 
   It still seems that this is worth it. 
-  The tactic `aesop_mat` exists specifically to discharge such goals with minimal fuss 
-  (using default values), but getting this to 
-  work as smoothly as possible is still a work in progress. 
+  The tactic `aesop_mat` exists specifically to discharge such goals 
+  with minimal fuss (using default values). 
+  This works fairly well, but there is room for improvement. 
 
   A related decision is to not have matroids themselves be a typeclass. 
   This would make things be notationally simpler 
-  (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for a term `M: Matroid α`) 
+  (having `Base` in the presence of `[Matroid α]` rather than `M.Base` for a term `M : Matroid α`) 
   but is again just too awkward when one has multiple matroids on the same type. 
   In fact, in regular written mathematics,
   it is normal to explicitly indicate which matroid something is happening in, 
   so our notation mirrors common practice. 
+
 
 ## References
 
@@ -120,6 +138,10 @@ There are two major design decisions made in how we set things up that might be 
 * The robust axiomatic definition of infinite matroids 
 [H. Bruhn, R. Diestel, M. Kriesell, R. Pendavingh, P. Wollan, Axioms for infinite matroids, 
   Adv. Math 239 (2013), 18-46] 
+
+* Equicardinality of matroid bases is independent of ZFC.
+[N. Bowler, S. Geschke, Self-dual uniform matroids on infinite sets, 
+  Proc. Amer. Math. Soc. 144 (2016), 459-471]
 -/
 
 
@@ -140,12 +162,19 @@ def Matroid.ExistsMaximalSubsetProperty {α : Type _} (P : Set α → Prop) (X :
   satisfying the exchange property and the maximal subset property. Each such set is called a 
   `Base` of `M`. -/
 @[ext] structure Matroid (α : Type _) where
+  /-- `M` has a ground set. -/
   (ground : Set α)
+  /-- `M` has a predicate `Base` definining its bases -/
   (Base : Set α → Prop)
+  /-- There is at least one `Base` -/
   (exists_base' : ∃ B, Base B)
+  /-- For any bases `B,B'` and `e ∈ B \ B'`, there is some `f ∈ B' \ B` for which `B-e+f` 
+    is a base -/
   (base_exchange' : Matroid.ExchangeProperty Base)
-  (maximality' : ∀ X, X ⊆ ground → 
-    Matroid.ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
+  /-- Every subset `I` of a set `X` for which `I` is contained in a base is contained in a maximal 
+    subset of `X` that is contained in a base. -/
+  (maximality' : ∀ X, X ⊆ ground → Matroid.ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
+  /-- every base is contained in the ground set -/
   (subset_ground' : ∀ B, Base B → B ⊆ ground)
 
 namespace Matroid
@@ -161,10 +190,12 @@ attribute [pp_dot] Base
 
 /-- Typeclass for a matroid having finite ground set. Just a wrapper for `M.E.Finite`-/
 class Finite (M : Matroid α) : Prop where 
+  /-- The ground set is finite -/
   (ground_finite : M.E.Finite)
 
 /-- Typeclass for a matroid having nonempty ground set. Just a wrapper for `M.E.Nonempty`-/
 class Nonempty (M : Matroid α) : Prop where 
+  /-- The ground set is nonempty -/
   (ground_nonempty : M.E.Nonempty)
 
 theorem ground_nonempty (M : Matroid α) [Nonempty M] : M.E.Nonempty :=
@@ -179,19 +210,25 @@ theorem set_finite (M : Matroid α) [Finite M] (X : Set α) (hX : X ⊆ M.E := b
 instance finite_of_finite [@_root_.Finite α] {M : Matroid α} : Finite M := 
   ⟨Set.toFinite _⟩ 
 
-/-- A `FiniteRk` matroid is one with a finite Basis -/
-class FiniteRk (M : Matroid α) : Prop := (exists_finite_base : ∃ B, M.Base B ∧ B.Finite) 
+/-- A `FiniteRk` matroid is one whose bases are finite -/
+class FiniteRk (M : Matroid α) : Prop where
+  /-- There is a finite base -/
+  exists_finite_base : ∃ B, M.Base B ∧ B.Finite
 
 instance finiteRk_of_finite (M : Matroid α) [Finite M] : FiniteRk M := 
   ⟨ M.exists_base'.imp (fun B hB ↦ ⟨hB, M.set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
 
-/-- An `InfiniteRk` matroid is one whose Bases are infinite. -/
-class InfiniteRk (M : Matroid α) : Prop := (exists_infinite_base : ∃ B, M.Base B ∧ B.Infinite)
+/-- An `InfiniteRk` matroid is one whose bases are infinite. -/
+class InfiniteRk (M : Matroid α) : Prop where 
+  /-- There is an infinite base -/
+  exists_infinite_base : ∃ B, M.Base B ∧ B.Infinite
 
-/-- A `RkPos` matroid is one in which the empty set is not a Basis -/
-class RkPos (M : Matroid α) : Prop := (empty_not_base : ¬M.Base ∅)
+/-- A `RkPos` matroid is one whose bases are nonempty. -/
+class RkPos (M : Matroid α) : Prop where
+  /-- The empty set isn't a base -/
+  empty_not_base : ¬M.Base ∅
 
-theorem rkPos_iff_empty_not_base : M.RkPos ↔ ¬M.Base ∅ :=
+theorem rkPos_iff_empty_not_base : M.RkPos ↔ ¬M.Base ∅ := 
   ⟨fun ⟨h⟩ ↦ h, fun h ↦ ⟨h⟩⟩  
 
 section exchange
@@ -245,10 +282,7 @@ macro (name := aesop_mat) "aesop_mat" c:Aesop.tactic_clause* : tactic =>
   aesop $c* (options := { terminal := true })
   (rule_sets [$(Lean.mkIdent `Matroid):ident]))
 
-macro (name := aesop_mat?) "aesop_mat?" c:Aesop.tactic_clause* : tactic =>
-`(tactic|
-  aesop? $c* (options := { terminal := true })
-  (rule_sets [$(Lean.mkIdent `Matroid):ident]))
+-- We add a number of trivial lemmas to the ruleset `Matroid` for `aesop`. 
 
 @[aesop unsafe 5% (rule_sets [Matroid])] 
 private theorem inter_right_subset_ground (hX : X ⊆ M.E) : 
@@ -667,7 +701,8 @@ theorem basis_iff_mem_maximals_Prop (hX : X ⊆ M.E := by aesop_mat):
   basis_iff_mem_maximals
 
 theorem Indep.basis_of_maximal_subset (hI : M.Indep I) (hIX : I ⊆ X)
-    (hmax : ∀ ⦃J⦄, M.Indep J → I ⊆ J → J ⊆ X → J ⊆ I) (hX : X ⊆ M.E := by aesop_mat) : M.Basis I X := by
+    (hmax : ∀ ⦃J⦄, M.Indep J → I ⊆ J → J ⊆ X → J ⊆ I) (hX : X ⊆ M.E := by aesop_mat) :
+    M.Basis I X := by
   rw [basis_iff (by aesop_mat : X ⊆ M.E), and_iff_right hI, and_iff_right hIX]
   exact fun J hJ hIJ hJX ↦ hIJ.antisymm (hmax hJ hIJ hJX)
 
@@ -893,7 +928,7 @@ def matroid_of_base (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, 
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_base E Base exists_base base_exchange maximality support).Base = Base := rfl
 
-/-- A version of the independence axioms that avoids cardinality -/
+/-- A constructor for a matroid using the independence axioms for infinite matroids. -/
 def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
     (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) → 
@@ -953,7 +988,7 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
 
 /-- If there is an absolute upper bound on the size of a set satisfying `P`, then the 
   maximal subset property always holds. -/
-theorem Matroid.existsMaximalSubsetProperty_of_bdd {P : Set α → Prop} 
+theorem existsMaximalSubsetProperty_of_bdd {P : Set α → Prop} 
     (hP : ∃ (n : ℕ), ∀ Y, P Y → Y.encard ≤ n) (X : Set α) : ExistsMaximalSubsetProperty P X := by
   obtain ⟨n, hP⟩ := hP
 
@@ -1008,8 +1043,8 @@ instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
   exact ⟨_, hB, rfl.subset⟩
 
 /-- If there is an absolute upper bound on the size of an independent set, then matroids 
-  can be defined using an 'augmentation' axiom similar to the standard definition of finite matroids
-  for independent sets. -/
+  can be defined using an 'augmentation' axiom similar to the standard definition of 
+  finite matroids for independent sets. -/
 def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
@@ -1043,7 +1078,7 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
       = Indep := by
   simp [matroid_of_indep_of_bdd_augment]
 
-/-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
+/-- A collection of bases with the exchange property and at least one finite member is a matroid -/
 def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop) 
     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
@@ -1064,12 +1099,15 @@ def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → 
   rfl 
 
 /-- A matroid constructed with a finite Base is `FiniteRk` -/
-instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite} 
-    {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} : 
+instance finiteRk_of_exists_finite_base {E : Set α} {Base : Set α → Prop} 
+    {exists_finite_base : ∃ B, Base B ∧ B.Finite} {base_exchange : ExchangeProperty Base} 
+    {support : ∀ B, Base B → B ⊆ E} : 
     Matroid.FiniteRk 
       (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) := 
   ⟨exists_finite_base⟩  
 
+/-- If `E` is finite, then any nonempty collection of its subsets 
+  with the exchange property is the collection of bases of a matroid on `E`. -/
 def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
     (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
     (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
@@ -1082,8 +1120,8 @@ def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Pr
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl 
 
-/-- A collection of subsets of a finite ground set satisfying the usual independence axioms 
-  determines a matroid -/
+/-- If `E` is finite, then any collection of subsets of `E` satisfying 
+  the usual independence axioms determines a matroid -/
 def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
     (h_empty : Indep ∅)
     (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -1113,6 +1151,5 @@ instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : 
   simp [matroid_of_indep_of_finite]
 
 end FromAxioms
-
 
 

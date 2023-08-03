@@ -13,15 +13,15 @@ section Truncate
 def truncate (M : Matroid α) (k : ℕ∞) : Matroid α := 
   Option.casesOn k M 
   fun k ↦ matroid_of_indep_of_bdd_augment M.E (fun I ↦ M.Indep I ∧ I.encard ≤ k) 
-  ( by simp )
-  ( fun I J ⟨hI, hIc⟩ hIJ ↦ ⟨hI.subset hIJ, (encard_mono hIJ).trans hIc⟩ )
-  ( by
-      rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
-      obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
-      exact ⟨e, he.1, he.2, hi,
-        (encard_insert_of_not_mem he.2).trans_le ((ENat.add_one_le_of_lt hIJ).trans hJc)⟩ )
-  ⟨ k, fun I ⟨_, hIJ⟩ ↦ hIJ ⟩ 
-  ( fun I h ↦ h.1.subset_ground )
+    ( by simp )
+    ( fun I J ⟨hI, hIc⟩ hIJ ↦ ⟨hI.subset hIJ, (encard_mono hIJ).trans hIc⟩ )
+    ( by
+        rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
+        obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
+        exact ⟨e, he.1, he.2, hi,
+          (encard_insert_of_not_mem he.2).trans_le ((ENat.add_one_le_of_lt hIJ).trans hJc)⟩ )
+    ⟨ k, fun I ⟨_, hIJ⟩ ↦ hIJ ⟩ 
+    ( fun I h ↦ h.1.subset_ground )
 
 @[simp] theorem truncate_top (M : Matroid α) : M.truncate ⊤ = M := rfl 
 

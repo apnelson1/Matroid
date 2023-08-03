@@ -1,5 +1,7 @@
 import Matroid.Restrict
 import Mathlib.Logic.Equiv.LocalEquiv
+import Matroid.ForMathlib.Other
+
 namespace Matroid
 
 open Set LocalEquiv

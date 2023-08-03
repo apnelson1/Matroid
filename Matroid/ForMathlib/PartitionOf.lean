@@ -90,10 +90,12 @@ theorem mem_classes_iff :
 
 
 
-/-- Given a collection `c` of sets, a relation in which two elements are related if and only if 
-  they are both in some set in `c`, and no set in `c` contains exactly one of them. This is one 
-  of a few ways to define the 'partial equivalence relation' associated with `c` when the sets in 
-  `c` are disjoint; this definition is chosen so that `rel_of` is both symmetric and transitive 
+/-- Given a collection `c` of sets, a relation in which two elements are related 
+  if and only if they are both in some set in `c`, 
+  and no set in `c` contains exactly one of them. 
+  This is one of a few ways to define the 'partial equivalence relation'
+  associated with `c` when the sets in `c` are disjoint; 
+  this definition is chosen so that `rel_of` is both symmetric and transitive 
   without additional assumptions, which allows `IsTrans` and `IsSymm` to be instances.  -/
 def rel_of (c : Set (Set α)) : α → α → Prop := 
   fun x y ↦ (∃ t ∈ c, x ∈ t ∧ y ∈ t) ∧ (∀ ⦃t⦄, t ∈ c → (x ∈ t ↔ y ∈ t))
