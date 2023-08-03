@@ -31,7 +31,7 @@ theorem Basis'.encard (hI : M.Basis' I X) : I.encard = M.er X := by
   have : _root_.Nonempty ↑{B | (M ↾ X).Base B} := ⟨I, hI⟩
   rw [iInf_congr (_ : ∀ B : ↑{B | (M ↾ X).Base B}, (B : Set α).encard = I.encard), iInf_const]
   simp only [mem_setOf_eq, Subtype.forall]
-  exact fun B' hB' ↦ hB'.encard_eq_encard_of_base hI 
+  exact fun B' hB' ↦ hB'.card_eq_card_of_base hI 
 
 theorem Basis.encard (hI : M.Basis I X) : I.encard = M.er X := 
   hI.basis'.encard 

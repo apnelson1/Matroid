@@ -1,5 +1,5 @@
 import Mathlib.Logic.Equiv.LocalEquiv
-import Mathlib.Data.Set.Ncard
+import Mathlib.Data.Set.Card
 
 open Set
 

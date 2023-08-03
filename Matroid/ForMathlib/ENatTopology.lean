@@ -2,7 +2,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Data.ENat.Basic
 import Mathlib.Data.Nat.PartENat
 import Mathlib.Topology.Order.Basic
-import Mathlib.Data.Set.Ncard
+import Mathlib.Data.Set.Card
 import Mathlib.Topology.Instances.ENNReal
 
 

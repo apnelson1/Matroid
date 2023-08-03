@@ -1,5 +1,5 @@
 import Mathlib.Data.Set.Finite
-import Mathlib.Data.Set.Ncard
+import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init

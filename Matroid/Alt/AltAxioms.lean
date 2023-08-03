@@ -7,120 +7,143 @@ namespace Matroid
 
 /- complement API -/
 
-lemma compl_subset_inter {A B X E : Set α} (h : A ∩ X ⊆ B ∩ X) :
-    (E \ B) ∩ X ⊆ (E \ A) ∩ X :=
-  fun _ he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
+-- lemma compl_subset_inter {A B X E : Set α} (h : A ∩ X ⊆ B ∩ X) :
+--     (E \ B) ∩ X ⊆ (E \ A) ∩ X :=
+--   fun _ he ↦ ⟨⟨he.1.1, fun g ↦ he.1.2 (h ⟨g, he.2⟩).1⟩, he.2⟩
 
-lemma compl_ssubset_inter {A B X E : Set α}
-    (hA : A ⊆ E)
-    (hB : B ⊆ E)
-    (h : A ∩ X ⊂ B ∩ X) :
-    (E \ B) ∩ X ⊂ (E \ A) ∩ X := by
-  refine' ⟨compl_subset_inter h.subset, fun g ↦ _⟩
-  have := @compl_subset_inter α _ _ X E g
-  rw [diff_diff_cancel_left hA, diff_diff_cancel_left hB] at this
-  exact h.not_subset this
+-- lemma compl_ssubset_inter {A B X E : Set α}
+--     (hA : A ⊆ E)
+--     (hB : B ⊆ E)
+--     (h : A ∩ X ⊂ B ∩ X) :
+--     (E \ B) ∩ X ⊂ (E \ A) ∩ X := by
+--   refine' ⟨compl_subset_inter h.subset, fun g ↦ _⟩
+--   have := @compl_subset_inter α _ _ X E g
+--   rw [diff_diff_cancel_left hA, diff_diff_cancel_left hB] at this
+--   exact h.not_subset this
 
-lemma maximal_of_restriction {A B X} (P : Set α → Prop)
-    (hP  : ∀ S T, P S → T ⊆ S → P T)
-    (hA  : A ∈ maximals (· ⊆ ·) {I | P I ∧ I ⊆ X})
-    (hB  : B ∈ maximals (· ⊆ ·) {I | P I})
-    (hAB : A ⊆ B) :
-    A = B ∩ X :=
-  subset_antisymm (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩)
-    (hA.2 ⟨(hP (B) (B ∩ X) hB.1 (inter_subset_left _ _)), (inter_subset_right _ _)⟩
-    (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩))
-
-lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) :=
-  subset_antisymm (fun _ he ↦ ⟨he.1, h he.1, he.2⟩) (fun _ he ↦ ⟨he.1, he.2.2⟩)
-
-lemma compl_ssubset {A B E : Set α} (hA : A ⊆ E) (hB : B ⊆ E) (hAB  : A ⊂ B) :
-    E \ B ⊂ E \ A := by
-  refine (diff_subset_diff_right hAB.1).ssubset_of_ne (fun h ↦ hAB.ne ?_)
-  rw [←diff_diff_cancel_left hB, h, diff_diff_cancel_left hA]
-
-lemma ssubset_of_subset_of_compl_ssubset {A B X E : Set α}
-    (hA : A ⊆ E)
-    (hB : B ⊆ E)
-    (h₁ : A ∩ X ⊆ B ∩ X)
-    (h₂ : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
-    A ⊂ B := by
-  rw [ssubset_iff_subset_ne]
-  refine' ⟨fun e he ↦ (em (e ∈ X)).elim
-    (fun g ↦ (h₁ ⟨he, g⟩).1) (fun g ↦ (h₂.subset ⟨he, ⟨hA he, g⟩⟩).1), _⟩
-  rintro rfl
-  exact h₂.not_subset (subset_refl _)
-
-lemma ssubset_of_subset_of_compl_ssubset' {A B X E : Set α}
-    (hA : A ⊆ E)
-    (hB : B ⊆ E)
-    (hX : X ⊆ E)
-    (h₁ : A ∩ (E \ X) ⊆ B ∩ (E \ X))
-    (h₂ : A ∩ X ⊂ B ∩ X) :
-    A ⊂ B := by
-  let Y := E \ X
-  have g₂ : A ∩ (E \ Y) ⊂ B ∩ (E \ Y) := by
-    rw [diff_diff_cancel_left hX]
-    exact h₂
-  exact ssubset_of_subset_of_compl_ssubset hA hB h₁ g₂ 
-
-lemma ssubset_of_subset_of_compl_ssubset'' {A B : Set α}
-    (h₁ : A ∩ X ⊂ B ∩ X)
-    (h₂ : A \ X ⊆ B \ X) :
-    A ⊂ B := by
-  have h := union_subset_union h₁.subset h₂
-  rw [inter_union_diff, inter_union_diff] at h
-  refine' ⟨h, fun g ↦ by { rw [subset_antisymm h g] at h₁; exact (ne_of_ssuperset h₁) rfl }⟩
-
-lemma ssubset_of_ssubset_of_compl_subset'' {A B X : Set α}
-    (h₁ : A ∩ X ⊆ B ∩ X)
-    (h₂ : A \ X ⊂ B \ X) :
-    A ⊂ B := by
-  rw [diff_eq, diff_eq] at h₂
-  rw [←compl_compl X, ←diff_eq, ←diff_eq] at h₁
-  exact ssubset_of_subset_of_compl_ssubset'' h₂ h₁
+-- lemma maximal_of_restriction' {A B X} (P : Set α → Prop) (hP  : ∀ S T, P S → T ⊆ S → P T)
+--     (hA  : A ∈ maximals (· ⊆ ·) {I | P I ∧ I ⊆ X}) (hB  : B ∈ maximals (· ⊆ ·) {I | P I})
+--     (hAB : A ⊆ B) : A = B ∩ X := by 
+--   rw [setOf_and] at hA
   
-lemma subset_of_subset_of_compl_subset {A B X : Set α}
-    (h₁ : A ∩ X ⊆ B ∩ X)
-    (h₂ : A \ X ⊆ B \ X) :
-    A ⊆ B := by
-  have h := union_subset_union h₁.subset h₂
-  rw [inter_union_diff, inter_union_diff] at h
-  exact h
+--   have := @maximals_inter_subset (Set α) (· ⊆ ·) {I | P I} {I | I ⊆ X}
 
-lemma diff_ssubset_of_ssubset_of_eq_inter {A B X : Set α}
-    (h₁ : A ⊂ B)
-    (h₂ : A ∩ X = B ∩ X) :
-    A \ X ⊂ B \ X := by
-  refine' ⟨diff_subset_diff_left h₁.subset, fun g ↦ _⟩
-  have : A \ X = B \ X := subset_antisymm (diff_subset_diff_left h₁.subset) g
-  rw [←inter_union_diff A X, h₂, this, inter_union_diff] at h₁
-  exact ssubset_irrfl h₁
+  
+  
+
+-- lemma foo [PartialOrder α] (P Q : Set α) (h_mono : ∀ x ∈ P, y ≤ x → y ∈ P) 
+
+
+-- lemma maximal_of_restriction {A B X} (P : Set α → Prop)
+--     (hP  : ∀ S T, P S → T ⊆ S → P T)
+--     (hA  : A ∈ maximals (· ⊆ ·) {I | P I ∧ I ⊆ X})
+--     (hB  : B ∈ maximals (· ⊆ ·) {I | P I})
+--     (hAB : A ⊆ B) :
+--     A = B ∩ X :=
+--   subset_antisymm (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩)
+--     (hA.2 ⟨(hP (B) (B ∩ X) hB.1 (inter_subset_left _ _)), (inter_subset_right _ _)⟩
+--     (subset_inter_iff.mpr ⟨hAB, hA.1.2⟩))
+
+lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) := by
+  rw [←inter_diff_assoc, inter_eq_self_of_subset_left h]
+  
+  --subset_antisymm (fun _ he ↦ ⟨he.1, h he.1, he.2⟩) (fun _ he ↦ ⟨he.1, he.2.2⟩)
+
+-- lemma compl_ssubset {A B E : Set α} (hA : A ⊆ E) (hB : B ⊆ E) (hAB : A ⊂ B) :
+--     E \ B ⊂ E \ A := by
+--   refine (diff_subset_diff_right hAB.1).ssubset_of_ne (fun h ↦ hAB.ne ?_)
+--   rw [←diff_diff_cancel_left hB, h, diff_diff_cancel_left hA]
+
+-- lemma ssubset_of_subset_of_compl_ssubset {A B X E : Set α}
+--     (hA : A ⊆ E)
+--     (hB : B ⊆ E)
+--     (h₁ : A ∩ X ⊆ B ∩ X)
+--     (h₂ : A ∩ (E \ X) ⊂ B ∩ (E \ X)) :
+--     A ⊂ B := by
+--   rw [ssubset_iff_subset_ne]
+--   refine' ⟨fun e he ↦ (em (e ∈ X)).elim
+--     (fun g ↦ (h₁ ⟨he, g⟩).1) (fun g ↦ (h₂.subset ⟨he, ⟨hA he, g⟩⟩).1), _⟩
+--   rintro rfl
+--   exact h₂.not_subset (subset_refl _)
+
+-- lemma ssubset_of_subset_of_compl_ssubset' {A B X E : Set α}
+--     (hA : A ⊆ E)
+--     (hB : B ⊆ E)
+--     (hX : X ⊆ E)
+--     (h₁ : A ∩ (E \ X) ⊆ B ∩ (E \ X))
+--     (h₂ : A ∩ X ⊂ B ∩ X) :
+--     A ⊂ B := by
+--   let Y := E \ X
+--   have g₂ : A ∩ (E \ Y) ⊂ B ∩ (E \ Y) := by
+--     rw [diff_diff_cancel_left hX]
+--     exact h₂
+--   exact ssubset_of_subset_of_compl_ssubset hA hB h₁ g₂ 
+
+-- lemma ssubset_of_subset_of_compl_ssubset'' {A B : Set α}
+--     (h₁ : A ∩ X ⊂ B ∩ X)
+--     (h₂ : A \ X ⊆ B \ X) :
+--     A ⊂ B := by
+--   have h := union_subset_union h₁.subset h₂
+--   rw [inter_union_diff, inter_union_diff] at h
+--   refine' ⟨h, fun g ↦ by { rw [subset_antisymm h g] at h₁; exact (ne_of_ssuperset h₁) rfl }⟩
+
+-- lemma ssubset_of_ssubset_of_compl_subset'' {A B X : Set α}
+--     (h₁ : A ∩ X ⊆ B ∩ X)
+--     (h₂ : A \ X ⊂ B \ X) :
+--     A ⊂ B := by
+--   rw [diff_eq, diff_eq] at h₂
+--   rw [←compl_compl X, ←diff_eq, ←diff_eq] at h₁
+--   exact ssubset_of_subset_of_compl_ssubset'' h₂ h₁
+  
+-- lemma diff_ssubset_of_ssubset_of_eq_inter {A B X : Set α}
+--     (h₁ : A ⊂ B)
+--     (h₂ : A ∩ X = B ∩ X) :
+--     A \ X ⊂ B \ X := by
+--   refine' ⟨diff_subset_diff_left h₁.subset, fun g ↦ _⟩
+--   have : A \ X = B \ X := subset_antisymm (diff_subset_diff_left h₁.subset) g
+--   rw [←inter_union_diff A X, h₂, this, inter_union_diff] at h₁
+--   exact ssubset_irrfl h₁
 
 lemma disjoint_of_diff_subset {A B C : Set α} (h : A ⊆ B) : Disjoint A (C \ B) :=
   disjoint_of_subset_left h disjoint_sdiff_right  
   
-lemma compl_diff_compl' {x : α} (A B E : Set α)
-    (h : x ∈ A \ B)
-    (hx : x ∈ E) :
-    x ∈ (E \ B) \ (E \ A) := by
-  rw [diff_eq, diff_eq, diff_eq, compl_inter,
-      compl_compl, inter_union_distrib_left,
-      inter_assoc, inter_comm _ Eᶜ, ←inter_assoc,
-      inter_compl_self, empty_inter, empty_union,
-      inter_assoc, inter_comm _ A, ←diff_eq]
-  exact ⟨hx, h⟩
+-- lemma compl_diff_compl' {x : α} (A B E : Set α)
+--     (h : x ∈ A \ B)
+--     (hx : x ∈ E) :
+--     x ∈ (E \ B) \ (E \ A) := by
+--   rw [diff_eq, diff_eq, diff_eq, compl_inter,
+--       compl_compl, inter_union_distrib_left,
+--       inter_assoc, inter_comm _ Eᶜ, ←inter_assoc,
+--       inter_compl_self, empty_inter, empty_union,
+--       inter_assoc, inter_comm _ A, ←diff_eq]
+--   exact ⟨hx, h⟩
 
-lemma compl_diff_compl_iff {x : α} (A B E : Set α) :
-    x ∈ A \ B ↔ x ∈ (E \ B) \ (E \ A) :=
-  sorry
+-- lemma compl_diff_compl_iff {x : α} (A B E : Set α) :
+--     x ∈ A \ B ↔ x ∈ (E \ B) \ (E \ A) :=
+--   sorry
 
-lemma aux {X A B : Set α} :
-    X ∩ Aᶜ ⊂ X ∩ Bᶜ ↔ X ∩ B ⊂ X ∩ A := by
-  refine' ⟨_, sorry⟩
-  intro h
-  refine' ⟨fun e he ↦ (em (e ∈ A)).elim (fun g ↦ ⟨he.1, g⟩)
-      (fun g ↦ by {exfalso; exact (h.subset ⟨he.1, g⟩).2 he.2}), sorry⟩
+lemma compl_diff_compl_iff (A B E : Set α) (h : A ⊆ E) : A \ B = (E \ B) \ (E \ A) := by
+  rw [subset_antisymm_iff, diff_subset_iff, diff_diff, diff_subset_iff, union_right_comm, 
+    union_diff_self, union_assoc, union_diff_self, ←union_assoc, 
+    and_iff_left (subset_union_right _ _), ←diff_subset_iff, subset_diff, 
+    disjoint_union_right, and_iff_right (disjoint_sdiff_left), 
+    and_iff_left (disjoint_of_subset_left (diff_subset _ _) disjoint_sdiff_right)]
+  exact (diff_subset _ _).trans h 
+  
+  
+-- lemma foo {s t r : Set α} : s \ t ⊂ s \ r ↔ s ∩ t ⊂ s ∩ r := by 
+--   rw [ssubset_iff_subset_not_subset, subset_diff, and_iff_right (diff_subset _ _), 
+--     subset_diff, and_iff_right (diff_subset _ _), ssubset_iff_subset_not_subset, 
+--     subset_inter_iff, and_iff_right (inter_subset_left _ _), subset_inter_iff, 
+--     and_iff_right (inter_subset_left _ _), disjoint_iff_inter_eq_empty]
+  
+
+-- lemma aux {X A B : Set α} :
+--     X ∩ Aᶜ ⊂ X ∩ Bᶜ ↔ X ∩ B ⊂ X ∩ A := by
+--   refine' ⟨_, sorry⟩
+--   intro h
+--   refine' ⟨fun e he ↦ (em (e ∈ A)).elim (fun g ↦ ⟨he.1, g⟩)
+--       (fun g ↦ by {exfalso; exact (h.subset ⟨he.1, g⟩).2 he.2}), sorry⟩
 /- end of complement API -/
 
 /- singleton API -/

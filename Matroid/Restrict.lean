@@ -260,11 +260,11 @@ theorem Basis.eq_exchange_of_diff_eq_singleton (hI : M.Basis I X) (hJ : M.Basis 
     (hIJ : I \ J = {e}) : ∃ f ∈ J \ I, J = insert f I \ {e} := by
   rw [← base_restrict_iff] at hI hJ ; exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ
 
-theorem Basis'.encard_eq_encard (hI : M.Basis' I X) (hJ : M.Basis' J X) : I.encard = J.encard := by
-  rw [←base_restrict_iff'] at hI hJ; exact hI.encard_eq_encard_of_base hJ
+theorem Basis'.card_eq_card (hI : M.Basis' I X) (hJ : M.Basis' J X) : I.encard = J.encard := by
+  rw [←base_restrict_iff'] at hI hJ; exact hI.card_eq_card_of_base hJ
   
-theorem Basis.encard_eq_encard (hI : M.Basis I X) (hJ : M.Basis J X) : I.encard = J.encard :=
-  hI.basis'.encard_eq_encard hJ.basis'
+theorem Basis.card_eq_card (hI : M.Basis I X) (hJ : M.Basis J X) : I.encard = J.encard :=
+  hI.basis'.card_eq_card hJ.basis'
 
 theorem Indep.augment (hI : M.Indep I) (hJ : M.Indep J) (hIJ : I.encard < J.encard) : 
     ∃ e ∈ J \ I, M.Indep (insert e I) := by
@@ -274,7 +274,7 @@ theorem Indep.augment (hI : M.Indep I) (hJ : M.Indep J) (hIJ : I.encard < J.enca
       and_imp, dep_iff, insert_subset_iff, and_iff_left hI.subset_ground]
     exact fun e heJ heI ↦ ⟨he e ⟨heJ, heI⟩, hJ.subset_ground heJ⟩ 
   obtain ⟨J', hJ', hJJ'⟩ := hJ.subset_basis_of_subset (subset_union_right I J)
-  rw [←hJ'.encard_eq_encard hb] at hIJ
+  rw [←hJ'.card_eq_card hb] at hIJ
   exact hIJ.not_le (encard_mono hJJ')
 
 

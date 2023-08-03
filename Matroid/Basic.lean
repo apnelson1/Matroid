@@ -1,7 +1,6 @@
 import Mathlib.Data.Set.Card
 import Mathlib.Order.Minimal
 import Matroid.Init
-import Matroid.ForMathlib.Minimal
 
 /-!
 # Matroid
@@ -62,7 +61,7 @@ There are a few design decisions worth discussing.
   and that all lack nice properties. 
   Many different competing notions of infinite matroid were studied through the years; 
   in fact, the problem of which definition is the best was only really solved in 2010, 
-  when Bruhn et al. showed that there is a unique 'reasonable' notion of an infinite matroid;
+  when Bruhn et al. [2] showed that there is a unique 'reasonable' notion of an infinite matroid;
   these objects had been previously called 'B-matroids'. 
   These are defined by adding one carefully chosen axiom to the standard set, 
   and adapting existing axioms to not mention set cardinalities; 
@@ -84,7 +83,7 @@ There are a few design decisions worth discussing.
   this cardinality is an important invariant known as the 'rank' of `M`. 
   For infinite matroids, bases are not in general equicardinal; 
   in fact the equicardinality of bases of infinite matroids has been shown 
-  to be independent of ZFC. 
+  to be independent of ZFC [3]. 
   What is still true is that either all bases are finite and equicardinal,
   or all bases are infinite. This means that the natural notion of 'size' 
   for a set in matroid theory is given by the function `Set.encard`, which 
@@ -132,14 +131,14 @@ There are a few design decisions worth discussing.
 
 ## References
 
-* The standard text on matroid theory 
+[1] The standard text on matroid theory 
 [J. G. Oxley, Matroid Theory, Oxford University Press, New York, 2011.] 
 
-* The robust axiomatic definition of infinite matroids 
+[2] The robust axiomatic definition of infinite matroids 
 [H. Bruhn, R. Diestel, M. Kriesell, R. Pendavingh, P. Wollan, Axioms for infinite matroids, 
   Adv. Math 239 (2013), 18-46] 
 
-* Equicardinality of matroid bases is independent of ZFC.
+[3] Equicardinality of matroid bases is independent of ZFC.
 [N. Bowler, S. Geschke, Self-dual uniform matroids on infinite sets, 
   Proc. Amer. Math. Soc. 144 (2016), 459-471]
 -/
@@ -233,14 +232,15 @@ theorem rkPos_iff_empty_not_base : M.RkPos ↔ ¬M.Base ∅ :=
 
 section exchange
 
-/-- A family of sets with the exchange property is an antichain. -/
-theorem antichain_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base) 
-    (hB : Base B) (hB' : Base B') (h : B ⊆ B') : B = B' := 
-  h.antisymm (fun x hx ↦ by_contra 
-    (fun hxB ↦ by obtain ⟨y, hy, -⟩ := exch B' B hB' hB x ⟨hx, hxB⟩; exact hy.2 $ h hy.1))
+variable {Base : Set α → Prop} (exch : ExchangeProperty Base)
 
-theorem encard_diff_le_aux {Base : Set α → Prop} (exch : ExchangeProperty Base) 
-    {B₁ B₂ : Set α} (hB₁ : Base B₁) (hB₂ : Base B₂) : (B₁ \ B₂).encard ≤ (B₂ \ B₁).encard := by
+/-- A family of sets with the exchange property is an antichain. -/
+theorem antichain_of_exch (hB : Base B) (hB' : Base B') (h : B ⊆ B') : B = B' := 
+  h.antisymm (fun x hx ↦ by_contra 
+    (fun hxB ↦ let ⟨_, hy, _⟩ := exch B' B hB' hB x ⟨hx, hxB⟩; hy.2 <| h hy.1))
+
+theorem encard_diff_le_aux (exch : ExchangeProperty Base) (hB₁ : Base B₁) (hB₂ : Base B₂) : 
+    (B₁ \ B₂).encard ≤ (B₂ \ B₁).encard := by
   obtain (he | hinf | ⟨e, he, hcard⟩) := 
     (B₂ \ B₁).eq_empty_or_encard_eq_top_or_encard_diff_singleton_lt 
   · rw [antichain_of_exch exch hB₂ hB₁ (diff_eq_empty.mp he)]
@@ -261,13 +261,12 @@ termination_by _ => (B₂ \ B₁).encard
 
 /-- For any two sets `B₁,B₂` in a family with the exchange property, the differences `B₁ \ B₂` and
   `B₂ \ B₁` have the same `ℕ∞`-cardinality. -/
-theorem encard_diff_eq_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base)
-    (hB₁ : Base B₁) (hB₂ : Base B₂) : (B₁ \ B₂).encard = (B₂ \ B₁).encard := 
+theorem encard_diff_eq_of_exch (hB₁ : Base B₁) (hB₂ : Base B₂) :
+    (B₁ \ B₂).encard = (B₂ \ B₁).encard := 
 (encard_diff_le_aux exch hB₁ hB₂).antisymm (encard_diff_le_aux exch hB₂ hB₁)
 
 /-- Any two sets `B₁,B₂` in a family with the exchange property have the same `ℕ∞`-cardinality. -/
-theorem encard_base_eq_of_exch {Base : Set α → Prop} (exch : ExchangeProperty Base)
-    (hB₁ : Base B₁) (hB₂ : Base B₂) : B₁.encard = B₂.encard := by 
+theorem encard_base_eq_of_exch (hB₁ : Base B₁) (hB₂ : Base B₂) : B₁.encard = B₂.encard := by 
 rw [←encard_diff_add_encard_inter B₁ B₂, encard_diff_eq_of_exch exch hB₁ hB₂, inter_comm, 
      encard_diff_add_encard_inter]
 
@@ -282,7 +281,8 @@ macro (name := aesop_mat) "aesop_mat" c:Aesop.tactic_clause* : tactic =>
   aesop $c* (options := { terminal := true })
   (rule_sets [$(Lean.mkIdent `Matroid):ident]))
 
--- We add a number of trivial lemmas to the ruleset `Matroid` for `aesop`. 
+/- We add a number of trivial lemmas (deliberately specialized to statements in terms of the 
+  ground set of a matroid) to the ruleset `Matroid` for `aesop`. -/
 
 @[aesop unsafe 5% (rule_sets [Matroid])] 
 private theorem inter_right_subset_ground (hX : X ⊆ M.E) : 
@@ -344,23 +344,23 @@ theorem Base.eq_of_subset_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (hB�
     B₁ = B₂ :=
   antichain_of_exch M.base_exchange' hB₁ hB₂ hB₁B₂
 
-theorem Base.encard_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
+theorem Base.card_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).encard = (B₂ \ B₁).encard :=
   encard_diff_eq_of_exch (M.base_exchange') hB₁ hB₂ 
 
-theorem Base.card_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
+theorem Base.ncard_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).ncard = (B₂ \ B₁).ncard := by
-  rw [ncard_def, hB₁.encard_diff_comm hB₂, ←ncard_def]
+  rw [ncard_def, hB₁.card_diff_comm hB₂, ←ncard_def]
 
-theorem Base.encard_eq_encard_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
+theorem Base.card_eq_card_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     B₁.encard = B₂.encard := by
   rw [encard_base_eq_of_exch M.base_exchange' hB₁ hB₂]
 
-theorem Base.card_eq_card_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : B₁.ncard = B₂.ncard := by
-  rw [ncard_def B₁, hB₁.encard_eq_encard_of_base hB₂, ←ncard_def]
+theorem Base.ncard_eq_ncard_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : B₁.ncard = B₂.ncard := by
+  rw [ncard_def B₁, hB₁.card_eq_card_of_base hB₂, ←ncard_def]
 
 theorem Base.finite_of_finite (hB : M.Base B) (h : B.Finite) (hB' : M.Base B') : B'.Finite :=
-  (finite_iff_finite_of_encard_eq_encard (hB.encard_eq_encard_of_base hB')).mp h  
+  (finite_iff_finite_of_encard_eq_encard (hB.card_eq_card_of_base hB')).mp h  
 
 theorem Base.infinite_of_infinite (hB : M.Base B) (h : B.Infinite) (hB₁ : M.Base B₁) :
     B₁.Infinite :=
@@ -405,14 +405,11 @@ theorem finite_or_infiniteRk (M : Matroid α) : FiniteRk M ∨ InfiniteRk M :=
 
 theorem Base.diff_finite_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).Finite ↔ (B₂ \ B₁).Finite := 
-  finite_iff_finite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
+  finite_iff_finite_of_encard_eq_encard (hB₁.card_diff_comm hB₂)
 
 theorem Base.diff_infinite_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : 
     (B₁ \ B₂).Infinite ↔ (B₂ \ B₁).Infinite := 
-  infinite_iff_infinite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
-
-theorem Base.ncard_eq_ncard_of_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) : B₁.ncard = B₂.ncard :=
-by rw [ncard_def, hB₁.encard_eq_encard_of_base hB₂, ←ncard_def]
+  infinite_iff_infinite_of_encard_eq_encard (hB₁.card_diff_comm hB₂)
 
 theorem eq_of_base_iff_base_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) 
     (h : ∀ B, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B)) : M₁ = M₂ := by
@@ -557,7 +554,7 @@ theorem Base.eq_exchange_of_diff_eq_singleton (hB : M.Base B) (hB' : M.Base B') 
 theorem Base.exchange_base_of_indep (hB : M.Base B) (hf : f ∉ B) 
     (hI : M.Indep (insert f (B \ {e}))) : M.Base (insert f (B \ {e})) := by
   obtain ⟨B', hB', hIB'⟩ := hI.exists_base_supset
-  have hcard := hB'.encard_diff_comm hB
+  have hcard := hB'.card_diff_comm hB
   rw [insert_subset_iff, ←diff_eq_empty, diff_diff_comm, diff_eq_empty, subset_singleton_iff_eq] 
     at hIB'
   obtain ⟨hfB, (h | h)⟩ := hIB'
@@ -918,13 +915,13 @@ section FromAxioms
   (In fact, just a wrapper for the definition of a matroid) -/
 def matroid_of_base (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, Base B) 
     (base_exchange : ExchangeProperty Base) 
-    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
+    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
   ⟨E, Base, exists_base, base_exchange, maximality, support⟩
 
 @[simp] theorem matroid_of_base_apply (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, Base B)
     (base_exchange : ExchangeProperty Base) 
-    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (fun I ↦ ∃ B, Base B ∧ I ⊆ B) X)
+    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
     (support : ∀ B, Base B → B ⊆ E) : 
     (matroid_of_base E Base exists_base base_exchange maximality support).Base = Base := rfl
 

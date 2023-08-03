@@ -415,7 +415,7 @@ theorem girth_le_iff (M : Matroid α) [RkPos M﹡] :
 theorem girth_lt_iff (M : Matroid α) : M.girth < k ↔ ∃ C, M.Circuit C ∧ C.encard < k := by 
   simp_rw [girth, iInf_lt_iff, mem_setOf_eq, bex_def]
   
-theorem indep_of_encard_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by aesop_mat) :
+theorem indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   rw [indep_iff_forall_subset_not_circuit]
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
