@@ -118,9 +118,6 @@ lemma disjoint_of_diff_subset {A B C : Set α} (h : A ⊆ B) : Disjoint A (C \ B
 --       inter_assoc, inter_comm _ A, ←diff_eq]
 --   exact ⟨hx, h⟩
 
--- lemma compl_diff_compl_iff {x : α} (A B E : Set α) :
---     x ∈ A \ B ↔ x ∈ (E \ B) \ (E \ A) :=
---   sorry
 
 lemma compl_diff_compl_iff (A B E : Set α) (h : A ⊆ E) : A \ B = (E \ B) \ (E \ A) := by
   rw [subset_antisymm_iff, diff_subset_iff, diff_diff, diff_subset_iff, union_right_comm, 
@@ -162,30 +159,14 @@ lemma ssubset_not_eq {A B : Set α} (h : A ⊂ B) : A ≠ B :=
 
 -- only using independence
 
-/- (B2)* from Oxley -/
-theorem Base.exchange' {M : Matroid α} (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (hx : x ∈ B₂ \ B₁) :
-    ∃ y ∈ B₁ \ B₂, M.Base (insert x (B₁ \ {y})) := by
-  -- derived in Oxley using circuits
-  sorry
-  -- obtain ⟨y, hy⟩ := Base.strong_exchange hB₂ hB₁ hx
-  -- have : x ≠ y := by
-  --   rintro rfl
-  --   exact hx.2 hy.1.1
-  -- refine' ⟨y, hy.1, by { rw [insert_diff_singleton_comm this]; exact hy.2.1 }⟩
-
-/- Indep.exists_base_subset_union_base with interface that does not
-   require `indep` -/
-theorem exists_base_subset_union_base'
-      {M : Matroid α}
-      {Bi : Set α} (hBi : M.Base Bi) (hI : I ⊆ Bi)  -- I is indep
-      (hB : M.Base B) :
-    ∃ B', M.Base B' ∧ I ⊆ B' ∧ B' ⊆ I ∪ B :=
-  (indep_iff_subset_base.mpr ⟨Bi, hBi, hI⟩).exists_base_subset_union_base hB
-
 theorem not_base_of_ssubset
     {M : Matroid α} {I B : Set α} (hB : M.Base B) (hI : I ⊂ B) :
     ¬ M.Base I :=
   fun h ↦ (ssubset_not_eq hI) (h.eq_of_subset_indep hB.indep hI.subset)
+
+lemma dual_base_iff_maximal {M : Matroid α} {B : Set α} : B ⊆ M.E ∧ M.Base (M.E \ B)
+    ↔ B ∈ maximals (· ⊆ ·) {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} :=
+  sorry
 
 /- definition of dual where the bases of the dual
    are definitionally the complements of the
@@ -203,25 +184,32 @@ def dual' (M : Matroid α) : Matroid α :=
       exact ⟨diff_subset _ _, hB⟩
     })
     (by {
+      have aux : ∀ I B : Set α,
+        (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) I →
+          ¬I ∈ maximals (fun x x_1 ↦ x ⊆ x_1)  {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
+            B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
+              ∃ x, x ∈ B \ I ∧ (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) (insert x I) :=
+        sorry
+
       rintro B₁ B₂ hB₁ hB₂ x hx
-      have hx := (compl_diff_compl_iff _ _ M.E).mp hx
-      obtain ⟨y, ⟨hy, hB⟩⟩ := Base.exchange' hB₁.2 hB₂.2 hx
-      have hy := (compl_diff_compl_iff _ _ M.E).mpr hy
-      refine' ⟨y, hy, _⟩
+      obtain ⟨y, hy⟩ := @aux (B₁ \ {x}) B₂ ⟨B₁, hB₁.1, hB₁.2, diff_subset _ _⟩
+        (fun h ↦ (disjoint_singleton_right.mp (subset_diff.mp
+          (h.2 ⟨B₁, hB₁.1, hB₁.2, subset_refl _⟩ (diff_subset _ _))).2) hx.1)
+        (dual_base_iff_maximal.mp hB₂)
 
-      have : x ∈ {y}ᶜ := by
-        rw [mem_compl_singleton_iff]
-        rintro rfl
-        exact hx.1.2 hy.1
-
-      simp only [mem_diff, mem_singleton_iff]
-      refine' ⟨_, _⟩
-      . rw [insert_eq, union_subset_iff, singleton_subset_iff]
-        exact ⟨hB₂.1 hy.1, (diff_subset B₁ {x}).trans hB₁.1⟩
-      rwa [insert_eq, diff_eq, compl_union, diff_eq, compl_inter, compl_compl, ←inter_assoc,
-        inter_distrib_left, inter_assoc, inter_comm _ B₁ᶜ, ←inter_assoc, ←diff_eq, ←diff_eq,
-        inter_assoc, inter_comm _ {x}, ←inter_assoc, inter_singleton_eq_self.mpr hx.1.1,
-        inter_comm, inter_singleton_eq_self.mpr this, union_comm, ←insert_eq]
+      refine' ⟨y, _, _⟩
+      -- question: how to make this argument shorter?
+      . have : y ∉ B₁
+        . have := hy.1.2
+          rw [mem_diff_singleton, not_and, not_not] at this
+          intro g; rw [←this g] at hx
+          exact hx.2 hy.1.1
+        exact ⟨hy.1.1, this⟩
+      -- -- --
+      . {
+        obtain ⟨B, hB⟩ := hy.2
+        sorry
+      }
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
