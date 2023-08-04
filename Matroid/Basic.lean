@@ -344,6 +344,9 @@ theorem Base.eq_of_subset_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (hB�
     B₁ = B₂ :=
   antichain_of_exch M.base_exchange' hB₁ hB₂ hB₁B₂
 
+theorem Base.not_base_of_ssubset (hB : M.Base B) (hX : X ⊂ B) : ¬ M.Base X := 
+  fun h ↦ hX.ne (h.eq_of_subset_base hB hX.subset)
+
 theorem Base.card_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).encard = (B₂ \ B₁).encard :=
   encard_diff_eq_of_exch (M.base_exchange') hB₁ hB₂ 
@@ -572,6 +575,10 @@ theorem Base.exchange_base_of_indep' (hB : M.Base B) (he : e ∈ B) (hf : f ∉ 
   have hfe : f ≠ e := by rintro rfl; exact hf he
   rw [←insert_diff_singleton_comm hfe] at *
   exact hB.exchange_base_of_indep hf hI
+
+theorem Base.eq_exchange_of_exchange_subset (hB : M.Base B) (hB' : M.Base B') (hf : f ∉ B)
+    (h : insert f (B \ {e}) ⊆ B') : B' = insert f (B \ {e}) :=
+  ((hB.exchange_base_of_indep hf (hB'.indep.subset h)).eq_of_subset_base hB' h).symm
 
 theorem Base.insert_dep (hB : M.Base B) (h : e ∈ M.E \ B) : M.Dep (insert e B) := by
   rw [←not_indep_iff (insert_subset h.1 hB.subset_ground)]

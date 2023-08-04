@@ -3,7 +3,6 @@ import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Other
 import Mathlib.Order.Minimal
 import Matroid.Init
-import Matroid.ForMathlib.Minimal
 
 
 /-!
@@ -526,6 +525,10 @@ theorem Base.exchange_base_of_indep' (hB : M.Base B) (he : e ∈ B) (hf : f ∉ 
   have hfe : f ≠ e := by rintro rfl; exact hf he
   rw [←insert_diff_singleton_comm hfe] at *
   exact hB.exchange_base_of_indep hf hI
+
+theorem Base.eq_exchange_of_exchange_subset (hB : M.Base B) (hB' : M.Base B') (hf : f ∉ B)
+    (h : insert f (B \ {e}) ⊆ B') : B' = insert f (B \ {e}) :=
+  ((hB.exchange_base_of_indep hf (hB'.indep.subset h)).eq_of_subset_base hB' h).symm
 
 theorem Base.insert_dep (hB : M.Base B) (h : e ∈ M.E \ B) : M.Dep (insert e B) := by
   rw [←not_indep_iff (insert_subset h.1 hB.subset_ground)]
