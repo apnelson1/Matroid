@@ -157,8 +157,6 @@ lemma ssubset_not_eq {A B : Set α} (h : A ⊂ B) : A ≠ B :=
 
 /- dual matroid -/
 
--- only using independence
-
 theorem not_base_of_ssubset
     {M : Matroid α} {I B : Set α} (hB : M.Base B) (hI : I ⊂ B) :
     ¬ M.Base I :=
@@ -167,6 +165,32 @@ theorem not_base_of_ssubset
 lemma dual_base_iff_maximal {M : Matroid α} {B : Set α} : B ⊆ M.E ∧ M.Base (M.E \ B)
     ↔ B ∈ maximals (· ⊆ ·) {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} :=
   sorry
+
+lemma aux {M : Matroid α} (I B : Set α) : (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) I →
+    ¬I ∈ maximals (fun x x_1 ↦ x ⊆ x_1)  {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
+      B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
+        ∃ x, x ∈ B \ I ∧ (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) (insert x I) := by
+  sorry
+  -- rintro I X ⟨hIE, B, hB, hIB⟩ hI_not_max hX_max
+  -- have hXE := hX_max.1.1
+  -- have hB' := (base_compl_iff_mem_maximals_disjoint_base hXE).mpr hX_max
+  
+  -- set B' := M.E \ X with hX
+  -- have hI := (not_iff_not.mpr (base_compl_iff_mem_maximals_disjoint_base)).mpr hI_not_max
+  -- obtain ⟨B'', hB'', hB''₁, hB''₂⟩ := (hB'.indep.diff I).exists_base_subset_union_base hB 
+  -- rw [←compl_subset_compl, ←hIB.sdiff_eq_right, ←union_diff_distrib, diff_eq, compl_inter, 
+  --   compl_compl, union_subset_iff, compl_subset_compl] at hB''₂ 
+  
+  -- have hssu := (subset_inter (hB''₂.2) hIE).ssubset_of_ne 
+  --   (by { rintro rfl; apply hI; convert hB''; simp [hB''.subset_ground] })
+
+  -- obtain ⟨e, ⟨(heB'' : e ∉ _), heE⟩, heI⟩ := exists_of_ssubset hssu
+  -- use e
+  -- simp_rw [mem_diff, insert_subset_iff, and_iff_left heI, and_iff_right heE, and_iff_right hIE]
+  -- refine' ⟨by_contra (fun heX ↦ heB'' (hB''₁ ⟨_, heI⟩)), ⟨B'', hB'', _⟩⟩ 
+  -- · rw [hX]; exact ⟨heE, heX⟩
+  -- rw [←union_singleton, disjoint_union_left, disjoint_singleton_left, and_iff_left heB'']
+  -- exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left
 
 /- definition of dual where the bases of the dual
    are definitionally the complements of the
@@ -184,47 +208,38 @@ def dual' (M : Matroid α) : Matroid α :=
       exact ⟨diff_subset _ _, hB⟩
     })
     (by {
-      have aux : ∀ I B : Set α,
-        (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) I →
-          ¬I ∈ maximals (fun x x_1 ↦ x ⊆ x_1)  {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
-            B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B} →
-              ∃ x, x ∈ B \ I ∧ (fun I ↦ ∃ B, B ⊆ M.E ∧ M.Base (M.E \ B) ∧ I ⊆ B) (insert x I) :=
-        sorry
-
       rintro B₁ B₂ hB₁ hB₂ x hx
-      obtain ⟨y, hy⟩ := @aux (B₁ \ {x}) B₂ ⟨B₁, hB₁.1, hB₁.2, diff_subset _ _⟩
+      obtain ⟨y, hy⟩ := @aux _ _ (B₁ \ {x}) B₂ ⟨B₁, hB₁.1, hB₁.2, diff_subset _ _⟩
         (fun h ↦ (disjoint_singleton_right.mp (subset_diff.mp
           (h.2 ⟨B₁, hB₁.1, hB₁.2, subset_refl _⟩ (diff_subset _ _))).2) hx.1)
         (dual_base_iff_maximal.mp hB₂)
 
-      refine' ⟨y, _, _⟩
-      -- question: how to make this argument shorter?
-      . have : y ∉ B₁
+      refine' ⟨y, _, insert_subset (hB₂.1 hy.1.1) ((diff_subset B₁ {x}).trans hB₁.1), _⟩
+      . -- question: making this argument shorter
+        have : y ∉ B₁
         . have := hy.1.2
           rw [mem_diff_singleton, not_and, not_not] at this
           intro g; rw [←this g] at hx
           exact hx.2 hy.1.1
         exact ⟨hy.1.1, this⟩
-      -- -- --
-      . {
-        obtain ⟨B, hB⟩ := hy.2
-        sorry
-      }
+      . obtain ⟨B, hB⟩ := hy.2
+        have : M.Base (M.E \ insert y (B₁ \ {x}))
+        . -- question:
+          -- the set `insert y (B₁ \ {x}` is coindep and has the same cardinality as `B₁`
+          sorry
+        exact this
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
 
-      /- bookkeeping -/
       set B := M.E \ Bt
       have : Bt = M.E \ B :=
         (diff_diff_cancel_left hBt.1).symm
       rw [this] at hI'B; clear this
-      
       obtain ⟨-, hB⟩ := hBt
       have hI'E := hI'B.trans (diff_subset M.E B)
       have hI'B : Disjoint I' B :=
         (subset_diff.mp hI'B).2  
-      /- ----------- -/
       
       obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
       obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
@@ -243,7 +258,6 @@ def dual' (M : Matroid α) : Matroid α :=
 
       rintro J Bt h₁Bt hB'' hJBt _ hJX hssJ
 
-      /- bookkeeping -/
       set B'' := M.E \ Bt
       have hJE := hJBt.trans h₁Bt
       have hdj : Disjoint J B''
@@ -251,7 +265,6 @@ def dual' (M : Matroid α) : Matroid α :=
         . rwa [diff_diff_cancel_left h₁Bt]
         exact (subset_diff.mp this).2
       clear h₁Bt; clear hJBt
-      /- ----------- -/
 
       rw [and_iff_left hJE]
       rw [diff_eq, inter_right_comm, ←diff_eq, diff_subset_iff] at hssJ
