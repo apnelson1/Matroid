@@ -21,10 +21,20 @@ theorem tsum_subtype_eq_tsum_subtype {α β : Type _} {f : α → β} [Topologic
     [AddCommMonoid β] [T2Space β] {s t : Set α} (h : s ∩ f.support = t ∩ f.support) : 
     ∑' (x : s), f x = ∑' (x : t), f x := by 
   classical
-  set f' : α → β := fun a ↦ if a ∈ s ∪ t then f a else 0 
+  set f' : α → β := fun a ↦ if a ∈ s ∪ t then f a else 0 with hf'
+  have : f'.support ⊆ s ∩ t
+  · rintro x hx
+    simp only [Function.mem_support, ne_eq, ite_eq_right_iff, not_forall, exists_prop] at hx 
+    
+    -- exact hx.1
+    
+
   rw [tsum_congr (show ∀ (a : s), f a = f' a from sorry), 
     tsum_congr (show ∀ (a : t), f a = f' a from sorry), tsum_subtype_eq_of_support_subset, 
     tsum_subtype_eq_of_support_subset]  
+  
+  
+
   
   
 
@@ -283,7 +293,15 @@ protected theorem tsum_fiber_eq {ι} (f : ι → α) :
   
 theorem ENat.tsum_sUnion_eq {c : Set (Set α)} (hc : c.PairwiseDisjoint id) :
     ∑' (t : c), (t : Set α).encard = (⋃₀ c).encard := by
-  rw [tsum_eq_ts]
+  rw [←tsum_support_eq]
+
+
+  obtain (hs | hs) := c.finite_or_infinite
+  · refine hs.induction_on (by rw [sUnion_empty]; simp) (@fun a t hat _ IH ↦ ?_)
+    rw [ENat.tsum_insert hat, IH, sUnion_insert, encard_union_eq]
+    sorry
+  
+    
   -- have : ∀ (x : ⋃₀ c), ∃ (t : c), (x : α) ∈ (t : Set α)
   -- · sorry
   
