@@ -17,25 +17,21 @@ theorem tsum_support_eq {α β : Type _} {f : α → β} [TopologicalSpace β] [
     [T2Space β] : ∑' (x : f.support), f x = ∑' x, f x := by 
   simp [tsum_subtype]
 
+theorem tsum_subtype_eq_tsum_inter_support {α β : Type _} {f : α → β} [TopologicalSpace β] 
+    [AddCommMonoid β] [T2Space β] {s : Set α} :
+    ∑' (x : ↑(s ∩ f.support)), f x = ∑' (x : s), f x := by 
+  rw [tsum_congr (show ∀ (a : s), f a = (s.indicator f) a from _), 
+    tsum_congr ((show ∀ (a : ↑ (s ∩ f.support)), f a = (s.indicator f) a from _)), 
+    tsum_subtype_eq_of_support_subset (by simp), tsum_subtype_eq_of_support_subset (by simp)]  
+  · rintro ⟨a,ha⟩; simp [indicator_of_mem ha.1]
+  rintro ⟨a, ha⟩
+  simp [indicator_of_mem ha]
+    
 theorem tsum_subtype_eq_tsum_subtype {α β : Type _} {f : α → β} [TopologicalSpace β] 
     [AddCommMonoid β] [T2Space β] {s t : Set α} (h : s ∩ f.support = t ∩ f.support) : 
     ∑' (x : s), f x = ∑' (x : t), f x := by 
-  classical
-  set f' : α → β := fun a ↦ if a ∈ s ∪ t then f a else 0 with hf'
-  have : f'.support ⊆ s ∩ t
-  · rintro x hx
-    simp only [Function.mem_support, ne_eq, ite_eq_right_iff, not_forall, exists_prop] at hx 
-    
-    -- exact hx.1
-    
+  rw [←tsum_subtype_eq_tsum_inter_support, eq_comm, ←tsum_subtype_eq_tsum_inter_support, h]
 
-  rw [tsum_congr (show ∀ (a : s), f a = f' a from sorry), 
-    tsum_congr (show ∀ (a : t), f a = f' a from sorry), tsum_subtype_eq_of_support_subset, 
-    tsum_subtype_eq_of_support_subset]  
-  
-  
-
-  
   
 
 
@@ -293,7 +289,7 @@ protected theorem tsum_fiber_eq {ι} (f : ι → α) :
   
 theorem ENat.tsum_sUnion_eq {c : Set (Set α)} (hc : c.PairwiseDisjoint id) :
     ∑' (t : c), (t : Set α).encard = (⋃₀ c).encard := by
-  rw [←tsum_support_eq]
+  
 
 
   obtain (hs | hs) := c.finite_or_infinite
