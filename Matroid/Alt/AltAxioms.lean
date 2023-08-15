@@ -15,8 +15,6 @@ lemma disjoint_of_diff_subset {A B C : Set α} (h : A ⊆ B) : Disjoint A (C \ B
 lemma compl_diff_compl_iff (A B E : Set α) (h : A ⊆ E) : A \ B = (E \ B) \ (E \ A) := by
   ext; aesop
 
-lemma foo (A B E : Set α) : E \ A ⊆ E \ B ↔ E ∩ B ⊆ E ∩ A :=
-  sorry
 /- end of complement API -/
 
 /- singleton API -/
@@ -53,8 +51,20 @@ def dual' (M : Matroid α) : Matroid α :=
         ←union_diff_distrib, diff_eq, compl_inter, compl_compl, union_subset_iff,
         compl_subset_compl] at hB''₂
 
-      have hssu : B₁ \ {x} ⊂ B''ᶜ ∩ M.E := sorry
-      obtain ⟨e, ⟨(heB'' : e ∉ _), heE⟩, heI⟩ := exists_of_ssubset hssu
+      have hI : ¬ M.Base (M.E \ (B₁ \ {x}))
+      . intro g
+        have : M.E \ B₁ ⊂ M.E \ (B₁ \ {x})
+        . rw [diff_diff_right,
+              inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
+              ←insert_eq]
+          exact ssubset_insert (not_mem_diff_of_mem hx.1)
+        exact g.not_base_of_ssubset this hB₁.2
+
+      have hssu : B₁ \ {x} ⊂ B''ᶜ ∩ M.E :=
+        (subset_inter (hB''₂.2) ((diff_subset B₁ {x}).trans hB₁.1)).ssubset_of_ne 
+          (by { rintro g; apply hI; rw [g]; convert hB''; simp [hB''.subset_ground] })
+      obtain ⟨e, ⟨(heB'' : e ∉ _), heE⟩, heI⟩ :=
+        exists_of_ssubset hssu
 
       use e
       simp_rw [mem_diff, insert_subset_iff, and_iff_left heI, and_iff_right heE,
@@ -65,11 +75,21 @@ def dual' (M : Matroid α) : Matroid α :=
         . rw [mem_diff, not_and, not_not] at heI
           rw [←mem_singleton_iff.mp (heI g)] at hx
           exact ⟨heE, hx.2⟩
-      . have : M.E \ insert e (B₁ \ {x}) = insert x ((M.E \ B₁) \ {e}) := sorry
-        rw [this]
-        have : B'' = insert x ((M.E \ B₁) \ {e}) :=
-          Base.eq_exchange_of_exchange_subset hB₁.2 hB'' (not_mem_diff_of_mem hx.1) sorry
-        rw [←this]; exact hB''
+      . {
+        have : Disjoint (insert e (B₁ \ {x})) B'' := by
+          {
+            sorry
+            -- rw [←union_singleton, disjoint_union_left, disjoint_singleton_left, and_iff_left heB'']
+            -- exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left 
+          }
+        sorry
+      }
+      
+      
+      
+        -- have : B'' = insert x ((M.E \ B₁) \ {e}) :=
+        --   Base.eq_exchange_of_exchange_subset hB₁.2 hB'' (not_mem_diff_of_mem hx.1) sorry
+        -- sorry
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
@@ -140,7 +160,6 @@ def dual' (M : Matroid α) : Matroid α :=
       exact heX (hJX heJ)
     })
     (fun B hB ↦ hB.1)
-
 
 /- end of dual matroid -/
 
