@@ -476,10 +476,15 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   })
   h_support
 
-lemma inter_union_disjoint {ι : Type _} {Es Is : ι → Set α}
-    (hEs : Pairwise (Disjoint on (fun i ↦ Es i))) (hIs : ∀ i, Is i ⊆ Es i) (j : ι) :
-    (⋃ i, Is i) ∩ Es j = Is j :=
-  sorry 
+lemma inter_union_disjoint {ι : Type _} {Es Xs : ι → Set α}
+    (hEs : Pairwise (Disjoint on (fun i ↦ Es i))) (hIs : ∀ i, Xs i ⊆ Es i) (j : ι) :
+    (⋃ i, Xs i) ∩ Es j = Xs j := by
+  ext x
+  refine' ⟨_, fun hx ↦ ⟨(subset_iUnion (fun i ↦ Xs i) j) hx, hIs j hx⟩⟩
+  · intro ⟨hx, hxj⟩
+    obtain ⟨i, hi⟩ := mem_iUnion.mp hx
+    exact (em (i = j)).elim (by { rintro rfl; exact hi })
+            fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hIs i) hi) hxj })
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
