@@ -518,8 +518,18 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       -- TODO: factor out: special case of a more general result on lattices
       have aux : ∀ I, (I ∈ maximals (· ⊆ ·)
         {I | (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E)) I}) ↔
-        (∀ i, (Ms i).Base (I ∩ (Ms i).E)) := sorry
-      
+        (∀ i, (Ms i).Base (I ∩ (Ms i).E))
+      · rintro I
+        refine' ⟨_, _⟩
+        · intro hI i
+          refine' base_iff_maximal_indep.mpr ⟨hI.1.2 i, _⟩
+          · intro Bi hBi hIBi
+            refine' hIBi.eq_or_ssubset.elim (fun h ↦ h) (fun h ↦ _)
+            . obtain ⟨e, he⟩ := exists_of_ssubset h
+              sorry
+        sorry
+      -- using base_iff_maximal_indep and Indep.subset
+
       choose! Bs hBs using (fun i ↦ (hIs i).exists_base_subset_union_base
                                             ((aux I').mp ⟨⟨hI'E, hI's⟩, hI'max⟩ i))
       refine' ⟨⋃ i, Bs i, (aux (⋃ i, Bs i)).mpr fun i ↦
