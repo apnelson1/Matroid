@@ -66,6 +66,9 @@ def dual' (M : Matroid α) : Matroid α :=
       obtain ⟨e, ⟨(heB'' : e ∉ _), heE⟩, heI⟩ :=
         exists_of_ssubset hssu
 
+      refine' (em (x = e)).elim
+        (by {rintro rfl; exfalso; exact heB'' (hB''₁ ⟨⟨hB₁.1 hx.1, hx.2⟩, heI⟩)}) (fun hxe ↦ _)
+
       use e
       simp_rw [mem_diff, insert_subset_iff, and_iff_left heI, and_iff_right heE,
         and_iff_right ((diff_subset B₁ {x}).trans hB₁.1)]
@@ -76,20 +79,33 @@ def dual' (M : Matroid α) : Matroid α :=
           rw [←mem_singleton_iff.mp (heI g)] at hx
           exact ⟨heE, hx.2⟩
       . {
-        have : Disjoint (insert e (B₁ \ {x})) B'' := by
-          {
-            sorry
-            -- rw [←union_singleton, disjoint_union_left, disjoint_singleton_left, and_iff_left heB'']
-            -- exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left 
-          }
-        sorry
+          have : M.E \ insert e (B₁ \ {x}) = insert x ((M.E \ B₁) \ {e}) := by
+            {
+              calc
+                M.E \ insert e (B₁ \ {x}) = M.E \ ({e} ∪ (B₁ \ {x})) := by rw [insert_eq]
+                  _ = M.E ∩ ({e} ∪ (B₁ \ {x}))ᶜ := by rw [diff_eq]
+                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ \ {x})ᶜ) := by rw [compl_union]
+                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ ∩ {x}ᶜ)ᶜ) := by rw [diff_eq]
+                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ᶜ ∪ {x}ᶜᶜ)) := by rw [compl_inter]
+                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ᶜ ∪ {x})) := by rw [compl_compl]
+                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ ∪ {e}ᶜ ∩ {x}) := by rw [inter_distrib_left]
+                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ ∪ {x}) := by rw [inter_eq_self_of_subset_right (singleton_subset_iff.mpr (mem_compl_singleton_iff.mpr hxe))] -- e neq x
+                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ) ∪ M.E ∩ {x} := by rw [inter_distrib_left]
+                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ) ∪ {x} := by rw [inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1))]
+                  _ = M.E ∩ (B₁ᶜ ∩ {e}ᶜ) ∪ {x}:= by rw [inter_comm {e}ᶜ _]
+                  _ = M.E ∩ B₁ᶜ ∩ {e}ᶜ ∪ {x} := by rw [inter_assoc]
+                  _ = (M.E \ B₁) ∩ {e}ᶜ ∪ {x} := by rw [←diff_eq M.E _]
+                  _ = (M.E \ B₁) \ {e} ∪ {x} := by rw [←diff_eq]
+                  _ = {x} ∪ (M.E \ B₁) \ {e} := by rw [union_comm]
+                  _ = insert x ((M.E \ B₁) \ {e}) := by rw [←insert_eq]
+            }
+          rw [this]
+          have : M.Indep (insert x ((M.E \ B₁) \ {e})) := sorry
+          -- by subset of B''
+          have : M.Base  (insert x ((M.E \ B₁) \ {e})) :=
+            Base.exchange_base_of_indep hB₁.2 (not_mem_diff_of_mem hx.1) this
+          exact this
       }
-      
-      
-      
-        -- have : B'' = insert x ((M.E \ B₁) \ {e}) :=
-        --   Base.eq_exchange_of_exchange_subset hB₁.2 hB'' (not_mem_diff_of_mem hx.1) sorry
-        -- sorry
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
