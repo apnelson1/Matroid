@@ -347,6 +347,10 @@ theorem Base.eq_of_subset_base (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (hB�
 theorem Base.not_base_of_ssubset (hB : M.Base B) (hX : X ⊂ B) : ¬ M.Base X := 
   fun h ↦ hX.ne (h.eq_of_subset_base hB hX.subset)
 
+-- Not in PR 
+theorem Base.insert_not_base (hB : M.Base B) (heB : e ∉ B) : ¬ M.Base (insert e B) :=
+  fun h ↦ h.not_base_of_ssubset (ssubset_insert heB) hB 
+
 theorem Base.card_diff_comm (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) :
     (B₁ \ B₂).encard = (B₂ \ B₁).encard :=
   encard_diff_eq_of_exch (M.base_exchange') hB₁ hB₂ 
