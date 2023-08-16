@@ -121,72 +121,91 @@ def dual' (M : Matroid α) : Matroid α :=
       
     
     ( by 
-      rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
+          unfold ExistsMaximalSubsetProperty
+      simp only [forall_exists_index, and_imp]
+      rintro X hX I Y hY hYb hIY hIX
+      obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
+      obtain ⟨B', hB', hJB', hB'JB⟩ := hJ.indep.exists_base_subset_union_base hYb
 
-      set B := M.E \ Bt
-      have : Bt = M.E \ B :=
-        (diff_diff_cancel_left hBt.1).symm
-      rw [this] at hI'B; clear this
+      use X \ B'
+      rw [mem_maximals_setOf_iff]
+      refine ⟨⟨⟨M.E \ B', ⟨diff_subset _ _,by rwa [diff_diff_cancel_left hB'.subset_ground]⟩, 
+        diff_subset_diff hX Subset.rfl⟩,
+        ?_,diff_subset _ _⟩, ?_⟩  
+      · rw [subset_diff, and_iff_right hIX]
+        apply disjoint_of_subset_right hB'JB (disjoint_union_right.2 ⟨
+            disjoint_of_subset_left hIX (subset_diff.1 hJ.subset).2.symm, 
+            disjoint_of_subset_left hIY disjoint_sdiff_right⟩)
+      rintro Z ⟨⟨B'', ⟨hB''E, hB''⟩, hZB''⟩,h⟩ hXB'Z 
       
-      obtain ⟨-, hB⟩ := hBt
-      have hI'E := hI'B.trans (diff_subset M.E B)
-      have hI'B : Disjoint I' B :=
-        (subset_diff.mp hI'B).2  
+      -- rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
+
+      -- set B := M.E \ Bt
+      -- have : Bt = M.E \ B :=
+      --   (diff_diff_cancel_left hBt.1).symm
+      -- rw [this] at hI'B; clear this
       
-      obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
-      obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
+      -- obtain ⟨-, hB⟩ := hBt
+      -- have hI'E := hI'B.trans (diff_subset M.E B)
+      -- have hI'B : Disjoint I' B :=
+      --   (subset_diff.mp hI'B).2  
+      
+      -- obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
+      -- obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
 
-      refine' ⟨(X \ B') ∩ M.E,
-        ⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rwa [diff_diff_cancel_left hB'.subset_ground] }⟩,
-         (inter_subset_left (X \ B') M.E).trans (diff_subset_diff_left hX)⟩⟩,
-         ⟨subset_inter_iff.mpr ⟨_, hI'X.trans hX⟩,
-          (inter_subset_left (X \ B') M.E).trans (diff_subset X B')⟩⟩, _⟩
-      · rw [subset_diff, and_iff_right hI'X]
-        refine' disjoint_of_subset_right hB'IB _
-        rw [disjoint_union_right, and_iff_left hI'B]
-        exact disjoint_of_subset hI'X hI.subset disjoint_sdiff_right
+      -- refine' ⟨(X \ B') ∩ M.E,
+      --   ⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rwa [diff_diff_cancel_left hB'.subset_ground] }⟩,
+      --    (inter_subset_left (X \ B') M.E).trans (diff_subset_diff_left hX)⟩⟩,
+      --    ⟨subset_inter_iff.mpr ⟨_, hI'X.trans hX⟩,
+      --     (inter_subset_left (X \ B') M.E).trans (diff_subset X B')⟩⟩, _⟩
+      -- · rw [subset_diff, and_iff_right hI'X]
+      --   refine' disjoint_of_subset_right hB'IB _
+      --   rw [disjoint_union_right, and_iff_left hI'B]
+      --   exact disjoint_of_subset hI'X hI.subset disjoint_sdiff_right
 
-      simp only [mem_setOf_eq, subset_inter_iff, and_imp, forall_exists_index]
+      -- simp only [mem_setOf_eq, subset_inter_iff, and_imp, forall_exists_index]
 
-      rintro J Bt h₁Bt hB'' hJBt _ hJX hssJ
+      -- rintro J Bt h₁Bt hB'' hJBt _ hJX hssJ
 
-      set B'' := M.E \ Bt
-      have hJE := hJBt.trans h₁Bt
-      have hdj : Disjoint J B''
-      · have : J ⊆ M.E \ B''
-        · rwa [diff_diff_cancel_left h₁Bt]
-        exact (subset_diff.mp this).2
-      clear h₁Bt; clear hJBt
+      -- set B'' := M.E \ Bt
+      -- have hJE := hJBt.trans h₁Bt
+      -- have hdj : Disjoint J B''
+      -- · have : J ⊆ M.E \ B''
+      --   · rwa [diff_diff_cancel_left h₁Bt]
+      --   exact (subset_diff.mp this).2
+      -- clear h₁Bt; clear hJBt
 
-      rw [and_iff_left hJE]
-      rw [diff_eq, inter_right_comm, ←diff_eq, diff_subset_iff] at hssJ
+      -- rw [and_iff_left hJE]
+      -- rw [diff_eq, inter_right_comm, ←diff_eq, diff_subset_iff] at hssJ
   
-      have hI' : (B'' ∩ X) ∪ (B' \ X) ⊆ B'
-      · rw [union_subset_iff, and_iff_left (diff_subset _ _),
-        ←inter_eq_self_of_subset_left hB''.subset_ground, inter_right_comm, inter_assoc]
+      -- have hI' : (B'' ∩ X) ∪ (B' \ X) ⊆ B'
+      -- · rw [union_subset_iff, and_iff_left (diff_subset _ _),
+      --   ←inter_eq_self_of_subset_left hB''.subset_ground, inter_right_comm, inter_assoc]
         
-        calc _ ⊆ _ := inter_subset_inter_right _ hssJ 
-            _ ⊆ _ := by rw [inter_distrib_left, hdj.symm.inter_eq, union_empty] 
-            _ ⊆ _ := inter_subset_right _ _
+      --   calc _ ⊆ _ := inter_subset_inter_right _ hssJ 
+      --       _ ⊆ _ := by rw [inter_distrib_left, hdj.symm.inter_eq, union_empty] 
+      --       _ ⊆ _ := inter_subset_right _ _
       
-      obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_base_subset_union_base hB''
-      rw [union_comm, ←union_assoc, union_eq_self_of_subset_right (inter_subset_left _ _)] at hB₁I
+      -- obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_base_subset_union_base hB''
+      -- rw [union_comm, ←union_assoc, union_eq_self_of_subset_right (inter_subset_left _ _)] at hB₁I
 
-      have : B₁ = B'
-      · refine' hB₁.eq_of_subset_indep hB'.indep (fun e he ↦ _)
-        refine' (hB₁I he).elim (fun heB'' ↦ _) (fun h ↦ h.1)
-        refine' (em (e ∈ X)).elim (fun heX ↦ hI' (Or.inl ⟨heB'', heX⟩)) (fun heX ↦ hIB' _)
-        refine' hI.mem_of_insert_indep ⟨hB₁.subset_ground he, heX⟩ 
-          (hB₁.indep.subset (insert_subset he _))
-        refine' (subset_union_of_subset_right (subset_diff.mpr ⟨hIB',_⟩) _).trans hI'B₁
-        refine' disjoint_of_subset_left hI.subset disjoint_sdiff_left 
-      subst this 
+      -- have : B₁ = B'
+      -- · refine' hB₁.eq_of_subset_indep hB'.indep (fun e he ↦ _)
+      --   refine' (hB₁I he).elim (fun heB'' ↦ _) (fun h ↦ h.1)
+      --   refine' (em (e ∈ X)).elim (fun heX ↦ hI' (Or.inl ⟨heB'', heX⟩)) (fun heX ↦ hIB' _)
+      --   refine' hI.mem_of_insert_indep ⟨hB₁.subset_ground he, heX⟩ 
+      --     (hB₁.indep.subset (insert_subset he _))
+      --   refine' (subset_union_of_subset_right (subset_diff.mpr ⟨hIB',_⟩) _).trans hI'B₁
+      --   refine' disjoint_of_subset_left hI.subset disjoint_sdiff_left 
+      -- subst this 
  
-      refine' subset_diff.mpr ⟨hJX, by_contra (fun hne ↦ _)⟩
-      obtain ⟨e, heJ, heB'⟩ := not_disjoint_iff.mp hne
-      obtain (heB'' | ⟨-,heX⟩ ) := hB₁I heB'
-      · exact hdj.ne_of_mem heJ heB'' rfl
-      exact heX (hJX heJ) )
+      -- refine' subset_diff.mpr ⟨hJX, by_contra (fun hne ↦ _)⟩
+      -- obtain ⟨e, heJ, heB'⟩ := not_disjoint_iff.mp hne
+      -- obtain (heB'' | ⟨-,heX⟩ ) := hB₁I heB'
+      -- · exact hdj.ne_of_mem heJ heB'' rfl
+      -- exact heX (hJX heJ)
+      
+       )
     (fun B hB ↦ hB.1)
 
 /- end of dual matroid -/
