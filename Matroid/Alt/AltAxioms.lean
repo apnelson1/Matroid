@@ -98,7 +98,7 @@ def dual' (M : Matroid α) : Matroid α :=
               inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
               ←insert_eq] at this
           exact this
-        rw [←(hB₁.2).eq_exchange_of_subset hB'' ⟨heE, _⟩ this]
+        rw [←(hB₁.2).eq_exchange_of_exchange_subset hB'' ⟨heE, _⟩ this]
         · exact hB''
         intro heB₁
         exact heI ⟨heB₁, Ne.symm hxe⟩ 
@@ -506,7 +506,7 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
     (fun I J hJ hIJ ↦ ⟨hIJ.trans hJ.1,
       fun i ↦ (hJ.2 i).subset
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
-    sorry
+    (sorry)
     (fun _ hI ↦ hI.1)
 
 
