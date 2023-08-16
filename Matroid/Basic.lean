@@ -584,14 +584,26 @@ theorem Base.eq_exchange_of_exchange_subset (hB : M.Base B) (hB' : M.Base B') (h
     (h : insert f (B \ {e}) ⊆ B') : B' = insert f (B \ {e}) :=
   ((hB.exchange_base_of_indep hf (hB'.indep.subset h)).eq_of_subset_base hB' h).symm
 
-theorem Base.eq_exchange_of_subset (hB : M.Base B) (hB' : M.Base B') (h : B' ⊆ insert f (B \ {e})) :
-    B' = insert f (B \ {e}) :=
-  sorry
-
-
 theorem Base.insert_dep (hB : M.Base B) (h : e ∈ M.E \ B) : M.Dep (insert e B) := by
   rw [←not_indep_iff (insert_subset h.1 hB.subset_ground)]
   exact h.2 ∘ (fun hi ↦ insert_eq_self.mp (hB.eq_of_subset_indep hi (subset_insert e B)).symm)
+
+theorem Base.eq_exchange_of_subset (hB : M.Base B) (hB' : M.Base B') (heB : e ∈ B) 
+    (h : B' ⊆ insert f (B \ {e})) : B' = insert f (B \ {e}) := by
+  obtain (rfl | hef) := eq_or_ne e f 
+  · rw [insert_diff_singleton, insert_eq_of_mem heB] at *
+    exact hB'.eq_of_subset_base hB h
+  have heB' : e ∉ B' := fun h' ↦ Or.elim (h h') hef (fun h'' ↦ h''.2 rfl)
+  
+  rw [←singleton_union, ←diff_subset_iff, subset_diff, disjoint_singleton_right] at h
+  have hfB' : f ∈ B'
+  · refine by_contra fun hfB' ↦ heB' ?_ 
+    rw [diff_singleton_eq_self hfB'] at h
+    rwa [hB'.eq_of_subset_base hB h.1]
+  
+  rw [hB'.eq_exchange_of_exchange_subset hB heB' (insert_subset heB h.1), 
+    insert_diff_singleton_comm hef.symm, insert_comm, insert_diff_singleton, insert_eq_of_mem hfB', 
+    insert_diff_of_mem _ (show e ∈ {e} from rfl), diff_singleton_eq_self heB']
   
 theorem Indep.exists_insert_of_not_base (hI : M.Indep I) (hI' : ¬M.Base I) (hB : M.Base B) : 
     ∃ e ∈ B \ I, M.Indep (insert e I) := by

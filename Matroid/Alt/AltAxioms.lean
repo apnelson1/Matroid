@@ -98,8 +98,10 @@ def dual' (M : Matroid α) : Matroid α :=
               inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
               ←insert_eq] at this
           exact this
-        rw [←(hB₁.2).eq_exchange_of_subset hB'' this]
-        exact hB''
+        rw [←(hB₁.2).eq_exchange_of_subset hB'' ⟨heE, _⟩ this]
+        · exact hB''
+        intro heB₁
+        exact heI ⟨heB₁, Ne.symm hxe⟩ 
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
