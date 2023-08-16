@@ -584,6 +584,11 @@ theorem Base.eq_exchange_of_exchange_subset (hB : M.Base B) (hB' : M.Base B') (h
     (h : insert f (B \ {e}) ⊆ B') : B' = insert f (B \ {e}) :=
   ((hB.exchange_base_of_indep hf (hB'.indep.subset h)).eq_of_subset_base hB' h).symm
 
+theorem Base.eq_exchange_of_subset (hB : M.Base B) (hB' : M.Base B') (h : B' ⊆ insert f (B \ {e})) :
+    B' = insert f (B \ {e}) :=
+  sorry
+
+
 theorem Base.insert_dep (hB : M.Base B) (h : e ∈ M.E \ B) : M.Dep (insert e B) := by
   rw [←not_indep_iff (insert_subset h.1 hB.subset_ground)]
   exact h.2 ∘ (fun hi ↦ insert_eq_self.mp (hB.eq_of_subset_indep hi (subset_insert e B)).symm)

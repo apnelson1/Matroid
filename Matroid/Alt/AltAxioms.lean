@@ -78,34 +78,28 @@ def dual' (M : Matroid α) : Matroid α :=
         . rw [mem_diff, not_and, not_not] at heI
           rw [←mem_singleton_iff.mp (heI g)] at hx
           exact ⟨heE, hx.2⟩
-      . {
-          have : M.E \ insert e (B₁ \ {x}) = insert x ((M.E \ B₁) \ {e}) := by
-            {
-              calc
-                M.E \ insert e (B₁ \ {x}) = M.E \ ({e} ∪ (B₁ \ {x})) := by rw [insert_eq]
-                  _ = M.E ∩ ({e} ∪ (B₁ \ {x}))ᶜ := by rw [diff_eq]
-                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ \ {x})ᶜ) := by rw [compl_union]
-                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ ∩ {x}ᶜ)ᶜ) := by rw [diff_eq]
-                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ᶜ ∪ {x}ᶜᶜ)) := by rw [compl_inter]
-                  _ = M.E ∩ ({e}ᶜ ∩ (B₁ᶜ ∪ {x})) := by rw [compl_compl]
-                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ ∪ {e}ᶜ ∩ {x}) := by rw [inter_distrib_left]
-                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ ∪ {x}) := by rw [inter_eq_self_of_subset_right (singleton_subset_iff.mpr (mem_compl_singleton_iff.mpr hxe))] -- e neq x
-                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ) ∪ M.E ∩ {x} := by rw [inter_distrib_left]
-                  _ = M.E ∩ ({e}ᶜ ∩ B₁ᶜ) ∪ {x} := by rw [inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1))]
-                  _ = M.E ∩ (B₁ᶜ ∩ {e}ᶜ) ∪ {x}:= by rw [inter_comm {e}ᶜ _]
-                  _ = M.E ∩ B₁ᶜ ∩ {e}ᶜ ∪ {x} := by rw [inter_assoc]
-                  _ = (M.E \ B₁) ∩ {e}ᶜ ∪ {x} := by rw [←diff_eq M.E _]
-                  _ = (M.E \ B₁) \ {e} ∪ {x} := by rw [←diff_eq]
-                  _ = {x} ∪ (M.E \ B₁) \ {e} := by rw [union_comm]
-                  _ = insert x ((M.E \ B₁) \ {e}) := by rw [←insert_eq]
-            }
-          rw [this]
-          have : M.Indep (insert x ((M.E \ B₁) \ {e})) := sorry
-          -- by subset of B''
-          have : M.Base  (insert x ((M.E \ B₁) \ {e})) :=
-            Base.exchange_base_of_indep hB₁.2 (not_mem_diff_of_mem hx.1) this
+      . rw [insert_eq, diff_eq, compl_union, diff_eq, compl_inter, compl_compl,
+            inter_distrib_left, inter_eq_self_of_subset_right (singleton_subset_iff.mpr
+            (mem_compl_singleton_iff.mpr hxe)), inter_distrib_left,
+            inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), 
+            inter_comm {e}ᶜ _, ←inter_assoc, ←diff_eq M.E _, ←diff_eq, union_comm, ←insert_eq]
+        have : B'' ⊆ insert x ((M.E \ B₁) \ {e})
+        . have : e ∈ B''ᶜ ∩ M.E := ⟨heB'', heE⟩
+          have : {e} ∪ B₁ \ {x} ⊆ B''ᶜ ∩ M.E :=
+            union_subset (singleton_subset_iff.mpr this) hssu.subset
+          rw [inter_comm, ←diff_eq] at this
+          have : M.E \ (M.E \ B'') ⊆ M.E \ ({e} ∪ B₁ \ {x}) :=
+            diff_subset_diff_right this
+          rw [diff_diff_cancel_left hB''.subset_ground, diff_eq, diff_eq, compl_union,
+              compl_inter, compl_compl, inter_union_distrib_left, inter_comm _ B₁ᶜ,
+              inter_eq_self_of_subset_right (singleton_subset_iff.mpr
+              (mem_compl_singleton_iff.mpr hxe)), inter_union_distrib_left, ←inter_assoc,
+              ←diff_eq, ←diff_eq,
+              inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
+              ←insert_eq] at this
           exact this
-      }
+        rw [←(hB₁.2).eq_exchange_of_subset hB'' this]
+        exact hB''
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
