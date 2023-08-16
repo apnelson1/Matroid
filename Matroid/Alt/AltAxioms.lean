@@ -173,7 +173,6 @@ def dual' (M : Matroid α) : Matroid α :=
 
 /- end of dual matroid -/
 
-/-
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -250,9 +249,10 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
         have hXc : Base (E \ X) := hX.2
         have hBc : Base (E \ B) := hB.2
-        have hBcXc := (compl_ssubset hX.1 hB.1 (ssubset_of_ssubset_of_subset ⟨hXI, hIX⟩ hIB))
+        sorry
+        -- have hBcXc := (compl_ssubset hX.1 hB.1 (ssubset_of_ssubset_of_subset ⟨hXI, hIX⟩ hIB))
 
-        exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
+        -- exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
 
     have aux0 : ∀ I, Base I → (E \ I) ∈ maximals (· ⊆ ·) { I | Indep' I } := by {
@@ -319,9 +319,10 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
             ⟨h.2.1, h.2.2⟩
           rw [←inter_eq_self_of_subset_left h.1.2] at h₁
           have h₂ : (E \ I) ∩ (E \ X) ⊂ B ∩ (E \ X) := by {
-            have := compl_ssubset_inter (diff_subset _ _) (hBt.2.trans hBt.1.1) h₁
-            rw [diff_diff_cancel_left (h_support hB.1)] at this
-            exact this
+            -- have := compl_ssubset_inter (diff_subset _ _) (hBt.2.trans hBt.1.1) h₁
+            -- rw [diff_diff_cancel_left (h_support hB.1)] at this
+            -- exact this
+            sorry
           }
           use E \ Bt
           use hBt.1.2
@@ -347,8 +348,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           exact ssubset_of_subset_of_ssubset h₁ hB'.2
         }
 
-        have hI'B : I' ⊂ B :=
-          ssubset_of_subset_of_compl_ssubset (h_support hI'.1.1) (h_support hB.1) h₁I'B h₂I'B
+        have hI'B : I' ⊂ B := sorry
+          -- ssubset_of_subset_of_compl_ssubset (h_support hI'.1.1) (h_support hB.1) h₁I'B h₂I'B
         
         exact hI'B.not_subset (hI'.1.2 hB.1 hI'B.subset)
     
@@ -374,7 +375,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           ⟨h.2.1, h.2.2⟩
         rw [←inter_eq_self_of_subset_left h.1.2] at h₁
         have h₂ : (E \ I) ∩ X ⊂ (E \ B) ∩ X :=
-          compl_ssubset_inter (h_support hB.1) (h_support h.1.1) h₁
+          sorry
+          -- compl_ssubset_inter (h_support hB.1) (h_support h.1.1) h₁
         have h₃ : (E \ Bt) ∩ X ⊆ (E \ I) ∩ X :=
            inter_subset_inter_left _ (diff_subset_diff_right hBt.2)
         have h₄ : (E \ Bt) ∩ X ⊂ (E \ B) ∩ X :=
@@ -404,7 +406,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           ssubset_of_subset_of_ssubset h₇ h₄
 
         have h₉ : I' ⊂ (E \ B) :=
-          ssubset_of_subset_of_compl_ssubset' (dual_support I' hI'.1.1) (diff_subset _ _) hX h₆ h₈
+          sorry
+          -- ssubset_of_subset_of_compl_ssubset' (dual_support I' hI'.1.1) (diff_subset _ _) hX h₆ h₈
 
         exact h₉.not_subset (hI'.1.2 (dual_base_indep (dual_base_compl B hB)) h₉.subset)
       }
@@ -443,7 +446,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         exact tmp
       }
       have h₂ : (E \ B') ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) := 
-        compl_subset_inter h₁
+        sorry
+        -- compl_subset_inter h₁
       have h₃ : E \ B ∩ (E \ X) ∈ {I' | Indep' I' ∧ I' ⊆ E \ X} := by {
         refine' ⟨⟨E \ B, _, inter_subset_left _ _⟩, inter_subset_right _ _⟩
         have : Base (E \ (E \ B)) := by {
@@ -469,7 +473,10 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   })
   h_support
 
-
+lemma inter_union_disjoint {ι : Type _} {Es Is : ι → Set α}
+    (hEs : Pairwise (Disjoint on (fun i ↦ Es i))) (hIs : ∀ i, Is i ⊆ Es i) (j : ι) :
+    (⋃ i, Is i) ∩ Es j = Is j :=
+  sorry 
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
@@ -478,18 +485,30 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
     (fun I ↦ (I ⊆ ⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E))
     (by {
       rintro X hX
-      sorry
+      let Xs : ι → Set α := fun i ↦ X ∩ (Ms i).E
+      choose! Is hIs using (fun i ↦ exists_basis (Ms i) (Xs i))
+      use (⋃ i, Is i)
+      have hineq := inter_union_disjoint hEs (fun i ↦ (hIs i).left_subset_ground)
+      refine' ⟨⟨⟨iUnion_subset_iff.mpr (fun i ↦ (hIs i).left_subset_ground.trans
+        (subset_iUnion (fun i ↦ (Ms i).E) i)), fun i ↦ (by { rw [hineq i]; exact (hIs i).indep })⟩,
+         iUnion_subset (fun i ↦ (hIs i).subset.trans (inter_subset_left _ _))⟩, _⟩
+      . rintro B ⟨⟨hBEs, hBs⟩, hBX⟩ hB
+        have : B ⊆ ⋃ (i : ι), B ∩ (Ms i).E := by
+          { rw [←inter_iUnion]; exact fun e he ↦ ⟨he, hBEs he⟩ }
+        refine' this.trans (iUnion_mono (fun i ↦ _))
+        . have := inter_subset_inter_left (Ms i).E hB
+          rw [hineq i] at this
+          exact ((hIs i).eq_of_subset_indep (hBs i) this
+            (inter_subset_inter_left _ hBX)).symm.subset
     })
     (fun I J hJ hIJ ↦ ⟨hIJ.trans hJ.1,
       fun i ↦ (hJ.2 i).subset
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     sorry
     (fun _ hI ↦ hI.1)
--/
 
 
 /-
---- Def of dual goes here? 
 
 /-- If there is an absolute upper bound on the size of a set satisfying `P`, then the 
   maximal subset property always holds. -/
