@@ -65,11 +65,8 @@ def dual' (M : Matroid α) : Matroid α :=
           (by { rintro g; apply hI; rw [g]; convert hB''; simp [hB''.subset_ground] })
       obtain ⟨e, ⟨(heB'' : e ∉ _), heE⟩, heI⟩ :=
         exists_of_ssubset hssu
-
       refine' (em (x = e)).elim
-        (by {rintro rfl; exfalso; exact heB'' (hB''₁ ⟨⟨hB₁.1 hx.1, hx.2⟩, heI⟩)}) (fun hxe ↦ _)
-
-      use e
+        (by {rintro rfl; exfalso; exact heB'' (hB''₁ ⟨⟨hB₁.1 hx.1, hx.2⟩, heI⟩)}) (fun hxe ↦ ⟨e, _⟩)
       simp_rw [mem_diff, insert_subset_iff, and_iff_left heI, and_iff_right heE,
         and_iff_right ((diff_subset B₁ {x}).trans hB₁.1)]
       refine' ⟨by_contra (fun heX ↦ heB'' (hB''₁ ⟨_, heI⟩)), _⟩
@@ -98,11 +95,8 @@ def dual' (M : Matroid α) : Matroid α :=
               inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
               ←insert_eq] at this
           exact this
-        sorry
-        -- rw [←(hB₁.2).eq_exchange_of_exchange_subset hB'' ⟨heE, _⟩ this]
-        -- · exact hB''
-        -- intro heB₁
-        -- exact heI ⟨heB₁, Ne.symm hxe⟩ 
+        rw [diff_eq, mem_inter_iff, not_and', mem_compl_singleton_iff] at heI
+        rwa [←hB₁.2.eq_exchange_of_subset hB'' ⟨heE, heI (Ne.symm hxe)⟩ this]
     })
     (by {
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
@@ -499,7 +493,7 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
     (⋃ i, (Ms i).E)
     (fun I ↦ (I ⊆ ⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E))
     (by {
-      rintro X hX
+      rintro X -
       let Xs : ι → Set α := fun i ↦ X ∩ (Ms i).E
       choose! Is hIs using (fun i ↦ exists_basis (Ms i) (Xs i))
       use (⋃ i, Is i)
@@ -520,6 +514,8 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       fun i ↦ (hJ.2 i).subset
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     (by {
+
+      -- TODO: factor out aux
       have aux : ∀ I, I ⊆ ⋃ (i : ι), (Ms i).E → ((I ∈ maximals (· ⊆ ·)
         {I | (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E)) I}) ↔
         (∀ i, (Ms i).Base (I ∩ (Ms i).E)))
@@ -543,6 +539,7 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
         · have g : ∀ (i : ι), I ∩ (Ms i).E ∈ maximals (· ⊆ ·) {X | (Ms i).Indep X} :=
             fun i ↦ (by { rw [←setOf_base_eq_maximals_setOf_indep]; exact h i })
           exact this.mpr g
+      -- end of aux
 
       rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
       choose! Bs hBs using (fun i ↦ (hIs i).exists_base_subset_union_base
