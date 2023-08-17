@@ -481,10 +481,17 @@ lemma inter_union_disjoint {ι : Type _} {Es Xs : ι → Set α}
     (⋃ i, Xs i) ∩ Es j = Xs j := by
   ext x
   refine' ⟨_, fun hx ↦ ⟨(subset_iUnion (fun i ↦ Xs i) j) hx, hIs j hx⟩⟩
-  · intro ⟨hx, hxj⟩
-    obtain ⟨i, hi⟩ := mem_iUnion.mp hx
-    exact (em (i = j)).elim (by { rintro rfl; exact hi })
-            fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hIs i) hi) hxj })
+  intro ⟨hx, hxj⟩
+  obtain ⟨i, hi⟩ := mem_iUnion.mp hx
+  exact (em (i = j)).elim (by { rintro rfl; exact hi })
+          fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hIs i) hi) hxj })
+
+lemma maximal_union_iff {ι : Type _} (Is : ι → Set α) (hIs : Pairwise (Disjoint on Is))
+    (h_global : Set α → Prop) (h_local  : ι → Set α → Prop)
+    (h : h_global (iUnion Is) ↔ ∀ i, h_local i (Is i)) :
+    (iUnion Is) ∈ maximals (· ⊆ ·) { X | h_global X } ↔
+      ∀ i, (Is i) ∈ maximals (· ⊆ ·) { X | h_local i X } :=
+  sorry
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
@@ -513,26 +520,35 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       fun i ↦ (hJ.2 i).subset
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     (by {
-      rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
-
-      -- TODO: factor out: special case of a more general result on lattices
-      have aux : ∀ I, (I ∈ maximals (· ⊆ ·)
+      have aux : ∀ I, I ⊆ ⋃ (i : ι), (Ms i).E → ((I ∈ maximals (· ⊆ ·)
         {I | (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E)) I}) ↔
-        (∀ i, (Ms i).Base (I ∩ (Ms i).E))
-      · rintro I
-        refine' ⟨_, _⟩
-        · intro hI i
-          refine' base_iff_maximal_indep.mpr ⟨hI.1.2 i, _⟩
-          · intro Bi hBi hIBi
-            refine' hIBi.eq_or_ssubset.elim (fun h ↦ h) (fun h ↦ _)
-            . obtain ⟨e, he⟩ := exists_of_ssubset h
-              sorry
-        sorry
-      -- using base_iff_maximal_indep and Indep.subset
+        (∀ i, (Ms i).Base (I ∩ (Ms i).E)))
+      · rintro I hIE
+        have hI : I = iUnion (fun i ↦ (I ∩ (Ms i).E)) := by
+          ext e; exact ⟨fun he ↦ (by { rw [←inter_iUnion]; exact ⟨he, hIE he⟩ }),
+                        fun he ↦ (by { obtain ⟨i, hi⟩ := mem_iUnion.mp he; exact hi.1 })⟩
+        have hIs : Pairwise (Disjoint on (fun i ↦ (I ∩ (Ms i).E))) :=
+          fun i j hij ↦ Disjoint.mono (inter_subset_right _ _) (inter_subset_right _ _) (hEs hij)
+        have := maximal_union_iff (fun i ↦ (I ∩ (Ms i).E)) hIs
+          (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E))
+          (fun i I ↦ (Ms i).Indep I)
+          ⟨fun ⟨_, h⟩ ↦ (by {simp_rw [inter_union_disjoint hEs
+            (fun i ↦ inter_subset_right I (Ms i).E)] at h; exact h}),
+          fun h ↦ ⟨iUnion_mono fun i ↦ inter_subset_right _ _,
+          (by { simp_rw [inter_union_disjoint hEs (fun i ↦ inter_subset_right I (Ms i).E)]; exact h })⟩⟩
+        rw [←hI] at this
+        refine' ⟨fun h i ↦
+          (by { have := this.mp h i; rwa [←setOf_base_eq_maximals_setOf_indep] at this }),
+          fun h ↦ _⟩
+        · have g : ∀ (i : ι), I ∩ (Ms i).E ∈ maximals (· ⊆ ·) {X | (Ms i).Indep X} :=
+            fun i ↦ (by { rw [←setOf_base_eq_maximals_setOf_indep]; exact h i })
+          exact this.mpr g
 
+      rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
       choose! Bs hBs using (fun i ↦ (hIs i).exists_base_subset_union_base
-                                            ((aux I').mp ⟨⟨hI'E, hI's⟩, hI'max⟩ i))
-      refine' ⟨⋃ i, Bs i, (aux (⋃ i, Bs i)).mpr fun i ↦
+                                            (((aux I' hI'E).mp ⟨⟨hI'E, hI's⟩, hI'max⟩) i))
+      refine' ⟨⋃ i, Bs i, (aux (⋃ i, Bs i) (iUnion_mono fun i ↦ (hBs i).1.subset_ground)).mpr
+        fun i ↦
         (by { rw [inter_union_disjoint hEs (fun i ↦ (hBs i).1.subset_ground)]; exact (hBs i).1 }),
         _, _⟩
       · have : I ⊆ ⋃ i, I ∩ (Ms i).E :=
