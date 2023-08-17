@@ -102,14 +102,11 @@ def dual' (M : Matroid α) : Matroid α :=
       rintro X hX I' ⟨Bt, ⟨hBt, hI'B⟩⟩ hI'X
 
       set B := M.E \ Bt
-      have : Bt = M.E \ B :=
-        (diff_diff_cancel_left hBt.1).symm
-      rw [this] at hI'B; clear this
+      rw [(diff_diff_cancel_left hBt.1).symm] at hI'B
       
       obtain ⟨-, hB⟩ := hBt
       have hI'E := hI'B.trans (diff_subset M.E B)
-      have hI'B : Disjoint I' B :=
-        (subset_diff.mp hI'B).2  
+      have hI'B := (subset_diff.mp hI'B).2  
       
       obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
       obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
@@ -123,9 +120,7 @@ def dual' (M : Matroid α) : Matroid α :=
         refine' disjoint_of_subset_right hB'IB _
         rw [disjoint_union_right, and_iff_left hI'B]
         exact disjoint_of_subset hI'X hI.subset disjoint_sdiff_right
-
       simp only [mem_setOf_eq, subset_inter_iff, and_imp, forall_exists_index]
-
       rintro J Bt h₁Bt hB'' hJBt _ hJX hssJ
 
       set B'' := M.E \ Bt
@@ -167,8 +162,8 @@ def dual' (M : Matroid α) : Matroid α :=
       exact heX (hJX heJ)
     })
     (fun B hB ↦ hB.1)
-
 /- end of dual matroid -/
+
 
 def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
@@ -180,32 +175,19 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   matroid_of_indep E Indep
   (by {
     obtain ⟨I, ⟨hI, -⟩⟩ := h_exists_maximal_indep_subset ∅ (empty_subset _)
-    rw [←subset_empty_iff.mp hI.2]
-    exact hI.1
+    rw [←subset_empty_iff.mp hI.2]; exact hI.1
   })
   (fun I J hI hIJ ↦ h_subset hI hIJ)
   (by {
     rintro I B hI h'I hB
     obtain ⟨B', hB'⟩ := h_basis hI hB
-    obtain ⟨x, hx⟩ : ∃ x, x ∈ B' \ I := by {
-      simp_rw [mem_diff]
-      by_contra' h
-      rw [←subset_def] at h
-      have : I = B' := subset_antisymm (hB'.2.1) (h)
-      subst this
-      exact h'I hB'.1
-    }
-    have hxB : x ∈ B := by
-      have := hB'.2.2 hx.1 
-      rw [mem_union] at this
-      rcases this with g | g
-      · { exfalso
-          exact hx.2 g }
-      · { exact g }
-    have : insert x I ⊆ B' := by
-      rw [insert_eq, union_subset_iff, singleton_subset_iff]
-      exact ⟨hx.1, hB'.2.1⟩
-    exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
+    have hssu : I ⊂ B' :=
+      ssubset_iff_subset_ne.mpr ⟨hB'.2.1, fun h ↦ (by { rw [h] at h'I; exact h'I hB'.1 })⟩
+    obtain ⟨x, hx⟩ := exists_of_ssubset hssu
+    have hxB : x ∈ B :=
+      ((mem_union _ _ _).mp (hB'.2.2 hx.1)).elim (fun g ↦ (by {exfalso; exact hx.2 g})) (fun g ↦ g)
+    exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1
+      (by { rw [insert_eq, union_subset_iff, singleton_subset_iff]; exact ⟨hx.1, hB'.2.1⟩ })⟩
   })
   (by {
     let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I }
@@ -527,18 +509,13 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
           fun i j hij ↦ Disjoint.mono (inter_subset_right _ _) (inter_subset_right _ _) (hEs hij)
         have := maximal_union_iff (fun i ↦ (I ∩ (Ms i).E)) hIs
           (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E))
-          (fun i I ↦ (Ms i).Indep I)
-          ⟨fun ⟨_, h⟩ ↦ (by {simp_rw [inter_union_disjoint hEs
+          (fun i I ↦ (Ms i).Indep I) ⟨fun ⟨_, h⟩ ↦ (by {simp_rw [inter_union_disjoint hEs
             (fun i ↦ inter_subset_right I (Ms i).E)] at h; exact h}),
           fun h ↦ ⟨iUnion_mono fun i ↦ inter_subset_right _ _,
           (by { simp_rw [inter_union_disjoint hEs (fun i ↦ inter_subset_right I (Ms i).E)]; exact h })⟩⟩
         rw [←hI] at this
-        refine' ⟨fun h i ↦
-          (by { have := this.mp h i; rwa [←setOf_base_eq_maximals_setOf_indep] at this }),
-          fun h ↦ _⟩
-        · have g : ∀ (i : ι), I ∩ (Ms i).E ∈ maximals (· ⊆ ·) {X | (Ms i).Indep X} :=
-            fun i ↦ (by { rw [←setOf_base_eq_maximals_setOf_indep]; exact h i })
-          exact this.mpr g
+        exact ⟨fun h i ↦ (by { have := this.mp h i; rwa [←setOf_base_eq_maximals_setOf_indep] at this }),
+          fun h ↦ this.mpr (fun i ↦ (by { rw [←setOf_base_eq_maximals_setOf_indep]; exact h i }))⟩
       -- end of aux
 
       rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
