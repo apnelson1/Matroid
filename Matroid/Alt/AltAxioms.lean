@@ -324,7 +324,7 @@ lemma inter_union_disjoint {ι : Type _} {Es Xs : ι → Set α}
           fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hIs i) hi) hxj })
 
 lemma maximal_union_iff
-    {ι : Type _}
+    {ι : Type _} [DecidableEq ι]
     (Es : ι → Set α)
     (hEs : Pairwise (Disjoint on Es))
     (Is : ι → Set α)
@@ -332,13 +332,37 @@ lemma maximal_union_iff
     (h_global : Set α → Prop)
     (h_local  : ι → Set α → Prop)
     (h : ∀ (Js : ι → Set α), h_global (iUnion Js) ↔ ∀ i, h_local i (Js i)) :
-    iUnion Is ∈ maximals (· ⊆ ·) { X | h_global X } ↔
+    ⋃ i, Is i  ∈ maximals (· ⊆ ·) { X | h_global X } ↔
         ∀ i, Is i ∈ maximals (· ⊆ ·) { X | h_local i X } := by
+  -- classical
   refine' ⟨_, _⟩
   · rintro h
-    
+    have i : ι := sorry  
+    have X : Set α := ∅  
+    set Js : ι → Set α := fun j ↦ if j = i then X else Is i
     sorry
   sorry
+
+-- lemma maximal_union_iff'
+--     {ι : Type _}
+--     (Es : ι → Set α)
+--     (hEs : Pairwise (Disjoint on Es))
+--     (I : Set α)
+--     -- (Is : ι → Set α)
+--     -- (hIs : ∀ i, Is i ⊆ Es i)
+--     -- (h_global : Set α → Prop)
+--     (P  : ι → Set α → Prop) 
+--     (hP : ∀ i X, P i X → X ⊆ Es i) :
+--     -- (h : ∀ (Js : ι → Set α), h_global (iUnion Js) ↔ ∀ i, h_local i (Js i)) :
+--     I ∈ maximals (· ⊆ ·) { X | ∀ i, P i (X ∩ Es i) } ↔
+--         ∀ i, I ∩ Es i ∈ maximals (· ⊆ ·) { X | P i X } := by
+--   refine' ⟨_, _⟩
+--   · rintro h
+    
+--     sorry
+--   sorry
+
+
 
 
 -- lemma maximal_union_iff {ι : Type _}
@@ -388,7 +412,7 @@ def directSum {ι : Type _} (Ms : ι → Matroid α)
       fun i ↦ (hJ.2 i).subset
       (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
     (by {
-
+      
       -- TODO: factor out aux
       have aux : ∀ I, I ⊆ ⋃ (i : ι), (Ms i).E → ((I ∈ maximals (· ⊆ ·)
         {I | (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E)) I}) ↔
