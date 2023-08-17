@@ -313,7 +313,6 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   h_support
 
 
-
 lemma inter_union_disjoint {ι : Type _} {Es Xs : ι → Set α}
     (hEs : Pairwise (Disjoint on (fun i ↦ Es i))) (hIs : ∀ i, Xs i ⊆ Es i) (j : ι) :
     (⋃ i, Xs i) ∩ Es j = Xs j := by
@@ -324,12 +323,43 @@ lemma inter_union_disjoint {ι : Type _} {Es Xs : ι → Set α}
   exact (em (i = j)).elim (by { rintro rfl; exact hi })
           fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hIs i) hi) hxj })
 
-lemma maximal_union_iff {ι : Type _} (Is : ι → Set α) (hIs : Pairwise (Disjoint on Is))
-    (h_global : Set α → Prop) (h_local  : ι → Set α → Prop)
-    (h : h_global (iUnion Is) ↔ ∀ i, h_local i (Is i)) :
-    (iUnion Is) ∈ maximals (· ⊆ ·) { X | h_global X } ↔
-      ∀ i, (Is i) ∈ maximals (· ⊆ ·) { X | h_local i X } :=
+lemma maximal_union_iff
+    {ι : Type _}
+    (Es : ι → Set α)
+    (hEs : Pairwise (Disjoint on Es))
+    (Is : ι → Set α)
+    (hIs : ∀ i, Is i ⊆ Es i)
+    (h_global : Set α → Prop)
+    (h_local  : ι → Set α → Prop)
+    (h : ∀ (Js : ι → Set α), h_global (iUnion Js) ↔ ∀ i, h_local i (Js i)) :
+    iUnion Is ∈ maximals (· ⊆ ·) { X | h_global X } ↔
+        ∀ i, Is i ∈ maximals (· ⊆ ·) { X | h_local i X } := by
+  refine' ⟨_, _⟩
+  · rintro h
+    
+    sorry
   sorry
+
+
+-- lemma maximal_union_iff {ι : Type _}
+--     (Is : ι → Set α)
+--     (hIs : Pairwise (Disjoint on Is))
+--     (h_global : Set α → Prop)
+--     (h_local  : ι → Set α → Prop)
+--     (h : ∀ (Js : ι → Set α), h_global (iUnion Js) ↔ ∀ i, h_local i (Js i))
+--     (Js : ι → Set α) :
+--     iUnion Js ∈ maximals (· ⊆ ·) { X | h_global X } ↔
+--       ∀ i, Js i ∈ maximals (· ⊆ ·) { X | X ⊆ Is i ∧ h_local i X } := by
+--   refine' ⟨_, _⟩
+--   · rintro hiU i
+--     refine' ⟨⟨sorry, (h Js).mp hiU.1 i⟩, _⟩
+--     · rintro Bi hBi hJsiBi
+--       by_contra' g
+--       have hssu : Js i ⊂ Bi := ⟨hJsiBi, g⟩
+
+--       have := (iUnion Js) ∪ Bi
+--       sorry
+--   sorry
 
 def directSum {ι : Type _} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
