@@ -398,8 +398,8 @@ def directSum {ι : Type _} [DecidableEq ι] (Ms : ι → Matroid α)
       have aux : ∀ I, I ⊆ ⋃ (i : ι), (Ms i).E → ((I ∈ maximals (· ⊆ ·)
         {I | (fun I ↦ I ⊆ ⋃ (i : ι), (Ms i).E ∧ ∀ (i : ι), (Ms i).Indep (I ∩ (Ms i).E)) I}) ↔
         (∀ i, (Ms i).Base (I ∩ (Ms i).E)))
-      · classical
-        refine' fun I hI ↦ ⟨fun h i ↦ _, _⟩
+      · refine' fun I hIE ↦ ⟨fun h i ↦ _,
+                             fun h ↦ ⟨⟨hIE, fun i ↦ (h i).indep⟩, fun B ⟨hBE, hBs⟩ hIB ↦ _⟩⟩
         · rw [base_iff_maximal_indep]
           refine' ⟨h.1.2 i, fun X hX hIiX ↦ _⟩; by_contra' g
           set Js : ι → Set α := fun j ↦ if j = i then X else I ∩ (Ms j).E with heqJs
@@ -418,7 +418,7 @@ def directSum {ι : Type _} [DecidableEq ι] (Ms : ι → Matroid α)
             exact h.1.2 j
 
           have hIJ : I ⊆ iUnion Js
-          · rw [eq_iUnion_inter hI]
+          · rw [eq_iUnion_inter hIE]
             refine' iUnion_mono fun j ↦ _
             split_ifs with hj
             · rw [hj]; exact hIiX
@@ -429,8 +429,9 @@ def directSum {ι : Type _} [DecidableEq ι] (Ms : ι → Matroid α)
           have := inter_subset_inter_left (Ms i).E this
           rw [inter_eq_self_of_subset_left hX.subset_ground] at this
           exact g (subset_antisymm hIiX this)
-
-        sorry
+        rw [eq_iUnion_inter hBE, eq_iUnion_inter hIE]
+        exact iUnion_mono fun i ↦
+              ((h i).eq_of_subset_indep (hBs i) (inter_subset_inter_left (Ms i).E hIB)).symm.subset
       -- end of aux
 
       rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
