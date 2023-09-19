@@ -6,7 +6,7 @@ namespace Matroid
 
 variable {M : Matroid α}
 
-def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_disj: Disjoint S M.E) : Matroid α := 
+def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α := 
   matroid_of_indep (M.E ∪ S) 
   (fun I ↦ (Disjoint S I ∧ M.Indep I) ∨ (e ∉ I ∧ ∃ f ∈ I, f ∈ S ∧ Disjoint S (I \ {f}) ∧ M.Indep (insert e (I \ {f}))))
   (by
@@ -35,37 +35,72 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_disj: Disjoint S M.E) 
       apply subset_union_of_subset_right (subset_diff_singleton Isub fmI)
   )   
   (by
-    rintro I X ⟨hIE, B, hB, hIB⟩ hI_not_max hX_max
+    rintro I X (⟨I_disj, I_ind⟩ | h_I) I_not_max X_max
+    dsimp
+    rw [mem_maximals_setOf_iff] at I_not_max X_max
+    push_neg at I_not_max
+    have I_nB : ¬ M.Base I
+    · sorry 
+    obtain ⟨(⟨X_disj, X_ind⟩ | ⟨e_nX, f, f_X, f_S, f_disj, f_ind⟩), X_max⟩ := X_max
+    have X_B : M.Base X
+    · sorry
+    obtain ⟨e, e_Xdiff, e_Ind⟩ := Indep.exists_insert_of_not_base I_ind I_nB X_B
+    use e
+    refine ⟨e_Xdiff, Or.inl ⟨?_, e_Ind⟩⟩
+    apply Disjoint.union_right _ I_disj
+    apply disjoint_of_subset_right _ X_disj
+    intro a (h_a : a = e)
+    rw [h_a]
+    apply mem_of_mem_diff e_Xdiff
+    have X_B: M.Base (insert e (X \ {f}))
+    · sorry
+    obtain ⟨x, x_Xdiff, x_Ind⟩ := Indep.exists_insert_of_not_base I_ind I_nB X_B
+    by_cases x_eq_e : x=e
+    have e_nI : e ∉ I
+    · rw [←x_eq_e]
+      exact ((Set.mem_diff _).2 x_Xdiff).2
+    use f
+    rw [mem_diff]
+    refine ⟨⟨f_X, ?_⟩, ?_⟩
+    apply disjoint_left.1 I_disj f_S
+    right
+    constructor
+    rw [mem_insert_iff]
+    push_neg
+    refine ⟨?_, e_nI⟩
+    intro e_eq_f
+    apply e_nX
+    rw [e_eq_f]
+    apply f_X
+    use f
+    refine ⟨Set.mem_insert _ _, f_S, ?_⟩
+    
+    /-
     dsimp
     rw [mem_maximals_setOf_iff] at hI_not_max hX_max
-    obtain ⟨(⟨XdisjI, X_Ind⟩ | finx), hX_max⟩ := hX_max
-    · push_neg at hI_not_max
-      have I_ind : M.Indep I
+    push_neg at hI_not_max
+    have I_ind : M.Indep I
       · use B
-      have X_b : M.Base X
-      · apply Indep.base_of_maximal X_Ind
-        intro J J_Ind XsubJ
-        apply hX_max (Or.inl ⟨_, J_Ind⟩) XsubJ
-        exact disjoint_of_subset_right (Indep.subset_ground J_Ind) S_disj
-      have I_ssub_B : I ⊂ B
-      · apply ssubset_iff_subset_ne.2 ⟨hIB, _⟩
-        intro I_eq_B
-        obtain ⟨R, (⟨fnotinR, Rind⟩ | finR), hR₁, hR₂⟩ := hI_not_max (Or.inl ⟨hIE, I_ind⟩)
-        apply Indep.not_dep Rind
-        apply Base.dep_of_ssubset hB
-        rw [←I_eq_B]
-        apply ssubset_iff_subset_ne.2 ⟨hR₁, hR₂⟩
-        obtain ⟨e_not_mem_I, f, finR, finS, fdisj, fIndep⟩ := finR
-        have IssubefR : I ⊂ insert e (R \ {f})
-        have IsubfR : I ⊆ (R \ {f})
-        · apply subset_diff_singleton hR₁ _
-          apply disjoint_left.1 _ finS
-          apply disjoint_of_subset_right (Indep.subset_ground I_ind) S_disj
-        apply ssubset_iff_subset_ne.2 ⟨_, _⟩
-        apply subset_union_of_subset_right IsubfR
-        apply ne_of_ssubset
-        apply ssubset_of_subset_of_ssubset IsubfR (ssubset_insert _)
-        rw []
+    have I_ssub_B : I ⊂ B
+    · apply ssubset_iff_subset_ne.2 ⟨hIB, _⟩
+      intro I_eq_B
+      obtain ⟨R, (⟨fnotinR, Rind⟩ | finR), hR₁, hR₂⟩ := hI_not_max (Or.inl ⟨hIE, I_ind⟩)
+      apply Indep.not_dep Rind
+      apply Base.dep_of_ssubset hB
+      rw [←I_eq_B]
+      apply ssubset_iff_subset_ne.2 ⟨hR₁, hR₂⟩
+      obtain ⟨e_not_mem_I, f, finR, finS, fdisj, fIndep⟩ := finR
+      have hI : M.Base I
+      · rw [I_eq_B]
+        exact hB
+      have rfind: M.Indep (R \ {f})
+      · apply Indep.subset fIndep (subset_union_right _ _)
+      have rdep: M.Dep R
+      · apply Base.dep_of_ssubset I (ssubset_iff_subset_ne.2 ⟨hR₁, hR₂⟩)
+    
+    obtain ⟨(⟨XdisjI, X_Ind⟩ | finx), hX_max⟩ := hX_max
+    -/
+        
 
 
       /-by_cases xb : X = B
