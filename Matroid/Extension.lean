@@ -65,7 +65,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_disj: Disjoint S M.E) 
         apply subset_union_of_subset_right IsubfR
         apply ne_of_ssubset
         apply ssubset_of_subset_of_ssubset IsubfR (ssubset_insert _)
-        
+        rw []
 
 
       /-by_cases xb : X = B
