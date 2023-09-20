@@ -35,7 +35,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α :=
       apply subset_union_of_subset_right (subset_diff_singleton Isub fmI)
   )   
   (by
-    rintro I X (⟨I_disj, I_ind⟩ | h_I) I_not_max X_max
+    rintro I X (⟨I_disj, I_ind⟩ | ⟨e_nI, f, f_I, f_S, f_disj, f_ind⟩) I_not_max X_max
     dsimp
     rw [mem_maximals_setOf_iff] at I_not_max X_max
     push_neg at I_not_max
@@ -73,8 +73,63 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α :=
     rw [e_eq_f]
     apply f_X
     use f
-    refine ⟨Set.mem_insert _ _, f_S, ?_⟩
+    have fif_eq: (insert f I) \ {f} = I \ {f}
+    apply insert_diff_of_mem _ (mem_singleton _)
+    refine ⟨Set.mem_insert _ _, f_S, ?_, ?_⟩
+    rw [fif_eq]
+    apply disjoint_of_subset_right _ I_disj
+    apply diff_subset _ _
+    apply Indep.subset x_Ind
+    rw [x_eq_e, fif_eq]
+    apply insert_subset_insert (diff_subset _ _)
+    use x
+    rw [mem_diff] at *
+    constructor
+    obtain h := mem_of_mem_insert_of_ne x_Xdiff.1 x_eq_e
+    exact ⟨mem_of_mem_diff h, x_Xdiff.2⟩
+    left
+    refine ⟨?_, x_Ind⟩
+    apply Disjoint.union_right
+    apply disjoint_singleton_right.2
+    apply disjoint_right.1 f_disj
+    apply mem_of_mem_insert_of_ne x_Xdiff.1 x_eq_e
+    exact I_disj
+    -- part 2
+    dsimp
+    rw [mem_maximals_setOf_iff] at I_not_max X_max
+    have I_nB : ¬ M.Base (insert e (I \ {f}))
+    · sorry 
+    have I_nB₂ : ¬ M.Base I
+    · sorry
+    obtain ⟨(⟨X_disj, X_ind⟩ | ⟨e_nX, f, f_X, f_S, f_disj, f_ind⟩), X_max⟩ := X_max
+    have e_ne_f: e ≠ f
+    · intro h_f
+      apply e_nI
+      rw [h_f]
+      exact f_I
+    have X_B : M.Base X
+    · sorry
+    obtain ⟨x, x_Xdiff, x_ind⟩ := Indep.exists_insert_of_not_base f_ind I_nB X_B
+    by_cases x_eq_f : x = f
+    rw [x_eq_f] at x_ind
+    have I_ind : M.Indep I
+    · apply Indep.subset x_ind    
+      rw [insert_def]
+      intro y h_y
+      by_cases y_f : y = f
+      exact (Or.inl y_f)
+      right
+      apply mem_insert_of_mem
+      exact ⟨h_y, y_f⟩
+    obtain ⟨y, y_Xdiff, y_ind⟩ := Indep.exists_insert_of_not_base I_ind I_nB₂ X_B
+    use y
+    refine ⟨y_Xdiff, Or.inl ⟨?_, y_ind⟩⟩
     
+
+
+
+
+
     /-
     dsimp
     rw [mem_maximals_setOf_iff] at hI_not_max hX_max
