@@ -6,20 +6,23 @@ namespace Matroid
 
 variable {M : Matroid α}
 
-def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α := 
+def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): Matroid α := 
   matroid_of_indep (M.E ∪ S) 
-  (fun I ↦ (Disjoint S I ∧ M.Indep I) ∨ (e ∉ I ∧ ∃ f ∈ I, f ∈ S ∧ Disjoint S (I \ {f}) ∧ M.Indep (insert e (I \ {f}))))
+  (fun I ↦ M.Indep I ∨ (e ∉ I ∧ ∃ f ∈ I, f ∈ S ∧ Disjoint S (I \ {f}) ∧ M.Indep (insert e (I \ {f}))))
+  ( Or.inl M.empty_indep )
   (by
-    left
-    refine ⟨disjoint_empty S, M.empty_indep⟩
-  )
-  (by
-    rintro I I' (⟨hI, hIY⟩ | ⟨e_ni_I, f, f_I, f_s, I_d, h_Indep⟩) Isub
-    left
-    refine' ⟨_, Indep.subset hIY Isub⟩
-    exact disjoint_of_subset_right Isub hI
-    --exact not_mem_subset Isub hI
+    rintro I I' (hIY | ⟨e_ni_I, f, f_I, f_S, I_d, h_Indep⟩) Isub
+    exact (Or.inl (Indep.subset hIY Isub))
     by_cases fmI: f ∈ I
+    right
+    refine' ⟨not_mem_subset Isub e_ni_I , _⟩
+    use f
+    refine' ⟨fmI, f_S, _, Indep.subset h_Indep _⟩
+    apply disjoint_of_subset_right (diff_subset_diff_left Isub) I_d
+    apply insert_subset_insert (diff_subset_diff_left Isub)
+    apply Or.inl (Indep.subset h_Indep _)
+    apply subset_union_of_subset_right (subset_diff.2 ⟨Isub, _⟩)
+    rwa [disjoint_singleton_right]
     · right
       refine ⟨not_mem_subset Isub e_ni_I, ?_⟩
       use f
@@ -49,8 +52,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α :=
     refine ⟨e_Xdiff, Or.inl ⟨?_, e_Ind⟩⟩
     apply Disjoint.union_right _ I_disj
     apply disjoint_of_subset_right _ X_disj
-    intro a (h_a : a = e)
-    rw [h_a]
+    apply singleton_subset_iff.2 _
     apply mem_of_mem_diff e_Xdiff
     have X_B: M.Base (insert e (X \ {f}))
     · sorry
@@ -124,7 +126,22 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) : Matroid α :=
     obtain ⟨y, y_Xdiff, y_ind⟩ := Indep.exists_insert_of_not_base I_ind I_nB₂ X_B
     use y
     refine ⟨y_Xdiff, Or.inl ⟨?_, y_ind⟩⟩
-    
+    apply disjoint_of_subset_right (y_ind.subset_ground) S_j
+    use x
+    refine' ⟨_, _⟩
+    rw [mem_diff] at x_Xdiff ⊢
+    refine' ⟨x_Xdiff.1, _⟩
+    intro x_I
+    apply x_Xdiff.2
+    apply mem_union_right
+    rw [mem_diff]
+    refine' ⟨x_I, _⟩
+    rw [mem_singleton_iff]
+    exact x_eq_f
+    left
+
+
+
 
 
 
