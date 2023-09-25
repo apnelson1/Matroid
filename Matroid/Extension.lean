@@ -144,8 +144,8 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
       apply Indep.subset_ground (Indep.subset x_ind _)
       rw [singleton_subset_iff]
       exact mem_insert x _
+    refine' ⟨⟨x_in_x, x_notin_I⟩, _⟩
     
-      
 
 
 
