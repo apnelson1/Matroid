@@ -234,9 +234,26 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
     exact (ne_of_mem_of_not_mem f_S (disjoint_right.1 S_j x_in_E)).symm
 
   )
-  (
-    intro X X_ground
+  (by
+    rintro X X_ground I (I_indep | ⟨e_nI, f, f_S, f_I, f_disj, f_ind⟩) I_sub_X
+    rw [nonempty_def]
+    obtain h := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) (I_indep.subset (inter_subset_left I M.E))
+    obtain ⟨Y, h_Y⟩ := h (inter_subset_inter_left _ I_sub_X)
+    rw [mem_maximals_iff] at h_Y
+    obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
+    by_cases X_disj : Disjoint X S
     
+
+
+
+
+
+    
+
+
+
+
+
   )
    sorry
 
