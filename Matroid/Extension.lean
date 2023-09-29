@@ -242,10 +242,12 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
     obtain ⟨Y, h_Y⟩ := h (inter_subset_inter_left _ I_sub_X)
     simp_rw [mem_maximals_iff] at h_Y ⊢
     obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
+    have I_sub_Y : I ⊆ Y
+    · rwa [←(inter_eq_left_iff_subset.2 I_indep.subset_ground)]
     by_cases X_disj : Disjoint X S
     use Y    
     refine' ⟨⟨Or.inl Y_ind, _, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
-    rwa [←(inter_eq_left_iff_subset.2 I_indep.subset_ground)]
+    exact I_sub_Y
     rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_disj, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
     apply Y_max ⟨y_ind, _⟩ Y_sub_y
     exact ⟨subset_trans (inter_subset_left I M.E) I_sub_y, subset_inter y_sub_X (y_ind.subset_ground)⟩
@@ -263,8 +265,22 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
     exact mem_insert e Y
     use f
     refine' ⟨mem_insert f Y, f_S, _⟩
+    rw [insert_diff_self_of_not_mem (disjoint_left.1 (disjoint_of_subset_right (Y_ind.subset_ground) S_j) f_S)]
+    exact ⟨disjoint_of_subset_right (Y_ind.subset_ground) S_j, eY_ind.1⟩
+    refine ⟨subset_trans I_sub_Y (subset_insert f Y), insert_subset f_X (subset_trans Y_sub_X' (inter_subset_left X M.E))⟩
+    rintro y ⟨(y_ind | ⟨e_ny, l, h_l⟩), I_sub_y, y_sub_X⟩ fY_sub_y
+    have f_ground : f ∈ M.E
+    · rw [←singleton_subset_iff]
+      apply (y_ind.subset _).subset_ground
+      rw [singleton_subset_iff]
+      exact fY_sub_y (mem_insert f Y)
+    exact absurd f_ground (disjoint_left.1 S_j f_S)
     
 
+
+    
+    --refine' ⟨disjoint_of_subset_right S_j _, insert_subset f_X (subset_trans Y_sub_X' (inter_subset_left X M.E))⟩
+    
 
 
 
