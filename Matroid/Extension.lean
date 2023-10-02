@@ -298,6 +298,6 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
    sorry
 
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : 
-    M = ParallelExt (M ⟍ f) e f := 
+    M = ParallelExt (M ⟍ f) e {f} := 
   sorry 
   
