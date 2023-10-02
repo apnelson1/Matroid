@@ -109,7 +109,7 @@ theorem Basis.to_delete (h : M.Basis I X) (hX : Disjoint X D) : (M ⟍ D).Basis 
 @[simp] theorem delete_cl_eq (M : Matroid α) (D X : Set α) : (M ⟍ D).cl X = M.cl (X \ D) \ D := by 
   rw [←restrict_compl, restrict_cl_eq', sdiff_sdiff_self, bot_eq_empty, union_empty, 
     diff_eq, inter_comm M.E, ←inter_assoc X, ←diff_eq, ←cl_eq_cl_inter_ground, 
-    ←inter_assoc, ←diff_eq, inter_eq_left_iff_subset]
+    ←inter_assoc, ←diff_eq, inter_eq_left]
   exact (diff_subset _ _).trans (M.cl_subset_ground _)
 
 theorem delete_loops_eq (M : Matroid α) (D : Set α) : (M ⟍ D).cl ∅ = M.cl ∅ \ D := by
@@ -347,8 +347,7 @@ theorem Indep.of_contract (hI : (M ⟋ C).Indep I) : M.Indep I := by
       ⟨h.1, fun h' ↦ h.2 (hM.symm.subset ⟨h', M.cl_subset_ground _ h.1⟩).1⟩⟩
 
 theorem contract_loops_eq : (M ⟋ C).cl ∅ = M.cl C \ C := by
-  simp_rw [Set.ext_iff, ← loop_iff_mem_cl_empty, contract_loop_iff_mem_cl, iff_self_iff,
-    imp_true_iff]
+  simp [Set.ext_iff, ← loop_iff_mem_cl_empty, contract_loop_iff_mem_cl]
 
 @[simp] theorem contract_cl_eq (M : Matroid α) (C X : Set α) :
     (M ⟋ C).cl X = M.cl (X ∪ C) \ C := by
@@ -503,7 +502,7 @@ theorem contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     subset_antisymm_iff, subset_diff, diff_subset_iff, and_iff_left disjoint_sdiff_left, 
     and_iff_right (M.cl_subset_ground _ ), 
     and_iff_right (subset_union_of_subset_right (M.cl_subset_ground _) C)]
-  rw [←inter_eq_left_iff_subset (s := M.E), inter_distrib_left, 
+  rw [←inter_eq_left (s := M.E), inter_distrib_left, 
     inter_eq_self_of_subset_right (M.cl_subset_ground _), subset_antisymm_iff, union_subset_iff, 
     and_iff_right (inter_subset_left _ _), union_eq_self_of_subset_left (s := M.E ∩ C), 
     and_iff_right (M.cl_subset_ground _), Iff.comm, ←cl_union_cl_right_eq, ←cl_eq_cl_inter_ground, 

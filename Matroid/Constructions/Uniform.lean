@@ -110,7 +110,7 @@ theorem unif_on_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
     iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true, 
      ←encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff, 
     and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_distrib_left, 
-    and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left_iff_subset, 
+    and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left, 
     subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
   · exact ((tsub_le_self).trans_lt (WithTop.coe_lt_top k)).ne
   exact WithTop.coe_ne_top

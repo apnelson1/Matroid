@@ -84,12 +84,12 @@ def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α�
     (e₂₃ : Iso M₂ M₃) : Iso M₁ M₃ where 
   toLocalEquiv := e₁₂.toLocalEquiv.trans e₂₃.toLocalEquiv
   source_eq' := by 
-  { rw [trans_source, e₁₂.source_eq', e₂₃.source_eq', ←e₁₂.target_eq', 
-      inter_eq_left_iff_subset, ←e₁₂.source_eq']
+  { rw [trans_source, e₁₂.source_eq', e₂₃.source_eq', ←e₁₂.target_eq', inter_eq_left, 
+    ←e₁₂.source_eq']
     exact source_subset_preimage_target _ }
   target_eq' := by 
-  { rw [trans_target, e₁₂.target_eq', e₂₃.target_eq', inter_eq_left_iff_subset, 
-      ←e₂₃.source_eq', ←e₂₃.target_eq']
+  { rw [trans_target, e₁₂.target_eq', e₂₃.target_eq', inter_eq_left, ←e₂₃.source_eq', 
+    ←e₂₃.target_eq']
     exact target_subset_preimage_source _ }
   setOf_base_eq' := by rw [e₂₃.setOf_base_eq', e₁₂.setOf_base_eq']; ext B; simp [image_image]
 
