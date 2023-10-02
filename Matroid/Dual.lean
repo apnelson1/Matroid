@@ -153,17 +153,18 @@ theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B 
   simp_rw [dual_dep_iff_forall, insert_subset_iff, and_iff_right he.1.1, 
     and_iff_left ((inter_subset_left _ _).trans (diff_subset _ _))]
   refine' fun B' hB' ↦ by_contra (fun hem ↦ _)
-  simp_rw [nonempty_iff_ne_empty, not_ne_iff, ←union_singleton, inter_distrib_right, 
-    union_empty_iff, singleton_inter_eq_empty, diff_eq, inter_comm _ M.E, 
-    ←inter_inter_distrib_left, ← inter_assoc, inter_right_comm, 
-    inter_eq_self_of_subset_right hB'.subset_ground, ←diff_eq, diff_eq_empty] at hem
+  rw [nonempty_iff_ne_empty, not_ne_iff, ←union_singleton, diff_inter_diff, 
+   inter_distrib_right, union_empty_iff, singleton_inter_eq_empty, diff_eq, 
+   inter_right_comm, inter_eq_self_of_subset_right hB'.subset_ground, ←diff_eq, 
+   diff_eq_empty] at hem
   obtain ⟨f, hfb, hBf⟩ := hB.exchange hB' ⟨he.2, hem.2⟩ 
   
   have hi : M.Indep (insert f (B ∩ X))
   · refine' hBf.indep.subset (insert_subset_insert _)
     simp_rw [subset_diff, and_iff_right (inter_subset_left _ _), disjoint_singleton_right, 
       mem_inter_iff, iff_false_intro he.1.2, and_false]
-  exact hfb.2 (hBX.mem_of_insert_indep (hem.1 hfb) hi).1 
+  exact hfb.2 (hBX.mem_of_insert_indep (Or.elim (hem.1 hfb.1) (False.elim ∘ hfb.2) id) hi).1 
+  
 
 theorem Base.inter_basis_iff_compl_inter_basis_dual (hB : M.Base B) (hX : X ⊆ M.E := by aesop_mat): 
     M.Basis (B ∩ X) X ↔ M﹡.Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by

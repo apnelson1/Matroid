@@ -845,10 +845,9 @@ theorem Indep.basis_of_forall_insert (hI : M.Indep I) (hIX : I ⊆ X)
   
 theorem Indep.basis_insert_iff (hI : M.Indep I) :
     M.Basis I (insert e I) ↔ M.Dep (insert e I) ∨ e ∈ I := by 
-  simp_rw [insert_subset_iff, and_iff_left hI.subset_ground, or_iff_not_imp_right, 
-    hI.basis_iff_forall_insert_dep (subset_insert _ _), dep_iff, insert_subset_iff, 
-    and_iff_left hI.subset_ground, mem_diff, mem_insert_iff, or_and_right, and_not_self, 
-    or_false, and_imp, forall_eq]
+  simp_rw [hI.basis_iff_forall_insert_dep (subset_insert _ _), dep_iff, 
+    insert_subset_iff, mem_diff, mem_insert_iff, and_imp, forall_eq_or_imp]
+  tauto
     
 theorem Basis.iUnion_basis_iUnion {ι : Type _} (X I : ι → Set α) (hI : ∀ i, M.Basis (I i) (X i)) 
     (h_ind : M.Indep (⋃ i, I i)) : M.Basis (⋃ i, I i) (⋃ i, X i) := by
@@ -1090,7 +1089,7 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
     Matroid α := 
   matroid_of_indep_of_bdd E Indep h_empty h_subset 
     (by 
-      simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, mem_diff,
+      simp_rw [mem_maximals_setOf_iff, not_and, not_forall, exists_prop,  mem_diff,
         and_imp, and_assoc]
       rintro I B hI hImax hB hBmax
       obtain ⟨J, hJ, hIJ, hne⟩ := hImax hI

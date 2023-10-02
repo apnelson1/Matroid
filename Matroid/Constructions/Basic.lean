@@ -224,7 +224,8 @@ theorem trivial_on_base_iff (hIE : I ⊆ E) : (trivial_on I E).Base B ↔ B = I 
 
 theorem trivial_on_inter_ground_eq (I E : Set α) :
     trivial_on (I ∩ E) E = trivial_on I E := by
-  simp_rw [trivial_on, restrict_eq_restrict_iff, free_on_indep_iff, subset_inter_iff, iff_self_and]
+  simp only [trivial_on, restrict_eq_restrict_iff, free_on_indep_iff, subset_inter_iff, 
+    iff_self_and]
   tauto
 
 @[simp] theorem trivial_on_indep_iff' : (trivial_on I E).Indep J ↔ J ⊆ I ∩ E := by
@@ -256,14 +257,16 @@ theorem trivial_on_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivial_on I E).
     (trivial_on I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
   have hb := (trivial_on_basis_iff (inter_subset_right I E) (inter_subset_right X E)).mpr rfl
   ext e
-  simp_rw [←trivial_on_inter_ground_eq I E, cl_eq_cl_inter_ground _ X, trivial_on_ground, 
-    ←hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivial_on_indep_iff', insert_subset_iff, 
-    trivial_on_ground, inter_comm E, inter_assoc, inter_self, inter_comm E, inter_assoc, inter_self,
-    and_iff_left (inter_subset_right _ _),
-    and_iff_left ((inter_subset_right _ _).trans (inter_subset_right _ _))]
-  simp only [mem_inter_iff, and_true, not_and, mem_union, mem_diff]
-  tauto
   
+  rw [←trivial_on_inter_ground_eq I E, cl_eq_cl_inter_ground _ X, trivial_on_ground, 
+    ←hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivial_on_indep_iff', insert_subset_iff, 
+    trivial_on_ground, inter_assoc, inter_self,  and_iff_left (inter_subset_right _ _), 
+    ←inter_inter_distrib_right, inter_assoc, union_distrib_right, inter_comm I, inter_union_diff, 
+    insert_subset_iff, inter_comm X, inter_assoc, and_iff_left (inter_subset_left _ _), 
+    mem_inter_iff]
+  simp only [not_and, mem_inter_iff, mem_union, mem_diff]
+  tauto
+   
 theorem eq_trivial_on_of_loops_union_coloops (hE : M.E = M.cl ∅ ∪ M﹡.cl ∅) :
     M = trivial_on (M﹡.cl ∅) M.E := by
   refine eq_of_base_iff_base_forall rfl (fun B hBE ↦ ?_) 

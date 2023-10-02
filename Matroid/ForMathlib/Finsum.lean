@@ -52,7 +52,7 @@ theorem eq_of_finprod_mem_ge_finprod_mem_of_forall_le' [OrderedCancelCommMonoid 
 @[to_additive]
 theorem finprod_le_finprod_of_subset [CanonicallyOrderedMonoid N] (h : s ⊆ t) (ht : t.Finite) :
     ∏ᶠ x ∈ s, f x ≤ ∏ᶠ x ∈ t, f x := by
-  rw [←inter_union_diff t s, inter_eq_right_iff_subset.mpr h,
+  rw [←inter_union_diff t s, inter_eq_right.mpr h,
     finprod_mem_union (@disjoint_sdiff_self_right _ s t _) (ht.subset h) (ht.diff _)]
   exact le_mul_right rfl.le
 

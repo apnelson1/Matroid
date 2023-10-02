@@ -242,7 +242,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
     simp_rw [mem_maximals_iff] at h_Y ⊢
     obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
     have I_sub_Y : I ⊆ Y
-    · rwa [←(inter_eq_left_iff_subset.2 I_indep.subset_ground)]
+    · rwa [←(inter_eq_left.2 I_indep.subset_ground)]
     by_cases X_disj : Disjoint X S
     use Y    
     refine' ⟨⟨Or.inl Y_ind, _, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩

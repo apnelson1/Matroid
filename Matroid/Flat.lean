@@ -350,7 +350,7 @@ theorem hyperplane_iff_maximal_nonspanning :
     ⟨fun e he ↦ _, h.1.1.ssubset_of_ne (by rintro rfl; exact h.1.2 M.ground_spanning),
       fun F hF hHF hFE ↦ or_iff_not_imp_right.mpr fun hFE' ↦ _⟩
   · have h' := h.2 (insert_subset he.1 h.1.1)
-    simp_rw [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
+    simp only [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
       imp_false, Classical.not_not, spanning_iff_cl]  at h' 
     rw [spanning_iff_cl] at h'
     rw [h', ← not_spanning_iff_cl h.1.1]
@@ -376,7 +376,7 @@ theorem hyperplane_iff_maximal_nonspanning :
 @[simp] theorem compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by
   rw [← compl_cocircuit_iff_hyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
-    inter_eq_left_iff_subset.mpr h]
+    inter_eq_left.mpr h]
 
 theorem Hyperplane.compl_cocircuit (hH : M.Hyperplane H) : M.Cocircuit (M.E \ H) :=
   (compl_cocircuit_iff_hyperplane hH.subset_ground).mpr hH

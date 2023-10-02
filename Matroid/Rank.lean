@@ -159,7 +159,7 @@ theorem er_inter_add_er_union_le_er_add_er (M : Matroid α) (X Y : Set α) :
     ←hIY.encard, union_comm, ←encard_union_add_encard_inter, add_comm]
   exact add_le_add (er_le_encard _ _) (encard_mono (subset_inter hIX' hIY'))
 
-alias er_inter_add_er_union_le_er_add_er ← er_submod
+alias er_submod := er_inter_add_er_union_le_er_add_er
 
 theorem er_eq_er_of_subset_le (hXY : X ⊆ Y) (hYX : M.er Y ≤ M.er X) : M.er X = M.er Y :=
   (M.er_mono hXY).antisymm hYX
@@ -1330,7 +1330,7 @@ end Matroid
 -- -- begin
 -- --   have hsm := M.r_submod (X ∪ Z) Y,
 -- --   rw [union_right_comm, union_eq_right_iff_subset.mpr hXY, inter_distrib_right,
--- --     inter_eq_left_iff_subset.mpr hXY, add_comm] at hsm,
+-- --     inter_eq_left.mpr hXY, add_comm] at hsm,
 -- --   exact le_trans (add_le_add_left (M.r_le_r_union_left _ _) _) hsm,
 -- -- end
 -- -- lemma rFin.augment_of_not_rFin (hX : M.rFin X) (hZ : ¬M.rFin Z) (hZ : Z ⊆ M.E . ssE): 
@@ -1349,7 +1349,7 @@ end Matroid
 -- -- begin
 -- --   have hsm := M.r_submod Y (X ∪ Z),
 -- --   rw [←union_assoc, union_eq_left_iff_subset.mpr hXY, inter_distrib_left,
--- --     inter_eq_right_iff_subset.mpr hXY] at hsm,
+-- --     inter_eq_right.mpr hXY] at hsm,
 -- --   linarith [M.r_le_r_union_left X (Y ∩ Z), M.r_le_r_union_left Y Z],
 -- -- end
 -- -- lemma r_insert_eq_of_r_insert_subset_le [finite_rk M] (hXY : X ⊆ Y) (h : M.r (insert e X) ≤ M.r X) :

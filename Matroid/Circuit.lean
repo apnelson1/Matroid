@@ -132,7 +132,7 @@ theorem mem_fundCct (M : Matroid α) (e : α) (I : Set α) : e ∈ fundCct M e I
 
 /-- The fundamental circuit of `e` and `I` has the junk value `{e}` if `e ∈ I` -/
 theorem Indep.fundCct_eq_of_mem (hI : M.Indep I) (he : e ∈ I) : M.fundCct e I = {e} := by
-  rw [fundCct, ← union_singleton, union_eq_right_iff_subset]
+  rw [fundCct, ← union_singleton, union_eq_right]
   refine' sInter_subset_of_mem _
   simp only [mem_setOf, singleton_subset_iff, and_iff_right he]
   exact M.mem_cl_self _ (hI.subset_ground he)
@@ -183,8 +183,7 @@ theorem dep_iff_supset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) �
 
 theorem indep_iff_forall_subset_not_circuit' :
     M.Indep I ↔ (∀ C, C ⊆ I → ¬M.Circuit C) ∧ I ⊆ M.E := by
-  simp_rw [indep_iff_not_dep, dep_iff_supset_circuit', not_and, not_exists, 
-    imp_not_comm (b := _ ⊆ _)]; aesop
+  simp_rw [indep_iff_not_dep, dep_iff_supset_circuit', not_and, imp_not_comm (b := _ ⊆ _)]; aesop
 
 theorem indep_iff_forall_subset_not_circuit (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ C, C ⊆ I → ¬M.Circuit C := by 
@@ -240,7 +239,7 @@ theorem Circuit.strong_multi_elimination {ι : Type _} (hC : M.Circuit C) (x : �
   · suffices C \ {z} ⊆ C \ insert z (range x) ∪ range x by
       rw [union_diff_distrib] at hY 
       convert this.trans (union_subset_union ((subset_union_left _ _).trans_eq hY.symm) h₂) using 1
-      rw [union_eq_right_iff_subset.mpr]
+      rw [union_eq_right.mpr]
       exact M.subset_cl Y
     rw [← union_singleton, ← diff_diff, diff_subset_iff, singleton_union, ← insert_union,
       insert_diff_singleton, ← singleton_union, union_assoc, diff_union_self]
@@ -473,7 +472,8 @@ theorem Base.rev_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e �
 
 theorem Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he : e ∈ I₁ \ I₂) :
     ∃ f ∈ I₂ \ I₁, M.Basis (insert e I₂ \ {f}) X :=
-  (hI₁.strong_exchange hI₂ he).imp (by simp_rw [exists_prop]; tauto)
+  (hI₁.strong_exchange hI₂ he).imp 
+    (by simp only [mem_diff, mem_insert_iff, mem_singleton_iff]; tauto)
 
 end BasisExchange
 section Iso

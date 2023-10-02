@@ -178,7 +178,7 @@ theorem Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
 
   rw [subset_antisymm_iff, cl_def, subset_sInter_iff, and_iff_right (sInter_subset_of_mem _)]
   · rintro F' ⟨hF', hIF'⟩ e (he : M.Basis I (insert e I))
-    rw [inter_eq_left_iff_subset.mpr (hIF.subset.trans hIF.subset_ground)] at hIF' 
+    rw [inter_eq_left.mpr (hIF.subset.trans hIF.subset_ground)] at hIF' 
     obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF' hF'.2
     exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (Or.inr (mem_insert _ _))
   exact ⟨hF, (inter_subset_left _ _).trans hIF.subset⟩ 
@@ -347,7 +347,8 @@ theorem basis_iff_indep_cl : M.Basis I X ↔ M.Indep I ∧ X ⊆ M.cl I ∧ I �
     (basis_union_iff_indep_cl.mpr ⟨h.1, h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩
 
 theorem Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I := by
-  rw [←hI.indep.cl_inter_eq_self_of_subset hJI, inter_eq_right_iff_subset]; exact hI.subset.trans hJ
+  rw [←hI.indep.cl_inter_eq_self_of_subset hJI, inter_eq_self_of_subset_right]
+  exact hI.subset.trans hJ
 
 theorem empty_basis_iff : M.Basis ∅ X ↔ X ⊆ M.cl ∅ := by
   rw [basis_iff_indep_cl, and_iff_right M.empty_indep, and_iff_left (empty_subset _)]

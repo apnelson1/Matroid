@@ -152,7 +152,7 @@ theorem loop_or_nonloop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_ma
   rw [Nonloop, ←singleton_dep, dep_iff, not_and, not_imp_not, singleton_subset_iff]
   exact ⟨fun h ↦ ⟨fun _ ↦ h, singleton_subset_iff.mp h.subset_ground⟩, fun h ↦ h.1 h.2⟩
 
-alias indep_singleton ↔ Indep.nonloop Nonloop.indep
+alias ⟨Indep.nonloop, Nonloop.indep⟩ := indep_singleton
 
 theorem Indep.nonloop_of_mem (hI : M.Indep I) (h : e ∈ I) : M.Nonloop e := by
   rw [← not_loop_iff (hI.subset_ground h)]; exact fun he ↦ (he.not_mem_of_indep hI) h
@@ -374,7 +374,7 @@ theorem Coloop.mem_of_mem_cl (he : M.Coloop e) (hX : e ∈ M.cl X) : e ∈ X := 
 
 theorem cl_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M﹡.cl ∅) : M.cl X ∩ K = X ∩ K := by
   have hKE : K ∩ M.E = K
-  · rw [inter_eq_left_iff_subset, ←dual_ground]; exact hK.trans (cl_subset_ground _ _) 
+  · rw [inter_eq_left, ←dual_ground]; exact hK.trans (cl_subset_ground _ _) 
   rw [←hKE, ←inter_assoc X, inter_right_comm, hKE, cl_eq_cl_inter_ground, 
     subset_antisymm_iff, and_iff_left (inter_subset_inter_left K (M.subset_cl _)), 
     ←inter_eq_self_of_subset_right hK, ←inter_assoc, cl_inter_coloops_eq, 
