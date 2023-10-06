@@ -21,10 +21,11 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
     · apply Or.inl (Indep.subset h_Indep _)
       apply subset_union_of_subset_right (subset_diff.2 ⟨Isub, _⟩)
       rwa [disjoint_singleton_right]
+    
   )   
-  (by    
-    rintro I X (I_ind | ⟨e_nI, f, f_I, f_S, f_ind⟩), I_not_max X_max
-    · dsimp  --case 1: I is regular independent
+  (by
+    rintro I X (I_ind | ⟨e_nI, f, f_I, f_S, f_ind⟩) I_not_max X_max
+    · dsimp  
       rw [mem_maximals_setOf_iff] at I_not_max X_max
       push_neg at I_not_max
       have I_nB : ¬ M.Base I
@@ -92,23 +93,20 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
       use x
       rw [mem_diff] at *
       refine' ⟨⟨mem_of_mem_diff (mem_of_mem_insert_of_ne x_Xdiff.1 x_eq_e), x_Xdiff.2⟩, Or.inl x_Ind⟩
-    
-    -- part 2
     · dsimp
       rw [mem_maximals_setOf_iff] at I_not_max X_max
       push_neg at I_not_max
       have I_nB : ¬ M.Base (insert e (I \ {f}))
       · intro h_f
-        obtain ⟨R, (R_ind | ⟨e_notin_R, l, l_in_R, l_in_S, l_disj, l_ind⟩), I_sub_R, I_ne_R⟩:=
-        · I_not_max (Or.inr ⟨e_nI, f, f_I, f_S, f_disj, f_ind⟩)
-          apply disjoint_left.1 S_j f_S
+        obtain ⟨R, (R_ind | ⟨e_notin_R, l, l_in_R, l_in_S, l_ind⟩), I_sub_R, I_ne_R⟩:= I_not_max (Or.inr ⟨e_nI, f, f_I, f_S, f_disj, f_ind⟩)
+        · apply disjoint_left.1 S_j f_S
           rw [←singleton_subset_iff]
           apply Indep.subset_ground (Indep.subset R_ind _)
           exact singleton_subset_iff.2 (I_sub_R f_I)
-          apply l_ind.not_dep (h_f.dep_of_ssubset (ssubset_of_subset_of_ne (insert_subset_insert _) _) _)
+        · apply l_ind.not_dep (h_f.dep_of_ssubset (ssubset_of_subset_of_ne (insert_subset_insert _) _) _)
           apply subset_diff_singleton
           exact subset_trans (diff_subset _ _) I_sub_R
-        · apply disjoint_left.1 (disjoint_of_subset_right ((f_ind.subset (subset_insert _ _)).subset_ground) S_j) l_in_S
+          apply disjoint_left.1 (disjoint_of_subset_right ((f_ind.subset (subset_insert _ _)).subset_ground) S_j) l_in_S
           rw [insert_eq, insert_eq]
           by_cases f_eq_l : f = l
           rw [←f_eq_l]
@@ -130,7 +128,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
           push_neg
           exact ⟨ne_of_mem_of_not_mem f_I e_nI, not_mem_diff_of_mem (mem_singleton _)⟩
           exact l_ind.subset_ground
-      obtain ⟨(X_ind | ⟨e_nX, l, l_X, l_S, l_disj, l_ind⟩), X_max⟩ := X_max
+      obtain ⟨(X_ind | ⟨e_nX, l, l_X, l_S, l_ind⟩), X_max⟩ := X_max
       have e_ne_f: e ≠ f
       · intro h_f
         apply e_nI
@@ -163,18 +161,8 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
       rw [mem_insert_iff]
       push_neg
       refine' ⟨⟨e_ne_x, e_nI⟩, f, mem_insert_of_mem x f_I, f_S, _⟩
-      rw [insert_comm _ _ _, insert_diff_singleton_comm x_ne_f _] at x_ind
-      refine' ⟨_, x_ind⟩
-      rw [←insert_diff_singleton_comm x_ne_f _]
-      apply Disjoint.union_right _ f_disj
-      apply disjoint_singleton_right.2
-      apply disjoint_right.1 S_j _
-      have x_in_E : x ∈ M.E
-      · rw [←singleton_subset_iff]
-        apply Indep.subset_ground (Indep.subset X_ind _)
-        rw [singleton_subset_iff]
-        exact ((mem_diff x).1 x_Xdiff).1
-      exact x_in_E
+      rwa [insert_comm _ _ _, insert_diff_singleton_comm x_ne_f _] at x_ind
+      
       have X_B : M.Base (insert e (X \ {l}))
       · rw [base_iff_maximal_indep]
         refine' ⟨l_ind, fun J J_ind J_sub ↦ _⟩
@@ -219,12 +207,7 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
       rw [mem_insert_iff]
       push_neg
       refine' ⟨⟨(ne_of_mem_of_not_mem x_in_X e_nX).symm, e_nI⟩, f, mem_insert_of_mem _ f_I, _⟩
-      refine' ⟨f_S, ⟨_, _⟩⟩
-      rw [←(insert_diff_singleton_comm _ _)]
-      apply Disjoint.union_right _ f_disj
-      apply disjoint_singleton_right.2
-      exact disjoint_right.1 S_j x_in_E
-      exact (ne_of_mem_of_not_mem f_S (disjoint_right.1 S_j x_in_E)).symm
+      refine' ⟨f_S, _⟩
       apply Indep.subset x_ind
       rw [insert_comm, ←(insert_diff_singleton_comm _ _)]
       exact (ne_of_mem_of_not_mem f_S (disjoint_right.1 S_j x_in_E)).symm
