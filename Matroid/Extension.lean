@@ -214,24 +214,135 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
 
   )
   (by
-    rintro X X_ground I (I_indep | ⟨e_nI, f, f_S, f_I, f_ind⟩) I_sub_X
-    obtain ⟨Y, h_Y⟩ := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
-      (I_indep.subset (inter_subset_left I M.E)) (inter_subset_inter_left _ I_sub_X)
-    simp_rw [mem_maximals_iff] at h_Y ⊢
-    obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
-    have I_sub_Y : I ⊆ Y
-    · rwa [←(inter_eq_left.2 I_indep.subset_ground)]
-    use Y
-    rw [mem_maximals_iff]
-    refine' ⟨⟨Or.inl Y_ind, I_sub_Y, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
-    rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
-    apply Y_max ⟨y_ind, _⟩ Y_sub_y
-    · exact ⟨subset_trans (inter_subset_left _ _) I_sub_y, subset_inter y_sub_X y_ind.subset_ground⟩
-    have eY_ind : M.Indep (insert e (Y \ {f}))
-    apply f_ind.subset (insert_subset_insert (diff_subset_diff_left Y_sub_y))
-    have Y_f_idem : Y \ {f} = Y
-    · apply diff_singleton_eq_self
-       
+    rintro X X_ground I (I_indep | ⟨e_nI, f, f_I, f_S, f_ind⟩) I_sub_X
+    · obtain ⟨Y, h_Y⟩ := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
+        (I_indep.subset (inter_subset_left I M.E)) (inter_subset_inter_left _ I_sub_X)
+      rw [mem_maximals_iff] at h_Y
+      obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
+      have I_sub_Y : I ⊆ Y
+      · rwa [←(inter_eq_left.2 I_indep.subset_ground)]
+      by_cases X_disj : Disjoint S X
+      use Y
+      rw [mem_maximals_iff]
+      refine' ⟨⟨Or.inl Y_ind, I_sub_Y, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
+      rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
+      apply Y_max ⟨y_ind, _⟩ Y_sub_y
+      · exact ⟨subset_trans (inter_subset_left _ _) I_sub_y, subset_inter y_sub_X y_ind.subset_ground⟩
+      apply absurd f_s (disjoint_right.1 X_disj (y_sub_X f_y))
+      by_cases e_ind : M.Indep (insert e Y) ∧ e ∉ Y
+      obtain ⟨eY_ind, e_notin_Y⟩ := e_ind 
+      obtain ⟨f, f_S, f_X⟩ := not_disjoint_iff.1 X_disj
+      have f_ne_e : f ≠ e
+      · apply ne_of_mem_of_not_mem f_S _
+        apply disjoint_right.1 S_j _
+        rw [←singleton_subset_iff]
+        apply Indep.subset_ground (eY_ind.subset _)
+        rw [singleton_subset_iff]
+        exact mem_insert _ _
+      have f_notin_Y : f ∉ Y
+      · apply disjoint_left.1 _ f_S
+        apply disjoint_of_subset_right (subset_trans Y_sub_X' (inter_subset_right _ _)) S_j
+      use (insert f Y)
+      rw [mem_maximals_iff]
+      refine' ⟨⟨Or.inr ⟨_, f, mem_insert f Y, f_S, _⟩, _⟩, _⟩
+      · rw [mem_insert_iff]
+        push_neg
+        exact ⟨f_ne_e.symm, e_notin_Y⟩
+      · rwa [insert_diff_self_of_not_mem f_notin_Y]
+      · refine' ⟨subset_trans I_sub_Y (subset_insert _ _), insert_subset f_X _⟩
+        exact subset_trans Y_sub_X' (inter_subset_left _ _)
+      rintro y ⟨(y_ind | ⟨e_nY, l, l_y, l_s, l_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
+      have f_ground : f ∈ M.E
+      · rw [←singleton_subset_iff] 
+        apply (y_ind.subset (subset_trans _ Y_sub_y)).subset_ground
+        rw [singleton_subset_iff]
+        exact mem_insert f Y
+      exact absurd f_ground (disjoint_left.1 S_j f_S)
+      have y_l_mem_inter : y \ {l} ⊆ X ∩ M.E
+      · apply subset_inter
+        · exact subset_trans (diff_subset y {l}) y_sub_X
+        · exact (l_ind.subset (subset_insert _ _)).subset_ground 
+      have f_eq_l : f = l
+      · by_contra h_f
+        apply disjoint_left.1 S_j f_S
+        apply (y_l_mem_inter _).2
+        rw [mem_diff_singleton]
+        exact ⟨Y_sub_y (mem_insert f Y), h_f⟩
+      rw [f_eq_l]
+      have Y_sub_y' : Y ⊆ y \ {l}
+      · apply subset_diff_singleton (subset_trans (subset_insert f Y) Y_sub_y) _
+        rwa [←f_eq_l]
+      have Y_eq_yl: Y = y \ {l}
+      · apply Y_max _ Y_sub_y'
+        exact ⟨l_ind.subset (subset_insert _ _), subset_trans I'_sub_Y Y_sub_y', y_l_mem_inter⟩ 
+      rw [Y_eq_yl, insert_diff_singleton, insert_eq_of_mem l_y]
+      use Y
+      rw [mem_maximals_iff]
+      refine' ⟨⟨Or.inl Y_ind, I_sub_Y, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
+      rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
+      apply Y_max ⟨y_ind, _⟩ Y_sub_y
+      · exact ⟨subset_trans (inter_subset_left _ _) I_sub_y, subset_inter y_sub_X y_ind.subset_ground⟩
+      push_neg at e_ind
+      apply absurd (Y_sub_y (e_ind _)) e_nY
+      apply f_ind.subset (insert_subset_insert (subset_diff_singleton Y_sub_y _))
+      apply disjoint_left.1 (disjoint_of_subset_right Y_ind.subset_ground S_j) f_s
+    --part 2, I is unconventionally independent
+    have e_ne_f : e ≠ f := (ne_of_mem_of_not_mem f_I e_nI).symm
+    obtain ⟨Y, h_Y⟩:= M.maximality' (insert e (X ∩ M.E)) (insert_subset ?_ (inter_subset_right X M.E)) (insert e (I \ {f})) f_ind (insert_subset_insert ?_)
+    · rw [mem_maximals_iff] at h_Y
+      obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
+      use (insert f (Y \ {e}))
+      refine' ⟨⟨Or.inr ⟨_, f, mem_insert f _, f_S, _⟩, _, _⟩, _⟩
+      · rw [mem_insert_iff]
+        push_neg
+        exact ⟨e_ne_f, not_mem_diff_of_mem (mem_singleton _)⟩
+      · have f_notin_Y : f ∉ (Y \ {e})
+        · intro h_f
+          apply disjoint_left.1 S_j f_S
+          exact (mem_of_mem_insert_of_ne (Y_sub_X' ((mem_diff _).1 h_f).1) e_ne_f.symm).2
+        rwa [insert_diff_self_of_not_mem f_notin_Y, insert_diff_singleton, insert_eq_of_mem (I'_sub_Y (mem_insert _ _))]
+      · intro i i_in_I
+        by_cases i_eq_f : i = f
+        rw [i_eq_f]
+        exact mem_insert _ _
+        apply mem_insert_of_mem
+        rw [mem_diff_singleton]
+        refine' ⟨I'_sub_Y (mem_insert_of_mem _ _), ne_of_mem_of_not_mem i_in_I e_nI⟩
+        exact mem_diff_singleton.2 ⟨i_in_I, i_eq_f⟩
+      · apply insert_subset (I_sub_X f_I) _
+        rintro y ⟨y_in_Y, (y_ne_e : y ≠ e)⟩
+        apply inter_subset_left X M.E
+        exact mem_of_mem_insert_of_ne (Y_sub_X' y_in_Y) y_ne_e
+      rintro y ⟨(y_ind | ⟨e_nY, l, l_y, l_s, l_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
+      · apply absurd _ (disjoint_left.1 S_j f_S)
+        rw [←singleton_subset_iff]
+        apply (y_ind.subset _).subset_ground
+        rw [singleton_subset_iff]
+        exact Y_sub_y (mem_insert f _)
+      · have y_l_mem_inter : y \ {l} ⊆ X ∩ M.E
+        · apply subset_inter
+          · exact subset_trans (diff_subset y {l}) y_sub_X
+          · exact (l_ind.subset (subset_insert _ _)).subset_ground 
+        have f_eq_l : f = l
+        · by_contra h_f
+          apply disjoint_left.1 S_j f_S
+          apply (y_l_mem_inter _).2
+          rw [mem_diff_singleton]
+          refine ⟨Y_sub_y (mem_insert f _), h_f⟩
+        rw [f_eq_l]
+        have Y_eq_y_e_l : Y = insert e (y \ {l})
+        · apply Y_max ⟨l_ind, _, _⟩ _
+          rintro x (x_eq_e | ⟨x_in_I, (x_ne_f : x ≠ f)⟩)
+          · rw [x_eq_e]
+            exact mem_insert e _
+          
+
+
+
+
+
+
+
 
 
 
