@@ -1,20 +1,11 @@
 import Matroid.Simple
 import Matroid.Minor
+import Matroid.Constructions.ParallelExt
 open Set
 open Classical
 namespace Matroid
 
 variable {M : Matroid α}
-
-def parallel_preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := sorry
-
-@[simp] theorem parallel_preimage_indep_iff {M : Matroid β} {E : Set α} {f : α → β} {I : Set α} : 
-    (M.parallel_preimage E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by 
-  sorry 
-
-@[simp] theorem parallel_preimage_ground_eq {M : Matroid β} {E : Set α} {f : α → β} : 
-    (M.parallel_preimage E f).E = E := sorry 
-
 
 def ParallelExt (M : Matroid α) (e : α) (S : Set α): Matroid α := 
     M.parallel_preimage (M.E ∪ S) (fun x ↦ if (x ∈ S) then e else x)
@@ -29,8 +20,6 @@ theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI
       · by_contra h_f
         rw [subset_insert_iff_of_not_mem h_f, subset_diff, disjoint_singleton_right] at C_sub 
         exact (hI.subset C_sub.1).not_dep C_circ.1
-      have C_diff_subset : C \ {f} ⊆ I \ {e} := fun c ⟨c_C, (c_ne_f : c ≠ f)⟩ ↦ 
-      mem_of_mem_insert_of_ne (C_sub c_C) c_ne_f
       have e_notin_C : e ∉ C := fun e_in_C ↦ (mem_of_mem_insert_of_ne (C_sub e_in_C) e_ne_f).2 rfl
       have C_ne_ef : C ≠ {e, f}
       · intro h_f
@@ -162,7 +151,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
         refine' ⟨i, i_in_I, _⟩
         exact if_neg (ne_of_mem_of_not_mem i_in_I f_in_I)
     rwa [image_eq] at I_image_Indep
-    
+
 
 
 
