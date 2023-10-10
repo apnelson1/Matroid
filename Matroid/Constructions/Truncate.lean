@@ -50,7 +50,7 @@ theorem truncate_base_iff {k : ℕ} (h_rk : k ≤ M.erk) :
       fun I _ hIk hBI ↦ ?_⟩ ⟩
   · obtain ⟨B', hB', hJB'⟩ := hB.exists_base_supset
     obtain ⟨J, hBJ, hJB', h'⟩ := 
-      exists_supset_subset_encard_eq hJB' hBk (h_rk.trans_eq hB'.encard.symm)
+      exists_superset_subset_encard_eq hJB' hBk (h_rk.trans_eq hB'.encard.symm)
     rw [h _ (hB'.indep.subset hJB') h'.le hBJ] at hlt
     exact hlt.ne h' 
   exact (finite_of_encard_eq_coe hBk).eq_of_subset_of_encard_le' hBI (hIk.trans_eq hBk.symm)
