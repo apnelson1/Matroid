@@ -1,13 +1,236 @@
 import Matroid.Simple
 import Matroid.Minor
-
 open Set
+open Classical
 namespace Matroid
 
 variable {M : Matroid α}
 
-def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): Matroid α := 
-  matroid_of_indep (M.E ∪ S) 
+def parallel_preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := sorry
+
+@[simp] theorem parallel_preimage_indep_iff {M : Matroid β} {E : Set α} {f : α → β} {I : Set α} : 
+    (M.parallel_preimage E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by 
+  sorry 
+
+@[simp] theorem parallel_preimage_ground_eq {M : Matroid β} {E : Set α} {f : α → β} : 
+    (M.parallel_preimage E f).E = E := sorry 
+
+
+def ParallelExt (M : Matroid α) (e : α) (S : Set α): Matroid α := 
+    M.parallel_preimage (M.E ∪ S) (fun x ↦ if (x ∈ S) then e else x)
+
+theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I):
+    M.Indep (insert f (I \ {e})) := by
+  by_cases e_ne_f : e = f
+  · rwa [←e_ne_f, insert_diff_singleton, insert_eq_of_mem hI_e]
+  · rw [indep_iff_forall_subset_not_circuit']
+    refine' ⟨fun C C_sub C_circ ↦ _, _⟩
+    · have f_c : f ∈ C
+      · by_contra h_f
+        rw [subset_insert_iff_of_not_mem h_f, subset_diff, disjoint_singleton_right] at C_sub 
+        exact (hI.subset C_sub.1).not_dep C_circ.1
+      have C_diff_subset : C \ {f} ⊆ I \ {e} := fun c ⟨c_C, (c_ne_f : c ≠ f)⟩ ↦ 
+      mem_of_mem_insert_of_ne (C_sub c_C) c_ne_f
+      have e_notin_C : e ∉ C := fun e_in_C ↦ (mem_of_mem_insert_of_ne (C_sub e_in_C) e_ne_f).2 rfl
+      have C_ne_ef : C ≠ {e, f}
+      · intro h_f
+        rw [h_f] at e_notin_C
+        exact e_notin_C (mem_insert e _)
+      obtain ⟨C', C'_circ, C'_sub⟩ := C_circ.elimination ((parallel_iff_circuit e_ne_f).1 h_para) C_ne_ef f
+      have C'_sub_I : C' ⊆ I
+      intro c c_sub_C'
+      obtain ⟨(c_sub_C | c_sub_ef), (c_ne_f : c ≠ f)⟩ := C'_sub c_sub_C'
+      · exact (mem_of_mem_insert_of_ne (C_sub c_sub_C) c_ne_f).1
+      · have c_eq_e : c = e
+        · apply eq_of_not_mem_of_mem_insert c_sub_ef _
+          rwa [mem_singleton_iff]
+        rwa [c_eq_e]
+      exact (hI.subset C'_sub_I).not_dep C'_circ.1
+    · rintro i (i_eq_f | i_sub_I)
+      · rw [i_eq_f]
+        exact h_para.mem_ground_right
+      · exact hI.subset_ground i_sub_I.1    
+  
+    
+
+theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
+    M = ParallelExt (M ⟍ f) e {f} := by
+  rw [ParallelExt, eq_iff_indep_iff_indep_forall, parallel_preimage_ground_eq]
+  refine' ⟨_, fun I I_ground ↦ ⟨fun I_Ind ↦ _, _⟩⟩
+  · simp
+    exact (insert_eq_of_mem (Parallel.mem_ground_right h_para)).symm
+  · rw [parallel_preimage_indep_iff]
+    simp [delete_ground]
+    constructor
+    · constructor
+      · by_cases f_in_I : f ∈ I
+        · have image_eq : (fun a ↦ if a = f then e else a) '' I = insert e (I \ {f})
+          · apply subset_antisymm 
+            · rintro i ⟨a, a_I, h_a₁⟩
+              dsimp at h_a₁
+              by_cases a_eq_f : a = f
+              · rw [if_pos a_eq_f] at h_a₁
+                rw [←h_a₁]
+                exact mem_insert _ _
+              · rw [if_neg a_eq_f] at h_a₁
+                rw [←h_a₁]
+                exact mem_insert_of_mem _ (mem_diff_singleton.2 ⟨a_I, a_eq_f⟩)
+            · rintro i (i_eq_e | ⟨i_in_I, (i_ne_f : i ≠ f)⟩)
+              · refine' ⟨f, f_in_I, _⟩
+                rw [i_eq_e]
+                exact if_pos rfl
+              · refine ⟨i, i_in_I, if_neg i_ne_f⟩
+          rw [image_eq]
+          apply I_Ind.parallel_substitute h_para.symm f_in_I
+        · have image_eq : (fun a ↦ if a = f then e else a) '' I = I
+          · apply subset_antisymm
+            · rintro i ⟨a, a_I, h_a₁⟩
+              dsimp at h_a₁
+              rw [if_neg (ne_of_mem_of_not_mem a_I f_in_I)] at h_a₁
+              rwa [←h_a₁]
+            · rintro i i_in_I
+              refine' ⟨i, i_in_I, if_neg (ne_of_mem_of_not_mem i_in_I f_in_I)⟩
+          rwa [image_eq]
+      · intro x x_in_I
+        by_cases x_eq_f : x = f
+        · rwa [if_pos x_eq_f]
+        · rwa [if_neg x_eq_f]
+    refine' ⟨_, subset_trans I_ground (subset_insert f M.E)⟩
+    rintro a a_I b b_I f_ab
+    dsimp at f_ab
+    by_cases b_eq_f : b = f
+    · rw [if_pos b_eq_f, ite_eq_left_iff] at f_ab
+      by_cases a_eq_f : a = f
+      · rwa [b_eq_f]
+      · have ef_sub_I : {e, f} ⊆ I
+        · rintro i (i_eq_e | (i_eq_f : i = f)) 
+          · rwa [i_eq_e, ←(f_ab a_eq_f)]
+          · rwa [i_eq_f, ←b_eq_f]
+        exfalso
+        apply I_Ind.not_dep _
+        rw [dep_iff_supset_circuit]
+        exact ⟨{e, f}, ef_sub_I, (parallel_iff_circuit h_ne).1 h_para⟩
+    · rw [if_neg b_eq_f] at f_ab
+      by_cases a_eq_f : a = f 
+      · rw [if_pos a_eq_f] at f_ab
+        have ef_sub_I : {e, f} ⊆ I
+        · rintro i (i_eq_e | (i_eq_f : i = f)) 
+          · rwa [i_eq_e, f_ab]
+          · rwa [i_eq_f, ←a_eq_f]
+        exfalso
+        apply I_Ind.not_dep _
+        rw [dep_iff_supset_circuit]
+        exact ⟨{e, f}, ef_sub_I, (parallel_iff_circuit h_ne).1 h_para⟩
+      · rwa [if_neg a_eq_f] at f_ab
+  -- part 2
+  rw [parallel_preimage_indep_iff]
+  simp [delete_ground]
+  rintro I_image_Indep h_not_f h_inj I_sub
+  by_cases f_in_I : f ∈ I
+  · have image_eq : (fun a ↦ if a = f then e else a) '' I = insert e (I \ {f})
+    · apply subset_antisymm 
+      · rintro i ⟨a, a_I, h_a₁⟩
+        dsimp at h_a₁
+        by_cases a_eq_f : a = f
+        · rw [if_pos a_eq_f] at h_a₁
+          rw [←h_a₁]
+          exact mem_insert _ _
+        · rw [if_neg a_eq_f] at h_a₁
+          rw [←h_a₁]
+          exact mem_insert_of_mem _ (mem_diff_singleton.2 ⟨a_I, a_eq_f⟩)
+      · rintro i (i_eq_e | ⟨i_in_I, (i_ne_f : i ≠ f)⟩)
+        · refine' ⟨f, f_in_I, _⟩
+          rw [i_eq_e]
+          exact if_pos rfl
+        · refine ⟨i, i_in_I, if_neg i_ne_f⟩
+    rw [image_eq] at I_image_Indep
+    have:= I_image_Indep.parallel_substitute h_para (mem_insert e _)
+    have e_notin_I : e ∉ I
+    · intro e_in_I
+      apply h_ne (h_inj e_in_I f_in_I _)
+      dsimp
+      rw [if_pos rfl, if_neg h_ne]
+    simp [e_notin_I, f_in_I, h_ne] at this
+    exact this
+  · have image_eq : (fun a ↦ if a = f then e else a) '' I = I
+    · apply subset_antisymm
+      · rintro i ⟨a, a_I, h_a₁⟩
+        dsimp at h_a₁
+        rw [if_neg (ne_of_mem_of_not_mem a_I f_in_I)] at h_a₁
+        rwa [←h_a₁]
+      · intro i i_in_I
+        refine' ⟨i, i_in_I, _⟩
+        exact if_neg (ne_of_mem_of_not_mem i_in_I f_in_I)
+    rwa [image_eq] at I_image_Indep
+
+
+
+
+    
+
+
+
+
+   
+          
+
+
+
+
+
+
+
+
+
+
+
+    --rintro X X_ground I (I_indep | ⟨e_nI, f, f_S, f_I, f_ind⟩) I_sub_X
+    /-rw [nonempty_def]
+    obtain h := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
+      (I_indep.subset (inter_subset_left I M.E))
+    obtain ⟨Y, h_Y⟩ := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
+      (I_indep.subset (inter_subset_left I M.E)) (inter_subset_inter_left _ I_sub_X)
+    simp_rw [mem_maximals_iff] at h_Y ⊢
+    obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
+    have I_sub_Y : I ⊆ Y
+    · rwa [←(inter_eq_left.2 I_indep.subset_ground)]
+    by_cases X_disj : Disjoint X S
+    use Y    
+    refine' ⟨⟨Or.inl Y_ind, _, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
+    exact I_sub_Y
+    rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
+    apply Y_max ⟨y_ind, _⟩ Y_sub_y
+    exact ⟨subset_trans (inter_subset_left I M.E) I_sub_y, 
+      subset_inter y_sub_X (y_ind.subset_ground)⟩
+    apply absurd f_s (disjoint_left.1 X_disj (y_sub_X f_y))
+    have:  eY_nind : ¬ M.Indep (insert e Y) ∧ e ∉ Y
+    -/
+    
+
+
+    
+    --refine' ⟨disjoint_of_subset_right S_j _, insert_subset f_X (subset_trans Y_sub_X' (inter_subset_left X M.E))⟩
+    
+
+
+
+
+
+
+
+    
+
+
+
+
+
+  )
+   sorry
+-/
+
+
+  
+/-  matroid_of_indep (M.E ∪ S) 
   (fun I ↦ M.Indep I ∨ (e ∉ I ∧ ∃ f ∈ I, f ∈ S ∧ M.Indep (insert e (I \ {f}))))
   ( Or.inl M.empty_indep )
   (by
@@ -335,62 +558,4 @@ def ParallelExt (M : Matroid α) (e : α) (S : Set α) (S_j : Disjoint S M.E): M
           rintro x (x_eq_e | ⟨x_in_I, (x_ne_f : x ≠ f)⟩)
           · rw [x_eq_e]
             exact mem_insert e _
-          
-
-
-
-
-
-
-
-
-
-
-
-    --rintro X X_ground I (I_indep | ⟨e_nI, f, f_S, f_I, f_ind⟩) I_sub_X
-    /-rw [nonempty_def]
-    obtain h := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
-      (I_indep.subset (inter_subset_left I M.E))
-    obtain ⟨Y, h_Y⟩ := M.maximality' (X ∩ M.E) (inter_subset_right X M.E) (I ∩ M.E) 
-      (I_indep.subset (inter_subset_left I M.E)) (inter_subset_inter_left _ I_sub_X)
-    simp_rw [mem_maximals_iff] at h_Y ⊢
-    obtain ⟨⟨(Y_ind : M.Indep Y), I'_sub_Y, Y_sub_X'⟩, Y_max⟩ := h_Y
-    have I_sub_Y : I ⊆ Y
-    · rwa [←(inter_eq_left.2 I_indep.subset_ground)]
-    by_cases X_disj : Disjoint X S
-    use Y    
-    refine' ⟨⟨Or.inl Y_ind, _, subset_trans Y_sub_X' (inter_subset_left X M.E)⟩, _⟩
-    exact I_sub_Y
-    rintro y ⟨(y_ind | ⟨e_nY, f, f_y, f_s, f_ind⟩), I_sub_y, y_sub_X⟩ Y_sub_y
-    apply Y_max ⟨y_ind, _⟩ Y_sub_y
-    exact ⟨subset_trans (inter_subset_left I M.E) I_sub_y, 
-      subset_inter y_sub_X (y_ind.subset_ground)⟩
-    apply absurd f_s (disjoint_left.1 X_disj (y_sub_X f_y))
-    have:  eY_nind : ¬ M.Indep (insert e Y) ∧ e ∉ Y
-    -/
-    
-
-
-    
-    --refine' ⟨disjoint_of_subset_right S_j _, insert_subset f_X (subset_trans Y_sub_X' (inter_subset_left X M.E))⟩
-    
-
-
-
-
-
-
-
-    
-
-
-
-
-
-  )
-   sorry
-
-theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : 
-    M = ParallelExt (M ⟍ f) e {f} := 
-  sorry 
-  
+            -/
