@@ -162,7 +162,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
         refine' ⟨i, i_in_I, _⟩
         exact if_neg (ne_of_mem_of_not_mem i_in_I f_in_I)
     rwa [image_eq] at I_image_Indep
-
+    
 
 
 
@@ -224,9 +224,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
 
 
 
-  )
-   sorry
--/
+
 
 
   
