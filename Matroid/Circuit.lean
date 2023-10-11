@@ -531,7 +531,7 @@ def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.
     (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N 
   := sorry 
 
-section Equiv
+end Equiv
 
 end Matroid
 
