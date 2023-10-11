@@ -40,8 +40,6 @@ theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI
         exact h_para.mem_ground_right
       · exact hI.subset_ground i_sub_I.1    
   
-    
-
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
     M = ParallelExt (M ⟍ f) e {f} := by
   rw [ParallelExt, eq_iff_indep_iff_indep_forall, parallel_preimage_ground_eq]
@@ -49,7 +47,9 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
   · simp
     exact (insert_eq_of_mem (Parallel.mem_ground_right h_para)).symm
   · rw [parallel_preimage_indep_iff]
-    simp [delete_ground]
+    simp only [delete_elem, mem_singleton_iff, delete_indep_iff, disjoint_singleton_right, 
+      mem_image, not_exists, not_and, delete_ground, union_singleton, mem_diff, not_true, and_false, 
+      insert_diff_singleton]
     constructor
     · constructor
       · by_cases f_in_I : f ∈ I
@@ -80,7 +80,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
             · rintro i i_in_I
               refine' ⟨i, i_in_I, if_neg (ne_of_mem_of_not_mem i_in_I f_in_I)⟩
           rwa [image_eq]
-      · intro x x_in_I
+      · intro x _
         by_cases x_eq_f : x = f
         · rwa [if_pos x_eq_f]
         · rwa [if_neg x_eq_f]
