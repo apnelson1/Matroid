@@ -529,13 +529,45 @@ section Equiv
 def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
     (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N 
-  := sorry 
-
+  := by
+  apply iso_of_forall_indep e hM hN _ _
+  · intro I
+    rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
+    rintro ⟨no_circ, sub_ground⟩
+    constructor
+    · intro C C_sub_eI C_circ
+      apply no_circ _ _ (on_circuit_symm C C_circ)
+      rintro i ⟨c, c_C, ec_eq_i⟩
+      obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
+      rw [←e_i', e.left_inv] at ec_eq_i
+      rwa [←ec_eq_i]
+      rw [hM]
+      exact sub_ground i'_I
+    · rintro i ⟨c, c_I, c_eq⟩
+      rw [←c_eq, ←hN]
+      rw [←hM] at sub_ground
+      exact e.map_source' (sub_ground c_I)
+  · intro I
+    rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
+    rintro ⟨no_circ, sub_ground⟩
+    constructor
+    · intro C C_sub_eI C_circ
+      apply no_circ _ _ (on_circuit C C_circ)
+      rintro i ⟨c, c_C, ec_eq_i⟩
+      obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
+      rw [←e_i', e.right_inv] at ec_eq_i
+      rwa [←ec_eq_i]
+      rw [hN]
+      exact sub_ground i'_I
+    · rintro i ⟨c, c_I, c_eq⟩
+      rw [←c_eq, ←hM]
+      rw [←hN] at sub_ground
+      exact e.map_target' (sub_ground c_I)
 end Equiv
-
+          
 end Matroid
-
-
+         
+          
 
 -- end BasisExchange
 

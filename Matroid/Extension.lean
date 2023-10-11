@@ -40,6 +40,11 @@ theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI
         exact h_para.mem_ground_right
       · exact hI.subset_ground i_sub_I.1    
   
+theorem parallel_automorphism {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : 
+Iso M (M.parallel_preimage M.E (fun x ↦ if (x = e) then f else (if (x = f) then e else x))) := by
+  sorry
+
+
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
     M = ParallelExt (M ⟍ f) e {f} := by
   rw [ParallelExt, eq_iff_indep_iff_indep_forall, parallel_preimage_ground_eq]
