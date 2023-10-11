@@ -101,6 +101,11 @@ lemma Set.InjOn.exists_injOn_superset_image {f : α → β} {s s' : Set α} {t :
   obtain ⟨y, hy, rfl⟩ := ht hxt 
   exact ⟨y, ⟨hy, hxt⟩, rfl⟩  
 
+theorem Set.imageFactorization_injective (h : InjOn f s) : 
+    Injective (s.imageFactorization f) := by 
+  rintro ⟨x,hx⟩ ⟨y,hy⟩ h'
+  simp_rw [imageFactorization, Subtype.mk.injEq, h.eq_iff hx hy] at h'  
+  simp only [h']
 section Lattice
 
 lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
