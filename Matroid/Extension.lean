@@ -129,6 +129,7 @@ def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
         exact fun e_in_B' ↦ (mem_of_mem_insert_of_ne e_in_B' (ne_of_mem_of_not_mem e_in_B f_in_B)).2 rfl
     by_cases f_in_B : f ∈ B
     sorry
+    sorry
 
 
     
