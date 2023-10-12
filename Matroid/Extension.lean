@@ -2,12 +2,11 @@ import Matroid.Simple
 import Matroid.Minor
 import Matroid.Constructions.ParallelExt
 open Set
-open Classical
 namespace Matroid
 
 variable {M : Matroid α}
 
-def ParallelExt (M : Matroid α) (e : α) (S : Set α): Matroid α := 
+def ParallelExt (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] : Matroid α := 
     M.parallel_preimage (M.E ∪ S) (fun x ↦ if (x ∈ S) then e else x)
 
 theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I):
@@ -82,131 +81,132 @@ lemma swap_eq_not_e_f (B : Set α) (e_notin_B : e ∉ B) (f_notin_B : f ∉ B) :
     dsimp
     rw [if_neg (ne_of_mem_of_not_mem b_mem e_notin_B), if_neg (ne_of_mem_of_not_mem b_mem f_notin_B)]
 
-noncomputable def parallel_swap {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M where
-  toLocalEquiv := {
-    toFun := fun x ↦ if (x = e) then f else (if (x = f) then e else x)
-    invFun := fun x ↦ if (x = e) then f else (if (x = f) then e else x)
-    source := M.E
-    target := M.E
-    map_source' := by
-      intro x x_ground
-      dsimp
-      by_cases x_eq_e : x = e
-      · rw [if_pos x_eq_e]
-        exact h_para.mem_ground_right
-      · rw [if_neg x_eq_e]
-        by_cases x_eq_f : x = f
-        · rw [if_pos x_eq_f]
-          exact h_para.mem_ground_left
-        · rwa [if_neg x_eq_f]
-    map_target' := by
-      intro x x_ground
-      dsimp
-      by_cases x_eq_e : x = e
-      · rw [if_pos x_eq_e]
-        exact h_para.mem_ground_right
-      · rw [if_neg x_eq_e]
-        by_cases x_eq_f : x = f
-        · rw [if_pos x_eq_f]
-          exact h_para.mem_ground_left
-        · rwa [if_neg x_eq_f]
-    left_inv' := by
-      intro x _
-      dsimp
-      by_cases x_eq_e : x = e
-      · rw [if_pos x_eq_e]
-        by_cases f_eq_e : f = e
-        · rwa [if_pos f_eq_e, x_eq_e]
-        · rw [if_neg f_eq_e, if_pos rfl, x_eq_e]
-      · rw [if_neg x_eq_e]
-        by_cases x_eq_f : x = f
-        · rw [if_pos x_eq_f, if_pos rfl, x_eq_f]
-        · rw [if_neg x_eq_f, if_neg x_eq_e, if_neg x_eq_f]  
-    right_inv' := by
-      intro x _
-      dsimp
-      by_cases x_eq_e : x = e
-      · rw [if_pos x_eq_e]
-        by_cases f_eq_e : f = e
-        · rwa [if_pos f_eq_e, x_eq_e]
-        · rw [if_neg f_eq_e, if_pos rfl, x_eq_e]
-      · rw [if_neg x_eq_e]
-        by_cases x_eq_f : x = f
-        · rw [if_pos x_eq_f, if_pos rfl, x_eq_f]
-        · rw [if_neg x_eq_f, if_neg x_eq_e, if_neg x_eq_f]  
-  }
-  source_eq' := rfl
-  target_eq' := rfl
-  setOf_base_eq' := by
-    dsimp
-    by_cases e_eq_f : e = f
-    · have fun_eq_id : (fun x ↦ if x = e then f else if x = f then e else x) = id
-      · ext x
-        by_cases x_eq_e : x = e
-        · rw [if_pos x_eq_e, x_eq_e, ←e_eq_f]
-          rfl
-        · rw [if_neg x_eq_e]
-          by_cases x_eq_f : x = f
-          · rw [if_pos x_eq_f, e_eq_f, x_eq_f]
-            rfl
-          · rw [if_neg x_eq_f]
-            rfl 
-      rw [fun_eq_id]
-      simp only [id_eq, image_id']
-    · ext B
-      constructor
-      · intro B_Base
-        by_cases e_in_B : e ∈ B
-        · have f_notin_B : f ∉ B
-          · intro f_in_B
-            apply (B_Base.indep.subset _).not_dep ((parallel_iff_circuit e_eq_f).1 h_para).dep
-            rintro x (x_e | (x_f : x = f))
-            · rwa [x_e]
-            · rwa [x_f]
-          refine' ⟨insert f (B \ {e}), _, _⟩
-          · exact B_Base.exchange_base_of_indep f_notin_B (B_Base.indep.parallel_substitute h_para e_in_B)
-          · have f_in_B' : f ∈ insert f (B \ {e}):= mem_insert f _
-            have e_notin_B' : e ∉ insert f (B \ {e})
-            · rintro ((e_eq_f : e = f) | ⟨_, e_ne_e⟩)
-              · contradiction
-              · contradiction
-            rw [swap_eq_f_not_e _ e_notin_B' f_in_B']
-            simp only [e_in_B, not_true, mem_diff, f_notin_B, mem_singleton_iff, false_and, mem_insert_iff, or_false,
-              insert_diff_of_mem, not_false_eq_true, diff_singleton_eq_self, and_false, insert_diff_singleton,
-              insert_eq_of_mem]
-        · by_cases f_in_B : f ∈ B
-          · refine' ⟨insert e (B \ {f}), _, _⟩
-            · exact B_Base.exchange_base_of_indep e_in_B (B_Base.indep.parallel_substitute h_para.symm f_in_B) 
-            · have e_in_B' : e ∈ insert e (B \ {f}):= mem_insert e _
-              have f_notin_B' : f ∉ insert e (B \ {f})
-              · rintro ((f_eq_e : f = e) | ⟨_, e_ne_e⟩)
-                · exact e_eq_f f_eq_e.symm
-                · contradiction
-              rw [swap_eq_e_not_f _ e_in_B' f_notin_B']
-              simp only [f_in_B, not_true, mem_diff, e_in_B, mem_singleton_iff, false_and, mem_insert_iff, or_false,
-                insert_diff_of_mem, not_false_eq_true, diff_singleton_eq_self, and_false, insert_diff_singleton,
-                insert_eq_of_mem]
-          · refine' ⟨B, B_Base, _⟩
-            rw [swap_eq_not_e_f B e_in_B f_in_B]
-      · rintro ⟨B', B'_Base, hB'⟩
-        by_cases e_in_B' : e ∈ B'
-        · have f_notin_B' : f ∉ B'
-          · intro f_in_B'
-            apply (B'_Base.indep.subset _).not_dep ((parallel_iff_circuit e_eq_f).1 h_para).dep
-            rintro x (x_e | (x_f : x = f))
-            · rwa [x_e]
-            · rwa [x_f]
-          rw [←hB', swap_eq_e_not_f B' e_in_B' f_notin_B']
-          exact B'_Base.exchange_base_of_indep f_notin_B' (B'_Base.indep.parallel_substitute h_para e_in_B')
-        · by_cases f_in_B' : f ∈ B'
-          · rw [←hB', swap_eq_f_not_e B' e_in_B' f_in_B']
-            exact B'_Base.exchange_base_of_indep e_in_B' (B'_Base.indep.parallel_substitute h_para.symm f_in_B')
-          · rwa [←hB', swap_eq_not_e_f B' e_in_B' f_in_B']
+noncomputable def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M where
+  toLocalEquiv := (Equiv.swap e f).toLocalEquiv 
+  -- toLocalEquiv := {
+  --   toFun := fun x ↦ if (x = e) then f else (if (x = f) then e else x)
+  --   invFun := fun x ↦ if (x = e) then f else (if (x = f) then e else x)
+  --   source := M.E
+  --   target := M.E
+  --   map_source' := by
+  --     intro x x_ground
+  --     dsimp
+  --     by_cases x_eq_e : x = e
+  --     · rw [if_pos x_eq_e]
+  --       exact h_para.mem_ground_right
+  --     · rw [if_neg x_eq_e]
+  --       by_cases x_eq_f : x = f
+  --       · rw [if_pos x_eq_f]
+  --         exact h_para.mem_ground_left
+  --       · rwa [if_neg x_eq_f]
+  --   map_target' := by
+  --     intro x x_ground
+  --     dsimp
+  --     by_cases x_eq_e : x = e
+  --     · rw [if_pos x_eq_e]
+  --       exact h_para.mem_ground_right
+  --     · rw [if_neg x_eq_e]
+  --       by_cases x_eq_f : x = f
+  --       · rw [if_pos x_eq_f]
+  --         exact h_para.mem_ground_left
+  --       · rwa [if_neg x_eq_f]
+  --   left_inv' := by
+  --     intro x _
+  --     dsimp
+  --     by_cases x_eq_e : x = e
+  --     · rw [if_pos x_eq_e]
+  --       by_cases f_eq_e : f = e
+  --       · rwa [if_pos f_eq_e, x_eq_e]
+  --       · rw [if_neg f_eq_e, if_pos rfl, x_eq_e]
+  --     · rw [if_neg x_eq_e]
+  --       by_cases x_eq_f : x = f
+  --       · rw [if_pos x_eq_f, if_pos rfl, x_eq_f]
+  --       · rw [if_neg x_eq_f, if_neg x_eq_e, if_neg x_eq_f]  
+  --   right_inv' := by
+  --     intro x _
+  --     dsimp
+  --     by_cases x_eq_e : x = e
+  --     · rw [if_pos x_eq_e]
+  --       by_cases f_eq_e : f = e
+  --       · rwa [if_pos f_eq_e, x_eq_e]
+  --       · rw [if_neg f_eq_e, if_pos rfl, x_eq_e]
+  --     · rw [if_neg x_eq_e]
+  --       by_cases x_eq_f : x = f
+  --       · rw [if_pos x_eq_f, if_pos rfl, x_eq_f]
+  --       · rw [if_neg x_eq_f, if_neg x_eq_e, if_neg x_eq_f]  
+  -- }
+  source_eq' := sorry
+  target_eq' := sorry 
+  setOf_base_eq' := sorry
+    -- dsimp
+    -- by_cases e_eq_f : e = f
+    -- · have fun_eq_id : (fun x ↦ if x = e then f else if x = f then e else x) = id
+    --   · ext x
+    --     by_cases x_eq_e : x = e
+    --     · rw [if_pos x_eq_e, x_eq_e, ←e_eq_f]
+    --       rfl
+    --     · rw [if_neg x_eq_e]
+    --       by_cases x_eq_f : x = f
+    --       · rw [if_pos x_eq_f, e_eq_f, x_eq_f]
+    --         rfl
+    --       · rw [if_neg x_eq_f]
+    --         rfl 
+    --   rw [fun_eq_id]
+    --   simp only [id_eq, image_id']
+    -- · ext B
+    --   constructor
+    --   · intro B_Base
+    --     by_cases e_in_B : e ∈ B
+    --     · have f_notin_B : f ∉ B
+    --       · intro f_in_B
+    --         apply (B_Base.indep.subset _).not_dep ((parallel_iff_circuit e_eq_f).1 h_para).dep
+    --         rintro x (x_e | (x_f : x = f))
+    --         · rwa [x_e]
+    --         · rwa [x_f]
+    --       refine' ⟨insert f (B \ {e}), _, _⟩
+    --       · exact B_Base.exchange_base_of_indep f_notin_B (B_Base.indep.parallel_substitute h_para e_in_B)
+    --       · have f_in_B' : f ∈ insert f (B \ {e}):= mem_insert f _
+    --         have e_notin_B' : e ∉ insert f (B \ {e})
+    --         · rintro ((e_eq_f : e = f) | ⟨_, e_ne_e⟩)
+    --           · contradiction
+    --           · contradiction
+    --         rw [swap_eq_f_not_e _ e_notin_B' f_in_B']
+    --         simp only [e_in_B, not_true, mem_diff, f_notin_B, mem_singleton_iff, false_and, mem_insert_iff, or_false,
+    --           insert_diff_of_mem, not_false_eq_true, diff_singleton_eq_self, and_false, insert_diff_singleton,
+    --           insert_eq_of_mem]
+    --     · by_cases f_in_B : f ∈ B
+    --       · refine' ⟨insert e (B \ {f}), _, _⟩
+    --         · exact B_Base.exchange_base_of_indep e_in_B (B_Base.indep.parallel_substitute h_para.symm f_in_B) 
+    --         · have e_in_B' : e ∈ insert e (B \ {f}):= mem_insert e _
+    --           have f_notin_B' : f ∉ insert e (B \ {f})
+    --           · rintro ((f_eq_e : f = e) | ⟨_, e_ne_e⟩)
+    --             · exact e_eq_f f_eq_e.symm
+    --             · contradiction
+    --           rw [swap_eq_e_not_f _ e_in_B' f_notin_B']
+    --           simp only [f_in_B, not_true, mem_diff, e_in_B, mem_singleton_iff, false_and, mem_insert_iff, or_false,
+    --             insert_diff_of_mem, not_false_eq_true, diff_singleton_eq_self, and_false, insert_diff_singleton,
+    --             insert_eq_of_mem]
+    --       · refine' ⟨B, B_Base, _⟩
+    --         rw [swap_eq_not_e_f B e_in_B f_in_B]
+    --   · rintro ⟨B', B'_Base, hB'⟩
+    --     by_cases e_in_B' : e ∈ B'
+    --     · have f_notin_B' : f ∉ B'
+    --       · intro f_in_B'
+    --         apply (B'_Base.indep.subset _).not_dep ((parallel_iff_circuit e_eq_f).1 h_para).dep
+    --         rintro x (x_e | (x_f : x = f))
+    --         · rwa [x_e]
+    --         · rwa [x_f]
+    --       rw [←hB', swap_eq_e_not_f B' e_in_B' f_notin_B']
+    --       exact B'_Base.exchange_base_of_indep f_notin_B' (B'_Base.indep.parallel_substitute h_para e_in_B')
+    --     · by_cases f_in_B' : f ∈ B'
+    --       · rw [←hB', swap_eq_f_not_e B' e_in_B' f_in_B']
+    --         exact B'_Base.exchange_base_of_indep e_in_B' (B'_Base.indep.parallel_substitute h_para.symm f_in_B')
+    --       · rwa [←hB', swap_eq_not_e_f B' e_in_B' f_in_B']
 
 
-theorem parallel_swap_indep_iff (h_para : M.Parallel e f) :
-    (parallel_swap h_para).toLocalEquiv = (fun x ↦ if (x = e) then f else (if (x = f) then e else x)) := sorry
-
+@[simp] theorem parallel_swap_apply [DecidableEq α] (h_para : M.Parallel e f) :
+    (parallel_swap h_para).toLocalEquiv = (Equiv.swap e f).toLocalEquiv := rfl 
+    -- (parallel_swap h_para).toLocalEquiv = (fun x ↦ if (x = e) then f else (if (x = f) then e else x)) := sorry
 
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
     M = ParallelExt (M ⟍ f) e {f} := by
