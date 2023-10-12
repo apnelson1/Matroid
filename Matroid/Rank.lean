@@ -527,6 +527,9 @@ theorem rk_def (M : Matroid α) : M.rk = M.r M.E := by
 @[simp] theorem er_toNat_eq_r (M : Matroid α) (X : Set α) : ENat.toNat (M.er X) = M.r X :=
   rfl  
 
+theorem Base.ncard (hB : M.Base B) : B.ncard = M.rk := by
+  rw [rk_def, ←er_toNat_eq_r, ncard_def, hB.encard, erk_eq_er_ground]
+  
 theorem rFin.coe_r_eq (hX : M.rFin X) : (M.r X : ℕ∞) = M.er X := by
   rw [r, coe_toNat (by rwa [er_ne_top_iff])]
 

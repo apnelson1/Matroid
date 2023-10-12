@@ -1,5 +1,6 @@
 import Mathlib.Logic.Equiv.LocalEquiv
 import Mathlib.Data.Set.Card
+import Mathlib.Data.Matrix.Basic
 
 open Set Function
 
@@ -120,26 +121,37 @@ theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : S
   obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq h
   exact ⟨hf.toLocalEquiv, rfl, hf.toLocalEquiv_target⟩
   
+end Lattice
+section Matrix 
 
+variable {m n R : Type} [Semiring R]
 
+/-- For a semiring `R`, the modules `(n → R)` and `Matrix Unit n R` are linearly equivalent. -/
+def Matrix.row_linearEquiv (n R : Type) [Semiring R] : (n → R) ≃ₗ[R] Matrix Unit n R where 
+  toFun := Matrix.row 
+  invFun A i := A () i
+  map_add' := Matrix.row_add
+  map_smul' := Matrix.row_smul
+  left_inv := fun _ ↦ rfl 
+  right_inv := fun _ ↦ rfl 
 
--- def LocalEquiv.LocalEquivSet (i : LocalEquiv α β) : LocalEquiv (Set α) (Set β) where
---   toFun := image i.toFun
---   invFun := image i.invFun
---   source := Iic i.source
---   target := Iic i.target
---   map_source' := by 
---   { simp only [mem_Iic, le_eq_subset, image_subset_iff]
---     exact fun s hs a has ↦ i.map_source' (hs has) }
---   map_target' := by
---   { simp only [mem_Iic, le_eq_subset, image_subset_iff]
---     exact fun s hs a has ↦ i.map_target' (hs has) }
---   left_inv' := by
---   { simp only [mem_Iic, le_eq_subset, invFun_as_coe]
---     exact fun _ h ↦ symm_image_image_of_subset_source i h }
---   right_inv' := by
---   { simp only [mem_Iic, le_eq_subset, invFun_as_coe]
---     exact fun _ h ↦ image_symm_image_of_subset_target i h }
+@[simp] theorem Matrix.row_linearEquiv_apply (f : n → R) :
+    Matrix.row_linearEquiv n R x = Matrix.row x := rfl
 
+@[simp] theorem Matrix.row_linearEquiv_apply_symm (A : Matrix Unit n R) :
+    (Matrix.row_linearEquiv n R).symm A = A () := rfl
 
-  
+/-- For a semiring `R`, the modules `(m → R)` and `Matrix m Unit r` are linearly equivalent. -/
+def Matrix.col_linearEquiv (m R : Type) [Semiring R] : (m → R) ≃ₗ[R] Matrix m Unit R where 
+  toFun := Matrix.col 
+  invFun A i := A i ()
+  map_add' := Matrix.col_add
+  map_smul' := Matrix.col_smul
+  left_inv := fun _ ↦ rfl 
+  right_inv := fun _ ↦ rfl 
+
+@[simp] theorem Matrix.col_linearEquiv_apply (f : m → R) :
+    Matrix.col_linearEquiv m R x = Matrix.col x := rfl
+
+@[simp] theorem Matrix.col_linearEquiv_apply_symm (A : Matrix m Unit R) (i : m) :
+    (Matrix.col_linearEquiv m R).symm A i = A i () := rfl
