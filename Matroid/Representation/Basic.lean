@@ -6,14 +6,25 @@ variable {α β W W' 𝔽 : Type _} {e f x : α} {I B X : Set α} {M : Matroid �
 
 open Function Set Submodule
 
+
+theorem linearIndependent_subtype_congr {R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M] 
+  {s s' : Set M} (h_eq : s = s') : 
+    LinearIndependent R ((↑) : s → M) ↔ LinearIndependent R ((↑) : s' → M) := by 
+  subst h_eq; rfl 
+
 namespace Matroid
+
+/-- A function `φ : α → W` represents `M` over `𝔽` if independence in `M` corresponds to linear
+  independence in `W` of the image. -/
+def IsRep (M : Matroid α) (𝔽 : Type _) [Field 𝔽] [AddCommMonoid W] [Module 𝔽 W] (φ : α → W) := 
+  ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict φ)
 
 @[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type _) [Field 𝔽] [AddCommMonoid W] 
   [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
-  (valid' : ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict to_fun))
+  (valid' : M.IsRep 𝔽 to_fun)
  
 instance : FunLike (M.Rep 𝔽 W) α (fun _ ↦ W) where
   coe φ := φ.to_fun
@@ -23,16 +34,6 @@ instance coeFun : CoeFun (M.Rep 𝔽 W) fun _ ↦ (α → W) :=
   ⟨FunLike.coe⟩
 
 @[simp] theorem Rep.to_fun_eq_coe (φ : M.Rep 𝔽 W) : φ.to_fun = (φ : α → W) := rfl
-
-theorem Rep.eq_zero_iff_not_indep {φ : M.Rep 𝔽 W} : φ e = 0 ↔ ¬ M.Indep {e} := by
-  simp [φ.valid',linearIndependent_unique_iff, -indep_singleton]
-  
-theorem Rep.eq_zero_of_not_mem_ground (φ : M.Rep 𝔽 W) (he : e ∉ M.E) : φ e = 0 := by 
-  rw [φ.eq_zero_iff_not_indep, indep_singleton]
-  exact fun hl ↦ he hl.mem_ground
-
-theorem Rep.support_subset_ground (φ : M.Rep 𝔽 W) : support φ ⊆ M.E := 
-  fun _ he ↦ by_contra <| fun h' ↦ he (φ.eq_zero_of_not_mem_ground h')
 
 theorem Rep.indep_iff (φ : M.Rep 𝔽 W) : M.Indep I ↔ LinearIndependent 𝔽 (I.restrict φ) := 
   φ.valid' I
@@ -53,6 +54,17 @@ theorem Rep.indep_iff_image (φ : M.Rep 𝔽 W) (h_inj : InjOn φ I) :
   refine ⟨φ.linear_indep_image, fun hi ↦ ?_⟩ 
   rw [φ.indep_iff, restrict_eq]
   exact (linearIndependent_image h_inj (R := 𝔽)).2 hi
+
+theorem Rep.eq_zero_iff_not_indep {φ : M.Rep 𝔽 W} : φ e = 0 ↔ ¬ M.Indep {e} := by
+  simp [φ.indep_iff, linearIndependent_unique_iff, -indep_singleton]
+  
+theorem Rep.eq_zero_of_not_mem_ground (φ : M.Rep 𝔽 W) (he : e ∉ M.E) : φ e = 0 := by 
+  rw [φ.eq_zero_iff_not_indep, indep_singleton]
+  exact fun hl ↦ he hl.mem_ground
+
+theorem Rep.support_subset_ground (φ : M.Rep 𝔽 W) : support φ ⊆ M.E := 
+  fun _ he ↦ by_contra <| fun h' ↦ he (φ.eq_zero_of_not_mem_ground h')
+
 
 /-- A function with support contained in `M.E` that gives the correct independent sets 
   within the ground set gives a representation -/
@@ -99,7 +111,11 @@ def Rep.map_equiv (φ : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') : M.Rep 𝔽 W' :
 @[simp] theorem Rep.map_equiv_apply (φ : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') (e : α) : 
     (φ.map_equiv ψ) e = ψ (φ e) := rfl 
 
+def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : W₁ = W₂) : M.Rep 𝔽 W₂ := 
+  φ.map_equiv <| LinearEquiv.ofEq _ _ h
 
+-- @[simp] theorem Rep.subtype_ofEq_apply {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : W₁ = W₂) 
+--   (e : α) : (φ.subtype_ofEq h) e = ⟨φ e, h ▸ (φ e).prop⟩ := rfl 
 
 /-- Each function from a type to a module defines a matroid on a finite superset of its support -/
 def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : Matroid α := 
@@ -163,12 +179,7 @@ def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.
 def rep_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) :
     (matroid_of_fun (𝔽 := 𝔽) f E hf hfin).Rep 𝔽 W where 
   to_fun := f
-  valid' := by simp 
-
-theorem linearIndependent_subtype_congr {R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M] 
-  {s s' : Set M} (h_eq : s = s') : 
-    LinearIndependent R ((↑) : s → M) ↔ LinearIndependent R ((↑) : s' → M) := by 
-  subst h_eq; rfl 
+  valid' := by simp [IsRep]
 
 theorem Rep.range_subset_span_base (φ : M.Rep 𝔽 W) (hB : M.Base B) : range φ ⊆ span 𝔽 (φ '' B) := by 
   rintro _ ⟨e, he ,rfl⟩ 
@@ -190,32 +201,56 @@ theorem Rep.span_range_eq_span_base (φ : M.Rep 𝔽 W) (hB : M.Base B) :
   exact span_eq_of_le _ (φ.range_subset_span_base hB) (span_mono (image_subset_range _ _))
 
 /-- A representation is `FullRank` if its vectors span the space -/
-def Rep.FullRank (φ : M.Rep 𝔽 W) : Prop := span 𝔽 (range φ) = ⊤ 
+def Rep.FullRank (φ : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range φ)
 
 /-- Restrict a representation to the submodule spanned by its image -/
 def Rep.restrict_span (φ : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range φ)) where
-  to_fun e := ⟨φ e, subset_span (mem_range_self e)⟩  
+  to_fun := inclusion subset_span ∘ rangeFactorization φ
   valid' := (by 
     intro I
     rw [φ.indep_iff]
-    refine' ⟨fun h ↦ _, fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩
-    exact LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coeSubtype]) )
-
-/-- This should be the right object but seems like it's definitionally garbage -/
-noncomputable def Rep.toStandardRep [FiniteRk M] (φ : M.Rep 𝔽 W) (hB : M.Base B) :
-    M.Rep 𝔽 (B → 𝔽) :=
-  have := hB.finite.fintype;
-  (φ.restrict_span.map_equiv 
-    (LinearEquiv.ofEq _ _ <| (φ.span_range_eq_span_base hB).symm)).map_equiv 
-    (Basis.span (φ.linear_indep hB.indep)).equivFun
-  
--- theorem foo [FiniteRk M] (φ : M.Rep 𝔽 W) (hB : M.Base B) (heB : e ∈ B) : 
---     (φ.toStandardRep hB) e ⟨e, heB⟩ = 1 := by 
---   simp [Rep.toStandardRep, Rep.restrict_span, restrict, range_restrict, Basis.equivFun, 
---     Basis.span, LinearEquiv.ofEq, Equiv.Set.ofEq, Equiv.setCongr]
-  
-  
-  
+    refine ⟨fun h ↦ LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coeSubtype]), 
+      fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩ )
 
 
-  -- refine' φ.map (𝔽 := 𝔽) _ _
+theorem Rep.FullRank.span_range {φ : M.Rep 𝔽 W} (h : φ.FullRank) : span 𝔽 (range φ) = ⊤ := by 
+  rwa [eq_top_iff]
+
+@[simp] theorem Rep.restrict_span_apply (φ : M.Rep 𝔽 W) (e : α) : 
+  φ.restrict_span e = inclusion subset_span (rangeFactorization φ e) := rfl 
+
+theorem Rep.restrict_span_fullRank (φ : M.Rep 𝔽 W) : 
+    φ.restrict_span.FullRank := by
+  change _ ≤ span 𝔽 (range (inclusion subset_span ∘ _))
+  rw [range_comp, surjective_onto_range.range_eq, image_univ, range_inclusion]
+  change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑φ))) ⁻¹' _) 
+  simp
+
+noncomputable def Rep.FullRank.basis_of_base {φ : M.Rep 𝔽 W} (h : φ.FullRank) (hB : M.Base B) : 
+    _root_.Basis B 𝔽 W := 
+  Basis.mk (φ.linear_indep hB.indep) 
+    ( by rw [←h.span_range, φ.span_range_eq_span_base hB] )
+
+noncomputable def Rep.basis_of_base (φ : M.Rep 𝔽 W) (hB : M.Base B) : 
+    _root_.Basis B 𝔽 (span 𝔽 (range φ)) := 
+  (Basis.span (φ.linear_indep hB.indep)).map <| LinearEquiv.ofEq _ _ (φ.span_range_eq_span_base hB)
+
+/-- The natural representation with rows indexed by a base -/
+noncomputable def Rep.to_standard_rep (φ : M.Rep 𝔽 W) (hB : M.Base B) :
+    M.Rep 𝔽 (B →₀ 𝔽) :=
+  φ.restrict_span.map_equiv (φ.restrict_span_fullRank.basis_of_base hB).repr 
+  
+theorem Rep.standard_rep_eq_one (φ : M.Rep 𝔽 W) (hB : M.Base B) (e : B) : 
+    (φ.to_standard_rep hB) e e = 1 := by 
+  simp only [Rep.to_standard_rep, Rep.FullRank.basis_of_base, Rep.map_equiv_apply, 
+    Rep.restrict_span_apply, Basis.mk_repr]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
+  simp
+  
+theorem Rep.standard_rep_eq_zero (φ : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) : 
+    (φ.to_standard_rep hB) e f = 0 := by 
+  simp [Rep.to_standard_rep, Rep.FullRank.basis_of_base, Rep.map_equiv_apply, 
+    Rep.restrict_span_apply, Basis.mk_repr]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
+  exact Finsupp.single_eq_of_ne hef
+  
