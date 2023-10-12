@@ -8,7 +8,8 @@ open Function Set Submodule
 
 namespace Matroid
 
-structure Rep (M : Matroid α) (𝔽 W : Type _) [Field 𝔽] [AddCommMonoid W] [Module 𝔽 W] where
+@[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type _) [Field 𝔽] [AddCommMonoid W] 
+  [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
@@ -74,14 +75,31 @@ def rep_of_ground (f : α → W) (h_support : support f ⊆ M.E)
   (hf : ∀ {I}, I ⊆ M.E → (M.Indep I ↔ LinearIndependent 𝔽 (f ∘ ((↑) : I → α)))) : 
   (rep_of_ground f h_support hf : α → W) = f := rfl 
 
-/-- Compose a representation with a linear injection. -/
-def Rep.map (φ : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) : M.Rep 𝔽 W' where
-  to_fun := ψ ∘ φ  
-  valid' := fun _ ↦ by 
-    rw [φ.indep_iff, restrict_eq, restrict_eq, comp.assoc, ψ.linearIndependent_iff hψ]
   
-@[simp] theorem Rep.map_apply (φ : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) (e : α) : 
-    (φ.map ψ hψ) e = ψ (φ e) := rfl 
+def Rep.map (φ : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') 
+    (h_inj : Disjoint (span 𝔽 (range φ)) (LinearMap.ker ψ)) : M.Rep 𝔽 W' where 
+  to_fun := ψ ∘ φ
+  valid' := fun I ↦ by 
+    rw [φ.indep_iff, restrict_eq, restrict_eq, comp.assoc] 
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · apply h.map (h_inj.mono_left (span_mono _))
+      rw [range_comp]
+      exact image_subset_range _ _
+    exact LinearIndependent.of_comp _ h
+
+/-- Compose a representation with a linear injection. -/
+def Rep.map' (φ : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) := φ.map ψ (by simp [hψ])
+
+/-- Compose a representation with a linear equivalence. -/
+def Rep.map_equiv (φ : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') : M.Rep 𝔽 W' := φ.map' ψ ψ.ker
+
+@[simp] theorem Rep.map'_apply (φ : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) (e : α) : 
+    (φ.map' ψ hψ) e = ψ (φ e) := rfl 
+
+@[simp] theorem Rep.map_equiv_apply (φ : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') (e : α) : 
+    (φ.map_equiv ψ) e = ψ (φ e) := rfl 
+
+
 
 /-- Each function from a type to a module defines a matroid on a finite superset of its support -/
 def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : Matroid α := 
@@ -167,50 +185,37 @@ theorem Rep.range_subset_span_base (φ : M.Rep 𝔽 W) (hB : M.Base B) : range �
   exact φ.linear_indep_image hB.indep
   
 theorem Rep.span_range_eq_span_base (φ : M.Rep 𝔽 W) (hB : M.Base B) : 
-    span 𝔽 (range φ) = span 𝔽 (range (restrict B φ)) := by 
-  rw [range_restrict]
+     span 𝔽 (range (restrict B φ)) = span 𝔽 (range φ) := by 
+  rw [range_restrict, eq_comm]
   exact span_eq_of_le _ (φ.range_subset_span_base hB) (span_mono (image_subset_range _ _))
 
 /-- A representation is `FullRank` if its vectors span the space -/
 def Rep.FullRank (φ : M.Rep 𝔽 W) : Prop := span 𝔽 (range φ) = ⊤ 
 
--- noncomputable def BaseBasis (φ : M.Rep 𝔽 W) (hB : M.Base B) : 
---     _root_.Basis B 𝔽 (span 𝔽 (range (B.restrict φ))) :=
---   Basis.mk (linearIndependent_span (φ.linear_indep hB.indep))
---   (by 
---     rintro ⟨x, hx⟩ -
+/-- Restrict a representation to the submodule spanned by its image -/
+def Rep.restrict_span (φ : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range φ)) where
+  to_fun e := ⟨φ e, subset_span (mem_range_self e)⟩  
+  valid' := (by 
+    intro I
+    rw [φ.indep_iff]
+    refine' ⟨fun h ↦ _, fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩
+    exact LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coeSubtype]) )
 
-
---   ) 
-
-
---   -- -- set v : B → span 𝔽 (range φ) := fun e ↦ ⟨φ e, _⟩  
---   -- have h := linearIndependent_span (φ.linear_indep hB.indep)
-
---   -- apply Basis.mk h
---   -- simp only [restrict_apply]
---   -- rintro ⟨x, hx⟩ -
+/-- This should be the right object but seems like it's definitionally garbage -/
+noncomputable def Rep.toStandardRep [FiniteRk M] (φ : M.Rep 𝔽 W) (hB : M.Base B) :
+    M.Rep 𝔽 (B → 𝔽) :=
+  have := hB.finite.fintype;
+  (φ.restrict_span.map_equiv 
+    (LinearEquiv.ofEq _ _ <| (φ.span_range_eq_span_base hB).symm)).map_equiv 
+    (Basis.span (φ.linear_indep hB.indep)).equivFun
   
-  
-
-
-
-  
-  
-
-
+-- theorem foo [FiniteRk M] (φ : M.Rep 𝔽 W) (hB : M.Base B) (heB : e ∈ B) : 
+--     (φ.toStandardRep hB) e ⟨e, heB⟩ = 1 := by 
+--   simp [Rep.toStandardRep, Rep.restrict_span, restrict, range_restrict, Basis.equivFun, 
+--     Basis.span, LinearEquiv.ofEq, Equiv.Set.ofEq, Equiv.setCongr]
   
   
   
 
-
-def Rep.toStandardRep (φ : M.Rep 𝔽 W) (hB : M.Base B) : M.Rep 𝔽 (B → 𝔽) := by
-  
-  have hb1 := (Basis.span (φ.linear_indep hB.indep))
-  
-  -- .map 
-    -- (LinearEquiv.ofEq _ _ (φ.span_range_eq_span_base hB).symm)
-  set W₀ := span 𝔽 (φ '' B) with hW₀ 
-  sorry 
 
   -- refine' φ.map (𝔽 := 𝔽) _ _
