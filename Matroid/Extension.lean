@@ -204,10 +204,8 @@ noncomputable def parallel_swap {M : Matroid α} {e f : α} (h_para : M.Parallel
           · rwa [←hB', swap_eq_not_e_f B' e_in_B' f_in_B']
 
 
-
-
-
-
+theorem parallel_swap_indep_iff {M N : Matroid α} {I : Set α} (h_para : M.Parallel e f) (swap : parallel_swap h_para M N):
+    M.Indep I ↔ N.Indep ((fun x ↦ if (x = e) then f else (if (x = f) then e else x)) '' I) := sorry
 
 
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
