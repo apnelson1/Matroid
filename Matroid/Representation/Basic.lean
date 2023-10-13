@@ -1,26 +1,24 @@
 import Matroid.Flat
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.Data.Matrix.Rank
+import Matroid.Representation.ForMathlib
 
-variable {α β W W' 𝔽 R : Type _} {e f x : α} {I B X : Set α} {M : Matroid α} [Field 𝔽] 
+variable {α β W W' 𝔽 R : Type _} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽] 
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional
-
 
 theorem linearIndependent_subtype_congr {R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M] 
   {s s' : Set M} (h_eq : s = s') : 
     LinearIndependent R ((↑) : s → M) ↔ LinearIndependent R ((↑) : s' → M) := by 
   subst h_eq; rfl 
-
 namespace Matroid
 
 /-- A function `φ : α → W` represents `M` over `𝔽` if independence in `M` corresponds to linear
   independence in `W` of the image. -/
-def IsRep (M : Matroid α) (𝔽 : Type _) [Field 𝔽] [AddCommMonoid W] [Module 𝔽 W] (φ : α → W) := 
+def IsRep (M : Matroid α) (𝔽 : Type _) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] 
+    (φ : α → W) := 
   ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict φ)
 
-@[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type _) [Field 𝔽] [AddCommMonoid W] 
+@[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type _) [CommSemiring 𝔽] [AddCommMonoid W] 
   [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
@@ -42,7 +40,7 @@ theorem Rep.indep_iff (φ : M.Rep 𝔽 W) : M.Indep I ↔ LinearIndependent 𝔽
 theorem Rep.linear_indep (φ : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (I.restrict φ) := 
   φ.indep_iff.1 hI 
 
-theorem Rep.injOn_of_indep (φ : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn φ I :=
+theorem Rep.injOn_of_indep (φ : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn φ I := 
   injOn_iff_injective.2 ((φ.linear_indep hI).injective)
   
 theorem Rep.linear_indep_image (φ : M.Rep 𝔽 W) (hI : M.Indep I) : 
@@ -315,17 +313,21 @@ theorem Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
   use φ.map_equiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard) 
   exact hφ.map_equiv _
   
-theorem Rep.subset_span_of_basis (φ : M.Rep 𝔽 W) (h : M.Basis I X) : φ '' X ⊆ span 𝔽 (φ '' I) := by 
+theorem Rep.subset_span_of_basis' (φ : M.Rep 𝔽 W) (h : M.Basis' I X) : 
+    φ '' X ⊆ span 𝔽 (φ '' I) := by 
   rintro _ ⟨e, he, rfl⟩
   obtain (heI | heI) := em (φ e ∈ φ '' I)
   · exact subset_span heI
   obtain (heI' | heI') := em (e ∈ I)
   · exact (heI (mem_image_of_mem _ heI')).elim 
-  have hi := (h.insert_dep ⟨he, heI'⟩).not_indep 
+  have hi := h.insert_not_indep ⟨he, heI'⟩ 
   rw [φ.indep_iff_image, injOn_insert heI', and_iff_left heI, 
     and_iff_left (φ.injOn_of_indep h.indep), linearIndependent_subtype_congr image_insert_eq, 
     (linearIndependent_insert heI), not_and,  not_not] at hi 
   exact hi <| φ.linear_indep_image h.indep 
+
+theorem Rep.subset_span_of_basis (φ : M.Rep 𝔽 W) (h : M.Basis I X) : φ '' X ⊆ span 𝔽 (φ '' I) :=
+  φ.subset_span_of_basis' h.basis'
 
 theorem Rep.span_eq_span_inter_ground (φ : M.Rep 𝔽 W) (X : Set α) : 
     span 𝔽 (φ '' X) = span 𝔽 (φ '' (X ∩ M.E)) := by 
@@ -338,32 +340,88 @@ theorem Rep.span_eq_span_inter_ground (φ : M.Rep 𝔽 W) (X : Set α) :
   rw [←nmem_support]
   exact not_mem_subset φ.support_subset_ground he.2
 
+@[simp] theorem Rep.span_eq_span_cl (φ : M.Rep 𝔽 W) (X : Set α) : 
+    span 𝔽 (φ '' M.cl X) = span 𝔽 (φ '' X) := by 
+  rw [φ.span_eq_span_inter_ground X, cl_eq_cl_inter_ground, le_antisymm_iff, 
+    and_iff_left (span_mono (image_subset _ (M.subset_cl _)))]
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E) 
+  rw [←hI.cl_eq_cl]
+  exact (span_mono <| φ.subset_span_of_basis hI.indep.basis_cl).trans <| 
+    span_le.2 (span_mono (image_subset _ hI.subset))
+
+theorem Rep.span_eq_span_of_basis' (φ : M.Rep 𝔽 W) (h : M.Basis' I X) : 
+    span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
+  le_antisymm (span_mono (image_subset _ h.subset)) (span_le.2 (φ.subset_span_of_basis' h)) 
+
+theorem Rep.span_eq_span_of_basis (φ : M.Rep 𝔽 W) (h : M.Basis I X) : 
+    span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
+  φ.span_eq_span_of_basis' h.basis' 
+
+theorem Rep.span_le_span_of_cl_subset_cl (φ : M.Rep 𝔽 W) (h : M.cl X ⊆ M.cl Y) :
+    span 𝔽 (φ '' X) ≤ span 𝔽 (φ '' Y) := by 
+  obtain ⟨I, hI⟩ := M.exists_basis' X 
+  refine span_le.2 <| (φ.subset_span_of_basis' hI).trans <| span_le.2 ?_
+  rw [←φ.span_eq_span_cl]
+  exact (image_subset _ (hI.basis_cl_right.subset.trans h)).trans subset_span 
+  
+theorem Rep.subset_span_iff (φ : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) : 
+    φ '' X ⊆ span 𝔽 (φ '' Y) ↔ X ⊆ M.cl Y := by 
+  -- obtain ⟨I, hI⟩ := M.exists_basis' X
+
+  refine ⟨fun h e heX ↦ ?_, fun h ↦ ?_⟩ 
+  · obtain ⟨I, hI⟩ := M.exists_basis' Y 
+    -- have hsp := h (mem_image_of_mem _ heX)
+    rw [←φ.span_eq_span_of_basis' hI] at h
+    rw [←hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
+    
+    specialize h (mem_image_of_mem _ heX)
+    refine fun hi ↦ by_contra fun heI ↦ ?_
+    have hind := φ.linear_indep_image hi 
+    rw [linearIndependent_subtype_congr image_insert_eq, linearIndependent_insert] at hind
+    · exact (hind.2 h).elim  
+    refine fun heI' ↦ heI ?_ 
+    rwa [←(φ.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
+  rw [←φ.span_eq_span_cl]
+  exact (image_subset φ h).trans subset_span
+    
+
+-- Ugly proof in the second part 
 theorem Rep.cl_eq (φ : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ φ ⁻¹' (span 𝔽 (φ '' X)) := by 
-  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  rw [cl_eq_cl_inter_ground, ←hI.cl_eq_cl, φ.span_eq_span_inter_ground, 
-    subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _), 
+  obtain ⟨I, hI⟩ := M.exists_basis' (X)
+  rw [←hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _), 
     ←image_subset_iff, and_iff_left]
   · exact (φ.subset_span_of_basis hI.indep.basis_cl).trans (span_mono (image_subset _ hI.subset))
   rintro x ⟨hxE, hx⟩  
   rw [mem_preimage] at hx
   
+  rw [hI.indep.mem_cl_iff, or_iff_not_imp_right, dep_iff, 
+    and_iff_left <| insert_subset hxE hI.indep.subset_ground]
+  refine fun hxI hi ↦ ?_
+  apply (φ.linear_indep hi).not_mem_span_image (s := Subtype.val ⁻¹' I) 
+    (x := ⟨x, mem_insert _ _⟩) (by simpa)
+  simp only [restrict_apply] 
+
+  have hsp := span_mono (φ.subset_span_of_basis' hI) hx
   
-  have := φ.subset_span_of_basis hI hx  
-  -- refine subset_antisymm (subset_inter (cl_subset_ground _ _) ?_) ?_ 
-  -- · rw [←image_subset_iff]
+  rw [span_coe_eq_restrictScalars, restrictScalars_self] at hsp 
+  convert hsp 
+  ext
+  aesop
 
-  -- · 
-  --   refine subset_trans ?_ subset_span
+theorem Rep.span_eq_span_of_cl_eq_cl (φ : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) : 
+    span 𝔽 (φ '' X) = span 𝔽 (φ '' Y) := by 
+  rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
+  simp_rw [le_antisymm_iff, span_le, φ.subset_span_iff (inter_subset_right _ _), 
+    ←cl_eq_cl_inter_ground]
+  constructor
+  · rw [←h, cl_eq_cl_inter_ground]; exact subset_cl _ _
+  rw [h, cl_eq_cl_inter_ground]
+  exact subset_cl _ _
 
-
-  --   (fun x hx ↦ ?_)) ?_ 
-  -- · rw [mem_preimage]
-  --   have := φ.subset_span_of_basis hI
-
-     
-  -- · have := φ.subset_span_of_basis hI
-
-  -- have := hI.indep.mem_cl_iff_of_not_mem
+-- theorem Rep.r_eq [FiniteRk M] (φ : M.Rep 𝔽 W) (X : Set α) : 
+--     M.r X = finrank 𝔽 (span 𝔽 (φ '' X)) := by
+--   obtain ⟨I, hI⟩ := M.exists_basis' X 
+--   rw [←hI.r]
 
 structure MatrixRep (M : Matroid α) (𝔽 R : Type _) [Field 𝔽] where 
   (to_matrix : Matrix R M.E 𝔽)
@@ -387,18 +445,16 @@ noncomputable def Representable.fin_matrixRep [FiniteRk M] (hM : M.Representable
     M.MatrixRep 𝔽 (Fin M.rk) := 
   (Classical.choose hM.exists_fin_rep).to_matrixRep
 
--- noncomputable instance [Finite M] (X : Set M.E) : Fintype X := by 
---   have := M.ground_finite.fintype
---   exact Fintype.ofFinite ↑X
+-- Subspace representations 
 
--- instance [Fintype α] (X : Set α) : Fintype X := by
---   
+def Rep.subspaceRep (φ : M.Rep 𝔽 W) : Submodule 𝔽 (α → 𝔽) := 
+  Submodule.subspaceRep 𝔽 φ
 
+/-- The 'row space' corresponding to the representation `φ` -/
+def Rep.projSet (φ : M.Rep 𝔽 W) (X : Set α) : Submodule 𝔽 (X → 𝔽) := 
+  Submodule.map (LinearMap.funLeft 𝔽 𝔽 Subtype.val) (Submodule.subspaceRep 𝔽 φ)
   
-
-
--- theorem MatrixRep.r_eq [Finite M] (A : MatrixRep M 𝔽 R) (X : Set α) [Fintype X] (hX : X ⊆ M.E) : 
---     M.r X = (Matrix.submatrix (A : Matrix R M.E 𝔽) id (inclusion hX)).rank (R := 𝔽) := by 
---   rw [M.r_def]
-  -- sorry 
+theorem foo (φ : M.Rep 𝔽 W) (I : Set α) : 
+    M.Indep I ↔ φ.projSet I = ⊤ := by 
+  
 

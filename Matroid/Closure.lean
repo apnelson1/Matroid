@@ -200,12 +200,22 @@ theorem Basis'.cl_eq_cl (h : M.Basis' I X) : M.cl I = M.cl X := by
 theorem Basis.subset_cl (h : M.Basis I X) : X ⊆ M.cl I := by 
   rw [←cl_subset_cl_iff_subset_cl, h.cl_eq_cl]
 
-theorem Basis.basis_cl_right (h : M.Basis I X) : M.Basis I (M.cl X) := by
+theorem Basis'.basis_cl_right (h : M.Basis' I X) : M.Basis I (M.cl X) := by 
   rw [←h.cl_eq_cl]; exact h.indep.basis_cl
+
+theorem Basis.basis_cl_right (h : M.Basis I X) : M.Basis I (M.cl X) := 
+  h.basis'.basis_cl_right
 
 theorem Indep.mem_cl_iff (hI : M.Indep I) :
     x ∈ M.cl I ↔ M.Dep (insert x I) ∨ x ∈ I := by 
   rwa [hI.cl_eq_setOf_basis_insert, mem_setOf, basis_insert_iff]
+
+theorem Indep.mem_cl_iff' (hI : M.Indep I) : 
+    x ∈ M.cl I ↔ x ∈ M.E ∧ (M.Indep (insert x I) → x ∈ I) := by 
+  rw [hI.mem_cl_iff, dep_iff, insert_subset_iff, and_iff_left hI.subset_ground, 
+    imp_iff_not_or]
+  have := hI.subset_ground 
+  aesop
 
 theorem Indep.insert_dep_iff (hI : M.Indep I) : M.Dep (insert e I) ↔ e ∈ M.cl I \ I := by 
   rw [mem_diff, hI.mem_cl_iff, or_and_right, and_not_self_iff, or_false, 

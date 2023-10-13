@@ -135,11 +135,11 @@ theorem le_er_iff : n ≤ M.er X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.encard =
   rw [←hIc, ←hI.er]
   exact M.er_mono hIX
 
-theorem er_le_iff : M.er X ≤ n ↔ ∀ I, I ⊆ X → M.Indep I → I.encard ≤ n := by
+theorem er_le_iff : M.er X ≤ n ↔ ∀ {I}, I ⊆ X → M.Indep I → I.encard ≤ n := by
   refine ⟨fun h I hIX hI ↦ (hI.er.symm.trans_le ((M.er_mono hIX).trans h)), fun h ↦ ?_⟩
   obtain ⟨I, hI⟩ := M.exists_basis' X
   rw [←hI.encard]
-  exact h I hI.subset hI.indep
+  exact h hI.subset hI.indep
 
 theorem Indep.encard_le_er_of_subset (hI : M.Indep I) (hIX : I ⊆ X) : I.encard ≤ M.er X := by
   rw [← hI.er]; exact M.er_mono hIX
@@ -563,92 +563,63 @@ theorem rFin.er_le_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X ≤ M.er Y �
 @[simp] theorem coe_le_er_iff [FiniteRk M] {n : ℕ} : (n : ℕ∞) ≤ M.er X ↔ n ≤ M.r X := by
   rw [← coe_r_eq, Nat.cast_le]
 
+theorem rFin.r_le_r_of_er_le_er (hY : M.rFin Y) (hle : M.er X ≤ M.er Y) : M.r X ≤ M.r Y := by
+  rwa [← rFin.er_le_er_iff _ hY]; exact hle.trans_lt hY.lt
+
+theorem r_eq_r_inter_ground (M : Matroid α) (X : Set α) : M.r X = M.r (X ∩ M.E) := by
+  rw [← er_toNat_eq_r, ←er_inter_ground_eq, er_toNat_eq_r]
+
+theorem le_r_iff [FiniteRk M] : n ≤ M.r X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
+  simp_rw [← coe_le_er_iff, le_er_iff,]
+  refine ⟨fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, by rw [ncard_def, hc, toNat_coe]⟩, 
+    fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, ?_⟩⟩  
+  rw [hI.finite.encard_eq_coe, ←hc]; rfl 
+
+theorem r_le_iff [FiniteRk M] : M.r X ≤ n ↔ ∀ {I}, I ⊆ X → M.Indep I → I.ncard ≤ n := by
+  simp_rw [←er_le_coe_iff, er_le_iff, encard_le_coe_iff]
+  refine ⟨fun h I hIX hI ↦ ?_, fun h I hIX hI ↦ ⟨hI.finite, ⟨_, hI.finite.encard_eq_coe, h hIX hI⟩⟩⟩
+  obtain ⟨-, m, hm, hmn⟩ := h hIX hI 
+  rwa [ncard_def, hm, toNat_coe]
+
+theorem r_mono (M : Matroid α) [FiniteRk M] : Monotone M.r := by
+  rintro X Y (hXY : X ⊆ Y);
+  rw [← er_le_er_iff]
+  exact M.er_mono hXY
+
+theorem r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
+  rw [r_eq_r_inter_ground, rk_def]; exact M.r_mono (inter_subset_right _ _)
+
+theorem Indep.r (hI : M.Indep I) : M.r I = I.ncard := by
+  rw [← er_toNat_eq_r, hI.er, ncard_def]
+
+theorem r_le_card (M : Matroid α) [Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M.r X ≤ X.ncard := 
+  r_le_iff.2 <| fun {I} hI _ ↦ ncard_le_of_subset hI <| M.set_finite X
+  
+theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
+  rw [← hI.r]; exact M.r_mono h
+
+theorem Indep.card_le_rk [FiniteRk M] (hI : M.Indep I) : I.ncard ≤ M.rk :=
+  hI.r.symm.trans_le (M.r_le_rk I)
+
+theorem Basis'.card (h : M.Basis' I X) : I.ncard = M.r X := by 
+  rw [ncard_def, h.encard, ←er_toNat_eq_r]
+
+theorem Basis'.r (h : M.Basis' I X) : M.r I = M.r X := by 
+  rw [← h.card, h.indep.r]
+
+theorem Basis.card (h : M.Basis I X) : I.ncard = M.r X := 
+  h.basis'.card
+  
+theorem Basis.r (h : M.Basis I X) : M.r I = M.r X :=
+  h.basis'.r 
 
 
 
-end Rank
 
 
-end Matroid
-
--- theorem r_eq_of_er_eq (h : M.er X = M.er Y) : M.r X = M.r Y := by rw [r, r, h]
--- #align matroid_in.r_eq_of_er_eq Matroid.r_eq_of_er_eq
-
--- theorem rFin.er_eq_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X = M.er Y ↔ M.r X = M.r Y := by
---   rw [← hX.coe_r_eq_er, ← hY.coe_r_eq_er, ENat.coe_inj]
--- #align matroid_in.rFin.er_eq_er_iff Matroid.rFin.er_eq_er_iff
-
--- theorem rFin.er_le_er_iff (hX : M.rFin X) (hY : M.rFin Y) : M.er X ≤ M.er Y ↔ M.r X ≤ M.r Y := by
---   rw [← hX.coe_r_eq_er, ← hY.coe_r_eq_er, ENat.coe_le_coe_iff]
--- #align matroid_in.rFin.er_le_er_iff Matroid.rFin.er_le_er_iff
 
 
--- theorem rFin.r_le_r_of_er_le_er (hY : M.rFin Y) (hle : M.er X ≤ M.er Y) : M.r X ≤ M.r Y := by
---   rwa [← rFin.er_le_er_iff _ hY]; exact hle.trans_lt hY.lt
--- #align matroid_in.rFin.r_le_r_of_er_le_er Matroid.rFin.r_le_r_of_er_le_er
-
--- theorem rFin.er_le_er_of_r_le_r (hX : M.rFin X) (hle : M.r X ≤ M.r Y) : M.er X ≤ M.er Y := by
---   obtain h | h := em (M.rFin Y); rwa [hX.er_le_er_iff h]; rw [not_rFin_iff.mp h]; simp
--- #align matroid_in.rFin.er_le_er_of_r_le_r Matroid.rFin.er_le_er_of_r_le_r
-
--- theorem r_eq_r_inter_ground (M : Matroid α) (X : Set α) : M.r X = M.r (X ∩ M.E) := by
---   rw [← er_to_nat_eq_r, er_inter_ground_eq, er_to_nat_eq_r]
--- #align matroid_in.r_eq_r_inter_ground Matroid.r_eq_r_inter_ground
-
--- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
--- theorem le_r_iff [FiniteRk M] : n ≤ M.r X ↔ ∃ (I : _) (_ : I ⊆ X), M.indep I ∧ I.ncard = n :=
---   by
---   simp_rw [← coe_le_er_iff, le_er_iff, encard_eq_coe_iff, exists_prop]
---   exact exists_congr fun I => ⟨fun hI => by tauto, fun hI => ⟨hI.1, hI.2.1, hI.2.1.Finite, hI.2.2⟩⟩
--- #align matroid_in.le_r_iff Matroid.le_r_iff
-
--- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
--- theorem r_le_iff [FiniteRk M] : M.r X ≤ n ↔ ∀ (I) (_ : I ⊆ X), M.indep I → I.ncard ≤ n :=
---   by
---   simp_rw [← ENat.coe_le_coe_iff, coe_r_eq_er, er_le_iff, encard_le_coe_iff, ENat.coe_le_coe_iff]
---   exact forall_congr' fun I => ⟨by tauto, fun h hIX hI => ⟨hI.Finite, h hIX hI⟩⟩
--- #align matroid_in.r_le_iff Matroid.r_le_iff
-
--- theorem r_mono (M : Matroid α) [FiniteRk M] : Monotone M.r := by rintro X Y (hXY : X ⊆ Y);
---   rw [← er_le_er_iff]; exact M.er_mono hXY
--- #align matroid_in.r_mono Matroid.r_mono
-
--- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
--- theorem r_le_card (M : Matroid α) [Finite M] (X : Set α)
---     (hX : X ⊆ M.E := by
---       run_tac
---         ssE) :
---     M.r X ≤ X.ncard := by rw [r_le_iff]; exact fun I h _ => ncard_le_of_subset h (M.set_finite X)
--- #align matroid_in.r_le_card Matroid.r_le_card
-
--- theorem r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
---   rw [r_eq_r_inter_ground]; exact M.r_mono (inter_subset_right _ _)
--- #align matroid_in.r_le_rk Matroid.r_le_rk
-
--- theorem lt_rk_iff_ne_rk [FiniteRk M] : M.r X < M.rk ↔ M.r X ≠ M.rk :=
---   (M.r_le_rk X).lt_iff_ne
--- #align matroid_in.lt_rk_iff_ne_rk Matroid.lt_rk_iff_ne_rk
-
--- theorem Indep.r (hI : M.indep I) : M.r I = I.ncard := by
---   rw [← er_to_nat_eq_r, hI.er, encard_to_nat_eq]
--- #align matroid_in.indep.r Matroid.Indep.r
-
--- theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
---   rw [← hI.r]; exact M.r_mono h
--- #align matroid_in.indep.card_le_r_of_subset Matroid.Indep.card_le_r_of_subset
-
--- theorem Indep.card_le_rk [FiniteRk M] (hI : M.indep I) : I.ncard ≤ M.rk :=
---   hI.R.symm.trans_le (M.r_le_rk I)
--- #align matroid_in.indep.card_le_rk Matroid.Indep.card_le_rk
-
--- theorem Basis.card (h : M.Basis I X) : I.ncard = M.r X := by
---   rw [← encard_to_nat_eq, ← er_to_nat_eq_r, h.encard]
--- #align matroid_in.basis.card Matroid.Basis.card
-
--- theorem Basis.r (h : M.Basis I X) : M.r I = M.r X := by rw [← h.card, h.indep.r]
--- #align matroid_in.basis.r Matroid.Basis.r
-
--- theorem Basis.r_eq_card (h : M.Basis I X) : M.r X = I.ncard := by rw [← h.r, ← h.indep.r]
 -- #align matroid_in.basis.r_eq_card Matroid.Basis.r_eq_card
 
 -- theorem Base.r (hB : M.base B) : M.r B = M.rk := by rw [base_iff_basis_ground] at hB ; rw [hB.r, rk]
@@ -656,6 +627,45 @@ end Matroid
 
 -- theorem Base.card (hB : M.base B) : B.ncard = M.rk := by rw [(base_iff_basis_ground.mp hB).card, rk]
 -- #align matroid_in.base.card Matroid.Base.card
+
+-- #align matroid_in.indep.card_le_rk Matroid.Indep.card_le_rk
+
+
+-- #align matroid_in.basis.card Matroid.Basis.card
+
+end Rank
+
+
+end Matroid
+
+
+
+-- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
+
+-- #align matroid_in.le_r_iff Matroid.le_r_iff
+
+-- /- ./././Mathport/Syntax/Translate/Basic.lean:638:2: warning: expanding binder collection (I «expr ⊆ » X) -/
+
+-- #align matroid_in.r_le_iff Matroid.r_le_iff
+
+
+-- #align matroid_in.r_mono Matroid.r_mono
+
+-- /- ./././Mathport/Syntax/Translate/Tactic/Builtin.lean:69:18: unsupported non-interactive tactic ssE -/
+
+-- #align matroid_in.r_le_card Matroid.r_le_card
+
+
+-- #align matroid_in.r_le_rk Matroid.r_le_rk
+
+-- theorem lt_rk_iff_ne_rk [FiniteRk M] : M.r X < M.rk ↔ M.r X ≠ M.rk :=
+--   (M.r_le_rk X).lt_iff_ne
+-- #align matroid_in.lt_rk_iff_ne_rk Matroid.lt_rk_iff_ne_rk
+
+
+-- #align matroid_in.indep.r Matroid.Indep.r
+
+
 
 -- @[simp]
 -- theorem r_empty (M : Matroid α) : M.r ∅ = 0 := by

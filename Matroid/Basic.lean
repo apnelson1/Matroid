@@ -732,6 +732,10 @@ theorem Basis'.eq_of_subset_indep (hI : M.Basis' I X) (hJ : M.Indep J) (hIJ : I 
     (hJX : J ⊆ X) : I = J := 
   hIJ.antisymm (hI.2 ⟨hJ, hJX⟩ hIJ)
 
+theorem Basis'.insert_not_indep (hI : M.Basis' I X) (he : e ∈ X \ I) : ¬ M.Indep (insert e I) := 
+  fun hi ↦ he.2 <| insert_eq_self.1 <| Eq.symm <| 
+    hI.eq_of_subset_indep hi (subset_insert _ _) (insert_subset he.1 hI.subset)
+
 theorem basis_iff_mem_maximals (hX : X ⊆ M.E := by aesop_mat): 
     M.Basis I X ↔ I ∈ maximals (· ⊆ ·) {I | M.Indep I ∧ I ⊆ X} := by
   rw [Basis, and_iff_left hX]
