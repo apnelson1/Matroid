@@ -126,7 +126,6 @@ def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.
   ( fun I ↦ LinearIndependent 𝔽 (I.restrict f) ) 
   ( linearIndependent_empty_type )
   ( fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI) )
- 
   ( by 
     intro I J hI hJ hIJ
     have hIinj : InjOn f I := by rw [injOn_iff_injective]; exact hI.injective
@@ -447,14 +446,43 @@ noncomputable def Representable.fin_matrixRep [FiniteRk M] (hM : M.Representable
 
 -- Subspace representations 
 
-def Rep.subspaceRep (φ : M.Rep 𝔽 W) : Submodule 𝔽 (α → 𝔽) := 
-  Submodule.subspaceRep 𝔽 φ
+def Rep.subspaceRep (φ : M.Rep 𝔽 W) : Submodule 𝔽 (α → 𝔽) := Submodule.ofFun 𝔽 φ
 
 /-- The 'row space' corresponding to the representation `φ` -/
-def Rep.projSet (φ : M.Rep 𝔽 W) (X : Set α) : Submodule 𝔽 (X → 𝔽) := 
-  Submodule.map (LinearMap.funLeft 𝔽 𝔽 Subtype.val) (Submodule.subspaceRep 𝔽 φ)
+def Rep.projSet (φ : M.Rep 𝔽 W) (X : Set α) : Submodule 𝔽 (X → 𝔽) := ofFun 𝔽 (φ ∘ ((↑) : X → α))
   
-theorem foo (φ : M.Rep 𝔽 W) (I : Set α) : 
-    M.Indep I ↔ φ.projSet I = ⊤ := by 
+theorem Rep.indep_iff_projSet_eq_top (φ : M.Rep 𝔽 W) : M.Indep I ↔ φ.projSet I = ⊤ := by 
+  rw [φ.indep_iff, Rep.projSet, ofFun_eq_top_iff]; rfl  
+  
+example (h : Module.Finite 𝔽 (α → 𝔽)) : _root_.Finite α := by 
   
 
+def matroid_of_subspace (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensional 𝔽 U] : Matroid α := 
+  matroid_of_indep_of_bdd_augment univ 
+  ( fun I ↦ Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) 
+  ( by simp )
+  ( by 
+    refine fun I J (hJ : _ = ⊤) hIJ ↦ eq_top_iff'.2 fun (x : I → 𝔽) ↦ mem_map.2 ?_  
+    simp_rw [eq_top_iff', mem_map] at hJ
+    obtain ⟨y, hy, hy'⟩ := hJ <| LinearMap.extend_subset 𝔽 hIJ x
+    exact ⟨y, hy, funext fun i ↦ by simpa using congr_fun hy' (inclusion hIJ i)⟩ )
+  ( by sorry )
+  ( by 
+    refine ⟨finrank 𝔽 U, fun I (hI : _ = ⊤) ↦ ?_⟩ 
+    have : Fintype I
+    · have hfin := Module.Finite.map U (LinearMap.fun_subtype 𝔽 I)
+      rw [hI] at hfin
+      
+      sorry 
+    rw [encard_le_coe_iff_finite_ncard_le, and_iff_right <| toFinite I, ←Nat.card_coe_set_eq, 
+      Nat.card_eq_fintype_card]
+    
+    have hle := Submodule.finrank_map_le (LinearMap.fun_subtype 𝔽 I) U 
+    rw [hI] at hle
+    convert hle
+    simp 
+     
+    )
+  ( fun _ _ ↦ subset_univ _ ) 
+  
+  
