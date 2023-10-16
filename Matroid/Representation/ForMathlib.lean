@@ -108,8 +108,7 @@ def Submodule.ofFun (R : Type _) [CommSemiring R] [Module R W] (f : α → W) : 
   LinearMap.range (dual_comp f R)
 
 theorem Submodule.ofFun_map (f : α → W) (e : W →ₗ[R] W') 
-  (h_inj : Disjoint (span R (range f)) (LinearMap.ker e)) : 
-    ofFun R (e ∘ f) = ofFun R f := by 
+    (h_inj : Disjoint (span R (range f)) (LinearMap.ker e)) : ofFun R (e ∘ f) = ofFun R f := by 
   ext w
   simp only [ofFun, dual_compMap_apply, LinearMap.mem_range, LinearMap.coe_mk, AddHom.coe_mk]
   refine ⟨by rintro ⟨φ, _, rfl⟩; exact ⟨φ.comp e, rfl⟩, ?_⟩ 
@@ -138,42 +137,36 @@ theorem Submodule.ofFun_eq_top_iff (f : α → W) : ofFun R f = ⊤ ↔ LinearIn
   simp [linearIndependent_iff_forall_exists_eq_dual_comp, eq_top_iff']
   
 -- Inverses
-
-noncomputable def foo1 (U : Submodule R (α → R)) (b : Basis ι R U) : α → (ι → R) :=
-    fun a i ↦ (b i).1 a 
+ 
+/-- For every `ι`-indexed basis of a subspace `U` of `α → R`, there is a canonical 
+  `f : α → (ι → R)` for which `U = ofFun R f` -/
+theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) : 
+    ofFun R (fun a i ↦ (b i).1 a) = U := by  
+  have _ := FiniteDimensional.fintypeBasisIndex b
+  ext x
+  rw [mem_ofFun_iff]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨φ, rfl⟩
+    set φ' : ι → R := (piEquiv ι R R).symm φ  with hφ'
+    convert (b.equivFun.symm φ').prop 
+    ext x
+    rw [Function.comp_apply, (piEquiv ι R R).symm_apply_eq.1 hφ', piEquiv_apply_apply]
+    simp only [Basis.equivFun_symm_apply, AddSubmonoid.coe_finset_sum, 
+      coe_toAddSubmonoid, Finset.sum_apply]
+    exact Finset.sum_congr rfl fun y _ ↦ mul_comm _ _ 
+  use (piEquiv ι R R) <| b.equivFun ⟨x, h⟩ 
+  ext i
+  simp only [Basis.equivFun_apply, Function.comp_apply, piEquiv_apply_apply] 
+  convert congr_fun (congr_arg Subtype.val (b.sum_repr ⟨x, h⟩)) i 
+  simp only [smul_eq_mul, AddSubmonoid.coe_finset_sum, coe_toAddSubmonoid, SetLike.val_smul, 
+    Finset.sum_apply, Pi.smul_apply]
+  exact Finset.sum_congr rfl  fun y _ ↦ mul_comm _ _
   
+-- Todo; the span of the range of f and (ofFun f) should have the same dimension. I don't know if
+-- there is a natural map from bases of one to the other, though. 
 
-
--- theorem foo2 (U : Submodule R (α → R)) [FiniteDimensional R U] (b : Basis ι R U) : 
---     ofFun R (fun a i ↦ (b i).1 a ) = U := by 
---   classical 
---   have _ := FiniteDimensional.fintypeBasisIndex b
-  
-  
---   ext x
---   · rw [mem_ofFun_iff]; constructor
---     · rintro ⟨φ, hφ, rfl⟩
---       have := (b.map b.equivFun).dualBasis.equivFun_apply φ 
-       
-
---       -- have := DualEquiv
---       -- have : Dual R (ι → R) →ₗ[R] (ι → R)
---       -- · exact?  
---       sorry
---     sorry
-
-      
---       -- change (fun (a : α) ↦ _) ∈ U  
-      
-      
+-- theorem Basis.foo {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) : 
+--     span R (range (fun a i ↦ (b i).1 a)) = ⊤ := by 
+--   _
       
     
-
-    
--- sorry
-  -- simp [foo1, ofFun]
-
-
-
-
-
