@@ -9,9 +9,15 @@ theorem Submodule.span_diff_zero {R : Type u_1} {M : Type u_4} [Semiring R] [Add
   simp [←Submodule.span_insert_zero]
   
 theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V] 
-  [Module K V] [FiniteDimensional K V] (f : α → V) (h : LinearIndependent K f) :
+  [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
     _root_.Finite α :=
   Cardinal.lt_aleph0_iff_finite.1 <| FiniteDimensional.lt_aleph0_of_linearIndependent h
+
+noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
+    Fintype α :=
+  have _ := h.finite_index 
+  Fintype.ofFinite α
 section coords
 
 def LinearMap.fun_subtype (R : Type _) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) := 
@@ -75,7 +81,6 @@ end coords
 
 variable {α W W' R : Type _} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
 
-
 @[simp] theorem Basis.total_comp_repr (f : Basis α R W) (g : α → R) : 
     ((Finsupp.total α R R g).comp f.repr.toLinearMap) ∘ f = g := by
   ext; simp 
@@ -108,7 +113,7 @@ def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W
   map_add' := fun _ _ ↦ rfl
   map_smul' := fun _ _ ↦ rfl 
   
-@[simp] theorem Submodule.dual_compMap_apply (f : α → W) (R : Type _) [CommSemiring R] [Module R W]
+@[simp] theorem Submodule.dual_comp_apply (f : α → W) (R : Type _) [CommSemiring R] [Module R W]
   (φ : Module.Dual R W) : 
     Submodule.dual_comp f R φ = φ ∘ f := rfl 
 
@@ -120,7 +125,7 @@ def Submodule.ofFun (R : Type _) [CommSemiring R] [Module R W] (f : α → W) : 
 theorem Submodule.ofFun_map (f : α → W) (e : W →ₗ[R] W') 
     (h_inj : Disjoint (span R (range f)) (LinearMap.ker e)) : ofFun R (e ∘ f) = ofFun R f := by 
   ext w
-  simp only [ofFun, dual_compMap_apply, LinearMap.mem_range, LinearMap.coe_mk, AddHom.coe_mk]
+  simp only [ofFun, dual_comp_apply, LinearMap.mem_range, LinearMap.coe_mk, AddHom.coe_mk]
   refine ⟨by rintro ⟨φ, _, rfl⟩; exact ⟨φ.comp e, rfl⟩, ?_⟩ 
   
   rintro ⟨φ, _, rfl⟩  
@@ -175,9 +180,63 @@ theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b :
 -- Todo; the span of the range of f and (ofFun f) should have the same dimension. I don't know if
 -- there is a natural map from bases of one to the other, though. 
 
--- theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) : 
---     Module.rank R (ofFun R f) = Module.rank R (span R (range f)) := by 
---   apply le_antisymm
+theorem foo1 (f : α → R) (hf : Module.Finite R (ofFun R f)) : Module.Finite R (span R (range f)) 
+  := by
+  _
+  
+
+def exists_basis (f : α → W) : 
+    ∃ (I : Set α) (b : Basis I R (span R (range f))), ∀ i, (b i : W) = f (i : α) := by 
+  obtain ⟨I, (hI : LinearIndependent R (I.restrict f)), hmax⟩ := exists_maximal_independent' R f
+  have hsp : span R (range (I.restrict f)) = span R (range f)
+  · refine le_antisymm (span_mono ?_) ?_
+    · rw [range_restrict]; apply image_subset_range
+    refine fun x hx ↦ by_contra fun hx' ↦ ?_  
+    
+    -- have :+ linearIndependent
+
+  have hss : ∀ a, f a ∈ span R (range (I.restrict f))
+  · intro a; rw [hsp]; exact subset_span (mem_range_self _)
+  have hi := (linearIndependent_span hI)
+  refine ⟨I, (Basis.mk hi ?_).map (LinearEquiv.ofEq _ _ hsp), fun i ↦ by simp⟩
+  
+  simp_rw [←Submodule.map_le_map_iff_of_injective (injective_subtype _), 
+    Submodule.map_top, range_subtype, range_restrict, restrict_apply, Submodule.map_span]
+  apply span_mono 
+  rintro _ ⟨x, hx, rfl⟩ 
+  simp only [coeSubtype, mem_image, mem_range, Subtype.exists, Subtype.mk.injEq, exists_prop, 
+    range_restrict, exists_and_left, exists_exists_and_eq_and] 
+  exact ⟨f x, subset_span <| mem_image_of_mem _ hx, ⟨_, hx, rfl⟩, rfl⟩  
+
+  
+
+  
+  
+  
+  -- rw [←Submodule.map_le_map_iff_of_injective (M := span R (range (I.restrict f))) (f := Submodule.subtype) sorry ⊤ (span R _)]
+  -- rw [top_le_iff, eq_top_iff']
+  -- rintro ⟨x,hx⟩ 
+  -- rw [Submodule.mem_span] at *
+  -- intro P hP
+  -- have := image_subset_image (Submodule.subtype) hP 
+
+  
+  -- rw [mem_span_set] at *
+  -- obtain ⟨c, hc, rfl⟩:= hx 
+  -- use fun x ↦ c x 
+  
+  
+  
+
+
+  -- ·  
+
+
+theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) : 
+    FiniteDimensional.finrank R (ofFun R f) = FiniteDimensional.finrank R (span R (range f)) := by 
+  -- have : ∃ I : Set α, Nonempty (Basis I R (span R (range f))) 
+  
+  -- have : Basis _ R (span R (range f)) := by exact?
 --   · 
 
 -- theorem Basis.foo {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) : 

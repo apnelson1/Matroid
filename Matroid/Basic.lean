@@ -1121,11 +1121,19 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
       = Indep := by
   simp [matroid_of_indep_of_bdd_augment]
 
+instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅) 
+    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I) 
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
+    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) (h_supp : ∀ I, Indep I → I ⊆ E) : 
+    (matroid_of_indep_of_bdd_augment E Indep h_empty h_subset ind_aug h_bdd h_supp).FiniteRk := by 
+  rw [matroid_of_indep_of_bdd_augment]; infer_instance
+
 /-- A collection of bases with the exchange property and at least one finite member is a matroid -/
 def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop) 
     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
-  matroid_of_base E Base 
+    matroid_of_base E Base 
     (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange 
     (by {
       obtain ⟨B, hB, hfin⟩ := exists_finite_base

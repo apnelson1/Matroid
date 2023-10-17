@@ -119,20 +119,18 @@ def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : 
 -- @[simp] theorem Rep.subtype_ofEq_apply {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : W₁ = W₂) 
 --   (e : α) : (φ.subtype_ofEq h) e = ⟨φ e, h ▸ (φ e).prop⟩ := rfl 
 
+-- theorem LinearIndependent.finite_index_of_restrict {I : Set α} {f : α → (h : Linear)
+
+/-- A function to a module whose range has finite span gives a matroid -/
 def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
   (hfin : Module.Finite 𝔽 (span 𝔽 (range f))) : Matroid α := 
   have hlem  : ∀ {I}, LinearIndependent 𝔽 (I.restrict f) → Set.Finite I := by
     intro I hI 
-    obtain ⟨i, hi⟩ := LinearMap.exists_leftInverse_of_injective 
-      (Submodule.subtype (span 𝔽 (range f))) (by simp)
-     
-    have _ := (hI.map (f := i) ?_).finite_index
-    · exact I.toFinite
-    simp only [range_restrict, disjoint_def', LinearMap.mem_ker]
-    rintro x hx y hy rfl 
-    have h := LinearMap.congr_fun hi ⟨x, span_mono (image_subset_range _ _) hx⟩ 
-    simp only [LinearMap.coe_comp, coeSubtype, comp_apply, hy, LinearMap.id_coe, id_eq] at h
-    simpa using (congr_arg Subtype.val h).symm 
+    have hsp := span_mono (R := 𝔽) (image_subset_range f I)
+    rw [←range_restrict] at hsp
+    have _ := finiteDimensional_of_le hsp 
+    have _ := (linearIndependent_span hI).finite_index 
+    exact I.toFinite
   matroid_of_indep_of_bdd_augment 
   E
   ( fun I ↦ LinearIndependent 𝔽 (I.restrict f) ) 
@@ -186,26 +184,34 @@ def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E)
     refine fun I hI ↦ subset_trans (fun e heI ↦ ?_) hf
     exact hI.ne_zero ⟨_, heI⟩ )
 
-
--- Each function from a type to a module defines a matroid on a finite superset of its support -
-def matroid_of_fun_of_finite (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : 
-  Matroid α := matroid_of_fun (𝔽 := 𝔽) f E hf (by 
-    rw [←Submodule.span_diff_zero]
-    
-    have _ := (FiniteDimensional.span_of_finite 𝔽 (hfin.image f))
-    apply Submodule.finiteDimensional_of_le 
-    -- have : Module.Finite 𝔽 (span 𝔽 (f '' E))
-    
-    )
-  
-
 @[simp] theorem matroid_of_fun_indep_iff (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
-  (hfin : E.Finite) (I : Set α) : 
+  (hfin : Module.Finite 𝔽 (span 𝔽 (range f))) (I : Set α) : 
     (matroid_of_fun (𝔽 := 𝔽) f E hf hfin).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by
   simp [matroid_of_fun, matroid_of_indep_of_finite] 
 
-def rep_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) :
-    (matroid_of_fun (𝔽 := 𝔽) f E hf hfin).Rep 𝔽 W where 
+instance (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : Module.Finite 𝔽 (span 𝔽 (range f))) :
+    (matroid_of_fun f E hf hfin).FiniteRk := by 
+  rw [matroid_of_fun]; infer_instance
+
+-- Each function from a type to a module defines a matroid on a finite superset of its support -
+def matroid_of_fun_of_finite (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
+  (hfin : E.Finite) : Matroid α := matroid_of_fun (𝔽 := 𝔽) f E hf (by 
+    rw [←Submodule.span_diff_zero, ←(by ext; aesop : f '' (support f) = range f \ {0})] 
+    have _ := (FiniteDimensional.span_of_finite 𝔽 (hfin.image f))
+    exact Submodule.finiteDimensional_of_le <| span_mono (R := 𝔽) (image_subset f hf) )
+  
+instance (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : 
+    (matroid_of_fun_of_finite (𝔽 := 𝔽) f E hf hfin).Finite :=
+  ⟨hfin⟩ 
+
+@[simp] theorem matroid_of_fun_of_finite_indep_iff (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
+  (hfin : E.Finite) (I : Set α) : 
+    (matroid_of_fun_of_finite (𝔽 := 𝔽) f E hf hfin).Indep I 
+      ↔ LinearIndependent 𝔽 (I.restrict f) := by 
+  simp [matroid_of_fun_of_finite]
+
+def rep_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
+  (hfin : Module.Finite 𝔽 (span 𝔽 (range f))) : (matroid_of_fun (𝔽 := 𝔽) f E hf hfin).Rep 𝔽 W where 
   to_fun := f
   valid' := by simp [IsRep]
 
@@ -510,10 +516,10 @@ theorem matroid_of_subspace_aux {U : Submodule 𝔽 (α → 𝔽)} {I : Set α} 
   (hI : Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) : 
   Set.Finite I ∧ finrank 𝔽 (Submodule.map (LinearMap.fun_subtype 𝔽 I) U) = I.ncard := sorry 
 
-theorem matroid_of_subspace_aux' {U : Submodule 𝔽 (α → 𝔽)} {I : Set α}
-    (hI : Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) 
-    (b : Basis ): 
-  ∃ (f : I → U) , LinearIndependent 𝔽 f ∧ 
+-- theorem matroid_of_subspace_aux' {U : Submodule 𝔽 (α → 𝔽)} {I : Set α}
+--     (hI : Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) 
+--     (b : Basis ): 
+--   ∃ (f : I → U) , LinearIndependent 𝔽 f ∧ 
 
 
 
@@ -565,5 +571,3 @@ theorem matroid_of_subspace_aux' {U : Submodule 𝔽 (α → 𝔽)} {I : Set α}
      
 --     )
 --   ( fun _ _ ↦ subset_univ _ ) 
-  
-  
