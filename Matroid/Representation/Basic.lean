@@ -119,8 +119,20 @@ def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : 
 -- @[simp] theorem Rep.subtype_ofEq_apply {W₁ W₂ : Submodule 𝔽 W} (φ : M.Rep 𝔽 W₁) (h : W₁ = W₂) 
 --   (e : α) : (φ.subtype_ofEq h) e = ⟨φ e, h ▸ (φ e).prop⟩ := rfl 
 
-def matroid_of_fun' (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
+def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
   (hfin : Module.Finite 𝔽 (span 𝔽 (range f))) : Matroid α := 
+  have hlem  : ∀ {I}, LinearIndependent 𝔽 (I.restrict f) → Set.Finite I := by
+    intro I hI 
+    obtain ⟨i, hi⟩ := LinearMap.exists_leftInverse_of_injective 
+      (Submodule.subtype (span 𝔽 (range f))) (by simp)
+     
+    have _ := (hI.map (f := i) ?_).finite_index
+    · exact I.toFinite
+    simp only [range_restrict, disjoint_def', LinearMap.mem_ker]
+    rintro x hx y hy rfl 
+    have h := LinearMap.congr_fun hi ⟨x, span_mono (image_subset_range _ _) hx⟩ 
+    simp only [LinearMap.coe_comp, coeSubtype, comp_apply, hy, LinearMap.id_coe, id_eq] at h
+    simpa using (congr_arg Subtype.val h).symm 
   matroid_of_indep_of_bdd_augment 
   E
   ( fun I ↦ LinearIndependent 𝔽 (I.restrict f) ) 
@@ -130,12 +142,8 @@ def matroid_of_fun' (f : α → W) (E : Set α) (hf : f.support ⊆ E)
     intro I J hI hJ hIJ
     have hIinj : InjOn f I := by rw [injOn_iff_injective]; exact hI.injective
 
-    have : Fintype I
-    · sorry 
-    
-      
-    have : Fintype J 
-    · sorry
+    have := (hlem hI).fintype 
+    have := (hlem hJ).fintype 
 
     have h : ¬ (f '' J ⊆ span 𝔽 (f '' I))
     · refine fun hss ↦ hIJ.not_le ?_
@@ -145,7 +153,7 @@ def matroid_of_fun' (f : α → W) (E : Set α) (hf : f.support ⊆ E)
       · apply FiniteDimensional.span_of_finite
         rw [range_restrict]
         apply I.toFinite.image
-      
+        
       have hle := span_mono hss (R := 𝔽)
       simp only [span_coe_eq_restrictScalars, restrictScalars_self] at hle  
       have hrank := finrank_le_finrank_of_le hle 
@@ -153,7 +161,7 @@ def matroid_of_fun' (f : α → W) (E : Set α) (hf : f.support ⊆ E)
       rwa [finrank_span_eq_card hI, finrank_span_eq_card hJ, 
         ←Nat.card_eq_fintype_card, ←Nat.card_eq_fintype_card, 
         Nat.card_coe_set_eq, Nat.card_coe_set_eq] at hrank
-  
+
     obtain ⟨_, ⟨e, he, rfl⟩, heI⟩ := not_subset.1 h
     have' heI' : f e ∉ f '' I := fun h ↦ heI (Submodule.subset_span h)
     have heI'' : e ∉ I := fun h' ↦ heI' (mem_image_of_mem f h') 
@@ -161,71 +169,35 @@ def matroid_of_fun' (f : α → W) (E : Set α) (hf : f.support ⊆ E)
     simp only
     have hi : LinearIndependent 𝔽 ((↑) : f '' I → W)
     · rwa [← linearIndependent_image hIinj]
-
+    
     have hins := (linearIndependent_insert heI').2 ⟨hi, heI⟩
     
     apply hins.comp (Equiv.setCongr image_insert_eq ∘ (imageFactorization f (insert e I)))
     simp only [EmbeddingLike.comp_injective]
     apply imageFactorization_injective
     rwa [injOn_insert heI'', and_iff_left (fun h ↦ heI (Submodule.subset_span h))] ) 
-  sorry
+  ( by 
+    refine ⟨FiniteDimensional.finrank 𝔽 (span 𝔽 (range f)), fun I (hI : LinearIndependent _ _) ↦ ?_⟩
+    have _ := (hlem hI).fintype
+    rw [←(hlem hI).cast_ncard_eq, Nat.cast_le, ←Nat.card_coe_set_eq, Nat.card_eq_fintype_card, 
+      ←finrank_span_eq_card hI, range_restrict]
+    exact finrank_le_finrank_of_le (span_mono <| image_subset_range _ _) )
   ( by 
     refine fun I hI ↦ subset_trans (fun e heI ↦ ?_) hf
     exact hI.ne_zero ⟨_, heI⟩ )
 
 
 -- Each function from a type to a module defines a matroid on a finite superset of its support -
-def matroid_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : Matroid α := 
-  matroid_of_indep_of_finite 
-  hfin 
-  ( fun I ↦ LinearIndependent 𝔽 (I.restrict f) ) 
-  ( linearIndependent_empty_type )
-  ( fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI) )
-  ( by 
-    intro I J hI hJ hIJ
-    have hIinj : InjOn f I := by rw [injOn_iff_injective]; exact hI.injective
-
-    have : Fintype I
-    · refine Finite.fintype (hfin.subset (subset_trans (fun _ hxI ↦ ?_) hf))
-      exact hI.ne_zero ⟨_, hxI⟩
-      
-    have : Fintype J 
-    · refine Finite.fintype (hfin.subset (subset_trans (fun _ hxJ ↦ ?_) hf))
-      exact hJ.ne_zero ⟨_, hxJ⟩
-
-    have h : ¬ (f '' J ⊆ span 𝔽 (f '' I))
-    · refine fun hss ↦ hIJ.not_le ?_
-      rw [←range_restrict, ←range_restrict] at hss
-      
-      have : FiniteDimensional 𝔽 {x // x ∈ span 𝔽 (Set.range (I.restrict f))}
-      · apply FiniteDimensional.span_of_finite
-        rw [range_restrict]
-        apply I.toFinite.image
-      
-      have hle := span_mono hss (R := 𝔽)
-      simp only [span_coe_eq_restrictScalars, restrictScalars_self] at hle  
-      have hrank := finrank_le_finrank_of_le hle 
-      rwa [finrank_span_eq_card hI, finrank_span_eq_card hJ, 
-        ←Nat.card_eq_fintype_card, ←Nat.card_eq_fintype_card, 
-        Nat.card_coe_set_eq, Nat.card_coe_set_eq] at hrank
-  
-    obtain ⟨_, ⟨e, he, rfl⟩, heI⟩ := not_subset.1 h
-    have' heI' : f e ∉ f '' I := fun h ↦ heI (Submodule.subset_span h)
-    have heI'' : e ∉ I := fun h' ↦ heI' (mem_image_of_mem f h') 
-    refine' ⟨e, he, heI'', _⟩
-    simp only
-    have hi : LinearIndependent 𝔽 ((↑) : f '' I → W)
-    · rwa [← linearIndependent_image hIinj]
-
-    have hins := (linearIndependent_insert heI').2 ⟨hi, heI⟩
+def matroid_of_fun_of_finite (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : 
+  Matroid α := matroid_of_fun (𝔽 := 𝔽) f E hf (by 
+    rw [←Submodule.span_diff_zero]
     
-    apply hins.comp (Equiv.setCongr image_insert_eq ∘ (imageFactorization f (insert e I)))
-    simp only [EmbeddingLike.comp_injective]
-    apply imageFactorization_injective
-    rwa [injOn_insert heI'', and_iff_left (fun h ↦ heI (Submodule.subset_span h))] ) 
-  ( by 
-    refine fun I hI ↦ subset_trans (fun e heI ↦ ?_) hf
-    exact hI.ne_zero ⟨_, heI⟩ )
+    have _ := (FiniteDimensional.span_of_finite 𝔽 (hfin.image f))
+    apply Submodule.finiteDimensional_of_le 
+    -- have : Module.Finite 𝔽 (span 𝔽 (f '' E))
+    
+    )
+  
 
 @[simp] theorem matroid_of_fun_indep_iff (f : α → W) (E : Set α) (hf : f.support ⊆ E) 
   (hfin : E.Finite) (I : Set α) : 

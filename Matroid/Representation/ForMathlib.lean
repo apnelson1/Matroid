@@ -1,7 +1,17 @@
 import Mathlib.LinearAlgebra.Dual
+import Mathlib.LinearAlgebra.Finrank
 
 open Submodule Set Module
 
+@[simp]
+theorem Submodule.span_diff_zero {R : Type u_1} {M : Type u_4} [Semiring R] [AddCommMonoid M] 
+    [Module R M] {s : Set M} : Submodule.span R (s \ {0}) = Submodule.span R s := by
+  simp [←Submodule.span_insert_zero]
+  
+theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V] 
+  [Module K V] [FiniteDimensional K V] (f : α → V) (h : LinearIndependent K f) :
+    _root_.Finite α :=
+  Cardinal.lt_aleph0_iff_finite.1 <| FiniteDimensional.lt_aleph0_of_linearIndependent h
 section coords
 
 def LinearMap.fun_subtype (R : Type _) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) := 
@@ -164,6 +174,11 @@ theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b :
   
 -- Todo; the span of the range of f and (ofFun f) should have the same dimension. I don't know if
 -- there is a natural map from bases of one to the other, though. 
+
+-- theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) : 
+--     Module.rank R (ofFun R f) = Module.rank R (span R (range f)) := by 
+--   apply le_antisymm
+--   · 
 
 -- theorem Basis.foo {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) : 
 --     span R (range (fun a i ↦ (b i).1 a)) = ⊤ := by 

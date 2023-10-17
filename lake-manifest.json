@@ -4,7 +4,7 @@
  [{"git":
    {"url": "https://github.com/leanprover-community/mathlib4.git",
     "subDir?": null,
-    "rev": "bdfd1fa735d1783887a6db5fd49c65868eb808af",
+    "rev": "f3695eb20c685cfcb5e45f75b1e68a59b8de7efb",
     "opts": {},
     "name": "mathlib",
     "inputRev?": null,
@@ -15,6 +15,14 @@
     "rev": "a387c0eb611857e2460cf97a8e861c944286e6b2",
     "opts": {},
     "name": "Qq",
+    "inputRev?": "master",
+    "inherited": true}},
+  {"git":
+   {"url": "https://github.com/JLimperg/aesop",
+    "subDir?": null,
+    "rev": "41c6370eb2f0c9052bee6af0e0a017b9ba8da2b8",
+    "opts": {},
+    "name": "aesop",
     "inputRev?": "master",
     "inherited": true}},
   {"git":
@@ -36,17 +44,9 @@
   {"git":
    {"url": "https://github.com/leanprover/std4",
     "subDir?": null,
-    "rev": "85a0d4891518518edfccee16cbceac139efa460c",
+    "rev": "45a53252c3b0c670e1a33ef55e262a9be626d820",
     "opts": {},
     "name": "std",
     "inputRev?": "main",
-    "inherited": true}},
-  {"git":
-   {"url": "https://github.com/JLimperg/aesop",
-    "subDir?": null,
-    "rev": "0bd8465d8a5cfdd53c1ff0fd57ca5eaa53eb455c",
-    "opts": {},
-    "name": "aesop",
-    "inputRev?": "master",
     "inherited": true}}],
  "name": "matroid"}
