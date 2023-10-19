@@ -71,7 +71,7 @@ theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ 
 
 @[simp] theorem restrict_ground_eq : (M ↾ R).E = R := rfl 
 
-instance restrict_finite {R : Set α} (hR : R.Finite) : (M ↾ R).Finite := 
+theorem restrict_finite {R : Set α} (hR : R.Finite) : (M ↾ R).Finite := 
   ⟨hR⟩  
 
 @[simp] theorem restrict_dep_iff : (M ↾ R).Dep X ↔ ¬ M.Indep X ∧ X ⊆ R := by
@@ -105,6 +105,13 @@ theorem Basis.restrict_base (h : M.Basis I X) : (M ↾ X).Base I := by
 instance restrict_finiteRk [M.FiniteRk] : (M ↾ R).FiniteRk := 
   let ⟨_, hB⟩ := (M ↾ R).exists_base
   hB.finiteRk_of_finite (hB.indep.of_restrict.finite)
+
+instance restrict_finitary [Finitary M] (R : Set α) : Finitary (M ↾ R) := by 
+  refine ⟨fun I hI ↦ ?_⟩ 
+  simp only [restrict_indep_iff] at *
+  rw [indep_iff_forall_finite_subset_indep]
+  exact ⟨fun J hJ hJfin ↦ (hI J hJ hJfin).1, 
+    fun e heI ↦ singleton_subset_iff.1 (hI _ (by simpa) (toFinite _)).2⟩ 
 
 @[simp] theorem Basis.base_restrict (h : M.Basis I X) : (M ↾ X).Base I := 
   (base_restrict_iff h.subset_ground).mpr h

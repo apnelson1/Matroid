@@ -77,8 +77,12 @@ theorem Circuit.mem_cl_diff_singleton_of_mem (hC : M.Circuit C) (heC : e ∈ C) 
 
 theorem circuit_iff_mem_minimals : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
+theorem Circuit.eq_of_not_indep_subset (hC : M.Circuit C) (hX : ¬ M.Indep X) (hXC : X ⊆ C) : 
+    X = C := 
+  eq_of_le_of_not_lt hXC (hX ∘ hC.ssubset_indep)
+
 theorem Circuit.eq_of_dep_subset (hC : M.Circuit C) (hX : M.Dep X) (hXC : X ⊆ C) : X = C :=
-  eq_of_le_of_not_lt hXC (hX.not_indep ∘ hC.ssubset_indep)
+  hC.eq_of_not_indep_subset hX.not_indep hXC
 
 theorem Circuit.not_ssubset (hC : M.Circuit C) (hC' : M.Circuit C') : ¬C' ⊂ C := 
   fun h' ↦ h'.ne (hC.eq_of_dep_subset hC'.dep h'.subset)
@@ -492,35 +496,22 @@ theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setO
 
 end Iso
 section Finitary
+  
+theorem Circuit.finite [Finitary M] (hC : M.Circuit C) : C.Finite := by 
+  have hi := hC.dep.not_indep
+  rw [indep_iff_forall_finite_subset_indep] at hi; push_neg at hi
+  obtain ⟨J, hJC, hJfin, hJ⟩ := hi
+  rwa [← hC.eq_of_not_indep_subset hJ hJC]
 
-/-- A `Finitary` matroid is one whose Circuits are finite -/
-class Finitary (M : Matroid α) : Prop := 
-  (cct_finite : ∀ (C : Set α), M.Circuit C → C.Finite) 
-
-instance Finitary_of_FiniteRk {M : Matroid α} [FiniteRk M] : Finitary M := 
-⟨by {
-  intros C hC
-  obtain (rfl | ⟨e,heC⟩) := C.eq_empty_or_nonempty; exact finite_empty
-  have hi : M.Indep (C \ {e}) :=
-  by_contra (fun h ↦ (hC.2 ⟨h, (diff_subset _ _).trans hC.1.2⟩ (diff_subset C {e}) heC).2 rfl)
-  obtain ⟨B, hB, hCB⟩ := hi 
-  convert (hB.finite.subset hCB).insert e
-  rw [insert_diff_singleton, insert_eq_of_mem heC] } ⟩  
-
-theorem Circuit.finite [Finitary M] (hC : M.Circuit C) : C.Finite :=
-  let ⟨h⟩ := ‹M.Finitary›
-  h C hC
+theorem finitary_iff_forall_circuit_finite : M.Finitary ↔ ∀ C, M.Circuit C → C.Finite := by
+  refine ⟨fun _ _ ↦ Circuit.finite, fun h ↦ 
+    ⟨fun I hI ↦ indep_iff_not_dep.2 ⟨fun hd ↦ ?_,fun x hx ↦ ?_⟩⟩ ⟩ 
+  · obtain ⟨C, hCI, hC⟩ := hd.exists_circuit_subset   
+    exact hC.dep.not_indep <| hI _ hCI (h C hC)
+  simpa using (hI {x} (by simpa) (finite_singleton _)).subset_ground
 
 theorem Cocircuit.finite [Finitary (M﹡)] (hK : M.Cocircuit K) : K.Finite :=
   Circuit.finite hK
-
-theorem indep_iff_forall_finite_subset_indep [Finitary M] :
-    M.Indep I ↔ ∀ J, J ⊆ I → J.Finite → M.Indep J := by
-  refine' ⟨fun h J hJI _ ↦ h.subset hJI, _⟩
-  rw [indep_iff_forall_subset_not_circuit']
-  exact fun h ↦
-    ⟨fun C hCI hC ↦ hC.dep.not_indep (h _ hCI hC.finite), fun e heI ↦
-      singleton_subset_iff.mp (h _ (singleton_subset_iff.mpr heI) (toFinite _)).subset_ground⟩
 
 end Finitary
 

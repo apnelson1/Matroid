@@ -1,5 +1,6 @@
 import Mathlib.Data.Set.Card
 import Mathlib.Order.Minimal
+import Mathlib.Order.Zorn
 import Matroid.Init
 
 /-!
@@ -646,8 +647,32 @@ theorem eq_of_indep_iff_indep_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M�
   eq_of_base_iff_base_forall hE (fun B _ ↦ by simp_rw [base_iff_maximal_indep, h']) 
   
 theorem eq_iff_indep_iff_indep_forall {M₁ M₂ : Matroid α} : 
-  M₁ = M₂ ↔ (M₁.E = M₂.E) ∧ ∀ I, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I) :=
+    M₁ = M₂ ↔ (M₁.E = M₂.E) ∧ ∀ I, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I) :=
 ⟨fun h ↦ by (subst h; simp), fun h ↦ eq_of_indep_iff_indep_forall h.1 h.2⟩  
+
+/-- A `Finitary` matroid is one where an infinite set is independent if and only if it all
+  its finite subsets are independent, or equivalently a matroid whose circuits are finite. -/
+class Finitary (M : Matroid α) : Prop where 
+  /-- Independence is compact -/
+  compact : ∀ I, (∀ J, J ⊆ I → J.Finite → M.Indep J) → M.Indep I  
+
+theorem indep_of_forall_finite_subset_indep {M : Matroid α} [Finitary M] (I : Set α)
+    (h : ∀ J, J ⊆ I → J.Finite → M.Indep J) : M.Indep I := 
+  Finitary.compact I h
+
+theorem indep_iff_forall_finite_subset_indep {M : Matroid α} [Finitary M] :
+    M.Indep I ↔ ∀ J, J ⊆ I → J.Finite → M.Indep J :=
+  ⟨fun h _ hJI _ ↦ h.subset hJI, Finitary.compact I⟩ 
+
+instance finitary_of_finiteRk {M : Matroid α} [FiniteRk M] : Finitary M := 
+⟨ by 
+  refine fun I hI ↦ I.finite_or_infinite.elim (hI _ Subset.rfl) (fun h ↦ False.elim ?_)
+  obtain ⟨B, hB⟩ := M.exists_base
+  obtain ⟨I₀, hI₀I, hI₀fin, hI₀card⟩ := h.exists_subset_ncard_eq (B.ncard + 1)
+  obtain ⟨B', hB', hI₀B'⟩ := hI _ hI₀I hI₀fin
+  have hle := ncard_le_of_subset hI₀B' hB'.finite
+  rw [hI₀card, hB'.ncard_eq_ncard_of_base hB, Nat.add_one_le_iff] at hle 
+  exact hle.ne rfl ⟩  
 
 end dep_indep
 
@@ -1200,6 +1225,156 @@ instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : 
     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : 
     ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Indep = Indep := by
   simp [matroid_of_indep_of_finite]
+
+/-- An independence predicate satisfying the finite matroid axioms determines a matroid, 
+  provided independence is compact (i.e. determined by its behaviour on finite sets) -/
+def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop) 
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard → 
+    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
+  
+  have htofin : ∀ I e, Indep I → ¬ Indep (insert e I) → 
+    ∃ I₀, I₀ ⊆ I ∧ I₀.Finite ∧ ¬ Indep (insert e I₀) := by
+      by_contra h; push_neg at h
+      obtain ⟨I, e, -, hIe, h⟩ := h
+      refine hIe <| h_compact _ fun J hJss hJfin ↦ ?_
+      exact ind_mono (h (J \ {e}) (by rwa [diff_subset_iff]) (hJfin.diff _)) (by simp)
+    
+  matroid_of_indep E Indep h_empty ind_mono 
+  ( by 
+    intro I B hI hImax hBmax
+    simp only [mem_maximals_iff, mem_setOf_eq, not_and, not_forall, exists_prop, 
+      exists_and_left, iff_true_intro hI, true_imp_iff] at hImax hBmax  
+    obtain ⟨I', hI', hII', hne⟩ := hImax
+    obtain ⟨e, heI', heI⟩ := exists_of_ssubset (hII'.ssubset_of_ne hne)   
+    have hins : Indep (insert e I) := ind_mono hI' (insert_subset heI' hII')
+    obtain (heB | heB) := em (e ∈ B)
+    · exact ⟨e, ⟨heB, heI⟩, hins⟩
+    by_contra hcon; push_neg at hcon
+
+    have heBdep : ¬Indep (insert e B) := 
+      fun hi ↦ heB <| insert_eq_self.1 (hBmax.2 hi (subset_insert _ _)).symm
+    
+    /- There is a finite subset `B₀` of `B` so that `B₀ + e` is dependent-/
+    obtain ⟨B₀, hB₀B, hB₀fin, hB₀e⟩ := htofin B e hBmax.1  heBdep 
+    have hB₀ := ind_mono hBmax.1 hB₀B
+
+    /- There is a finite subset `I₀` of `I` so that `I₀` doesn't extend into `B₀` -/
+    have hexI₀ : ∃ I₀, I₀ ⊆ I ∧ I₀.Finite ∧ ∀ x, x ∈ B₀ \ I₀ → ¬Indep (insert x I₀)
+    · have hchoose : ∀ (b : ↑(B₀ \ I)), ∃ Ib, Ib ⊆ I ∧ Ib.Finite ∧ ¬Indep (insert (b : α) Ib)
+      · rintro ⟨b, hb⟩; exact htofin I b hI (hcon b ⟨hB₀B hb.1, hb.2⟩)
+      choose! f hf using hchoose 
+      have _ := finite_coe_iff.2 (hB₀fin.diff I)
+      refine ⟨iUnion f ∪ (B₀ ∩ I), 
+        union_subset (iUnion_subset (fun i ↦ (hf i).1)) (inter_subset_right _ _), 
+        (finite_iUnion <| fun i ↦ (hf i).2.1).union (hB₀fin.subset (inter_subset_left _ _)), 
+        fun x ⟨hxB₀, hxn⟩ hi ↦ ?_⟩
+      have hxI : x ∉ I := fun hxI ↦ hxn <| Or.inr ⟨hxB₀, hxI⟩
+      refine (hf ⟨x, ⟨hxB₀, hxI⟩⟩).2.2 (ind_mono hi <| insert_subset_insert ?_)
+      apply subset_union_of_subset_left 
+      apply subset_iUnion  
+    
+    obtain ⟨I₀, hI₀I, hI₀fin, hI₀⟩ := hexI₀
+    
+    set E₀ := insert e (I₀ ∪ B₀)
+    have hE₀fin : E₀.Finite := (hI₀fin.union hB₀fin).insert e
+
+    /- Extend `B₀` to a maximal independent subset of `I₀ ∪ B₀ + e` -/
+    obtain ⟨J, ⟨hB₀J, hJ, hJss⟩, hJmax⟩ := Finite.exists_maximal_wrt (f := id) 
+      (s := {J | B₀ ⊆ J ∧ Indep J ∧ J ⊆ E₀}) 
+      (hE₀fin.finite_subsets.subset (by simp))
+      ⟨B₀, Subset.rfl, hB₀, (subset_union_right _ _).trans (subset_insert _ _)⟩  
+    
+    have heI₀ : e ∉ I₀ := not_mem_subset hI₀I heI
+    have heI₀i : Indep (insert e I₀) := ind_mono hins (insert_subset_insert hI₀I)
+    
+    have heJ : e ∉ J := fun heJ ↦ hB₀e (ind_mono hJ <| insert_subset heJ hB₀J) 
+
+    have hJfin := hE₀fin.subset hJss
+
+    /- We have `|I₀ + e| ≤ |J|`, since otherwise we could extend the maximal set `J`  -/
+    have hcard : (insert e I₀).ncard ≤ J.ncard 
+    · refine not_lt.1 fun hlt ↦ ?_
+      obtain ⟨f, hfI, hfJ, hfi⟩ := ind_aug hJ hJfin heI₀i (hI₀fin.insert e) hlt
+      have hfE₀ : f ∈ E₀ := mem_of_mem_of_subset hfI (insert_subset_insert (subset_union_left _ _)) 
+      refine hfJ (insert_eq_self.1 <| Eq.symm (hJmax _ 
+        ⟨hB₀J.trans <| subset_insert _ _,hfi,insert_subset hfE₀ hJss⟩ (subset_insert _ _)))
+
+
+    /- But this means `|I₀| < |J|`, and extending `I₀` into `J` gives a contradiction -/
+    rw [ncard_insert_of_not_mem heI₀ hI₀fin, ←Nat.lt_iff_add_one_le] at hcard
+    
+    obtain ⟨f, hfJ, hfI₀, hfi⟩ := ind_aug (ind_mono hI hI₀I) hI₀fin hJ hJfin hcard    
+    exact hI₀ f ⟨Or.elim (hJss hfJ) (fun hfe ↦ (heJ <| hfe ▸ hfJ).elim) (by aesop), hfI₀⟩ hfi ) 
+
+    ( by 
+      rintro X - I hI hIX 
+      have hzorn := zorn_subset_nonempty {Y | Indep Y ∧ I ⊆ Y ∧ Y ⊆ X} ?_ I ⟨hI, Subset.rfl, hIX⟩
+      · obtain ⟨J, hJ, -, hJmax⟩ := hzorn
+        exact ⟨J, hJ, fun K hK hJK ↦ (hJmax K hK hJK).subset⟩ 
+      
+      refine fun Is hIs hchain ⟨K, hK⟩ ↦ ⟨⋃₀ Is, ⟨?_,?_,?_⟩, fun _ ↦ subset_sUnion_of_mem ⟩ 
+      · refine h_compact _ fun J hJ hJfin ↦ ?_  
+        have hchoose : ∀ e, e ∈ J → ∃ I, I ∈ Is ∧ (e : α) ∈ I
+        · exact fun _ he ↦ mem_sUnion.1 <| hJ he  
+        choose! f hf using hchoose
+        refine J.eq_empty_or_nonempty.elim (fun hJ ↦ hJ ▸ h_empty) (fun hne ↦ ?_) 
+        obtain ⟨x, hxJ, hxmax⟩ := Finite.exists_maximal_wrt f _ hJfin hne
+        refine ind_mono (hIs (hf x hxJ).1).1 fun y hyJ ↦ ?_ 
+        obtain (hle | hle) := hchain.total (hf _ hxJ).1 (hf _ hyJ).1
+        · rw [hxmax _ hyJ hle]; exact (hf _ hyJ).2 
+        exact hle (hf _ hyJ).2 
+
+      · exact subset_sUnion_of_subset _ K (hIs hK).2.1 hK 
+      exact sUnion_subset fun X hX ↦ (hIs hX).2.2 ) 
+    h_support
+
+@[simp] theorem matroid_of_indep_of_compact_apply (E : Set α) (Indep : Set α → Prop) 
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard → 
+    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : 
+  (matroid_of_indep_of_compact E Indep h_empty ind_mono ind_aug h_compact h_support).Indep 
+    = Indep := by simp [matroid_of_indep_of_compact]
+
+instance matroid_of_indep_of_compact_finitary (E : Set α) (Indep : Set α → Prop) 
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard → 
+    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : 
+    (matroid_of_indep_of_compact E Indep h_empty ind_mono ind_aug h_compact h_support).Finitary := 
+  ⟨ by simpa ⟩ 
+
+/-- An independence predicate on `Finset α` that obeys the finite matroid axioms determines a 
+  finitary matroid on `α`. 
+  TODO : Simp lemmas -/
+def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.card < J.card → 
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I)) 
+    (h_support : ∀ ⦃I⦄, Indep I → (I : Set α) ⊆ E) : Matroid α := 
+  matroid_of_indep_of_compact E (fun I ↦ (∀ (J : Finset α), (J : Set α) ⊆ I → Indep J)) 
+    ( by simpa [subset_empty_iff] )
+    ( fun I J hJ hIJ K hKI ↦ hJ _ (hKI.trans hIJ) )
+    ( by 
+      intro I J hI hIfin hJ hJfin hIJ
+      rw [ncard_eq_toFinset_card _ hIfin, ncard_eq_toFinset_card _ hJfin] at hIJ
+      have aug := ind_aug (hI _ (by simp [Subset.rfl])) (hJ _ (by simp [Subset.rfl])) hIJ
+      simp only [Finite.mem_toFinset] at aug 
+      obtain ⟨e, heJ, heI, hi⟩ := aug
+      exact ⟨e, heJ, heI, fun K hK ↦ ind_mono hi <| Finset.coe_subset.1 (by simpa)⟩ )
+    ( fun I h J hJ ↦ h _ hJ J.finite_toSet _ Subset.rfl )
+    ( fun I hI x hxI ↦ by simpa using h_support <| hI {x} (by simpa) )
+
+    
 
 end FromAxioms
 
