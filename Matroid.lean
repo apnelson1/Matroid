@@ -1,2 +1,2 @@
 import Matroid.Simple
-import Matroid.Representation.Basic
+import Matroid.Representation.Subspace

@@ -186,8 +186,13 @@ theorem matroid_of_fun_finite (f : α → W) (E : Set α) (hf : f.support ⊆ E)
     (matroid_of_fun 𝔽 f E hf).Finite :=
   ⟨hfin⟩ 
 
-def rep_of_fun (f : α → W) (E : Set α) (hf : f.support ⊆ E) : 
-    (matroid_of_fun 𝔽  f E hf).Rep 𝔽 W where 
+def rep_of_fun_univ (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) : 
+    (matroid_on_univ_of_fun 𝔽 f).Rep 𝔽 W where
+  to_fun := f
+  valid' := by simp [IsRep]
+
+def rep_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) (hf : f.support ⊆ E) : 
+    (matroid_of_fun 𝔽 f E hf).Rep 𝔽 W where 
   to_fun := f
   valid' := by simp [IsRep]
 
@@ -430,122 +435,3 @@ theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
 --     M.r X = finrank 𝔽 (span 𝔽 (v '' X)) := by
 --   obtain ⟨I, hI⟩ := M.exists_basis' X 
 --   rw [←hI.r]
-
-structure MatrixRep (M : Matroid α) (𝔽 R : Type _) [Field 𝔽] where 
-  (to_matrix : Matrix R M.E 𝔽)
-  (as_rep : M.Rep 𝔽 (Matrix R Unit 𝔽))
-  (compatible : ∀ e : M.E, as_rep e = Matrix.of (fun x _ ↦ to_matrix x e) )
-
-instance {R : Type _} : Coe (M.MatrixRep 𝔽 R) (Matrix R M.E 𝔽) := ⟨MatrixRep.to_matrix⟩ 
-
-noncomputable def Rep.to_matrixRep (v : M.Rep 𝔽 (R → 𝔽)) : MatrixRep M 𝔽 R where 
-  to_matrix := Matrix.of (fun e x ↦ v ((x : M.E) : α) e)
-  as_rep := v.map_equiv (Matrix.col_linearEquiv _ _)
-  compatible := fun _ ↦ funext fun _ ↦ funext fun _ ↦ by simp 
-
-noncomputable def Rep.to_matrixRep_of_base [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) : 
-    MatrixRep M 𝔽 B := 
-  (v.to_standard_rep' hB).to_matrixRep 
-  
-theorem MatrixRep.representable (A : M.MatrixRep 𝔽 R) : M.Representable 𝔽 := A.as_rep.representable      
-    
-noncomputable def Representable.fin_matrixRep [FiniteRk M] (hM : M.Representable 𝔽) : 
-    M.MatrixRep 𝔽 (Fin M.rk) := 
-  (Classical.choose hM.exists_fin_rep).to_matrixRep
-
--- Subspace representations 
-
-def Rep.subspaceRep (v : M.Rep 𝔽 W) : Submodule 𝔽 (α → 𝔽) := Submodule.ofFun 𝔽 v
-
-/-- The 'row space' corresponding to the representation `v` -/
-def Rep.projSet (v : M.Rep 𝔽 W) (X : Set α) : Submodule 𝔽 (X → 𝔽) := ofFun 𝔽 (v ∘ ((↑) : X → α))
-  
-theorem Rep.indep_iff_projSet_eq_top (v : M.Rep 𝔽 W) : M.Indep I ↔ v.projSet I = ⊤ := by 
-  rw [v.indep_iff, Rep.projSet, ofFun_eq_top_iff]; rfl  
-
-
-  
--- example (h : Module.Finite 𝔽 (α → 𝔽)) : _root_.Finite α := by 
-  
--- def matroid' (U : Submodule 𝔽 (α → 𝔽)) : Matroid α := matroid_of_indep 
---     univ 
---     ( fun I ↦ Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤ )
---     ( by simp )
---     ( by 
---       refine fun I J (hJ : _ = ⊤) hIJ ↦ eq_top_iff'.2 fun (x : I → 𝔽) ↦ mem_map.2 ?_  
---       simp_rw [eq_top_iff', mem_map] at hJ
---       obtain ⟨y, hy, hy'⟩ := hJ <| LinearMap.extend_subset 𝔽 hIJ x
---       exact ⟨y, hy, funext fun i ↦ by simpa using congr_fun hy' (inclusion hIJ i)⟩ )
---     ( by 
---       intro I B hI hInotmax hBmax
---       simp only [mem_maximals_setOf_iff, not_and, not_forall, exists_prop, exists_and_left, 
---         iff_true_intro hI, true_imp_iff] at hInotmax hBmax
---       by_contra h
---       push_neg at h
-
-      
-      
---       )
---     sorry 
---     ( fun _ _ ↦ subset_univ _ ) 
-
-
-theorem matroid_of_subspace_aux {U : Submodule 𝔽 (α → 𝔽)} {I : Set α} [FiniteDimensional 𝔽 U]
-  (hI : Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) : 
-  Set.Finite I ∧ finrank 𝔽 (Submodule.map (LinearMap.fun_subtype 𝔽 I) U) = I.ncard := sorry 
-
--- theorem matroid_of_subspace_aux' {U : Submodule 𝔽 (α → 𝔽)} {I : Set α}
---     (hI : Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) 
---     (b : Basis ): 
---   ∃ (f : I → U) , LinearIndependent 𝔽 f ∧ 
-
-
-
--- def matroid_of_subspace (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensional 𝔽 U] : Matroid α := 
---   matroid_of_indep_of_bdd_augment univ 
---   ( fun I ↦ Submodule.map (LinearMap.fun_subtype 𝔽 I) U = ⊤) 
---   ( by simp )
---   ( by 
---     refine fun I J (hJ : _ = ⊤) hIJ ↦ eq_top_iff'.2 fun (x : I → 𝔽) ↦ mem_map.2 ?_  
---     simp_rw [eq_top_iff', mem_map] at hJ
---     obtain ⟨y, hy, hy'⟩ := hJ <| LinearMap.extend_subset 𝔽 hIJ x
---     exact ⟨y, hy, funext fun i ↦ by simpa using congr_fun hy' (inclusion hIJ i)⟩ )
---   ( by 
---       intro I J hI hJ hcard 
-      
---       obtain ⟨hIfin, hI'⟩ := matroid_of_subspace_aux hI 
---       obtain ⟨hJfin, hJ'⟩ := matroid_of_subspace_aux hJ 
---       have _ := hIfin.fintype 
---       have _ := hJfin.fintype 
---       set e : (⊤ : Submodule 𝔽 (I → 𝔽)) ≃ₗ[𝔽] (I → 𝔽) := by exact?
---       set b : _root_.Basis I 𝔽 (I → 𝔽) := by exact?
---       -- set b' : _root_.Basis I 𝔽 (⊤ : Submodule 𝔽 (I → 𝔽)):= 
---       set b' :=  (Pi.basisFun 𝔽 I).map (LinearEquiv.ofTop ⊤ rfl).symm with hb' 
---       have := b'.linearIndependent
-
-      
---       -- have := Basis.exists_basis ()
---       -- apply_fun (finrank 𝔽) at hI hJ 
---       -- simp at hI 
---       sorry )
---   ( by 
---     refine ⟨finrank 𝔽 U, fun I (hI : _ = ⊤) ↦ 
---       encard_le_coe_iff_finite_ncard_le.2 (matroid_of_subspace_aux hI)⟩ 
-     
---     -- obtain ⟨ hfin, hcard⟩ := 
---     -- 
---     -- have : Fintype I
---     -- · have hfin := Module.Finite.map U (LinearMap.fun_subtype 𝔽 I)
---     --   rw [hI] at hfin
-      
---     --   sorry 
---     -- rw [encard_le_coe_iff_finite_ncard_le, and_iff_right <| toFinite I, ←Nat.card_coe_set_eq, 
---     --   Nat.card_eq_fintype_card]
-    
---     -- have hle := Submodule.finrank_map_le (LinearMap.fun_subtype 𝔽 I) U 
---     -- rw [hI] at hle
---     -- convert hle
---     -- simp 
-     
---     )
---   ( fun _ _ ↦ subset_univ _ ) 

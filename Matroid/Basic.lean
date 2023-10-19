@@ -631,6 +631,19 @@ theorem Indep.exists_insert_of_not_base (hI : M.Indep I) (hI' : ¬M.Base I) (hB 
   exact ⟨e, ⟨he.1, not_mem_subset hIB' he.2⟩, 
     ⟨_, hBase, insert_subset_insert (subset_diff_singleton hIB' hx)⟩⟩
 
+/-- This is the same as `Indep.exists_insert_of_not_base`, but phrased so the statement is
+  defeq to the augmentation axiom for independent sets -/
+theorem aug_property (M : Matroid α) : 
+    ∀⦃I B⦄, M.Indep I → I ∉ maximals (· ⊆ ·) (setOf M.Indep) → 
+      B ∈ maximals (· ⊆ ·) (setOf M.Indep) → ∃ x ∈ B \ I, M.Indep (insert x I) := by 
+  intro I B hI hImax hB 
+  simp only [mem_maximals_iff, mem_setOf_eq, not_and, not_forall, exists_prop, 
+    exists_and_left, iff_true_intro hI, true_imp_iff] at hB hImax 
+  refine hI.exists_insert_of_not_base (fun hIb ↦ ?_) ?_
+  · obtain ⟨I', hII', hI', hne⟩ := hImax 
+    exact hne <| hIb.eq_of_subset_indep hII' hI'
+  exact hB.1.base_of_maximal fun J hJ hBJ ↦ hB.2 hJ hBJ
+
 theorem ground_indep_iff_base : M.Indep M.E ↔ M.Base M.E :=
   ⟨fun h ↦ h.base_of_maximal (fun _ hJ hEJ ↦ hEJ.antisymm hJ.subset_ground), Base.indep⟩
 
@@ -673,6 +686,11 @@ instance finitary_of_finiteRk {M : Matroid α} [FiniteRk M] : Finitary M :=
   have hle := ncard_le_of_subset hI₀B' hB'.finite
   rw [hI₀card, hB'.ncard_eq_ncard_of_base hB, Nat.add_one_le_iff] at hle 
   exact hle.ne rfl ⟩  
+
+/-- Matroids obey the maximality axiom -/
+theorem existsMaximalSubsetProperty_indep (M : Matroid α) : 
+    ∀ X, X ⊆ M.E → ExistsMaximalSubsetProperty M.Indep X :=
+  M.maximality'
 
 end dep_indep
 
@@ -1373,9 +1391,29 @@ def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α →
       exact ⟨e, heJ, heI, fun K hK ↦ ind_mono hi <| Finset.coe_subset.1 (by simpa)⟩ )
     ( fun I h J hJ ↦ h _ hJ J.finite_toSet _ Subset.rfl )
     ( fun I hI x hxI ↦ by simpa using h_support <| hI {x} (by simpa) )
+      
+/-- Construct a matroid from an independence predicate that agrees with that of some matroid. 
+  Computable even when the matroid is only known existentially -/  
+def matroid_of_indep_of_exists_matroid (E : Set α) (Indep : Set α → Prop)
+    (hM : ∃ (M : Matroid α), E = M.E ∧ ∀ I, M.Indep I ↔ Indep I) : Matroid α := 
+  have hex : ∃ (M : Matroid α), E = M.E ∧ M.Indep = Indep := by
+    obtain ⟨M, rfl, h⟩ := hM; refine ⟨_, rfl, funext (by simp [h])⟩ 
+  matroid_of_indep E Indep 
+  ( by obtain ⟨M, -, rfl⟩ := hex; exact M.empty_indep )  
+  ( by obtain ⟨M, -, rfl⟩ := hex; exact fun I J hJ hIJ ↦ hJ.subset hIJ )
+  ( by obtain ⟨M, -, rfl⟩ := hex; exact M.aug_property )
+  ( by obtain ⟨M, rfl, rfl⟩ := hex; exact M.existsMaximalSubsetProperty_indep )
+  ( by obtain ⟨M, rfl, rfl⟩ := hex; exact fun I ↦ Indep.subset_ground )
 
-    
+@[simp] theorem matroid_of_indep_of_exists_matroid_indep (E : Set α) (Indep : Set α → Prop) 
+    (hM : ∃ (M : Matroid α), E = M.E ∧ ∀ I, M.Indep I ↔ Indep I) : 
+    (matroid_of_indep_of_exists_matroid E Indep hM).Indep = Indep := by 
+  simp [matroid_of_indep_of_exists_matroid] 
 
+@[simp] theorem matroid_of_indep_of_exists_matroid_ground (E : Set α) (Indep : Set α → Prop)
+    (hM : ∃ (M : Matroid α), E = M.E ∧ ∀ I, M.Indep I ↔ Indep I) : 
+    (matroid_of_indep_of_exists_matroid E Indep hM).E = E := rfl
+  
 end FromAxioms
 
 

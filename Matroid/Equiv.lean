@@ -264,5 +264,5 @@ instance : IsEquiv (Matroid α) (fun (M N : Matroid α) ↦ M ≃ N) where
   refl := fun M ↦ ⟨Iso.refl M⟩
   trans := fun _ _ _ ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩ 
   symm := fun _ _ ⟨e⟩ ↦ ⟨e.symm⟩  
-  
+
 end Matroid

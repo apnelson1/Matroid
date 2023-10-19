@@ -204,9 +204,9 @@ theorem linearIndependent_of_finite_index {R M ι : Type _} [Field R] [AddCommGr
 -- Todo; the span of the range of f and (ofFun f) should have the same dimension. I don't know if
 -- there is a natural map from bases of one to the other, though. 
 
-theorem foo1 (f : α → R) (hf : Module.Finite R (ofFun R f)) : Module.Finite R (span R (range f)) 
-  := by
-  sorry
+-- theorem foo1 (f : α → R) (hf : Module.Finite R (ofFun R f)) : Module.Finite R (span R (range f)) 
+--   := by
+--   sorry
   
 
 -- def exists_basis (f : α → W) : 
@@ -256,9 +256,9 @@ theorem foo1 (f : α → R) (hf : Module.Finite R (ofFun R f)) : Module.Finite R
   -- ·  
 
 
-theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) : 
-    FiniteDimensional.finrank R (ofFun R f) = FiniteDimensional.finrank R (span R (range f)) := by 
-    sorry
+-- theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) : 
+--     FiniteDimensional.finrank R (ofFun R f) = FiniteDimensional.finrank R (span R (range f)) := by 
+--     sorry
   -- have : ∃ I : Set α, Nonempty (Basis I R (span R (range f))) 
   
   -- have : Basis _ R (span R (range f)) := by exact?
