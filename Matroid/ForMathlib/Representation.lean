@@ -156,10 +156,18 @@ theorem Submodule.ofFun_map' (f : α → W) (e : W →ₗ[R] W') (h_inj : Linear
 theorem Submodule.ofFun_eq_top_iff (f : α → W) : ofFun R f = ⊤ ↔ LinearIndependent R f := by 
   simp [linearIndependent_iff_forall_exists_eq_dual_comp, eq_top_iff']
   
+theorem ofFun_comp_coe (f : α → W) (s : Set α) : 
+    ofFun R (f ∘ ((↑) : s → α)) = (ofFun R f).map (LinearMap.fun_subtype R s) := by 
+  ext; aesop
+
 -- Inverses
- 
+
+
+  -- _
+
 /-- For every `ι`-indexed basis of a subspace `U` of `α → R`, there is a canonical 
-  `f : α → (ι → R)` for which `U = ofFun R f` -/
+  `f : α → (ι → R)` for which `U = ofFun R f`. I think this breaks if `U` isn't 
+    finite-dimensional -/
 theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) : 
     ofFun R (fun a i ↦ (b i).1 a) = U := by  
   have _ := FiniteDimensional.fintypeBasisIndex b

@@ -7,7 +7,7 @@ namespace Matroid
 variable {M : Matroid α}
 
 def ParallelExt (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] : Matroid α := 
-    M.parallel_preimage (M.E ∪ S) (fun x ↦ if (x ∈ S) then e else x)
+    M.preimage (M.E ∪ S) (fun x ↦ if (x ∈ S) then e else x)
 
 theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I):
     M.Indep (insert f (I \ {e})) := by
@@ -143,11 +143,11 @@ def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
 open Classical
 theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f) (h_ne : e ≠ f): 
     M = ParallelExt (M ⟍ f) e {f} := by
-  rw [ParallelExt, eq_iff_indep_iff_indep_forall, parallel_preimage_ground_eq]
+  rw [ParallelExt, eq_iff_indep_iff_indep_forall, preimage_ground_eq]
   refine' ⟨_, fun I I_ground ↦ ⟨fun I_Ind ↦ _, _⟩⟩
   · simp
     exact (insert_eq_of_mem (Parallel.mem_ground_right h_para)).symm
-  · rw [parallel_preimage_indep_iff]
+  · rw [preimage_indep_iff]
     simp only [delete_elem, mem_singleton_iff, delete_indep_iff, disjoint_singleton_right, 
       mem_image, not_exists, not_and, delete_ground, union_singleton, mem_diff, not_true, and_false, 
       insert_diff_singleton]
@@ -213,7 +213,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
         exact ⟨{e, f}, ef_sub_I, (parallel_iff_circuit h_ne).1 h_para⟩
       · rwa [if_neg a_eq_f] at f_ab
   -- part 2
-  rw [parallel_preimage_indep_iff]
+  rw [preimage_indep_iff]
   simp only [delete_elem, mem_singleton_iff, delete_indep_iff, disjoint_singleton_right, mem_image, not_exists, not_and,
     delete_ground, union_singleton, mem_diff, not_true, and_false, insert_diff_singleton, and_imp]
   rintro I_image_Indep h_not_f h_inj I_sub

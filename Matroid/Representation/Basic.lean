@@ -166,24 +166,28 @@ instance matroid_on_univ_of_fun_finitary (𝔽 : Type _) [Field 𝔽] [Module �
     Finitary (matroid_on_univ_of_fun 𝔽 f) := by
   rw [matroid_on_univ_of_fun]; infer_instance 
 
-def matroid_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) 
-    (_ : support f ⊆ E) := (matroid_on_univ_of_fun 𝔽 f) ↾ E 
+def matroid_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) := 
+  (matroid_on_univ_of_fun 𝔽 f) ↾ E 
 
-@[simp] theorem matroid_of_fun_indep_iff (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) 
+theorem matroid_of_fun_indep_iff' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E I : Set α) :
+    (matroid_of_fun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ I ⊆ E := by 
+  simp [matroid_of_fun]
+
+theorem matroid_of_fun_indep_iff (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) 
     (E : Set α) (hf : support f ⊆ E) (I : Set α) : 
-    (matroid_of_fun 𝔽 f E hf).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by 
-  simp only [matroid_of_fun, restrict_indep_iff, matroid_on_univ_of_fun_apply, and_iff_left_iff_imp]
-  refine fun h ↦ subset_trans (fun e heI ↦ ?_) hf; exact h.ne_zero ⟨e, heI⟩ 
+    (matroid_of_fun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by 
+  simp only [matroid_of_fun_indep_iff', and_iff_left_iff_imp]
+  exact fun hli ↦ subset_trans (fun x hxI ↦ by exact hli.ne_zero ⟨x, hxI⟩) hf
    
-@[simp] theorem matroid_of_fun_ground (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) 
-    (E : Set α) (hf : support f ⊆ E) : (matroid_of_fun 𝔽 f E hf).E = E := rfl 
+@[simp] theorem matroid_of_fun_ground (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :     
+    (matroid_of_fun 𝔽 f E).E = E := rfl 
 
-instance matroid_of_fun_finitary (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) 
-    (hf : support f ⊆ E) : Finitary (matroid_of_fun 𝔽 f E hf) := by 
+instance matroid_of_fun_finitary (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) : 
+    Finitary (matroid_of_fun 𝔽 f E) := by 
   rw [matroid_of_fun]; infer_instance  
 
-theorem matroid_of_fun_finite (f : α → W) (E : Set α) (hf : f.support ⊆ E) (hfin : E.Finite) : 
-    (matroid_of_fun 𝔽 f E hf).Finite :=
+theorem matroid_of_fun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : 
+    (matroid_of_fun 𝔽 f E ).Finite :=
   ⟨hfin⟩ 
 
 def rep_of_fun_univ (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) : 
@@ -191,10 +195,27 @@ def rep_of_fun_univ (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) 
   to_fun := f
   valid' := by simp [IsRep]
 
-def rep_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) (hf : f.support ⊆ E) : 
-    (matroid_of_fun 𝔽 f E hf).Rep 𝔽 W where 
+def rep_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) (hf : support f ⊆ E) : 
+    (matroid_of_fun 𝔽 f E).Rep 𝔽 W where 
   to_fun := f
-  valid' := by simp [IsRep]
+  valid' := by simp [IsRep, matroid_of_fun_indep_iff _ _ _ hf] 
+
+@[simp] theorem matroid_of_fun_indicator_eq (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) 
+    (E : Set α) : matroid_of_fun 𝔽 (indicator E f) E = matroid_of_fun 𝔽 f E := by 
+  simp only [eq_iff_indep_iff_indep_forall, matroid_of_fun_ground, true_and]
+  intro I hIE 
+  rw [matroid_of_fun_indep_iff', and_iff_left hIE, matroid_of_fun_indep_iff', and_iff_left hIE]
+  convert Iff.rfl using 2
+  ext ⟨x, hx⟩
+  simp only [restrict_apply, indicator_of_mem (hIE hx)]  
+
+noncomputable def rep_of_fun' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) : 
+    (matroid_of_fun 𝔽 f E).Rep 𝔽 W where
+      to_fun := indicator E f
+      valid' := (by 
+      rw [←matroid_of_fun_indicator_eq, IsRep]
+      intro I
+      rw [matroid_of_fun_indep_iff _ _ _ support_indicator_subset] )
 
 theorem Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by 
   rintro _ ⟨e, he ,rfl⟩ 
@@ -271,6 +292,10 @@ def Representable (M : Matroid α) (𝔽 : Type _) [Field 𝔽] : Prop :=
 theorem Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
   have ⟨_, hB⟩ := M.exists_base
   ⟨_, ⟨v.to_standard_rep hB⟩⟩ 
+
+theorem matroid_of_fun_representable (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) : 
+    (matroid_of_fun 𝔽 f E).Representable 𝔽 := 
+  (rep_of_fun' 𝔽 f E).representable
 
 theorem Rep.standard_rep_eq_one (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) : 
     (v.to_standard_rep hB) e e = 1 := by 

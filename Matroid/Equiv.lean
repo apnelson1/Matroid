@@ -107,6 +107,37 @@ def Iso.of_eq {M N : Matroid α} (h : M = N) : Iso M N where
   target_eq' := by simp [h]
   setOf_base_eq' := by simp [h]
   
+/-- A `LocalEquiv` behaving well on independent sets also gives an isomorphism -/
+def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β) 
+    (h_source : f.source = M.E) (h_target : f.target = N.E) 
+    (h_ind : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (f '' I))) : Iso M N where
+  toLocalEquiv := f
+  source_eq' := h_source
+  target_eq' := h_target
+  setOf_base_eq' := 
+  ( by
+    rw [setOf_base_eq_maximals_setOf_indep, setOf_base_eq_maximals_setOf_indep, 
+      ←maximals_image_of_rel_iff_rel_on (f := image f) (s := (· ⊆ ·))]
+    · convert rfl 
+      ext I
+      simp_rw [mem_image, mem_setOf]
+      refine ⟨?_, fun h ↦ ?_⟩
+      · rintro ⟨I, hI, rfl⟩
+        rwa [h_ind _ hI.subset_ground] at hI 
+      use f.symm '' I
+      rwa [h_ind, f.image_symm_image_of_subset_target (h.subset_ground.trans_eq h_target.symm), 
+        and_iff_left rfl]
+      refine (image_subset _ h.subset_ground).trans ?_ 
+      rw [←h_target, ←h_source, f.symm_image_target_eq_source]
+    rintro I J (hI : M.Indep I) (hJ : M.Indep J)
+    rw [f.injOn.image_subset_image_iff_of_subset 
+      (hI.subset_ground.trans_eq h_source.symm) (hJ.subset_ground.trans_eq h_source.symm)] )
+
+@[simp] theorem Iso.of_forall_indep_apply {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β) 
+    (h_source : f.source = M.E) (h_target : f.target = N.E) 
+    (h_ind : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (f '' I))) : 
+    (Iso.of_forall_indep f h_source h_target h_ind : α → β) = f := rfl 
+
 section transfer
 
 -- Some generic lemmas to carry a matroid `Set` property across an isomorphism 
