@@ -65,74 +65,58 @@ def parallel_preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α
   
 section Image 
 
-def image (M : Matroid α) (f : α ↪ β) : Matroid β := matroid_of_base 
+/-- Map a matroid to a copy in another type using an injection from the ground set -/
+def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := matroid_of_indep
   ( f '' M.E )
-  ( fun B ↦ M.Base (f ⁻¹' B) ∧ B ⊆ f '' M.E ) 
+  ( fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀) 
+  ⟨ ∅, by simp ⟩
+  ( by
+    rintro I _ ⟨J, hJ, rfl⟩ hIJ 
+    refine ⟨f ⁻¹' I ∩ M.E, hJ.subset ?_, ?_⟩ 
+    · refine (inter_subset_inter_left M.E (preimage_mono hIJ)).trans ?_ 
+      rw [hf.preimage_image_inter hJ.subset_ground]
+    simp only [subset_antisymm_iff, image_subset_iff, inter_subset_left, and_true]
+    rintro x hx
+    obtain ⟨y, hy, rfl⟩ := hIJ hx
+    exact ⟨_, ⟨hx, hJ.subset_ground hy⟩, rfl⟩ )
   ( by 
-    obtain ⟨B, hB⟩ := M.exists_base
-    exact ⟨f '' B, (by rwa [preimage_image_eq _ f.injective] : M.Base (f ⁻¹' (f '' B))), 
-      image_subset _ hB.subset_ground⟩ )
-  ( by 
-    rintro B B' ⟨(hB : M.Base _), hBE⟩ ⟨(hB' : M.Base _), hB'E⟩ b hb
-    obtain ⟨a,ha,rfl⟩ := hBE hb.1
-    obtain ⟨y, ⟨(hyB' : f y ∈ B'), (hyB : f y ∉ B)⟩, hy'⟩ := hB.exchange hB' (e := a) (by aesop)
-    exact ⟨_, ⟨hyB', hyB⟩, by convert hy'; ext; aesop, insert_subset (hB'E hyB')
-      ((diff_subset _ _).trans hBE)⟩ )
-  ( by 
-    intro X hX I hI hIX 
+    rintro _ B ⟨I, hI, rfl⟩ hImax hBmax
+    simp only [mem_maximals_iff, mem_setOf_eq, forall_exists_index, and_imp, image_subset_iff,
+      not_and, not_forall, exists_prop, exists_and_left] at hBmax hImax 
+    obtain ⟨⟨B, hB, rfl⟩, hmax⟩ := hBmax 
+    obtain ⟨_, I', hI', rfl, hII', hne⟩ := hImax _ hI rfl 
 
-    )
-  sorry
-
-def image' (M : Matroid α) (f : α ↪ β) : Matroid β := matroid_of_indep
-  ( f '' M.E )
-  ( fun I ↦ M.Indep (f ⁻¹' I) ∧ I ⊆ f '' M.E ) 
-  ( by simp )
-  ( fun I J ⟨hJ, hJE⟩ hIJ ↦ ⟨hJ.subset (preimage_mono hIJ), hIJ.trans hJE⟩ )
-  ( by 
-    intro I B hI hImax hBmax
-    simp only [mem_maximals_iff, mem_setOf_eq, and_imp, iff_true_intro hI, true_and, 
-      not_forall, exists_prop, exists_and_left] at hBmax hImax 
-    obtain ⟨J, hJ, (hJE : J ⊆ f '' M.E) , hIJ, hne⟩ := hImax 
-    obtain ⟨⟨hBi, (hBss : B ⊆ f '' M.E)⟩, hmax⟩ := hBmax 
-    obtain ⟨B, rfl⟩ := subset_range_iff_exists_image_eq.1 (hBss.trans (image_subset_range _ _))
-    obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.1 (hJE.trans (image_subset_range _ _))
-    obtain ⟨I, rfl⟩ := subset_range_iff_exists_image_eq.1 (hI.2.trans (image_subset_range _ _))
-    simp_rw [preimage_subset_preimage_]
     have hIb : ¬ M.Base I
     · refine fun hIb ↦ hne ?_
-      -- have := hIb.eq_of_subset_indep hJ 
-      sorry
-      -- sorryhave := 
-    have hIb : ¬ M.Base (f ⁻¹' I)
-    · refine fun hIb ↦ hne ?_  
-      have he := hIb.eq_of_subset_indep hJ (preimage_mono hIJ)
-      rwa [preimage_eq_preimage' (hI.2.trans (image_subset_range _ _))
-        (hJE.trans (image_subset_range _ _))] at he 
-    have hBb : M.Base (f ⁻¹' B)
-    · refine hBi.base_of_maximal (fun K hK hBK ↦ ?_) 
-      rw [hmax (y := f '' K) (by convert hK; aesop) (image_subset _ hK.subset_ground), 
-        f.injective.preimage_image]
+      rw [hIb.eq_of_subset_indep ?_ (subset_inter hII' hI.subset_ground), 
+        hf.preimage_image_inter hI'.subset_ground]
+      rwa [hf.preimage_image_inter hI'.subset_ground]
+    
+    have hB : M.Base B
+    · refine hB.base_of_maximal (fun J hJ hBJ ↦ ?_)
+      have h_image := hmax  _ hJ rfl (image_subset _ hBJ)
+      rwa [hf.image_eq_image_iff_of_subset hB.subset_ground hJ.subset_ground] at h_image
       
-
-      -- have := image_subset f hBK 
-    have' := hI.1.exists_insert_of_not_base (B := f ⁻¹' B) ?_ ?_ 
-
-
-    )
-  
-  -- ( by 
-  --   rintro B B' ⟨(hB : M.Base _), hBE⟩ ⟨(hB' : M.Base _), hB'E⟩ b hb
-  --   obtain ⟨a,ha,rfl⟩ := hBE hb.1
-  --   obtain ⟨y, ⟨(hyB' : f y ∈ B'), (hyB : f y ∉ B)⟩, hy'⟩ := hB.exchange hB' (e := a) (by aesop)
-  --   exact ⟨_, ⟨hyB', hyB⟩, by convert hy'; ext; aesop, insert_subset (hB'E hyB')
-  --     ((diff_subset _ _).trans hBE)⟩ )
+    obtain ⟨e, he, hi⟩ := hI.exists_insert_of_not_base hIb hB
+    refine ⟨f e, ⟨mem_image_of_mem f he.1, fun h ↦ he.2 ?_⟩, ⟨_, hi, by rw [image_insert_eq]⟩⟩ 
+    rwa [hf.mem_image_iff hI.subset_ground (hB.subset_ground he.1)] at h )
   ( by 
-    intro X hX I hI hIX 
-    sorry 
-    )
-  sorry
-  sorry 
+    rintro X hX I ⟨I, hI, rfl⟩ hIX 
+    obtain ⟨X, hXE, rfl⟩ := exists_eq_image_subset_of_subset_image hX 
+    rw [hf.image_subset_image_iff_of_subset hI.subset_ground hXE] at hIX 
+    
+    obtain ⟨B, hB, hIB⟩ := hI.subset_basis_of_subset hIX 
+    refine ⟨f '' B, ?_⟩ 
+    simp only [image_subset_iff, mem_maximals_iff, mem_setOf_eq, and_imp, forall_exists_index]
+    refine ⟨⟨⟨B, hB.indep, rfl⟩, hIB.trans <| subset_preimage_image _ _, 
+      hB.subset.trans <| subset_preimage_image _ _⟩, ?_⟩ 
+    rintro _ K hK rfl - hKX hBK
+    
+    rw [hB.eq_of_subset_indep hK]
+    · have hss := subset_inter hBK hB.left_subset_ground
+      rwa [hf.preimage_image_inter hK.subset_ground] at hss
+    rwa [hf.image_subset_image_iff_of_subset hK.subset_ground hXE] at hKX )
+  ( by rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground )
 
 
 end Image
