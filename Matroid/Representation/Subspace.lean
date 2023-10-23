@@ -60,6 +60,9 @@ def Rep.subspaceRep (v : M.Rep 𝔽 W) : M.SubspaceRep 𝔽 where
   space := ofFun 𝔽 v
   valid := fun I ↦ by rw [←v.projSet_eq_map, v.indep_iff_projSet_eq_top]
    
+@[simp] theorem Rep.subspaceRep_apply (v : M.Rep 𝔽 W) : 
+    v.subspaceRep.space = ofFun 𝔽 v := rfl 
+
 theorem SubspaceRep.representable (U : M.SubspaceRep 𝔽) [FiniteDimensional 𝔽 U] : 
     M.Representable 𝔽 := by 
   obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis 𝔽 U
@@ -78,20 +81,50 @@ end Matroid
     Submodule 𝔽 (α → 𝔽) :=
   U.dualAnnihilator.map (Module.piEquiv α 𝔽 𝔽).symm 
 
-theorem foo [Fintype α] {U : Submodule 𝔽 (α → 𝔽)} {x : α → 𝔽}: 
+@[simp] theorem Module.piEquiv_apply_symm [Fintype α] [DecidableEq α] 
+    (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) : 
+    (Module.piEquiv α 𝔽 𝔽).symm y i = y (Function.update 0 i 1) := by 
+  simp [piEquiv, Basis.constr, LinearMap.stdBasis_apply]
+
+@[simp] theorem Module.Dual.sum_update [Fintype α] [DecidableEq α] (y : Module.Dual 𝔽 (α → 𝔽)) 
+    (x : α → 𝔽) : ∑ i, y (update 0 i 1) * x i = y x := by 
+  rw [←LinearMap.congr_fun ((Pi.basisFun 𝔽 α).sum_dual_apply_smul_coord y) x]
+  simp [LinearMap.stdBasis_apply]
+
+@[simp] theorem mem_orthspace_iff [Fintype α] {U : Submodule 𝔽 (α → 𝔽)} {x : α → 𝔽} : 
     x ∈ U.orthspace ↔ ∀ y ∈ U, ∑ i, x i * y i = 0 := by  
+  classical 
   simp only [orthspace, mem_map, mem_dualAnnihilator]
-  constructor
+  refine ⟨?_, fun h ↦ ⟨Module.piEquiv α 𝔽 𝔽 x, fun w hw ↦ ?_, by simp⟩⟩ 
   · rintro ⟨y, hy, rfl⟩ x hxU 
     convert hy x hxU using 1
-    -- rw [Module.piEquiv_apply_symm]
+    simp [Module.piEquiv_apply_symm]
+  convert h w hw using 1 
+  simp_rw [Module.piEquiv_apply_apply, smul_eq_mul, mul_comm]
+  
+@[simp] theorem orth_orth [Fintype α] (U : Subspace 𝔽 (α → 𝔽)) : 
+    U.orthspace.orthspace = U := by 
+  refine (eq_of_le_of_finrank_le (fun x hxU ↦ ?_) (le_of_eq ?_)).symm
+  · simp_rw [mem_orthspace_iff]
+    intro y hy
+    simpa [mul_comm] using hy x hxU
+  rw [orthspace, orthspace, LinearEquiv.finrank_map_eq', LinearEquiv.dualAnnihilator_map_eq, LinearEquiv.finrank_map_eq', 
+    ←Subspace.finrank_dualCoannihilator_eq, Subspace.dualAnnihilator_dualCoannihilator_eq]
+  
+theorem foo [Fintype α] {M N : Matroid α} (hME : M.E = univ) (hNE : N.E = univ) 
+    (f : M.Rep 𝔽 W) (g : N.Rep 𝔽 W') {B : Set α} (hB : M.Base B) 
+    (h_orth : f.subspaceRep.space.orthspace = g.subspaceRep) :
+    N.Indep Bᶜ := 
+  
+  sorry 
 
-@[simp] theorem Module.piEquiv_apply_symm [Fintype α] (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) : 
-    (Module.piEquiv α 𝔽 𝔽).symm y i = 0 := by 
+
   
 
-theorem foo [Fintype α] (U : Submodule 𝔽 (α → 𝔽)) : U.orthspace.orthspace = U := by 
-  simp [Submodule.orthspace]
+  
+
+  -- simp only [mem_orthspace_iff, le_antisymm_iff]
+  
 
 -- theorem [Fintype α] (U U' : Submodule 𝔽 (α → 𝔽)) : 
 
