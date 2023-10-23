@@ -59,7 +59,7 @@ theorem Loop.mem_flat (he : M.Loop e) {F : Set α} (hF : M.Flat F) : e ∈ F := 
 theorem Flat.loops_subset (hF : M.Flat F) : M.cl ∅ ⊆ F := fun _ he ↦ Loop.mem_flat he hF
 
 theorem Loop.dep_of_mem (he : M.Loop e) (h : e ∈ X) (hXE : X ⊆ M.E := by aesop_mat) : M.Dep X :=
-  he.dep.supset (singleton_subset_iff.mpr h) hXE
+  he.dep.superset (singleton_subset_iff.mpr h) hXE
 
 theorem Loop.not_indep_of_mem (he : M.Loop e) (h : e ∈ X) : ¬M.Indep X := fun hX ↦
   he.dep.not_indep (hX.subset (singleton_subset_iff.mpr h))
@@ -100,7 +100,7 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   have he : e ∈ M.E := M.exists_base.elim (fun B hB ↦ (h B hB).1)
   rw [←singleton_dep, ←not_indep_iff]
   intro hei
-  obtain ⟨B, hB, heB⟩ := hei.exists_base_supset
+  obtain ⟨B, hB, heB⟩ := hei.exists_base_superset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
 end Loop
@@ -348,7 +348,7 @@ theorem coloop_iff_forall_mem_cl_iff_mem :
   · have heE := M.exists_base.elim (fun _ hB ↦ hB.subset_ground (h hB))
     refine' ⟨fun X ↦ ⟨fun heX ↦ _, fun heX ↦ M.mem_cl_of_mem' heX⟩, heE⟩
     obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset
+    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
     rw [cl_eq_cl_inter_ground, ←hI.cl_eq_cl] at heX
     exact (hI.subset ((hB.indep.cl_inter_eq_self_of_subset hIB).subset ⟨heX, h hB⟩)).1
   rw [←h.1, hB.cl_eq]
@@ -441,7 +441,7 @@ theorem Coloop.insert_indep_of_indep (he : M.Coloop e) (hI : M.Indep I) : M.Inde
 theorem union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) :
     M.Indep (I ∪ K) ↔ M.Indep I := by
   refine ⟨fun h ↦ h.subset (subset_union_left I K), fun h ↦ ?_⟩
-  obtain ⟨B, hB, hIB⟩ := h.exists_base_supset
+  obtain ⟨B, hB, hIB⟩ := h.exists_base_superset
   exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ Coloop.mem_of_base he hB))
 
 theorem diff_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) :

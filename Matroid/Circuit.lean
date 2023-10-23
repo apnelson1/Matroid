@@ -178,16 +178,16 @@ theorem Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit 
     (insert_subset he (hI.subset.trans (diff_subset _ _))), 
     hI.indep.fundCct_circuit ⟨heX, not_mem_subset hI.subset (not_mem_diff_of_mem rfl)⟩⟩ 
 
-theorem dep_iff_supset_circuit (hX : X ⊆ M.E := by aesop_mat) :
+theorem dep_iff_superset_circuit (hX : X ⊆ M.E := by aesop_mat) :
     M.Dep X ↔ ∃ C, C ⊆ X ∧ M.Circuit C :=
-  ⟨Dep.exists_circuit_subset, fun ⟨C, hCX, hC⟩ ↦ hC.dep.supset hCX⟩ 
+  ⟨Dep.exists_circuit_subset, fun ⟨C, hCX, hC⟩ ↦ hC.dep.superset hCX⟩ 
 
-theorem dep_iff_supset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) ∧ X ⊆ M.E :=
-  ⟨fun h ↦ ⟨h.exists_circuit_subset, h.subset_ground⟩, fun ⟨⟨C, hCX, hC⟩, h⟩ ↦ hC.dep.supset hCX⟩ 
+theorem dep_iff_superset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) ∧ X ⊆ M.E :=
+  ⟨fun h ↦ ⟨h.exists_circuit_subset, h.subset_ground⟩, fun ⟨⟨C, hCX, hC⟩, h⟩ ↦ hC.dep.superset hCX⟩ 
 
 theorem indep_iff_forall_subset_not_circuit' :
     M.Indep I ↔ (∀ C, C ⊆ I → ¬M.Circuit C) ∧ I ⊆ M.E := by
-  simp_rw [indep_iff_not_dep, dep_iff_supset_circuit', not_and, imp_not_comm (b := _ ⊆ _)]; aesop
+  simp_rw [indep_iff_not_dep, dep_iff_superset_circuit', not_and, imp_not_comm (b := _ ⊆ _)]; aesop
 
 theorem indep_iff_forall_subset_not_circuit (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ C, C ⊆ I → ¬M.Circuit C := by 
@@ -288,7 +288,7 @@ theorem Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h
 theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep I)
     (hCI : C ⊆ insert e I) : C = M.fundCct e I := by
   have heI : e ∉ I
-  · intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.supset hCI).not_indep hI
+  · intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.superset hCI).not_indep hI
   have heC : e ∈ C
   · refine' by_contra fun heC ↦ (hI.subset _).not_dep hC.dep
     rwa [←singleton_union, ←diff_subset_iff, diff_singleton_eq_self heC] at hCI
@@ -348,7 +348,7 @@ theorem cocircuit_iff_mem_minimals :
 theorem cocircuit_iff_mem_minimals_compl_nonspanning :
     M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ¬M.Spanning (M.E \ X)} := by
   convert cocircuit_iff_mem_minimals with K
-  simp_rw [spanning_iff_supset_base (S := M.E \ K), not_exists, subset_diff, not_and,
+  simp_rw [spanning_iff_superset_base (S := M.E \ K), not_exists, subset_diff, not_and,
     not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground, 
       inter_comm K]
 

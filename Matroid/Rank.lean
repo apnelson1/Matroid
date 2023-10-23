@@ -31,7 +31,7 @@ theorem Basis'.encard (hI : M.Basis' I X) : I.encard = M.er X := by
   have : _root_.Nonempty ↑{B | (M ↾ X).Base B} := ⟨I, hI⟩
   rw [iInf_congr (_ : ∀ B : ↑{B | (M ↾ X).Base B}, (B : Set α).encard = I.encard), iInf_const]
   simp only [mem_setOf_eq, Subtype.forall]
-  exact fun B' hB' ↦ hB'.card_eq_card_of_base hI 
+  exact fun B' hB' ↦ hB'.encard_eq_encard_of_base hI 
 
 theorem Basis.encard (hI : M.Basis I X) : I.encard = M.er X := 
   hI.basis'.encard 
@@ -276,10 +276,10 @@ theorem spanning_iff_er' [FiniteRk M] : M.Spanning X ↔ M.erk ≤ M.er X ∧ X 
   refine' ⟨fun h ↦ _, fun ⟨hr, hX⟩ ↦ _⟩
   · rw [erk_eq_er_ground, ←er_cl_eq _ X, h.cl_eq]; exact ⟨rfl.le, h.subset_ground⟩ 
   obtain ⟨J, hJ⟩ := M.exists_basis X
-  obtain ⟨B, hB, hJB⟩ := hJ.indep.exists_base_supset
+  obtain ⟨B, hB, hJB⟩ := hJ.indep.exists_base_superset
   rw [←hJ.encard, ←hB.encard] at hr
   obtain rfl := hB.finite.eq_of_subset_of_encard_le hJB hr
-  rw [spanning_iff_supset_base]
+  rw [spanning_iff_superset_base]
   exact ⟨J, hB, hJ.subset⟩  
 
 theorem spanning_iff_er [FiniteRk M] (hX : X ⊆ M.E := by aesop_mat) : 
@@ -422,7 +422,7 @@ theorem rFin_singleton (M : Matroid α) (e : α) : M.rFin {e} :=
 theorem rFin.subset (h : M.rFin Y) (hXY : X ⊆ Y) : M.rFin X :=
   (M.er_mono hXY).trans_lt h
 
-theorem not_rFin_supset (h : ¬M.rFin X) (hXY : X ⊆ Y) : ¬M.rFin Y :=
+theorem not_rFin_superset (h : ¬M.rFin X) (hXY : X ⊆ Y) : ¬M.rFin Y :=
   fun h' ↦ h (h'.subset hXY)
 
 theorem not_rFin_of_er_ge (h : ¬M.rFin X) (hXY : M.er X ≤ M.er Y) : ¬M.rFin Y := 
@@ -1268,7 +1268,7 @@ end Matroid
 -- --   nth_rewrite 0 [←union_diff_cancel hX], 
 -- --   apply r_union_le_card_add_r, 
 -- -- end
--- -- lemma rank_eq_of_le_supset [finite_rk M] (h : X ⊆ Y) (hr : M.r Y ≤ M.r X) : M.r X = M.r Y :=
+-- -- lemma rank_eq_of_le_superset [finite_rk M] (h : X ⊆ Y) (hr : M.r Y ≤ M.r X) : M.r X = M.r Y :=
 -- -- hr.antisymm' (M.r_mono h)
 -- -- lemma r_le_r_insert (M : matroid_in α) (e : α) (X : set α) : M.r X ≤ M.r (insert e X) :=
 -- -- begin
@@ -1441,7 +1441,7 @@ end Matroid
 -- -- by rw [hC.card, nat.cast_add, nat.cast_one, add_tsub_cancel_right]
 -- -- lemma exists_circuit_iff_card_lt_rk [finite M] : M.rk < M.E.ncard ↔ ∃ C, M.circuit C :=
 -- -- begin
--- --   rw [rk, r_lt_card_iff_dep, dep_iff_supset_circuit], 
+-- --   rw [rk, r_lt_card_iff_dep, dep_iff_superset_circuit], 
 -- --   split, 
 -- --   { rintro ⟨C, -, hC⟩, exact ⟨C, hC⟩}, 
 -- --   rintro ⟨C, hC⟩, exact ⟨C, hC.subset_ground, hC⟩, 

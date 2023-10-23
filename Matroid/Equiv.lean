@@ -223,7 +223,7 @@ lemma Iso.on_indep (e : Iso M N) (hI : M.Indep I) : N.Indep (e '' I) := by
   rw [setOf_indep_eq, e.setOf_base_eq]
   simp only [SetLike.mem_coe, mem_lowerClosure, mem_image, mem_setOf_eq, le_eq_subset, 
     image_subset_iff, exists_exists_and_eq_and]
-  obtain ⟨B, hB, hIB⟩ := hI.exists_base_supset
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
   exact ⟨B, hB, hIB.trans (subset_preimage_image _ _)⟩ 
 
 theorem Iso.on_indep_symm (e : Iso M N) (h : N.Indep (e '' I)) (hI : I ⊆ M.E := by aesop_mat) : 

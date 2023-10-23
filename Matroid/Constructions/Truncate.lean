@@ -48,7 +48,7 @@ theorem truncate_base_iff {k : ℕ} (h_rk : k ≤ M.erk) :
   refine ⟨fun ⟨⟨hB, hBk⟩, h⟩ ↦ ⟨hB, hBk.antisymm (le_of_not_lt fun hlt ↦ ?_)⟩, 
     fun ⟨hB, hBk⟩ ↦ ⟨⟨ hB, hBk.le⟩, 
       fun I _ hIk hBI ↦ ?_⟩ ⟩
-  · obtain ⟨B', hB', hJB'⟩ := hB.exists_base_supset
+  · obtain ⟨B', hB', hJB'⟩ := hB.exists_base_superset
     obtain ⟨J, hBJ, hJB', h'⟩ := 
       exists_superset_subset_encard_eq hJB' hBk (h_rk.trans_eq hB'.encard.symm)
     rw [h _ (hB'.indep.subset hJB') h'.le hBJ] at hlt

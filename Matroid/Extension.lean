@@ -198,7 +198,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
           · rwa [i_eq_f, ←b_eq_f]
         exfalso
         apply I_Ind.not_dep _
-        rw [dep_iff_supset_circuit]
+        rw [dep_iff_superset_circuit]
         exact ⟨{e, f}, ef_sub_I, (parallel_iff_circuit h_ne).1 h_para⟩
     · rw [if_neg b_eq_f] at f_ab
       by_cases a_eq_f : a = f 
@@ -209,7 +209,7 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
           · rwa [i_eq_f, ←a_eq_f]
         exfalso
         apply I_Ind.not_dep _
-        rw [dep_iff_supset_circuit]
+        rw [dep_iff_superset_circuit]
         exact ⟨{e, f}, ef_sub_I, (parallel_iff_circuit h_ne).1 h_para⟩
       · rwa [if_neg a_eq_f] at f_ab
   -- part 2

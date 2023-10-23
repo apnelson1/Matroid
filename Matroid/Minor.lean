@@ -400,7 +400,7 @@ theorem er_contract_add_er_eq_er_union (M : Matroid α) (C X : Set α) :
     (M ⟋ C).er X + M.er C = M.er (X ∪ C) := by
   obtain ⟨I, D, hIC, hD, -, hM⟩ := M.exists_eq_contract_indep_delete C
   obtain ⟨J, hJ, rfl⟩ :=
-    hIC.exists_basis_inter_eq_of_supset (subset_union_right (X ∩ M.E) _) (by simp)
+    hIC.exists_basis_inter_eq_of_superset (subset_union_right (X ∩ M.E) _) (by simp)
   rw [er_contract_eq_er_contract_inter_ground, ←contract_inter_ground_eq,
     hJ.er_contract hIC, ←er_inter_ground_eq, ← hIC.encard, ←er_inter_ground_eq ,
     inter_distrib_right, ← hJ.encard, encard_diff_add_encard_inter]
@@ -428,8 +428,8 @@ theorem contract_er_add_contract_er (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y �
   clear hXY hYZ X Y Z
   intro X Y Z hXY hYZ hXE hYE hZE
   obtain ⟨I, hI⟩ := M.exists_basis X
-  obtain ⟨J, hJ, rfl⟩ := hI.exists_basis_inter_eq_of_supset hXY
-  obtain ⟨K, hK, rfl⟩ := hJ.exists_basis_inter_eq_of_supset hYZ
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_basis_inter_eq_of_superset hXY
+  obtain ⟨K, hK, rfl⟩ := hJ.exists_basis_inter_eq_of_superset hYZ
   rw [M.er_contract_eq_er_contract_diff, M.er_contract_eq_er_contract_diff Y,
     M.er_contract_eq_er_contract_diff _ Z, hK.er_contract_of_subset hYZ hJ,
     hJ.er_contract_of_subset hXY hI, ←
@@ -766,7 +766,7 @@ end Matroid
 --   rw [hF.covby_iff_eq_cl_insert, and_iff_right hss]
 --   refine' ⟨_, fun h ↦ _⟩
 --   · rintro ⟨e, ⟨heE, heF⟩, rfl⟩
---     obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_supset (subset_insert e F)
+--     obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_superset (subset_insert e F)
 --     rw [hJF'.basis_cl.er_contract_of_subset (M.subset_cl_of_subset (subset_insert e F)) hI]
 --     rw [← encard_singleton e]; apply congr_arg
 --     rw [subset_antisymm_iff, diff_subset_iff, singleton_subset_iff, mem_diff, and_iff_left heF,
@@ -775,7 +775,7 @@ end Matroid
 --     have hJF := hF.cl_subset_of_subset ((subset_insert_iff_of_not_mem heJ).mp hJF'.subset)
 --     rw [hJF'.cl] at hJF 
 --     exact heF (hJF (M.mem_cl_of_mem (mem_insert e F)))
---   obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_supset hss
+--   obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_superset hss
 --   rw [hJF'.er_contract_of_subset hss hI, ← ENat.coe_one, encard_eq_coe_iff, ncard_eq_one] at h 
 --   obtain ⟨e, he⟩ := h.2; use e
 --   rw [← singleton_subset_iff, ← union_singleton, ← he,

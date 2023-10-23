@@ -711,7 +711,7 @@ end Matroid
 --     obtain ⟨BJ', hBJ', hJBJ'⟩ :=
 --       (hBJ.indep.subset hJBJ).subset_basis_of_subset (subset_union_left _ B₀) 
 --         (union_subset (hJ.2.trans (hXR.trans hR)) (hB₀R.trans hR))
---     have' hBJ'b := hB₀.base_of_basis_supset (subset_union_right _ _) hBJ'
+--     have' hBJ'b := hB₀.base_of_basis_superset (subset_union_right _ _) hBJ'
 --     refine' ⟨J, ⟨⟨BJ', ⟨hBJ'b, hBJ'.subset.trans (union_subset (hJ.2.trans hXR) hB₀R)⟩, hJBJ'⟩,hJ⟩, 
 --       fun K ⟨⟨BK, ⟨hBK, _⟩, hKBK⟩, hYK, hKX⟩ hKJ ↦ hJmax BK hBK hKBK hYK hKX hKJ⟩
 --   subset_ground' := by tauto
