@@ -47,7 +47,7 @@ theorem antichain_of_circuit_hyperplane (M : Matroid α) :
     IsAntichain (· ⊆ ·) ({ B | M.Base B } ∪ { H | M.Circuit H ∧ M.Hyperplane H }) := by 
   rintro X ((hX : M.Base X) | ⟨hXc, -⟩) Y ((hY : M.Base Y) | ⟨hYc, hYh⟩) hne hss
   · exact hne (hX.eq_of_subset_base hY hss)
-  · exact hYh.not_spanning (hX.spanning.supset hss)
+  · exact hYh.not_spanning (hX.spanning.superset hss)
   · exact (hY.indep.subset hss).not_dep hXc.dep
   exact hne (hXc.eq_of_subset_circuit hYc hss)
 
@@ -70,7 +70,7 @@ def relax_set (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
         · have hB'B : (B' \ B).Nonempty
           · rw [nonempty_iff_ne_empty, ne_eq, diff_eq_empty]; intro hB'B
             obtain (hB' | hB') := hB'
-            · exact hBcc.not_spanning (hB'.spanning.supset hB'B)
+            · exact hBcc.not_spanning (hB'.spanning.superset hB'B)
             rw [hB'.2.1.eq_of_subset_circuit hBc hB'B, diff_self] at he
             exact not_mem_empty e he
           obtain ⟨f, hf⟩ := hB'B
@@ -94,7 +94,7 @@ def relax_set (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
           exact hsmall ⟨I, Or.inr h, hIB, hIX⟩ 
 
         obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIX
-        obtain ⟨BJ, hBJ, hJBJ⟩ := hJ.indep.exists_base_supset
+        obtain ⟨BJ, hBJ, hJBJ⟩ := hJ.indep.exists_base_superset
         refine ⟨J, ⟨⟨BJ, Or.inl hBJ, hJBJ⟩,hIJ,hJ.subset⟩, 
           fun K ⟨⟨BK, hBK, hKBK⟩, hIK, hKX⟩ (hJK : J ⊆ K) ↦ (?_ : K ⊆ J)⟩ 
         rw [hJ.eq_of_subset_indep _ hJK hKX]
@@ -117,7 +117,7 @@ theorem relax_set_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H �
   refine' ⟨fun ⟨B, hB, hIB⟩ ↦ hB.elim (fun hB' ↦ Or.inl ⟨B, hB', hIB⟩) (fun hB' ↦ _), 
     fun h ↦ h.elim (fun ⟨B, hB, hIB⟩ ↦ ⟨B, Or.inl hB, hIB⟩) fun hI ↦ ⟨I, Or.inr hI, rfl.subset⟩⟩
   refine hIB.eq_or_ssubset.elim (fun h ↦ Or.inr (by rwa [h])) (fun hss ↦ Or.inl ?_)
-  apply Indep.exists_base_supset (hB.elim (fun h' ↦ h'.indep.subset hIB) 
+  apply Indep.exists_base_superset (hB.elim (fun h' ↦ h'.indep.subset hIB) 
     (fun h' ↦ (h _ h').1.ssubset_indep hss))
   
 /-- Change a single nonbase `H` of `M` to a base, provided `H` is a circuit-hyperplane -/

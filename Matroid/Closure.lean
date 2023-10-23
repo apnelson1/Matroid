@@ -263,7 +263,7 @@ theorem Base.cl_eq (hB : M.Base B) : M.cl B = M.E := by
 theorem Base.mem_cl (hB : M.Base B) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl B := by 
   rwa [hB.cl_eq]
 
-theorem Base.cl_of_supset (hB : M.Base B) (hBX : B ⊆ X) : M.cl X = M.E :=
+theorem Base.cl_of_superset (hB : M.Base B) (hBX : B ⊆ X) : M.cl X = M.E :=
   subset_antisymm (M.cl_subset_ground _) (by rw [← hB.cl_eq]; exact M.cl_subset_cl hBX)
 
 theorem base_iff_indep_cl_eq : M.Base B ↔ M.Indep B ∧ M.cl B = M.E := by
@@ -521,17 +521,17 @@ theorem not_spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : ¬M.Spanning S �
     iff_true_intro (M.cl_subset_ground _)]
   exact fun _ ↦ trivial
 
-theorem Spanning.supset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := by aesop_mat) :
+theorem Spanning.superset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := by aesop_mat) :
     M.Spanning T :=
   ⟨(M.cl_subset_ground _).antisymm (by rw [←hS.cl_eq]; exact M.cl_subset_cl hST), hT⟩
   
 theorem Spanning.union_left (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (S ∪ X) :=
-  hS.supset (subset_union_left _ _)
+  hS.superset (subset_union_left _ _)
 
 theorem Spanning.union_right (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (X ∪ S) :=
-  hS.supset (subset_union_right _ _)
+  hS.superset (subset_union_right _ _)
 
 theorem Base.spanning (hB : M.Base B) : M.Spanning B :=
   ⟨hB.cl_eq, hB.subset_ground⟩
@@ -539,27 +539,27 @@ theorem Base.spanning (hB : M.Base B) : M.Spanning B :=
 theorem ground_spanning (M : Matroid α) : M.Spanning M.E :=
   ⟨M.cl_ground, rfl.subset⟩
 
-theorem Base.supset_spanning (hB : M.Base B) (hBX : B ⊆ X) (hX : X ⊆ M.E := by aesop_mat) : 
+theorem Base.superset_spanning (hB : M.Base B) (hBX : B ⊆ X) (hX : X ⊆ M.E := by aesop_mat) : 
     M.Spanning X:= 
-  hB.spanning.supset hBX
+  hB.spanning.superset hBX
 
-theorem spanning_iff_supset_base' : M.Spanning S ↔ (∃ B, M.Base B ∧ B ⊆ S) ∧ S ⊆ M.E := by 
-  refine' ⟨fun h ↦ ⟨_, h.subset_ground⟩, fun ⟨⟨B, hB, hBS⟩, hSE⟩ ↦ hB.spanning.supset hBS⟩
+theorem spanning_iff_superset_base' : M.Spanning S ↔ (∃ B, M.Base B ∧ B ⊆ S) ∧ S ⊆ M.E := by 
+  refine' ⟨fun h ↦ ⟨_, h.subset_ground⟩, fun ⟨⟨B, hB, hBS⟩, hSE⟩ ↦ hB.spanning.superset hBS⟩
   obtain ⟨B, hB⟩ := M.exists_basis S
   have hB' := hB.basis_cl_right
   rw [h.cl_eq, basis_ground_iff] at hB'
   exact ⟨B, hB', hB.subset⟩ 
 
-theorem spanning_iff_supset_base (hS : S ⊆ M.E := by aesop_mat) : 
+theorem spanning_iff_superset_base (hS : S ⊆ M.E := by aesop_mat) : 
     M.Spanning S ↔ ∃ B, M.Base B ∧ B ⊆ S := by 
-  rw [spanning_iff_supset_base', and_iff_left hS]
+  rw [spanning_iff_superset_base', and_iff_left hS]
 
 theorem Spanning.exists_base_subset (hS : M.Spanning S) : ∃ B, M.Base B ∧ B ⊆ S := by 
-  rwa [spanning_iff_supset_base] at hS
+  rwa [spanning_iff_superset_base] at hS
 
 theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
     M.Coindep I ↔ M.Spanning (M.E \ I) := by
-  rw [coindep_iff_exists, spanning_iff_supset_base]
+  rw [coindep_iff_exists, spanning_iff_superset_base]
 
 theorem spanning_iff_compl_coindep (hS : S ⊆ M.E := by aesop_mat) : 
     M.Spanning S ↔ M.Coindep (M.E \ S) := by 
@@ -629,7 +629,7 @@ theorem Modular.sUnion_subset_ground (h : M.Modular Xs I) : ⋃₀ Xs ⊆ M.E :=
   rw [sUnion_subset_iff]; exact fun X hX ↦ h.mem_subset_ground hX
 
 theorem modular_of_sUnion_indep (h : M.Indep (⋃₀ Xs)) : ∃ I, M.Modular Xs I := by
-  obtain ⟨I, hI, huI⟩ := h.exists_base_supset
+  obtain ⟨I, hI, huI⟩ := h.exists_base_superset
   refine' ⟨I, hI, fun Ys hYs ⟨Y, hY⟩ ↦ _⟩
   have hss : ⋂₀ Ys ⊆ I := ((sInter_subset_of_mem hY).trans (subset_sUnion_of_mem hY)).trans 
     ((sUnion_subset_sUnion hYs).trans huI)

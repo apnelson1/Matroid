@@ -7,9 +7,9 @@ variable {α β : Type _} {f : α → β} {E I s : Set α}
 
 namespace Matroid
   
-/-- Given a `Matroid` `M` on `β` and a function `f : α → β`, this is the matroid on `α` 
-  obtained by replacing each `x ∈ M.E` by the fiber `f ⁻¹' {x}` of pairwise parallel elements -/
-def parallel_preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := matroid_of_indep
+/-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`. Elements with 
+  the same image are parallel. -/
+def preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := matroid_of_indep
   E ( fun I ↦ M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E ) ( by simp )
   ( fun I J ⟨h, h', hE⟩ hIJ ↦ ⟨h.subset (image_subset _ hIJ), InjOn.mono hIJ h', hIJ.trans hE⟩ )
   ( by
@@ -56,16 +56,28 @@ def parallel_preimage (M : Matroid β) (E : Set α) (f : α → β) : Matroid α
     exact hBinj.mem_of_mem_image hJB hb hb' )
   ( fun I h ↦ h.2.2 )
 
-@[simp] theorem parallel_preimage_indep_iff {M : Matroid β} : 
-    (M.parallel_preimage E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by 
-  simp [parallel_preimage]
+@[simp] theorem preimage_indep_iff {M : Matroid β} : 
+    (M.preimage E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by 
+  simp [preimage]
 
-@[simp] theorem parallel_preimage_ground_eq {M : Matroid β} : 
-    (M.parallel_preimage E f).E = E := rfl 
-  
+@[simp] theorem preimage_ground_eq {M : Matroid β} : 
+    (M.preimage E f).E = E := rfl 
+
+/-- If `f` is locally a bijection, then `M` is isomorphic to its preimage. -/
+noncomputable def iso_preimage [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α} 
+    (hf : BijOn f E M.E) : Iso (M.preimage E f) M := 
+  Iso.of_forall_indep 
+  hf.toLocalEquiv
+  ( by rw [BijOn.toLocalEquiv_source, preimage_ground_eq] )
+  hf.toLocalEquiv_target
+  ( by 
+    simp only [preimage_ground_eq, preimage_indep_iff, BijOn.toLocalEquiv_apply,
+      and_iff_left_iff_imp]
+    exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
+
 section Image 
 
-/-- Map a matroid to a copy in another type using an injection from the ground set -/
+/-- Map a matroid `M` on `α` to a copy in `β` using a function `f` that is injective on `M.E` -/
 def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := matroid_of_indep
   ( f '' M.E )
   ( fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀) 
@@ -118,6 +130,23 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ma
     rwa [hf.image_subset_image_iff_of_subset hK.subset_ground hXE] at hKX )
   ( by rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground )
 
+@[simp] theorem image_ground (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : 
+    (M.image f hf).E = f '' M.E := rfl 
+
+@[simp] theorem image_indep_iff (M : Matroid α) (f : α → β) (hf : InjOn f M.E) (I : Set β) : 
+    (M.image f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := 
+  by simp [image] 
+
+/-- `M` is isomorphic to its image -/
+noncomputable def iso_image [_root_.Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
+    Iso M (M.image f hf)  :=
+  Iso.of_forall_indep hf.toLocalEquiv ( by simp ) ( by simp )  
+  ( by 
+    simp only [InjOn.toLocalEquiv, BijOn.toLocalEquiv_apply, image_indep_iff]
+    refine fun I hIE ↦ ⟨fun hI ↦ ⟨I, hI, rfl⟩, fun ⟨I₀, hI₀, (h_eq : f '' _ = _)⟩ ↦ ?_⟩ 
+    rw [hf.image_eq_image_iff_of_subset hIE hI₀.subset_ground] at h_eq
+    rwa [h_eq] )    
+  
 
 end Image
   

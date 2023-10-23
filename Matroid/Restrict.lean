@@ -220,7 +220,7 @@ section Basis
 theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (hJY : M.Basis J Y) :
     M.Basis I Y := by
   rw [←base_restrict_iff]; rw [← base_restrict_iff] at hJY
-  exact hJY.base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY)
+  exact hJY.base_of_basis_superset hJX.subset (hIX.basis_restrict_of_subset hXY)
 
 theorem Basis.basis_of_basis_of_subset_of_subset (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X) 
     (hIY : I ⊆ Y) : M.Basis I Y := by
@@ -256,7 +256,7 @@ theorem Indep.exists_insert_of_not_basis (hI : M.Indep I) (hIX : I ⊆ X) (hI' :
   exact ⟨e, he, (restrict_indep_iff.mp hi).1⟩
 
 theorem Basis.base_of_base_subset (hIX : M.Basis I X) (hB : M.Base B) (hBX : B ⊆ X) : M.Base I :=
-  hB.base_of_basis_supset hBX hIX
+  hB.base_of_basis_superset hBX hIX
 
 theorem Basis.exchange (hIX : M.Basis I X) (hJX : M.Basis J X) (he : e ∈ I \ J) :
     ∃ f ∈ J \ I, M.Basis (insert f (I \ {e})) X := by
@@ -268,7 +268,7 @@ theorem Basis.eq_exchange_of_diff_eq_singleton (hI : M.Basis I X) (hJ : M.Basis 
   rw [← base_restrict_iff] at hI hJ ; exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ
 
 theorem Basis'.card_eq_card (hI : M.Basis' I X) (hJ : M.Basis' J X) : I.encard = J.encard := by
-  rw [←base_restrict_iff'] at hI hJ; exact hI.card_eq_card_of_base hJ
+  rw [←base_restrict_iff'] at hI hJ; exact hI.encard_eq_encard_of_base hJ
   
 theorem Basis.card_eq_card (hI : M.Basis I X) (hJ : M.Basis J X) : I.encard = J.encard :=
   hI.basis'.card_eq_card hJ.basis'
