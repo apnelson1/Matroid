@@ -77,13 +77,12 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
 
 
 /-- An independence predicate satisfying the finite matroid axioms determines a matroid,
-  provided independence is compact (i.e. determined by its behaviour on finite sets). 
-  Uses the axiom of choice.  -/
+  provided independence is determined by its behaviour on finite sets. Uses choice. -/
 def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop)
     (h_empty : Indep ∅)
     (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
     (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
-    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
     (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
 
@@ -109,11 +108,11 @@ def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop)
     have heBdep : ¬Indep (insert e B) :=
       fun hi ↦ heB <| insert_eq_self.1 (hBmax.2 hi (subset_insert _ _)).symm
 
-    /- There is a finite subset `B₀` of `B` so that `B₀ + e` is dependent-/
+    -- There is a finite subset `B₀` of `B` so that `B₀ + e` is dependent
     obtain ⟨B₀, hB₀B, hB₀fin, hB₀e⟩ := htofin B e hBmax.1  heBdep
     have hB₀ := ind_mono hBmax.1 hB₀B
 
-    /- There is a finite subset `I₀` of `I` so that `I₀` doesn't extend into `B₀` -/
+    -- There is a finite subset `I₀` of `I` so that `I₀` doesn't extend into `B₀`
     have hexI₀ : ∃ I₀, I₀ ⊆ I ∧ I₀.Finite ∧ ∀ x, x ∈ B₀ \ I₀ → ¬Indep (insert x I₀)
     · have hchoose : ∀ (b : ↑(B₀ \ I)), ∃ Ib, Ib ⊆ I ∧ Ib.Finite ∧ ¬Indep (insert (b : α) Ib)
       · rintro ⟨b, hb⟩; exact htofin I b hI (hcon b ⟨hB₀B hb.1, hb.2⟩)
@@ -133,7 +132,7 @@ def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop)
     set E₀ := insert e (I₀ ∪ B₀)
     have hE₀fin : E₀.Finite := (hI₀fin.union hB₀fin).insert e
 
-    /- Extend `B₀` to a maximal independent subset of `I₀ ∪ B₀ + e` -/
+    -- Extend `B₀` to a maximal independent subset of `I₀ ∪ B₀ + e`
     obtain ⟨J, ⟨hB₀J, hJ, hJss⟩, hJmax⟩ := Finite.exists_maximal_wrt (f := id)
       (s := {J | B₀ ⊆ J ∧ Indep J ∧ J ⊆ E₀})
       (hE₀fin.finite_subsets.subset (by simp))
@@ -146,7 +145,7 @@ def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop)
 
     have hJfin := hE₀fin.subset hJss
 
-    /- We have `|I₀ + e| ≤ |J|`, since otherwise we could extend the maximal set `J`  -/
+    -- We have `|I₀ + e| ≤ |J|`, since otherwise we could extend the maximal set `J`
     have hcard : (insert e I₀).ncard ≤ J.ncard
     · refine not_lt.1 fun hlt ↦ ?_
       obtain ⟨f, hfI, hfJ, hfi⟩ := ind_aug hJ hJfin heI₀i (hI₀fin.insert e) hlt
@@ -155,7 +154,7 @@ def matroid_of_indep_of_compact (E : Set α) (Indep : Set α → Prop)
         ⟨hB₀J.trans <| subset_insert _ _,hfi,insert_subset hfE₀ hJss⟩ (subset_insert _ _)))
 
 
-    /- But this means `|I₀| < |J|`, and extending `I₀` into `J` gives a contradiction -/
+    -- But this means `|I₀| < |J|`, and extending `I₀` into `J` gives a contradiction
     rw [ncard_insert_of_not_mem heI₀ hI₀fin, ←Nat.lt_iff_add_one_le] at hcard
 
     obtain ⟨f, hfJ, hfI₀, hfi⟩ := ind_aug (ind_mono hI hI₀I) hI₀fin hJ hJfin hcard

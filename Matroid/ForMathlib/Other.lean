@@ -50,57 +50,57 @@ lemma Function.invFunOn_injOn_image_preimage [_root_.Nonempty α] (f : α → β
   rw [invFunOn_eq (f := f) ⟨x, hx, rfl⟩, invFunOn_eq (f := f) ⟨y,hy,rfl⟩] at h
   rw [h]
 
-lemma Set.InjOn.exists_injOn_superset {f : α → β} {s t : Set α} (hinj : InjOn f s) (hst : s ⊆ t) :
-    ∃ r, s ⊆ r ∧ r ⊆ t ∧ InjOn f r ∧ f '' r = f '' t := by
+-- lemma Set.InjOn.exists_injOn_superset {f : α → β} {s t : Set α} (hinj : InjOn f s) (hst : s ⊆ t) :
+--     ∃ r, s ⊆ r ∧ r ⊆ t ∧ InjOn f r ∧ f '' r = f '' t := by
 
-  obtain (hα | hα) := isEmpty_or_nonempty α
-  · exact ⟨∅, by simp [eq_empty_of_isEmpty]⟩
-  set d := t ∩ (f ⁻¹' (f '' t \ f '' s)) with hd
-  set g := invFunOn f d with hg
+--   obtain (hα | hα) := isEmpty_or_nonempty α
+--   · exact ⟨∅, by simp [eq_empty_of_isEmpty]⟩
+--   set d := t ∩ (f ⁻¹' (f '' t \ f '' s)) with hd
+--   set g := invFunOn f d with hg
 
-  have hdj : Disjoint (f '' s) (f '' d)
-  · rw [disjoint_iff_forall_ne]
-    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ he
-    rw [hd, mem_inter_iff, mem_preimage, ←he] at hb
-    exact hb.2.2 (mem_image_of_mem f ha)
+--   have hdj : Disjoint (f '' s) (f '' d)
+--   · rw [disjoint_iff_forall_ne]
+--     rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ he
+--     rw [hd, mem_inter_iff, mem_preimage, ←he] at hb
+--     exact hb.2.2 (mem_image_of_mem f ha)
 
-  refine ⟨s ∪ g '' (f '' d), subset_union_left _ _, union_subset hst ?_, ?_, ?_⟩
-  · exact (f.invFunOn_image_image_subset _).trans (inter_subset_left _ _)
-  · rw [injOn_union, and_iff_right hinj, and_iff_right (invFunOn_injOn_image_preimage f _)]
-    · rintro x hx _ ⟨_,⟨y,hy,rfl⟩,rfl⟩ he
-      rw [hg, invFunOn_apply_eq (f := f) hy] at he
-      rw [disjoint_iff_forall_ne] at hdj
-      exact hdj (mem_image_of_mem f hx) (mem_image_of_mem f hy) he
-    · exact disjoint_of_subset_right (f.invFunOn_image_image_subset _) hdj.of_image
-  rw [image_union, subset_antisymm_iff, union_subset_iff, and_iff_right (image_subset _ hst),
-    and_iff_right (image_subset _ _)]
-  · rintro _ ⟨x, hxt, rfl⟩
-    rw [mem_union]
-    by_cases h : f x ∈ f '' s
-    · left; assumption
-    have hxd : x ∈ d
-    · rw [hd, mem_inter_iff, and_iff_right hxt]
-      exact ⟨mem_image_of_mem f hxt, h⟩
-    right
+--   refine ⟨s ∪ g '' (f '' d), subset_union_left _ _, union_subset hst ?_, ?_, ?_⟩
+--   · exact (f.invFunOn_image_image_subset _).trans (inter_subset_left _ _)
+--   · rw [injOn_union, and_iff_right hinj, and_iff_right (invFunOn_injOn_image_preimage f _)]
+--     · rintro x hx _ ⟨_,⟨y,hy,rfl⟩,rfl⟩ he
+--       rw [hg, invFunOn_apply_eq (f := f) hy] at he
+--       rw [disjoint_iff_forall_ne] at hdj
+--       exact hdj (mem_image_of_mem f hx) (mem_image_of_mem f hy) he
+--     · exact disjoint_of_subset_right (f.invFunOn_image_image_subset _) hdj.of_image
+--   rw [image_union, subset_antisymm_iff, union_subset_iff, and_iff_right (image_subset _ hst),
+--     and_iff_right (image_subset _ _)]
+--   · rintro _ ⟨x, hxt, rfl⟩
+--     rw [mem_union]
+--     by_cases h : f x ∈ f '' s
+--     · left; assumption
+--     have hxd : x ∈ d
+--     · rw [hd, mem_inter_iff, and_iff_right hxt]
+--       exact ⟨mem_image_of_mem f hxt, h⟩
+--     right
 
-    refine ⟨g (f x), ⟨f x, ⟨g (f x), ?_, ?_⟩, rfl⟩, ?_⟩
-    · exact mem_of_mem_of_subset (invFunOn_apply_mem (f := f) hxd) Subset.rfl
-    · rwa [invFunOn_apply_eq (f := f)]
-    · rwa [invFunOn_apply_eq (f := f)]
-  rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-  exact mem_of_mem_of_subset (invFunOn_apply_mem (f := f) hx) (inter_subset_left _ _)
+--     refine ⟨g (f x), ⟨f x, ⟨g (f x), ?_, ?_⟩, rfl⟩, ?_⟩
+--     · exact mem_of_mem_of_subset (invFunOn_apply_mem (f := f) hxd) Subset.rfl
+--     · rwa [invFunOn_apply_eq (f := f)]
+--     · rwa [invFunOn_apply_eq (f := f)]
+--   rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+--   exact mem_of_mem_of_subset (invFunOn_apply_mem (f := f) hx) (inter_subset_left _ _)
 
-lemma Set.InjOn.exists_injOn_superset_image {f : α → β} {s s' : Set α} {t : Set β}
-    (hss' : s ⊆ s') (hinj : InjOn f s) (hst : f '' s ⊆ t) (ht : t ⊆ f '' s') :
-    ∃ r, s ⊆ r ∧ r ⊆ s' ∧ InjOn f r ∧ f '' r = t := by
-  rw [image_subset_iff] at hst
-  obtain ⟨r, hsr, hrs', hinj, heq⟩ := hinj.exists_injOn_superset (subset_inter hss' hst)
-  rw [subset_inter_iff] at hrs'
-  refine ⟨r, hsr, hrs'.1, hinj, ?_⟩
-  rw [heq, subset_antisymm_iff, image_subset_iff, and_iff_right (inter_subset_right _ _)]
-  intro x hxt
-  obtain ⟨y, hy, rfl⟩ := ht hxt
-  exact ⟨y, ⟨hy, hxt⟩, rfl⟩
+-- lemma Set.InjOn.exists_injOn_superset_image {f : α → β} {s s' : Set α} {t : Set β}
+--     (hss' : s ⊆ s') (hinj : InjOn f s) (hst : f '' s ⊆ t) (ht : t ⊆ f '' s') :
+--     ∃ r, s ⊆ r ∧ r ⊆ s' ∧ InjOn f r ∧ f '' r = t := by
+--   rw [image_subset_iff] at hst
+--   obtain ⟨r, hsr, hrs', hinj, heq⟩ := hinj.exists_injOn_superset (subset_inter hss' hst)
+--   rw [subset_inter_iff] at hrs'
+--   refine ⟨r, hsr, hrs'.1, hinj, ?_⟩
+--   rw [heq, subset_antisymm_iff, image_subset_iff, and_iff_right (inter_subset_right _ _)]
+--   intro x hxt
+--   obtain ⟨y, hy, rfl⟩ := ht hxt
+--   exact ⟨y, ⟨hy, hxt⟩, rfl⟩
 
 /-- If `f` maps `s` bijectively to `t` and, then for any `s ⊆ s₁` and `t ⊆ t' ⊆ f '' s₁`,
   there is some `s ⊆ s' ⊆ s₁` so that `f` maps `s'` bijectively to `t'`. -/
@@ -140,7 +140,7 @@ theorem Set.BijOn.extend {f : α → β} {s : Set α} {t : Set β} (h : BijOn f 
     (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
   simpa using h.extend_of_subset (subset_univ s) htt' (by simpa)
 
-theorem Set.imageFactorization_injective (h : InjOn f s) :
+theorem Set.InjOn.imageFactorization_injective (h : InjOn f s) :
     Injective (s.imageFactorization f) := by
   rintro ⟨x,hx⟩ ⟨y,hy⟩ h'
   simp_rw [imageFactorization, Subtype.mk.injEq, h.eq_iff hx hy] at h'

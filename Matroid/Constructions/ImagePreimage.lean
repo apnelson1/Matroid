@@ -50,8 +50,8 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
       hJ₀X, and_imp, true_and]
     intro K hK hinj hIK hKX hJ₀K
     rw [←hinj.image_eq_image_iff_of_subset hJ₀K Subset.rfl,
-       hJ.2 hK (image_subset_range _ _) ?_ (image_subset _ hKX) (image_subset _ hJ₀K)]
-    exact fun e he ↦ ⟨e, hIK he, rfl⟩ )
+       hJ.2 hK (image_subset_range _ _) (fun e he ↦ ⟨e, hIK he, rfl⟩)
+       (image_subset _ hKX) (image_subset _ hJ₀K)] )
   ( fun I hI e heI ↦ hI.1.subset_ground ⟨e, heI, rfl⟩ )
 
 @[simp] theorem preimage_indep_iff {M : Matroid β} :
@@ -63,26 +63,32 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`, restricted
   to a ground set `E`. Elements with the same image are parallel. -/
-def preimage' (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := (M.preimage f) ↾ E
+def preimageOn (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := (M.preimage f) ↾ E
 
-@[simp] theorem preimage'_indep_iff {M : Matroid β} :
-    (M.preimage' E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by
-  simp [preimage', and_assoc]
+@[simp] theorem preimageOn_indep_iff {M : Matroid β} :
+    (M.preimageOn E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by
+  simp [preimageOn, and_assoc]
 
-@[simp] theorem preimage'_ground_eq {M : Matroid β} :
-    (M.preimage' E f).E = E := rfl
+@[simp] theorem preimageOn_ground_eq {M : Matroid β} :
+    (M.preimageOn E f).E = E := rfl
 
 /-- If `f` is locally a bijection, then `M` is isomorphic to its preimage. -/
-noncomputable def iso_preimage [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
-    (hf : BijOn f E M.E) : Iso (M.preimage' E f) M :=
+noncomputable def iso_preimageOn [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
+    (hf : BijOn f E M.E) : Iso (M.preimageOn E f) M :=
   Iso.of_forall_indep
   hf.toLocalEquiv
-  ( by rw [BijOn.toLocalEquiv_source, preimage'_ground_eq] )
+  ( by rw [BijOn.toLocalEquiv_source, preimageOn_ground_eq] )
   hf.toLocalEquiv_target
   ( by
-    simp only [preimage'_ground_eq, preimage'_indep_iff, BijOn.toLocalEquiv_apply,
+    simp only [preimageOn_ground_eq, preimageOn_indep_iff, BijOn.toLocalEquiv_apply,
       and_iff_left_iff_imp]
     exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
+
+theorem Iso.eq_preimage {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.preimageOn M.E e := by
+  simp only [eq_iff_indep_iff_indep_forall, preimageOn_ground_eq, preimageOn_indep_iff, true_and]
+  intro I hIE
+  rw [and_iff_left hIE, ←e.on_indep_iff, iff_self_and]
+  exact fun _ ↦ e.toLocalEquiv.bijOn.injOn.mono (by simpa)
 
 section Image
 
