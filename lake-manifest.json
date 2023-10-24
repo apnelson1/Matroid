@@ -4,7 +4,7 @@
  [{"git":
    {"url": "https://github.com/leanprover-community/mathlib4.git",
     "subDir?": null,
-    "rev": "e9da486301080c2f72366a2547c0ba77d0e3cb74",
+    "rev": "2737bd912c4b1ffed90ba7cb2682c3b549b9e714",
     "opts": {},
     "name": "mathlib",
     "inputRev?": null,
@@ -12,7 +12,7 @@
   {"git":
    {"url": "https://github.com/leanprover/std4",
     "subDir?": null,
-    "rev": "d83bd039e6e26efc721cd51929659418ad0329df",
+    "rev": "fb56324020c8e4f3d451e8901b290dea82c072ae",
     "opts": {},
     "name": "std",
     "inputRev?": "main",
@@ -44,9 +44,9 @@
   {"git":
    {"url": "https://github.com/leanprover-community/ProofWidgets4",
     "subDir?": null,
-    "rev": "27715d1daf32b9657dc38cd52172d77b19bde4ba",
+    "rev": "5382e38eca1e2537d75d4c4705a9e744424b0037",
     "opts": {},
     "name": "proofwidgets",
-    "inputRev?": "v0.0.18",
+    "inputRev?": "v0.0.19",
     "inherited": true}}],
  "name": "matroid"}

@@ -5,11 +5,28 @@ open Finset
 
 
 
-def transverses (T : Finset α) {ι : Type _} (f : ι → Finset α): Prop :=
-  ∃ (m : α → ι), Set.InjOn m T.toSet ∧ (∀ a, a ∈ T → a ∈ f (m a))
+def transverses (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
+  ∃ (m : α → ι), Set.InjOn m T.toSet ∧ (∀ a, a ∈ T → a ∈ fam (m a))
 
-theorem transverses_iff_hall (T : Finset α) (f : ι → Finset α):
-    transverses T f ↔ ∀ S, S ⊆ T → S.card ≥ (S.biUnion f) := sorry
+
+
+def neighbors [Fintype ι] [DecidableEq α] (fam : ι → Finset α) (a : α) : Finset ι :=
+    {i | a ∈ fam i}.toFinset
+
+theorem transverses_iff_hall {ι : Type _} [Fintype ι] [DecidableEq α] [DecidableEq ι]  (T : Finset α)
+    (fam : ι → Finset α): transverses T fam ↔ ∀ S, S ⊆ T → S.card ≥ (S.biUnion (neighbors fam)).card
+    := by
+  constructor
+  · rintro ⟨T_map, T_map_inj, h_T_map⟩
+    have hall:= (Finset.all_card_le_biUnion_card_iff_exists_injective (neighbors fam)).2 ⟨T_map, ?_⟩
+
+
+
+
+
+
+
+
 
 def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [Inhabited ι] [Fintype ι]
     (f : ι → Finset α) : Matroid α :=
