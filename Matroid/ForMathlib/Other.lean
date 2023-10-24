@@ -102,44 +102,43 @@ lemma Set.InjOn.exists_injOn_superset_image {f : α → β} {s s' : Set α} {t :
   obtain ⟨y, hy, rfl⟩ := ht hxt
   exact ⟨y, ⟨hy, hxt⟩, rfl⟩
 
+/-- If `f` maps `s` bijectively to `t` and, then for any `s ⊆ s₁` and `t ⊆ t' ⊆ f '' s₁`,
+  there is some `s ⊆ s' ⊆ s₁` so that `f` maps `s'` bijectively to `t'`. -/
+theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t : Set β}
+    (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : t' ⊆ f '' s₁) :
+    ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
+  have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∈ s₁ \ s ∧ f a = b
+  · rintro ⟨b, hb⟩
+    obtain ⟨a, ha, rfl⟩  := ht' hb.1
+    exact ⟨_, ⟨ha, fun has ↦ hb.2 <| h.mapsTo has⟩, rfl⟩
+  choose g hg using hex
+  have hinj : InjOn f (s ∪ range g)
+  · rw [injOn_union, and_iff_right h.injOn, and_iff_left]
+    · rintro _ ⟨⟨x,hx⟩, rfl⟩ _ ⟨⟨x', hx'⟩,rfl⟩ hf
+      simp only [(hg _).2, (hg _).2] at hf; subst hf; rfl
+    · rintro x hx _ ⟨⟨y,hy⟩, hy', rfl⟩ h_eq
+      rw [(hg _).2] at h_eq
+      obtain (rfl : _ = y) := h_eq
+      exact hy.2 <| h.mapsTo hx
+    rw [disjoint_iff_forall_ne]
+    rintro x hx _ ⟨y, hy, rfl⟩ rfl
+    have h' := h.mapsTo hx
+    rw [(hg _).2] at h'
+    exact y.prop.2 h'
+  have hp : BijOn f (range g) (t' \ t)
+  · apply BijOn.mk
+    · rintro _ ⟨x, hx, rfl⟩; rw [(hg _).2]; exact x.2
+    · exact hinj.mono (subset_union_right _ _)
+    exact fun x hx ↦ ⟨g ⟨x,hx⟩, by simp [(hg _).2] ⟩
+  refine ⟨s ∪ range g, subset_union_left _ _, union_subset hss₁ <| ?_, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩; exact (hg _).1.1
+  convert h.union hp ?_
+  · exact (union_diff_cancel htt').symm
+  exact hinj
+
 theorem Set.BijOn.extend {f : α → β} {s : Set α} {t : Set β} (h : BijOn f s t) (htt' : t ⊆ t')
     (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
-  have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∉ s ∧ f a = b
-  · rintro ⟨b,hb⟩
-    obtain ⟨a, rfl⟩ := ht' hb.1
-    exact ⟨_, fun has ↦ hb.2 <| h.image_eq.subset (mem_image_of_mem _ has), rfl⟩
-  choose g hg using hex
-  have hp : BijOn f (range g) (t' \ t)
-  · sorry
-
-  refine ⟨s ∪ range g, subset_union_left _ _, ?_⟩
-  convert h.union hp ?_
-  · rwa [union_diff_self, eq_comm, union_eq_right]
-  rw [injOn_union, and_iff_right h.injOn, and_iff_left]
-  · rintro _ ⟨x, rfl⟩ _ ⟨x', rfl⟩ h_eq
-    rw [(hg x).2, (hg x').2] at h_eq
-    exact congr_arg _ <| SetCoe.ext h_eq
-  · rintro x hxs _ ⟨⟨y,hy⟩, rfl⟩ h_eq
-    rw [(hg _).2] at h_eq
-    obtain (rfl : _ = y) := h_eq
-
-
-
-  -- apply (hg ⟨_, hy⟩).1
-  -- rw [←h.injOn.mem_image_iff Subset.rfl, (hg _).2]
-  -- · simp only [mem_image]; exact ⟨_, hxs, rfl⟩
-
-
-
-    -- rintro _ ⟨⟨x,hx⟩, rfl⟩ _ ⟨⟨x', hx'⟩, rfl⟩  h_eq
-
-
-  -- rintro x (hxs | hxg) x' (hx's | hx'g) h_eq
-  -- · exact h.injOn hxs hx's h_eq
-  -- ·
-  -- intro x hx x' hx' h_eq
-
-
+  simpa using h.extend_of_subset (subset_univ s) htt' (by simpa)
 
 theorem Set.imageFactorization_injective (h : InjOn f s) :
     Injective (s.imageFactorization f) := by
