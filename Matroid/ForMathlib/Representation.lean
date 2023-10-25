@@ -144,6 +144,21 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
   rw [Finsupp.apply_total, hφ] at hc
   simpa [Finsupp.total_apply, Function.update_apply] using hc
 
+
+theorem Fintype.linearIndependent_iff'' {ι R M : Type _} {v : ι → M} [Field R]
+    [AddCommGroup M] [Module R M] [Fintype ι] [FiniteDimensional R M] :
+    LinearIndependent R v ↔ ∀ φ : Module.Dual R M, φ ∘ v = 0 → φ = 0 := by
+  rw [Fintype.linearIndependent_iff]
+  refine ⟨fun h φ h0 ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis R M
+    have : Fintype s := FiniteDimensional.fintypeBasisIndex b
+    have := b.sum_dual_apply_smul_coord φ
+    -- rw [← b.sum_dual_apply_smul_coord φ] at h0
+
+
+
+
+
  /-- For each function `f` to a module `W` over `r`, composition with `f` is a linear map from
   `Dual W` to `α → R` -/
 def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W] :

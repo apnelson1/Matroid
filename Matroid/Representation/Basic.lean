@@ -296,11 +296,11 @@ def rep_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : 
 
 noncomputable def rep_of_fun' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroid_of_fun 𝔽 f E).Rep 𝔽 W where
-      to_fun := indicator E f
-      valid' := (by
-      rw [←matroid_of_fun_indicator_eq, IsRep]
-      intro I
-      rw [matroid_of_fun_indep_iff _ _ _ support_indicator_subset] )
+  to_fun := indicator E f
+  valid' := ( by
+    rw [←matroid_of_fun_indicator_eq, IsRep]
+    intro I
+    rw [matroid_of_fun_indep_iff _ _ _ support_indicator_subset] )
 
 theorem Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
   rintro _ ⟨e, he ,rfl⟩
