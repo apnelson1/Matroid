@@ -13,12 +13,79 @@ def transverses (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
 def neighbors [Fintype ι] [DecidableEq α] (fam : ι → Finset α) (a : α) : Finset ι :=
     {i | a ∈ fam i}.toFinset
 
-theorem transverses_iff_hall {ι : Type _} [Fintype ι] [DecidableEq α] [DecidableEq ι]  (T : Finset α)
-    (fam : ι → Finset α): transverses T fam ↔ ∀ S, S ⊆ T → S.card ≥ (S.biUnion (neighbors fam)).card
-    := by
+theorem hall_subset {ι : Type u}  {α : Type v}
+[DecidableEq α] [DecidableEq ι] (T : Finset ι) (fam : ι → Finset α) : (∀ (s : Finset ι), s ⊆ T →
+Finset.card s ≤ Finset.card (Finset.biUnion s fam)) ↔
+∃ f, Set.InjOn f T ∧ ∀ x ∈ T, f x ∈ fam x := by
+  haveI : (Inhabited α) := by
+    inhabit α
+
+  have hall:= Finset.all_card_le_biUnion_card_iff_exists_injective (fun (x : T) ↦ fam x)
+  have biUnion_eq : ∀ S, Finset.biUnion (Finset.map (Function.Embedding.subtype (fun x ↦ x ∈ T)) S) fam =
+      Finset.biUnion S (fun (x : T) ↦ fam x)
+  · intro S
+    apply subset_antisymm
+    · rintro x y
+      obtain ⟨a, a_mem, h_a⟩ :=Finset.mem_biUnion.1 y
+      rw [Finset.mem_biUnion]
+      rw [Finset.mem_map] at a_mem
+      obtain ⟨a', a'_mem, h_a'⟩ := a_mem
+      refine' ⟨a', a'_mem, _⟩
+      simp at h_a'
+      rwa [h_a']
+    · rintro x y
+      obtain ⟨a, a_mem, h_a⟩ := Finset.mem_biUnion.1 y
+      rw [Finset.mem_biUnion]
+      refine' ⟨a, _, h_a⟩
+      simpa
   constructor
-  · rintro ⟨T_map, T_map_inj, h_T_map⟩
-    have hall:= (Finset.all_card_le_biUnion_card_iff_exists_injective (neighbors fam)).2 ⟨T_map, ?_⟩
+  · intro hall_condition
+    have hall_condition2 : (∀ (s : Finset { x // x ∈ T }),
+    card s ≤ card (Finset.biUnion s fun x ↦ fam ↑x))
+    · intro S
+      set S' : Finset ι := Finset.map (Function.Embedding.subtype _) S with S'_def
+      have S'_sub_T : S' ⊆ T
+      · intro s s_sub_S'
+        rw [S'_def] at s_sub_S'
+        apply Finset.property_of_mem_map_subtype S s_sub_S'
+      have card:= hall_condition S' S'_sub_T
+      rw [Finset.card_map] at card
+      rwa [←(biUnion_eq S), ←S'_def]
+    obtain ⟨f, f_Inj, h_f⟩ := hall.1 hall_condition2
+    set f' : ι → α := fun x ↦ if h: (x ∈ T) then f ⟨x, h⟩ else default with f'_def
+    refine' ⟨f', _, _⟩
+    · intro a (a_mem : a ∈ T) b (b_mem : b ∈ T) abeq
+      simp only [a_mem, dite_true, b_mem] at abeq
+      exact Subtype.mk_eq_mk.1 (f_Inj abeq)
+    · intro x x_T
+      simp only [x_T, dite_true]
+      exact h_f _
+  rintro ⟨f, f_Inj, h_f⟩
+  have exists_transversal_on_set : ∃ f, Function.Injective f ∧ ∀ (x : { x // x ∈ T }), f x ∈ fam ↑x
+  · refine' ⟨fun x ↦ Subtype.restrict _ f x, _, _⟩
+    · intro a b abeq
+      dsimp at abeq
+      apply Subtype.ext (f_Inj a.prop b.prop abeq)
+    · intro x
+      exact h_f x.val x.prop
+  have hall_condition := hall.2 exists_transversal_on_set
+  intro S S_sub_T
+  set S' := S.subtype (fun x ↦ x ∈ T)
+  have card:= hall_condition (S.subtype (fun x ↦ x ∈ T))
+  rw [←biUnion_eq] at card
+  simp only [card_subtype, subtype_map] at card
+  rw [Finset.filter_true_of_mem (fun x x_mem ↦ S_sub_T x_mem)] at card
+  assumption
+
+
+
+
+
+
+
+
+
+
 
 
 
