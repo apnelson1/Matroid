@@ -105,6 +105,7 @@ theorem subset_cols_notLinearIndependent_iff [Fintype n] :
 
 def span_cols_eq_top [Fintype m] : LinearIndependent R A ↔ span R (range Aᵀ) = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  classical
   · obtain ⟨g, hg⟩ :=
       (Submodule.subtype (span R (range Aᵀ))).exists_leftInverse_of_injective (by simp)
 
@@ -118,10 +119,64 @@ def span_cols_eq_top [Fintype m] : LinearIndependent R A ↔ span R (range Aᵀ)
       rw [eq_comm, ←sub_eq_zero]
       simpa using LinearMap.congr_fun (congr_fun h' i) x
 
-    apply funext fun i ↦ (?_ : e i = 0)
-    have' := (Pi.basisFun R m).sum_dual_apply_smul_coord (e i)
+    ext i j
     rw [Fintype.linearIndependent_iff] at h
+    specialize h ((Module.piEquiv m R R).symm (e i))
+    simp only [Module.piEquiv, Basis.constr, Pi.basisFun_apply, LinearMap.stdBasis,
+      LinearMap.coe_single, LinearEquiv.coe_symm_mk, LinearMap.coe_comp, LinearMap.coe_proj, eval,
+      comp_apply, LinearMap.sub_apply, coeSubtype, LinearMap.id_coe, id_eq, Pi.sub_apply, ne_eq,
+      Pi.zero_apply, LinearMap.zero_comp, LinearMap.zero_apply] at *
+    apply h
+    ext j
+    simp only [ne_eq, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
+      sub_mul, Finset.sum_sub_distrib, sub_eq_zero]
 
+
+
+      -- def rowBasis.basis_of_cols_linearIndependent (h : A.RowBasis s) (hi : LinearIndependent R Aᵀ) :
+      --     Basis s R (n → R) := by
+      --   refine h.basis.map (LinearEquiv.trans (LinearEquiv.ofEq _ _ ?_ : _ ≃ₗ[R] _)
+      --     (Submodule.topEquiv : _ ≃ₗ[R] (n → R )))
+
+        -- have hi : span R (range (submatrix A ((↑) : s → m))) = ⊤
+        -- · sorry
+        -- have : span R (range (submatrix A ((↑) : s → m))) ≃ₗ[R] (n → R)
+        -- · set h1 := LinearEquiv.ofEq (span R (range (submatrix A ((↑) : s → m)))) ⊤ hi
+        --   set h2 := (Submodule.topEquiv (R := R) (M := n → R))
+
+          -- Submodule.topEquiv (R := R) (M := n → R)
+
+
+          -- (LinearEquiv.ofEq _ _ hi).trans (by exact?)
+        -- refine (Basis.span h.linearIndependent).map (Submodule.topEquiv.symm.trans ?_)
+
+        -- refine (Basis.span h.linearIndependent).map ?_
+
+
+    -- have hr : (A · j) ∈ span R (range Aᵀ) := sorry
+    -- have := congr_fun (congr_arg (Submodule.subtype _) <| LinearMap.congr_fun hg ⟨_,hr⟩ ) i
+    -- -- convert rfl
+    -- -- have' := (Pi.basisFun R m).sum_dual_apply_smul_coord (e i)
+    -- rw [Fintype.linearIndependent_iff] at h
+    -- -- set g' : m → R := fun j ↦ e i (Pi.basisFun R m j)
+    -- have h_end := h (fun j ↦ e i (Pi.basisFun R m j)) ?_
+    -- · rw [←(Pi.basisFun R m).sum_dual_apply_smul_coord (e i)]
+    --   simp [h_end]
+    -- ext j
+    -- simp only [LinearMap.coe_comp, LinearMap.coe_proj, eval, comp_apply, LinearMap.sub_apply,
+    --   coeSubtype, LinearMap.id_coe, id_eq, Pi.sub_apply, Finset.sum_apply, Pi.smul_apply,
+    --   smul_eq_mul, Pi.zero_apply, Pi.basisFun_apply, LinearMap.stdBasis_apply, sub_mul,
+    --   Finset.sum_sub_distrib, update_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq,
+    --   Finset.mem_univ, ite_true, sub_eq_zero]
+
+    -- -- simp_rw [sub_mul, Finset.sum_sub]
+    -- have hr : (A · j) ∈ span R (range Aᵀ) := sorry
+    -- convert congr_fun (congr_arg (Submodule.subtype _) <| LinearMap.congr_fun hg ⟨_,hr⟩ ) i
+
+    -- simp only [LinearMap.coe_comp, coeSubtype, comp_apply]
+
+    -- rw [Fintype.sum_eq_single i]
+    -- · rw [update_apply]
 
 
 
