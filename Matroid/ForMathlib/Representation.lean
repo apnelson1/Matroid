@@ -3,6 +3,12 @@ import Mathlib.LinearAlgebra.Finrank
 
 open Submodule Set Module
 
+@[simp] theorem Module.piEquiv_apply_symm [Field 𝔽] [Fintype α] [DecidableEq α]
+    (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) :
+    (Module.piEquiv α 𝔽 𝔽).symm y i = y (Pi.single i 1) := by
+  simp only [piEquiv, Basis.constr, Pi.basisFun_apply, LinearMap.stdBasis_apply,
+    LinearEquiv.coe_symm_mk]; rfl
+
 @[simp]
 theorem LinearEquiv.dualMap_apply_symm {R : Type u} [CommSemiring R] {M₁ : Type v} {M₂ : Type v'}
     [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂] (f : M₁ ≃ₗ[R] M₂)
@@ -145,15 +151,15 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
   simpa [Finsupp.total_apply, Function.update_apply] using hc
 
 
-theorem Fintype.linearIndependent_iff'' {ι R M : Type _} {v : ι → M} [Field R]
-    [AddCommGroup M] [Module R M] [Fintype ι] [FiniteDimensional R M] :
-    LinearIndependent R v ↔ ∀ φ : Module.Dual R M, φ ∘ v = 0 → φ = 0 := by
-  rw [Fintype.linearIndependent_iff]
-  refine ⟨fun h φ h0 ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis R M
-    have : Fintype s := FiniteDimensional.fintypeBasisIndex b
-    have := b.sum_dual_apply_smul_coord φ
-    -- rw [← b.sum_dual_apply_smul_coord φ] at h0
+-- theorem Fintype.linearIndependent_iff'' {ι R M : Type _} {v : ι → M} [Field R]
+--     [AddCommGroup M] [Module R M] [Fintype ι] [FiniteDimensional R M] :
+--     LinearIndependent R v ↔ ∀ φ : Module.Dual R M, φ ∘ v = 0 → φ = 0 := by
+--   rw [Fintype.linearIndependent_iff]
+--   refine ⟨fun h φ h0 ↦ ?_, fun h ↦ ?_⟩
+--   · obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis R M
+--     have : Fintype s := FiniteDimensional.fintypeBasisIndex b
+--     have := b.sum_dual_apply_smul_coord φ
+--     -- rw [← b.sum_dual_apply_smul_coord φ] at h0
 
 
 

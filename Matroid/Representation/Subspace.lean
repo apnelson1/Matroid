@@ -83,7 +83,7 @@ end Matroid
 
 @[simp] theorem Module.piEquiv_apply_symm [Fintype α] [DecidableEq α]
     (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) :
-    (Module.piEquiv α 𝔽 𝔽).symm y i = y (Function.update 0 i 1) := by
+    (Module.piEquiv α 𝔽 𝔽).symm y i = y (Pi.single i 1) := by
   simp [piEquiv, Basis.constr, LinearMap.stdBasis_apply]
 
 @[simp] theorem Module.Dual.sum_update [Fintype α] [DecidableEq α] (y : Module.Dual 𝔽 (α → 𝔽))
