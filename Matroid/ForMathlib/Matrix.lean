@@ -1,5 +1,6 @@
 import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.Dual
+import Matroid.ForMathlib.Representation
 
 variable {ι m n R : Type _} [Field R] {A B : Matrix m n R} {s : Set m} {t : Set n}
 
@@ -7,11 +8,12 @@ open Set Function Submodule BigOperators
 
 namespace Matrix
 
-/-- The rows in `s` index a basis for the row space of `A` -/
-def RowBasis (A : Matrix m n R) (s : Set m) :=
+/-- `A.RowBasis s` means that the rows `A_i : i ∈ s` are a basis for the row space of `A` -/
+def RowBasis (A : Matrix m n R) (s : Set m) : Prop :=
     LinearIndependent R (A.submatrix ((↑) : s → m) id)
   ∧ span R (range <| A.submatrix ((↑) : s → m) id) = span R (range A)
 
+/-- A `RowBasis` as a `Basis` for the row space -/
 noncomputable def RowBasis.basis (h : A.RowBasis s) : Basis s R (span R (range A)) :=
   (Basis.span h.1).map <| LinearEquiv.ofEq _ _ h.2
 
@@ -24,9 +26,10 @@ theorem RowBasis.linearIndependent (h : A.RowBasis s) :
 theorem RowBasis.span_eq (h : A.RowBasis s) :
   span R (range <| A.submatrix ((↑) : s → m) id) = span R (range A) := h.2
 
-/-- The columns in `t` index a basis for the column space of `A` -/
+/-- `A.ColBasis t` means that the columns `A_i : i ∈ t` are a basis for the column space of `A` -/
 def ColBasis (A : Matrix m n R) (t : Set n) := Aᵀ.RowBasis t
 
+/-- A `ColBasis` as a `Basis` for the column space -/
 noncomputable def ColBasis.basis (h : A.ColBasis t) : Basis t R (span R (range Aᵀ)) :=
   RowBasis.basis h
 
@@ -41,16 +44,10 @@ theorem ColBasis.span_eq (h : A.ColBasis t) :
     span R (range <| (A.submatrix id ((↑) : t → n))ᵀ) = span R (range Aᵀ) :=
   h.2
 
-@[simp] theorem RowBasis_transpose : Aᵀ.RowBasis t ↔ A.ColBasis t := Iff.rfl
-@[simp] theorem ColBasis_transpose : Aᵀ.ColBasis s ↔ A.RowBasis s := Iff.rfl
+@[simp] theorem rowBasis_transpose : Aᵀ.RowBasis t ↔ A.ColBasis t := Iff.rfl
+@[simp] theorem colBasis_transpose : Aᵀ.ColBasis s ↔ A.RowBasis s := Iff.rfl
 
-
-
--- theorem Finset.sum_coe_sort_eq_subtype {β : Type u} {α : Type v} [Fintype α] (s : Set α) [Fintype s]
---   [AddCommMonoid β] (f : s → β) :
---     (∑ x : s, f x) = ∑ x : α, if hx : x ∈ s then f ⟨x,hx⟩ else 0 := sorry
-
-theorem _root_.Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
+theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
   [AddCommMonoid M] [Module R M] {s : Set ι} {v : ι → M} :
     ¬ LinearIndependent R (s.restrict v) ↔ ∃ c : ι → R, ∑ i, c i • v i = 0 ∧ (∃ i ∈ s, c i ≠ 0)
       ∧ ∀ i, i ∉ s → c i = 0 := by
@@ -72,6 +69,10 @@ theorem _root_.Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiri
 
 @[simp] theorem vecMulLinear_apply' {R m n : Type _} [Semiring R] [Fintype m]
     (M : Matrix m n R) (x : m → R) : M.vecMulLinear x = M.vecMul x := rfl
+
+theorem range_vecMulLinear {R m n : Type _} [CommSemiring R] [Fintype m] (M : Matrix m n R) :
+    LinearMap.range M.vecMulLinear = span R (range M) := by
+  convert range_mulVecLin Mᵀ; ext x; simp [← vecMul_transpose]
 
 theorem rows_linearIndependent_iff [Fintype m] :
     LinearIndependent R A ↔ LinearMap.ker A.vecMulLinear = ⊥ := by
@@ -103,153 +104,65 @@ theorem subset_cols_notLinearIndependent_iff [Fintype n] :
       ∃ c, A.mulVec c = 0 ∧ c ≠ 0 ∧ support c ⊆ t := by
   simp_rw [subset_rows_notLinearIndependent_iff, vecMul_transpose]
 
-def span_cols_eq_top [Fintype m] : LinearIndependent R A ↔ span R (range Aᵀ) = ⊤ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+@[simp] theorem Fintype.sum_pi_single {α : Type v} {β : α → Type u_2} [DecidableEq α] [Fintype α]
+    [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
+    ∑ a', Pi.single a' (f a') a = f a := by
+  convert Finset.sum_pi_single a f Finset.univ; simp
+
+theorem toLin'_transpose [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
+    toLin' Aᵀ = (Module.piEquiv n R R).symm.comp
+      (A.toLin'.dualMap.comp (Module.piEquiv m R R).toLinearMap) := by
+  ext i j; simp [Module.piEquiv_apply_apply, ←Pi.single_mul_right_apply (A · j)]
+
+theorem toLin'_dualMap [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
+    A.toLin'.dualMap =
+      ((Module.piEquiv n R R).comp (toLin' Aᵀ)).comp (Module.piEquiv m R R).symm.toLinearMap := by
+  rw [toLin'_transpose]; aesop
+
+/-- TODO : remove the assumption that `m` is finite -/
+theorem span_rows_eq_top_iff_linearIndependent_cols [Fintype m] [Fintype n] :
+    span R (range A) = ⊤ ↔ LinearIndependent R Aᵀ := by
   classical
-  · obtain ⟨g, hg⟩ :=
-      (Submodule.subtype (span R (range Aᵀ))).exists_leftInverse_of_injective (by simp)
+  convert (LinearMap.dualMap_surjective_iff (f := toLin' A))
+  · rw [←range_vecMulLinear, LinearMap.range_eq_top, toLin'_dualMap]
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, EquivLike.comp_bijective,
+      EquivLike.surjective_comp, EquivLike.comp_surjective]
+    convert Iff.rfl; ext i j; simp
+  rw [rows_linearIndependent_iff, LinearMap.ker_eq_bot]; convert Iff.rfl; ext; simp
 
-    set e : m → ((m → R) →ₗ[R] R) :=
-      fun i ↦ (LinearMap.proj i).comp ((Submodule.subtype _).comp g - LinearMap.id)
+/-- TODO : remove the assumption that `n` is finite -/
+theorem span_cols_eq_top_iff_linearIndependent_rows [Fintype m] [Fintype n] :
+    span R (range Aᵀ) = ⊤ ↔ LinearIndependent R A := by
+  rw [span_rows_eq_top_iff_linearIndependent_cols, transpose_transpose]
 
-    suffices h' : e = 0
-    · rw [Submodule.eq_top_iff']; intro x
-      convert (g x).prop
-      ext i
-      rw [eq_comm, ←sub_eq_zero]
-      simpa using LinearMap.congr_fun (congr_fun h' i) x
+theorem ColBasis.rows_linearIndependent [Fintype m] [Fintype n] (ht : A.ColBasis t)
+    (hA : LinearIndependent R A) : LinearIndependent R (A.submatrix id ((↑) : t → n)) := by
+  have _ := t.toFinite.fintype
+  rw [←span_cols_eq_top_iff_linearIndependent_rows, Submodule.eq_top_iff']
+  intro x
+  rw [←span_cols_eq_top_iff_linearIndependent_rows] at hA
+  have hsp := hA ▸ ht.span_eq
+  rw [hsp];
+  apply mem_top
 
-    ext i j
-    rw [Fintype.linearIndependent_iff] at h
-    specialize h ((Module.piEquiv m R R).symm (e i))
-    simp only [Module.piEquiv, Basis.constr, Pi.basisFun_apply, LinearMap.stdBasis,
-      LinearMap.coe_single, LinearEquiv.coe_symm_mk, LinearMap.coe_comp, LinearMap.coe_proj, eval,
-      comp_apply, LinearMap.sub_apply, coeSubtype, LinearMap.id_coe, id_eq, Pi.sub_apply, ne_eq,
-      Pi.zero_apply, LinearMap.zero_comp, LinearMap.zero_apply] at *
-    apply h
-    ext j
-    simp only [ne_eq, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
-      sub_mul, Finset.sum_sub_distrib, sub_eq_zero]
+theorem RowBasis.cols_linearIndependent [Fintype m] [Fintype n] (hs : A.RowBasis s)
+    (hA : LinearIndependent R Aᵀ) : LinearIndependent R (Aᵀ.submatrix id ((↑) : s → m)) :=
+  (colBasis_transpose.2 hs).rows_linearIndependent hA
 
+/-- If an `m × n` matrix `A` with entries in `R` has linearly independent rows,
+    a column basis for `A` gives a basis for `m → R`. -/
+noncomputable def ColBasis.basis' [Fintype m] [Fintype n] (ht : A.ColBasis t)
+  (hA : LinearIndependent R A) : Basis t R (m → R) :=
+  have _ := t.toFinite.fintype
+  ( Basis.span ht.linearIndependent ).map <| LinearEquiv.ofTop _ <| eq_top_iff'.2 fun x ↦
+    ( by rw [ht.span_eq, span_cols_eq_top_iff_linearIndependent_rows.2 hA]; apply mem_top )
 
+@[simp] theorem ColBasis.basis'_apply [Fintype m] [Fintype n] (ht : A.ColBasis t)
+    (hA : LinearIndependent R A) (j : t) : ht.basis' hA j = (A · j) := by
+  ext; simp [basis', Basis.span_apply]
 
-      -- def rowBasis.basis_of_cols_linearIndependent (h : A.RowBasis s) (hi : LinearIndependent R Aᵀ) :
-      --     Basis s R (n → R) := by
-      --   refine h.basis.map (LinearEquiv.trans (LinearEquiv.ofEq _ _ ?_ : _ ≃ₗ[R] _)
-      --     (Submodule.topEquiv : _ ≃ₗ[R] (n → R )))
-
-        -- have hi : span R (range (submatrix A ((↑) : s → m))) = ⊤
-        -- · sorry
-        -- have : span R (range (submatrix A ((↑) : s → m))) ≃ₗ[R] (n → R)
-        -- · set h1 := LinearEquiv.ofEq (span R (range (submatrix A ((↑) : s → m)))) ⊤ hi
-        --   set h2 := (Submodule.topEquiv (R := R) (M := n → R))
-
-          -- Submodule.topEquiv (R := R) (M := n → R)
-
-
-          -- (LinearEquiv.ofEq _ _ hi).trans (by exact?)
-        -- refine (Basis.span h.linearIndependent).map (Submodule.topEquiv.symm.trans ?_)
-
-        -- refine (Basis.span h.linearIndependent).map ?_
-
-
-    -- have hr : (A · j) ∈ span R (range Aᵀ) := sorry
-    -- have := congr_fun (congr_arg (Submodule.subtype _) <| LinearMap.congr_fun hg ⟨_,hr⟩ ) i
-    -- -- convert rfl
-    -- -- have' := (Pi.basisFun R m).sum_dual_apply_smul_coord (e i)
-    -- rw [Fintype.linearIndependent_iff] at h
-    -- -- set g' : m → R := fun j ↦ e i (Pi.basisFun R m j)
-    -- have h_end := h (fun j ↦ e i (Pi.basisFun R m j)) ?_
-    -- · rw [←(Pi.basisFun R m).sum_dual_apply_smul_coord (e i)]
-    --   simp [h_end]
-    -- ext j
-    -- simp only [LinearMap.coe_comp, LinearMap.coe_proj, eval, comp_apply, LinearMap.sub_apply,
-    --   coeSubtype, LinearMap.id_coe, id_eq, Pi.sub_apply, Finset.sum_apply, Pi.smul_apply,
-    --   smul_eq_mul, Pi.zero_apply, Pi.basisFun_apply, LinearMap.stdBasis_apply, sub_mul,
-    --   Finset.sum_sub_distrib, update_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq,
-    --   Finset.mem_univ, ite_true, sub_eq_zero]
-
-    -- -- simp_rw [sub_mul, Finset.sum_sub]
-    -- have hr : (A · j) ∈ span R (range Aᵀ) := sorry
-    -- convert congr_fun (congr_arg (Submodule.subtype _) <| LinearMap.congr_fun hg ⟨_,hr⟩ ) i
-
-    -- simp only [LinearMap.coe_comp, coeSubtype, comp_apply]
-
-    -- rw [Fintype.sum_eq_single i]
-    -- · rw [update_apply]
-
-
-
-
-    -- simpa using LinearMap.congr_fun he x
-
-    -- set e : m → ((m → R) →ₗ[R] R) :=
-    --   fun i ↦ (LinearMap.proj i).comp ((Submodule.subtype _).comp g - LinearMap.id)
-    -- have he : e = 0
-    -- · ext i
-
-
-    -- rw [eq_comm, ←sub_eq_zero]
-    -- ext i
-    -- simpa using LinearMap.congr_fun (congr_fun he i) x
-
-    -- have := congr_fun he i
-    -- have he : ∀ i, e i = 0
-    -- · sorry
-    -- rw [Submodule.eq_top_iff']
-    -- intro x
-    -- have h_eq : g x = x
-    -- · ext i; simpa [sub_eq_zero] using LinearMap.congr_fun (he i) x
-    -- rw [←h_eq]; apply coe_mem
-
-  -- rw [rows_linearIndependent_iff]
-  -- constructor
-  -- ·
-
-  --   Basis s R (n → R) := by
-  -- refine h.basis.map (LinearEquiv.trans (LinearEquiv.ofEq _ _ ?_ : _ ≃ₗ[R] _)
-  --   (Submodule.topEquiv : _ ≃ₗ[R] (n → R )))
-
--- def rowBasis.basis_of_cols_linearIndependent (h : A.RowBasis s) (hi : LinearIndependent R Aᵀ) :
---     Basis s R (n → R) := by
---   refine h.basis.map (LinearEquiv.trans (LinearEquiv.ofEq _ _ ?_ : _ ≃ₗ[R] _)
---     (Submodule.topEquiv : _ ≃ₗ[R] (n → R )))
-
-  -- have hi : span R (range (submatrix A ((↑) : s → m))) = ⊤
-  -- · sorry
-  -- have : span R (range (submatrix A ((↑) : s → m))) ≃ₗ[R] (n → R)
-  -- · set h1 := LinearEquiv.ofEq (span R (range (submatrix A ((↑) : s → m)))) ⊤ hi
-  --   set h2 := (Submodule.topEquiv (R := R) (M := n → R))
-
-    -- Submodule.topEquiv (R := R) (M := n → R)
-
-
-    -- (LinearEquiv.ofEq _ _ hi).trans (by exact?)
-  -- refine (Basis.span h.linearIndependent).map (Submodule.topEquiv.symm.trans ?_)
-
-  -- refine (Basis.span h.linearIndependent).map ?_
-
-theorem range_vecMulLinear [Fintype m] (M : Matrix m n R) :
-    LinearMap.range M.vecMulLinear = span R (range M) := by
-  rw [←M.transpose_transpose, ← Mᵀ.range_mulVecLin]
-  ext x
-  simp [mulVec_transpose, vecMulLinear]
-
-theorem foo_rc [Fintype m] [Fintype n] (hA : LinearIndependent R A) (ht : A.ColBasis t) :
-    LinearIndependent R (A.submatrix id ((↑) : t → n)) := by
-  simp_rw [rows_linearIndependent_iff, Submodule.eq_bot_iff, LinearMap.mem_ker,
-    vecMulLinear_apply', vecMul, submatrix_apply, id_eq]
-
-  refine fun c h ↦ funext fun i ↦ (?_ : c i = 0)
-  have := ht.basis
-
-
-
-  -- by_contra hcon
-  -- rw [Fintype.not_linearIndependent_iff] at hcon
-  -- obtain ⟨g, hs, ⟨i,hi⟩⟩ := hcon
-
-
+noncomputable def RowBasis.basis' [Fintype m] [Fintype n] (ht : A.RowBasis s)
+    (hA : LinearIndependent R Aᵀ) : Basis s R (n → R) :=z
 
 theorem foo [Fintype m] [Fintype n] (hA : LinearIndependent R A) (hB : LinearIndependent R B)
     (hAB : LinearMap.ker B.mulVecLin ≤ span R (range A)) (ht : A.ColBasis tᶜ) :
