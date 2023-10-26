@@ -162,7 +162,7 @@ noncomputable def ColBasis.basis' [Fintype m] [Fintype n] (ht : A.ColBasis t)
   ext; simp [basis', Basis.span_apply]
 
 noncomputable def RowBasis.basis' [Fintype m] [Fintype n] (ht : A.RowBasis s)
-    (hA : LinearIndependent R Aᵀ) : Basis s R (n → R) :=
+    (hA : LinearIndependent R Aᵀ) : Basis s R (n → R) :=z
 
 theorem foo [Fintype m] [Fintype n] (hA : LinearIndependent R A) (hB : LinearIndependent R B)
     (hAB : LinearMap.ker B.mulVecLin ≤ span R (range A)) (ht : A.ColBasis tᶜ) :
