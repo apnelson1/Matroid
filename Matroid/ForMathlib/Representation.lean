@@ -1,13 +1,13 @@
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.Finrank
+import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 
-open Submodule Set Module
+open Submodule Set Module BigOperators
 
-theorem LinearIndependent.exists_extend {K V ι : Type _} [DivisionRing K] [AddCommGroup V] 
-    [Module K V] {f : ι → V} {s₀ t : Set ι} (hli : LinearIndependent (s₀.restrict f)) 
-    (hst : s₀ ⊆ t) :
-    ∃ s, s₀ ⊆ s ∧ s ⊆ t ∧ LinearIndependent (s.restrict f) ∧ span K (f '' s) = span K (f '' t) := by 
-  
+@[simp] theorem Fintype.sum_pi_single {α : Type v} {β : α → Type u_2} [DecidableEq α] [Fintype α]
+    [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
+    ∑ a', Pi.single a' (f a') a = f a := by
+  convert Finset.sum_pi_single a f Finset.univ; simp
 
 @[simp] theorem Module.piEquiv_apply_symm [Field 𝔽] [Fintype α] [DecidableEq α]
     (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) :
@@ -49,26 +49,11 @@ theorem LinearEquiv.map_coe {R M₁ M₂ : Type _} [CommSemiring R]
     FiniteDimensional.finrank R (p.map f) = FiniteDimensional.finrank R p :=
   finrank_map_eq f p
 
-theorem linearIndependent_subtype_congr {R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M]
-  {s s' : Set M} (h_eq : s = s') :
-    LinearIndependent R ((↑) : s → M) ↔ LinearIndependent R ((↑) : s' → M) := by
-  subst h_eq; rfl
-
 @[simp]
 theorem Submodule.span_diff_zero {R : Type u_1} {M : Type u_4} [Semiring R] [AddCommMonoid M]
     [Module R M] {s : Set M} : Submodule.span R (s \ {0}) = Submodule.span R s := by
   simp [←Submodule.span_insert_zero]
 
-theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V]
-  [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
-    _root_.Finite α :=
-  Cardinal.lt_aleph0_iff_finite.1 <| FiniteDimensional.lt_aleph0_of_linearIndependent h
-
-noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
-    Fintype α :=
-  have _ := h.finite_index
-  Fintype.ofFinite α
 section coords
 
 def LinearMap.fun_subtype (R : Type _) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=
@@ -136,8 +121,20 @@ variable {α W W' R : Type _} [AddCommGroup W] [Field R] [Module R W] [AddCommGr
     ((Finsupp.total α R R g).comp f.repr.toLinearMap) ∘ f = g := by
   ext; simp
 
+ /-- For each function `f` to a module `W` over `r`, composition with `f` is a linear map from
+  `Dual W` to `α → R` -/
+def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W] :
+    Dual R W →ₗ[R] (α → R) where
+  toFun φ := φ ∘ f
+  map_add' := fun _ _ ↦ rfl
+  map_smul' := fun _ _ ↦ rfl
+
+@[simp] theorem Submodule.dual_comp_apply (f : α → W) (R : Type _) [CommSemiring R] [Module R W]
+  (φ : Module.Dual R W) :
+    Submodule.dual_comp f R φ = φ ∘ f := rfl
+
 theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
-    LinearIndependent R f ↔ ∀ (g : α → R), ∃ (φ : Dual R W), φ ∘ f = g := by
+    LinearIndependent R f ↔ ∀ (g : α → R), ∃ (φ : Module.Dual R W), φ ∘ f = g := by
   refine ⟨fun h g ↦ ?_, fun h ↦ linearIndependent_iff.2 fun l hl ↦ Finsupp.ext fun a ↦ ?_⟩
   · obtain ⟨i, hi⟩ := (span R (range f)).subtype.exists_leftInverse_of_injective
       (LinearMap.ker_eq_bot.2 (injective_subtype _))
@@ -156,32 +153,6 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
   rw [Finsupp.apply_total, hφ] at hc
   simpa [Finsupp.total_apply, Function.update_apply] using hc
 
-
--- theorem Fintype.linearIndependent_iff'' {ι R M : Type _} {v : ι → M} [Field R]
---     [AddCommGroup M] [Module R M] [Fintype ι] [FiniteDimensional R M] :
---     LinearIndependent R v ↔ ∀ φ : Module.Dual R M, φ ∘ v = 0 → φ = 0 := by
---   rw [Fintype.linearIndependent_iff]
---   refine ⟨fun h φ h0 ↦ ?_, fun h ↦ ?_⟩
---   · obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis R M
---     have : Fintype s := FiniteDimensional.fintypeBasisIndex b
---     have := b.sum_dual_apply_smul_coord φ
---     -- rw [← b.sum_dual_apply_smul_coord φ] at h0
-
-
-
-
-
- /-- For each function `f` to a module `W` over `r`, composition with `f` is a linear map from
-  `Dual W` to `α → R` -/
-def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W] :
-    Dual R W →ₗ[R] (α → R) where
-  toFun φ := φ ∘ f
-  map_add' := fun _ _ ↦ rfl
-  map_smul' := fun _ _ ↦ rfl
-
-@[simp] theorem Submodule.dual_comp_apply (f : α → W) (R : Type _) [CommSemiring R] [Module R W]
-  (φ : Module.Dual R W) :
-    Submodule.dual_comp f R φ = φ ∘ f := rfl
 
 /-- Each function `f` to a module `W` gives a submodule obtained by composing each `φ ∈ Dual W`
   with f -/
@@ -291,21 +262,6 @@ theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b :
     Finset.sum_apply, Pi.smul_apply]
   exact Finset.sum_congr rfl  fun y _ ↦ mul_comm _ _
 
-theorem linearIndependent_of_finite_index {R M ι : Type _} [Field R] [AddCommGroup M]
-    [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
-    LinearIndependent R f := by
-  have hinj : f.Injective
-  · intro x y hxy
-    have hli := (h {x,y} (toFinite _))
-    have h : (⟨x, by simp⟩ : ({x,y} : Set ι)) = ⟨y, by simp⟩
-    · rw [←hli.injective.eq_iff]; simpa
-    simpa using h
-
-  rw [←linearIndependent_subtype_range hinj]
-  refine linearIndependent_of_finite _ fun t ht htfin ↦ ?_
-  obtain ⟨t, rfl⟩ := subset_range_iff_exists_image_eq.1 ht
-  exact (linearIndependent_image (injOn_of_injective hinj t)).1 <|
-    h t (htfin.of_finite_image (injOn_of_injective hinj t))
 
 -- noncomputable def Basis.mk_submodule {ι R M : Type _} {v : ι → M} [Ring R] [AddCommGroup M]
 --   [Module R M]

@@ -1,14 +1,28 @@
 import Mathlib.Data.Matrix.Rank
 import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Representation
+import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 
 variable {ι m n R : Type _} [Field R] {A B : Matrix m n R} {s : Set m} {t : Set n}
 
 open Set Function Submodule BigOperators
 
+/- Given `A : Matrix m n R` and `s : Set m`, We write `s.restrict A` for the function
+  function assigning each `i : s` to its row in `n → R`.
+
+  And similarly, given `t : Set n`, write `t.restrict Aᵀ` for the function assigning
+  each `j : t` to its column.
+
+  These are spellings of `A.submatrix ((↑) : s → m) id` and `A.submatrix id ((↑) : t → n)`
+  respectively, but are preferable since they are shorter, and show the sets `s,t`
+  explicitly in the infoview.
+  -/
 namespace Matrix
 
-theorem range_col_submatrix' {l m n α : Type _} (A : Matrix m n α) (c_reindex : l → n) :
+theorem restrict_eq_submatrix (A : Matrix m n α) (s : Set m) :
+  s.restrict A = A.submatrix ((↑) : s → m) id := rfl
+
+theorem range_col_submatrix {l m n α : Type _} (A : Matrix m n α) (c_reindex : l → n) :
     range (A.submatrix id c_reindex) = (· ∘ c_reindex) '' range A := by
   aesop
 
@@ -22,30 +36,40 @@ theorem range_col_submatrix' {l m n α : Type _} (A : Matrix m n α) (c_reindex 
     range (A.submatrix r_reindex id) = A '' range (r_reindex) := by
   aesop
 
+@[simp] theorem range_restrict {m n R : Type _} (A : Matrix m n R) (s : Set m) :
+    range (s.restrict A) = A '' s := by
+  simp [restrict_eq_submatrix]
+
+@[simp] theorem range_restrict_transpose {m n R : Type _} [Field R] (A : Matrix m n R) (t : Set m) :
+    range (t.restrict A)ᵀ = range (Aᵀ.submatrix id ((↑) : t → m)) := by
+  rfl
+
 /-- `A.RowBasis s` means that the rows `A_i : i ∈ s` are a basis for the row space of `A` -/
 def RowBasis (A : Matrix m n R) (s : Set m) : Prop :=
-    LinearIndependent R (A.submatrix ((↑) : s → m) id)
-  ∧ span R (A '' s) = span R (range A)
+    LinearIndependent R (restrict s A) ∧ span R (A '' s) = span R (range A)
 
 /-- A `RowBasis` as a `Basis` for the row space -/
 noncomputable def RowBasis.basis (h : A.RowBasis s) : Basis s R (span R (range A)) :=
   (Basis.span h.1).map <| LinearEquiv.ofEq _ _ (by simp [h.2])
 
-theorem exists_rowBasis_superset (A : Matrix m n R) {s₀ : Set m} 
-    (hs₀ : LinearIndependent R (A.submatrix ((↑) : s₀ → m) id)) : ∃ s, A.RowBasis s ∧ s₀ ⊆ s := by 
-  sorry
+theorem exists_rowBasis_superset (A : Matrix m n R) {s₀ : Set m}
+    (hs₀ : LinearIndependent R (s₀.restrict A)) : ∃ s, A.RowBasis s ∧ s₀ ⊆ s := by
+  obtain ⟨s, hss, -, h1,h2⟩ := exists_linearIndependent_extension' hs₀ (subset_univ _)
+  refine ⟨s, ⟨h2, le_antisymm (span_mono (image_subset_range _ _)) ?_⟩, hss⟩
+  rw [image_univ] at h1
+  exact span_le.mpr h1
 
 @[simp] theorem RowBasis.basis_apply (h : A.RowBasis s) (i : s) : h.basis i = A i := by
   ext; simp [Matrix.RowBasis.basis, Basis.span_apply]
 
-theorem RowBasis.linearIndependent (h : A.RowBasis s) :
-  LinearIndependent R (A.submatrix ((↑) : s → m) id) := h.1
+theorem RowBasis.linearIndependent (h : A.RowBasis s) : LinearIndependent R (s.restrict A) :=
+  h.1
 
 theorem RowBasis.span_eq (h : A.RowBasis s) :
   span R (A '' s) = span R (range A) := h.2
 
 theorem rowBasis_iff_maximal_linearIndependent : A.RowBasis s ↔
-    s ∈ maximals (· ⊆ ·) {b : Set m | LinearIndependent R (A.submatrix ((↑) : b → m) id)} := by
+    s ∈ maximals (· ⊆ ·) {b : Set m | LinearIndependent R (b.restrict A)} := by
   rw [mem_maximals_setOf_iff, RowBasis, and_congr_right_iff]
   refine fun hli ↦ ⟨fun h y hy hsy ↦ hsy.antisymm fun e he ↦ by_contra fun hes ↦ ?_,
       fun h ↦ le_antisymm (span_mono ?_) ?_⟩
@@ -78,40 +102,18 @@ noncomputable def ColBasis.basis (h : A.ColBasis t) : Basis t R (span R (range A
 @[simp] theorem ColBasis.basis_apply (h : A.ColBasis t) (j : t) : h.basis j = Aᵀ j := by
   ext; simp [ColBasis.basis]
 
-theorem ColBasis.linearIndependent (h : A.ColBasis t) :
-    LinearIndependent R (A.submatrix id ((↑) : t → n))ᵀ :=
+theorem ColBasis.linearIndependent (h : A.ColBasis t) : LinearIndependent R (t.restrict Aᵀ) :=
   h.1
 
-theorem ColBasis.span_eq (h : A.ColBasis t) :
-    span R (Aᵀ '' t) = span R (range Aᵀ) :=
+theorem ColBasis.span_eq (h : A.ColBasis t) : span R (Aᵀ '' t) = span R (range Aᵀ) :=
   h.2
 
 theorem colBasis_iff_maximal_linearIndependent : A.ColBasis t ↔
-    t ∈ maximals (· ⊆ ·) {b : Set n | LinearIndependent R (A.submatrix id ((↑) : b → n))ᵀ}  := by
-  rw [ColBasis, rowBasis_iff_maximal_linearIndependent];  rfl
+    t ∈ maximals (· ⊆ ·) {b : Set n | LinearIndependent R (b.restrict Aᵀ)}  := by
+  rw [ColBasis, rowBasis_iff_maximal_linearIndependent]
 
 @[simp] theorem rowBasis_transpose : Aᵀ.RowBasis t ↔ A.ColBasis t := Iff.rfl
 @[simp] theorem colBasis_transpose : Aᵀ.ColBasis s ↔ A.RowBasis s := Iff.rfl
-
-theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
-  [AddCommMonoid M] [Module R M] {s : Set ι} {v : ι → M} :
-    ¬ LinearIndependent R (s.restrict v) ↔ ∃ c : ι → R, ∑ i, c i • v i = 0 ∧ (∃ i ∈ s, c i ≠ 0)
-      ∧ ∀ i, i ∉ s → c i = 0 := by
-  classical
-  have _ := s.toFinite.fintype
-  rw [Fintype.not_linearIndependent_iff]
-  refine ⟨fun ⟨c', hc', i₀, hi₀⟩ ↦ ?_, fun ⟨c, hc0, ⟨i₀, hi₀, hne⟩, hi⟩ ↦ ?_⟩
-  · set f := fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ • (v i) else 0
-    refine ⟨fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ else 0, ?_, ⟨i₀, i₀.prop, by simpa⟩,
-      fun i hi ↦ by simp [hi]⟩
-    rw [←hc']
-    convert Finset.sum_congr_set s f (fun i ↦ (c' i) • v i) (fun _ h ↦ by simp [h])
-      (fun _ h ↦ by simp [h])
-    · simp only; split_ifs; rfl; exact zero_smul _ _
-  refine ⟨fun i ↦ c i, ?_, ⟨⟨i₀, hi₀⟩, hne⟩⟩
-  rw [←hc0, eq_comm]
-  convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
-    (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
 @[simp] theorem vecMulLinear_apply' {R m n : Type _} [Semiring R] [Fintype m]
     (M : Matrix m n R) (x : m → R) : M.vecMulLinear x = M.vecMul x := rfl
@@ -133,10 +135,7 @@ theorem cols_linearIndependent_iff [Fintype n] :
   rw [rows_linearIndependent_iff]; convert Iff.rfl; ext; simp [← mulVec_transpose]
 
 theorem subset_rows_notLinearIndependent_iff [Fintype m] :
-    ¬ LinearIndependent R (A.submatrix ((↑) : s → m) id) ↔
-      ∃ c, A.vecMul c = 0 ∧ c ≠ 0 ∧ support c ⊆ s := by
-  change (¬LinearIndependent R (s.restrict A)) ↔ _
-
+    ¬ LinearIndependent R (s.restrict A) ↔ ∃ c, A.vecMul c = 0 ∧ c ≠ 0 ∧ support c ⊆ s := by
   simp only [Fintype.subtype_notLinearIndependent_iff, ne_eq, vecMul, dotProduct,
     support_subset_iff, not_imp_comm]
   refine ⟨fun ⟨c,h,⟨i, _, hci⟩,h'⟩ ↦
@@ -146,14 +145,8 @@ theorem subset_rows_notLinearIndependent_iff [Fintype m] :
   exact hi (funext fun i ↦ (em (i ∈ s)).elim (hc i) (h' i))
 
 theorem subset_cols_notLinearIndependent_iff [Fintype n] :
-    ¬ LinearIndependent R (Aᵀ.submatrix ((↑) : t → n) id) ↔
-      ∃ c, A.mulVec c = 0 ∧ c ≠ 0 ∧ support c ⊆ t := by
+    ¬ LinearIndependent R (t.restrict Aᵀ) ↔ ∃ c, A.mulVec c = 0 ∧ c ≠ 0 ∧ support c ⊆ t := by
   simp_rw [subset_rows_notLinearIndependent_iff, vecMul_transpose]
-
-@[simp] theorem Fintype.sum_pi_single {α : Type v} {β : α → Type u_2} [DecidableEq α] [Fintype α]
-    [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
-    ∑ a', Pi.single a' (f a') a = f a := by
-  convert Finset.sum_pi_single a f Finset.univ; simp
 
 theorem toLin'_transpose [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
     toLin' Aᵀ = (Module.piEquiv n R R).symm.comp
@@ -182,12 +175,16 @@ theorem span_cols_eq_top_iff_linearIndependent_rows [Fintype m] [Fintype n] :
   rw [span_rows_eq_top_iff_linearIndependent_cols, transpose_transpose]
 
 theorem ColBasis.rows_linearIndependent [Fintype m] [Fintype n] (ht : A.ColBasis t)
-    (hA : LinearIndependent R A) : LinearIndependent R (A.submatrix id ((↑) : t → n)) := by
+    (hA : LinearIndependent R A) : LinearIndependent R (t.restrict Aᵀ) := by
   have _ := t.toFinite.fintype
   rw [←span_cols_eq_top_iff_linearIndependent_rows, Submodule.eq_top_iff']
   intro x
   rw [←span_cols_eq_top_iff_linearIndependent_rows] at hA
-  simp [hA ▸ ht.span_eq]
+  have := hA ▸ ht.span_eq
+  rw [range_restrict_transpose, transpose_transpose]
+
+
+  -- simp [restrict_eq_submatrix, hA ▸ ht.span_eq]
 
 theorem RowBasis.cols_linearIndependent [Fintype m] [Fintype n] (hs : A.RowBasis s)
     (hA : LinearIndependent R Aᵀ) : LinearIndependent R (Aᵀ.submatrix id ((↑) : s → m)) :=
