@@ -144,31 +144,52 @@ def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq
       exact lt_of_add_lt_add_right I_lt_J
     have h_hall : ∀ e ∈ J \ I, ∃ I_e, I_e ⊆ insert e I ∧
     (I_e.biUnion (neighbors f)).card < I_e.card ∧ e ∈ I_e ∧
-    (I_e \ {e}).card = ((I_e \ {e}).biUnion (neighbors f)).card
+    (I_e \ {e}).card = ((I_e).biUnion (neighbors f)).card
     · intro e e_mem_diff
       have no_trans := h_false e (Finset.mem_sdiff.1 e_mem_diff).1 (Finset.mem_sdiff.1 e_mem_diff).2
       rw [transversal_exists_iff (insert e I) f] at no_trans
       push_neg at no_trans
       obtain ⟨S, S_sub, h_S⟩ := no_trans
       refine' ⟨S, S_sub, h_S, _⟩
-      have e_in_I_e : e ∈ S
+      have e_in_S : e ∈ S
       · by_contra e_nS
         rw [Finset.subset_insert_iff_of_not_mem e_nS] at S_sub
         --w [transversal_exists_iff _ _] at I_trans
         apply (not_le_of_lt h_S) (((transversal_exists_iff _ _).1 I_trans) S S_sub)
-      refine' ⟨e_in_I_e, _⟩
-      have card_le : card (S \ {e}) ≤ card (Finset.biUnion (S \ {e}) (neighbors f))
-      · have Sde_sub : (S \ {e}) ⊆ I
-        . intro s s_mem
-          apply mem_of_mem_insert_of_ne (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.not_mem_singleton.1
-          (Finset.mem_sdiff.1 s_mem).2)
-        exact ((transversal_exists_iff _ _).1 I_trans) (S \ {e}) Sde_sub
-      apply le_antisymm card_le
+      refine' ⟨e_in_S, _⟩
       have card_eq_plus_one : card S = card (S \ {e}) + 1
-      · rw [Finset.card_sdiff, card_singleton]
-
-
-
+        · rw [Finset.card_sdiff, card_singleton, Nat.sub_add_cancel _]
+          apply le_trans _ (Finset.card_le_of_subset (Finset.singleton_subset_iff.2 e_in_S))
+          rw [card_singleton]
+          rwa [singleton_subset_iff]
+      rw [card_eq_plus_one, Nat.lt_add_one_iff] at h_S
+      have card_eq' : (S \ {e}).card = ((S \ {e}).biUnion (neighbors f)).card
+      · have card_le : card (S \ {e}) ≤ card (Finset.biUnion (S \ {e}) (neighbors f)) :=
+        ((transversal_exists_iff _ _).1 I_trans) (S \ {e}) (fun s s_mem ↦ mem_of_mem_insert_of_ne
+        (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.not_mem_singleton.1
+        (Finset.mem_sdiff.1 s_mem).2))
+        apply le_antisymm card_le _
+        apply le_trans (Finset.card_le_of_subset (Finset.biUnion_subset_biUnion_of_subset_left
+        (neighbors f) (Finset.sdiff_subset S {e})))
+        assumption
+    choose! witness h_witness using h_hall
+    set W := (J \ I).biUnion witness
+    have W_card : W.card = (W.biUnion (neighbors f)).card
+    /-set W:= (((J \ I).biUnion witness) \ (I \ J)) with W_def
+    have W_sub_J : W ⊆ J
+    · intro w w_mem_W
+      rw [W_def, mem_sdiff, mem_biUnion] at w_mem_W
+      obtain ⟨⟨j, j_mem_JI, w_witness_j⟩, w_not_mem_IJ⟩ := w_mem_W
+      obtain (w_eq_j | w_mem_I) := Finset.mem_insert.1 ((h_witness j j_mem_JI).1 w_witness_j)
+      · rw [w_eq_j]
+        exact (Finset.mem_sdiff.1 j_mem_JI).1
+      · rw [mem_sdiff] at w_not_mem_IJ
+        push_neg at w_not_mem_IJ
+        exact w_not_mem_IJ w_mem_I
+    apply not_lt_of_le (((transversal_exists_iff _ _).1 J_trans W W_sub_J))
+    nth_rewrite 2 [W_def]
+    apply lt_of_le_of_lt Finset.card_biUnion_le
+    -/
 
 
 
@@ -177,6 +198,7 @@ def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq
 
    sorry
 
+#check ENat.le_of_lt_add_one
 
 /-
 def Function.total_transversal {S : Set α} {ι : Type _} (T : Set α) (T_map : α → ι)
