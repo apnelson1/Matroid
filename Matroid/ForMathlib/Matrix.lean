@@ -8,17 +8,9 @@ open Set Function Submodule BigOperators
 
 namespace Matrix
 
--- @[simp] theorem range_row_submatrix {l m n α : Type _} (A : Matrix m n α) (r_reindex : l → m) :
---     range (A.submatrix r_reindex id) = A '' range (r_reindex) := by
---   aesop
-
 theorem range_col_submatrix' {l m n α : Type _} (A : Matrix m n α) (c_reindex : l → n) :
     range (A.submatrix id c_reindex) = (· ∘ c_reindex) '' range A := by
   aesop
-
--- @[simp] theorem range_col_submatrix {l m n : Type _} (A : Matrix m n R) (c_reindex : l → n) :
---     range (A.submatrix id c_reindex) = (LinearMap.funLeft R _ c_reindex) '' range A := by
---   aesop
 
 @[simp] theorem range_submatrix {l m n o R : Type _} [Field R] (A : Matrix m n R)
     (r_reindex : l → m) (c_reindex : o → n) :
@@ -30,7 +22,6 @@ theorem range_col_submatrix' {l m n α : Type _} (A : Matrix m n α) (c_reindex 
     range (A.submatrix r_reindex id) = A '' range (r_reindex) := by
   aesop
 
-
 /-- `A.RowBasis s` means that the rows `A_i : i ∈ s` are a basis for the row space of `A` -/
 def RowBasis (A : Matrix m n R) (s : Set m) : Prop :=
     LinearIndependent R (A.submatrix ((↑) : s → m) id)
@@ -39,6 +30,10 @@ def RowBasis (A : Matrix m n R) (s : Set m) : Prop :=
 /-- A `RowBasis` as a `Basis` for the row space -/
 noncomputable def RowBasis.basis (h : A.RowBasis s) : Basis s R (span R (range A)) :=
   (Basis.span h.1).map <| LinearEquiv.ofEq _ _ (by simp [h.2])
+
+theorem exists_rowBasis_superset (A : Matrix m n R) {s₀ : Set m} 
+    (hs₀ : LinearIndependent R (A.submatrix ((↑) : s₀ → m) id)) : ∃ s, A.RowBasis s ∧ s₀ ⊆ s := by 
+  sorry
 
 @[simp] theorem RowBasis.basis_apply (h : A.RowBasis s) (i : s) : h.basis i = A i := by
   ext; simp [Matrix.RowBasis.basis, Basis.span_apply]

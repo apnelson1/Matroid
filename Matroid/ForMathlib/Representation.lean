@@ -3,6 +3,12 @@ import Mathlib.LinearAlgebra.Finrank
 
 open Submodule Set Module
 
+theorem LinearIndependent.exists_extend {K V ι : Type _} [DivisionRing K] [AddCommGroup V] 
+    [Module K V] {f : ι → V} {s₀ t : Set ι} (hli : LinearIndependent (s₀.restrict f)) 
+    (hst : s₀ ⊆ t) :
+    ∃ s, s₀ ⊆ s ∧ s ⊆ t ∧ LinearIndependent (s.restrict f) ∧ span K (f '' s) = span K (f '' t) := by 
+  
+
 @[simp] theorem Module.piEquiv_apply_symm [Field 𝔽] [Fintype α] [DecidableEq α]
     (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) :
     (Module.piEquiv α 𝔽 𝔽).symm y i = y (Pi.single i 1) := by
