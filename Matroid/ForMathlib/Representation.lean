@@ -1,53 +1,12 @@
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.Finrank
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+import Matroid.ForMathlib.LinearAlgebra.StdBasis
 
 open Submodule Set Module BigOperators
 
-@[simp] theorem Fintype.sum_pi_single {α : Type v} {β : α → Type u_2} [DecidableEq α] [Fintype α]
-    [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
-    ∑ a', Pi.single a' (f a') a = f a := by
-  convert Finset.sum_pi_single a f Finset.univ; simp
 
-@[simp] theorem Module.piEquiv_apply_symm [Field 𝔽] [Fintype α] [DecidableEq α]
-    (y : Module.Dual 𝔽 (α → 𝔽)) (i : α) :
-    (Module.piEquiv α 𝔽 𝔽).symm y i = y (Pi.single i 1) := by
-  simp only [piEquiv, Basis.constr, Pi.basisFun_apply, LinearMap.stdBasis_apply,
-    LinearEquiv.coe_symm_mk]; rfl
 
-@[simp]
-theorem LinearEquiv.dualMap_apply_symm {R : Type u} [CommSemiring R] {M₁ : Type v} {M₂ : Type v'}
-    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂] (f : M₁ ≃ₗ[R] M₂)
-    (g : Module.Dual R M₁) : f.symm.dualMap g = g.comp (f.symm : M₂ →ₗ[R] M₁) := rfl
-
-@[simp] theorem LinearEquiv.dualAnnihilator_map_eq {R : Type u} {M : Type v} [CommSemiring R]
-    [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M'] (e : M ≃ₗ[R] M')
-    (U : Submodule R M) :
-    dualAnnihilator (U.map e) = (dualAnnihilator U).map e.symm.dualMap :=  by
-  ext x
-  simp only [mem_dualAnnihilator, mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-    dualMap_apply_symm]
-  refine ⟨fun h ↦ ⟨e.dualMap x, h, by ext; simp⟩, ?_⟩
-  rintro ⟨y, hy, rfl⟩ x hxu
-  simpa using hy x hxu
-
-theorem LinearEquiv.map_coe {R M₁ M₂ : Type _} [CommSemiring R]
-    [AddCommMonoid M₁] [AddCommMonoid M₂] [Module R M₁] [Module R M₂] (e : M₁ ≃ₗ[R] M₂)
-    (U : Submodule R M₁):
-  U.map (e : M₁ →ₗ[R] M₂) = U.map e := rfl
-
-@[simp] theorem LinearEquiv.map_trans {R M₁ M₂ M₃ : Type _} [CommSemiring R]
-    [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid M₃] [Module R M₁]
-    [Module R M₂] [Module R M₃] (e₁₂ : M₁ ≃ₗ[R] M₂) (e₂₃ : M₂ ≃ₗ[R] M₃)
-    (U : Submodule R M₁) :
-    U.map (e₁₂.trans e₂₃) = (U.map e₁₂).map e₂₃ := by
-  rw [←LinearEquiv.map_coe,  LinearEquiv.coe_trans, Submodule.map_comp]; rfl
-
-/-- Unlike the unprimed version, `f` isn't coerced here, so the simplifier can find it. -/
-@[simp] theorem LinearEquiv.finrank_map_eq' {R M M₂ : Type _} [Ring R] [AddCommGroup M]
-    [AddCommGroup M₂] [Module R M] [Module R M₂] (f : M ≃ₗ[R] M₂) (p : Submodule R M) :
-    FiniteDimensional.finrank R (p.map f) = FiniteDimensional.finrank R p :=
-  finrank_map_eq f p
 
 @[simp]
 theorem Submodule.span_diff_zero {R : Type u_1} {M : Type u_4} [Semiring R] [AddCommMonoid M]

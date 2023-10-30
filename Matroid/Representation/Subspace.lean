@@ -86,30 +86,7 @@ end Matroid
     (Module.piEquiv α 𝔽 𝔽).symm y i = y (Pi.single i 1) := by
   simp [piEquiv, Basis.constr, LinearMap.stdBasis_apply]
 
-@[simp] theorem Module.Dual.sum_update [Fintype α] [DecidableEq α] (y : Module.Dual 𝔽 (α → 𝔽))
-    (x : α → 𝔽) : ∑ i, y (update 0 i 1) * x i = y x := by
-  rw [←LinearMap.congr_fun ((Pi.basisFun 𝔽 α).sum_dual_apply_smul_coord y) x]
-  simp [LinearMap.stdBasis_apply]
 
-@[simp] theorem mem_orthspace_iff [Fintype α] {U : Submodule 𝔽 (α → 𝔽)} {x : α → 𝔽} :
-    x ∈ U.orthspace ↔ ∀ y ∈ U, ∑ i, x i * y i = 0 := by
-  classical
-  simp only [orthspace, mem_map, mem_dualAnnihilator]
-  refine ⟨?_, fun h ↦ ⟨Module.piEquiv α 𝔽 𝔽 x, fun w hw ↦ ?_, by simp⟩⟩
-  · rintro ⟨y, hy, rfl⟩ x hxU
-    convert hy x hxU using 1
-    simp [Module.piEquiv_apply_symm]
-  convert h w hw using 1
-  simp_rw [Module.piEquiv_apply_apply, smul_eq_mul, mul_comm]
-
-@[simp] theorem orth_orth [Fintype α] (U : Subspace 𝔽 (α → 𝔽)) :
-    U.orthspace.orthspace = U := by
-  refine (eq_of_le_of_finrank_le (fun x hxU ↦ ?_) (le_of_eq ?_)).symm
-  · simp_rw [mem_orthspace_iff]
-    intro y hy
-    simpa [mul_comm] using hy x hxU
-  rw [orthspace, orthspace, LinearEquiv.finrank_map_eq', LinearEquiv.dualAnnihilator_map_eq, LinearEquiv.finrank_map_eq',
-    ←Subspace.finrank_dualCoannihilator_eq, Subspace.dualAnnihilator_dualCoannihilator_eq]
 
 
 noncomputable def foo [Fintype α] {B : Set α} (f : α → W) (b : _root_.Basis B 𝔽 W)
