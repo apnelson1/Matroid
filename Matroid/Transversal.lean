@@ -121,6 +121,121 @@ lemma eq_union_inter_diff [DecidableEq α] (S T : Finset α): S = (S \ T) ∪ (S
       refine Finset.mem_union.2 (Or.inr (Finset.mem_inter.2 ⟨a_S, h⟩))
       refine Finset.mem_union.2 (Or.inl (Finset.mem_sdiff.2 ⟨a_S, h⟩))
 
+lemma biUnion_union_eq [DecidableEq γ] [DecidableEq β]
+    {f : γ → Finset β} {A B : Finset γ} : (A ∪ B).biUnion f = (A.biUnion f) ∪ (B.biUnion f)
+    := by
+  apply subset_antisymm
+  · intro a a_mem
+    obtain ⟨a', a'_mem, h_a'⟩ := Finset.mem_biUnion.1 a_mem
+    obtain (a'_A | a'_B) := Finset.mem_union.1 a'_mem
+    · apply Finset.mem_union_left
+      rw [Finset.mem_biUnion]
+      refine' ⟨a', a'_A, h_a'⟩
+    · apply Finset.mem_union_right
+      rw [Finset.mem_biUnion]
+      refine' ⟨a', a'_B, h_a'⟩
+  · intro a a_mem
+    rw [Finset.mem_biUnion]
+    obtain (a_A | a_B) := Finset.mem_union.1 a_mem
+    · obtain ⟨a', a'_A, h_a'⟩ := Finset.mem_biUnion.1 a_A
+      refine ⟨a', Finset.mem_union_left _ a'_A, h_a'⟩
+    · obtain ⟨a', a'_B, h_a'⟩ := Finset.mem_biUnion.1 a_B
+      refine ⟨a', Finset.mem_union_right _ a'_B, h_a'⟩
+
+lemma biUnion_inter_sub [DecidableEq γ] [DecidableEq β]
+    {f : γ → Finset β} {A B : Finset γ} : (A ∩ B).biUnion f ⊆ (A.biUnion f) ∩ (B.biUnion f)
+    := by
+  intro a a_mem
+  obtain ⟨a', a'_mem, h_a'⟩ := Finset.mem_biUnion.1 a_mem
+  rw [mem_inter]
+  refine' ⟨Finset.mem_biUnion.2 ⟨a', _, h_a'⟩, Finset.mem_biUnion.2 ⟨a', _, h_a'⟩⟩
+  exact Finset.mem_of_mem_inter_left a'_mem
+  exact Finset.mem_of_mem_inter_right a'_mem
+
+lemma card_le_union_of_card_add_inter_le_add [DecidableEq γ] {a b : ℕ} {S T : Finset γ}
+    (h : a + b ≤ S.card + T.card) (b_le : (S ∩ T).card ≤ b) : a ≤ (S ∪ T).card := by
+  rw [←(card_union_add_card_inter _ _)] at h
+  apply @Nat.le_of_add_le_add_right _ b _
+  apply le_trans h (add_le_add_left b_le _)
+
+lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Fintype ι]
+    {f : ι → Finset α} {I : Finset α} (trans : transverses I f) (witness_set : Finset α)
+    (witness : α → Finset α)
+    (h_witness : ∀ a, a ∈ witness_set → ((((witness a) \ {a}).biUnion (neighbors f)).card =
+    ((witness a) \ {a}).card ∧ witness a \ {a} ⊆ I)) :
+    ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
+    (witness_set.biUnion (fun a ↦ witness a \ {a})).card := by
+  revert witness
+  suffices (∀ i (witness_set : Finset α)
+    (witness : α → Finset α)
+    (h_witness : ∀ a, a ∈ witness_set → ((((witness a) \ {a}).biUnion (neighbors f)).card =
+    ((witness a) \ {a}).card ∧ witness a \ {a} ⊆ I)), witness_set.card = i →  ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
+    (witness_set.biUnion (fun a ↦ witness a \ {a})).card) by
+    · intro witness h_witness
+      exact this witness_set.card witness_set witness h_witness rfl
+  intro i
+
+  induction i with
+  | zero => intro w_set witness _ w_set_card_eq
+            rw [card_eq_zero] at w_set_card_eq
+            rw [w_set_card_eq]
+            rfl
+  | succ n ih => intro w_set witness h_witness card_eq
+                 obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
+                 apply le_antisymm
+                 · rw [←w_eq, biUnion_insert]
+                   have card_le : card (Finset.biUnion (witness a \ {a} ∪ T.biUnion
+                    fun a ↦ witness a \ {a}) (neighbors f)) + ((T.biUnion (fun a ↦ witness a \ {a})
+                     ∩ (witness a \ {a})).biUnion
+                    (neighbors f)).card ≤ (T.biUnion (fun a ↦ witness a \ {a})).card +
+                     (witness a \ {a}).card
+                   rw [biUnion_union_eq]
+                   apply le_trans
+                   · apply add_le_add_left (Finset.card_le_of_subset biUnion_inter_sub)
+                   · rw [Finset.union_comm, Finset.card_union_add_card_inter _ _]
+                     have h_T : card (Finset.biUnion (Finset.biUnion T fun a ↦ witness a \ {a})
+                     (neighbors f)) = (T.biUnion (fun a ↦ witness a \ {a})).card
+                     · apply ih T witness _ T_card
+                       intro a a_T
+                       apply h_witness a _
+                       rw [←w_eq]
+                       exact mem_insert_of_mem a_T
+                     rw [h_T, Nat.add_le_add_iff_left]
+                     apply le_of_eq (h_witness a _).1
+                     rw [←w_eq]
+                     exact Finset.mem_insert_self _ _
+                   nth_rw 2 [union_comm]
+                   apply card_le_union_of_card_add_inter_le_add card_le _
+                   apply (transversal_exists_iff _ _).1 trans
+                   intro x x_mem
+                   obtain ⟨_, x_a⟩ := Finset.mem_inter.1 x_mem
+                   apply (h_witness a _).2 x_a
+                   rw [←w_eq]
+                   exact Finset.mem_insert_self _ _
+                 apply (transversal_exists_iff _ _).1 trans
+                 rw [←w_eq, biUnion_subset]
+                 intro x x_mem
+                 apply (h_witness x _).2
+                 rw [←w_eq]
+                 exact x_mem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Fintype ι]
     (f : ι → Finset α) : Matroid α :=
@@ -210,8 +325,15 @@ def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq
         exact mem_of_mem_insert_of_ne ((h_witness a a_JI).1 (mem_sdiff.1 h_a).1) (
           not_mem_singleton.1 (mem_sdiff.1 h_a).2)
     have W_diff_card : (W \ (J \ I)).card = ((W \ (J \ I)).biUnion (neighbors f)).card
-    · apply le_antisymm ((transversal_exists_iff _ _).1 I_trans _ W_diff_sub_I)
-      rw [W_eq]
+    · rw [W_eq]
+      symm
+      apply hall_union_card_eq I_trans (J \ I)
+      intro a a_sub
+      constructor
+      · symm
+        have:= (h_witness a a_sub).2.2.2
+        apply le_antisymm
+
 
 
 
