@@ -76,10 +76,16 @@ theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K
   Cardinal.lt_aleph0_iff_finite.1 <| FiniteDimensional.lt_aleph0_of_linearIndependent h
 
 noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
     Fintype α :=
   have _ := h.finite_index
   Fintype.ofFinite α
+
+theorem LinearIndependent.finite_index_restrict {K : Type u} {V : Type v} [DivisionRing K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} {s : Set α}
+    (h : LinearIndependent K (s.restrict f)) : s.Finite :=
+  have := h.finite_index
+  s.toFinite
 
 theorem linearIndependent_subtype_congr {R M : Type _} [Semiring R] [AddCommMonoid M] [Module R M]
   {s s' : Set M} (h_eq : s = s') :
