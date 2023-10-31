@@ -27,7 +27,7 @@ theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
-theorem linearIndependent_of_finite' {R M ι : Type _} [DivisionRing R] [AddCommGroup M]
+theorem linearIndependent_of_finite_index {R M ι : Type _} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
     LinearIndependent R f := by
   have hinj : f.Injective
@@ -49,7 +49,7 @@ theorem linearIndependent_iUnion_of_directed' {R M ι η : Type _} [DivisionRing
   obtain (h_empt | hne) := isEmpty_or_nonempty η
   · rw [iUnion_of_empty s]
     apply linearIndependent_empty_type
-  apply linearIndependent_of_finite' _ (fun t ht ↦ ?_)
+  apply linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
   obtain ⟨I,hIfin, hI⟩ :=
     finite_subset_iUnion (ht.image Subtype.val) (Subtype.coe_image_subset (⋃ j, s j) t)
   obtain ⟨z, hz⟩ := hs.finset_le hIfin.toFinset

@@ -1,5 +1,6 @@
 import Matroid.Flat
 import Matroid.ForMathlib.Representation
+import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.Constructions.ImagePreimage
 
 variable {α β W W' 𝔽 R : Type _} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
@@ -199,7 +200,7 @@ theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : 
 
 /-- A function from `α` to a module gives rise to a finitary matroid on `α` -/
 def matroid_on_univ_of_fun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
-    matroid_of_indep_of_compact univ
+    matroid_of_indep_of_finitary univ
     (fun I ↦ LinearIndependent 𝔽 (I.restrict v))
     linearIndependent_empty_type
     ( fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI) )
@@ -362,7 +363,7 @@ noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank)
 
 theorem Rep.FullRank.map_equiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
     (v.map_equiv ψ).FullRank := by
-  rw [Rep.fullRank_iff, map_equiv, map', map, ←Rep.to_fun_eq_coe]
+  rw [Rep.fullRank_iff, Rep.map_equiv, map', map, ←Rep.to_fun_eq_coe]
   simp [LinearEquiv.coe_coe, range_comp, h.span_range]
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
