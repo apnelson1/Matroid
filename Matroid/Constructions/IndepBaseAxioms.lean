@@ -1,23 +1,66 @@
+/-
+Copyright (c) 2023 Peter Nelson. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Peter Nelson
+-/
 import Mathlib.Data.Matroid.Basic
+
+/-!
+Matroids in mathlib are defined axiomatically in terms of bases,
+but can be described just as naturally via their collections of independent sets,
+and in fact such a description, being more 'verbose', can often be useful.
+As well as this, the definition of a `Matroid` uses an unwieldy 'maximality'
+axiom that can be dropped in cases where there is some finiteness assumption.
+
+This file provides several ways to do define a matroid in terms of its independence or base
+predicates, using axiom sets that are appropriate in different settings,
+and often much simpler than the general definition.
+It also contains `simp` lemmas and typeclasses as appropriate.
+
+All the independence axiom sets need nontriviality (the empty set is independent),
+monotonicity (subsets of independent sets are independent),
+and some form of 'augmentation' axiom, which allows one to enlarge a non-maximal independent set.
+This augmentation axiom is still required when there are finiteness assumptions, but is simpler.
+It just states that if `I` is a finite independent set and `J` is a larger finite
+independent set, then there exists `e ∈ J \ I` for which `insert e I` is independent.
+This is the axiom that appears in all most of the definitions.
+
+## Main definitions
+
+* `matroid_of_base` constructs a matroid from the base axioms (using the definition of a matroid).
+
+* `matroid_of_indep` constructs a matroid described in terms of its independent sets
+  in full generality, using infinite versions of the axioms.
+
+* `matroid_of_indep_of_finitary` constructs a `Finitary` matroid in terms of its independent sets
+  in the special case where independence of a set is determined only by that of its
+  finite subsets. This construction uses Zorn's lemma.
+
+* `matroid_of_indep_of_bdd` constructs a matroid in terms of its independence sets in
+  the case where there is some known absolute upper bound on the size of an independent set.
+  This uses the infinite version of the augmentation axiom, and gives a `FiniteRk` matroid.
+
+* `matroid_of_indep_of_bdd_augment` is the same as the above, but with a finite augmentation axiom.
+
+* `matroid_of_exists_finite_base` constructs a matroid from its bases, if it is known that one
+  of them is finite. This gives a `FiniteRk` matroid.
+
+* `matroid_of_base_of_finite` constructs a `Finite` matroid from its bases.
+
+* `matroid_of_indep_of_finite` constructs a `Finite` matroid from its independent sets.
+
+* `matroid_of_indep_finset` constructs a `Finitary` matroid on `α` from an independence predicate
+    on `Finset α`.
+
+* `matroid_of_indep_of_exists_matroid` constructs a 'copy' of a matroid that is known only
+  existentially, but whose independent predicate is known explicitly.
+-/
 
 open Set
 
+variable {α : Type _}
+
 namespace Matroid
-
--- ### Various alternative ways to construct a matroid from axioms.
-
-/-- This is the same as `Indep.exists_insert_of_not_base`, but phrased so the statement is
-  defeq to the augmentation axiom for independent sets -/
-theorem aug_property (M : Matroid α) :
-    ∀⦃I B⦄, M.Indep I → I ∉ maximals (· ⊆ ·) (setOf M.Indep) →
-      B ∈ maximals (· ⊆ ·) (setOf M.Indep) → ∃ x ∈ B \ I, M.Indep (insert x I) := by
-  intro I B hI hImax hB
-  simp only [mem_maximals_iff, mem_setOf_eq, not_and, not_forall, exists_prop,
-    exists_and_left, iff_true_intro hI, true_imp_iff] at hB hImax
-  refine hI.exists_insert_of_not_base (fun hIb ↦ ?_) ?_
-  · obtain ⟨I', hII', hI', hne⟩ := hImax
-    exact hne <| hIb.eq_of_subset_indep hII' hI'
-  exact hB.1.base_of_maximal fun J hJ hBJ ↦ hB.2 hJ hBJ
 
 /-- A constructor for matroids via the base axioms.
   (In fact, just a wrapper for the definition of a matroid) -/
@@ -32,6 +75,12 @@ def matroid_of_base (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, 
     (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
     (support : ∀ B, Base B → B ⊆ E) :
     (matroid_of_base E Base exists_base base_exchange maximality support).Base = Base := rfl
+
+@[simp] theorem matroid_of_base_ground (E : Set α) (Base : Set α → Prop) (exists_base : ∃ B, Base B)
+    (base_exchange : ExchangeProperty Base)
+    (maximality : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty (∃ B, Base B ∧ · ⊆ B) X)
+    (support : ∀ B, Base B → B ⊆ E) :
+    (matroid_of_base E Base exists_base base_exchange maximality support).E = E := rfl
 
 /-- A constructor for a matroid using the independence axioms for infinite matroids. -/
 def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
@@ -87,6 +136,14 @@ def matroid_of_indep (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅
   obtain ⟨B, hB⟩ := h_maximal E rfl.subset I h (h_support I h)
   simp_rw [mem_maximals_setOf_iff, and_imp] at hB
   exact ⟨B, ⟨hB.1.1, fun J hJ hBJ ↦ hB.2 hJ (hB.1.2.1.trans hBJ) (h_support J hJ) hBJ⟩, hB.1.2.1⟩
+
+@[simp] theorem matroid_of_indep_ground (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
+    (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) →
+      B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
+    (h_maximal : ∀ X, X ⊆ E → ExistsMaximalSubsetProperty Indep X)
+    (h_support : ∀ I, Indep I → I ⊆ E) :
+    (matroid_of_indep E Indep h_empty h_subset h_aug h_maximal h_support).E = E := rfl
 
 /-- An independence predicate satisfying the finite matroid axioms determines a matroid,
   provided independence is determined by its behaviour on finite sets. Uses choice. -/
@@ -194,13 +251,42 @@ def matroid_of_indep_of_finitary (E : Set α) (Indep : Set α → Prop)
       exact sUnion_subset fun X hX ↦ (hIs hX).2.2 )
     h_support
 
+@[simp] theorem matroid_of_indep_of_finitary_apply (E : Set α) (Indep : Set α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
+    (matroid_of_indep_of_finitary E Indep h_empty ind_mono ind_aug h_compact h_support).Indep
+      = Indep := by
+  simp [matroid_of_indep_of_finitary]
+
+@[simp] theorem matroid_of_indep_of_finitary_ground (E : Set α) (Indep : Set α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
+    (matroid_of_indep_of_finitary E Indep h_empty ind_mono ind_aug h_compact h_support).E = E := by
+  simp [matroid_of_indep_of_finitary]
+
+instance matroid_of_indep_of_finitary_finitary (E : Set α) (Indep : Set α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
+    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
+    (matroid_of_indep_of_finitary E Indep h_empty ind_mono ind_aug h_compact h_support).Finitary :=
+  ⟨ by simpa ⟩
 
 /-- If there is an absolute upper bound on the size of a set satisfying `P`, then the
   maximal subset property always holds. -/
 theorem existsMaximalSubsetProperty_of_bdd {P : Set α → Prop}
     (hP : ∃ (n : ℕ), ∀ Y, P Y → Y.encard ≤ n) (X : Set α) : ExistsMaximalSubsetProperty P X := by
   obtain ⟨n, hP⟩ := hP
-
   rintro I hI hIX
   have hfin : Set.Finite (ncard '' {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X})
   · rw [finite_iff_bddAbove, bddAbove_def]
@@ -234,6 +320,13 @@ def matroid_of_indep_of_bdd (E : Set α) (Indep : Set α → Prop) (h_empty : In
     (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n) (h_support : ∀ I, Indep I → I ⊆ E) :
     (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).Indep = Indep := by
   simp [matroid_of_indep_of_bdd]
+
+@[simp] theorem matroid_of_indep_of_bdd_ground (E : Set α) (Indep : Set α → Prop)
+    (h_empty : Indep ∅) (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) →
+      B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
+    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n) (h_support : ∀ I, Indep I → I ⊆ E) :
+    (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).E = E := rfl
 
 /-- `matroid_of_indep_of_bdd` constructs a `FiniteRk` matroid. -/
 instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
@@ -287,7 +380,14 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
       = Indep := by
   simp [matroid_of_indep_of_bdd_augment]
 
-instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
+@[simp] theorem matroid_of_indep_of_bdd_augment_ground (E : Set α) (Indep : Set α → Prop)
+    (h_empty : Indep ∅) (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n ) (h_support : ∀ I, Indep I → I ⊆ E) :
+    (matroid_of_indep_of_bdd_augment E Indep h_empty h_subset ind_aug h_bdd h_support).E = E := rfl
+
+instance matroid_of_indep_of_bdd_finiteRk (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.encard < J.encard →
       ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
@@ -299,7 +399,7 @@ instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
 def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop)
     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
     (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
-    matroid_of_base E Base
+  matroid_of_base E Base
     (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange
     (by {
       obtain ⟨B, hB, hfin⟩ := exists_finite_base
@@ -314,6 +414,11 @@ def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → 
     (support : ∀ B, Base B → B ⊆ E) :
     (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base :=
   rfl
+
+@[simp] theorem matroid_of_exists_finite_base_ground {α : Type _} (E : Set α) (Base : Set α → Prop)
+    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
+    (support : ∀ B, Base B → B ⊆ E) :
+    (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).E = E := rfl
 
 /-- A matroid constructed with a finite Base is `FiniteRk` -/
 instance finiteRk_of_exists_finite_base {E : Set α} {Base : Set α → Prop}
@@ -337,6 +442,11 @@ def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Pr
     (support : ∀ B, Base B → B ⊆ E) :
     (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl
 
+@[simp] theorem matroid_of_base_of_finite_ground {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
+    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
+    (support : ∀ B, Base B → B ⊆ E) :
+    (matroid_of_base_of_finite hE Base exists_base base_exchange support).E = E := rfl
+
 /-- If `E` is finite, then any collection of subsets of `E` satisfying
   the usual independence axioms determines a matroid -/
 def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
@@ -345,11 +455,26 @@ def matroid_of_indep_of_finite {E : Set α} (hE : E.Finite) (Indep : Set α → 
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
   matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono
-  ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
+    ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
       rwa [←Nat.cast_lt (α := ℕ∞), (hE.subset (h_support hJ)).cast_ncard_eq,
       (hE.subset (h_support hI)).cast_ncard_eq]) )
-  (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
-  h_support
+    (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
+    h_support
+
+@[simp] theorem matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
+    ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Indep = Indep := by
+  simp [matroid_of_indep_of_finite]
+
+@[simp] theorem matroid_of_indep_of_finite_ground {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
+    ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).E = E := rfl
 
 instance matroid_of_indep_of_finite.Finite {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
     (h_empty : Indep ∅)
@@ -359,37 +484,8 @@ instance matroid_of_indep_of_finite.Finite {E : Set α} (hE : E.Finite) (Indep :
     ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Finite :=
   ⟨hE⟩
 
-instance matroid_of_indep_of_finite_apply {E : Set α} (hE : E.Finite) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
-    ((matroid_of_indep_of_finite) hE Indep h_empty ind_mono ind_aug h_support).Indep = Indep := by
-  simp [matroid_of_indep_of_finite]
-
-@[simp] theorem matroid_of_indep_of_finitary_apply (E : Set α) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
-    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
-    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
-  (matroid_of_indep_of_finitary E Indep h_empty ind_mono ind_aug h_compact h_support).Indep
-    = Indep := by simp [matroid_of_indep_of_finitary]
-
-instance matroid_of_indep_of_finitary_finitary (E : Set α) (Indep : Set α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → I.Finite → Indep J → J.Finite → I.ncard < J.ncard →
-    ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
-    (h_compact : ∀ I, (∀ J, J ⊆ I → J.Finite → Indep J) → Indep I)
-    (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) :
-    (matroid_of_indep_of_finitary E Indep h_empty ind_mono ind_aug h_compact h_support).Finitary :=
-  ⟨ by simpa ⟩
-
 /-- An independence predicate on `Finset α` that obeys the finite matroid axioms determines a
-  finitary matroid on `α`.
-  TODO : Simp lemmas -/
+  finitary matroid on `α`. -/
 def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
     (h_empty : Indep ∅)
     (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
@@ -417,7 +513,8 @@ def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α →
     (h_support : ∀ ⦃I⦄, Indep I → (I : Set α) ⊆ E) :
   (matroid_of_indep_finset E Indep h_empty ind_mono ind_aug h_support).E = E := rfl
 
-@[simp] theorem matroid_of_indep_finset_apply [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
+/-- This isn't a `simp` lemma, because the simplifier already reduces it to `∀ J ⊆ I, Indep J`. -/
+theorem matroid_of_indep_finset_apply [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
     (h_empty : Indep ∅)
     (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.card < J.card →
@@ -436,6 +533,20 @@ def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α →
     (matroid_of_indep_finset E Indep h_empty ind_mono ind_aug h_support).Indep I ↔
       ∀ (J : Finset α), (J : Set α) ⊆ I → Indep J := by
   simp [matroid_of_indep_finset]
+
+/-- This is the same as `Indep.exists_insert_of_not_base`, but phrased so the statement is
+  defeq to the augmentation axiom for independent sets -/
+theorem aug_property (M : Matroid α) :
+    ∀⦃I B⦄, M.Indep I → I ∉ maximals (· ⊆ ·) (setOf M.Indep) →
+      B ∈ maximals (· ⊆ ·) (setOf M.Indep) → ∃ x ∈ B \ I, M.Indep (insert x I) := by
+  intro I B hI hImax hB
+  simp only [mem_maximals_iff, mem_setOf_eq, not_and, not_forall, exists_prop,
+    exists_and_left, iff_true_intro hI, true_imp_iff] at hB hImax
+  refine hI.exists_insert_of_not_base (fun hIb ↦ ?_) ?_
+  · obtain ⟨I', hII', hI', hne⟩ := hImax
+    exact hne <| hIb.eq_of_subset_indep hII' hI'
+  exact hB.1.base_of_maximal fun J hJ hBJ ↦ hB.2 hJ hBJ
+
 
 /-- Construct a matroid from an independence predicate that agrees with that of some matroid `M'`.
   Computable even when `M'` is not known constructively. -/
