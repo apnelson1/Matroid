@@ -173,7 +173,7 @@ instance [Simple M] : Loopless M := by
   rw [loopless_iff_forall_nonloop]
   exact fun e he ↦ ((parallel_iff_eq he).2 rfl).nonloop_left
 
-instance {α : Type _} : Simple (empty_on α) :=
+instance {α : Type _} : Simple (emptyOn α) :=
   ⟨fun he ↦ by simp at he⟩
 
 theorem simple_iff_loopless_eq_of_parallel_forall:
@@ -235,6 +235,16 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
   refine ⟨fun C hC ↦ lt_of_le_of_lt (by norm_num) (h C hC), fun e f hef ↦ by_contra fun hne ↦ ?_⟩
   exact (h _ ((parallel_iff_circuit hne).1 hef)).ne (by rw [encard_pair hne])
 
+theorem simple_iff_forall_pair_indep :
+    M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E), M.Indep {e,f} := by
+  refine ⟨fun h e f he hf ↦ pair_indep he hf,
+    fun h ↦ ⟨fun {e f} he ↦
+      ⟨fun hp ↦ by_contra fun hef ↦ (hp.dep_of_ne hef).not_indep <| h he hp.mem_ground_right, ?_ ⟩⟩⟩
+  rintro rfl
+  have hee := h he he
+  simp only [mem_singleton_iff, insert_eq_of_mem, indep_singleton] at hee
+  exact hee.parallel_self
+
 theorem simple_iff_forall_parallel_class [Loopless M] :
     M.Simple ↔ ∀ P ∈ PSetoid.classes M.Parallel, encard P ≤ 1 := by
   simp_rw [mem_parallel_classes_iff_eq_cl]
@@ -242,7 +252,7 @@ theorem simple_iff_forall_parallel_class [Loopless M] :
   · rw [cl_singleton_eq, cl_empty_eq_empty, diff_empty] at hP
     rw [hP, encard_singleton]
 
-  obtain (rfl | _) := M.eq_empty_on_or_nonempty
+  obtain (rfl | _) := M.eq_emptyOn_or_nonempty
   · infer_instance
 
   rw [simple_iff_cl_subset_self_forall]
@@ -252,9 +262,16 @@ theorem simple_iff_forall_parallel_class [Loopless M] :
   apply hpara _ _ _ he.parallel_self
   rwa [mem_setOf, parallel_comm, (toNonloop (M.cl_subset_ground _ hx)).parallel_iff_mem_cl]
 
+@[simp] theorem simple_trivialOn_iff {I E : Set α} : (trivialOn I E).Simple ↔ E ⊆ I := by
+  simp only [simple_iff_forall_pair_indep, trivialOn_ground, mem_singleton_iff,
+    trivialOn_indep_iff', subset_inter_iff]
+  refine ⟨fun h x hxE ↦ by simpa using (h hxE hxE).1, fun h {e f} he hf ↦ ⟨subset_trans ?_ h, ?_⟩⟩
+  <;> rintro x (rfl | rfl) <;> assumption
 
+instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
+  rw [←trivialOn_eq_freeOn, simple_trivialOn_iff]
 
-
-
+@[simp] theorem simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
+  rw [←trivialOn_eq_loopyOn, simple_trivialOn_iff, subset_empty_iff]
 
 end Simple

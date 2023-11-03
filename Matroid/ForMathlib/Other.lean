@@ -202,3 +202,5 @@ theorem exists_eq_image_subset_of_subset_image {α β : Type _} {f : α → β} 
   simp [image_subset_iff, inter_subset_left]
 
 theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
+
+abbrev Set.incl (s : Set α) : s → α := Subtype.val

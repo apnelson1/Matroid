@@ -10,7 +10,7 @@ section Uniform
 
 /-- A uniform matroid with a given rank `k` and ground set `E`. If `k = ⊤`, then every set is
   independent. ` -/
-def unif_on (E : Set α) (k : ℕ∞) : Matroid α := (free_on E).truncate k 
+def unif_on (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncate k 
 
 @[simp] theorem unif_on_ground_eq (E : Set α) : (unif_on E k).E = E := by
   cases k <;> rfl
@@ -18,10 +18,10 @@ def unif_on (E : Set α) (k : ℕ∞) : Matroid α := (free_on E).truncate k
 @[simp] theorem unif_on_indep_iff : (unif_on E k).Indep I ↔ I.encard ≤ k ∧ I ⊆ E := by
   simp [unif_on, and_comm]
 
-@[simp] theorem unif_on_top (E : Set α) : unif_on E ⊤ = free_on E := by 
+@[simp] theorem unif_on_top (E : Set α) : unif_on E ⊤ = freeOn E := by 
   rw [unif_on, truncate_top]
 
-@[simp] theorem unif_on_zero (E : Set α) : unif_on E 0 = loopy_on E := by 
+@[simp] theorem unif_on_zero (E : Set α) : unif_on E 0 = loopyOn E := by 
   simp [unif_on]
  
 theorem unif_on_eq_unif_on_min (E : Set α) (k : ℕ∞) : unif_on E k = unif_on E (min k E.encard) := by
@@ -29,22 +29,22 @@ theorem unif_on_eq_unif_on_min (E : Set α) (k : ℕ∞) : unif_on E k = unif_on
     le_min_iff, and_congr_left_iff, iff_self_and, true_and]
   exact fun I hI _ _ ↦ encard_mono hI
 
-@[simp] theorem unif_on_encard : unif_on E E.encard = free_on E := by 
-  rw [unif_on, truncate_eq_self_of_rk_le (free_on_erk_eq _).le]
+@[simp] theorem unif_on_encard : unif_on E E.encard = freeOn E := by 
+  rw [unif_on, truncate_eq_self_of_rk_le (freeOn_erk_eq _).le]
 
-theorem unif_on_eq_of_le (h : E.encard ≤ k) : unif_on E k = free_on E := by 
-  rw [unif_on, truncate_eq_self_of_rk_le (by rwa [free_on_erk_eq])]
+theorem unif_on_eq_of_le (h : E.encard ≤ k) : unif_on E k = freeOn E := by 
+  rw [unif_on, truncate_eq_self_of_rk_le (by rwa [freeOn_erk_eq])]
 
 theorem unif_on_base_iff {k : ℕ} (hk : k ≤ E.encard) (hBE : B ⊆ E) : 
     (unif_on E k).Base B ↔ B.encard = k := by
-  rw [unif_on, truncate_base_iff, free_on_indep_iff, and_iff_right hBE]; rwa [free_on_erk_eq]
+  rw [unif_on, truncate_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_erk_eq]
 
 theorem unif_on_base_iff' (hktop : k ≠ ⊤) (hk : k ≤ E.encard) (hBE : B ⊆ E) : 
     (unif_on E k).Base B ↔ B.encard = k := by
   lift k to ℕ using hktop; rw [unif_on_base_iff hk hBE]
   
 theorem unif_on_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unif_on E k).er X = min X.encard k := by
-  rw [unif_on, truncate_er_eq, free_on_er_eq hX]
+  rw [unif_on, truncate_er_eq, freeOn_er_eq hX]
 
 theorem unif_on_er_eq' (E : Set α) (k : ℕ∞) : (unif_on E k).er X = min (X ∩ E).encard k := by
   rw [←er_inter_ground_eq, unif_on_er_eq _ _ (by rw [unif_on_ground_eq]; apply inter_subset_right), 
@@ -86,7 +86,7 @@ theorem unif_on_dual_eq (hE : E.Finite) : (unif_on E k)﹡ = unif_on E (E.encard
   obtain (rfl | hk) := eq_or_ne k ⊤; simp
   lift k to ℕ using hk 
   obtain (hle | hlt) := le_or_lt E.encard k
-  · rw [unif_on_eq_of_le hle, free_on_dual_eq, tsub_eq_zero_of_le hle, unif_on_zero]
+  · rw [unif_on_eq_of_le hle, freeOn_dual_eq, tsub_eq_zero_of_le hle, unif_on_zero]
   refine eq_of_base_iff_base_forall (by simp) (fun B hBE ↦ ?_)
   simp only [dual_ground, unif_on_ground_eq] at hBE 
   rw [dual_base_iff', unif_on_base_iff' ((tsub_le_self.trans_lt hE.encard_lt_top).ne) (by simp) hBE, 
@@ -131,8 +131,8 @@ def unif (a b : ℕ) := unif_on (univ : Set (Fin b)) a
   rw [unif, unif_on_er_eq _ _ (subset_univ _)]
   
 theorem unif_base_iff (hab : a ≤ b) : (unif a b).Base B ↔ B.encard = a := by
-  rw [unif, unif_on, truncate_base_iff, free_on_indep_iff, and_iff_right (subset_univ _)]
-  rwa [free_on_erk_eq, encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin, 
+  rw [unif, unif_on, truncate_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
+  rwa [freeOn_erk_eq, encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin, 
     PartENat.withTopEquiv_natCast, Nat.cast_le]
   
 @[simp] theorem unif_base_iff' : (unif a (a + b)).Base B ↔ B.encard = a := by 

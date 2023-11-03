@@ -129,22 +129,16 @@ theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.
     (hst : s ⊆ t) : LinearIndependent K ((h.extend' hst).restrict f) :=
   (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.2.2
 
--- theorem linearIndependent_pair_iff {K : Type u_3} {V : Type u} [DivisionRing K] [AddCommGroup V]
---     [Module K V] {x : V} {y : V} (hx : x ≠ 0) :
---     LinearIndependent K (({x,y} : Set V).restrict id) ↔ ∃ c, c ≠ 0 ∧ c • x = y := by
---   _
-
 theorem linearIndependent_index_pair_iff {K V ι : Type _} [DivisionRing K] [AddCommGroup V]
-  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j):
-    LinearIndependent K (({i,j} : Set ι).restrict f) ↔ ∀ (c : K), c ≠ 0 → c • f i ≠ f j := by
+  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
+    LinearIndependent K (({i,j} : Set ι).restrict f) ↔ ∀ (c : K), c • f i ≠ f j := by
   convert linearIndependent_insert' (s := {j}) (a := i) (by simpa using hij) using 2
   simp only [ne_eq, linearIndependent_unique_iff, default_coe_singleton, image_singleton,
     mem_span_singleton, not_exists]
-  refine ⟨fun h ↦ ⟨fun h0 ↦ ?_, fun c hc ↦ ?_⟩, fun h c h' ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨fun h0 ↦ ?_, fun c hc ↦ h c⁻¹ ?_⟩, fun h c h' ↦ h.2 c⁻¹ ?_⟩
   · simp only [h0, smul_eq_zero] at h
-  -- · rw [←hc, smul_smul, inv_mul_cancel, one_smul]
-  --   rintro rfl
-  --   simp [←hc] at hi
-  -- rw [← h', smul_smul, inv_mul_cancel, one_smul]
-  -- rintro rfl
-  -- simp [←h'] at h
+    simpa using h 0
+  · rw [←hc, smul_smul, inv_mul_cancel, one_smul]
+    rintro rfl; exact hi <| by simp [←hc]
+  rw [←h', smul_smul, inv_mul_cancel, one_smul]
+  rintro rfl; exact h.1 <| by simp [← h']
