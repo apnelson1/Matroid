@@ -94,6 +94,7 @@ def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W
 
 theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
     LinearIndependent R f ↔ ∀ (g : α → R), ∃ (φ : Module.Dual R W), φ ∘ f = g := by
+  classical
   refine ⟨fun h g ↦ ?_, fun h ↦ linearIndependent_iff.2 fun l hl ↦ Finsupp.ext fun a ↦ ?_⟩
   · obtain ⟨i, hi⟩ := (span R (range f)).subtype.exists_leftInverse_of_injective
       (LinearMap.ker_eq_bot.2 (injective_subtype _))
@@ -106,7 +107,6 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
     simp only [LinearMap.coe_comp, coeSubtype, Function.comp_apply, LinearMap.id_coe, id_eq] at hrw
     simp only [hrw, Basis.span_apply]
 
-  classical
   obtain ⟨φ, hφ⟩ := h <| Function.update 0 a (1 : R)
   have hc := φ.congr_arg hl
   rw [Finsupp.apply_total, hφ] at hc
@@ -151,44 +151,12 @@ theorem ofFun_comp_coe (f : α → W) (s : Set α) :
     ofFun R (f ∘ ((↑) : s → α)) = (ofFun R f).map (LinearMap.fun_subtype R s) := by
   ext; aesop
 
--- noncomputable def foo {f : α → W} (b : Basis ι R (span R (range f)))
 
 def ofFun_repr (f : α → W) (b : Basis ι R W) : ι → ofFun R f :=
   fun i ↦ ⟨fun a ↦ (b.repr ∘ f) a i, ( by
         simp only [Function.comp_apply, mem_ofFun_iff]
         exact ⟨b.coord i, funext fun _ ↦ rfl⟩ ) ⟩
 
--- noncomputable def foo'' {f : α → (ι →₀ R)} (hf : span R (range f) = ⊤) :
---     Basis ι R (ofFun R f) :=
---   let v : ι → α → R := fun i a ↦ f a i
---   Basis.mk (v := (⟨v, sorry⟩ : ofFun R f))
---   ( by
---     simp [linearIndependent_iff]
---     intro c
-
---   ) sorry
---   -- Basis.mk (v := f) sorry sorry
-
-
-
--- noncomputable def foo' {f : α → W} (b : Basis ι R W) :
---   Basis ι R (ofFun R f) :=
---   let v : ι → ofFun R f :=
---     fun i ↦ ⟨fun a ↦ (b.repr ∘ f) a i, ( by
---         simp only [Function.comp_apply, mem_ofFun_iff]
---         exact ⟨b.coord i, funext fun _ ↦ rfl⟩ ) ⟩
-
---   Basis.mk (v := v)
-
---     ( by
---       simp only [linearIndependent_iff]
-
---       intro l h
-
-
---       use g
---     )
---     sorry
 
 
 -- Inverses
@@ -220,76 +188,3 @@ theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b :
   simp only [smul_eq_mul, AddSubmonoid.coe_finset_sum, coe_toAddSubmonoid, SetLike.val_smul,
     Finset.sum_apply, Pi.smul_apply]
   exact Finset.sum_congr rfl  fun y _ ↦ mul_comm _ _
-
-
--- noncomputable def Basis.mk_submodule {ι R M : Type _} {v : ι → M} [Ring R] [AddCommGroup M]
---   [Module R M]
---   (hli : LinearIndependent R v) (hsp : ⊤ ≤ Submodule.span R (Set.range v)) :
--- Basis ι R M
-
--- Todo; the span of the range of f and (ofFun f) should have the same dimension. I don't know if
--- there is a natural map from bases of one to the other, though.
-
--- theorem foo1 (f : α → R) (hf : Module.Finite R (ofFun R f)) : Module.Finite R (span R (range f))
---   := by
---   sorry
-
-
--- def exists_basis (f : α → W) :
---     ∃ (I : Set α) (b : Basis I R (span R (range f))), ∀ i, (b i : W) = f (i : α) := by
---   obtain ⟨I, (hI : LinearIndependent R (I.restrict f)), hmax⟩ := exists_maximal_independent' R f
---   have hsp : span R (range (I.restrict f)) = span R (range f)
---   · refine le_antisymm (span_mono ?_) ?_
---     · rw [range_restrict]; apply image_subset_range
---     refine fun x hx ↦ by_contra fun hx' ↦ ?_
-
---     -- have :+ linearIndependent
-
---   have hss : ∀ a, f a ∈ span R (range (I.restrict f))
---   · intro a; rw [hsp]; exact subset_span (mem_range_self _)
---   have hi := (linearIndependent_span hI)
---   refine ⟨I, (Basis.mk hi ?_).map (LinearEquiv.ofEq _ _ hsp), fun i ↦ by simp⟩
-
---   simp_rw [←Submodule.map_le_map_iff_of_injective (injective_subtype _),
---     Submodule.map_top, range_subtype, range_restrict, restrict_apply, Submodule.map_span]
---   apply span_mono
---   rintro _ ⟨x, hx, rfl⟩
---   simp only [coeSubtype, mem_image, mem_range, Subtype.exists, Subtype.mk.injEq, exists_prop,
---     range_restrict, exists_and_left, exists_exists_and_eq_and]
---   exact ⟨f x, subset_span <| mem_image_of_mem _ hx, ⟨_, hx, rfl⟩, rfl⟩
-
-
-
-
-
-
-  -- rw [←Submodule.map_le_map_iff_of_injective (M := span R (range (I.restrict f))) (f := Submodule.subtype) sorry ⊤ (span R _)]
-  -- rw [top_le_iff, eq_top_iff']
-  -- rintro ⟨x,hx⟩
-  -- rw [Submodule.mem_span] at *
-  -- intro P hP
-  -- have := image_subset_image (Submodule.subtype) hP
-
-
-  -- rw [mem_span_set] at *
-  -- obtain ⟨c, hc, rfl⟩:= hx
-  -- use fun x ↦ c x
-
-
-
-
-
-  -- ·
-
-
--- theorem rank_of_fun (f : α → R) (hf : Module.Finite R (span R (range f))) :
---     FiniteDimensional.finrank R (ofFun R f) = FiniteDimensional.finrank R (span R (range f)) := by
---     sorry
-  -- have : ∃ I : Set α, Nonempty (Basis I R (span R (range f)))
-
-  -- have : Basis _ R (span R (range f)) := by exact?
---   ·
-
--- theorem Basis.foo {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) :
---     span R (range (fun a i ↦ (b i).1 a)) = ⊤ := by
---   _

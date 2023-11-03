@@ -478,6 +478,7 @@ theorem eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid
   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
 
+
 end Coloop
 
 end Matroid
