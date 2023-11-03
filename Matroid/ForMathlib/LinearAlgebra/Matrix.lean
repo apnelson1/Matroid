@@ -56,9 +56,9 @@ variable [Semiring R]
 
 @[simp] theorem colSpace_transpose (A : Matrix m n R) : Aᵀ.colSpace = A.rowSpace := rfl
 
-@[simp] theorem rowSpace_eq_span (A : Matrix m n R) : span R (range A.rowFun) = A.rowSpace := rfl
+@[simp] theorem span_eq_rowSpace (A : Matrix m n R) : span R (range A.rowFun) = A.rowSpace := rfl
 
-@[simp] theorem colSpace_eq_span (A : Matrix m n R) : span R (range A.colFun) = A.colSpace := rfl
+@[simp] theorem span_eq_colSpace (A : Matrix m n R) : span R (range A.colFun) = A.colSpace := rfl
 
 end semiring
 
@@ -120,31 +120,9 @@ theorem restrict_eq_submatrix (A : Matrix m n α) (s : Set m) :
 theorem transpose_restrict_eq_submatrix (A : Matrix m n R) (t : Set m) :
   (t.restrict A)ᵀ = Aᵀ.colSubmatrix t := rfl
 
--- theorem transpose_transpose_restrict_eq_submatrix (A : Matrix m n R) (t : Set n) :
---   (t.restrict Aᵀ)ᵀ = (A.submatrix id ((↑) : t → n)) := rfl
-
 theorem image_eq_range_submatrix (A : Matrix m n α) (s : Set m) :
     A '' s = range (A.rowSubmatrix s).rowFun := by
   aesop
-
--- theorem range_col_submatrix (A : Matrix m n α) (c_reindex : l → n) :
---     range (A.submatrix id c_reindex) = (· ∘ c_reindex) '' range A := by
---   aesop
-
--- @[simp] theorem range_row_submatrix {l m n α : Type _} (A : Matrix m n α) (r_reindex : l → m) :
---     range (A.submatrix r_reindex id) = A '' range (r_reindex) := by
---   aesop
-
--- @[simp] theorem range_restrict {m n R : Type _} (A : Matrix m n R) (s : Set m) :
---     range (s.restrict A) = A '' s := by
---   simp [restrict_eq_submatrix]
-
--- @[simp] theorem range_submatrix {l m n o R : Type _} [CommRing R] (A : Matrix m n R)
---     (r_reindex : l → m) (c_reindex : o → n) :
---     range (A.submatrix r_reindex c_reindex) =
---       (LinearMap.funLeft R _ c_reindex) '' (A '' range (r_reindex)) := by
---   aesop
-
 
 @[simp] theorem rowFun_colSubmatrix_eq [CommRing R] (A : Matrix m n R) (t : Set n) :
     rowFun (colSubmatrix A t) = LinearMap.funLeft R R (↑) ∘ A.rowFun := by
@@ -192,11 +170,6 @@ theorem RowBasis.linearIndependent (h : A.RowBasis s) :
 theorem RowBasis.rowSpace_eq (h : A.RowBasis s) :
     (A.rowSubmatrix s).rowSpace = A.rowSpace :=
   h.2
-
--- theorem RowBasis.span_submatrix_eq (h : A.RowBasis s) :
---     span R (range (A.submatrix ((↑) : s → m) id)) = span R (range A) := by
---   simp [h.span_eq]
-
 
 /-- A `ColBasis` as a `Basis` for the column space -/
 noncomputable def ColBasis.basis (h : A.ColBasis t) : Basis t R A.colSpace :=
@@ -266,7 +239,7 @@ theorem rowBasis_iff_maximal_linearIndependent : A.RowBasis s ↔
     · apply hy.comp (inclusion (insert_subset he hsy)) <| inclusion_injective _
     apply ((linearIndependent_insert' hes).1 hse).2
     have hsp := h.symm.le.subset <| (subset_span <| mem_range_self _   : A e ∈ _)
-    rwa [image_eq_range_submatrix, rowSpace_eq_span]
+    rwa [image_eq_range_submatrix, span_eq_rowSpace]
   · rintro _ ⟨x, -, rfl⟩; exact ⟨x, rfl⟩
   rintro x hx
   obtain ⟨k, c, f, g, rfl⟩ := mem_span_set'.1 hx
@@ -281,7 +254,7 @@ theorem rowBasis_iff_maximal_linearIndependent : A.RowBasis s ↔
   by_contra hsp
   have heq := (h <| (linearIndependent_insert' hjs).2 ⟨hli, fun hsp' ↦ hsp ?_⟩) (subset_insert _ _)
   · exact hjs (heq.symm.subset (mem_insert _ _))
-  rwa [image_eq_range_submatrix, rowSpace_eq_span ] at hsp'
+  rwa [image_eq_range_submatrix, span_eq_rowSpace ] at hsp'
 
 theorem colBasis_iff_maximal_linearIndependent : A.ColBasis t ↔
     t ∈ maximals (· ⊆ ·) {b : Set n | LinearIndependent R (A.colSubmatrix b).colFun}  := by
@@ -378,14 +351,27 @@ theorem cols_linearIndependent_of_rowSpace_le_rowSpace {A₁ : Matrix m₁ n R} 
   convert congr_fun hne i'
   simp
 
+/-- Matrices with the same row space have the same column dependencies -/
+theorem cols_linearIndependent_iff_of_rowSpaces_eq {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
+    (h : A₁.rowSpace = A₂.rowSpace) {t : Set n} :
+    LinearIndependent R (A₁.colSubmatrix t).colFun
+      ↔ LinearIndependent R (A₂.colSubmatrix t).colFun := by
+  exact ⟨fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.le h',
+    fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.symm.le h'⟩
+
 /-- Matrices with the same row space have the same column bases -/
 theorem colBases_eq_of_rowSpaces_eq {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
     (h : A₁.rowSpace = A₂.rowSpace) : A₁.ColBasis = A₂.ColBasis := by
   ext
-  simp_rw [colBasis_iff_maximal_linearIndependent]
-  convert Iff.rfl with t
-  exact ⟨fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.symm.le h',
-    fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.le h'⟩
+  simp_rw [colBasis_iff_maximal_linearIndependent, cols_linearIndependent_iff_of_rowSpaces_eq h]
+
+/-- Matrices with the same column space have the same row dependencies-/
+theorem rowsLinearIndependent_iff_of_colSpaces_eq {A₁ : Matrix m n₁ R} {A₂ : Matrix m n₂ R}
+    (h : A₁.colSpace = A₂.colSpace) :
+    LinearIndependent R (A₁.rowSubmatrix s).rowFun
+      ↔ LinearIndependent R (A₂.rowSubmatrix s).rowFun := by
+  rw [←rowSpace_transpose, ←rowSpace_transpose] at h
+  exact cols_linearIndependent_iff_of_rowSpaces_eq h
 
 /-- Matrices with the same column space have the same row bases -/
 theorem rowBases_eq_of_colSpaces_eq {A₁ : Matrix m n₁ R} {A₂ : Matrix m n₂ R}
@@ -455,7 +441,6 @@ variable [Field R] [Fintype n] {m₁ m₂ : Type _} [Fintype m₁] [Fintype m₂
 theorem nullSpace_eq_ker_mulVecLin : A.nullSpace = LinearMap.ker A.mulVecLin := by
   ext x; rw [mem_nullSpace_iff, LinearMap.mem_ker, mulVecLin_apply]
 
-/-- Possibly this will work without various `Fintype`s-/
 theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearIndependent R A₁.rowFun)
     (h₂ : LinearIndependent R A₂.rowFun) (ht : A₁.ColBasis t) :  A₂.ColBasis tᶜ := by
   classical
@@ -528,7 +513,6 @@ end NullSpace
 
 section Rank
 
-
 noncomputable def rank' {R : Type _} [CommRing R] (A : Matrix m n R) : ℕ :=
   finrank R <| colSpace A
 
@@ -574,18 +558,7 @@ theorem rank'_transpose (A : Matrix m n K) : Aᵀ.rank' = A.rank' := by
   rw [←ncard_colBasis ht, ←ncard_rowBasis_eq_ncard_colBasis hs ht,
     ←ncard_colBasis hs.colBasis_transpose]
 
-
-
 end Rank
-
-
-
-
-
-
-
-
-
 
 end Matrix
 

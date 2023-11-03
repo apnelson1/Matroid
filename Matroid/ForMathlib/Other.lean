@@ -200,3 +200,5 @@ theorem exists_eq_image_subset_of_subset_image {α β : Type _} {f : α → β} 
   · obtain ⟨a, ha, rfl⟩ := hst hxt
     exact ⟨a, mem_inter hxt ha, rfl⟩
   simp [image_subset_iff, inter_subset_left]
+
+theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
