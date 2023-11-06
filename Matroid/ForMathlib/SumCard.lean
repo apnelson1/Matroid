@@ -12,11 +12,11 @@ import Mathlib.Algebra.BigOperators.Finprod
 
 open Set
 
--- theorem finsum_eq_finsum_iff_of_le {ι M : Type _} [inst : OrderedCancelAddCommMonoid M] 
+-- theorem finsum_eq_finsum_iff_of_le {ι M : Type*} [inst : OrderedCancelAddCommMonoid M] 
 -- {s : Set ι} {f g : ι → M} (h : ∀ (i : ι), f i ≤ g i) :
 -- ((Finset.sum s fun i => f i) = Finset.sum s fun i => g i) ↔ ∀ (i : ι), i ∈ s → f i = g i
 
-variable {α : Type _} {s : Set α} {c : Set (Set α)}
+variable {α : Type*} {s : Set α} {c : Set (Set α)}
 
 theorem ENat.finsum_mem_one_eq (hs : s.Finite) : ∑ᶠ i ∈ s, 1 = s.encard := by 
   apply @Finite.induction_on α _ _ hs

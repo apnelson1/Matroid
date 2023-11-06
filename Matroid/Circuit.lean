@@ -5,7 +5,7 @@ import Matroid.Closure
   A `Circuit` of a matroid is a minimal dependent set. 
 -/
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 open Set
 
@@ -217,7 +217,7 @@ theorem mem_cl_iff_exists_circuit_of_not_mem (he : e ∉ X) :
 /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is 
   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version. 
   The stronger version is required for axiomatizing infinite matroids via circuits. -/
-theorem Circuit.strong_multi_elimination {ι : Type _} (hC : M.Circuit C) (x : ι → α)
+theorem Circuit.strong_multi_elimination {ι : Type*} (hC : M.Circuit C) (x : ι → α)
     (Cs : ι → Set α) (hCs : ∀ i, M.Circuit (Cs i)) (h_mem : ∀ i, x i ∈ C ∩ Cs i)
     (h_unique : ∀ i i', x i ∈ Cs i' → i = i') {z : α} (hz : z ∈ C \ ⋃ i, Cs i) :
     ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by

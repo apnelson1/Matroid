@@ -2,7 +2,7 @@ import Matroid.Rank
 
 open Set
 
-variable {α : Type _} {M N : Matroid α}
+variable {α : Type*} {M N : Matroid α}
 
 namespace Matroid
 
@@ -10,7 +10,7 @@ section Delete
 
 variable {D D₁ D₂ : Set α}
 
-class HasDelete (α β : Type _) where
+class HasDelete (α β : Type*) where
   del : α → β → α
 
 infixl:75 " ⟍ " => HasDelete.del
@@ -19,10 +19,10 @@ infixl:75 " ⟍ " => HasDelete.del
 def delete (M : Matroid α) (D : Set α) : Matroid α :=
   M ↾ (M.E \ D)
 
-instance delSet {α : Type _} : HasDelete (Matroid α) (Set α) :=
+instance delSet {α : Type*} : HasDelete (Matroid α) (Set α) :=
   ⟨Matroid.delete⟩
 
-instance delElem {α : Type _} : HasDelete (Matroid α) α :=
+instance delElem {α : Type*} : HasDelete (Matroid α) α :=
   ⟨fun M e ↦ M.delete {e}⟩
 
 instance delete_finite [Matroid.Finite M] : Matroid.Finite (M ⟍ D) :=
@@ -136,7 +136,7 @@ theorem delete_delete_diff (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ �
   by simp
 
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
-noncomputable def Iso.delete {β : Type _} {N : Matroid β} (e : Iso M N) (hD : D ⊆ M.E) :
+noncomputable def Iso.delete {β : Type*} {N : Matroid β} (e : Iso M N) (hD : D ⊆ M.E) :
     Iso (M ⟍ D) (N ⟍ e '' D) := by
   convert Iso.restrict e (M.E \ D) using 1
   rw [e.injOn_ground.image_diff hD, e.image_ground, ←restrict_compl]
@@ -147,7 +147,7 @@ section Contract
 
 variable {C C₁ C₂ : Set α}
 
-class HasContract (α β : Type _) where
+class HasContract (α β : Type*) where
   con : α → β → α
 
 infixl:75 " ⟋ " => HasContract.con
@@ -157,10 +157,10 @@ infixl:75 " ⟋ " => HasContract.con
 def contract (M : Matroid α) (C : Set α) : Matroid α :=
   (M﹡ ⟍ C)﹡
 
-instance conSet {α : Type _} : HasContract (Matroid α) (Set α) :=
+instance conSet {α : Type*} : HasContract (Matroid α) (Set α) :=
   ⟨Matroid.contract⟩
 
-instance conElem {α : Type _} : HasContract (Matroid α) α :=
+instance conElem {α : Type*} : HasContract (Matroid α) α :=
   ⟨fun M e ↦ M.contract {e}⟩
 
 @[simp] theorem dual_delete_dual_eq_contract (M : Matroid α) (X : Set α) : (M﹡ ⟍ X)﹡ = M ⟋ X :=
@@ -462,7 +462,7 @@ theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ⟋ C).er X ≤ M
 theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⟋ C).rFin X := by
   rw [←er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
 
-noncomputable def Iso.contract {β : Type _} {N : Matroid β} (e : Iso M N) (hC : C ⊆ M.E) :
+noncomputable def Iso.contract {β : Type*} {N : Matroid β} (e : Iso M N) (hC : C ⊆ M.E) :
     Iso (M ⟋ C) (N ⟋ e '' C) :=
   (e.dual.delete hC).dual
 
@@ -595,7 +595,7 @@ def StrictMinor (N M : Matroid α) : Prop :=
 infixl:50 " ≤m " => Matroid.Minor
 infixl:50 " <m " => Matroid.StrictMinor
 
-instance {α : Type _} : IsNonstrictStrictOrder (Matroid α) (· ≤m ·) (· <m ·) :=
+instance {α : Type*} : IsNonstrictStrictOrder (Matroid α) (· ≤m ·) (· <m ·) :=
   ⟨fun _ _ ↦ Iff.rfl⟩
 
 theorem contract_delete_minor (M : Matroid α) (C D : Set α) : M ⟋ C ⟍ D ≤m M := by
@@ -714,7 +714,7 @@ end Minor
 
 section Iso
 
-variable {β : Type _} {N' M' : Matroid α}
+variable {β : Type*} {N' M' : Matroid α}
 
 /-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
   defined to be type-heterogeneous.  -/
@@ -740,7 +740,7 @@ theorem Minor.trans_iso {M' : Matroid β} (h : N ≤m M) (e : Iso M M') : N ≤i
 theorem Minor.isoMinor (h : N ≤m M) : N ≤i M :=
   ⟨N, h, ⟨Iso.refl N⟩⟩
 
-theorem IsoMinor.trans {α₁ α₂ α₃ : Type _} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
+theorem IsoMinor.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
     {M₃ : Matroid α₃} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ :=
   by
   obtain ⟨M₂', hM₂'M₃, ⟨i'⟩⟩ := h'

@@ -94,7 +94,7 @@
 --   simp [matroid_of_indep_of_bdd_augment]
 
 -- /-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
--- def matroid_of_exists_finite_base {α : Type _} (E : Set α) (Base : Set α → Prop) 
+-- def matroid_of_exists_finite_base {α : Type*} (E : Set α) (Base : Set α → Prop) 
 --     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
 --     (support : ∀ B, Base B → B ⊆ E) : Matroid α := 
 --   matroid_of_base E Base 
@@ -107,7 +107,7 @@
 --       exact encard_mono hYB' })
 --     support
 
--- @[simp] theorem matroid_of_exists_finite_base_apply {α : Type _} (E : Set α) (Base : Set α → Prop) 
+-- @[simp] theorem matroid_of_exists_finite_base_apply {α : Type*} (E : Set α) (Base : Set α → Prop) 
 --     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base) 
 --     (support : ∀ B, Base B → B ⊆ E) : 
 --     (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base := 

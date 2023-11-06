@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Basic
 
-variable {π : α → Type _}
+variable {π : α → Type*}
 
 def Function.restrict (f : ∀ a : α, π a) (s : Set α) : ∀ a : s, π a := fun x => f x
 

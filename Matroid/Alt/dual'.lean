@@ -4,7 +4,7 @@ namespace Matroid
 
 open Set 
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 section dual 
 
@@ -182,11 +182,11 @@ def dual (M : Matroid α) : Matroid α :=
 
 /-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. (This is distinct from the 
   usual `*` symbol for multiplication, due to precedence issues. )-/
-class Mdual (β : Type _) := (dual : β → β)
+class Mdual (β : Type*) := (dual : β → β)
 
 postfix:max "﹡" => Mdual.dual
 
-instance Matroid_Mdual {α : Type _} : Mdual (Matroid α) := ⟨Matroid.dual⟩ 
+instance Matroid_Mdual {α : Type*} : Mdual (Matroid α) := ⟨Matroid.dual⟩ 
 
 theorem dual_base_iff' : M﹡.Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E := by 
   rw [and_comm]; rfl

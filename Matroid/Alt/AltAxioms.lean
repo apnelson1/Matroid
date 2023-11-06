@@ -226,7 +226,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   })
   h_support
 
-lemma inter_iUnion_disjoint {ι : Type _} {Es Xs : ι → Set α}
+lemma inter_iUnion_disjoint {ι : Type*} {Es Xs : ι → Set α}
     (hEs : Pairwise (Disjoint on Es)) (hXs : ∀ i, Xs i ⊆ Es i) (j : ι) :
     (⋃ i, Xs i) ∩ Es j = Xs j := by
   ext x
@@ -236,13 +236,13 @@ lemma inter_iUnion_disjoint {ι : Type _} {Es Xs : ι → Set α}
   exact (em (i = j)).elim (by { rintro rfl; exact hi })
           fun g ↦ (by { exfalso; exact (disjoint_left.mp (hEs g)) ((hXs i) hi) hxj })
 
-lemma eq_iUnion_inter {ι : Type _} {Es : ι → Set α} {X : Set α} (hX : X ⊆ ⋃ i, Es i) :
+lemma eq_iUnion_inter {ι : Type*} {Es : ι → Set α} {X : Set α} (hX : X ⊆ ⋃ i, Es i) :
     X = ⋃ i, X ∩ Es i :=
   subset_antisymm fun x hx ↦ by { rw [←inter_iUnion]; exact ⟨hx, hX hx⟩ }
                   fun x hx ↦ by { obtain ⟨i, ⟨hi, -⟩⟩ := mem_iUnion.mp hx; exact hi }
 
 -- lemma maximal_union_iff
---     {ι : Type _}
+--     {ι : Type*}
 --     (Es : ι → Set α)
 --     (hEs : Pairwise (Disjoint on Es))
 --     (Is : ι → Set α)
@@ -254,7 +254,7 @@ lemma eq_iUnion_inter {ι : Type _} {Es : ι → Set α} {X : Set α} (hX : X �
 --         ∀ i, Is i ∈ maximals (· ⊆ ·) { X | h_local i X } := by
 --   sorry
 
-lemma aux {ι : Type _} [DecidableEq ι] {Ms : ι → Matroid α}
+lemma aux {ι : Type*} [DecidableEq ι] {Ms : ι → Matroid α}
     (hEs : Pairwise (Disjoint on fun i ↦ (Ms i).E)) (I : Set α) (hIE : I ⊆ ⋃ i, (Ms i).E) :
   I ∈ maximals (· ⊆ ·) {I | I ⊆ ⋃ i, (Ms i).E ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E) } ↔
     ∀ i, (Ms i).Base (I ∩ (Ms i).E) := by
@@ -292,7 +292,7 @@ lemma aux {ι : Type _} [DecidableEq ι] {Ms : ι → Matroid α}
   exact iUnion_mono fun i ↦
         ((h i).eq_of_subset_indep (hBs i) (inter_subset_inter_left (Ms i).E hIB)).symm.subset
 
-def directSum {ι : Type _} [DecidableEq ι] (Ms : ι → Matroid α)
+def directSum {ι : Type*} [DecidableEq ι] (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on fun i ↦ (Ms i).E)) :=
   matroid_of_indep_of_forall_subset_base
     (⋃ i, (Ms i).E)

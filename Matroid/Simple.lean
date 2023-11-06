@@ -5,7 +5,7 @@ open Set
 
 namespace Matroid
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 section Parallel
 
@@ -173,7 +173,7 @@ instance [Simple M] : Loopless M := by
   rw [loopless_iff_forall_nonloop]
   exact fun e he ↦ ((parallel_iff_eq he).2 rfl).nonloop_left
 
-instance {α : Type _} : Simple (emptyOn α) :=
+instance {α : Type*} : Simple (emptyOn α) :=
   ⟨fun he ↦ by simp at he⟩
 
 theorem simple_iff_loopless_eq_of_parallel_forall:

@@ -194,7 +194,7 @@ def Matrix.col_linearEquiv (m R : Type) [Semiring R] : (m → R) ≃ₗ[R] Matri
 @[simp] theorem Matrix.col_linearEquiv_apply_symm (A : Matrix m Unit R) (i : m) :
     (Matrix.col_linearEquiv m R).symm A i = A i () := rfl
 
-theorem exists_eq_image_subset_of_subset_image {α β : Type _} {f : α → β} {s : Set α} {t : Set β}
+theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {s : Set α} {t : Set β}
     (hst : t ⊆ f '' s) : ∃ t₀, t₀ ⊆ s ∧ t = f '' t₀ := by
   refine ⟨f ⁻¹' t ∩ s, inter_subset_right _ _, subset_antisymm (fun x hxt ↦ ?_) ?_⟩
   · obtain ⟨a, ha, rfl⟩ := hst hxt

@@ -6,7 +6,7 @@ namespace Matroid
 
 open Set LocalEquiv
 
-variable {α β α₁ α₂ α₃ : Type _}
+variable {α β α₁ α₂ α₃ : Type*}
 
 structure Iso (M : Matroid α) (N : Matroid β) where
   (toLocalEquiv : LocalEquiv α β)

@@ -3,7 +3,7 @@ import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.Constructions.ImagePreimage
 
-variable {α β W W' 𝔽 R : Type _} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
+variable {α β W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional
@@ -14,11 +14,11 @@ namespace Matroid
 
 /-- A function `v : α → W` represents `M` over `𝔽` if independence of `I` in `M` corresponds to
   linear independence of `v '' I` in `W`. -/
-def IsRep (M : Matroid α) (𝔽 : Type _) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W]
+def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W]
     (v : α → W) :=
   ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v)
 
-@[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type _) [CommSemiring 𝔽] [AddCommMonoid W]
+@[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type*) [CommSemiring 𝔽] [AddCommMonoid W]
   [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
@@ -205,7 +205,7 @@ theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : 
   simp [iso, indicator_of_mem hx]
 
 /-- A function from `α` to a module gives rise to a finitary matroid on `α` -/
-def matroidOnUnivOfFun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
+def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
     matroid_of_indep_of_finitary univ
     (fun I ↦ LinearIndependent 𝔽 (I.restrict v))
     linearIndependent_empty_type
@@ -245,35 +245,35 @@ def matroidOnUnivOfFun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (v : α → 
         simp only [Subtype.mk.injEq] )
     ( fun _ _ ↦ subset_univ _ )
 
-@[simp] theorem matroidOnUnivOfFun_apply (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W)
+@[simp] theorem matroidOnUnivOfFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
   (I : Set α) :
    (matroidOnUnivOfFun 𝔽 f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) :=
    by simp [matroidOnUnivOfFun]
 
-@[simp] theorem matroidOnUnivOfFun_ground (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
+@[simp] theorem matroidOnUnivOfFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
   (matroidOnUnivOfFun 𝔽 f).E = univ := rfl
 
-instance matroidOnUnivOfFun_finitary (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
+instance matroidOnUnivOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
     Finitary (matroidOnUnivOfFun 𝔽 f) := by
   rw [matroidOnUnivOfFun]; infer_instance
 
-def matroidOfFun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :=
+def matroidOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :=
   (matroidOnUnivOfFun 𝔽 f) ↾ E
 
-theorem matroidOfFun_indep_iff' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E I : Set α) :
+theorem matroidOfFun_indep_iff' (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E I : Set α) :
     (matroidOfFun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ I ⊆ E := by
   simp [matroidOfFun]
 
-theorem matroidOfFun_indep_iff (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W)
+theorem matroidOfFun_indep_iff (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
     (E : Set α) (hf : support f ⊆ E) (I : Set α) :
     (matroidOfFun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by
   simp only [matroidOfFun_indep_iff', and_iff_left_iff_imp]
   exact fun hli ↦ subset_trans (fun x hxI ↦ by exact hli.ne_zero ⟨x, hxI⟩) hf
 
-@[simp] theorem matroidOfFun_ground (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+@[simp] theorem matroidOfFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroidOfFun 𝔽 f E).E = E := rfl
 
-instance matroidOfFun_finitary (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+instance matroidOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     Finitary (matroidOfFun 𝔽 f E) := by
   rw [matroidOfFun]; infer_instance
 
@@ -281,17 +281,17 @@ theorem matroidOfFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) :
     (matroidOfFun 𝔽 f E).Finite :=
   ⟨hfin⟩
 
-def repOfFun_univ (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
+def repOfFunUniv (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
     (matroidOnUnivOfFun 𝔽 f).Rep 𝔽 W where
   to_fun := f
   valid' := by simp [IsRep]
 
-def repOfFun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) (hf : support f ⊆ E) :
+def repOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) (hf : support f ⊆ E) :
     (matroidOfFun 𝔽 f E).Rep 𝔽 W where
   to_fun := f
   valid' := by simp [IsRep, matroidOfFun_indep_iff _ _ _ hf]
 
-@[simp] theorem matroidOfFun_indicator_eq (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W)
+@[simp] theorem matroidOfFun_indicator_eq (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
     (E : Set α) : matroidOfFun 𝔽 (indicator E f) E = matroidOfFun 𝔽 f E := by
   simp only [eq_iff_indep_iff_indep_forall, matroidOfFun_ground, true_and]
   intro I hIE
@@ -300,10 +300,10 @@ def repOfFun (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Se
   ext ⟨x, hx⟩
   simp only [restrict_apply, indicator_of_mem (hIE hx)]
 
-def matroidOfSubtypeFun {E : Set α} (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
+def matroidOfSubtypeFun {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
     Matroid α := matroidOfFun 𝔽 (Function.extend Subtype.val f 0) E
 
-@[simp] theorem matroidOfSubtypeFun_indep_iff {E : Set α} (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W]
+@[simp] theorem matroidOfSubtypeFun_indep_iff {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
     (f : E → W) (I : Set α) : (matroidOfSubtypeFun 𝔽 f).Indep I
       ↔ ∃ (I₀ : Set E), LinearIndependent 𝔽 (I₀.restrict f) ∧ I = (↑) '' I₀ := by
   simp only [matroidOfSubtypeFun, matroidOfFun._eq_1, restrict_indep_iff, matroidOnUnivOfFun_apply]
@@ -327,7 +327,7 @@ def matroidOfSubtypeFun {E : Set α} (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W
   rintro ⟨_,⟨⟨x,hxE⟩,hx,rfl⟩⟩ ⟨_,⟨⟨y,hyE⟩,hy,rfl⟩⟩ hxy
   simpa using hxy
 
-noncomputable def repOfFun' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+noncomputable def repOfFun' (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroidOfFun 𝔽 f E).Rep 𝔽 W where
   to_fun := indicator E f
   valid' := ( by
@@ -335,10 +335,10 @@ noncomputable def repOfFun' (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α
     intro I
     rw [matroidOfFun_indep_iff _ _ _ support_indicator_subset] )
 
-@[simp] theorem matroidOfSubtypeFun_ground {E : Set α} (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W]
+@[simp] theorem matroidOfSubtypeFun_ground {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
     (f : E → W) : (matroidOfSubtypeFun 𝔽 f).E = E := rfl
 
-noncomputable def matroidOfSubtypeFun_rep {E : Set α} (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W]
+noncomputable def matroidOfSubtypeFun_rep {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
     (f : E → W) : (matroidOfSubtypeFun 𝔽 f).Rep 𝔽 W where
       to_fun := Subtype.val.extend f 0
       valid' := (by
@@ -462,7 +462,7 @@ theorem Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B)
   (v.standardRep_fullRank' hB).mapEquiv _
 
 /-- A matroid is representable if it has a representation -/
-def Representable (M : Matroid α) (𝔽 : Type _) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
+def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
 
 theorem Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
   have ⟨B, hB⟩ := M.exists_base
@@ -477,7 +477,7 @@ theorem Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
   convert congr_fun hx i
   rw [Subtype.val_injective.extend_apply]
 
-theorem matroidOfFun_representable (𝔽 : Type _) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+theorem matroidOfFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroidOfFun 𝔽 f E).Representable 𝔽 :=
   (repOfFun' 𝔽 f E).representable
 

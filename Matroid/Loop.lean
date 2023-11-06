@@ -7,7 +7,7 @@ import Matroid.Circuit
 -/
 
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 open Set
 

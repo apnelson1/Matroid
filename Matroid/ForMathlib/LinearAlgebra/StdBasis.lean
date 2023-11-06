@@ -33,7 +33,7 @@ variable [Fintype ι] [Field R]{x : ι → R} {U V : Submodule R (ι → R)}
 
 /-- The space of vectors 'orthogonal' to all vectors in `U`, in the sense of having a
   dot product of zero. -/
-@[pp_dot] noncomputable def Submodule.orthSpace {R : Type _} [CommSemiring R]
+@[pp_dot] noncomputable def Submodule.orthSpace {R : Type*} [CommSemiring R]
     (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
   U.dualAnnihilator.map (Module.piEquiv ι R R).symm
 
@@ -60,7 +60,7 @@ variable [Fintype ι] [Field R]{x : ι → R} {U V : Submodule R (ι → R)}
     LinearEquiv.finrank_map_eq', ←Subspace.finrank_dualCoannihilator_eq,
     Subspace.dualAnnihilator_dualCoannihilator_eq]
 
-theorem orthSpace_injective (ι R : Type _) [Fintype ι] [Field R] :
+theorem orthSpace_injective (ι R : Type*) [Fintype ι] [Field R] :
     Injective (Submodule.orthSpace : Subspace R (ι → R) → Subspace R (ι → R)) :=
   fun _ _ h ↦ by simpa using congr_arg Submodule.orthSpace h
 
@@ -74,7 +74,7 @@ theorem eq_orthSpace_comm : U = V.orthSpace ↔ V = U.orthSpace :=
   rw [orthSpace]; simp
 
 /-- Orthogonal spaces gives an isomorphism from the subspace lattice to its order dual -/
-noncomputable def orthSpace_orderIso (ι R : Type _) [Fintype ι] [Field R] :
+noncomputable def orthSpace_orderIso (ι R : Type*) [Fintype ι] [Field R] :
   Subspace R (ι → R) ≃o (Subspace R (ι → R))ᵒᵈ where
     toFun := orthSpace
     invFun := orthSpace
@@ -88,7 +88,7 @@ noncomputable def orthSpace_orderIso (ι R : Type _) [Fintype ι] [Field R] :
       have hdp := (mem_orthSpace_iff.1 <| h hy) _ hx
       rwa [Matrix.dotProduct_comm] at hdp )
 
-theorem orthSpace_strictAnti (ι R : Type _) [Fintype ι] [Field R] :
+theorem orthSpace_strictAnti (ι R : Type*) [Fintype ι] [Field R] :
     StrictAnti (Submodule.orthSpace : Subspace R (ι → R) → Subspace R (ι → R)) :=
   (orthSpace_orderIso ι R).strictMono
 

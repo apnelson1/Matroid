@@ -5,10 +5,10 @@ open Finset
 
 
 
-def Transverses (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
+def Transverses (T : Finset α) {ι : Type*} (fam : ι → Finset α): Prop :=
   ∃ (m : α → ι), Set.InjOn m T.toSet ∧ (∀ a, a ∈ T → a ∈ fam (m a))
 
-def Transverses_subtype (T : Finset α) {ι : Type _} (fam : ι → Finset α) : Prop :=
+def Transverses_subtype (T : Finset α) {ι : Type*} (fam : ι → Finset α) : Prop :=
   ∃ (m : T → ι), m.Injective ∧ (∀ a, a.1 ∈ fam (m a))
 
 theorem transverses_subtype_iff_transverses_of_inhabited [DecidableEq α] [Inhabited ι] {T : Finset α}
@@ -62,7 +62,7 @@ Finset.card s ≤ Finset.card (Finset.biUnion s fam)) ↔
     have hall_condition2 : (∀ (s : Finset { x // x ∈ T }),
     card s ≤ card (Finset.biUnion s fun x ↦ fam ↑x))
     · intro S
-      set S' : Finset ι := Finset.map (Function.Embedding.subtype _) S with S'_def
+      set S' : Finset ι := Finset.map (Function.Embedding.subType*) S with S'_def
       have S'_sub_T : S' ⊆ T
       · intro s s_sub_S'
         rw [S'_def] at s_sub_S'
@@ -241,7 +241,7 @@ decreasing_by
 
 
 
-def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq ι] [Fintype ι]
+def matroid_of_transversals_finite {ι a : Type*} [DecidableEq α] [DecidableEq ι] [Fintype ι]
     (f : ι → Finset α) : Matroid α :=
   matroid_of_indep_finset (Finset.univ.biUnion f)
   (fun S ↦ Transverses_subtype S f)

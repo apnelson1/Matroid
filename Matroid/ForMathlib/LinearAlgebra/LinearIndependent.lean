@@ -2,7 +2,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Other
 
-variable {α ι W W' R : Type _} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
+variable {α ι W W' R : Type*} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
 
 open Set Submodule BigOperators
 
@@ -26,7 +26,7 @@ theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
-theorem linearIndependent_of_finite_index {R M ι : Type _} [DivisionRing R] [AddCommGroup M]
+theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
     LinearIndependent R f := by
   have hinj : f.Injective
@@ -41,7 +41,7 @@ theorem linearIndependent_of_finite_index {R M ι : Type _} [DivisionRing R] [Ad
   exact (linearIndependent_image (injOn_of_injective hinj t)).1 <|
     h t (htfin.of_finite_image (injOn_of_injective hinj t))
 
-theorem linearIndependent_iUnion_of_directed' {R M ι η : Type _} [DivisionRing R] [AddCommGroup M]
+theorem linearIndependent_iUnion_of_directed' {R M ι η : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : η → Set ι) (hs : Directed (· ⊆ ·) s)
     (h : ∀ j, LinearIndependent R ((s j).restrict f)) :
     LinearIndependent R ((⋃ j, s j).restrict f) := by
@@ -60,7 +60,7 @@ theorem linearIndependent_iUnion_of_directed' {R M ι η : Type _} [DivisionRing
   refine (h z).comp emb <| Function.Injective.comp (inclusion_injective hss) ?_
   exact InjOn.imageFactorization_injective (Subtype.val_injective.injOn _)
 
-theorem linearIndependent_sUnion_of_directed' {R M ι : Type _} [DivisionRing R] [AddCommGroup M]
+theorem linearIndependent_sUnion_of_directed' {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : Set (Set ι)) (hs : DirectedOn (· ⊆ ·) s)
     (h : ∀ c ∈ s, LinearIndependent R (c.restrict f)) :
     LinearIndependent R ((⋃₀ s).restrict f) := by
@@ -86,7 +86,7 @@ theorem LinearIndependent.finite_index_restrict {K : Type u} {V : Type v} [Divis
   have := h.finite_index
   s.toFinite
 
-variable {K V ι : Type _} [DivisionRing K] [AddCommGroup V] [Module K V] {f : ι → V}
+variable {K V ι : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {f : ι → V}
   {s₀ s t : Set ι}
 
 theorem exists_linearIndependent_extension' (hli : LinearIndependent K (s₀.restrict f))
@@ -129,7 +129,7 @@ theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.
     (hst : s ⊆ t) : LinearIndependent K ((h.extend' hst).restrict f) :=
   (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.2.2
 
-theorem linearIndependent_index_pair_iff {K V ι : Type _} [DivisionRing K] [AddCommGroup V]
+theorem linearIndependent_index_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
   [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
     LinearIndependent K (({i,j} : Set ι).restrict f) ↔ ∀ (c : K), c • f i ≠ f j := by
   convert linearIndependent_insert' (s := {j}) (a := i) (by simpa using hij) using 2

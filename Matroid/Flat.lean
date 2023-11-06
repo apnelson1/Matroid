@@ -1,6 +1,6 @@
 import Matroid.Minor
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 open Set
 
@@ -15,7 +15,7 @@ theorem Flat.eq_ground_of_spanning (hF : M.Flat F) (h : M.Spanning F) : F = M.E 
 theorem Flat.spanning_iff (hF : M.Flat F) : M.Spanning F ↔ F = M.E :=
   ⟨hF.eq_ground_of_spanning, by rintro rfl; exact M.ground_spanning⟩
 
-theorem Flat.iInter {ι : Type _} [_root_.Nonempty ι] {Fs : ι → Set α} 
+theorem Flat.iInter {ι : Type*} [_root_.Nonempty ι] {Fs : ι → Set α} 
     (hFs : ∀ i, M.Flat (Fs i)) : M.Flat (⋂ i, Fs i) := by
   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
     (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩ 

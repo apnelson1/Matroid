@@ -1,3 +1,3 @@
 import Matroid.Simple
 import Matroid.Representation.Subspace
-import Matroid.Representation.Matrix
+import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace

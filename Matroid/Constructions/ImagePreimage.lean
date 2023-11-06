@@ -3,7 +3,7 @@ import Matroid.ForMathlib.Other
 
 open Set Function
 
-variable {α β : Type _} {f : α → β} {E I s : Set α}
+variable {α β : Type*} {f : α → β} {E I s : Set α}
 
 namespace Matroid
 

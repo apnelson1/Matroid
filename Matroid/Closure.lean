@@ -7,9 +7,9 @@ open Set
 
 namespace Matroid
 
--- variable {α : Type _} {M : Matroid α} {I J B C X Y : Set α} {e f x y : α}
+-- variable {α : Type*} {M : Matroid α} {I J B C X Y : Set α} {e f x y : α}
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 /-- A flat is a maximal set having a given basis  -/
 @[pp_dot] def Flat (M : Matroid α) (F : Set α) : Prop :=
@@ -310,7 +310,7 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type _} [hι : _root_.Nonempty ι] 
+theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : _root_.Nonempty ι] 
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp

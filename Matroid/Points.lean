@@ -6,7 +6,7 @@ open PSetoid
 
 namespace Matroid
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 
 /-- The number of parallel classes (or equivalently, points) of a matroid. -/
 @[pp_dot] noncomputable def point_count (M : Matroid α) := 

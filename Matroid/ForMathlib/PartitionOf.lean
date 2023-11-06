@@ -8,7 +8,7 @@ theorem symm_iff_of (r : α → α → Prop) [IsSymm α r] {x y : α} : r x y �
 
 namespace PSetoid
 
-variable {α : Type _} {c : Set (Set α)}
+variable {α : Type*} {c : Set (Set α)}
 
 /-- `c` is a collection of disjoint nonempty sets with union `s`. -/
 def IsPartition (c : Set (Set α)) (s : Set α) := 

@@ -5,34 +5,31 @@ import Matroid.ForMathlib.LinearAlgebra.StdBasis
 
 open Submodule Set Module BigOperators
 
-
-
-
 @[simp]
-theorem Submodule.span_diff_zero {R : Type u_1} {M : Type u_4} [Semiring R] [AddCommMonoid M]
-    [Module R M] {s : Set M} : Submodule.span R (s \ {0}) = Submodule.span R s := by
+theorem Submodule.span_diff_zero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {s : Set M} : Submodule.span R (s \ {0}) = Submodule.span R s := by
   simp [←Submodule.span_insert_zero]
 
 section coords
 
-def LinearMap.fun_subtype (R : Type _) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=
+def LinearMap.fun_subtype (R : Type*) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=
   LinearMap.funLeft R R Subtype.val
 
-@[simp] theorem LinearMap.fun_subtype_apply (R : Type _) [Semiring R] (s : Set α) (x : α → R)
+@[simp] theorem LinearMap.fun_subtype_apply (R : Type*) [Semiring R] (s : Set α) (x : α → R)
     (y : s) : LinearMap.fun_subtype R s x y = x y := rfl
 
-def LinearMap.fun_subset (R : Type _) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
+def LinearMap.fun_subset (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
     (t → R) →ₗ[R] (s → R) :=
   LinearMap.funLeft R R (Set.inclusion hst)
 
-@[simp] theorem LinearMap.fun_subset_apply (R : Type _) [Semiring R] {s t : Set α} (hst : s ⊆ t)
+@[simp] theorem LinearMap.fun_subset_apply (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t)
     (f : t → R) (y : s) : LinearMap.fun_subset R hst f y = f (Set.inclusion hst y) := rfl
 
-noncomputable def LinearMap.extend_subtype (R : Type _) [Semiring R] (s : Set α) :
+noncomputable def LinearMap.extend_subtype (R : Type*) [Semiring R] (s : Set α) :
     (s → R) →ₗ[R] (α → R)  :=
   Function.ExtendByZero.linearMap R Subtype.val
 
-theorem Function.ExtendByZero.linearMap_injective (R : Type _) {ι η : Type _} [Semiring R]
+theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
   {s : ι → η} (hs : Function.Injective s) :
     LinearMap.ker (Function.ExtendByZero.linearMap R s) = ⊥ := by
   rw [Submodule.eq_bot_iff]
@@ -42,30 +39,30 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type _) {ι η : Type _} 
   simp only [linearMap_apply, exists_apply_eq_apply, not_true, Pi.zero_apply] at h
   rw [Pi.zero_apply, ←h, hs.extend_apply]
 
-@[simp] theorem LinearMap.extend_subtype_inj (R : Type _) [Semiring R] (s : Set α) :
+@[simp] theorem LinearMap.extend_subtype_inj (R : Type*) [Semiring R] (s : Set α) :
     LinearMap.ker (LinearMap.extend_subtype R s) = ⊥ :=
   Function.ExtendByZero.linearMap_injective _ Subtype.coe_injective
 
-@[simp] theorem LinearMap.extend_subtype_apply (R : Type _) [Semiring R] (s : Set α) (f : s → R)
+@[simp] theorem LinearMap.extend_subtype_apply (R : Type*) [Semiring R] (s : Set α) (f : s → R)
     (y : s) : LinearMap.extend_subtype R s f y = f y := by
   rw [extend_subtype, Function.ExtendByZero.linearMap_apply, Subtype.coe_injective.extend_apply]
 
-@[simp] theorem LinearMap.fun_subtype_extend_subtype (R : Type _) [Semiring R] (s : Set α) :
+@[simp] theorem LinearMap.fun_subtype_extend_subtype (R : Type*) [Semiring R] (s : Set α) :
     (LinearMap.fun_subtype R s).comp (LinearMap.extend_subtype R s) = LinearMap.id := by
   ext; simp
 
-noncomputable def LinearMap.extend_subset (R : Type _) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
+noncomputable def LinearMap.extend_subset (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
     (s → R) →ₗ[R] (t → R) := Function.ExtendByZero.linearMap R (Set.inclusion hst)
 
-@[simp] theorem LinearMap.extend_subset_apply (R : Type _) [Semiring R] {s t : Set α} (hst : s ⊆ t)
+@[simp] theorem LinearMap.extend_subset_apply (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t)
     (f : s → R) (x : s) : LinearMap.extend_subset R hst f (Set.inclusion hst x) = f x := by
   rw [extend_subset, Function.ExtendByZero.linearMap_apply, (inclusion_injective hst).extend_apply]
 
-theorem LinearMap.extend_subset_inj (R : Type _) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
+theorem LinearMap.extend_subset_inj (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
     LinearMap.ker (LinearMap.extend_subset R hst) = ⊥ :=
   Function.ExtendByZero.linearMap_injective _ <| inclusion_injective hst
 
-theorem Module.dom_finite_of_finite (R : Type _) [DivisionRing R] (hfin : Module.Finite R (α → R)) :
+theorem Module.dom_finite_of_finite (R : Type*) [DivisionRing R] (hfin : Module.Finite R (α → R)) :
     _root_.Finite α := by
   have := FiniteDimensional.of_injective (Finsupp.lcoeFun : (α →₀ R) →ₗ[R] (α → R))
     (fun f g h ↦ by ext x; simpa using congr_fun h x)
@@ -74,7 +71,7 @@ theorem Module.dom_finite_of_finite (R : Type _) [DivisionRing R] (hfin : Module
 
 end coords
 
-variable {α W W' R : Type _} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
+variable {α W W' R : Type*} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
 
 @[simp] theorem Basis.total_comp_repr (f : Basis α R W) (g : α → R) :
     ((Finsupp.total α R R g).comp f.repr.toLinearMap) ∘ f = g := by
@@ -82,13 +79,13 @@ variable {α W W' R : Type _} [AddCommGroup W] [Field R] [Module R W] [AddCommGr
 
  /-- For each function `f` to a module `W` over `r`, composition with `f` is a linear map from
   `Dual W` to `α → R` -/
-def Submodule.dual_comp (f : α → W) (R : Type _) [CommSemiring R] [Module R W] :
+def Submodule.dual_comp (f : α → W) (R : Type*) [CommSemiring R] [Module R W] :
     Dual R W →ₗ[R] (α → R) where
   toFun φ := φ ∘ f
   map_add' := fun _ _ ↦ rfl
   map_smul' := fun _ _ ↦ rfl
 
-@[simp] theorem Submodule.dual_comp_apply (f : α → W) (R : Type _) [CommSemiring R] [Module R W]
+@[simp] theorem Submodule.dual_comp_apply (f : α → W) (R : Type*) [CommSemiring R] [Module R W]
   (φ : Module.Dual R W) :
     Submodule.dual_comp f R φ = φ ∘ f := rfl
 
@@ -115,7 +112,7 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
 
 /-- Each function `f` to a module `W` gives a submodule obtained by composing each `φ ∈ Dual W`
   with f -/
-def Submodule.ofFun (R : Type _) [CommSemiring R] [Module R W] (f : α → W) : Submodule R (α → R) :=
+def Submodule.ofFun (R : Type*) [CommSemiring R] [Module R W] (f : α → W) : Submodule R (α → R) :=
   LinearMap.range (dual_comp f R)
 
 theorem Submodule.ofFun_map (f : α → W) (e : W →ₗ[R] W')

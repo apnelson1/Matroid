@@ -1,7 +1,7 @@
 
 import Matroid.Flat
 
-variable {α : Type _} {M : Matroid α} {E : Set α}
+variable {α : Type*} {M : Matroid α} {E : Set α}
 
 namespace Matroid 
 

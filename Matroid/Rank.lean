@@ -10,7 +10,7 @@ open ENat
 
 namespace Matroid
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 section Basic
 
 /-- The rank `erk M` of `M` is the cardinality of a base of `M`. -/

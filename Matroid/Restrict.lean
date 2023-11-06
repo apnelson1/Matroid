@@ -8,7 +8,7 @@ open Set
 
 namespace Matroid
 
-variable {α : Type _} {M : Matroid α}
+variable {α : Type*} {M : Matroid α}
 section restrict
 
 /-- Change the ground set of a matroid to some `R : Set α`. The independent sets of the restriction
@@ -57,11 +57,11 @@ def Restrict (M : Matroid α) (X : Set α) : Matroid α :=
 
 variable {R R₁ R₂ : Set α}
 
-class MRestrict (α β : Type _) := (restrict : α → β → α)
+class MRestrict (α β : Type*) := (restrict : α → β → α)
 
 infixl:65  " ↾ " => MRestrict.restrict
 
-instance {α : Type _} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.Restrict X⟩
+instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.Restrict X⟩
 
 @[simp] theorem restrict_indep_iff : (M ↾ R).Indep I ↔ M.Indep I ∧ I ⊆ R := by
   change (M.Restrict R).Indep I ↔ _; simp [Restrict]

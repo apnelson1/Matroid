@@ -1,6 +1,6 @@
 import Matroid.Flat
 
-variable {α : Type _} {M : Matroid α} {E : Set α}
+variable {α : Type*} {M : Matroid α} {E : Set α}
 
 namespace Matroid
 
@@ -9,7 +9,7 @@ open Set
 section EmptyOn
 
 /-- The `Matroid α` with empty ground set-/
-def emptyOn (α : Type _) : Matroid α :=
+def emptyOn (α : Type*) : Matroid α :=
   matroid_of_base_of_finite finite_empty (· = ∅) ⟨_,rfl⟩ (by rintro _ _ rfl; simp) (by simp)
 
 @[simp] theorem emptyOn_ground : (emptyOn α).E = ∅ := rfl
@@ -30,7 +30,7 @@ def emptyOn (α : Type _) : Matroid α :=
   rw [← ground_eq_empty_iff]; rfl
 
 /-- Any two empty matroids are isomorphic -/
-noncomputable def Iso.of_empty (α β : Type _) [_root_.Nonempty α] [_root_.Nonempty β] :
+noncomputable def Iso.of_empty (α β : Type*) [_root_.Nonempty α] [_root_.Nonempty β] :
     Iso (emptyOn α) (emptyOn β) where
   toLocalEquiv := InjOn.toLocalEquiv _ _ (injOn_empty (Classical.arbitrary (α → β)))
   source_eq' := by simp

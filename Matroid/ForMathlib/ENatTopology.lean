@@ -13,11 +13,11 @@ universe u v
 
 open scoped BigOperators ENNReal Topology Filter
 
-theorem tsum_support_eq {α β : Type _} {f : α → β} [TopologicalSpace β] [AddCommMonoid β] 
+theorem tsum_support_eq {α β : Type*} {f : α → β} [TopologicalSpace β] [AddCommMonoid β] 
     [T2Space β] : ∑' (x : f.support), f x = ∑' x, f x := by 
   simp [tsum_subtype]
 
-theorem tsum_subtype_eq_tsum_inter_support {α β : Type _} {f : α → β} [TopologicalSpace β] 
+theorem tsum_subtype_eq_tsum_inter_support {α β : Type*} {f : α → β} [TopologicalSpace β] 
     [AddCommMonoid β] [T2Space β] {s : Set α} :
     ∑' (x : ↑(s ∩ f.support)), f x = ∑' (x : s), f x := by 
   rw [tsum_congr (show ∀ (a : s), f a = (s.indicator f) a from _), 
@@ -27,7 +27,7 @@ theorem tsum_subtype_eq_tsum_inter_support {α β : Type _} {f : α → β} [Top
   rintro ⟨a, ha⟩
   simp [indicator_of_mem ha]
     
-theorem tsum_subtype_eq_tsum_subtype {α β : Type _} {f : α → β} [TopologicalSpace β] 
+theorem tsum_subtype_eq_tsum_subtype {α β : Type*} {f : α → β} [TopologicalSpace β] 
     [AddCommMonoid β] [T2Space β] {s t : Set α} (h : s ∩ f.support = t ∩ f.support) : 
     ∑' (x : s), f x = ∑' (x : t), f x := by 
   rw [←tsum_subtype_eq_tsum_inter_support, eq_comm, ←tsum_subtype_eq_tsum_inter_support, h]
@@ -364,18 +364,18 @@ end tsum
 
 
 
--- theorem WithTop.inducing_coe {β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β]
+-- theorem WithTop.inducing_coe {β : Type*} [Preorder β] [TopologicalSpace β] [OrderTopology β]
 --     [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] : 
 --     Inducing ((↑) : β → WithTop β) := by
 --   rw [inducing_iff]
 
--- theorem WithTop.embedding_coe {β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β]
+-- theorem WithTop.embedding_coe {β : Type*} [Preorder β] [TopologicalSpace β] [OrderTopology β]
 --     [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] : 
 --     Embedding ((↑) : β → WithTop β) := by
   
   
 
--- theorem foo_tendsto_coe {α β : Type _} [Preorder β] [TopologicalSpace β] [OrderTopology β] 
+-- theorem foo_tendsto_coe {α β : Type*} [Preorder β] [TopologicalSpace β] [OrderTopology β] 
 --   [TopologicalSpace (WithTop β)] [OrderTopology (WithTop β)] {f : Filter α} {m : α → β} {a : β} :
 --     Filter.Tendsto (fun a ↦ (m a : WithTop β)) f (nhds (a : WithTop β)) ↔ Filter.Tendsto m f (nhds a) := by 
 --   have := embedding_coe.tendsto_nhds_iff
@@ -386,7 +386,7 @@ end tsum
 
 
 
--- example {α : Type _} [OrderedAddCommMonoid α] [TopologicalSpace α] [OrderTopology α] 
+-- example {α : Type*} [OrderedAddCommMonoid α] [TopologicalSpace α] [OrderTopology α] 
 --   [ContinuousAdd α] [TopologicalSpace (WithTop α)] [OrderTopology (WithTop α)] :
 --     ContinuousAdd (WithTop α) := by 
 --   apply continuousAdd_of_comm_of_nhds_zero
@@ -451,18 +451,18 @@ end tsum
 -- protected theorem tsum_eq_iSup_sum : ∑' a, f a = ⨆ s : Finset α, ∑ a in s, f a :=
 --   ENNReal.hasSum.tsum_eq
 
--- protected theorem tsum_eq_iSup_sum' {ι : Type _} (s : ι → Finset α) (hs : ∀ t, ∃ i, t ⊆ s i) :
+-- protected theorem tsum_eq_iSup_sum' {ι : Type*} (s : ι → Finset α) (hs : ∀ t, ∃ i, t ⊆ s i) :
 --     ∑' a, f a = ⨆ i, ∑ a in s i, f a := by
 --   rw [ENNReal.tsum_eq_iSup_sum]
 --   symm
 --   change ⨆ i : ι, (fun t : Finset α ↦ ∑ a in t, f a) (s i) = ⨆ s : Finset α, ∑ a in s, f a
 --   exact (Finset.sum_mono_set f).iSup_comp_eq hs
 
--- protected theorem tsum_sigma {β : α → Type _} (f : ∀ a, β a → β) :
+-- protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → β) :
 --     ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
 --   tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
 
--- protected theorem tsum_sigma' {β : α → Type _} (f : (Σa, β a) → β) :
+-- protected theorem tsum_sigma' {β : α → Type*} (f : (Σa, β a) → β) :
 --     ∑' p : Σa, β a, f p = ∑' (a) (b), f ⟨a, b⟩ :=
 --   tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
 
@@ -523,7 +523,7 @@ end tsum
 --   let ⟨a⟩ := ‹Nonempty α›
 --   ENNReal.tsum_eq_top_of_eq_top ⟨a, rfl⟩
 
--- theorem tsum_const_eq_top_of_ne_zero {α : Type _} [Infinite α] {c : β} (hc : c ≠ 0) :
+-- theorem tsum_const_eq_top_of_ne_zero {α : Type*} [Infinite α] {c : β} (hc : c ≠ 0) :
 --     ∑' _ : α, c = ∞ := by
 --   have A : Tendsto (fun n : ℕ ↦ (n : β) * c) atTop (𝓝 (∞ * c)) := by
 --     apply ENNReal.Tendsto.mul_const tendsto_nat_nhds_top
@@ -553,7 +553,7 @@ end tsum
 --   simpa only [smul_one_mul] using @ENNReal.tsum_mul_left _ (a • (1 : β)) _
 
 -- @[simp]
--- theorem tsum_iSup_eq {α : Type _} (a : α) {f : α → β} : (∑' b : α, ⨆ _ : a = b, f b) = f a :=
+-- theorem tsum_iSup_eq {α : Type*} (a : α) {f : α → β} : (∑' b : α, ⨆ _ : a = b, f b) = f a :=
 --   (tsum_eq_single a fun _ h ↦ by simp [h.symm]).trans <| by simp
 
 -- theorem hasSum_iff_tendsto_nat {f : ℕ → β} (r : β) :
@@ -568,11 +568,11 @@ end tsum
 --   rw [← hasSum_iff_tendsto_nat]
 --   exact ENat.summable.hasSum
 
--- theorem toNNReal_apply_of_tsum_ne_top {α : Type _} {f : α → β} (hf : ∑' i, f i ≠ ∞) (x : α) :
+-- theorem toNNReal_apply_of_tsum_ne_top {α : Type*} {f : α → β} (hf : ∑' i, f i ≠ ∞) (x : α) :
 --     (((ENNReal.toNNReal ∘ f) x : ℝ≥0) : β) = f x :=
 --   coe_toNNReal <| ENNReal.ne_top_of_tsum_ne_top hf _
 
--- theorem summable_toNNReal_of_tsum_ne_top {α : Type _} {f : α → β} (hf : ∑' i, f i ≠ ∞) :
+-- theorem summable_toNNReal_of_tsum_ne_top {α : Type*} {f : α → β} (hf : ∑' i, f i ≠ ∞) :
 --     Summable (ENNReal.toNNReal ∘ f) := by
 --   simpa only [← tsum_coe_ne_top_iff_summable, toNNReal_apply_of_tsum_ne_top hf] using hf
 
@@ -591,14 +591,14 @@ end tsum
 
 -- /-- The sum over the complement of a finset tends to `0` when the finset grows to cover the whole
 -- space. This does not need a summability assumption, as otherwise all sums are zero. -/
--- theorem tendsto_tsum_compl_atTop_zero {α : Type _} {f : α → β} (hf : ∑' x, f x ≠ ∞) :
+-- theorem tendsto_tsum_compl_atTop_zero {α : Type*} {f : α → β} (hf : ∑' x, f x ≠ ∞) :
 --     Tendsto (fun s : Finset α ↦ ∑' b : { x // x ∉ s }, f b) atTop (𝓝 0) := by
 --   lift f to α → ℝ≥0 using ENNReal.ne_top_of_tsum_ne_top hf
 --   convert ENNReal.tendsto_coe.2 (NNReal.tendsto_tsum_compl_atTop_zero f)
 --   rw [ENNReal.coe_tsum]
 --   exact NNReal.summable_comp_injective (tsum_coe_ne_top_iff_summable.1 hf) Subtype.coe_injective
 
--- protected theorem tsum_apply {ι α : Type _} {f : ι → α → β} {x : α} :
+-- protected theorem tsum_apply {ι α : Type*} {f : ι → α → β} {x : α} :
 --     (∑' i, f i) x = ∑' i, f i x :=
 --   tsum_apply <| Pi.summable.mpr fun _ ↦ ENat.summable
 
@@ -621,29 +621,29 @@ end tsum
 --     ∑' x : s, f x ≤ ∑' x : t, f x :=
 --   tsum_comp_le_tsum_of_injective (inclusion_injective h) _
 
--- theorem tsum_iUnion_le_tsum {ι : Type _} (f : α → β) (t : ι → Set α) :
+-- theorem tsum_iUnion_le_tsum {ι : Type*} (f : α → β) (t : ι → Set α) :
 --     ∑' x : ⋃ i, t i, f x ≤ ∑' i, ∑' x : t i, f x :=
 --   calc ∑' x : ⋃ i, t i, f x ≤ ∑' x : Σ i, t i, f x.2 :=
 --     tsum_le_tsum_comp_of_surjective (sigmaToiUnion_surjective t) _
 --   _ = ∑' i, ∑' x : t i, f x := ENNReal.tsum_sigma' _
 
--- theorem tsum_biUnion_le_tsum {ι : Type _} (f : α → β) (s : Set ι) (t : ι → Set α) :
+-- theorem tsum_biUnion_le_tsum {ι : Type*} (f : α → β) (s : Set ι) (t : ι → Set α) :
 --     ∑' x : ⋃ i ∈ s , t i, f x ≤ ∑' i : s, ∑' x : t i, f x :=
---   calc ∑' x : ⋃ i ∈ s, t i, f x = ∑' x : ⋃ i : s, t i, f x := tsum_congr_subtype _ <| by simp
+--   calc ∑' x : ⋃ i ∈ s, t i, f x = ∑' x : ⋃ i : s, t i, f x := tsum_congr_subType* <| by simp
 --   _ ≤ ∑' i : s, ∑' x : t i, f x := tsum_iUnion_le_tsum _ _
 
--- theorem tsum_biUnion_le {ι : Type _} (f : α → β) (s : Finset ι) (t : ι → Set α) :
+-- theorem tsum_biUnion_le {ι : Type*} (f : α → β) (s : Finset ι) (t : ι → Set α) :
 --     ∑' x : ⋃ i ∈ s, t i, f x ≤ ∑ i in s, ∑' x : t i, f x :=
 --   (tsum_biUnion_le_tsum f s.toSet t).trans_eq (Finset.tsum_subtype s fun i ↦ ∑' x : t i, f x)
 
--- theorem tsum_iUnion_le {ι : Type _} [Fintype ι] (f : α → β) (t : ι → Set α) :
+-- theorem tsum_iUnion_le {ι : Type*} [Fintype ι] (f : α → β) (t : ι → Set α) :
 --     ∑' x : ⋃ i, t i, f x ≤ ∑ i, ∑' x : t i, f x := by
 --   rw [← tsum_fintype]
 --   exact tsum_iUnion_le_tsum f t
 
 -- theorem tsum_union_le (f : α → β) (s t : Set α) :
 --     ∑' x : ↑(s ∪ t), f x ≤ ∑' x : s, f x + ∑' x : t, f x :=
---   calc ∑' x : ↑(s ∪ t), f x = ∑' x : ⋃ b, cond b s t, f x := tsum_congr_subtype _ union_eq_iUnion
+--   calc ∑' x : ↑(s ∪ t), f x = ∑' x : ⋃ b, cond b s t, f x := tsum_congr_subType* union_eq_iUnion
 --   _ ≤ _ := by simpa using tsum_iUnion_le f (cond · s t)
 
 -- theorem tsum_eq_add_tsum_ite {f : β → β} (b : β) :
@@ -657,7 +657,7 @@ end tsum
 
 -- /-- A sum of extended nonnegative reals which is finite can have only finitely many terms
 -- above any positive threshold.-/
--- theorem finite_const_le_of_tsum_ne_top {ι : Type _} {a : ι → β} (tsum_ne_top : ∑' i, a i ≠ ∞)
+-- theorem finite_const_le_of_tsum_ne_top {ι : Type*} {a : ι → β} (tsum_ne_top : ∑' i, a i ≠ ∞)
 --     {ε : β} (ε_ne_zero : ε ≠ 0) : { i : ι | ε ≤ a i }.Finite := by
 --   by_contra h
 --   have := Infinite.to_subtype h
@@ -667,7 +667,7 @@ end tsum
 --     (fun i ↦ i.2) ENat.summable ENat.summable
 
 -- /-- Markov's inequality for `Finset.card` and `tsum` in `β`. -/
--- theorem finset_card_const_le_le_of_tsum_le {ι : Type _} {a : ι → β} {c : β} (c_ne_top : c ≠ ∞)
+-- theorem finset_card_const_le_le_of_tsum_le {ι : Type*} {a : ι → β} {c : β} (c_ne_top : c ≠ ∞)
 --     (tsum_le_c : ∑' i, a i ≤ c) {ε : β} (ε_ne_zero : ε ≠ 0) :
 --     ∃ hf : { i : ι | ε ≤ a i }.Finite, ↑hf.toFinset.card ≤ c / ε := by
 --   have hf : { i : ι | ε ≤ a i }.Finite :=

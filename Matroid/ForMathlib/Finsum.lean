@@ -3,7 +3,7 @@ import Mathlib.Data.Set.Card
 
 open Set Function 
 
-variable {ι N : Type _} {f g : ι → N} {s : Set ι}
+variable {ι N : Type*} {f g : ι → N} {s : Set ι}
 
 @[to_additive]
 theorem finprod_mem_le_finprod_mem [OrderedCommMonoid N] (hs : s.Finite) (h : ∀ i ∈ s, f i ≤ g i) : 
@@ -86,7 +86,7 @@ theorem finprod_mem_const_eq [CommMonoid N] (s : Set α) (c : N) :
   rwa [mulSupport_const hc, inter_univ]
 
 @[to_additive, simp] 
-theorem finprod_const_eq [CommMonoid N] (ι : Type _) (c : N) :
+theorem finprod_const_eq [CommMonoid N] (ι : Type*) (c : N) :
     ∏ᶠ (_ : ι), c = c ^ (Nat.card ι) := by 
   rw [←finprod_mem_univ, finprod_mem_const_eq, ncard_univ]
 
@@ -157,7 +157,7 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 
 
 
--- theorem finsum_comm  [AddCommMonoid N] {α β : Type _} {f : α → β → N}: 
+-- theorem finsum_comm  [AddCommMonoid N] {α β : Type*} {f : α → β → N}: 
 --     ∑ᶠ (a : α) (b : β), f a b = ∑ᶠ (b : β) (a : α), f a b := by
   
 
