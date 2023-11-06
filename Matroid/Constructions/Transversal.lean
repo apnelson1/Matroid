@@ -413,7 +413,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
 -/
 
 theorem transversal_of_unif [DecidableEq α] (E : Finset α) (k : ℕ) :
-    unif_on E k = (matroid_of_transversals_finite (fun (i : Fin k) ↦ E) E) := by
+    unif_on E k = (matroid_of_transversals_finite (fun (_ : Fin k) ↦ E) E) := by
   rw [eq_iff_indep_iff_indep_forall, transversal_ground_eq, unif_on_ground_eq]
   refine' ⟨by rfl, fun I hIE ↦ _⟩
   obtain ⟨I', hI'⟩ := Set.Finite.exists_finset_coe (Set.Finite.subset (Finset.finite_toSet E) hIE)
