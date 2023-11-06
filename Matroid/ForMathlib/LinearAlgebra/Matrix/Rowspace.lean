@@ -98,6 +98,9 @@ theorem restrict_eq_submatrix (A : Matrix m n α) (s : Set m) :
 theorem transpose_restrict_eq_submatrix (A : Matrix m n R) (t : Set m) :
   (t.restrict A)ᵀ = Aᵀ.colSubmatrix t := rfl
 
+theorem submatrix_eq_restrict (A : Matrix m n R) (s : Set m) (t : Set n) :
+  A.submatrix s.incl t.incl = s.restrict (A.colSubmatrix t) := rfl
+
 theorem image_eq_range_submatrix (A : Matrix m n α) (s : Set m) :
     A '' s = range (A.rowSubmatrix s).rowFun := by
   aesop
@@ -180,6 +183,47 @@ theorem cols_linearIndependent_iff {R : Type*} [CommRing R] {A : Matrix m n R} [
     LinearIndependent R A.colFun ↔ LinearMap.ker A.mulVecLin = ⊥ := by
   rw [←rowFun_transpose, rows_linearIndependent_iff]
   convert Iff.rfl; ext; simp [← mulVec_transpose]
+
+/-- If some column-submatrix of `A` has linearly independent rows, then so does `A`. -/
+theorem rows_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ ≃ m) (f : n₀ → n)
+    (h : LinearIndependent R (A.submatrix e f).rowFun) : LinearIndependent R A.rowFun := by
+  classical
+  rw [linearIndependent_iff'] at h ⊢
+  intro s c hc i his
+  rw [←h (s.image e.symm) (c ∘ e) _ (e.symm i) (by simpa)]
+  · simp
+  ext j
+  convert congr_fun hc (f j)
+  simp
+
+theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m) (f : n₀ ≃ n)
+    (h : LinearIndependent R (A.submatrix e f).colFun) : LinearIndependent R A.colFun :=
+  rows_linearIndependent_of_submatrix f e h
+
+theorem rows_linearIndependent_skew_union {R : Type*} [Field R] {s s' : Set m} {t t' : Set n}
+    {A : Matrix m n R} (hss' : Disjoint s s')
+    (htt' : Disjoint t t') (h : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
+    (h' : LinearIndependent R (A.submatrix (incl s') (incl t')).rowFun)
+    (h0 : A.submatrix (incl s) (incl t') = 0) :
+    LinearIndependent R (A.submatrix (incl (s ∪ s')) (incl (t ∪ t'))).rowFun := by
+  classical
+
+
+  rw [submatrix_eq_restrict, rowFun, subtype_linearIndependent_iff] at *
+  intro c hc hss
+
+  specialize h' (c.filter (· ∈ s')) ?_
+  · simp
+
+
+
+  -- have := (Finsupp.embDomain (Embedding.refl _) c).sub
+  -- have h1 : ∀ i (hi : i ∈ s'), c (Or.inr hi) = 0
+
+  -- have h1 : ∀ i ∈ s₀, i.1 ∈ s' → c i = 0
+  -- · intro i hi his'
+
+
 
 end Ring
 
