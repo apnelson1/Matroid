@@ -1,6 +1,8 @@
 import Mathlib.Logic.Equiv.LocalEquiv
 import Mathlib.Data.Set.Card
 import Mathlib.Data.Matrix.Basic
+import Mathlib.Data.Matrix.RowCol
+
 
 open Set Function
 
