@@ -26,6 +26,28 @@ theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
+theorem subtype_linearIndependent_iff [CommSemiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
+    {v : ι → M} : LinearIndependent R (s.restrict v) ↔
+      ∀ l : ι →₀ R, Finsupp.total ι M R v l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
+  rw [linearIndependent_iff]
+  refine ⟨fun h l hl hsupp ↦ ?_, fun h ↦ ?_⟩
+  · specialize h (Finsupp.subtypeDomain (· ∈ s ) l) _
+    · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ (Subset.rfl)] at hl ⊢
+      · sorry
+      · sorry
+      sorry
+      -- simp only [Finsupp.subtypeDomain_apply, restrict_apply]
+      -- convert hl
+      -- have := @Finset.sum_subtype (s := l.support) (p := fun (i : ι) ↦ i ∈ l.support)
+      -- sorry
+      -- -- have' := @Finset.sum_subtype (s := l.support) (f := fun x ↦ l x • v x)
+
+    ext i
+    obtain (hi | hi) := em (i ∈ s)
+    · exact FunLike.congr_fun h ⟨i,hi⟩
+    simpa using not_mem_subset hsupp  hi
+  sorry
+
 theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
     LinearIndependent R f := by
