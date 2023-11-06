@@ -8,8 +8,6 @@ import Mathlib.SetTheory.Ordinal.Basic
 namespace Matroid
 open Finset
 
-
-
 def Transverses' (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
   ∃ (m : α → ι), Set.InjOn m T.toSet ∧ (∀ a, a ∈ T → a ∈ fam (m a))
 
@@ -240,17 +238,19 @@ decreasing_by  --not well done, is extra hypothesis in lemma for this reason
 
 
 def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι]
-    (f : ι → Finset α) (E : Finset α) : Matroid α :=
+    (f : ι → Finset α) (E : Set α) : Matroid α :=
   matroid_of_indep_finset E
-  (fun S ↦ S ⊆ E ∧ Transverses S f)
+  (fun S ↦ S.toSet ⊆ E ∧ Transverses S f)
   (by
-    refine' ⟨empty_subset _, ⟨fun a ↦ absurd a.2 (not_mem_empty a.1), fun a ↦ absurd a.2 (not_mem_empty a.1),
+    refine' ⟨_, ⟨fun a ↦ absurd a.2 (not_mem_empty a.1), fun a ↦ absurd a.2 (not_mem_empty a.1),
     fun a ↦ absurd a.2 (not_mem_empty a.1)⟩⟩
+    rw [coe_empty]
+    exact Set.empty_subset _
     )
   (fun I J J_trans I_sub ↦ ⟨subset_trans I_sub J_trans.1, transverses_mono I_sub J_trans.2⟩)
   (by
     obtain (empty | nonempty) := isEmpty_or_nonempty ι
-    · rintro I J _ ⟨J_sub, ⟨J_map, _⟩⟩ I_lt_J
+    · rintro I J _ ⟨_, ⟨J_map, _⟩⟩ I_lt_J
       have J_empty : J = ∅
       · have:= J_map.isEmpty
         rw [eq_empty_iff_forall_not_mem]
@@ -277,8 +277,10 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
          e_mem_diff).2
         rw [transversal_exists_iff (insert e I) f] at no_trans
         push_neg at no_trans
-        obtain ⟨S, S_sub, h_S⟩ := no_trans (insert_subset (J_trans.1
-         (Finset.mem_sdiff.1 e_mem_diff).1) I_trans.1)
+        have insert_sub: (insert e I).toSet ⊆ E
+        · rw [coe_insert]
+          apply Set.insert_subset (J_trans.1 (Finset.mem_sdiff.1 e_mem_diff).1) I_trans.1
+        obtain ⟨S, S_sub, h_S⟩ := no_trans insert_sub
         refine' ⟨S, S_sub, h_S, _⟩
         have e_in_S : e ∈ S
         · by_contra e_nS
@@ -392,34 +394,34 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
   (
     by
     rintro I ⟨I_sub, _, _, _⟩ i i_mem_I
-    exact mem_coe.1 (I_sub (mem_coe.1 i_mem_I))
+    exact (I_sub (mem_coe.1 i_mem_I))
   )
 
 @[simp] theorem transversal_indep_iff [DecidableEq α] [DecidableEq ι] [Fintype ι]
-    {f : ι → Finset α} {E : Finset α} {I : Finset α} :
-    (matroid_of_transversals_finite f E).Indep I ↔ I ⊆ E ∧ Transverses I f := by
+    {f : ι → Finset α} {E : Set α} {I : Finset α} :
+    (matroid_of_transversals_finite f E).Indep I ↔ I.toSet ⊆ E ∧ Transverses I f := by
   simp only [matroid_of_transversals_finite, coe_biUnion, coe_univ, Set.mem_univ, Set.iUnion_true,
     matroid_of_indep_finset_apply', coe_subset]
   exact ⟨fun s_trans ↦ s_trans I subset_rfl, fun I_trans J J_sub ↦
    ⟨subset_trans J_sub I_trans.1, transverses_mono J_sub I_trans.2⟩⟩
 
 @[simp] theorem transversal_ground_eq [DecidableEq α] [DecidableEq ι] [Fintype ι]
-    (f : ι → Finset α) (E : Finset α) : (matroid_of_transversals_finite f E).E = E := by rfl
+    (f : ι → Finset α) (E : Set α) : (matroid_of_transversals_finite f E).E = E := by rfl
 
---causes some error to do with existence statement for type
-/-def Matroid.is_Transversal [DecidableEq α] (M : Matroid α) : Prop :=
-    ∃ (ι : Type _) (hd : DecidableEq ι) (hf : Fintype ι) (f : ι → Finset α),
-    M = matroid_of_transversals_finite f
--/
 
-theorem transversal_of_unif [DecidableEq α] (E : Finset α) (k : ℕ) :
-    unif_on E k = (matroid_of_transversals_finite (fun (_ : Fin k) ↦ E) E) := by
+def Matroid.is_Transversal [DecidableEq α] (M : Matroid α) : Prop :=
+    ∃ (k : ℕ) (f : (Fin k) → Finset α),
+    M = matroid_of_transversals_finite f M.E
+
+theorem unif_is_transversal [DecidableEq α] (E : Finset α) (k : ℕ) :
+    Matroid.is_Transversal (unif_on E.toSet k) := by
+  refine' ⟨k, (fun (_ : Fin k) ↦ E), _⟩
   rw [eq_iff_indep_iff_indep_forall, transversal_ground_eq, unif_on_ground_eq]
   refine' ⟨by rfl, fun I hIE ↦ _⟩
   obtain ⟨I', hI'⟩ := Set.Finite.exists_finset_coe (Set.Finite.subset (Finset.finite_toSet E) hIE)
   refine' ⟨fun hU ↦ _, fun hT ↦ _⟩
   · rw [unif_on_indep_iff, Set.encard_le_coe_iff_finite_ncard_le, ←hI', Set.ncard_coe_Finset] at hU
-    rw [←hI', transversal_indep_iff, ←coe_subset]
+    rw [←hI', transversal_indep_iff, coe_subset]
     refine' ⟨hU.2, _⟩
     haveI linOrder: LinearOrder α:= IsWellOrder.linearOrder (WellOrderingRel)
     set map := (I'.orderIsoOfFin (rfl)).symm.toOrderEmbedding
@@ -430,15 +432,9 @@ theorem transversal_of_unif [DecidableEq α] (E : Finset α) (k : ℕ) :
     exact coe_subset.1 hU.2 a.2
   · rw [unif_on_indep_iff, ←hI', Set.encard_le_coe_iff_finite_ncard_le, Set.ncard_coe_Finset]
     nth_rw 2 [hI']
-    refine' ⟨⟨Finset.finite_toSet _, _⟩, hIE⟩
+    refine' ⟨⟨Finset.finite_toSet I', _⟩, hIE⟩
     rw [←hI', transversal_indep_iff] at hT
     obtain ⟨_, ⟨I'_map, I'_map_inj, _⟩⟩ := hT
-    have:= Finite.card_le_of_injective I'_map I'_map_inj
-    simp only [Nat.card_eq_fintype_card, Fintype.card_coe, Fintype.card_fin] at this
-    exact this
-
-
-
-
-  #check Fin.castLEEmb
-  #check RelEmbedding.trans
+    have card_le:= Finite.card_le_of_injective I'_map I'_map_inj
+    simp only [Nat.card_eq_fintype_card, Fintype.card_coe, Fintype.card_fin] at card_le
+    exact card_le
