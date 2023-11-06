@@ -5,8 +5,30 @@ open Finset
 
 
 
-def transverses (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
+def Transverses (T : Finset α) {ι : Type _} (fam : ι → Finset α): Prop :=
   ∃ (m : α → ι), Set.InjOn m T.toSet ∧ (∀ a, a ∈ T → a ∈ fam (m a))
+
+def Transverses_subtype (T : Finset α) {ι : Type _} (fam : ι → Finset α) : Prop :=
+  ∃ (m : T → ι), m.Injective ∧ (∀ a, a.1 ∈ fam (m a))
+
+theorem transverses_subtype_iff_transverses_of_inhabited [DecidableEq α] [Inhabited ι] {T : Finset α}
+    {fam : ι → Finset α} : Transverses_subtype T fam ↔ Transverses T fam := by
+  refine' ⟨_, _⟩
+  · rintro ⟨m, m_inj, h_m⟩
+    set m' : α → ι := fun a ↦ if h : (a ∈ T) then (m ⟨a, h⟩) else default
+    refine' ⟨m', fun a a_mem b b_mem abeq ↦ _, fun a a_mem ↦ _⟩
+    · dsimp at abeq
+      simp only [mem_coe.1 b_mem, mem_coe.1 a_mem, dite_true] at abeq
+      apply Subtype.mk_eq_mk.1 (m_inj abeq)
+    · nth_rw 1 [←(@Subtype.coe_mk _ (fun a ↦ a ∈ T) a a_mem)]
+      simp only [mem_coe.1 a_mem, dite_true]
+      exact h_m ⟨a, a_mem⟩
+  · rintro ⟨m, m_inj, h_m⟩
+    set m' : T → ι := fun a ↦ m a.val
+    refine' ⟨m', fun a b abeq ↦ _, fun a ↦ _⟩
+    · rw [Subtype.mk_eq_mk]
+      exact m_inj a.2 b.2 abeq
+    · exact h_m a a.2
 
 
 
@@ -77,7 +99,7 @@ Finset.card s ≤ Finset.card (Finset.biUnion s fam)) ↔
 
 lemma transversal_exists_iff {ι : Type u}  {α : Type v}
 [DecidableEq α] [Inhabited ι] [DecidableEq ι] [Fintype ι] (T : Finset α) (fam : ι → Finset α):
-transverses T fam ↔ ∀ S, S ⊆ T → S.card ≤ (S.biUnion (neighbors fam)).card := by
+Transverses T fam ↔ ∀ S, S ⊆ T → S.card ≤ (S.biUnion (neighbors fam)).card := by
   constructor
   · rintro ⟨T_map, T_map_inj, h_T_map⟩
     apply (hall_subset T (neighbors fam)).2 ⟨T_map, T_map_inj, _⟩
@@ -93,20 +115,6 @@ transverses T fam ↔ ∀ S, S ⊆ T → S.card ≤ (S.biUnion (neighbors fam)).
     unfold neighbors at mem
     rw [Set.mem_toFinset] at mem
     exact mem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 lemma eq_union_inter_diff [DecidableEq α] (S T : Finset α): S = (S \ T) ∪ (S ∩ T):= by
   refine' (ext (fun a ↦ _)).symm
@@ -164,66 +172,59 @@ lemma card_lt_of_diff_subset_lt [DecidableEq γ] {A B C : Finset γ} (B_sub : B 
   apply lt_of_lt_of_le _ (le_card_sdiff _ _)
   refine (tsub_lt_tsub_iff_left_of_le (card_le_of_subset B_sub)).mpr card_lt
 
+
 lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Fintype ι]
-    {f : ι → Finset α} {I : Finset α} (trans : transverses I f) (witness_set : Finset α)
-    (witness : α → Finset α)
+    {f : ι → Finset α} {I : Finset α} (trans : Transverses I f) (witness_set : Finset α)
+    (witness_set_card : witness_set.card = n) (witness : α → Finset α)
     (h_witness : ∀ a, a ∈ witness_set → ((((witness a) \ {a}).biUnion (neighbors f)).card =
     ((witness a) \ {a}).card ∧ witness a \ {a} ⊆ I)) :
     ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
     (witness_set.biUnion (fun a ↦ witness a \ {a})).card := by
-  revert witness
-  suffices (∀ i (witness_set : Finset α)
-    (witness : α → Finset α)
-    (_ : ∀ a, a ∈ witness_set → ((((witness a) \ {a}).biUnion (neighbors f)).card =
-    ((witness a) \ {a}).card ∧ witness a \ {a} ⊆ I)), witness_set.card = i →  ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
-    (witness_set.biUnion (fun a ↦ witness a \ {a})).card) by
-    · intro witness h_witness
-      exact this witness_set.card witness_set witness h_witness rfl
-  intro i
-
-  induction i with
-  | zero => intro w_set witness _ w_set_card_eq
-            rw [card_eq_zero] at w_set_card_eq
-            rw [w_set_card_eq]
-            rfl
-  | succ n ih => intro w_set witness h_witness card_eq
-                 obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
-                 apply le_antisymm
-                 · rw [←w_eq, biUnion_insert]
-                   have card_le : card (Finset.biUnion (witness a \ {a} ∪ T.biUnion
-                    fun a ↦ witness a \ {a}) (neighbors f)) + ((T.biUnion (fun a ↦ witness a \ {a})
-                     ∩ (witness a \ {a})).biUnion
-                    (neighbors f)).card ≤ (T.biUnion (fun a ↦ witness a \ {a})).card +
-                     (witness a \ {a}).card
-                   rw [biUnion_union_eq]
-                   apply le_trans
-                   · apply add_le_add_left (Finset.card_le_of_subset biUnion_inter_sub)
-                   · rw [Finset.union_comm, Finset.card_union_add_card_inter _ _]
-                     have h_T : card (Finset.biUnion (Finset.biUnion T fun a ↦ witness a \ {a})
-                     (neighbors f)) = (T.biUnion (fun a ↦ witness a \ {a})).card
-                     · apply ih T witness _ T_card
-                       intro a a_T
-                       apply h_witness a _
-                       rw [←w_eq]
-                       exact mem_insert_of_mem a_T
-                     rw [h_T, Nat.add_le_add_iff_left]
-                     apply le_of_eq (h_witness a _).1
-                     rw [←w_eq]
-                     exact Finset.mem_insert_self _ _
-                   nth_rw 2 [union_comm]
-                   apply card_le_union_of_card_add_inter_le_add card_le _
-                   apply (transversal_exists_iff _ _).1 trans
-                   intro x x_mem
-                   obtain ⟨_, x_a⟩ := Finset.mem_inter.1 x_mem
-                   apply (h_witness a _).2 x_a
-                   rw [←w_eq]
-                   exact Finset.mem_insert_self _ _
-                 apply (transversal_exists_iff _ _).1 trans
-                 rw [←w_eq, biUnion_subset]
-                 intro x x_mem
-                 apply (h_witness x _).2
-                 rw [←w_eq]
-                 exact x_mem
+  obtain (card_eq | card_eq) := Nat.eq_zero_or_eq_succ_pred (witness_set.card)
+  ·   rw [card_eq_zero] at card_eq
+      rw [card_eq]
+      rfl
+  · obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
+    apply le_antisymm
+    · rw [←w_eq, biUnion_insert]
+      have card_le : card (Finset.biUnion (witness a \ {a} ∪ T.biUnion
+      fun a ↦ witness a \ {a}) (neighbors f)) + ((T.biUnion (fun a ↦ witness a \ {a})
+      ∩ (witness a \ {a})).biUnion
+      (neighbors f)).card ≤ (T.biUnion (fun a ↦ witness a \ {a})).card +
+      (witness a \ {a}).card
+      rw [biUnion_union_eq]
+      apply le_trans
+      · apply add_le_add_left (Finset.card_le_of_subset biUnion_inter_sub)
+      · rw [Finset.union_comm, Finset.card_union_add_card_inter _ _]
+        have h_T : card (Finset.biUnion (Finset.biUnion T fun a ↦ witness a \ {a})
+        (neighbors f)) = (T.biUnion (fun a ↦ witness a \ {a})).card
+        · apply hall_union_card_eq trans T T_card witness _
+          intro a a_T
+          apply h_witness a _
+          rw [←w_eq]
+          exact mem_insert_of_mem a_T
+        rw [h_T, Nat.add_le_add_iff_left]
+        apply le_of_eq (h_witness a _).1
+        rw [←w_eq]
+        exact Finset.mem_insert_self _ _
+      nth_rw 2 [union_comm]
+      apply card_le_union_of_card_add_inter_le_add card_le _
+      apply (transversal_exists_iff _ _).1 trans
+      intro x x_mem
+      obtain ⟨_, x_a⟩ := Finset.mem_inter.1 x_mem
+      apply (h_witness a _).2 x_a
+      rw [←w_eq]
+      exact Finset.mem_insert_self _ _
+    apply (transversal_exists_iff _ _).1 trans
+    rw [←w_eq, biUnion_subset]
+    intro x x_mem
+    apply (h_witness x _).2
+    rw [←w_eq]
+    exact x_mem
+decreasing_by
+  simp_wf
+  rw [←witness_set_card, card_eq]
+  simp
 
 
 
@@ -240,141 +241,155 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
 
 
 
-
-
-
-def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Fintype ι]
+def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq ι] [Fintype ι]
     (f : ι → Finset α) : Matroid α :=
   matroid_of_indep_finset (Finset.univ.biUnion f)
-  (fun S ↦ transverses S f)
-  (⟨(fun _ ↦ default), ⟨fun a a_mem ↦ absurd a_mem (not_mem_empty a),
-    fun a a_mem ↦ absurd a_mem (not_mem_empty a)⟩⟩)
+  (fun S ↦ Transverses_subtype S f)
+  (by
+    refine' ⟨fun a ↦ absurd a.2 (not_mem_empty a.1), fun a ↦ absurd a.2 (not_mem_empty a.1),
+    fun a ↦ absurd a.2 (not_mem_empty a.1)⟩
+    )
   (by
     rintro I J ⟨J_map, J_map_inj, h_J_map⟩ I_sub
-    refine' ⟨J_map, J_map_inj.mono I_sub, fun a a_T ↦ h_J_map a (I_sub a_T)⟩
+    set I_map : I → ι := fun i ↦ J_map ⟨i, I_sub i.2⟩
+    refine' ⟨I_map, fun a b abeq ↦ Subtype.ext_val (Subtype.mk_eq_mk.1 (J_map_inj abeq)), fun
+    a ↦ h_J_map ⟨a, I_sub a.2⟩⟩
   )
   (by
-    rintro I J I_trans J_trans I_lt_J
-    by_contra h_false
-    push_neg at h_false
-    have diff_card_lt : (I \ J).card < (J \ I).card
-    · rw [eq_union_inter_diff I J] at I_lt_J
-      nth_rw 3 [eq_union_inter_diff J I] at I_lt_J
-      rw [Finset.card_disjoint_union (Finset.disjoint_sdiff_inter _ _), Finset.card_disjoint_union
-      (Finset.disjoint_sdiff_inter _ _), Finset.inter_comm] at I_lt_J
-      exact lt_of_add_lt_add_right I_lt_J
-    have h_hall : ∀ e ∈ J \ I, ∃ I_e, I_e ⊆ insert e I ∧
-    (I_e.biUnion (neighbors f)).card < I_e.card ∧ e ∈ I_e ∧
-    (I_e \ {e}).card = ((I_e).biUnion (neighbors f)).card
-    · intro e e_mem_diff
-      have no_trans := h_false e (Finset.mem_sdiff.1 e_mem_diff).1 (Finset.mem_sdiff.1 e_mem_diff).2
-      rw [transversal_exists_iff (insert e I) f] at no_trans
-      push_neg at no_trans
-      obtain ⟨S, S_sub, h_S⟩ := no_trans
-      refine' ⟨S, S_sub, h_S, _⟩
-      have e_in_S : e ∈ S
-      · by_contra e_nS
-        rw [Finset.subset_insert_iff_of_not_mem e_nS] at S_sub
-        --w [transversal_exists_iff _ _] at I_trans
-        apply (not_le_of_lt h_S) (((transversal_exists_iff _ _).1 I_trans) S S_sub)
-      have card_eq_plus_one : card S = card (S \ {e}) + 1
-      · rw [Finset.card_sdiff, card_singleton, Nat.sub_add_cancel _]
-        apply le_trans _ (Finset.card_le_of_subset (Finset.singleton_subset_iff.2 e_in_S))
-        rw [card_singleton]
-        rwa [singleton_subset_iff]
-      rw [card_eq_plus_one, Nat.lt_add_one_iff] at h_S
-      have card_eq' : (S \ {e}).card = ((S \ {e}).biUnion (neighbors f)).card
-      · have card_le : card (S \ {e}) ≤ card (Finset.biUnion (S \ {e}) (neighbors f)) :=
-        ((transversal_exists_iff _ _).1 I_trans) (S \ {e}) (fun s s_mem ↦ mem_of_mem_insert_of_ne
-        (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.not_mem_singleton.1
-        (Finset.mem_sdiff.1 s_mem).2))
-        apply le_antisymm card_le _
-        apply le_trans (Finset.card_le_of_subset (Finset.biUnion_subset_biUnion_of_subset_left
-        (neighbors f) (Finset.sdiff_subset S {e})))
+    obtain (empty | nonempty) := isEmpty_or_nonempty ι
+    · rintro I J _ ⟨J_map, _⟩ I_lt_J
+      have J_empty : J = ∅
+      · have:= J_map.isEmpty
+        rw [eq_empty_iff_forall_not_mem]
+        intro x x_J
+        apply this.elim' ⟨x, x_J⟩
+      rw [J_empty, card_empty] at I_lt_J
+      exact absurd I_lt_J (Nat.not_lt_zero _)
+    · inhabit ι
+      simp_rw [transverses_subtype_iff_transverses_of_inhabited]
+      rintro I J I_trans J_trans I_lt_J
+      by_contra h_false
+      push_neg at h_false
+      have diff_card_lt : (I \ J).card < (J \ I).card
+      · rw [eq_union_inter_diff I J] at I_lt_J
+        nth_rw 3 [eq_union_inter_diff J I] at I_lt_J
+        rw [Finset.card_disjoint_union (Finset.disjoint_sdiff_inter _ _), Finset.card_disjoint_union
+        (Finset.disjoint_sdiff_inter _ _), Finset.inter_comm] at I_lt_J
+        exact lt_of_add_lt_add_right I_lt_J
+      have h_hall : ∀ e ∈ J \ I, ∃ I_e, I_e ⊆ insert e I ∧
+      (I_e.biUnion (neighbors f)).card < I_e.card ∧ e ∈ I_e ∧
+      (I_e \ {e}).card = ((I_e).biUnion (neighbors f)).card
+      · intro e e_mem_diff
+        have no_trans := h_false e (Finset.mem_sdiff.1 e_mem_diff).1 (Finset.mem_sdiff.1 e_mem_diff).2
+        rw [transversal_exists_iff (insert e I) f] at no_trans
+        push_neg at no_trans
+        obtain ⟨S, S_sub, h_S⟩ := no_trans
+        refine' ⟨S, S_sub, h_S, _⟩
+        have e_in_S : e ∈ S
+        · by_contra e_nS
+          rw [Finset.subset_insert_iff_of_not_mem e_nS] at S_sub
+          --w [transversal_exists_iff _ _] at I_trans
+          apply (not_le_of_lt h_S) (((transversal_exists_iff _ _).1 I_trans) S S_sub)
+        have card_eq_plus_one : card S = card (S \ {e}) + 1
+        · rw [Finset.card_sdiff, card_singleton, Nat.sub_add_cancel _]
+          apply le_trans _ (Finset.card_le_of_subset (Finset.singleton_subset_iff.2 e_in_S))
+          rw [card_singleton]
+          rwa [singleton_subset_iff]
+        rw [card_eq_plus_one, Nat.lt_add_one_iff] at h_S
+        have card_eq' : (S \ {e}).card = ((S \ {e}).biUnion (neighbors f)).card
+        · have card_le : card (S \ {e}) ≤ card (Finset.biUnion (S \ {e}) (neighbors f)) :=
+          ((transversal_exists_iff _ _).1 I_trans) (S \ {e}) (fun s s_mem ↦ mem_of_mem_insert_of_ne
+          (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.not_mem_singleton.1
+          (Finset.mem_sdiff.1 s_mem).2))
+          apply le_antisymm card_le _
+          apply le_trans (Finset.card_le_of_subset (Finset.biUnion_subset_biUnion_of_subset_left
+          (neighbors f) (Finset.sdiff_subset S {e})))
+          assumption
+        refine' ⟨e_in_S, _⟩
+        apply le_antisymm _ h_S
+        rw [card_eq']
+        apply card_le_of_subset (biUnion_subset_biUnion_of_subset_left (neighbors f)
+        (sdiff_subset _ _))
+      choose! witness h_witness using h_hall
+      set W := (J \ I).biUnion witness with W_def
+      have JI_sub_W : (J \ I) ⊆ W
+      · intro j j_sub_J
+        rw [W_def, mem_biUnion]
+        refine' ⟨j, j_sub_J, _⟩
+        exact (h_witness j j_sub_J).2.2.1
+      have W_diff_sub_I : W \ (J \ I) ⊆ I
+      · intro w w_sub_W
+        rw [mem_sdiff, W_def, mem_biUnion] at w_sub_W
+        obtain ⟨⟨a, a_JI, h_a⟩, w_mem⟩ := w_sub_W
+        obtain (w_eq_a | w_mem_I) := Finset.mem_insert.1 ((h_witness a a_JI).1 h_a)
+        rw [w_eq_a] at w_mem
+        exact absurd a_JI w_mem
         assumption
-      refine' ⟨e_in_S, _⟩
-      apply le_antisymm _ h_S
-      rw [card_eq']
-      apply card_le_of_subset (biUnion_subset_biUnion_of_subset_left (neighbors f)
-      (sdiff_subset _ _))
-    choose! witness h_witness using h_hall
-    set W := (J \ I).biUnion witness with W_def
-    have JI_sub_W : (J \ I) ⊆ W
-    · intro j j_sub_J
-      rw [W_def, mem_biUnion]
-      refine' ⟨j, j_sub_J, _⟩
-      exact (h_witness j j_sub_J).2.2.1
-    have W_diff_sub_I : W \ (J \ I) ⊆ I
-    · intro w w_sub_W
-      rw [mem_sdiff, W_def, mem_biUnion] at w_sub_W
-      obtain ⟨⟨a, a_JI, h_a⟩, w_mem⟩ := w_sub_W
-      obtain (w_eq_a | w_mem_I) := Finset.mem_insert.1 ((h_witness a a_JI).1 h_a)
-      rw [w_eq_a] at w_mem
-      exact absurd a_JI w_mem
-      assumption
-    have W_eq : W \ (J \ I) = (J \ I).biUnion (fun j ↦ (witness j) \ {j})
-    · apply subset_antisymm
+      have W_eq : W \ (J \ I) = (J \ I).biUnion (fun j ↦ (witness j) \ {j})
+      · apply subset_antisymm
+        · intro w w_mem
+          rw [mem_biUnion]
+          rw [W_def, mem_sdiff, mem_biUnion] at w_mem
+          obtain ⟨⟨a, a_JI, h_a⟩, w_mem⟩ := w_mem
+          refine' ⟨a, a_JI, _⟩
+          rw [mem_sdiff, mem_singleton]
+          exact ⟨h_a, (ne_of_mem_of_not_mem a_JI w_mem).symm⟩
+        · intro w w_mem
+          rw [mem_biUnion] at w_mem
+          rw [mem_sdiff, W_def, mem_biUnion]
+          obtain ⟨a, a_JI, h_a⟩ := w_mem
+          refine' ⟨⟨a, a_JI, (mem_sdiff.1 h_a).1⟩, _⟩
+          intro w_JI
+          apply (mem_sdiff.1 w_JI).2
+          exact mem_of_mem_insert_of_ne ((h_witness a a_JI).1 (mem_sdiff.1 h_a).1) (
+            not_mem_singleton.1 (mem_sdiff.1 h_a).2)
+      have W_diff_card : (W \ (J \ I)).card = ((W \ (J \ I)).biUnion (neighbors f)).card
+      · rw [W_eq]
+        symm
+        apply hall_union_card_eq I_trans (J \ I) _
+        intro a a_sub
+        constructor
+        · symm
+          have card_eq:= (h_witness a a_sub).2.2.2
+          apply le_antisymm
+          · apply (transversal_exists_iff _ _).1 I_trans
+            rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+            exact (h_witness a a_sub).1
+          · apply le_trans (card_le_of_subset (biUnion_subset_biUnion_of_subset_left _
+            (sdiff_subset (witness a) {a}))) (le_of_eq card_eq.symm)
+        rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+        exact (h_witness a a_sub).1
+        exact card (J \ I)
+        rfl
+      apply not_lt_of_le (((transversal_exists_iff J _).1 J_trans) (W \ (I \ J)) _)
+      · apply lt_of_le_of_lt _ (card_lt_of_diff_subset_lt JI_sub_W diff_card_lt)
+        rw [W_diff_card]
+        have W_sdiff_neighbors_eq : (W \ (J \ I)).biUnion (neighbors f) = W.biUnion (neighbors f)
+        · apply subset_antisymm (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _)) _
+          rw [W_eq, W_def]
+          intro n n_mem
+          rw [biUnion_biUnion, mem_biUnion] at n_mem ⊢
+          obtain ⟨j, j_mem, h_j⟩ := n_mem
+          refine' ⟨j, j_mem, _⟩
+          have neighbor_eq : (witness j \ {j}).biUnion (neighbors f) = (witness j).biUnion (neighbors f)
+          · apply eq_of_subset_of_card_le (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _))
+            rw [←(h_witness j j_mem).2.2.2]
+            apply (transversal_exists_iff _ _).1 I_trans
+            rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+            exact (h_witness j j_mem).1
+          rwa [neighbor_eq]
+        rw [W_sdiff_neighbors_eq]
+        exact card_le_of_subset (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _))
       · intro w w_mem
-        rw [mem_biUnion]
-        rw [W_def, mem_sdiff, mem_biUnion] at w_mem
-        obtain ⟨⟨a, a_JI, h_a⟩, w_mem⟩ := w_mem
-        refine' ⟨a, a_JI, _⟩
-        rw [mem_sdiff, mem_singleton]
-        exact ⟨h_a, (ne_of_mem_of_not_mem a_JI w_mem).symm⟩
-      · intro w w_mem
-        rw [mem_biUnion] at w_mem
-        rw [mem_sdiff, W_def, mem_biUnion]
-        obtain ⟨a, a_JI, h_a⟩ := w_mem
-        refine' ⟨⟨a, a_JI, (mem_sdiff.1 h_a).1⟩, _⟩
-        intro w_JI
-        apply (mem_sdiff.1 w_JI).2
-        exact mem_of_mem_insert_of_ne ((h_witness a a_JI).1 (mem_sdiff.1 h_a).1) (
-          not_mem_singleton.1 (mem_sdiff.1 h_a).2)
-    have W_diff_card : (W \ (J \ I)).card = ((W \ (J \ I)).biUnion (neighbors f)).card
-    · rw [W_eq]
-      symm
-      apply hall_union_card_eq I_trans (J \ I)
-      intro a a_sub
-      constructor
-      · symm
-        have card_eq:= (h_witness a a_sub).2.2.2
-        apply le_antisymm
-        · apply (transversal_exists_iff _ _).1 I_trans
-          rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
-          exact (h_witness a a_sub).1
-        · apply le_trans (card_le_of_subset (biUnion_subset_biUnion_of_subset_left _
-          (sdiff_subset (witness a) {a}))) (le_of_eq card_eq.symm)
-      rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
-      exact (h_witness a a_sub).1
-    apply not_lt_of_le (((transversal_exists_iff J _).1 J_trans) (W \ (I \ J)) _)
-    · apply lt_of_le_of_lt _ (card_lt_of_diff_subset_lt JI_sub_W diff_card_lt)
-      rw [W_diff_card]
-      have W_sdiff_neighbors_eq : (W \ (J \ I)).biUnion (neighbors f) = W.biUnion (neighbors f)
-      · apply subset_antisymm (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _)) _
-        rw [W_eq, W_def]
-        intro n n_mem
-        rw [biUnion_biUnion, mem_biUnion] at n_mem ⊢
-        obtain ⟨j, j_mem, h_j⟩ := n_mem
-        refine' ⟨j, j_mem, _⟩
-        have neighbor_eq : (witness j \ {j}).biUnion (neighbors f) = (witness j).biUnion (neighbors f)
-        · apply eq_of_subset_of_card_le (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _))
-          rw [←(h_witness j j_mem).2.2.2]
-          apply (transversal_exists_iff _ _).1 I_trans
-          rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
-          exact (h_witness j j_mem).1
-        rwa [neighbor_eq]
-      rw [W_sdiff_neighbors_eq]
-      exact card_le_of_subset (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _))
-    · intro w w_mem
-      by_cases w_in_J : w ∈ J
-      · assumption
-      · obtain ⟨w_W, w_IJ⟩ := mem_sdiff.1 w_mem
-        exfalso
-        apply w_IJ
-        rw [mem_sdiff]
-        refine' ⟨W_diff_sub_I _, w_in_J⟩
-        rw [mem_sdiff]
-        exact ⟨w_W, not_mem_sdiff_of_not_mem_left w_in_J⟩
+        by_cases w_in_J : w ∈ J
+        · assumption
+        · obtain ⟨w_W, w_IJ⟩ := mem_sdiff.1 w_mem
+          exfalso
+          apply w_IJ
+          rw [mem_sdiff]
+          refine' ⟨W_diff_sub_I _, w_in_J⟩
+          rw [mem_sdiff]
+          exact ⟨w_W, not_mem_sdiff_of_not_mem_left w_in_J⟩
   )
 
   (
@@ -382,5 +397,5 @@ def matroid_of_transversals_finite {ι a : Type _} [DecidableEq α] [DecidableEq
     rintro I ⟨I_map, _, map_mem⟩ i i_mem_I
     rw [mem_coe] at i_mem_I ⊢
     rw [mem_biUnion]
-    refine' ⟨I_map i, mem_univ _, map_mem i i_mem_I⟩
+    refine' ⟨I_map ⟨i, i_mem_I⟩, mem_univ _, map_mem ⟨i, i_mem_I⟩⟩
   )
