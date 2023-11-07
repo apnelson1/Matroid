@@ -1,4 +1,5 @@
 import Mathlib.Data.Matrix.Rank
+import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.Representation
@@ -196,11 +197,72 @@ theorem rows_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ ≃ m)
   convert congr_fun hc (f j)
   simp
 
-
-
 theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m) (f : n₀ ≃ n)
     (h : LinearIndependent R (A.submatrix e f).colFun) : LinearIndependent R A.colFun :=
   rows_linearIndependent_of_submatrix f e h
+
+theorem rows_linearIndependent_of_reindex (em : m' ≃ m) (en : n' ≃ n)
+    (h : LinearIndependent R (A.submatrix em en).rowFun) : LinearIndependent R A.rowFun :=
+  rows_linearIndependent_of_submatrix em en h
+
+theorem cols_linearIndependent_of_reindex (em : m' ≃ m) (en : n' ≃ n)
+    (h : LinearIndependent R (A.submatrix em en).colFun) : LinearIndependent R A.colFun :=
+  cols_linearIndependent_of_submatrix em en h
+
+theorem rows_linearIndependent_reindex (em : m' ≃ m) (en : n' ≃ n)
+    (h : LinearIndependent R A.rowFun) : LinearIndependent R (A.submatrix em en).rowFun := by
+  rw [show A = (A.submatrix em en).submatrix em.symm en.symm from by simp]  at h
+  exact rows_linearIndependent_of_submatrix _ _ h
+
+theorem cols_linearIndependent_reindex (em : m' ≃ m) (en : n' ≃ n)
+    (h : LinearIndependent R A.colFun) : LinearIndependent R (A.submatrix em en).colFun := by
+  convert rows_linearIndependent_reindex en em h
+
+/-
+    n0 n1
+m0  A  B
+m1  O  C
+-/
+
+
+theorem linearIndependent_rows_of_upper_tri {m₀ m₁ n₀ n₁ : Type*} (A : Matrix m₀ n₀ R)
+    (B : Matrix m₀ n₁ R) (C : Matrix m₁ n₁ R) (hA : LinearIndependent R A.rowFun)
+    (hC : LinearIndependent R C.rowFun) :
+    LinearIndependent R (Matrix.fromBlocks A B 0 C).rowFun := by
+  simp_rw [linearIndependent_iff, Finsupp.total_apply] at *
+  intro l hl
+  specialize hA (l.comapDomain Sum.inl (Sum.inl_injective.injOn _))
+  specialize hC (l.comapDomain Sum.inr (Sum.inr_injective.injOn _))
+  simp only [Finsupp.sum, Finsupp.comapDomain_support, Finsupp.comapDomain_apply] at hA hC hl
+  specialize hA ?_
+  · ext j
+    convert congr_fun hl (Sum.inl j)
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
+    convert Finset.sum_preimage Sum.inl l.support (Sum.inl_injective.injOn _)
+      (fun (i : m₀ ⊕ m₁) ↦ l i * ((Matrix.fromBlocks A B 0 C) i (Sum.inl j)))
+    simp
+  ext (i | i)
+  · exact FunLike.congr_fun hA i
+  refine FunLike.congr_fun (hC ?_) i
+  ext j
+  convert congr_fun hl (Sum.inr j)
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
+
+  convert Finset.sum_preimage Sum.inr l.support (Sum.inr_injective.injOn _)
+    (fun (i : m₀ ⊕ m₁) ↦ l i * ((Matrix.fromBlocks A B 0 C) i (Sum.inr j))) ?_
+  simp only [Finsupp.mem_support_iff, ne_eq, mem_range, not_exists, Sum.forall, not_false_eq_true,
+    implies_true, fromBlocks_apply₁₂, forall_true_left, Sum.inr.injEq, forall_eq,
+    fromBlocks_apply₂₂, IsEmpty.forall_iff, and_true]
+  exact fun i₀ hi₀ ↦ (hi₀ (FunLike.congr_fun hA i₀)).elim
+
+theorem linearIndependent_rows_of_lower_tri {m₀ m₁ n₀ n₁ : Type*} (A : Matrix m₀ n₀ R)
+    (B : Matrix m₁ n₀ R) (C : Matrix m₁ n₁ R) (hA : LinearIndependent R A.rowFun)
+    (hC : LinearIndependent R C.rowFun) :
+    LinearIndependent R (Matrix.fromBlocks A 0 B C).rowFun := by
+  refine rows_linearIndependent_of_reindex (Equiv.sumComm _ _) (Equiv.sumComm _ _) ?_
+  convert linearIndependent_rows_of_upper_tri C B A hC hA
+  simp only [Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_right,
+    fromBlocks_submatrix_sum_swap_left, submatrix_id_id]
 
 theorem rows_linearIndependent_union_of_zero_block
     (hst : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
@@ -208,33 +270,9 @@ theorem rows_linearIndependent_union_of_zero_block
     (h0 : A.submatrix (incl s) (incl tᶜ) = 0) :
     LinearIndependent R A.rowFun := by
   classical
-  rw [submatrix_eq_restrict, linearIndependent_restrict_iff] at hst hstc
-  rw [linearIndependent_iff]
-  simp_rw [Finsupp.total_apply] at *
-  intro l hl
-
-  specialize hstc (l.filter (· ∈ sᶜ)) ?_ (fun x ↦ by simp)
-  · ext j
-    simp only [mem_compl_iff, Finsupp.sum_filter_index, Finsupp.support_filter,
-      Finsupp.mem_support_iff, ne_eq, not_not, Finset.sum_apply, Pi.smul_apply,
-      colSubmatrix_apply, smul_eq_mul, Pi.zero_apply]
-    simp_rw [Finsupp.sum] at hl
-    convert congr_fun hl j.1
-    simp only [Finsupp.mem_support_iff, ne_eq, not_not, Finset.sum_apply, Pi.smul_apply,
-      smul_eq_mul]
-    refine Finset.sum_subset (by aesop) (fun i _ hi' ↦ ?_)
-    simp only [Finsupp.mem_support_iff, ne_eq, not_not, Finset.mem_filter, not_and] at hi'
-    refine (eq_or_ne (l i) 0).elim (fun h0 ↦ by rw [h0, zero_mul]) (fun hn0 ↦ ?_)
-    rw [show A i j = 0 from congr_fun (congr_fun h0 ⟨i,hi' hn0⟩) j, mul_zero]
-
-  refine hst l ?_ ?_
-  · ext j; convert congr_fun hl j; simp [Finsupp.sum]
-
-  refine fun i hi ↦ by_contra <| fun his ↦ ?_
-  replace hstc := FunLike.congr_fun hstc i
-  rw [Finsupp.filter_apply_pos (· ∈ sᶜ) _ his, Finsupp.zero_apply] at hstc
-  simp only [Finset.mem_coe, Finsupp.mem_support_iff, ne_eq] at hi
-  exact hi hstc
+  apply rows_linearIndependent_of_reindex (Equiv.sumCompl (· ∈ s)) (Equiv.sumCompl (· ∈ t))
+  convert linearIndependent_rows_of_lower_tri _ (A.submatrix (incl sᶜ) (incl t)) _ hst hstc
+  ext (i | i) (j | j); rfl; exact congr_fun (congr_fun h0 i) j; rfl; rfl
 
 /-- If a matrix `A` has a 2x2 decomposition into blocks where the top right one is zero,
   and both blocks on the diagonal have linearly independent rows,      [S 0]
