@@ -637,7 +637,7 @@ theorem Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
   · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, (one_smul _ _).symm⟩
 
   rw [he.parallel_iff_dep hf hef, ←not_indep_iff, v.indep_iff, not_iff_comm,
-    linearIndependent_index_pair_iff _ hef (v.ne_zero_of_nonloop he)]
+    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
   simp only [ne_eq, not_exists, not_and]
   refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
     h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel hc, one_smul])⟩

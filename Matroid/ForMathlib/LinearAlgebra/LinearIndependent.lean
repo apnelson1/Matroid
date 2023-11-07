@@ -2,11 +2,11 @@ import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Other
 
-variable {α ι W W' R : Type*} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
+variable {α ι W W' R : Type*} [AddCommGroup W] [AddCommGroup W']
 
 open Set Submodule BigOperators
 
-theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
+theorem Fintype.linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
   [AddCommMonoid M] [Module R M] {s : Set ι} {v : ι → M} :
     ¬ LinearIndependent R (s.restrict v) ↔ ∃ c : ι → R, ∑ i, c i • v i = 0 ∧ (∃ i ∈ s, c i ≠ 0)
       ∧ ∀ i, i ∉ s → c i = 0 := by
@@ -26,27 +26,30 @@ theorem Fintype.subtype_notLinearIndependent_iff [Fintype ι] [CommSemiring R]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
-theorem subtype_linearIndependent_iff [CommSemiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
+theorem linearIndependent_restrict_iff [CommSemiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
     {v : ι → M} : LinearIndependent R (s.restrict v) ↔
       ∀ l : ι →₀ R, Finsupp.total ι M R v l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
+  set incl : s ↪ ι := Function.Embedding.subtype (· ∈ s)
   rw [linearIndependent_iff]
-  refine ⟨fun h l hl hsupp ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun h l hl hsupp ↦ ?_, fun h l hl ↦ ?_⟩
   · specialize h (Finsupp.subtypeDomain (· ∈ s ) l) _
     · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ (Subset.rfl)] at hl ⊢
-      · sorry
-      · sorry
-      sorry
-      -- simp only [Finsupp.subtypeDomain_apply, restrict_apply]
-      -- convert hl
-      -- have := @Finset.sum_subtype (s := l.support) (p := fun (i : ι) ↦ i ∈ l.support)
-      -- sorry
-      -- -- have' := @Finset.sum_subtype (s := l.support) (f := fun x ↦ l x • v x)
-
+      · simp only [Finsupp.subtypeDomain_apply, restrict_apply]
+        convert (Finset.sum_map _ incl (fun x ↦ l x • v x)).symm
+        convert hl.symm
+        ext i
+        aesop
+      · aesop
+      aesop
     ext i
     obtain (hi | hi) := em (i ∈ s)
     · exact FunLike.congr_fun h ⟨i,hi⟩
     simpa using not_mem_subset hsupp  hi
-  sorry
+  specialize h <| Finsupp.embDomain incl l
+  simp only [Finsupp.total_embDomain, Function.Embedding.coe_subtype, Finsupp.support_embDomain,
+    Finset.coe_map, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
+    Finsupp.embDomain_eq_zero, forall_true_left] at h
+  exact h hl
 
 theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
@@ -151,7 +154,7 @@ theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.
     (hst : s ⊆ t) : LinearIndependent K ((h.extend' hst).restrict f) :=
   (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.2.2
 
-theorem linearIndependent_index_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
+theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
   [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
     LinearIndependent K (({i,j} : Set ι).restrict f) ↔ ∀ (c : K), c • f i ≠ f j := by
   convert linearIndependent_insert' (s := {j}) (a := i) (by simpa using hij) using 2

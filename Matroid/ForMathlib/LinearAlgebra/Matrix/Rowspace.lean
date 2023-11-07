@@ -14,9 +14,9 @@ variable {l m n o α : Type*} {A B : Matrix m n R} {s : Set m} {t : Set n}
 
 section spaces
 
-@[pp_dot] abbrev rowFun (A : Matrix m n R) : m → (n → R) := A
+abbrev rowFun (A : Matrix m n R) : m → (n → R) := A
 
-@[pp_dot] abbrev colFun (A : Matrix m n R) : n → (m → R) := Aᵀ
+abbrev colFun (A : Matrix m n R) : n → (m → R) := Aᵀ
 
 @[simp] theorem rowFun_transpose (A : Matrix m n R) : Aᵀ.rowFun = A.colFun := rfl
 
@@ -200,29 +200,96 @@ theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m)
     (h : LinearIndependent R (A.submatrix e f).colFun) : LinearIndependent R A.colFun :=
   rows_linearIndependent_of_submatrix f e h
 
-theorem rows_linearIndependent_skew_union {R : Type*} [Field R] {s s' : Set m} {t t' : Set n}
-    {A : Matrix m n R} (hss' : Disjoint s s')
-    (htt' : Disjoint t t') (h : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
+theorem foo
+    (hst : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
+    (hstc : LinearIndependent R (A.submatrix (incl sᶜ) (incl tᶜ)).rowFun)
+    (h0 : A.submatrix (incl s) (incl tᶜ) = 0) :
+    LinearIndependent R A.rowFun := by
+  classical
+  have hli := LinearIndependent.sum_type (R := R) (v := s.restrict A) (v' := sᶜ.restrict A) ?_ ?_ ?_
+  · set e : s ⊕ ↑sᶜ ≃ m := Equiv.sumCompl (fun (x : m) ↦ x ∈ s)
+    refine (linearIndependent_equiv' e ?_).1 hli
+    ext (j | j) i <;> rfl
+  · exact rows_linearIndependent_of_submatrix (Equiv.refl _) (t.incl) hst
+  · exact rows_linearIndependent_of_submatrix (Equiv.refl _) (tᶜ.incl) hstc
+  rw [Submodule.disjoint_def]
+  rintro x hxs hxsc
+  have htc : tᶜ.restrict x = 0
+  · ext i
+    have h0 : (LinearMap.proj (R := R) i.1) '' (A '' s) ⊆ {0}
+    · rintro _ ⟨_,⟨j,hj,rfl⟩, rfl⟩
+      simp only [LinearMap.coe_proj, eval, mem_singleton_iff]
+      exact congr_fun (congr_fun h0 ⟨j,hj⟩) i
+
+    replace hxs := Submodule.apply_mem_span_image_of_mem_span (LinearMap.proj i.1) hxs
+    simp only [eval, range_restrict] at hxs
+    replace hxs := span_mono h0 hxs
+    rw [Submodule.span_singleton_eq_bot.2 rfl] at hxs
+    simpa using hxs
+  have := mem_span.1 hxsc
+  rw [linearIndependent_iff] at hstc
+
+
+
+
+
+--   have := LinearMap.funLeft R R t.incl
+--   have := Submodule.apply_mem_span_image_of_mem_span (LinearMap.funLeft R R t.incl) hxs
+--   simp at this
+--   -- rw [mem_span_set] at hxs hxsc
+--   -- obtain ⟨ns, fs, gs, rfl⟩ := mem_span_set'.1 hxs
+--   -- obtain ⟨nsc, fsc, gsc, h⟩ := mem_span_set'.1 hxsc
+
+
+
+
+
+
+/-- If a matrix `A` has a 2x2 decomposition into blocks where the top right one is zero,
+  and both blocks on the diagonal have linearly independent rows,      [S 0]
+  then `A` has linearly independent rows.                              [T R] -/
+theorem rows_linearIndependent_skew_union {R : Type*} [CommSemiring R] {s s' : Set m} {t t' : Set n}
+    {A : Matrix m n R} (h : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
     (h' : LinearIndependent R (A.submatrix (incl s') (incl t')).rowFun)
     (h0 : A.submatrix (incl s) (incl t') = 0) :
     LinearIndependent R (A.submatrix (incl (s ∪ s')) (incl (t ∪ t'))).rowFun := by
   classical
 
+  rw [submatrix_eq_restrict, linearIndependent_restrict_iff] at *
+  intro c (hc : _ = (0 : ↑(t ∪ t') → R)) hss
+  simp only [Finsupp.total_apply] at hc h h'
 
-  rw [submatrix_eq_restrict, rowFun, subtype_linearIndependent_iff] at *
-  intro c hc hss
-
-  specialize h' (c.filter (· ∈ s')) ?_
-  · simp
-
-
-
-  -- have := (Finsupp.embDomain (Embedding.refl _) c).sub
-  -- have h1 : ∀ i (hi : i ∈ s'), c (Or.inr hi) = 0
-
-  -- have h1 : ∀ i ∈ s₀, i.1 ∈ s' → c i = 0
-  -- · intro i hi his'
-
+  specialize h' (c.filter (· ∈ s')) ?_ ?_
+  · ext ⟨j,hj⟩
+    convert congr_fun hc ⟨j,Or.inr hj⟩
+    rw [←Finsupp.sum_filter_add_sum_filter_not (p := (· ∈ s')) c, eq_comm]
+    simp only [Pi.add_apply, Finsupp.sum_filter_index]
+    convert add_zero _
+    · simp only [Finset.sum_apply, Finsupp.support_filter,
+        Finsupp.mem_support_iff, ne_eq, not_not, Pi.smul_apply, colSubmatrix_apply, smul_eq_mul]
+      rw [Finset.sum_eq_zero]
+      simp only [Finsupp.mem_support_iff, ne_eq, not_not, Finset.mem_filter, and_imp]
+      refine fun i hi0 his' ↦ ?_
+      have his : i ∈ s := Or.elim (hss (show i ∈ c.support from by simpa)) id his'.elim
+      convert mul_zero _
+      exact congr_fun (congr_fun h0 ⟨i, his⟩) ⟨j, hj⟩
+    simp
+  · rintro x hx
+    simp only [Finsupp.support_filter, Finsupp.mem_support_iff, ne_eq, Finset.coe_filter,
+      mem_setOf_eq] at hx
+    exact hx.2
+  refine h c ?_ ?_
+  · ext ⟨j,hj⟩
+    simp only [Finsupp.total_apply, Pi.zero_apply] at hc ⊢
+    replace hc := congr_fun hc ⟨j, Or.inl hj⟩
+    convert hc
+    simp [colSubmatrix, Finsupp.sum]
+  rintro i hi
+  refine (hss hi).elim id <| fun his' ↦ False.elim ?_
+  rw [Finset.mem_coe, Finsupp.mem_support_iff] at hi
+  replace h' := FunLike.congr_fun h' i
+  rw [Finsupp.filter_apply_pos (· ∈ s') _ his'] at h'
+  exact hi h'
 
 
 end Ring
@@ -296,7 +363,7 @@ variable [Field R]
 theorem subset_rows_notLinearIndependent_iff [Fintype m] [Field R] :
     ¬ LinearIndependent R (A.rowSubmatrix s).rowFun ↔
       ∃ c, A.vecMul c = 0 ∧ c ≠ 0 ∧ support c ⊆ s := by
-  simp only [rowFun_rowSubmatrix_eq, Fintype.subtype_notLinearIndependent_iff, ne_eq,
+  simp only [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff, ne_eq,
     vecMul, dotProduct, support_subset_iff, not_imp_comm]
   refine ⟨fun ⟨c,h,⟨i, _, hci⟩,h'⟩ ↦
     ⟨c, by convert h; simp, by rintro rfl; exact hci rfl, h'⟩,
@@ -469,7 +536,7 @@ theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearInde
     (h₂ : LinearIndependent R A₂.rowFun) (ht : A₁.ColBasis t) :  A₂.ColBasis tᶜ := by
   classical
   refine ⟨by_contra fun hld ↦?_ , ?_⟩
-  · rw [rowFun_rowSubmatrix_eq, Fintype.subtype_notLinearIndependent_iff] at hld
+  · rw [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff] at hld
     obtain ⟨c, hc0, hcex, hct⟩ := hld
     have hnull : c ∈ A₂.nullSpace
     · rw [mem_nullSpace_iff]
