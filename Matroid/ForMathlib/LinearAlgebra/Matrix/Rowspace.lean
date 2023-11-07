@@ -196,54 +196,45 @@ theorem rows_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ ≃ m)
   convert congr_fun hc (f j)
   simp
 
+
+
 theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m) (f : n₀ ≃ n)
     (h : LinearIndependent R (A.submatrix e f).colFun) : LinearIndependent R A.colFun :=
   rows_linearIndependent_of_submatrix f e h
 
-theorem foo
+theorem rows_linearIndependent_union_of_zero_block
     (hst : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
     (hstc : LinearIndependent R (A.submatrix (incl sᶜ) (incl tᶜ)).rowFun)
     (h0 : A.submatrix (incl s) (incl tᶜ) = 0) :
     LinearIndependent R A.rowFun := by
   classical
-  have hli := LinearIndependent.sum_type (R := R) (v := s.restrict A) (v' := sᶜ.restrict A) ?_ ?_ ?_
-  · set e : s ⊕ ↑sᶜ ≃ m := Equiv.sumCompl (fun (x : m) ↦ x ∈ s)
-    refine (linearIndependent_equiv' e ?_).1 hli
-    ext (j | j) i <;> rfl
-  · exact rows_linearIndependent_of_submatrix (Equiv.refl _) (t.incl) hst
-  · exact rows_linearIndependent_of_submatrix (Equiv.refl _) (tᶜ.incl) hstc
-  rw [Submodule.disjoint_def]
-  rintro x hxs hxsc
-  have htc : tᶜ.restrict x = 0
-  · ext i
-    have h0 : (LinearMap.proj (R := R) i.1) '' (A '' s) ⊆ {0}
-    · rintro _ ⟨_,⟨j,hj,rfl⟩, rfl⟩
-      simp only [LinearMap.coe_proj, eval, mem_singleton_iff]
-      exact congr_fun (congr_fun h0 ⟨j,hj⟩) i
+  rw [submatrix_eq_restrict, linearIndependent_restrict_iff] at hst hstc
+  rw [linearIndependent_iff]
+  simp_rw [Finsupp.total_apply] at *
+  intro l hl
 
-    replace hxs := Submodule.apply_mem_span_image_of_mem_span (LinearMap.proj i.1) hxs
-    simp only [eval, range_restrict] at hxs
-    replace hxs := span_mono h0 hxs
-    rw [Submodule.span_singleton_eq_bot.2 rfl] at hxs
-    simpa using hxs
-  have := mem_span.1 hxsc
-  rw [linearIndependent_iff] at hstc
+  specialize hstc (l.filter (· ∈ sᶜ)) ?_ (fun x ↦ by simp)
+  · ext j
+    simp only [mem_compl_iff, Finsupp.sum_filter_index, Finsupp.support_filter,
+      Finsupp.mem_support_iff, ne_eq, not_not, Finset.sum_apply, Pi.smul_apply,
+      colSubmatrix_apply, smul_eq_mul, Pi.zero_apply]
+    simp_rw [Finsupp.sum] at hl
+    convert congr_fun hl j.1
+    simp only [Finsupp.mem_support_iff, ne_eq, not_not, Finset.sum_apply, Pi.smul_apply,
+      smul_eq_mul]
+    refine Finset.sum_subset (by aesop) (fun i _ hi' ↦ ?_)
+    simp only [Finsupp.mem_support_iff, ne_eq, not_not, Finset.mem_filter, not_and] at hi'
+    refine (eq_or_ne (l i) 0).elim (fun h0 ↦ by rw [h0, zero_mul]) (fun hn0 ↦ ?_)
+    rw [show A i j = 0 from congr_fun (congr_fun h0 ⟨i,hi' hn0⟩) j, mul_zero]
 
+  refine hst l ?_ ?_
+  · ext j; convert congr_fun hl j; simp [Finsupp.sum]
 
-
-
-
---   have := LinearMap.funLeft R R t.incl
---   have := Submodule.apply_mem_span_image_of_mem_span (LinearMap.funLeft R R t.incl) hxs
---   simp at this
---   -- rw [mem_span_set] at hxs hxsc
---   -- obtain ⟨ns, fs, gs, rfl⟩ := mem_span_set'.1 hxs
---   -- obtain ⟨nsc, fsc, gsc, h⟩ := mem_span_set'.1 hxsc
-
-
-
-
-
+  refine fun i hi ↦ by_contra <| fun his ↦ ?_
+  replace hstc := FunLike.congr_fun hstc i
+  rw [Finsupp.filter_apply_pos (· ∈ sᶜ) _ his, Finsupp.zero_apply] at hstc
+  simp only [Finset.mem_coe, Finsupp.mem_support_iff, ne_eq] at hi
+  exact hi hstc
 
 /-- If a matrix `A` has a 2x2 decomposition into blocks where the top right one is zero,
   and both blocks on the diagonal have linearly independent rows,      [S 0]

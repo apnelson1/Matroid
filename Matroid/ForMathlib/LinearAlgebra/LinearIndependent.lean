@@ -26,7 +26,7 @@ theorem Fintype.linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
-theorem linearIndependent_restrict_iff [CommSemiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
+theorem linearIndependent_restrict_iff [Semiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
     {v : ι → M} : LinearIndependent R (s.restrict v) ↔
       ∀ l : ι →₀ R, Finsupp.total ι M R v l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
   set incl : s ↪ ι := Function.Embedding.subtype (· ∈ s)
@@ -50,6 +50,14 @@ theorem linearIndependent_restrict_iff [CommSemiring R] [AddCommMonoid M] [Modul
     Finset.coe_map, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
     Finsupp.embDomain_eq_zero, forall_true_left] at h
   exact h hl
+
+theorem linearIndependent_subsingleton_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
+    [Module R M] [Subsingleton ι] {f : ι → M} : LinearIndependent R f ↔ ∀ i, f i ≠ 0 := by
+  obtain (he | he) := isEmpty_or_nonempty ι
+  · simp [linearIndependent_empty_type]
+  obtain ⟨_⟩ := (unique_iff_subsingleton_and_nonempty (α := ι)).2 ⟨by assumption, he⟩
+  rw [linearIndependent_unique_iff]
+  exact ⟨fun h i ↦ by rwa [Unique.eq_default i], fun h ↦ h _⟩
 
 theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :

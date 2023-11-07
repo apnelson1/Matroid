@@ -72,41 +72,17 @@ theorem rectProjVandermonde_linearIndependent_rows [Fintype α] {v : α → Opti
   · have : IsEmpty α
     · rwa [Nat.le_zero, Fintype.card_eq_zero_iff] at hn
     apply linearIndependent_empty_type
-  have := rows_linearIndependent_skew_union (A := rectProjVandermonde v (n+1))
-    (s := {a | v a ≠ none}) (s' := {a | v a = none})
-    (t := {x | x < Fin.last n}) (t' := {Fin.last n})
+  apply rows_linearIndependent_union_of_zero_block (s := {a | v a = none}) (t := {Fin.last n})
+  · have _ : Subsingleton {a | v a = none} := sorry
+    rw [linearIndependent_subsingleton_index]
+    rintro ⟨a,(ha : v a = none)⟩ h0
+    replace h0 := congr_fun h0 ⟨Fin.last n, rfl⟩
+    simp only [coe_setOf, mem_setOf_eq, submatrix_apply, Pi.zero_apply] at h0
+    rw [rectProjVandermonde_apply_none_one _ _ ha] at h0
+    · exact one_ne_zero h0
+    simp [Fin.last]
 
-  -- set V0 : Matrix {a // v a ≠ none} (Fin (n+1)) K :=
-  --   Matrix.of fun a (i : Fin (n+1)) ↦ ((v a.1).get sorry)^(i : ℕ)
-  -- have hV0 : LinearIndependent K V0.rowFun
-  -- · sorry
-  -- obtain (hs | hn) := em' (none ∈ range v)
-  -- · set eα : {a // v a ≠ none} ≃ α :=
-  --     Equiv.subtypeUnivEquiv <| fun x hx ↦ hs (hx ▸ mem_range_self x)
-  --   apply rows_linearIndependent_of_submatrix eα id
-  --   convert hV0
-  --   ext m ⟨a,ha⟩
-  --   simp_rw [ne_eq, submatrix_apply, id_eq, of_apply]
-  --   rw [rectProjVandermonde_apply_some]
-  --   simp
-  -- obtain ⟨a0, ha0⟩ := hn
-  -- have _ : Fintype { a // v a ≠ none } := Fintype.ofFinite _
-  -- rw [Fintype.linearIndependent_iff] at hV0 ⊢
-  -- intro c hc
-  -- specialize hV0 (Set.restrict _ c) ?_
-  -- · ext j
-  --   convert congr_fun hc j
-  --   simp
-  -- simp only [ne_eq, restrict_apply, Subtype.forall] at hV0
-  -- refine fun i ↦ (eq_or_ne i a0).elim ?_ ?_
-  -- · rintro rfl
-  --   replace hc := congr_fun hc ⊤
-  --   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at hc
-  --   rwa [Fintype.sum_eq_single i, Matrix.rowFun, rectProjVandermonde_apply_none_one v (n.succ) ha0 ⊤
-  --     (by simp [Fin.top_eq_last]), mul_one] at hc
-  --   rintro b hbi
-  --   rw [hV0, zero_mul]
-  --   exact (Injective.ne_iff' hv ha0).mpr hbi
-  -- rintro hne
-  -- rw [hV0]
-  -- exact (Injective.ne_iff' hv ha0).mpr hne
+
+
+
+    -- rw [rectProjVandermonde_apply_none_one]
