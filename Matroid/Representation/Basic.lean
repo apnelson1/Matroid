@@ -1,7 +1,11 @@
 import Matroid.Simple
 import Matroid.ForMathlib.Representation
+import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+import Matroid.ForMathlib.LinearAlgebra.Vandermonde
 import Matroid.Constructions.ImagePreimage
+import Matroid.Constructions.Uniform
+
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
@@ -477,6 +481,9 @@ theorem Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
   convert congr_fun hx i
   rw [Subtype.val_injective.extend_apply]
 
+theorem IsRep.representable {v : α → W} (h : M.IsRep 𝔽 v) : M.Representable 𝔽 :=
+  Rep.representable ⟨v, h⟩
+
 theorem matroidOfFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroidOfFun 𝔽 f E).Representable 𝔽 :=
   (repOfFun' 𝔽 f E).representable
@@ -667,9 +674,76 @@ end Simple
 
 section Uniform
 
-
+/-- A uniform matroid on at most `|𝔽|+1` elements is `𝔽`-representable -/
+theorem uniform_rep {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (univ : Set 𝔽) + 1) :
+    Representable (unif a b) 𝔽 := by
+  have hinj : Nonempty (Fin b ↪ (Option 𝔽))
+  · refine ⟨Embedding.trans (Nonempty.some ?_) (Equiv.Set.univ (Option 𝔽)).toEmbedding⟩
+    rw [Fin.nonempty_embedding_iff_le_encard]
+    convert hb
+    rw [encard_univ, PartENat.card_option, encard_univ]
+    convert PartENat.withTopAddEquiv.map_add (PartENat.card 𝔽) 1
+    exact (PartENat.withTopEquiv_natCast 1).symm
+  obtain ⟨i,hi⟩ := hinj
+  set A := Matrix.rectProjVandermonde i a
+  exact IsRep.representable (v := A.rowFun)
+    (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
 
 end Uniform
+
+section Contract
+
+def Rep.contract_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) :
+    (M ⟋ I).Rep 𝔽 (W ⧸ (span 𝔽 (v '' I))) where
+      to_fun := Submodule.Quotient.mk ∘ v
+      valid' :=
+    ( by
+      intro J
+      rw [hI.contract_indep_iff, v.indep_iff]
+      refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+      · rw [restrict_eq, comp.assoc, (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; simp)]
+        refine (h'.2.mono_index _ (subset_union_left _ _)).map ?_
+        simp only [range_restrict, ker_mkQ]
+        convert h'.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) (h'.1.preimage _)
+        · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, inter_comm,
+            union_inter_cancel_left]
+        rw [restrict_eq, image_comp, Subtype.image_preimage_coe, inter_comm,
+          union_inter_cancel_right]
+      have hdj : Disjoint (v '' I) (v '' J)
+      · rw [Set.disjoint_iff_forall_ne]
+        rintro _ heI _ ⟨e,heJ,rfl⟩ rfl
+        apply h'.ne_zero ⟨e,heJ⟩
+        simp only [Set.restrict_apply, comp_apply, Quotient.mk_eq_zero]
+        exact Submodule.subset_span heI
+
+      refine ⟨hdj.symm.of_image, ?_⟩
+      rw [v.indep_iff] at hI
+      refine (linearIndependent_image ?_).2 ?_
+      · rw [injOn_union]
+        refine ⟨fun i hi j hj hij ↦ ?_, injOn_iff_injective.2 hI.injective, fun j hj i hj heq ↦ ?_⟩
+        · rw [← (injOn_iff_injective.2 h'.injective).eq_iff hi hj]
+          simp [hij]
+
+        -- have := hdj.ne_of_mem ⟨v i, mem_image_of_mem _ hi, rfl⟩
+
+
+
+
+
+
+
+
+    )
+
+
+  --   ((M ⟋ I).IsRep 𝔽 ((Submodule.Quotient.mk (p := span 𝔽 (v '' I))) ∘ v) ) := by
+  -- simp [IsRep]
+  -- intro J
+  -- simp only [hI.contract_indep_iff]
+  -- refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+  -- · rw [h.]
+
+
 
 
 

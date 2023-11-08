@@ -264,7 +264,7 @@ theorem linearIndependent_rows_of_lower_tri {m₀ m₁ n₀ n₁ : Type*} (A : M
   simp only [Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_right,
     fromBlocks_submatrix_sum_swap_left, submatrix_id_id]
 
-theorem rows_linearIndependent_union_of_zero_block
+theorem rows_linearIndependent_union_of_upper_zero_block
     (hst : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
     (hstc : LinearIndependent R (A.submatrix (incl sᶜ) (incl tᶜ)).rowFun)
     (h0 : A.submatrix (incl s) (incl tᶜ) = 0) :
@@ -273,6 +273,16 @@ theorem rows_linearIndependent_union_of_zero_block
   apply rows_linearIndependent_of_reindex (Equiv.sumCompl (· ∈ s)) (Equiv.sumCompl (· ∈ t))
   convert linearIndependent_rows_of_lower_tri _ (A.submatrix (incl sᶜ) (incl t)) _ hst hstc
   ext (i | i) (j | j); rfl; exact congr_fun (congr_fun h0 i) j; rfl; rfl
+
+theorem rows_linearIndependent_union_of_lower_zero_block
+    (hst : LinearIndependent R (A.submatrix (incl s) (incl t)).rowFun)
+    (hstc : LinearIndependent R (A.submatrix (incl sᶜ) (incl tᶜ)).rowFun)
+    (h0 : A.submatrix (incl sᶜ) (incl t) = 0) :
+    LinearIndependent R A.rowFun := by
+  rw [←compl_compl s, ←compl_compl t] at hst
+  apply rows_linearIndependent_union_of_upper_zero_block hstc hst
+  rw [compl_compl]
+  exact h0
 
 /-- If a matrix `A` has a 2x2 decomposition into blocks where the top right one is zero,
   and both blocks on the diagonal have linearly independent rows,      [S 0]

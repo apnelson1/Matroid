@@ -74,6 +74,12 @@ theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [Add
   exact (linearIndependent_image (injOn_of_injective hinj t)).1 <|
     h t (htfin.of_finite_image (injOn_of_injective hinj t))
 
+theorem LinearIndependent.mono_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
+    [Module R M] (f : ι → M) {s t : Set ι} (h : LinearIndependent R (t.restrict f)) (hst : s ⊆ t) :
+    LinearIndependent R (s.restrict f) :=
+  (linearIndependent_image ((injOn_iff_injective.2 h.injective).mono hst )).2 <|
+    h.image.mono (image_subset _ hst)
+
 theorem linearIndependent_iUnion_of_directed' {R M ι η : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : η → Set ι) (hs : Directed (· ⊆ ·) s)
     (h : ∀ j, LinearIndependent R ((s j).restrict f)) :
