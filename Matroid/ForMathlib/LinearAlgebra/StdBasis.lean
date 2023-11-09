@@ -3,6 +3,7 @@ import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.Dual
+import Mathlib.LinearAlgebra.BilinearForm
 
 open Set BigOperators Submodule Function
 
@@ -24,58 +25,118 @@ open Set BigOperators Submodule Function
 @[simp] theorem Module.Dual.sum_pi_single [Field R] [Fintype α] [DecidableEq α]
   (y : Module.Dual R (α → R)) (x : α → R) : ∑ i, y (Pi.single i 1) * x i = y x :=
   Module.Dual.sum_update y x
-
-
-
 section orthSpace
 
-variable [Fintype ι] [Field R]{x : ι → R} {U V : Submodule R (ι → R)}
+variable {η : Type*} [CommRing R] {x : η → R} {U V : Submodule R (η → R)}
+
+/-- `(l : η →₀ R)` gives rise canonically to a functional on `η → R` via `Finsupp.total`. -/
+noncomputable def Finsupp.toDual (l : η →₀ R) : Module.Dual R (η → R) where
+  toFun := fun x ↦ Finsupp.total _ _ _ x l
+  map_add' := fun _ _ ↦ by simp [Finsupp.total, Finsupp.sum, mul_add, Finset.sum_add_distrib]
+  map_smul' := fun c x ↦ by
+    simp [Finsupp.total, Finsupp.sum, Finset.mul_sum, ← mul_assoc, mul_comm _ c]
+
+@[simp] theorem Finsupp.toDual_apply (l : η →₀ R) (x : η → R) :
+    l.toDual x = Finsupp.total _ _ _ x l := rfl
+
+noncomputable def Finsupp.toDualLin (η R : Type*) [CommRing R] :
+    (η →₀ R) →ₗ[R] Module.Dual R (η → R) where
+  toFun := Finsupp.toDual
+  map_add' := fun _ _ ↦ by ext; simp
+  map_smul' := fun _ _ ↦ by ext; simp
+
+@[simp] theorem Finsupp.toDualLin_coe (η R : Type*) [CommRing R] (l : η →₀ R) :
+    toDualLin η R l = Finsupp.toDual l := rfl
+
+-- noncomputable def Finsupp.biLin (η R : Type*) [CommRing R] : BilinForm R (η →₀ R) where
+--   bilin := fun x y ↦ Finsupp.total _ _ _ x y
+--   bilin_add_left := fun _ _ _ ↦ by simp [Finsupp.total_apply, Finsupp.sum, mul_add,
+--     Finset.sum_add_distrib]
+--   bilin_smul_left := fun c y z ↦ by
+--     simp_rw [coe_smul, total_apply, Finsupp.sum, Finset.mul_sum]
+--     refine Finset.sum_congr rfl fun x _ ↦ ?_
+--     rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, mul_comm c, mul_assoc]
+--     rfl
+--   bilin_add_right := by simp
+--   bilin_smul_right := by simp
+
+noncomputable def Submodule.orthSpace' (U : Submodule R (η → R)) : Submodule R (η →₀ R) :=
+  (Submodule.dualAnnihilator U).comap (Finsupp.toDualLin η R)
 
 /-- The space of vectors 'orthogonal' to all vectors in `U`, in the sense of having a
-  dot product of zero. -/
-@[pp_dot] noncomputable def Submodule.orthSpace {R : Type*} [CommSemiring R]
-    (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
-  U.dualAnnihilator.map (Module.piEquiv ι R R).symm
+  dot product of zero. This doesn't require `Fintype η`;
+  its members are always finitely supported. -/
+noncomputable def Submodule.orthSpace (U : Submodule R (η → R)) := U.orthSpace'.map Finsupp.lcoeFun
 
-@[simp] theorem mem_orthSpace_iff': x ∈ U.orthSpace ↔ ∀ y ∈ U, ∑ i, x i * y i = 0 := by
+@[simp] theorem mem_orthSpace_iff' [Fintype η] : x ∈ U.orthSpace ↔ ∀ y ∈ U, ∑ i, x i * y i = 0 := by
   classical
-  simp only [orthSpace, mem_map, mem_dualAnnihilator]
-  refine ⟨?_, fun h ↦ ⟨Module.piEquiv ι R R x, fun w hw ↦ ?_, by simp⟩⟩
-  · rintro ⟨y, hy, rfl⟩ x hxU; convert hy x hxU using 1; simp
+  simp only [orthSpace, orthSpace', mem_map, mem_comap, Finsupp.toDualLin_coe, mem_dualAnnihilator,
+    Finsupp.toDual_apply, Finsupp.total_apply, Finsupp.sum, smul_eq_mul]
+  refine ⟨fun h y hyU ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨c, hc, rfl⟩ := h
+    simp only [Finsupp.lcoeFun_apply]
+    convert hc y hyU using 1
+    rw [eq_comm, Finset.sum_subset (Finset.subset_univ _)]
+    simp only [Finset.mem_univ, Finsupp.mem_support_iff, ne_eq, not_not, forall_true_left]
+    exact fun x hx ↦ by simp [hx]
+  refine ⟨Finsupp.equivFunOnFinite.2 x, fun w hw ↦ ?_, by ext; simp⟩
   convert h w hw using 1
-  simp_rw [Module.piEquiv_apply_apply, smul_eq_mul, mul_comm]
+  simp only [Equiv.invFun_as_coe, Finsupp.equivFunOnFinite_symm_apply_support,
+    Finite.toFinset_setOf, ne_eq, Finset.mem_univ, forall_true_left, not_not,
+    Finsupp.equivFunOnFinite_symm_apply_toFun]
+  apply Finset.sum_subset (Finset.subset_univ _)
+  simp only [Finset.mem_univ, forall_true_left, not_not, Finset.mem_filter, true_and]
+  exact fun x hx ↦ by simp [hx]
 
-@[simp] theorem mem_orthSpace_iff : x ∈ U.orthSpace ↔ ∀ y ∈ U, Matrix.dotProduct x y = 0 :=
-    mem_orthSpace_iff'
+@[simp] theorem mem_orthSpace_iff [Fintype η] :
+    x ∈ U.orthSpace ↔ ∀ y ∈ U, Matrix.dotProduct x y = 0 :=
+  mem_orthSpace_iff'
 
-@[simp] theorem orthSpace_orthSpace (U : Submodule R (ι → R)) : U.orthSpace.orthSpace = U := by
+theorem orthSpace_eq [Fintype η] (U : Submodule R (η → R)) :
+    U.orthSpace = U.dualAnnihilator.map (Module.piEquiv η R R).symm := by
+  classical
+  ext x
+  simp only [mem_orthSpace_iff', mem_map, mem_dualAnnihilator]
+  refine ⟨fun h ↦ ⟨Module.piEquiv η R R x, ?_, by simp⟩, fun h ↦ ?_⟩
+  · simpa [Module.piEquiv_apply_apply, h, mul_comm]
+  obtain ⟨w, h, rfl⟩ := h
+  intro y hy
+  convert h y hy using 1
+  simp [Module.piEquiv_apply_symm]
+  convert FunLike.congr_fun ((Pi.basisFun R η).sum_dual_apply_smul_coord w) y using 1
+  simp only [Pi.basisFun_apply, LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.smul_apply,
+    Basis.coord_apply, Pi.basisFun_repr, smul_eq_mul]
+  rfl
+
+variable {K : Type*} [Field K] [Fintype η] {U V : Subspace K (η → K)}
+
+@[simp] theorem orthSpace_orthSpace (U : Subspace K (η → K)) : U.orthSpace.orthSpace = U := by
   classical
   refine (FiniteDimensional.eq_of_le_of_finrank_le (fun x hxU ↦ ?_) (le_of_eq ?_)).symm
   · simp_rw [mem_orthSpace_iff']
     intro y hy
     simpa [mul_comm] using hy x hxU
-  have := (Module.piEquiv ι R R).symm.finrank_map_eq'
 
-  rw [orthSpace, orthSpace, LinearEquiv.finrank_map_eq', LinearEquiv.dualAnnihilator_map_eq,
+  rw [orthSpace_eq, orthSpace_eq, LinearEquiv.finrank_map_eq', LinearEquiv.dualAnnihilator_map_eq,
     LinearEquiv.finrank_map_eq', ←Subspace.finrank_dualCoannihilator_eq,
     Subspace.dualAnnihilator_dualCoannihilator_eq]
 
-theorem orthSpace_injective (ι R : Type*) [Fintype ι] [Field R] :
-    Injective (Submodule.orthSpace : Subspace R (ι → R) → Subspace R (ι → R)) :=
-  fun _ _ h ↦ by simpa using congr_arg Submodule.orthSpace h
+theorem orthSpace_injective (η K : Type*) [Fintype η] [Field K] :
+    Injective (Submodule.orthSpace : Subspace K (η → K) → Subspace K (η → K)) :=
+  fun U U' h ↦ by simpa using congr_arg Submodule.orthSpace h
 
 theorem eq_orthSpace_comm : U = V.orthSpace ↔ V = U.orthSpace :=
   ⟨fun h ↦ by rw [h, orthSpace_orthSpace], fun h ↦ by rw [h, orthSpace_orthSpace]⟩
 
-@[simp] theorem orthSpace_bot : (⊥ : Subspace R (ι → R)).orthSpace = ⊤ := by
-  rw [orthSpace]; simp
+@[simp] theorem orthSpace_bot : (⊥ : Subspace K (η → K)).orthSpace = ⊤ :=
+  by rw [orthSpace_eq]; simp
 
-@[simp] theorem orthSpace_top : (⊤ : Subspace R (ι → R)).orthSpace = ⊥ := by
-  rw [orthSpace]; simp
+@[simp] theorem orthSpace_top : (⊤ : Subspace K (η → K)).orthSpace = ⊥ := by
+  rw [orthSpace_eq]; simp
 
 /-- Orthogonal spaces gives an isomorphism from the subspace lattice to its order dual -/
-noncomputable def orthSpace_orderIso (ι R : Type*) [Fintype ι] [Field R] :
-  Subspace R (ι → R) ≃o (Subspace R (ι → R))ᵒᵈ where
+noncomputable def orthSpace_orderIso (η K : Type*) [Fintype η] [Field K] :
+  Subspace K (η → K) ≃o (Subspace K (η → K))ᵒᵈ where
     toFun := orthSpace
     invFun := orthSpace
     left_inv := orthSpace_orthSpace
@@ -88,14 +149,14 @@ noncomputable def orthSpace_orderIso (ι R : Type*) [Fintype ι] [Field R] :
       have hdp := (mem_orthSpace_iff.1 <| h hy) _ hx
       rwa [Matrix.dotProduct_comm] at hdp )
 
-theorem orthSpace_strictAnti (ι R : Type*) [Fintype ι] [Field R] :
-    StrictAnti (Submodule.orthSpace : Subspace R (ι → R) → Subspace R (ι → R)) :=
-  (orthSpace_orderIso ι R).strictMono
+theorem orthSpace_strictAnti (η K : Type*) [Fintype η] [Field K] :
+    StrictAnti (Submodule.orthSpace : Subspace K (η → K) → Subspace K (η → K)) :=
+  (orthSpace_orderIso η K).strictMono
 
 theorem orthSpace_le_iff_le : V.orthSpace ≤ U.orthSpace ↔ U ≤ V :=
-  (orthSpace_orderIso ι R).le_iff_le
+  (orthSpace_orderIso η K).le_iff_le
 
 theorem orthSpace_lt_iff_lt : V.orthSpace < U.orthSpace ↔ U < V :=
-  (orthSpace_orderIso ι R).lt_iff_lt
+  (orthSpace_orderIso η K).lt_iff_lt
 
 end orthSpace

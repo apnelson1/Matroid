@@ -397,10 +397,10 @@ theorem exists_colBasis (A : Matrix m n R) : ∃ t, A.ColBasis t :=
 end DivisionRing
 section Field
 
-variable [Field R]
+variable {K : Type*} [Field K] {A : Matrix m n K}
 
-theorem subset_rows_notLinearIndependent_iff [Fintype m] [Field R] :
-    ¬ LinearIndependent R (A.rowSubmatrix s).rowFun ↔
+theorem subset_rows_notLinearIndependent_iff [Fintype m] :
+    ¬ LinearIndependent K (A.rowSubmatrix s).rowFun ↔
       ∃ c, A.vecMul c = 0 ∧ c ≠ 0 ∧ support c ⊆ s := by
   simp only [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff, ne_eq,
     vecMul, dotProduct, support_subset_iff, not_imp_comm]
@@ -411,23 +411,23 @@ theorem subset_rows_notLinearIndependent_iff [Fintype m] [Field R] :
   exact hi (funext fun i ↦ (em (i ∈ s)).elim (hc i) (h' i))
 
 theorem subset_cols_notLinearIndependent_iff [Fintype n] :
-    ¬ LinearIndependent R (A.colSubmatrix t).colFun ↔
+    ¬ LinearIndependent K (A.colSubmatrix t).colFun ↔
       ∃ c, A.mulVec c = 0 ∧ c ≠ 0 ∧ support c ⊆ t := by
   rw [←rowFun_transpose, colSubmatrix_transpose, subset_rows_notLinearIndependent_iff]
   simp_rw [vecMul_transpose]
 
 theorem toLin'_transpose [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
-    toLin' Aᵀ = (Module.piEquiv n R R).symm.comp
-      (A.toLin'.dualMap.comp (Module.piEquiv m R R).toLinearMap) := by
+    toLin' Aᵀ = (Module.piEquiv n K K).symm.comp
+      (A.toLin'.dualMap.comp (Module.piEquiv m K K).toLinearMap) := by
   ext i j; simp [Module.piEquiv_apply_apply, ←Pi.single_mul_right_apply (A · j)]
 
 theorem toLin'_dualMap [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
     A.toLin'.dualMap =
-      ((Module.piEquiv n R R).comp (toLin' Aᵀ)).comp (Module.piEquiv m R R).symm.toLinearMap := by
+      ((Module.piEquiv n K K).comp (toLin' Aᵀ)).comp (Module.piEquiv m K K).symm.toLinearMap := by
   rw [toLin'_transpose]; aesop
 
 theorem colSpace_eq_top_iff_linearIndependent_rows [Fintype m] :
-    A.colSpace = ⊤ ↔ LinearIndependent R A.rowFun := by
+    A.colSpace = ⊤ ↔ LinearIndependent K A.rowFun := by
   rw [←not_iff_not, ←Ne.def, ←lt_top_iff_ne_top, ←orthSpace_lt_iff_lt, orthSpace_top,
     bot_lt_iff_ne_bot, Submodule.ne_bot_iff, Fintype.not_linearIndependent_iff]
   simp only [mem_orthSpace_iff', ne_eq, ← smul_eq_mul]
@@ -441,23 +441,24 @@ theorem colSpace_eq_top_iff_linearIndependent_rows [Fintype m] :
     smul_eq_mul]
 
 theorem rowSpace_eq_top_iff_linearIndependent_cols [Fintype n] :
-    A.rowSpace = ⊤ ↔ LinearIndependent R A.colFun := by
+    A.rowSpace = ⊤ ↔ LinearIndependent K A.colFun := by
   rw [←colSpace_transpose, colSpace_eq_top_iff_linearIndependent_rows, rowFun_transpose]
 
 theorem ColBasis.rows_linearIndependent [Fintype m] (ht : A.ColBasis t)
-    (hA : LinearIndependent R A.rowFun) : LinearIndependent R (A.colSubmatrix t).rowFun := by
+    (hA : LinearIndependent K A.rowFun) : LinearIndependent K (A.colSubmatrix t).rowFun := by
   rw [←colSpace_eq_top_iff_linearIndependent_rows, Submodule.eq_top_iff']
   rw [←colSpace_eq_top_iff_linearIndependent_rows] at hA
   exact fun x ↦ by simp [hA ▸ ht.colSpace_eq]
 
 theorem RowBasis.cols_linearIndependent [Fintype n] (hs : A.RowBasis s)
-    (hA : LinearIndependent R Aᵀ) : LinearIndependent R (s.restrict A)ᵀ :=
+    (hA : LinearIndependent K Aᵀ) : LinearIndependent K (s.restrict A)ᵀ :=
   hs.colBasis_transpose.rows_linearIndependent hA
 
-theorem cols_linearIndependent_of_rowSpace_le_rowSpace {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
-    (h : A₁.rowSpace ≤ A₂.rowSpace) {t : Set n}
-    (ht : LinearIndependent R (A₁.colSubmatrix t).colFun) :
-    LinearIndependent R (A₂.colSubmatrix t).colFun := by
+variable {m₁ m₂ : Type*} {A₁ : Matrix m₁ n K} {A₂ : Matrix m₂ n K}
+
+theorem cols_linearIndependent_of_rowSpace_le_rowSpace  (h : A₁.rowSpace ≤ A₂.rowSpace) {t : Set n}
+    (ht : LinearIndependent K (A₁.colSubmatrix t).colFun) :
+    LinearIndependent K (A₂.colSubmatrix t).colFun := by
   rw [linearIndependent_iff'] at ht ⊢
   by_contra h'; push_neg at h'; obtain ⟨t₀, c, hne, i₀, hit₀, hnz⟩ := h'
   refine hnz <| ht t₀ c ?_ _ hit₀
@@ -480,29 +481,28 @@ theorem cols_linearIndependent_of_rowSpace_le_rowSpace {A₁ : Matrix m₁ n R} 
   simp
 
 /-- Matrices with the same row space have the same column dependencies -/
-theorem cols_linearIndependent_iff_of_rowSpaces_eq {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
-    (h : A₁.rowSpace = A₂.rowSpace) {t : Set n} :
-    LinearIndependent R (A₁.colSubmatrix t).colFun
-      ↔ LinearIndependent R (A₂.colSubmatrix t).colFun := by
+theorem cols_linearIndependent_iff_of_rowSpaces_eq (h : A₁.rowSpace = A₂.rowSpace) {t : Set n} :
+    LinearIndependent K (A₁.colSubmatrix t).colFun
+      ↔ LinearIndependent K (A₂.colSubmatrix t).colFun := by
   exact ⟨fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.le h',
     fun h' ↦ cols_linearIndependent_of_rowSpace_le_rowSpace h.symm.le h'⟩
 
 /-- Matrices with the same row space have the same column bases -/
-theorem colBases_eq_of_rowSpaces_eq {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
-    (h : A₁.rowSpace = A₂.rowSpace) : A₁.ColBasis = A₂.ColBasis := by
+theorem colBases_eq_of_rowSpaces_eq (h : A₁.rowSpace = A₂.rowSpace) :
+    A₁.ColBasis = A₂.ColBasis := by
   ext
   simp_rw [colBasis_iff_maximal_linearIndependent, cols_linearIndependent_iff_of_rowSpaces_eq h]
 
 /-- Matrices with the same column space have the same row dependencies-/
-theorem rowsLinearIndependent_iff_of_colSpaces_eq {A₁ : Matrix m n₁ R} {A₂ : Matrix m n₂ R}
+theorem rowsLinearIndependent_iff_of_colSpaces_eq {A₁ : Matrix m n₁ K} {A₂ : Matrix m n₂ K}
     (h : A₁.colSpace = A₂.colSpace) :
-    LinearIndependent R (A₁.rowSubmatrix s).rowFun
-      ↔ LinearIndependent R (A₂.rowSubmatrix s).rowFun := by
+    LinearIndependent K (A₁.rowSubmatrix s).rowFun
+      ↔ LinearIndependent K (A₂.rowSubmatrix s).rowFun := by
   rw [←rowSpace_transpose, ←rowSpace_transpose] at h
   exact cols_linearIndependent_iff_of_rowSpaces_eq h
 
 /-- Matrices with the same column space have the same row bases -/
-theorem rowBases_eq_of_colSpaces_eq {A₁ : Matrix m n₁ R} {A₂ : Matrix m n₂ R}
+theorem rowBases_eq_of_colSpaces_eq {A₁ : Matrix m n₁ K} {A₂ : Matrix m n₂ K}
     (h : A₁.colSpace = A₂.colSpace) : A₁.RowBasis = A₂.RowBasis := by
   ext s
   rw [←rowSpace_transpose, ←rowSpace_transpose] at h
@@ -525,29 +525,29 @@ theorem ColBasis.submatrix_rowBasis (ht : A.ColBasis t) (hs : A.RowBasis s) :
 /-- If an `m × n` matrix `A` with entries in `R` has linearly independent rows,
     a column basis for `A` gives a basis for `m → R`. -/
 noncomputable def ColBasis.basisFun [Fintype m] (ht : A.ColBasis t)
-  (hA : LinearIndependent R A.rowFun) : Basis t R (m → R) :=
+  (hA : LinearIndependent K A.rowFun) : Basis t K (m → K) :=
     (Basis.span ht.linearIndependent).map <| LinearEquiv.ofTop _ <| eq_top_iff'.2 fun x ↦
     ( by
       rw [span_eq_colSpace, ht.colSpace_eq, colSpace_eq_top_iff_linearIndependent_rows.2 hA]
       trivial )
 
 @[simp] theorem ColBasis.basisFun_apply [Fintype m] (ht : A.ColBasis t)
-    (hA : LinearIndependent R A.rowFun) (j : t) : ht.basisFun hA j = (A · j) := by
+    (hA : LinearIndependent K A.rowFun) (j : t) : ht.basisFun hA j = (A · j) := by
   ext x; exact congr_fun (Basis.span_apply ht.linearIndependent j) x
 
 noncomputable def RowBasis.basisFun [Fintype n] (hs : A.RowBasis s)
-    (hA : LinearIndependent R A.colFun) : Basis s R (n → R) :=
+    (hA : LinearIndependent K A.colFun) : Basis s K (n → K) :=
   hs.colBasis_transpose.basisFun hA
 
 @[simp] theorem RowBasis.basisFun_apply [Fintype n] (hs : A.RowBasis s)
-    (hA : LinearIndependent R Aᵀ) (i : s) : hs.basisFun hA i = A i := by
+    (hA : LinearIndependent K Aᵀ) (i : s) : hs.basisFun hA i = A i := by
   ext; simp [basisFun]
 
 end Field
 section NullSpace
 
-variable [Field R] [Fintype n] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂] {A₁ : Matrix m₁ n R}
-  {A₂ : Matrix m₂ n R} {t : Set n}
+variable {K : Type*} [Field K] [Fintype n] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂]
+  {A : Matrix m n K} {A₁ : Matrix m₁ n K} {A₂ : Matrix m₂ n K} {t : Set n}
 
 @[pp_dot] noncomputable def nullSpace {R : Type*} [CommRing R] (A : Matrix m n R) :
     Submodule R (n → R) :=
@@ -571,8 +571,8 @@ variable [Field R] [Fintype n] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂]
 theorem nullSpace_eq_ker_mulVecLin : A.nullSpace = LinearMap.ker A.mulVecLin := by
   ext x; rw [mem_nullSpace_iff, LinearMap.mem_ker, mulVecLin_apply]
 
-theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearIndependent R A₁.rowFun)
-    (h₂ : LinearIndependent R A₂.rowFun) (ht : A₁.ColBasis t) :  A₂.ColBasis tᶜ := by
+theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearIndependent K A₁.rowFun)
+    (h₂ : LinearIndependent K A₂.rowFun) (ht : A₁.ColBasis t) :  A₂.ColBasis tᶜ := by
   classical
   refine ⟨by_contra fun hld ↦?_ , ?_⟩
   · rw [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff] at hld

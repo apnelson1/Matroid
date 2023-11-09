@@ -153,7 +153,7 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ma
   by simp [image]
 
 /-- `M` is isomorphic to its image -/
-noncomputable def iso_image [_root_.Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
+noncomputable def iso_image [Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     Iso M (M.image f hf)  :=
   Iso.of_forall_indep hf.toLocalEquiv ( by simp ) ( by simp )
   ( by
@@ -162,5 +162,39 @@ noncomputable def iso_image [_root_.Nonempty α] (M : Matroid α) (f : α → β
     rw [hf.image_eq_image_iff_of_subset hIE hI₀.subset_ground] at h_eq
     rwa [h_eq] )
 
-
 end Image
+
+section OnUniv
+
+variable {E X : Set α} {M : Matroid α}
+
+/-- Given `X : Set α`, the matroid on type `X` with ground set `univ`.
+  If `X ⊆ M.E`, then isomorphic to `M ↾ X`. -/
+def onGround (M : Matroid α) (X : Set α) : Matroid X := M.preimage (↑)
+
+theorem onGround_ground (hX : X ⊆ M.E) : (M.onGround X).E = univ := by
+  rw [onGround, preimage_ground_eq, eq_univ_iff_forall]; simpa
+
+noncomputable def iso_onGround' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onGround X) (M ↾ X) :=
+  have _ := nonempty_coe_sort.2 hne
+  Iso.of_forall_indep (Subtype.coe_injective.injOn univ).toLocalEquiv
+    (by simp [onGround_ground hX]) (by simp)
+  ( by
+    simp only [onGround_ground hX, subset_univ, InjOn.toLocalEquiv, image_univ,
+      Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toLocalEquiv_apply, restrict_indep_iff,
+      image_subset_iff, Subtype.coe_preimage_self, and_true, forall_true_left]
+    simp only [onGround._eq_1, preimage_indep_iff, and_iff_left_iff_imp]
+    intro I
+    simp [Subtype.val_injective.injOn I] )
+
+noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso (M.onGround E) M :=
+  have hne : E.Nonempty := hE ▸ M.ground_nonempty
+  (iso_onGround' hE.symm.subset hne).trans (Iso.of_eq (by rw [←hE, restrict_ground_eq_self]))
+
+@[simp] theorem iso_onGround_apply [M.Nonempty] (hE : M.E = E) (x : E) :
+    (iso_onGround hE) x = x := rfl
+
+
+
+
+end OnUniv
