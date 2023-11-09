@@ -1,5 +1,6 @@
 import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.LinearAlgebra.Dual
+import Mathlib.LinearAlgebra.Quotient
 import Matroid.ForMathlib.Other
 
 variable {α ι W W' R : Type*} [AddCommGroup W] [AddCommGroup W']
@@ -181,3 +182,33 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
     rintro rfl; exact hi <| by simp [←hc]
   rw [←h', smul_smul, inv_mul_cancel, one_smul]
   rintro rfl; exact h.1 <| by simp [← h']
+
+theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
+    {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+    (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
+    LinearIndependent R ((s ∪ t).restrict f) := by
+  refine (linearIndependent_image ?_).2 ?_
+  · rw [injOn_union, and_iff_right <| injOn_iff_injective.2 hs.injective,
+      and_iff_right <| injOn_iff_injective.2 ht.injective]
+    · intro x hx y hy he
+      rw [Submodule.disjoint_def] at hdj
+      apply hs.ne_zero ⟨x,hx⟩
+      simp [hdj _ (subset_span (mem_image_of_mem _ hx))
+        (by rw [he]; exact subset_span (mem_image_of_mem _ hy))]
+    rw [disjoint_iff_forall_ne]
+    rintro i his _ hit rfl
+    apply hs.ne_zero ⟨i, his⟩
+    exact (Submodule.disjoint_def.1 hdj) (f i) (subset_span (mem_image_of_mem _ his))
+      (subset_span (mem_image_of_mem _ hit))
+  change LinearIndependent R (incl _)
+  rw [image_union]
+  exact LinearIndependent.union hs.image ht.image hdj
+
+theorem LinearIndependent.union_index' {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
+    {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+    (ht : LinearIndependent R (t.restrict ( (mkQ (span R (f '' s)) ∘ f)))) :
+    LinearIndependent R ((s ∪ t).restrict f) := by
+  apply linearIndependent.union_index hs ht.of_comp
+  convert (Submodule.range_ker_disjoint ht).symm
+  · simp
+  aesop

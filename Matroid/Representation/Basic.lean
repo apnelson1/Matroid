@@ -10,7 +10,7 @@ import Matroid.Constructions.Uniform
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Function Set Submodule FiniteDimensional
+open Function Set Submodule FiniteDimensional BigOperators
 
 set_option autoImplicit false
 
@@ -675,7 +675,7 @@ end Simple
 section Uniform
 
 /-- A uniform matroid on at most `|𝔽|+1` elements is `𝔽`-representable -/
-theorem uniform_rep {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (univ : Set 𝔽) + 1) :
+theorem uniform_rep_of_le {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (univ : Set 𝔽) + 1) :
     Representable (unif a b) 𝔽 := by
   have hinj : Nonempty (Fin b ↪ (Option 𝔽))
   · refine ⟨Embedding.trans (Nonempty.some ?_) (Equiv.Set.univ (Option 𝔽)).toEmbedding⟩
@@ -691,63 +691,41 @@ theorem uniform_rep {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (
 
 end Uniform
 
-section Contract
+section Minor
 
-def Rep.contract_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) :
-    (M ⟋ I).Rep 𝔽 (W ⧸ (span 𝔽 (v '' I))) where
-      to_fun := Submodule.Quotient.mk ∘ v
-      valid' :=
-    ( by
-      intro J
-      rw [hI.contract_indep_iff, v.indep_iff]
-      refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
-      · rw [restrict_eq, comp.assoc, (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; simp)]
-        refine (h'.2.mono_index _ (subset_union_left _ _)).map ?_
-        simp only [range_restrict, ker_mkQ]
-        convert h'.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) (h'.1.preimage _)
-        · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, inter_comm,
-            union_inter_cancel_left]
-        rw [restrict_eq, image_comp, Subtype.image_preimage_coe, inter_comm,
-          union_inter_cancel_right]
-      have hdj : Disjoint (v '' I) (v '' J)
-      · rw [Set.disjoint_iff_forall_ne]
-        rintro _ heI _ ⟨e,heJ,rfl⟩ rfl
-        apply h'.ne_zero ⟨e,heJ⟩
-        simp only [Set.restrict_apply, comp_apply, Quotient.mk_eq_zero]
-        exact Submodule.subset_span heI
+/-- Contracting a set preserves representability. -/
+def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ⟋ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
+    to_fun := Submodule.Quotient.mk ∘ v
+    valid' :=
+  ( by
+    intro J
+    obtain ⟨I,hI⟩ := M.exists_basis' C
+    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
+      (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; rfl), union_comm, v.indep_iff,
+      and_right_comm, ← disjoint_union_right, union_diff_self,
+      union_eq_self_of_subset_left hI.subset]
+    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
+    · refine (h.2.mono_index _ (subset_union_right _ _)).map ?_
+      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
+      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
+          inter_comm, union_inter_cancel_right]
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
+          inter_comm, union_inter_cancel_left]
+      exact (h.1.mono_right hI.subset).preimage _
+    · rw [disjoint_iff_forall_ne]
+      rintro i hiJ _ hiI rfl
+      apply h.ne_zero ⟨i, hiJ⟩
+      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
+      exact subset_span (mem_image_of_mem _ hiI)
+    rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
 
-      refine ⟨hdj.symm.of_image, ?_⟩
-      rw [v.indep_iff] at hI
-      refine (linearIndependent_image ?_).2 ?_
-      · rw [injOn_union]
-        refine ⟨fun i hi j hj hij ↦ ?_, injOn_iff_injective.2 hI.injective, fun j hj i hj heq ↦ ?_⟩
-        · rw [← (injOn_iff_injective.2 h'.injective).eq_iff hi hj]
-          simp [hij]
+theorem Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ⟍ D).Rep 𝔽 W :=
+  v.restrict (M.E \ D)
 
-        -- have := hdj.ne_of_mem ⟨v i, mem_image_of_mem _ hi, rfl⟩
-
-
-
-
-
-
-
-
-    )
-
-
-  --   ((M ⟋ I).IsRep 𝔽 ((Submodule.Quotient.mk (p := span 𝔽 (v '' I))) ∘ v) ) := by
-  -- simp [IsRep]
-  -- intro J
-  -- simp only [hI.contract_indep_iff]
-  -- refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
-  -- · rw [h.]
-
-
-
-
-
--- theorem Rep.r_eq [FiniteRk M] (v : M.Rep 𝔽 W) (X : Set α) :
---     M.r X = finrank 𝔽 (span 𝔽 (v '' X)) := by
---   obtain ⟨I, hI⟩ := M.exists_basis' X
---   rw [←hI.r]
+theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
+    N.Representable 𝔽 := by
+  rw [minor_iff_exists_contract_delete] at hNM
+  obtain ⟨C, D, rfl⟩ := hNM
+  obtain ⟨v⟩ := hM
+  exact ((v.contract C).delete D).representable
