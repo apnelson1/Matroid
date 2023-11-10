@@ -7,3 +7,4 @@ import Matroid.ForMathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Basic
 import Matroid.ForMathlib.Representation
+import Matroid.ForMathlib.SetSubtype
