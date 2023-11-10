@@ -30,7 +30,7 @@ def emptyOn (α : Type*) : Matroid α :=
   rw [← ground_eq_empty_iff]; rfl
 
 /-- Any two empty matroids are isomorphic -/
-noncomputable def Iso.of_empty (α β : Type*) [_root_.Nonempty α] [_root_.Nonempty β] :
+noncomputable def Iso.of_empty (α β : Type*) [Nonempty α] [Nonempty β] :
     Iso (emptyOn α) (emptyOn β) where
   toLocalEquiv := InjOn.toLocalEquiv _ _ (injOn_empty (Classical.arbitrary (α → β)))
   source_eq' := by simp
@@ -56,6 +56,9 @@ noncomputable def Iso.of_empty (α β : Type*) [_root_.Nonempty α] [_root_.None
 theorem eq_emptyOn_or_nonempty (M : Matroid α) : M = emptyOn α ∨ Matroid.Nonempty M := by
   rw [←ground_eq_empty_iff]
   exact M.E.eq_empty_or_nonempty.elim Or.inl (fun h ↦ Or.inr ⟨h⟩)
+
+theorem ground_nonempty_iff (M : Matroid α) : M.E.Nonempty ↔ M.Nonempty :=
+  ⟨fun h ↦ ⟨h⟩, fun ⟨h⟩ ↦ h⟩
 
 end EmptyOn
 

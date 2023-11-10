@@ -16,15 +16,37 @@ namespace Matroid
 
 abbrev Rep.toMatrix (v : M.Rep 𝔽 (ι → 𝔽)) : Matrix ι α 𝔽 := (Matrix.of v)ᵀ
 
-theorem Rep.column_basis_eq_base (v : M.Rep 𝔽 (ι → 𝔽)) : v.toMatrix.ColBasis = M.Base := by
+theorem Rep.colBasis_eq_base (v : M.Rep 𝔽 (ι → 𝔽)) : v.toMatrix.ColBasis = M.Base := by
   ext B
   change _ ↔ B ∈ {B | M.Base B}
   simp_rw [setOf_base_eq_maximals_setOf_indep, colBasis_iff_maximal_linearIndependent, v.indep_iff]
   rfl
 
-theorem foo {M N : Matroid α} {E : Set α} [Fintype E] (hME : M.E = E) (hNE : N.E = E)
-    (vM : M.Rep 𝔽 (α → 𝔽)) (vN : N.Rep 𝔽 (β → 𝔽))
-    (h : (vM.toMatrix.colSubmatrix E).rowSpace = (vN.toMatrix.colSubmatrix E).nullSpace) : N = M﹡ := by
+theorem dual_aux [Fintype α] {M N : Matroid α} (hM : M.E = univ) (hN : N.E = univ)
+    (vM : M.Rep 𝔽 (ι → 𝔽)) (vN : N.Rep 𝔽 (η → 𝔽))
+    (h : vM.toMatrix.rowSpace = vN.toMatrix.nullSpace) : N = M﹡ := by
+  apply eq_of_base_iff_base_forall (by rw [hN, dual_ground, hM]) (fun B _ ↦ ?_)
+  rw [← vN.colBasis_eq_base, dual_base_iff, ← vM.colBasis_eq_base, hM, ← compl_eq_univ_diff,
+    colBasis_iff_colBasis_compl_of_orth h, compl_compl]
+
+theorem dual_aux2 {M N : Matroid α} {E : Set α} (hE : E.Finite) (hME : M.E = E) (hNE : N.E = E)
+    (vM : M.Rep 𝔽 (ι → 𝔽)) (vN : N.Rep 𝔽 (η → 𝔽))
+    (h : (vM.toMatrix.colSubmatrix E).rowSpace = (vN.toMatrix.colSubmatrix E).nullSpace) :
+    N = M﹡ := by
+  apply eq_of_onGround_eq hNE (by rwa [dual_ground])
+  rw [← onGround_dual]
+  have _ := hE.fintype
+  have _ := (hNE.symm ▸ hE).fintype
+  have _ := (hME.symm ▸ hE).fintype
+  apply dual_aux (onGround_ground hME.symm.subset) (onGround_ground hNE.symm.subset)
+    (vM.onGround' E) (vN.onGround' E)
+  convert h
+  exact hME
+
+theorem Representable.dual [M.Finite] (h : M.Representable 𝔽) : M﹡.Representable 𝔽 := by
+  obtain ⟨v⟩ := h
+  set ns := (v.toMatrix.colSubmatrix M.E).nullSpace
+  obtain b := Basis.ofVectorSpace 𝔽 ns
   sorry
 
 

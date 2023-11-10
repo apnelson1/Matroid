@@ -194,7 +194,22 @@ noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso (M.onGround E) 
 @[simp] theorem iso_onGround_apply [M.Nonempty] (hE : M.E = E) (x : E) :
     (iso_onGround hE) x = x := rfl
 
+theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.onGround E) :
+    M = N := by
+  obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
+  · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
+  have hNn : N.Nonempty
+  · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
 
+  apply eq_of_indep_iff_indep_forall (by rw [hM,hN])
+  intro I hI
+  rw [(iso_onGround hM).symm.on_indep_iff, (iso_onGround hN).symm.on_indep_iff]
+  simp_rw [h]
+  convert Iff.rfl using 2
+
+theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
+  subst hM
+  sorry
 
 
 end OnUniv

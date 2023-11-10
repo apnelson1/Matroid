@@ -191,6 +191,29 @@ def Rep.preimage {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.preima
 @[simp] theorem Rep.preimage_apply {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) :
     (v.preimage f : α → W) = v ∘ f := rfl
 
+
+-- /- this proof is a mess. -/
+-- theorem Rep.matroidOfFun_restrict_eq_onGround (v : M.Rep 𝔽 W) :
+--     matroidOfFun 𝔽 (M.E.restrict v) univ = M.onGround M.E := by
+--   rw [eq_iff_indep_iff_indep_forall, matroidOfFun_ground, onGround_ground Subset.rfl,
+--     and_iff_right rfl, onGround]
+--   simp only [subset_univ, preimage_indep_iff, forall_true_left, matroidOfFun_indep_iff,
+--     v.indep_iff, and_iff_left (Subtype.val_injective.injOn _)]
+--   refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · refine (linearIndependent_image ?_).2 ?_
+--     · rintro _ ⟨a, ha, rfl⟩ _ ⟨b,hb,rfl⟩ hab
+--       have := (h.injective.eq_iff (a := ⟨a, ha⟩) (b := ⟨b, hb⟩)).1 hab
+--       simp only [Subtype.mk.injEq] at this
+--       rw [this]
+--     convert h.image <;> simp [restrict_eq, ← image_comp]
+--   refine (linearIndependent_image ?_).2 ?_
+--   · rw [restrict_eq]
+--     rintro ⟨a,ha⟩ ha' ⟨b,hb⟩ hb' (hab : v a = v b)
+--     have := (h.injective.eq_iff (a := ⟨a, by aesop⟩) (b := ⟨b,by aesop⟩)).1 hab
+--     simp only [Subtype.mk.injEq] at this
+--     simpa only [Subtype.mk.injEq]
+--   convert h.image <;> simp [restrict_eq, ← image_comp]
+
 def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
   rep_of_ground v
   ( v.support_subset_ground.trans_eq (congr_arg _ h) )
@@ -198,6 +221,10 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 
 @[simp] theorem Rep.ofEq_apply {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) :
   (v.ofEq h : α → W) = v := rfl
+
+def Rep.onGround (v : M.Rep 𝔽 W) : (M.onGround M.E).Rep 𝔽 W := v.preimage (incl M.E)
+
+def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
 
 /-- Carry a representation across a matroid isomorphism -/
 noncomputable def Rep.iso {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) :
@@ -351,6 +378,12 @@ noncomputable def matroidOfSubtypeFun_rep {E : Set α} (𝔽 : Type*) [Field �
         · exact hx rfl
         rintro ⟨⟨a,ha⟩,rfl⟩
         exact hxE ha )
+
+
+
+
+
+
 
 theorem Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
   rintro _ ⟨e, he ,rfl⟩
