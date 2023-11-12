@@ -3,6 +3,7 @@ import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.Dual
+import Matroid.ForMathlib.Other
 import Mathlib.LinearAlgebra.BilinearForm
 
 open Set BigOperators Submodule Function
@@ -25,6 +26,66 @@ open Set BigOperators Submodule Function
 @[simp] theorem Module.Dual.sum_pi_single [Field R] [Fintype α] [DecidableEq α]
   (y : Module.Dual R (α → R)) (x : α → R) : ∑ i, y (Pi.single i 1) * x i = y x :=
   Module.Dual.sum_update y x
+
+theorem ExtendByZero.linearMap_incl_eq {R : Type*} [Semiring R] (s : Set η) (x : s → R) (i : η)
+  [Decidable (i ∈ s)] :
+    ExtendByZero.linearMap R s.incl x i = if h : i ∈ s then x ⟨i,h⟩ else 0 := by
+  split_ifs
+  simp
+
+
+
+section supportedFun
+
+variable {R η : Type*} [Semiring R] {s : Set η} {x : η → R}
+
+/-- The submodule of vectors in `η → R` with support contained in some `s : Set η`. -/
+noncomputable def Set.supportedFun (s : Set η)  (R : Type*) [Semiring R] : Submodule R (η → R) :=
+  LinearMap.range <| ExtendByZero.linearMap R s.incl
+
+@[simp] theorem mem_supportedFun_iff : x ∈ s.supportedFun R ↔ x.support ⊆ s := by
+  simp only [supportedFun, LinearMap.mem_range, support_subset_iff, ne_eq]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨y, rfl⟩ i hi
+    simp only [ExtendByZero.linearMap_apply, Subtype.exists, not_exists] at hi
+    refine by_contra fun his ↦ hi ?_
+    rw [extend_apply', Pi.zero_apply]
+    rintro ⟨a, rfl⟩
+    exact his a.2
+  use LinearMap.funLeft R R s.incl x
+  ext i
+  simp [LinearMap.funLeft]
+  obtain (his | his) := em (i ∈ s)
+  · exact Subtype.val_injective.extend_apply (x ∘ s.incl) 0 ⟨i,his⟩
+  rw [extend_apply', eq_comm]
+  · simpa using (mt <| h i) his
+  rintro ⟨a, rfl⟩
+  exact his a.2
+
+@[simp] theorem supportedFun_univ (R η : Type*) [Semiring R] :
+    (univ : Set η).supportedFun R = ⊤ := by
+  ext; simp
+
+@[simp] theorem supportedFun_empty (R η : Type*) [Semiring R] :
+    (∅ : Set η).supportedFun R = ⊥ := by
+  ext x;
+  simp only [mem_supportedFun_iff, support_subset_iff, ne_eq, mem_empty_iff_false, mem_bot,
+    imp_false, not_not]
+  exact Iff.symm funext_iff
+
+noncomputable def foo (s : Set η) (R : Type*) [Semiring R] :
+    Submodule R (s → R) ≃ {U : Submodule R (η → R) // U ≤ s.supportedFun R} where
+  toFun U := ⟨U.map (ExtendByZero.linearMap R s.incl), sorry⟩
+  invFun U := U.1.map <| LinearMap.funLeft R R s.incl
+  left_inv := by
+    intro U
+    ext
+    simp [LinearMap.funLeft]
+
+  right_inv := sorry
+
+end supportedFun
+
 section orthSpace
 
 variable {η : Type*} [CommRing R] {x : η → R} {U V : Submodule R (η → R)}
@@ -62,6 +123,10 @@ noncomputable def Finsupp.toDualLin (η R : Type*) [CommRing R] :
 
 noncomputable def Submodule.orthSpace' (U : Submodule R (η → R)) : Submodule R (η →₀ R) :=
   (Submodule.dualAnnihilator U).comap (Finsupp.toDualLin η R)
+
+@[simp] theorem mem_orthSpace'_iff {U : Submodule R (η → R)} :
+    l ∈ U.orthSpace' ↔ ∀ x ∈ U, Finsupp.total _ _ _ x l = 0 := by
+  simp [orthSpace']
 
 /-- The space of vectors 'orthogonal' to all vectors in `U`, in the sense of having a
   dot product of zero. This doesn't require `Fintype η`;
@@ -159,4 +224,90 @@ theorem orthSpace_le_iff_le : V.orthSpace ≤ U.orthSpace ↔ U ≤ V :=
 theorem orthSpace_lt_iff_lt : V.orthSpace < U.orthSpace ↔ U < V :=
   (orthSpace_orderIso η K).lt_iff_lt
 
+
+-- theorem mem_relOrthSpace_iff (hs : s.Finite) {x : ι → K} {U : Subspace K (ι → K)}:
+--     x ∈ s.relOrthSpace U ↔ x.support ⊆ s ∧ ∀ y ∈ U, ∑ i : hs.toFinset, x i * y i = 0 := by
+--   have _ := hs.fintype
+--   rw [relOrthSpace, mem_inf]
+
+-- theorem relOrthSpace_relOrthSpace {U : Subspace K (η → K)} {s : Set η} (hU : U ≤ s.supportedFun K) :
+--     s.relOrthSpace (s.relOrthSpace U) = U := by
+
+--   -- rw [relOrthSpace, relOrthSpace]
+
+
+
 end orthSpace
+
+section relOrthSpace
+
+variable {R K η ι : Type*} [CommRing R] [Field K] [Fintype η]
+
+/-- The subspace of vectors in `U.orthSpace` with support contained in `s`. -/
+def Set.relOrthSpace (s : Set ι) (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
+    U.orthSpace ⊓ (s.supportedFun R)
+
+theorem mem_relOrthSpace_iff_exists_finsupp (s : Set ι) (U : Submodule R (ι → R)) :
+    x ∈ s.relOrthSpace U ↔ x.support ⊆ s ∧
+      (∃ l : s →₀ R, (∀ x ∈ U, (Finsupp.total _ _ _ (x ∘ s.incl) l = 0) ∧ ∀ i, l i = x i)) := by
+  rw [relOrthSpace, mem_inf]
+
+
+-- theorem relOrthSpace_eq_relOrthSpace_inf (s : Set ι) (U : Submodule R (ι → R)) :
+--     s.relOrthSpace U = s.relOrthSpace (U ⊓ (s.supportedFun R)) := by
+--   classical
+--   ext x
+--   rw [relOrthSpace, relOrthSpace, mem_inf, mem_supportedFun_iff, mem_inf, mem_supportedFun_iff,
+--     and_congr_left_iff, orthSpace, mem_map, orthSpace, mem_map]
+--   simp only [mem_orthSpace'_iff, ge_iff_le, mem_inf,
+--     mem_supportedFun_iff, and_imp]
+--   intro hx
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · obtain ⟨y, hy, rfl⟩ := h
+--     refine ⟨y, fun x hxU _↦ hy x hxU, rfl⟩
+--   obtain ⟨y, hy, rfl⟩ := h
+--   refine ⟨y, fun x hxU ↦  ?_, rfl⟩
+--   rw [Finsupp.total_apply, Finsupp.sum]
+
+
+
+theorem Set.Finite.relOrthSpace_eq {s : Set ι} (hs : s.Finite) {U : Submodule R (ι → R)}:
+    s.relOrthSpace U =
+      (U.map (LinearMap.funLeft R R s.incl)).orthSpace.map (ExtendByZero.linearMap R s.incl) := by
+  have _ := hs.fintype
+  rw [relOrthSpace, orthSpace]
+  ext x
+  simp only [ge_iff_le, mem_inf, mem_map, mem_orthSpace'_iff, mem_supportedFun_iff,
+    mem_orthSpace_iff', forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, LinearMap.funLeft_apply, Finsupp.lcoeFun,
+    LinearMap.coe_mk, AddHom.coe_mk]
+  constructor
+  · rintro ⟨⟨y, hy, rfl⟩, h⟩
+    use Finsupp.lsubtypeDomain (R := R) (s := s) y
+    simp only [Finsupp.lsubtypeDomain, Finsupp.subtypeDomain, LinearMap.coe_mk, AddHom.coe_mk,
+      Finsupp.coe_mk, comp_apply]
+    refine ⟨fun a ha ↦ ?_, ?_⟩
+    · convert hy a ha
+      have hss : y.support ⊆ s.toFinset
+      · rwa [Set.subset_toFinset, ←Finsupp.fun_support_eq]
+      rw [Finsupp.total_apply, Finsupp.sum, Finset.sum_subset hss (by aesop)]
+      · simp_rw [(show ∀ i : s, a (incl s i) = a i from fun _↦ rfl)]
+        exact Finset.sum_set_coe (s := s) (f := fun x ↦ y x * a x)
+    · ext i
+      simp only [ExtendByZero.linearMap_apply, Subtype.exists, not_exists]
+      obtain (hi | hi) := em (i ∈ s)
+      · rw [← Subtype.coe_mk i hi, Subtype.val_injective.extend_apply]
+        simp
+      rw [extend_apply', eq_comm]
+      · rw [support_subset_iff] at h
+        simpa using (mt <| h i) hi
+      rintro ⟨i, rfl⟩
+      exact hi i.2
+
+
+
+
+
+
+
+end relOrthSpace
