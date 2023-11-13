@@ -185,15 +185,18 @@ lemma card_lt_of_diff_subset_lt [DecidableEq γ] {A B C : Finset γ} (B_sub : B 
 
 lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Fintype ι]
     {f : ι → Finset α} {I : Finset α} (trans : Transverses' I f) (witness_set : Finset α)
-    (witness_set_card : witness_set.card = n) (witness : α → Finset α)
+    (witness : α → Finset α)
     (h_witness : ∀ a, a ∈ witness_set → ((((witness a) \ {a}).biUnion (neighbors f)).card =
     ((witness a) \ {a}).card ∧ witness a \ {a} ⊆ I)) :
     ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
     (witness_set.biUnion (fun a ↦ witness a \ {a})).card := by
-  obtain (card_eq | card_eq) := Nat.eq_zero_or_eq_succ_pred (witness_set.card)
-  ·   rw [card_eq_zero] at card_eq
-      rw [card_eq]
-      rfl
+  obtain (rfl | h) := witness_set.eq_empty_or_nonempty
+  · sorry
+  -- obtain (card_eq | card_eq) := Nat.eq_zero_or_eq_succ_pred (witness_set.card)
+  -- ·   rw [card_eq_zero] at card_eq
+  --     rw [card_eq]
+  --     rfl
+
   · obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
     apply le_antisymm
     · rw [←w_eq, biUnion_insert]
@@ -208,7 +211,8 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
       · rw [Finset.union_comm, Finset.card_union_add_card_inter _ _]
         have h_T : card (Finset.biUnion (Finset.biUnion T fun a ↦ witness a \ {a})
         (neighbors f)) = (T.biUnion (fun a ↦ witness a \ {a})).card
-        · apply hall_union_card_eq trans T T_card witness _
+        · have : card T < card witness_set := sorry
+          apply hall_union_card_eq trans T witness _
           intro a a_T
           apply h_witness a _
           rw [←w_eq]
@@ -231,10 +235,11 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
     apply (h_witness x _).2
     rw [←w_eq]
     exact x_mem
-decreasing_by  --not well done, is extra hypothesis in lemma for this reason
-  simp_wf
-  rw [←witness_set_card, card_eq]
-  simp
+termination_by _ => (witness_set.card)
+-- decreasing_by  --not well done, is extra hypothesis in lemma for this reason
+--   simp_wf
+--   rw [←witness_set_card, card_eq]
+--   simp
 
 
 def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι]

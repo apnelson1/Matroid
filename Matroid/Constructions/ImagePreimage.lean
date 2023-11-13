@@ -3,9 +3,9 @@ import Matroid.ForMathlib.Other
 
 open Set Function
 
-variable {α β : Type*} {f : α → β} {E I s : Set α}
 
 namespace Matroid
+variable {α β : Type*} {f : α → β} {E I s : Set α}
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
   Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
@@ -58,8 +58,21 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
     (M.preimage f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := by
   simp [preimage]
 
-@[simp] theorem preimage_ground_eq {M : Matroid β} :
+@[simp] theorem preimage_ground_eq (M : Matroid β) (f : α → β) :
     (M.preimage f).E = f ⁻¹' M.E := rfl
+
+theorem preimage_indep_off_of_injective (M : Matroid β) (hf : f.Injective) :
+    (M.preimage f).Indep I ↔ M.Indep (f '' I) := by
+  rw [preimage_indep_iff, and_iff_left (hf.injOn I)]
+
+noncomputable def preimage_iso [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : Iso (M.preimage f) M :=
+    Iso.of_forall_indep
+      (hf.injOn univ).toLocalEquiv (by simp [← hfE]) (by simpa)
+      ( by simp [←hfE, hf.injOn _] )
+
+@[simp] theorem preimage_iso_coeFun [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : (preimage_iso hf hfE : α → β) = fun x ↦ f x := rfl
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`, restricted
   to a ground set `E`. Elements with the same image are parallel. -/
@@ -187,29 +200,38 @@ noncomputable def iso_onGround' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onG
     intro I
     simp [Subtype.val_injective.injOn I] )
 
-noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso (M.onGround E) M :=
-  have hne : E.Nonempty := hE ▸ M.ground_nonempty
-  (iso_onGround' hE.symm.subset hne).trans (Iso.of_eq (by rw [←hE, restrict_ground_eq_self]))
+noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso M (M.onGround E) := by
+  have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
+  exact (preimage_iso Subtype.val_injective (by rw [Subtype.range_val, ←hE])).symm
 
-@[simp] theorem iso_onGround_apply [M.Nonempty] (hE : M.E = E) (x : E) :
-    (iso_onGround hE) x = x := rfl
+-- @[simp] theorem iso_onGround_apply [M.Nonempty] (hE : M.E = E) (x : E) :
+--     (iso_onGround hE) x = x := by
+--   subst hE
+--   cases x
+--   simp [iso_onGround]
 
-theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.onGround E) :
-    M = N := by
-  obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
-  · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
-  have hNn : N.Nonempty
-  · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
+--   simp [iso_onGround, onGround, preimage_ground_eq, hE]
 
-  apply eq_of_indep_iff_indep_forall (by rw [hM,hN])
-  intro I hI
-  rw [(iso_onGround hM).symm.on_indep_iff, (iso_onGround hN).symm.on_indep_iff]
-  simp_rw [h]
-  convert Iff.rfl using 2
 
-theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
-  subst hM
-  sorry
+-- theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.onGround E) :
+--     M = N := by
+--   obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
+--   · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
+--   have hNn : N.Nonempty
+--   · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
+
+--   apply eq_of_indep_iff_indep_forall (by rw [hM,hN])
+--   intro I hI
+--   rw [(iso_onGround hM).symm.on_indep_iff, (iso_onGround hN).symm.on_indep_iff]
+--   simp_rw [h]
+--   convert Iff.rfl using 2
+
+-- theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
+--   obtain (hα | hα) := isEmpty_or_nonempty α; simp
+
+--   subst hM
+
+--   sorry
 
 
 end OnUniv

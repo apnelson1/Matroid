@@ -60,6 +60,9 @@ theorem eq_emptyOn_or_nonempty (M : Matroid α) : M = emptyOn α ∨ Matroid.Non
 theorem ground_nonempty_iff (M : Matroid α) : M.E.Nonempty ↔ M.Nonempty :=
   ⟨fun h ↦ ⟨h⟩, fun ⟨h⟩ ↦ h⟩
 
+@[simp] theorem eq_empty [IsEmpty α] (M : Matroid α) : M = emptyOn α := by
+  simp [←ground_eq_empty_iff]
+
 end EmptyOn
 
 section LoopyOn
