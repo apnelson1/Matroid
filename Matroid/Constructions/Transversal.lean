@@ -191,13 +191,12 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
     ((witness_set.biUnion (fun a ↦ witness a \ {a})).biUnion (neighbors f)).card =
     (witness_set.biUnion (fun a ↦ witness a \ {a})).card := by
   obtain (rfl | h) := witness_set.eq_empty_or_nonempty
-  · sorry
-  -- obtain (card_eq | card_eq) := Nat.eq_zero_or_eq_succ_pred (witness_set.card)
-  -- ·   rw [card_eq_zero] at card_eq
-  --     rw [card_eq]
-  --     rfl
-
-  · obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
+  ·  rfl
+  · obtain ⟨a, a_mem⟩ := Finset.Nonempty.bex h
+    set T:= witness_set.erase a with T_def
+    have w_eq := Finset.insert_erase a_mem
+    have T_card := Finset.card_insert_of_not_mem (not_mem_erase a witness_set)
+    rw [←T_def] at w_eq T_card
     apply le_antisymm
     · rw [←w_eq, biUnion_insert]
       have card_le : card (Finset.biUnion (witness a \ {a} ∪ T.biUnion
@@ -211,8 +210,11 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
       · rw [Finset.union_comm, Finset.card_union_add_card_inter _ _]
         have h_T : card (Finset.biUnion (Finset.biUnion T fun a ↦ witness a \ {a})
         (neighbors f)) = (T.biUnion (fun a ↦ witness a \ {a})).card
-        · have : card T < card witness_set := sorry
-          apply hall_union_card_eq trans T witness _
+        · have term: card T < card witness_set
+          · rw [←w_eq, T_card]
+            norm_num
+          have _ := term --oddly, termination is only found if the context giving termination
+          apply hall_union_card_eq trans T witness _ --is provided in a term proof not tactic
           intro a a_T
           apply h_witness a _
           rw [←w_eq]
@@ -361,8 +363,6 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
             (sdiff_subset (witness a) {a}))) (le_of_eq card_eq.symm)
         rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
         exact (h_witness a a_sub).1
-        exact card (J \ I)
-        rfl
       apply not_lt_of_le (((transversal_exists_iff J _).1 J_trans.2) (W \ (I \ J)) _)
       · apply lt_of_le_of_lt _ (card_lt_of_diff_subset_lt JI_sub_W diff_card_lt)
         rw [W_diff_card]
@@ -443,3 +443,44 @@ theorem unif_is_transversal [DecidableEq α] (E : Finset α) (k : ℕ) :
     have card_le:= Finite.card_le_of_injective I'_map I'_map_inj
     simp only [Nat.card_eq_fintype_card, Fintype.card_coe, Fintype.card_fin] at card_le
     exact card_le
+
+--another definition of "modularity" exists in the repo- is such that a base is modular over a set
+--subsets if for any subset of that set, the intersection of the base with the intersection of
+--that subset is a base for the intersection of the subset - cant find what exactly this means wrt
+--modular pairs
+
+open Set
+def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
+    ∃ B, M.Basis (B ∩ (X ∩ Y)) (X ∩ Y) ∧ M.Basis (X ∩ B) X ∧ M.Basis (Y ∩ B) Y
+
+@[simp] theorem Modular_pair_comm (h : Modular_pair M X Y) : Modular_pair M Y X := by
+  obtain ⟨B, B_inter, B_X, B_Y⟩ := h
+  refine' ⟨B, _⟩
+  rw [inter_comm Y X]
+  exact ⟨B_inter, B_Y, B_X⟩
+
+def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
+    ∀ Y, M.Flat Y → Modular_pair M X Y
+
+@[simp] theorem Modular_ground (M : Matroid α) : Modular_flat M M.E := by
+  intro Y Y_flat
+  obtain ⟨B, h_B⟩ := M.exists_basis Y
+  obtain ⟨B', B'_base, B_sub_B'⟩ := h_B.indep
+  refine' ⟨B', _⟩
+  have B'_inter : B' ∩ Y = B
+  · apply subset_antisymm _ _
+    · rintro x ⟨x_B, x_Y⟩
+      by_contra h_f
+      apply ((B'_base.indep).subset (insert_subset x_B B_sub_B')).not_dep
+      exact h_B.insert_dep ⟨x_Y, h_f⟩
+    · intro x x_B
+      exact ⟨B_sub_B' x_B, h_B.subset x_B⟩
+  rw [inter_eq_self_of_subset_right B'_base.subset_ground,
+  inter_eq_self_of_subset_right Y_flat.subset_ground, inter_comm Y B', B'_inter, basis_ground_iff]
+  exact ⟨h_B, B'_base, h_B⟩
+
+@[simp] theorem Modular_cl_empty (M : Matroid α) : Modular_flat M (M.cl ∅) := by
+  intro Y Y_flat
+  obtain ⟨B, h_B⟩ := M.exists_basis Y
+  refine' ⟨B, _⟩
+  sorry
