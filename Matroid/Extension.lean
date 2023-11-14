@@ -44,8 +44,6 @@ lemma Equiv.image_invol [DecidableEq α] {e f : α} : Function.Involutive (Set.i
   intro X
   rw [←Set.image_comp _ _, Function.Involutive.comp_self inv, image_id]
 
-#check Function.Involutive.eq_iff Equiv.image_invol
-
 lemma Equiv.swap_mem_image_iff [DecidableEq α] {e f : α} : x ∈ (Equiv.swap e f) '' S ↔ (Equiv.swap e f) x ∈ S := by
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
   · obtain ⟨x', x'_mem, hx'⟩ := h
