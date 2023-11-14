@@ -35,32 +35,98 @@ open Set BigOperators Submodule Function
 
 
 
+section extend
+
+noncomputable def LinearMap.extendSubtype (R : Type*) [Semiring R] (s : Set α) :
+    (s → R) →ₗ[R] (α → R)  :=
+  Function.ExtendByZero.linearMap R s.incl
+
+theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
+  {s : ι → η} (hs : Function.Injective s) :
+    Injective <| Function.ExtendByZero.linearMap R s := by
+  intro x x' h
+  ext i
+  replace h := congr_fun h (s i)
+  simp only [linearMap_apply, exists_apply_eq_apply, not_true] at h
+  rwa [hs.extend_apply, hs.extend_apply] at h
+
+@[simp] theorem LinearMap.extendSubtype_inj (R : Type*) [Semiring R] (s : Set α) :
+    Injective <| LinearMap.extendSubtype R s :=
+  Function.ExtendByZero.linearMap_injective _ Subtype.coe_injective
+
+@[simp] theorem LinearMap.extendSubtype_apply {R : Type*} [Semiring R] {s : Set α} (f : s → R)
+    (y : s) : LinearMap.extendSubtype R s f y = f y := by
+  rw [extendSubtype, Function.ExtendByZero.linearMap_apply, Subtype.coe_injective.extend_apply]
+
+theorem LinearMap.extendSubtype_eq_ite {R : Type*} [Semiring R] (s : Set η) (x : s → R)
+  [DecidablePred (· ∈ s)] :
+    LinearMap.extendSubtype R s x = fun i ↦ if h : i ∈ s then x ⟨i,h⟩ else 0 := by
+  ext i
+  split_ifs with h
+  · exact extendSubtype_apply x ⟨i,h⟩
+  simp only [extendSubtype._eq_1, ExtendByZero.linearMap_apply, Subtype.exists, not_exists]
+  rw [extend_apply', Pi.zero_apply]
+  rintro ⟨a,rfl⟩
+  exact h a.2
+
+def LinearMap.funSubtype (R : Type*) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=
+  LinearMap.funLeft R R Subtype.val
+
+@[simp] theorem LinearMap.fun_Subtype_apply (R : Type*) [Semiring R] (s : Set α) (x : α → R)
+    (y : s) : LinearMap.funSubtype R s x y = x y := rfl
+
+@[simp] theorem LinearMap.funSubtype_extendSubtype (R : Type*) [Semiring R] (s : Set α) :
+    (LinearMap.funSubtype R s).comp (LinearMap.extendSubtype R s) = LinearMap.id := by
+  ext; simp
+
+@[simp] theorem LinearMap.funSubtype_extendSubtype_apply (R : Type*) [Semiring R] (s : Set α)
+  (x : s → R) :
+    (LinearMap.funSubtype R s) ((LinearMap.extendSubtype R s) x) = x := by
+  ext; simp
+
+theorem LinearMap.extendSubtype_funSubtype_apply {R : Type*} [Semiring R] {s : Set η} {x : η → R}
+  (hx : support x ⊆ s) :
+    (LinearMap.extendSubtype R s) ((LinearMap.funSubtype R s) x) = x := by
+  classical
+  ext i
+  simp only [extendSubtype_eq_ite, fun_Subtype_apply, dite_eq_ite, ite_eq_left_iff]
+  exact fun his ↦ Eq.symm <| by simpa using mt (support_subset_iff.1 hx i) his
+
+noncomputable def LinearMap.extendSubset (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
+    (s → R) →ₗ[R] (t → R) := Function.ExtendByZero.linearMap R (Set.inclusion hst)
+
+@[simp] theorem LinearMap.extendSubset_apply (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t)
+    (f : s → R) (x : s) : LinearMap.extendSubset R hst f (Set.inclusion hst x) = f x := by
+  rw [extendSubset, Function.ExtendByZero.linearMap_apply, (inclusion_injective hst).extend_apply]
+
+theorem LinearMap.extend_subset_inj (R : Type*) [Semiring R] {s t : Set α} (hst : s ⊆ t) :
+    Injective (LinearMap.extendSubset R hst) :=
+  Function.ExtendByZero.linearMap_injective _ <| inclusion_injective hst
+
+
+
+
+end extend
+
+
 section supportedFun
 
 variable {R η : Type*} [Semiring R] {s : Set η} {x : η → R}
 
 /-- The submodule of vectors in `η → R` with support contained in some `s : Set η`. -/
 noncomputable def Set.supportedFun (s : Set η)  (R : Type*) [Semiring R] : Submodule R (η → R) :=
-  LinearMap.range <| ExtendByZero.linearMap R s.incl
+  LinearMap.range <| LinearMap.extendSubtype R s
 
 @[simp] theorem mem_supportedFun_iff : x ∈ s.supportedFun R ↔ x.support ⊆ s := by
-  simp only [supportedFun, LinearMap.mem_range, support_subset_iff, ne_eq]
+  classical
+  simp only [supportedFun, LinearMap.mem_range, ne_eq]
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨y, rfl⟩ i hi
-    simp only [ExtendByZero.linearMap_apply, Subtype.exists, not_exists] at hi
-    refine by_contra fun his ↦ hi ?_
-    rw [extend_apply', Pi.zero_apply]
-    rintro ⟨a, rfl⟩
-    exact his a.2
-  use LinearMap.funLeft R R s.incl x
-  ext i
-  simp [LinearMap.funLeft]
-  obtain (his | his) := em (i ∈ s)
-  · exact Subtype.val_injective.extend_apply (x ∘ s.incl) 0 ⟨i,his⟩
-  rw [extend_apply', eq_comm]
-  · simpa using (mt <| h i) his
-  rintro ⟨a, rfl⟩
-  exact his a.2
+    simp only [mem_support, ne_eq, LinearMap.extendSubtype_eq_ite, dite_eq_right_iff,
+      not_forall] at hi
+    obtain ⟨h,-⟩ := hi
+    exact h
+  exact ⟨LinearMap.funSubtype R s x, LinearMap.extendSubtype_funSubtype_apply h⟩
 
 @[simp] theorem supportedFun_univ (R η : Type*) [Semiring R] :
     (univ : Set η).supportedFun R = ⊤ := by
@@ -73,16 +139,51 @@ noncomputable def Set.supportedFun (s : Set η)  (R : Type*) [Semiring R] : Subm
     imp_false, not_not]
   exact Iff.symm funext_iff
 
--- noncomputable def foo (s : Set η) (R : Type*) [Semiring R] :
---     Submodule R (s → R) ≃ {U : Submodule R (η → R) // U ≤ s.supportedFun R} where
---   toFun U := ⟨U.map (ExtendByZero.linearMap R s.incl), sorry⟩
---   invFun U := U.1.map <| LinearMap.funLeft R R s.incl
---   left_inv := by
---     intro U
---     ext
---     simp [LinearMap.funLeft]
 
---   right_inv := sorry
+@[simp] theorem Submodule.MapSubtype.relIso_apply {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (p : Submodule R M) (U : Submodule R p) :
+    (MapSubtype.relIso p U).1 = U.map p.subtype := rfl
+
+@[simp] theorem Submodule.MapSubtype.relIso_apply_mem {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (p : Submodule R M) (U : Submodule R p) (x : M):
+    x ∈ (MapSubtype.relIso p U).1 ↔ x ∈ U.map p.subtype := Iff.rfl
+
+@[simp] theorem Submodule.MapSubtype.relIso_apply_symm {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (p : Submodule R M) (U : {U // U ≤ p}):
+    (MapSubtype.relIso p).symm U = U.1.comap p.subtype := rfl
+
+/-- For a set `s` in `η`, submodules of `s → R` are equivalent to submodules of `η → R`
+  whose members are supported on `s` -/
+noncomputable def Set.subtypeFunEquiv (s : Set η) (R : Type*) [Semiring R] :
+    Submodule R (s → R) ≃o {U : Submodule R (η → R) // U ≤ s.supportedFun R} :=
+  (orderIsoMapComap <| LinearEquiv.ofInjective _ (LinearMap.extendSubtype_inj R s)).trans
+    (MapSubtype.relIso (s.supportedFun R))
+
+set_option pp.proofs.withType false
+
+@[simp] theorem Set.mem_subtypeFunEquiv_iff (s : Set η) (R : Type*) [Semiring R]
+    (U : Submodule R (s → R)) (x : η → R) :
+      x ∈ (s.subtypeFunEquiv R U).1 ↔ x.support ⊆ s ∧ s.restrict x ∈ U := by
+  classical
+  change (x ∈ (MapSubtype.relIso _ _).1 ↔ _)
+  simp only [RelIso.coe_toEquiv, orderIsoMapComap_apply, MapSubtype.relIso_apply, mem_map,
+    coeSubtype, exists_exists_and_eq_and]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨a, ha, rfl⟩
+    convert ha
+    ext i
+    simp only [restrict_apply]
+    convert congr_fun (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) a) i
+    simp
+  refine ⟨_, h, ?_⟩
+
+  convert (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) _)
+  ext i
+  rw [LinearMap.extendSubtype_eq_ite]
+  simp
+
+  -- simp
+
 
 end supportedFun
 
@@ -246,6 +347,16 @@ variable {R K η ι : Type*} [CommRing R] [Field K] [Fintype η]
 /-- The subspace of vectors in `U.orthSpace` with support contained in `s`. -/
 def Set.relOrthSpace (s : Set ι) (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
     U.orthSpace ⊓ (s.supportedFun R)
+
+theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
+    s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
+  ext x
+  simp [relOrthSpace]
+
+theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
+    s.relOrthSpace (s.relOrthSpace U) = U := by
+  sorry
+
 
 -- theorem mem_relOrthSpace_iff_exists_finsupp (s : Set ι) (U : Submodule R (ι → R)) :
 --     x ∈ s.relOrthSpace U ↔ x.support ⊆ s ∧
