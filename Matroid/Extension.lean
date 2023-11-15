@@ -288,6 +288,13 @@ open Set
 @[pp_dot] def Modular_matroid (M : Matroid α) : Prop :=
     ∀ X, M.Flat X → M.Modular_set X
 
+def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
+    ∀ Y, M.Flat Y → Modular_pair M X Y
+
+def Modular_cut (M : Matroid α) (C : Set (Set α)) : Prop :=
+    (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
+    (∀ F₁ F₂, F₁ ∈ C → F₂ ∈ C → M.Modular_pair F₁ F₂ → F₁ ∩ F₂ ∈ C)
+
 lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX : X ⊆ {A, B}) :
     X = {A} ∨ X = {B} ∨ X = {A, B} := by
   by_cases A_in_X : A ∈ X
@@ -302,6 +309,7 @@ lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX 
      (singleton_subset_iff.2 B_in_X)))
     · rw [Xne.subset_singleton_iff.1 ((subset_insert_iff_of_not_mem A_in_X).1 hX)] at B_in_X
       exact absurd (Set.mem_singleton B) B_in_X
+
 
 @[simp] theorem Modular_ground (M : Matroid α) : M.Modular_set M.E := by
   intro Y Y_flat
@@ -331,11 +339,6 @@ lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX 
   rw [pair_comm] at Ys_sub
   exact B_modular Ys_sub Ys_ne
 
-def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
-    ∀ Y, M.Flat Y → Modular_pair M X Y
-
-
-
 @[simp] theorem Modular_cl_empty (M : Matroid α) : Modular_flat M (M.cl ∅) := by
   intro Y Y_flat
   obtain ⟨B, h_B⟩ := M.exists_basis Y
@@ -362,3 +365,92 @@ def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
     intro a a_cl a_B'
     rw [←loop_iff_mem_cl_empty, loop_iff_not_mem_base_forall] at a_cl
     exact a_cl B' B'_base a_B'
+
+def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e : α) :
+    Matroid α :=
+  matroid_of_indep (insert e M.E)
+  (fun X ↦ if (e ∈ X) then (M.Indep (X \ {e}) ∧ M.cl (X \ {e}) ∉ C) else M.Indep X)
+  (by
+    dsimp
+    rw [if_neg (not_mem_empty _)]
+    exact M.empty_indep
+  )
+  (by
+    intro I J J_ind I_sub
+    by_cases e_mem_I : e ∈ I
+    · rw [if_pos e_mem_I]
+      rw [if_pos (I_sub e_mem_I)] at J_ind
+      refine' ⟨J_ind.1.subset (diff_subset_diff_left I_sub), fun clI_mem ↦ _⟩
+      apply J_ind.2 (hC.2.1 (M.cl (I \ {e})) (M.cl (J \ {e}))
+       clI_mem (M.cl_subset_cl (diff_subset_diff_left I_sub)) (M.cl_flat (J \ {e})))
+    · rw [if_neg e_mem_I]
+      by_cases e_mem_J : e ∈ J
+      · rw [if_pos e_mem_J] at J_ind
+        exact J_ind.1.subset (subset_diff_singleton I_sub e_mem_I)
+      · rw [if_neg e_mem_J] at J_ind
+        exact J_ind.subset I_sub
+  )
+  (by
+    rintro I J I_ind I_nmax ⟨J_ind, J_max⟩
+    rw [mem_maximals_iff] at I_nmax
+    push_neg at I_nmax
+    obtain ⟨Y, Y_ind, I_sub_Y, I_ne_Y⟩ := I_nmax I_ind
+    by_cases e_in_I : e ∈ I
+    · rw [if_pos e_in_I] at I_ind
+      by_cases e_in_J : e ∈ J
+      · sorry --hardest case i think, leave for last
+      · have extend : ∃ j₁ ∈ J \ I, ∃ j₂ ∈ J \ I, j₁ ≠ j₂ ∧ M.Indep (insert j₂
+       (insert j₁ (I \ {e}))) := sorry --this may be difficult
+--case involving finding 2 to add from j and using modularity to contradict I independence, not so
+--bad
+        obtain ⟨j₁, j₁_mem, j₂, j₂_mem, h_ne, ind⟩ := extend
+        by_cases j₁_cl_mem_c : M.cl (insert j₁ (I \ {e})) ∈ C
+        · by_cases j₂_cl_mem_c : M.cl (insert j₂ (I \ {e})) ∈ C
+          · have inter_eq : (insert j₁ (I \ {e})) ∩ (insert j₂ (I \ {e})) = I \ {e}
+            · rw [insert_eq, insert_eq, ←union_distrib_right, Disjoint.inter_eq _, empty_union]
+              rwa [disjoint_singleton]
+            have union_eq : (insert j₁ (I \ {e})) ∪ (insert j₂ (I \ {e})) =
+             insert j₂ (insert j₁ (I \ {e}))
+            · rw [insert_eq, insert_eq, ←union_union_distrib_right, @union_comm _ {j₁} _,
+               union_assoc, ←insert_eq, ←insert_eq]
+            have pair : M.Modular_pair (M.cl (insert j₁ (I \ {e}))) (M.cl (insert j₂ (I \ {e})))
+            · obtain ⟨B, B_Base, B_sub⟩ := ind
+              refine' ⟨B, B_Base, fun Ys Ys_sub Ys_ne ↦ _⟩
+              obtain (eq_j₁ | eq_j₂ | eq_inter) := subset_pair_none Ys_ne Ys_sub
+              · rw [eq_j₁, sInter_singleton, B_Base.indep.cl_inter_eq_self_of_subset (subset_trans
+                 (subset_insert _ _) B_sub)]
+                exact (((M.indep_iff_subset_base).2 ⟨B, B_Base, B_sub⟩).subset
+                 (subset_insert _ _)).basis_cl
+              · rw [insert_comm] at B_sub
+                rw [eq_j₂, sInter_singleton, B_Base.indep.cl_inter_eq_self_of_subset (subset_trans
+                 (subset_insert _ _) B_sub)]
+                exact (((M.indep_iff_subset_base).2 ⟨B, B_Base, B_sub⟩).subset
+                 (subset_insert _ _)).basis_cl
+              · rw [eq_inter, sInter_pair, ←(Indep.cl_inter_eq_inter_cl _),
+                 B_Base.indep.cl_inter_eq_self_of_subset, inter_eq]
+                · exact I_ind.1.basis_cl
+                · rw [inter_eq]
+                  exact subset_trans (subset_trans (subset_insert _ _) (subset_insert _ _)) B_sub
+                · rw [union_eq]
+                  exact ⟨B, B_Base, B_sub⟩
+            have inter_mem_c:= hC.2.2 _ _ j₁_cl_mem_c j₂_cl_mem_c pair
+            rw [←Indep.cl_inter_eq_inter_cl _, inter_eq] at inter_mem_c
+            · exact absurd inter_mem_c I_ind.2
+            · rwa [union_eq]
+          · refine' ⟨j₂, j₂_mem, _⟩
+            dsimp
+            rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
+             (ne_of_mem_of_not_mem j₂_mem.1 e_in_J) _, ]
+            rw [insert_comm] at ind
+            exact ⟨ind.subset (subset_insert _ _), j₂_cl_mem_c⟩
+        · refine' ⟨j₁, j₁_mem, _⟩
+          dsimp
+          rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
+           (ne_of_mem_of_not_mem j₁_mem.1 e_in_J) _, ]
+          exact ⟨ind.subset (subset_insert _ _), j₁_cl_mem_c⟩
+    · by_cases e_in_J : e ∈ J
+      · sorry --not that bad case
+      · sorry --trivial case
+
+  )
+  sorry sorry
