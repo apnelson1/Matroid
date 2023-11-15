@@ -163,26 +163,26 @@ set_option pp.proofs.withType false
 
 @[simp] theorem Set.mem_subtypeFunEquiv_iff (s : Set η) (R : Type*) [Semiring R]
     (U : Submodule R (s → R)) (x : η → R) :
-      x ∈ (s.subtypeFunEquiv R U).1 ↔ x.support ⊆ s ∧ s.restrict x ∈ U := by
-  classical
-  change (x ∈ (MapSubtype.relIso _ _).1 ↔ _)
-  simp only [RelIso.coe_toEquiv, orderIsoMapComap_apply, MapSubtype.relIso_apply, mem_map,
-    coeSubtype, exists_exists_and_eq_and]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨a, ha, rfl⟩
-    convert ha
-    ext i
-    simp only [restrict_apply]
-    convert congr_fun (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) a) i
-    simp
-  refine ⟨_, h, ?_⟩
+      x ∈ (s.subtypeFunEquiv R U).1 ↔ x.support ⊆ s ∧ s.restrict x ∈ U := sorry
+--   classical
+--   change (x ∈ (MapSubtype.relIso _ _).1 ↔ _)
+--   simp only [RelIso.coe_toEquiv, orderIsoMapComap_apply, MapSubtype.relIso_apply, mem_map,
+--     coeSubtype, exists_exists_and_eq_and]
+--   refine ⟨?_, fun h ↦ ?_⟩
+--   · rintro ⟨a, ha, rfl⟩
+--     convert ha
+--     ext i
+--     simp only [restrict_apply]
+--     convert congr_fun (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) a) i
+--     simp
+--   refine ⟨_, h, ?_⟩
 
-  convert (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) _)
-  ext i
-  rw [LinearMap.extendSubtype_eq_ite]
-  simp
+--   convert (LinearEquiv.ofInjective_apply (f := LinearMap.extendSubtype R s) _)
+--   ext i
+--   rw [LinearMap.extendSubtype_eq_ite]
+--   simp
 
-  -- simp
+--   -- simp
 
 
 end supportedFun
@@ -348,14 +348,14 @@ variable {R K η ι : Type*} [CommRing R] [Field K] [Fintype η]
 def Set.relOrthSpace (s : Set ι) (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
     U.orthSpace ⊓ (s.supportedFun R)
 
-theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
-    s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
-  ext x
-  simp [relOrthSpace]
+-- theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
+--     s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
+--   ext x
+--   simp [relOrthSpace]
 
-theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
-    s.relOrthSpace (s.relOrthSpace U) = U := by
-  sorry
+-- theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
+--     s.relOrthSpace (s.relOrthSpace U) = U := by
+--   sorry
 
 
 -- theorem mem_relOrthSpace_iff_exists_finsupp (s : Set ι) (U : Submodule R (ι → R)) :
