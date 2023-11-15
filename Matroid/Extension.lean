@@ -44,8 +44,6 @@ lemma Equiv.image_invol [DecidableEq α] {e f : α} : Function.Involutive (Set.i
   intro X
   rw [←Set.image_comp _ _, Function.Involutive.comp_self inv, image_id]
 
-#check Function.Involutive.eq_iff Equiv.image_invol
-
 lemma Equiv.swap_mem_image_iff [DecidableEq α] {e f : α} : x ∈ (Equiv.swap e f) '' S ↔ (Equiv.swap e f) x ∈ S := by
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
   · obtain ⟨x', x'_mem, hx'⟩ := h
@@ -280,23 +278,36 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
 --modular pairs
 
 open Set
-def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
-    ∃ B, M.Basis (B ∩ (X ∩ Y)) (X ∩ Y) ∧ M.Basis (X ∩ B) X ∧ M.Basis (Y ∩ B) Y
 
-@[simp] theorem Modular_pair_comm (h : Modular_pair M X Y) : Modular_pair M Y X := by
-  obtain ⟨B, B_inter, B_X, B_Y⟩ := h
-  refine' ⟨B, _⟩
-  rw [inter_comm Y X]
-  exact ⟨B_inter, B_Y, B_X⟩
+@[pp_dot] def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
+    ∃ B, M.Modular {X, Y} B
 
-def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
-    ∀ Y, M.Flat Y → Modular_pair M X Y
+@[pp_dot] def Modular_set (M : Matroid α) (X : Set α) : Prop :=
+    ∀ Y, M.Flat Y → M.Modular_pair X Y
 
-@[simp] theorem Modular_ground (M : Matroid α) : Modular_flat M M.E := by
+@[pp_dot] def Modular_matroid (M : Matroid α) : Prop :=
+    ∀ X, M.Flat X → M.Modular_set X
+
+lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX : X ⊆ {A, B}) :
+    X = {A} ∨ X = {B} ∨ X = {A, B} := by
+  by_cases A_in_X : A ∈ X
+  · by_cases B_in_X : B ∈ X
+    · exact (Or.inr (Or.inr (subset_antisymm hX (insert_subset A_in_X
+       (singleton_subset_iff.2 B_in_X)))))
+    · rw [pair_comm] at hX
+      exact Or.inl (subset_antisymm ((subset_insert_iff_of_not_mem B_in_X).1 hX)
+       (singleton_subset_iff.2 A_in_X))
+  · by_cases B_in_X : B ∈ X
+    · exact Or.inr (Or.inl (subset_antisymm ((subset_insert_iff_of_not_mem A_in_X).1 hX)
+     (singleton_subset_iff.2 B_in_X)))
+    · rw [Xne.subset_singleton_iff.1 ((subset_insert_iff_of_not_mem A_in_X).1 hX)] at B_in_X
+      exact absurd (Set.mem_singleton B) B_in_X
+
+@[simp] theorem Modular_ground (M : Matroid α) : M.Modular_set M.E := by
   intro Y Y_flat
   obtain ⟨B, h_B⟩ := M.exists_basis Y
   obtain ⟨B', B'_base, B_sub_B'⟩ := h_B.indep
-  refine' ⟨B', _⟩
+  refine' ⟨B', B'_base, _⟩
   have B'_inter : B' ∩ Y = B
   · apply subset_antisymm _ _
     · rintro x ⟨x_B, x_Y⟩
@@ -305,12 +316,49 @@ def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
       exact h_B.insert_dep ⟨x_Y, h_f⟩
     · intro x x_B
       exact ⟨B_sub_B' x_B, h_B.subset x_B⟩
-  rw [inter_eq_self_of_subset_right B'_base.subset_ground,
-  inter_eq_self_of_subset_right Y_flat.subset_ground, inter_comm Y B', B'_inter, basis_ground_iff]
-  exact ⟨h_B, B'_base, h_B⟩
+  rintro X X_sub X_ne
+  obtain (X_eq_E | X_eq_Y | X_eq_pair) := subset_pair_none X_ne X_sub
+  · rwa [X_eq_E, sInter_singleton, inter_eq_self_of_subset_right B'_base.subset_ground,
+     basis_ground_iff]
+  · rwa [X_eq_Y, sInter_singleton, inter_comm, B'_inter]
+  · rwa [X_eq_pair, sInter_pair, inter_eq_self_of_subset_right Y_flat.subset_ground, inter_comm,
+     B'_inter]
+
+@[simp] theorem Modular_pair_comm (h : Modular_pair M X Y) : Modular_pair M Y X := by
+  obtain ⟨B, B_Base, B_modular⟩ := h
+  refine' ⟨B, B_Base, _⟩
+  intro Ys Ys_sub Ys_ne
+  rw [pair_comm] at Ys_sub
+  exact B_modular Ys_sub Ys_ne
+
+def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
+    ∀ Y, M.Flat Y → Modular_pair M X Y
+
+
 
 @[simp] theorem Modular_cl_empty (M : Matroid α) : Modular_flat M (M.cl ∅) := by
   intro Y Y_flat
   obtain ⟨B, h_B⟩ := M.exists_basis Y
-  refine' ⟨B, _⟩
-  sorry
+  obtain ⟨B', B'_base, B_sub_B'⟩ := h_B.indep
+  have B'_inter : Y ∩ B' = B
+  · apply subset_antisymm _ _
+    · rintro x ⟨x_B, x_Y⟩
+      by_contra h_f
+      apply ((B'_base.indep).subset (insert_subset x_Y B_sub_B')).not_dep
+      exact h_B.insert_dep ⟨x_B, h_f⟩
+    · intro x x_B
+      exact ⟨h_B.subset x_B, B_sub_B' x_B⟩
+  refine' ⟨B', B'_base, fun Ys Ys_sub Ys_ne ↦ _⟩
+  obtain (Ys_eq_cl | Ys_eq_Y | Ys_eq_pair) := subset_pair_none Ys_ne Ys_sub
+  · rw [Ys_eq_cl, sInter_singleton, Disjoint.inter_eq _, empty_basis_iff]
+    · rw [disjoint_left]
+      intro a a_cl a_B'
+      rw [←loop_iff_mem_cl_empty, loop_iff_not_mem_base_forall] at a_cl
+      exact a_cl B' B'_base a_B'
+  · rwa [Ys_eq_Y, sInter_singleton, B'_inter]
+  · rw [Ys_eq_pair, sInter_pair, ←Y_flat.cl, inter_eq_self_of_subset_left
+    (M.cl_subset_cl (empty_subset _)), Disjoint.inter_eq _, empty_basis_iff]
+    rw [disjoint_left]
+    intro a a_cl a_B'
+    rw [←loop_iff_mem_cl_empty, loop_iff_not_mem_base_forall] at a_cl
+    exact a_cl B' B'_base a_B'

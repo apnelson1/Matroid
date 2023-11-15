@@ -374,10 +374,10 @@ variable {R K η ι : Type*} [CommRing R] [Field K] [Fintype η]
 def Set.relOrthSpace (s : Set ι) (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
     U.orthSpace ⊓ (s.supportedFun R)
 
-theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
-    s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
-  ext x
-  simp only [relOrthSpace, ge_iff_le, mem_inf, mem_supportedFun_iff, mem_subtypeFunEquiv_iff,
+-- theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
+--     s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
+--   ext x
+--   simp only [relOrthSpace, ge_iff_le, mem_inf, mem_supportedFun_iff, mem_subtypeFunEquiv_iff,
     and_comm, and_congr_right_iff, orthSpace, mem_map, mem_orthSpace'_iff, mem_subtypeFunEquiv_iff,
     and_imp]
   refine fun hx ↦ ⟨?_, fun ⟨y, hyx, hy⟩ ↦ ?_⟩
@@ -398,9 +398,9 @@ theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
 
 
 
-theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
-    s.relOrthSpace (s.relOrthSpace U) = U := by
-  sorry
+-- theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
+--     s.relOrthSpace (s.relOrthSpace U) = U := by
+--   sorry
 
 
 -- theorem mem_relOrthSpace_iff_exists_finsupp (s : Set ι) (U : Submodule R (ι → R)) :
