@@ -443,14 +443,19 @@ theorem Set.relOrthSpace_subtypeFunEquiv (s : Set ι) (U : Submodule K (s → K)
   simp only [Finsupp.total_mapDomain, and_imp]
   exact fun _ _ hyU ↦ hl _ hyU
 
+theorem Set.Finite.mem_relOrthSpace_iff {s : Set ι} (hs : s.Finite) {U : Submodule K (ι → K)} :
+    x ∈ s.relOrthSpace U ↔
+      ∃ (hsupp : support x ⊆ s), ∀ y ∈ U, ∑ i in (hs.subset hsupp).toFinset, x i * y i = 0 := by
+  rw [s.mem_relOrthSpace_iff]
+  sorry
+  -- this should be ok to prove
 
-
-theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
-    s.relOrthSpace (s.relOrthSpace U) = U := by
-  have he1 := s.relOrthSpace_subtypeFunEquiv ((s.subtypeFunEquiv K).symm ⟨U, hU⟩)
-  simp only [OrderIso.apply_symm_apply] at he1
-  rw [he1]
-
+theorem Set.Finite.relOrthSpace_relOrthSpace {s : Set ι} (hs : s.Finite) (U : Submodule K (ι → K))
+    (hU : U ≤ s.supportedFun K) : s.relOrthSpace (s.relOrthSpace U) = U := by
+  set U' : {U : Submodule K (ι → K) // U ≤ s.supportedFun K} := ⟨U,hU⟩
+  have := hs.fintype
+  rw [(show U = U' from rfl), ← Subtype.val_inj.2 <| (s.subtypeFunEquiv K).apply_symm_apply U',
+    s.relOrthSpace_subtypeFunEquiv, s.relOrthSpace_subtypeFunEquiv, orthSpace_orthSpace]
 
 
 

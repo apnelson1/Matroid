@@ -2,7 +2,7 @@ import Mathlib.Data.Matrix.Rank
 import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.FiniteDimensional
-import Matroid.ForMathlib.Representation
+-- import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.StdBasis
 import Matroid.ForMathlib.LinearAlgebra.Matrix.NonsingularInverse
@@ -625,7 +625,6 @@ theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearInde
   convert congr_fun hc0 ⟨x, hxt⟩
   simp
 
-
 theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace) :
     A₁.ColBasis t ↔ A₂.ColBasis tᶜ := by
   obtain ⟨b₁, hb₁⟩ := A₁.exists_rowBasis
@@ -640,6 +639,23 @@ theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace)
   rw [←orthSpace_rowSpace_eq_nullSpace, h, orthSpace_orthSpace]
 
 end NullSpace
+
+section RelNullSpace
+
+variable {K : Type*} [Field K] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂]
+  {A : Matrix m n K} {A₁ : Matrix m₁ n K} {A₂ : Matrix m₂ n K} {t : Set n}
+
+theorem colBasis_iff_colBasis_diff_of_orth {s : Set n} (hs : s.Finite) (hA₁ : A₁.colFun.support ⊆ s)
+    (hA₂ : A₂.colFun.support ⊆ s) (h : A₁.rowSpace = A₂.nullSpace ⊓ s.supportedFun K) {t : Set n} :
+    A₁.ColBasis t ↔ A₂.ColBasis (s \ t) := by
+  have hts : t ⊆ s := sorry
+  set B₁ := A₁.colSubmatrix s
+  set B₂ := A₂.colSubmatrix s
+  have := hs.fintype
+  have := colBasis_iff_colBasis_compl_of_orth (A₁ := B₁) (A₂ := B₂) (t := s.incl ⁻¹' t) sorry
+
+
+end RelNullSpace
 
 section Rank
 
