@@ -330,9 +330,9 @@ theorem er_le_one_iff [_root_.Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
   rw [er_cl_eq, ←encard_singleton e]
   exact M.er_le_encard {e}
 
-
-
 end Basic
+
+
 
 section rFin
 
@@ -618,8 +618,6 @@ theorem Basis.r (h : M.Basis I X) : M.r I = M.r X :=
 
 
 
-
-
 -- #align matroid_in.basis.r_eq_card Matroid.Basis.r_eq_card
 
 -- theorem Base.r (hB : M.base B) : M.r B = M.rk := by rw [base_iff_basis_ground] at hB ; rw [hB.r, rk]
@@ -635,7 +633,43 @@ theorem Basis.r (h : M.Basis I X) : M.r I = M.r X :=
 
 end Rank
 
+section Constructions
 
+variable {E : Set α}
+
+@[simp] theorem loopyOn_er_eq (E X : Set α) : (loopyOn E).er X = 0 := by
+  obtain ⟨I, hI⟩ := (loopyOn E).exists_basis' X
+  rw [hI.er_eq_encard, loopyOn_indep_iff.1 hI.indep, encard_empty]
+
+@[simp] theorem loopyOn_erk_eq (E : Set α) : (loopyOn E).erk = 0 := by
+  rw [erk_eq_er_ground, loopyOn_er_eq]
+
+@[simp] theorem loopyOn_r_eq (E X : Set α) : (loopyOn E).r X = 0 := by
+  rw [←er_toNat_eq_r, loopyOn_er_eq]; rfl
+
+@[simp] theorem erk_eq_zero_iff : M.erk = 0 ↔ M = loopyOn M.E := by
+  refine ⟨fun h ↦ cl_empty_eq_ground_iff.1 ?_, fun h ↦ by rw [h, loopyOn_erk_eq]⟩
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [←hB.encard, encard_eq_zero] at h
+  rw [←h, hB.cl_eq]
+
+theorem eq_loopyOn_iff_cl : M = loopyOn E ↔ M.cl ∅ = E ∧ M.E = E :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←cl_empty_eq_ground_iff, h, h']⟩
+
+theorem eq_loopyOn_iff_erk : M = loopyOn E ↔ M.erk = 0 ∧ M.E = E :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [←h', ←erk_eq_zero_iff, h]⟩
+
+@[simp] theorem freeOn_erk_eq (E : Set α) : (freeOn E).erk = E.encard := by
+  rw [erk_eq_er_ground, freeOn_ground, (freeOn_indep_iff.2 rfl.subset).er]
+
+theorem freeOn_er_eq (hXE : X ⊆ E) : (freeOn E).er X = X.encard := by
+  obtain ⟨I, hI⟩ := (freeOn E).exists_basis X
+  rw [hI.er_eq_encard, (freeOn_indep hXE).eq_of_basis hI]
+
+theorem freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
+  rw [←er_toNat_eq_r, freeOn_er_eq hXE, ncard_def]
+
+end Constructions
 end Matroid
 
 

@@ -135,11 +135,6 @@ theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 theorem delete_delete_diff (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
   by simp
 
-/-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
-noncomputable def Iso.delete {β : Type*} {N : Matroid β} (e : Iso M N) (hD : D ⊆ M.E) :
-    Iso (M ⟍ D) (N ⟍ e '' D) := by
-  convert Iso.restrict e (M.E \ D) using 1
-  rw [e.injOn_ground.image_diff hD, e.image_ground, ←restrict_compl]
 
 end Delete
 
@@ -462,10 +457,6 @@ theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ⟋ C).er X ≤ M
 theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⟋ C).rFin X := by
   rw [←er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
 
-noncomputable def Iso.contract {β : Type*} {N : Matroid β} (e : Iso M N) (hC : C ⊆ M.E) :
-    Iso (M ⟋ C) (N ⟋ e '' C) :=
-  (e.dual.delete hC).dual
-
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
     (M ⟋ C).rFin (X \ C) :=
   (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
@@ -526,11 +517,8 @@ theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) :
   rw [←he.er_eq, ←union_singleton]
   exact M.er_mono (subset_union_right _ _)
 
-
-
-
-
 end Contract
+
 
 section Minor
 
@@ -656,13 +644,13 @@ theorem contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ 
     (M ⟋ C) ↾ R ≤m M := by
   rw [←delete_compl]; apply contract_delete_minor
 
-theorem Minor.to_dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
+theorem Minor.dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [delete_dual_eq_dual_contract, contract_dual_eq_dual_delete]
   apply delete_contract_minor
 
-theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M := by
-  refine' ⟨fun h ↦ _, Minor.to_dual⟩; rw [← dual_dual N, ← dual_dual M]; exact h.to_dual
+theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M :=
+  ⟨fun h ↦ by rw [← dual_dual N, ← dual_dual M]; exact h.dual, Minor.dual⟩
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
@@ -712,46 +700,45 @@ theorem Minor.exists_contract_spanning_restrict (h : N ≤m M) :
 
 end Minor
 
-section Iso
+section Constructions
 
-variable {β : Type*} {N' M' : Matroid α}
+variable {E : Set α}
 
-/-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
-  defined to be type-heterogeneous.  -/
-def IsoMinor (N : Matroid β) (M : Matroid α) : Prop :=
-  ∃ M' : Matroid α, M' ≤m M ∧ N ≃ M'
+@[simp] theorem delete_ground_self (M : Matroid α) : M ⟍ M.E = emptyOn α := by
+  simp [←ground_eq_empty_iff]
 
-infixl:50 " ≤i " => Matroid.IsoMinor
+@[simp] theorem contract_ground_self (M : Matroid α) : M ⟋ M.E = emptyOn α := by
+  simp [←ground_eq_empty_iff]
 
-instance isoMinor_refl : IsRefl (Matroid α) (· ≤i ·) :=
-  ⟨fun M ↦ ⟨M, refl M, ⟨Iso.refl M⟩⟩⟩
+@[simp] theorem emptyOn_minor (M : Matroid α) : (emptyOn α) ≤m M :=
+  ⟨M.E, ∅, by simp [rfl.subset]⟩
 
-theorem Iso.isoMinor {N : Matroid β} (e : Iso N M) : N ≤i M :=
-  ⟨M, Minor.refl _, ⟨e⟩⟩
+@[simp] theorem minor_emptyOn_iff : M ≤m emptyOn α ↔ M = emptyOn α :=
+  ⟨fun h ↦ ground_eq_empty_iff.1 (eq_empty_of_subset_empty h.subset),
+    by rintro rfl; apply emptyOn_minor⟩
 
-theorem IsIso.isoMinor {N : Matroid β} (h : M ≃ N) : M ≤i N := by
-  obtain ⟨e⟩ := h; exact e.isoMinor
+@[simp] theorem loopyOn_delete (E X : Set α) : (loopyOn E) ⟍ X = loopyOn (E \ X) := by
+  rw [←restrict_compl, loopyOn_restrict, loopyOn_ground]
 
-theorem Minor.trans_iso {M' : Matroid β} (h : N ≤m M) (e : Iso M M') : N ≤i M' := by
-  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h
-  exact ⟨_,
-    contract_delete_minor _ _ _, ⟨(Iso.contract e hC).delete (subset_diff.2 ⟨hD, hCD.symm⟩)⟩⟩
+@[simp] theorem loopyOn_contract (E X : Set α) : (loopyOn E) ⟋ X = loopyOn (E \ X) := by
+  simp_rw [eq_loopyOn_iff_cl, contract_cl_eq, empty_union, loopyOn_cl_eq, contract_ground,
+    loopyOn_ground]
 
-theorem Minor.isoMinor (h : N ≤m M) : N ≤i M :=
-  ⟨N, h, ⟨Iso.refl N⟩⟩
+@[simp] theorem loopyOn_minor : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
+  refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
+  convert (loopyOn E).restrict_minor hss using 1
+  rw [h, loopyOn_ground, loopyOn_restrict]
 
-theorem IsoMinor.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
-    {M₃ : Matroid α₃} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ :=
-  by
-  obtain ⟨M₂', hM₂'M₃, ⟨i'⟩⟩ := h'
-  obtain ⟨M₁', hM₁'M₂, ⟨i''⟩⟩ := h
-  obtain ⟨N, hN, ⟨iN⟩⟩ := hM₁'M₂.trans_iso i'
-  exact ⟨N, hN.trans hM₂'M₃, ⟨i''.trans iN⟩⟩
+theorem contract_eq_loopyOn_of_spanning (h : M.Spanning C) : M ⟋ C = loopyOn (M.E \ C) := by
+  rw [eq_loopyOn_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
 
-theorem Iso.trans_isoMinor {N : Matroid β} (e : Iso N N') (h : N' ≤i M) : N ≤i M :=
-  e.isoMinor.trans h
+@[simp] theorem freeOn_delete (E X : Set α) : (freeOn E) ⟍ X = freeOn (E \ X) := by
+  rw [←loopyOn_dual_eq, ←contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
 
-end Iso
+@[simp] theorem freeOn_contract (E X : Set α) : (freeOn E) ⟋ X = freeOn (E \ X) := by
+  rw [←loopyOn_dual_eq, ←delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
+
+end Constructions
 
 end Matroid
 

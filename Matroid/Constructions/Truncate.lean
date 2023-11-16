@@ -1,4 +1,4 @@
-import Matroid.Constructions.Basic
+import Matroid.Rank
 
 variable {α : Type*} {M : Matroid α} {E : Set α}
 
