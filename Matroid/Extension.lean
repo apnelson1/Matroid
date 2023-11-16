@@ -1,5 +1,5 @@
 import Matroid.Simple
-import Matroid.Minor
+import Matroid.Minor.Basic
 import Matroid.Constructions.ImagePreimage
 open Set
 namespace Matroid

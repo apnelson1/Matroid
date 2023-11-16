@@ -135,11 +135,6 @@ theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 theorem delete_delete_diff (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
   by simp
 
-/-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
-noncomputable def Iso.delete {β : Type*} {N : Matroid β} (e : Iso M N) (hD : D ⊆ M.E) :
-    Iso (M ⟍ D) (N ⟍ e '' D) := by
-  convert Iso.restrict e (M.E \ D) using 1
-  rw [e.injOn_ground.image_diff hD, e.image_ground, ←restrict_compl]
 
 end Delete
 
@@ -462,10 +457,6 @@ theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ⟋ C).er X ≤ M
 theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⟋ C).rFin X := by
   rw [←er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
 
-noncomputable def Iso.contract {β : Type*} {N : Matroid β} (e : Iso M N) (hC : C ⊆ M.E) :
-    Iso (M ⟋ C) (N ⟋ e '' C) :=
-  (e.dual.delete hC).dual
-
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
     (M ⟋ C).rFin (X \ C) :=
   (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
@@ -656,13 +647,13 @@ theorem contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ 
     (M ⟋ C) ↾ R ≤m M := by
   rw [←delete_compl]; apply contract_delete_minor
 
-theorem Minor.to_dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
+theorem Minor.dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [delete_dual_eq_dual_contract, contract_dual_eq_dual_delete]
   apply delete_contract_minor
 
-theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M := by
-  refine' ⟨fun h ↦ _, Minor.to_dual⟩; rw [← dual_dual N, ← dual_dual M]; exact h.to_dual
+theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M :=
+  ⟨fun h ↦ by rw [← dual_dual N, ← dual_dual M]; exact h.dual, Minor.dual⟩
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
@@ -712,46 +703,6 @@ theorem Minor.exists_contract_spanning_restrict (h : N ≤m M) :
 
 end Minor
 
-section Iso
-
-variable {β : Type*} {N' M' : Matroid α}
-
-/-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
-  defined to be type-heterogeneous.  -/
-def IsoMinor (N : Matroid β) (M : Matroid α) : Prop :=
-  ∃ M' : Matroid α, M' ≤m M ∧ N ≃ M'
-
-infixl:50 " ≤i " => Matroid.IsoMinor
-
-instance isoMinor_refl : IsRefl (Matroid α) (· ≤i ·) :=
-  ⟨fun M ↦ ⟨M, refl M, ⟨Iso.refl M⟩⟩⟩
-
-theorem Iso.isoMinor {N : Matroid β} (e : Iso N M) : N ≤i M :=
-  ⟨M, Minor.refl _, ⟨e⟩⟩
-
-theorem IsIso.isoMinor {N : Matroid β} (h : M ≃ N) : M ≤i N := by
-  obtain ⟨e⟩ := h; exact e.isoMinor
-
-theorem Minor.trans_iso {M' : Matroid β} (h : N ≤m M) (e : Iso M M') : N ≤i M' := by
-  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h
-  exact ⟨_,
-    contract_delete_minor _ _ _, ⟨(Iso.contract e hC).delete (subset_diff.2 ⟨hD, hCD.symm⟩)⟩⟩
-
-theorem Minor.isoMinor (h : N ≤m M) : N ≤i M :=
-  ⟨N, h, ⟨Iso.refl N⟩⟩
-
-theorem IsoMinor.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
-    {M₃ : Matroid α₃} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ :=
-  by
-  obtain ⟨M₂', hM₂'M₃, ⟨i'⟩⟩ := h'
-  obtain ⟨M₁', hM₁'M₂, ⟨i''⟩⟩ := h
-  obtain ⟨N, hN, ⟨iN⟩⟩ := hM₁'M₂.trans_iso i'
-  exact ⟨N, hN.trans hM₂'M₃, ⟨i''.trans iN⟩⟩
-
-theorem Iso.trans_isoMinor {N : Matroid β} (e : Iso N N') (h : N' ≤i M) : N ≤i M :=
-  e.isoMinor.trans h
-
-end Iso
 
 end Matroid
 

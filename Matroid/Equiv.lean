@@ -8,6 +8,9 @@ open Set LocalEquiv
 
 variable {α β α₁ α₂ α₃ : Type*}
 
+/-- An isomorphism between two matroids. Sadly this doesn't exist if one has empty ground
+  type and the other is an empty matroid on a nonempty type; this is a shortcoming of the
+  implementation via `LocalEquiv`, which otherwise has many advantages.  -/
 structure Iso (M : Matroid α) (N : Matroid β) where
   (toLocalEquiv : LocalEquiv α β)
   (source_eq' : toLocalEquiv.source = M.E)
@@ -138,6 +141,14 @@ def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
     (h_ind : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (f '' I))) :
     (Iso.of_forall_indep f h_source h_target h_ind : α → β) = f := rfl
 
+/-- Empty matroids (on nonempty types) are isomorphic. -/
+noncomputable def Iso.of_empty_empty [Nonempty α] [Nonempty β] {M : Matroid α} {N : Matroid β}
+    (hM : M.E = ∅) (hN : N.E = ∅) : M.Iso N :=
+  let f : (α → β) := Pi.Nonempty.some
+  Iso.of_forall_indep ((injOn_empty f).toLocalEquiv) (by simp [hM.symm]) (by simp [hN.symm])
+   (by simp [hM, subset_empty_iff])
+
+
 section transfer
 
 -- Some generic lemmas to carry a matroid `Set` property across an isomorphism
@@ -251,28 +262,6 @@ theorem Iso.on_dep_symm (e : Iso M N) (h : N.Dep (e '' D)) (hD : D ⊆ M.E := by
 theorem Iso.setOf_dep_eq (e : Iso M N) : setOf N.Dep = (image e) '' setOf M.Dep :=
   e.setOf_prop_eq Dep.subset_ground e.on_dep e.symm.on_dep
 
-
-/-- Restrictions of isomorphic matroids are isomorphic -/
-def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
-    Iso (M ↾ R) (N ↾ (e '' R)) :=
-  iso_of_forall_indep (e.toLocalEquiv.restr R)
-  (by simpa [restrict_ground_eq])
-  (by rw [restr_target, restrict_ground_eq,
-    image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])] )
-
-  (by {
-    simp only [restrict_indep_iff, restr_coe, image_subset_iff, and_imp]
-    exact fun I hI hIR ↦ ⟨e.on_indep hI, hIR.trans (subset_preimage_image _ _)⟩ })
-  (by {
-    simp only [restrict_indep_iff, restr_coe_symm, image_subset_iff, and_imp]
-    refine' fun I hI hIR ↦ ⟨e.symm.on_indep hI, hIR.trans _⟩
-    rw [image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])]
-    apply inter_subset_right })
-
-@[simp] lemma Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
-    (e.restrict R hR).toLocalEquiv = e.toLocalEquiv.restr R := by
-  simp [restrict]
-
 /-- The duals of isomorphic matroids are isomorphic -/
 def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
   iso_of_forall_base e.toLocalEquiv
@@ -290,14 +279,66 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
 
 @[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toLocalEquiv = e.toLocalEquiv := rfl
 
-/-- We write `M ≃ N` if there is an isomorphism from `M` to `N`. -/
-def IsIso : Matroid α → Matroid β → Prop := fun M N ↦ _root_.Nonempty (M.Iso N)
+/-- We write `M ≅ N` if there is an isomorphism from `M` to `N`. This is defined as
+  a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
+  even though `M.Iso N` may be 'incorrectly' empty in such cases. -/
+def IsIso : Matroid α → Matroid β → Prop := fun M N ↦
+  (M.E = ∅ ∧ N.E = ∅) ∨ Nonempty (M.Iso N)
 
-infixl:65  " ≃ " => IsIso
+infixl:65  " ≅ " => IsIso
 
-instance : IsEquiv (Matroid α) (fun (M N : Matroid α) ↦ M ≃ N) where
-  refl := fun M ↦ ⟨Iso.refl M⟩
-  trans := fun _ _ _ ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩
-  symm := fun _ _ ⟨e⟩ ↦ ⟨e.symm⟩
+-- instance : IsEquiv (Matroid α) (fun (M N : Matroid α) ↦ M ≅ N) where
+--   refl := fun M ↦ ⟨Iso.refl M⟩
+--   trans := fun _ _ _ ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩
+--   symm := fun _ _ ⟨e⟩ ↦ ⟨e.symm⟩
+
+theorem IsIso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := by
+  obtain (⟨hM,hN⟩ | ⟨⟨e⟩⟩)  := h
+  · exact Or.inl ⟨hN, hM⟩
+  exact Or.inr ⟨e.symm⟩
+
+theorem IsIso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
+  ⟨IsIso.symm, IsIso.symm⟩
+
+theorem IsIso.trans {M : Matroid α} {N : Matroid β} {O : Matroid γ}
+    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
+  obtain (⟨hM,hN⟩ | ⟨⟨eMN⟩⟩) := h1
+  · refine Or.inl ⟨hM, ?_⟩
+    obtain (⟨-,hO⟩ | ⟨⟨eNO⟩⟩) := h2
+    · exact hO
+    rw [← eNO.image_ground, hN, image_empty]
+  obtain (⟨hN',hO⟩ | ⟨⟨eNO⟩⟩) := h2
+  · rw [← eMN.image_ground, image_eq_empty] at hN'
+    exact Or.inl ⟨hN', hO⟩
+  exact Or.inr <| ⟨eMN.trans eNO⟩
+
+theorem IsIso.refl (M : Matroid α) : M ≅ M :=
+  Or.inr ⟨Iso.refl M⟩
+
+theorem Iso.isIso {M : Matroid α} {N : Matroid β} (h : M.Iso N) : M ≅ N :=
+  Or.inr ⟨h⟩
+
+theorem isIso_of_empty (M : Matroid α) {N : Matroid β} [IsEmpty α] (hN : N.E = ∅) : M ≅ N :=
+  Or.inl ⟨by simp, hN⟩
+
+theorem IsIso.nonempty_iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Nonempty α] [Nonempty β] :
+    Nonempty (M.Iso N) := by
+  obtain (⟨hM, hN⟩ | ⟨⟨e⟩⟩) := h
+  · exact ⟨Iso.of_empty_empty hM hN⟩
+  exact ⟨e⟩
+
+/-- Noncomputably produce an `Iso M N` from `M ≅ N` whenever both ground types are nonempty -/
+noncomputable def IsIso.iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Nonempty α] [Nonempty β] :
+    Iso M N := h.nonempty_iso.some
+
+theorem IsIso.dual (h : M ≅ N) : M﹡ ≅ N﹡ := by
+  obtain (⟨hM, hN⟩ | ⟨⟨e⟩⟩) := h
+  · exact Or.inl ⟨hM,hN⟩
+  exact Or.inr ⟨e.dual⟩
+
+theorem isIso_dual_iff : M﹡ ≅ N﹡ ↔ M ≅ N := by
+  refine ⟨fun h ↦ ?_, IsIso.dual⟩
+  rw [←dual_dual M, ←dual_dual N]
+  exact h.dual
 
 end Matroid

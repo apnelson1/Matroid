@@ -1,4 +1,4 @@
-import Matroid.Minor
+import Matroid.Minor.Basic
 
 variable {α : Type*} {M : Matroid α}
 
