@@ -1,4 +1,4 @@
-import Matroid.Restrict
+import Matroid.Constructions.Basic
 import Mathlib.Logic.Equiv.LocalEquiv
 import Matroid.ForMathlib.Other
 
@@ -142,12 +142,9 @@ def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
     (Iso.of_forall_indep f h_source h_target h_ind : α → β) = f := rfl
 
 /-- Empty matroids (on nonempty types) are isomorphic. -/
-noncomputable def Iso.of_empty_empty [Nonempty α] [Nonempty β] {M : Matroid α} {N : Matroid β}
-    (hM : M.E = ∅) (hN : N.E = ∅) : M.Iso N :=
+noncomputable def Iso.of_emptyOn [Nonempty α] [Nonempty β] : (emptyOn α).Iso (emptyOn β) :=
   let f : (α → β) := Pi.Nonempty.some
-  Iso.of_forall_indep ((injOn_empty f).toLocalEquiv) (by simp [hM.symm]) (by simp [hN.symm])
-   (by simp [hM, subset_empty_iff])
-
+  Iso.of_forall_indep ((injOn_empty f).toLocalEquiv) (by simp) (by simp) (by simp)
 
 section transfer
 
@@ -283,14 +280,18 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
   a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
   even though `M.Iso N` may be 'incorrectly' empty in such cases. -/
 def IsIso : Matroid α → Matroid β → Prop := fun M N ↦
-  (M.E = ∅ ∧ N.E = ∅) ∨ Nonempty (M.Iso N)
+  (M = emptyOn α ∧ N = emptyOn β) ∨ Nonempty (M.Iso N)
 
 infixl:65  " ≅ " => IsIso
 
--- instance : IsEquiv (Matroid α) (fun (M N : Matroid α) ↦ M ≅ N) where
---   refl := fun M ↦ ⟨Iso.refl M⟩
---   trans := fun _ _ _ ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩
---   symm := fun _ _ ⟨e⟩ ↦ ⟨e.symm⟩
+
+@[simp] theorem isIso_emptyOn_iff {M : Matroid α} {β : Type*} : M ≅ emptyOn β ↔ M = emptyOn α := by
+  constructor
+  · rintro (⟨rfl,-⟩ | ⟨⟨i⟩⟩ ); rfl
+    rw [← ground_eq_empty_iff, ← i.symm.image_ground]
+    simp
+  rintro rfl
+  exact Or.inl ⟨rfl, rfl⟩
 
 theorem IsIso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := by
   obtain (⟨hM,hN⟩ | ⟨⟨e⟩⟩)  := h
@@ -300,31 +301,40 @@ theorem IsIso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := 
 theorem IsIso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
   ⟨IsIso.symm, IsIso.symm⟩
 
-theorem IsIso.trans {M : Matroid α} {N : Matroid β} {O : Matroid γ}
-    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
-  obtain (⟨hM,hN⟩ | ⟨⟨eMN⟩⟩) := h1
-  · refine Or.inl ⟨hM, ?_⟩
-    obtain (⟨-,hO⟩ | ⟨⟨eNO⟩⟩) := h2
-    · exact hO
-    rw [← eNO.image_ground, hN, image_empty]
-  obtain (⟨hN',hO⟩ | ⟨⟨eNO⟩⟩) := h2
-  · rw [← eMN.image_ground, image_eq_empty] at hN'
-    exact Or.inl ⟨hN', hO⟩
-  exact Or.inr <| ⟨eMN.trans eNO⟩
-
 theorem IsIso.refl (M : Matroid α) : M ≅ M :=
   Or.inr ⟨Iso.refl M⟩
 
 theorem Iso.isIso {M : Matroid α} {N : Matroid β} (h : M.Iso N) : M ≅ N :=
   Or.inr ⟨h⟩
 
-theorem isIso_of_empty (M : Matroid α) {N : Matroid β} [IsEmpty α] (hN : N.E = ∅) : M ≅ N :=
-  Or.inl ⟨by simp, hN⟩
+theorem IsIso.trans {M : Matroid α} {N : Matroid β} {O : Matroid γ}
+    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i1⟩⟩) := h1
+  · rwa [IsIso.comm, isIso_emptyOn_iff] at h2 ⊢
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i2⟩⟩) := h2
+  · rw [isIso_emptyOn_iff]
+    exact isIso_emptyOn_iff.1 i1.isIso
+  exact Or.inr ⟨i1.trans i2⟩
+
+theorem IsIso.empty_or_nonempty_iso (h : M ≅ N) :
+    (M = emptyOn α ∧ N = emptyOn β) ∨ (Nonempty α ∧ Nonempty β ∧ Nonempty (M.Iso N)) := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
+  · exact Or.inl ⟨rfl,rfl⟩
+  cases isEmpty_or_nonempty α
+  · left
+    obtain rfl := eq_emptyOn M
+    simp [isIso_emptyOn_iff.1 e.symm.isIso]
+  cases isEmpty_or_nonempty β
+  · left
+    obtain rfl := eq_emptyOn N
+    simp [isIso_emptyOn_iff.1 e.isIso]
+  right
+  exact ⟨by assumption, by assumption, ⟨e⟩⟩
 
 theorem IsIso.nonempty_iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Nonempty α] [Nonempty β] :
     Nonempty (M.Iso N) := by
-  obtain (⟨hM, hN⟩ | ⟨⟨e⟩⟩) := h
-  · exact ⟨Iso.of_empty_empty hM hN⟩
+  obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
+  · exact ⟨Iso.of_emptyOn⟩
   exact ⟨e⟩
 
 /-- Noncomputably produce an `Iso M N` from `M ≅ N` whenever both ground types are nonempty -/
@@ -332,13 +342,36 @@ noncomputable def IsIso.iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Non
     Iso M N := h.nonempty_iso.some
 
 theorem IsIso.dual (h : M ≅ N) : M﹡ ≅ N﹡ := by
-  obtain (⟨hM, hN⟩ | ⟨⟨e⟩⟩) := h
-  · exact Or.inl ⟨hM,hN⟩
+  obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
+  · exact Or.inl ⟨by simp, by simp⟩
   exact Or.inr ⟨e.dual⟩
 
 theorem isIso_dual_iff : M﹡ ≅ N﹡ ↔ M ≅ N := by
   refine ⟨fun h ↦ ?_, IsIso.dual⟩
   rw [←dual_dual M, ←dual_dual N]
   exact h.dual
+
+theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
+  rw [isIso_emptyOn_iff]
+
+@[simp] theorem emptyOn_isIso_iff {M : Matroid α} (β : Type*) : emptyOn β ≅ M ↔ M = emptyOn α := by
+  rw [IsIso.comm, isIso_emptyOn_iff]
+
+
+-- theorem isIso_loopyOn_iff {β : Type*} {E : Set β} :
+--     M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+
+--   refine ⟨fun h ↦ ?_, fun ⟨h, ⟨i⟩⟩ ↦ ?_⟩
+--   · obtain (⟨hM, hN⟩ | ⟨⟨i⟩⟩) := h
+--     · rw [loopyOn_ground] at hN
+--       obtain rfl := ground_eq_empty_iff.1 hM
+--       simp only [emptyOn_ground, loopyOn_empty, hN, true_and]
+--       exact Fintype.card_eq.mp rfl
+--     refine ⟨?_, ⟨by simpa using i.toLocalEquiv.bijOn.equiv⟩⟩
+--     apply eq_of_indep_iff_indep_forall (by simp) fun I hIE ↦ ?_
+--     rw [i.on_indep_iff, loopyOn_indep_iff, loopyOn_indep_iff, image_eq_empty]
+--     sorry
+
+
 
 end Matroid

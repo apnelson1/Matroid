@@ -517,11 +517,8 @@ theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) :
   rw [←he.er_eq, ←union_singleton]
   exact M.er_mono (subset_union_right _ _)
 
-
-
-
-
 end Contract
+
 
 section Minor
 
@@ -703,6 +700,45 @@ theorem Minor.exists_contract_spanning_restrict (h : N ≤m M) :
 
 end Minor
 
+section Constructions
+
+variable {E : Set α}
+
+@[simp] theorem delete_ground_self (M : Matroid α) : M ⟍ M.E = emptyOn α := by
+  simp [←ground_eq_empty_iff]
+
+@[simp] theorem contract_ground_self (M : Matroid α) : M ⟋ M.E = emptyOn α := by
+  simp [←ground_eq_empty_iff]
+
+@[simp] theorem emptyOn_minor (M : Matroid α) : (emptyOn α) ≤m M :=
+  ⟨M.E, ∅, by simp [rfl.subset]⟩
+
+@[simp] theorem minor_emptyOn_iff : M ≤m emptyOn α ↔ M = emptyOn α :=
+  ⟨fun h ↦ ground_eq_empty_iff.1 (eq_empty_of_subset_empty h.subset),
+    by rintro rfl; apply emptyOn_minor⟩
+
+@[simp] theorem loopyOn_delete (E X : Set α) : (loopyOn E) ⟍ X = loopyOn (E \ X) := by
+  rw [←restrict_compl, loopyOn_restrict, loopyOn_ground]
+
+@[simp] theorem loopyOn_contract (E X : Set α) : (loopyOn E) ⟋ X = loopyOn (E \ X) := by
+  simp_rw [eq_loopyOn_iff_cl, contract_cl_eq, empty_union, loopyOn_cl_eq, contract_ground,
+    loopyOn_ground]
+
+@[simp] theorem loopyOn_minor : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
+  refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
+  convert (loopyOn E).restrict_minor hss using 1
+  rw [h, loopyOn_ground, loopyOn_restrict]
+
+theorem contract_eq_loopyOn_of_spanning (h : M.Spanning C) : M ⟋ C = loopyOn (M.E \ C) := by
+  rw [eq_loopyOn_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
+
+@[simp] theorem freeOn_delete (E X : Set α) : (freeOn E) ⟍ X = freeOn (E \ X) := by
+  rw [←loopyOn_dual_eq, ←contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
+
+@[simp] theorem freeOn_contract (E X : Set α) : (freeOn E) ⟋ X = freeOn (E \ X) := by
+  rw [←loopyOn_dual_eq, ←delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
+
+end Constructions
 
 end Matroid
 

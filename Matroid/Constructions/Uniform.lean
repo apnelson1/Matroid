@@ -163,9 +163,10 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn (univ : Set (Fin b)) :=
 @[simp] theorem unif_eq_loopyOn (b : ℕ) : unif 0 b = loopyOn (univ : Set (Fin b)) := by
   simp [unif]
 
+/-- The dual of a uniform matroid. This is true even if the subtraction truncates. -/
 @[simp] theorem unif_dual (a b : ℕ): (unif a b)﹡ = unif (b - a) b := by
   obtain (hab | hba) := le_or_lt a b
-  · exact unif_dual' (Nat.add_sub_of_le hab)
+  · exact unif_dual' (Nat.add_sub_of_le hab)˝
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) :=

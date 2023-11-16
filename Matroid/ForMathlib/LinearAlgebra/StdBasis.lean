@@ -37,6 +37,8 @@ open Set BigOperators Submodule Function
 
 section extend
 
+variable {R : Type*} [Semiring R] {s : Set α}
+
 noncomputable def LinearMap.extendSubtype (R : Type*) [Semiring R] (s : Set α) :
     (s → R) →ₗ[R] (α → R)  :=
   Function.ExtendByZero.linearMap R s.incl
@@ -46,7 +48,7 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
     Injective <| Function.ExtendByZero.linearMap R s := by
   intro x x' h
   ext i
-  replace h := congr_fun h (s i)
+  replace h := _root_.congr_fun h (s i)
   simp only [linearMap_apply, exists_apply_eq_apply, not_true] at h
   rwa [hs.extend_apply, hs.extend_apply] at h
 
@@ -74,6 +76,17 @@ theorem LinearMap.extendSubtype_eq_ite {R : Type*} [Semiring R] (s : Set η) (x 
   rw [extend_apply', Pi.zero_apply]
   rintro ⟨a,rfl⟩
   exact h a.2
+
+@[simp] theorem LinearMap.extendSubtype_restrict (x : s → R) :
+    s.restrict (LinearMap.extendSubtype R s x) = x := by
+  ext; simp
+
+theorem LinearMap.extendSubtype_support_subset (x : s → R) :
+    support (LinearMap.extendSubtype R s x) ⊆ s := by
+  classical
+  refine fun i (hi : _ ≠ 0) ↦ by_contra fun his ↦ ?_
+  simp_rw [LinearMap.extendSubtype_eq_ite, dif_neg his] at hi
+  exact hi rfl
 
 def LinearMap.funSubtype (R : Type*) [Semiring R] (s : Set α) : (α → R) →ₗ[R] (s → R) :=
   LinearMap.funLeft R R Subtype.val
@@ -284,6 +297,12 @@ noncomputable def Submodule.orthSpace (U : Submodule R (η → R)) := U.orthSpac
     x ∈ U.orthSpace ↔ ∀ y ∈ U, Matrix.dotProduct x y = 0 :=
   mem_orthSpace_iff'
 
+
+theorem mem_orthSpace_iff'' {U : Submodule R (ι → R)} {w : ι → R}:
+    w ∈ U.orthSpace ↔ ∃ (l : ι →₀ R), l = w ∧ ∀ y ∈ U, Finsupp.total _ _ _ y l = 0 := by
+  simp_rw [orthSpace, mem_map, mem_orthSpace'_iff]
+  aesop
+
 theorem orthSpace_eq [Fintype η] (U : Submodule R (η → R)) :
     U.orthSpace = U.dualAnnihilator.map (Module.piEquiv η R R).symm := by
   classical
@@ -374,33 +393,65 @@ variable {R K η ι : Type*} [CommRing R] [Field K] [Fintype η]
 def Set.relOrthSpace (s : Set ι) (U : Submodule R (ι → R)) : Submodule R (ι → R) :=
     U.orthSpace ⊓ (s.supportedFun R)
 
--- theorem foo1 (s : Set ι) (U : Submodule K (s → K)) :
---     s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
---   ext x
---   simp only [relOrthSpace, ge_iff_le, mem_inf, mem_supportedFun_iff, mem_subtypeFunEquiv_iff,
-    and_comm, and_congr_right_iff, orthSpace, mem_map, mem_orthSpace'_iff, mem_subtypeFunEquiv_iff,
-    and_imp]
-  refine fun hx ↦ ⟨?_, fun ⟨y, hyx, hy⟩ ↦ ?_⟩
-  · rintro ⟨l, rfl, hl⟩
-    use l.subtypeDomain s
-    refine ⟨rfl, fun x hxU ↦ ?_⟩
-    simp [Finsupp.total_apply, Finsupp.sum]
-    specialize hl (LinearMap.extendSubtype K s x) ?_ ?_
-    · rintro i (hi : _ ≠ 0)
-      refine (em (i ∈ s)).elim id (fun his ↦ (hi ?_).elim)
-      rwa [LinearMap.extendSubtype_apply_not_mem]
-    · convert hxU; ext i; simp
+theorem Set.mem_relOrthSpace_iff {s : Set ι} {U : Submodule R (ι → R)} {w : ι → R}:
+    w ∈ s.relOrthSpace U ↔
+      ∃ (l : Finsupp.supported R R s), l = w ∧ ∀ x ∈ U, Finsupp.total _ _ _ x l.1 = 0 := by
+  rw [relOrthSpace, mem_inf, mem_orthSpace_iff'', mem_supportedFun_iff]
+  constructor
+  · rintro ⟨⟨l, rfl, hl⟩, hsupp⟩
+    exact ⟨⟨l, by simpa using hsupp⟩, by simpa⟩
+  rintro ⟨l, rfl, hl⟩
+  refine ⟨⟨l, rfl, hl⟩, ?_⟩
+  rw [Finsupp.fun_support_eq]
+  exact l.2
+
+theorem Set.relOrthSpace_subtypeFunEquiv (s : Set ι) (U : Submodule K (s → K)) :
+    s.relOrthSpace (s.subtypeFunEquiv K U).1 = s.subtypeFunEquiv K U.orthSpace := by
+  ext x
+  simp_rw [mem_relOrthSpace_iff, mem_subtypeFunEquiv_iff, mem_orthSpace_iff'']
+  refine ⟨?_, fun ⟨hsupp, l, hlrs, hl⟩ ↦ ?_⟩
+  · rintro ⟨l, rfl, h⟩
+    rw [Finsupp.fun_support_eq]
+    refine ⟨l.2, Finsupp.restrictSupportEquiv s _ l, ?_, fun y hy ↦ ?_⟩
+    · ext; simp [Finsupp.restrictSupportEquiv]
+    specialize h (LinearMap.extendSubtype K s y)
+    simp only [LinearMap.extendSubtype_restrict, hy, and_true,
+      LinearMap.extendSubtype_support_subset, forall_true_left] at h
+    convert h
+    simp only [Finsupp.restrictSupportEquiv, Equiv.coe_fn_mk, Finsupp.total_apply, Finsupp.sum,
+      Finsupp.subtypeDomain_apply, smul_eq_mul]
+    convert (Finset.sum_map _ (Embedding.subtype (· ∈ s)) _).symm
+    · simp only [Embedding.coe_subtype, LinearMap.extendSubtype_apply]
+    ext i
+    simp only [Finsupp.mem_support_iff, ne_eq, Finset.mem_map, Finsupp.subtypeDomain_apply,
+      Embedding.coe_subtype, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right,
+      iff_self_and]
+    rw [not_imp_comm]
+    exact (Finsupp.mem_supported' _ _).1 l.2 _
+  refine ⟨⟨Finsupp.mapDomain s.incl l, ?_⟩, ?_, ?_⟩
+  · rw [Finsupp.mem_supported']
+    intro i hi
+    rw [Finsupp.mapDomain_notin_range _ _ (by simpa)]
+  · ext i
+    simp only
+    obtain (his | his) := em (i ∈ s)
+    · convert Finsupp.mapDomain_apply Subtype.val_injective l ⟨i,his⟩
+      simp [hlrs]
+    rw [Finsupp.mapDomain_notin_range, eq_comm]
+    · simpa using not_mem_subset hsupp his
+    simpa
+  simp only [Finsupp.total_mapDomain, and_imp]
+  exact fun _ _ hyU ↦ hl _ hyU
 
 
 
+theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
+    s.relOrthSpace (s.relOrthSpace U) = U := by
+  have he1 := s.relOrthSpace_subtypeFunEquiv ((s.subtypeFunEquiv K).symm ⟨U, hU⟩)
+  simp only [OrderIso.apply_symm_apply] at he1
+  rw [he1]
 
 
-
-
-
--- theorem foo (s : Set ι) (U : Submodule K (ι → K)) (hU : U ≤ s.supportedFun K) :
---     s.relOrthSpace (s.relOrthSpace U) = U := by
---   sorry
 
 
 -- theorem mem_relOrthSpace_iff_exists_finsupp (s : Set ι) (U : Submodule R (ι → R)) :

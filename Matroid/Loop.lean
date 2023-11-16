@@ -478,7 +478,32 @@ theorem eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid
   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
 
-
 end Coloop
+
+section Constructions
+
+theorem eq_trivialOn_of_loops_union_coloops (hE : M.E = M.cl ∅ ∪ M﹡.cl ∅) :
+    M = trivialOn (M﹡.cl ∅) M.E := by
+  refine eq_of_base_iff_base_forall rfl (fun B hBE ↦ ?_)
+  rw [trivialOn_base_iff (show M﹡.cl ∅ ⊆ M.E from M﹡.cl_subset_ground _)]
+  rw [hE, ←diff_subset_iff] at hBE
+  use fun h ↦ h.coloops_subset.antisymm' (by rwa [sdiff_eq_left.mpr h.indep.disjoint_loops] at hBE)
+  rintro rfl
+  obtain ⟨B, hB⟩ := M.exists_base
+  rwa [hB.coloops_subset.antisymm ]
+  refine subset_trans ?_ (diff_subset_iff.2 hE.subset)
+  rw [subset_diff, and_iff_right hB.subset_ground]
+  exact hB.indep.disjoint_loops
+
+theorem trivialOn_loops_eq (I E : Set α) : (trivialOn I E).cl ∅ = E \ I := by
+  simp
+
+@[simp] theorem trivialOn_coloops_eq' (I E : Set α) : (trivialOn I E)﹡.cl ∅ = I ∩ E := by
+  simp [inter_comm I]
+
+theorem trivialOn_coloops_eq {I E : Set α} (h : I ⊆ E) : (trivialOn I E)﹡.cl ∅ = I := by
+  simp [h]
+
+end Constructions
 
 end Matroid
