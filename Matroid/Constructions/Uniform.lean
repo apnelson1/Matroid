@@ -25,6 +25,9 @@ def unifOn (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncate k
 @[simp] theorem unifOn_zero (E : Set α) : unifOn E 0 = loopyOn E := by
   simp [unifOn]
 
+@[simp] theorem unifOn_empty (α : Type*) (a : ℕ) : unifOn ∅ a = emptyOn α := by
+  simp [unifOn]
+
 theorem unifOn_eq_unifOn_min (E : Set α) (k : ℕ∞) : unifOn E k = unifOn E (min k E.encard) := by
   simp only [ge_iff_le, eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff,
     le_min_iff, and_congr_left_iff, iff_self_and, true_and]
@@ -166,44 +169,39 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn (univ : Set (Fin b)) :=
 /-- The dual of a uniform matroid. This is true even if the subtraction truncates. -/
 @[simp] theorem unif_dual (a b : ℕ): (unif a b)﹡ = unif (b - a) b := by
   obtain (hab | hba) := le_or_lt a b
-  · exact unif_dual' (Nat.add_sub_of_le hab)˝
+  · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
 theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
-  rw [eq_unifOn_iff, and_iff_right rfl]
-  obtain (rfl | hb0) := eq_or_ne b 0
-  · simp only [eq_emptyOn, isIso_emptyOn_iff, Nat.cast_zero, encard_eq_zero,
+  obtain (rfl | b) := b
+  · rw []
+    simp only [Nat.zero_eq, eq_emptyOn, isIso_emptyOn_iff, Nat.cast_zero, encard_eq_zero,
       ground_eq_empty_iff, iff_and_self]
     rintro rfl
-    simp [subset_empty_iff]
-  have hne : Nonempty (Fin b) := ⟨⟨0, Nat.pos_of_ne_zero hb0⟩⟩
-  cases isEmpty_or_nonempty α
-  · apply iff_of_false
-    · rw [eq_emptyOn M, emptyOn_isIso_iff, ← ground_eq_empty_iff, unif_ground_eq]
-      simp
-    rw [eq_emptyOn M, emptyOn_ground, encard_empty, @eq_comm ℕ∞, Nat.cast_eq_zero,
-      iff_false_intro hb0, and_false, not_false_iff]
-    trivial
-
-  refine ⟨fun h_iso ↦ ⟨fun I ↦ ⟨fun hI ↦ ⟨?_,hI.subset_ground⟩,fun ⟨hle, hIE⟩ ↦ ?_⟩,?_⟩,
-    fun ⟨hI, hb⟩ ↦ ?_⟩
-  · have hi := h_iso.iso.on_indep hI
-    rwa [unif_indep_iff, InjOn.encard_image (h_iso.iso.injOn_ground.mono hI.subset_ground)] at hi
-  · apply h_iso.iso.on_indep_symm
-    rwa [unif_indep_iff, InjOn.encard_image (h_iso.iso.injOn_ground.mono hIE)]
-  · rw [←InjOn.encard_image h_iso.iso.injOn_ground, h_iso.iso.image_ground, unif_ground_eq,
-      encard_univ]
     simp
+  obtain (hα | hα) := isEmpty_or_nonempty α
+  · simp only [eq_emptyOn, emptyOn_isIso_iff, emptyOn_ground, encard_empty, Nat.cast_succ,
+      true_and]
+    rw [← ground_eq_empty_iff, unif_ground_eq, univ_eq_empty_iff]
+    simp [eq_comm (a := (0 : ℕ∞))]
+  have hcard := encard_eq_coe_toFinset_card (univ : Set (Fin b.succ))
+  rw [toFinset_univ, Finset.card_fin] at hcard
+  rw [eq_unifOn_iff, and_iff_right rfl]
+  refine ⟨fun h ↦ ?_, fun ⟨hi,h⟩ ↦ ?_⟩
+  · obtain (⟨rfl, -⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
+    · simp [emptyOn_isIso_iff, ← ground_eq_empty_iff, unif_ground_eq] at h
+    refine ⟨fun I ↦ ⟨fun hI ↦ ⟨?_, hI.subset_ground⟩, fun ⟨hIcard, hIE⟩ ↦ ?_⟩, ?_⟩
+    · have hi := e.on_indep hI
+      rwa [unif_indep_iff, (e.injOn_ground.mono hI.subset_ground).encard_image] at hi
+    · rwa [e.on_indep_iff, unif_indep_iff, (e.injOn_ground.mono hIE).encard_image]
+    rw [← e.injOn_ground.encard_image, e.image_ground, unif_ground_eq, hcard]
 
-  have hfin := finite_of_encard_eq_coe hb
-  rw [← (show (univ : Set (Fin b)).encard = b by simp [encard_univ])] at hb
-  obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq hb
-  refine Or.inr ⟨iso_of_forall_indep' hf.toLocalEquiv rfl rfl fun I hIE ↦ ?_⟩
-  simp only [BijOn.toLocalEquiv_apply, unif_indep_iff]
-  rw [InjOn.encard_image (hf.injOn.mono hIE), hI, and_iff_left hIE]
+  obtain ⟨f,hf⟩ := (finite_of_encard_eq_coe h).exists_bijOn_of_encard_eq (hcard.symm ▸ h)
+  refine (iso_of_forall_indep' hf.toLocalEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
+  simp [hi, hIE, (hf.injOn.mono hIE).encard_image]
 
 theorem unif_isoMinor_restr (a : ℕ) {b b' : ℕ} (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
   set R : Set (Fin b') := range (Fin.castLE hbb')
@@ -225,6 +223,7 @@ theorem unif_isoMinor_restr (a : ℕ) {b b' : ℕ} (hbb' : b ≤ b') : unif a b 
 --     rw [← h_eq]
 --     apply unif_isoMinor_restr _ (Nat.le_add_right b d)
 --   rw [unif_eq_freeOn hlt.le, unif_eq_freeOn <| Nat.add_le_add_right hlt.le d]
+
 
 --   set R : Set (Fin (b+d)) := range (Fin.castLE (Nat.le_add_right b d))
 --   refine ⟨

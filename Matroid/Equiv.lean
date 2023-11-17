@@ -357,9 +357,39 @@ theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
 @[simp] theorem emptyOn_isIso_iff {M : Matroid α} (β : Type*) : emptyOn β ≅ M ↔ M = emptyOn α := by
   rw [IsIso.comm, isIso_emptyOn_iff]
 
+theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
+    M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain (⟨rfl,hLoopy⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
+    · simp only [emptyOn_ground, loopyOn_empty, true_and]
+      rw [← ground_eq_empty_iff, loopyOn_ground] at hLoopy
+      subst hLoopy
+      exact Fintype.card_eq.mp rfl
+    rw [eq_loopyOn_iff, and_iff_right rfl]
+    refine ⟨fun I _ hI ↦ by simpa using e.on_indep hI, ?_⟩
+    · convert Nonempty.intro e.toLocalEquiv.toEquiv <;> simp
+  rintro ⟨hM, ⟨e⟩⟩
+  cases isEmpty_or_nonempty α
+  · simp only [eq_emptyOn, emptyOn_isIso_iff, ← ground_eq_empty_iff, loopyOn_ground]
+    exact isEmpty_coe_sort.1 e.symm.isEmpty
+  cases isEmpty_or_nonempty β
+  · simp only [eq_emptyOn, isIso_emptyOn_iff]
+    rw [← ground_eq_empty_iff, ← isEmpty_coe_sort]
+    rw [E.eq_empty_of_isEmpty] at e
+    exact e.isEmpty
+  refine (Iso.of_forall_indep (LocalEquiv.ofSetEquiv e) (by simp) (by simp) ?_).isIso
+  simp only [eq_iff_indep_iff_indep_forall, loopyOn_ground, loopyOn_indep_iff, true_and] at hM
+  simpa
 
--- theorem isIso_loopyOn_iff {β : Type*} {E : Set β} :
---     M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+theorem isIso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
+    M ≅ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
+  rw [← isIso_dual_iff, freeOn_dual_eq, isIso_loopyOn_iff, dual_eq_comm, dual_ground,
+    loopyOn_dual_eq, eq_comm]
+
+
+
+
+
 
 --   refine ⟨fun h ↦ ?_, fun ⟨h, ⟨i⟩⟩ ↦ ?_⟩
 --   · obtain (⟨hM, hN⟩ | ⟨⟨i⟩⟩) := h

@@ -161,6 +161,46 @@ theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : S
   obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq h
   exact ⟨hf.toLocalEquiv, rfl, hf.toLocalEquiv_target⟩
 
+theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t) :
+    ∃ f, BijOn f s t ∧ ∀ x, e x = f x := by
+  classical
+  use fun x ↦ if hx : x ∈ s then e ⟨x,hx⟩ else Classical.arbitrary β
+  refine ⟨BijOn.mk (fun x hx ↦ ?_) (fun x hx y hy hxy ↦ ?_) (fun y hy ↦ ⟨e.symm ⟨y, hy⟩, by simp⟩),
+    by simp⟩
+  · rw [dif_pos hx]; exact Subtype.prop _
+  simpa [dif_pos hx, dif_pos hy, Subtype.coe_inj] using hxy
+
+noncomputable def LocalEquiv.ofSetEquiv [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+    (e : s ≃ t) : LocalEquiv α β :=
+  let f := Classical.choose e.exists_bijOn
+  BijOn.toLocalEquiv f s t (Classical.choose_spec e.exists_bijOn).1
+
+ @[simp] theorem LocalEquiv.ofSetEquiv_source_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+    (e : s ≃ t) : (LocalEquiv.ofSetEquiv e).source = s := by
+  simp [ofSetEquiv]
+
+@[simp] theorem LocalEquiv.ofSetEquiv_target_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+    (e : s ≃ t) : (LocalEquiv.ofSetEquiv e).target = t := by
+  simp [ofSetEquiv]
+
+@[simp] theorem LocalEquiv.ofSetEquiv_apply [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+    (e : s ≃ t) (x : s) : LocalEquiv.ofSetEquiv e x = e x :=
+  ((Classical.choose_spec e.exists_bijOn).2 x).symm
+
+-- @[simp] theorem LocalEquiv.ofSetEquiv_apply_symm [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+--     (e : s ≃ t) (y : t) : (LocalEquiv.ofSetEquiv e).symm y = e.symm y := by
+
+--   simp only [ofSetEquiv, Subtype.forall, BijOn.toLocalEquiv_symm_apply]
+
+--   have := ((Classical.choose_spec e.exists_bijOn).2 (e.symm y)).symm
+
+
+
+
+
+  -- use Function.extend Subtype.val (fun x ↦ (e x).1) (fun _ ↦ Classical.arbitrary β)
+  -- simp
+
 end Lattice
 section Matrix
 
@@ -206,3 +246,7 @@ theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {
 theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
 
 abbrev Set.incl (s : Set α) : s → α := Subtype.val
+
+@[simp] theorem isEmpty_fin_iff {b : ℕ} : IsEmpty (Fin b) ↔ b = 0 := by 
+  cases b <;> simp [Fin.isEmpty]
+  

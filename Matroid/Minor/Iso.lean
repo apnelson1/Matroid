@@ -113,6 +113,29 @@ section free_loopy
 
 variable {α β : Type*} {M : Matroid α}
 
+theorem isoMinor_loopyOn_iff {E : Set β} :
+    M ≤i loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ↪ E) := by
+  simp_rw [IsoMinor, minor_loopyOn_iff]
+  refine ⟨fun ⟨M₀, hM₀, hM₀M⟩ ↦ ?_, fun ⟨hM, ⟨e⟩⟩ ↦ ?_⟩
+  · rw [hM₀.1, isIso_loopyOn_iff] at hM₀M
+    obtain ⟨e⟩ := hM₀M.2
+    exact ⟨hM₀M.1, ⟨e.toEmbedding.trans ⟨inclusion hM₀.2, inclusion_injective hM₀.2⟩⟩⟩
+
+  refine ⟨(loopyOn E) ↾ (((↑) : E → β) '' range e), by simp, ?_⟩
+
+
+  simp only [loopyOn_restrict, isIso_loopyOn_iff, and_iff_right hM]
+  -- refine ⟨Equiv.Set.image (((↑) : E → β) ∘ e.toFun) _ ?_⟩
+  -- have := Equiv.Set.image (((↑) : E → β ) ∘ e)
+
+
+
+
+
+
+-- theorem loopyOn_isoMinor_iff {E : Set β} : loopyOn E ≤i M ↔ Nonempty (E ↪ M.cl ∅) := by
+--   _
+
 -- theorem loopyOn_isoMinor_iff {E : Set β} : loopyOn E ≤i M ↔ Nonempty (E ↪ M.cl ∅) := by
 --   cases isEmpty_or_nonempty β
 --   · simp only [eq_emptyOn, emptyOn_isoMinor, true_iff]

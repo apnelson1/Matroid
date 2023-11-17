@@ -8,3 +8,4 @@ import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Basic
 import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.SetSubtype
+import Matroid.ForMathlib.Order.Minimal

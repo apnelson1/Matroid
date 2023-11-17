@@ -33,10 +33,8 @@ def emptyOn (α : Type*) : Matroid α :=
 @[simp] theorem emptyOn_dual_eq : (emptyOn α)﹡ = emptyOn α := by
   rw [← ground_eq_empty_iff]; rfl
 
-
 @[simp] theorem restrict_to_empty (M : Matroid α) : M ↾ (∅ : Set α) = emptyOn α := by
   simp [←ground_eq_empty_iff]
-
 
 theorem eq_emptyOn_or_nonempty (M : Matroid α) : M = emptyOn α ∨ Matroid.Nonempty M := by
   rw [←ground_eq_empty_iff]
@@ -63,6 +61,12 @@ def loopyOn (E : Set α) : Matroid α := (emptyOn α ↾ E)
 @[simp] theorem loopyOn_indep_iff : (loopyOn E).Indep I ↔ I = ∅ := by
   simp only [loopyOn, restrict_indep_iff, emptyOn_indep_iff, and_iff_left_iff_imp]
   rintro rfl; apply empty_subset
+
+theorem eq_loopyOn_iff : (M = loopyOn E) ↔ M.E = E ∧ ∀ X ⊆ M.E, M.Indep X → X = ∅ := by
+  simp_rw [eq_iff_indep_iff_indep_forall]
+  simp only [loopyOn_ground, loopyOn_indep_iff, and_congr_right_iff]
+  rintro rfl
+  refine ⟨fun h I hI ↦ (h I hI).1, fun h I hIE ↦ ⟨h I hIE, by rintro rfl; simp⟩⟩
 
 @[simp] theorem loopyOn_base_iff : (loopyOn E).Base B ↔ B = ∅ := by
   simp only [base_iff_maximal_indep, loopyOn_indep_iff, forall_eq, and_iff_left_iff_imp]
@@ -132,6 +136,9 @@ def freeOn (E : Set α) : Matroid α := (loopyOn E)﹡
   rw [freeOn, dual_dual]
 
 @[simp] theorem loopyOn_dual_eq : (loopyOn E)﹡ = freeOn E := rfl
+
+@[simp] theorem freeOn_empty (α : Type*) : freeOn (∅ : Set α) = emptyOn α := by
+  simp [freeOn]
 
 @[simp] theorem freeOn_base_iff : (freeOn E).Base B ↔ B = E := by
   simp only [freeOn, loopyOn_ground, dual_base_iff', loopyOn_base_iff, diff_eq_empty,
@@ -206,7 +213,6 @@ theorem trivialOn_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivialOn I E).Ba
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
   · rw [←diff_diff_cancel_left hB, h, diff_inter_self_eq_diff]
   rw [h, inter_comm I]; simp
-
 
 @[simp] theorem trivialOn_self (I : Set α) : (trivialOn I I) = freeOn I := by
   rw [trivialOn, freeOn_restrict rfl.subset]

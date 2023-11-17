@@ -724,7 +724,7 @@ variable {E : Set α}
   simp_rw [eq_loopyOn_iff_cl, contract_cl_eq, empty_union, loopyOn_cl_eq, contract_ground,
     loopyOn_ground]
 
-@[simp] theorem loopyOn_minor : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
+@[simp] theorem minor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
   refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
   convert (loopyOn E).restrict_minor hss using 1
   rw [h, loopyOn_ground, loopyOn_restrict]

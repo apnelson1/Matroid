@@ -37,6 +37,16 @@ def truncate (M : Matroid α) (k : ℕ∞) : Matroid α :=
     loopyOn_indep_iff, and_iff_right_iff_imp]
   rintro I - rfl; apply empty_indep
 
+@[simp] theorem truncate_emptyOn (α : Type*) (k : ℕ∞) : (emptyOn α).truncate k = emptyOn α := by
+  rw [← ground_eq_empty_iff, truncate_ground_eq, emptyOn_ground]
+
+@[simp] theorem truncate_loopyOn (E : Set α) (k : ℕ∞) : (loopyOn E).truncate k = loopyOn E := by
+  apply eq_of_indep_iff_indep_forall (by simp)
+  simp only [truncate_ground_eq, loopyOn_ground, truncate_indep_iff, loopyOn_indep_iff,
+    and_iff_left_iff_imp]
+  rintro _ _ rfl
+  simp
+
 theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncate k = M := by
   refine eq_of_indep_iff_indep_forall truncate_ground_eq (fun I _ ↦ ?_)
   rw [truncate_indep_iff, and_iff_left_iff_imp]

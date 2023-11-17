@@ -6,6 +6,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.StdBasis
 import Matroid.ForMathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Matroid.ForMathlib.SetSubtype
+import Matroid.ForMathlib.Minimal
 
 open Set Function Submodule BigOperators FiniteDimensional
 
@@ -218,13 +220,6 @@ theorem cols_linearIndependent_reindex (em : m' ≃ m) (en : n' ≃ n)
     (h : LinearIndependent R A.colFun) : LinearIndependent R (A.submatrix em en).colFun := by
   convert rows_linearIndependent_reindex en em h
 
-/-
-    n0 n1
-m0  A  B
-m1  O  C
--/
-
-
 theorem linearIndependent_rows_of_upper_tri {m₀ m₁ n₀ n₁ : Type*} (A : Matrix m₀ n₀ R)
     (B : Matrix m₀ n₁ R) (C : Matrix m₁ n₁ R) (hA : LinearIndependent R A.rowFun)
     (hC : LinearIndependent R C.rowFun) :
@@ -330,7 +325,6 @@ theorem rows_linearIndependent_skew_union {R : Type*} [CommSemiring R] {s s' : S
   rw [Finsupp.filter_apply_pos (· ∈ s') _ his'] at h'
   exact hi h'
 
-
 end Ring
 
 section DivisionRing
@@ -393,6 +387,45 @@ theorem exists_colBasis_superset {A : Matrix m n R} {t₀ : Set n}
 
 theorem exists_colBasis (A : Matrix m n R) : ∃ t, A.ColBasis t :=
   Aᵀ.exists_rowBasis
+
+theorem colBasis_submatrix_foo (ht : A.colSpace = (A.colSubmatrix t).colSpace)
+  {t' : Set n} (ht' : t' ⊆ t) :
+    A.ColBasis t' ↔ (A.colSubmatrix t).ColBasis (t.subtypeOrderIso.symm ⟨t',ht'⟩) := by
+  simp_rw [colBasis_iff_maximal_linearIndependent]
+  set t₀ : {x // x ⊆ t} := ⟨t', ht'⟩
+  -- obtain rfl : t' = t₀ := rfl
+
+  change (t₀ : Set n) ∈ _ ↔ t₀ ∈ (t.subtypeOrderIso.toEquiv.symm) ⁻¹' (maximals (· ≤ · ) _)
+
+  rw [← mem_preimage]
+  have := t.subtypeOrderEmbedding
+  change _ ∈ t.subtypeOrderEmbedding ⁻¹' _ ↔ _
+
+  rw [← Equiv.image_eq_preimage, RelIso.coe_toEquiv, ← RelIso.coe_toRelEmbedding,
+    ← RelEmbedding.maximals_image_eq]
+  simp
+  have := (subtypeOrderIso t).toRelEmbedding.maximals_image_eq
+
+
+
+-- theorem colBasis_submatrix_foo (hs : A.colSpace = (A.colSubmatrix t).colSpace) (t' : Set t) :
+--     (A.colSubmatrix t).ColBasis t' ↔ A.ColBasis (t.subtypeOrderIso t').1 := by
+--   have hrw : {b | LinearIndependent R ((A.colSubmatrix t).colSubmatrix b).colFun} =
+--     t.subtypeOrderIso ⁻¹' {r | LinearIndependent R (r.1.restrict A.colFun)}
+--   · ext r
+--     sorry
+--   simp_rw [colBasis_iff_maximal_linearIndependent]
+--   rw [← mem_preimage]
+
+
+--   simp_rw [colBasis_iff_maximal_linearIndependent, hrw, RelIso.maximals_preimage_eq,
+--     ← mem_preimage]
+
+--   simp
+--   convert Iff.rfl
+
+
+
 
 end DivisionRing
 section Field
