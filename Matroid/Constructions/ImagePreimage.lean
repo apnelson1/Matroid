@@ -1,5 +1,6 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.Other
+import Matroid.Equiv
 
 open Set Function
 

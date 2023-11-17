@@ -15,16 +15,16 @@ theorem Flat.eq_ground_of_spanning (hF : M.Flat F) (h : M.Spanning F) : F = M.E 
 theorem Flat.spanning_iff (hF : M.Flat F) : M.Spanning F ↔ F = M.E :=
   ⟨hF.eq_ground_of_spanning, by rintro rfl; exact M.ground_spanning⟩
 
-theorem Flat.iInter {ι : Type*} [_root_.Nonempty ι] {Fs : ι → Set α} 
+theorem Flat.iInter {ι : Type*} [_root_.Nonempty ι] {Fs : ι → Set α}
     (hFs : ∀ i, M.Flat (Fs i)) : M.Flat (⋂ i, Fs i) := by
   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
-    (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩ 
+    (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩
   obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (iInter_subset _ i))
   refine' (subset_union_right _ _).trans ((hFs i).1 (X := Fs i ∪ X) hIJ _)
   convert hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ) using 1
   rw [←union_assoc, union_eq_self_of_subset_right hIJ.subset]
 
-theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs → M.Flat F) : 
+theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs → M.Flat F) :
     M.Flat (⋂₀ Fs) := by
   rw [sInter_eq_iInter]
   have : _root_.Nonempty Fs
@@ -32,26 +32,26 @@ theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F, F ∈ Fs 
   exact Flat.iInter (fun ⟨F, hF⟩ ↦ h _ hF)
 
 theorem cl_flat (M : Matroid α) (X : Set α) : M.Flat (M.cl X) :=
-  Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left  
+  Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left
 
-theorem flat_iff_cl_self : M.Flat F ↔ M.cl F = F := 
+theorem flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
 
-theorem Flat.inter (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.Flat (F₁ ∩ F₂) := by 
+theorem Flat.inter (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.Flat (F₁ ∩ F₂) := by
   rw [inter_eq_iInter]; apply Flat.iInter; simp [hF₁, hF₂]
-  
+
 theorem flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
     M.Flat F ↔ ∀ e ∈ M.E \ F, M.cl F ⊂ M.cl (insert e F) := by
   refine' ⟨fun h e he ↦ (M.cl_subset_cl (subset_insert _ _)).ssubset_of_ne _, fun h ↦ _⟩
   · rw [h.cl]
-    exact fun h' ↦ mt ((Set.ext_iff.mp h') e).mpr (not_mem_of_mem_diff he) 
-      ((M.subset_cl _ (insert_subset he.1 hF)) (mem_insert _ _)) 
+    exact fun h' ↦ mt ((Set.ext_iff.mp h') e).mpr (not_mem_of_mem_diff he)
+      ((M.subset_cl _ (insert_subset he.1 hF)) (mem_insert _ _))
   rw [flat_iff_cl_self]
   by_contra h'
   obtain ⟨e, he', heF⟩ := exists_of_ssubset (ssubset_of_ne_of_subset (Ne.symm h') (M.subset_cl F))
   have h'' := h e ⟨(M.cl_subset_ground F) he', heF⟩
-  rw [← M.cl_insert_cl_eq_cl_insert e F, insert_eq_of_mem he', M.cl_cl] at h'' 
+  rw [← M.cl_insert_cl_eq_cl_insert e F, insert_eq_of_mem he', M.cl_cl] at h''
   exact h''.ne rfl
 
 theorem flat_iff_forall_circuit (hF : F ⊆ M.E := by aesop_mat) :
@@ -61,7 +61,7 @@ theorem flat_iff_forall_circuit (hF : F ⊆ M.E := by aesop_mat) :
   · rw [← h]
     refine' (M.cl_subset_cl _) (hC.subset_cl_diff_singleton e heC)
     rwa [diff_subset_iff, singleton_union]
-  refine' (M.subset_cl F hF).antisymm' (fun e heF ↦ by_contra fun he' ↦ _) 
+  refine' (M.subset_cl F hF).antisymm' (fun e heF ↦ by_contra fun he' ↦ _)
   obtain ⟨C, hC, heC, hCF⟩ := (mem_cl_iff_exists_circuit_of_not_mem he').mp heF
   exact he' (h C e hC heC hCF)
 
@@ -71,50 +71,50 @@ theorem flat_iff_forall_circuit' :
     (flat_iff_forall_circuit h.2).mpr h.1⟩
 
 theorem Flat.cl_exchange (hF : M.Flat F) (he : e ∈ M.cl (insert f F) \ F) :
-    f ∈ M.cl (insert e F) \ F := by 
+    f ∈ M.cl (insert e F) \ F := by
   nth_rw 2 [← hF.cl] at *; exact Matroid.cl_exchange he
 
 theorem Flat.cl_insert_eq_cl_insert_of_mem (hF : M.Flat F) (he : e ∈ M.cl (insert f F) \ F) :
-    M.cl (insert e F) = M.cl (insert f F) := 
+    M.cl (insert e F) = M.cl (insert f F) :=
   Matroid.cl_insert_eq_cl_insert_of_mem (by rwa [hF.cl])
 
 theorem Flat.cl_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.cl X ⊆ F := by
-  have h' := M.cl_mono h; rwa [hF.cl] at h' 
+  have h' := M.cl_mono h; rwa [hF.cl] at h'
 
-  -- TODO : Cyclic flats. 
+  -- TODO : Cyclic flats.
 
 section LowRank
 
 @[reducible, pp_dot] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 1
 
-theorem Point.flat (hP : M.Point P) : M.Flat P := 
+theorem Point.flat (hP : M.Point P) : M.Flat P :=
   hP.1
 
-theorem Point.er (hP : M.Point P) : M.er P = 1 := 
+theorem Point.er (hP : M.Point P) : M.er P = 1 :=
   hP.2
 
-@[aesop unsafe 10% (rule_sets [Matroid])] 
-theorem Point.subset_ground (hP : M.Point P) : P ⊆ M.E := 
+@[aesop unsafe 10% (rule_sets [Matroid])]
+theorem Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
 @[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 
-theorem Line.flat (hL : M.Line L) : M.Flat L := 
+theorem Line.flat (hL : M.Line L) : M.Flat L :=
   hL.1
 
-theorem Line.er (hL : M.Line L) : M.er L = 2 := 
+theorem Line.er (hL : M.Line L) : M.er L = 2 :=
   hL.2
 
-@[aesop unsafe 10% (rule_sets [Matroid])] 
-theorem Line.subset_ground (hL : M.Line L) : L ⊆ M.E := 
+@[aesop unsafe 10% (rule_sets [Matroid])]
+theorem Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
 
 @[reducible, pp_dot] def Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
 
-theorem Plane.flat (hP : M.Plane P) : M.Flat P := 
+theorem Plane.flat (hP : M.Plane P) : M.Flat P :=
   hP.1
 
-theorem Plane.er (hP : M.Plane P) : M.er P = 3 := 
+theorem Plane.er (hP : M.Plane P) : M.er P = 3 :=
   hP.2
 
 end LowRank
@@ -135,7 +135,7 @@ theorem Flat.covby_iff_of_flat (hF₀ : M.Flat F₀) (hF₁ : M.Flat F₁) :
 
 theorem Covby.flat_left (h : M.Covby F₀ F₁) : M.Flat F₀ :=
   h.1
- 
+
 theorem Covby.flat_right (h : M.Covby F₀ F₁) : M.Flat F₁ :=
   h.2.1
 
@@ -178,11 +178,11 @@ theorem Flat.covby_iff_eq_cl_insert (hF₀ : M.Flat F₀) :
       fun F hF hF₀F hFF₁ ↦ ?_⟩
   · rw [insert_eq, union_subset_iff, singleton_subset_iff]
     exact ⟨heF₀.1, hF₀.subset_ground⟩
-  · exact fun h ↦ heF₀.2 (h.symm.subset (mem_cl_of_mem' _ (mem_insert _ _) heF₀.1)) 
-  refine hF₀F.eq_or_ssubset.elim (fun h ↦ Or.inl h.symm) 
+  · exact fun h ↦ heF₀.2 (h.symm.subset (mem_cl_of_mem' _ (mem_insert _ _) heF₀.1))
+  refine hF₀F.eq_or_ssubset.elim (fun h ↦ Or.inl h.symm)
     (fun hss ↦ Or.inr (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset ?_ hF₀F))))
   obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset hss
-  exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩).1 
+  exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩).1
     (hF.cl_subset_of_subset (insert_subset hfF hF₀F))
 
 theorem cl_covby_iff : M.Covby (M.cl X) F ↔ ∃ e ∈ M.E \ M.cl X, F = M.cl (insert e X) := by
@@ -201,81 +201,81 @@ theorem Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E
   rintro X heX f _ rfl
   rw [hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he.2⟩]
 
--- hypothesis: added `e ∈ M.E` 
--- lemma flat.covby_partition (hF : M.flat F) : 
---   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+-- hypothesis: added `e ∈ M.E`
+-- lemma flat.covby_partition (hF : M.flat F) :
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) :=
 -- begin
 --     sorry
--- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
---   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+-- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or,
+--   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp,
 --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
---   simp_rw [iff_true_intro heF.1, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+--   simp_rw [iff_true_intro heF.1, and_true, not_true, false_implies_iff, imp_true_iff, and_true],
 --   rintro rfl, exact not_mem_empty e heF.1
 -- },
 -- {
 --   by_cases g : e ∈ M.E,
 --   {
 --       sorry,
---   -- simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
---   -- exists_unique_iff_exists, exists_prop], 
---   -- obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
---   -- simp only [and_imp] at hF',   
---   -- use F' \ F, 
---   -- simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
---   --   iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
---   --   true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
---   -- refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+--   -- simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff,
+--   -- exists_unique_iff_exists, exists_prop],
+--   -- obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF,
+--   -- simp only [and_imp] at hF',
+--   -- use F' \ F,
+--   -- simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff,
+--   --   iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left,
+--   --   true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true],
+--   -- refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩,
 --   -- rw [hF'.2 F₁ heF₁ hFF₁]
 --   },
 -- },
 -- refine ⟨not_mem_diff_singleton _ _,
 --   λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
--- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
---   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+-- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or,
+--   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp,
 --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
---   simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+--   simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true],
 --   rintro rfl, exact not_mem_empty e heF },
--- { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
---   exists_unique_iff_exists, exists_prop], 
---   obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
---   simp only [and_imp] at hF',   
---   use F' \ F, 
---   simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
---     iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
---     true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
---   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
---   rw [hF'.2 F₁ heF₁ hFF₁] }, 
--- end 
--- lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
---   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
+-- { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff,
+--   exists_unique_iff_exists, exists_prop],
+--   obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF,
+--   simp only [and_imp] at hF',
+--   use F' \ F,
+--   simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff,
+--     iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left,
+--     true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true],
+--   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩,
+--   rw [hF'.2 F₁ heF₁ hFF₁] },
+-- end
+-- lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) :
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) :=
 -- begin
---   convert hF.covby_partition, 
---   rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
---   rintro (rfl | ⟨F', hF', h⟩) , 
+--   convert hF.covby_partition,
+--   rw [eq_comm, sdiff_eq_left, disjoint_singleton_right],
+--   rintro (rfl | ⟨F', hF', h⟩) ,
 --   { exact not_nonempty_empty hFne },
---   refine hF'.ssubset.not_subset _, 
---   simpa [diff_eq_empty] using h, 
--- end 
--- lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
---   setoid.is_partition {F | M.covby ∅ F} := 
+--   refine hF'.ssubset.not_subset _,
+--   simpa [diff_eq_empty] using h,
+-- end
+-- lemma flat.covby_partition_of_empty (hF : M.flat ∅) :
+--   setoid.is_partition {F | M.covby ∅ F} :=
 -- begin
---   convert hF.covby_partition, 
+--   convert hF.covby_partition,
 --   simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
---   ext F,  
---   simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
---   rintro hF' rfl, 
---   exact hF'.ssubset.ne rfl, 
--- end 
+--   ext F,
+--   simp_rw [mem_diff, mem_singleton_iff, iff_self_and],
+--   rintro hF' rfl,
+--   exact hF'.ssubset.ne rfl,
+-- end
 -- lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :
 --   F.ncard + ∑ᶠ F' ∈ {F' | M.covby F F'}, (F' \ F).ncard = nat.card E :=
 -- begin
---   obtain (rfl | hFne) := F.eq_empty_or_nonempty, 
+--   obtain (rfl | hFne) := F.eq_empty_or_nonempty,
 --   { convert finsum_partition_eq hF.covby_partition_of_empty, simp },
---   convert finsum_partition_eq (hF.covby_partition_of_nonempty hFne), 
---   rw [finsum_mem_insert, add_left_cancel_iff, finsum_mem_image],  
---   { rintro F₁ hF₁ F₂ hF₂ (h : F₁ \ F = F₂ \ F), 
---     rw [←diff_union_of_subset hF₁.subset, h, diff_union_of_subset hF₂.subset] }, 
---   { rintro ⟨F', hF', (h : F' \ F = F)⟩, 
+--   convert finsum_partition_eq (hF.covby_partition_of_nonempty hFne),
+--   rw [finsum_mem_insert, add_left_cancel_iff, finsum_mem_image],
+--   { rintro F₁ hF₁ F₂ hF₂ (h : F₁ \ F = F₂ \ F),
+--     rw [←diff_union_of_subset hF₁.subset, h, diff_union_of_subset hF₂.subset] },
+--   { rintro ⟨F', hF', (h : F' \ F = F)⟩,
 --     obtain ⟨e, he⟩ := hFne,
 --     exact (h.symm.subset he).2 he },
 --   exact (to_finite _).image _,
@@ -321,7 +321,7 @@ theorem Hyperplane.cl_eq_ground_of_ssuperset (hH : M.Hyperplane H) (hX : H ⊂ X
 
 theorem Hyperplane.spanning_of_ssuperset (hH : M.Hyperplane H) (hX : H ⊂ X)
     (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Spanning X := by rw [spanning_iff_cl, hH.cl_eq_ground_of_ssuperset hX]  
+    M.Spanning X := by rw [spanning_iff_cl, hH.cl_eq_ground_of_ssuperset hX]
 
 theorem Hyperplane.not_spanning (hH : M.Hyperplane H) : ¬M.Spanning H := by
   rw [hH.flat.spanning_iff]; exact hH.ssubset_ground.ne
@@ -351,28 +351,28 @@ theorem hyperplane_iff_maximal_nonspanning :
       fun F hF hHF hFE ↦ or_iff_not_imp_right.mpr fun hFE' ↦ _⟩
   · have h' := h.2 (insert_subset he.1 h.1.1)
     simp only [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
-      imp_false, Classical.not_not, spanning_iff_cl]  at h' 
+      imp_false, Classical.not_not, spanning_iff_cl]  at h'
     rw [spanning_iff_cl] at h'
     rw [h', ← not_spanning_iff_cl h.1.1]
     exact h.1.2
   have h' := h.2 hFE
-  rw [hF.spanning_iff] at h' 
+  rw [hF.spanning_iff] at h'
   rw [h' hFE' hHF]
 
 @[simp] theorem compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by
-  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, hyperplane_iff_maximal_nonspanning, 
-    (and_comm (b := _ ⊆ _)), mem_minimals_setOf_iff, mem_maximals_setOf_iff, 
+  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, hyperplane_iff_maximal_nonspanning,
+    (and_comm (b := _ ⊆ _)), mem_minimals_setOf_iff, mem_maximals_setOf_iff,
     diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
   refine' fun _ ↦ ⟨fun h X hXE hX hHX ↦ _, fun h X hX hXE hXH ↦ _⟩
-  · rw [←diff_diff_cancel_left hH, ←diff_diff_cancel_left hXE, 
+  · rw [←diff_diff_cancel_left hH, ←diff_diff_cancel_left hXE,
       h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) (diff_subset _ _)]
     rw [←subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
     exact hHX.trans (subset_union_right _ _)
   rw [h (diff_subset _ _) hX, diff_diff_cancel_left hXE]
   rw [subset_diff]
-  exact ⟨hH, hXH.symm⟩ 
-    
+  exact ⟨hH, hXH.symm⟩
+
 @[simp] theorem compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by
   rw [← compl_cocircuit_iff_hyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
@@ -384,7 +384,7 @@ theorem Hyperplane.compl_cocircuit (hH : M.Hyperplane H) : M.Cocircuit (M.E \ H)
 theorem Cocircuit.compl_hyperplane {K : Set α} (hK : M.Cocircuit K) : M.Hyperplane (M.E \ K) :=
   (compl_hyperplane_iff_cocircuit hK.subset_ground).mpr hK
 
-theorem univ_not_hyperplane (M : Matroid α) : ¬M.Hyperplane univ := 
+theorem univ_not_hyperplane (M : Matroid α) : ¬M.Hyperplane univ :=
   fun h ↦ h.ssubset_univ.ne rfl
 
 theorem Hyperplane.eq_of_subset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂) (h : H₁ ⊆ H₂) :
@@ -414,7 +414,7 @@ theorem Hyperplane.ssuperset_eq_univ_of_flat (hH : M.Hyperplane H) (hF : M.Flat 
 
 theorem Hyperplane.cl_insert_eq_univ (hH : M.Hyperplane H) (he : e ∈ M.E \ H) :
     M.cl (insert e H) = M.E := by
-  refine' hH.ssuperset_eq_univ_of_flat (M.cl_flat _) 
+  refine' hH.ssuperset_eq_univ_of_flat (M.cl_flat _)
     ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
   rw [insert_eq, union_subset_iff, singleton_subset_iff]
   exact ⟨he.1, hH.subset_ground⟩
@@ -422,10 +422,10 @@ theorem Hyperplane.cl_insert_eq_univ (hH : M.Hyperplane H) (he : e ∈ M.E \ H) 
 theorem exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E := by aesop_mat) :
     ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_basis X
-  rw [← hI.cl_eq_cl, mem_diff, hI.indep.not_mem_cl_iff] at h 
+  rw [← hI.cl_eq_cl, mem_diff, hI.indep.not_mem_cl_iff] at h
   obtain ⟨B, hB, heIB⟩ := h.2.1.exists_base_superset
   rw [insert_subset_iff] at heIB
-  refine ⟨_, hB.hyperplane_of_cl_diff_singleton heIB.1, ?_, ?_⟩ 
+  refine ⟨_, hB.hyperplane_of_cl_diff_singleton heIB.1, ?_, ?_⟩
   · exact hI.subset_cl.trans (M.cl_subset_cl (subset_diff_singleton heIB.2 h.2.2))
   exact hB.indep.not_mem_cl_diff_of_mem heIB.1
 
@@ -441,13 +441,13 @@ theorem cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.E :
 
 theorem mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e ∈ M.E := by aesop_mat) :
     e ∈ M.cl X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
-  simp_rw [M.cl_eq_cl_inter_ground X, 
+  simp_rw [M.cl_eq_cl_inter_ground X,
     M.cl_eq_sInter_hyperplanes _ ((inter_subset_left _ _).trans hX), mem_inter_iff, and_iff_left he,
     mem_sInter, mem_setOf_eq, and_imp]
-  exact ⟨fun h H hH hXH ↦ h _ hH ((inter_subset_left _ _).trans hXH), 
+  exact ⟨fun h H hH hXH ↦ h _ hH ((inter_subset_left _ _).trans hXH),
     fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
 
-theorem mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat) 
+theorem mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat)
   (he : e ∈ M.E := by aesop_mat) :
     e ∈ M﹡.cl X ↔ ∀ C, M.Circuit C → e ∈ C → (X ∩ C).Nonempty := by
   rw [← dual_dual M]
@@ -455,13 +455,13 @@ theorem mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat)
   refine' ⟨fun h C hC heC ↦ by_contra fun hne ↦ _, fun h H hH hXE ↦ by_contra fun he' ↦ _⟩
   · rw [nonempty_iff_ne_empty, not_not, ←disjoint_iff_inter_eq_empty] at hne
     exact (h _ hC.compl_hyperplane (subset_diff.mpr ⟨hX, hne⟩)).2 heC
-  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, he'⟩  
+  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, he'⟩
   exact hf.2.2 (hXE hf.1)
 
 theorem Flat.subset_hyperplane_of_ne_ground (hF : M.Flat F) (h : F ≠ M.E) :
     ∃ H, M.Hyperplane H ∧ F ⊆ H := by
   obtain ⟨e, heE, heF⟩ := exists_of_ssubset (hF.subset_ground.ssubset_of_ne h)
-  rw [← hF.cl] at heF 
+  rw [← hF.cl] at heF
   obtain ⟨H, hH, hFH, -⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨heE, heF⟩
   exact ⟨H, hH, hFH⟩
 
@@ -480,23 +480,23 @@ end Hyperplane
 section Minor
 
 theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
-  rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ←M.cl_union_cl_right_eq, 
+  rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ←M.cl_union_cl_right_eq,
     union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
 
-@[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) : 
+@[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ⟋ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
-  rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff, 
-    union_comm C, ←and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff, 
+  rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
+    union_comm C, ←and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
     and_congr_right_iff]
-  exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC), 
+  exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC),
     fun h ↦ (subset_union_left _ _).trans h⟩
-  
-theorem flat_contract_iff' : 
+
+theorem flat_contract_iff' :
     (M ⟋ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [←contract_inter_ground_eq, flat_contract_iff]
 
 theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
-    (M ⟋ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by 
+    (M ⟋ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
   rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
 
@@ -585,4 +585,3 @@ end Minor
 -- end
 -- end from_axioms
 end Matroid
-

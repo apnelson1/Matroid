@@ -1,6 +1,6 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.PartitionOf
-
+import Matroid.Flat
 open Set
 
 namespace Matroid
