@@ -1,4 +1,8 @@
+import Matroid.Simple
+import Matroid.Closure
+import Matroid.ForMathlib.Other
 
+namespace Matroid
 open Set
 
 @[pp_dot] def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
@@ -16,21 +20,6 @@ def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
 def Modular_cut (M : Matroid α) (C : Set (Set α)) : Prop :=
     (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
     (∀ F₁ F₂, F₁ ∈ C → F₂ ∈ C → M.Modular_pair F₁ F₂ → F₁ ∩ F₂ ∈ C)
-
-theorem subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX : X ⊆ {A, B}) :
-    X = {A} ∨ X = {B} ∨ X = {A, B} := by
-  by_cases A_in_X : A ∈ X
-  · by_cases B_in_X : B ∈ X
-    · exact (Or.inr (Or.inr (subset_antisymm hX (insert_subset A_in_X
-       (singleton_subset_iff.2 B_in_X)))))
-    · rw [pair_comm] at hX
-      exact Or.inl (subset_antisymm ((subset_insert_iff_of_not_mem B_in_X).1 hX)
-       (singleton_subset_iff.2 A_in_X))
-  · by_cases B_in_X : B ∈ X
-    · exact Or.inr (Or.inl (subset_antisymm ((subset_insert_iff_of_not_mem A_in_X).1 hX)
-     (singleton_subset_iff.2 B_in_X)))
-    · rw [Xne.subset_singleton_iff.1 ((subset_insert_iff_of_not_mem A_in_X).1 hX)] at B_in_X
-      exact absurd (Set.mem_singleton B) B_in_X
 
 theorem union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
@@ -59,7 +48,7 @@ theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     · intro x x_B
       exact ⟨B_sub_B' x_B, h_B.subset x_B⟩
   rintro X X_sub X_ne
-  obtain (X_eq_E | X_eq_Y | X_eq_pair) := subset_pair_none X_ne X_sub
+  obtain (X_eq_E | X_eq_Y | X_eq_pair) := (Nonempty.subset_pair_iff X_ne).1 X_sub
   · rwa [X_eq_E, sInter_singleton, inter_eq_self_of_subset_right B'_base.subset_ground,
      basis_ground_iff]
   · rwa [X_eq_Y, sInter_singleton, inter_comm, B'_inter]
@@ -86,7 +75,7 @@ theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     · intro x x_B
       exact ⟨h_B.subset x_B, B_sub_B' x_B⟩
   refine' ⟨B', B'_base, fun Ys Ys_sub Ys_ne ↦ _⟩
-  obtain (Ys_eq_cl | Ys_eq_Y | Ys_eq_pair) := subset_pair_none Ys_ne Ys_sub
+  obtain (Ys_eq_cl | Ys_eq_Y | Ys_eq_pair) := (Nonempty.subset_pair_iff Ys_ne).1 Ys_sub
   · rw [Ys_eq_cl, sInter_singleton, Disjoint.inter_eq _, empty_basis_iff]
     · rw [disjoint_left]
       intro a a_cl a_B'
@@ -104,7 +93,7 @@ theorem Modular_pair_closure (M : Matroid α) (X Y : Set α) (h_union : M.Indep 
     M.Modular_pair (M.cl X) (M.cl Y) := by
   obtain ⟨B, B_Base, B_sub⟩ := h_union
   refine' ⟨B, B_Base, fun Ys Ys_sub Ys_ne ↦ _⟩
-  obtain (eq_X | eq_Y | eq_inter) := subset_pair_none Ys_ne Ys_sub
+  obtain (eq_X | eq_Y | eq_inter) := (Nonempty.subset_pair_iff Ys_ne).1 Ys_sub
   · rw [eq_X, sInter_singleton, B_Base.indep.cl_inter_eq_self_of_subset
    (union_subset_iff.1 B_sub).1]
     exact (((M.indep_iff_subset_base).2 ⟨B, B_Base, B_sub⟩).subset
@@ -119,7 +108,7 @@ theorem Modular_pair_closure (M : Matroid α) (X Y : Set α) (h_union : M.Indep 
     · exact subset_trans (inter_subset_left _ _ ) (subset_trans (subset_union_left _ _) B_sub)
     · exact (M.indep_iff_subset_base).2 ⟨B, B_Base, B_sub⟩
 
-
+open Classical
 def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e : α) (e_nE : e ∉ M.E) :
     Matroid α :=
   matroid_of_indep (insert e M.E)
@@ -131,18 +120,14 @@ def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e
   )
   (by
     intro I J J_ind I_sub
-    by_cases e_mem_I : e ∈ I
-    · rw [if_pos e_mem_I]
-      rw [if_pos (I_sub e_mem_I)] at J_ind
+    split_ifs with e_mem_I
+    · rw [if_pos (I_sub e_mem_I)] at J_ind
       refine' ⟨J_ind.1.subset (diff_subset_diff_left I_sub), fun clI_mem ↦ _⟩
       apply J_ind.2 (hC.2.1 (M.cl (I \ {e})) (M.cl (J \ {e}))
        clI_mem (M.cl_subset_cl (diff_subset_diff_left I_sub)) (M.cl_flat (J \ {e})))
-    · rw [if_neg e_mem_I]
-      by_cases e_mem_J : e ∈ J
-      · rw [if_pos e_mem_J] at J_ind
-        exact J_ind.1.subset (subset_diff_singleton I_sub e_mem_I)
-      · rw [if_neg e_mem_J] at J_ind
-        exact J_ind.subset I_sub
+    split_ifs at J_ind with e_mem_J
+    · exact J_ind.1.subset (subset_diff_singleton I_sub e_mem_I)
+    exact J_ind.subset I_sub
   )
   (by
     rintro I J I_ind I_nmax ⟨J_ind, J_max⟩
@@ -158,158 +143,172 @@ def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e
     rw [mem_maximals_iff] at I_nmax
     push_neg at I_nmax
     obtain ⟨Y, Y_ind, I_sub_Y, I_ne_Y⟩ := I_nmax I_ind
-    dsimp at Y_ind
-    by_cases e_in_I : e ∈ I
-    · rw [if_pos e_in_I] at I_ind
-      by_cases e_in_J : e ∈ J
-      · sorry --hardest case i think, leave for last
-      ·
-        have I_nb : ¬ M.Base (I \ {e})
-        · intro I_Base
-          rw [if_pos (I_sub_Y e_in_I)] at Y_ind
-          apply (I_Base.dep_of_ssubset _ Y_ind.1.subset_ground).not_indep Y_ind.1
-          rw [ssubset_iff_subset_ne]
-          refine' ⟨diff_subset_diff_left I_sub_Y, fun diff_eq ↦ _⟩
-          apply I_ne_Y (subset_antisymm I_sub_Y _)
-          intro y y_in_Y
-          by_cases y_eq_e : y = e
-          · rwa [y_eq_e]
-          · apply diff_subset I {e}
-            rw [diff_eq]
-            exact ⟨y_in_Y, y_eq_e⟩
-        obtain ⟨j₂, hj₂⟩ := I_ind.1.exists_insert_of_not_base I_nb (J_base_of_not_mem_e e_in_J)
-        have j₂I_nb : ¬ M.Base (insert j₂ (I \ {e}))
-        · intro j₂I_base
-        have extend : ∃ j₁ ∈ J \ I, ∃ j₂ ∈ J \ I, j₁ ≠ j₂ ∧ M.Indep (insert j₂ --this may be difficult
-       (insert j₁ (I \ {e})))
-        · sorry
---case involving finding 2 to add from j and using modularity to contradict I independence, not so
---bad
-        obtain ⟨j₁, j₁_mem, j₂, j₂_mem, h_ne, ind⟩ := extend
-        by_cases j₁_cl_mem_c : M.cl (insert j₁ (I \ {e})) ∈ C
-        · by_cases j₂_cl_mem_c : M.cl (insert j₂ (I \ {e})) ∈ C
-          · have pair := M.Modular_pair_closure (insert j₁ (I \ {e})) (insert j₂ (I \ {e}))
-            rw [union_insert_eq] at pair
-            have inter_mem_c:= hC.2.2 _ _ j₁_cl_mem_c j₂_cl_mem_c (pair ind)
-            rw [←Indep.cl_inter_eq_inter_cl _, inter_insert_eq h_ne] at inter_mem_c
-            · exact absurd inter_mem_c I_ind.2
-            · rwa [union_insert_eq]
-          · refine' ⟨j₂, j₂_mem, _⟩
-            dsimp
-            rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
-             (ne_of_mem_of_not_mem j₂_mem.1 e_in_J) _, ]
-            rw [insert_comm] at ind
-            exact ⟨ind.subset (subset_insert _ _), j₂_cl_mem_c⟩
-        · refine' ⟨j₁, j₁_mem, _⟩
-          dsimp
-          rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
-           (ne_of_mem_of_not_mem j₁_mem.1 e_in_J) _, ]
-          exact ⟨ind.subset (subset_insert _ _), j₁_cl_mem_c⟩
-    · rw [if_neg e_in_I] at I_ind
-      by_cases e_in_J : e ∈ J
-      · dsimp at J_ind; rw [if_pos e_in_J] at J_ind --moderately difficult case
-        by_cases cl_I_mem : M.cl I ∈ C --if cl(I) ∈ C, and every member of J-e cant be added, then J ⊂ cl(I)
-        · by_contra' h_f
-          have J_diff_sub_cl_I : J \ {e} ⊆ M.cl I
-          · rintro j ⟨j_J, (j_ne : j ≠ e)⟩
-            rw [I_ind.mem_cl_iff, or_comm, or_iff_not_imp_left]
-            intro j_nI
-            have not_ind:= h_f j ⟨j_J, j_nI⟩
-            rw [if_neg _] at not_ind
-            · apply dep_of_not_indep not_ind _
-              rintro x (x_eq | x_sub)
-              · rw [x_eq]
-                apply (J_ind.1.subset_ground) ⟨j_J, j_ne⟩
-              · apply I_ind.subset_ground x_sub
-            rintro (e_eq | e_mem)
-            · exact j_ne e_eq.symm
-            · exact e_in_I e_mem
-          have I_J_exch : ∃ i ∈ I \ (J \ {e}), M.Indep (insert i (J \ {e}))
-          · apply J_ind.1.exists_insert_of_not_basis (subset_union_left _ I)
-            · intro h_f
-              apply J_ind.2 (hC.2.1 _ _ cl_I_mem _ (M.cl_flat _))
-              rw [h_f.cl_eq_cl]
-              exact M.cl_subset_cl (subset_union_right _ _)
-            rw [basis_iff_indep_subset_cl]
-            refine' ⟨I_ind, subset_union_right _ _, fun x ↦ _⟩
-            rintro (x_J | x_I)
-            · exact J_diff_sub_cl_I x_J
-            · exact M.mem_cl_of_mem x_I
-          obtain ⟨i, i_mem, i_ind⟩ := I_J_exch
-          by_cases e_in_Y : e ∈ Y
-          · rw [if_pos e_in_Y] at Y_ind
-            apply Y_ind.2 (hC.2.1 _ _ cl_I_mem (M.cl_subset_cl _) (M.cl_flat _))
-            exact subset_diff_singleton I_sub_Y e_in_I
-          · rw [if_neg e_in_Y] at Y_ind
-            have Y_insert : ∃ y ∈ Y \ I, M.Indep (insert y (insert i (J \ {e})))
-            · obtain ⟨y, hy⟩ := Set.exists_of_ssubset (ssubset_iff_subset_ne.2 ⟨I_sub_Y, I_ne_Y⟩)
-              refine' ⟨y, ⟨hy.1, hy.2⟩, _⟩
-              rw [i_ind.insert_indep_iff_of_not_mem, mem_diff]
-              · refine' ⟨Y_ind.subset_ground hy.1, fun y_cl ↦ _⟩
-                obtain (mem_c | y_in_I) := I_ind.insert_indep_iff.1 (Y_ind.subset
-                 (insert_subset hy.1 I_sub_Y))
-                · apply mem_c.2 (cl_subset_cl_of_subset_cl (insert_subset (M.mem_cl_of_mem i_mem.1
-                 I_ind.subset_ground) J_diff_sub_cl_I) y_cl)
-                · exact hy.2 y_in_I
-              · rintro (y_I | ⟨y_J, (y_ne_e : y ≠ e)⟩)
-                · apply hy.2
-                  rw [y_I]
-                  exact i_mem.1
-                apply h_f y ⟨y_J, hy.2⟩
-                rw [mem_insert_iff, or_iff_left e_in_I, if_neg y_ne_e.symm]
-                apply Y_ind.subset (insert_subset hy.1 I_sub_Y)
-            obtain ⟨y, y_mem, y_ind⟩ := Y_insert
-            have pair_cl:= hC.2.2 (M.cl (insert i (J \ {e}))) (M.cl (insert y (J \ {e})))
-            have union_indep : M.Indep ((insert i (J \ {e})) ∪ (insert y (J \ {e})))
-            · rwa [union_insert_eq]
-            rw [←Indep.cl_inter_eq_inter_cl union_indep, inter_insert_eq (ne_of_mem_of_not_mem i_mem.1 y_mem.2)] at pair_cl
-            apply J_ind.2 (pair_cl _ _ _)
-            · by_contra insert_not_mem
-              apply (J \ {e}).ne_insert_of_not_mem (J \ {e}) i_mem.2 (subset_antisymm (subset_insert _ _) _)
-              rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem i_mem.1 e_in_I) _] at insert_not_mem ⊢
-              apply diff_subset_diff_left (J_max _ (subset_insert _ _))
-              dsimp
-              rw [if_pos (mem_insert_of_mem _ e_in_J)]
-              refine' ⟨y_ind.subset (subset_trans _ (subset_insert _ _)), insert_not_mem⟩
-              rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem i_mem.1 e_in_I) _]
-            · by_contra insert_not_mem
-              apply (J \ {e}).ne_insert_of_not_mem (J \ {e}) _ (subset_antisymm (subset_insert y _) _)
-              · rintro ⟨y_J, (y_ne_e : y ≠ e)⟩
-                apply h_f y ⟨y_J, y_mem.2⟩
-                rw [mem_insert_iff, or_iff_left e_in_I, if_neg y_ne_e.symm]
-                apply Y_ind.subset (insert_subset y_mem.1 I_sub_Y)
-              rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem y_mem.1 e_in_Y)] at insert_not_mem ⊢
-              apply diff_subset_diff_left (J_max _ (subset_insert _ _))
-              dsimp
-              rw [if_pos (mem_insert_of_mem _ e_in_J)]
-              rw [insert_comm] at y_ind
-              refine' ⟨y_ind.subset (subset_trans _ (subset_insert _ _)), insert_not_mem⟩
-              rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem y_mem.1 e_in_Y)]
-            apply M.Modular_pair_closure _ _ union_indep
-        · refine' ⟨e, ⟨e_in_J, e_in_I⟩, _⟩
-          dsimp
-          rw [if_pos (mem_insert e I), insert_diff_self_of_not_mem e_in_I]
-          exact ⟨I_ind, cl_I_mem⟩
-      · have I_not_base : ¬ M.Base I --easiest case, e is in neither - requires some effort to show I not a base
-        · intro h_f
-          by_cases e_in_Y : e ∈ Y
-          · rw [if_pos e_in_Y, Spanning.cl_eq _] at Y_ind
-            · apply (ne_insert_of_not_mem J e_in_J) (subset_antisymm (subset_insert e J) (J_max _ (subset_insert e J)))
-              dsimp at J_ind ⊢
-              rw [if_pos (mem_insert _ _), insert_diff_self_of_not_mem e_in_J, (J_base_of_not_mem_e e_in_J).cl_eq]
-              rw [if_neg e_in_J] at J_ind
-              exact ⟨J_ind, Y_ind.2⟩
-            rw [spanning_iff_superset_base (Y_ind.1.subset_ground)]
-            refine' ⟨I, h_f, subset_diff_singleton I_sub_Y e_in_I⟩
-          · rw [if_neg e_in_Y] at Y_ind
-            apply (h_f.dep_of_ssubset (I_ne_Y.ssubset_of_subset I_sub_Y)
-             Y_ind.subset_ground).not_indep Y_ind
-        obtain ⟨x, x_mem, x_ind⟩ := I_ind.exists_insert_of_not_base I_not_base (J_base_of_not_mem_e e_in_J)
-        refine' ⟨x, x_mem, _⟩
+    dsimp at Y_ind J_ind
+    split_ifs at I_ind with e_in_I
+    · rw [if_pos (I_sub_Y e_in_I)] at Y_ind
+      split_ifs at J_ind with e_in_J --hardest case i think, leave for last
+      · have J_b : M.Basis (J \ {e}) ((I ∪ J) \ {e})
+
+
+      have I_nb : ¬ M.Base (I \ {e})
+      · intro I_Base
+        apply (I_Base.dep_of_ssubset _ Y_ind.1.subset_ground).not_indep Y_ind.1
+        rw [ssubset_iff_subset_ne]
+        refine' ⟨diff_subset_diff_left I_sub_Y, fun diff_eq ↦ _⟩
+        apply I_ne_Y (subset_antisymm I_sub_Y _)
+        intro y y_in_Y
+        obtain (rfl | hne) := eq_or_ne y e
+        · assumption
+        apply diff_subset I {e}
+        rw [diff_eq]
+        exact ⟨y_in_Y, hne⟩
+      obtain ⟨j₂, hj₂⟩ := I_ind.1.exists_insert_of_not_base I_nb (J_base_of_not_mem_e e_in_J)
+      rw [diff_diff_right, Disjoint.inter_eq (disjoint_singleton_right.2 e_in_J), union_empty] at hj₂
+      by_cases j₂I_b : M.Base (insert j₂ (I \ {e}))
+      · refine' ⟨j₂, hj₂.1, _⟩
         dsimp
-        rwa [if_neg _]
-        rw [mem_insert_iff]; push_neg
-        exact ⟨(ne_of_mem_of_not_mem x_mem.1 e_in_J).symm, e_in_I⟩
+        rw [if_pos ((subset_insert _ _) e_in_I), ←insert_diff_singleton_comm (ne_of_mem_of_not_mem hj₂.1.1 e_in_J),
+         and_iff_right hj₂.2]
+        obtain ⟨y, hy⟩ := Set.exists_of_ssubset (ssubset_iff_subset_ne.2 ⟨I_sub_Y, I_ne_Y⟩)
+        obtain (rfl | ne) := eq_or_ne j₂ y
+        · intro hf
+          apply Y_ind.2 (hC.2.1 _ _ hf (M.cl_subset_cl _) (M.cl_flat _))
+          exact (insert_subset (⟨hy.1, ne_of_mem_of_not_mem hj₂.1.1 e_in_J⟩) (diff_subset_diff_left I_sub_Y))
+        have y_notin : y ∉ insert j₂ (I \ {e})
+        · rw [mem_insert_iff, not_or, mem_diff, not_and_or]
+          exact ⟨ne.symm, Or.inl hy.2⟩
+        have base_insert:= @Matroid.Base.exchange_base_of_indep _ _ _ _ j₂ j₂I_b y_notin
+        rw [insert_diff_self_of_not_mem (not_mem_subset (diff_subset _ _) hj₂.1.2)] at base_insert
+        rw [j₂I_b.cl_eq]
+        rw [Spanning.cl_eq _] at Y_ind
+        · exact Y_ind.2
+        have insert_y_subset_Y : insert y (I \ {e}) ⊆ Y \ {e}
+        · rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem e_in_I hy.2).symm]
+          exact diff_subset_diff_left (insert_subset hy.1 I_sub_Y)
+        apply Base.superset_spanning (base_insert (Y_ind.1.subset insert_y_subset_Y))
+         insert_y_subset_Y Y_ind.1.subset_ground
+      obtain ⟨j₁, j₁_mem, j₁_ind⟩:=hj₂.2.exists_insert_of_not_base j₂I_b (J_base_of_not_mem_e e_in_J)
+      have hne : j₂ ≠ j₁:= fun (rfl) ↦ j₁_mem.2 (mem_insert _ _)
+      --case involving finding 2 to add from j and using modularity to contradict I independence, not so
+      --bad
+      by_cases j₁_cl_mem_c : M.cl (insert j₁ (I \ {e})) ∈ C
+      · by_cases j₂_cl_mem_c : M.cl (insert j₂ (I \ {e})) ∈ C
+        · have pair := M.Modular_pair_closure (insert j₂ (I \ {e})) (insert j₁ (I \ {e}))
+          rw [union_insert_eq] at pair
+          have inter_mem_c:= hC.2.2 _ _ j₂_cl_mem_c j₁_cl_mem_c (pair j₁_ind)
+          rw [←Indep.cl_inter_eq_inter_cl _, inter_insert_eq hne] at inter_mem_c
+          · exact absurd inter_mem_c I_ind.2
+          · rwa [union_insert_eq]
+        refine' ⟨j₂, hj₂.1, _⟩
+        dsimp
+        rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
+         (ne_of_mem_of_not_mem hj₂.1.1 e_in_J) _]
+        exact ⟨j₁_ind.subset (subset_insert _ _), j₂_cl_mem_c⟩
+      refine' ⟨j₁, ⟨j₁_mem.1, fun hf ↦ j₁_mem.2 (mem_insert_of_mem _ ⟨hf, ne_of_mem_of_not_mem
+       j₁_mem.1 e_in_J⟩)⟩, _⟩
+      dsimp
+      rw [if_pos (mem_insert_of_mem _ e_in_I), ←insert_diff_singleton_comm
+       (ne_of_mem_of_not_mem j₁_mem.1 e_in_J) _, ]
+      exact ⟨j₁_ind.subset (insert_subset_insert (subset_insert _ _)), j₁_cl_mem_c⟩
+    split_ifs at J_ind with e_in_J --2nd hardest case
+    · by_cases cl_I_mem : M.cl I ∈ C --if cl(I) ∈ C, and every member of J-e cant be added, then J ⊂ cl(I)
+      · by_contra' h_f
+        have J_diff_sub_cl_I : J \ {e} ⊆ M.cl I
+        · rintro j ⟨j_J, (j_ne : j ≠ e)⟩
+          rw [I_ind.mem_cl_iff, or_comm, or_iff_not_imp_left]
+          intro j_nI
+          have not_ind:= h_f j ⟨j_J, j_nI⟩
+          rw [if_neg _] at not_ind
+          · apply dep_of_not_indep not_ind _
+            rintro x (x_eq | x_sub)
+            · rw [x_eq]
+              apply (J_ind.1.subset_ground) ⟨j_J, j_ne⟩
+            · apply I_ind.subset_ground x_sub
+          rintro (e_eq | e_mem)
+          · exact j_ne e_eq.symm
+          · exact e_in_I e_mem
+        have I_J_exch : ∃ i ∈ I \ (J \ {e}), M.Indep (insert i (J \ {e}))
+        · apply J_ind.1.exists_insert_of_not_basis (subset_union_left _ I)
+          · intro h_f
+            apply J_ind.2 (hC.2.1 _ _ cl_I_mem _ (M.cl_flat _))
+            rw [h_f.cl_eq_cl]
+            exact M.cl_subset_cl (subset_union_right _ _)
+          rw [basis_iff_indep_subset_cl]
+          refine' ⟨I_ind, subset_union_right _ _, fun x ↦ _⟩
+          rintro (x_J | x_I)
+          · exact J_diff_sub_cl_I x_J
+          · exact M.mem_cl_of_mem x_I
+        obtain ⟨i, i_mem, i_ind⟩ := I_J_exch
+        split_ifs at Y_ind with e_in_Y
+        · apply Y_ind.2 (hC.2.1 _ _ cl_I_mem (M.cl_subset_cl _) (M.cl_flat _))
+          exact subset_diff_singleton I_sub_Y e_in_I
+        have Y_insert : ∃ y ∈ Y \ I, M.Indep (insert y (insert i (J \ {e})))
+        · obtain ⟨y, hy⟩ := Set.exists_of_ssubset (ssubset_iff_subset_ne.2 ⟨I_sub_Y, I_ne_Y⟩)
+          refine' ⟨y, ⟨hy.1, hy.2⟩, _⟩
+          rw [i_ind.insert_indep_iff_of_not_mem, mem_diff]
+          · refine' ⟨Y_ind.subset_ground hy.1, fun y_cl ↦ _⟩
+            obtain (mem_c | y_in_I) := I_ind.insert_indep_iff.1 (Y_ind.subset
+              (insert_subset hy.1 I_sub_Y))
+            · apply mem_c.2 (cl_subset_cl_of_subset_cl (insert_subset (M.mem_cl_of_mem i_mem.1
+              I_ind.subset_ground) J_diff_sub_cl_I) y_cl)
+            · exact hy.2 y_in_I
+          · rintro (y_I | ⟨y_J, (y_ne_e : y ≠ e)⟩)
+            · apply hy.2
+              rw [y_I]
+              exact i_mem.1
+            apply h_f y ⟨y_J, hy.2⟩
+            rw [mem_insert_iff, or_iff_left e_in_I, if_neg y_ne_e.symm]
+            apply Y_ind.subset (insert_subset hy.1 I_sub_Y)
+        obtain ⟨y, y_mem, y_ind⟩ := Y_insert
+        have pair_cl:= hC.2.2 (M.cl (insert i (J \ {e}))) (M.cl (insert y (J \ {e})))
+        have union_indep : M.Indep ((insert i (J \ {e})) ∪ (insert y (J \ {e})))
+        · rwa [union_insert_eq]
+        rw [←Indep.cl_inter_eq_inter_cl union_indep, inter_insert_eq (ne_of_mem_of_not_mem i_mem.1 y_mem.2)] at pair_cl
+        apply J_ind.2 (pair_cl _ _ _)
+        · by_contra insert_not_mem
+          apply (J \ {e}).ne_insert_of_not_mem (J \ {e}) i_mem.2 (subset_antisymm (subset_insert _ _) _)
+          rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem i_mem.1 e_in_I) _] at insert_not_mem ⊢
+          apply diff_subset_diff_left (J_max _ (subset_insert _ _))
+          dsimp
+          rw [if_pos (mem_insert_of_mem _ e_in_J)]
+          refine' ⟨y_ind.subset (subset_trans _ (subset_insert _ _)), insert_not_mem⟩
+          rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem i_mem.1 e_in_I) _]
+        · by_contra insert_not_mem
+          apply (J \ {e}).ne_insert_of_not_mem (J \ {e}) _ (subset_antisymm (subset_insert y _) _)
+          · rintro ⟨y_J, (y_ne_e : y ≠ e)⟩
+            apply h_f y ⟨y_J, y_mem.2⟩
+            rw [mem_insert_iff, or_iff_left e_in_I, if_neg y_ne_e.symm]
+            apply Y_ind.subset (insert_subset y_mem.1 I_sub_Y)
+          rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem y_mem.1 e_in_Y)] at insert_not_mem ⊢
+          apply diff_subset_diff_left (J_max _ (subset_insert _ _))
+          dsimp
+          rw [if_pos (mem_insert_of_mem _ e_in_J)]
+          rw [insert_comm] at y_ind
+          refine' ⟨y_ind.subset (subset_trans _ (subset_insert _ _)), insert_not_mem⟩
+          rw [insert_diff_singleton_comm (ne_of_mem_of_not_mem y_mem.1 e_in_Y)]
+        apply M.Modular_pair_closure _ _ union_indep
+      refine' ⟨e, ⟨e_in_J, e_in_I⟩, _⟩
+      dsimp
+      rw [if_pos (mem_insert e I), insert_diff_self_of_not_mem e_in_I]
+      exact ⟨I_ind, cl_I_mem⟩
+    have I_not_base : ¬ M.Base I --easiest case, e is in neither - requires some effort to show I not a base
+    · intro h_f
+      split_ifs at Y_ind with e_in_Y
+      · rw [Spanning.cl_eq _] at Y_ind
+        · apply (ne_insert_of_not_mem J e_in_J) (subset_antisymm (subset_insert e J) (J_max _ (subset_insert e J)))
+          dsimp at J_ind ⊢
+          rw [if_pos (mem_insert _ _), insert_diff_self_of_not_mem e_in_J, (J_base_of_not_mem_e e_in_J).cl_eq]
+          exact ⟨J_ind, Y_ind.2⟩
+        rw [spanning_iff_superset_base (Y_ind.1.subset_ground)]
+        refine' ⟨I, h_f, subset_diff_singleton I_sub_Y e_in_I⟩
+      apply (h_f.dep_of_ssubset (I_ne_Y.ssubset_of_subset I_sub_Y)
+        Y_ind.subset_ground).not_indep Y_ind
+    obtain ⟨x, x_mem, x_ind⟩ := I_ind.exists_insert_of_not_base I_not_base (J_base_of_not_mem_e e_in_J)
+    refine' ⟨x, x_mem, _⟩
+    dsimp
+    rwa [if_neg _]
+    rw [mem_insert_iff]; push_neg
+    exact ⟨(ne_of_mem_of_not_mem x_mem.1 e_in_J).symm, e_in_I⟩
 
 
 
