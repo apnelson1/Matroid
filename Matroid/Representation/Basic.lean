@@ -429,17 +429,17 @@ theorem Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v)
   rw [FullRank, eq_top_iff]
 
 theorem Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
-  (v.restrict_span : α → _) = inclusion subset_span ∘ rangeFactorization v := by ext; rfl
+  (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
 
 @[simp] theorem Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
-  v.restrict_span e = inclusion subset_span (rangeFactorization v e) := rfl
+  v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
 
 theorem Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) :
     v.restrict_span.FullRank := by
   change _ ≤ span 𝔽 _
   rw [restrict_span_eq_inclusion]
-  change _ ≤ span 𝔽 (range (inclusion subset_span ∘ _))
-  rw [range_comp, surjective_onto_range.range_eq, image_univ, range_inclusion]
+  change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
+  rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
   simp
 

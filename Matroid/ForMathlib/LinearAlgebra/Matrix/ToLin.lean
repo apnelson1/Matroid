@@ -19,12 +19,10 @@ theorem vecMul_eq_sum [Fintype m] (M : Matrix m n R) (x : m → R) :
   ext j; simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]; rfl
 
 theorem mulVec_eq_sum {R : Type*} [CommRing R] [Fintype n] (M : Matrix m n R) (x : n → R) :
-    M.mulVec x = ∑ i, x i • (M · i) := by
-  ext j; simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul];
-  sorry
-
-
-
+    M.mulVec x = ∑ i, (x i) • (M · i) := by
+  ext J
+  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
+  rfl
 
 end Semiring
 
