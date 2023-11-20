@@ -1,5 +1,6 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.PartitionOf
+import Matroid.ForMathlib.Other
 import Matroid.Flat
 open Set
 
@@ -132,6 +133,28 @@ theorem Parallel.indep_substitute_iff (h_para : M.Parallel e f) (he : e ∈ I) (
   convert hI.parallel_substitute h_para.symm (mem_insert _ _)
   have hef : e ≠ f := by rintro rfl; exact hf he
   simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
+
+/-- Swapping two parallel elements gives an automorphism -/
+def parallelSwap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M :=
+  iso_of_forall_indep' ((Equiv.swap e f).toLocalEquiv.restr M.E) (by simp)
+  ( by
+    simp only [LocalEquiv.restr_target, Equiv.toLocalEquiv_target, Equiv.toLocalEquiv_symm_apply,
+      Equiv.symm_swap, univ_inter, preimage_equiv_eq_image_symm]
+    exact Equiv.swap_image_eq_self (iff_of_true h_para.mem_ground_left h_para.mem_ground_right))
+  ( by
+    simp only [LocalEquiv.restr_coe, Equiv.toLocalEquiv_apply]
+    intro I _
+    by_cases hef : e ∈ I ↔ f ∈ I
+    · rw [Equiv.swap_image_eq_self hef]
+    rw [not_iff, iff_iff_and_or_not_and_not, not_not] at hef
+    obtain (hef | hef) := hef
+    · rw [Equiv.swap_comm, Equiv.swap_image_eq_exchange hef.2 hef.1,
+        h_para.symm.indep_substitute_iff hef.2 hef.1]
+    rw [Equiv.swap_image_eq_exchange hef.1 hef.2, h_para.indep_substitute_iff hef.1 hef.2] )
+
+@[simp] theorem parallel_swap_apply [DecidableEq α] (h_para : M.Parallel e f) :
+    (parallelSwap h_para).toLocalEquiv = (Equiv.swap e f).toLocalEquiv.restr M.E := rfl
+
 
 end Parallel
 

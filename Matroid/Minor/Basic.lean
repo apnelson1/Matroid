@@ -78,6 +78,9 @@ theorem Indep.of_delete (h : (M ⟍ D).Indep I) : M.Indep I :=
 theorem Indep.indep_delete_of_disjoint (h : M.Indep I) (hID : Disjoint I D) : (M ⟍ D).Indep I :=
   delete_indep_iff.mpr ⟨h, hID⟩
 
+theorem indep_iff_delete_of_disjoint (hID : Disjoint I D) : M.Indep I ↔ (M ⟍ D).Indep I :=
+  ⟨fun h ↦ h.indep_delete_of_disjoint hID, fun h ↦ h.of_delete⟩
+
 @[simp] theorem delete_dep_iff : (M ⟍ D).Dep X ↔ M.Dep X ∧ Disjoint X D := by
   rw [dep_iff, dep_iff, delete_indep_iff, delete_ground, subset_diff]; tauto
 
@@ -330,6 +333,32 @@ theorem Indep.of_contract (hI : (M ⟋ C).Indep I) : M.Indep I := by
   obtain ⟨J, R, hJ, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
   rw [hM, delete_indep_iff, hJ.indep.contract_indep_iff] at hI
   exact hI.1.2.subset (subset_union_left _ _)
+
+instance contract_finiteRk [FiniteRk M] : FiniteRk (M ⟋ C) := by
+  obtain ⟨B, hB⟩ := (M ⟋ C).exists_base
+  refine ⟨B, hB, hB.indep.of_contract.finite⟩
+
+instance contract_finitary [Finitary M] : Finitary (M ⟋ C) := by
+  refine ⟨fun I hI ↦ ?_⟩
+  obtain ⟨J, D, hJ, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
+  simp_rw [hM, delete_indep_iff, hJ.indep.contract_indep_iff] at hI ⊢
+  simp_rw [disjoint_iff_forall_ne]
+  refine ⟨⟨fun x hx y hy ↦ ?_, ?_⟩, fun x hx y hy ↦ ?_⟩
+  · rintro rfl
+    specialize hI {x} (singleton_subset_iff.2 hx) (finite_singleton _)
+    simp only [disjoint_singleton_left, singleton_union] at hI
+    exact hI.1.1 hy
+  · apply indep_of_forall_finite_subset_indep _ (fun K hK hKfin ↦ ?_)
+    specialize hI (K ∩ I) (inter_subset_right _ _) (hKfin.subset (inter_subset_left _ _))
+    refine hI.1.2.subset <| (subset_inter Subset.rfl hK).trans ?_
+    rw [inter_distrib_left]
+    exact union_subset_union Subset.rfl (inter_subset_right _ _)
+
+  rintro rfl
+  specialize hI {x} (singleton_subset_iff.2 hx) (finite_singleton _)
+  simp only [disjoint_singleton_left, singleton_union] at hI
+  exact hI.2 hy
+
 
 @[simp] theorem contract_loop_iff_mem_cl : (M ⟋ C).Loop e ↔ e ∈ M.cl C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C

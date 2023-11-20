@@ -15,26 +15,6 @@ section Set
 def parallelExtendSet (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] : Matroid α :=
     M.preimage (fun x ↦ if (x ∈ S) then e else x)
 
-/-- Swapping two parallel elements gives an automorphism -/
-def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M :=
-  iso_of_forall_indep' ((Equiv.swap e f).toLocalEquiv.restr M.E) (by simp)
-  ( by
-    simp only [LocalEquiv.restr_target, Equiv.toLocalEquiv_target, Equiv.toLocalEquiv_symm_apply,
-      Equiv.symm_swap, univ_inter, preimage_equiv_eq_image_symm]
-    exact Equiv.swap_image_eq_self (iff_of_true h_para.mem_ground_left h_para.mem_ground_right))
-  ( by
-    simp only [LocalEquiv.restr_coe, Equiv.toLocalEquiv_apply]
-    intro I _
-    by_cases hef : e ∈ I ↔ f ∈ I
-    · rw [Equiv.swap_image_eq_self hef]
-    rw [not_iff, iff_iff_and_or_not_and_not, not_not] at hef
-    obtain (hef | hef) := hef
-    · rw [Equiv.swap_comm, Equiv.swap_image_eq_exchange hef.2 hef.1,
-        h_para.symm.indep_substitute_iff hef.2 hef.1]
-    rw [Equiv.swap_image_eq_exchange hef.1 hef.2, h_para.indep_substitute_iff hef.1 hef.2] )
-
-@[simp] theorem parallel_swap_apply [DecidableEq α] (h_para : M.Parallel e f) :
-    (parallel_swap h_para).toLocalEquiv = (Equiv.swap e f).toLocalEquiv.restr M.E := rfl
 
 end Set
 
@@ -83,6 +63,18 @@ theorem addLoop_loop (he : e ∉ M.E) : (M.addLoop e).Loop e := by
     singleton_subset_iff, restrict_ground_eq, and_iff_left (mem_insert _ _),
     and_iff_left (mem_insert _ _)]
   exact fun hi ↦ he (singleton_subset_iff.1 hi.subset_ground)
+
+instance addLoop_finite (M : Matroid α) [M.Finite] (e : α) : (M.addLoop e).Finite :=
+  ⟨M.ground_finite.insert e⟩
+
+instance addLoop_finiteRk (M : Matroid α) [M.FiniteRk] (e : α) : (M.addLoop e).FiniteRk := by
+  obtain ⟨B, hB⟩ := (addLoop M e).exists_base
+  exact ⟨⟨B, hB, (addLoop_indep_iff.1 hB.indep).finite⟩⟩
+
+instance addLoop_finitary (M : Matroid α) [M.Finitary] (e : α) : (M.addLoop e).Finitary := by
+  refine ⟨fun I hI ↦ ?_⟩
+  simp only [addLoop_indep_iff] at *
+  exact Finitary.indep_of_forall_finite I hI
 
 def addColoop (M : Matroid α) (e : α) : Matroid α := (M﹡.addLoop e)﹡
 
@@ -139,6 +131,9 @@ theorem parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef
     disjoint_singleton_right, and_congr_left_iff, iff_self_and, true_and]
   aesop
 
+/-- Deleting `f` in a parallel extension of `M` by `f` is the same as deleting `f` from `M`.
+  This could be a simp lemma, but it is less convenient than the 'non-junk' unprimed version,
+  which is simpler for reasonable inputs, even though it requires `f ∉ M.E` explicitly.  -/
 theorem parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     (M.parallelExtend e f) ⟍ f = M ⟍ f := by
   classical
@@ -230,6 +225,32 @@ theorem eq_parallelExtend_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
       exact fun hI ↦ (hpar.dep_of_ne hef).not_indep (hI.subset <| pair_subset heI hfI)
     rw [hpar.symm.indep_substitute_iff hfI heI, and_iff_right heI]
   simp [hfI]
+
+instance parallelExtend_finite (M : Matroid α) [M.Finite] (e f : α) :
+    (M.parallelExtend e f).Finite :=
+  ⟨M.ground_finite.insert f⟩
+
+instance parallelExtend_finiteRk (M : Matroid α) [FiniteRk M] (e f : α) :
+    (M.parallelExtend e f).FiniteRk := by
+  obtain ⟨B, hB⟩ := (M.parallelExtend e f).exists_base
+  have hB' : M.Indep (B \ {f})
+  · rw [indep_iff_delete_of_disjoint (disjoint_sdiff_left (t := B) (s := {f})),
+      ← delete_elem, ← parallelExtend_delete_eq' M e f, delete_elem, delete_indep_iff,
+      and_iff_left disjoint_sdiff_left]
+    exact hB.indep.subset <| diff_subset _ _
+  exact ⟨⟨_, hB, (hB'.finite.insert f).subset <| by simp⟩⟩
+
+instance parallelExtend_finitary (M : Matroid α) [Finitary M] (e f : α) :
+    (M.parallelExtend e f).Finitary := by
+  obtain (rfl | hef) := eq_or_ne e f
+  · rw [parallelExtend_self]; infer_instance
+  obtain (he | he) := em' (M.Nonloop e)
+  · rw [parallelExtend_not_nonloop he]
+    have := Finitary
+
+  rw [parallelExtend_eq_parallelExtend_delete _ hef]
+  refine ⟨fun I hI ↦ ?_⟩
+
 
 end Parallel
 
