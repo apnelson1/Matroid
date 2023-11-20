@@ -24,6 +24,12 @@ theorem pair_diff_left {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {x} = {y
 theorem pair_diff_right {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {y} = {x} := by
   rw [pair_comm, pair_diff_left hne.symm]
 
+@[simp] theorem pair_subset_iff {x y : α} {s : Set α} : {x,y} ⊆ s ↔ x ∈ s ∧ y ∈ s := by
+  rw [insert_subset_iff, singleton_subset_iff]
+
+theorem pair_subset {x y : α} {s : Set α} (hx : x ∈ s) (hy : y ∈ s) : {x,y} ⊆ s :=
+  pair_subset_iff.2 ⟨hx,hy⟩
+
 lemma Set.InjOn.image_eq_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
     (h₂ : s₂ ⊆ s) : f '' s₁ = f '' s₂ ↔ s₁ = s₂ :=
   ⟨fun h' ↦ by rw [←h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩

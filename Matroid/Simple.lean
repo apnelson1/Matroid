@@ -107,6 +107,32 @@ theorem Nonloop.parallel_iff_dep (he : M.Nonloop e) (hf : M.Nonloop f) (hef : e 
     M.Parallel e f ↔ M.Dep {e,f} := by
   rw [←hf.indep.mem_cl_iff_of_not_mem hef, he.parallel_iff_mem_cl]
 
+theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I) :
+    M.Indep (insert f (I \ {e})) := by
+  obtain (rfl | hef) := eq_or_ne e f
+  · rwa [insert_diff_singleton, insert_eq_of_mem hI_e]
+  rw [indep_iff_forall_subset_not_circuit']
+  refine ⟨fun C C_sub C_circ ↦ ?_, ?_⟩
+  · have e_notin_C : e ∉ C := fun e_in_C ↦ (mem_of_mem_insert_of_ne (C_sub e_in_C) hef).2 rfl
+    have C_ne_ef : C ≠ {e, f}
+    · intro h_f
+      rw [h_f] at e_notin_C
+      exact e_notin_C (mem_insert e _)
+    obtain ⟨C', C'_circ, C'_sub⟩ :=
+      C_circ.elimination ((parallel_iff_circuit hef).1 h_para) C_ne_ef f
+    refine C'_circ.dep.not_indep (hI.subset <| C'_sub.trans ?_)
+    simp only [mem_singleton_iff, union_insert, union_singleton, mem_insert_iff, true_or, or_true,
+      not_true, diff_subset_iff, singleton_union, insert_subset_iff, hI_e, true_and]
+    refine C_sub.trans (insert_subset_insert (diff_subset _ _))
+  exact insert_subset h_para.mem_ground_right <| (diff_subset _ _).trans hI.subset_ground
+
+theorem Parallel.indep_substitute_iff (h_para : M.Parallel e f) (he : e ∈ I) (hf : f ∉ I) :
+    M.Indep I ↔ M.Indep (insert f (I \ {e})) := by
+  refine ⟨fun hI ↦ hI.parallel_substitute h_para he, fun hI ↦ ?_⟩
+  convert hI.parallel_substitute h_para.symm (mem_insert _ _)
+  have hef : e ≠ f := by rintro rfl; exact hf he
+  simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
+
 end Parallel
 
 section ParallelClass
