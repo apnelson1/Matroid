@@ -100,6 +100,9 @@ theorem Basis.to_delete (h : M.Basis I X) (hX : Disjoint X D) : (M ⟍ D).Basis 
 @[simp] theorem delete_nonloop_iff : (M ⟍ D).Nonloop e ↔ M.Nonloop e ∧ e ∉ D := by
   rw [← indep_singleton, delete_indep_iff, disjoint_singleton_left, indep_singleton]
 
+theorem Nonloop.of_delete (h : (M ⟍ D).Nonloop e) : M.Nonloop e :=
+  (delete_nonloop_iff.1 h).1
+
 @[simp] theorem delete_circuit_iff : (M ⟍ D).Circuit C ↔ M.Circuit C ∧ Disjoint C D := by
   simp_rw [circuit_iff, delete_dep_iff, and_imp]
   rw [and_comm, ← and_assoc, and_congr_left_iff, and_comm, and_congr_right_iff]
@@ -134,7 +137,6 @@ theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 
 theorem delete_delete_diff (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
   by simp
-
 
 end Delete
 
@@ -517,6 +519,10 @@ theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) :
   rw [←he.er_eq, ←union_singleton]
   exact M.er_mono (subset_union_right _ _)
 
+theorem Nonloop.of_contract (h : (M ⟋ C).Nonloop e) : M.Nonloop e := by
+  rw [← indep_singleton] at h ⊢
+  exact h.of_contract
+
 end Contract
 
 
@@ -595,6 +601,14 @@ theorem contract_delete_minor (M : Matroid α) (C D : Set α) : M ⟋ C ⟍ D �
 theorem minor_iff_exists_contract_delete : N ≤m M ↔ ∃ C D : Set α, N = M ⟋ C ⟍ D :=
   ⟨fun ⟨C, D, h⟩ ↦ ⟨_,_,h.2.2.2⟩, fun ⟨C, D, h⟩ ↦ by rw [h]; apply contract_delete_minor⟩
 
+theorem Indep.of_minor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
+  obtain ⟨C,D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
+  exact hI.of_delete.of_contract
+
+theorem Nonloop.of_minor (h : N.Nonloop e) (hNM : N ≤m M) : M.Nonloop e := by
+  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
+  exact h.of_delete.of_contract
+
 instance minor_refl : IsRefl (Matroid α) (· ≤m ·) :=
   ⟨fun M ↦ minor_iff_exists_contract_delete.2 ⟨∅, ∅, by simp⟩⟩
 
@@ -643,6 +657,11 @@ theorem delete_contract_minor (M : Matroid α) (D C : Set α) : M ⟍ D ⟋ C �
 theorem contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
     (M ⟋ C) ↾ R ≤m M := by
   rw [←delete_compl]; apply contract_delete_minor
+
+theorem Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
+  obtain ⟨C, D, -, -, -, rfl⟩ := h
+  rw [← er_univ_eq, ← er_univ_eq, delete_er_eq']
+  exact (M.er_contract_le_er _ _).trans (M.er_mono (diff_subset _ _))
 
 theorem Minor.dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
@@ -737,6 +756,23 @@ theorem contract_eq_loopyOn_of_spanning (h : M.Spanning C) : M ⟋ C = loopyOn (
 
 @[simp] theorem freeOn_contract (E X : Set α) : (freeOn E) ⟋ X = freeOn (E \ X) := by
   rw [←loopyOn_dual_eq, ←delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
+
+theorem restrict_indep_eq_freeOn (hI : M.Indep I) : M ↾ I = freeOn I := by
+  refine eq_of_indep_iff_indep_forall rfl (fun J _ ↦ ?_)
+  simp only [restrict_ground_eq, restrict_indep_iff, freeOn_indep_iff, and_iff_right_iff_imp]
+  exact hI.subset
+
+theorem indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
+  refine ⟨restrict_indep_eq_freeOn, fun h ↦ ?_⟩
+  have h' := restrict_indep_iff (M := M) (I := I) (R := I)
+  rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'
+
+theorem restrict_subset_loops_eq (hX : X ⊆ M.cl ∅) : M ↾ X = loopyOn X := by
+  refine eq_of_indep_iff_indep_forall rfl (fun I hI ↦ ?_)
+  simp only [restrict_indep_iff, loopyOn_indep_iff]
+  use fun h ↦ h.1.eq_empty_of_subset_loops (h.2.trans hX)
+  rintro rfl
+  simp
 
 end Constructions
 

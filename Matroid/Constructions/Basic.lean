@@ -46,6 +46,9 @@ theorem ground_nonempty_iff (M : Matroid α) : M.E.Nonempty ↔ M.Nonempty :=
 @[simp] theorem eq_emptyOn [IsEmpty α] (M : Matroid α) : M = emptyOn α := by
   simp [←ground_eq_empty_iff]
 
+instance finite_emptyOn (α : Type*) : (emptyOn α).Finite :=
+  ⟨finite_empty⟩
+
 end EmptyOn
 
 section LoopyOn

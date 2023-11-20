@@ -6,6 +6,5 @@ import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Basic
-import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.SetSubtype
-import Matroid.ForMathlib.Order.Minimal
+import Matroid.ForMathlib.Minimal

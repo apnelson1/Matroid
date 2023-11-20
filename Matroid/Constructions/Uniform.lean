@@ -1,5 +1,6 @@
 import Matroid.Minor.Iso
 import Matroid.Constructions.Truncate
+import Mathlib.Tactic.Linarith
 
 variable {α : Type*} {M : Matroid α} {E : Set α}
 
@@ -123,6 +124,10 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
     (unifOn E k) ⟋ C = unifOn (E \ C) (k - (E ∩ C).encard) :=
   unifOn_contract_eq' E C WithTop.coe_ne_top
 
+section unif
+
+variable {a b a' b' : ℕ}
+
 /-- A canonical uniform matroid, with rank `a` and ground type `Fin b`. -/
 def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 
@@ -133,6 +138,14 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 
 @[simp] theorem unif_er_eq (X) : (unif a b).er X = min X.encard a := by
   rw [unif, unifOn_er_eq _ _ (subset_univ _)]
+
+@[simp] theorem unif_erk_eq (a b : ℕ) : (unif a b).erk = min a b := by
+  rw [erk_eq_er_ground, unif_er_eq]
+  simp only [unif_ground_eq, ge_iff_le, encard_univ_fin, min_comm]
+  rfl
+
+theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
+  simpa
 
 theorem unif_base_iff (hab : a ≤ b) : (unif a b).Base B ↔ B.encard = a := by
   rw [unif, unifOn, truncate_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
@@ -187,8 +200,6 @@ theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard =
       true_and]
     rw [← ground_eq_empty_iff, unif_ground_eq, univ_eq_empty_iff]
     simp [eq_comm (a := (0 : ℕ∞))]
-  have hcard := encard_eq_coe_toFinset_card (univ : Set (Fin b.succ))
-  rw [toFinset_univ, Finset.card_fin] at hcard
   rw [eq_unifOn_iff, and_iff_right rfl]
   refine ⟨fun h ↦ ?_, fun ⟨hi,h⟩ ↦ ?_⟩
   · obtain (⟨rfl, -⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
@@ -197,43 +208,51 @@ theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard =
     · have hi := e.on_indep hI
       rwa [unif_indep_iff, (e.injOn_ground.mono hI.subset_ground).encard_image] at hi
     · rwa [e.on_indep_iff, unif_indep_iff, (e.injOn_ground.mono hIE).encard_image]
-    rw [← e.injOn_ground.encard_image, e.image_ground, unif_ground_eq, hcard]
+    rw [← e.injOn_ground.encard_image, e.image_ground, unif_ground_eq, encard_univ_fin]
 
-  obtain ⟨f,hf⟩ := (finite_of_encard_eq_coe h).exists_bijOn_of_encard_eq (hcard.symm ▸ h)
+  obtain ⟨f,hf⟩ := (finite_of_encard_eq_coe h).exists_bijOn_of_encard_eq
+    ((encard_univ_fin _).symm ▸ h)
   refine (iso_of_forall_indep' hf.toLocalEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
   simp [hi, hIE, (hf.injOn.mono hIE).encard_image]
 
-theorem unif_isoMinor_restr (a : ℕ) {b b' : ℕ} (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
+theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
   set R : Set (Fin b') := range (Fin.castLE hbb')
   have hM : ((unif a b') ↾ R) ≅ unif a b
   · rw [isIso_unif_iff, eq_iff_indep_iff_indep_forall]
     simp only [restrict_ground_eq, unifOn_ground_eq, restrict_indep_iff,
       unif_indep_iff, unifOn_indep_iff, implies_true, forall_const, and_self, true_and]
-    rw [← image_univ, Function.Injective.encard_image]
-    · simp [encard_eq_coe_toFinset_card]
+    rw [← image_univ, Function.Injective.encard_image, encard_univ_fin]
     exact (Fin.castLEEmb hbb').injective
   exact ⟨_, restrict_minor _ (by simp), hM.symm⟩
 
--- theorem unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
+theorem unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
+  rw [← isoMinor_dual_iff, unif_dual, unif_dual]
+  have h_eq : b - a = b + d - (a + d)
+  · rw [add_tsub_add_eq_tsub_right]
+  rw [← h_eq]
+  apply unif_isoMinor_restr _ (Nat.le_add_right b d)
 
---   obtain (hle | hlt) := le_or_lt a b
---   · rw [← isoMinor_dual_iff, unif_dual, unif_dual]
---     have h_eq : b - a = b + d - (a + d)
---     · rw [add_tsub_add_eq_tsub_right]
---     rw [← h_eq]
---     apply unif_isoMinor_restr _ (Nat.le_add_right b d)
---   rw [unif_eq_freeOn hlt.le, unif_eq_freeOn <| Nat.add_le_add_right hlt.le d]
+theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
+    unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by
+  refine ⟨fun h ↦ ?_, fun ⟨hr, hr'⟩  ↦ ?_⟩
+  · constructor
+    · have hle := h.erk_le_erk
+      simp only [unif_erk_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
+      obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
+    have hle := h.dual.erk_le_erk
+    rw [unif_dual, unif_dual, unif_erk_eq_of_le (by simp), unif_erk_eq_of_le (by simp)] at hle
+    exact (WithTop.le_coe rfl).1 hle
+  have hbb' := add_le_add hr hr'
+  rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
 
+  obtain ⟨d,rfl⟩ := Nat.exists_eq_add_of_le hr
+  obtain ⟨d',rfl⟩ := Nat.exists_eq_add_of_le ha'b'
+  refine (unif_isoMinor_contr a b d).trans (unif_isoMinor_restr (a+d) ?_)
+  have hb' : b ≤ d' + a
+  · zify at hr'; simpa using hr'
+  linarith
 
---   set R : Set (Fin (b+d)) := range (Fin.castLE (Nat.le_add_right b d))
---   refine ⟨
-
-
-
-
-
-
-
+end unif
 
 end Uniform
 

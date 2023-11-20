@@ -9,27 +9,6 @@ section Iso
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
-/-- Restrictions of isomorphic matroids are isomorphic -/
-def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
-    Iso (M ↾ R) (N ↾ (e '' R)) :=
-  iso_of_forall_indep (e.toLocalEquiv.restr R)
-  (by simpa [restrict_ground_eq])
-  (by rw [restr_target, restrict_ground_eq,
-    image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])] )
-
-  (by {
-    simp only [restrict_indep_iff, restr_coe, image_subset_iff, and_imp]
-    exact fun I hI hIR ↦ ⟨e.on_indep hI, hIR.trans (subset_preimage_image _ _)⟩ })
-  (by {
-    simp only [restrict_indep_iff, restr_coe_symm, image_subset_iff, and_imp]
-    refine' fun I hI hIR ↦ ⟨e.symm.on_indep hI, hIR.trans _⟩
-    rw [image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])]
-    apply inter_subset_right })
-
-@[simp] lemma Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
-    (e.restrict R hR).toLocalEquiv = e.toLocalEquiv.restr R := by
-  simp [restrict]
-
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
 noncomputable def Iso.delete (e : Iso M N) (hD : D ⊆ M.E) :
     Iso (M ⟍ D) (N ⟍ e '' D) := by
@@ -107,6 +86,15 @@ theorem IsoMinor.dual (h : N ≤i M) : N﹡ ≤i M﹡ :=
 theorem isoMinor_dual_iff : N﹡ ≤i M﹡ ↔ N ≤i M :=
   ⟨fun h ↦ by rw [← dual_dual M, ← dual_dual N]; exact h.dual, IsoMinor.dual⟩
 
+theorem IsoMinor.erk_le_erk (h : N ≤i M) : N.erk ≤ M.erk := by
+  obtain ⟨N', hN', hNM⟩ := h
+  exact hNM.erk_eq_erk.le.trans hN'.erk_le
+
+theorem IsoMinor.encard_ground_le_encard_ground (h : N ≤i M) : N.E.encard ≤ M.E.encard := by
+  obtain ⟨N', hN', (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩)⟩ := h; simp
+  have hss := encard_le_of_subset <| e.image_ground.subset.trans hN'.subset
+  rwa [e.injOn_ground.encard_image] at hss
+
 end Iso
 
 section free_loopy
@@ -120,39 +108,85 @@ theorem isoMinor_loopyOn_iff {E : Set β} :
   · rw [hM₀.1, isIso_loopyOn_iff] at hM₀M
     obtain ⟨e⟩ := hM₀M.2
     exact ⟨hM₀M.1, ⟨e.toEmbedding.trans ⟨inclusion hM₀.2, inclusion_injective hM₀.2⟩⟩⟩
-
   refine ⟨(loopyOn E) ↾ (((↑) : E → β) '' range e), by simp, ?_⟩
-
-
   simp only [loopyOn_restrict, isIso_loopyOn_iff, and_iff_right hM]
-  -- refine ⟨Equiv.Set.image (((↑) : E → β) ∘ e.toFun) _ ?_⟩
-  -- have := Equiv.Set.image (((↑) : E → β ) ∘ e)
+  convert Nonempty.intro <| Equiv.ofInjective (e.trans (Function.Embedding.subtype _))
+    ((e.trans _).injective)
+  rw [← image_univ, image_image, image_univ]
+  rfl
 
+theorem isoMinor_freeOn_iff {E : Set β} :
+    M ≤i freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ↪ E) := by
+  rw [← isoMinor_dual_iff, freeOn_dual_eq, isoMinor_loopyOn_iff, dual_ground,
+    dual_eq_comm, eq_comm, loopyOn_dual_eq]
 
+theorem isoMinor_loopyOn_iff_of_finite {E : Set β} (hE : E.Finite) :
+    M ≤i loopyOn E ↔ M = loopyOn M.E ∧ M.E.encard ≤ E.encard := by
+  simp [Matroid.isoMinor_loopyOn_iff, ←hE.encard_le_iff_nonempty_embedding']
 
+theorem isoMinor_freeOn_iff_of_finite {E : Set β} (hE : E.Finite) :
+    M ≤i freeOn E ↔ M = freeOn M.E ∧ M.E.encard ≤ E.encard := by
+  simp [Matroid.isoMinor_freeOn_iff, ←hE.encard_le_iff_nonempty_embedding']
 
+theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
+    freeOn E ≤i M ↔ ∃ (f : E ↪ β), M.Indep (range f) := by
+  simp_rw [IsoMinor, IsIso.comm (M := freeOn E), isIso_freeOn_iff]
+  refine ⟨fun ⟨M₀, hM₀M, hM₀free, ⟨e⟩⟩ ↦ ?_, fun ⟨f, hf⟩ ↦ ?_⟩
+  · use e.symm.toEmbedding.trans (Function.Embedding.subtype _)
+    refine Indep.of_minor ?_ hM₀M
+    nth_rw 1 [hM₀free ]
+    simp only [freeOn_indep_iff]
+    rintro _ ⟨x,hx,rfl⟩
+    simp
+  refine ⟨M ↾ (range f), M.restrict_minor hf.subset_ground, ?_⟩
+  rw [restrict_ground_eq, ← indep_iff_restrict_eq_freeOn, and_iff_right hf]
+  exact ⟨(Equiv.ofInjective f f.2).symm⟩
 
+theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
+    freeOn E ≤i M ↔ E.encard ≤ M.erk := by
+  rw [Matroid.freeOn_isoMinor_iff]
+  refine ⟨fun ⟨f, hf⟩  ↦ ?_, fun h ↦ ?_⟩
+  · rw [encard_congr <| Equiv.ofInjective f f.2, ←hf.er]
+    apply er_le_erk
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [← hB.encard, hE.encard_le_iff_nonempty_embedding] at h
+  obtain ⟨e⟩ := h
+  refine ⟨e.trans (Function.Embedding.subtype _), hB.indep.subset ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  simp
 
--- theorem loopyOn_isoMinor_iff {E : Set β} : loopyOn E ≤i M ↔ Nonempty (E ↪ M.cl ∅) := by
---   _
-
--- theorem loopyOn_isoMinor_iff {E : Set β} : loopyOn E ≤i M ↔ Nonempty (E ↪ M.cl ∅) := by
---   cases isEmpty_or_nonempty β
---   · simp only [eq_emptyOn, emptyOn_isoMinor, true_iff]
---     exact ⟨Function.Embedding.ofIsEmpty⟩
---   cases isEmpty_or_nonempty α
---   · rw [eq_emptyOn M, isoMinor_emptyOn_iff, ← ground_eq_empty_iff, loopyOn_ground, emptyOn_cl_eq]
---     constructor
---     · rintro rfl; exact ⟨Function.Embedding.ofIsEmpty⟩
---     intro ⟨h⟩
---     rw [eq_empty_iff_forall_not_mem]
---     intro x hx
---     simpa using (h ⟨x,hx⟩).2
---   refine ⟨fun ⟨M', hM', hM'M⟩ ↦ ?_, fun h ↦ ?_⟩
---   · refine ⟨⟨fun x ↦ ⟨hM'M.iso x, ?_⟩, ?_⟩⟩
---     · rw [← loop_iff_mem_cl_empty, ← not_nonloop_iff _, ← indep_singleton, ← image_singleton]
---       have' := hM'M.iso.on_indep_iff _
-
-
+theorem loopyOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
+    loopyOn E ≤i M ↔ E.encard ≤ M﹡.erk := by
+  rw [← isoMinor_dual_iff, loopyOn_dual_eq, freeOn_isoMinor_iff_of_finite hE]
 
 end free_loopy
+
+section Property
+
+universe u
+
+variable {α β : Type*} {M : Matroid α} {N : Matroid β}
+
+/-- A minor-closed matroid property -/
+def MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
+    ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N
+
+def IsoMinorClosed (P : ∀ {α : Type*}, Matroid α → Prop) : Prop := MinorClosed P ∧ Invariant P
+
+def ExMinor (N : Matroid β) {α : Type*} (M : Matroid α) : Prop := ¬ (N ≤i M)
+
+theorem exMinor_isoMinorClosed {N₀ : Matroid η} : IsoMinorClosed (ExMinor N₀) := by
+  refine ⟨fun {α} N M hNM h_ex h_minor ↦ h_ex <| h_minor.trans hNM.isoMinor,
+    fun {α} {β} M M' hMM' ↦ ?_⟩
+  simp only [ExMinor, eq_iff_iff, not_iff_not]
+  exact ⟨fun h ↦ h.trans hMM'.isoMinor, fun h ↦ h.trans hMM'.symm.isoMinor⟩
+
+
+
+
+
+
+
+
+
+end Property

@@ -259,6 +259,9 @@ theorem Iso.on_dep_symm (e : Iso M N) (h : N.Dep (e '' D)) (hD : D ⊆ M.E := by
 theorem Iso.setOf_dep_eq (e : Iso M N) : setOf N.Dep = (image e) '' setOf M.Dep :=
   e.setOf_prop_eq Dep.subset_ground e.on_dep e.symm.on_dep
 
+theorem Iso.encard_ground_eq (e : Iso M N) : M.E.encard = N.E.encard := by
+  rw [← e.image_ground, e.injOn_ground.encard_image]
+
 /-- The duals of isomorphic matroids are isomorphic -/
 def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
   iso_of_forall_base e.toLocalEquiv
@@ -275,6 +278,42 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
       rw [e.symm.injOn_ground.image_diff hBE, e.symm.image_ground, symm_apply] } )
 
 @[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toLocalEquiv = e.toLocalEquiv := rfl
+
+/-- Restrictions of isomorphic matroids are isomorphic -/
+def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
+    Iso (M ↾ R) (N ↾ (e '' R)) :=
+  iso_of_forall_indep (e.toLocalEquiv.restr R)
+  (by simpa [restrict_ground_eq])
+  (by rw [restr_target, restrict_ground_eq,
+    image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])] )
+
+  (by {
+    simp only [restrict_indep_iff, restr_coe, image_subset_iff, and_imp]
+    exact fun I hI hIR ↦ ⟨e.on_indep hI, hIR.trans (subset_preimage_image _ _)⟩ })
+  (by {
+    simp only [restrict_indep_iff, restr_coe_symm, image_subset_iff, and_imp]
+    refine' fun I hI hIR ↦ ⟨e.symm.on_indep hI, hIR.trans _⟩
+    rw [image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])]
+    apply inter_subset_right })
+
+@[simp] lemma Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+    (e.restrict R hR).toLocalEquiv = e.toLocalEquiv.restr R := by
+  simp [restrict]
+
+theorem Iso.on_basis (e : Iso M N) (hI : M.Basis I X) : N.Basis (e '' I) (e '' X) := by
+  rw [← base_restrict_iff _, (e.restrict X).symm.on_base_iff _, base_restrict_iff]
+  · convert hI
+    simp only [symm_apply, restrict_apply, restr_coe_symm]
+    apply e.toLocalEquiv.symm_image_image_of_subset_source
+    rw [e.source_eq]
+    exact hI.indep.subset_ground
+  · simp only [restrict_ground_eq]
+    exact image_subset _ hI.subset
+  exact e.image_subset_ground X hI.subset_ground
+
+section IsIso
+
+variable {M : Matroid α} {N : Matroid β}
 
 /-- We write `M ≅ N` if there is an isomorphism from `M` to `N`. This is defined as
   a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
@@ -304,10 +343,10 @@ theorem IsIso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
 theorem IsIso.refl (M : Matroid α) : M ≅ M :=
   Or.inr ⟨Iso.refl M⟩
 
-theorem Iso.isIso {M : Matroid α} {N : Matroid β} (h : M.Iso N) : M ≅ N :=
+theorem Iso.isIso (h : M.Iso N) : M ≅ N :=
   Or.inr ⟨h⟩
 
-theorem IsIso.trans {M : Matroid α} {N : Matroid β} {O : Matroid γ}
+theorem IsIso.trans {O : Matroid γ}
     (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨i1⟩⟩) := h1
   · rwa [IsIso.comm, isIso_emptyOn_iff] at h2 ⊢
@@ -331,15 +370,30 @@ theorem IsIso.empty_or_nonempty_iso (h : M ≅ N) :
   right
   exact ⟨by assumption, by assumption, ⟨e⟩⟩
 
-theorem IsIso.nonempty_iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Nonempty α] [Nonempty β] :
+theorem IsIso.nonempty_iso [Nonempty α] [Nonempty β] (h : M ≅ N) :
     Nonempty (M.Iso N) := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact ⟨Iso.of_emptyOn⟩
   exact ⟨e⟩
 
 /-- Noncomputably produce an `Iso M N` from `M ≅ N` whenever both ground types are nonempty -/
-noncomputable def IsIso.iso {M : Matroid α} {N : Matroid β} (h : M ≅ N) [Nonempty α] [Nonempty β] :
+noncomputable def IsIso.iso [Nonempty α] [Nonempty β] (h : M ≅ N) :
     Iso M N := h.nonempty_iso.some
+
+theorem IsIso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
+  · exact iff_of_true (finite_emptyOn α) (finite_emptyOn β)
+  refine ⟨fun ⟨h⟩ ↦ ⟨?_⟩, fun ⟨h⟩ ↦ ⟨?_⟩⟩
+  · rw [← encard_ne_top_iff] at h ⊢
+    rwa [e.encard_ground_eq] at h
+  rw [← encard_ne_top_iff] at h ⊢
+  rwa [e.encard_ground_eq]
+
+theorem IsIso.finiteRk_iff (h : M ≅ N) : M.FiniteRk ↔ N.FiniteRk := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
+  · apply iff_of_true <;> infer_instance
+  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_base hB, hBfin.image _⟩,
+    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, e.symm.on_base hB, hBfin.image _⟩⟩
 
 theorem IsIso.dual (h : M ≅ N) : M﹡ ≅ N﹡ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
@@ -386,8 +440,40 @@ theorem isIso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
   rw [← isIso_dual_iff, freeOn_dual_eq, isIso_loopyOn_iff, dual_eq_comm, dual_ground,
     loopyOn_dual_eq, eq_comm]
 
+end IsIso
 
+section Invariant
 
+def Invariant {η : Type*} (f : ∀ {α : Type u}, Matroid α → η) : Prop :=
+  ∀ {α β : Type u} {M : Matroid α} {N : Matroid β}, M ≅ N → f M = f N
+
+theorem Invariant.pred_iff_pred {P : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
+    {α β : Type u} {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) : P M ↔ P N := by
+  simp [hP hMN]
+
+theorem Invariant.and {P Q : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
+    (hQ : Invariant Q) : Invariant (fun M ↦ P M ∧ Q M) := by
+  intro α β M N hMN
+  simp only [eq_iff_iff]
+  rw [hP.pred_iff_pred hMN, hQ.pred_iff_pred hMN]
+
+theorem invariant_finite : Invariant Matroid.Finite := by
+  intro α β M N hMN
+  simp only [eq_iff_iff]
+  exact hMN.finite_iff
+
+theorem invariant_finiteRk : Invariant Matroid.FiniteRk := by
+  intro α β M N hMN
+  simp only [eq_iff_iff]
+  exact hMN.finiteRk_iff
+
+-- def InvariantPred (f : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
+--   Invariant f
+
+-- theorem Invariant.onIso {η α β : Type*} {f : ∀ {α : Type u}, Matroid α → η}
+--     (hf : Invariant f) {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) :
+
+end Invariant
 
 
 

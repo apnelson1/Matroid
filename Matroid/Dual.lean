@@ -115,6 +115,9 @@ theorem dual_dep_iff_forall : (M﹡.Dep I) ↔ (∀ B, M.Base B → (I ∩ B).No
 instance dual_finite [M.Finite] : M﹡.Finite :=
   ⟨M.ground_finite⟩
 
+instance dual_nonempty [M.Nonempty] : M﹡.Nonempty :=
+  ⟨M.ground_nonempty⟩
+
 theorem subset_ground_dual (hX : X ⊆ M.E := by aesop_mat) : X ⊆ M﹡.E :=
   hX
 

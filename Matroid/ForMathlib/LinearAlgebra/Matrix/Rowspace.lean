@@ -2,7 +2,6 @@ import Mathlib.Data.Matrix.Rank
 import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.FiniteDimensional
--- import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.StdBasis
 import Matroid.ForMathlib.LinearAlgebra.Matrix.NonsingularInverse
@@ -388,23 +387,23 @@ theorem exists_colBasis_superset {A : Matrix m n R} {t₀ : Set n}
 theorem exists_colBasis (A : Matrix m n R) : ∃ t, A.ColBasis t :=
   Aᵀ.exists_rowBasis
 
-theorem colBasis_submatrix_foo (ht : A.colSpace = (A.colSubmatrix t).colSpace)
-  {t' : Set n} (ht' : t' ⊆ t) :
-    A.ColBasis t' ↔ (A.colSubmatrix t).ColBasis (t.subtypeOrderIso.symm ⟨t',ht'⟩) := by
-  simp_rw [colBasis_iff_maximal_linearIndependent]
-  set t₀ : {x // x ⊆ t} := ⟨t', ht'⟩
-  -- obtain rfl : t' = t₀ := rfl
+-- theorem colBasis_submatrix_foo (ht : A.colSpace = (A.colSubmatrix t).colSpace)
+--   {t' : Set n} (ht' : t' ⊆ t) :
+--     A.ColBasis t' ↔ (A.colSubmatrix t).ColBasis (t.subtypeOrderIso.symm ⟨t',ht'⟩) := by
+--   simp_rw [colBasis_iff_maximal_linearIndependent]
+--   set t₀ : {x // x ⊆ t} := ⟨t', ht'⟩
+--   -- obtain rfl : t' = t₀ := rfl
 
-  change (t₀ : Set n) ∈ _ ↔ t₀ ∈ (t.subtypeOrderIso.toEquiv.symm) ⁻¹' (maximals (· ≤ · ) _)
+--   change (t₀ : Set n) ∈ _ ↔ t₀ ∈ (t.subtypeOrderIso.toEquiv.symm) ⁻¹' (maximals (· ≤ · ) _)
 
-  rw [← mem_preimage]
-  have := t.subtypeOrderEmbedding
-  change _ ∈ t.subtypeOrderEmbedding ⁻¹' _ ↔ _
+--   rw [← mem_preimage]
+--   have := t.subtypeOrderEmbedding
+--   change _ ∈ t.subtypeOrderEmbedding ⁻¹' _ ↔ _
 
-  rw [← Equiv.image_eq_preimage, RelIso.coe_toEquiv, ← RelIso.coe_toRelEmbedding,
-    ← RelEmbedding.maximals_image_eq]
-  simp
-  have := (subtypeOrderIso t).toRelEmbedding.maximals_image_eq
+--   rw [← Equiv.image_eq_preimage, RelIso.coe_toEquiv, ← RelIso.coe_toRelEmbedding,
+--     ← RelEmbedding.maximals_image_eq]
+--   simp
+--   have := (subtypeOrderIso t).toRelEmbedding.maximals_image_eq
 
 
 
@@ -672,24 +671,6 @@ theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace)
   rw [←orthSpace_rowSpace_eq_nullSpace, h, orthSpace_orthSpace]
 
 end NullSpace
-
-section RelNullSpace
-
-variable {K : Type*} [Field K] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂]
-  {A : Matrix m n K} {A₁ : Matrix m₁ n K} {A₂ : Matrix m₂ n K} {t : Set n}
-
-theorem colBasis_iff_colBasis_diff_of_orth {s : Set n} (hs : s.Finite) (hA₁ : A₁.colFun.support ⊆ s)
-    (hA₂ : A₂.colFun.support ⊆ s) (h : A₁.rowSpace = A₂.nullSpace ⊓ s.supportedFun K) {t : Set n} :
-    A₁.ColBasis t ↔ A₂.ColBasis (s \ t) := by
-  have hts : t ⊆ s := sorry
-  set B₁ := A₁.colSubmatrix s
-  set B₂ := A₂.colSubmatrix s
-  have := hs.fintype
-  have := colBasis_iff_colBasis_compl_of_orth (A₁ := B₁) (A₂ := B₂) (t := s.incl ⁻¹' t) sorry
-
-
-end RelNullSpace
-
 section Rank
 
 noncomputable def rank' {R : Type*} [CommRing R] (A : Matrix m n R) : ℕ :=
@@ -741,7 +722,28 @@ end Rank
 
 end Matrix
 
+section Basis
 
+variable {R m n : Type*} [CommRing R] {U : Submodule R (n → R)}
+
+/-- Given a basis for a submodule `U` of `n → R`, put its vectors as the rows of a matrix,
+  whose row space will then be `U` . -/
+noncomputable def Basis.toRowMatrix (b : Basis m R U) : Matrix m n R :=
+  Matrix.of (fun i j ↦ (b i : (n → R)) j)
+
+@[simp] theorem Basis.toRowMatrix_apply (b : Basis m R U) (i : m) (j : n) :
+  b.toRowMatrix i j = (b i : n → R) j := rfl
+
+@[simp] theorem Basis.toRowMatrix_rowSpace (b : Basis m R U) : b.toRowMatrix.rowSpace = U := by
+  convert congr_arg (fun (W : Submodule R U) ↦ W.map (Submodule.subtype U)) b.span_eq
+  · rw [Matrix.rowSpace, map_span]
+    convert rfl
+    ext x
+    simp only [coeSubtype, mem_image, mem_range, exists_exists_eq_and, toRowMatrix]
+    rfl
+  simp
+
+end Basis
 
 
 

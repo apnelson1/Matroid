@@ -1,5 +1,5 @@
+import Matroid.Minor.Iso
 import Matroid.Simple
-import Matroid.ForMathlib.Representation
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Vandermonde
@@ -235,6 +235,7 @@ theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : 
     (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
   simp [iso, indicator_of_mem hx]
 
+
 /-- A function from `α` to a module gives rise to a finitary matroid on `α` -/
 def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
     matroid_of_indep_of_finitary univ
@@ -379,7 +380,10 @@ noncomputable def matroidOfSubtypeFun_rep {E : Set α} (𝔽 : Type*) [Field �
         rintro ⟨⟨a,ha⟩,rfl⟩
         exact hxE ha )
 
-
+@[simp] theorem matroidOfSubtypeFun_rep_apply {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
+    (f : E → W) (e : E) : matroidOfSubtypeFun_rep 𝔽 f e = f e := by
+  change Subtype.val.extend f 0 e = f e
+  rw [Function.Injective.extend_apply Subtype.val_injective]
 
 
 
@@ -498,8 +502,43 @@ theorem Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B)
     (v.standardRep hB).FullRank :=
   (v.standardRep_fullRank' hB).mapEquiv _
 
+section Constructions
+
+-- Loopy matroids are trivially representable over every field.
+def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
+  to_fun := 0
+  valid' := by
+    refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · obtain rfl := loopyOn_indep_iff.1 h
+      apply linearIndependent_empty_type
+    rw [loopyOn_indep_iff, eq_empty_iff_forall_not_mem]
+    exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
+
+-- The empty matroid is trivially representable over every field.
+def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
+  (loopyRep ∅ 𝔽).ofEq <| loopyOn_empty _
+
+-- TODO: The free matroid is trivially representable over every field.
+-- def freeRep [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)] (𝔽 : Type*) [Field 𝔽] :
+--     (freeOn E).Rep 𝔽 (α → 𝔽) where
+--   to_fun e := if e ∈ E then Pi.single e 1 else 0
+--   valid' := by
+--     intro I
+--     simp
+
+
+
+
+end Constructions
+
+section Representable
+
 /-- A matroid is representable if it has a representation -/
 def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
+
+/-- Noncomputably extract a representation from proof of representability -/
+noncomputable def Representable.rep (h : M.Representable 𝔽) : M.Rep 𝔽 (α → 𝔽) :=
+  Nonempty.some h
 
 theorem Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
   have ⟨B, hB⟩ := M.exists_base
@@ -538,6 +577,30 @@ theorem Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
   rw [←Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
   use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
   exact hv.mapEquiv _
+
+theorem representable_emptyOn (α 𝔽 : Type*) [Field 𝔽] : (emptyOn α).Representable 𝔽 :=
+  (emptyRep α 𝔽).representable
+
+theorem representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
+    (loopyOn E).Representable 𝔽 :=
+  (loopyRep E 𝔽).representable
+
+theorem Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
+    (h : M.Representable 𝔽) (hMN : M ≅ N) : N.Representable 𝔽 := by
+  obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
+  · apply representable_emptyOn
+  exact (h.rep.iso e).representable
+
+theorem IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) :
+    M.Representable 𝔽 ↔ N.Representable 𝔽 :=
+  ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
+
+theorem invariant_representable (𝔽 : Type*) [Field 𝔽] :
+    Invariant (fun M ↦ M.Representable 𝔽) := by
+  refine fun {α} {β} M N hMN ↦ ?_
+  simp only [eq_iff_iff, hMN.representable_iff]
+
+end Representable
 
 theorem Rep.subset_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
     v '' X ⊆ span 𝔽 (v '' I) := by
@@ -704,7 +767,6 @@ theorem Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := b
   exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul]
 
 end Simple
-
 section Uniform
 
 /-- A uniform matroid on at most `|𝔽|+1` elements is `𝔽`-representable -/
@@ -762,3 +824,12 @@ theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM 
   obtain ⟨C, D, rfl⟩ := hNM
   obtain ⟨v⟩ := hM
   exact ((v.contract C).delete D).representable
+
+theorem minorClosed_representable (𝔽 : Type*) [Field 𝔽] :
+    MinorClosed (fun M ↦ M.Representable 𝔽) := by
+  intro α N M hNM (h : M.Representable 𝔽)
+  exact h.minor hNM
+
+theorem representable_isoMinorClosed (𝔽 : Type*) [Field 𝔽] :
+    IsoMinorClosed (fun M ↦ M.Representable 𝔽) :=
+  ⟨minorClosed_representable 𝔽, invariant_representable 𝔽⟩

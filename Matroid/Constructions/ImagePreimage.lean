@@ -182,7 +182,7 @@ section OnUniv
 
 variable {E X : Set α} {M : Matroid α}
 
-/-- Given `X : Set α`, the matroid on type `X` with ground set `univ`.
+/-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
   If `X ⊆ M.E`, then isomorphic to `M ↾ X`. -/
 def onGround (M : Matroid α) (X : Set α) : Matroid X := M.preimage (↑)
 
@@ -205,34 +205,43 @@ noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso M (M.onGround E
   have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
   exact (preimage_iso Subtype.val_injective (by rw [Subtype.range_val, ←hE])).symm
 
--- @[simp] theorem iso_onGround_apply [M.Nonempty] (hE : M.E = E) (x : E) :
---     (iso_onGround hE) x = x := by
---   subst hE
---   cases x
---   simp [iso_onGround]
+theorem isIso_onGround (M : Matroid α) (hE : M.E = E) : M ≅ M.onGround E := by
+  obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
+  · simp only [emptyOn_ground] at hE; subst hE; simp
+  exact (iso_onGround hE).isIso
 
---   simp [iso_onGround, onGround, preimage_ground_eq, hE]
+theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.onGround E) :
+    M = N := by
+  obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
+  · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
+  have hNn : N.Nonempty
+  · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
+  rw [eq_iff_indep_iff_indep_forall] at h ⊢
+  rw [hM, hN, and_iff_right rfl]
+  intro I hIE
+  simp only [onGround_ground hM.symm.subset, subset_univ, forall_true_left] at h
+  rw [(iso_onGround hM).on_indep_iff, (iso_onGround hN).on_indep_iff]
+  convert h.2 _ using 1
 
+@[simp] theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
+  obtain (rfl | hne) := eq_emptyOn_or_nonempty M
+  · simp only [emptyOn_ground] at hM; subst hM; simp
+  set e := iso_onGround hM
+  set e' := iso_onGround (show M﹡.E = E from hM)
+  have hu1 := onGround_ground hM.symm.subset
+  have hu2 := onGround_ground (M := M﹡) hM.symm.subset
+  subst hM
 
--- theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.onGround E) :
---     M = N := by
---   obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
---   · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
---   have hNn : N.Nonempty
---   · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
+  apply eq_of_base_iff_base_forall
+  · rw [dual_ground, hu1, hu2]
 
---   apply eq_of_indep_iff_indep_forall (by rw [hM,hN])
---   intro I hI
---   rw [(iso_onGround hM).symm.on_indep_iff, (iso_onGround hN).symm.on_indep_iff]
---   simp_rw [h]
---   convert Iff.rfl using 2
+  intro B _
 
--- theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
---   obtain (hα | hα) := isEmpty_or_nonempty α; simp
-
---   subst hM
-
---   sorry
-
+  rw [e'.symm.on_base_iff, dual_base_iff', dual_base_iff', e.symm.on_base_iff, and_iff_left,
+    and_iff_left, e.symm.injOn_ground.image_diff, e.symm.image_ground]
+  · rfl
+  · rw [hu1]; exact subset_univ _
+  · apply e'.symm.image_subset_ground
+  rw [hu1]; exact subset_univ _
 
 end OnUniv
