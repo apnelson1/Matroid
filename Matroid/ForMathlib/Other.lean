@@ -275,6 +275,126 @@ theorem Set.Finite.encard_eq_iff_nonempty_equiv {s : Set α} {t : Set β} (ht : 
   -- simp
 
 end Lattice
+section Swap
+
+
+theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set α} (hef : e ∈ S ↔ f ∈ S) :
+    (Equiv.swap e f) '' S = S := by
+  ext x
+  rw [image_equiv_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def]
+  split_ifs with hxe hxf
+  · rwa [hxe, Iff.comm]
+  · rwa [hxf]
+  rfl
+
+theorem Equiv.swap_image_eq_exchange [DecidableEq α] {S : Set α} (he : e ∈ S) (hf : f ∉ S) :
+    (Equiv.swap e f) '' S = insert f (S \ {e}) := by
+  ext x
+  rw [image_equiv_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def,
+    mem_insert_iff, mem_diff]
+  split_ifs with hxe hxf
+  · subst hxe
+    simp [he, hf, (show x ≠ f by rintro rfl; exact hf he)]
+  · subst hxf
+    simp [he]
+  simp [hxe, iff_false_intro hxf]
+
+end Swap
+
+section Update
+
+variable {α β : Type*} [DecidableEq α] [DecidableEq β]
+
+@[simp] theorem image_update  (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :
+    (update f a b) '' s = if a ∈ s then insert b (f '' (s \ {a})) else (f '' s) := by
+  split_ifs with h
+  · rw [subset_antisymm_iff, image_subset_iff]
+    refine ⟨fun x hxs ↦ (em (x = a)).elim (fun heq ↦ ?_) (fun hne ↦ Or.inr ?_), fun x ↦ ?_⟩
+    · rw [mem_preimage, update_apply, if_pos heq]; exact mem_insert _ _
+    · exact ⟨x, ⟨hxs, hne⟩, by rw [update_noteq hne]⟩
+    rintro (rfl | ⟨x, hx, rfl⟩)
+    · use a; simpa
+    exact ⟨x, hx.1, update_noteq hx.2 _ _⟩
+  rw [subset_antisymm_iff, image_subset_iff, image_subset_iff]
+  refine ⟨fun x hxs ↦ ⟨x, hxs, ?_⟩, fun x hxs ↦ ⟨x, hxs, ?_⟩⟩
+  · rw [update_noteq]; rintro rfl; exact h hxs
+  rw [update_noteq]; rintro rfl; exact h hxs
+
+lemma preimage_update  {f : α → β} (hf : f.Injective) (a : α) (b : β) (s : Set β)
+    [Decidable (b ∈ s)] :
+    (update f a b) ⁻¹' s = if b ∈ s then insert a (f ⁻¹' (s \ {f a})) else (f ⁻¹' (s \ {f a})) := by
+
+  split_ifs with h
+  · rw [subset_antisymm_iff, insert_subset_iff, mem_preimage, update_same,
+      preimage_diff, and_iff_right h, diff_subset_iff,
+      (show {f a} = f '' {a} by rw [image_singleton]),
+      preimage_image_eq _ hf, singleton_union, insert_diff_singleton]
+    refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+    · obtain (rfl | hxa) := eq_or_ne x a
+      · rw [mem_preimage, update_same] at hx
+        apply mem_insert
+      rw [mem_preimage, update_noteq hxa] at hx
+      exact mem_insert_of_mem _ hx
+    obtain (rfl | hxa) := eq_or_ne x a
+    · exact mem_insert _ _
+    rw [mem_insert_iff, mem_preimage, update_noteq hxa]
+    exact Or.inr hx
+  refine subset_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
+  · obtain (rfl | hxa) := eq_or_ne x a
+    · exact (h (by simpa using hx)).elim
+    rw [mem_preimage, update_noteq hxa] at hx
+    exact ⟨hx, by rwa [mem_singleton_iff, hf.eq_iff]⟩
+  rw [mem_preimage, mem_diff, mem_singleton_iff, hf.eq_iff] at hx
+  rw [mem_preimage, update_noteq hx.2]
+  exact hx.1
+
+lemma image_update_id_apply (x y : α) (s : Set α) [Decidable (x ∈ s)] :
+  (update id x y) '' s = if x ∉ s then s else insert y (s \ {x}) := by simp
+
+lemma update_injective (hf : f.Injective) (a : α) (h : b ∉ range f) : (update f a b).Injective := by
+  rintro x y hy
+  rw [update_apply, update_apply] at hy
+  split_ifs at hy with h_1 h_2
+  · rw [h_1,h_2]
+  · exact (h ⟨y, hy.symm⟩).elim
+  · exact (h ⟨x, hy⟩).elim
+  exact hf.eq_iff.1 hy
+
+lemma update_injOn_iff {f : α → β} {a : α} {b : β} :
+    InjOn (update f a b) s ↔ InjOn f (s \ {a}) ∧ (a ∈ s → ∀ x ∈ s, f x = b → x = a) := by
+  refine ⟨fun h ↦ ⟨fun x hx y hy hxy ↦  h hx.1 hy.1 ?_, ?_⟩, fun h x hx y hy hxy ↦ ?_⟩
+  · rwa [update_noteq hx.2, update_noteq hy.2]
+  · rintro has x hxs rfl
+    exact by_contra (fun hne ↦ hne (h hxs has (by rw [update_same, update_noteq hne])))
+  obtain (rfl | hxa) := eq_or_ne x a
+  · by_contra' hne
+    rw [update_same, update_noteq hne.symm] at hxy
+    exact hne.symm <| h.2 hx y hy hxy.symm
+  obtain (rfl | hya) := eq_or_ne y a
+  · rw [update_noteq hxa, update_same] at hxy
+    exact h.2 hy x hx hxy
+  rw [update_noteq hxa, update_noteq hya] at hxy
+  exact h.1 ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
+
+@[simp] lemma update_id_injOn_iff {a b : α} :
+    InjOn (update id a b) s ↔ (a ∈ s → b ∈ s → a = b) := by
+  rw [update_injOn_iff, and_iff_right (injective_id.injOn _)]
+  refine ⟨fun h has hbs ↦ (h has b hbs rfl).symm, ?_⟩
+  rintro h has _ hbs rfl
+  exact (h has hbs).symm
+
+end Update
+
+
+-- theorem filter_preimage_eq {e f : α} [DecidableEq α] {S : Set α} (he : e ∈ S) (hf : f ∈ S)
+--     (h_ne : e ≠ f) : (fun x ↦ if (x = e) then f else x) ⁻¹' (S \ {e}) = S := by
+--   ext x
+--   simp only [preimage_diff, mem_diff, mem_preimage, mem_singleton_iff]
+--   split_ifs with hxe
+--   · subst hxe
+--     exact iff_of_true ⟨hf, h_ne.symm⟩ he
+--   rw [and_iff_left hxe]
+
 section Matrix
 
 variable {m n R : Type} [Semiring R]
