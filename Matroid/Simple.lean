@@ -135,6 +135,15 @@ theorem Parallel.indep_substitute_iff (h_para : M.Parallel e f) (he : e ∈ I) (
 
 end Parallel
 
+section Series
+
+@[pp_dot] def Series (M : Matroid α) (e f : α) : Prop := M﹡.Parallel e f
+
+-- API TODO
+
+
+end Series
+
 section ParallelClass
 
 open PSetoid
