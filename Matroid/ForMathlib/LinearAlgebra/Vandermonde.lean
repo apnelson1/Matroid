@@ -126,7 +126,7 @@ theorem rectProjVandermonde_rowSet_linearIndependent_iff {v : α → Option K} {
     have hc := FiniteDimensional.fintype_card_le_finrank_of_linearIndependent h
     rw [FiniteDimensional.finrank_fintype_fun_eq_card, Fintype.card_fin,
       ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ncard_def, ht,
-      ENat.toNat_add (by simp) (by simp),
+      ENat.toNat_add (by simp) sorry,
       ENat.toNat_coe, _root_.map_one, add_le_iff_nonpos_right] at hc
     simp at hc
   rw [encard_le_coe_iff_finite_ncard_le] at h

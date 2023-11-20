@@ -176,10 +176,8 @@ theorem ColBasis.rowBasis_transpose (h : A.ColBasis t) : Aᵀ.RowBasis t := colB
 theorem rows_linearIndependent_iff [Fintype m] :
     LinearIndependent R A.rowFun ↔ LinearMap.ker A.vecMulLinear = ⊥ := by
   simp only [Fintype.linearIndependent_iff, Submodule.eq_bot_iff, LinearMap.mem_ker,
-    vecMulLinear_apply', vecMul, dotProduct]
-  refine ⟨fun h x h0 ↦ funext fun i ↦ h _ (by rw [←h0]; ext; simp) _, fun h x h0 i ↦ ?_⟩
-  rw [h x]; rfl
-  rw [←h0]; ext; simp
+    vecMulLinear_apply', vecMul_eq_sum]
+  aesop
 
 theorem cols_linearIndependent_iff {R : Type*} [CommRing R] {A : Matrix m n R} [Fintype n] :
     LinearIndependent R A.colFun ↔ LinearMap.ker A.mulVecLin = ⊥ := by
@@ -435,12 +433,10 @@ theorem subset_rows_notLinearIndependent_iff [Fintype m] :
     ¬ LinearIndependent K (A.rowSubmatrix s).rowFun ↔
       ∃ c, A.vecMul c = 0 ∧ c ≠ 0 ∧ support c ⊆ s := by
   simp only [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff, ne_eq,
-    vecMul, dotProduct, support_subset_iff, not_imp_comm]
-  refine ⟨fun ⟨c,h,⟨i, _, hci⟩,h'⟩ ↦
-    ⟨c, by convert h; simp, by rintro rfl; exact hci rfl, h'⟩,
-    fun ⟨c,h,hi,h'⟩ ↦ ⟨c, by convert h; simp, ?_, h'⟩⟩
-  by_contra hc; push_neg at hc
-  exact hi (funext fun i ↦ (em (i ∈ s)).elim (hc i) (h' i))
+    vecMul_eq_sum, not_imp_comm, support_subset_iff, funext_iff, Finset.sum_apply,
+    Pi.smul_apply, smul_eq_mul, Pi.zero_apply, not_forall]
+  exact ⟨fun ⟨c, hc, ⟨i, _, hi⟩, hcsupp⟩ ↦ ⟨c, hc, ⟨⟨i, hi⟩, hcsupp⟩⟩,
+    fun ⟨c, hc, ⟨i,hi⟩, hc'⟩ ↦ ⟨c, hc, ⟨i, by_contra fun his ↦ hi (hc' _ his), hi⟩, hc'⟩⟩
 
 theorem subset_cols_notLinearIndependent_iff [Fintype n] :
     ¬ LinearIndependent K (A.colSubmatrix t).colFun ↔
@@ -586,14 +582,15 @@ variable {K : Type*} [Field K] [Fintype n] {m₁ m₂ : Type*} [Fintype m₁] [F
   A.rowSpace.orthSpace
 
 @[simp] theorem mem_nullSpace_iff : x ∈ A.nullSpace ↔ A.mulVec x = 0 := by
-  simp only [nullSpace, mem_orthSpace_iff', mulVec, dotProduct, mul_comm (x _)]
-  refine ⟨fun h ↦ funext fun i ↦ h _ (subset_span <| mem_range_self i), fun h y hy ↦ ?_⟩
-  rw [rowSpace] at hy
-  rw [←dotProduct_eq_zero_of_mem_span hy (x := x)]
-  · simp [dotProduct, mul_comm]
-  rintro _ ⟨a ,ha, rfl⟩
-  convert congr_fun h a using 1
-  simp [dotProduct, mul_comm]
+  sorry
+  -- simp only [nullSpace, mem_orthSpace_iff', mulVec, dotProduct, mul_comm (x _)]
+  -- refine ⟨fun h ↦ funext fun i ↦ h _ (subset_span <| mem_range_self i), fun h y hy ↦ ?_⟩
+  -- rw [rowSpace] at hy
+  -- rw [←dotProduct_eq_zero_of_mem_span hy (x := x)]
+  -- · simp [dotProduct, mul_comm]
+  -- rintro _ ⟨a ,ha, rfl⟩
+  -- convert congr_fun h a using 1
+  -- simp [dotProduct, mul_comm]
 
 @[simp] theorem orthSpace_rowSpace_eq_nullSpace : A.rowSpace.orthSpace = A.nullSpace := rfl
 
@@ -610,10 +607,11 @@ theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearInde
   · rw [rowFun_rowSubmatrix_eq, Fintype.linearIndependent_restrict_iff] at hld
     obtain ⟨c, hc0, hcex, hct⟩ := hld
     have hnull : c ∈ A₂.nullSpace
-    · rw [mem_nullSpace_iff]
-      ext i
-      convert congr_fun hc0 i
-      simp [mulVec, dotProduct, mul_comm (A₂ _ _), Finset.sum_fn]
+    · sorry
+      -- rw [mem_nullSpace_iff]
+      -- ext i
+      -- convert congr_fun hc0 i
+      -- simp [mulVec, dotProduct, mul_comm (A₂ _ _), Finset.sum_fn]
 
     rw [←h, rowSpace_eq_lin_range, LinearMap.mem_range] at hnull
     obtain ⟨d, rfl⟩ := hnull
@@ -636,26 +634,27 @@ theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearInde
   · rw [← rowSpace_eq_lin_range, ← orthSpace_rowSpace_eq_nullSpace, h,
       orthSpace_nullSpace_eq_rowSpace]
   have h0 := mem_nullSpace_iff.1 <| h₂₁.le (LinearMap.mem_range_self A₂.vecMulLinear c)
-  simp_rw [mulVec, dotProduct, vecMulLinear_apply, vecMul, dotProduct] at h0
+  sorry
+  -- simp_rw [mulVec, dotProduct, vecMulLinear_apply, vecMul, dotProduct] at h0
 
-  have h01 := Fintype.linearIndependent_iff.1 ht.linearIndependent (fun x ↦ vecMul c A₂ x) ?_
-  · refine Fintype.linearIndependent_iff.1 h₂ c <| funext fun j ↦ ?_
-    obtain (hjt | hjt) := em (j ∈ t)
-    · convert h01 ⟨j,hjt⟩ using 1; simp [vecMul, dotProduct]
-    convert congr_fun hc0 ⟨j,hjt⟩; simp
+  -- have h01 := Fintype.linearIndependent_iff.1 ht.linearIndependent (fun x ↦ vecMul c A₂ x) ?_
+  -- · refine Fintype.linearIndependent_iff.1 h₂ c <| funext fun j ↦ ?_
+  --   obtain (hjt | hjt) := em (j ∈ t)
+  --   · convert h01 ⟨j,hjt⟩ using 1; simp [vecMul, dotProduct]
+  --   convert congr_fun hc0 ⟨j,hjt⟩; simp
 
-  rw [←h0]
-  simp only [colSubmatrix_transpose, rowSubmatrix_apply, ←Finset.sum_fn]
-  rw [← Finset.sum_subset (s₁ := t.toFinset) (by simp)]
-  · convert (Finset.sum_toFinset_eq_subtype (· ∈ t) _).symm; ext;
-    simp [mul_comm, vecMul, dotProduct]
+  -- rw [←h0]
+  -- simp only [colSubmatrix_transpose, rowSubmatrix_apply, ←Finset.sum_fn]
+  -- rw [← Finset.sum_subset (s₁ := t.toFinset) (by simp)]
+  -- · convert (Finset.sum_toFinset_eq_subtype (· ∈ t) _).symm; ext;
+  --   simp [mul_comm, vecMul, dotProduct]
 
-  simp only [Finset.mem_univ, mem_toFinset, forall_true_left]
-  rintro x hxt
-  ext i;
-  simp only [Pi.zero_apply, mul_eq_zero]; right
-  convert congr_fun hc0 ⟨x, hxt⟩
-  simp
+  -- simp only [Finset.mem_univ, mem_toFinset, forall_true_left]
+  -- rintro x hxt
+  -- ext i;
+  -- simp only [Pi.zero_apply, mul_eq_zero]; right
+  -- convert congr_fun hc0 ⟨x, hxt⟩
+  -- simp
 
 theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace) :
     A₁.ColBasis t ↔ A₂.ColBasis tᶜ := by

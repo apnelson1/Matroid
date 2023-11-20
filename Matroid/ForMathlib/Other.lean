@@ -30,6 +30,27 @@ theorem pair_diff_right {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {y} = {
 theorem pair_subset {x y : α} {s : Set α} (hx : x ∈ s) (hy : y ∈ s) : {x,y} ⊆ s :=
   pair_subset_iff.2 ⟨hx,hy⟩
 
+theorem subset_insert_iff {s t : Set α} {x : α} :
+    s ⊆ insert x t ↔ s ⊆ t ∨ (x ∈ s ∧ s \ {x} ⊆ t) := by
+  rw [← diff_singleton_subset_iff]
+  obtain (hx | hx) := em (x ∈ s)
+  · rw [and_iff_right hx]
+    exact ⟨fun h ↦ Or.inr h, fun h ↦ h.elim (fun hst ↦ (diff_subset _ _).trans hst) id⟩
+  rw [diff_singleton_eq_self hx]
+  tauto
+
+theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
+    s ⊆ {x,y} ↔ s = {x} ∨ s = {y} ∨ s = {x,y} := by
+  obtain (rfl | hne) := eq_or_ne x y
+  · rw [pair_eq_singleton, hs.subset_singleton_iff]; simp
+  rw [subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
+    iff_false_intro hs.ne_empty, false_or, and_or_left, ← singleton_subset_iff,
+    ← subset_antisymm_iff, eq_comm (b := s), ←or_assoc, or_comm (a := s = _), or_assoc]
+  convert Iff.rfl using 3
+  rw [Iff.comm, subset_antisymm_iff, diff_subset_iff, subset_diff, disjoint_singleton,
+    and_iff_left hne.symm, ← and_assoc, and_comm, singleton_union, ← and_assoc, ← union_subset_iff,
+    singleton_union, pair_comm, ← subset_antisymm_iff, eq_comm]
+
 lemma Set.InjOn.image_eq_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
     (h₂ : s₂ ⊆ s) : f '' s₁ = f '' s₂ ↔ s₁ = s₂ :=
   ⟨fun h' ↦ by rw [←h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩

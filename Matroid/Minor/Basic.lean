@@ -514,8 +514,8 @@ theorem Nonloop.contract_er_add_one_eq (he : M.Nonloop e) (X : Set α) :
 
 theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) :
     (M ⟋ e).er X = M.er (insert e X) - 1 := by
-  rw [←WithTop.add_right_cancel_iff (by norm_num : (1 : ℕ∞) ≠ ⊤), he.contract_er_add_one_eq,
-    tsub_add_cancel_iff_le.2]
+  rw [←WithTop.add_right_cancel_iff (by exact ENat.coe_toNat_eq_self.mp rfl : (1 : ℕ∞) ≠ ⊤),
+    he.contract_er_add_one_eq, tsub_add_cancel_iff_le.2]
   rw [←he.er_eq, ←union_singleton]
   exact M.er_mono (subset_union_right _ _)
 
@@ -741,7 +741,7 @@ variable {E : Set α}
 
 @[simp] theorem loopyOn_contract (E X : Set α) : (loopyOn E) ⟋ X = loopyOn (E \ X) := by
   simp_rw [eq_loopyOn_iff_cl, contract_cl_eq, empty_union, loopyOn_cl_eq, contract_ground,
-    loopyOn_ground]
+    loopyOn_ground, true_and]
 
 @[simp] theorem minor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
   refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩

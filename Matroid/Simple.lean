@@ -239,7 +239,7 @@ theorem pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E :
 
 theorem indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
-  have hne : I.encard ≠ ⊤ := (h.trans_lt (by norm_num : (2 : ℕ∞) < ⊤ )).ne
+  have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
   rw [le_iff_lt_or_eq, encard_eq_two, ←ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
     WithTop.add_le_add_iff_right, encard_le_one_iff_eq] at h
   · obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, hxy, rfl⟩ := h

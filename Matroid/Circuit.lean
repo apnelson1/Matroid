@@ -370,8 +370,8 @@ theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircui
   rw [←he]; exact (inter_subset_left _ _).trans hC.subset_ground
 
 theorem dual_rkPos_iff_exists_circuit : M﹡.RkPos ↔ ∃ C, M.Circuit C := by
-  simp only [rkPos_iff_empty_not_base, empty_subset, dual_base_iff, diff_empty, not_iff_comm,
-    not_exists, ←ground_indep_iff_base, indep_iff_forall_subset_not_circuit (rfl.subset)]
+  rw [rkPos_iff_empty_not_base, dual_base_iff, diff_empty, not_iff_comm, not_exists,
+    ← ground_indep_iff_base, indep_iff_forall_subset_not_circuit]
   exact ⟨fun h C _ ↦ h C, fun h C hC ↦ h C hC.subset_ground hC⟩
 
 theorem Circuit.dual_rkPos (hC : M.Circuit C) : M﹡.RkPos :=

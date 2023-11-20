@@ -165,7 +165,7 @@ theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B 
   have hi : M.Indep (insert f (B ∩ X))
   · refine' hBf.indep.subset (insert_subset_insert _)
     simp_rw [subset_diff, and_iff_right (inter_subset_left _ _), disjoint_singleton_right,
-      mem_inter_iff, iff_false_intro he.1.2, and_false]
+      mem_inter_iff, iff_false_intro he.1.2, and_false, not_false_iff]
   exact hfb.2 (hBX.mem_of_insert_indep (Or.elim (hem.1 hfb.1) (False.elim ∘ hfb.2) id) hi).1
 
 

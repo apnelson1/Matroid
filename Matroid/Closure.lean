@@ -464,7 +464,8 @@ theorem eq_of_cl_eq_cl_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.cl X = M
   by_cases he : e ∈ M.E; aesop
   simp only [iff_false_intro he, and_false, false_or, and_true, ←mem_inter_iff, ←mem_union,
     inter_eq_self_of_subset_left hIR, union_comm I, and_iff_right
-      (show ¬M.Indep (insert e I) from fun hi ↦ he (hi.subset_ground (mem_insert _ _)))]
+      (show ¬M.Indep (insert e I) from fun hi ↦ he (hi.subset_ground (mem_insert _ _))),
+    not_false_iff]
 
 theorem restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).cl X = M.cl X ∩ R := by

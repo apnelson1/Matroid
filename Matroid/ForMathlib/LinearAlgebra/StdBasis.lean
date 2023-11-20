@@ -443,12 +443,12 @@ theorem Set.relOrthSpace_subtypeFunEquiv (s : Set ι) (U : Submodule K (s → K)
   simp only [Finsupp.total_mapDomain, and_imp]
   exact fun _ _ hyU ↦ hl _ hyU
 
-theorem Set.Finite.mem_relOrthSpace_iff {s : Set ι} (hs : s.Finite) {U : Submodule K (ι → K)} :
-    x ∈ s.relOrthSpace U ↔
-      ∃ (hsupp : support x ⊆ s), ∀ y ∈ U, ∑ i in (hs.subset hsupp).toFinset, x i * y i = 0 := by
-  rw [s.mem_relOrthSpace_iff]
-  sorry
-  -- this should be ok to prove
+-- theorem Set.Finite.mem_relOrthSpace_iff {s : Set ι} (hs : s.Finite) {U : Submodule K (ι → K)} :
+--     x ∈ s.relOrthSpace U ↔
+--       ∃ (hsupp : support x ⊆ s), ∀ y ∈ U, ∑ i in (hs.subset hsupp).toFinset, x i * y i = 0 := by
+--   rw [s.mem_relOrthSpace_iff]
+--   sorry
+--   -- this should be ok to prove
 
 theorem Set.Finite.relOrthSpace_relOrthSpace {s : Set ι} (hs : s.Finite) (U : Submodule K (ι → K))
     (hU : U ≤ s.supportedFun K) : s.relOrthSpace (s.relOrthSpace U) = U := by

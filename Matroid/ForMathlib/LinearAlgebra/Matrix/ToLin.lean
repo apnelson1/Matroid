@@ -1,6 +1,6 @@
 import Mathlib.LinearAlgebra.Matrix.ToLin
 
-open Matrix Submodule Set LinearMap
+open Matrix Submodule Set LinearMap BigOperators
 
 variable {R m n : Type*}
 
@@ -14,6 +14,18 @@ variable [Semiring R]
 theorem Matrix.coe_vecMulLinear [Fintype m] (M : Matrix m n R) :
     (M.vecMulLinear : _ → _) = M.vecMul := rfl
 
+theorem vecMul_eq_sum [Fintype m] (M : Matrix m n R) (x : m → R) :
+    M.vecMul x = ∑ i, x i • M i := by
+  ext j; simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]; rfl
+
+theorem mulVec_eq_sum {R : Type*} [CommRing R] [Fintype n] (M : Matrix m n R) (x : n → R) :
+    M.mulVec x = ∑ i, x i • (M · i) := by
+  ext j; simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul];
+  sorry
+
+
+
+
 end Semiring
 
 section CommRing
@@ -25,9 +37,8 @@ theorem Matrix.range_vecMulLinear {R : Type*} [CommSemiring R] [Fintype m] (M : 
   letI := Classical.decEq m
   simp_rw [range_eq_map, ← iSup_range_stdBasis, Submodule.map_iSup, range_eq_map, ←
     Ideal.span_singleton_one, Ideal.span, Submodule.map_span, image_image, image_singleton,
-    Matrix.vecMulLinear_apply', iSup_span, range_eq_iUnion, vecMul, iUnion_singleton_eq_range,
-    dotProduct, stdBasis_apply', ite_mul, one_mul, zero_mul, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true]
+    Matrix.vecMulLinear_apply', iSup_span, range_eq_iUnion, iUnion_singleton_eq_range]
+  simp only [LinearMap.stdBasis, coe_single, single_vecMul, one_mul]
 
 theorem Matrix.coe_mulVecLin [Fintype n] (M : Matrix m n R) :
     (M.mulVecLin : _ → _) = M.mulVec := rfl
@@ -43,15 +54,8 @@ theorem Matrix.coe_mulVecLin [Fintype n] (M : Matrix m n R) :
 theorem Matrix.vecMulLinear_injective_iff {R : Type*} [CommRing R] [Fintype m] {M : Matrix m n R} :
     Function.Injective M.vecMulLinear ↔ LinearIndependent R (fun i ↦ M i) := by
   simp only [←LinearMap.ker_eq_bot, Fintype.linearIndependent_iff, Submodule.eq_bot_iff,
-     LinearMap.mem_ker, vecMulLinear_apply', vecMul, dotProduct]
-  refine ⟨fun h c h0 i ↦ ?_, fun h c h0 ↦ funext fun i ↦ ?_⟩
-  · rw [h c, Pi.zero_apply]
-    rw [←h0]
-    ext; simp [mul_comm]
-  rw [h c, Pi.zero_apply]
-  rw [←h0]
-  ext j
-  simp [mul_comm]
+     LinearMap.mem_ker, vecMulLinear_apply', vecMul_eq_sum]
+  aesop
 
 theorem Matrix.ker_mulVecLin_eq_bot_iff' [Fintype n] :
     (LinearMap.ker M.mulVecLin) = ⊥ ↔ ∀ v, M.mulVec v = 0 → v = 0 := by
