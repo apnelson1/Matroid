@@ -7,6 +7,7 @@ namespace Matroid
 
 variable {M : Matroid α}
 
+/-- Replace the elements of `S` with parallel copies of `e`. -/
 def ParallelExt (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] : Matroid α :=
     M.preimage (fun x ↦ if (x ∈ S) then e else x)
 
@@ -21,7 +22,8 @@ theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI
       · intro h_f
         rw [h_f] at e_notin_C
         exact e_notin_C (mem_insert e _)
-      obtain ⟨C', C'_circ, C'_sub⟩ := C_circ.elimination ((parallel_iff_circuit e_ne_f).1 h_para) C_ne_ef f
+      obtain ⟨C', C'_circ, C'_sub⟩ :=
+        C_circ.elimination ((parallel_iff_circuit e_ne_f).1 h_para) C_ne_ef f
       have C'_sub_I : C' ⊆ I
       intro c c_sub_C'
       obtain ⟨(c_sub_C | c_sub_ef), (c_ne_f : c ≠ f)⟩ := C'_sub c_sub_C'
@@ -36,48 +38,47 @@ theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI
         exact h_para.mem_ground_right
       · exact hI.subset_ground i_sub_I.1
 
-lemma insert_diff_insert_diff {B : Set α} (e_in_B : e ∈ B) (f_notin_B : f ∉ B):
+theorem insert_diff_insert_diff {B : Set α} (e_in_B : e ∈ B) (f_notin_B : f ∉ B):
     insert e (insert f (B \ {e}) \ {f}) = B := by simp [e_in_B, f_notin_B]
 
-
-lemma Equiv.image_invol [DecidableEq α] {e f : α} : Function.Involutive (Set.image (Equiv.swap e f)) := by
+theorem Equiv.image_invol [DecidableEq α] {e f : α} :
+    Function.Involutive (Set.image (Equiv.swap e f)) := by
   have inv : Function.Involutive (Equiv.swap e f) := fun x ↦ Equiv.swap_apply_self _ _ _
   intro X
   rw [←Set.image_comp _ _, Function.Involutive.comp_self inv, image_id]
 
-lemma Equiv.swap_mem_image_iff [DecidableEq α] {e f : α} : x ∈ (Equiv.swap e f) '' S ↔ (Equiv.swap e f) x ∈ S := by
+theorem Equiv.swap_mem_image_iff [DecidableEq α] {e f : α} :
+    x ∈ (Equiv.swap e f) '' S ↔ (Equiv.swap e f) x ∈ S := by
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
   · obtain ⟨x', x'_mem, hx'⟩ := h
     rwa [←hx', Equiv.swap_apply_self]
   · refine' ⟨(Equiv.swap e f) x, h, _⟩
     rw [Equiv.swap_apply_self]
 
-lemma Equiv.swap_image_eq_self_both_mem [DecidableEq α] (S : Set α) (e_in_S : e ∈ S) (f_in_S : f ∈ S) :
-    (Equiv.swap e f)'' S = S := by
+theorem Equiv.swap_image_eq_self_both_mem [DecidableEq α] (S : Set α) (he : e ∈ S) (hf : f ∈ S) :
+    (Equiv.swap e f) '' S = S := by
   ext x
   rw [Equiv.swap_mem_image_iff]
   by_cases x_eq_e : x = e
   · rw [x_eq_e, Equiv.swap_apply_left]
-    exact ⟨fun _ ↦ e_in_S, fun _ ↦ f_in_S⟩
+    exact ⟨fun _ ↦ he, fun _ ↦ hf⟩
   · by_cases x_eq_f : x = f
     · rw [x_eq_f, Equiv.swap_apply_right]
-      exact ⟨fun _ ↦ f_in_S, fun _ ↦ e_in_S⟩
+      exact ⟨fun _ ↦ hf, fun _ ↦ he⟩
     · rw [Equiv.swap_apply_of_ne_of_ne x_eq_e x_eq_f]
 
-lemma Equiv.swap_image_eq_self_not_mem [DecidableEq α] {S : Set α} (e_notin_S : e ∉ S) (f_notin_S : f ∉ S) :
-    (Equiv.swap e f)'' S = S := by
+theorem Equiv.swap_image_eq_self_not_mem [DecidableEq α] {S : Set α} (he : e ∉ S) (hf : f ∉ S) :
+    (Equiv.swap e f) '' S = S := by
   ext x
   rw [Equiv.swap_mem_image_iff]
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
-  · rwa [←(@Equiv.swap_apply_self _ _ e f x), Equiv.swap_apply_of_ne_of_ne (ne_of_mem_of_not_mem h e_notin_S)
-  (ne_of_mem_of_not_mem h f_notin_S)]
-  · rwa [Equiv.swap_apply_of_ne_of_ne (ne_of_mem_of_not_mem h e_notin_S)
-  (ne_of_mem_of_not_mem h f_notin_S)]
+  · rwa [←(@Equiv.swap_apply_self _ _ e f x),
+      Equiv.swap_apply_of_ne_of_ne (ne_of_mem_of_not_mem h he)
+  (ne_of_mem_of_not_mem h hf)]
+  rwa [Equiv.swap_apply_of_ne_of_ne (ne_of_mem_of_not_mem h he) (ne_of_mem_of_not_mem h hf)]
 
-
-
-lemma Equiv.swap_image_eq_self_left [DecidableEq α] {S : Set α} (e_in_S : e ∈ S) (f_notin_S : f ∉ S) :
-    (Equiv.swap e f)'' S = insert f (S \ {e}) := by
+theorem Equiv.swap_image_eq_self_left [DecidableEq α] {S : Set α} (he : e ∈ S) (hf : f ∉ S) :
+    (Equiv.swap e f) '' S = insert f (S \ {e}) := by
   ext x
   rw [Equiv.swap_mem_image_iff]
   by_cases x_eq_f : x = f
@@ -89,15 +90,14 @@ lemma Equiv.swap_image_eq_self_left [DecidableEq α] {S : Set α} (e_in_S : e �
     · have x_ne_e : x ≠ e
       · intro x'_eq_e
         rw [x'_eq_e, Equiv.swap_apply_left] at h
-        apply f_notin_S h
+        apply hf h
       rw [Equiv.swap_apply_of_ne_of_ne x_ne_e x_eq_f] at h
       exact mem_insert_of_mem f (mem_diff_of_mem h x_ne_e)
     · obtain ⟨x_in_S, (x_ne_e : x ≠ e)⟩ := mem_of_mem_insert_of_ne h x_eq_f
       rwa [Equiv.swap_apply_of_ne_of_ne x_ne_e x_eq_f]
 
-
-lemma Equiv.swap_image_eq_self [DecidableEq α] {S : Set (Set α)} (h_B : ∀ B, B ∈ S ↔ (Equiv.swap e f) '' B ∈ S) :
-    S = Set.image (Equiv.swap e f)'' S := by
+theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set (Set α)}
+    (h_B : ∀ B, B ∈ S ↔ (Equiv.swap e f) '' B ∈ S) : S = Set.image (Equiv.swap e f) '' S := by
   ext B
   refine' ⟨fun B_S ↦ _, fun ⟨B', B'_mem, hB'⟩ ↦ _⟩
   · refine' ⟨(Equiv.swap e f) '' B, (h_B B).1 B_S, _⟩
@@ -105,14 +105,17 @@ lemma Equiv.swap_image_eq_self [DecidableEq α] {S : Set (Set α)} (h_B : ∀ B,
   rw [←hB']
   exact (h_B B').1 B'_mem
 
-def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M where
+
+def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) :
+    Iso M M where
   toLocalEquiv := (Equiv.swap e f).toLocalEquiv.restr M.E
   source_eq' := by
     simp
   target_eq' := by
-    simp only [LocalEquiv.restr_target, Equiv.toLocalEquiv_target, Equiv.toLocalEquiv_symm_apply, Equiv.symm_swap,
-      univ_inter]
-    rw [preimage_eq_iff_eq_image, Equiv.swap_image_eq_self_both_mem M.E h_para.mem_ground_left h_para.mem_ground_right]
+    simp only [LocalEquiv.restr_target, Equiv.toLocalEquiv_target,
+      Equiv.toLocalEquiv_symm_apply, Equiv.symm_swap, univ_inter]
+    rw [preimage_eq_iff_eq_image, Equiv.swap_image_eq_self_both_mem M.E
+      h_para.mem_ground_left h_para.mem_ground_right]
     exact Equiv.bijective _
   setOf_base_eq' := by
     apply Equiv.swap_image_eq_self _
@@ -122,26 +125,32 @@ def parallel_swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
     · rw [Equiv.swap_image_eq_self_both_mem B e_in_B f_in_B]
     · rw [Equiv.swap_image_eq_self_left e_in_B f_in_B]
       refine' ⟨fun (B_Base : M.Base B) ↦ _, fun (B'_Base : M.Base _) ↦ _⟩
-      · exact Base.exchange_base_of_indep B_Base f_in_B ((B_Base.indep).parallel_substitute h_para e_in_B)
+      · exact Base.exchange_base_of_indep B_Base f_in_B
+          ((B_Base.indep).parallel_substitute h_para e_in_B)
       · rw [←insert_diff_insert_diff e_in_B f_in_B]
-        apply Base.exchange_base_of_indep B'_Base ?_ ((B'_Base.indep).parallel_substitute h_para.symm (mem_insert f _))
-        exact fun e_in_B' ↦ (mem_of_mem_insert_of_ne e_in_B' (ne_of_mem_of_not_mem e_in_B f_in_B)).2 rfl
+        apply Base.exchange_base_of_indep B'_Base ?_
+          ((B'_Base.indep).parallel_substitute h_para.symm (mem_insert f _))
+        exact fun e_in_B' ↦ (mem_of_mem_insert_of_ne e_in_B'
+          (ne_of_mem_of_not_mem e_in_B f_in_B)).2 rfl
     by_cases f_in_B : f ∈ B
     · rw [Equiv.swap_comm, Equiv.swap_image_eq_self_left f_in_B e_in_B]
       refine' ⟨fun (B_Base : M.Base B) ↦ _, fun (B'_Base : M.Base _) ↦ _⟩
-      · exact Base.exchange_base_of_indep B_Base e_in_B ((B_Base.indep).parallel_substitute h_para.symm f_in_B)
+      · exact Base.exchange_base_of_indep B_Base e_in_B
+          ((B_Base.indep).parallel_substitute h_para.symm f_in_B)
       · rw [←insert_diff_insert_diff f_in_B e_in_B]
-        apply Base.exchange_base_of_indep B'_Base ?_ ((B'_Base.indep).parallel_substitute h_para (mem_insert e _))
-        exact fun f_in_B' ↦ (mem_of_mem_insert_of_ne f_in_B' (ne_of_mem_of_not_mem f_in_B e_in_B)).2 rfl
-    · rw [Equiv.swap_image_eq_self_not_mem e_in_B f_in_B]
+        apply Base.exchange_base_of_indep B'_Base ?_
+          ((B'_Base.indep).parallel_substitute h_para (mem_insert e _))
+        exact fun f_in_B' ↦
+          (mem_of_mem_insert_of_ne f_in_B' (ne_of_mem_of_not_mem f_in_B e_in_B)).2 rfl
+    rw [Equiv.swap_image_eq_self_not_mem e_in_B f_in_B]
 
 
 @[simp] theorem parallel_swap_apply [DecidableEq α] (h_para : M.Parallel e f) :
     (parallel_swap h_para).toLocalEquiv = (Equiv.swap e f).toLocalEquiv.restr M.E := rfl
     -- (parallel_swap h_para).toLocalEquiv = (fun x ↦ if (x = e) then f else (if (x = f) then e else x)) := sorry
 
-lemma filter_preimage_eq {e f : α} [DecidableEq α] {S : Set α} (e_S : e ∈ S) (f_S : f ∈ S) (h_ne : e ≠ f):
-    (fun x ↦ if (x = e) then f else x) ⁻¹' (S \ {e})= S := by
+theorem filter_preimage_eq {e f : α} [DecidableEq α] {S : Set α} (e_S : e ∈ S) (f_S : f ∈ S)
+    (h_ne : e ≠ f) : (fun x ↦ if (x = e) then f else x) ⁻¹' (S \ {e})= S := by
   apply subset_antisymm
   · intro x x_mem
     rw [mem_preimage] at x_mem
@@ -233,9 +242,6 @@ theorem eq_parallelExt_del {M : Matroid α} {e f : α} (h_para : M.Parallel e f)
   -- part 2
   rw [preimage_indep_iff]
 
-  /-simp only [delete_elem, mem_singleton_iff, delete_indep_iff, disjoint_singleton_right, mem_image, not_exists, not_and,
-    delete_ground, union_singleton, mem_diff, not_true, and_false, insert_diff_singleton, and_imp]
-    -/
   rintro ⟨(I_image_Indep : (M ⟍ f).Indep ((fun x ↦ if x = f then e else x) '' I)), h_inj⟩
   by_cases f_in_I : f ∈ I
   · have image_eq : (fun a ↦ if a = f then e else a) '' I = insert e (I \ {f})
@@ -296,7 +302,7 @@ def Modular_cut (M : Matroid α) (C : Set (Set α)) : Prop :=
     (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
     (∀ F₁ F₂, F₁ ∈ C → F₂ ∈ C → M.Modular_pair F₁ F₂ → F₁ ∩ F₂ ∈ C)
 
-lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX : X ⊆ {A, B}) :
+theorem subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX : X ⊆ {A, B}) :
     X = {A} ∨ X = {B} ∨ X = {A, B} := by
   by_cases A_in_X : A ∈ X
   · by_cases B_in_X : B ∈ X
@@ -311,12 +317,12 @@ lemma subset_pair_none {A B : Set α} {X : Set (Set α)} (Xne : X.Nonempty) (hX 
     · rw [Xne.subset_singleton_iff.1 ((subset_insert_iff_of_not_mem A_in_X).1 hX)] at B_in_X
       exact absurd (Set.mem_singleton B) B_in_X
 
-lemma union_insert_eq {A : Set α} {b c : α} :
+theorem union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
   rw [insert_eq, insert_eq, ←union_union_distrib_right, @union_comm _ {b} _,
     union_assoc, ←insert_eq, ←insert_eq]
 
-lemma inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
+theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
   rw [insert_eq, insert_eq, ←union_distrib_right, Disjoint.inter_eq _, empty_union]
   rwa [disjoint_singleton]
