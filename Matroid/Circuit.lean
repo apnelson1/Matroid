@@ -116,7 +116,6 @@ theorem Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
 
-
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `univ` if `e ∉ M.cl I`. -/
 @[pp_dot] def fundCct (M : Matroid α) (e : α) (I : Set α) :=
@@ -507,6 +506,8 @@ theorem Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he
 end BasisExchange
 section Iso
 
+variable {β : Type*} {N : Matroid β}
+
 theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
   rw [Circuit, e.setOf_dep_eq, minimals_image_of_rel_iff_rel (r := (· ⊆ ·))]
   · exact mem_image_of_mem _ h
@@ -518,6 +519,10 @@ theorem Iso.on_circuit_symm (e : Iso M N) (h : N.Circuit (e '' C)) (hC : C ⊆ M
 
 theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setOf M.Circuit :=
   e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
+
+theorem Iso.on_circuit_iff (e : Iso M N) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Circuit C ↔ N.Circuit (e '' C) :=
+  ⟨fun h ↦ e.on_circuit h, fun h ↦ e.on_circuit_symm h hC⟩
 
 end Iso
 section Equiv

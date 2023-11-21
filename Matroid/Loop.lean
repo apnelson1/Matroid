@@ -103,6 +103,13 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   obtain ⟨B, hB, heB⟩ := hei.exists_base_superset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
+@[simp] theorem restrict_loop_iff {R : Set α}  :
+    (M ↾ R).Loop e ↔ e ∈ R ∧ (M.Loop e ∨ e ∉ M.E) := by
+  rw [← singleton_dep, restrict_dep_iff, singleton_subset_iff, ← singleton_dep, and_comm,
+    and_congr_right_iff, Dep, and_or_right, singleton_subset_iff, and_iff_left or_not,
+    or_iff_left_of_imp (fun he hi ↦ he (singleton_subset_iff.1 hi.subset_ground))]
+  simp only [singleton_subset_iff, implies_true]
+
 end Loop
 
 section Nonloop
@@ -229,6 +236,15 @@ theorem exists_nonloop (M : Matroid α) [RkPos M] : ∃ e, M.Nonloop e :=
 
 theorem Nonloop.rkPos (h : M.Nonloop e) : M.RkPos :=
   h.indep.rkPos_of_nonempty (singleton_nonempty e)
+
+@[simp] theorem restrict_nonloop_iff {R : Set α} : (M ↾ R).Nonloop e ↔ M.Nonloop e ∧ e ∈ R := by
+  rw [← indep_singleton, restrict_indep_iff, singleton_subset_iff, indep_singleton]
+
+theorem Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e :=
+  (restrict_nonloop_iff.1 h).1
+
+theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
+  ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩
 
 end Nonloop
 

@@ -22,6 +22,7 @@ def delete (M : Matroid α) (D : Set α) : Matroid α :=
 instance delSet {α : Type*} : HasDelete (Matroid α) (Set α) :=
   ⟨Matroid.delete⟩
 
+/-- Can this be an abbrev? -/
 instance delElem {α : Type*} : HasDelete (Matroid α) α :=
   ⟨fun M e ↦ M.delete {e}⟩
 
@@ -47,6 +48,12 @@ theorem delete_subset_ground (M : Matroid α) (D : Set α) : (M ⟍ D).E ⊆ M.E
 
 @[simp] theorem delete_elem (M : Matroid α) (e : α) : M ⟍ e = M ⟍ ({e} : Set α) := rfl
 
+instance deleteElem_finite [Matroid.Finite M] {e : α} : Matroid.Finite (M ⟍ e) := by
+  rw [delete_elem]; infer_instance
+
+instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ⟍ e) := by
+  rw [delete_elem]; infer_instance
+
 @[simp] theorem delete_delete (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ (D₁ ∪ D₂) := by
   rw [←restrict_compl, ←restrict_compl, ←restrict_compl, restrict_restrict_eq, restrict_ground_eq,
     diff_diff]
@@ -71,6 +78,9 @@ theorem delete_eq_delete_iff : M ⟍ D₁ = M ⟍ D₂ ↔ D₁ ∩ M.E = D₂ �
 @[simp] theorem delete_indep_iff : (M ⟍ D).Indep I ↔ M.Indep I ∧ Disjoint I D := by
   rw [←restrict_compl, restrict_indep_iff, subset_diff, ←and_assoc,
     and_iff_left_of_imp Indep.subset_ground]
+
+@[simp] theorem deleteElem_indep_iff : (M ⟍ e).Indep I ↔ M.Indep I ∧ e ∉ I := by
+  rw [delete_elem, delete_indep_iff, disjoint_singleton_right]
 
 theorem Indep.of_delete (h : (M ⟍ D).Indep I) : M.Indep I :=
   (delete_indep_iff.mp h).1
@@ -106,11 +116,20 @@ theorem Basis.to_delete (h : M.Basis I X) (hX : Disjoint X D) : (M ⟍ D).Basis 
 theorem Nonloop.of_delete (h : (M ⟍ D).Nonloop e) : M.Nonloop e :=
   (delete_nonloop_iff.1 h).1
 
+theorem nonloop_iff_delete_of_not_mem (he : e ∉ D) : M.Nonloop e ↔ (M ⟍ D).Nonloop e :=
+  ⟨fun h ↦ delete_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_delete⟩
+
 @[simp] theorem delete_circuit_iff : (M ⟍ D).Circuit C ↔ M.Circuit C ∧ Disjoint C D := by
   simp_rw [circuit_iff, delete_dep_iff, and_imp]
   rw [and_comm, ← and_assoc, and_congr_left_iff, and_comm, and_congr_right_iff]
   exact fun hdj _↦ ⟨fun h I hId hIC ↦ h hId (disjoint_of_subset_left hIC hdj) hIC,
     fun h I hI _ hIC ↦ h hI hIC⟩
+
+theorem Circuit.of_delete (h : (M ⟍ D).Circuit C) : M.Circuit C :=
+  (delete_circuit_iff.1 h).1
+
+theorem circuit_iff_delete_of_disjoint (hCD : Disjoint C D) : M.Circuit C ↔ (M ⟍ D).Circuit C :=
+  ⟨fun h ↦ delete_circuit_iff.2 ⟨h, hCD⟩, fun h ↦ h.of_delete⟩
 
 @[simp] theorem delete_cl_eq (M : Matroid α) (D X : Set α) : (M ⟍ D).cl X = M.cl (X \ D) \ D := by
   rw [←restrict_compl, restrict_cl_eq', sdiff_sdiff_self, bot_eq_empty, union_empty,
@@ -141,6 +160,12 @@ theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 theorem delete_delete_diff (M : Matroid α) (D₁ D₂ : Set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
   by simp
 
+instance delete_finitary (M : Matroid α) [Finitary M] (D : Set α) : Finitary (M ⟍ D) := by
+  change Finitary (M ↾ (M.E \ D)); infer_instance
+
+instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (M ⟍ e) := by
+  rw [delete_elem]; infer_instance
+
 end Delete
 
 section Contract
@@ -153,7 +178,8 @@ class HasContract (α β : Type*) where
 infixl:75 " ⟋ " => HasContract.con
 
 /-- The contraction `M ⟋ C` is the matroid on `M.E \ C` whose bases are the sets `B \ I` where `B`
-  is a base for `M` containing a base `I` for `C`. It is also equal to the dual of `M﹡ ⟍ C`, and is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
+  is a base for `M` containing a base `I` for `C`. It is also equal to the dual of `M﹡ ⟍ C`, and
+    is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
 def contract (M : Matroid α) (C : Set α) : Matroid α :=
   (M﹡ ⟍ C)﹡
 
@@ -187,7 +213,8 @@ theorem contract_ground_subset_ground (M : Matroid α) (C : Set α) : (M ⟋ C).
 @[simp] theorem contract_elem (M : Matroid α) (e : α) : M ⟋ e = M ⟋ ({e} : Set α) :=
   rfl
 
-@[simp] theorem contract_contract (M : Matroid α) (C₁ C₂ : Set α) : M ⟋ C₁ ⟋ C₂ = M ⟋ (C₁ ∪ C₂) := by
+@[simp] theorem contract_contract (M : Matroid α) (C₁ C₂ : Set α) :
+    M ⟋ C₁ ⟋ C₂ = M ⟋ (C₁ ∪ C₂) := by
   rw [eq_comm, ← dual_delete_dual_eq_contract, ← delete_delete, ← dual_contract_dual_eq_delete, ←
     dual_contract_dual_eq_delete, dual_dual, dual_dual, dual_dual]
 
@@ -339,26 +366,29 @@ instance contract_finiteRk [FiniteRk M] : FiniteRk (M ⟋ C) := by
   refine ⟨B, hB, hB.indep.of_contract.finite⟩
 
 instance contract_finitary [Finitary M] : Finitary (M ⟋ C) := by
-  refine ⟨fun I hI ↦ ?_⟩
   obtain ⟨J, D, hJ, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  simp_rw [hM, delete_indep_iff, hJ.indep.contract_indep_iff] at hI ⊢
+  rw [hM]
+  suffices : Finitary (M ⟋ J)
+  · infer_instance
+  refine ⟨fun I hI ↦ ?_⟩
+  simp_rw [hJ.indep.contract_indep_iff] at hI ⊢
   simp_rw [disjoint_iff_forall_ne]
-  refine ⟨⟨fun x hx y hy ↦ ?_, ?_⟩, fun x hx y hy ↦ ?_⟩
+  refine ⟨fun x hx y hy ↦ ?_, ?_⟩
   · rintro rfl
     specialize hI {x} (singleton_subset_iff.2 hx) (finite_singleton _)
     simp only [disjoint_singleton_left, singleton_union] at hI
-    exact hI.1.1 hy
-  · apply indep_of_forall_finite_subset_indep _ (fun K hK hKfin ↦ ?_)
-    specialize hI (K ∩ I) (inter_subset_right _ _) (hKfin.subset (inter_subset_left _ _))
-    refine hI.1.2.subset <| (subset_inter Subset.rfl hK).trans ?_
-    rw [inter_distrib_left]
-    exact union_subset_union Subset.rfl (inter_subset_right _ _)
+    exact hI.1 hy
+  apply indep_of_forall_finite_subset_indep _ (fun K hK hKfin ↦ ?_)
+  specialize hI (K ∩ I) (inter_subset_right _ _) (hKfin.subset (inter_subset_left _ _))
+  refine hI.2.subset <| (subset_inter Subset.rfl hK).trans ?_
+  rw [inter_distrib_left]
+  exact union_subset_union Subset.rfl (inter_subset_right _ _)
 
-  rintro rfl
-  specialize hI {x} (singleton_subset_iff.2 hx) (finite_singleton _)
-  simp only [disjoint_singleton_left, singleton_union] at hI
-  exact hI.2 hy
+instance contractElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ⟋ e) := by
+  rw [contract_elem]; infer_instance
 
+instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ⟋ e) := by
+  rw [contract_elem]; infer_instance
 
 @[simp] theorem contract_loop_iff_mem_cl : (M ⟋ C).Loop e ↔ e ∈ M.cl C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
@@ -491,11 +521,6 @@ theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⟋ C).rFin X := by
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
     (M ⟋ C).rFin (X \ C) :=
   (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
-
-instance contract_finiteRk [FiniteRk M] : FiniteRk (M ⟋ C) := by
-  have h := ‹FiniteRk M›
-  rw [← rFin_ground_iff_finiteRk] at h ⊢
-  exact (h.contract_rFin C).subset (diff_subset _ _)
 
 -- Todo : Probably `Basis'` makes this shorter.
 lemma contract_er_add_er_eq (M : Matroid α) (C X : Set α) :
@@ -649,6 +674,17 @@ lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
 
 lemma Minor.subset (h : N ≤m M) : N.E ⊆ M.E := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact (diff_subset _ _).trans (diff_subset _ _)
+
+theorem Minor.finite (h : N ≤m M) [M.Finite] : N.Finite :=
+  ⟨M.ground_finite.subset h.subset⟩
+
+theorem Minor.finiteRk (h : N ≤m M) [FiniteRk M] : FiniteRk N := by
+  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
+  infer_instance
+
+theorem Minor.finitary (h : N ≤m M) [Finitary M] : Finitary N := by
+  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
+  infer_instance
 
 instance minor_antisymm : IsAntisymm (Matroid α) (· ≤m ·) :=
   ⟨fun _ _ h h' ↦ h'.eq_of_ground_subset h.subset⟩
