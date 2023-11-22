@@ -1,4 +1,5 @@
 import Matroid.Circuit
+import Matroid.Constructions.ImagePreimage
 
 /-
   A `Loop` of a matroid_in is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
@@ -109,6 +110,12 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
     and_congr_right_iff, Dep, and_or_right, singleton_subset_iff, and_iff_left or_not,
     or_iff_left_of_imp (fun he hi ↦ he (singleton_subset_iff.1 hi.subset_ground))]
   simp only [singleton_subset_iff, implies_true]
+
+@[simp] theorem preimage_loop_iff {M : Matroid β} {f : α → β} :
+    (M.preimage f).Loop e ↔ M.Loop (f e) := by
+  rw [← singleton_dep, preimage_dep_iff]
+  simp
+
 
 end Loop
 
@@ -246,6 +253,11 @@ theorem Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e
 theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩
 
+@[simp] theorem preimage_nonloop_iff {M : Matroid β} {f : α → β} :
+    (M.preimage f).Nonloop e ↔ M.Nonloop (f e) := by
+  rw [← indep_singleton, preimage_indep_iff, image_singleton, indep_singleton,
+    and_iff_left (injOn_singleton _ _)]
+
 end Nonloop
 
 section Loopless
@@ -282,8 +294,24 @@ theorem loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → 1 < 
       (h _ (singleton_circuit.2 hel)).2 e rfl⟩
   rintro rfl; rw [singleton_circuit] at hC; exact M.not_loop e hC
 
+theorem Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e} :=
+  Set.ext fun _ ↦  ⟨fun he ↦ toNonloop he, Nonloop.mem_ground⟩
+
 instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RkPos M :=
   M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
+
+/-- The matroid obtained by removing the loops of `e` -/
+@[pp_dot] def removeLoops (M : Matroid α) : Matroid α := M ↾ {e | M.Nonloop e}
+
+theorem removeLoops_eq_restr (M : Matroid α) : M.removeLoops = M ↾ {e | M.Nonloop e} := rfl
+
+@[simp] theorem removeLoops_ground_eq (M : Matroid α) : M.removeLoops.E = {e | M.Nonloop e} := rfl
+
+instance removeLoops_loopless (M : Matroid α) : Loopless M.removeLoops := by
+  simp [loopless_iff_forall_nonloop, removeLoops]
+
+@[simp] theorem removeLoops_eq_self (M : Matroid α) [Loopless M] : M.removeLoops = M := by
+  rw [removeLoops, ← Loopless.ground_eq, restrict_ground_eq_self]
 
 end Loopless
 section Coloop

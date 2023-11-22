@@ -70,6 +70,9 @@ def Iso.refl (M : Matroid α) : Iso M M where
   target_eq' := rfl
   setOf_base_eq' := by simp
 
+@[simp] theorem Iso.refl_toLocalEquiv (M : Matroid α) :
+    (Iso.refl M).toLocalEquiv = ofSet M.E := rfl
+
 def Iso.symm (e : Iso M N) : Iso N M where
   toLocalEquiv := e.toLocalEquiv.symm
   source_eq' := by rw [symm_source, e.target_eq']
@@ -82,6 +85,9 @@ def Iso.symm (e : Iso M N) : Iso N M where
       · exact symm_image_image_of_subset_source e.toLocalEquiv (by simp [h.subset_ground])
       rw [←h]; convert hB';
       exact symm_image_image_of_subset_source e.toLocalEquiv (by simp [hB'.subset_ground]) }
+
+@[simp] theorem Iso.symm_toLocalEquiv (e : Iso M N) :
+    e.symm.toLocalEquiv = e.toLocalEquiv.symm := rfl
 
 def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃} (e₁₂ : Iso M₁ M₂)
     (e₂₃ : Iso M₂ M₃) : Iso M₁ M₃ where
@@ -96,6 +102,10 @@ def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α�
     exact target_subset_preimage_source _ }
   setOf_base_eq' := by rw [e₂₃.setOf_base_eq', e₁₂.setOf_base_eq']; ext B; simp [image_image]
 
+@[simp] theorem Iso.trans_toLocalEquiv {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
+    (e₁₂ : Iso M₁ M₂) (e₂₃ : Iso M₂ M₃) :
+  (e₁₂.trans e₂₃).toLocalEquiv = e₁₂.toLocalEquiv.trans e₂₃.toLocalEquiv := rfl
+
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Iso.image_symm_subset_ground (e : Iso M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
     e.symm '' X ⊆ M.E :=
@@ -104,11 +114,14 @@ theorem Iso.image_symm_subset_ground (e : Iso M N) (X : Set β) (hX : X ⊆ N.E 
 @[simp] theorem Iso.symm_apply (e : Iso M N) : e.symm.toLocalEquiv = e.toLocalEquiv.symm := rfl
 
 /-- Equal matroids are isomorphic -/
-def Iso.of_eq {M N : Matroid α} (h : M = N) : Iso M N where
+def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
   toLocalEquiv := ofSet M.E
   source_eq' := rfl
   target_eq' := by simp [h]
   setOf_base_eq' := by simp [h]
+
+@[simp] theorem Iso.ofEq_toLocalEquiv {M N : Matroid α} (h : M = N) :
+    (Iso.ofEq h).toLocalEquiv = ofSet M.E := rfl
 
 /-- A `LocalEquiv` behaving well on independent sets also gives an isomorphism -/
 def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)

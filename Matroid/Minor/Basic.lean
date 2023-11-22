@@ -166,6 +166,11 @@ instance delete_finitary (M : Matroid α) [Finitary M] (D : Set α) : Finitary (
 instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (M ⟍ e) := by
   rw [delete_elem]; infer_instance
 
+theorem removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ⟍ M.cl ∅ := by
+  rw [← restrict_compl, removeLoops]
+  convert rfl using 2
+  simp [Set.ext_iff, mem_setOf, Nonloop, Loop, mem_diff, and_comm]
+
 end Delete
 
 section Contract

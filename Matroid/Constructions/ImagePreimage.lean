@@ -62,6 +62,17 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
 @[simp] theorem preimage_ground_eq (M : Matroid β) (f : α → β) :
     (M.preimage f).E = f ⁻¹' M.E := rfl
 
+@[simp] theorem preimage_dep_iff {M : Matroid β} :
+    (M.preimage f).Dep I ↔ M.Dep (f '' I) ∨ (M.Indep (f '' I) ∧ ¬ InjOn f I) := by
+  rw [Dep, preimage_indep_iff, not_and, preimage_ground_eq, Dep, image_subset_iff]
+  refine ⟨fun ⟨hi, h⟩ ↦ ?_, ?_⟩
+  · rw [and_iff_left h, ← imp_iff_not_or]
+    exact fun hI ↦ ⟨hI, hi hI⟩
+  rintro (⟨hI, hIE⟩ | hI)
+  · exact ⟨fun h ↦ (hI h).elim, hIE⟩
+  rw [iff_true_intro hI.1, iff_true_intro hI.2, implies_true, true_and]
+  simpa using hI.1.subset_ground
+
 @[simp] theorem preimage_id (M : Matroid β) : M.preimage id = M :=
   eq_of_indep_iff_indep_forall (by simp) (by simp [injective_id.injOn _])
 
