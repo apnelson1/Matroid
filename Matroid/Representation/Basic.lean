@@ -877,10 +877,9 @@ theorem eq_dual_of_rowSpace_eq_nullSpace {M N : Matroid α} {E : Set α} (hE : E
 /-- The dual of a representable matroid is representable -/
 theorem Representable.dual [M.Finite] (h : M.Representable 𝔽) : M﹡.Representable 𝔽 := by
   obtain ⟨v⟩ := h
-  set ns : Submodule 𝔽 (M﹡.E → 𝔽):= (v.toMatrix.colSubmatrix M.E).nullSpace
+  set ns : Submodule 𝔽 (M﹡.E → 𝔽) := (v.toMatrix.colSubmatrix M.E).nullSpace
   obtain b := Basis.ofVectorSpace 𝔽 ns
-  have : Fintype M﹡.E
-  · exact M.ground_finite.fintype
+  have : Fintype M﹡.E := M.ground_finite.fintype
   set Mdrep := (matroidOfSubtypeFun_rep 𝔽 b.toRowMatrix.colFun)
   have Mdrep' := Mdrep.representable
   rwa [← eq_dual_of_rowSpace_eq_nullSpace (ground_finite M) rfl (by simp) v Mdrep]
@@ -904,6 +903,9 @@ end Dual
 section Extension
 
 variable [DecidableEq α]
+
+noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
+  v.restrict (insert e M.E)
 
 noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
   (v.preimage (update id f e)).restrict (insert f M.E)
