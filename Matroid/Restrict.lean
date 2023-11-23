@@ -184,6 +184,11 @@ theorem Restriction.strictRestriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <
   obtain ⟨R, hR, rfl⟩ := h.exists_eq_restrict
   exact ⟨h.eq_restrict, hR.ssubset_of_ne (fun h ↦ hne (by rw [h, restrict_ground_eq_self]))⟩
 
+theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <r M := by
+  refine (M.restrict_restriction R hR.subset).strictRestriction_of_ne (fun h ↦ ?_)
+  rw [← h, restrict_ground_eq] at hR
+  exact hR.ne rfl
+
 instance Restriction.trans : IsTrans (Matroid α) (· ≤r ·) :=
   ⟨fun M₁ M₂ M₃ h₁ h₂ ↦ by
   { rw [restriction_iff_exists] at *
