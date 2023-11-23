@@ -116,7 +116,6 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   rw [← singleton_dep, preimage_dep_iff]
   simp
 
-
 end Loop
 
 section Nonloop
@@ -257,6 +256,12 @@ theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e �
     (M.preimage f).Nonloop e ↔ M.Nonloop (f e) := by
   rw [← indep_singleton, preimage_indep_iff, image_singleton, indep_singleton,
     and_iff_left (injOn_singleton _ _)]
+
+@[simp] theorem freeOn_nonloop_iff {E : Set α} : (freeOn E).Nonloop e ↔ e ∈ E := by
+  rw [← indep_singleton, freeOn_indep_iff, singleton_subset_iff]
+
+@[simp] theorem trivialOn_nonloop_iff {I E : Set α} : (trivialOn I E).Nonloop e ↔ e ∈ I ∩ E := by
+  rw [← indep_singleton, trivialOn_indep_iff', singleton_subset_iff]
 
 end Nonloop
 

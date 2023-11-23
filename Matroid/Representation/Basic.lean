@@ -264,9 +264,10 @@ def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W
       refine' ⟨e, he, heI'', _⟩
       simp only
       have hi : LinearIndependent 𝔽 (v '' I).incl := (linearIndependent_image hIinj).1 hI
-      have h_end : LinearIndependent 𝔽 (restrict _ id) := hi.insert heI
-      rwa [←image_insert_eq, restrict_eq, comp.left_id,
-        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end )
+      have h_end : LinearIndependent 𝔽 (incl _) := hi.insert heI
+      rwa [←image_insert_eq,
+        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end
+        )
     ( by
         refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
         have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
@@ -924,6 +925,8 @@ theorem Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
     (M.parallelExtend e f).Representable 𝔽 :=
   (h.rep.parallelExtend e f).representable
 
+/-- This doesn't actually need finiteness; constructing the obvious explicit
+  representation for the series extension is TODO. -/
 theorem Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
     (M.seriesExtend e f).Representable 𝔽 := by
   rw [← dual_representable_iff, seriesExtend_dual]

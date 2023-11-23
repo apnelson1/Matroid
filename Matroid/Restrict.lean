@@ -13,7 +13,7 @@ section restrict
 
 /-- Change the ground set of a matroid to some `R : Set α`. The independent sets of the restriction
   are the independent subsets of the new ground set. Most commonly used when `R ⊆ M.E`   -/
-def Restrict (M : Matroid α) (X : Set α) : Matroid α :=
+def restrict (M : Matroid α) (X : Set α) : Matroid α :=
   matroid_of_indep X (fun I ↦ M.Indep I ∧ I ⊆ X) ⟨M.empty_indep, empty_subset _⟩
     ( fun I J h hIJ ↦ ⟨h.1.subset hIJ, hIJ.trans h.2⟩ )
     ( by
@@ -36,14 +36,11 @@ def Restrict (M : Matroid α) (X : Set α) : Matroid α :=
           (diff_subset_diff_right (subset_union_right _ _))
         rw [h_eq, ←diff_inter_diff, ←hB.inter_basis_iff_compl_inter_basis_dual] at hI'
 
-
         obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset
           (subset_inter hIB (subset_inter hIY hI.subset_ground))
-
         obtain rfl := hI'.indep.eq_of_basis hJ
 
         have hIJ' : I ⊂ B ∩ (X ∩ M.E) := hIJ.ssubset_of_ne (fun he ↦ hIn (by rwa [he]))
-
         obtain ⟨e, he⟩ := exists_of_ssubset hIJ'
         exact ⟨e, ⟨⟨(hBIB' he.1.1).elim (fun h ↦ (he.2 h).elim) id,he.1.2⟩, he.2⟩,
           hI'.indep.subset (insert_subset he.1 hIJ), insert_subset he.1.2.1 hIY⟩ )
@@ -61,10 +58,10 @@ class MRestrict (α β : Type*) := (restrict : α → β → α)
 
 infixl:65  " ↾ " => MRestrict.restrict
 
-instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.Restrict X⟩
+instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.restrict X⟩
 
 @[simp] theorem restrict_indep_iff : (M ↾ R).Indep I ↔ M.Indep I ∧ I ⊆ R := by
-  change (M.Restrict R).Indep I ↔ _; simp [Restrict]
+  change (M.restrict R).Indep I ↔ _; simp [restrict]
 
 theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ R).Indep I :=
   restrict_indep_iff.mpr ⟨h,hIR⟩
@@ -102,7 +99,7 @@ theorem Basis.restrict_base (h : M.Basis I X) : (M ↾ X).Base I := by
     and_iff_right h.1.2.1]
   exact fun J hJ hJX hIJ ↦ h.1.2.2 _ hJ hIJ hJX
 
-instance restrict_finiteRk [M.FiniteRk] : (M ↾ R).FiniteRk :=
+instance restrict_finiteRk [M.FiniteRk] (R : Set α) : (M ↾ R).FiniteRk :=
   let ⟨_, hB⟩ := (M ↾ R).exists_base
   hB.finiteRk_of_finite (hB.indep.of_restrict.finite)
 
@@ -167,7 +164,7 @@ theorem StrictRestriction.restriction (h : N <r M) : N ≤r M :=
 theorem StrictRestriction.ssubset (h : N <r M) : N.E ⊂ M.E :=
   h.2
 
-theorem StrictRestriction.ne (h : N <r M) : N ≠ M := by
+theorem StrictRestriction.Ne (h : N <r M) : N ≠ M := by
   rintro rfl; exact h.ssubset.ne rfl
 
 theorem StrictRestriction.eq_restrict (h : N <r M) : M ↾ N.E = N :=
@@ -182,9 +179,6 @@ theorem restrict_restriction (M : Matroid α) (R : Set α) (hR : R ⊆ M.E := by
 
 theorem restriction_iff_exists : (N ≤r M) ↔ ∃ R, R ⊆ M.E ∧ N = M ↾ R := by
   use Restriction.exists_eq_restrict; rintro ⟨R, hR, rfl⟩; exact restrict_restriction M R hR
-
-theorem StrictRestriction.Ne (h : N <r M) : N ≠ M := by
-  rintro rfl; exact h.2.ne rfl
 
 theorem Restriction.strictRestriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <r M := by
   obtain ⟨R, hR, rfl⟩ := h.exists_eq_restrict
@@ -205,7 +199,7 @@ instance Restriction.antisymm : IsAntisymm (Matroid α) (· ≤r ·) :=
 
 instance : IsNonstrictStrictOrder (Matroid α) (· ≤r ·) (· <r ·) where
   right_iff_left_not_left := fun M M' ↦
-    ⟨fun h ↦ ⟨h.restriction, fun h' ↦ h.ne (antisymm h.restriction h')⟩,
+    ⟨fun h ↦ ⟨h.restriction, fun h' ↦ h.Ne (antisymm h.restriction h')⟩,
      fun h ↦ h.1.strictRestriction_of_ne (by rintro rfl; exact h.2 (refl M))⟩
 
 end restrict

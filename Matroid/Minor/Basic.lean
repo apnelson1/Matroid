@@ -30,7 +30,7 @@ instance delete_finite [Matroid.Finite M] : Matroid.Finite (M ⟍ D) :=
   ⟨M.ground_finite.diff D⟩
 
 instance delete_finiteRk [FiniteRk M] : FiniteRk (M ⟍ D) :=
-  Matroid.restrict_finiteRk
+  restrict_finiteRk _
 
 theorem restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ⟍ D := rfl
 
@@ -185,8 +185,7 @@ infixl:75 " ⟋ " => HasContract.con
 /-- The contraction `M ⟋ C` is the matroid on `M.E \ C` whose bases are the sets `B \ I` where `B`
   is a base for `M` containing a base `I` for `C`. It is also equal to the dual of `M﹡ ⟍ C`, and
     is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
-def contract (M : Matroid α) (C : Set α) : Matroid α :=
-  (M﹡ ⟍ C)﹡
+def contract (M : Matroid α) (C : Set α) : Matroid α := (M﹡ ⟍ C)﹡
 
 instance conSet {α : Type*} : HasContract (Matroid α) (Set α) :=
   ⟨Matroid.contract⟩
@@ -197,11 +196,6 @@ instance conElem {α : Type*} : HasContract (Matroid α) α :=
 @[simp] theorem dual_delete_dual_eq_contract (M : Matroid α) (X : Set α) : (M﹡ ⟍ X)﹡ = M ⟋ X :=
   rfl
 
-@[simp] theorem contract_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E = M.E \ C := rfl
-
-instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
-  rw [← dual_delete_dual_eq_contract]; infer_instance
-
 @[simp] theorem dual_contract_dual_eq_delete (M : Matroid α) (X : Set α) : (M﹡ ⟋ X)﹡ = M ⟍ X := by
   rw [← dual_delete_dual_eq_contract, dual_dual, dual_dual]
 
@@ -210,6 +204,11 @@ instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
 
 @[simp] theorem delete_dual_eq_dual_contract (M : Matroid α) (X : Set α) : (M ⟍ X)﹡ = M﹡ ⟋ X := by
   rw [← dual_delete_dual_eq_contract, dual_dual]
+
+@[simp] theorem contract_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E = M.E \ C := rfl
+
+instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
+  rw [← dual_delete_dual_eq_contract]; infer_instance
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem contract_ground_subset_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E ⊆ M.E :=
@@ -583,7 +582,6 @@ theorem Nonloop.of_contract (h : (M ⟋ C).Nonloop e) : M.Nonloop e := by
   exact h.of_contract
 
 end Contract
-
 
 section Minor
 
