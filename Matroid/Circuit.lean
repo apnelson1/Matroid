@@ -71,6 +71,18 @@ theorem Circuit.subset_cl_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.c
   · rw [(hC.diff_singleton_basis he).cl_eq_cl]; exact M.subset_cl _
   rw [diff_singleton_eq_self he]; exact M.subset_cl _
 
+theorem Circuit.subset_cl_diff_subsingleton (hC : M.Circuit C) {Z : Set α} (hZ : Z.encard ≤ 1) :
+    C ⊆ M.cl (C \ Z) := by
+  obtain (rfl | ⟨x, rfl⟩) := encard_le_one_iff_eq.1 hZ
+  · rw [diff_empty]; apply M.subset_cl _
+  exact hC.subset_cl_diff_singleton _
+
+theorem Circuit.cl_diff_subsingleton_eq_cl (hC : M.Circuit C) {Z : Set α} (hZ : Z.encard ≤ 1) :
+    M.cl (C \ Z) = M.cl C := by
+  obtain (rfl | ⟨x, rfl⟩) := encard_le_one_iff_eq.1 hZ
+  · simp
+  rw [hC.cl_diff_singleton_eq_cl]
+
 theorem Circuit.mem_cl_diff_singleton_of_mem (hC : M.Circuit C) (heC : e ∈ C) :
     e ∈ M.cl (C \ {e}) :=
   (hC.subset_cl_diff_singleton e) heC
@@ -115,7 +127,6 @@ theorem circuit_iff_dep_forall_diff_singleton_indep :
 theorem Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h : C₁ ⊆ C₂) :
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
-
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `univ` if `e ∉ M.cl I`. -/
@@ -214,6 +225,59 @@ theorem mem_cl_iff_exists_circuit_of_not_mem (he : e ∉ X) :
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, (subset_inter h hC.subset_ground).trans _⟩⟩
   rw [insert_inter_of_mem (hC.subset_ground heC)]
 
+-- /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is
+--   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version.
+--   The stronger version is required for axiomatizing infinite matroids via circuits. -/
+-- theorem Circuit.strong_multi_elimination' {ι : Type*} (hC : M.Circuit C) (x : ι → α)
+--     (Cs : ι → Set α) (hCs : ∀ i, M.Circuit (Cs i)) (h_mem : ∀ i, x i ∈ C ∩ Cs i)
+--     (h_unique : ∀ i i', x i ∈ Cs i' → i = i') {Z : Set α} (hZcard : Z.encard ≤ 1)
+--     (hZ : Z ⊆ C \ ⋃ i, Cs i) :
+--     ∃ C', M.Circuit C' ∧ Z ⊆ C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by
+--   set Y := (C ∪ ⋃ x, Cs x) \ (Z ∪ (range x)) with hY
+--   have hYE : Y ⊆ M.E
+--   · refine' (diff_subset _ _).trans (union_subset hC.subset_ground _)
+--     exact iUnion_subset fun i ↦ (hCs i).subset_ground
+--   have h₁ : range x ⊆ M.cl (⋃ i, (Cs i \ {x i}) \ (Z ∪ (range x)))
+--   · rintro e ⟨i, rfl⟩
+--     have h' := (hCs i).subset_cl_diff_singleton (x i) (h_mem i).2
+--     refine' mem_of_mem_of_subset h' (M.cl_subset_cl _)
+--     refine' subset_iUnion_of_subset i (subset_diff.mpr ⟨rfl.subset, _⟩)
+--     rw [disjoint_iff_forall_ne]
+
+--     rintro y hy z (hzZ | ⟨j, rfl⟩) rfl
+--     · exact (hZ hzZ).2 (mem_iUnion_of_mem i hy.1)
+--     refine' hy.2 (mem_singleton_iff.mpr _)
+--     rw [h_unique _ _ hy.1]
+--   have h₂ : range x ⊆ M.cl Y
+--   · refine' h₁.trans (M.cl_subset_cl (iUnion_subset fun x ↦ _))
+--     refine' diff_subset_diff_left (subset_union_of_subset_right _ _)
+--     exact subset_iUnion_of_subset x (diff_subset _ _)
+--   have h₃ : C \ Z ⊆ M.cl Y
+--   · suffices C \ Z ⊆ C \ (Z ∪ (range x)) ∪ range x by
+--       rw [union_diff_distrib] at hY
+--       convert this.trans (union_subset_union ((subset_union_left _ _).trans_eq hY.symm) h₂) using 1
+--       rw [union_eq_right.mpr]
+--       exact M.subset_cl Y
+
+--     rw [← diff_diff, diff_subset_iff, diff_union_self, ← union_assoc, union_diff_self,
+--       union_right_comm]
+--     exact subset_union_right _ _
+--   rw [← M.cl_subset_cl_iff_subset_cl ((diff_subset _ _).trans hC.subset_ground)] at h₃
+
+--   have h₄ := ((hZ.trans (diff_subset _ _)).trans (hC.subset_cl_diff_subsingleton hZcard)).trans h₃
+--   obtain (rfl | ⟨z, rfl⟩) := encard_le_one_iff_eq.1 hZcard
+--   ·
+--   obtain (hzY | ⟨C', hC', hzC', hCzY⟩) := (mem_cl_iff_mem_or_exists_circuit hYE).mp h₄
+--   · exact ((hY.subset hzY).2 (mem_insert z _)).elim
+--   refine' ⟨C', hC', hzC', subset_diff.mpr ⟨_, _⟩⟩
+--   · exact hCzY.trans (insert_subset (Or.inl hz.1) (diff_subset _ _))
+--   refine' disjoint_of_subset_left hCzY _
+--   rw [← singleton_union, disjoint_union_left, disjoint_singleton_left]
+--   refine' ⟨not_mem_subset _ hz.2, _⟩
+--   · rintro x' ⟨i, rfl⟩; exact mem_iUnion_of_mem i (h_mem i).2
+--   exact disjoint_of_subset_right (subset_insert z _) disjoint_sdiff_left
+
+
 /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is
   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version.
   The stronger version is required for axiomatizing infinite matroids via circuits. -/
@@ -260,6 +324,7 @@ theorem Circuit.strong_multi_elimination {ι : Type*} (hC : M.Circuit C) (x : ι
   · rintro x' ⟨i, rfl⟩; exact mem_iUnion_of_mem i (h_mem i).2
   exact disjoint_of_subset_right (subset_insert z _) disjoint_sdiff_left
 
+
 /-- The strong circuit elimination axiom. For any two circuits `C₁,C₂` and all `e ∈ C₁ ∩ C₂` and
   `f ∈ C₁ \ C₂`, there is a circuit `C` with `f ∈ C ⊆ (C₁ ∪ C₂) \ {e}`. -/
 theorem Circuit.strong_elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (he : e ∈ C₁ ∩ C₂)
@@ -284,6 +349,99 @@ theorem Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h
       exact ⟨C, h.1, h.2.1⟩
     exact ⟨C₂, hC₂, subset_diff_singleton (subset_union_right _ _) he₂⟩
   exact ⟨C₁, hC₁, subset_diff_singleton (subset_union_left _ _) he₁⟩
+
+-- theorem Circuit.multi_elimination {ι : Type*} (hC : M.Circuit C) (x : ι → α)
+--     (Cs : ι → Set α) (hCs : ∀ i, M.Circuit (Cs i)) (h_mem : ∀ i, x i ∈ C ∩ Cs i)
+--     (h_unique : ∀ i i', x i ∈ Cs i' → i = i') (h_exists : ∃ i, Cs i ≠ C) :
+--     ∃ C', M.Circuit C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by
+--   obtain (h_empt | ⟨z,hz⟩) := (C \ ⋃ i, Cs i).eq_empty_or_nonempty
+--   · rw [diff_eq_empty] at h_empt
+--     by_cases h : ∃ (i₀ i₁ : ι), ¬ (Cs i₀ ⊆ Cs i₁)
+--     · obtain ⟨i₀, i₁, hi₀₁⟩ := h
+--       have h1 : x i₀
+--       sorry
+--     push_neg at h
+--     obtain ⟨i₀, hi₀⟩ := h_exists
+--     obtain ⟨C', hC', hC'ss⟩ := hC.elimination (hCs i₀) hi₀.symm (x i₀)
+--     refine ⟨C', hC', ?_⟩
+--     have : Unique ι
+--     · refine @Unique.mk' _ ⟨i₀⟩ ⟨fun i j ↦ h_unique _ _ ?_⟩
+--       rw [← (h i j).antisymm (h j i)]
+--       exact (h_mem i).2
+--     rw [range_unique, Unique.default_eq i₀]
+--     refine hC'ss.trans (diff_subset_diff (union_subset_union_right _ ?_) Subset.rfl)
+--     exact subset_iUnion Cs i₀
+--   obtain ⟨C', hC', -, hss⟩ := hC.strong_multi_elimination x Cs hCs h_mem h_unique hz
+--   exact ⟨C', hC', hss⟩
+      -- refine ⟨infer_instance,fun a ↦ h_unique _ _ ?_⟩
+      -- simp_rw [(h default a).antisymm (h a default)]
+
+
+
+
+
+    -- have := hC.elimination (hCs (Classical.arbitrary ι))
+
+    -- obtain (hι | hne) := isEmpty_or_nonempty ι
+    --
+    -- simp_rw [union_eq_self_of_subset_left h_empt]
+    -- by_contra h
+    -- have hI' : M.Indep ((⋃ i, Cs i) \ Set.range x)
+    -- · sorry
+    -- clear h
+    -- have h1 : x i₀ ∈ M.cl ((⋃ i ∈ {i | i ≠ i₀}, Cs i) \ range x)
+    -- · sorry
+
+    -- have hJC := hC.diff_singleton_indep (h_mem i₀).1
+    -- obtain ⟨J, hJ, hCJ⟩ := hJC.subset_basis_of_subset ((diff_subset _ _).trans h_empt)
+    -- have := hI'.basis_of_forall_insert (diff_subset _ _) sorry
+
+
+    -- set x' : {i // i ≠ i₀} → α := fun i ↦ x i
+    -- have hrx : range x' = range x \ {x i₀}
+    -- · sorry
+    -- have h_ex := hC.strong_multi_elimination (ι := {i // i ≠ i₀}) x' (fun i ↦ Cs i)
+    --   (fun i ↦ hCs i) (fun i ↦ h_mem i) (fun i i' hii' ↦ ?_) (z := x i₀) ?_
+    -- · obtain ⟨C', hC', hi₀C, hC'ss⟩ := h_ex
+    --   have hne' : C' ≠ Cs i₀
+    --   · rintro rfl
+    --     have hxi₀ := (hC'ss hi₀C).1
+    --   obtain ⟨C'', hC'', hC''ss⟩ := hC'.elimination (hCs i₀) hne' (x i₀)
+    --   refine ⟨C'', hC'', hC''ss.trans ?_⟩
+    --   rw [subset_diff, diff_subset_iff, singleton_union, union_subset_iff, and_iff_left]
+    --   · refine ⟨hC'ss.trans ?_, ?_⟩
+    --     · rw [hrx, diff_subset_iff, ← singleton_union, ← union_assoc, diff_union_self]
+    --       apply subset_union_of_subset_right
+    --       apply union_subset_union_right
+    --       rw [iUnion_subset_iff]
+    --       exact fun i ↦ subset_iUnion Cs _
+    --     refine subset_trans (subset_union_of_subset_right ?_ _) (subset_insert _ _)
+    --     exact subset_iUnion Cs i₀
+    --   rw [disjoint_iff_inter_eq_empty, diff_eq, inter_assoc, inter_comm _ (range x), ← diff_eq,
+    --     ← hrx, ← disjoint_iff_inter_eq_empty, disjoint_union_left,
+    --     and_iff_right ((subset_diff.1 hC'ss).2), disjoint_iff_forall_ne]
+    --   rintro _ ha _ ⟨i, hi, rfl⟩ rfl
+    --   exact i.2 <| h_unique _ _ ha
+    -- · apply_fun (↑) using Subtype.coe_injective
+    --   exact h_unique i i' hii'
+    -- refine ⟨(h_mem i₀).1, ?_⟩
+    -- rintro ⟨_, ⟨⟨⟨i, hne⟩, rfl⟩ , hi'⟩⟩
+    -- simp only at hi'
+    -- exact hne.symm <| h_unique _ _ hi'
+
+
+    --   -- rw [disjoint_iff_forall_ne]
+
+    --   -- · refine hC'ss.trans ?_
+    --   --   rw [diff_subset_iff, hrx, ← singleton_union, ← union_assoc, diff_union_self,
+    --   --     union_right_comm, union_diff_self, union_comm (range x), union_assoc]
+    --   --   apply subset_union_of_subset_left
+    --   --   apply union_subset_union_right
+
+
+    -- set Cs' : {i // i ≠ i₀} → Set α := fun i ↦ Cs i
+
+
 
 theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep I)
     (hCI : C ⊆ insert e I) : C = M.fundCct e I := by
@@ -507,6 +665,8 @@ theorem Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he
 end BasisExchange
 section Iso
 
+variable {β : Type*} {N : Matroid β}
+
 theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
   rw [Circuit, e.setOf_dep_eq, minimals_image_of_rel_iff_rel (r := (· ⊆ ·))]
   · exact mem_image_of_mem _ h
@@ -518,6 +678,10 @@ theorem Iso.on_circuit_symm (e : Iso M N) (h : N.Circuit (e '' C)) (hC : C ⊆ M
 
 theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setOf M.Circuit :=
   e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
+
+theorem Iso.on_circuit_iff (e : Iso M N) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Circuit C ↔ N.Circuit (e '' C) :=
+  ⟨fun h ↦ e.on_circuit h, fun h ↦ e.on_circuit_symm h hC⟩
 
 end Iso
 section Equiv

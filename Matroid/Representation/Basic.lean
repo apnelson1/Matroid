@@ -926,7 +926,9 @@ theorem Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
 
 theorem Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
     (M.seriesExtend e f).Representable 𝔽 := by
-  rw [← dual_representable_iff]
+  rw [← dual_representable_iff, seriesExtend_dual]
+  apply Representable.parallelExtend
+  exact v.representable.dual
 
 
 end Extension
