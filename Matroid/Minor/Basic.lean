@@ -30,7 +30,7 @@ instance delete_finite [Matroid.Finite M] : Matroid.Finite (M ⟍ D) :=
   ⟨M.ground_finite.diff D⟩
 
 instance delete_finiteRk [FiniteRk M] : FiniteRk (M ⟍ D) :=
-  Matroid.restrict_finiteRk
+  restrict_finiteRk _
 
 theorem restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ⟍ D := rfl
 
@@ -185,8 +185,7 @@ infixl:75 " ⟋ " => HasContract.con
 /-- The contraction `M ⟋ C` is the matroid on `M.E \ C` whose bases are the sets `B \ I` where `B`
   is a base for `M` containing a base `I` for `C`. It is also equal to the dual of `M﹡ ⟍ C`, and
     is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
-def contract (M : Matroid α) (C : Set α) : Matroid α :=
-  (M﹡ ⟍ C)﹡
+def contract (M : Matroid α) (C : Set α) : Matroid α := (M﹡ ⟍ C)﹡
 
 instance conSet {α : Type*} : HasContract (Matroid α) (Set α) :=
   ⟨Matroid.contract⟩
@@ -197,11 +196,6 @@ instance conElem {α : Type*} : HasContract (Matroid α) α :=
 @[simp] theorem dual_delete_dual_eq_contract (M : Matroid α) (X : Set α) : (M﹡ ⟍ X)﹡ = M ⟋ X :=
   rfl
 
-@[simp] theorem contract_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E = M.E \ C := rfl
-
-instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
-  rw [← dual_delete_dual_eq_contract]; infer_instance
-
 @[simp] theorem dual_contract_dual_eq_delete (M : Matroid α) (X : Set α) : (M﹡ ⟋ X)﹡ = M ⟍ X := by
   rw [← dual_delete_dual_eq_contract, dual_dual, dual_dual]
 
@@ -210,6 +204,11 @@ instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
 
 @[simp] theorem delete_dual_eq_dual_contract (M : Matroid α) (X : Set α) : (M ⟍ X)﹡ = M﹡ ⟋ X := by
   rw [← dual_delete_dual_eq_contract, dual_dual]
+
+@[simp] theorem contract_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E = M.E \ C := rfl
+
+instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ⟋ C) := by
+  rw [← dual_delete_dual_eq_contract]; infer_instance
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem contract_ground_subset_ground (M : Matroid α) (C : Set α) : (M ⟋ C).E ⊆ M.E :=
@@ -584,7 +583,6 @@ theorem Nonloop.of_contract (h : (M ⟋ C).Nonloop e) : M.Nonloop e := by
 
 end Contract
 
-
 section Minor
 
 variable {M₀ M₁ M₂ : Matroid α}
@@ -657,6 +655,8 @@ theorem contract_delete_minor (M : Matroid α) (C D : Set α) : M ⟋ C ⟍ D �
   refine ⟨_,_, inter_subset_right _ _, inter_subset_right _ _, ?_, rfl⟩
   exact disjoint_of_subset (inter_subset_left C M.E) (inter_subset_left _ M.E) disjoint_sdiff_right
 
+theorem minor_def : N ≤m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ N = M ⟋ C ⟍ D := Iff.rfl
+
 theorem minor_iff_exists_contract_delete : N ≤m M ↔ ∃ C D : Set α, N = M ⟋ C ⟍ D :=
   ⟨fun ⟨C, D, h⟩ ↦ ⟨_,_,h.2.2.2⟩, fun ⟨C, D, h⟩ ↦ by rw [h]; apply contract_delete_minor⟩
 
@@ -709,6 +709,59 @@ theorem Minor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M�
 theorem Minor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
   _root_.antisymm h h'
 
+theorem StrictMinor.minor (h : N <m M) : N ≤m M :=
+  h.1
+
+theorem StrictMinor.not_minor (h : N <m M) : ¬ (M ≤m N) :=
+  h.2
+
+theorem strictMinor_iff_minor_ne : N <m M ↔ N ≤m M ∧ N ≠ M := by
+  rw [StrictMinor, and_congr_right_iff]
+  refine fun hNM ↦ ⟨?_,fun hne hM ↦ hne (hNM.antisymm hM)⟩
+  rintro hMN rfl
+  exact hMN <| Minor.refl N
+
+theorem strictMinor_iff_minor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E := by
+  rw [strictMinor_iff_minor_ne, and_congr_right_iff, ssubset_iff_subset_ne]
+  intro h
+  rw [and_iff_right h.subset, not_iff_not]
+  exact ⟨fun h ↦ by rw [h], fun hE ↦ (h.eq_of_ground_subset hE.symm.subset).symm⟩
+
+theorem StrictMinor.ne (h : N <m M) : N ≠ M := by
+  rintro rfl; exact h.2 <| Minor.refl N
+
+theorem StrictMinor.irrefl (M : Matroid α) : ¬ (M <m M) :=
+  fun h ↦ h.ne <| rfl
+
+theorem StrictMinor.ssubset (h : N <m M) : N.E ⊂ M.E :=
+  h.minor.subset.ssubset_of_ne fun hE ↦ h.ne.symm <| h.minor.eq_of_ground_subset hE.symm.subset
+
+theorem StrictMinor.trans_minor (h : N <m M) (h' : M ≤m M') : N <m M' := by
+  rw [strictMinor_iff_minor_ne, and_iff_right (h.minor.trans h')]
+  rintro rfl
+  exact h.2 h'
+
+theorem Minor.trans_strictMinor (h : N ≤m M) (h' : M <m M') : N <m M' :=
+  ⟨h.trans h'.minor, fun h'' ↦ (h'.trans_minor h'').not_minor h⟩
+
+theorem StrictMinor.trans (h : N <m M) (h' : M <m M') : N <m M' :=
+  h.trans_minor h'.minor
+
+theorem strictMinor_iff_exists_eq_contract_delete :
+    N <m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ (C ∪ D).Nonempty ∧ N = M ⟋ C ⟍ D := by
+  rw [strictMinor_iff_minor_ssubset, minor_def]
+  constructor
+  rintro ⟨⟨C, D, hC, hD, hCD, rfl⟩, hss⟩
+  · refine ⟨C, D, hC, hD, hCD, ?_, rfl⟩
+    rw [nonempty_iff_ne_empty]; rintro hCD
+    rw [delete_ground, contract_ground, diff_diff, hCD, diff_empty] at hss
+    exact hss.ne rfl
+  rintro ⟨C, D, hC, hD, hCD, ⟨e,he⟩, rfl⟩
+  use ⟨C, D, hC, hD, hCD, rfl⟩
+  rw [delete_ground, contract_ground, diff_diff, ssubset_iff_subset_not_subset,
+    and_iff_right (diff_subset _ _)]
+  exact fun hss ↦ (hss ((union_subset hC hD) he)).2 he
+
 theorem contract_minor (M : Matroid α) (C : Set α) : M ⟋ C ≤m M := by
   rw [← (M ⟋ C).delete_empty]; apply contract_delete_minor
 
@@ -721,12 +774,39 @@ theorem restrict_minor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M �
 theorem Restriction.minor (h : N ≤r M) : N ≤m M := by
   rw [← h.eq_restrict, ←delete_compl h.subset]; apply delete_minor
 
+theorem StrictRestriction.strictMinor (h : N <r M) : N <m M :=
+  ⟨h.restriction.minor, fun h' ↦ h.2.not_subset h'.subset⟩
+
+theorem restrict_strictMinor (hR : R ⊂ M.E) : M ↾ R <m M :=
+  (restrict_strictRestriction hR).strictMinor
+
 theorem delete_contract_minor (M : Matroid α) (D C : Set α) : M ⟍ D ⟋ C ≤m M :=
   ((M ⟍ D).contract_minor C).trans (M.delete_minor D)
 
 theorem contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
     (M ⟋ C) ↾ R ≤m M := by
   rw [←delete_compl]; apply contract_delete_minor
+
+theorem contractElem_strictMinor (he : e ∈ M.E) : M ⟋ e <m M :=
+  ⟨contract_minor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
+
+theorem deleteElem_strictMinor (he : e ∈ M.E) : M ⟍ e <m M :=
+  ⟨delete_minor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
+
+theorem strictMinor_iff_minor_contract_or_delete :
+    N <m M ↔ ∃ e ∈ M.E, N ≤m M ⟋ e ∨ N ≤m M ⟍ e := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨C, D, hC, hD, hCD, ⟨e,(heC | heD)⟩, rfl⟩ :=
+      strictMinor_iff_exists_eq_contract_delete.1 h
+    · refine ⟨e, hC heC, Or.inl ?_⟩
+      rw [← insert_eq_of_mem heC, ← singleton_union, ← contract_contract, contract_elem ]
+      apply contract_delete_minor
+    refine ⟨e, hD heD, Or.inr ?_⟩
+    rw [contract_delete_comm _ hCD, ← insert_eq_of_mem heD, ← singleton_union, ← delete_delete]
+    apply delete_contract_minor
+  rintro ⟨e, he, (hc | hd)⟩
+  · exact hc.trans_strictMinor (contractElem_strictMinor he)
+  exact hd.trans_strictMinor (deleteElem_strictMinor he)
 
 theorem Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
@@ -845,6 +925,29 @@ theorem restrict_subset_loops_eq (hX : X ⊆ M.cl ∅) : M ↾ X = loopyOn X := 
   simp
 
 end Constructions
+
+section Property
+
+universe u
+
+/-- A minor-closed matroid property -/
+def MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
+    ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N
+
+/-- `M` is an `ExclMinor` for property `P` if `M` is minor-minimal not satisfying `P`. -/
+@[pp_dot] def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
+  ¬ P M ∧ ∀ {N}, N <m M → P N
+
+theorem exclMinor_iff_forall_delete_contract (hP : MinorClosed P) {M : Matroid α} :
+    M.ExclMinor P ↔ ¬ P M ∧ ∀ e ∈ M.E, P (M ⟋ e) ∧ P (M ⟍ e) := by
+  refine ⟨fun h ↦
+      ⟨h.1, fun e he ↦ ⟨h.2 (contractElem_strictMinor he), h.2 (deleteElem_strictMinor he)⟩⟩ ,
+    fun h ↦ ⟨h.1, fun {N} hNM ↦ ?_⟩⟩
+  obtain ⟨e, he, (hc | hd)⟩ := strictMinor_iff_minor_contract_or_delete.1 hNM
+  · exact hP hc (h.2 e he).1
+  exact hP hd (h.2 e he).2
+
+end Property
 
 end Matroid
 

@@ -275,7 +275,7 @@ section Series
 
 @[pp_dot] def Series (M : Matroid α) (e f : α) : Prop := M﹡.Parallel e f
 
--- API TODO
+-- API TODO, but all will follow easily from duality.
 
 
 end Series
@@ -634,6 +634,28 @@ theorem eq_simplificationWrt_iff (hc : M.ParallelChoiceFunction c) :
 @[simp] theorem eq_simplification_iff (M : Matroid α) : M = M.simplification ↔ M.Simple :=
   eq_simplificationWrt_iff M.exists_parallelChoiceFunction.choose_spec
 
-
-
 end Simplification
+
+section Property
+
+universe u
+
+variable {P : ∀ {β : Type u}, Matroid β → Prop} {α : Type u}
+
+def RemoveLoopClosed (P : ∀ {β : Type u}, Matroid β → Prop) : Prop :=
+  ∀ {α : Type u} {M : Matroid α}, P M ↔ P M.removeLoops
+
+-- theorem RemoveLoopClosed_iff_forall_delete :
+--     RemoveLoopClosed P ↔ ∀ {M : Matroid α} {X : Set α} (hX : X ⊆ M.cl ∅), P M ↔ P (M ⟍ X) := by
+--   refine ⟨fun h M X hX ↦ ?_, fun h ↦ ?_⟩
+
+/-- A matroid property `P` is `SimpClosed` if `P M ↔ P M.simplification` for all `M`. -/
+def SimpClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
+  ∀ {β : Type u} {M : Matroid β}, P M ↔ P M.simplification
+
+theorem simpClosed_iff {P : ∀ {β : Type u}, Matroid β → Prop} :
+  SimpClosed P ↔ ∀ {α : Type u} {M : Matroid α},
+    (∀ )
+
+
+end Property

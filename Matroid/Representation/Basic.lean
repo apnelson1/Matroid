@@ -264,9 +264,10 @@ def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W
       refine' ⟨e, he, heI'', _⟩
       simp only
       have hi : LinearIndependent 𝔽 (v '' I).incl := (linearIndependent_image hIinj).1 hI
-      have h_end : LinearIndependent 𝔽 (restrict _ id) := hi.insert heI
-      rwa [←image_insert_eq, restrict_eq, comp.left_id,
-        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end )
+      have h_end : LinearIndependent 𝔽 (incl _) := hi.insert heI
+      rwa [←image_insert_eq,
+        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end
+        )
     ( by
         refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
         have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
@@ -876,10 +877,9 @@ theorem eq_dual_of_rowSpace_eq_nullSpace {M N : Matroid α} {E : Set α} (hE : E
 /-- The dual of a representable matroid is representable -/
 theorem Representable.dual [M.Finite] (h : M.Representable 𝔽) : M﹡.Representable 𝔽 := by
   obtain ⟨v⟩ := h
-  set ns : Submodule 𝔽 (M﹡.E → 𝔽):= (v.toMatrix.colSubmatrix M.E).nullSpace
+  set ns : Submodule 𝔽 (M﹡.E → 𝔽) := (v.toMatrix.colSubmatrix M.E).nullSpace
   obtain b := Basis.ofVectorSpace 𝔽 ns
-  have : Fintype M﹡.E
-  · exact M.ground_finite.fintype
+  have : Fintype M﹡.E := M.ground_finite.fintype
   set Mdrep := (matroidOfSubtypeFun_rep 𝔽 b.toRowMatrix.colFun)
   have Mdrep' := Mdrep.representable
   rwa [← eq_dual_of_rowSpace_eq_nullSpace (ground_finite M) rfl (by simp) v Mdrep]
@@ -904,6 +904,9 @@ section Extension
 
 variable [DecidableEq α]
 
+noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
+  v.restrict (insert e M.E)
+
 noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
   (v.preimage (update id f e)).restrict (insert f M.E)
 
@@ -924,6 +927,8 @@ theorem Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
     (M.parallelExtend e f).Representable 𝔽 :=
   (h.rep.parallelExtend e f).representable
 
+/-- This doesn't actually need finiteness; constructing the obvious explicit
+  representation for the series extension is TODO. -/
 theorem Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
     (M.seriesExtend e f).Representable 𝔽 := by
   rw [← dual_representable_iff, seriesExtend_dual]

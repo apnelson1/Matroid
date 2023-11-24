@@ -165,11 +165,7 @@ section Property
 
 universe u
 
-variable {α β : Type*} {M : Matroid α} {N : Matroid β}
-
-/-- A minor-closed matroid property -/
-def MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
-    ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N
+variable {α β : Type u} {M : Matroid α} {N : Matroid β} (P : ∀ {η : Type u}, Matroid η → Prop)
 
 def IsoMinorClosed (P : ∀ {α : Type*}, Matroid α → Prop) : Prop := MinorClosed P ∧ Invariant P
 
@@ -180,13 +176,6 @@ theorem exMinor_isoMinorClosed {N₀ : Matroid η} : IsoMinorClosed (ExMinor N�
     fun {α} {β} M M' hMM' ↦ ?_⟩
   simp only [ExMinor, eq_iff_iff, not_iff_not]
   exact ⟨fun h ↦ h.trans hMM'.isoMinor, fun h ↦ h.trans hMM'.symm.isoMinor⟩
-
-
-
-
-
-
-
 
 
 end Property
