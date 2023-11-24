@@ -318,6 +318,23 @@ instance removeLoops_loopless (M : Matroid α) : Loopless M.removeLoops := by
 @[simp] theorem removeLoops_eq_self (M : Matroid α) [Loopless M] : M.removeLoops = M := by
   rw [removeLoops, ← Loopless.ground_eq, restrict_ground_eq_self]
 
+theorem removeLoops_eq_self_iff : M.removeLoops = M ↔ M.Loopless := by
+  refine ⟨fun h ↦ ?_, fun h ↦ M.removeLoops_eq_self⟩
+  rw [← h]
+  infer_instance
+
+theorem removeLoops_restriction (M : Matroid α) : M.removeLoops ≤r M :=
+  restrict_restriction _ _ (fun _ h ↦ Nonloop.mem_ground h)
+
+@[simp] theorem removeLoops_nonloop_iff : M.removeLoops.Nonloop e ↔ M.Nonloop e := by
+  rw [removeLoops_eq_restr, restrict_nonloop_iff, mem_setOf, and_self]
+
+theorem Nonloop.removeLoops_nonloop (he : M.Nonloop e) : M.removeLoops.Nonloop e :=
+  removeLoops_nonloop_iff.2 he
+
+@[simp] theorem removeLoops_idem (M : Matroid α) : M.removeLoops.removeLoops = M.removeLoops := by
+  simp [removeLoops_eq_restr]
+
 end Loopless
 section Coloop
 
