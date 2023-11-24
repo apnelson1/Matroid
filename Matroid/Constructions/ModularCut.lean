@@ -116,6 +116,59 @@ theorem Modular_cut_pair {M : Matroid α} {C : Set (Set α)} (hC : M.Modular_cut
   rw [ab_cl_inter_eq, B_base.indep.cl_inter_eq_self_of_subset ((subset_insert _ _).trans ((subset_insert _ _).trans sub_B))]
   exact (h_ind.subset ((subset_insert _ _).trans (subset_insert _ _))).basis_cl
 
+theorem Modular_cut_remove {M : Matroid α} {C : Set (Set α)} (hC : M.Modular_cut C) {B Y : Set α}
+    (hB₁ : M.Indep B) (hB₂ : Y ⊆ B) (h_remove : ∀ b ∈ B \ Y, M.cl (B \ {b}) ∈ C) : M.cl Y ∈ C := by
+  set Js := {M.cl (B \ {b}) | b ∈ B \ Y} with Js_def
+  set Js₁ := {(B \ {b}) | b ∈ B \ Y}
+  obtain (rfl | ne) := eq_or_ne Y B
+  · sorry
+  have Js₁_none : Js₁.Nonempty
+  · obtain ⟨b, hb⟩ := exists_of_ssubset (ssubset_iff_subset_ne.2 ⟨hB₂, ne⟩)
+    refine' ⟨B \ {b}, ⟨b, ⟨hb.1, hb.2⟩, rfl⟩⟩
+  have Js₁_sInter_sub_B : sInter Js₁ ⊆ B
+  · intro j j_mem
+    rw [mem_sInter] at j_mem
+    obtain ⟨t, ht⟩ := Js₁_none
+    apply ((_ : t ⊆ B) (j_mem t ht))
+    obtain ⟨b, b_mem, rfl⟩ := ht
+    exact diff_subset _ _
+  have Js_biInter_eq : ⋂ J ∈ Js, J = ⋂ J₁ ∈ Js₁, M.cl J₁ := (by simp)
+  have Js_inter_eq : sInter Js = M.cl Y
+  · rw [sInter_eq_biInter, Js_biInter_eq, ←hB₁.cl_sInter_eq_biInter_cl_of_forall_subset Js₁_none]
+    · congr!
+      ext x
+      refine' ⟨fun x_mem ↦ _, fun x_mem I I_mem ↦ _⟩
+      · by_contra x_notin_Y
+        have xBY : x ∈ B \ Y := ⟨Js₁_sInter_sub_B x_mem, x_notin_Y⟩
+        rw [mem_sInter] at x_mem
+        exact absurd rfl (x_mem (B \ {x}) ⟨x, xBY, rfl⟩).2
+      obtain ⟨b, hb, rfl⟩ := I_mem
+      exact ⟨hB₂ x_mem, ne_of_mem_of_not_mem x_mem hb.2⟩
+    rintro J ⟨b, hb, rfl⟩
+    exact diff_subset _ _
+  rw [←Js_inter_eq]
+  apply hC.2.2
+  · rintro J ⟨b, hb, rfl⟩
+    exact h_remove b hb
+  have:= hB₁
+  obtain ⟨B', B'_base, B_sub_B'⟩ := this
+  refine' ⟨B', B'_base, fun Ys Ys_sub Ys_none ↦ _⟩
+  have Ys_eq_cl_I: ∃ I ⊆ B', sInter Ys = M.cl I
+  · rw [sInter_eq_biInter]
+    have: Nonempty α := sorry
+    choose! fn h_fn using Ys_sub
+    set I:= fn '' (Ys)
+
+  obtain ⟨I, I_sub, cl_eq⟩ := Ys_eq_cl_I
+  rw [cl_eq, B'_base.indep.cl_inter_eq_self_of_subset I_sub]
+  exact (B'_base.indep.subset I_sub).basis_cl
+
+
+
+
+
+
+
 open Classical
 def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e : α) (e_nE : e ∉ M.E) :
     Matroid α :=
@@ -538,6 +591,7 @@ def matroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut C) (e
       obtain (rfl):= hB.1.eq_of_subset_indep I_ind.1 B_sub (diff_subset_diff_left I_sub_X)
       simp [Y_sub_I e_in_Y]
     push_neg at B_cl_mem
+    by_cases remove_cycle : ∀ b ∈ B \ (Y \ {e}), B \ {b} ∈ C
 
 
 
