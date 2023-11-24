@@ -167,15 +167,17 @@ universe u
 
 variable {α β : Type u} {M : Matroid α} {N : Matroid β} (P : ∀ {η : Type u}, Matroid η → Prop)
 
-def IsoMinorClosed (P : ∀ {α : Type*}, Matroid α → Prop) : Prop := MinorClosed P ∧ Invariant P
+-- class IsoMinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop where
+--   minorClosed : MinorClosed P
+--   invariant : Invariant P
 
-def ExMinor (N : Matroid β) {α : Type*} (M : Matroid α) : Prop := ¬ (N ≤i M)
+-- def ExMinor (N : Matroid β) {α : Type*} (M : Matroid α) : Prop := ¬ (N ≤i M)
 
-theorem exMinor_isoMinorClosed {N₀ : Matroid η} : IsoMinorClosed (ExMinor N₀) := by
-  refine ⟨fun {α} N M hNM h_ex h_minor ↦ h_ex <| h_minor.trans hNM.isoMinor,
-    fun {α} {β} M M' hMM' ↦ ?_⟩
-  simp only [ExMinor, eq_iff_iff, not_iff_not]
-  exact ⟨fun h ↦ h.trans hMM'.isoMinor, fun h ↦ h.trans hMM'.symm.isoMinor⟩
+-- theorem exMinor_isoMinorClosed {N₀ : Matroid η} : IsoMinorClosed (ExMinor N₀) := by
+--   refine ⟨fun {α} N M hNM h_ex h_minor ↦ h_ex <| h_minor.trans hNM.isoMinor,
+--     fun {α} {β} M M' hMM' ↦ ?_⟩
+--   simp only [ExMinor, eq_iff_iff, not_iff_not]
+--   exact ⟨fun h ↦ h.trans hMM'.isoMinor, fun h ↦ h.trans hMM'.symm.isoMinor⟩
 
 
 end Property

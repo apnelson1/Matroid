@@ -189,18 +189,27 @@ theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <
   rw [← h, restrict_ground_eq] at hR
   exact hR.ne rfl
 
-instance Restriction.trans : IsTrans (Matroid α) (· ≤r ·) :=
+instance restriction_trans : IsTrans (Matroid α) (· ≤r ·) :=
   ⟨fun M₁ M₂ M₃ h₁ h₂ ↦ by
   { rw [restriction_iff_exists] at *
     obtain ⟨R₁, hR₁, rfl⟩ := h₁
     obtain ⟨R₂, hR₂, rfl⟩ := h₂
     exact ⟨R₁, hR₁.trans hR₂, restrict_restrict_eq _ hR₁⟩ } ⟩
 
-instance Restriction.refl : IsRefl (Matroid α) (· ≤r ·) :=
+instance restriction_refl : IsRefl (Matroid α) (· ≤r ·) :=
   ⟨fun M ↦ ⟨M.restrict_ground_eq_self, rfl.subset⟩⟩
 
-instance Restriction.antisymm : IsAntisymm (Matroid α) (· ≤r ·) :=
+instance restriction_antisymm : IsAntisymm (Matroid α) (· ≤r ·) :=
   ⟨fun M M' ⟨h₁,h₂⟩ ⟨_,h₂'⟩ ↦ by rw [←h₁, h₂.antisymm h₂', restrict_ground_eq_self]⟩
+
+theorem Restriction.refl (M : Matroid α) : M ≤r M :=
+  _root_.refl M
+
+theorem Restriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤r M₂) (h' : M₂ ≤r M₃) : M₁ ≤r M₃ :=
+  _root_.trans h h'
+
+theorem Restriction.antisymm (h : N ≤r M) (h' : M ≤r N) : N = M :=
+  _root_.antisymm h h'
 
 instance : IsNonstrictStrictOrder (Matroid α) (· ≤r ·) (· <r ·) where
   right_iff_left_not_left := fun M M' ↦

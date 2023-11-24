@@ -828,14 +828,16 @@ theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM 
   obtain ⟨v⟩ := hM
   exact ((v.contract C).delete D).representable
 
-theorem minorClosed_representable (𝔽 : Type*) [Field 𝔽] :
-    MinorClosed (fun M ↦ M.Representable 𝔽) := by
-  intro α N M hNM (h : M.Representable 𝔽)
-  exact h.minor hNM
+universe u
 
-theorem representable_isoMinorClosed (𝔽 : Type*) [Field 𝔽] :
-    IsoMinorClosed (fun M ↦ M.Representable 𝔽) :=
-  ⟨minorClosed_representable 𝔽, invariant_representable 𝔽⟩
+instance minorClosed_representable (𝔽 : Type*) [Field 𝔽] :
+    MinorClosed (fun {α : Type u} (M : Matroid α) ↦ M.Representable 𝔽) where
+  forall_minor := fun {_ _ _} hNM h ↦ h.minor hNM
+
+example {𝔽 : Type*} [Field 𝔽] {α : Type u} (M N : Matroid α) (h : M.Representable 𝔽) (h' : N ≤m M) :
+    N.Representable 𝔽 :=
+  h'.pred_minor (P := (Representable · 𝔽)) h
+
 
 end Minor
 

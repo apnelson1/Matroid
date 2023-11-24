@@ -808,6 +808,10 @@ theorem strictMinor_iff_minor_contract_or_delete :
   · exact hc.trans_strictMinor (contractElem_strictMinor he)
   exact hd.trans_strictMinor (deleteElem_strictMinor he)
 
+theorem Minor.strictMinor_or_eq (h : N ≤m M) : N <m M ∨ N = M := by
+  rw [strictMinor_iff_minor_ne, and_iff_right h]
+  exact ne_or_eq N M
+
 theorem Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [← er_univ_eq, ← er_univ_eq, delete_er_eq']
@@ -866,6 +870,44 @@ theorem Minor.exists_contract_spanning_restrict (h : N ≤m M) :
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
   refine' ⟨C, hC, delete_restriction _ _, _⟩
   rw [← (hD.coindep_contract_of_disjoint hCD.symm).cl_compl, delete_ground]
+
+/-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
+@[pp_dot] def Minor.C (h : N ≤m M) : Set α :=
+  h.exists_contract_indep_delete_coindep.choose
+
+/-- Classically choose a coindependent delete-set from a proof that `N` is a minor of `M`. -/
+@[pp_dot] def Minor.D (h : N ≤m M) : Set α :=
+  h.exists_contract_indep_delete_coindep.choose_spec.choose
+
+theorem Minor.C_indep (h : N ≤m M) : M.Indep h.C := by
+  obtain ⟨-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec; exact h
+
+theorem Minor.D_coindep (h : N ≤m M) : M.Coindep h.D := by
+  obtain ⟨-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
+
+theorem Minor.disjoint (h : N ≤m M) : Disjoint h.C h.D := by
+  obtain ⟨-,-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
+
+theorem Minor.eq_con_del (h : N ≤m M) : N = M ⟋ h.C ⟍ h.D := by
+  obtain ⟨-,-,-,h⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
+
+theorem Minor.C_union_D_eq (h : N ≤m M) : h.C ∪ h.D = M.E \ N.E := by
+  simp only [h.eq_con_del, delete_ground, contract_ground, diff_diff]
+  rw [Set.diff_diff_cancel_left]
+  exact union_subset h.C_indep.subset_ground h.D_coindep.subset_ground
+
+theorem Minor.C_disjoint (h : N ≤m M) : Disjoint h.C N.E :=
+  (subset_diff.1 h.C_union_D_eq.subset).2.mono_left (subset_union_left _ _)
+
+theorem Minor.D_disjoint (h : N ≤m M) : Disjoint h.D N.E :=
+  (subset_diff.1 h.C_union_D_eq.subset).2.mono_left (subset_union_right _ _)
+
+theorem Minor.eq_con_restr (h : N ≤m M) : N = (M ⟋ h.C) ↾ N.E := by
+  simp [h.eq_con_del, ← restrict_compl]
+
+theorem StrictMinor.C_union_D_nonempty (h : N <m M) : (h.minor.C ∪ h.minor.D).Nonempty := by
+  rw [h.minor.C_union_D_eq]
+  exact nonempty_of_ssubset h.ssubset
 
 end Minor
 
@@ -930,22 +972,53 @@ section Property
 
 universe u
 
+variable {P : ∀ {β : Type u}, Matroid β → Prop} {α : Type u} {M N : Matroid α}
+
 /-- A minor-closed matroid property -/
-def MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
-    ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N
+class MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
+    (forall_minor : ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N)
+
+theorem Minor.pred_minor [MinorClosed P] (hNM : N ≤m M) (hM : P M) : P N :=
+  MinorClosed.forall_minor hNM hM
 
 /-- `M` is an `ExclMinor` for property `P` if `M` is minor-minimal not satisfying `P`. -/
 @[pp_dot] def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
   ¬ P M ∧ ∀ {N}, N <m M → P N
 
-theorem exclMinor_iff_forall_delete_contract (hP : MinorClosed P) {M : Matroid α} :
+theorem ExclMinor.not_prop_self (h : M.ExclMinor P) : ¬ P M :=
+  h.1
+
+theorem ExclMinor.prop_of_strictMinor (hM : M.ExclMinor P) (hMN : N <m M) : P N :=
+  hM.2 hMN
+
+theorem ExclMinor.eq_of_not_prop_of_minor (hM : M.ExclMinor P) (hNM : N ≤m M) (hN : ¬ P N) :
+    N = M := by
+  obtain (hNM' | rfl) := hNM.strictMinor_or_eq
+  · exact (hN <| hM.prop_of_strictMinor hNM').elim
+  rfl
+
+theorem ExclMinor.prop_deleteElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟍ e) :=
+  hM.prop_of_strictMinor (deleteElem_strictMinor he)
+
+theorem ExclMinor.prop_contractElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟋ e) :=
+  hM.prop_of_strictMinor (contractElem_strictMinor he)
+
+theorem exclMinor_iff_forall_contract_delete [MinorClosed P] {M : Matroid α} :
     M.ExclMinor P ↔ ¬ P M ∧ ∀ e ∈ M.E, P (M ⟋ e) ∧ P (M ⟍ e) := by
-  refine ⟨fun h ↦
-      ⟨h.1, fun e he ↦ ⟨h.2 (contractElem_strictMinor he), h.2 (deleteElem_strictMinor he)⟩⟩ ,
+  refine ⟨fun h ↦ ⟨h.not_prop_self, fun e he ↦ ⟨h.prop_contractElem he, h.prop_deleteElem he⟩⟩,
     fun h ↦ ⟨h.1, fun {N} hNM ↦ ?_⟩⟩
   obtain ⟨e, he, (hc | hd)⟩ := strictMinor_iff_minor_contract_or_delete.1 hNM
-  · exact hP hc (h.2 e he).1
-  exact hP hd (h.2 e he).2
+  · exact hc.pred_minor (h.2 e he).1
+  exact hd.pred_minor (h.2 e he).2
+
+instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
+  forall_minor := fun {_} {_ _} a _ ↦ Minor.finite a
+
+instance minorClosed_finiteRk : MinorClosed.{u} FiniteRk where
+  forall_minor := fun {_} {_ _} a _ ↦ Minor.finiteRk a
+
+instance minorClosed_finitary : MinorClosed.{u} Finitary where
+  forall_minor := fun {_} {_ _} a _ ↦ Minor.finitary a
 
 end Property
 
