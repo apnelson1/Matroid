@@ -40,6 +40,12 @@ theorem restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ⟍ D
 @[simp] theorem delete_restriction (M : Matroid α) (D : Set α) : M ⟍ D ≤r M :=
   restrict_restriction _ _ (diff_subset _ _)
 
+theorem Restriction.exists_eq_delete (hNM : N ≤r M) : ∃ D ⊆ M.E, N = M ⟍ D :=
+  ⟨M.E \ N.E, diff_subset _ _, by rw [← hNM.1, restrict_ground_eq, delete_compl hNM.subset]⟩
+
+theorem restriction_iff_exists_eq_delete : N ≤r M ↔ ∃ D ⊆ M.E, N = M ⟍ D :=
+  ⟨Restriction.exists_eq_delete, by rintro ⟨D, -, rfl⟩; apply delete_restriction⟩
+
 @[simp] theorem delete_ground (M : Matroid α) (D : Set α) : (M ⟍ D).E = M.E \ D := rfl
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
@@ -822,8 +828,29 @@ theorem Minor.dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
   rw [delete_dual_eq_dual_contract, contract_dual_eq_dual_delete]
   apply delete_contract_minor
 
+theorem Minor.of_dual (h : N﹡ ≤m M﹡) : N ≤m M := by
+  simpa using h.dual
+
 theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M :=
-  ⟨fun h ↦ by rw [← dual_dual N, ← dual_dual M]; exact h.dual, Minor.dual⟩
+  ⟨Minor.of_dual, Minor.dual⟩
+
+theorem minor_dual_iff_dual_minor : N ≤m M﹡ ↔ N﹡ ≤m M := by
+  rw [←dual_minor_iff, dual_dual]
+
+theorem StrictMinor.dual (h : N <m M) : N﹡ <m M﹡ := by
+  rwa [StrictMinor, dual_minor_iff, dual_minor_iff]
+
+theorem StrictMinor.of_dual (h : N﹡ <m M﹡) : N <m M := by
+  simpa using h.dual
+
+theorem dual_strictMinor_iff: N﹡ <m M﹡ ↔ N <m M :=
+  ⟨StrictMinor.of_dual, StrictMinor.dual⟩
+
+theorem strictMinor_dual_iff_dual_strictMinor : N <m M﹡ ↔ N﹡ <m M := by
+  rw [← dual_strictMinor_iff, dual_dual]
+
+theorem StrictMinor.encard_ground_lt [M.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
+  M.ground_finite.encard_lt_encard hNM.ssubset
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
@@ -909,6 +936,28 @@ theorem StrictMinor.C_union_D_nonempty (h : N <m M) : (h.minor.C ∪ h.minor.D).
   rw [h.minor.C_union_D_eq]
   exact nonempty_of_ssubset h.ssubset
 
+theorem finite_minors (M : Matroid α) [M.Finite] : {N | N ≤m M}.Finite := by
+  refine @Set.toFinite (Matroid α) {N | N ≤m M} ?_
+  have hf := M.ground_finite.finite_subsets.to_subtype
+  set f : {N // N ≤m M} → {X | X ⊆ M.E} × {X | X ⊆ M.E} :=
+    fun N ↦ ⟨⟨N.prop.C,N.prop.C_indep.subset_ground⟩, ⟨N.prop.D, N.prop.D_coindep.subset_ground⟩⟩
+  apply Finite.of_injective f
+  rintro ⟨N, hN⟩ ⟨N', hN'⟩ hNN'
+  simp only [Subtype.mk.injEq]
+  rw [hN.eq_con_del, hN'.eq_con_del]
+  simp only [coe_setOf, mem_setOf_eq, Prod.mk.injEq, Subtype.mk.injEq] at hNN'
+  rw [hNN'.1, hNN'.2]
+
+
+
+
+  -- have : Finite {X // X ⊆ M.E}
+  -- ·
+  -- have : Finite ({X // X ⊆ M.E} × {X // X ⊆ M.E}) := by
+  --   apply?
+
+  -- apply Finite.of_injective (f := fun N ↦ N.prop.C)
+
 end Minor
 
 section Constructions
@@ -921,12 +970,20 @@ variable {E : Set α}
 @[simp] theorem contract_ground_self (M : Matroid α) : M ⟋ M.E = emptyOn α := by
   simp [←ground_eq_empty_iff]
 
-@[simp] theorem emptyOn_minor (M : Matroid α) : (emptyOn α) ≤m M :=
-  ⟨M.E, ∅, by simp [rfl.subset]⟩
+@[simp] theorem emptyOn_restriction (M : Matroid α) : emptyOn α ≤r M := by
+  constructor <;> simp
+
+@[simp] theorem emptyOn_minor (M : Matroid α) : emptyOn α ≤m M :=
+  M.emptyOn_restriction.minor
 
 @[simp] theorem minor_emptyOn_iff : M ≤m emptyOn α ↔ M = emptyOn α :=
   ⟨fun h ↦ ground_eq_empty_iff.1 (eq_empty_of_subset_empty h.subset),
     by rintro rfl; apply emptyOn_minor⟩
+
+@[simp] theorem restriction_emptyOn_iff : M ≤r emptyOn α ↔ M = emptyOn α := by
+  refine ⟨fun h ↦ minor_emptyOn_iff.1 h.minor, ?_⟩
+  rintro rfl
+  constructor <;> simp
 
 @[simp] theorem loopyOn_delete (E X : Set α) : (loopyOn E) ⟍ X = loopyOn (E \ X) := by
   rw [←restrict_compl, loopyOn_restrict, loopyOn_ground]
@@ -967,60 +1024,6 @@ theorem restrict_subset_loops_eq (hX : X ⊆ M.cl ∅) : M ↾ X = loopyOn X := 
   simp
 
 end Constructions
-
-section Property
-
-universe u
-
-variable {P : ∀ {β : Type u}, Matroid β → Prop} {α : Type u} {M N : Matroid α}
-
-/-- A minor-closed matroid property -/
-class MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
-    (forall_minor : ∀ {α : Type u} {N M : Matroid α}, N ≤m M → P M → P N)
-
-theorem Minor.pred_minor [MinorClosed P] (hNM : N ≤m M) (hM : P M) : P N :=
-  MinorClosed.forall_minor hNM hM
-
-/-- `M` is an `ExclMinor` for property `P` if `M` is minor-minimal not satisfying `P`. -/
-@[pp_dot] def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
-  ¬ P M ∧ ∀ {N}, N <m M → P N
-
-theorem ExclMinor.not_prop_self (h : M.ExclMinor P) : ¬ P M :=
-  h.1
-
-theorem ExclMinor.prop_of_strictMinor (hM : M.ExclMinor P) (hMN : N <m M) : P N :=
-  hM.2 hMN
-
-theorem ExclMinor.eq_of_not_prop_of_minor (hM : M.ExclMinor P) (hNM : N ≤m M) (hN : ¬ P N) :
-    N = M := by
-  obtain (hNM' | rfl) := hNM.strictMinor_or_eq
-  · exact (hN <| hM.prop_of_strictMinor hNM').elim
-  rfl
-
-theorem ExclMinor.prop_deleteElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟍ e) :=
-  hM.prop_of_strictMinor (deleteElem_strictMinor he)
-
-theorem ExclMinor.prop_contractElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟋ e) :=
-  hM.prop_of_strictMinor (contractElem_strictMinor he)
-
-theorem exclMinor_iff_forall_contract_delete [MinorClosed P] {M : Matroid α} :
-    M.ExclMinor P ↔ ¬ P M ∧ ∀ e ∈ M.E, P (M ⟋ e) ∧ P (M ⟍ e) := by
-  refine ⟨fun h ↦ ⟨h.not_prop_self, fun e he ↦ ⟨h.prop_contractElem he, h.prop_deleteElem he⟩⟩,
-    fun h ↦ ⟨h.1, fun {N} hNM ↦ ?_⟩⟩
-  obtain ⟨e, he, (hc | hd)⟩ := strictMinor_iff_minor_contract_or_delete.1 hNM
-  · exact hc.pred_minor (h.2 e he).1
-  exact hd.pred_minor (h.2 e he).2
-
-instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
-  forall_minor := fun {_} {_ _} a _ ↦ Minor.finite a
-
-instance minorClosed_finiteRk : MinorClosed.{u} FiniteRk where
-  forall_minor := fun {_} {_ _} a _ ↦ Minor.finiteRk a
-
-instance minorClosed_finitary : MinorClosed.{u} Finitary where
-  forall_minor := fun {_} {_ _} a _ ↦ Minor.finitary a
-
-end Property
 
 end Matroid
 

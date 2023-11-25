@@ -688,10 +688,6 @@ theorem IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : 
     M.erk = N.erk := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
 
-theorem invariant_erk : Invariant Matroid.erk := by
-  intro _ _ _ _ hMN
-  exact IsIso.erk_eq_erk hMN
-
 end Constructions
 end Matroid
 

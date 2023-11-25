@@ -598,10 +598,22 @@ theorem IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β
     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
 
-theorem invariant_representable (𝔽 : Type*) [Field 𝔽] :
-    Invariant (fun M ↦ M.Representable 𝔽) := by
-  refine fun {α} {β} M N hMN ↦ ?_
-  simp only [eq_iff_iff, hMN.representable_iff]
+/-- The property of being a finite `𝔽`-representable matroid. -/
+class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
+  rep : M.Representable 𝔽
+  finite : M.Finite
+
+theorem finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
+  FieldRep.finite 𝔽
+
+/-- The property of being finite and representable over all fields. -/
+class FieldRegular (M : Matroid α) : Prop where
+  (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
+
+/-- The property of being finite and representable over some field. -/
+class FieldSomeRep (M : Matroid α) : Prop where
+  (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
+
 
 end Representable
 
@@ -828,15 +840,8 @@ theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM 
   obtain ⟨v⟩ := hM
   exact ((v.contract C).delete D).representable
 
-universe u
 
-instance minorClosed_representable (𝔽 : Type*) [Field 𝔽] :
-    MinorClosed (fun {α : Type u} (M : Matroid α) ↦ M.Representable 𝔽) where
-  forall_minor := fun {_ _ _} hNM h ↦ h.minor hNM
 
-example {𝔽 : Type*} [Field 𝔽] {α : Type u} (M N : Matroid α) (h : M.Representable 𝔽) (h' : N ≤m M) :
-    N.Representable 𝔽 :=
-  h'.pred_minor (P := (Representable · 𝔽)) h
 
 
 end Minor

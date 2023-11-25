@@ -513,18 +513,7 @@ def matroid_of_indep_finset [DecidableEq α] (E : Set α) (Indep : Finset α →
     (h_support : ∀ ⦃I⦄, Indep I → (I : Set α) ⊆ E) :
   (matroid_of_indep_finset E Indep h_empty ind_mono ind_aug h_support).E = E := rfl
 
-/-- This isn't a `simp` lemma, because the simplifier already reduces it to `∀ J ⊆ I, Indep J`. -/
-theorem matroid_of_indep_finset_apply [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
-    (h_empty : Indep ∅)
-    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.card < J.card →
-      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
-    (h_support : ∀ ⦃I⦄, Indep I → (I : Set α) ⊆ E) (I : Finset α) :
-    (matroid_of_indep_finset E Indep h_empty ind_mono ind_aug h_support).Indep I ↔ Indep I := by
-  simp only [matroid_of_indep_finset, matroid_of_indep_of_finitary_apply, Finset.coe_subset]
-  exact ⟨fun h ↦ h _ Subset.rfl, fun h J hJI ↦ ind_mono h hJI⟩
-
-@[simp] theorem matroid_of_indep_finset_apply' [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
+@[simp] theorem matroid_of_indep_finset_apply [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
     (h_empty : Indep ∅)
     (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
     (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.card < J.card →
@@ -534,6 +523,17 @@ theorem matroid_of_indep_finset_apply [DecidableEq α] (E : Set α) (Indep : Fin
       ∀ (J : Finset α), (J : Set α) ⊆ I → Indep J := by
   simp [matroid_of_indep_finset]
 
+/-- This isn't a `simp` lemma, because it would stop @[simp] working on
+  `matroid_of_indep_finset_apply`. -/
+theorem matroid_of_indep_finset_apply_set [DecidableEq α] (E : Set α) (Indep : Finset α → Prop)
+    (h_empty : Indep ∅)
+    (ind_mono : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
+    (ind_aug : ∀ ⦃I J⦄, Indep I → Indep J → I.card < J.card →
+      ∃ e ∈ J, e ∉ I ∧ Indep (insert e I))
+    (h_support : ∀ ⦃I⦄, Indep I → (I : Set α) ⊆ E) (I : Finset α) :
+    (matroid_of_indep_finset E Indep h_empty ind_mono ind_aug h_support).Indep I ↔ Indep I := by
+  simp only [matroid_of_indep_finset, matroid_of_indep_of_finitary_apply, Finset.coe_subset]
+  exact ⟨fun h ↦ h _ Subset.rfl, fun h J hJI ↦ ind_mono h hJI⟩
 
 /-- Construct a matroid from an independence predicate that agrees with that of some matroid `M'`.
   Computable even when `M'` is not known constructively. -/

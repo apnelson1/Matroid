@@ -463,6 +463,15 @@ theorem Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
   rintro e f he hf
   exact ⟨hI.subset (pair_subset he hf), he, hf⟩
 
+theorem Simple.subset_ground {X : Set α} (_ : (M ↾ X).Simple) : X ⊆ M.E :=
+  fun _ hx ↦ (toNonloop (M := M ↾ X) hx).of_restrict.mem_ground
+
+theorem Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M ↾ X).Simple := by
+  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
+    restrict_indep_iff, pair_subset_iff] at *
+  aesop
+
+
 end Simple
 
 section Simplification
@@ -716,64 +725,3 @@ theorem simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
   simpa using M.exists_parallelChoiceFunction.choose_spec
 
 end Simplification
-
-section Property
-
-universe u
-
-variable {P : ∀ {β : Type u}, Matroid β → Prop} {α : Type u} {M : Matroid α}
-
-/-- A matroid property `P` is `RemoveLoopClosed` if `P M ↔ P M.removeLoops` for all `M`. -/
-class RemoveLoopClosed (P : ∀ {β : Type u}, Matroid β → Prop) : Prop :=
-  /- `P` holds for `M` iff it holds after removing loops. -/
-  (iff_removeLoops : ∀ {α : Type u} {M : Matroid α}, P M ↔ P M.removeLoops)
-
-@[simp] theorem pred_removeLoops_iff [RemoveLoopClosed P] {M : Matroid α} : P M.removeLoops ↔ P M :=
-  RemoveLoopClosed.iff_removeLoops.symm
-
-theorem removeLoopClosed_iff_forall_delete :
-    RemoveLoopClosed P ↔
-      ∀ {α : Type u} {M : Matroid α} {X : Set α}, X ⊆ M.cl ∅ → (P M ↔ P (M ⟍ X)) := by
-  refine ⟨fun h {α} M X hX ↦ ?_, fun h ↦ ⟨fun {γ M} ↦ ?_⟩ ⟩
-  · rw [h.iff_removeLoops, Iff.comm, h.iff_removeLoops, removeLoops_eq_delete,
-      removeLoops_eq_delete, delete_cl_eq, empty_diff, delete_delete, union_diff_self,
-      union_eq_self_of_subset_left hX]
-  simp only [removeLoops_eq_delete]
-  exact h Subset.rfl
-
-/-- In the setting of finite matroids, there would be an `iff` version of this lemma.  -/
-theorem RemoveLoopClosed.iff_delete_loop (hP : RemoveLoopClosed P) {M : Matroid α} (he : M.Loop e) :
-    P M ↔ P (M ⟍ e) := by
-  rw [removeLoopClosed_iff_forall_delete] at hP
-  apply hP
-  simpa
-
-theorem ExclMinor.loopless [RemoveLoopClosed P] [MinorClosed P] (hM : M.ExclMinor P) :
-    M.Loopless := by
-  rw [← removeLoops_eq_self_iff]
-  apply hM.eq_of_not_prop_of_minor M.removeLoops_restriction.minor
-  simp_rw [pred_removeLoops_iff]
-  exact hM.not_prop_self
-
-/-- A matroid property `P` is `SimpClosed` if `P M ↔ P M.simplification` for all `M`. -/
-class SimpClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
-  /- `P` holds for `M` iff it holds after simplifying. -/
-  (iff_simp : ∀ {β : Type u} {M : Matroid β}, P M ↔ P M.simplification)
-
-@[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop) [SimpClosed P] :
-    P M.simplification ↔ P M :=
-  SimpClosed.iff_simp.symm
-
-instance removeLoopClosed_of_simpClosed (P : ∀ {β : Type u}, Matroid β → Prop) [SimpClosed P] :
-    RemoveLoopClosed P where
-  iff_removeLoops := fun {α} M ↦ by
-    rw [← pred_simplification_iff P, Iff.comm, ← pred_simplification_iff P,
-      removeLoops_simplification_eq]
-
-theorem ExclMinor.simple [SimpClosed P] [MinorClosed P] (hM : M.ExclMinor P) : M.Simple := by
-  rw [← simplification_eq_self_iff]
-  apply hM.eq_of_not_prop_of_minor (simplification_restriction M).minor
-  simp_rw [pred_simplification_iff]
-  exact hM.not_prop_self
-
-end Property

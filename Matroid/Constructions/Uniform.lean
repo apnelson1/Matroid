@@ -1,6 +1,8 @@
 import Matroid.Minor.Iso
 import Matroid.Constructions.Truncate
 import Mathlib.Tactic.Linarith
+import Matroid.Simple
+import Matroid.ForMathlib.Card
 
 variable {α : Type*} {M : Matroid α} {E : Set α}
 
@@ -54,6 +56,9 @@ theorem unifOn_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unifOn E k).er 
 theorem unifOn_er_eq' (E : Set α) (k : ℕ∞) : (unifOn E k).er X = min (X ∩ E).encard k := by
   rw [←er_inter_ground_eq, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
     unifOn_ground_eq]
+
+theorem unifOn_erk_eq (E : Set α) (k : ℕ∞) : (unifOn E k).erk = min E.encard k := by
+  rw [erk_eq_er_ground, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   rw [←rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
@@ -124,6 +129,17 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
     (unifOn E k) ⟋ C = unifOn (E \ C) (k - (E ∩ C).encard) :=
   unifOn_contract_eq' E C WithTop.coe_ne_top
 
+@[simp] theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
+  constructor
+  · rintro rfl
+    simp_rw [unifOn_ground_eq, unifOn_erk_eq, min_le_iff, iff_true_intro rfl.le,
+      or_true, true_and, simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
+      and_iff_right (encard_pair_le _ _)]
+    exact pair_subset
+  rintro ⟨rfl, hr, hM⟩
+  simp only [eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff, true_and]
+  exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hr, hIE⟩,
+    fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩
 section unif
 
 variable {a b a' b' : ℕ}
@@ -167,20 +183,16 @@ theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
   rw [encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, ENat.some_eq_coe, eq_comm, Nat.cast_add]
 
-theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn (univ : Set (Fin b)) := by
-  apply eq_of_indep_iff_indep_forall (by simp)
-  simp only [unif_ground_eq, subset_univ, unif_indep_iff, freeOn_indep_iff, iff_true,
-    forall_true_left]
-  intro I
-  rw [I.toFinite.encard_eq_coe_toFinset_card, Nat.cast_le]
-  refine le_trans ?_ h
-  exact card_finset_fin_le (Finite.toFinset (toFinite I))
+/-- This needs a @[simp] tag even though the proof is `simp`, since the proof uses the RHS. -/
+@[simp] theorem unif_eq_loopyOn (b : ℕ) : unif 0 b = loopyOn univ := by
+  simp
 
-@[simp] theorem unif_eq_loopyOn (b : ℕ) : unif 0 b = loopyOn (univ : Set (Fin b)) := by
-  simp [unif]
+theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
+  simpa
 
-/-- The dual of a uniform matroid. This is true even if the subtraction truncates. -/
-@[simp] theorem unif_dual (a b : ℕ): (unif a b)﹡ = unif (b - a) b := by
+/-- The expression for dual of a uniform matroid.
+  The junk case where `b < a` still works because the subtraction truncates. -/
+@[simp] theorem unif_dual (a b : ℕ) : (unif a b)﹡ = unif (b - a) b := by
   obtain (hab | hba) := le_or_lt a b
   · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
@@ -214,6 +226,11 @@ theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard =
     ((encard_univ_fin _).symm ▸ h)
   refine (iso_of_forall_indep' hf.toLocalEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
   simp [hi, hIE, (hf.injOn.mono hIE).encard_image]
+
+/-- The forwards direction of `isIso_unif_iff`, stated existentially so that `M` and `b` can be
+  substituted out of the context with `obtain ⟨_, rfl, rfl⟩ := h`.  -/
+theorem exists_of_isIso_unif (h : M ≅ unif a b) : ∃ X, M = unifOn X a ∧ X.encard = b :=
+  ⟨M.E, isIso_unif_iff.1 h⟩
 
 theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
   set R : Set (Fin b') := range (Fin.castLE hbb')
@@ -251,6 +268,38 @@ theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
   have hb' : b ≤ d' + a
   · zify at hr'; simpa using hr'
   linarith
+
+@[simp] theorem isIso_line_iff {n : ℕ} : M ≅ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+  simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
+
+theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
+    (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
+  obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
+  have hYs := hL.subset hYL
+  refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
+  rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
+  simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
+    and_iff_left hY]
+  refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
+  · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
+  exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restriction
+
+theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
+    ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
+  refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+    h <| line_isoRestr_of_simple_er_le_two hL hle hLr, fun h hR ↦ ?_⟩
+  obtain ⟨N, hNM, hN⟩ := hR
+  obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
+  rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff] at hN
+  simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff,
+    true_and] at hN
+  refine (h L ?_ ?_).ne hN.2
+  · simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
+      restrict_indep_iff, pair_subset_iff]
+    exact fun {e f} he hf ↦ ⟨by simp [hN.1 _ (pair_subset he hf)], he, hf⟩
+  obtain ⟨I, hI⟩ := M.exists_basis' L
+  rw [← hI.encard, ← hN.1 _ hI.subset]
+  exact hI.indep
 
 end unif
 

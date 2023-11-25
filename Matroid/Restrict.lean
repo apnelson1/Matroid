@@ -66,6 +66,9 @@ instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.rest
 theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ R).Indep I :=
   restrict_indep_iff.mpr ⟨h,hIR⟩
 
+theorem Indep.of_restriction (hI : (M ↾ R).Indep I) : M.Indep I :=
+  (restrict_indep_iff.1 hI).1
+
 @[simp] theorem restrict_ground_eq : (M ↾ R).E = R := rfl
 
 theorem restrict_finite {R : Set α} (hR : R.Finite) : (M ↾ R).Finite :=
@@ -146,8 +149,8 @@ def Restriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊆ M.E
 
 def StrictRestriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊂ M.E
 
-infix:20  " ≤r " => Restriction
-infix:20  " <r " => StrictRestriction
+infix:50  " ≤r " => Restriction
+infix:50  " <r " => StrictRestriction
 
 theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N :=
   h.1

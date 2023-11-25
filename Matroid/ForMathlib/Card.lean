@@ -4,6 +4,11 @@ open Set
 
 variable {s : Set α} {n : ℕ}
 
+@[simp] theorem encard_pair_le (e f : α) : encard {e,f} ≤ 2 := by
+  obtain (rfl | hne) := eq_or_ne e f
+  · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]; norm_num
+  rw [encard_pair hne]
+
 theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) := by
   obtain (hfin | hinf) := s.finite_or_infinite
   · rw [← hfin.cast_ncard_eq, iff_true_intro hfin, Nat.cast_le, true_imp_iff]

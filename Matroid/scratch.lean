@@ -1,14 +1,18 @@
-import Mathlib.Data.Set.Basic
+import Mathlib.Tactic
 
-variable {π : α → Type*}
+class P1 (n : ℕ) : Prop where
+  (p : 37 < n)
 
-def Function.restrict (f : ∀ a : α, π a) (s : Set α) : ∀ a : s, π a := fun x => f x
+class P2 (m n : ℕ) extends P1 n : Prop where
+  (q : n < m)
+  (p' : 2 < n)
 
--- notation:1000 lhs:1024 " ↾ " rhs:1000 => (Function.restrict lhs rhs)
-infix:1023 " ↾ " => Function.restrict
+instance foo (m n : ℕ) [h : P2 m n] : P1 n :=
+  ⟨h.p⟩
 
-theorem restrict_eq (f : α → β) (s : Set α) : (f ↾ s) = f ∘ Subtype.val := rfl
-
-theorem id_restrict_eq (s : Set α) : id ↾ s = Subtype.val := rfl
-
-@[simp] theorem restrict_apply (f : α → β) (s : Set α) (x : s) : Function.restrict f s x = f x := rfl
+/-
+cannot find synthesization order for instance foo with type
+  ∀ (m n : ℕ) [h : P2 m n], P1 n
+all remaining arguments have metavariables:
+  P2 ?m n
+  -/
