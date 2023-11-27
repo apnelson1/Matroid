@@ -16,44 +16,35 @@ variable {η : Type*} {P : ∀ {β : Type u}, Matroid β → Prop} {α : Type u}
 
 section Invariant
 
-def Invariant {η : Type*} (f : ∀ {α : Type u}, Matroid α → η) : Prop :=
-  ∀ {α β : Type u} {M : Matroid α} {N : Matroid β}, M ≅ N → f M = f N
+/-- A matroid invariant is a parameter or property that is invariant under isomorphism. -/
+class Invariant {η : Type} (f : ∀ {α : Type u}, Matroid α → η) : Prop :=
+  (on_iso : ∀ {α β : Type u} {M : Matroid α} {N : Matroid β}, M ≅ N → f M = f N)
 
-theorem Invariant.pred_iff_pred {P : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
+theorem IsIso.pred_iff_pred {P : ∀ {η : Type u}, Matroid η → Prop} [Invariant P]
     {α β : Type u} {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) : P M ↔ P N := by
-  simp [hP hMN]
+  simpa using Invariant.on_iso (f := P) hMN
 
-theorem Invariant.and {P Q : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
-    (hQ : Invariant Q) : Invariant (fun M ↦ P M ∧ Q M) := by
-  intro α β M N hMN
-  simp only [eq_iff_iff]
-  rw [hP.pred_iff_pred hMN, hQ.pred_iff_pred hMN]
+theorem IsIso.pred_of_pred [Invariant P] {α β : Type u} {M : Matroid α} {N : Matroid β}
+  (hMN : M ≅ N) (hM : P M) : P N := hMN.pred_iff_pred.1 hM
 
-theorem invariant_finite : Invariant Matroid.Finite := by
-  intro α β M N hMN
-  simp only [eq_iff_iff]
-  exact hMN.finite_iff
+-- theorem Invariant.and {P Q : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
+--     (hQ : Invariant Q) : Invariant (fun M ↦ P M ∧ Q M) := by
+--   intro α β M N hMN
+--   simp only [eq_iff_iff]
+--   rw [hP.pred_iff_pred hMN, hQ.pred_iff_pred hMN]
 
-theorem invariant_finiteRk : Invariant Matroid.FiniteRk := by
-  intro α β M N hMN
-  simp only [eq_iff_iff]
-  exact hMN.finiteRk_iff
+instance invariant_finite : Invariant.{u} Matroid.Finite where
+  on_iso := by intro _ _ _ _ hMN ; rw [hMN.finite_iff]
 
--- def InvariantPred (f : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
---   Invariant f
+instance invariant_finiteRk : Invariant.{u} FiniteRk where
+  on_iso := by intro _ _ _ _ hMN ; rw [hMN.finiteRk_iff]
 
--- theorem Invariant.onIso {η α β : Type*} {f : ∀ {α : Type u}, Matroid α → η}
---     (hf : Invariant f) {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) :
+instance invariant_erk : Invariant.{u} erk where
+  on_iso := by intro _ _ _ _ hMN; exact hMN.erk_eq_erk
 
-
-theorem invariant_erk : Invariant Matroid.erk := by
-  intro _ _ _ _ hMN
-  exact IsIso.erk_eq_erk hMN
-
-theorem invariant_representable (𝔽 : Type*) [Field 𝔽] :
-    Invariant (fun M ↦ M.Representable 𝔽) := by
-  refine fun {α} {β} M N hMN ↦ ?_
-  simp only [eq_iff_iff, hMN.representable_iff]
+instance invariant_fieldRep {𝔽 : Type*} [Field 𝔽] : Invariant.{u} (FieldRep 𝔽) where
+  on_iso := by
+    intro _ _ _ _ hMN; rw [fieldRep_def, fieldRep_def, hMN.representable_iff, hMN.finite_iff]
 
 end Invariant
 
@@ -95,6 +86,22 @@ theorem exclMinor_iff_forall_contract_delete [MinorClosed P] {M : Matroid α} :
   obtain ⟨e, he, (hc | hd)⟩ := strictMinor_iff_minor_contract_or_delete.1 hNM
   · exact hc.pred_minor (h.2 e he).1
   exact hd.pred_minor (h.2 e he).2
+
+theorem mem_iff_not_exists_exclMinor_minor [MinorClosed P] (M : Matroid α) [M.Finite] :
+    P M ↔ ¬ ∃ N, N ≤m M ∧ N.ExclMinor P := by
+  refine ⟨fun h ⟨N, hNM, hN⟩ ↦ hN.not_prop_self <| hNM.pred_minor h,
+    fun h ↦ by_contra fun hM ↦ h ?_⟩
+  obtain (hM' | hM') := em (M.ExclMinor P)
+  · exact ⟨M, Minor.refl M, hM'⟩
+  simp_rw [ExclMinor, not_and, not_forall] at hM'
+  obtain ⟨N, hNM, hPN⟩ := hM' hM
+  have := hNM.encard_ground_lt
+  have hNfin := hNM.minor.finite
+  have h' := mt (mem_iff_not_exists_exclMinor_minor (M := N)).2 hPN
+  rw [not_not] at h'
+  obtain ⟨N', hN'N, hN'⟩ := h'
+  exact ⟨N', hN'N.trans hNM.minor, hN'⟩
+termination_by _ => M.E.encard
 
 instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
   forall_minor := fun a _ ↦ Minor.finite a
@@ -221,29 +228,5 @@ theorem ExclMinor.finite [FinClass P] (hM : M.ExclMinor P) : M.Finite := by
   · infer_instance
   have := finite_of_pred <| hM.prop_deleteElem he
   exact ⟨((M ⟍ e).ground_finite.insert e).subset (by simp)⟩
-
-theorem mem_iff_not_exists_exclMinor_minor [MinorClosed P] (M : Matroid α) [M.Finite] :
-    P M ↔ ¬ ∃ N, N ≤m M ∧ N.ExclMinor P := by
-  refine ⟨fun h ⟨N, hNM, hN⟩ ↦ hN.not_prop_self <| hNM.pred_minor h,
-    fun h ↦ by_contra fun hM ↦ h ?_⟩
-  obtain (hM' | hM') := em (M.ExclMinor P)
-  · exact ⟨M, Minor.refl M, hM'⟩
-  simp_rw [ExclMinor, not_and, not_forall] at hM'
-  obtain ⟨N, hNM, hPN⟩ := hM' hM
-  have := hNM.encard_ground_lt
-  have hNfin := hNM.minor.finite
-  have h' := mt (mem_iff_not_exists_exclMinor_minor (M := N)).2 hPN
-  rw [not_not] at h'
-  obtain ⟨N', hN'N, hN'⟩ := h'
-  exact ⟨N', hN'N.trans hNM.minor, hN'⟩
-
-termination_by _ => M.E.encard
-
-
-
-
-
-
-
 
 section Finite

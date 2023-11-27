@@ -620,6 +620,12 @@ theorem simplification_eq_wrt (M : Matroid α) :
   rw [simplification, removeLoops_simplificationWrt_eq]
   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
 
+theorem exists_simplification_eq_wrt (M : Matroid α) :
+    ∃ c, M.ParallelChoiceFunction c ∧ M.simplification = M.simplificationWrt c := by
+  use M.removeLoops.exists_parallelChoiceFunction.choose
+  rw [simplification_eq_wrt]
+  simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
+
 @[simp] theorem removeLoops_simplification_eq (M : Matroid α) :
     M.removeLoops.simplification = M.simplification := by
   simp [simplification]
@@ -639,9 +645,9 @@ theorem simplificationWrt_simple (M : Matroid α) {c : α → α}
   exact ((hef.trans (hc.2.1 hy).symm).symm.trans (hc.2.1 hx).symm).symm
 
 instance simplification_simple (M : Matroid α) : M.simplification.Simple := by
-  rw [simplification_eq_wrt]
-  apply simplificationWrt_simple
-  simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
+  obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
+  rw [hM]
+  exact simplificationWrt_simple M hc
 
 theorem preimage_simplificationWrt (M : Matroid α) (hc : M.ParallelChoiceFunction c) :
     (M.simplificationWrt c).preimage c = M.removeLoops := by
