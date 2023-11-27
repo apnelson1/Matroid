@@ -1,14 +1,32 @@
-import Mathlib.Data.Set.Basic
+import Mathlib.Data.Finset.Card
 
-variable {π : α → Type*}
+def P : Finset ℕ → Prop := sorry
 
-def Function.restrict (f : ∀ a : α, π a) (s : Set α) : ∀ a : s, π a := fun x => f x
+theorem hP {s : Finset ℕ} (hs : ¬ P s) : ∃ t, t ⊂ s ∧ ¬ P t  := sorry
 
--- notation:1000 lhs:1024 " ↾ " rhs:1000 => (Function.restrict lhs rhs)
-infix:1023 " ↾ " => Function.restrict
+theorem foo1 (s : Finset ℕ) : P s := by
+  by_contra h
+  obtain ⟨t, ht, hPt⟩ := hP h
 
-theorem restrict_eq (f : α → β) (s : Set α) : (f ↾ s) = f ∘ Subtype.val := rfl
+  have h_lt : t.card < s.card
+  · exact Finset.card_lt_card ht
 
-theorem id_restrict_eq (s : Set α) : id ↾ s = Subtype.val := rfl
+  exact hPt <| foo1 t
+termination_by _ => s.card
 
-@[simp] theorem restrict_apply (f : α → β) (s : Set α) (x : s) : Function.restrict f s x = f x := rfl
+-- failed to prove termination, possible solutions:
+--   - Use `have`-expressions to prove the remaining goals
+--   - Use `termination_by` to specify a different well-founded relation
+--   - Use `decreasing_by` to specify your own tactic for discharging this kind of goal
+
+
+theorem foo2 (s : Finset ℕ) : P s := by
+  by_contra h
+  obtain ⟨t, ht, hPt⟩ := hP h
+
+  have h_lt : t.card < s.card := Finset.card_lt_card ht
+
+  exact hPt <| foo2 t
+termination_by _ => s.card
+
+-- succeeds

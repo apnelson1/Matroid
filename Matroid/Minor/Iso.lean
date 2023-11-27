@@ -5,9 +5,8 @@ namespace Matroid
 
 open Set LocalEquiv
 
-section Iso
-
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
+section Iso
 
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
 noncomputable def Iso.delete (e : Iso M N) (hD : D ⊆ M.E) :
@@ -50,27 +49,17 @@ theorem Iso.isoMinor (e : Iso N M) : N ≤i M :=
 
 theorem Minor.trans_isIso {M N : Matroid α} {M' : Matroid β} (h : N ≤m M) (hi : M ≅ M') :
     N ≤i M' := by
-  obtain (hα | hα) := isEmpty_or_nonempty α
-  · simp
-  obtain (hβ | hβ) := isEmpty_or_nonempty β
-  · simp only [eq_emptyOn, isIso_emptyOn_iff, isoMinor_emptyOn_iff] at *
-    rwa [hi, minor_emptyOn_iff] at h
+  obtain (⟨rfl,rfl⟩ | ⟨-, -, ⟨i⟩⟩) := hi.empty_or_nonempty_iso
+  · simpa using h
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h
   exact ⟨_, contract_delete_minor _ _ _,
-    ((hi.iso.contract hC).delete (subset_diff.2 ⟨hD, hCD.symm⟩)).isIso⟩
+    ((i.contract hC).delete (subset_diff.2 ⟨hD, hCD.symm⟩)).isIso⟩
 
 theorem Minor.isoMinor {M N : Matroid α} (h : N ≤m M) : N ≤i M :=
   ⟨N, h, (Iso.refl N).isIso⟩
 
 theorem IsoMinor.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
     {M₃ : Matroid α₃} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ := by
-  cases isEmpty_or_nonempty α₁
-  · simp
-  cases isEmpty_or_nonempty α₂
-  · simp only [eq_emptyOn, isoMinor_emptyOn_iff] at h; simp [h]
-  cases isEmpty_or_nonempty α₃
-  · simp only [eq_emptyOn, isoMinor_emptyOn_iff] at h' ⊢
-    rwa [h', isoMinor_emptyOn_iff] at h
   obtain ⟨M₂', hM₂'M₃, i'⟩ := h'
   obtain ⟨M₁', hM₁'M₂, i''⟩ := h
   obtain ⟨N, hN, iN⟩ := hM₁'M₂.trans_isIso i'
@@ -97,9 +86,57 @@ theorem IsoMinor.encard_ground_le_encard_ground (h : N ≤i M) : N.E.encard ≤ 
 
 end Iso
 
-section free_loopy
+section IsoRestr
 
-variable {α β : Type*} {M : Matroid α}
+/-- Type-heterogeneous statement that `N` is isomorphic to a restriction of `M` -/
+def IsoRestr (N : Matroid β) (M : Matroid α) : Prop :=
+  ∃ M' : Matroid α, M' ≤r M ∧ N ≅ M'
+
+infixl:50 " ≤ir " => Matroid.IsoRestr
+
+theorem IsoRestr.isoMinor (h : N ≤ir M) : N ≤i M := by
+  obtain ⟨M', hMM', hNM'⟩ := h
+  exact ⟨M', hMM'.minor, hNM'⟩
+
+theorem Restriction.IsoRestr {N M : Matroid α} (h : N ≤r M) : N ≤ir M :=
+  ⟨N, h, IsIso.refl N⟩
+
+theorem IsoRestr.refl (M : Matroid α) : M ≤ir M :=
+  (Restriction.refl M).IsoRestr
+
+theorem IsIso.isoRestr (h : N ≅ M) : M ≤ir N :=
+  ⟨N, Restriction.refl N, h.symm⟩
+
+@[simp] theorem emptyOn_isoRestr (β : Type*) (M : Matroid α) : emptyOn β ≤ir M :=
+  ⟨emptyOn α, by simp only [emptyOn_restriction], by simp only [isIso_emptyOn_iff]⟩
+
+@[simp] theorem isoRestr_emptyOn_iff {M : Matroid α} : M ≤ir emptyOn β ↔ M = emptyOn α :=
+  ⟨fun h ↦ isoMinor_emptyOn_iff.1 h.isoMinor, by rintro rfl; simp⟩
+
+theorem Restriction.trans_isIso {N M : Matroid α} {M' : Matroid β} (h : N ≤r M) (h' : M ≅ M') :
+    N ≤ir M' := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i⟩⟩) := h'
+  · simpa using h
+  obtain ⟨D, hD, rfl⟩ := h.exists_eq_delete
+  exact ⟨_, delete_restriction _ _, (i.delete hD).isIso⟩
+
+theorem IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
+    (h₁₂ : M₁ ≤ir M₂) (h₂₃ : M₂ ≤ir M₃) : M₁ ≤ir M₃ := by
+  obtain ⟨N₁, hN₁M₂, hN₁M₁⟩ := h₁₂
+  obtain ⟨N₂, hN₂M₃, hN₂M₂⟩ := h₂₃
+  obtain ⟨N₁', hN₁'N₂, hN₁N₁'⟩ := hN₁M₂.trans_isIso hN₂M₂
+  exact ⟨N₁', hN₁'N₂.trans hN₂M₃, hN₁M₁.trans hN₁N₁'⟩
+
+theorem isoMinor_iff_exists_contract_isoRestr {N : Matroid α} {M : Matroid β} :
+    N ≤i M ↔ ∃ C, M.Indep C ∧ N ≤ir M ⟋ C := by
+  refine ⟨fun h ↦ ?_, fun ⟨C, _, hN⟩ ↦ hN.isoMinor.trans (M.contract_minor C).isoMinor ⟩
+  obtain ⟨N', hN'M, hi⟩ := h
+  obtain ⟨C, hC, hN', -⟩ := hN'M.exists_contract_spanning_restrict
+  exact ⟨C, hC, ⟨_, hN', hi⟩⟩
+
+end IsoRestr
+
+section free_loopy
 
 theorem isoMinor_loopyOn_iff {E : Set β} :
     M ≤i loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ↪ E) := by
@@ -160,24 +197,3 @@ theorem loopyOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
   rw [← isoMinor_dual_iff, loopyOn_dual_eq, freeOn_isoMinor_iff_of_finite hE]
 
 end free_loopy
-
-section Property
-
-universe u
-
-variable {α β : Type u} {M : Matroid α} {N : Matroid β} (P : ∀ {η : Type u}, Matroid η → Prop)
-
--- class IsoMinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop where
---   minorClosed : MinorClosed P
---   invariant : Invariant P
-
--- def ExMinor (N : Matroid β) {α : Type*} (M : Matroid α) : Prop := ¬ (N ≤i M)
-
--- theorem exMinor_isoMinorClosed {N₀ : Matroid η} : IsoMinorClosed (ExMinor N₀) := by
---   refine ⟨fun {α} N M hNM h_ex h_minor ↦ h_ex <| h_minor.trans hNM.isoMinor,
---     fun {α} {β} M M' hMM' ↦ ?_⟩
---   simp only [ExMinor, eq_iff_iff, not_iff_not]
---   exact ⟨fun h ↦ h.trans hMM'.isoMinor, fun h ↦ h.trans hMM'.symm.isoMinor⟩
-
-
-end Property

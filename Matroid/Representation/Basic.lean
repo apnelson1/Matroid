@@ -598,10 +598,24 @@ theorem IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β
     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
 
-theorem invariant_representable (𝔽 : Type*) [Field 𝔽] :
-    Invariant (fun M ↦ M.Representable 𝔽) := by
-  refine fun {α} {β} M N hMN ↦ ?_
-  simp only [eq_iff_iff, hMN.representable_iff]
+/-- The property of being a finite `𝔽`-representable matroid. -/
+class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
+  rep : M.Representable 𝔽
+  finite : M.Finite
+
+theorem finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
+  FieldRep.finite 𝔽
+
+/-- The property of being finite and representable over all fields. -/
+class FieldRegular (M : Matroid α) : Prop where
+  (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
+
+/-- The property of being finite and representable over some field. -/
+class FieldSomeRep (M : Matroid α) : Prop where
+  (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
+
+theorem fieldRep_def (𝔽 : Type*) [Field 𝔽] : FieldRep 𝔽 M ↔ M.Representable 𝔽 ∧ M.Finite :=
+  ⟨fun ⟨h1,h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
 
 end Representable
 
@@ -708,6 +722,47 @@ theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
   rw [h, cl_eq_cl_inter_ground]
   exact subset_cl _ _
 
+section Minor
+
+/-- Contracting a set preserves representability. -/
+def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ⟋ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
+    to_fun := Submodule.Quotient.mk ∘ v
+    valid' :=
+  ( by
+    intro J
+    obtain ⟨I,hI⟩ := M.exists_basis' C
+    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
+      (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; rfl), union_comm, v.indep_iff,
+      and_right_comm, ← disjoint_union_right, union_diff_self,
+      union_eq_self_of_subset_left hI.subset]
+    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
+    · refine (h.2.mono_index _ (subset_union_right _ _)).map ?_
+      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
+      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
+          inter_comm, union_inter_cancel_right]
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
+          inter_comm, union_inter_cancel_left]
+      exact (h.1.mono_right hI.subset).preimage _
+    · rw [disjoint_iff_forall_ne]
+      rintro i hiJ _ hiI rfl
+      apply h.ne_zero ⟨i, hiJ⟩
+      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
+      exact subset_span (mem_image_of_mem _ hiI)
+    rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
+
+theorem Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ⟍ D).Rep 𝔽 W :=
+  v.restrict (M.E \ D)
+
+theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
+    N.Representable 𝔽 := by
+  rw [minor_iff_exists_contract_delete] at hNM
+  obtain ⟨C, D, rfl⟩ := hNM
+  obtain ⟨v⟩ := hM
+  exact ((v.contract C).delete D).representable
+
+end Minor
+
 section Simple
 
 theorem Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
@@ -729,6 +784,14 @@ theorem Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e 
   rw [loopless_iff_forall_nonloop]
   exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e he).2 (h e he),
     fun h e he ↦ (v.ne_zero_iff_nonloop e he).1 (h e he)⟩
+
+@[simp] theorem removeLoops_representable_iff :
+    M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
+  refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
+  · rw [M.eq_restrict_removeLoops]
+    exact (v.restrict M.E).representable
+  rw [removeLoops_eq_restr]
+  exact (v.restrict _).representable
 
 theorem Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
     M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ v e = c • v f := by
@@ -769,6 +832,14 @@ theorem Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := b
   · rw [hl, simple_loopyOn_iff] at h; simp [h]
   exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul]
 
+@[simp] theorem simplification_representable_iff :
+    M.simplification.Representable 𝔽 ↔ M.Representable 𝔽 := by
+  obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
+  rw [hM]
+  refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
+  rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
+  exact (v.preimage _).representable
+  
 end Simple
 section Uniform
 
@@ -784,62 +855,12 @@ theorem uniform_rep_of_le {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ en
     exact (PartENat.withTopEquiv_natCast 1).symm
   obtain ⟨i,hi⟩ := hinj
   set A := Matrix.rectProjVandermonde i a
-  exact IsRep.representable (v := A.rowFun)
+  exact IsRep.representable 
     (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
 
 end Uniform
 
-section Minor
 
-/-- Contracting a set preserves representability. -/
-def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ⟋ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
-    to_fun := Submodule.Quotient.mk ∘ v
-    valid' :=
-  ( by
-    intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
-    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
-      (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; rfl), union_comm, v.indep_iff,
-      and_right_comm, ← disjoint_union_right, union_diff_self,
-      union_eq_self_of_subset_left hI.subset]
-    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
-    · refine (h.2.mono_index _ (subset_union_right _ _)).map ?_
-      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
-      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
-          inter_comm, union_inter_cancel_right]
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,
-          inter_comm, union_inter_cancel_left]
-      exact (h.1.mono_right hI.subset).preimage _
-    · rw [disjoint_iff_forall_ne]
-      rintro i hiJ _ hiI rfl
-      apply h.ne_zero ⟨i, hiJ⟩
-      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
-      exact subset_span (mem_image_of_mem _ hiI)
-    rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
-
-theorem Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ⟍ D).Rep 𝔽 W :=
-  v.restrict (M.E \ D)
-
-theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
-    N.Representable 𝔽 := by
-  rw [minor_iff_exists_contract_delete] at hNM
-  obtain ⟨C, D, rfl⟩ := hNM
-  obtain ⟨v⟩ := hM
-  exact ((v.contract C).delete D).representable
-
-universe u
-
-instance minorClosed_representable (𝔽 : Type*) [Field 𝔽] :
-    MinorClosed (fun {α : Type u} (M : Matroid α) ↦ M.Representable 𝔽) where
-  forall_minor := fun {_ _ _} hNM h ↦ h.minor hNM
-
-example {𝔽 : Type*} [Field 𝔽] {α : Type u} (M N : Matroid α) (h : M.Representable 𝔽) (h' : N ≤m M) :
-    N.Representable 𝔽 :=
-  h'.pred_minor (P := (Representable · 𝔽)) h
-
-
-end Minor
 
 section Dual
 

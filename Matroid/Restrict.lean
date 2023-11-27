@@ -12,7 +12,8 @@ variable {α : Type*} {M : Matroid α}
 section restrict
 
 /-- Change the ground set of a matroid to some `R : Set α`. The independent sets of the restriction
-  are the independent subsets of the new ground set. Most commonly used when `R ⊆ M.E`   -/
+  are the independent subsets of the new ground set. Most commonly used when `R ⊆ M.E`;
+  but it is convenient to not require this; the elements of `R \ M.E` are loops.  -/
 def restrict (M : Matroid α) (X : Set α) : Matroid α :=
   matroid_of_indep X (fun I ↦ M.Indep I ∧ I ⊆ X) ⟨M.empty_indep, empty_subset _⟩
     ( fun I J h hIJ ↦ ⟨h.1.subset hIJ, hIJ.trans h.2⟩ )
@@ -65,6 +66,9 @@ instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.rest
 
 theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ R).Indep I :=
   restrict_indep_iff.mpr ⟨h,hIR⟩
+
+theorem Indep.of_restriction (hI : (M ↾ R).Indep I) : M.Indep I :=
+  (restrict_indep_iff.1 hI).1
 
 @[simp] theorem restrict_ground_eq : (M ↾ R).E = R := rfl
 
@@ -146,8 +150,8 @@ def Restriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊆ M.E
 
 def StrictRestriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊂ M.E
 
-infix:20  " ≤r " => Restriction
-infix:20  " <r " => StrictRestriction
+infix:50  " ≤r " => Restriction
+infix:50  " <r " => StrictRestriction
 
 theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N :=
   h.1
@@ -222,7 +226,7 @@ end restrict
 section Basis
 
 -- These lemmas are awkward positioned here, because they look like they belong in `Basic`, but
--- their proofs depend on the definition of restriction (and hence duality. Maybe refactoring
+-- their proofs depend on the definition of restriction, and hence duality. Maybe refactoring
 -- the proofs isn't too bad.
 
 theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (hJY : M.Basis J Y) :

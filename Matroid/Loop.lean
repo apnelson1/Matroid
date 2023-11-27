@@ -326,6 +326,11 @@ theorem removeLoops_eq_self_iff : M.removeLoops = M ↔ M.Loopless := by
 theorem removeLoops_restriction (M : Matroid α) : M.removeLoops ≤r M :=
   restrict_restriction _ _ (fun _ h ↦ Nonloop.mem_ground h)
 
+theorem eq_restrict_removeLoops (M : Matroid α) : M = M.removeLoops ↾ M.E := by
+  rw [removeLoops, eq_iff_indep_iff_indep_forall]
+  simp only [restrict_ground_eq, restrict_indep_iff, true_and]
+  exact fun I hIE ↦ ⟨fun hI ↦ ⟨⟨hI,fun e heI ↦ hI.nonloop_of_mem heI⟩, hIE⟩, fun hI ↦ hI.1.1⟩
+
 @[simp] theorem removeLoops_nonloop_iff : M.removeLoops.Nonloop e ↔ M.Nonloop e := by
   rw [removeLoops_eq_restr, restrict_nonloop_iff, mem_setOf, and_self]
 

@@ -458,10 +458,9 @@ theorem indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by 
   rw [indep_iff_forall_subset_not_circuit]
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
 
-@[simp] theorem girth_eq_top_iff_freeOn [Finitary M] : M.girth = ⊤ ↔ M = freeOn M.E := by
-  rw [←ground_indep_iff_eq_freeOn, girth_eq_top_iff, indep_iff_forall_subset_not_circuit]
+@[simp] theorem girth_eq_top_iff_ground_indep [Finitary M] : M.girth = ⊤ ↔ M.Indep M.E := by
+  rw [girth_eq_top_iff, indep_iff_forall_subset_not_circuit]
   exact ⟨fun h C _ hC ↦ h C hC hC.finite, fun h C hC _ ↦ h C hC.subset_ground hC⟩
-
 
 end Girth
 section BasisExchange
@@ -543,6 +542,7 @@ theorem Iso.on_circuit_iff (e : Iso M N) (hC : C ⊆ M.E := by aesop_mat) :
 end Iso
 section Equiv
 
+/-- A `LocalEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
 def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
     (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N
@@ -583,7 +583,6 @@ def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.
 end Equiv
 
 end Matroid
-
 
 
 -- end BasisExchange
