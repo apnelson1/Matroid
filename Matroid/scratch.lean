@@ -41,12 +41,107 @@ def extensionProperty (G : SimpleGraph V) : Prop :=
 --   (toIso : G.induce s ≃g H.induce t)
 --   (hst : ∀ i, i < n → i ∈ s ∧ i ∈ t)
 
-structure partialIso (G H : SimpleGraph ℕ) (n : ℕ) where
-  (eqv : LocalEquiv ℕ ℕ)
-  (h_source : ∀ {i}, i ≤ n → i ∈ eqv.source)
-  (h_target : ∀ {j}, j ≤ n → j ∈ eqv.target)
-  (toIso : G.induce eqv.source ≃g H.induce eqv.target)
-  (h_eq : eqv.toEquiv = toIso.toEquiv)
+-- structure partialIso (G H : SimpleGraph ℕ) (n : ℕ) where
+--   (eqv : LocalEquiv ℕ ℕ)
+--   (h_source : ∀ {i}, i < n → i ∈ eqv.source)
+--   (h_target : ∀ {j}, j < n → j ∈ eqv.target)
+--   (toIso : G.induce eqv.source ≃g H.induce eqv.target)
+--   (h_eq : eqv.toEquiv = toIso.toEquiv)
+
+def partialIso (G H : SimpleGraph ℕ) (n : ℕ) :=
+  {e : LocalEquiv ℕ ℕ // Iic n ⊆ e.source ∩ e.target ∧
+    ∃ (φ : G.induce e.source ≃g H.induce e.target), φ.toEquiv = e.toEquiv }
+
+theorem partialIso.mem_source {G H : SimpleGraph ℕ} {i n : ℕ} (e : partialIso G H (n+1)) (hin : i ≤ n) :
+  i ∈ e.1.source := sorry
+
+theorem partialIso.mem_target {G H : SimpleGraph ℕ} {i n : ℕ} (e : partialIso G H (n+1)) (hin : i ≤ n) :
+  i ∈ e.1.target := sorry
+
+-- def LocalEquiv.isPartialIso (e : LocalEquiv ℕ ℕ) (G H : SimpleGraph ℕ) (n : ℕ) : Prop :=
+--   (Iic n ⊆ e.source ∩ e.target) ∧
+--   ∃ (φ : G.induce e.source ≃g H.induce e.target), φ.toEquiv = e.toEquiv
+
+def foo_ind {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionProperty H) {n : ℕ}
+  (e : partialIso G H n) : ∃ e' : partialIso G H (n+1),
+    e.1.source ⊆ e'.1.source ∧ ∀ x ∈ e.1.source, e'.1 x = e.1 x := sorry
+
+theorem foo {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionProperty H)
+    (e0 : partialIso G H 0) :
+    ∃ (e : G ≃g H), ∀ i ∈ e0.1.source, e i = e0.1 i := by
+  obtain ⟨es, hes⟩ := toSeq (partialIso G H) _ e0 (fun i ↦ foo_ind hG hH)
+
+  have h_strong : ∀ {i j : ℕ}, i ≤ j → ((es (i+1)).1.source ⊆ (es (j+1)).1.source)
+    ∧ (∀ n, n ∈ (es (i+1)).1.source → (es (i+1)).1 n = (es (j+1)).1 n)
+  · intro i j hij
+    obtain ⟨d, rfl⟩ := exists_add_of_le hij
+    induction' d with d IH generalizing i
+    · simp [Subset.rfl]
+    simp only [le_add_iff_nonneg_right, zero_le, forall_true_left] at IH
+    simp_rw [Nat.succ_eq_add_one]
+    refine ⟨(hes _).1.trans (IH.1.trans ?_), fun n hn ↦ ?_⟩
+    · rw [add_comm d 1, add_assoc, add_assoc, add_assoc]
+      rfl
+    rw [IH.2 n hn, ← (hes _).2, add_assoc, add_assoc, add_assoc]
+    exact IH.1 hn
+
+  set f := fun i ↦ (es (i+1)).1 i with hf_def
+
+  have hfInj : f.Injective
+  · intro i j hij
+    simp only [hf_def] at hij
+    rw [(h_strong (le_max_left i j)).2, (h_strong (le_max_right i j)).2] at hij
+    · refine' (es (max i j + 1)).1.injOn _ _ hij <;> apply partialIso.mem_source <;> simp
+    all_goals
+    · apply partialIso.mem_source <;> simp
+
+  have hfSurj : f.Surjective
+  · intro j
+    set k := max j <| (es (j+1)).1.symm j
+    use (es (k+1)).1.symm j
+    rw [hf_def]
+    eta
+
+
+
+  --   n ∈ (es (i+1)).1.source → (es (i+1)).1 n = (es (j+1)).1 n
+  -- · intro i j n hij hn
+  --   obtain ⟨d, rfl⟩ := exists_add_of_le hij
+  --   induction' d with d IH
+  --   · simp
+  --   rw [Nat.succ_eq_add_one, ← add_assoc, IH (by simp)]
+  --   induction' d with d IH'
+  --   · simpa
+
+  -- have hf₀ : ∀ {i j}, j ∈ (es (i+1)).1.source → f j = (es (i+1)).1 j
+  -- · intro i j hij
+  --   induction' i with i IH
+  --   · induction' j with j IHj
+  --     · simp
+  --     rw [Nat.succ_eq_add_one, IHj]
+
+
+
+  -- have hf : ∀ {i j} (hij : i ≤ j), f i = (es (j+1)).1 i
+  -- · intro i j hij
+  --   obtain ⟨d, rfl⟩ := exists_add_of_le hij
+  --   induction' d with d IH
+  --   · simp
+  --   rw [IH (by simp), Nat.succ_eq_add_one, ← hes, add_assoc, add_assoc, add_assoc]
+  --   exact partialIso.mem_source _ <| by simp
+  -- have hf' : ∀ i, f ((es (i+1)).1.symm i) = i
+  -- · intro i
+  --   convert (es (i+1)).1.right_inv ((es (i+1)).mem_target rfl.le) using 1
+
+
+
+
+
+
+
+
+  --   (fun {i} e e' ↦ ∀ x ∈ e.1.source, e.1 x = e'.1 x) ⟨e0, he0⟩
+  --   (fun i ⟨e,he⟩ ↦
 
 -- def partialIso.subIso (G H : SimpleGraph ℕ) {n₁ n₂ : ℕ} (e₁ : partialIso G H n₁)
 --     (e₂ : partialIso G H n₂) : Prop :=
@@ -65,7 +160,8 @@ structure partialIso (G H : SimpleGraph ℕ) (n : ℕ) where
 theorem foo_aux {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionProperty H) (n : ℕ)
   (e : partialIso G H n) : ∃ (e' : partialIso G H (n+1)), e.eqv = e'.eqv.restr e.eqv.source := sorry
 
-theorem foo (G H : SimpleGraph ℕ) (hG : extensionProperty G) (hH : extensionProperty H) :
+theorem foo {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionProperty H)
+  (φ0 : partialIso G H 0) : ∃ (φ : G ≃g H), ∀ i ∈ φ0.eqv.
     Nonempty (G ≃g H) := by
   set e0 : partialIso G H 0 := sorry
   -- ⟨∅, ∅, ⟨Equiv.refl _, by simp⟩, by simp⟩
