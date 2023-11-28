@@ -662,6 +662,8 @@ theorem flat_of_delete_elem_flat {M : Matroid α} (e_nF : e ∉ F) (hF : M.Flat 
 
 #check cl_insert_eq_of_mem_cl
 
+#check iInter_cl_eq_cl_sInter_of_modular --completes modularity part of proof
+
 theorem modular_cut_of_flats_remove {M : Matroid α} (h_e : e ∈ M.E := by aesop_mat) :
     Modular_cut (M ⟍ e) ({F | e ∉ F ∧ M.Flat (insert e F) ∧ e ∈ M.cl F}) := by
   refine' ⟨fun F F_flat ↦ flat_of_delete_elem_flat F_flat.1 F_flat.2.1,
