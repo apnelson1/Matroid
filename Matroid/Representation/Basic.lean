@@ -839,7 +839,7 @@ theorem Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := b
   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
   rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
   exact (v.preimage _).representable
-  
+
 end Simple
 section Uniform
 
@@ -855,7 +855,7 @@ theorem uniform_rep_of_le {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ en
     exact (PartENat.withTopEquiv_natCast 1).symm
   obtain ⟨i,hi⟩ := hinj
   set A := Matrix.rectProjVandermonde i a
-  exact IsRep.representable 
+  exact IsRep.representable
     (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
 
 end Uniform
