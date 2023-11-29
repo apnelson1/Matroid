@@ -1,4 +1,32 @@
+/-
+Copyright (c) 2023 Peter Nelson. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Peter Nelson
+-/
 import Matroid.Constructions.IndepBaseAxioms
+
+/-!
+# Matroid Duality
+
+For a matroid `M` on ground set `E`, the collection of complements of the bases of `M` is the
+collection of bases of another matroid on `E` called the 'Dual' of `M`. The duality map is
+an involution, interacts nicely with minors, and preserves many important matroid properties
+such as representability and connectivity.
+
+This file defines the dual matroid `M﹡` of `M`, and gives associated API. The definition
+is in terms of its independent, sets, using `IndepMatroid.matroid`.
+
+We also define 'Co-independence' (independence in the dual) of a set as a predicate `M.Coindep X`.
+This is the same as `M﹡.Indep X`, but has its own name for the sake of dot notation.
+
+## Main Definitions
+
+* `M.Dual`, written `M﹡`, is the matroid in which a set `B` is a base if and only if `B ⊆ M.E`
+  and `M.E \ B` is a base for `M`.
+
+* `M.Coindep X` means `M﹡.Indep X`, or equivalently that `X` is contained in `M.E \ B` for some
+  base `B` of `M`.
+-/
 
 open Set
 
@@ -8,6 +36,8 @@ variable {α : Type*} {M : Matroid α}
 
 section dual
 
+/-- Given `M : Matroid α`, the `IndepMatroid α` whose independent sets are
+  the subsets of `M.E` that are disjoint from some base of `M` -/
 @[simps] def dual_indepMatroid (M : Matroid α) : IndepMatroid α where
   E := M.E
   Indep I := I ⊆ M.E ∧ ∃ B, M.Base B ∧ Disjoint I B
@@ -82,13 +112,14 @@ section dual
     exact heX (hJX heJ)
   subset_ground := by tauto
 
-/-- The dual of a matroid -/
+/-- The dual of a matroid; the bases are the complements (w.r.t `M.E`) of the bases of `M`. -/
 def dual (M : Matroid α) : Matroid α := M.dual_indepMatroid.matroid
 
-/-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. (This is distinct from the
-  usual `*` symbol for multiplication, due to precedence issues. )-/
+/-- A notation typeclass for matroid duality-/
 class Mdual (β : Type*) := (dual : β → β)
 
+/-- The `﹡` symbol, which denotes matroid duality.
+  (This is distinct from the usual `*` symbol for multiplication, due to precedence issues. )-/
 postfix:max "﹡" => Mdual.dual
 
 instance Matroid_Mdual {α : Type*} : Mdual (Matroid α) := ⟨Matroid.dual⟩
@@ -209,15 +240,19 @@ theorem coindep_def : M.Coindep X ↔ M﹡.Indep X := Iff.rfl
 theorem Coindep.indep (hX : M.Coindep X) : M﹡.Indep X :=
   hX
 
-theorem coindep_iff_exists' : M.Coindep X ↔ (∃ B, M.Base B ∧ B ⊆ M.E \ X) ∧ X ⊆ M.E :=
-  ⟨fun ⟨B, hB, hXB⟩ ↦ ⟨⟨M.E \ B, hB.compl_base_of_dual, diff_subset_diff_right hXB⟩,
-      hXB.trans hB.subset_ground⟩,
-    fun ⟨⟨B, hB, hBX⟩, hXE⟩ ↦ ⟨M.E \ B, hB.compl_base_dual,
-      subset_diff.mpr ⟨hXE, (subset_diff.1 hBX).2.symm⟩⟩⟩
+theorem coindep_iff_exists' : M.Coindep X ↔ (∃ B, M.Base B ∧ B ⊆ M.E \ X) ∧ X ⊆ M.E := by
+  simp_rw [Coindep, dual_indep_iff_exists', and_comm (a := _ ⊆ _), and_congr_left_iff, subset_diff]
+  exact fun _ ↦ ⟨fun ⟨B, hB, hXB⟩ ↦ ⟨B, hB, hB.subset_ground, hXB.symm⟩,
+    fun ⟨B, hB, _, hBX⟩ ↦ ⟨B, hB, hBX.symm⟩⟩
 
 theorem coindep_iff_exists (hX : X ⊆ M.E := by aesop_mat) :
     M.Coindep X ↔ ∃ B, M.Base B ∧ B ⊆ M.E \ X := by
   rw [coindep_iff_exists', and_iff_left hX]
+
+theorem coindep_iff_subset_diff_base : M.Coindep X ↔ ∃ B, M.Base B ∧ X ⊆ M.E \ B := by
+  simp_rw [coindep_iff_exists', subset_diff]
+  exact ⟨fun ⟨⟨B, hB, _, hBX⟩, hX⟩ ↦ ⟨B, hB, hX, hBX.symm⟩,
+    fun ⟨B, hB, hXE, hXB⟩ ↦ ⟨⟨B, hB, hB.subset_ground,  hXB.symm⟩, hXE⟩⟩
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Coindep.subset_ground (hX : M.Coindep X) : X ⊆ M.E :=
