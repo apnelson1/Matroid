@@ -1,22 +1,21 @@
 import Matroid.Constructions.IndepBaseAxioms
 
-namespace Matroid
-
 open Set
+
+namespace Matroid
 
 variable {α : Type*} {M : Matroid α}
 
 section dual
 
-/-- The dual of a matroid. TODO : refactor so that a dual base is definitionally the complement
-  of a base. -/
-def dual (M : Matroid α) : Matroid α :=
-  matroid_of_indep M.E (fun I ↦ I ⊆ M.E ∧ ∃ B, M.Base B ∧ Disjoint I B)
-⟨empty_subset M.E, M.exists_base.imp (fun B hB ↦ ⟨hB, empty_disjoint _⟩)⟩
-( by {
+@[simps] def dual_indepMatroid (M : Matroid α) : IndepMatroid α where
+  E := M.E
+  Indep I := I ⊆ M.E ∧ ∃ B, M.Base B ∧ Disjoint I B
+  indep_empty := ⟨empty_subset M.E, M.exists_base.imp (fun B hB ↦ ⟨hB, empty_disjoint _⟩)⟩
+  indep_subset := by
     rintro I J ⟨hJE, B, hB, hJB⟩ hIJ
-    exact ⟨hIJ.trans hJE, ⟨B, hB, disjoint_of_subset_left hIJ hJB⟩⟩ } )
-( by {
+    exact ⟨hIJ.trans hJE, ⟨B, hB, disjoint_of_subset_left hIJ hJB⟩⟩
+  indep_aug := by
     rintro I X ⟨hIE, B, hB, hIB⟩ hI_not_max hX_max
     have hXE := hX_max.1.1
     have hB' := (base_compl_iff_mem_maximals_disjoint_base hXE).mpr hX_max
@@ -36,8 +35,8 @@ def dual (M : Matroid α) : Matroid α :=
     refine' ⟨by_contra (fun heX ↦ heB'' (hB''₁ ⟨_, heI⟩)), ⟨B'', hB'', _⟩⟩
     · rw [hX]; exact ⟨heE, heX⟩
     rw [←union_singleton, disjoint_union_left, disjoint_singleton_left, and_iff_left heB'']
-    exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left } )
-( by {
+    exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left
+  indep_maximal := by
     rintro X - I'⟨hI'E, B, hB, hI'B⟩ hI'X
     obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
     obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
@@ -80,8 +79,11 @@ def dual (M : Matroid α) : Matroid α :=
     obtain ⟨e, heJ, heB'⟩ := not_disjoint_iff.mp hne
     obtain (heB'' | ⟨-,heX⟩ ) := hB₁I heB'
     · exact hdj.ne_of_mem heJ heB'' rfl
-    exact heX (hJX heJ) } )
-( by tauto )
+    exact heX (hJX heJ)
+  subset_ground := by tauto
+
+/-- The dual of a matroid -/
+def dual (M : Matroid α) : Matroid α := M.dual_indepMatroid.matroid
 
 /-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. (This is distinct from the
   usual `*` symbol for multiplication, due to precedence issues. )-/
@@ -91,8 +93,8 @@ postfix:max "﹡" => Mdual.dual
 
 instance Matroid_Mdual {α : Type*} : Mdual (Matroid α) := ⟨Matroid.dual⟩
 
-theorem dual_indep_iff_exists' : (M﹡.Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) :=
-  by simp [Mdual.dual, dual]
+theorem dual_indep_iff_exists' : (M﹡.Indep I) ↔ I ⊆ M.E ∧ (∃ B, M.Base B ∧ Disjoint I B) := by
+  simp [Mdual.dual, dual]
 
 @[simp] theorem dual_ground : M﹡.E = M.E := rfl
 
@@ -105,7 +107,7 @@ theorem subset_ground_of_subset_dual_ground (hX : X ⊆ M﹡.E) : X ⊆ M.E :=
   hX
 
 @[simp] theorem dual_indep_iff_exists (hI : I ⊆ M.E := by aesop_mat) :
-  (M﹡.Indep I) ↔ (∃ B, M.Base B ∧ Disjoint I B) :=
+  M﹡.Indep I ↔ (∃ B, M.Base B ∧ Disjoint I B) :=
 by rw [dual_indep_iff_exists', and_iff_right hI]
 
 theorem dual_dep_iff_forall : (M﹡.Dep I) ↔ (∀ B, M.Base B → (I ∩ B).Nonempty) ∧ I ⊆ M.E :=
@@ -130,7 +132,7 @@ theorem dual_base_iff' : M﹡.Base B ↔ M.Base (M.E \ B) ∧ B ⊆ M.E :=
   (em (B ⊆ M.E)).elim (fun h ↦ by rw [dual_base_iff, and_iff_left h])
     (fun h ↦ iff_of_false (h ∘ (fun h' ↦ h'.subset_ground)) (h ∘ And.right))
 
-theorem setOf_dual_base_eq : setOf M﹡.Base = (fun X ↦ M.E \ X) '' setOf M.Base := by
+theorem setOf_dual_base_eq : setOf M﹡.Base = (fun X ↦ M.E \ X) '' {B | M.Base B} := by
   ext B
   simp only [mem_setOf_eq, mem_image, dual_base_iff']
   refine' ⟨fun h ↦ ⟨_, h.1, diff_diff_cancel_left h.2⟩,
@@ -179,11 +181,11 @@ by rw [←dual_dual M₁, h, dual_dual]
 
 @[simp] theorem dual_inj_iff {M₁ M₂ : Matroid α} : M₁﹡ = M₂﹡ ↔ M₁ = M₂ := ⟨dual_inj, congr_arg _⟩
 
-theorem eq_dual_comm {M₁ M₂ : Matroid α} : M₁ = M₂﹡ ↔ M₂ = M₁﹡ :=
-by rw [←dual_inj_iff, dual_dual, eq_comm]
+theorem eq_dual_comm {M₁ M₂ : Matroid α} : M₁ = M₂﹡ ↔ M₂ = M₁﹡ := by
+  rw [←dual_inj_iff, dual_dual, eq_comm]
 
-theorem dual_eq_comm {M₁ M₂ : Matroid α} : M₁﹡ = M₂ ↔ M₂﹡ = M₁ :=
-by rw [←dual_inj_iff, dual_dual, eq_comm]
+theorem eq_dual_iff_dual_eq {M₁ M₂ : Matroid α} : M₁ = M₂﹡ ↔ M₁﹡ = M₂ := by
+  rw [eq_dual_comm, eq_comm]
 
 theorem base_iff_dual_base_compl (hB : B ⊆ M.E := by aesop_mat) :
     M.Base B ↔ M﹡.Base (M.E \ B) := by

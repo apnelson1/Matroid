@@ -11,47 +11,52 @@ namespace Matroid
 variable {α : Type*} {M : Matroid α}
 section restrict
 
+/-- The `IndepMatroid` whose independent sets are the independent subsets of `X`. -/
+@[simps] def restrict_indepMatroid (M : Matroid α) (X : Set α) : IndepMatroid α where
+  E := X
+  Indep I := M.Indep I ∧ I ⊆ X
+  indep_empty := ⟨M.empty_indep, empty_subset _⟩
+  indep_subset := fun I J h hIJ ↦ ⟨h.1.subset hIJ, hIJ.trans h.2⟩
+  indep_aug := by
+    rintro I I' ⟨hI, hIY⟩ (hIn : ¬ M.Basis' I X) (hI' : M.Basis' I' X)
+    rw [basis'_iff_basis_inter_ground] at hIn hI'
+    obtain ⟨B', hB', rfl⟩ := hI'.exists_base
+    obtain ⟨B, hB, hIB, hBIB'⟩ := hI.exists_base_subset_union_base hB'
+    rw [hB'.inter_basis_iff_compl_inter_basis_dual, diff_inter_diff] at hI'
+
+    have hss : M.E \ (B' ∪ (X ∩ M.E)) ⊆ M.E \ (B ∪ (X ∩ M.E))
+    · apply diff_subset_diff_right
+      rw [union_subset_iff, and_iff_left (subset_union_right _ _), union_comm]
+      exact hBIB'.trans (union_subset_union_left _ (subset_inter hIY hI.subset_ground))
+
+    have hi : M﹡.Indep (M.E \ (B ∪ (X ∩ M.E)))
+    · rw [dual_indep_iff_exists]
+      exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩
+
+    have h_eq := hI'.eq_of_subset_indep hi hss
+      (diff_subset_diff_right (subset_union_right _ _))
+    rw [h_eq, ←diff_inter_diff, ←hB.inter_basis_iff_compl_inter_basis_dual] at hI'
+
+    obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset
+      (subset_inter hIB (subset_inter hIY hI.subset_ground))
+    obtain rfl := hI'.indep.eq_of_basis hJ
+
+    have hIJ' : I ⊂ B ∩ (X ∩ M.E) := hIJ.ssubset_of_ne (fun he ↦ hIn (by rwa [he]))
+    obtain ⟨e, he⟩ := exists_of_ssubset hIJ'
+    exact ⟨e, ⟨⟨(hBIB' he.1.1).elim (fun h ↦ (he.2 h).elim) id,he.1.2⟩, he.2⟩,
+      hI'.indep.subset (insert_subset he.1 hIJ), insert_subset he.1.2.1 hIY⟩
+  indep_maximal := by
+    rintro A hAX I ⟨hI, _⟩ hIA
+    obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis'_of_subset hIA; use J
+    rw [mem_maximals_setOf_iff, and_iff_left hJ.subset, and_iff_left hIJ,
+      and_iff_right ⟨hJ.indep, hJ.subset.trans hAX⟩]
+    exact fun K ⟨⟨hK, _⟩, _, hKA⟩ hJK ↦ hJ.eq_of_subset_indep hK hJK hKA
+  subset_ground I := And.right
+
 /-- Change the ground set of a matroid to some `R : Set α`. The independent sets of the restriction
-  are the independent subsets of the new ground set. Most commonly used when `R ⊆ M.E`;
-  but it is convenient to not require this; the elements of `R \ M.E` are loops.  -/
-def restrict (M : Matroid α) (X : Set α) : Matroid α :=
-  matroid_of_indep X (fun I ↦ M.Indep I ∧ I ⊆ X) ⟨M.empty_indep, empty_subset _⟩
-    ( fun I J h hIJ ↦ ⟨h.1.subset hIJ, hIJ.trans h.2⟩ )
-    ( by
-        rintro I I' ⟨hI, hIY⟩ (hIn : ¬ M.Basis' I X) (hI' : M.Basis' I' X)
-        rw [basis'_iff_basis_inter_ground] at hIn hI'
-        obtain ⟨B', hB', rfl⟩ := hI'.exists_base
-        obtain ⟨B, hB, hIB, hBIB'⟩ := hI.exists_base_subset_union_base hB'
-        rw [hB'.inter_basis_iff_compl_inter_basis_dual, diff_inter_diff] at hI'
-
-        have hss : M.E \ (B' ∪ (X ∩ M.E)) ⊆ M.E \ (B ∪ (X ∩ M.E))
-        · apply diff_subset_diff_right
-          rw [union_subset_iff, and_iff_left (subset_union_right _ _), union_comm]
-          exact hBIB'.trans (union_subset_union_left _ (subset_inter hIY hI.subset_ground))
-
-        have hi : M﹡.Indep (M.E \ (B ∪ (X ∩ M.E)))
-        · rw [dual_indep_iff_exists]
-          exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩
-
-        have h_eq := hI'.eq_of_subset_indep hi hss
-          (diff_subset_diff_right (subset_union_right _ _))
-        rw [h_eq, ←diff_inter_diff, ←hB.inter_basis_iff_compl_inter_basis_dual] at hI'
-
-        obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset
-          (subset_inter hIB (subset_inter hIY hI.subset_ground))
-        obtain rfl := hI'.indep.eq_of_basis hJ
-
-        have hIJ' : I ⊂ B ∩ (X ∩ M.E) := hIJ.ssubset_of_ne (fun he ↦ hIn (by rwa [he]))
-        obtain ⟨e, he⟩ := exists_of_ssubset hIJ'
-        exact ⟨e, ⟨⟨(hBIB' he.1.1).elim (fun h ↦ (he.2 h).elim) id,he.1.2⟩, he.2⟩,
-          hI'.indep.subset (insert_subset he.1 hIJ), insert_subset he.1.2.1 hIY⟩ )
-    ( by
-        rintro A hAX I ⟨hI, _⟩ hIA
-        obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis'_of_subset hIA; use J
-        rw [mem_maximals_setOf_iff, and_iff_left hJ.subset, and_iff_left hIJ,
-          and_iff_right ⟨hJ.indep, hJ.subset.trans hAX⟩]
-        exact fun K ⟨⟨hK, _⟩, _, hKA⟩ hJK ↦ hJ.eq_of_subset_indep hK hJK hKA )
-    ( by tauto )
+  are the independent subsets of the new ground set. Most commonly used when `R ⊆ M.E`,
+  but it is convenient not to require this. The elements of `R \ M.E` become loops.  -/
+def restrict (M : Matroid α) (R : Set α) : Matroid α := (M.restrict_indepMatroid R).matroid
 
 variable {R R₁ R₂ : Set α}
 
@@ -62,7 +67,7 @@ infixl:65  " ↾ " => MRestrict.restrict
 instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.restrict X⟩
 
 @[simp] theorem restrict_indep_iff : (M ↾ R).Indep I ↔ M.Indep I ∧ I ⊆ R := by
-  change (M.restrict R).Indep I ↔ _; simp [restrict]
+  simp [MRestrict.restrict, restrict]
 
 theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ R).Indep I :=
   restrict_indep_iff.mpr ⟨h,hIR⟩
@@ -85,6 +90,9 @@ theorem restrict_restrict_eq (M : Matroid α) (hR : R₂ ⊆ R₁) : (M ↾ R₁
   refine' eq_of_indep_iff_indep_forall rfl _
   simp only [restrict_ground_eq, restrict_indep_iff, and_congr_left_iff, and_iff_left_iff_imp]
   exact fun _ h _ _ ↦ h.trans hR
+
+@[simp] theorem restrict_idem (M : Matroid α) (R : Set α) : M ↾ R ↾ R = M ↾ R := by
+  rw [M.restrict_restrict_eq Subset.rfl]
 
 theorem Indep.of_restrict (h : (M ↾ R).Indep I) : M.Indep I :=
   (restrict_indep_iff.mp h).1
@@ -146,65 +154,47 @@ theorem restrict_eq_restrict_iff (M M' : Matroid α) (X : Set α) :
 @[simp] theorem restrict_eq_self_iff : M ↾ R = M ↔ R = M.E :=
   ⟨fun h ↦ by rw [←h]; rfl, fun h ↦ by simp [h]⟩
 
-def Restriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊆ M.E
+def Restriction (N M : Matroid α) : Prop := ∃ R ⊆ M.E, N = M ↾ R
 
-def StrictRestriction (N M : Matroid α) : Prop := M ↾ N.E = N ∧ N.E ⊂ M.E
+def StrictRestriction (N M : Matroid α) : Prop := Restriction N M ∧ ¬ Restriction M N
 
 infix:50  " ≤r " => Restriction
 infix:50  " <r " => StrictRestriction
 
-theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N :=
-  h.1
+instance : IsNonstrictStrictOrder (Matroid α) (· ≤r ·) (· <r ·) where
+  right_iff_left_not_left _ _ := Iff.rfl
 
-theorem Restriction.subset (h : N ≤r M) : N.E ⊆ M.E :=
-  h.2
-
-theorem Restriction.exists_eq_restrict (h : N ≤r M) : ∃ R, R ⊆ M.E ∧ N = M ↾ R := by
-  rw [←h.eq_restrict]; exact ⟨N.E, h.subset, rfl⟩
-
-theorem StrictRestriction.restriction (h : N <r M) : N ≤r M :=
-  ⟨h.1, h.2.subset⟩
-
-theorem StrictRestriction.ssubset (h : N <r M) : N.E ⊂ M.E :=
-  h.2
-
-theorem StrictRestriction.Ne (h : N <r M) : N ≠ M := by
-  rintro rfl; exact h.ssubset.ne rfl
-
-theorem StrictRestriction.eq_restrict (h : N <r M) : M ↾ N.E = N :=
-  h.restriction.eq_restrict
-
-theorem StrictRestriction.exists_eq_restrict (h : N <r M) : ∃ R, R ⊂ M.E ∧ N = M ↾ R :=
-  ⟨N.E, h.ssubset, by rw [h.eq_restrict]⟩
+theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N := by
+  obtain ⟨R, -, rfl⟩ := h; rw [restrict_ground_eq]
 
 theorem restrict_restriction (M : Matroid α) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
-    M ↾ R ≤r M := by
-  rw [Restriction, restrict_ground_eq, and_iff_left hR]
+    M ↾ R ≤r M :=
+  ⟨R, hR, rfl⟩
+
+theorem Restriction.subset (h : N ≤r M) : N.E ⊆ M.E := by
+  obtain ⟨R, hR, rfl⟩ := h; exact hR
+
+theorem Restriction.exists_eq_restrict (h : N ≤r M) : ∃ R ⊆ M.E, N = M ↾ R :=
+  h
 
 theorem restriction_iff_exists : (N ≤r M) ↔ ∃ R, R ⊆ M.E ∧ N = M ↾ R := by
   use Restriction.exists_eq_restrict; rintro ⟨R, hR, rfl⟩; exact restrict_restriction M R hR
 
-theorem Restriction.strictRestriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <r M := by
-  obtain ⟨R, hR, rfl⟩ := h.exists_eq_restrict
-  exact ⟨h.eq_restrict, hR.ssubset_of_ne (fun h ↦ hne (by rw [h, restrict_ground_eq_self]))⟩
+instance restriction_trans : IsTrans (Matroid α) (· ≤r ·) where
+  trans M₁ M₂ M₃ := by
+    rintro ⟨R, hR, rfl⟩ ⟨R', hR', rfl⟩
+    rw [restrict_restrict_eq _ (show R ⊆ R' from hR)]
+    exact ⟨R, hR.trans hR', rfl⟩
 
-theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <r M := by
-  refine (M.restrict_restriction R hR.subset).strictRestriction_of_ne (fun h ↦ ?_)
-  rw [← h, restrict_ground_eq] at hR
-  exact hR.ne rfl
+instance restriction_refl : IsRefl (Matroid α) (· ≤r ·) where
+  refl M := ⟨M.E, Subset.rfl, M.restrict_ground_eq_self.symm⟩
 
-instance restriction_trans : IsTrans (Matroid α) (· ≤r ·) :=
-  ⟨fun M₁ M₂ M₃ h₁ h₂ ↦ by
-  { rw [restriction_iff_exists] at *
-    obtain ⟨R₁, hR₁, rfl⟩ := h₁
-    obtain ⟨R₂, hR₂, rfl⟩ := h₂
-    exact ⟨R₁, hR₁.trans hR₂, restrict_restrict_eq _ hR₁⟩ } ⟩
-
-instance restriction_refl : IsRefl (Matroid α) (· ≤r ·) :=
-  ⟨fun M ↦ ⟨M.restrict_ground_eq_self, rfl.subset⟩⟩
-
-instance restriction_antisymm : IsAntisymm (Matroid α) (· ≤r ·) :=
-  ⟨fun M M' ⟨h₁,h₂⟩ ⟨_,h₂'⟩ ↦ by rw [←h₁, h₂.antisymm h₂', restrict_ground_eq_self]⟩
+instance restriction_antisymm : IsAntisymm (Matroid α) (· ≤r ·) where
+  antisymm M M' := by
+    rintro ⟨R, hR, rfl⟩ ⟨R', hR', h⟩
+    rw [h, restrict_restrict_eq _ (show R' ⊆ R from hR')] at hR
+    obtain (rfl : R = R') := hR.antisymm hR'
+    rw [h, restrict_idem]
 
 theorem Restriction.refl (M : Matroid α) : M ≤r M :=
   _root_.refl M
@@ -215,10 +205,33 @@ theorem Restriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤r M₂) (h'
 theorem Restriction.antisymm (h : N ≤r M) (h' : M ≤r N) : N = M :=
   _root_.antisymm h h'
 
-instance : IsNonstrictStrictOrder (Matroid α) (· ≤r ·) (· <r ·) where
-  right_iff_left_not_left := fun M M' ↦
-    ⟨fun h ↦ ⟨h.restriction, fun h' ↦ h.Ne (antisymm h.restriction h')⟩,
-     fun h ↦ h.1.strictRestriction_of_ne (by rintro rfl; exact h.2 (refl M))⟩
+theorem StrictRestriction.restriction (h : N <r M) : N ≤r M :=
+  h.1
+
+theorem StrictRestriction.Ne (h : N <r M) : N ≠ M := by
+  rintro rfl; exact h.2 (Restriction.refl N)
+
+theorem StrictRestriction.irrefl (M : Matroid α) : ¬ (M <r M) :=
+  fun h ↦ h.Ne rfl
+
+theorem StrictRestriction.ssubset (h : N <r M) : N.E ⊂ M.E := by
+  obtain ⟨R, -, rfl⟩ := h.1
+  refine h.restriction.subset.ssubset_of_ne (fun h' ↦ h.2 ⟨R, Subset.rfl, ?_⟩)
+  rw [show R = M.E from h', restrict_idem, restrict_ground_eq_self]
+
+theorem StrictRestriction.eq_restrict (h : N <r M) : M ↾ N.E = N :=
+  h.restriction.eq_restrict
+
+theorem StrictRestriction.exists_eq_restrict (h : N <r M) : ∃ R, R ⊂ M.E ∧ N = M ↾ R :=
+  ⟨N.E, h.ssubset, by rw [h.eq_restrict]⟩
+
+theorem Restriction.strictRestriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <r M :=
+  ⟨h, fun h' ↦ hne <| h.antisymm h'⟩
+
+theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <r M := by
+  refine (M.restrict_restriction R hR.subset).strictRestriction_of_ne (fun h ↦ ?_)
+  rw [← h, restrict_ground_eq] at hR
+  exact hR.ne rfl
 
 end restrict
 

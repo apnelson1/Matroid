@@ -450,8 +450,8 @@ theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
 
 theorem isIso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
     M ≅ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
-  rw [← isIso_dual_iff, freeOn_dual_eq, isIso_loopyOn_iff, dual_eq_comm, dual_ground,
-    loopyOn_dual_eq, eq_comm]
+  rw [← isIso_dual_iff, freeOn_dual_eq, isIso_loopyOn_iff, ← eq_dual_iff_dual_eq, dual_ground,
+    loopyOn_dual_eq]
 
 end IsIso
 

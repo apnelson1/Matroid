@@ -8,25 +8,30 @@ open Set
 
 section Truncate
 
-/-- The truncation of a matroid to finite rank `k`. The independent sets of the truncation
-  are the independent sets of the matroid of size at most `k`. -/
+/-- The `IndepMatroid` whose independent sets are the `M`-independent sets of size at most `k`. -/
+def truncate_indepMatroid (M : Matroid α) (k : ℕ) : IndepMatroid α := IndepMatroid.ofBddAugment
+  (E := M.E)
+  (Indep := fun I ↦ M.Indep I ∧ I.encard ≤ k)
+  (indep_empty := by simp)
+  (indep_subset := fun I J hI hIJ ↦ ⟨hI.1.subset hIJ, (encard_mono hIJ).trans hI.2⟩)
+  (indep_aug := by
+    rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
+    obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
+    exact ⟨e, he.1, he.2, hi,
+      (encard_insert_of_not_mem he.2).trans_le ((ENat.add_one_le_of_lt hIJ).trans hJc)⟩)
+  (indep_bdd := ⟨k, fun _ ↦ And.right⟩)
+  (subset_ground := fun _ h ↦ h.1.subset_ground)
+
+/-- The truncation of a matroid to rank `k`. The independent sets of the truncation
+  are the independent sets of the matroid of size at most `k`.  -/
 def truncate (M : Matroid α) (k : ℕ∞) : Matroid α :=
-  Option.casesOn k M
-  fun k ↦ matroid_of_indep_of_bdd_augment M.E (fun I ↦ M.Indep I ∧ I.encard ≤ k)
-    ( by simp )
-    ( fun I J ⟨hI, hIc⟩ hIJ ↦ ⟨hI.subset hIJ, (encard_mono hIJ).trans hIc⟩ )
-    ( by
-        rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
-        obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
-        exact ⟨e, he.1, he.2, hi,
-          (encard_insert_of_not_mem he.2).trans_le ((ENat.add_one_le_of_lt hIJ).trans hJc)⟩ )
-    ⟨ k, fun I ⟨_, hIJ⟩ ↦ hIJ ⟩
-    ( fun I h ↦ h.1.subset_ground )
+  Option.casesOn k M <| fun k ↦ (M.truncate_indepMatroid k).matroid
 
 @[simp] theorem truncate_top (M : Matroid α) : M.truncate ⊤ = M := rfl
 
 @[simp] theorem truncate_indep_iff : (M.truncate k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) := by
-  cases k <;> simp [truncate, WithTop.none_eq_top, WithTop.some_eq_coe, le_top]
+  cases k <;> simp [truncate, truncate_indepMatroid, WithTop.none_eq_top,
+    WithTop.some_eq_coe, le_top]
 
 @[simp] theorem truncate_ground_eq : (M.truncate k).E = M.E := by
   cases k <;> rfl

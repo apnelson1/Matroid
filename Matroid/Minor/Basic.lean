@@ -41,7 +41,9 @@ theorem restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ⟍ D
   restrict_restriction _ _ (diff_subset _ _)
 
 theorem Restriction.exists_eq_delete (hNM : N ≤r M) : ∃ D ⊆ M.E, N = M ⟍ D :=
-  ⟨M.E \ N.E, diff_subset _ _, by rw [← hNM.1, restrict_ground_eq, delete_compl hNM.subset]⟩
+  ⟨M.E \ N.E, diff_subset _ _, by
+    obtain ⟨R, hR, rfl⟩ := hNM
+    rw [delete_compl, restrict_ground_eq] ⟩
 
 theorem restriction_iff_exists_eq_delete : N ≤r M ↔ ∃ D ⊆ M.E, N = M ⟍ D :=
   ⟨Restriction.exists_eq_delete, by rintro ⟨D, -, rfl⟩; apply delete_restriction⟩
@@ -190,7 +192,7 @@ infixl:75 " ⟋ " => HasContract.con
 
 /-- The contraction `M ⟋ C` is the matroid on `M.E \ C` whose bases are the sets `B \ I` where `B`
   is a base for `M` containing a base `I` for `C`. It is also equal to the dual of `M﹡ ⟍ C`, and
-    is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
+  is defined this way so we don't have to give a separate proof that it is actually a matroid. -/
 def contract (M : Matroid α) (C : Set α) : Matroid α := (M﹡ ⟍ C)﹡
 
 instance conSet {α : Type*} : HasContract (Matroid α) (Set α) :=
@@ -781,7 +783,7 @@ theorem Restriction.minor (h : N ≤r M) : N ≤m M := by
   rw [← h.eq_restrict, ←delete_compl h.subset]; apply delete_minor
 
 theorem StrictRestriction.strictMinor (h : N <r M) : N <m M :=
-  ⟨h.restriction.minor, fun h' ↦ h.2.not_subset h'.subset⟩
+  ⟨h.restriction.minor, fun h' ↦ h.ssubset.not_subset h'.subset⟩
 
 theorem restrict_strictMinor (hR : R ⊂ M.E) : M ↾ R <m M :=
   (restrict_strictRestriction hR).strictMinor
@@ -970,8 +972,8 @@ variable {E : Set α}
 @[simp] theorem contract_ground_self (M : Matroid α) : M ⟋ M.E = emptyOn α := by
   simp [←ground_eq_empty_iff]
 
-@[simp] theorem emptyOn_restriction (M : Matroid α) : emptyOn α ≤r M := by
-  constructor <;> simp
+@[simp] theorem emptyOn_restriction (M : Matroid α) : emptyOn α ≤r M :=
+  ⟨∅, empty_subset _, by simp⟩
 
 @[simp] theorem emptyOn_minor (M : Matroid α) : emptyOn α ≤m M :=
   M.emptyOn_restriction.minor
@@ -983,7 +985,7 @@ variable {E : Set α}
 @[simp] theorem restriction_emptyOn_iff : M ≤r emptyOn α ↔ M = emptyOn α := by
   refine ⟨fun h ↦ minor_emptyOn_iff.1 h.minor, ?_⟩
   rintro rfl
-  constructor <;> simp
+  exact Restriction.refl _
 
 @[simp] theorem loopyOn_delete (E X : Set α) : (loopyOn E) ⟍ X = loopyOn (E \ X) := by
   rw [←restrict_compl, loopyOn_restrict, loopyOn_ground]

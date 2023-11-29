@@ -8,7 +8,7 @@ open Set
 
 /-- This is the same as `Indep.exists_insert_of_not_base`, but phrased so the statement is
   defeq to the augmentation axiom for independent sets -/
-theorem aug_property (M : Matroid α) :
+theorem Indep.exists_insert_of_not_mem_maximals (M : Matroid α) :
     ∀⦃I B⦄, M.Indep I → I ∉ maximals (· ⊆ ·) (setOf M.Indep) →
       B ∈ maximals (· ⊆ ·) (setOf M.Indep) → ∃ x ∈ B \ I, M.Indep (insert x I) := by
   intro I B hI hImax hB

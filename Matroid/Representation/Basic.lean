@@ -237,14 +237,14 @@ theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : 
     (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
   simp [iso, indicator_of_mem hx]
 
-
-/-- A function from `α` to a module gives rise to a finitary matroid on `α` -/
-def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
-    matroid_of_indep_of_finitary univ
-    (fun I ↦ LinearIndependent 𝔽 (I.restrict v))
-    linearIndependent_empty_type
-    ( fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI) )
-    ( by
+/-- The `IndepMatroid` whose independent sets are the sets with linearly independent image-/
+def indepMatroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : IndepMatroid α :=
+  IndepMatroid.ofFinitary
+    (E := univ)
+    (Indep := fun I ↦ LinearIndependent 𝔽 (I.restrict v))
+    (indep_empty := linearIndependent_empty_type)
+    (indep_subset := fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI))
+    (indep_aug := by
       intro I J hI hIfin hJ hJfin hcard
       have hIinj : InjOn v I := by rw [injOn_iff_injective]; exact hI.injective
       have h : ¬ (v '' J ⊆ span 𝔽 (v '' I))
@@ -266,31 +266,34 @@ def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W
       have hi : LinearIndependent 𝔽 (v '' I).incl := (linearIndependent_image hIinj).1 hI
       have h_end : LinearIndependent 𝔽 (incl _) := hi.insert heI
       rwa [←image_insert_eq,
-        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end
-        )
-    ( by
-        refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
-        have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
-        have h_im : LinearIndependent 𝔽 _ := hi.image
-        apply LinearIndependent.of_subtype_range _
-        · exact (linearIndependent_equiv (Equiv.Set.ofEq (by ext; simp : v '' _ = _))).1 h_im
-        rintro ⟨⟨x,hx⟩,hx'⟩ ⟨⟨y ,hy⟩, hy'⟩ (hxy : v x = v y)
-        simp only [Subtype.mk.injEq]
-        convert (hi.injective.eq_iff (a := ⟨x,by aesop⟩) (b := ⟨y,by aesop⟩)).1 hxy
-        simp only [Subtype.mk.injEq] )
-    ( fun _ _ ↦ subset_univ _ )
+        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end)
+    (indep_compact := by
+      refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
+      have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
+      have h_im : LinearIndependent 𝔽 _ := hi.image
+      apply LinearIndependent.of_subtype_range _
+      · exact (linearIndependent_equiv (Equiv.Set.ofEq (by ext; simp : v '' _ = _))).1 h_im
+      rintro ⟨⟨x,hx⟩,hx'⟩ ⟨⟨y ,hy⟩, hy'⟩ (hxy : v x = v y)
+      simp only [Subtype.mk.injEq]
+      convert (hi.injective.eq_iff (a := ⟨x,by aesop⟩) (b := ⟨y,by aesop⟩)).1 hxy
+      simp only [Subtype.mk.injEq])
+    (subset_ground := fun _ _ ↦ subset_univ _)
+
+/-- A function from `α` to a module gives rise to a finitary matroid on `α` -/
+def matroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
+  (indepMatroidOnUnivOfFun 𝔽 v).matroid
 
 @[simp] theorem matroidOnUnivOfFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
   (I : Set α) :
    (matroidOnUnivOfFun 𝔽 f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) :=
-   by simp [matroidOnUnivOfFun]
+   by simp [matroidOnUnivOfFun, indepMatroidOnUnivOfFun]
 
 @[simp] theorem matroidOnUnivOfFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
   (matroidOnUnivOfFun 𝔽 f).E = univ := rfl
 
 instance matroidOnUnivOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
     Finitary (matroidOnUnivOfFun 𝔽 f) := by
-  rw [matroidOnUnivOfFun]; infer_instance
+  rw [matroidOnUnivOfFun, indepMatroidOnUnivOfFun]; infer_instance
 
 def matroidOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :=
   (matroidOnUnivOfFun 𝔽 f) ↾ E

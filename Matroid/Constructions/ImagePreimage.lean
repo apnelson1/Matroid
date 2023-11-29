@@ -8,12 +8,12 @@ open Set Function
 namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α}
 
-/-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
-  Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
-def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
-  (f ⁻¹' M.E) (fun I ↦ M.Indep (f '' I) ∧ InjOn f I) ( by simp )
-  ( fun I J ⟨h, h'⟩ hIJ ↦ ⟨h.subset (image_subset _ hIJ), InjOn.mono hIJ h'⟩ )
-  ( by
+def preimage_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α where
+  E := f ⁻¹' M.E
+  Indep I := M.Indep (f '' I) ∧ InjOn f I
+  indep_empty := by simp
+  indep_subset I J h hIJ := ⟨h.1.subset (image_subset _ hIJ), InjOn.mono hIJ h.2⟩
+  indep_aug := by
     rintro I B ⟨hI, hIinj⟩ hImax hBmax
     simp only [mem_maximals_iff, mem_setOf_eq, hI, hIinj, and_self, and_imp,
       true_and, not_forall, exists_prop, exists_and_left] at hImax hBmax
@@ -35,8 +35,8 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
     obtain ⟨_, ⟨⟨e, he, rfl⟩, he'⟩, hei⟩ := Indep.exists_insert_of_not_base (by simpa) h₁ h₂
     have heI : e ∉ I := fun heI ↦ he' (mem_image_of_mem f heI)
     rw [← image_insert_eq, restrict_indep_iff] at hei
-    exact ⟨e, ⟨he, heI⟩, hei.1, (injOn_insert heI).2 ⟨hIinj, he'⟩⟩ )
-  ( by
+    exact ⟨e, ⟨he, heI⟩, hei.1, (injOn_insert heI).2 ⟨hIinj, he'⟩⟩
+  indep_maximal := by
     rintro X - I ⟨hI, hIinj⟩ hIX
     obtain ⟨J, hJ⟩ := (M ↾ range f).existsMaximalSubsetProperty_indep (f '' X) (by simp)
       (f '' I) (by simpa) (image_subset _ hIX)
@@ -52,12 +52,16 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := matroid_of_indep
     intro K hK hinj hIK hKX hJ₀K
     rw [←hinj.image_eq_image_iff_of_subset hJ₀K Subset.rfl,
        hJ.2 hK (image_subset_range _ _) (fun e he ↦ ⟨e, hIK he, rfl⟩)
-       (image_subset _ hKX) (image_subset _ hJ₀K)] )
-  ( fun I hI e heI ↦ hI.1.subset_ground ⟨e, heI, rfl⟩ )
+       (image_subset _ hKX) (image_subset _ hJ₀K)]
+  subset_ground I hI e heI := hI.1.subset_ground ⟨e, heI, rfl⟩
+
+/-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
+  Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
+def preimage (M : Matroid β) (f : α → β) : Matroid α := (preimage_indepMatroid M f).matroid
 
 @[simp] theorem preimage_indep_iff {M : Matroid β} :
     (M.preimage f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := by
-  simp [preimage]
+  simp [preimage, preimage_indepMatroid]
 
 @[simp] theorem preimage_ground_eq (M : Matroid β) (f : α → β) :
     (M.preimage f).E = f ⁻¹' M.E := rfl
@@ -120,12 +124,13 @@ theorem Iso.eq_preimage {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.
 
 section Image
 
-/-- Map a matroid `M` on `α` to a copy in `β` using a function `f` that is injective on `M.E` -/
-def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := matroid_of_indep
-  ( f '' M.E )
-  ( fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀)
-  ⟨ ∅, by simp ⟩
-  ( by
+/-- Given an injective function `f` on `M.E`, the `IndepMatroid` whose independent sets
+  are the images of those in `M`. -/
+def image_indepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : IndepMatroid β where
+  E := f '' M.E
+  Indep I := ∃ I₀, M.Indep I₀ ∧ I = f '' I₀
+  indep_empty := ⟨∅, by simp⟩
+  indep_subset := by
     rintro I _ ⟨J, hJ, rfl⟩ hIJ
     refine ⟨f ⁻¹' I ∩ M.E, hJ.subset ?_, ?_⟩
     · refine (inter_subset_inter_left M.E (preimage_mono hIJ)).trans ?_
@@ -133,8 +138,8 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ma
     simp only [subset_antisymm_iff, image_subset_iff, inter_subset_left, and_true]
     rintro x hx
     obtain ⟨y, hy, rfl⟩ := hIJ hx
-    exact ⟨_, ⟨hx, hJ.subset_ground hy⟩, rfl⟩ )
-  ( by
+    exact ⟨_, ⟨hx, hJ.subset_ground hy⟩, rfl⟩
+  indep_aug := by
     rintro _ B ⟨I, hI, rfl⟩ hImax hBmax
     simp only [mem_maximals_iff, mem_setOf_eq, forall_exists_index, and_imp, image_subset_iff,
       not_and, not_forall, exists_prop, exists_and_left] at hBmax hImax
@@ -154,8 +159,8 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ma
 
     obtain ⟨e, he, hi⟩ := hI.exists_insert_of_not_base hIb hB
     refine ⟨f e, ⟨mem_image_of_mem f he.1, fun h ↦ he.2 ?_⟩, ⟨_, hi, by rw [image_insert_eq]⟩⟩
-    rwa [hf.mem_image_iff hI.subset_ground (hB.subset_ground he.1)] at h )
-  ( by
+    rwa [hf.mem_image_iff hI.subset_ground (hB.subset_ground he.1)] at h
+  indep_maximal := by
     rintro X hX I ⟨I, hI, rfl⟩ hIX
     obtain ⟨X, hXE, rfl⟩ := exists_eq_image_subset_of_subset_image hX
     rw [hf.image_subset_image_iff_of_subset hI.subset_ground hXE] at hIX
@@ -170,15 +175,20 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ma
     rw [hB.eq_of_subset_indep hK]
     · have hss := subset_inter hBK hB.left_subset_ground
       rwa [hf.preimage_image_inter hK.subset_ground] at hss
-    rwa [hf.image_subset_image_iff_of_subset hK.subset_ground hXE] at hKX )
-  ( by rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground )
+    rwa [hf.image_subset_image_iff_of_subset hK.subset_ground hXE] at hKX
+  subset_ground := by
+    rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground
+
+/-- Map a matroid `M` on `α` to a copy in `β` using a function `f` that is injective on `M.E` -/
+def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
+  (image_indepMatroid M f hf).matroid
 
 @[simp] theorem image_ground (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     (M.image f hf).E = f '' M.E := rfl
 
 @[simp] theorem image_indep_iff (M : Matroid α) (f : α → β) (hf : InjOn f M.E) (I : Set β) :
     (M.image f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ :=
-  by simp [image]
+  by simp [image, image_indepMatroid]
 
 /-- `M` is isomorphic to its image -/
 noncomputable def iso_image [Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :

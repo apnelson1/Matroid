@@ -155,7 +155,7 @@ theorem isoMinor_loopyOn_iff {E : Set β} :
 theorem isoMinor_freeOn_iff {E : Set β} :
     M ≤i freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ↪ E) := by
   rw [← isoMinor_dual_iff, freeOn_dual_eq, isoMinor_loopyOn_iff, dual_ground,
-    dual_eq_comm, eq_comm, loopyOn_dual_eq]
+    ← eq_dual_iff_dual_eq, loopyOn_dual_eq]
 
 theorem isoMinor_loopyOn_iff_of_finite {E : Set β} (hE : E.Finite) :
     M ≤i loopyOn E ↔ M = loopyOn M.E ∧ M.E.encard ≤ E.encard := by
