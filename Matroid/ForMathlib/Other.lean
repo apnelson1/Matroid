@@ -1,4 +1,4 @@
-import Mathlib.Logic.Equiv.LocalEquiv
+import Matroid.ForMathlib.LocalEquiv
 import Mathlib.Data.Set.Card
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Matrix.RowCol
@@ -181,12 +181,6 @@ lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert 
   simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range,
     Subtype.range_coe_subtype, setOf_mem_eq]
 
-theorem Finite.exists_localEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
-    (hfin : s.Finite) (h : s.encard = t.encard) :
-    ∃ (e : LocalEquiv α β), e.source = s ∧ e.target = t := by
-
-  obtain ⟨f, hf⟩ := hfin.exists_bijOn_of_encard_eq h
-  exact ⟨hf.toLocalEquiv, rfl, hf.toLocalEquiv_target⟩
 
 theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t) :
     ∃ f, BijOn f s t ∧ ∀ x, e x = f x := by
@@ -196,23 +190,6 @@ theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t)
     by simp⟩
   · rw [dif_pos hx]; exact Subtype.prop _
   simpa [dif_pos hx, dif_pos hy, Subtype.coe_inj] using hxy
-
-noncomputable def LocalEquiv.ofSetEquiv [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
-    (e : s ≃ t) : LocalEquiv α β :=
-  let f := Classical.choose e.exists_bijOn
-  BijOn.toLocalEquiv f s t (Classical.choose_spec e.exists_bijOn).1
-
- @[simp] theorem LocalEquiv.ofSetEquiv_source_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
-    (e : s ≃ t) : (LocalEquiv.ofSetEquiv e).source = s := by
-  simp [ofSetEquiv]
-
-@[simp] theorem LocalEquiv.ofSetEquiv_target_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
-    (e : s ≃ t) : (LocalEquiv.ofSetEquiv e).target = t := by
-  simp [ofSetEquiv]
-
-@[simp] theorem LocalEquiv.ofSetEquiv_apply [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
-    (e : s ≃ t) (x : s) : LocalEquiv.ofSetEquiv e x = e x :=
-  ((Classical.choose_spec e.exists_bijOn).2 x).symm
 
 theorem Set.Finite.encard_le_iff_nonempty_embedding {s : Set α} {t : Set β} (hs : s.Finite) :
     s.encard ≤ t.encard ↔ Nonempty (s ↪ t) := by

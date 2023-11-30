@@ -360,7 +360,7 @@ theorem Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.c
   rw [←hI.indep.cl_inter_eq_self_of_subset hJI, inter_eq_self_of_subset_right]
   exact hI.subset.trans hJ
 
-theorem empty_basis_iff : M.Basis ∅ X ↔ X ⊆ M.cl ∅ := by
+@[simp] theorem empty_basis_iff : M.Basis ∅ X ↔ X ⊆ M.cl ∅ := by
   rw [basis_iff_indep_cl, and_iff_right M.empty_indep, and_iff_left (empty_subset _)]
 
 -- Sets

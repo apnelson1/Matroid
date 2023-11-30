@@ -109,6 +109,12 @@ theorem indep_iff_delete_of_disjoint (hID : Disjoint I D) : M.Indep I ↔ (M ⟍
   rw [←restrict_compl, basis_restrict_iff, subset_diff, ←and_assoc,
     and_iff_left_of_imp Basis.subset_ground]
 
+@[simp] theorem delete_basis'_iff : (M ⟍ D).Basis' I X ↔ M.Basis' I (X \ D) := by
+  rw [basis'_iff_basis_inter_ground, delete_basis_iff, delete_ground, diff_eq, inter_comm M.E,
+    ← inter_assoc, ← diff_eq, ← basis'_iff_basis_inter_ground, and_iff_left_iff_imp,
+    inter_comm, ← inter_diff_assoc]
+  exact fun _ ↦ disjoint_sdiff_left
+
 theorem Basis.of_delete (h : (M ⟍ D).Basis I X) : M.Basis I X :=
   (delete_basis_iff.mp h).1
 

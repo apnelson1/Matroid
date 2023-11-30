@@ -79,8 +79,23 @@ theorem Indep.disjoint_loops (hI : M.Indep I) : Disjoint I (M.cl ∅) :=
 theorem Indep.eq_empty_of_subset_loops (hI : M.Indep I) (h : I ⊆ M.cl ∅) : I = ∅ :=
   eq_empty_iff_forall_not_mem.mpr fun _ he ↦ Loop.not_mem_of_indep (h he) hI he
 
+@[simp] theorem basis_loops_iff : M.Basis I (M.cl ∅) ↔ I = ∅ := by
+  refine ⟨fun h ↦ h.indep.eq_empty_of_subset_loops h.subset, ?_⟩
+  rintro rfl
+  exact M.empty_indep.basis_cl
+
 theorem cl_eq_loops_of_subset (h : X ⊆ M.cl ∅) : M.cl X = M.cl ∅ :=
   (cl_subset_cl_of_subset_cl h).antisymm (M.cl_mono (empty_subset _))
+
+theorem basis_iff_empty_of_subset_loops (hX : X ⊆ M.cl ∅) : M.Basis I X ↔ I = ∅ := by
+  refine ⟨fun h ↦ ?_, by rintro rfl; simpa⟩
+  replace h := (cl_eq_loops_of_subset hX) ▸ h.basis_cl_right
+  simpa using h
+
+
+
+
+
 
 theorem Loop.cl (he : M.Loop e) : M.cl {e} = M.cl ∅ :=
   cl_eq_loops_of_subset (singleton_subset_iff.mpr he)

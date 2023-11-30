@@ -18,6 +18,14 @@ open Set
 def Modular_flat (M : Matroid α) (X : Set α) : Prop :=
     ∀ Y, M.Flat Y → Modular_pair M X Y
 
+-- #check Matroid.Modular
+
+-- structure ModularCut (M : Matroid α) where
+--   (Fs : Set (Set α))
+--   (forall_flat : ∀ F ∈ Fs, M.Flat F)
+--   (modular : ∀ X ⊆ C, X.Nonempty  )
+
+
 def Modular_cut (M : Matroid α) (C : Set (Set α)) : Prop := --version with infinite modular sets
     (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
     (∀ X ⊆ C, X.Nonempty → (∃ B, M.Modular X B) → sInter X ∈ C)
@@ -26,7 +34,6 @@ def Modular_cut' (M : Matroid α) (C : Set (Set α)) : Prop := --old version for
     (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
     (∀ F₁ F₂, F₁ ∈ C → F₂ ∈ C → M.Modular_pair F₁ F₂ → F₁ ∩ F₂ ∈ C)
 
-#check Set.Finite.finite_subsets
 
 lemma modular_finite_intersection {M : Matroid α} (C_mod : M.Modular_cut' C) (X_fin : X.Finite)
     (X_sub : X ⊆ C) (X_mod : ∃ B, M.Modular X B) (X_none : X.Nonempty) : sInter X ∈ C := by

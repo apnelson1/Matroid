@@ -1,5 +1,5 @@
 import Matroid.Constructions.Basic
-import Mathlib.Logic.Equiv.LocalEquiv
+import Matroid.ForMathlib.LocalEquiv
 import Matroid.ForMathlib.Other
 
 namespace Matroid
@@ -426,6 +426,7 @@ theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
 
 theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
     M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+  classical
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain (⟨rfl,hLoopy⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
     · simp only [emptyOn_ground, loopyOn_empty, true_and]
