@@ -26,14 +26,50 @@ def Modular_cut' (M : Matroid α) (C : Set (Set α)) : Prop := --old version for
     (∀ F ∈ C, M.Flat F) ∧ (∀ F F', F ∈ C → F ⊆ F' → M.Flat F' → F' ∈ C) ∧
     (∀ F₁ F₂, F₁ ∈ C → F₂ ∈ C → M.Modular_pair F₁ F₂ → F₁ ∩ F₂ ∈ C)
 
+#check Set.Finite.finite_subsets
+
+lemma modular_finite_intersection {M : Matroid α} (C_mod : M.Modular_cut' C) (X_fin : X.Finite)
+    (X_sub : X ⊆ C) (X_mod : ∃ B, M.Modular X B) (X_none : X.Nonempty) : sInter X ∈ C := by
+  obtain (⟨x, rfl⟩ | X_nt) := X_none.exists_eq_singleton_or_nontrivial
+  · rwa [sInter_singleton, ←singleton_subset_iff]
+  obtain ⟨x, y, xy_ne, xy_sub⟩ := nontrivial_iff_pair_subset.1 X_nt
+  have x_eq_insert : X = insert x (X \ {x})
+  · simp [pair_subset_iff.1 xy_sub]
+  rw [x_eq_insert, sInter_insert]
+  obtain ⟨B, B_mod⟩ := X_mod
+  apply C_mod.2.2 _ _ (X_sub (xy_sub (mem_insert _ _))) _
+  · refine' ⟨B, B_mod.1, fun Ys Ys_sub Ys_none ↦ _⟩
+    obtain (rfl | rfl | rfl) := (Nonempty.subset_pair_iff Ys_none).1 Ys_sub
+    · apply B_mod.2 (singleton_subset_iff.2 (xy_sub (mem_insert _ _))) (singleton_nonempty _)
+    · rw [sInter_singleton]
+      apply B_mod.2 (diff_subset _ _) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+      exact xy_ne.symm
+    rw [sInter_pair, ←sInter_insert, ←x_eq_insert]
+    exact B_mod.2 (rfl.subset) X_none
+  have encard_lt : (X \ {x}).encard < X.encard
+  · apply X_fin.encard_lt_encard ⟨diff_subset _ _, (not_subset.2 ⟨x, (xy_sub (mem_insert _ _)), _⟩)⟩
+    exact fun x_mem ↦ absurd rfl x_mem.2
+  have:= encard_lt
+  apply modular_finite_intersection C_mod (X_fin.subset (diff_subset _ _)) ((diff_subset _ _).trans
+   X_sub) ⟨B, (B_mod.subset (diff_subset _ _))⟩ ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+  exact xy_ne.symm
+termination_by _ => X.encard
+
+
 theorem modular_cut_iff_modular_cut'_finite {M : Matroid α} [M.Finite] :
     M.Modular_cut C ↔ M.Modular_cut' C := by
   unfold Modular_cut Modular_cut'
-  apply (Iff.rfl.and (Iff.rfl.and _))
-  refine' ⟨fun h_mod F₁ F₂ F₁_mem F₂_mem Fs_modular ↦ _, fun h_mod X X_sub X_none X_modular ↦ _⟩
-  ·
-    sorry
-  sorry
+  refine' ⟨fun h_mod ↦ ⟨h_mod.1, h_mod.2.1, fun F₁ F₂ F₁_mem F₂_mem Fs_modular ↦ _⟩,
+  fun h_mod  ↦ ⟨h_mod.1, h_mod.2.1, fun X X_sub X_none X_modular ↦ _⟩⟩
+  · have:= h_mod.2.2 {F₁, F₂} (pair_subset F₁_mem F₂_mem) ⟨F₁, mem_insert _ _⟩ Fs_modular
+    rwa [←sInter_pair]
+  have X_fin : X.Finite
+  · have flat_fin : {F | M.Flat F}.Finite
+    · apply Finite.subset M.ground_finite.finite_subsets (fun F F_Flat ↦ F_Flat.subset_ground)
+    apply Finite.subset (Finite.subset (flat_fin) (fun F F_C ↦ h_mod.1 F F_C)) X_sub
+  apply modular_finite_intersection h_mod X_fin X_sub X_modular X_none
+
+
 
 theorem union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
