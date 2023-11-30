@@ -102,6 +102,37 @@ theorem ModularCut.inter (C : M.ModularCut) (hF : F ∈ C) (hF' : F' ∈ C)
     (hFF' : M.ModularPair F F') : F ∩ F' ∈ C := by
   simpa using C.sInter (pair_subset hF hF') hFF' (by simp)
 
+
+lemma modular_finite_intersection {M : Matroid α} {X : Set (Set α)} {Fs : Set (Set α)}
+    (forall_flat : ∀ {F}, F ∈ Fs → M.Flat F)
+    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularFamily {F, F'} → F ∩ F' ∈ Fs)
+    (hfin : X.Finite) (hsub : X ⊆ Fs) (hmod : M.ModularFamily X) (hnone : X.Nonempty) :
+    sInter X ∈ Fs := by
+  obtain (⟨x, rfl⟩ | X_nt) := hnone.exists_eq_singleton_or_nontrivial
+  · rwa [sInter_singleton, ←singleton_subset_iff]
+  obtain ⟨x, y, xy_ne, xy_sub⟩ := nontrivial_iff_pair_subset.1 X_nt
+  have x_eq_insert : X = insert x (X \ {x})
+  · simp [pair_subset_iff.1 xy_sub]
+  rw [x_eq_insert, sInter_insert]
+  obtain ⟨B, B_mod⟩ := hmod
+  apply pair_modular (hsub (xy_sub (mem_insert _ _))) _
+  · refine' ⟨B, B_mod.1, fun Ys Ys_sub Ys_none ↦ _⟩
+    obtain (rfl | rfl | rfl) := (Nonempty.subset_pair_iff Ys_none).1 Ys_sub
+    · apply B_mod.2 (singleton_subset_iff.2 (xy_sub (mem_insert _ _))) (singleton_nonempty _)
+    · rw [sInter_singleton]
+      apply B_mod.2 (diff_subset _ _) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+      exact xy_ne.symm
+    rw [sInter_pair, ←sInter_insert, ←x_eq_insert]
+    exact B_mod.2 (rfl.subset) hnone
+  have encard_lt : (X \ {x}).encard < X.encard
+  · apply hfin.encard_lt_encard ⟨diff_subset _ _, (not_subset.2 ⟨x, (xy_sub (mem_insert _ _)), _⟩)⟩
+    exact fun x_mem ↦ absurd rfl x_mem.2
+  have:= encard_lt
+  apply modular_finite_intersection forall_flat pair_modular (hfin.subset (diff_subset _ _)) ((diff_subset _ _).trans
+   hsub) ⟨B, (B_mod.subset (diff_subset _ _))⟩ ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+  exact xy_ne.symm
+termination_by _ => X.encard
+
 /-- In a finite matroid, the 'pair property' is enough to construct a modular cut .
   The @[simps] will autogenerate simp lemmas. -/
 @[simps] def ModularCut.ofForallPair {M : Matroid α} [M.Finite] {Fs : Set (Set α)}
@@ -113,7 +144,13 @@ theorem ModularCut.inter (C : M.ModularCut) (hF : F ∈ C) (hF' : F' ∈ C)
   forall_flat := forall_flat
   up_closed := up_closed
   -- Use the stuff in `modular_cut_iff_modular_cut'_finite` to prove this.
-  modular := sorry
+  modular := by
+    intro Xs hsub hnone hXs
+    have hfin : Xs.Finite
+    · have flat_fin : {F | M.Flat F}.Finite
+      · apply Finite.subset M.ground_finite.finite_subsets (fun F F_Flat ↦ F_Flat.subset_ground)
+      apply Finite.subset (Finite.subset (flat_fin) (fun F F_C ↦ forall_flat F_C)) hsub
+    exact modular_finite_intersection forall_flat pair_modular hfin hsub hXs hnone
 
 
 /-- A modular cut will determine an extension. -/
