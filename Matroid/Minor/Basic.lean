@@ -711,58 +711,49 @@ theorem Minor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M�
 theorem Minor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
   h'.eq_of_ground_subset h.subset
 
-/-- A type synonym for `Matroid α`, with the minor partial order. -/
-def Matroidₘ (α : Type*) : Type _ := (Matroid α)
+-- /-- A type synonym for `Matroid α`, with the minor partial order. -/
+-- def Matroidₘ (α : Type*) : Type _ := (Matroid α)
 
-instance (α : Type*) : PartialOrder (Matroidₘ α) where
+instance (α : Type*) : PartialOrder (Matroid α) where
   le M M' := M ≤m M'
   lt M M' := M <m M'
   le_refl := Minor.refl
   le_trans _ _ _ h h' := Minor.trans h h'
   le_antisymm _ _ h h' := Minor.antisymm h h'
 
-@[simp] theorem Matroidₘ.minor_iff (M M' : Matroidₘ α) : M ≤ M' ↔ (M : Matroid α) ≤m M' := Iff.rfl
+@[simp] theorem Matroid.le_iff (M M' : Matroid α) : M ≤ M' ↔ M ≤m M' := Iff.rfl
 
-@[simp] theorem Matroidₘ.strictMinor_iff (M M' : Matroidₘ α) :
-    M < M' ↔ (M : Matroid α) <m M' := Iff.rfl
+@[simp] theorem Matroidₘ.lt_iff (M M' : Matroid α) : M < M' ↔ M <m M' := Iff.rfl
 
 theorem StrictMinor.minor (h : N <m M) : N ≤m M :=
-  h.1
+  le_of_lt h
 
 theorem StrictMinor.not_minor (h : N <m M) : ¬ (M ≤m N) :=
-  h.2
+  not_le_of_lt h
 
-theorem strictMinor_iff_minor_ne : N <m M ↔ N ≤m M ∧ N ≠ M := by
-  rw [StrictMinor, and_congr_right_iff]
-  refine fun hNM ↦ ⟨?_,fun hne hM ↦ hne (hNM.antisymm hM)⟩
-  rintro hMN rfl
-  exact hMN <| Minor.refl N
+theorem strictMinor_iff_minor_ne : N <m M ↔ N ≤m M ∧ N ≠ M :=
+  lt_iff_le_and_ne (α := Matroid α)
 
-theorem strictMinor_iff_minor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E := by
-  rw [strictMinor_iff_minor_ne, and_congr_right_iff, ssubset_iff_subset_ne]
-  intro h
-  rw [and_iff_right h.subset, not_iff_not]
-  exact ⟨fun h ↦ by rw [h], fun hE ↦ (h.eq_of_ground_subset hE.symm.subset).symm⟩
+theorem StrictMinor.ne (h : N <m M) : N ≠ M :=
+  LT.lt.ne h
 
-theorem StrictMinor.ne (h : N <m M) : N ≠ M := by
-  rintro rfl; exact h.2 <| Minor.refl N
-
-theorem StrictMinor.irrefl (M : Matroid α) : ¬ (M <m M) :=
-  fun h ↦ h.ne <| rfl
+theorem strictMinor_irrefl (M : Matroid α) : ¬ (M <m M) :=
+  lt_irrefl M
 
 theorem StrictMinor.ssubset (h : N <m M) : N.E ⊂ M.E :=
-  h.minor.subset.ssubset_of_ne fun hE ↦ h.ne.symm <| h.minor.eq_of_ground_subset hE.symm.subset
+  h.minor.subset.ssubset_of_ne (fun hE ↦ h.ne (h.minor.eq_of_ground_subset hE.symm.subset).symm)
 
-theorem StrictMinor.trans_minor (h : N <m M) (h' : M ≤m M') : N <m M' := by
-  rw [strictMinor_iff_minor_ne, and_iff_right (h.minor.trans h')]
-  rintro rfl
-  exact h.2 h'
+theorem strictMinor_iff_minor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E :=
+  ⟨fun h ↦ ⟨h.minor, h.ssubset⟩, fun ⟨h, hss⟩ ↦ ⟨h, fun h' ↦ hss.ne <| by rw [h'.antisymm h]⟩⟩
+
+theorem StrictMinor.trans_minor (h : N <m M) (h' : M ≤m M') : N <m M' :=
+  lt_of_lt_of_le h h'
 
 theorem Minor.trans_strictMinor (h : N ≤m M) (h' : M <m M') : N <m M' :=
-  ⟨h.trans h'.minor, fun h'' ↦ (h'.trans_minor h'').not_minor h⟩
+  lt_of_le_of_lt h h'
 
 theorem StrictMinor.trans (h : N <m M) (h' : M <m M') : N <m M' :=
-  h.trans_minor h'.minor
+  lt_trans h h'
 
 theorem strictMinor_iff_exists_eq_contract_delete :
     N <m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ (C ∪ D).Nonempty ∧ N = M ⟋ C ⟍ D := by
@@ -964,8 +955,9 @@ theorem foo (P : Matroid α → Prop) [M.Finite] (hP : P M) (hNM : N ≤m M) :
       ∀ e ∈ h.D, ¬ P (M₀ ⟍ e) := by
 
   -- have := @Finite.exists_minimal_wrt _ (Matroid α) (· ≤m ·)
-  have := Finite.exists_minimal_wrt (α := Matroid α) (β := Matroidₘ α) id _
+  have := Finite.exists_minimal_wrt id _
     (M.finite_minors.inter_of_right {M' | N ≤m M' ∧ P M})
+
 
   sorry
   -- have : Finite {X // X ⊆ M.E}
