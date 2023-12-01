@@ -10,12 +10,12 @@ section Iso
 
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
 noncomputable def Iso.delete (e : Iso M N) (hD : D ⊆ M.E) :
-    Iso (M ⟍ D) (N ⟍ e '' D) := by
+    Iso (M ⧹ D) (N ⧹ e '' D) := by
   convert Iso.restrict e (M.E \ D) using 1
   rw [e.injOn_ground.image_diff hD, e.image_ground, ←restrict_compl]
 
 noncomputable def Iso.contract (e : Iso M N) (hC : C ⊆ M.E) :
-    Iso (M ⟋ C) (N ⟋ e '' C) :=
+    Iso (M ⧸ C) (N ⧸ e '' C) :=
   (e.dual.delete hC).dual
 
 /-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
@@ -26,10 +26,10 @@ def IsoMinor (N : Matroid β) (M : Matroid α) : Prop :=
 infixl:50 " ≤i " => Matroid.IsoMinor
 
 instance isoMinor_refl : IsRefl (Matroid α) (· ≤i ·) :=
-  ⟨fun M ↦ ⟨M, refl M, IsIso.refl M⟩⟩
+  ⟨fun M ↦ ⟨M, Minor.refl, IsIso.refl M⟩⟩
 
 theorem IsIso.isoMinor (h : M ≅ N) : M ≤i N :=
-  ⟨N, Minor.refl _, h⟩
+  ⟨N, Minor.refl, h⟩
 
 theorem Iso.isoMinor (e : Iso N M) : N ≤i M :=
   e.isIso.isoMinor
@@ -102,10 +102,10 @@ theorem Restriction.IsoRestr {N M : Matroid α} (h : N ≤r M) : N ≤ir M :=
   ⟨N, h, IsIso.refl N⟩
 
 theorem IsoRestr.refl (M : Matroid α) : M ≤ir M :=
-  (Restriction.refl M).IsoRestr
+  Restriction.refl.IsoRestr
 
 theorem IsIso.isoRestr (h : N ≅ M) : M ≤ir N :=
-  ⟨N, Restriction.refl N, h.symm⟩
+  ⟨N, Restriction.refl, h.symm⟩
 
 @[simp] theorem emptyOn_isoRestr (β : Type*) (M : Matroid α) : emptyOn β ≤ir M :=
   ⟨emptyOn α, by simp only [emptyOn_restriction], by simp only [isIso_emptyOn_iff]⟩
@@ -128,7 +128,7 @@ theorem IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ 
   exact ⟨N₁', hN₁'N₂.trans hN₂M₃, hN₁M₁.trans hN₁N₁'⟩
 
 theorem isoMinor_iff_exists_contract_isoRestr {N : Matroid α} {M : Matroid β} :
-    N ≤i M ↔ ∃ C, M.Indep C ∧ N ≤ir M ⟋ C := by
+    N ≤i M ↔ ∃ C, M.Indep C ∧ N ≤ir M ⧸ C := by
   refine ⟨fun h ↦ ?_, fun ⟨C, _, hN⟩ ↦ hN.isoMinor.trans (M.contract_minor C).isoMinor ⟩
   obtain ⟨N', hN'M, hi⟩ := h
   obtain ⟨C, hC, hN', -⟩ := hN'M.exists_contract_spanning_restrict

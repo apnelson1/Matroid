@@ -114,12 +114,24 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   obtain ⟨B, hB, heB⟩ := hei.exists_base_superset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
-@[simp] theorem restrict_loop_iff {R : Set α}  :
+@[simp] theorem restrict_loop_iff {R : Set α} :
     (M ↾ R).Loop e ↔ e ∈ R ∧ (M.Loop e ∨ e ∉ M.E) := by
   rw [← singleton_dep, restrict_dep_iff, singleton_subset_iff, ← singleton_dep, and_comm,
     and_congr_right_iff, Dep, and_or_right, singleton_subset_iff, and_iff_left or_not,
     or_iff_left_of_imp (fun he hi ↦ he (singleton_subset_iff.1 hi.subset_ground))]
   simp only [singleton_subset_iff, implies_true]
+
+theorem restriction_loop_iff (hNM : N ≤r M) :
+    N.Loop e ↔ e ∈ N.E ∧ M.Loop e := by
+  obtain ⟨R, hR, rfl⟩ := hNM
+  simp only [restrict_loop_iff, restrict_ground_eq, and_congr_right_iff, or_iff_left_iff_imp]
+  exact fun heR heE ↦ (heE (hR heR)).elim
+
+theorem Loop.of_restriction (he : N.Loop e) (hNM : N ≤r M) : M.Loop e :=
+  ((restriction_loop_iff hNM).1 he).2
+
+theorem Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) : N.Loop e :=
+  (restriction_loop_iff hNM).2 ⟨heN, he⟩
 
 @[simp] theorem preimage_loop_iff {M : Matroid β} {f : α → β} :
     (M.preimage f).Loop e ↔ M.Loop (f e) := by
@@ -258,6 +270,9 @@ theorem Nonloop.rkPos (h : M.Nonloop e) : M.RkPos :=
 
 theorem Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e :=
   (restrict_nonloop_iff.1 h).1
+
+theorem Nonloop.of_restriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e := by
+  obtain ⟨R, hR, rfl⟩ := hNM; exact h.of_restrict
 
 theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩

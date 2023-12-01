@@ -1,5 +1,4 @@
 import Matroid.Representation.Basic
-import Mathlib.FieldTheory.Finite.GaloisField
 
 /-
 We collect material on matroid invariants and closure properties of classes of matroids here.
@@ -68,6 +67,19 @@ class MinorClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
 theorem Minor.pred_minor [MinorClosed P] (hNM : N ≤m M) (hM : P M) : P N :=
   MinorClosed.forall_minor hNM hM
 
+instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
+  forall_minor := fun a _ ↦ Minor.finite a
+
+instance minorClosed_finiteRk : MinorClosed.{u} FiniteRk where
+  forall_minor := fun a _ ↦ Minor.finiteRk a
+
+instance minorClosed_finitary : MinorClosed.{u} Finitary where
+  forall_minor := fun a _ ↦ Minor.finitary a
+
+instance minorClosed_fieldRep (𝔽 : Type*) [Field 𝔽] :
+    MinorClosed (FieldRep 𝔽) :=
+  ⟨fun {_ _ _} hNM ⟨hMrep, hMfin⟩ ↦ ⟨hMrep.minor hNM, hNM.pred_minor hMfin⟩⟩
+
 /-- `M` is an `ExclMinor` for property `P` if `M` is minor-minimal not satisfying `P`. -/
 @[pp_dot] def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
   ¬ P M ∧ ∀ {N}, N <m M → P N
@@ -83,49 +95,37 @@ theorem ExclMinor.eq_of_not_prop_of_minor (hM : M.ExclMinor P) (hNM : N ≤m M) 
   obtain (hNM' | rfl) := hNM.strictMinor_or_eq
   · exact (hN <| hM.prop_of_strictMinor hNM').elim
   rfl
-
-theorem ExclMinor.prop_deleteElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟍ e) :=
+⧸
+theorem ExclMinor.prop_deleteElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⧹ e) :=
   hM.prop_of_strictMinor (deleteElem_strictMinor he)
 
-theorem ExclMinor.prop_contractElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⟋ e) :=
+theorem ExclMinor.prop_contractElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⧸ e) :=
   hM.prop_of_strictMinor (contractElem_strictMinor he)
 
 theorem exclMinor_iff_forall_contract_delete [MinorClosed P] {M : Matroid α} :
-    M.ExclMinor P ↔ ¬ P M ∧ ∀ e ∈ M.E, P (M ⟋ e) ∧ P (M ⟍ e) := by
+    M.ExclMinor P ↔ ¬ P M ∧ ∀ e ∈ M.E, P (M ⧸ e) ∧ P (M ⧹ e) := by
   refine ⟨fun h ↦ ⟨h.not_prop_self, fun e he ↦ ⟨h.prop_contractElem he, h.prop_deleteElem he⟩⟩,
     fun h ↦ ⟨h.1, fun {N} hNM ↦ ?_⟩⟩
   obtain ⟨e, he, (hc | hd)⟩ := strictMinor_iff_minor_contract_or_delete.1 hNM
   · exact hc.pred_minor (h.2 e he).1
   exact hd.pred_minor (h.2 e he).2
 
-theorem mem_iff_not_exists_exclMinor_minor [MinorClosed P] (M : Matroid α) [M.Finite] :
+theorem pred_iff_not_exists_exclMinor_minor [MinorClosed P] (M : Matroid α) [M.Finite] :
     P M ↔ ¬ ∃ N, N ≤m M ∧ N.ExclMinor P := by
   refine ⟨fun h ⟨N, hNM, hN⟩ ↦ hN.not_prop_self <| hNM.pred_minor h,
     fun h ↦ by_contra fun hM ↦ h ?_⟩
-  obtain (hM' | hM') := em (M.ExclMinor P)
-  · exact ⟨M, Minor.refl M, hM'⟩
-  simp_rw [ExclMinor, not_and, not_forall] at hM'
-  obtain ⟨N, hNM, hPN⟩ := hM' hM
-  have := hNM.encard_ground_lt
-  have hNfin := hNM.minor.finite
-  have h' := mt (mem_iff_not_exists_exclMinor_minor (M := N)).2 hPN
-  rw [not_not] at h'
-  obtain ⟨N', hN'N, hN'⟩ := h'
-  exact ⟨N', hN'N.trans hNM.minor, hN'⟩
-termination_by _ => M.E.encard
+  obtain ⟨N, ⟨hNM : N ≤m M, hPN : ¬ P N ⟩, hmin⟩ := Finite.exists_minimal_wrt id _
+    (M.finite_setOf_minor.inter_of_left {M' | ¬ P M'}) ⟨M, Minor.refl, hM⟩
+  refine ⟨N, hNM, hPN, fun {N₀} hlt ↦ by_contra fun hN₀ ↦ ?_⟩
+  obtain rfl := hmin N₀ ⟨hlt.minor.trans hNM, hN₀⟩ hlt.minor
+  exact strictMinor_irrefl _ hlt
 
-instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
-  forall_minor := fun a _ ↦ Minor.finite a
-
-instance minorClosed_finiteRk : MinorClosed.{u} FiniteRk where
-  forall_minor := fun a _ ↦ Minor.finiteRk a
-
-instance minorClosed_finitary : MinorClosed.{u} Finitary where
-  forall_minor := fun a _ ↦ Minor.finitary a
-
-instance minorClosed_fieldRep (𝔽 : Type*) [Field 𝔽] :
-    MinorClosed (FieldRep 𝔽) :=
-  ⟨fun {_ _ _} hNM ⟨hMrep, hMfin⟩ ↦ ⟨hMrep.minor hNM, hNM.pred_minor hMfin⟩⟩
+theorem exists_minimal_minor_between (P : Matroid α → Prop) [M.Finite] (hM : P M) (hNM : N ≤m M) :
+    ∃ (M₀ : Matroid α), N ≤m M₀ ∧ M₀ ≤m M ∧ ∀ M₀', N ≤m M₀' → M₀' <m M₀ → ¬ P M₀' := by
+  obtain ⟨M₀, ⟨hM₀M, -, hNM₀⟩, hmin⟩ :=  Finite.exists_minimal_wrt id _
+    (M.finite_setOf_minor.inter_of_left {M' | P M' ∧ N ≤m M'}) ⟨M, Minor.refl, hM, hNM⟩
+  exact ⟨M₀, hNM₀, hM₀M, fun M' hM' hM'M₀ hP ↦ hM'M₀.ne.symm <|
+    hmin _ ⟨hM'M₀.minor.trans hM₀M, hP, hM'⟩ hM'M₀.minor⟩
 
 end Minor
 
@@ -182,7 +182,7 @@ theorem ExclMinor.finite [FinClass P] (hM : M.ExclMinor P) : M.Finite := by
   obtain (rfl | ⟨⟨e,he⟩⟩ ) := eq_emptyOn_or_nonempty M
   · infer_instance
   have := finite_of_pred <| hM.prop_deleteElem he
-  exact ⟨((M ⟍ e).ground_finite.insert e).subset (by simp)⟩
+  exact ⟨((M ⧹ e).ground_finite.insert e).subset (by simp)⟩
 
 section Finite
 
@@ -192,10 +192,10 @@ section Loops
 /-- A matroid property `P` is `DeleteLoopClosed` if it is unchanged by deleting/adding a single
   loop. This is not the same as stating -/
 class DeleteLoopClosed (P : ∀ {β : Type u}, Matroid β → Prop) : Prop :=
-  (iff_deleteLoop : ∀ {α : Type u} {M : Matroid α} {e : α}, M.Loop e → (P (M ⟍ e) ↔ P M))
+  (iff_deleteLoop : ∀ {α : Type u} {M : Matroid α} {e : α}, M.Loop e → (P (M ⧹ e) ↔ P M))
 
 theorem pred_delete_loop_iff [DeleteLoopClosed P] {M : Matroid α} (he : M.Loop e) :
-    P (M ⟍ e) ↔ P M :=
+    P (M ⧹ e) ↔ P M :=
   DeleteLoopClosed.iff_deleteLoop he
 
 theorem ExclMinor.loopless [DeleteLoopClosed P] [MinorClosed P] (hM : M.ExclMinor P) :
@@ -207,10 +207,10 @@ theorem ExclMinor.loopless [DeleteLoopClosed P] [MinorClosed P] (hM : M.ExclMino
 
 @[simp] theorem pred_removeLoops_iff [DeleteLoopClosed P] {M : Matroid α} [M.Finite] :
     P M.removeLoops ↔ P M := by
-  set S := (M.cl ∅).powerset ∩ {X : Set α | (P M ↔ P (M ⟍ X))}
+  set S := (M.cl ∅).powerset ∩ {X : Set α | (P M ↔ P (M ⧹ X))}
   have hfin : S.Finite
   · exact (M.ground_finite.subset (M.cl_subset_ground ∅)).finite_subsets.inter_of_left _
-  obtain ⟨X, ⟨hXss : _ ⊆ M.cl ∅, hPX : P M ↔ P (M ⟍ X)⟩, hX⟩ :=
+  obtain ⟨X, ⟨hXss : _ ⊆ M.cl ∅, hPX : P M ↔ P (M ⧹ X)⟩, hX⟩ :=
     Finite.exists_maximal_wrt id S hfin ⟨∅, by simp⟩
   obtain (hss | rfl) := hXss.ssubset_or_eq
   · obtain ⟨e, heX, hel⟩ := exists_of_ssubset hss
@@ -235,21 +235,44 @@ end Loops
 
 section Simple
 
-class DeleteParallelClosed (P : ∀ {β : Type u}, Matroid β → Prop) : Prop :=
-  (iff_delete_loop :
-    ∀ {α : Type u} {M : Matroid α} {e : α}, M.Loop e → (P (M ⟍ e) ↔ P M))
+/-- Property `P` is unchanged by deleting loops and parallel copies. This is weaker than
+  being closed under simplification, because simplification may remove an infinite set. -/
+class DeleteParallelClosed (P : ∀ {β : Type u}, Matroid β → Prop) extends DeleteLoopClosed P :=
   (iff_delete_parallel :
-    ∀ {α : Type u} {M : Matroid α} {e f : α}, M.Parallel e f → (P (M ⟍ e) ↔ P M))
+    ∀ {α : Type u} {M : Matroid α} {e f : α}, M.Parallel e f → (P (M ⧹ e) ↔ P M))
 
-instance DeleteParallelClosed.deleteLoopClosed [DeleteParallelClosed P] : DeleteLoopClosed P where
-  iff_deleteLoop := fun {_ _} ↦ iff_delete_loop
+-- instance DeleteParallelClosed.deleteLoopClosed [DeleteParallelClosed P] : DeleteLoopClosed P where
+--   iff_deleteLoop := fun {_ _} ↦ iff_delete_loop
 
 theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef : M.Parallel e f) :
-    P (M ⟍ e) ↔ P M :=
+    P (M ⧹ e) ↔ P M :=
   DeleteParallelClosed.iff_delete_parallel hef
 
--- @[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop)
---     [DeleteParallelClosed P] {M : Matroid α} [M.Finite] : P M.simplification ↔ P M := by
+@[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop)
+    [DeleteParallelClosed P] {M : Matroid α} [M.Finite] : P M.simplification ↔ P M := by
+  set S := {N | M.simplification ≤r N ∧ (P M ↔ P N)}
+  have := M.finite_setOf_restriction.inter_of_right S
+  obtain ⟨(N : Matroid α), ⟨⟨hNs, hNP⟩,hNM : N ≤r M⟩,hmin⟩ := Finite.exists_minimal_wrt
+    (α := Matroid α) (β := Matroidᵣ α) id _
+    (M.finite_setOf_restriction.inter_of_right {N | M.simplification ≤r N ∧ (P M ↔ P N)})
+    ⟨M, ⟨M.simplification_restriction,Iff.rfl⟩, Restriction.refl⟩
+  obtain (rfl | hNs) := hNs.eq_or_strictRestriction
+  · rwa [Iff.comm]
+  obtain (⟨e,he⟩ | ⟨e,f,hef,he,hf⟩) :=
+    exists_loop_or_parallel_of_simplification_strictRestriction hNs hNM
+  · rw  [← pred_delete_loop_iff (P := P) he] at hNP
+    specialize hmin (N ⧹ e) ⟨⟨?_,hNP⟩, (delete_restriction _ _).trans hNM⟩ (delete_restriction _ _)
+    have hesi : e ∉ M.simplification.E :=
+      fun he' ↦ M.simplification.not_loop e <| he.loop_restriction hNs.restriction he'
+
+
+
+
+
+  -- simp only [mem_inter_iff, id_eq, Matroidᵣ.le_iff, and_imp] at hmin
+
+
+
 --   classical
 --   set S := {R : Set α | M.simplification.E ⊆ R ∧ R ⊆ M.E ∧ (P (M ↾ R) ↔ P M)}
 --   have hSfin : S.Finite
@@ -284,7 +307,7 @@ theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef 
 
 -- theorem removeLoopClosed_iff_forall_delete :
 --     RemoveLoopClosed P ↔
---       ∀ {α : Type u} {M : Matroid α} {X : Set α}, X ⊆ M.cl ∅ → (P M ↔ P (M ⟍ X)) := by
+--       ∀ {α : Type u} {M : Matroid α} {X : Set α}, X ⊆ M.cl ∅ → (P M ↔ P (M ⧹ X)) := by
 --   refine ⟨fun h {α} M X hX ↦ ?_, fun h ↦ ⟨fun {γ M} ↦ ?_⟩ ⟩
 --   · rw [h.iff_removeLoops, Iff.comm, h.iff_removeLoops, removeLoops_eq_delete,
 --       removeLoops_eq_delete, delete_cl_eq, empty_diff, delete_delete, union_diff_self,

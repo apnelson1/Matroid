@@ -479,12 +479,12 @@ end Hyperplane
 
 section Minor
 
-theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
+theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
   rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ←M.cl_union_cl_right_eq,
     union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
 
 @[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
-    (M ⟋ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
+    (M ⧸ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
   rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
     union_comm C, ←and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
     and_congr_right_iff]
@@ -492,11 +492,11 @@ theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
     fun h ↦ (subset_union_left _ _).trans h⟩
 
 theorem flat_contract_iff' :
-    (M ⟋ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
+    (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [←contract_inter_ground_eq, flat_contract_iff]
 
 theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
-    (M ⟋ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
+    (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
   rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
 

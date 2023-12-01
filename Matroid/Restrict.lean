@@ -72,7 +72,7 @@ instance {α : Type*} : MRestrict (Matroid α) (Set α) := ⟨fun M X ↦ M.rest
 theorem Indep.indep_restrict_of_subset (h : M.Indep I) (hIR : I ⊆ R) : (M ↾ R).Indep I :=
   restrict_indep_iff.mpr ⟨h,hIR⟩
 
-theorem Indep.of_restriction (hI : (M ↾ R).Indep I) : M.Indep I :=
+theorem Indep.of_restrict (hI : (M ↾ R).Indep I) : M.Indep I :=
   (restrict_indep_iff.1 hI).1
 
 @[simp] theorem restrict_ground_eq : (M ↾ R).E = R := rfl
@@ -93,9 +93,6 @@ theorem restrict_restrict_eq (M : Matroid α) (hR : R₂ ⊆ R₁) : (M ↾ R₁
 
 @[simp] theorem restrict_idem (M : Matroid α) (R : Set α) : M ↾ R ↾ R = M ↾ R := by
   rw [M.restrict_restrict_eq Subset.rfl]
-
-theorem Indep.of_restrict (h : (M ↾ R).Indep I) : M.Indep I :=
-  (restrict_indep_iff.mp h).1
 
 @[simp] theorem base_restrict_iff (hX : X ⊆ M.E := by aesop_mat) :
     (M ↾ X).Base I ↔ M.Basis I X := by
@@ -161,15 +158,42 @@ def StrictRestriction (N M : Matroid α) : Prop := Restriction N M ∧ ¬ Restri
 infix:50  " ≤r " => Restriction
 infix:50  " <r " => StrictRestriction
 
-instance : IsNonstrictStrictOrder (Matroid α) (· ≤r ·) (· <r ·) where
-  right_iff_left_not_left _ _ := Iff.rfl
+/-- A type synonym for matroids with the restriction order.
+  (The `PartialOrder` on `Matroid α` is reserved for the minor order)  -/
+def Matroidᵣ (α : Type*) : Type _ := Matroid α
 
-theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N := by
-  obtain ⟨R, -, rfl⟩ := h; rw [restrict_ground_eq]
+instance {α : Type*} : PartialOrder (Matroidᵣ α) where
+  le := (· ≤r ·)
+  lt := (· <r ·)
+  le_refl M := ⟨M.E, Subset.rfl, M.restrict_ground_eq_self.symm⟩
+  le_trans _ _ _ := by
+    rintro ⟨R, hR, rfl⟩ ⟨R', hR', rfl⟩
+    rw [restrict_restrict_eq _ (show R ⊆ R' from hR)]
+    exact ⟨R, hR.trans hR', rfl⟩
+  le_antisymm M₁ M₂ := by
+    rintro ⟨R, hR, rfl⟩ ⟨R', hR', h⟩
+    rw [h] at hR
+    obtain (rfl : R = R') := hR.antisymm hR'
+    rwa [restrict_idem, eq_comm] at h
+
+@[simp] protected theorem Matroidᵣ.le_iff {M M' : Matroidᵣ α} : M ≤ M' ↔ M ≤r M' := Iff.rfl
+@[simp] protected theorem Matroidᵣ.lt_iff {M M' : Matroidᵣ α} : M < M' ↔ M <r M' := Iff.rfl
+
+theorem Restriction.refl {M : Matroid α} : M ≤r M :=
+  le_refl (α := Matroidᵣ α) M
+
+theorem Restriction.antisymm (h : M ≤r M') (h' : M' ≤r M) : M = M' :=
+  le_antisymm (α := Matroidᵣ α) h h'
+
+theorem Restriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤r M₂) (h' : M₂ ≤r M₃) : M₁ ≤r M₃ :=
+  le_trans (α := Matroidᵣ α) h h'
 
 theorem restrict_restriction (M : Matroid α) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     M ↾ R ≤r M :=
   ⟨R, hR, rfl⟩
+
+theorem Restriction.eq_restrict (h : N ≤r M) : M ↾ N.E = N := by
+  obtain ⟨R, -, rfl⟩ := h; rw [restrict_ground_eq]
 
 theorem Restriction.subset (h : N ≤r M) : N.E ⊆ M.E := by
   obtain ⟨R, hR, rfl⟩ := h; exact hR
@@ -180,39 +204,14 @@ theorem Restriction.exists_eq_restrict (h : N ≤r M) : ∃ R ⊆ M.E, N = M ↾
 theorem restriction_iff_exists : (N ≤r M) ↔ ∃ R, R ⊆ M.E ∧ N = M ↾ R := by
   use Restriction.exists_eq_restrict; rintro ⟨R, hR, rfl⟩; exact restrict_restriction M R hR
 
-instance restriction_trans : IsTrans (Matroid α) (· ≤r ·) where
-  trans M₁ M₂ M₃ := by
-    rintro ⟨R, hR, rfl⟩ ⟨R', hR', rfl⟩
-    rw [restrict_restrict_eq _ (show R ⊆ R' from hR)]
-    exact ⟨R, hR.trans hR', rfl⟩
-
-instance restriction_refl : IsRefl (Matroid α) (· ≤r ·) where
-  refl M := ⟨M.E, Subset.rfl, M.restrict_ground_eq_self.symm⟩
-
-instance restriction_antisymm : IsAntisymm (Matroid α) (· ≤r ·) where
-  antisymm M M' := by
-    rintro ⟨R, hR, rfl⟩ ⟨R', hR', h⟩
-    rw [h, restrict_restrict_eq _ (show R' ⊆ R from hR')] at hR
-    obtain (rfl : R = R') := hR.antisymm hR'
-    rw [h, restrict_idem]
-
-theorem Restriction.refl (M : Matroid α) : M ≤r M :=
-  _root_.refl M
-
-theorem Restriction.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤r M₂) (h' : M₂ ≤r M₃) : M₁ ≤r M₃ :=
-  _root_.trans h h'
-
-theorem Restriction.antisymm (h : N ≤r M) (h' : M ≤r N) : N = M :=
-  _root_.antisymm h h'
-
 theorem StrictRestriction.restriction (h : N <r M) : N ≤r M :=
   h.1
 
-theorem StrictRestriction.Ne (h : N <r M) : N ≠ M := by
-  rintro rfl; exact h.2 (Restriction.refl N)
+theorem StrictRestriction.Ne (h : N <r M) : N ≠ M :=
+  ne_of_lt (α := Matroidᵣ α) h
 
 theorem StrictRestriction.irrefl (M : Matroid α) : ¬ (M <r M) :=
-  fun h ↦ h.Ne rfl
+  lt_irrefl (α := Matroidᵣ α) M
 
 theorem StrictRestriction.ssubset (h : N <r M) : N.E ⊂ M.E := by
   obtain ⟨R, -, rfl⟩ := h.1
@@ -228,10 +227,43 @@ theorem StrictRestriction.exists_eq_restrict (h : N <r M) : ∃ R, R ⊂ M.E ∧
 theorem Restriction.strictRestriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <r M :=
   ⟨h, fun h' ↦ hne <| h.antisymm h'⟩
 
+theorem Restriction.eq_or_strictRestriction (h : N ≤r M) : N = M ∨ N <r M :=
+  eq_or_lt_of_le (α := Matroidᵣ α) h
+
 theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <r M := by
   refine (M.restrict_restriction R hR.subset).strictRestriction_of_ne (fun h ↦ ?_)
   rw [← h, restrict_ground_eq] at hR
   exact hR.ne rfl
+
+theorem Restriction.finite {M : Matroid α} [M.Finite] (h : N ≤r M) : N.Finite := by
+  obtain ⟨R, hR, rfl⟩ := h
+  exact restrict_finite <| M.ground_finite.subset hR
+
+theorem Restriction.finiteRk {M : Matroid α} [FiniteRk M] (h : N ≤r M) : N.FiniteRk := by
+  obtain ⟨R, -, rfl⟩ := h
+  infer_instance
+
+theorem Restriction.finitary {M : Matroid α} [Finitary M] (h : N ≤r M) : N.Finitary := by
+  obtain ⟨R, -, rfl⟩ := h
+  infer_instance
+
+theorem finite_setOf_restriction (M : Matroid α) [M.Finite] : {N | N ≤r M}.Finite :=
+  (M.ground_finite.finite_subsets.image (fun R ↦ M ↾ R)).subset <|
+    by rintro _ ⟨R, hR, rfl⟩; exact ⟨_, hR, rfl⟩
+
+theorem Indep.of_restriction (hI : N.Indep I) (hNM : N ≤r M) : M.Indep I := by
+  obtain ⟨R, -, rfl⟩ := hNM; exact hI.of_restrict
+
+theorem Indep.indep_restriction (hI : M.Indep I) (hNM : N ≤r M) (hIN : I ⊆ N.E) : N.Indep I := by
+  obtain ⟨R, -, rfl⟩ := hNM; simpa [hI]
+
+theorem Dep.of_restriction (hD : N.Dep I) (hNM : N ≤r M) : M.Dep I := by
+  obtain ⟨R, hR, rfl⟩ := hNM
+  rw [restrict_dep_iff] at hD
+  exact ⟨hD.1, hD.2.trans hR⟩
+
+theorem Dep.dep_restriction (hD : M.Dep D) (hNM : N ≤r M) (hIN : D ⊆ N.E) : N.Dep D := by
+  obtain ⟨R, -, rfl⟩ := hNM; simpa [hD.not_indep]
 
 end restrict
 

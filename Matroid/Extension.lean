@@ -35,7 +35,7 @@ theorem addLoop_eq_self (he : e ∈ M.E) : M.addLoop e = M := by
   simp only [addLoop, restrict_indep_iff, and_iff_left_iff_imp]
   exact fun hI ↦ hI.subset_ground.trans (subset_insert _ _)
 
-theorem eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.Loop e ∧ M' ⟍ e = M := by
+theorem eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.Loop e ∧ M' ⧹ e = M := by
   obtain (he' | he') := em' (e ∈ M'.E)
   · refine iff_of_false ?_ ?_
     · rintro rfl; simp at he'
@@ -83,7 +83,7 @@ theorem addColoop_eq_self (he : e ∈ M.E) : M.addColoop e = M := by
 
 @[simp] theorem addColoop_ground (M : Matroid α) (e : α) : (M.addColoop e).E = insert e M.E := rfl
 
-theorem eq_addColoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ M' ⟋ e = M := by
+theorem eq_addColoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ M' ⧸ e = M := by
   rw [addColoop, eq_dual_comm, eq_comm, eq_addLoop_iff (show e ∉ M﹡.E from he),
     dual_loop_iff_coloop, eq_dual_comm, delete_elem, dual_delete_dual_eq_contract, contract_elem,
     eq_comm]
@@ -109,7 +109,7 @@ def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
   rw [update_eq_self, preimage_id, addLoop]
 
 theorem parallelExtend_not_nonloop (he : ¬M.Nonloop e) (f : α) :
-    M.parallelExtend e f = (M ⟍ f).addLoop f := by
+    M.parallelExtend e f = (M ⧹ f).addLoop f := by
   classical
   simp only [parallelExtend, delete_elem, eq_iff_indep_iff_indep_forall, restrict_ground_eq,
     addLoop_ground, delete_ground, mem_diff, mem_singleton_iff, not_true_eq_false, and_false,
@@ -122,7 +122,7 @@ theorem parallelExtend_not_nonloop (he : ¬M.Nonloop e) (f : α) :
   simp [hf, hI]
 
 theorem parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef : e ≠ f):
-    M.parallelExtend e f = (M ⟍ f).parallelExtend e f := by
+    M.parallelExtend e f = (M ⧹ f).parallelExtend e f := by
   classical
   rw [parallelExtend, parallelExtend, delete_elem, delete_ground, insert_diff_singleton,
     eq_iff_indep_iff_indep_forall]
@@ -135,7 +135,7 @@ theorem parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef
   This could be a simp lemma, but it is less convenient than the 'non-junk' unprimed version,
   which is simpler for reasonable inputs, even though it requires `f ∉ M.E` explicitly.  -/
 theorem parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
-    (M.parallelExtend e f) ⟍ f = M ⟍ f := by
+    (M.parallelExtend e f) ⧹ f = M ⧹ f := by
   classical
   simp only [parallelExtend, delete_elem, eq_iff_indep_iff_indep_forall, delete_ground,
     restrict_ground_eq, mem_insert_iff, true_or, not_true_eq_false, mem_singleton_iff,
@@ -147,7 +147,7 @@ theorem parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     and_iff_left_iff_imp]
   exact fun hI ↦ hI.subset_ground.trans <| subset_insert _ _
 
-theorem parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ⟍ f = M := by
+theorem parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ⧹ f = M := by
   rwa [parallelExtend_delete_eq', delete_elem, delete_eq_self_iff, disjoint_singleton_left]
 
 theorem parallelExtend_nonloop_iff (he : M.Nonloop e) :
@@ -205,7 +205,7 @@ theorem parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
 
 
 theorem eq_parallelExtend_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
-    M' = M.parallelExtend e f ↔ M'.Parallel e f ∧ M' ⟍ f = M := by
+    M' = M.parallelExtend e f ↔ M'.Parallel e f ∧ M' ⧹ f = M := by
   have hef : e ≠ f := by rintro rfl; exact hf he.mem_ground
   constructor
   · rintro rfl
@@ -322,29 +322,29 @@ def seriesExtend (M : Matroid α) (e f : α) : Matroid α := (M﹡.parallelExten
   rw [seriesExtend, parallelExtend_self, addColoop]
 
 theorem seriesExtend_coloop (he : M.Coloop e) (f : α) :
-    M.seriesExtend e f = (M ⟋ f).addColoop f := by
+    M.seriesExtend e f = (M ⧸ f).addColoop f := by
   rw [seriesExtend, parallelExtend_not_nonloop, addColoop, delete_elem, contract_elem,
     contract_dual_eq_dual_delete]
   simp [Nonloop, dual_loop_iff_coloop, he]
 
 theorem seriesExtend_not_mem_ground (he : e ∉ M.E) (f : α) :
-    M.seriesExtend e f = (M ⟋ f).addColoop f := by
+    M.seriesExtend e f = (M ⧸ f).addColoop f := by
   rw [seriesExtend, parallelExtend_not_nonloop, addColoop, contract_elem, delete_elem,
     contract_dual_eq_dual_delete]
   simp [Nonloop, he]
 
 theorem seriesExtend_eq_seriesExtend_contract (M : Matroid α) {e f : α} (hef : e ≠ f):
-    M.seriesExtend e f = (M ⟋ f).seriesExtend e f := by
+    M.seriesExtend e f = (M ⧸ f).seriesExtend e f := by
   rw [seriesExtend, parallelExtend_eq_parallelExtend_delete _ hef, seriesExtend]
   simp only [delete_elem, contract_elem, contract_dual_eq_dual_delete]
 
 theorem seriesExtend_contract_eq' (M : Matroid α) (e f : α) :
-    (M.seriesExtend e f) ⟋ f = M ⟋ f := by
+    (M.seriesExtend e f) ⧸ f = M ⧸ f := by
   rw [seriesExtend, contract_elem, ← delete_dual_eq_dual_contract, ← delete_elem,
     parallelExtend_delete_eq']
   simp
 
-theorem seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f) ⟋ f = M := by
+theorem seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f) ⧸ f = M := by
   rw [seriesExtend, contract_elem, ← delete_dual_eq_dual_contract, ← delete_elem,
     parallelExtend_delete_eq _ (show f ∉ M﹡.E from hf), dual_dual]
 
@@ -355,7 +355,7 @@ theorem seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
   rwa [Nonloop, dual_ground, and_iff_left heE, dual_loop_iff_coloop]
 
 theorem eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.Coloop e) (hf : f ∉ M.E) :
-    M' = M.seriesExtend e f ↔ M'.Series e f ∧ M' ⟋ f = M := by
+    M' = M.seriesExtend e f ↔ M'.Series e f ∧ M' ⧸ f = M := by
   rw [seriesExtend, eq_dual_comm, eq_comm, eq_parallelExtend_iff _ (show f ∉ M﹡.E from hf),
     delete_elem, ← contract_dual_eq_dual_delete, ← contract_elem, dual_inj_iff, Series]
   rwa [Nonloop, and_iff_left (show e ∈ M﹡.E from heE), dual_loop_iff_coloop]

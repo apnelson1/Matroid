@@ -281,6 +281,17 @@ def Parallel.swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
   rw [removeLoops_eq_restr, restrict_parallel_iff, mem_setOf, mem_setOf, and_iff_left_iff_imp]
   exact fun h ↦ ⟨h.nonloop_left, h.nonloop_right⟩
 
+theorem Parallel.of_restriction (h : N.Parallel e f) (hNM : N ≤r M) : M.Parallel e f := by
+  obtain ⟨R, hR, rfl⟩ := hNM; exact (restrict_parallel_iff.1 h).1
+
+theorem Parallel.parallel_restriction (h : M.Parallel e f) (hNM : N ≤r M)
+    (he : e ∈ N.E) (hf : f ∈ N.E) : N.Parallel e f := by
+  obtain ⟨R, -, rfl⟩ := hNM; rwa [restrict_parallel_iff, and_iff_left ⟨he, hf⟩]
+
+theorem Restriction.parallel_iff (hNM : N ≤r M) :
+    N.Parallel e f ↔ M.Parallel e f ∧ e ∈ N.E ∧ f ∈ N.E := by
+  obtain ⟨R, -, rfl⟩ := hNM; simp
+
 end Parallel
 
 section Series
@@ -470,6 +481,15 @@ theorem Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (
   simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
     restrict_indep_iff, pair_subset_iff] at *
   aesop
+
+theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
+    (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
+  by_contra' h
+  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop] at hM
+  push_neg at hM
+  obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
+  exact hne <| h.2 e f hef
+
 
 
 end Simple
@@ -733,22 +753,58 @@ theorem simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
   rw [simplification_eq_wrt, simplificationWrt_eq_self_iff]
   simpa using M.exists_parallelChoiceFunction.choose_spec
 
-theorem eq_simplificationWrt_of_restriction_of_simple (hc : M.ParallelChoiceFunction c)
-    (hsN : M.simplificationWrt c ≤r N) (hNM : N ≤r M) (hN : N.Simple) :
-    N = M.simplificationWrt c := by
-  apply hsN.minor.eq_of_ground_subset (fun e he ↦ ?_)
-  simp only [simplificationWrt_ground_eq, mem_image, mem_setOf_eq]
-  obtain ⟨R, -, rfl⟩ := hNM.exists_eq_restrict
-  have' hpara := hc.parallel_apply ((M ↾ R).toNonloop he).of_restrict
-  refine ⟨e, hpara.nonloop_left, Parallel.eq (M := M ↾ R) ?_⟩
-  refine restrict_parallel_iff.2 ⟨hpara.symm, ?_, he⟩
-  exact hsN.subset <| hpara.nonloop_left.mem_simplificationWrt_ground c
+theorem exists_loop_or_parallel_of_simplificationWrt_strictRestriction
+    (hc : M.ParallelChoiceFunction c) (hsN : M.simplificationWrt c <r N) (hNM : N ≤r M) :
+    (∃ e, N.Loop e) ∨ (∃ e, N.Parallel e (c e) ∧ e ≠ c e) := by
+  obtain ⟨R, hR, hsi⟩ := hsN.exists_eq_restrict
+  obtain ⟨e, heN, heR⟩ := exists_of_ssubset hR
+  refine (N.loop_or_nonloop e).elim (fun h ↦ Or.inl ⟨e,h⟩)
+    (fun he ↦ Or.inr ⟨e, ?_, fun hce ↦ heR ?_⟩)
+  · refine (hc.parallel_apply (he.of_restriction hNM)).parallel_restriction hNM heN (hR.subset ?_)
+    rw [← restrict_ground_eq (M := N) (R := R), ← hsi]
+    exact (he.of_restriction hNM).mem_simplificationWrt_ground c
+  rw [← restrict_ground_eq (M := N) (R := R), ← hsi, hce]
+  exact (he.of_restriction hNM).mem_simplificationWrt_ground c
 
-theorem eq_simplification_of_restriction_of_simple (hsN : M.simplification ≤r N) (hNM : N ≤r M)
-    (hN : N.Simple) : N = M.simplification := by
+theorem eq_simplificationWrt_of_restriction [Simple N] (hc : M.ParallelChoiceFunction c)
+    (hsN : M.simplificationWrt c ≤r N) (hNM : N ≤r M)  :
+    N = M.simplificationWrt c := by
+  obtain (rfl | hM) := hsN.eq_or_strictRestriction
+  · rfl
+  obtain (⟨e,he⟩ | ⟨e,hef⟩) := exists_loop_or_parallel_of_simplificationWrt_strictRestriction
+    hc hM hNM
+  · exact (N.not_loop e he).elim
+  exact (hef.2 hef.1.eq).elim
+
+/-- If `N` is below `M` but strictly above `M.simplification` in the restriction order, then
+  `N` has a loop or an element parallel to something in the simplification. -/
+theorem exists_loop_or_parallel_of_simplification_strictRestriction
+    (hsN : M.simplification <r N) (hNM : N ≤r M) :
+    (∃ e, N.Loop e) ∨
+    (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
+  obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
+  obtain (he | ⟨e,he,hce⟩) :=
+    exists_loop_or_parallel_of_simplificationWrt_strictRestriction hc (hM ▸ hsN) hNM
+  · exact Or.inl he
+  refine Or.inr ⟨e,_, he, ?_⟩
+  rw [hM] at hsN ⊢
+  have hr := (he.nonloop_left.of_restriction hNM).mem_simplificationWrt_ground c
+  refine ⟨fun h' ↦ ?_, hr⟩
+  have _ := M.simplificationWrt_simple hc
+  exact hce (he.parallel_restriction hsN.restriction h' hr).eq
+
+theorem exists_parallel_of_simplification_strictRestriction [Loopless N]
+    (hsN : M.simplification <r N) (hNM : N ≤r M) :
+    (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
+   obtain (⟨e,he⟩ | h) := exists_loop_or_parallel_of_simplification_strictRestriction hsN hNM
+   · exact (N.not_loop e he).elim
+   assumption
+
+theorem eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r N) (hNM : N ≤r M) :
+    N = M.simplification := by
   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
   rw [hM]
-  exact eq_simplificationWrt_of_restriction_of_simple hc (by rwa [← hM]) hNM hN
+  exact eq_simplificationWrt_of_restriction hc (by rwa [← hM]) hNM
 
 
 end Simplification

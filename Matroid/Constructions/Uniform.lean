@@ -106,12 +106,12 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)﹡ = unifOn E (E.encard - 
     ←WithTop.add_right_cancel_iff (hlt.trans_le le_top).ne, tsub_add_cancel_of_le hlt.le]
 
 @[simp] theorem unifOn_delete_eq (E D : Set α) (k : ℕ∞) :
-    (unifOn E k) ⟍ D = unifOn (E \ D) k := by
+    (unifOn E k) ⧹ D = unifOn (E \ D) k := by
   simp_rw [eq_unifOn_iff, delete_ground, unifOn_ground_eq, true_and, delete_indep_iff,
     unifOn_indep_iff, subset_diff, and_assoc, imp_true_iff]
 
 theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
-    (unifOn E k) ⟋ C = unifOn (E \ C) (k - (E ∩ C).encard) := by
+    (unifOn E k) ⧸ C = unifOn (E \ C) (k - (E ∩ C).encard) := by
   lift k to ℕ using hk
   refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
@@ -126,7 +126,7 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
   exact WithTop.coe_ne_top
 
 @[simp] theorem unifOn_contract_eq {k : ℕ} :
-    (unifOn E k) ⟋ C = unifOn (E \ C) (k - (E ∩ C).encard) :=
+    (unifOn E k) ⧸ C = unifOn (E \ C) (k - (E ∩ C).encard) :=
   unifOn_contract_eq' E C WithTop.coe_ne_top
 
 @[simp] theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
@@ -282,7 +282,7 @@ theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L)
     and_iff_left hY]
   refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
   · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
-  exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restriction
+  exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
 theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
     ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
