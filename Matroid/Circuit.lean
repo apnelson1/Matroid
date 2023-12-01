@@ -329,7 +329,7 @@ theorem eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E =
 section Dual
 
 /-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
-@[pp_dot, reducible] def Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
+@[pp_dot] abbrev Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
 
 theorem cocircuit_def : M.Cocircuit K ↔ M﹡.Circuit K := Iff.rfl
 
@@ -423,7 +423,7 @@ end Finitary
 section Girth
 
 /-- The `girth` of `M` is the cardinality of the smallest circuit of `M`, or `⊤` if none exists.-/
-@[pp_dot] noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ setOf M.Circuit, C.encard
+@[pp_dot] noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ {C | M.Circuit C}, C.encard
 
 theorem one_le_girth (M : Matroid α) : 1 ≤ M.girth := by
   simp_rw [girth, le_iInf_iff, one_le_encard_iff_nonempty]; exact fun _ ↦ Circuit.nonempty
@@ -545,8 +545,7 @@ section Equiv
 /-- A `LocalEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
 def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
-    (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N
-  := by
+    (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N := by
   apply iso_of_forall_indep e hM hN _ _
   · intro I
     rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']

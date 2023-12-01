@@ -2,9 +2,9 @@ import Matroid.Circuit
 import Matroid.Constructions.ImagePreimage
 
 /-
-  A `Loop` of a matroid_in is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
+  A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
   Thus, the set of loops of `M` is equal to `M.cl ∅`, and we prefer this notation instead of
-  `{e | M.loop e}` or similar. A `Nonloop` is an element of the ground set that is not a loop.
+  `{e | M.Loop e}` or similar. A `Nonloop` is an element of the ground set that is not a loop.
 -/
 
 
@@ -91,11 +91,6 @@ theorem basis_iff_empty_of_subset_loops (hX : X ⊆ M.cl ∅) : M.Basis I X ↔ 
   refine ⟨fun h ↦ ?_, by rintro rfl; simpa⟩
   replace h := (cl_eq_loops_of_subset hX) ▸ h.basis_cl_right
   simpa using h
-
-
-
-
-
 
 theorem Loop.cl (he : M.Loop e) : M.cl {e} = M.cl ∅ :=
   cl_eq_loops_of_subset (singleton_subset_iff.mpr he)
@@ -359,7 +354,7 @@ end Loopless
 section Coloop
 
 /-- A coloop is a loop of the dual  -/
-@[pp_dot, reducible] def Coloop (M : Matroid α) (e : α) : Prop :=
+@[pp_dot] abbrev Coloop (M : Matroid α) (e : α) : Prop :=
   M﹡.Loop e
 
 @[aesop unsafe 20% (rule_sets [Matroid])]
