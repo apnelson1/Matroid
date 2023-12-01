@@ -633,6 +633,9 @@ theorem exists_simplification_eq_wrt (M : Matroid α) :
 @[simp] theorem simplificationWrt_ground_eq (M : Matroid α) (c : α → α) :
   (M.simplificationWrt c).E = c '' {e | M.Nonloop e} := rfl
 
+theorem Nonloop.mem_simplificationWrt_ground (he : M.Nonloop e) (c : α → α) :
+    c e ∈ (M.simplificationWrt c).E := ⟨_, he, rfl⟩
+
 theorem simplificationWrt_simple (M : Matroid α) {c : α → α}
     (hc : M.ParallelChoiceFunction c) : (M.simplificationWrt c).Simple := by
   simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_nonloop,
@@ -729,5 +732,23 @@ theorem simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
 @[simp] theorem simplification_eq_self_iff (M : Matroid α) : M.simplification = M ↔ M.Simple := by
   rw [simplification_eq_wrt, simplificationWrt_eq_self_iff]
   simpa using M.exists_parallelChoiceFunction.choose_spec
+
+theorem eq_simplificationWrt_of_restriction_of_simple (hc : M.ParallelChoiceFunction c)
+    (hsN : M.simplificationWrt c ≤r N) (hNM : N ≤r M) (hN : N.Simple) :
+    N = M.simplificationWrt c := by
+  apply hsN.minor.eq_of_ground_subset (fun e he ↦ ?_)
+  simp only [simplificationWrt_ground_eq, mem_image, mem_setOf_eq]
+  obtain ⟨R, -, rfl⟩ := hNM.exists_eq_restrict
+  have' hpara := hc.parallel_apply ((M ↾ R).toNonloop he).of_restrict
+  refine ⟨e, hpara.nonloop_left, Parallel.eq (M := M ↾ R) ?_⟩
+  refine restrict_parallel_iff.2 ⟨hpara.symm, ?_, he⟩
+  exact hsN.subset <| hpara.nonloop_left.mem_simplificationWrt_ground c
+
+theorem eq_simplification_of_restriction_of_simple (hsN : M.simplification ≤r N) (hNM : N ≤r M)
+    (hN : N.Simple) : N = M.simplification := by
+  obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
+  rw [hM]
+  exact eq_simplificationWrt_of_restriction_of_simple hc (by rwa [← hM]) hNM hN
+
 
 end Simplification

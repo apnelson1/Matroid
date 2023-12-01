@@ -660,9 +660,6 @@ def StrictMinor (N M : Matroid α) : Prop :=
 infixl:50 " ≤m " => Matroid.Minor
 infixl:50 " <m " => Matroid.StrictMinor
 
-instance {α : Type*} : IsNonstrictStrictOrder (Matroid α) (· ≤m ·) (· <m ·) :=
-  ⟨fun _ _ ↦ Iff.rfl⟩
-
 theorem contract_delete_minor (M : Matroid α) (C D : Set α) : M ⟋ C ⟍ D ≤m M := by
   rw [contract_delete_diff, ←contract_inter_ground_eq, ←delete_inter_ground_eq,
     contract_ground, diff_inter_self_eq_diff, diff_inter_diff_right, inter_diff_right_comm]
@@ -681,9 +678,6 @@ theorem Indep.of_minor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
 theorem Nonloop.of_minor (h : N.Nonloop e) (hNM : N ≤m M) : M.Nonloop e := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
   exact h.of_delete.of_contract
-
-instance minor_refl : IsRefl (Matroid α) (· ≤m ·) :=
-  ⟨fun M ↦ minor_iff_exists_contract_delete.2 ⟨∅, ∅, by simp⟩⟩
 
 lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
@@ -705,23 +699,32 @@ theorem Minor.finitary (h : N ≤m M) [Finitary M] : Finitary N := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
   infer_instance
 
-instance minor_antisymm : IsAntisymm (Matroid α) (· ≤m ·) :=
-  ⟨fun _ _ h h' ↦ h'.eq_of_ground_subset h.subset⟩
-
-instance minor_trans : IsTrans (Matroid α) (· ≤m ·) :=
-⟨ by
-    rintro M₀ M₁ M₂ ⟨C₁, D₁, -, -, -, rfl⟩ ⟨C₂, D₂, -, -, -, rfl⟩
-    rw [contract_delete_contract_delete']
-    apply contract_delete_minor ⟩
-
 theorem Minor.refl (M : Matroid α) : M ≤m M :=
-  _root_.refl M
+  minor_iff_exists_contract_delete.2 ⟨∅, ∅, by simp⟩
 
-theorem Minor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M₂ ≤m M₃) : M₁ ≤m M₃ :=
-  _root_.trans h h'
+theorem Minor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M₂ ≤m M₃) : M₁ ≤m M₃ := by
+  obtain ⟨C₁, D₁, -, -, -, rfl⟩ := h
+  obtain ⟨C₂, D₂, -, -, -, rfl⟩ := h'
+  rw [contract_delete_contract_delete']
+  apply contract_delete_minor
 
 theorem Minor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
-  _root_.antisymm h h'
+  h'.eq_of_ground_subset h.subset
+
+/-- A type synonym for `Matroid α`, with the minor partial order. -/
+def Matroidₘ (α : Type*) : Type _ := (Matroid α)
+
+instance (α : Type*) : PartialOrder (Matroidₘ α) where
+  le M M' := M ≤m M'
+  lt M M' := M <m M'
+  le_refl := Minor.refl
+  le_trans _ _ _ h h' := Minor.trans h h'
+  le_antisymm _ _ h h' := Minor.antisymm h h'
+
+@[simp] theorem Matroidₘ.minor_iff (M M' : Matroidₘ α) : M ≤ M' ↔ (M : Matroid α) ≤m M' := Iff.rfl
+
+@[simp] theorem Matroidₘ.strictMinor_iff (M M' : Matroidₘ α) :
+    M < M' ↔ (M : Matroid α) <m M' := Iff.rfl
 
 theorem StrictMinor.minor (h : N <m M) : N ≤m M :=
   h.1
@@ -956,9 +959,15 @@ theorem finite_minors (M : Matroid α) [M.Finite] : {N | N ≤m M}.Finite := by
   simp only [coe_setOf, mem_setOf_eq, Prod.mk.injEq, Subtype.mk.injEq] at hNN'
   rw [hNN'.1, hNN'.2]
 
+theorem foo (P : Matroid α → Prop) [M.Finite] (hP : P M) (hNM : N ≤m M) :
+    ∃ (M₀ : Matroid α) (h : N ≤m M₀), M₀ ≤m M ∧ P M₀ ∧ ∀ e ∈ h.C, ¬ P (M₀ ⟋ e) ∧
+      ∀ e ∈ h.D, ¬ P (M₀ ⟍ e) := by
 
+  -- have := @Finite.exists_minimal_wrt _ (Matroid α) (· ≤m ·)
+  have := Finite.exists_minimal_wrt (α := Matroid α) (β := Matroidₘ α) id _
+    (M.finite_minors.inter_of_right {M' | N ≤m M' ∧ P M})
 
-
+  sorry
   -- have : Finite {X // X ⊆ M.E}
   -- ·
   -- have : Finite ({X // X ⊆ M.E} × {X // X ⊆ M.E}) := by
