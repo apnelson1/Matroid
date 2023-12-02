@@ -740,9 +740,9 @@ def matroid_of_cut (M : Matroid α) {C : Set (Set α)} (hC : M.Modular_cut C) {e
 
 #check restrict_cl_eq
 
-theorem flat_of_delete_elem_flat {M : Matroid α} (e_nF : e ∉ F) (hF : M.Flat (insert e F)) :
+theorem flat_of_deleteElem_flat {M : Matroid α} (e_nF : e ∉ F) (hF : M.Flat (insert e F)) :
     (M ⧹ e).Flat F := by
-  rw [flat_iff_cl_self, delete_elem, delete_cl_eq, diff_singleton_eq_self e_nF]
+  rw [flat_iff_cl_self, deleteElem, delete_cl_eq, diff_singleton_eq_self e_nF]
   apply subset_antisymm _ (subset_diff_singleton (M.subset_cl _ ((subset_insert _ _).trans
    hF.subset_ground)) e_nF)
   · rw [diff_singleton_subset_iff]
@@ -789,21 +789,21 @@ lemma modular_of_modular_restrict (M : Matroid α) (X : Set (Set α)) (hX : sUni
 
 @[simp] theorem modular_cut_of_flats_remove {M : Matroid α} :
     Modular_cut (M ⧹ e) ({F | e ∉ F ∧ M.Flat (insert e F) ∧ e ∈ M.cl F}) := by
-  refine' ⟨fun F F_flat ↦ flat_of_delete_elem_flat F_flat.1 F_flat.2.1,
+  refine' ⟨fun F F_flat ↦ flat_of_deleteElem_flat F_flat.1 F_flat.2.1,
    fun F F' F_Flat F_sub_F' F'_Flat ↦ _, fun X X_sub X_none X_modular ↦ _⟩
   · have F'_ground : F' ⊆ M.E
     · apply F'_Flat.subset_ground.trans
-      rw [delete_elem, delete_ground]
+      rw [deleteElem, delete_ground]
       exact diff_subset _ _
     have e_nE : e ∉ (M ⧹ e).E
-    · rw [delete_elem, delete_ground]
+    · rw [deleteElem, delete_ground]
       exact fun e_mem ↦ absurd (rfl) e_mem.2
     have e_in_cl_F' : e ∈ M.cl F' \ F' := ⟨(M.cl_subset_cl F_sub_F' F_Flat.2.2),
      not_mem_subset F'_Flat.subset_ground e_nE⟩
     refine' ⟨e_in_cl_F'.2, _⟩
     rw [flat_iff_cl_self, cl_insert_eq_of_mem_cl e_in_cl_F'.1]
     refine' ⟨subset_antisymm _ (insert_subset e_in_cl_F'.1 (M.subset_cl _)), e_in_cl_F'.1⟩
-    · rw [flat_iff_cl_self, delete_elem, delete_cl_eq,
+    · rw [flat_iff_cl_self, deleteElem, delete_cl_eq,
        diff_singleton_eq_self e_in_cl_F'.2] at F'_Flat
       nth_rw 2 [←F'_Flat]
       simp only [mem_diff, mem_singleton_iff, not_true_eq_false, and_false, insert_diff_singleton,

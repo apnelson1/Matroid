@@ -175,7 +175,7 @@ theorem ModularCut.extension_cl_eq_of_not_mem (C : M.ModularCut) (he : e ∉ M.E
   obtain ⟨I, hI⟩ := M.exists_basis' X
   have hI' : (extension C e).Basis' I X
   sorry
-  -- · rw [← C.extension_delete he, delete_elem, delete_basis'_iff] at hI
+  -- · rw [← C.extension_delete he, deleteElem, delete_basis'_iff] at hI
   --   have := hI.indep.basis_insert_iff (e := e)
 
 
@@ -199,9 +199,9 @@ theorem ModularCut.extension_flat_iff (C : M.ModularCut) (e : α) (he : e ∉ M.
 /-- The modular cut corresponding to a deletion. (This is the empty cut if `e ∉ M.E`) -/
 @[simps] def ModularCut.ofDelete (M : Matroid α) (e : α) : (M ⧹ e).ModularCut where
   Fs := {F | (M ⧹ e).Flat F ∧ e ∈ M.cl F}
-  forall_flat := by simp only [delete_elem, mem_setOf_eq, and_imp]; tauto
+  forall_flat := by simp only [deleteElem, mem_setOf_eq, and_imp]; tauto
   up_closed := by
-    simp only [delete_elem, mem_setOf_eq, and_imp]
+    simp only [deleteElem, mem_setOf_eq, and_imp]
     exact fun {F F'} hF heF hFF' hF' ↦ ⟨hF', M.cl_subset_cl hFF' heF⟩
   modular := by
     sorry
@@ -220,7 +220,7 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
     -- reduce it to goals of the form `structure field = structure field`,
     -- which often makes the simplifier a lot happier.
     ext F
-    simp only [delete_elem, mem_setOf_eq, extension_ground, congr_Fs, SetLike.mem_coe,
+    simp only [deleteElem, mem_setOf_eq, extension_ground, congr_Fs, SetLike.mem_coe,
       mem_ofDelete_iff, mem_Fs_iff]
 
     -- some matroidy goal left
@@ -228,10 +228,10 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
 
   right_inv := by
     rintro ⟨N, hN, rfl⟩
-    simp only [delete_elem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
+    simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
     apply eq_of_indep_iff_indep_forall (by simpa) (fun I hI ↦ ?_)
     by_cases heI : e ∈ I
-    · simp only [delete_elem, mem_setOf_eq, extension_indep, delete_indep_iff,
+    · simp only [deleteElem, mem_setOf_eq, extension_indep, delete_indep_iff,
         disjoint_singleton_right, heI, not_true_eq_false, and_false, delete_ground, mem_diff,
         mem_singleton_iff, not_false_eq_true, and_self, and_true, delete_cl_eq, sdiff_idem,
         mem_congr, mem_ofDelete_iff, not_and, true_and, false_or]

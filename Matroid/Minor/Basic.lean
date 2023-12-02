@@ -57,46 +57,32 @@ theorem restriction_iff_exists_eq_delete : N ≤r M ↔ ∃ D ⊆ M.E, N = M ⧹
 theorem delete_subset_ground (M : Matroid α) (D : Set α) : (M ⧹ D).E ⊆ M.E :=
   diff_subset _ _
 
-@[simp] theorem delete_elem (M : Matroid α) (e : α) : M ⧹ e = M ⧹ ({e} : Set α) := rfl
+@[simp] theorem deleteElem (M : Matroid α) (e : α) : M ⧹ e = M ⧹ ({e} : Set α) := rfl
 
-theorem delete_elem_eq_self (M : Matroid α) (he : e ∉ M.E) : M ⧹ e = M := by
-  rwa [delete_elem, delete_eq_restrict, restrict_eq_self_iff,sdiff_eq_left,
+theorem deleteElem_eq_self (he : e ∉ M.E) : M ⧹ e = M := by
+  rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff,sdiff_eq_left,
     disjoint_singleton_right]
 
 
--- theorem Restriction.restriction_delete_elem (h : N ≤r M) (he : e ∉ N.E) : N ≤r M ⧹ e := by
+-- theorem Restriction.restriction_deleteElem (h : N ≤r M) (he : e ∉ N.E) : N ≤r M ⧹ e := by
 --   obtain ⟨R, hR, rfl⟩ := h
 --   refine ⟨R, ?_, ?_⟩
---   · simp only [delete_elem, delete_ground]
+--   · simp only [deleteElem, delete_ground]
 --     exact subset_diff_singleton hR he
 --   rw [← restrict_eq_delete]
 
 
 instance deleteElem_finite [Matroid.Finite M] {e : α} : Matroid.Finite (M ⧹ e) := by
-  rw [delete_elem]; infer_instance
+  rw [deleteElem]; infer_instance
 
 instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ⧹ e) := by
-  rw [delete_elem]; infer_instance
+  rw [deleteElem]; infer_instance
 
 @[simp] theorem delete_delete (M : Matroid α) (D₁ D₂ : Set α) : M ⧹ D₁ ⧹ D₂ = M ⧹ (D₁ ∪ D₂) := by
   rw [←restrict_compl, ←restrict_compl, ←restrict_compl, restrict_restrict_eq, restrict_ground_eq,
     diff_diff]
   simp [diff_subset]
 
-
-theorem Restriction.restriction_delete_elem (h : N ≤r M) (he : e ∉ N.E) : N ≤r M ⧹ e := by
-  obtain ⟨R, hR, rfl⟩ := h
-  refine ⟨R, ?_, ?_⟩
-  · simp only [delete_elem, delete_ground]
-    exact subset_diff_singleton hR he
-
-  sorry
-  -- ugh
-  -- obtain ⟨D, hD, rfl⟩ := h.exists_eq_delete
-  -- rw [restriction_iff_exists_eq_delete]
-  -- refine ⟨D \ {e}, diff_subset_diff_left hD, ?_⟩
-  -- rw [delete_elem, delete_delete, singleton_union, insert_diff_singleton, insert_eq_of_mem]
-  -- simp at he
 
 theorem delete_comm (M : Matroid α) (D₁ D₂ : Set α) : M ⧹ D₁ ⧹ D₂ = M ⧹ D₂ ⧹ D₁ := by
   rw [delete_delete, union_comm, delete_delete]
@@ -114,12 +100,22 @@ theorem delete_eq_delete_iff : M ⧹ D₁ = M ⧹ D₂ ↔ D₁ ∩ M.E = D₂ �
 @[simp] theorem delete_eq_self_iff : M ⧹ D = M ↔ Disjoint D M.E := by
   rw [←restrict_compl, restrict_eq_self_iff, sdiff_eq_left, disjoint_comm]
 
+theorem Restriction.restrict_delete_of_disjoint (h : N ≤r M) (hX : Disjoint X N.E) :
+    N ≤r (M ⧹ X) := by
+  obtain ⟨D, hD, rfl⟩ := restriction_iff_exists_eq_delete.1 h
+  refine restriction_iff_exists_eq_delete.2 ⟨D \ X, diff_subset_diff_left hD, ?_⟩
+  rwa [delete_delete, union_diff_self, union_comm, ← delete_delete, eq_comm,
+    delete_eq_self_iff]
+
+theorem Restriction.restriction_deleteElem (h : N ≤r M) (he : e ∉ N.E) : N ≤r M ⧹ e :=
+  h.restrict_delete_of_disjoint (by simpa)
+
 @[simp] theorem delete_indep_iff : (M ⧹ D).Indep I ↔ M.Indep I ∧ Disjoint I D := by
   rw [←restrict_compl, restrict_indep_iff, subset_diff, ←and_assoc,
     and_iff_left_of_imp Indep.subset_ground]
 
 @[simp] theorem deleteElem_indep_iff : (M ⧹ e).Indep I ↔ M.Indep I ∧ e ∉ I := by
-  rw [delete_elem, delete_indep_iff, disjoint_singleton_right]
+  rw [deleteElem, delete_indep_iff, disjoint_singleton_right]
 
 theorem Indep.of_delete (h : (M ⧹ D).Indep I) : M.Indep I :=
   (delete_indep_iff.mp h).1
@@ -209,7 +205,7 @@ instance delete_finitary (M : Matroid α) [Finitary M] (D : Set α) : Finitary (
   change Finitary (M ↾ (M.E \ D)); infer_instance
 
 instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (M ⧹ e) := by
-  rw [delete_elem]; infer_instance
+  rw [deleteElem]; infer_instance
 
 theorem removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ⧹ M.cl ∅ := by
   rw [← restrict_compl, removeLoops]

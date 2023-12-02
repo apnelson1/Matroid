@@ -95,7 +95,7 @@ theorem ExclMinor.eq_of_not_prop_of_minor (hM : M.ExclMinor P) (hNM : N ≤m M) 
   obtain (hNM' | rfl) := hNM.strictMinor_or_eq
   · exact (hN <| hM.prop_of_strictMinor hNM').elim
   rfl
-⧸
+
 theorem ExclMinor.prop_deleteElem (hM : M.ExclMinor P) (he : e ∈ M.E) : P (M ⧹ e) :=
   hM.prop_of_strictMinor (deleteElem_strictMinor he)
 
@@ -216,7 +216,7 @@ theorem ExclMinor.loopless [DeleteLoopClosed P] [MinorClosed P] (hM : M.ExclMino
   · obtain ⟨e, heX, hel⟩ := exists_of_ssubset hss
     refine (hel <|
       (hX (insert e X) ⟨insert_subset heX hXss, ?_⟩ (by simp)).symm.subset (mem_insert _ _)).elim
-    rw [mem_setOf_eq, hPX, ← union_singleton, ← delete_delete, ← delete_elem,
+    rw [mem_setOf_eq, hPX, ← union_singleton, ← delete_delete, ← deleteElem,
       pred_delete_loop_iff (P := P)]
     rwa [delete_loop_iff, and_iff_left hel]
   rw [hPX, removeLoops_eq_delete]
@@ -239,14 +239,14 @@ section Simple
   being closed under simplification, because simplification may remove an infinite set. -/
 class DeleteParallelClosed (P : ∀ {β : Type u}, Matroid β → Prop) extends DeleteLoopClosed P :=
   (iff_delete_parallel :
-    ∀ {α : Type u} {M : Matroid α} {e f : α}, M.Parallel e f → (P (M ⧹ e) ↔ P M))
+    ∀ {α : Type u} {M : Matroid α} {e f : α}, M.Parallel e f → e ≠ f → (P (M ⧹ e) ↔ P M))
 
 -- instance DeleteParallelClosed.deleteLoopClosed [DeleteParallelClosed P] : DeleteLoopClosed P where
 --   iff_deleteLoop := fun {_ _} ↦ iff_delete_loop
 
-theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef : M.Parallel e f) :
-    P (M ⧹ e) ↔ P M :=
-  DeleteParallelClosed.iff_delete_parallel hef
+theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef : M.Parallel e f)
+  (hne : e ≠ f) : P (M ⧹ e) ↔ P M :=
+  DeleteParallelClosed.iff_delete_parallel hef hne
 
 @[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop)
     [DeleteParallelClosed P] {M : Matroid α} [M.Finite] : P M.simplification ↔ P M := by
@@ -261,59 +261,17 @@ theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef 
   obtain (⟨e,he⟩ | ⟨e,f,hef,he,hf⟩) :=
     exists_loop_or_parallel_of_simplification_strictRestriction hNs hNM
   · rw  [← pred_delete_loop_iff (P := P) he] at hNP
-    specialize hmin (N ⧹ e) ⟨⟨?_,hNP⟩, (delete_restriction _ _).trans hNM⟩ (delete_restriction _ _)
     have hesi : e ∉ M.simplification.E :=
       fun he' ↦ M.simplification.not_loop e <| he.loop_restriction hNs.restriction he'
+    rw [show N = N ⧹ e from hmin (N ⧹ e) ⟨⟨hNs.restriction.restriction_deleteElem hesi,hNP⟩,
+      (delete_restriction _ _).trans hNM⟩ (delete_restriction _ _)] at he
+    simp at he
+  rw [← pred_delete_parallel_iff (P := P) hef (fun h ↦ he <| h ▸ hf)] at hNP
+  rw [show N = N ⧹ e from hmin (N ⧹ e)
+    ⟨⟨hNs.restriction.restriction_deleteElem he,hNP⟩, (delete_restriction _ _).trans hNM⟩
+    (delete_restriction _ _)] at hef
+  exact (hef.nonloop_left.mem_ground.2 rfl).elim
 
-
-
-
-
-  -- simp only [mem_inter_iff, id_eq, Matroidᵣ.le_iff, and_imp] at hmin
-
-
-
---   classical
---   set S := {R : Set α | M.simplification.E ⊆ R ∧ R ⊆ M.E ∧ (P (M ↾ R) ↔ P M)}
---   have hSfin : S.Finite
---   · exact M.ground_finite.finite_subsets.subset (fun X ⟨hX, hX'⟩ ↦ hX'.1)
---   obtain ⟨R, ⟨hsR, hRE, hPR⟩, hmin⟩ := Finite.exists_minimal_wrt id S hSfin
---     ⟨M.E, M.simplification_restriction.subset, Subset.rfl, by simp⟩
---   by_cases hs : (M ↾ R).Simple
---   · rw [← hPR]
-
---   exfalso
---   simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop,
---     Decidable.not_and_iff_or_not, not_forall, not_not] at hs
---   obtain (⟨e, heE, he⟩ | ⟨e, f, hef, hne⟩) := hs
-
-
-
-
-
-  -- obtain (hss | rfl) := hsR.ssubset_or_eq
-  -- · by_cases hs : M.Simple
-  --   ·
-  -- rwa [M.simplification_restriction.eq_restrict] at hPR
-
-
-
--- instance [DeleteLoopClosed P] : RemoveLoopsClosed P where
---   iff_removeLoops := by
---     refine fun {α M} ↦ ⟨M.removeLoops_restriction.pred_restriction, fun hMr ↦ ?_⟩
-
-
-
-
--- theorem removeLoopClosed_iff_forall_delete :
---     RemoveLoopClosed P ↔
---       ∀ {α : Type u} {M : Matroid α} {X : Set α}, X ⊆ M.cl ∅ → (P M ↔ P (M ⧹ X)) := by
---   refine ⟨fun h {α} M X hX ↦ ?_, fun h ↦ ⟨fun {γ M} ↦ ?_⟩ ⟩
---   · rw [h.iff_removeLoops, Iff.comm, h.iff_removeLoops, removeLoops_eq_delete,
---       removeLoops_eq_delete, delete_cl_eq, empty_diff, delete_delete, union_diff_self,
---       union_eq_self_of_subset_left hX]
---   simp only [removeLoops_eq_delete]
---   exact h Subset.rfl
 
 
 
@@ -334,7 +292,7 @@ class SimpClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
   /- `P` holds for `M` iff it holds after simplifying. -/
   (iff_simp : ∀ {β : Type u} {M : Matroid β}, P M ↔ P M.simplification)
 
-@[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop) [SimpClosed P] :
+@[simp] theorem pred_simplification_iff' (P : ∀ {β : Type u}, Matroid β → Prop) [SimpClosed P] :
     P M.simplification ↔ P M :=
   SimpClosed.iff_simp.symm
 
@@ -344,20 +302,20 @@ class SimpClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
 --     rw [← pred_simplification_iff P, Iff.comm, ← pred_simplification_iff P,
 --       removeLoops_simplification_eq]
 
-instance fieldRep.simpClosed {𝔽 : Type*} [Field 𝔽] : SimpClosed.{u} (FieldRep 𝔽) := by
-  refine ⟨fun {α M} ↦ ⟨fun ⟨h1,h2⟩ ↦ ?_, fun ⟨h1,h2⟩ ↦ ?_⟩⟩
-  sorry
-  sorry
+-- instance fieldRep.simpClosed {𝔽 : Type*} [Field 𝔽] : SimpClosed.{u} (FieldRep 𝔽) := by
+--   refine ⟨fun {α M} ↦ ⟨fun ⟨h1,h2⟩ ↦ ?_, fun ⟨h1,h2⟩ ↦ ?_⟩⟩
+--   sorry
+--   sorry
 
-theorem ExclMinor.simple [SimpClosed P] [MinorClosed P] (hM : M.ExclMinor P) : M.Simple := by
-  rw [← simplification_eq_self_iff]
-  apply hM.eq_of_not_prop_of_minor (simplification_restriction M).minor
-  simp_rw [pred_simplification_iff]
-  exact hM.not_prop_self
+-- theorem ExclMinor.simple [SimpClosed P] [MinorClosed P] (hM : M.ExclMinor P) : M.Simple := by
+--   rw [← simplification_eq_self_iff]
+--   apply hM.eq_of_not_prop_of_minor (simplification_restriction M).minor
+--   simp_rw [pred_simplification_iff]
+--   exact hM.not_prop_self
 
-theorem ExclMinor.dual_simple [SimpClosed P] [MinorClosed P] [DualClosed P] (hM : M.ExclMinor P) :
-    M﹡.Simple :=
-  hM.toDual.simple
+-- theorem ExclMinor.dual_simple [SimpClosed P] [MinorClosed P] [DualClosed P] (hM : M.ExclMinor P) :
+--     M﹡.Simple :=
+--   hM.toDual.simple
 
 end Simple
 
