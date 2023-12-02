@@ -235,6 +235,8 @@ theorem Indep.insert_indep_iff (hI : M.Indep I) :
   · simp_rw [insert_eq_of_mem h, iff_true_intro hI, true_iff, iff_true_intro h, or_true]
   rw [hI.insert_indep_iff_of_not_mem h, or_iff_left h]
 
+
+
 theorem Indep.basis_of_subset_of_subset_cl (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.cl I) :
     M.Basis I X :=
   hI.basis_cl.basis_subset hIX hXI
@@ -417,6 +419,9 @@ theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) 
       (by rw [cl_diff_singleton_eq_cl hin])⟩⟩
   rw [cl_eq_cl_inter_ground, inter_comm, inter_diff_distrib_left,
     inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, ←cl_eq_cl_inter_ground]
+
+theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
+  ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
 lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ (∀ J, J ⊂ I → M.cl J ⊂ M.cl I) := by
@@ -640,9 +645,11 @@ theorem Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
     (inter_subset_inter_left _ (h.trans (M.cl_subset_cl (inter_subset_left _ _)))))
 
 
--- Hi Mati - I moved things to `Modular.lean`; in the process of simplifying definitions and
--- building API. It is now much easier to prove that something is a modular base,
--- or in particular a modular pair. the API is WIP. `ModularBase` is the old `Modular`.
+-- Hi Mati - I moved things to `Modular.lean`, and simplified the API substantially.
+-- It is now much easier to prove and use modular pair/base/set assumptions.
+-- (I didn't do anything related to cuts stuff). If I were you, I'd look through
+-- my lemmas and see if there are any shortcuts for what you've done.
+-- ()`ModularBase` is the old `Modular`)
 
 
 

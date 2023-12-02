@@ -379,7 +379,7 @@ theorem parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     {f | M.Parallel e f} = {e} := by
   simp_rw [parallel_iff_eq he, setOf_eq_eq_singleton']
 
-theorem cl_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.cl {e} = {e} := by
+@[simp] theorem cl_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.cl {e} = {e} := by
   rw [cl_eq_parallel_class_union_loops, parallel_class_eq he, cl_empty_eq_empty, union_empty]
 
 /-- We need `RkPos` or something similar here, since otherwise the matroid whose only element is
@@ -395,6 +395,11 @@ theorem simple_iff_cl_subset_self_forall [RkPos M] :
     exact hf.not_loop hel
   rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
   exact fun e f hp ↦ (h _ hp.nonloop_right) hp.mem_cl
+
+theorem cl_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.cl X = X := by
+  obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
+  · exact M.cl_empty_eq_empty
+  exact cl_singleton_eq he
 
 theorem singleton_flat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Flat {e} := by
   rw [←cl_singleton_eq]; apply cl_flat
