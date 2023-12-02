@@ -1,5 +1,6 @@
 import Matroid.Equiv
 import Matroid.Restrict
+import Matroid.ForMathlib.Set
 
 open scoped BigOperators
 
@@ -630,72 +631,166 @@ section modular
 
 variable {Xs Ys : Set (Set α)}
 
-@[pp_dot] def Modular (M : Matroid α) (Xs : Set (Set α)) (I : Set α) :=
-  M.Base I ∧ ∀ ⦃Ys⦄, Ys ⊆ Xs → Ys.Nonempty → M.Basis ((⋂₀ Ys) ∩ I) (⋂₀ Ys)
+theorem Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
+    (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
+  refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
+  have hcl := hI.cl_sInter_eq_biInter_cl_of_forall_subset (Js := (· ∩ I) '' Xs) (by simpa)
+    (fun J ⟨X, _, hxJ⟩ ↦ hxJ.symm.subset.trans (inter_subset_right _ _))
+  simp only [sInter_image, mem_image, iInter_exists, biInter_and', iInter_iInter_eq_right,
+    ← inter_distrib_sInter_right hXs] at hcl
+  simp_rw [hcl, subset_iInter_iff]
+  exact fun s hs ↦ (sInter_subset_of_mem hs).trans (h _ hs).subset_cl
 
-theorem Modular.base (h : M.Modular Xs I) : M.Base I := h.1
+theorem Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
+    M.Basis (M.cl X ∩ I) (M.cl X) := by
+  rw [← h.basis_cl_right.eq_of_subset_indep (hI.inter_left (M.cl X))
+    (inter_subset_inter_left _ (M.subset_cl _)) (inter_subset_left _ _)]
+  exact h.basis_cl_right
 
-theorem Modular.indep (h : M.Modular Xs I) : M.Indep I := h.1.indep
+-- Hi Mati - I changed `Modular` to `ModularBase`, reversed the order of parameters, and
+-- simplified the definition. It is now much easier to prove that something is a modular base,
+-- or in particular a modular pair. the API is WIP.
 
-theorem Modular.forall (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) (hne : Ys.Nonempty):
-    M.Basis ((⋂₀ Ys) ∩ I) (⋂₀ Ys) :=
-  h.2 hYs hne
 
-theorem Modular.inter_basis_of_mem (h : M.Modular Xs I) (hX : X ∈ Xs) : M.Basis (X ∩ I) X := by
-  convert h.forall (singleton_subset_iff.mpr hX) (by simp); simp; simp
+/-- `B` is a modular base for a set family if its intersection with every set in the family
+  is a basis for that set. -/
+@[pp_dot] def ModularBase (M : Matroid α) (B : Set α) (Xs : Set (Set α)) :=
+  M.Base B ∧ ∀ ⦃X⦄, X ∈ Xs → M.Basis (X ∩ B) X
 
-theorem Modular.subset (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) : M.Modular Ys I :=
-  ⟨h.base, fun _ hZs hne ↦ h.forall (hZs.trans hYs) hne⟩
+theorem ModularBase.base (h : M.ModularBase B Xs) : M.Base B := h.1
+
+theorem ModularBase.indep (h : M.ModularBase B Xs) : M.Indep B := h.1.indep
+
+theorem ModularBase.basis_inter (h : M.ModularBase B Xs) (hX : X ∈ Xs) : M.Basis (X ∩ B) X :=
+  h.2 hX
+
+theorem ModularBase.subset (h : M.ModularBase B Xs) (hYs : Ys ⊆ Xs) : M.ModularBase B Ys :=
+  ⟨h.1, fun _ hY ↦ h.2 (hYs hY)⟩
+
+@[simp] theorem modularBase_pair_iff {B X Y : Set α} :
+    M.ModularBase B {X,Y} ↔ M.Base B ∧ M.Basis (X ∩ B) X ∧ M.Basis (Y ∩ B) Y := by
+  simp [ModularBase]
+
+theorem ModularBase.basis_sInter (h : M.ModularBase B Xs) (hne : Xs.Nonempty) :
+    M.Basis ((⋂₀ Xs) ∩ B) (⋂₀ Xs) :=
+  h.1.indep.interBasis_sInter hne h.2
+
+theorem ModularBase.basis_sInter_subset (h : M.ModularBase B Xs) (hYs : Ys ⊆ Xs)
+    (hne : Ys.Nonempty) : M.Basis ((⋂₀ Ys) ∩ B) (⋂₀ Ys) :=
+  (h.subset hYs).basis_sInter hne
 
 @[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.sInter_subset_ground (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) (hne : Ys.Nonempty) :
-    ⋂₀ Ys ⊆ M.E :=
-  (h.forall hYs hne).subset_ground
+theorem ModularBase.sInter_subset_ground (h : M.ModularBase B Xs) (hne : Xs.Nonempty) :
+    ⋂₀ Xs ⊆ M.E :=
+  (h.basis_sInter hne).subset_ground
 
 @[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.mem_subset_ground (h : M.Modular Xs I) (hX : X ∈ Xs) : X ⊆ M.E := by
-  convert h.sInter_subset_ground (Ys := {X}) (by simpa) (by simp); simp
+theorem ModularBase.mem_subset_ground (h : M.ModularBase B Xs) (hX : X ∈ Xs) : X ⊆ M.E :=
+  (h.basis_inter hX).subset_ground
 
 @[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.sUnion_subset_ground (h : M.Modular Xs I) : ⋃₀ Xs ⊆ M.E := by
+theorem ModularBase.sUnion_subset_ground (h : M.ModularBase B Xs) : ⋃₀ Xs ⊆ M.E := by
   rw [sUnion_subset_iff]; exact fun X hX ↦ h.mem_subset_ground hX
 
-theorem modular_of_sUnion_indep (h : M.Indep (⋃₀ Xs)) : ∃ I, M.Modular Xs I := by
-  obtain ⟨I, hI, huI⟩ := h.exists_base_superset
-  refine' ⟨I, hI, fun Ys hYs ⟨Y, hY⟩ ↦ _⟩
-  have hss : ⋂₀ Ys ⊆ I := ((sInter_subset_of_mem hY).trans (subset_sUnion_of_mem hY)).trans
-    ((sUnion_subset_sUnion hYs).trans huI)
-  rw [inter_eq_self_of_subset_left hss]
-  exact (hI.indep.subset hss).basis_self
+theorem exists_modularBase_of_sUnion_indep (h : M.Indep (⋃₀ Xs)) : ∃ B, M.ModularBase B Xs := by
+  obtain ⟨B, hB, huB⟩ := h.exists_base_superset
+  refine ⟨B, hB, fun {X} hX ↦ ?_⟩
+  have hXB : X ⊆ B := (subset_sUnion_of_mem hX).trans huB
+  rw [inter_eq_self_of_subset_left hXB]
+  exact (hB.indep.subset hXB).basis_self
 
-theorem Modular.basis_sUnion (h : M.Modular Xs I) : M.Basis (⋃₀ Xs ∩ I) (⋃₀ Xs) := by
+theorem ModularBase.basis_sUnion (h : M.ModularBase B Xs) : M.Basis (⋃₀ Xs ∩ B) (⋃₀ Xs) := by
   refine' Indep.basis_of_subset_of_subset_cl (h.indep.inter_left _) (inter_subset_left _ _)
     (sUnion_subset (fun X hX ↦ _))
-  have hb := h.inter_basis_of_mem hX
+  have hb := h.basis_inter hX
   rw [←cl_subset_cl_iff_subset_cl, ←hb.cl_eq_cl]
   exact M.cl_subset_cl (inter_subset_inter_left _ (subset_sUnion_of_mem hX))
 
-theorem Modular.basis_sUnion_of_subset (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) :
-    M.Basis (⋃₀ Ys ∩ I) (⋃₀ Ys) :=
+theorem Modular.basis_sUnion_of_subset (h : M.ModularBase B Xs) (hYs : Ys ⊆ Xs) :
+    M.Basis (⋃₀ Ys ∩ B) (⋃₀ Ys) :=
   (h.subset hYs).basis_sUnion
 
-theorem sInter_subset_sUnion (hXs : Xs.Nonempty) : ⋂₀ Xs ⊆ ⋃₀ Xs :=
-  (sInter_subset_of_mem hXs.some_mem).trans (subset_sUnion_of_mem hXs.some_mem)
-
 theorem iInter_cl_eq_cl_sInter_of_modular
-    (hXs : ∃ I, M.Modular Xs I) (hne : Xs.Nonempty) : (⋂ X ∈ Xs, M.cl X) = M.cl (⋂₀ Xs) := by
-  obtain ⟨I, hI⟩ := hXs
+    (hXs : ∃ B, M.ModularBase B Xs) (hne : Xs.Nonempty) : (⋂ X ∈ Xs, M.cl X) = M.cl (⋂₀ Xs) := by
+  obtain ⟨B, hB⟩ := hXs
   have := hne.coe_sort
-  have eq1 : (⋂ X ∈ Xs, M.cl X) = (⋂ X ∈ Xs, M.cl (X ∩ I))
-  · convert rfl using 4 with X hX; rw [(hI.inter_basis_of_mem hX).cl_eq_cl]
-  rw [eq1, ←biInter_image, ←hI.indep.cl_sInter_eq_biInter_cl_of_forall_subset,
-    ←(hI.forall rfl.subset hne).cl_eq_cl, eq_comm, sInter_eq_iInter, iInter_inter]
+  have eq1 : (⋂ X ∈ Xs, M.cl X) = (⋂ X ∈ Xs, M.cl (X ∩ B))
+  · convert rfl using 4 with X hX
+    rw [(hB.basis_inter hX).cl_eq_cl]
+  rw [eq1, ←biInter_image, ←hB.indep.cl_sInter_eq_biInter_cl_of_forall_subset,
+    ←(hB.basis_sInter hne).cl_eq_cl, eq_comm, sInter_eq_iInter, iInter_inter]
   · convert rfl; simp
   · apply hne.image
   simp
 
 theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
   ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
+
+def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.ModularBase B Xs
+
+def ModularPair (M : Matroid α) (X Y : Set α) := M.ModularFamily {X,Y}
+
+theorem ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
+  rwa [ModularPair, pair_comm, ← ModularPair]
+
+theorem ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
+  ⟨ModularPair.symm, ModularPair.symm⟩
+
+@[simp] theorem modularPair_iff {M : Matroid α} {X Y : Set α} :
+    M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (Y ∩ I) Y := by
+  simp only [ModularPair, ModularFamily, mem_singleton_iff, modularBase_pair_iff]
+  refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, hB.indep, hB'⟩,
+    fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB, ?_, ?_⟩⟩
+  · rwa [← hIX.eq_of_subset_indep (hB.indep.inter_left X) (inter_subset_inter_right _ hIB)
+      (inter_subset_left _ _)]
+  rwa [← hIY.eq_of_subset_indep (hB.indep.inter_left Y) (inter_subset_inter_right _ hIB)
+    (inter_subset_left _ _)]
+
+theorem modularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.ModularPair X Y := by
+  obtain ⟨I,J, hI, hJ, hIJ⟩ := M.exists_basis_subset_basis hXY
+  refine modularPair_iff.2 ⟨J, hJ.indep, ?_, by rwa [inter_eq_self_of_subset_right hJ.subset]⟩
+  rwa [← hI.eq_of_subset_indep (hJ.indep.inter_left X) (subset_inter hI.subset hIJ)
+    (inter_subset_left _ _)]
+
+theorem ModularPair.cl_left (h : M.ModularPair X Y) : M.ModularPair (M.cl X) Y := by
+  rw [modularPair_iff] at h ⊢
+  obtain ⟨I, hI, hX, hY⟩ := h
+  refine ⟨I, hI, ?_, hY⟩
+  rw [← hX.basis_cl_right.eq_of_subset_indep (hI.inter_left (M.cl X))
+    (inter_subset_inter_left _ (M.subset_cl _)) (inter_subset_left _ _)]
+  exact hX.basis_cl_right
+
+theorem ModularPair.cl_right (h : M.ModularPair X Y) : M.ModularPair X (M.cl Y) :=
+  h.symm.cl_left.symm
+
+theorem ModularPair.cl_cl (h : M.ModularPair X Y) : M.ModularPair (M.cl X) (M.cl Y) :=
+  h.cl_left.cl_right
+
+def ModularSet (M : Matroid α) (X : Set α) := ∀ ⦃F⦄, M.Flat F → M.ModularPair X F
+
+@[simp] theorem modularSet_def {M : Matroid α} {X : Set α} :
+    M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → M.ModularPair X F := Iff.rfl
+
+@[simp] theorem modularSet_iff {M : Matroid α} {X : Set α} :
+    M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (F ∩ I) F := by
+  simp [ModularSet, modularPair_iff]
+
+theorem modularSet_ground (M : Matroid α) : M.ModularSet M.E :=
+  modularSet_def.2 (fun {_} hF ↦ (modularPair_of_subset hF.subset_ground Subset.rfl).symm)
+
+theorem modularSet_empty (M : Matroid α) : M.ModularSet ∅ :=
+  modularSet_def.2 (fun {_} hF ↦ (modularPair_of_subset (empty_subset _) hF.subset_ground))
+
+theorem modularSet.cl (h : M.ModularSet X) : M.ModularSet (M.cl X) :=
+  fun {_} hF ↦ (h hF).cl_left
+
+-- theorem modularSet_singleton (M : Matroid α) (he : e ∈ M.E) : M.ModularSet {e} := by
+--   refine modularSet_iff.2 (fun {F} hF ↦ ?_)
+--   by_cases heF : e ∈ F
+--   · obtain ⟨Ie, hIe⟩ := M.exists_basis {e}
+--     obtain ⟨J, hJf, hJ⟩ := hIe.exists_basis_inter_eq_of_superset (singleton_subset_iff.2 heF)
+
+
 
 end modular
 
