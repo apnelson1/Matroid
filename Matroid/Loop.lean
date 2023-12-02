@@ -138,6 +138,34 @@ theorem Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E)
   rw [← singleton_dep, preimage_dep_iff]
   simp
 
+theorem cl_union_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X ∪ Y) = M.cl X :=
+  (M.cl_subset_cl (subset_union_left _ _)).antisymm'
+    ((M.cl_subset_cl (union_subset_union_right X hY)).trans_eq (by simp))
+
+theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X \ Y) = M.cl X := by
+  rw [←cl_union_eq_cl_of_subset_loops _ _ hY, diff_union_self,
+    cl_union_eq_cl_of_subset_loops _ _ hY]
+
+@[simp] theorem cl_diff_loops_eq (M : Matroid α) (X : Set α) : M.cl (X \ M.cl ∅) = M.cl X :=
+  M.cl_diff_eq_cl_of_subset_loops X rfl.subset
+
+theorem basis_union_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X ∪ L) ↔ M.Basis I X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [basis_iff_indep_cl]
+    refine ⟨h.indep, (subset_union_left _ _).trans h.subset_cl, ?_⟩
+    rw [← (h.indep.disjoint_loops.mono_right hL).sdiff_eq_left, diff_subset_iff, union_comm]
+    exact h.subset
+  exact h.basis_cl_right.basis_subset (h.subset.trans (subset_union_left _ _))
+    (union_subset (M.subset_cl X) (hL.trans (M.cl_subset_cl <| empty_subset X)))
+
+theorem basis_diff_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X \ L) ↔ M.Basis I X := by
+  rw [← basis_union_iff_basis_of_subset_loops hL, diff_union_self,
+    basis_union_iff_basis_of_subset_loops hL]
+
 end Loop
 
 section Nonloop
