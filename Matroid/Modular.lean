@@ -243,21 +243,31 @@ theorem ModularPair.er_add_er (h : M.ModularPair X Y) :
     ← encard_union_add_encard_inter, ← inter_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
--- theorem rFin.modularPair_iff (hX : M.rFin X) (hY : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
---     (hYE : Y ⊆ M.E := by aesop_mat) :
---     M.ModularPair X Y ↔ M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
---   refine ⟨fun h ↦ h.er_add_er, fun hr ↦ ?_⟩
---   obtain ⟨Ii, IX, hIi, hIX, hss⟩ := M.exists_basis_subset_basis (inter_subset_left X Y)
---   obtain ⟨I, hI, hss'⟩ :=
---     hIX.indep.subset_basis_of_subset (hIX.subset.trans (subset_union_left X Y))
---   rw [hIX.er_eq_encard, hIi.er_eq_encard, hI.er_eq_encard,
---     ← encard_diff_add_encard_of_subset hss', add_comm, ← add_assoc,
---     WithTop.add_right_cancel_iff] at hr
+theorem rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+    (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.ModularPair X Y ↔ M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
+  refine ⟨fun h ↦ h.er_add_er, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
+  obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y)
+  have hifin : Ii.encard ≠ ⊤
+  · simpa using (hXfin.inter_right Y).finite_of_basis hIi
+  obtain ⟨IX, hIX, hX⟩ := hIi.indep.subset_basis_of_subset
+    (hIi.subset.trans (inter_subset_left _ _))
+  obtain ⟨IY, hIY, hY⟩ := hIi.indep.subset_basis_of_subset
+    (hIi.subset.trans (inter_subset_right _ _))
+  refine ⟨IX, IY, hIX, hIY, ?_⟩
+  rw [hIi.er_eq_encard, hIX.er_eq_encard, ← encard_diff_add_encard_of_subset hX,
+    add_comm (encard _), add_assoc, WithTop.add_left_cancel_iff hifin, hIY.er_eq_encard,
+    ← encard_union_add_encard_inter, ← union_eq_self_of_subset_left hY, ← union_assoc,
+    diff_union_self, union_eq_self_of_subset_right hX] at hr
+  refine Basis.indep <| (hXfin.union hYfin).basis_of_subset_cl_of_subset_of_encard_le ?_
+    (union_subset_union hIX.subset hIY.subset) (le_of_add_le_left hr.le)
+  rw [← M.cl_union_cl_left_eq, ← M.cl_union_cl_right_eq]
+  exact (M.subset_cl _).trans (M.cl_subset_cl (union_subset_union hIX.subset_cl hIY.subset_cl))
 
-  -- refine modularPair_iff_exists_subsets_cl_inter.2 ⟨I, hI.indep, ?_, ?_⟩
-  -- · exact hIX.subset_cl.trans (M.cl_subset_cl (subset_inter hIX.subset hss))
-  -- rw [hIX.er_eq_encard, hI.er_eq_encard, ← encard_diff_add_encard_of_subset hss,
-  --   ← add_assoc, add_comm, WithTop.add_right_cancel_iff] at hr
+theorem modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+    (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
+  simp_rw [(M.to_rFin X).modularPair_iff (M.to_rFin Y), ← coe_r_eq, ← Nat.cast_add, Nat.cast_inj]
 
 
 

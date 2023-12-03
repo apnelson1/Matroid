@@ -521,6 +521,26 @@ theorem er_union_eq_of_subsets_of_ers_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' :
   rw [er_union_eq_of_subset_of_er_le_er _ hX hXX', union_comm,
     er_union_eq_of_subset_of_er_le_er _ hY hYY', union_comm]
 
+theorem rFin.basis_of_subset_cl_of_subset_of_encard_le (hX : M.rFin X) (hXI : X ⊆ M.cl I)
+    (hIX : I ⊆ X) (hI : I.encard ≤ M.er X) : M.Basis I X := by
+  obtain ⟨J, hJ⟩ := M.exists_basis (I ∩ M.E)
+  have hIJ := hJ.subset.trans (inter_subset_left _ _)
+  rw [cl_eq_cl_inter_ground] at hXI
+  replace hXI := hXI.trans <| M.cl_subset_cl_of_subset_cl hJ.subset_cl
+  have hJX := hJ.indep.basis_of_subset_of_subset_cl (hIJ.trans hIX) hXI
+  rw [← hJX.encard] at hI
+  rwa [← Finite.eq_of_subset_of_encard_le' (hX.finite_of_basis hJX) hIJ hI]
+
+
+
+  -- have := hIX.trans (M.cl_subset_cl_of_subset_cl hJ.subset_cl)
+
+  -- rw [cl_eq_cl_inter_ground] at hIX
+  -- have h' := hIX.trans <| M.cl_subset_cl_of_subset_cl hJ.subset_cl
+
+  -- have := M.cl_subset_cl_of_subset_
+  -- have := hIX.trans (M.cl_subset_cl_of_subset_cl )
+
 end rFin
 
 section Rank
