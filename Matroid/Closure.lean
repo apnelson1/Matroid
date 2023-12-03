@@ -300,7 +300,7 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : _root_.Nonempty ι]
+theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
@@ -308,6 +308,11 @@ theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : _root_.Nonem
 theorem cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.Nonempty)
     (h : M.Indep (⋃₀ Is)) :  M.cl (⋂₀ Is) = (⋂ I ∈ Is, M.cl I) :=
   h.cl_sInter_eq_biInter_cl_of_forall_subset hIs (fun _ ↦ subset_sUnion_of_mem)
+
+theorem cl_biInter_eq_biInter_cl_of_biUnion_indep {ι : Type*} {A : Set ι} (hA : A.Nonempty)
+    {I : ι → Set α} (h : M.Indep (⋃ i ∈ A, I i)) : M.cl (⋂ i ∈ A, I i) = ⋂ i ∈ A, M.cl (I i) := by
+  have := hA.coe_sort
+  convert cl_iInter_eq_biInter_cl_of_iUnion_indep (ι := A) (Is := fun i ↦ I i) (by simpa) <;> simp
 
 theorem Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by
   rw [inter_eq_iInter, cl_iInter_eq_biInter_cl_of_iUnion_indep, inter_eq_iInter]
@@ -621,22 +626,30 @@ section Constructions
 end Constructions
 
 
-variable {Xs Ys : Set (Set α)}
+variable {Xs Ys : Set (Set α)} {ι : Type*}
 
-theorem Indep.inter_basis_cl_iff_subset_cl_inter (hI : M.Indep I) :
+theorem Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
     M.Basis (X ∩ I) X ↔ X ⊆ M.cl (X ∩ I) :=
   ⟨Basis.subset_cl,
     fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_cl (inter_subset_left _ _) h⟩
 
+theorem Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
+    (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
+  refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
+  simp_rw [biInter_distrib_inter _ hA,
+    cl_biInter_eq_biInter_cl_of_biUnion_indep hA (I := fun i ↦ (X i) ∩ I) (hI.subset (by simp)),
+    subset_iInter_iff]
+  exact fun i hiA ↦ (biInter_subset_of_mem hiA).trans (h i hiA).subset_cl
+
+theorem Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
+    (h : ∀ i, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i, X i) ∩ I) (⋂ i, X i) := by
+  rw [← biInter_univ]
+  exact hI.interBasis_biInter (by simp) (by simpa)
+
 theorem Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
     (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
-  refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
-  have hcl := hI.cl_sInter_eq_biInter_cl_of_forall_subset (Js := (· ∩ I) '' Xs) (by simpa)
-    (fun J ⟨X, _, hxJ⟩ ↦ hxJ.symm.subset.trans (inter_subset_right _ _))
-  simp only [sInter_image, mem_image, iInter_exists, biInter_and', iInter_iInter_eq_right,
-    ← inter_distrib_sInter_right hXs] at hcl
-  simp_rw [hcl, subset_iInter_iff]
-  exact fun s hs ↦ (sInter_subset_of_mem hs).trans (h _ hs).subset_cl
+  rw [sInter_eq_biInter]
+  exact hI.interBasis_biInter hXs h
 
 theorem Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
     M.Basis (M.cl X ∩ I) (M.cl X) := by
