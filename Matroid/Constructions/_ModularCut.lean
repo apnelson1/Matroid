@@ -2,14 +2,15 @@ import Matroid.Simple
 import Matroid.Closure
 import Matroid.ForMathlib.Other
 import Matroid.Minor.Basic
+import Matroid.Modular
 
 namespace Matroid
 open Set BigOperators
 
 variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
-
+/-
 --- predicate (functions to `Prop`) should be in upper camel case, without underscores
-@[pp_dot] def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.Modular Xs B
+@[pp_dot] def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.ModularBase B Xs
 
 theorem ModularFamily.subset (hXs : M.ModularFamily Xs) (hYs : Ys ⊆ Xs) : M.ModularFamily Ys := by
   obtain ⟨B, hB⟩ := hXs
@@ -71,14 +72,14 @@ theorem modular_loops (M : Matroid α) : M.ModularSet (M.cl ∅) := by
     and_iff_right rfl, empty_inter, empty_basis_iff,
     inter_eq_self_of_subset_left hF.loops_subset, union_eq_self_of_subset_left hF.loops_subset,
     and_iff_right hI, and_iff_left Subset.rfl, inter_eq_self_of_subset_right hI.subset]
-
+-/
 /-- It is probably best for a modular cut to be a structure - it is easier to reason about
   different ways of getting them, equivalences, etc. -/
 @[ext] structure ModularCut (M : Matroid α) where
   (Fs : Set (Set α))
   (forall_flat : ∀ {F}, F ∈ Fs → M.Flat F)
   (up_closed : ∀ {F F'}, F ∈ Fs → F ⊆ F' → M.Flat F' → F' ∈ Fs)
-  (modular : ∀ Xs ⊆ Fs, Xs.Nonempty → M.ModularFamily Xs → ⋂₀ Xs ∈ Fs)
+  (modular : ∀ Xs ⊆ Fs, Xs.Nonempty → M.ModularFamily (fun X : Xs ↦ X) → ⋂₀ Xs ∈ Fs)
 
 /-- Instance so `M.ModularCut` can be treated like a set via coercion. -/
 instance {M : Matroid α} : SetLike (M.ModularCut) (Set α) where
@@ -94,19 +95,38 @@ theorem ModularCut.superset (C : M.ModularCut) (hF : F ∈ C) (hFF' : F ⊆ F') 
 theorem ModularCut.flat (C : M.ModularCut) (hF : F ∈ C) : M.Flat F :=
     C.forall_flat hF
 
-theorem ModularCut.sInter (C : M.ModularCut) (hXs : Xs ⊆ C) (hXsmod : M.ModularFamily Xs)
-    (hne : Xs.Nonempty) : ⋂₀ Xs ∈ C :=
+theorem ModularCut.sInter (C : M.ModularCut) (hXs : Xs ⊆ C)
+    (hXsmod : M.ModularFamily (fun X : Xs ↦ X)) (hne : Xs.Nonempty) : ⋂₀ Xs ∈ C :=
   C.modular _ hXs hne hXsmod
 
 theorem ModularCut.inter (C : M.ModularCut) (hF : F ∈ C) (hF' : F' ∈ C)
     (hFF' : M.ModularPair F F') : F ∩ F' ∈ C := by
-  simpa using C.sInter (pair_subset hF hF') hFF' (by simp)
+  rw [←sInter_pair]
+  apply C.sInter (pair_subset hF hF') _ (by simp)
+  let ⟨B, hB⟩ := hFF'
+  refine' ⟨B, hB.1, fun i ↦ _⟩
+  dsimp
+  obtain (eq | ne) := mem_insert_iff.2 (Subtype.mem i)
+  · rw [eq]
+    exact hB.2 true
+  rw [mem_singleton_iff.1 ne]
+  exact hB.2 false
+
+lemma ModularBase.subset {M : Matroid α} {X Y : Set (Set α)} {B : Set α}
+    (hmod : M.ModularBase B (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.ModularBase B (fun y : Y ↦ y) :=
+  ⟨hmod.1, fun i ↦ hmod.2 ⟨i.1, hsub i.2⟩⟩
+
+
+lemma ModularFamily.subset {M : Matroid α} {X Y : Set (Set α)}
+    (hmod : M.ModularFamily (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.ModularFamily (fun y : Y ↦ y) := by
+  obtain ⟨B, hB⟩ := hmod
+  refine' ⟨B, hB.subset hsub⟩
 
 
 lemma modular_finite_intersection {M : Matroid α} {X : Set (Set α)} {Fs : Set (Set α)}
     (forall_flat : ∀ {F}, F ∈ Fs → M.Flat F)
-    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularFamily {F, F'} → F ∩ F' ∈ Fs)
-    (hfin : X.Finite) (hsub : X ⊆ Fs) (hmod : M.ModularFamily X) (hnone : X.Nonempty) :
+    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularPair F F' → F ∩ F' ∈ Fs)
+    (hfin : X.Finite) (hsub : X ⊆ Fs) (hmod : M.ModularFamily (fun x : X ↦ x)) (hnone : X.Nonempty) :
     sInter X ∈ Fs := by
   obtain (⟨x, rfl⟩ | X_nt) := hnone.exists_eq_singleton_or_nontrivial
   · rwa [sInter_singleton, ←singleton_subset_iff]
@@ -116,20 +136,18 @@ lemma modular_finite_intersection {M : Matroid α} {X : Set (Set α)} {Fs : Set 
   rw [x_eq_insert, sInter_insert]
   obtain ⟨B, B_mod⟩ := hmod
   apply pair_modular (hsub (xy_sub (mem_insert _ _))) _
-  · refine' ⟨B, B_mod.1, fun Ys Ys_sub Ys_none ↦ _⟩
-    obtain (rfl | rfl | rfl) := (Nonempty.subset_pair_iff Ys_none).1 Ys_sub
-    · apply B_mod.2 (singleton_subset_iff.2 (xy_sub (mem_insert _ _))) (singleton_nonempty _)
-    · rw [sInter_singleton]
-      apply B_mod.2 (diff_subset _ _) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
-      exact xy_ne.symm
-    rw [sInter_pair, ←sInter_insert, ←x_eq_insert]
-    exact B_mod.2 (rfl.subset) hnone
+  · refine' ⟨B, B_mod.1, Bool.forall_bool.2 ⟨_, _⟩⟩
+    · dsimp
+      rw [sInter_eq_biInter]
+      apply B_mod.1.indep.interBasis_biInter ⟨y, _⟩ (fun i i_mem ↦ B_mod.2 ⟨i, i_mem.1⟩)
+      exact ⟨(pair_subset_iff.1 xy_sub).2, xy_ne.symm⟩
+    apply (B_mod.2 ⟨x, xy_sub (mem_insert _ _)⟩)
   have encard_lt : (X \ {x}).encard < X.encard
   · apply hfin.encard_lt_encard ⟨diff_subset _ _, (not_subset.2 ⟨x, (xy_sub (mem_insert _ _)), _⟩)⟩
     exact fun x_mem ↦ absurd rfl x_mem.2
   have:= encard_lt
   apply modular_finite_intersection forall_flat pair_modular (hfin.subset (diff_subset _ _)) ((diff_subset _ _).trans
-   hsub) ⟨B, (B_mod.subset (diff_subset _ _))⟩ ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+   hsub) (ModularFamily.subset ⟨B, B_mod⟩ (diff_subset _ _)) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
   exact xy_ne.symm
 termination_by _ => X.encard
 
@@ -138,7 +156,7 @@ termination_by _ => X.encard
 @[simps] def ModularCut.ofForallPair {M : Matroid α} [M.Finite] {Fs : Set (Set α)}
     (forall_flat : ∀ {F}, F ∈ Fs → M.Flat F)
     (up_closed : ∀ {F F'}, F ∈ Fs → F ⊆ F' → M.Flat F' → F' ∈ Fs)
-    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularFamily {F, F'} → F ∩ F' ∈ Fs) :
+    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularPair F F' → F ∩ F' ∈ Fs) :
     M.ModularCut where
   Fs := Fs
   forall_flat := forall_flat
