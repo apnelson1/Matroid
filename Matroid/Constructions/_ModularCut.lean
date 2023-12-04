@@ -199,7 +199,7 @@ theorem ModularCut.extension_eq_self (C : M.ModularCut) (he : e ∈ M.E) :
   eq_of_indep_iff_indep_forall (by simpa) (fun _ _ ↦ by simp [he])
 
 theorem ModularCut.extension_delete (C : M.ModularCut) {e : α} (he : e ∉ M.E) :
-    (C.extension e) ⟍ e = M :=
+    (C.extension e) ⧹ e = M :=
   eq_of_indep_iff_indep_forall (by simpa)
     (fun I hI ↦ by simp [show e ∉ I from fun heI ↦ by simpa using hI heI])
 
@@ -212,7 +212,7 @@ theorem ModularCut.extension_cl_eq_of_not_mem (C : M.ModularCut) (he : e ∉ M.E
   obtain ⟨I, hI⟩ := M.exists_basis' X
   have hI' : (extension C e).Basis' I X
   sorry
-  -- · rw [← C.extension_delete he, delete_elem, delete_basis'_iff] at hI
+  -- · rw [← C.extension_delete he, deleteElem, delete_basis'_iff] at hI
   --   have := hI.indep.basis_insert_iff (e := e)
 
 
@@ -234,20 +234,20 @@ theorem ModularCut.extension_flat_iff (C : M.ModularCut) (e : α) (he : e ∉ M.
     F ∈ C.congr hMN ↔ F ∈ C := Iff.rfl
 
 /-- The modular cut corresponding to a deletion. (This is the empty cut if `e ∉ M.E`) -/
-@[simps] def ModularCut.ofDelete (M : Matroid α) (e : α) : (M ⟍ e).ModularCut where
-  Fs := {F | (M ⟍ e).Flat F ∧ e ∈ M.cl F}
-  forall_flat := by simp only [delete_elem, mem_setOf_eq, and_imp]; tauto
+@[simps] def ModularCut.ofDelete (M : Matroid α) (e : α) : (M ⧹ e).ModularCut where
+  Fs := {F | (M ⧹ e).Flat F ∧ e ∈ M.cl F}
+  forall_flat := by simp only [deleteElem, mem_setOf_eq, and_imp]; tauto
   up_closed := by
-    simp only [delete_elem, mem_setOf_eq, and_imp]
+    simp only [deleteElem, mem_setOf_eq, and_imp]
     exact fun {F F'} hF heF hFF' hF' ↦ ⟨hF', M.cl_subset_cl hFF' heF⟩
   modular := by
     sorry
 
 @[simp] theorem ModularCut.mem_ofDelete_iff (M : Matroid α) (e : α) {F : Set α} :
-  F ∈ ModularCut.ofDelete M e ↔ (M ⟍ e).Flat F ∧ e ∈ M.cl F := Iff.rfl
+  F ∈ ModularCut.ofDelete M e ↔ (M ⧹ e).Flat F ∧ e ∈ M.cl F := Iff.rfl
 
 def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
-    M.ModularCut ≃ {N : Matroid α | e ∈ N.E ∧ N ⟍ e = M} where
+    M.ModularCut ≃ {N : Matroid α | e ∈ N.E ∧ N ⧹ e = M} where
   toFun Fs := ⟨Fs.extension e, mem_insert _ _, Fs.extension_delete he⟩
   invFun N := (ModularCut.ofDelete N e).congr N.prop.2
   left_inv := by
@@ -257,7 +257,7 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
     -- reduce it to goals of the form `structure field = structure field`,
     -- which often makes the simplifier a lot happier.
     ext F
-    simp only [delete_elem, mem_setOf_eq, extension_ground, congr_Fs, SetLike.mem_coe,
+    simp only [deleteElem, mem_setOf_eq, extension_ground, congr_Fs, SetLike.mem_coe,
       mem_ofDelete_iff, mem_Fs_iff]
 
     -- some matroidy goal left
@@ -265,10 +265,10 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
 
   right_inv := by
     rintro ⟨N, hN, rfl⟩
-    simp only [delete_elem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
+    simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
     apply eq_of_indep_iff_indep_forall (by simpa) (fun I hI ↦ ?_)
     by_cases heI : e ∈ I
-    · simp only [delete_elem, mem_setOf_eq, extension_indep, delete_indep_iff,
+    · simp only [deleteElem, mem_setOf_eq, extension_indep, delete_indep_iff,
         disjoint_singleton_right, heI, not_true_eq_false, and_false, delete_ground, mem_diff,
         mem_singleton_iff, not_false_eq_true, and_self, and_true, delete_cl_eq, sdiff_idem,
         mem_congr, mem_ofDelete_iff, not_and, true_and, false_or]

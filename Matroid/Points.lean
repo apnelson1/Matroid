@@ -20,9 +20,9 @@ theorem point_count_eq_card_iff_simple [Finite M] :
     M.point_count = M.E.encard ↔ M.Simple := by 
   rw [point_count, ←ENat.finsum_mem_one_eq]
 
-/-- rank-`k` flats of `M ⟋ e` correspond to rank-`(k+1)` flats of `M` containing `e`. -/
+/-- rank-`k` flats of `M ⧸ e` correspond to rank-`(k+1)` flats of `M` containing `e`. -/
 def Nonloop.contract_flat_equiv (he : M.Nonloop e) (k : ℕ) :
-  {F // (M ⟋ e).Flat F ∧ (M ⟋ e).er F = k} ≃ {F // M.Flat F ∧ M.er F = k + 1 ∧ e ∈ F} where
+  {F // (M ⧸ e).Flat F ∧ (M ⧸ e).er F = k} ≃ {F // M.Flat F ∧ M.er F = k + 1 ∧ e ∈ F} where
     toFun := fun F ↦ ⟨insert e F, by
       obtain ⟨F, hF⟩ := F
       rw [he.contract_flat_iff, ←WithTop.add_right_cancel_iff WithTop.one_ne_top, 
@@ -40,7 +40,7 @@ def Nonloop.contract_flat_equiv (he : M.Nonloop e) (k : ℕ) :
     right_inv := fun ⟨F, hF⟩ ↦ by simp [hF.2.2]
 
 theorem Nonloop.point_count_contract_eq (he : M.Nonloop e) : 
-    (M ⟋ e).point_count = {L | M.Line L ∧ e ∈ L}.encard := by 
+    (M ⧸ e).point_count = {L | M.Line L ∧ e ∈ L}.encard := by 
   rw [point_count_eq_num_points]
   apply encard_congr
   simp only [coe_setOf]

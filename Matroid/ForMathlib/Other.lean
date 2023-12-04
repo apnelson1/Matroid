@@ -131,6 +131,7 @@ lemma Function.invFunOn_injOn_image_preimage [_root_.Nonempty α] (f : α → β
 --   obtain ⟨y, hy, rfl⟩ := ht hxt
 --   exact ⟨y, ⟨hy, hxt⟩, rfl⟩
 
+
 /-- If `f` maps `s` bijectively to `t` and, then for any `s ⊆ s₁` and `t ⊆ t' ⊆ f '' s₁`,
   there is some `s ⊆ s' ⊆ s₁` so that `f` maps `s'` bijectively to `t'`. -/
 theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t : Set β}

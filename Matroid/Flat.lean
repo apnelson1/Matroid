@@ -38,6 +38,11 @@ theorem flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
 
+theorem exists_mem_cl_not_mem_of_not_flat (h : ¬ M.Flat F) (hF : F ⊆ M.E := by aesop_mat) :
+    ∃ e, e ∈ M.cl F \ F := by
+  rw [flat_iff_cl_self, subset_antisymm_iff, and_iff_left (M.subset_cl F)] at h
+  exact not_subset.1 h
+
 theorem Flat.inter (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.Flat (F₁ ∩ F₂) := by
   rw [inter_eq_iInter]; apply Flat.iInter; simp [hF₁, hF₂]
 
@@ -479,12 +484,12 @@ end Hyperplane
 
 section Minor
 
-theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
+theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
   rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ←M.cl_union_cl_right_eq,
     union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
 
 @[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
-    (M ⟋ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
+    (M ⧸ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
   rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
     union_comm C, ←and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
     and_congr_right_iff]
@@ -492,11 +497,11 @@ theorem flat_contract (X C : Set α) : (M ⟋ C).Flat (M.cl (X ∪ C) \ C) := by
     fun h ↦ (subset_union_left _ _).trans h⟩
 
 theorem flat_contract_iff' :
-    (M ⟋ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
+    (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [←contract_inter_ground_eq, flat_contract_iff]
 
 theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
-    (M ⟋ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
+    (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
   rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
 

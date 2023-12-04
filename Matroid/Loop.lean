@@ -2,9 +2,9 @@ import Matroid.Circuit
 import Matroid.Constructions.ImagePreimage
 
 /-
-  A `Loop` of a matroid_in is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
+  A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
   Thus, the set of loops of `M` is equal to `M.cl ∅`, and we prefer this notation instead of
-  `{e | M.loop e}` or similar. A `Nonloop` is an element of the ground set that is not a loop.
+  `{e | M.Loop e}` or similar. A `Nonloop` is an element of the ground set that is not a loop.
 -/
 
 
@@ -92,11 +92,6 @@ theorem basis_iff_empty_of_subset_loops (hX : X ⊆ M.cl ∅) : M.Basis I X ↔ 
   replace h := (cl_eq_loops_of_subset hX) ▸ h.basis_cl_right
   simpa using h
 
-
-
-
-
-
 theorem Loop.cl (he : M.Loop e) : M.cl {e} = M.cl ∅ :=
   cl_eq_loops_of_subset (singleton_subset_iff.mpr he)
 
@@ -119,17 +114,57 @@ theorem loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ 
   obtain ⟨B, hB, heB⟩ := hei.exists_base_superset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
-@[simp] theorem restrict_loop_iff {R : Set α}  :
+@[simp] theorem restrict_loop_iff {R : Set α} :
     (M ↾ R).Loop e ↔ e ∈ R ∧ (M.Loop e ∨ e ∉ M.E) := by
   rw [← singleton_dep, restrict_dep_iff, singleton_subset_iff, ← singleton_dep, and_comm,
     and_congr_right_iff, Dep, and_or_right, singleton_subset_iff, and_iff_left or_not,
     or_iff_left_of_imp (fun he hi ↦ he (singleton_subset_iff.1 hi.subset_ground))]
   simp only [singleton_subset_iff, implies_true]
 
+theorem restriction_loop_iff (hNM : N ≤r M) :
+    N.Loop e ↔ e ∈ N.E ∧ M.Loop e := by
+  obtain ⟨R, hR, rfl⟩ := hNM
+  simp only [restrict_loop_iff, restrict_ground_eq, and_congr_right_iff, or_iff_left_iff_imp]
+  exact fun heR heE ↦ (heE (hR heR)).elim
+
+theorem Loop.of_restriction (he : N.Loop e) (hNM : N ≤r M) : M.Loop e :=
+  ((restriction_loop_iff hNM).1 he).2
+
+theorem Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) : N.Loop e :=
+  (restriction_loop_iff hNM).2 ⟨heN, he⟩
+
 @[simp] theorem preimage_loop_iff {M : Matroid β} {f : α → β} :
     (M.preimage f).Loop e ↔ M.Loop (f e) := by
   rw [← singleton_dep, preimage_dep_iff]
   simp
+
+theorem cl_union_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X ∪ Y) = M.cl X :=
+  (M.cl_subset_cl (subset_union_left _ _)).antisymm'
+    ((M.cl_subset_cl (union_subset_union_right X hY)).trans_eq (by simp))
+
+theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X \ Y) = M.cl X := by
+  rw [←cl_union_eq_cl_of_subset_loops _ _ hY, diff_union_self,
+    cl_union_eq_cl_of_subset_loops _ _ hY]
+
+@[simp] theorem cl_diff_loops_eq (M : Matroid α) (X : Set α) : M.cl (X \ M.cl ∅) = M.cl X :=
+  M.cl_diff_eq_cl_of_subset_loops X rfl.subset
+
+theorem basis_union_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X ∪ L) ↔ M.Basis I X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [basis_iff_indep_cl]
+    refine ⟨h.indep, (subset_union_left _ _).trans h.subset_cl, ?_⟩
+    rw [← (h.indep.disjoint_loops.mono_right hL).sdiff_eq_left, diff_subset_iff, union_comm]
+    exact h.subset
+  exact h.basis_cl_right.basis_subset (h.subset.trans (subset_union_left _ _))
+    (union_subset (M.subset_cl X) (hL.trans (M.cl_subset_cl <| empty_subset X)))
+
+theorem basis_diff_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X \ L) ↔ M.Basis I X := by
+  rw [← basis_union_iff_basis_of_subset_loops hL, diff_union_self,
+    basis_union_iff_basis_of_subset_loops hL]
 
 end Loop
 
@@ -264,6 +299,9 @@ theorem Nonloop.rkPos (h : M.Nonloop e) : M.RkPos :=
 theorem Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e :=
   (restrict_nonloop_iff.1 h).1
 
+theorem Nonloop.of_restriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e := by
+  obtain ⟨R, hR, rfl⟩ := hNM; exact h.of_restrict
+
 theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩
 
@@ -359,7 +397,7 @@ end Loopless
 section Coloop
 
 /-- A coloop is a loop of the dual  -/
-@[pp_dot, reducible] def Coloop (M : Matroid α) (e : α) : Prop :=
+@[pp_dot] abbrev Coloop (M : Matroid α) (e : α) : Prop :=
   M﹡.Loop e
 
 @[aesop unsafe 20% (rule_sets [Matroid])]

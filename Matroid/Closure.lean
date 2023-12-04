@@ -1,5 +1,6 @@
 import Matroid.Equiv
 import Matroid.Restrict
+import Matroid.ForMathlib.Set
 
 open scoped BigOperators
 
@@ -147,19 +148,6 @@ theorem cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) :
 theorem cl_insert_eq_of_mem_cl (he : e ∈ M.cl X) : M.cl (insert e X) = M.cl X := by
   rw [←cl_insert_cl_eq_cl_insert, insert_eq_of_mem he, cl_cl]
 
-theorem cl_union_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
-    M.cl (X ∪ Y) = M.cl X :=
-  (M.cl_subset_cl (subset_union_left _ _)).antisymm'
-    ((M.cl_subset_cl (union_subset_union_right X hY)).trans_eq (by simp))
-
-theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
-    M.cl (X \ Y) = M.cl X := by
-  rw [←cl_union_eq_cl_of_subset_loops _ _ hY, diff_union_self,
-    cl_union_eq_cl_of_subset_loops _ _ hY]
-
-@[simp] theorem cl_diff_loops_eq (M : Matroid α) (X : Set α) : M.cl (X \ M.cl ∅) = M.cl X :=
-  M.cl_diff_eq_cl_of_subset_loops X rfl.subset
-
 theorem mem_cl_self (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl {e} :=
   mem_cl_of_mem' _ rfl
 
@@ -247,6 +235,8 @@ theorem Indep.insert_indep_iff (hI : M.Indep I) :
   · simp_rw [insert_eq_of_mem h, iff_true_intro hI, true_iff, iff_true_intro h, or_true]
   rw [hI.insert_indep_iff_of_not_mem h, or_iff_left h]
 
+
+
 theorem Indep.basis_of_subset_of_subset_cl (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.cl I) :
     M.Basis I X :=
   hI.basis_cl.basis_subset hIX hXI
@@ -310,7 +300,7 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : _root_.Nonempty ι]
+theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
@@ -318,6 +308,11 @@ theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : _root_.Nonem
 theorem cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.Nonempty)
     (h : M.Indep (⋃₀ Is)) :  M.cl (⋂₀ Is) = (⋂ I ∈ Is, M.cl I) :=
   h.cl_sInter_eq_biInter_cl_of_forall_subset hIs (fun _ ↦ subset_sUnion_of_mem)
+
+theorem cl_biInter_eq_biInter_cl_of_biUnion_indep {ι : Type*} {A : Set ι} (hA : A.Nonempty)
+    {I : ι → Set α} (h : M.Indep (⋃ i ∈ A, I i)) : M.cl (⋂ i ∈ A, I i) = ⋂ i ∈ A, M.cl (I i) := by
+  have := hA.coe_sort
+  convert cl_iInter_eq_biInter_cl_of_iUnion_indep (ι := A) (Is := fun i ↦ I i) (by simpa) <;> simp
 
 theorem Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by
   rw [inter_eq_iInter, cl_iInter_eq_biInter_cl_of_iUnion_indep, inter_eq_iInter]
@@ -429,6 +424,9 @@ theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) 
       (by rw [cl_diff_singleton_eq_cl hin])⟩⟩
   rw [cl_eq_cl_inter_ground, inter_comm, inter_diff_distrib_left,
     inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, ←cl_eq_cl_inter_ground]
+
+theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
+  ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
 lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ (∀ J, J ⊂ I → M.cl J ⊂ M.cl I) := by
@@ -626,78 +624,47 @@ section Constructions
 
 
 end Constructions
-section modular
 
-variable {Xs Ys : Set (Set α)}
 
-@[pp_dot] def Modular (M : Matroid α) (Xs : Set (Set α)) (I : Set α) :=
-  M.Base I ∧ ∀ ⦃Ys⦄, Ys ⊆ Xs → Ys.Nonempty → M.Basis ((⋂₀ Ys) ∩ I) (⋂₀ Ys)
+variable {Xs Ys : Set (Set α)} {ι : Type*}
 
-theorem Modular.base (h : M.Modular Xs I) : M.Base I := h.1
+theorem Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
+    M.Basis (X ∩ I) X ↔ X ⊆ M.cl (X ∩ I) :=
+  ⟨Basis.subset_cl,
+    fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_cl (inter_subset_left _ _) h⟩
 
-theorem Modular.indep (h : M.Modular Xs I) : M.Indep I := h.1.indep
+theorem Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
+    (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
+  refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
+  simp_rw [biInter_distrib_inter _ hA,
+    cl_biInter_eq_biInter_cl_of_biUnion_indep hA (I := fun i ↦ (X i) ∩ I) (hI.subset (by simp)),
+    subset_iInter_iff]
+  exact fun i hiA ↦ (biInter_subset_of_mem hiA).trans (h i hiA).subset_cl
 
-theorem Modular.forall (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) (hne : Ys.Nonempty):
-    M.Basis ((⋂₀ Ys) ∩ I) (⋂₀ Ys) :=
-  h.2 hYs hne
+theorem Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
+    (h : ∀ i, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i, X i) ∩ I) (⋂ i, X i) := by
+  rw [← biInter_univ]
+  exact hI.interBasis_biInter (by simp) (by simpa)
 
-theorem Modular.inter_basis_of_mem (h : M.Modular Xs I) (hX : X ∈ Xs) : M.Basis (X ∩ I) X := by
-  convert h.forall (singleton_subset_iff.mpr hX) (by simp); simp; simp
+theorem Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
+    (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
+  rw [sInter_eq_biInter]
+  exact hI.interBasis_biInter hXs h
 
-theorem Modular.subset (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) : M.Modular Ys I :=
-  ⟨h.base, fun _ hZs hne ↦ h.forall (hZs.trans hYs) hne⟩
+theorem Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
+    M.Basis (M.cl X ∩ I) (M.cl X) := by
+  rw [hI.inter_basis_cl_iff_subset_cl_inter] at h ⊢
+  exact (M.cl_subset_cl_of_subset_cl h).trans (M.cl_subset_cl
+    (inter_subset_inter_left _ (h.trans (M.cl_subset_cl (inter_subset_left _ _)))))
 
-@[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.sInter_subset_ground (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) (hne : Ys.Nonempty) :
-    ⋂₀ Ys ⊆ M.E :=
-  (h.forall hYs hne).subset_ground
 
-@[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.mem_subset_ground (h : M.Modular Xs I) (hX : X ∈ Xs) : X ⊆ M.E := by
-  convert h.sInter_subset_ground (Ys := {X}) (by simpa) (by simp); simp
+-- Hi Mati - I moved things to `Modular.lean`, and simplified the API substantially.
+-- It is now much easier to prove and use modular pair/base/set assumptions.
+-- (I didn't do anything related to cuts stuff). If I were you, I'd look through
+-- my lemmas and see if there are any shortcuts for what you've done.
+-- ()`ModularBase` is the old `Modular`)
 
-@[aesop unsafe 5% (rule_sets [Matroid])]
-theorem Modular.sUnion_subset_ground (h : M.Modular Xs I) : ⋃₀ Xs ⊆ M.E := by
-  rw [sUnion_subset_iff]; exact fun X hX ↦ h.mem_subset_ground hX
 
-theorem modular_of_sUnion_indep (h : M.Indep (⋃₀ Xs)) : ∃ I, M.Modular Xs I := by
-  obtain ⟨I, hI, huI⟩ := h.exists_base_superset
-  refine' ⟨I, hI, fun Ys hYs ⟨Y, hY⟩ ↦ _⟩
-  have hss : ⋂₀ Ys ⊆ I := ((sInter_subset_of_mem hY).trans (subset_sUnion_of_mem hY)).trans
-    ((sUnion_subset_sUnion hYs).trans huI)
-  rw [inter_eq_self_of_subset_left hss]
-  exact (hI.indep.subset hss).basis_self
-
-theorem Modular.basis_sUnion (h : M.Modular Xs I) : M.Basis (⋃₀ Xs ∩ I) (⋃₀ Xs) := by
-  refine' Indep.basis_of_subset_of_subset_cl (h.indep.inter_left _) (inter_subset_left _ _)
-    (sUnion_subset (fun X hX ↦ _))
-  have hb := h.inter_basis_of_mem hX
-  rw [←cl_subset_cl_iff_subset_cl, ←hb.cl_eq_cl]
-  exact M.cl_subset_cl (inter_subset_inter_left _ (subset_sUnion_of_mem hX))
-
-theorem Modular.basis_sUnion_of_subset (h : M.Modular Xs I) (hYs : Ys ⊆ Xs) :
-    M.Basis (⋃₀ Ys ∩ I) (⋃₀ Ys) :=
-  (h.subset hYs).basis_sUnion
-
-theorem sInter_subset_sUnion (hXs : Xs.Nonempty) : ⋂₀ Xs ⊆ ⋃₀ Xs :=
-  (sInter_subset_of_mem hXs.some_mem).trans (subset_sUnion_of_mem hXs.some_mem)
-
-theorem iInter_cl_eq_cl_sInter_of_modular
-    (hXs : ∃ I, M.Modular Xs I) (hne : Xs.Nonempty) : (⋂ X ∈ Xs, M.cl X) = M.cl (⋂₀ Xs) := by
-  obtain ⟨I, hI⟩ := hXs
-  have := hne.coe_sort
-  have eq1 : (⋂ X ∈ Xs, M.cl X) = (⋂ X ∈ Xs, M.cl (X ∩ I))
-  · convert rfl using 4 with X hX; rw [(hI.inter_basis_of_mem hX).cl_eq_cl]
-  rw [eq1, ←biInter_image, ←hI.indep.cl_sInter_eq_biInter_cl_of_forall_subset,
-    ←(hI.forall rfl.subset hne).cl_eq_cl, eq_comm, sInter_eq_iInter, iInter_inter]
-  · convert rfl; simp
-  · apply hne.image
-  simp
-
-theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
-  ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
-
-end modular
 
 end Matroid
 
