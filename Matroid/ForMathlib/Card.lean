@@ -50,3 +50,60 @@ theorem encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : univ.P
     simp only [Nat.cast_sum]
   simp only [Finset.mem_univ, ne_eq, Finite.disjoint_toFinset, forall_true_left]
   exact fun i j hij ↦ hs (mem_univ i) (mem_univ j) hij
+
+theorem encard_biUnion {ι : Type*} {s : ι → Set α} (t : Finset ι)
+    (ht : (t : Set ι).PairwiseDisjoint s) : encard (⋃ i ∈ t, s i) = ∑ i in t, encard (s i) := by
+  convert encard_iUnion (fun i : t ↦ s i) ?_
+  · ext x; simp
+  · rw [Finset.univ_eq_attach, Finset.sum_attach (f := fun i ↦ (s i).encard)]
+  rintro ⟨i, hi⟩ - ⟨j, hj⟩ - hne
+  exact disjoint_iff_forall_ne.2 (ht hi hj (by simpa using hne)).ne_of_mem
+
+theorem encard_iUnion_le {ι : Type*} [Fintype ι] (s : ι → Set α) :
+    encard (⋃ i : ι, s i) ≤ ∑ i, encard (s i) := by
+  classical
+  obtain (⟨i, hi⟩ | h) := em <| ∃ i, (s i).Infinite
+  · have hle := Finset.sum_le_sum_of_subset (f := fun i ↦ encard (s i)) (Finset.subset_univ {i})
+    simp_rw [Finset.sum_singleton, hi.encard_eq] at hle
+    exact le_top.trans hle
+  simp_rw [not_exists, not_infinite] at h
+  convert (Nat.cast_le (α := ℕ∞)).2
+    (Finset.card_biUnion_le (s := Finset.univ) (t := fun i ↦ (h i).toFinset))
+  · rw [(finite_iUnion h).encard_eq_coe_toFinset_card]
+    congr
+    ext x
+    simp
+  rw [Nat.cast_sum]
+  exact Finset.sum_congr rfl (fun x _ ↦ (h x).encard_eq_coe_toFinset_card)
+
+theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s : ι → Set α}
+    (hfin : ∀ i, (s i).Finite) :
+    encard (⋃ i, s i) = ∑ i, encard (s i) ↔ univ.PairwiseDisjoint s := by
+  classical
+  refine ⟨fun hsum i _ j _ hij ↦ disjoint_iff_forall_ne.2 ?_, fun hdj ↦ encard_iUnion s hdj⟩
+  rintro x hxi _ hxj rfl
+  have hrw : ∀ t : Set α, encard t = encard (t \ {x}) + encard (t ∩ {x})
+  · intro t
+    rw [←encard_union_eq, diff_union_inter]
+    exact disjoint_sdiff_left.mono_right (inter_subset_right _ _)
+  rw [hrw, Finset.sum_congr rfl (fun i _ ↦ hrw (s i)), Finset.sum_add_distrib,
+    inter_eq_self_of_subset_right (singleton_subset_iff.2 (mem_iUnion_of_mem i hxi)),
+    encard_singleton, eq_comm, iUnion_diff] at hsum
+
+  have hlb := Finset.sum_le_sum_of_subset
+    (f := fun i ↦ (s i ∩ {x}).encard) (Finset.subset_univ {i,j})
+  simp_rw [Finset.sum_pair hij] at hlb
+  rw [inter_eq_self_of_subset_right (by simpa), inter_eq_self_of_subset_right (by simpa),
+    encard_singleton] at hlb
+  have hcon := ((add_le_add_left hlb _).trans hsum.le).trans
+    (add_le_add_right (encard_iUnion_le _) 1)
+  rw [← add_assoc, WithTop.add_le_add_iff_right (by simp), ENat.add_one_le_iff] at hcon
+  · exact hcon.ne rfl
+  refine (WithTop.sum_lt_top (fun i _ ↦ ?_)).ne
+  rw [encard_ne_top_iff]
+  exact (hfin i).diff _
+
+theorem pairwiseDisjoint_of_encard_sum_le_encard_iUnion {ι : Type*} [Fintype ι] {s : ι → Set α}
+    (hfin : ∀ i, (s i).Finite) (hle : ∑ i, encard (s i) ≤ encard (⋃ i, s i)) :
+    univ.PairwiseDisjoint s := by
+  rw [← encard_iUnion_eq_sum_iff_pairwiseDisjoint hfin, hle.antisymm (encard_iUnion_le s)]

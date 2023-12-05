@@ -3,6 +3,7 @@ import Mathlib.Data.ENat.Basic
 import Mathlib.Data.Set.Intervals.WithBotTop
 import Mathlib.Topology.Algebra.Order.MonotoneConvergence
 import Mathlib.Topology.Instances.Discrete
+import Mathlib.Topology.Instances.ENNReal
 
 namespace ENat
 
@@ -93,3 +94,66 @@ protected theorem hasSum : HasSum f (⨆ s : Finset α, ∑ a in s, f a) :=
 
 example (f g : α → ℕ∞) : ∑' a, (f a + g a) = ∑' a, f a + ∑' a, g a := by
   rw [tsum_add (by simp) (by simp)]
+
+section SMul
+
+variable {α : Type*} [DecidableEq α] [AddMonoid α]
+
+
+-- instance [CanonicallyOrderedAddCommMonoid α] : DistribSMul ℕ∞ (WithTop α) where
+--   smul n a := n.rec (if a = 0 then 0 else ⊤) (fun i ↦ i • a)
+--   smul_zero := by
+--     rintro (rfl | n)
+--     · change ite _ _ _ = _
+--       rw [if_pos rfl]
+--     exact smul_zero n
+--   smul_add := by
+--     rintro (rfl | n) a b
+--     · by_cases hab : a + b = 0
+--       · rw [add_eq_zero_iff]
+--       change ite _ _ _ = (ite _ _ _) + (ite _ _ _)
+
+  -- smul n a := n.rec (⊤ * a) (fun i ↦ i • a)
+
+noncomputable example : SMul ℕ∞ ENNReal :=
+  inferInstanceAs (SMul ℕ∞ (WithTop NNReal))
+
+theorem WithTop.smul_top (a : WithTop α) (ha : a ≠ 0) : (⊤ : ℕ∞) • a = ⊤ :=
+  WithTop.top_mul ha
+
+@[simp] theorem WithTop.smul_cast (i : ℕ) (a : WithTop α) : (i : ℕ∞) • a = i • a := rfl
+
+@[simp] theorem WithTop.smul_zero [SMulZeroClass ℕ α] (n : ℕ∞) : n • (0 : WithTop α) = 0 := by
+  obtain (rfl | n) := n
+  · change ⊤ * _ = _
+    rw [WithTop.mul_def, if_pos (Or.inr rfl)]
+  convert WithTop.smul_cast n (0 : WithTop α)
+  simp
+
+instance [CanonicallyOrderedAddCommMonoid α] : DistribSMul ℕ∞ (WithTop α) where
+  smul_zero := by
+    rintro (rfl | n)
+    · change ⊤ * _ = _
+      rw [WithTop.mul_def, if_pos (Or.inr rfl)]
+    convert WithTop.smul_cast n (0 : WithTop α)
+    simp
+  smul_add := by
+    rintro (rfl | n) x y
+    · change ⊤ * _ = (⊤ * _) + (⊤ * _)
+      obtain (rfl | hx) := (zero_le x).eq_or_lt
+      rw [mul_zero]
+
+
+    -- rw [WithTop.smul_top]
+
+
+
+theorem foo (n m : ℕ∞) : n • m = n * m := by
+  have foo' : lalal.smul (α := ℕ∞) n m = n * m
+  · cases n
+    rfl
+    rw [← smul_eq_mul]
+    cases m
+    simp
+
+end SMul
