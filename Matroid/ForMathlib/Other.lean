@@ -51,6 +51,16 @@ theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
     and_iff_left hne.symm, ← and_assoc, and_comm, singleton_union, ← and_assoc, ← union_subset_iff,
     singleton_union, pair_comm, ← subset_antisymm_iff, eq_comm]
 
+theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
+    (insert b A) ∩ (insert c A) = A := by
+  rw [insert_eq, insert_eq, ←union_distrib_right, Disjoint.inter_eq _, empty_union]
+  rwa [disjoint_singleton]
+
+theorem union_insert_eq {A : Set α} {b c : α} :
+    (insert b A) ∪ (insert c A) = insert c (insert b A) := by
+  rw [insert_eq, insert_eq, ←union_union_distrib_right, @union_comm _ {b} _,
+    union_assoc, ←insert_eq, ←insert_eq]
+
 lemma Set.InjOn.image_eq_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
     (h₂ : s₂ ⊆ s) : f '' s₁ = f '' s₂ ↔ s₁ = s₂ :=
   ⟨fun h' ↦ by rw [←h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩
