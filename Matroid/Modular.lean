@@ -1,5 +1,6 @@
 import Matroid.Flat
 import Matroid.Simple
+import Matroid.ForMathlib.Card
 
 open Set BigOperators
 
@@ -399,84 +400,105 @@ theorem SkewFamily.disjoint_inter_indep (h : M.SkewFamily Xs) (hI : M.Indep I) (
   rintro e ⟨hei, heI⟩ _ hej rfl
   exact (hI.nonloop_of_mem heI).not_loop <| h.loop_of_mem_inter hij ⟨hei,hej⟩
 
+theorem SkewFamily.disjoint_of_indep_subset (h : M.SkewFamily Xs) (hI : M.Indep I) (hIX : I ⊆ Xs i)
+    (hij : i ≠ j) : Disjoint I (Xs j) := by
+  have hdj := h.disjoint_inter_indep hI hij
+  rwa [inter_eq_self_of_subset_right hIX] at hdj
+
 theorem SkewFamily.pairwiseDisjoint_inter_of_indep (h : M.SkewFamily Xs) (hI : M.Indep I) :
     (univ : Set ι).PairwiseDisjoint (fun i ↦ Xs i ∩ I) :=
   fun _ _ _ _ hij ↦ (h.disjoint_inter_indep hI hij).mono_right (inter_subset_left _ _)
 
-theorem SkewFamily.disjoint_of_indep_subsets (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
+theorem SkewFamily.pairwiseDisjoint_of_indep_subsets (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : univ.PairwiseDisjoint Is :=
   fun i _ j _ hij ↦ disjoint_iff_inter_eq_empty.2 <|
     ((hIs i).inter_right (Is j)).eq_empty_of_subset_loops
     ((inter_subset_inter (hIX i) (hIX j)).trans (h.2 hij).subset)
+
+theorem SkewFamily.pairwiseDisjoint_of_bases (h : M.SkewFamily Xs)
+    (hIX : ∀ i, M.Basis (Is i) (Xs i)) : univ.PairwiseDisjoint Is :=
+  h.pairwiseDisjoint_of_indep_subsets (fun i ↦ (hIX i).subset) (fun i ↦ (hIX i).indep)
 
 theorem SkewFamily.cls_skewFamily (h : M.SkewFamily Xs) : M.SkewFamily (fun i ↦ M.cl (Xs i)) := by
   refine ⟨h.modularFamily.cls_modularFamily, fun i j hij ↦ ?_⟩
   have := M.cl_subset_cl_of_subset_cl <| h.subset_loops_of_ne hij
   rwa [← (h.modularFamily.modularPair i j).inter_cl_eq]
 
-theorem skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
-    ∃ (Is : ι → Set α), univ.PairwiseDisjoint Is ∧ M.Basis (⋃ i : ι, Is i) (⋃ i : ι, Xs i) ∧
-      ∀ i, M.Basis (Is i) (Xs i) := by
-  refine ⟨fun h ↦ ?_,
-    fun ⟨Is, hdj, hIs, hb⟩ ↦ ⟨hIs.indep.modularFamily fun i ↦ ?_, fun i j hij ↦ ?_⟩⟩
-  · obtain ⟨B, hB⟩ := h.modularFamily
-    refine ⟨_, ?_, ?_, hB.basis_inter⟩
-    · exact h.disjoint_of_indep_subsets (fun i ↦ inter_subset_left _ _)
-        (fun i ↦ hB.indep.inter_left _)
-    rw [← iUnion_inter]
-    exact hB.basis_iUnion
-  · rw [hIs.indep.inter_basis_cl_iff_subset_cl_inter]
-    exact (hb i).subset_cl.trans (M.cl_subset_cl (subset_inter (hb i).subset (subset_iUnion _ _)))
-  refine (inter_subset_inter (M.subset_cl _ (hb i).subset_ground)
-    (M.subset_cl _ (hb j).subset_ground)).trans ?_
-  rw [← (hb i).cl_eq_cl, ← (hb j).cl_eq_cl, ← (hIs.indep.subset _).cl_inter_eq_inter_cl,
+theorem Indep.skewFamily_of_disjoint_bases (hI : M.Indep (⋃ i, Is i))
+    (hdj : univ.PairwiseDisjoint Is) (hIs : ∀ i, M.Basis (Is i) (Xs i)) : M.SkewFamily Xs := by
+  refine ⟨hI.modularFamily fun i ↦ ?_, fun i j hij ↦ ?_⟩
+  · rw [hI.inter_basis_cl_iff_subset_cl_inter]
+    exact (hIs i).subset_cl.trans (M.cl_subset_cl (subset_inter (hIs i).subset (subset_iUnion _ i)))
+  refine (inter_subset_inter (M.subset_cl _ (hIs i).subset_ground)
+    (M.subset_cl _ (hIs j).subset_ground)).trans ?_
+  rw [← (hIs i).cl_eq_cl, ← (hIs j).cl_eq_cl, ← (hI.subset _).cl_inter_eq_inter_cl,
     Disjoint.inter_eq <| hdj (mem_univ i) (mem_univ j) hij]
   exact union_subset (subset_iUnion _ _) (subset_iUnion _ _)
 
+theorem skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
+    ∃ (Is : ι → Set α), univ.PairwiseDisjoint Is ∧ M.Basis (⋃ i : ι, Is i) (⋃ i : ι, Xs i) ∧
+      ∀ i, M.Basis (Is i) (Xs i) := by
+  refine ⟨fun h ↦ ?_, fun ⟨Is, hdj, hIs, hb⟩ ↦ hIs.indep.skewFamily_of_disjoint_bases hdj hb⟩
+  obtain ⟨B, hB⟩ := h.modularFamily
+  refine ⟨_, ?_, ?_, hB.basis_inter⟩
+  · exact h.pairwiseDisjoint_of_indep_subsets (fun i ↦ inter_subset_left _ _)
+      (fun i ↦ hB.indep.inter_left _)
+  rw [← iUnion_inter]
+  exact hB.basis_iUnion
+
+theorem Indep.skewFamily_iff_pairwiseDisjoint (hI : M.Indep (⋃ i : ι, Is i)) :
+    M.SkewFamily Is ↔ univ.PairwiseDisjoint Is := by
+  refine ⟨fun h ↦ h.pairwiseDisjoint_of_indep_subsets
+    (fun _ ↦ Subset.rfl) (fun i ↦ hI.subset (subset_iUnion _ _)),
+    fun h ↦ hI.skewFamily_of_disjoint_bases ?_ (fun i ↦ (hI.subset (subset_iUnion _ _)).basis_self)⟩
+  exact h
+
+/-- Quite a nasty proof. I don't know if there is a good way of shortening it. -/
 theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : M.Indep (⋃ i, Is i) := by
   choose Js hJs using fun i ↦ (hIs i).subset_basis_of_subset (hIX i)
   refine Indep.subset ?_ <| iUnion_mono (fun i ↦ (hJs i).2)
 
-  obtain ⟨J, hJ⟩ := M.exists_basis (⋃ i, Js i) sorry
+  obtain ⟨J, hJ⟩ := M.exists_basis _ (iUnion_subset (fun i ↦ (hJs i).1.indep.subset_ground))
 
   by_contra hcon
   have ex_i : ∃ i e, e ∈ (Js i) \ J
-  · sorry
+  · by_contra' h'
+    rw [← hJ.subset.antisymm (iUnion_subset fun i e he ↦ by_contra fun heJ ↦ h' i e ⟨he, heJ⟩)]
+      at hcon
+    exact hcon hJ.indep
 
   obtain ⟨i₀, e, hei₀, heJ⟩ := ex_i
 
   obtain ⟨Ks, hdj, hKs, huKs⟩ := skewFamily_iff_exist_bases.1 h
 
   have hssE : Js i₀ ∪ (⋃ i ∈ ({i₀}ᶜ : Set ι), Ks i) ⊆ M.E
-  · sorry
+  · refine union_subset (hJs i₀).1.indep.subset_ground ?_
+    simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
+    exact fun i _ ↦ (huKs i).indep.subset_ground
 
-  obtain ⟨K', hK', hss⟩ := (hJs i₀).1.indep.subset_basis_of_subset sorry hssE
+  obtain ⟨K', hK', hss⟩ := (hJs i₀).1.indep.subset_basis_of_subset (subset_union_left _ _) hssE
 
   have hK'' : ∀ i, i ≠ i₀ → Ks i ⊆ K'
   · intro i hne f hf
-
     by_contra hfK'
-    refine hfK' <| hK'.mem_of_insert_indep (Or.inr <| mem_biUnion hne hf) ?_
-    rw [hK'.indep.insert_indep_iff_of_not_mem hfK', mem_diff,
-      and_iff_right ((huKs i).indep.subset_ground hf)]
-    refine not_mem_subset ?_ <| hKs.indep.not_mem_cl_diff_of_mem (mem_iUnion.2 ⟨i,hf⟩)
+    apply hKs.indep.not_mem_cl_diff_of_mem (mem_iUnion.2 ⟨i,hf⟩)
+    have hcl : f ∈ M.cl K'
+    · exact hK'.subset_cl (Or.inr <| mem_biUnion hne hf)
 
-    rw [hK'.cl_eq_cl, M.cl_subset_cl_iff_subset_cl]
+    refine mem_of_mem_of_subset
+      (M.cl_subset_cl (subset_diff_singleton hK'.subset hfK') hcl) (M.cl_subset_cl_of_subset_cl ?_)
+    simp only [mem_compl_iff, mem_singleton_iff, mem_union, mem_iUnion, exists_prop, not_exists,
+      diff_singleton_subset_iff, union_subset_iff, iUnion_subset_iff]
+    refine ⟨(hJs i₀).1.subset.trans ?_, fun i _ ↦ ?_⟩
+    · refine (huKs i₀).subset_cl.trans (subset_trans (M.cl_subset_cl ?_) (subset_insert _ _))
+      refine subset_diff_singleton (subset_iUnion Ks i₀) (fun hf' ↦ ?_)
+      exact (hdj (mem_univ i) (mem_univ i₀) hne).ne_of_mem hf hf' rfl
 
-
-
-    simp only [mem_compl_iff, mem_singleton_iff, mem_iUnion, not_exists, union_subset_iff,
-      iUnion_subset_iff]
-    refine ⟨?_, fun j hjne ↦ ?_⟩
-    · refine (hJs i₀).1.subset.trans ((huKs i₀).subset_cl.trans (M.cl_subset_cl ?_))
-      refine subset_diff_singleton (subset_iUnion Ks i₀) (fun hKsi₀ ↦ ?_)
-      exact (hdj (mem_univ i) (mem_univ i₀) hne).ne_of_mem hf hKsi₀ rfl
-
-
-    sorry
-    -- refine hK'.cl_subset_c.trans ?_
-
+    refine subset_trans ?_ <|
+      insert_subset_insert (M.subset_cl _ ((diff_subset _ _).trans hKs.indep.subset_ground))
+    rw [insert_diff_singleton]
+    exact (subset_iUnion Ks i).trans (subset_insert _ _)
 
   have he' : e ∈ M.cl (K' \ {e})
   · refine mem_of_mem_of_subset (hJ.subset_cl (mem_iUnion_of_mem _ hei₀)) ?_
@@ -491,130 +513,74 @@ theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i,
     apply Loop.not_nonloop <| h.loop_of_mem_inter hi ⟨(hJs i₀).1.subset hei₀, (huKs i).subset heK⟩
     exact (hK'.indep.subset hss).nonloop_of_mem hei₀
 
---   exact hK'.indep.not_mem_cl_diff_of_mem (hss hei₀) he'
-      -- refine mem_of_mem_of_subset ?_ (M.subset_cl ?_ ((diff_subset _ _).trans hK'.subset_ground)))
+  exact hK'.indep.not_mem_cl_diff_of_mem (hss hei₀) he'
 
-    -- rw [hJ.cl_eq_cl, cl_subset_cl_iff_subset_cl hJ.subset_ground, iUnion_subset_iff]
-    -- intro i
-    -- obtain (rfl | hi) := eq_or_ne i₀ i
-    -- · refine subset_trans ?_ (hJ.subset_cl.trans ?_)
+theorem SkewFamily.mono (h : M.SkewFamily Xs) (hYX : ∀ i, Ys i ⊆ Xs i) : M.SkewFamily Ys := by
+  choose Is hIs using fun i ↦ M.exists_basis (Ys i) ((hYX i).trans (h.subset_ground_of_mem i))
+  refine Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
+  · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
+  exact h.pairwiseDisjoint_of_indep_subsets
+    (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
 
-  -- have hJ₀K' : e ∈ M.cl
-  -- ·
+theorem SkewFamily.iUnion_basis_iUnion (h : M.SkewFamily Xs) (hIs : ∀ i, M.Basis (Is i) (Xs i)) :
+    M.Basis (⋃ i, Is i) (⋃ i, Xs i) := by
+  have hi := h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset) (fun i ↦ (hIs i).indep)
+  exact hi.basis_of_subset_of_subset_cl (iUnion_mono (fun i ↦ (hIs i).subset)) <|
+    iUnion_subset (fun i ↦ (hIs i).subset_cl.trans (M.cl_subset_cl (subset_iUnion _ _)))
 
+theorem SkewFamily.sum_er_eq_er_iUnion [Fintype ι] (h : M.SkewFamily Xs) :
+    ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
+  choose Is hIs using fun i ↦ M.exists_basis (Xs i) (h.subset_ground_of_mem i)
+  rw [(h.iUnion_basis_iUnion hIs).er_eq_encard,
+    encard_iUnion _ (h.pairwiseDisjoint_of_bases hIs)]
+  simp_rw [(hIs _).er_eq_encard]
 
-  -- have ex_i : ∃ i, I ∩ (Is i) ⊂ Is i
-  -- · by_contra' h
-  --   refine hcon (hI.indep.subset (iUnion_subset fun i ↦ ?_))
-  --   exact (inter_subset_right I (Is i)).eq_or_ssubset.elim inter_eq_right.1 (fun h' ↦ (h i h').elim)
-  -- obtain ⟨i₀, hi₀ss⟩ := ex_i
+theorem rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] (hXs : ∀ i, M.rFin (Xs i))
+    (hXE : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
+  refine ⟨SkewFamily.sum_er_eq_er_iUnion, fun hsum ↦ ?_⟩
+  choose Is hIs using fun i ↦ M.exists_basis (Xs i) (hXE i)
+  rw [← er_cl_eq , ← M.cl_iUnion_cl_eq_cl_iUnion] at hsum
+  simp_rw [← (fun i ↦ M.er_cl_eq (Xs i)), ← (fun i ↦ (hIs i).cl_eq_cl), M.cl_iUnion_cl_eq_cl_iUnion,
+    er_cl_eq, (fun i ↦ (hIs i).indep.er)] at hsum
 
+  apply Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
+  · exact rFin.indep_of_encard_le_er
+      ((rFin.iUnion hXs).subset (iUnion_mono (fun i ↦ (hIs i).subset)))
+      ((encard_iUnion_le _).trans hsum.le)
+  exact pairwiseDisjoint_of_encard_sum_le_encard_iUnion
+    (fun i ↦ (hXs i).finite_of_basis (hIs i)) (hsum.le.trans <| M.er_le_encard _)
 
-
-
-
-  --
-
-  -- obtain ⟨J₀, hJ₀, hssJ₀⟩ := (hI.indep.inter_right (Is i₀)).subset_basis_of_subset
-  --   (subset_union_left _ (Ks i₀)) (union_subset
-  --     ((inter_subset_left _ _).trans hI.indep.subset_ground) (huKs i₀).indep.subset_ground)
-
-  -- -- This is a good test for `aesop_mat`.
-  -- have hssE : J₀ ∪ (⋃ i ∈ ({i₀}ᶜ : Set ι), Ks i) ⊆ M.E
-  -- · refine union_subset hJ₀.indep.subset_ground ?_
-  --   simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
-  --   exact fun i _ ↦ (huKs i).indep.subset_ground
-
-  -- obtain ⟨K',hK',hss⟩ := hJ₀.indep.subset_basis_of_subset (subset_union_left _ _) hssE
-
-
-  -- have hK'' : M.Basis K'
-
-
-
-
-  -- have hKd := biUnion_subset_biUnion_left (subset_univ ({i₀}ᶜ : Set ι)) (t := Ks)
-  -- rw [biUnion_univ] at hKd
-  -- obtain ⟨K', hK', hss⟩ :=
-  --   (hKs.indep.subset hKd).subset_basis_of_subset (subset_union_left _ J₀)
-  --     (union_subset (hKd.trans hKs.indep.subset_ground) hJ₀.indep.subset_ground)
-
-
-
-
-
-
-    -- rw [← inter_eq_right, subset_antisymm_iff, and_iff_right (inter_subset_right _ _),
-    --   subset_iff_ssubset_or_eq]
-  -- choose Js hJs using fun i ↦ (hIs i).subset_basis_of_subset (hIX i)
-  -- refine Indep.subset ?_ <| iUnion_mono (fun i ↦ (hJs i).2)
-  -- obtain ⟨Ks, hdj, hKs, huKs⟩ := skewFamily_iff_exist_bases.1 h
-  -- obtain ⟨J, hJ⟩ := M.exists_basis (⋃ i, Js i)
-  --   (iUnion_subset (fun i ↦ (hJs i).1.indep.subset_ground))
-  -- obtain (rfl | hss) := hJ.subset.eq_or_ssubset
-  -- · exact hJ.indep
-  -- obtain ⟨e, ⟨_,⟨i₀,rfl⟩, (hi₀ : e ∈ Js i₀)⟩, heJs⟩ := exists_of_ssubset hss
-  -- obtain ⟨J', hJ', hss⟩  := (hJ.indep.inter_left (Xs i₀)).subset_basis_of_subset
-  --   (subset_union_left _ (⋃ i ∈ ({i₀}ᶜ : Set ι), Ks i)) sorry
-  -- have hJ'b : M.Basis J' (⋃ i, Xs i) := sorry
-
-
-
-
-
-  -- have
-
-
-  -- have hJX : M.Basis J (⋃ i, Xs i)
-  -- · refine hJ.basis_of_cl_eq_cl (hJ.subset.trans (iUnion_mono (fun i ↦ (hJs i).1.subset))) ?_
-  --   simp_rw [← M.cl_iUnion_cl_eq_cl_iUnion Js,
-  --     fun i ↦ (hJs i).1.cl_eq_cl, M.cl_iUnion_cl_eq_cl_iUnion]
-
-
-
-
-  -- replace hJ := hJ.basis_cl_right
-  -- rw []
-
-  -- rw [← hJ.subset.antisymm]
-  -- · exact hJ.indep
-  -- rintro e ⟨_, ⟨i₀,_, rfl⟩, (hei₀ : e ∈ Js i₀)⟩
-
-
-
-
-
---   -- obtain ⟨I₀, hI₀⟩ := (hC.diff_singleton_indep heC).subset_basis_of_subset (subset_union_left _ (Js i₀))
-
-
-
--- theorem SkewFamily.mono (h : M.SkewFamily Xs) (hYX : ∀ i, Ys i ⊆ Xs i) : M.SkewFamily Ys := by
-
---   have hYE : ∀ i, Ys i ⊆ M.E := fun i ↦ (hYX i).trans (h.subset_ground_of_mem i)
---   -- rw [skewFamily_iff_exist_bases] at h ⊢
-
---   choose Js hJs using (fun i ↦ M.exists_basis (Ys i))
-
---   have : h.modularFamily
-
-
-
-
-
-
--- theorem SkewFamily.mono (h : M.SkewFamily Xs) (hYX : ∀ i, Ys i ⊆ Xs i) : M.SkewFamily Ys := by
---   _
+theorem skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] [FiniteRk M] (hXs : ∀ i, Xs i ⊆ M.E) :
+     M.SkewFamily Xs ↔ ∑ i, M.r (Xs i) = M.r (⋃ i, Xs i) := by
+  simp_rw [rFin.skewFamily_iff_sum_er_eq_er_iUnion (fun i ↦ M.to_rFin (Xs i)) hXs,
+    ← M.coe_r_eq, ← Nat.cast_sum, Nat.cast_inj]
 
 def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Skew.subset_ground_left (h : M.Skew X Y) : X ⊆ M.E :=
+  h.subset_ground_of_mem true
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem Skew.subset_ground_right (h : M.Skew X Y) : Y ⊆ M.E :=
+  h.subset_ground_of_mem false
 
 theorem Skew.modularPair (h : M.Skew X Y) : M.ModularPair X Y :=
   h.modularFamily
 
--- theorem skew_iff_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by aesop_mat) :
---     M.Skew X Y ↔ X ⊆ M.cl ∅ := by
---   _
+theorem skew_iff_modularPair_inter_subset_loops :
+    M.Skew X Y ↔ M.ModularPair X Y ∧ X ∩ Y ⊆ M.cl ∅ := by
+  rw [Skew, SkewFamily, ModularPair, and_congr_right_iff]
+  simp [inter_comm X Y]
 
-theorem skew_iff_exists_bases (X Y : Set α) :
+theorem Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
+  rw [skew_iff_modularPair_inter_subset_loops] at h ⊢
+  rwa [inter_comm, ModularPair.comm]
+
+theorem Skew.comm : M.Skew X Y ↔ M.Skew Y X :=
+  ⟨Skew.symm, Skew.symm⟩
+
+theorem skew_iff_exist_bases {X Y : Set α} :
     M.Skew X Y ↔ ∃ I J, M.Indep (I ∪ J) ∧ Disjoint I J ∧ M.Basis I X ∧ M.Basis J Y := by
   change (M.ModularPair X Y ∧ _) ↔ _
   rw [modularPair_iff_exists_basis_basis]
@@ -630,22 +596,101 @@ theorem skew_iff_exists_bases (X Y : Set α) :
   refine (inter_subset_inter hI.subset_cl hJ.subset_cl).trans ?_
   rw [← hu.cl_inter_eq_inter_cl, hdj.inter_eq]
 
--- theorem skewFamily.sum_er_eq_er_biUniµon (h : M.SkewFamily Xs) (A : Finset ι) :
---     ∑ i in A, M.er (Xs i) = M.er (⋃ i ∈ A, Xs i) := by
---   classical
---   apply A.induction_on (p := fun A ↦ ∑ i in A, M.er (Xs i) = M.er (⋃ i ∈ (A : Set ι), Xs i))
---   · simp
---   intro a s has hs
---   simp only [Finset.mem_coe, Finset.coe_insert, mem_insert_iff, iUnion_iUnion_eq_or_left]
-  -- have := ∑ i in A, M.er (Xs i) = M.er (⋃ i ∈ (A : Set ι), Xs i)
+theorem Skew.disjoint_of_indep_subset_left (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X) :
+    Disjoint I Y :=
+  SkewFamily.disjoint_of_indep_subset (i := true) (j := false) h hI hIX (by simp)
 
--- theorem skewFamily_iff_exists_base : M.SkewFamily Xs ↔ ∃ B, M.Base B ∧
---     univ.PairwiseDisjoint (fun i ↦ Xs i ∩ B) ∧ ∀ i, M.Basis (Xs i ∩ B) (Xs i) := by
+theorem Skew.disjoint_of_indep_subset_right (h : M.Skew X Y) (hJ : M.Indep J) (hJY : J ⊆ Y) :
+    Disjoint X J :=
+  (SkewFamily.disjoint_of_indep_subset (j := true) (i := false) h hJ hJY (by simp)).symm
 
---   refine ⟨fun h ↦ ?_, fun ⟨B, hB, hdj, hbs⟩ ↦ ?_⟩
+theorem Skew.disjoint_of_basis_of_subset (h : M.Skew X Y) (hI : M.Basis I X) (hJ : J ⊆ Y) :
+    Disjoint I J :=
+  (h.disjoint_of_indep_subset_left hI.indep hI.subset).mono_right hJ
+
+theorem Skew.mono (h : M.Skew X Y) (hX : X' ⊆ X) (hY : Y' ⊆ Y) : M.Skew X' Y' :=
+  SkewFamily.mono h (Ys := fun i ↦ bif i then X' else Y') (Bool.rec (by simpa) (by simpa))
+
+theorem Skew.mono_left (h : M.Skew X Y) (hX : X' ⊆ X) : M.Skew X' Y :=
+  h.mono hX Subset.rfl
+
+theorem Skew.mono_right (h : M.Skew X Y) (hY : Y' ⊆ Y) : M.Skew X Y' :=
+  h.mono Subset.rfl hY
+
+theorem Skew.cl_skew (h : M.Skew X Y) : M.Skew (M.cl X) (M.cl Y) := by
+  have h' := SkewFamily.cls_skewFamily h
+  simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite] at h'
+  exact h'
+
+theorem skew_iff_cl_skew (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ M.Skew (M.cl X) (M.cl Y) :=
+  ⟨Skew.cl_skew, fun h ↦ h.mono (M.subset_cl X) (M.subset_cl Y)⟩
+
+theorem skew_iff_bases_skew (hI : M.Basis I X) (hJ : M.Basis J Y) : M.Skew I J ↔ M.Skew X Y :=
+  ⟨fun h ↦ h.cl_skew.mono hI.subset_cl hJ.subset_cl, fun h ↦ h.mono hI.subset hJ.subset⟩
+
+theorem Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
+    (hJ : M.Indep J) (hJY : J ⊆ Y) : M.Indep (I ∪ J) := by
+  rw [union_eq_iUnion]
+  exact SkewFamily.iUnion_indep_subset_indep h (Is := fun i ↦ bif i then I else J)
+    (Bool.rec (by simpa) (by simpa)) (Bool.rec (by simpa) (by simpa))
+
+theorem Skew.union_basis_union (h : M.Skew X Y) (hI : M.Basis I X) (hJ : M.Basis J Y) :
+    M.Basis (I ∪ J) (X ∪ Y) := by
+  rw [union_eq_iUnion, union_eq_iUnion]
+  exact SkewFamily.iUnion_basis_iUnion h (Bool.rec (by simpa) (by simpa))
+
+theorem Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoint I J := by
+  rw [union_eq_iUnion] at h
+  convert h.skewFamily_iff_pairwiseDisjoint
+  convert pairwise_disjoint_on_bool.symm
+  simp [PairwiseDisjoint, Set.Pairwise, Pairwise]
+
+-- theorem skew_iff_contract_restrict_eq_delete_restrict (hX : X ⊆ M.E := by aesop_mat)
+--     (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ⧸ X) ↾ Y = (M ⧹ X) ↾ Y := by
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · refine eq_of_indep_iff_indep_forall rfl fun J (hJ : J ⊆ Y) ↦ ?_
+--     obtain ⟨I, hI⟩ := M.exists_basis X
+--     have hJI : Disjoint J I := (h.disjoint_of_basis_of_subset hI hJ).symm
+--     rw [hI.contract_eq_contract_delete, restrict_indep_iff, restrict_indep_iff, and_iff_left hJ,
+--       and_iff_left hJ, delete_indep_iff, hI.indep.contract_indep_iff, and_iff_right hJI,
+--        delete_indep_iff]
+--     nth_rw 2 [← diff_union_of_subset hI.subset]
+--     rw [disjoint_union_right, and_iff_left hJI, and_congr_left_iff]
+--     refine fun hdj ↦ ⟨fun h ↦ h.subset (subset_union_left _ _), fun hJi ↦ ?_⟩
+--     exact h.symm.union_indep_of_indep_subsets hJi hJ hI.indep hI.subset
+--   rw [skew_iff_exist_bases]
+--   obtain ⟨I, hI⟩ := M.exists_basis X
+--   obtain ⟨J,hJ⟩ := M.exists_basis Y
+--   have hXJ : Disjoint X J
+--   · rw [disjoint_iff_forall_ne]
+--     rintro e heJ _ heX rfl
+--     have : (M ⧹ X ↾ Y).Nonloop e
+--     · simp
+--   refine ⟨I, J, ?_, ?_, hI, hJ⟩
+--   · have hXJ : Disjoint X J
+--     · rw [disjoint_iff_forall_ne]
+--       rintro e heJ _ heX rfl
+
+--     rw [hI.contract_eq_contract_delete] at h
+
+
+--     have hJi : (M ⧹ X ↾ Y).Indep J
+--     · rw [restrict_indep_iff, delete_indep_iff, and_iff_left hJ.subset, and_iff_right hJ.indep,
+--         disjoint_iff_forall_ne]
+
+--       sorry
+--     sorry
+--   sorry
+--     -- have := h.disjoint_of_indep_subset_right hJi hJ
 
 
 
+
+
+
+
+    -- obtain ⟨I, J, hi, hdj, hI, hJ⟩ := skew_iff_exist_bases.1 h
 
 
 

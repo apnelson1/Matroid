@@ -458,6 +458,11 @@ theorem erk_lt_top (M : Matroid α) [FiniteRk M] : M.erk < ⊤ := by
 theorem Indep.finite_of_subset_rFin (hI : M.Indep I) (hIX : I ⊆ X) (hX : M.rFin X) : I.Finite :=
   hX.finite_of_indep_subset hI hIX
 
+theorem rFin.indep_of_encard_le_er (hX : M.rFin I) (h : encard I ≤ M.er I) : M.Indep I := by
+  rw [indep_iff_er_eq_encard_of_finite _]
+  · exact (M.er_le_encard I).antisymm h
+  simpa using h.trans_lt hX.lt
+
 theorem rFin.to_cl (h : M.rFin X) : M.rFin (M.cl X) := by
   rwa [←er_lt_top_iff, er_cl_eq]
 
@@ -531,15 +536,15 @@ theorem rFin.basis_of_subset_cl_of_subset_of_encard_le (hX : M.rFin X) (hXI : X 
   rw [← hJX.encard] at hI
   rwa [← Finite.eq_of_subset_of_encard_le' (hX.finite_of_basis hJX) hIJ hI]
 
+theorem rFin.iUnion [Fintype ι] {Xs : ι → Set α} (h : ∀ i, M.rFin (Xs i)) : M.rFin (⋃ i, Xs i) := by
+  choose Is hIs using fun i ↦ M.exists_basis' (Xs i)
+  have hfin : (⋃ i, Is i).Finite := finite_iUnion <| fun i ↦ (h i).finite_of_basis' (hIs i)
+  rw [← rFin_cl_iff]
+  have hcl := (M.rFin_of_finite hfin).to_cl
+  rw [← M.cl_iUnion_cl_eq_cl_iUnion]
+  simp_rw [← (hIs _).cl_eq_cl, M.cl_iUnion_cl_eq_cl_iUnion]
+  assumption
 
-
-  -- have := hIX.trans (M.cl_subset_cl_of_subset_cl hJ.subset_cl)
-
-  -- rw [cl_eq_cl_inter_ground] at hIX
-  -- have h' := hIX.trans <| M.cl_subset_cl_of_subset_cl hJ.subset_cl
-
-  -- have := M.cl_subset_cl_of_subset_
-  -- have := hIX.trans (M.cl_subset_cl_of_subset_cl )
 
 end rFin
 
