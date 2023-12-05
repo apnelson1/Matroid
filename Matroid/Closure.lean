@@ -120,6 +120,10 @@ theorem cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) :
     M.cl (⋃ X ∈ Xs, M.cl X) = M.cl (⋃₀ Xs) := by
   rw [sUnion_eq_iUnion, biUnion_eq_iUnion, cl_iUnion_cl_eq_cl_iUnion]
 
+theorem cl_biUnion_cl_eq_cl_biUnion (M : Matroid α) (Xs : ι → Set α) (A : Set ι):
+    M.cl (⋃ i ∈ A, M.cl (Xs i)) = M.cl (⋃ i ∈ A, Xs i) := by
+  rw [biUnion_eq_iUnion, M.cl_iUnion_cl_eq_cl_iUnion, biUnion_eq_iUnion]
+
 @[simp] theorem cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
     M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by
   rw [eq_comm, union_eq_iUnion, ←cl_iUnion_cl_eq_cl_iUnion, union_eq_iUnion]

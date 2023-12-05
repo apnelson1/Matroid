@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Card
 
-open Set
+open Set BigOperators
 
 variable {s : Set α} {n : ℕ}
 
@@ -31,3 +31,11 @@ theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ 
   obtain (hα | hα) := finite_or_infinite α
   · have _ := Fintype.ofFinite α; simp
   simp
+
+#check Finset.card_biUnion
+
+-- theorem encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : univ.PairwiseDisjoint s) :
+--     encard (⋃ i, s i) = ∑ i, encard (s i) := by
+--   obtain (⟨i, hi⟩ | h) := em <| ∃ i, (s i).Infinite
+--   · rw [(hi.mono (subset_iUnion s i)).encard_eq]
+--     rw [sum_compl]
