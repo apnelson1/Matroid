@@ -1,4 +1,5 @@
 import Mathlib.Data.Set.Card
+import Mathlib.Algebra.BigOperators.Order
 
 open Set BigOperators
 
@@ -32,10 +33,20 @@ theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ 
   · have _ := Fintype.ofFinite α; simp
   simp
 
-#check Finset.card_biUnion
-
--- theorem encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : univ.PairwiseDisjoint s) :
---     encard (⋃ i, s i) = ∑ i, encard (s i) := by
---   obtain (⟨i, hi⟩ | h) := em <| ∃ i, (s i).Infinite
---   · rw [(hi.mono (subset_iUnion s i)).encard_eq]
---     rw [sum_compl]
+theorem encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : univ.PairwiseDisjoint s) :
+    encard (⋃ i, s i) = ∑ i, encard (s i) := by
+  classical
+  obtain (⟨i, hi⟩ | h) := em <| ∃ i, (s i).Infinite
+  · rw [(hi.mono (subset_iUnion s i)).encard_eq]
+    have hle := Finset.sum_le_sum_of_subset (f := fun i ↦ encard (s i)) (Finset.subset_univ {i})
+    simp_rw [Finset.sum_singleton, hi.encard_eq, top_le_iff, eq_comm] at hle
+    exact hle
+  simp_rw [not_exists, not_infinite] at h
+  rw [(finite_iUnion h).encard_eq_coe_toFinset_card]
+  simp_rw [(h _).encard_eq_coe_toFinset_card]
+  have h_eq := Finset.card_biUnion (s := Finset.univ) (t := fun i ↦ (h i).toFinset) ?_
+  · convert congr_arg ((↑) : ℕ → ℕ∞) h_eq
+    · ext x; simp
+    simp only [Nat.cast_sum]
+  simp only [Finset.mem_univ, ne_eq, Finite.disjoint_toFinset, forall_true_left]
+  exact fun i j hij ↦ hs (mem_univ i) (mem_univ j) hij

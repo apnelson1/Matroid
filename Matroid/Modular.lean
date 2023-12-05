@@ -1,5 +1,6 @@
 import Matroid.Flat
 import Matroid.Simple
+import Matroid.ForMathlib.Card
 
 open Set BigOperators
 
@@ -515,11 +516,12 @@ theorem SkewFamily.iUnion_basis_iUnion (h : M.SkewFamily Xs) (hIs : ∀ i, M.Bas
   exact hi.basis_of_subset_of_subset_cl (iUnion_mono (fun i ↦ (hIs i).subset)) <|
     iUnion_subset (fun i ↦ (hIs i).subset_cl.trans (M.cl_subset_cl (subset_iUnion _ _)))
 
-theorem skewFamily.sum_er_eq_er_biUnion [Fintype ι] (h : M.SkewFamily Xs) (A : Finset ι) :
+theorem skewFamily.sum_er_eq_er_biUnion [Fintype ι] (h : M.SkewFamily Xs) :
     ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (h.subset_ground_of_mem i)
-  rw [(h.iUnion_basis_iUnion hIs).er_eq_encard]
-
+  rw [(h.iUnion_basis_iUnion hIs).er_eq_encard,
+    encard_iUnion _ (h.pairwiseDisjoint_of_bases hIs)]
+  simp_rw [(hIs _).er_eq_encard]
 
 def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
 
