@@ -375,6 +375,12 @@ theorem Basis.contract_eq_contract_delete (hI : M.Basis I X) : M ⧸ X = M ⧸ I
     ←hI.indep.mem_cl_iff_of_not_mem he.2]
   exact hI.subset_cl he.1
 
+theorem Basis.contract_indep_iff (hI : M.Basis I X) :
+    (M ⧸ X).Indep J ↔ M.Indep (J ∪ I) ∧ Disjoint X J := by
+  rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
+    and_comm, ← and_assoc, ← disjoint_union_right, diff_union_self,
+    union_eq_self_of_subset_right hI.subset, and_comm, disjoint_comm]
+
 theorem Basis'.contract_eq_contract_delete (hI : M.Basis' I X) : M ⧸ X = M ⧸ I ⧹ (X \ I) := by
   rw [←contract_inter_ground_eq, hI.basis_inter_ground.contract_eq_contract_delete, eq_comm,
     ←delete_inter_ground_eq, contract_ground, diff_eq, diff_eq, ←inter_inter_distrib_right,

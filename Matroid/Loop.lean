@@ -138,35 +138,119 @@ theorem Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E)
   rw [← singleton_dep, preimage_dep_iff]
   simp
 
-theorem cl_union_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
-    M.cl (X ∪ Y) = M.cl X :=
-  (M.cl_subset_cl (subset_union_left _ _)).antisymm'
-    ((M.cl_subset_cl (union_subset_union_right X hY)).trans_eq (by simp))
-
-theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
-    M.cl (X \ Y) = M.cl X := by
-  rw [←cl_union_eq_cl_of_subset_loops _ _ hY, diff_union_self,
-    cl_union_eq_cl_of_subset_loops _ _ hY]
-
-@[simp] theorem cl_diff_loops_eq (M : Matroid α) (X : Set α) : M.cl (X \ M.cl ∅) = M.cl X :=
-  M.cl_diff_eq_cl_of_subset_loops X rfl.subset
-
-theorem basis_union_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
-    M.Basis I (X ∪ L) ↔ M.Basis I X := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [basis_iff_indep_cl]
-    refine ⟨h.indep, (subset_union_left _ _).trans h.subset_cl, ?_⟩
-    rw [← (h.indep.disjoint_loops.mono_right hL).sdiff_eq_left, diff_subset_iff, union_comm]
-    exact h.subset
-  exact h.basis_cl_right.basis_subset (h.subset.trans (subset_union_left _ _))
-    (union_subset (M.subset_cl X) (hL.trans (M.cl_subset_cl <| empty_subset X)))
-
-theorem basis_diff_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
-    M.Basis I (X \ L) ↔ M.Basis I X := by
-  rw [← basis_union_iff_basis_of_subset_loops hL, diff_union_self,
-    basis_union_iff_basis_of_subset_loops hL]
 
 end Loop
+
+section LoopEquiv
+
+theorem cl_union_loops_eq (M : Matroid α) (X : Set α) : M.cl (X ∪ M.cl ∅) = M.cl X := by
+  rw [cl_union_cl_right_eq, union_empty]
+
+@[simp] theorem cl_diff_loops_eq (M : Matroid α) (X : Set α) : M.cl (X \ M.cl ∅) = M.cl X := by
+  rw [← M.cl_union_loops_eq (X \ M.cl ∅), diff_union_self, cl_union_cl_right_eq, union_empty]
+
+/-- Two sets are `LoopEquiv` in `M` if their symmetric difference contains only loops. -/
+def LoopEquiv (M : Matroid α) (X Y : Set α) := X ∪ M.cl ∅ = Y ∪ M.cl ∅
+
+theorem loopEquiv_iff_union_eq_union : M.LoopEquiv X Y ↔ X ∪ M.cl ∅ = Y ∪ M.cl ∅ := Iff.rfl
+
+theorem LoopEquiv.union_eq_union (h : M.LoopEquiv X Y) : X ∪ M.cl ∅ = Y ∪ M.cl ∅ := h
+
+theorem LoopEquiv.diff_eq_diff (h : M.LoopEquiv X Y) : X \ M.cl ∅ = Y \ M.cl ∅ := by
+  rw [subset_antisymm_iff, diff_subset_iff, union_diff_self, union_comm, ← h.union_eq_union,
+    diff_subset_iff, union_diff_self, union_comm _ X, and_iff_right (subset_union_left _ _),
+    h.union_eq_union]
+  apply subset_union_left
+
+theorem LoopEquiv.rfl (M : Matroid α) {X : Set α} : M.LoopEquiv X X := by
+  rfl
+
+theorem LoopEquiv.symm (h : M.LoopEquiv X Y) : M.LoopEquiv Y X :=
+  Eq.symm h
+
+theorem LoopEquiv.comm : M.LoopEquiv X Y ↔ M.LoopEquiv Y X :=
+  ⟨LoopEquiv.symm, LoopEquiv.symm⟩
+
+theorem LoopEquiv.trans (hXY : M.LoopEquiv X Y) (hYZ : M.LoopEquiv Y Z) : M.LoopEquiv X Z :=
+  Eq.trans hXY hYZ
+
+theorem LoopEquiv.diff_subset_loops (h : M.LoopEquiv X Y) : X \ Y ⊆ M.cl ∅ := by
+  rw [diff_subset_iff, ← h.union_eq_union]
+  exact subset_union_left _ _
+
+theorem LoopEquiv.symm_diff_subset_loops : M.LoopEquiv X Y ↔ X ∆ Y ⊆ M.cl ∅ := by
+  rw [Set.symmDiff_def, union_subset_iff]
+  refine ⟨fun h ↦ ⟨h.diff_subset_loops, h.symm.diff_subset_loops⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
+  rw [diff_subset_iff] at h1 h2
+  rw [loopEquiv_iff_union_eq_union, subset_antisymm_iff, union_subset_iff, union_subset_iff]
+  exact ⟨⟨h1, subset_union_right _ _⟩, h2, subset_union_right _ _⟩
+
+theorem loopEquiv_union (X : Set α) (hL : L ⊆ M.cl ∅) : M.LoopEquiv X (X ∪ L) := by
+   rw [loopEquiv_iff_union_eq_union, union_assoc, union_eq_self_of_subset_left hL]
+
+theorem loopEquiv_diff (X : Set α) (hL : L ⊆ M.cl ∅) : M.LoopEquiv X (X \ L) := by
+  rw [LoopEquiv.comm]
+  refine (loopEquiv_union (X \ L) hL).trans ?_
+  rw [diff_union_self, LoopEquiv.comm]
+  exact loopEquiv_union X hL
+
+theorem loopEquiv_union_diff (X : Set α) (hL : L ⊆ M.cl ∅) (hL' : L' ⊆ M.cl ∅) :
+    M.LoopEquiv X ((X ∪ L) \ L') :=
+  (loopEquiv_union X hL).trans (loopEquiv_diff _ hL')
+
+theorem loopEquiv_union_loops (M : Matroid α) (X : Set α) : M.LoopEquiv X (X ∪ M.cl ∅) :=
+  loopEquiv_union X Subset.rfl
+
+theorem loopEquiv_diff_loops (M : Matroid α) (X : Set α) : M.LoopEquiv X (X \ M.cl ∅) :=
+  loopEquiv_diff X Subset.rfl
+
+theorem LoopEquiv.exists_diff_union_loops (h : M.LoopEquiv X Y) :
+    ∃ L L', L ⊆ M.cl ∅ ∧ L' ⊆ M.cl ∅ ∧ Y = (X ∪ L) \ L' :=
+  ⟨_, _, h.symm.diff_subset_loops, h.diff_subset_loops, by aesop⟩
+
+theorem LoopEquiv.subset_union_loops (h : M.LoopEquiv X Y) : Y ⊆ X ∪ M.cl ∅ := by
+  rw [h.union_eq_union]; exact subset_union_left _ _
+
+theorem LoopEquiv.cl_eq_cl (h : M.LoopEquiv X Y) : M.cl X = M.cl Y := by
+  rw [← cl_union_loops_eq, h.union_eq_union, cl_union_loops_eq]
+
+@[aesop unsafe 5% (rule_sets [Matroid])]
+theorem LoopEquiv.subset_ground (h : M.LoopEquiv X Y) (hX : X ⊆ M.E := by aesop_mat) : Y ⊆ M.E :=
+  h.subset_union_loops.trans (union_subset hX (M.cl_subset_ground ∅))
+
+theorem LoopEquiv.inter_eq_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : X ∩ I = Y ∩ I := by
+  rw [show X ∩ I = (X ∪ M.cl ∅) ∩ I
+    by rw [inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty],
+    h.union_eq_union, inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty]
+
+theorem LoopEquiv.subset_iff_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : I ⊆ X ↔ I ⊆ Y := by
+  rw [← sdiff_eq_left.2 hI.disjoint_loops, diff_subset_iff, diff_subset_iff,
+    union_comm, h.union_eq_union, union_comm]
+
+theorem LoopEquiv.basis_iff (h : M.LoopEquiv X Y) : M.Basis I X ↔ M.Basis I Y := by
+  rw [basis_iff_indep_subset_cl, basis_iff_indep_subset_cl, and_congr_right_iff]
+  intro hI
+  rw [h.subset_iff_of_indep hI, and_congr_right_iff, show M.cl I = M.cl I ∪ M.cl ∅ by simp,
+    union_comm, ← diff_subset_iff,  h.diff_eq_diff, diff_subset_iff]
+  exact fun _ ↦ Iff.rfl
+
+theorem basis_union_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X ∪ L) ↔ M.Basis I X :=
+  (loopEquiv_union X hL).symm.basis_iff
+
+theorem basis_diff_iff_basis_of_subset_loops (hL : L ⊆ M.cl ∅) :
+    M.Basis I (X \ L) ↔ M.Basis I X :=
+  (loopEquiv_diff X hL).symm.basis_iff
+
+theorem cl_union_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X ∪ Y) = M.cl X :=
+  (loopEquiv_union X hY).symm.cl_eq_cl
+
+theorem cl_diff_eq_cl_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.cl ∅) :
+    M.cl (X \ Y) = M.cl X :=
+  (loopEquiv_diff X hY).symm.cl_eq_cl
+
+end LoopEquiv
 
 section Nonloop
 
