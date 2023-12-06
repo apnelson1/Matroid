@@ -491,11 +491,40 @@ termination_by _ => X.encard
     · exact I_ind.subset_ground ⟨x_I, hne⟩
     exact J_ind.subset_ground ⟨x_J, hne⟩
 
-
-
   indep_maximal := by
     -- more hard work here
-    sorry
+    intro X X_sub Y Y_ind Y_sub_X
+    obtain (Y_ind | ⟨e_in_Y, Y_ind, Y_cl_not_mem⟩) := Y_ind
+    · by_cases e_in_Y : e ∈ Y
+      · obtain ⟨B, B_Basis, Y_sub_B⟩ := Y_ind.subset_basis_of_subset Y_sub_X (X_sub.trans
+          (insert_subset (Y_ind.subset_ground e_in_Y) subset_rfl))
+        refine' ⟨B, _⟩
+        rw [mem_maximals_iff]
+        refine' ⟨⟨Or.inl B_Basis.indep, Y_sub_B, B_Basis.subset⟩, fun I I_ind I_sub ↦ _⟩
+        obtain ⟨(I_ind | ⟨e_in_I, _, _⟩), Y_sub_I, I_sub_X⟩ := I_ind
+        · obtain (rfl | ssub) := eq_or_ssubset_of_subset I_sub
+          · rfl
+          exact absurd I_ind (B_Basis.dep_of_ssubset ssub I_sub_X).not_indep
+        apply absurd (Y_ind.subset_ground e_in_Y) e_in_I.2
+      by_cases e_in_X : e ∈ X
+      obtain (X_ground | ⟨e_mem, Xdiff_sub⟩) := subset_insert_iff.1 X_sub
+      · obtain ⟨B, B_Basis, Y_sub_B⟩ := Y_ind.subset_basis_of_subset Y_sub_X X_ground
+        refine' ⟨B, mem_maximals_iff.2 _⟩
+        refine' ⟨⟨Or.inl B_Basis.indep, Y_sub_B, B_Basis.subset⟩, fun I I_ind I_sub ↦ _⟩
+        obtain ⟨(I_ind | ⟨e_in_I, _, _⟩), Y_sub_I, I_sub_X⟩ := I_ind
+        · obtain (rfl | ssub) := eq_or_ssubset_of_subset I_sub
+          · rfl
+          exact absurd I_ind (B_Basis.dep_of_ssubset ssub I_sub_X).not_indep
+        apply absurd (X_ground e_in_X) e_in_I.2
+      obtain ⟨B, B_Basis, Y_sub_B⟩ := Y_ind.subset_basis_of_subset (subset_diff_singleton Y_sub_X e_in_Y) Xdiff_sub
+      by_cases eB_ind : M.Indep (insert e B)
+      · refine' ⟨insert e B, mem_maximals_iff.2 _⟩
+
+
+
+
+
+
   subset_ground := by
     rintro I (hI | ⟨-, hI, -⟩)
     · exact hI.subset_ground.trans <| subset_insert _ _
