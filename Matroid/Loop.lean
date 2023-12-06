@@ -411,7 +411,7 @@ section Loopless
 theorem loopless_iff_cl_empty : M.Loopless ↔ M.cl ∅ = ∅ :=
   ⟨fun h ↦ h.cl_empty, fun h ↦ ⟨h⟩⟩
 
-theorem cl_empty_eq_empty (M : Matroid α) [Loopless M] : M.cl ∅ = ∅ :=
+@[simp] theorem cl_empty_eq_empty (M : Matroid α) [Loopless M] : M.cl ∅ = ∅ :=
   ‹Loopless M›.cl_empty
 
 theorem toNonloop [Loopless M] (he : e ∈ M.E := by aesop_mat) :
