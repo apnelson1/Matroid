@@ -46,6 +46,7 @@ theorem eq_top_iff_forall_lt {n : ℕ∞} : n = ⊤ ↔ ∀ m : ℕ, m < n := by
   rintro ⟨a, rfl⟩
   exact (h a).ne rfl
 
+/-- The set of `ENat` that are not `⊤` is equivalent to `ℕ`. -/
 def neTopEquivNat : { a : ℕ∞ | a ≠ ⊤ } ≃ ℕ where
   toFun x := ENat.toNat x
   invFun x := ⟨x, coe_ne_top x⟩
@@ -243,6 +244,9 @@ protected theorem sum_le_tsum {f : α → ℕ∞} (s : Finset α) : ∑ x in s, 
 protected theorem le_tsum (a : α) : f a ≤ ∑' a, f a :=
   le_tsum' ENat.summable a
 
+protected theorem le_tsum_of_mem {s : Set α} (ha : a ∈ s) : f a ≤ ∑' (x : s), f x :=
+  ENat.le_tsum (⟨a,ha⟩ : s)
+
 @[simp] protected theorem tsum_eq_zero : ∑' i, f i = 0 ↔ ∀ i, f i = 0 :=
   tsum_eq_zero_iff ENat.summable
 
@@ -286,6 +290,14 @@ theorem Finite.tsum_eq_top_iff {s : Set α} (hs : s.Finite) :
   obtain ⟨b, hbs, hbtop⟩ := IH htop
   exact ⟨b, Or.inr hbs, hbtop⟩
 
+protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
+  simp_rw [ENat.tsum_eq_iSup_sum, ENat.mul_iSup, Finset.mul_sum]
+
+protected theorem tsum_mul (c : ℕ∞) : (∑' a, f a) * c = ∑' a, f a * c := by
+  simp_rw [ENat.tsum_eq_iSup_sum, ENat.iSup_mul, Finset.sum_mul]
+
+-- cardinality
+
 protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard := by
   classical
   suffices hfin : ∀ (t : Set α), t.Finite → ∑' (_ : t), 1 = t.encard
@@ -306,17 +318,11 @@ protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard := by
     Pi.one_apply, Finset.sum_const, nsmul_eq_mul, mul_one]
   rw [← encard_coe_eq_coe_finsetCard, Finite.coe_toFinset]
 
-protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
-  simp_rw [ENat.tsum_eq_iSup_sum, ENat.mul_iSup, Finset.mul_sum]
-
-protected theorem tsum_mul (c : ℕ∞) : (∑' a, f a) * c = ∑' a, f a * c := by
-  simp_rw [ENat.tsum_eq_iSup_sum, ENat.iSup_mul, Finset.sum_mul]
-
-@[simp] protected theorem tsum_set_const (s : Set α) (c : ℕ∞) : ∑' (_ : s), c = c * s.encard := by
+@[simp] protected theorem tsum_mem_const (s : Set α) (c : ℕ∞) : ∑' (_ : s), c = c * s.encard := by
   rw [← ENat.tsum_one s, ENat.mul_tsum, mul_one]
 
 @[simp] protected theorem tsum_const (c : ℕ∞) : ∑' _ : ι, c = c * (univ : Set ι).encard := by
-  rw [← tsum_univ, ENat.tsum_set_const]
+  rw [← tsum_univ, ENat.tsum_mem_const]
 
 theorem tsum_const_eq_top_of_ne_zero [Infinite ι] {c : ℕ∞} (hc : c ≠ 0) :
     ∑' (_ : ι), c = ⊤ := by

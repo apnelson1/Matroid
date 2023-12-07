@@ -5,6 +5,11 @@ open Set BigOperators
 
 variable {s : Set α} {n : ℕ}
 
+theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
+    s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
+  rw [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter, WithTop.add_left_cancel_iff
+    h.encard_lt_top.ne, encard_eq_zero, disjoint_iff_inter_eq_empty]
+
 @[simp] theorem encard_pair_le (e f : α) : encard {e,f} ≤ 2 := by
   obtain (rfl | hne) := eq_or_ne e f
   · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]; norm_num
@@ -102,6 +107,22 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
   refine (WithTop.sum_lt_top (fun i _ ↦ ?_)).ne
   rw [encard_ne_top_iff]
   exact (hfin i).diff _
+
+theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
+    {s : ι → Set α} (hs : ∀ i ∈ u, (s i).Finite) :
+    encard (⋃ i ∈ u, s i) = ∑ i in u, encard (s i) ↔ (u : Set ι).PairwiseDisjoint s := by
+  change encard (⋃ i ∈ (u : Set ι), _) = _ ↔ _
+  rw [biUnion_eq_iUnion]
+  convert encard_iUnion_eq_sum_iff_pairwiseDisjoint (ι := u) (s := fun i ↦ s i) (by simpa)
+  · rw [Finset.univ_eq_attach, Finset.sum_attach (f := fun i ↦ encard (s i))]
+  refine ⟨fun h i _ j _ hij ↦ h i.prop j.prop (by rwa [Ne.def, Subtype.coe_injective.eq_iff]),
+    fun h i hi j hj hij ↦ ?_⟩
+  exact h (mem_univ ⟨i, hi⟩) (mem_univ ⟨j,hj⟩) (by simpa)
+
+
+
+
+
 
 theorem pairwiseDisjoint_of_encard_sum_le_encard_iUnion {ι : Type*} [Fintype ι] {s : ι → Set α}
     (hfin : ∀ i, (s i).Finite) (hle : ∑ i, encard (s i) ≤ encard (⋃ i, s i)) :
