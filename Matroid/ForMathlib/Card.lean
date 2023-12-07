@@ -21,6 +21,9 @@ theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) 
   rw [hinf.encard_eq, iff_true_intro le_top, true_iff, iff_false_intro hinf, false_imp_iff]
   trivial
 
+theorem Equiv.encard_univ_eq (e : α ≃ β) : encard (univ : Set α) = encard (univ : Set β) := by
+  rw [encard_univ, encard_univ, PartENat.card_congr e]
+
 theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ s.encard := by
   refine ⟨fun ⟨i⟩ ↦ ?_, fun h ↦ ?_⟩
   · convert ((Equiv.Set.univ (Fin n)).toEmbedding.trans i).enccard_le

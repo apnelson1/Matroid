@@ -5,7 +5,7 @@ import Mathlib.Topology.Instances.Discrete
 import Matroid.ForMathlib.Card
 
 
-open Set WithTop Filter
+open Set Function WithTop Filter
 
 universe u v
 
@@ -15,7 +15,7 @@ theorem tsum_support_eq {α β : Type*} {f : α → β} [TopologicalSpace β] [A
     [T2Space β] : ∑' (x : f.support), f x = ∑' x, f x := by
   simp [tsum_subtype]
 
-theorem tsum_subtype_eq_tsum_inter_support {α β : Type*} {f : α → β} [TopologicalSpace β]
+theorem tsum_inter_support_eq_tsum_subtype {α β : Type*} {f : α → β} [TopologicalSpace β]
     [AddCommMonoid β] [T2Space β] {s : Set α} :
     ∑' (x : ↑(s ∩ f.support)), f x = ∑' (x : s), f x := by
   rw [tsum_congr (show ∀ (a : s), f a = (s.indicator f) a from _),
@@ -28,7 +28,7 @@ theorem tsum_subtype_eq_tsum_inter_support {α β : Type*} {f : α → β} [Topo
 theorem tsum_subtype_eq_tsum_subtype {α β : Type*} {f : α → β} [TopologicalSpace β]
     [AddCommMonoid β] [T2Space β] {s t : Set α} (h : s ∩ f.support = t ∩ f.support) :
     ∑' (x : s), f x = ∑' (x : t), f x := by
-  rw [←tsum_subtype_eq_tsum_inter_support, eq_comm, ←tsum_subtype_eq_tsum_inter_support, h]
+  rw [←tsum_inter_support_eq_tsum_subtype, eq_comm, ←tsum_inter_support_eq_tsum_subtype, h]
 
 namespace ENat
 
@@ -59,6 +59,12 @@ theorem cinfi_ne_top [InfSet α] (f : ℕ∞ → α) : ⨅ x : { x : ℕ∞ // x
 theorem iInf_ne_top [CompleteLattice α] (f : ℕ∞ → α) :
     ⨅ (x) (_ : x ≠ ⊤), f x = ⨅ x : ℕ, f x := by
   rw [iInf_subtype', cinfi_ne_top]
+
+theorem indicator_support_le (f : α → ℕ∞) (i : α) : indicator (support f) 1 i ≤ f i := by
+  by_cases hi : i ∈ support f
+  · rwa [indicator_apply_eq_self.2 (fun h ↦ (h hi).elim), Pi.one_apply, ENat.one_le_iff_ne_zero]
+  rw [indicator_apply_eq_zero.2 (fun h ↦ (hi h).elim)]
+  apply zero_le
 
 end basic
 
@@ -192,20 +198,20 @@ section Sup
 
 variable {ι : Sort*}
 
-@[simp] theorem iSup_eq_zero {f : ι → ℕ∞} : ⨆ i, f i = 0 ↔ ∀ i, f i = 0 :=
+@[simp] protected theorem iSup_eq_zero {f : ι → ℕ∞} : ⨆ i, f i = 0 ↔ ∀ i, f i = 0 :=
   iSup_eq_bot
 
-@[simp] theorem iSup_zero_eq_zero : ⨆ _ : ι, (0 : ℕ∞) = 0 := by
+@[simp] protected theorem iSup_zero_eq_zero : ⨆ _ : ι, (0 : ℕ∞) = 0 := by
   simp
 
 protected theorem mul_iSup (c : ℕ∞) (f : ι → ℕ∞) : c * (⨆ i, f i) = ⨆ i, (c * f i) := by
   by_cases hf : ∀ i, f i = 0
   · obtain rfl : f = fun _ ↦ 0
     exact funext hf
-    simp only [mul_zero, iSup_zero_eq_zero]
+    simp only [mul_zero, ENat.iSup_zero_eq_zero]
   refine' (monotone_id.const_mul' _).map_iSup_of_continuousAt _ (mul_zero c)
   refine' ENat.Tendsto.const_mul tendsto_id (Or.inl _)
-  exact mt iSup_eq_zero.1 hf
+  exact mt ENat.iSup_eq_zero.1 hf
 
 protected theorem iSup_mul (c : ℕ∞) (f : ι → ℕ∞) : (⨆ i, f i) * c = ⨆ i, (f i * c) := by
   simp_rw [mul_comm, ENat.mul_iSup]
@@ -253,6 +259,10 @@ protected theorem le_tsum_of_mem {s : Set α} (ha : a ∈ s) : f a ≤ ∑' (x :
 protected theorem tsum_eq_top_of_eq_top : (∃ a, f a = ⊤) → ∑' a, f a = ⊤
   | ⟨a, ha⟩ => top_unique <| ha ▸ ENat.le_tsum a
 
+protected theorem tsum_subtype_eq_top_of_eq_top {s : Set α} (h : ∃ a ∈ s, f a = ⊤) :
+    ∑' a : s, f a = ⊤ :=
+  let ⟨a, ha, has⟩ := h
+  ENat.tsum_eq_top_of_eq_top ⟨⟨a, ha⟩, has⟩
 
 -- sets
 
@@ -280,6 +290,12 @@ protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
   rw [←WithTop.add_right_cancel_iff hfin, ←ENat.tsum_add,
     tsum_congr (fun i ↦ tsub_add_cancel_of_le (h i)), tsub_add_cancel_of_le (ENat.tsum_le_tsum h)]
 
+protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
+  simp_rw [ENat.tsum_eq_iSup_sum, ENat.mul_iSup, Finset.mul_sum]
+
+protected theorem tsum_mul (c : ℕ∞) : (∑' a, f a) * c = ∑' a, f a * c := by
+  simp_rw [ENat.tsum_eq_iSup_sum, ENat.iSup_mul, Finset.sum_mul]
+
 theorem Finite.tsum_eq_top_iff {s : Set α} (hs : s.Finite) :
     ∑' (x : s), f x = ⊤ ↔ ∃ a ∈ s, f a = ⊤ := by
   refine' ⟨hs.induction_on (by simp) @fun a s' has' _ IH htop ↦ _,
@@ -290,58 +306,23 @@ theorem Finite.tsum_eq_top_iff {s : Set α} (hs : s.Finite) :
   obtain ⟨b, hbs, hbtop⟩ := IH htop
   exact ⟨b, Or.inr hbs, hbtop⟩
 
-protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
-  simp_rw [ENat.tsum_eq_iSup_sum, ENat.mul_iSup, Finset.mul_sum]
-
-protected theorem tsum_mul (c : ℕ∞) : (∑' a, f a) * c = ∑' a, f a * c := by
-  simp_rw [ENat.tsum_eq_iSup_sum, ENat.iSup_mul, Finset.sum_mul]
-
--- cardinality
-
-protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard := by
-  classical
-  suffices hfin : ∀ (t : Set α), t.Finite → ∑' (_ : t), 1 = t.encard
-  · obtain (hs | hs) := s.finite_or_infinite
-    · rw [hfin s hs]
-    rw [hs.encard_eq, eq_top_iff_forall_lt]
-    intro m
-    obtain ⟨t, ht⟩ := exists_subset_encard_eq (show m+1 ≤ s.encard by simp [hs.encard_eq])
-    have htfin : t.Finite := finite_of_encard_eq_coe ht.2
-    have hle := ENat.tsum_le_of_subset ht.1 (f := 1)
-    simp_rw [Pi.one_apply, hfin _ htfin, ht.2, add_one_le_iff (coe_ne_top m)] at hle
-    exact hle
-  intro t ht
-  change ∑' (x : t), (1 : α → ℕ∞) x = _
-  rw [tsum_subtype, tsum_eq_sum (s := ht.toFinset) (by simp), eq_comm]
-  simp_rw [indicator_apply, ← Finset.sum_filter]
-  simp only [Finite.mem_toFinset, imp_self, implies_true, Finset.filter_true_of_mem,
-    Pi.one_apply, Finset.sum_const, nsmul_eq_mul, mul_one]
-  rw [← encard_coe_eq_coe_finsetCard, Finite.coe_toFinset]
-
-@[simp] protected theorem tsum_mem_const (s : Set α) (c : ℕ∞) : ∑' (_ : s), c = c * s.encard := by
-  rw [← ENat.tsum_one s, ENat.mul_tsum, mul_one]
-
-@[simp] protected theorem tsum_const (c : ℕ∞) : ∑' _ : ι, c = c * (univ : Set ι).encard := by
-  rw [← tsum_univ, ENat.tsum_mem_const]
-
-theorem tsum_const_eq_top_of_ne_zero [Infinite ι] {c : ℕ∞} (hc : c ≠ 0) :
-    ∑' (_ : ι), c = ⊤ := by
-  rw [ENat.tsum_const, infinite_univ.encard_eq, mul_top hc]
-
-protected theorem encard_support_le_tsum : f.support.encard ≤ ∑' x, f x := by
-  classical
-  rw [← ENat.tsum_one, tsum_subtype f.support (fun _ ↦ 1)]
-  apply ENat.tsum_le_tsum
-  intro a
-  simp only [Function.mem_support, ne_eq, not_not]
-  rw [indicator_apply]
-  split_ifs with h
-  · rwa [ENat.one_le_iff_ne_zero]
-  apply zero_le
-
 protected theorem tsum_eq_top_of_support_infinite (hf : f.support.Infinite) : ∑' a, f a = ⊤ := by
-  have := ENat.encard_support_le_tsum (f := f)
-  rwa [hf.encard_eq, top_le_iff] at this
+  rw [ENat.tsum_eq_iSup_sum, iSup_eq_top]
+  intro b hb
+  lift b to ℕ using hb.ne
+  obtain ⟨s, hss, hsc⟩ := exists_subset_encard_eq ((add_one_le_of_lt hb).trans_eq hf.encard_eq.symm)
+  rw [← Nat.cast_one, ← Nat.cast_add] at hsc
+  set s' := (finite_of_encard_eq_coe hsc).toFinset
+  refine ⟨s', lt_of_lt_of_le ?_ (Finset.sum_le_sum (show ∀ i ∈ s', 1 ≤ f i from ?_))  ⟩
+  · rw [Finset.sum_const, nsmul_eq_mul, mul_one,
+      ← (finite_of_encard_eq_coe hsc).encard_eq_coe_toFinset_card, hsc, Nat.cast_lt]
+    exact Nat.lt.base b
+  simp only [Finite.mem_toFinset, ENat.one_le_iff_ne_zero]
+  exact hss
+
+protected theorem tsum_const_eq_top_of_ne_zero [Infinite ι] {c : ℕ∞} (hc : c ≠ 0) :
+    ∑' (_ : ι), c = ⊤ :=
+  ENat.tsum_eq_top_of_support_infinite (by rwa [support_const hc, infinite_univ_iff])
 
 protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨ ∃ a, f a = ⊤ := by
   refine' ⟨fun h ↦ _, _⟩
@@ -354,49 +335,123 @@ protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨
   · exact ENat.tsum_eq_top_of_support_infinite h
   exact ENat.tsum_eq_top_of_eq_top h
 
+protected theorem tsum_subtype_eq_top_iff {s : Set α} :
+    ∑' (a : s), f a = ⊤ ↔ (s ∩ f.support).Infinite ∨ ∃ a ∈ s, f a = ⊤ := by
+  simp_rw [ENat.tsum_eq_top_iff, Subtype.exists, exists_prop]
+  convert Iff.rfl
+  simp_rw [← Set.finite_coe_iff]
+  exact Bijective.finite_iff (f := fun i ↦ ⟨⟨i,i.2.1⟩, i.2.2⟩)
+    ⟨by rintro ⟨i, hi⟩ ⟨j, hj⟩ hij; simpa using hij, by rintro ⟨⟨i,his⟩, hi⟩; use ⟨i, ⟨his, hi⟩⟩⟩
+
+protected theorem tsum_subtype_eq_top_of_inter_support_infinite {s : Set α}
+    (hf : (s ∩ f.support).Infinite) : ∑' (a : s), f a = ⊤ :=
+  ENat.tsum_subtype_eq_top_iff.2 (Or.inl hf)
+
+protected theorem tsum_subtype_const_eq_top_of_ne_zero {s : Set α} (hs : s.Infinite) {c : ℕ∞}
+    (hc : c ≠ 0) : ∑' (_ : s), c = ⊤ :=
+  ENat.tsum_subtype_eq_top_of_inter_support_infinite (f := fun _ ↦ c)
+    (by rwa [support_const hc, inter_univ])
+
+protected theorem tsum_comp_le_tsum_of_injective {f : α → β} (hf : Injective f) (g : β → ℕ∞) :
+    ∑' x, g (f x) ≤ ∑' y, g y :=
+  tsum_le_tsum_of_inj f hf (fun _ _ ↦ zero_le _) (fun _ ↦ le_rfl) ENat.summable ENat.summable
+
+protected theorem tsum_le_tsum_comp_of_surjective {f : α → β} (hf : Surjective f) (g : β → ℕ∞) :
+    ∑' y, g y ≤ ∑' x, g (f x) :=
+  calc ∑' y, g y = ∑' y, g (f (surjInv hf y)) := by simp only [surjInv_eq hf]
+    _ ≤ ∑' x, g (f x) := ENat.tsum_comp_le_tsum_of_injective (injective_surjInv hf) _
+
+protected theorem tsum_comp_eq_tsum_of_bijective {f : α → β} (hf : f.Bijective) (g : β → ℕ∞) :
+    ∑' x, g (f x) = ∑' y, g y :=
+  (ENat.tsum_comp_le_tsum_of_injective hf.injective g).antisymm
+    (ENat.tsum_le_tsum_comp_of_surjective hf.surjective g)
+
+protected theorem tsum_mono_subtype (f : α → ℕ∞) {s t : Set α} (h : s ⊆ t) :
+    ∑' x : s, f x ≤ ∑' x : t, f x :=
+  ENat.tsum_comp_le_tsum_of_injective (inclusion_injective h) _
+
+protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → ℕ∞) :
+    ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
+  tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
+
+protected theorem tsum_sigma' {β : α → Type*} (f : (Σ a, β a) → ℕ∞) :
+    ∑' p : Σ a, β a, f p = ∑' (a) (b), f ⟨a, b⟩ :=
+  tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
+
+protected theorem tsum_iUnion_le_tsum (f : α → ℕ∞) (t : ι → Set α) :
+    ∑' x : ⋃ i, t i, f x ≤ ∑' i, ∑' x : t i, f x :=
+  calc ∑' x : ⋃ i, t i, f x ≤ ∑' x : Σ i, t i, f x.2 :=
+    ENat.tsum_le_tsum_comp_of_surjective (sigmaToiUnion_surjective t) _
+  _ = ∑' i, ∑' x : t i, f x := ENat.tsum_sigma' _
+
+protected theorem tsum_biUnion_le_tsum (f : α → ℕ∞) (s : Set ι) (t : ι → Set α) :
+    ∑' x : ⋃ i ∈ s , t i, f x ≤ ∑' i : s, ∑' x : t i, f x :=
+  calc ∑' x : ⋃ i ∈ s, t i, f x = ∑' x : ⋃ i : s, t i, f x := by rw [tsum_congr_subtype]; simp
+  _ ≤ ∑' i : s, ∑' x : t i, f x := ENat.tsum_iUnion_le_tsum _ _
+
+protected theorem tsum_biUnion_le (f : α → ℕ∞) (s : Finset ι) (t : ι → Set α) :
+    ∑' x : ⋃ i ∈ s, t i, f x ≤ ∑ i in s, ∑' x : t i, f x :=
+  (ENat.tsum_biUnion_le_tsum f s.toSet t).trans_eq (Finset.tsum_subtype s fun i ↦ ∑' x : t i, f x)
+
+protected theorem tsum_iUnion_le [Fintype ι] (f : α → ℕ∞) (t : ι → Set α) :
+    ∑' x : ⋃ i, t i, f x ≤ ∑ i, ∑' x : t i, f x := by
+  rw [← tsum_fintype]
+  exact ENat.tsum_iUnion_le_tsum f t
+
+theorem tsum_iUnion_eq_tsum (f : α → ℕ∞) (t : ι → Set α) (ht : univ.PairwiseDisjoint t) :
+    ∑' x : ⋃ i, t i, f x = ∑' i, ∑' x : t i, f x :=
+  calc ∑' x : ⋃ i, t i, f x = ∑' x : Σ i, t i, f x.2 :=
+    (ENat.tsum_comp_eq_tsum_of_bijective (sigmaToiUnion_bijective t
+      (fun i j hij ↦ ht (mem_univ i) (mem_univ j) hij)) _).symm
+  _ = _ := ENat.tsum_sigma' _
+
+-- cardinality
+
+/-- A version of `ENat.tsum_one` where the `1` is explicitly a function from the type rather than
+  from the subtype. Useful for rewriting. -/
+protected theorem tsum_one' (s : Set α) : ∑' (i : s), (1 : α → ℕ∞) i = s.encard := by
+  obtain (hfin | hinf) := s.finite_or_infinite
+  · have := hfin.fintype
+    convert tsum_eq_sum (β := s) (f := (1 : s → ℕ∞)) (s := Finset.univ) (by simp)
+    simp only [Pi.one_apply, Finset.sum_const, nsmul_eq_mul, mul_one,
+      encard_eq_coe_toFinset_card, toFinset_card, Nat.cast_inj]
+    rfl
+  rw [hinf.encard_eq, ENat.tsum_subtype_eq_top_of_inter_support_infinite]
+  simpa
+
+@[simp] protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard :=
+  ENat.tsum_one' s
+
+@[simp] protected theorem tsum_subtype_const (s : Set α) (c : ℕ∞) :
+    ∑' (_ : s), c = c * s.encard := by
+  rw [← ENat.tsum_one s, ENat.mul_tsum, mul_one]
+
+@[simp] protected theorem tsum_const (c : ℕ∞) : ∑' _ : ι, c = c * (univ : Set ι).encard := by
+  rw [← tsum_univ, ENat.tsum_subtype_const]
+
+protected theorem encard_support_le_tsum : f.support.encard ≤ ∑' x, f x := by
+  rw [← ENat.tsum_one', tsum_subtype]
+  exact ENat.tsum_le_tsum <| ENat.indicator_support_le _
+
 protected theorem tsum_encard_eq_encard_iUnion {ι} {s : ι → Set α} (hI : univ.PairwiseDisjoint s) :
     ∑' i, (s i).encard = (⋃ i, s i).encard := by
-  set f := fun i ↦ (s i).encard
-  obtain (hfin | hinf) := (f.support).finite_or_infinite
-  · rw [tsum_eq_sum (s := hfin.toFinset) (f := f) (by simp), ← encard_biUnion]
-    · congr; aesop
-    exact fun i _ j _ hij t hti htj ↦ (hI (mem_univ i) (mem_univ j) hij) hti htj
-  rw [ENat.tsum_eq_top_of_support_infinite hinf, eq_comm, encard_eq_top_iff]
-  have hg : ∀ (i : Function.support f), ∃ (a : ⋃ i, s i), a.1 ∈ s i
-  · rintro ⟨i, hi⟩
-    rw [Function.mem_support, ne_eq, encard_eq_zero, ← ne_eq, ← nonempty_iff_ne_empty] at hi
-    obtain ⟨a, ha⟩ := hi
-    exact ⟨⟨a, mem_iUnion_of_mem _ ha⟩, ha⟩
-  choose g hg' using hg
-  have _ := hinf.to_subtype
-  refine infinite_coe_iff.1 <| Infinite.of_injective g
-    (fun ⟨i,hi⟩ ⟨j,hj⟩ hij ↦ by_contra fun hne ↦ ?_)
-  apply (hI (mem_univ i) (mem_univ j) (fun he ↦ hne (by simpa))).ne_of_mem (hg' ⟨i,hi⟩) (hg' ⟨j,hj⟩)
-  rw [hij]
+  simp_rw [← ENat.tsum_one', ENat.tsum_iUnion_eq_tsum _ _ hI]
 
-theorem encard_iUnion_le_tsum {ι} {s : ι → Set α} :
+theorem encard_iUnion_le_tsum_encard {ι} {s : ι → Set α} :
     (⋃ i, s i).encard ≤ ∑' i, (s i).encard := by
-  set f := fun i ↦ (s i).encard
-  obtain (hfin | hinf) := (f.support).finite_or_infinite
-  · rw [tsum_eq_sum (s := hfin.toFinset) (f := f) (by simp)]
-    have := hfin.to_subtype
-    convert encard_iUnion_le (ι := hfin.toFinset) (s := fun i ↦ s i)
-    · ext; aesop
-    convert rfl using 1
-    rw [Finset.univ_eq_attach, Finset.sum_attach (s := hfin.toFinset) (f := f)]
-  rw [ENat.tsum_eq_top_of_support_infinite hinf]
-  exact le_top
+  rw [← ENat.tsum_one]
+  exact (ENat.tsum_iUnion_le_tsum 1 s).trans_eq (by simp)
 
-theorem tsum_encard_eq_encard_biUnion {ι} {s : ι → Set α} {I : Set ι}
-    (hI : I.PairwiseDisjoint s) : ∑' i : I, (s i).encard = (⋃ i ∈ I, s i).encard := by
+theorem tsum_encard_eq_encard_biUnion {ι} {s : ι → Set α} {t : Set ι}
+    (hI : t.PairwiseDisjoint s) : ∑' i : t, (s i).encard = (⋃ i ∈ t, s i).encard := by
   rw [biUnion_eq_iUnion, ← ENat.tsum_encard_eq_encard_iUnion]
   rintro ⟨i,hi⟩ - ⟨j,hj⟩ - hij
   exact hI hi hj (by simpa using hij)
 
-theorem encard_biUnion_le_tsum {ι} {s : ι → Set α} {I : Set ι} :
+theorem encard_biUnion_le_tsum_encard {ι} {s : ι → Set α} {I : Set ι} :
     (⋃ i ∈ I, s i).encard ≤ ∑' i : I, (s i).encard := by
   rw [biUnion_eq_iUnion]
-  apply encard_iUnion_le_tsum
+  apply encard_iUnion_le_tsum_encard
 
 protected theorem tsum_encard_eq_encard_sUnion {c : Set (Set α)} (hc : c.PairwiseDisjoint id) :
     ∑' (t : c), (t : Set α).encard = (⋃₀ c).encard := by
@@ -404,10 +459,10 @@ protected theorem tsum_encard_eq_encard_sUnion {c : Set (Set α)} (hc : c.Pairwi
   rintro ⟨i,hi⟩ - ⟨j,hj⟩ - hij
   exact hc hi hj (by simpa using hij)
 
-theorem encard_sUnion_le_tsum {c : Set (Set α)} :
+theorem encard_sUnion_le_tsum_encard {c : Set (Set α)} :
     (⋃₀ c).encard ≤ ∑' s : c, s.1.encard := by
   rw [sUnion_eq_iUnion]
-  apply encard_iUnion_le_tsum
+  apply encard_iUnion_le_tsum_encard
 
 protected theorem tsum_inter_fiber_eq {ι} {s : Set ι} (f : ι → α) :
     ∑' (a : α), (s ∩ f ⁻¹' {a}).encard = s.encard := by
@@ -421,17 +476,9 @@ protected theorem tsum_fiber_eq {ι} (f : ι → α) :
     ∑' (a : α), (f ⁻¹' {a}).encard = (univ : Set ι).encard := by
   rw [←ENat.tsum_inter_fiber_eq (s := univ) f, tsum_congr]; intro b; rw [univ_inter]
 
-
 end tsum
 
 
--- protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → β) :
---     ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
---   tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
-
--- protected theorem tsum_sigma' {β : α → Type*} (f : (Σa, β a) → β) :
---     ∑' p : Σa, β a, f p = ∑' (a) (b), f ⟨a, b⟩ :=
---   tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
 
 -- protected theorem tsum_eq_iSup_nat {f : ℕ → β} :
 --     ∑' i : ℕ, f i = ⨆ i : ℕ, ∑ a in Finset.range i, f a :=

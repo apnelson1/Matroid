@@ -316,7 +316,7 @@ theorem mem_parallel_classes_iff_eq_cl :
   simp only [mem_classes_iff, parallel_self_iff, parallel_class_eq_cl_diff_loops]
 
 /-- Parallel classes correspond to points -/
-def parallel_point_equiv (M : Matroid α) : classes M.Parallel ≃ {P // M.Point P} where
+def parallelPointEquiv (M : Matroid α) : classes M.Parallel ≃ {P // M.Point P} where
   toFun := fun X ↦ ⟨X ∪ M.cl ∅, by
     obtain ⟨e, he, h⟩ := mem_parallel_classes_iff_eq_cl.1 X.prop
     rw [h, diff_union_self, cl_union_cl_empty_eq, Point, er_cl_eq, and_iff_right (M.cl_flat _),
@@ -333,11 +333,11 @@ def parallel_point_equiv (M : Matroid α) : classes M.Parallel ≃ {P // M.Point
   right_inv := by
     rintro ⟨P, hP, hPr⟩; simp [hP.cl_subset_of_subset (empty_subset P)]
 
-@[simp] theorem parallel_point_equiv_apply (P : classes M.Parallel) :
-    (M.parallel_point_equiv P : Set α) = (P : Set α) ∪ M.cl ∅ := rfl
+@[simp] theorem parallelPointEquiv_apply (P : classes M.Parallel) :
+    (M.parallelPointEquiv P : Set α) = (P : Set α) ∪ M.cl ∅ := rfl
 
-@[simp] theorem parallel_point_equiv_apply_symm (P : {P // M.Point P}) :
-  (M.parallel_point_equiv.symm P : Set α) = (P : Set α) \ M.cl ∅ := rfl
+@[simp] theorem parallelPointEquiv_apply_symm (P : {P // M.Point P}) :
+  (M.parallelPointEquiv.symm P : Set α) = (P : Set α) \ M.cl ∅ := rfl
 
 theorem parallel_classes_partition (M : Matroid α) :
     IsPartition (classes M.Parallel) (M.E \ M.cl ∅) := by
@@ -810,6 +810,18 @@ theorem eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r
   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
   rw [hM]
   exact eq_simplificationWrt_of_restriction hc (by rwa [← hM]) hNM
+
+
+noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c) :
+    PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
+  toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
+    simp
+
+
+    ⟩⟩
+  invFun := _
+  left_inv := _
+  right_inv := _
 
 
 end Simplification
