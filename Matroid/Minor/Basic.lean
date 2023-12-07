@@ -63,15 +63,6 @@ theorem deleteElem_eq_self (he : e ∉ M.E) : M ⧹ e = M := by
   rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff,sdiff_eq_left,
     disjoint_singleton_right]
 
-
--- theorem Restriction.restriction_deleteElem (h : N ≤r M) (he : e ∉ N.E) : N ≤r M ⧹ e := by
---   obtain ⟨R, hR, rfl⟩ := h
---   refine ⟨R, ?_, ?_⟩
---   · simp only [deleteElem, delete_ground]
---     exact subset_diff_singleton hR he
---   rw [← restrict_eq_delete]
-
-
 instance deleteElem_finite [Matroid.Finite M] {e : α} : Matroid.Finite (M ⧹ e) := by
   rw [deleteElem]; infer_instance
 
@@ -82,7 +73,6 @@ instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ⧹ e) := by
   rw [←restrict_compl, ←restrict_compl, ←restrict_compl, restrict_restrict_eq, restrict_ground_eq,
     diff_diff]
   simp [diff_subset]
-
 
 theorem delete_comm (M : Matroid α) (D₁ D₂ : Set α) : M ⧹ D₁ ⧹ D₂ = M ⧹ D₂ ⧹ D₁ := by
   rw [delete_delete, union_comm, delete_delete]
@@ -972,23 +962,6 @@ theorem StrictMinor.C_union_D_nonempty (h : N <m M) : (h.minor.C ∪ h.minor.D).
 
 theorem finite_setOf_minor (M : Matroid α) [M.Finite] : {N | N ≤m M}.Finite :=
   (finite_setOf_matroid M.ground_finite).subset (fun _ hNM ↦ hNM.subset)
-
--- theorem foo (P : Matroid α → Prop) [M.Finite] (hP : P M) (hNM : N ≤m M) :
---     ∃ (M₀ : Matroid α) (h : N ≤m M₀), M₀ ≤m M ∧ P M₀ ∧ ∀ e ∈ h.C, ¬ P (M₀ ⧸ e) ∧
---       ∀ e ∈ h.D, ¬ P (M₀ ⧹ e) := by
-
---   -- have := @Finite.exists_minimal_wrt _ (Matroid α) (· ≤m ·)
---   have := Finite.exists_minimal_wrt id _
---     (M.finite_minors.inter_of_right {M' | N ≤m M' ∧ P M})
-
-
---   sorry
---   -- have : Finite {X // X ⊆ M.E}
---   -- ·
---   -- have : Finite ({X // X ⊆ M.E} × {X // X ⊆ M.E}) := by
---   --   apply?
-
---   -- apply Finite.of_injective (f := fun N ↦ N.prop.C)
 
 end Minor
 
