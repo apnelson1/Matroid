@@ -13,8 +13,9 @@ variable {V V W : Type*} {s : Set V} {t : Set W} {G : SimpleGraph V} {H : Simple
 
 section PartialIso
 
-/-- A `PartialIso G H s t` is an isomorphism between some induced subgraph of `G` containing `s`,
-  and an induced subgraph of `H` containing `t`. Implemented as a `LocalEquiv`. -/
+/-- A `PartialIso G H s t` is an isomorphism between some finite induced subgraph of `G`
+  containing `s`, and a finite induced subgraph of `H` containing `t`.
+  Implemented as a `LocalEquiv`. -/
 structure PartialIso (G : SimpleGraph V) (H : SimpleGraph W) (s : Set V) (t : Set W) where
   (φ : LocalEquiv V W)
   (hs : s ⊆ φ.source)
@@ -38,6 +39,9 @@ end PartialIso
 
 section ExtensionProperty
 
+/-- A graph `G` has the extension property if, for all disjoint finite sets `A,B` of vertices,
+  there is a vertex outside `A ∪ B` that is adjacent to everything in `A` and nothing in `B`.
+  (A countable graph with this property must be isomorphic to the Rado graph.)-/
 def ExtensionProperty (G : SimpleGraph V) : Prop :=
   ∀ A B : Finset V, Disjoint A B →
     ∃ x, x ∉ A ∧ x ∉ B ∧ ((∀ v ∈ A, G.Adj v x) ∧ (∀ v ∈ B, ¬ G.Adj v x))
@@ -182,6 +186,7 @@ theorem ExtensionProperty.exists_extend_iso [Countable V] [Countable W] (hG : Ex
     transEquiv_symm_apply, symm_symm, transEquiv_apply, RelIso.coe_toEquiv] at he'
   simp [he' (eG' i) (by simpa)]
 
+/-- Any two countable graphs with the extension property are isomorphic. -/
 theorem ExtensionProperty.iso_of_countable [Countable V] [Countable W] (hG : ExtensionProperty G)
     (hH : ExtensionProperty H) : Nonempty (G ≃g H) := by
   have _ := hG.infinite
@@ -201,3 +206,46 @@ theorem ExtensionProperty.iso_of_countable [Countable V] [Countable W] (hG : Ext
 
 
 end ExtensionProperty
+
+
+
+def BitRel (m n : ℕ) := ∃ (h : n < (Nat.digits 2 m).length), (Nat.digits 2 m).get ⟨n,h⟩ = 1
+
+
+
+-- theorem BitRel.lt (h : BitRel m n) : n < m := by
+--   obtain (rfl | m) := m
+--   · simp [BitRel] at h
+--   obtain ⟨h, h'⟩ := h
+--   rw [Nat.digits_len _ _ (by norm_num) (by simp)] at h
+--   refine h.trans_le (Nat.add_one_le_iff.2 ?_)
+--   apply Nat.log_lt_of_lt_pow (by simp) (Nat.lt_two_pow (Nat.succ m))
+
+-- theorem BitRel.foo (S : Finset ℕ) {b : ℕ} (hSb : ∀ x ∈ S, x < b) :
+--     BitRel m (Nat.ofDigits 2 ((List.range m).map (fun i ↦ if i ∈ S then (1 : ℕ) else 0))) ↔ m ∈ S := by
+--   simp only [BitRel, le_refl, ne_eq]
+--   refine ⟨fun ⟨hlt, h_eq⟩ ↦ ?_, fun h ↦ ?_⟩
+--   · rw [List.get_map] at hlt
+--   -- refine ⟨(Nat.of_digits_lt_base_pow_length (b = 0) ?_).trans_le ?_, ?_⟩
+
+
+/-- The graph on `ℕ` where `m` and `n` are adjacent if the `m`th little-endian bit of `n` is `1`,
+  or vice versa. -/
+def RadoGraph : SimpleGraph ℕ := SimpleGraph.fromRel BitRel
+
+
+theorem rado_extensionProperty : ExtensionProperty RadoGraph := by
+  intro A B hdj
+  obtain (h | h) := (A ∪ B).eq_empty_or_nonempty
+  · rw [Finset.union_eq_empty] at h
+    obtain ⟨rfl, rfl⟩ := h
+    use 0
+    simp
+
+  set L := (List.range (Finset.max' _ h)).map
+    (fun i ↦ if i ∈ A ∨ i = Finset.max' _ h + 1 then 1 else 0)
+
+
+  -- refine ⟨Nat.ofDigits 2 L, ?_, ?_, ?_⟩
+  -- · rw [Nat.ofDigits_eq_sum_mapIdx]
+  --   simp only

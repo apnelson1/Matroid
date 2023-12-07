@@ -10,8 +10,8 @@ variable {ι α : Type*} {M : Matroid α} {B : Set α} {Xs Ys Js Is : ι → Set
 
 section ModularBase
 
-/-- A base `B` is a modular base for an indexed set family if its intersection with every set
-  in the family is a basis for that set. -/
+/-- A base `B` is a modular base for an indexed set family if it contains bases for all the sets
+  in the family. -/
 @[pp_dot] def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
   M.Base B ∧ ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 
@@ -147,7 +147,7 @@ theorem ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopE
   rw [← (he i).basis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.basis_inter i
 
-/-- Sets `X,Y` are a modular pair if they have bases with independent union. -/
+/-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
     M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
 

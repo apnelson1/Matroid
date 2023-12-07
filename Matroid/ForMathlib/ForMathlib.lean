@@ -8,3 +8,4 @@ import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Basic
 import Matroid.ForMathlib.SetSubtype
 import Matroid.ForMathlib.Minimal
+import Matroid.ForMathlib.ENatTopology
