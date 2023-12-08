@@ -473,7 +473,7 @@ theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i,
 
   by_contra hcon
   have ex_i : ∃ i e, e ∈ (Js i) \ J
-  · by_contra' h'
+  · by_contra! h'
     rw [← hJ.subset.antisymm (iUnion_subset fun i e he ↦ by_contra fun heJ ↦ h' i e ⟨he, heJ⟩)]
       at hcon
     exact hcon hJ.indep

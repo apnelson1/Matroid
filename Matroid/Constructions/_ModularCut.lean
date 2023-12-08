@@ -348,7 +348,7 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
       -- e in J only case
       have e_notin_I:= not_mem_subset I_ind.subset_ground e_in_J.2
       by_cases cl_I_mem : M.cl I ∈ C
-      · by_contra' h_f
+      · by_contra! h_f
         have J_diff_sub_cl_I : J \ {e} ⊆ M.cl I
         · rintro j ⟨j_J, (j_ne : j ≠ e)⟩
           rw [I_ind.mem_cl_iff, or_comm, or_iff_not_imp_left, dep_iff]
@@ -461,7 +461,7 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
       rw [ ←insert_diff_singleton_comm (ne_of_mem_of_not_mem j₁_mem.1 (not_mem_subset J_ind.subset_ground e_in_I.2)) _]
       exact Or.inr ⟨⟨mem_insert_of_mem _ e_in_I.1, e_in_I.2⟩, j₁_ind.subset (insert_subset_insert (subset_insert _ _)), j₁_cl_mem_c⟩
     --hard case, e in both
-    by_contra' h_f
+    by_contra! h_f
     obtain (Y_ind | ⟨e_in_Y, Y_ind, Y_cl_not_mem⟩) := Y_ind
     · exact e_in_I.2 (Y_ind.subset_ground (I_sub_Y e_in_I.1))
     have J_insert_mem_C : ∀ x ∉ J, M.Indep (insert x (J \ {e})) → M.cl (insert x (J \ {e})) ∈ C

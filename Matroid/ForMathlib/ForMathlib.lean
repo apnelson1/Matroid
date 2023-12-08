@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
 import Matroid.ForMathlib.LinearAlgebra.Submodule
 import Matroid.ForMathlib.LinearAlgebra.StdBasis

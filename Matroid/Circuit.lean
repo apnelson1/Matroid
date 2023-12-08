@@ -5,7 +5,7 @@ import Matroid.Closure
   A `Circuit` of a matroid is a minimal dependent set.
 -/
 
-variable {α : Type*} {M : Matroid α}
+variable {α : Type*} {M : Matroid α} {C C' C₁ C₂ R R I X K : Set α} {e f x y : α}
 
 open Set
 
@@ -310,7 +310,7 @@ theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Ind
     rwa [←singleton_union, ←diff_subset_iff, diff_singleton_eq_self heC] at hCI
   have he : e ∈ M.cl I
   · rw [mem_cl_iff_exists_circuit_of_not_mem heI]; exact ⟨C, hC, heC, hCI⟩
-  by_contra' hne
+  by_contra! hne
   obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination (hI.fundCct_circuit ⟨he,heI⟩) hne e
   refine' hCf.dep.not_indep (hI.subset (hCfss.trans _))
   rw [diff_subset_iff, singleton_union, union_subset_iff, and_iff_right hCI]
@@ -422,6 +422,8 @@ theorem Cocircuit.finite [Finitary (M﹡)] (hK : M.Cocircuit K) : K.Finite :=
 end Finitary
 section Girth
 
+variable {k : ℕ∞}
+
 /-- The `girth` of `M` is the cardinality of the smallest circuit of `M`, or `⊤` if none exists.-/
 @[pp_dot] noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ {C | M.Circuit C}, C.encard
 
@@ -465,6 +467,8 @@ theorem indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by 
 end Girth
 section BasisExchange
 
+variable {I₁ I₂ B₁ B₂ : Set α}
+
 theorem Indep.rev_exchange_indep_iff (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
     M.Indep (insert e I \ {f}) ↔ f ∈ M.fundCct e I := by
   simp_rw [indep_iff_forall_subset_not_circuit', and_iff_left ((diff_subset _ _).trans
@@ -484,7 +488,7 @@ theorem Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e
   have he₁ : e ∈ M.cl B₂ \ B₂
   · rw [hB₂.cl_eq]; exact ⟨hB₁.subset_ground he.1, he.2⟩
   simp_rw [hB₂.indep.rev_exchange_indep_iff he₁]
-  by_contra' h
+  by_contra! h
 
   have hC := hB₂.indep.fundCct_circuit he₁
   have hCss : M.fundCct e B₂ \ {e} ⊆ B₂
@@ -542,6 +546,8 @@ theorem Iso.on_circuit_iff (e : Iso M N) (hC : C ⊆ M.E := by aesop_mat) :
 end Iso
 section Equiv
 
+variable {β : Type*} {N : Matroid β}
+
 /-- A `LocalEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
 def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
@@ -596,7 +602,7 @@ end Matroid
 -- -- matroid_in_of_indep_of_finite (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
 -- -- (λ I J hIJ hJ C hCI, hIJ C (hCI.trans hJ))
 -- -- begin
--- --   by_contra' h,
+-- --   by_contra! h,
 -- --   obtain ⟨I,J,hI,hJ,hIJ,Hbad⟩ := h,
 -- --   set indep := (λ I, ∀ C ⊆ I, ¬circuit C) with hi,
 -- --   /- Choose an independent set `K ⊆ I ∪ J`, larger than `I`, for which `I \ K` is minimized -/
@@ -636,7 +642,7 @@ end Matroid
 -- --   obtain ⟨g,hgK,hgI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hIK,
 -- --   obtain ⟨Cg, hCgss, hCg, hgCg, heCg⟩ := hCf g ⟨hgK,hgI⟩,
 -- --   have hg_ex : ∃ g', g' ∈ Cg ∧ g' ∈ K \ I,
--- --   { by_contra' hg',
+-- --   { by_contra! hg',
 -- --     exact hI _ (λ x hx,
 -- --       or.elim (hCgss hx) (λ h, h.symm ▸ heI) (λ hxK, by_contra (λ hxI, hg' _ hx ⟨hxK, hxI⟩))) hCg},
 -- --   obtain ⟨g', hg', hg'KI⟩ := hg_ex,

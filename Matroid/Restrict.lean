@@ -8,7 +8,7 @@ open Set
 
 namespace Matroid
 
-variable {α : Type*} {M : Matroid α}
+variable {α : Type*} {M M' N : Matroid α} {I X Y R D J B : Set α} {e : α}
 section restrict
 
 /-- The `IndepMatroid` whose independent sets are the independent subsets of `X`. -/
@@ -332,7 +332,7 @@ theorem Basis.card_eq_card (hI : M.Basis I X) (hJ : M.Basis J X) : I.encard = J.
 
 theorem Indep.augment (hI : M.Indep I) (hJ : M.Indep J) (hIJ : I.encard < J.encard) :
     ∃ e ∈ J \ I, M.Indep (insert e I) := by
-  by_contra' he
+  by_contra! he
   have hb : M.Basis I (I ∪ J)
   · simp_rw [hI.basis_iff_forall_insert_dep (subset_union_left _ _), union_diff_left, mem_diff,
       and_imp, dep_iff, insert_subset_iff, and_iff_left hI.subset_ground]

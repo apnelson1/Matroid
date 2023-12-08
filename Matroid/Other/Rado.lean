@@ -200,7 +200,7 @@ theorem ExtensionProperty.iso_of_countable [Countable V] [Countable W] (hG : Ext
 -- theorem ExtensionProperty.exists_of_finite_partition {n : ℕ} (hG : ExtensionProperty G)
 --     (f : V → Fin n) : ∃ i, ExtensionProperty (G.induce (f ⁻¹' {i})) := by
 --   simp_rw [ExtensionProperty]
---   by_contra' h
+--   by_contra! h
 --   choose As Bs hdj hABs using h
 
 

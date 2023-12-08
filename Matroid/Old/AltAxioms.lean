@@ -74,11 +74,11 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       fun I ⟨B, hB⟩ ↦ hB.2.trans hB.1.1
     have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I} = Base' := by
       ext X; refine' ⟨fun ⟨⟨B, hB⟩, hX⟩ ↦ _, fun hX ↦ _⟩
-      · by_contra' h
+      · by_contra! h
         have hX' := ssubset_iff_subset_ne.mpr ⟨hB.2, by {rintro rfl; exact h hB.1}⟩
         exact hX'.not_subset (hX (dual_base_indep hB.1) hX'.subset)
       · rw [maximals]
-        by_contra' h; dsimp at h; push_neg at h
+        by_contra! h; dsimp at h; push_neg at h
         obtain ⟨I, ⟨⟨B, ⟨hB, hIB⟩⟩, hXI, hIX⟩⟩ := h ⟨X, hX, subset_refl X⟩
         have hBcXc := diff_ssubset_of_ssubset hX.1 hB.1 (ssubset_of_ssubset_of_subset ⟨hXI, hIX⟩ hIB)
         exact hBcXc.not_subset (hB.2.2 hX.2.1 hBcXc.subset)
@@ -103,7 +103,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       {
         refine' fun X B hX hB hBX ↦ ⟨⟨h_subset hB.1 (inter_subset_left _ _),
           inter_subset_right _ _⟩, _⟩
-        by_contra' g
+        by_contra! g
         obtain ⟨I, h⟩ := g
 
         obtain ⟨Bt, hBt⟩ := exists_base_contains_indep I h.1.1
@@ -130,7 +130,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
             rw [diff_diff_cancel_left (h_support hB''.1.1)]
             exact hB''.1
           rw [mem_union]
-          by_contra' g; push_neg at g
+          by_contra! g; push_neg at g
           obtain ⟨he₁, he₂⟩ := g
           rw [mem_diff, not_and, not_not] at he₂
           exact he.2 (hB''.2.1 ⟨he₂ he.1, he₁⟩)
@@ -180,7 +180,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       have hB'c : E \ B' ∩ (E \ X) ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I' | Indep' I' ∧ I' ⊆ E \ X}
       · refine' ⟨⟨⟨E \ B', ⟨diff_subset _ _, by { rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB'.1.1)]; exact hB'.1 }⟩, inter_subset_left _ _⟩, inter_subset_right _ _⟩, _⟩
         -- maximality
-        by_contra' g
+        by_contra! g
         obtain ⟨B, hB⟩ : ∃ B, Base B ∧ (B ∩ (E \ X) ⊂ B' ∩ (E \ X)) := by
           obtain ⟨I, h⟩ := g; obtain ⟨⟨Bt, hBt⟩, _⟩ := h.1
           have h₁ : (E \ B') ∩ (E \ X) ⊂ I :=
@@ -260,7 +260,7 @@ lemma aux {ι : Type*} [DecidableEq ι] {Ms : ι → Matroid α}
     ∀ i, (Ms i).Base (I ∩ (Ms i).E) := by
   refine' ⟨fun h i ↦ _, fun h ↦ ⟨⟨hIE, fun i ↦ (h i).indep⟩, fun B ⟨hBE, hBs⟩ hIB ↦ _⟩⟩
   · rw [base_iff_maximal_indep]
-    refine' ⟨h.1.2 i, fun X hX hIiX ↦ _⟩; by_contra' g
+    refine' ⟨h.1.2 i, fun X hX hIiX ↦ _⟩; by_contra! g
     set Js : ι → Set α := fun j ↦ if j = i then X else I ∩ (Ms j).E with heqJs
 
     have hJs : ∀ j, Js j ⊆ (Ms j).E

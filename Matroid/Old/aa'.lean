@@ -230,7 +230,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     obtain ⟨B', hB'⟩ := h_basis hI hB
     obtain ⟨x, hx⟩ : ∃ x, x ∈ B' \ I := by {
       simp_rw [mem_diff]
-      by_contra' h
+      by_contra! h
       rw [←subset_def] at h
       have : I = B' := subset_antisymm (hB'.2.1) (h)
       subst this
@@ -270,7 +270,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I } = Base' := by
       ext X
       refine' ⟨fun ⟨⟨B, hB⟩, hX⟩ ↦ _, _⟩
-      . by_contra' h
+      . by_contra! h
         have hX' : X ⊂ B := by
           rw [ssubset_iff_subset_ne]
           refine' ⟨hB.2, _⟩
@@ -279,7 +279,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         exact hX'.not_subset (hX (dual_base_indep hB.1) hX'.subset)
       . rintro hX
         rw [maximals]
-        by_contra' h
+        by_contra! h
         dsimp at h
         push_neg at h
         obtain ⟨I, ⟨hI, hXI, hIX⟩⟩ := h ⟨X, hX, subset_refl X⟩
@@ -348,7 +348,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
             rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1)]
             exact hB
           exact ⟨diff_subset _ _, this⟩
-      . by_contra' g
+      . by_contra! g
         obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
           obtain ⟨I, h⟩ := g
           obtain ⟨⟨Bt, hBt⟩, _⟩ := h.1
@@ -402,7 +402,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       {
         refine' fun X B hX hB hBX ↦ ⟨⟨h_subset hB.1 (inter_subset_left _ _),
           inter_subset_right _ _⟩, _⟩
-        by_contra' g
+        by_contra! g
         obtain ⟨I, h⟩ := g
 
         obtain ⟨Bt, hBt⟩ := exists_base_contains_indep I h.1.1

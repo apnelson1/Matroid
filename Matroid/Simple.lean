@@ -489,7 +489,7 @@ theorem Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (
 
 theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
     (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
-  by_contra' h
+  by_contra! h
   rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop] at hM
   push_neg at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
