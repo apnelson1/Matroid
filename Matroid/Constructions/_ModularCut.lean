@@ -113,8 +113,6 @@ theorem ModularCut.inter (C : M.ModularCut) (hF : F ∈ C) (hF' : F' ∈ C)
   rw [mem_singleton_iff.1 ne]
   exact hB.2 false
 
-#check Indep.cl_inter_eq_self_of_subset
-
 lemma ModularCut.insert_cl (C : M.ModularCut) (hI : M.Indep (insert a (insert b X)))
     (ha : M.cl (insert a X) ∈ C) (hb : M.cl (insert b X) ∈ C) (hne : a ≠ b) : M.cl X ∈ C := by
   rw [←(@inter_insert_eq _ X _ _ hne), Indep.cl_inter_eq_inter_cl]
@@ -127,6 +125,12 @@ lemma ModularCut.insert_cl (C : M.ModularCut) (hI : M.Indep (insert a (insert b 
     exact subset_insert _ _
   rwa [union_insert_eq, insert_comm]
 
+theorem Basis.exchange_base_of_indep {M : Matroid α} (hB : M.Basis B X) (hf : f ∈ X \ B)
+    (hI : M.Indep (insert f (B \ {e}))) : M.Basis (insert f (B \ {e})) X := by
+  have X_sub := hB.subset_ground
+  rw [←base_restrict_iff] at hB ⊢
+  · apply hB.exchange_base_of_indep hf.2 (hI.indep_restrict_of_subset (insert_subset hf.1
+    ((diff_subset _ _).trans hB.subset_ground)))
 
 
 
@@ -188,7 +192,7 @@ termination_by _ => X.encard
       apply Finite.subset (Finite.subset (flat_fin) (fun F F_C ↦ forall_flat F_C)) hsub
     exact modular_finite_intersection forall_flat pair_modular hfin hsub hXs hnone
 
-theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
+theorem ModularCut.remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
     (hB₁ : M.Indep B) (hB₂ : Y ⊆ B) (h_remove : ∀ b ∈ B \ Y, M.cl (B \ {b}) ∈ C) (h_B : M.cl B ∈ C)
     : M.cl Y ∈ C := by
   set Js := {M.cl (B \ {b}) | b ∈ B \ Y}
@@ -198,7 +202,7 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
   have Js₁_none : Js₁.Nonempty
   · obtain ⟨b, hb⟩ := exists_of_ssubset (ssubset_iff_subset_ne.2 ⟨hB₂, h_ne⟩)
     refine' ⟨B \ {b}, ⟨b, ⟨hb.1, hb.2⟩, rfl⟩⟩
-  have Js₁_sInter_sub_B : sInter Js₁ ⊆ B
+  have Js₁_sInter_sub_B : ⋂₀ Js₁ ⊆ B
   · intro j j_mem
     rw [mem_sInter] at j_mem
     obtain ⟨t, ht⟩ := Js₁_none
@@ -206,7 +210,7 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
     obtain ⟨b, _, rfl⟩ := ht
     exact diff_subset _ _
   have Js_biInter_eq : ⋂ J ∈ Js, J = ⋂ J₁ ∈ Js₁, M.cl J₁ := (by simp)
-  have Js_inter_eq : sInter Js = M.cl Y
+  have Js_inter_eq : ⋂₀ Js = M.cl Y
   · rw [sInter_eq_biInter, Js_biInter_eq, ←hB₁.cl_sInter_eq_biInter_cl_of_forall_subset Js₁_none]
     · congr!
       ext x
@@ -226,73 +230,13 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
   · obtain ⟨A, a, ha⟩ := Js₁_none
     refine' ⟨M.cl (B \ {a}), _⟩
     refine' ⟨a, ha.1, rfl⟩
-  refine' ⟨B, _⟩
-  sorry
   have:= hB₁
   obtain ⟨B', B'_base, B_sub_B'⟩ := this
-  refine' ⟨B', B'_base, fun Ys Ys_sub Ys_none ↦ _⟩
-  have Ys_eq_cl_I: ∃ I ⊆ B, sInter Ys = M.cl I
-  · have: Nonempty α
-    · rw [←exists_true_iff_nonempty]
-      obtain ⟨A, a, _⟩ := Js₁_none
-      refine' ⟨a, _⟩
-      simp only
-    choose! fn h_fn using Ys_sub
-    refine' ⟨B \ (fn '' Ys), diff_subset _ _, _⟩
-    ext x; constructor
-    · intro x_mem
-      by_contra not_mem_cl
-      rw [(hB₁.subset (diff_subset _ _)).not_mem_cl_iff _] at not_mem_cl
-      · have x_mem_cl : x ∈ (M.cl B) \ B
-        · rw [mem_diff]; constructor
-          · obtain ⟨y, hy⟩ := Ys_none
-            have x_cl := x_mem y hy
-            rw [←((h_fn hy).2)] at x_cl
-            apply mem_of_subset_of_mem (M.cl_subset_cl (diff_subset _ _)) x_cl
-          intro x_B
-          apply not_mem_cl.2 (mem_diff_of_mem x_B _)
-          rintro ⟨b, b_Ys, f⟩
-          have x_b:= x_mem b b_Ys
-          rw [←((h_fn b_Ys).2), (hB₁.subset (diff_subset _ _)).mem_cl_iff_of_not_mem,
-           dep_iff] at x_b
-          · apply x_b.1 (hB₁.subset (insert_subset x_B (diff_subset _ _)))
-          rw [←f]
-          apply not_mem_diff_of_mem (rfl)
-        apply not_mem_cl.1.not_dep
-        rw [dep_iff_superset_circuit not_mem_cl.1.subset_ground]
-        refine' ⟨M.fundCct x B, _, hB₁.fundCct_circuit x_mem_cl⟩
-        intro f f_mem
-        obtain (rfl | fx_ne) := eq_or_ne f x
-        · exact mem_insert f _
-        rw [←hB₁.rev_exchange_indep_iff x_mem_cl, ←insert_diff_singleton_comm fx_ne.symm] at f_mem
-        have f_in_B : f ∈ B
-        · by_contra f_notin_B
-          rw [diff_singleton_eq_self f_notin_B, hB₁.insert_indep_iff_of_not_mem x_mem_cl.2] at f_mem
-          apply f_mem.2 x_mem_cl.1
-        apply mem_insert_of_mem
-        rw [mem_diff, and_iff_right f_in_B]
-        rintro ⟨y, y_Ys, rfl⟩
-        rw [(hB₁.subset (diff_subset _ _)).insert_indep_iff_of_not_mem
-         (not_mem_subset (diff_subset _ _) x_mem_cl.2)] at f_mem
-        apply f_mem.2
-        rw [(h_fn y_Ys).2]
-        exact x_mem y y_Ys
-      obtain ⟨y, hy⟩ := Ys_none
-      have x_cl:= x_mem y hy
-      rw [←((h_fn hy).2)] at x_cl
-      exact ((M.cl_subset_ground _) x_cl)
-    rw [mem_sInter]
-    rintro x_mem t t_mem
-    obtain f:= (h_fn t_mem)
-    rw [←f.2]
-    apply mem_of_subset_of_mem (M.cl_subset_cl (diff_subset_diff_right _)) x_mem
-    rw [singleton_subset_iff, mem_image]
-    refine' ⟨t, t_mem, rfl⟩
-  obtain ⟨I, I_sub, cl_eq⟩ := Ys_eq_cl_I
-  rw [cl_eq, (B'_base.indep).cl_inter_eq_self_of_subset (I_sub.trans B_sub_B')]
-  exact (B'_base.indep.subset (I_sub.trans B_sub_B')).basis_cl
-
-
+  refine' ⟨B', B'_base, fun x ↦ _⟩
+  obtain ⟨y, ⟨y', y'_mem, rfl⟩⟩ := x
+  dsimp
+  rw [B'_base.indep.cl_inter_eq_self_of_subset ((diff_subset _ _).trans B_sub_B')]
+  apply (hB₁.subset (diff_subset _ {y'})).basis_cl
 
 /-- A modular cut will determine an extension. -/
 @[simps] def ModularCut.extensionIndepMatroid (C : M.ModularCut) (e : α) :
@@ -669,9 +613,11 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
         · rfl
         apply absurd I_ind (B_Basis.dep_of_ssubset ssub I_sub_X).not_indep
       apply absurd (I_sub_X e_in_I.1) e_in_X
-    obtain ⟨B, B_Basis, Y_sub_B⟩ := Y_ind.subset_basis_of_subset (diff_subset_diff_left Y_sub_X)
-    have e_nB := not_mem_subset B_Basis.left_subset_ground e_in_Y.2
-    by_cases cl_B_mem_C : M.cl B ∉ C
+    rw [←diff_singleton_subset_iff] at X_sub
+    obtain ⟨B, B_Basis, Y_sub_B⟩ := Y_ind.subset_basis_of_subset (diff_subset_diff_left Y_sub_X) X_sub
+    have e_nB : e ∉ B
+    · exact not_mem_subset B_Basis.left_subset_ground e_in_Y.2
+    obtain (cl_B_mem_C | cl_B_mem_C) := em (M.cl B ∉ C)
     · refine' ⟨insert e B, mem_maximals_iff.2 ⟨⟨Or.inr ⟨⟨mem_insert _ _, e_in_Y.2⟩, by simp
        [B_Basis.indep, e_nB], by simp [cl_B_mem_C, e_nB]⟩, diff_singleton_subset_iff.1 Y_sub_B,
        insert_subset (Y_sub_X e_in_Y.1) (B_Basis.subset.trans (diff_subset _ _))⟩, fun I I_ind sub_I ↦ _⟩⟩
@@ -681,21 +627,44 @@ theorem Modular_cut_remove {M : Matroid α} (C : M.ModularCut) {B Y : Set α}
       · simp [e_in_I.1]
       apply absurd I_ind (B_Basis.dep_of_ssubset ssub (diff_subset_diff_left I_sub_X)).not_indep
     rw [not_not] at cl_B_mem_C
-
-
-
-
-
-
-
-
-
-
+    obtain (h_remove | h_remove) := em (∀ b ∈ B \ (Y \ {e}), M.cl (B \ {b}) ∈ C)
+    · exact absurd (C.remove B_Basis.indep Y_sub_B h_remove cl_B_mem_C) Y_cl_not_mem
+    push_neg at h_remove
+    obtain ⟨b, b_mem, b_cl_mem⟩ := h_remove
+    refine' ⟨(insert e (B \ {b})), mem_maximals_iff.2 ⟨⟨Or.inr ⟨⟨mem_insert _ _, e_in_Y.2⟩, by simp
+     [e_nB, B_Basis.indep.subset (diff_subset B {b})], by simp [e_nB, b_cl_mem]⟩,
+     ⟨diff_singleton_subset_iff.1 (subset_diff_singleton Y_sub_B b_mem.2), insert_subset (Y_sub_X
+     e_in_Y.1) (((diff_subset _ _).trans B_Basis.subset).trans (diff_subset _ _))⟩⟩,
+     fun I I_ind sub_I ↦ _⟩⟩
+    obtain ⟨(I_ind | ⟨e_in_I, I_ind, I_cl_not_mem⟩), Y_sub_I, I_sub_X⟩ := I_ind
+    · exact absurd (I_ind.subset_ground (sub_I (mem_insert _ _))) e_in_Y.2
+    obtain (rfl | ssub) := eq_or_ssubset_of_subset sub_I
+    · rfl
+    obtain ⟨i, hi⟩ := exists_of_ssubset ssub
+    exfalso
+    apply I_cl_not_mem
+    have bsub : insert i (B \ {b}) ⊆ I \ {e}
+    · apply insert_subset _ _
+      · exact ⟨hi.1, fun (rfl) ↦ hi.2 (mem_insert _ _)⟩
+      apply subset_diff_singleton ((subset_insert _ _).trans sub_I) (not_mem_subset
+       ((diff_subset _ _).trans (B_Basis.left_subset_ground)) e_in_Y.2)
+    have iBb_C : M.cl (insert i (B \ {b})) ∈ C
+    · obtain (rfl | i_ne_b) := eq_or_ne i b
+      · simp only [b_mem.1, not_true_eq_false, mem_diff, mem_singleton_iff, and_false,
+        insert_diff_singleton, insert_eq_of_mem, cl_B_mem_C]
+      rwa [@Basis.cl_eq_cl _ M _ (X \ {e}) _, ←B_Basis.cl_eq_cl]
+      apply B_Basis.exchange_base_of_indep
+      rw [mem_diff, mem_diff, mem_singleton_iff]
+      · refine' ⟨⟨I_sub_X hi.1, fun (rfl) ↦ hi.2 (mem_insert _ _)⟩, fun i_B ↦ hi.2 (mem_insert_of_mem _ ⟨i_B, i_ne_b⟩)⟩
+      refine' I_ind.subset (insert_subset ⟨hi.1, fun (rfl) ↦ hi.2 (mem_insert _ _)⟩ ((subset_insert _ _).trans bsub))
+    apply @ModularCut.superset _ M (M.cl (insert i (B \ {b}))) _ C iBb_C _ (M.cl_flat _)
+    apply M.cl_subset_cl bsub
 
   subset_ground := by
     rintro I (hI | ⟨-, hI, -⟩)
     · exact hI.subset_ground.trans <| subset_insert _ _
     simpa using diff_subset_iff.1 hI.subset_ground
+
 
 def ModularCut.extension (C : M.ModularCut) (e : α) := (C.extensionIndepMatroid e).matroid
 

@@ -816,12 +816,12 @@ noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c)
     PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
   toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
     simp
-
+    sorry
 
     ⟩⟩
-  invFun := _
-  left_inv := _
-  right_inv := _
+  invFun := sorry
+  left_inv := sorry
+  right_inv := sorry
 
 
 end Simplification
