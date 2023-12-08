@@ -4,11 +4,12 @@ import Mathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.Dual
 import Matroid.ForMathlib.Other
-import Mathlib.LinearAlgebra.BilinearForm
+
+variable {α R η ι : Type*}
 
 open Set BigOperators Submodule Function
 
-@[simp] theorem Fintype.sum_pi_single {α : Type v} {β : α → Type u_2} [DecidableEq α] [Fintype α]
+@[simp] theorem Fintype.sum_pi_single {α : Type*} {β : α → Type*} [DecidableEq α] [Fintype α]
     [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
     ∑ a', Pi.single a' (f a') a = f a := by
   convert Finset.sum_pi_single a f Finset.univ; simp
@@ -204,9 +205,9 @@ set_option pp.proofs.withType false
     x ∈ (s.subtypeFunEquiv R U).1 ↔ x.support ⊆ s ∧ s.restrict x ∈ U := by
   classical
   change (x ∈ (MapSubtype.relIso _ _).1 ↔ _)
-  simp only [RelIso.coe_toEquiv, orderIsoMapComap_apply, MapSubtype.relIso_apply, mem_map,
-    coeSubtype, exists_exists_and_eq_and, LinearEquiv.ofInjective_apply,
-    LinearMap.extendSubtype_eq_ite, support_subset_iff]
+  simp only [RelIso.coe_fn_toEquiv, orderIsoMapComap_apply, MapSubtype.relIso_apply, mem_map,
+    coeSubtype, exists_exists_and_eq_and, LinearEquiv.ofInjective_apply, support_subset_iff,
+    LinearMap.extendSubtype_eq_ite]
   refine ⟨?_, fun ⟨hxs, hxU⟩ ↦ ?_⟩
   · rintro ⟨a, ha, rfl⟩
     constructor
@@ -264,7 +265,7 @@ noncomputable def Finsupp.toDualLin (η R : Type*) [CommRing R] :
 noncomputable def Submodule.orthSpace' (U : Submodule R (η → R)) : Submodule R (η →₀ R) :=
   (Submodule.dualAnnihilator U).comap (Finsupp.toDualLin η R)
 
-@[simp] theorem mem_orthSpace'_iff {U : Submodule R (η → R)} :
+@[simp] theorem mem_orthSpace'_iff {U : Submodule R (η → R)} {l : η →₀ R} :
     l ∈ U.orthSpace' ↔ ∀ x ∈ U, Finsupp.total _ _ _ x l = 0 := by
   simp [orthSpace']
 

@@ -8,7 +8,7 @@ open Set
 
 namespace Matroid
 
-variable {α : Type*} {M : Matroid α}
+variable {α : Type*} {M N : Matroid α} {e f g : α} {I X P D : Set α}
 
 section Parallel
 
@@ -282,7 +282,7 @@ def Parallel.swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
   exact fun h ↦ ⟨h.nonloop_left, h.nonloop_right⟩
 
 theorem Parallel.of_restriction (h : N.Parallel e f) (hNM : N ≤r M) : M.Parallel e f := by
-  obtain ⟨R, hR, rfl⟩ := hNM; exact (restrict_parallel_iff.1 h).1
+  obtain ⟨R, -, rfl⟩ := hNM; exact (restrict_parallel_iff.1 h).1
 
 theorem Parallel.parallel_restriction (h : M.Parallel e f) (hNM : N ≤r M)
     (he : e ∈ N.E) (hf : f ∈ N.E) : N.Parallel e f := by
@@ -415,7 +415,7 @@ theorem indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E :
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
   rw [le_iff_lt_or_eq, encard_eq_two, ←ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
     WithTop.add_le_add_iff_right, encard_le_one_iff_eq] at h
-  · obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, hxy, rfl⟩ := h
+  · obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, -, rfl⟩ := h
     · exact M.empty_indep
     · refine indep_singleton.2 (toNonloop (by aesop_mat))
     exact pair_indep
@@ -489,7 +489,7 @@ theorem Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (
 
 theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
     (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
-  by_contra' h
+  by_contra! h
   rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop] at hM
   push_neg at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)

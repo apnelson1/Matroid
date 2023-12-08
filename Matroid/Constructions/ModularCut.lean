@@ -224,7 +224,7 @@ def indepmatroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut 
       --we also have I+j base, and as I is nonmaximal we may find some x where cl(I+x)∉C
       --but since I+x base then M.E∉C and we win
       --
-      · by_contra' h_f
+      · by_contra! h_f
         have J_insert_mem_C : ∀ x ∉ J, M.Indep (insert x (J \ {e})) → M.cl (insert x (J \ {e})) ∈ C
         · intro x x_notin_J x_ind
           by_contra not_mem_C
@@ -420,7 +420,7 @@ def indepmatroid_of_cut (M : Matroid α) (C : Set (Set α)) (hC : M.Modular_cut 
     split_ifs at J_ind with e_in_J --2nd hardest case
     · by_cases cl_I_mem : M.cl I ∈ C --if cl(I) ∈ C, and every member of J-e cant be added,
     --then J ⊂ cl(I)
-      · by_contra' h_f
+      · by_contra! h_f
         have J_diff_sub_cl_I : J \ {e} ⊆ M.cl I
         · rintro j ⟨j_J, (j_ne : j ≠ e)⟩
           rw [I_ind.mem_cl_iff, or_comm, or_iff_not_imp_left]

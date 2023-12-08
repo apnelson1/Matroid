@@ -3,6 +3,7 @@ import Mathlib.Data.Set.Card
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Matrix.RowCol
 
+variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 
 open Set Function
 
@@ -144,7 +145,7 @@ lemma Function.invFunOn_injOn_image_preimage [_root_.Nonempty α] (f : α → β
 
 /-- If `f` maps `s` bijectively to `t` and, then for any `s ⊆ s₁` and `t ⊆ t' ⊆ f '' s₁`,
   there is some `s ⊆ s' ⊆ s₁` so that `f` maps `s'` bijectively to `t'`. -/
-theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t : Set β}
+theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set β}
     (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : t' ⊆ f '' s₁) :
     ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
   have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∈ s₁ \ s ∧ f a = b
@@ -176,7 +177,7 @@ theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t : Set β
   · exact (union_diff_cancel htt').symm
   exact hinj
 
-theorem Set.BijOn.extend {f : α → β} {s : Set α} {t : Set β} (h : BijOn f s t) (htt' : t ⊆ t')
+theorem Set.BijOn.extend {f : α → β} {s : Set α} {t t' : Set β} (h : BijOn f s t) (htt' : t ⊆ t')
     (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
   simpa using h.extend_of_subset (subset_univ s) htt' (by simpa)
 
@@ -187,7 +188,10 @@ theorem Set.InjOn.imageFactorization_injective (h : InjOn f s) :
   simp only [h']
 section Lattice
 
-lemma biUnion_insert_eq (hX : X.Nonempty) (Y : Set α) : ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
+
+
+lemma biUnion_insert_eq {X : Set α} (hX : X.Nonempty) (Y : Set α) :
+    ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
   have := hX.to_subtype
   simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range,
     Subtype.range_coe_subtype, setOf_mem_eq]
@@ -265,6 +269,7 @@ theorem Set.Finite.encard_eq_iff_nonempty_equiv {s : Set α} {t : Set β} (ht : 
 end Lattice
 section Swap
 
+variable {e f : α}
 
 theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set α} (hef : e ∈ S ↔ f ∈ S) :
     (Equiv.swap e f) '' S = S := by
@@ -291,7 +296,7 @@ end Swap
 
 section Update
 
-variable {α β : Type*} [DecidableEq α] [DecidableEq β]
+variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}
 
 @[simp] theorem image_update  (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :
     (update f a b) '' s = if a ∈ s then insert b (f '' (s \ {a})) else (f '' s) := by
@@ -348,14 +353,17 @@ lemma update_injective (hf : f.Injective) (a : α) (h : b ∉ range f) : (update
   · exact (h ⟨x, hy⟩).elim
   exact hf.eq_iff.1 hy
 
-lemma update_injOn_iff {f : α → β} {a : α} {b : β} :
+lemma update_injOn_iff {f : α → β} {s : Set α} {a : α} {b : β} :
     InjOn (update f a b) s ↔ InjOn f (s \ {a}) ∧ (a ∈ s → ∀ x ∈ s, f x = b → x = a) := by
   refine ⟨fun h ↦ ⟨fun x hx y hy hxy ↦  h hx.1 hy.1 ?_, ?_⟩, fun h x hx y hy hxy ↦ ?_⟩
   · rwa [update_noteq hx.2, update_noteq hy.2]
   · rintro has x hxs rfl
-    exact by_contra (fun hne ↦ hne (h hxs has (by rw [update_same, update_noteq hne])))
+    by_contra! hne
+    have h' := h hxs has
+    rw [update_noteq hne, update_same] at h'
+    exact hne <| h' rfl
   obtain (rfl | hxa) := eq_or_ne x a
-  · by_contra' hne
+  · by_contra! hne
     rw [update_same, update_noteq hne.symm] at hxy
     exact hne.symm <| h.2 hx y hy hxy.symm
   obtain (rfl | hya) := eq_or_ne y a
@@ -364,7 +372,7 @@ lemma update_injOn_iff {f : α → β} {a : α} {b : β} :
   rw [update_noteq hxa, update_noteq hya] at hxy
   exact h.1 ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
 
-@[simp] lemma update_id_injOn_iff {a b : α} :
+@[simp] lemma update_id_injOn_iff {a b : α} {s : Set α} :
     InjOn (update id a b) s ↔ (a ∈ s → b ∈ s → a = b) := by
   rw [update_injOn_iff, and_iff_right (injective_id.injOn _)]
   refine ⟨fun h has hbs ↦ (h has b hbs rfl).symm, ?_⟩
@@ -396,7 +404,7 @@ def Matrix.row_linearEquiv (n R : Type) [Semiring R] : (n → R) ≃ₗ[R] Matri
   left_inv := fun _ ↦ rfl
   right_inv := fun _ ↦ rfl
 
-@[simp] theorem Matrix.row_linearEquiv_apply (f : n → R) :
+@[simp] theorem Matrix.row_linearEquiv_apply (x : n → R) :
     Matrix.row_linearEquiv n R x = Matrix.row x := rfl
 
 @[simp] theorem Matrix.row_linearEquiv_apply_symm (A : Matrix Unit n R) :
@@ -411,7 +419,7 @@ def Matrix.col_linearEquiv (m R : Type) [Semiring R] : (m → R) ≃ₗ[R] Matri
   left_inv := fun _ ↦ rfl
   right_inv := fun _ ↦ rfl
 
-@[simp] theorem Matrix.col_linearEquiv_apply (f : m → R) :
+@[simp] theorem Matrix.col_linearEquiv_apply (x : m → R) :
     Matrix.col_linearEquiv m R x = Matrix.col x := rfl
 
 @[simp] theorem Matrix.col_linearEquiv_apply_symm (A : Matrix m Unit R) (i : m) :

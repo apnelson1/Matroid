@@ -1,14 +1,16 @@
 import Mathlib.Data.Setoid.Partition
 
 
+
+
 open Set
 
-theorem symm_iff_of (r : α → α → Prop) [IsSymm α r] {x y : α} : r x y ↔ r y x :=
+theorem symm_iff_of {α : Type*} (r : α → α → Prop) [IsSymm α r] {x y : α} : r x y ↔ r y x :=
   ⟨fun h ↦ symm_of r h, fun h ↦ symm_of r h⟩
 
 namespace PSetoid
 
-variable {α : Type*} {c : Set (Set α)}
+variable {α : Type*} {c : Set (Set α)} {s t t' : Set α} {x y : α}
 
 /-- `c` is a collection of disjoint nonempty sets with union `s`. -/
 def IsPartition (c : Set (Set α)) (s : Set α) :=

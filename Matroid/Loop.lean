@@ -8,7 +8,7 @@ import Matroid.Constructions.ImagePreimage
 -/
 
 
-variable {α : Type*} {M : Matroid α}
+variable {α β : Type*} {M N : Matroid α} {e f : α} {B L L' I X Y Z F C K : Set α}
 
 open Set
 
@@ -332,7 +332,7 @@ theorem Nonloop.mem_cl_comm (he : M.Nonloop e) (hf : M.Nonloop f) : f ∈ M.cl {
 
 theorem Nonloop.nonloop_of_mem_cl (he : M.Nonloop e) (hef : e ∈ M.cl {f}) : M.Nonloop f := by
   rw [Nonloop, and_comm];
-  by_contra' h; apply he.not_loop
+  by_contra! h; apply he.not_loop
   rw [loop_iff_mem_cl_empty] at *; convert hef using 1
   obtain (hf | hf) := em (f ∈ M.E)
   · rw [←cl_cl _ ∅, ←insert_eq_of_mem (h hf), cl_insert_cl_eq_cl_insert, insert_emptyc_eq]
@@ -384,7 +384,7 @@ theorem Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e
   (restrict_nonloop_iff.1 h).1
 
 theorem Nonloop.of_restriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e := by
-  obtain ⟨R, hR, rfl⟩ := hNM; exact h.of_restrict
+  obtain ⟨R, -, rfl⟩ := hNM; exact h.of_restrict
 
 theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩

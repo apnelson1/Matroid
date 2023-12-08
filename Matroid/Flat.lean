@@ -401,7 +401,7 @@ theorem Hyperplane.not_ssubset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H
   fun hss ↦ hss.ne (h₁.eq_of_subset h₂ hss.subset)
 
 theorem Hyperplane.exists_not_mem (hH : M.Hyperplane H) : ∃ e, e ∉ H := by
-  by_contra' h;
+  by_contra! h;
   apply M.univ_not_hyperplane; convert hH; rwa [eq_comm, eq_univ_iff_forall]
 
 theorem Base.hyperplane_of_cl_diff_singleton (hB : M.Base B) (heB : e ∈ B) :

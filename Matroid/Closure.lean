@@ -8,9 +8,7 @@ open Set
 
 namespace Matroid
 
--- variable {α : Type*} {M : Matroid α} {I J B C X Y : Set α} {e f x y : α}
-
-variable {α : Type*} {M : Matroid α}
+variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
 
 /-- A flat is a maximal set having a given basis  -/
 @[pp_dot] def Flat (M : Matroid α) (F : Set α) : Prop :=
@@ -367,7 +365,7 @@ theorem Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.c
 theorem mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) := by
   rw [cl_eq_cl_inter_ground] at *
   have hfE : f ∈ M.E
-  · by_contra' hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
+  · by_contra! hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
   have heE : e ∈ M.E := (M.cl_subset_ground _) hef
   rw [insert_inter_of_mem hfE] at hef; rw [insert_inter_of_mem heE]
 

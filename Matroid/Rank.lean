@@ -1873,7 +1873,7 @@ end Matroid
 -- -- -- (λ I J, card_le_r_of_card_le_r_of_subset r ‹_› ‹_›)
 -- -- -- (begin
 -- -- --   intros I J hI hJ hIJ,
--- -- --   by_contra' h',
+-- -- --   by_contra! h',
 -- -- --   have con := r_eq_r_of_maximal_indep r ‹_› ‹_› ‹_› I (I ∪ J) ⟨⟨subset_union_left _ _, hI⟩, _⟩,
 -- -- --   { exact (r_le_card I).not_lt
 -- -- --       ((hIJ.trans_le (hJ.trans (r_mono (subset_union_right I J)))).trans_eq con.symm) },

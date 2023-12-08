@@ -22,7 +22,7 @@ theorem Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circu
 theorem Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
     (hHc : M.Circuit H) (he : e ∈ B) : 
     ∃ f, f ∈ H \ B ∧ (M.Base (insert f (B \ {e})) ∨ insert f (B \ {e}) = H) := by
-  by_contra' h
+  by_contra! h
 
   have h1 : H \ {e} ⊆ M.cl (B \ {e})
   · refine fun x hx ↦ by_contra fun hcl ↦ ?_ 
