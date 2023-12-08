@@ -502,9 +502,19 @@ theorem er_contract_add_er_eq_er_union (M : Matroid α) (C X : Set α) :
     hJ.er_contract hIC, ←er_inter_ground_eq, ← hIC.encard, ←er_inter_ground_eq ,
     inter_distrib_right, ← hJ.encard, encard_diff_add_encard_inter]
 
--- theorem er_contract_eq_tsub (M : Matroid α) [FiniteRk M] (C X : Set α) :
---     (M ⧸ C).er X = M.er (X ∪ C) - M.er C := by
+theorem Circuit.contract_dep (hK : M.Circuit K) (hCK : Disjoint C K) : (M ⧸ C).Dep K := by
+  obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E)
+  rw [← contract_inter_ground_eq, Dep, hI.contract_indep_iff,
+    and_iff_left (hCK.mono_left (inter_subset_left _ _)), contract_ground, subset_diff,
+    and_iff_left (hCK.symm.mono_right (inter_subset_left _ _)), and_iff_left hK.subset_ground]
+  exact fun hi ↦ hK.dep.not_indep (hi.subset (subset_union_left _ _))
 
+theorem Dep.of_contract (h : (M ⧸ C).Dep X) (hC : C ⊆ M.E := by aesop_mat) : M.Dep (C ∪ X) := by
+  rw [Dep, and_iff_left (union_subset hC (h.subset_ground.trans (diff_subset _ _)))]
+  intro hi
+  rw [Dep, (hi.subset (subset_union_left _ _)).contract_indep_iff, union_comm,
+    and_iff_left hi] at h
+  exact h.1 (subset_diff.1 h.2).2
 
 theorem Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ⧸ I).cl ∅ := by
   rw [diff_subset_iff, contract_loops_eq, union_diff_self,

@@ -812,16 +812,16 @@ theorem eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r
   exact eq_simplificationWrt_of_restriction hc (by rwa [← hM]) hNM
 
 
-noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c) :
-    PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
-  toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
-    simp
+-- noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c) :
+--     PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
+--   toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
+--     simp
 
 
-    ⟩⟩
-  invFun := _
-  left_inv := _
-  right_inv := _
+--     ⟩⟩
+--   invFun := _
+--   left_inv := _
+--   right_inv := _
 
 
 end Simplification
