@@ -642,18 +642,15 @@ theorem colBasis_iff_aux (h : A₁.rowSpace = A₂.nullSpace) (h₁ : LinearInde
 
   rw [←h0]
   simp only [colSubmatrix_transpose, rowSubmatrix_apply, ←Finset.sum_fn]
+
   rw [← Finset.sum_subset (s₁ := t.toFinset) (by simp)]
   · convert (Finset.sum_toFinset_eq_subtype (· ∈ t) _).symm; ext;
     simp [mul_comm, vecMul, dotProduct]
 
   simp only [Finset.mem_univ, mem_toFinset, forall_true_left, smul_eq_zero]
   rintro x hxt
-  right
-  -- ext i;
-  -- simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero]
-  -- right
-  convert congr_fun hc0 ⟨x, hxt⟩
-  sorry
+  left
+  simpa using congr_fun hc0 ⟨x, hxt⟩
 
 theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace) :
     A₁.ColBasis t ↔ A₂.ColBasis tᶜ := by
