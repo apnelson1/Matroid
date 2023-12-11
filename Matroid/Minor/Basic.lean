@@ -3,13 +3,13 @@ import Matroid.ForMathlib.Basic
 
 open Set
 
-variable {α : Type*} {M N : Matroid α}
+variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K : Set α}
 
 namespace Matroid
 
 section Delete
 
-variable {D D₁ D₂ : Set α}
+variable {D D₁ D₂ R : Set α}
 
 class HasDelete (α β : Type*) where
   del : α → β → α
@@ -150,16 +150,18 @@ theorem Nonloop.of_delete (h : (M ⧹ D).Nonloop e) : M.Nonloop e :=
 theorem nonloop_iff_delete_of_not_mem (he : e ∉ D) : M.Nonloop e ↔ (M ⧹ D).Nonloop e :=
   ⟨fun h ↦ delete_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_delete⟩
 
-@[simp] theorem delete_circuit_iff : (M ⧹ D).Circuit C ↔ M.Circuit C ∧ Disjoint C D := by
+@[simp] theorem delete_circuit_iff {C : Set α} :
+    (M ⧹ D).Circuit C ↔ M.Circuit C ∧ Disjoint C D := by
   simp_rw [circuit_iff, delete_dep_iff, and_imp]
   rw [and_comm, ← and_assoc, and_congr_left_iff, and_comm, and_congr_right_iff]
   exact fun hdj _↦ ⟨fun h I hId hIC ↦ h hId (disjoint_of_subset_left hIC hdj) hIC,
     fun h I hI _ hIC ↦ h hI hIC⟩
 
-theorem Circuit.of_delete (h : (M ⧹ D).Circuit C) : M.Circuit C :=
+theorem Circuit.of_delete {C : Set α} (h : (M ⧹ D).Circuit C) : M.Circuit C :=
   (delete_circuit_iff.1 h).1
 
-theorem circuit_iff_delete_of_disjoint (hCD : Disjoint C D) : M.Circuit C ↔ (M ⧹ D).Circuit C :=
+theorem circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
+    M.Circuit C ↔ (M ⧹ D).Circuit C :=
   ⟨fun h ↦ delete_circuit_iff.2 ⟨h, hCD⟩, fun h ↦ h.of_delete⟩
 
 @[simp] theorem delete_cl_eq (M : Matroid α) (D X : Set α) : (M ⧹ D).cl X = M.cl (X \ D) \ D := by
@@ -532,7 +534,7 @@ theorem contract_er_add_contract_er (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y �
         (inter_subset_inter_left M.E hYZ) (inter_subset_right _ _) (inter_subset_right _ _)
         (inter_subset_right _ _)
     simpa [← er_contract_eq_er_contract_inter_ground] using this
-  clear hXY hYZ X Y Z
+  -- clear hXY hYZ X Y Z
   intro X Y Z hXY hYZ hXE hYE hZE
   obtain ⟨I, hI⟩ := M.exists_basis X
   obtain ⟨J, hJ, rfl⟩ := hI.exists_basis_inter_eq_of_superset hXY
@@ -1012,7 +1014,8 @@ variable {E : Set α}
   convert (loopyOn E).restrict_minor hss using 1
   rw [h, loopyOn_ground, loopyOn_restrict]
 
-theorem contract_eq_loopyOn_of_spanning (h : M.Spanning C) : M ⧸ C = loopyOn (M.E \ C) := by
+theorem contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
+    M ⧸ C = loopyOn (M.E \ C) := by
   rw [eq_loopyOn_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
 
 @[simp] theorem freeOn_delete (E X : Set α) : (freeOn E) ⧹ X = freeOn (E \ X) := by

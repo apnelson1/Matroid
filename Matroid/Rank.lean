@@ -10,7 +10,7 @@ open ENat
 
 namespace Matroid
 
-variable {α : Type*} {M : Matroid α}
+variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : ℕ∞} {e f : α}
 section Basic
 
 /-- The rank `erk M` of `M` is the cardinality of a base of `M`. -/
@@ -63,8 +63,8 @@ theorem Base.encard (hB : M.Base B) : B.encard = M.erk := by
 @[simp] theorem er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [←hI.basis_inter_ground.encard, ←hI.encard]
 
-theorem Iso.er_image_eq (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
-    N.er (e '' X) = M.er X := by
+theorem Iso.er_image_eq {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) (X : Set α)
+    (hX : X ⊆ M.E := by aesop_mat) : N.er (e '' X) = M.er X := by
   obtain ⟨I,hI⟩ := M.exists_basis X
   rw [hI.er_eq_encard, (e.on_basis hI).er_eq_encard,
     (e.injOn_ground.mono hI.indep.subset_ground).encard_image]
@@ -72,7 +72,8 @@ theorem Iso.er_image_eq (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_m
 @[simp] theorem er_univ_eq (M : Matroid α) : M.er univ = M.erk := by
   rw [← er_inter_ground_eq, univ_inter, erk_eq_er_ground]
 
-theorem Iso.erk_eq_erk (e : Iso M N) : M.erk = N.erk := by
+theorem Iso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) :
+    M.erk = N.erk := by
   rw [erk_eq_er_ground, ← e.er_image_eq M.E, e.image_ground, erk_eq_er_ground]
 
 @[simp] theorem er_empty (M : Matroid α) : M.er ∅ = 0 := by
@@ -263,6 +264,16 @@ theorem erk_le_encard_add_er_compl (M : Matroid α) (X : Set α) :
   le_trans (by rw [←er_inter_ground_eq, erk_eq_er_ground, union_diff_self,
     union_inter_cancel_right]) (M.er_union_le_encard_add_er X (M.E \ X))
 
+theorem er_insert_eq_add_one (M : Matroid α) (X : Set α) (he : e ∈ M.E \ M.cl X) :
+    M.er (insert e X) = M.er X + 1 := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [← hI.cl_eq_cl] at he
+  rw [← er_cl_eq, ← cl_insert_cl_eq_cl_insert, ← hI.cl_eq_cl, hI.er_eq_encard,
+    cl_insert_cl_eq_cl_insert, er_cl_eq, Indep.er, encard_insert_of_not_mem]
+  · exact fun heI ↦ he.2 (M.subset_cl I hI.indep.subset_ground heI)
+  rw [hI.indep.insert_indep_iff]
+  exact Or.inl he
+
 theorem er_augment (h : M.er X < M.er Z) : ∃ z ∈ Z \ X, M.er (insert z X) = M.er X + 1 := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans (subset_union_left X Z))
@@ -330,7 +341,7 @@ theorem er_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
   rw [←he.er_eq]
   exact ((M.er_mono hXe).trans (M.er_cl_eq _).le).antisymm (M.er_mono (singleton_subset_iff.2 heX))
 
-theorem er_le_one_iff [_root_.Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
+theorem er_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
     M.er X ≤ 1 ↔ ∃ e, X ⊆ M.cl {e} := by
   refine' ⟨fun h ↦ _, fun ⟨e, he⟩ ↦ _⟩
   · obtain ⟨I, hI⟩ := M.exists_basis X
@@ -606,13 +617,13 @@ theorem rFin.r_le_r_of_er_le_er (hY : M.rFin Y) (hle : M.er X ≤ M.er Y) : M.r 
 theorem r_eq_r_inter_ground (M : Matroid α) (X : Set α) : M.r X = M.r (X ∩ M.E) := by
   rw [← er_toNat_eq_r, ←er_inter_ground_eq, er_toNat_eq_r]
 
-theorem le_r_iff [FiniteRk M] : n ≤ M.r X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
+theorem le_r_iff [FiniteRk M] {n : ℕ} : n ≤ M.r X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
   simp_rw [← coe_le_er_iff, le_er_iff,]
   refine ⟨fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, by rw [ncard_def, hc, toNat_coe]⟩,
     fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, ?_⟩⟩
   rw [hI.finite.encard_eq_coe, ←hc]; rfl
 
-theorem r_le_iff [FiniteRk M] : M.r X ≤ n ↔ ∀ {I}, I ⊆ X → M.Indep I → I.ncard ≤ n := by
+theorem r_le_iff [FiniteRk M] {n : ℕ} : M.r X ≤ n ↔ ∀ {I}, I ⊆ X → M.Indep I → I.ncard ≤ n := by
   simp_rw [←er_le_coe_iff, er_le_iff, encard_le_coe_iff]
   refine ⟨fun h I hIX hI ↦ ?_, fun h I hIX hI ↦ ⟨hI.finite, ⟨_, hI.finite.encard_eq_coe, h hIX hI⟩⟩⟩
   obtain ⟨-, m, hm, hmn⟩ := h hIX hI
@@ -631,7 +642,7 @@ theorem Indep.r (hI : M.Indep I) : M.r I = I.ncard := by
 
 theorem r_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.r X ≤ X.ncard :=
-  r_le_iff.2 <| fun {I} hI _ ↦ ncard_le_of_subset hI <| M.set_finite X
+  r_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_of_subset hI (M.set_finite X))
 
 theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
   rw [← hI.r]; exact M.r_mono h

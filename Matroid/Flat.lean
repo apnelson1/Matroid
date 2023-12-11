@@ -58,7 +58,6 @@ theorem Flat.sInter_inter_ground {Fs : Set (Set α)} (h : ∀ F ∈ Fs, M.Flat F
   rw [sInter_eq_iInter]
   exact Flat.iInter_inter_ground (by simpa)
 
-
 theorem cl_flat (M : Matroid α) (X : Set α) : M.Flat (M.cl X) :=
   Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left
 
@@ -70,7 +69,6 @@ theorem exists_mem_cl_not_mem_of_not_flat (h : ¬ M.Flat F) (hF : F ⊆ M.E := b
     ∃ e, e ∈ M.cl F \ F := by
   rw [flat_iff_cl_self, subset_antisymm_iff, and_iff_left (M.subset_cl F)] at h
   exact not_subset.1 h
-
 
 theorem flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
     M.Flat F ↔ ∀ e ∈ M.E \ F, M.cl F ⊂ M.cl (insert e F) := by
@@ -122,8 +120,12 @@ theorem Flat.cl_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.Indep I) : M.cl I 
 theorem Flat.eq_cl_of_basis (hF : M.Flat F) (hI : M.Basis I F) : F = M.cl I :=
   hI.subset_cl.antisymm (hF.cl_subset_of_subset hI.subset)
 
-  -- TODO : Cyclic flats.
+theorem Flat.er_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
+    M.er (insert e F) = M.er F + 1 := by
+  rw [Matroid.er_insert_eq_add_one]
+  rwa [hF.cl]
 
+  -- TODO : Cyclic flats.
 
 section Lattice
 
@@ -210,24 +212,6 @@ theorem Flats.coe_sInf' {Fs : Set M.Flats} (hne : Fs.Nonempty) :
   simp only [coe_sInf, inter_eq_left]
   exact (biInter_subset_of_mem hne.some_mem).trans (hne.some.coe_subset_ground)
 
--- def Covby' (M : Matroid α) (F₀ F₁ : Set α) : Prop :=
---   ∃ (h₀ : M.Flat F₀) (h₁ : M.Flat F₁), h₀.toFlats ⋖ h₁.toFlats
-
-
-
--- theorem covby'_iff {F₀ F₁ : Set α} : (F₀ ⋖[M] F₁) ↔
---     M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ := by
---   simp_rw [Covby', covby_iff_lt_and_eq_or_eq]
---   refine ⟨fun ⟨h₀, h₁, hlt, hforall⟩ ↦ ⟨h₀, h₁, hlt, fun F hF hF₀ hF₁ ↦ ?_⟩,
---     fun ⟨hF₀, hF₁, hss, hforall⟩ ↦ ⟨hF₀, hF₁, hss, ?_⟩⟩
---   · obtain (h1 | h2) := hforall ⟨F, hF⟩ hF₀ hF₁
---     · exact Or.inl <| congr_arg ((↑) : M.Flats → Set α) h1
---     exact Or.inr <| congr_arg ((↑) : M.Flats → Set α) h2
---   rintro ⟨F, hF⟩ (h₀ : F₀ ⊆ F) (h₁ : F ⊆ F₁)
---   obtain (rfl | rfl) := hforall F hF h₀ h₁
---   · exact Or.inl rfl
---   exact Or.inr rfl
-
 end Lattice
 
 
@@ -288,13 +272,15 @@ theorem Covby.cl_insert_eq (h : F₀ ⋖[M] F₁) (he : e ∈ F₁ \ F₀) : M.c
   rw [insert_eq, union_subset_iff, singleton_subset_iff]
   exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
 
+theorem Covby.exists_eq_cl_insert (h : F₀ ⋖[M] F₁) : ∃ e ∈ F₁ \ F₀, M.cl (insert e F₀) = F₁ := by
+  obtain ⟨e, he⟩ := exists_of_ssubset h.ssubset
+  exact ⟨e, he, h.cl_insert_eq he⟩
+
 theorem Flat.covby_iff_eq_cl_insert (hF₀ : M.Flat F₀) :
     F₀ ⋖[M] F₁ ↔ ∃ e ∈ M.E \ F₀, F₁ = M.cl (insert e F₀) := by
-  refine' ⟨fun h ↦ _, _⟩
-  · obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset
-    simp_rw [← h.cl_insert_eq ⟨heF₁, heF₀⟩]
-    have : e ∈ M.E \ F₀ := ⟨h.flat_right.subset_ground heF₁, heF₀⟩
-    exact ⟨_, this, rfl⟩
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨e, he, rfl⟩ := h.exists_eq_cl_insert
+    exact ⟨e, ⟨(M.cl_subset_ground _) he.1, he.2⟩, rfl⟩
   rintro ⟨e, heF₀, rfl⟩
   refine
     covby_iff.2 ⟨hF₀, M.cl_flat _, (M.subset_cl_of_subset (subset_insert _ _) ?_).ssubset_of_ne ?_,
@@ -308,6 +294,11 @@ theorem Flat.covby_iff_eq_cl_insert (hF₀ : M.Flat F₀) :
   exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩).1
     (hF.cl_subset_of_subset (insert_subset hfF hF₀F))
 
+theorem Covby.er_eq (h : F ⋖[M] F') : M.er F' = M.er F + 1 := by
+  obtain ⟨e, he, rfl⟩ := h.exists_eq_cl_insert
+  rw [er_cl_eq, h.flat_left.er_insert_eq_add_one]
+  exact ⟨M.cl_subset_ground _ he.1, he.2⟩
+
 theorem cl_covby_iff : (M.cl X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.cl X, F = M.cl (insert e X) := by
   simp_rw [(M.cl_flat X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
 
@@ -316,8 +307,7 @@ theorem Flat.covby_cl_insert (hF : M.Flat F) (he : e ∉ F) (heE : e ∈ M.E := 
   hF.covby_iff_eq_cl_insert.2 ⟨e, ⟨heE, he⟩, rfl⟩
 
 theorem Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E \ F₀) :
-    ∃! F₁, e ∈ F₁ ∧ (F₀ ⋖[M] F₁) :=
-  by
+    ∃! F₁, e ∈ F₁ ∧ (F₀ ⋖[M] F₁) := by
   simp_rw [hF₀.covby_iff_eq_cl_insert]
   use M.cl (insert e F₀)
   refine' ⟨_, _⟩
@@ -346,9 +336,44 @@ theorem Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E
         ⟨M.cl (insert e F), M.mem_cl_of_mem (mem_insert _ _), hF.covby_cl_insert heF, heF⟩,
         fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.flat_right.subset_ground heF', h⟩⟩ )
 
-@[simp] theorem mem_covbyPartition_iff {X : Set α} (hF : M.Flat F) :
+@[simp] theorem Flat.mem_covbyPartition_iff {X : Set α} (hF : M.Flat F) :
     X ∈ hF.covbyPartition ↔ ∃ F', ((F ⋖[M] F') ∧ F' \ F = X) := by
   simp [Flat.covbyPartition]
+
+@[simp] theorem Flat.partOf_covbyPartition_eq (hF : M.Flat F) (e : α) :
+    hF.covbyPartition.partOf e = M.cl (insert e F) \ F := by
+  by_cases he : e ∈ M.E \ F
+  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covbyPartition_iff.1 (hF.covbyPartition.partOf_mem he)
+    obtain rfl := hFF'.cl_insert_eq (hF'.symm.subset <| hF.covbyPartition.mem_partOf he)
+    exact hF'.symm
+  have hrw : insert e F ∩ M.E = F
+  · refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
+    rw [← singleton_union, inter_distrib_right, union_subset_iff,
+       (and_iff_left (inter_subset_left _ _))]
+    rintro f ⟨rfl, hf⟩
+    exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
+  rw [cl_eq_cl_inter_ground, hrw, hF.cl, diff_self, hF.covbyPartition.partOf_eq_empty he]
+
+@[simp] theorem Flat.rel_covbyPartition_iff (hF : M.Flat F) {e f : α} :
+    hF.covbyPartition.Rel e f ↔
+      e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.cl (insert e F) = M.cl (insert f F) := by
+  simp only [hF.covbyPartition.rel_iff_partOf_eq_partOf', partOf_covbyPartition_eq, mem_diff,
+    exists_prop, exists_and_left, and_congr_right_iff]
+  refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  rw [← union_eq_self_of_subset_right (M.cl_subset_cl (subset_insert e F)),
+    ← union_eq_self_of_subset_right (M.cl_subset_cl (subset_insert f F)), hF.cl,
+    ← diff_union_self, h, diff_union_self]
+
+theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
+    hF.covbyPartition.Rel e f ↔ M.cl (insert e F) = M.cl (insert f F) := by
+  rw [hF.rel_covbyPartition_iff, and_iff_right he, and_iff_right_iff_imp]
+  refine fun hcl ↦ ⟨by_contra fun hf ↦ ?_, fun hfF ↦ ?_⟩
+  · rw [M.cl_eq_cl_inter_ground (insert f F), insert_inter_of_not_mem hf,
+      inter_eq_self_of_subset_left hF.subset_ground, hF.cl] at hcl
+    exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
+  rw [insert_eq_of_mem hfF, hF.cl] at hcl
+  exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
+
 
 -- lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :
 --   F.ncard + ∑ᶠ F' ∈ {F' | M.covby F F'}, (F' \ F).ncard = nat.card E :=
@@ -603,6 +628,16 @@ theorem Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
 theorem Nonloop.cl_point (he : M.Nonloop e) : M.Point (M.cl {e}) :=
   ⟨M.cl_flat {e}, by rw [er_cl_eq, he.indep.er, encard_singleton]⟩
 
+theorem loops_covby_iff : M.cl ∅ ⋖[M] P ↔ M.Point P := by
+  refine ⟨fun h ↦ ⟨h.flat_right, ?_⟩, fun ⟨h_flat, hr⟩ ↦ ?_⟩
+  · obtain ⟨e, ⟨he, heE⟩, rfl⟩ := h.exists_eq_cl_insert
+    simp [(show M.Indep {e} by rwa [indep_singleton, nonloop_iff_not_mem_cl_empty]).er]
+  obtain ⟨I, hI⟩ := M.exists_basis P
+  obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard.trans hr
+  have he := indep_singleton.1 hI.indep
+  convert (M.cl_flat ∅).covby_cl_insert he.not_loop
+  simp [h_flat.eq_cl_of_basis hI]
+
 theorem Point.exists_eq_cl_nonloop (hP : M.Point P) : ∃ e, M.Nonloop e ∧ P = M.cl {e} := by
   obtain ⟨I, hI⟩ := M.exists_basis P
   obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard.trans hP.er
@@ -613,6 +648,11 @@ theorem Point.eq_cl_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P) :
   rw [← indep_singleton] at he
   exact hP.flat.eq_cl_of_basis <| he.basis_of_subset_of_er_le_of_finite (singleton_subset_iff.2 heP)
     (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
+
+theorem point_iff_exists_eq_cl_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} := by
+  refine ⟨Point.exists_eq_cl_nonloop, ?_⟩
+  rintro ⟨e, he, rfl⟩
+  exact he.cl_point
 
 @[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 

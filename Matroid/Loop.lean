@@ -258,9 +258,6 @@ section Nonloop
 @[pp_dot] def Nonloop (M : Matroid α) (e : α) : Prop :=
   ¬M.Loop e ∧ e ∈ M.E
 
-@[reducible, pp_dot] def nonloops (M : Matroid α) : Set α :=
-  {e | M.Nonloop e}
-
 @[aesop unsafe 20% (rule_sets [Matroid])]
 theorem Nonloop.mem_ground (h : M.Nonloop e) : e ∈ M.E :=
   h.2
@@ -270,8 +267,6 @@ theorem Nonloop.not_loop (he : M.Nonloop e) : ¬M.Loop e :=
 
 theorem Loop.not_nonloop (he : M.Loop e) : ¬M.Nonloop e :=
   fun h ↦ h.not_loop he
-
-@[simp] theorem mem_nonloops_iff : e ∈ M.nonloops ↔ M.Nonloop e := Iff.rfl
 
 theorem nonloop_of_not_loop (he : e ∈ M.E := by aesop_mat) (h : ¬ M.Loop e) : M.Nonloop e :=
   ⟨h,he⟩
@@ -285,11 +280,17 @@ theorem loop_of_not_nonloop (he : e ∈ M.E := by aesop_mat) (h : ¬ M.Nonloop e
 @[simp] theorem not_nonloop_iff (he : e ∈ M.E := by aesop_mat) : ¬M.Nonloop e ↔ M.Loop e := by
   rw [← not_loop_iff, not_not]
 
-theorem nonloops_eq_compl_cl_empty : M.nonloops = M.E \ M.cl ∅ := by
-  ext; simp [Nonloop, Loop, and_comm]
+theorem nonloop_iff_mem_compl_loops : M.Nonloop e ↔ e ∈ M.E \ M.cl ∅ := by
+  rw [Nonloop, Loop, and_comm, mem_diff]
 
-@[simp] theorem compl_nonloops_eq_cl_empty : M.E \ M.nonloops = M.cl ∅ := by
-  rw [nonloops_eq_compl_cl_empty, diff_diff_cancel_left (M.cl_subset_ground _)]
+theorem setOf_nonloop_eq (M : Matroid α) : {e | M.Nonloop e} = M.E \ M.cl ∅ :=
+  Set.ext (fun _ ↦ nonloop_iff_mem_compl_loops)
+
+theorem not_nonloop_iff_cl : ¬ M.Nonloop e ↔ M.cl {e} = M.cl ∅ := by
+  by_cases he : e ∈ M.E
+  · simp [Nonloop, and_comm, not_and, not_not, loop_iff_cl_eq_cl_empty', he]
+  simp [cl_eq_cl_inter_ground, singleton_inter_eq_empty.2 he,
+    (show ¬ M.Nonloop e from fun h ↦ he h.mem_ground)]
 
 theorem loop_or_nonloop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ∨ M.Nonloop e := by

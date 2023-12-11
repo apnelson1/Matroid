@@ -147,6 +147,49 @@ theorem exists_unique_of_mem_set (P : Partition s) (hx : x ∈ s) : ∃! t, t �
   obtain ⟨t, hxt⟩ := hx
   exact ⟨t, hxt, fun u ⟨huP, hxu⟩ ↦ eq_of_mem_inter huP hxt.1 ⟨hxu, hxt.2⟩⟩
 
+/-- The part containing a given element of the set being partitioned. If `x ∉ s`, then `∅`.  -/
+@[pp_dot] def partOf (P : Partition s) (x : α) : Set α :=
+  ⋃₀ {t ∈ P | x ∈ t}
+
+theorem partOf_mem (P : Partition s) (hx : x ∈ s) : P.partOf x ∈ P := by
+  obtain ⟨t, ⟨h', h⟩⟩ := P.exists_unique_of_mem_set hx
+  have hrw : {t | t ∈ P ∧ x ∈ t} = {t}
+  · ext t'
+    simp only [mem_setOf_eq, mem_singleton_iff]
+    exact ⟨h t', by rintro rfl; exact h'⟩
+  rw [partOf, hrw, sUnion_singleton]
+  exact h'.1
+
+theorem partOf_eq_empty (P : Partition s) (hx : x ∉ s) : P.partOf x = ∅ := by
+  rw [← P.sUnion_eq] at hx
+  simp only [partOf, eq_empty_iff_forall_not_mem, mem_sUnion, mem_setOf, not_exists, not_and,
+    and_imp]
+  exact fun y t ht hxt _ ↦ hx <| mem_sUnion_of_mem hxt ht
+
+theorem mem_partOf (P : Partition s) (hx : x ∈ s) : x ∈ P.partOf x := by
+  obtain ⟨_, ⟨h, -⟩⟩ := P.exists_unique_of_mem_set hx
+  exact mem_sUnion_of_mem h.2 h
+
+theorem eq_partOf_of_mem {P : Partition s} (ht : t ∈ P) (hxt : x ∈ t) :
+    t = P.partOf x := by
+  have hx : x ∈ s
+  · rw [← P.sUnion_eq]
+    exact mem_sUnion_of_mem hxt ht
+  obtain ⟨t', ⟨-, h⟩⟩ := P.exists_unique_of_mem_set hx
+  rw [h t ⟨ht, hxt⟩, h (P.partOf x) ⟨P.partOf_mem hx, P.mem_partOf hx⟩]
+
+/-- Noncomputably choose a representative from an equivalence class-/
+@[pp_dot] noncomputable def rep (P : Partition s) (ht : t ∈ P) : α := (P.nonempty_of_mem ht).some
+
+@[simp] theorem rep_mem (ht : t ∈ P) : P.rep ht ∈ t :=
+  (P.nonempty_of_mem ht).some_mem
+
+@[simp] theorem rep_mem' (ht : t ∈ P) : P.rep ht ∈ s :=
+  P.subset_of_mem ht <| rep_mem ht
+
+@[simp] theorem partOf_rep (ht : t ∈ P) : P.partOf (P.rep ht) = t :=
+  (eq_partOf_of_mem ht (P.rep_mem ht)).symm
+
 theorem finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).Finite :=
   hs.finite_subsets.subset fun _ ↦ subset_of_mem
 
@@ -172,6 +215,7 @@ theorem finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).
     x ∈ parts := Iff.rfl
 
 
+
 end Set
 
 section Rel
@@ -184,7 +228,6 @@ theorem symm_iff_of {α : Type*} (r : α → α → Prop) [IsSymm α r] {x y : �
 theorem refl_of_rel {α : Type*} (r : α → α → Prop) [IsSymm α r] [IsTrans α r] {x y : α}
     (h : r x y) : r x x :=
   trans_of r h (symm_of r h)
-
 
 /-- A transitive, symmetric binary relation `r` induces a partition of the set of elements on
   which it is reflexive. -/
@@ -246,7 +289,7 @@ theorem class_nonempty {t : Set α} (ht : t ∈ ofRel r) : t.Nonempty := by
 
 /-- Every partition of `s : Set α` induces a transitive, symmetric binary relation on `α`
   whose equivalence classes are the parts of `P`. The relation is irreflexive outside `s`.  -/
-def Rel (P : Partition s) (a b : α) : Prop :=
+@[pp_dot] def Rel (P : Partition s) (a b : α) : Prop :=
   ∃ t ∈ P, a ∈ t ∧ b ∈ t
 
 theorem Rel.exists (h : P.Rel x y) : ∃ t ∈ P, x ∈ t ∧ y ∈ t :=
@@ -273,10 +316,39 @@ instance (P : Partition s) : IsTrans α P.Rel where
 theorem Rel.symm {P : Partition s} (h : P.Rel x y) : P.Rel y x :=
   symm_of P.Rel h
 
+theorem rel_comm {P : Partition s} : P.Rel x y ↔ P.Rel y x :=
+  ⟨Rel.symm, Rel.symm⟩
+
 theorem Rel.trans {P : Partition s} (hxy : P.Rel x y) (hyz : P.Rel y z) : P.Rel x z :=
   trans_of P.Rel hxy hyz
 
+theorem Rel.mem_left {P : Partition s} (h : P.Rel x y) : x ∈ s := by
+  obtain ⟨t, htP, hxt, -⟩ := h
+  exact subset_of_mem htP hxt
+
+theorem Rel.mem_right {P : Partition s} (h : P.Rel x y) : y ∈ s :=
+  h.symm.mem_left
+
 theorem rel_iff_exists : P.Rel x y ↔ ∃ t ∈ P, x ∈ t ∧ y ∈ t := Iff.rfl
+
+theorem rel_iff_partOf_eq_partOf (P : Partition s) (hx : x ∈ s) (hy : y ∈ s) :
+    P.Rel x y ↔ P.partOf x = P.partOf y := by
+  refine ⟨fun ⟨t, htP, hxt, hyt⟩ ↦ ?_, fun h ↦ ⟨P.partOf x, P.partOf_mem hx, P.mem_partOf hx, ?_⟩⟩
+  · rw [eq_partOf_of_mem (P.partOf_mem hx)]
+    rwa [← eq_partOf_of_mem htP hxt]
+  rw [h]
+  exact mem_partOf P hy
+
+theorem rel_iff_partOf_eq_partOf' (P : Partition s) :
+    P.Rel x y ↔ ∃ (_ : x ∈ s) (_ : y ∈ s), P.partOf x = P.partOf y :=
+  ⟨fun h ↦ ⟨h.mem_left, h.mem_right, (P.rel_iff_partOf_eq_partOf h.mem_left h.mem_right).1 h⟩,
+    fun ⟨hx,hy,h⟩ ↦ (P.rel_iff_partOf_eq_partOf hx hy).2 h⟩
+
+theorem rel_iff_forall {P : Partition s} : P.Rel x y ↔ x ∈ s ∧ ∀ t ∈ P, x ∈ t ↔ y ∈ t := by
+  refine ⟨fun h ↦ ⟨h.mem_left, fun _ ↦ h.forall⟩,
+    fun ⟨hxs, h⟩ ↦ ⟨P.partOf x, P.partOf_mem hxs, P.mem_partOf hxs, ?_⟩⟩
+  rw [← h _ (P.partOf_mem hxs)]
+  exact P.mem_partOf hxs
 
 theorem setOf_rel_self_eq (P : Partition s) : {x | P.Rel x x} = s := by
   refine subset_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
@@ -285,13 +357,34 @@ theorem setOf_rel_self_eq (P : Partition s) : {x | P.Rel x x} = s := by
   obtain ⟨t, ⟨ht, hxt⟩, -⟩ := P.exists_unique_of_mem_set hx
   exact ⟨t, ht, hxt, hxt⟩
 
+theorem rel_self_iff_mem {P : Partition s} : P.Rel x x ↔ x ∈ s := by
+  simp [← P.setOf_rel_self_eq]
+
 theorem setOf_rel_eq (ht : t ∈ P) (hx : x ∈ t) : {y | P.Rel x y} = t :=
   Set.ext fun y ↦ ⟨fun ⟨t', ht', hx', hy'⟩ ↦ by rwa [P.eq_of_mem_of_mem ht ht' hx hx'],
     fun h ↦ ⟨t, ht, hx, h⟩⟩
 
+theorem rep_rel (ht : t ∈ P) (hx : x ∈ t) : P.Rel x (P.rep ht) :=
+  ⟨t, ht, hx, P.rep_mem ht⟩
+
+@[simp] theorem rep_rel_self {P : Partition s} (ht : t ∈ P) : P.Rel (P.rep ht) (P.rep ht) :=
+  rep_rel _ (P.rep_mem ht)
+
+theorem setOf_rel_rep_eq (ht : t ∈ P) : {x | P.Rel (P.rep ht) x} = t :=
+  setOf_rel_eq ht (P.rep_mem ht)
+
+/-- The `partOf x` is the set of `y` related to `x`. True even if `x ∉ s`, since both are `∅`.-/
+theorem setOf_rel_eq_partOf (P : Partition s) (x : α) : {y | P.Rel x y} = P.partOf x := by
+  by_cases hx : x ∈ s
+  · rw [setOf_rel_eq (P.partOf_mem hx) (P.mem_partOf hx)]
+  rw [partOf_eq_empty _ hx, eq_empty_iff_forall_not_mem]
+  exact fun y hxy ↦ hx <| Rel.mem_left hxy
+
 theorem setOf_rel_mem (P : Partition s) (hx : x ∈ s) : {y | P.Rel x y} ∈ P := by
   obtain ⟨t, ⟨ht,hp⟩, -⟩ := P.exists_unique_of_mem_set hx
   rwa [setOf_rel_eq ht hp]
+
+@[simp] theorem rel_congr (P : Partition s) (hst : s = t) : (P.congr hst).Rel = P.Rel := rfl
 
 theorem ofRel_rel_eq (P : Partition s) : ofRel' P.Rel P.setOf_rel_self_eq.symm = P := by
   ext a

@@ -3,7 +3,7 @@ import Mathlib.Algebra.BigOperators.Order
 
 open Set BigOperators
 
-variable {s : Set α} {n : ℕ}
+variable {α β : Type*} {s t : Set α} {n : ℕ}
 
 theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
@@ -23,6 +23,9 @@ theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) 
 
 theorem Equiv.encard_univ_eq (e : α ≃ β) : encard (univ : Set α) = encard (univ : Set β) := by
   rw [encard_univ, encard_univ, PartENat.card_congr e]
+
+theorem Equiv.encard_eq {s : Set α} {t : Set β} (e : s ≃ t) : s.encard = t.encard :=
+  e.toEmbedding.enccard_le.antisymm e.symm.toEmbedding.enccard_le
 
 theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ s.encard := by
   refine ⟨fun ⟨i⟩ ↦ ?_, fun h ↦ ?_⟩
