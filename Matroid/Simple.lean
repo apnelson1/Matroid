@@ -1,5 +1,5 @@
 import Matroid.Constructions.Basic
-import Matroid.ForMathlib.PartitionOf
+import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat
 import Matroid.Constructions.ImagePreimage
@@ -305,46 +305,44 @@ end Series
 
 section ParallelClass
 
-open PSetoid
+/-- The `Partition` of the nonloops of `M` into parallel classes. -/
+def parallelPartition (M : Matroid α) : Partition {e | M.Nonloop e} :=
+  Partition.ofRel' M.Parallel (by simp)
 
-theorem mem_parallel_classes_iff_eq_cl :
-    P ∈ classes M.Parallel ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} \ M.cl ∅ := by
-  simp [mem_classes_iff, parallel_class_eq_cl_diff_loops]
+theorem mem_parallelPartition_iff {P : Set α} :
+    P ∈ M.parallelPartition ↔ ∃ e, M.Nonloop e ∧ P = {f | M.Parallel e f} := by
+  simp [parallelPartition]
 
-@[simp] theorem mem_parallel_classes_iff :
-    P ∈ classes M.Parallel ↔ ∃ e, M.Nonloop e ∧ P = {f | M.Parallel e f} := by
-  simp only [mem_classes_iff, parallel_self_iff, parallel_class_eq_cl_diff_loops]
+theorem mem_parallelPartition_iff_eq_cl_diff_loops {P : Set α} :
+    P ∈ M.parallelPartition ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} \ M.cl ∅ := by
+  simp [parallelPartition, M.parallel_class_eq_cl_diff_loops]
 
 /-- Parallel classes correspond to points -/
-def parallelPointEquiv (M : Matroid α) : classes M.Parallel ≃ {P // M.Point P} where
-  toFun := fun X ↦ ⟨X ∪ M.cl ∅, by
-    obtain ⟨e, he, h⟩ := mem_parallel_classes_iff_eq_cl.1 X.prop
-    rw [h, diff_union_self, cl_union_cl_empty_eq, Point, er_cl_eq, and_iff_right (M.cl_flat _),
-      he.er_eq] ⟩
-  invFun := fun P ↦ ⟨P \ M.cl ∅, by
-    obtain ⟨P, hP, hr⟩ := P
-    rw [mem_parallel_classes_iff_eq_cl]
-    obtain ⟨e, heP, he, hecl⟩ := (er_eq_one_iff hP.subset_ground).1 hr
-    obtain rfl := hecl.antisymm (hP.cl_subset_of_subset (singleton_subset_iff.2 heP))
-    exact ⟨e, he, rfl⟩ ⟩
+@[simps] def parallelPointEquiv (M : Matroid α) :
+    {P // P ∈ M.parallelPartition} ≃ {P // M.Point P} where
+  toFun P := ⟨P ∪ M.cl ∅, by
+    obtain ⟨e, he, h⟩ := mem_parallelPartition_iff_eq_cl_diff_loops.1 P.prop
+    rw [h, diff_union_self, union_eq_self_of_subset_right (M.cl_subset_cl (empty_subset _))]
+    exact he.cl_point ⟩
+  invFun P := ⟨P \ M.cl ∅, by
+    obtain ⟨e, he, heP⟩ := P.prop.exists_eq_cl_nonloop
+    rw [mem_parallelPartition_iff_eq_cl_diff_loops]
+    exact ⟨e, he, by rw [heP]⟩⟩
   left_inv := by
-    rintro ⟨P, hP⟩; obtain ⟨e, -, rfl⟩ := mem_parallel_classes_iff.1 hP
-    simp [parallel_class_eq_cl_diff_loops]
+    rintro ⟨P, hP⟩
+    obtain ⟨e, -, rfl⟩ := mem_parallelPartition_iff_eq_cl_diff_loops.1 hP
+    simp
   right_inv := by
-    rintro ⟨P, hP, hPr⟩; simp [hP.cl_subset_of_subset (empty_subset P)]
+    rintro ⟨P, hP⟩
+    obtain ⟨e, -, rfl⟩ := hP.exists_eq_cl_nonloop
+    simp
 
-@[simp] theorem parallelPointEquiv_apply (P : classes M.Parallel) :
-    (M.parallelPointEquiv P : Set α) = (P : Set α) ∪ M.cl ∅ := rfl
+-- theorem parallel_classes_partition (M : Matroid α) :
+--     IsPartition (classes M.Parallel) (M.E \ M.cl ∅) := by
+--   convert classes_partition M.Parallel using 1; ext x; simp [Nonloop, Loop, and_comm]
 
-@[simp] theorem parallelPointEquiv_apply_symm (P : {P // M.Point P}) :
-  (M.parallelPointEquiv.symm P : Set α) = (P : Set α) \ M.cl ∅ := rfl
-
-theorem parallel_classes_partition (M : Matroid α) :
-    IsPartition (classes M.Parallel) (M.E \ M.cl ∅) := by
-  convert classes_partition M.Parallel using 1; ext x; simp [Nonloop, Loop, and_comm]
-
-theorem parallel_classes_finite (M : Matroid α) [Matroid.Finite M] : (classes M.Parallel).Finite :=
-  M.parallel_classes_partition.finite_of_finite (M.set_finite _ (diff_subset _ _))
+-- theorem parallel_classes_finite (M : Matroid α) [Matroid.Finite M] : (classes M.Parallel).Finite :=
+--   M.parallel_classes_partition.finite_of_finite (M.set_finite _ (diff_subset _ _))
 
 end ParallelClass
 
@@ -445,21 +443,17 @@ theorem simple_iff_forall_pair_indep :
   exact hee.parallel_self
 
 theorem simple_iff_forall_parallel_class [Loopless M] :
-    M.Simple ↔ ∀ P ∈ PSetoid.classes M.Parallel, encard P ≤ 1 := by
-  simp_rw [mem_parallel_classes_iff_eq_cl]
-  refine ⟨fun h P ⟨e, he, hP⟩ ↦ ?_, fun h ↦ ?_⟩
-  · rw [cl_singleton_eq, cl_empty_eq_empty, diff_empty] at hP
-    rw [hP, encard_singleton]
-
-  obtain (rfl | _) := M.eq_emptyOn_or_nonempty
-  · infer_instance
-
-  rw [simple_iff_cl_subset_self_forall]
-  refine fun e he x hx ↦ (?_ : x = e)
-  have hpara := h _ ⟨e, he, rfl⟩
-  rw [←parallel_class_eq_cl_diff_loops, encard_le_one_iff] at hpara
-  apply hpara _ _ _ he.parallel_self
-  rwa [mem_setOf, parallel_comm, (toNonloop (M.cl_subset_ground _ hx)).parallel_iff_mem_cl]
+    M.Simple ↔ ∀ P ∈ M.parallelPartition, encard P = 1 := by
+  simp only [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption),
+    mem_parallelPartition_iff, forall_exists_index, and_imp]
+  refine ⟨fun h P e he ↦ ?_, fun h e f hef ↦ ?_⟩
+  · rintro rfl
+    simp [show (∀ f, M.Parallel e f ↔ e = f) from fun f ↦ ⟨h e f, fun h ↦ h ▸ he.parallel_self⟩]
+  specialize h {e | M.Parallel e f} e hef.nonloop_left
+  simp_rw [hef.parallel_iff_right, parallel_comm, true_imp_iff, encard_eq_one] at h
+  obtain ⟨x, hx⟩ := h
+  simp only [ext_iff, mem_setOf_eq, mem_singleton_iff] at hx
+  rw [(hx e).1 hef.symm, (hx f).1 hef.nonloop_right.parallel_self]
 
 @[simp] theorem simple_trivialOn_iff {I E : Set α} : (trivialOn I E).Simple ↔ E ⊆ I := by
   simp only [simple_iff_forall_pair_indep, trivialOn_ground, mem_singleton_iff,
@@ -494,8 +488,6 @@ theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
   push_neg at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
   exact hne <| h.2 e f hef
-
-
 
 end Simple
 
@@ -812,16 +804,16 @@ theorem eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r
   exact eq_simplificationWrt_of_restriction hc (by rwa [← hM]) hNM
 
 
-noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c) :
-    PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
-  toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
-    simp
-    sorry
+-- noncomputable def ParallelChoiceFunction.equiv (hc : M.ParallelChoiceFunction c) :
+--     PSetoid.classes M.Parallel ≃ (M.simplificationWrt c).E where
+--   toFun P := ⟨P.prop.nonempty.some, ⟨P.prop.nonempty.some, by
+--     simp
+--     sorry
 
-    ⟩⟩
-  invFun := sorry
-  left_inv := sorry
-  right_inv := sorry
+--     ⟩⟩
+--   invFun := sorry
+--   left_inv := sorry
+--   right_inv := sorry
 
 
 end Simplification

@@ -18,7 +18,7 @@ variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : 
 theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
   hF.2
 
-theorem ground_flat (M : Matroid α) : M.Flat M.E :=
+@[simp] theorem ground_flat (M : Matroid α) : M.Flat M.E :=
   ⟨fun _ _ _ ↦ Basis.subset_ground, Subset.rfl⟩
 
 /-- The closure of a subset of the ground set is the intersection of the flats containing it.

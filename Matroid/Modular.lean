@@ -6,7 +6,8 @@ open Set BigOperators
 
 namespace Matroid
 
-variable {ι α : Type*} {M : Matroid α} {B : Set α} {Xs Ys Js Is : ι → Set α} {i j : ι}
+variable {ι α : Type*} {M : Matroid α} {B I J X X' Y Y' F : Set α} {Xs Ys Js Is : ι → Set α}
+  {i j : ι} {e f : α}
 
 section ModularBase
 
@@ -463,7 +464,8 @@ theorem Indep.skewFamily_iff_pairwiseDisjoint (hI : M.Indep (⋃ i : ι, Is i)) 
     fun h ↦ hI.skewFamily_of_disjoint_bases ?_ (fun i ↦ (hI.subset (subset_iUnion _ _)).basis_self)⟩
   exact h
 
-/-- Quite a nasty proof. I don't know if there is a good way of shortening it. -/
+/-- Quite a nasty proof. Probably the right proof involves relating modularity to the
+  letteice of Flats. -/
 theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : M.Indep (⋃ i, Is i) := by
   choose Js hJs using fun i ↦ (hIs i).subset_basis_of_subset (hIX i)
