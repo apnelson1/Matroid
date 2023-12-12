@@ -3,7 +3,16 @@ import Mathlib.Data.Matroid.Basic
 open Set
 namespace Matroid
 
-variable {M : Matroid α}
+variable {α : Type*} {M : Matroid α} {I J X Y : Set α} {e : α}
+
+theorem Basis'.mem_of_insert_indep (hI : M.Basis' I X) (he : e ∈ X) (hIe : M.Indep (insert e I)) :
+    e ∈ I :=
+  hI.basis_inter_ground.mem_of_insert_indep ⟨he, hIe.subset_ground (mem_insert _ _)⟩ hIe
+
+theorem Basis'.inter_eq_of_subset_indep (hI : M.Basis' I X) (hIJ : I ⊆ J) (hJ : M.Indep J) :
+    J ∩ X = I := by
+  rw [← hI.basis_inter_ground.inter_eq_of_subset_indep hIJ hJ, inter_comm X, ← inter_assoc,
+    inter_eq_self_of_subset_left hJ.subset_ground]
 
 theorem finite_setOf_matroid {E : Set α} (hE : E.Finite) : {M : Matroid α | M.E ⊆ E}.Finite := by
   set f : Matroid α → Set α × (Set (Set α)) := fun M ↦ ⟨M.E, {B | M.Base B}⟩

@@ -1,6 +1,7 @@
 import Matroid.Flat
 import Matroid.Simple
 import Matroid.ForMathlib.Card
+import Mathlib.Order.ModularLattice
 
 open Set BigOperators
 
@@ -716,5 +717,17 @@ theorem SkewFamily.skew_compl_singleton (h : M.SkewFamily Xs) (i : ι) :
   convert h.skew_compl {i}; simp
 
 end Skew
+
+-- section Flat
+
+-- variable {F₁ F₂ : Set α}
+
+-- theorem foo (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.ModularPair F₁ F₂ ↔
+--     IsModularLattice ↑(Icc (hF₁.toFlats ⊓ hF₂.toFlats) (hF₁.toFlats ⊔ hF₂.toFlats)) := by
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · constructor
+--     ·
+
+-- end Flat
 
 end Matroid

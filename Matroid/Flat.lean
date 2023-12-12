@@ -167,7 +167,7 @@ theorem flatCl_mono (M : Matroid α) : Monotone M.flatCl :=
   fun _ _ ↦ M.cl_subset_cl
 
 /-- The flats of a matroid form a complete lattice. -/
-instance FlatLattice (M : Matroid α) : CompleteLattice M.Flats where
+instance flatLattice (M : Matroid α) : CompleteLattice M.Flats where
   sup F₁ F₂ := M.flatCl (F₁ ∪ F₂)
   le_sup_left F F' := (subset_union_left _ _).trans (M.subset_cl _)
   le_sup_right F F' := (subset_union_right _ _).trans (M.subset_cl _)
@@ -222,6 +222,9 @@ def Covby (M : Matroid α) (F₀ F₁ : Set α) : Prop :=
   ∃ (h₀ : M.Flat F₀) (h₁ : M.Flat F₁), h₀.toFlats ⋖ h₁.toFlats
 
 notation:25 F₀:50 " ⋖[" M:25 "] " F₁ :50 => Covby M F₀ F₁
+
+@[simp] theorem Flats.covby_iff (F₀ F₁ : M.Flats) : F₀ ⋖ F₁ ↔ (F₀ : Set α) ⋖[M] (F₁ : Set α) := by
+  simp only [Matroid.Covby, coe_flat, exists_true_left]; rfl
 
 theorem covby_iff : F₀ ⋖[M] F₁ ↔
     M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ := by
@@ -318,6 +321,16 @@ theorem Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E
   rintro X heX f _ rfl
   rw [hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he.2⟩]
 
+/-- If `F` covers distinct flats `F₀` and `F₁`, then `F` is their join. -/
+theorem Covby.eq_cl_union_of_covby_of_ne (h₀ : F₀ ⋖[M] F) (h₁ : F₁ ⋖[M] F) (hne : F₀ ≠ F₁) :
+    F = M.cl (F₀ ∪ F₁) := by
+  refine subset_antisymm ?_ (h₁.flat_right.cl_subset_of_subset (union_subset h₀.subset h₁.subset))
+  have hnss : ¬ (F₀ ⊆ F₁) :=
+    fun hss ↦ hne.symm <| h₀.eq_of_subset_of_ssubset h₁.flat_left hss h₁.ssubset
+  obtain ⟨e, he₀, he₁⟩ := not_subset.1 hnss
+  obtain rfl := h₁.cl_insert_eq ⟨h₀.subset he₀, he₁⟩
+  exact M.cl_subset_cl (insert_subset (Or.inl he₀) (subset_union_right _ _))
+
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
 @[simps!] def Flat.covbyPartition (hF : M.Flat F) : Partition (M.E \ F) :=
   Partition.ofPairwiseDisjoint'
@@ -373,6 +386,29 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
     exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
   rw [insert_eq_of_mem hfF, hF.cl] at hcl
   exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
+
+
+instance {M : Matroid α} : IsWeakUpperModularLattice M.Flats where
+  covby_sup_of_inf_covby_covby := by
+    rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
+    simp only [ge_iff_le, Flats.le_iff, Flats.covby_iff, Flats.coe_sup, Flats.coe_inf]
+    rintro h₀ h₁
+    obtain ⟨e, he₁, he₀⟩ := exists_of_ssubset h₁.ssubset
+    have := h₀.eq_of_ssubset_of_subset (M.cl_flat (insert e (F₀ ∩ F₁)))
+
+
+
+    -- have : F₁ ⊆ M.cl (insert e F₀)
+    -- · have := h₁.eq_of_ssubset_of_subset (M.cl_flat (insert e (F₀ ∩ F₁)))
+    -- have hnss : ¬ (F₀ ⊆ F₁) :=
+    --   fun hss ↦ h₁.ssubset.ne (by rw [union_eq_self_of_subset_left hss, hF₁.cl])
+    -- obtain ⟨e, he₀, he₁⟩ := not_subset.1 hnss
+    -- have h : F₀ = M.cl (insert e (F₀ ∩ F₁))
+    -- · rw [subset_antisymm_iff, hF₀.cl_subset_iff_subset _, and_iff_left
+    --     (insert_subset he₀ (inter_subset_left _ _))]
+    --   · refine h₀.subset.trans (M.cl_subset_cl_of_subset_cl ?_)
+
+
 
 
 -- lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :

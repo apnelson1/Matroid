@@ -16,7 +16,7 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
     M.numPoints = M.simplification.E.encard := by
   rw [numPoints_eq_encard_parallelClasses, M.simplification_equiv.encard_eq]
 
-#check contract_er_diff_add_contract_er_diff
+
 
 -- Define relative rank.
 

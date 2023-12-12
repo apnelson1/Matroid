@@ -468,7 +468,6 @@ theorem Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ⧸ 
     union_eq_self_of_subset_left (M.subset_cl I)]
   exact hIX.subset_cl
 
-
 theorem contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     (M ⧸ C).Spanning X ↔ M.Spanning (X ∪ (C ∩ M.E)) ∧ Disjoint X C := by
   simp_rw [Spanning, contract_cl_eq, contract_ground, subset_diff, union_subset_iff,
@@ -489,10 +488,16 @@ theorem contract_spanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ⧸ C).Spanning X ↔ M.Spanning (X ∪ C) ∧ Disjoint X C := by
   rw [contract_spanning_iff', inter_eq_self_of_subset_left hC]
 
-
 theorem Nonloop.of_contract (h : (M ⧸ C).Nonloop e) : M.Nonloop e := by
   rw [← indep_singleton] at h ⊢
   exact h.of_contract
+
+@[simp] theorem contract_nonloop_iff : (M ⧸ C).Nonloop e ↔ e ∈ M.E \ M.cl C := by
+  rw [nonloop_iff_mem_compl_loops, contract_ground, contract_loops_eq]
+  refine ⟨fun ⟨he,heC⟩ ↦ ⟨he.1, fun h ↦ heC ⟨h, he.2⟩⟩,
+    fun h ↦ ⟨⟨h.1, fun heC ↦ h.2 ?_⟩, fun h' ↦ h.2 h'.1⟩⟩
+  rw [cl_eq_cl_inter_ground]
+  exact (M.subset_cl (C ∩ M.E)) ⟨heC, h.1⟩
 
 end Contract
 

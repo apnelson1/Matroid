@@ -334,6 +334,9 @@ theorem er_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
   exact ⟨by rintro rfl; exact hI.subset_cl, fun h ↦ eq_empty_of_forall_not_mem
     fun x hx ↦ (hI.indep.nonloop_of_mem hx).not_loop (h (hI.subset hx))⟩
 
+theorem er_eq_zero_iff' : M.er X = 0 ↔ X ∩ M.E ⊆ M.cl ∅ := by
+  rw [← er_inter_ground_eq, er_eq_zero_iff]
+
 theorem er_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
     M.er X = 1 ↔ ∃ e ∈ X, M.Nonloop e ∧ X ⊆ M.cl {e} := by
   refine ⟨?_, fun ⟨e, heX, he, hXe⟩ ↦ ?_⟩
@@ -344,14 +347,15 @@ theorem er_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
   rw [←he.er_eq]
   exact ((M.er_mono hXe).trans (M.er_cl_eq _).le).antisymm (M.er_mono (singleton_subset_iff.2 heX))
 
-theorem er_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
-    M.er X ≤ 1 ↔ ∃ e, X ⊆ M.cl {e} := by
-  refine' ⟨fun h ↦ _, fun ⟨e, he⟩ ↦ _⟩
+theorem er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
+    M.er X ≤ 1 ↔ ∃ e ∈ M.E, X ⊆ M.cl {e} := by
+  refine' ⟨fun h ↦ _, fun ⟨e, _, he⟩ ↦ _⟩
   · obtain ⟨I, hI⟩ := M.exists_basis X
     rw [hI.er_eq_encard, encard_le_one_iff_eq] at h
     obtain (rfl | ⟨e, rfl⟩) := h
-    · exact ⟨Classical.arbitrary α, (hI.subset_cl.trans (M.cl_subset_cl (empty_subset _)))⟩
-    exact ⟨e, hI.subset_cl⟩
+    · exact ⟨M.ground_nonempty.some, M.ground_nonempty.some_mem,
+        hI.subset_cl.trans ((M.cl_subset_cl (empty_subset _)))⟩
+    exact ⟨e, hI.indep.subset_ground rfl,  hI.subset_cl⟩
   refine (M.er_mono he).trans ?_
   rw [er_cl_eq, ←encard_singleton e]
   exact M.er_le_encard {e}
