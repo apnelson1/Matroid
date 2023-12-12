@@ -324,6 +324,9 @@ theorem er_singleton_eq [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.er {e} = 1 :=
   (M.toNonloop he).er_eq
 
+theorem LoopEquiv.er_eq_er (h : M.LoopEquiv X Y) : M.er X = M.er Y := by
+  rw [← M.er_cl_eq, h.cl_eq_cl, M.er_cl_eq]
+
 theorem er_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
     M.er X = 0 ↔ X ⊆ M.cl ∅ := by
   obtain ⟨I, hI⟩ := M.exists_basis X

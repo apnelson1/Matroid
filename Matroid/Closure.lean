@@ -184,6 +184,9 @@ theorem Basis.cl_eq_cl (h : M.Basis I X) : M.cl I = M.cl X := by
   rw [←M.cl_cl I, h.indep.cl_eq_setOf_basis_insert]
   exact M.cl_subset_cl fun e he ↦ (h.basis_subset (subset_insert _ _) (insert_subset he h.subset))
 
+theorem Basis.cl_eq_right (h : M.Basis I (M.cl X)) : M.cl I = M.cl X :=
+  M.cl_cl X ▸ h.cl_eq_cl
+
 theorem Basis'.cl_eq_cl (h : M.Basis' I X) : M.cl I = M.cl X := by
   rw [cl_eq_cl_inter_ground _ X, h.basis_inter_ground.cl_eq_cl]
 

@@ -173,20 +173,6 @@ theorem circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
 theorem delete_loops_eq (M : Matroid α) (D : Set α) : (M ⧹ D).cl ∅ = M.cl ∅ \ D := by
   simp
 
-@[simp] theorem delete_er_eq' (M : Matroid α) (D X : Set α) : (M ⧹ D).er X = M.er (X \ D) := by
-  rw [←restrict_compl, restrict_er_eq', diff_eq, inter_comm M.E, ←inter_assoc, ←diff_eq,
-    er_inter_ground_eq]
-
-theorem delete_er_eq (M : Matroid α) (h : Disjoint X D) : (M ⧹ D).er X = M.er X := by
-  rwa [delete_er_eq', sdiff_eq_left.2]
-
-theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
-    (M ⧹ D).er X = (M ⧹ D).er (X \ D) := by
-  simp
-
-@[simp] theorem delete_rFin_iff : (M ⧹ D).rFin X ↔ M.rFin (X \ D) := by
-  rw [←er_lt_top_iff, delete_er_eq', er_lt_top_iff]
-
 @[simp] theorem delete_empty (M : Matroid α) : M ⧹ (∅ : Set α) = M := by
   rw [delete_eq_self_iff]; exact empty_disjoint _
 
@@ -463,47 +449,6 @@ theorem contract_loops_eq : (M ⧸ C).cl ∅ = M.cl C \ C := by
   · rwa [mem_diff, and_iff_left heX, mem_diff, mem_union, or_iff_right heX, ← mem_diff] at h'
   rw [← contract_loop_iff_mem_cl, ← contract_loop_iff_mem_cl, contract_contract, union_comm]
 
-/-- This lemma is useful where it is known (or unimportant) that `X ⊆ M.E` -/
-theorem er_contract_eq_er_contract_diff (M : Matroid α) (C X : Set α) :
-    (M ⧸ C).er X = (M ⧸ C).er (X \ C) := by
-  rw [← er_cl_eq, contract_cl_eq, ← er_cl_eq _ (X \ C), contract_cl_eq, diff_union_self]
-
-/-- This lemma is useful where it is known (or unimportant) that `X` and `C` are disjoint -/
-theorem er_contract_eq_er_contract_inter_ground (M : Matroid α) (C X : Set α) :
-    (M ⧸ C).er X = (M ⧸ C).er (X ∩ M.E) := by
-  rw [←er_inter_ground_eq, contract_ground, M.er_contract_eq_er_contract_diff _ (X ∩ M.E),
-    inter_diff_assoc]
-
-/-- This lemma is essentially defining the 'relative rank' of `X` to `C`. The required set `I` can
-  be obtained for any `X,C ⊆ M.E` using `M.exists_basis_union_inter_basis X C`. -/
-theorem Basis.er_contract (hI : M.Basis I (X ∪ C)) (hIC : M.Basis (I ∩ C) C) :
-    (M ⧸ C).er X = (I \ C).encard := by
-  rw [er_contract_eq_er_contract_diff, hIC.contract_eq_contract_delete, delete_er_eq',
-    diff_inter_self_eq_diff, ←Basis.er_eq_encard]
-  apply Basis.contract_basis_union_union
-  · rw [diff_union_inter, diff_diff, union_eq_self_of_subset_right (diff_subset _ _)]
-    apply hI.basis_subset _ (union_subset_union (diff_subset _ _) (inter_subset_right _ _))
-    rw [union_comm, ← diff_subset_iff, subset_diff, diff_self_inter, diff_subset_iff, union_comm]
-    exact ⟨hI.subset, disjoint_sdiff_left⟩
-  rw [disjoint_union_left]
-  exact
-    ⟨disjoint_of_subset_right (inter_subset_right _ _) disjoint_sdiff_left,
-      disjoint_of_subset (diff_subset _ _) (inter_subset_right _ _) disjoint_sdiff_left⟩
-
-theorem Basis.er_contract_of_subset (hI : M.Basis I X) (hCX : C ⊆ X) (hIC : M.Basis (I ∩ C) C) :
-    (M ⧸ C).er (X \ C) = (I \ C).encard := by
-  rw [← er_contract_eq_er_contract_diff, Basis.er_contract _ hIC]
-  rwa [union_eq_self_of_subset_right hCX]
-
-theorem er_contract_add_er_eq_er_union (M : Matroid α) (C X : Set α) :
-    (M ⧸ C).er X + M.er C = M.er (X ∪ C) := by
-  obtain ⟨I, D, hIC, hD, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  obtain ⟨J, hJ, rfl⟩ :=
-    hIC.exists_basis_inter_eq_of_superset (subset_union_right (X ∩ M.E) _) (by simp)
-  rw [er_contract_eq_er_contract_inter_ground, ←contract_inter_ground_eq,
-    hJ.er_contract hIC, ←er_inter_ground_eq, ← hIC.encard, ←er_inter_ground_eq ,
-    inter_distrib_right, ← hJ.encard, encard_diff_add_encard_inter]
-
 theorem Circuit.contract_dep (hK : M.Circuit K) (hCK : Disjoint C K) : (M ⧸ C).Dep K := by
   obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E)
   rw [← contract_inter_ground_eq, Dep, hI.contract_indep_iff,
@@ -523,77 +468,6 @@ theorem Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ⧸ 
     union_eq_self_of_subset_left (M.subset_cl I)]
   exact hIX.subset_cl
 
-/-- Relative rank is additive. TODO : maybe `Basis'` shortens the proof? -/
-theorem contract_er_add_contract_er (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
-    (M ⧸ X).er Y + (M ⧸ Y).er Z = (M ⧸ X).er Z :=
-  by
-  suffices h' : ∀ X' Y' Z', X' ⊆ Y' → Y' ⊆ Z' → X' ⊆ M.E → Y' ⊆ M.E → Z' ⊆ M.E →
-    (M ⧸ X').er Y' + (M ⧸ Y').er Z' = (M ⧸ X').er Z'
-  · have :=
-      h' (X ∩ M.E) (Y ∩ M.E) (Z ∩ M.E) (inter_subset_inter_left M.E hXY)
-        (inter_subset_inter_left M.E hYZ) (inter_subset_right _ _) (inter_subset_right _ _)
-        (inter_subset_right _ _)
-    simpa [← er_contract_eq_er_contract_inter_ground] using this
-  -- clear hXY hYZ X Y Z
-  intro X Y Z hXY hYZ hXE hYE hZE
-  obtain ⟨I, hI⟩ := M.exists_basis X
-  obtain ⟨J, hJ, rfl⟩ := hI.exists_basis_inter_eq_of_superset hXY
-  obtain ⟨K, hK, rfl⟩ := hJ.exists_basis_inter_eq_of_superset hYZ
-  rw [M.er_contract_eq_er_contract_diff, M.er_contract_eq_er_contract_diff Y,
-    M.er_contract_eq_er_contract_diff _ Z, hK.er_contract_of_subset hYZ hJ,
-    hJ.er_contract_of_subset hXY hI, ←
-    encard_union_eq (disjoint_of_subset_left _ disjoint_sdiff_right)]
-  · rw [inter_assoc, inter_eq_self_of_subset_right hXY] at hI
-    rw [diff_eq, diff_eq, inter_assoc, ← inter_distrib_left, union_distrib_right, union_compl_self,
-      univ_inter, ← compl_inter, ← diff_eq, inter_eq_self_of_subset_left hXY, Basis.encard]
-    rw [hI.contract_eq_contract_delete, delete_basis_iff,
-      and_iff_left (disjoint_of_subset_right (diff_subset _ _) disjoint_sdiff_left)]
-    refine' Basis.contract_basis_union_union _ _
-    · rw [diff_union_inter]
-      refine'
-        hK.basis_subset _ (union_subset (diff_subset _ _) ((inter_subset_left _ _).trans hK.subset))
-      rw [union_comm, ← diff_subset_iff, diff_self_inter]
-      exact diff_subset_diff_left hK.subset
-    rw [← union_diff_distrib]
-    exact disjoint_of_subset_right (inter_subset_right _ _) disjoint_sdiff_left
-  refine' (diff_subset _ _).trans (inter_subset_right _ _)
-
-theorem contract_er_diff_add_contract_er_diff (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
-    (M ⧸ X).er (Y \ X) + (M ⧸ Y).er (Z \ Y) = (M ⧸ X).er (Z \ X) := by
-  simp_rw [← er_contract_eq_er_contract_diff, M.contract_er_add_contract_er hXY hYZ]
-
-theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ⧸ C).er X ≤ M.er X :=
-  by
-  obtain ⟨I, hI⟩ := (M ⧸ C).exists_basis (X ∩ (M ⧸ C).E)
-  rw [←er_inter_ground_eq, ← hI.encard, ←hI.indep.of_contract.er]
-  exact M.er_mono (hI.subset.trans (inter_subset_left _ _))
-
-theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⧸ C).rFin X := by
-  rw [←er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
-
-lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
-    (M ⧸ C).rFin (X \ C) :=
-  (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
-
--- Todo : Probably `Basis'` makes this shorter.
-lemma contract_er_add_er_eq (M : Matroid α) (C X : Set α) :
-    (M ⧸ C).er X + M.er C = M.er (X ∪ C) := by
-  rw [←contract_inter_ground_eq, ←M.er_inter_ground_eq C]
-  obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E)
-  rw [hI.contract_eq_contract_delete, delete_er_eq', ←er_inter_ground_eq, contract_ground,
-    inter_diff_assoc, diff_inter, inter_distrib_right, diff_inter_self, union_empty,
-    ←inter_diff_assoc, inter_diff_right_comm]
-  have hdiff : (X \ C) \ I ∩ M.E ⊆ (M ⧸ I).E
-  · rw [contract_ground, inter_comm, diff_eq, diff_eq, diff_eq]
-    apply inter_subset_inter_right; apply inter_subset_right
-  obtain ⟨J, hJ⟩  := (M ⧸ I).exists_basis (((X \ C) \ I) ∩ M.E)
-  rw [hJ.er_eq_encard, hI.er_eq_encard, ←encard_union_eq,
-      ←(hI.indep.union_contract_basis_union_of_basis hJ).er_eq_encard, union_distrib_right,
-      diff_union_self, ←union_distrib_right, ←er_cl_eq, ←cl_union_cl_right_eq, hI.cl_eq_cl,
-      cl_union_cl_right_eq, ←inter_distrib_right, diff_union_self, er_cl_eq,
-      er_inter_ground_eq]
-  exact disjoint_of_subset hJ.subset (hI.subset.trans (inter_subset_left _ _))
-    (disjoint_of_subset_left ((inter_subset_left _ _).trans (diff_subset _ _)) disjoint_sdiff_left)
 
 theorem contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     (M ⧸ C).Spanning X ↔ M.Spanning (X ∪ (C ∩ M.E)) ∧ Disjoint X C := by
@@ -615,16 +489,6 @@ theorem contract_spanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ⧸ C).Spanning X ↔ M.Spanning (X ∪ C) ∧ Disjoint X C := by
   rw [contract_spanning_iff', inter_eq_self_of_subset_left hC]
 
-theorem Nonloop.contract_er_add_one_eq (he : M.Nonloop e) (X : Set α) :
-    (M ⧸ e).er X + 1 = M.er (insert e X) := by
-  rw [contract_elem, ←he.er_eq, er_contract_add_er_eq_er_union, union_singleton]
-
-theorem Nonloop.contract_er_eq (he : M.Nonloop e) (X : Set α) :
-    (M ⧸ e).er X = M.er (insert e X) - 1 := by
-  rw [←WithTop.add_right_cancel_iff (by exact ENat.coe_toNat_eq_self.mp rfl : (1 : ℕ∞) ≠ ⊤),
-    he.contract_er_add_one_eq, tsub_add_cancel_iff_le.2]
-  rw [←he.er_eq, ←union_singleton]
-  exact M.er_mono (subset_union_right _ _)
 
 theorem Nonloop.of_contract (h : (M ⧸ C).Nonloop e) : M.Nonloop e := by
   rw [← indep_singleton] at h ⊢
@@ -853,11 +717,6 @@ theorem strictMinor_iff_minor_contract_or_delete :
 theorem Minor.strictMinor_or_eq (h : N ≤m M) : N <m M ∨ N = M := by
   rw [strictMinor_iff_minor_ne, and_iff_right h]
   exact ne_or_eq N M
-
-theorem Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
-  obtain ⟨C, D, -, -, -, rfl⟩ := h
-  rw [← er_univ_eq, ← er_univ_eq, delete_er_eq']
-  exact (M.er_contract_le_er _ _).trans (M.er_mono (diff_subset _ _))
 
 theorem Minor.dual (h : N ≤m M) : N﹡ ≤m M﹡ := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
