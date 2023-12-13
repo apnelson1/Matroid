@@ -1,4 +1,4 @@
-import Matroid.Dual
+import Mathlib.Data.Matroid.Dual
 
 /-!
 # Duality
