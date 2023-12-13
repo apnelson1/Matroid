@@ -1,6 +1,6 @@
 import Matroid.Restrict
 
-variable {α : Type*} {M : Matroid α} {E : Set α}
+variable {α : Type*} {M : Matroid α} {E B I X R J : Set α}
 
 namespace Matroid
 

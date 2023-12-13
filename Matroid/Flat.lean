@@ -217,7 +217,8 @@ end Lattice
 
 
 -- ### Covering
-/-- `F₀ ⋖[M] F₁` means that `F₀` and `F₁` are strictly nested flats, with no flat between them. -/
+/-- `F₀ ⋖[M] F₁` means that `F₀` and `F₁` are strictly nested flats with no flat between them.
+  Defined in terms of the bundled `Covby` in the lattice of flats. -/
 def Covby (M : Matroid α) (F₀ F₁ : Set α) : Prop :=
   ∃ (h₀ : M.Flat F₀) (h₁ : M.Flat F₁), h₀.toFlats ⋖ h₁.toFlats
 
@@ -249,8 +250,19 @@ theorem Covby.flat_left (h : F₀ ⋖[M] F₁) : M.Flat F₀ :=
 theorem Covby.flat_right (h : F₀ ⋖[M] F₁) : M.Flat F₁ :=
   h.2.1
 
+@[aesop unsafe 10% (rule_sets [Matroid])]
+theorem Covby.subset_ground_left (h : F₀ ⋖[M] F₁) : F₀ ⊆ M.E :=
+  h.flat_left.subset_ground
+
+@[aesop unsafe 10% (rule_sets [Matroid])]
+theorem Covby.subset_ground_right (h : F₀ ⋖[M] F₁) : F₁ ⊆ M.E :=
+  h.flat_right.subset_ground
+
 theorem Covby.ssubset (h : F₀ ⋖[M] F₁) : F₀ ⊂ F₁ :=
   h.2.2.1
+
+theorem Covby.ne (h : F₀ ⋖[M] F₁) : F₀ ≠ F₁ :=
+  h.ssubset.ne
 
 theorem Covby.subset (h : F₀ ⋖[M] F₁) : F₀ ⊆ F₁ :=
   h.ssubset.subset
@@ -331,6 +343,82 @@ theorem Covby.eq_cl_union_of_covby_of_ne (h₀ : F₀ ⋖[M] F) (h₁ : F₁ ⋖
   obtain rfl := h₁.cl_insert_eq ⟨h₀.subset he₀, he₁⟩
   exact M.cl_subset_cl (insert_subset (Or.inl he₀) (subset_union_right _ _))
 
+theorem Flat.exists_left_covby_of_ssubset (hF₀ : M.Flat F₀) (hF₁ : M.Flat F₁) (hss : F₀ ⊂ F₁) :
+    ∃ F, ((F₀ ⋖[M] F) ∧ F ⊆ F₁) := by
+  obtain ⟨e, he⟩ := exists_of_ssubset hss
+  exact ⟨_, hF₀.covby_cl_insert he.2 (hF₁.subset_ground he.1),
+    hF₁.cl_subset_of_subset <| insert_subset he.1 hss.subset⟩
+
+theorem Flat.exists_covby_right_of_ssubset (hF₀ : M.Flat F₀) (hF₁ : M.Flat F₁) (hss : F₀ ⊂ F₁) :
+    ∃ F, (F₀ ⊆ F ∧ (F ⋖[M] F₁)) := by
+  obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_basis_subset_basis hss.subset
+  have hssu : I ⊂ J := hIJ.ssubset_of_ne <| by
+    rintro rfl
+    rw [hF₀.eq_cl_of_basis hI, hF₁.eq_cl_of_basis hJ] at hss
+    exact hss.ne rfl
+  obtain ⟨e, heJ, heI⟩ := exists_of_ssubset hssu
+  refine ⟨M.cl (J \ {e}), hI.subset_cl.trans (M.cl_subset_cl (subset_diff_singleton hIJ heI)), ?_⟩
+  convert (M.cl_flat (J \ {e})).covby_cl_insert ?_ (hJ.indep.subset_ground heJ)
+  · rw [cl_insert_cl_eq_cl_insert, insert_diff_singleton, insert_eq_of_mem heJ,
+      hF₁.eq_cl_of_basis hJ]
+  exact hJ.indep.not_mem_cl_diff_of_mem heJ
+
+theorem Covby.covby_cl_union_of_inter_covby (h₀ : F₀ ∩ F₁ ⋖[M] F₀) (h₁ : F₀ ∩ F₁ ⋖[M] F₁) :
+    F₀ ⋖[M] M.cl (F₀ ∪ F₁) := by
+  obtain ⟨e₀, -, h₀'⟩ := h₀.exists_eq_cl_insert
+  obtain ⟨e₁, he₁, h₁'⟩ := h₁.exists_eq_cl_insert
+  nth_rw 2 [← h₀', ← h₁']
+  rw [cl_cl_union_cl_eq_cl_union, ← singleton_union, ← singleton_union,
+    ← union_union_distrib_right, union_comm {e₀}, union_assoc, singleton_union, singleton_union,
+    ← M.cl_insert_cl_eq_cl_insert, h₀']
+  exact h₀.flat_right.covby_cl_insert (fun h ↦ he₁.2 ⟨h, he₁.1⟩) (h₁.flat_right.subset_ground he₁.1)
+
+instance {M : Matroid α} : IsWeakUpperModularLattice M.Flats where
+  covby_sup_of_inf_covby_covby := by
+    rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
+    simp only [ge_iff_le, Flats.le_iff, Flats.covby_iff, Flats.coe_inf, Flats.coe_sup]
+    exact Covby.covby_cl_union_of_inter_covby
+
+-- theorem Covby.foo (h₀ : F₀ ⋖[M] F₁) (h₁ : F₁ ⋖[M] F₂) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₂) :
+--     F₀ ⋖[M] F := by
+--   _
+
+-- theorem Covby.inter_covby_of_covby_of_covby (h₀ : F₀ ⋖[M] F) (h₁ : F₁ ⋖[M] F)
+--     (h' : F₀ ∩ F₁ ⋖[M] F₀) : F₀ ∩ F₁ ⋖[M] F₁ := by
+--   have hssu : F₀ ∩ F₁ ⊂ F₁
+--   · refine (inter_subset_right _ _).ssubset_of_ne (fun h_eq ↦ ?_)
+--     rw [h_eq] at h'
+--     exact h₀.ne <| h₁.eq_of_ssubset_of_subset h'.flat_right h'.ssubset h₀.subset
+--   have hne : F₀ ≠ F₁
+--   · rintro rfl; rw [inter_self] at hssu; exact hssu.ne rfl
+--   obtain rfl := h₀.eq_cl_union_of_covby_of_ne h₁ hne
+--   obtain ⟨F', hF', hF'F₁⟩ :=
+--     (h₀.flat_left.inter h₁.flat_left).exists_left_covby_of_ssubset h₁.flat_left hssu
+--   obtain (h | h) := h₀.eq_or_eq (M.cl_flat (F₀ ∪ F'))
+--     (M.subset_cl_of_subset' (subset_union_left _ _))
+--     (M.cl_subset_cl (union_subset_union_right _ hF'F₁))
+--   · have hF'F₀ : F' ⊆ F₀
+--     · rw [← h]; exact M.subset_cl_of_subset' (subset_union_right _ _)
+--     obtain (rfl | rfl) := h'.eq_or_eq hF'.flat_right hF'.subset hF'F₀
+--     · exact (hF'.ne rfl).elim
+--     rw [inter_eq_self_of_subset_left hF'F₁] at hF'
+--     exact (hF'.ne rfl).elim
+
+  -- have h_eq : F₀ ∩ F₁ = F₀ ∩ F'
+  -- · rw [inter_eq_inter_iff_left]
+  --   exact ⟨(inter_subset_right _ _).trans hssF', hcbF'.subset⟩
+  -- rw [h_eq] at hcbF' h' ⊢
+  -- have := h₀.eq_of_ssubset_of_subset ?_ (h'.covby_cl_union_of_inter_covby hcbF').ssubset
+  --   (M.cl_subset_cl (union_subset_union_right _ hssF'))
+
+  -- rw [(h₀.flat_left.inter h₁.flat_left).covby_iff_of_flat h₁.flat_left, and_iff_right hssu]
+  -- refine fun F' hF' hss h₁ ↦ ?_
+  -- obtain (h1 | hne) := eq_or_ne (F₀ ∩ F') F₀
+  -- · rw [inter_eq_left] at h1
+  --   have := h₀.eq_of_subset_of_ssubset sorry h1
+  -- have := h'.eq_of_subset_of_ssubset (h₀.flat_left.inter hF') (subset_inter ?_ hss)
+
+
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
 @[simps!] def Flat.covbyPartition (hF : M.Flat F) : Partition (M.E \ F) :=
   Partition.ofPairwiseDisjoint'
@@ -386,27 +474,6 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
     exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
   rw [insert_eq_of_mem hfF, hF.cl] at hcl
   exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
-
-
-instance {M : Matroid α} : IsWeakUpperModularLattice M.Flats where
-  covby_sup_of_inf_covby_covby := by
-    rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
-    simp only [ge_iff_le, Flats.le_iff, Flats.covby_iff, Flats.coe_sup, Flats.coe_inf]
-    rintro h₀ h₁
-    obtain ⟨e, he₁, he₀⟩ := exists_of_ssubset h₁.ssubset
-    have := h₀.eq_of_ssubset_of_subset (M.cl_flat (insert e (F₀ ∩ F₁)))
-
-
-
-    -- have : F₁ ⊆ M.cl (insert e F₀)
-    -- · have := h₁.eq_of_ssubset_of_subset (M.cl_flat (insert e (F₀ ∩ F₁)))
-    -- have hnss : ¬ (F₀ ⊆ F₁) :=
-    --   fun hss ↦ h₁.ssubset.ne (by rw [union_eq_self_of_subset_left hss, hF₁.cl])
-    -- obtain ⟨e, he₀, he₁⟩ := not_subset.1 hnss
-    -- have h : F₀ = M.cl (insert e (F₀ ∩ F₁))
-    -- · rw [subset_antisymm_iff, hF₀.cl_subset_iff_subset _, and_iff_left
-    --     (insert_subset he₀ (inter_subset_left _ _))]
-    --   · refine h₀.subset.trans (M.cl_subset_cl_of_subset_cl ?_)
 
 
 

@@ -1,11 +1,13 @@
 import Matroid.Minor.Basic
+import Matroid.Minor.RelRank
 import Matroid.Constructions.Basic
+
 
 namespace Matroid
 
 open Set LocalEquiv
 
-variable {α β : Type*} {M : Matroid α} {N : Matroid β}
+variable {α β β' : Type*} {M : Matroid α} {N : Matroid β} {C D : Set α}
 section Iso
 
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
