@@ -718,8 +718,7 @@ theorem Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (s
 theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
   rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
-  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff (inter_subset_right _ _),
-    cl_inter_ground]
+  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff (inter_subset_right _ _), cl_inter_ground]
   constructor
   · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
   rw [h, ← cl_inter_ground]
