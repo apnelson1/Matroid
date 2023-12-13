@@ -52,26 +52,26 @@ theorem eq_of_finprod_mem_ge_finprod_mem_of_forall_le' [OrderedCancelCommMonoid 
 @[to_additive]
 theorem finprod_le_finprod_of_subset [CanonicallyOrderedMonoid N] (h : s ⊆ t) (ht : t.Finite) :
     ∏ᶠ x ∈ s, f x ≤ ∏ᶠ x ∈ t, f x := by
-  rw [←inter_union_diff t s, inter_eq_right.mpr h,
+  rw [← inter_union_diff t s, inter_eq_right.mpr h,
     finprod_mem_union (@disjoint_sdiff_self_right _ s t _) (ht.subset h) (ht.diff _)]
   exact le_mul_right rfl.le
 
 @[to_additive]
 theorem finprod_le_finprod_of_subset' [CanonicallyOrderedMonoid N] (h : s ⊆ t) 
     (ht : (t ∩ mulSupport f).Finite) : ∏ᶠ x ∈ s, f x ≤ ∏ᶠ x ∈ t, f x := by
-  rw [←finprod_mem_inter_mulSupport, ←finprod_mem_inter_mulSupport (s := t)]
+  rw [← finprod_mem_inter_mulSupport, ← finprod_mem_inter_mulSupport (s := t)]
   apply finprod_le_finprod_of_subset (inter_subset_inter_left _ h) ht
 
 @[to_additive] 
 theorem mem_le_finprod [CanonicallyOrderedMonoid N] (ha : a ∈ s) (hs : s.Finite) : 
     f a ≤ ∏ᶠ x ∈ s, f x := by 
-  rw [←finprod_mem_singleton (f := f) (a := a)]
+  rw [← finprod_mem_singleton (f := f) (a := a)]
   exact finprod_le_finprod_of_subset (singleton_subset_iff.2 ha) hs
     
 @[to_additive] 
 theorem mem_le_finprod' [CanonicallyOrderedMonoid N] (ha : a ∈ s) (hs : (s ∩ mulSupport f).Finite) : 
     f a ≤ ∏ᶠ x ∈ s, f x := by 
-  rw [←finprod_mem_singleton (f := f) (a := a)]
+  rw [← finprod_mem_singleton (f := f) (a := a)]
   exact finprod_le_finprod_of_subset' (singleton_subset_iff.2 ha) hs
 
 @[to_additive, simp] 
@@ -88,7 +88,7 @@ theorem finprod_mem_const_eq [CommMonoid N] (s : Set α) (c : N) :
 @[to_additive, simp] 
 theorem finprod_const_eq [CommMonoid N] (ι : Type*) (c : N) :
     ∏ᶠ (_ : ι), c = c ^ (Nat.card ι) := by 
-  rw [←finprod_mem_univ, finprod_mem_const_eq, ncard_univ]
+  rw [← finprod_mem_univ, finprod_mem_const_eq, ncard_univ]
 
 attribute [simp] finsum_mem_const_eq finsum_const_eq
 
@@ -116,14 +116,14 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 --     ∑ᶠ s ∈ c, s.ncard = (⋃₀ c).ncard := by 
 --   suffices h' : ∀ (c' : Set (Set α)) (hc' : c'.PairwiseDisjoint id) (hfin : ∀ s ∈ c', s.Finite)
 --     (hne : ∀ s ∈ c', s.Nonempty), ∑ᶠ s ∈ c', s.ncard = (⋃₀ c').ncard
---   · rw [←finsum_mem_inter_support, h' (c ∩ support ncard) (hc.subset (inter_subset_left _ _)) 
+--   · rw [← finsum_mem_inter_support, h' (c ∩ support ncard) (hc.subset (inter_subset_left _ _)) 
 --       (fun x hx ↦ hfin x hx.1) (fun x ⟨hxc,hx⟩ ↦ ?_ )]
 --     congr
 --     simp_rw [Set.ext_iff, mem_sUnion, mem_inter_iff, mem_support, ne_eq, and_assoc]
 --     refine' fun x ↦ ⟨fun ⟨t, ht, _, hxt⟩ ↦ ⟨t, ht, hxt⟩, fun ⟨t, ht, hxt⟩ ↦ ⟨t, ht, _, hxt⟩⟩
---     rw [ncard_eq_zero (hfin _ ht), ←ne_eq, ←nonempty_iff_ne_empty]
+--     rw [ncard_eq_zero (hfin _ ht), ← ne_eq, ← nonempty_iff_ne_empty]
 --     exact ⟨_, hxt⟩ 
---     rwa [mem_support, ne_eq, ncard_eq_zero (hfin _ hxc), ←ne_eq, ←nonempty_iff_ne_empty] at hx 
+--     rwa [mem_support, ne_eq, ncard_eq_zero (hfin _ hxc), ← ne_eq, ← nonempty_iff_ne_empty] at hx 
 --   intro c' hc' hc'fin hc'ne
 --   obtain (h | h) := c'.finite_or_infinite
 --   · revert hc'fin hc' hc'ne
@@ -141,17 +141,17 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 
 
 --   obtain (h | h) := (c ∩ support ncard).finite_or_infinite
---   · rw [←finsum_mem_inter_support, ← finsum_mem_one_eq, ← finsum_mem_one_eq] 
---   rw [←finsum_mem_one_eq, eq_comm,  ← finsum_mem_inter_support]
+--   · rw [← finsum_mem_inter_support, ← finsum_mem_one_eq, ← finsum_mem_one_eq] 
+--   rw [← finsum_mem_one_eq, eq_comm,  ← finsum_mem_inter_support]
 --   change ∑ᶠ (s ∈ c ∩ support ncard), s.ncard = _
   
 --   obtain (h | h) := (c ∩ support ncard).finite_or_infinite
---   · rw [←finsum_mem_one_eq]
+--   · rw [← finsum_mem_one_eq]
 --     have := @finsum_mem_sUnion (Set α) ℕ _ ncard  
 --     have' := @finsum_mem_sUnion (t := c ∩ support ncard) _ _ ncard
---     rw [←finsum_mem_one_eq]
+--     rw [← finsum_mem_one_eq]
 --   obtain (h | h) := (⋃₀ c).finite_or_infinite
---   rw [←finsum_mem_one_eq, finsum_mem_sUnion hc]
+--   rw [← finsum_mem_one_eq, finsum_mem_sUnion hc]
   
 
 
@@ -164,7 +164,7 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 -- theorem finsum_inter_fiber_eq (hs : s.Finite) (f : ι → α) : 
 --     ∑ᶠ (a : α), (s ∩ f ⁻¹' {a}).ncard = s.ncard := by 
   
---   rw [←finsum_congr (fun a ↦ finsum_mem_one_eq (s ∩ f ⁻¹' {a})), mem_inter_iff, ←finsum_mem_univ]
+--   rw [← finsum_congr (fun a ↦ finsum_mem_one_eq (s ∩ f ⁻¹' {a})), mem_inter_iff, ← finsum_mem_univ]
   
 --   apply @Finite.induction_on _ _ _ hs (by simp)
 
@@ -201,28 +201,28 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 --   rw [finsum_mem_inter_support_eq f s s', finsum_mem_inter_support_eq g s s']
 --   · exact finsum_mem_le_finsum_mem (hf.union hg) 
 --       (fun i hi ↦ h i (Or.elim hi And.left And.left))
---   · rw [hs', ←inter_distrib_left, inter_assoc, 
+--   · rw [hs', ← inter_distrib_left, inter_assoc, 
 --       inter_eq_self_of_subset_right (subset_union_right _ _)]
---   rw [hs', ←inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
+--   rw [hs', ← inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
     
 -- theorem finsum_le_finsum [OrderedAddCommMonoid N] (hf : (support f).Finite) 
 --     (hg : (support g).Finite) (h : ∀ i, f i ≤ g i) : ∑ᶠ i, f i ≤ ∑ᶠ i, g i := by
---   rw [←finsum_mem_univ, ←finsum_mem_univ (f := g)]
+--   rw [← finsum_mem_univ, ← finsum_mem_univ (f := g)]
 --   apply finsum_mem_le_finsum_mem' <;> simpa 
 
     
 --   have := finsum_mem_inter_support_eq f s ((s ∩ support f) \)
 --   convert finsum_mem_le_finsum_mem (f := f) (g := g) (hf.union hg) 
 --       (fun i hi ↦ h i (Or.elim hi And.left And.left)) using 1
---   · rw [←finsum_mem_inter_support_eq, eq_comm, ←finsum_mem_inter_support_eq (s := s)]
---     · rw [←inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
---     rw [←inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
+--   · rw [← finsum_mem_inter_support_eq, eq_comm, ← finsum_mem_inter_support_eq (s := s)]
+--     · rw [← inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
+--     rw [← inter_distrib_left, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)]
   
     
     
     
     
---   rw [←finsum_mem_inter_support_eq f s]
+--   rw [← finsum_mem_inter_support_eq f s]
 
 
 --   · 

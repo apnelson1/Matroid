@@ -28,7 +28,7 @@ theorem tsum_inter_support_eq_tsum_subtype {α β : Type*} {f : α → β} [Topo
 theorem tsum_subtype_eq_tsum_subtype {α β : Type*} {f : α → β} [TopologicalSpace β]
     [AddCommMonoid β] [T2Space β] {s t : Set α} (h : s ∩ f.support = t ∩ f.support) :
     ∑' (x : s), f x = ∑' (x : t), f x := by
-  rw [←tsum_inter_support_eq_tsum_subtype, eq_comm, ←tsum_inter_support_eq_tsum_subtype, h]
+  rw [← tsum_inter_support_eq_tsum_subtype, eq_comm, ← tsum_inter_support_eq_tsum_subtype, h]
 
 namespace ENat
 
@@ -83,11 +83,11 @@ theorem openEmbedding_coe : OpenEmbedding ((↑) : ℕ → ℕ∞) :=
   ⟨embedding_coe, range_coe' ▸ isOpen_Iio⟩
 
 @[simp] theorem isOpen_image_coe (s : Set ℕ) : IsOpen (((↑) : ℕ → ℕ∞) '' s) := by
-  rw [←openEmbedding_coe.open_iff_image_open]; exact trivial
+  rw [← openEmbedding_coe.open_iff_image_open]; exact trivial
 
 theorem isOpen_singleton {x : ℕ∞} (hx : x ≠ ⊤) : IsOpen {x} := by
   lift x to ℕ using hx
-  rw [←image_singleton, ←openEmbedding_coe.open_iff_image_open]
+  rw [← image_singleton, ← openEmbedding_coe.open_iff_image_open]
   exact trivial
 
 @[simp] theorem isOpen_coe_singleton (n : ℕ) : IsOpen {(n : ℕ∞)} :=
@@ -272,22 +272,22 @@ protected theorem tsum_union_disjoint {s t : Set α} (hd : Disjoint s t) :
 
 protected theorem tsum_le_of_subset {s t : Set α} (h : s ⊆ t) :
     ∑' (x : s), f x ≤ ∑' (x : t), f x := by
-  rw [←diff_union_of_subset h, ENat.tsum_union_disjoint disjoint_sdiff_left]
+  rw [← diff_union_of_subset h, ENat.tsum_union_disjoint disjoint_sdiff_left]
   exact le_add_self
 
 protected theorem tsum_le_union (s t : Set α) :
     ∑' (x : ↑(s ∪ t)), f (x : α) ≤ ∑' (x : s), f x + ∑' (x : t), f x := by
-  rw [←diff_union_self, ENat.tsum_union_disjoint disjoint_sdiff_left]
+  rw [← diff_union_self, ENat.tsum_union_disjoint disjoint_sdiff_left]
   exact add_le_add_right (ENat.tsum_le_of_subset (diff_subset _ _)) _
 
 protected theorem tsum_insert {s : Set α} {a : α} (h : a ∉ s) :
     ∑' (x : ↑(insert a s)), f x = f a + ∑' (x : s), f x := by
-  rw [←singleton_union, ENat.tsum_union_disjoint, tsum_singleton]
+  rw [← singleton_union, ENat.tsum_union_disjoint, tsum_singleton]
   rwa [disjoint_singleton_left]
 
 protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
     ∑' a, (f a - g a) = ∑' a, f a - ∑' a, g a := by
-  rw [←WithTop.add_right_cancel_iff hfin, ←ENat.tsum_add,
+  rw [← WithTop.add_right_cancel_iff hfin, ← ENat.tsum_add,
     tsum_congr (fun i ↦ tsub_add_cancel_of_le (h i)), tsub_add_cancel_of_le (ENat.tsum_le_tsum h)]
 
 protected theorem mul_tsum (c : ℕ∞) : c * ∑' a, f a = ∑' a, c * f a := by
@@ -328,7 +328,7 @@ protected theorem tsum_eq_top_iff : ∑' a, f a = ⊤ ↔ f.support.Infinite ∨
   refine' ⟨fun h ↦ _, _⟩
   · rw [or_iff_not_imp_left, not_infinite]
     intro hfin
-    rw [←tsum_support_eq, Finite.tsum_eq_top_iff hfin] at h
+    rw [← tsum_support_eq, Finite.tsum_eq_top_iff hfin] at h
     obtain ⟨a, -, h⟩ := h
     exact ⟨a, h⟩
   rintro (h | h)
@@ -474,7 +474,7 @@ protected theorem tsum_inter_fiber_eq {ι} {s : Set ι} (f : ι → α) :
 
 protected theorem tsum_fiber_eq {ι} (f : ι → α) :
     ∑' (a : α), (f ⁻¹' {a}).encard = (univ : Set ι).encard := by
-  rw [←ENat.tsum_inter_fiber_eq (s := univ) f, tsum_congr]; intro b; rw [univ_inter]
+  rw [← ENat.tsum_inter_fiber_eq (s := univ) f, tsum_congr]; intro b; rw [univ_inter]
 
 end tsum
 

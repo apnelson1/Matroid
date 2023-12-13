@@ -33,7 +33,7 @@ theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ 
     simp [encard_univ]
   obtain ⟨t, hts, hcard⟩ := exists_subset_encard_eq h
   have ht : t.Finite := finite_of_encard_eq_coe hcard
-  rw [←ht.cast_ncard_eq, Nat.cast_inj, ncard_eq_toFinset_card t ht] at hcard
+  rw [← ht.cast_ncard_eq, Nat.cast_inj, ncard_eq_toFinset_card t ht] at hcard
   refine ⟨(Finset.equivFinOfCardEq hcard).symm.toEmbedding.trans ?_ ⟩
   simp only [Finite.mem_toFinset]
   exact embeddingOfSubset t s hts
@@ -95,7 +95,7 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
   rintro x hxi _ hxj rfl
   have hrw : ∀ t : Set α, encard t = encard (t \ {x}) + encard (t ∩ {x})
   · intro t
-    rw [←encard_union_eq, diff_union_inter]
+    rw [← encard_union_eq, diff_union_inter]
     exact disjoint_sdiff_left.mono_right (inter_subset_right _ _)
   rw [hrw, Finset.sum_congr rfl (fun i _ ↦ hrw (s i)), Finset.sum_add_distrib,
     inter_eq_self_of_subset_right (singleton_subset_iff.2 (mem_iUnion_of_mem i hxi)),

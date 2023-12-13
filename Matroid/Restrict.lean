@@ -35,7 +35,7 @@ section restrict
 
     have h_eq := hI'.eq_of_subset_indep hi hss
       (diff_subset_diff_right (subset_union_right _ _))
-    rw [h_eq, ←diff_inter_diff, ←hB.inter_basis_iff_compl_inter_basis_dual] at hI'
+    rw [h_eq, ← diff_inter_diff, ← hB.inter_basis_iff_compl_inter_basis_dual] at hI'
 
     obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset
       (subset_inter hIB (subset_inter hIY hI.subset_ground))
@@ -123,7 +123,7 @@ instance restrict_finitary [Finitary M] (R : Set α) : Finitary (M ↾ R) := by
   (base_restrict_iff h.subset_ground).mpr h
 
 theorem Basis.basis_restrict_of_subset (hI : M.Basis I X) (hXY : X ⊆ Y) : (M ↾ Y).Basis I X := by
-  rwa [←base_restrict_iff, M.restrict_restrict_eq hXY, base_restrict_iff]
+  rwa [← base_restrict_iff, M.restrict_restrict_eq hXY, base_restrict_iff]
 
 theorem basis'_restrict_iff : (M ↾ R).Basis' I X ↔ M.Basis' I (X ∩ R) ∧ I ⊆ R := by
   simp_rw [Basis', mem_maximals_setOf_iff, restrict_indep_iff, subset_inter_iff, and_imp]; tauto
@@ -139,17 +139,17 @@ theorem basis_restrict_iff (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).Basis I X ↔ M.Basis I X ∧ X ⊆ R := by
   rw [basis_restrict_iff', and_congr_left_iff]
   intro hXR
-  rw [←basis'_iff_basis_inter_ground, basis'_iff_basis]
+  rw [← basis'_iff_basis_inter_ground, basis'_iff_basis]
 
 theorem restrict_eq_restrict_iff (M M' : Matroid α) (X : Set α) :
     M ↾ X = M' ↾ X ↔ ∀ I, I ⊆ X → (M.Indep I ↔ M'.Indep I) := by
   refine' ⟨fun h I hIX ↦ _, fun h ↦ eq_of_indep_iff_indep_forall rfl fun I (hI : I ⊆ X) ↦ _⟩
-  · rw [←and_iff_left (a := (M.Indep I)) hIX, ←and_iff_left (a := (M'.Indep I)) hIX,
-      ←restrict_indep_iff, h, restrict_indep_iff]
+  · rw [← and_iff_left (a := (M.Indep I)) hIX, ← and_iff_left (a := (M'.Indep I)) hIX,
+      ← restrict_indep_iff, h, restrict_indep_iff]
   rw [restrict_indep_iff, and_iff_left hI, restrict_indep_iff, and_iff_left hI, h _ hI]
 
 @[simp] theorem restrict_eq_self_iff : M ↾ R = M ↔ R = M.E :=
-  ⟨fun h ↦ by rw [←h]; rfl, fun h ↦ by simp [h]⟩
+  ⟨fun h ↦ by rw [← h]; rfl, fun h ↦ by simp [h]⟩
 
 def Restriction (N M : Matroid α) : Prop := ∃ R ⊆ M.E, N = M ↾ R
 
@@ -276,7 +276,7 @@ section Basis
 
 theorem Basis.transfer (hIX : M.Basis I X) (hJX : M.Basis J X) (hXY : X ⊆ Y) (hJY : M.Basis J Y) :
     M.Basis I Y := by
-  rw [←base_restrict_iff]; rw [← base_restrict_iff] at hJY
+  rw [← base_restrict_iff]; rw [← base_restrict_iff] at hJY
   exact hJY.base_of_basis_superset hJX.subset (hIX.basis_restrict_of_subset hXY)
 
 theorem Basis.basis_of_basis_of_subset_of_subset (hI : M.Basis I X) (hJ : M.Basis J Y) (hJX : J ⊆ X)
@@ -325,7 +325,7 @@ theorem Basis.eq_exchange_of_diff_eq_singleton (hI : M.Basis I X) (hJ : M.Basis 
   rw [← base_restrict_iff] at hI hJ ; exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ
 
 theorem Basis'.card_eq_card (hI : M.Basis' I X) (hJ : M.Basis' J X) : I.encard = J.encard := by
-  rw [←base_restrict_iff'] at hI hJ; exact hI.card_eq_card_of_base hJ
+  rw [← base_restrict_iff'] at hI hJ; exact hI.card_eq_card_of_base hJ
 
 theorem Basis.card_eq_card (hI : M.Basis I X) (hJ : M.Basis J X) : I.encard = J.encard :=
   hI.basis'.card_eq_card hJ.basis'
@@ -338,7 +338,7 @@ theorem Indep.augment (hI : M.Indep I) (hJ : M.Indep J) (hIJ : I.encard < J.enca
       and_imp, dep_iff, insert_subset_iff, and_iff_left hI.subset_ground]
     exact fun e heJ heI ↦ ⟨he e ⟨heJ, heI⟩, hJ.subset_ground heJ⟩
   obtain ⟨J', hJ', hJJ'⟩ := hJ.subset_basis_of_subset (subset_union_right I J)
-  rw [←hJ'.card_eq_card hb] at hIJ
+  rw [← hJ'.card_eq_card hb] at hIJ
   exact hIJ.not_le (encard_mono hJJ')
 
 

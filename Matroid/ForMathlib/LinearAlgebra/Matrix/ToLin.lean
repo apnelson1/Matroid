@@ -30,7 +30,7 @@ variable [CommRing R] {M : Matrix m n R}
 theorem Matrix.range_vecMulLinear {R : Type*} [CommSemiring R] [Fintype m] (M : Matrix m n R) :
     LinearMap.range M.vecMulLinear = span R (range M) := by
   letI := Classical.decEq m
-  simp_rw [range_eq_map, ← iSup_range_stdBasis, Submodule.map_iSup, range_eq_map, ←
+  simp_rw [range_eq_map, ← iSup_range_stdBasis, Submodule.map_iSup, range_eq_map, ← 
     Ideal.span_singleton_one, Ideal.span, Submodule.map_span, image_image, image_singleton,
     Matrix.vecMulLinear_apply', iSup_span, range_eq_iUnion, iUnion_singleton_eq_range]
   simp only [LinearMap.stdBasis, coe_single, single_vecMul, one_mul]
@@ -38,7 +38,7 @@ theorem Matrix.range_vecMulLinear {R : Type*} [CommSemiring R] [Fintype m] (M : 
 
 theorem Matrix.vecMulLinear_injective_iff {R : Type*} [CommRing R] [Fintype m] {M : Matrix m n R} :
     Function.Injective M.vecMulLinear ↔ LinearIndependent R (fun i ↦ M i) := by
-  simp only [←LinearMap.ker_eq_bot, Fintype.linearIndependent_iff, Submodule.eq_bot_iff,
+  simp only [← LinearMap.ker_eq_bot, Fintype.linearIndependent_iff, Submodule.eq_bot_iff,
      LinearMap.mem_ker, vecMulLinear_apply', vecMul_eq_sum]
   aesop
 
@@ -48,6 +48,6 @@ theorem Matrix.ker_mulVecLin_eq_bot_iff' [Fintype n] :
 
 theorem Matrix.mulVecLin_injective_iff [Fintype n] :
     Function.Injective M.mulVecLin ↔ LinearIndependent R (fun i ↦ Mᵀ i) := by
-  rw [←vecMulLinear_transpose, vecMulLinear_injective_iff]
+  rw [← vecMulLinear_transpose, vecMulLinear_injective_iff]
 
 end CommRing

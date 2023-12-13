@@ -28,7 +28,7 @@ theorem rectVandermonde_linearIndependent_rows [Fintype α] {v : α → K} (hv :
 
 theorem rectVandermonde_linearIndependent_cols [Fintype α] {v : α → K} (hv : Injective v)
     (hn : n ≤ Fintype.card α) : LinearIndependent K (rectVandermonde v n).colFun := by
-  rw [←Fintype.card_fin n] at hn
+  rw [← Fintype.card_fin n] at hn
   obtain ⟨g⟩ := Embedding.nonempty_of_card_le hn
   apply cols_linearIndependent_of_submatrix g (Equiv.refl _)
   rw [linearIndependent_cols_iff_isUnit]

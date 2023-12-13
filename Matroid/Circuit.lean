@@ -39,8 +39,8 @@ theorem Circuit.diff_singleton_indep (hC : M.Circuit C) (he : e ∈ C) : M.Indep
   hC.ssubset_indep (diff_singleton_sSubset.2 he)
 
 theorem Circuit.diff_singleton_basis (hC : M.Circuit C) (he : e ∈ C) : M.Basis (C \ {e}) C := by
-  nth_rw 2 [←insert_eq_of_mem he];
-  rw [←insert_diff_singleton, (hC.diff_singleton_indep he).basis_insert_iff,
+  nth_rw 2 [← insert_eq_of_mem he];
+  rw [← insert_diff_singleton, (hC.diff_singleton_indep he).basis_insert_iff,
     insert_diff_singleton, insert_eq_of_mem he]
   exact Or.inl hC.dep
 
@@ -137,7 +137,7 @@ theorem fundCct_subset_ground (heI : e ∈ M.cl I) : M.fundCct e I ⊆ M.E := by
   refine' insert_subset
       ((cl_subset_ground _ _) heI) ((sInter_subset_of_mem _).trans (inter_subset_right I M.E))
   refine' ⟨inter_subset_left _ _, _⟩
-  rwa [← cl_eq_cl_inter_ground]
+  rwa [cl_inter_ground]
 
 theorem fundCct_subset_insert (he : e ∈ M.cl I) : M.fundCct e I ⊆ insert e I :=
   insert_subset_insert (sInter_subset_of_mem ⟨rfl.subset, he⟩)
@@ -184,7 +184,7 @@ theorem Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit 
   obtain ⟨⟨e, he, heX⟩, hXE⟩ := hX
   -- Why doesn't `aesop_mat` work on the next line?
   obtain ⟨I, hI⟩ := M.exists_basis (X \ {e}) ((diff_subset _ _).trans hXE)
-  rw [←hI.cl_eq_cl] at heX
+  rw [← hI.cl_eq_cl] at heX
   exact ⟨_, (fundCct_subset_insert heX).trans
     (insert_subset he (hI.subset.trans (diff_subset _ _))),
     hI.indep.fundCct_circuit ⟨heX, not_mem_subset hI.subset (not_mem_diff_of_mem rfl)⟩⟩
@@ -210,7 +210,7 @@ theorem mem_cl_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
   rw [or_iff_right he]
   refine' ⟨fun h ↦ _, fun ⟨C, hC, heC, hCX⟩ ↦ _⟩
   · obtain ⟨I, hI⟩ := M.exists_basis X
-    rw [←hI.cl_eq_cl] at h
+    rw [← hI.cl_eq_cl] at h
     exact ⟨M.fundCct e I, hI.indep.fundCct_circuit ⟨h, not_mem_subset hI.subset he⟩,
       M.mem_fundCct e I, (fundCct_subset_insert h).trans (insert_subset_insert hI.subset)⟩
   refine' ((hC.subset_cl_diff_singleton e).trans (M.cl_subset_cl _)) heC
@@ -218,7 +218,7 @@ theorem mem_cl_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
 
 theorem mem_cl_iff_exists_circuit_of_not_mem (he : e ∉ X) :
     e ∈ M.cl X ↔ ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ insert e X := by
-  rw [cl_eq_cl_inter_ground, mem_cl_iff_mem_or_exists_circuit, mem_inter_iff, iff_false_intro he,
+  rw [← cl_inter_ground, mem_cl_iff_mem_or_exists_circuit, mem_inter_iff, iff_false_intro he,
     false_and_iff, false_or_iff]
   refine' ⟨
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, h.trans ((insert_subset_insert (inter_subset_left _ _)))⟩,
@@ -307,7 +307,7 @@ theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Ind
   · intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.superset hCI).not_indep hI
   have heC : e ∈ C
   · refine' by_contra fun heC ↦ (hI.subset _).not_dep hC.dep
-    rwa [←singleton_union, ←diff_subset_iff, diff_singleton_eq_self heC] at hCI
+    rwa [← singleton_union, ← diff_subset_iff, diff_singleton_eq_self heC] at hCI
   have he : e ∈ M.cl I
   · rw [mem_cl_iff_exists_circuit_of_not_mem heI]; exact ⟨C, hC, heC, hCI⟩
   by_contra! hne
@@ -350,7 +350,7 @@ theorem coindep_iff_forall_subset_not_cocircuit :
 theorem cocircuit_iff_mem_minimals :
     M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ∀ B, M.Base B → (X ∩ B).Nonempty} := by
   revert K
-  simp_rw [cocircuit_def, circuit_def, ←Set.ext_iff, dep_iff, ←coindep_def, dual_ground,
+  simp_rw [cocircuit_def, circuit_def, ← Set.ext_iff, dep_iff, ← coindep_def, dual_ground,
     coindep_iff_exists', not_and, imp_not_comm (b := (_ ⊆ _)), not_exists, not_and, subset_diff,
     not_and, not_disjoint_iff_nonempty_inter]
   apply (minimals_eq_minimals_of_subset_of_forall _ _).symm
@@ -365,7 +365,7 @@ theorem cocircuit_iff_mem_minimals_compl_nonspanning :
     M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ¬M.Spanning (M.E \ X)} := by
   convert cocircuit_iff_mem_minimals with K
   simp_rw [spanning_iff_superset_base (S := M.E \ K), not_exists, subset_diff, not_and,
-    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp Base.subset_ground,
+    not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp Base.subset_ground,
       inter_comm K]
 
 theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) :
@@ -377,13 +377,13 @@ theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircui
     mem_setOf, not_not] at hK
   have' hKe := hK.2 (y := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
   apply hK.1
-  rw [spanning_iff_ground_subset_cl]; nth_rw 1 [←hKe.cl_eq, diff_diff_eq_sdiff_union]
+  rw [spanning_iff_ground_subset_cl]; nth_rw 1 [← hKe.cl_eq, diff_diff_eq_sdiff_union]
   · refine' (M.cl_subset_cl (subset_union_left _ C)).trans _
-    rw [union_assoc, singleton_union, insert_eq_of_mem heCK.1, ←cl_union_cl_right_eq,
-      ←hC.cl_diff_singleton_eq_cl e, cl_union_cl_right_eq, union_eq_self_of_subset_right]
-    rw [←he, diff_self_inter]
+    rw [union_assoc, singleton_union, insert_eq_of_mem heCK.1, ← cl_union_cl_right_eq,
+      ← hC.cl_diff_singleton_eq_cl e, cl_union_cl_right_eq, union_eq_self_of_subset_right]
+    rw [← he, diff_self_inter]
     exact diff_subset_diff_left hC.subset_ground
-  rw [←he]; exact (inter_subset_left _ _).trans hC.subset_ground
+  rw [← he]; exact (inter_subset_left _ _).trans hC.subset_ground
 
 theorem dual_rkPos_iff_exists_circuit : M﹡.RkPos ↔ ∃ C, M.Circuit C := by
   rw [rkPos_iff_empty_not_base, dual_base_iff, diff_empty, not_iff_comm, not_exists,
@@ -397,7 +397,7 @@ theorem exists_circuit [RkPos M﹡] : ∃ C, M.Circuit C :=
   dual_rkPos_iff_exists_circuit.1 (by assumption)
 
 theorem rk_Pos_iff_exists_cocircuit : M.RkPos ↔ ∃ K, M.Cocircuit K := by
-  rw [←dual_dual M, dual_rkPos_iff_exists_circuit, dual_dual M]
+  rw [← dual_dual M, dual_rkPos_iff_exists_circuit, dual_dual M]
 
 end Dual
 
@@ -548,8 +548,8 @@ section Equiv
 
 variable {β : Type*} {N : Matroid β}
 
-/-- A `LocalEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
-def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+/-- A `PartialEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
+def iso_of_forall_circuit' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
     (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N := by
   apply iso_of_forall_indep e hM hN _ _
@@ -561,13 +561,13 @@ def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.
       apply no_circ _ _ (on_circuit_symm C C_circ)
       rintro i ⟨c, c_C, ec_eq_i⟩
       obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
-      rw [←e_i', e.left_inv] at ec_eq_i
-      rwa [←ec_eq_i]
+      rw [← e_i', e.left_inv] at ec_eq_i
+      rwa [← ec_eq_i]
       rw [hM]
       exact sub_ground i'_I
     · rintro i ⟨c, c_I, c_eq⟩
-      rw [←c_eq, ←hN]
-      rw [←hM] at sub_ground
+      rw [← c_eq, ← hN]
+      rw [← hM] at sub_ground
       exact e.map_source' (sub_ground c_I)
   · intro I
     rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
@@ -577,13 +577,13 @@ def iso_of_forall_circuit' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.
       apply no_circ _ _ (on_circuit C C_circ)
       rintro i ⟨c, c_C, ec_eq_i⟩
       obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
-      rw [←e_i', e.right_inv] at ec_eq_i
-      rwa [←ec_eq_i]
+      rw [← e_i', e.right_inv] at ec_eq_i
+      rwa [← ec_eq_i]
       rw [hN]
       exact sub_ground i'_I
     · rintro i ⟨c, c_I, c_eq⟩
-      rw [←c_eq, ←hM]
-      rw [←hN] at sub_ground
+      rw [← c_eq, ← hM]
+      rw [← hN] at sub_ground
       exact e.map_target' (sub_ground c_I)
 end Equiv
 
@@ -625,7 +625,7 @@ end Matroid
 -- --       ((diff_subset _ _).trans (insert_subset.mpr ⟨or.inl heI,hKIJ⟩)),
 -- --     have hTcard : T.ncard = K.ncard, by rw [hT, ncard_exchange' heK hfK],
 -- --     have hITcard : (I \ T).ncard < (I \ K).ncard,
--- --     { rw [nat.lt_iff_add_one_le, hT, ←insert_diff_singleton_comm hef, ←union_singleton, ←diff_diff,
+-- --     { rw [nat.lt_iff_add_one_le, hT, ← insert_diff_singleton_comm hef, ← union_singleton, ← diff_diff,
 -- --         ncard_diff_singleton_add_one ],
 -- --       { convert rfl.le using 2,
 -- --         rw [diff_eq_compl_inter, diff_eq_compl_inter, diff_eq_compl_inter, compl_inter,
@@ -648,7 +648,7 @@ end Matroid
 -- --   obtain ⟨g', hg', hg'KI⟩ := hg_ex,
 -- --   obtain ⟨Cg', hCg'ss, hCg', hgCg', heCg'⟩ := hCf g' hg'KI,
 -- --   have hne : Cg ≠ Cg',
--- --   { intro heq, rw ←heq at hgCg', exact hgCg' hg', },
+-- --   { intro heq, rw ← heq at hgCg', exact hgCg' hg', },
 -- --   obtain ⟨C, hCss, hC⟩ := elimination _ _ e hCg hCg' hne ⟨heCg, heCg'⟩,
 -- --   refine hK C (hCss.trans _) hC,
 -- --   rw [diff_subset_iff, singleton_union],

@@ -21,7 +21,7 @@ open Set BigOperators Submodule Function
 
 @[simp] theorem Module.Dual.sum_update [Field R] [Fintype α] [DecidableEq α]
   (y : Module.Dual R (α → R)) (x : α → R) : ∑ i, y (Function.update 0 i 1) * x i = y x := by
-  rw [←LinearMap.congr_fun ((Pi.basisFun R α).sum_dual_apply_smul_coord y) x]
+  rw [← LinearMap.congr_fun ((Pi.basisFun R α).sum_dual_apply_smul_coord y) x]
   simp [LinearMap.stdBasis_apply]
 
 @[simp] theorem Module.Dual.sum_pi_single [Field R] [Fintype α] [DecidableEq α]
@@ -330,7 +330,7 @@ variable {K : Type*} [Field K] [Fintype η] {U V : Subspace K (η → K)}
     simpa [mul_comm] using hy x hxU
 
   rw [orthSpace_eq, orthSpace_eq, LinearEquiv.finrank_map_eq', LinearEquiv.dualAnnihilator_map_eq,
-    LinearEquiv.finrank_map_eq', ←Subspace.finrank_dualCoannihilator_eq,
+    LinearEquiv.finrank_map_eq', ← Subspace.finrank_dualCoannihilator_eq,
     Subspace.dualAnnihilator_dualCoannihilator_eq]
 
 theorem orthSpace_injective (η K : Type*) [Fintype η] [Field K] :
@@ -356,7 +356,7 @@ noncomputable def orthSpace_orderIso (η K : Type*) [Fintype η] [Field K] :
     map_rel_iff' := (by
       refine fun {U} {V} ↦ ⟨fun (h : V.orthSpace ≤ U.orthSpace) x hx ↦ ?_,
         fun h ↦ fun x hx ↦ mem_orthSpace_iff.2 fun y hyU ↦ mem_orthSpace_iff.1 hx y <| h hyU⟩
-      rw [←orthSpace_orthSpace V, mem_orthSpace_iff]
+      rw [← orthSpace_orthSpace V, mem_orthSpace_iff]
       intro y hy
       have hdp := (mem_orthSpace_iff.1 <| h hy) _ hx
       rwa [Matrix.dotProduct_comm] at hdp )
@@ -502,7 +502,7 @@ theorem Set.Finite.relOrthSpace_relOrthSpace {s : Set ι} (hs : s.Finite) (U : S
 --     refine ⟨fun a ha ↦ ?_, ?_⟩
 --     · convert hy a ha
 --       have hss : y.support ⊆ s.toFinset
---       · rwa [Set.subset_toFinset, ←Finsupp.fun_support_eq]
+--       · rwa [Set.subset_toFinset, ← Finsupp.fun_support_eq]
 --       rw [Finsupp.total_apply, Finsupp.sum, Finset.sum_subset hss (by aesop)]
 --       · simp_rw [(show ∀ i : s, a (incl s i) = a i from fun _↦ rfl)]
 --         exact Finset.sum_set_coe (s := s) (f := fun x ↦ y x * a x)

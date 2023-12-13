@@ -50,7 +50,7 @@ def preimage_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α whe
     simp only [mem_maximals_iff, mem_setOf_eq, hJ.1.1.1, hbj.injOn, and_self, hIJ₀,
       hJ₀X, and_imp, true_and]
     intro K hK hinj hIK hKX hJ₀K
-    rw [←hinj.image_eq_image_iff_of_subset hJ₀K Subset.rfl,
+    rw [← hinj.image_eq_image_iff_of_subset hJ₀K Subset.rfl,
        hJ.2 hK (image_subset_range _ _) (fun e he ↦ ⟨e, hIK he, rfl⟩)
        (image_subset _ hKX) (image_subset _ hJ₀K)]
   subset_ground I hI e heI := hI.1.subset_ground ⟨e, heI, rfl⟩
@@ -87,8 +87,8 @@ theorem preimage_indep_off_of_injective (M : Matroid β) (hf : f.Injective) :
 noncomputable def preimage_iso [Nonempty α] {M : Matroid β} (hf : f.Injective)
     (hfE : range f = M.E) : Iso (M.preimage f) M :=
     Iso.of_forall_indep
-      (hf.injOn univ).toLocalEquiv (by simp [← hfE]) (by simpa)
-      ( by simp [←hfE, hf.injOn _] )
+      (hf.injOn univ).toPartialEquiv (by simp [← hfE]) (by simpa)
+      ( by simp [← hfE, hf.injOn _] )
 
 @[simp] theorem preimage_iso_coeFun [Nonempty α] {M : Matroid β} (hf : f.Injective)
     (hfE : range f = M.E) : (preimage_iso hf hfE : α → β) = fun x ↦ f x := rfl
@@ -108,19 +108,19 @@ def preimageOn (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := (M.
 noncomputable def iso_preimageOn [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
     (hf : BijOn f E M.E) : Iso (M.preimageOn E f) M :=
   Iso.of_forall_indep
-  hf.toLocalEquiv
-  ( by rw [BijOn.toLocalEquiv_source, preimageOn_ground_eq] )
-  hf.toLocalEquiv_target
+  hf.toPartialEquiv
+  ( by rw [BijOn.toPartialEquiv_source, preimageOn_ground_eq] )
+  hf.toPartialEquiv_target
   ( by
-    simp only [preimageOn_ground_eq, preimageOn_indep_iff, BijOn.toLocalEquiv_apply,
+    simp only [preimageOn_ground_eq, preimageOn_indep_iff, BijOn.toPartialEquiv_apply,
       and_iff_left_iff_imp]
     exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
 
 theorem Iso.eq_preimage {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.preimageOn M.E e := by
   simp only [eq_iff_indep_iff_indep_forall, preimageOn_ground_eq, preimageOn_indep_iff, true_and]
   intro I hIE
-  rw [and_iff_left hIE, ←e.on_indep_iff, iff_self_and]
-  exact fun _ ↦ e.toLocalEquiv.bijOn.injOn.mono (by simpa)
+  rw [and_iff_left hIE, ← e.on_indep_iff, iff_self_and]
+  exact fun _ ↦ e.toPartialEquiv.bijOn.injOn.mono (by simpa)
 
 section Image
 
@@ -193,9 +193,9 @@ def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
 /-- `M` is isomorphic to its image -/
 noncomputable def iso_image [Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     Iso M (M.image f hf)  :=
-  Iso.of_forall_indep hf.toLocalEquiv ( by simp ) ( by simp )
+  Iso.of_forall_indep hf.toPartialEquiv ( by simp ) ( by simp )
   ( by
-    simp only [InjOn.toLocalEquiv, BijOn.toLocalEquiv_apply, image_indep_iff]
+    simp only [InjOn.toPartialEquiv, BijOn.toPartialEquiv_apply, image_indep_iff]
     refine fun I hIE ↦ ⟨fun hI ↦ ⟨I, hI, rfl⟩, fun ⟨I₀, hI₀, (h_eq : f '' _ = _)⟩ ↦ ?_⟩
     rw [hf.image_eq_image_iff_of_subset hIE hI₀.subset_ground] at h_eq
     rwa [h_eq] )
@@ -215,11 +215,11 @@ theorem onGround_ground (hX : X ⊆ M.E) : (M.onGround X).E = univ := by
 
 noncomputable def iso_onGround' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onGround X) (M ↾ X) :=
   have _ := nonempty_coe_sort.2 hne
-  Iso.of_forall_indep (Subtype.coe_injective.injOn univ).toLocalEquiv
+  Iso.of_forall_indep (Subtype.coe_injective.injOn univ).toPartialEquiv
     (by simp [onGround_ground hX]) (by simp)
   ( by
-    simp only [onGround_ground hX, subset_univ, InjOn.toLocalEquiv, image_univ,
-      Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toLocalEquiv_apply, restrict_indep_iff,
+    simp only [onGround_ground hX, subset_univ, InjOn.toPartialEquiv, image_univ,
+      Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toPartialEquiv_apply, restrict_indep_iff,
       image_subset_iff, Subtype.coe_preimage_self, and_true, forall_true_left]
     simp only [onGround._eq_1, preimage_indep_iff, and_iff_left_iff_imp]
     intro I
@@ -227,7 +227,7 @@ noncomputable def iso_onGround' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onG
 
 noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso M (M.onGround E) := by
   have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
-  exact (preimage_iso Subtype.val_injective (by rw [Subtype.range_val, ←hE])).symm
+  exact (preimage_iso Subtype.val_injective (by rw [Subtype.range_val, ← hE])).symm
 
 theorem isIso_onGround (M : Matroid α) (hE : M.E = E) : M ≅ M.onGround E := by
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty

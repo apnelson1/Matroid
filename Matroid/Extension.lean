@@ -249,7 +249,7 @@ theorem parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     rw [or_iff_right (show C ≠ {e,f} by rintro rfl; exact heC (Or.inl rfl)), and_iff_right heC,
       i.on_circuit_iff, circuit_iff_delete_of_disjoint (disjoint_singleton_right.2 hfC'),
       ← deleteElem, parallelExtend_delete_eq _ hf, parallel_swap_apply, parallelExtend_ground,
-      LocalEquiv.restr_coe, Equiv.toLocalEquiv_apply, Equiv.swap_comm,
+      PartialEquiv.restr_coe, Equiv.toPartialEquiv_apply, Equiv.swap_comm,
       Equiv.swap_image_eq_exchange hfC heC]
 
   refine iff_of_false (fun hC ↦ hnss hC.subset_ground) ?_
@@ -357,7 +357,7 @@ theorem seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
 theorem eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.Coloop e) (hf : f ∉ M.E) :
     M' = M.seriesExtend e f ↔ M'.Series e f ∧ M' ⧸ f = M := by
   rw [seriesExtend, eq_dual_comm, eq_comm, eq_parallelExtend_iff _ (show f ∉ M﹡.E from hf),
-    deleteElem, ← contract_dual_eq_dual_delete, ← contract_elem, dual_inj_iff, Series]
+    deleteElem, ← contract_dual_eq_dual_delete, ← contract_elem, dual_inj, Series]
   rwa [Nonloop, and_iff_left (show e ∈ M﹡.E from heE), dual_loop_iff_coloop]
 
 instance seriesExtend_finite (M : Matroid α) [M.Finite] : (M.seriesExtend e f).Finite :=

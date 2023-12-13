@@ -59,7 +59,7 @@ theorem Nonloop.parallel_iff_cl_eq_cl (he : M.Nonloop e) :
     (M.cl_flat ∅).rel_covbyPartition_iff' ⟨he.mem_ground, he.not_loop⟩]; simp
 
 theorem Parallel.mem_cl (h : M.Parallel e f) : e ∈ M.cl {f} := by
-  rw [←h.cl_eq_cl]; exact mem_cl_of_mem' _ rfl
+  rw [← h.cl_eq_cl]; exact mem_cl_of_mem' _ rfl
 
 theorem Parallel.parallel_iff_left (h : M.Parallel e f) {x : α} :
     M.Parallel x e ↔ M.Parallel x f :=
@@ -102,7 +102,7 @@ theorem Loopless.parallel_class_eq_cl (h : M.Loopless) (e : α) :
   rw [setOf_parallel_eq_cl_diff_loops, h.cl_empty, diff_empty]
 
 theorem Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := by
-  rw [pair_comm, ←h.nonloop_left.indep.mem_cl_iff_of_not_mem hne.symm]; exact h.symm.mem_cl
+  rw [pair_comm, ← h.nonloop_left.indep.mem_cl_iff_of_not_mem hne.symm]; exact h.symm.mem_cl
 
 theorem parallel_iff_circuit (hef : e ≠ f) : M.Parallel e f ↔ M.Circuit {e,f} := by
   refine' ⟨fun h ↦ circuit_iff_dep_forall_diff_singleton_indep.2 ⟨h.dep_of_ne hef,_⟩, fun h ↦ _⟩
@@ -120,7 +120,7 @@ theorem Parallel.circuit_of_ne (hef : M.Parallel e f) (hne : e ≠ f) : M.Circui
 
 theorem Nonloop.parallel_iff_dep (he : M.Nonloop e) (hf : M.Nonloop f) (hef : e ≠ f) :
     M.Parallel e f ↔ M.Dep {e,f} := by
-  rw [←hf.indep.mem_cl_iff_of_not_mem hef, he.parallel_iff_mem_cl]
+  rw [← hf.indep.mem_cl_iff_of_not_mem hef, he.parallel_iff_mem_cl]
 
 theorem Parallel.eq_of_indep (h : M.Parallel e f) (hi : M.Indep {e,f}) : e = f := by
   by_contra hef
@@ -203,9 +203,9 @@ theorem indep_image_iff_of_injOn_parallelMap {φ : α → α} (hφ : InjOn φ I)
     (h : ∀ e ∈ I, M.Parallel e (φ e)) : M.Indep (φ '' I) ↔ M.Indep I :=
   ⟨fun hI ↦ hI.of_parallelMap hφ h, fun hi ↦ hi.parallelMap h⟩
 
-/-- A LocalEquiv from `X ⊆ M.E` to `Y` that maps loops to loops and nonloops to
+/-- A PartialEquiv from `X ⊆ M.E` to `Y` that maps loops to loops and nonloops to
   parallel copies on a set `X` gives an isomorphism from `M ↾ X` to `M ↾ Y` -/
-def isoOfMapParallelRestr {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E) (π : LocalEquiv α α)
+def isoOfMapParallelRestr {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E) (π : PartialEquiv α α)
   (hX : π.source = X) (hY : π.target = Y) (hLoop : ∀ e ∈ X, M.Loop e → M.Loop (π e))
   (hPara : ∀ e ∈ X, M.Nonloop e → M.Parallel e (π e)) : (M ↾ X).Iso (M ↾ Y) :=
   iso_of_forall_indep' π (by simpa) (by simpa)
@@ -219,12 +219,12 @@ def isoOfMapParallelRestr {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E) (π 
     rw [Nonloop, and_iff_left ((hI.trans hXE) heI)]
     exact fun hl ↦ (hi.nonloop_of_mem (mem_image_of_mem π heI)).not_loop (hLoop _ (hI heI) hl) )
 
-@[simp] theorem isoOfMapParallelRestr_toLocalEquiv {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E)
-    (π : LocalEquiv α α) (hX : π.source = X) (hY : π.target = Y)
+@[simp] theorem isoOfMapParallelRestr_toPartialEquiv {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E)
+    (π : PartialEquiv α α) (hX : π.source = X) (hY : π.target = Y)
     (hLoop : ∀ e ∈ X, M.Loop e → M.Loop (π e)) (hPara : ∀ e ∈ X, M.Nonloop e → M.Parallel e (π e)) :
-    (isoOfMapParallelRestr X Y hXE π hX hY hLoop hPara).toLocalEquiv = π := rfl
+    (isoOfMapParallelRestr X Y hXE π hX hY hLoop hPara).toPartialEquiv = π := rfl
 
-def isoOfMapParallel (M : Matroid α) (π : LocalEquiv α α) (h_source : π.source = M.E)
+def isoOfMapParallel (M : Matroid α) (π : PartialEquiv α α) (h_source : π.source = M.E)
     (h_target : π.target = M.E) (hLoop : ∀ {e}, M.Loop e → M.Loop (π e))
     (hPara : ∀ {e}, M.Nonloop e → M.Parallel e (π e)) : M.Iso M :=
   let π := isoOfMapParallelRestr M.E M.E Subset.rfl π h_source h_target
@@ -232,31 +232,31 @@ def isoOfMapParallel (M : Matroid α) (π : LocalEquiv α α) (h_source : π.sou
   let ψ := Iso.ofEq M.restrict_ground_eq_self
   (ψ.symm.trans π).trans ψ
 
-@[simp] theorem isoOfMapParallel_toLocalEquiv (M : Matroid α) (π : LocalEquiv α α)
+@[simp] theorem isoOfMapParallel_toPartialEquiv (M : Matroid α) (π : PartialEquiv α α)
     (h_source : π.source = M.E) (h_target : π.target = M.E) (hLoop : ∀ {e}, M.Loop e → M.Loop (π e))
     (hPara : ∀ {e}, M.Nonloop e → M.Parallel e (π e)) :
-    (isoOfMapParallel M π h_source h_target hLoop hPara).toLocalEquiv = π := by
-  simp only [isoOfMapParallel, Iso.trans_toLocalEquiv, Iso.symm_toLocalEquiv, Iso.ofEq_toLocalEquiv,
-    restrict_ground_eq_self, LocalEquiv.ofSet_symm, isoOfMapParallelRestr_toLocalEquiv]
+    (isoOfMapParallel M π h_source h_target hLoop hPara).toPartialEquiv = π := by
+  simp only [isoOfMapParallel, Iso.trans_toPartialEquiv, Iso.symm_toPartialEquiv, Iso.ofEq_toPartialEquiv,
+    restrict_ground_eq_self, PartialEquiv.ofSet_symm, isoOfMapParallelRestr_toPartialEquiv]
   ext x
   · simp
   · simp
-  simp only [← h_source, LocalEquiv.trans_source, LocalEquiv.ofSet_source, LocalEquiv.ofSet_coe,
-    preimage_id_eq, id_eq, inter_self, LocalEquiv.coe_trans, Function.comp.right_id, mem_inter_iff,
+  simp only [← h_source, PartialEquiv.trans_source, PartialEquiv.ofSet_source, PartialEquiv.ofSet_coe,
+    preimage_id_eq, id_eq, inter_self, PartialEquiv.coe_trans, Function.comp.right_id, mem_inter_iff,
     mem_preimage, and_iff_left_iff_imp]
   intro hx
   rw [h_source, ← h_target]
-  exact LocalEquiv.map_source π hx
+  exact PartialEquiv.map_source π hx
 
 /-- Swapping two parallel elements gives an automorphism -/
 def Parallel.swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Parallel e f) : Iso M M :=
-  iso_of_forall_indep' ((Equiv.swap e f).toLocalEquiv.restr M.E) (by simp)
+  iso_of_forall_indep' ((Equiv.swap e f).toPartialEquiv.restr M.E) (by simp)
   ( by
-    simp only [LocalEquiv.restr_target, Equiv.toLocalEquiv_target, Equiv.toLocalEquiv_symm_apply,
+    simp only [PartialEquiv.restr_target, Equiv.toPartialEquiv_target, Equiv.toPartialEquiv_symm_apply,
       Equiv.symm_swap, univ_inter, preimage_equiv_eq_image_symm]
     exact Equiv.swap_image_eq_self (iff_of_true h_para.mem_ground_left h_para.mem_ground_right))
   ( by
-    simp only [LocalEquiv.restr_coe, Equiv.toLocalEquiv_apply]
+    simp only [PartialEquiv.restr_coe, Equiv.toPartialEquiv_apply]
     intro I _
     by_cases hef : e ∈ I ↔ f ∈ I
     · rw [Equiv.swap_image_eq_self hef]
@@ -267,7 +267,7 @@ def Parallel.swap [DecidableEq α] {M : Matroid α} {e f : α} (h_para : M.Paral
     rw [Equiv.swap_image_eq_exchange hef.1 hef.2, h_para.indep_substitute_iff hef.1 hef.2] )
 
 @[simp] theorem parallel_swap_apply [DecidableEq α] (h_para : M.Parallel e f) :
-    (Parallel.swap h_para).toLocalEquiv = (Equiv.swap e f).toLocalEquiv.restr M.E := rfl
+    (Parallel.swap h_para).toPartialEquiv = (Equiv.swap e f).toPartialEquiv.restr M.E := rfl
 
 @[simp] theorem restrict_parallel_iff {R : Set α} :
     (M ↾ R).Parallel e f ↔ M.Parallel e f ∧ e ∈ R ∧ f ∈ R := by
@@ -401,18 +401,18 @@ theorem cl_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {
   exact cl_singleton_eq he
 
 theorem singleton_flat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Flat {e} := by
-  rw [←cl_singleton_eq]; apply cl_flat
+  rw [← cl_singleton_eq]; apply cl_flat
 
 theorem pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := by aesop_mat) :
     M.Indep {e,f} := by
   obtain (rfl | hne) := eq_or_ne e f
   · rw [pair_eq_singleton, indep_singleton]; exact toNonloop he
-  rwa [←not_dep_iff, ←(toNonloop he).parallel_iff_dep (toNonloop hf) hne, parallel_iff_eq he]
+  rwa [← not_dep_iff, ← (toNonloop he).parallel_iff_dep (toNonloop hf) hne, parallel_iff_eq he]
 
 theorem indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
-  rw [le_iff_lt_or_eq, encard_eq_two, ←ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
+  rw [le_iff_lt_or_eq, encard_eq_two, ← ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
     WithTop.add_le_add_iff_right, encard_le_one_iff_eq] at h
   · obtain (rfl | ⟨x, rfl⟩) | ⟨x, y, -, rfl⟩ := h
     · exact M.empty_indep
@@ -463,10 +463,10 @@ theorem simple_iff_forall_parallel_class [Loopless M] :
   <;> rintro x (rfl | rfl) <;> assumption
 
 instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
-  rw [←trivialOn_eq_freeOn, simple_trivialOn_iff]
+  rw [← trivialOn_eq_freeOn, simple_trivialOn_iff]
 
 @[simp] theorem simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
-  rw [←trivialOn_eq_loopyOn, simple_trivialOn_iff, subset_empty_iff]
+  rw [← trivialOn_eq_loopyOn, simple_trivialOn_iff, subset_empty_iff]
 
 theorem Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
   simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
@@ -694,7 +694,7 @@ noncomputable def simplificationWrt_iso {c c' : α → α} (hc : M.ParallelChoic
     apply hc₂.parallel_of_apply_eq
     · rwa [hc₁.nonloop_apply_iff]
     rw [hc₂.idem]
-  let π : LocalEquiv α α := {
+  let π : PartialEquiv α α := {
     toFun := c'
     invFun := c
     source := c '' L

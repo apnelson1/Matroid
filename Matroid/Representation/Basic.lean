@@ -54,7 +54,7 @@ theorem Rep.injOn_of_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn v I :=
   injOn_iff_injective.2 ((v.onIndep hI).injective)
 
 theorem Rep.indep_image (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (v '' I).incl := by
-  rw [←linearIndependent_image <| v.injOn_of_indep hI]
+  rw [← linearIndependent_image <| v.injOn_of_indep hI]
   exact v.onIndep hI
 
 theorem Rep.indep_iff_image_of_inj (v : M.Rep 𝔽 W) (h_inj : InjOn v I) :
@@ -87,7 +87,7 @@ def rep_of_ground (f : α → W) (h_support : support f ⊆ M.E)
     intro I
     obtain (hI | hI) := em (I ⊆ M.E)
     · rw [hf hI]
-    rw [←not_iff_not, iff_true_left (fun hi ↦ hI hi.subset_ground)]
+    rw [← not_iff_not, iff_true_left (fun hi ↦ hI hi.subset_ground)]
     intro h_ind
     obtain ⟨e, heI, heE⟩ := not_subset.1 hI
     have h0 := h_ind.ne_zero ⟨e, heI⟩
@@ -104,7 +104,7 @@ noncomputable def repOfSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
   ( by aesop )
   ( by
     intro I hI
-    rw [←Subtype.range_val (s := M.E), subset_range_iff_exists_image_eq] at hI
+    rw [← Subtype.range_val (s := M.E), subset_range_iff_exists_image_eq] at hI
     obtain ⟨I, rfl⟩ := hI
     rw [hf]
     apply linearIndependent_equiv' <| Equiv.Set.image _ _ Subtype.val_injective
@@ -219,7 +219,7 @@ def Rep.preimage {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.preima
 def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
   rep_of_ground v
   ( v.support_subset_ground.trans_eq (congr_arg _ h) )
-  ( by intro I _; rw [←h, v.indep_iff] )
+  ( by intro I _; rw [← h, v.indep_iff] )
 
 @[simp] theorem Rep.ofEq_apply {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) :
   (v.ofEq h : α → W) = v := rfl
@@ -249,14 +249,14 @@ def indepMatroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α 
       have hIinj : InjOn v I := by rw [injOn_iff_injective]; exact hI.injective
       have h : ¬ (v '' J ⊆ span 𝔽 (v '' I))
       · refine fun hle ↦ hcard.not_le ?_
-        rw [←span_le, ←range_restrict, ←range_restrict] at hle
+        rw [← span_le, ← range_restrict, ← range_restrict] at hle
         have _ := hIfin.fintype; have _ := hJfin.fintype
         have _ : FiniteDimensional 𝔽 (span 𝔽 (Set.range (I.restrict v)))
         · apply FiniteDimensional.span_of_finite; simpa using hIfin.image v
 
         convert finrank_le_finrank_of_le hle
         <;> rw [finrank_span_eq_card (by assumption),
-          ←Nat.card_coe_set_eq, Nat.card_eq_fintype_card]
+          ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card]
 
       obtain ⟨_, ⟨e, he, rfl⟩, heI⟩ := not_subset.1 h
       have' heI' : v e ∉ v '' I := fun h ↦ heI (Submodule.subset_span h)
@@ -265,8 +265,8 @@ def indepMatroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α 
       simp only
       have hi : LinearIndependent 𝔽 (v '' I).incl := (linearIndependent_image hIinj).1 hI
       have h_end : LinearIndependent 𝔽 (incl _) := hi.insert heI
-      rwa [←image_insert_eq,
-        ←linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end)
+      rwa [← image_insert_eq,
+        ← linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end)
     (indep_compact := by
       refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
       have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
@@ -346,7 +346,7 @@ def matroidOfSubtypeFun {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
       ↔ ∃ (I₀ : Set E), LinearIndependent 𝔽 (I₀.restrict f) ∧ I = (↑) '' I₀ := by
   simp only [matroidOfSubtypeFun, matroidOfFun._eq_1, restrict_indep_iff, matroidOnUnivOfFun_apply]
   refine ⟨fun ⟨h,hIE⟩ ↦ ?_, ?_⟩
-  · rw [←Subtype.range_val (s := E), subset_range_iff_exists_image_eq] at hIE
+  · rw [← Subtype.range_val (s := E), subset_range_iff_exists_image_eq] at hIE
     obtain ⟨I₀, rfl⟩ := hIE
     refine ⟨_, ?_, rfl⟩
     convert h.comp (imageFactorization Subtype.val I₀) _
@@ -369,7 +369,7 @@ noncomputable def repOfFun' (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α 
     (matroidOfFun 𝔽 f E).Rep 𝔽 W where
   to_fun := indicator E f
   valid' := ( by
-    rw [←matroidOfFun_indicator_eq, IsRep]
+    rw [← matroidOfFun_indicator_eq, IsRep]
     intro I
     rw [matroidOfFun_indep_iff _ _ _ support_indicator_subset] )
 
@@ -405,7 +405,7 @@ theorem Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v 
     (LinearIndependent.insert ?_ h')
 
 
-  · rw [←image_insert_eq, ←v.indep_iff_image_of_inj] at hind
+  · rw [← image_insert_eq, ← v.indep_iff_image_of_inj] at hind
     · exact heB (hB.mem_of_insert_indep hind)
     rw [injOn_insert heB, and_iff_right (v.injOn_of_indep hB.indep)]
     exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
@@ -452,11 +452,11 @@ theorem Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) :
 /-- A base of `M` gives a linear basis in a full-rank representation -/
 noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.Base B) :
     _root_.Basis B 𝔽 W :=
-  Basis.mk (v.onIndep hB.indep) ( by rw [←h.span_range, v.span_range_eq_span_base hB] )
+  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, v.span_range_eq_span_base hB] )
 
 theorem Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
     (v.mapEquiv ψ).FullRank := by
-  rw [Rep.fullRank_iff, Rep.mapEquiv, map', map, ←Rep.to_fun_eq_coe]
+  rw [Rep.fullRank_iff, Rep.mapEquiv, map', map, ← Rep.to_fun_eq_coe]
   simp [LinearEquiv.coe_coe, range_comp, h.span_range]
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
@@ -580,7 +580,7 @@ theorem Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
   have _ := hB.finite.fintype
   obtain ⟨v, hv⟩ := h.exists_standardRep hB
   have hcard := hB.ncard
-  rw [←Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
+  rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
   use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
   exact hv.mapEquiv _
 
@@ -641,20 +641,20 @@ theorem Rep.subset_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) : v '' X �
 theorem Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
   refine le_antisymm ?_ (span_mono (image_subset v <| inter_subset_left _ _))
-  rw [←span_insert_zero (s := v '' (X ∩ M.E)), ←inter_union_diff X M.E, image_union,
+  rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
     inter_union_diff]
   apply span_mono (union_subset (subset_insert _ _) _)
   rintro _ ⟨e, he, rfl⟩
   left
-  rw [←nmem_support]
+  rw [← nmem_support]
   exact not_mem_subset v.support_subset_ground he.2
 
 @[simp] theorem Rep.span_eq_span_cl (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' M.cl X) = span 𝔽 (v '' X) := by
-  rw [v.span_eq_span_inter_ground X, cl_eq_cl_inter_ground, le_antisymm_iff,
+  rw [v.span_eq_span_inter_ground X, ← cl_inter_ground, le_antisymm_iff,
     and_iff_left (span_mono (image_subset _ (M.subset_cl _)))]
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  rw [←hI.cl_eq_cl]
+  rw [← hI.cl_eq_cl]
   exact (span_mono <| v.subset_span_of_basis hI.indep.basis_cl).trans <|
     span_le.2 (span_mono (image_subset _ hI.subset))
 
@@ -670,7 +670,7 @@ theorem Rep.span_le_span_of_cl_subset_cl (v : M.Rep 𝔽 W) (h : M.cl X ⊆ M.cl
     span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   refine span_le.2 <| (v.subset_span_of_basis' hI).trans <| span_le.2 ?_
-  rw [←v.span_eq_span_cl]
+  rw [← v.span_eq_span_cl]
   exact (image_subset _ (hI.basis_cl_right.subset.trans h)).trans subset_span
 
 theorem Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
@@ -680,8 +680,8 @@ theorem Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) 
   refine ⟨fun h e heX ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_basis' Y
     -- have hsp := h (mem_image_of_mem _ heX)
-    rw [←v.span_eq_span_of_basis' hI] at h
-    rw [←hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
+    rw [← v.span_eq_span_of_basis' hI] at h
+    rw [← hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
 
     specialize h (mem_image_of_mem _ heX)
     refine fun hi ↦ by_contra fun heI ↦ ?_
@@ -689,16 +689,16 @@ theorem Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) 
     rw [image_insert_eq, linearIndependent_insert] at hind
     · exact (hind.2 h).elim
     refine fun heI' ↦ heI ?_
-    rwa [←(v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
-  rw [←v.span_eq_span_cl]
+    rwa [← (v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
+  rw [← v.span_eq_span_cl]
   exact (image_subset v h).trans subset_span
 
 
 -- Ugly proof in the second part
 theorem Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (span 𝔽 (v '' X)) := by
   obtain ⟨I, hI⟩ := M.exists_basis' (X)
-  rw [←hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _),
-    ←image_subset_iff, and_iff_left]
+  rw [← hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _),
+    ← image_subset_iff, and_iff_left]
   · exact (v.subset_span_of_basis hI.indep.basis_cl).trans (span_mono (image_subset _ hI.subset))
   rintro x ⟨hxE, hx⟩
   rw [mem_preimage] at hx
@@ -719,10 +719,10 @@ theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
   rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
   simp_rw [le_antisymm_iff, span_le, v.subset_span_iff (inter_subset_right _ _),
-    ←cl_eq_cl_inter_ground]
+    cl_inter_ground]
   constructor
-  · rw [←h, cl_eq_cl_inter_ground]; exact subset_cl _ _
-  rw [h, cl_eq_cl_inter_ground]
+  · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
+  rw [h, ← cl_inter_ground]
   exact subset_cl _ _
 
 section Minor
@@ -770,7 +770,7 @@ section Simple
 
 theorem Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
     v e = 0 ↔ M.Loop e := by
-  rw [←singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
+  rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
   simp only [default_coe_singleton, Set.restrict_apply, ne_eq, not_not]
 
 theorem Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
@@ -781,7 +781,7 @@ theorem Rep.ne_zero_of_nonloop (v : M.Rep 𝔽 W) (h : M.Nonloop e) : v e ≠ 0 
 
 theorem Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
     v e ≠ 0 ↔ M.Nonloop e :=
-  ⟨fun h ↦ by rwa [←not_loop_iff, ←v.eq_zero_iff e], v.ne_zero_of_nonloop⟩
+  ⟨fun h ↦ by rwa [← not_loop_iff, ← v.eq_zero_iff e], v.ne_zero_of_nonloop⟩
 
 theorem Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
   rw [loopless_iff_forall_nonloop]
@@ -808,20 +808,20 @@ theorem Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
   obtain (rfl | hef) := eq_or_ne e f
   · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, (one_smul _ _).symm⟩
 
-  rw [he.parallel_iff_dep hf hef, ←not_indep_iff, v.indep_iff, not_iff_comm,
+  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff, not_iff_comm,
     linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
   simp only [ne_eq, not_exists, not_and]
   refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
     h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel hc, one_smul])⟩
-  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [←h'])
-  exact h c⁻¹ (by simpa) <| by rw [←h', smul_smul, inv_mul_cancel hc, one_smul]
+  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
+  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel hc, one_smul]
 
 theorem Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
     M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), v e = c • (v f) → e = f := by
   simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
   refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
   · refine (v.parallel_iff ?_).2 ⟨c, ?_, h_eq⟩
-    · rw [←v.ne_zero_iff_nonloop e]; exact h0 _ he
+    · rw [← v.ne_zero_iff_nonloop e]; exact h0 _ he
     rintro rfl
     exact h0 e he <| by simp [h_eq]
   · obtain ⟨f, hf⟩ := M.exists_nonloop

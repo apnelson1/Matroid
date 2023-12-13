@@ -38,7 +38,7 @@ instance delete_finiteRk [FiniteRk M] : FiniteRk (M ⧹ D) :=
 theorem restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ⧹ D := rfl
 
 @[simp] theorem delete_compl (hR : R ⊆ M.E := by aesop_mat) : M ⧹ (M.E \ R) = M ↾ R := by
-  rw [←restrict_compl, diff_diff_cancel_left hR]
+  rw [← restrict_compl, diff_diff_cancel_left hR]
 
 @[simp] theorem delete_restriction (M : Matroid α) (D : Set α) : M ⧹ D ≤r M :=
   restrict_restriction _ _ (diff_subset _ _)
@@ -70,7 +70,7 @@ instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ⧹ e) := by
   rw [deleteElem]; infer_instance
 
 @[simp] theorem delete_delete (M : Matroid α) (D₁ D₂ : Set α) : M ⧹ D₁ ⧹ D₂ = M ⧹ (D₁ ∪ D₂) := by
-  rw [←restrict_compl, ←restrict_compl, ←restrict_compl, restrict_restrict_eq, restrict_ground_eq,
+  rw [← restrict_compl, ← restrict_compl, ← restrict_compl, restrict_restrict_eq, restrict_ground_eq,
     diff_diff]
   simp [diff_subset]
 
@@ -78,17 +78,17 @@ theorem delete_comm (M : Matroid α) (D₁ D₂ : Set α) : M ⧹ D₁ ⧹ D₂ 
   rw [delete_delete, union_comm, delete_delete]
 
 theorem delete_inter_ground_eq (M : Matroid α) (D : Set α) : M ⧹ (D ∩ M.E) = M ⧹ D := by
-  rw [←restrict_compl, ←restrict_compl, diff_inter_self_eq_diff]
+  rw [← restrict_compl, ← restrict_compl, diff_inter_self_eq_diff]
 
 theorem delete_eq_delete_iff : M ⧹ D₁ = M ⧹ D₂ ↔ D₁ ∩ M.E = D₂ ∩ M.E := by
-  rw [←delete_inter_ground_eq, ←M.delete_inter_ground_eq D₂]
+  rw [← delete_inter_ground_eq, ← M.delete_inter_ground_eq D₂]
   refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
   apply_fun (M.E \ Matroid.E ·) at h
   simp_rw [delete_ground, diff_diff_cancel_left (inter_subset_right _ _)] at h
   assumption
 
 @[simp] theorem delete_eq_self_iff : M ⧹ D = M ↔ Disjoint D M.E := by
-  rw [←restrict_compl, restrict_eq_self_iff, sdiff_eq_left, disjoint_comm]
+  rw [← restrict_compl, restrict_eq_self_iff, sdiff_eq_left, disjoint_comm]
 
 theorem Restriction.restrict_delete_of_disjoint (h : N ≤r M) (hX : Disjoint X N.E) :
     N ≤r (M ⧹ X) := by
@@ -101,7 +101,7 @@ theorem Restriction.restriction_deleteElem (h : N ≤r M) (he : e ∉ N.E) : N �
   h.restrict_delete_of_disjoint (by simpa)
 
 @[simp] theorem delete_indep_iff : (M ⧹ D).Indep I ↔ M.Indep I ∧ Disjoint I D := by
-  rw [←restrict_compl, restrict_indep_iff, subset_diff, ←and_assoc,
+  rw [← restrict_compl, restrict_indep_iff, subset_diff, ← and_assoc,
     and_iff_left_of_imp Indep.subset_ground]
 
 @[simp] theorem deleteElem_indep_iff : (M ⧹ e).Indep I ↔ M.Indep I ∧ e ∉ I := by
@@ -120,10 +120,10 @@ theorem indep_iff_delete_of_disjoint (hID : Disjoint I D) : M.Indep I ↔ (M ⧹
   rw [dep_iff, dep_iff, delete_indep_iff, delete_ground, subset_diff]; tauto
 
 @[simp] theorem delete_base_iff : (M ⧹ D).Base B ↔ M.Basis B (M.E \ D) := by
-  rw [←restrict_compl, base_restrict_iff]
+  rw [← restrict_compl, base_restrict_iff]
 
 @[simp] theorem delete_basis_iff : (M ⧹ D).Basis I X ↔ M.Basis I X ∧ Disjoint X D := by
-  rw [←restrict_compl, basis_restrict_iff, subset_diff, ←and_assoc,
+  rw [← restrict_compl, basis_restrict_iff, subset_diff, ← and_assoc,
     and_iff_left_of_imp Basis.subset_ground]
 
 @[simp] theorem delete_basis'_iff : (M ⧹ D).Basis' I X ↔ M.Basis' I (X \ D) := by
@@ -139,7 +139,7 @@ theorem Basis.to_delete (h : M.Basis I X) (hX : Disjoint X D) : (M ⧹ D).Basis 
   rw [delete_basis_iff]; exact ⟨h, hX⟩
 
 @[simp] theorem delete_loop_iff : (M ⧹ D).Loop e ↔ M.Loop e ∧ e ∉ D := by
-  rw [←singleton_dep, delete_dep_iff, disjoint_singleton_left, singleton_dep]
+  rw [← singleton_dep, delete_dep_iff, disjoint_singleton_left, singleton_dep]
 
 @[simp] theorem delete_nonloop_iff : (M ⧹ D).Nonloop e ↔ M.Nonloop e ∧ e ∉ D := by
   rw [← indep_singleton, delete_indep_iff, disjoint_singleton_left, indep_singleton]
@@ -165,9 +165,9 @@ theorem circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
   ⟨fun h ↦ delete_circuit_iff.2 ⟨h, hCD⟩, fun h ↦ h.of_delete⟩
 
 @[simp] theorem delete_cl_eq (M : Matroid α) (D X : Set α) : (M ⧹ D).cl X = M.cl (X \ D) \ D := by
-  rw [←restrict_compl, restrict_cl_eq', sdiff_sdiff_self, bot_eq_empty, union_empty,
-    diff_eq, inter_comm M.E, ←inter_assoc X, ←diff_eq, ←cl_eq_cl_inter_ground,
-    ←inter_assoc, ←diff_eq, inter_eq_left]
+  rw [← restrict_compl, restrict_cl_eq', sdiff_sdiff_self, bot_eq_empty, union_empty,
+    diff_eq, inter_comm M.E, ← inter_assoc X, ← diff_eq, cl_inter_ground,
+    ← inter_assoc, ← diff_eq, inter_eq_left]
   exact (diff_subset _ _).trans (M.cl_subset_ground _)
 
 theorem delete_loops_eq (M : Matroid α) (D : Set α) : (M ⧹ D).cl ∅ = M.cl ∅ \ D := by
@@ -245,24 +245,24 @@ theorem contract_comm (M : Matroid α) (C₁ C₂ : Set α) : M ⧸ C₁ ⧸ C�
   rw [contract_contract, union_comm, contract_contract]
 
 theorem contract_eq_self_iff : M ⧸ C = M ↔ Disjoint C M.E := by
-  rw [← dual_delete_dual_eq_contract, ← dual_inj_iff, dual_dual, delete_eq_self_iff, dual_ground]
+  rw [← dual_delete_dual_eq_contract, ← dual_inj, dual_dual, delete_eq_self_iff, dual_ground]
 
 @[simp] theorem contract_empty (M : Matroid α) : M ⧸ (∅ : Set α) = M := by
-  rw [←dual_delete_dual_eq_contract, delete_empty, dual_dual]
+  rw [← dual_delete_dual_eq_contract, delete_empty, dual_dual]
 
 theorem contract_contract_diff (M : Matroid α) (C₁ C₂ : Set α) :
     M ⧸ C₁ ⧸ C₂ = M ⧸ C₁ ⧸ (C₂ \ C₁) := by
   simp
 
 theorem contract_eq_contract_iff : M ⧸ C₁ = M ⧸ C₂ ↔ C₁ ∩ M.E = C₂ ∩ M.E := by
-  rw [← dual_delete_dual_eq_contract, ← dual_delete_dual_eq_contract, dual_inj_iff,
+  rw [← dual_delete_dual_eq_contract, ← dual_delete_dual_eq_contract, dual_inj,
     delete_eq_delete_iff, dual_ground]
 
 @[simp] theorem contract_inter_ground_eq (M : Matroid α) (C : Set α) : M ⧸ (C ∩ M.E) = M ⧸ C := by
   rw [← dual_delete_dual_eq_contract, (show M.E = M﹡.E from rfl), delete_inter_ground_eq]; rfl
 
 theorem coindep_contract_iff : (M ⧸ C).Coindep X ↔ M.Coindep X ∧ Disjoint X C := by
-  rw [coindep_def, contract_dual_eq_dual_delete, delete_indep_iff, ←coindep_def]
+  rw [coindep_def, contract_dual_eq_dual_delete, delete_indep_iff, ← coindep_def]
 
 theorem Coindep.coindep_contract_of_disjoint (hX : M.Coindep X) (hXC : Disjoint X C) :
     (M ⧸ C).Coindep X :=
@@ -271,11 +271,11 @@ theorem Coindep.coindep_contract_of_disjoint (hX : M.Coindep X) (hXC : Disjoint 
 theorem Indep.contract_base_iff (hI : M.Indep I) :
     (M ⧸ I).Base B ↔ M.Base (B ∪ I) ∧ Disjoint B I := by
   have hIE := hI.subset_ground
-  rw [← dual_dual M, ←coindep_def, coindep_iff_exists] at hI
+  rw [← dual_dual M, ← coindep_def, coindep_iff_exists] at hI
   obtain ⟨B₀, hB₀, hfk⟩ := hI
-  rw [←dual_dual M, ←dual_delete_dual_eq_contract, dual_base_iff', dual_base_iff',
+  rw [← dual_dual M, ← dual_delete_dual_eq_contract, dual_base_iff', dual_base_iff',
     delete_base_iff, dual_dual, delete_ground, diff_diff, union_comm, union_subset_iff,
-    subset_diff, ←and_assoc, and_congr_left_iff, dual_ground, and_iff_left hIE, and_congr_left_iff]
+    subset_diff, ← and_assoc, and_congr_left_iff, dual_ground, and_iff_left hIE, and_congr_left_iff]
   refine' fun _ _ ↦
     ⟨fun h ↦ h.base_of_base_subset hB₀ (subset_diff.mpr ⟨hB₀.subset_ground, _⟩), fun hB ↦
       hB.basis_of_subset (diff_subset _ _) (diff_subset_diff_right (subset_union_right _ _))⟩
@@ -340,7 +340,7 @@ theorem contract_eq_delete_of_subset_coloops (hX : X ⊆ M﹡.cl ∅) : M ⧸ X 
     union_indep_iff_indep_of_subset_coloops hX]
 
 theorem contract_eq_delete_of_subset_loops (hX : X ⊆ M.cl ∅) : M ⧸ X = M ⧹ X := by
-  rw [← dual_inj_iff, contract_dual_eq_dual_delete, delete_dual_eq_dual_contract, eq_comm,
+  rw [← dual_inj, contract_dual_eq_dual_delete, delete_dual_eq_dual_contract, eq_comm,
     contract_eq_delete_of_subset_coloops]
   rwa [dual_dual]
 
@@ -348,9 +348,9 @@ theorem Basis.contract_eq_contract_delete (hI : M.Basis I X) : M ⧸ X = M ⧸ I
   nth_rw 1 [← diff_union_of_subset hI.subset]
   rw [union_comm, ← contract_contract]
   refine' contract_eq_delete_of_subset_loops fun e he ↦ _
-  rw [← loop_iff_mem_cl_empty, ←singleton_dep, hI.indep.contract_dep_iff,
+  rw [← loop_iff_mem_cl_empty, ← singleton_dep, hI.indep.contract_dep_iff,
     disjoint_singleton_left, and_iff_right he.2, singleton_union,
-    ←hI.indep.mem_cl_iff_of_not_mem he.2]
+    ← hI.indep.mem_cl_iff_of_not_mem he.2]
   exact hI.subset_cl he.1
 
 theorem Basis.contract_indep_iff (hI : M.Basis I X) :
@@ -360,22 +360,22 @@ theorem Basis.contract_indep_iff (hI : M.Basis I X) :
     union_eq_self_of_subset_right hI.subset, and_comm, disjoint_comm]
 
 theorem Basis'.contract_eq_contract_delete (hI : M.Basis' I X) : M ⧸ X = M ⧸ I ⧹ (X \ I) := by
-  rw [←contract_inter_ground_eq, hI.basis_inter_ground.contract_eq_contract_delete, eq_comm,
-    ←delete_inter_ground_eq, contract_ground, diff_eq, diff_eq, ←inter_inter_distrib_right,
-    ←diff_eq]
+  rw [← contract_inter_ground_eq, hI.basis_inter_ground.contract_eq_contract_delete, eq_comm,
+    ← delete_inter_ground_eq, contract_ground, diff_eq, diff_eq, ← inter_inter_distrib_right,
+    ← diff_eq]
 
 theorem contract_cl_eq_contract_delete (M : Matroid α) (C : Set α) :
     M ⧸ M.cl C = M ⧸ C ⧹ (M.cl C \ C) := by
   obtain ⟨I, hI⟩ := M.exists_basis_inter_ground_basis_cl C
-  rw [hI.2.contract_eq_contract_delete, ←M.contract_inter_ground_eq C,
+  rw [hI.2.contract_eq_contract_delete, ← M.contract_inter_ground_eq C,
     hI.1.contract_eq_contract_delete, delete_delete]
   convert rfl using 2
   rw [union_comm, diff_eq (t := I), union_distrib_left, union_distrib_left, diff_union_self,
     union_eq_self_of_subset_left ((diff_subset _ _).trans (M.cl_subset_ground _)),
       inter_distrib_right, diff_eq, inter_eq_self_of_subset_left (M.cl_subset_ground _),
-      cl_eq_cl_inter_ground, union_eq_self_of_subset_right (M.subset_cl (C ∩ M.E)),
-      inter_distrib_left, ←inter_assoc, inter_self, ←inter_distrib_left, ←compl_inter,
-      ←diff_eq, inter_eq_self_of_subset_right (hI.1.subset.trans (inter_subset_left _ _))]
+      ← cl_inter_ground, union_eq_self_of_subset_right (M.subset_cl (C ∩ M.E)),
+      inter_distrib_left, ← inter_assoc, inter_self, ← inter_distrib_left, ← compl_inter,
+      ← diff_eq, inter_eq_self_of_subset_right (hI.1.subset.trans (inter_subset_left _ _))]
 
 theorem exists_eq_contract_indep_delete (M : Matroid α) (C : Set α) :
     ∃ I D : Set α, M.Basis I (C ∩ M.E) ∧ D ⊆ (M ⧸ I).E ∧ D ⊆ C ∧ M ⧸ C = M ⧸ I ⧹ D := by
@@ -383,7 +383,7 @@ theorem exists_eq_contract_indep_delete (M : Matroid α) (C : Set α) :
   use I, C \ I ∩ M.E, hI
   rw [contract_ground, and_iff_right ((inter_subset_left _ _).trans (diff_subset _ _)), diff_eq,
     diff_eq, inter_right_comm, inter_assoc, and_iff_right (inter_subset_right _ _),
-    ←contract_inter_ground_eq, hI.contract_eq_contract_delete, diff_eq, inter_assoc]
+    ← contract_inter_ground_eq, hI.contract_eq_contract_delete, diff_eq, inter_assoc]
 
 theorem Indep.of_contract (hI : (M ⧸ C).Indep I) : M.Indep I := by
   obtain ⟨J, R, hJ, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
@@ -421,8 +421,8 @@ instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ⧸ e) := by
 
 @[simp] theorem contract_loop_iff_mem_cl : (M ⧸ C).Loop e ↔ e ∈ M.cl C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  rw [hM, delete_loop_iff, ←singleton_dep, hI.indep.contract_dep_iff, disjoint_singleton_left,
-    singleton_union, hI.indep.insert_dep_iff, mem_diff, M.cl_eq_cl_inter_ground C, hI.cl_eq_cl,
+  rw [hM, delete_loop_iff, ← singleton_dep, hI.indep.contract_dep_iff, disjoint_singleton_left,
+    singleton_union, hI.indep.insert_dep_iff, mem_diff, ← M.cl_inter_ground C, hI.cl_eq_cl,
     and_comm (a := e ∉ I), and_self_right, ← mem_diff, ← mem_diff, diff_diff]
   apply_fun Matroid.E at hM
   rw [delete_ground, contract_ground, contract_ground, diff_diff, diff_eq_diff_iff_inter_eq_inter,
@@ -471,14 +471,14 @@ theorem Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ⧸ 
 theorem contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     (M ⧸ C).Spanning X ↔ M.Spanning (X ∪ (C ∩ M.E)) ∧ Disjoint X C := by
   simp_rw [Spanning, contract_cl_eq, contract_ground, subset_diff, union_subset_iff,
-    and_iff_left (inter_subset_right _ _), ←and_assoc, and_congr_left_iff,
+    and_iff_left (inter_subset_right _ _), ← and_assoc, and_congr_left_iff,
     subset_antisymm_iff, subset_diff, diff_subset_iff, and_iff_left disjoint_sdiff_left,
     and_iff_right (M.cl_subset_ground _ ),
     and_iff_right (subset_union_of_subset_right (M.cl_subset_ground _) C)]
-  rw [←inter_eq_left (s := M.E), inter_distrib_left,
+  rw [← inter_eq_left (s := M.E), inter_distrib_left,
     inter_eq_self_of_subset_right (M.cl_subset_ground _), subset_antisymm_iff, union_subset_iff,
     and_iff_right (inter_subset_left _ _), union_eq_self_of_subset_left (s := M.E ∩ C),
-    and_iff_right (M.cl_subset_ground _), Iff.comm, ←cl_union_cl_right_eq, ←cl_eq_cl_inter_ground,
+    and_iff_right (M.cl_subset_ground _), Iff.comm, ← cl_union_cl_right_eq,cl_inter_ground,
     cl_union_cl_right_eq]
   · exact fun _ _ ↦ Iff.rfl
   exact (M.subset_cl _).trans
@@ -496,7 +496,7 @@ theorem Nonloop.of_contract (h : (M ⧸ C).Nonloop e) : M.Nonloop e := by
   rw [nonloop_iff_mem_compl_loops, contract_ground, contract_loops_eq]
   refine ⟨fun ⟨he,heC⟩ ↦ ⟨he.1, fun h ↦ heC ⟨h, he.2⟩⟩,
     fun h ↦ ⟨⟨h.1, fun heC ↦ h.2 ?_⟩, fun h' ↦ h.2 h'.1⟩⟩
-  rw [cl_eq_cl_inter_ground]
+  rw [← cl_inter_ground]
   exact (M.subset_cl (C ∩ M.E)) ⟨heC, h.1⟩
 
 end Contract
@@ -506,7 +506,7 @@ section Minor
 variable {M₀ M₁ M₂ : Matroid α}
 
 theorem contract_delete_diff (M : Matroid α) (C D : Set α) : M ⧸ C ⧹ D = M ⧸ C ⧹ (D \ C) := by
-  rw [delete_eq_delete_iff, contract_ground, diff_eq, diff_eq, ←inter_inter_distrib_right,
+  rw [delete_eq_delete_iff, contract_ground, diff_eq, diff_eq, ← inter_inter_distrib_right,
     inter_assoc]
 
 theorem contract_delete_comm (M : Matroid α) {C D : Set α} (hCD : Disjoint C D) :
@@ -515,10 +515,10 @@ theorem contract_delete_comm (M : Matroid α) {C D : Set α} (hCD : Disjoint C D
   rw [delete_ground, contract_ground, subset_diff, subset_diff] at hI
   simp only [delete_ground, contract_ground, delete_indep_iff, and_iff_left hI.2]
   obtain ⟨J, hJ⟩ := (M ⧹ D).exists_basis' C;  have hJ' := hJ
-  rw [← restrict_compl, basis'_restrict_iff, subset_diff, diff_eq, inter_comm M.E, ←inter_assoc,
-    ←diff_eq, sdiff_eq_left.2 hCD] at hJ'
+  rw [← restrict_compl, basis'_restrict_iff, subset_diff, diff_eq, inter_comm M.E, ← inter_assoc,
+    ← diff_eq, sdiff_eq_left.2 hCD] at hJ'
   rw [hJ.contract_eq_contract_delete, delete_indep_iff, hJ.indep.contract_indep_iff,
-    delete_indep_iff, ←contract_inter_ground_eq, hJ'.1.contract_eq_contract_delete,
+    delete_indep_iff, ← contract_inter_ground_eq, hJ'.1.contract_eq_contract_delete,
     delete_indep_iff,  hJ'.1.indep.contract_indep_iff, disjoint_union_left, and_iff_right hI.2,
     and_iff_left (disjoint_of_subset_right (diff_subset _ _) hI.1.2), and_iff_left hJ'.2.2,
     and_iff_left
@@ -565,7 +565,7 @@ infixl:50 " ≤m " => Matroid.Minor
 infixl:50 " <m " => Matroid.StrictMinor
 
 theorem contract_delete_minor (M : Matroid α) (C D : Set α) : M ⧸ C ⧹ D ≤m M := by
-  rw [contract_delete_diff, ←contract_inter_ground_eq, ←delete_inter_ground_eq,
+  rw [contract_delete_diff, ← contract_inter_ground_eq, ← delete_inter_ground_eq,
     contract_ground, diff_inter_self_eq_diff, diff_inter_diff_right, inter_diff_right_comm]
   refine ⟨_,_, inter_subset_right _ _, inter_subset_right _ _, ?_, rfl⟩
   exact disjoint_of_subset (inter_subset_left C M.E) (inter_subset_left _ M.E) disjoint_sdiff_right
@@ -586,7 +586,7 @@ theorem Nonloop.of_minor (h : N.Nonloop e) (hNM : N ≤m M) : M.Nonloop e := by
 lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [delete_ground, contract_ground, subset_diff, subset_diff] at hE
-  rw [←contract_inter_ground_eq, hE.1.2.symm.inter_eq, contract_empty, ←delete_inter_ground_eq,
+  rw [← contract_inter_ground_eq, hE.1.2.symm.inter_eq, contract_empty, ← delete_inter_ground_eq,
     hE.2.symm.inter_eq, delete_empty]
 
 lemma Minor.subset (h : N ≤m M) : N.E ⊆ M.E := by
@@ -680,10 +680,10 @@ theorem delete_minor (M : Matroid α) (D : Set α) : M ⧹ D ≤m M := by
   nth_rw 1 [← M.contract_empty]; apply contract_delete_minor
 
 theorem restrict_minor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R) ≤m M := by
-  rw [←delete_compl]; apply delete_minor
+  rw [← delete_compl]; apply delete_minor
 
 theorem Restriction.minor (h : N ≤r M) : N ≤m M := by
-  rw [← h.eq_restrict, ←delete_compl h.subset]; apply delete_minor
+  rw [← h.eq_restrict, ← delete_compl h.subset]; apply delete_minor
 
 theorem StrictRestriction.strictMinor (h : N <r M) : N <m M :=
   ⟨h.restriction.minor, fun h' ↦ h.ssubset.not_subset h'.subset⟩
@@ -696,7 +696,7 @@ theorem delete_contract_minor (M : Matroid α) (D C : Set α) : M ⧹ D ⧸ C �
 
 theorem contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
     (M ⧸ C) ↾ R ≤m M := by
-  rw [←delete_compl]; apply contract_delete_minor
+  rw [← delete_compl]; apply contract_delete_minor
 
 theorem contractElem_strictMinor (he : e ∈ M.E) : M ⧸ e <m M :=
   ⟨contract_minor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
@@ -735,7 +735,7 @@ theorem dual_minor_iff : N﹡ ≤m M﹡ ↔ N ≤m M :=
   ⟨Minor.of_dual, Minor.dual⟩
 
 theorem minor_dual_iff_dual_minor : N ≤m M﹡ ↔ N﹡ ≤m M := by
-  rw [←dual_minor_iff, dual_dual]
+  rw [← dual_minor_iff, dual_dual]
 
 theorem StrictMinor.dual (h : N <m M) : N﹡ <m M﹡ := by
   rwa [StrictMinor, dual_minor_iff, dual_minor_iff]
@@ -846,10 +846,10 @@ section Constructions
 variable {E : Set α}
 
 @[simp] theorem delete_ground_self (M : Matroid α) : M ⧹ M.E = emptyOn α := by
-  simp [←ground_eq_empty_iff]
+  simp [← ground_eq_empty_iff]
 
 @[simp] theorem contract_ground_self (M : Matroid α) : M ⧸ M.E = emptyOn α := by
-  simp [←ground_eq_empty_iff]
+  simp [← ground_eq_empty_iff]
 
 @[simp] theorem emptyOn_restriction (M : Matroid α) : emptyOn α ≤r M :=
   ⟨∅, empty_subset _, by simp⟩
@@ -867,7 +867,7 @@ variable {E : Set α}
   exact Restriction.refl
 
 @[simp] theorem loopyOn_delete (E X : Set α) : (loopyOn E) ⧹ X = loopyOn (E \ X) := by
-  rw [←restrict_compl, loopyOn_restrict, loopyOn_ground]
+  rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]
 
 @[simp] theorem loopyOn_contract (E X : Set α) : (loopyOn E) ⧸ X = loopyOn (E \ X) := by
   simp_rw [eq_loopyOn_iff_cl, contract_cl_eq, empty_union, loopyOn_cl_eq, contract_ground,
@@ -883,10 +883,10 @@ theorem contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
   rw [eq_loopyOn_iff_cl, contract_ground, and_iff_left rfl, contract_cl_eq, empty_union, h.cl_eq]
 
 @[simp] theorem freeOn_delete (E X : Set α) : (freeOn E) ⧹ X = freeOn (E \ X) := by
-  rw [←loopyOn_dual_eq, ←contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
+  rw [← loopyOn_dual_eq, ← contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
 
 @[simp] theorem freeOn_contract (E X : Set α) : (freeOn E) ⧸ X = freeOn (E \ X) := by
-  rw [←loopyOn_dual_eq, ←delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
+  rw [← loopyOn_dual_eq, ← delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
 
 theorem restrict_indep_eq_freeOn (hI : M.Indep I) : M ↾ I = freeOn I := by
   refine eq_of_indep_iff_indep_forall rfl (fun J _ ↦ ?_)

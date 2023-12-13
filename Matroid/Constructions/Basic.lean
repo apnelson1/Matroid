@@ -6,10 +6,6 @@ namespace Matroid
 
 open Set
 
-/- TODO : This file is quite far down the imports tree, even though the objects it concerns
-  are very simple. Perhaps it can be dissolved, with all its lemmas just moving to other
-  files as early as possible. -/
-
 section EmptyOn
 
 /-- The `Matroid α` with empty ground set-/
@@ -28,23 +24,23 @@ def emptyOn (α : Type*) : Matroid α :=
   refine' ⟨fun h ↦ eq_of_base_iff_base_forall (by simp [h]) _, fun h ↦ by simp [h]⟩
   simp only [h, subset_empty_iff, emptyOn_base_iff, forall_eq, iff_true]
   obtain ⟨B', hB'⟩ := M.exists_base
-  rwa [←eq_empty_of_subset_empty (hB'.subset_ground.trans_eq h)]
+  rwa [← eq_empty_of_subset_empty (hB'.subset_ground.trans_eq h)]
 
 @[simp] theorem emptyOn_dual_eq : (emptyOn α)﹡ = emptyOn α := by
   rw [← ground_eq_empty_iff]; rfl
 
 @[simp] theorem restrict_to_empty (M : Matroid α) : M ↾ (∅ : Set α) = emptyOn α := by
-  simp [←ground_eq_empty_iff]
+  simp [← ground_eq_empty_iff]
 
 theorem eq_emptyOn_or_nonempty (M : Matroid α) : M = emptyOn α ∨ Matroid.Nonempty M := by
-  rw [←ground_eq_empty_iff]
+  rw [← ground_eq_empty_iff]
   exact M.E.eq_empty_or_nonempty.elim Or.inl (fun h ↦ Or.inr ⟨h⟩)
 
 theorem ground_nonempty_iff (M : Matroid α) : M.E.Nonempty ↔ M.Nonempty :=
   ⟨fun h ↦ ⟨h⟩, fun ⟨h⟩ ↦ h⟩
 
 @[simp] theorem eq_emptyOn [IsEmpty α] (M : Matroid α) : M = emptyOn α := by
-  rw [←ground_eq_empty_iff]
+  rw [← ground_eq_empty_iff]
   exact M.E.eq_empty_of_isEmpty
 
 instance finite_emptyOn (α : Type*) : (emptyOn α).Finite :=
@@ -102,7 +98,7 @@ theorem Finite.loopyOn_finite (hE : E.Finite) : Matroid.Finite (loopyOn E) :=
   rwa [eq_comm, ← h I hI.subset_ground]
 
 theorem eq_loopyOn_or_rkPos (M : Matroid α) : M = loopyOn M.E ∨ RkPos M := by
-  rw [←empty_base_iff, rkPos_iff_empty_not_base]; apply em
+  rw [← empty_base_iff, rkPos_iff_empty_not_base]; apply em
 
 theorem not_rkPos_iff : ¬RkPos M ↔ M = loopyOn M.E := by
   rw [rkPos_iff_empty_not_base, not_iff_comm, empty_base_iff]
@@ -146,7 +142,7 @@ def freeOn (E : Set α) : Matroid α := (loopyOn E)﹡
 
 @[simp] theorem freeOn_base_iff : (freeOn E).Base B ↔ B = E := by
   simp only [freeOn, loopyOn_ground, dual_base_iff', loopyOn_base_iff, diff_eq_empty,
-    ←subset_antisymm_iff, eq_comm (a := E)]
+    ← subset_antisymm_iff, eq_comm (a := E)]
 
 @[simp] theorem freeOn_indep_iff : (freeOn E).Indep I ↔ I ⊆ E := by
   simp [indep_iff_subset_base]
@@ -205,26 +201,26 @@ theorem trivialOn_indep_iff (hIE : I ⊆ E) : (trivialOn I E).Indep J ↔ J ⊆ 
 theorem trivialOn_basis_iff (hI : I ⊆ E) (hX : X ⊆ E) :
     (trivialOn I E).Basis J X ↔ J = X ∩ I := by
   rw [basis_iff_mem_maximals]
-  simp_rw [trivialOn_indep_iff', ←subset_inter_iff, ←le_eq_subset, Iic_def, maximals_Iic,
+  simp_rw [trivialOn_indep_iff', ← subset_inter_iff, ← le_eq_subset, Iic_def, maximals_Iic,
     mem_singleton_iff, inter_eq_self_of_subset_left hI, inter_comm I]
 
 theorem trivialOn_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivialOn I E).Basis (X ∩ I) X := by
   rw [trivialOn_basis_iff hI hX]
 
 @[simp] theorem trivialOn_dual_eq (I E : Set α) : (trivialOn I E)﹡ = trivialOn (E \ I) E := by
-  rw [←trivialOn_inter_ground_eq]
+  rw [← trivialOn_inter_ground_eq]
   refine eq_of_base_iff_base_forall rfl (fun B (hB : B ⊆ E) ↦ ?_)
   rw [dual_base_iff, trivialOn_base_iff (inter_subset_right _ _),
     trivialOn_base_iff (diff_subset _ _), trivialOn_ground]
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
-  · rw [←diff_diff_cancel_left hB, h, diff_inter_self_eq_diff]
+  · rw [← diff_diff_cancel_left hB, h, diff_inter_self_eq_diff]
   rw [h, inter_comm I]; simp
 
 @[simp] theorem trivialOn_self (I : Set α) : (trivialOn I I) = freeOn I := by
   rw [trivialOn, freeOn_restrict rfl.subset]
 
 @[simp] theorem trivialOn_empty (I : Set α) : (trivialOn ∅ I) = loopyOn I := by
-  rw [←dual_inj_iff, trivialOn_dual_eq, diff_empty, trivialOn_self, loopyOn_dual_eq]
+  rw [← dual_inj, trivialOn_dual_eq, diff_empty, trivialOn_self, loopyOn_dual_eq]
 
 @[simp] theorem trivialOn_restrict' (I E R : Set α) :
     (trivialOn I E) ↾ R = trivialOn (I ∩ R ∩ E) R := by

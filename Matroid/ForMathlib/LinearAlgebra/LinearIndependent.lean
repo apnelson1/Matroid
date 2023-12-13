@@ -18,12 +18,12 @@ theorem Fintype.linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
   · set f := fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ • (v i) else 0
     refine ⟨fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ else 0, ?_, ⟨i₀, i₀.prop, by simpa⟩,
       fun i hi ↦ by simp [hi]⟩
-    rw [←hc']
+    rw [← hc']
     convert Finset.sum_congr_set s f (fun i ↦ (c' i) • v i) (fun _ h ↦ by simp [h])
       (fun _ h ↦ by simp [h])
     · simp only; split_ifs; rfl; exact zero_smul _ _
   refine ⟨fun i ↦ c i, ?_, ⟨⟨i₀, hi₀⟩, hne⟩⟩
-  rw [←hc0, eq_comm]
+  rw [← hc0, eq_comm]
   convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
     (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
 
@@ -67,9 +67,9 @@ theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [Add
   · intro x y hxy
     have hli := (h {x,y} (toFinite _))
     have h : (⟨x, by simp⟩ : ({x,y} : Set ι)) = ⟨y, by simp⟩
-    · rw [←hli.injective.eq_iff]; simpa
+    · rw [← hli.injective.eq_iff]; simpa
     simpa using h
-  rw [←linearIndependent_subtype_range hinj]
+  rw [← linearIndependent_subtype_range hinj]
   refine linearIndependent_of_finite _ fun t ht htfin ↦ ?_
   obtain ⟨t, rfl⟩ := subset_range_iff_exists_image_eq.1 ht
   exact (linearIndependent_image (injOn_of_injective hinj t)).1 <|
@@ -140,7 +140,7 @@ theorem exists_linearIndependent_extension' (hli : LinearIndependent K (s₀.res
     by_contra hxm
     have hxm' : x ∉ m := fun hxm' ↦ hxm <| subset_span <| mem_image_of_mem _ hxm'
     have hli' := (linearIndependent_insert' hxm').2 ⟨hli, hxm⟩
-    rw [←hmax _ ⟨hs₀m.trans <| subset_insert _ _, insert_subset hx hmt, hli'⟩ (subset_insert _ _)]
+    rw [← hmax _ ⟨hs₀m.trans <| subset_insert _ _, insert_subset hx hmt, hli'⟩ (subset_insert _ _)]
       at hxm'
     exact hxm' <| mem_insert _ _
   rintro c hcss hchain ⟨r, hr⟩
@@ -178,9 +178,9 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
   refine ⟨fun h ↦ ⟨fun h0 ↦ ?_, fun c hc ↦ h c⁻¹ ?_⟩, fun h c h' ↦ h.2 c⁻¹ ?_⟩
   · simp only [h0, smul_eq_zero] at h
     simpa using h 0
-  · rw [←hc, smul_smul, inv_mul_cancel, one_smul]
-    rintro rfl; exact hi <| by simp [←hc]
-  rw [←h', smul_smul, inv_mul_cancel, one_smul]
+  · rw [← hc, smul_smul, inv_mul_cancel, one_smul]
+    rintro rfl; exact hi <| by simp [← hc]
+  rw [← h', smul_smul, inv_mul_cancel, one_smul]
   rintro rfl; exact h.1 <| by simp [← h']
 
 theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]

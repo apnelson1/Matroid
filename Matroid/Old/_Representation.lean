@@ -8,7 +8,7 @@ open Submodule Set Module BigOperators
 @[simp]
 theorem Submodule.span_diff_zero {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     {s : Set M} : Submodule.span R (s \ {0}) = Submodule.span R s := by
-  simp [←Submodule.span_insert_zero]
+  simp [← Submodule.span_insert_zero]
 
 section coords
 
@@ -37,7 +37,7 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
   ext i
   have h := congr_fun hg (s i)
   simp only [linearMap_apply, exists_apply_eq_apply, not_true, Pi.zero_apply] at h
-  rw [Pi.zero_apply, ←h, hs.extend_apply]
+  rw [Pi.zero_apply, ← h, hs.extend_apply]
 
 @[simp] theorem LinearMap.extend_subtype_inj (R : Type*) [Semiring R] (s : Set α) :
     LinearMap.ker (LinearMap.extend_subtype R s) = ⊥ :=
@@ -97,7 +97,7 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
       (LinearMap.ker_eq_bot.2 (injective_subtype _))
     set ψ := (Finsupp.total α R R g).comp (Basis.span h).repr.toLinearMap with hψ
     refine ⟨ψ.comp i, funext fun a ↦ ?_⟩
-    rw [←(Basis.span h).total_comp_repr g, ←hψ, Function.comp_apply, Function.comp_apply,
+    rw [← (Basis.span h).total_comp_repr g, ← hψ, Function.comp_apply, Function.comp_apply,
       ψ.coe_comp, Function.comp_apply]
     refine congr_arg _ <| Subtype.coe_injective ?_
     have hrw := LinearMap.congr_fun hi ⟨f a, subset_span (mem_range_self a)⟩
@@ -123,7 +123,7 @@ theorem Submodule.ofFun_map (f : α → W) (e : W →ₗ[R] W')
 
   rintro ⟨φ, _, rfl⟩
   have hker : LinearMap.ker (LinearMap.domRestrict e (span R (range f))) = ⊥
-  · rwa [LinearMap.ker_eq_bot, LinearMap.injective_domRestrict_iff, ←disjoint_iff]
+  · rwa [LinearMap.ker_eq_bot, LinearMap.injective_domRestrict_iff, ← disjoint_iff]
 
   obtain ⟨einv, hinv⟩ := (e.domRestrict (span R (Set.range f))).exists_leftInverse_of_injective hker
 

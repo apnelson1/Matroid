@@ -5,7 +5,7 @@ import Matroid.Constructions.Basic
 
 namespace Matroid
 
-open Set LocalEquiv
+open Set PartialEquiv
 
 variable {α β β' : Type*} {M : Matroid α} {N : Matroid β} {C D : Set α}
 section Iso
@@ -14,7 +14,7 @@ section Iso
 noncomputable def Iso.delete (e : Iso M N) (hD : D ⊆ M.E) :
     Iso (M ⧹ D) (N ⧹ e '' D) := by
   convert Iso.restrict e (M.E \ D) using 1
-  rw [e.injOn_ground.image_diff hD, e.image_ground, ←restrict_compl]
+  rw [e.injOn_ground.image_diff hD, e.image_ground, ← restrict_compl]
 
 noncomputable def Iso.contract (e : Iso M N) (hC : C ⊆ M.E) :
     Iso (M ⧸ C) (N ⧸ e '' C) :=
@@ -161,11 +161,11 @@ theorem isoMinor_freeOn_iff {E : Set β} :
 
 theorem isoMinor_loopyOn_iff_of_finite {E : Set β} (hE : E.Finite) :
     M ≤i loopyOn E ↔ M = loopyOn M.E ∧ M.E.encard ≤ E.encard := by
-  simp [Matroid.isoMinor_loopyOn_iff, ←hE.encard_le_iff_nonempty_embedding']
+  simp [Matroid.isoMinor_loopyOn_iff, ← hE.encard_le_iff_nonempty_embedding']
 
 theorem isoMinor_freeOn_iff_of_finite {E : Set β} (hE : E.Finite) :
     M ≤i freeOn E ↔ M = freeOn M.E ∧ M.E.encard ≤ E.encard := by
-  simp [Matroid.isoMinor_freeOn_iff, ←hE.encard_le_iff_nonempty_embedding']
+  simp [Matroid.isoMinor_freeOn_iff, ← hE.encard_le_iff_nonempty_embedding']
 
 theorem freeOn_isoMinor_iff {E : Set α} {M : Matroid β} :
     freeOn E ≤i M ↔ ∃ (f : E ↪ β), M.Indep (range f) := by
@@ -185,7 +185,7 @@ theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
     freeOn E ≤i M ↔ E.encard ≤ M.erk := by
   rw [Matroid.freeOn_isoMinor_iff]
   refine ⟨fun ⟨f, hf⟩  ↦ ?_, fun h ↦ ?_⟩
-  · rw [encard_congr <| Equiv.ofInjective f f.2, ←hf.er]
+  · rw [encard_congr <| Equiv.ofInjective f f.2, ← hf.er]
     apply er_le_erk
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard, hE.encard_le_iff_nonempty_embedding] at h

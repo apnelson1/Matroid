@@ -108,7 +108,7 @@ instance {c : Set (Set α)} : IsSymm α (rel_of c) :=
 
 instance {c : Set (Set α)} : IsTrans α (rel_of c) :=
   ⟨fun x y z ⟨⟨t, htc, hxt, hyt⟩, hxy⟩ ⟨⟨_, _, _, _⟩, hyz⟩ ↦
-    ⟨⟨t,htc,hxt, by rwa [←hyz htc]⟩, fun t₀ ht₀ ↦ by rw [hxy ht₀, hyz ht₀]⟩⟩
+    ⟨⟨t,htc,hxt, by rwa [← hyz htc]⟩, fun t₀ ht₀ ↦ by rw [hxy ht₀, hyz ht₀]⟩⟩
 
 theorem rel_of.rel_self_of_mem (ht : t ∈ c) (hx : x ∈ t) : (rel_of c) x x :=
   ⟨⟨t, ht, hx, hx⟩, fun _ _ ↦ Iff.rfl⟩
@@ -123,7 +123,7 @@ theorem rel_of_iff_exists (hc : IsPartition c s) :
     rel_of c x y ↔ ∃ t ∈ c, x ∈ t ∧ y ∈ t := by
   refine ⟨fun h ↦ h.1, fun ⟨t, htc, hxt, hyt⟩ ↦
     ⟨⟨t, htc, hxt, hyt⟩, fun t' ht'c ↦ ⟨fun hxt' ↦ ?_, fun hyt' ↦ ?_⟩⟩⟩
-  rwa [←hc.eq_of_mem_of_mem htc ht'c hxt hxt']
+  rwa [← hc.eq_of_mem_of_mem htc ht'c hxt hxt']
   rwa [hc.eq_of_mem_of_mem ht'c htc hyt' hyt]
 
 theorem classes_rel_of_eq (hc : IsPartition c s) : classes (rel_of c) = c := by
@@ -131,8 +131,8 @@ theorem classes_rel_of_eq (hc : IsPartition c s) : classes (rel_of c) = c := by
   · rintro _ ⟨x, ⟨⟨t, htc, hxt, -⟩, -⟩, rfl⟩
     convert htc
     refine subset_antisymm (fun y ↦ ?_) (fun y hyt ↦ (rel_of_iff_exists hc).2 ⟨t, htc, hxt, hyt⟩)
-    rw [mem_setOf_eq]; rintro ⟨-,h⟩; rwa [←h htc]
+    rw [mem_setOf_eq]; rintro ⟨-,h⟩; rwa [← h htc]
   obtain ⟨x, hx⟩ := hc.nonempty_of_mem htc
   convert eqv_class_mem (rel_of.rel_self_of_mem htc hx)
   exact subset_antisymm (fun y hyt ↦ (rel_of_iff_exists hc).2 ⟨t, htc, hx, hyt⟩)
-    (fun y ⟨_,hy⟩ ↦ by rwa [←hy htc])
+    (fun y ⟨_,hy⟩ ↦ by rwa [← hy htc])

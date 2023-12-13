@@ -1,11 +1,11 @@
 import Mathlib.Combinatorics.SimpleGraph.Basic
-import Mathlib.Logic.Equiv.LocalEquiv
-import Matroid.ForMathlib.LocalEquiv
+import Mathlib.Logic.Equiv.PartialEquiv
+import Matroid.ForMathlib.PartialEquiv
 import Mathlib.Data.Nat.Digits
 
 #find (ℕ ≃ Finset ℕ)
 
-open Set SimpleGraph Function LocalEquiv BigOperators
+open Set SimpleGraph Function PartialEquiv BigOperators
 
 variable {V V W : Type*} {s : Set V} {t : Set W} {G : SimpleGraph V} {H : SimpleGraph W}
 
@@ -15,9 +15,9 @@ section PartialIso
 
 /-- A `PartialIso G H s t` is an isomorphism between some finite induced subgraph of `G`
   containing `s`, and a finite induced subgraph of `H` containing `t`.
-  Implemented as a `LocalEquiv`. -/
+  Implemented as a `PartialEquiv`. -/
 structure PartialIso (G : SimpleGraph V) (H : SimpleGraph W) (s : Set V) (t : Set W) where
-  (φ : LocalEquiv V W)
+  (φ : PartialEquiv V W)
   (hs : s ⊆ φ.source)
   (ht : t ⊆ φ.target)
   (finite : φ.source.Finite)
@@ -85,7 +85,7 @@ theorem ExtensionProperty.extend_partialIso (hH : ExtensionProperty H) (e : Part
       by_cases (hbA _ (e.φ.map_target hb)) (hbB _ (e.φ.map_target hb)) (e.φ.right_inv hb)
   refine ⟨⟨e.φ.insert ha hbt, insert_subset_insert e.hs, e.ht.trans (subset_insert _ _), ?_, ?_⟩,?_⟩
   · simp [e.finite.insert _]
-  · simp only [LocalEquiv.insert_source, mem_insert_iff]
+  · simp only [PartialEquiv.insert_source, mem_insert_iff]
     rintro i j (rfl | hi)
     · rw [e.φ.insert_apply, update_same]
       rintro (rfl | hj)
@@ -146,8 +146,8 @@ theorem ExtensionProperty.exists_extend_iso_nat {G H : SimpleGraph ℕ} (hG : Ex
       ((es (max i j +1)).hs (by simp [Nat.lt_add_one_iff])) hij
   · use (es (j+1)).1.symm j
     rw [hf_def, h_le (le_max_right j ((es (j+1)).φ.symm j)),
-      LocalEquiv.eq_of_mem_source (h_strong' (add_le_add_right (le_max_left _ _) 1)),
-      LocalEquiv.right_inv _ ((es (j+1)).ht (by simp))]
+      PartialEquiv.eq_of_mem_source (h_strong' (add_le_add_right (le_max_left _ _) 1)),
+      PartialEquiv.right_inv _ ((es (j+1)).ht (by simp))]
     exact (es (j+1)).φ.map_target ((es (j+1)).ht (by simp))
   · simp only [Equiv.ofBijective_apply]
     intro a b
@@ -192,7 +192,7 @@ theorem ExtensionProperty.iso_of_countable [Countable V] [Countable W] (hG : Ext
   have _ := hG.infinite
   have _ := hH.infinite
   have e0 : PartialIso G H ∅ ∅ :=
-    ⟨(injOn_empty (fun _ : V ↦ Classical.arbitrary W)).toLocalEquiv,
+    ⟨(injOn_empty (fun _ : V ↦ Classical.arbitrary W)).toPartialEquiv,
       by simp, by simp, by simp, by simp⟩
   obtain ⟨e,-⟩ := hG.exists_extend_iso hH e0
   exact ⟨e⟩

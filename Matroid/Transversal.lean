@@ -20,7 +20,7 @@ theorem transverses_subtype_iff_transverses_of_inhabited [DecidableEq α] [Inhab
     · dsimp at abeq
       simp only [mem_coe.1 b_mem, mem_coe.1 a_mem, dite_true] at abeq
       apply Subtype.mk_eq_mk.1 (m_inj abeq)
-    · nth_rw 1 [←(@Subtype.coe_mk _ (fun a ↦ a ∈ T) a a_mem)]
+    · nth_rw 1 [← (@Subtype.coe_mk _ (fun a ↦ a ∈ T) a a_mem)]
       simp only [mem_coe.1 a_mem, dite_true]
       exact h_m ⟨a, a_mem⟩
   · rintro ⟨m, m_inj, h_m⟩
@@ -69,7 +69,7 @@ Finset.card s ≤ Finset.card (Finset.biUnion s fam)) ↔
         apply Finset.property_of_mem_map_subtype S s_sub_S'
       have card:= hall_condition S' S'_sub_T
       rw [Finset.card_map] at card
-      rwa [←(biUnion_eq S), ←S'_def]
+      rwa [← (biUnion_eq S), ← S'_def]
     obtain ⟨f, f_Inj, h_f⟩ := hall.1 hall_condition2
     set f' : ι → α := fun x ↦ if h: (x ∈ T) then f ⟨x, h⟩ else default
     refine' ⟨f', _, _⟩
@@ -91,7 +91,7 @@ Finset.card s ≤ Finset.card (Finset.biUnion s fam)) ↔
   intro S S_sub_T
   set S' := S.subtype (fun x ↦ x ∈ T)
   have card:= hall_condition (S.subtype (fun x ↦ x ∈ T))
-  rw [←biUnion_eq] at card
+  rw [← biUnion_eq] at card
   simp only [card_subtype, subtype_map] at card
   rw [Finset.filter_true_of_mem (fun x x_mem ↦ S_sub_T x_mem)] at card
   assumption
@@ -162,7 +162,7 @@ lemma biUnion_inter_sub [DecidableEq γ] [DecidableEq β]
 
 lemma card_le_union_of_card_add_inter_le_add [DecidableEq γ] {a b : ℕ} {S T : Finset γ}
     (h : a + b ≤ S.card + T.card) (b_le : (S ∩ T).card ≤ b) : a ≤ (S ∪ T).card := by
-  rw [←(card_union_add_card_inter _ _)] at h
+  rw [← (card_union_add_card_inter _ _)] at h
   apply @Nat.le_of_add_le_add_right _ b _
   apply le_trans h (add_le_add_left b_le _)
 
@@ -186,7 +186,7 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
       rfl
   · obtain ⟨a, T, _, w_eq, T_card⟩ := Finset.card_eq_succ.1 card_eq
     apply le_antisymm
-    · rw [←w_eq, biUnion_insert]
+    · rw [← w_eq, biUnion_insert]
       have card_le : card (Finset.biUnion (witness a \ {a} ∪ T.biUnion
       fun a ↦ witness a \ {a}) (neighbors f)) + ((T.biUnion (fun a ↦ witness a \ {a})
       ∩ (witness a \ {a})).biUnion
@@ -201,11 +201,11 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
         · apply hall_union_card_eq trans T T_card witness _
           intro a a_T
           apply h_witness a _
-          rw [←w_eq]
+          rw [← w_eq]
           exact mem_insert_of_mem a_T
         rw [h_T, Nat.add_le_add_iff_left]
         apply le_of_eq (h_witness a _).1
-        rw [←w_eq]
+        rw [← w_eq]
         exact Finset.mem_insert_self _ _
       nth_rw 2 [union_comm]
       apply card_le_union_of_card_add_inter_le_add card_le _
@@ -213,17 +213,17 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
       intro x x_mem
       obtain ⟨_, x_a⟩ := Finset.mem_inter.1 x_mem
       apply (h_witness a _).2 x_a
-      rw [←w_eq]
+      rw [← w_eq]
       exact Finset.mem_insert_self _ _
     apply (transversal_exists_iff _ _).1 trans
-    rw [←w_eq, biUnion_subset]
+    rw [← w_eq, biUnion_subset]
     intro x x_mem
     apply (h_witness x _).2
-    rw [←w_eq]
+    rw [← w_eq]
     exact x_mem
 decreasing_by
   simp_wf
-  rw [←witness_set_card, card_eq]
+  rw [← witness_set_card, card_eq]
   simp
 
 
@@ -353,11 +353,11 @@ def matroid_of_transversals_finite {ι a : Type*} [DecidableEq α] [DecidableEq 
           have card_eq:= (h_witness a a_sub).2.2.2
           apply le_antisymm
           · apply (transversal_exists_iff _ _).1 I_trans
-            rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+            rw [sdiff_singleton_eq_erase, ← subset_insert_iff]
             exact (h_witness a a_sub).1
           · apply le_trans (card_le_of_subset (biUnion_subset_biUnion_of_subset_left _
             (sdiff_subset (witness a) {a}))) (le_of_eq card_eq.symm)
-        rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+        rw [sdiff_singleton_eq_erase, ← subset_insert_iff]
         exact (h_witness a a_sub).1
         exact card (J \ I)
         rfl
@@ -373,9 +373,9 @@ def matroid_of_transversals_finite {ι a : Type*} [DecidableEq α] [DecidableEq 
           refine' ⟨j, j_mem, _⟩
           have neighbor_eq : (witness j \ {j}).biUnion (neighbors f) = (witness j).biUnion (neighbors f)
           · apply eq_of_subset_of_card_le (biUnion_subset_biUnion_of_subset_left _ (sdiff_subset _ _))
-            rw [←(h_witness j j_mem).2.2.2]
+            rw [← (h_witness j j_mem).2.2.2]
             apply (transversal_exists_iff _ _).1 I_trans
-            rw [sdiff_singleton_eq_erase, ←subset_insert_iff]
+            rw [sdiff_singleton_eq_erase, ← subset_insert_iff]
             exact (h_witness j j_mem).1
           rwa [neighbor_eq]
         rw [W_sdiff_neighbors_eq]

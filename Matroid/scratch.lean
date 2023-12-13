@@ -1,5 +1,5 @@
 import Mathlib.Combinatorics.SimpleGraph.Basic
-import Mathlib.Logic.Equiv.LocalEquiv
+import Mathlib.Logic.Equiv.PartialEquiv
 
 open Set SimpleGraph
 
@@ -42,14 +42,14 @@ def extensionProperty (G : SimpleGraph V) : Prop :=
 --   (hst : ∀ i, i < n → i ∈ s ∧ i ∈ t)
 
 -- structure partialIso (G H : SimpleGraph ℕ) (n : ℕ) where
---   (eqv : LocalEquiv ℕ ℕ)
+--   (eqv : PartialEquiv ℕ ℕ)
 --   (h_source : ∀ {i}, i < n → i ∈ eqv.source)
 --   (h_target : ∀ {j}, j < n → j ∈ eqv.target)
 --   (toIso : G.induce eqv.source ≃g H.induce eqv.target)
 --   (h_eq : eqv.toEquiv = toIso.toEquiv)
 
 def partialIso (G H : SimpleGraph ℕ) (n : ℕ) :=
-  {e : LocalEquiv ℕ ℕ // Iic n ⊆ e.source ∩ e.target ∧
+  {e : PartialEquiv ℕ ℕ // Iic n ⊆ e.source ∩ e.target ∧
     ∃ (φ : G.induce e.source ≃g H.induce e.target), φ.toEquiv = e.toEquiv }
 
 theorem partialIso.mem_source {G H : SimpleGraph ℕ} {i n : ℕ} (e : partialIso G H (n+1)) (hin : i ≤ n) :
@@ -58,7 +58,7 @@ theorem partialIso.mem_source {G H : SimpleGraph ℕ} {i n : ℕ} (e : partialIs
 theorem partialIso.mem_target {G H : SimpleGraph ℕ} {i n : ℕ} (e : partialIso G H (n+1)) (hin : i ≤ n) :
   i ∈ e.1.target := sorry
 
--- def LocalEquiv.isPartialIso (e : LocalEquiv ℕ ℕ) (G H : SimpleGraph ℕ) (n : ℕ) : Prop :=
+-- def PartialEquiv.isPartialIso (e : PartialEquiv ℕ ℕ) (G H : SimpleGraph ℕ) (n : ℕ) : Prop :=
 --   (Iic n ⊆ e.source ∩ e.target) ∧
 --   ∃ (φ : G.induce e.source ≃g H.induce e.target), φ.toEquiv = e.toEquiv
 
@@ -217,7 +217,7 @@ theorem foo {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionPr
     · rw [← hf (le_max_right _ _), (bs k).eqv.right_inv ((bs k).h_target (le_max_left _ _))]
       simp only
 
-    -- · rw [LocalEquiv.right_inv]
+    -- · rw [PartialEquiv.right_inv]
 
     -- use (bs j).eqv.symm j
     -- rw [hf' (le_max_right j ((bs j).eqv.symm j))]
@@ -268,19 +268,19 @@ theorem foo {G H : SimpleGraph ℕ} (hG : extensionProperty G) (hH : extensionPr
 
 
 
---   set down_closed : (∀ n, LocalEquiv ℕ ℕ) → Prop :=
+--   set down_closed : (∀ n, PartialEquiv ℕ ℕ) → Prop :=
 --     fun es ↦ ∀ {i a b : ℕ}, a ≤ b →
 --       (i ∈ (es a).source → es b i = es a i) ∧
 --       (i ∈ (es a).target → (es b).symm i = (es a).symm i)
---   set mono : (∀ n, LocalEquiv ℕ ℕ) → Prop :=
+--   set mono : (∀ n, PartialEquiv ℕ ℕ) → Prop :=
 --     fun es ↦ ∀ {a b : ℕ}, a ≤ b →
 --       ((es a).source ⊆ (es b).source ∧ (es a).target ⊆ (es b).target)
---   set defined_on_lt : (∀ n, LocalEquiv ℕ ℕ) → Prop :=
+--   set defined_on_lt : (∀ n, PartialEquiv ℕ ℕ) → Prop :=
 --     fun es ↦ ∀ {i n : ℕ}, i < n → i ∈ (es n).source ∧ i ∈ (es n).target
---   set partial_iso : LocalEquiv ℕ ℕ → Prop :=
+--   set partial_iso : PartialEquiv ℕ ℕ → Prop :=
 --     fun e ↦ ∀ {i j : ℕ}, i ∈ e.source → j ∈ e.source → ((G.Adj i j) ↔ (H.Adj (e i) (e j)))
 
---   have lem : ∃ (es : ∀ n, LocalEquiv ℕ ℕ), down_closed es ∧ mono es ∧ defined_on_lt es
+--   have lem : ∃ (es : ∀ n, PartialEquiv ℕ ℕ), down_closed es ∧ mono es ∧ defined_on_lt es
 --     ∧ ∀ n, partial_iso (es n)
 --   ·
 

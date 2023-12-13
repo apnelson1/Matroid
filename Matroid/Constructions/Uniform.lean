@@ -54,14 +54,14 @@ theorem unifOn_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unifOn E k).er 
   rw [unifOn, truncate_er_eq, freeOn_er_eq hX]
 
 theorem unifOn_er_eq' (E : Set α) (k : ℕ∞) : (unifOn E k).er X = min (X ∩ E).encard k := by
-  rw [←er_inter_ground_eq, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
+  rw [← er_inter_ground_eq, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
     unifOn_ground_eq]
 
 theorem unifOn_erk_eq (E : Set α) (k : ℕ∞) : (unifOn E k).erk = min E.encard k := by
   rw [erk_eq_er_ground, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
-  rw [←rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
+  rw [← rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 @[simp] theorem unifOn_spanning_iff' {k : ℕ∞} (hk : k ≠ ⊤) :
@@ -72,7 +72,7 @@ instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   refine' ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ _) (fun h ↦ Or.inl ⟨_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) _⟩
   · refine' X.finite_or_infinite.elim (fun hfin ↦ Or.inr _) (fun hinf ↦ Or.inl ⟨_, hXE⟩)
-    · rw [←(hfin.inter_of_left E).eq_of_subset_of_encard_le' (inter_subset_right _ _) h,
+    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' (inter_subset_right _ _) h,
         inter_eq_self_of_subset_left hXE]
     rw [hinf.encard_eq]
     apply le_top
@@ -101,9 +101,9 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)﹡ = unifOn E (E.encard - 
   simp only [dual_ground, unifOn_ground_eq] at hBE
   rw [dual_base_iff', unifOn_base_iff' ((tsub_le_self.trans_lt hE.encard_lt_top).ne) (by simp) hBE,
     unifOn_ground_eq, and_iff_left hBE, unifOn_base_iff hlt.le (diff_subset _ _),
-    ←WithTop.add_right_cancel_iff (hE.subset hBE).encard_lt_top.ne,
+    ← WithTop.add_right_cancel_iff (hE.subset hBE).encard_lt_top.ne,
     encard_diff_add_encard_of_subset hBE, Iff.comm, eq_comm, add_comm,
-    ←WithTop.add_right_cancel_iff (hlt.trans_le le_top).ne, tsub_add_cancel_of_le hlt.le]
+    ← WithTop.add_right_cancel_iff (hlt.trans_le le_top).ne, tsub_add_cancel_of_le hlt.le]
 
 @[simp] theorem unifOn_delete_eq (E D : Set α) (k : ℕ∞) :
     (unifOn E k) ⧹ D = unifOn (E \ D) k := by
@@ -115,10 +115,10 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
   lift k to ℕ using hk
   refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
-  rw [←contract_inter_ground_eq, unifOn_ground_eq, inter_comm,
+  rw [← contract_inter_ground_eq, unifOn_ground_eq, inter_comm,
     contract_spanning_iff, unifOn_spanning_iff', unifOn_spanning_iff', tsub_le_iff_right,
     iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true,
-     ←encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff,
+     ← encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff,
     and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_distrib_left,
     and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left,
     subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
@@ -176,9 +176,9 @@ theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
   refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _),
     unif_base_iff (Nat.le_add_left _ _),
-    ←WithTop.add_right_cancel_iff (encard_ne_top_iff.2 B.toFinite),
+    ← WithTop.add_right_cancel_iff (encard_ne_top_iff.2 B.toFinite),
     encard_diff_add_encard_of_subset (subset_univ _), Iff.comm,
-    ←WithTop.add_left_cancel_iff (WithTop.coe_ne_top (a := a)), eq_comm]
+    ← WithTop.add_left_cancel_iff (WithTop.coe_ne_top (a := a)), eq_comm]
   convert Iff.rfl
   rw [encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, ENat.some_eq_coe, eq_comm, Nat.cast_add]
@@ -224,7 +224,7 @@ theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard =
 
   obtain ⟨f,hf⟩ := (finite_of_encard_eq_coe h).exists_bijOn_of_encard_eq
     ((encard_univ_fin _).symm ▸ h)
-  refine (iso_of_forall_indep' hf.toLocalEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
+  refine (iso_of_forall_indep' hf.toPartialEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
   simp [hi, hIE, (hf.injOn.mono hIE).encard_image]
 
 /-- The forwards direction of `isIso_unif_iff`, stated existentially so that `M` and `b` can be
@@ -315,30 +315,30 @@ end Uniform
 --   rintro rfl hfin,
 --   have lem : ∀ x y, ({x,y} : Set α).encard ≤ 2,
 --   { intros x y,
---     rw [(({x,y} : Set α).to_finite.encard_eq), ←nat.cast_two, nat.cast_le],
+--     rw [(({x,y} : Set α).to_finite.encard_eq), ← nat.cast_two, nat.cast_le],
 --     exact (ncard_insert_le _ _).trans (by simp) },
 --   haveI : M.finite := ⟨hfin⟩,
 --   refine ⟨λ h, ⟨λ e he f hf, (h _).mpr ⟨lem _ _,_⟩,_⟩, λ h I, _⟩,
 
 --   { rintro x ((rfl : x = e)| (rfl : x = f)); assumption  },
 --   { rw [rk],
---     rw [←one_add_one_eq_two, nat.add_one_le_iff, one_lt_ncard_iff hfin] at hk,
+--     rw [← one_add_one_eq_two, nat.add_one_le_iff, one_lt_ncard_iff hfin] at hk,
 --     obtain ⟨a, b, ha, hb, hne⟩ := hk,
 --     have hss : {a,b} ⊆ M.E, by {rintro x ((rfl : x = a) | (rfl : x = b)); assumption},
 --     have hlb := M.r_mono hss,
 --     rw [indep.r ((h _).mpr ⟨_, hss⟩), ncard_pair hne] at hlb,
 --     { refine hlb.antisymm' _,
 --       obtain ⟨B, hB⟩ := M.exists_base,
---       rw [←rk, ←hB.card],
+--       rw [← rk, ← hB.card],
 --       have h' := ((h B).mp hB.indep).1,
---       rw [←nat.cast_two, encard_le_coe_iff] at h',
+--       rw [← nat.cast_two, encard_le_coe_iff] at h',
 --       exact h'.2 },
 --     apply lem },
---   rw [←nat.cast_two, encard_le_coe_iff],
+--   rw [← nat.cast_two, encard_le_coe_iff],
 --   refine ⟨λ h', ⟨⟨h'.finite, _⟩, h'.subset_ground⟩, _⟩,
---   { rw [←h'.r, ←h.2], exact r_le_rk _ _ },
+--   { rw [← h'.r, ← h.2], exact r_le_rk _ _ },
 --   rintro ⟨⟨hfin, hcard⟩, hss⟩,
---   rw [le_iff_eq_or_lt, nat.lt_iff_add_one_le, ncard_eq_two, ←one_add_one_eq_two,
+--   rw [le_iff_eq_or_lt, nat.lt_iff_add_one_le, ncard_eq_two, ← one_add_one_eq_two,
 --     nat.add_le_add_iff_right, ncard_le_one_iff_eq hfin] at hcard,
 --   obtain (⟨x,y,-, rfl⟩ | rfl | ⟨e, rfl⟩ ) := hcard,
 --   { exact h.1 _ (hss (by simp)) _ (hss (by simp)) },

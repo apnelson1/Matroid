@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.LocalEquiv
+import Matroid.ForMathlib.PartialEquiv
 import Mathlib.Data.Set.Card
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Matrix.RowCol
@@ -8,9 +8,9 @@ variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 open Set Function
 
 theorem diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t ∩ s = r ∩ s) := by
-  rw [←diff_inter_self_eq_diff, ←diff_inter_self_eq_diff (t := r)]
+  rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := r)]
   refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
-  rw [←diff_diff_cancel_left (inter_subset_right t s), h,
+  rw [← diff_diff_cancel_left (inter_subset_right t s), h,
     diff_diff_cancel_left (inter_subset_right r s)]
 
 @[simp] theorem Set.diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
@@ -46,7 +46,7 @@ theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
   · rw [pair_eq_singleton, hs.subset_singleton_iff]; simp
   rw [subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
     iff_false_intro hs.ne_empty, false_or, and_or_left, ← singleton_subset_iff,
-    ← subset_antisymm_iff, eq_comm (b := s), ←or_assoc, or_comm (a := s = _), or_assoc]
+    ← subset_antisymm_iff, eq_comm (b := s), ← or_assoc, or_comm (a := s = _), or_assoc]
   convert Iff.rfl using 3
   rw [Iff.comm, subset_antisymm_iff, diff_subset_iff, subset_diff, disjoint_singleton,
     and_iff_left hne.symm, ← and_assoc, and_comm, singleton_union, ← and_assoc, ← union_subset_iff,
@@ -54,22 +54,22 @@ theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
 
 theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
-  rw [insert_eq, insert_eq, ←union_distrib_right, Disjoint.inter_eq _, empty_union]
+  rw [insert_eq, insert_eq, ← union_distrib_right, Disjoint.inter_eq _, empty_union]
   rwa [disjoint_singleton]
 
 theorem union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
-  rw [insert_eq, insert_eq, ←union_union_distrib_right, @union_comm _ {b} _,
-    union_assoc, ←insert_eq, ←insert_eq]
+  rw [insert_eq, insert_eq, ← union_union_distrib_right, @union_comm _ {b} _,
+    union_assoc, ← insert_eq, ← insert_eq]
 
 lemma Set.InjOn.image_eq_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
     (h₂ : s₂ ⊆ s) : f '' s₁ = f '' s₂ ↔ s₁ = s₂ :=
-  ⟨fun h' ↦ by rw [←h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩
+  ⟨fun h' ↦ by rw [← h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩
 
 lemma Set.InjOn.image_subset_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
     (h₂ : s₂ ⊆ s) : f '' s₁ ⊆ f '' s₂ ↔ s₁ ⊆ s₂ := by
   refine' ⟨fun h' ↦ _, image_subset _⟩
-  rw [←h.preimage_image_inter h₁, ←h.preimage_image_inter h₂]
+  rw [← h.preimage_image_inter h₁, ← h.preimage_image_inter h₂]
   exact inter_subset_inter_left _ (preimage_mono h')
 
 lemma Set.InjOn.image_diff' {f : α → β} (h : InjOn f s) :
@@ -101,7 +101,7 @@ lemma Function.invFunOn_injOn_image_preimage [_root_.Nonempty α] (f : α → β
 --   have hdj : Disjoint (f '' s) (f '' d)
 --   · rw [disjoint_iff_forall_ne]
 --     rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ he
---     rw [hd, mem_inter_iff, mem_preimage, ←he] at hb
+--     rw [hd, mem_inter_iff, mem_preimage, ← he] at hb
 --     exact hb.2.2 (mem_image_of_mem f ha)
 
 --   refine ⟨s ∪ g '' (f '' d), subset_union_left _ _, union_subset hst ?_, ?_, ?_⟩
@@ -193,7 +193,7 @@ section Lattice
 lemma biUnion_insert_eq {X : Set α} (hX : X.Nonempty) (Y : Set α) :
     ⋃ (x ∈ X), (insert x Y) = X ∪ Y := by
   have := hX.to_subtype
-  simp_rw [←singleton_union, biUnion_eq_iUnion, ←iUnion_union, iUnion_singleton_eq_range,
+  simp_rw [← singleton_union, biUnion_eq_iUnion, ← iUnion_union, iUnion_singleton_eq_range,
     Subtype.range_coe_subtype, setOf_mem_eq]
 
 
@@ -252,10 +252,10 @@ theorem Set.Finite.encard_eq_iff_nonempty_equiv {s : Set α} {t : Set β} (ht : 
 
 
 
--- @[simp] theorem LocalEquiv.ofSetEquiv_apply_symm [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
---     (e : s ≃ t) (y : t) : (LocalEquiv.ofSetEquiv e).symm y = e.symm y := by
+-- @[simp] theorem PartialEquiv.ofSetEquiv_apply_symm [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+--     (e : s ≃ t) (y : t) : (PartialEquiv.ofSetEquiv e).symm y = e.symm y := by
 
---   simp only [ofSetEquiv, Subtype.forall, BijOn.toLocalEquiv_symm_apply]
+--   simp only [ofSetEquiv, Subtype.forall, BijOn.toPartialEquiv_symm_apply]
 
 --   have := ((Classical.choose_spec e.exists_bijOn).2 (e.symm y)).symm
 

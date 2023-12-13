@@ -1,60 +1,60 @@
 import Matroid.Constructions.Basic
-import Matroid.ForMathlib.LocalEquiv
+import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Other
 
 namespace Matroid
 
-open Set LocalEquiv
+open Set PartialEquiv
 
 variable {α β α₁ α₂ α₃ : Type*}
 
 /-- An isomorphism between two matroids. Sadly this doesn't exist if one has empty ground
   type and the other is an empty matroid on a nonempty type; this is a shortcoming of the
-  implementation via `LocalEquiv`, which otherwise has many advantages.  -/
+  implementation via `PartialEquiv`, which otherwise has many advantages.  -/
 structure Iso (M : Matroid α) (N : Matroid β) where
-  (toLocalEquiv : LocalEquiv α β)
-  (source_eq' : toLocalEquiv.source = M.E)
-  (target_eq' : toLocalEquiv.target = N.E)
-  (setOf_base_eq' : setOf N.Base = (image toLocalEquiv) '' (setOf M.Base))
+  (toPartialEquiv : PartialEquiv α β)
+  (source_eq' : toPartialEquiv.source = M.E)
+  (target_eq' : toPartialEquiv.target = N.E)
+  (setOf_base_eq' : setOf N.Base = (image toPartialEquiv) '' (setOf M.Base))
 
 instance {M : Matroid α} {N : Matroid β} : CoeFun (Iso M N) (fun _ ↦ (α → β)) where
-  coe e := (e.toLocalEquiv : α → β)
+  coe e := (e.toPartialEquiv : α → β)
 
 theorem Iso.setOf_base_eq (e : Iso M N) : setOf N.Base = (image e) '' (setOf M.Base) :=
   e.setOf_base_eq'
 
-@[simp] lemma Iso.source_eq (e : Iso M N) : e.toLocalEquiv.source = M.E :=
+@[simp] lemma Iso.source_eq (e : Iso M N) : e.toPartialEquiv.source = M.E :=
   e.source_eq'
 
-@[simp] lemma Iso.target_eq (e : Iso M N) : e.toLocalEquiv.target = N.E :=
+@[simp] lemma Iso.target_eq (e : Iso M N) : e.toPartialEquiv.target = N.E :=
   e.target_eq'
 
 @[simp] lemma Iso.subset_source (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
-    X ⊆ e.toLocalEquiv.source :=
+    X ⊆ e.toPartialEquiv.source :=
   hX.trans_eq e.source_eq.symm
 
 @[simp] lemma Iso.subset_target (e : Iso M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
-    X ⊆ e.toLocalEquiv.target :=
+    X ⊆ e.toPartialEquiv.target :=
   hX.trans_eq e.target_eq.symm
 
 @[simp] lemma Iso.image_subset_target (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
-    e '' X ⊆ e.toLocalEquiv.target := by
-  rw [←image_source_eq_target]; exact image_subset _ (e.subset_source X)
+    e '' X ⊆ e.toPartialEquiv.target := by
+  rw [← image_source_eq_target]; exact image_subset _ (e.subset_source X)
 
 @[simp] lemma Iso.image_ground (e : Iso M N) : e '' M.E = N.E := by
-  rw [←e.source_eq, ←e.target_eq, image_source_eq_target]
+  rw [← e.source_eq, ← e.target_eq, image_source_eq_target]
 
 lemma Iso.ground_subset_preimage_ground (e : Iso M N) : M.E ⊆ e ⁻¹' N.E := by
-  rw [←e.source_eq, ←e.target_eq]; exact source_subset_preimage_target e.toLocalEquiv
+  rw [← e.source_eq, ← e.target_eq]; exact source_subset_preimage_target e.toPartialEquiv
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Iso.image_subset_ground (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e '' X ⊆ N.E := by
   convert image_subset _ hX
-  rw [←e.source_eq, image_source_eq_target, e.target_eq]
+  rw [← e.source_eq, image_source_eq_target, e.target_eq]
 
 lemma Iso.injOn_ground (e : Iso M N) : InjOn e M.E := by
-  rw [←e.source_eq]; exact e.toLocalEquiv.injOn
+  rw [← e.source_eq]; exact e.toPartialEquiv.injOn
 
 theorem Iso.on_base_iff (e : Iso M N) (hB : B ⊆ M.E := by aesop_mat) :
     M.Base B ↔ N.Base (e '' B) := by
@@ -62,19 +62,19 @@ theorem Iso.on_base_iff (e : Iso M N) (hB : B ⊆ M.E := by aesop_mat) :
   simp_rw [e.setOf_base_eq', mem_image, mem_setOf_eq]
   refine' ⟨fun h ↦ ⟨B, h, rfl⟩, fun ⟨B', h, h'⟩ ↦ _⟩
   rw [e.injOn_ground.image_eq_image_iff_of_subset h.subset_ground hB] at h'
-  rwa [←h']
+  rwa [← h']
 
 def Iso.refl (M : Matroid α) : Iso M M where
-  toLocalEquiv := ofSet M.E
+  toPartialEquiv := ofSet M.E
   source_eq' := rfl
   target_eq' := rfl
   setOf_base_eq' := by simp
 
-@[simp] theorem Iso.refl_toLocalEquiv (M : Matroid α) :
-    (Iso.refl M).toLocalEquiv = ofSet M.E := rfl
+@[simp] theorem Iso.refl_toPartialEquiv (M : Matroid α) :
+    (Iso.refl M).toPartialEquiv = ofSet M.E := rfl
 
 def Iso.symm (e : Iso M N) : Iso N M where
-  toLocalEquiv := e.toLocalEquiv.symm
+  toPartialEquiv := e.toPartialEquiv.symm
   source_eq' := by rw [symm_source, e.target_eq']
   target_eq' := by rw [symm_target, e.source_eq']
   setOf_base_eq' := by
@@ -82,58 +82,58 @@ def Iso.symm (e : Iso M N) : Iso N M where
       ext B
       simp only [mem_setOf_eq, mem_image, exists_exists_and_eq_and]
       refine' ⟨fun h ↦ ⟨B, h, _⟩, fun ⟨B', hB', h⟩ ↦ _⟩
-      · exact symm_image_image_of_subset_source e.toLocalEquiv (by simp [h.subset_ground])
-      rw [←h]; convert hB';
-      exact symm_image_image_of_subset_source e.toLocalEquiv (by simp [hB'.subset_ground]) }
+      · exact symm_image_image_of_subset_source e.toPartialEquiv (by simp [h.subset_ground])
+      rw [← h]; convert hB';
+      exact symm_image_image_of_subset_source e.toPartialEquiv (by simp [hB'.subset_ground]) }
 
-@[simp] theorem Iso.symm_toLocalEquiv (e : Iso M N) :
-    e.symm.toLocalEquiv = e.toLocalEquiv.symm := rfl
+@[simp] theorem Iso.symm_toPartialEquiv (e : Iso M N) :
+    e.symm.toPartialEquiv = e.toPartialEquiv.symm := rfl
 
 def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃} (e₁₂ : Iso M₁ M₂)
     (e₂₃ : Iso M₂ M₃) : Iso M₁ M₃ where
-  toLocalEquiv := e₁₂.toLocalEquiv.trans e₂₃.toLocalEquiv
+  toPartialEquiv := e₁₂.toPartialEquiv.trans e₂₃.toPartialEquiv
   source_eq' := by
-  { rw [trans_source, e₁₂.source_eq', e₂₃.source_eq', ←e₁₂.target_eq', inter_eq_left,
-    ←e₁₂.source_eq']
+  { rw [trans_source, e₁₂.source_eq', e₂₃.source_eq', ← e₁₂.target_eq', inter_eq_left,
+    ← e₁₂.source_eq']
     exact source_subset_preimage_target _ }
   target_eq' := by
-  { rw [trans_target, e₁₂.target_eq', e₂₃.target_eq', inter_eq_left, ←e₂₃.source_eq',
-    ←e₂₃.target_eq']
+  { rw [trans_target, e₁₂.target_eq', e₂₃.target_eq', inter_eq_left, ← e₂₃.source_eq',
+    ← e₂₃.target_eq']
     exact target_subset_preimage_source _ }
   setOf_base_eq' := by rw [e₂₃.setOf_base_eq', e₁₂.setOf_base_eq']; ext B; simp [image_image]
 
-@[simp] theorem Iso.trans_toLocalEquiv {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
+@[simp] theorem Iso.trans_toPartialEquiv {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
     (e₁₂ : Iso M₁ M₂) (e₂₃ : Iso M₂ M₃) :
-  (e₁₂.trans e₂₃).toLocalEquiv = e₁₂.toLocalEquiv.trans e₂₃.toLocalEquiv := rfl
+  (e₁₂.trans e₂₃).toPartialEquiv = e₁₂.toPartialEquiv.trans e₂₃.toPartialEquiv := rfl
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Iso.image_symm_subset_ground (e : Iso M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
     e.symm '' X ⊆ M.E :=
   e.symm.image_subset_ground X hX
 
-@[simp] theorem Iso.symm_apply (e : Iso M N) : e.symm.toLocalEquiv = e.toLocalEquiv.symm := rfl
+@[simp] theorem Iso.symm_apply (e : Iso M N) : e.symm.toPartialEquiv = e.toPartialEquiv.symm := rfl
 
 /-- Equal matroids are isomorphic -/
 def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
-  toLocalEquiv := ofSet M.E
+  toPartialEquiv := ofSet M.E
   source_eq' := rfl
   target_eq' := by simp [h]
   setOf_base_eq' := by simp [h]
 
-@[simp] theorem Iso.ofEq_toLocalEquiv {M N : Matroid α} (h : M = N) :
-    (Iso.ofEq h).toLocalEquiv = ofSet M.E := rfl
+@[simp] theorem Iso.ofEq_toPartialEquiv {M N : Matroid α} (h : M = N) :
+    (Iso.ofEq h).toPartialEquiv = ofSet M.E := rfl
 
-/-- A `LocalEquiv` behaving well on independent sets also gives an isomorphism -/
-def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
+/-- A `PartialEquiv` behaving well on independent sets also gives an isomorphism -/
+def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : PartialEquiv α β)
     (h_source : f.source = M.E) (h_target : f.target = N.E)
     (h_ind : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (f '' I))) : Iso M N where
-  toLocalEquiv := f
+  toPartialEquiv := f
   source_eq' := h_source
   target_eq' := h_target
   setOf_base_eq' :=
   ( by
     rw [setOf_base_eq_maximals_setOf_indep, setOf_base_eq_maximals_setOf_indep,
-      ←maximals_image_of_rel_iff_rel_on (f := image f) (s := (· ⊆ ·))]
+      ← maximals_image_of_rel_iff_rel_on (f := image f) (s := (· ⊆ ·))]
     · convert rfl
       ext I
       simp_rw [mem_image, mem_setOf]
@@ -144,12 +144,12 @@ def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
       rwa [h_ind, f.image_symm_image_of_subset_target (h.subset_ground.trans_eq h_target.symm),
         and_iff_left rfl]
       refine (image_subset _ h.subset_ground).trans ?_
-      rw [←h_target, ←h_source, f.symm_image_target_eq_source]
+      rw [← h_target, ← h_source, f.symm_image_target_eq_source]
     rintro I J (hI : M.Indep I) (hJ : M.Indep J)
     rw [f.injOn.image_subset_image_iff_of_subset
       (hI.subset_ground.trans_eq h_source.symm) (hJ.subset_ground.trans_eq h_source.symm)] )
 
-@[simp] theorem Iso.of_forall_indep_apply {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
+@[simp] theorem Iso.of_forall_indep_apply {M : Matroid α} {N : Matroid β} (f : PartialEquiv α β)
     (h_source : f.source = M.E) (h_target : f.target = N.E)
     (h_ind : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (f '' I))) :
     (Iso.of_forall_indep f h_source h_target h_ind : α → β) = f := rfl
@@ -157,7 +157,7 @@ def Iso.of_forall_indep {M : Matroid α} {N : Matroid β} (f : LocalEquiv α β)
 /-- Empty matroids (on nonempty types) are isomorphic. -/
 noncomputable def Iso.of_emptyOn [Nonempty α] [Nonempty β] : (emptyOn α).Iso (emptyOn β) :=
   let f : (α → β) := Pi.Nonempty.some
-  Iso.of_forall_indep ((injOn_empty f).toLocalEquiv) (by simp) (by simp) (by simp)
+  Iso.of_forall_indep ((injOn_empty f).toPartialEquiv) (by simp) (by simp) (by simp)
 
 section transfer
 
@@ -185,11 +185,11 @@ theorem Iso.prop_subset_iff_subset (e : Iso M N) (hM : ∀ {X}, PM X → X ⊆ M
 
 end transfer
 
-/-- A `LocalEquiv` that respects bases is an isomorphism. -/
-def iso_of_forall_base (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+/-- A `PartialEquiv` that respects bases is an isomorphism. -/
+def iso_of_forall_base (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_base : ∀ B, M.Base B → N.Base (e '' B))
     (on_base_symm : ∀ B, N.Base B → M.Base (e.symm '' B)) : Iso M N where
-  toLocalEquiv := e
+  toPartialEquiv := e
   source_eq' := hM
   target_eq' := hN
   setOf_base_eq' := by
@@ -198,11 +198,11 @@ def iso_of_forall_base (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.targ
     rintro ⟨B, hB, rfl⟩
     exact on_base B hB }
 
-/-- A `LocalEquiv` that respects independence is an isomorphism. -/
-def iso_of_forall_indep (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+/-- A `PartialEquiv` that respects independence is an isomorphism. -/
+def iso_of_forall_indep (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_indep : ∀ I, M.Indep I → N.Indep (e '' I))
     (on_indep_symm : ∀ I, N.Indep I → M.Indep (e.symm '' I)) : Iso M N where
-  toLocalEquiv := e
+  toPartialEquiv := e
   source_eq' := hM
   target_eq' := hN
   setOf_base_eq' := by
@@ -211,33 +211,33 @@ def iso_of_forall_indep (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.tar
       · rintro _ ⟨I, (hI : M.Indep I), rfl⟩; exact on_indep I hI
       · rw [e.image_symm_image_of_subset_target (hI.subset_ground.trans_eq hN.symm)]
     rw [setOf_base_eq_maximals_setOf_indep, setOfIndep,
-      maximals_image_of_rel_iff_rel_on (r := (· ⊆ ·)), ←setOf_base_eq_maximals_setOf_indep]
+      maximals_image_of_rel_iff_rel_on (r := (· ⊆ ·)), ← setOf_base_eq_maximals_setOf_indep]
     rintro I J (hI : M.Indep I) (hJ : M.Indep J)
     rw [e.injOn.image_subset_image_iff_of_subset (hI.subset_ground.trans hM.symm.subset)
       (hJ.subset_ground.trans hM.symm.subset)] }
 
-@[simp] theorem iso_of_forall_indep_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β)
+@[simp] theorem iso_of_forall_indep_apply {M : Matroid α} {N : Matroid β} (e : PartialEquiv α β)
     (hM : e.source = M.E) (hN : e.target = N.E) (on_indep : ∀ I, M.Indep I → N.Indep (e '' I))
     (on_indep_symm : ∀ I, N.Indep I → M.Indep (e.symm '' I)) :
-  (iso_of_forall_indep e hM hN on_indep on_indep_symm).toLocalEquiv = e := rfl
+  (iso_of_forall_indep e hM hN on_indep on_indep_symm).toPartialEquiv = e := rfl
 
-def iso_of_forall_indep' (e : LocalEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+def iso_of_forall_indep' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
     (on_indep : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (e '' I))) : Iso M N :=
   iso_of_forall_indep e hM hN (fun I hI ↦ (on_indep I hI.subset_ground).mp hI)
     (by {
       intro I hI
       have h' : e.symm '' I ⊆ M.E
-      · rw [←hM, ←symm_image_target_eq_source, hN]; exact image_subset _ hI.subset_ground
+      · rw [← hM, ← symm_image_target_eq_source, hN]; exact image_subset _ hI.subset_ground
       rwa [on_indep _ h', image_symm_image_of_subset_target _
         (by rw [hN]; exact hI.subset_ground)] })
 
-@[simp] theorem iso_of_forall_indep'_apply {M : Matroid α} {N : Matroid β} (e : LocalEquiv α β)
+@[simp] theorem iso_of_forall_indep'_apply {M : Matroid α} {N : Matroid β} (e : PartialEquiv α β)
     (hM : e.source = M.E) (hN : e.target = N.E)
     (on_indep : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (e '' I))) :
-  (iso_of_forall_indep' e hM hN on_indep).toLocalEquiv = e := rfl
+  (iso_of_forall_indep' e hM hN on_indep).toPartialEquiv = e := rfl
 
 theorem Iso.on_base (e : Iso M N) (hB : M.Base B) : N.Base (e '' B) := by
-  rwa [←e.on_base_iff]
+  rwa [← e.on_base_iff]
 
 lemma Iso.on_indep (e : Iso M N) (hI : M.Indep I) : N.Indep (e '' I) := by
   change (_ ∈ (setOf N.Indep))
@@ -277,7 +277,7 @@ theorem Iso.encard_ground_eq (e : Iso M N) : M.E.encard = N.E.encard := by
 
 /-- The duals of isomorphic matroids are isomorphic -/
 def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
-  iso_of_forall_base e.toLocalEquiv
+  iso_of_forall_base e.toPartialEquiv
     (by simp) (by simp)
     (by {
       simp_rw [dual_base_iff', image_subset_iff, and_imp]
@@ -290,12 +290,12 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
       convert e.symm.on_base hB
       rw [e.symm.injOn_ground.image_diff hBE, e.symm.image_ground, symm_apply] } )
 
-@[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toLocalEquiv = e.toLocalEquiv := rfl
+@[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toPartialEquiv = e.toPartialEquiv := rfl
 
 /-- Restrictions of isomorphic matroids are isomorphic -/
 def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     Iso (M ↾ R) (N ↾ (e '' R)) :=
-  iso_of_forall_indep (e.toLocalEquiv.restr R)
+  iso_of_forall_indep (e.toPartialEquiv.restr R)
   (by simpa [restrict_ground_eq])
   (by rw [restr_target, restrict_ground_eq,
     image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])] )
@@ -310,14 +310,14 @@ def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     apply inter_subset_right })
 
 @[simp] lemma Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
-    (e.restrict R hR).toLocalEquiv = e.toLocalEquiv.restr R := by
+    (e.restrict R hR).toPartialEquiv = e.toPartialEquiv.restr R := by
   simp [restrict]
 
 theorem Iso.on_basis (e : Iso M N) (hI : M.Basis I X) : N.Basis (e '' I) (e '' X) := by
   rw [← base_restrict_iff _, (e.restrict X).symm.on_base_iff _, base_restrict_iff]
   · convert hI
     simp only [symm_apply, restrict_apply, restr_coe_symm]
-    apply e.toLocalEquiv.symm_image_image_of_subset_source
+    apply e.toPartialEquiv.symm_image_image_of_subset_source
     rw [e.source_eq]
     exact hI.indep.subset_ground
   · simp only [restrict_ground_eq]
@@ -415,7 +415,7 @@ theorem IsIso.dual (h : M ≅ N) : M﹡ ≅ N﹡ := by
 
 theorem isIso_dual_iff : M﹡ ≅ N﹡ ↔ M ≅ N := by
   refine ⟨fun h ↦ ?_, IsIso.dual⟩
-  rw [←dual_dual M, ←dual_dual N]
+  rw [← dual_dual M, ← dual_dual N]
   exact h.dual
 
 theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
@@ -435,7 +435,7 @@ theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
       exact Fintype.card_eq.mp rfl
     rw [eq_loopyOn_iff, and_iff_right rfl]
     refine ⟨fun I _ hI ↦ by simpa using e.on_indep hI, ?_⟩
-    · convert Nonempty.intro e.toLocalEquiv.toEquiv <;> simp
+    · convert Nonempty.intro e.toPartialEquiv.toEquiv <;> simp
   rintro ⟨hM, ⟨e⟩⟩
   cases isEmpty_or_nonempty α
   · simp only [eq_emptyOn, emptyOn_isIso_iff, ← ground_eq_empty_iff, loopyOn_ground]
@@ -445,7 +445,7 @@ theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
     rw [← ground_eq_empty_iff, ← isEmpty_coe_sort]
     rw [E.eq_empty_of_isEmpty] at e
     exact e.isEmpty
-  refine (Iso.of_forall_indep (LocalEquiv.ofSetEquiv e) (by simp) (by simp) ?_).isIso
+  refine (Iso.of_forall_indep (PartialEquiv.ofSetEquiv e) (by simp) (by simp) ?_).isIso
   simp only [eq_iff_indep_iff_indep_forall, loopyOn_ground, loopyOn_indep_iff, true_and] at hM
   simpa
 
@@ -462,7 +462,7 @@ end IsIso
 --       obtain rfl := ground_eq_empty_iff.1 hM
 --       simp only [emptyOn_ground, loopyOn_empty, hN, true_and]
 --       exact Fintype.card_eq.mp rfl
---     refine ⟨?_, ⟨by simpa using i.toLocalEquiv.bijOn.equiv⟩⟩
+--     refine ⟨?_, ⟨by simpa using i.toPartialEquiv.bijOn.equiv⟩⟩
 --     apply eq_of_indep_iff_indep_forall (by simp) fun I hIE ↦ ?_
 --     rw [i.on_indep_iff, loopyOn_indep_iff, loopyOn_indep_iff, image_eq_empty]
 --     sorry

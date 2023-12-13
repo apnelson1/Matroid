@@ -31,7 +31,7 @@ def matroidOnUnivOfSubspace (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensiona
     refine ⟨matroidOnUnivOfFun 𝔽 <| fun a i ↦ (b i).1 a, rfl, fun I ↦ ?_⟩
     rw [v.indep_iff_projSet_eq_top, v.projSet_eq_map]
     have hUf : (ofFun 𝔽 <| fun a i ↦ (b i).1 a) = U := b.eq_ofFun
-    simp_rw [←hUf]
+    simp_rw [← hUf]
     rfl )
 
 def matroid_of_subspace (E : Set α) (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensional 𝔽 U] :
@@ -58,7 +58,7 @@ instance {M : Matroid α} {𝔽 : Type*} [Field 𝔽] :
 /-- A representation `v` canonically gives a subspace representation (its 'row space')-/
 def Rep.subspaceRep (v : M.Rep 𝔽 W) : M.SubspaceRep 𝔽 where
   space := ofFun 𝔽 v
-  valid := fun I ↦ by rw [←v.projSet_eq_map, v.indep_iff_projSet_eq_top]
+  valid := fun I ↦ by rw [← v.projSet_eq_map, v.indep_iff_projSet_eq_top]
 
 @[simp] theorem Rep.subspaceRep_apply (v : M.Rep 𝔽 W) :
     v.subspaceRep.space = ofFun 𝔽 v := rfl
@@ -70,7 +70,7 @@ theorem SubspaceRep.representable (U : M.SubspaceRep 𝔽) [FiniteDimensional �
   · rw [eq_iff_indep_iff_indep_forall]
     refine ⟨rfl, fun I hIE ↦ ?_⟩
     rw [matroidOfFun_indep_iff', and_iff_left hIE, U.indep_iff]
-    simp_rw [←b.eq_ofFun, ←ofFun_comp_coe, ofFun_eq_top_iff]
+    simp_rw [← b.eq_ofFun, ← ofFun_comp_coe, ofFun_eq_top_iff]
     rfl
   rw [hM]
   apply matroidOfFun_representable

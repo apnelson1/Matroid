@@ -11,7 +11,7 @@ theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
     [Module R M₂] [Module R M₃] (e₁₂ : M₁ ≃ₗ[R] M₂) (e₂₃ : M₂ ≃ₗ[R] M₃)
     (U : Submodule R M₁) :
     U.map (e₁₂.trans e₂₃) = (U.map e₁₂).map e₂₃ := by
-  rw [←LinearEquiv.map_coe,  LinearEquiv.coe_trans, Submodule.map_comp]; rfl
+  rw [← LinearEquiv.map_coe,  LinearEquiv.coe_trans, Submodule.map_comp]; rfl
 
 @[simp] theorem LinearMap.range_domRestrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
     [AddCommMonoid M] [AddCommMonoid M₂] [Module R M] [Module R₂ M₂] {σ₁₂ : R →+* R₂}

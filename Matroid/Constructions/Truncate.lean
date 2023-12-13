@@ -81,10 +81,10 @@ instance truncate.finiteRk {k : ℕ} : FiniteRk (M.truncate k) := by
   obtain ⟨B, hB⟩ := (M.truncate k).exists_base
   refine ⟨B, hB, (le_or_lt M.erk k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rk_le h] at hB
-    rw [←encard_lt_top_iff, hB.encard]
+    rw [← encard_lt_top_iff, hB.encard]
     exact h.trans_lt (WithTop.coe_lt_top _)
   rw [truncate_base_iff h.le] at hB
-  rw [←encard_lt_top_iff, hB.2]
+  rw [← encard_lt_top_iff, hB.2]
   apply WithTop.coe_lt_top
 
 theorem Indep.of_truncate (h : (M.truncate k).Indep I) : M.Indep I := by

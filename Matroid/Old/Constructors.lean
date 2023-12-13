@@ -54,7 +54,7 @@
 --     (fun B hB ↦ hB.finiteRk_of_finite _)
 --   obtain ⟨n, h_bdd⟩ := h_bdd
 --   refine' finite_of_encard_le_coe (h_bdd _ _)
---   rw [←matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
+--   rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
 --   exact ⟨_, hB, rfl.subset⟩
 
 -- /-- If there is an absolute upper bound on the size of an independent set, then matroids 
@@ -141,7 +141,7 @@
 --     (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α := 
 --   matroid_of_indep_of_bdd_augment E Indep h_empty ind_mono 
 --   ( fun I J hI hJ hlt ↦ ind_aug hI hJ ( by
---       rwa [←Nat.cast_lt (α := ℕ∞), (hE.subset (h_support hJ)).cast_ncard_eq, 
+--       rwa [← Nat.cast_lt (α := ℕ∞), (hE.subset (h_support hJ)).cast_ncard_eq, 
 --       (hE.subset (h_support hI)).cast_ncard_eq]) )
 --   (⟨E.ncard, fun I hI ↦ by { rw [hE.cast_ncard_eq]; exact encard_mono (h_support hI) }⟩ )
 --   h_support
