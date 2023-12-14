@@ -1,5 +1,6 @@
 import Matroid.Simple
 import Matroid.ForMathlib.ENatTopology
+import Matroid.Flat
 
 open Set
 
@@ -17,6 +18,12 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
   rw [numPoints_eq_encard_parallelClasses, M.simplification_equiv.encard_eq]
 
 
+
+-- theorem Point.foo {P : Set α} (hP : M.Point P) : 
+--     M.numPoints = 1 + ∑' L : {L // P ⋖[M] L}, (M ↾ (L \ P)).numPoints := by
+--   set Ls := M.covbyPartition 
+ 
+  
 
 -- Define relative rank.
 

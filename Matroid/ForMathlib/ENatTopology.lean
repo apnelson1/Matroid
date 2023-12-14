@@ -9,6 +9,8 @@ open Set Function WithTop Filter
 
 universe u v
 
+variable {α β ι : Type*} {s : Set α}
+
 open scoped BigOperators ENNReal Topology Filter
 
 theorem tsum_support_eq {α β : Type*} {f : α → β} [TopologicalSpace β] [AddCommMonoid β]
@@ -103,7 +105,7 @@ theorem mem_nhds_iff {x : ℕ∞} {s : Set ℕ∞} (hx : x ≠ ⊤) : s ∈ 𝓝
   rw [_root_.mem_nhds_iff]
   exact ⟨fun ⟨_, h, _, h'⟩ ↦ h h', fun h ↦ ⟨_, singleton_subset_iff.2 h, isOpen_singleton hx, rfl⟩⟩
 
-@[simp] theorem mem_nhds_coe_iff (n : ℕ) : s ∈ 𝓝 (n : ℕ∞) ↔ (n : ℕ∞) ∈ s :=
+@[simp] theorem mem_nhds_coe_iff (n : ℕ) {s : Set ℕ∞} : s ∈ 𝓝 (n : ℕ∞) ↔ (n : ℕ∞) ∈ s :=
   mem_nhds_iff (coe_ne_top _)
 
 @[simp] theorem nhds_cast_eq (n : ℕ) : 𝓝 (n : ℕ∞) = 𝓟 ({(n : ℕ∞)}) := by
@@ -136,9 +138,9 @@ theorem tendsto_nhds_top_iff {m : α → ℕ∞} {f : Filter α} :
     Tendsto m f (𝓝 ⊤) ↔ ∀ x : ℕ, ∀ᶠ a in f, ↑x < m a := by
   simp only [nhds_top', tendsto_iInf, tendsto_principal, mem_Ioi]
 
-protected theorem tendsto_mul (ha : a ≠ 0 ∨ b ≠ ⊤) (hb : b ≠ 0 ∨ a ≠ ⊤) :
+protected theorem tendsto_mul {a b : ℕ∞} (ha : a ≠ 0 ∨ b ≠ ⊤) (hb : b ≠ 0 ∨ a ≠ ⊤) :
     Tendsto (fun p : ℕ∞ × ℕ∞ => p.1 * p.2) (𝓝 (a, b)) (𝓝 (a * b)) := by
-  clear n
+  clear n ι β s α
   wlog h : b ≤ a with h'
   · specialize h' hb ha (not_le.1 h).le
     rw [nhds_swap a b, mul_comm, tendsto_map'_iff]
@@ -250,7 +252,7 @@ protected theorem sum_le_tsum {f : α → ℕ∞} (s : Finset α) : ∑ x in s, 
 protected theorem le_tsum (a : α) : f a ≤ ∑' a, f a :=
   le_tsum' ENat.summable a
 
-protected theorem le_tsum_of_mem {s : Set α} (ha : a ∈ s) : f a ≤ ∑' (x : s), f x :=
+protected theorem le_tsum_of_mem {s : Set α} {a : α} (ha : a ∈ s) : f a ≤ ∑' (x : s), f x :=
   ENat.le_tsum (⟨a,ha⟩ : s)
 
 @[simp] protected theorem tsum_eq_zero : ∑' i, f i = 0 ↔ ∀ i, f i = 0 :=
@@ -365,6 +367,10 @@ protected theorem tsum_comp_eq_tsum_of_bijective {f : α → β} (hf : f.Bijecti
     ∑' x, g (f x) = ∑' y, g y :=
   (ENat.tsum_comp_le_tsum_of_injective hf.injective g).antisymm
     (ENat.tsum_le_tsum_comp_of_surjective hf.surjective g)
+
+protected theorem tsum_comp_eq_tsum_of_equiv (e : α ≃ β) (g : β → ℕ∞) :
+    ∑' x, g (e x) = ∑' y, g y := by
+  rw [ENat.tsum_comp_eq_tsum_of_bijective e.bijective]
 
 protected theorem tsum_mono_subtype (f : α → ℕ∞) {s t : Set α} (h : s ⊆ t) :
     ∑' x : s, f x ≤ ∑' x : t, f x :=

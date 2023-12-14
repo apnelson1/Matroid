@@ -617,7 +617,6 @@ section Constructions
     (trivialOn I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
   have hb := (trivialOn_basis_iff (inter_subset_right I E) (inter_subset_right X E)).mpr rfl
   ext e
-
   rw [← trivialOn_inter_ground_eq I E, ← cl_inter_ground _ X, trivialOn_ground,
     ← hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivialOn_indep_iff', insert_subset_iff,
     trivialOn_ground, inter_assoc, inter_self,  and_iff_left (inter_subset_right _ _),

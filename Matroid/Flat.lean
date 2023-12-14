@@ -1,5 +1,6 @@
 import Matroid.Minor.RelRank
 import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.ENatTopology
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -64,6 +65,10 @@ theorem Flat.sInter_inter_ground {Fs : Set (Set α)} (h : ∀ F ∈ Fs, M.Flat F
 theorem flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
+
+theorem flat_iff_subset_cl_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.cl F ⊆ F := by
+  rw [flat_iff_cl_self, subset_antisymm_iff, and_iff_left_iff_imp]
+  exact fun _ ↦ M.subset_cl F
 
 theorem exists_mem_cl_not_mem_of_not_flat (h : ¬ M.Flat F) (hF : F ⊆ M.E := by aesop_mat) :
     ∃ e, e ∈ M.cl F \ F := by
@@ -491,6 +496,29 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
   rw [insert_eq_of_mem hfF, hF.cl] at hcl
   exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
 
+@[simps] def Flat.equivCovbyPartition (hF₀ : M.Flat F₀) :
+    ↑(hF₀.covbyPartition : Set (Set α)) ≃ {F // F₀ ⋖[M] F} where
+  toFun F := ⟨F ∪ F₀, sorry⟩
+  invFun F := ⟨F \ F₀, sorry⟩
+  left_inv := sorry
+  right_inv := sorry
+
+
+theorem Flat.ground_encard_eq_tsum (hF₀ : M.Flat F₀) :
+    M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
+  rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
+  apply congr_arg (_ + ·)
+  have' := ENat.tsum_encard_eq_encard_sUnion hF₀.covbyPartition.pairwiseDisjoint
+
+  simp at this
+
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv hF₀.equivCovbyPartition (fun F ↦ encard ((F : Set α) \ F₀)), ← this]
+  simp only [SetLike.coe_sort_coe]
+  congr
+  ext F
+  simp [equivCovbyPartition]
+  -- have := hF₀.covbyPartition.pairwiseDisjoint
+
 section Minor
 
 theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
@@ -513,9 +541,12 @@ theorem flat_contract_iff' :
     (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [← contract_inter_ground_eq, flat_contract_iff]
 
-
 theorem Flat.union_flat_of_contract' (hF : (M ⧸ C).Flat F) : M.Flat (F ∪ M.cl C) := by
-  rw [flat_contract_iff'] at hF
+  replace hF := (flat_contract_iff'.1 hF).1.cl
+  rw [← cl_union_cl_right_eq, cl_inter_ground] at hF
+  rw [flat_iff_subset_cl_self (union_subset _ (M.cl_subset_ground _)), hF]
+  · exact union_subset_union_right _ <| (M.subset_cl _).trans (M.cl_inter_ground _).subset
+  exact (subset_union_left _ _).trans (hF.symm.subset.trans (M.cl_subset_ground _))
 
 theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
     (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
@@ -785,6 +816,7 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
   rw [← h.cl]
   exact M.cl_subset_cl (subset_union_right _ _)
 
+/-- Points of `M ⧸ C` are equivalent to flats covering `M.cl C`. -/
 @[simps] def pointContractCovbyEquiv (M : Matroid α) (C : Set α) :
     {P // (M ⧸ C).Point P} ≃ {F // M.cl C ⋖[M] F} where
   toFun P := ⟨P ∪ M.cl C, by
@@ -799,7 +831,8 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     obtain ⟨P, hP⟩ := P
     rw [← cl_inter_ground] at hP
     rwa [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← contract_inter_ground_eq,
-      point_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self, union_eq_self_of_subset_left, cl_inter_ground]
+      point_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self,
+      union_eq_self_of_subset_left, cl_inter_ground]
     exact (M.subset_cl _).trans hP.subset ⟩
   left_inv := by
     rintro ⟨P,hP⟩
@@ -816,6 +849,10 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     rw [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← cl_inter_ground,
       diff_union_eq_union_of_subset P (M.subset_cl (C ∩ M.E)), union_eq_left, cl_inter_ground]
     exact hP.subset
+
+theorem encard_ground_eq_sum_points (M : Matroid α) : M.E.encard =
+    (M.cl ∅).encard + ∑' P : {P // M.Point P}, ((P : Set α) \ M.cl ∅).encard := by
+  have := (M.cl_flat ∅).covbyPartition.pairwiseDisjoint
 
 @[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 
