@@ -231,7 +231,7 @@ end Lattice
 def Covby (M : Matroid α) (F₀ F₁ : Set α) : Prop :=
   ∃ (h₀ : M.Flat F₀) (h₁ : M.Flat F₁), h₀.toFlats ⋖ h₁.toFlats
 
-notation:25 F₀:50 " ⋖[" M:25 "] " F₁ :50 => Covby M F₀ F₁
+notation:25 F₀:50 " ⋖[" M:25 "] " F₁ :75 => Covby M F₀ F₁
 
 @[simp] theorem Flats.covby_iff (F₀ F₁ : M.Flats) : F₀ ⋖ F₁ ↔ (F₀ : Set α) ⋖[M] (F₁ : Set α) := by
   simp only [Matroid.Covby, coe_flat, exists_true_left]; rfl
@@ -406,25 +406,34 @@ instance {M : Matroid α} : IsWeakUpperModularLattice M.Flats where
     simp only [ge_iff_le, Flats.le_iff, Flats.covby_iff, Flats.coe_inf, Flats.coe_sup]
     exact Covby.covby_cl_union_of_inter_covby
 
+/-- If `M.relRank F₀ F₁ = 2` for flats `F₀, F₁`, then every flat strictly between
+  `F₀` and `F₁` covers `F₀` and is covered by `F₁`. -/
+theorem Flat.covby_and_covby_of_ssubset_of_ssubset_of_relRank_eq_two (hF₀ : M.Flat F₀)
+    (hF₁ : M.Flat F₁) (h : M.relRank F₀ F₁ = 2) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₁) :
+    (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
+  have h0le := hF₀.one_le_relRank_of_ssubset h₀
+  have h1le := hF.one_le_relRank_of_ssubset h₁
+  rw [← M.relRank_add_of_subset_of_subset h₀.subset h₁.subset] at h
+  have h0top : M.relRank F₀ F ≠ ⊤
+  · intro h'; rw [h'] at h; norm_cast at h
+  have h1top : M.relRank F F₁ ≠ ⊤
+  · intro h'; rw [h', add_top] at h; norm_cast at h
+  have hle1 := WithTop.le_of_add_le_add_left h0top <| h.le.trans (add_le_add_right h0le 1)
+  have hle0 := WithTop.le_of_add_le_add_right h1top <| h.le.trans (add_le_add_left h1le 1)
+  rw [hF₀.covby_iff_relRank_eq_one hF, hF.covby_iff_relRank_eq_one hF₁,
+    and_iff_right h₀.subset, and_iff_right h₁.subset]
+  exact ⟨hle0.antisymm h0le, hle1.antisymm h1le⟩
+
 /-- If some flat is covered by `F₁` and covers `F₀`,
   then this holds for every flat strictly between `F₀` and `F₁`. -/
 theorem Covby.covby_and_covby_of_covby_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M] F')
     (hF'F₁ : F' ⋖[M] F₁) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₁) :
     (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
-  have hr := M.relRank_add_of_subset_of_subset hF₀F'.subset hF'F₁.subset
-  rw [hF₀F'.flat_left.covby_iff_relRank_eq_one hF, hF.covby_iff_relRank_eq_one hF'F₁.flat_right,
-    and_iff_right h₀.subset, and_iff_right h₁.subset]
-  rw [hF₀F'.relRank_eq_one, hF'F₁.relRank_eq_one,
-    ← M.relRank_add_of_subset_of_subset h₀.subset h₁.subset] at hr
-  have h0top : M.relRank F₀ F ≠ ⊤
-  · intro h; rw [h] at hr; norm_cast at hr
-  have h1top : M.relRank F F₁ ≠ ⊤
-  · intro h; rw [h, add_top] at hr; norm_cast at hr
-  have h0le := hF₀F'.flat_left.one_le_relRank_of_ssubset h₀
-  have h1le := hF.one_le_relRank_of_ssubset h₁
-  have hle1 := WithTop.le_of_add_le_add_left h0top <| hr.symm.le.trans (add_le_add_right h0le 1)
-  have hle0 := WithTop.le_of_add_le_add_right h1top <| hr.symm.le.trans (add_le_add_left h1le 1)
-  exact ⟨hle0.antisymm h0le, hle1.antisymm h1le⟩
+  apply hF₀F'.flat_left.covby_and_covby_of_ssubset_of_ssubset_of_relRank_eq_two hF'F₁.flat_right
+    ?_ hF h₀ h₁
+  rw [← M.relRank_add_of_subset_of_subset hF₀F'.subset hF'F₁.subset, hF'F₁.relRank_eq_one,
+    hF₀F'.relRank_eq_one]
+  rfl
 
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
 @[simps!] def Flat.covbyPartition (hF : M.Flat F) : Partition (M.E \ F) :=
@@ -481,6 +490,47 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
     exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
   rw [insert_eq_of_mem hfF, hF.cl] at hcl
   exact he.2 <| hcl.subset (M.mem_cl_of_mem (mem_insert e F))
+
+section Minor
+
+theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
+  rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ← M.cl_union_cl_right_eq,
+    union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
+
+@[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
+    (M ⧸ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
+  rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
+    union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
+    and_congr_right_iff]
+  exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC),
+    fun h ↦ (subset_union_left _ _).trans h⟩
+
+theorem Flat.union_flat_of_contract (hF : (M ⧸ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Flat (F ∪ C) :=
+  ((flat_contract_iff hC).1 hF).1
+
+theorem flat_contract_iff' :
+    (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
+  rw [← contract_inter_ground_eq, flat_contract_iff]
+
+
+theorem Flat.union_flat_of_contract' (hF : (M ⧸ C).Flat F) : M.Flat (F ∪ M.cl C) := by
+  rw [flat_contract_iff'] at hF
+
+theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
+    (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
+  rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
+
+/-- Flats of `M ⧸ C` are equivalent to flats of `M` containing `C`-/
+@[simps] def flatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
+    {F // (M ⧸ C).Flat F} ≃ {F // M.Flat F ∧ C ⊆ F} where
+  toFun F := ⟨F ∪ C, by simp [subset_union_right, F.prop.union_flat_of_contract]⟩
+  invFun F := ⟨F \ C, by simp
+    [flat_contract_iff hC, union_eq_self_of_subset_right F.prop.2, disjoint_sdiff_left, F.prop.1]⟩
+  left_inv := by rintro ⟨-, hF⟩; simp [(subset_diff.1 hF.subset_ground).2]
+  right_inv := by rintro ⟨F, hF⟩; simp [hF.2]
+
+end Minor
 
 -- ### Hyperplanes
 section Hyperplane
@@ -592,13 +642,18 @@ theorem Hyperplane.eq_of_subset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane 
 theorem Hyperplane.not_ssubset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂) : ¬H₁ ⊂ H₂ :=
   fun hss ↦ hss.ne (h₁.eq_of_subset h₂ hss.subset)
 
-theorem Hyperplane.exists_not_mem (hH : M.Hyperplane H) : ∃ e, e ∉ H := by
-  by_contra! h;
-  apply M.univ_not_hyperplane; convert hH; rwa [eq_comm, eq_univ_iff_forall]
+theorem Hyperplane.inter_ssubset_left_of_ne (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂)
+    (hne : H₁ ≠ H₂) : H₁ ∩ H₂ ⊂ H₁ := by
+  refine (inter_subset_left _ _).ssubset_of_ne fun h_eq ↦ hne <| h₁.eq_of_subset h₂ ?_
+  rw [← h_eq]
+  exact inter_subset_right _ _
+
+theorem Hyperplane.inter_ssubset_right_of_ne (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂)
+    (hne : H₁ ≠ H₂) : H₁ ∩ H₂ ⊂ H₂ := by
+  rw [inter_comm]; exact h₂.inter_ssubset_left_of_ne h₁ hne.symm
 
 theorem Base.hyperplane_of_cl_diff_singleton (hB : M.Base B) (heB : e ∈ B) :
-    M.Hyperplane (M.cl (B \ {e})) :=
-  by
+    M.Hyperplane (M.cl (B \ {e})) := by
   rw [hyperplane_iff_covby, Flat.covby_iff_eq_cl_insert (M.cl_flat _)]
   refine' ⟨e, ⟨hB.subset_ground heB, _⟩, _⟩
   · rw [(hB.indep.diff {e}).not_mem_cl_iff (hB.subset_ground heB)]
@@ -627,8 +682,7 @@ theorem exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆
   exact hB.indep.not_mem_cl_diff_of_mem heIB.1
 
 theorem cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
-    M.cl X = ⋂₀ {H | M.Hyperplane H ∧ X ⊆ H} ∩ M.E :=
-  by
+    M.cl X = ⋂₀ {H | M.Hyperplane H ∧ X ⊆ H} ∩ M.E := by
   refine' subset_antisymm (subset_inter _ (M.cl_subset_ground _)) _
   · rw [subset_sInter_iff]; rintro H ⟨hH, hXH⟩; exact hH.flat.cl_subset_of_subset hXH
   rintro e ⟨heH, heE⟩
@@ -672,32 +726,17 @@ theorem subset_hyperplane_iff_cl_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
   rw [← hH.flat.cl]
   exact hY.symm.trans_subset (M.cl_mono hYH)
 
+theorem Hyperplane.inter_covby_comm (hH₁ : M.Hyperplane H₁) (hH₂ : M.Hyperplane H₂) :
+    M.Covby (H₁ ∩ H₂) H₁ ↔ M.Covby (H₁ ∩ H₂) H₂ := by
+  obtain (rfl | hne) := eq_or_ne H₁ H₂; simp
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact And.left <| h.covby_and_covby_of_covby_of_ssubset_of_ssubset hH₁.covby hH₂.flat
+      (hH₁.inter_ssubset_right_of_ne hH₂ hne) hH₂.ssubset_ground
+  exact And.left <| h.covby_and_covby_of_covby_of_ssubset_of_ssubset hH₂.covby hH₁.flat
+    (hH₁.inter_ssubset_left_of_ne hH₂ hne) (hH₁.ssubset_ground)
+
 end Hyperplane
 
-section Minor
-
-theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
-  rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ← M.cl_union_cl_right_eq,
-    union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
-
-@[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
-    (M ⧸ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
-  rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
-    union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
-    and_congr_right_iff]
-  exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC),
-    fun h ↦ (subset_union_left _ _).trans h⟩
-
-theorem flat_contract_iff' :
-    (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
-  rw [← contract_inter_ground_eq, flat_contract_iff]
-
-theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
-    (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
-  rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
-
-
-end Minor
 
 
 section LowRank
@@ -733,10 +772,50 @@ theorem Point.eq_cl_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P) :
   exact hP.flat.eq_cl_of_basis <| he.basis_of_subset_of_er_le_of_finite (singleton_subset_iff.2 heP)
     (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
 
-theorem point_iff_exists_eq_cl_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} := by
-  refine ⟨Point.exists_eq_cl_nonloop, ?_⟩
-  rintro ⟨e, he, rfl⟩
-  exact he.cl_point
+theorem point_iff_exists_eq_cl_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} :=
+  ⟨Point.exists_eq_cl_nonloop, by rintro ⟨e, he, rfl⟩; exact he.cl_point⟩
+
+theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
+    (M ⧸ C).Point P ↔ (M.cl C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
+  rw [Point, flat_contract_iff, covby_iff_relRank_eq_one, relRank_cl_left,
+    union_comm C, ← relRank_eq_relRank_union, and_iff_right (cl_flat _ _),
+    ← relRank_eq_er_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
+    and_congr_left_iff, iff_and_self]
+  rintro h - -
+  rw [← h.cl]
+  exact M.cl_subset_cl (subset_union_right _ _)
+
+@[simps] def pointContractCovbyEquiv (M : Matroid α) (C : Set α) :
+    {P // (M ⧸ C).Point P} ≃ {F // M.cl C ⋖[M] F} where
+  toFun P := ⟨P ∪ M.cl C, by
+    obtain ⟨P, hP⟩ := P
+    rw [← contract_inter_ground_eq, point_contract_iff, cl_inter_ground] at hP
+    convert hP.1 using 1
+    rw [subset_antisymm_iff, union_subset_iff, and_iff_right (subset_union_right _ _),
+      union_subset_iff, and_iff_left (subset_union_left _ _), ← hP.1.flat_right.cl,
+      ← cl_inter_ground]
+    exact ⟨M.cl_subset_cl (subset_union_left _ _), (M.subset_cl _).trans (subset_union_right _ _)⟩⟩
+  invFun P := ⟨P \ C, by
+    obtain ⟨P, hP⟩ := P
+    rw [← cl_inter_ground] at hP
+    rwa [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← contract_inter_ground_eq,
+      point_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self, union_eq_self_of_subset_left, cl_inter_ground]
+    exact (M.subset_cl _).trans hP.subset ⟩
+  left_inv := by
+    rintro ⟨P,hP⟩
+    simp only [Subtype.mk.injEq]
+    rw [← contract_inter_ground_eq, point_contract_iff] at hP
+    rw [← cl_inter_ground, diff_eq_diff_inter_of_subset (union_subset _ (M.cl_subset_ground _)),
+      subset_antisymm_iff, diff_subset_iff, union_subset_iff, subset_diff,
+      and_iff_right (subset_union_right _ _), and_iff_right hP.1.subset, and_iff_left hP.2]
+    · exact subset_union_left _ _
+    exact (subset_union_right _ _).trans hP.1.subset_ground_right
+  right_inv := by
+    rintro ⟨P, hP⟩
+    simp only [Subtype.mk.injEq]
+    rw [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← cl_inter_ground,
+      diff_union_eq_union_of_subset P (M.subset_cl (C ∩ M.E)), union_eq_left, cl_inter_ground]
+    exact hP.subset
 
 @[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 

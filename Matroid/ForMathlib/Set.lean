@@ -46,3 +46,11 @@ theorem union_distrib_sUnion {s : Set (Set α)} (hs : s.Nonempty) (t : Set α) :
 theorem sUnion_distrib_union {s : Set (Set α)} (hs : s.Nonempty) (t : Set α) :
     ⋃₀ s ∪ t = ⋃ x ∈ s, (x ∪ t) := by
   rw [sUnion_eq_biUnion, biUnion_distrib_union _ hs]
+
+theorem diff_eq_diff_inter_of_subset {s t : Set α} (h : s ⊆ t) (r : Set α) :
+    s \ r = s \ (r ∩ t) := by
+  rw [diff_inter, diff_eq_empty.2 h, union_empty]
+
+theorem diff_union_eq_union_of_subset (s : Set α) {t r : Set α} (h : t ⊆ r) :
+    (s \ t) ∪ r = s ∪ r := by
+  ext x; simp only [mem_union, mem_diff]; tauto
