@@ -135,6 +135,13 @@ theorem relRank_add_er_eq (M : Matroid α) (C X : Set α) :
     ← hIC.encard, encard_diff_add_encard_inter, hJ.encard, ← inter_distrib_right,
     er_inter_ground_eq]
 
+theorem rFin.relRank_eq_sub (hY : M.rFin X) (hXY : X ⊆ Y) :
+    M.relRank X Y = M.er Y - M.er X := by
+  rw [← union_eq_self_of_subset_right hXY, ←relRank_add_er_eq, ← relRank_eq_relRank_union]
+  apply WithTop.add_right_cancel <| ne_top_of_lt hY
+  rw [eq_comm, tsub_add_cancel_iff_le]
+  exact le_add_self
+
 theorem Nonloop.relRank_add_one_eq (he : M.Nonloop e) (X : Set α) :
     M.relRank {e} X + 1 = M.er (insert e X) := by
   rw [← union_singleton, ← relRank_add_er_eq, he.er_eq]
@@ -160,6 +167,8 @@ theorem relRank_add_of_subset_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hYZ : 
     inter_eq_self_of_subset_left hXY, diff_eq]
   exact disjoint_of_subset_left ((diff_subset _ _).trans (inter_subset_right _ _))
     disjoint_sdiff_right
+
+
 
 theorem relRank_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.relRank X Y = 0 ↔ Y ⊆ M.cl X := by

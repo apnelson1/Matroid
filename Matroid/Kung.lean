@@ -17,13 +17,15 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
     M.numPoints = M.simplification.E.encard := by
   rw [numPoints_eq_encard_parallelClasses, M.simplification_equiv.encard_eq]
 
+theorem foo [Simple M] {e : α} (he : e ∈ M.E) :
+    M.E.encard = 1 + ∑' L : {L // M.Line L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
+  have :=
 
-
--- theorem Point.foo {P : Set α} (hP : M.Point P) : 
+-- theorem Point.foo {P : Set α} (hP : M.Point P) :
 --     M.numPoints = 1 + ∑' L : {L // P ⋖[M] L}, (M ↾ (L \ P)).numPoints := by
---   set Ls := M.covbyPartition 
- 
-  
+
+
+
 
 -- Define relative rank.
 
