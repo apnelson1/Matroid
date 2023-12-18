@@ -1,10 +1,9 @@
-import Matroid.Minor.Iso
 import Matroid.Constructions.Truncate
 import Mathlib.Tactic.Linarith
 import Matroid.Simple
 import Matroid.ForMathlib.Card
 
-variable {α : Type*} {M : Matroid α} {E : Set α}
+variable {α : Type*} {M : Matroid α} {E I B X C : Set α} {k : ℕ∞}
 
 namespace Matroid
 
@@ -14,7 +13,7 @@ section Uniform
 
 /-- A uniform matroid with a given rank `k` and ground set `E`. If `k = ⊤`, then every set is
   independent. ` -/
-def unifOn (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncate k
+def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncate k
 
 @[simp] theorem unifOn_ground_eq (E : Set α) : (unifOn E k).E = E := by
   cases k <;> rfl
@@ -110,8 +109,8 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)﹡ = unifOn E (E.encard - 
   simp_rw [eq_unifOn_iff, delete_ground, unifOn_ground_eq, true_and, delete_indep_iff,
     unifOn_indep_iff, subset_diff, and_assoc, imp_true_iff]
 
-theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
-    (unifOn E k) ⧸ C = unifOn (E \ C) (k - (E ∩ C).encard) := by
+theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤) :
+    ((unifOn E k) ⧸ C) = unifOn (E \ C) (k - (E ∩ C).encard) := by
   lift k to ℕ using hk
   refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
@@ -126,7 +125,7 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
   exact WithTop.coe_ne_top
 
 @[simp] theorem unifOn_contract_eq {k : ℕ} :
-    (unifOn E k) ⧸ C = unifOn (E \ C) (k - (E ∩ C).encard) :=
+    ((unifOn E k) ⧸ C) = unifOn (E \ C) (k - (E ∩ C).encard) :=
   unifOn_contract_eq' E C WithTop.coe_ne_top
 
 @[simp] theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
@@ -140,11 +139,22 @@ theorem unifOn_contract_eq' (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤):
   simp only [eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff, true_and]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hr, hIE⟩,
     fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩
+
+instance unifOn_loopless {k : ℕ∞} (E : Set α) : Loopless (unifOn E (k+1)) := by
+  simp_rw [loopless_iff_forall_nonloop, ← indep_singleton, unifOn_indep_iff]
+  simp
+
+instance unifOn_simple {k : ℕ∞} (E : Set α) : Simple (unifOn E (k+2)) := by
+  simp only [simple_iff_forall_pair_indep, unifOn_indep_iff, unifOn_ground_eq,
+    mem_singleton_iff, pair_subset_iff]
+  exact fun {e f} he hf ↦ ⟨(encard_pair_le e f).trans (self_le_add_left _ _), he, hf⟩
+
 section unif
 
 variable {a b a' b' : ℕ}
 
-/-- A canonical uniform matroid, with rank `a` and ground type `Fin b`. -/
+/-- A canonical uniform matroid, with rank `a` and ground type `Fin b`.
+  (In the junk case where `b < a`, then the matroid is free, and the rank is `b` instead).  -/
 def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 
 @[simp] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
@@ -163,15 +173,15 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
   simpa
 
-theorem unif_base_iff (hab : a ≤ b) : (unif a b).Base B ↔ B.encard = a := by
+theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ B.encard = a := by
   rw [unif, unifOn, truncate_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
   rwa [freeOn_erk_eq, encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, Nat.cast_le]
 
-@[simp] theorem unif_base_iff' : (unif a (a + b)).Base B ↔ B.encard = a := by
+@[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
   rw [unif_base_iff (Nat.le_add_right _ _)]
 
-theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
+theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)﹡ = unif b n := by
   subst h
   refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _),
@@ -182,6 +192,14 @@ theorem unif_dual' (h : a + b = n) : (unif a n)﹡ = unif b n := by
   convert Iff.rfl
   rw [encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, ENat.some_eq_coe, eq_comm, Nat.cast_add]
+
+instance unif_loopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
+  rw [unif, Nat.cast_add, Nat.cast_one]
+  infer_instance
+
+instance unif_simple (a b : ℕ) : Simple (unif (a + 2) b) := by
+  rw [unif, Nat.cast_add, Nat.cast_two]
+  infer_instance
 
 /-- This needs a @[simp] tag even though the proof is `simp`, since the proof uses the RHS. -/
 @[simp] theorem unif_eq_loopyOn (b : ℕ) : unif 0 b = loopyOn univ := by
@@ -304,45 +322,3 @@ theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
 end unif
 
 end Uniform
-
--- /-- Horrible proof. Should be improved using `simple` api -/
--- theorem iso_line_iff {k : ℕ} (hk : 2 ≤ k) :
---   nonempty (M ≃i (unif 2 k)) ↔
---     (∀ e f ∈ M.E, M.indep {e,f}) ∧ M.rk = 2 ∧ M.E.finite ∧ M.E.ncard = k :=
--- begin
---   simp_rw [iso_unif_iff, encard_eq_coe_iff, ← and_assoc, and.congr_left_iff,
---     set.eq_unifOn_iff, and_iff_right rfl, nat.cast_bit0, enat.coe_one],
---   rintro rfl hfin,
---   have lem : ∀ x y, ({x,y} : Set α).encard ≤ 2,
---   { intros x y,
---     rw [(({x,y} : Set α).to_finite.encard_eq), ← nat.cast_two, nat.cast_le],
---     exact (ncard_insert_le _ _).trans (by simp) },
---   haveI : M.finite := ⟨hfin⟩,
---   refine ⟨λ h, ⟨λ e he f hf, (h _).mpr ⟨lem _ _,_⟩,_⟩, λ h I, _⟩,
-
---   { rintro x ((rfl : x = e)| (rfl : x = f)); assumption  },
---   { rw [rk],
---     rw [← one_add_one_eq_two, nat.add_one_le_iff, one_lt_ncard_iff hfin] at hk,
---     obtain ⟨a, b, ha, hb, hne⟩ := hk,
---     have hss : {a,b} ⊆ M.E, by {rintro x ((rfl : x = a) | (rfl : x = b)); assumption},
---     have hlb := M.r_mono hss,
---     rw [indep.r ((h _).mpr ⟨_, hss⟩), ncard_pair hne] at hlb,
---     { refine hlb.antisymm' _,
---       obtain ⟨B, hB⟩ := M.exists_base,
---       rw [← rk, ← hB.card],
---       have h' := ((h B).mp hB.indep).1,
---       rw [← nat.cast_two, encard_le_coe_iff] at h',
---       exact h'.2 },
---     apply lem },
---   rw [← nat.cast_two, encard_le_coe_iff],
---   refine ⟨λ h', ⟨⟨h'.finite, _⟩, h'.subset_ground⟩, _⟩,
---   { rw [← h'.r, ← h.2], exact r_le_rk _ _ },
---   rintro ⟨⟨hfin, hcard⟩, hss⟩,
---   rw [le_iff_eq_or_lt, nat.lt_iff_add_one_le, ncard_eq_two, ← one_add_one_eq_two,
---     nat.add_le_add_iff_right, ncard_le_one_iff_eq hfin] at hcard,
---   obtain (⟨x,y,-, rfl⟩ | rfl | ⟨e, rfl⟩ ) := hcard,
---   { exact h.1 _ (hss (by simp)) _ (hss (by simp)) },
---   { simp },
---   convert h.1 e (hss (by simp)) e (hss (by simp)),
---   simp,
--- end

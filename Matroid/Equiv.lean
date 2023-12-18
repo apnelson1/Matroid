@@ -2,11 +2,13 @@ import Matroid.Constructions.Basic
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Other
 
+
+-- TODO : refactor (maybe using `FunLike` so `toPartialEquiv` is invisible in the infoview)
 namespace Matroid
 
 open Set PartialEquiv
 
-variable {α β α₁ α₂ α₃ : Type*}
+variable {α β γ α₁ α₂ α₃ : Type*} {M : Matroid α} {N : Matroid β} {B I D X Y : Set α}
 
 /-- An isomorphism between two matroids. Sadly this doesn't exist if one has empty ground
   type and the other is an empty matroid on a nonempty type; this is a shortcoming of the
@@ -23,28 +25,31 @@ instance {M : Matroid α} {N : Matroid β} : CoeFun (Iso M N) (fun _ ↦ (α →
 theorem Iso.setOf_base_eq (e : Iso M N) : setOf N.Base = (image e) '' (setOf M.Base) :=
   e.setOf_base_eq'
 
-@[simp] lemma Iso.source_eq (e : Iso M N) : e.toPartialEquiv.source = M.E :=
+@[simp] theorem Iso.source_eq (e : Iso M N) : e.toPartialEquiv.source = M.E :=
   e.source_eq'
 
-@[simp] lemma Iso.target_eq (e : Iso M N) : e.toPartialEquiv.target = N.E :=
+@[simp] theorem Iso.target_eq (e : Iso M N) : e.toPartialEquiv.target = N.E :=
   e.target_eq'
 
-@[simp] lemma Iso.subset_source (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+@[simp] theorem Iso.subset_source (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     X ⊆ e.toPartialEquiv.source :=
   hX.trans_eq e.source_eq.symm
 
-@[simp] lemma Iso.subset_target (e : Iso M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
+@[simp] theorem Iso.subset_target (e : Iso M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
     X ⊆ e.toPartialEquiv.target :=
   hX.trans_eq e.target_eq.symm
 
-@[simp] lemma Iso.image_subset_target (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+@[simp] theorem Iso.image_subset_target (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e '' X ⊆ e.toPartialEquiv.target := by
   rw [← image_source_eq_target]; exact image_subset _ (e.subset_source X)
 
-@[simp] lemma Iso.image_ground (e : Iso M N) : e '' M.E = N.E := by
+@[simp] theorem Iso.image_ground (e : Iso M N) : e '' M.E = N.E := by
   rw [← e.source_eq, ← e.target_eq, image_source_eq_target]
 
-lemma Iso.ground_subset_preimage_ground (e : Iso M N) : M.E ⊆ e ⁻¹' N.E := by
+@[simp] theorem Iso.map_mem (e : Iso M N) {x : α} (hx : x ∈ M.E) : e x ∈ N.E :=
+  e.image_ground.subset ⟨x,hx, rfl⟩
+
+theorem Iso.ground_subset_preimage_ground (e : Iso M N) : M.E ⊆ e ⁻¹' N.E := by
   rw [← e.source_eq, ← e.target_eq]; exact source_subset_preimage_target e.toPartialEquiv
 
 @[aesop unsafe 10% (rule_sets [Matroid])]
@@ -53,7 +58,7 @@ theorem Iso.image_subset_ground (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by
   convert image_subset _ hX
   rw [← e.source_eq, image_source_eq_target, e.target_eq]
 
-lemma Iso.injOn_ground (e : Iso M N) : InjOn e M.E := by
+theorem Iso.injOn_ground (e : Iso M N) : InjOn e M.E := by
   rw [← e.source_eq]; exact e.toPartialEquiv.injOn
 
 theorem Iso.on_base_iff (e : Iso M N) (hB : B ⊆ M.E := by aesop_mat) :
@@ -89,6 +94,7 @@ def Iso.symm (e : Iso M N) : Iso N M where
 @[simp] theorem Iso.symm_toPartialEquiv (e : Iso M N) :
     e.symm.toPartialEquiv = e.toPartialEquiv.symm := rfl
 
+
 def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃} (e₁₂ : Iso M₁ M₂)
     (e₂₃ : Iso M₂ M₃) : Iso M₁ M₃ where
   toPartialEquiv := e₁₂.toPartialEquiv.trans e₂₃.toPartialEquiv
@@ -112,6 +118,15 @@ theorem Iso.image_symm_subset_ground (e : Iso M N) (X : Set β) (hX : X ⊆ N.E 
   e.symm.image_subset_ground X hX
 
 @[simp] theorem Iso.symm_apply (e : Iso M N) : e.symm.toPartialEquiv = e.toPartialEquiv.symm := rfl
+
+@[simp] theorem Iso.symm_symm (e : Iso M N) : e.symm.symm = e := by
+  cases e; rfl
+
+theorem Iso.apply_symm_apply_mem (e : Iso M N) {x : α} (hx : x ∈ M.E) : e.symm (e x) = x :=
+  e.toPartialEquiv.leftInvOn (show x ∈ _ by rwa [e.source_eq])
+
+theorem Iso.symm_apply_apply_mem (e : Iso M N) {x : β} (hx : x ∈ N.E) : e (e.symm x) = x :=
+  e.symm.apply_symm_apply_mem hx
 
 /-- Equal matroids are isomorphic -/
 def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
@@ -161,7 +176,7 @@ noncomputable def Iso.of_emptyOn [Nonempty α] [Nonempty β] : (emptyOn α).Iso 
 
 section transfer
 
--- Some generic lemmas to carry a matroid `Set` property across an isomorphism
+-- Some generic theorems to carry a matroid `Set` property across an isomorphism
 
 variable {PM : Set α → Prop} {PN : Set β → Prop}
 
@@ -239,7 +254,7 @@ def iso_of_forall_indep' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.
 theorem Iso.on_base (e : Iso M N) (hB : M.Base B) : N.Base (e '' B) := by
   rwa [← e.on_base_iff]
 
-lemma Iso.on_indep (e : Iso M N) (hI : M.Indep I) : N.Indep (e '' I) := by
+theorem Iso.on_indep (e : Iso M N) (hI : M.Indep I) : N.Indep (e '' I) := by
   change (_ ∈ (setOf N.Indep))
   rw [setOf_indep_eq, e.setOf_base_eq]
   simp only [SetLike.mem_coe, mem_lowerClosure, mem_image, mem_setOf_eq, le_eq_subset,
@@ -290,7 +305,7 @@ def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
       convert e.symm.on_base hB
       rw [e.symm.injOn_ground.image_diff hBE, e.symm.image_ground, symm_apply] } )
 
-@[simp] lemma Iso.dual_apply (e : Iso M N) : e.dual.toPartialEquiv = e.toPartialEquiv := rfl
+@[simp] theorem Iso.dual_apply (e : Iso M N) : e.dual.toPartialEquiv = e.toPartialEquiv := rfl
 
 /-- Restrictions of isomorphic matroids are isomorphic -/
 def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
@@ -309,7 +324,7 @@ def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     rw [image_eq_target_inter_inv_preimage _ (by rwa [e.source_eq])]
     apply inter_subset_right })
 
-@[simp] lemma Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+@[simp] theorem Iso.restrict_apply (e : Iso M N) {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
     (e.restrict R hR).toPartialEquiv = e.toPartialEquiv.restr R := by
   simp [restrict]
 

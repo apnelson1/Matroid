@@ -196,6 +196,14 @@ theorem basis_restrict_iff (hR : R ⊆ M.E := by aesop_mat) :
   intro hXR
   rw [← basis'_iff_basis_inter_ground, basis'_iff_basis]
 
+theorem Basis'.of_restrict (hI : (M ↾ R).Basis' I X) : M.Basis' I (X ∩ R) :=
+  (basis'_restrict_iff.1 hI).1
+
+theorem Basis.of_restrict (hI : (M ↾ R).Basis I X) (hss : X ⊆ M.E := by aesop_mat) :
+    M.Basis I X := by
+  rw [basis_restrict_iff', inter_eq_self_of_subset_left hss] at hI
+  exact hI.1
+
 theorem restrict_eq_restrict_iff (M M' : Matroid α) (X : Set α) :
     M ↾ X = M' ↾ X ↔ ∀ I, I ⊆ X → (M.Indep I ↔ M'.Indep I) := by
   refine' ⟨fun h I hIX ↦ _, fun h ↦ eq_of_indep_iff_indep_forall rfl fun I (hI : I ⊆ X) ↦ _⟩
@@ -287,6 +295,9 @@ theorem Restriction.subset (h : N ≤r M) : N.E ⊆ M.E := by
 theorem Restriction.exists_eq_restrict (h : N ≤r M) : ∃ R ⊆ M.E, N = M ↾ R :=
   h
 
+theorem Restriction.of_subset {R' : Set α} (M : Matroid α) (h : R ⊆ R') : (M ↾ R) ≤r (M ↾ R') := by
+  rw [← restrict_restrict_eq M h]; exact restrict_restriction _ _ h
+
 theorem restriction_iff_exists : (N ≤r M) ↔ ∃ R, R ⊆ M.E ∧ N = M ↾ R := by
   use Restriction.exists_eq_restrict; rintro ⟨R, hR, rfl⟩; exact restrict_restriction M R hR
 
@@ -320,6 +331,14 @@ theorem restrict_strictRestriction {M : Matroid α} (hR : R ⊂ M.E) : M ↾ R <
   refine (M.restrict_restriction R hR.subset).strictRestriction_of_ne (fun h ↦ ?_)
   rw [← h, restrict_ground_eq] at hR
   exact hR.ne rfl
+
+theorem Restriction.strictRestriction_of_ground_ne (h : N ≤r M) (hne : N.E ≠ M.E) : N <r M := by
+  rw [← h.eq_restrict]
+  exact restrict_strictRestriction (h.subset.ssubset_of_ne hne)
+
+theorem StrictRestriction.of_ssubset {R' : Set α} (M : Matroid α) (h : R ⊂ R') :
+    (M ↾ R) <r (M ↾ R') :=
+  (Restriction.of_subset M h.subset).strictRestriction_of_ground_ne h.ne
 
 theorem Restriction.finite {M : Matroid α} [M.Finite] (h : N ≤r M) : N.Finite := by
   obtain ⟨R, hR, rfl⟩ := h

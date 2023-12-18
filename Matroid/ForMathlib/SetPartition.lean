@@ -1,13 +1,10 @@
 import Mathlib.Data.Setoid.Partition
 import Mathlib.Data.SetLike.Basic
+import Matroid.ForMathlib.Lattice
 
 open Set
 
 variable {α : Type*} [CompleteLattice α] {s x y z : α}
-
-@[simp] theorem setIndependent_singleton {α : Type*} [CompleteLattice α] (s : α) :
-    CompleteLattice.SetIndependent {s} := by
-  simp [CompleteLattice.SetIndependent]
 
 structure Partition (s : α) :=
   parts : Set α
@@ -60,28 +57,6 @@ theorem le_of_mem (P : Partition s) (hx : x ∈ P) : x ≤ s :=
 theorem parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempty :=
   nonempty_iff_ne_empty.2 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
 
-/-- A collection of disjoint elements gives a partition of their supremum. -/
-@[simps] def ofIndependent {u : Set α} (hs : CompleteLattice.SetIndependent u) (hbot : ⊥ ∉ u) :
-    Partition (sSup u) where
-  parts := u
-  setIndependent := hs
-  bot_not_mem := hbot
-  sSup_eq' := rfl
-
-/-- The partition with no parts. -/
-@[simps] def ofBot (α : Type*) [CompleteLattice α] : Partition (⊥ : α) where
-  parts := ∅
-  setIndependent := by simp
-  bot_not_mem := by simp
-  sSup_eq' := by simp
-
-/-- The one-part partition. -/
-@[simps] def indiscrete (s : α) (hs : s ≠ ⊥) : Partition s where
-  parts := {s}
-  setIndependent := by simp
-  bot_not_mem := by simpa using hs.symm
-  sSup_eq' := sSup_singleton
-
 @[simps] protected def congr {t : α} (P : Partition s) (hst : s = t) : Partition t where
   parts := P.parts
   setIndependent := P.setIndependent
@@ -94,11 +69,73 @@ theorem parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempt
 @[simp] theorem mem_congr_iff {t x : α} {P : Partition s} (hst : s = t) :
     x ∈ P.congr hst ↔ x ∈ P := Iff.rfl
 
+@[simps!] def partsCongrEquiv {t : α} (P : Partition s) (hst : s = t) :
+    (P : Set α) ≃ (P.congr hst : Set α) := Equiv.Set.ofEq rfl
+
+
+
 end Basic
 
-section Refinement
+/-- A `SetIndependent` collection not containing `⊥` gives a partition of its supremum. -/
+@[simps] def ofIndependent {u : Set α} (hs : CompleteLattice.SetIndependent u) (hbot : ⊥ ∉ u) :
+    Partition (sSup u) where
+  parts := u
+  setIndependent := hs
+  bot_not_mem := hbot
+  sSup_eq' := rfl
 
-instance {α : Type*} [CompleteLattice α] {s : α} : PartialOrder (Partition s) where
+@[simp] theorem mem_ofIndependent_iff {u : Set α} (hu : CompleteLattice.SetIndependent u)
+    (h : ⊥ ∉ u) {a : α} : a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
+
+/-- A `SetIndependent` collection gives a partition of its supremum by removing `⊥`. -/
+def ofIndependent' {u : Set α} (hs : CompleteLattice.SetIndependent u) : Partition (sSup u) :=
+  (ofIndependent (hs.mono (diff_subset u {⊥})) (fun h ↦ h.2 rfl)).congr (by simp)
+
+@[simp] theorem mem_ofIndependent'_iff {u : Set α} (hu : CompleteLattice.SetIndependent u) {a : α} :
+  a ∈ ofIndependent' hu ↔ a ∈ u ∧ a ≠ ⊥ := Iff.rfl
+
+/-- The partition with no parts. -/
+@[simps] protected def empty (α : Type*) [CompleteLattice α] : Partition (⊥ : α) where
+  parts := ∅
+  setIndependent := by simp
+  bot_not_mem := by simp
+  sSup_eq' := by simp
+
+@[simp] theorem empty_coe_eq (α : Type*) [CompleteLattice α] :
+    (Partition.empty α : Set α) = ∅ := rfl
+
+@[simp] theorem not_mem_empty (α : Type*) [CompleteLattice α] {a : α} :
+    a ∉ Partition.empty α := by
+  rw [← SetLike.mem_coe, empty_coe_eq]
+  simp
+
+theorem eq_empty (P : Partition (⊥ : α)) : P = Partition.empty α := by
+  ext x
+  have hsup := P.sSup_eq
+  simp only [sSup_eq_bot, SetLike.mem_coe] at hsup
+  simp only [not_mem_empty, iff_false]
+  exact fun hx ↦ P.ne_bot_of_mem hx <| hsup x hx
+
+instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
+  default := Partition.empty α
+  uniq := by simp [eq_empty]
+
+/-- The one-part partition. -/
+@[simps] def indiscrete (s : α) (hs : s ≠ ⊥) : Partition s where
+  parts := {s}
+  setIndependent := by simp
+  bot_not_mem := by simpa using hs.symm
+  sSup_eq' := sSup_singleton
+
+@[simp] theorem mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) {a : α} :
+    a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
+
+
+section Order
+
+variable {α : Type*} [CompleteLattice α]
+
+instance {s : α} : PartialOrder (Partition s) where
   le P Q := ∀ x ∈ P, ∃ y ∈ Q, x ≤ y
   lt := _
   le_refl P x hx := by
@@ -120,7 +157,69 @@ instance {α : Type*} [CompleteLattice α] {s : α} : PartialOrder (Partition s)
       (hxy.trans hyx')
     rwa [hxy.antisymm hyx']
 
-end Refinement
+instance {s : α} : OrderTop (Partition s) where
+  top := (ofIndependent' (setIndependent_singleton s)).congr sSup_singleton
+  le_top := by
+    obtain (rfl | hs) := eq_or_ne s ⊥
+    · simp
+    rintro P x hx
+    refine ⟨s, ?_, P.le_of_mem hx⟩
+    change s ∈ Partition.congr _ _
+    rw [mem_congr_iff, mem_ofIndependent'_iff]
+    exact ⟨rfl, hs⟩
+
+@[simp] theorem mem_top_iff {a s : α} : a ∈ (⊤ : Partition s) ↔ a = s ∧ a ≠ ⊥ := by
+  change a ∈ Partition.congr _ _ ↔ _
+  rw [mem_congr_iff, mem_ofIndependent'_iff, mem_singleton_iff]
+
+theorem top_eq_indiscrete (hs : s ≠ ⊥) : (⊤ : Partition s) = indiscrete s hs := by
+  ext a
+  rw [mem_top_iff, mem_indiscrete_iff, and_iff_left_iff_imp]
+  rintro rfl; assumption
+
+theorem parts_top_subset (s : α) : ((⊤ : Partition s) : Set α) ⊆ {s} := by
+  simp
+
+
+end Order
+section Bind
+
+variable {α : Type*} [CompleteDistribLattice α] {s : α}
+
+@[simps] protected def bind (P : Partition s) (Qs : ∀ a ∈ P, Partition a) : Partition s where
+  parts := ⋃ a : P, (Qs a a.prop)
+  setIndependent := by
+    intro b hb
+    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists] at hb
+    obtain ⟨a, haP, hba : b ∈ Qs a haP⟩ := hb
+    have hdj1 := (Qs a haP).setIndependent hba
+    have hdj2 := (P.setIndependent haP).mono_left <| (Qs a haP).le_of_mem hba
+    refine (hdj1.sup_right hdj2).mono_right ?_
+    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists, mem_parts, ge_iff_le,
+      sSup_le_iff, mem_diff, mem_singleton_iff, and_imp, forall_exists_index]
+
+    rintro t' x hx (ht' : t' ∈ Qs x hx) hne
+    obtain (rfl | hne) := eq_or_ne x a
+    · exact (le_sSup_of_le (show t' ∈ _ \ {b} from ⟨ht', hne⟩) rfl.le).trans le_sup_left
+    exact (le_sSup_of_le (show x ∈ P.parts \ ({a} : Set α) from ⟨hx, hne⟩)
+      ((Qs x hx).le_of_mem ht')).trans le_sup_right
+  bot_not_mem := by
+    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists]
+    exact fun x hx ↦ (Qs x hx).bot_not_mem
+  sSup_eq' := by
+    simp_rw [sSup_iUnion, Partition.sSup_eq, ← P.sSup_eq, sSup_eq_iSup, iSup_subtype]; rfl
+
+@[simp] theorem mem_bind_iff {P : Partition s} {Qs : ∀ a ∈ P, Partition a} {a : α} :
+    a ∈ P.bind Qs ↔ ∃ (b : α) (hb : b ∈ P), a ∈ Qs b hb := by
+  change _ ∈ ⋃ _, _ ↔ _; simp
+
+@[simp] theorem bind_le {α : Type*} [CompleteDistribLattice α] {s : α} (P : Partition s)
+    (Qs : ∀ a ∈ P, Partition a) : P.bind Qs ≤ P := by
+  intro t ht
+  obtain ⟨b, hbp, h⟩ := mem_bind_iff.1 ht
+  exact ⟨b, hbp, Partition.le_of_mem _ h⟩
+
+end Bind
 
 section Set
 
@@ -213,8 +312,6 @@ theorem finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).
     (forall_nonempty) (eq_sUnion) {x : Set α} :
   x ∈ ofPairwiseDisjoint' (s := s) (parts := parts) pairwiseDisjoint forall_nonempty eq_sUnion ↔
     x ∈ parts := Iff.rfl
-
-
 
 end Set
 

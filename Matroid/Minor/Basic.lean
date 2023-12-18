@@ -353,16 +353,20 @@ theorem Basis.contract_eq_contract_delete (hI : M.Basis I X) : M ⧸ X = M ⧸ I
     ← hI.indep.mem_cl_iff_of_not_mem he.2]
   exact hI.subset_cl he.1
 
-theorem Basis.contract_indep_iff (hI : M.Basis I X) :
+theorem Basis'.contract_eq_contract_delete (hI : M.Basis' I X) : M ⧸ X = M ⧸ I ⧹ (X \ I) := by
+  rw [← contract_inter_ground_eq, hI.basis_inter_ground.contract_eq_contract_delete, eq_comm,
+    ← delete_inter_ground_eq, contract_ground, diff_eq, diff_eq, ← inter_inter_distrib_right,
+    ← diff_eq]
+
+theorem Basis'.contract_indep_iff (hI : M.Basis' I X) :
     (M ⧸ X).Indep J ↔ M.Indep (J ∪ I) ∧ Disjoint X J := by
   rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
     and_comm, ← and_assoc, ← disjoint_union_right, diff_union_self,
     union_eq_self_of_subset_right hI.subset, and_comm, disjoint_comm]
 
-theorem Basis'.contract_eq_contract_delete (hI : M.Basis' I X) : M ⧸ X = M ⧸ I ⧹ (X \ I) := by
-  rw [← contract_inter_ground_eq, hI.basis_inter_ground.contract_eq_contract_delete, eq_comm,
-    ← delete_inter_ground_eq, contract_ground, diff_eq, diff_eq, ← inter_inter_distrib_right,
-    ← diff_eq]
+theorem Basis.contract_indep_iff (hI : M.Basis I X) :
+    (M ⧸ X).Indep J ↔ M.Indep (J ∪ I) ∧ Disjoint X J :=
+  hI.basis'.contract_indep_iff
 
 theorem contract_cl_eq_contract_delete (M : Matroid α) (C : Set α) :
     M ⧸ M.cl C = M ⧸ C ⧹ (M.cl C \ C) := by
@@ -509,6 +513,20 @@ theorem contract_delete_diff (M : Matroid α) (C D : Set α) : M ⧸ C ⧹ D = M
   rw [delete_eq_delete_iff, contract_ground, diff_eq, diff_eq, ← inter_inter_distrib_right,
     inter_assoc]
 
+theorem contract_restrict_eq_restrict_contract (M : Matroid α) (C R : Set α) (h : Disjoint C R) :
+    (M ⧸ C) ↾ R = (M ↾ (R ∪ C)) ⧸ C := by
+  refine eq_of_indep_iff_indep_forall (by simp [h.sdiff_eq_right]) (fun I _ ↦ ?_)
+  obtain ⟨J, hJ⟩ := (M ↾ (R ∪ C)).exists_basis' C
+  have hJ' : M.Basis' J C
+  · have := hJ.of_restrict
+    rwa [inter_eq_self_of_subset_left (subset_union_right _ _)] at this
+  rw [restrict_indep_iff, hJ.contract_indep_iff, hJ'.contract_indep_iff, restrict_indep_iff,
+    union_subset_iff, and_iff_left (hJ.subset.trans (subset_union_right _ _)), union_comm R C,
+    ← diff_subset_iff, and_assoc, and_assoc, and_congr_right_iff, and_comm, and_congr_left_iff]
+  intro _ hd
+  rw [hd.sdiff_eq_right]
+
+/- TODO : Simplify this proof using the lemma above-/
 theorem contract_delete_comm (M : Matroid α) {C D : Set α} (hCD : Disjoint C D) :
     M ⧸ C ⧹ D = M ⧹ D ⧸ C := by
   refine eq_of_indep_iff_indep_forall (by simp [diff_diff_comm]) (fun I hI ↦ ?_)
@@ -549,10 +567,12 @@ theorem contract_delete_contract_delete (M : Matroid α) (C D C' D' : Set α) (h
   rw [contract_delete_contract_delete', sdiff_eq_left.mpr h]
 
 theorem delete_contract_delete' (M : Matroid α) (D C D' : Set α) :
-    M ⧹ D ⧸ C ⧹ D' = M ⧸ (C \ D) ⧹ (D ∪ D') := by rw [delete_contract_comm', delete_delete]
+    M ⧹ D ⧸ C ⧹ D' = M ⧸ (C \ D) ⧹ (D ∪ D') := by
+  rw [delete_contract_comm', delete_delete]
 
 theorem delete_contract_delete (M : Matroid α) (D C D' : Set α) (h : Disjoint C D) :
-    M ⧹ D ⧸ C ⧹ D' = M ⧸ C ⧹ (D ∪ D') := by rw [delete_contract_delete', sdiff_eq_left.mpr h]
+    M ⧹ D ⧸ C ⧹ D' = M ⧸ C ⧹ (D ∪ D') := by
+  rw [delete_contract_delete', sdiff_eq_left.mpr h]
 
 /- `N` is a minor of `M` if `N = M ⧸ C ⧹ D` for disjoint sets `C,D ⊆ M.E`-/
 def Minor (N M : Matroid α) : Prop :=
@@ -582,6 +602,10 @@ theorem Indep.of_minor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
 theorem Nonloop.of_minor (h : N.Nonloop e) (hNM : N ≤m M) : M.Nonloop e := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
   exact h.of_delete.of_contract
+
+theorem Loop.minor (he : M.Loop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.Loop e := by
+  rw [← not_nonloop_iff]
+  exact fun hnl ↦ he.not_nonloop <| hnl.of_minor hNM
 
 lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
@@ -675,6 +699,15 @@ theorem strictMinor_iff_exists_eq_contract_delete :
 
 theorem contract_minor (M : Matroid α) (C : Set α) : M ⧸ C ≤m M := by
   rw [← (M ⧸ C).delete_empty]; apply contract_delete_minor
+
+theorem contract_minor_of_subset (M : Matroid α) {C C' : Set α} (hCC' : C ⊆ C') :
+    M ⧸ C' ≤m M ⧸ C := by
+  rw [← diff_union_of_subset hCC', union_comm, ← contract_contract]
+  apply contract_minor
+
+theorem contract_minor_of_mem (M : Matroid α) {C : Set α} (he : e ∈ C) :
+    M ⧸ C ≤m M ⧸ e :=
+  M.contract_minor_of_subset (singleton_subset_iff.2 he)
 
 theorem delete_minor (M : Matroid α) (D : Set α) : M ⧹ D ≤m M := by
   nth_rw 1 [← M.contract_empty]; apply contract_delete_minor

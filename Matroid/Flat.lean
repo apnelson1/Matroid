@@ -562,6 +562,8 @@ theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
   left_inv := by rintro ⟨-, hF⟩; simp [(subset_diff.1 hF.subset_ground).2]
   right_inv := by rintro ⟨F, hF⟩; simp [hF.2]
 
+
+
 end Minor
 
 -- ### Hyperplanes
@@ -855,9 +857,7 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
 
 theorem encard_ground_eq_encard_loops_add_sum_points (M : Matroid α) : M.E.encard =
     (M.cl ∅).encard + ∑' P : {P // M.Point P}, ((P : Set α) \ M.cl ∅).encard := by
-  rw [(M.cl_flat ∅).ground_encard_eq_tsum]
-  change _ + ∑' F : {F | M.cl ∅ ⋖[M] F} , _ = _ + ∑' P : {P | M.Point P}, _
-  rw [tsum_congr_subtype (f := fun F ↦ encard (F \ M.cl ∅))]
+  rw [(M.cl_flat ∅).ground_encard_eq_tsum, tsum_congr_subtype (f := fun F ↦ encard (F \ M.cl ∅))]
   simp [loops_covby_iff]
 
 theorem Point.eq_or_eq_of_flat_of_subset (hP : M.Point P) (hF : M.Flat F) (h : F ⊆ P) :
@@ -886,7 +886,7 @@ theorem Point.subset_or_inter_eq_loops_of_flat (hP : M.Point P) (hF : M.Flat F) 
 
 
 
-@[reducible, pp_dot] def Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
+@[pp_dot] abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 
 theorem Line.flat (hL : M.Line L) : M.Flat L :=
   hL.1
@@ -905,7 +905,17 @@ theorem Line.mem_iff_covby (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.cl
   rw [(M.rFin_singleton e).relRank_eq_sub (by simpa), he.er_eq, hL.er]
   rfl
 
-@[reducible, pp_dot] def Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
+theorem Nonloop.cl_covby_iff (he : M.Nonloop e) : M.cl {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by
+  refine ⟨fun h ↦ ⟨⟨h.flat_right, ?_⟩,h.subset <| M.mem_cl_self e⟩,
+    fun ⟨hL, heL⟩ ↦ by rwa [← hL.mem_iff_covby he]⟩
+  rw [h.er_eq, er_cl_eq, he.er_eq]
+  rfl
+
+def Nonloop.lineContractPointEquiv (he : M.Nonloop e) :
+    {P // (M ⧸ e).Point P} ≃ {L // M.Line L ∧ e ∈ L} :=
+  (M.pointContractCovbyEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.cl_covby_iff))
+
+@[pp_dot] abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
 
 theorem Plane.flat (hP : M.Plane P) : M.Flat P :=
   hP.1

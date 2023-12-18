@@ -2,6 +2,7 @@ import Matroid.Constructions.Basic
 import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat
+import Matroid.Minor.Iso
 import Matroid.Constructions.ImagePreimage
 
 open Set
@@ -134,6 +135,10 @@ theorem parallel_iff_nonloop_nonloop_indep_imp_eq :
   rw [h.1.parallel_iff_dep h.2.1 hne, Dep, pair_subset_iff, and_iff_left h.2.1.mem_ground,
     and_iff_left h.1.mem_ground]
   exact fun hi ↦ hne (h.2.2 hi)
+
+theorem Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ⧸ e).Loop f := by
+  rw [loop_iff_mem_cl_empty, contract_elem, contract_loops_eq, mem_diff]
+  exact ⟨hef.symm.mem_cl, hne.symm⟩
 
 theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I) :
     M.Indep (insert f (I \ {e})) := by
@@ -326,7 +331,7 @@ theorem mem_parallelClasses_iff {P : Set α} :
 
 /-- Parallel classes correspond to points -/
 @[simps] def parallelPointEquiv (M : Matroid α) :
-    {P // P ∈ M.parallelClasses} ≃ {P // M.Point P} where
+    ↑ (M.parallelClasses)  ≃ {P // M.Point P} where
   toFun P := ⟨P ∪ M.cl ∅, by
     obtain ⟨e, he, h⟩ := mem_parallelClasses_iff_eq_cl_diff_loops.1 P.prop
     rw [h, diff_union_self, union_eq_self_of_subset_right (M.cl_subset_cl (empty_subset _))]
@@ -443,6 +448,15 @@ theorem simple_iff_forall_pair_indep :
   simp only [mem_singleton_iff, insert_eq_of_mem, indep_singleton] at hee
   exact hee.parallel_self
 
+theorem Simple.map_iso {α β : Type*} {M : Matroid α} {N : Matroid β} (hM : M.Simple) (hMN : M ≅ N) :
+    N.Simple := by
+  rw [simple_iff_forall_pair_indep] at *
+  rintro e f he hf
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i⟩⟩) := hMN
+  · simp at he
+  have := i.on_indep <| hM (i.symm.map_mem he) (i.symm.map_mem hf)
+  rwa [image_pair, i.symm_apply_apply_mem hf, i.symm_apply_apply_mem he] at this
+
 theorem simple_iff_forall_parallel_class [Loopless M] :
     M.Simple ↔ ∀ P ∈ M.parallelClasses, encard P = 1 := by
   simp only [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption),
@@ -489,6 +503,39 @@ theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
   push_neg at hM
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
   exact hne <| h.2 e f hef
+
+theorem Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ⧸ C).Loopless) :
+    M.Loopless := by
+  rw [loopless_iff_cl_empty] at *
+  rw [contract_loops_eq, diff_eq_empty] at h
+  rw [restrict_cl_eq', empty_inter, union_empty_iff] at hC
+  rw [← inter_union_diff (s := M.cl ∅) (t := C), hC.1, empty_union, diff_eq_empty]
+  exact (M.cl_subset_cl <| empty_subset C).trans h
+
+theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ⧸ C).Simple) :
+    M.Simple := by
+  rw [simple_iff_loopless_eq_of_parallel_forall] at h hC ⊢
+  obtain ⟨hl, h⟩ := h
+  obtain ⟨hCl, hC⟩ := hC
+  simp only [restrict_parallel_iff, and_imp] at hC
+  refine ⟨(hCl.of_restrict_contract hl), fun e f hef ↦ ?_⟩
+  by_cases heC : e ∈ C
+  · by_cases hfC : f ∈ C
+    · exact hC _ _ hef heC hfC
+    refine by_contra fun hne ↦ not_loop (M ⧸ C) f ?_
+    exact (hef.loop_of_contract hne).minor ⟨hef.mem_ground_right, hfC⟩ (contract_minor_of_mem _ heC)
+  by_cases hfC : f ∈ C
+  · refine by_contra fun (hne : e ≠ f) ↦ not_loop (M ⧸ C) e ?_
+    exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
+      (contract_minor_of_mem _ hfC)
+  apply h
+  rw [parallel_iff, contract_cl_eq, contract_cl_eq, ← cl_union_cl_left_eq, hef.cl_eq_cl,
+    cl_union_cl_left_eq, and_iff_left rfl]
+  exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
+
+theorem Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ⧸ I).Simple) : M.Simple :=
+  hI.restr_simple.of_restrict_contract h
+
 
 end Simple
 
@@ -720,6 +767,23 @@ noncomputable def simplificationWrt_iso {c c' : α → α} (hc : M.ParallelChoic
       rintro _ ⟨e,-,rfl⟩ he'
       exact hc'.parallel_apply he' )
 
+/-- If `M ↾ X` is a simple restriction of `M`, then every parallel choice function `c`
+  induces an isomorphism from `M ↾ X` to `M ↾ (c '' X)`. -/
+theorem ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c) 
+    (hX : (M ↾ X).Simple) : ∃ φ : (M ↾ X).Iso (M ↾ (c '' X)), ∀ e ∈ X, φ e = c e  := by
+  obtain ⟨c', hc', hC'X⟩ := extends_to_parallelChoiceFunction hX
+  have hss : X ⊆ {e | M.Nonloop e} := fun e he ↦ (toNonloop (M := M ↾ X) he).of_restrict
+  have hss' : X ⊆ (M.simplificationWrt c').E
+  · rw [simplificationWrt, restrict_ground_eq, ← hC'X.image_eq_self]
+    exact image_subset _ hss
+  set φ := (simplificationWrt_iso hc' hc).restrict X hss'
+  refine ⟨((Iso.ofEq ?_).trans φ).trans (Iso.ofEq ?_), ?_⟩ 
+  · rwa [simplificationWrt, restrict_restrict_eq]
+  · simp only [simplificationWrt_iso, isoOfMapParallelRestr_toPartialEquiv, simplificationWrt]
+    rw [restrict_restrict_eq]
+    exact image_subset _ hss
+  simp [simplificationWrt_iso]
+
 /-- Any simplification is isomorphic to the classical one. This is defined in tactic mode for now -/
 noncomputable def simplificationWrt_iso_simplification (hc : M.ParallelChoiceFunction c) :
     (M.simplificationWrt c).Iso M.simplification := by
@@ -750,6 +814,9 @@ theorem simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
 @[simp] theorem simplification_eq_self_iff (M : Matroid α) : M.simplification = M ↔ M.Simple := by
   rw [simplification_eq_wrt, simplificationWrt_eq_self_iff]
   simpa using M.exists_parallelChoiceFunction.choose_spec
+
+@[simp] theorem simplification_eq_self (M : Matroid α) [Simple M] : M.simplification = M := by
+  rwa [simplification_eq_self_iff]
 
 theorem exists_loop_or_parallel_of_simplificationWrt_strictRestriction
     (hc : M.ParallelChoiceFunction c) (hsN : M.simplificationWrt c <r N) (hNM : N ≤r M) :
@@ -837,8 +904,61 @@ noncomputable def simplification_equiv (M : Matroid α) :
   (Equiv.Set.ofEq (congr_arg Matroid.E h.choose_spec.2)).trans
     (simplificationWrt_equiv h.choose_spec.1)
 
+  
+
+-- theorem er_simplificationWrt_eq (hc : M.ParallelChoiceFunction c) (X : Set α) : 
+--     (M.simplificationWrt c).er (c '' X) = M.er X := by
+--   refine le_antisymm ?_ ?_
+--   · sorry
+--   obtain ⟨I, hI⟩ := M.exists_basis' X
+--   obtain ⟨φ, hφ⟩ := hc.iso_of_simple_restr hI.indep.restr_simple
+--   rw [hI.er_eq_encard]
+--   have := (φ.on_indep <| hI.indep.indep_restrict_of_subset Subset.rfl).er
+  
+--   _
+
 
 -- TODO - API for the above equivalences. (Don't know exactly what this entails. )
 
 
 end Simplification
+
+section Minor
+
+/-- Any simple restriction of `M` is a restriction of a simplification of `M`-/
+theorem Restriction.exists_restriction_simplificationWrt (h : N ≤r M) [Simple N] :
+    ∃ c, M.ParallelChoiceFunction c ∧ N ≤r M.simplificationWrt c := by
+  obtain ⟨c, hc, hcN⟩ :=
+    extends_to_parallelChoiceFunction (show (M ↾ N.E).Simple by rwa [h.eq_restrict])
+  refine ⟨c, hc, ?_⟩
+  rw [← h.eq_restrict, simplificationWrt]
+  exact Restriction.of_subset _ (fun e heN ↦ ⟨e, (toNonloop heN).of_restriction h, hcN heN⟩)
+
+/-- Any simple minor of `M` is a minor of a simplification of `M`-/
+theorem Minor.exists_minor_simplificationWrt {N M : Matroid α} [Simple N] (hN : N ≤m M) :
+    ∃ c, M.ParallelChoiceFunction c ∧ N ≤m M.simplificationWrt c := by
+  obtain ⟨I, hI, hr, -⟩ := hN.exists_contract_spanning_restrict
+  have hN' := hr.eq_restrict ▸
+    M.contract_restrict_eq_restrict_contract _ _ (subset_diff.1 hr.subset).2.symm
+  have h : (M ↾ (N.E ∪ I)).Simple
+  · apply Indep.simple_of_contract_simple (I := I) _ (by rwa [← hN'])
+    refine restrict_indep_iff.2 ⟨hI, subset_union_right _ _⟩
+  have hres := restrict_restriction M _ (union_subset hN.subset hI.subset_ground)
+  obtain ⟨c, hc, hrc⟩ := hres.exists_restriction_simplificationWrt
+  refine ⟨c, hc, ?_⟩
+  rw [← hr.eq_restrict]
+  apply Minor.trans ?_ hrc.minor
+  rw [contract_restrict_eq_restrict_contract _ _ _ (subset_diff.1 hr.subset).2.symm]
+  apply contract_minor
+
+theorem minor_iff_minor_simplification {α β : Type*} {N : Matroid α} [Simple N] {M : Matroid β} :
+    N ≤i M ↔ N ≤i M.simplification := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.trans M.simplification_restriction.minor.isoMinor⟩
+  obtain ⟨N', hN'M, hi⟩ := h
+  have _ := ‹Simple N›.map_iso hi
+  obtain ⟨c, hc, hminor⟩ := hN'M.exists_minor_simplificationWrt
+  exact hi.isoMinor.trans <| hminor.isoMinor.trans
+    (M.simplificationWrt_isIso_simplification hc).isoMinor
+
+
+end Minor

@@ -1,4 +1,4 @@
-import Matroid.Simple
+import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.ENatTopology
 import Matroid.Flat
 
@@ -17,48 +17,52 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
     M.numPoints = M.simplification.E.encard := by
   rw [numPoints_eq_encard_parallelClasses, M.simplification_equiv.encard_eq]
 
-theorem foo [Simple M] {e : α} (he : e ∈ M.E) :
+@[simp] theorem numPoints_eq_encard_ground (M : Matroid α) [Simple M] :
+    M.numPoints = M.E.encard := by
+  simp [numPoints_eq_encard_ground_simplification]
+
+theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e ∈ M.E) :
     M.E.encard = 1 + ∑' L : {L // M.Line L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
-  have :=
+  rw [← encard_diff_add_encard_of_subset (singleton_subset_iff.2 he), add_comm, encard_singleton]
+  apply congr_arg (1 + ·)
+  convert (ENat.tsum_encard_eq_encard_sUnion (M ⧸ e).parallelClasses.pairwiseDisjoint).symm using 1
+  · simp only [contract_elem, Partition.sUnion_eq, contract_nonloop_iff, mem_diff]
+    congr
+    rw [cl_singleton_eq]
+  convert ENat.tsum_comp_eq_tsum_of_equiv (M ⧸ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
+    using 1
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toNonloop he).lineContractPointEquiv]
+  refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
+  simp [Nonloop.lineContractPointEquiv, cl_singleton_eq he,
+    diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
+
+theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) : 
+    M.numPoints ≤ ∑' i : {i : ℕ // i ≤ M.erk}, q ^ (i : ℕ) := by
+  _
+
+
+
+
+
+  -- have : ∀ L, (M.Line L ∧ e ∈ L) ↔ (M.cl {e} ⋖[M] L)
+  -- · intro L
+
+  -- rw [tsum_congr_subtype (Q := fun L ↦ M.cl {e} ⋖[M] L)]
+
+
+
+
+
+
+-- /-- Any partition `Xs` of the nonloops of `M` that is coarser than the partition into
+--   parallel classes gives a decomposition of `M.numPoints` as a sum over the parts of `Xs`. -/
+-- theorem foo' (M : Matroid α) (Xs : Partition {e | M.Nonloop e}) (hP : M.parallelClasses ≤ Xs) :
+--     M.numPoints = ∑' X : Xs, (M ↾ X).numPoints := by
+--   _
+
+-- theorem foo [Simple M] {e : α} (he : e ∈ M.E) :
+--     M.E.encard = 1 + ∑' L : {L // M.Line L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
+
 
 -- theorem Point.foo {P : Set α} (hP : M.Point P) :
 --     M.numPoints = 1 + ∑' L : {L // P ⋖[M] L}, (M ↾ (L \ P)).numPoints := by
-
-
-
-
--- Define relative rank.
-
--- def foo (M : Matroid α) {F₀ : Set α} (hF₀ : M.Flat F₀) :
---     { F // F₀ ⋖[M] F } ≃ { P // (M ⧸ F₀).Point P } where
---   toFun F := ⟨F \ F₀, by
---     obtain ⟨F, hF⟩ := F
-
---     rw [Point, flat_contract_iff]
---     simp only [diff_union_self, union_eq_self_of_subset_right hF.subset]
---     rw [and_iff_left (disjoint_sdiff_left), and_iff_right hF.flat_right]
-
---     have hr := M.contract_er_diff_add_contract_er_diff (empty_subset F₀) hF.subset
---     simp only [contract_empty, diff_empty, hF.er_eq] at hr
---     rw [diff_union_self, union_eq_self_of_subset_right hF.subset, hF.er_eq, add_comm] at hr
-
---     --hF.er_eq
-
---     ⟩
---   invFun P := ⟨P ∪ F₀, sorry⟩
---   left_inv := by
---     rintro ⟨F, hF⟩
---     simp only [diff_union_self, Subtype.mk.injEq, union_eq_left]
---     exact hF.subset
---   right_inv := by
---     rintro ⟨P, hP⟩
---     simp only [union_diff_right, Subtype.mk.injEq, sdiff_eq_left]
---     exact (subset_diff.1 hP.subset_ground).2
-
--- theorem foo {F F' : Set α} (hF : M.Flat F) (hF' : M.Flat F') :
---   M.Parallel
-
--- theorem point_contract_iff {C P : Set α} (hC : C ⊆ M.E) :
---     (M ⧸ C).Point P ↔ M.cl C ⋖[M] C ∪ P := by
---   rw [Point, flat_contract_iff]
---   rw [← loops_covby_iff, contract_loops_eq]

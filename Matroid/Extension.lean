@@ -7,13 +7,14 @@ import Matroid.ForMathlib.Other
 open Set Function
 namespace Matroid
 
-variable {M : Matroid α}
+
 
 section Set
 
 /-- Replace the elements of `S` with parallel copies of `e`. -/
-def parallelExtendSet (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] : Matroid α :=
-    M.preimage (fun x ↦ if (x ∈ S) then e else x)
+def parallelExtendSet {α : Type*} (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] :
+    Matroid α :=
+  M.preimage (fun x ↦ if (x ∈ S) then e else x)
 
 
 end Set
@@ -21,7 +22,7 @@ end Set
 
 section Loop
 
-variable {α : Type*} {M M' : Matroid α} {e : α}
+variable {α : Type*} {M M' : Matroid α} {e f : α} {I : Set α}
 
 /-- Add a loop `e` to a matroid `M`. Has the junk value `M` if `e ∈ M.E` -/
 def addLoop (M : Matroid α) (e : α) : Matroid α := M ↾ (insert e M.E)
@@ -83,7 +84,7 @@ theorem addColoop_eq_self (he : e ∈ M.E) : M.addColoop e = M := by
 
 @[simp] theorem addColoop_ground (M : Matroid α) (e : α) : (M.addColoop e).E = insert e M.E := rfl
 
-theorem eq_addColoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ M' ⧸ e = M := by
+theorem eq_addColoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ (M' ⧸ e) = M := by
   rw [addColoop, eq_dual_comm, eq_comm, eq_addLoop_iff (show e ∉ M﹡.E from he),
     dual_loop_iff_coloop, eq_dual_comm, deleteElem, dual_delete_dual_eq_contract, contract_elem,
     eq_comm]
@@ -92,7 +93,7 @@ end Loop
 
 section Parallel
 
-variable {α : Type*} [DecidableEq α] {M : Matroid α}
+variable {α : Type*} [DecidableEq α] {M M' : Matroid α} {e f x : α} {I C : Set α}
 
 /-- Replace `f` with a parallel copy of `e` in `M`. Intended for use where `e` is a nonloop
   and `f ∉ M.E`. When this is not the case, the junk value is described by
@@ -299,7 +300,7 @@ end Parallel
 
 section Series
 
-variable {α : Type*} [DecidableEq α] {M : Matroid α}
+variable {α : Type*} [DecidableEq α] {M M' : Matroid α} {e f : α}
 
 /-- Coextend `e` by `f` in series. Intended for use where `e` is a non-coloop
   and `f ∉ M.E`. When this is not the case, the junk value is described by
@@ -339,12 +340,12 @@ theorem seriesExtend_eq_seriesExtend_contract (M : Matroid α) {e f : α} (hef :
   simp only [deleteElem, contract_elem, contract_dual_eq_dual_delete]
 
 theorem seriesExtend_contract_eq' (M : Matroid α) (e f : α) :
-    (M.seriesExtend e f) ⧸ f = M ⧸ f := by
+    ((M.seriesExtend e f) ⧸ f) = M ⧸ f := by
   rw [seriesExtend, contract_elem, ← delete_dual_eq_dual_contract, ← deleteElem,
     parallelExtend_delete_eq']
   simp
 
-theorem seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f) ⧸ f = M := by
+theorem seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f ⧸ f) = M := by
   rw [seriesExtend, contract_elem, ← delete_dual_eq_dual_contract, ← deleteElem,
     parallelExtend_delete_eq _ (show f ∉ M﹡.E from hf), dual_dual]
 
@@ -355,7 +356,7 @@ theorem seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
   rwa [Nonloop, dual_ground, and_iff_left heE, dual_loop_iff_coloop]
 
 theorem eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.Coloop e) (hf : f ∉ M.E) :
-    M' = M.seriesExtend e f ↔ M'.Series e f ∧ M' ⧸ f = M := by
+    M' = M.seriesExtend e f ↔ M'.Series e f ∧ ((M' ⧸ f) = M) := by
   rw [seriesExtend, eq_dual_comm, eq_comm, eq_parallelExtend_iff _ (show f ∉ M﹡.E from hf),
     deleteElem, ← contract_dual_eq_dual_delete, ← contract_elem, dual_inj, Series]
   rwa [Nonloop, and_iff_left (show e ∈ M﹡.E from heE), dual_loop_iff_coloop]
