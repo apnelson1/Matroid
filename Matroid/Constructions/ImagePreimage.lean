@@ -204,7 +204,7 @@ end Image
 
 section OnUniv
 
-variable {E X : Set α} {M : Matroid α}
+variable {E X : Set α} {M N : Matroid α}
 
 /-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
   If `X ⊆ M.E`, then isomorphic to `M ↾ X`. -/

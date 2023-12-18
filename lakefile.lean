@@ -2,7 +2,7 @@ import Lake
 open Lake DSL
 
 package «matroid» where
-  moreServerOptions := #[
+  leanOptions := #[
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
     ⟨`pp.proofs.withType, false⟩,
     ⟨`autoImplicit, false⟩,
