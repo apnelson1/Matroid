@@ -149,6 +149,22 @@ theorem ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopE
   rw [← (he i).basis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.basis_inter i
 
+theorem ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E) (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily Xs := by
+  obtain ⟨B, B_Base, hB⟩ := h
+  obtain ⟨B', B'_Base⟩ := B_Base.indep.of_restrict
+  refine' ⟨B', B'_Base.1, fun X ↦ _⟩
+  obtain Basis := hB X
+  have R_B'_inter_eq : R ∩ B' = B
+  · rw [ext_iff]
+    refine' fun x ↦ ⟨fun x_mem ↦ _, fun x_mem ↦ ⟨B_Base.subset_ground x_mem, B'_Base.2 x_mem⟩⟩
+    by_contra x_nB
+    apply (B'_Base.1.indep.subset (insert_subset x_mem.2 B'_Base.2)).not_dep
+    rw [Dep, and_iff_left ((insert_subset x_mem.2 B'_Base.2).trans B'_Base.1.subset_ground)]
+    exact (restrict_dep_iff.1 (B_Base.insert_dep ⟨x_mem.1, x_nB⟩)).1
+  rw [←(inter_eq_left.2 Basis.subset_ground), inter_assoc, inter_eq_left.2 Basis.subset_ground,
+  restrict_ground_eq, R_B'_inter_eq]
+  exact ((basis_restrict_iff).1 Basis).1
+
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
     M.ModularFamily (fun i : Bool ↦ bif i then X else Y)

@@ -87,6 +87,14 @@ instance {M : Matroid α} : SetLike (M.ModularCut) (Set α) where
   coe := ModularCut.Fs
   coe_injective' := by rintro ⟨C, -, -, -⟩ ⟨C', -, -, -⟩; simp
 
+def ModularCut.empty (M : Matroid α) : M.ModularCut where
+  Fs := ∅
+  forall_flat := fun F_mem ↦ absurd F_mem (not_mem_empty _)
+  up_closed := fun F_mem ↦ absurd F_mem (not_mem_empty _)
+  modular := fun _ Xs_sub Xs_none ↦ absurd (subset_empty_iff.1 Xs_sub).symm (ne_of_ssubset Xs_none.empty_ssubset)
+
+def ModularCut.Nonempty {M : Matroid α} (C : M.ModularCut) : Prop := C.Fs.Nonempty
+
 @[simp] theorem ModularCut.mem_Fs_iff {C : M.ModularCut} : I ∈ C.Fs ↔ I ∈ C := Iff.rfl
 
 theorem ModularCut.superset {F F' : Set α} (C : M.ModularCut) (hF : F ∈ C) (hFF' : F ⊆ F') (hF' : M.Flat F') :
@@ -780,10 +788,8 @@ theorem ModularCut.extension_cl_eq_of_not_mem {e : α} {X : Set α} (C : M.Modul
 
 
 
-theorem ModularCut.extension_flat_iff {F : Set α} (C : M.ModularCut) (e : α) (he : e ∉ M.E) :
+theorem ModularCut.extension_flat_iff {F : Set α} {C : M.ModularCut} (hC : C.Nonempty) (e : α) (he : e ∉ M.E) :
     (C.extension e).Flat F ↔ (M.Flat F ∧ F ∉ C) ∨ (e ∈ F ∧ F \ {e} ∈ C) := by
---not actually true : F may be a flat in the extension if it is e+M.E, and F \ {e} ∉ C as
---e is a coloop in the extension
   rw [flat_iff_cl_self]
   refine' ⟨fun cl_eq_self ↦ _, fun cl_eq_self ↦ _⟩
   · obtain (e_mem | e_not_mem) := em (e ∈ F ∧ F \ {e} ∈ C)
@@ -813,7 +819,9 @@ theorem ModularCut.extension_flat_iff {F : Set α} (C : M.ModularCut) (e : α) (
         rw [flat_iff_cl_self.1 F_flat, not_and_or, not_not]
         exact Or.inr (Or.inr F_mem)
       rwa [flat_iff_cl_self]
-    sorry
+    have e_nF : e ∉ F
+    · intro e_F
+
 
 
   sorry
@@ -830,6 +838,9 @@ theorem ModularCut.extension_flat_iff {F : Set α} (C : M.ModularCut) (e : α) (
 @[simp] theorem ModularCut.mem_congr {F : Set α} {M N : Matroid α} (C : M.ModularCut) (hMN : M = N) :
     F ∈ C.congr hMN ↔ F ∈ C := Iff.rfl
 
+
+
+
 /-- The modular cut corresponding to a deletion. (This is the empty cut if `e ∉ M.E`) -/
 @[simps] def ModularCut.ofDelete (M : Matroid α) (e : α) : (M ⧹ e).ModularCut where
   Fs := {F | (M ⧹ e).Flat F ∧ e ∈ M.cl F}
@@ -838,16 +849,14 @@ theorem ModularCut.extension_flat_iff {F : Set α} (C : M.ModularCut) (e : α) (
     simp only [deleteElem, mem_setOf_eq, and_imp]
     exact fun {F F'} hF heF hFF' hF' ↦ ⟨hF', M.cl_subset_cl hFF' heF⟩
   modular := by
-    intro Xs Xs_sub Xs_none Modular
+    intro Xs Xs_sub Xs_none mod
     refine' ⟨Flat.sInter Xs_none (fun F F_mem ↦ (Xs_sub F_mem).1), _⟩
-    have mod : M.ModularFamily (fun X : Xs ↦ X)
-    · obtain ⟨B, B_Base, hB⟩ := Modular
-      obtain ⟨B', B'_Base⟩ := B_Base.indep.of_restrict
-      refine' ⟨B', B'_Base.1, fun X ↦ _⟩
-      obtain h := (basis_restrict_iff _).1 (hB X)
-      dsimp at *
-      sorry
-    sorry
+    have mod': ModularFamily M (fun X : Xs ↦ X) := mod.ofRestrict (diff_subset _ _)
+    haveI Xsne : _root_.Nonempty ↑Xs := nonempty_coe_sort.2 Xs_none
+    rw [sInter_eq_iInter, ←ModularFamily.iInter_cl_eq_cl_iInter mod', mem_iInter]
+    exact fun X ↦ (Xs_sub X.2).2
+
+
 
 @[simp] theorem ModularCut.mem_ofDelete_iff (M : Matroid α) (e : α) {F : Set α} :
   F ∈ ModularCut.ofDelete M e ↔ (M ⧹ e).Flat F ∧ e ∈ M.cl F := Iff.rfl
@@ -865,10 +874,28 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
     ext F
     simp only [deleteElem, mem_setOf_eq, extension_ground, congr_Fs, SetLike.mem_coe,
       mem_ofDelete_iff, mem_Fs_iff]
-
-    -- some matroidy goal left
-    sorry
-
+    rw [←deleteElem, C.extension_delete he]
+    refine' ⟨fun F_Flat ↦ _, fun F_C ↦ _⟩
+    · obtain ⟨B, hB⟩ := M.exists_basis F F_Flat.1.subset_ground
+      have hB' : (C.extension e).Basis B F
+      · rw [←(@extension_delete _ M C e he)] at hB
+        exact ((basis_restrict_iff (diff_subset _ _)).1 hB).1
+      have e_not_B : e ∉ B := fun e_in_B ↦ he (hB.left_subset_ground e_in_B)
+      rw [←hB'.cl_eq_cl, hB'.indep.mem_cl_iff, or_iff_left e_not_B, dep_iff,
+      (C.extension_indep), not_or, not_and_or, not_and_or, or_iff_right,
+      insert_diff_self_of_not_mem e_not_B, or_iff_right (not_not.2 hB.indep),
+      not_not, hB.cl_eq_cl, F_Flat.1.cl] at F_Flat
+      · exact F_Flat.2.1.2
+      exact not_not.2 ⟨(mem_insert _ _), he⟩
+    obtain ⟨B, hB⟩ := M.exists_basis F (C.flat F_C).subset_ground
+    have hB' : (C.extension e).Basis B F
+    · rw [←(@extension_delete _ M C e he)] at hB
+      exact ((basis_restrict_iff (diff_subset _ _)).1 hB).1
+    have e_not_B : e ∉ B := fun e_in_B ↦ he (hB.left_subset_ground e_in_B)
+    rw [←hB'.cl_eq_cl, hB'.indep.mem_cl_iff, or_iff_left e_not_B, dep_iff, C.extension_indep,
+    not_or, not_and_or, not_and_or, insert_diff_self_of_not_mem e_not_B, not_not, hB.cl_eq_cl,
+    (C.flat F_C).cl]
+    exact ⟨(C.flat F_C), ⟨(fun ind ↦ he (ind.subset_ground (mem_insert _ _))), Or.inr (Or.inr F_C)⟩, (insert_subset_insert hB.left_subset_ground)⟩
   right_inv := by
     rintro ⟨N, hN, rfl⟩
     simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
@@ -879,6 +906,28 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
         mem_singleton_iff, not_false_eq_true, and_self, and_true, delete_cl_eq, sdiff_idem,
         mem_congr, mem_ofDelete_iff, not_and, true_and, false_or]
       -- matroidy goals. Should be able to reduce to the case where `I \ {e}` is independent.
+      refine' ⟨_, fun ind ↦ ⟨ind.subset (diff_subset _ _), _⟩⟩
+      · rintro ⟨ind, flat⟩
+        have Ie_basis : N.Basis (I \ {e}) (N.cl (I \ {e}) \ {e})
+        · exact (ind.basis_cl).basis_subset (subset_diff_singleton (N.subset_cl _) (fun e_mem ↦ absurd rfl e_mem.2)) (diff_subset _ _)
+        obtain (cl_flat | cl_not_flat) := em ((N ⧹ e).Flat (N.cl (I \ {e}) \ {e}))
+        · have e_not_mem:= flat cl_flat
+          rw [←Ie_basis.cl_eq_cl, ind.mem_cl_iff, not_or, not_dep_iff] at e_not_mem
+          convert e_not_mem.1
+          simp [heI]
+        obtain ⟨a, a_mem, a_not_mem⟩ := exists_mem_cl_not_mem_of_not_flat cl_not_flat
+        have basis_restrict : (N ⧹ e).Basis (I \ {e}) (N.cl (I \ {e}) \ {e})
+        · exact (basis_restrict_iff (diff_subset _ _)).2 ⟨Ie_basis, (diff_subset_diff_left (N.cl_subset_ground _))⟩
+        rw [←basis_restrict.cl_eq_cl] at a_mem
+        apply absurd ⟨_, (_ : a ≠ e)⟩ a_not_mem
+        · rw [ind.mem_cl_iff, dep_iff]
+          rw [deleteElem, delete_eq_restrict, (ind.indep_restrict_of_subset _).mem_cl_iff,
+          restrict_dep_iff] at a_mem
+          · obtain (a_dep | a_mem) := a_mem
+            · exact Or.inl ⟨a_dep.1, a_dep.2.trans (diff_subset _ _)⟩
+            exact Or.inr a_mem
+          exact subset_diff_singleton ind.subset_ground (fun e_mem ↦ e_mem.2 rfl)
+        apply ne_of_mem_of_not_mem a_mem (not_mem_subset (cl_subset_ground _ _) he)
 
       sorry
     simp [heI]
