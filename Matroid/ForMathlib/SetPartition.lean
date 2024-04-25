@@ -24,7 +24,7 @@ instance {α : Type*} [CompleteLattice α] {s : α} : SetLike (Partition s) α w
 
 @[simp] theorem mem_parts {x : α} : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
 
-@[ext] theorem Partition.ext {P Q : Partition s} (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
+@[ext] theorem ext {P Q : Partition s} (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
   cases P
   cases Q
   simp only [mk.injEq]
@@ -252,8 +252,8 @@ theorem exists_unique_of_mem_set (P : Partition s) (hx : x ∈ s) : ∃! t, t �
 
 theorem partOf_mem (P : Partition s) (hx : x ∈ s) : P.partOf x ∈ P := by
   obtain ⟨t, ⟨h', h⟩⟩ := P.exists_unique_of_mem_set hx
-  have hrw : {t | t ∈ P ∧ x ∈ t} = {t}
-  · ext t'
+  have hrw : {t | t ∈ P ∧ x ∈ t} = {t} := by
+    ext t'
     simp only [mem_setOf_eq, mem_singleton_iff]
     exact ⟨h t', by rintro rfl; exact h'⟩
   rw [partOf, hrw, sUnion_singleton]
@@ -271,8 +271,8 @@ theorem mem_partOf (P : Partition s) (hx : x ∈ s) : x ∈ P.partOf x := by
 
 theorem eq_partOf_of_mem {P : Partition s} (ht : t ∈ P) (hxt : x ∈ t) :
     t = P.partOf x := by
-  have hx : x ∈ s
-  · rw [← P.sUnion_eq]
+  have hx : x ∈ s := by
+    rw [← P.sUnion_eq]
     exact mem_sUnion_of_mem hxt ht
   obtain ⟨t', ⟨-, h⟩⟩ := P.exists_unique_of_mem_set hx
   rw [h t ⟨ht, hxt⟩, h (P.partOf x) ⟨P.partOf_mem hx, P.mem_partOf hx⟩]
@@ -378,8 +378,6 @@ theorem eqv_class_mem_ofRel (h : r x x) : {y | r x y} ∈ ofRel r :=
     t ∈ ofRel' r hs ↔ ∃ x ∈ s, t = {y | r x y} := by
   subst hs
   simp [ofRel', mem_congr_iff, mem_ofRel_iff]
-
-  -- simp_rw [eq_comm (a := t)]; rfl
 
 theorem class_nonempty {t : Set α} (ht : t ∈ ofRel r) : t.Nonempty := by
   obtain ⟨x, hx, rfl⟩ := ht; exact ⟨x, hx⟩

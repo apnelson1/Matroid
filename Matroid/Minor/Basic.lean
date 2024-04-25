@@ -804,8 +804,7 @@ theorem Minor.exists_contract_indep_delete_coindep (h : N ≤m M) :
       diff_union_self, union_comm] at hi
     exact hi.1.2
   · rw [coindep_def]
-    have hss : (C' \ I) \ K ⊆ (M ⧸ ﹡I ⧹ K)﹡
-    -- have hss : (C' \ I) \ K ⊆ (M ⧸ I ⧹ K)﹡.cl ∅ := by
+    have hss : (C' \ I) \ K ⊆ (M ⧸ I ⧹ K)﹡﹡.cl ∅ := by
       rw [dual_dual, delete_loops_eq];
       exact diff_subset_diff_left hI.diff_subset_loops_contract
     have hi := indep_of_subset_coloops hss

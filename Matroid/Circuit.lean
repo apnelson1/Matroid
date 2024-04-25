@@ -6,7 +6,6 @@ import Matroid.Closure
 variable {α : Type*} {M : Matroid α} {C C' C₁ C₂ R R I X K : Set α} {e f x y : α}
 
 open Set
-
 namespace Matroid
 
 /-- A Circuit is a minimal dependent set -/

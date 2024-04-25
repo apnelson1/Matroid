@@ -1,6 +1,6 @@
 import Matroid.Minor.RelRank
 import Matroid.ForMathlib.SetPartition
-import Matroid.ForMathlib.ENatTopology
+-- import Matroid.ForMathlib.ENatTopology
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -50,8 +50,7 @@ theorem Flat.biInter_inter_ground {ι : Type*} {Fs : ι → Set α} {s : Set ι}
 theorem Flat.sInter {Fs : Set (Set α)} (hF : Fs.Nonempty) (h : ∀ F ∈ Fs, M.Flat F) :
     M.Flat (⋂₀ Fs) := by
   rw [sInter_eq_iInter]
-  have : Nonempty Fs
-  · exact Iff.mpr nonempty_coe_sort hF
+  have : Nonempty Fs := Iff.mpr nonempty_coe_sort hF
   exact Flat.iInter (fun ⟨F, hF⟩ ↦ h _ hF)
 
 theorem Flat.sInter_inter_ground {Fs : Set (Set α)} (h : ∀ F ∈ Fs, M.Flat F) :
@@ -160,7 +159,7 @@ def flatCl (M : Matroid α) (X : Set α) : M.Flats := ⟨_, M.cl_flat X⟩
 @[simp] theorem Flats.coe_inj {F F' : M.Flats} : (F : Set α) = (F' : Set α) ↔ F = F' :=
   Subtype.coe_inj
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Flats.coe_subset_ground (F : M.Flats) : (F : Set α) ⊆ M.E :=
   F.coe_flat.subset_ground
 
@@ -243,7 +242,7 @@ notation:25 F₀:50 " ⋖[" M:25 "] " F₁ :75 => Covby M F₀ F₁
 
 theorem covby_iff : F₀ ⋖[M] F₁ ↔
     M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.Flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ := by
-  simp_rw [Covby, covby_iff_lt_and_eq_or_eq]
+  simp_rw [Covby, covBy_iff_lt_and_eq_or_eq]
   refine ⟨fun ⟨h₀, h₁, hlt, hforall⟩ ↦ ⟨h₀, h₁, hlt, fun F hF hF₀ hF₁ ↦ ?_⟩,
     fun ⟨hF₀, hF₁, hss, hforall⟩ ↦ ⟨hF₀, hF₁, hss, ?_⟩⟩
   · obtain (h1 | h2) := hforall ⟨F, hF⟩ hF₀ hF₁
@@ -264,11 +263,11 @@ theorem Covby.flat_left (h : F₀ ⋖[M] F₁) : M.Flat F₀ :=
 theorem Covby.flat_right (h : F₀ ⋖[M] F₁) : M.Flat F₁ :=
   h.2.1
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Covby.subset_ground_left (h : F₀ ⋖[M] F₁) : F₀ ⊆ M.E :=
   h.flat_left.subset_ground
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Covby.subset_ground_right (h : F₀ ⋖[M] F₁) : F₁ ⊆ M.E :=
   h.flat_right.subset_ground
 
@@ -406,7 +405,7 @@ theorem Covby.covby_cl_union_of_inter_covby (h₀ : F₀ ∩ F₁ ⋖[M] F₀) (
   exact h₀.flat_right.covby_cl_insert (fun h ↦ he₁.2 ⟨h, he₁.1⟩) (h₁.flat_right.subset_ground he₁.1)
 
 instance {M : Matroid α} : IsWeakUpperModularLattice M.Flats where
-  covby_sup_of_inf_covby_covby := by
+  covBy_sup_of_inf_covBy_covBy := by
     rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
     simp only [ge_iff_le, Flats.le_iff, Flats.covby_iff, Flats.coe_inf, Flats.coe_sup]
     exact Covby.covby_cl_union_of_inter_covby
@@ -419,10 +418,10 @@ theorem Flat.covby_and_covby_of_ssubset_of_ssubset_of_relRank_eq_two (hF₀ : M.
   have h0le := hF₀.one_le_relRank_of_ssubset h₀
   have h1le := hF.one_le_relRank_of_ssubset h₁
   rw [← M.relRank_add_of_subset_of_subset h₀.subset h₁.subset] at h
-  have h0top : M.relRank F₀ F ≠ ⊤
-  · intro h'; rw [h'] at h; norm_cast at h
-  have h1top : M.relRank F F₁ ≠ ⊤
-  · intro h'; rw [h', add_top] at h; norm_cast at h
+  have h0top : M.relRank F₀ F ≠ ⊤ := by
+    intro h'; rw [h'] at h; norm_cast at h
+  have h1top : M.relRank F F₁ ≠ ⊤ := by
+    intro h'; rw [h', add_top] at h; norm_cast at h
   have hle1 := WithTop.le_of_add_le_add_left h0top <| h.le.trans (add_le_add_right h0le 1)
   have hle0 := WithTop.le_of_add_le_add_right h1top <| h.le.trans (add_le_add_left h1le 1)
   rw [hF₀.covby_iff_relRank_eq_one hF, hF.covby_iff_relRank_eq_one hF₁,
@@ -468,9 +467,9 @@ theorem Covby.covby_and_covby_of_covby_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖
   · obtain ⟨F', hFF', hF'⟩ := hF.mem_covbyPartition_iff.1 (hF.covbyPartition.partOf_mem he)
     obtain rfl := hFF'.cl_insert_eq (hF'.symm.subset <| hF.covbyPartition.mem_partOf he)
     exact hF'.symm
-  have hrw : insert e F ∩ M.E = F
-  · refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
-    rw [← singleton_union, inter_distrib_right, union_subset_iff,
+  have hrw : insert e F ∩ M.E = F := by
+    refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
+    rw [← singleton_union, union_inter_distrib_right, union_subset_iff,
        (and_iff_left (inter_subset_left _ _))]
     rintro f ⟨rfl, hf⟩
     exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
@@ -508,17 +507,18 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
   left_inv := by rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩; simp
   right_inv := by rintro ⟨F, hF⟩; simp [hF.subset]
 
-theorem Flat.ground_encard_eq_tsum (hF₀ : M.Flat F₀) :
-    M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
-  rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
-  apply congr_arg (_ + ·)
-  have hcard := ENat.tsum_encard_eq_encard_sUnion hF₀.covbyPartition.pairwiseDisjoint
-  simp only [SetLike.coe_sort_coe, Partition.sUnion_eq] at hcard
-  rw [← ENat.tsum_comp_eq_tsum_of_equiv hF₀.equivCovbyPartition (fun F ↦ encard ((F : Set α) \ F₀)),
-    ← hcard]
-  apply tsum_congr
-  rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩
-  rw [hF₀.equivCovbyPartition_apply_coe, diff_union_self, union_diff_right]
+-- this needs `ENatTopology`
+-- theorem Flat.ground_encard_eq_tsum (hF₀ : M.Flat F₀) :
+--     M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
+--   rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
+--   apply congr_arg (_ + ·)
+--   have hcard := ENat.tsum_encard_eq_encard_sUnion hF₀.covbyPartition.pairwiseDisjoint
+--   simp only [SetLike.coe_sort_coe, Partition.sUnion_eq] at hcard
+--   rw [← ENat.tsum_comp_eq_tsum_of_equiv hF₀.equivCovbyPartition (fun F ↦ encard ((F : Set α) \ F₀)),
+--     ← hcard]
+--   apply tsum_congr
+--   rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩
+--   rw [hF₀.equivCovbyPartition_apply_coe, diff_union_self, union_diff_right]
 
 section Minor
 
@@ -573,7 +573,7 @@ section Hyperplane
 @[pp_dot] def Hyperplane (M : Matroid α) (H : Set α) : Prop :=
   H ⋖[M] M.E
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Hyperplane.subset_ground (hH : M.Hyperplane H) : H ⊆ M.E :=
   hH.flat_left.subset_ground
 
@@ -783,7 +783,7 @@ theorem Point.flat (hP : M.Point P) : M.Flat P :=
 theorem Point.er (hP : M.Point P) : M.er P = 1 :=
   hP.2
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
@@ -855,10 +855,10 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
       diff_union_eq_union_of_subset P (M.subset_cl (C ∩ M.E)), union_eq_left, cl_inter_ground]
     exact hP.subset
 
-theorem encard_ground_eq_encard_loops_add_sum_points (M : Matroid α) : M.E.encard =
-    (M.cl ∅).encard + ∑' P : {P // M.Point P}, ((P : Set α) \ M.cl ∅).encard := by
-  rw [(M.cl_flat ∅).ground_encard_eq_tsum, tsum_congr_subtype (f := fun F ↦ encard (F \ M.cl ∅))]
-  simp [loops_covby_iff]
+-- theorem encard_ground_eq_encard_loops_add_sum_points (M : Matroid α) : M.E.encard =
+--     (M.cl ∅).encard + ∑' P : {P // M.Point P}, ((P : Set α) \ M.cl ∅).encard := by
+--   rw [(M.cl_flat ∅).ground_encard_eq_tsum, tsum_congr_subtype (f := fun F ↦ encard (F \ M.cl ∅))]
+--   simp [loops_covby_iff]
 
 theorem Point.eq_or_eq_of_flat_of_subset (hP : M.Point P) (hF : M.Flat F) (h : F ⊆ P) :
     F = M.cl ∅ ∨ F = P :=
@@ -894,7 +894,7 @@ theorem Line.flat (hL : M.Line L) : M.Flat L :=
 theorem Line.er (hL : M.Line L) : M.er L = 2 :=
   hL.2
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
 

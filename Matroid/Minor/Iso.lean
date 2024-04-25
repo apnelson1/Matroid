@@ -2,7 +2,6 @@ import Matroid.Minor.Basic
 import Matroid.Minor.RelRank
 import Matroid.Constructions.Basic
 
-
 namespace Matroid
 
 open Set PartialEquiv
@@ -83,7 +82,7 @@ theorem IsoMinor.erk_le_erk (h : N ≤i M) : N.erk ≤ M.erk := by
 
 theorem IsoMinor.encard_ground_le_encard_ground (h : N ≤i M) : N.E.encard ≤ M.E.encard := by
   obtain ⟨N', hN', (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩)⟩ := h; simp
-  have hss := encard_le_of_subset <| e.image_ground.subset.trans hN'.subset
+  have hss := encard_le_card <| e.image_ground.subset.trans hN'.subset
   rwa [e.injOn_ground.encard_image] at hss
 
 end Iso
