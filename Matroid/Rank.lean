@@ -1926,7 +1926,7 @@ end Matroid
 -- -- --   refine ⟨B, hB.indep.base_of_rk_le_card _, subset_compl_iff_disjoint_left.mp hB.subset⟩,
 -- -- --   rw [← hB.indep.r, hB.r, hr],
 -- -- -- end
--- -- -- lemma dual_r_add_rk_eq (M : matroid_in α) (X : set α) : M﹡.r X + M.rk = ncard X + M.r Xᶜ  :=
+-- -- -- lemma dual_r_add_rk_eq (M : matroid_in α) (X : set α) : M✶.r X + M.rk = ncard X + M.r Xᶜ  :=
 -- -- -- begin
 -- -- --   set r' : set α → ℤ := λ X, X.ncard + M.r Xᶜ - M.rk with hr',
 -- -- --   have hr'_nonneg : ∀ X, 0 ≤ r' X,
@@ -1941,7 +1941,7 @@ end Matroid
 -- -- --   { intros X Y, simp_rw [hr', compl_inter, compl_union],
 -- -- --     linarith [ncard_inter_add_ncard_union X Y, M.r_submod Xᶜ Yᶜ]},
 -- -- --   set M' := matroid_of_int_r r' hr'_nonneg hr'_le_card hr'_mono hr'_submod with hM',
--- -- --   have hM'M : M' = M﹡,
+-- -- --   have hM'M : M' = M✶,
 -- -- --   { refine eq_of_indep_iff_indep_forall (λ I, _),
 -- -- --     rw [indep_iff_r_eq_card, dual_indep_iff_coindep, coindep_iff_r], zify,
 -- -- --     simp_rw [hM', matroid_of_int_r_apply, hr'],
@@ -1950,7 +1950,7 @@ end Matroid
 -- -- --   rw [← hM'M], zify, simp_rw [hM', matroid_of_int_r_apply, hr'],
 -- -- --   ring,
 -- -- -- end
--- -- -- lemma dual_r_cast_eq (M : matroid_in α) (X : set α) : (M﹡.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
+-- -- -- lemma dual_r_cast_eq (M : matroid_in α) (X : set α) : (M✶.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
 -- -- -- by linarith [M.dual_r_add_rk_eq X]
 -- -- -- end dual
 -- -- end matroid_in

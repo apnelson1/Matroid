@@ -26,7 +26,7 @@ def emptyOn (α : Type*) : Matroid α :=
   obtain ⟨B', hB'⟩ := M.exists_base
   rwa [← eq_empty_of_subset_empty (hB'.subset_ground.trans_eq h)]
 
-@[simp] theorem emptyOn_dual_eq : (emptyOn α)﹡ = emptyOn α := by
+@[simp] theorem emptyOn_dual_eq : (emptyOn α)✶ = emptyOn α := by
   rw [← ground_eq_empty_iff]; rfl
 
 @[simp] theorem restrict_to_empty (M : Matroid α) : M ↾ (∅ : Set α) = emptyOn α := by
@@ -112,14 +112,14 @@ end LoopyOn
 section FreeOn
 
 /-- The `Matroid α` with ground set `E` whose only base is `E`. -/
-def freeOn (E : Set α) : Matroid α := (loopyOn E)﹡
+def freeOn (E : Set α) : Matroid α := (loopyOn E)✶
 
 @[simp] theorem freeOn_ground : (freeOn E).E = E := rfl
 
-@[simp] theorem freeOn_dual_eq : (freeOn E)﹡ = loopyOn E := by
+@[simp] theorem freeOn_dual_eq : (freeOn E)✶ = loopyOn E := by
   rw [freeOn, dual_dual]
 
-@[simp] theorem loopyOn_dual_eq : (loopyOn E)﹡ = freeOn E := rfl
+@[simp] theorem loopyOn_dual_eq : (loopyOn E)✶ = freeOn E := rfl
 
 @[simp] theorem freeOn_empty (α : Type*) : freeOn (∅ : Set α) = emptyOn α := by
   simp [freeOn]
@@ -191,7 +191,7 @@ theorem trivialOn_basis_iff (hI : I ⊆ E) (hX : X ⊆ E) :
 theorem trivialOn_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivialOn I E).Basis (X ∩ I) X := by
   rw [trivialOn_basis_iff hI hX]
 
-@[simp] theorem trivialOn_dual_eq (I E : Set α) : (trivialOn I E)﹡ = trivialOn (E \ I) E := by
+@[simp] theorem trivialOn_dual_eq (I E : Set α) : (trivialOn I E)✶ = trivialOn (E \ I) E := by
   rw [← trivialOn_inter_ground_eq]
   refine eq_of_base_iff_base_forall rfl (fun B (hB : B ⊆ E) ↦ ?_)
   rw [dual_base_iff, trivialOn_base_iff (inter_subset_right _ _),

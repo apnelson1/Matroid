@@ -326,14 +326,14 @@ theorem eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E =
 section Dual
 
 /-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
-@[pp_dot] abbrev Cocircuit (M : Matroid α) (K : Set α) : Prop := M﹡.Circuit K
+@[pp_dot] abbrev Cocircuit (M : Matroid α) (K : Set α) : Prop := M✶.Circuit K
 
-theorem cocircuit_def : M.Cocircuit K ↔ M﹡.Circuit K := Iff.rfl
+theorem cocircuit_def : M.Cocircuit K ↔ M✶.Circuit K := Iff.rfl
 
-theorem Cocircuit.circuit (hK : M.Cocircuit K) : M﹡.Circuit K :=
+theorem Cocircuit.circuit (hK : M.Cocircuit K) : M✶.Circuit K :=
   hK
 
-theorem Circuit.cocircuit (hC : M.Circuit C) : M﹡.Cocircuit C := by
+theorem Circuit.cocircuit (hC : M.Circuit C) : M✶.Cocircuit C := by
   rwa [cocircuit_def, dual_dual]
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
@@ -382,15 +382,15 @@ theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircui
     exact diff_subset_diff_left hC.subset_ground
   rw [← he]; exact (inter_subset_left _ _).trans hC.subset_ground
 
-theorem dual_rkPos_iff_exists_circuit : M﹡.RkPos ↔ ∃ C, M.Circuit C := by
+theorem dual_rkPos_iff_exists_circuit : M✶.RkPos ↔ ∃ C, M.Circuit C := by
   rw [rkPos_iff_empty_not_base, dual_base_iff, diff_empty, not_iff_comm, not_exists,
     ← ground_indep_iff_base, indep_iff_forall_subset_not_circuit]
   exact ⟨fun h C _ ↦ h C, fun h C hC ↦ h C hC.subset_ground hC⟩
 
-theorem Circuit.dual_rkPos (hC : M.Circuit C) : M﹡.RkPos :=
+theorem Circuit.dual_rkPos (hC : M.Circuit C) : M✶.RkPos :=
   dual_rkPos_iff_exists_circuit.mpr ⟨C, hC⟩
 
-theorem exists_circuit [RkPos M﹡] : ∃ C, M.Circuit C :=
+theorem exists_circuit [RkPos M✶] : ∃ C, M.Circuit C :=
   dual_rkPos_iff_exists_circuit.1 (by assumption)
 
 theorem rk_Pos_iff_exists_cocircuit : M.RkPos ↔ ∃ K, M.Cocircuit K := by
@@ -413,7 +413,7 @@ theorem finitary_iff_forall_circuit_finite : M.Finitary ↔ ∀ C, M.Circuit C �
     exact hC.dep.not_indep <| hI _ hCI (h C hC)
   simpa using (hI {x} (by simpa) (finite_singleton _)).subset_ground
 
-theorem Cocircuit.finite [Finitary (M﹡)] (hK : M.Cocircuit K) : K.Finite :=
+theorem Cocircuit.finite [Finitary (M✶)] (hK : M.Cocircuit K) : K.Finite :=
   Circuit.finite hK
 
 end Finitary
@@ -437,14 +437,14 @@ theorem girth_eq_top_iff : M.girth = ⊤ ↔ ∀ C, M.Circuit C → C.Infinite :
 theorem le_girth_iff : k ≤ M.girth ↔ ∀ C, M.Circuit C → k ≤ C.encard := by
   simp [girth, le_sInf_iff]
 
-theorem exists_circuit_girth (M : Matroid α) [RkPos M﹡] :
+theorem exists_circuit_girth (M : Matroid α) [RkPos M✶] :
     ∃ C, M.Circuit C ∧ C.encard = M.girth := by
   obtain ⟨⟨C,hC⟩, (hC' : C.encard = _)⟩ :=
     @ciInf_mem ℕ∞ (setOf M.Circuit) _ _ (nonempty_coe_sort.mpr M.exists_circuit)
       (fun C ↦ (C : Set α).encard)
   exact ⟨C, hC, by rw [hC', girth, iInf_subtype']⟩
 
-theorem girth_le_iff (M : Matroid α) [RkPos M﹡] :
+theorem girth_le_iff (M : Matroid α) [RkPos M✶] :
     M.girth ≤ k ↔ ∃ C, M.Circuit C ∧ C.encard ≤ k :=
   let ⟨C, hC⟩ := M.exists_circuit_girth
   ⟨fun h ↦ ⟨C, hC.1, hC.2.le.trans h⟩, fun ⟨_, hC, hCc⟩ ↦ (hC.girth_le_card).trans hCc⟩

@@ -91,7 +91,7 @@ theorem eq_unifOn_iff : M = unifOn E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.en
   ⟨by rintro rfl; simp,
     fun ⟨hE, h⟩ ↦ eq_of_indep_iff_indep_forall (by simpa) fun I _↦ by simpa using h I⟩
 
-theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)﹡ = unifOn E (E.encard - k) := by
+theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - k) := by
   obtain (rfl | hk) := eq_or_ne k ⊤; simp
   lift k to ℕ using hk
   obtain (hle | hlt) := le_or_lt E.encard k
@@ -181,7 +181,7 @@ theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ 
 @[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
   rw [unif_base_iff (Nat.le_add_right _ _)]
 
-theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)﹡ = unif b n := by
+theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   subst h
   refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _),
@@ -210,12 +210,12 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
 
 /-- The expression for dual of a uniform matroid.
   The junk case where `b < a` still works because the subtraction truncates. -/
-@[simp] theorem unif_dual (a b : ℕ) : (unif a b)﹡ = unif (b - a) b := by
+@[simp] theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
   obtain (hab | hba) := le_or_lt a b
   · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 
-theorem unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) :=
+theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
 theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by

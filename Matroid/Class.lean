@@ -133,19 +133,19 @@ section Dual
 
 /-- A self-dual matroid parameter -/
 def SelfDual (P : ∀ {α : Type u}, Matroid α → η) : Prop :=
-  ∀ {α : Type u} (M : Matroid α), P M = P M﹡
+  ∀ {α : Type u} (M : Matroid α), P M = P M✶
 
 /-- A matroid property that is preserved under taking duals. -/
 class DualClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
-  (forall_dual : ∀ {α : Type u} {M : Matroid α}, P M → P M﹡)
+  (forall_dual : ∀ {α : Type u} {M : Matroid α}, P M → P M✶)
 
-theorem toDualPred [DualClosed P] (hM : P M) : P M﹡ :=
+theorem toDualPred [DualClosed P] (hM : P M) : P M✶ :=
   DualClosed.forall_dual hM
 
-theorem ofDualPred [DualClosed P] (hM : P M﹡) : P M :=
+theorem ofDualPred [DualClosed P] (hM : P M✶) : P M :=
   M.dual_dual ▸ toDualPred hM
 
-@[simp] theorem iffDualPred [DualClosed P] : P M﹡ ↔ P M :=
+@[simp] theorem iffDualPred [DualClosed P] : P M✶ ↔ P M :=
   ⟨ofDualPred, toDualPred⟩
 
 /-- The class of finite matroids is closed under duality -/
@@ -156,7 +156,7 @@ instance dualClosed_finite : DualClosed.{u} Matroid.Finite where
 instance dualClosed_fieldRep (𝔽 : Type*) [Field 𝔽] : DualClosed.{u} (FieldRep 𝔽) where
   forall_dual := fun {_ _} ⟨hMrep, hMfin⟩ ↦ ⟨hMrep.dual, by infer_instance⟩
 
-theorem ExclMinor.toDual [DualClosed P] (h : M.ExclMinor P) : M﹡.ExclMinor P :=
+theorem ExclMinor.toDual [DualClosed P] (h : M.ExclMinor P) : M✶.ExclMinor P :=
   ⟨fun h' ↦ h.1 <| ofDualPred h',
     fun {_} hNM ↦ ofDualPred (h.prop_of_strictMinor <| strictMinor_dual_iff_dual_strictMinor.1 hNM)⟩
 
@@ -314,11 +314,11 @@ class SimpClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
 --   exact hM.not_prop_self
 
 -- theorem ExclMinor.dual_simple [SimpClosed P] [MinorClosed P] [DualClosed P] (hM : M.ExclMinor P) :
---     M﹡.Simple :=
+--     M✶.Simple :=
 --   hM.toDual.simple
 
 end Simple
 
--- example (hM : M.ExclMinor (FieldRep (ZMod 2))) : M.Simple ∧ M﹡.Simple ∧ M.Finite := by
+-- example (hM : M.ExclMinor (FieldRep (ZMod 2))) : M.Simple ∧ M✶.Simple ∧ M.Finite := by
 --   constructor
 --   · have := hM.simple

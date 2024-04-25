@@ -69,11 +69,11 @@ theorem IsoMinor.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ 
 theorem Iso.trans_isoMinor {N' : Matroid β'} (e : Iso N N') (h : N' ≤i M) : N ≤i M :=
   e.isoMinor.trans h
 
-theorem IsoMinor.dual (h : N ≤i M) : N﹡ ≤i M﹡ :=
+theorem IsoMinor.dual (h : N ≤i M) : N✶ ≤i M✶ :=
   let ⟨N', hN', hN'M⟩ := h
-  ⟨N'﹡, hN'.dual, hN'M.dual⟩
+  ⟨N'✶, hN'.dual, hN'M.dual⟩
 
-theorem isoMinor_dual_iff : N﹡ ≤i M﹡ ↔ N ≤i M :=
+theorem isoMinor_dual_iff : N✶ ≤i M✶ ↔ N ≤i M :=
   ⟨fun h ↦ by rw [← dual_dual M, ← dual_dual N]; exact h.dual, IsoMinor.dual⟩
 
 theorem IsoMinor.erk_le_erk (h : N ≤i M) : N.erk ≤ M.erk := by
@@ -194,7 +194,7 @@ theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
   simp
 
 theorem loopyOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
-    loopyOn E ≤i M ↔ E.encard ≤ M﹡.erk := by
+    loopyOn E ≤i M ↔ E.encard ≤ M✶.erk := by
   rw [← isoMinor_dual_iff, loopyOn_dual_eq, freeOn_isoMinor_iff_of_finite hE]
 
 end free_loopy

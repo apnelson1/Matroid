@@ -298,7 +298,7 @@ end Parallel
 
 section Series
 
-@[pp_dot] def Series (M : Matroid α) (e f : α) : Prop := M﹡.Parallel e f
+@[pp_dot] def Series (M : Matroid α) (e f : α) : Prop := M✶.Parallel e f
 
 -- API TODO, but all will follow easily from duality.
 

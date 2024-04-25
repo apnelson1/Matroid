@@ -5,6 +5,16 @@ open Set Function PartialEquiv
 
 variable {α β : Type*}
 
+theorem PartialEquiv.image_subset_target (e : PartialEquiv α β) {s : Set α} (hs : s ⊆ e.source) :
+    e '' s ⊆ e.target := by
+  rw [← e.image_source_eq_target]
+  exact image_subset _ hs
+
+theorem PartialEquiv.symm_image_subset_source (e : PartialEquiv α β) {s : Set β}
+    (hs : s ⊆ e.target) : e.symm '' s ⊆ e.source := by
+  rw [← e.symm_image_target_eq_source]
+  exact image_subset _ hs
+
 section ofSetEquiv
 
 theorem Finite.exists_PartialEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}

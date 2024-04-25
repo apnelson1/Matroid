@@ -1,5 +1,7 @@
 import Mathlib.Data.Set.Card
-import Mathlib.Algebra.BigOperators.Order
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.BigOperators.Ring
+import Mathlib.Algebra.BigOperators.WithTop
 
 open Set BigOperators
 
@@ -66,7 +68,7 @@ theorem encard_biUnion {ι : Type*} {s : ι → Set α} (t : Finset ι)
     (ht : (t : Set ι).PairwiseDisjoint s) : encard (⋃ i ∈ t, s i) = ∑ i in t, encard (s i) := by
   convert encard_iUnion (fun i : t ↦ s i) ?_
   · ext x; simp
-  · rw [Finset.univ_eq_attach, Finset.sum_attach (f := fun i ↦ (s i).encard)]
+  · rw [Finset.univ_eq_attach, Finset.sum_attach _ (f := fun i ↦ (s i).encard)]
   rintro ⟨i, hi⟩ - ⟨j, hj⟩ - hne
   exact disjoint_iff_forall_ne.2 (ht hi hj (by simpa using hne)).ne_of_mem
 
@@ -93,8 +95,8 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
   classical
   refine ⟨fun hsum i _ j _ hij ↦ disjoint_iff_forall_ne.2 ?_, fun hdj ↦ encard_iUnion s hdj⟩
   rintro x hxi _ hxj rfl
-  have hrw : ∀ t : Set α, encard t = encard (t \ {x}) + encard (t ∩ {x})
-  · intro t
+  have hrw : ∀ t : Set α, encard t = encard (t \ {x}) + encard (t ∩ {x}) := by
+    intro t
     rw [← encard_union_eq, diff_union_inter]
     exact disjoint_sdiff_left.mono_right (inter_subset_right _ _)
   rw [hrw, Finset.sum_congr rfl (fun i _ ↦ hrw (s i)), Finset.sum_add_distrib,
@@ -120,15 +122,10 @@ theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
   change encard (⋃ i ∈ (u : Set ι), _) = _ ↔ _
   rw [biUnion_eq_iUnion]
   convert encard_iUnion_eq_sum_iff_pairwiseDisjoint (ι := u) (s := fun i ↦ s i) (by simpa)
-  · rw [Finset.univ_eq_attach, Finset.sum_attach (f := fun i ↦ encard (s i))]
+  · rw [Finset.univ_eq_attach, Finset.sum_attach _ (f := fun i ↦ encard (s i))]
   refine ⟨fun h i _ j _ hij ↦ h i.prop j.prop (by rwa [Ne.def, Subtype.coe_injective.eq_iff]),
     fun h i hi j hj hij ↦ ?_⟩
   exact h (mem_univ ⟨i, hi⟩) (mem_univ ⟨j,hj⟩) (by simpa)
-
-
-
-
-
 
 theorem pairwiseDisjoint_of_encard_sum_le_encard_iUnion {ι : Type*} [Fintype ι] {s : ι → Set α}
     (hfin : ∀ i, (s i).Finite) (hle : ∑ i, encard (s i) ≤ encard (⋃ i, s i)) :

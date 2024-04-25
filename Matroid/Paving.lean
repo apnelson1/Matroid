@@ -38,9 +38,9 @@ def Paving.minor (hM : M.Paving) (hNM : N ≤m M) : N.Paving := by
   exact (hM.contract _).delete _
 
 /-- A `SparsePaving` matroid is one where every circuit is a circuit-hyperplane. -/
-def SparsePaving (M : Matroid α) := M.Paving ∧ M﹡.Paving
+def SparsePaving (M : Matroid α) := M.Paving ∧ M✶.Paving
 
-theorem SparsePaving.dual (h : M.SparsePaving) : M﹡.SparsePaving := by
+theorem SparsePaving.dual (h : M.SparsePaving) : M✶.SparsePaving := by
   rw [SparsePaving, dual_dual]
   exact And.symm h
 

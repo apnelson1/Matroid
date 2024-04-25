@@ -300,7 +300,7 @@ theorem Iso.encard_ground_eq (e : Iso M N) : M.E.encard = N.E.encard := by
   rw [← e.image_ground, e.injOn_ground.encard_image]
 
 /-- The duals of isomorphic matroids are isomorphic -/
-def Iso.dual (e : Iso M N) : Iso M﹡ N﹡ :=
+def Iso.dual (e : Iso M N) : Iso M✶ N✶ :=
   iso_of_forall_base e.toPartialEquiv
     (by simp) (by simp)
     (by {
@@ -431,12 +431,12 @@ theorem IsIso.finiteRk_iff (h : M ≅ N) : M.FiniteRk ↔ N.FiniteRk := by
   exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_base hB, hBfin.image _⟩,
     fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, e.symm.on_base hB, hBfin.image _⟩⟩
 
-theorem IsIso.dual (h : M ≅ N) : M﹡ ≅ N﹡ := by
+theorem IsIso.dual (h : M ≅ N) : M✶ ≅ N✶ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact Or.inl ⟨by simp, by simp⟩
   exact Or.inr ⟨e.dual⟩
 
-theorem isIso_dual_iff : M﹡ ≅ N﹡ ↔ M ≅ N := by
+theorem isIso_dual_iff : M✶ ≅ N✶ ↔ M ≅ N := by
   refine ⟨fun h ↦ ?_, IsIso.dual⟩
   rw [← dual_dual M, ← dual_dual N]
   exact h.dual

@@ -734,9 +734,9 @@ theorem mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e �
 
 theorem mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat)
   (he : e ∈ M.E := by aesop_mat) :
-    e ∈ M﹡.cl X ↔ ∀ C, M.Circuit C → e ∈ C → (X ∩ C).Nonempty := by
+    e ∈ M✶.cl X ↔ ∀ C, M.Circuit C → e ∈ C → (X ∩ C).Nonempty := by
   rw [← dual_dual M]
-  simp_rw [← cocircuit_def, dual_dual M, mem_cl_iff_forall_hyperplane (M := M﹡) hX he]
+  simp_rw [← cocircuit_def, dual_dual M, mem_cl_iff_forall_hyperplane (M := M✶) hX he]
   refine' ⟨fun h C hC heC ↦ by_contra fun hne ↦ _, fun h H hH hXE ↦ by_contra fun he' ↦ _⟩
   · rw [nonempty_iff_ne_empty, not_not, ← disjoint_iff_inter_eq_empty] at hne
     exact (h _ hC.compl_hyperplane (subset_diff.mpr ⟨hX, hne⟩)).2 heC

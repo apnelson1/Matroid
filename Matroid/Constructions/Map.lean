@@ -245,13 +245,13 @@ theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.on
   rw [(iso_onGround hM).on_indep_iff, (iso_onGround hN).on_indep_iff]
   convert h.2 _ using 1
 
-@[simp] theorem onGround_dual (hM : M.E = E) : (M.onGround E)﹡ = M﹡.onGround E := by
+@[simp] theorem onGround_dual (hM : M.E = E) : (M.onGround E)✶ = M✶.onGround E := by
   obtain (rfl | hne) := eq_emptyOn_or_nonempty M
   · simp only [emptyOn_ground] at hM; subst hM; simp
   set e := iso_onGround hM
-  set e' := iso_onGround (show M﹡.E = E from hM)
+  set e' := iso_onGround (show M✶.E = E from hM)
   have hu1 := onGround_ground hM.symm.subset
-  have hu2 := onGround_ground (M := M﹡) hM.symm.subset
+  have hu2 := onGround_ground (M := M✶) hM.symm.subset
   subst hM
 
   apply eq_of_base_iff_base_forall
