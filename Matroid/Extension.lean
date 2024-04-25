@@ -1,7 +1,7 @@
 import Matroid.Simple
 import Matroid.Closure
 import Matroid.Minor.Basic
-import Matroid.Constructions.ImagePreimage
+import Matroid.Constructions.Map
 import Matroid.ForMathlib.Other
 
 open Set Function

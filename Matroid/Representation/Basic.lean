@@ -4,7 +4,7 @@ import Matroid.Extension
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Vandermonde
-import Matroid.Constructions.ImagePreimage
+import Matroid.Constructions.Map
 import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
 

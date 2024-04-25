@@ -1,6 +1,4 @@
 import Matroid.Closure
-
-
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
 -/
@@ -19,7 +17,7 @@ theorem circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} :
 theorem Circuit.dep (hC : M.Circuit C) : M.Dep C :=
   hC.1
 
-@[aesop unsafe 20% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 theorem Circuit.subset_ground (hC : M.Circuit C) : C ⊆ M.E :=
   hC.dep.subset_ground
 
@@ -238,11 +236,11 @@ theorem Circuit.strong_multi_elimination {ι : Type*} (hC : M.Circuit C) (x : ι
     (h_unique : ∀ i i', x i ∈ Cs i' → i = i') {z : α} (hz : z ∈ C \ ⋃ i, Cs i) :
     ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by
   set Y := (C ∪ ⋃ x, Cs x) \ insert z (range x) with hY
-  have hYE : Y ⊆ M.E
-  · refine' (diff_subset _ _).trans (union_subset hC.subset_ground _)
+  have hYE : Y ⊆ M.E := by
+    refine' (diff_subset _ _).trans (union_subset hC.subset_ground _)
     exact iUnion_subset fun i ↦ (hCs i).subset_ground
-  have h₁ : range x ⊆ M.cl (⋃ i, (Cs i \ {x i}) \ insert z (range x))
-  · rintro e ⟨i, rfl⟩
+  have h₁ : range x ⊆ M.cl (⋃ i, (Cs i \ {x i}) \ insert z (range x)) := by
+    rintro e ⟨i, rfl⟩
     have h' := (hCs i).subset_cl_diff_singleton (x i) (h_mem i).2
     refine' mem_of_mem_of_subset h' (M.cl_subset_cl _)
     refine' subset_iUnion_of_subset i (subset_diff.mpr ⟨rfl.subset, _⟩)
@@ -251,12 +249,12 @@ theorem Circuit.strong_multi_elimination {ι : Type*} (hC : M.Circuit C) (x : ι
     · exact hz.2 (mem_iUnion_of_mem i hy.1)
     refine' hy.2 (mem_singleton_iff.mpr _)
     rw [h_unique _ _ hy.1]
-  have h₂ : range x ⊆ M.cl Y
-  · refine' h₁.trans (M.cl_subset_cl (iUnion_subset fun x ↦ _))
+  have h₂ : range x ⊆ M.cl Y := by
+    refine' h₁.trans (M.cl_subset_cl (iUnion_subset fun x ↦ _))
     refine' diff_subset_diff_left (subset_union_of_subset_right _ _)
     exact subset_iUnion_of_subset x (diff_subset _ _)
-  have h₃ : C \ {z} ⊆ M.cl Y
-  · suffices C \ {z} ⊆ C \ insert z (range x) ∪ range x by
+  have h₃ : C \ {z} ⊆ M.cl Y := by
+    suffices C \ {z} ⊆ C \ insert z (range x) ∪ range x by
       rw [union_diff_distrib] at hY
       convert this.trans (union_subset_union ((subset_union_left _ _).trans_eq hY.symm) h₂) using 1
       rw [union_eq_right.mpr]
@@ -286,13 +284,13 @@ theorem Circuit.strong_elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C
   simp only [range_const, iUnion_const] at hCss
   exact ⟨C, hC, hCss, hfC⟩
 
-/-- The circuit eliminiation axiom : for any pair of distinct circuits `C₁,C₂` and any `e`, some
+/-- The circuit elimination axiom : for any pair of distinct circuits `C₁,C₂` and any `e`, some
   circuit is contained in `C₁ ∪ C₂ \ {e}`. Traditionally this is stated with the assumption that
   `e ∈ C₁ ∩ C₂`, but it is also true without it. --/
 theorem Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h : C₁ ≠ C₂) (e : α) :
     ∃ C, M.Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} := by
-  have hne : (C₁ \ C₂).Nonempty
-  · simp_rw [nonempty_iff_ne_empty, Ne.def, diff_eq_empty]
+  have hne : (C₁ \ C₂).Nonempty := by
+    simp_rw [nonempty_iff_ne_empty, Ne.def, diff_eq_empty]
     exact fun hss ↦ h (hC₁.eq_of_subset_circuit hC₂ hss)
   obtain (he₁ | he₁) := em (e ∈ C₁)
   · obtain (he₂ | he₂) := em (e ∈ C₂)
@@ -303,13 +301,13 @@ theorem Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h
 
 theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep I)
     (hCI : C ⊆ insert e I) : C = M.fundCct e I := by
-  have heI : e ∉ I
-  · intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.superset hCI).not_indep hI
-  have heC : e ∈ C
-  · refine' by_contra fun heC ↦ (hI.subset _).not_dep hC.dep
+  have heI : e ∉ I := by
+    intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.superset hCI).not_indep hI
+  have heC : e ∈ C := by
+    refine' by_contra fun heC ↦ (hI.subset _).not_dep hC.dep
     rwa [← singleton_union, ← diff_subset_iff, diff_singleton_eq_self heC] at hCI
-  have he : e ∈ M.cl I
-  · rw [mem_cl_iff_exists_circuit_of_not_mem heI]; exact ⟨C, hC, heC, hCI⟩
+  have he : e ∈ M.cl I := by
+    rw [mem_cl_iff_exists_circuit_of_not_mem heI]; exact ⟨C, hC, heC, hCI⟩
   by_contra! hne
   obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination (hI.fundCct_circuit ⟨he,heI⟩) hne e
   refine' hCf.dep.not_indep (hI.subset (hCfss.trans _))
@@ -318,8 +316,8 @@ theorem Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Ind
 
 theorem eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     (h : ∀ C, C ⊆ M₁.E → (M₁.Circuit C ↔ M₂.Circuit C)) : M₁ = M₂ := by
-  have h' : ∀ C, M₁.Circuit C ↔ M₂.Circuit C
-  · exact fun C ↦ (em (C ⊆ M₁.E)).elim (h C)
+  have h' : ∀ C, M₁.Circuit C ↔ M₂.Circuit C := by
+    exact fun C ↦ (em (C ⊆ M₁.E)).elim (h C)
       (fun hC ↦ iff_of_false (mt Circuit.subset_ground hC)
         (mt Circuit.subset_ground (fun hss ↦ hC (hss.trans_eq hE.symm))))
   refine' eq_of_indep_iff_indep_forall hE fun I hI ↦ _
@@ -339,7 +337,7 @@ theorem Cocircuit.circuit (hK : M.Cocircuit K) : M﹡.Circuit K :=
 theorem Circuit.cocircuit (hC : M.Circuit C) : M﹡.Cocircuit C := by
   rwa [cocircuit_def, dual_dual]
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Cocircuit.subset_ground (hC : M.Cocircuit C) : C ⊆ M.E :=
   hC.circuit.subset_ground
 
@@ -481,21 +479,21 @@ theorem Indep.rev_exchange_indep_iff (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
   so that swapping `e` for `f` in yields bases in both `B₁` and `B₂`.  -/
 theorem Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e ∈ B₁ \ B₂) :
     ∃ f ∈ B₂ \ B₁, M.Base (insert e B₂ \ {f}) ∧ M.Base (insert f B₁ \ {e}) := by
-  suffices h1 : (∃ f, f ∈ B₂ \ B₁ ∧  M.Indep (insert e B₂ \ {f}) ∧ M.Indep (insert f B₁ \ {e}))
-  · obtain ⟨f, hf, h₁, h₂⟩ := h1;
+  suffices h1 : (∃ f, f ∈ B₂ \ B₁ ∧  M.Indep (insert e B₂ \ {f}) ∧ M.Indep (insert f B₁ \ {e})) by
+    obtain ⟨f, hf, h₁, h₂⟩ := h1;
     exact ⟨f, hf, hB₂.exchange_base_of_indep' hf.1 he.2 h₁,
       hB₁.exchange_base_of_indep' he.1 hf.2 h₂⟩
-  have he₁ : e ∈ M.cl B₂ \ B₂
-  · rw [hB₂.cl_eq]; exact ⟨hB₁.subset_ground he.1, he.2⟩
+  have he₁ : e ∈ M.cl B₂ \ B₂ := by
+    rw [hB₂.cl_eq]; exact ⟨hB₁.subset_ground he.1, he.2⟩
   simp_rw [hB₂.indep.rev_exchange_indep_iff he₁]
   by_contra! h
 
   have hC := hB₂.indep.fundCct_circuit he₁
-  have hCss : M.fundCct e B₂ \ {e} ⊆ B₂
-  · rw [diff_subset_iff, singleton_union]; exact fundCct_subset_insert he₁.1
+  have hCss : M.fundCct e B₂ \ {e} ⊆ B₂ := by
+    rw [diff_subset_iff, singleton_union]; exact fundCct_subset_insert he₁.1
 
-  have hcl : M.fundCct e B₂ ⊆ M.cl (B₁ \ {e})
-  · refine' (hC.subset_cl_diff_singleton e).trans (cl_subset_cl_of_subset_cl (fun f hf ↦ _))
+  have hcl : M.fundCct e B₂ ⊆ M.cl (B₁ \ {e}) := by
+    refine' (hC.subset_cl_diff_singleton e).trans (cl_subset_cl_of_subset_cl (fun f hf ↦ _))
     have hef : f ≠ e := by rintro rfl; exact hf.2 rfl
     rw [(hB₁.indep.diff {e}).mem_cl_iff, dep_iff, insert_subset_iff,
       and_iff_left ((diff_subset _ _).trans hB₁.subset_ground), or_iff_not_imp_right, mem_diff,
@@ -528,7 +526,7 @@ section Iso
 variable {β : Type*} {N : Matroid β}
 
 theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
-  rw [Circuit, e.setOf_dep_eq, minimals_image_of_rel_iff_rel (r := (· ⊆ ·))]
+  rw [Circuit, e.setOf_dep_eq, ← image_minimals_of_rel_iff_rel (r := (· ⊆ ·))]
   · exact mem_image_of_mem _ h
   exact e.prop_subset_iff_subset Dep.subset_ground
 

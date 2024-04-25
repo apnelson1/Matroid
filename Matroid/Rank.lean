@@ -17,7 +17,7 @@ section Basic
 @[pp_dot] noncomputable def erk (M : Matroid α) : ℕ∞ :=
   ⨅ B : {B | M.Base B}, (B : Set α).encard
 
-/-- The rank `r X` of a set `X` is the cardinality of one of its bases -/
+/-- The rank `er X` of a set `X` is the cardinality of one of its bases -/
 @[pp_dot] noncomputable def er (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X).erk
 
 theorem erk_eq_er_ground (M : Matroid α) : M.erk = M.er M.E := by
@@ -649,7 +649,7 @@ theorem Indep.r (hI : M.Indep I) : M.r I = I.ncard := by
 
 theorem r_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.r X ≤ X.ncard :=
-  r_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_of_subset hI (M.set_finite X))
+  r_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_ncard hI (M.set_finite X))
 
 theorem Indep.card_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
   rw [← hI.r]; exact M.r_mono h
@@ -668,23 +668,6 @@ theorem Basis.card (h : M.Basis I X) : I.ncard = M.r X :=
 
 theorem Basis.r (h : M.Basis I X) : M.r I = M.r X :=
   h.basis'.r
-
-
-
-
-
--- #align matroid_in.basis.r_eq_card Matroid.Basis.r_eq_card
-
--- theorem Base.r (hB : M.base B) : M.r B = M.rk := by rw [base_iff_basis_ground] at hB ; rw [hB.r, rk]
--- #align matroid_in.base.r Matroid.Base.r
-
--- theorem Base.card (hB : M.base B) : B.ncard = M.rk := by rw [(base_iff_basis_ground.mp hB).card, rk]
--- #align matroid_in.base.card Matroid.Base.card
-
--- #align matroid_in.indep.card_le_rk Matroid.Indep.card_le_rk
-
-
--- #align matroid_in.basis.card Matroid.Basis.card
 
 end Rank
 

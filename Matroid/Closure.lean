@@ -1,5 +1,5 @@
 import Matroid.Equiv
-import Matroid.Restrict
+import Mathlib.Data.Matroid.Restrict
 import Matroid.ForMathlib.Set
 
 open scoped BigOperators
@@ -14,7 +14,7 @@ variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : 
 @[pp_dot] def Flat (M : Matroid α) (F : Set α) : Prop :=
   (∀ ⦃I X⦄, M.Basis I F → M.Basis I X → X ⊆ F) ∧ F ⊆ M.E
 
-@[aesop unsafe 20% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
   hF.2
 
@@ -26,14 +26,13 @@ theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
 @[pp_dot] def cl (M : Matroid α) (X : Set α) : Set α :=
   ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
 
-theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} :=
-  rfl
+theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} := rfl
 
 theorem cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {F | M.Flat F ∧ X ⊆ F} := by
   nth_rw 2 [← inter_eq_self_of_subset_left hX]; rfl
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
   sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right _ _⟩
 
@@ -102,7 +101,7 @@ theorem mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aes
     e ∈ M.cl X := by
   rw [← cl_inter_ground]; exact M.mem_cl_of_mem ⟨heX, h⟩
 
--- @[aesop unsafe 10% (rule_sets [Matroid])]
+-- @[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
 
 theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
@@ -160,8 +159,8 @@ theorem Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
   set F := {x | M.Basis I (insert x I)}
   have hIF : M.Basis I F := hI.basis_setOf_insert_basis
 
-  have hF : M.Flat F
-  · refine' ⟨fun J X hJF hJX e heX ↦ (_ : M.Basis _ _), hIF.subset_ground⟩
+  have hF : M.Flat F := by
+    refine' ⟨fun J X hJF hJX e heX ↦ (_ : M.Basis _ _), hIF.subset_ground⟩
     exact (hIF.basis_of_basis_of_subset_of_subset (hJX.basis_union hJF) hJF.subset
       (hIF.subset.trans (subset_union_right _ _))).basis_subset (subset_insert _ _)
       (insert_subset (Or.inl heX) (hIF.subset.trans (subset_union_right _ _)))
@@ -279,8 +278,8 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
   have hiI := hI.subset hiX
   refine' ⟨ fun X hX ↦ M.cl_subset_cl (sInter_subset_of_mem hX), fun e he ↦ by_contra fun he' ↦ _⟩
   rw [mem_iInter₂] at he
-  have heEI : e ∈ M.E \ I
-  · refine' ⟨M.cl_subset_ground _ (he _ hne.some_mem), fun heI ↦ he' _⟩
+  have heEI : e ∈ M.E \ I := by
+    refine' ⟨M.cl_subset_ground _ (he _ hne.some_mem), fun heI ↦ he' _⟩
     refine' mem_cl_of_mem _ (fun X hX' ↦ _) hiI.subset_ground
     rw [← hI.cl_inter_eq_self_of_subset (hIs X hX')]
     exact ⟨he X hX', heI⟩
@@ -289,8 +288,8 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
   obtain ⟨J, hJI, heJ⟩ := he'.subset_basis_of_subset (insert_subset_insert hiX)
     (insert_subset heEI.1 hI.subset_ground)
 
-  have hIb : M.Basis I (insert e I)
-  · rw [hI.insert_basis_iff_mem_cl]; exact (M.cl_subset_cl (hIs _ hne.some_mem)) (he _ hne.some_mem)
+  have hIb : M.Basis I (insert e I) := by
+    rw [hI.insert_basis_iff_mem_cl]; exact (M.cl_subset_cl (hIs _ hne.some_mem)) (he _ hne.some_mem)
 
   obtain ⟨f, hfIJ, hfb⟩ :=  hJI.exchange hIb ⟨heJ (mem_insert e _), heEI.2⟩
   obtain rfl := hI.eq_of_basis (hfb.basis_subset (insert_subset hfIJ.1
@@ -367,8 +366,8 @@ theorem Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.c
 
 theorem mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) := by
   rw [← cl_inter_ground] at *
-  have hfE : f ∈ M.E
-  · by_contra! hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
+  have hfE : f ∈ M.E := by
+    by_contra! hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
   have heE : e ∈ M.E := (M.cl_subset_ground _) hef
   rw [insert_inter_of_mem hfE] at hef; rw [insert_inter_of_mem heE]
 
@@ -503,7 +502,7 @@ variable {S T : Set α}
   a base of `M`. -/
 @[pp_dot] def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
 
-@[aesop unsafe 10% (rule_sets [Matroid])]
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 theorem Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
   hS.2
 
@@ -587,8 +586,8 @@ theorem Spanning.base_of_indep (hIs : M.Spanning I) (hI : M.Indep I) : M.Base I 
 
 theorem eq_of_spanning_iff_spanning_forall {M M' : Matroid α} (h : M.E = M'.E)
     (hsp : ∀ S, S ⊆ M.E → (M.Spanning S ↔ M'.Spanning S )) : M = M' := by
-  have hsp' : M.Spanning = M'.Spanning
-  · ext S
+  have hsp' : M.Spanning = M'.Spanning := by
+    ext S
     refine (em (S ⊆ M.E)).elim (fun hSE ↦ by rw [hsp _ hSE] )
       (fun hSE ↦ iff_of_false (fun h ↦ hSE h.subset_ground)
       (fun h' ↦ hSE (h'.subset_ground.trans h.symm.subset)))
@@ -620,15 +619,13 @@ section Constructions
   rw [← trivialOn_inter_ground_eq I E, ← cl_inter_ground _ X, trivialOn_ground,
     ← hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivialOn_indep_iff', insert_subset_iff,
     trivialOn_ground, inter_assoc, inter_self,  and_iff_left (inter_subset_right _ _),
-    ← inter_inter_distrib_right, inter_assoc, union_distrib_right, inter_comm I, inter_union_diff,
-    insert_subset_iff, inter_comm X, inter_assoc, and_iff_left (inter_subset_left _ _),
-    mem_inter_iff]
+    ← inter_inter_distrib_right, inter_assoc, inter_union_distrib_right, inter_comm I,
+    inter_union_diff, insert_subset_iff, inter_comm X, inter_assoc,
+    and_iff_left (inter_subset_left _ _), mem_inter_iff]
   simp only [not_and, mem_inter_iff, mem_union, mem_diff]
   tauto
 
-
 end Constructions
-
 
 variable {Xs Ys : Set (Set α)} {ι : Type*}
 

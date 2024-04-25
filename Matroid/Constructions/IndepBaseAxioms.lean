@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson
 -/
 import Mathlib.Data.Matroid.Basic
-import Matroid.ForMathlib.Basic
+-- import Matroid.ForMathlib.Basic
 
 /-!
 # Matroid Independence and Basis axioms

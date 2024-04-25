@@ -4,11 +4,10 @@ import Matroid.Equiv
 
 open Set Function
 
-
 namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α}
 
-def preimage_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α where
+private def comap_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α where
   E := f ⁻¹' M.E
   Indep I := M.Indep (f '' I) ∧ InjOn f I
   indep_empty := by simp
@@ -20,13 +19,13 @@ def preimage_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α whe
 
     obtain ⟨I', hI', hI'inj, hII', hne⟩ := hImax
 
-    have h₁ : ¬(M ↾ range f).Base (f '' I)
-    · refine fun hB ↦ hne ?_
+    have h₁ : ¬(M ↾ range f).Base (f '' I) := by
+      refine fun hB ↦ hne ?_
       have h_im := hB.eq_of_subset_indep (by simpa) (image_subset _ hII')
       rwa [hI'inj.image_eq_image_iff_of_subset hII' Subset.rfl] at h_im
 
-    have h₂ : (M ↾ range f).Base (f '' B)
-    · refine Indep.base_of_maximal (by simpa using hBmax.1.1) (fun J hJi hBJ ↦ ?_)
+    have h₂ : (M ↾ range f).Base (f '' B) := by
+      refine Indep.base_of_maximal (by simpa using hBmax.1.1) (fun J hJi hBJ ↦ ?_)
       simp only [restrict_indep_iff] at hJi
       obtain ⟨J₀, hBJ₀, hJ₀⟩ := hBmax.1.2.bijOn_image.extend hBJ hJi.2
       obtain rfl := hJ₀.image_eq
@@ -57,18 +56,18 @@ def preimage_indepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α whe
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
   Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
-def preimage (M : Matroid β) (f : α → β) : Matroid α := (preimage_indepMatroid M f).matroid
+def comap (M : Matroid β) (f : α → β) : Matroid α := (comap_indepMatroid M f).matroid
 
-@[simp] theorem preimage_indep_iff {M : Matroid β} :
-    (M.preimage f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := by
-  simp [preimage, preimage_indepMatroid]
+@[simp] theorem comap_indep_iff {M : Matroid β} :
+    (M.comap f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := by
+  simp [comap, comap_indepMatroid]
 
-@[simp] theorem preimage_ground_eq (M : Matroid β) (f : α → β) :
-    (M.preimage f).E = f ⁻¹' M.E := rfl
+@[simp] theorem comap_ground_eq (M : Matroid β) (f : α → β) :
+    (M.comap f).E = f ⁻¹' M.E := rfl
 
-@[simp] theorem preimage_dep_iff {M : Matroid β} :
-    (M.preimage f).Dep I ↔ M.Dep (f '' I) ∨ (M.Indep (f '' I) ∧ ¬ InjOn f I) := by
-  rw [Dep, preimage_indep_iff, not_and, preimage_ground_eq, Dep, image_subset_iff]
+@[simp] theorem comap_dep_iff {M : Matroid β} :
+    (M.comap f).Dep I ↔ M.Dep (f '' I) ∨ (M.Indep (f '' I) ∧ ¬ InjOn f I) := by
+  rw [Dep, comap_indep_iff, not_and, comap_ground_eq, Dep, image_subset_iff]
   refine ⟨fun ⟨hi, h⟩ ↦ ?_, ?_⟩
   · rw [and_iff_left h, ← imp_iff_not_or]
     exact fun hI ↦ ⟨hI, hi hI⟩
@@ -77,47 +76,46 @@ def preimage (M : Matroid β) (f : α → β) : Matroid α := (preimage_indepMat
   rw [iff_true_intro hI.1, iff_true_intro hI.2, implies_true, true_and]
   simpa using hI.1.subset_ground
 
-@[simp] theorem preimage_id (M : Matroid β) : M.preimage id = M :=
+@[simp] theorem comap_id (M : Matroid β) : M.comap id = M :=
   eq_of_indep_iff_indep_forall (by simp) (by simp [injective_id.injOn _])
 
-theorem preimage_indep_off_of_injective (M : Matroid β) (hf : f.Injective) :
-    (M.preimage f).Indep I ↔ M.Indep (f '' I) := by
-  rw [preimage_indep_iff, and_iff_left (hf.injOn I)]
+theorem comap_indep_off_of_injective (M : Matroid β) (hf : f.Injective) :
+    (M.comap f).Indep I ↔ M.Indep (f '' I) := by
+  rw [comap_indep_iff, and_iff_left (hf.injOn I)]
 
-noncomputable def preimage_iso [Nonempty α] {M : Matroid β} (hf : f.Injective)
-    (hfE : range f = M.E) : Iso (M.preimage f) M :=
-    Iso.of_forall_indep
-      (hf.injOn univ).toPartialEquiv (by simp [← hfE]) (by simpa)
-      ( by simp [← hfE, hf.injOn _] )
+noncomputable def comap_iso [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : Iso (M.comap f) M :=
+  iso_of_forall_indep' (hf.injOn univ).toPartialEquiv (by simp [← hfE]) (by simpa)
+    ( by simp [← hfE, hf.injOn _] )
 
-@[simp] theorem preimage_iso_coeFun [Nonempty α] {M : Matroid β} (hf : f.Injective)
-    (hfE : range f = M.E) : (preimage_iso hf hfE : α → β) = fun x ↦ f x := rfl
+@[simp] theorem comap_iso_coeFun [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : (comap_iso hf hfE : α → β) = fun x ↦ f x := rfl
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`, restricted
   to a ground set `E`. Elements with the same image are parallel. -/
-def preimageOn (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := (M.preimage f) ↾ E
+def comapOn (M : Matroid β) (E : Set α) (f : α → β) : Matroid α := (M.comap f) ↾ E
 
-@[simp] theorem preimageOn_indep_iff {M : Matroid β} :
-    (M.preimageOn E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by
-  simp [preimageOn, and_assoc]
+@[simp] theorem comapOn_indep_iff {M : Matroid β} :
+    (M.comapOn E f).Indep I ↔ (M.Indep (f '' I) ∧ InjOn f I ∧ I ⊆ E) := by
+  simp [comapOn, and_assoc]
 
-@[simp] theorem preimageOn_ground_eq {M : Matroid β} :
-    (M.preimageOn E f).E = E := rfl
+@[simp] theorem comapOn_ground_eq {M : Matroid β} :
+    (M.comapOn E f).E = E := rfl
 
-/-- If `f` is locally a bijection, then `M` is isomorphic to its preimage. -/
-noncomputable def iso_preimageOn [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
-    (hf : BijOn f E M.E) : Iso (M.preimageOn E f) M :=
-  Iso.of_forall_indep
+/-- If `f` is locally a bijection, then `M` is isomorphic to its comap. -/
+noncomputable def iso_comapOn [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
+    (hf : BijOn f E M.E) : Iso (M.comapOn E f) M :=
+  iso_of_forall_indep'
   hf.toPartialEquiv
-  ( by rw [BijOn.toPartialEquiv_source, preimageOn_ground_eq] )
+  ( by rw [BijOn.toPartialEquiv_source, comapOn_ground_eq] )
   hf.toPartialEquiv_target
   ( by
-    simp only [preimageOn_ground_eq, preimageOn_indep_iff, BijOn.toPartialEquiv_apply,
+    simp only [comapOn_ground_eq, comapOn_indep_iff, BijOn.toPartialEquiv_apply,
       and_iff_left_iff_imp]
     exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
 
-theorem Iso.eq_preimage {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.preimageOn M.E e := by
-  simp only [eq_iff_indep_iff_indep_forall, preimageOn_ground_eq, preimageOn_indep_iff, true_and]
+theorem Iso.eq_comap {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.comapOn M.E e := by
+  simp only [eq_iff_indep_iff_indep_forall, comapOn_ground_eq, comapOn_indep_iff, true_and]
   intro I hIE
   rw [and_iff_left hIE, ← e.on_indep_iff, iff_self_and]
   exact fun _ ↦ e.toPartialEquiv.bijOn.injOn.mono (by simpa)
@@ -126,7 +124,7 @@ section Image
 
 /-- Given an injective function `f` on `M.E`, the `IndepMatroid` whose independent sets
   are the images of those in `M`. -/
-def image_indepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : IndepMatroid β where
+private def map_indepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : IndepMatroid β where
   E := f '' M.E
   Indep I := ∃ I₀, M.Indep I₀ ∧ I = f '' I₀
   indep_empty := ⟨∅, by simp⟩
@@ -146,14 +144,14 @@ def image_indepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Ind
     obtain ⟨⟨B, hB, rfl⟩, hmax⟩ := hBmax
     obtain ⟨_, I', hI', rfl, hII', hne⟩ := hImax _ hI rfl
 
-    have hIb : ¬ M.Base I
-    · refine fun hIb ↦ hne ?_
+    have hIb : ¬ M.Base I := by
+      refine fun hIb ↦ hne ?_
       rw [hIb.eq_of_subset_indep ?_ (subset_inter hII' hI.subset_ground),
         hf.preimage_image_inter hI'.subset_ground]
       rwa [hf.preimage_image_inter hI'.subset_ground]
 
-    have hB : M.Base B
-    · refine hB.base_of_maximal (fun J hJ hBJ ↦ ?_)
+    have hB : M.Base B := by
+      refine hB.base_of_maximal (fun J hJ hBJ ↦ ?_)
       have h_image := hmax  _ hJ rfl (image_subset _ hBJ)
       rwa [hf.image_eq_image_iff_of_subset hB.subset_ground hJ.subset_ground] at h_image
 
@@ -180,20 +178,20 @@ def image_indepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Ind
     rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground
 
 /-- Map a matroid `M` on `α` to a copy in `β` using a function `f` that is injective on `M.E` -/
-def image (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
-  (image_indepMatroid M f hf).matroid
+def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
+  (map_indepMatroid M f hf).matroid
 
 @[simp] theorem image_ground (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
-    (M.image f hf).E = f '' M.E := rfl
+    (M.map f hf).E = f '' M.E := rfl
 
 @[simp] theorem image_indep_iff (M : Matroid α) (f : α → β) (hf : InjOn f M.E) (I : Set β) :
-    (M.image f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ :=
-  by simp [image, image_indepMatroid]
+    (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ :=
+  by simp [map, map_indepMatroid]
 
 /-- `M` is isomorphic to its image -/
 noncomputable def iso_image [Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
-    Iso M (M.image f hf)  :=
-  Iso.of_forall_indep hf.toPartialEquiv ( by simp ) ( by simp )
+    Iso M (M.map f hf)  :=
+  iso_of_forall_indep' hf.toPartialEquiv ( by simp ) ( by simp )
   ( by
     simp only [InjOn.toPartialEquiv, BijOn.toPartialEquiv_apply, image_indep_iff]
     refine fun I hIE ↦ ⟨fun hI ↦ ⟨I, hI, rfl⟩, fun ⟨I₀, hI₀, (h_eq : f '' _ = _)⟩ ↦ ?_⟩
@@ -208,26 +206,26 @@ variable {E X : Set α} {M N : Matroid α}
 
 /-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
   If `X ⊆ M.E`, then isomorphic to `M ↾ X`. -/
-def onGround (M : Matroid α) (X : Set α) : Matroid X := M.preimage (↑)
+def onGround (M : Matroid α) (X : Set α) : Matroid X := M.comap (↑)
 
 theorem onGround_ground (hX : X ⊆ M.E) : (M.onGround X).E = univ := by
-  rw [onGround, preimage_ground_eq, eq_univ_iff_forall]; simpa
+  rw [onGround, comap_ground_eq, eq_univ_iff_forall]; simpa
 
 noncomputable def iso_onGround' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onGround X) (M ↾ X) :=
   have _ := nonempty_coe_sort.2 hne
-  Iso.of_forall_indep (Subtype.coe_injective.injOn univ).toPartialEquiv
+  iso_of_forall_indep' (Subtype.coe_injective.injOn univ).toPartialEquiv
     (by simp [onGround_ground hX]) (by simp)
   ( by
     simp only [onGround_ground hX, subset_univ, InjOn.toPartialEquiv, image_univ,
       Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toPartialEquiv_apply, restrict_indep_iff,
       image_subset_iff, Subtype.coe_preimage_self, and_true, forall_true_left]
-    simp only [onGround._eq_1, preimage_indep_iff, and_iff_left_iff_imp]
+    simp only [onGround._eq_1, comap_indep_iff, and_iff_left_iff_imp]
     intro I
     simp [Subtype.val_injective.injOn I] )
 
 noncomputable def iso_onGround [M.Nonempty] (hE : M.E = E) : Iso M (M.onGround E) := by
   have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
-  exact (preimage_iso Subtype.val_injective (by rw [Subtype.range_val, ← hE])).symm
+  exact (comap_iso Subtype.val_injective (by rw [Subtype.range_val, ← hE])).symm
 
 theorem isIso_onGround (M : Matroid α) (hE : M.E = E) : M ≅ M.onGround E := by
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
@@ -238,8 +236,8 @@ theorem eq_of_onGround_eq (hM : M.E = E) (hN : N.E = E) (h : M.onGround E = N.on
     M = N := by
   obtain (rfl | hMn) := M.eq_emptyOn_or_nonempty
   · rw [eq_comm, ← ground_eq_empty_iff, hN, ← hM, emptyOn_ground]
-  have hNn : N.Nonempty
-  · rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
+  have hNn : N.Nonempty := by
+    rwa [← ground_nonempty_iff, hN, ← hM, ground_nonempty_iff]
   rw [eq_iff_indep_iff_indep_forall] at h ⊢
   rw [hM, hN, and_iff_right rfl]
   intro I hIE

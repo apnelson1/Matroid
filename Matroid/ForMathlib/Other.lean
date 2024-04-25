@@ -54,7 +54,7 @@ theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
 
 theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
-  rw [insert_eq, insert_eq, ← union_distrib_right, Disjoint.inter_eq _, empty_union]
+  rw [insert_eq, insert_eq, ← inter_union_distrib_right, Disjoint.inter_eq _, empty_union]
   rwa [disjoint_singleton]
 
 theorem union_insert_eq {A : Set α} {b c : α} :
@@ -148,13 +148,13 @@ lemma Function.invFunOn_injOn_image_preimage [_root_.Nonempty α] (f : α → β
 theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set β}
     (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : t' ⊆ f '' s₁) :
     ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
-  have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∈ s₁ \ s ∧ f a = b
-  · rintro ⟨b, hb⟩
+  have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∈ s₁ \ s ∧ f a = b := by
+    rintro ⟨b, hb⟩
     obtain ⟨a, ha, rfl⟩  := ht' hb.1
     exact ⟨_, ⟨ha, fun has ↦ hb.2 <| h.mapsTo has⟩, rfl⟩
   choose g hg using hex
-  have hinj : InjOn f (s ∪ range g)
-  · rw [injOn_union, and_iff_right h.injOn, and_iff_left]
+  have hinj : InjOn f (s ∪ range g) := by
+    rw [injOn_union, and_iff_right h.injOn, and_iff_left]
     · rintro _ ⟨⟨x,hx⟩, rfl⟩ _ ⟨⟨x', hx'⟩,rfl⟩ hf
       simp only [(hg _).2, (hg _).2] at hf; subst hf; rfl
     · rintro x hx _ ⟨⟨y,hy⟩, hy', rfl⟩ h_eq
@@ -166,8 +166,8 @@ theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set
     have h' := h.mapsTo hx
     rw [(hg _).2] at h'
     exact y.prop.2 h'
-  have hp : BijOn f (range g) (t' \ t)
-  · apply BijOn.mk
+  have hp : BijOn f (range g) (t' \ t) := by
+    apply BijOn.mk
     · rintro _ ⟨x, hx, rfl⟩; rw [(hg _).2]; exact x.2
     · exact hinj.mono (subset_union_right _ _)
     exact fun x hx ↦ ⟨g ⟨x,hx⟩, by simp [(hg _).2] ⟩

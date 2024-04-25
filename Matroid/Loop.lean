@@ -1,5 +1,6 @@
 import Matroid.Circuit
-import Matroid.Constructions.ImagePreimage
+import Matroid.Constructions.Map
+import Mathlib.Order.SymmDiff
 
 /-
   A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.
@@ -11,6 +12,7 @@ import Matroid.Constructions.ImagePreimage
 variable {α β : Type*} {M N : Matroid α} {e f : α} {B L L' I X Y Z F C K : Set α}
 
 open Set
+open scoped symmDiff
 
 namespace Matroid
 
@@ -23,7 +25,7 @@ theorem loop_iff_mem_cl_empty : M.Loop e ↔ e ∈ M.cl ∅ := Iff.rfl
 
 theorem cl_empty_eq_loops (M : Matroid α) : M.cl ∅ = {e | M.Loop e} := rfl
 
-@[aesop unsafe 20% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 theorem Loop.mem_ground (he : M.Loop e) : e ∈ M.E :=
   cl_subset_ground M ∅ he
 
@@ -134,8 +136,8 @@ theorem Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E)
   (restriction_loop_iff hNM).2 ⟨heN, he⟩
 
 @[simp] theorem preimage_loop_iff {M : Matroid β} {f : α → β} :
-    (M.preimage f).Loop e ↔ M.Loop (f e) := by
-  rw [← singleton_dep, preimage_dep_iff]
+    (M.comap f).Loop e ↔ M.Loop (f e) := by
+  rw [← singleton_dep, comap_dep_iff]
   simp
 
 
@@ -178,7 +180,7 @@ theorem LoopEquiv.diff_subset_loops (h : M.LoopEquiv X Y) : X \ Y ⊆ M.cl ∅ :
   rw [diff_subset_iff, ← h.union_eq_union]
   exact subset_union_left _ _
 
-theorem LoopEquiv.symm_diff_subset_loops : M.LoopEquiv X Y ↔ X ∆ Y ⊆ M.cl ∅ := by
+theorem LoopEquiv.symmDiff_subset_loops : M.LoopEquiv X Y ↔ X ∆ Y ⊆ M.cl ∅ := by
   rw [Set.symmDiff_def, union_subset_iff]
   refine ⟨fun h ↦ ⟨h.diff_subset_loops, h.symm.diff_subset_loops⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
   rw [diff_subset_iff] at h1 h2
@@ -214,14 +216,14 @@ theorem LoopEquiv.subset_union_loops (h : M.LoopEquiv X Y) : Y ⊆ X ∪ M.cl �
 theorem LoopEquiv.cl_eq_cl (h : M.LoopEquiv X Y) : M.cl X = M.cl Y := by
   rw [← cl_union_loops_eq, h.union_eq_union, cl_union_loops_eq]
 
-@[aesop unsafe 5% (rule_sets [Matroid])]
+@[aesop unsafe 5% (rule_sets := [Matroid])]
 theorem LoopEquiv.subset_ground (h : M.LoopEquiv X Y) (hX : X ⊆ M.E := by aesop_mat) : Y ⊆ M.E :=
   h.subset_union_loops.trans (union_subset hX (M.cl_subset_ground ∅))
 
 theorem LoopEquiv.inter_eq_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : X ∩ I = Y ∩ I := by
   rw [show X ∩ I = (X ∪ M.cl ∅) ∩ I
-    by rw [inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty],
-    h.union_eq_union, inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty]
+    by rw [union_inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty],
+    h.union_eq_union, union_inter_distrib_right, hI.disjoint_loops.symm.inter_eq, union_empty]
 
 theorem LoopEquiv.subset_iff_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : I ⊆ X ↔ I ⊆ Y := by
   rw [← sdiff_eq_left.2 hI.disjoint_loops, diff_subset_iff, diff_subset_iff,
@@ -258,7 +260,7 @@ section Nonloop
 @[pp_dot] def Nonloop (M : Matroid α) (e : α) : Prop :=
   ¬M.Loop e ∧ e ∈ M.E
 
-@[aesop unsafe 20% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 theorem Nonloop.mem_ground (h : M.Nonloop e) : e ∈ M.E :=
   h.2
 
@@ -391,8 +393,8 @@ theorem nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e �
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩
 
 @[simp] theorem preimage_nonloop_iff {M : Matroid β} {f : α → β} :
-    (M.preimage f).Nonloop e ↔ M.Nonloop (f e) := by
-  rw [← indep_singleton, preimage_indep_iff, image_singleton, indep_singleton,
+    (M.comap f).Nonloop e ↔ M.Nonloop (f e) := by
+  rw [← indep_singleton, comap_indep_iff, image_singleton, indep_singleton,
     and_iff_left (injOn_singleton _ _)]
 
 @[simp] theorem freeOn_nonloop_iff {E : Set α} : (freeOn E).Nonloop e ↔ e ∈ E := by
@@ -485,7 +487,7 @@ section Coloop
 @[pp_dot] abbrev Coloop (M : Matroid α) (e : α) : Prop :=
   M﹡.Loop e
 
-@[aesop unsafe 20% (rule_sets [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 theorem Coloop.mem_ground (he : M.Coloop e) : e ∈ M.E :=
   @Loop.mem_ground α (M﹡) e he
 
@@ -582,8 +584,8 @@ theorem Coloop.mem_of_mem_cl (he : M.Coloop e) (hX : e ∈ M.cl X) : e ∈ X := 
   rw [he.mem_cl_iff_mem]
 
 theorem cl_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M﹡.cl ∅) : M.cl X ∩ K = X ∩ K := by
-  have hKE : K ∩ M.E = K
-  · rw [inter_eq_left, ← dual_ground]; exact hK.trans (cl_subset_ground _ _)
+  have hKE : K ∩ M.E = K := by
+    rw [inter_eq_left, ← dual_ground]; exact hK.trans (cl_subset_ground _ _)
   rw [← hKE, ← inter_assoc X, inter_right_comm, hKE, ← cl_inter_ground,
     subset_antisymm_iff, and_iff_left (inter_subset_inter_left K (M.subset_cl _)),
     ← inter_eq_self_of_subset_right hK, ← inter_assoc, cl_inter_coloops_eq,
@@ -604,8 +606,8 @@ theorem cl_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M﹡.cl ∅) :
   obtain he' | ⟨C, hC, heC, hCss⟩ := (mem_cl_iff_mem_or_exists_circuit
     (union_subset (M.cl_subset_ground _) (hK.trans (M﹡.cl_subset_ground _)))).1 he
   · exact he'
-  have hCX : C \ {e} ⊆ M.cl X
-  · rw [diff_subset_iff, singleton_union]
+  have hCX : C \ {e} ⊆ M.cl X := by
+    rw [diff_subset_iff, singleton_union]
     refine (subset_inter hCss Subset.rfl).trans ?_
     rintro f ⟨rfl | h1 | h2, h⟩
     · apply mem_insert

@@ -1,4 +1,4 @@
-import Matroid.Restrict
+import Mathlib.Data.Matroid.Restrict
 
 variable {α : Type*} {M : Matroid α} {E B I X R J : Set α}
 
@@ -104,22 +104,6 @@ theorem not_rkPos_iff : ¬RkPos M ↔ M = loopyOn M.E := by
   rw [rkPos_iff_empty_not_base, not_iff_comm, empty_base_iff]
 
 
-
-
-  -- cases isEmpty_or_nonempty α
-  -- · rw [eq_emptyOn M, emptyOn_isIso_iff, emptyOn_ground, ← ground_eq_empty_iff, loopyOn_ground,
-  --     eq_comm (a := emptyOn α), ← ground_eq_empty_iff, loopyOn_ground, and_iff_right rfl]
-  --   refine ⟨?_, fun ⟨e⟩ ↦ ?_⟩
-  --   · rintro rfl; exact Fintype.card_eq.mp rfl
-  --   exact isEmpty_coe_sort.mp e.symm.isEmpty
-  -- cases isEmpty_or_nonempty β
-  -- refine ⟨fun h ↦ ⟨eq_of_indep_iff_indep_forall rfl fun I hI ↦ ?_,?_⟩, fun h ↦ ?_⟩
-
-  -- · simp at h
-  -- · have := h.iso.on_indep_iff
-
-  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  -- ·
 
 
 
@@ -231,7 +215,6 @@ theorem trivialOn_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivialOn I E).Ba
 theorem trivialOn_restrict (h : I ⊆ E) (R : Set α) :
     (trivialOn I E) ↾ R = trivialOn (I ∩ R) R := by
   rw [trivialOn_restrict', inter_right_comm, inter_eq_self_of_subset_left h]
-
 
 @[simp] theorem trivialOn_eq_freeOn : trivialOn E E = freeOn E := by
   rw [trivialOn, restrict_eq_self_iff, freeOn_ground]

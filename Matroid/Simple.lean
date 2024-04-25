@@ -1,9 +1,8 @@
-import Matroid.Constructions.Basic
 import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat
 import Matroid.Minor.Iso
-import Matroid.Constructions.ImagePreimage
+import Matroid.Constructions.Map
 
 open Set
 
@@ -769,7 +768,7 @@ noncomputable def simplificationWrt_iso {c c' : α → α} (hc : M.ParallelChoic
 
 /-- If `M ↾ X` is a simple restriction of `M`, then every parallel choice function `c`
   induces an isomorphism from `M ↾ X` to `M ↾ (c '' X)`. -/
-theorem ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c) 
+theorem ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c)
     (hX : (M ↾ X).Simple) : ∃ φ : (M ↾ X).Iso (M ↾ (c '' X)), ∀ e ∈ X, φ e = c e  := by
   obtain ⟨c', hc', hC'X⟩ := extends_to_parallelChoiceFunction hX
   have hss : X ⊆ {e | M.Nonloop e} := fun e he ↦ (toNonloop (M := M ↾ X) he).of_restrict
@@ -777,7 +776,7 @@ theorem ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunctio
   · rw [simplificationWrt, restrict_ground_eq, ← hC'X.image_eq_self]
     exact image_subset _ hss
   set φ := (simplificationWrt_iso hc' hc).restrict X hss'
-  refine ⟨((Iso.ofEq ?_).trans φ).trans (Iso.ofEq ?_), ?_⟩ 
+  refine ⟨((Iso.ofEq ?_).trans φ).trans (Iso.ofEq ?_), ?_⟩
   · rwa [simplificationWrt, restrict_restrict_eq]
   · simp only [simplificationWrt_iso, isoOfMapParallelRestr_toPartialEquiv, simplificationWrt]
     rw [restrict_restrict_eq]
@@ -904,9 +903,9 @@ noncomputable def simplification_equiv (M : Matroid α) :
   (Equiv.Set.ofEq (congr_arg Matroid.E h.choose_spec.2)).trans
     (simplificationWrt_equiv h.choose_spec.1)
 
-  
 
--- theorem er_simplificationWrt_eq (hc : M.ParallelChoiceFunction c) (X : Set α) : 
+
+-- theorem er_simplificationWrt_eq (hc : M.ParallelChoiceFunction c) (X : Set α) :
 --     (M.simplificationWrt c).er (c '' X) = M.er X := by
 --   refine le_antisymm ?_ ?_
 --   · sorry
@@ -914,7 +913,7 @@ noncomputable def simplification_equiv (M : Matroid α) :
 --   obtain ⟨φ, hφ⟩ := hc.iso_of_simple_restr hI.indep.restr_simple
 --   rw [hI.er_eq_encard]
 --   have := (φ.on_indep <| hI.indep.indep_restrict_of_subset Subset.rfl).er
-  
+
 --   _
 
 
