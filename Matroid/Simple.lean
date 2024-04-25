@@ -240,14 +240,11 @@ def isoOfMapParallel (M : Matroid α) (π : PartialEquiv α α) (h_source : π.s
     (h_source : π.source = M.E) (h_target : π.target = M.E) (hLoop : ∀ {e}, M.Loop e → M.Loop (π e))
     (hPara : ∀ {e}, M.Nonloop e → M.Parallel e (π e)) :
     (isoOfMapParallel M π h_source h_target hLoop hPara).toPartialEquiv = π := by
-  simp only [isoOfMapParallel, Iso.trans_toPartialEquiv, Iso.symm_toPartialEquiv, Iso.ofEq_toPartialEquiv,
-    restrict_ground_eq_self, PartialEquiv.ofSet_symm, isoOfMapParallelRestr_toPartialEquiv]
+  suffices ((PartialEquiv.ofSet M.E).trans π).trans (PartialEquiv.ofSet M.E) = π by simpa
   ext x
   · simp
   · simp
-  simp only [← h_source, PartialEquiv.trans_source, PartialEquiv.ofSet_source, PartialEquiv.ofSet_coe,
-    preimage_id_eq, id_eq, inter_self, PartialEquiv.coe_trans, Function.comp_id, mem_inter_iff,
-    mem_preimage, and_iff_left_iff_imp]
+  suffices x ∈ π.source → π x ∈ π.source by simpa [← h_source]
   intro hx
   rw [h_source, ← h_target]
   exact PartialEquiv.map_source π hx
