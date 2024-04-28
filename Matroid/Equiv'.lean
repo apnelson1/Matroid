@@ -1,5 +1,5 @@
 import Matroid.Constructions.Basic
-import Matroid.Constructions.Map
+import Matroid.Map
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Other
 
