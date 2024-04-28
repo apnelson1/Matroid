@@ -5,6 +5,10 @@ open Set Function PartialEquiv
 
 variable {α β : Type*}
 
+theorem PartialEquiv.IsImage.restr_eq_restr_set (e : PartialEquiv α β) {s : Set α} {t : Set β}
+    (h : e.IsImage s t) : h.restr = e.restr s := by
+  ext <;> simp
+
 theorem PartialEquiv.image_subset_target (e : PartialEquiv α β) {s : Set α} (hs : s ⊆ e.source) :
     e '' s ⊆ e.target := by
   rw [← e.image_source_eq_target]
@@ -15,6 +19,30 @@ theorem PartialEquiv.symm_image_subset_source (e : PartialEquiv α β) {s : Set 
   rw [← e.symm_image_target_eq_source]
   exact image_subset _ hs
 
+theorem PartialEquiv.image_isImage_of_subset_source (e : PartialEquiv α β) {s : Set α}
+    (h : s ⊆ e.source) : e.IsImage s (e '' s) := by
+  apply PartialEquiv.IsImage.of_image_eq
+  rw [inter_eq_self_of_subset_right h, eq_comm, inter_eq_right]
+  exact image_subset_target e h
+
+theorem PartialEquiv.symm_image_isImage_of_subset_target (e : PartialEquiv α β) {s : Set β}
+    (h : s ⊆ e.target) : e.IsImage (e.symm '' s) s := by
+  simpa using e.symm.image_isImage_of_subset_source (s := s) (by simpa)
+
+/-- The `PartialEquiv` with empty source and target. The types must be nonempty. -/
+@[simps] noncomputable def PartialEquiv.empty [Nonempty α] [Nonempty β] : PartialEquiv α β where
+  toFun _ := Classical.arbitrary _
+  invFun _ := Classical.arbitrary _
+  source := ∅
+  target := ∅
+  map_source' := by simp
+  map_target' := by simp
+  left_inv' := by simp
+  right_inv' := by simp
+
+@[simp] theorem PartialEquiv.symm_empty [Nonempty α] [Nonempty β] :
+    (PartialEquiv.empty : PartialEquiv α β).symm = PartialEquiv.empty := by
+  ext <;> simp
 section ofSetEquiv
 
 theorem Finite.exists_PartialEquiv_of_encard_eq [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}

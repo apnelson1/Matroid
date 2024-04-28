@@ -1,33 +1,44 @@
 import Matroid.Constructions.Basic
+import Matroid.Constructions.Map
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Other
 
 
 open Set
 
-
 variable {α β γ : Type*} {M : Matroid α} {N : Matroid β} {R : Matroid γ} {e : PartialEquiv α β}
   {f : PartialEquiv β γ}
 
-theorem PartialEquiv.image_isImage_of_subset_source (e : PartialEquiv α β) {s : Set α}
-    (h : s ⊆ e.source) : e.IsImage s (e '' s) := by
-  apply PartialEquiv.IsImage.of_image_eq
-  rw [inter_eq_self_of_subset_right h, eq_comm, inter_eq_right]
-  exact image_subset_target e h
+theorem Set.BijOn.subset_right {f : α → β} {s : Set α} {r t : Set β} (hf : BijOn f s t)
+    (hxt : r ⊆ t) : BijOn f (s ∩ f ⁻¹' r) r := by
+  refine ⟨inter_subset_right _ _, hf.injOn.mono <| inter_subset_left _ _, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl⟩ := hf.surjOn (hxt hx)
+  exact ⟨y, ⟨hy, hx⟩, rfl⟩
 
-theorem PartialEquiv.symm_image_isImage_of_subset_source (e : PartialEquiv α β) {s : Set β}
-    (h : s ⊆ e.target) : e.IsImage (e.symm '' s) s := by
-  simpa using e.symm.image_isImage_of_subset_source (s := s) (by simpa)
+theorem Set.SurjOn.image_invFun_image_subset_eq [Nonempty α] {f : α → β} {s : Set α} {r t : Set β}
+    (hf : SurjOn f s t) (hrt : r ⊆ t) : f '' ((Function.invFunOn f s) '' r) = r := by
+  ext x
+  simp only [mem_image, exists_exists_and_eq_and]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨x,hx,rfl⟩
+    obtain ⟨y, hy, rfl⟩ := hf (hrt hx)
+    rwa [Function.invFunOn_apply_eq (f := f) hy]
+  obtain ⟨y, hy, rfl⟩ := hf (hrt h)
+  refine ⟨_,h, by rwa [Function.invFunOn_apply_eq (f := f)]⟩
 
-theorem PartialEquiv.IsImage.restr_eq_restr_set {s : Set α} {t : Set β} (h : e.IsImage s t) :
-    h.restr = e.restr s := by
-  ext <;> simp
+theorem Set.SurjOn.image_invFun_image_eq [Nonempty α] {f : α → β} {s : Set α} {t : Set β}
+    (hf : SurjOn f s t) : f '' ((Function.invFunOn f s) '' t) = t :=
+  hf.image_invFun_image_subset_eq rfl.subset
 
 namespace Matroid
 
+theorem Nonempty.nonempty_type {M : Matroid α} (hM : M.Nonempty) : Nonempty α := by
+  obtain ⟨e,-⟩ := hM; exact ⟨e⟩
+
 section GroundEquiv
 
-/-- `GroundEquiv e M N` means that `e : PartialEquiv` puts `M.E` and `N.E` in bijection.  -/
+/-- `GroundEquiv e M N` means that `e : PartialEquiv α β` puts `M.E` and `N.E` in bijection.
+The API here is to combine some of `PartialEquiv`'s API with `aesop_mat`.  -/
 def GroundEquiv (e : PartialEquiv α β) (M : Matroid α) (N : Matroid β) :=
   e.source = M.E ∧ e.target = N.E
 
@@ -102,14 +113,34 @@ theorem GroundEquiv.restrict (h : GroundEquiv e M N) {M' : Matroid α} {N' : Mat
     PartialEquiv.IsImage.restr_target, inter_eq_right, h.source_eq, h.target_eq,
     and_iff_right hM']
 
+theorem GroundEquiv.image_isImage (h : GroundEquiv e M N) (X : Set α)
+    (hX : X ⊆ M.E := by aesop_mat) : e.IsImage X (e '' X) :=
+  e.image_isImage_of_subset_source (by rwa [h.source_eq])
+
+theorem GroundEquiv.symm_image_isImage (h : GroundEquiv e M N) (Y : Set β)
+    (hX : Y ⊆ N.E := by aesop_mat) : e.IsImage (e.symm '' Y) Y :=
+  e.symm_image_isImage_of_subset_target (by rwa [h.target_eq])
+
+theorem GroundEquiv.eq_emptyOn (h : GroundEquiv e M (emptyOn β)) : M = emptyOn α := by
+  rw [← ground_eq_empty_iff, ← h.source_eq, ← e.symm_image_target_eq_source, h.target_eq]; simp
+
+theorem GroundEquiv.of_empty [Nonempty α] [Nonempty β] :
+    GroundEquiv PartialEquiv.empty (emptyOn α) (emptyOn β) := by
+  simp [GroundEquiv]
+
 end GroundEquiv
 
 section WeakMap
 
-/-- `IsWeakMap e M N` means that `e` is a bijection mapping dependent sets to dependent sets. -/
+/-- `IsWeakMap e M N` means that `e` is a bijection from `M.E` to `N.E` for which the image of
+each dependent set is dependent
+(or equivalently the preimage of each independent set is independent) -/
 structure IsWeakMap (e : PartialEquiv α β) (M : Matroid α) (N : Matroid β) : Prop :=
   (groundEquiv : GroundEquiv e M N)
   (image_dep : ∀ ⦃D⦄, M.Dep D → N.Dep (e '' D))
+
+theorem isWeakMap_def : IsWeakMap e M N ↔ (GroundEquiv e M N ∧ ∀ ⦃D⦄, M.Dep D → N.Dep (e '' D)) :=
+  ⟨fun h ↦ ⟨h.1,h.2⟩, fun h ↦ ⟨h.1,h.2⟩⟩
 
 theorem IsWeakMap.refl (M : Matroid α) : IsWeakMap (PartialEquiv.ofSet M.E) M M :=
   ⟨GroundEquiv.refl M, by simp⟩
@@ -151,35 +182,35 @@ theorem IsWeakMap.restrict (h : IsWeakMap e M N) {X : Set α} (hX : X ⊆ M.E) {
   rwa [← inter_eq_self_of_subset_right hY, ← h.groundEquiv.target_eq, ← hXY.image_eq,
     h.groundEquiv.source_eq, inter_eq_self_of_subset_right hX]
 
-  -- exact fun D hD hDR ↦ ⟨fun hi ↦ hD (h.indep_of_image hi), hDR.trans <| subset_preimage_image e X⟩
+theorem IsWeakMap.of_empty [Nonempty α] [Nonempty β] :
+    IsWeakMap PartialEquiv.empty (emptyOn α) (emptyOn β) where
+  groundEquiv := GroundEquiv.of_empty
+  image_dep := by simp [dep_iff]
 
--- theorem IsWeakMap.restrict_left (h : IsWeakMap e M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
---     IsWeakMap (e.restr R) (M ↾ R) (N ↾ (e '' R)) := by
---   refine ⟨?_,?_⟩
---   · have he' : e.IsImage R (e '' R) :=
---       e.image_isImage_of_subset_source (by rwa [h.groundEquiv.source_eq])
---     have h' := h.groundEquiv.restrict (M' := M ↾ R) (N' := N ↾ (e '' R)) hR ?_ he'
---     · rwa [← e.isImage_restr_eq_restr] at h'
---     apply h.groundEquiv.image_subset_ground _
---   simp only [restrict_dep_iff, PartialEquiv.restr_coe, image_subset_iff, and_imp]
---   exact fun D hD hDR ↦ ⟨fun hi ↦ hD (h.indep_of_image hi), hDR.trans <| subset_preimage_image e R⟩
-
--- theorem IsWeakMap.restrict_right (h : IsWeakMap e M N) (R : Set β) (hR : R ⊆ N.E := by aesop_mat) :
---     IsWeakMap (e.symm.restr R).symm (M ↾ (e.symm '' R)) (N ↾ R) := by
---   refine ⟨?_, ?_⟩
---   ·
 
 end WeakMap
 
 def IsIso (e : PartialEquiv α β) (M : Matroid α) (N : Matroid β) : Prop :=
   IsWeakMap e M N ∧ IsWeakMap e.symm N M
 
+theorem IsIso.refl (M : Matroid α) : IsIso (PartialEquiv.ofSet M.E) M M := by
+  rw [IsIso, PartialEquiv.ofSet_symm, and_self]
+  exact IsWeakMap.refl M
+
 theorem IsIso.symm (h : IsIso e M N) : IsIso e.symm N M := by
   simpa [IsIso, and_comm]
 
 theorem IsIso.isWeakMap (h : IsIso e M N) : IsWeakMap e M N := h.1
 
+theorem IsIso.trans (h : IsIso e M N) (h' : IsIso f N R) : IsIso (e.trans f) M R :=
+  ⟨h.isWeakMap.trans h'.isWeakMap, h'.symm.isWeakMap.trans h.symm.isWeakMap⟩
+
 theorem IsIso.groundEquiv (h : IsIso e M N) : GroundEquiv e M N := h.1.1
+
+theorem GroundEquiv.isIso_of_map_indep_map_indep (he : GroundEquiv e M N)
+    (hMN : ∀ ⦃I⦄, M.Indep I → N.Indep (e '' I)) (hNM : ∀ ⦃I⦄, N.Indep I → M.Indep (e.symm '' I)) :
+    IsIso e M N :=
+  ⟨he.isWeakMap_iff_symm_image_indep.2 hNM, he.symm.isWeakMap_iff_symm_image_indep.2 (by simpa)⟩
 
 theorem GroundEquiv.isIso_of_map_base_map_base (he : GroundEquiv e M N)
     (hMN : ∀ ⦃B⦄, M.Base B → N.Base (e '' B)) (hNM : ∀ ⦃B⦄, N.Base B → M.Base (e.symm '' B)) :
@@ -209,80 +240,239 @@ theorem IsIso.dual (h : IsIso e M N) : IsIso e M✶ N✶ :=
   h.groundEquiv.dual.isIso_of_map_base_map_base (fun _ ↦ h.image_dual_base)
     (fun _ ↦ h.symm.image_dual_base)
 
+def IsIso.restrict (h : IsIso e M N) {X : Set α} {Y : Set β} (hX : X ⊆ M.E := by aesop_mat)
+    (hY : Y ⊆ N.E := by aesop_mat) (hXY : e.IsImage X Y) : IsIso hXY.restr (M ↾ X) (N ↾ Y) :=
+  ⟨h.isWeakMap.restrict hX hY hXY, h.symm.isWeakMap.restrict hY hX hXY.symm⟩
+
 def IsIso.restrict_left (h : IsIso e M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     IsIso (e.restr R) (M ↾ R) (N ↾ (e '' R)) := by
-  have hRN := h.groundEquiv.image_subset_ground R
-  have hR' : e.IsImage R (e '' R) :=
-    e.image_isImage_of_subset_source (by rwa [h.groundEquiv.source_eq])
+  have hR' := h.groundEquiv.image_isImage R
   rw [← hR'.restr_eq_restr_set]
-  refine ⟨h.isWeakMap.restrict hR hRN hR', h.symm.isWeakMap.restrict hRN hR hR'.symm ⟩
+  exact h.restrict hR (h.groundEquiv.image_subset_ground R) _
+
+theorem IsIso.of_empty [Nonempty α] [Nonempty β] :
+    IsIso PartialEquiv.empty (emptyOn α) (emptyOn β) :=
+  ⟨IsWeakMap.of_empty,by simpa using IsWeakMap.of_empty⟩
+
+section Iso
+
+/-- We write `M ≅ N` if there is an isomorphism from `M` to `N`. This is defined as
+  a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
+  even though there may be no `e` with `IsIso e M N` in such cases.
+  (The aim is to save on unneccessary `Nonempty` assumptions in applications,
+  but perhaps this isn't worth the hassle) -/
+def Iso : Matroid α → Matroid β → Prop := fun M N ↦
+  (M = emptyOn α ∧ N = emptyOn β) ∨ ∃ e, IsIso e M N
+
+infixl:65  " ≅ " => Iso
+
+theorem Iso.empty_or_exists_isIso (h : M ≅ N) :
+    (M = emptyOn α ∧ N = emptyOn β) ∨ ∃ e, IsIso e M N := h
+
+@[simp] theorem iso_emptyOn_iff {M : Matroid α} {β : Type*} :
+    M ≅ emptyOn β ↔ M = emptyOn α := by
+  constructor
+  · rintro (⟨rfl,-⟩ | ⟨⟨e, he⟩⟩ ); rfl
+    exact he.groundEquiv.eq_emptyOn
+  rintro rfl
+  exact Or.inl ⟨rfl, rfl⟩
+
+theorem Iso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := by
+  obtain (⟨hM,hN⟩ | ⟨⟨e,he⟩⟩)  := h
+  · exact Or.inl ⟨hN, hM⟩
+  exact Or.inr ⟨e.symm, he.symm⟩
+
+theorem Iso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
+  ⟨Iso.symm, Iso.symm⟩
+
+theorem Iso.refl (M : Matroid α) : M ≅ M :=
+  Or.inr <| ⟨_, IsIso.refl M⟩
+
+theorem IsIso.iso (h : IsIso e M N) : M ≅ N :=
+  Or.inr ⟨e,h⟩
+
+theorem Iso.trans {O : Matroid γ}
+    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i1, hi1⟩⟩) := h1
+  · rwa [Iso.comm, iso_emptyOn_iff] at h2 ⊢
+  obtain (⟨rfl,rfl⟩ | ⟨⟨i2, hi2⟩⟩) := h2
+  · rw [iso_emptyOn_iff]
+    exact iso_emptyOn_iff.1 hi1.iso
+  have := hi1.trans hi2
+  exact Or.inr ⟨_, hi1.trans hi2⟩
+
+theorem Iso.exists_isIso [Nonempty α] [Nonempty β] (h : M ≅ N) :
+    ∃ e, IsIso e M N := by
+  obtain (⟨rfl, rfl⟩ | ⟨⟨e, he⟩⟩) := h
+  · exact ⟨_, IsIso.of_empty⟩
+  exact ⟨e,he⟩
+
+theorem Nonempty.iso_iff_exists_isIso (hM : M.Nonempty) : M ≅ N ↔ ∃ e, IsIso e M N := by
+  rw [Iso, ← ground_eq_empty_iff, or_iff_right]
+  exact not_and.2 fun a _ ↦ hM.ground_nonempty.ne_empty a
+
+theorem Iso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
+  · exact iff_of_true (finite_emptyOn α) (finite_emptyOn β)
+  refine ⟨fun ⟨hfin⟩ ↦ ⟨?_⟩, fun ⟨hfin⟩ ↦ ⟨?_⟩⟩
+  · rw [← he.groundEquiv.image_ground]
+    exact hfin.image e
+  rw [← he.symm.groundEquiv.image_ground]
+  exact hfin.image _
+
+theorem Iso.finiteRk_iff (h : M ≅ N) : M.FiniteRk ↔ N.FiniteRk := by
+  obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
+  · apply iff_of_true <;> infer_instance
+  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, he.image_base hB, hBfin.image _⟩,
+    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, he.symm.image_base hB, hBfin.image _⟩⟩
+
+theorem Iso.dual (h : M ≅ N) : M✶ ≅ N✶ := by
+  obtain (⟨rfl, rfl⟩ | ⟨⟨e,he⟩⟩) := h
+  · exact Or.inl ⟨by simp, by simp⟩
+  exact Or.inr ⟨_,he.dual⟩
+
+theorem isIso_dual_iff : M✶ ≅ N✶ ↔ M ≅ N := by
+  refine ⟨fun h ↦ ?_, Iso.dual⟩
+  rw [← dual_dual M, ← dual_dual N]
+  exact h.dual
+
+theorem iso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
+  rw [iso_emptyOn_iff]
+
+@[simp] theorem emptyOn_iso_iff {M : Matroid α} (β : Type*) : emptyOn β ≅ M ↔ M = emptyOn α := by
+  rw [Iso.comm, iso_emptyOn_iff]
+
+theorem iso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
+    M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+  classical
+  obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
+  · simp only [emptyOn_iso_iff, emptyOn_ground, loopyOn_empty, true_and]
+    rw [← ground_eq_empty_iff, loopyOn_ground]
+    exact ⟨by rintro rfl; exact ⟨Equiv.equivOfIsEmpty _ _⟩,
+      fun ⟨e⟩ ↦ eq_empty_of_forall_not_mem fun x hx ↦ by simpa using (e.symm ⟨x,hx⟩).2⟩
+
+  simp only [hM.iso_iff_exists_isIso, eq_loopyOn_iff, true_and]
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨fun I _ hI ↦ by simpa using he.image_indep hI, ?_⟩, fun ⟨h,⟨e⟩⟩ ↦ ?_⟩
+  · have h_e := e.toEquiv
+    rw [he.groundEquiv.source_eq, he.groundEquiv.target_eq, loopyOn_ground] at h_e
+    exact ⟨h_e⟩
+  obtain ⟨x,hx⟩ := hM.ground_nonempty
+  have _ : Nonempty α := ⟨x⟩
+  have _ : Nonempty β := ⟨(e ⟨x,hx⟩)⟩
+  refine ⟨PartialEquiv.ofSetEquiv e,
+    GroundEquiv.isIso_of_map_indep_map_indep ⟨rfl,rfl⟩ ?_ (by simp)⟩
+  · simp only [PartialEquiv.ofSetEquiv_apply, loopyOn_indep_iff, image_eq_empty]
+    exact fun I hI ↦ h I hI.subset_ground hI
+
+theorem iso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
+    M ≅ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
+  rw [← isIso_dual_iff, freeOn_dual_eq, iso_loopyOn_iff, ← eq_dual_iff_dual_eq, dual_ground,
+    loopyOn_dual_eq]
+
+end Iso
+
+section Map
+
+theorem iso_map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
+    M ≅ M.map f hf := by
+  obtain (rfl | hM) := M.eq_emptyOn_or_nonempty; simp
+  have := hM.nonempty_type
+  rw [hM.iso_iff_exists_isIso]
+  have hg : GroundEquiv hf.toPartialEquiv M (M.map f hf) := ⟨by simp, by simp⟩
+  refine ⟨_, hg.isIso_of_map_indep_map_indep ?_ ?_⟩
+  · simp only [InjOn.toPartialEquiv, BijOn.toPartialEquiv_apply, map_indep_iff]
+    exact fun I hI ↦ ⟨I,hI,rfl⟩
+  simp only [map_indep_iff, InjOn.toPartialEquiv, BijOn.toPartialEquiv_symm_apply,
+    forall_exists_index, and_imp]
+  rintro _ I hI rfl
+  rwa [hf.invFunOn_image hI.subset_ground]
+
+theorem iso_comap (f : α ↪ β) {M : Matroid β} (hfE : range f = M.E) : M.comap f ≅ M := by
+  obtain (rfl | hM) := M.eq_emptyOn_or_nonempty; simp
+  obtain ⟨x,hx⟩ := hM.ground_nonempty
+  obtain ⟨y, rfl⟩ := hfE.symm.subset hx
+  have hf : BijOn f univ M.E := by
+    suffices SurjOn (⇑f) univ (range ⇑f) by simpa [BijOn, f.injective.injOn univ, ← hfE]
+    rintro y ⟨x,hx,rfl⟩; simp
+  have _ : Nonempty α := ⟨y⟩
+  have hg : GroundEquiv hf.toPartialEquiv (M.comap f) M := ⟨by simp [← hf.image_eq], by simp⟩
+  refine Or.inr ⟨_, hg.isIso_of_map_indep_map_indep ?_ ?_⟩
+  · simp only [comap_indep_iff, BijOn.toPartialEquiv_apply, and_imp]
+    exact fun I hI _ ↦ hI
+  simp only [BijOn.toPartialEquiv_symm_apply, comap_indep_iff, f.injective.injOn _, and_true]
+  intro I hI
+  rwa [hf.surjOn.image_invFun_image_subset_eq hI.subset_ground]
 
 
-  -- refine ⟨?_, ?_⟩
-  -- · apply h.iseqk
-  -- have := h.isWeakMap
-    -- Iso (M ↾ R) (N ↾ (e '' R)
+
+/-
 
 
-  -- have := h.symm.imagehB.compl_base_of_dual
+/-- `M` is isomorphic to its image -/
+noncomputable def iso_image [Nonempty α] (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
+    Iso M (M.map f hf)  :=
+  iso_of_forall_indep' hf.toPartialEquiv ( by simp ) ( by simp )
+  ( by
+    simp only [InjOn.toPartialEquiv, BijOn.toPartialEquiv_apply, image_indep_iff]
+    refine fun I hIE ↦ ⟨fun hI ↦ ⟨I, hI, rfl⟩, fun ⟨I₀, hI₀, (h_eq : f '' _ = _)⟩ ↦ ?_⟩
+    rw [hf.image_eq_image_iff_of_subset hIE hI₀.subset_ground] at h_eq
+    rwa [h_eq] )
+
+noncomputable def comap_iso [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : Iso (M.comap f) M :=
+  iso_of_forall_indep' (hf.injOn univ).toPartialEquiv (by simp [← hfE]) (by simpa)
+    ( by simp [← hfE, hf.injOn _] )
+
+@[simp] theorem comap_iso_coeFun [Nonempty α] {M : Matroid β} (hf : f.Injective)
+    (hfE : range f = M.E) : (comap_iso hf hfE : α → β) = fun x ↦ f x := rfl
+
+
+noncomputable def iso_onSubtype' (hX : X ⊆ M.E) (hne : X.Nonempty) : Iso (M.onSubtype X) (M ↾ X) :=
+  have _ := nonempty_coe_sort.2 hne
+  iso_of_forall_indep' (Subtype.coe_injective.injOn univ).toPartialEquiv
+    (by simp [onSubtype_ground hX]) (by simp)
+  ( by
+    simp only [onSubtype_ground hX, subset_univ, InjOn.toPartialEquiv, image_univ,
+      Subtype.range_coe_subtype, setOf_mem_eq, BijOn.toPartialEquiv_apply, restrict_indep_iff,
+      image_subset_iff, Subtype.coe_preimage_self, and_true, forall_true_left]
+    simp only [onSubtype._eq_1, comap_indep_iff, and_iff_left_iff_imp]
+    intro I
+    simp [Subtype.val_injective.injOn I] )
+
+noncomputable def iso_onSubtype [M.Nonempty] (hE : M.E = E) : Iso M (M.onSubtype E) := by
+  have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
+  exact (comap_iso Subtype.val_injective (by rw [Subtype.range_val, ← hE])).symm
+
+theorem isIso_onSubtype (M : Matroid α) (hE : M.E = E) : M ≅ M.onSubtype E := by
+  obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
+  · simp only [emptyOn_ground] at hE; subst hE; simp
+  exact (iso_onSubtype hE).isIso
+
+
+/-- If `f` is locally a bijection, then `M` is isomorphic to its comap. -/
+noncomputable def iso_comapOn [_root_.Nonempty α] (M : Matroid β) {f : α → β} {E : Set α}
+    (hf : BijOn f E M.E) : Iso (M.comapOn E f) M :=
+  iso_of_forall_indep'
+  hf.toPartialEquiv
+  ( by rw [BijOn.toPartialEquiv_source, comapOn_ground_eq] )
+  hf.toPartialEquiv_target
+  ( by
+    simp only [comapOn_ground_eq, comapOn_indep_iff, BijOn.toPartialEquiv_apply,
+      and_iff_left_iff_imp]
+    exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
+
+theorem Iso.eq_comap {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.comapOn M.E e := by
+  simp only [eq_iff_indep_iff_indep_forall, comapOn_ground_eq, comapOn_indep_iff, true_and]
+  intro I hIE
+  rw [and_iff_left hIE, ← e.on_indep_iff, iff_self_and]
+  exact fun _ ↦ e.toPartialEquiv.bijOn.injOn.mono (by simpa)
+
+-/
+
+end Map
 
 
 
 
 
--- /-- A `PartialEquiv` is a weak map from `M` to `N` if the preimage of every independent set is
---   independent-/
--- structure IsWeakMap (e : PartialEquiv α β) (M : Matroid α) (N : Matroid β) : Prop :=
---   (source_eq : e.source = M.E)
---   (target_eq : e.target = N.E)
---   (symm_image_indep : ∀ ⦃I⦄, N.Indep I → M.Indep (e.symm '' I))
-
--- theorem IsWeakMap.subset_source (h : IsWeakMap e M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
---     X ⊆ e.source :=
---   hX.trans (h.source_eq.symm.subset)
-
--- theorem IsWeakMap.subset_target (h : IsWeakMap e M N) (X : Set β) (hX : X ⊆ N.E := by aesop_mat) :
---     X ⊆ e.target :=
---   hX.trans (h.target_eq.symm.subset)
-
--- theorem IsWeakMap.dep_of_dep (h : IsWeakMap e M N) {D : Set α} (hD : M.Dep D) : N.Dep (e '' D) := by
---   rw [dep_iff, ← h.target_eq]
---   refine ⟨fun hi ↦ hD.not_indep ?_, e.image_subset_target (h.subset_source D)⟩
---   replace hi := h.symm_image_indep hi
---   rwa [e.symm_image_image_of_subset_source (h.subset_source D)] at hi
-
--- theorem isWeakMap_iff_dep_of_dep_forall (hM : e.source = M.E) (hN : e.target = N.E) :
---     IsWeakMap e M N ↔ ∀ {D}, M.Dep D → N.Dep (e '' D) := by
---   refine ⟨IsWeakMap.dep_of_dep, fun h ↦ IsWeakMap.mk hM⟩
-
--- structure WeakMap (M : Matroid α) (N : Matroid β) where
---   (toPartialEquiv : PartialEquiv α β)
---   (weakMap : IsWeakMap toPartialEquiv M N)
-
--- theorem IsWeakMap.trans {e : PartialEquiv α β} {e' : PartialEquiv β γ} (he : IsWeakMap e M N)
---     (he' : IsWeakMap e' N R) : IsWeakMap (e.trans e') M R where
---   source_eq := by
---     rw [e.trans_source, ← he.source_eq, he'.source_eq, ← he.target_eq, inter_eq_left]
---     exact e.source_subset_preimage_target
---   target_eq := by
---     rw [e.trans_target, ← he'.target_eq, inter_eq_left, he.target_eq, ← he'.source_eq]
---     exact e'.target_subset_preimage_source
---   symm_image_indep := by
---     intro I hI
---     replace hI := he.symm_image_indep <| he'.symm_image_indep hI
---     rw [image_image] at hI
---     rwa [PartialEquiv.trans_symm_eq_symm_trans_symm]
-
--- def WeakMap.trans (e : WeakMap M N) (f : WeakMap N R) : WeakMap M R where
---   toPartialEquiv := e.toPartialEquiv.trans f.toPartialEquiv
---   weakMap := e.weakMap.trans f.weakMap
-
--- def WeakLE (M N : Matroid α) := IsWeakMap (PartialEquiv.refl _) M N
-
--- infixl:50 " ≤w " => Matroid.WeakLE
-
--- -- theorem WeakLE.trans
-
-
-
-end WeakMap
+end Matroid
