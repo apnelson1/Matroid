@@ -279,46 +279,46 @@ theorem map_image_base_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {
 
 end Image
 
-section OnSubtype
+section restrictSubtype
 
 variable {E X : Set α} {M N : Matroid α}
 
 /-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
   If `X ⊆ M.E`, then isomorphic to `M ↾ X`. If `X = M.E`, then isomorphic to `M`. -/
-def onSubtype (M : Matroid α) (X : Set α) : Matroid X := M.comap (↑)
+def restrictSubtype (M : Matroid α) (X : Set α) : Matroid X := M.comap (↑)
 
-theorem onSubtype_ground (hX : X ⊆ M.E) : (M.onSubtype X).E = univ := by
-  rw [onSubtype, comap_ground_eq, eq_univ_iff_forall]; simpa
+theorem restrictSubtype_ground (hX : X ⊆ M.E) : (M.restrictSubtype X).E = univ := by
+  rw [restrictSubtype, comap_ground_eq, eq_univ_iff_forall]; simpa
 
-@[simp] theorem onSubtype_indep_iff {X : Set α} {I : Set X} :
-    (M.onSubtype X).Indep I ↔ M.Indep ((↑) '' I) := by
-  simp [onSubtype, Subtype.val_injective.injOn I]
+@[simp] theorem restrictSubtype_indep_iff {X : Set α} {I : Set X} :
+    (M.restrictSubtype X).Indep I ↔ M.Indep ((↑) '' I) := by
+  simp [restrictSubtype, Subtype.val_injective.injOn I]
 
-theorem onSubtype_indep_iff_of_subset {X I : Set α} (hIX : I ⊆ X) :
-    (M.onSubtype X).Indep (X ↓∩ I) ↔ M.Indep I := by
-  rw [onSubtype_indep_iff, image_preimage_eq_iff.2]; simpa
+theorem restrictSubtype_indep_iff_of_subset {X I : Set α} (hIX : I ⊆ X) :
+    (M.restrictSubtype X).Indep (X ↓∩ I) ↔ M.Indep I := by
+  rw [restrictSubtype_indep_iff, image_preimage_eq_iff.2]; simpa
 
-theorem onSubtype_inter_indep_iff {X I : Set α} :
-    (M.onSubtype X).Indep (X ↓∩ I) ↔ M.Indep (X ∩ I) := by
-  simp only [onSubtype, comap_indep_iff, Subtype.image_preimage_coe, and_iff_left_iff_imp]
+theorem restrictSubtype_inter_indep_iff {X I : Set α} :
+    (M.restrictSubtype X).Indep (X ↓∩ I) ↔ M.Indep (X ∩ I) := by
+  simp only [restrictSubtype, comap_indep_iff, Subtype.image_preimage_coe, and_iff_left_iff_imp]
   exact fun _ ↦ injOn_subtype_val
 
-theorem eq_of_onSubtype_eq (hM : M.E = E) (hN : N.E = E) (h : M.onSubtype E = N.onSubtype E) :
+theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E) (h : M.restrictSubtype E = N.restrictSubtype E) :
     M = N := by
   subst hM
   refine eq_of_indep_iff_indep_forall (by rw [hN]) (fun I hI ↦ ?_)
-  rwa [← onSubtype_indep_iff_of_subset hI, h, onSubtype_indep_iff_of_subset]
+  rwa [← restrictSubtype_indep_iff_of_subset hI, h, restrictSubtype_indep_iff_of_subset]
 
-theorem onSubtype_dual' (hM : M.E = E) : (M.onSubtype E)✶ = M✶.onSubtype E := by
-  rw [onSubtype, ← comapOn_preimage_eq, comapOn_dual_eq_of_bijOn, ← dual_ground,
-    comapOn_preimage_eq, onSubtype]
+theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.restrictSubtype E := by
+  rw [restrictSubtype, ← comapOn_preimage_eq, comapOn_dual_eq_of_bijOn, ← dual_ground,
+    comapOn_preimage_eq, restrictSubtype]
   subst hM
   exact ⟨by simp [MapsTo], Subtype.val_injective.injOn _, by simp [SurjOn, Subset.rfl]⟩
 
-@[simp] theorem onSubtype_dual : (M.onSubtype M.E)✶ = M✶.onSubtype M.E :=
-  onSubtype_dual' rfl
+@[simp] theorem restrictSubtype_dual : (M.restrictSubtype M.E)✶ = M✶.restrictSubtype M.E :=
+  restrictSubtype_dual' rfl
 
-end OnSubtype
+end restrictSubtype
 section Iso
 
 

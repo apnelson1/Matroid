@@ -1,4 +1,4 @@
-import Matroid.Constructions.Map
+import Matroid.Map
 
 open Set BigOperators Set.Notation
 
@@ -9,7 +9,7 @@ variable {α β ι : Type*}
 -- a little API for mathlib.
 
 /-- If `s` and `t` are disjoint sets in `α`, there is a natural injection from `s ⊕ t` to `α`. -/
-@[simps] def Disjoint.sumElimValEmbedding {s t : Set α} (h : Disjoint s t) : s ⊕ t ↪ α where
+@[simps] def Disjoint.sumSubtypeEmbedding {s t : Set α} (h : Disjoint s t) : s ⊕ t ↪ α where
   toFun := Sum.elim Subtype.val Subtype.val
   inj' := by
     rintro (⟨a,ha⟩ | ⟨a,ha⟩) (⟨b,hb⟩ | ⟨b,hb⟩)
@@ -18,16 +18,16 @@ variable {α β ι : Type*}
     · simpa using h.symm.ne_of_mem ha hb
     simp [Subtype.val_inj]
 
-@[simp] theorem Disjoint.sumElimValEmbedding_preimage_inl {s t r : Set α} (h : Disjoint s t) :
-    .inl ⁻¹' (h.sumElimValEmbedding ⁻¹' r) = r ∩ s := by
+@[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inl {s t r : Set α} (h : Disjoint s t) :
+    .inl ⁻¹' (h.sumSubtypeEmbedding ⁻¹' r) = r ∩ s := by
   ext; simp
 
-@[simp] theorem Disjoint.sumElimValEmbedding_preimage_inr {s t r : Set α} (h : Disjoint s t) :
-    .inr ⁻¹' (h.sumElimValEmbedding ⁻¹' r) = r ∩ t := by
+@[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inr {s t r : Set α} (h : Disjoint s t) :
+    .inr ⁻¹' (h.sumSubtypeEmbedding ⁻¹' r) = r ∩ t := by
   ext; simp
 
-@[simp] theorem Disjoint.sumElimValEmbedding_range {s t : Set α} (h : Disjoint s t) :
-    range h.sumElimValEmbedding = s ∪ t := by
+@[simp] theorem Disjoint.sumSubtypeEmbedding_range {s t : Set α} (h : Disjoint s t) :
+    range h.sumSubtypeEmbedding = s ∪ t := by
   ext; simp
 
 namespace Matroid
@@ -35,7 +35,7 @@ namespace Matroid
 /-- We prove that the direct sum of an indexed collection of matroids is a matroid
   by constructing an `IndepMatroid`.
   (Probably proving this is actually easier than defining the direct sum of matroids on two types,
-  since it lets you abstract 'left' and right.) -/
+  since it lets you abstract 'left' and 'right'.) -/
 private def sigmaIndepMatroid {α : ι → Type*} (M : (i : ι) → Matroid (α i)) :
     IndepMatroid ((i : ι) × α i) where
       E := ⋃ (i : ι), (Sigma.mk i '' (M i).E)
@@ -78,14 +78,14 @@ def directSum {α : Type u} {β : Type v} (M : Matroid α) (N : Matroid β) : Ma
     (M.directSum N).E = (.inl '' M.E) ∪ (.inr '' N.E) := by
   ext; simp [directSum, mapEquiv, mapEmbedding, Equiv.ulift, Equiv.sumEquivSigmaBool]
 
-/-- Applying this map to the direct sum of the 'subtype' version of `M` and `N` gives a
-  direct sum within the type `α`, provided `M` and `N` have disjoint ground sets.   -/
+/-- The direct sum of two `Matroid α` with disjoint ground sets, defined as a `Matroid α`.
+Implemented by mapping a matroid on `M.E ⊕ N.E` into `α`.  -/
 def directSum' (M N : Matroid α) (h : Disjoint M.E N.E) : Matroid α :=
-  ((M.onSubtype M.E).directSum (N.onSubtype N.E)).mapEmbedding h.sumElimValEmbedding
+  ((M.restrictSubtype M.E).directSum (N.restrictSubtype N.E)).mapEmbedding h.sumSubtypeEmbedding
 
 @[simp] theorem directSum'_ground_eq {M N : Matroid α} {h : Disjoint M.E N.E} :
     (M.directSum' N h).E = M.E ∪ N.E := by
-  simp [directSum', onSubtype, mapEmbedding]
+  simp [directSum', restrictSubtype, mapEmbedding]
 
 @[simp] theorem directSum'_indep_iff {M N : Matroid α} {h : Disjoint M.E N.E} {I : Set α} :
     (M.directSum' N h).Indep I ↔ M.Indep (I ∩ M.E) ∧ N.Indep (I ∩ N.E) ∧ I ⊆ M.E ∪ N.E := by
