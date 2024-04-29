@@ -1,5 +1,5 @@
 import Matroid.Minor.Basic
-import Matroid.Minor.RelRank
+import Matroid.Minor.Rank
 import Matroid.Constructions.Basic
 
 namespace Matroid

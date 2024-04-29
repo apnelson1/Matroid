@@ -22,6 +22,14 @@ theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 @[simp] theorem delete_rFin_iff : (M ⧹ D).rFin X ↔ M.rFin (X \ D) := by
   rw [← er_lt_top_iff, delete_er_eq', er_lt_top_iff]
 
+theorem Coindep.delete_erk_eq (hX : M.Coindep X) : (M ⧹ X).erk = M.erk := by
+  rw [coindep_iff_cl_compl_eq_ground] at hX
+  rw [erk_eq_er_ground, delete_ground, delete_er_eq', diff_diff, union_self, ← er_cl_eq, hX,
+    erk_eq_er_ground]
+
+theorem Indep.delete_erk_dual_eq (hI : M.Indep I) : (M ⧸ I)✶.erk = M✶.erk := by
+  rw [← hI.coindep.delete_erk_eq, contract_dual_eq_dual_delete]
+
 end Delete
 
 /-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ⧸ X`,

@@ -2,7 +2,7 @@ import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat
 import Matroid.Minor.Iso
-import Matroid.Constructions.Map
+import Matroid.Map
 
 open Set
 

@@ -1,4 +1,4 @@
-import Matroid.Minor.RelRank
+import Matroid.Minor.Rank
 import Matroid.ForMathlib.SetPartition
 -- import Matroid.ForMathlib.ENatTopology
 
