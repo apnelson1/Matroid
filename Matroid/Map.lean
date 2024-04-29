@@ -1,11 +1,14 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Logic_Embedding_Set
 import Mathlib.Data.Set.Subset
 
 open Set.Notation
--- import Matroid.Equiv
+
+universe u
 
 open Set Function
+
 
 namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α}
@@ -303,8 +306,8 @@ theorem restrictSubtype_inter_indep_iff {X I : Set α} :
   simp only [restrictSubtype, comap_indep_iff, Subtype.image_preimage_coe, and_iff_left_iff_imp]
   exact fun _ ↦ injOn_subtype_val
 
-theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E) (h : M.restrictSubtype E = N.restrictSubtype E) :
-    M = N := by
+theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E)
+    (h : M.restrictSubtype E = N.restrictSubtype E) : M = N := by
   subst hM
   refine eq_of_indep_iff_indep_forall (by rw [hN]) (fun I hI ↦ ?_)
   rwa [← restrictSubtype_indep_iff_of_subset hI, h, restrictSubtype_indep_iff_of_subset]
@@ -319,8 +322,204 @@ theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.r
   restrictSubtype_dual' rfl
 
 end restrictSubtype
-section Iso
+section MapRel
 
 
 
-end Iso
+
+    -- rw [extend_apply' _ _ _ (by simpa [embeddingOfSubset])] at hxy
+
+    -- · obtain (rfl | ⟨y₀,rfl⟩) := aux y
+    --   · rfl
+    --   ·
+    -- obtain
+    -- rintro ⟨x, (rfl | hx)⟩ ⟨y, (rfl | hy)⟩ hxy; rfl
+
+    -- · have :
+      -- rw [extend_apply', extend_apply'] at hxy
+
+-- theorem aux {α β : Type*} {s t : Set β} {f : s → α} {g : t → α} (a₀ : s) :
+--   ∃
+
+-- noncomputable def exhaust {α β : Type*} {s t : Set β} (f : s ↪ α) (g : t ↪ α)
+--     [DecidablePred (· ∈ range g)] [DecidablePred (· ∈ s)] (b₀ : s) : ℕ → α ⊕ β
+--   | 0 => .inr b₀.1
+--   | n+1 => (exhaust f g b₀ n).rec
+--     (fun a ↦ if ha : a ∈ range g then .inr (Classical.choose (mem_range.1 ha)).1 else .inl a)
+--     (fun b ↦ if hb : b ∈ s then .inl (f ⟨b,hb⟩) else .inr b)
+
+
+mutual
+  def repeat_left {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → α
+    | 0 => a₀
+    | n+1 => g (repeat_right f g a₀ n)
+
+  def repeat_right {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → β
+    | 0 => f a₀
+    | n+1 => f (repeat_left f g a₀ n)
+end
+
+def repeat_modify {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) (b : β)
+    [DecidablePred fun n ↦ repeat_right f g a₀ n = b] [Decidable (∃ i, repeat_right f g a₀ i = b)] :
+    α :=
+  if h : ∃ i, repeat_right f g a₀ i = b then (repeat_left f g a₀) (Nat.find h) else g b
+
+
+def ImageIndep (M : Matroid α) (r : α → β → Prop) (I : Set β) :=
+  ∃ (f : β → Option α), (∀ b ∈ I, ∃ a ∈ f b, r a b) ∧ (InjOn f I) ∧ M.Indep (some ⁻¹' (f '' I))
+
+
+-- def mapRelIndepMatroid' (M : Matroid α) (r : α → β → Prop) : IndepMatroid β where
+--   E := univ
+--   Indep I := ∃ (f : Option β → Option α), ∀ a ∈ I, f (some a) ≠ none ∧ InjOn f (some '' I)
+--     ∧ M.Indep (some ⁻¹' (f '' (some '' I)))
+-- noncomputable def exhaust' (f g : α → Option β) (a₀ : α)
+--   [DecidablePred (∃ a, g a = some ·)] : ℕ → Option (α ⊕ β)
+--   | 0 => some <| .inl a₀
+--   | n+1 => (exhaust' f g a₀ n).rec none (Sum.rec
+--       (fun a ↦ (f a).rec none (fun b ↦ some (.inr b)))
+--       fun b ↦ if h : ∃ a, g a = some b then some (.inl (Classical.choose h)) else none)
+
+-- def inj' (f : α → Option β) := InjOn f ({x | f x ≠ none})
+
+-- theorem exhaust_left (f g : α → Option β) (a₀ : α) [DecidablePred (∃ a, g a = some ·)]
+--     {i : ℕ} {a : α} {b : β} (hfa : f a = some b) (hia : exhaust' f g a₀ i = some (.inl a)) :
+--     exhaust' f g a₀ (i+1) = some (.inr b) := by
+--   induction' i using Nat.recAux with i hi
+--   · simp only [exhaust', Option.some.injEq, Sum.inl.injEq] at hia ⊢
+--     simp [exhaust, hia, hfa]
+--   simp [exhaust'] at hia
+--   simp only [exhaust', Nat.add_eq, add_zero] at hia hi ⊢
+
+
+
+
+-- theorem foo (f g : α → Option β) [DecidablePred (∃ a, g a = some ·)] (a₀ : α) (ha₀ : f a₀ ≠ none)
+--     (h_exhaust : ∀ i, exhaust' f g a₀ i ≠ none) (h_inj : InjOn g ({x | g x ≠ none})) :
+--     ∃ (g' : α → Option β), (g' a₀ ≠ none) ∧ (∀ a, g' a = none → g a = none) ∧
+--       InjOn g' ({x | g' x ≠ none}) := by
+--   classical
+--   refine ⟨fun a ↦ if ∃ i, exhaust' f g a₀ i = some (.inl a) then f a else g a, ?_, ?_, ?_⟩
+--   · simp only [ne_eq]; rwa [if_pos ⟨0, rfl⟩]
+--   · intro a
+--     simp only
+--     split_ifs with h h
+--     ·
+
+
+
+
+
+-- noncomputable def flipAt {α β : Type*} {s t : Set β} (f : s ↪ α) (g : t ↪ α)
+--     [DecidablePred (· ∈ range g)] [DecidablePred (· ∈ s)] (b₀ : s) (hb₀ : b₀.1 ∉ t) :
+--     ↑(insert b₀.1 t) ↪ α where
+--   toFun x := if h : ∃ i, exhaust f g b₀ i = .inr x then (Classical.choose h).
+--   inj' := _
+
+-- def mapRelIndepMatroid (M : Matroid α) (r : α → β → Prop) : IndepMatroid β where
+--   E := univ
+--   Indep I := ∃ (i : I ↪ α), M.Indep (range i) ∧ ∀ e, r (i e) e
+--   indep_empty := ⟨⟨fun x ↦ (not_mem_empty x.1 x.2).elim, fun x ↦ (not_mem_empty x.1 x.2).elim⟩,
+--     by convert M.empty_indep; simp, fun x ↦ (not_mem_empty x.1 x.2).elim⟩
+--   indep_subset := by
+--     rintro I J ⟨e, hei, her⟩ hIJ
+--     refine ⟨(embeddingOfSubset I J hIJ).trans e, hei.subset ?_, fun ⟨x,hx⟩ ↦ her ⟨x, hIJ hx⟩ ⟩
+--     rw [Embedding.range_trans]
+--     apply image_subset_range
+--   indep_aug := by
+--     simp_rw [mem_maximals_iff, mem_setOf, not_and, not_forall, exists_prop]
+--     rintro I B hI' hI ⟨⟨g, hg, hgr⟩, hBmax⟩
+--     obtain ⟨K, ⟨eK, heK, heKr⟩, hIK, hIne⟩ := hI hI'
+--     obtain ⟨b, hbK, hbI⟩ := exists_of_ssubset (hIK.ssubset_of_ne hIne)
+--     set a := eK ⟨b,hbK⟩ with ha_def
+--     set f := (embeddingOfSubset _ _ hIK).trans eK with hf_def
+
+--     have haf : a ∉ range f := by
+--       rintro ⟨⟨a₀,ha₀I⟩, ha₀ : eK _ = _⟩
+--       simp_rw [ha_def, eK.apply_eq_iff_eq, ← Subtype.val_inj, embeddingOfSubset_apply_coe] at ha₀
+--       subst ha₀; contradiction
+
+--     have hab : r a b := by apply heKr
+
+--     by_cases hac : ∃ c, r a c ∧ c ∈ B \ I
+--     · obtain ⟨c, hac, hc⟩ := hac
+--       refine ⟨c, hc, Subtype.embeddingInsert f hc.2 haf, heK.subset ?_, ?_⟩
+--       · rw [Subtype.range_embeddingInsert, ha_def, hf_def, insert_subset_iff]
+--         refine ⟨mem_range_self _, ?_⟩
+--         rw [Embedding.range_trans]
+--         apply image_subset_range
+--       rintro ⟨x, (rfl | hxI)⟩
+--       · rw [Subtype.embeddingInsert_apply']
+--         · exact hac
+--         exact hc.2
+--       rw [Subtype.embeddingInsert_apply_mem _ _ _ (by simpa)]
+--       exact heKr ⟨x, hIK hxI⟩
+
+--     push_neg at hac
+
+--     -- have hag : a ∉ range g := by
+--     --   rintro ⟨a₀, ha₀⟩
+--     --   -- have := hgr a₀
+--     --   apply hac a₀ (by rw [← ha₀]; apply hgr)
+
+--     have hbB : b ∉ B := fun hbB ↦ hac b hab ⟨hbB, hbI⟩
+
+--     by_cases hag : a ∈ range g
+--     · obtain ⟨⟨b₀,hb₀B⟩, hb₀⟩ := hag
+--       have hrb₀ : r a b₀ := by rw [← hb₀]; apply hgr
+--       have hb₀I : b₀ ∈ I := by_contra fun h' ↦ hac _ hrb₀ ⟨hb₀B, h'⟩
+--       set a₀ := f ⟨b₀, hb₀I⟩ with ha₀_def
+--       by_cases ha₀ : a₀ ∈ range g
+--       · obtain ⟨b₁, hb₁⟩ := ha₀
+--         -- define `f'` from `f` on `I ∪ {b₁}` by mapping `b₀` to `a` and `b₁` to `a₀`.
+
+
+
+
+--     set g' := Subtype.embeddingInsert g (a := b) (b := a) hbB
+--     -- have := @hBmax (insert b B)
+
+
+
+
+    -- by_contra! hcon
+
+
+
+    -- have ha_nbr : ∀ c, r a c → c ∈ B := by
+    --   refine fun c hac ↦ by_contra fun hcB ↦ ?_
+    --   rw [@hBmax (insert c B) ?_ (subset_insert _ _)] at hcB
+    --   · simp at hcB
+    --   have : Subtype.emb
+
+
+
+      -- rw [@hBmax (insert c B) ?_ (subset_insert _ _)]; exact mem_insert _ _
+      -- refine ⟨Subtype.embeddingInsert g
+
+
+    -- obtain ⟨I, i, hIX, hIXne⟩ := hI hI'
+    -- by_contra! hcon
+    -- have hB : ∀ {x y}, y ∈ B → r x y → x ∈ range f := by
+    --   rw [← diff_union_inter B I]
+    --   rintro x y (hy | hy) hXY
+    --   · by_contra hx'
+    --     specialize hcon _ hy (Subtype.embeddingInsert f hy.2 hx')
+    --     simp at hcon
+
+
+
+
+
+
+
+    -- simp [mem_maximals_iff]
+
+
+    -- rintro I B ⟨eI, heI, heIr⟩ hnotmax hmax
+    -- by_contra! hcon
+    -- push_neg at hcon
+  -- indep_maximal := _
+  -- subset_ground := _
+
+end MapRel
