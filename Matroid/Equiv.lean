@@ -352,15 +352,15 @@ section IsIso
 
 variable {M : Matroid α} {N : Matroid β}
 
-/-- We write `M ≅ N` if there is an isomorphism from `M` to `N`. This is defined as
+/-- We write `M ≂ N` if there is an isomorphism from `M` to `N`. This is defined as
   a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
   even though `M.Iso N` may be 'incorrectly' empty in such cases. -/
 def IsIso : Matroid α → Matroid β → Prop := fun M N ↦
   (M = emptyOn α ∧ N = emptyOn β) ∨ Nonempty (M.Iso N)
 
-infixl:65  " ≅ " => IsIso
+infixl:65  " ≂ " => IsIso
 
-@[simp] theorem isIso_emptyOn_iff {M : Matroid α} {β : Type*} : M ≅ emptyOn β ↔ M = emptyOn α := by
+@[simp] theorem isIso_emptyOn_iff {M : Matroid α} {β : Type*} : M ≂ emptyOn β ↔ M = emptyOn α := by
   constructor
   · rintro (⟨rfl,-⟩ | ⟨⟨i⟩⟩ ); rfl
     rw [← ground_eq_empty_iff, ← i.symm.image_ground]
@@ -368,22 +368,22 @@ infixl:65  " ≅ " => IsIso
   rintro rfl
   exact Or.inl ⟨rfl, rfl⟩
 
-theorem IsIso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := by
+theorem IsIso.symm {M : Matroid α} {N : Matroid β} (h : M ≂ N) : N ≂ M := by
   obtain (⟨hM,hN⟩ | ⟨⟨e⟩⟩)  := h
   · exact Or.inl ⟨hN, hM⟩
   exact Or.inr ⟨e.symm⟩
 
-theorem IsIso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
+theorem IsIso.comm {M : Matroid α} {N : Matroid β} : M ≂ N ↔ N ≂ M :=
   ⟨IsIso.symm, IsIso.symm⟩
 
-theorem IsIso.refl (M : Matroid α) : M ≅ M :=
+theorem IsIso.refl (M : Matroid α) : M ≂ M :=
   Or.inr ⟨Iso.refl M⟩
 
-theorem Iso.isIso (h : M.Iso N) : M ≅ N :=
+theorem Iso.isIso (h : M.Iso N) : M ≂ N :=
   Or.inr ⟨h⟩
 
 theorem IsIso.trans {O : Matroid γ}
-    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
+    (h1 : M ≂ N) (h2 : N ≂ O) : M ≂ O := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨i1⟩⟩) := h1
   · rwa [IsIso.comm, isIso_emptyOn_iff] at h2 ⊢
   obtain (⟨rfl,rfl⟩ | ⟨⟨i2⟩⟩) := h2
@@ -391,7 +391,7 @@ theorem IsIso.trans {O : Matroid γ}
     exact isIso_emptyOn_iff.1 i1.isIso
   exact Or.inr ⟨i1.trans i2⟩
 
-theorem IsIso.empty_or_nonempty_iso (h : M ≅ N) :
+theorem IsIso.empty_or_nonempty_iso (h : M ≂ N) :
     (M = emptyOn α ∧ N = emptyOn β) ∨ (Nonempty α ∧ Nonempty β ∧ Nonempty (M.Iso N)) := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact Or.inl ⟨rfl,rfl⟩
@@ -406,17 +406,17 @@ theorem IsIso.empty_or_nonempty_iso (h : M ≅ N) :
   right
   exact ⟨by assumption, by assumption, ⟨e⟩⟩
 
-theorem IsIso.nonempty_iso [Nonempty α] [Nonempty β] (h : M ≅ N) :
+theorem IsIso.nonempty_iso [Nonempty α] [Nonempty β] (h : M ≂ N) :
     Nonempty (M.Iso N) := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact ⟨Iso.of_emptyOn⟩
   exact ⟨e⟩
 
-/-- Noncomputably choose an `Iso M N` from `M ≅ N` whenever both ground types are nonempty -/
-noncomputable def IsIso.iso [Nonempty α] [Nonempty β] (h : M ≅ N) :
+/-- Noncomputably choose an `Iso M N` from `M ≂ N` whenever both ground types are nonempty -/
+noncomputable def IsIso.iso [Nonempty α] [Nonempty β] (h : M ≂ N) :
     Iso M N := h.nonempty_iso.some
 
-theorem IsIso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
+theorem IsIso.finite_iff (h : M ≂ N) : M.Finite ↔ N.Finite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact iff_of_true (finite_emptyOn α) (finite_emptyOn β)
   refine ⟨fun ⟨h⟩ ↦ ⟨?_⟩, fun ⟨h⟩ ↦ ⟨?_⟩⟩
@@ -425,30 +425,30 @@ theorem IsIso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
   rw [← encard_ne_top_iff] at h ⊢
   rwa [e.encard_ground_eq]
 
-theorem IsIso.finiteRk_iff (h : M ≅ N) : M.FiniteRk ↔ N.FiniteRk := by
+theorem IsIso.finiteRk_iff (h : M ≂ N) : M.FiniteRk ↔ N.FiniteRk := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
   · apply iff_of_true <;> infer_instance
   exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_base hB, hBfin.image _⟩,
     fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, e.symm.on_base hB, hBfin.image _⟩⟩
 
-theorem IsIso.dual (h : M ≅ N) : M✶ ≅ N✶ := by
+theorem IsIso.dual (h : M ≂ N) : M✶ ≂ N✶ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h
   · exact Or.inl ⟨by simp, by simp⟩
   exact Or.inr ⟨e.dual⟩
 
-theorem isIso_dual_iff : M✶ ≅ N✶ ↔ M ≅ N := by
+theorem isIso_dual_iff : M✶ ≂ N✶ ↔ M ≂ N := by
   refine ⟨fun h ↦ ?_, IsIso.dual⟩
   rw [← dual_dual M, ← dual_dual N]
   exact h.dual
 
-theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
+theorem isIso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≂ emptyOn β := by
   rw [isIso_emptyOn_iff]
 
-@[simp] theorem emptyOn_isIso_iff {M : Matroid α} (β : Type*) : emptyOn β ≅ M ↔ M = emptyOn α := by
+@[simp] theorem emptyOn_isIso_iff {M : Matroid α} (β : Type*) : emptyOn β ≂ M ↔ M = emptyOn α := by
   rw [IsIso.comm, isIso_emptyOn_iff]
 
 theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
-    M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+    M ≂ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
   classical
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain (⟨rfl,hLoopy⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
@@ -475,7 +475,7 @@ theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
 
 
 theorem isIso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
-    M ≅ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
+    M ≂ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
   rw [← isIso_dual_iff, freeOn_dual_eq, isIso_loopyOn_iff, ← eq_dual_iff_dual_eq, dual_ground,
     loopyOn_dual_eq]
 

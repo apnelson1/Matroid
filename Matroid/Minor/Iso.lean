@@ -1,6 +1,8 @@
 import Matroid.Minor.Basic
 import Matroid.Minor.Rank
 import Matroid.Constructions.Basic
+import Matroid.Equiv
+import Matroid.ForMathlib.Other
 
 namespace Matroid
 
@@ -22,14 +24,14 @@ noncomputable def Iso.contract (e : Iso M N) (hC : C ⊆ M.E) :
 /-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
   defined to be type-heterogeneous.  -/
 def IsoMinor (N : Matroid β) (M : Matroid α) : Prop :=
-  ∃ M' : Matroid α, M' ≤m M ∧ N ≅ M'
+  ∃ M' : Matroid α, M' ≤m M ∧ N ≂ M'
 
 infixl:50 " ≤i " => Matroid.IsoMinor
 
 instance isoMinor_refl : IsRefl (Matroid α) (· ≤i ·) :=
   ⟨fun M ↦ ⟨M, Minor.refl, IsIso.refl M⟩⟩
 
-theorem IsIso.isoMinor (h : M ≅ N) : M ≤i N :=
+theorem IsIso.isoMinor (h : M ≂ N) : M ≤i N :=
   ⟨N, Minor.refl, h⟩
 
 theorem Iso.isoMinor (e : Iso N M) : N ≤i M :=
@@ -48,7 +50,7 @@ theorem Iso.isoMinor (e : Iso N M) : N ≤i M :=
   rintro rfl
   apply emptyOn_isoMinor
 
-theorem Minor.trans_isIso {M N : Matroid α} {M' : Matroid β} (h : N ≤m M) (hi : M ≅ M') :
+theorem Minor.trans_isIso {M N : Matroid α} {M' : Matroid β} (h : N ≤m M) (hi : M ≂ M') :
     N ≤i M' := by
   obtain (⟨rfl,rfl⟩ | ⟨-, -, ⟨i⟩⟩) := hi.empty_or_nonempty_iso
   · simpa using h
@@ -91,7 +93,7 @@ section IsoRestr
 
 /-- Type-heterogeneous statement that `N` is isomorphic to a restriction of `M` -/
 def IsoRestr (N : Matroid β) (M : Matroid α) : Prop :=
-  ∃ M' : Matroid α, M' ≤r M ∧ N ≅ M'
+  ∃ M' : Matroid α, M' ≤r M ∧ N ≂ M'
 
 infixl:50 " ≤ir " => Matroid.IsoRestr
 
@@ -105,7 +107,7 @@ theorem Restriction.IsoRestr {N M : Matroid α} (h : N ≤r M) : N ≤ir M :=
 theorem IsoRestr.refl (M : Matroid α) : M ≤ir M :=
   Restriction.refl.IsoRestr
 
-theorem IsIso.isoRestr (h : N ≅ M) : M ≤ir N :=
+theorem IsIso.isoRestr (h : N ≂ M) : M ≤ir N :=
   ⟨N, Restriction.refl, h.symm⟩
 
 @[simp] theorem emptyOn_isoRestr (β : Type*) (M : Matroid α) : emptyOn β ≤ir M :=
@@ -114,7 +116,7 @@ theorem IsIso.isoRestr (h : N ≅ M) : M ≤ir N :=
 @[simp] theorem isoRestr_emptyOn_iff {M : Matroid α} : M ≤ir emptyOn β ↔ M = emptyOn α :=
   ⟨fun h ↦ isoMinor_emptyOn_iff.1 h.isoMinor, by rintro rfl; simp⟩
 
-theorem Restriction.trans_isIso {N M : Matroid α} {M' : Matroid β} (h : N ≤r M) (h' : M ≅ M') :
+theorem Restriction.trans_isIso {N M : Matroid α} {M' : Matroid β} (h : N ≤r M) (h' : M ≂ M') :
     N ≤ir M' := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨i⟩⟩) := h'
   · simpa using h

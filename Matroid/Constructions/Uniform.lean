@@ -118,7 +118,7 @@ theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠
     contract_spanning_iff, unifOn_spanning_iff', unifOn_spanning_iff', tsub_le_iff_right,
     iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true,
      ← encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff,
-    and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_distrib_left,
+    and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_inter_distrib_left,
     and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left,
     subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
   · exact ((tsub_le_self).trans_lt (WithTop.coe_lt_top k)).ne
@@ -218,7 +218,7 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
-theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
+theorem isIso_unif_iff : M ≂ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
   obtain (rfl | b) := b
   · rw []
     simp only [Nat.zero_eq, eq_emptyOn, isIso_emptyOn_iff, Nat.cast_zero, encard_eq_zero,
@@ -247,16 +247,16 @@ theorem isIso_unif_iff : M ≅ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard =
 
 /-- The forwards direction of `isIso_unif_iff`, stated existentially so that `M` and `b` can be
   substituted out of the context with `obtain ⟨_, rfl, rfl⟩ := h`.  -/
-theorem exists_of_isIso_unif (h : M ≅ unif a b) : ∃ X, M = unifOn X a ∧ X.encard = b :=
+theorem exists_of_isIso_unif (h : M ≂ unif a b) : ∃ X, M = unifOn X a ∧ X.encard = b :=
   ⟨M.E, isIso_unif_iff.1 h⟩
 
 theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
-  set R : Set (Fin b') := range (Fin.castLE hbb')
-  have hM : ((unif a b') ↾ R) ≅ unif a b
+  set R : Set (Fin b') := range (Fin.castLE hbb') with hR
+  have hM : ((unif a b') ↾ R) ≂ unif a b
   · rw [isIso_unif_iff, eq_iff_indep_iff_indep_forall]
     simp only [restrict_ground_eq, unifOn_ground_eq, restrict_indep_iff,
       unif_indep_iff, unifOn_indep_iff, implies_true, forall_const, and_self, true_and]
-    rw [← image_univ, Function.Injective.encard_image, encard_univ_fin]
+    rw [hR, ← image_univ, Function.Injective.encard_image, encard_univ_fin]
     exact (Fin.castLEEmb hbb').injective
   exact ⟨_, restrict_minor _ (by simp), hM.symm⟩
 
@@ -287,7 +287,7 @@ theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
   · zify at hr'; simpa using hr'
   linarith
 
-@[simp] theorem isIso_line_iff {n : ℕ} : M ≅ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
 theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)

@@ -18,14 +18,14 @@ section Invariant
 
 /-- A matroid invariant is a parameter or property that is invariant under isomorphism. -/
 class Invariant {η : Type} (f : ∀ {α : Type u}, Matroid α → η) : Prop :=
-  (on_iso : ∀ {α β : Type u} {M : Matroid α} {N : Matroid β}, M ≅ N → f M = f N)
+  (on_iso : ∀ {α β : Type u} {M : Matroid α} {N : Matroid β}, M ≂ N → f M = f N)
 
 theorem IsIso.pred_iff_pred {P : ∀ {η : Type u}, Matroid η → Prop} [Invariant P]
-    {α β : Type u} {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) : P M ↔ P N := by
+    {α β : Type u} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) : P M ↔ P N := by
   simpa using Invariant.on_iso (f := P) hMN
 
 theorem IsIso.pred_of_pred [Invariant P] {α β : Type u} {M : Matroid α} {N : Matroid β}
-  (hMN : M ≅ N) (hM : P M) : P N := hMN.pred_iff_pred.1 hM
+  (hMN : M ≂ N) (hM : P M) : P N := hMN.pred_iff_pred.1 hM
 
 -- theorem Invariant.and {P Q : ∀ {η : Type u}, Matroid η → Prop} (hP : Invariant P)
 --     (hQ : Invariant Q) : Invariant (fun M ↦ P M ∧ Q M) := by

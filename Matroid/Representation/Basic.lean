@@ -7,14 +7,13 @@ import Matroid.ForMathlib.LinearAlgebra.Vandermonde
 import Matroid.Map
 import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
+import Matroid.ForMathlib.Other
 
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix
-
-set_option autoImplicit false
 
 namespace Matroid
 
@@ -31,12 +30,12 @@ def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] 
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
   (valid' : M.IsRep 𝔽 to_fun)
 
-instance : FunLike (M.Rep 𝔽 W) α (fun _ ↦ W) where
+instance : DFunLike (M.Rep 𝔽 W) α (fun _ ↦ W) where
   coe v := v.to_fun
   coe_injective' := by rintro ⟨f,h⟩ ⟨f', h'⟩; simp
 
 instance coeFun : CoeFun (M.Rep 𝔽 W) fun _ ↦ (α → W) :=
-  ⟨FunLike.coe⟩
+  ⟨DFunLike.coe⟩
 
 @[simp] theorem Rep.to_fun_eq_coe (v : M.Rep 𝔽 W) : v.to_fun = (v : α → W) := rfl
 
@@ -176,22 +175,22 @@ noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep �
     (v.restrict X : α → W) = indicator X v := rfl
 
 /-- A representation gives a representation of a preimage -/
-def Rep.preimage {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.preimage f).Rep 𝔽 W :=
+def Rep.comap {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.comap f).Rep 𝔽 W :=
   rep_of_ground (v ∘ f)
   ( by
-    simp only [preimage_ground_eq, support_subset_iff, comp_apply, ne_eq, mem_preimage]
+    simp only [comap_ground_eq, support_subset_iff, comp_apply, ne_eq, mem_preimage]
     exact fun x ↦ Not.imp_symm <| Rep.eq_zero_of_not_mem_ground _ )
   ( by
     intro I _
-    rw [preimage_indep_iff, v.indep_iff, restrict_eq, restrict_eq, comp.assoc]
+    rw [comap_indep_iff, v.indep_iff, restrict_eq, restrict_eq, comp.assoc]
     refine' ⟨fun ⟨h,hInj⟩ ↦ _, fun h ↦ ⟨LinearIndependent.image_of_comp _ _ _ h, ?_⟩⟩
     · exact h.comp (imageFactorization f I) (hInj.imageFactorization_injective)
     rintro x hx y hy hxy
     have hi := h.injective (a₁ := ⟨x,hx⟩) (a₂ := ⟨y,hy⟩)
     simpa only [comp_apply, Subtype.mk.injEq, hxy, true_imp_iff] using hi )
 
-@[simp] theorem Rep.preimage_apply {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) :
-    (v.preimage f : α → W) = v ∘ f := rfl
+@[simp] theorem Rep.comap_apply {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) :
+    (v.comap f : α → W) = v ∘ f := rfl
 
 
 -- /- this proof is a mess. -/
@@ -224,18 +223,20 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 @[simp] theorem Rep.ofEq_apply {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) :
   (v.ofEq h : α → W) = v := rfl
 
-def Rep.onGround (v : M.Rep 𝔽 W) : (M.onGround M.E).Rep 𝔽 W := v.preimage (incl M.E)
+noncomputable def Rep.onGround (v : M.Rep 𝔽 W) : (M.restrictSubtype M.E).Rep 𝔽 W :=
+  (v.restrict M.E).comap (incl M.E)
 
-def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
 
-/-- Carry a representation across a matroid isomorphism -/
+-- def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
+
+/- Carry a representation across a matroid isomorphism -/
 noncomputable def Rep.iso {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) :
     N.Rep 𝔽 W :=
-  ((v.preimage i.symm).restrict N.E).ofEq i.symm.eq_preimage.symm
+  ((v.comap i.symm).restrict N.E).ofEq i.symm.eq_comap.symm
 
-theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) {x : β}
-    (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
-  simp [iso, indicator_of_mem hx]
+-- theorem Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) {x : β}
+--     (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
+--   simp [iso, indicator_of_mem hx]
 
 /-- The `IndepMatroid` whose independent sets are the sets with linearly independent image-/
 def indepMatroidOnUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : IndepMatroid α :=
@@ -357,13 +358,13 @@ def matroidOfSubtypeFun {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
   rintro ⟨I, hI, rfl⟩
   simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
   set  g : (Subtype.val '' I) → I := fun x ↦ ⟨⟨x,
-    ( by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simp)⟩, (by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simpa )⟩
+    ( by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simp)⟩, (by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simpa )⟩ with hg
   convert hI.comp g ?_
   · ext x
     obtain ⟨_,⟨x,hx,rfl⟩⟩ := x
     simp [Subtype.val_injective.extend_apply]
   rintro ⟨_,⟨⟨x,hxE⟩,hx,rfl⟩⟩ ⟨_,⟨⟨y,hyE⟩,hy,rfl⟩⟩ hxy
-  simpa using hxy
+  simpa [hg] using hxy
 
 noncomputable def repOfFun' (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     (matroidOfFun 𝔽 f E).Rep 𝔽 W where
@@ -592,12 +593,12 @@ theorem representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
   (loopyRep E 𝔽).representable
 
 theorem Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
-    (h : M.Representable 𝔽) (hMN : M ≅ N) : N.Representable 𝔽 := by
+    (h : M.Representable 𝔽) (hMN : M ≂ N) : N.Representable 𝔽 := by
   obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
   · apply representable_emptyOn
   exact (h.rep.iso e).representable
 
-theorem IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≅ N) :
+theorem IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) :
     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
 

@@ -444,7 +444,7 @@ theorem simple_iff_forall_pair_indep :
   simp only [mem_singleton_iff, insert_eq_of_mem, indep_singleton] at hee
   exact hee.parallel_self
 
-theorem Simple.map_iso {α β : Type*} {M : Matroid α} {N : Matroid β} (hM : M.Simple) (hMN : M ≅ N) :
+theorem Simple.map_iso {α β : Type*} {M : Matroid α} {N : Matroid β} (hM : M.Simple) (hMN : M ≂ N) :
     N.Simple := by
   rw [simple_iff_forall_pair_indep] at *
   rintro e f he hf
@@ -789,7 +789,7 @@ noncomputable def simplificationWrt_iso_simplification (hc : M.ParallelChoiceFun
   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
 
 theorem simplificationWrt_isIso_simplification (hc : M.ParallelChoiceFunction c) :
-    M.simplificationWrt c ≅ M.simplification :=
+    M.simplificationWrt c ≂ M.simplification :=
   (simplificationWrt_iso_simplification hc).isIso
 
 theorem simplificationWrt_restriction (hc : M.ParallelChoiceFunction c) :

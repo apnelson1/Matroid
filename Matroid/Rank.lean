@@ -710,7 +710,7 @@ theorem freeOn_er_eq (hXE : X ⊆ E) : (freeOn E).er X = X.encard := by
 theorem freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
   rw [← er_toNat_eq_r, freeOn_er_eq hXE, ncard_def]
 
-theorem IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≅ N) :
+theorem IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≂ N) :
     M.erk = N.erk := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
 
