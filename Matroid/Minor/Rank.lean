@@ -8,45 +8,45 @@ variable {α : Type*} {M N : Matroid α} {I J C D X Y Z : Set α} {e f : α}
 
 section Delete
 
-@[simp] theorem delete_er_eq' (M : Matroid α) (D X : Set α) : (M ⧹ D).er X = M.er (X \ D) := by
+@[simp] theorem delete_er_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).er X = M.er (X \ D) := by
   rw [← restrict_compl, restrict_er_eq', diff_eq, inter_comm M.E, ← inter_assoc, ← diff_eq,
     er_inter_ground_eq]
 
-theorem delete_er_eq (M : Matroid α) (h : Disjoint X D) : (M ⧹ D).er X = M.er X := by
+theorem delete_er_eq (M : Matroid α) (h : Disjoint X D) : (M ＼ D).er X = M.er X := by
   rwa [delete_er_eq', sdiff_eq_left.2]
 
 theorem delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
-    (M ⧹ D).er X = (M ⧹ D).er (X \ D) := by
+    (M ＼ D).er X = (M ＼ D).er (X \ D) := by
   simp
 
-@[simp] theorem delete_rFin_iff : (M ⧹ D).rFin X ↔ M.rFin (X \ D) := by
+@[simp] theorem delete_rFin_iff : (M ＼ D).rFin X ↔ M.rFin (X \ D) := by
   rw [← er_lt_top_iff, delete_er_eq', er_lt_top_iff]
 
-theorem Coindep.delete_erk_eq (hX : M.Coindep X) : (M ⧹ X).erk = M.erk := by
+theorem Coindep.delete_erk_eq (hX : M.Coindep X) : (M ＼ X).erk = M.erk := by
   rw [coindep_iff_cl_compl_eq_ground] at hX
   rw [erk_eq_er_ground, delete_ground, delete_er_eq', diff_diff, union_self, ← er_cl_eq, hX,
     erk_eq_er_ground]
 
-theorem Indep.delete_erk_dual_eq (hI : M.Indep I) : (M ⧸ I)✶.erk = M✶.erk := by
+theorem Indep.delete_erk_dual_eq (hI : M.Indep I) : (M ／ I)✶.erk = M✶.erk := by
   rw [← hI.coindep.delete_erk_eq, contract_dual_eq_dual_delete]
 
 end Delete
 
-/-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ⧸ X`,
-  and equal to the minimum number of elements that need to be added to `X` to span `Y`.
-  The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
-  expression when `X ⊆ Y`, and sometimes more generally. -/
-@[pp_dot] noncomputable def relRank (M : Matroid α) (X Y : Set α) : ℕ∞ := (M ⧸ X).er Y
+/-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ／ X`,
+and equal to the minimum number of elements that need to be added to `X` to span `Y`.
+The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
+expression when `X ⊆ Y`, and sometimes more generally. -/
+@[pp_dot] noncomputable def relRank (M : Matroid α) (X Y : Set α) : ℕ∞ := (M ／ X).er Y
 
-theorem relRank_eq_er_contract (M : Matroid α) (X Y : Set α) : M.relRank X Y = (M ⧸ X).er Y := rfl
+theorem relRank_eq_er_contract (M : Matroid α) (X Y : Set α) : M.relRank X Y = (M ／ X).er Y := rfl
 
 theorem relRank_le_er (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ M.er Y := by
-  obtain ⟨I, hI⟩ := (M ⧸ X).exists_basis (Y ∩ (M ⧸ X).E)
+  obtain ⟨I, hI⟩ := (M ／ X).exists_basis (Y ∩ (M ／ X).E)
   rw [relRank, ← er_inter_ground_eq, ← hI.encard, ← hI.indep.of_contract.er]
   exact M.er_mono (hI.subset.trans (inter_subset_left _ _))
 
 theorem relRank_eq_er_diff_contract (M : Matroid α) (X Y : Set α) :
-    M.relRank X Y = (M ⧸ X).er (Y \ X) := by
+    M.relRank X Y = (M ／ X).er (Y \ X) := by
   rw [relRank_eq_er_contract, ← er_cl_eq, contract_cl_eq, eq_comm, ← er_cl_eq, contract_cl_eq,
     diff_union_self]
 
@@ -55,7 +55,7 @@ theorem relRank_eq_diff_right (M : Matroid α) (X Y : Set α) : M.relRank X Y = 
 
 theorem relRank_mono_right (M : Matroid α) (X : Set α) {Y Y' : Set α} (hYY' : Y ⊆ Y') :
     M.relRank X Y ≤ M.relRank X Y' :=
-  (M ⧸ X).er_mono hYY'
+  (M ／ X).er_mono hYY'
 
 theorem relRank_mono_left (M : Matroid α) {X X' : Set α} (Y : Set α) (h : X ⊆ X') :
     M.relRank X' Y ≤ M.relRank X Y := by
@@ -79,8 +79,8 @@ theorem relRank_eq_zero_of_subset (M : Matroid α) (h : Y ⊆ X) : M.relRank X Y
 @[simp] theorem relRank_cl_right (M : Matroid α) (X Y : Set α) :
     M.relRank X (M.cl Y) = M.relRank X Y := by
   refine le_antisymm ?_ ?_
-  · rw [relRank_eq_er_diff_contract,  relRank, ← (M ⧸ X).er_cl_eq Y, contract_cl_eq]
-    exact (M ⧸ X).er_mono (diff_subset_diff_left (M.cl_subset_cl (subset_union_left _ _)))
+  · rw [relRank_eq_er_diff_contract,  relRank, ← (M ／ X).er_cl_eq Y, contract_cl_eq]
+    exact (M ／ X).er_mono (diff_subset_diff_left (M.cl_subset_cl (subset_union_left _ _)))
   rw [relRank, ← er_inter_ground_eq, contract_ground, ← inter_diff_assoc]
   exact er_mono _ <| (diff_subset _ _).trans
     ((M.subset_cl _).trans (M.cl_subset_cl (inter_subset_left _ _)))
@@ -189,7 +189,7 @@ theorem relRank_eq_zero_iff' : M.relRank X Y = 0 ↔ Y ∩ M.E ⊆ M.cl X := by
 theorem relRank_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.relRank X Y = 1 ↔ ∃ e ∈ Y \ M.cl X, Y ⊆ M.cl (insert e X) := by
   rw [← relRank_cl_left, relRank_eq_er_diff_contract, er_eq_one_iff
-    (show Y \ (M.cl X) ⊆ (M ⧸ (M.cl X)).E from diff_subset_diff_left hY)]
+    (show Y \ (M.cl X) ⊆ (M ／ (M.cl X)).E from diff_subset_diff_left hY)]
   simp only [contract_cl_eq, singleton_union, diff_subset_iff, diff_union_self,
     cl_insert_cl_eq_cl_insert, union_diff_self, contract_nonloop_iff, cl_cl,
     union_eq_self_of_subset_left (M.cl_subset_cl (subset_insert _ X))]
@@ -209,17 +209,17 @@ theorem relRank_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) 
   exact Or.inl ⟨_, ⟨hY'.1, he⟩, hY'.2⟩
 section Contract
 
-theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ⧸ C).er X ≤ M.er X :=
+theorem er_contract_le_er (M : Matroid α) (C X : Set α) : (M ／ C).er X ≤ M.er X :=
   by
-  obtain ⟨I, hI⟩ := (M ⧸ C).exists_basis (X ∩ (M ⧸ C).E)
+  obtain ⟨I, hI⟩ := (M ／ C).exists_basis (X ∩ (M ／ C).E)
   rw [← er_inter_ground_eq, ← hI.encard, ← hI.indep.of_contract.er]
   exact M.er_mono (hI.subset.trans (inter_subset_left _ _))
 
-theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ⧸ C).rFin X := by
+theorem rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ／ C).rFin X := by
   rw [← er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
 
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
-    (M ⧸ C).rFin (X \ C) :=
+    (M ／ C).rFin (X \ C) :=
   (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
 
 theorem Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by

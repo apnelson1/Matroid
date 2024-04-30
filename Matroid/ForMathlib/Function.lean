@@ -27,6 +27,12 @@ lemma Set.InjOn.image_diff {f : α → β} (h : InjOn f s) (hst : t ⊆ s) :
     f '' (s \ t) = f '' s \ f '' t := by
   rw [h.image_diff', inter_eq_self_of_subset_right hst]
 
+theorem Set.InjOn.imageFactorization_injective (h : InjOn f s) :
+    Injective (s.imageFactorization f) := by
+  rintro ⟨x,hx⟩ ⟨y,hy⟩ h'
+  simp_rw [imageFactorization, Subtype.mk.injEq, h.eq_iff hx hy] at h'
+  simp only [h']
+
 section inverse
 
 lemma Function.invFunOn_injOn_image_preimage [Nonempty α] (f : α → β) (S : Set α) :
@@ -96,11 +102,6 @@ theorem Set.BijOn.extend {f : α → β} {s : Set α} {t t' : Set β} (h : BijOn
     (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
   simpa using h.extend_of_subset (subset_univ s) htt' (by simpa)
 
-theorem Set.InjOn.imageFactorization_injective (h : InjOn f s) :
-    Injective (s.imageFactorization f) := by
-  rintro ⟨x,hx⟩ ⟨y,hy⟩ h'
-  simp_rw [imageFactorization, Subtype.mk.injEq, h.eq_iff hx hy] at h'
-  simp only [h']
 
 
 section Update

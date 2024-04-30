@@ -1,6 +1,6 @@
 import Matroid.Rank
 
-variable {α : Type*} {M : Matroid α} {E : Set α}
+variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
 
 namespace Matroid
 
@@ -9,7 +9,8 @@ open Set
 section Truncate
 
 /-- The `IndepMatroid` whose independent sets are the `M`-independent sets of size at most `k`. -/
-def truncate_indepMatroid (M : Matroid α) (k : ℕ) : IndepMatroid α := IndepMatroid.ofBddAugment
+def truncateNat (M : Matroid α) (k : ℕ) : Matroid α :=
+  IndepMatroid.matroid <| IndepMatroid.ofBddAugment
   (E := M.E)
   (Indep := fun I ↦ M.Indep I ∧ I.encard ≤ k)
   (indep_empty := by simp)
@@ -23,34 +24,34 @@ def truncate_indepMatroid (M : Matroid α) (k : ℕ) : IndepMatroid α := IndepM
   (subset_ground := fun _ h ↦ h.1.subset_ground)
 
 /-- The truncation of a matroid to rank `k`. The independent sets of the truncation
-  are the independent sets of the matroid of size at most `k`.  -/
+are the independent sets of the matroid of size at most `k`.  -/
 def truncate (M : Matroid α) (k : ℕ∞) : Matroid α :=
-  Option.casesOn k M <| fun k ↦ (M.truncate_indepMatroid k).matroid
+  IndepMatroid.matroid <| IndepMatroid.ofExistsMatroid
+    (E := M.E)
+    (Indep := fun I ↦ M.Indep I ∧ I.encard ≤ k)
+    (hM :=  k.recTopCoe ⟨M, rfl, by simp⟩
+      (fun k ↦ ⟨M.truncateNat k, rfl, fun _ ↦ by simp [truncateNat]⟩))
 
-@[simp] theorem truncate_top (M : Matroid α) : M.truncate ⊤ = M := rfl
+@[simp] theorem truncate_top (M : Matroid α) : M.truncate ⊤ = M :=
+  eq_of_indep_iff_indep_forall rfl (by simp [truncate, IndepMatroid.ofExistsMatroid])
 
 @[simp] theorem truncate_indep_iff : (M.truncate k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) := by
-  cases k <;> simp [truncate, truncate_indepMatroid, WithTop.none_eq_top,
-    WithTop.some_eq_coe, le_top]
+  simp [truncate, IndepMatroid.ofExistsMatroid]
 
-@[simp] theorem truncate_ground_eq : (M.truncate k).E = M.E := by
-  cases k <;> rfl
+@[simp] theorem truncate_ground_eq : (M.truncate k).E = M.E := rfl
 
 @[simp] theorem truncate_zero (M : Matroid α) : M.truncate 0 = loopyOn M.E := by
-  refine' eq_of_indep_iff_indep_forall rfl _
-  simp only [truncate_ground_eq, truncate_indep_iff, nonpos_iff_eq_zero, encard_eq_zero,
-    loopyOn_indep_iff, and_iff_right_iff_imp]
-  rintro I - rfl; apply empty_indep
+  refine eq_of_indep_iff_indep_forall rfl ?_
+  suffices ∀ I ⊆ M.E, I = ∅ → M.Indep I by simpa [truncate, IndepMatroid.ofExistsMatroid]
+  rintro I - rfl; exact M.empty_indep
 
 @[simp] theorem truncate_emptyOn (α : Type*) (k : ℕ∞) : (emptyOn α).truncate k = emptyOn α := by
   rw [← ground_eq_empty_iff, truncate_ground_eq, emptyOn_ground]
 
 @[simp] theorem truncate_loopyOn (E : Set α) (k : ℕ∞) : (loopyOn E).truncate k = loopyOn E := by
   apply eq_of_indep_iff_indep_forall (by simp)
-  simp only [truncate_ground_eq, loopyOn_ground, truncate_indep_iff, loopyOn_indep_iff,
-    and_iff_left_iff_imp]
-  rintro _ _ rfl
-  simp
+  suffices ∀ I ⊆ E, I = ∅ → encard I ≤ k by simpa
+  rintro _ - rfl; simp
 
 theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncate k = M := by
   refine eq_of_indep_iff_indep_forall truncate_ground_eq (fun I _ ↦ ?_)

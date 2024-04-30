@@ -1,6 +1,6 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.PartialEquiv
-import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Function
 
 
 -- TODO : refactor (maybe using `FunLike` so `toPartialEquiv` is invisible in the infoview)

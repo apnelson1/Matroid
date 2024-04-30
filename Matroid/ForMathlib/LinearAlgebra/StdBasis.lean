@@ -315,7 +315,7 @@ theorem orthSpace_eq [Fintype η] (U : Submodule R (η → R)) :
   intro y hy
   convert h y hy using 1
   simp [Module.piEquiv_apply_symm]
-  convert FunLike.congr_fun ((Pi.basisFun R η).sum_dual_apply_smul_coord w) y using 1
+  convert DFunLike.congr_fun ((Pi.basisFun R η).sum_dual_apply_smul_coord w) y using 1
   simp only [Pi.basisFun_apply, LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.smul_apply,
     Basis.coord_apply, Pi.basisFun_repr, smul_eq_mul]
   rfl

@@ -11,12 +11,12 @@ section Iso
 
 /-- Deletions of isomorphic matroids are isomorphic. TODO : Actually define as a term. -/
 noncomputable def Iso.delete (e : Iso M N) (hD : D ⊆ M.E) :
-    Iso (M ⧹ D) (N ⧹ e '' D) := by
+    Iso (M ＼ D) (N ＼ e '' D) := by
   convert Iso.restrict e (M.E \ D) using 1
   rw [e.injOn_ground.image_diff hD, e.image_ground, ← restrict_compl]
 
 noncomputable def Iso.contract (e : Iso M N) (hC : C ⊆ M.E) :
-    Iso (M ⧸ C) (N ⧸ e '' C) :=
+    Iso (M ／ C) (N ／ e '' C) :=
   (e.dual.delete hC).dual
 
 /-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`. This is
@@ -129,7 +129,7 @@ theorem IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ 
   exact ⟨N₁', hN₁'N₂.trans hN₂M₃, hN₁M₁.trans hN₁N₁'⟩
 
 theorem isoMinor_iff_exists_contract_isoRestr {N : Matroid α} {M : Matroid β} :
-    N ≤i M ↔ ∃ C, M.Indep C ∧ N ≤ir M ⧸ C := by
+    N ≤i M ↔ ∃ C, M.Indep C ∧ N ≤ir M ／ C := by
   refine ⟨fun h ↦ ?_, fun ⟨C, _, hN⟩ ↦ hN.isoMinor.trans (M.contract_minor C).isoMinor ⟩
   obtain ⟨N', hN'M, hi⟩ := h
   obtain ⟨C, hC, hN', -⟩ := hN'M.exists_contract_spanning_restrict

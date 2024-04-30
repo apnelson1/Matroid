@@ -3,12 +3,10 @@ import Matroid.Map
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Other
 
-
 open Set
 
 variable {α β γ : Type*} {M : Matroid α} {N : Matroid β} {R : Matroid γ} {e : PartialEquiv α β}
   {f : PartialEquiv β γ}
-
 
 
 namespace Matroid
@@ -237,43 +235,43 @@ theorem IsIso.of_empty [Nonempty α] [Nonempty β] :
 
 section Iso
 
-/-- We write `M ≅ N` if there is an isomorphism from `M` to `N`. This is defined as
-  a disjunction so it behaves mathematically correctly even when `α` or `β` is empty,
-  even though there may be no `e` with `IsIso e M N` in such cases.
-  (The aim is to save on unneccessary `Nonempty` assumptions in applications,
-  but perhaps this isn't worth the hassle) -/
+/-- We write `M ≃ N` if there is an isomorphism from `M` to `N`. This is defined as a disjunction
+so it behaves mathematically correctly even when `α` or `β` is empty,
+even though there may be no `e` with `IsIso e M N` in such cases.
+(The aim is to save on unneccessary `Nonempty` assumptions in applications,
+but perhaps this isn't worth the hassle) -/
 def Iso : Matroid α → Matroid β → Prop := fun M N ↦
   (M = emptyOn α ∧ N = emptyOn β) ∨ ∃ e, IsIso e M N
 
-infixl:65  " ≅ " => Iso
+infixl:65  " ≃ " => Iso
 
-theorem Iso.empty_or_exists_isIso (h : M ≅ N) :
+theorem Iso.empty_or_exists_isIso (h : M ≃ N) :
     (M = emptyOn α ∧ N = emptyOn β) ∨ ∃ e, IsIso e M N := h
 
 @[simp] theorem iso_emptyOn_iff {M : Matroid α} {β : Type*} :
-    M ≅ emptyOn β ↔ M = emptyOn α := by
+    M ≃ emptyOn β ↔ M = emptyOn α := by
   constructor
   · rintro (⟨rfl,-⟩ | ⟨⟨e, he⟩⟩ ); rfl
     exact he.groundEquiv.eq_emptyOn
   rintro rfl
   exact Or.inl ⟨rfl, rfl⟩
 
-theorem Iso.symm {M : Matroid α} {N : Matroid β} (h : M ≅ N) : N ≅ M := by
+theorem Iso.symm {M : Matroid α} {N : Matroid β} (h : M ≃ N) : N ≃ M := by
   obtain (⟨hM,hN⟩ | ⟨⟨e,he⟩⟩)  := h
   · exact Or.inl ⟨hN, hM⟩
   exact Or.inr ⟨e.symm, he.symm⟩
 
-theorem Iso.comm {M : Matroid α} {N : Matroid β} : M ≅ N ↔ N ≅ M :=
+theorem Iso.comm {M : Matroid α} {N : Matroid β} : M ≃ N ↔ N ≃ M :=
   ⟨Iso.symm, Iso.symm⟩
 
-theorem Iso.refl (M : Matroid α) : M ≅ M :=
+theorem Iso.refl (M : Matroid α) : M ≃ M :=
   Or.inr <| ⟨_, IsIso.refl M⟩
 
-theorem IsIso.iso (h : IsIso e M N) : M ≅ N :=
+theorem IsIso.iso (h : IsIso e M N) : M ≃ N :=
   Or.inr ⟨e,h⟩
 
 theorem Iso.trans {O : Matroid γ}
-    (h1 : M ≅ N) (h2 : N ≅ O) : M ≅ O := by
+    (h1 : M ≃ N) (h2 : N ≃ O) : M ≃ O := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨i1, hi1⟩⟩) := h1
   · rwa [Iso.comm, iso_emptyOn_iff] at h2 ⊢
   obtain (⟨rfl,rfl⟩ | ⟨⟨i2, hi2⟩⟩) := h2
@@ -282,17 +280,17 @@ theorem Iso.trans {O : Matroid γ}
   have := hi1.trans hi2
   exact Or.inr ⟨_, hi1.trans hi2⟩
 
-theorem Iso.exists_isIso [Nonempty α] [Nonempty β] (h : M ≅ N) :
+theorem Iso.exists_isIso [Nonempty α] [Nonempty β] (h : M ≃ N) :
     ∃ e, IsIso e M N := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e, he⟩⟩) := h
   · exact ⟨_, IsIso.of_empty⟩
   exact ⟨e,he⟩
 
-theorem Nonempty.iso_iff_exists_isIso (hM : M.Nonempty) : M ≅ N ↔ ∃ e, IsIso e M N := by
+theorem Nonempty.iso_iff_exists_isIso (hM : M.Nonempty) : M ≃ N ↔ ∃ e, IsIso e M N := by
   rw [Iso, ← ground_eq_empty_iff, or_iff_right]
   exact not_and.2 fun a _ ↦ hM.ground_nonempty.ne_empty a
 
-theorem Iso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
+theorem Iso.finite_iff (h : M ≃ N) : M.Finite ↔ N.Finite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
   · exact iff_of_true (finite_emptyOn α) (finite_emptyOn β)
   refine ⟨fun ⟨hfin⟩ ↦ ⟨?_⟩, fun ⟨hfin⟩ ↦ ⟨?_⟩⟩
@@ -301,30 +299,30 @@ theorem Iso.finite_iff (h : M ≅ N) : M.Finite ↔ N.Finite := by
   rw [← he.symm.groundEquiv.image_ground]
   exact hfin.image _
 
-theorem Iso.finiteRk_iff (h : M ≅ N) : M.FiniteRk ↔ N.FiniteRk := by
+theorem Iso.finiteRk_iff (h : M ≃ N) : M.FiniteRk ↔ N.FiniteRk := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
   · apply iff_of_true <;> infer_instance
   exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, he.image_base hB, hBfin.image _⟩,
     fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, he.symm.image_base hB, hBfin.image _⟩⟩
 
-theorem Iso.dual (h : M ≅ N) : M✶ ≅ N✶ := by
+theorem Iso.dual (h : M ≃ N) : M✶ ≃ N✶ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e,he⟩⟩) := h
   · exact Or.inl ⟨by simp, by simp⟩
   exact Or.inr ⟨_,he.dual⟩
 
-theorem isIso_dual_iff : M✶ ≅ N✶ ↔ M ≅ N := by
+theorem isIso_dual_iff : M✶ ≃ N✶ ↔ M ≃ N := by
   refine ⟨fun h ↦ ?_, Iso.dual⟩
   rw [← dual_dual M, ← dual_dual N]
   exact h.dual
 
-theorem iso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≅ emptyOn β := by
+theorem iso_emptyOn_emptyOn (α β : Type*) : emptyOn α ≃ emptyOn β := by
   rw [iso_emptyOn_iff]
 
-@[simp] theorem emptyOn_iso_iff {M : Matroid α} (β : Type*) : emptyOn β ≅ M ↔ M = emptyOn α := by
+@[simp] theorem emptyOn_iso_iff {M : Matroid α} (β : Type*) : emptyOn β ≃ M ↔ M = emptyOn α := by
   rw [Iso.comm, iso_emptyOn_iff]
 
 theorem iso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
-    M ≅ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
+    M ≃ loopyOn E ↔ M = loopyOn M.E ∧ Nonempty (M.E ≃ E) := by
   classical
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
   · simp only [emptyOn_iso_iff, emptyOn_ground, loopyOn_empty, true_and]
@@ -346,7 +344,7 @@ theorem iso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
     exact fun I hI ↦ h I hI.subset_ground hI
 
 theorem iso_freeOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
-    M ≅ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
+    M ≃ freeOn E ↔ M = freeOn M.E ∧ Nonempty (M.E ≃ E) := by
   rw [← isIso_dual_iff, freeOn_dual_eq, iso_loopyOn_iff, ← eq_dual_iff_dual_eq, dual_ground,
     loopyOn_dual_eq]
 
@@ -354,8 +352,7 @@ end Iso
 
 section Map
 
-theorem iso_map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
-    M ≅ M.map f hf := by
+theorem iso_map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : M ≃ M.map f hf := by
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty; simp
   have := hM.nonempty_type
   rw [hM.iso_iff_exists_isIso]
@@ -368,7 +365,7 @@ theorem iso_map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
   rintro _ I hI rfl
   rwa [hf.invFunOn_image hI.subset_ground]
 
-theorem iso_comap (f : α ↪ β) {M : Matroid β} (hfE : range f = M.E) : M.comap f ≅ M := by
+theorem iso_comap (f : α ↪ β) {M : Matroid β} (hfE : range f = M.E) : M.comap f ≃ M := by
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty; simp
   obtain ⟨x,hx⟩ := hM.ground_nonempty
   obtain ⟨y, rfl⟩ := hfE.symm.subset hx
@@ -383,8 +380,6 @@ theorem iso_comap (f : α ↪ β) {M : Matroid β} (hfE : range f = M.E) : M.com
   simp only [BijOn.toPartialEquiv_symm_apply, comap_indep_iff, f.injective.injOn _, and_true]
   intro I hI
   rwa [hf.surjOn.image_invFun_image_subset_eq hI.subset_ground]
-
-
 
 /-
 
@@ -424,7 +419,7 @@ noncomputable def iso_onSubtype [M.Nonempty] (hE : M.E = E) : Iso M (M.onSubtype
   have hne : Nonempty E := by subst hE; exact nonempty_coe_sort.mpr M.ground_nonempty
   exact (comap_iso Subtype.val_injective (by rw [Subtype.range_val, ← hE])).symm
 
-theorem isIso_onSubtype (M : Matroid α) (hE : M.E = E) : M ≅ M.onSubtype E := by
+theorem isIso_onSubtype (M : Matroid α) (hE : M.E = E) : M ≃ M.onSubtype E := by
   obtain (rfl | hM) := M.eq_emptyOn_or_nonempty
   · simp only [emptyOn_ground] at hE; subst hE; simp
   exact (iso_onSubtype hE).isIso

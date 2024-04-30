@@ -135,7 +135,7 @@ theorem parallel_iff_nonloop_nonloop_indep_imp_eq :
     and_iff_left h.1.mem_ground]
   exact fun hi ↦ hne (h.2.2 hi)
 
-theorem Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ⧸ e).Loop f := by
+theorem Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ e).Loop f := by
   rw [loop_iff_mem_cl_empty, contract_elem, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_cl, hne.symm⟩
 
@@ -500,7 +500,7 @@ theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
   exact hne <| h.2 e f hef
 
-theorem Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ⧸ C).Loopless) :
+theorem Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
     M.Loopless := by
   rw [loopless_iff_cl_empty] at *
   rw [contract_loops_eq, diff_eq_empty] at h
@@ -508,7 +508,7 @@ theorem Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h 
   rw [← inter_union_diff (s := M.cl ∅) (t := C), hC.1, empty_union, diff_eq_empty]
   exact (M.cl_subset_cl <| empty_subset C).trans h
 
-theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ⧸ C).Simple) :
+theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
     M.Simple := by
   rw [simple_iff_loopless_eq_of_parallel_forall] at h hC ⊢
   obtain ⟨hl, h⟩ := h
@@ -518,10 +518,10 @@ theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M
   by_cases heC : e ∈ C
   · by_cases hfC : f ∈ C
     · exact hC _ _ hef heC hfC
-    refine by_contra fun hne ↦ not_loop (M ⧸ C) f ?_
+    refine by_contra fun hne ↦ not_loop (M ／ C) f ?_
     exact (hef.loop_of_contract hne).minor ⟨hef.mem_ground_right, hfC⟩ (contract_minor_of_mem _ heC)
   by_cases hfC : f ∈ C
-  · refine by_contra fun (hne : e ≠ f) ↦ not_loop (M ⧸ C) e ?_
+  · refine by_contra fun (hne : e ≠ f) ↦ not_loop (M ／ C) e ?_
     exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
       (contract_minor_of_mem _ hfC)
   apply h
@@ -529,7 +529,7 @@ theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M
     cl_union_cl_left_eq, and_iff_left rfl]
   exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
 
-theorem Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ⧸ I).Simple) : M.Simple :=
+theorem Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
   hI.restr_simple.of_restrict_contract h
 
 

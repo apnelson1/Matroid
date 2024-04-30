@@ -705,7 +705,7 @@ theorem Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoin
   simp [PairwiseDisjoint, Set.Pairwise, Pairwise]
 
 theorem skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
-    (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ⧸ X) ↾ Y = M ↾ Y := by
+    (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   refine ⟨fun h ↦ ?_, fun h ↦ skew_iff_exist_bases.2 ?_⟩
   · refine eq_of_indep_iff_indep_forall rfl fun J (hJ : J ⊆ Y) ↦ ?_

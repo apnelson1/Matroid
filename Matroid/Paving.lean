@@ -18,7 +18,7 @@ theorem Paving.spanning_of_dep (hM : M.Paving) (hD : M.Dep D) : M.Spanning D := 
   obtain ⟨C, hCD, hC⟩ := hD.exists_circuit_subset
   exact (hM.spanning_of_circuit hC).superset hCD
 
-def Paving.delete (hM : M.Paving) (D : Set α) : (M ⧹ D).Paving := by
+def Paving.delete (hM : M.Paving) (D : Set α) : (M ＼ D).Paving := by
   simp_rw [Paving, delete_circuit_iff, and_imp]
   intro C hC hCD
   rw [spanning_iff_cl _, delete_cl_eq, delete_ground, hCD.sdiff_eq_left,
@@ -26,7 +26,7 @@ def Paving.delete (hM : M.Paving) (D : Set α) : (M ⧹ D).Paving := by
   rw [delete_ground, subset_diff]
   exact ⟨hC.subset_ground, hCD⟩
 
-def Paving.contract (hM : M.Paving) (C : Set α) : (M ⧸ C).Paving := by
+def Paving.contract (hM : M.Paving) (C : Set α) : (M ／ C).Paving := by
   intro C' hC'
   have hdj : Disjoint C' C := (subset_diff.1 hC'.subset_ground).2
   rw [contract_spanning_iff', union_comm]

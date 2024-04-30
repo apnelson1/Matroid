@@ -1,56 +1,62 @@
 import Mathlib.LinearAlgebra.FiniteDimensional
 import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.Quotient
-import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Function
 
-variable {α ι W W' R : Type*} [AddCommGroup W] [AddCommGroup W']
+-- import Mathlib.Data.FunLike.Basic
 
-open Set Submodule BigOperators
+universe u v
 
-theorem Fintype.linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
-  [AddCommMonoid M] [Module R M] {s : Set ι} {v : ι → M} :
-    ¬ LinearIndependent R (s.restrict v) ↔ ∃ c : ι → R, ∑ i, c i • v i = 0 ∧ (∃ i ∈ s, c i ≠ 0)
-      ∧ ∀ i, i ∉ s → c i = 0 := by
-  classical
-  have _ := s.toFinite.fintype
-  rw [Fintype.not_linearIndependent_iff]
-  refine ⟨fun ⟨c', hc', i₀, hi₀⟩ ↦ ?_, fun ⟨c, hc0, ⟨i₀, hi₀, hne⟩, hi⟩ ↦ ?_⟩
-  · set f := fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ • (v i) else 0
-    refine ⟨fun i ↦ if hi : i ∈ s then c' ⟨i,hi⟩ else 0, ?_, ⟨i₀, i₀.prop, by simpa⟩,
-      fun i hi ↦ by simp [hi]⟩
-    rw [← hc']
-    convert Finset.sum_congr_set s f (fun i ↦ (c' i) • v i) (fun _ h ↦ by simp [h])
-      (fun _ h ↦ by simp [h])
-    · simp only; split_ifs; rfl; exact zero_smul _ _
-  refine ⟨fun i ↦ c i, ?_, ⟨⟨i₀, hi₀⟩, hne⟩⟩
-  rw [← hc0, eq_comm]
-  convert Finset.sum_congr_set s (fun i ↦ (c i) • (v i)) (fun i ↦ (c i) • v i)
-    (fun x _ ↦ rfl) (fun _ hx ↦ by simp [hi _ hx])
+variable {α ι W W' M R : Type*} [AddCommGroup W] [AddCommGroup W']
+
+open Function Set Submodule BigOperators
+
+theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] {s : Finset ι} {f : ι → M} :
+    ¬ LinearIndependent R ((s : Set ι).restrict f) ↔
+      ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
+  simp only [Finset.coe_sort_coe, not_linearIndependent_iff, Finset.univ_eq_attach, restrict_apply,
+    ne_eq, Subtype.exists, Finset.mem_coe]
+  refine ⟨fun ⟨g, hg0, b, hbs, hgb⟩ ↦ ?_, fun ⟨c,hc0,⟨b,hbs, hb0⟩,hc'⟩ ↦ ?_⟩
+  · set c := Function.extend Subtype.val g 0 with hc
+    have hc0 : ∀ x ∉ s, c x = 0 :=
+      fun x hxs ↦ by rw [hc, extend_apply' _ _ _ (by simpa), Pi.zero_apply]
+    have hc1 : ∀ x : s, c x = g x :=
+      fun ⟨x,hx⟩ ↦ by rw [hc, Subtype.val_injective.extend_apply]
+    refine ⟨c, ?_, ⟨b, hbs, by rwa [← hc1] at hgb⟩, hc0⟩
+    · rw [← Finset.sum_subset s.subset_univ (fun x _ hx ↦ by simp [hc0 x hx]), ← Finset.sum_attach]
+      simp_rw [hc1]; assumption
+  refine ⟨c ∘ Subtype.val, ?_, b, hbs, by simpa⟩
+  simp only [comp_apply]
+  rwa [s.sum_attach (fun x ↦ c x • f x),
+    Finset.sum_subset (s.subset_univ) (fun x _ hx ↦ by simp [hc' x hx])]
+
+theorem Fintype.not_linearIndependent_restrict_iff' [Fintype ι] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] {s : Set ι} {f : ι → M} :
+    ¬ LinearIndependent R (s.restrict f) ↔
+      ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
+  obtain ⟨s,rfl⟩ := s.toFinite.exists_finset_coe
+  exact Fintype.not_linearIndependent_restrict_iff
 
 theorem linearIndependent_restrict_iff [Semiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
-    {v : ι → M} : LinearIndependent R (s.restrict v) ↔
-      ∀ l : ι →₀ R, Finsupp.total ι M R v l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
-  set incl : s ↪ ι := Function.Embedding.subtype (· ∈ s)
+    {f : ι → M} : LinearIndependent R (s.restrict f) ↔
+      ∀ l : ι →₀ R, Finsupp.total ι M R f l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
+  classical
   rw [linearIndependent_iff]
-  refine ⟨fun h l hl hsupp ↦ ?_, fun h l hl ↦ ?_⟩
-  · specialize h (Finsupp.subtypeDomain (· ∈ s ) l) _
-    · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ (Subset.rfl)] at hl ⊢
-      · simp only [Finsupp.subtypeDomain_apply, restrict_apply]
-        convert (Finset.sum_map _ incl (fun x ↦ l x • v x)).symm
-        convert hl.symm
-        ext i
-        aesop
-      · aesop
-      aesop
-    ext i
-    obtain (hi | hi) := em (i ∈ s)
-    · exact FunLike.congr_fun h ⟨i,hi⟩
-    simpa using not_mem_subset hsupp  hi
-  specialize h <| Finsupp.embDomain incl l
-  simp only [Finsupp.total_embDomain, Function.Embedding.coe_subtype, Finsupp.support_embDomain,
-    Finset.coe_map, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
-    Finsupp.embDomain_eq_zero, forall_true_left] at h
-  exact h hl
+  refine ⟨fun h l hl0 hls ↦ ?_, fun h l hl0 ↦ ?_⟩
+  · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ Subset.rfl _ (by simp)] at hl0
+    specialize h (Finsupp.comapDomain ((↑) : s → ι) l (Subtype.val_injective.injOn _))
+    simp only [Finsupp.total_comapDomain, restrict_apply] at h
+    rw [Finset.sum_preimage _ _ _ (fun x ↦ l x • f x)
+      (fun x hx hx' ↦ (hx' (by simpa using hls hx)).elim )] at h
+    simp_rw [DFunLike.ext_iff] at h ⊢
+    exact fun i ↦ by_contra fun hi ↦ hi <|
+      by simpa using (h hl0) ⟨i, hls (show i ∈ l.support by simpa using hi)⟩
+  specialize h l.extendDomain
+  rw [Finsupp.extendDomain_eq_embDomain_subtype, Finsupp.total_embDomain] at h
+  simp only [Embedding.coe_subtype, Finsupp.support_embDomain, Finset.coe_map, image_subset_iff,
+    Subtype.coe_preimage_self, subset_univ, Finsupp.embDomain_eq_zero, forall_true_left] at h
+  exact h hl0
 
 theorem linearIndependent_subsingleton_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] [Subsingleton ι] {f : ι → M} : LinearIndependent R f ↔ ∀ i, f i ≠ 0 := by
@@ -63,11 +69,11 @@ theorem linearIndependent_subsingleton_index {R M ι : Type*} [DivisionRing R] [
 theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
     LinearIndependent R f := by
-  have hinj : f.Injective
-  · intro x y hxy
+  have hinj : f.Injective := by
+    intro x y hxy
     have hli := (h {x,y} (toFinite _))
-    have h : (⟨x, by simp⟩ : ({x,y} : Set ι)) = ⟨y, by simp⟩
-    · rw [← hli.injective.eq_iff]; simpa
+    have h : (⟨x, by simp⟩ : ({x,y} : Set ι)) = ⟨y, by simp⟩ := by
+      rw [← hli.injective.eq_iff]; simpa
     simpa using h
   rw [← linearIndependent_subtype_range hinj]
   refine linearIndependent_of_finite _ fun t ht htfin ↦ ?_
@@ -92,13 +98,13 @@ theorem linearIndependent_iUnion_of_directed' {R M ι η : Type*} [DivisionRing 
   obtain ⟨I,hIfin, hI⟩ :=
     finite_subset_iUnion (ht.image Subtype.val) (Subtype.coe_image_subset (⋃ j, s j) t)
   obtain ⟨z, hz⟩ := hs.finset_le hIfin.toFinset
-  have hss : Subtype.val '' t ⊆ s z
-  · refine hI.trans (iUnion_subset fun i j h ↦ ?_)
+  have hss : Subtype.val '' t ⊆ s z := by
+    refine hI.trans (iUnion_subset fun i j h ↦ ?_)
     simp only [mem_iUnion, exists_prop] at h
     exact hz i (by simpa using h.1) h.2
   set emb : t → s z := (inclusion hss) ∘ (imageFactorization Subtype.val t)
   refine (h z).comp emb <| Function.Injective.comp (inclusion_injective hss) ?_
-  exact InjOn.imageFactorization_injective (Subtype.val_injective.injOn _)
+  exact (Subtype.val_injective.injOn _).imageFactorization_injective
 
 theorem linearIndependent_sUnion_of_directed' {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : Set (Set ι)) (hs : DirectedOn (· ⊆ ·) s)
@@ -112,7 +118,7 @@ theorem linearIndependent_sUnion_of_directed' {R M ι : Type*} [DivisionRing R] 
 
 theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V]
   [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) : Finite α :=
-  Cardinal.lt_aleph0_iff_finite.1 <| FiniteDimensional.lt_aleph0_of_linearIndependent h
+  Cardinal.lt_aleph0_iff_finite.1 <| LinearIndependent.lt_aleph0_of_finiteDimensional h
 
 noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
     [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
@@ -200,7 +206,6 @@ theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M
     apply hs.ne_zero ⟨i, his⟩
     exact (Submodule.disjoint_def.1 hdj) (f i) (subset_span (mem_image_of_mem _ his))
       (subset_span (mem_image_of_mem _ hit))
-  change LinearIndependent R (incl _)
   rw [image_union]
   exact LinearIndependent.union hs.image ht.image hdj
 

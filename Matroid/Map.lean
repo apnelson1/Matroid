@@ -260,24 +260,25 @@ end Image
 
 section restrictSubtype
 
-variable {E X : Set α} {M N : Matroid α}
+variable {E X I : Set α} {M N : Matroid α}
 
-/-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
-  Always isomorphic to `M ↾ X`. If `X = M.E`, then isomorphic to `M`. -/
+/-- Given `M : Matroid α` and `X : Set α`, the restriction of `M` to `X`,
+viewed as a matroid on type `X` with ground set `univ`.
+Always isomorphic to `M ↾ X`. If `X = M.E`, then isomorphic to `M`. -/
 def restrictSubtype (M : Matroid α) (X : Set α) : Matroid X := (M ↾ X).comap (↑)
 
-theorem restrictSubtype_ground : (M.restrictSubtype X).E = univ := by
+@[simp] theorem restrictSubtype_ground : (M.restrictSubtype X).E = univ := by
   simp [restrictSubtype]
 
-@[simp] theorem restrictSubtype_indep_iff {X : Set α} {I : Set X} :
+@[simp] theorem restrictSubtype_indep_iff {I : Set X} :
     (M.restrictSubtype X).Indep I ↔ M.Indep ((↑) '' I) := by
   simp [restrictSubtype, Subtype.val_injective.injOn I]
 
-theorem restrictSubtype_indep_iff_of_subset {X I : Set α} (hIX : I ⊆ X) :
+theorem restrictSubtype_indep_iff_of_subset (hIX : I ⊆ X) :
     (M.restrictSubtype X).Indep (X ↓∩ I) ↔ M.Indep I := by
   rw [restrictSubtype_indep_iff, image_preimage_eq_iff.2]; simpa
 
-theorem restrictSubtype_inter_indep_iff {X I : Set α} :
+theorem restrictSubtype_inter_indep_iff :
     (M.restrictSubtype X).Indep (X ↓∩ I) ↔ M.Indep (X ∩ I) := by
   simp [restrictSubtype, Subtype.val_injective.injOn]
 
@@ -287,14 +288,13 @@ theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E)
   refine eq_of_indep_iff_indep_forall (by rw [hN]) (fun I hI ↦ ?_)
   rwa [← restrictSubtype_indep_iff_of_subset hI, h, restrictSubtype_indep_iff_of_subset]
 
-theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.restrictSubtype E := by
-  subst hM
+@[simp] theorem restrictSubtype_dual : (M.restrictSubtype M.E)✶ = M✶.restrictSubtype M.E := by
   rw [restrictSubtype, ← comapOn_preimage_eq, comapOn_dual_eq_of_bijOn, restrict_ground_eq_self,
     ← dual_ground, comapOn_preimage_eq, restrictSubtype, restrict_ground_eq_self]
   exact ⟨by simp [MapsTo], Subtype.val_injective.injOn _, by simp [SurjOn, Subset.rfl]⟩
 
-@[simp] theorem restrictSubtype_dual : (M.restrictSubtype M.E)✶ = M✶.restrictSubtype M.E :=
-  restrictSubtype_dual' rfl
+theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.restrictSubtype E := by
+  rw [← hM, restrictSubtype_dual]
 
 end restrictSubtype
 

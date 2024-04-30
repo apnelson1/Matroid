@@ -522,27 +522,27 @@ theorem Flat.rel_covbyPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
 
 section Minor
 
-theorem flat_contract (X C : Set α) : (M ⧸ C).Flat (M.cl (X ∪ C) \ C) := by
+theorem flat_contract (X C : Set α) : (M ／ C).Flat (M.cl (X ∪ C) \ C) := by
   rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ← M.cl_union_cl_right_eq,
     union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
 
 @[simp] theorem flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
-    (M ⧸ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
+    (M ／ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
   rw [flat_iff_cl_self, contract_cl_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
     union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
     and_congr_right_iff]
   exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC),
     fun h ↦ (subset_union_left _ _).trans h⟩
 
-theorem Flat.union_flat_of_contract (hF : (M ⧸ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
+theorem Flat.union_flat_of_contract (hF : (M ／ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
     M.Flat (F ∪ C) :=
   ((flat_contract_iff hC).1 hF).1
 
 theorem flat_contract_iff' :
-    (M ⧸ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
+    (M ／ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [← contract_inter_ground_eq, flat_contract_iff]
 
-theorem Flat.union_flat_of_contract' (hF : (M ⧸ C).Flat F) : M.Flat (F ∪ M.cl C) := by
+theorem Flat.union_flat_of_contract' (hF : (M ／ C).Flat F) : M.Flat (F ∪ M.cl C) := by
   replace hF := (flat_contract_iff'.1 hF).1.cl
   rw [← cl_union_cl_right_eq, cl_inter_ground] at hF
   rw [flat_iff_subset_cl_self (union_subset _ (M.cl_subset_ground _)), hF]
@@ -550,12 +550,12 @@ theorem Flat.union_flat_of_contract' (hF : (M ⧸ C).Flat F) : M.Flat (F ∪ M.c
   exact (subset_union_left _ _).trans (hF.symm.subset.trans (M.cl_subset_ground _))
 
 theorem Nonloop.contract_flat_iff (he : M.Nonloop e) :
-    (M ⧸ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
+    (M ／ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
   rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
-/-- Flats of `M ⧸ C` are equivalent to flats of `M` containing `C`-/
+/-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def flatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
-    {F // (M ⧸ C).Flat F} ≃ {F // M.Flat F ∧ C ⊆ F} where
+    {F // (M ／ C).Flat F} ≃ {F // M.Flat F ∧ C ⊆ F} where
   toFun F := ⟨F ∪ C, by simp [subset_union_right, F.prop.union_flat_of_contract]⟩
   invFun F := ⟨F \ C, by simp
     [flat_contract_iff hC, union_eq_self_of_subset_right F.prop.2, disjoint_sdiff_left, F.prop.1]⟩
@@ -812,7 +812,7 @@ theorem point_iff_exists_eq_cl_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P 
   ⟨Point.exists_eq_cl_nonloop, by rintro ⟨e, he, rfl⟩; exact he.cl_point⟩
 
 theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
-    (M ⧸ C).Point P ↔ (M.cl C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
+    (M ／ C).Point P ↔ (M.cl C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
   rw [Point, flat_contract_iff, covby_iff_relRank_eq_one, relRank_cl_left,
     union_comm C, ← relRank_eq_relRank_union, and_iff_right (cl_flat _ _),
     ← relRank_eq_er_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
@@ -821,9 +821,9 @@ theorem point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
   rw [← h.cl]
   exact M.cl_subset_cl (subset_union_right _ _)
 
-/-- Points of `M ⧸ C` are equivalent to flats covering `M.cl C`. -/
+/-- Points of `M ／ C` are equivalent to flats covering `M.cl C`. -/
 @[simps] def pointContractCovbyEquiv (M : Matroid α) (C : Set α) :
-    {P // (M ⧸ C).Point P} ≃ {F // M.cl C ⋖[M] F} where
+    {P // (M ／ C).Point P} ≃ {F // M.cl C ⋖[M] F} where
   toFun P := ⟨P ∪ M.cl C, by
     obtain ⟨P, hP⟩ := P
     rw [← contract_inter_ground_eq, point_contract_iff, cl_inter_ground] at hP
@@ -912,7 +912,7 @@ theorem Nonloop.cl_covby_iff (he : M.Nonloop e) : M.cl {e} ⋖[M] L ↔ M.Line L
   rfl
 
 def Nonloop.lineContractPointEquiv (he : M.Nonloop e) :
-    {P // (M ⧸ e).Point P} ≃ {L // M.Line L ∧ e ∈ L} :=
+    {P // (M ／ e).Point P} ≃ {L // M.Line L ∧ e ∈ L} :=
   (M.pointContractCovbyEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.cl_covby_iff))
 
 @[pp_dot] abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3

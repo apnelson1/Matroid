@@ -1,16 +1,15 @@
 import Mathlib.Order.Minimal
+import Mathlib.Order.RelIso.Set
 
 open Set
 
 
-variable {r : α → α → Prop} {s : β → β → Prop}
+variable {α β : Type*} {r : α → α → Prop} {s : β → β → Prop}
+
 
 theorem RelIso.minimals_preimage_eq (f : r ≃r s) (y : Set β) :
     minimals r (f ⁻¹' y) = f ⁻¹' (minimals s y) := by
-  have hr : range f = univ
-  · convert f.toEquiv.range_eq_univ
-  convert f.toRelEmbedding.minimals_preimage_eq y
-  simp only [coe_toRelEmbedding, hr, inter_univ]
+  convert f.toRelEmbedding.minimals_preimage_eq y; simp
 
 theorem RelIso.maximals_preimage_eq (f : r ≃r s) (y : Set β) :
     maximals r (f ⁻¹' y) = f ⁻¹' (maximals s y) :=

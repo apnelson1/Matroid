@@ -35,8 +35,8 @@ theorem rectVandermonde_linearIndependent_cols [Fintype α] {v : α → K} (hv :
   exact vandermonde_isUnit_iff.2 (hv.comp g.injective)
 
 /-- A rectangular Vandermonde matrix with possible extra rows equal to `(0,0, ..., 1)`,
-  indexed by the `a` for which `v a = none`. These rows can be thought of projectively
-  as 'infinity' rows.  -/
+indexed by the `a` for which `v a = none`. These rows can be thought of projectively
+as 'infinity' rows.  -/
 def rectProjVandermonde (v : α → Option R) (n : ℕ) : Matrix α (Fin n) R :=
   Matrix.of (fun a ↦ (v a).casesOn
     (n.casesOn finZeroElim (fun n ↦ Pi.single (Fin.last n) 1)) (fun x i ↦ x^(i : ℕ)))
@@ -70,8 +70,8 @@ theorem rectProjVandermonde_linearIndependent_rows [Fintype α] {v : α → Opti
     (hv : Injective v) (hn : Fintype.card α ≤ n) :
     LinearIndependent K (rectProjVandermonde v n).rowFun := by
   obtain (rfl | n) := n
-  · have : IsEmpty α
-    · rwa [Nat.le_zero, Fintype.card_eq_zero_iff] at hn
+  · have : IsEmpty α := by
+      rwa [Nat.le_zero, Fintype.card_eq_zero_iff] at hn
     apply linearIndependent_empty_type
   classical
 
@@ -98,9 +98,9 @@ theorem rectProjVandermonde_linearIndependent_rows [Fintype α] {v : α → Opti
       exact Nat.sub_le_of_le_add hn
     set v' : s' → K := fun a ↦ (v a).get
       ( by rw [← Option.ne_none_iff_isSome]; refine fun h ↦ a.prop <| hv (by rw [h, ha0]) )
-    have hv' : ∀ i, some (v' i) = v i := by simp
-    have hv'_inj : Injective v'
-    · intro i j h
+    have hv' : ∀ i, some (v' i) = v i := by simp [v']
+    have hv'_inj : Injective v' := by
+      intro i j h
       apply_fun (↑) using Subtype.coe_injective
       apply_fun v using hv
       apply_fun some at h
@@ -123,7 +123,7 @@ theorem rectProjVandermonde_rowSet_linearIndependent_iff {v : α → Option K} {
   · obtain ⟨t, hts, ht⟩ := exists_subset_encard_eq <| ENat.add_one_le_of_lt hlt
     have _ := (finite_of_encard_eq_coe ht).fintype
     replace h := LinearIndependent.mono_index _ h hts
-    have hc := FiniteDimensional.fintype_card_le_finrank_of_linearIndependent h
+    have hc := h.fintype_card_le_finrank
     rw [FiniteDimensional.finrank_fintype_fun_eq_card, Fintype.card_fin,
       ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ncard_def, ht,
       ENat.toNat_add (by simp) (ENat.coe_toNat_eq_self.mp rfl),

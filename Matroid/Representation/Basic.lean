@@ -4,7 +4,7 @@ import Matroid.Extension
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Vandermonde
-import Matroid.Constructions.Map
+import Matroid.Map
 import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
 
@@ -19,7 +19,7 @@ set_option autoImplicit false
 namespace Matroid
 
 /-- A function `v : α → W` represents `M` over `𝔽` if independence of `I` in `M` corresponds to
-  linear independence of `v '' I` in `W`. -/
+linear independence of `v '' I` in `W`. -/
 def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W]
     (v : α → W) :=
   ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v)
@@ -727,7 +727,7 @@ theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
 section Minor
 
 /-- Contracting a set preserves representability. -/
-def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ⧸ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
+def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ／ C).Rep 𝔽 (W ／ (span 𝔽 (v '' C))) where
     to_fun := Submodule.Quotient.mk ∘ v
     valid' :=
   ( by
@@ -753,7 +753,7 @@ def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ⧸ C).Rep 𝔽 (W ⧸ (sp
       exact subset_span (mem_image_of_mem _ hiI)
     rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
 
-theorem Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ⧹ D).Rep 𝔽 W :=
+theorem Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)
 
 theorem Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :

@@ -148,8 +148,8 @@ protected theorem tendsto_mul {a b : ℕ∞} (ha : a ≠ 0 ∨ b ≠ ⊤) (hb : 
   obtain (rfl | ha') := eq_or_ne a ⊤
   · rw [top_mul (by simpa using hb), tendsto_nhds_top_iff]
     intro x
-    have hforall : ∀ᶠ c : ℕ∞ × ℕ∞ in 𝓝 (⊤, b), ↑x < c.1 ∧ 0 < c.2
-    · refine (lt_mem_nhds (show (x : ℕ∞) < ⊤ from WithTop.coe_lt_top x)).prod_nhds ?_
+    have hforall : ∀ᶠ c : ℕ∞ × ℕ∞ in 𝓝 (⊤, b), ↑x < c.1 ∧ 0 < c.2 := by
+      refine (lt_mem_nhds (show (x : ℕ∞) < ⊤ from WithTop.coe_lt_top x)).prod_nhds ?_
       obtain (rfl | hbne) := eq_or_ne b ⊤
       · apply lt_mem_nhds (by simp)
       lift b to ℕ using hbne
@@ -319,7 +319,7 @@ protected theorem tsum_eq_top_of_support_infinite (hf : f.support.Infinite) : �
   · rw [Finset.sum_const, nsmul_eq_mul, mul_one,
       ← (finite_of_encard_eq_coe hsc).encard_eq_coe_toFinset_card, hsc, Nat.cast_lt]
     exact Nat.lt.base b
-  simp only [Finite.mem_toFinset, ENat.one_le_iff_ne_zero]
+  simp only [Finite.mem_toFinset, ENat.one_le_iff_ne_zero, s']
   exact hss
 
 protected theorem tsum_const_eq_top_of_ne_zero [Infinite ι] {c : ℕ∞} (hc : c ≠ 0) :

@@ -9,7 +9,7 @@ namespace Matroid
 theorem Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
   (hB.compl_base_dual).encard
 
-theorem Indep.contract_er_dual_eq (hI : M.Indep I) : (M ⧸ I)✶.erk = M✶.erk := by
+theorem Indep.contract_er_dual_eq (hI : M.Indep I) : (M ／ I)✶.erk = M✶.erk := by
   rw [contract_dual_eq_dual_delete]
 
 theorem encard_dual_eq_foo (hI : M.Basis I X) (hI' : M.Basis I' X) (hJ : M.Indep J)
@@ -21,14 +21,14 @@ theorem encard_dual_eq_foo (hI : M.Basis I X) (hI' : M.Basis I' X) (hJ : M.Indep
   have hJ' : ∀ X, (M ↾ (X ∪ J)).Indep J := fun X ↦ by
     rw [restrict_indep_iff, and_iff_right hJ]; apply subset_union_right
 
-  obtain ⟨B₀,hB₀⟩ := (M ⧸ J).exists_basis' (I ∩ I')
+  obtain ⟨B₀,hB₀⟩ := (M ／ J).exists_basis' (I ∩ I')
   obtain ⟨BI, hBI, hssBI⟩ :=
     hB₀.indep.subset_basis'_of_subset (hB₀.subset.trans (inter_subset_left _ _))
   obtain ⟨BI', hBI', hssBI'⟩ :=
     hB₀.indep.subset_basis'_of_subset (hB₀.subset.trans (inter_subset_right _ _))
 
-  have hbas : ∀ Y K B, K ⊆ Y → Y ⊆ X → M.Basis K X → (M ⧸ J).Basis' B K →
-      ((M ↾ (Y ∪ J)) ⧸ J).Base B := by
+  have hbas : ∀ Y K B, K ⊆ Y → Y ⊆ X → M.Basis K X → (M ／ J).Basis' B K →
+      ((M ↾ (Y ∪ J)) ／ J).Base B := by
     intro Y K B hKY hYX hKX hBK
     rw [← contract_restrict_eq_restrict_contract _ _ _ (hXJ.symm.mono_right hYX),
       base_restrict_iff']

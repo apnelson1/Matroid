@@ -1,5 +1,5 @@
 import Mathlib.Algebra.Module.Submodule.Map
-import Mathlib.LinearAlgebra.Finrank
+import Mathlib.LinearAlgebra.Dimension.Finrank
 
 theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
     [AddCommMonoid M₁] [AddCommMonoid M₂] [Module R M₁] [Module R M₂] (e : M₁ ≃ₗ[R] M₂)
@@ -28,8 +28,8 @@ theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
   apply_fun f using hf
   simpa using h
 
-theorem LinearMap.finrank_map_of_inj {K V : Type*} [Ring K] [AddCommGroup V]
-    [Module K V] {V₂ : Type v'} [AddCommGroup V₂] [Module K V₂] {f : V →ₗ[K] V₂}
+theorem LinearMap.finrank_map_of_inj {K V V₂ : Type*} [Ring K] [AddCommGroup V]
+    [Module K V] [AddCommGroup V₂] [Module K V₂] {f : V →ₗ[K] V₂}
     (hf : Function.Injective ↑f) (U : Submodule K V) :
     FiniteDimensional.finrank K (U.map f) = FiniteDimensional.finrank K U := by
   rw [← LinearMap.finrank_range_of_inj (LinearMap.domRestrict_injective hf _),
