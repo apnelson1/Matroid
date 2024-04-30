@@ -1,9 +1,26 @@
 import Matroid.Constructions.Basic
-import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.Logic_Embedding_Set
 import Mathlib.Data.Set.Subset
 
 open Set.Notation
+
+
+/-
+This file defines maps and comaps, which move a matroid on one type to a matroid on another
+using a function between the types. The constructions are mathematically just combinations of
+restrictions and parallel extensions, so are not difficult.
+
+At least for finite matroids, both maps and comaps are a special case of a construction of
+Perfect (1969) in which a matroid structure can be transported across a bipartite graph.
+[See Oxley, Thm 11.2.12]. This is nontrivial, and I don't know whether this is known to extend to
+infinite matroids. The proofs use cardinality. The construction would imply Konig's theorem
+for infinite bipartite graphs, which isn't easy.
+
+In particular, if things were generalized, it would allow the construction `map` not to require
+injectivity. This would be nice. It might be easier than the full strength of the bipartite graph
+construction; it corresponds to the case where one side of the graph has max degree one.
+-/
 
 universe u
 
@@ -147,64 +164,23 @@ theorem comapOn_dual_eq_of_bijOn {M : Matroid β} {E : Set α} (h : BijOn f E M.
 
 section Image
 
-/-- Given an injective function `f` on `M.E`, the `IndepMatroid` whose independent sets
-are the images of those in `M`. -/
-private def mapIndepMatroid (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : IndepMatroid β where
-  E := f '' M.E
-  Indep I := ∃ I₀, M.Indep I₀ ∧ I = f '' I₀
-  indep_empty := ⟨∅, by simp⟩
-  indep_subset := by
-    rintro I _ ⟨J, hJ, rfl⟩ hIJ
-    refine ⟨f ⁻¹' I ∩ M.E, hJ.subset ?_, ?_⟩
-    · refine (inter_subset_inter_left M.E (preimage_mono hIJ)).trans ?_
-      rw [hf.preimage_image_inter hJ.subset_ground]
-    simp only [subset_antisymm_iff, image_subset_iff, inter_subset_left, and_true]
-    rintro x hx
-    obtain ⟨y, hy, rfl⟩ := hIJ hx
-    exact ⟨_, ⟨hx, hJ.subset_ground hy⟩, rfl⟩
-  indep_aug := by
-    rintro _ B ⟨I, hI, rfl⟩ hImax hBmax
-    simp only [mem_maximals_iff, mem_setOf_eq, forall_exists_index, and_imp, image_subset_iff,
-      not_and, not_forall, exists_prop, exists_and_left] at hBmax hImax
-    obtain ⟨⟨B, hB, rfl⟩, hmax⟩ := hBmax
-    obtain ⟨_, I', hI', rfl, hII', hne⟩ := hImax _ hI rfl
-
-    have hIb : ¬ M.Base I := by
-      refine fun hIb ↦ hne ?_
-      rw [hIb.eq_of_subset_indep ?_ (subset_inter hII' hI.subset_ground),
-        hf.preimage_image_inter hI'.subset_ground]
-      rwa [hf.preimage_image_inter hI'.subset_ground]
-
-    have hB : M.Base B := by
-      refine hB.base_of_maximal (fun J hJ hBJ ↦ ?_)
-      have h_image := hmax  _ hJ rfl (image_subset _ hBJ)
-      rwa [hf.image_eq_image_iff_of_subset hB.subset_ground hJ.subset_ground] at h_image
-
-    obtain ⟨e, he, hi⟩ := hI.exists_insert_of_not_base hIb hB
-    refine ⟨f e, ⟨mem_image_of_mem f he.1, fun h ↦ he.2 ?_⟩, ⟨_, hi, by rw [image_insert_eq]⟩⟩
-    rwa [hf.mem_image_iff hI.subset_ground (hB.subset_ground he.1)] at h
-  indep_maximal := by
-    rintro X hX I ⟨I, hI, rfl⟩ hIX
-    obtain ⟨X, hXE, rfl⟩ := exists_eq_image_subset_of_subset_image hX
-    rw [hf.image_subset_image_iff_of_subset hI.subset_ground hXE] at hIX
-
-    obtain ⟨B, hB, hIB⟩ := hI.subset_basis_of_subset hIX
-    refine ⟨f '' B, ?_⟩
-    simp only [image_subset_iff, mem_maximals_iff, mem_setOf_eq, and_imp, forall_exists_index]
-    refine ⟨⟨⟨B, hB.indep, rfl⟩, hIB.trans <| subset_preimage_image _ _,
-      hB.subset.trans <| subset_preimage_image _ _⟩, ?_⟩
-    rintro _ K hK rfl - hKX hBK
-
-    rw [hB.eq_of_subset_indep hK]
-    · have hss := subset_inter hBK hB.left_subset_ground
-      rwa [hf.preimage_image_inter hK.subset_ground] at hss
-    rwa [hf.image_subset_image_iff_of_subset hK.subset_ground hXE] at hKX
-  subset_ground := by
-    rintro _ ⟨I, hI, rfl⟩; exact image_subset _ hI.subset_ground
-
-/-- Map a matroid `M` on `α` to a copy in `β` using a function `f` that is injective on `M.E` -/
+/-- Given an injective function `f` on `M.E`, the isomorphic copy of `M` whose independent sets
+are the images of those in `M`. Implicitly defined using the comap of an inverse function. -/
 def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
-  (mapIndepMatroid M f hf).matroid
+  IndepMatroid.matroid <| IndepMatroid.ofExistsMatroid
+  (E := f '' M.E)
+  (Indep := fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀)
+  (hM := by
+    obtain (_ | _) := isEmpty_or_nonempty α
+    · exact ⟨emptyOn β, by simp⟩
+    refine ⟨M.comapOn _ (Function.invFunOn f M.E), rfl, fun I ↦ ?_⟩
+    simp only [comapOn_indep_iff]
+    refine ⟨fun ⟨h, _, hs⟩ ↦ ⟨_, h, Eq.symm <| SurjOn.image_invFun_image_eq fun x hx ↦ hs hx ⟩, ?_⟩
+    rintro ⟨I, hI, rfl⟩
+    rw [InjOn.invFunOn_image hf hI.subset_ground, and_iff_right hI,
+      and_iff_right <| (invFunOn_injOn_image f M.E).mono (image_subset f hI.subset_ground)]
+    rintro _ ⟨y, hy, rfl⟩
+    exact ⟨y, hI.subset_ground hy, rfl⟩ )
 
 /-- Map a matroid `M` across an embedding. -/
 def mapEmbedding (M : Matroid α) (f : α ↪ β) : Matroid β := M.map f <| f.injective.injOn _
@@ -215,8 +191,8 @@ def mapEquiv (M : Matroid α) (f : α ≃ β) : Matroid β := M.mapEmbedding f.t
     (M.map f hf).E = f '' M.E := rfl
 
 @[simp] theorem map_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set β} :
-    (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ :=
-  by simp [map, mapIndepMatroid]
+    (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := by
+  simp [map, IndepMatroid.ofExistsMatroid]
 
 theorem map_image_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set α}
     (hI : I ⊆ M.E) : (M.map f hf).Indep (f '' I) ↔ M.Indep I := by
@@ -287,11 +263,11 @@ section restrictSubtype
 variable {E X : Set α} {M N : Matroid α}
 
 /-- Given `M : Matroid α` and `X : Set α`, the natural matroid on type `X` with ground set `univ`.
-  If `X ⊆ M.E`, then isomorphic to `M ↾ X`. If `X = M.E`, then isomorphic to `M`. -/
-def restrictSubtype (M : Matroid α) (X : Set α) : Matroid X := M.comap (↑)
+  Always isomorphic to `M ↾ X`. If `X = M.E`, then isomorphic to `M`. -/
+def restrictSubtype (M : Matroid α) (X : Set α) : Matroid X := (M ↾ X).comap (↑)
 
-theorem restrictSubtype_ground (hX : X ⊆ M.E) : (M.restrictSubtype X).E = univ := by
-  rw [restrictSubtype, comap_ground_eq, eq_univ_iff_forall]; simpa
+theorem restrictSubtype_ground : (M.restrictSubtype X).E = univ := by
+  simp [restrictSubtype]
 
 @[simp] theorem restrictSubtype_indep_iff {X : Set α} {I : Set X} :
     (M.restrictSubtype X).Indep I ↔ M.Indep ((↑) '' I) := by
@@ -303,8 +279,7 @@ theorem restrictSubtype_indep_iff_of_subset {X I : Set α} (hIX : I ⊆ X) :
 
 theorem restrictSubtype_inter_indep_iff {X I : Set α} :
     (M.restrictSubtype X).Indep (X ↓∩ I) ↔ M.Indep (X ∩ I) := by
-  simp only [restrictSubtype, comap_indep_iff, Subtype.image_preimage_coe, and_iff_left_iff_imp]
-  exact fun _ ↦ injOn_subtype_val
+  simp [restrictSubtype, Subtype.val_injective.injOn]
 
 theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E)
     (h : M.restrictSubtype E = N.restrictSubtype E) : M = N := by
@@ -313,16 +288,18 @@ theorem eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E)
   rwa [← restrictSubtype_indep_iff_of_subset hI, h, restrictSubtype_indep_iff_of_subset]
 
 theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.restrictSubtype E := by
-  rw [restrictSubtype, ← comapOn_preimage_eq, comapOn_dual_eq_of_bijOn, ← dual_ground,
-    comapOn_preimage_eq, restrictSubtype]
   subst hM
+  rw [restrictSubtype, ← comapOn_preimage_eq, comapOn_dual_eq_of_bijOn, restrict_ground_eq_self,
+    ← dual_ground, comapOn_preimage_eq, restrictSubtype, restrict_ground_eq_self]
   exact ⟨by simp [MapsTo], Subtype.val_injective.injOn _, by simp [SurjOn, Subset.rfl]⟩
 
 @[simp] theorem restrictSubtype_dual : (M.restrictSubtype M.E)✶ = M✶.restrictSubtype M.E :=
   restrictSubtype_dual' rfl
 
 end restrictSubtype
+
 section MapRel
+
 
 
 
@@ -349,24 +326,24 @@ section MapRel
 --     (fun b ↦ if hb : b ∈ s then .inl (f ⟨b,hb⟩) else .inr b)
 
 
-mutual
-  def repeat_left {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → α
-    | 0 => a₀
-    | n+1 => g (repeat_right f g a₀ n)
+-- mutual
+--   def repeat_left {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → α
+--     | 0 => a₀
+--     | n+1 => g (repeat_right f g a₀ n)
 
-  def repeat_right {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → β
-    | 0 => f a₀
-    | n+1 => f (repeat_left f g a₀ n)
-end
+--   def repeat_right {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → β
+--     | 0 => f a₀
+--     | n+1 => f (repeat_left f g a₀ n)
+-- end
 
-def repeat_modify {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) (b : β)
-    [DecidablePred fun n ↦ repeat_right f g a₀ n = b] [Decidable (∃ i, repeat_right f g a₀ i = b)] :
-    α :=
-  if h : ∃ i, repeat_right f g a₀ i = b then (repeat_left f g a₀) (Nat.find h) else g b
+-- def repeat_modify {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) (b : β)
+--     [DecidablePred fun n ↦ repeat_right f g a₀ n = b] [Decidable (∃ i, repeat_right f g a₀ i = b)] :
+--     α :=
+--   if h : ∃ i, repeat_right f g a₀ i = b then (repeat_left f g a₀) (Nat.find h) else g b
 
 
-def ImageIndep (M : Matroid α) (r : α → β → Prop) (I : Set β) :=
-  ∃ (f : β → Option α), (∀ b ∈ I, ∃ a ∈ f b, r a b) ∧ (InjOn f I) ∧ M.Indep (some ⁻¹' (f '' I))
+-- def ImageIndep (M : Matroid α) (r : α → β → Prop) (I : Set β) :=
+--   ∃ (f : β → Option α), (∀ b ∈ I, ∃ a ∈ f b, r a b) ∧ (InjOn f I) ∧ M.Indep (some ⁻¹' (f '' I))
 
 
 -- def mapRelIndepMatroid' (M : Matroid α) (r : α → β → Prop) : IndepMatroid β where

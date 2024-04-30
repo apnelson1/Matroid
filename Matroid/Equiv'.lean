@@ -9,26 +9,7 @@ open Set
 variable {α β γ : Type*} {M : Matroid α} {N : Matroid β} {R : Matroid γ} {e : PartialEquiv α β}
   {f : PartialEquiv β γ}
 
-theorem Set.BijOn.subset_right {f : α → β} {s : Set α} {r t : Set β} (hf : BijOn f s t)
-    (hxt : r ⊆ t) : BijOn f (s ∩ f ⁻¹' r) r := by
-  refine ⟨inter_subset_right _ _, hf.injOn.mono <| inter_subset_left _ _, fun x hx ↦ ?_⟩
-  obtain ⟨y, hy, rfl⟩ := hf.surjOn (hxt hx)
-  exact ⟨y, ⟨hy, hx⟩, rfl⟩
 
-theorem Set.SurjOn.image_invFun_image_subset_eq [Nonempty α] {f : α → β} {s : Set α} {r t : Set β}
-    (hf : SurjOn f s t) (hrt : r ⊆ t) : f '' ((Function.invFunOn f s) '' r) = r := by
-  ext x
-  simp only [mem_image, exists_exists_and_eq_and]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨x,hx,rfl⟩
-    obtain ⟨y, hy, rfl⟩ := hf (hrt hx)
-    rwa [Function.invFunOn_apply_eq (f := f) hy]
-  obtain ⟨y, hy, rfl⟩ := hf (hrt h)
-  refine ⟨_,h, by rwa [Function.invFunOn_apply_eq (f := f)]⟩
-
-theorem Set.SurjOn.image_invFun_image_eq [Nonempty α] {f : α → β} {s : Set α} {t : Set β}
-    (hf : SurjOn f s t) : f '' ((Function.invFunOn f s) '' t) = t :=
-  hf.image_invFun_image_subset_eq rfl.subset
 
 namespace Matroid
 
