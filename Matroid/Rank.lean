@@ -63,18 +63,18 @@ theorem Base.encard (hB : M.Base B) : B.encard = M.erk := by
 @[simp] theorem er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [← hI.basis_inter_ground.encard, ← hI.encard]
 
-theorem Iso.er_image_eq {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) (X : Set α)
-    (hX : X ⊆ M.E := by aesop_mat) : N.er (e '' X) = M.er X := by
-  obtain ⟨I,hI⟩ := M.exists_basis X
-  rw [hI.er_eq_encard, (e.on_basis hI).er_eq_encard,
-    (e.injOn_ground.mono hI.indep.subset_ground).encard_image]
+-- theorem Iso.er_image_eq {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) (X : Set α)
+--     (hX : X ⊆ M.E := by aesop_mat) : N.er (e '' X) = M.er X := by
+--   obtain ⟨I,hI⟩ := M.exists_basis X
+--   rw [hI.er_eq_encard, (e.on_basis hI).er_eq_encard,
+--     (e.injOn_ground.mono hI.indep.subset_ground).encard_image]
 
 @[simp] theorem er_univ_eq (M : Matroid α) : M.er univ = M.erk := by
   rw [← er_inter_ground_eq, univ_inter, erk_eq_er_ground]
 
-theorem Iso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) :
-    M.erk = N.erk := by
-  rw [erk_eq_er_ground, ← e.er_image_eq M.E, e.image_ground, erk_eq_er_ground]
+-- theorem Iso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) :
+--     M.erk = N.erk := by
+--   rw [erk_eq_er_ground, ← e.er_image_eq M.E, e.image_ground, erk_eq_er_ground]
 
 @[simp] theorem er_empty (M : Matroid α) : M.er ∅ = 0 := by
   rw [← M.empty_indep.basis_self.encard, encard_empty]
@@ -710,9 +710,9 @@ theorem freeOn_er_eq (hXE : X ⊆ E) : (freeOn E).er X = X.encard := by
 theorem freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
   rw [← er_toNat_eq_r, freeOn_er_eq hXE, ncard_def]
 
-theorem IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≂ N) :
-    M.erk = N.erk := by
-  obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
+-- theorem IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≂ N) :
+--     M.erk = N.erk := by
+--   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
 
 end Constructions
 end Matroid

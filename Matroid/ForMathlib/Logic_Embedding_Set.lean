@@ -1,27 +1,73 @@
 import Mathlib.Logic.Embedding.Set
 import Mathlib.Tactic
+import Mathlib.Data.Set.Subset
 
-open Set Function
+open Set Function Set.Notation
 
 section embeddingInsert
 
 variable {α β γ : Type*} {a : α} {b : β} {s : Set α} {f : s ↪ β}
 
 
-@[simp] theorem range_embeddingOfSubset {s t : Set α} (hst : s ⊆ t) :
+
+
+
+@[simp] theorem Equiv.ofInjective_image (f : α → β) (hf : f.Injective) (s : Set α) :
+    ((Equiv.ofInjective f hf) '' s) = f '' s := by
+  ext; simp
+
+
+
+-- this should be elsewhere.
+theorem Function.Embedding.range_trans (f : α ↪ β) (g : β ↪ γ) :
+    range (f.trans g) = g '' (range f) :=
+  range_comp g f
+
+@[simp] theorem Function.Embedding.preimage_trans (f : α ↪ β) (g : β ↪ γ) (s : Set γ) :
+    (f.trans g) ⁻¹' s = f ⁻¹' (g ⁻¹' s) := rfl
+
+theorem Function.Embedding.image_trans (f : α ↪ β) (g : β ↪ γ) :
+    (f.trans g) '' s = g '' (f '' s) :=
+  Eq.symm <| image_image _ _ _
+
+
+@[simp] theorem Set.range_embeddingOfSubset {s t : Set α} (hst : s ⊆ t) :
     range (embeddingOfSubset s t hst) = {x | x.1 ∈ s} := by
   ext ⟨x,hx⟩; simp [embeddingOfSubset]
 
-theorem embeddingOfSubset_apply {s t : Set α} (hst : s ⊆ t) (x : s) :
+theorem Set.embeddingOfSubset_apply {s t : Set α} (hst : s ⊆ t) (x : s) :
     embeddingOfSubset s t hst x = ⟨x.1, hst x.2⟩ := rfl
 
--- this should be elsewhere.
-theorem Embedding.range_trans {f : α ↪ β} {g : β ↪ γ} : range (f.trans g) = g '' (range f) :=
-  range_comp g f
+theorem Set.embeddingOfSubset_image {s t : Set α} (hst : s ⊆ t) (r : Set s) :
+    (embeddingOfSubset s t hst) '' r = {x : t | x.1 ∈ (r : Set α)} := by
+  ext ⟨x,h⟩; simp [embeddingOfSubset_apply]
+
+theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t) :
+    (embeddingOfSubset s t hst) ⁻¹' r = {x : s | x.1 ∈ (r : Set α)} := by
+  ext ⟨x,h⟩; simp [hst h, embeddingOfSubset_apply]
+
 
 -- this is an `apply_coe` lemma in mathlib that should be renamed.
 -- @[simp] theorem embeddingOfSubset_apply_val {s t : Set α} (hst : s ⊆ t) (x : s) :
 --     (embeddingOfSubset s t hst x).1 = x.1 := rfl
+
+/-- The same as `Function.Embedding.subtype`, but for the special case of a set coercion.
+Can be more convenient for rewriting.  -/
+@[simps!] def Function.Embedding.setSubtype {α : Type*} (s : Set α) : s ↪ α :=
+  Embedding.subtype s
+
+@[simp] theorem Function.Embedding.preimage_setSubtype (s : Set α) (x : Set α) :
+    ((Embedding.setSubtype s) ⁻¹' x : Set s) = s ↓∩ x := rfl
+
+@[simp] theorem Function.Embedding.image_setSubtype (s : Set α) (x : Set s) :
+    Embedding.setSubtype s '' x = ↑x := rfl
+
+@[simp] theorem Function.Embedding.range_setSubtype_eq (s : Set α) :
+    Set.range (Embedding.setSubtype s) = s :=
+  Subtype.range_val
+
+
+section embeddingInsert
 
 /-- An embedding defined on a coerced set can be extended to an embedding on an insertion. -/
 noncomputable def Subtype.embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
@@ -50,6 +96,7 @@ theorem Subtype.embeddingInsert_apply_mem (f : s ↪ β) (ha : a ∉ s) (hb : b 
     {x : ↑(insert a s)} (hx : x.1 ∈ s) : (Subtype.embeddingInsert f ha hb) x = f ⟨x,hx⟩ := by
   nth_rw 1 [show x = embeddingOfSubset _ _ (subset_insert a s) ⟨x,hx⟩ from rfl]
   simp [embeddingInsert, (embeddingOfSubset _ _ (subset_insert a s)).injective.extend_apply]
+
 
 theorem Subtype.embeddingInsert_apply (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     (Subtype.embeddingInsert f ha hb) ⟨a, mem_insert _ _⟩ = b := by

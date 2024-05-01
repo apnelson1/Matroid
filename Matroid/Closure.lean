@@ -1,4 +1,4 @@
-import Matroid.Equiv
+import Matroid.Constructions.Basic
 import Mathlib.Data.Matroid.Restrict
 import Matroid.ForMathlib.Set
 

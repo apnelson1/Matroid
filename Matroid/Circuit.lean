@@ -1,3 +1,4 @@
+import Matroid.Equiv
 import Matroid.Closure
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
@@ -5,7 +6,7 @@ import Matroid.Closure
 
 variable {α : Type*} {M : Matroid α} {C C' C₁ C₂ R R I X K : Set α} {e f x y : α}
 
-open Set
+open Set Set.Notation
 namespace Matroid
 
 /-- A Circuit is a minimal dependent set -/
@@ -524,67 +525,71 @@ section Iso
 
 variable {β : Type*} {N : Matroid β}
 
-theorem Iso.on_circuit (e : Iso M N) (h : M.Circuit C) : N.Circuit (e '' C) := by
-  rw [Circuit, e.setOf_dep_eq, ← image_minimals_of_rel_iff_rel (r := (· ⊆ ·))]
-  · exact mem_image_of_mem _ h
-  exact e.prop_subset_iff_subset Dep.subset_ground
+theorem Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circuit ↑(e '' C) := by
+  simp_rw [circuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]
+  intro I hI hIC
+  obtain ⟨I,rfl⟩ := eq_image_val_of_subset hI.subset_ground
+  replace hC := hC.eq_of_dep_subset (e.symm.image_dep hI)
+  simp only [image_subset_iff, preimage_val_image_val_eq_self, image_symm_eq_preimage,
+    preimage_subset_iff, image_val_inj] at hIC hC
+  simp [← hC hIC]
 
-theorem Iso.on_circuit_symm (e : Iso M N) (h : N.Circuit (e '' C)) (hC : C ⊆ M.E := by aesop_mat) :
-    M.Circuit C :=
-  e.on_prop_symm (e.symm.on_circuit) h
-
-theorem Iso.setOf_circuit_eq (e : Iso M N) : setOf N.Circuit = (image e) '' setOf M.Circuit :=
-  e.setOf_prop_eq (fun h ↦ h.1.subset_ground) e.on_circuit e.symm.on_circuit
-
-theorem Iso.on_circuit_iff (e : Iso M N) (hC : C ⊆ M.E := by aesop_mat) :
-    M.Circuit C ↔ N.Circuit (e '' C) :=
-  ⟨fun h ↦ e.on_circuit h, fun h ↦ e.on_circuit_symm h hC⟩
+def Iso.ofForallCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.Circuit ↑C ↔ N.Circuit ↑(e '' C)) :
+    M ≂ N := Iso.ofForallDep e (fun D ↦ by
+    rw [dep_iff_superset_circuit, dep_iff_superset_circuit]
+    refine ⟨fun ⟨C, hCD, hC⟩ ↦ ?_, fun ⟨C, hCD, hC⟩ ↦ ?_⟩
+    · obtain ⟨C, rfl⟩ := eq_image_val_of_subset hC.subset_ground
+      refine ⟨_, ?_, (h _).1 hC⟩
+      rw [image_subset_image_iff Subtype.val_injective] at hCD ⊢
+      rwa [Equiv.image_subset e]
+    obtain ⟨C, rfl⟩ := eq_image_val_of_subset hC.subset_ground
+    exact ⟨↑(e.symm '' C), by simpa using hCD, by rw [h]; simpa⟩ )
 
 end Iso
 section Equiv
 
-variable {β : Type*} {N : Matroid β}
+-- variable {β : Type*} {N : Matroid β}
 
-/-- A `PartialEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
-def iso_of_forall_circuit' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
-    (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
-    (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N := by
-  apply iso_of_forall_indep e hM hN _ _
-  · intro I
-    rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
-    rintro ⟨no_circ, sub_ground⟩
-    constructor
-    · intro C C_sub_eI C_circ
-      apply no_circ _ _ (on_circuit_symm C C_circ)
-      rintro i ⟨c, c_C, ec_eq_i⟩
-      obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
-      rw [← e_i', e.left_inv] at ec_eq_i
-      rwa [← ec_eq_i]
-      rw [hM]
-      exact sub_ground i'_I
-    · rintro i ⟨c, c_I, c_eq⟩
-      rw [← c_eq, ← hN]
-      rw [← hM] at sub_ground
-      exact e.map_source' (sub_ground c_I)
-  · intro I
-    rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
-    rintro ⟨no_circ, sub_ground⟩
-    constructor
-    · intro C C_sub_eI C_circ
-      apply no_circ _ _ (on_circuit C C_circ)
-      rintro i ⟨c, c_C, ec_eq_i⟩
-      obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
-      rw [← e_i', e.right_inv] at ec_eq_i
-      rwa [← ec_eq_i]
-      rw [hN]
-      exact sub_ground i'_I
-    · rintro i ⟨c, c_I, c_eq⟩
-      rw [← c_eq, ← hM]
-      rw [← hN] at sub_ground
-      exact e.map_target' (sub_ground c_I)
-end Equiv
+-- /-- A `PartialEquiv` that maps circuits to and from circuits is a matroid isomorphism. -/
+-- def iso_of_forall_circuit' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+--     (on_circuit : ∀ C, M.Circuit C → N.Circuit (e '' C))
+--     (on_circuit_symm : ∀ C, N.Circuit C → M.Circuit (e.symm '' C)) : Iso M N := by
+--   apply iso_of_forall_indep e hM hN _ _
+--   · intro I
+--     rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
+--     rintro ⟨no_circ, sub_ground⟩
+--     constructor
+--     · intro C C_sub_eI C_circ
+--       apply no_circ _ _ (on_circuit_symm C C_circ)
+--       rintro i ⟨c, c_C, ec_eq_i⟩
+--       obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
+--       rw [← e_i', e.left_inv] at ec_eq_i
+--       rwa [← ec_eq_i]
+--       rw [hM]
+--       exact sub_ground i'_I
+--     · rintro i ⟨c, c_I, c_eq⟩
+--       rw [← c_eq, ← hN]
+--       rw [← hM] at sub_ground
+--       exact e.map_source' (sub_ground c_I)
+--   · intro I
+--     rw [indep_iff_forall_subset_not_circuit', indep_iff_forall_subset_not_circuit']
+--     rintro ⟨no_circ, sub_ground⟩
+--     constructor
+--     · intro C C_sub_eI C_circ
+--       apply no_circ _ _ (on_circuit C C_circ)
+--       rintro i ⟨c, c_C, ec_eq_i⟩
+--       obtain ⟨i', i'_I, e_i'⟩ := C_sub_eI c_C
+--       rw [← e_i', e.right_inv] at ec_eq_i
+--       rwa [← ec_eq_i]
+--       rw [hN]
+--       exact sub_ground i'_I
+--     · rintro i ⟨c, c_I, c_eq⟩
+--       rw [← c_eq, ← hM]
+--       rw [← hN] at sub_ground
+--       exact e.map_target' (sub_ground c_I)
+-- end Equiv
 
-end Matroid
+-- end Matroid
 
 
 -- end BasisExchange

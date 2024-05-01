@@ -1,6 +1,8 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.Logic_Embedding_Set
+import Matroid.ForMathlib.Matroid_Basic
+import Matroid.ForMathlib.PreimageVal
 import Mathlib.Data.Set.Subset
 
 open Set.Notation
@@ -18,14 +20,13 @@ infinite matroids. The proofs use cardinality. The construction would imply Koni
 for infinite bipartite graphs, which isn't easy.
 
 In particular, if things were generalized, it would allow the construction `map` not to require
-injectivity. This would be nice. It might be easier than the full strength of the bipartite graph
+injectivity, which would be nice. It might be easier than the full strength of the bipartite graph
 construction; it corresponds to the case where one side of the graph has max degree one.
 -/
 
 universe u
 
 open Set Function
-
 
 namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α}
@@ -162,37 +163,88 @@ theorem comapOn_dual_eq_of_bijOn {M : Matroid β} {E : Set α} (h : BijOn f E M.
     h.injOn.image_diff (by simpa), h.image_eq]
   exact (h.mapsTo.mono_left (show B ⊆ E by simpa)).image_subset
 
-section Image
+section Map
+
+/-- Map a matroid `M` to an isomorphic copy in `β` using an embedding `M.E ↪ β`. -/
+def mapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : Matroid β := ofExistsMatroidIndep
+  (E := range f)
+  (Indep := fun I ↦ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f)
+  (hM := by
+    classical
+    obtain (rfl | ⟨⟨e,he⟩⟩) := eq_emptyOn_or_nonempty M
+    · refine ⟨emptyOn β, ?_⟩
+      simp only [emptyOn_ground] at f
+      simp [range_eq_empty f, subset_empty_iff]
+    have _ : Nonempty M.E := ⟨⟨e,he⟩⟩
+    have _ : Nonempty α := ⟨e⟩
+    refine ⟨M.comapOn (range f) (fun x ↦ ↑(invFunOn f univ x)), rfl, ?_⟩
+    simp_rw [comapOn_indep_iff, ← and_assoc, and_congr_left_iff, subset_range_iff_exists_image_eq]
+    rintro _ ⟨I, rfl⟩
+    rw [← image_image, InjOn.invFunOn_image (f.injective.injOn _) (subset_univ _),
+      preimage_image_eq _ f.injective, and_iff_left_iff_imp]
+    rintro - x hx y hy
+    simp only [EmbeddingLike.apply_eq_iff_eq, Subtype.val_inj]
+    exact (invFunOn_injOn_image f univ) (image_subset f (subset_univ I) hx)
+      (image_subset f (subset_univ I) hy) )
+
+@[simp] theorem mapSetEmbedding_ground (M : Matroid α) (f : M.E ↪ β) :
+    (M.mapSetEmbedding f).E = range f := rfl
+
+@[simp] theorem mapSetEmbedding_indep_iff {M : Matroid α} {f : M.E ↪ β} {I : Set β} :
+    (M.mapSetEmbedding f).Indep I ↔ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f := by
+  simp [mapSetEmbedding]
+
+theorem mapSetEmbedding_indep_iff' {M : Matroid α} {f : M.E ↪ β} {I : Set β} :
+    (M.mapSetEmbedding f).Indep I ↔ ∃ (I₀ : Set M.E), M.Indep ↑I₀ ∧ I = f '' I₀ := by
+  simp only [mapSetEmbedding_indep_iff, subset_range_iff_exists_image_eq]
+  constructor
+  · rintro ⟨hI, I, rfl⟩
+    exact ⟨I, by rwa [preimage_image_eq _ f.injective] at hI, rfl⟩
+  rintro ⟨I, hI, rfl⟩
+  rw [preimage_image_eq _ f.injective]
+  exact ⟨hI, _, rfl⟩
 
 /-- Given an injective function `f` on `M.E`, the isomorphic copy of `M` whose independent sets
-are the images of those in `M`. Implicitly defined using the comap of an inverse function. -/
-def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β :=
-  IndepMatroid.matroid <| IndepMatroid.ofExistsMatroid
+are the images of those in `M`. -/
+def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ofExistsMatroidIndep
   (E := f '' M.E)
   (Indep := fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀)
   (hM := by
-    obtain (_ | _) := isEmpty_or_nonempty α
-    · exact ⟨emptyOn β, by simp⟩
-    refine ⟨M.comapOn _ (Function.invFunOn f M.E), rfl, fun I ↦ ?_⟩
-    simp only [comapOn_indep_iff]
-    refine ⟨fun ⟨h, _, hs⟩ ↦ ⟨_, h, Eq.symm <| SurjOn.image_invFun_image_eq fun x hx ↦ hs hx ⟩, ?_⟩
+    refine ⟨M.mapSetEmbedding ⟨_, hf.injective⟩, by simp, fun I ↦ ?_⟩
+    simp_rw [mapSetEmbedding_indep_iff', Embedding.coeFn_mk, restrict_apply]
+    constructor
+    · rintro ⟨I, hI, rfl⟩
+      exact ⟨I, hI, by simp⟩
     rintro ⟨I, hI, rfl⟩
-    rw [InjOn.invFunOn_image hf hI.subset_ground, and_iff_right hI,
-      and_iff_right <| (invFunOn_injOn_image f M.E).mono (image_subset f hI.subset_ground)]
-    rintro _ ⟨y, hy, rfl⟩
-    exact ⟨y, hI.subset_ground hy, rfl⟩ )
-
-/-- Map a matroid `M` across an embedding. -/
-def mapEmbedding (M : Matroid α) (f : α ↪ β) : Matroid β := M.map f <| f.injective.injOn _
-
-def mapEquiv (M : Matroid α) (f : α ≃ β) : Matroid β := M.mapEmbedding f.toEmbedding
+    refine ⟨M.E ↓∩ I, by rwa [image_val_preimage_val_of_subset hI.subset_ground], ?_⟩
+    simp only [image_val_image_eq, image_val_preimage_val_of_subset hI.subset_ground])
 
 @[simp] theorem map_ground (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).E = f '' M.E := rfl
 
 @[simp] theorem map_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set β} :
     (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := by
-  simp [map, IndepMatroid.ofExistsMatroid]
+  simp [map]
+
+/-- Map `M : Matroid α` across an embedding defined on all of `α` -/
+def mapEmbedding (M : Matroid α) (f : α ↪ β) : Matroid β := M.map f <| f.injective.injOn _
+
+/-- Map `M : Matroid α` across an equivalence `α ≃ β` -/
+def mapEquiv (M : Matroid α) (f : α ≃ β) : Matroid β := M.mapEmbedding f.toEmbedding
+
+/-- Map `M : Matroid α` to a `Matroid β` with ground set `E` using an equivalence `M.E ≃ E`.
+Defined using `Matroid.ofExistsMatroidIndep` for better defeq.  -/
+def mapSetEquiv (M : Matroid α) {E : Set β} (e : M.E ≃ E) : Matroid β :=
+  ofExistsMatroidIndep E (fun I ↦ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)))
+  ⟨M.mapSetEmbedding (e.toEmbedding.trans <| Embedding.setSubtype E), by
+    simp [Embedding.range_trans, and_comm, image_equiv_eq_preimage_symm]⟩
+
+@[simp] theorem mapSetEquiv.ground (M : Matroid α) {E : Set β} (e : M.E ≃ E) :
+    (M.mapSetEquiv e).E = E := rfl
+
+@[simp] theorem mapSetEquiv_indep_iff (M : Matroid α) {E : Set β} (e : M.E ≃ E) {I : Set β} :
+    (M.mapSetEquiv e).Indep I ↔ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)) := by
+  simp [mapSetEquiv]
 
 theorem map_image_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set α}
     (hI : I ⊆ M.E) : (M.map f hf).Indep (f '' I) ↔ M.Indep I := by
@@ -256,7 +308,7 @@ theorem map_image_base_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {
     (freeOn E).map f hf = freeOn (f '' E) := by
   rw [← dual_inj]; simp
 
-end Image
+end Map
 
 section restrictSubtype
 
@@ -297,206 +349,3 @@ theorem restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.r
   rw [← hM, restrictSubtype_dual]
 
 end restrictSubtype
-
-section MapRel
-
-
-
-
-
-    -- rw [extend_apply' _ _ _ (by simpa [embeddingOfSubset])] at hxy
-
-    -- · obtain (rfl | ⟨y₀,rfl⟩) := aux y
-    --   · rfl
-    --   ·
-    -- obtain
-    -- rintro ⟨x, (rfl | hx)⟩ ⟨y, (rfl | hy)⟩ hxy; rfl
-
-    -- · have :
-      -- rw [extend_apply', extend_apply'] at hxy
-
--- theorem aux {α β : Type*} {s t : Set β} {f : s → α} {g : t → α} (a₀ : s) :
---   ∃
-
--- noncomputable def exhaust {α β : Type*} {s t : Set β} (f : s ↪ α) (g : t ↪ α)
---     [DecidablePred (· ∈ range g)] [DecidablePred (· ∈ s)] (b₀ : s) : ℕ → α ⊕ β
---   | 0 => .inr b₀.1
---   | n+1 => (exhaust f g b₀ n).rec
---     (fun a ↦ if ha : a ∈ range g then .inr (Classical.choose (mem_range.1 ha)).1 else .inl a)
---     (fun b ↦ if hb : b ∈ s then .inl (f ⟨b,hb⟩) else .inr b)
-
-
--- mutual
---   def repeat_left {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → α
---     | 0 => a₀
---     | n+1 => g (repeat_right f g a₀ n)
-
---   def repeat_right {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) : ℕ → β
---     | 0 => f a₀
---     | n+1 => f (repeat_left f g a₀ n)
--- end
-
--- def repeat_modify {α β : Type u} (f : α → β) (g : β → α) (a₀ : α) (b : β)
---     [DecidablePred fun n ↦ repeat_right f g a₀ n = b] [Decidable (∃ i, repeat_right f g a₀ i = b)] :
---     α :=
---   if h : ∃ i, repeat_right f g a₀ i = b then (repeat_left f g a₀) (Nat.find h) else g b
-
-
--- def ImageIndep (M : Matroid α) (r : α → β → Prop) (I : Set β) :=
---   ∃ (f : β → Option α), (∀ b ∈ I, ∃ a ∈ f b, r a b) ∧ (InjOn f I) ∧ M.Indep (some ⁻¹' (f '' I))
-
-
--- def mapRelIndepMatroid' (M : Matroid α) (r : α → β → Prop) : IndepMatroid β where
---   E := univ
---   Indep I := ∃ (f : Option β → Option α), ∀ a ∈ I, f (some a) ≠ none ∧ InjOn f (some '' I)
---     ∧ M.Indep (some ⁻¹' (f '' (some '' I)))
--- noncomputable def exhaust' (f g : α → Option β) (a₀ : α)
---   [DecidablePred (∃ a, g a = some ·)] : ℕ → Option (α ⊕ β)
---   | 0 => some <| .inl a₀
---   | n+1 => (exhaust' f g a₀ n).rec none (Sum.rec
---       (fun a ↦ (f a).rec none (fun b ↦ some (.inr b)))
---       fun b ↦ if h : ∃ a, g a = some b then some (.inl (Classical.choose h)) else none)
-
--- def inj' (f : α → Option β) := InjOn f ({x | f x ≠ none})
-
--- theorem exhaust_left (f g : α → Option β) (a₀ : α) [DecidablePred (∃ a, g a = some ·)]
---     {i : ℕ} {a : α} {b : β} (hfa : f a = some b) (hia : exhaust' f g a₀ i = some (.inl a)) :
---     exhaust' f g a₀ (i+1) = some (.inr b) := by
---   induction' i using Nat.recAux with i hi
---   · simp only [exhaust', Option.some.injEq, Sum.inl.injEq] at hia ⊢
---     simp [exhaust, hia, hfa]
---   simp [exhaust'] at hia
---   simp only [exhaust', Nat.add_eq, add_zero] at hia hi ⊢
-
-
-
-
--- theorem foo (f g : α → Option β) [DecidablePred (∃ a, g a = some ·)] (a₀ : α) (ha₀ : f a₀ ≠ none)
---     (h_exhaust : ∀ i, exhaust' f g a₀ i ≠ none) (h_inj : InjOn g ({x | g x ≠ none})) :
---     ∃ (g' : α → Option β), (g' a₀ ≠ none) ∧ (∀ a, g' a = none → g a = none) ∧
---       InjOn g' ({x | g' x ≠ none}) := by
---   classical
---   refine ⟨fun a ↦ if ∃ i, exhaust' f g a₀ i = some (.inl a) then f a else g a, ?_, ?_, ?_⟩
---   · simp only [ne_eq]; rwa [if_pos ⟨0, rfl⟩]
---   · intro a
---     simp only
---     split_ifs with h h
---     ·
-
-
-
-
-
--- noncomputable def flipAt {α β : Type*} {s t : Set β} (f : s ↪ α) (g : t ↪ α)
---     [DecidablePred (· ∈ range g)] [DecidablePred (· ∈ s)] (b₀ : s) (hb₀ : b₀.1 ∉ t) :
---     ↑(insert b₀.1 t) ↪ α where
---   toFun x := if h : ∃ i, exhaust f g b₀ i = .inr x then (Classical.choose h).
---   inj' := _
-
--- def mapRelIndepMatroid (M : Matroid α) (r : α → β → Prop) : IndepMatroid β where
---   E := univ
---   Indep I := ∃ (i : I ↪ α), M.Indep (range i) ∧ ∀ e, r (i e) e
---   indep_empty := ⟨⟨fun x ↦ (not_mem_empty x.1 x.2).elim, fun x ↦ (not_mem_empty x.1 x.2).elim⟩,
---     by convert M.empty_indep; simp, fun x ↦ (not_mem_empty x.1 x.2).elim⟩
---   indep_subset := by
---     rintro I J ⟨e, hei, her⟩ hIJ
---     refine ⟨(embeddingOfSubset I J hIJ).trans e, hei.subset ?_, fun ⟨x,hx⟩ ↦ her ⟨x, hIJ hx⟩ ⟩
---     rw [Embedding.range_trans]
---     apply image_subset_range
---   indep_aug := by
---     simp_rw [mem_maximals_iff, mem_setOf, not_and, not_forall, exists_prop]
---     rintro I B hI' hI ⟨⟨g, hg, hgr⟩, hBmax⟩
---     obtain ⟨K, ⟨eK, heK, heKr⟩, hIK, hIne⟩ := hI hI'
---     obtain ⟨b, hbK, hbI⟩ := exists_of_ssubset (hIK.ssubset_of_ne hIne)
---     set a := eK ⟨b,hbK⟩ with ha_def
---     set f := (embeddingOfSubset _ _ hIK).trans eK with hf_def
-
---     have haf : a ∉ range f := by
---       rintro ⟨⟨a₀,ha₀I⟩, ha₀ : eK _ = _⟩
---       simp_rw [ha_def, eK.apply_eq_iff_eq, ← Subtype.val_inj, embeddingOfSubset_apply_coe] at ha₀
---       subst ha₀; contradiction
-
---     have hab : r a b := by apply heKr
-
---     by_cases hac : ∃ c, r a c ∧ c ∈ B \ I
---     · obtain ⟨c, hac, hc⟩ := hac
---       refine ⟨c, hc, Subtype.embeddingInsert f hc.2 haf, heK.subset ?_, ?_⟩
---       · rw [Subtype.range_embeddingInsert, ha_def, hf_def, insert_subset_iff]
---         refine ⟨mem_range_self _, ?_⟩
---         rw [Embedding.range_trans]
---         apply image_subset_range
---       rintro ⟨x, (rfl | hxI)⟩
---       · rw [Subtype.embeddingInsert_apply']
---         · exact hac
---         exact hc.2
---       rw [Subtype.embeddingInsert_apply_mem _ _ _ (by simpa)]
---       exact heKr ⟨x, hIK hxI⟩
-
---     push_neg at hac
-
---     -- have hag : a ∉ range g := by
---     --   rintro ⟨a₀, ha₀⟩
---     --   -- have := hgr a₀
---     --   apply hac a₀ (by rw [← ha₀]; apply hgr)
-
---     have hbB : b ∉ B := fun hbB ↦ hac b hab ⟨hbB, hbI⟩
-
---     by_cases hag : a ∈ range g
---     · obtain ⟨⟨b₀,hb₀B⟩, hb₀⟩ := hag
---       have hrb₀ : r a b₀ := by rw [← hb₀]; apply hgr
---       have hb₀I : b₀ ∈ I := by_contra fun h' ↦ hac _ hrb₀ ⟨hb₀B, h'⟩
---       set a₀ := f ⟨b₀, hb₀I⟩ with ha₀_def
---       by_cases ha₀ : a₀ ∈ range g
---       · obtain ⟨b₁, hb₁⟩ := ha₀
---         -- define `f'` from `f` on `I ∪ {b₁}` by mapping `b₀` to `a` and `b₁` to `a₀`.
-
-
-
-
---     set g' := Subtype.embeddingInsert g (a := b) (b := a) hbB
---     -- have := @hBmax (insert b B)
-
-
-
-
-    -- by_contra! hcon
-
-
-
-    -- have ha_nbr : ∀ c, r a c → c ∈ B := by
-    --   refine fun c hac ↦ by_contra fun hcB ↦ ?_
-    --   rw [@hBmax (insert c B) ?_ (subset_insert _ _)] at hcB
-    --   · simp at hcB
-    --   have : Subtype.emb
-
-
-
-      -- rw [@hBmax (insert c B) ?_ (subset_insert _ _)]; exact mem_insert _ _
-      -- refine ⟨Subtype.embeddingInsert g
-
-
-    -- obtain ⟨I, i, hIX, hIXne⟩ := hI hI'
-    -- by_contra! hcon
-    -- have hB : ∀ {x y}, y ∈ B → r x y → x ∈ range f := by
-    --   rw [← diff_union_inter B I]
-    --   rintro x y (hy | hy) hXY
-    --   · by_contra hx'
-    --     specialize hcon _ hy (Subtype.embeddingInsert f hy.2 hx')
-    --     simp at hcon
-
-
-
-
-
-
-
-    -- simp [mem_maximals_iff]
-
-
-    -- rintro I B ⟨eI, heI, heIr⟩ hnotmax hmax
-    -- by_contra! hcon
-    -- push_neg at hcon
-  -- indep_maximal := _
-  -- subset_ground := _
-
-end MapRel
