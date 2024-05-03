@@ -832,11 +832,11 @@ theorem Minor.exists_contract_spanning_restrict (h : N ≤m M) :
   rw [← (hD.coindep_contract_of_disjoint hCD.symm).cl_compl, delete_ground]
 
 /-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
-@[pp_dot] def Minor.C (h : N ≤m M) : Set α :=
+def Minor.C (h : N ≤m M) : Set α :=
   h.exists_contract_indep_delete_coindep.choose
 
 /-- Classically choose a coindependent delete-set from a proof that `N` is a minor of `M`. -/
-@[pp_dot] def Minor.D (h : N ≤m M) : Set α :=
+def Minor.D (h : N ≤m M) : Set α :=
   h.exists_contract_indep_delete_coindep.choose_spec.choose
 
 theorem Minor.C_indep (h : N ≤m M) : M.Indep h.C := by

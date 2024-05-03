@@ -1,7 +1,8 @@
 
 import Mathlib.Data.Set.Function
+import Mathlib.Data.Set.Subset
 
-open Set Function
+open Set Function Set.Notation
 
 variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 

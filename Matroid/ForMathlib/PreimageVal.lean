@@ -17,7 +17,10 @@ attribute [simp] Set.preimage_val_image_val_eq_self
     ↑((f '' (s ↓∩ x))) = f '' ↑(s ↓∩ x) := by
   aesop
 
-@[simp] theorem image_val_eq (s : Set α) (x : Set s) : Subtype.val '' x = ↑x := rfl
+-- @[simp] theorem image_val_eq (s : Set α) (x : Set s) : Subtype.val '' x = ↑x := rfl
+
+theorem image_val_eq_coe (s : Set α) (x : Set s) : (fun a : s ↦ a.1) '' x = ↑x := rfl
+
 
 @[simp] theorem image_val_image_eq (s : Set α) (t : Set s) (f : α → β) :
     (fun (x : s) ↦ f ↑x) '' t = f '' (↑t) := by

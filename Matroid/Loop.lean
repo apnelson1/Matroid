@@ -18,7 +18,7 @@ namespace Matroid
 
 section Loop
 /-- A loop is a member of the closure of the empty set -/
-@[pp_dot] def Loop (M : Matroid α) (e : α) : Prop :=
+def Loop (M : Matroid α) (e : α) : Prop :=
   e ∈ M.cl ∅
 
 theorem loop_iff_mem_cl_empty : M.Loop e ↔ e ∈ M.cl ∅ := Iff.rfl
@@ -48,7 +48,7 @@ theorem singleton_circuit : M.Circuit {e} ↔ M.Loop e := by
 theorem loop_iff_not_mem_base_forall (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ↔ ∀ B, M.Base B → e ∉ B := by
   rw [← singleton_dep, ← not_indep_iff, not_iff_comm, not_forall]
-  simp_rw [not_imp, not_not, ← singleton_subset_iff, indep_iff_subset_base]
+  simp_rw [_root_.not_imp, not_not, ← singleton_subset_iff, indep_iff_subset_base]
 
 theorem Loop.circuit (he : M.Loop e) : M.Circuit {e} :=
   singleton_circuit.mpr he

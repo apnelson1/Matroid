@@ -11,7 +11,7 @@ namespace Matroid
 variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
 
 /-- A flat is a maximal set having a given basis  -/
-@[pp_dot] def Flat (M : Matroid α) (F : Set α) : Prop :=
+def Flat (M : Matroid α) (F : Set α) : Prop :=
   (∀ ⦃I X⦄, M.Basis I F → M.Basis I X → X ⊆ F) ∧ F ⊆ M.E
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
@@ -23,7 +23,7 @@ theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
 
 /-- The closure of a subset of the ground set is the intersection of the flats containing it.
   A set `X` that doesn't satisfy `X ⊆ M.E` has the junk value `M.cl X := M.cl (X ∩ M.E)`. -/
-@[pp_dot] def cl (M : Matroid α) (X : Set α) : Set α :=
+def cl (M : Matroid α) (X : Set α) : Set α :=
   ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
 
 theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} := rfl
@@ -520,8 +520,7 @@ theorem spanning_iff_ground_subset_cl (hS : S ⊆ M.E := by aesop_mat) :
   rw [spanning_iff_cl, subset_antisymm_iff, and_iff_right (cl_subset_ground _ _)]
 
 theorem not_spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : ¬M.Spanning S ↔ M.cl S ⊂ M.E := by
-  rw [spanning_iff_cl, ssubset_iff_subset_ne, Ne.def, iff_and_self,
-    iff_true_intro (M.cl_subset_ground _)]
+  rw [spanning_iff_cl, ssubset_iff_subset_ne, iff_and_self, iff_true_intro (M.cl_subset_ground _)]
   exact fun _ ↦ trivial
 
 theorem Spanning.superset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := by aesop_mat) :

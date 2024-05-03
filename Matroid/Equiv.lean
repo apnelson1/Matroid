@@ -67,6 +67,9 @@ theorem Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = 
     e ⁻¹' X ⊆ Y ↔ X ⊆ e '' Y := by
   rw [← e.image_symm_eq_preimage, image_subset_iff, e.preimage_symm_eq_image]
 
+@[simp] theorem Iso.range_eq (e : M ≂ N) : range e = univ :=
+  Equiv.range_eq_univ (e : M.E ≃ N.E)
+
 @[simps] def Iso.trans {γ : Type*} {M : Matroid α} {N : Matroid β} {R : Matroid γ}
     (e : M ≂ N) (f : N ≂ R) : M ≂ R where
   toEquiv := (e : M.E ≃ N.E).trans f
@@ -144,12 +147,33 @@ noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
 
 end map
 
+section dual
+
+def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
+  let e' : M✶.E ≃ N✶.E := ((Equiv.setCongr rfl).trans (e : M.E ≃ N.E)).trans (Equiv.setCongr rfl)
+  Iso.ofForallBase e' (by
+    simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ, dual_base_iff]
+    intro B
+    simp_rw [show M.E = Subtype.val '' (univ : Set M.E) by simp,
+      show N.E = Subtype.val '' (univ : Set N.E) by simp]
+    rw [← image_val_diff, ← image_val_diff, e.base_image_iff, image_diff, image_univ, e.range_eq]
+    · rfl
+    exact (Equiv.injective (e : M.E ≃ N.E)))
+
+@[simp] theorem Iso.dual_image (e : M ≂ N) (X : Set α) :
+    Subtype.val '' (e.dual '' (M✶.E ↓∩ X)) = e '' (M.E ↓∩ X) := rfl
+
+end dual
+
 section restrict
 
--- def Iso.restrict (e : M ≂ N) (RM : Set M.E) (RN : Set N.E) (h : e '' RM = RN) :
---     (M ↾ RM) ≂ (N ↾ RN) where
---   toEquiv := by
---     _
---   indep_image_iff' := _
+def Iso.restrict (e : M ≂ N) {R : Set α} {S : Set β} (hR : R ⊆ M.E) (hS : S ⊆ N.E)
+    (hRS : ∀ x : M.E, (e x).1 ∈ S ↔ x.1 ∈ R) : (M ↾ R) ≂ (N ↾ S) where
+  toEquiv := Equiv.subsetEquivSubset (e : M.E ≃ N.E) hR hS hRS
+  indep_image_iff' := by
+    simp only [restrict_ground_eq, restrict_indep_iff, image_subset_iff, Subtype.coe_preimage_self,
+      subset_univ, and_true]
+    intro I
+    convert e.indep_image_iff (I := (embeddingOfSubset _ _ hR) '' I) using 2 <;> simp
 
 end restrict

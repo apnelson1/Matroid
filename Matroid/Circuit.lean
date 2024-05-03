@@ -10,7 +10,7 @@ open Set Set.Notation
 namespace Matroid
 
 /-- A Circuit is a minimal dependent set -/
-@[pp_dot] def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
+def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
 
 theorem circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
@@ -29,7 +29,7 @@ theorem Circuit.ssubset_indep (hC : M.Circuit C) (hXC : X ⊂ C) : M.Indep X := 
   exact fun h ↦ hXC.ne ((circuit_iff.1 hC).2 h hXC.subset)
 
 theorem circuit_iff_forall_ssubset : M.Circuit C ↔ M.Dep C ∧ ∀ ⦃I⦄, I ⊂ C → M.Indep I := by
-  simp_rw [circuit_iff, dep_iff, and_congr_right_iff, ssubset_iff_subset_ne, and_imp, Ne.def]
+  simp_rw [circuit_iff, dep_iff, and_congr_right_iff, ssubset_iff_subset_ne, and_imp]
   exact fun _ hC ↦ ⟨fun h I hIC hne ↦ by_contra fun hi ↦ hne (h hi (hIC.trans hC) hIC),
     fun h I hi _ hIC ↦ by_contra fun hne ↦ hi (h hIC hne)⟩
 
@@ -128,7 +128,7 @@ theorem Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `univ` if `e ∉ M.cl I`. -/
-@[pp_dot] def fundCct (M : Matroid α) (e : α) (I : Set α) :=
+def fundCct (M : Matroid α) (e : α) (I : Set α) :=
   insert e (⋂₀ {J | J ⊆ I ∧ e ∈ M.cl J})
 
 theorem fundCct_subset_ground (heI : e ∈ M.cl I) : M.fundCct e I ⊆ M.E := by
@@ -290,7 +290,8 @@ theorem Circuit.strong_elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C
 theorem Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h : C₁ ≠ C₂) (e : α) :
     ∃ C, M.Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} := by
   have hne : (C₁ \ C₂).Nonempty := by
-    simp_rw [nonempty_iff_ne_empty, Ne.def, diff_eq_empty]
+    rw [nonempty_iff_ne_empty, Ne, diff_eq_empty]
+    -- simp_rw [nonempty_iff_ne_empty]
     exact fun hss ↦ h (hC₁.eq_of_subset_circuit hC₂ hss)
   obtain (he₁ | he₁) := em (e ∈ C₁)
   · obtain (he₂ | he₂) := em (e ∈ C₂)
@@ -327,7 +328,7 @@ theorem eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E =
 section Dual
 
 /-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
-@[pp_dot] abbrev Cocircuit (M : Matroid α) (K : Set α) : Prop := M✶.Circuit K
+abbrev Cocircuit (M : Matroid α) (K : Set α) : Prop := M✶.Circuit K
 
 theorem cocircuit_def : M.Cocircuit K ↔ M✶.Circuit K := Iff.rfl
 
@@ -368,7 +369,7 @@ theorem cocircuit_iff_mem_minimals_compl_nonspanning :
 
 theorem Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) :
     (C ∩ K).encard ≠ 1 := by
-  rw [Ne.def, encard_eq_one, not_exists]
+  rw [Ne, encard_eq_one, not_exists]
   intro e he
   have heCK := singleton_subset_iff.1 he.symm.subset
   simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, mem_minimals_iff_forall_ssubset_not_mem,
@@ -423,7 +424,7 @@ section Girth
 variable {k : ℕ∞}
 
 /-- The `girth` of `M` is the cardinality of the smallest circuit of `M`, or `⊤` if none exists.-/
-@[pp_dot] noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ {C | M.Circuit C}, C.encard
+noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ {C | M.Circuit C}, C.encard
 
 theorem one_le_girth (M : Matroid α) : 1 ≤ M.girth := by
   simp_rw [girth, le_iInf_iff, one_le_encard_iff_nonempty]; exact fun _ ↦ Circuit.nonempty

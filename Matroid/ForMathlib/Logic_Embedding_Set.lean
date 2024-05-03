@@ -31,10 +31,6 @@ theorem Function.Embedding.image_trans (f : α ↪ β) (g : β ↪ γ) :
   Eq.symm <| image_image _ _ _
 
 
-@[simp] theorem Set.range_embeddingOfSubset {s t : Set α} (hst : s ⊆ t) :
-    range (embeddingOfSubset s t hst) = {x | x.1 ∈ s} := by
-  ext ⟨x,hx⟩; simp [embeddingOfSubset]
-
 theorem Set.embeddingOfSubset_apply {s t : Set α} (hst : s ⊆ t) (x : s) :
     embeddingOfSubset s t hst x = ⟨x.1, hst x.2⟩ := rfl
 
@@ -46,6 +42,12 @@ theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t
     (embeddingOfSubset s t hst) ⁻¹' r = {x : s | x.1 ∈ (r : Set α)} := by
   ext ⟨x,h⟩; simp [hst h, embeddingOfSubset_apply]
 
+@[simp] theorem Set.embeddingOfSubset_coeFun {s t : Set α} (hst : s ⊆ t) :
+    (embeddingOfSubset s t hst : s → t) = inclusion hst := rfl
+
+@[simp] theorem image_val_image_inclusion {s t : Set α} (hst : s ⊆ t) (r : Set s) :
+    Subtype.val '' (inclusion hst '' r) = r :=
+  image_image Subtype.val (inclusion hst) r
 
 -- this is an `apply_coe` lemma in mathlib that should be renamed.
 -- @[simp] theorem embeddingOfSubset_apply_val {s t : Set α} (hst : s ⊆ t) (x : s) :
@@ -72,11 +74,11 @@ section embeddingInsert
 /-- An embedding defined on a coerced set can be extended to an embedding on an insertion. -/
 noncomputable def Subtype.embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     ↑(insert a s) ↪ β where
-  toFun := Function.extend (embeddingOfSubset _ _ (subset_insert a s)) f (fun _ ↦ b)
+  toFun := Function.extend (inclusion (subset_insert a s)) f (fun _ ↦ b)
   inj' := by
-    have hinj := (embeddingOfSubset _ _ (subset_insert a s)).injective
+    have hinj := (inclusion_injective (subset_insert a s))
     have aux : ∀ (x : ↑(insert a s)),
-        x = ⟨a, mem_insert _ _⟩ ∨ ∃ (x₀ : s), x = embeddingOfSubset _ _ (subset_insert a s) x₀ := by
+        x = ⟨a, mem_insert _ _⟩ ∨ ∃ (x₀ : s), x = inclusion (subset_insert a s) x₀ := by
       rintro ⟨x, (rfl | hx)⟩; exact .inl rfl; exact .inr ⟨⟨x,hx⟩, rfl⟩
     rintro x y hxy
     obtain (rfl | ⟨x₀,rfl⟩) := aux x
@@ -94,9 +96,9 @@ noncomputable def Subtype.embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b 
 
 theorem Subtype.embeddingInsert_apply_mem (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f)
     {x : ↑(insert a s)} (hx : x.1 ∈ s) : (Subtype.embeddingInsert f ha hb) x = f ⟨x,hx⟩ := by
-  nth_rw 1 [show x = embeddingOfSubset _ _ (subset_insert a s) ⟨x,hx⟩ from rfl]
-  simp [embeddingInsert, (embeddingOfSubset _ _ (subset_insert a s)).injective.extend_apply]
-
+  nth_rw 1 [show x = inclusion (subset_insert a s) ⟨x,hx⟩ from rfl]
+  simp only [embeddingInsert,  Embedding.coeFn_mk]
+  rw [(inclusion_injective (subset_insert a s)).extend_apply]
 
 theorem Subtype.embeddingInsert_apply (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     (Subtype.embeddingInsert f ha hb) ⟨a, mem_insert _ _⟩ = b := by
@@ -119,10 +121,41 @@ theorem Subtype.embeddingInsert_apply_eq_ite (f : s ↪ β) (ha : a ∉ s) (hb :
 @[simp] theorem Subtype.range_embeddingInsert (f : s ↪ β) (ha : a ∉ s) (hb : b ∉ range f) :
     range (Subtype.embeddingInsert f ha hb) = insert b (range f) := by
   simp only [embeddingInsert, Embedding.coeFn_mk]
-  rw [range_extend (embeddingOfSubset _ _ (subset_insert a s)).injective, range_embeddingOfSubset]
+  rw [range_extend (inclusion_injective (subset_insert a s)), range_inclusion]
   simp_rw [← union_singleton]
   convert rfl
   ext x
   simp [ha, eq_comm (a := x)]
 
 end embeddingInsert
+
+
+section EquivSubset
+
+/-- The restriction of an equivalence `e : s ≃ t` to a subset `a` of `s` and its image `b`. -/
+@[simps] def Equiv.subsetEquivSubset {α β : Type*} {a s : Set α} {b t : Set β} (e : s ≃ t)
+    (has : a ⊆ s) (hbt : b ⊆ t) (h_eq : ∀ x, (e x).1 ∈ b ↔ x.1 ∈ a) : a ≃ b :=
+    Equiv.mk
+      (toFun := fun x ↦ ⟨(e ⟨x.1, has x.2⟩).1, by rw [h_eq]; simp⟩)
+      (invFun := fun x ↦ ⟨(e.symm ⟨x.1, hbt x.2⟩).1, by rw [← h_eq]; simp⟩)
+      (left_inv := fun _ ↦ by simp)
+      (right_inv := fun _ ↦ by simp)
+
+@[simp] theorem Equiv.subsetEquivSubset_image_val {α β : Type*} {a s : Set α} {b t : Set β}
+    (e : s ≃ t) (has) (hbt : b ⊆ t) (h_eq) (u : Set a) :
+    Subtype.val '' (e.subsetEquivSubset has hbt h_eq '' u) = e '' ((inclusion has) '' u) := by
+  ext x
+  simp only [mem_image, mem_image_equiv, Subtype.exists, exists_and_right, exists_eq_right,
+    inclusion_mk, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_and_left,
+    subsetEquivSubset, coe_fn_mk, Subtype.mk.injEq, exists_prop]
+  constructor
+  · rintro ⟨hxb, ⟨v, hva, hvu, rfl⟩⟩; simp [has hva, hva, hvu]
+  simp only [forall_exists_index, and_imp]
+  rintro hxt v hva hvu hvs hvx
+  refine ⟨?_, ⟨v, hva, hvu, by rw [hvx]⟩⟩
+  specialize h_eq ⟨v, hvs⟩
+  rw [hvx, Subtype.coe_mk, Subtype.coe_mk] at h_eq
+  rwa [h_eq]
+
+
+end EquivSubset
