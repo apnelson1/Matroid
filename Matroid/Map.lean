@@ -204,6 +204,9 @@ theorem mapSetEmbedding_indep_iff' {M : Matroid α} {f : M.E ↪ β} {I : Set β
   rw [preimage_image_eq _ f.injective]
   exact ⟨hI, _, rfl⟩
 
+def mapSetSetEmbedding (M : Matroid α) {E : Set β} (f : M.E ↪ E) : Matroid β :=
+  M.mapSetEmbedding (f.trans (Embedding.setSubtype E))
+
 /-- Given an injective function `f` on `M.E`, the isomorphic copy of `M` whose independent sets
 are the images of those in `M`. -/
 def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ofExistsMatroidIndep

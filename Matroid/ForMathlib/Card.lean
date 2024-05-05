@@ -123,7 +123,7 @@ theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
   rw [biUnion_eq_iUnion]
   convert encard_iUnion_eq_sum_iff_pairwiseDisjoint (ι := u) (s := fun i ↦ s i) (by simpa)
   · rw [Finset.univ_eq_attach, Finset.sum_attach _ (f := fun i ↦ encard (s i))]
-  refine ⟨fun h i _ j _ hij ↦ h i.prop j.prop (by rwa [Ne.def, Subtype.coe_injective.eq_iff]),
+  refine ⟨fun h i _ j _ hij ↦ h i.prop j.prop (by rwa [Ne, Subtype.coe_injective.eq_iff]),
     fun h i hi j hj hij ↦ ?_⟩
   exact h (mem_univ ⟨i, hi⟩) (mem_univ ⟨j,hj⟩) (by simpa)
 

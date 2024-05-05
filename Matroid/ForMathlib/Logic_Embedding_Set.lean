@@ -45,9 +45,20 @@ theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t
 @[simp] theorem Set.embeddingOfSubset_coeFun {s t : Set α} (hst : s ⊆ t) :
     (embeddingOfSubset s t hst : s → t) = inclusion hst := rfl
 
+@[simp] theorem image_val_image_comp_inclusion (s : Set α) (r : Set s) {t t' : Set β} (ht : t ⊆ t')
+    (f : s → t) : Subtype.val '' ((fun x ↦ inclusion ht (f x)) '' r) = ↑(f '' r) := by
+  simp_rw [image_image, coe_inclusion]
+
+@[simp] theorem image_val_range_comp_inclusion (s : Set α) {t t' : Set β} (ht : t ⊆ t') (
+    f : s → t) : Subtype.val '' (range (fun x ↦ inclusion ht (f x))) = ↑(range f) := by
+  rw [← image_univ, image_val_image_comp_inclusion]
+  simp
+
 @[simp] theorem image_val_image_inclusion {s t : Set α} (hst : s ⊆ t) (r : Set s) :
     Subtype.val '' (inclusion hst '' r) = r :=
   image_image Subtype.val (inclusion hst) r
+
+
 
 -- this is an `apply_coe` lemma in mathlib that should be renamed.
 -- @[simp] theorem embeddingOfSubset_apply_val {s t : Set α} (hst : s ⊆ t) (x : s) :
@@ -156,6 +167,12 @@ section EquivSubset
   specialize h_eq ⟨v, hvs⟩
   rw [hvx, Subtype.coe_mk, Subtype.coe_mk] at h_eq
   rwa [h_eq]
+
+@[simps!] def Equiv.subsetEquivImage {α β : Type*} {a s : Set α} {t : Set β} (e : s ≃ t)
+    (has : a ⊆ s) : a ≃ Subtype.val '' (e '' (s ↓∩ a)) :=
+  e.subsetEquivSubset has (by simp) (by simp)
+
+
 
 
 end EquivSubset

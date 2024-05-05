@@ -7,7 +7,7 @@ open Set Set.Notation
 namespace Matroid
 
 /-- An isomorphism between two matroids. -/
-structure Iso (M : Matroid α) (N : Matroid β) where
+@[pp_nodot] structure Iso (M : Matroid α) (N : Matroid β) where
   toEquiv : M.E ≃ N.E
   indep_image_iff' : ∀ (I : Set M.E), M.Indep I ↔ N.Indep (↑(toEquiv '' I))
 
@@ -44,6 +44,12 @@ theorem Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(
     rw [← Equiv.image_symm_image e.toEquiv I]
     convert (e.indep_image_iff (I := e.toEquiv.symm '' I)).symm
     simp
+
+@[simp] theorem Iso.apply_symm_apply (e : M ≂ N) (x : N.E) : e (e.symm x) = x :=
+  Equiv.apply_symm_apply e.toEquiv x
+
+@[simp] theorem Iso.symm_apply_apply (e : M ≂ N) (x : M.E) : e.symm (e x) = x :=
+  Equiv.symm_apply_apply e.toEquiv x
 
 theorem Iso.symm_image_image (e : M ≂ N) (X : Set M.E) : e.symm '' (e '' X) = X :=
   Equiv.symm_image_image e.toEquiv X
@@ -162,6 +168,9 @@ def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
 
 @[simp] theorem Iso.dual_image (e : M ≂ N) (X : Set α) :
     Subtype.val '' (e.dual '' (M✶.E ↓∩ X)) = e '' (M.E ↓∩ X) := rfl
+
+def Iso.dual_comm (e : M ≂ N✶) : M✶ ≂ N :=
+  e.dual.trans <| Iso.ofEq N.dual_dual
 
 end dual
 
