@@ -615,10 +615,10 @@ theorem hyperplane_iff_maximal_proper_flat :
     M.Hyperplane H ↔ M.Flat H ∧ H ⊂ M.E ∧ ∀ F, H ⊂ F → M.Flat F → F = M.E := by
   rw [hyperplane_iff_covby, covby_iff, and_iff_right M.ground_flat, and_congr_right_iff,
     and_congr_right_iff]
-  simp_rw [or_iff_not_imp_left, ssubset_iff_subset_ne, and_imp, ← Ne.def]
+  simp_rw [or_iff_not_imp_left, ssubset_iff_subset_ne, and_imp]
   exact fun _ _ _  ↦
     ⟨fun h F hHF hne' hF ↦ h F hF hHF hF.subset_ground hne'.symm, fun h F hF hHF _ hne' ↦
-      h F hHF hne'.symm hF⟩
+      h F hHF (Ne.symm hne') hF⟩
 
 theorem hyperplane_iff_maximal_nonspanning :
     M.Hyperplane H ↔ H ∈ maximals (· ⊆ ·) {X | ¬M.Spanning X ∧ X ⊆ M.E} := by

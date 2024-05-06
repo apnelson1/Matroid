@@ -5,7 +5,6 @@ import Mathlib.LinearAlgebra.FiniteDimensional
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.StdBasis
 import Matroid.ForMathlib.SetSubtype
-import Matroid.ForMathlib.Minimal
 import Matroid.ForMathlib.LinearAlgebra.Matrix.ToLin
 
 open Set Function Submodule BigOperators FiniteDimensional

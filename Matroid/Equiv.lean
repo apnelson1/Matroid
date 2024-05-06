@@ -35,6 +35,10 @@ theorem Iso.dep_image_iff (e : M ≂ N) {D : Set M.E} : M.Dep ↑D ↔ N.Dep ↑
 theorem Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(e '' D) :=
   e.dep_image_iff.1 hD
 
+@[simps] def Iso.refl {M : Matroid α} : Iso M M where
+  toEquiv := Equiv.refl _
+  indep_image_iff' := by simp
+
 @[simps] def Iso.symm (e : M ≂ N) : Iso N M where
   toEquiv := e.toEquiv.symm
   indep_image_iff' := by

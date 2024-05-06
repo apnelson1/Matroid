@@ -44,7 +44,7 @@ section basic
 
 theorem eq_top_iff_forall_lt {n : ℕ∞} : n = ⊤ ↔ ∀ m : ℕ, m < n := by
   refine ⟨fun h m ↦ h ▸ coe_lt_top m ,fun h ↦ ?_⟩
-  rw [← not_not (a := (n = ⊤)), ← Ne.def, ne_top_iff_exists]
+  rw [← not_not (a := (n = ⊤)), ← Ne, ne_top_iff_exists]
   rintro ⟨a, rfl⟩
   exact (h a).ne rfl
 
