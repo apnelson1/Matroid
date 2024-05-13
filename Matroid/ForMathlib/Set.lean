@@ -55,7 +55,6 @@ theorem diff_union_eq_union_of_subset (s : Set α) {t r : Set α} (h : t ⊆ r) 
     (s \ t) ∪ r = s ∪ r := by
   ext x; simp only [mem_union, mem_diff]; tauto
 
-
 theorem diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t ∩ s = r ∩ s) := by
   rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := r)]
   refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
@@ -89,17 +88,23 @@ theorem subset_insert_iff {s t : Set α} {x : α} :
   rw [diff_singleton_eq_self hx]
   tauto
 
-theorem Nonempty.subset_pair_iff {x y : α} {s : Set α} (hs : s.Nonempty) :
-    s ⊆ {x,y} ↔ s = {x} ∨ s = {y} ∨ s = {x,y} := by
+theorem subset_pair_iff {x y : α} {s : Set α} : s ⊆ {x,y} ↔ ∀ a ∈ s, a = x ∨ a = y := by
+  simp [subset_def]
+
+theorem subset_pair_iff_eq {x y : α} {s : Set α} :
+    s ⊆ {x,y} ↔ s = ∅ ∨ s = {x} ∨ s = {y} ∨ s = {x,y} := by
   obtain (rfl | hne) := eq_or_ne x y
-  · rw [pair_eq_singleton, hs.subset_singleton_iff]; simp
-  rw [subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
-    iff_false_intro hs.ne_empty, false_or, and_or_left, ← singleton_subset_iff,
-    ← subset_antisymm_iff, eq_comm (b := s), ← or_assoc, or_comm (a := s = _), or_assoc]
-  convert Iff.rfl using 3
-  rw [Iff.comm, subset_antisymm_iff, diff_subset_iff, subset_diff, disjoint_singleton,
-    and_iff_left hne.symm, ← and_assoc, and_comm, singleton_union, ← and_assoc, ← union_subset_iff,
-    singleton_union, pair_comm, ← subset_antisymm_iff, eq_comm]
+  · simp only [mem_singleton_iff, insert_eq_of_mem, subset_singleton_iff_eq, or_self]
+  rw [pair_comm, subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
+    subset_singleton_iff_eq, or_assoc, and_or_left, and_or_left]
+  convert Iff.rfl; aesop
+  refine ⟨fun h ↦ by rw [h, and_iff_right (.inl rfl), pair_diff_left hne.symm], fun h ↦ ?_⟩
+  rw [subset_antisymm_iff, diff_subset_iff, singleton_union, subset_diff, singleton_subset_iff] at h
+  exact h.2.1.antisymm (pair_subset h.1 h.2.2.1)
+
+theorem Nonempty.subset_pair_iff_eq {x y : α} {s : Set α} (hs : s.Nonempty) :
+    s ⊆ {x,y} ↔ s = {x} ∨ s = {y} ∨ s = {x,y} := by
+  rw [Set.subset_pair_iff_eq, or_iff_right]; exact hs.ne_empty
 
 theorem inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
