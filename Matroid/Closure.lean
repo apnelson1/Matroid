@@ -1,10 +1,11 @@
 import Matroid.Constructions.Basic
 import Mathlib.Data.Matroid.Restrict
 import Matroid.ForMathlib.Set
+import Matroid.Equiv
 
 open scoped BigOperators
 
-open Set
+open Set Set.Notation
 
 namespace Matroid
 
@@ -15,10 +16,10 @@ def Flat (M : Matroid α) (F : Set α) : Prop :=
   (∀ ⦃I X⦄, M.Basis I F → M.Basis I X → X ⊆ F) ∧ F ⊆ M.E
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
-theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
+lemma Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
   hF.2
 
-@[simp] theorem ground_flat (M : Matroid α) : M.Flat M.E :=
+@[simp] lemma ground_flat (M : Matroid α) : M.Flat M.E :=
   ⟨fun _ _ _ ↦ Basis.subset_ground, Subset.rfl⟩
 
 /-- The closure of a subset of the ground set is the intersection of the flats containing it.
@@ -26,85 +27,85 @@ theorem Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
 def cl (M : Matroid α) (X : Set α) : Set α :=
   ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
 
-theorem cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} := rfl
+lemma cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} := rfl
 
-theorem cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {F | M.Flat F ∧ X ⊆ F} := by
   nth_rw 2 [← inter_eq_self_of_subset_left hX]; rfl
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
-theorem cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
+lemma cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
   sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right _ _⟩
 
-theorem cl_eq_sInter_of_subset {M : Matroid α} (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma cl_eq_sInter_of_subset {M : Matroid α} (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {F : Set α | M.Flat F ∧ X ⊆ F} :=
   by rw [cl, inter_eq_self_of_subset_left hX]
 
-@[simp] theorem cl_inter_ground (M : Matroid α) (X : Set α) : M.cl (X ∩ M.E) = M.cl X := by
+@[simp] lemma cl_inter_ground (M : Matroid α) (X : Set α) : M.cl (X ∩ M.E) = M.cl X := by
   simp_rw [cl_def, inter_assoc, inter_self]
 
-theorem inter_ground_subset_cl (M : Matroid α) (X : Set α) : X ∩ M.E ⊆ M.cl X := by
+lemma inter_ground_subset_cl (M : Matroid α) (X : Set α) : X ∩ M.E ⊆ M.cl X := by
   simp_rw [cl_def, subset_sInter_iff]; aesop
 
-theorem mem_cl_iff_forall_mem_flat (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma mem_cl_iff_forall_mem_flat (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.cl X ↔ ∀ F, M.Flat F → X ⊆ F → e ∈ F := by
   simp_rw [cl_eq_sInter_of_subset X, mem_sInter, mem_setOf, and_imp]
 
-theorem subset_cl_iff_forall_subset_flat (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_cl_iff_forall_subset_flat (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     Y ⊆ M.cl X ↔ ∀ F, M.Flat F → X ⊆ F → Y ⊆ F := by
   simp_rw [cl_eq_sInter_of_subset X, subset_sInter_iff, mem_setOf, and_imp]
 
-theorem subset_cl (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_cl (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     X ⊆ M.cl X := by
   rw [cl_eq_sInter_of_subset X, subset_sInter_iff]; simp
 
-theorem Flat.cl (hF : M.Flat F) : M.cl F = F :=
+lemma Flat.cl (hF : M.Flat F) : M.cl F = F :=
   (sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F)
 
-@[simp] theorem cl_ground (M : Matroid α) : M.cl M.E = M.E :=
+@[simp] lemma cl_ground (M : Matroid α) : M.cl M.E = M.E :=
   (M.cl_subset_ground M.E).antisymm (M.subset_cl M.E)
 
-@[simp] theorem cl_univ (M : Matroid α) : M.cl univ = M.E := by
+@[simp] lemma cl_univ (M : Matroid α) : M.cl univ = M.E := by
   rw [← cl_inter_ground, univ_inter, cl_ground]
 
-theorem cl_subset_cl (M : Matroid α) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
+lemma cl_subset_cl (M : Matroid α) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
   subset_sInter (fun _ ⟨hF, hssF⟩ ↦
     sInter_subset_of_mem ⟨hF, subset_trans (inter_subset_inter_left _ h) hssF⟩)
 
-theorem cl_mono (M : Matroid α) : Monotone M.cl :=
+lemma cl_mono (M : Matroid α) : Monotone M.cl :=
   fun _ _ ↦ M.cl_subset_cl
 
-@[simp] theorem cl_cl (M : Matroid α) (X : Set α) : M.cl (M.cl X) = M.cl X :=
+@[simp] lemma cl_cl (M : Matroid α) (X : Set α) : M.cl (M.cl X) = M.cl X :=
   (M.subset_cl _).antisymm' (subset_sInter
     (fun F hF ↦ (cl_subset_cl _  (sInter_subset_of_mem hF)).trans hF.1.cl.subset))
 
-theorem cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
+lemma cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
     (M.cl_subset_cl hXY).trans_eq (M.cl_cl Y)
 
-theorem cl_subset_cl_iff_subset_cl (hX : X ⊆ M.E := by aesop_mat) :
+lemma cl_subset_cl_iff_subset_cl (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X ⊆ M.cl Y ↔ X ⊆ M.cl Y :=
   ⟨(M.subset_cl X).trans, cl_subset_cl_of_subset_cl⟩
 
-theorem subset_cl_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by aesop_mat) :
+lemma subset_cl_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E := by aesop_mat) :
     X ⊆ M.cl Y :=
   hXY.trans (M.subset_cl Y)
 
-theorem subset_cl_of_subset' (M : Matroid α) (hXY : X ⊆ Y) (hX : X ⊆ M.E := by aesop_mat) :
+lemma subset_cl_of_subset' (M : Matroid α) (hXY : X ⊆ Y) (hX : X ⊆ M.E := by aesop_mat) :
     X ⊆ M.cl Y := by
   rw [← cl_inter_ground]; exact M.subset_cl_of_subset (subset_inter hXY hX)
 
-theorem mem_cl_of_mem (M : Matroid α) (h : e ∈ X) (hX : X ⊆ M.E := by aesop_mat) :
+lemma mem_cl_of_mem (M : Matroid α) (h : e ∈ X) (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.cl X :=
   (M.subset_cl X) h
 
-theorem mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aesop_mat) :
+lemma mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aesop_mat) :
     e ∈ M.cl X := by
   rw [← cl_inter_ground]; exact M.mem_cl_of_mem ⟨heX, h⟩
 
 -- @[aesop unsafe 10% (rule_sets := [Matroid])]
-theorem mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
+lemma mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
 
-theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
+lemma cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
     M.cl (⋃ i, M.cl (Xs i)) = M.cl (⋃ i, Xs i) := by
   refine (M.cl_subset_cl_of_subset_cl
     (iUnion_subset (fun i ↦ M.cl_subset_cl (subset_iUnion _ _)))).antisymm ?_
@@ -113,48 +114,59 @@ theorem cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
   rw [cl_inter_ground]
   exact subset_iUnion (fun i ↦ M.cl (Xs i)) i
 
-theorem cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) :
+lemma cl_iUnion_congr {ι : Type*} (Xs Ys : ι → Set α) (h : ∀ i, M.cl (Xs i) = M.cl (Ys i)) :
+    M.cl (⋃ i, Xs i) = M.cl (⋃ i, Ys i) := by
+  rw [← M.cl_iUnion_cl_eq_cl_iUnion]
+  simp [h, M.cl_iUnion_cl_eq_cl_iUnion]
+
+lemma cl_biUnion_cl_eq_cl_sUnion (M : Matroid α) (Xs : Set (Set α)) :
     M.cl (⋃ X ∈ Xs, M.cl X) = M.cl (⋃₀ Xs) := by
   rw [sUnion_eq_iUnion, biUnion_eq_iUnion, cl_iUnion_cl_eq_cl_iUnion]
 
-theorem cl_biUnion_cl_eq_cl_biUnion (M : Matroid α) (Xs : ι → Set α) (A : Set ι):
+lemma cl_biUnion_cl_eq_cl_biUnion (M : Matroid α) (Xs : ι → Set α) (A : Set ι) :
     M.cl (⋃ i ∈ A, M.cl (Xs i)) = M.cl (⋃ i ∈ A, Xs i) := by
   rw [biUnion_eq_iUnion, M.cl_iUnion_cl_eq_cl_iUnion, biUnion_eq_iUnion]
 
-@[simp] theorem cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
+lemma cl_biUnion_congr (M : Matroid α) (Xs Ys : ι → Set α) (A : Set ι)
+    (h : ∀ i ∈ A, M.cl (Xs i) = M.cl (Ys i)) :
+    M.cl (⋃ i ∈ A, Xs i) = M.cl (⋃ i ∈ A, Ys i) := by
+  rw [← cl_biUnion_cl_eq_cl_biUnion, iUnion₂_congr h, cl_biUnion_cl_eq_cl_biUnion]
+
+@[simp] lemma cl_cl_union_cl_eq_cl_union (M : Matroid α) (X Y : Set α) :
     M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) := by
   rw [eq_comm, union_eq_iUnion, ← cl_iUnion_cl_eq_cl_iUnion, union_eq_iUnion]
   simp_rw [Bool.cond_eq_ite, apply_ite]
 
-@[simp] theorem cl_union_cl_right_eq (M : Matroid α) (X Y : Set α) :
+@[simp] lemma cl_union_cl_right_eq (M : Matroid α) (X Y : Set α) :
     M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) := by
   rw [← cl_cl_union_cl_eq_cl_union, cl_cl, cl_cl_union_cl_eq_cl_union]
 
-@[simp] theorem cl_union_cl_left_eq (M : Matroid α) (X Y : Set α) :
+@[simp] lemma cl_union_cl_left_eq (M : Matroid α) (X Y : Set α) :
     M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y) := by
   rw [← cl_cl_union_cl_eq_cl_union, cl_cl, cl_cl_union_cl_eq_cl_union]
 
-@[simp] theorem cl_insert_cl_eq_cl_insert (M : Matroid α) (e : α) (X : Set α) :
+@[simp] lemma cl_insert_cl_eq_cl_insert (M : Matroid α) (e : α) (X : Set α) :
     M.cl (insert e (M.cl X)) = M.cl (insert e X) := by
   simp_rw [← singleton_union, cl_union_cl_right_eq]
 
-@[simp] theorem cl_union_cl_empty_eq (M : Matroid α) (X : Set α) :
+@[simp] lemma cl_union_cl_empty_eq (M : Matroid α) (X : Set α) :
     M.cl X ∪ M.cl ∅ = M.cl X :=
   union_eq_self_of_subset_right (M.cl_subset_cl (empty_subset _))
 
-@[simp] theorem cl_empty_union_cl_eq (M : Matroid α) (X : Set α) :
+@[simp] lemma cl_empty_union_cl_eq (M : Matroid α) (X : Set α) :
     M.cl ∅ ∪ M.cl X = M.cl X :=
   union_eq_self_of_subset_left (M.cl_subset_cl (empty_subset _))
 
-theorem cl_insert_eq_of_mem_cl (he : e ∈ M.cl X) : M.cl (insert e X) = M.cl X := by
+lemma cl_insert_eq_of_mem_cl (he : e ∈ M.cl X) : M.cl (insert e X) = M.cl X := by
   rw [← cl_insert_cl_eq_cl_insert, insert_eq_of_mem he, cl_cl]
 
-theorem mem_cl_self (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl {e} :=
+lemma mem_cl_self (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl {e} :=
   mem_cl_of_mem' _ rfl
+
 
 -- Independence and Bases
 
-theorem Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
+lemma Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
     M.cl I = {x | M.Basis I (insert x I)} := by
   set F := {x | M.Basis I (insert x I)}
   have hIF : M.Basis I F := hI.basis_setOf_insert_basis
@@ -172,106 +184,104 @@ theorem Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
     exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (Or.inr (mem_insert _ _))
   exact ⟨hF, (inter_subset_left _ _).trans hIF.subset⟩
 
-theorem Indep.insert_basis_iff_mem_cl (hI : M.Indep I) : M.Basis I (insert e I) ↔ e ∈ M.cl I := by
+lemma Indep.insert_basis_iff_mem_cl (hI : M.Indep I) : M.Basis I (insert e I) ↔ e ∈ M.cl I := by
   rw [hI.cl_eq_setOf_basis_insert, mem_setOf]
 
-theorem Indep.basis_cl (hI : M.Indep I) : M.Basis I (M.cl I) := by
+lemma Indep.basis_cl (hI : M.Indep I) : M.Basis I (M.cl I) := by
   rw [hI.cl_eq_setOf_basis_insert]; exact hI.basis_setOf_insert_basis
 
-theorem Basis.cl_eq_cl (h : M.Basis I X) : M.cl I = M.cl X := by
+lemma Basis.cl_eq_cl (h : M.Basis I X) : M.cl I = M.cl X := by
   refine' subset_antisymm (M.cl_subset_cl h.subset) _
   rw [← M.cl_cl I, h.indep.cl_eq_setOf_basis_insert]
   exact M.cl_subset_cl fun e he ↦ (h.basis_subset (subset_insert _ _) (insert_subset he h.subset))
 
-theorem Basis.cl_eq_right (h : M.Basis I (M.cl X)) : M.cl I = M.cl X :=
+lemma Basis.cl_eq_right (h : M.Basis I (M.cl X)) : M.cl I = M.cl X :=
   M.cl_cl X ▸ h.cl_eq_cl
 
-theorem Basis'.cl_eq_cl (h : M.Basis' I X) : M.cl I = M.cl X := by
+lemma Basis'.cl_eq_cl (h : M.Basis' I X) : M.cl I = M.cl X := by
   rw [← cl_inter_ground _ X, h.basis_inter_ground.cl_eq_cl]
 
-theorem Basis.subset_cl (h : M.Basis I X) : X ⊆ M.cl I := by
+lemma Basis.subset_cl (h : M.Basis I X) : X ⊆ M.cl I := by
   rw [← cl_subset_cl_iff_subset_cl, h.cl_eq_cl]
 
-theorem Basis'.basis_cl_right (h : M.Basis' I X) : M.Basis I (M.cl X) := by
+lemma Basis'.basis_cl_right (h : M.Basis' I X) : M.Basis I (M.cl X) := by
   rw [← h.cl_eq_cl]; exact h.indep.basis_cl
 
-theorem Basis.basis_cl_right (h : M.Basis I X) : M.Basis I (M.cl X) :=
+lemma Basis.basis_cl_right (h : M.Basis I X) : M.Basis I (M.cl X) :=
   h.basis'.basis_cl_right
 
-theorem Indep.mem_cl_iff (hI : M.Indep I) :
+lemma Indep.mem_cl_iff (hI : M.Indep I) :
     x ∈ M.cl I ↔ M.Dep (insert x I) ∨ x ∈ I := by
   rwa [hI.cl_eq_setOf_basis_insert, mem_setOf, basis_insert_iff]
 
-theorem Indep.mem_cl_iff' (hI : M.Indep I) :
+lemma Indep.mem_cl_iff' (hI : M.Indep I) :
     x ∈ M.cl I ↔ x ∈ M.E ∧ (M.Indep (insert x I) → x ∈ I) := by
   rw [hI.mem_cl_iff, dep_iff, insert_subset_iff, and_iff_left hI.subset_ground,
     imp_iff_not_or]
   have := hI.subset_ground
   aesop
 
-theorem Indep.insert_dep_iff (hI : M.Indep I) : M.Dep (insert e I) ↔ e ∈ M.cl I \ I := by
+lemma Indep.insert_dep_iff (hI : M.Indep I) : M.Dep (insert e I) ↔ e ∈ M.cl I \ I := by
   rw [mem_diff, hI.mem_cl_iff, or_and_right, and_not_self_iff, or_false,
     iff_self_and, imp_not_comm]
   intro heI; rw [insert_eq_of_mem heI]; exact hI.not_dep
 
-theorem Indep.mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) :
+lemma Indep.mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) :
     e ∈ M.cl I ↔ M.Dep (insert e I) := by
   rw [hI.insert_dep_iff, mem_diff, and_iff_left heI]
 
-theorem Indep.not_mem_cl_iff (hI : M.Indep I) (he : e ∈ M.E := by aesop_mat) :
+lemma Indep.not_mem_cl_iff (hI : M.Indep I) (he : e ∈ M.E := by aesop_mat) :
     e ∉ M.cl I ↔ M.Indep (insert e I) ∧ e ∉ I := by
   rw [hI.mem_cl_iff, dep_iff, insert_subset_iff, and_iff_right he,
     and_iff_left hI.subset_ground]; tauto
 
-theorem Indep.not_mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I)
+lemma Indep.not_mem_cl_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I)
     (he : e ∈ M.E := by aesop_mat) : e ∉ M.cl I ↔ M.Indep (insert e I) := by
   rw [hI.not_mem_cl_iff, and_iff_left heI]
 
-theorem Indep.insert_indep_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) :
+lemma Indep.insert_indep_iff_of_not_mem (hI : M.Indep I) (heI : e ∉ I) :
     M.Indep (insert e I) ↔ e ∈ M.E \ M.cl I := by
   rw [mem_diff, hI.mem_cl_iff_of_not_mem heI, dep_iff, not_and, not_imp_not, insert_subset_iff,
     and_iff_left hI.subset_ground]
   exact ⟨fun h ↦ ⟨h.subset_ground (mem_insert e I), fun _ ↦ h⟩, fun h ↦ h.2 h.1⟩
 
-theorem Indep.insert_indep_iff (hI : M.Indep I) :
+lemma Indep.insert_indep_iff (hI : M.Indep I) :
     M.Indep (insert e I) ↔ e ∈ M.E \ M.cl I ∨ e ∈ I := by
   obtain (h | h) := em (e ∈ I)
   · simp_rw [insert_eq_of_mem h, iff_true_intro hI, true_iff, iff_true_intro h, or_true]
   rw [hI.insert_indep_iff_of_not_mem h, or_iff_left h]
 
-
-
-theorem Indep.basis_of_subset_of_subset_cl (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.cl I) :
+lemma Indep.basis_of_subset_of_subset_cl (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.cl I) :
     M.Basis I X :=
   hI.basis_cl.basis_subset hIX hXI
 
-theorem basis_iff_indep_subset_cl : M.Basis I X ↔ M.Indep I ∧ I ⊆ X ∧ X ⊆ M.cl I :=
+lemma basis_iff_indep_subset_cl : M.Basis I X ↔ M.Indep I ∧ I ⊆ X ∧ X ⊆ M.cl I :=
   ⟨fun h ↦ ⟨h.indep, h.subset, h.subset_cl⟩, fun h ↦ h.1.basis_of_subset_of_subset_cl h.2.1 h.2.2⟩
 
-theorem Indep.base_of_ground_subset_cl (hI : M.Indep I) (h : M.E ⊆ M.cl I) : M.Base I := by
+lemma Indep.base_of_ground_subset_cl (hI : M.Indep I) (h : M.E ⊆ M.cl I) : M.Base I := by
   rw [← basis_ground_iff]; exact hI.basis_of_subset_of_subset_cl hI.subset_ground h
 
-theorem Base.cl_eq (hB : M.Base B) : M.cl B = M.E := by
+lemma Base.cl_eq (hB : M.Base B) : M.cl B = M.E := by
   rw [← basis_ground_iff] at hB; rw [hB.cl_eq_cl, cl_ground]
 
-theorem Base.mem_cl (hB : M.Base B) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl B := by
+lemma Base.mem_cl (hB : M.Base B) (e : α) (he : e ∈ M.E := by aesop_mat) : e ∈ M.cl B := by
   rwa [hB.cl_eq]
 
-theorem Base.cl_of_superset (hB : M.Base B) (hBX : B ⊆ X) : M.cl X = M.E :=
+lemma Base.cl_of_superset (hB : M.Base B) (hBX : B ⊆ X) : M.cl X = M.E :=
   subset_antisymm (M.cl_subset_ground _) (by rw [← hB.cl_eq]; exact M.cl_subset_cl hBX)
 
-theorem base_iff_indep_cl_eq : M.Base B ↔ M.Indep B ∧ M.cl B = M.E := by
+lemma base_iff_indep_cl_eq : M.Base B ↔ M.Indep B ∧ M.cl B = M.E := by
   rw [← basis_ground_iff, basis_iff_indep_subset_cl, and_congr_right_iff]
   exact fun hI ↦ ⟨fun h ↦ (M.cl_subset_ground _).antisymm h.2,
     fun h ↦ ⟨(M.subset_cl B).trans_eq h, h.symm.subset⟩⟩
 
-theorem Indep.cl_inter_eq_self_of_subset (hI : M.Indep I) (hJI : J ⊆ I) : M.cl J ∩ I = J := by
+lemma Indep.cl_inter_eq_self_of_subset (hI : M.Indep I) (hJI : J ⊆ I) : M.cl J ∩ I = J := by
   have hJ := hI.subset hJI
   rw [subset_antisymm_iff, and_iff_left (subset_inter (M.subset_cl _) hJI)]
   rintro e ⟨heJ, heI⟩
   exact hJ.basis_cl.mem_of_insert_indep heJ (hI.subset (insert_subset heI hJI))
 
-theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M.Indep I)
+lemma Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M.Indep I)
     (hne : Js.Nonempty) (hIs : ∀ J ∈ Js, J ⊆ I) : M.cl (⋂₀ Js) = (⋂ J ∈ Js, M.cl J)  := by
   rw [subset_antisymm_iff, subset_iInter₂_iff]
   have hiX : ⋂₀ Js ⊆ I := (sInter_subset_of_mem hne.some_mem).trans (hIs _ hne.some_mem)
@@ -304,67 +314,67 @@ theorem Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI :
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-theorem cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
+lemma cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
 
-theorem cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.Nonempty)
+lemma cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.Nonempty)
     (h : M.Indep (⋃₀ Is)) :  M.cl (⋂₀ Is) = (⋂ I ∈ Is, M.cl I) :=
   h.cl_sInter_eq_biInter_cl_of_forall_subset hIs (fun _ ↦ subset_sUnion_of_mem)
 
-theorem cl_biInter_eq_biInter_cl_of_biUnion_indep {ι : Type*} {A : Set ι} (hA : A.Nonempty)
+lemma cl_biInter_eq_biInter_cl_of_biUnion_indep {ι : Type*} {A : Set ι} (hA : A.Nonempty)
     {I : ι → Set α} (h : M.Indep (⋃ i ∈ A, I i)) : M.cl (⋂ i ∈ A, I i) = ⋂ i ∈ A, M.cl (I i) := by
   have := hA.coe_sort
   convert cl_iInter_eq_biInter_cl_of_iUnion_indep (ι := A) (Is := fun i ↦ I i) (by simpa) <;> simp
 
-theorem Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by
+lemma Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by
   rw [inter_eq_iInter, cl_iInter_eq_biInter_cl_of_iUnion_indep, inter_eq_iInter]
   · exact iInter_congr (by simp)
   rwa [← union_eq_iUnion]
 
-theorem basis_iff_basis_cl_of_subset (hIX : I ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
+lemma basis_iff_basis_cl_of_subset (hIX : I ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
     M.Basis I X ↔ M.Basis I (M.cl X) :=
   ⟨fun h ↦ h.basis_cl_right, fun h ↦ h.basis_subset hIX (M.subset_cl X hX)⟩
 
-theorem basis_iff_basis_cl_of_subset' (hIX : I ⊆ X) : M.Basis I X ↔ X ⊆ M.E ∧ M.Basis I (M.cl X) :=
+lemma basis_iff_basis_cl_of_subset' (hIX : I ⊆ X) : M.Basis I X ↔ X ⊆ M.E ∧ M.Basis I (M.cl X) :=
   ⟨fun h ↦ ⟨h.subset_ground, h.basis_cl_right⟩, fun h ↦ h.2.basis_subset hIX (M.subset_cl X h.1)⟩
 
-theorem basis'_iff_basis_cl : M.Basis' I X ↔ M.Basis I (M.cl X) ∧ I ⊆ X := by
+lemma basis'_iff_basis_cl : M.Basis' I X ↔ M.Basis I (M.cl X) ∧ I ⊆ X := by
   rw [← cl_inter_ground, basis'_iff_basis_inter_ground]
   exact ⟨fun h ↦ ⟨h.basis_cl_right, h.subset.trans (inter_subset_left _ _)⟩,
     fun h ↦ h.1.basis_subset (subset_inter h.2 h.1.indep.subset_ground) (M.subset_cl _)⟩
 
-theorem exists_basis_inter_ground_basis_cl (M : Matroid α) (X : Set α) :
+lemma exists_basis_inter_ground_basis_cl (M : Matroid α) (X : Set α) :
     ∃ I, M.Basis I (X ∩ M.E) ∧ M.Basis I (M.cl X) := by
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
   have hI' := hI.basis_cl_right; rw [cl_inter_ground] at hI'
   exact ⟨_, hI, hI'⟩
 
-theorem Basis.basis_of_cl_eq_cl (hI : M.Basis I X) (hY : I ⊆ Y) (h : M.cl X = M.cl Y)
+lemma Basis.basis_of_cl_eq_cl (hI : M.Basis I X) (hY : I ⊆ Y) (h : M.cl X = M.cl Y)
     (hYE : Y ⊆ M.E := by aesop_mat) : M.Basis I Y := by
   refine' hI.indep.basis_of_subset_of_subset_cl hY _
   rw [hI.cl_eq_cl, h]
   exact M.subset_cl Y
 
-theorem basis_union_iff_indep_cl : M.Basis I (I ∪ X) ↔ M.Indep I ∧ X ⊆ M.cl I :=
+lemma basis_union_iff_indep_cl : M.Basis I (I ∪ X) ↔ M.Indep I ∧ X ⊆ M.cl I :=
   ⟨fun h ↦ ⟨h.indep, (subset_union_right _ _).trans h.subset_cl⟩, fun ⟨hI, hXI⟩ ↦
     hI.basis_cl.basis_subset (subset_union_left _ _) (union_subset (M.subset_cl I) hXI)⟩
 
-theorem basis_iff_indep_cl : M.Basis I X ↔ M.Indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
+lemma basis_iff_indep_cl : M.Basis I X ↔ M.Indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
   ⟨fun h ↦ ⟨h.indep, h.subset_cl, h.subset⟩, fun h ↦
     (basis_union_iff_indep_cl.mpr ⟨h.1, h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩
 
-theorem Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I := by
+lemma Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I := by
   rw [← hI.indep.cl_inter_eq_self_of_subset hJI, inter_eq_self_of_subset_right]
   exact hI.subset.trans hJ
 
-@[simp] theorem empty_basis_iff : M.Basis ∅ X ↔ X ⊆ M.cl ∅ := by
+@[simp] lemma empty_basis_iff : M.Basis ∅ X ↔ X ⊆ M.cl ∅ := by
   rw [basis_iff_indep_cl, and_iff_right M.empty_indep, and_iff_left (empty_subset _)]
 
 -- Sets
 
-theorem mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) := by
+lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) := by
   rw [← cl_inter_ground] at *
   have hfE : f ∈ M.E := by
     by_contra! hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
@@ -381,30 +391,30 @@ theorem mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f �
     or_iff_left he.2] at hef
   subst hef; apply mem_insert
 
-theorem cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X) : f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X) : f ∈ M.cl (insert e X) \ M.cl X :=
   ⟨mem_cl_insert he.2 he.1, fun hf ↦
     by rwa [cl_insert_eq_of_mem_cl hf, diff_self, iff_false_intro (not_mem_empty _)] at he⟩
 
-theorem cl_exchange_iff : e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange_iff : e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
   ⟨cl_exchange, cl_exchange⟩
 
-theorem cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) :
+lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) :
     M.cl (insert e X) = M.cl (insert f X) := by
   have hf := cl_exchange he
   rw [eq_comm, ← cl_cl, ← insert_eq_of_mem he.1, cl_insert_cl_eq_cl_insert, insert_comm, ← cl_cl,
     ← cl_insert_cl_eq_cl_insert, insert_eq_of_mem hf.1, cl_cl, cl_cl]
 
-theorem cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X := by
+lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X := by
   refine' (em (e ∈ X)).elim (fun h' ↦ _) (fun h' ↦ by rw [diff_singleton_eq_self h'])
   convert M.cl_insert_cl_eq_cl_insert e (X \ {e}) using 1
   · rw [insert_eq_of_mem h, cl_cl]
   rw [insert_diff_singleton, insert_eq_of_mem h']
 
-theorem mem_cl_diff_singleton_iff_cl (he : e ∈ X) (heE : e ∈ M.E := by aesop_mat) :
+lemma mem_cl_diff_singleton_iff_cl (he : e ∈ X) (heE : e ∈ M.E := by aesop_mat) :
     e ∈ M.cl (X \ {e}) ↔ M.cl (X \ {e}) = M.cl X :=
   ⟨cl_diff_singleton_eq_cl, fun h ↦ by rw [h]; exact M.mem_cl_of_mem' he⟩
 
-theorem indep_iff_not_mem_cl_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
+lemma indep_iff_not_mem_cl_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ e ∈ I, e ∉ M.cl (I \ {e}) := by
   use fun h e heI he ↦ ((h.cl_inter_eq_self_of_subset (diff_subset I {e})).subset ⟨he, heI⟩).2 rfl
   intro h
@@ -414,14 +424,14 @@ theorem indep_iff_not_mem_cl_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
   exact mem_of_mem_of_subset
     (hJ.subset_cl he) (M.cl_subset_cl (subset_diff_singleton hJ.subset heJ))
 
-theorem indep_iff_not_mem_cl_diff_forall' : M.Indep I ↔ I ⊆ M.E ∧ ∀ e ∈ I, e ∉ M.cl (I \ {e}) :=
+lemma indep_iff_not_mem_cl_diff_forall' : M.Indep I ↔ I ⊆ M.E ∧ ∀ e ∈ I, e ∉ M.cl (I \ {e}) :=
   ⟨fun h ↦ ⟨h.subset_ground, (indep_iff_not_mem_cl_diff_forall h.subset_ground).mp h⟩, fun h ↦
     (indep_iff_not_mem_cl_diff_forall h.1).mpr h.2⟩
 
-theorem Indep.not_mem_cl_diff_of_mem (hI : M.Indep I) (he : e ∈ I) : e ∉ M.cl (I \ {e}) :=
+lemma Indep.not_mem_cl_diff_of_mem (hI : M.Indep I) (he : e ∈ I) : e ∉ M.cl (I \ {e}) :=
   (indep_iff_not_mem_cl_diff_forall'.1 hI).2 e he
 
-theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I := by
+lemma indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I := by
   rw [indep_iff_not_mem_cl_diff_forall']
   refine' ⟨fun ⟨hIE, h⟩ e heI h_eq ↦ h e heI (h_eq.symm.subset (M.mem_cl_of_mem heI)),
     fun h ↦ ⟨fun e heI ↦ by_contra fun heE ↦ h e heI _,fun e heI hin ↦ h e heI
@@ -429,7 +439,7 @@ theorem indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) 
   rw [← cl_inter_ground, inter_comm, inter_diff_distrib_left,
     inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, cl_inter_ground]
 
-theorem Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
+lemma Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
   ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
 lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
@@ -448,11 +458,11 @@ lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
   rw [← cl_cl, ← insert_eq_of_mem hin, cl_insert_cl_eq_cl_insert, insert_diff_singleton,
     insert_eq_of_mem heI]
 
-theorem eq_of_cl_eq_cl_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.cl X = M₂.cl X) : M₁ = M₂ :=
+lemma eq_of_cl_eq_cl_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.cl X = M₂.cl X) : M₁ = M₂ :=
   eq_of_indep_iff_indep_forall (by simpa using h univ)
     (fun _ _ ↦ by simp_rw [indep_iff_cl_diff_ne_forall, h])
 
-@[simp] theorem restrict_cl_eq' (M : Matroid α) (X R : Set α) :
+@[simp] lemma restrict_cl_eq' (M : Matroid α) (X R : Set α) :
     (M ↾ R).cl X = (M.cl (X ∩ R) ∩ R) ∪ (R \ M.E) := by
   rw [← cl_inter_ground, restrict_ground_eq]
   ext e
@@ -469,7 +479,7 @@ theorem eq_of_cl_eq_cl_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.cl X = M
       (show ¬M.Indep (insert e I) from fun hi ↦ he (hi.subset_ground (mem_insert _ _))),
     not_false_iff]
 
-theorem restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
+lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).cl X = M.cl X ∩ R := by
   rw [restrict_cl_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR]
 
@@ -503,87 +513,87 @@ variable {S T : Set α}
 @[pp_dot] def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
-theorem Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
+lemma Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
   hS.2
 
-theorem Spanning.cl_eq (hS : M.Spanning S) : M.cl S = M.E :=
+lemma Spanning.cl_eq (hS : M.Spanning S) : M.cl S = M.E :=
   hS.1
 
-theorem spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : M.Spanning S ↔ M.cl S = M.E :=
+lemma spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : M.Spanning S ↔ M.cl S = M.E :=
   ⟨And.left, fun h ↦ ⟨h, hS⟩⟩
 
-theorem cl_spanning_iff (hS : S ⊆ M.E := by aesop_mat) : M.Spanning (M.cl S) ↔ M.Spanning S := by
+lemma cl_spanning_iff (hS : S ⊆ M.E := by aesop_mat) : M.Spanning (M.cl S) ↔ M.Spanning S := by
   rw [spanning_iff_cl, cl_cl, ← spanning_iff_cl]
 
-theorem spanning_iff_ground_subset_cl (hS : S ⊆ M.E := by aesop_mat) :
+lemma spanning_iff_ground_subset_cl (hS : S ⊆ M.E := by aesop_mat) :
     M.Spanning S ↔ M.E ⊆ M.cl S := by
   rw [spanning_iff_cl, subset_antisymm_iff, and_iff_right (cl_subset_ground _ _)]
 
-theorem not_spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : ¬M.Spanning S ↔ M.cl S ⊂ M.E := by
+lemma not_spanning_iff_cl (hS : S ⊆ M.E := by aesop_mat) : ¬M.Spanning S ↔ M.cl S ⊂ M.E := by
   rw [spanning_iff_cl, ssubset_iff_subset_ne, iff_and_self, iff_true_intro (M.cl_subset_ground _)]
   exact fun _ ↦ trivial
 
-theorem Spanning.superset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := by aesop_mat) :
+lemma Spanning.superset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := by aesop_mat) :
     M.Spanning T :=
   ⟨(M.cl_subset_ground _).antisymm (by rw [← hS.cl_eq]; exact M.cl_subset_cl hST), hT⟩
 
-theorem Spanning.union_left (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
+lemma Spanning.union_left (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (S ∪ X) :=
   hS.superset (subset_union_left _ _)
 
-theorem Spanning.union_right (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
+lemma Spanning.union_right (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (X ∪ S) :=
   hS.superset (subset_union_right _ _)
 
-theorem Base.spanning (hB : M.Base B) : M.Spanning B :=
+lemma Base.spanning (hB : M.Base B) : M.Spanning B :=
   ⟨hB.cl_eq, hB.subset_ground⟩
 
-theorem ground_spanning (M : Matroid α) : M.Spanning M.E :=
+lemma ground_spanning (M : Matroid α) : M.Spanning M.E :=
   ⟨M.cl_ground, rfl.subset⟩
 
-theorem Base.superset_spanning (hB : M.Base B) (hBX : B ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
+lemma Base.superset_spanning (hB : M.Base B) (hBX : B ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning X:=
   hB.spanning.superset hBX
 
-theorem spanning_iff_superset_base' : M.Spanning S ↔ (∃ B, M.Base B ∧ B ⊆ S) ∧ S ⊆ M.E := by
+lemma spanning_iff_superset_base' : M.Spanning S ↔ (∃ B, M.Base B ∧ B ⊆ S) ∧ S ⊆ M.E := by
   refine' ⟨fun h ↦ ⟨_, h.subset_ground⟩, fun ⟨⟨B, hB, hBS⟩, hSE⟩ ↦ hB.spanning.superset hBS⟩
   obtain ⟨B, hB⟩ := M.exists_basis S
   have hB' := hB.basis_cl_right
   rw [h.cl_eq, basis_ground_iff] at hB'
   exact ⟨B, hB', hB.subset⟩
 
-theorem spanning_iff_superset_base (hS : S ⊆ M.E := by aesop_mat) :
+lemma spanning_iff_superset_base (hS : S ⊆ M.E := by aesop_mat) :
     M.Spanning S ↔ ∃ B, M.Base B ∧ B ⊆ S := by
   rw [spanning_iff_superset_base', and_iff_left hS]
 
-theorem Spanning.exists_base_subset (hS : M.Spanning S) : ∃ B, M.Base B ∧ B ⊆ S := by
+lemma Spanning.exists_base_subset (hS : M.Spanning S) : ∃ B, M.Base B ∧ B ⊆ S := by
   rwa [spanning_iff_superset_base] at hS
 
-theorem coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
+lemma coindep_iff_compl_spanning (hI : I ⊆ M.E := by aesop_mat) :
     M.Coindep I ↔ M.Spanning (M.E \ I) := by
   rw [coindep_iff_exists, spanning_iff_superset_base]
 
-theorem spanning_iff_compl_coindep (hS : S ⊆ M.E := by aesop_mat) :
+lemma spanning_iff_compl_coindep (hS : S ⊆ M.E := by aesop_mat) :
     M.Spanning S ↔ M.Coindep (M.E \ S) := by
   rw [coindep_iff_compl_spanning, diff_diff_cancel_left hS]
 
-theorem Coindep.compl_spanning (hI : M.Coindep I) : M.Spanning (M.E \ I) :=
+lemma Coindep.compl_spanning (hI : M.Coindep I) : M.Spanning (M.E \ I) :=
   (coindep_iff_compl_spanning hI.subset_ground).mp hI
 
-theorem coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E := by aesop_mat) :
+lemma coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E := by aesop_mat) :
     M.Coindep X ↔ M.cl (M.E \ X) = M.E := by
   rw [coindep_iff_compl_spanning, spanning_iff_cl]
 
-theorem Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
+lemma Coindep.cl_compl (hX : M.Coindep X) : M.cl (M.E \ X) = M.E :=
   (coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX
 
-theorem Indep.base_of_spanning (hI : M.Indep I) (hIs : M.Spanning I) : M.Base I := by
+lemma Indep.base_of_spanning (hI : M.Indep I) (hIs : M.Spanning I) : M.Base I := by
   obtain ⟨B, hB, hBI⟩ := hIs.exists_base_subset; rwa [← hB.eq_of_subset_indep hI hBI]
 
-theorem Spanning.base_of_indep (hIs : M.Spanning I) (hI : M.Indep I) : M.Base I :=
+lemma Spanning.base_of_indep (hIs : M.Spanning I) (hI : M.Indep I) : M.Base I :=
   hI.base_of_spanning hIs
 
-theorem eq_of_spanning_iff_spanning_forall {M M' : Matroid α} (h : M.E = M'.E)
+lemma eq_of_spanning_iff_spanning_forall {M M' : Matroid α} (h : M.E = M'.E)
     (hsp : ∀ S, S ⊆ M.E → (M.Spanning S ↔ M'.Spanning S )) : M = M' := by
   have hsp' : M.Spanning = M'.Spanning := by
     ext S
@@ -598,20 +608,20 @@ end Spanning
 
 section Constructions
 
-@[simp] theorem emptyOn_cl_eq (X : Set α) : (emptyOn α).cl X = ∅ := by
+@[simp] lemma emptyOn_cl_eq (X : Set α) : (emptyOn α).cl X = ∅ := by
   rw [← subset_empty_iff, ← emptyOn_ground]; apply cl_subset_ground
 
-@[simp] theorem loopyOn_cl_eq (E X : Set α) : (loopyOn E).cl X = E :=
+@[simp] lemma loopyOn_cl_eq (E X : Set α) : (loopyOn E).cl X = E :=
   (cl_subset_ground _ _).antisymm
     (subset_trans (by rw [(loopyOn_base_iff.2 rfl).cl_eq]) (cl_subset_cl _ (empty_subset _)))
 
-@[simp] theorem cl_empty_eq_ground_iff : M.cl ∅ = M.E ↔ M = loopyOn M.E := by
+@[simp] lemma cl_empty_eq_ground_iff : M.cl ∅ = M.E ↔ M = loopyOn M.E := by
   refine ⟨fun h ↦ eq_of_cl_eq_cl_forall ?_, fun h ↦ by rw [h, loopyOn_cl_eq, loopyOn_ground]⟩
   refine fun X ↦ subset_antisymm (by simp [cl_subset_ground]) ?_
   rw [loopyOn_cl_eq, ← h]
   exact M.cl_mono (empty_subset _)
 
-@[simp] theorem trivialOn_cl_eq (I E X : Set α) :
+@[simp] lemma trivialOn_cl_eq (I E X : Set α) :
     (trivialOn I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
   have hb := (trivialOn_basis_iff (inter_subset_right I E) (inter_subset_right X E)).mpr rfl
   ext e
@@ -628,12 +638,12 @@ end Constructions
 
 variable {Xs Ys : Set (Set α)} {ι : Type*}
 
-theorem Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
+lemma Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
     M.Basis (X ∩ I) X ↔ X ⊆ M.cl (X ∩ I) :=
   ⟨Basis.subset_cl,
     fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_cl (inter_subset_left _ _) h⟩
 
-theorem Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
+lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
     (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
   refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
   simp_rw [biInter_distrib_inter _ hA,
@@ -641,30 +651,47 @@ theorem Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set �
     subset_iInter_iff]
   exact fun i hiA ↦ (biInter_subset_of_mem hiA).trans (h i hiA).subset_cl
 
-theorem Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
+lemma Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
     (h : ∀ i, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i, X i) ∩ I) (⋂ i, X i) := by
   rw [← biInter_univ]
   exact hI.interBasis_biInter (by simp) (by simpa)
 
-theorem Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
+lemma Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
     (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
   rw [sInter_eq_biInter]
   exact hI.interBasis_biInter hXs h
 
-theorem Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
+lemma Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
     M.Basis (M.cl X ∩ I) (M.cl X) := by
   rw [hI.inter_basis_cl_iff_subset_cl_inter] at h ⊢
   exact (M.cl_subset_cl_of_subset_cl h).trans (M.cl_subset_cl
     (inter_subset_inter_left _ (h.trans (M.cl_subset_cl (inter_subset_left _ _)))))
 
+section Iso
 
--- Hi Mati - I moved things to `Modular.lean`, and simplified the API substantially.
--- It is now much easier to prove and use modular pair/base/set assumptions.
--- (I didn't do anything related to cuts stuff). If I were you, I'd look through
--- my lemmas and see if there are any shortcuts for what you've done.
--- ()`ModularBase` is the old `Modular`)
+/-- If an equivalence between `M.E` and `N.E` respects the closure function, it is an isomorphism-/
+def isoOfForallImageCl {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
+    (h : ∀ X : Set M.E, N.cl ↑(e '' X) = e '' (M.E ↓∩ M.cl ↑X)) : M ≂ N where
+  toEquiv := e
+  indep_image_iff' I := by
+    rw [indep_iff_not_mem_cl_diff_forall, indep_iff_not_mem_cl_diff_forall]
+    simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
+      mem_image_equiv]
+    refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' y hy hyI ?_, fun h' x hx hxI h'' ↦
+      h' (e ⟨x,hx⟩).1 (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
+    · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
+        simp [image_diff e.injective, hyx]
+      have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.cl (↑I \ {y}) := by simpa [h_eq, h] using hxI
+      simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
+    have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by
+      simp [image_diff e.injective]
+    rw [h_eq, h]
+    simpa
 
+@[simp] lemma isoOfForallImageCl_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h) (x : M.E) :
+  (isoOfForallImageCl e h) x = e x := rfl
 
+end Iso
 
 end Matroid
 

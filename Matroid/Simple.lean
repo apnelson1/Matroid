@@ -4,7 +4,7 @@ import Matroid.Flat
 import Matroid.Minor.Iso
 import Matroid.Map
 
-open Set
+open Set Set.Notation
 
 namespace Matroid
 
@@ -139,24 +139,162 @@ theorem Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M �
   rw [loop_iff_mem_cl_empty, contract_elem, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_cl, hne.symm⟩
 
-theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel e f) (hI_e : e ∈ I) :
-    M.Indep (insert f (I \ {e})) := by
-  obtain (rfl | hef) := eq_or_ne e f
-  · rwa [insert_diff_singleton, insert_eq_of_mem hI_e]
-  rw [indep_iff_forall_subset_not_circuit']
-  refine ⟨fun C C_sub C_circ ↦ ?_, ?_⟩
-  · have e_notin_C : e ∉ C := fun e_in_C ↦ (mem_of_mem_insert_of_ne (C_sub e_in_C) hef).2 rfl
-    have C_ne_ef : C ≠ {e, f} := by
-      intro h_f
-      rw [h_f] at e_notin_C
-      exact e_notin_C (mem_insert e _)
-    obtain ⟨C', C'_circ, C'_sub⟩ :=
-      C_circ.elimination ((parallel_iff_circuit hef).1 h_para) C_ne_ef f
-    refine C'_circ.dep.not_indep (hI.subset <| C'_sub.trans ?_)
-    simp only [mem_singleton_iff, union_insert, union_singleton, mem_insert_iff, true_or, or_true,
-      not_true, diff_subset_iff, singleton_union, insert_subset_iff, hI_e, true_and]
-    refine C_sub.trans (insert_subset_insert (diff_subset _ _))
-  exact insert_subset h_para.mem_ground_right <| (diff_subset _ _).trans hI.subset_ground
+end Parallel
+
+section Parallel'
+
+def Parallel' (M : Matroid α) (e f : α) : Prop := e ∈ M.E ∧ f ∈ M.E ∧ M.cl {e} = M.cl {f}
+
+@[aesop unsafe 20% (rule_sets := [Matroid])]
+theorem Parallel'.mem_ground_left (h : M.Parallel' e f) : e ∈ M.E := h.1
+
+@[aesop unsafe 20% (rule_sets := [Matroid])]
+theorem Parallel'.mem_ground_right (h : M.Parallel' e f) : f ∈ M.E := h.2.1
+
+theorem Parallel'.cl_eq_cl (h : M.Parallel' e f) : M.cl {e} = M.cl {f} := h.2.2
+
+theorem Parallel'.symm (h : M.Parallel' e f) : M.Parallel' f e :=
+  ⟨h.mem_ground_right, h.mem_ground_left, h.cl_eq_cl.symm⟩
+
+theorem parallel'_self_of_mem_ground (h : e ∈ M.E) : M.Parallel' e e :=
+    ⟨h,h,rfl⟩
+
+theorem Parallel'.trans (h : M.Parallel' e f) (h' : M.Parallel' f g) : M.Parallel' e g :=
+  ⟨h.mem_ground_left, h'.mem_ground_right, h.cl_eq_cl.trans h'.cl_eq_cl⟩
+
+theorem Parallel'.parallel_of_nonloop (h : M.Parallel' e f) (he : M.Nonloop e) :
+    M.Parallel e f := by
+  rwa [Nonloop.parallel_iff_cl_eq_cl, h.cl_eq_cl]
+
+theorem Parallel.parallel' (h : M.Parallel e f) : M.Parallel' e f :=
+  ⟨h.mem_ground_left, h.mem_ground_right, h.cl_eq_cl⟩
+
+theorem Parallel'.parallel_iff (h : M.Parallel' e f) : M.Parallel e f ↔ M.Nonloop e :=
+  ⟨fun h' ↦ h'.nonloop_left, h.parallel_of_nonloop⟩
+
+theorem Parallel'.loop_of_loop (h : M.Parallel' e f) (he : M.Loop e) : M.Loop f := by
+  have h' := h.cl_eq_cl
+  rw [he.cl, eq_comm] at h'
+  rwa [loop_iff_cl_eq_cl_empty h.mem_ground_right]
+
+theorem Parallel'.loop_or_parallel (h : M.Parallel' e f) :
+    (M.Loop e ∧ M.Loop f) ∨ M.Parallel e f := by
+  obtain (he | he) := M.loop_or_nonloop e
+  · exact .inl ⟨he, h.loop_of_loop he⟩
+  exact .inr <| h.parallel_of_nonloop he
+
+theorem parallel'_iff_loops_or_parallel :
+    M.Parallel' e f ↔ (M.Loop e ∧ M.Loop f) ∨ M.Parallel e f := by
+  refine ⟨Parallel'.loop_or_parallel, ?_⟩
+  rintro (⟨he, hf⟩ | hef)
+  · rw [Matroid.Parallel', he.cl, hf.cl]
+    simp [he.mem_ground, hf.mem_ground]
+  exact hef.parallel'
+
+theorem parallel'_iff_cl_eq_cl (e f : α) (he : e ∈ M.E := by aesop_mat)
+    (hf : f ∈ M.E := by aesop_mat) : M.Parallel' e f ↔ M.cl {e} = M.cl {f} := by
+  rw [Matroid.Parallel', and_iff_right he, and_iff_right hf]
+
+theorem Parallel'.mem_cl (h : M.Parallel' e f) : e ∈ M.cl {f} := by
+  rw [← h.cl_eq_cl]
+  apply mem_cl_self _ _ h.mem_ground_left
+
+end Parallel'
+
+section Switch
+
+theorem cl_range_of_forall_parallel'_subtype {X : Set α} (φ : X → α)
+    (h_para : ∀ e : X, M.Parallel' e (φ e)) : M.cl (range φ) = M.cl X := by
+  simpa using M.cl_iUnion_congr (fun e ↦ {φ e}) (fun e ↦ {e.1}) (fun e ↦ (h_para e).cl_eq_cl.symm)
+
+theorem cl_image_of_forall_parallel'_subtype {X : Set α} (φ : X → α)
+    (h_para : ∀ e : X, M.Parallel' e (φ e)) (Y : Set X) : M.cl (φ '' Y) = M.cl Y := by
+  convert M.cl_biUnion_congr (fun e : X ↦ {φ e}) (fun e ↦ {e.1}) Y
+    (fun e _ ↦ (h_para e).cl_eq_cl.symm) <;> aesop
+
+theorem cl_image_of_forall_parallel' (φ : α → α) (h_para : ∀ e, M.Parallel' e (φ e))
+    (X : Set α) : M.cl (φ '' X) = M.cl X := by
+  rw [← cl_range_of_forall_parallel'_subtype (fun x : X ↦ φ x) (fun x ↦ h_para x), image_eq_range]
+
+/-- If `φ : X ≃ Y` is such that `e` and `φ e` are always `Parallel'`, then `φ` determines a
+matroid isomorphism. -/
+def isoOfMapParallelRestr {M : Matroid α} (X Y : Set α) (φ : X ≃ Y)
+    (hPara : ∀ e : X,  M.Parallel' e (φ e)) : (M ↾ X) ≂ (M ↾ Y) :=
+  isoOfForallImageCl φ
+  ( by
+      have hXE : X ⊆ M.E := fun x hx ↦ (hPara ⟨x,hx⟩).mem_ground_left
+      simp only [restrict_ground_eq, restrict_cl_eq', image_val_inter_self_left_eq_coe,
+        preimage_union, preimage_inter, Subtype.coe_preimage_self, inter_univ, preimage_diff]
+      intro Z
+      rw [image_image, cl_image_of_forall_parallel'_subtype _ hPara, image_image]
+      have hYE : Y ⊆ M.E := fun y hy ↦ by simpa using (hPara (φ.symm ⟨y,hy⟩)).mem_ground_right
+
+      simp [preimage_val_eq_univ_of_subset hXE, diff_eq_empty.2 hYE]
+      ext x
+      simp only [mem_inter_iff, mem_image, mem_preimage, Subtype.exists, exists_and_left]
+      refine ⟨fun ⟨hx,hxY⟩  ↦ ⟨φ.symm ⟨_,hxY⟩, ?_⟩, ?_⟩
+      · simp only [Subtype.coe_eta, Equiv.apply_symm_apply, Subtype.coe_prop, exists_const, and_true]
+        exact mem_of_mem_of_subset (by simpa using (hPara (φ.symm ⟨x,hxY⟩)).mem_cl) <|
+          M.cl_subset_cl_of_subset_cl (by simpa)
+      rintro ⟨x, hx', hx, rfl⟩
+      simp only [Subtype.coe_prop, and_true]
+      exact mem_of_mem_of_subset (hPara ⟨x,hx⟩).symm.mem_cl <|
+          M.cl_subset_cl_of_subset_cl (by simpa) )
+
+@[simps!] def isoOfMapParallel {M : Matroid α} (φ : M.E ≃ M.E)
+    (hPara : ∀ (e : M.E), M.Parallel' e (φ e)) : M ≂ M :=
+  isoOfForallImageCl φ
+  ( by
+    simp_rw [image_image, cl_image_of_forall_parallel'_subtype _ hPara, Set.ext_iff,
+      mem_image, mem_preimage, Subtype.exists, exists_and_left]
+    refine fun X x ↦ ⟨fun hx ↦ ⟨φ.symm ⟨x,mem_ground_of_mem_cl hx⟩, ?_⟩, ?_⟩
+    · simp only [Subtype.coe_eta, Equiv.apply_symm_apply, Subtype.coe_prop, exists_const, and_true]
+      exact mem_of_mem_of_subset
+        (by simpa using (hPara (φ.symm ⟨x, mem_ground_of_mem_cl hx⟩)).mem_cl)
+        (M.cl_subset_cl_of_subset_cl (by simpa))
+    rintro ⟨x, hx, hxE, rfl⟩
+    exact mem_of_mem_of_subset (hPara ⟨x, hxE⟩).symm.mem_cl
+      (M.cl_subset_cl_of_subset_cl (by simpa)) )
+
+theorem Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel' e f)
+    (hI_e : e ∈ I) : M.Indep (insert f (I \ {e})) := by
+  classical
+  set φ : M.E ≃ M.E := Equiv.swap ⟨e, h_para.mem_ground_left⟩ ⟨f, h_para.mem_ground_right⟩
+  set ψ := isoOfMapParallel φ (by
+    simp only [Subtype.forall]
+    intro a ha
+    obtain (rfl | hne) := eq_or_ne a e; simpa [φ]
+    obtain (rfl | hne') := eq_or_ne a f; simpa [φ] using h_para.symm
+    simp [φ]
+    rw [Equiv.swap_apply_of_ne_of_ne (by simpa) (by simpa)]
+    exact M.parallel'_self_of_mem_ground ha )
+  convert ψ.image_indep (I := M.E ↓∩ I) (by rwa [image_val_preimage_val_of_subset hI.subset_ground])
+  ext x
+  simp only [mem_insert_iff, mem_diff, mem_singleton_iff, mem_image, mem_preimage, Subtype.exists,
+    exists_and_left, exists_and_right, exists_eq_right, ψ, isoOfMapParallel]
+  simp
+
+
+
+
+
+
+  -- obtain (rfl | hef) := eq_or_ne e f
+  -- · rwa [insert_diff_singleton, insert_eq_of_mem hI_e]
+  -- rw [indep_iff_forall_subset_not_circuit']
+  -- refine ⟨fun C C_sub C_circ ↦ ?_, ?_⟩
+  -- · have e_notin_C : e ∉ C := fun e_in_C ↦ (mem_of_mem_insert_of_ne (C_sub e_in_C) hef).2 rfl
+  --   have C_ne_ef : C ≠ {e, f} := by
+  --     intro h_f
+  --     rw [h_f] at e_notin_C
+  --     exact e_notin_C (mem_insert e _)
+  --   obtain ⟨C', C'_circ, C'_sub⟩ :=
+  --     C_circ.elimination ((parallel_iff_circuit hef).1 h_para) C_ne_ef f
+  --   refine C'_circ.dep.not_indep (hI.subset <| C'_sub.trans ?_)
+  --   simp only [mem_singleton_iff, union_insert, union_singleton, mem_insert_iff, true_or, or_true,
+  --     not_true, diff_subset_iff, singleton_union, insert_subset_iff, hI_e, true_and]
+  --   refine C_sub.trans (insert_subset_insert (diff_subset _ _))
+  -- exact insert_subset h_para.mem_ground_right <| (diff_subset _ _).trans hI.subset_ground
 
 theorem Parallel.indep_substitute_iff (h_para : M.Parallel e f) (he : e ∈ I) (hf : f ∉ I) :
     M.Indep I ↔ M.Indep (insert f (I \ {e})) := by
@@ -164,6 +302,23 @@ theorem Parallel.indep_substitute_iff (h_para : M.Parallel e f) (he : e ∈ I) (
   convert hI.parallel_substitute h_para.symm (mem_insert _ _)
   have hef : e ≠ f := by rintro rfl; exact hf he
   simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
+
+
+theorem Indep.mapEquiv (hI : M.Indep I) (φ : I → α) (h_para : ∀ e : I, M.Parallel' e (φ e)) :
+    M.Indep (range φ) := by
+  have hss : range φ ⊆ M.E := by rintro _ ⟨e, he, rfl⟩; exact (h_para e).mem_ground_right
+  rw [indep_iff_not_mem_cl_diff_forall] at hI ⊢
+  rintro _ ⟨e, rfl⟩
+  rw [← image_univ, ← image_singleton]
+  refine fun h ↦ hI e.1 e.2 ?_
+  replace h := (M.cl_subset_cl_of_subset_cl (singleton_subset_iff.2 h)).trans
+    <| M.cl_subset_cl (subset_image_diff φ univ {e})
+  refine mem_of_mem_of_subset (h_para e).mem_cl ?_
+  simpa [cl_image_of_forall_parallel' φ h_para] using h
+
+-- theorem Indep.ofMapEquiv (φ : I → α) (h_para : ∀ e : I, M.Parallel e (φ e))
+--     (h_indep : M.Indep (range φ)) : M.Indep I := by
+--   rw [indep_iff_not_mem_cl_diff_forall']
 
 theorem Indep.parallelMap {φ : α → α} (hI : M.Indep I) (h_para : ∀ e ∈ I, M.Parallel e (φ e)) :
     M.Indep (φ '' I) := by
@@ -207,13 +362,12 @@ theorem indep_image_iff_of_injOn_parallelMap {φ : α → α} (hφ : InjOn φ I)
     (h : ∀ e ∈ I, M.Parallel e (φ e)) : M.Indep (φ '' I) ↔ M.Indep I :=
   ⟨fun hI ↦ hI.of_parallelMap hφ h, fun hi ↦ hi.parallelMap h⟩
 
--- def isoOfMapParallelRestr {M : Matroid α} (X Y : Set α) (hXE : X ⊆ M.E) (φ : X ≃ Y)
---   (hloop : ∀ e : X, M.Loop e → M.Loop (φ e)) (hPara : ∀ e : X, M.Nonloop e → M.Parallel e (φ e)) :
---   (M ↾ X) ≂ (M ↾ Y) where
---     toEquiv := φ
---     indep_image_iff' := by
---       simp only [restrict_ground_eq, restrict_indep_iff, image_subset_iff,
---         Subtype.coe_preimage_self, subset_univ, and_true]
+
+      -- refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+      -- · have := h.parallelMap
+
+
+
 
 
 -- /-- A PartialEquiv from `X ⊆ M.E` to `Y` that maps loops to loops and nonloops to

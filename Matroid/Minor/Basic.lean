@@ -283,7 +283,7 @@ theorem Indep.contract_base_iff (hI : M.Indep I) :
 
 theorem Indep.contract_indep_iff (hI : M.Indep I) :
     (M ／ I).Indep J ↔ Disjoint J I ∧ M.Indep (J ∪ I) := by
-  simp_rw [indep_iff_subset_base, hI.contract_base_iff, union_subset_iff]
+  simp_rw [indep_iff, hI.contract_base_iff, union_subset_iff]
   exact ⟨fun ⟨B, ⟨hBI, hdj⟩, hJB⟩ ↦
     ⟨disjoint_of_subset_left hJB hdj, _, hBI, hJB.trans (subset_union_left _ _),
       subset_union_right _ _⟩,

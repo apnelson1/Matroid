@@ -102,7 +102,7 @@ theorem Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = 
   toEquiv := e
   indep_image_iff' := by
     intro I
-    rw [indep_iff_subset_base, indep_iff_subset_base]
+    rw [indep_iff, indep_iff]
     refine ⟨fun ⟨B, hB, hIB⟩ ↦ ?_, fun ⟨B, hB, hIB⟩ ↦ ?_⟩
     · obtain ⟨B, rfl⟩ := eq_image_val_of_subset hB.subset_ground
       refine ⟨↑(e '' B), (he B).1 hB, ?_⟩

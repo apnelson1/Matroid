@@ -18,7 +18,7 @@ def emptyOn (α : Type*) : Matroid α :=
   simp [emptyOn]
 
 @[simp] theorem emptyOn_indep_iff : (emptyOn α).Indep B ↔ B = ∅ := by
-  simp [indep_iff_subset_base, subset_empty_iff]
+  simp [indep_iff, subset_empty_iff]
 
 @[simp] theorem ground_eq_empty_iff : (M.E = ∅) ↔ M = emptyOn α := by
   refine' ⟨fun h ↦ eq_of_base_iff_base_forall (by simp [h]) _, fun h ↦ by simp [h]⟩
@@ -129,7 +129,7 @@ def freeOn (E : Set α) : Matroid α := (loopyOn E)✶
     ← subset_antisymm_iff, eq_comm (a := E)]
 
 @[simp] theorem freeOn_indep_iff : (freeOn E).Indep I ↔ I ⊆ E := by
-  simp [indep_iff_subset_base]
+  simp [indep_iff]
 
 theorem freeOn_indep (hIE : I ⊆ E) : (freeOn E).Indep I :=
   freeOn_indep_iff.2 hIE

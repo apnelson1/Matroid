@@ -48,7 +48,7 @@ theorem singleton_circuit : M.Circuit {e} ↔ M.Loop e := by
 theorem loop_iff_not_mem_base_forall (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ↔ ∀ B, M.Base B → e ∉ B := by
   rw [← singleton_dep, ← not_indep_iff, not_iff_comm, not_forall]
-  simp_rw [_root_.not_imp, not_not, ← singleton_subset_iff, indep_iff_subset_base]
+  simp_rw [_root_.not_imp, not_not, ← singleton_subset_iff, indep_iff]
 
 theorem Loop.circuit (he : M.Loop e) : M.Circuit {e} :=
   singleton_circuit.mpr he

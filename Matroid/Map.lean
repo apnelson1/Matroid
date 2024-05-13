@@ -1,9 +1,9 @@
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.Logic_Embedding_Set
-import Matroid.ForMathlib.Matroid_Basic
 import Matroid.ForMathlib.PreimageVal
 import Mathlib.Data.Set.Subset
+import Matroid.ForMathlib.MatroidBasic
 
 open Set.Notation
 
@@ -13,15 +13,10 @@ This file defines maps and comaps, which move a matroid on one type to a matroid
 using a function between the types. The constructions are mathematically just combinations of
 restrictions and parallel extensions, so are not difficult.
 
-At least for finite matroids, both maps and comaps are a special case of a construction of
-Perfect (1969) in which a matroid structure can be transported across a bipartite graph.
-[See Oxley, Thm 11.2.12]. This is nontrivial, and I don't know whether this is known to extend to
-infinite matroids. The proofs use cardinality. The construction would imply Konig's theorem
-for infinite bipartite graphs, which isn't easy.
+For finite matroids, both maps and comaps are a special case of a construction of
+Perfect (1969) in which a matroid structure can be transported across a bipartite graph
+[See Oxley, Thm 11.2.12]. Unfortunately, this doesn't extend to infinite matroids.
 
-In particular, if things were generalized, it would allow the construction `map` not to require
-injectivity, which would be nice. It might be easier than the full strength of the bipartite graph
-construction; it corresponds to the case where one side of the graph has max degree one.
 -/
 
 universe u
@@ -166,7 +161,7 @@ theorem comapOn_dual_eq_of_bijOn {M : Matroid β} {E : Set α} (h : BijOn f E M.
 section Map
 
 /-- Map a matroid `M` to an isomorphic copy in `β` using an embedding `M.E ↪ β`. -/
-def mapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : Matroid β := ofExistsMatroidIndep
+def mapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : Matroid β := Matroid.ofExistsMatroid
   (E := range f)
   (Indep := fun I ↦ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f)
   (hM := by
@@ -191,8 +186,7 @@ def mapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : Matroid β := ofExistsMa
     (M.mapSetEmbedding f).E = range f := rfl
 
 @[simp] theorem mapSetEmbedding_indep_iff {M : Matroid α} {f : M.E ↪ β} {I : Set β} :
-    (M.mapSetEmbedding f).Indep I ↔ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f := by
-  simp [mapSetEmbedding]
+    (M.mapSetEmbedding f).Indep I ↔ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f := Iff.rfl
 
 theorem mapSetEmbedding_indep_iff' {M : Matroid α} {f : M.E ↪ β} {I : Set β} :
     (M.mapSetEmbedding f).Indep I ↔ ∃ (I₀ : Set M.E), M.Indep ↑I₀ ∧ I = f '' I₀ := by
@@ -209,7 +203,7 @@ def mapSetSetEmbedding (M : Matroid α) {E : Set β} (f : M.E ↪ E) : Matroid �
 
 /-- Given an injective function `f` on `M.E`, the isomorphic copy of `M` whose independent sets
 are the images of those in `M`. -/
-def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ofExistsMatroidIndep
+def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := Matroid.ofExistsMatroid
   (E := f '' M.E)
   (Indep := fun I ↦ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀)
   (hM := by
@@ -226,8 +220,7 @@ def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := ofEx
     (M.map f hf).E = f '' M.E := rfl
 
 @[simp] theorem map_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set β} :
-    (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := by
-  simp [map]
+    (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := Iff.rfl
 
 /-- Map `M : Matroid α` across an embedding defined on all of `α` -/
 def mapEmbedding (M : Matroid α) (f : α ↪ β) : Matroid β := M.map f <| f.injective.injOn _
@@ -238,7 +231,7 @@ def mapEquiv (M : Matroid α) (f : α ≃ β) : Matroid β := M.mapEmbedding f.t
 /-- Map `M : Matroid α` to a `Matroid β` with ground set `E` using an equivalence `M.E ≃ E`.
 Defined using `Matroid.ofExistsMatroidIndep` for better defeq.  -/
 def mapSetEquiv (M : Matroid α) {E : Set β} (e : M.E ≃ E) : Matroid β :=
-  ofExistsMatroidIndep E (fun I ↦ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)))
+  Matroid.ofExistsMatroid E (fun I ↦ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)))
   ⟨M.mapSetEmbedding (e.toEmbedding.trans <| Embedding.setSubtype E), by
     simp [Embedding.range_trans, and_comm, image_equiv_eq_preimage_symm]⟩
 
@@ -246,8 +239,7 @@ def mapSetEquiv (M : Matroid α) {E : Set β} (e : M.E ≃ E) : Matroid β :=
     (M.mapSetEquiv e).E = E := rfl
 
 @[simp] theorem mapSetEquiv_indep_iff (M : Matroid α) {E : Set β} (e : M.E ≃ E) {I : Set β} :
-    (M.mapSetEquiv e).Indep I ↔ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)) := by
-  simp [mapSetEquiv]
+    (M.mapSetEquiv e).Indep I ↔ I ⊆ E ∧ M.Indep ↑(e.symm '' (E ↓∩ I)) := Iff.rfl
 
 theorem map_image_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I : Set α}
     (hI : I ⊆ M.E) : (M.map f hf).Indep (f '' I) ↔ M.Indep I := by
