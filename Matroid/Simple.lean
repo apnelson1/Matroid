@@ -5,19 +5,18 @@ open Set Set.Notation
 variable {α : Type*} {M N : Matroid α} {e f g : α} {I X P D : Set α}
 
 namespace Matroid
--- section Simple
 
+/-- A matroid is `Simple` if it has no loops or nontrivial parallel pairs. -/
 class Simple (M : Matroid α) : Prop where
   (parallel_iff_eq : ∀ {e f}, e ∈ M.E → (M.Parallel e f ↔ e = f))
 
-theorem Parallel.eq [Simple M] (h : M.Parallel e f) : e = f := by
+lemma Parallel.eq [Simple M] (h : M.Parallel e f) : e = f := by
   rwa [Simple.parallel_iff_eq h.mem_ground_left] at h
 
-theorem parallel_iff_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
-    M.Parallel e f ↔ e = f :=
+lemma parallel_iff_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Parallel e f ↔ e = f :=
   Simple.parallel_iff_eq he
 
-theorem not_parallel_of_ne (M : Matroid α) [Simple M] (hef : e ≠ f) : ¬ M.Parallel e f :=
+lemma not_parallel_of_ne (M : Matroid α) [Simple M] (hef : e ≠ f) : ¬ M.Parallel e f :=
   fun h ↦ hef h.eq
 
 instance [Simple M] : Loopless M := by
@@ -27,21 +26,21 @@ instance [Simple M] : Loopless M := by
 instance {α : Type*} : Simple (emptyOn α) :=
   ⟨fun he ↦ by simp at he⟩
 
-theorem simple_iff_loopless_eq_of_parallel_forall:
+lemma simple_iff_loopless_eq_of_parallel_forall:
     Simple M ↔ (M.Loopless ∧ ∀ e f, M.Parallel e f → e = f) :=
   ⟨fun h ↦ ⟨by infer_instance, fun _ _ ↦ Parallel.eq⟩,
     fun ⟨_,h⟩ ↦ ⟨fun heE ↦ ⟨h _ _,by rintro rfl; exact (toNonloop heE).parallel_self⟩⟩⟩
 
-theorem parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
+lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     {f | M.Parallel e f} = {e} := by
   simp_rw [parallel_iff_eq he, setOf_eq_eq_singleton']
 
-@[simp] theorem cl_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.cl {e} = {e} := by
+@[simp] lemma cl_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.cl {e} = {e} := by
   rw [cl_eq_parallel_class_union_loops, parallel_class_eq he, cl_empty_eq_empty, union_empty]
 
 /-- We need `RkPos` or something similar here, since otherwise the matroid whose only element is
   a loop is a counterexample. -/
-theorem simple_iff_cl_subset_self_forall [RkPos M] :
+lemma simple_iff_cl_subset_self_forall [RkPos M] :
     M.Simple ↔ ∀ e, M.Nonloop e → M.cl {e} ⊆ {e} := by
   refine ⟨fun h e he ↦ by rw [cl_singleton_eq], fun h ↦ ?_⟩
   have hl : M.Loopless := by
@@ -53,21 +52,21 @@ theorem simple_iff_cl_subset_self_forall [RkPos M] :
   rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
   exact fun e f hp ↦ (h _ hp.nonloop_right) hp.mem_cl
 
-theorem cl_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.cl X = X := by
+lemma cl_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.cl X = X := by
   obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
   · exact M.cl_empty_eq_empty
   exact cl_singleton_eq he
 
-theorem singleton_flat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Flat {e} := by
+lemma singleton_flat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Flat {e} := by
   rw [← cl_singleton_eq]; apply cl_flat
 
-theorem pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := by aesop_mat) :
+lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := by aesop_mat) :
     M.Indep {e,f} := by
   obtain (rfl | hne) := eq_or_ne e f
   · rw [pair_eq_singleton, indep_singleton]; exact toNonloop he
   rwa [← not_dep_iff, ← (toNonloop he).parallel_iff_dep (toNonloop hf) hne, parallel_iff_eq he]
 
-theorem indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
+lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne
   rw [le_iff_lt_or_eq, encard_eq_two, ← ENat.add_one_le_iff hne, (by norm_num : (2 : ℕ∞) = 1 + 1),
@@ -78,14 +77,14 @@ theorem indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E :
     exact pair_indep
   norm_num
 
-theorem er_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
+lemma er_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.er {e,f} = 2 := by
   rw [(pair_indep he).er, encard_pair hef]
 
-theorem Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
+lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
   lt_of_not_le fun hle ↦ hD.not_indep (indep_of_encard_le_two hle)
 
-theorem simple_iff_three_le_girth : M.Simple ↔ 3 ≤ M.girth := by
+lemma simple_iff_three_le_girth : M.Simple ↔ 3 ≤ M.girth := by
   rw [le_girth_iff]
   refine ⟨fun h C hC ↦ le_of_not_lt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (ENat.le_of_lt_add_one hlt)
@@ -95,45 +94,106 @@ theorem simple_iff_three_le_girth : M.Simple ↔ 3 ≤ M.girth := by
   have hcon := (h _ (hef.circuit_of_ne hne)).trans_eq (encard_pair hne)
   norm_num at hcon
 
-theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.encard := by
-  refine ⟨fun h C hC ↦ hC.dep.two_lt_encard, fun h ↦  ?_⟩
-  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_circuit]
-  refine ⟨fun C hC ↦ lt_of_le_of_lt (by norm_num) (h C hC), fun e f hef ↦ by_contra fun hne ↦ ?_⟩
-  exact (h _ ((parallel_iff_circuit hne).1 hef)).ne (by rw [encard_pair hne])
+lemma simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.encard := by
+  simp_rw [← ENat.add_one_le_iff (show 2 ≠ ⊤ by norm_num), show (2 : ℕ∞) + 1 = 3 from rfl,
+    simple_iff_three_le_girth, le_girth_iff]
 
--- theorem simple_iff_forall_pair_indep :
---     M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E), M.Indep {e,f} := by
---   refine ⟨fun h e f he hf ↦ pair_indep he hf,
---     fun h ↦ ⟨fun {e f} he ↦
---       ⟨fun hp ↦ by_contra fun hef ↦ (hp.dep_of_ne hef).not_indep <| h he hp.mem_ground_right, ?_ ⟩⟩⟩
---   rintro rfl
---   have hee := h he he
---   simp only [mem_singleton_iff, insert_eq_of_mem, indep_singleton] at hee
---   exact hee.parallel_self
+lemma simple_iff_forall_pair_indep : M.Simple ↔ ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.Indep {e,f} := by
+  refine ⟨fun h _ _ he hf ↦ pair_indep he hf, fun h ↦ ?_⟩
+  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop]
+  exact ⟨fun e he hl ↦ hl.dep.not_indep <| by simpa using h he he,
+    fun e f hef ↦ hef.eq_of_indep (h hef.mem_ground_left hef.mem_ground_right) ⟩
 
--- theorem Simple.map_iso {α β : Type*} {M : Matroid α} {N : Matroid β} (hM : M.Simple) (hMN : M ≂ N) :
---     N.Simple := by
---   rw [simple_iff_forall_pair_indep] at *
---   rintro e f he hf
---   obtain (⟨rfl,rfl⟩ | ⟨⟨i⟩⟩) := hMN
---   · simp at he
---   have := i.on_indep <| hM (i.symm.map_mem he) (i.symm.map_mem hf)
---   rwa [image_pair, i.symm_apply_apply_mem hf, i.symm_apply_apply_mem he] at this
+lemma Simple.map {β : Type*} (hM : M.Simple) {f : α → β} (hf : M.E.InjOn f) :
+    Simple (M.map f hf) := by
+  simp only [simple_iff_forall_pair_indep, map_ground, mem_image, map_indep_iff,
+    forall_exists_index, and_imp]
+  rintro _ _ x hx rfl y hy rfl
+  exact ⟨_, pair_indep hx hy, by simp [image_insert_eq]⟩
 
--- theorem simple_iff_forall_parallel_class [Loopless M] :
---     M.Simple ↔ ∀ P ∈ M.parallelClasses, encard P = 1 := by
---   simp only [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption),
---     mem_parallelClasses_iff, forall_exists_index, and_imp]
---   refine ⟨fun h P e he ↦ ?_, fun h e f hef ↦ ?_⟩
---   · rintro rfl
---     simp [show (∀ f, M.Parallel e f ↔ e = f) from fun f ↦ ⟨h e f, fun h ↦ h ▸ he.parallel_self⟩]
---   specialize h {e | M.Parallel e f} e hef.nonloop_left
---   simp_rw [hef.parallel_iff_right, parallel_comm, true_imp_iff, encard_eq_one] at h
---   obtain ⟨x, hx⟩ := h
---   simp only [ext_iff, mem_setOf_eq, mem_singleton_iff] at hx
---   rw [(hx e).1 hef.symm, (hx f).1 hef.nonloop_right.parallel_self]
+lemma simple_iff_forall_parallel_class [Loopless M] :
+    M.Simple ↔ ∀ P ∈ M.parallelClasses, encard P = 1 := by
+  simp only [mem_parallelClasses_iff, forall_exists_index, and_imp, encard_eq_one]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro h P x hx rfl
+    exact ⟨x, by simp [Set.ext_iff, parallel_iff_eq hx.mem_ground]⟩
+  rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption)]
+  refine fun e f hef ↦ ?_
+  obtain ⟨x, hx⟩ := h _ e hef.nonloop_left rfl
+  rw [(show f = x from hx.subset hef), show e = x from hx.subset (hef.nonloop_left.parallel_self)]
 
--- @[simp] theorem simple_trivialOn_iff {I E : Set α} : (trivialOn I E).Simple ↔ E ⊆ I := by
+lemma simple_iff_parallelClasses_eq_discrete' :
+    M.Simple ↔ M.Loopless ∧ M.parallelClasses = Partition.discrete {e | M.Nonloop e} := by
+  refine ⟨fun h ↦ ⟨by infer_instance, Partition.eq_of_rel_iff_rel ?_⟩, fun ⟨_,h⟩ ↦ ?_⟩
+  · simp only [Partition.discrete.rel_iff_eq, mem_setOf_eq,
+      show M.parallelClasses.Rel = M.Parallel from rfl]
+    exact fun x y ↦ ⟨fun h ↦ ⟨h.eq, h.nonloop_left⟩, by rintro ⟨rfl, h⟩; exact h.parallel_self⟩
+  rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right (by assumption)]
+  simp [Parallel, h]
+
+lemma simple_iff_parallelClasses_eq_discrete [Loopless M] :
+    M.Simple ↔  M.parallelClasses = Partition.discrete {e | M.Nonloop e} := by
+  rw [simple_iff_parallelClasses_eq_discrete', and_iff_right (by assumption)]
+
+lemma parallelClasses_eq_discrete [Simple M] :
+    M.parallelClasses = Partition.discrete {e | M.Nonloop e} :=
+  simple_iff_parallelClasses_eq_discrete.1 (by assumption)
+
+lemma exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
+    (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
+  by_contra! h
+  rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop] at hM
+  push_neg at hM
+  obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
+  exact hne <| h.2 e f hef
+
+lemma Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
+  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
+    restrict_indep_iff, pair_subset_iff]
+  rintro e f he hf
+  exact ⟨hI.subset (pair_subset he hf), he, hf⟩
+
+lemma Simple.subset_ground {X : Set α} (_ : (M ↾ X).Simple) : X ⊆ M.E :=
+  fun _ hx ↦ (toNonloop (M := M ↾ X) hx).of_restrict.mem_ground
+
+lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M ↾ X).Simple := by
+  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
+    restrict_indep_iff, pair_subset_iff] at *
+  aesop
+
+lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
+    M.Loopless := by
+  rw [loopless_iff_cl_empty] at *
+  rw [contract_loops_eq, diff_eq_empty] at h
+  rw [restrict_cl_eq', empty_inter, union_empty_iff] at hC
+  rw [← inter_union_diff (s := M.cl ∅) (t := C), hC.1, empty_union, diff_eq_empty]
+  exact (M.cl_subset_cl <| empty_subset C).trans h
+
+lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
+    M.Simple := by
+  rw [simple_iff_loopless_eq_of_parallel_forall] at h hC ⊢
+  obtain ⟨hl, h⟩ := h
+  obtain ⟨hCl, hC⟩ := hC
+  simp only [restrict_parallel_iff, and_imp] at hC
+  refine ⟨(hCl.of_restrict_contract hl), fun e f hef ↦ ?_⟩
+  by_cases heC : e ∈ C
+  · by_cases hfC : f ∈ C
+    · exact hC _ _ hef heC hfC
+    refine by_contra fun hne ↦ not_loop (M ／ C) f ?_
+    exact (hef.loop_of_contract hne).minor ⟨hef.mem_ground_right, hfC⟩ (contract_minor_of_mem _ heC)
+  by_cases hfC : f ∈ C
+  · refine by_contra fun (hne : e ≠ f) ↦ not_loop (M ／ C) e ?_
+    exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
+      (contract_minor_of_mem _ hfC)
+  apply h
+  rw [parallel_iff, contract_cl_eq, contract_cl_eq, ← cl_union_cl_left_eq, hef.cl_eq_cl,
+    cl_union_cl_left_eq, and_iff_left rfl]
+  exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
+
+lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
+  hI.restr_simple.of_restrict_contract h
+
+-- @[simp] lemma simple_trivialOn_iff {I E : Set α} : (trivialOn I E).Simple ↔ E ⊆ I := by
 --   simp only [simple_iff_forall_pair_indep, trivialOn_ground, mem_singleton_iff,
 --     trivialOn_indep_iff', subset_inter_iff]
 --   refine ⟨fun h x hxE ↦ by simpa using (h hxE hxE).1, fun h {e f} he hf ↦ ⟨subset_trans ?_ h, ?_⟩⟩
@@ -142,67 +202,76 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 -- instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
 --   rw [← trivialOn_eq_freeOn, simple_trivialOn_iff]
 
--- @[simp] theorem simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
+-- @[simp] lemma simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
 --   rw [← trivialOn_eq_loopyOn, simple_trivialOn_iff, subset_empty_iff]
 
--- theorem Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
---   simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
---     restrict_indep_iff, pair_subset_iff]
---   rintro e f he hf
---   exact ⟨hI.subset (pair_subset he hf), he, hf⟩
 
--- theorem Simple.subset_ground {X : Set α} (_ : (M ↾ X).Simple) : X ⊆ M.E :=
---   fun _ hx ↦ (toNonloop (M := M ↾ X) hx).of_restrict.mem_ground
 
--- theorem Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M ↾ X).Simple := by
---   simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
---     restrict_indep_iff, pair_subset_iff] at *
---   aesop
-
--- theorem exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
---     (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
---   by_contra! h
---   rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_not_loop] at hM
---   push_neg at hM
---   obtain ⟨e, f, hef, hne⟩ := hM (fun e _ ↦ h.1 e)
---   exact hne <| h.2 e f hef
-
--- theorem Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
---     M.Loopless := by
---   rw [loopless_iff_cl_empty] at *
---   rw [contract_loops_eq, diff_eq_empty] at h
---   rw [restrict_cl_eq', empty_inter, union_empty_iff] at hC
---   rw [← inter_union_diff (s := M.cl ∅) (t := C), hC.1, empty_union, diff_eq_empty]
---   exact (M.cl_subset_cl <| empty_subset C).trans h
-
--- theorem Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
---     M.Simple := by
---   rw [simple_iff_loopless_eq_of_parallel_forall] at h hC ⊢
---   obtain ⟨hl, h⟩ := h
---   obtain ⟨hCl, hC⟩ := hC
---   simp only [restrict_parallel_iff, and_imp] at hC
---   refine ⟨(hCl.of_restrict_contract hl), fun e f hef ↦ ?_⟩
---   by_cases heC : e ∈ C
---   · by_cases hfC : f ∈ C
---     · exact hC _ _ hef heC hfC
---     refine by_contra fun hne ↦ not_loop (M ／ C) f ?_
---     exact (hef.loop_of_contract hne).minor ⟨hef.mem_ground_right, hfC⟩ (contract_minor_of_mem _ heC)
---   by_cases hfC : f ∈ C
---   · refine by_contra fun (hne : e ≠ f) ↦ not_loop (M ／ C) e ?_
---     exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
---       (contract_minor_of_mem _ hfC)
---   apply h
---   rw [parallel_iff, contract_cl_eq, contract_cl_eq, ← cl_union_cl_left_eq, hef.cl_eq_cl,
---     cl_union_cl_left_eq, and_iff_left rfl]
---   exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
-
--- theorem Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
---   hI.restr_simple.of_restrict_contract h
 
 
 -- end Simple
 
--- section Simplification
+section Simplification
+
+def simplification (M : Matroid α) : Matroid α :=
+  M ↾ M.parallelClasses.nonempty_repFun.some '' {e | M.Nonloop e}
+
+@[simp] lemma simplification_eq_self [Simple M] : M.simplification = M := by
+  rw [simplification, restrict_eq_self_iff, Partition.repFun_discrete_coeFun'
+    M.parallelClasses_eq_discrete, Loopless.ground_eq, image_id]
+
+
+
+
+-- def simplificationTo (M : Matroid α) (hX : (M ↾ X).Simple) :
+
+-- structure paraChoice (M : Matroid α) where
+--   (toFun : α → α)
+--   (eq_id_of_not_nonloop' : ∀ e, ¬ M.Nonloop e → toFun e = e)
+--   (parallel_of_nonloop' : ∀ e, M.Nonloop e → M.Parallel e (toFun e))
+--   (eq_of_parallel' : ∀ e f, M.Parallel e f → toFun e = toFun f)
+
+-- instance (M : Matroid α) : FunLike M.paraChoice α α where
+--   coe := paraChoice.toFun
+--   coe_injective' c c' := by cases c; cases c'; simp
+
+-- lemma paraChoice.apply_of_not_nonloop (c : M.paraChoice) (he : ¬ M.Nonloop e) : c e = e :=
+--   c.eq_id_of_not_nonloop' e he
+
+-- lemma paraChoice.parallel_apply (c : M.paraChoice) (he : M.Nonloop e) : M.Parallel e (c e) :=
+--   c.parallel_of_nonloop' e he
+
+-- lemma paraChoice.nonloop_apply (c : M.paraChoice) (he : M.Nonloop e) : M.Nonloop (c e) :=
+--   (c.parallel_apply he).nonloop_right
+
+-- lemma paraChoice.apply_eq_apply (c : M.paraChoice) (hef : M.Parallel e f) : c e = c f :=
+--   c.eq_of_parallel' e f hef
+
+-- lemma paraChoice.parallel_of_apply_eq (c : M.paraChoice) (he : M.Nonloop e) (hef : c e = c f) :
+--     M.Parallel e f := by
+--   refine (c.parallel_apply he).trans ?_
+--   rw [parallel_comm, hef]
+--   apply c.parallel_apply (by_contra fun hf ↦ ?_)
+--   rw [c.apply_of_not_nonloop hf] at hef
+--   subst hef
+--   exact hf (c.nonloop_apply he)
+
+-- lemma paraChoice.parallel_iff_of_nonloop (c : M.paraChoice) (he : M.Nonloop e) :
+--     M.Parallel e f ↔ c e = c f :=
+--   ⟨c.apply_eq_apply, c.parallel_of_apply_eq he⟩
+
+-- @[simp] lemma paraChoice.apply_apply (c : M.paraChoice) (e : α) : c (c e) = c e := by
+--   obtain (he | he) := em (M.Nonloop e)
+--   · exact c.apply_eq_apply (c.parallel_apply he).symm
+--   rw [c.apply_of_not_nonloop he, c.apply_of_not_nonloop he]
+
+
+
+-- lemma extends_to_parallelChoiceFunction {M : Matroid α} {X : Set α} (hX : (M ↾ X).Simple) :
+--     ∃ c : M.paraChoice, EqOn c id X := by
+--   have :=
+
+end Simplification
 
 -- variable {M : Matroid α} {c : α → α}
 
@@ -213,60 +282,60 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   (∀ {e}, ¬ M.Nonloop e → c e = e) ∧ (∀ {e}, M.Nonloop e → M.Parallel e (c e)) ∧
 --     (∀ {e f}, M.Nonloop e → M.Nonloop f → (M.Parallel e f ↔ c e = c f))
 
--- theorem ParallelChoiceFunction.parallel_iff_of_nonloop (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.parallel_iff_of_nonloop (hc : M.ParallelChoiceFunction c)
 --   (he : M.Nonloop e) (hf : M.Nonloop f) : M.Parallel e f ↔ c e = c f := hc.2.2 he hf
 
--- theorem ParallelChoiceFunction.eq_of_parallel (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.eq_of_parallel (hc : M.ParallelChoiceFunction c)
 --     (hef : M.Parallel e f) : c e = c f :=
 --   (hc.parallel_iff_of_nonloop hef.nonloop_left hef.nonloop_right).1 hef
 
--- theorem ParallelChoiceFunction.parallel_apply (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.parallel_apply (hc : M.ParallelChoiceFunction c)
 --     (he : M.Nonloop e) : M.Parallel e (c e) :=
 --   hc.2.1 he
 
--- theorem ParallelChoiceFunction.nonloop (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.nonloop (hc : M.ParallelChoiceFunction c)
 --     (he : M.Nonloop e) : M.Nonloop (c e) :=
 --   (hc.parallel_apply he).nonloop_right
 
--- theorem ParallelChoiceFunction.eq_self (hc : M.ParallelChoiceFunction c) (he : ¬M.Nonloop e) :
+-- lemma ParallelChoiceFunction.eq_self (hc : M.ParallelChoiceFunction c) (he : ¬M.Nonloop e) :
 --     c e = e := hc.1 he
 
--- theorem ParallelChoiceFunction.idem (hc : M.ParallelChoiceFunction c) (e : α) : c (c e) = c e := by
+-- lemma ParallelChoiceFunction.idem (hc : M.ParallelChoiceFunction c) (e : α) : c (c e) = c e := by
 --   obtain (he | he) := em (M.Nonloop e)
 --   · rw [hc.eq_of_parallel]
 --     rw [parallel_comm]
 --     exact hc.parallel_apply he
 --   rw [hc.eq_self he, hc.eq_self he]
 
--- theorem ParallelChoiceFunction.nonloop_apply_iff (hc : M.ParallelChoiceFunction c) :
+-- lemma ParallelChoiceFunction.nonloop_apply_iff (hc : M.ParallelChoiceFunction c) :
 --     M.Nonloop (c e) ↔ M.Nonloop e := by
 --   refine ⟨fun h ↦ by_contra fun he ↦ ?_, hc.nonloop⟩
 --   rw [hc.eq_self he] at h
 --   exact he h
 
--- theorem ParallelChoiceFunction.parallel_of_apply_eq (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.parallel_of_apply_eq (hc : M.ParallelChoiceFunction c)
 --     (he : M.Nonloop e) (hef : c e = c f) : M.Parallel e f := by
 --   apply (hc.parallel_iff_of_nonloop he _).2 hef
 --   rwa [← hc.nonloop_apply_iff, ← hef, hc.nonloop_apply_iff]
 
--- theorem ParallelChoiceFunction.preimage_image_setOf_nonloop (hc : M.ParallelChoiceFunction c) :
+-- lemma ParallelChoiceFunction.preimage_image_setOf_nonloop (hc : M.ParallelChoiceFunction c) :
 --     c ⁻¹' (c '' {e | M.Nonloop e}) = {e | M.Nonloop e} := by
 --   simp only [ext_iff, mem_preimage, mem_image, mem_setOf_eq]
 --   exact fun x ↦ ⟨fun ⟨y, hy, hyx⟩ ↦ (hc.parallel_of_apply_eq hy hyx).nonloop_right,
 --     fun hx ↦ ⟨_, hx, rfl⟩⟩
 
--- theorem ParallelChoiceFunction.image_setOf_nonloop_subset (hc : M.ParallelChoiceFunction c) :
+-- lemma ParallelChoiceFunction.image_setOf_nonloop_subset (hc : M.ParallelChoiceFunction c) :
 --     c '' {e | M.Nonloop e} ⊆ {e | M.Nonloop e} := by
 --   rintro _ ⟨e, he, rfl⟩; exact hc.nonloop he
 
--- theorem ParallelChoiceFunction.injOn (hc : M.ParallelChoiceFunction c) (hX : (M ↾ X).Simple) :
+-- lemma ParallelChoiceFunction.injOn (hc : M.ParallelChoiceFunction c) (hX : (M ↾ X).Simple) :
 --     InjOn c X := by
 --   simp only [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_nonloop,
 --     restrict_ground_eq, restrict_nonloop_iff, restrict_parallel_iff, and_imp] at hX
 --   exact fun e he f hf hef ↦ hX.2 _ _ (hc.parallel_of_apply_eq (hX.1 _ he).1 hef) he hf
 
 -- /-- Any simple restriction of `M` can be extended to a parallel choice function. -/
--- theorem extends_to_parallelChoiceFunction {M : Matroid α} {X : Set α} (hX : (M ↾ X).Simple) :
+-- lemma extends_to_parallelChoiceFunction {M : Matroid α} {X : Set α} (hX : (M ↾ X).Simple) :
 --     ∃ c, M.ParallelChoiceFunction c ∧ EqOn c id X := by
 --   classical
 --   have hc : ∀ {x}, M.Nonloop x → {y | M.Parallel x y}.Nonempty :=
@@ -319,11 +388,11 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   rw [dif_pos hnl', dif_pos he']
 --   exact he'.choose_spec.1
 
--- theorem exists_parallelChoiceFunction (M : Matroid α) : ∃ c, M.ParallelChoiceFunction c := by
+-- lemma exists_parallelChoiceFunction (M : Matroid α) : ∃ c, M.ParallelChoiceFunction c := by
 --   obtain ⟨c, hc, -⟩ := extends_to_parallelChoiceFunction (M := M) (X := ∅) (by simp; infer_instance)
 --   exact ⟨c,hc⟩
 
--- @[simp] theorem parallelChoiceFunction_removeLoops_iff :
+-- @[simp] lemma parallelChoiceFunction_removeLoops_iff :
 --     M.removeLoops.ParallelChoiceFunction c ↔ M.ParallelChoiceFunction c := by
 --   simp [ParallelChoiceFunction]
 
@@ -331,7 +400,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 -- @[pp_dot] def simplificationWrt (M : Matroid α) (c : α → α) : Matroid α :=
 --   M ↾ (c '' {e | M.Nonloop e})
 
--- @[simp] theorem removeLoops_simplificationWrt_eq (M : Matroid α) (c : α → α)
+-- @[simp] lemma removeLoops_simplificationWrt_eq (M : Matroid α) (c : α → α)
 --     (hc : M.ParallelChoiceFunction c) :
 --     M.removeLoops.simplificationWrt c = M.simplificationWrt c := by
 --   simp_rw [simplificationWrt, removeLoops_eq_restr, restrict_nonloop_iff, mem_setOf_eq, and_self]
@@ -344,28 +413,28 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 -- @[pp_dot] def simplification (M : Matroid α) : Matroid α :=
 --   M.removeLoops.simplificationWrt M.removeLoops.exists_parallelChoiceFunction.choose
 
--- theorem simplification_eq_wrt (M : Matroid α) :
+-- lemma simplification_eq_wrt (M : Matroid α) :
 --     M.simplification = M.simplificationWrt M.removeLoops.exists_parallelChoiceFunction.choose := by
 --   rw [simplification, removeLoops_simplificationWrt_eq]
 --   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
 
--- theorem exists_simplification_eq_wrt (M : Matroid α) :
+-- lemma exists_simplification_eq_wrt (M : Matroid α) :
 --     ∃ c, M.ParallelChoiceFunction c ∧ M.simplification = M.simplificationWrt c := by
 --   use M.removeLoops.exists_parallelChoiceFunction.choose
 --   rw [simplification_eq_wrt]
 --   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
 
--- @[simp] theorem removeLoops_simplification_eq (M : Matroid α) :
+-- @[simp] lemma removeLoops_simplification_eq (M : Matroid α) :
 --     M.removeLoops.simplification = M.simplification := by
 --   simp [simplification]
 
--- @[simp] theorem simplificationWrt_ground_eq (M : Matroid α) (c : α → α) :
+-- @[simp] lemma simplificationWrt_ground_eq (M : Matroid α) (c : α → α) :
 --   (M.simplificationWrt c).E = c '' {e | M.Nonloop e} := rfl
 
--- theorem Nonloop.mem_simplificationWrt_ground (he : M.Nonloop e) (c : α → α) :
+-- lemma Nonloop.mem_simplificationWrt_ground (he : M.Nonloop e) (c : α → α) :
 --     c e ∈ (M.simplificationWrt c).E := ⟨_, he, rfl⟩
 
--- theorem simplificationWrt_simple (M : Matroid α) {c : α → α}
+-- lemma simplificationWrt_simple (M : Matroid α) {c : α → α}
 --     (hc : M.ParallelChoiceFunction c) : (M.simplificationWrt c).Simple := by
 --   simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_nonloop,
 --     simplificationWrt, restrict_ground_eq, restrict_nonloop_iff, mem_image]
@@ -381,7 +450,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   rw [hM]
 --   exact simplificationWrt_simple M hc
 
--- theorem comap_simplificationWrt (M : Matroid α) (hc : M.ParallelChoiceFunction c) :
+-- lemma comap_simplificationWrt (M : Matroid α) (hc : M.ParallelChoiceFunction c) :
 --     (M.simplificationWrt c).comap c = M.removeLoops := by
 --   simp only [simplificationWrt, removeLoops_eq_restr, eq_iff_indep_iff_indep_forall,
 --     comap_ground_eq, restrict_ground_eq, hc.preimage_image_setOf_nonloop, comap_indep_iff,
@@ -433,7 +502,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 
 -- /-- If `M ↾ X` is a simple restriction of `M`, then every parallel choice function `c`
 --   induces an isomorphism from `M ↾ X` to `M ↾ (c '' X)`. -/
--- theorem ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c)
+-- lemma ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c)
 --     (hX : (M ↾ X).Simple) : ∃ φ : (M ↾ X).Iso (M ↾ (c '' X)), ∀ e ∈ X, φ e = c e  := by
 --   obtain ⟨c', hc', hC'X⟩ := extends_to_parallelChoiceFunction hX
 --   have hss : X ⊆ {e | M.Nonloop e} := fun e he ↦ (toNonloop (M := M ↾ X) he).of_restrict
@@ -455,19 +524,19 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   apply simplificationWrt_iso hc
 --   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
 
--- theorem simplificationWrt_isIso_simplification (hc : M.ParallelChoiceFunction c) :
+-- lemma simplificationWrt_isIso_simplification (hc : M.ParallelChoiceFunction c) :
 --     M.simplificationWrt c ≂ M.simplification :=
 --   (simplificationWrt_iso_simplification hc).isIso
 
--- theorem simplificationWrt_restriction (hc : M.ParallelChoiceFunction c) :
+-- lemma simplificationWrt_restriction (hc : M.ParallelChoiceFunction c) :
 --     M.simplificationWrt c ≤r M :=
 --   restrict_restriction _ _ <| hc.image_setOf_nonloop_subset.trans (fun _ ↦ Nonloop.mem_ground)
 
--- theorem simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
+-- lemma simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
 --   (simplificationWrt_restriction M.removeLoops.exists_parallelChoiceFunction.choose_spec).trans
 --     M.removeLoops_restriction
 
--- theorem simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
+-- lemma simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
 --     M.simplificationWrt c = M ↔ M.Simple := by
 --   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
 --   · rw [← h]; exact M.simplificationWrt_simple hc
@@ -475,14 +544,14 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   apply (simplificationWrt_restriction hc).minor.eq_of_ground_subset
 --   exact fun e he ↦ ⟨e, toNonloop he, Parallel.eq (hc.parallel_apply (toNonloop he)).symm⟩
 
--- @[simp] theorem simplification_eq_self_iff (M : Matroid α) : M.simplification = M ↔ M.Simple := by
+-- @[simp] lemma simplification_eq_self_iff (M : Matroid α) : M.simplification = M ↔ M.Simple := by
 --   rw [simplification_eq_wrt, simplificationWrt_eq_self_iff]
 --   simpa using M.exists_parallelChoiceFunction.choose_spec
 
--- @[simp] theorem simplification_eq_self (M : Matroid α) [Simple M] : M.simplification = M := by
+-- @[simp] lemma simplification_eq_self (M : Matroid α) [Simple M] : M.simplification = M := by
 --   rwa [simplification_eq_self_iff]
 
--- theorem exists_loop_or_parallel_of_simplificationWrt_strictRestriction
+-- lemma exists_loop_or_parallel_of_simplificationWrt_strictRestriction
 --     (hc : M.ParallelChoiceFunction c) (hsN : M.simplificationWrt c < r N) (hNM : N ≤r M) :
 --     (∃ e, N.Loop e) ∨ (∃ e, N.Parallel e (c e) ∧ e ≠ c e) := by
 --   obtain ⟨R, hR, hsi⟩ := hsN.exists_eq_restrict
@@ -495,7 +564,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   rw [← restrict_ground_eq (M := N) (R := R), ← hsi, hce]
 --   exact (he.of_restriction hNM).mem_simplificationWrt_ground c
 
--- theorem eq_simplificationWrt_of_restriction [Simple N] (hc : M.ParallelChoiceFunction c)
+-- lemma eq_simplificationWrt_of_restriction [Simple N] (hc : M.ParallelChoiceFunction c)
 --     (hsN : M.simplificationWrt c ≤r N) (hNM : N ≤r M)  :
 --     N = M.simplificationWrt c := by
 --   obtain (rfl | hM) := hsN.eq_or_strictRestriction
@@ -507,7 +576,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 
 -- /-- If `N` is below `M` but strictly above `M.simplification` in the restriction order, then
 --   `N` has a loop or an element parallel to something in the simplification. -/
--- theorem exists_loop_or_parallel_of_simplification_strictRestriction
+-- lemma exists_loop_or_parallel_of_simplification_strictRestriction
 --     (hsN : M.simplification <r N) (hNM : N ≤r M) :
 --     (∃ e, N.Loop e) ∨
 --     (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
@@ -522,14 +591,14 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   have _ := M.simplificationWrt_simple hc
 --   exact hce (he.parallel_restriction hsN.restriction h' hr).eq
 
--- theorem exists_parallel_of_simplification_strictRestriction [Loopless N]
+-- lemma exists_parallel_of_simplification_strictRestriction [Loopless N]
 --     (hsN : M.simplification <r N) (hNM : N ≤r M) :
 --     (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
 --    obtain (⟨e,he⟩ | h) := exists_loop_or_parallel_of_simplification_strictRestriction hsN hNM
 --    · exact (N.not_loop e he).elim
 --    assumption
 
--- theorem eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r N) (hNM : N ≤r M) :
+-- lemma eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r N) (hNM : N ≤r M) :
 --     N = M.simplification := by
 --   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
 --   rw [hM]
@@ -579,7 +648,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 -- section Minor
 
 -- /-- Any simple restriction of `M` is a restriction of a simplification of `M`-/
--- theorem Restriction.exists_restriction_simplificationWrt (h : N ≤r M) [Simple N] :
+-- lemma Restriction.exists_restriction_simplificationWrt (h : N ≤r M) [Simple N] :
 --     ∃ c, M.ParallelChoiceFunction c ∧ N ≤r M.simplificationWrt c := by
 --   obtain ⟨c, hc, hcN⟩ :=
 --     extends_to_parallelChoiceFunction (show (M ↾ N.E).Simple by rwa [h.eq_restrict])
@@ -588,7 +657,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   exact Restriction.of_subset _ (fun e heN ↦ ⟨e, (toNonloop heN).of_restriction h, hcN heN⟩)
 
 -- /-- Any simple minor of `M` is a minor of a simplification of `M`-/
--- theorem Minor.exists_minor_simplificationWrt {N M : Matroid α} [Simple N] (hN : N ≤m M) :
+-- lemma Minor.exists_minor_simplificationWrt {N M : Matroid α} [Simple N] (hN : N ≤m M) :
 --     ∃ c, M.ParallelChoiceFunction c ∧ N ≤m M.simplificationWrt c := by
 --   obtain ⟨I, hI, hr, -⟩ := hN.exists_contract_spanning_restrict
 --   have hN' := hr.eq_restrict ▸
@@ -604,7 +673,7 @@ theorem simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.en
 --   rw [contract_restrict_eq_restrict_contract _ _ _ (subset_diff.1 hr.subset).2.symm]
 --   apply contract_minor
 
--- theorem minor_iff_minor_simplification {α β : Type*} {N : Matroid α} [Simple N] {M : Matroid β} :
+-- lemma minor_iff_minor_simplification {α β : Type*} {N : Matroid α} [Simple N] {M : Matroid β} :
 --     N ≤i M ↔ N ≤i M.simplification := by
 --   refine ⟨fun h ↦ ?_, fun h ↦ h.trans M.simplification_restriction.minor.isoMinor⟩
 --   obtain ⟨N', hN'M, hi⟩ := h
