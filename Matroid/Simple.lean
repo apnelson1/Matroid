@@ -139,6 +139,11 @@ lemma parallelClasses_eq_discrete [Simple M] :
     M.parallelClasses = Partition.discrete {e | M.Nonloop e} :=
   simple_iff_parallelClasses_eq_discrete.1 (by assumption)
 
+lemma Simple.eq_of_parallel_of_mem (h : (M ↾ X).Simple) (he : e ∈ X) (hf : f ∈ X)
+    (hef : M.Parallel e f) : e = f :=
+  (parallel_iff_eq (M := M ↾ X) (e := (⟨e,he⟩ : X)) (f := (⟨f,hf⟩ : X)) (by simpa)).1
+    (by simp [restrict_parallel_iff, hef, he, hf])
+
 lemma exists_loop_or_para_of_not_simple (hM : ¬ M.Simple) :
     (∃ e, M.Loop e) ∨ ∃ e f, M.Parallel e f ∧ e ≠ f := by
   by_contra! h
@@ -153,8 +158,11 @@ lemma Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
   rintro e f he hf
   exact ⟨hI.subset (pair_subset he hf), he, hf⟩
 
-lemma Simple.subset_ground {X : Set α} (_ : (M ↾ X).Simple) : X ⊆ M.E :=
-  fun _ hx ↦ (toNonloop (M := M ↾ X) hx).of_restrict.mem_ground
+lemma Simple.subset_nonloops (_ : (M ↾ X).Simple) : X ⊆ {e | M.Nonloop e} :=
+  fun _ hx ↦ (toNonloop (M := M ↾ X) hx).of_restrict
+
+lemma Simple.subset_ground {X : Set α} (h : (M ↾ X).Simple) : X ⊆ M.E :=
+  h.subset_nonloops.trans (fun _ ↦ Nonloop.mem_ground)
 
 lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M ↾ X).Simple := by
   simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
@@ -213,13 +221,43 @@ lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : 
 
 section Simplification
 
+variable {x y : α}
+
+def IsSimplification (N M : Matroid α) : Prop :=
+  ∃ (f : M.parallelClasses.RepFun), N = M ↾ f '' {e | M.Nonloop e}
+
 def simplification (M : Matroid α) : Matroid α :=
   M ↾ M.parallelClasses.nonempty_repFun.some '' {e | M.Nonloop e}
 
-@[simp] lemma simplification_eq_self [Simple M] : M.simplification = M := by
-  rw [simplification, restrict_eq_self_iff, Partition.repFun_discrete_coeFun'
-    M.parallelClasses_eq_discrete, Loopless.ground_eq, image_id]
+theorem IsSimplification.simple (h : N.IsSimplification M) : N.Simple := by
+  obtain ⟨f, rfl⟩ := h
+  rw [simple_iff_loopless_eq_of_parallel_forall]
+  simp only [restrict_parallel_iff, mem_image, mem_setOf_eq, and_imp, forall_exists_index,
+    loopless_iff_forall_nonloop, restrict_ground_eq, mem_image, mem_setOf_eq, restrict_nonloop_iff,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun x hx ↦ ⟨f.apply_mem hx, ⟨x, hx, rfl⟩⟩, ?_⟩
+  rintro _ _ hxy x - rfl y - rfl
+  simpa using f.apply_eq_apply hxy
 
+theorem Simple.exists_simplification (hX : (M ↾ X).Simple) :
+    ∃ (N : Matroid α), N.IsSimplification M ∧ X ⊆ N.E := by
+  obtain ⟨f, hf⟩ := M.parallelClasses.exists_extend_partial_repFun'
+    (fun _ _ ↦ hX.eq_of_parallel_of_mem)
+  refine ⟨_, ⟨f,rfl⟩, ?_⟩
+  rw [← image_id X, ← hf.image_eq]
+  exact image_subset f hX.subset_nonloops
+
+def simplification_isSimplification (M : Matroid α) : M.simplification.IsSimplification M :=
+  ⟨_, rfl⟩
+
+lemma IsSimplification.eq_self_iff (h : N.IsSimplification M) : N = M ↔ M.Simple := by
+  refine ⟨fun h' ↦ h' ▸ h.simple, fun h' ↦ ?_⟩
+  obtain ⟨f, rfl⟩ := h
+  rw [restrict_eq_self_iff, f.coeFun_eq_id_of_eq_discrete M.parallelClasses_eq_discrete, image_id,
+    Loopless.ground_eq]
+
+@[simp] lemma simplification_eq_self [Simple M] : M.simplification = M := by
+  rwa [IsSimplification.eq_self_iff M.simplification_isSimplification]
 
 
 

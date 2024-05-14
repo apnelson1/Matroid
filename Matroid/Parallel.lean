@@ -16,7 +16,7 @@ def parallelClasses (M : Matroid α) : Partition {e | M.Nonloop e} :=
 
 def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
 
-lemma parallel_def (M : Matroid α) : M.Parallel = M.parallelClasses.Rel := rfl
+@[simp] lemma parallelClasses_rel_eq : M.parallelClasses.Rel = M.Parallel := rfl
 
 lemma parallel_iff : M.Parallel e f ↔ M.Nonloop e ∧ M.Nonloop f ∧ M.cl {e} = M.cl {f} := by
   simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), nonloop_iff_mem_compl_loops]

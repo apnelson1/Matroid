@@ -629,8 +629,8 @@ lemma nonempty_repFun (P : Partition s) : Nonempty P.RepFun := by
     exact hx'.1.symm
   rw [f.apply_of_not_mem hx, id]
 
-lemma repFun_discrete_coeFun' {s : Set α} {P : Partition s} (hP : P = Partition.discrete s)
-    (f : P.RepFun) : (f : α → α) = id := by
+lemma RepFun.coeFun_eq_id_of_eq_discrete  (f : P.RepFun) (hP : P = Partition.discrete s) :
+    (f : α → α) = id := by
   subst hP; exact repFun_discrete_coeFun s f
 
 
