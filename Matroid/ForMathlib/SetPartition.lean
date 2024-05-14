@@ -536,6 +536,9 @@ instance : FunLike (RepFun P) α α where
   coe := RepFun.toFun
   coe_injective' f f' := by cases f; cases f'; simp
 
+@[simp] lemma RepFun.mk_apply (P : Partition s) (f) (h₁ : ∀ a ∉ s, f a = a)
+  (h₂ : ∀ a ∈ s, P.Rel a (f a)) (h₃) (x : α) : (RepFun.mk f h₁ h₂ h₃) x = f x := rfl
+
 lemma RepFun.apply_of_not_mem (f : P.RepFun) (ha : a ∉ s) : f a = a :=
   f.apply_eq_self_of_not_mem a ha
 
@@ -572,6 +575,9 @@ lemma RepFun.apply_eq_apply_iff_rel_of_ne (f : P.RepFun) (hne : a ≠ b) : f a =
   · rw [eq_comm, f.apply_eq_apply_iff_rel ha]
     exact f.rel_apply ha
   simp_rw [f.apply_of_not_mem ha]
+
+lemma RepFun.image_subset_self (f : P.RepFun) : f '' s ⊆ s := by
+  rintro _ ⟨a,ha,rfl⟩; exact f.apply_mem ha
 
 /-- Any partially defined `RepFun` extends to a complete one. -/
 lemma exists_extend_partial_repFun (P : Partition s) {t : Set α} (f₀ : t → α)
@@ -612,13 +618,10 @@ lemma nonempty_repFun (P : Partition s) : Nonempty P.RepFun := by
   obtain ⟨f, -⟩ := P.exists_extend_partial_repFun' (t := ∅) (by simp)
   exact ⟨f⟩
 
--- @[simp] lemma repFun_discrete_eq_self (s : Set α) (f : (Partition.discrete s).RepFun) (x : α) :
---     f x = x := by
---   obtain (hx | hx) := em (x ∈ s)
---   · have hx' := f.rel_apply hx
---     simp only [discrete.rel_iff_eq] at hx'
---     exact hx'.1.symm
---   rw [f.apply_of_not_mem hx]
+@[simp] theorem repFun_repFun (f f' : P.RepFun) (x : α) : f (f' x) = f x := by
+  obtain (hx | hx) := em (x ∈ s)
+  · exact f.apply_eq_apply (f'.rel_apply hx).symm
+  rw [f'.apply_of_not_mem hx, f.apply_of_not_mem hx]
 
 @[simp] lemma repFun_discrete_coeFun (s : Set α) (f : (Partition.discrete s).RepFun) :
     (f : α → α) = id := by

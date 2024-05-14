@@ -190,6 +190,11 @@ theorem removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.cl ∅ 
   convert rfl using 2
   simp [Set.ext_iff, mem_setOf, Nonloop, Loop, mem_diff, and_comm]
 
+lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.cl ∅) : (M ＼ X).removeLoops =  M.removeLoops := by
+  rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, delete_cl_eq, empty_diff,
+    union_diff_self, union_eq_self_of_subset_left h]
+
+
 end Delete
 
 section Contract
