@@ -301,8 +301,7 @@ lemma IsSimplification.eq_self_iff (h : N.IsSimplification M) : N = M ↔ M.Simp
 lemma IsSimplification.nonloop_of_mem (h : N.IsSimplification M) (heN : e ∈ N.E) : M.Nonloop e :=
   (h.simple.nonloop_of_mem heN).of_restriction h.restriction
 
-/-- A simplification of `M` is a loopless restriction of `M` whose ground set is a transversal
-of the parallel classes of `M`. -/
+/-- A simplification of `M` is the restriction of `M` to a transversal of its parallel classes. -/
 lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M ∧
     ∀ ⦃e⦄, M.Nonloop e → ∃! f ∈ N.E, M.Parallel e f := by
   classical
