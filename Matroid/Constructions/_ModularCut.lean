@@ -11,13 +11,13 @@ open Set BigOperators
 variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 
 --- predicate (functions to `Prop`) should be in upper camel case, without underscores
--- @[pp_dot] def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.Modular Xs B
+-- def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.Modular Xs B
 
 -- theorem ModularFamily.subset (hXs : M.ModularFamily Xs) (hYs : Ys ⊆ Xs) : M.ModularFamily Ys := by
 --   obtain ⟨B, hB⟩ := hXs
 --   exact ⟨B, hB.subset hYs⟩
 
--- @[pp_dot] def ModularPair (M : Matroid α) (X Y : Set α) : Prop := M.ModularFamily {X,Y}
+-- def ModularPair (M : Matroid α) (X Y : Set α) : Prop := M.ModularFamily {X,Y}
 
 -- theorem modularPair_iff : M.ModularPair X Y ↔
 --     ∃ I, M.Basis I (X ∪ Y) ∧ M.Basis (X ∩ I) X
@@ -48,10 +48,10 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 -- theorem ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
 --   ⟨ModularPair.symm, ModularPair.symm⟩
 
--- @[pp_dot] def ModularSet (M : Matroid α) (X : Set α) : Prop :=
+-- def ModularSet (M : Matroid α) (X : Set α) : Prop :=
 --     ∀ {F}, M.Flat F → M.ModularPair X F
 
--- @[pp_dot] def ModularMatroid (M : Matroid α) : Prop :=
+-- def ModularMatroid (M : Matroid α) : Prop :=
 --     ∀ {F}, M.Flat F → M.ModularSet F
 
 -- theorem modular_ground (M : Matroid α) : M.ModularSet M.E := by

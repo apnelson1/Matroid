@@ -6,13 +6,13 @@ import Matroid.Minor.Basic
 namespace Matroid
 open Set
 
-@[pp_dot] def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
+def Modular_pair (M : Matroid α) (X Y : Set α) : Prop :=
     ∃ B, M.Modular {X, Y} B
 
-@[pp_dot] def Modular_set (M : Matroid α) (X : Set α) : Prop :=
+def Modular_set (M : Matroid α) (X : Set α) : Prop :=
     ∀ Y, M.Flat Y → M.Modular_pair X Y
 
-@[pp_dot] def Modular_matroid (M : Matroid α) : Prop :=
+def Modular_matroid (M : Matroid α) : Prop :=
     ∀ X, M.Flat X → M.Modular_set X
 
 def Modular_flat (M : Matroid α) (X : Set α) : Prop :=

@@ -1,5 +1,4 @@
 import Matroid.ForMathlib.SetPartition
-import Matroid.ForMathlib.Logic.Equiv.Set
 import Matroid.Flat
 
 open Set Set.Notation
@@ -313,7 +312,7 @@ section Swap
     (X : Set M.E) : isoOfSwapParallel h_para '' X = Equiv.swap e f '' X := by
   rw [isoOfSwapParallel, isoOfMapParallelBijOn_apply_image]
 
-lemma Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel' e f)
+lemma Indep.parallel'_substitute (hI : M.Indep I) (h_para : M.Parallel' e f)
     (heI : e ∈ I) : M.Indep (insert f (I \ {e})) := by
   classical
   convert (isoOfSwapParallel h_para).image_indep (I := M.E ↓∩ I)
@@ -325,10 +324,10 @@ lemma Indep.parallel_substitute (hI : M.Indep I) (h_para : M.Parallel' e f)
     simpa
   rw [(Equiv.swap_bijOn_exchange heI hfI).image_eq]
 
-lemma Parallel.indep_substitute_iff (h_para : M.Parallel' e f) (he : e ∈ I) (hf : f ∉ I) :
+lemma Parallel'.indep_substitute_iff (h_para : M.Parallel' e f) (he : e ∈ I) (hf : f ∉ I) :
     M.Indep I ↔ M.Indep (insert f (I \ {e})) := by
-  refine ⟨fun hI ↦ hI.parallel_substitute h_para he, fun hI ↦ ?_⟩
-  convert hI.parallel_substitute h_para.symm (mem_insert _ _)
+  refine ⟨fun hI ↦ hI.parallel'_substitute h_para he, fun hI ↦ ?_⟩
+  convert hI.parallel'_substitute h_para.symm (mem_insert _ _)
   have hef : e ≠ f := by rintro rfl; exact hf he
   simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
 

@@ -366,7 +366,7 @@ end Basic
 
 section rFin
 
-@[pp_dot] def rFin (M : Matroid α) (X : Set α) :=
+def rFin (M : Matroid α) (X : Set α) :=
   M.er X < ⊤
 
 @[simp] theorem er_lt_top_iff : M.er X < ⊤ ↔ M.rFin X := Iff.rfl

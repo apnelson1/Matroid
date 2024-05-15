@@ -257,7 +257,7 @@ end LoopEquiv
 section Nonloop
 
 /-- A `nonloop` is an element that is not a loop -/
-@[pp_dot] def Nonloop (M : Matroid α) (e : α) : Prop :=
+def Nonloop (M : Matroid α) (e : α) : Prop :=
   ¬M.Loop e ∧ e ∈ M.E
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
@@ -408,7 +408,7 @@ end Nonloop
 section Loopless
 
 /-- A Matroid is loopless if it has no loop -/
-@[pp_dot] class Loopless (M : Matroid α) : Prop where
+class Loopless (M : Matroid α) : Prop where
   cl_empty : M.cl ∅ = ∅
 
 lemma loopless_iff_cl_empty : M.Loopless ↔ M.cl ∅ = ∅ :=
@@ -446,7 +446,7 @@ instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RkPos M :=
   M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
 
 /-- The matroid obtained by removing the loops of `e` -/
-@[pp_dot] def removeLoops (M : Matroid α) : Matroid α := M ↾ {e | M.Nonloop e}
+def removeLoops (M : Matroid α) : Matroid α := M ↾ {e | M.Nonloop e}
 
 lemma removeLoops_eq_restr (M : Matroid α) : M.removeLoops = M ↾ {e | M.Nonloop e} := rfl
 
@@ -487,7 +487,7 @@ end Loopless
 section Coloop
 
 /-- A coloop is a loop of the dual  -/
-@[pp_dot] abbrev Coloop (M : Matroid α) (e : α) : Prop :=
+abbrev Coloop (M : Matroid α) (e : α) : Prop :=
   M✶.Loop e
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]

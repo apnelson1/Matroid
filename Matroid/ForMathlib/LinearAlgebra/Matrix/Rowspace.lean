@@ -27,9 +27,9 @@ section semiring
 
 variable [Semiring R]
 
-@[pp_dot] def rowSpace (A : Matrix m n R) : Submodule R (n → R) := span R (range A.rowFun)
+def rowSpace (A : Matrix m n R) : Submodule R (n → R) := span R (range A.rowFun)
 
-@[pp_dot] def colSpace (A : Matrix m n R) : Submodule R (m → R) := Aᵀ.rowSpace
+def colSpace (A : Matrix m n R) : Submodule R (m → R) := Aᵀ.rowSpace
 
 @[simp] theorem rowSpace_transpose (A : Matrix m n R) : Aᵀ.rowSpace = A.colSpace := rfl
 
@@ -71,10 +71,10 @@ end commring
 
 end spaces
 
-@[pp_dot] def rowSubmatrix (A : Matrix m n α) (s : Set m) : Matrix s n α :=
+def rowSubmatrix (A : Matrix m n α) (s : Set m) : Matrix s n α :=
   A.submatrix ((↑) : s → m) id
 
-@[pp_dot] def colSubmatrix (A : Matrix m n α) (t : Set n) : Matrix m t α :=
+def colSubmatrix (A : Matrix m n α) (t : Set n) : Matrix m t α :=
   A.submatrix id ((↑) : t → n)
 
 @[simp] theorem rowSubmatrix_apply (i : s) : (A.rowSubmatrix s) i = A i := rfl

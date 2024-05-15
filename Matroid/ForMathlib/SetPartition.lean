@@ -247,7 +247,7 @@ lemma exists_unique_of_mem_set (P : Partition s) (hx : x ∈ s) : ∃! t, t ∈ 
   exact ⟨t, hxt, fun u ⟨huP, hxu⟩ ↦ eq_of_mem_inter huP hxt.1 ⟨hxu, hxt.2⟩⟩
 
 /-- The part containing a given element of the set being partitioned. If `x ∉ s`, then `∅`.  -/
-@[pp_dot] def partOf (P : Partition s) (x : α) : Set α :=
+def partOf (P : Partition s) (x : α) : Set α :=
   ⋃₀ {t ∈ P | x ∈ t}
 
 lemma partOf_mem (P : Partition s) (hx : x ∈ s) : P.partOf x ∈ P := by
@@ -384,7 +384,7 @@ lemma class_nonempty {t : Set α} (ht : t ∈ ofRel r) : t.Nonempty := by
 
 /-- Every partition of `s : Set α` induces a transitive, symmetric binary relation on `α`
   whose equivalence classes are the parts of `P`. The relation is irreflexive outside `s`.  -/
-@[pp_dot] def Rel (P : Partition s) (a b : α) : Prop :=
+def Rel (P : Partition s) (a b : α) : Prop :=
   ∃ t ∈ P, a ∈ t ∧ b ∈ t
 
 lemma Rel.exists (h : P.Rel x y) : ∃ t ∈ P, x ∈ t ∧ y ∈ t :=

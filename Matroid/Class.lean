@@ -81,7 +81,7 @@ instance minorClosed_fieldRep (𝔽 : Type*) [Field 𝔽] :
   ⟨fun {_ _ _} hNM ⟨hMrep, hMfin⟩ ↦ ⟨hMrep.minor hNM, hNM.pred_minor hMfin⟩⟩
 
 /-- `M` is an `ExclMinor` for property `P` if `M` is minor-minimal not satisfying `P`. -/
-@[pp_dot] def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
+def ExclMinor {β : Type u} (M : Matroid β) (P : ∀ {α : Type u}, Matroid α → Prop) :=
   ¬ P M ∧ ∀ {N}, N <m M → P N
 
 theorem ExclMinor.not_prop_self (h : M.ExclMinor P) : ¬ P M :=

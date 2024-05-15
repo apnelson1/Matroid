@@ -570,7 +570,7 @@ end Minor
 section Hyperplane
 
 /-- A hyperplane is a maximal set containing no base  -/
-@[pp_dot] def Hyperplane (M : Matroid α) (H : Set α) : Prop :=
+def Hyperplane (M : Matroid α) (H : Set α) : Prop :=
   H ⋖[M] M.E
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
@@ -775,7 +775,7 @@ end Hyperplane
 
 section LowRank
 
-@[reducible, pp_dot] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 1
+@[reducible] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 1
 
 theorem Point.flat (hP : M.Point P) : M.Flat P :=
   hP.1
@@ -886,7 +886,7 @@ theorem Point.subset_or_inter_eq_loops_of_flat (hP : M.Point P) (hF : M.Flat F) 
 
 
 
-@[pp_dot] abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
+abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
 
 theorem Line.flat (hL : M.Line L) : M.Flat L :=
   hL.1
@@ -915,7 +915,7 @@ def Nonloop.lineContractPointEquiv (he : M.Nonloop e) :
     {P // (M ／ e).Point P} ≃ {L // M.Line L ∧ e ∈ L} :=
   (M.pointContractCovbyEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.cl_covby_iff))
 
-@[pp_dot] abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
+abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
 
 theorem Plane.flat (hP : M.Plane P) : M.Flat P :=
   hP.1

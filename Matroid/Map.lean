@@ -26,12 +26,15 @@ open Set Function
 namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α}
 
-private def comapIndepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α where
-  E := f ⁻¹' M.E
-  Indep I := M.Indep (f '' I) ∧ InjOn f I
-  indep_empty := by simp
-  indep_subset I J h hIJ := ⟨h.1.subset (image_subset _ hIJ), InjOn.mono hIJ h.2⟩
-  indep_aug := by
+/-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
+Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
+private def comap (M : Matroid β) (f : α → β) : Matroid α :=
+  IndepMatroid.matroid <| IndepMatroid.mk
+  (E := f ⁻¹' M.E)
+  (Indep := fun I ↦ M.Indep (f '' I) ∧ InjOn f I)
+  (indep_empty := by simp)
+  (indep_subset := fun I J h hIJ ↦ ⟨h.1.subset (image_subset _ hIJ), InjOn.mono hIJ h.2⟩)
+  ( indep_aug := by
     rintro I B ⟨hI, hIinj⟩ hImax hBmax
     simp only [mem_maximals_iff, mem_setOf_eq, hI, hIinj, and_self, and_imp,
       true_and, not_forall, exists_prop, exists_and_left] at hImax hBmax
@@ -53,8 +56,8 @@ private def comapIndepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α
     obtain ⟨_, ⟨⟨e, he, rfl⟩, he'⟩, hei⟩ := Indep.exists_insert_of_not_base (by simpa) h₁ h₂
     have heI : e ∉ I := fun heI ↦ he' (mem_image_of_mem f heI)
     rw [← image_insert_eq, restrict_indep_iff] at hei
-    exact ⟨e, ⟨he, heI⟩, hei.1, (injOn_insert heI).2 ⟨hIinj, he'⟩⟩
-  indep_maximal := by
+    exact ⟨e, ⟨he, heI⟩, hei.1, (injOn_insert heI).2 ⟨hIinj, he'⟩⟩ )
+  (indep_maximal := by
     rintro X - I ⟨hI, hIinj⟩ hIX
     obtain ⟨J, hJ⟩ := (M ↾ range f).existsMaximalSubsetProperty_indep (f '' X) (by simp)
       (f '' I) (by simpa) (image_subset _ hIX)
@@ -70,16 +73,11 @@ private def comapIndepMatroid (M : Matroid β) (f : α → β) : IndepMatroid α
     intro K hK hinj hIK hKX hJ₀K
     rw [← hinj.image_eq_image_iff_of_subset hJ₀K Subset.rfl,
        hJ.2 hK (image_subset_range _ _) (fun e he ↦ ⟨e, hIK he, rfl⟩)
-       (image_subset _ hKX) (image_subset _ hJ₀K)]
-  subset_ground I hI e heI := hI.1.subset_ground ⟨e, heI, rfl⟩
-
-/-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
-Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
-def comap (M : Matroid β) (f : α → β) : Matroid α := (comapIndepMatroid M f).matroid
+       (image_subset _ hKX) (image_subset _ hJ₀K)] )
+  (subset_ground := fun I hI e heI  ↦ hI.1.subset_ground ⟨e, heI, rfl⟩)
 
 @[simp] theorem comap_indep_iff {M : Matroid β} :
-    (M.comap f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := by
-  simp [comap, comapIndepMatroid]
+    (M.comap f).Indep I ↔ M.Indep (f '' I) ∧ InjOn f I := Iff.rfl
 
 @[simp] theorem comap_ground_eq (M : Matroid β) (f : α → β) :
     (M.comap f).E = f ⁻¹' M.E := rfl
@@ -114,6 +112,28 @@ theorem comap_indep_iff_of_embedding (M : Matroid β) (f : α ↪ β) :
 @[simp] theorem comap_loopyOn (f : α → β) (E : Set β) :
     comap (loopyOn E) f = loopyOn (f ⁻¹' E) := by
   rw [eq_loopyOn_iff]; aesop
+
+theorem comap_basis_iff {M : Matroid β} {I X : Set α} :
+    (M.comap f).Basis I X ↔ M.Basis (f '' I) (f '' X) ∧ I ⊆ X ∧ I.InjOn f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨hI, hinj⟩ := comap_indep_iff.1 h.indep
+    refine ⟨hI.basis_of_forall_insert (image_subset f h.subset) fun e he ↦ ?_, h.subset, hinj⟩
+    simp only [mem_diff, mem_image, not_exists, not_and, and_imp, forall_exists_index,
+      forall_apply_eq_imp_iff₂] at he
+    obtain ⟨⟨e, heX, rfl⟩, he⟩ := he
+    have heI : e ∉ I := fun heI ↦ (he e heI rfl)
+    replace h := h.insert_dep ⟨heX, heI⟩
+    simp only [comap_dep_iff, image_insert_eq, or_iff_not_imp_right, injOn_insert heI] at h
+    simp only [hinj, mem_image, not_exists, not_and, true_and, not_forall, Classical.not_imp,
+      not_not] at h
+    exact h (fun _ ↦ he)
+  refine Indep.basis_of_forall_insert ?_ h.2.1 ?_
+  · simp [comap_indep_iff, h.1.indep, h.2]
+  simp
+  sorry
+
+
+
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`,
 restricted to a ground set `E`. Elements with the same image are parallel. -/

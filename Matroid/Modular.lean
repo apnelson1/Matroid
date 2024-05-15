@@ -14,7 +14,7 @@ section ModularBase
 
 /-- A base `B` is a modular base for an indexed set family if it contains bases for all the sets
   in the family. -/
-@[pp_dot] def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
+def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
   M.Base B ∧ ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 
 theorem ModularBase.base (h : M.ModularBase B Xs) : M.Base B :=
@@ -588,7 +588,7 @@ theorem skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] [FiniteRk M] (hXs : ∀ 
     ← M.coe_r_eq, ← Nat.cast_sum, Nat.cast_inj]
 
 /-- Two sets are skew if they have disjoint bases with independent union. -/
-@[pp_dot] def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
+def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
 theorem Skew.subset_ground_left (h : M.Skew X Y) : X ⊆ M.E :=

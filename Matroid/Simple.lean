@@ -544,7 +544,7 @@ end Simplification
 --   simp [ParallelChoiceFunction]
 
 -- /-- The simplification of `M` (with respect to a choice function `c`) as a restriction of `M`. -/
--- @[pp_dot] def simplificationWrt (M : Matroid α) (c : α → α) : Matroid α :=
+-- def simplificationWrt (M : Matroid α) (c : α → α) : Matroid α :=
 --   M ↾ (c '' {e | M.Nonloop e})
 
 -- @[simp] lemma removeLoops_simplificationWrt_eq (M : Matroid α) (c : α → α)
@@ -557,7 +557,7 @@ end Simplification
 -- /-- The simplification of `M` relative to a classically chosen parallel choice function.
 --   Defined to depend only on `M.removeLoops`, so the same choice is made even if loops
 --   are removed/added to `M`. -/
--- @[pp_dot] def simplification (M : Matroid α) : Matroid α :=
+-- def simplification (M : Matroid α) : Matroid α :=
 --   M.removeLoops.simplificationWrt M.removeLoops.exists_parallelChoiceFunction.choose
 
 -- lemma simplification_eq_wrt (M : Matroid α) :

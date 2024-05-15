@@ -483,6 +483,56 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
     (M ↾ R).cl X = M.cl X ∩ R := by
   rw [restrict_cl_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR]
 
+-- theorem comap_cl_eq {β : Type*} (M : Matroid β) (f : α → β) (X : Set α) :
+--     (M.comap f).cl X = f ⁻¹' M.cl (f '' X) := by
+
+--   obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
+--   rw [← hI.cl_eq_cl]
+--   have hI' := hI
+--   simp only [Basis', comap_indep_iff, mem_maximals_iff, mem_setOf_eq, not_and, and_imp] at hI'
+--   ext x
+--   obtain (hxI | hxI) := em (x ∈ I)
+--   · exact iff_of_true (mem_cl_of_mem _ hxI hI.indep.subset_ground)
+--       (mem_cl_of_mem' _ (mem_image_of_mem _ (hI.subset hxI))
+--       (hI'.1.1.1.subset_ground (mem_image_of_mem _ hxI)))
+--   rw [hI.indep.mem_cl_iff_of_not_mem hxI]
+--   simp only [comap_dep_iff, injOn_insert hxI, hI'.1.1.2, mem_image, not_exists,
+--     not_and, true_and, not_forall, Classical.not_imp, not_not, mem_preimage, or_iff_not_imp_left,
+--     exists_prop, image_insert_eq]
+--   refine ⟨fun h ↦ M.cl_subset_cl (image_subset f hI.subset) ?_, fun hx hd ↦ ?_⟩
+--   · rw [hI'.1.1.1.mem_cl_iff, or_iff_not_imp_left]
+--     refine fun hd ↦ ?_
+--     obtain ⟨hi, ⟨y, hy, hyx⟩⟩ := h hd
+--     rw [← hyx]
+--     exact mem_image_of_mem f hy
+--   rw [not_dep_iff (insert_subset (mem_ground_of_mem_cl hx) hI'.1.1.1.subset_ground)] at hd
+--   refine ⟨hd, by_contra fun hcon ↦ ?_⟩
+--   rw [← mem_image] at hcon
+
+--   have hxX : x ∉ X := by
+--     refine fun hxX ↦ hxI ?_
+--     have := hI'.2 (y := insert x I) (by simpa [image_insert_eq])
+--     rw [injOn_insert, iff_true_intro (subset_insert _ _), true_imp_iff, insert_subset_iff] at this
+--     rw [this ⟨hI'.1.1.2, hcon⟩ ⟨hxX, hI.subset⟩]
+--     apply mem_insert
+--     exact hxI
+
+--   sorry
+
+    -- refine ⟨?_, fun h ↦ ?_⟩
+    -- · rintro (h | ⟨h,y, hyI, hyx⟩)
+    --   · refine M.cl_subset_cl (image_subset f hI.subset) ?_
+    --     rw [hI'.1.1.1.mem_cl_iff]
+    --     exact .inl h
+    --   rw [← hyx]
+    --   exact M.cl_subset_cl (image_subset f hI.subset)
+    --     (M.mem_cl_of_mem (mem_image_of_mem f hyI) hI'.1.1.1.subset_ground)
+    -- rw [or_iff_not_imp_left]
+
+
+
+  -- simp [hI.indep.mem_cl_iff', image_insert_eq]
+
 
 
 
@@ -510,7 +560,7 @@ variable {S T : Set α}
 
 /-- A set is `spanning` in `M` if its closure is equal to `M.E`, or equivalently if it contains
   a base of `M`. -/
-@[pp_dot] def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
+def Spanning (M : Matroid α) (S : Set α) := M.cl S = M.E ∧ S ⊆ M.E
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma Spanning.subset_ground (hS : M.Spanning S) : S ⊆ M.E :=
