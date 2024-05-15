@@ -569,7 +569,7 @@ end rFin
 section Rank
 
 /-- The rank function. Intended to be used in a `FiniteRk` matroid; otherwise `er` is better.-/
-@[pp_dot] noncomputable def r (M : Matroid α) (X : Set α) : ℕ :=
+noncomputable def r (M : Matroid α) (X : Set α) : ℕ :=
   ENat.toNat (M.er X)
 
 /-- The rank of the ground set of a matroid -/

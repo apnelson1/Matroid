@@ -135,8 +135,7 @@ lemma Loop.of_restriction (he : N.Loop e) (hNM : N ≤r M) : M.Loop e :=
 lemma Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) : N.Loop e :=
   (restriction_loop_iff hNM).2 ⟨heN, he⟩
 
-@[simp] lemma preimage_loop_iff {M : Matroid β} {f : α → β} :
-    (M.comap f).Loop e ↔ M.Loop (f e) := by
+@[simp] lemma comap_loop_iff {M : Matroid β} {f : α → β} : (M.comap f).Loop e ↔ M.Loop (f e) := by
   rw [← singleton_dep, comap_dep_iff]
   simp
 
@@ -392,7 +391,7 @@ lemma Nonloop.of_restriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e :=
 lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
   ⟨fun h ↦ restrict_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_restrict⟩
 
-@[simp] lemma preimage_nonloop_iff {M : Matroid β} {f : α → β} :
+@[simp] lemma comap_nonloop_iff {M : Matroid β} {f : α → β} :
     (M.comap f).Nonloop e ↔ M.Nonloop (f e) := by
   rw [← indep_singleton, comap_indep_iff, image_singleton, indep_singleton,
     and_iff_left (injOn_singleton _ _)]

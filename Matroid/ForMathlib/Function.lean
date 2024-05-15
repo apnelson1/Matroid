@@ -124,33 +124,30 @@ variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : 
   · rw [update_noteq]; rintro rfl; exact h hxs
   rw [update_noteq]; rintro rfl; exact h hxs
 
-lemma preimage_update  {f : α → β} (hf : f.Injective) (a : α) (b : β) (s : Set β)
-    [Decidable (b ∈ s)] :
-    (update f a b) ⁻¹' s = if b ∈ s then insert a (f ⁻¹' (s \ {f a})) else (f ⁻¹' (s \ {f a})) := by
+lemma preimage_update_of_not_mem_not_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∉ s) :
+    update f a b ⁻¹' s = f ⁻¹' s := by
+  ext x
+  simp only [mem_preimage, update_apply]
+  split_ifs with h; simp [hbs, h.symm ▸ has]; rfl
 
-  split_ifs with h
-  · rw [subset_antisymm_iff, insert_subset_iff, mem_preimage, update_same,
-      preimage_diff, and_iff_right h, diff_subset_iff,
-      (show {f a} = f '' {a} by rw [image_singleton]),
-      preimage_image_eq _ hf, singleton_union, insert_diff_singleton]
-    refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-    · obtain (rfl | hxa) := eq_or_ne x a
-      · rw [mem_preimage, update_same] at hx
-        apply mem_insert
-      rw [mem_preimage, update_noteq hxa] at hx
-      exact mem_insert_of_mem _ hx
-    obtain (rfl | hxa) := eq_or_ne x a
-    · exact mem_insert _ _
-    rw [mem_insert_iff, mem_preimage, update_noteq hxa]
-    exact Or.inr hx
-  refine subset_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
-  · obtain (rfl | hxa) := eq_or_ne x a
-    · exact (h (by simpa using hx)).elim
-    rw [mem_preimage, update_noteq hxa] at hx
-    exact ⟨hx, by rwa [mem_singleton_iff, hf.eq_iff]⟩
-  rw [mem_preimage, mem_diff, mem_singleton_iff, hf.eq_iff] at hx
-  rw [mem_preimage, update_noteq hx.2]
-  exact hx.1
+lemma preimage_update_of_not_mem_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∈ s) :
+    update f a b ⁻¹' s = f ⁻¹' s \ {a} := by
+  ext x
+  obtain (rfl | hxa) := eq_or_ne x a
+  · simpa
+  simp [hxa]
+
+lemma preimage_update_of_mem (f : α → β) {s : Set β} (hbs : b ∈ s) :
+    update f a b ⁻¹' s = insert a (f ⁻¹' s) := by
+  ext x; obtain (rfl | hxa) := eq_or_ne x a; simpa; simp [hxa]
+
+lemma preimage_update_eq_ite (f : α → β) (a : α) (b : β) (s : Set β) [Decidable (b ∈ s)]
+    [Decidable (f a ∈ s)] : update f a b ⁻¹' s =
+      if b ∈ s then (insert a (f ⁻¹' s)) else (if f a ∈ s then (f ⁻¹' s) \ {a} else f ⁻¹' s) := by
+  split_ifs with hb ha
+  · rw [preimage_update_of_mem _ hb]
+  · rw [preimage_update_of_not_mem_mem _ hb ha]
+  rw [preimage_update_of_not_mem_not_mem _ hb ha]
 
 lemma image_update_id_apply (x y : α) (s : Set α) [Decidable (x ∈ s)] :
   (update id x y) '' s = if x ∉ s then s else insert y (s \ {x}) := by simp

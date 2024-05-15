@@ -134,6 +134,12 @@ lemma parallel_iff_nonloop_nonloop_indep_imp_eq :
     and_iff_left h.1.mem_ground]
   exact fun hi ↦ hne (h.2.2 hi)
 
+lemma Parallel.mem_cl_iff_mem_cl (h : M.Parallel e f) {X : Set α} :
+    e ∈ M.cl X ↔ f ∈ M.cl X := by
+  refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+  · exact mem_of_mem_of_subset h.symm.mem_cl (M.cl_subset_cl_of_subset_cl (by simpa))
+  exact mem_of_mem_of_subset h.mem_cl (M.cl_subset_cl_of_subset_cl (by simpa))
+
 lemma Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ e).Loop f := by
   rw [loop_iff_mem_cl_empty, contract_elem, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_cl, hne.symm⟩
@@ -148,6 +154,9 @@ lemma restrict_parallel_iff {R : Set α} :
   rw [removeLoops_eq_restr, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.nonloop_left, h.nonloop_right⟩)]
 
+-- @[simp] lemma comap_parallel_iff {β : Type*} {M : Matroid β} {f : α → β} {x y : α} :
+--     (M.comap f).Parallel x y ↔ M.Parallel (f x) (f y) := by
+--   simp [parallel_iff]
 
 end Parallel
 
@@ -216,6 +225,11 @@ lemma Parallel'.eq_of_indep (h : M.Parallel' e f) (hef : M.Indep {e,f}) : e = f 
 
 @[simp] lemma parallel'_iff_parallel [Loopless M] : M.Parallel' e f ↔ M.Parallel e f := by
   rw [parallel'_iff_loops_or_parallel, or_iff_right (fun h ↦ M.not_loop e h.1)]
+
+lemma Parallel'.mem_cl_iff_mem_cl (h : M.Parallel' e f) {X : Set α} : e ∈ M.cl X ↔ f ∈ M.cl X := by
+  obtain (⟨he, hf⟩ | h) := h.loop_or_parallel
+  · simp [he.mem_cl, hf.mem_cl]
+  exact h.mem_cl_iff_mem_cl
 
 end Parallel'
 

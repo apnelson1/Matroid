@@ -36,7 +36,7 @@ end Delete
 and equal to the minimum number of elements that need to be added to `X` to span `Y`.
 The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
 expression when `X ⊆ Y`, and sometimes more generally. -/
-@[pp_dot] noncomputable def relRank (M : Matroid α) (X Y : Set α) : ℕ∞ := (M ／ X).er Y
+noncomputable def relRank (M : Matroid α) (X Y : Set α) : ℕ∞ := (M ／ X).er Y
 
 theorem relRank_eq_er_contract (M : Matroid α) (X Y : Set α) : M.relRank X Y = (M ／ X).er Y := rfl
 

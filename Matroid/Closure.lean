@@ -483,74 +483,28 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
     (M ↾ R).cl X = M.cl X ∩ R := by
   rw [restrict_cl_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR]
 
--- theorem comap_cl_eq {β : Type*} (M : Matroid β) (f : α → β) (X : Set α) :
---     (M.comap f).cl X = f ⁻¹' M.cl (f '' X) := by
+@[simp] lemma comap_cl_eq {β : Type*} (M : Matroid β) (f : α → β) (X : Set α) :
+    (M.comap f).cl X = f ⁻¹' M.cl (f '' X) := by
+  obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
+  obtain ⟨hI', -, hIinj⟩ := comap_basis'_iff.1 hI
+  rw [← hI.cl_eq_cl]
+  ext x
+  obtain (hxE | hxE) := em' (f x ∈ M.E)
+  · apply iff_of_false <;> exact (fun h ↦ hxE (by simpa using mem_ground_of_mem_cl h))
 
---   obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
---   rw [← hI.cl_eq_cl]
---   have hI' := hI
---   simp only [Basis', comap_indep_iff, mem_maximals_iff, mem_setOf_eq, not_and, and_imp] at hI'
---   ext x
---   obtain (hxI | hxI) := em (x ∈ I)
---   · exact iff_of_true (mem_cl_of_mem _ hxI hI.indep.subset_ground)
---       (mem_cl_of_mem' _ (mem_image_of_mem _ (hI.subset hxI))
---       (hI'.1.1.1.subset_ground (mem_image_of_mem _ hxI)))
---   rw [hI.indep.mem_cl_iff_of_not_mem hxI]
---   simp only [comap_dep_iff, injOn_insert hxI, hI'.1.1.2, mem_image, not_exists,
---     not_and, true_and, not_forall, Classical.not_imp, not_not, mem_preimage, or_iff_not_imp_left,
---     exists_prop, image_insert_eq]
---   refine ⟨fun h ↦ M.cl_subset_cl (image_subset f hI.subset) ?_, fun hx hd ↦ ?_⟩
---   · rw [hI'.1.1.1.mem_cl_iff, or_iff_not_imp_left]
---     refine fun hd ↦ ?_
---     obtain ⟨hi, ⟨y, hy, hyx⟩⟩ := h hd
---     rw [← hyx]
---     exact mem_image_of_mem f hy
---   rw [not_dep_iff (insert_subset (mem_ground_of_mem_cl hx) hI'.1.1.1.subset_ground)] at hd
---   refine ⟨hd, by_contra fun hcon ↦ ?_⟩
---   rw [← mem_image] at hcon
+  obtain (hxI | hxI) := em (x ∈ I)
+  · exact iff_of_true (mem_cl_of_mem _ hxI hI.indep.subset_ground)
+      (mem_cl_of_mem' _ (mem_image_of_mem f (hI.subset hxI))
+        (hI'.indep.subset_ground (mem_image_of_mem f hxI)))
+  have hss : insert x I ⊆ (M.comap f).E := insert_subset hxE hI.indep.subset_ground
+  rw [hI.indep.mem_cl_iff_of_not_mem hxI, ← not_indep_iff hss, comap_indep_iff,
+    injOn_insert hxI, not_and, not_and, not_not, iff_true_intro hIinj, true_imp_iff]
 
---   have hxX : x ∉ X := by
---     refine fun hxX ↦ hxI ?_
---     have := hI'.2 (y := insert x I) (by simpa [image_insert_eq])
---     rw [injOn_insert, iff_true_intro (subset_insert _ _), true_imp_iff, insert_subset_iff] at this
---     rw [this ⟨hI'.1.1.2, hcon⟩ ⟨hxX, hI.subset⟩]
---     apply mem_insert
---     exact hxI
+  obtain (hxI' | hxI') := em (f x ∈ f '' I)
+  · simp [hxI', hxE, mem_cl_of_mem' _ (hI'.subset hxI') hxE]
 
---   sorry
-
-    -- refine ⟨?_, fun h ↦ ?_⟩
-    -- · rintro (h | ⟨h,y, hyI, hyx⟩)
-    --   · refine M.cl_subset_cl (image_subset f hI.subset) ?_
-    --     rw [hI'.1.1.1.mem_cl_iff]
-    --     exact .inl h
-    --   rw [← hyx]
-    --   exact M.cl_subset_cl (image_subset f hI.subset)
-    --     (M.mem_cl_of_mem (mem_image_of_mem f hyI) hI'.1.1.1.subset_ground)
-    -- rw [or_iff_not_imp_left]
-
-
-
-  -- simp [hI.indep.mem_cl_iff', image_insert_eq]
-
-
-
-
-  -- constructor
-  -- · refine' (em (e ∈ M.E)).elim (fun he ↦
-  --     fun h ↦ h.elim (fun h' ↦ Or.inl ⟨Or.inl ⟨h'.1, he⟩, h'.2⟩)
-  --       (fun heI ↦ Or.inl ⟨Or.inr heI, hI.indep.subset_ground heI⟩))
-  --     (fun he h ↦ h.elim (fun h' ↦ Or.inr ⟨h'.2, he⟩)
-  --       (fun h' ↦ Or.inr ⟨hI.indep.subset_ground h', he⟩))
-
-
-  -- refine' fun e ↦ ⟨fun h ↦ ⟨_,_⟩, fun h ↦ _⟩
-
-
-
-  -- ·
-  --   rw [hI.indep.mem_cl_iff, restrict_dep_iff, insert_subset_iff,
-  --     and_iff_left (hI.subset.trans (inter_subset_right _ _)), hI'.indep.mem_cl_iff]
+  rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,
+    hI'.indep.insert_indep_iff_of_not_mem hxI', mem_diff, and_iff_right hxE, not_not, hI'.cl_eq_cl]
 
 
 

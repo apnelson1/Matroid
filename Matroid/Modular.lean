@@ -111,7 +111,7 @@ def ModularFamily (M : Matroid α) (Xs : ι → Set α) := ∃ B, M.ModularBase 
 theorem Indep.modularFamily (hI : M.Indep I) (hXs : ∀ i, M.Basis ((Xs i) ∩ I) (Xs i)) :
     M.ModularFamily Xs := by
   simp_rw [hI.inter_basis_cl_iff_subset_cl_inter] at hXs
-  obtain ⟨B, hB, hIB⟩ := hI
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
   refine ⟨B, hB, ?_⟩
   simp_rw [hB.indep.inter_basis_cl_iff_subset_cl_inter]
   exact fun i ↦ (hXs i).trans (M.cl_subset_cl (inter_subset_inter_right _ hIB))
@@ -152,7 +152,7 @@ theorem ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopE
 theorem ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
     (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily Xs := by
   obtain ⟨B, B_Base, hB⟩ := h
-  obtain ⟨B', B'_Base⟩ := B_Base.indep.of_restrict
+  obtain ⟨B', B'_Base⟩ := B_Base.indep.of_restrict.exists_base_superset
   refine' ⟨B', B'_Base.1, fun X ↦ _⟩
   obtain Basis := hB X
   have R_B'_inter_eq : R ∩ B' = B := by
@@ -187,8 +187,8 @@ theorem ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
 
 @[simp] theorem modularPair_iff {M : Matroid α} {X Y : Set α} :
     M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (Y ∩ I) Y := by
-  simp only [ModularPair, ModularFamily, mem_singleton_iff, modularBase_pair_iff]
-  refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, hB.indep, ?_⟩,
+  simp only [ModularPair, ModularFamily, mem_singleton_iff, modularBase_pair_iff, indep_iff]
+  refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB.indep, ?_⟩,
     fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB, ?_⟩ ⟩
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
   simp only [Bool.forall_bool, cond_false, cond_true]
