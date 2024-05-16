@@ -1,4 +1,5 @@
 import Matroid.ForMathlib.Order.Minimal
+import Matroid.ForMathlib.MatroidBasic
 import Matroid.Modular
 
 open Set Function Set.Notation
@@ -117,6 +118,35 @@ theorem ModularCut.extIndep_iff {U : M.ModularCut} (he : e ∉ M.E) :
   · exact .inl h.1
   exact .inr ⟨h.1, h.2.1⟩
 
+lemma ModularCut.lemma {U : M.ModularCut} (hI : M.Indep I) (hX : X ⊆ M.E)
+    (hIU : M.cl I ∉ U) (h : ∀ x ∈ X \ M.cl I, M.cl (insert x I) ∈ U) :
+    X ⊆ M.cl I ∨ ∃ x ∈ X \ I, M.Indep (insert x I) ∧ X ⊆ M.cl (insert x I) := by
+  obtain ⟨I', hI', hII'⟩ := hI.subset_basis_of_subset (subset_union_left I X)
+  obtain (h | ⟨x, hx, y, hy, hne⟩) := (I' \ I).subsingleton_or_nontrivial
+  · obtain (he | ⟨x, hx⟩) := h.eq_empty_or_singleton
+    · rw [diff_eq_empty] at he
+      obtain rfl := hII'.antisymm he
+      exact .inl <| (subset_union_right _ _).trans hI'.subset_cl
+    obtain rfl : I' = insert x I := by
+      rw [← union_singleton, ← hx, union_diff_self, union_eq_self_of_subset_left hII']
+    have hxI : x ∉ I := (hx.symm.subset rfl).2
+    have hxX : x ∈ X := by cases hI'.subset <| .inl rfl ; contradiction; assumption
+    exact .inr ⟨x, ⟨hxX, hxI⟩, hI'.indep, (subset_union_right _ _).trans hI'.subset_cl⟩
+  refine False.elim <| hIU ?_
+  have hI'' : I' \ I ⊆ X \ M.cl I := by
+    rw [subset_diff, diff_subset_iff, and_iff_right hI'.subset]
+    simp [disjoint_iff_forall_ne]
+    rintro a haI' haI _ hacl rfl
+    rw [hI.mem_cl_iff, or_iff_left haI] at hacl
+    exact (hI'.indep.subset (insert_subset haI' hII')).not_dep hacl
+
+  have hi := U.inter_mem (h x (hI'' hx)) (h y (hI'' hy)) (modularPair_insert_cl _ _ _ _)
+  rwa [← Indep.cl_inter_eq_inter_cl, inter_insert_of_not_mem (by simp [hne.symm, hy.2]),
+    inter_eq_self_of_subset_right (subset_insert _ _)] at hi
+
+  exact hI'.indep.subset (union_subset (insert_subset hx.1 hII') (insert_subset hy.1 hII'))
+
+
 def ModularCut.extendIndepMatroid (U : ModularCut M) (he : e ∉ M.E) : IndepMatroid α where
 
   E := insert e M.E
@@ -134,14 +164,14 @@ def ModularCut.extendIndepMatroid (U : ModularCut M) (he : e ∉ M.E) : IndepMat
   indep_aug := by
 
     rintro I B hI hInotmax hB
-    have ⟨hBi, hBins⟩ := (mem_maximals_iff_forall_insert (fun _ _ ↦ ExtIndep.subset)).1 hB
-    simp only [mem_maximals_iff, mem_setOf_eq, and_iff_right hBi] at hB
+    have ⟨hBi', hBins⟩ := (mem_maximals_iff_forall_insert (fun _ _ ↦ ExtIndep.subset)).1 hB
+    simp only [mem_maximals_iff, mem_setOf_eq, and_iff_right hBi'] at hB
     rw [mem_maximals_iff_forall_insert (fun _ _ ↦ ExtIndep.subset), and_iff_right hI] at hInotmax
     push_neg at hInotmax
 
 
     -- split into cases depending on why `B` is extension-independent.
-    obtain (⟨hBi, heB⟩ | ⟨B, hB, hBU, heB, rfl⟩) := hBi.or' he
+    obtain (⟨hBi, heB⟩ | ⟨B, hBi, hBU, heB, rfl⟩) := hBi'.or' he
     · -- Case where `B` is a base of `M`.
       replace hBi := hBi.base_of_maximal (fun J hJ ↦ hB (.inl hJ))
 
@@ -177,42 +207,114 @@ def ModularCut.extendIndepMatroid (U : ModularCut M) (he : e ∉ M.E) : IndepMat
       simp_rw [mem_diff, mem_insert_iff, not_or, and_imp, insert_comm, extIndep_insert_iff he,
         not_and, not_not] at hcon
       replace hcon := fun x hx ↦ hcon x hx (by rintro rfl; contradiction)
+      simp_rw [insert_comm, extIndep_insert_iff he] at hInotmax
       have hxBI : x ∈ B \ I := by simpa [hne] using hx
 
-      -- If `I ∪ {x}` is a base, then since `I ∪ {e}` is not maximally extension-indep,
-      -- there is some `y` outside the span of `I` for which `cl (I ∪ {y}) ∉ U`.
-      -- But `cl (I ∪ {y}) = M.E = cl (I ∪ {x})`, so this contradicts the choice of `x`.
-      obtain (hIxb | hIxnb) := em (M.Base (insert x I))
-      · simp_rw [insert_comm, extIndep_insert_iff he, mem_insert_iff, not_or] at hInotmax
-        obtain ⟨y, ⟨hye, hyI⟩, hIy, hIyU⟩ := hInotmax
-        have hyxI : y ∉ insert x I := by
-          rintro (rfl | hyI)
-          · exact hIyU <| hcon y hx.1 hyI hIx
-          contradiction
-        have hyIb := hIxb.exchange_base_of_indep (e := x) (f := y) hyxI
-        simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self hxBI.2, hIy,
-          true_implies] at hyIb
-        rw [hyIb.cl_eq, ← hIxb.cl_eq] at hIyU
-        exact hIyU <| hcon x hxBI.1 hxBI.2 hIx
+      obtain (hcl | ⟨y, hyB, hyI, hByI⟩) := U.lemma hIi hBi.indep hIU ?_
+      · sorry
+      obtain ⟨z, hzeI, hzI, hzIU⟩ := hInotmax
+      simp only [mem_insert_iff, not_or] at hzeI
+      replace hByI := M.cl_subset_cl_of_subset_cl hByI
+      rw [hBi.cl_eq] at hByI
 
-      -- If `I ∪ {x}` isn't a base, then there is some `y ∈ B` outside the span of `I ∪ {x}`.
-      -- But now (the closures of `I ∪ {x}` and `I ∪ {y}`) are a modular pair contained in `U`,
-      -- and we can contradict `cl I ∉ U`.
-      obtain ⟨y, hy, hyxI⟩ := hIx.exists_insert_of_not_base hIxnb hBi
-      simp only [mem_diff, mem_insert_iff, not_or] at hy
-      have hmod := U.inter_mem (hcon x hxBI.1 hxBI.2 hIx)
-        (hcon y hy.1 hy.2.2 (hyxI.subset (insert_subset_insert (subset_insert _ _)))) ?_
-      · rw [← Indep.cl_inter_eq_inter_cl, inter_insert_of_not_mem (by simpa using hy.2),
-          inter_eq_self_of_subset_right (subset_insert _ _)] at hmod
+      replace hyI := hyI.base_of_ground_subset_cl hByI
+      have hzIb : M.Base (insert z I) :=
+        insert_base_of_insert_indep hyB.2 hzeI.2 hyI hzI
+
+      rw [hzIb.cl_eq, ← hyI.cl_eq] at hzIU
+      exact hzIU <| hcon y hyB.1 hyB.2 hyI.indep
+      -- sorry
+      -- -- sorry
+
+
+      -- -- If `I ∪ {x}` is a base, then since `I ∪ {e}` is not maximally extension-indep,
+      -- -- there is some `y` outside the span of `I` for which `cl (I ∪ {y}) ∉ U`.
+      -- -- But `cl (I ∪ {y}) = M.E = cl (I ∪ {x})`, so this contradicts the choice of `x`.
+      -- obtain (hIxb | hIxnb) := em (M.Base (insert x I))
+      -- · simp_rw [insert_comm, extIndep_insert_iff he, mem_insert_iff, not_or] at hInotmax
+      --   obtain ⟨y, ⟨hye, hyI⟩, hIy, hIyU⟩ := hInotmax
+      --   have hyxI : y ∉ insert x I := by
+      --     rintro (rfl | hyI)
+      --     · exact hIyU <| hcon y hx.1 hyI hIx
+      --     contradiction
+      --   have hyIb := hIxb.exchange_base_of_indep (e := x) (f := y) hyxI
+      --   simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self hxBI.2, hIy,
+      --     true_implies] at hyIb
+      --   rw [hyIb.cl_eq, ← hIxb.cl_eq] at hIyU
+      --   exact hIyU <| hcon x hxBI.1 hxBI.2 hIx
+
+      -- -- If `I ∪ {x}` isn't a base, then there is some `y ∈ B` outside the span of `I ∪ {x}`.
+      -- -- But now (the closures of `I ∪ {x}` and `I ∪ {y}`) are a modular pair contained in `U`,
+      -- -- and we can contradict `cl I ∉ U`.
+
+      -- obtain ⟨y, hy, hyxI⟩ := hIx.exists_insert_of_not_base hIxnb hBi
+      -- simp only [mem_diff, mem_insert_iff, not_or] at hy
+      -- have hmod := U.inter_mem (hcon x hxBI.1 hxBI.2 hIx)
+      --   (hcon y hy.1 hy.2.2 (hyxI.subset (insert_subset_insert (subset_insert _ _))))
+      --   (M.modularPair_insert_cl _ _ _)
+      -- rw [← Indep.cl_inter_eq_inter_cl, inter_insert_of_not_mem (by simpa using hy.2),
+      --   inter_eq_self_of_subset_right (subset_insert _ _)] at hmod
+      -- · contradiction
+      -- simpa [union_eq_self_of_subset_right (subset_insert _ _)]
+
+
+
+    simp_rw [insert_comm, extIndep_insert_iff he, not_and, not_not, mem_insert_iff, not_or, and_imp]
+      at hBins
+
+    by_contra! hcon
+    obtain (⟨hI, heI⟩ | ⟨I, hI1, hI2, hI3, rfl⟩) := hI.or' he
+    · have hIU : M.cl I ∈ U := by
+        refine by_contra fun hIU ↦ hcon e ⟨.inl rfl, heI⟩ (.inr ⟨?_, ?_⟩) <;>
+        simpa [diff_singleton_eq_self heI]
+      have hBss : B ⊆ M.cl I := by
+        intro x hx
+        rw [hI.mem_cl_iff', and_iff_right (hBi.subset_ground hx)]
+        exact fun hxI ↦ by_contra fun h' ↦ hcon x ⟨.inr hx, h'⟩ (.inl hxI)
+
+      have hBI : M.cl B ⊂ M.cl I :=
+        (M.cl_subset_cl_of_subset_cl hBss).ssubset_of_ne (fun h ↦ hBU <| by rwa [h])
+
+
+      obtain ⟨x, hxI, hxB⟩ := exists_of_cl_ssubset hBI
+
+      obtain ⟨y, hyI, hIy⟩ := hInotmax
+      obtain (rfl | hne) := eq_or_ne e y
+      · rw [extIndep_insert_iff he, and_iff_right hI] at hIy; contradiction
+
+      rw [extIndep_iff_of_not_mem he (by simp [hne, heI])] at hIy
+      have hBxy : M.Indep (insert y (insert x B)) := by
+        rw [Indep.insert_indep_iff, mem_diff]
+        · rw [hI.insert_indep_iff_of_not_mem hyI] at hIy
+          refine .inl ⟨hIy.1, not_mem_subset (M.cl_subset_cl_of_subset_cl ?_) hIy.2⟩
+          exact insert_subset (M.mem_cl_of_mem hxI) hBss
+        rw [hBi.insert_indep_iff]
+        exact .inl ⟨hI.subset_ground hxI, hxB⟩
+
+      have hxB' : x ∉ B := (not_mem_subset (M.subset_cl B hBi.subset_ground) hxB)
+
+      have hxBU := hBins x (by rintro rfl; contradiction)
+        (not_mem_subset (M.subset_cl B hBi.subset_ground) hxB) (hBxy.subset (subset_insert _ _))
+
+      have hyB : y ∉ B := by
+        rw [hI.insert_indep_iff_of_not_mem hyI] at hIy
+        exact fun hyB ↦ hIy.2 <| hBss hyB
+
+      have hyBU := hBins y hne.symm hyB (hBxy.subset (insert_subset_insert (subset_insert _ _)))
+      have h_inter := U.inter_mem hxBU hyBU ?_
+      · rw [← Indep.cl_inter_eq_inter_cl, insert_inter_of_not_mem,
+          inter_eq_self_of_subset_left (subset_insert _ _)] at h_inter
         · contradiction
+        · simp only [mem_insert_iff, hxB', or_false]
+          rintro rfl; contradiction
         simpa [union_eq_self_of_subset_right (subset_insert _ _)]
       apply ModularPair.cl_cl
       apply Indep.modularPair_of_union
       simpa [union_eq_self_of_subset_right (subset_insert _ _)]
-    rw [extIndep_insert_iff he] at hBi
 
-  -- Now consider the case where `B` has the form `B₀ ∪ {e}` with `B₀` independent and `cl B₀ ∉ U`.
-
+    simp_rw [insert_comm, extIndep_insert_iff he] at hInotmax hcon hI
+    simp only [mem_insert_iff, not_or, true_or, insert_diff_of_mem, mem_diff, not_and, not_not,
+      and_imp] at hInotmax hcon
 
 
 

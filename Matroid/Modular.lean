@@ -338,6 +338,48 @@ theorem ModularFamily.modularPair_singleton_compl (h : M.ModularFamily Xs) (i₀
     M.ModularPair (Xs i₀) (⋃ i ∈ ({i₀} : Set ι)ᶜ, Xs i) := by
   convert h.modularPair_compl {i₀}; simp
 
+theorem modularPair_insert_cl (M : Matroid α) (X : Set α) (e f : α) :
+    M.ModularPair (M.cl (insert e X)) (M.cl (insert f X)) := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+
+  rw [← cl_insert_cl_eq_cl_insert, ← cl_insert_cl_eq_cl_insert (e := f), ← hI.cl_eq_cl]
+  obtain (he | he) := em' (e ∈ M.E)
+  · rw [← cl_inter_ground, insert_inter_of_not_mem he, cl_inter_ground]
+    exact modularPair_of_subset (M.cl_subset_cl (subset_insert _ _)) (M.cl_subset_ground _)
+  obtain (hf | hf) := em' (f ∈ M.E)
+  · rw [ModularPair.comm, ← cl_inter_ground, insert_inter_of_not_mem hf, cl_inter_ground]
+    exact modularPair_of_subset (M.cl_subset_cl (subset_insert _ _)) (M.cl_subset_ground _)
+
+  obtain (hfI | hfI) := em (f ∈ M.cl I)
+  · rw [ModularPair.comm, insert_eq_of_mem hfI]
+    exact modularPair_of_subset (M.cl_subset_cl (subset_insert _ _)) (M.cl_subset_ground _)
+  rw [cl_insert_cl_eq_cl_insert, cl_insert_cl_eq_cl_insert]
+  obtain (hef | hef) := em (e ∈ M.cl (insert f I))
+  · refine modularPair_of_subset (M.cl_subset_cl_of_subset_cl ?_) (M.cl_subset_ground _)
+    exact insert_subset hef (M.subset_cl_of_subset (subset_insert _ _)
+      (insert_subset hf hI.indep.subset_ground))
+
+  refine ModularPair.cl_cl ?_
+  apply Indep.modularPair_of_union
+  rw [union_insert, union_eq_self_of_subset_right (subset_insert _ _), insert_comm,
+    Indep.insert_indep_iff]
+  · exact .inl ⟨he, hef⟩
+  rw [hI.indep.insert_indep_iff]
+  exact .inl ⟨hf, hfI⟩
+
+
+
+
+
+
+  -- obtain (he | he) := em' (M.Indep (insert e I))
+  -- · rw [hI.indep.insert_indep_iff, not_or, mem_diff, not_and, not_not] at he
+  --   obtain (heE | heE) := em (e ∈ M.E)
+  --   · rw [insert_eq_self.2 (he.1 heE)]
+  --     exact modularPair_of_subset (M.cl_subset_cl (subset_insert _ _)) (M.cl_subset_ground _)
+  --   rw [cl_eq_cl_in]
+
+
 end ModularFamily
 
 section ModularSet

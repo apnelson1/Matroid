@@ -94,6 +94,10 @@ lemma subset_cl_of_subset' (M : Matroid α) (hXY : X ⊆ Y) (hX : X ⊆ M.E := b
     X ⊆ M.cl Y := by
   rw [← cl_inter_ground]; exact M.subset_cl_of_subset (subset_inter hXY hX)
 
+lemma exists_of_cl_ssubset (hXY : M.cl X ⊂ M.cl Y) : ∃ e ∈ Y, e ∉ M.cl X := by
+  by_contra! hcon
+  exact hXY.not_subset (M.cl_subset_cl_of_subset_cl hcon)
+
 lemma mem_cl_of_mem (M : Matroid α) (h : e ∈ X) (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.cl X :=
   (M.subset_cl X) h
@@ -403,6 +407,10 @@ lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) :
   have hf := cl_exchange he
   rw [eq_comm, ← cl_cl, ← insert_eq_of_mem he.1, cl_insert_cl_eq_cl_insert, insert_comm, ← cl_cl,
     ← cl_insert_cl_eq_cl_insert, insert_eq_of_mem hf.1, cl_cl, cl_cl]
+
+lemma cl_insert_eq_or_insert_indep (M : Matroid α) (X : Set α) (e : α) :
+    M.cl (insert e X) = M.cl X ∨ (e ∉ X ∧ M.Indep (insert e X)) := by
+  sorry
 
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X := by
   refine' (em (e ∈ X)).elim (fun h' ↦ _) (fun h' ↦ by rw [diff_singleton_eq_self h'])
