@@ -279,6 +279,9 @@ lemma base_iff_indep_cl_eq : M.Base B ↔ M.Indep B ∧ M.cl B = M.E := by
   exact fun hI ↦ ⟨fun h ↦ (M.cl_subset_ground _).antisymm h.2,
     fun h ↦ ⟨(M.subset_cl B).trans_eq h, h.symm.subset⟩⟩
 
+lemma Indep.base_iff_ground_subset_cl (hI : M.Indep I) : M.Base I ↔ M.E ⊆ M.cl I :=
+  ⟨fun h ↦ by rw [h.cl_eq], hI.base_of_ground_subset_cl⟩
+
 lemma Indep.cl_inter_eq_self_of_subset (hI : M.Indep I) (hJI : J ⊆ I) : M.cl J ∩ I = J := by
   have hJ := hI.subset hJI
   rw [subset_antisymm_iff, and_iff_left (subset_inter (M.subset_cl _) hJI)]
@@ -407,10 +410,6 @@ lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) :
   have hf := cl_exchange he
   rw [eq_comm, ← cl_cl, ← insert_eq_of_mem he.1, cl_insert_cl_eq_cl_insert, insert_comm, ← cl_cl,
     ← cl_insert_cl_eq_cl_insert, insert_eq_of_mem hf.1, cl_cl, cl_cl]
-
-lemma cl_insert_eq_or_insert_indep (M : Matroid α) (X : Set α) (e : α) :
-    M.cl (insert e X) = M.cl X ∨ (e ∉ X ∧ M.Indep (insert e X)) := by
-  sorry
 
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X := by
   refine' (em (e ∈ X)).elim (fun h' ↦ _) (fun h' ↦ by rw [diff_singleton_eq_self h'])

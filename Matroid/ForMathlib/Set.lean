@@ -115,3 +115,7 @@ theorem union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
   rw [insert_eq, insert_eq, ← union_union_distrib_right, @union_comm _ {b} _,
     union_assoc, ← insert_eq, ← insert_eq]
+
+theorem not_mem_or_exists_eq_insert_not_mem (s : Set α) (x : α) :
+    x ∉ s ∨ ∃ s₀, x ∉ s₀ ∧ s = insert x s₀ :=
+  imp_iff_not_or.1 <| fun h ↦ ⟨s \ {x}, by simp, by simp [insert_eq_of_mem h]⟩
