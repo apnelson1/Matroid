@@ -136,14 +136,12 @@ lemma ModularCut.ExtIndep.diff_singleton_indep {U : M.ModularCut} (h : U.ExtInde
     M.Indep (I \ {e}) := by
   obtain (h | h) := h; exact h.diff _; exact h.1
 
-theorem ModularCut.extIndep_iff {U : M.ModularCut} (he : e ∉ M.E) :
+lemma ModularCut.extIndep_iff {U : M.ModularCut} (he : e ∉ M.E) :
     U.ExtIndep e I ↔ (M.Indep I ∧ e ∉ I) ∨ (M.Indep (I \ {e}) ∧ M.cl (I \ {e}) ∉ U ∧ e ∈ I) := by
   refine ⟨fun h ↦ h.or he, ?_⟩
   rintro (h | h)
   · exact .inl h.1
   exact .inr ⟨h.1, h.2.1⟩
-
-
 
 lemma ModularCut.insert_maximal_extIndep_subset_insert_iff {U : M.ModularCut} (heE : e ∉ M.E)
     (heI : e ∉ I) (hX : X ⊆ M.E) :
@@ -190,7 +188,6 @@ lemma ModularCut.insert_maximal_extIndep_subset_insert_iff {U : M.ModularCut} (h
   rw [extIndep_insert_iff heE (by simp [Ne.symm hxe, heI])]
   specialize h x
   tauto
-
 
 lemma ModularCut.maximal_extIndep_subset_insert_iff {U : M.ModularCut} (heE : e ∉ M.E)
     (hX : X ⊆ M.E) (heI : e ∉ I) :
@@ -466,5 +463,6 @@ def ModularCut.extendIndepMatroid (U : ModularCut M) (he : e ∉ M.E) : IndepMat
 
     exact (subset_union_right _ _).trans hJ.subset_cl
 
-  indep_maximal := sorry
+  indep_maximal := by
+    intro X hXE I hI hIX
   subset_ground := sorry

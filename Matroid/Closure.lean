@@ -37,6 +37,9 @@ lemma cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
 lemma cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
   sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right _ _⟩
 
+lemma ground_subset_cl_iff : (M.E ⊆ M.cl X) ↔ M.cl X = M.E := by
+  simp [M.cl_subset_ground X, subset_antisymm_iff]
+
 lemma cl_eq_sInter_of_subset {M : Matroid α} (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {F : Set α | M.Flat F ∧ X ⊆ F} :=
   by rw [cl, inter_eq_self_of_subset_left hX]
@@ -548,6 +551,10 @@ lemma Spanning.superset (hS : M.Spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E := b
     M.Spanning T :=
   ⟨(M.cl_subset_ground _).antisymm (by rw [← hS.cl_eq]; exact M.cl_subset_cl hST), hT⟩
 
+lemma Spanning.cl_superset_eq (hS : M.Spanning S) (hST : S ⊆ T) : M.cl T = M.E := by
+  rw [← cl_inter_ground, ← spanning_iff_cl]
+  exact hS.superset (subset_inter hST hS.subset_ground)
+
 lemma Spanning.union_left (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (S ∪ X) :=
   hS.superset (subset_union_left _ _)
@@ -563,7 +570,7 @@ lemma ground_spanning (M : Matroid α) : M.Spanning M.E :=
   ⟨M.cl_ground, rfl.subset⟩
 
 lemma Base.superset_spanning (hB : M.Base B) (hBX : B ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
-    M.Spanning X:=
+    M.Spanning X :=
   hB.spanning.superset hBX
 
 lemma spanning_iff_superset_base' : M.Spanning S ↔ (∃ B, M.Base B ∧ B ⊆ S) ∧ S ⊆ M.E := by
