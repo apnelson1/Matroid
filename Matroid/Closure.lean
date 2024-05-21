@@ -109,6 +109,9 @@ lemma mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aesop
     e ∈ M.cl X := by
   rw [← cl_inter_ground]; exact M.mem_cl_of_mem ⟨heX, h⟩
 
+lemma not_mem_of_mem_diff_cl (he : e ∈ M.E \ M.cl X) : e ∉ X :=
+  fun heX ↦ he.2 <| M.mem_cl_of_mem' heX he.1
+
 -- @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
 
@@ -332,7 +335,7 @@ lemma Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M
     exact hIs.trans (diff_subset _ _)
   exact heEI.2 (hIs _ hX' heX)
 
-lemma cl_iInter_eq_biInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
+lemma cl_iInter_eq_iInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :  M.cl (⋂ i, Is i) = (⋂ i, M.cl (Is i)) := by
   convert h.cl_sInter_eq_biInter_cl_of_forall_subset (range_nonempty Is) (by simp [subset_iUnion])
   simp
@@ -344,10 +347,14 @@ lemma cl_sInter_eq_biInter_cl_of_sUnion_indep (Is : Set (Set α)) (hIs : Is.None
 lemma cl_biInter_eq_biInter_cl_of_biUnion_indep {ι : Type*} {A : Set ι} (hA : A.Nonempty)
     {I : ι → Set α} (h : M.Indep (⋃ i ∈ A, I i)) : M.cl (⋂ i ∈ A, I i) = ⋂ i ∈ A, M.cl (I i) := by
   have := hA.coe_sort
-  convert cl_iInter_eq_biInter_cl_of_iUnion_indep (ι := A) (Is := fun i ↦ I i) (by simpa) <;> simp
+  convert cl_iInter_eq_iInter_cl_of_iUnion_indep (ι := A) (Is := fun i ↦ I i) (by simpa) <;> simp
+
+lemma Indep.cl_iInter_eq_biInter_cl_of_forall_subset {ι : Type*} [hι : Nonempty ι] {Js : ι → Set α}
+    (hI : M.Indep I) (hJs : ∀ i, Js i ⊆ I) : M.cl (⋂ i, Js i) = ⋂ i, M.cl (Js i) :=
+  cl_iInter_eq_iInter_cl_of_iUnion_indep _ (hI.subset <| by simpa)
 
 lemma Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl I ∩ M.cl J := by
-  rw [inter_eq_iInter, cl_iInter_eq_biInter_cl_of_iUnion_indep, inter_eq_iInter]
+  rw [inter_eq_iInter, cl_iInter_eq_iInter_cl_of_iUnion_indep, inter_eq_iInter]
   · exact iInter_congr (by simp)
   rwa [← union_eq_iUnion]
 

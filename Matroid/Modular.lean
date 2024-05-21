@@ -96,7 +96,7 @@ theorem ModularBase.modularBase_cls (hB : M.ModularBase B Xs) :
 theorem ModularBase.iInter_cl_eq_cl_iInter [Nonempty ι] (hB : M.ModularBase B Xs) :
     (⋂ i : ι, M.cl (Xs i)) = M.cl (⋂ i : ι, Xs i) := by
   simp_rw [subset_antisymm_iff, subset_iInter_iff, ← hB.cl_inter_eq]
-  rw [← cl_iInter_eq_biInter_cl_of_iUnion_indep, ← iInter_inter B Xs]
+  rw [← cl_iInter_eq_iInter_cl_of_iUnion_indep, ← iInter_inter B Xs]
   · refine ⟨M.cl_subset_cl (inter_subset_left _ _), fun i ↦ ?_⟩
     rw [hB.cl_inter_eq]
     exact M.cl_subset_cl (iInter_subset _ i)

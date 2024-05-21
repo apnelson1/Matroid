@@ -11,7 +11,7 @@ section Parallel
 
 /-- The partition of the nonloops of `M` into parallel classes. -/
 def parallelClasses (M : Matroid α) : Partition {e | M.Nonloop e} :=
-  (M.cl_flat ∅).covbyPartition.congr M.setOf_nonloop_eq.symm
+  (M.cl_flat ∅).covByPartition.congr M.setOf_nonloop_eq.symm
 
 def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
 
@@ -55,7 +55,7 @@ lemma Parallel.mem_ground_right (h : M.Parallel e f) : f ∈ M.E :=
 lemma Nonloop.parallel_iff_cl_eq_cl (he : M.Nonloop e) :
     M.Parallel e f ↔ M.cl {e} = M.cl {f} := by
   rw [Parallel, parallelClasses, Partition.rel_congr,
-    (M.cl_flat ∅).rel_covbyPartition_iff' ⟨he.mem_ground, he.not_loop⟩]; simp
+    (M.cl_flat ∅).rel_covByPartition_iff' ⟨he.mem_ground, he.not_loop⟩]; simp
 
 lemma Parallel.mem_cl (h : M.Parallel e f) : e ∈ M.cl {f} := by
   rw [← h.cl_eq_cl]; exact mem_cl_of_mem' _ rfl
@@ -72,7 +72,7 @@ lemma setOf_parallel_eq_cl_diff_loops (M : Matroid α) (e : α) :
     {f | M.Parallel e f} = M.cl {e} \ M.cl ∅ := by
   by_cases he : M.Nonloop e
   · rw [Parallel, parallelClasses, Partition.rel_congr,
-      Partition.setOf_rel_eq_partOf, (M.cl_flat ∅).partOf_covbyPartition_eq,
+      Partition.setOf_rel_eq_partOf, (M.cl_flat ∅).partOf_covByPartition_eq,
       cl_insert_cl_eq_cl_insert, insert_emptyc_eq]
   rw [not_nonloop_iff_cl.1 he, diff_self, eq_empty_iff_forall_not_mem]
   exact fun f hf ↦ he (Parallel.nonloop_left hf)
@@ -396,8 +396,8 @@ section ParallelClass
 
 lemma mem_parallelClasses_iff_eq_cl_diff_loops {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.Nonloop e ∧ P = M.cl {e} \ M.cl ∅ := by
-  simp only [parallelClasses, Partition.mem_congr_iff, Flat.mem_covbyPartition_iff,
-    loops_covby_iff, point_iff_exists_eq_cl_nonloop]
+  simp only [parallelClasses, Partition.mem_congr_iff, Flat.mem_covByPartition_iff,
+    loops_covBy_iff, point_iff_exists_eq_cl_nonloop]
   constructor
   · rintro ⟨_, ⟨e, he, rfl⟩, rfl⟩
     exact ⟨e, he, rfl⟩
