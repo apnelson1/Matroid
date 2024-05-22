@@ -12,7 +12,6 @@ lemma flat_def : M.Flat F ↔ (∀ I X, M.Basis I F → M.Basis I X → X ⊆ F)
 
 lemma Flat.eq_ground_of_spanning (hF : M.Flat F) (h : M.Spanning F) : F = M.E := by
   rw [← hF.cl, h.cl_eq]
-
 lemma Flat.spanning_iff (hF : M.Flat F) : M.Spanning F ↔ F = M.E :=
   ⟨hF.eq_ground_of_spanning, by rintro rfl; exact M.ground_spanning⟩
 
@@ -652,7 +651,31 @@ lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
   left_inv := by rintro ⟨-, hF⟩; simp [(subset_diff.1 hF.subset_ground).2]
   right_inv := by rintro ⟨F, hF⟩; simp [hF.2]
 
+lemma flat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Flat F ↔ ∃ F', M.Flat F' ∧ F = F' ∩ R := by
+  refine ⟨fun h ↦ ⟨M.cl F, M.cl_flat F, ?_⟩, ?_⟩
+  · nth_rw 1 [← h.cl]
+    have hFR : F ⊆ R := h.subset_ground
+    simp [inter_eq_self_of_subset_left hFR, diff_subset, diff_eq_empty.2 hR]
+  rintro ⟨F, hF, rfl⟩
+  rw [flat_iff_subset_cl_self]
+  suffices M.cl (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, diff_eq_empty.2 hR]
+  exact (inter_subset_left _ _).trans (hF.cl_subset_of_subset (inter_subset_left _ _))
 
+lemma flat_delete_iff {D : Set α} :
+    (M ＼ D).Flat F ↔ ∃ F', M.Flat F' ∧ F = F' \ D := by
+  simp_rw [delete_eq_restrict, flat_restrict_iff (diff_subset M.E D), ← inter_diff_assoc]
+  constructor <;>
+  · rintro ⟨F, hF, rfl⟩
+    refine ⟨F, hF, ?_⟩
+    rw [inter_eq_self_of_subset_left hF.subset_ground]
+
+@[simp] lemma flat_deleteElem_iff : (M ＼ e).Flat F ↔ e ∉ F ∧ (M.Flat F ∨ M.Flat (insert e F)) := by
+  rw [deleteElem, flat_delete_iff]
+  constructor
+  · rintro ⟨F, hF, rfl⟩
+    obtain (heF | heF) := em (e ∈ F) <;> simp [heF, hF]
+  rintro ⟨heF, (hF | hF)⟩ <;> exact ⟨_, hF, by simp [heF]⟩
 
 end Minor
 

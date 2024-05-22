@@ -149,22 +149,30 @@ theorem ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopE
   rw [← (he i).basis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.basis_inter i
 
-theorem ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
-    (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily Xs := by
-  obtain ⟨B, B_Base, hB⟩ := h
-  obtain ⟨B', B'_Base⟩ := B_Base.indep.of_restrict.exists_base_superset
-  refine' ⟨B', B'_Base.1, fun X ↦ _⟩
-  obtain Basis := hB X
+theorem ModularFamily.ofRestrict' {R : Set α}
+    (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily (fun i ↦ (Xs i) ∩ M.E) := by
+  obtain ⟨B, hBb, hB⟩ := h
+  obtain ⟨B', hB'⟩ := hBb.indep.of_restrict.exists_base_superset
+  refine' ⟨B', hB'.1, fun i ↦ _⟩
+  obtain Basis := hB i
   have R_B'_inter_eq : R ∩ B' = B := by
     rw [ext_iff]
-    refine' fun x ↦ ⟨fun x_mem ↦ _, fun x_mem ↦ ⟨B_Base.subset_ground x_mem, B'_Base.2 x_mem⟩⟩
+    refine' fun x ↦ ⟨fun x_mem ↦ _, fun x_mem ↦ ⟨hBb.subset_ground x_mem, hB'.2 x_mem⟩⟩
     by_contra x_nB
-    apply (B'_Base.1.indep.subset (insert_subset x_mem.2 B'_Base.2)).not_dep
-    rw [Dep, and_iff_left ((insert_subset x_mem.2 B'_Base.2).trans B'_Base.1.subset_ground)]
-    exact (restrict_dep_iff.1 (B_Base.insert_dep ⟨x_mem.1, x_nB⟩)).1
-  rw [←(inter_eq_left.2 Basis.subset_ground), inter_assoc, inter_eq_left.2 Basis.subset_ground,
-  restrict_ground_eq, R_B'_inter_eq]
-  exact ((basis_restrict_iff).1 Basis).1
+    apply (hB'.1.indep.subset (insert_subset x_mem.2 hB'.2)).not_dep
+    rw [Dep, and_iff_left ((insert_subset x_mem.2 hB'.2).trans hB'.1.subset_ground)]
+    exact (restrict_dep_iff.1 (hBb.insert_dep ⟨x_mem.1, x_nB⟩)).1
+  simp only
+  rw [basis_restrict_iff'] at Basis
+  rw [ ← inter_eq_self_of_subset_left Basis.2, inter_right_comm _ R, inter_assoc, R_B'_inter_eq,
+    inter_assoc, inter_eq_self_of_subset_right (hB'.2.trans hB'.1.subset_ground),
+    inter_right_comm, inter_eq_self_of_subset_left Basis.2]
+  exact Basis.1
+
+theorem ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
+    (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily Xs := by
+  convert h.ofRestrict' with i
+  rw [inter_eq_self_of_subset_left <| (h.subset_ground_of_mem i).trans hR]
 
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=

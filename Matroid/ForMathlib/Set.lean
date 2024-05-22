@@ -125,3 +125,6 @@ lemma biInter_diff_singleton_eq_diff (s : Set α) {t : Set α} (ht : t.Nonempty)
   simp only [ext_iff, mem_iInter, mem_diff, mem_singleton_iff]
   exact fun x ↦ ⟨fun h ↦ ⟨(h _ ht.some_mem).1, fun hxt ↦ (h x hxt).2 rfl⟩,
     fun h y hyt ↦ ⟨h.1, fun hxy ↦ h.2 <| hxy.symm ▸ hyt⟩⟩
+
+theorem subset_diff_singleton_iff {s t : Set α} {x : α} : s ⊆ t \ {x} ↔ (s ⊆ t ∧ x ∉ s) := by
+  rw [subset_diff, disjoint_singleton_right]
