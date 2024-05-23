@@ -1,12 +1,59 @@
 import Matroid.ForMathlib.Order.Minimal
 import Matroid.ForMathlib.MatroidBasic
 import Matroid.Modular
-import Matroid.Flat
+
+/-
+
+# Extensions
+
+If `M` is a matroid and `e` is an element outside the ground set of `M`,
+a single-element extension of `M` by `e` is a matroid `M'` for which
+`M'.E = M.E ∪ {e}` and `M' ＼ e = M`.
+
+In 1965, Crapo proved that the single-element extensions of a finite matroid `M` are
+parametrized by the 'modular cuts' of `M`; a modular cut is an upper ideal in the
+lattice of flats of `M` that is closed under taking intersections of modular pairs.
+(`A,B` is  modular pair if `r A + r B = r (A ∪ B) + r (A ∩ B)`).
+Given a modular cut `U`, the flats of `M` spanning the new element `e` in the extension `M'` are
+precisely those in `U`. See [Oxley 7.2].
+
+For infinite matroids, this condition fails; for instance, if `M` is a free matroid
+on an infinite ground set, and `U` is the collection of all sets of `M` with finite complement,
+then `U` is clearly a modular cut (it is closed under taking intersections of every two elements),
+but `U` doesn't correspond to any single-element extension; in such an extension `M'`,
+`e` would be spanned by every hyperplane of `M` and would therefore be spanned by every flat of `M`.
+
+To correctly describe single-element extensions of infinite matroids, we need to modify
+the definition of a modular cut. Instead of insisting that a modular cut `U` be closed
+under taking intersections of modular pairs, we instead require that it is closed under
+intersections of arbitrary 'modular families'. Modular families are collections of sets
+with a common basis; they are defined in `Matroid.Modular`.
+
+In this file, we define modular cuts, show that they parametrize single-element extensions
+of arbitrary matroids, and show that they specialize to Crapo's modular cuts in the finite case.
+
+# Main Definitions.
+
+* `Matroid.ModularCut` : a collection of flats in a matroid closed under taking superflats and
+    under intersections of modular families.
+
+* `ModularCut.principal M X` : the modular cut of `M` comprising all the flats containing `X`
+
+* `ModularCut.restrict` : the restriction of a modular cut to a restriction of `M`.
+
+* `ModularCut.ofDeleteElem` : the modular cut of `M ＼ e` corresponding to the extension `M`
+    of `M ＼ e`.
+
+* `ModularCut.ofForallModularPairInter` : in the finite case, a modular cut in the classical sense
+    gives a modular cut in the more general sense.
+
+* `Matroid.extendBy e U` : add an element `e` to a matroid `M` using a modular cut `U`.
+
+* `Matroid.extensionEquiv` : the equivalence between single-element extensions of `M`
+    and modular cuts of `M`.
+-/
 
 open Set Function Set.Notation
-
-
-
 
 variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α}
 
@@ -73,6 +120,7 @@ lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U) (h
 lemma ModularCut.cl_mem_of_mem (hF : F ∈ U) : M.cl F ∈ U := by
   rwa [(U.flat_of_mem hF).cl]
 
+/-- The `ModularCut` of all flats containing `X`. -/
 def ModularCut.principal (M : Matroid α) (X : Set α) : M.ModularCut where
   carrier := {F | M.Flat F ∧ X ⊆ F}
   forall_flat _ h := h.1
@@ -595,7 +643,7 @@ lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extend
     not_iff_not, ← hF.eq_cl_of_basis hI] using h_eq
 
 /-- Single-element extensions are equivalent to modular cuts. -/
-def extensionEquiv (M : Matroid α) (he : e ∉ M.E) :
+def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
     {N : Matroid α // (e ∈ N.E ∧ N ＼ e = M)} ≃ M.ModularCut where
   toFun N := (ModularCut.ofDeleteElem N e).congr N.2.2
   invFun U := ⟨M.extendBy e U, by simp, U.extendBy_deleteElem he⟩
