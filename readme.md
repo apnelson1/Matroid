@@ -30,13 +30,14 @@ and need some cosmetic updates to make them work again with a few months of math
 * Representability : Matroid/Representation/* 
   (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
 * Paving matroids : Matroid/Paving
+* Modular cuts and general extensions : Matroid/Construction/Extension
 * Transversal matroids : Matroid/Transversal
 * Circuit-hyperplane relaxation : Matroid/Relax
 * Parallel and series extensions : Matroid/Extension
 * Matroid invariants and minor-closed properties : Matroid/Class
 * Modular sets, pairs and families : Matroid/Modular
-* Modular cuts and general extensions : Matroid/Construction/_ModularCut 
-  (under construction)
+
+  
 
 
 Additionally, there is some material from an earlier lean3 version of the repo 
