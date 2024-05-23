@@ -270,20 +270,20 @@ modular pairs rather than families. -/
       exact fun _ h _ ↦ h
     simp only [Finset.coe_cons, insert_subset_iff, sInter_insert, and_imp]
     intro F S hFS hne IH hFU hSU hmod
+
     set incl : S → S.cons F hFS := fun X ↦ ⟨X, by simp⟩
-    have _ := hne.coe_sort
     refine h_pair hFU (IH hSU (hmod.comp incl)) ?_
-
-    rw [ModularPair]
-
-    set t : Bool → Set (S.cons F hFS) := fun i ↦ bif i then {⟨F, by simp⟩} else (Set.range incl)
-    have ht : ∀ j, (t j).Nonempty := by
-      rintro (rfl | rfl) <;> simp [t, incl, range_nonempty]
-    convert hmod.set_biInter_comp t ht with j
-    cases j
-    · simp only [cond_false, mem_setOf_eq, t, incl, biInter_range, sInter_eq_biInter,
-        biInter_eq_iInter]; rfl
-    simp [t]
+    have : Nontrivial (S.cons F hFS) := by
+      obtain ⟨F', hF'⟩ := hne
+      refine ⟨⟨F, by simp⟩, ⟨F', by simp [hF']⟩, ?_⟩
+      simp only [ne_eq, Subtype.mk.injEq]
+      rintro rfl; contradiction
+    convert hmod.modularPair_singleton_compl_biInter ⟨F, by simp⟩
+    simp only [mem_compl_iff, mem_singleton_iff, iInter_subtype, sInter_eq_iInter]
+    ext x;
+    simp only [Finset.mem_coe, mem_iInter, Finset.mem_cons, Subtype.mk.injEq,
+      iInter_iInter_eq_or_left, not_true_eq_false, iInter_of_empty, univ_inter]
+    exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩
 
 end finite
 
@@ -549,7 +549,8 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut)
   exact hconJ'.2 <| hJ.indep.cl_diff_covBy hxJI.1
 
 /-- Extend a matroid `M` by an element `e` using a modular cut `U`.
-(Intended for use when `e ∉ M.E`; if `e` already belongs to `M`, then `e` is first deleted.) -/
+(Intended for use when `e ∉ M.E`; if `e` already belongs to `M`,
+then this gives the extension of `M ＼ e` by `e` using `U`.) -/
 @[simps!] def extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
     (E := insert e M.E)
