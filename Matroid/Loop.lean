@@ -579,6 +579,24 @@ lemma Coloop.mem_cl_iff_mem (he : M.Coloop e) : e ∈ M.cl X ↔ e ∈ X :=
 lemma Coloop.mem_of_mem_cl (he : M.Coloop e) (hX : e ∈ M.cl X) : e ∈ X := by
   rwa [← he.mem_cl_iff_mem]
 
+lemma coloop_iff_diff_nonspanning : M.Coloop e ↔ ¬ M.Spanning (M.E \ {e}) := by
+  rw [coloop_iff_forall_mem_cl_iff_mem']
+  refine ⟨fun h hsp ↦ ?_, fun h ↦ ⟨fun X hX ↦ ⟨fun he ↦ ?_, fun he ↦ ?_⟩, by_contra fun h' ↦ h ?_⟩⟩
+  · simpa [hsp.cl_eq.symm ▸ h.2] using h.1 (M.E \ {e})
+  · rw [spanning_iff_ground_subset_cl] at h
+    refine by_contra fun he' ↦ h ?_
+    rw [← union_eq_self_of_subset_left (subset_diff_singleton hX he'), ← cl_union_cl_left_eq,
+      ← insert_eq_of_mem he, ← union_singleton, union_assoc, union_diff_self, singleton_union,
+      ← cl_ground]
+    apply M.cl_subset_cl
+    rw [cl_ground]
+    exact (subset_insert _ _).trans (subset_union_right _ _)
+  · exact M.subset_cl X hX he
+  rw [spanning_iff_cl, diff_singleton_eq_self h', cl_ground]
+
+lemma coloop_iff_diff_cl : M.Coloop e ↔ M.cl (M.E \ {e}) ≠ M.E := by
+  rw [coloop_iff_diff_nonspanning, spanning_iff_cl]
+
 @[simp] lemma cl_inter_coloops_eq (M : Matroid α) (X : Set α) :
     M.cl X ∩ M✶.cl ∅ = X ∩ M✶.cl ∅ := by
   simp_rw [Set.ext_iff, mem_inter_iff, ← coloop_iff_mem_cl_empty, and_congr_left_iff]

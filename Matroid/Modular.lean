@@ -17,83 +17,83 @@ section ModularBase
 def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
   M.Base B ∧ ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 
-theorem ModularBase.base (h : M.ModularBase B Xs) : M.Base B :=
+lemma ModularBase.base (h : M.ModularBase B Xs) : M.Base B :=
   h.1
 
-theorem ModularBase.indep (h : M.ModularBase B Xs) : M.Indep B :=
+lemma ModularBase.indep (h : M.ModularBase B Xs) : M.Indep B :=
   h.base.indep
 
-theorem ModularBase.basis_inter (h : M.ModularBase B Xs) (i : ι) : M.Basis ((Xs i) ∩ B) (Xs i) :=
+lemma ModularBase.basis_inter (h : M.ModularBase B Xs) (i : ι) : M.Basis ((Xs i) ∩ B) (Xs i) :=
   h.2 i
 
-theorem ModularBase.subset_cl_inter (h : M.ModularBase B Xs) (i : ι) : Xs i ⊆ M.cl ((Xs i) ∩ B) :=
+lemma ModularBase.subset_cl_inter (h : M.ModularBase B Xs) (i : ι) : Xs i ⊆ M.cl ((Xs i) ∩ B) :=
   (h.basis_inter i).subset_cl
 
-theorem ModularBase.cl_inter_eq (h : M.ModularBase B Xs) (i : ι) : M.cl (Xs i ∩ B) = M.cl (Xs i) :=
+lemma ModularBase.cl_inter_eq (h : M.ModularBase B Xs) (i : ι) : M.cl (Xs i ∩ B) = M.cl (Xs i) :=
   (h.basis_inter i).cl_eq_cl
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem ModularBase.subset_ground (h : M.ModularBase B Xs) (i : ι) : Xs i ⊆ M.E :=
+lemma ModularBase.subset_ground (h : M.ModularBase B Xs) (i : ι) : Xs i ⊆ M.E :=
   (h.basis_inter i).subset_ground
 
-theorem ModularBase.subtype (h : M.ModularBase B Xs) (A : Set ι) :
+lemma ModularBase.subtype (h : M.ModularBase B Xs) (A : Set ι) :
     M.ModularBase B (fun i : A ↦ Xs i) :=
   ⟨h.1, fun ⟨i,_⟩ ↦ h.2 i⟩
 
-@[simp] theorem modularBase_pair_iff {B X Y : Set α} :
+@[simp] lemma modularBase_pair_iff {B X Y : Set α} :
     M.ModularBase B (fun i : ({X,Y} : Set (Set α)) ↦ i) ↔
       M.Base B ∧ M.Basis (X ∩ B) X ∧ M.Basis (Y ∩ B) Y := by
   simp [ModularBase]
 
-theorem ModularBase.basis_iInter [Nonempty ι] (h : M.ModularBase B Xs) :
+lemma ModularBase.basis_iInter [Nonempty ι] (h : M.ModularBase B Xs) :
     M.Basis ((⋂ i, Xs i) ∩ B) (⋂ i, Xs i) :=
   h.1.indep.interBasis_iInter (fun _ ↦ h.2 _)
 
-theorem ModularBase.basis_biInter (h : M.ModularBase B Xs) {A : Set ι} (hA : A.Nonempty)  :
+lemma ModularBase.basis_biInter (h : M.ModularBase B Xs) {A : Set ι} (hA : A.Nonempty)  :
     M.Basis ((⋂ i ∈ A, Xs i) ∩ B) (⋂ i ∈ A, Xs i) :=
   h.1.indep.interBasis_biInter hA (fun _ _ ↦ h.2 _)
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem ModularBase.iInter_subset_ground [Nonempty ι] (h : M.ModularBase B Xs) :
+lemma ModularBase.iInter_subset_ground [Nonempty ι] (h : M.ModularBase B Xs) :
     ⋂ i, Xs i ⊆ M.E :=
   h.basis_iInter.subset_ground
 
-theorem ModularBase.biInter_subset_ground (h : M.ModularBase B Xs) {A : Set ι} (hA : A.Nonempty) :
+lemma ModularBase.biInter_subset_ground (h : M.ModularBase B Xs) {A : Set ι} (hA : A.Nonempty) :
     ⋂ i ∈ A, Xs i ⊆ M.E :=
   (h.basis_biInter hA).subset_ground
 
-theorem ModularBase.basis_iUnion (h : M.ModularBase B Xs) :
+lemma ModularBase.basis_iUnion (h : M.ModularBase B Xs) :
     M.Basis ((⋃ i, Xs i) ∩ B) (⋃ i, Xs i) := by
   simp_rw [h.1.indep.inter_basis_cl_iff_subset_cl_inter, iUnion_subset_iff]
   exact fun i ↦ (h.subset_cl_inter i).trans
     (M.cl_subset_cl (inter_subset_inter_left _ (subset_iUnion _ i)))
 
-theorem ModularBase.basis_biUnion (h : M.ModularBase B Xs) (A : Set ι) :
+lemma ModularBase.basis_biUnion (h : M.ModularBase B Xs) (A : Set ι) :
     M.Basis ((⋃ i ∈ A, Xs i) ∩ B) (⋃ i ∈ A, Xs i) := by
   convert (h.subtype A).basis_iUnion <;> simp
 
-theorem exists_modularBase_of_iUnion_indep (h : M.Indep (⋃ i, Xs i)) :
+lemma exists_modularBase_of_iUnion_indep (h : M.Indep (⋃ i, Xs i)) :
     ∃ B, M.ModularBase B Xs := by
   obtain ⟨B, hB, hIB⟩ := h.exists_base_superset
   refine ⟨B, hB, fun i ↦ ?_⟩
   rw [inter_eq_self_of_subset_left <| iUnion_subset_iff.1 hIB i]
   exact (h.subset (subset_iUnion _ i)).basis_self
 
-theorem Base.modularBase_of_forall_subset_cl (hB : M.Base B) (h : ∀ i, Xs i ⊆ M.cl ((Xs i) ∩ B)) :
+lemma Base.modularBase_of_forall_subset_cl (hB : M.Base B) (h : ∀ i, Xs i ⊆ M.cl ((Xs i) ∩ B)) :
     M.ModularBase B Xs := by
   exact ⟨hB, fun i ↦ hB.indep.inter_basis_cl_iff_subset_cl_inter.2 (h i)⟩
 
-theorem ModularBase.modularBase_of_forall_subset_subset_cl (hB : M.ModularBase B Xs)
+lemma ModularBase.modularBase_of_forall_subset_subset_cl (hB : M.ModularBase B Xs)
     (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.cl (Xs i)) : M.ModularBase B Ys := by
   refine ⟨hB.base, fun i ↦ hB.indep.inter_basis_cl_iff_subset_cl_inter.2 ?_⟩
   refine (hYX i).trans (M.cl_subset_cl_of_subset_cl ?_)
   exact (hB.2 i).subset_cl.trans (M.cl_subset_cl (inter_subset_inter_left B (hXY i)))
 
-theorem ModularBase.modularBase_cls (hB : M.ModularBase B Xs) :
+lemma ModularBase.modularBase_cls (hB : M.ModularBase B Xs) :
     M.ModularBase B (fun i ↦ M.cl (Xs i)) :=
   hB.modularBase_of_forall_subset_subset_cl (fun i ↦ M.subset_cl (Xs i)) (fun i ↦ Subset.rfl)
 
-theorem ModularBase.iInter_cl_eq_cl_iInter [Nonempty ι] (hB : M.ModularBase B Xs) :
+lemma ModularBase.iInter_cl_eq_cl_iInter [Nonempty ι] (hB : M.ModularBase B Xs) :
     (⋂ i : ι, M.cl (Xs i)) = M.cl (⋂ i : ι, Xs i) := by
   simp_rw [subset_antisymm_iff, subset_iInter_iff, ← hB.cl_inter_eq]
   rw [← cl_iInter_eq_iInter_cl_of_iUnion_indep, ← iInter_inter B Xs]
@@ -108,7 +108,7 @@ section ModularFamily
 /-- A set family is a `ModularFamily` if it has a modular base. -/
 def ModularFamily (M : Matroid α) (Xs : ι → Set α) := ∃ B, M.ModularBase B Xs
 
-theorem Indep.modularFamily (hI : M.Indep I) (hXs : ∀ i, M.Basis ((Xs i) ∩ I) (Xs i)) :
+lemma Indep.modularFamily (hI : M.Indep I) (hXs : ∀ i, M.Basis ((Xs i) ∩ I) (Xs i)) :
     M.ModularFamily Xs := by
   simp_rw [hI.inter_basis_cl_iff_subset_cl_inter] at hXs
   obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
@@ -116,40 +116,52 @@ theorem Indep.modularFamily (hI : M.Indep I) (hXs : ∀ i, M.Basis ((Xs i) ∩ I
   simp_rw [hB.indep.inter_basis_cl_iff_subset_cl_inter]
   exact fun i ↦ (hXs i).trans (M.cl_subset_cl (inter_subset_inter_right _ hIB))
 
-theorem ModularFamily.subset_ground_of_mem (h : M.ModularFamily Xs) (i : ι) : Xs i ⊆ M.E :=
+lemma ModularFamily.subset_ground_of_mem (h : M.ModularFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   let ⟨_, h⟩ := h
   h.subset_ground i
 
-theorem ModularFamily.iInter_cl_eq_cl_iInter [Nonempty ι] (hXs : M.ModularFamily Xs) :
+lemma ModularFamily.iInter_cl_eq_cl_iInter [Nonempty ι] (hXs : M.ModularFamily Xs) :
     (⋂ i : ι, M.cl (Xs i)) = M.cl (⋂ i : ι, Xs i) :=
   let ⟨_, h⟩ := hXs
   h.iInter_cl_eq_cl_iInter
 
-theorem Indep.modularFamily_of_subsets (hI : M.Indep I) (hJs : ⋃ i, Js i ⊆ I) :
+lemma Indep.modularFamily_of_subsets (hI : M.Indep I) (hJs : ⋃ i, Js i ⊆ I) :
     M.ModularFamily Js := by
   refine hI.modularFamily (fun i ↦ ?_)
   have hJI : Js i ⊆ I := (subset_iUnion _ i).trans hJs
   rw [inter_eq_self_of_subset_left hJI]
   exact (hI.subset hJI).basis_self
 
-theorem ModularFamily.modularFamily_of_forall_subset_cl (h : M.ModularFamily Xs)
+lemma ModularFamily.modularFamily_of_forall_subset_cl (h : M.ModularFamily Xs)
     (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.cl (Xs i)) : M.ModularFamily Ys :=
   let ⟨B, hB⟩ := h
   ⟨B, hB.modularBase_of_forall_subset_subset_cl hXY hYX⟩
 
-theorem ModularFamily.cls_modularFamily (h : M.ModularFamily Xs) :
+lemma ModularFamily.cls_modularFamily (h : M.ModularFamily Xs) :
     M.ModularFamily (fun i ↦ M.cl (Xs i)) :=
   let ⟨B, hB⟩ := h
   ⟨B, hB.modularBase_cls⟩
 
-theorem ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopEquiv (Xs i) (Ys i)) :
+@[simp] lemma modularFamily_of_isEmpty [IsEmpty ι] : M.ModularFamily Xs :=
+  M.empty_indep.modularFamily_of_subsets (by simp)
+
+@[simp] lemma modularFamily_iff_of_subsingleton [Subsingleton ι] :
+    M.ModularFamily Xs ↔ ∀ i, Xs i ⊆ M.E := by
+  obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; simp
+  refine ⟨fun h ↦ h.subset_ground_of_mem, fun h ↦ ?_⟩
+  obtain ⟨I, hI⟩ := M.exists_basis (Xs i)
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
+  refine ⟨B, hB, fun j ↦ ?_⟩
+  rwa [Subsingleton.elim j i, inter_comm, hI.inter_eq_of_subset_indep hIB hB.indep]
+
+lemma ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopEquiv (Xs i) (Ys i)) :
     M.ModularFamily Ys := by
   obtain ⟨B, hB⟩ := h
   refine ⟨B, hB.base, fun i ↦ ?_⟩
   rw [← (he i).basis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.basis_inter i
 
-theorem ModularFamily.ofRestrict' {R : Set α}
+lemma ModularFamily.ofRestrict' {R : Set α}
     (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily (fun i ↦ (Xs i) ∩ M.E) := by
   obtain ⟨B, hBb, hB⟩ := h
   obtain ⟨B', hB'⟩ := hBb.indep.of_restrict.exists_base_superset
@@ -169,31 +181,41 @@ theorem ModularFamily.ofRestrict' {R : Set α}
     inter_right_comm, inter_eq_self_of_subset_left Basis.2]
   exact Basis.1
 
-theorem ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
+lemma ModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
     (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily Xs := by
   convert h.ofRestrict' with i
   rw [inter_eq_self_of_subset_left <| (h.subset_ground_of_mem i).trans hR]
+
+/-- A subfamily of a modular family is a modular family. -/
+lemma ModularFamily.comp {η : Type*} (h : M.ModularFamily Xs) (t : η → ι) :
+    M.ModularFamily (Xs ∘ t) := by
+  obtain ⟨B, hB, hBXs⟩ := h
+  exact ⟨B, hB, fun i ↦ (by simpa using hBXs (t i))⟩
+
+lemma ModularFamily.set_biInter_comp {η : Type*} (h : M.ModularFamily Xs) (t : η → Set ι)
+    (ht : ∀ j, (t j).Nonempty) : M.ModularFamily (fun j ↦ ⋂ i ∈ t j, (Xs i)) := by
+  obtain ⟨B, hB⟩ := h; exact ⟨B, hB.base, fun j ↦ hB.basis_biInter (ht j)⟩
 
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
     M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
 
-theorem ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
+lemma ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
    obtain ⟨B, hB⟩ := h
    exact ⟨B, hB.base, fun i ↦ by simpa using hB.2 !i⟩
 
-theorem ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
+lemma ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
   ⟨ModularPair.symm, ModularPair.symm⟩
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem ModularPair.subset_ground_left (h : M.ModularPair X Y) : X ⊆ M.E :=
+lemma ModularPair.subset_ground_left (h : M.ModularPair X Y) : X ⊆ M.E :=
   h.subset_ground_of_mem true
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
+lemma ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
 
-@[simp] theorem modularPair_iff {M : Matroid α} {X Y : Set α} :
+@[simp] lemma modularPair_iff {M : Matroid α} {X Y : Set α} :
     M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (Y ∩ I) Y := by
   simp only [ModularPair, ModularFamily, mem_singleton_iff, modularBase_pair_iff, indep_iff]
   refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB.indep, ?_⟩,
@@ -205,23 +227,23 @@ theorem ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
     (inter_subset_inter_right _ hIB) (inter_subset_left _ _)]
   exact ⟨hIY,hIX⟩
 
-theorem ModularFamily.modularPair (h : M.ModularFamily Xs) (i j : ι) :
+lemma ModularFamily.modularPair (h : M.ModularFamily Xs) (i j : ι) :
     M.ModularPair (Xs i) (Xs j) := by
   obtain ⟨B, hB⟩ := h
   exact modularPair_iff.2 ⟨B, hB.indep, hB.basis_inter i, hB.basis_inter j⟩
 
-theorem modularPair_iff_exists_subsets_cl_inter :
+lemma modularPair_iff_exists_subsets_cl_inter :
     M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ X ⊆ M.cl (X ∩ I) ∧ Y ⊆ M.cl (Y ∩ I)  := by
   rw [modularPair_iff]
   refine ⟨fun ⟨I,hI,h⟩ ↦ ⟨I,hI,?_⟩, fun ⟨I,hI,h⟩ ↦ ⟨I,hI,?_⟩⟩
   · rwa [← hI.inter_basis_cl_iff_subset_cl_inter, ← hI.inter_basis_cl_iff_subset_cl_inter]
   rwa [hI.inter_basis_cl_iff_subset_cl_inter, hI.inter_basis_cl_iff_subset_cl_inter]
 
-theorem ModularPair.exists_subsets_cl_inter (h : M.ModularPair X Y) :
+lemma ModularPair.exists_subsets_cl_inter (h : M.ModularPair X Y) :
     ∃ I, M.Indep I ∧ X ⊆ M.cl (X ∩ I) ∧ Y ⊆ M.cl (Y ∩ I) :=
   modularPair_iff_exists_subsets_cl_inter.1 h
 
-theorem modularPair_iff_exists_basis_basis :
+lemma modularPair_iff_exists_basis_basis :
     M.ModularPair X Y ↔ ∃ I J, M.Basis I X ∧ M.Basis J Y ∧ M.Indep (I ∪ J) := by
   rw [modularPair_iff]
   refine ⟨fun ⟨I,hI,hIX,hIY⟩ ↦ ⟨_, _, hIX, hIY, hI.subset (by simp)⟩,
@@ -230,7 +252,7 @@ theorem modularPair_iff_exists_basis_basis :
   use hI.subset_cl.trans (M.cl_subset_cl (subset_inter hI.subset (subset_union_left _ _)))
   exact hJ.subset_cl.trans (M.cl_subset_cl (subset_inter hJ.subset (subset_union_right _ _)))
 
-theorem ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
+lemma ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
     M.Basis I (X ∪ Y) ∧ M.Basis (I ∩ X) X ∧ M.Basis (I ∩ Y) Y ∧ M.Basis (I ∩ X ∩ Y) (X ∩ Y) := by
   obtain ⟨B, hB⟩ := h
   refine ⟨(X ∪ Y) ∩ B, ?_⟩
@@ -242,58 +264,58 @@ theorem ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
   have hi := hB.basis_iInter
   rwa [← inter_eq_iInter] at hi
 
-theorem ModularPair.inter_cl_eq (h : M.ModularPair X Y) : M.cl (X ∩ Y) = M.cl X ∩ M.cl Y := by
+lemma ModularPair.inter_cl_eq (h : M.ModularPair X Y) : M.cl (X ∩ Y) = M.cl X ∩ M.cl Y := by
   convert (ModularFamily.iInter_cl_eq_cl_iInter h).symm
   · rw [inter_eq_iInter]
   simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite, inter_eq_iInter]
 
-theorem modularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.ModularPair X Y := by
+lemma modularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.ModularPair X Y := by
   obtain ⟨I,J, hI, hJ, hIJ⟩ := M.exists_basis_subset_basis hXY
   refine modularPair_iff.2 ⟨J, hJ.indep, ?_, by rwa [inter_eq_self_of_subset_right hJ.subset]⟩
   rwa [← hI.eq_of_subset_indep (hJ.indep.inter_left X) (subset_inter hI.subset hIJ)
     (inter_subset_left _ _)]
 
-theorem Indep.modularPair_of_union (hi : M.Indep (I ∪ J)) : M.ModularPair I J := by
+lemma Indep.modularPair_of_union (hi : M.Indep (I ∪ J)) : M.ModularPair I J := by
   simpa only [iUnion_subset_iff, Bool.forall_bool, cond_false, subset_union_right, cond_true,
     subset_union_left, and_self, forall_true_left] using
     hi.modularFamily_of_subsets (Js := fun i ↦ bif i then I else J)
 
-theorem ModularPair.of_subset_cl_subset_cl (h : M.ModularPair X Y) (hXX' : X ⊆ X')
+lemma ModularPair.of_subset_cl_subset_cl (h : M.ModularPair X Y) (hXX' : X ⊆ X')
     (hX' : X' ⊆ M.cl X) (hYY' : Y ⊆ Y') (hY' : Y' ⊆ M.cl Y) : M.ModularPair X' Y' := by
   apply ModularFamily.modularFamily_of_forall_subset_cl h
   · simp [hYY', hXX']
   simp [hY', hX']
 
-theorem ModularPair.of_subset_cl_left (h : M.ModularPair X Y) (hXX' : X ⊆ X') (hX' : X' ⊆ M.cl X) :
+lemma ModularPair.of_subset_cl_left (h : M.ModularPair X Y) (hXX' : X ⊆ X') (hX' : X' ⊆ M.cl X) :
     M.ModularPair X' Y :=
   h.of_subset_cl_subset_cl hXX' hX' Subset.rfl (M.subset_cl Y)
 
-theorem ModularPair.of_subset_cl_right (h : M.ModularPair X Y) (hYY' : Y ⊆ Y') (hY' : Y' ⊆ M.cl Y) :
+lemma ModularPair.of_subset_cl_right (h : M.ModularPair X Y) (hYY' : Y ⊆ Y') (hY' : Y' ⊆ M.cl Y) :
     M.ModularPair X Y' :=
   (h.symm.of_subset_cl_left hYY' hY').symm
 
-theorem ModularPair.of_basis_left (h : M.ModularPair I Y) (hIX : M.Basis I X) :
+lemma ModularPair.of_basis_left (h : M.ModularPair I Y) (hIX : M.Basis I X) :
     M.ModularPair X Y :=
   h.of_subset_cl_left hIX.subset hIX.subset_cl
 
-theorem ModularPair.of_basis_right (h : M.ModularPair X J) (hJY : M.Basis J Y) :
+lemma ModularPair.of_basis_right (h : M.ModularPair X J) (hJY : M.Basis J Y) :
     M.ModularPair X Y :=
   h.of_subset_cl_right hJY.subset hJY.subset_cl
 
-theorem ModularPair.of_basis_of_basis (h : M.ModularPair I J) (hIX : M.Basis I X)
+lemma ModularPair.of_basis_of_basis (h : M.ModularPair I J) (hIX : M.Basis I X)
     (hJY : M.Basis J Y) : M.ModularPair X Y :=
   (h.of_basis_left hIX).of_basis_right hJY
 
-theorem ModularPair.cl_left (h : M.ModularPair X Y) : M.ModularPair (M.cl X) Y :=
+lemma ModularPair.cl_left (h : M.ModularPair X Y) : M.ModularPair (M.cl X) Y :=
   h.of_subset_cl_left (M.subset_cl X) Subset.rfl
 
-theorem ModularPair.cl_right (h : M.ModularPair X Y) : M.ModularPair X (M.cl Y) :=
+lemma ModularPair.cl_right (h : M.ModularPair X Y) : M.ModularPair X (M.cl Y) :=
   h.symm.cl_left.symm
 
-theorem ModularPair.cl_cl (h : M.ModularPair X Y) : M.ModularPair (M.cl X) (M.cl Y) :=
+lemma ModularPair.cl_cl (h : M.ModularPair X Y) : M.ModularPair (M.cl X) (M.cl Y) :=
   h.cl_left.cl_right
 
-theorem modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.cl X) :
+lemma modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.cl X) :
     M.ModularPair {e} X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   have hi : M.Indep (insert e I) := by
@@ -303,14 +325,14 @@ theorem modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.c
   rw [← singleton_union] at hI'
   exact hI'.indep.modularPair_of_union.of_basis_right hI
 
-theorem ModularPair.er_add_er (h : M.ModularPair X Y) :
+lemma ModularPair.er_add_er (h : M.ModularPair X Y) :
     M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
   obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_basis
   rw [hIi.er_eq_encard, hIu.er_eq_encard, hIX.er_eq_encard, hIY.er_eq_encard,
     ← encard_union_add_encard_inter, ← inter_union_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
-theorem rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+lemma rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
   refine ⟨fun h ↦ h.er_add_er, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
@@ -331,22 +353,33 @@ theorem rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ 
   rw [← M.cl_union_cl_left_eq, ← M.cl_union_cl_right_eq]
   exact (M.subset_cl _).trans (M.cl_subset_cl (union_subset_union hIX.subset_cl hIY.subset_cl))
 
-theorem modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+lemma modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
   simp_rw [(M.to_rFin X).modularPair_iff (M.to_rFin Y), ← coe_r_eq, ← Nat.cast_add, Nat.cast_inj]
 
-theorem ModularFamily.modularPair_compl (h : M.ModularFamily Xs) (A : Set ι) :
+lemma ModularFamily.modularPair_compl_biUnion (h : M.ModularFamily Xs) (A : Set ι) :
     M.ModularPair (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by
   rw [modularPair_iff]
   obtain ⟨B, hB⟩ := h
   exact ⟨B, hB.indep, hB.basis_biUnion A, hB.basis_biUnion Aᶜ⟩
 
-theorem ModularFamily.modularPair_singleton_compl (h : M.ModularFamily Xs) (i₀ : ι) :
-    M.ModularPair (Xs i₀) (⋃ i ∈ ({i₀} : Set ι)ᶜ, Xs i) := by
-  convert h.modularPair_compl {i₀}; simp
+lemma ModularFamily.modularPair_compl_biInter (h : M.ModularFamily Xs) (A : Set ι)
+    (hA : A.Nonempty) (hA' : A ≠ univ) : M.ModularPair (⋂ i ∈ A, Xs i) (⋂ i ∈ Aᶜ, Xs i) := by
+  rw [modularPair_iff]
+  obtain ⟨B, hB⟩ := h
+  exact ⟨B, hB.indep, hB.basis_biInter hA, hB.basis_biInter (by rwa [nonempty_compl])⟩
 
-theorem modularPair_insert_cl (M : Matroid α) (X : Set α) (e f : α) :
+lemma ModularFamily.modularPair_singleton_compl_biUnion (h : M.ModularFamily Xs) (i₀ : ι) :
+    M.ModularPair (Xs i₀) (⋃ i ∈ ({i₀} : Set ι)ᶜ, Xs i) := by
+  convert h.modularPair_compl_biUnion {i₀}; simp
+
+lemma ModularFamily.modularPair_singleton_compl_biInter [Nontrivial ι] (h : M.ModularFamily Xs)
+    (i₀ : ι) : M.ModularPair (Xs i₀) (⋂ i ∈ ({i₀} : Set ι)ᶜ, Xs i) := by
+  convert h.modularPair_compl_biInter {i₀} (by simp)
+    (by simpa [ne_univ_iff_exists_not_mem, mem_singleton_iff] using exists_ne i₀); simp
+
+lemma modularPair_insert_cl (M : Matroid α) (X : Set α) (e f : α) :
     M.ModularPair (M.cl (insert e X)) (M.cl (insert f X)) := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
 
@@ -375,19 +408,6 @@ theorem modularPair_insert_cl (M : Matroid α) (X : Set α) (e f : α) :
   rw [hI.indep.insert_indep_iff]
   exact .inl ⟨hf, hfI⟩
 
-
-
-
-
-
-  -- obtain (he | he) := em' (M.Indep (insert e I))
-  -- · rw [hI.indep.insert_indep_iff, not_or, mem_diff, not_and, not_not] at he
-  --   obtain (heE | heE) := em (e ∈ M.E)
-  --   · rw [insert_eq_self.2 (he.1 heE)]
-  --     exact modularPair_of_subset (M.cl_subset_cl (subset_insert _ _)) (M.cl_subset_ground _)
-  --   rw [cl_eq_cl_in]
-
-
 end ModularFamily
 
 section ModularSet
@@ -395,18 +415,18 @@ section ModularSet
 /-- A `ModularSet` is a set that is a modular pair with every flat. -/
 def ModularSet (M : Matroid α) (X : Set α) := ∀ ⦃F⦄, M.Flat F → M.ModularPair X F
 
-@[simp] theorem modularSet_def {M : Matroid α} {X : Set α} :
+@[simp] lemma modularSet_def {M : Matroid α} {X : Set α} :
     M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → M.ModularPair X F := Iff.rfl
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem ModularSet.subset_ground (h : M.ModularSet X) : X ⊆ M.E :=
+lemma ModularSet.subset_ground (h : M.ModularSet X) : X ⊆ M.E :=
   (h (M.cl_flat ∅)).subset_ground_left
 
-@[simp] theorem modularSet_iff {M : Matroid α} {X : Set α} :
+@[simp] lemma modularSet_iff {M : Matroid α} {X : Set α} :
     M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (F ∩ I) F := by
   simp [ModularSet, modularPair_iff]
 
-theorem modularSet_iff_cl {M : Matroid α} {X : Set α} :
+lemma modularSet_iff_cl {M : Matroid α} {X : Set α} :
     M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → ∃ I, M.Indep I ∧ X ⊆ M.cl (X ∩ I) ∧ F ⊆ M.cl (F ∩ I) := by
   rw [modularSet_iff]
   refine ⟨fun h F hF ↦ ?_, fun h F hF ↦ ?_⟩
@@ -417,16 +437,16 @@ theorem modularSet_iff_cl {M : Matroid α} {X : Set α} :
   refine ⟨I, hI, ?_⟩
   rwa [hI.inter_basis_cl_iff_subset_cl_inter, hI.inter_basis_cl_iff_subset_cl_inter]
 
-theorem modularSet_ground (M : Matroid α) : M.ModularSet M.E :=
+lemma modularSet_ground (M : Matroid α) : M.ModularSet M.E :=
   modularSet_def.2 (fun _ hF ↦ (modularPair_of_subset hF.subset_ground Subset.rfl).symm)
 
-theorem modularSet_empty (M : Matroid α) : M.ModularSet ∅ :=
+lemma modularSet_empty (M : Matroid α) : M.ModularSet ∅ :=
   modularSet_def.2 (fun _ hF ↦ (modularPair_of_subset (empty_subset _) hF.subset_ground))
 
-theorem modularSet.cl (h : M.ModularSet X) : M.ModularSet (M.cl X) :=
+lemma modularSet.cl (h : M.ModularSet X) : M.ModularSet (M.cl X) :=
   fun _ hF ↦ (h hF).cl_left
 
-theorem modularSet_singleton (M : Matroid α) (he : e ∈ M.E) : M.ModularSet {e} := by
+lemma modularSet_singleton (M : Matroid α) (he : e ∈ M.E) : M.ModularSet {e} := by
   refine modularSet_def.2 fun F hF ↦ ?_
   by_cases heF : {e} ⊆ F
   · apply modularPair_of_subset heF hF.subset_ground
@@ -434,7 +454,7 @@ theorem modularSet_singleton (M : Matroid α) (he : e ∈ M.E) : M.ModularSet {e
   exact modularPair_singleton he hF.subset_ground heF
 
 /-- Every modular set in a simple matroid is a flat. -/
-theorem ModularSet.Flat [Simple M] (hF : M.ModularSet F) : M.Flat F := by
+lemma ModularSet.Flat [Simple M] (hF : M.ModularSet F) : M.Flat F := by
   by_contra h
   obtain ⟨e, heF, he⟩ := exists_mem_cl_not_mem_of_not_flat h
   rw [modularSet_iff] at hF
@@ -459,51 +479,51 @@ section Skew
 def SkewFamily (M : Matroid α) (Xs : ι → Set α) :=
   M.ModularFamily Xs ∧ ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.cl ∅
 
-theorem SkewFamily.modularFamily (h : M.SkewFamily Xs) : M.ModularFamily Xs :=
+lemma SkewFamily.modularFamily (h : M.SkewFamily Xs) : M.ModularFamily Xs :=
   h.1
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem SkewFamily.subset_ground_of_mem (h : M.SkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
+lemma SkewFamily.subset_ground_of_mem (h : M.SkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   h.modularFamily.subset_ground_of_mem i
 
-theorem SkewFamily.loop_of_mem_inter (h : M.SkewFamily Xs) (hij : i ≠ j)
+lemma SkewFamily.loop_of_mem_inter (h : M.SkewFamily Xs) (hij : i ≠ j)
     (he : e ∈ Xs i ∩ Xs j) : M.Loop e :=
   h.2 hij he
 
-theorem SkewFamily.subset_loops_of_ne (h : M.SkewFamily Xs) (hij : i ≠ j) : Xs i ∩ Xs j ⊆ M.cl ∅ :=
+lemma SkewFamily.subset_loops_of_ne (h : M.SkewFamily Xs) (hij : i ≠ j) : Xs i ∩ Xs j ⊆ M.cl ∅ :=
   h.2 hij
 
-theorem SkewFamily.disjoint_inter_indep (h : M.SkewFamily Xs) (hI : M.Indep I) (hij : i ≠ j) :
+lemma SkewFamily.disjoint_inter_indep (h : M.SkewFamily Xs) (hI : M.Indep I) (hij : i ≠ j) :
     Disjoint (Xs i ∩ I) (Xs j) := by
   rw [disjoint_iff_forall_ne]
   rintro e ⟨hei, heI⟩ _ hej rfl
   exact (hI.nonloop_of_mem heI).not_loop <| h.loop_of_mem_inter hij ⟨hei,hej⟩
 
-theorem SkewFamily.disjoint_of_indep_subset (h : M.SkewFamily Xs) (hI : M.Indep I) (hIX : I ⊆ Xs i)
+lemma SkewFamily.disjoint_of_indep_subset (h : M.SkewFamily Xs) (hI : M.Indep I) (hIX : I ⊆ Xs i)
     (hij : i ≠ j) : Disjoint I (Xs j) := by
   have hdj := h.disjoint_inter_indep hI hij
   rwa [inter_eq_self_of_subset_right hIX] at hdj
 
-theorem SkewFamily.pairwiseDisjoint_inter_of_indep (h : M.SkewFamily Xs) (hI : M.Indep I) :
+lemma SkewFamily.pairwiseDisjoint_inter_of_indep (h : M.SkewFamily Xs) (hI : M.Indep I) :
     (univ : Set ι).PairwiseDisjoint (fun i ↦ Xs i ∩ I) :=
   fun _ _ _ _ hij ↦ (h.disjoint_inter_indep hI hij).mono_right (inter_subset_left _ _)
 
-theorem SkewFamily.pairwiseDisjoint_of_indep_subsets (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
+lemma SkewFamily.pairwiseDisjoint_of_indep_subsets (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : univ.PairwiseDisjoint Is :=
   fun i _ j _ hij ↦ disjoint_iff_inter_eq_empty.2 <|
     ((hIs i).inter_right (Is j)).eq_empty_of_subset_loops
     ((inter_subset_inter (hIX i) (hIX j)).trans (h.2 hij).subset)
 
-theorem SkewFamily.pairwiseDisjoint_of_bases (h : M.SkewFamily Xs)
+lemma SkewFamily.pairwiseDisjoint_of_bases (h : M.SkewFamily Xs)
     (hIX : ∀ i, M.Basis (Is i) (Xs i)) : univ.PairwiseDisjoint Is :=
   h.pairwiseDisjoint_of_indep_subsets (fun i ↦ (hIX i).subset) (fun i ↦ (hIX i).indep)
 
-theorem SkewFamily.cls_skewFamily (h : M.SkewFamily Xs) : M.SkewFamily (fun i ↦ M.cl (Xs i)) := by
+lemma SkewFamily.cls_skewFamily (h : M.SkewFamily Xs) : M.SkewFamily (fun i ↦ M.cl (Xs i)) := by
   refine ⟨h.modularFamily.cls_modularFamily, fun i j hij ↦ ?_⟩
   have := M.cl_subset_cl_of_subset_cl <| h.subset_loops_of_ne hij
   rwa [← (h.modularFamily.modularPair i j).inter_cl_eq]
 
-theorem Indep.skewFamily_of_disjoint_bases (hI : M.Indep (⋃ i, Is i))
+lemma Indep.skewFamily_of_disjoint_bases (hI : M.Indep (⋃ i, Is i))
     (hdj : univ.PairwiseDisjoint Is) (hIs : ∀ i, M.Basis (Is i) (Xs i)) : M.SkewFamily Xs := by
   refine ⟨hI.modularFamily fun i ↦ ?_, fun i j hij ↦ ?_⟩
   · rw [hI.inter_basis_cl_iff_subset_cl_inter]
@@ -514,7 +534,7 @@ theorem Indep.skewFamily_of_disjoint_bases (hI : M.Indep (⋃ i, Is i))
     Disjoint.inter_eq <| hdj (mem_univ i) (mem_univ j) hij]
   exact union_subset (subset_iUnion _ _) (subset_iUnion _ _)
 
-theorem skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
+lemma skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
     ∃ (Is : ι → Set α), univ.PairwiseDisjoint Is ∧ M.Basis (⋃ i : ι, Is i) (⋃ i : ι, Xs i) ∧
       ∀ i, M.Basis (Is i) (Xs i) := by
   refine ⟨fun h ↦ ?_, fun ⟨Is, hdj, hIs, hb⟩ ↦ hIs.indep.skewFamily_of_disjoint_bases hdj hb⟩
@@ -525,7 +545,7 @@ theorem skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
   rw [← iUnion_inter]
   exact hB.basis_iUnion
 
-theorem Indep.skewFamily_iff_pairwiseDisjoint (hI : M.Indep (⋃ i : ι, Is i)) :
+lemma Indep.skewFamily_iff_pairwiseDisjoint (hI : M.Indep (⋃ i : ι, Is i)) :
     M.SkewFamily Is ↔ univ.PairwiseDisjoint Is := by
   refine ⟨fun h ↦ h.pairwiseDisjoint_of_indep_subsets
     (fun _ ↦ Subset.rfl) (fun i ↦ hI.subset (subset_iUnion _ _)),
@@ -536,7 +556,7 @@ theorem Indep.skewFamily_iff_pairwiseDisjoint (hI : M.Indep (⋃ i : ι, Is i)) 
   For a skew family `Xs`, the union of some independent subsets of the `Xs` is independent.
   Quite a nasty proof. Probably the right proof involves relating modularity to the
   lattice of Flats. -/
-theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
+lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : M.Indep (⋃ i, Is i) := by
   choose Js hJs using fun i ↦ (hIs i).subset_basis_of_subset (hIX i)
   refine Indep.subset ?_ <| iUnion_mono (fun i ↦ (hJs i).2)
@@ -597,27 +617,27 @@ theorem SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i,
 
   exact hK'.indep.not_mem_cl_diff_of_mem (hss hei₀) he'
 
-theorem SkewFamily.mono (h : M.SkewFamily Xs) (hYX : ∀ i, Ys i ⊆ Xs i) : M.SkewFamily Ys := by
+lemma SkewFamily.mono (h : M.SkewFamily Xs) (hYX : ∀ i, Ys i ⊆ Xs i) : M.SkewFamily Ys := by
   choose Is hIs using fun i ↦ M.exists_basis (Ys i) ((hYX i).trans (h.subset_ground_of_mem i))
   refine Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
   · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
   exact h.pairwiseDisjoint_of_indep_subsets
     (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
 
-theorem SkewFamily.iUnion_basis_iUnion (h : M.SkewFamily Xs) (hIs : ∀ i, M.Basis (Is i) (Xs i)) :
+lemma SkewFamily.iUnion_basis_iUnion (h : M.SkewFamily Xs) (hIs : ∀ i, M.Basis (Is i) (Xs i)) :
     M.Basis (⋃ i, Is i) (⋃ i, Xs i) := by
   have hi := h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset) (fun i ↦ (hIs i).indep)
   exact hi.basis_of_subset_of_subset_cl (iUnion_mono (fun i ↦ (hIs i).subset)) <|
     iUnion_subset (fun i ↦ (hIs i).subset_cl.trans (M.cl_subset_cl (subset_iUnion _ _)))
 
-theorem SkewFamily.sum_er_eq_er_iUnion [Fintype ι] (h : M.SkewFamily Xs) :
+lemma SkewFamily.sum_er_eq_er_iUnion [Fintype ι] (h : M.SkewFamily Xs) :
     ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (h.subset_ground_of_mem i)
   rw [(h.iUnion_basis_iUnion hIs).er_eq_encard,
     encard_iUnion _ (h.pairwiseDisjoint_of_bases hIs)]
   simp_rw [(hIs _).er_eq_encard]
 
-theorem rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] (hXs : ∀ i, M.rFin (Xs i))
+lemma rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] (hXs : ∀ i, M.rFin (Xs i))
     (hXE : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
   refine ⟨SkewFamily.sum_er_eq_er_iUnion, fun hsum ↦ ?_⟩
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (hXE i)
@@ -632,7 +652,7 @@ theorem rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] (hXs : ∀ i, M.rFi
   exact pairwiseDisjoint_of_encard_sum_le_encard_iUnion
     (fun i ↦ (hXs i).finite_of_basis (hIs i)) (hsum.le.trans <| M.er_le_encard _)
 
-theorem skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] [FiniteRk M] (hXs : ∀ i, Xs i ⊆ M.E) :
+lemma skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] [FiniteRk M] (hXs : ∀ i, Xs i ⊆ M.E) :
      M.SkewFamily Xs ↔ ∑ i, M.r (Xs i) = M.r (⋃ i, Xs i) := by
   simp_rw [rFin.skewFamily_iff_sum_er_eq_er_iUnion (fun i ↦ M.to_rFin (Xs i)) hXs,
     ← M.coe_r_eq, ← Nat.cast_sum, Nat.cast_inj]
@@ -641,36 +661,36 @@ theorem skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] [FiniteRk M] (hXs : ∀ 
 def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem Skew.subset_ground_left (h : M.Skew X Y) : X ⊆ M.E :=
+lemma Skew.subset_ground_left (h : M.Skew X Y) : X ⊆ M.E :=
   h.subset_ground_of_mem true
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-theorem Skew.subset_ground_right (h : M.Skew X Y) : Y ⊆ M.E :=
+lemma Skew.subset_ground_right (h : M.Skew X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
 
-theorem Skew.modularPair (h : M.Skew X Y) : M.ModularPair X Y :=
+lemma Skew.modularPair (h : M.Skew X Y) : M.ModularPair X Y :=
   h.modularFamily
 
-theorem skew_iff_modularPair_inter_subset_loops :
+lemma skew_iff_modularPair_inter_subset_loops :
     M.Skew X Y ↔ M.ModularPair X Y ∧ X ∩ Y ⊆ M.cl ∅ := by
   rw [Skew, SkewFamily, ModularPair, and_congr_right_iff]
   simp [inter_comm X Y]
 
-theorem Skew.inter_subset_loops (h : M.Skew X Y) : X ∩ Y ⊆ M.cl ∅ :=
+lemma Skew.inter_subset_loops (h : M.Skew X Y) : X ∩ Y ⊆ M.cl ∅ :=
   (skew_iff_modularPair_inter_subset_loops.1 h).2
 
-theorem Skew.disjoint [Loopless M] (h : M.Skew X Y) : Disjoint X Y := by
+lemma Skew.disjoint [Loopless M] (h : M.Skew X Y) : Disjoint X Y := by
   rw [disjoint_iff_inter_eq_empty, ← subset_empty_iff]
   simpa using h.inter_subset_loops
 
-theorem Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
+lemma Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
   rw [skew_iff_modularPair_inter_subset_loops] at h ⊢
   rwa [inter_comm, ModularPair.comm]
 
-theorem Skew.comm : M.Skew X Y ↔ M.Skew Y X :=
+lemma Skew.comm : M.Skew X Y ↔ M.Skew Y X :=
   ⟨Skew.symm, Skew.symm⟩
 
-theorem skew_iff_exist_bases {X Y : Set α} :
+lemma skew_iff_exist_bases {X Y : Set α} :
     M.Skew X Y ↔ ∃ I J, M.Indep (I ∪ J) ∧ Disjoint I J ∧ M.Basis I X ∧ M.Basis J Y := by
   change (M.ModularPair X Y ∧ _) ↔ _
   rw [modularPair_iff_exists_basis_basis]
@@ -686,41 +706,41 @@ theorem skew_iff_exist_bases {X Y : Set α} :
   refine (inter_subset_inter hI.subset_cl hJ.subset_cl).trans ?_
   rw [← hu.cl_inter_eq_inter_cl, hdj.inter_eq]
 
-theorem Skew.disjoint_of_indep_subset_left (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X) :
+lemma Skew.disjoint_of_indep_subset_left (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X) :
     Disjoint I Y :=
   SkewFamily.disjoint_of_indep_subset (i := true) (j := false) h hI hIX (by simp)
 
-theorem Skew.disjoint_of_indep_subset_right (h : M.Skew X Y) (hJ : M.Indep J) (hJY : J ⊆ Y) :
+lemma Skew.disjoint_of_indep_subset_right (h : M.Skew X Y) (hJ : M.Indep J) (hJY : J ⊆ Y) :
     Disjoint X J :=
   (SkewFamily.disjoint_of_indep_subset (j := true) (i := false) h hJ hJY (by simp)).symm
 
-theorem Skew.disjoint_of_basis_of_subset (h : M.Skew X Y) (hI : M.Basis I X) (hJ : J ⊆ Y) :
+lemma Skew.disjoint_of_basis_of_subset (h : M.Skew X Y) (hI : M.Basis I X) (hJ : J ⊆ Y) :
     Disjoint I J :=
   (h.disjoint_of_indep_subset_left hI.indep hI.subset).mono_right hJ
 
-theorem Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.cl ∅) Y := by
+lemma Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.cl ∅) Y := by
   rw [disjoint_iff_inter_eq_empty, ← inter_diff_right_comm, diff_eq_empty]
   exact h.inter_subset_loops
 
-theorem Skew.mono (h : M.Skew X Y) (hX : X' ⊆ X) (hY : Y' ⊆ Y) : M.Skew X' Y' :=
+lemma Skew.mono (h : M.Skew X Y) (hX : X' ⊆ X) (hY : Y' ⊆ Y) : M.Skew X' Y' :=
   SkewFamily.mono h (Ys := fun i ↦ bif i then X' else Y') (Bool.rec (by simpa) (by simpa))
 
-theorem Skew.mono_left (h : M.Skew X Y) (hX : X' ⊆ X) : M.Skew X' Y :=
+lemma Skew.mono_left (h : M.Skew X Y) (hX : X' ⊆ X) : M.Skew X' Y :=
   h.mono hX Subset.rfl
 
-theorem Skew.mono_right (h : M.Skew X Y) (hY : Y' ⊆ Y) : M.Skew X Y' :=
+lemma Skew.mono_right (h : M.Skew X Y) (hY : Y' ⊆ Y) : M.Skew X Y' :=
   h.mono Subset.rfl hY
 
-theorem Skew.cl_skew (h : M.Skew X Y) : M.Skew (M.cl X) (M.cl Y) := by
+lemma Skew.cl_skew (h : M.Skew X Y) : M.Skew (M.cl X) (M.cl Y) := by
   have h' := SkewFamily.cls_skewFamily h
   simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite] at h'
   exact h'
 
-theorem skew_iff_cl_skew (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+lemma skew_iff_cl_skew (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
     M.Skew X Y ↔ M.Skew (M.cl X) (M.cl Y) :=
   ⟨Skew.cl_skew, fun h ↦ h.mono (M.subset_cl X) (M.subset_cl Y)⟩
 
-theorem skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
+lemma skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
     M.Skew X Y ↔ M.Skew X' Y' := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rwa [skew_iff_cl_skew hX.subset_ground hY.subset_ground, ← hX.cl_eq_cl, ← hY.cl_eq_cl,
@@ -728,33 +748,33 @@ theorem skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
   rwa [skew_iff_cl_skew hX.symm.subset_ground hY.symm.subset_ground, hX.cl_eq_cl, hY.cl_eq_cl,
       ← skew_iff_cl_skew]
 
-theorem skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.cl ∅) (Y \ M.cl ∅) :=
+lemma skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.cl ∅) (Y \ M.cl ∅) :=
   skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) (M.loopEquiv_diff_loops Y)
 
-theorem skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.cl ∅) Y :=
+lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.cl ∅) Y :=
   skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) rfl
 
-theorem skew_iff_bases_skew (hI : M.Basis I X) (hJ : M.Basis J Y) : M.Skew I J ↔ M.Skew X Y :=
+lemma skew_iff_bases_skew (hI : M.Basis I X) (hJ : M.Basis J Y) : M.Skew I J ↔ M.Skew X Y :=
   ⟨fun h ↦ h.cl_skew.mono hI.subset_cl hJ.subset_cl, fun h ↦ h.mono hI.subset hJ.subset⟩
 
-theorem Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
+lemma Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
     (hJ : M.Indep J) (hJY : J ⊆ Y) : M.Indep (I ∪ J) := by
   rw [union_eq_iUnion]
   exact SkewFamily.iUnion_indep_subset_indep h (Is := fun i ↦ bif i then I else J)
     (Bool.rec (by simpa) (by simpa)) (Bool.rec (by simpa) (by simpa))
 
-theorem Skew.union_basis_union (h : M.Skew X Y) (hI : M.Basis I X) (hJ : M.Basis J Y) :
+lemma Skew.union_basis_union (h : M.Skew X Y) (hI : M.Basis I X) (hJ : M.Basis J Y) :
     M.Basis (I ∪ J) (X ∪ Y) := by
   rw [union_eq_iUnion, union_eq_iUnion]
   exact SkewFamily.iUnion_basis_iUnion h (Bool.rec (by simpa) (by simpa))
 
-theorem Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoint I J := by
+lemma Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoint I J := by
   rw [union_eq_iUnion] at h
   convert h.skewFamily_iff_pairwiseDisjoint
   convert pairwise_disjoint_on_bool.symm
   simp [PairwiseDisjoint, Set.Pairwise, Pairwise]
 
-theorem skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
+lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   refine ⟨fun h ↦ ?_, fun h ↦ skew_iff_exist_bases.2 ?_⟩
@@ -773,15 +793,15 @@ theorem skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
   rw [← h, restrict_indep_iff, hI.contract_indep_iff] at hi
   exact hi.1.2.mono_left hI.subset
 
-theorem SkewFamily.skew_compl (h : M.SkewFamily Xs) (A : Set ι) :
+lemma SkewFamily.skew_compl (h : M.SkewFamily Xs) (A : Set ι) :
     M.Skew (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by
   rw [skew_iff_modularPair_inter_subset_loops]
-  refine ⟨h.modularFamily.modularPair_compl A, ?_⟩
+  refine ⟨h.modularFamily.modularPair_compl_biUnion A, ?_⟩
   rintro e ⟨⟨_,⟨i,hi,rfl⟩,hi'⟩ ,⟨_,⟨j,hj,rfl⟩,hj'⟩⟩
   simp only [mem_iUnion, exists_prop] at hi' hj'
   exact h.loop_of_mem_inter (show i ≠ j from fun hij ↦ hj'.1 <| hij ▸ hi'.1) ⟨hi'.2, hj'.2⟩
 
-theorem SkewFamily.skew_compl_singleton (h : M.SkewFamily Xs) (i : ι) :
+lemma SkewFamily.skew_compl_singleton (h : M.SkewFamily Xs) (i : ι) :
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set ι)ᶜ, Xs j) := by
   convert h.skew_compl {i}; simp
 
@@ -791,7 +811,7 @@ end Skew
 
 -- variable {F₁ F₂ : Set α}
 
--- theorem foo (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.ModularPair F₁ F₂ ↔
+-- lemma foo (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.ModularPair F₁ F₂ ↔
 --     IsModularLattice ↑(Icc (hF₁.toFlats ⊓ hF₂.toFlats) (hF₁.toFlats ⊔ hF₂.toFlats)) := by
 --   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
 --   · constructor

@@ -136,6 +136,8 @@ lemma Flat.one_le_relRank_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
     (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.relRank F X :=
   ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_relRank_eq_zero h_eq)
 
+lemma finite_setOf_flat (M : Matroid α) [M.Finite] : {F | M.Flat F}.Finite :=
+  M.ground_finite.finite_subsets.subset (fun _ hF ↦ hF.subset_ground)
 
   -- TODO : Cyclic flats.
 
