@@ -659,3 +659,12 @@ def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
     exact ModularCut.deleteElem_extendBy heN
 
 end extensions
+
+section LinearClass
+
+def LinearClass (M : Matroid α) where
+  carrier : Set (Set α)
+  forall_hyperplane : ∀ H ∈ carrier, M.Hyperplane H
+  forall_hyper_
+
+end LinearClass
