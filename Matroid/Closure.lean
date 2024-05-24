@@ -358,6 +358,12 @@ lemma Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl
   · exact iInter_congr (by simp)
   rwa [← union_eq_iUnion]
 
+
+  -- have' := iInter_mono (fun i ↦ M.subset_cl (Xs i) )
+  -- simp only [ext_iff, mem_iInter]
+  -- refine fun x ↦ ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  -- ·
+
 lemma basis_iff_basis_cl_of_subset (hIX : I ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
     M.Basis I X ↔ M.Basis I (M.cl X) :=
   ⟨fun h ↦ h.basis_cl_right, fun h ↦ h.basis_subset hIX (M.subset_cl X hX)⟩
