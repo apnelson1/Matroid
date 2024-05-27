@@ -306,12 +306,18 @@ alias ⟨Indep.nonloop, Nonloop.indep⟩ := indep_singleton
 lemma Indep.nonloop_of_mem (hI : M.Indep I) (h : e ∈ I) : M.Nonloop e := by
   rw [← not_loop_iff (hI.subset_ground h)]; exact fun he ↦ (he.not_mem_of_indep hI) h
 
+lemma Nonloop.exists_mem_base (he : M.Nonloop e) : ∃ B, M.Base B ∧ e ∈ B := by
+  simpa using (indep_singleton.2 he).exists_base_superset
+
 lemma Cocircuit.nonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.Nonloop e := by
   rw [← not_loop_iff (hK.subset_ground he), ← singleton_circuit]
   intro he'
   have hcon := he'.inter_cocircuit_ne_singleton hK
   rw [inter_eq_self_of_subset_left (singleton_subset_iff.2 he), encard_singleton] at hcon
   exact hcon rfl
+
+lemma Circuit.nonloop_of_mem (hC : M.Circuit C) (hC' : C.Nontrivial) (he : e ∈ C) : M.Nonloop e :=
+  nonloop_of_not_loop (hC.subset_ground he) (fun hL ↦ by simp [hL.eq_of_circuit_mem hC he] at hC')
 
 lemma Circuit.nonloop_of_mem_of_one_lt_card (hC : M.Circuit C) (h : 1 < C.encard) (he : e ∈ C) :
     M.Nonloop e := by
@@ -597,6 +603,34 @@ lemma coloop_iff_diff_nonspanning : M.Coloop e ↔ ¬ M.Spanning (M.E \ {e}) := 
 lemma coloop_iff_diff_cl : M.Coloop e ↔ M.cl (M.E \ {e}) ≠ M.E := by
   rw [coloop_iff_diff_nonspanning, spanning_iff_cl]
 
+lemma coloop_iff_not_mem_cl_compl (he : e ∈ M.E := by aesop_mat) :
+    M.Coloop e ↔ e ∉ M.cl (M.E \ {e}) := by
+  rw [coloop_iff_diff_cl, not_iff_not]
+  refine ⟨fun h ↦ by rwa [h], fun h ↦ (M.cl_subset_ground _).antisymm fun x hx ↦ ?_⟩
+  obtain (rfl | hne) := eq_or_ne x e; assumption
+  exact M.subset_cl (M.E \ {e}) (diff_subset _ _) (show x ∈ M.E \ {e} from ⟨hx, hne⟩)
+
+lemma Base.mem_coloop_iff_forall_not_mem_fundCct (hB : M.Base B) (he : e ∈ B) :
+    M.Coloop e ↔ ∀ x ∈ M.E \ B, e ∉ M.fundCct x B := by
+  refine ⟨fun h x hx heC ↦ (h.not_mem_circuit <| hB.fundCct_circuit hx) heC, fun h ↦ ?_⟩
+  have h' : M.E \ {e} ⊆ M.cl (B \ {e}) := by
+    rintro x ⟨hxE, hne : x ≠ e⟩
+    obtain (hx | hx) := em (x ∈ B)
+    · exact M.subset_cl (B \ {e}) ((diff_subset _ _).trans hB.subset_ground) ⟨hx, hne⟩
+    have h_cct := (hB.fundCct_circuit ⟨hxE, hx⟩).mem_cl_diff_singleton_of_mem
+      (M.mem_fundCct x B)
+    refine (M.cl_subset_cl (subset_diff_singleton ?_ ?_)) h_cct
+    · simpa using fundCct_subset_insert _ _
+    simp [hne.symm, h x ⟨hxE, hx⟩]
+  rw [coloop_iff_not_mem_cl_compl (hB.subset_ground he)]
+  exact not_mem_subset (M.cl_subset_cl_of_subset_cl h') <| hB.indep.not_mem_cl_diff_of_mem he
+
+lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
+    ∃ C, M.Circuit C ∧ e ∈ C := by
+  simp only [coloop_iff_forall_mem_base, not_forall, Classical.not_imp, exists_prop] at he
+  obtain ⟨B, hB, heB⟩ := he
+  exact ⟨M.fundCct e B, hB.fundCct_circuit ⟨heE,heB⟩, .inl rfl⟩
+
 @[simp] lemma cl_inter_coloops_eq (M : Matroid α) (X : Set α) :
     M.cl X ∩ M✶.cl ∅ = X ∩ M✶.cl ∅ := by
   simp_rw [Set.ext_iff, mem_inter_iff, ← coloop_iff_mem_cl_empty, and_congr_left_iff]
@@ -708,6 +742,7 @@ lemma eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid �
   refine' iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) _
   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]
   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
+
 
 end Coloop
 

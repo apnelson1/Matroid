@@ -23,16 +23,16 @@ instance : EquivLike (M ≂ N) M.E N.E where
     simp only [DFunLike.coe_fn_eq, Iso.mk.injEq]
     exact fun h _ ↦ h
 
-theorem Iso.indep_image_iff (e : M ≂ N) {I : Set M.E} : M.Indep ↑I ↔ N.Indep ↑(e '' I) :=
+lemma Iso.indep_image_iff (e : M ≂ N) {I : Set M.E} : M.Indep ↑I ↔ N.Indep ↑(e '' I) :=
   e.indep_image_iff' I
 
-theorem Iso.image_indep (e : M ≂ N) {I : Set M.E} (hI : M.Indep I) : N.Indep (↑(e '' I)) :=
+lemma Iso.image_indep (e : M ≂ N) {I : Set M.E} (hI : M.Indep I) : N.Indep (↑(e '' I)) :=
   e.indep_image_iff.1 hI
 
-theorem Iso.dep_image_iff (e : M ≂ N) {D : Set M.E} : M.Dep ↑D ↔ N.Dep ↑(e '' D) := by
+lemma Iso.dep_image_iff (e : M ≂ N) {D : Set M.E} : M.Dep ↑D ↔ N.Dep ↑(e '' D) := by
   rw [← not_indep_iff, e.indep_image_iff, not_indep_iff]
 
-theorem Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(e '' D) :=
+lemma Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(e '' D) :=
   e.dep_image_iff.1 hD
 
 @[simps] def Iso.refl {M : Matroid α} : Iso M M where
@@ -49,35 +49,35 @@ theorem Iso.image_dep (e : M ≂ N) {D : Set M.E} (hD : M.Dep ↑D) : N.Dep ↑(
     convert (e.indep_image_iff (I := e.toEquiv.symm '' I)).symm
     simp
 
-@[simp] theorem Iso.apply_symm_apply (e : M ≂ N) (x : N.E) : e (e.symm x) = x :=
+@[simp] lemma Iso.apply_symm_apply (e : M ≂ N) (x : N.E) : e (e.symm x) = x :=
   Equiv.apply_symm_apply e.toEquiv x
 
-@[simp] theorem Iso.symm_apply_apply (e : M ≂ N) (x : M.E) : e.symm (e x) = x :=
+@[simp] lemma Iso.symm_apply_apply (e : M ≂ N) (x : M.E) : e.symm (e x) = x :=
   Equiv.symm_apply_apply e.toEquiv x
 
-theorem Iso.symm_image_image (e : M ≂ N) (X : Set M.E) : e.symm '' (e '' X) = X :=
+lemma Iso.symm_image_image (e : M ≂ N) (X : Set M.E) : e.symm '' (e '' X) = X :=
   Equiv.symm_image_image e.toEquiv X
 
-theorem Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X :=
+lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X :=
   Equiv.image_symm_image e.toEquiv X
 
-@[simp] theorem Iso.image_symm_eq_preimage (e : M ≂ N) (X : Set N.E) : e.symm '' X = e ⁻¹' X :=
+@[simp] lemma Iso.image_symm_eq_preimage (e : M ≂ N) (X : Set N.E) : e.symm '' X = e ⁻¹' X :=
   Eq.symm <| preimage_equiv_eq_image_symm X e.toEquiv
 
-@[simp] theorem Iso.preimage_symm_eq_image (e : M ≂ N) (X : Set M.E) : e.symm ⁻¹' X = e '' X :=
+@[simp] lemma Iso.preimage_symm_eq_image (e : M ≂ N) (X : Set M.E) : e.symm ⁻¹' X = e '' X :=
   (e.toEquiv.image_eq_preimage X).symm
 
-@[simp] theorem Iso.preimage_image (e : M ≂ N) (X : Set M.E) : e ⁻¹' (e '' X) = X := by
+@[simp] lemma Iso.preimage_image (e : M ≂ N) (X : Set M.E) : e ⁻¹' (e '' X) = X := by
   rw [← e.image_symm_eq_preimage, e.symm_image_image]
 
-@[simp] theorem Iso.image_preimage (e : M ≂ N) (X : Set N.E) : e '' (e ⁻¹' X) = X := by
+@[simp] lemma Iso.image_preimage (e : M ≂ N) (X : Set N.E) : e '' (e ⁻¹' X) = X := by
   rw [← e.image_symm_eq_preimage, e.image_symm_image]
 
-@[simp] theorem Iso.preimage_subset_iff (e : M ≂ N) {X : Set N.E} {Y : Set M.E} :
+@[simp] lemma Iso.preimage_subset_iff (e : M ≂ N) {X : Set N.E} {Y : Set M.E} :
     e ⁻¹' X ⊆ Y ↔ X ⊆ e '' Y := by
   rw [← e.image_symm_eq_preimage, image_subset_iff, e.preimage_symm_eq_image]
 
-@[simp] theorem Iso.range_eq (e : M ≂ N) : range e = univ :=
+@[simp] lemma Iso.range_eq (e : M ≂ N) : range e = univ :=
   Equiv.range_eq_univ (e : M.E ≃ N.E)
 
 @[simps] def Iso.trans {γ : Type*} {M : Matroid α} {N : Matroid β} {R : Matroid γ}
@@ -113,7 +113,7 @@ theorem Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = 
     rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
     simpa using hIB
 
-theorem Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e '' B)) := by
+lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e '' B)) := by
   rw [base_iff_maximal_indep, ← e.indep_image_iff, and_iff_right hB.indep]
   intro I hI h'
   obtain ⟨I, rfl⟩ := eq_image_val_of_subset hI.subset_ground
@@ -123,9 +123,35 @@ theorem Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑
   simp only [image_subset_iff, preimage_val_image_val_eq_self] at h'
   simp [hB h', image_image]
 
-theorem Iso.base_image_iff (e : M ≂ N) {B : Set M.E} : M.Base B ↔ N.Base (↑(e '' B)) :=
+lemma Iso.base_image_iff (e : M ≂ N) {B : Set M.E} : M.Base B ↔ N.Base (↑(e '' B)) :=
   ⟨e.base_image, fun h ↦ by simpa using e.symm.base_image h⟩
 section map
+
+lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
+    M.Basis I X ↔ N.Basis ↑(e '' I) ↑(e '' X) := by
+  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, basis_iff_mem_maximals,
+    mem_maximals_iff, mem_setOf_eq, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
+    preimage_image, and_congr_right_iff]
+  intro hI hIX
+  refine ⟨fun h J hJ hJX hIJ ↦ ?_, fun h J hJ hJX hIJ ↦ ?_⟩
+  · specialize h (y := ↑(e.symm '' (N.E ↓∩ J)))
+    simp only [image_symm_eq_preimage, e.indep_image_iff, image_preimage,
+      Subtype.image_preimage_coe, inter_eq_self_of_subset_right hJ.subset_ground, hJ,
+      image_subset_iff, preimage_val_image_val_eq_self, preimage_subset_iff, image_val_inj,
+      true_implies] at h
+
+    specialize h <| by simpa using (show N.E ↓∩ J ⊆ _ from preimage_mono (f := Subtype.val) hJX)
+    obtain rfl := h (by convert hIJ)
+    simp [hJ.subset_ground]
+  specialize h (y := ↑(e '' (M.E ↓∩ J)))
+  simp only [← e.indep_image_iff, Subtype.image_preimage_coe,
+    inter_eq_self_of_subset_right hJ.subset_ground, hJ, image_subset_iff,
+    preimage_val_image_val_eq_self, preimage_image, image_val_inj, true_implies] at h
+  rw [← image_subset_image_iff Subtype.val_injective] at h
+  simp only [Subtype.image_preimage_coe, inter_eq_self_of_subset_right hJ.subset_ground] at h
+  specialize h hJX (by convert hIJ)
+  rw [← e.symm_image_image I, h]
+  simp [hJ.subset_ground]
 
 noncomputable def isoMap (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) : M ≂ (M.map f hf) where
   toEquiv := Equiv.Set.imageOfInjOn _ _ hf
@@ -170,7 +196,7 @@ def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
     · rfl
     exact (Equiv.injective (e : M.E ≃ N.E)))
 
-@[simp] theorem Iso.dual_image (e : M ≂ N) (X : Set α) :
+@[simp] lemma Iso.dual_image (e : M ≂ N) (X : Set α) :
     Subtype.val '' (e.dual '' (M✶.E ↓∩ X)) = e '' (M.E ↓∩ X) := rfl
 
 def Iso.dual_comm (e : M ≂ N✶) : M✶ ≂ N :=

@@ -662,9 +662,15 @@ end extensions
 
 section LinearClass
 
-def LinearClass (M : Matroid α) where
-  carrier : Set (Set α)
-  forall_hyperplane : ∀ H ∈ carrier, M.Hyperplane H
-  forall_hyper_
+/-
+TODO. Linear classes only work for finite matroids; for instance, if `B` and `B'` are disjoint
+infinite bases, then the class of hyperplanes spanning all but finitely many elements of `B`
+ought not to be a linear class, but I don't know what definition would forbid that.
+-/
+
+-- def LinearClass (M : Matroid α) where
+--   carrier : Set (Set α)
+--   forall_hyperplane : ∀ H ∈ carrier, M.Hyperplane H
+--   forall_hyper_
 
 end LinearClass

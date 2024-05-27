@@ -154,6 +154,14 @@ lemma restrict_parallel_iff {R : Set α} :
   rw [removeLoops_eq_restr, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.nonloop_left, h.nonloop_right⟩)]
 
+lemma Parallel.mem_cocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.Cocircuit K)
+    (he : e ∈ K) : f ∈ K := by
+  by_contra hf
+  have hK' := (hK.compl_hyperplane).flat.cl
+  have hfK := hK'.symm.subset ⟨hef.mem_ground_right, hf⟩
+  rw [← hef.mem_cl_iff_mem_cl, hK'] at hfK
+  exact hfK.2 he
+
 -- @[simp] lemma comap_parallel_iff {β : Type*} {M : Matroid β} {f : α → β} {x y : α} :
 --     (M.comap f).Parallel x y ↔ M.Parallel (f x) (f y) := by
 --   simp [parallel_iff]

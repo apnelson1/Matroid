@@ -128,3 +128,8 @@ lemma biInter_diff_singleton_eq_diff (s : Set α) {t : Set α} (ht : t.Nonempty)
 
 lemma subset_diff_singleton_iff {s t : Set α} {x : α} : s ⊆ t \ {x} ↔ (s ⊆ t ∧ x ∉ s) := by
   rw [subset_diff, disjoint_singleton_right]
+
+lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ t := by
+  refine (diff_subset _ _).ssubset_of_ne fun h_eq ↦ ?_
+  rw [sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right hst] at h_eq
+  simp [h_eq] at hs

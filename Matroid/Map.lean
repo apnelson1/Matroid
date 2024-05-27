@@ -24,7 +24,7 @@ universe u
 open Set Function
 
 namespace Matroid
-variable {α β : Type*} {f : α → β} {E I s : Set α}
+variable {α β : Type*} {f : α → β} {E I s : Set α} {M : Matroid α}
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
 Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
@@ -282,6 +282,12 @@ lemma map_image_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I
   rw [preimage_image_eq _ f.injective]
   exact ⟨hI, image_subset_range _ _⟩
 
+lemma Indep.map (hI : M.Indep I) (f : α → β) (hf : InjOn f M.E) : (M.map f hf).Indep (f '' I) :=
+  map_indep_iff.2 ⟨I, hI, rfl⟩
+
+lemma Indep.mapEmbedding (hI : M.Indep I) (f : α ↪ β) : (M.mapEmbedding f).Indep (f '' I) := by
+  simpa [preimage_image_eq I f.injective]
+
 @[simp] lemma mapEquiv_indep_iff {M : Matroid α} {f : α ≃ β} {I : Set β} :
     (M.mapEquiv f).Indep I ↔ M.Indep (f.symm '' I) := by
   rw [mapEquiv, mapEmbedding, map_indep_iff, Equiv.coe_toEmbedding]
@@ -303,11 +309,32 @@ lemma map_image_indep_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {I
   rw [hf.image_subset_image_iff_of_subset hB.subset_ground hI'.subset_ground] at hB₀I
   rw [hB.eq_of_subset_indep hI' hB₀I]
 
+lemma Base.mapEmbedding {B : Set α} (hB : M.Base B) (f : α ↪ β) :
+    (M.mapEmbedding f).Base (f '' B) := by
+  rw [Matroid.mapEmbedding, map_base_iff]
+  exact ⟨B, hB, rfl⟩
+
 lemma map_image_base_iff {M : Matroid α} {f : α → β} {hf : InjOn f M.E} {B : Set α}
     (hB : B ⊆ M.E) : (M.map f hf).Base (f '' B) ↔ M.Base B := by
   rw [map_base_iff]
   refine ⟨fun ⟨J, hJ, hIJ⟩ ↦ ?_, fun h ↦ ⟨B, h, rfl⟩⟩
   rw [hf.image_eq_image_iff_of_subset hB hJ.subset_ground] at hIJ; rwa [hIJ]
+
+lemma Basis.map {X : Set α} (hIX : M.Basis I X) (f : α → β) (hf : InjOn f M.E) :
+    (M.map f hf).Basis (f '' I) (f '' X) := by
+  refine (hIX.indep.map f hf).basis_of_forall_insert (image_subset _ hIX.subset) ?_
+  rintro _ ⟨⟨e,he,rfl⟩, he'⟩
+  have hss := insert_subset (hIX.subset_ground he) hIX.indep.subset_ground
+  rw [← not_indep_iff (by simpa [← image_insert_eq] using image_subset f hss)]
+  simp only [map_indep_iff, not_exists, not_and]
+  intro J hJ hins
+  rw [← image_insert_eq, hf.image_eq_image_iff_of_subset hss hJ.subset_ground] at hins
+  obtain rfl := hins
+  exact he' (mem_image_of_mem f (hIX.mem_of_insert_indep he hJ))
+
+lemma Basis.mapEmbedding {X : Set α} (hIX : M.Basis I X) (f : α ↪ β) :
+    (M.mapEmbedding f).Basis (f '' I) (f '' X) := by
+  apply hIX.map
 
 @[simp] lemma map_dual {M : Matroid α} {f : α → β} {hf : InjOn f M.E} :
     (M.map f hf)✶ = M✶.map f hf := by

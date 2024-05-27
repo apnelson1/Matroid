@@ -884,6 +884,33 @@ lemma Hyperplane.inter_covBy_comm (hH₁ : M.Hyperplane H₁) (hH₂ : M.Hyperpl
   exact And.left <| h.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset hH₂.covBy hH₁.flat
     (hH₁.inter_ssubset_left_of_ne hH₂ hne) (hH₁.ssubset_ground)
 
+lemma Hyperplane.basis_hyperplane_delete (hH : M.Hyperplane H) (hI : M.Basis I H) :
+    (M ＼ (H \ I)).Hyperplane I := by
+  obtain ⟨e, he, heH⟩ := exists_of_ssubset hH.ssubset_ground
+  have hB : M.Base (insert e I) := by
+    refine Indep.base_of_spanning ?_ ?_
+    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH), hI.cl_eq_cl,
+        hH.flat.cl, mem_diff, and_iff_left heH]
+    rw [spanning_iff_cl, ← cl_insert_cl_eq_cl_insert, hI.cl_eq_cl, hH.flat.cl,
+      hH.cl_eq_ground_of_ssuperset (ssubset_insert heH)]
+  convert Base.hyperplane_of_cl_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
+  · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,
+    not_false_eq_true, diff_singleton_eq_self, delete_cl_eq]
+    rw [disjoint_sdiff_right.sdiff_eq_left, hI.cl_eq_cl, hH.flat.cl, diff_diff_cancel_left]
+    exact hI.subset
+  simp only [delete_base_iff]
+  refine hB.indep.basis_of_forall_insert ?_ fun x ⟨⟨hxE, _⟩, hx⟩ ↦ hB.insert_dep ⟨hxE, hx⟩
+  suffices insert e I ∩ (H \ I) = ∅ by simpa [insert_subset_iff, he, heH, subset_diff,
+    hI.indep.subset_ground, disjoint_iff_inter_eq_empty]
+  rw [insert_inter_of_not_mem (by simp [heH])]
+  simp
+
+lemma Hyperplane.basis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.Basis I H) :
+    (M ↾ (I ∪ (M.E \ H))).Hyperplane I := by
+  convert hH.basis_hyperplane_delete hI using 1
+  rw [delete_eq_restrict, diff_diff_right, inter_eq_self_of_subset_right hI.indep.subset_ground,
+    union_comm]
+
 end Hyperplane
 
 
