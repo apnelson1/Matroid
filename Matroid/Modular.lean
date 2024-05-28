@@ -196,20 +196,40 @@ lemma ModularFamily.set_biInter_comp {η : Type*} (h : M.ModularFamily Xs) (t : 
     (ht : ∀ j, (t j).Nonempty) : M.ModularFamily (fun j ↦ ⋂ i ∈ t j, (Xs i)) := by
   obtain ⟨B, hB⟩ := h; exact ⟨B, hB.base, fun j ↦ hB.basis_biInter (ht j)⟩
 
+lemma ModularFamily.map {β : Type*} (f : α → β) (hf : InjOn f M.E) (h : M.ModularFamily Xs) :
+    (M.map f hf).ModularFamily (fun i ↦ f '' (Xs i)) := by
+  obtain ⟨B, hB, hBX⟩ := h
+  refine ⟨f '' B, hB.map hf, fun i ↦ ?_⟩
+  convert (hBX i).map f hf
+  rw [hf.image_inter (hBX i).subset_ground hB.subset_ground]
+
+lemma modularFamily_map_iff {β : Type*} (f : α → β) (hf : InjOn f M.E) {Xs : ι → Set β} :
+    (M.map f hf).ModularFamily Xs ↔ ∃ Ys, M.ModularFamily Ys ∧ ∀ i, Xs i = f '' (Ys i) := by
+  refine ⟨fun h ↦ ?_, fun ⟨Ys, hYs, h_eq⟩ ↦ ?_⟩
+  · obtain ⟨B, hB, h⟩ := h
+    simp_rw [basis_map_iff'] at h
+    rw [map_base_iff] at hB
+    obtain ⟨B, hB, rfl⟩ := hB
+    choose Is hIs using h
+    choose Ys hYs using hIs
+    refine ⟨Ys, ⟨B, hB, fun i ↦ ?_⟩, fun i ↦ (hYs i).2.2⟩
+    convert (hYs i).1
+    rw [← hf.image_eq_image_iff_of_subset ((inter_subset_right _ _).trans hB.subset_ground)
+      (hYs i).1.indep.subset_ground, ← (hYs i).2.1, (hYs i).2.2, hf.image_inter]
+    · exact (hYs i).1.subset_ground
+    exact hB.subset_ground
+
+  convert hYs.map f hf with i
+  apply h_eq
+
+
+
 lemma ModularFamily.mapEmbedding {β : Type*} (f : α ↪ β) (h : M.ModularFamily Xs) :
     (M.mapEmbedding f).ModularFamily (fun i ↦ f '' (Xs i)) := by
   obtain ⟨B, hB, hBX⟩ := h
-  refine ⟨f '' B, hB.mapEmbedding f, ?_⟩
-
-  intro i
-  have hX : M.E ∩ Xs i = Xs i := by simpa using (hBX i).subset_ground
-
-
-
-
-
-
-
+  refine ⟨f '' B, hB.mapEmbedding f, fun i ↦ ?_⟩
+  convert (hBX i).mapEmbedding f
+  rw [image_inter f.injective]
 
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=

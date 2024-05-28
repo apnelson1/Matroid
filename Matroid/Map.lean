@@ -309,6 +309,10 @@ lemma Indep.mapEmbedding (hI : M.Indep I) (f : α ↪ β) : (M.mapEmbedding f).I
   rw [hf.image_subset_image_iff_of_subset hB.subset_ground hI'.subset_ground] at hB₀I
   rw [hB.eq_of_subset_indep hI' hB₀I]
 
+lemma Base.map {B : Set α} (hB : M.Base B) {f : α → β} (hf : M.E.InjOn f) :
+    (M.map f hf).Base (f '' B) := by
+  rw [map_base_iff]; exact ⟨B, hB, rfl⟩
+
 lemma Base.mapEmbedding {B : Set α} (hB : M.Base B) (f : α ↪ β) :
     (M.mapEmbedding f).Base (f '' B) := by
   rw [Matroid.mapEmbedding, map_base_iff]
@@ -331,6 +335,28 @@ lemma Basis.map {X : Set α} (hIX : M.Basis I X) (f : α → β) (hf : InjOn f M
   rw [← image_insert_eq, hf.image_eq_image_iff_of_subset hss hJ.subset_ground] at hins
   obtain rfl := hins
   exact he' (mem_image_of_mem f (hIX.mem_of_insert_indep he hJ))
+
+lemma basis_map_iff {I X : Set α} (f : α → β) (hf : InjOn f M.E) (hI : I ⊆ M.E) (hX : X ⊆ M.E) :
+    (M.map f hf).Basis (f '' I) (f '' X) ↔ M.Basis I X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map f hf⟩
+  obtain ⟨I', hI', hII'⟩ := map_indep_iff.1 h.indep
+  rw [hf.image_eq_image_iff_of_subset hI hI'.subset_ground] at hII'
+  obtain rfl := hII'
+  have hss := (hf.image_subset_image_iff_of_subset hI hX).1 h.subset
+  refine hI'.basis_of_maximal_subset hss (fun J hJ hIJ hJX ↦ ?_)
+  have hIJ' := h.eq_of_subset_indep (hJ.map f hf) (image_subset f hIJ) (image_subset f hJX)
+  rw [hf.image_eq_image_iff_of_subset hI hJ.subset_ground] at hIJ'
+  exact hIJ'.symm.subset
+
+lemma basis_map_iff' {I X : Set β} (f : α → β) (hf : InjOn f M.E) :
+    (M.map f hf).Basis I X ↔ ∃ I₀ X₀, M.Basis I₀ X₀ ∧ I = f '' I₀ ∧ X = f '' X₀ := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨I, hI, rfl⟩ := subset_image_iff.1 h.indep.subset_ground
+    obtain ⟨X, hX, rfl⟩ := subset_image_iff.1 h.subset_ground
+    rw [basis_map_iff _ _ hI hX] at h
+    exact ⟨I, X, h, rfl, rfl⟩
+  rintro ⟨I, X, hIX, rfl, rfl⟩
+  exact hIX.map f hf
 
 lemma Basis.mapEmbedding {X : Set α} (hIX : M.Basis I X) (f : α ↪ β) :
     (M.mapEmbedding f).Basis (f '' I) (f '' X) := by

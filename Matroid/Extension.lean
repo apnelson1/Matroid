@@ -11,17 +11,18 @@ a single-element extension of `M` by `e` is a matroid `M'` for which
 `M'.E = M.E ∪ {e}` and `M' ＼ e = M`.
 
 In 1965, Crapo proved that the single-element extensions of a finite matroid `M` are
-parametrized by the 'modular cuts' of `M`; a modular cut is an upper ideal in the
+described precisely by the 'modular cuts' of `M`; a modular cut is an upper ideal in the
 lattice of flats of `M` that is closed under taking intersections of modular pairs.
-(`A,B` is  modular pair if `r A + r B = r (A ∪ B) + r (A ∩ B)`).
+(in a finite matroid, `A,B` is  modular pair if `r A + r B = r (A ∪ B) + r (A ∩ B)`).
 Given a modular cut `U`, the flats of `M` spanning the new element `e` in the extension `M'` are
 precisely those in `U`. See [Oxley 7.2].
 
 For infinite matroids, this condition fails; for instance, if `M` is a free matroid
 on an infinite ground set, and `U` is the collection of all sets of `M` with finite complement,
-then `U` is clearly a modular cut (it is closed under taking intersections of every two elements),
+then `U` is clearly a modular cut (it is closed under taking intersections of any two elements),
 but `U` doesn't correspond to any single-element extension; in such an extension `M'`,
-`e` would be spanned by every hyperplane of `M` and would therefore be spanned by every flat of `M`.
+`e` would be spanned by every hyperplane of `M` and would therefore be spanned by the
+rank-zero flat of `M`, which isn't in `U`.
 
 To correctly describe single-element extensions of infinite matroids, we need to modify
 the definition of a modular cut. Instead of insisting that a modular cut `U` be closed
@@ -31,6 +32,8 @@ with a common basis; they are defined in `Matroid.Modular`.
 
 In this file, we define modular cuts, show that they parametrize single-element extensions
 of arbitrary matroids, and show that they specialize to Crapo's modular cuts in the finite case.
+We also define the 'projection' of `M` associated with each modular cut `U` of `M`; this is the
+matroid obtained from `M` by extending using `U`, then contracting the new element.
 
 # Main Definitions.
 
@@ -51,6 +54,12 @@ of arbitrary matroids, and show that they specialize to Crapo's modular cuts in 
 
 * `Matroid.extensionEquiv` : the equivalence between single-element extensions of `M`
     and modular cuts of `M`.
+
+* `Matroid.projectBy e U` : add and then contract a new element in a matroid `M`
+  using a modular cut `U`.
+
+* `Matroid.truncate` : add a new element freely spanned by `M.E`, then contract it.
+
 -/
 
 open Set Function Set.Notation
@@ -61,7 +70,8 @@ namespace Matroid
 
 /-- A `ModularCut M` is a collection of flats of `M` that is closed under taking superflats and
 under intersections of modular families. These parametrize the extensions of `M` by a single
-element outside `M`; see `Matroid.extendBy`. -/
+element outside `M` and hence also the projections of `M`; see `Matroid.extendBy` and
+`Matroid.projectBy`.  -/
 @[ext] structure ModularCut (M : Matroid α) where
   (carrier : Set (Set α))
   (forall_flat : ∀ F ∈ carrier, M.Flat F)
@@ -74,11 +84,43 @@ instance (M : Matroid α) : SetLike (ModularCut M) (Set α) where
   coe := ModularCut.carrier
   coe_injective' U U' := by cases U; cases U'; simp
 
+/-- Transfer a `ModularCut` across an equality. -/
 def ModularCut.congr {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
   carrier := U
   forall_flat := by obtain rfl := hNM; exact U.forall_flat
   forall_superset := by obtain rfl := hNM; exact U.forall_superset
   forall_inter := by obtain rfl := hNM; exact U.forall_inter
+
+/-- Transfer a `ModularCut` along an injection -/
+def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f) :
+    (M.map f hf).ModularCut where
+  carrier := (image f) '' U
+  forall_flat := by
+    rintro _ ⟨F, hF, rfl⟩
+    exact (U.forall_flat F hF).map hf
+  forall_superset := by
+    simp_rw [flat_map_iff']
+    rintro _ F' ⟨F, hF, rfl⟩ ⟨F', hF', rfl⟩ hss
+    refine ⟨F', U.forall_superset _ _ hF hF' ?_, rfl⟩
+    rwa [← hf.image_subset_image_iff_of_subset (U.forall_flat F hF).subset_ground hF'.subset_ground]
+  forall_inter := by
+    simp_rw [modularFamily_map_iff, subset_image_iff]
+    rintro _ ⟨Fs, hFs, rfl⟩ hne ⟨Ys, ⟨B, hB, hYs⟩, h_eq⟩
+    have hFsE : ∀ F ∈ Fs, F ⊆ M.E := fun F hF ↦ (U.forall_flat F (hFs hF)).subset_ground
+    have hwin := U.forall_inter Fs hFs (by simpa using hne) ⟨B, hB, ?_⟩
+    · simp only [sInter_image, mem_image, SetLike.mem_coe]
+      refine ⟨_, hwin, ?_⟩
+      rw [← InjOn.image_biInter_eq (f := f) (by simpa using hne), sInter_eq_biInter]
+      refine hf.mono ?_
+      simpa only [iUnion_subset_iff]
+
+    simp only [Subtype.forall]
+    refine fun F hF ↦ ?_
+    simp only [Subtype.forall, mem_image, forall_exists_index] at hYs h_eq
+    specialize h_eq _ _ ⟨hF, rfl⟩
+    specialize hYs _ _ ⟨hF, rfl⟩
+    rw [hf.image_eq_image_iff_of_subset (hFsE F hF) hYs.subset_ground] at h_eq
+    rwa [← h_eq] at hYs
 
 @[simp] lemma ModularCut.mem_mk_iff (S : Set (Set α)) (h₁ : ∀ F ∈ S, M.Flat F)
   (h₂ : ∀ F F', F ∈ S → M.Flat F' → F ⊆ F' → F' ∈ S)
@@ -121,7 +163,7 @@ lemma ModularCut.cl_mem_of_mem (hF : F ∈ U) : M.cl F ∈ U := by
   rwa [(U.flat_of_mem hF).cl]
 
 /-- The `ModularCut` of all flats containing `X`. -/
-def ModularCut.principal (M : Matroid α) (X : Set α) : M.ModularCut where
+@[simps] def ModularCut.principal (M : Matroid α) (X : Set α) : M.ModularCut where
   carrier := {F | M.Flat F ∧ X ⊆ F}
   forall_flat _ h := h.1
   forall_superset _ _ hF hF' hFF' := ⟨hF', hF.2.trans hFF'⟩
@@ -162,8 +204,27 @@ lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U
     ¬ X ∈ (⊥ : M.ModularCut) :=
   not_mem_empty X
 
-@[simp] protected lemma ModularCut.mem_top_of_flat (hF : M.Flat F) : F ∈ (⊤ : M.ModularCut) :=
+protected lemma ModularCut.mem_top_of_flat (hF : M.Flat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
+
+@[simp] lemma ModularCut.mem_top_iff : F ∈ (⊤ : M.ModularCut) ↔ M.Flat F :=
+  ⟨fun h ↦ h.1, ModularCut.mem_top_of_flat⟩
+
+lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.cl ∅ ∈ U := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro rfl
+    exact ⟨M.cl_flat ∅, empty_subset _⟩
+  simp only [SetLike.ext_iff, mem_top_iff]
+  refine fun F ↦ ⟨U.flat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
+
+lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut) := by
+  rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
+
+lemma principal_ground_ne_top (M : Matroid α) [RkPos M] : ModularCut.principal M M.E ≠ ⊤ := by
+  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, cl_flat, true_and]
+  obtain ⟨B, hB⟩ := M.exists_base
+  obtain ⟨e, heB⟩ := hB.nonempty
+  exact fun h ↦ (hB.indep.nonloop_of_mem heB).not_loop <| h (hB.subset_ground heB)
 
 lemma ModularCut.mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
     (hJI : J ⊂ I) (h : ∀ e ∈ I \ J, M.cl (I \ {e}) ∈ U) : M.cl J ∈ U := by
@@ -215,7 +276,7 @@ lemma ModularCut.covBy_of_maximal_cl (U : M.ModularCut) {X Y : Set α} (hXY : M.
 
 section restrict
 
-/-- A `ModularCut` in `M` given a `ModularCut` in `M ↾ R` for any `R ⊆ M.E`. -/
+/-- A `ModularCut` in `M` gives a `ModularCut` in `M ↾ R` for any `R ⊆ M.E`. -/
 def ModularCut.restrict (U : M.ModularCut) {R : Set α} (hR : R ⊆ M.E) : (M ↾ R).ModularCut where
   carrier := {F | (M ↾ R).Flat F ∧ M.cl F ∈ U}
   forall_flat F h := h.1
@@ -660,17 +721,69 @@ def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
 
 end extensions
 
+section projection
+
+/-- Extend `M` using the modular cut `U`, and contract the new element. -/
+def projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α := Matroid.ofExistsMatroid
+  (E := M.E)
+  (Indep := fun I ↦ M.Indep I ∧ (U ≠ ⊤ → M.cl I ∉ U))
+  (hM := by
+    have hinj := Option.some_injective α
+    have hf : InjOn _ M.E := hinj.injOn M.E
+    set M' := (M.map _ hf).extendBy none (U.map _ hf) with hM'
+    use (M' ／ (none : Option α)).comap (Option.some)
+    suffices ∀ (I : Set α),
+      ((M.map some hf).extendBy none (U.map some hf) ／ (none : Option α)).Indep (some '' I) ↔
+      M.Indep I ∧ (U ≠ ⊤ → M.cl I ∉ U) by
+      simpa [preimage_image_eq _ hinj, hinj.injOn _, hM']
+    intro I
+    obtain (rfl | hU) := eq_or_ne U ⊤
+    · rw [contract_elem, contract_eq_delete_of_subset_loops]
+      · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj]
+      rw [singleton_subset_iff, ← loop_iff_mem_cl_empty, ← singleton_dep, dep_iff]
+      simp [ModularCut.extIndep_iff_of_mem, map_cl_eq, ModularCut.map, image_eq_image hinj]
+    rw [contract_elem, Indep.contract_indep_iff]
+    · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_cl_eq,
+        preimage_image_eq _ hinj, ModularCut.map, hU]
+    suffices M.cl ∅ ∉ U by
+      simpa [ModularCut.extIndep_iff_of_mem, (eq_comm (a := ∅)), map_cl_eq, ModularCut.map,
+        image_eq_image hinj]
+    rwa [Ne, ModularCut.eq_top_iff] at hU )
+
+@[simp] lemma projectBy_ground_eq (U : M.ModularCut) : (M.projectBy U).E = M.E := rfl
+
+@[simp] lemma projectBy_indep_iff (U : M.ModularCut) :
+    (M.projectBy U).Indep I ↔ M.Indep I ∧ (U ≠ ⊤ → M.cl I ∉ U) := Iff.rfl
+
+lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
+    (M.projectBy U).Indep I ↔ M.Indep I ∧ M.cl I ∉ U := by
+  simp [hU]
+
+lemma projectBy_top : M.projectBy ⊤ = M := by
+  simp [eq_iff_indep_iff_indep_forall]
+
+/-- The matroid on `M.E` whose independent sets are the independent nonbases of `M`. -/
+def truncate (M : Matroid α) := M.projectBy (ModularCut.principal M M.E)
+
+@[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
+
+@[simp] lemma truncate_indep_iff [M.RkPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.Base I := by
+  suffices M.Indep I → (¬M.E ⊆ M.cl I ↔ ¬M.Base I) by simpa [truncate, M.principal_ground_ne_top]
+  refine fun hI ↦ ⟨fun hcl hB ↦ hcl ?_, fun h hcl ↦ h (hI.base_of_spanning ?_)⟩
+  · simp [hB.cl_eq, Subset.rfl]
+  rwa [spanning_iff_ground_subset_cl]
+
+end projection
+
 section LinearClass
 
 /-
-TODO. Linear classes only work for finite matroids; for instance, if `B` and `B'` are disjoint
-infinite bases, then the class of hyperplanes spanning all but finitely many elements of `B`
-ought not to be a linear class, but I don't know what definition would forbid that.
+TODO. I think linear classes only work for finite matroids; if `B` and `B'` are disjoint infinite bases of `M`, the class of hyperplanes `H` with `B\H` finite ought not to be a linear class, but I don't know what reasonable definition would forbid that.
 -/
 
 -- def LinearClass (M : Matroid α) where
 --   carrier : Set (Set α)
 --   forall_hyperplane : ∀ H ∈ carrier, M.Hyperplane H
---   forall_hyper_
+--   forall_hyper' : ∀ H₁ H₂ ∈ carrier,
 
 end LinearClass

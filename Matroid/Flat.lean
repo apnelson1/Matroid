@@ -64,6 +64,25 @@ lemma flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
 
+lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) (hFE : F ⊆ M.E) :
+    (M.map f hf).Flat (f '' F) ↔ M.Flat F := by
+  rw [flat_iff_cl_self, map_cl_eq, ← cl_inter_ground, hf.preimage_image_inter hFE,
+    hf.image_eq_image_iff_of_subset (M.cl_subset_ground _) hFE, flat_iff_cl_self]
+
+lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
+    (M.map f hf).Flat (f '' F) := by
+  rw [flat_iff_cl_self, map_cl_eq, ← cl_inter_ground, hf.preimage_image_inter hF.subset_ground,
+    hF.cl]
+
+lemma flat_map_iff' {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
+    (M.map f hf).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f '' F₀ := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨F, hF, rfl⟩ := subset_image_iff.1 h.subset_ground
+    rw [flat_map_iff hf hF] at h
+    exact ⟨F, h, rfl⟩
+  rintro ⟨F, hF, rfl⟩
+  exact hF.map hf
+
 lemma flat_iff_subset_cl_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.cl F ⊆ F := by
   rw [flat_iff_cl_self, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_cl F

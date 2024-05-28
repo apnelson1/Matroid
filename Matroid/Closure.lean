@@ -537,7 +537,35 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
   rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,
     hI'.indep.insert_indep_iff_of_not_mem hxI', mem_diff, and_iff_right hxE, not_not, hI'.cl_eq_cl]
 
+lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) (X : Set β) :
+    (M.map f hf).cl X = f '' M.cl (f ⁻¹' X) := by
+  suffices h' : ∀ X ⊆ f '' M.E, (M.map f hf).cl X = f '' (M.cl (f ⁻¹' X)) by
+    convert h' (X ∩ f '' M.E) (inter_subset_right _ _) using 1
+    · rw [← cl_inter_ground]; rfl
+    rw [preimage_inter, eq_comm, ← cl_inter_ground, inter_assoc, hf.preimage_image_inter Subset.rfl,
+      cl_inter_ground]
+  clear X
+  intro X hX
+  obtain ⟨I, hI⟩ := (M.map f hf).exists_basis X
+  obtain ⟨I, X, hI', rfl, rfl⟩ := (basis_map_iff' f hf).1 hI
 
+  rw [eq_comm, ← cl_inter_ground, hf.preimage_image_inter hI'.subset_ground,
+    ← hI.cl_eq_cl, ← hI'.cl_eq_cl]
+  ext e
+  simp only [mem_image, hI.indep.mem_cl_iff', map_ground, map_indep_iff, forall_exists_index,
+    and_imp, hI'.indep.mem_cl_iff']
+
+  refine ⟨?_, ?_⟩
+  . rintro ⟨e, ⟨heE, hind⟩, rfl⟩
+    refine ⟨⟨e, heE, rfl⟩, fun J hJ hins ↦ ⟨e, hind ?_, rfl⟩⟩
+    rw [← image_insert_eq,
+      hf.image_eq_image_iff_of_subset (insert_subset heE hI'.indep.subset_ground) hJ.subset_ground]
+      at hins
+    rwa [hins]
+  rintro ⟨⟨x, hx, rfl⟩, h⟩
+  refine ⟨x, ⟨hx, fun hind ↦ ?_⟩, rfl⟩
+  obtain ⟨x', hx', h_eq⟩ := h _ hind (by rw [image_insert_eq])
+  rwa [← hf (hI'.indep.subset_ground hx') hx h_eq]
 
 section Spanning
 
