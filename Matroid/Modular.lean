@@ -839,6 +839,11 @@ lemma Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoint 
   rw [← pairwise_disjoint_on_bool, Skew, Indep.skewFamily_iff_pairwise_disjoint]
   rwa [union_eq_iUnion] at h
 
+lemma Indep.subset_skew_diff (h : M.Indep I) (hJI : J ⊆ I) : M.Skew J (I \ J) := by
+  rw [Indep.skew_iff_disjoint]
+  · exact disjoint_sdiff_right
+  exact h.subset (union_subset hJI (diff_subset _ _))
+
 lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
   obtain ⟨I, hI⟩ := M.exists_basis X

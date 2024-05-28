@@ -560,6 +560,11 @@ lemma contract_restrict_eq_restrict_contract (M : Matroid α) (C R : Set α) (h 
   intro _ hd
   rw [hd.sdiff_eq_right]
 
+lemma restrict_contract_eq_contract_restrict (M : Matroid α) {C R : Set α} (hCR : C ⊆ R) :
+    (M ↾ R) ／ C = (M ／ C) ↾ (R \ C) := by
+  rw [contract_restrict_eq_restrict_contract _ _ _ disjoint_sdiff_right]
+  simp [union_eq_self_of_subset_right hCR]
+
 /- TODO : Simplify this proof using the lemma above-/
 lemma contract_delete_comm (M : Matroid α) {C D : Set α} (hCD : Disjoint C D) :
     M ／ C ＼ D = M ＼ D ／ C := by
