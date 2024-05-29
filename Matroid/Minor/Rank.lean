@@ -30,6 +30,23 @@ lemma Coindep.delete_erk_eq (hX : M.Coindep X) : (M ＼ X).erk = M.erk := by
 lemma Indep.delete_erk_dual_eq (hI : M.Indep I) : (M ／ I)✶.erk = M✶.erk := by
   rw [← hI.coindep.delete_erk_eq, contract_dual_eq_dual_delete]
 
+lemma Indep.erk_dual_restrict_eq (hI : M.Indep I) : (M ↾ I)✶.erk = 0 := by
+  simp [hI.restrict_eq_freeOn]
+
+lemma Basis.erk_dual_restrict_of_disjoint (hB : M.Basis I (I ∪ X)) (hdj : Disjoint I X) :
+    (M ↾ (I ∪ X))✶.erk = X.encard := by
+  rw [← Base.encard_compl_eq hB.restrict_base]; simp [hdj.sdiff_eq_right]
+
+lemma Basis.erk_dual_restrict (hB : M.Basis I X) : (M ↾ X)✶.erk = (X \ I).encard := by
+  rw [← Base.encard_compl_eq hB.restrict_base, restrict_ground_eq]
+
+@[simp] lemma erk_dual_restrict_eq_zero_iff : (M ↾ I)✶.erk = 0 ↔ M.Indep I := by
+  rw [← restrict_eq_freeOn_iff, erk_eq_zero_iff, dual_ground, restrict_ground_eq,
+    eq_comm, eq_dual_comm, loopyOn_dual_eq]
+
+lemma Indep.contract_er_dual_eq (hI : M.Indep I) : (M ／ I)✶.erk = M✶.erk := by
+  rw [contract_dual_eq_dual_delete, hI.coindep.delete_erk_eq]
+
 end Delete
 
 /-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ／ X`,

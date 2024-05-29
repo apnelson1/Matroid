@@ -754,7 +754,7 @@ lemma Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
   rw [skew_iff_modularPair_inter_subset_loops] at h ⊢
   rwa [inter_comm, ModularPair.comm]
 
-lemma Skew.comm : M.Skew X Y ↔ M.Skew Y X :=
+lemma skew_comm : M.Skew X Y ↔ M.Skew Y X :=
   ⟨Skew.symm, Skew.symm⟩
 
 lemma skew_iff_exist_bases {X Y : Set α} :
@@ -785,6 +785,12 @@ lemma Skew.disjoint_of_basis_of_subset (h : M.Skew X Y) (hI : M.Basis I X) (hJ :
     Disjoint I J :=
   (h.disjoint_of_indep_subset_left hI.indep hI.subset).mono_right hJ
 
+lemma Skew.disjoint_of_indep_left (h : M.Skew I X) (hI : M.Indep I) : Disjoint I X :=
+  h.disjoint_of_indep_subset_left hI Subset.rfl
+
+lemma Skew.disjoint_of_indep_right (h : M.Skew X I) (hI : M.Indep I) : Disjoint X I :=
+  h.disjoint_of_indep_subset_right hI Subset.rfl
+
 lemma Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.cl ∅) Y := by
   rw [disjoint_iff_inter_eq_empty, ← inter_diff_right_comm, diff_eq_empty]
   exact h.inter_subset_loops
@@ -806,6 +812,14 @@ lemma Skew.cl_skew (h : M.Skew X Y) : M.Skew (M.cl X) (M.cl Y) := by
 lemma skew_iff_cl_skew (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
     M.Skew X Y ↔ M.Skew (M.cl X) (M.cl Y) :=
   ⟨Skew.cl_skew, fun h ↦ h.mono (M.subset_cl X) (M.subset_cl Y)⟩
+
+lemma skew_iff_cl_skew_left (hX : X ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ M.Skew (M.cl X) Y := by
+  by_cases hY : Y ⊆ M.E
+  · rw [skew_iff_cl_skew, iff_comm, skew_iff_cl_skew, cl_cl]
+  exact iff_of_false (fun h ↦ hY <| h.subset_ground_right) (fun h ↦ hY <| h.subset_ground_right)
+
+lemma skew_iff_cl_skew_right (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ M.Skew X (M.cl Y) := by
+  rw [skew_comm, skew_iff_cl_skew_left, skew_comm]
 
 lemma skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
     M.Skew X Y ↔ M.Skew X' Y' := by
@@ -838,6 +852,11 @@ lemma Skew.union_basis_union (h : M.Skew X Y) (hI : M.Basis I X) (hJ : M.Basis J
 lemma Indep.skew_iff_disjoint (h : M.Indep (I ∪ J)) : M.Skew I J ↔ Disjoint I J := by
   rw [← pairwise_disjoint_on_bool, Skew, Indep.skewFamily_iff_pairwise_disjoint]
   rwa [union_eq_iUnion] at h
+
+lemma Indep.skew_iff_disjoint_union_indep (hI : M.Indep I) (hJ : M.Indep J) :
+    M.Skew I J ↔ Disjoint I J ∧ M.Indep (I ∪ J) := by
+  refine ⟨fun h ↦ ⟨h.disjoint_of_indep_left hI, ?_⟩, fun h ↦ h.2.skew_iff_disjoint.2 h.1⟩
+  exact h.union_indep_of_indep_subsets hI Subset.rfl hJ Subset.rfl
 
 lemma Indep.subset_skew_diff (h : M.Indep I) (hJI : J ⊆ I) : M.Skew J (I \ J) := by
   rw [Indep.skew_iff_disjoint]
@@ -878,8 +897,8 @@ lemma SkewFamily.skew_compl_singleton (h : M.SkewFamily Xs) (i : ι) :
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set ι)ᶜ, Xs j) := by
   convert h.skew_compl {i}; simp
 
-lemma skew_iff_forall_circuit (hX : X ⊆ M.E) (hY : Y ⊆ M.E) (hdj : Disjoint X Y) :
-    M.Skew X Y ↔ ∀ C, M.Circuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
+lemma skew_iff_forall_circuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
+    (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ ∀ C, M.Circuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   rw [Skew, skewFamily_iff_forall_circuit]
   · simp [← union_eq_iUnion, or_comm]
   · simp [hX, hY]

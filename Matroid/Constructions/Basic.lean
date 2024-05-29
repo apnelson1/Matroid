@@ -103,10 +103,6 @@ theorem eq_loopyOn_or_rkPos (M : Matroid α) : M = loopyOn M.E ∨ RkPos M := by
 theorem not_rkPos_iff : ¬RkPos M ↔ M = loopyOn M.E := by
   rw [rkPos_iff_empty_not_base, not_iff_comm, empty_base_iff]
 
-
-
-
-
 end LoopyOn
 
 section FreeOn
@@ -148,6 +144,13 @@ theorem freeOn_indep (hIE : I ⊆ E) : (freeOn E).Indep I :=
   · rintro rfl; simp [Subset.rfl]
   simp only [eq_iff_indep_iff_indep_forall, freeOn_ground, freeOn_indep_iff, h.1, true_and]
   exact fun I hIX ↦ iff_of_true (h.2.subset hIX) hIX
+
+lemma restrict_eq_freeOn_iff : M ↾ I = freeOn I ↔ M.Indep I := by
+  rw [eq_freeOn_iff, and_iff_right M.restrict_ground_eq, restrict_indep_iff,
+    and_iff_left Subset.rfl]
+
+lemma Indep.restrict_eq_freeOn (hI : M.Indep I) : M ↾ I = freeOn I := by
+  rwa [restrict_eq_freeOn_iff]
 
 theorem ground_indep_iff_eq_freeOn : M.Indep M.E ↔ M = freeOn M.E := by
   simp

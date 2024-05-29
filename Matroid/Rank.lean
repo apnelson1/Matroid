@@ -360,6 +360,9 @@ theorem er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
   rw [er_cl_eq, ← encard_singleton e]
   exact M.er_le_encard {e}
 
+lemma Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
+  (hB.compl_base_dual).encard
+
 end Basic
 
 
