@@ -251,6 +251,8 @@ IndepMatroid.mk
 
 @[simps!] def matroidOnUniv (M : ClMatroid α) (hM : M.E = univ) := (M.indepMatroidOnUniv hM).matroid
 
+@[simp] lemma matroidOnUniv_indep_eq (M : ClMatroid α) (hM : M.E = univ) (I : Set α) : (M.matroidOnUniv hM).Indep I = M.ClIndep I := rfl
+
 lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
     (M.matroidOnUniv hM).cl X = M.cl X := by
   obtain ⟨I, hI⟩ := (M.matroidOnUniv hM).exists_basis X (by simp [hM])
@@ -267,7 +269,66 @@ lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
     obtain ⟨a, haI, ha⟩ := h
     rw [← insert_diff_singleton_comm (by rintro rfl; contradiction)] at ha
     exact heI' <| by simpa [haI] using M.cl_exchange ⟨ha, hi a haI⟩
-  sorry
+  · simp_rw [← hI.cl_eq_cl, subset_def, hI.indep.mem_cl_iff']
+    simp only [matroidOnUniv_E, mem_univ, matroidOnUniv_Indep, true_and]
+    refine fun e h heI ↦ ?_
+    rw [Matroid.Basis, maximals] at hI
+    simp only [matroidOnUniv_Indep, mem_setOf_eq, and_imp, matroidOnUniv_E, subset_univ,
+      and_true] at hI
+    have hIX: M.cl X = M.cl I := by
+      refine subset_antisymm ?_ (M.cl_subset_cl hI.left.right)
+      nth_rw 2 [← M.cl_cl_eq_cl]
+      apply cl_subset_cl
+      obtain ⟨⟨hI', hIX⟩ ,  hImax⟩ := hI
+      contrapose! hImax
+      simp [subset_def, not_forall, Classical.not_imp] at hImax
+      rcases hImax with ⟨a, haX, haI⟩
+      use (insert a I)
+      refine ⟨?_, insert_subset haX hIX, subset_insert a I, ?_⟩
+      · rw [M.clIndep_iff]
+        contrapose! haI
+        obtain ⟨x, hx, hx'⟩ := haI
+        by_cases hxa: x = a
+        · simp [hxa, mem_singleton_iff, insert_diff_of_mem] at hx'
+          apply cl_subset_cl
+          apply diff_subset
+          exact {a}
+          exact hx'
+        have: I = insert x (I \ {x}) := by
+          rw [insert_diff_singleton, insert_eq_of_mem]
+          rw [insert_def, mem_setOf] at hx
+          rcases hx with h₁|h₂
+          · absurd hxa h₁
+            trivial
+          · exact h₂
+        rw [this]
+        apply M.cl_exchange
+        rw [mem_diff]
+        refine ⟨ ?_,?_⟩
+        · rw [insert_diff_singleton_comm]
+          exact hx'
+          rw [ne_eq, eq_comm]
+          exact hxa
+        . rw [clIndep_iff] at hI'
+          apply hI'
+          rw [insert_def, mem_setOf] at hx
+          rcases hx with h₁|h₂
+          · absurd hxa h₁
+            trivial
+          · exact h₂
+      · simp [subset_def]
+        contrapose! haI
+        apply M.subset_cl_self
+        simp [hM]
+        exact haI
+    rw [hIX] at h
+    contrapose! h
+    have: insert e I \ {e} = I := insert_diff_self_of_not_mem h
+    rw [← this]
+    rw [clIndep_iff] at heI
+    apply heI
+    simp [mem_insert_iff, true_or]
+
 
 
 
