@@ -11,8 +11,7 @@ mathlib: these are
 * Matroid duality : Mathlib/Data/Matroid/Dual
 * Restricting a matroid to a set, and the restriction order : Mathlib/Data/Matroid/Restrict
 
-Topics in this repo are listed below. Those towards the bottom are currently a bit stale, 
-and need some cosmetic updates to make them work again with a few months of mathlib changes. 
+Topics in this repo are listed below. 
 
 * Free and co-free matroids : Matroid/Constructions/Basic
 * Isomorphism : Matroid/Equiv
@@ -22,20 +21,22 @@ and need some cosmetic updates to make them work again with a few months of math
 * Loops : Matroid/Loop
 * The rank function : Matroid/Rank
 * Minors : Matroid/Minor/Basic and Matroid/Minor/Iso
-* Relative Rank : Matroid/Minor/RelRank
+* Relative Rank : Matroid/Minor/Rank
 * Flats : Matroid/Flat
 * Truncations : Matroid/Constructions/Truncate
 * Simplicity and simplification : Matroid/Simple
+* Modular sets, pairs and families : Matroid/Modular
+* Modular cuts, extensions and projections : Matroid/Extension
+
+The following currently need a few fixes to work correctly. 
 * Uniform matroids : Matroid/Uniform
-* Representability : Matroid/Representation/* 
-  (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
 * Paving matroids : Matroid/Paving
-* Modular cuts and general extensions : Matroid/Construction/Extension
 * Transversal matroids : Matroid/Transversal
 * Circuit-hyperplane relaxation : Matroid/Relax
 * Parallel and series extensions : Matroid/Extension
 * Matroid invariants and minor-closed properties : Matroid/Class
-* Modular sets, pairs and families : Matroid/Modular
+* Representability : Matroid/Representation/* 
+  (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
 
   
 
