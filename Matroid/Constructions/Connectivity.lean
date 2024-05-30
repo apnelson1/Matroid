@@ -369,76 +369,59 @@ lemma conn_eq_zero (M : Matroid α) (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆
     ← disjoint_iff_inter_eq_empty, erk_dual_restrict_eq_zero_iff,
     hI.indep.skew_iff_disjoint_union_indep hJ.indep]
 
-lemma conn_compl_dual (M : Matroid α) (hX : X ⊆ M.E) :
-    M.conn X (M.E \ X) = M✶.conn X (M.E \ X) := by
-  -- obtain ⟨B0, BI0⟩ := M.exists_basis (M.E \ X)
-  -- obtain ⟨B1, BI1⟩ := M.exists_basis X
-  set Z : Bool → Set α := fun b ↦ bif b then X else M.E \ X
-  have hdj : Disjoint (Z true) (Z false) := sorry
-  have hu : Z true ∪ Z false = M.E := sorry
-  rw [(show M.E \ X = Z false from rfl), show X = Z true from rfl]
+lemma conn_eq_conn_inter_ground (M : Matroid α) (X Y : Set α) :
+    M.conn X Y = M.conn (X ∩ M.E) (Y ∩ M.E) := by
+  rw [conn_cl_cl, ← cl_inter_ground, ← cl_inter_ground _ Y, ← conn_cl_cl]
 
-  choose B hB using fun b ↦ (M.exists_basis (Z b) (by cases b <;> aesop_mat))
+lemma conn_eq_conn_inter_ground_left (M : Matroid α) (X Y : Set α) :
+    M.conn X Y = M.conn (X ∩ M.E) Y := by
+  rw [conn_cl_left, ← cl_inter_ground, ← conn_cl_left]
 
+/-- Connectivity to complement is self-dual. -/
+lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.conn X (M.E \ X) := by
+  suffices ∀ X ⊆ M.E, M.conn X (M.E \ X) = M✶.conn X (M.E \ X) by
+    rw [conn_eq_conn_inter_ground_left, M✶.conn_eq_conn_inter_ground_left,
+      show M.E \ X = M.E \ (X ∩ M.E) by simp, this _ (inter_subset_right _ _), dual_ground]
+  intro X hX
 
-  have hex : ∀ b, ∃ F, F ⊆ B b ∧ (M.Base (B (!b) ∪ (B b \ F))) := by
-    intro b
-    sorry
-  choose F hF using hex
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
+  obtain ⟨BX, hBX, hIBX⟩ := hI.indep.subset_basis_of_subset (subset_union_left I J)
+  have hIJE : M.Spanning (I ∪ J) := by
+    rw [spanning_iff_cl, ← cl_cl_union_cl_eq_cl_union, hI.cl_eq_cl, hJ.cl_eq_cl,
+      cl_cl_union_cl_eq_cl_union, union_diff_cancel hX, cl_ground]
 
-  set B' : Bool → Set α := fun b ↦ ((Z b \ B b) ∪ (F b))
+  have hBXb : M.Base BX := by rw [← basis_ground_iff, ← hIJE.cl_eq]; exact hBX.basis_cl_right
 
-  have hbasis : ∀ b, M✶.Basis' (B' b) (Z b) := by sorry
+  obtain rfl : I = BX ∩ X := hI.eq_of_subset_indep (hBXb.indep.inter_right _)
+    (subset_inter hIBX hI.subset) (inter_subset_right _ _)
 
-  have haux : ∀ Y, Y ⊆ Z true → M.E \ (Z true \ Y) = Z false ∪ Y := by
-    intro Y hY
-    rw [← hu, union_diff_distrib, diff_diff_cancel_left hY, union_comm, sdiff_eq_left.2]
-    exact hdj.symm.mono_right (diff_subset _ _)
+  have hBXdual := hBXb.compl_inter_basis_of_inter_basis hI
+  rw [diff_inter_diff, union_comm, ← diff_diff] at hBXdual
 
-  have hbase : M✶.Base ((B' true \ F true) ∪ B' false) := by
-    simp only [union_diff_right, B']
-    rw [diff_diff, union_eq_self_of_subset_right (hF true).1, ← union_assoc, dual_base_iff',
-      and_iff_left, ← diff_diff, ← diff_diff, haux, union_diff_distrib,
-      diff_diff_cancel_left, (sdiff_eq_left (x := B true)).2, union_diff_distrib,
-      (sdiff_eq_left (x := B true)).2, union_comm]
-    · exact (hF false).2
-    · exact hdj.mono ((hB true).subset) ((hF false).1.trans (hB false).subset)
-    · exact hdj.mono ((hB true).subset) (diff_subset _ _)
-    · exact (hB false).subset
-    · exact (hB true).subset
-    rw [← hu]
-    refine union_subset (union_subset_union (diff_subset _ _) (diff_subset _ _)) ?_
-    exact ((hF false).1.trans (hB false).subset).trans (subset_union_right _ _)
+  obtain ⟨BY, hBY, hJBY⟩ := hJ.indep.subset_basis_of_subset (subset_union_right (BX ∩ X) J)
+  have hBYb : M.Base BY := by rw [← basis_ground_iff, ← hIJE.cl_eq]; exact hBY.basis_cl_right
 
-  have hb' := (hF true).2.basis_ground.basis_subset (Y := B true ∪ B false)
-    (by rw [union_comm]; refine union_subset_union_left _ (diff_subset _ _))
-    ((union_subset_union (hB true).subset (hB false).subset).trans_eq hu)
+  obtain rfl : J = BY ∩ (M.E \ X) := hJ.eq_of_subset_indep (hBYb.indep.inter_right _)
+    (subset_inter hJBY hJ.subset) (inter_subset_right _ _)
 
-  rw [(hB true).basis'.conn_eq_of_disjoint (hB false).basis' hdj, hb'.erk_dual_restrict]
-  rw [union_comm, Bool.not_true, union_diff_distrib, diff_eq_empty.2 (subset_union_left _ _),
-    empty_union, ← diff_diff, sdiff_eq_left.2 (hdj.mono (hB true).subset (hB false).subset),
-    diff_diff_cancel_left (hF true).1]
+  have hBYdual := hBYb.compl_inter_basis_of_inter_basis hJ
+  rw [diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hBYdual
 
-  rw [conn_eq_encard_of_diff' hdj (hbasis true) (hbasis false) (F := F true)]
+  rw [hBYdual.basis'.conn_eq_of_disjoint hBXdual.basis' disjoint_sdiff_right,
+    hI.basis'.conn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.erk_dual_restrict, union_diff_distrib, diff_eq_empty.2 (inter_subset_left _ _), empty_union,
+    Basis.erk_dual_restrict (hBYb.compl_base_dual.basis_ground.basis_subset _ _)]
 
-  · exact subset_union_right _ _
-  rwa [hu, basis'_iff_basis, ← dual_ground, basis_ground_iff]
+  · rw [union_diff_distrib, diff_eq_empty.2 (diff_subset_diff_left hX), empty_union, diff_diff,
+      diff_diff, ← union_assoc, union_comm, ← diff_diff, diff_diff_cancel_left hBYb.subset_ground,
+      ← diff_diff, inter_diff_distrib_left, inter_eq_self_of_subset_left hBYb.subset_ground,
+      diff_self_inter]
+  · rw [← union_diff_cancel hX, union_diff_distrib, union_diff_cancel hX, diff_diff, diff_diff]
+    refine union_subset_union_right _ (diff_subset_diff_right ?_)
+    simp only [union_subset_iff, subset_union_left, true_and]
+    exact hBX.subset.trans (union_subset_union (inter_subset_right _ _) (inter_subset_left _ _))
 
-
-
-
-  -- have hconn_dual :
-
-
-  -- set B : Bool → Set α := fun b ↦ bif b then B1 else B0
-
-
-  -- set Y := M.E \ X with hY
-  -- obtain ⟨IX, hIX⟩ := M.exists_basis X
-  -- obtain ⟨IY, hIY⟩ := M.exists_basis Y
-  -- rw [hIX.basis'.conn_eq_of_disjoint hIY.basis' disjoint_sdiff_right]
-
-  -- obtain ⟨BX, hBX⟩ := hIX.indep.subset_basis_of_subset (subset_union_left IX IY)
+  exact union_subset ((diff_subset _ _).trans hX) ((diff_subset _ _).trans (diff_subset _ _))
 
 end conn
 
@@ -447,44 +430,57 @@ section separation
 variable {k : ℕ} {P : Set α → Prop} {a b : α}
 
 protected structure Partition (M : Matroid α) where
-  A : Set α
-  B : Set α
-  disjoint : Disjoint A B
-  union_eq : A ∪ B = M.E
+  left : Set α
+  right : Set α
+  disjoint : Disjoint left right
+  union_eq : left ∪ right = M.E
 
 @[simps] def Partition.symm (P : M.Partition) : M.Partition where
-  A := P.B
-  B := P.A
+  left := P.2
+  right := P.1
   disjoint := P.disjoint.symm
   union_eq := by rw [← P.union_eq, union_comm]
 
 @[simps] def Partition.dual (P : M.Partition) : M✶.Partition where
-  A := P.A
-  B := P.B
+  left := P.1
+  right := P.2
   disjoint := P.disjoint
   union_eq := P.union_eq
 
 @[simps] def Partition.of_subset (A : Set α) (hX : A ⊆ M.E := by aesop_mat) : M.Partition where
-  A := A
-  B := M.E \ A
+  left := A
+  right := M.E \ A
   disjoint := disjoint_sdiff_right
   union_eq := by simp [hX]
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-lemma Partition.A_subset_ground (P : M.Partition) : P.A ⊆ M.E := by
+lemma Partition.left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
   rw [← P.union_eq]; apply subset_union_left
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-lemma Partition.B_subset_ground (P : M.Partition) : P.B ⊆ M.E := by
+lemma Partition.right_subset_ground (P : M.Partition) : P.2 ⊆ M.E := by
   rw [← P.union_eq]; apply subset_union_right
 
-noncomputable abbrev Partition.conn (P : M.Partition) : ℕ∞ := M.conn P.A P.B
+noncomputable abbrev Partition.conn (P : M.Partition) : ℕ∞ := M.conn P.1 P.2
+
+lemma Partition.compl_left (P : M.Partition) : M.E \ P.1 = P.2 := by
+  simp [← P.union_eq, P.disjoint.symm]
+
+lemma Partition.compl_right (P : M.Partition) : M.E \ P.2 = P.1 := by
+  simp [← P.union_eq, P.disjoint]
 
 @[simp] lemma Partition.conn_symm (P : M.Partition) : P.symm.conn = P.conn :=
   M.conn_comm _ _
 
+@[simp] lemma Partition.conn_dual (P : M.Partition) : P.dual.conn = P.conn := by
+  change M✶.conn _ _ = M.conn _ _
+  rw [← P.compl_left, conn_compl_dual, P.compl_left]; rfl
+
+@[simp] lemma Partition.conn_eq_zero_iff {P : M.Partition} : P.conn = 0 ↔ M.Skew P.1 P.2 :=
+  M.conn_eq_zero P.left_subset_ground P.right_subset_ground
+
 def Partition.IsTutteSep (P : M.Partition) (k : ℕ) :=
-  P.conn < k ∧ k ≤ P.A.encard ∧ k ≤ P.B.encard
+  P.conn < k ∧ k ≤ P.1.encard ∧ k ≤ P.2.encard
 
 lemma connected_iff_not_exists_tutteSep [M.Nonempty] :
     M.Connected ↔ ¬ ∃ (P : M.Partition), P.IsTutteSep 1 := by
@@ -492,9 +488,9 @@ lemma connected_iff_not_exists_tutteSep [M.Nonempty] :
   simp only [Connected, show M.Nonempty by assumption, true_and, not_forall, Classical.not_imp,
     exists_and_left, exists_prop, exists_and_left, Partition.IsTutteSep, Nat.cast_one,
     ENat.lt_one_iff, one_le_encard_iff_nonempty]
-  simp_rw [conn_eq_zero _ (Partition.A_subset_ground _) (Partition.B_subset_ground _),
-    skew_iff_forall_circuit (Partition.disjoint _) (Partition.A_subset_ground _)
-    (Partition.B_subset_ground _)]
+  simp only [Partition.conn_eq_zero_iff, and_self,
+    skew_iff_forall_circuit (Partition.disjoint _) (Partition.left_subset_ground _)
+      (Partition.right_subset_ground _)]
 
   refine ⟨fun ⟨P, ⟨hc, hA, hB⟩⟩ ↦ ?_, fun ⟨x, y, hy, hx, h⟩ ↦ ?_⟩
   · obtain ⟨a, ha⟩ := hA
@@ -506,7 +502,7 @@ lemma connected_iff_not_exists_tutteSep [M.Nonempty] :
     exact P.symm.disjoint.ne_of_mem (hCB haC) ha rfl
   refine ⟨Partition.of_subset {z | M.ConnectedTo x z} (fun z hz ↦ hz.mem_ground_right),
     ?_, ⟨x, by simpa⟩, ⟨y, by simp [hy, h]⟩⟩
-  simp only [Partition.of_subset_A, Partition.of_subset_B, union_diff_self]
+  simp only [Partition.of_subset_left, Partition.of_subset_right, union_diff_self]
   rintro C hC -
   obtain ⟨e, he⟩ := hC.nonempty
   by_cases hex : M.ConnectedTo x e
@@ -514,6 +510,7 @@ lemma connected_iff_not_exists_tutteSep [M.Nonempty] :
   refine .inr fun z hzC ↦ ⟨hC.subset_ground hzC, fun (hz : M.ConnectedTo x z) ↦ ?_⟩
   exact hex <| hz.trans <| hC.mem_connectedTo_mem hzC he
 
+-- def TutteConnected (k : ℕ) := ¬ ∃
 
 
 

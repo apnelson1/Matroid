@@ -27,12 +27,12 @@ Topics in this repo are listed below.
 * Simplicity and simplification : Matroid/Simple
 * Modular sets, pairs and families : Matroid/Modular
 * Modular cuts, extensions and projections : Matroid/Extension
+* Circuit-hyperplane relaxation : Matroid/Relax
+* Paving matroids : Matroid/Paving
 
 The following currently need a few fixes to work correctly. 
 * Uniform matroids : Matroid/Uniform
-* Paving matroids : Matroid/Paving
 * Transversal matroids : Matroid/Transversal
-* Circuit-hyperplane relaxation : Matroid/Relax
 * Parallel and series extensions : Matroid/Extension
 * Matroid invariants and minor-closed properties : Matroid/Class
 * Representability : Matroid/Representation/* 

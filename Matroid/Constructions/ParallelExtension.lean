@@ -247,11 +247,6 @@ lemma parallelExtend_cl_eq_of_not_mem_not_mem (he : M.Nonloop e) (hf : f ∉ M.E
 lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Indep I ↔
       (f ∉ I ∧ M.Indep I) ∨ (f ∈ I ∧ e ∉ I ∧ M.Indep (insert e (I \ {f}))) := by
-
-
-lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
-    (M.parallelExtend e f).Indep I ↔
-      (f ∉ I ∧ M.Indep I) ∨ (f ∈ I ∧ e ∉ I ∧ M.Indep (insert e (I \ {f}))) := by
   have hdel : ∀ J, f ∉ J → ((M.parallelExtend e f).Indep J ↔ M.Indep J) := by
     rintro J hfJ
     convert (delete_indep_iff (M := M.parallelExtend e f) (D := {f}) (I := J)).symm using 1
@@ -290,7 +285,8 @@ lemma parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
   obtain (heC | heC) := em (e ∈ C)
   · simp only [heC, not_true_eq_false, false_implies, true_and, true_implies,
       show ¬C ⊆ M.E from sorry, and_false, false_and, or_false, false_or]
-
+    sorry
+  sorry
 
 
 

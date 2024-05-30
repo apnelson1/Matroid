@@ -5,24 +5,6 @@ import Matroid.Equiv
 import Matroid.ForMathlib.Other
 import Mathlib.Data.FunLike.Embedding
 
-open Lean PrettyPrinter Delaborator SubExpr in
-@[delab app.Matroid.Restriction]
-private def delabRestriction : Delab :=
-  whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
-    guard <| (← getExpr).getAppNumArgs = 3
-    let a ← withAppFn <| withAppArg delab
-    let b ← withAppArg delab
-    `($a ≤r $b)
-
-open Lean PrettyPrinter Delaborator SubExpr in
-@[delab app.Matroid.Minor]
-private def delabMinor : Delab :=
-  whenPPOption getPPNotation <| whenNotPPOption getPPExplicit do
-    guard <| (← getExpr).getAppNumArgs = 3
-    let a ← withAppFn <| withAppArg delab
-    let b ← withAppArg delab
-    `($a ≤m $b)
-
 namespace Matroid
 
 open Set Function Set.Notation Subtype
