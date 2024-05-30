@@ -9,7 +9,7 @@ open Set
 
 section Relax
 
-theorem Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
+lemma Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
     (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by
   have hcl := hH.cl_insert_eq hf.2 hf.1
   rw [← cl_insert_cl_eq_cl_insert, ← hHc.cl_diff_singleton_eq_cl e, cl_insert_cl_eq_cl_insert,
@@ -19,7 +19,7 @@ theorem Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circu
     hHc.cl_diff_singleton_eq_cl e, hH.flat.cl]
   exact hf.2
 
-theorem Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
+lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
     (hHc : M.Circuit H) (he : e ∈ B) :
     ∃ f, f ∈ H \ B ∧ (M.Base (insert f (B \ {e})) ∨ insert f (B \ {e}) = H) := by
   by_contra! h
@@ -45,7 +45,7 @@ theorem Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hy
   apply hB.indep.not_mem_cl_diff_of_mem he
   rwa [← hBH, ← hfe]
 
-theorem antichain_of_circuit_hyperplane (M : Matroid α) :
+lemma antichain_of_circuit_hyperplane (M : Matroid α) :
     IsAntichain (· ⊆ ·) ({ B | M.Base B } ∪ { H | M.Circuit H ∧ M.Hyperplane H }) := by
   rintro X ((hX : M.Base X) | ⟨hXc, -⟩) Y ((hY : M.Base Y) | ⟨hYc, hYh⟩) hne hss
   · exact hne (hX.eq_of_subset_base hY hss)
@@ -56,7 +56,7 @@ theorem antichain_of_circuit_hyperplane (M : Matroid α) :
 /-- Relax a collection `Hs` of circuit-hyperplanes of a matroid `M` to obtain a new matroid whose
   bases are the old bases together with the sets in `Hs`.
   (If `Hs` contains sets that are not circuit hyperplanes, they do not become bases.) -/
-def relax_set (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
+def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
   Matroid.ofBase M.E
     ( fun B ↦ M.Base B ∨ (B ∈ Hs ∧ M.Circuit B ∧ M.Hyperplane B) )
     ( M.exists_base.imp fun _ ↦ Or.inl )
@@ -107,15 +107,15 @@ def relax_set (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
         exact hsmall ⟨K, Or.inr ⟨hBK, hBKc, hBKh⟩, hIK, hKX⟩ )
     ( by rintro B (hB | ⟨-, hB, -⟩) <;> aesop_mat )
 
-theorem relax_set_base_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
-    (M.relax_set Hs).Base B ↔ M.Base B ∨ B ∈ Hs := by
-  simp only [relax_set, Matroid.ofBase]
+lemma relaxSet_base_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
+    (M.relaxSet Hs).Base B ↔ M.Base B ∨ B ∈ Hs := by
+  simp only [relaxSet, Matroid.ofBase]
   exact ⟨fun h' ↦ h'.elim Or.inl (Or.inr ∘ And.left),
     fun h' ↦ h'.elim Or.inl (fun hBs ↦ Or.inr ⟨hBs, h B hBs⟩)⟩
 
-theorem relax_set_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
-    (M.relax_set Hs).Indep I ↔ M.Indep I ∨ I ∈ Hs := by
-  simp_rw [indep_iff, relax_set_base_iff h]
+lemma relaxSet_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
+    (M.relaxSet Hs).Indep I ↔ M.Indep I ∨ I ∈ Hs := by
+  simp_rw [indep_iff, relaxSet_base_iff h]
   refine' ⟨fun ⟨B, hB, hIB⟩ ↦ hB.elim (fun hB' ↦ Or.inl ⟨B, hB', hIB⟩) (fun hB' ↦ _),
     fun h ↦ h.elim (fun ⟨B, hB, hIB⟩ ↦ ⟨B, Or.inl hB, hIB⟩) fun hI ↦ ⟨I, Or.inr hI, rfl.subset⟩⟩
   refine hIB.eq_or_ssubset.elim (fun h ↦ Or.inr (by rwa [h])) (fun hss ↦ Or.inl ?_)
@@ -123,15 +123,15 @@ theorem relax_set_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H �
     (fun h' ↦ (h _ h').1.ssubset_indep hss))
 
 /-- Change a single nonbase `H` of `M` to a base, provided `H` is a circuit-hyperplane -/
-def relax (M : Matroid α) (H : Set α) : Matroid α := M.relax_set ({H} : Set (Set α))
+def relax (M : Matroid α) (H : Set α) : Matroid α := M.relaxSet ({H} : Set (Set α))
 
-theorem relax_base_iff (hH : M.Hyperplane X) (hC : M.Circuit X) :
+lemma relax_base_iff (hH : M.Hyperplane X) (hC : M.Circuit X) :
     (M.relax X).Base B ↔ (M.Base B ∨ B = X) := by
-  rw [relax, relax_set_base_iff, mem_singleton_iff]; simp [hH, hC]
+  rw [relax, relaxSet_base_iff, mem_singleton_iff]; simp [hH, hC]
 
-theorem relax_indep_iff (hH : M.Hyperplane X) (hC : M.Circuit X) :
+lemma relax_indep_iff (hH : M.Hyperplane X) (hC : M.Circuit X) :
     (M.relax X).Indep I ↔ (M.Indep I ∨ I = X) := by
-  rw [relax, relax_set_indep_iff, mem_singleton_iff]; simp [hH, hC]
+  rw [relax, relaxSet_indep_iff, mem_singleton_iff]; simp [hH, hC]
 
 
 
