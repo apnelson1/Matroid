@@ -202,7 +202,47 @@ lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
 
 theorem Connected.finite_of_finitary_of_cofinitary (hM : M.Connected) [Finitary M] [Finitary M✶] :
     M.Finite := by
-  sorry
+  set x : ℕ → α := sorry
+  have hinj : Function.Injective x := sorry
+  have hx : ∀ t, ∃ C, M.Circuit C ∧ ∀ i ≤ t, x i ∈ C := sorry
+
+  have hxE : range x ⊆ M.E := by
+    rintro _ ⟨i, hi, rfl⟩; obtain ⟨C, hC⟩ := hx i; exact hC.1.subset_ground (hC.2 i rfl.le)
+
+  have hI : M.Indep (range x) := by
+    rw [indep_iff_forall_finite_subset_indep]
+    simp_rw [subset_range_iff_exists_image_eq]
+    rintro _ ⟨J, rfl⟩ hfin
+    have hJfin := hfin.of_finite_image (hinj.injOn _)
+    obtain ⟨b, (hb : ∀ _, _)⟩ := hJfin.bddAbove
+    obtain ⟨C', hC'⟩ := hx (b+1)
+
+    apply hC'.1.ssubset_indep (ssubset_of_ne_of_subset ?_ ?_)
+    · rintro rfl
+      simp_rw [hinj.mem_set_image] at hC'
+      linarith [hb _ <| hC'.2 _ rfl.le]
+    rintro _ ⟨i, hi, rfl⟩
+    exact hC'.2 _ ((hb _ hi).trans (by simp))
+
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+
+  have : ∃ b : ℕ, ∀ e ∈ M.fundCocct (x 0) B, M.fundCct e B ⊂ insert e (x '' Iic b) := sorry
+
+
+      -- simp_rw [InjOn.mem_of_mem_image (hinj.injOn J) Subset.rfl] at hC'
+    -- intro J hJX hJfin
+    -- obtain ⟨J, rfl, hinj⟩ := exists_image_eq_injOn_of_subset_range hJX
+
+    -- obtain ⟨b, (hb : ∀ _, _)⟩ := hJfin.bddAbove
+    -- obtain ⟨C', hC'⟩ := hx (b+1)
+    -- apply hC'.1.ssubset_indep (ssubset_of_ne_of_subset ?_ ?_)
+    -- · rintro rfl
+    --   have :=
+    -- simp_rw [subset_range_iff_exists_image_eq]
+    -- rintro _ ⟨C, rfl⟩ hC
+
+
+
   -- classical
   -- refine ⟨not_infinite.1 fun hinf ↦ ?_⟩
   -- have hnt := hinf.nontrivial
