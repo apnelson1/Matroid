@@ -55,35 +55,71 @@ namespace Matroid
 
 section Sigma
 
-/-- We prove that the direct sum of an indexed collection of matroids is a matroid
-  by constructing an `IndepMatroid`.
-  (Probably proving this is actually easier than defining the direct sum of matroids on two types,
-  since it lets you abstract 'left' and 'right'.) -/
-private def sigmaIndepMatroid {α : ι → Type*} (M : (i : ι) → Matroid (α i)) :
-    IndepMatroid ((i : ι) × α i) where
-      E := ⋃ (i : ι), (Sigma.mk i '' (M i).E)
-      Indep I := ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I)
-      indep_empty := by simp
-      indep_subset := sorry
-      indep_aug := sorry
-      indep_maximal := sorry
-      subset_ground := sorry
+@[simp] lemma iUnion_preimage_image_sigma_mk_eq {ι : Type*} {α : ι → Type*}
+    {f : (i : ι) → Set (α i)} {j : ι} : ⋃ i, Sigma.mk j ⁻¹' (Sigma.mk i '' (f i)) = f j := by
+  aesop
 
-/-- An indexed collection of matroids on arbitrary types determines a 'direct sum' matroid
-on the sigma-type. -/
-def sigma {α : ι → Type*} (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α i) :=
-  (sigmaIndepMatroid M).matroid
+/-- An indexed collection of matroids on determines a 'direct sum' matroid on the sigma-type. -/
+protected def sigma {α : ι → Type*} (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α i) where
+  E := ⋃ (i : ι), (Sigma.mk i '' (M i).E)
+  Indep I := ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I)
+  Base B := ∀ i, (M i).Base (Sigma.mk i ⁻¹' B)
+
+  indep_iff' I := by
+    refine ⟨fun h ↦ ?_, fun ⟨B, hB, hIB⟩ i ↦ (hB i).indep.subset (preimage_mono hIB) ⟩
+    choose Bs hBs using fun i ↦ (h i).exists_base_superset
+    exact ⟨⋃ i, Sigma.mk i '' Bs i, fun i ↦ by simpa using (hBs i).1,
+      fun ⟨i, e⟩ he ↦ mem_iUnion.2 ⟨i, mem_image_of_mem (Sigma.mk i) ((hBs i).2 he)⟩⟩
+
+  exists_base := by
+    choose B hB using fun i ↦ (M i).exists_base
+    refine ⟨⋃ i, Sigma.mk i '' B i, by simpa⟩
+
+  base_exchange B₁ B₂ h₁ h₂ := by
+    simp only [mem_diff, Sigma.exists, and_imp, Sigma.forall]
+    intro i e he₁ he₂
+    have hf_ex := (h₁ i).exchange (h₂ i) ⟨he₁, by simpa⟩
+    obtain ⟨f, ⟨hf₁, hf₂⟩, hfB⟩ := hf_ex
+    refine ⟨i, f, ⟨hf₁, hf₂⟩, fun j ↦ ?_⟩
+    rw [← union_singleton, preimage_union, preimage_diff]
+    obtain (rfl | hne) := eq_or_ne i j
+    · simpa only [ show ∀ x, {⟨i,x⟩} = Sigma.mk i '' {x} by simp,
+        preimage_image_eq _ sigma_mk_injective, union_singleton]
+    rw [preimage_singleton_eq_empty.2 (by simpa), preimage_singleton_eq_empty.2 (by simpa),
+      diff_empty, union_empty]
+    exact h₁ j
+
+  maximality X _ I hI hIX := by
+    choose Js hJs using
+      fun i ↦ (hI i).subset_basis'_of_subset (preimage_mono (f := Sigma.mk i) hIX)
+    refine ⟨⋃ i, Sigma.mk i '' Js i, ?_⟩
+    simp only [mem_maximals_setOf_iff, preimage_iUnion, iUnion_preimage_image_sigma_mk_eq,
+      iUnion_subset_iff, image_subset_iff, and_imp]
+    refine ⟨⟨fun i ↦ (hJs i).1.indep,?_, fun i ↦ (hJs i).1.subset⟩, fun K hK _ hKX hJK ↦ ?_⟩
+    · rw [← iUnion_image_preimage_sigma_mk_eq_self (s := I)]
+      exact iUnion_mono (fun i ↦ image_subset _ (hJs i).2)
+    simp_rw [fun i ↦ (hJs i).1.eq_of_subset_indep (hK i) (hJK i) (preimage_mono hKX)]
+    rw [iUnion_image_preimage_sigma_mk_eq_self]
+
+  subset_ground := by
+    intro B hB
+    rw [← iUnion_image_preimage_sigma_mk_eq_self (s := B)]
+    exact iUnion_mono (fun i ↦ image_subset _ (hB i).subset_ground)
 
 @[simp] theorem sigma_indep_iff {α : ι → Type*} {M : (i : ι) → Matroid (α i)}
-    {I : Set ((i : ι) × α i)} : (sigma M).Indep I ↔ ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I) := by
-  simp [sigma, sigmaIndepMatroid]
+    {I : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).Indep I ↔ ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I) := Iff.rfl
+
+@[simp] theorem sigma_base_iff {α : ι → Type*} {M : (i : ι) → Matroid (α i)}
+    {B : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).Base B ↔ ∀ i, (M i).Base (Sigma.mk i ⁻¹' B) := Iff.rfl
 
 @[simp] theorem sigma_ground_eq {α : ι → Type*} {M : (i : ι) → Matroid (α i)} :
-  (sigma M).E = ⋃ (i : ι), (Sigma.mk i '' (M i).E) := rfl
+  (Matroid.sigma M).E = ⋃ (i : ι), (Sigma.mk i '' (M i).E) := rfl
 
 /-- The direct sum of an indexed collection of matroids on `α` with disjoint ground sets. -/
 def sigma' (M : ι → Matroid α) (h : PairwiseDisjoint univ (fun i ↦ (M i).E)) : Matroid α :=
-  (sigma (fun i ↦ (M i).restrictSubtype (M i).E)).mapEmbedding h.sigmaSubtypeEmbedding
+  (Matroid.sigma (fun i ↦ (M i).restrictSubtype (M i).E)).mapEmbedding h.sigmaSubtypeEmbedding
 
 @[simp] theorem sigma'_ground_eq {M : ι → Matroid α} (h : PairwiseDisjoint univ (fun i ↦ (M i).E)) :
     (sigma' M h).E = ⋃ i : ι, (M i).E := by
@@ -98,29 +134,25 @@ end Sigma
 
 section Sum
 
-/-- The direct sum of two matroids. Defined in terms of `Matroid.sigma` and
-``Equiv.sumEquivSigmaBool`, which requires handling some universe issues with `ULift`. -/
-def directSum {α : Type u} {β : Type v} (M : Matroid α) (N : Matroid β) : Matroid (α ⊕ β) :=
-  let S := Matroid.sigma (Bool.rec (M.mapEquiv Equiv.ulift.symm) (N.mapEquiv Equiv.ulift.symm))
-  let e := Equiv.sumEquivSigmaBool (ULift.{v} α) (ULift.{u} β)
-  let S' := S.mapEquiv e.symm
-  S'.mapEquiv (Equiv.sumCongr Equiv.ulift Equiv.ulift)
-
-/-- Because of this simp lemma, the ugly universe stuff in the implementation of `directSum`
-doesn't matter. -/
-@[simp] theorem directSum_indep_iff {M : Matroid α} {N : Matroid β} {I : Set (α ⊕ β)} :
-    (M.directSum N).Indep I ↔ M.Indep (.inl ⁻¹' I) ∧ N.Indep (.inr ⁻¹' I) := by
-  simp only [directSum, mapEquiv_indep_iff, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
+/-- The direct sum of two matroids. -/
+@[simps!] def directSum {α : Type u} {β : Type v} (M : Matroid α) (N : Matroid β) :
+    Matroid (α ⊕ β) := Matroid.ofExistsMatroid
+  (E := (.inl '' M.E) ∪ (.inr '' N.E))
+  (Indep := fun I ↦ M.Indep (Sum.inl ⁻¹' I) ∧ N.Indep (Sum.inr ⁻¹' I))
+  (hM :=
+    let S := Matroid.sigma (Bool.rec (M.mapEquiv Equiv.ulift.symm) (N.mapEquiv Equiv.ulift.symm))
+    let e := Equiv.sumEquivSigmaBool (ULift.{v} α) (ULift.{u} β)
+    let MS := (S.mapEquiv e.symm).mapEquiv (Equiv.sumCongr Equiv.ulift Equiv.ulift)
+    by
+    refine ⟨MS, ?_, fun I ↦ ?_⟩
+    · simp [Set.ext_iff, MS, e, S, mapEquiv, mapEmbedding, Equiv.ulift, Equiv.sumEquivSigmaBool]
+    simp only [MS, e, S, mapEquiv_indep_iff, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
     Equiv.symm_symm, sigma_indep_iff, Bool.forall_bool, Equiv.ulift_apply]
-  convert Iff.rfl <;> ext <;> simp [Equiv.ulift, Equiv.sumEquivSigmaBool]
-
-@[simp] theorem directSum_ground_eq (M : Matroid α) (N : Matroid β) :
-    (M.directSum N).E = (.inl '' M.E) ∪ (.inr '' N.E) := by
-  ext; simp [directSum, mapEquiv, mapEmbedding, Equiv.ulift, Equiv.sumEquivSigmaBool]
+    convert Iff.rfl <;> simp [Set.ext_iff, Equiv.ulift, Equiv.sumEquivSigmaBool] )
 
 /-- The direct sum of two matroids on `α` with disjoint ground sets, as a `Matroid α`.
 Implemented by mapping a matroid on `M.E ⊕ N.E` into `α`.  -/
-def directSum' (M N : Matroid α) (h : Disjoint M.E N.E) : Matroid α :=
+@[simps!] def directSum' (M N : Matroid α) (h : Disjoint M.E N.E) : Matroid α :=
   ((M.restrictSubtype M.E).directSum (N.restrictSubtype N.E)).mapEmbedding h.sumSubtypeEmbedding
 
 @[simp] theorem directSum'_ground_eq {M N : Matroid α} {h : Disjoint M.E N.E} :

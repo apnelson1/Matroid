@@ -884,7 +884,7 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
 
 lemma Circuit.something {C : Set α} (hC : M.Circuit C) (hXnt : X.Nontrivial) (hXC : X ⊆ C)
     (hJ : M.Skew X J) : ∃ C', (M ／ J).Circuit C' ∧ X ⊆ C' := by
-  have h' : (M χ)
+
 
 
 lemma empty_skew (hX : X ⊆ M.E) : M.Skew ∅ X := by
