@@ -312,9 +312,8 @@ lemma Nonloop.exists_mem_base (he : M.Nonloop e) : ∃ B, M.Base B ∧ e ∈ B :
 lemma Cocircuit.nonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.Nonloop e := by
   rw [← not_loop_iff (hK.subset_ground he), ← singleton_circuit]
   intro he'
-  have hcon := he'.inter_cocircuit_ne_singleton hK
-  rw [inter_eq_self_of_subset_left (singleton_subset_iff.2 he), encard_singleton] at hcon
-  exact hcon rfl
+  obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.cocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
+  exact hfe rfl
 
 lemma Circuit.nonloop_of_mem (hC : M.Circuit C) (hC' : C.Nontrivial) (he : e ∈ C) : M.Nonloop e :=
   nonloop_of_not_loop (hC.subset_ground he) (fun hL ↦ by simp [hL.eq_of_circuit_mem hC he] at hC')
