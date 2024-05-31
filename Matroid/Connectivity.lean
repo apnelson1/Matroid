@@ -202,31 +202,81 @@ lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
 
 theorem Connected.finite_of_finitary_of_cofinitary (hM : M.Connected) [Finitary M] [Finitary M✶] :
     M.Finite := by
-  set x : ℕ → α := sorry
-  have hinj : Function.Injective x := sorry
-  have hx : ∀ t, ∃ C, M.Circuit C ∧ ∀ i ≤ t, x i ∈ C := sorry
 
-  have hxE : range x ⊆ M.E := by
-    rintro _ ⟨i, hi, rfl⟩; obtain ⟨C, hC⟩ := hx i; exact hC.1.subset_ground (hC.2 i rfl.le)
+  let goodSet := {I : Set α // Set.Infinite {C | M.Circuit C ∧ I ⊆ C}}
 
-  have hI : M.Indep (range x) := by
+  set I' : ℕ → goodSet := sorry
+
+  set I : ℕ → Set α := fun i ↦ (I' i).1
+
+  have hI_strict : StrictMono I := sorry
+  -- have hI_strict : ∀ ⦃i j⦄, i < j → I i ⊂ I j := sorry
+  have hIC : ∀ i, ∃ C, M.Circuit C ∧ I i ⊂ C := by
+    intro i
+    obtain ⟨C, hC⟩ := (I' (i+1)).2.nonempty
+    exact ⟨C, hC.1, ssubset_of_ssubset_of_subset (hI_strict (Nat.lt.base i)) hC.2⟩
+
+  set I₀ := ⋃ i, I i with hI₀_def
+
+  have hI₀ : M.Indep I₀ := by
     rw [indep_iff_forall_finite_subset_indep]
-    simp_rw [subset_range_iff_exists_image_eq]
-    rintro _ ⟨J, rfl⟩ hfin
-    have hJfin := hfin.of_finite_image (hinj.injOn _)
-    obtain ⟨b, (hb : ∀ _, _)⟩ := hJfin.bddAbove
-    obtain ⟨C', hC'⟩ := hx (b+1)
+    intro J hJss hJfin
+    rw [hJfin.subset_iUnion_mono_iff hI_strict.monotone] at hJss
+    obtain ⟨i, hJi⟩ := hJss
+    obtain ⟨C, hC, hssu⟩ := hIC i
+    exact (hC.ssubset_indep hssu).subset hJi
 
-    apply hC'.1.ssubset_indep (ssubset_of_ne_of_subset ?_ ?_)
-    · rintro rfl
-      simp_rw [hinj.mem_set_image] at hC'
-      linarith [hb _ <| hC'.2 _ rfl.le]
-    rintro _ ⟨i, hi, rfl⟩
-    exact hC'.2 _ ((hb _ hi).trans (by simp))
+  obtain ⟨B, hB, hIB⟩ := hI₀.exists_base_superset
 
-  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+  obtain ⟨e, heI1, -⟩ := exists_of_ssubset <| hI_strict (show 0 < 1 by norm_num)
+  obtain ⟨K,hK, hKB⟩ := hB.indep.exists_cocircuit_inter_eq_mem (show e ∈ _ from sorry)
 
-  have : ∃ b : ℕ, ∀ e ∈ M.fundCocct (x 0) B, M.fundCct e B ⊂ insert e (x '' Iic b) := sorry
+  have hufin := hK.finite.biUnion (t := fun x ↦ I₀ ∩ (M.fundCct x B)) sorry
+
+  obtain ⟨m, hem, hb⟩ : ∃ m, e ∈ I m ∧ ∀ x ∈ K, I₀ ∩ M.fundCct x B ⊆ I m := by
+    have h:= hufin.subset_iUnion_mono_iff hI_strict.monotone
+    simp only [iUnion_subset_iff, inter_subset_left, implies_true, true_iff] at h
+    obtain ⟨m', hm'⟩ := h
+    refine ⟨m' + 1, ?_, fun x hx ↦ (hm' x hx).trans (hI_strict.monotone <| Nat.le_add_right m' 1)⟩
+    exact hI_strict.monotone (Nat.le_add_left 1 _) heI1
+
+
+  obtain ⟨Cm, hCm, hImCm⟩ := hIC m
+  have hnt := hCm.cocircuit_inter_nontrivial hK ⟨e, hImCm.subset hem, (hKB.symm.subset rfl).1⟩
+  obtain ⟨f, ⟨hfCm, hfK⟩, hfe⟩ := hnt.exists_ne e
+
+  have foo : ∃ C', (M ／ (B \ I₀)).Circuit C' ∧ (I m) ⊆ C' := sorry
+
+  -- have := hCm.ssubset_indep (X := M.fundCct f B)
+
+
+
+
+  -- set x : ℕ → α := sorry
+  -- have hinj : Function.Injective x := sorry
+  -- have hx : ∀ t, ∃ C, M.Circuit C ∧ ∀ i ≤ t, x i ∈ C := sorry
+
+  -- have hxE : range x ⊆ M.E := by
+  --   rintro _ ⟨i, hi, rfl⟩; obtain ⟨C, hC⟩ := hx i; exact hC.1.subset_ground (hC.2 i rfl.le)
+
+  -- have hI : M.Indep (range x) := by
+  --   rw [indep_iff_forall_finite_subset_indep]
+  --   simp_rw [subset_range_iff_exists_image_eq]
+  --   rintro _ ⟨J, rfl⟩ hfin
+  --   have hJfin := hfin.of_finite_image (hinj.injOn _)
+  --   obtain ⟨b, (hb : ∀ _, _)⟩ := hJfin.bddAbove
+  --   obtain ⟨C', hC'⟩ := hx (b+1)
+
+  --   apply hC'.1.ssubset_indep (ssubset_of_ne_of_subset ?_ ?_)
+  --   · rintro rfl
+  --     simp_rw [hinj.mem_set_image] at hC'
+  --     linarith [hb _ <| hC'.2 _ rfl.le]
+  --   rintro _ ⟨i, hi, rfl⟩
+  --   exact hC'.2 _ ((hb _ hi).trans (by simp))
+
+  -- obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+
+  -- have : ∃ b : ℕ, ∀ e ∈ M.fundCocct (x 0) B, M.fundCct e B ⊂ insert e (x '' Iic b) := sorry
 
 
       -- simp_rw [InjOn.mem_of_mem_image (hinj.injOn J) Subset.rfl] at hC'
