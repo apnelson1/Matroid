@@ -1,5 +1,6 @@
 import Matroid.Minor.Rank
 import Matroid.Modular
+import Matroid.ForMathlib.Data.Set.Finite
 
 open Set
 
@@ -15,7 +16,7 @@ variable {α : Type*} {M : Matroid α}
 
 namespace Matroid
 
-section ConnectedTo
+section Connected
 
 variable {C K : Set α} {e f g : α}
 
@@ -179,6 +180,10 @@ lemma Loop.not_connected (he : M.Loop e) (hE : M.E.Nontrivial) : ¬ M.Connected 
   rw [← connected_dual_iff]
   exact he.dual_coloop.not_connected hE
 
+lemma Connected.loopless (hM : M.Connected) (hE : M.E.Nontrivial) : M.Loopless := by
+  rw [loopless_iff_forall_not_loop]
+  exact fun e _ hl ↦ hl.not_connected hE hM
+
 lemma Connected.exists_circuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E) (hne : e ≠ f) :
     ∃ C, M.Circuit C ∧ e ∈ C ∧ f ∈ C :=
   (h.2 he hf).exists_circuit_of_ne hne
@@ -195,7 +200,74 @@ lemma Connected.exists_circuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e �
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
 
-end ConnectedTo
+theorem Connected.finite_of_finitary_of_cofinitary (hM : M.Connected) [Finitary M] [Finitary M✶] :
+    M.Finite := by
+  sorry
+  -- classical
+  -- refine ⟨not_infinite.1 fun hinf ↦ ?_⟩
+  -- have hnt := hinf.nontrivial
+  -- obtain ⟨e, he⟩ := hinf.nonempty
+
+  -- -- There are infinitely many circuits containing `e`. Let `eCs` be a sequence of them.
+  -- have hCs0 : {C | e ∈ C ∧ M.Circuit C}.Infinite := by
+  --   intro hfin
+  --   have _ := hfin.to_subtype
+  --   have hfin' := @Finite.Set.finite_biUnion (ι := Set α) (t := id) _ (by assumption)
+  --     (fun C hC ↦ Finite.to_subtype (by exact hC.2.finite))
+  --   obtain ⟨f, hfE, hf⟩ := (hinf.diff hfin').nonempty
+  --   simp only [mem_setOf_eq, id_eq, mem_iUnion, exists_prop, not_exists, not_and, and_imp] at hf
+  --   obtain ⟨C', hC', heC', hfC'⟩ := hM.exists_circuit hnt he hfE
+  --   exact hf _ heC' hC' hfC'
+  -- obtain eCs := Set.Infinite.natEmbedding _ hCs0
+
+  -- -- Let `Z` be the union of the `eCs`. This set is countably infinite; pick an enumeration
+  -- -- `x` of `Z` starting from `e`.
+  -- set Z := (⋃ i, (eCs i).1)
+  -- have heZ : e ∈ Z := mem_iUnion_of_mem 0 (eCs 0).2.1
+  -- obtain x' : ℕ ≃ Z := by
+  --   refine Nonempty.some <| @nonempty_equiv_of_countable  _ _ _ _ ?_ ?_
+  --   · simp only [mem_setOf_eq, coe_setOf, countable_coe_iff, Z]
+  --     exact countable_iUnion fun i ↦ Finite.countable ((eCs i).2.2.finite.to_subtype)
+  --   exact Infinite.to_subtype <| infinite_iUnion <| Subtype.val_injective.comp eCs.injective
+
+  -- set x : ℕ ≃ Z := (Equiv.swap 0 (x'.symm ⟨e,heZ⟩)).trans x'
+  -- have hx0 : x 0 = e := by simp [x]
+
+  -- let nextCs (Cs : Set (Set α)) (x : α) :=
+  --   if {C ∈ Cs | x ∈ C}.Infinite then {C ∈ Cs | x ∈ C} else {C ∈ Cs | x ∉ C}
+
+  -- let Cs : ℕ → Set (Set α) :=  Nat.rec (range (Subtype.val ∘ eCs))
+  --   (fun i Cs' ↦ nextCs Cs' (x (i+1)))
+
+  -- set ind := {i | ∀ C ∈ Cs i, (x i).1 ∈ C} with hind
+
+
+
+
+
+
+
+
+    -- simp at this
+    -- have _ : ∀ C : {C | e ∈ C ∧ M.Circuit C}, C.1.Finite := sorry
+
+    -- have := hfin.iUnion (s := id) (fun C hC ↦ hC.2.finite) ()
+
+  -- obtain ⟨C₀, hC₀, heC₀,-⟩ := hM.exists_circuit hnt he he
+
+  -- have hI : ∃ I ⊂ C₀, e ∈ I ∧ ∃ (Cs : Set (Set α)), (∀ C ∈ Cs, M.Circuit C ∧ C ∩ C₀ = I)
+  --   ∧ Cs.PairwiseDisjoint id := by
+  --   sorry
+  -- -- have _ := hM.loopless hnt
+  -- -- have _ : M✶.Loopless := hM.to_dual.loopless hnt
+  -- -- obtain ⟨e, he⟩ := hinf.nonempty
+  -- -- have := M✶.not_loop e
+  -- have := (M✶.nonloop_of_not_loop he (M✶.not_loop e)).exists_mem_cocircuit
+
+
+
+
+end Connected
 
 section conn
 

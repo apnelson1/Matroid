@@ -408,6 +408,10 @@ lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ 
 @[simp] lemma trivialOn_nonloop_iff {I E : Set α} : (trivialOn I E).Nonloop e ↔ e ∈ I ∩ E := by
   rw [← indep_singleton, trivialOn_indep_iff', singleton_subset_iff]
 
+lemma Nonloop.exists_mem_cocircuit (he : M.Nonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
+  obtain ⟨B, hB, heB⟩ := he.exists_mem_base
+  exact ⟨_, fundCocct_cocircuit heB hB, mem_fundCocct M e B⟩
+
 end Nonloop
 
 section Loopless

@@ -476,9 +476,40 @@ lemma Circuit.contract_circuit (hK : M.Circuit K) (hC : C ⊂ K) : (M ／ C).Cir
   rintro rfl
   exact hI.2 Subset.rfl
 
+lemma Circuit.contract_dep_of_not_subset (hK : M.Circuit K) {C : Set α} (hKC : ¬ K ⊆ C) :
+    (M ／ C).Dep (K \ C) := by
+  have h' := hK.contract_circuit (C := C ∩ K) ((inter_subset_right _ _).ssubset_of_ne (by simpa))
+  simp only [diff_inter_self_eq_diff] at h'
+  have hwin := h'.contract_dep (C := C \ K) disjoint_sdiff_sdiff
+  rwa [contract_contract, inter_union_diff] at hwin
+
 lemma Circuit.contract_diff_circuit (hC : M.Circuit C) (hK : K.Nonempty) (hKC : K ⊆ C) :
     (M ／ (C \ K)).Circuit K := by
   simpa [inter_eq_self_of_subset_right hKC] using hC.contract_circuit (diff_ssubset hKC hK)
+
+lemma Circuit.subset_circuit_of_contract {C K : Set α} (hC : (M ／ K).Circuit C) :
+    ∃ C', M.Circuit C' ∧ C ⊆ C' ∧ C' ⊆ C ∪ K := by
+  obtain ⟨I, hI⟩ := M.exists_basis' K
+  rw [hI.contract_eq_contract_delete, delete_circuit_iff] at hC
+
+  have hCss := hC.1.subset_ground
+  rw [contract_ground, subset_diff] at hCss
+  obtain ⟨hCE, hCI⟩ := hCss
+  have hIE := hI.indep.subset_ground
+
+  have hCId : M.Dep (C ∪ I) := by
+    rw [← not_indep_iff]; intro hd
+    have hCi := hd.diff_indep_contract_of_subset (subset_union_right _ _)
+    rw [union_diff_right, sdiff_eq_left.2 hCI] at hCi
+    exact hC.1.dep.not_indep hCi
+
+  obtain ⟨C', hC'CI, hC'⟩ := hCId.exists_circuit_subset
+  refine ⟨C', hC', ?_, hC'CI.trans (union_subset_union_right _ hI.subset)⟩
+
+  have hd := hC'.contract_dep_of_not_subset (C := I)
+    (fun hC'I ↦ (hI.indep.subset hC'I).not_dep hC'.dep)
+  rw [← hC.1.eq_of_dep_subset hd (by simpa [diff_subset_iff, union_comm])]
+  exact diff_subset _ _
 
 lemma Dep.of_contract (h : (M ／ C).Dep X) (hC : C ⊆ M.E := by aesop_mat) : M.Dep (C ∪ X) := by
   rw [Dep, and_iff_left (union_subset hC (h.subset_ground.trans (diff_subset _ _)))]
@@ -824,7 +855,7 @@ lemma strictMinor_dual_iff_dual_strictMinor : N <m M✶ ↔ N✶ <m M := by
 lemma StrictMinor.encard_ground_lt [M.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
   M.ground_finite.encard_lt_encard hNM.ssubset
 
-/-- The scum lemma. We can always realize a minor by contracting an independent set and deleting
+/-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
 lemma Minor.exists_contract_indep_delete_coindep (h : N ≤m M) :
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ N = M ／ C ＼ D := by

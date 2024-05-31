@@ -424,10 +424,19 @@ lemma fundCocct_subset_insert_compl (M : Matroid α) (e : α) (B : Set α) :
     M.fundCocct e B ⊆ insert e (M.E \ B) :=
   fundCct_subset_insert _ _
 
-lemma fundCocct_inter_eq (B : Set α) (he : e ∈ B) : (M.fundCocct e B) ∩ B = {e} := by
+lemma fundCocct_inter_eq (M : Matroid α) {B : Set α} (he : e ∈ B) :
+    (M.fundCocct e B) ∩ B = {e} := by
   refine subset_antisymm ?_ (singleton_subset_iff.2 ⟨M.mem_fundCocct _ _, he⟩)
   refine (inter_subset_inter_left _ (M.fundCocct_subset_insert_compl _ _)).trans ?_
   simp (config := {contextual := true})
+
+lemma Indep.exists_cocircuit_inter_eq_mem (hI : M.Indep I) (heI : e ∈ I) :
+    ∃ K, M.Cocircuit K ∧ K ∩ I = {e} := by
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+  refine ⟨M.fundCocct e B, fundCocct_cocircuit (hIB heI) hB, ?_⟩
+  rw [subset_antisymm_iff, subset_inter_iff, singleton_subset_iff, and_iff_right
+    (mem_fundCocct _ _ _), singleton_subset_iff, and_iff_left heI, ← M.fundCocct_inter_eq (hIB heI)]
+  exact inter_subset_inter_right _ hIB
 
 end Dual
 
