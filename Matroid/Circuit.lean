@@ -377,22 +377,28 @@ lemma cocircuit_iff_mem_minimals_compl_nonspanning :
     not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp Base.subset_ground,
       inter_comm K]
 
-lemma Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) :
-    (C ∩ K).encard ≠ 1 := by
-  rw [Ne, encard_eq_one, not_exists]
-  intro e he
-  have heCK := singleton_subset_iff.1 he.symm.subset
+lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.Cocircuit K) :
+    Disjoint C K ∨ (C ∩ K).Nontrivial := by
+  simp_rw [or_iff_not_imp_left, not_disjoint_iff]
+  rintro ⟨e, heC, heK⟩
+  simp_rw [nontrivial_iff_ne_singleton <| show e ∈ C ∩ K from ⟨heC, heK⟩]
+  intro he
   simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, mem_minimals_iff_forall_ssubset_not_mem,
     mem_setOf, not_not] at hK
   have' hKe := hK.2 (y := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
   apply hK.1
   rw [spanning_iff_ground_subset_cl]; nth_rw 1 [← hKe.cl_eq, diff_diff_eq_sdiff_union]
   · refine' (M.cl_subset_cl (subset_union_left _ C)).trans _
-    rw [union_assoc, singleton_union, insert_eq_of_mem heCK.1, ← cl_union_cl_right_eq,
+    rw [union_assoc, singleton_union, insert_eq_of_mem heC, ← cl_union_cl_right_eq,
       ← hC.cl_diff_singleton_eq_cl e, cl_union_cl_right_eq, union_eq_self_of_subset_right]
     rw [← he, diff_self_inter]
     exact diff_subset_diff_left hC.subset_ground
   rw [← he]; exact (inter_subset_left _ _).trans hC.subset_ground
+
+lemma Circuit.cocircuit_inter_nontrivial (hC : M.Circuit C) (hK : M.Cocircuit K)
+    (hCK : (C ∩ K).Nonempty) : (C ∩ K).Nontrivial := by
+  simpa [or_iff_not_imp_left, not_disjoint_iff_nonempty_inter, imp_iff_right hCK] using
+    hC.cocircuit_disjoint_or_nontrivial_inter hK
 
 lemma dual_rkPos_iff_exists_circuit : M✶.RkPos ↔ ∃ C, M.Circuit C := by
   rw [rkPos_iff_empty_not_base, dual_base_iff, diff_empty, not_iff_comm, not_exists,
