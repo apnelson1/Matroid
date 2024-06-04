@@ -882,8 +882,20 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
   rw [← h, restrict_indep_iff, hI.contract_indep_iff] at hi
   exact hi.1.2.mono_left hI.subset
 
-lemma Circuit.something {C : Set α} (hC : M.Circuit C) (hXnt : X.Nontrivial) (hXC : X ⊆ C)
-    (hJ : M.Skew X J) : ∃ C', (M ／ J).Circuit C' ∧ X ⊆ C' := by
+/-- If `X` is contained in a circuit, the same is true if we contract an independent set `J` that is
+  skew to `X`. (This is also almost true if `J` isn't independent, but there are trivial problems
+  if `X` is empty or `C` is a loop.) -/
+lemma Circuit.exists_subset_circuit_contract_of_subset {C : Set α} (hC : M.Circuit C) (hXC : X ⊆ C)
+    (hJ : M.Indep J) (hXJ : M.Skew X J) : ∃ C', (M ／ J).Circuit C' ∧ X ⊆ C' := by
+  obtain (rfl | hne) := X.eq_empty_or_nonempty
+  · have h' : (M ／ J).Dep (C \ J) := by
+      rw [hJ.contract_dep_iff, and_iff_right disjoint_sdiff_left, diff_union_self]
+      exact hC.dep.superset (subset_union_left _ _)
+    obtain ⟨C', -, hC'⟩ := h'.exists_circuit_subset
+    exact ⟨C', hC', empty_subset _⟩
+  have hXc := hC.contract_diff_circuit hne hXC
+
+      -- exact fun hi ↦ hC.dep.not_indep (hi.subset (subset_union_left _ _))
 
 
 
