@@ -1,19 +1,21 @@
 import Matroid.Constructions.Truncate
 import Mathlib.Tactic.Linarith
 import Matroid.Simple
+import Matroid.Minor.Iso
 import Matroid.ForMathlib.Card
+import Matroid.ForMathlib.Set
 
 variable {α : Type*} {M : Matroid α} {E I B X C : Set α} {k : ℕ∞}
 
 namespace Matroid
 
-open Set
+open Set Set.Notation
 
 section Uniform
 
 /-- A uniform matroid with a given rank `k` and ground set `E`. If `k = ⊤`, then every set is
   independent. ` -/
-def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncate k
+def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).truncateTo k
 
 @[simp] theorem unifOn_ground_eq (E : Set α) : (unifOn E k).E = E := by
   cases k <;> rfl
@@ -22,7 +24,7 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).tru
   simp [unifOn, and_comm]
 
 @[simp] theorem unifOn_top (E : Set α) : unifOn E ⊤ = freeOn E := by
-  rw [unifOn, truncate_top]
+  rw [unifOn, truncateTo_top]
 
 @[simp] theorem unifOn_zero (E : Set α) : unifOn E 0 = loopyOn E := by
   simp [unifOn]
@@ -43,14 +45,14 @@ theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
 
 theorem unifOn_base_iff {k : ℕ} (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).Base B ↔ B.encard = k := by
-  rw [unifOn, truncate_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_erk_eq]
+  rw [unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_erk_eq]
 
 theorem unifOn_base_iff' (hktop : k ≠ ⊤) (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).Base B ↔ B.encard = k := by
   lift k to ℕ using hktop; rw [unifOn_base_iff hk hBE]
 
 theorem unifOn_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unifOn E k).er X = min X.encard k := by
-  rw [unifOn, truncate_er_eq, freeOn_er_eq hX]
+  rw [unifOn, truncateTo_er_eq, freeOn_er_eq hX]
 
 theorem unifOn_er_eq' (E : Set α) (k : ℕ∞) : (unifOn E k).er X = min (X ∩ E).encard k := by
   rw [← er_inter_ground_eq, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
@@ -134,7 +136,7 @@ theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠
     simp_rw [unifOn_ground_eq, unifOn_erk_eq, min_le_iff, iff_true_intro rfl.le,
       or_true, true_and, simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
       and_iff_right (encard_pair_le _ _)]
-    exact pair_subset
+    exact fun e f ↦ pair_subset
   rintro ⟨rfl, hr, hM⟩
   simp only [eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff, true_and]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hr, hIE⟩,
@@ -167,14 +169,13 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 
 @[simp] theorem unif_erk_eq (a b : ℕ) : (unif a b).erk = min a b := by
   rw [erk_eq_er_ground, unif_er_eq]
-  simp only [unif_ground_eq, ge_iff_le, encard_univ_fin, min_comm]
-  rfl
+  simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
 
 theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
   simpa
 
 theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ B.encard = a := by
-  rw [unif, unifOn, truncate_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
+  rw [unif, unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
   rwa [freeOn_erk_eq, encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, Nat.cast_le]
 
@@ -218,54 +219,61 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
-theorem isIso_unif_iff : M ≂ (unif a b) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
-  obtain (rfl | b) := b
-  · rw []
-    simp only [Nat.zero_eq, eq_emptyOn, isIso_emptyOn_iff, Nat.cast_zero, encard_eq_zero,
-      ground_eq_empty_iff, iff_and_self]
-    rintro rfl
-    simp
-  obtain (hα | hα) := isEmpty_or_nonempty α
-  · simp only [eq_emptyOn, emptyOn_isIso_iff, emptyOn_ground, encard_empty, Nat.cast_succ,
-      true_and]
-    rw [← ground_eq_empty_iff, unif_ground_eq, univ_eq_empty_iff]
-    simp [eq_comm (a := (0 : ℕ∞))]
-  rw [eq_unifOn_iff, and_iff_right rfl]
-  refine ⟨fun h ↦ ?_, fun ⟨hi,h⟩ ↦ ?_⟩
-  · obtain (⟨rfl, -⟩ | ⟨-, -, ⟨e⟩⟩) := h.empty_or_nonempty_iso
-    · simp [emptyOn_isIso_iff, ← ground_eq_empty_iff, unif_ground_eq] at h
-    refine ⟨fun I ↦ ⟨fun hI ↦ ⟨?_, hI.subset_ground⟩, fun ⟨hIcard, hIE⟩ ↦ ?_⟩, ?_⟩
-    · have hi := e.on_indep hI
-      rwa [unif_indep_iff, (e.injOn_ground.mono hI.subset_ground).encard_image] at hi
-    · rwa [e.on_indep_iff, unif_indep_iff, (e.injOn_ground.mono hIE).encard_image]
-    rw [← e.injOn_ground.encard_image, e.image_ground, unif_ground_eq, encard_univ_fin]
+theorem isIso_unif_iff : Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
+  refine ⟨fun ⟨e⟩ ↦ ⟨M.E, ?_⟩, ?_⟩
+  · rw [eq_unifOn_iff, and_iff_right rfl, and_iff_left <| by simpa using e.toEquiv.encard_eq]
+    refine fun I ↦ ?_
+    obtain (hIE | hIE) := em' <| I ⊆ M.E
+    · exact iff_of_false (fun h ↦ hIE h.subset_ground) (by simp [hIE])
+    rw [and_iff_left hIE]
+    have hwin := e.indep_image_iff (I := M.E ↓∩ I)
+    simp only [Subtype.image_preimage_coe, inter_eq_self_of_subset_right hIE, unif_ground_eq,
+      unif_indep_iff] at hwin
+    rwa [Subtype.val_injective.encard_image, (EmbeddingLike.injective' _).encard_image,
+      encard_preimage_of_injective_subset_range Subtype.val_injective (by simpa)] at hwin
+  rintro ⟨E, rfl, hE⟩
+  obtain ⟨e⟩ := Fin.nonempty_equiv_iff_encard_eq.2 hE
+  refine ⟨e.trans (Equiv.Set.univ (Fin b)).symm, fun I ↦ ?_⟩
+  simp only [unifOn_indep_iff, Subtype.val_injective.encard_image, image_subset_iff, unif_ground_eq,
+    Equiv.Set.univ, Equiv.trans_apply, Equiv.coe_fn_symm_mk, unif_indep_iff]
+  rw [Function.Injective.encard_image (fun _ _ ↦ by simp), and_iff_left_iff_imp]
+  exact fun _ ⟨_,hx⟩ _ ↦ hx
 
-  obtain ⟨f,hf⟩ := (finite_of_encard_eq_coe h).exists_bijOn_of_encard_eq
-    ((encard_univ_fin _).symm ▸ h)
-  refine (iso_of_forall_indep' hf.toPartialEquiv rfl (by simp) fun I hIE ↦ ?_).isIso
-  simp [hi, hIE, (hf.injOn.mono hIE).encard_image]
-
-/-- The forwards direction of `isIso_unif_iff`, stated existentially so that `M` and `b` can be
-  substituted out of the context with `obtain ⟨_, rfl, rfl⟩ := h`.  -/
-theorem exists_of_isIso_unif (h : M ≂ unif a b) : ∃ X, M = unifOn X a ∧ X.encard = b :=
-  ⟨M.E, isIso_unif_iff.1 h⟩
-
-theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
-  set R : Set (Fin b') := range (Fin.castLE hbb') with hR
-  have hM : ((unif a b') ↾ R) ≂ unif a b
-  · rw [isIso_unif_iff, eq_iff_indep_iff_indep_forall]
-    simp only [restrict_ground_eq, unifOn_ground_eq, restrict_indep_iff,
-      unif_indep_iff, unifOn_indep_iff, implies_true, forall_const, and_self, true_and]
-    rw [hR, ← image_univ, Function.Injective.encard_image, encard_univ_fin]
+noncomputable def unif_isoRestr_unif (a : ℕ) (hbb' : b ≤ b') : unif a b ≤ir unif a b' :=
+  let R : Set (Fin b') := range (Fin.castLE hbb')
+  have hM : Nonempty (((unif a b') ↾ R) ≂ unif a b) := by
+    refine isIso_unif_iff.2 ⟨R, ?_⟩
+    suffices R.encard = b by simpa [eq_iff_indep_iff_indep_forall]
+    rw [show R = range (Fin.castLE hbb') from rfl, ← image_univ, Function.Injective.encard_image,
+      encard_univ_fin]
     exact (Fin.castLEEmb hbb').injective
-  exact ⟨_, restrict_minor _ (by simp), hM.symm⟩
+  hM.some.symm.isoRestr.trans ((unif a b').restrict_restriction R).isoRestr
 
-theorem unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
-  rw [← isoMinor_dual_iff, unif_dual, unif_dual]
-  have h_eq : b - a = b + d - (a + d)
-  · rw [add_tsub_add_eq_tsub_right]
-  rw [← h_eq]
-  apply unif_isoMinor_restr _ (Nat.le_add_right b d)
+noncomputable def unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
+  have h_eq : b - a = b + d - (a + d) := by rw [add_tsub_add_eq_tsub_right]
+  have := (unif_isoRestr_unif a (Nat.le_add_right b d)).isoMinor
+  -- rw [← isoMinor_dual_iff, unif_dual, unif_dual]
+  -- have h_eq : b - a = b + d - (a + d)
+  -- · rw [add_tsub_add_eq_tsub_right]
+  -- rw [← h_eq]
+  -- apply unif_isoMinor_restr _ (Nat.le_add_right b d)
+  -- toFun := fun ⟨x, hx⟩ ↦ ⟨⟨x.1,x.2.trans_le hbb'⟩, by simp⟩
+  -- inj' := by rintro ⟨⟨x, hx⟩, hx'⟩ ⟨⟨y,hy⟩, hy'⟩; simp
+
+  -- exists_minor' := by
+  --   simp
+
+-- theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
+--   set R : Set (Fin b') := range (Fin.castLE hbb') with hR
+--   have hM : ((unif a b') ↾ R) ≂ unif a b
+--   · rw [isIso_unif_iff, eq_iff_indep_iff_indep_forall]
+--     simp only [restrict_ground_eq, unifOn_ground_eq, restrict_indep_iff,
+--       unif_indep_iff, unifOn_indep_iff, implies_true, forall_const, and_self, true_and]
+--     rw [hR, ← image_univ, Function.Injective.encard_image, encard_univ_fin]
+--     exact (Fin.castLEEmb hbb').injective
+--   exact ⟨_, restrict_minor _ (by simp), hM.symm⟩
+
+
 
 theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
     unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by

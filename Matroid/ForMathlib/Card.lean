@@ -40,6 +40,14 @@ theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ 
   simp only [Finite.mem_toFinset]
   exact embeddingOfSubset t s hts
 
+@[simp] theorem encard_univ_fin (a : ℕ) : (univ : Set (Fin a)).encard = a := by
+  simp [encard_eq_coe_toFinset_card]
+
+theorem Fin.nonempty_equiv_iff_encard_eq : Nonempty (s ≃ Fin n) ↔ s.encard = n := by
+  refine ⟨fun ⟨e⟩ ↦ by simpa using e.encard_univ_eq, fun h ↦ ?_⟩
+  have _ := Finite.fintype (finite_of_encard_eq_coe h).to_subtype
+  exact ⟨Fintype.equivFinOfCardEq <| by simpa [encard_eq_coe_toFinset_card, Nat.cast_inj] using h⟩
+
 @[simp] theorem PartENat.card_option (α : Type*) :
     PartENat.card (Option α) = PartENat.card α + 1 := by
   obtain (hα | hα) := finite_or_infinite α

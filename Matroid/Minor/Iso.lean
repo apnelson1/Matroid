@@ -42,6 +42,16 @@ theorem IsoRestr.indep_image_iff (i : N ≤ir M) {I : Set N.E} :
     M.Indep ↑(i '' I) ↔ N.Indep ↑I :=
   (i.indep_iff' I).symm
 
+def Iso.isoRestr (e : N ≂ M) : N ≤ir M where
+  toFun := e
+  inj' := EmbeddingLike.injective' e
+  indep_iff' _ := indep_image_iff e
+
+def Restriction.isoRestr {M N : Matroid α} (h : N ≤r M) : N ≤ir M where
+  toFun := inclusion h.subset
+  inj' := inclusion_injective h.subset
+  indep_iff' I := by simp [h.indep_iff]
+
 theorem IsoRestr.exists_restr_iso (i : N ≤ir M) : ∃ (M₀ : Matroid α) (_ : N ≂ M₀), M₀ ≤r M :=
   ⟨M ↾ ↑(range (Subtype.val ∘ i)),
     Iso.mk (Equiv.ofInjective _ <| Subtype.val_injective.comp (EmbeddingLike.injective i))
@@ -110,6 +120,20 @@ theorem IsoMinor.exists_iso (i : N ≤i M) :
       convert Iff.rfl using 2
       ext x
       simp [← he]
+
+noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M where
+  toFun := e
+  inj' := e.inj'
+  exists_minor' := by
+    obtain ⟨M₀, i, hM₀⟩ := e.exists_restr_iso
+
+
+  -- have hex := e.exists_restr_iso
+  -- refine IsoMinor.ofExistsIso e ⟨hex.choose, hex.choose_spec.choose_spec.minor, ?_⟩
+
+
+
+
 
 /-- If `N ≂ M₀` and `M₀ ≤m M` then `N ≤i M`. -/
 @[simps] def Iso.transIsoMinor {M₀ : Matroid α} (e : N ≂ M₀) (hM₀ : M₀ ≤m M) : N ≤i M where
