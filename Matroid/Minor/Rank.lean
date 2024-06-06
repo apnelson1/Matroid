@@ -239,6 +239,15 @@ lemma er_contract_le_er (M : Matroid α) (C X : Set α) : (M ／ C).er X ≤ M.e
 lemma rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ／ C).rFin X := by
   rw [← er_lt_top_iff] at *; exact (er_contract_le_er _ _ _).trans_lt h
 
+lemma rFin.union_of_contract (hX : (M ／ C).rFin X) (hC : M.rFin C) : M.rFin (X ∪ C) := by
+  rw [← er_lt_top_iff, ← M.relRank_add_er_eq, relRank]
+  rw [← er_ne_top_iff] at hC hX
+  rw [lt_top_iff_ne_top, Ne, WithTop.add_eq_top, not_or]
+  exact ⟨hX, hC⟩
+
+lemma rFin.of_contract (hX : (M ／ C).rFin X) (hC : M.rFin C) : M.rFin X :=
+  (hX.union_of_contract hC).subset subset_union_left
+
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.cl (Z ∪ C)) :
     (M ／ C).rFin (X \ C) :=
   (h.contract_rFin C).to_cl.subset (by rw [contract_cl_eq]; exact diff_subset_diff_left hX)
@@ -248,5 +257,35 @@ lemma Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
   rw [← er_univ_eq, ← er_univ_eq, delete_er_eq']
   exact (M.er_contract_le_er _ _).trans (M.er_mono diff_subset)
 
-
 end Contract
+
+section Rank
+
+lemma delete_r_eq (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
+  rw [r, r, delete_er_eq']
+
+lemma delete_r_eq_of_disjoint (M : Matroid α) (hDX : Disjoint X D) : (M ＼ D).r X = M.r X := by
+  rw [delete_r_eq, hDX.sdiff_eq_left]
+
+lemma delete_elem_r_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ e).r X = M.r X := by
+  rw [deleteElem, delete_r_eq, diff_singleton_eq_self heX]
+
+lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+    (M ／ C).r X + M.r C = M.r (X ∪ C) := by
+  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, coe_r_eq, ← relRank_add_er_eq, relRank]
+
+@[simp] lemma contract_r_cast_int_Eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+    ((M ／ C).r X : ℤ) = M.r (X ∪ C) - M.r C := by
+  rw [← contract_r_add_eq]
+  exact eq_sub_of_add_eq rfl
+
+lemma Nonloop.contract_r_add_one_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
+    (M ／ e).r X + 1 = M.r (insert e X) := by
+  rw [← union_singleton, ← contract_r_add_eq, he.r_eq, contract_elem]
+
+lemma Nonloop.contract_r_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
+    ((M ／ e).r X : ℤ) = M.r (insert e X) - 1 := by
+  rw [← he.contract_r_add_one_eq]
+  exact eq_sub_of_add_eq rfl
+
+end Rank

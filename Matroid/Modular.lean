@@ -222,8 +222,6 @@ lemma modularFamily_map_iff {β : Type*} (f : α → β) (hf : InjOn f M.E) {Xs 
   convert hYs.map f hf with i
   apply h_eq
 
-
-
 lemma ModularFamily.mapEmbedding {β : Type*} (f : α ↪ β) (h : M.ModularFamily Xs) :
     (M.mapEmbedding f).ModularFamily (fun i ↦ f '' (Xs i)) := by
   obtain ⟨B, hB, hBX⟩ := h

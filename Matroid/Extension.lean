@@ -162,7 +162,7 @@ lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U) (h
 lemma ModularCut.cl_mem_of_mem (hF : F ∈ U) : M.cl F ∈ U := by
   rwa [(U.flat_of_mem hF).cl]
 
-/-- The `ModularCut` of all flats containing `X`. -/
+/-- The `ModularCut` of all flats containing `X` -/
 @[simps] def ModularCut.principal (M : Matroid α) (X : Set α) : M.ModularCut where
   carrier := {F | M.Flat F ∧ X ⊆ F}
   forall_flat _ h := h.1
@@ -171,6 +171,7 @@ lemma ModularCut.cl_mem_of_mem (hF : F ∈ U) : M.cl F ∈ U := by
 
 @[simp] lemma ModularCut.mem_principal_iff : F ∈ principal M X ↔ M.Flat F ∧ X ⊆ F := Iff.rfl
 
+/-- The empty modular cut -/
 @[simps] def ModularCut.empty (M : Matroid α) : M.ModularCut where
   carrier := ∅
   forall_flat := by simp
@@ -244,7 +245,7 @@ lemma ModularCut.covBy_of_maximal_cl (U : M.ModularCut) {X Y : Set α} (hXY : M.
     (hYU : M.cl Y ∈ U) (hXU : M.cl X ∉ U) (hmax : ∀ x ∈ Y \ M.cl X, M.cl (insert x X) ∈ U) :
       M.cl X ⋖[M] M.cl Y := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans (subset_union_left X Y))
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans subset_union_left)
   have hJ' := hJ.basis_cl_right
   rw [← cl_cl_union_cl_eq_cl_union, union_eq_self_of_subset_left hXY, cl_cl] at hJ'
 
@@ -290,7 +291,7 @@ def ModularCut.restrict (U : M.ModularCut) {R : Set α} (hR : R ⊆ M.E) : (M �
 
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
 def ModularCut.delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
-  U.restrict (diff_subset M.E D)
+  U.restrict diff_subset
 
 lemma ModularCut.mem_delete_elem_iff :
     F ∈ U.delete {e} ↔ (e ∉ F) ∧ (F ∈ U ∨ (insert e F ∈ U ∧ e ∈ M.cl F)) := by
@@ -522,8 +523,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
   have hB : U.ExtIndep e B := hBmax.1
   have hIeE := hI.diff_singleton_indep.subset_ground
   have hBeE := hB.diff_singleton_indep.subset_ground
-  have hss : B \ {e} ⊆ (I ∪ B) \ {e} :=
-    diff_subset_diff_left <| subset_union_right I B
+  have hss : B \ {e} ⊆ (I ∪ B) \ {e} := diff_subset_diff_left subset_union_right
 
   have hIBe : I ∪ B ⊆ insert e M.E :=
     union_subset hI.subset_insert_ground hB.subset_insert_ground
@@ -729,13 +729,13 @@ def projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α := Matroid.ofExis
   (Indep := fun I ↦ M.Indep I ∧ (U ≠ ⊤ → M.cl I ∉ U))
   (hM := by
     have hinj := Option.some_injective α
-    have hf : InjOn _ M.E := hinj.injOn M.E
+    have hf : InjOn some M.E := hinj.injOn
     set M' := (M.map _ hf).extendBy none (U.map _ hf) with hM'
     use (M' ／ (none : Option α)).comap (Option.some)
     suffices ∀ (I : Set α),
       ((M.map some hf).extendBy none (U.map some hf) ／ (none : Option α)).Indep (some '' I) ↔
       M.Indep I ∧ (U ≠ ⊤ → M.cl I ∉ U) by
-      simpa [preimage_image_eq _ hinj, hinj.injOn _, hM']
+      simpa [preimage_image_eq _ hinj, hinj.injOn, hM']
     intro I
     obtain (rfl | hU) := eq_or_ne U ⊤
     · rw [contract_elem, contract_eq_delete_of_subset_loops]

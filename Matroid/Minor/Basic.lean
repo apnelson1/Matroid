@@ -29,8 +29,11 @@ lemma delete_eq_restrict (M : Matroid α) (D : Set α) : M ＼ D = M ↾ (M.E \ 
 instance delElem {α : Type*} : HasDelete (Matroid α) α :=
   ⟨fun M e ↦ M.delete {e}⟩
 
-instance delete_finite [Matroid.Finite M] : Matroid.Finite (M ＼ D) :=
+instance delete_finite [M.Finite] : (M ＼ D).Finite :=
   ⟨M.ground_finite.diff D⟩
+
+instance deleteElem_finite [Matroid.Finite M] : (M ＼ e).Finite :=
+  delete_finite
 
 instance delete_finiteRk [FiniteRk M] : FiniteRk (M ＼ D) :=
   restrict_finiteRk _
@@ -60,9 +63,6 @@ lemma delete_subset_ground (M : Matroid α) (D : Set α) : (M ＼ D).E ⊆ M.E :
 lemma deleteElem_eq_self (he : e ∉ M.E) : M ＼ e = M := by
   rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff,sdiff_eq_left,
     disjoint_singleton_right]
-
-instance deleteElem_finite [Matroid.Finite M] {e : α} : Matroid.Finite (M ＼ e) := by
-  rw [deleteElem]; infer_instance
 
 instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ＼ e) := by
   rw [deleteElem]; infer_instance
@@ -229,8 +229,11 @@ instance conElem {α : Type*} : HasContract (Matroid α) α :=
 
 @[simp] lemma contract_ground (M : Matroid α) (C : Set α) : (M ／ C).E = M.E \ C := rfl
 
-instance contract_finite [Matroid.Finite M] : Matroid.Finite (M ／ C) := by
+instance contract_finite [M.Finite] : (M ／ C).Finite := by
   rw [← dual_delete_dual_eq_contract]; infer_instance
+
+instance contractElem_finite [M.Finite] : (M ／ e).Finite :=
+  contract_finite
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma contract_ground_subset_ground (M : Matroid α) (C : Set α) : (M ／ C).E ⊆ M.E :=
@@ -292,6 +295,10 @@ lemma Indep.contract_indep_iff (hI : M.Indep I) :
       subset_union_right⟩,
     fun ⟨hdj, B, hB, hJB, hIB⟩ ↦ ⟨B \ I,⟨by simpa [union_eq_self_of_subset_right hIB],
       disjoint_sdiff_left⟩, subset_diff.2 ⟨hJB, hdj⟩ ⟩⟩
+
+lemma Nonloop.contract_indep_iff (he : M.Nonloop e) :
+    (M ／ e).Indep I ↔ e ∉ I ∧ M.Indep (insert e I) := by
+  simp [contract_elem, he.indep.contract_indep_iff]
 
 lemma Indep.union_indep_iff_contract_indep (hI : M.Indep I) :
     M.Indep (I ∪ J) ↔ (M ／ I).Indep (J \ I) := by
