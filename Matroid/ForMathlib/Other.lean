@@ -163,7 +163,7 @@ def Matrix.col_linearEquiv (m R : Type) [Semiring R] : (m → R) ≃ₗ[R] Matri
 
 theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {s : Set α} {t : Set β}
     (hst : t ⊆ f '' s) : ∃ t₀, t₀ ⊆ s ∧ t = f '' t₀ := by
-  refine ⟨f ⁻¹' t ∩ s, inter_subset_right _ _, subset_antisymm (fun x hxt ↦ ?_) ?_⟩
+  refine ⟨f ⁻¹' t ∩ s, inter_subset_right, subset_antisymm (fun x hxt ↦ ?_) ?_⟩
   · obtain ⟨a, ha, rfl⟩ := hst hxt
     exact ⟨a, mem_inter hxt ha, rfl⟩
   simp [image_subset_iff, inter_subset_left]

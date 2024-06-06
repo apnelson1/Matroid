@@ -137,7 +137,7 @@ theorem er_mono (M : Matroid α) : Monotone M.er := by
   exact encard_mono hIJ
 
 theorem er_le_erk (M : Matroid α) (X : Set α) : M.er X ≤ M.erk := by
-  rw [erk_eq_er_ground, ← er_inter_ground_eq]; exact M.er_mono (inter_subset_right _ _)
+  rw [erk_eq_er_ground, ← er_inter_ground_eq]; exact M.er_mono inter_subset_right
 
 theorem le_er_iff : n ≤ M.er X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.encard = n := by
   refine' ⟨fun h ↦ _, fun ⟨I, hIX, hI, hIc⟩ ↦ _⟩
@@ -165,9 +165,9 @@ theorem er_inter_add_er_union_le_er_add_er (M : Matroid α) (X Y : Set α) :
     M.er (X ∩ Y) + M.er (X ∪ Y) ≤ M.er X + M.er Y := by
   obtain ⟨Ii, hIi⟩ := M.exists_basis' (X ∩ Y)
   obtain ⟨IX, hIX, hIX'⟩ :=
-    hIi.indep.subset_basis'_of_subset (hIi.subset.trans (inter_subset_left _ _))
+    hIi.indep.subset_basis'_of_subset (hIi.subset.trans inter_subset_left)
   obtain ⟨IY, hIY, hIY'⟩ :=
-    hIi.indep.subset_basis'_of_subset (hIi.subset.trans (inter_subset_right _ _))
+    hIi.indep.subset_basis'_of_subset (hIi.subset.trans inter_subset_right)
   rw [← hIX.er_eq_er_union, union_comm, ← hIY.er_eq_er_union, ← hIi.encard, ← hIX.encard,
     ← hIY.encard, union_comm, ← encard_union_add_encard_inter, add_comm]
   exact add_le_add (er_le_encard _ _) (encard_mono (subset_inter hIX' hIY'))
@@ -182,7 +182,7 @@ theorem er_union_le_er_add_er (M : Matroid α) (X Y : Set α) : M.er (X ∪ Y) �
 
 theorem er_eq_er_union_er_le_zero (X : Set α) (hY : M.er Y ≤ 0) : M.er (X ∪ Y) = M.er X :=
   (((M.er_union_le_er_add_er X Y).trans (add_le_add_left hY _)).trans_eq (add_zero _)).antisymm
-    (M.er_mono (subset_union_left _ _))
+    (M.er_mono subset_union_left)
 
 theorem er_eq_er_diff_er_le_zero (X : Set α) (hY : M.er Y ≤ 0) : M.er (X \ Y) = M.er X := by
   rw [← er_eq_er_union_er_le_zero (X \ Y) hY, diff_union_self, er_eq_er_union_er_le_zero _ hY]
@@ -276,8 +276,8 @@ theorem er_insert_eq_add_one (M : Matroid α) (X : Set α) (he : e ∈ M.E \ M.c
 
 theorem er_augment (h : M.er X < M.er Z) : ∃ z ∈ Z \ X, M.er (insert z X) = M.er X + 1 := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans (subset_union_left X Z))
-  have hlt := h.trans_le (M.er_mono (subset_union_right X Z))
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans subset_union_left)
+  have hlt := h.trans_le (M.er_mono (subset_union_right (s := X)))
   rw [hI.er_eq_encard, hJ.er_eq_encard] at hlt
   obtain ⟨e, heJ, heI⟩ := exists_of_ssubset (hIJ.ssubset_of_ne (by rintro rfl; exact hlt.ne rfl))
   have heIi : M.Indep (insert e I) := hJ.indep.subset (insert_subset heJ hIJ)
@@ -497,19 +497,19 @@ theorem rFin.union (hX : M.rFin X) (hY : M.rFin Y) : M.rFin (X ∪ Y) := by
   exact ⟨hX, hY⟩
 
 theorem rFin.rFin_union_iff (hX : M.rFin X) : M.rFin (X ∪ Y) ↔ M.rFin Y :=
-  ⟨fun h ↦ h.subset (subset_union_right _ _), fun h ↦ hX.union h⟩
+  ⟨fun h ↦ h.subset subset_union_right, fun h ↦ hX.union h⟩
 
 theorem rFin.rFin_diff_iff (hX : M.rFin X) : M.rFin (Y \ X) ↔ M.rFin Y := by
   rw [← hX.rFin_union_iff, union_diff_self, hX.rFin_union_iff]
 
 theorem rFin.inter_right (hX : M.rFin X) (Y : Set α) : M.rFin (X ∩ Y) :=
-  hX.subset (inter_subset_left _ _)
+  hX.subset inter_subset_left
 
 theorem rFin.inter_left (hX : M.rFin X) (Y : Set α) : M.rFin (Y ∩ X) :=
-  hX.subset (inter_subset_right _ _)
+  hX.subset inter_subset_right
 
 theorem rFin.diff (hX : M.rFin X) (D : Set α) : M.rFin (X \ D) :=
-  hX.subset (diff_subset _ _)
+  hX.subset diff_subset
 
 theorem rFin.insert (hX : M.rFin X) (e : α) : M.rFin (insert e X) := by
   rw [← union_singleton]; exact hX.union (M.rFin_singleton e)
@@ -540,7 +540,7 @@ theorem er_union_eq_of_subset_of_er_le_er (Z : Set α) (hXY : X ⊆ Y) (hr : M.e
   · rw [← er_union_cl_left_eq, hX'.cl_eq_cl_of_subset_of_er_ge_er hXY hr, er_union_cl_left_eq]
   rw [er_eq_top_iff.2, er_eq_top_iff.2]
   · exact not_rFin_of_er_ge hX' (M.er_mono (subset_union_of_subset_left hXY _))
-  exact not_rFin_of_er_ge hX' (M.er_mono (subset_union_left _ _))
+  exact not_rFin_of_er_ge hX' (M.er_mono subset_union_left)
 
 theorem er_union_eq_of_subsets_of_ers_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' : M.er X' ≤ M.er X)
     (hYY' : M.er Y' ≤ M.er Y) : M.er (X ∪ Y) = M.er (X' ∪ Y') := by
@@ -550,7 +550,7 @@ theorem er_union_eq_of_subsets_of_ers_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' :
 theorem rFin.basis_of_subset_cl_of_subset_of_encard_le (hX : M.rFin X) (hXI : X ⊆ M.cl I)
     (hIX : I ⊆ X) (hI : I.encard ≤ M.er X) : M.Basis I X := by
   obtain ⟨J, hJ⟩ := M.exists_basis (I ∩ M.E)
-  have hIJ := hJ.subset.trans (inter_subset_left _ _)
+  have hIJ := hJ.subset.trans inter_subset_left
   rw [← cl_inter_ground] at hXI
   replace hXI := hXI.trans <| M.cl_subset_cl_of_subset_cl hJ.subset_cl
   have hJX := hJ.indep.basis_of_subset_of_subset_cl (hIJ.trans hIX) hXI
@@ -645,7 +645,7 @@ theorem r_mono (M : Matroid α) [FiniteRk M] : Monotone M.r := by
   exact M.er_mono hXY
 
 theorem r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
-  rw [r_eq_r_inter_ground, rk_def]; exact M.r_mono (inter_subset_right _ _)
+  rw [r_eq_r_inter_ground, rk_def]; exact M.r_mono inter_subset_right
 
 theorem Indep.r (hI : M.Indep I) : M.r I = I.ncard := by
   rw [← er_toNat_eq_r, hI.er, ncard_def]

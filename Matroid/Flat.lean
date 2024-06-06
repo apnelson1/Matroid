@@ -20,7 +20,7 @@ lemma Flat.iInter {ι : Type*} [Nonempty ι] {Fs : ι → Set α}
   refine' ⟨fun I X hI hIX ↦ subset_iInter fun i ↦ _,
     (iInter_subset _ (Classical.arbitrary _)).trans (hFs _).subset_ground⟩
   obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (iInter_subset _ i))
-  refine' (subset_union_right _ _).trans ((hFs i).1 (X := Fs i ∪ X) hIJ _)
+  refine' subset_union_right.trans ((hFs i).1 (X := Fs i ∪ X) hIJ _)
   convert hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ) using 1
   rw [← union_assoc, union_eq_self_of_subset_right hIJ.subset]
 
@@ -58,10 +58,10 @@ lemma Flat.sInter_inter_ground {Fs : Set (Set α)} (h : ∀ F ∈ Fs, M.Flat F) 
   exact Flat.iInter_inter_ground (by simpa)
 
 @[simp] lemma cl_flat (M : Matroid α) (X : Set α) : M.Flat (M.cl X) :=
-  Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right _ _⟩ fun _ ↦ And.left
+  Flat.sInter ⟨M.E, M.ground_flat, inter_subset_right⟩ fun _ ↦ And.left
 
 lemma flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
-  ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
+  ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
 
 lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) (hFE : F ⊆ M.E) :
@@ -202,14 +202,14 @@ lemma flatCl_mono (M : Matroid α) : Monotone M.flatCl :=
 /-- The flats of a matroid form a complete lattice. -/
 instance flatLattice (M : Matroid α) : CompleteLattice M.FlatOf where
   sup F₁ F₂ := M.flatCl (F₁ ∪ F₂)
-  le_sup_left F F' := (subset_union_left _ _).trans (M.subset_cl _)
-  le_sup_right F F' := (subset_union_right _ _).trans (M.subset_cl _)
+  le_sup_left F F' := subset_union_left.trans (M.subset_cl _)
+  le_sup_right F F' := subset_union_right.trans (M.subset_cl _)
   sup_le := by
     rintro ⟨F₁, hF₁⟩ ⟨F₂, hF₂⟩ ⟨F₃, hF₃⟩ (h : F₁ ⊆ F₃) (h' : F₂ ⊆ F₃)
     exact (M.cl_subset_cl (union_subset h h')).trans_eq hF₃.cl
   inf F₁ F₂ := ⟨F₁ ∩ F₂, F₁.coe_flat.inter F₂.coe_flat⟩
-  inf_le_left _ _ := inter_subset_left _ _
-  inf_le_right _ _ := inter_subset_right _ _
+  inf_le_left _ _ := inter_subset_left
+  inf_le_right _ _ := inter_subset_right
   le_inf _ _ _ h h' := subset_inter h h'
   sSup Fs := M.flatCl (⋃ F ∈ Fs, F)
   le_sSup Fs F h := F.2.cl.symm.subset.trans <| M.cl_subset_cl (subset_biUnion_of_mem h)
@@ -219,7 +219,7 @@ instance flatLattice (M : Matroid α) : CompleteLattice M.FlatOf where
     simp only [iUnion_subset_iff, F.coe_flat.cl]
     assumption
   sInf Fs := ⟨(⋂ F ∈ Fs, F) ∩ M.E, Flat.biInter_inter_ground (by simp)⟩
-  sInf_le Fs F h := (inter_subset_left _ _).trans (biInter_subset_of_mem (by simpa))
+  sInf_le Fs F h := inter_subset_left.trans (biInter_subset_of_mem (by simpa))
   le_sInf Fs F h := subset_inter (by simpa) F.coe_subset_ground
   top := ⟨M.E, M.ground_flat⟩
   bot := M.flatCl ∅
@@ -482,7 +482,7 @@ lemma CovBy.eq_cl_union_of_covBy_of_ne (h₀ : F₀ ⋖[M] F) (h₁ : F₁ ⋖[M
     fun hss ↦ hne.symm <| h₀.eq_of_subset_of_ssubset h₁.flat_left hss h₁.ssubset
   obtain ⟨e, he₀, he₁⟩ := not_subset.1 hnss
   obtain rfl := h₁.cl_insert_eq ⟨h₀.subset he₀, he₁⟩
-  exact M.cl_subset_cl (insert_subset (Or.inl he₀) (subset_union_right _ _))
+  exact M.cl_subset_cl (insert_subset (Or.inl he₀) subset_union_right)
 
 lemma Flat.exists_left_covBy_of_ssubset (hF₀ : M.Flat F₀) (hF₁ : M.Flat F₁) (hss : F₀ ⊂ F₁) :
     ∃ F, ((F₀ ⋖[M] F) ∧ F ⊆ F₁) := by
@@ -580,7 +580,7 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
   have hrw : insert e F ∩ M.E = F := by
     refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
     rw [← singleton_union, union_inter_distrib_right, union_subset_iff,
-       (and_iff_left (inter_subset_left _ _))]
+       (and_iff_left inter_subset_left)]
     rintro f ⟨rfl, hf⟩
     exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
   rw [← cl_inter_ground, hrw, hF.cl, diff_self, hF.covByPartition.partOf_eq_empty he]
@@ -634,7 +634,7 @@ section Minor
 
 lemma flat_contract (X C : Set α) : (M ／ C).Flat (M.cl (X ∪ C) \ C) := by
   rw [flat_iff_cl_self, contract_cl_eq, diff_union_self, ← M.cl_union_cl_right_eq,
-    union_eq_self_of_subset_right (M.cl_subset_cl (subset_union_right _ _)), cl_cl]
+    union_eq_self_of_subset_right (M.cl_subset_cl subset_union_right), cl_cl]
 
 @[simp] lemma flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
@@ -642,7 +642,7 @@ lemma flat_contract (X C : Set α) : (M ／ C).Flat (M.cl (X ∪ C) \ C) := by
     union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_cl_self, subset_antisymm_iff,
     and_congr_right_iff]
   exact fun _ _ ↦ ⟨fun h ↦ M.subset_cl _ (union_subset (h.trans (M.cl_subset_ground _)) hC),
-    fun h ↦ (subset_union_left _ _).trans h⟩
+    fun h ↦ subset_union_left.trans h⟩
 
 lemma Flat.union_flat_of_contract (hF : (M ／ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
     M.Flat (F ∪ C) :=
@@ -657,7 +657,7 @@ lemma Flat.union_flat_of_contract' (hF : (M ／ C).Flat F) : M.Flat (F ∪ M.cl 
   rw [← cl_union_cl_right_eq, cl_inter_ground] at hF
   rw [flat_iff_subset_cl_self (union_subset _ (M.cl_subset_ground _)), hF]
   · exact union_subset_union_right _ <| (M.subset_cl _).trans (M.cl_inter_ground _).subset
-  exact (subset_union_left _ _).trans (hF.symm.subset.trans (M.cl_subset_ground _))
+  exact subset_union_left.trans (hF.symm.subset.trans (M.cl_subset_ground _))
 
 lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
     (M ／ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
@@ -681,11 +681,11 @@ lemma flat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
   rintro ⟨F, hF, rfl⟩
   rw [flat_iff_subset_cl_self]
   suffices M.cl (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, diff_eq_empty.2 hR]
-  exact (inter_subset_left _ _).trans (hF.cl_subset_of_subset (inter_subset_left _ _))
+  exact inter_subset_left.trans (hF.cl_subset_of_subset inter_subset_left)
 
 lemma flat_delete_iff {D : Set α} :
     (M ＼ D).Flat F ↔ ∃ F', M.Flat F' ∧ F = F' \ D := by
-  simp_rw [delete_eq_restrict, flat_restrict_iff (diff_subset M.E D), ← inter_diff_assoc]
+  simp_rw [delete_eq_restrict, flat_restrict_iff diff_subset, ← inter_diff_assoc]
   constructor <;>
   · rintro ⟨F, hF, rfl⟩
     refine ⟨F, hF, ?_⟩
@@ -781,10 +781,10 @@ lemma hyperplane_iff_maximal_nonspanning :
     diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
   refine' fun _ ↦ ⟨fun h X hXE hX hHX ↦ _, fun h X hX hXE hXH ↦ _⟩
   · rw [← diff_diff_cancel_left hH, ← diff_diff_cancel_left hXE,
-      h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) (diff_subset _ _)]
+      h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) diff_subset]
     rw [← subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
-    exact hHX.trans (subset_union_right _ _)
-  rw [h (diff_subset _ _) hX, diff_diff_cancel_left hXE]
+    exact hHX.trans subset_union_right
+  rw [h diff_subset hX, diff_diff_cancel_left hXE]
   rw [subset_diff]
   exact ⟨hH, hXH.symm⟩
 
@@ -812,9 +812,9 @@ lemma Hyperplane.not_ssubset (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H�
 
 lemma Hyperplane.inter_ssubset_left_of_ne (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂)
     (hne : H₁ ≠ H₂) : H₁ ∩ H₂ ⊂ H₁ := by
-  refine (inter_subset_left _ _).ssubset_of_ne fun h_eq ↦ hne <| h₁.eq_of_subset h₂ ?_
+  refine inter_subset_left.ssubset_of_ne fun h_eq ↦ hne <| h₁.eq_of_subset h₂ ?_
   rw [← h_eq]
-  exact inter_subset_right _ _
+  exact inter_subset_right
 
 lemma Hyperplane.inter_ssubset_right_of_ne (h₁ : M.Hyperplane H₁) (h₂ : M.Hyperplane H₂)
     (hne : H₁ ≠ H₂) : H₁ ∩ H₂ ⊂ H₂ := by
@@ -861,9 +861,9 @@ lemma cl_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := 
 lemma mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e ∈ M.E := by aesop_mat) :
     e ∈ M.cl X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
   simp_rw [← M.cl_inter_ground X,
-    M.cl_eq_sInter_hyperplanes _ ((inter_subset_left _ _).trans hX), mem_inter_iff, and_iff_left he,
+    M.cl_eq_sInter_hyperplanes _ (inter_subset_left.trans hX), mem_inter_iff, and_iff_left he,
     mem_sInter, mem_setOf_eq, and_imp]
-  exact ⟨fun h H hH hXH ↦ h _ hH ((inter_subset_left _ _).trans hXH),
+  exact ⟨fun h H hH hXH ↦ h _ hH (inter_subset_left.trans hXH),
     fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
 
 lemma mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat)
@@ -980,7 +980,7 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     and_congr_left_iff, iff_and_self]
   rintro h - -
   rw [← h.cl]
-  exact M.cl_subset_cl (subset_union_right _ _)
+  exact M.cl_subset_cl subset_union_right
 
 /-- Points of `M ／ C` are equivalent to flats covering `M.cl C`. -/
 @[simps] def pointContractCovByEquiv (M : Matroid α) (C : Set α) :
@@ -989,10 +989,10 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     obtain ⟨P, hP⟩ := P
     rw [← contract_inter_ground_eq, point_contract_iff, cl_inter_ground] at hP
     convert hP.1 using 1
-    rw [subset_antisymm_iff, union_subset_iff, and_iff_right (subset_union_right _ _),
-      union_subset_iff, and_iff_left (subset_union_left _ _), ← hP.1.flat_right.cl,
+    rw [subset_antisymm_iff, union_subset_iff, and_iff_right subset_union_right,
+      union_subset_iff, and_iff_left subset_union_left, ← hP.1.flat_right.cl,
       ← cl_inter_ground]
-    exact ⟨M.cl_subset_cl (subset_union_left _ _), (M.subset_cl _).trans (subset_union_right _ _)⟩⟩
+    exact ⟨M.cl_subset_cl subset_union_left, (M.subset_cl _).trans subset_union_right⟩⟩
   invFun P := ⟨P \ C, by
     obtain ⟨P, hP⟩ := P
     rw [← cl_inter_ground] at hP
@@ -1006,9 +1006,9 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     rw [← contract_inter_ground_eq, point_contract_iff] at hP
     rw [← cl_inter_ground, diff_eq_diff_inter_of_subset (union_subset _ (M.cl_subset_ground _)),
       subset_antisymm_iff, diff_subset_iff, union_subset_iff, subset_diff,
-      and_iff_right (subset_union_right _ _), and_iff_right hP.1.subset, and_iff_left hP.2]
-    · exact subset_union_left _ _
-    exact (subset_union_right _ _).trans hP.1.subset_ground_right
+      and_iff_right subset_union_right, and_iff_right hP.1.subset, and_iff_left hP.2]
+    · exact subset_union_left
+    exact subset_union_right.trans hP.1.subset_ground_right
   right_inv := by
     rintro ⟨P, hP⟩
     simp only [Subtype.mk.injEq]
@@ -1027,7 +1027,7 @@ lemma Point.eq_or_eq_of_flat_of_subset (hP : M.Point P) (hF : M.Flat F) (h : F �
 
 lemma Point.subset_or_inter_eq_loops_of_flat (hP : M.Point P) (hF : M.Flat F) :
     P ⊆ F ∨ P ∩ F = M.cl ∅ := by
-  obtain (h | h) := hP.eq_or_eq_of_flat_of_subset (hP.flat.inter hF) (inter_subset_left _ _)
+  obtain (h | h) := hP.eq_or_eq_of_flat_of_subset (hP.flat.inter hF) inter_subset_left
   · exact Or.inr h
   exact Or.inl (inter_eq_left.1 h)
 

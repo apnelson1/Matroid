@@ -15,7 +15,7 @@ section Iso
 /-- Deletions of isomorphic matroids are isomorphic. -/
 def Iso.delete (e : Iso M N) (D : Set α) :
     Iso (M ＼ D) (N ＼ (↑(e '' M.E ↓∩ D) : Set β)) :=
-  e.restrict (diff_subset _ _) (diff_subset _ _) (by aesop)
+  e.restrict diff_subset diff_subset (by aesop)
 
 /-- Contractions of isomorphic matroids are isomorphic. -/
 def Iso.contract (e : Iso M N) (C : Set α) :

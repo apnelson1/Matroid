@@ -137,7 +137,7 @@ theorem freeOn_indep (hIE : I ⊆ E) : (freeOn E).Indep I :=
 
 @[simp] theorem freeOn_basis'_iff : (freeOn E).Basis' I X ↔ I = X ∩ E := by
   rw [basis'_iff_basis_inter_ground, freeOn_basis_iff, freeOn_ground,
-    and_iff_left (inter_subset_right _ _)]
+    and_iff_left inter_subset_right]
 
 @[simp] theorem eq_freeOn_iff : M = freeOn E ↔ M.E = E ∧ M.Indep E := by
   refine ⟨?_, fun h ↦ ?_⟩
@@ -197,8 +197,8 @@ theorem trivialOn_inter_basis (hI : I ⊆ E) (hX : X ⊆ E) : (trivialOn I E).Ba
 @[simp] theorem trivialOn_dual_eq (I E : Set α) : (trivialOn I E)✶ = trivialOn (E \ I) E := by
   rw [← trivialOn_inter_ground_eq]
   refine eq_of_base_iff_base_forall rfl (fun B (hB : B ⊆ E) ↦ ?_)
-  rw [dual_base_iff, trivialOn_base_iff (inter_subset_right _ _),
-    trivialOn_base_iff (diff_subset _ _), trivialOn_ground]
+  rw [dual_base_iff, trivialOn_base_iff inter_subset_right, trivialOn_base_iff diff_subset,
+    trivialOn_ground]
   refine' ⟨fun h ↦ _, fun h ↦ _⟩
   · rw [← diff_diff_cancel_left hB, h, diff_inter_self_eq_diff]
   rw [h, inter_comm I]; simp

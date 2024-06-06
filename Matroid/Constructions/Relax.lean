@@ -13,7 +13,7 @@ lemma Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit
     (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by
   have hcl := hH.cl_insert_eq hf.2 hf.1
   rw [← cl_insert_cl_eq_cl_insert, ← hHc.cl_diff_singleton_eq_cl e, cl_insert_cl_eq_cl_insert,
-    ← spanning_iff_cl (insert_subset hf.1 ((diff_subset _ _).trans hH.subset_ground))] at hcl
+    ← spanning_iff_cl (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hcl
   refine' hcl.base_of_indep _
   rw [← (hHc.diff_singleton_indep he).not_mem_cl_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),
     hHc.cl_diff_singleton_eq_cl e, hH.flat.cl]
@@ -30,16 +30,16 @@ lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hype
     · exact fun hxB' ↦ hcl (M.mem_cl_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
 
     refine (h x ⟨hx.1, hxB⟩).1 (hB.exchange_base_of_indep hxB ?_)
-    rwa [← (hB.indep.diff {e}).not_mem_cl_iff_of_not_mem (not_mem_subset (diff_subset _ _) hxB)
+    rwa [← (hB.indep.diff {e}).not_mem_cl_iff_of_not_mem (not_mem_subset diff_subset hxB)
       (hH.subset_ground hx.1)]
 
-  rw [← cl_subset_cl_iff_subset_cl ((diff_subset _ _).trans hH.subset_ground),
+  rw [← cl_subset_cl_iff_subset_cl (diff_subset.trans hH.subset_ground),
     hHc.cl_diff_singleton_eq_cl, hH.flat.cl] at h1
   obtain hBH := hH.eq_of_subset (hB.hyperplane_of_cl_diff_singleton he) h1
 
   have hb : M.Basis (B \ {e}) H
   · exact (hB.indep.diff _).basis_of_subset_of_subset_cl
-      ((M.subset_cl (B \ {e}) ((diff_subset _ _).trans hB.subset_ground)).trans hBH.symm.subset) h1
+      ((M.subset_cl (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
   obtain ⟨f, ⟨hfH, hfBe⟩, hfB⟩ := hHc.basis_iff_insert_eq.1 hb
   refine (h _ ⟨hfH, fun hfB ↦ hfBe ⟨hfB, fun (hfe : f = e) ↦ ?_⟩⟩).2 hfB.symm
   apply hB.indep.not_mem_cl_diff_of_mem he

@@ -332,7 +332,7 @@ extension `M` of `M ＼ e`. Intended to apply when `e ∈ M.E`. -/
     refine fun Fs hFs hFne hmod ↦ ⟨Flat.sInter hFne fun F hF ↦ (hFs hF).1, ?_⟩
     have := hFne.coe_sort
     rw [deleteElem, delete_eq_restrict] at hmod
-    rw [sInter_eq_iInter, ← (hmod.ofRestrict (diff_subset _ _)).iInter_cl_eq_cl_iInter, mem_iInter]
+    rw [sInter_eq_iInter, ← (hmod.ofRestrict diff_subset).iInter_cl_eq_cl_iInter, mem_iInter]
     exact fun ⟨F, hF⟩ ↦ (hFs hF).2
 
 lemma mem_ofDeleteElem_iff : F ∈ ModularCut.ofDeleteElem M e ↔ e ∉ F ∧ M.cl F = insert e F := by
@@ -531,7 +531,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
 
   have hImax : I ∈ maximals (· ⊆ ·) {J | U.ExtIndep e J ∧ J ⊆ I ∪ B} := by
     rw [mem_maximals_iff_forall_insert (fun _ _ ht hst ↦ ⟨ht.1.subset hst, hst.trans ht.2⟩),
-      and_iff_right hI, and_iff_right (subset_union_left _ _)]
+      and_iff_right hI, and_iff_right subset_union_left]
     intro x hxI h'
     rw [insert_subset_iff, mem_union, or_iff_right hxI] at h'
     exact hcon x ⟨h'.2.1, hxI⟩ h'.1
@@ -542,7 +542,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
 
   rw [hrw, U.maximal_extIndep_iff Subset.rfl hI hI.subset_insert_ground] at hInmax
   rw [hrw, U.maximal_extIndep_iff Subset.rfl hB hB.subset_insert_ground] at hBmax
-  rw [U.maximal_extIndep_iff hIBe hI (subset_union_left _ _)] at hImax
+  rw [U.maximal_extIndep_iff hIBe hI subset_union_left] at hImax
 
   obtain (rfl | hU) := U.eq_bot_or_ground_mem
   · replace hBmax := show M.Spanning (B \ {e}) ∧ e ∈ B by
@@ -649,7 +649,7 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut)
     simp only [extIndep_iff_of_mem (show e ∈ J' from .inl rfl), hJ'e]
     exact ⟨hJ.indep.diff _, hJu⟩
 
-  have hJ'X : J' ⊆ X := insert_subset (hIX heI) ((diff_subset _ _).trans hJX)
+  have hJ'X : J' ⊆ X := insert_subset (hIX heI) (diff_subset.trans hJX)
 
   have hconJ' : (M.cl (J \ {x}) = M.cl J → e ∈ X) ∧ ¬M.CovBy (M.cl (J \ {x})) (M.cl J) := by
     rw [maximal_extIndep_iff hXE hind hJ'X, iff_true_intro hconJe] at hcon
@@ -681,7 +681,7 @@ lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
 
   refine ⟨fun h ↦ ⟨h.subset (subset_insert _ _), fun he _ ↦ ?_⟩, fun ⟨hIi, h⟩ ↦ ?_⟩
   · suffices e ∈ M.cl (M.cl I) from h.not_mem_cl_diff_of_mem (.inl rfl) <| by simpa [heI']
-    exact (M.cl_subset_cl (diff_subset _ _)) he
+    exact (M.cl_subset_cl diff_subset) he
   rw [hIi.insert_indep_iff_of_not_mem heI', mem_diff, and_iff_right (hI (.inl rfl))]
   refine fun heCl ↦ ?_
   simp only [heCl, insert_eq_of_mem, cl_flat, not_true_eq_false, imp_false] at h

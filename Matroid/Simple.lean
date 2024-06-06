@@ -811,7 +811,7 @@ end Simplification
 --     M.contract_restrict_eq_restrict_contract _ _ (subset_diff.1 hr.subset).2.symm
 --   have h : (M ↾ (N.E ∪ I)).Simple := by
 --     apply Indep.simple_of_contract_simple (I := I) _ (by rwa [← hN'])
---     refine restrict_indep_iff.2 ⟨hI, subset_union_right _ _⟩
+--     refine restrict_indep_iff.2 ⟨hI, subset_union_right⟩
 --   have hres := restrict_restriction M _ (union_subset hN.subset hI.subset_ground)
 --   obtain ⟨c, hc, hrc⟩ := hres.exists_restriction_simplificationWrt
 --   refine ⟨c, hc, ?_⟩

@@ -640,7 +640,7 @@ theorem Rep.subset_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) : v '' X �
 
 theorem Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
-  refine le_antisymm ?_ (span_mono (image_subset v <| inter_subset_left _ _))
+  refine le_antisymm ?_ (span_mono (image_subset v <| inter_subset_left))
   rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
     inter_union_diff]
   apply span_mono (union_subset (subset_insert _ _) _)
@@ -718,7 +718,7 @@ theorem Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (s
 theorem Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
   rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
-  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff (inter_subset_right _ _), cl_inter_ground]
+  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff inter_subset_right, cl_inter_ground]
   constructor
   · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
   rw [h, ← cl_inter_ground]
@@ -738,7 +738,7 @@ def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) : (M ／ C).Rep 𝔽 (W ／ (sp
       and_right_comm, ← disjoint_union_right, union_diff_self,
       union_eq_self_of_subset_left hI.subset]
     refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
-    · refine (h.2.mono_index _ (subset_union_right _ _)).map ?_
+    · refine (h.2.mono_index _ subset_union_right).map ?_
       simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
       convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
       · rw [restrict_eq, image_comp, Subtype.image_preimage_coe,

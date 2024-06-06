@@ -20,7 +20,7 @@ lemma Set.InjOn.image_diff' {f : α → β} (h : InjOn f s) :
     f '' (s \ t) = f '' s \ f '' (s ∩ t) := by
   refine' Set.ext (fun y ↦ ⟨_,_⟩)
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨x, hx.1, rfl⟩, fun h' ↦ hx.2 (h.mem_of_mem_image (inter_subset_left _ _) hx.1 h').2⟩
+    exact ⟨⟨x, hx.1, rfl⟩, fun h' ↦ hx.2 (h.mem_of_mem_image inter_subset_left hx.1 h').2⟩
   rintro ⟨⟨x, hx, rfl⟩,h'⟩
   exact ⟨x, ⟨hx,fun hxt ↦ h' ⟨x, ⟨hx,hxt⟩, rfl⟩⟩, rfl⟩
 
@@ -44,7 +44,7 @@ lemma Function.invFunOn_injOn_image_preimage [Nonempty α] (f : α → β) (S : 
 
 theorem Set.BijOn.subset_right {f : α → β} {s : Set α} {r t : Set β} (hf : BijOn f s t)
     (hxt : r ⊆ t) : BijOn f (s ∩ f ⁻¹' r) r := by
-  refine ⟨inter_subset_right _ _, hf.injOn.mono <| inter_subset_left _ _, fun x hx ↦ ?_⟩
+  refine ⟨inter_subset_right, hf.injOn.mono <| inter_subset_left, fun x hx ↦ ?_⟩
   obtain ⟨y, hy, rfl⟩ := hf.surjOn (hxt hx)
   exact ⟨y, ⟨hy, hx⟩, rfl⟩
 
@@ -91,9 +91,9 @@ theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set
   have hp : BijOn f (range g) (t' \ t) := by
     apply BijOn.mk
     · rintro _ ⟨x, hx, rfl⟩; rw [(hg _).2]; exact x.2
-    · exact hinj.mono (subset_union_right _ _)
+    · exact hinj.mono subset_union_right
     exact fun x hx ↦ ⟨g ⟨x,hx⟩, by simp [(hg _).2] ⟩
-  refine ⟨s ∪ range g, subset_union_left _ _, union_subset hss₁ <| ?_, ?_⟩
+  refine ⟨s ∪ range g, subset_union_left, union_subset hss₁ <| ?_, ?_⟩
   · rintro _ ⟨x, hx, rfl⟩; exact (hg _).1.1
   convert h.union hp ?_
   · exact (union_diff_cancel htt').symm
@@ -182,7 +182,7 @@ lemma update_injOn_iff {f : α → β} {s : Set α} {a : α} {b : β} :
 
 @[simp] lemma update_id_injOn_iff {a b : α} {s : Set α} :
     InjOn (update id a b) s ↔ (a ∈ s → b ∈ s → a = b) := by
-  rw [update_injOn_iff, and_iff_right (injective_id.injOn _)]
+  rw [update_injOn_iff, and_iff_right injective_id.injOn]
   refine ⟨fun h has hbs ↦ (h has b hbs rfl).symm, ?_⟩
   rintro h has _ hbs rfl
   exact (h has hbs).symm

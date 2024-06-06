@@ -2,7 +2,7 @@ import Mathlib.Data.Set.Pairwise.Basic
 import Matroid.Basic
 import Matroid.Alt.Dual
 
-open Set 
+open Set
 
 namespace Matroid
 
@@ -11,7 +11,7 @@ lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) := by
   rw [← inter_diff_assoc, inter_eq_self_of_subset_left h]
 
 -- lemma disjoint_of_diff_subset {A B C : Set α} (h : A ⊆ B) : Disjoint A (C \ B) :=
---   disjoint_of_subset_left h disjoint_sdiff_right  
+--   disjoint_of_subset_left h disjoint_sdiff_right
 
 -- lemma compl_diff_compl_iff (A B E : Set α) (h : A ⊆ E) : A \ B = (E \ B) \ (E \ A) := by
 --   ext; aesop
@@ -22,7 +22,7 @@ lemma compl_ground {A B E : Set α} (h : A ⊆ E) : A \ B = A ∩ (E \ B) := by
 -- lemma inter_singleton_eq_self {a : α} {S : Set α} :
 --     S ∩ {a} = {a} ↔ a ∈ S :=
 --   ⟨fun h ↦ singleton_subset_iff.mp (h.symm.subset.trans (inter_subset_left S {a})),
---    fun h ↦ subset_antisymm (inter_subset_right _ _) (singleton_subset_iff.mpr ⟨h, mem_singleton _⟩)⟩
+--    fun h ↦ subset_antisymm inter_subset_right (singleton_subset_iff.mpr ⟨h, mem_singleton _⟩)⟩
 /- end of singleton API -/
 
 
@@ -65,7 +65,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     let Indep' : Set α → Prop := { I | ∃ B, Base' B ∧ I ⊆ B }
 
     have dual_subset : ∀ I J, Indep' J → I ⊆ J → Indep' I :=
-      fun I J ⟨B, hB⟩ hIJ ↦ ⟨B, hB.1, hIJ.trans hB.2⟩ 
+      fun I J ⟨B, hB⟩ hIJ ↦ ⟨B, hB.1, hIJ.trans hB.2⟩
     have dual_base_compl : ∀ ⦃B⦄, Base B → Base' (E \ B) :=
       fun B hB ↦ by {rw [← diff_diff_cancel_left (h_support hB.1)] at hB; exact ⟨diff_subset _ _, hB⟩}
     have dual_base_indep : ∀ ⦃B⦄, Base' B → Indep' B :=
@@ -92,17 +92,17 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
 
 
-    
 
 
-    
+
+
 
     have aux2'' : ∀ X B, X ⊆ E → Base B →
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)} →
         B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} := by
       {
-        refine' fun X B hX hB hBX ↦ ⟨⟨h_subset hB.1 (inter_subset_left _ _),
-          inter_subset_right _ _⟩, _⟩
+        refine' fun X B hX hB hBX ↦ ⟨⟨h_subset hB.1 inter_subset_left,
+          inter_subset_right⟩, _⟩
         by_contra! g
         obtain ⟨I, h⟩ := g
 
@@ -118,8 +118,8 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
            inter_subset_inter_left _ (diff_subset_diff_right hBt.2)
         have h₄ : (E \ Bt) ∩ X ⊂ (E \ B) ∩ X :=
            ssubset_of_subset_of_ssubset h₃ h₂
-        
-        
+
+
         obtain ⟨I', hI'⟩ : ∃ I', I' ∈ maximals (· ⊆ ·) {I' | Indep' I'} ∧ E \ B ∩ (E \ X) ⊆ I' ∧ I' ⊆ E \ B ∩ (E \ X) ∪ E \ Bt
         . obtain ⟨B'', hB''⟩ := h_basis (h_subset hBt.1.1 (diff_subset Bt ((E \ B) ∩ (E \ X)))) hB
           refine' ⟨E \ B'', _, ⟨fun e he ↦ ⟨he.1.1,
@@ -138,9 +138,9 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         have h₅ : (E \ B) ∩ (E \ X) ⊆ I' ∩ (E \ X) := by
           rw [← inter_eq_self_of_subset_left (inter_subset_right (E \ B) (E \ X))]
           exact inter_subset_inter_left (E \ X) hI'.2.1
-        
+
         have h₆ : I' ∩ (E \ X) ⊆ (E \ B) ∩ (E \ X) :=
-          hBX.2 ⟨(fun I J ⟨B, hB⟩ hIJ ↦ ⟨B, hB.1, hIJ.trans hB.2⟩) _ I' hI'.1.1 (inter_subset_left _ _), inter_subset_right _ _⟩ h₅
+          hBX.2 ⟨(fun I J ⟨B, hB⟩ hIJ ↦ ⟨B, hB.1, hIJ.trans hB.2⟩) _ I' hI'.1.1 inter_subset_left, inter_subset_right⟩ h₅
 
         have h₇ : I' ∩ X ⊆ (E \ Bt) ∩ X := by
           {
@@ -157,7 +157,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           ssubset_of_subset_of_ssubset h₇ h₄
         have h₉ : I' ⊂ (E \ B) :=
           sorry
-          -- ssubset_of_subset_of_compl_ssubset' (dual_support I' hI'.1.1) (diff_subset _ _) hX h₆ h₈
+          -- ssubset_of_subset_of_compl_ssubset' (dual_support I' hI'.1.1) diff_subset hX h₆ h₈
         exact h₉.not_subset (hI'.1.2 (dual_base_indep (dual_base_compl hB)) h₉.subset)
       }
 
@@ -173,12 +173,12 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
       have I'eq : I' = B' ∩ X :=
         subset_antisymm (subset_inter_iff.mpr ⟨hB'.2.1, hI'.1.2⟩)
-          (hI'.2 ⟨h_subset hB'.1.1 (inter_subset_left _ _), inter_subset_right _ _⟩
+          (hI'.2 ⟨h_subset hB'.1.1 inter_subset_left, inter_subset_right⟩
           (subset_inter_iff.mpr ⟨hB'.2.1, hI'.1.2⟩))
       rw [I'eq] at hI'
 
       have hB'c : E \ B' ∩ (E \ X) ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I' | Indep' I' ∧ I' ⊆ E \ X}
-      · refine' ⟨⟨⟨E \ B', ⟨diff_subset _ _, by { rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB'.1.1)]; exact hB'.1 }⟩, inter_subset_left _ _⟩, inter_subset_right _ _⟩, _⟩
+      · refine' ⟨⟨⟨E \ B', ⟨diff_subset _ _, by { rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB'.1.1)]; exact hB'.1 }⟩, inter_subset_left⟩, inter_subset_right⟩, _⟩
         -- maximality
         by_contra! g
         obtain ⟨B, hB⟩ : ∃ B, Base B ∧ (B ∩ (E \ X) ⊂ B' ∩ (E \ X)) := by
@@ -188,13 +188,13 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           rw [← inter_eq_self_of_subset_left h.1.2] at h₁
           have h₂ : (E \ I) ∩ (E \ X) ⊂ B' ∩ (E \ X) :=
             sorry
-          exact ⟨E \ Bt, hBt.1.2, ssubset_of_subset_of_ssubset (inter_subset_inter_left _ 
+          exact ⟨E \ Bt, hBt.1.2, ssubset_of_subset_of_ssubset (inter_subset_inter_left _
             (diff_subset_diff_right hBt.2)) h₂⟩
         obtain ⟨J, hJ⟩ := h_basis hI'.1.1 hB.1
         have h₁JB : J ∩ X ⊆ B' ∩ X
         · have := inter_subset_inter_left X hJ.2.1
           rw [inter_eq_self_of_subset_left (inter_subset_right B' X)] at this
-          exact hI'.2 ⟨h_subset hJ.1.1 (inter_subset_left _ _), (inter_subset_right _ _)⟩ this
+          exact hI'.2 ⟨h_subset hJ.1.1 inter_subset_left, inter_subset_right⟩ this
         have h₂JB : J ∩ (E \ X) ⊂ B' ∩ (E \ X)
         . have := inter_subset_inter_left (E \ X) hJ.2.2
           rw [union_inter_distrib_right, inter_assoc, inter_diff_self, inter_empty,
@@ -217,7 +217,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       }
       rw [subset_antisymm h (hB'c.2 ⟨⟨E \ B,
           ⟨diff_subset _ _, by { rw [diff_diff_cancel_left (h_support hB.1.1)]; exact hB.1 }⟩,
-          inter_subset_left _ _⟩, inter_subset_right _ _⟩ h)] at hB'c
+          inter_subset_left⟩, inter_subset_right⟩ h)] at hB'c
       refine' ⟨B ∩ X, (aux2'' X B hX hB.1) hB'c, subset_inter_iff.mpr ⟨hB.2.1, hIX⟩, _⟩
       · calc B ∩ X ⊆ (I ∪ B') ∩ X    := inter_subset_inter_left X hB.2.2
           _ = (I ∩ X) ∪ (B' ∩ X)     := inter_distrib_right _ _ _
@@ -267,7 +267,7 @@ lemma aux {ι : Type*} [DecidableEq ι] {Ms : ι → Matroid α}
     . rintro j; rw [heqJs]; dsimp
       split_ifs with hj
       . rw [hj]; exact hX.subset_ground
-      exact inter_subset_right _ _
+      exact inter_subset_right
 
     have hJ : ⋃ j, Js j ∈ {I | I ⊆ ⋃ j, (Ms j).E ∧ ∀ j, (Ms j).Indep (I ∩ (Ms j).E)}
     · refine' ⟨iUnion_mono hJs, _⟩
@@ -305,7 +305,7 @@ def directSum {ι : Type*} [DecidableEq ι] (Ms : ι → Matroid α)
       have hineq := inter_iUnion_disjoint hEs (fun i ↦ (hIs i).left_subset_ground)
       refine' ⟨⟨⟨iUnion_subset_iff.mpr (fun i ↦ (hIs i).left_subset_ground.trans
         (subset_iUnion (fun i ↦ (Ms i).E) i)), fun i ↦ (by { rw [hineq i]; exact (hIs i).indep })⟩,
-         iUnion_subset (fun i ↦ (hIs i).subset.trans (inter_subset_left _ _))⟩, _⟩
+         iUnion_subset (fun i ↦ (hIs i).subset.trans inter_subset_left)⟩, _⟩
       · rintro B ⟨⟨hBEs, hBs⟩, hBX⟩ hB
         have : B ⊆ ⋃ (i : ι), B ∩ (Ms i).E := by
           { rw [← inter_iUnion]; exact fun e he ↦ ⟨he, hBEs he⟩ }
@@ -317,7 +317,7 @@ def directSum {ι : Type*} [DecidableEq ι] (Ms : ι → Matroid α)
     })
     (fun I J hJ hIJ ↦ ⟨hIJ.trans hJ.1,
       fun i ↦ (hJ.2 i).subset
-      (subset_inter ((inter_subset_left _ _).trans hIJ) (inter_subset_right _ _))⟩) 
+      (subset_inter (inter_subset_left.trans hIJ) inter_subset_right)⟩)
     (by {
       rintro I I' ⟨hIE, hIs⟩ ⟨⟨hI'E, hI's⟩, hI'max⟩
       choose! Bs hBs using (fun i ↦ (hIs i).exists_base_subset_union_base
@@ -331,8 +331,8 @@ def directSum {ι : Type*} [DecidableEq ι] (Ms : ι → Matroid α)
         exact this.trans (iUnion_mono fun i ↦ (hBs i).2.1)
       rw [iUnion_subset_iff]
       exact fun i ↦
-        (hBs i).2.2.trans (union_subset_union (inter_subset_left _ _) (inter_subset_left _ _))
+        (hBs i).2.2.trans (union_subset_union inter_subset_left inter_subset_left)
     })
     (fun _ hI ↦ hI.1)
 
-end Matroid 
+end Matroid

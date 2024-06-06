@@ -202,7 +202,7 @@ lemma parallelExtend_cl_eq_of_mem (he : M.Nonloop e) (hf : f ∉ M.E) (X : Set �
   rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_cl_eq, mem_diff,
     (parallelExtend_parallel he f).mem_cl_iff_mem_cl] at heX
   rw [cl_diff_singleton_eq_cl heX.1, eq_comm, insert_eq_self]
-  exact mem_of_mem_of_subset heX.1 (cl_subset_cl _ (diff_subset _ _))
+  exact mem_of_mem_of_subset heX.1 (cl_subset_cl _ diff_subset)
 
 lemma parallelExtend_cl_eq_of_not_mem_not_mem (he : M.Nonloop e) (hf : f ∉ M.E) {X : Set α}
     (heX : e ∉ M.cl X) (hfX : f ∉ X) : (M.parallelExtend e f).cl X = M.cl X := by

@@ -35,7 +35,7 @@ lemma cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
-  sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right _ _⟩
+  sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right⟩
 
 lemma ground_subset_cl_iff : (M.E ⊆ M.cl X) ↔ M.cl X = M.E := by
   simp [M.cl_subset_ground X, subset_antisymm_iff]
@@ -184,15 +184,15 @@ lemma Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
   have hF : M.Flat F := by
     refine' ⟨fun J X hJF hJX e heX ↦ (_ : M.Basis _ _), hIF.subset_ground⟩
     exact (hIF.basis_of_basis_of_subset_of_subset (hJX.basis_union hJF) hJF.subset
-      (hIF.subset.trans (subset_union_right _ _))).basis_subset (subset_insert _ _)
-      (insert_subset (Or.inl heX) (hIF.subset.trans (subset_union_right _ _)))
+      (hIF.subset.trans subset_union_right)).basis_subset (subset_insert _ _)
+      (insert_subset (Or.inl heX) (hIF.subset.trans subset_union_right))
 
   rw [subset_antisymm_iff, cl_def, subset_sInter_iff, and_iff_right (sInter_subset_of_mem _)]
   · rintro F' ⟨hF', hIF'⟩ e (he : M.Basis I (insert e I))
     rw [inter_eq_left.mpr (hIF.subset.trans hIF.subset_ground)] at hIF'
     obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF' hF'.2
     exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (Or.inr (mem_insert _ _))
-  exact ⟨hF, (inter_subset_left _ _).trans hIF.subset⟩
+  exact ⟨hF, inter_subset_left.trans hIF.subset⟩
 
 lemma Indep.insert_basis_iff_mem_cl (hI : M.Indep I) : M.Basis I (insert e I) ↔ e ∈ M.cl I := by
   rw [hI.cl_eq_setOf_basis_insert, mem_setOf]
@@ -332,7 +332,7 @@ lemma Indep.cl_sInter_eq_biInter_cl_of_forall_subset {Js : Set (Set α)} (hI : M
   · refine' (hJI.indep.subset (insert_subset (heJ (mem_insert _ _)) _)).not_dep hd
     specialize hIs _ hX'
     rw [← singleton_union, ← diff_subset_iff, diff_singleton_eq_self hfX] at hIs
-    exact hIs.trans (diff_subset _ _)
+    exact hIs.trans diff_subset
   exact heEI.2 (hIs _ hX' heX)
 
 lemma cl_iInter_eq_iInter_cl_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
@@ -373,7 +373,7 @@ lemma basis_iff_basis_cl_of_subset' (hIX : I ⊆ X) : M.Basis I X ↔ X ⊆ M.E 
 
 lemma basis'_iff_basis_cl : M.Basis' I X ↔ M.Basis I (M.cl X) ∧ I ⊆ X := by
   rw [← cl_inter_ground, basis'_iff_basis_inter_ground]
-  exact ⟨fun h ↦ ⟨h.basis_cl_right, h.subset.trans (inter_subset_left _ _)⟩,
+  exact ⟨fun h ↦ ⟨h.basis_cl_right, h.subset.trans inter_subset_left⟩,
     fun h ↦ h.1.basis_subset (subset_inter h.2 h.1.indep.subset_ground) (M.subset_cl _)⟩
 
 lemma exists_basis_inter_ground_basis_cl (M : Matroid α) (X : Set α) :
@@ -389,12 +389,12 @@ lemma Basis.basis_of_cl_eq_cl (hI : M.Basis I X) (hY : I ⊆ Y) (h : M.cl X = M.
   exact M.subset_cl Y
 
 lemma basis_union_iff_indep_cl : M.Basis I (I ∪ X) ↔ M.Indep I ∧ X ⊆ M.cl I :=
-  ⟨fun h ↦ ⟨h.indep, (subset_union_right _ _).trans h.subset_cl⟩, fun ⟨hI, hXI⟩ ↦
-    hI.basis_cl.basis_subset (subset_union_left _ _) (union_subset (M.subset_cl I) hXI)⟩
+  ⟨fun h ↦ ⟨h.indep, subset_union_right.trans h.subset_cl⟩, fun ⟨hI, hXI⟩ ↦
+    hI.basis_cl.basis_subset subset_union_left (union_subset (M.subset_cl I) hXI)⟩
 
 lemma basis_iff_indep_cl : M.Basis I X ↔ M.Indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
   ⟨fun h ↦ ⟨h.indep, h.subset_cl, h.subset⟩, fun h ↦
-    (basis_union_iff_indep_cl.mpr ⟨h.1, h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩
+    (basis_union_iff_indep_cl.mpr ⟨h.1, h.2.1⟩).basis_subset h.2.2 subset_union_right⟩
 
 lemma Basis.eq_of_cl_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I := by
   rw [← hI.indep.cl_inter_eq_self_of_subset hJI, inter_eq_self_of_subset_right]
@@ -447,7 +447,7 @@ lemma mem_cl_diff_singleton_iff_cl (he : e ∈ X) (heE : e ∈ M.E := by aesop_m
 
 lemma indep_iff_not_mem_cl_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ e ∈ I, e ∉ M.cl (I \ {e}) := by
-  use fun h e heI he ↦ ((h.cl_inter_eq_self_of_subset (diff_subset I {e})).subset ⟨he, heI⟩).2 rfl
+  use fun h e heI he ↦ ((h.cl_inter_eq_self_of_subset diff_subset).subset ⟨he, heI⟩).2 rfl
   intro h
   obtain ⟨J, hJ⟩ := M.exists_basis I
   convert hJ.indep
@@ -471,7 +471,7 @@ lemma indep_iff_cl_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) �
     inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, cl_inter_ground]
 
 lemma Indep.cl_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂ M.cl I :=
-  ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
+  ssubset_of_subset_of_ne (M.cl_mono diff_subset) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
 lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ (∀ J, J ⊂ I → M.cl J ⊂ M.cl I) := by
@@ -540,7 +540,7 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
 lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) (X : Set β) :
     (M.map f hf).cl X = f '' M.cl (f ⁻¹' X) := by
   suffices h' : ∀ X ⊆ f '' M.E, (M.map f hf).cl X = f '' (M.cl (f ⁻¹' X)) by
-    convert h' (X ∩ f '' M.E) (inter_subset_right _ _) using 1
+    convert h' (X ∩ f '' M.E) inter_subset_right using 1
     · rw [← cl_inter_ground]; rfl
     rw [preimage_inter, eq_comm, ← cl_inter_ground, inter_assoc, hf.preimage_image_inter Subset.rfl,
       cl_inter_ground]
@@ -606,11 +606,11 @@ lemma Spanning.cl_superset_eq (hS : M.Spanning S) (hST : S ⊆ T) : M.cl T = M.E
 
 lemma Spanning.union_left (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (S ∪ X) :=
-  hS.superset (subset_union_left _ _)
+  hS.superset subset_union_left
 
 lemma Spanning.union_right (hS : M.Spanning S) (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning (X ∪ S) :=
-  hS.superset (subset_union_right _ _)
+  hS.superset subset_union_right
 
 lemma Base.spanning (hB : M.Base B) : M.Spanning B :=
   ⟨hB.cl_eq, hB.subset_ground⟩
@@ -690,14 +690,15 @@ section Constructions
 
 @[simp] lemma trivialOn_cl_eq (I E X : Set α) :
     (trivialOn I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
-  have hb := (trivialOn_basis_iff (inter_subset_right I E) (inter_subset_right X E)).mpr rfl
+  have hb : (trivialOn (I ∩ E) E).Basis (X ∩ E ∩ (I ∩ E)) (X ∩ E) :=
+    (trivialOn_basis_iff inter_subset_right inter_subset_right).2 rfl
   ext e
   rw [← trivialOn_inter_ground_eq I E, ← cl_inter_ground _ X, trivialOn_ground,
     ← hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivialOn_indep_iff', insert_subset_iff,
-    trivialOn_ground, inter_assoc, inter_self,  and_iff_left (inter_subset_right _ _),
+    trivialOn_ground, inter_assoc, inter_self,  and_iff_left inter_subset_right,
     ← inter_inter_distrib_right, inter_assoc, inter_union_distrib_right, inter_comm I,
     inter_union_diff, insert_subset_iff, inter_comm X, inter_assoc,
-    and_iff_left (inter_subset_left _ _), mem_inter_iff]
+    and_iff_left inter_subset_left, mem_inter_iff]
   simp only [not_and, mem_inter_iff, mem_union, mem_diff]
   tauto
 
@@ -708,11 +709,11 @@ variable {Xs Ys : Set (Set α)} {ι : Type*}
 lemma Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
     M.Basis (X ∩ I) X ↔ X ⊆ M.cl (X ∩ I) :=
   ⟨Basis.subset_cl,
-    fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_cl (inter_subset_left _ _) h⟩
+    fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_cl inter_subset_left h⟩
 
 lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
     (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
-  refine (hI.inter_left _).basis_of_subset_of_subset_cl (inter_subset_left _ _) ?_
+  refine (hI.inter_left _).basis_of_subset_of_subset_cl inter_subset_left ?_
   simp_rw [biInter_distrib_inter _ hA,
     cl_biInter_eq_biInter_cl_of_biUnion_indep hA (I := fun i ↦ (X i) ∩ I) (hI.subset (by simp)),
     subset_iInter_iff]
@@ -732,7 +733,7 @@ lemma Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
     M.Basis (M.cl X ∩ I) (M.cl X) := by
   rw [hI.inter_basis_cl_iff_subset_cl_inter] at h ⊢
   exact (M.cl_subset_cl_of_subset_cl h).trans (M.cl_subset_cl
-    (inter_subset_inter_left _ (h.trans (M.cl_subset_cl (inter_subset_left _ _)))))
+    (inter_subset_inter_left _ (h.trans (M.cl_subset_cl inter_subset_left))))
 
 section Iso
 
@@ -772,7 +773,7 @@ end Matroid
 -- -- {x : α} {I : set α} (h : x ∈ cl (I \ {x})) :
 -- --   cl (I \ {x}) = cl I :=
 -- -- begin
--- --   refine (cl_mono _ _ (diff_subset _ _)).antisymm _,
+-- --   refine (cl_mono _ _ diff_subset).antisymm _,
 -- --   have h' := cl_mono _ _ (insert_subset.mpr ⟨h, (M.subset_cl _ )⟩),
 -- --   rw [insert_diff_singleton, cl_idem] at h',
 -- --   exact (cl_mono _ _ (subset_insert _ _)).trans h',

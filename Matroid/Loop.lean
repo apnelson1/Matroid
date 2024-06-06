@@ -159,7 +159,7 @@ lemma LoopEquiv.union_eq_union (h : M.LoopEquiv X Y) : X ∪ M.cl ∅ = Y ∪ M.
 
 lemma LoopEquiv.diff_eq_diff (h : M.LoopEquiv X Y) : X \ M.cl ∅ = Y \ M.cl ∅ := by
   rw [subset_antisymm_iff, diff_subset_iff, union_diff_self, union_comm, ← h.union_eq_union,
-    diff_subset_iff, union_diff_self, union_comm _ X, and_iff_right (subset_union_left _ _),
+    diff_subset_iff, union_diff_self, union_comm _ X, and_iff_right subset_union_left,
     h.union_eq_union]
   apply subset_union_left
 
@@ -177,14 +177,14 @@ lemma LoopEquiv.trans (hXY : M.LoopEquiv X Y) (hYZ : M.LoopEquiv Y Z) : M.LoopEq
 
 lemma LoopEquiv.diff_subset_loops (h : M.LoopEquiv X Y) : X \ Y ⊆ M.cl ∅ := by
   rw [diff_subset_iff, ← h.union_eq_union]
-  exact subset_union_left _ _
+  exact subset_union_left
 
 lemma LoopEquiv.symmDiff_subset_loops : M.LoopEquiv X Y ↔ X ∆ Y ⊆ M.cl ∅ := by
   rw [Set.symmDiff_def, union_subset_iff]
   refine ⟨fun h ↦ ⟨h.diff_subset_loops, h.symm.diff_subset_loops⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
   rw [diff_subset_iff] at h1 h2
   rw [loopEquiv_iff_union_eq_union, subset_antisymm_iff, union_subset_iff, union_subset_iff]
-  exact ⟨⟨h1, subset_union_right _ _⟩, h2, subset_union_right _ _⟩
+  exact ⟨⟨h1, subset_union_right⟩, h2, subset_union_right⟩
 
 lemma loopEquiv_union (X : Set α) (hL : L ⊆ M.cl ∅) : M.LoopEquiv X (X ∪ L) := by
    rw [loopEquiv_iff_union_eq_union, union_assoc, union_eq_self_of_subset_left hL]
@@ -210,7 +210,7 @@ lemma LoopEquiv.exists_diff_union_loops (h : M.LoopEquiv X Y) :
   ⟨_, _, h.symm.diff_subset_loops, h.diff_subset_loops, by aesop⟩
 
 lemma LoopEquiv.subset_union_loops (h : M.LoopEquiv X Y) : Y ⊆ X ∪ M.cl ∅ := by
-  rw [h.union_eq_union]; exact subset_union_left _ _
+  rw [h.union_eq_union]; exact subset_union_left
 
 lemma LoopEquiv.cl_eq_cl (h : M.LoopEquiv X Y) : M.cl X = M.cl Y := by
   rw [← cl_union_loops_eq, h.union_eq_union, cl_union_loops_eq]
@@ -529,7 +529,7 @@ lemma coloop_iff_forall_mem_base : M.Coloop e ↔ ∀ ⦃B⦄, M.Base B → e �
     dual_ground, mem_diff]
   refine' ⟨fun h B hB ↦ _, fun h B ⟨hB, _⟩ ↦ ⟨hB.subset_ground (h hB), (h hB).2⟩⟩
   · rw [← diff_diff_cancel_left hB.subset_ground]
-    exact h (M.E \ B) ⟨(by rwa [diff_diff_cancel_left hB.subset_ground]), diff_subset _ _⟩
+    exact h (M.E \ B) ⟨(by rwa [diff_diff_cancel_left hB.subset_ground]), diff_subset⟩
 
 lemma Base.mem_of_coloop (hB : M.Base B) (he : M.Coloop e) : e ∈ B :=
   coloop_iff_forall_mem_base.mp he hB
@@ -580,7 +580,7 @@ lemma coloop_iff_forall_mem_cl_iff_mem' :
     M.Coloop e ↔ (∀ X, X ⊆ M.E → (e ∈ M.cl X ↔ e ∈ X)) ∧ e ∈ M.E := by
   rw [coloop_iff_forall_mem_cl_iff_mem, and_congr_left_iff]
   refine fun he ↦ ⟨fun h X _ ↦ h X, fun h X ↦ ?_⟩
-  rw [← cl_inter_ground, h (X ∩ M.E) (inter_subset_right _ _), mem_inter_iff, and_iff_left he]
+  rw [← cl_inter_ground, h (X ∩ M.E) inter_subset_right, mem_inter_iff, and_iff_left he]
 
 lemma Coloop.mem_cl_iff_mem (he : M.Coloop e) : e ∈ M.cl X ↔ e ∈ X :=
   (coloop_iff_forall_mem_cl_iff_mem.1 he).1 X
@@ -599,7 +599,7 @@ lemma coloop_iff_diff_nonspanning : M.Coloop e ↔ ¬ M.Spanning (M.E \ {e}) := 
       ← cl_ground]
     apply M.cl_subset_cl
     rw [cl_ground]
-    exact (subset_insert _ _).trans (subset_union_right _ _)
+    exact (subset_insert _ _).trans subset_union_right
   · exact M.subset_cl X hX he
   rw [spanning_iff_cl, diff_singleton_eq_self h', cl_ground]
 
@@ -611,7 +611,7 @@ lemma coloop_iff_not_mem_cl_compl (he : e ∈ M.E := by aesop_mat) :
   rw [coloop_iff_diff_cl, not_iff_not]
   refine ⟨fun h ↦ by rwa [h], fun h ↦ (M.cl_subset_ground _).antisymm fun x hx ↦ ?_⟩
   obtain (rfl | hne) := eq_or_ne x e; assumption
-  exact M.subset_cl (M.E \ {e}) (diff_subset _ _) (show x ∈ M.E \ {e} from ⟨hx, hne⟩)
+  exact M.subset_cl (M.E \ {e}) diff_subset (show x ∈ M.E \ {e} from ⟨hx, hne⟩)
 
 lemma Base.mem_coloop_iff_forall_not_mem_fundCct (hB : M.Base B) (he : e ∈ B) :
     M.Coloop e ↔ ∀ x ∈ M.E \ B, e ∉ M.fundCct x B := by
@@ -619,7 +619,7 @@ lemma Base.mem_coloop_iff_forall_not_mem_fundCct (hB : M.Base B) (he : e ∈ B) 
   have h' : M.E \ {e} ⊆ M.cl (B \ {e}) := by
     rintro x ⟨hxE, hne : x ≠ e⟩
     obtain (hx | hx) := em (x ∈ B)
-    · exact M.subset_cl (B \ {e}) ((diff_subset _ _).trans hB.subset_ground) ⟨hx, hne⟩
+    · exact M.subset_cl (B \ {e}) (diff_subset.trans hB.subset_ground) ⟨hx, hne⟩
     have h_cct := (hB.fundCct_circuit ⟨hxE, hx⟩).mem_cl_diff_singleton_of_mem
       (M.mem_fundCct x B)
     refine (M.cl_subset_cl (subset_diff_singleton ?_ ?_)) h_cct
@@ -678,8 +678,8 @@ lemma cl_eq_of_subset_coloops (hK : K ⊆ M✶.cl ∅) : M.cl K = K ∪ M.cl ∅
 lemma cl_diff_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.cl ∅) :
     M.cl (X \ K) = M.cl X \ K := by
   nth_rw 2 [← inter_union_diff X K]
-  rw [union_comm, cl_union_eq_of_subset_coloops _ ((inter_subset_right X K).trans hK),
-    union_diff_distrib, diff_eq_empty.mpr (inter_subset_right X K), union_empty, eq_comm,
+  rw [union_comm, cl_union_eq_of_subset_coloops _ (inter_subset_right.trans hK),
+    union_diff_distrib, diff_eq_empty.mpr inter_subset_right, union_empty, eq_comm,
     sdiff_eq_self_iff_disjoint, disjoint_iff_forall_ne]
   rintro e heK _ heX rfl
   have he : M.Coloop e := hK heK
@@ -708,7 +708,7 @@ lemma Coloop.insert_indep_of_indep (he : M.Coloop e) (hI : M.Indep I) : M.Indep 
 
 lemma union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M✶.cl ∅) :
     M.Indep (I ∪ K) ↔ M.Indep I := by
-  refine ⟨fun h ↦ h.subset (subset_union_left I K), fun h ↦ ?_⟩
+  refine ⟨fun h ↦ h.subset subset_union_left, fun h ↦ ?_⟩
   obtain ⟨B, hB, hIB⟩ := h.exists_base_superset
   exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ Coloop.mem_of_base he hB))
 
@@ -738,9 +738,9 @@ lemma eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid �
   refine' eq_of_indep_iff_indep_forall hE fun I hI ↦ _
   rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ← hc]
   obtain hdj | hndj := em (Disjoint I (M₁.cl ∅))
-  · rw [h _ ((diff_subset _ _).trans hI)]
+  · rw [h _ (diff_subset.trans hI)]
     rw [disjoint_union_right]
-    exact ⟨disjoint_of_subset_left (diff_subset _ _) hdj, disjoint_sdiff_left⟩
+    exact ⟨disjoint_of_subset_left diff_subset hdj, disjoint_sdiff_left⟩
   obtain ⟨e, heI, hel : M₁.Loop e⟩ := not_disjoint_iff_nonempty_inter.mp hndj
   refine' iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) _
   rw [loop_iff_mem_cl_empty, hl, ← loop_iff_mem_cl_empty] at hel ; rw [hc]

@@ -97,10 +97,10 @@ lemma ModularBase.iInter_cl_eq_cl_iInter [Nonempty ι] (hB : M.ModularBase B Xs)
     (⋂ i : ι, M.cl (Xs i)) = M.cl (⋂ i : ι, Xs i) := by
   simp_rw [subset_antisymm_iff, subset_iInter_iff, ← hB.cl_inter_eq]
   rw [← cl_iInter_eq_iInter_cl_of_iUnion_indep, ← iInter_inter B Xs]
-  · refine ⟨M.cl_subset_cl (inter_subset_left _ _), fun i ↦ ?_⟩
+  · refine ⟨M.cl_subset_cl inter_subset_left, fun i ↦ ?_⟩
     rw [hB.cl_inter_eq]
     exact M.cl_subset_cl (iInter_subset _ i)
-  exact hB.base.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right _ _))
+  exact hB.base.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
 
 end ModularBase
 section ModularFamily
@@ -214,7 +214,7 @@ lemma modularFamily_map_iff {β : Type*} (f : α → β) (hf : InjOn f M.E) {Xs 
     choose Ys hYs using hIs
     refine ⟨Ys, ⟨B, hB, fun i ↦ ?_⟩, fun i ↦ (hYs i).2.2⟩
     convert (hYs i).1
-    rw [← hf.image_eq_image_iff_of_subset ((inter_subset_right _ _).trans hB.subset_ground)
+    rw [← hf.image_eq_image_iff_of_subset (inter_subset_right.trans hB.subset_ground)
       (hYs i).1.indep.subset_ground, ← (hYs i).2.1, (hYs i).2.2, hf.image_inter]
     · exact (hYs i).1.subset_ground
     exact hB.subset_ground
@@ -258,8 +258,8 @@ lemma ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
   simp only [Bool.forall_bool, cond_false, cond_true]
   rw [← hIX.eq_of_subset_indep (hB.indep.inter_left X) (inter_subset_inter_right _ hIB)
-    (inter_subset_left _ _), ← hIY.eq_of_subset_indep (hB.indep.inter_left Y)
-    (inter_subset_inter_right _ hIB) (inter_subset_left _ _)]
+    inter_subset_left, ← hIY.eq_of_subset_indep (hB.indep.inter_left Y)
+    (inter_subset_inter_right _ hIB) inter_subset_left]
   exact ⟨hIY,hIX⟩
 
 lemma ModularFamily.modularPair (h : M.ModularFamily Xs) (i j : ι) :
@@ -284,15 +284,15 @@ lemma modularPair_iff_exists_basis_basis :
   refine ⟨fun ⟨I,hI,hIX,hIY⟩ ↦ ⟨_, _, hIX, hIY, hI.subset (by simp)⟩,
     fun ⟨I,J,hI,hJ,hi⟩ ↦ ⟨_,hi, ?_⟩⟩
   simp_rw [hi.inter_basis_cl_iff_subset_cl_inter]
-  use hI.subset_cl.trans (M.cl_subset_cl (subset_inter hI.subset (subset_union_left _ _)))
-  exact hJ.subset_cl.trans (M.cl_subset_cl (subset_inter hJ.subset (subset_union_right _ _)))
+  use hI.subset_cl.trans (M.cl_subset_cl (subset_inter hI.subset subset_union_left))
+  exact hJ.subset_cl.trans (M.cl_subset_cl (subset_inter hJ.subset subset_union_right))
 
 lemma ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
     M.Basis I (X ∪ Y) ∧ M.Basis (I ∩ X) X ∧ M.Basis (I ∩ Y) Y ∧ M.Basis (I ∩ X ∩ Y) (X ∩ Y) := by
   obtain ⟨B, hB⟩ := h
   refine ⟨(X ∪ Y) ∩ B, ?_⟩
-  rw [inter_right_comm, inter_eq_self_of_subset_right (subset_union_left _ _),
-    inter_right_comm, inter_eq_self_of_subset_right (subset_union_right _ _), inter_right_comm]
+  rw [inter_right_comm, inter_eq_self_of_subset_right subset_union_left,
+    inter_right_comm, inter_eq_self_of_subset_right subset_union_right, inter_right_comm]
   refine ⟨?_, by simpa using hB.basis_inter true, by simpa using hB.basis_inter false, ?_⟩
   · have hu := hB.basis_iUnion
     rwa [← union_eq_iUnion] at hu
@@ -308,7 +308,7 @@ lemma modularPair_of_subset (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.ModularPair X Y
   obtain ⟨I,J, hI, hJ, hIJ⟩ := M.exists_basis_subset_basis hXY
   refine modularPair_iff.2 ⟨J, hJ.indep, ?_, by rwa [inter_eq_self_of_subset_right hJ.subset]⟩
   rwa [← hI.eq_of_subset_indep (hJ.indep.inter_left X) (subset_inter hI.subset hIJ)
-    (inter_subset_left _ _)]
+    inter_subset_left]
 
 lemma Indep.modularPair_of_union (hi : M.Indep (I ∪ J)) : M.ModularPair I J := by
   simpa only [iUnion_subset_iff, Bool.forall_bool, cond_false, subset_union_right, cond_true,
@@ -375,9 +375,9 @@ lemma rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.
   have hifin : Ii.encard ≠ ⊤ := by
     simpa using (hXfin.inter_right Y).finite_of_basis hIi
   obtain ⟨IX, hIX, hX⟩ := hIi.indep.subset_basis_of_subset
-    (hIi.subset.trans (inter_subset_left _ _))
+    (hIi.subset.trans inter_subset_left)
   obtain ⟨IY, hIY, hY⟩ := hIi.indep.subset_basis_of_subset
-    (hIi.subset.trans (inter_subset_right _ _))
+    (hIi.subset.trans inter_subset_right)
   refine ⟨IX, IY, hIX, hIY, ?_⟩
   rw [hIi.er_eq_encard, hIX.er_eq_encard, ← encard_diff_add_encard_of_subset hX,
     add_comm (encard _), add_assoc, WithTop.add_left_cancel_iff hifin, hIY.er_eq_encard,
@@ -497,13 +497,13 @@ lemma ModularSet.Flat [Simple M] (hF : M.ModularSet F) : M.Flat F := by
   have heM := M.cl_subset_ground F heF
   have heI : e ∈ I := by
     rw [hI.inter_basis_cl_iff_subset_cl_inter, cl_singleton_eq,
-      cl_eq_self_of_subset_singleton heM (inter_subset_left _ _)] at hIe
+      cl_eq_self_of_subset_singleton heM inter_subset_left] at hIe
     simpa using hIe
   apply hI.not_mem_cl_diff_of_mem heI
   apply mem_of_mem_of_subset <| M.cl_subset_cl_of_subset_cl hIF.subset_cl heF
   apply M.cl_subset_cl
-  rw [subset_diff, and_iff_right (inter_subset_right _ _), disjoint_singleton_right]
-  exact fun he' ↦ he <| (inter_subset_left _ _) he'
+  rw [subset_diff, and_iff_right inter_subset_right, disjoint_singleton_right]
+  exact fun he' ↦ he <| inter_subset_left he'
 
 end ModularSet
 
@@ -541,7 +541,7 @@ lemma SkewFamily.disjoint_of_indep_subset (h : M.SkewFamily Xs) (hI : M.Indep I)
 
 lemma SkewFamily.pairwise_disjoint_inter_of_indep (h : M.SkewFamily Xs) (hI : M.Indep I) :
     Pairwise (Disjoint on fun i ↦ Xs i ∩ I) :=
-  fun _ _ hij ↦ (h.disjoint_inter_indep hI hij).mono_right (inter_subset_left _ _)
+  fun _ _ hij ↦ (h.disjoint_inter_indep hI hij).mono_right inter_subset_left
 
 lemma SkewFamily.pairwise_disjoint_of_indep_subsets (h : M.SkewFamily Xs) (hIX : ∀ i, Is i ⊆ Xs i)
     (hIs : ∀ i, M.Indep (Is i)) : Pairwise (Disjoint on Is) :=
@@ -575,7 +575,7 @@ lemma skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
   refine ⟨fun h ↦ ?_, fun ⟨Is, hdj, hIs, hb⟩ ↦ hIs.indep.skewFamily_of_disjoint_bases hdj hb⟩
   obtain ⟨B, hB⟩ := h.modularFamily
   refine ⟨_, ?_, ?_, hB.basis_inter⟩
-  · exact h.pairwise_disjoint_of_indep_subsets (fun i ↦ inter_subset_left _ _)
+  · exact h.pairwise_disjoint_of_indep_subsets (fun i ↦ inter_subset_left)
       (fun i ↦ hB.indep.inter_left _)
   rw [← iUnion_inter]
   exact hB.basis_iUnion
@@ -614,7 +614,7 @@ lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, I
     simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
     exact fun i _ ↦ (huKs i).indep.subset_ground
 
-  obtain ⟨K', hK', hss⟩ := (hJs i₀).1.indep.subset_basis_of_subset (subset_union_left _ _) hssE
+  obtain ⟨K', hK', hss⟩ := (hJs i₀).1.indep.subset_basis_of_subset subset_union_left hssE
 
   have hK'' : ∀ i, i ≠ i₀ → Ks i ⊆ K' := by
     intro i hne f hf
@@ -633,7 +633,7 @@ lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, I
       exact (hdj hne).ne_of_mem hf hf' rfl
 
     refine subset_trans ?_ <|
-      insert_subset_insert (M.subset_cl _ ((diff_subset _ _).trans hKs.indep.subset_ground))
+      insert_subset_insert (M.subset_cl _ (diff_subset.trans hKs.indep.subset_ground))
     rw [insert_diff_singleton]
     exact (subset_iUnion Ks i).trans (subset_insert _ _)
 
@@ -643,7 +643,7 @@ lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, I
     rintro f hf
     obtain ⟨i, hfi⟩ := mem_iUnion.1 (hJ.subset hf)
     obtain (rfl | hi) := eq_or_ne i₀ i
-    · apply M.subset_cl (K' \ {e}) ((diff_subset _ _).trans hK'.indep.subset_ground)
+    · apply M.subset_cl (K' \ {e}) (diff_subset.trans hK'.indep.subset_ground)
       exact ⟨hss hfi, fun (h : f = e) ↦ heJ <| h ▸ hf⟩
     refine mem_of_mem_of_subset ((hJs i).1.subset.trans (huKs i).subset_cl hfi) (M.cl_subset_cl ?_)
     refine subset_diff_singleton (hK'' i hi.symm) (fun heK ↦ ?_)
@@ -700,11 +700,11 @@ lemma skewFamily_iff_forall_circuit (hXs : ∀ i, Xs i ⊆ M.E) (hdj : Pairwise 
   · have h : ∃ i, ¬ M.Indep (C ∩ Xs i) := by
       by_contra! hcon
       refine hC.dep.not_indep ?_
-      refine (h.iUnion_indep_subset_indep (fun i ↦ inter_subset_right _ _) hcon).subset ?_
+      refine (h.iUnion_indep_subset_indep (fun i ↦ inter_subset_right) hcon).subset ?_
       simp [← inter_iUnion, hCU, Subset.rfl]
     obtain ⟨i, hi⟩ := h
-    rw [← hC.eq_of_not_indep_subset hi (inter_subset_left _ _)]
-    exact ⟨i, inter_subset_right _ _⟩
+    rw [← hC.eq_of_not_indep_subset hi inter_subset_left]
+    exact ⟨i, inter_subset_right⟩
   choose Is hIs using fun i ↦ M.exists_basis _ (hXs i)
   have hss := iUnion_mono (fun i ↦ (hIs i).subset)
   have hIe : ⋃ i, Is i ⊆ M.E := by simp [fun i ↦ (hIs i).subset.trans (hXs i)]
@@ -861,7 +861,7 @@ lemma Indep.skew_iff_disjoint_union_indep (hI : M.Indep I) (hJ : M.Indep J) :
 lemma Indep.subset_skew_diff (h : M.Indep I) (hJI : J ⊆ I) : M.Skew J (I \ J) := by
   rw [Indep.skew_iff_disjoint]
   · exact disjoint_sdiff_right
-  exact h.subset (union_subset hJI (diff_subset _ _))
+  exact h.subset (union_subset hJI diff_subset)
 
 lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
@@ -869,7 +869,7 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
   refine ⟨fun h ↦ ?_, fun h ↦ skew_iff_exist_bases.2 ?_⟩
   · refine eq_of_indep_iff_indep_forall rfl fun J (hJ : J ⊆ Y) ↦ ?_
     simp_rw [restrict_indep_iff, hI.contract_indep_iff, and_iff_left hJ]
-    refine ⟨fun h ↦ h.1.subset (subset_union_left _ _),
+    refine ⟨fun h ↦ h.1.subset subset_union_left,
       fun hJi ↦ ⟨?_, h.disjoint_of_indep_subset_right hJi hJ⟩⟩
     exact h.symm.union_indep_of_indep_subsets hJi hJ hI.indep hI.subset
   obtain ⟨J, hJ⟩ := M.exists_basis Y
@@ -882,8 +882,8 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
   rw [← h, restrict_indep_iff, hI.contract_indep_iff] at hi
   exact hi.1.2.mono_left hI.subset
 
-lemma Circuit.something {C : Set α} (hC : M.Circuit C) (hXnt : X.Nontrivial) (hXC : X ⊆ C)
-    (hJ : M.Skew X J) : ∃ C', (M ／ J).Circuit C' ∧ X ⊆ C' := by
+-- lemma Circuit.something {C : Set α} (hC : M.Circuit C) (hXnt : X.Nontrivial) (hXC : X ⊆ C)
+--     (hJ : M.Skew X J) : ∃ C', (M ／ J).Circuit C' ∧ X ⊆ C' := by
 
 
 

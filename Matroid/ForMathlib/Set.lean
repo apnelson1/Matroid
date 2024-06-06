@@ -58,8 +58,7 @@ lemma diff_union_eq_union_of_subset (s : Set α) {t r : Set α} (h : t ⊆ r) :
 lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t ∩ s = r ∩ s) := by
   rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := r)]
   refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
-  rw [← diff_diff_cancel_left (inter_subset_right t s), h,
-    diff_diff_cancel_left (inter_subset_right r s)]
+  rw [← diff_diff_cancel_left inter_subset_right, h, diff_diff_cancel_left inter_subset_right]
 
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
   simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
@@ -84,7 +83,7 @@ lemma subset_insert_iff {s t : Set α} {x : α} :
   rw [← diff_singleton_subset_iff]
   obtain (hx | hx) := em (x ∈ s)
   · rw [and_iff_right hx]
-    exact ⟨fun h ↦ Or.inr h, fun h ↦ h.elim (fun hst ↦ (diff_subset _ _).trans hst) id⟩
+    exact ⟨fun h ↦ Or.inr h, fun h ↦ h.elim (fun hst ↦ diff_subset.trans hst) id⟩
   rw [diff_singleton_eq_self hx]
   tauto
 
@@ -130,6 +129,6 @@ lemma subset_diff_singleton_iff {s t : Set α} {x : α} : s ⊆ t \ {x} ↔ (s �
   rw [subset_diff, disjoint_singleton_right]
 
 lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ t := by
-  refine (diff_subset _ _).ssubset_of_ne fun h_eq ↦ ?_
+  refine diff_subset.ssubset_of_ne fun h_eq ↦ ?_
   rw [sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right hst] at h_eq
   simp [h_eq] at hs

@@ -71,11 +71,11 @@ instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   refine' ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ _) (fun h ↦ Or.inl ⟨_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) _⟩
   · refine' X.finite_or_infinite.elim (fun hfin ↦ Or.inr _) (fun hinf ↦ Or.inl ⟨_, hXE⟩)
-    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' (inter_subset_right _ _) h,
+    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' inter_subset_right h,
         inter_eq_self_of_subset_left hXE]
     rw [hinf.encard_eq]
     apply le_top
-  · exact h.trans (encard_mono (inter_subset_left _ _))
+  · exact h.trans (encard_mono inter_subset_left)
   rintro rfl
   rw [inter_self]
   exact ⟨Or.inl rfl.le, Subset.rfl⟩
@@ -99,7 +99,7 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - 
   refine eq_of_base_iff_base_forall (by simp) (fun B hBE ↦ ?_)
   simp only [dual_ground, unifOn_ground_eq] at hBE
   rw [dual_base_iff', unifOn_base_iff' ((tsub_le_self.trans_lt hE.encard_lt_top).ne) (by simp) hBE,
-    unifOn_ground_eq, and_iff_left hBE, unifOn_base_iff hlt.le (diff_subset _ _),
+    unifOn_ground_eq, and_iff_left hBE, unifOn_base_iff hlt.le diff_subset,
     ← WithTop.add_right_cancel_iff (hE.subset hBE).encard_lt_top.ne,
     encard_diff_add_encard_of_subset hBE, Iff.comm, eq_comm, add_comm,
     ← WithTop.add_right_cancel_iff (hlt.trans_le le_top).ne, tsub_add_cancel_of_le hlt.le]
@@ -116,9 +116,9 @@ theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
   rw [← contract_inter_ground_eq, unifOn_ground_eq, inter_comm,
     contract_spanning_iff, unifOn_spanning_iff', unifOn_spanning_iff', tsub_le_iff_right,
-    iff_true_intro (disjoint_of_subset_right (inter_subset_right _ _) hS.2), and_true,
-     ← encard_union_eq (disjoint_of_subset_right (inter_subset_right _ _) hS.2), union_subset_iff,
-    and_iff_left (inter_subset_left _ _), and_iff_left hS.1, subset_diff, union_inter_distrib_left,
+    iff_true_intro (disjoint_of_subset_right inter_subset_right hS.2), and_true,
+     ← encard_union_eq (disjoint_of_subset_right inter_subset_right hS.2), union_subset_iff,
+    and_iff_left inter_subset_left, and_iff_left hS.1, subset_diff, union_inter_distrib_left,
     and_iff_left hS, union_eq_self_of_subset_left hS.1, inter_eq_left,
     subset_antisymm_iff, subset_diff, and_iff_right hS, diff_subset_iff, union_comm C]
   · exact ((tsub_le_self).trans_lt (WithTop.coe_lt_top k)).ne

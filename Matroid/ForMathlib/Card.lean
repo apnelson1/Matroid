@@ -98,7 +98,7 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
   have hrw : ∀ t : Set α, encard t = encard (t \ {x}) + encard (t ∩ {x}) := by
     intro t
     rw [← encard_union_eq, diff_union_inter]
-    exact disjoint_sdiff_left.mono_right (inter_subset_right _ _)
+    exact disjoint_sdiff_left.mono_right inter_subset_right
   rw [hrw, Finset.sum_congr rfl (fun i _ ↦ hrw (s i)), Finset.sum_add_distrib,
     inter_eq_self_of_subset_right (singleton_subset_iff.2 (mem_iUnion_of_mem i hxi)),
     encard_singleton, eq_comm, iUnion_diff] at hsum

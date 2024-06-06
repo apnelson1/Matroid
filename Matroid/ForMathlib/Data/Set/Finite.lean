@@ -5,8 +5,6 @@ open Set
 
 variable {α : Type*} {s : Set α}
 
-lemma Set.Infinite.nontrivial (hs : s.Infinite) : s.Nontrivial :=
-  not_subsingleton_iff.1 <| mt Subsingleton.finite hs
 
 lemma infinite_iUnion {ι : Type*} [Infinite ι] {s : ι → Set α} (hs : Function.Injective s) :
     (⋃ i, s i).Infinite :=

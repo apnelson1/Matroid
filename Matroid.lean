@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.ForMathlib
 import Matroid.Constructions.Basic
 import Matroid.Map
 import Matroid.Equiv

@@ -39,7 +39,7 @@ def dual (M : Matroid α) : Matroid α :=
 
       rw [diff_diff_singleton (show x ∈ M.E \ B₂ from ⟨hxE, hx.2⟩),
         diff_diff, insert_union,
-        union_eq_self_of_subset_left (diff_subset_diff_right (subset_union_right _ _))] at hB''₂
+        union_eq_self_of_subset_left (diff_subset_diff_right subset_union_right)] at hB''₂
       have hne : M.E \ B₁ ≠ B''
       · rintro rfl
         exact (hB''₁ (show x ∈ _ from ⟨⟨hxE, hx.2⟩,fun h ↦ h.2 rfl⟩)).2 hx.1
@@ -150,15 +150,15 @@ def dual (M : Matroid α) : Matroid α :=
       rw [diff_eq, inter_right_comm, ← diff_eq, diff_subset_iff] at hssJ
 
       have hI' : (B'' ∩ X) ∪ (B' \ X) ⊆ B'
-      · rw [union_subset_iff, and_iff_left (diff_subset _ _),
+      · rw [union_subset_iff, and_iff_left diff_subset,
         ← inter_eq_self_of_subset_left hB''.subset_ground, inter_right_comm, inter_assoc]
 
         calc _ ⊆ _ := inter_subset_inter_right _ hssJ
             _ ⊆ _ := by rw [inter_distrib_left, hdj.symm.inter_eq, union_empty]
-            _ ⊆ _ := inter_subset_right _ _
+            _ ⊆ _ := inter_subset_right
 
       obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_base_subset_union_base hB''
-      rw [union_comm, ← union_assoc, union_eq_self_of_subset_right (inter_subset_left _ _)] at hB₁I
+      rw [union_comm, ← union_assoc, union_eq_self_of_subset_right inter_subset_left] at hB₁I
 
       have : B₁ = B'
       · refine' hB₁.eq_of_subset_indep hB'.indep (fun e he ↦ _)
@@ -242,7 +242,7 @@ theorem setOf_dual_base_eq : setOf M✶.Base = (fun X ↦ M.E \ X) '' setOf M.Ba
   ext B
   simp only [mem_setOf_eq, mem_image, dual_base_iff']
   refine' ⟨fun h ↦ ⟨_, h.1, diff_diff_cancel_left h.2⟩,
-    fun ⟨B', hB', h⟩ ↦ ⟨_,h.symm.trans_subset (diff_subset _ _)⟩⟩
+    fun ⟨B', hB', h⟩ ↦ ⟨_,h.symm.trans_subset diff_subset⟩⟩
   rwa [← h, diff_diff_cancel_left hB'.subset_ground]
 
 @[simp] theorem dual_dual (M : Matroid α) : M✶✶ = M :=
@@ -257,12 +257,12 @@ theorem Base.compl_base_dual (h : M.Base B) : M✶.Base (M.E \ B) := by
 
 theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B ∩ X) X) :
     M✶.Basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := by
-  refine' Indep.basis_of_forall_insert _ (inter_subset_right _ _) (fun e he ↦ _)
+  refine' Indep.basis_of_forall_insert _ inter_subset_right (fun e he ↦ _)
   · rw [dual_indep_iff_exists]
-    exact ⟨B, hB, disjoint_of_subset_left (inter_subset_left _ _) disjoint_sdiff_left⟩
+    exact ⟨B, hB, disjoint_of_subset_left inter_subset_left disjoint_sdiff_left⟩
   simp only [diff_inter_self_eq_diff, mem_diff, not_and, not_not, imp_iff_right he.1.1] at he
   simp_rw [dual_dep_iff_forall, insert_subset_iff, and_iff_right he.1.1,
-    and_iff_left ((inter_subset_left _ _).trans (diff_subset _ _))]
+    and_iff_left (inter_subset_left.trans diff_subset)]
   refine' fun B' hB' ↦ by_contra (fun hem ↦ _)
   simp_rw [nonempty_iff_ne_empty, not_ne_iff, ← union_singleton, inter_distrib_right,
     union_empty_iff, singleton_inter_eq_empty, diff_eq, inter_comm _ M.E,
@@ -272,7 +272,7 @@ theorem Base.compl_inter_basis_of_inter_basis (hB : M.Base B) (hBX : M.Basis (B 
 
   have hi : M.Indep (insert f (B ∩ X))
   · refine' hBf.indep.subset (insert_subset_insert _)
-    simp_rw [subset_diff, and_iff_right (inter_subset_left _ _), disjoint_singleton_right,
+    simp_rw [subset_diff, and_iff_right inter_subset_left, disjoint_singleton_right,
       mem_inter_iff, iff_false_intro he.1.2, and_false]
   exact hfb.2 (hBX.mem_of_insert_indep (hem.1 hfb) hi).1
 

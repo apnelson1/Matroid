@@ -280,7 +280,7 @@ protected theorem tsum_le_of_subset {s t : Set α} (h : s ⊆ t) :
 protected theorem tsum_le_union (s t : Set α) :
     ∑' (x : ↑(s ∪ t)), f (x : α) ≤ ∑' (x : s), f x + ∑' (x : t), f x := by
   rw [← diff_union_self, ENat.tsum_union_disjoint disjoint_sdiff_left]
-  exact add_le_add_right (ENat.tsum_le_of_subset (diff_subset _ _)) _
+  exact add_le_add_right (ENat.tsum_le_of_subset diff_subset) _
 
 protected theorem tsum_insert {s : Set α} {a : α} (h : a ∉ s) :
     ∑' (x : ↑(insert a s)), f x = f a + ∑' (x : s), f x := by

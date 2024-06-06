@@ -89,7 +89,7 @@ end Basic
 
 /-- A `SetIndependent` collection gives a partition of its supremum by removing `⊥`. -/
 def ofIndependent' {u : Set α} (hs : CompleteLattice.SetIndependent u) : Partition (sSup u) :=
-  (ofIndependent (hs.mono (diff_subset u {⊥})) (fun h ↦ h.2 rfl)).congr (by simp)
+  (ofIndependent (hs.mono (diff_subset (t := {⊥}))) (fun h ↦ h.2 rfl)).congr (by simp)
 
 @[simp] lemma mem_ofIndependent'_iff {u : Set α} (hu : CompleteLattice.SetIndependent u) {a : α} :
   a ∈ ofIndependent' hu ↔ a ∈ u ∧ a ≠ ⊥ := Iff.rfl

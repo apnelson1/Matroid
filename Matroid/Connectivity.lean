@@ -141,7 +141,7 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   obtain (he₂K₁ | he₂K₁) := em (e₂ ∈ K₁); exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
 
   have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.diff_singleton_indep hfC₂).subset
-      (subset_diff_singleton (diff_subset _ _) (by simp [hfK₁]))
+      (subset_diff_singleton diff_subset (by simp [hfK₁]))
 
   have hH := hK₁.compl_hyperplane
 
@@ -200,52 +200,52 @@ lemma Connected.exists_circuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e �
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
 
-theorem Connected.finite_of_finitary_of_cofinitary (hM : M.Connected) [Finitary M] [Finitary M✶] :
-    M.Finite := by
+-- theorem Connected.finite_of_finitary_of_cofinitary (hM : M.Connected) [Finitary M] [Finitary M✶] :
+--     M.Finite := by
 
-  let goodSet := {I : Set α // Set.Infinite {C | M.Circuit C ∧ I ⊆ C}}
+--   let goodSet := {I : Set α // Set.Infinite {C | M.Circuit C ∧ I ⊆ C}}
 
-  set I' : ℕ → goodSet := sorry
+--   set I' : ℕ → goodSet := sorry
 
-  set I : ℕ → Set α := fun i ↦ (I' i).1
+--   set I : ℕ → Set α := fun i ↦ (I' i).1
 
-  have hI_strict : StrictMono I := sorry
-  -- have hI_strict : ∀ ⦃i j⦄, i < j → I i ⊂ I j := sorry
-  have hIC : ∀ i, ∃ C, M.Circuit C ∧ I i ⊂ C := by
-    intro i
-    obtain ⟨C, hC⟩ := (I' (i+1)).2.nonempty
-    exact ⟨C, hC.1, ssubset_of_ssubset_of_subset (hI_strict (Nat.lt.base i)) hC.2⟩
+--   have hI_strict : StrictMono I := sorry
+--   -- have hI_strict : ∀ ⦃i j⦄, i < j → I i ⊂ I j := sorry
+--   have hIC : ∀ i, ∃ C, M.Circuit C ∧ I i ⊂ C := by
+--     intro i
+--     obtain ⟨C, hC⟩ := (I' (i+1)).2.nonempty
+--     exact ⟨C, hC.1, ssubset_of_ssubset_of_subset (hI_strict (Nat.lt.base i)) hC.2⟩
 
-  set I₀ := ⋃ i, I i with hI₀_def
+--   set I₀ := ⋃ i, I i with hI₀_def
 
-  have hI₀ : M.Indep I₀ := by
-    rw [indep_iff_forall_finite_subset_indep]
-    intro J hJss hJfin
-    rw [hJfin.subset_iUnion_mono_iff hI_strict.monotone] at hJss
-    obtain ⟨i, hJi⟩ := hJss
-    obtain ⟨C, hC, hssu⟩ := hIC i
-    exact (hC.ssubset_indep hssu).subset hJi
+--   have hI₀ : M.Indep I₀ := by
+--     rw [indep_iff_forall_finite_subset_indep]
+--     intro J hJss hJfin
+--     rw [hJfin.subset_iUnion_mono_iff hI_strict.monotone] at hJss
+--     obtain ⟨i, hJi⟩ := hJss
+--     obtain ⟨C, hC, hssu⟩ := hIC i
+--     exact (hC.ssubset_indep hssu).subset hJi
 
-  obtain ⟨B, hB, hIB⟩ := hI₀.exists_base_superset
+--   obtain ⟨B, hB, hIB⟩ := hI₀.exists_base_superset
 
-  obtain ⟨e, heI1, -⟩ := exists_of_ssubset <| hI_strict (show 0 < 1 by norm_num)
-  obtain ⟨K,hK, hKB⟩ := hB.indep.exists_cocircuit_inter_eq_mem (show e ∈ _ from sorry)
+--   obtain ⟨e, heI1, -⟩ := exists_of_ssubset <| hI_strict (show 0 < 1 by norm_num)
+--   obtain ⟨K,hK, hKB⟩ := hB.indep.exists_cocircuit_inter_eq_mem (show e ∈ _ from sorry)
 
-  have hufin := hK.finite.biUnion (t := fun x ↦ I₀ ∩ (M.fundCct x B)) sorry
+--   have hufin := hK.finite.biUnion (t := fun x ↦ I₀ ∩ (M.fundCct x B)) sorry
 
-  obtain ⟨m, hem, hb⟩ : ∃ m, e ∈ I m ∧ ∀ x ∈ K, I₀ ∩ M.fundCct x B ⊆ I m := by
-    have h:= hufin.subset_iUnion_mono_iff hI_strict.monotone
-    simp only [iUnion_subset_iff, inter_subset_left, implies_true, true_iff] at h
-    obtain ⟨m', hm'⟩ := h
-    refine ⟨m' + 1, ?_, fun x hx ↦ (hm' x hx).trans (hI_strict.monotone <| Nat.le_add_right m' 1)⟩
-    exact hI_strict.monotone (Nat.le_add_left 1 _) heI1
+--   obtain ⟨m, hem, hb⟩ : ∃ m, e ∈ I m ∧ ∀ x ∈ K, I₀ ∩ M.fundCct x B ⊆ I m := by
+--     have h:= hufin.subset_iUnion_mono_iff hI_strict.monotone
+--     simp only [iUnion_subset_iff, inter_subset_left, implies_true, true_iff] at h
+--     obtain ⟨m', hm'⟩ := h
+--     refine ⟨m' + 1, ?_, fun x hx ↦ (hm' x hx).trans (hI_strict.monotone <| Nat.le_add_right m' 1)⟩
+--     exact hI_strict.monotone (Nat.le_add_left 1 _) heI1
 
 
-  obtain ⟨Cm, hCm, hImCm⟩ := hIC m
-  have hnt := hCm.cocircuit_inter_nontrivial hK ⟨e, hImCm.subset hem, (hKB.symm.subset rfl).1⟩
-  obtain ⟨f, ⟨hfCm, hfK⟩, hfe⟩ := hnt.exists_ne e
+--   obtain ⟨Cm, hCm, hImCm⟩ := hIC m
+--   have hnt := hCm.cocircuit_inter_nontrivial hK ⟨e, hImCm.subset hem, (hKB.symm.subset rfl).1⟩
+--   obtain ⟨f, ⟨hfCm, hfK⟩, hfe⟩ := hnt.exists_ne e
 
-  have foo : ∃ C', (M ／ (B \ I₀)).Circuit C' ∧ (I m) ⊆ C' := sorry
+--   have foo : ∃ C', (M ／ (B \ I₀)).Circuit C' ∧ (I m) ⊆ C' := sorry
 
   -- have := hCm.ssubset_indep (X := M.fundCct f B)
 
@@ -377,15 +377,15 @@ lemma Indep.encard_inter_add_erk_dual_eq_of_cl_eq_cl (hI : M.Indep I) (hI' : M.I
       exact ⟨hdj.mono_left hB.subset,
         hsk.union_indep_of_indep_subsets hB.indep hB.subset (hK.indep.diff _) Subset.rfl⟩
 
-    · exact subset_union_left _ _
+    · exact subset_union_left
     · rw [contract_cl_eq, subset_diff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
         and_iff_left (hdj.mono_left hB.subset), ← cl_union_cl_left_eq, hB.cl_eq_cl, cl_cl,
         cl_union_cl_left_eq, union_diff_self, union_eq_self_of_subset_left hIK, hK.cl_eq_cl]
-      exact union_subset (hB.subset.trans (M.cl_subset_cl (subset_union_left _ _)))
-        (M.subset_cl_of_subset ((diff_subset _ _).trans (subset_union_right _ _)))
+      exact union_subset (hB.subset.trans (M.cl_subset_cl subset_union_left))
+        (M.subset_cl_of_subset (diff_subset.trans subset_union_right))
 
     rw [diff_subset_iff, union_comm B, ← union_assoc]
-    exact hK.subset.trans <| subset_union_left _ _
+    exact hK.subset.trans <| subset_union_left
 
   have hb' : ∀ ⦃B⦄, M.Basis B (M.cl I) →
       (B ∩ J).encard + (M ／ (K \ I) ↾ (B ∪ J \ (K \ I)))✶.erk = (J \ (K \ I)).encard := by
@@ -398,7 +398,7 @@ lemma Indep.encard_inter_add_erk_dual_eq_of_cl_eq_cl (hI : M.Indep I) (hI' : M.I
     intro Y
     rw [restrict_indep_iff, and_iff_right (hK.indep.diff I), diff_subset_iff, union_comm Y,
       ← union_assoc]
-    exact hK.subset.trans (subset_union_left _ _)
+    exact hK.subset.trans subset_union_left
   have hI'b := hII'.symm ▸ hI'.basis_cl
   rw [← (hind I).contract_er_dual_eq,  ← (hind I').contract_er_dual_eq,
     restrict_contract_eq_contract_restrict _ (hb hI.basis_cl).2,
@@ -449,7 +449,7 @@ lemma conn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.Basis' I 
     (hJ : M.Basis' J Y) (hFIJ : F ⊆ I ∪ J)  (hF : M.Basis' ((I ∪ J) \ F) (X ∪ Y)) :
     M.conn X Y = F.encard := by
   have hF' : M.Basis ((I ∪ J) \ F) (I ∪ J) := by
-    refine hF.basis_inter_ground.basis_subset (diff_subset _ _)
+    refine hF.basis_inter_ground.basis_subset diff_subset
       (subset_inter (union_subset_union hI.subset hJ.subset)
       (union_subset hI.indep.subset_ground hJ.indep.subset_ground))
   rw [hI.conn_eq hJ, hF'.erk_dual_restrict, diff_diff_cancel_left hFIJ,
@@ -458,7 +458,7 @@ lemma conn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.Basis' I 
 lemma conn_eq_encard_of_diff' {F : Set α} (hXY : Disjoint X Y) (hI : M.Basis' I X)
     (hJ : M.Basis' J Y) (hFI : F ⊆ I)  (hF : M.Basis' ((I \ F) ∪ J) (X ∪ Y)) :
     M.conn X Y = F.encard := by
-  apply conn_eq_encard_of_diff hXY hI hJ (hFI.trans (subset_union_left _ _))
+  apply conn_eq_encard_of_diff hXY hI hJ (hFI.trans subset_union_left)
   rwa [union_diff_distrib, (sdiff_eq_left (x := J)).2 ]
   exact (hXY.symm.mono hJ.subset (hFI.trans hI.subset))
 
@@ -543,7 +543,7 @@ lemma conn_eq_conn_inter_ground_left (M : Matroid α) (X Y : Set α) :
 lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.conn X (M.E \ X) := by
   suffices ∀ X ⊆ M.E, M.conn X (M.E \ X) = M✶.conn X (M.E \ X) by
     rw [conn_eq_conn_inter_ground_left, M✶.conn_eq_conn_inter_ground_left,
-      show M.E \ X = M.E \ (X ∩ M.E) by simp, this _ (inter_subset_right _ _), dual_ground]
+      show M.E \ X = M.E \ (X ∩ M.E) by simp, this _ inter_subset_right, dual_ground]
   intro X hX
 
   obtain ⟨I, hI⟩ := M.exists_basis X
@@ -556,7 +556,7 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
   have hBXb : M.Base BX := by rw [← basis_ground_iff, ← hIJE.cl_eq]; exact hBX.basis_cl_right
 
   obtain rfl : I = BX ∩ X := hI.eq_of_subset_indep (hBXb.indep.inter_right _)
-    (subset_inter hIBX hI.subset) (inter_subset_right _ _)
+    (subset_inter hIBX hI.subset) inter_subset_right
 
   have hBXdual := hBXb.compl_inter_basis_of_inter_basis hI
   rw [diff_inter_diff, union_comm, ← diff_diff] at hBXdual
@@ -565,13 +565,13 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
   have hBYb : M.Base BY := by rw [← basis_ground_iff, ← hIJE.cl_eq]; exact hBY.basis_cl_right
 
   obtain rfl : J = BY ∩ (M.E \ X) := hJ.eq_of_subset_indep (hBYb.indep.inter_right _)
-    (subset_inter hJBY hJ.subset) (inter_subset_right _ _)
+    (subset_inter hJBY hJ.subset) inter_subset_right
 
   have hBYdual := hBYb.compl_inter_basis_of_inter_basis hJ
   rw [diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hBYdual
 
   rw [hBYdual.basis'.conn_eq_of_disjoint hBXdual.basis' disjoint_sdiff_right,
-    hI.basis'.conn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.erk_dual_restrict, union_diff_distrib, diff_eq_empty.2 (inter_subset_left _ _), empty_union,
+    hI.basis'.conn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.erk_dual_restrict, union_diff_distrib, diff_eq_empty.2 inter_subset_left, empty_union,
     Basis.erk_dual_restrict (hBYb.compl_base_dual.basis_ground.basis_subset _ _)]
 
   · rw [union_diff_distrib, diff_eq_empty.2 (diff_subset_diff_left hX), empty_union, diff_diff,
@@ -581,9 +581,9 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
   · rw [← union_diff_cancel hX, union_diff_distrib, union_diff_cancel hX, diff_diff, diff_diff]
     refine union_subset_union_right _ (diff_subset_diff_right ?_)
     simp only [union_subset_iff, subset_union_left, true_and]
-    exact hBX.subset.trans (union_subset_union (inter_subset_right _ _) (inter_subset_left _ _))
+    exact hBX.subset.trans (union_subset_union inter_subset_right inter_subset_left)
 
-  exact union_subset ((diff_subset _ _).trans hX) ((diff_subset _ _).trans (diff_subset _ _))
+  exact union_subset (diff_subset.trans hX) (diff_subset.trans diff_subset)
 
 end conn
 
