@@ -37,7 +37,6 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
   linarith [M₁.r_mono (show I ∩ A ⊆ A from inter_subset_right),
     M₂.r_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
-
 lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
@@ -102,10 +101,9 @@ lemma exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (h
   rw [r_cl_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
   exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_cl M₁ X)) _
 
-
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
 noncomputable def max_common_ind (M₁ M₂ : Matroid α) : ℕ∞ :=
-  ⨆ I ∈ {I | M₁.Indep I ∧ M₂.Indep I}, encard I
+  ⨆ (I : Set α) (_ : M₁.Indep I ∧ M₂.Indep I), encard I
 
 
 

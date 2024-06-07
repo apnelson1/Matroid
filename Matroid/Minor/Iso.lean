@@ -121,20 +121,6 @@ theorem IsoMinor.exists_iso (i : N ≤i M) :
       ext x
       simp [← he]
 
-noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M where
-  toFun := e
-  inj' := e.inj'
-  exists_minor' := by
-    obtain ⟨M₀, i, hM₀⟩ := e.exists_restr_iso
-
-
-  -- have hex := e.exists_restr_iso
-  -- refine IsoMinor.ofExistsIso e ⟨hex.choose, hex.choose_spec.choose_spec.minor, ?_⟩
-
-
-
-
-
 /-- If `N ≂ M₀` and `M₀ ≤m M` then `N ≤i M`. -/
 @[simps] def Iso.transIsoMinor {M₀ : Matroid α} (e : N ≂ M₀) (hM₀ : M₀ ≤m M) : N ≤i M where
   toFun x := (inclusion hM₀.subset) (e x)
@@ -196,6 +182,10 @@ Useful for computability and defeq.  -/
   toFun := IsEmpty.elim' (by simp)
   inj' x := IsEmpty.elim' (by simp) x
   exists_minor' := ⟨emptyOn β, by simp, by ext; simp, by simp⟩
+
+noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
+  have hex := e.exists_restr_iso
+  hex.choose_spec.choose.isoMinor.trans hex.choose_spec.choose_spec.minor.isoMinor
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]
