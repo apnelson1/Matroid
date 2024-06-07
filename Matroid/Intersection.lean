@@ -8,7 +8,6 @@ import Matroid.Flat
   largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
   taken over all `X ⊆ E`. We also derive Rado's theorem as a corollary. -/
 
-
 open Set
 
 namespace Matroid
@@ -37,7 +36,7 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
   linarith [M₁.r_mono (show I ∩ A ⊆ A from inter_subset_right),
     M₂.r_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
-lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
+private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
@@ -51,8 +50,8 @@ lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M�
   have : (M₁ ／ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
   have : (M₁ ＼ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
 
-  obtain ⟨Id, Xd, hXd, hId₁, hId₂, hId⟩ := exists_common_ind (M₁ ＼ e) (M₂ ＼ e) (by simp [hE])
-  obtain ⟨Ic, Xc, hXc, hIc₁, hIc₂, hIc⟩ := exists_common_ind (M₁ ／ e) (M₂ ／ e) (by simp [hE])
+  obtain ⟨Id, Xd, hXd, hId₁, hId₂, hId⟩ := exists_common_ind_aux (M₁ ＼ e) (M₂ ＼ e) (by simp [hE])
+  obtain ⟨Ic, Xc, hXc, hIc₁, hIc₂, hIc⟩ := exists_common_ind_aux (M₁ ／ e) (M₂ ／ e) (by simp [hE])
 
   rw [he₁.contract_indep_iff] at hIc₁
   rw [he₂.contract_indep_iff] at hIc₂
@@ -91,21 +90,53 @@ lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M�
   linarith
 termination_by M₁.E.ncard
 
-/-- We can choose a minimizing pair `I,X` where `X` is a flat of `M₁` -/
-lemma exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
-    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) ∧ M₁.Flat X := by
+/-- The matroid intersection theorem. The hypothesis `M₁.E = M₂.E` isn't required. -/
+theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
+    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
+  obtain ⟨I, X, -, hI₁, hI₂, hcard⟩ := exists_common_ind_aux M₁ (M₂ ↾ M₁.E) rfl
+  refine ⟨I, (M₂.E \ M₁.E) ∪ X, hI₁, hI₂.of_restrict, ?_⟩
+  rw [← diff_diff, diff_diff_right_self, r_eq_r_inter_ground, union_inter_distrib_right,
+    disjoint_sdiff_left.inter_eq, empty_union, ← r_eq_r_inter_ground, hcard,
+    restrict_r_eq _ (by simp [diff_subset]), restrict_ground_eq, M₂.r_eq_r_inter_ground,
+    inter_diff_assoc, inter_comm]
+
+/-- A minimizer can be chosen in the matroid intersection theorem that is a flat of `M₁`.-/
+theorem exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
+    ∃ I X, M₁.Flat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
-  obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind M₁ M₂ hE
-  refine ⟨I, M₁.cl X, h1, h2, le_antisymm ?_ ?_, M₁.cl_flat _⟩
-  · exact h1.ncard_le_r_add_r h2 _
+  obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind_aux M₁ M₂ hE
+  refine ⟨I, _, M₁.cl_flat X, h1, h2, (h1.ncard_le_r_add_r h2 _).antisymm ?_⟩
   rw [r_cl_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
   exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_cl M₁ X)) _
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
-noncomputable def max_common_ind (M₁ M₂ : Matroid α) : ℕ∞ :=
-  ⨆ (I : Set α) (_ : M₁.Indep I ∧ M₂.Indep I), encard I
+noncomputable def maxCommonInd (M₁ M₂ : Matroid α) : ℕ :=
+  sSup {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
 
+lemma Indep.le_maxCommonInd [M₁.Finite] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I) :
+    I.ncard ≤ maxCommonInd M₁ M₂ := by
+  classical
+  rw [maxCommonInd, Nat.sSup_def, Nat.le_find_iff]
+  · simp only [mem_setOf_eq, forall_exists_index, and_imp, not_forall, Classical.not_imp, not_le]
+    exact fun m hm ↦ ⟨_, I, hI₁, hI₂, rfl, hm⟩
+  refine ⟨M₁.E.ncard, ?_⟩
+  simp only [mem_setOf_eq, forall_exists_index, and_imp]
+  rintro - J hJ₁ - rfl
+  exact ncard_le_ncard hJ₁.subset_ground M₁.ground_finite
 
+lemma maxCommonInd_exists (M₁ M₂ : Matroid α) [M₁.Finite] :
+    ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = maxCommonInd M₁ M₂ := by
+  rw [maxCommonInd]
+  let ns := {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
+  have hns : ns.Nonempty := ⟨0, ∅, by simp⟩
+  have hbdd : BddAbove ns := by
+    refine ⟨M₁.E.ncard, ?_⟩
+
+  -- have := Nat.sSup_mem (s := ns) ⟨ 0, ?_⟩
+
+-- theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
+--     max_common_ind M₁ M₂ = ⨅ X, M₁.r X + M₂.r (M₂.E \ X) := by
+--   _
 
   -- refine sSup {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
 -- nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) ((univ : set E).ncard)
