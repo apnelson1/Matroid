@@ -295,6 +295,15 @@ lemma er_eq_of_er_insert_le_forall (hXY : X ⊆ Y) (hY : ∀ e ∈ Y \ X, M.er (
     WithTop.add_le_add_iff_left (fun htop ↦ not_top_lt (htop ▸ hlt))] at hY
   simp at hY
 
+lemma Indep.exists_insert_of_encard_lt {I J : Set α} (hI : M.Indep I) (hJ : M.Indep J)
+    (hcard : I.encard < J.encard) : ∃ e ∈ J \ I, M.Indep (insert e I) := by
+  have hIfin : I.Finite := encard_lt_top_iff.1 <| hcard.trans_le le_top
+  rw [← hI.er, ← hJ.er] at hcard
+  obtain ⟨e, he, hIe⟩ := er_augment hcard
+  refine ⟨e, he, ?_⟩
+  rw [indep_iff_er_eq_encard_of_finite (hIfin.insert e), hIe, encard_insert_of_not_mem he.2,
+    hI.er]
+
 lemma spanning_iff_er' [FiniteRk M] : M.Spanning X ↔ M.erk ≤ M.er X ∧ X ⊆ M.E := by
   refine' ⟨fun h ↦ _, fun ⟨hr, hX⟩ ↦ _⟩
   · rw [erk_eq_er_ground, ← er_cl_eq _ X, h.cl_eq]; exact ⟨rfl.le, h.subset_ground⟩
@@ -709,6 +718,12 @@ lemma rFin.submod (hX : M.rFin X) (hY : M.rFin Y) : M.r (X ∩ Y) + M.r (X ∪ Y
 lemma r_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     M.r (X ∩ Y) + M.r (X ∪ Y) ≤ M.r X + M.r Y :=
   rFin.submod (M.to_rFin X) (M.to_rFin Y)
+
+lemma Indep.exists_insert_of_ncard_lt [FiniteRk M] {J : Set α} (hI : M.Indep I) (hJ : M.Indep J)
+    (hcard : I.ncard < J.ncard) : ∃ e ∈ J \ I, M.Indep (insert e I) := by
+  apply hI.exists_insert_of_encard_lt hJ
+  rw [← hJ.finite.cast_ncard_eq, ← hI.finite.cast_ncard_eq]
+  exact Nat.cast_lt.mpr hcard
 
 end Rank
 
