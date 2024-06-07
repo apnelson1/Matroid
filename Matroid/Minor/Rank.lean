@@ -261,14 +261,20 @@ end Contract
 
 section Rank
 
-lemma delete_r_eq (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
+lemma delete_r_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
   rw [r, r, delete_er_eq']
 
 lemma delete_r_eq_of_disjoint (M : Matroid α) (hDX : Disjoint X D) : (M ＼ D).r X = M.r X := by
-  rw [delete_r_eq, hDX.sdiff_eq_left]
+  rw [delete_r_eq', hDX.sdiff_eq_left]
 
 lemma delete_elem_r_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ e).r X = M.r X := by
-  rw [deleteElem, delete_r_eq, diff_singleton_eq_self heX]
+  rw [deleteElem, delete_r_eq', diff_singleton_eq_self heX]
+
+lemma restrict_r_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).r X = M.r (X ∩ R) := by
+  rw [r, restrict_er_eq', r]
+
+lemma restrict_r_eq (M : Matroid α) {R : Set α} (hXR : X ⊆ R) : (M ↾ R).r X = M.r X := by
+  rw [r, M.restrict_er_eq hXR, r]
 
 lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
     (M ／ C).r X + M.r C = M.r (X ∪ C) := by

@@ -1,18 +1,14 @@
 
 import Matroid.Constructions.DirectSum
+import Mathlib.Data.Nat.Lattice
 import Matroid.Minor.Rank
+import Matroid.Flat
 
--- /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
---   largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
---   taken over all `X ⊆ E`. We also derive Rado's theorem as a corollary. -/
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
+  largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
+  taken over all `X ⊆ E`. We also derive Rado's theorem as a corollary. -/
 
--- open_locale classical
 
--- open matroid set
-
--- variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} {I A : set E}
-
--- section intersection
 open Set
 
 namespace Matroid
@@ -41,55 +37,6 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
   linarith [M₁.r_mono (show I ∩ A ⊆ A from inter_subset_right),
     M₂.r_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
-lemma exists_common_ind' (M₁ M₂ : Matroid α) [M₁.Finite] [M₂.Finite] :
-    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ := by
-
-  obtain (h | ⟨e, he₁, he₂⟩) := em' <| ∃ e, M₁.Nonloop e ∧ M₂.Nonloop e
-  · refine ⟨∅, (M₂.E \ M₁.E) ∪ M₁.cl ∅, ?_⟩
-    rw [M₂.r_eq_r_inter_ground, inter_comm, ← diff_eq, ← diff_diff, r_eq_r_inter_ground,
-      union_inter_distrib_right]
-    suffices 0 = M₂.r ((M₂.E ∩ M₁.E) \ M₁.cl ∅) by simpa [← r_eq_r_inter_ground]
-    rw [eq_comm, r_eq_zero_iff (diff_subset.trans inter_subset_left), diff_subset_iff, inter_comm]
-    simp_rw [subset_def, mem_union, ← loop_iff_mem_cl_empty]
-    by_contra! hcon
-    obtain ⟨x, ⟨h₁, h₂⟩, h'⟩ := hcon
-    exact h ⟨x, (not_loop_iff h₁).1 h'.1, (not_loop_iff h₂).1 h'.2⟩
-
-  have : (M₁ ／ e).E.ncard < M₁.E.ncard :=
-    ncard_lt_ncard (by simpa using he₁.mem_ground) M₁.ground_finite
-  have : (M₁ ＼ e).E.ncard < M₁.E.ncard :=
-    ncard_lt_ncard (by simpa using he₁.mem_ground) M₁.ground_finite
-
-  obtain ⟨Id, Xd, hId₁, hId₂, hId⟩ := exists_common_ind' (M₁ ＼ e) (M₂ ＼ e)
-  obtain ⟨Ic, Xc, hIc₁, hIc₂, hIc⟩ := exists_common_ind' (M₁ ／ e) (M₂ ／ e)
-
-
-termination_by M₁.E.ncard
-
-    -- simp only [empty_indep, ncard_empty, sdiff_sdiff_right_self, inf_eq_inter, true_and]
-
-    -- simp only [empty_indep, ncard_empty, true_and]
-    -- rw [r_eq_r_inter_ground, union_inter_distrib_right, diff_inter_self, union_empty,
-    --   ← r_eq_r_inter_ground, r_loops, zero_add, r_eq_r_inter_ground, compl_union, inter_assoc,
-    --   diff_eq, compl_inter, compl_compl, union_inter_distrib_right, compl_inter_self, empty_union,
-    --   eq_comm, ← inter_assoc, r_eq_zero_iff inter_subset_right, inter_assoc, ← diff_eq_compl_inter,
-    --   diff_subset_iff]
-    -- sorry
-
-
-
-
-
-  --   by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
-  -- · suffices 0 = M₂.r (M₂.E \ M₁.cl ∅) from ⟨∅, M₁.cl ∅, cl_subset_ground _ _, by simpa⟩
-  --   rw [eq_comm, r_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
-  --   simpa [subset_def]
-  -- push_neg at hloop
-  -- obtain ⟨e, he, he₁, he₂⟩ := hloop
-  -- rw [not_loop_iff] at he₁ he₂
-
-  -- have : (M₁ ／ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
-  -- have : (M₁ ＼ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
 
 lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
@@ -143,107 +90,26 @@ lemma exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M�
     diff_diff_comm, diff_diff, union_singleton] at hId
 
   linarith
-
 termination_by M₁.E.ncard
 
 /-- We can choose a minimizing pair `I,X` where `X` is a flat of `M₁` -/
 lemma exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
-  ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) ∧ M₁.flat X :=
+    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) ∧ M₁.Flat X := by
+  have : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
+  obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind M₁ M₂ hE
+  refine ⟨I, M₁.cl X, h1, h2, le_antisymm ?_ ?_, M₁.cl_flat _⟩
+  · exact h1.ncard_le_r_add_r h2 _
+  rw [r_cl_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
+  exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_cl M₁ X)) _
 
--- /-- The hard direction of matroid intersection : existence -/
--- lemma exists_common_ind (M₁ M₂ : matroid E) :
---   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ :=
--- begin
---   -- Suppose not. Then we get strict inequality for all choices of I, X.
---   by_contra' hcon,
---   have hcon' : ∀ I X, M₁.indep I → M₂.indep I → I.ncard < M₁.r X + M₂.r Xᶜ, from
---     λ I X hI₁ hI₂, lt_of_le_of_ne (common_ind_le_r_add_r_compl hI₁ hI₂ X) (hcon I X hI₁ hI₂),
 
---   -- Construct a minimal counterexample (wrt the number of nonloops of `M₁`)
---   obtain ⟨M,hM,hpmin⟩ := (to_finite _ : {M | ∃ M', _}.finite).exists_minimal_wrt
---     (ncard ∘ matroid.nonloops) ⟨M₁, ⟨M₂, hcon'⟩⟩,
+/-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
+noncomputable def max_common_ind (M₁ M₂ : Matroid α) : ℕ∞ :=
+  ⨆ I ∈ {I | M₁.Indep I ∧ M₂.Indep I}, encard I
 
---   clear hcon hcon' M₁ M₂,
---   obtain ⟨M₁,M₂,hcon⟩ := ⟨M,hM⟩,
 
---   -- There is a common nonloop of `M₁` and `M₂`, otherwise the result is easy
---   have hne : ∃ e, M₁.nonloop e ∧ M₂.nonloop e,
---   { simp_rw [←not_loop_iff], by_contra' he,
---     simp_rw [loop_iff_mem_cl_empty, ←mem_compl_iff, ←subset_def] at he,
---     specialize hcon ∅ (M₁.cl ∅) M₁.empty_indep M₂.empty_indep,
---     rw [ncard_empty, r_cl, r_empty, zero_add] at hcon,
---     exact (hcon.trans_le (M₂.r_mono he)).ne (by rw [r_cl, r_empty])},
 
---   obtain ⟨e, he₁,he₂⟩ := hne,
-
---   -- Projecting/loopifying `e` gives non-counterexamples (by minimality), so there exist pairs
---   -- with equality in these minors.
---   have hd' := ncard_lt_ncard (strict_pminor_of_loopify_nonloop he₁).nonloops_ssubset_nonloops,
---   refine hd'.ne.symm (hpmin (M₁ ⟍ e) ⟨M₂ ⟍ e,_⟩ hd'.le),
---   by_contra' hd,
---   obtain ⟨Id,Xd, hId₁, hId₂, hId⟩ := hd,
-
---   have hc' := ncard_lt_ncard (strict_pminor_of_project_nonloop he₁).nonloops_ssubset_nonloops,
---   refine hc'.ne.symm (hpmin (M₁ ⟋ e) ⟨M₂ ⟋ e,_⟩ hc'.le),
---   by_contra' hc,
---   obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
-
---   -- Use these pairs to get rank lower bounds ...
---   have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e}) hId₁.of_loopify hId₂.of_loopify)),
-
---   have hic : (Xc ∩ Xd \ {e})ᶜ = (insert e (Xcᶜ ∪ Xdᶜ)),
---   { apply compl_injective,
---     simp_rw [←union_singleton, compl_union, compl_compl, diff_eq_compl_inter, inter_comm {e}ᶜ]},
-
---   simp_rw [loopify_elem, loopify.r_eq, hic] at hi,
---   zify at hIc hId hcon,
-
---   have hu := hcon (insert e Ic) (insert e (Xc ∪ Xd))
---     (by rwa ← he₁.indep_project_iff (not_mem_of_indep_project_singleton hIc₁))
---     (by rwa ← he₂.indep_project_iff (not_mem_of_indep_project_singleton hIc₁)),
-
---   have huc : (insert e (Xc ∪ Xd))ᶜ = Xcᶜ ∩ Xdᶜ \ {e},
---   { apply compl_injective,
---     simp_rw [diff_eq_compl_inter, compl_inter, compl_compl, singleton_union]},
-
---   simp_rw [ncard_insert_of_not_mem (not_mem_of_indep_project_singleton hIc₁),
---     nat.cast_add, nat.cast_one, huc] at hu,
-
---   rw [he₁.cast_r_project_eq, he₂.cast_r_project_eq] at hIc,
-
---   -- ... and contradict them with submodularity bounds.
---   have sm1 := M₁.r_submod (insert e Xc) (Xd \ {e}),
---   have sm2 := M₂.r_submod (insert e Xcᶜ) (Xdᶜ \ {e}),
-
---   rw [insert_union, insert_union_distrib, insert_diff_singleton, ←insert_union_distrib,
---     insert_inter_of_not_mem (not_mem_diff_singleton _ _), ←inter_diff_assoc] at sm1 sm2,
-
---   linarith,
--- end
-
--- /-- We can choose a minimizing pair `I,X` where `X` is a flat of `M₁` -/
--- lemma exists_common_ind_with_flat_left (M₁ M₂ : matroid E) :
---   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₁.flat X :=
--- begin
---   obtain ⟨I,X₀, h₀⟩ := exists_common_ind M₁ M₂,
---   rw [←M₁.r_cl X₀] at h₀,
---   refine ⟨I,M₁.cl X₀,h₀.1, h₀.2.1, le_antisymm _ _, M₁.flat_of_cl _⟩,
---   { apply common_ind_le_r_add_r_compl h₀.1 h₀.2.1 },
---   rw h₀.2.2,
---   simp only [add_le_add_iff_left],
---   exact M₂.r_mono (compl_subset_compl.mpr (subset_cl _ _)),
--- end
-
--- lemma exists_common_ind_with_flat_right (M₁ M₂ : matroid E) :
---   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₂.flat Xᶜ :=
--- begin
---   obtain ⟨I,X₀,h₀,h₁,hX₀,hF⟩ := exists_common_ind_with_flat_left M₂ M₁,
---   exact ⟨I, X₀ᶜ,h₁,h₀,by rwa [add_comm, compl_compl],by rwa compl_compl⟩,
--- end
-
--- /-- The cardinality of a largest common independent set of matroids `M₁,M₂`.
---   Is `find_greatest` really the right way to define this?  -/
--- noncomputable def max_common_ind (M₁ M₂ : matroid E) :=
+  -- refine sSup {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
 -- nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) ((univ : set E).ncard)
 
 -- lemma max_common_ind_eq_iff (M₁ M₂ : matroid E) {n : ℕ} :

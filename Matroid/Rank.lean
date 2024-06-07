@@ -647,6 +647,12 @@ lemma r_mono (M : Matroid α) [FiniteRk M] : Monotone M.r := by
   rw [← er_le_er_iff]
   exact M.er_mono hXY
 
+@[simp] lemma r_empty (M : Matroid α) : M.r ∅ = 0 := by
+  rw [r, er_empty]; rfl
+
+@[simp] lemma r_cl_eq (M : Matroid α) : M.r (M.cl X) = M.r X := by
+  rw [r, er_cl_eq, r]
+
 lemma r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
   rw [r_eq_r_inter_ground, rk_def]; exact M.r_mono inter_subset_right
 
