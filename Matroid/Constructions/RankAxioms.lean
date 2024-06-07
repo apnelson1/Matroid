@@ -68,7 +68,7 @@ theorem indep_subset (hJ : M.Indep J) (rIJ : I ⊆ J) : M.Indep I := by
   rw [hAUB] at hJ
   rw [hAIB]
   have hA : A ⊆ M.E := (rIJ.trans hJ_indep)
-  have hB : B ⊆ M.E := ((Set.diff_subset J {x}).trans hJ_indep)
+  have hB : B ⊆ M.E := ((Set.diff_subset).trans hJ_indep)
   exact hJ.trans_le (M.rel_rank_union_le_relRank_inter hA hB)
 
 theorem r_le_r_subset_right (hX : X ⊆ M.E) (hAX : A ⊆ X) (hBA : B ⊆ A) : M.relRank X A ≤ M.relRank X B := by
@@ -95,7 +95,7 @@ theorem insert_indep_iff_r_insert_pos (hI_indep : M.Indep I) (hx : x ∈ M.E \ I
     set B := (Set.insert x I \ {y})
     set C := (I \ {y})
     have h₁ : A ⊆ M.E := Set.insert_subset (Set.mem_of_mem_diff hx) hI_indep.subset_ground
-    have h₂ : B ⊆ A := Set.diff_subset (Set.insert x I) {y}
+    have h₂ : B ⊆ A := @Set.diff_subset α (insert x I) {y}
     have h₃ : C ⊆ B := by
       refine Set.diff_singleton_subset_iff.mpr ?_
       rw [Set.insert_diff_singleton]
@@ -120,7 +120,7 @@ theorem insert_indep_iff_r_insert_pos (hI_indep : M.Indep I) (hx : x ∈ M.E \ I
   have h' : M.relRank A C = M.relRank A B + M.relRank B C := by
     have h₁ : A ⊆ M.E := Set.insert_subset (Set.mem_of_mem_diff hx) hI_indep.subset_ground
     have h₂ : B ⊆ A := Set.subset_insert x I
-    have h₃ : C ⊆ B := Set.diff_subset I {y}
+    have h₃ : C ⊆ B := Set.diff_subset
     exact M.rel_rank_add_cancel h₁ h₂ h₃
   have h'' : M.relRank B C ≥ 1 := by
     rcases Set.mem_insert_iff.mp hy with rfl | hy
@@ -222,7 +222,7 @@ theorem indep_subset_maximal_iff_relrank_zero (hX : X ⊆ M.E) (hI : I ⊆ X) (h
       rw [hiff] at this
       exact this hB_max
     have hrIUB_I : M.relRank (I ∪ B) I > 0 := by
-      have h₁ : I ⊆ (I ∪ B) := by exact Set.subset_union_left I B
+      have h₁ : I ⊆ (I ∪ B) := by exact Set.subset_union_left
       have h₂ : (I ∪ B) ⊆ M.E := by exact Set.union_subset hI_indep.subset_ground hB_indep.subset_ground
       have h₃ : M.E ⊆ M.E := by exact fun ⦃a⦄ a ↦ a
       calc
@@ -231,13 +231,13 @@ theorem indep_subset_maximal_iff_relrank_zero (hX : X ⊆ M.E) (hI : I ⊆ X) (h
         exact M.rel_rank_add_cancel h₃ h₂ h₁
       _ ≤ M.relRank M.E B + M.relRank (I ∪ B) I := by
         apply add_le_add_right
-        exact r_le_r_subset_right h₃ h₂ (Set.subset_union_right I B)
+        exact r_le_r_subset_right h₃ h₂ (Set.subset_union_right)
       _ = M.relRank (I ∪ B) I := by
         rw [hrEB]
         simp only [zero_add]
     have hIUB_subset := (Set.union_subset hI_indep.subset_ground hB_indep.subset_ground)
-    have hI_nmax := (not_iff_not.mpr (indep_subset_maximal_iff_relrank_zero hIUB_subset (Set.subset_union_left I B) hI_indep)).mpr (Ne.symm (hrIUB_I.ne))
-    have h_maximals_nonempty := M.indep_maximal (I ∪ B) hIUB_subset I hI_indep  (Set.subset_union_left I B)
+    have hI_nmax := (not_iff_not.mpr (indep_subset_maximal_iff_relrank_zero hIUB_subset (Set.subset_union_left) hI_indep)).mpr (Ne.symm (hrIUB_I.ne))
+    have h_maximals_nonempty := M.indep_maximal (I ∪ B) hIUB_subset I hI_indep  (Set.subset_union_left)
     rcases h_maximals_nonempty with ⟨I', ⟨hI'_indep, hI'_contains_I, hI'_in_IUB⟩, hI'_max⟩
     by_cases hII' : I = I'
     · rw [<-hII'] at hI'_max hI'_indep
@@ -338,7 +338,7 @@ theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : 
       rcases (Set.encard_pos.mp this) with ⟨x, hx⟩
       set A' := A \ {x}
       have hxA : x ∈ A := Set.mem_of_mem_diff hx
-      have hAA' : A' ⊆ A := by exact Set.diff_subset A {x}
+      have hAA' : A' ⊆ A := by exact Set.diff_subset
       have hBA' : B ⊆ A' := Set.subset_diff_singleton hB (Set.not_mem_of_mem_diff hx)
       have hA'_indep : M.Indep A' := M.indep_subset hA_indep hAA'
       have hA'dB: A' \ B = (A \ B) \ {x} := by exact Set.diff_diff_comm
@@ -350,9 +350,9 @@ theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : 
       have hrA'B : M.relRank A' B = n := hPn A' B hBA' hA'_indep this
       have hrAA' : M.relRank A A' = 1 := by
         have hle : M.relRank A A' <= 1 := by
-          have := M.rel_rank_le_encard_diff hA_indep.subset_ground (Set.diff_subset A {x})
+          have := M.rel_rank_le_encard_diff hA_indep.subset_ground (@Set.diff_subset α A {x})
           rw [Set.diff_diff_cancel_left (Set.singleton_subset_iff.mpr hxA)] at this
-          simp at this; exact this
+          simp only [Set.encard_singleton] at this; exact this
         have hgt : M.relRank A A' > 0 := by exact hA_indep.indep x hxA
         refine le_antisymm_iff.mpr ⟨hle, ENat.one_le_iff_pos.mpr hgt⟩
       rw [M.rel_rank_add_cancel hA_indep.subset_ground hAA' hBA', hrA'B, hrAA']
@@ -360,35 +360,36 @@ theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : 
       rw [<-h11, <-(ENat.coe_add 1 n), add_comm, Nat.succ_eq_add_one];
     intro hP A B hB hA_indep h
     by_contra! h_finite
-    rcases Option.ne_none_iff_exists'.mp h_finite with ⟨c, hc⟩
+    have : ∃ n, M.relRank A B = n := by
+      exact exists_eq'
+    -- rcases Option.ne_none_iff_exists'.mp h_finite with ⟨c, hc⟩
+    rcases this with ⟨c, hc⟩
     simp at h
-    obtain ⟨D, hD_subset, hD_finite, hD_ncard⟩ := Set.Infinite.exists_subset_ncard_eq h (c+1)
-    have hD_encard : D.encard = c+1 := by
-      have : (c + 1 : ℕ) = (c + 1 : ℕ∞) := rfl
-      rw [<-this];
-      have : (D.ncard : ℕ∞) = (c + 1 : ℕ∞) := by exact congrArg Nat.cast hD_ncard
+    obtain ⟨D, hD_subset, hD_finite, hD_ncard⟩ := Set.Infinite.exists_subset_ncard_eq h (ENat.toNat c + 1)
+    have c_finite : c ≠ ⊤ := by rwa [hc] at h_finite
+    have hcc : c + 1 = ↑(ENat.toNat c + 1) := by
+      simp only [Nat.cast_add, Nat.cast_one, ENat.coe_toNat_eq_self.mpr c_finite]
+    have hD_encard : D.encard = c + 1 := by
       have : D.encard = (D.ncard : ℕ∞) := by exact Eq.symm (Set.Finite.cast_ncard_eq hD_finite)
-      rw [this]
-      assumption
+      rw [this, congrArg (Nat.cast) hD_ncard, hcc]
     clear hD_ncard hD_finite h_finite
     let B' := B ∪ D
-    have hD_subset_A : D ⊆ A := hD_subset.trans (Set.diff_subset A B)
-    have hD_indep : M.Indep D := by exact M.indep_subset hA_indep hD_subset_A
+    have hD_subset_A : D ⊆ A := hD_subset.trans (Set.diff_subset)
     have hB'_subset_A : B' ⊆ A := by exact (Set.union_subset hB hD_subset_A)
     have hB'_indep : M.Indep B' := by exact M.indep_subset hA_indep hB'_subset_A
-    have hB'B : (B' \ B).encard = c + 1 := by
+    have hB'B : (B' \ B).encard = ↑(ENat.toNat c + 1) := by
       have : B ∩ D ⊆ ∅ := by
         have : Disjoint B (A \ B) := Set.disjoint_sdiff_right
         have : Disjoint B D := by exact Set.disjoint_of_subset (fun ⦃a⦄ a ↦ a) hD_subset this
         exact Set.disjoint_iff.mp this
-      rwa [Set.union_diff_cancel_left this]
-    have hrB'B : M.relRank B' B = c + 1 := hP (c+1) B' B (Set.subset_union_left B D) hB'_indep hB'B
+      rw [Set.union_diff_cancel_left this, hD_encard, hcc]
+    have hrB'B : M.relRank B' B = c + 1 := by
+      rw [hP (ENat.toNat c + 1) B' B (Set.subset_union_left) hB'_indep hB'B, hcc]
     have hbad : M.relRank A B ≥ c + 1 := by
-      rw [M.rel_rank_add_cancel hA_indep.subset_ground hB'_subset_A (Set.subset_union_left B D), hrB'B]
+      rw [M.rel_rank_add_cancel hA_indep.subset_ground hB'_subset_A (Set.subset_union_left), hrB'B]
       simp only [ge_iff_le, self_le_add_left]
     rw [hc] at hbad;
-    have : c ≥ c + 1 := by exact WithTop.some_le_some.mp hbad
-    linarith
+    exact (lt_irrefl c) ((ENat.add_one_le_iff c_finite).mp hbad)
   exact h_induc (A \ B).encard A B hB hA rfl
 
 theorem rankMatroid_rel_rank_eq_matroid_rel_rank (M : RankMatroid α)
@@ -418,4 +419,137 @@ theorem rankMatroid_rel_rank_eq_matroid_rel_rank (M : RankMatroid α)
     _ = M.relRank I J := by
       rw [hAI]; simp only [zero_add]
 
+theorem encard_to_ncard {n : ℕ} {S : Set α} (h : S.encard = n) : S.ncard = n := by
+  have : S.Finite := by exact Set.finite_of_encard_eq_coe h
+  rw [<-Set.Finite.cast_ncard_eq this] at h
+  simp only [Nat.cast_inj] at h; assumption
+
+def RankMatroid.ofFinite {E : Set α} (hE : E.Finite) (r : Set α → ℕ)
+    (rank_le_encard : ∀ (X : Set α), r X ≤ X.encard)
+    (monotonicity : {A B : Set α} → A ⊆ E → B ⊆ A → r B ≤ r A)
+    (submodularity : {A B : Set α} → A ⊆ E → B ⊆ E → (r (A ∪ B)) + (r (A ∩ B)) ≤ r A + r B)
+    : RankMatroid α where
+  E := E
+  relRank := fun A B ↦ r A - r B
+  rel_rank_le_encard_diff := by
+    intro A B hA hB; simp only [tsub_le_iff_right]
+    have hr_empty : r ∅ = 0 := by
+      have := rank_le_encard ∅
+      simp only [Set.encard_empty, nonpos_iff_eq_zero, Nat.cast_eq_zero] at this
+      assumption
+    have h := submodularity ((@Set.diff_subset α A B).trans hA) (hB.trans hA)
+    simp only [Set.diff_union_self, Set.diff_inter_self] at h
+    rw [hr_empty, Set.union_eq_self_of_subset_right hB] at h; simp only [add_zero] at h
+    have h' := rank_le_encard (A \ B)
+    have : r A ≤ (r (A \ B) + r B : ℕ∞) := by
+      rw [<-ENat.coe_add]; exact Nat.cast_le.mpr h
+    exact le_add_of_le_add_right this (rank_le_encard (A \ B))
+  rel_rank_union_le_relRank_inter := by
+    dsimp only; intro A B hA hB
+    apply Nat.mono_cast
+    simp only [Nat.cast_id]
+    apply Nat.le_sub_of_add_le
+    have : Sub.sub (r (A ∪ B)) (r B) + (r (A ∩ B)) = (r (A ∪ B)) - (r B) + (r (A ∩ B)) := by
+      exact rfl
+    rw [this, <-@Nat.sub_add_comm (r (A ∪ B)) (r (A ∩ B)) (r B) (monotonicity (Set.union_subset hA hB) (Set.subset_union_right))]
+    apply Nat.sub_le_iff_le_add.mpr
+    exact submodularity hA hB
+  rel_rank_add_cancel := by
+    intro A B C hA hB hC; dsimp only
+    refine Eq.symm (tsub_add_tsub_cancel ?hab ?hcb)
+    · exact Nat.cast_le.mpr (monotonicity hA hB)
+    exact Nat.cast_le.mpr (monotonicity (hB.trans hA) hC)
+  rel_rank_sUnion_eq_zero := by
+    dsimp only
+    intro S B hS
+    have hPE_finite : (𝒫 E).Finite := Set.Finite.finite_subsets hE
+    have hS_subset_PE : S ⊆ 𝒫 E := by
+      intro A hA; simp only [Set.mem_powerset_iff]; exact (hS A hA).2.1
+    have hS_finite : S.Finite := Set.Finite.subset hPE_finite hS_subset_PE
+    have h_induc : ∀ n : ℕ, ∀ S : Set (Set α), ∀ B, (∀ A ∈ S, B ⊆ A ∧ A ⊆ E ∧ (r A : ℕ∞) - (r B : ℕ∞) = 0) → S.encard = n → r (⋃₀ S) - r B = 0 := by
+      intro n
+      induction n with
+      | zero =>
+        intro S B hS hS_encard
+        have : ⋃₀ S = ∅ := by
+          rw [<-Set.sUnion_empty]
+          refine congrArg Set.sUnion ?_
+          exact Set.encard_eq_zero.mp hS_encard
+        have h : r ∅ = 0 := by
+          have := (rank_le_encard ∅)
+          simp only [Set.encard_empty, nonpos_iff_eq_zero, Nat.cast_eq_zero] at this
+          assumption
+        rw [this, h]; simp only [ge_iff_le, zero_le, tsub_eq_zero_of_le]
+      | succ n hn =>
+        intro S B hS hS_encard
+        have hS_rank : ∀ A ∈ S, r A = r B := by
+          intro A hA
+          have h₁ := (hS A hA).2.2
+          have h₂ := monotonicity (hS A hA).2.1 (hS A hA).1
+          rw [<-ENat.coe_sub] at h₁
+          have : r A - r B = 0 := by exact WithTop.coe_eq_zero.mp h₁
+          have := (Nat.sub_eq_iff_eq_add h₂).mp this
+          simp only [zero_add] at this; assumption
+        obtain ⟨A, S₀, ⟨h_nmem, h_ins, h_ncard⟩⟩ := Set.eq_insert_of_ncard_eq_succ (encard_to_ncard hS_encard)
+        rw [<-h_ins] at hS_rank hS hS_encard ⊢
+        rw [Set.sUnion_insert A S₀]
+        have hS₀_subsetE : ⋃₀ S₀ ⊆ E := by
+          apply Set.sUnion_subset_iff.mpr
+          intro B hB; exact (hS B (Set.mem_insert_of_mem A hB)).2.1
+        have hB_subsetS₀ : B ⊆ ⋃₀ S₀ := by
+          sorry
+        have h : r (A ∪ ⋃₀ S₀) + r (A ∩ ⋃₀ S₀) ≤ r A + r (⋃₀ S₀) := by
+          exact submodularity (hS A (Set.mem_insert A S₀)).2.1 hS₀_subsetE
+        have hS₀_encard : S₀.encard = n := by
+          rw [Set.encard_insert_of_not_mem h_nmem] at hS_encard
+          simp only [Nat.cast_add, Nat.cast_one] at hS_encard
+          sorry
+        simp only [Set.sUnion_insert] at hn
+        have hS₀ : (∀ A ∈ S₀, B ⊆ A ∧ A ⊆ E ∧ (r A : ℕ∞) - r B = 0) := by
+          intro A' hA'; exact hS A' (Set.mem_insert_of_mem A hA')
+        have : r (⋃₀ S₀) = r B := by
+          have := hn S₀ B hS₀ hS₀_encard
+          rw [Nat.sub_eq_iff_eq_add (monotonicity hS₀_subsetE hB_subsetS₀)] at this
+          simp only [zero_add] at this; assumption
+        rw [this, hS_rank A (Set.mem_insert A S₀)] at h
+        have : r (A ∩ ⋃₀ S₀) = r B := by
+          apply le_antisymm_iff.mpr; constructor
+          · rw [<-this]; exact monotonicity hS₀_subsetE (Set.inter_subset_right)
+          exact monotonicity (Set.inter_subset_right.trans hS₀_subsetE) (Set.subset_inter (hS A (Set.mem_insert A S₀)).1 hB_subsetS₀)
+        rw [this] at h; simp only [add_le_add_iff_right] at h
+        exact Nat.sub_eq_zero_of_le h
+    have := h_induc (ENat.toNat S.encard) S B hS (eq_comm.mp (ENat.coe_toNat_eq_self.mpr (Set.encard_ne_top_iff.mpr hS_finite)))
+    exact @congrArg ℕ ℕ∞ (r (⋃₀ S) - r B) 0 Nat.cast this
+
+  Indep := fun X ↦ X ⊆ E ∧ r X = X.encard
+  indep_maximal := by
+    intro X hX I hI hI'; dsimp only
+    set S := {Y | (Y ⊆ E ∧ ↑(r Y) = Y.encard) ∧ I ⊆ Y ∧ Y ⊆ X}
+    have : S ⊆ 𝒫 X := fun Y hY ↦ hY.2.2
+    have : S.Finite := by
+      exact Set.Finite.subset (Set.Finite.finite_subsets (Set.Finite.subset hE hX)) this
+    unfold maximals Set.Nonempty
+    have hS_nonempty : S.Nonempty := by
+      unfold Set.Nonempty; use I
+      exact ⟨⟨hI'.trans hX, hI.2⟩, subset_refl I, hI'⟩
+    rcases Set.Finite.exists_maximal_wrt (fun A ↦ A) S this hS_nonempty with ⟨M, hMS, hM_max⟩
+    use M; dsimp only [Set.sep_setOf, Set.mem_setOf_eq]
+    refine ⟨hMS, ?_⟩
+    intro M' hM'S hM'
+    rw [hM_max M' hM'S hM']
+  indep_iff' := by
+    simp only [gt_iff_lt, tsub_pos_iff_lt, Nat.cast_lt]
+    refine fun I ↦ ⟨fun ⟨hI_subset, hIr⟩ ↦ ⟨hI_subset, ?_⟩, fun ⟨hI_subset, hI⟩ ↦ ⟨hI_subset, ?_⟩⟩
+    · intro x hx
+      have hIr := encard_to_ncard (Eq.symm hIr)
+      have hI_finite : I.Finite := by exact Set.Finite.subset hE hI_subset
+      have : r (I \ {x}) ≤ r I - 1 := by
+        rw [<-hIr, <-Set.ncard_diff_singleton_of_mem hx hI_finite]
+        have := rank_le_encard (I \ {x})
+        rw [<-Set.Finite.cast_ncard_eq (Set.Finite.subset hI_finite Set.diff_subset)] at this
+        exact WithTop.coe_le_coe.mp this
+      have hrI : r I > 0 := by
+        rw [<-hIr]; exact Nat.zero_lt_of_ne_zero (Set.ncard_ne_zero_of_mem hx hI_finite)
+      exact (Nat.lt_iff_le_pred hrI).mpr this
+    sorry
 end RankMatroid
