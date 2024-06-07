@@ -126,64 +126,35 @@ lemma Indep.le_maxCommonInd [M₁.Finite] (hI₁ : M₁.Indep I) (hI₂ : M₂.I
 
 lemma maxCommonInd_exists (M₁ M₂ : Matroid α) [M₁.Finite] :
     ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = maxCommonInd M₁ M₂ := by
-  rw [maxCommonInd]
-  let ns := {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
-  have hns : ns.Nonempty := ⟨0, ∅, by simp⟩
-  have hbdd : BddAbove ns := by
-    refine ⟨M₁.E.ncard, ?_⟩
+  refine Nat.sSup_mem (s := {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}) ⟨0, ∅, by simp⟩
+    ⟨M₁.E.ncard, ?_⟩
+  simp only [upperBounds, mem_setOf_eq, forall_exists_index, and_imp]
+  rintro _ I hI - rfl
+  exact ncard_le_ncard hI.subset_ground M₁.ground_finite
 
-  -- have := Nat.sSup_mem (s := ns) ⟨ 0, ?_⟩
+theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] [M₂.FiniteRk] :
+    maxCommonInd M₁ M₂ = ⨅ X, M₁.r X + M₂.r (M₂.E \ X) := by
+  refine le_antisymm (le_ciInf fun X ↦ ?_) ?_
+  · obtain ⟨I, hI₁, hI₂, hI⟩ := maxCommonInd_exists M₁ M₂
+    rw [← hI]
+    exact hI₁.ncard_le_r_add_r hI₂ X
+  obtain ⟨I, X, hI₁, hI₂, h⟩ := exists_common_ind M₁ M₂
+  exact (ciInf_le ⟨0, by simp [lowerBounds]⟩ X).trans (h.symm.le.trans (hI₁.le_maxCommonInd hI₂))
 
--- theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
---     max_common_ind M₁ M₂ = ⨅ X, M₁.r X + M₂.r (M₂.E \ X) := by
---   _
+section Rado
 
-  -- refine sSup {n | ∃ I, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = n}
--- nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) ((univ : set E).ncard)
+variable {ι : Type*} [Finite ι] {x : ι → α}
 
--- lemma max_common_ind_eq_iff (M₁ M₂ : matroid E) {n : ℕ} :
---   max_common_ind M₁ M₂ = n ↔ (∃ I, M₁.indep I ∧ M₂.indep I ∧ n ≤ I.ncard) ∧
---     (∀ I, M₁.indep I → M₂.indep I → I.ncard ≤ n)  :=
--- begin
---   rw [max_common_ind, nat.find_greatest_eq_iff],
---   obtain (rfl | n) := n,
---   { simp only [nat.nat_zero_eq_zero, zero_le', ne.def, eq_self_iff_true, not_true, ncard_eq_zero,
---     exists_eq_right_right, is_empty.forall_iff, not_exists, not_and, true_and, le_zero_iff,
---     and_true],
---     split,
---     {
---       refine λ h, ⟨⟨_, M₁.empty_indep, M₂.empty_indep⟩, λ I hI₁ hI₂, _⟩,
---       suffices hcI : ¬(0 < I.ncard), by rwa [not_lt, le_zero_iff, ncard_eq_zero] at hcI,
---       exact λ hcI, h hcI (ncard_mono (subset_univ _)) I hI₁ hI₂ rfl},
---     refine λ h n hpos hn I hI₁ hI₂ hcard, _,
---     rw [←hcard, h.2 I hI₁ hI₂] at hpos,
---     simpa using hpos},
+lemma rado_necessary [FiniteRk M] {f : α → ι} (hx : ∀ i, f (x i) = i) (h_ind : M.Indep (range x))
+    (S : Set ι) : S.ncard ≤ M.r (f ⁻¹' S) := by
+  have hinj : Function.Injective x := fun i j h ↦ by rw [← hx i, ← hx j, h]
+  have hS := (h_ind.subset (image_subset_range x S)).r
+  rw [ncard_image_of_injective _ hinj] at hS
+  refine hS.symm.le.trans (M.r_le_of_subset ?_)
+  rintro f ⟨i, hi, rfl⟩
+  simpa [hx i]
 
---   simp only [ne.def, nat.succ_ne_zero, not_false_iff, forall_true_left, not_exists, not_and,
---     nat.succ_eq_add_one],
---   split,
---   { rintro ⟨hn, ⟨I, hI₁, hI₂, hIcard⟩, h'⟩,
---     refine ⟨⟨I, hI₁, hI₂, hIcard.symm.le⟩, λ J hJ₁ hJ₂, _⟩,
---     by_contra' hJcard,
---     exact h' hJcard (ncard_mono (subset_univ _)) J hJ₁ hJ₂ rfl},
---   simp only [and_imp, forall_exists_index],
---   refine λ I hI₁ hI₂ hIcard h, ⟨_,⟨I, hI₁,hI₂,_⟩ ,λ n' hn' hn'' J hJ₁ hJ₂ hJcard, _⟩,
---   { rw ←(h I hI₁ hI₂).antisymm hIcard, exact ncard_mono (subset_univ _)},
---   { rw ←(h I hI₁ hI₂).antisymm hIcard},
---   subst hJcard,
---   exact (h J hJ₁ hJ₂).not_lt hn',
--- end
-
--- theorem matroid_intersection_minmax (M₁ M₂ : matroid E) :
---   max_common_ind M₁ M₂ = ⨅ X, M₁.r X + M₂.r Xᶜ :=
--- begin
---   rw [max_common_ind_eq_iff],
---   obtain ⟨I, X, hI₁, hI₂, heq⟩ := exists_common_ind M₁ M₂,
---   refine ⟨⟨I, hI₁, hI₂, (cinfi_le' _ _).trans_eq heq.symm⟩, λ J hJ₁ hJ₂, _ ⟩,
---   exact (le_cinfi_iff (order_bot.bdd_below _)).mpr (common_ind_le_r_add_r_compl hJ₁ hJ₂),
--- end
-
--- end intersection
+end Rado
 
 -- section rado
 
