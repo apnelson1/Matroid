@@ -30,11 +30,12 @@ Topics in this repo are listed below.
 * Modular cuts, extensions and projections : Matroid/Extension
 * Circuit-hyperplane relaxation : Matroid/Relax
 * Paving matroids : Matroid/Paving
+* The matroid intersection theorem : Matroid/Intersection
 
 The following currently need a few fixes to work correctly. 
 * Uniform matroids : Matroid/Uniform
 * Transversal matroids : Matroid/Transversal
-* Parallel and series extensions : Matroid/Extension
+* Parallel and series extensions : Matroid/ParallelExtension
 * Matroid invariants and minor-closed properties : Matroid/Class
 * Representability : Matroid/Representation/* 
   (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
@@ -44,7 +45,7 @@ The following currently need a few fixes to work correctly.
 
 Additionally, there is some material from an earlier lean3 version of the repo 
 which is essentially done but needs to be ported. This includes
-- the matroid intersection theorem 
+
 - Kung's theorem on excluding a line minor
 - quotients/projections
 
