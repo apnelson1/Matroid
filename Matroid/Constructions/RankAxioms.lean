@@ -10,7 +10,8 @@ structure RankMatroid (α : Type*) where
   (relRank : Set α → Set α → ℕ∞)
 
   (rel_rank_le_encard_diff {A B : Set α} : A ⊆ E → B ⊆ A → relRank A B ≤ (A \ B).encard)
-  (rel_rank_union_le_relRank_inter {A B : Set α} : A ⊆ E → B ⊆ E → relRank (A ∪ B) B ≤ relRank A (A ∩ B))
+  (rel_rank_union_le_relRank_inter {A B : Set α} : A ⊆ E → B ⊆ E →
+    relRank (A ∪ B) B ≤ relRank A (A ∩ B))
   (rel_rank_add_cancel {A B C : Set α} : A ⊆ E → B ⊆ A → C ⊆ B → (relRank A C) = (relRank A B) + (relRank B C))
   (rel_rank_sUnion_eq_zero {S : Set (Set α)} {B : Set α} :
       (∀ A ∈ S, B ⊆ A ∧ A ⊆ E ∧ relRank A B = 0) → relRank (⋃₀ S) B = 0)
@@ -262,7 +263,7 @@ theorem indep_subset_maximal_iff_relrank_zero (hX : X ⊆ M.E) (hI : I ⊆ X) (h
   indep_maximal := fun X hX ↦ M.indep_maximal X hX
   subset_ground := fun I hI ↦ hI.subset_ground
 
-@[simps] protected def matroid (M : RankMatroid α) : Matroid α := M.indepMatroid.matroid
+@[simps!] protected def matroid (M : RankMatroid α) : Matroid α := M.indepMatroid.matroid
 
 end RankMatroid
 
@@ -276,7 +277,7 @@ def indepSubsets (M : Matroid α) (A : Set α) : Set (Set α) :=
 noncomputable def relRank (M : Matroid α) (A B : Set α) : ℕ∞ :=
   sSup {x | ∃ I J : Set α, J ⊆ I ∧ I ∈ M.indepSubsets A ∧ M.Basis' J B ∧ x = (I \ J).encard}
 
-theorem basis_of_maximal_extension (M : Matroid α) {I X J : Set α} (hX : X ⊆ M.E) (hI : I ⊆ X) (hI_indep : M.Indep I)
+theorem basis_of_maximal_extension (M : Matroid α) {I X J : Set α}
     (h : J ∈ maximals (· ⊆ ·) {I' | M.Indep I' ∧ I ⊆ I' ∧ I' ⊆ X}) : M.Basis' J X := by
   unfold Basis'; unfold maximals at h ⊢; simp only [Set.mem_setOf_eq, and_imp] at h ⊢
   obtain ⟨⟨hJ_indep, hIJ, hJX⟩, hJ_max⟩ := h
@@ -323,8 +324,8 @@ namespace RankMatroid
 
 variable {α : Type*} {A B I J X : Set α} {M : RankMatroid α} {x : α}
 
-theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : B ⊆ A) (hA : M.Indep A)
-    : M.relRank A B = (A \ B).encard := by
+theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : B ⊆ A)
+    (hA : M.Indep A) : M.relRank A B = (A \ B).encard := by
   set P := fun n ↦ ∀ (A B : Set α), B ⊆ A → M.Indep A → (A \ B).encard = n → M.relRank A B = n
   have h_induc : ∀ n : ℕ∞, P n := by
     intro n
@@ -392,8 +393,9 @@ theorem relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hB : 
     exact (lt_irrefl c) ((ENat.add_one_le_iff c_finite).mp hbad)
   exact h_induc (A \ B).encard A B hB hA rfl
 
+-- this should be simp, with reversed inequality
 theorem rankMatroid_rel_rank_eq_matroid_rel_rank (M : RankMatroid α)
-    {A B : Set α} (hB : B ⊆ A) (hA : A ⊆ M.E): M.relRank A B = M.matroid.relRank A B := by
+    {A B : Set α} (hB : B ⊆ A) (hA : A ⊆ M.E) : M.relRank A B = M.matroid.relRank A B := by
   obtain ⟨I, J, hJ, hI_basis_A, hJ_basis_B, h⟩ := M.matroid.rel_rank_exists hB hA
   rw [h]; clear h;
   unfold Matroid.Basis' maximals at hI_basis_A hJ_basis_B;

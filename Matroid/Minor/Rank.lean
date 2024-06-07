@@ -70,6 +70,10 @@ lemma relRank_eq_er_diff_contract (M : Matroid α) (X Y : Set α) :
 lemma relRank_eq_diff_right (M : Matroid α) (X Y : Set α) : M.relRank X Y = M.relRank X (Y \ X) :=
   M.relRank_eq_er_diff_contract X Y
 
+lemma relRank_eq_union_right (M : Matroid α) (X Y : Set α) :
+    M.relRank X Y = M.relRank X (Y ∪ X) := by
+  rw [eq_comm, relRank_eq_diff_right, union_diff_right, ← relRank_eq_diff_right]
+
 lemma relRank_mono_right (M : Matroid α) (X : Set α) {Y Y' : Set α} (hYY' : Y ⊆ Y') :
     M.relRank X Y ≤ M.relRank X Y' :=
   (M ／ X).er_mono hYY'
