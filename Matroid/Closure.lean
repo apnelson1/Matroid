@@ -748,7 +748,7 @@ def isoOfForallImageCl {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' y hy hyI ?_, fun h' x hx hxI h'' ↦
       h' (e ⟨x,hx⟩).1 (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
     · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
-        simp [image_diff e.injective, hyx]
+        simp [image_diff e.injective, hyx, Set.preimage_val_image_val_eq_self]
       have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.cl (↑I \ {y}) := by simpa [h_eq, h] using hxI
       simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
     have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by
