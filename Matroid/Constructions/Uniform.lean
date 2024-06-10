@@ -229,7 +229,8 @@ theorem unif_sub_dual (a b : ℕ) : (unif (b-a) b)✶ = unif a b := by
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
-theorem isIso_unif_iff : Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
+theorem nonempty_iso_unif_iff :
+    Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
   refine ⟨fun ⟨e⟩ ↦ ⟨M.E, ?_⟩, ?_⟩
   · rw [eq_unifOn_iff, and_iff_right rfl, and_iff_left <| by simpa using e.toEquiv.encard_eq]
     refine fun I ↦ ?_
@@ -249,10 +250,19 @@ theorem isIso_unif_iff : Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a 
   rw [Function.Injective.encard_image (fun _ _ ↦ by simp), and_iff_left_iff_imp]
   exact fun _ ⟨_,hx⟩ _ ↦ hx
 
+theorem nonempty_iso_unif_iff' :
+    Nonempty (M ≂ (unif a b)) ↔ (M = unifOn M.E a ∧ M.E.encard = b) := by
+  rw [nonempty_iso_unif_iff]
+  exact ⟨by rintro ⟨E, rfl, h⟩; simp [h], fun h ↦ ⟨M.E, by simpa⟩⟩
+
+theorem nonempty_iso_line_iff {n : ℕ} :
+    Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+  simp [nonempty_iso_unif_iff', ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
+
 noncomputable def unif_isoRestr_unif (a : ℕ) (hbb' : b ≤ b') : unif a b ≤ir unif a b' :=
   let R : Set (Fin b') := range (Fin.castLE hbb')
   have hM : Nonempty (((unif a b') ↾ R) ≂ unif a b) := by
-    refine isIso_unif_iff.2 ⟨R, ?_⟩
+    refine nonempty_iso_unif_iff.2 ⟨R, ?_⟩
     suffices R.encard = b by simpa [eq_iff_indep_iff_indep_forall]
     rw [show R = range (Fin.castLE hbb') from rfl, ← image_univ, Function.Injective.encard_image,
       encard_univ_fin]
@@ -265,14 +275,16 @@ noncomputable def unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (
 
 theorem unif_isoMinor_unif_iff {a₁ a₂ d₁ d₂ : ℕ} :
     Nonempty (unif a₁ (a₁ + d₁) ≤i unif a₂ (a₂ + d₂)) ↔ a₁ ≤ a₂ ∧ d₁ ≤ d₂ := by
-  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
-    have := hM₀.rk_le
+  refine ⟨fun ⟨e⟩ ↦ ⟨by simpa using e.rk_le, by simpa using IsoMinor.rk_le e.dual⟩, fun h ↦ ?_⟩
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h.1
+  exact ⟨(unif_isoMinor_contr a₁ (a₁ + d₁) j).trans (unif_isoRestr_unif _ (by linarith)).isoMinor⟩
 
+theorem unif_isoMinor_unif_iff' {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b₁) (h₂ : a₂ ≤ b₂) :
+    Nonempty (unif a₁ b₁ ≤i unif a₂ b₂) ↔ a₁ ≤ a₂ ∧ b₁ - a₁ ≤ b₂ - a₂ := by
+  obtain ⟨d₁, rfl⟩ := Nat.exists_eq_add_of_le h₁
+  obtain ⟨d₂, rfl⟩ := Nat.exists_eq_add_of_le h₂
+  rw [add_tsub_cancel_left, add_tsub_cancel_left, unif_isoMinor_unif_iff]
 
-
--- theorem unif_isoMinor_unif_iff {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b₁) (h₂ : a₂ ≤ b₂) :
---     Nonempty (unif a₁ b₁ ≤ unif a₂ b₂) ↔ a₁ ≤
 
 -- theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
 --     unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by

@@ -17,8 +17,9 @@ lattice of flats of `M` that is closed under taking intersections of modular pai
 Given a modular cut `U`, the flats of `M` spanning the new element `e` in the extension `M'` are
 precisely those in `U`. See [Oxley 7.2].
 
-For infinite matroids, this condition fails; for instance, if `M` is a free matroid
-on an infinite ground set, and `U` is the collection of all sets of `M` with finite complement,
+For infinite matroids, this condition fails to correctly parametrize matroid extensions;
+for instance, if `M` is a free matroid on an infinite ground set,
+and `U` is the collection of all sets of `M` with finite complement,
 then `U` is clearly a modular cut (it is closed under taking intersections of any two elements),
 but `U` doesn't correspond to any single-element extension; in such an extension `M'`,
 `e` would be spanned by every hyperplane of `M` and would therefore be spanned by the
@@ -102,7 +103,7 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     simp_rw [flat_map_iff']
     rintro _ F' ⟨F, hF, rfl⟩ ⟨F', hF', rfl⟩ hss
     refine ⟨F', U.forall_superset _ _ hF hF' ?_, rfl⟩
-    rwa [← hf.image_subset_image_iff_of_subset (U.forall_flat F hF).subset_ground hF'.subset_ground]
+    rwa [← hf.image_subset_image_iff (U.forall_flat F hF).subset_ground hF'.subset_ground]
   forall_inter := by
     simp_rw [modularFamily_map_iff, subset_image_iff]
     rintro _ ⟨Fs, hFs, rfl⟩ hne ⟨Ys, ⟨B, hB, hYs⟩, h_eq⟩
@@ -119,7 +120,7 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     simp only [Subtype.forall, mem_image, forall_exists_index] at hYs h_eq
     specialize h_eq _ _ ⟨hF, rfl⟩
     specialize hYs _ _ ⟨hF, rfl⟩
-    rw [hf.image_eq_image_iff_of_subset (hFsE F hF) hYs.subset_ground] at h_eq
+    rw [hf.image_eq_image_iff (hFsE F hF) hYs.subset_ground] at h_eq
     rwa [← h_eq] at hYs
 
 @[simp] lemma ModularCut.mem_mk_iff (S : Set (Set α)) (h₁ : ∀ F ∈ S, M.Flat F)

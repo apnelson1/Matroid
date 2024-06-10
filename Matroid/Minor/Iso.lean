@@ -189,6 +189,11 @@ noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
 
 lemma IsoMinor.erk_le (e : N ≤i M) : N.erk ≤ M.erk := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+  exact i.erk_eq.trans_le hM₀.erk_le
+
+lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
+  obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+  exact i.rk_eq.trans_le hM₀.rk_le
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]

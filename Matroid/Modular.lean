@@ -200,21 +200,21 @@ lemma ModularFamily.map {β : Type*} (f : α → β) (hf : InjOn f M.E) (h : M.M
     (M.map f hf).ModularFamily (fun i ↦ f '' (Xs i)) := by
   obtain ⟨B, hB, hBX⟩ := h
   refine ⟨f '' B, hB.map hf, fun i ↦ ?_⟩
-  convert (hBX i).map f hf
+  convert (hBX i).map hf
   rw [hf.image_inter (hBX i).subset_ground hB.subset_ground]
 
 lemma modularFamily_map_iff {β : Type*} (f : α → β) (hf : InjOn f M.E) {Xs : ι → Set β} :
     (M.map f hf).ModularFamily Xs ↔ ∃ Ys, M.ModularFamily Ys ∧ ∀ i, Xs i = f '' (Ys i) := by
   refine ⟨fun h ↦ ?_, fun ⟨Ys, hYs, h_eq⟩ ↦ ?_⟩
   · obtain ⟨B, hB, h⟩ := h
-    simp_rw [basis_map_iff'] at h
+    simp_rw [map_basis_iff'] at h
     rw [map_base_iff] at hB
     obtain ⟨B, hB, rfl⟩ := hB
     choose Is hIs using h
     choose Ys hYs using hIs
     refine ⟨Ys, ⟨B, hB, fun i ↦ ?_⟩, fun i ↦ (hYs i).2.2⟩
     convert (hYs i).1
-    rw [← hf.image_eq_image_iff_of_subset (inter_subset_right.trans hB.subset_ground)
+    rw [← hf.image_eq_image_iff (inter_subset_right.trans hB.subset_ground)
       (hYs i).1.indep.subset_ground, ← (hYs i).2.1, (hYs i).2.2, hf.image_inter]
     · exact (hYs i).1.subset_ground
     exact hB.subset_ground

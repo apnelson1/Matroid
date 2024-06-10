@@ -127,6 +127,17 @@ lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e
 
 lemma Iso.base_image_iff (e : M ≂ N) {B : Set M.E} : M.Base B ↔ N.Base (↑(e '' B)) :=
   ⟨e.base_image, fun h ↦ by simpa using e.symm.base_image h⟩
+
+lemma Iso.nonempty_right (e : M ≂ N) [M.Nonempty] : N.Nonempty := by
+  obtain ⟨x,hx⟩ := M.ground_nonempty
+  exact ⟨e ⟨x,hx⟩, Subtype.coe_prop (e ⟨x, hx⟩)⟩
+
+lemma Iso.right_eq_empty (e : emptyOn α ≂ N) : N = emptyOn β := by
+  rw [← ground_eq_empty_iff]
+  have h := e.toEquiv
+  simp only [emptyOn_ground] at h
+  exact isEmpty_coe_sort.mp h.symm.isEmpty
+
 section map
 
 lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
@@ -184,30 +195,33 @@ noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
   toEquiv := f
   indep_image_iff' := by simp [Set.preimage_val_image_val_eq_self]
 
--- lemma Iso.exists_eq_map' (e : M ≂ N) [Nonempty β]:
---     ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
---   -- obtain ⟨a, ha⟩ := hM.ground_nonempty
+/-- If `M` and `N` are isomorphic and `N` is on a nonempty type, then `N` is a map of `M`.
+Useful for getting out of subtype hell. -/
+lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty β] :
+    ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+  classical
+  set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary β
+  have hf_im' : ∀ X ⊆ M.E, f '' X = e '' (M.E ↓∩ X) := by
+    simp [← Subtype.forall_set_subtype, preimage_image_eq _ Subtype.val_injective,
+      image_image, show ∀ x : M.E, f x = e x from fun x ↦ by simp [f, x.2]]
+  have hf_im : ∀ X : Set M.E, f '' X = e '' X := fun X ↦ by
+    rw [hf_im' _ (by simp), preimage_image_eq _ Subtype.val_injective]
+  refine ⟨f, fun _ hx _ hy ↦ by simp [f, hx, hy, Subtype.val_inj],
+    eq_of_indep_iff_indep_forall ?_ ?_⟩
+  · simp [map_ground, hf_im' _ Subset.rfl]
+  simp only [map_indep_iff]
+  simp_rw [← Subtype.forall_set_subtype]
+  refine fun I ↦ ⟨fun hI ↦ ⟨↑(e.symm '' I), ?_⟩, fun ⟨I₀, hI₀, h⟩ ↦ ?_⟩
+  · rw [hf_im, image_symm_image, and_iff_left rfl]
+    rwa [← e.symm.indep_image_iff]
+  rwa [h, hf_im' _ hI₀.subset_ground, ← e.indep_image_iff,
+    Subset.image_val_preimage_val_eq hI₀.subset_ground]
 
---   classical
---   set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary β with hfdef
---   refine ⟨f, ?_, ?_⟩
---   · refine fun _ hx _ hy ↦ by
---   -- rw [eq_iff_indep_iff_indep_forall]
---   simp only [eq_iff_indep_iff_indep_forall, map_ground]
-
--- lemma Iso.exists_eq_map (e : M ≂ N) (hM : M.Nonempty) :
---     ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
---   obtain ⟨a, ha⟩ := hM.ground_nonempty
-
---   classical
---   refine ⟨fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else e ⟨a,ha⟩, ?_, ?_⟩
---   · exact fun _ hx _ hy ↦ by simp [hx, hy, Subtype.val_inj]
---   -- rw [eq_iff_indep_iff_indep_forall]
---   simp only [eq_iff_indep_iff_indep_forall, map_ground]
-
-
-
-
+lemma Iso.exists_eq_map' (e : M ≂ N) [M.Nonempty] :
+    ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+  obtain ⟨x,hx⟩ := M.ground_nonempty
+  have _ : Nonempty β := ⟨e ⟨x,hx⟩⟩
+  exact e.exists_eq_map
 
 end map
 

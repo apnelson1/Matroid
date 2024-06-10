@@ -261,6 +261,11 @@ lemma Indep.insert_indep_iff (hI : M.Indep I) :
   · simp_rw [insert_eq_of_mem h, iff_true_intro hI, true_iff, iff_true_intro h, or_true]
   rw [hI.insert_indep_iff_of_not_mem h, or_iff_left h]
 
+lemma insert_indep_iff : M.Indep (insert e I) ↔ M.Indep I ∧ (e ∉ I → e ∈ M.E \ M.cl I) := by
+  by_cases hI : M.Indep I
+  · rw [hI.insert_indep_iff, and_iff_right hI, or_iff_not_imp_right]
+  simp [hI, show ¬ M.Indep (insert e I) from fun h ↦ hI <| h.subset <| subset_insert _ _]
+
 /-- This can be used for rewriting if the LHS is inside a quantifier where `f = e` is not known.-/
 lemma Indep.insert_diff_indep_iff (hI : M.Indep (I \ {e})) (heI : e ∈ I) :
     M.Indep (insert f I \ {e}) ↔ f ∈ M.E \ M.cl (I \ {e}) ∨ f ∈ I := by

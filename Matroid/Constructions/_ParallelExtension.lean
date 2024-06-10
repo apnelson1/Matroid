@@ -21,15 +21,8 @@ section Loop
 
 variable {α : Type*} {M M' : Matroid α} {e f : α} {I : Set α}
 
--- def addLoops (M : Matroid α) (L : Set α) : Matroid α := (M ＼ L) ↾ (M.E ∪ L)
-
 /-- Add a loop `e` to a matroid `M`. Has the junk value `M` if `e ∈ M.E` -/
 def addLoop (M : Matroid α) (e : α) : Matroid α := M ↾ (insert e M.E)
-
-theorem addLoop_eq_extendBy (he : e ∉ M.E) : M.addLoop e = M.extendBy e ⊤ := by
-  suffices ∀ I ⊆ insert e M.E, M.Indep I → (I ⊆ insert e M.E ↔ e ∉ I) by
-    simpa [eq_iff_indep_iff_indep_forall, addLoop, ModularCut.ExtIndep]
-  exact fun I hIE hI ↦ iff_of_true hIE <| not_mem_subset hI.subset_ground he
 
 lemma addLoop_eq_self (he : e ∈ M.E) : M.addLoop e = M := by
   rw [addLoop, insert_eq_of_mem he, restrict_ground_eq_self]
@@ -97,42 +90,21 @@ end Loop
 
 section Parallel
 
-variable {α : Type*} {M M' : Matroid α} {e f x : α} {I C : Set α}
+variable {α : Type*} [DecidableEq α] {M M' : Matroid α} {e f x : α} {I C : Set α}
 
-def parallelExtend (M : Matroid α) (e f : α) :=
-    M.extendBy f (ModularCut.principal M {e})
-
--- /-- Replace `f` with a parallel copy of `e` in `M`. Intended for use where `e` is a nonloop
---   and `f ∉ M.E`. When this is not the case, the junk value is described by
---   either `parallelExtend_not_nonloop` or `parallelExtend_delete_eq` -/
--- def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
---   (M.comap (update id f e)) ↾ (insert f M.E)
-
-lemma parallelExtend_eq_comap (M : Matroid α) (e f : α) [DecidableEq α] :
-    M.parallelExtend e f = M.comap (update id f e) ↾ (insert f M.E) := by
-  classical
-  refine eq_of_indep_iff_indep_forall rfl ?_
-  -- simp only [parallelExtend, eq_iff_indep_iff_indep_forall, extendBy_E, restrict_ground_eq,
-  --   extendBy_Indep, ModularCut.ExtIndep, ModularCut.mem_principal_iff, cl_flat,
-  --   singleton_subset_iff, true_and, restrict_indep_iff, comap_indep_iff, image_update, id_eq,
-  --   image_id', update_id_injOn_iff]
-
-  intro I hI
-
-  by_cases hfI : f ∈ I
-  · suffices M.Indep (I \ {f}) ∧ e ∉ M.cl (I \ {f}) ↔ M.Indep (insert e (I \ {f})) ∧ (e ∈ I → f = e)
-      by simpa [parallelExtend, ModularCut.ExtIndep, hfI, show I ⊆ insert f M.E from hI]
-    simp only [insert_indep_iff, mem_diff, mem_singleton_iff, not_and, Decidable.not_not, eq_comm,
-      and_assoc, and_congr_right_iff]
-    refine fun hIf ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+/-- Replace `f` with a parallel copy of `e` in `M`. Intended for use where `e` is a nonloop
+  and `f ∉ M.E`. When this is not the case, the junk value is described by
+  either `parallelExtend_not_nonloop` or `parallelExtend_delete_eq` -/
+def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
+  (M.comap (update id f e)) ↾ (insert f M.E)
 
 @[simp] lemma parallelExtend_ground (M : Matroid α) (e f : α) :
     (M.parallelExtend e f).E = insert f M.E := rfl
 
--- @[simp] lemma parallelExtend_self (M : Matroid α) (e : α) : M.parallelExtend e e = M.addLoop e := by
---     simp [eq_of_indep_iff_indep_forall]
-  -- change comap _ (update id e (id e)) ↾ _ = _
-  -- rw [update_eq_self, comap_id, addLoop]
+@[simp] lemma parallelExtend_self (M : Matroid α) (e : α) :
+    M.parallelExtend e e = M.addLoop e := by
+  change comap _ (update id e (id e)) ↾ _ = _
+  rw [update_eq_self, comap_id, addLoop]
 
 lemma parallelExtend_not_nonloop (he : ¬M.Nonloop e) (f : α) :
     M.parallelExtend e f = (M ＼ f).addLoop f := by
