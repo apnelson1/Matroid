@@ -187,6 +187,9 @@ noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
   have hex := e.exists_restr_iso
   hex.choose_spec.choose.isoMinor.trans hex.choose_spec.choose_spec.minor.isoMinor
 
+lemma IsoMinor.erk_le (e : N ≤i M) : N.erk ≤ M.erk := by
+  obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]
 --   obtain ⟨M₀,h,e,-⟩ := f.exists_iso

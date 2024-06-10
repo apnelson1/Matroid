@@ -132,4 +132,4 @@ theorem rectProjVandermonde_rowSet_linearIndependent_iff {v : α → Option K} {
   rw [encard_le_coe_iff_finite_ncard_le] at h
   have _ := h.1.fintype
   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at h
-  exact rectProjVandermonde_linearIndependent_rows (hv.injOn _).injective h.2
+  exact rectProjVandermonde_linearIndependent_rows hv.injOn.injective h.2

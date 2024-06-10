@@ -63,7 +63,7 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
   simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
 
-lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = (s \ r) ∩ t := by
+lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = s \ r ∩ t := by
   simp_rw [diff_eq, inter_right_comm]
 
 lemma pair_diff_left {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {x} = {y} := by

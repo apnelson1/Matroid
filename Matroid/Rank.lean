@@ -25,6 +25,8 @@ lemma erk_eq_er_ground (M : Matroid α) : M.erk = M.er M.E := by
 
 @[simp] lemma erk_restrict (M : Matroid α) (X : Set α) : (M ↾ X).erk = M.er X := rfl
 
+-- lemma Iso.erk_eq {M : Matroid α} {N : Matroid β}
+
 lemma Basis'.encard (hI : M.Basis' I X) : I.encard = M.er X := by
   rw [er,erk]
   rw [← base_restrict_iff'] at hI
@@ -377,8 +379,6 @@ lemma Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
 
 end Basic
 
-
-
 section rFin
 
 def rFin (M : Matroid α) (X : Set α) :=
@@ -608,6 +608,9 @@ lemma coe_r_eq_er_of_finite (M : Matroid α) (hX : X.Finite) : (M.r X : ℕ∞) 
 
 @[simp] lemma coe_r_eq (M : Matroid α) [FiniteRk M] (X : Set α) : (M.r X : ℕ∞) = M.er X :=
   (M.to_rFin X).coe_r_eq
+
+@[simp] lemma coe_rk_eq (M : Matroid α) [FiniteRk M] : (M.rk : ℕ∞) = M.erk := by
+  rw [erk_eq_er_ground, rk_def, coe_r_eq]
 
 lemma r_eq_of_er_eq (h : M.er X = M.er Y) : M.r X = M.r Y := by
   rw [r, r, h]

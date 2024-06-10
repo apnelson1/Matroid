@@ -9,10 +9,10 @@ variable {α R η ι : Type*}
 
 open Set BigOperators Submodule Function
 
-@[simp] theorem Fintype.sum_pi_single {α : Type*} {β : α → Type*} [DecidableEq α] [Fintype α]
-    [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
-    ∑ a', Pi.single a' (f a') a = f a := by
-  convert Finset.sum_pi_single a f Finset.univ; simp
+-- @[simp] theorem Fintype.sum_pi_single {α : Type*} {β : α → Type*} [DecidableEq α] [Fintype α]
+--     [(a : α) → AddCommMonoid (β a)] (a : α) (f : (a : α) → β a) :
+--     ∑ a', Pi.single a' (f a') a = f a := by
+--   convert Finset.sum_pi_single a f Finset.univ; simp
 
 @[simp] theorem Module.piEquiv_apply_symm [CommSemiring R] [Fintype α] [DecidableEq α]
     (y : Module.Dual R (α → R)) (i : α) : (Module.piEquiv α R R).symm y i = y (Pi.single i 1) := by
@@ -73,10 +73,7 @@ theorem LinearMap.extendSubtype_eq_ite {R : Type*} [Semiring R] (s : Set η) (x 
   ext i
   split_ifs with h
   · exact extendSubtype_apply x ⟨i,h⟩
-  simp only [extendSubtype._eq_1, ExtendByZero.linearMap_apply, Subtype.exists, not_exists]
-  rw [extend_apply', Pi.zero_apply]
-  rintro ⟨a,rfl⟩
-  exact h a.2
+  exact extendSubtype_apply_not_mem _ h
 
 @[simp] theorem LinearMap.extendSubtype_restrict (x : s → R) :
     s.restrict (LinearMap.extendSubtype R s x) = x := by
@@ -270,8 +267,7 @@ noncomputable def Submodule.orthSpace' (U : Submodule R (η → R)) : Submodule 
   simp [orthSpace']
 
 /-- The space of vectors 'orthogonal' to all vectors in `U`, in the sense of having a
-  dot product of zero. This doesn't require `Fintype η`;
-  its members are always finitely supported. -/
+dot product of zero. This doesn't require `Fintype η`; its members are always finitely supported. -/
 noncomputable def Submodule.orthSpace (U : Submodule R (η → R)) := U.orthSpace'.map Finsupp.lcoeFun
 
 @[simp] theorem mem_orthSpace_iff' [Fintype η] : x ∈ U.orthSpace ↔ ∀ y ∈ U, ∑ i, x i * y i = 0 := by

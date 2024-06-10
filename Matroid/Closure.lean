@@ -547,7 +547,8 @@ lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf : M.E.InjOn f)
   clear X
   intro X hX
   obtain ⟨I, hI⟩ := (M.map f hf).exists_basis X
-  obtain ⟨I, X, hI', rfl, rfl⟩ := (basis_map_iff' f hf).1 hI
+
+  obtain ⟨I, X, hI', rfl, rfl⟩ := (map_basis_iff').1 hI
 
   rw [eq_comm, ← cl_inter_ground, hf.preimage_image_inter hI'.subset_ground,
     ← hI.cl_eq_cl, ← hI'.cl_eq_cl]
@@ -559,8 +560,7 @@ lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf : M.E.InjOn f)
   . rintro ⟨e, ⟨heE, hind⟩, rfl⟩
     refine ⟨⟨e, heE, rfl⟩, fun J hJ hins ↦ ⟨e, hind ?_, rfl⟩⟩
     rw [← image_insert_eq,
-      hf.image_eq_image_iff_of_subset (insert_subset heE hI'.indep.subset_ground) hJ.subset_ground]
-      at hins
+      hf.image_eq_image_iff (insert_subset heE hI'.indep.subset_ground) hJ.subset_ground] at hins
     rwa [hins]
   rintro ⟨⟨x, hx, rfl⟩, h⟩
   refine ⟨x, ⟨hx, fun hind ↦ ?_⟩, rfl⟩

@@ -170,6 +170,9 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
   rw [erk_eq_er_ground, unif_er_eq]
   simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
 
+@[simp] theorem unif_rk_eq (a b : ℕ) : (unif a b).rk = min a b := by
+  rw [rk, unif_erk_eq, ENat.toNat_coe]
+
 theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
   simpa
 
@@ -193,6 +196,12 @@ theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   rw [encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
     PartENat.withTopEquiv_natCast, ENat.some_eq_coe, eq_comm, Nat.cast_add]
 
+@[simp] theorem unif_add_left_dual (a b : ℕ) : (unif a (a + b))✶ = unif b (a+b) :=
+  unif_dual' rfl
+
+@[simp] theorem unif_add_right_dual (a b : ℕ) : (unif b (a + b))✶ = unif a (a+b) :=
+  unif_dual' <| add_comm _ _
+
 instance unif_loopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
   rw [unif, Nat.cast_add, Nat.cast_one]
   infer_instance
@@ -201,25 +210,24 @@ instance unif_simple (a b : ℕ) : Simple (unif (a + 2) b) := by
   rw [unif, Nat.cast_add, Nat.cast_two]
   infer_instance
 
-/-- This needs a @[simp] tag even though the proof is `simp`, since the proof uses the RHS. -/
-@[simp] theorem unif_eq_loopyOn (b : ℕ) : unif 0 b = loopyOn univ := by
-  simp
+@[simp] theorem unif_zero (b : ℕ) : unif 0 b = loopyOn univ := by
+  simp [eq_loopyOn_iff]
 
 theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
-  simpa
+  simpa [eq_freeOn_iff]
 
 /-- The expression for dual of a uniform matroid.
   The junk case where `b < a` still works because the subtraction truncates. -/
-@[simp] theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
+theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
   obtain (hab | hba) := le_or_lt a b
   · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 
+theorem unif_sub_dual (a b : ℕ) : (unif (b-a) b)✶ = unif a b := by
+  rw [eq_comm, eq_dual_comm, unif_dual]
+
 theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
-
-example (a b c : Set α) (h : aᶜ \ b = c) : False := by
-  simp at h
 
 theorem isIso_unif_iff : Nonempty (M ≂ (unif a b)) ↔ ∃ E, (M = unifOn E a ∧ E.encard = b) := by
   refine ⟨fun ⟨e⟩ ↦ ⟨M.E, ?_⟩, ?_⟩
@@ -252,31 +260,19 @@ noncomputable def unif_isoRestr_unif (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i
   hM.some.symm.isoRestr.trans ((unif a b').restrict_restriction R).isoRestr
 
 noncomputable def unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
-  have h_eq : b - a = b + d - (a + d) := by rw [add_tsub_add_eq_tsub_right]
-  have := (unif_isoRestr_unif a (Nat.le_add_right b d)).isoMinor
-  sorry
-  -- rw [← isoMinor_dual_iff, unif_dual, unif_dual]
-  -- have h_eq : b - a = b + d - (a + d)
-  -- · rw [add_tsub_add_eq_tsub_right]
-  -- rw [← h_eq]
-  -- apply unif_isoMinor_restr _ (Nat.le_add_right b d)
-  -- toFun := fun ⟨x, hx⟩ ↦ ⟨⟨x.1,x.2.trans_le hbb'⟩, by simp⟩
-  -- inj' := by rintro ⟨⟨x, hx⟩, hx'⟩ ⟨⟨y,hy⟩, hy'⟩; simp
+  have e := (unif_isoRestr_unif (b-a) (Nat.le_add_right b d)).isoMinor.dual
+  rwa [unif_sub_dual, ← Nat.add_sub_add_right b d a, unif_sub_dual] at e
 
-  -- exists_minor' := by
-  --   simp
-
--- theorem unif_isoMinor_restr (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i unif a b' := by
---   set R : Set (Fin b') := range (Fin.castLE hbb') with hR
---   have hM : ((unif a b') ↾ R) ≂ unif a b
---   · rw [isIso_unif_iff, eq_iff_indep_iff_indep_forall]
---     simp only [restrict_ground_eq, unifOn_ground_eq, restrict_indep_iff,
---       unif_indep_iff, unifOn_indep_iff, implies_true, forall_const, and_self, true_and]
---     rw [hR, ← image_univ, Function.Injective.encard_image, encard_univ_fin]
---     exact (Fin.castLEEmb hbb').injective
---   exact ⟨_, restrict_minor _ (by simp), hM.symm⟩
+theorem unif_isoMinor_unif_iff {a₁ a₂ d₁ d₂ : ℕ} :
+    Nonempty (unif a₁ (a₁ + d₁) ≤i unif a₂ (a₂ + d₂)) ↔ a₁ ≤ a₂ ∧ d₁ ≤ d₂ := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+    have := hM₀.rk_le
 
 
+
+-- theorem unif_isoMinor_unif_iff {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b₁) (h₂ : a₂ ≤ b₂) :
+--     Nonempty (unif a₁ b₁ ≤ unif a₂ b₂) ↔ a₁ ≤
 
 -- theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
 --     unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by

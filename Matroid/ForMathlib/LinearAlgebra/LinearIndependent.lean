@@ -11,9 +11,8 @@ variable {α ι W W' M R : Type*} [AddCommGroup W] [AddCommGroup W']
 
 open Function Set Submodule BigOperators
 
-theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
-    [AddCommMonoid M] [Module R M] {s : Finset ι} {f : ι → M} :
-    ¬ LinearIndependent R ((s : Set ι).restrict f) ↔
+theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {s : Finset ι} {f : ι → M} : ¬ LinearIndependent R ((s : Set ι).restrict f) ↔
       ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
   simp only [Finset.coe_sort_coe, not_linearIndependent_iff, Finset.univ_eq_attach, restrict_apply,
     ne_eq, Subtype.exists, Finset.mem_coe]
@@ -31,9 +30,8 @@ theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R]
   rwa [s.sum_attach (fun x ↦ c x • f x),
     Finset.sum_subset (s.subset_univ) (fun x _ hx ↦ by simp [hc' x hx])]
 
-theorem Fintype.not_linearIndependent_restrict_iff' [Fintype ι] [CommSemiring R]
-    [AddCommMonoid M] [Module R M] {s : Set ι} {f : ι → M} :
-    ¬ LinearIndependent R (s.restrict f) ↔
+theorem Fintype.not_linearIndependent_restrict_iff' [Fintype ι] [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {s : Set ι} {f : ι → M} : ¬ LinearIndependent R (s.restrict f) ↔
       ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
   obtain ⟨s,rfl⟩ := s.toFinite.exists_finset_coe
   exact Fintype.not_linearIndependent_restrict_iff
@@ -45,7 +43,7 @@ theorem linearIndependent_restrict_iff [Semiring R] [AddCommMonoid M] [Module R 
   rw [linearIndependent_iff]
   refine ⟨fun h l hl0 hls ↦ ?_, fun h l hl0 ↦ ?_⟩
   · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ Subset.rfl _ (by simp)] at hl0
-    specialize h (Finsupp.comapDomain ((↑) : s → ι) l (Subtype.val_injective.injOn _))
+    specialize h (Finsupp.comapDomain ((↑) : s → ι) l Subtype.val_injective.injOn)
     simp only [Finsupp.total_comapDomain, restrict_apply] at h
     rw [Finset.sum_preimage _ _ _ (fun x ↦ l x • f x)
       (fun x hx hx' ↦ (hx' (by simpa using hls hx)).elim )] at h
@@ -78,8 +76,8 @@ theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [Add
   rw [← linearIndependent_subtype_range hinj]
   refine linearIndependent_of_finite _ fun t ht htfin ↦ ?_
   obtain ⟨t, rfl⟩ := subset_range_iff_exists_image_eq.1 ht
-  exact (linearIndependent_image (injOn_of_injective hinj t)).1 <|
-    h t (htfin.of_finite_image (injOn_of_injective hinj t))
+  exact (linearIndependent_image (injOn_of_injective hinj)).1 <|
+    h t (htfin.of_finite_image (injOn_of_injective hinj))
 
 theorem LinearIndependent.mono_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) {s t : Set ι} (h : LinearIndependent R (t.restrict f)) (hst : s ⊆ t) :
@@ -104,7 +102,7 @@ theorem linearIndependent_iUnion_of_directed' {R M ι η : Type*} [DivisionRing 
     exact hz i (by simpa using h.1) h.2
   set emb : t → s z := (inclusion hss) ∘ (imageFactorization Subtype.val t)
   refine (h z).comp emb <| Function.Injective.comp (inclusion_injective hss) ?_
-  exact (Subtype.val_injective.injOn _).imageFactorization_injective
+  exact Subtype.val_injective.injOn.imageFactorization_injective
 
 theorem linearIndependent_sUnion_of_directed' {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : Set (Set ι)) (hs : DirectedOn (· ⊆ ·) s)

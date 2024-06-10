@@ -67,7 +67,7 @@ lemma flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
 lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) (hFE : F ⊆ M.E) :
     (M.map f hf).Flat (f '' F) ↔ M.Flat F := by
   rw [flat_iff_cl_self, map_cl_eq, ← cl_inter_ground, hf.preimage_image_inter hFE,
-    hf.image_eq_image_iff_of_subset (M.cl_subset_ground _) hFE, flat_iff_cl_self]
+    hf.image_eq_image_iff (M.cl_subset_ground _) hFE, flat_iff_cl_self]
 
 lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
     (M.map f hf).Flat (f '' F) := by

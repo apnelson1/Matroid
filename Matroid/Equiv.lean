@@ -1,5 +1,7 @@
 import Matroid.Map
 import Matroid.ForMathlib.Function
+import Matroid.ForMathlib.PreimageVal
+import Matroid.ForMathlib.Logic_Embedding_Set
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
@@ -104,11 +106,11 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     intro I
     rw [indep_iff, indep_iff]
     refine ⟨fun ⟨B, hB, hIB⟩ ↦ ?_, fun ⟨B, hB, hIB⟩ ↦ ?_⟩
-    · obtain ⟨B, rfl⟩ := eq_image_val_of_subset hB.subset_ground
+    · obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
       refine ⟨↑(e '' B), (he B).1 hB, ?_⟩
       rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
       exact image_subset e hIB
-    obtain ⟨B, rfl⟩ := eq_image_val_of_subset hB.subset_ground
+    obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
     refine ⟨↑(e.symm '' B), by rwa [he, e.image_symm_image] , ?_⟩
     rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
     simpa using hIB
@@ -116,7 +118,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
 lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e '' B)) := by
   rw [base_iff_maximal_indep, ← e.indep_image_iff, and_iff_right hB.indep]
   intro I hI h'
-  obtain ⟨I, rfl⟩ := eq_image_val_of_subset hI.subset_ground
+  obtain ⟨I, rfl⟩ := Subset.eq_image_val hI.subset_ground
   replace hB := hB.eq_of_subset_indep (e.symm.image_indep hI)
   simp only [image_subset_iff, preimage_val_image_val_eq_self, image_val_inj,
     image_symm_eq_preimage] at hB
@@ -140,7 +142,8 @@ lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
       image_subset_iff, preimage_val_image_val_eq_self, preimage_subset_iff, image_val_inj,
       true_implies] at h
 
-    specialize h <| by simpa using (show N.E ↓∩ J ⊆ _ from preimage_mono (f := Subtype.val) hJX)
+    specialize h <| by simpa [Set.preimage_val_image_val_eq_self]
+      using (show N.E ↓∩ J ⊆ _ from preimage_mono (f := Subtype.val) hJX)
     obtain rfl := h (by convert hIJ)
     simp [hJ.subset_ground]
   specialize h (y := ↑(e '' (M.E ↓∩ J)))
@@ -179,7 +182,32 @@ noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M
 noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
     M ≂ M.mapSetEquiv f where
   toEquiv := f
-  indep_image_iff' := by simp
+  indep_image_iff' := by simp [Set.preimage_val_image_val_eq_self]
+
+-- lemma Iso.exists_eq_map' (e : M ≂ N) [Nonempty β]:
+--     ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+--   -- obtain ⟨a, ha⟩ := hM.ground_nonempty
+
+--   classical
+--   set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary β with hfdef
+--   refine ⟨f, ?_, ?_⟩
+--   · refine fun _ hx _ hy ↦ by
+--   -- rw [eq_iff_indep_iff_indep_forall]
+--   simp only [eq_iff_indep_iff_indep_forall, map_ground]
+
+-- lemma Iso.exists_eq_map (e : M ≂ N) (hM : M.Nonempty) :
+--     ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+--   obtain ⟨a, ha⟩ := hM.ground_nonempty
+
+--   classical
+--   refine ⟨fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else e ⟨a,ha⟩, ?_, ?_⟩
+--   · exact fun _ hx _ hy ↦ by simp [hx, hy, Subtype.val_inj]
+--   -- rw [eq_iff_indep_iff_indep_forall]
+--   simp only [eq_iff_indep_iff_indep_forall, map_ground]
+
+
+
+
 
 end map
 

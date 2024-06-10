@@ -6,6 +6,7 @@ import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.StdBasis
 import Matroid.ForMathlib.SetSubtype
 import Matroid.ForMathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.Order.Minimal
 
 open Set Function Submodule BigOperators FiniteDimensional
 
@@ -222,14 +223,14 @@ theorem linearIndependent_rows_of_upper_tri {m₀ m₁ n₀ n₁ : Type*} (A : M
     LinearIndependent R (Matrix.fromBlocks A B 0 C).rowFun := by
   simp_rw [linearIndependent_iff, Finsupp.total_apply] at *
   intro l hl
-  specialize hA (l.comapDomain Sum.inl (Sum.inl_injective.injOn _))
-  specialize hC (l.comapDomain Sum.inr (Sum.inr_injective.injOn _))
+  specialize hA (l.comapDomain Sum.inl Sum.inl_injective.injOn)
+  specialize hC (l.comapDomain Sum.inr Sum.inr_injective.injOn)
   simp only [Finsupp.sum, Finsupp.comapDomain_support, Finsupp.comapDomain_apply] at hA hC hl
   specialize hA ?_
   · ext j
     convert congr_fun hl (Sum.inl j)
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
-    convert Finset.sum_preimage Sum.inl l.support (Sum.inl_injective.injOn _)
+    convert Finset.sum_preimage Sum.inl l.support Sum.inl_injective.injOn
       (fun (i : m₀ ⊕ m₁) ↦ l i * ((Matrix.fromBlocks A B 0 C) i (Sum.inl j)))
     simp
   ext (i | i)
@@ -239,7 +240,7 @@ theorem linearIndependent_rows_of_upper_tri {m₀ m₁ n₀ n₁ : Type*} (A : M
   convert congr_fun hl (Sum.inr j)
   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
 
-  convert Finset.sum_preimage Sum.inr l.support (Sum.inr_injective.injOn _)
+  convert Finset.sum_preimage Sum.inr l.support Sum.inr_injective.injOn
     (fun (i : m₀ ⊕ m₁) ↦ l i * ((Matrix.fromBlocks A B 0 C) i (Sum.inr j))) ?_
   simp only [Finsupp.mem_support_iff, ne_eq, mem_range, not_exists, Sum.forall, not_false_eq_true,
     implies_true, fromBlocks_apply₁₂, forall_true_left, Sum.inr.injEq, forall_eq,
@@ -444,19 +445,33 @@ theorem subset_cols_notLinearIndependent_iff [Fintype n] :
   rw [← rowFun_transpose, colSubmatrix_transpose, subset_rows_notLinearIndependent_iff]
   simp_rw [vecMul_transpose]
 
-theorem toLin'_transpose [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
-    toLin' Aᵀ = (Module.piEquiv n K K).symm.comp
-      (A.toLin'.dualMap.comp (Module.piEquiv m K K).toLinearMap) := by
-  ext i j; simp [Module.piEquiv_apply_apply, ← Pi.single_mul_right_apply (A · j)]
+-- theorem toLin'_transpose [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
+--     toLin' Aᵀ = (Module.piEquiv n K K).symm.comp
+--       (A.toLin'.dualMap.comp (Module.piEquiv m K K).toLinearMap) := by
+--   classical
+--   ext i j
+--   -- simp only [rowFun_transpose, LinearMap.coe_comp, LinearMap.coe_single, comp_apply, toLin'_apply,
+--   --   mulVec_single, transpose_apply, mul_one, LinearEquiv.coe_coe, Module.piEquiv_apply_symm,
+--   --   LinearMap.dualMap_apply]
+--   -- suffices A i j = ∑ x : m, A x j * Pi.single i 1 x by
+--   simp only [rowFun_transpose, LinearMap.coe_comp, LinearMap.coe_single, comp_apply, toLin'_apply,
+--     mulVec_single, transpose_apply, mul_one, LinearEquiv.coe_coe, Module.piEquiv_apply_symm,
+--     LinearMap.dualMap_apply, Module.piEquiv_apply_apply, smul_eq_mul]
+--   simp_rw [← Pi.single_mul_right_apply (A · j)]
 
-theorem toLin'_dualMap [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
-    A.toLin'.dualMap =
-      ((Module.piEquiv n K K).comp (toLin' Aᵀ)).comp (Module.piEquiv m K K).symm.toLinearMap := by
-  rw [toLin'_transpose]; aesop
+
+  -- simp [Module.piEquiv_apply_apply, ← Pi.single_mul_right_apply (A · j)]
+  -- rw [eq_comm]
+
+
+-- theorem toLin'_dualMap [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] :
+--     A.toLin'.dualMap =
+--       ((Module.piEquiv n K K).comp (toLin' Aᵀ)).comp (Module.piEquiv m K K).symm.toLinearMap := by
+--   rw [toLin'_transpose]; aesop
 
 theorem colSpace_eq_top_iff_linearIndependent_rows [Fintype m] :
     A.colSpace = ⊤ ↔ LinearIndependent K A.rowFun := by
-  rw [← not_iff_not, ← Ne.def, ← lt_top_iff_ne_top, ← orthSpace_lt_iff_lt, orthSpace_top,
+  rw [← not_iff_not, ← Ne, ← lt_top_iff_ne_top, ← orthSpace_lt_iff_lt, orthSpace_top,
     bot_lt_iff_ne_bot, Submodule.ne_bot_iff, Fintype.not_linearIndependent_iff]
   simp only [mem_orthSpace_iff', ne_eq, ← smul_eq_mul]
   refine ⟨fun ⟨x,hx,h0⟩ ↦ ⟨x, ?_, ne_iff.mp h0⟩, fun ⟨x,hx,h0⟩ ↦ ⟨x, fun y hy ↦ ?_, ne_iff.mpr h0⟩⟩
@@ -577,12 +592,10 @@ section NullSpace
 variable {K : Type*} [Field K] [Fintype n] {m₁ m₂ : Type*} [Fintype m₁] [Fintype m₂]
   {A : Matrix m n K} {A₁ : Matrix m₁ n K} {A₂ : Matrix m₂ n K} {t : Set n}
 
-@[pp_dot] noncomputable def nullSpace {R : Type*} [CommRing R] (A : Matrix m n R) :
-    Submodule R (n → R) :=
+noncomputable def nullSpace {R : Type*} [CommRing R] (A : Matrix m n R) : Submodule R (n → R) :=
   A.rowSpace.orthSpace
 
 @[simp] theorem mem_nullSpace_iff {x : n → K} : x ∈ A.nullSpace ↔ A.mulVec x = 0 := by
-
   simp only [nullSpace, mem_orthSpace_iff', mulVec, dotProduct, mul_comm (x _)]
   refine ⟨fun h ↦ funext fun i ↦ h _ (subset_span <| mem_range_self i), fun h y hy ↦ ?_⟩
   rw [rowSpace] at hy

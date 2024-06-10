@@ -261,6 +261,12 @@ lemma Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
   rw [← er_univ_eq, ← er_univ_eq, delete_er_eq']
   exact (M.er_contract_le_er _ _).trans (M.er_mono diff_subset)
 
+lemma Minor.rk_le (h : N ≤m M) [FiniteRk M] : N.rk ≤ M.rk := by
+  have hle := h.erk_le
+  have := h.finiteRk
+  rw [← M.coe_rk_eq, ← N.coe_rk_eq] at hle
+  exact WithTop.coe_le_coe.1 hle
+
 end Contract
 
 section Rank

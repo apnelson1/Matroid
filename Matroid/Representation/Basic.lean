@@ -18,8 +18,7 @@ namespace Matroid
 
 /-- A function `v : α → W` represents `M` over `𝔽` if independence of `I` in `M` corresponds to
 linear independence of `v '' I` in `W`. -/
-def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W]
-    (v : α → W) :=
+def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] (v : α → W) :=
   ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v)
 
 @[pp_dot] structure Rep (M : Matroid α) (𝔽 W : Type*) [CommSemiring 𝔽] [AddCommMonoid W]
