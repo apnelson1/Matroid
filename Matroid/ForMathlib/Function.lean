@@ -55,7 +55,7 @@ section Update
 
 variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}
 
-@[simp] theorem image_update  (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :
+@[simp] theorem image_update (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :
     (update f a b) '' s = if a ∈ s then insert b (f '' (s \ {a})) else (f '' s) := by
   split_ifs with h
   · rw [subset_antisymm_iff, image_subset_iff]
