@@ -22,3 +22,10 @@ lemma insert_base_of_insert_indep {M : Matroid α} {I : Set α} {e f : α}
   obtain (rfl | hef) := eq_or_ne e f; assumption
   simpa [diff_singleton_eq_self he, hfI]
     using heI.exchange_base_of_indep (e := e) (f := f) (by simp [hef.symm, hf])
+
+lemma Indep.base_of_forall_insert {M : Matroid α} {B : Set α} (hB : M.Indep B)
+    (hBmax : ∀ e ∈ M.E \ B, ¬ M.Indep (insert e B)) : M.Base B := by
+  refine by_contra fun hnb ↦ ?_
+  obtain ⟨B', hB'⟩ := M.exists_base
+  obtain ⟨e, he, h⟩ := hB.exists_insert_of_not_base hnb hB'
+  exact hBmax e ⟨hB'.subset_ground he.1, he.2⟩ h

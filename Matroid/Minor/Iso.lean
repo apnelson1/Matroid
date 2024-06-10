@@ -1,6 +1,6 @@
 import Matroid.Minor.Basic
 import Matroid.Minor.Rank
-import Matroid.Constructions.Basic
+import Mathlib.Data.Matroid.Constructions
 import Matroid.Equiv
 import Matroid.ForMathlib.Other
 import Mathlib.Data.FunLike.Embedding

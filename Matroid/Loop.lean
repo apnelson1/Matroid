@@ -404,8 +404,8 @@ lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ 
 @[simp] lemma freeOn_nonloop_iff {E : Set α} : (freeOn E).Nonloop e ↔ e ∈ E := by
   rw [← indep_singleton, freeOn_indep_iff, singleton_subset_iff]
 
-@[simp] lemma trivialOn_nonloop_iff {I E : Set α} : (trivialOn I E).Nonloop e ↔ e ∈ I ∩ E := by
-  rw [← indep_singleton, trivialOn_indep_iff', singleton_subset_iff]
+@[simp] lemma uniqueBaseOn_nonloop_iff {I E : Set α} : (uniqueBaseOn I E).Nonloop e ↔ e ∈ I ∩ E := by
+  rw [← indep_singleton, uniqueBaseOn_indep_iff', singleton_subset_iff]
 
 lemma Nonloop.exists_mem_cocircuit (he : M.Nonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
   obtain ⟨B, hB, heB⟩ := he.exists_mem_base
@@ -751,10 +751,10 @@ end Coloop
 
 section Constructions
 
-lemma eq_trivialOn_of_loops_union_coloops (hE : M.E = M.cl ∅ ∪ M✶.cl ∅) :
-    M = trivialOn (M✶.cl ∅) M.E := by
+lemma eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.cl ∅ ∪ M✶.cl ∅) :
+    M = uniqueBaseOn (M✶.cl ∅) M.E := by
   refine eq_of_base_iff_base_forall rfl (fun B hBE ↦ ?_)
-  rw [trivialOn_base_iff (show M✶.cl ∅ ⊆ M.E from M✶.cl_subset_ground _)]
+  rw [uniqueBaseOn_base_iff (show M✶.cl ∅ ⊆ M.E from M✶.cl_subset_ground _)]
   rw [hE, ← diff_subset_iff] at hBE
   use fun h ↦ h.coloops_subset.antisymm' (by rwa [sdiff_eq_left.mpr h.indep.disjoint_loops] at hBE)
   rintro rfl
@@ -764,13 +764,13 @@ lemma eq_trivialOn_of_loops_union_coloops (hE : M.E = M.cl ∅ ∪ M✶.cl ∅) 
   rw [subset_diff, and_iff_right hB.subset_ground]
   exact hB.indep.disjoint_loops
 
-lemma trivialOn_loops_eq (I E : Set α) : (trivialOn I E).cl ∅ = E \ I := by
+lemma uniqueBaseOn_loops_eq (I E : Set α) : (uniqueBaseOn I E).cl ∅ = E \ I := by
   simp
 
-@[simp] lemma trivialOn_coloops_eq' (I E : Set α) : (trivialOn I E)✶.cl ∅ = I ∩ E := by
+@[simp] lemma uniqueBaseOn_coloops_eq' (I E : Set α) : (uniqueBaseOn I E)✶.cl ∅ = I ∩ E := by
   simp [inter_comm I]
 
-lemma trivialOn_coloops_eq {I E : Set α} (h : I ⊆ E) : (trivialOn I E)✶.cl ∅ = I := by
+lemma uniqueBaseOn_coloops_eq {I E : Set α} (h : I ⊆ E) : (uniqueBaseOn I E)✶.cl ∅ = I := by
   simp [h]
 
 end Constructions

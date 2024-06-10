@@ -1,4 +1,4 @@
-import Matroid.Constructions.Basic
+import Mathlib.Data.Matroid.Constructions
 import Mathlib.Data.Matroid.Restrict
 import Matroid.ForMathlib.Set
 import Matroid.Equiv
@@ -688,14 +688,14 @@ section Constructions
   rw [loopyOn_cl_eq, ← h]
   exact M.cl_mono (empty_subset _)
 
-@[simp] lemma trivialOn_cl_eq (I E X : Set α) :
-    (trivialOn I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
-  have hb : (trivialOn (I ∩ E) E).Basis (X ∩ E ∩ (I ∩ E)) (X ∩ E) :=
-    (trivialOn_basis_iff inter_subset_right inter_subset_right).2 rfl
+@[simp] lemma uniqueBaseOn_cl_eq (I E X : Set α) :
+    (uniqueBaseOn I E).cl X = (X ∩ I ∩ E) ∪ (E \ I) := by
+  have hb : (uniqueBaseOn (I ∩ E) E).Basis (X ∩ E ∩ (I ∩ E)) (X ∩ E) :=
+    (uniqueBaseOn_basis_iff inter_subset_right inter_subset_right).2 rfl
   ext e
-  rw [← trivialOn_inter_ground_eq I E, ← cl_inter_ground _ X, trivialOn_ground,
-    ← hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, trivialOn_indep_iff', insert_subset_iff,
-    trivialOn_ground, inter_assoc, inter_self,  and_iff_left inter_subset_right,
+  rw [← uniqueBaseOn_inter_ground_eq I E, ← cl_inter_ground _ X, uniqueBaseOn_ground,
+    ← hb.cl_eq_cl, hb.indep.mem_cl_iff, dep_iff, uniqueBaseOn_indep_iff', insert_subset_iff,
+    uniqueBaseOn_ground, inter_assoc, inter_self,  and_iff_left inter_subset_right,
     ← inter_inter_distrib_right, inter_assoc, inter_union_distrib_right, inter_comm I,
     inter_union_diff, insert_subset_iff, inter_comm X, inter_assoc,
     and_iff_left inter_subset_left, mem_inter_iff]

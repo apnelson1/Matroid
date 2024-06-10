@@ -65,46 +65,47 @@ theorem Set.SurjOn.image_invFun_image_eq [Nonempty α] {f : α → β} {s : Set 
 
 end inverse
 
-/-- If `f` maps `s` bijectively to `t` and, then for any `s ⊆ s₁` and `t ⊆ t' ⊆ f '' s₁`,
-  there is some `s ⊆ s' ⊆ s₁` so that `f` maps `s'` bijectively to `t'`. -/
+/-- If `f` maps `s` bijectively to `t` and a set `t'` is contained in the image of some `s₁ ⊇ s`,
+then `s₁` has a subset containing `s` that `f` maps bijectively to `t'`.-/
 theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set β}
-    (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : t' ⊆ f '' s₁) :
+    (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : SurjOn f s₁ t') :
     ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
-  have hex : ∀ (b : ↑(t' \ t)),  ∃ a, a ∈ s₁ \ s ∧ f a = b := by
-    rintro ⟨b, hb⟩
-    obtain ⟨a, ha, rfl⟩  := ht' hb.1
-    exact ⟨_, ⟨ha, fun has ↦ hb.2 <| h.mapsTo has⟩, rfl⟩
-  choose g hg using hex
-  have hinj : InjOn f (s ∪ range g) := by
-    rw [injOn_union, and_iff_right h.injOn, and_iff_left]
-    · rintro _ ⟨⟨x,hx⟩, rfl⟩ _ ⟨⟨x', hx'⟩,rfl⟩ hf
-      simp only [(hg _).2, (hg _).2] at hf; subst hf; rfl
-    · rintro x hx _ ⟨⟨y,hy⟩, hy', rfl⟩ h_eq
-      rw [(hg _).2] at h_eq
-      obtain (rfl : _ = y) := h_eq
-      exact hy.2 <| h.mapsTo hx
-    rw [disjoint_iff_forall_ne]
-    rintro x hx _ ⟨y, hy, rfl⟩ rfl
-    have h' := h.mapsTo hx
-    rw [(hg _).2] at h'
-    exact y.prop.2 h'
-  have hp : BijOn f (range g) (t' \ t) := by
-    apply BijOn.mk
-    · rintro _ ⟨x, hx, rfl⟩; rw [(hg _).2]; exact x.2
-    · exact hinj.mono subset_union_right
-    exact fun x hx ↦ ⟨g ⟨x,hx⟩, by simp [(hg _).2] ⟩
-  refine ⟨s ∪ range g, subset_union_left, union_subset hss₁ <| ?_, ?_⟩
-  · rintro _ ⟨x, hx, rfl⟩; exact (hg _).1.1
-  convert h.union hp ?_
-  · exact (union_diff_cancel htt').symm
-  exact hinj
+  obtain ⟨r, hrss, hbij⟩ := exists_subset_bijOn ((s₁ ∩ f ⁻¹' t') \ f ⁻¹' t) f
+  rw [image_diff_preimage, image_inter_preimage] at hbij
+  refine ⟨s ∪ r, subset_union_left, union_subset hss₁ (hrss.trans ?_), ?_, ?_, fun y hyt' ↦ ?_⟩
+  · exact diff_subset.trans inter_subset_left
+  · rw [mapsTo', image_union, hbij.image_eq, h.image_eq, union_subset_iff]
+    exact ⟨htt', diff_subset.trans inter_subset_right⟩
+  · rw [injOn_union, and_iff_right h.injOn, and_iff_right hbij.injOn]
+    · refine fun x hxs y hyr hxy ↦ (hrss hyr).2 ?_
+      rw [← h.image_eq]
+      exact ⟨x, hxs, hxy⟩
+    exact (subset_diff.1 hrss).2.symm.mono_left h.mapsTo
+  rw [image_union, h.image_eq, hbij.image_eq, union_diff_self]
+  exact .inr ⟨ht' hyt', hyt'⟩
 
+/-- If `f` maps `s` bijectively to `t`, and `t'` is a superset of `t` contained in the range of `f`,
+then `f` maps some superset of `s` bijectively to `t'`. -/
 theorem Set.BijOn.extend {f : α → β} {s : Set α} {t t' : Set β} (h : BijOn f s t) (htt' : t ⊆ t')
     (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
-  simpa using h.extend_of_subset (subset_univ s) htt' (by simpa)
+  simpa using h.extend_of_subset (subset_univ s) htt' (by simpa [SurjOn])
 
+theorem Set.InjOn.exists_subset_injOn_subset_range_eq {r s : Set α} {f : α → β} (hinj : InjOn f r)
+    (hrs : r ⊆ s) : ∃ (u : Set α), r ⊆ u ∧ u ⊆ s ∧ f '' u = f '' s ∧ Set.InjOn f u := by
+  obtain ⟨u, hru, hus, h⟩ := hinj.bijOn_image.extend_of_subset hrs (image_subset f hrs) Subset.rfl
+  exact ⟨u, hru, hus, h.image_eq, h.injOn⟩
 
+@[simp] theorem Set.surjOn_empty_iff {f : α → β} {t : Set β} : SurjOn f ∅ t ↔ t = ∅ := by
+  simp [SurjOn, subset_empty_iff]
 
+@[simp] theorem Set.mapsTo_empty_iff {f : α → β} {s : Set α} : MapsTo f s ∅ ↔ s = ∅ := by
+  simp [mapsTo', subset_empty_iff]
+
+@[simp] theorem Set.bijOn_empty_iff_left {f : α → β} {s : Set α} : BijOn f s ∅ ↔ s = ∅ :=
+  ⟨fun h ↦ by simpa using h.mapsTo, by rintro rfl; exact bijOn_empty f⟩
+
+@[simp] theorem Set.bijOn_empty_iff_right {f : α → β} {t : Set β} : BijOn f ∅ t ↔ t = ∅ :=
+  ⟨fun h ↦ by simpa using h.surjOn, by rintro rfl; exact bijOn_empty f⟩
 section Update
 
 variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}

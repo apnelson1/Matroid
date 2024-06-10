@@ -211,17 +211,17 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
 lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
   hI.restr_simple.of_restrict_contract h
 
--- @[simp] lemma simple_trivialOn_iff {I E : Set α} : (trivialOn I E).Simple ↔ E ⊆ I := by
---   simp only [simple_iff_forall_pair_indep, trivialOn_ground, mem_singleton_iff,
---     trivialOn_indep_iff', subset_inter_iff]
+-- @[simp] lemma simple_uniqueBaseOn_iff {I E : Set α} : (uniqueBaseOn I E).Simple ↔ E ⊆ I := by
+--   simp only [simple_iff_forall_pair_indep, uniqueBaseOn_ground, mem_singleton_iff,
+--     uniqueBaseOn_indep_iff', subset_inter_iff]
 --   refine ⟨fun h x hxE ↦ by simpa using (h hxE hxE).1, fun h {e f} he hf ↦ ⟨subset_trans ?_ h, ?_⟩⟩
 --   <;> rintro x (rfl | rfl) <;> assumption
 
 -- instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
---   rw [← trivialOn_eq_freeOn, simple_trivialOn_iff]
+--   rw [← uniqueBaseOn_eq_freeOn, simple_uniqueBaseOn_iff]
 
 -- @[simp] lemma simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
---   rw [← trivialOn_eq_loopyOn, simple_trivialOn_iff, subset_empty_iff]
+--   rw [← uniqueBaseOn_eq_loopyOn, simple_uniqueBaseOn_iff, subset_empty_iff]
 
 
 

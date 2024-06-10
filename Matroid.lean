@@ -1,4 +1,3 @@
-import Matroid.Constructions.Basic
 import Matroid.Map
 import Matroid.Equiv
 import Matroid.Circuit
