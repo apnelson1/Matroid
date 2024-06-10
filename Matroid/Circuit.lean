@@ -574,7 +574,7 @@ variable {β : Type*} {N : Matroid β}
 lemma Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circuit ↑(e '' C) := by
   simp_rw [circuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]
   intro I hI hIC
-  obtain ⟨I,rfl⟩ := eq_image_val_of_subset hI.subset_ground
+  obtain ⟨I,rfl⟩ := Subset.eq_image_val hI.subset_ground
   replace hC := hC.eq_of_dep_subset (e.symm.image_dep hI)
   simp only [image_subset_iff, preimage_val_image_val_eq_self, image_symm_eq_preimage,
     preimage_subset_iff, image_val_inj] at hIC hC
@@ -584,12 +584,13 @@ def Iso.ofForallCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.Circuit ↑C
     M ≂ N := Iso.ofForallDep e (fun D ↦ by
     rw [dep_iff_superset_circuit, dep_iff_superset_circuit]
     refine ⟨fun ⟨C, hCD, hC⟩ ↦ ?_, fun ⟨C, hCD, hC⟩ ↦ ?_⟩
-    · obtain ⟨C, rfl⟩ := eq_image_val_of_subset hC.subset_ground
+    · obtain ⟨C, rfl⟩ := Subset.eq_image_val hC.subset_ground
       refine ⟨_, ?_, (h _).1 hC⟩
       rw [image_subset_image_iff Subtype.val_injective] at hCD ⊢
       rwa [Equiv.image_subset e]
-    obtain ⟨C, rfl⟩ := eq_image_val_of_subset hC.subset_ground
-    exact ⟨↑(e.symm '' C), by simpa using hCD, by rw [h]; simpa⟩ )
+    obtain ⟨C, rfl⟩ := Subset.eq_image_val hC.subset_ground
+    exact ⟨↑(e.symm '' C), by simpa [Set.preimage_val_image_val_eq_self] using hCD,
+      by rw [h]; simpa⟩ )
 
 end Iso
 section Equiv

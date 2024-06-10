@@ -338,7 +338,7 @@ lemma Indep.parallel'_substitute (hI : M.Indep I) (h_para : M.Parallel' e f)
     (heI : e ∈ I) : M.Indep (insert f (I \ {e})) := by
   classical
   convert (isoOfSwapParallel h_para).image_indep (I := M.E ↓∩ I)
-    (by rwa [image_val_preimage_val_of_subset hI.subset_ground])
+    (by rwa [Subset.image_val_preimage_val_eq hI.subset_ground])
   simp only [isoOfSwapParallel_apply_image, Subtype.image_preimage_coe,
     inter_eq_self_of_subset_right hI.subset_ground]
   by_cases hfI : f ∈ I
