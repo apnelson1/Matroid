@@ -2,78 +2,22 @@
 import Mathlib.Data.Set.Function
 import Mathlib.Data.Set.Subset
 
-open Set Function Set.Notation
+open Function Set.Notation
 
-variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
+namespace Set
 
-lemma Set.InjOn.image_eq_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
-    (h₂ : s₂ ⊆ s) : f '' s₁ = f '' s₂ ↔ s₁ = s₂ :=
-  ⟨fun h' ↦ by rw [← h.preimage_image_inter h₁, h', h.preimage_image_inter h₂], fun h' ↦ by rw [h']⟩
+variable {α β : Type*} {r s s₁ s₂: Set α} {t t' t₁ t₂ : Set β} {f : α → β}
 
-lemma Set.InjOn.image_subset_image_iff_of_subset {f : α → β} (h : InjOn f s) (h₁ : s₁ ⊆ s)
-    (h₂ : s₂ ⊆ s) : f '' s₁ ⊆ f '' s₂ ↔ s₁ ⊆ s₂ := by
-  refine' ⟨fun h' ↦ _, image_subset _⟩
-  rw [← h.preimage_image_inter h₁, ← h.preimage_image_inter h₂]
-  exact inter_subset_inter_left _ (preimage_mono h')
 
-lemma Set.InjOn.image_diff' {f : α → β} (h : InjOn f s) :
-    f '' (s \ t) = f '' s \ f '' (s ∩ t) := by
-  refine' Set.ext (fun y ↦ ⟨_,_⟩)
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨x, hx.1, rfl⟩, fun h' ↦ hx.2 (h.mem_of_mem_image inter_subset_left hx.1 h').2⟩
-  rintro ⟨⟨x, hx, rfl⟩,h'⟩
-  exact ⟨x, ⟨hx,fun hxt ↦ h' ⟨x, ⟨hx,hxt⟩, rfl⟩⟩, rfl⟩
-
-lemma Set.InjOn.image_diff {f : α → β} (h : InjOn f s) (hst : t ⊆ s) :
-    f '' (s \ t) = f '' s \ f '' t := by
-  rw [h.image_diff', inter_eq_self_of_subset_right hst]
-
-theorem Set.InjOn.imageFactorization_injective (h : InjOn f s) :
-    Injective (s.imageFactorization f) := by
-  rintro ⟨x,hx⟩ ⟨y,hy⟩ h'
-  simp_rw [imageFactorization, Subtype.mk.injEq, h.eq_iff hx hy] at h'
-  simp only [h']
-
-section inverse
-
-lemma Function.invFunOn_injOn_image_preimage [Nonempty α] (f : α → β) (S : Set α) :
-    InjOn f ((invFunOn f S) '' (f '' S)) := by
-  rintro _ ⟨_,⟨x,hx, rfl⟩,rfl⟩ _ ⟨_,⟨y,hy,rfl⟩,rfl⟩ h
-  rw [invFunOn_eq (f := f) ⟨x, hx, rfl⟩, invFunOn_eq (f := f) ⟨y,hy,rfl⟩] at h
-  rw [h]
-
-theorem Set.BijOn.subset_right {f : α → β} {s : Set α} {r t : Set β} (hf : BijOn f s t)
-    (hxt : r ⊆ t) : BijOn f (s ∩ f ⁻¹' r) r := by
-  refine ⟨inter_subset_right, hf.injOn.mono <| inter_subset_left, fun x hx ↦ ?_⟩
-  obtain ⟨y, hy, rfl⟩ := hf.surjOn (hxt hx)
-  exact ⟨y, ⟨hy, hx⟩, rfl⟩
-
-theorem Set.SurjOn.image_invFun_image_subset_eq [Nonempty α] {f : α → β} {s : Set α} {r t : Set β}
-    (hf : SurjOn f s t) (hrt : r ⊆ t) : f '' ((Function.invFunOn f s) '' r) = r := by
-  ext x
-  simp only [mem_image, exists_exists_and_eq_and]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨x,hx,rfl⟩
-    obtain ⟨y, hy, rfl⟩ := hf (hrt hx)
-    rwa [Function.invFunOn_apply_eq (f := f) hy]
-  obtain ⟨y, hy, rfl⟩ := hf (hrt h)
-  refine ⟨_,h, by rwa [Function.invFunOn_apply_eq (f := f)]⟩
-
-theorem Set.SurjOn.image_invFun_image_eq [Nonempty α] {f : α → β} {s : Set α} {t : Set β}
-    (hf : SurjOn f s t) : f '' ((Function.invFunOn f s) '' t) = t :=
-  hf.image_invFun_image_subset_eq rfl.subset
-
-end inverse
 
 /-- If `f` maps `s` bijectively to `t` and a set `t'` is contained in the image of some `s₁ ⊇ s`,
 then `s₁` has a subset containing `s` that `f` maps bijectively to `t'`.-/
-theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set β}
-    (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t') (ht' : SurjOn f s₁ t') :
-    ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
+theorem BijOn.exists_extend_of_subset (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t')
+    (ht' : SurjOn f s₁ t') : ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
   obtain ⟨r, hrss, hbij⟩ := exists_subset_bijOn ((s₁ ∩ f ⁻¹' t') \ f ⁻¹' t) f
   rw [image_diff_preimage, image_inter_preimage] at hbij
-  refine ⟨s ∪ r, subset_union_left, union_subset hss₁ (hrss.trans ?_), ?_, ?_, fun y hyt' ↦ ?_⟩
-  · exact diff_subset.trans inter_subset_left
+  refine ⟨s ∪ r, subset_union_left, ?_, ?_, ?_, fun y hyt' ↦ ?_⟩
+  · exact union_subset hss₁ <| hrss.trans <| diff_subset.trans inter_subset_left
   · rw [mapsTo', image_union, hbij.image_eq, h.image_eq, union_subset_iff]
     exact ⟨htt', diff_subset.trans inter_subset_right⟩
   · rw [injOn_union, and_iff_right h.injOn, and_iff_right hbij.injOn]
@@ -86,25 +30,26 @@ theorem Set.BijOn.extend_of_subset {f : α → β} {s s₁ : Set α} {t t' : Set
 
 /-- If `f` maps `s` bijectively to `t`, and `t'` is a superset of `t` contained in the range of `f`,
 then `f` maps some superset of `s` bijectively to `t'`. -/
-theorem Set.BijOn.extend {f : α → β} {s : Set α} {t t' : Set β} (h : BijOn f s t) (htt' : t ⊆ t')
-    (ht' : t' ⊆ range f) : ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
-  simpa using h.extend_of_subset (subset_univ s) htt' (by simpa [SurjOn])
+theorem BijOn.exixts_extend (h : BijOn f s t) (htt' : t ⊆ t') (ht' : t' ⊆ range f) :
+    ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
+  simpa using h.exists_extend_of_subset (subset_univ s) htt' (by simpa [SurjOn])
 
-theorem Set.InjOn.exists_subset_injOn_subset_range_eq {r s : Set α} {f : α → β} (hinj : InjOn f r)
-    (hrs : r ⊆ s) : ∃ (u : Set α), r ⊆ u ∧ u ⊆ s ∧ f '' u = f '' s ∧ Set.InjOn f u := by
-  obtain ⟨u, hru, hus, h⟩ := hinj.bijOn_image.extend_of_subset hrs (image_subset f hrs) Subset.rfl
+theorem InjOn.exists_subset_injOn_subset_range_eq (hinj : InjOn f r) (hrs : r ⊆ s) :
+    ∃ (u : Set α), r ⊆ u ∧ u ⊆ s ∧ f '' u = f '' s ∧ Set.InjOn f u := by
+  obtain ⟨u, hru, hus, h⟩ := hinj.bijOn_image.exists_extend_of_subset hrs
+    (image_subset f hrs) Subset.rfl
   exact ⟨u, hru, hus, h.image_eq, h.injOn⟩
 
-@[simp] theorem Set.surjOn_empty_iff {f : α → β} {t : Set β} : SurjOn f ∅ t ↔ t = ∅ := by
+@[simp] theorem surjOn_empty_iff {f : α → β} {t : Set β} : SurjOn f ∅ t ↔ t = ∅ := by
   simp [SurjOn, subset_empty_iff]
 
-@[simp] theorem Set.mapsTo_empty_iff {f : α → β} {s : Set α} : MapsTo f s ∅ ↔ s = ∅ := by
+@[simp] theorem mapsTo_empty_iff {f : α → β} {s : Set α} : MapsTo f s ∅ ↔ s = ∅ := by
   simp [mapsTo', subset_empty_iff]
 
-@[simp] theorem Set.bijOn_empty_iff_left {f : α → β} {s : Set α} : BijOn f s ∅ ↔ s = ∅ :=
+@[simp] theorem bijOn_empty_iff_left {f : α → β} {s : Set α} : BijOn f s ∅ ↔ s = ∅ :=
   ⟨fun h ↦ by simpa using h.mapsTo, by rintro rfl; exact bijOn_empty f⟩
 
-@[simp] theorem Set.bijOn_empty_iff_right {f : α → β} {t : Set β} : BijOn f ∅ t ↔ t = ∅ :=
+@[simp] theorem bijOn_empty_iff_right {f : α → β} {t : Set β} : BijOn f ∅ t ↔ t = ∅ :=
   ⟨fun h ↦ by simpa using h.surjOn, by rintro rfl; exact bijOn_empty f⟩
 section Update
 

@@ -92,14 +92,34 @@ lemma subset_pair_iff {x y : α} {s : Set α} : s ⊆ {x,y} ↔ ∀ a ∈ s, a =
 
 lemma subset_pair_iff_eq {x y : α} {s : Set α} :
     s ⊆ {x,y} ↔ s = ∅ ∨ s = {x} ∨ s = {y} ∨ s = {x,y} := by
-  obtain (rfl | hne) := eq_or_ne x y
-  · simp only [mem_singleton_iff, insert_eq_of_mem, subset_singleton_iff_eq, or_self]
-  rw [pair_comm, subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
-    subset_singleton_iff_eq, or_assoc, and_or_left, and_or_left]
-  convert Iff.rfl; aesop
-  refine ⟨fun h ↦ by rw [h, and_iff_right (.inl rfl), pair_diff_left hne.symm], fun h ↦ ?_⟩
-  rw [subset_antisymm_iff, diff_subset_iff, singleton_union, subset_diff, singleton_subset_iff] at h
-  exact h.2.1.antisymm (pair_subset h.1 h.2.2.1)
+  refine ⟨?_, by rintro (rfl | rfl | rfl | rfl) <;> simp⟩
+  rw [subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq,
+    ← subset_empty_iff (s := s \ {x}), diff_subset_iff, union_empty, subset_singleton_iff_eq]
+  have h : x ∈ s ∧ ({y} = s \ {x}) → s = {x,y} := fun ⟨h1, h2⟩ ↦ by simp [h1, h2]
+  tauto
+
+
+
+  -- rw [subset_insert_iff, subset_singleton_iff_eq, or_assoc, subset_singleton_iff_eq,
+  --   diff_eq_empty, subset_singleton_iff_eq, subset_antisymm_iff (a := s \ {x})] at h
+  -- simp [subset_antisymm_iff]
+
+
+  -- by_cases hx : x ∈ s
+  -- · by_cases hy : y ∈ s
+  --   · simp [subset_antisymm_iff (a := s)]
+  -- simp_rw [subset_antisymm_iff (a := s), pair_subset_iff, singleton_subset_iff]
+
+  -- rw [subset_insert_iff, subset_singleton_iff_eq, subset_antisymm_iff (a := s) (b := {x,y}),
+  --   diff_subset_iff, subset_antisymm_iff (a := s), singleton_union, ]
+  -- obtain (rfl | hne) := eq_or_ne x y
+  -- · simp only [mem_singleton_iff, insert_eq_of_mem, subset_singleton_iff_eq, or_self]
+  -- rw [pair_comm, subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
+  --   subset_singleton_iff_eq, or_assoc, and_or_left, and_or_left]
+  -- convert Iff.rfl; aesop
+  -- refine ⟨fun h ↦ by rw [h, and_iff_right (.inl rfl), pair_diff_left hne.symm], fun h ↦ ?_⟩
+  -- rw [subset_antisymm_iff, diff_subset_iff, singleton_union, subset_diff, singleton_subset_iff] at h
+  -- exact h.2.1.antisymm (pair_subset h.1 h.2.2.1)
 
 lemma Nonempty.subset_pair_iff_eq {x y : α} {s : Set α} (hs : s.Nonempty) :
     s ⊆ {x,y} ↔ s = {x} ∨ s = {y} ∨ s = {x,y} := by
