@@ -271,6 +271,10 @@ def mapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : Matroid β := Matroid.of
 @[simp] lemma mapSetEmbedding_indep_iff {f : M.E ↪ β} {I : Set β} :
     (M.mapSetEmbedding f).Indep I ↔ M.Indep ↑(f ⁻¹' I) ∧ I ⊆ range f := Iff.rfl
 
+lemma Indep.exists_eq_image_of_mapSetEmbedding {f : M.E ↪ β} {I : Set β}
+    (hI : (M.mapSetEmbedding f).Indep I) : ∃ (I₀ : Set M.E), M.Indep I₀ ∧ I = f '' I₀ :=
+  ⟨f ⁻¹' I, hI.1, Eq.symm <| image_preimage_eq_of_subset hI.2⟩
+
 lemma mapSetEmbedding_indep_iff' {f : M.E ↪ β} {I : Set β} :
     (M.mapSetEmbedding f).Indep I ↔ ∃ (I₀ : Set M.E), M.Indep ↑I₀ ∧ I = f '' I₀ := by
   simp only [mapSetEmbedding_indep_iff, subset_range_iff_exists_image_eq]
