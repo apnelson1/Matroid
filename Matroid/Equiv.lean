@@ -195,12 +195,12 @@ noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
   toEquiv := f
   indep_image_iff' := by simp [Set.preimage_val_image_val_eq_self]
 
-/-- If `M` and `N` are isomorphic and `N` is on a nonempty type, then `N` is a map of `M`.
+/-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
-lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty β] :
+lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] :
     ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
   classical
-  set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary β
+  set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary (α → β) x
   have hf_im' : ∀ X ⊆ M.E, f '' X = e '' (M.E ↓∩ X) := by
     simp [← Subtype.forall_set_subtype, preimage_image_eq _ Subtype.val_injective,
       image_image, show ∀ x : M.E, f x = e x from fun x ↦ by simp [f, x.2]]
@@ -218,10 +218,10 @@ lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty β] :
     Subset.image_val_preimage_val_eq hI₀.subset_ground]
 
 lemma Iso.exists_eq_map' (e : M ≂ N) [M.Nonempty] :
-    ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
-  obtain ⟨x,hx⟩ := M.ground_nonempty
-  have _ : Nonempty β := ⟨e ⟨x,hx⟩⟩
-  exact e.exists_eq_map
+    ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf :=
+  have := e.nonempty_right
+  have := N.nonempty_type
+  e.exists_eq_map
 
 end map
 

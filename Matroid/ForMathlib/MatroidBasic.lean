@@ -5,6 +5,9 @@ open Set
 variable {α : Type*}
 namespace Matroid
 
+lemma nonempty_type (M : Matroid α) [h : M.Nonempty] : Nonempty α :=
+  let ⟨⟨e,_⟩⟩ := h
+  ⟨e⟩
 
 @[simp] theorem ofExistsMatroid_indep_eq {α : Type*} (E : Set α) (Indep) (hM) :
     (Matroid.ofExistsMatroid E Indep hM).Indep = Indep := rfl
