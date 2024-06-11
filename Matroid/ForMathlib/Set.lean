@@ -66,65 +66,6 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = s \ r ∩ t := by
   simp_rw [diff_eq, inter_right_comm]
 
-lemma pair_diff_left {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {x} = {y} := by
-  rw [insert_diff_of_mem _ (by exact rfl : x ∈ {x}), diff_singleton_eq_self (by simpa)]
-
-lemma pair_diff_right {x y : α} (hne : x ≠ y) : ({x, y} : Set α) \ {y} = {x} := by
-  rw [pair_comm, pair_diff_left hne.symm]
-
-@[simp] lemma pair_subset_iff {x y : α} {s : Set α} : {x,y} ⊆ s ↔ x ∈ s ∧ y ∈ s := by
-  rw [insert_subset_iff, singleton_subset_iff]
-
-lemma pair_subset {x y : α} {s : Set α} (hx : x ∈ s) (hy : y ∈ s) : {x,y} ⊆ s :=
-  pair_subset_iff.2 ⟨hx,hy⟩
-
-lemma subset_insert_iff {s t : Set α} {x : α} :
-    s ⊆ insert x t ↔ s ⊆ t ∨ (x ∈ s ∧ s \ {x} ⊆ t) := by
-  rw [← diff_singleton_subset_iff]
-  obtain (hx | hx) := em (x ∈ s)
-  · rw [and_iff_right hx]
-    exact ⟨fun h ↦ Or.inr h, fun h ↦ h.elim (fun hst ↦ diff_subset.trans hst) id⟩
-  rw [diff_singleton_eq_self hx]
-  tauto
-
-lemma subset_pair_iff {x y : α} {s : Set α} : s ⊆ {x,y} ↔ ∀ a ∈ s, a = x ∨ a = y := by
-  simp [subset_def]
-
-lemma subset_pair_iff_eq {x y : α} {s : Set α} :
-    s ⊆ {x,y} ↔ s = ∅ ∨ s = {x} ∨ s = {y} ∨ s = {x,y} := by
-  refine ⟨?_, by rintro (rfl | rfl | rfl | rfl) <;> simp⟩
-  rw [subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq,
-    ← subset_empty_iff (s := s \ {x}), diff_subset_iff, union_empty, subset_singleton_iff_eq]
-  have h : x ∈ s ∧ ({y} = s \ {x}) → s = {x,y} := fun ⟨h1, h2⟩ ↦ by simp [h1, h2]
-  tauto
-
-
-
-  -- rw [subset_insert_iff, subset_singleton_iff_eq, or_assoc, subset_singleton_iff_eq,
-  --   diff_eq_empty, subset_singleton_iff_eq, subset_antisymm_iff (a := s \ {x})] at h
-  -- simp [subset_antisymm_iff]
-
-
-  -- by_cases hx : x ∈ s
-  -- · by_cases hy : y ∈ s
-  --   · simp [subset_antisymm_iff (a := s)]
-  -- simp_rw [subset_antisymm_iff (a := s), pair_subset_iff, singleton_subset_iff]
-
-  -- rw [subset_insert_iff, subset_singleton_iff_eq, subset_antisymm_iff (a := s) (b := {x,y}),
-  --   diff_subset_iff, subset_antisymm_iff (a := s), singleton_union, ]
-  -- obtain (rfl | hne) := eq_or_ne x y
-  -- · simp only [mem_singleton_iff, insert_eq_of_mem, subset_singleton_iff_eq, or_self]
-  -- rw [pair_comm, subset_insert_iff, subset_singleton_iff_eq, subset_singleton_iff_eq, diff_eq_empty,
-  --   subset_singleton_iff_eq, or_assoc, and_or_left, and_or_left]
-  -- convert Iff.rfl; aesop
-  -- refine ⟨fun h ↦ by rw [h, and_iff_right (.inl rfl), pair_diff_left hne.symm], fun h ↦ ?_⟩
-  -- rw [subset_antisymm_iff, diff_subset_iff, singleton_union, subset_diff, singleton_subset_iff] at h
-  -- exact h.2.1.antisymm (pair_subset h.1 h.2.2.1)
-
-lemma Nonempty.subset_pair_iff_eq {x y : α} {s : Set α} (hs : s.Nonempty) :
-    s ⊆ {x,y} ↔ s = {x} ∨ s = {y} ∨ s = {x,y} := by
-  rw [Set.subset_pair_iff_eq, or_iff_right]; exact hs.ne_empty
-
 lemma inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
   rw [insert_eq, insert_eq, ← inter_union_distrib_right, Disjoint.inter_eq _, empty_union]
