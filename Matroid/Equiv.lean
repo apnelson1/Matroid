@@ -209,8 +209,7 @@ lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] :
   refine ⟨f, fun _ hx _ hy ↦ by simp [f, hx, hy, Subtype.val_inj],
     eq_of_indep_iff_indep_forall ?_ ?_⟩
   · simp [map_ground, hf_im' _ Subset.rfl]
-  simp only [map_indep_iff]
-  simp_rw [← Subtype.forall_set_subtype]
+  simp_rw [map_indep_iff, ← Subtype.forall_set_subtype]
   refine fun I ↦ ⟨fun hI ↦ ⟨↑(e.symm '' I), ?_⟩, fun ⟨I₀, hI₀, h⟩ ↦ ?_⟩
   · rw [hf_im, image_symm_image, and_iff_left rfl]
     rwa [← e.symm.indep_image_iff]
