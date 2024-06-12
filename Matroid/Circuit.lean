@@ -335,6 +335,19 @@ lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M
   simp_rw [indep_iff_forall_subset_not_circuit hI, h',
     indep_iff_forall_subset_not_circuit (hI.trans_eq hE)]
 
+lemma map_circuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
+    (M.map f hf).Circuit C ↔ ∃ C₀, M.Circuit C₀ ∧ C = f '' C₀ := by
+  simp only [circuit_iff, map_dep_iff, forall_exists_index, and_imp]
+  constructor
+  · rintro ⟨⟨C, hC, rfl⟩, h⟩
+    refine ⟨C, ⟨hC, fun D hD hDC ↦ ?_⟩, rfl⟩
+    rw [← hf.image_eq_image_iff hD.subset_ground hC.subset_ground]
+    exact h _ hD rfl (image_subset f hDC)
+  rintro ⟨C₀, ⟨h,h'⟩, rfl⟩
+  refine ⟨⟨C₀, h, rfl⟩, ?_⟩
+  rintro _ D hD rfl hss
+  rw [h' hD ((hf.image_subset_image_iff hD.subset_ground h.subset_ground).1 hss)]
+
 section Dual
 
 variable {B : Set α}

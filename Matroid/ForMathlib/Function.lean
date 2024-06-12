@@ -30,7 +30,7 @@ theorem BijOn.exists_extend_of_subset (h : BijOn f s t) (hss₁ : s ⊆ s₁) (h
 
 /-- If `f` maps `s` bijectively to `t`, and `t'` is a superset of `t` contained in the range of `f`,
 then `f` maps some superset of `s` bijectively to `t'`. -/
-theorem BijOn.exixts_extend (h : BijOn f s t) (htt' : t ⊆ t') (ht' : t' ⊆ range f) :
+theorem BijOn.exists_extend (h : BijOn f s t) (htt' : t ⊆ t') (ht' : t' ⊆ range f) :
     ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
   simpa using h.exists_extend_of_subset (subset_univ s) htt' (by simpa [SurjOn])
 

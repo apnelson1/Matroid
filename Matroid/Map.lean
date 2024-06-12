@@ -301,11 +301,28 @@ def map (M : Matroid α) (f : α → β) (hf : InjOn f M.E) : Matroid β := Matr
 @[simp] lemma map_indep_iff {hf} {I : Set β} :
     (M.map f hf).Indep I ↔ ∃ I₀, M.Indep I₀ ∧ I = f '' I₀ := Iff.rfl
 
+lemma map_dep_iff {hf} {D : Set β} :
+    (M.map f hf).Dep D ↔ ∃ D₀, M.Dep D₀ ∧ D = f '' D₀ := by
+  simp only [Dep, map_indep_iff, not_exists, not_and, map_ground, subset_image_iff]
+  constructor
+  · rintro ⟨h, D₀, hD₀E, rfl⟩
+    exact ⟨D₀, ⟨fun hd ↦ h _ hd rfl, hD₀E⟩, rfl⟩
+  rintro ⟨D₀, ⟨hD₀, hD₀E⟩, rfl⟩
+  refine ⟨fun I hI h_eq ↦ ?_, ⟨_, hD₀E, rfl⟩⟩
+  rw [hf.image_eq_image_iff hD₀E hI.subset_ground] at h_eq
+  subst h_eq; contradiction
+
 /-- Map `M : Matroid α` across an embedding defined on all of `α` -/
 def mapEmbedding (M : Matroid α) (f : α ↪ β) : Matroid β := M.map f f.injective.injOn
 
+@[simp] lemma mapEmbedding_ground_eq (M : Matroid α) (f : α ↪ β) :
+    (M.mapEmbedding f).E = f '' M.E := rfl
+
 /-- Map `M : Matroid α` across an equivalence `α ≃ β` -/
 def mapEquiv (M : Matroid α) (f : α ≃ β) : Matroid β := M.mapEmbedding f.toEmbedding
+
+@[simp] lemma mapEquiv_ground_eq (M : Matroid α) (f : α ≃ β) :
+    (M.mapEquiv f).E = f '' M.E := rfl
 
 /-- Map `M : Matroid α` to a `Matroid β` with ground set `E` using an equivalence `M.E ≃ E`.
 Defined using `Matroid.ofExistsMatroid` for better defeq.  -/

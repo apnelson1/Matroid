@@ -1,4 +1,5 @@
 import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.Other
 import Matroid.Flat
 
 open Set Set.Notation
@@ -312,9 +313,21 @@ def isoOfMapParallel (φ : M.E ≃ M.E) (h_para : ∀ (e : M.E), M.Parallel' e (
   rintro x y h - rfl
   exact (h_para y h).mem_ground_right
 
+
+
 end Iso
 
 section Swap
+
+
+
+
+    -- ext x
+    -- obtain (rfl | he) := eq_or_ne x e
+    -- · simp [h.mem_ground_right, h.mem_ground_left]
+    -- obtain (rfl | he) := eq_or_ne x f
+    -- ·
+
 
 /-- Swapping two `Parallel'` matroid elements gives an automorphism -/
 @[simps!] noncomputable def isoOfSwapParallel [DecidableEq α] (h_para : M.Parallel' e f) : M ≂ M :=
@@ -352,6 +365,22 @@ lemma Parallel'.indep_substitute_iff (h_para : M.Parallel' e f) (he : e ∈ I) (
   convert hI.parallel'_substitute h_para.symm (mem_insert _ _)
   have hef : e ≠ f := by rintro rfl; exact hf he
   simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
+
+lemma Parallel'.eq_map_swap (h : M.Parallel' e f) [DecidableEq α] :
+    M.mapEquiv (Equiv.swap e f) = M := by
+  have hrw := Equiv.swap_image_eq_self
+      (show e ∈ M.E ↔ f ∈ M.E by simp [h.mem_ground_left, h.mem_ground_right])
+  simp only [eq_iff_indep_iff_indep_forall, mapEquiv_ground_eq, hrw, mapEquiv_indep_iff,
+    Equiv.symm_swap, true_and]
+  rintro I -
+  by_cases heI : e ∈ I
+  · by_cases hfI : f ∈ I
+    · rw [Equiv.swap_image_eq_self (by simp [heI, hfI])]
+    rw [Equiv.swap_image_eq_exchange heI hfI, ← h.indep_substitute_iff heI hfI]
+  by_cases hfI : f ∈ I
+  · rw [Equiv.swap_comm, Equiv.swap_image_eq_exchange hfI heI,
+      ← h.symm.indep_substitute_iff hfI heI]
+  rw [Equiv.swap_image_eq_self (by simp [hfI, heI])]
 
 end Swap
 

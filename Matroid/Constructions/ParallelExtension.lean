@@ -271,20 +271,24 @@ lemma parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Circuit C ↔ M.Circuit C ∨ C = {e,f} ∨
         f ∈ C ∧ e ∉ C ∧ M.Circuit (insert e (C \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact hf he.mem_ground
+
   by_cases hfC : f ∈ C; swap
   · suffices h' : ((M.parallelExtend e f) ＼ f).Circuit C ↔ M.Circuit C by
       rw [deleteElem, delete_circuit_iff, disjoint_singleton_right, and_iff_left hfC] at h'
       simp [h', hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
     rw [parallelExtend_delete_eq _ hf]
-  suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} ∨ e ∉ C ∧ M.Circuit (insert e (C \ {f})) by
-    simpa [show ¬ M.Circuit C from fun hC ↦ hf (hC.subset_ground hfC), hfC]
-  by_cases heC : e ∈ C
-  · simp only [heC, not_true_eq_false, false_and, or_false]
-    have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
-    exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
-      by rintro rfl; assumption⟩
-  simp only [heC, not_false_eq_true, true_and, show C ≠ {e,f} by rintro rfl; simp at heC, false_or]
+  rw [← (M.parallelExtend_parallel he f).parallel'.eq_map_swap]
+
   sorry
+  -- suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} ∨ e ∉ C ∧ M.Circuit (insert e (C \ {f})) by
+  --   simpa [show ¬ M.Circuit C from fun hC ↦ hf (hC.subset_ground hfC), hfC]
+  -- by_cases heC : e ∈ C
+  -- · simp only [heC, not_true_eq_false, false_and, or_false]
+  --   have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
+  --   exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
+  --     by rintro rfl; assumption⟩
+  -- simp only [heC, not_false_eq_true, true_and, show C ≠ {e,f} by rintro rfl; simp at heC, false_or]
+  -- sorry
   -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   -- ·
 
