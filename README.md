@@ -10,10 +10,10 @@ mathlib: these are
 * Construction of matroids in terms of independence axioms : Mathlib/Data/Matroid/IndepAxioms
 * Matroid duality : Mathlib/Data/Matroid/Dual
 * Restricting a matroid to a set, and the restriction order : Mathlib/Data/Matroid/Restrict
+* Matroids with at most one base : Mathlib/Data/Matroid/Constructions
 
 Topics in this repo are listed below. 
 
-* Free and co-free matroids : Matroid/Constructions/Basic
 * Isomorphism : Matroid/Equiv
 * Maps and comaps between matroids : Matroid/Map
 * Direct sums : Matroid/Constructions/DirectSum
@@ -31,9 +31,9 @@ Topics in this repo are listed below.
 * Circuit-hyperplane relaxation : Matroid/Relax
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
+* Uniform matroids : Matroid/Uniform
 
 The following currently need a few fixes to work correctly. 
-* Uniform matroids : Matroid/Uniform
 * Transversal matroids : Matroid/Transversal
 * Parallel and series extensions : Matroid/ParallelExtension
 * Matroid invariants and minor-closed properties : Matroid/Class
