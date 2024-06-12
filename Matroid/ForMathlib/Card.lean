@@ -7,6 +7,9 @@ open Set BigOperators
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
+@[simp] lemma encard_le_one_iff_subsingleton : s.encard ≤ 1 ↔ s.Subsingleton := by
+  rw [encard_le_one_iff, Set.Subsingleton]; tauto
+
 theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
   rw [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter, WithTop.add_left_cancel_iff

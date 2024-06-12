@@ -1,4 +1,4 @@
-import Matroid.Rank
+import Matroid.Extension
 
 variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
 
@@ -6,7 +6,7 @@ namespace Matroid
 
 open Set
 
-section Truncate
+section truncateTo
 
 /-- The `IndepMatroid` whose independent sets are the `M`-independent sets of size at most `k`. -/
 def truncateToNat (M : Matroid α) (k : ℕ) : Matroid α :=
@@ -104,4 +104,116 @@ theorem truncateTo_er_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
   obtain ⟨I₀, hI₀, hI₀ss⟩ := exists_subset_encard_eq (min_le_of_left_le (b := k) hI.encard.symm.le)
   exact ⟨_, hI₀.trans hI.subset, ⟨hI.indep.subset hI₀, hI₀ss.trans_le (min_le_right _ _)⟩, hI₀ss⟩
 
-end Truncate
+end truncateTo
+
+section truncate
+
+/-- The matroid on `M.E` whose independent sets are the independent nonbases of `M`. -/
+def truncate (M : Matroid α) := Matroid.ofExistsMatroid
+  (E := M.E)
+  (Indep := fun I ↦ M.Indep I ∧ (M.Base I → I = ∅))
+  (hM := by
+    refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
+    obtain (hM | hM) := M.eq_loopyOn_or_rkPos
+    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
+    suffices M.Indep I → (¬M.E ⊆ M.cl I ↔ M.Base I → I = ∅) by simpa [M.principal_ground_ne_top]
+    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.cl_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
+    have hIb := hI.base_of_ground_subset_cl hss
+    exact hIb.nonempty.ne_empty (h hIb))
+
+@[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
+
+lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I = ∅) := Iff.rfl
+
+@[simp] lemma truncate_indep_iff [M.RkPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.Base I := by
+  simp only [truncate_indep_iff', and_congr_right_iff]
+  exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
+
+@[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
+  simp (config := {contextual := true}) [truncate, ModularCut.principal, eq_loopyOn_iff]
+
+lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
+  refine ⟨fun h ↦ ?_, fun ⟨e, he, hBe⟩ ↦ ?_⟩
+  · obtain ⟨hB, hBb⟩ := truncate_indep_iff.1 h.indep
+    obtain ⟨B', hB', hBB'⟩ := hB.exists_base_superset
+    obtain ⟨e, heB', heB⟩ := exists_of_ssubset (hBB'.ssubset_of_ne (by rintro rfl; contradiction))
+    refine ⟨e, heB, ?_⟩
+    rwa [h.eq_of_subset_indep ?_ (subset_diff_singleton hBB' heB), insert_diff_singleton,
+      insert_eq_of_mem heB']
+    rw [truncate_indep_iff]
+    exact ⟨hB'.indep.subset diff_subset, hB'.not_base_of_ssubset <| diff_singleton_sSubset.mpr heB'⟩
+  refine Indep.base_of_forall_insert ?_ ?_
+  · rw [truncate_indep_iff]
+    exact ⟨hBe.indep.subset (subset_insert _ _), hBe.not_base_of_ssubset (ssubset_insert he)⟩
+  simp only [truncate_ground_eq, mem_diff, truncate_indep_iff, not_and, not_not, and_imp]
+  exact fun f _ hfB hfBi ↦ insert_base_of_insert_indep he hfB hBe hfBi
+
+end truncate
+
+section circuitOn
+
+variable {C : Set α}
+
+/-- The matroid on `E` whose ground set is a circuit. Empty if `E = ∅`. -/
+def circuitOn (C : Set α) := (freeOn C).truncate
+
+@[simp] lemma circuitOn_ground : (circuitOn C).E = C := rfl
+
+lemma circuitOn_indep_iff (hC : C.Nonempty) : (circuitOn C).Indep I ↔ I ⊂ C := by
+  have := freeOn_rkPos hC
+  simp [circuitOn, truncate_indep_iff, ssubset_iff_subset_ne]
+
+lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔ D = C := by
+  simp only [Dep, circuitOn_indep_iff hC, ssubset_iff_subset_ne, ne_eq, not_and, not_not,
+    circuitOn_ground]
+  exact ⟨fun h ↦ h.1 h.2, by rintro rfl; simp [Subset.rfl]⟩
+
+lemma circuitOn_base_iff (hC : C.Nonempty) : (circuitOn C).Base B ↔ ∃ e ∉ B, insert e B = C := by
+  have _ := freeOn_rkPos hC; simp [circuitOn, truncate_base_iff]
+
+lemma circuitOn_ground_circuit (hC : C.Nonempty) : (circuitOn C).Circuit C := by
+  simp [circuit_iff_forall_ssubset, circuitOn_dep_iff hC, circuitOn_indep_iff hC]
+
+lemma circuitOn_circuit_iff (hC : C.Nonempty) {C' : Set α} : (circuitOn C).Circuit C' ↔ C' = C := by
+  refine ⟨fun h ↦ h.eq_of_subset_circuit (circuitOn_ground_circuit hC) h.subset_ground, ?_⟩
+  rintro rfl
+  exact circuitOn_ground_circuit hC
+
+lemma ground_circuit_iff [M.Nonempty] : M.Circuit M.E ↔ M = circuitOn M.E := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · refine eq_of_circuit_iff_circuit_forall rfl <| fun C hC ↦ ?_
+    rw [circuitOn_circuit_iff h.nonempty]
+    exact ⟨fun h' ↦ h'.eq_of_subset_circuit h hC, by rintro rfl; assumption⟩
+  rw [h]
+  exact circuitOn_ground_circuit M.ground_nonempty
+
+lemma circuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Circuit C ↔ M ↾ C = circuitOn C := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · refine eq_of_circuit_iff_circuit_forall rfl fun C' hC' ↦ ?_
+    rw [restrict_circuit_iff h.subset_ground, circuitOn_circuit_iff h.nonempty,
+      and_iff_left (show C' ⊆ C from hC')]
+    exact ⟨fun h' ↦ h'.eq_of_subset_circuit h hC', fun h' ↦ by rwa [h']⟩
+  have h' := restrict_circuit_iff hC (C := C)
+  rwa [and_iff_left Subset.rfl, h, iff_true_intro (circuitOn_ground_circuit hCne), true_iff] at h'
+
+end circuitOn
+--
+
+
+-- def tr (M : Matroid α) : Matroid α where
+--   E := M.E
+--   Base B := ∃ e ∉ B, M.Base (insert e B)
+--   Indep I := M.Indep I ∧ ¬ M.Base I
+--   indep_iff' I := by
+--     refine ⟨fun ⟨hI, hIb⟩ ↦ ?_, fun ⟨B, ⟨e, heB, heB'⟩, hIB⟩ ↦ ?_⟩
+--     · obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+--       obtain ⟨e, heB, heI⟩ := exists_of_ssubset (hIB.ssubset_of_ne (by rintro rfl; contradiction))
+--       exact ⟨B \ {e}, ⟨e, by simp, by simpa [heB]⟩, subset_diff_singleton hIB heI⟩
+--     have hIBe : I ⊆ insert e B := hIB.trans (subset_insert _ _)
+--     refine ⟨heB'.indep.subset hIBe, fun hI ↦ heB (hIB ?_)⟩
+--     simp [hI.eq_of_subset_base heB' hIBe]
+--   exists_base := _
+--   base_exchange := _
+--   maximality := _
+--   subset_ground := _

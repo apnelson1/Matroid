@@ -158,6 +158,20 @@ lemma Flat.one_le_relRank_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
 lemma finite_setOf_flat (M : Matroid α) [M.Finite] : {F | M.Flat F}.Finite :=
   M.ground_finite.finite_subsets.subset (fun _ hF ↦ hF.subset_ground)
 
+lemma uniqueBaseOn_flat_iff {I E : Set α} (hIE : I ⊆ E) : (uniqueBaseOn E I).Flat F ↔ F ⊆ I := by
+  simp [flat_iff_cl_self, diff_eq_empty.2 hIE, inter_assoc, inter_eq_self_of_subset_right hIE]
+
+@[simp] lemma loopyOn_flat_iff {E : Set α} : (loopyOn E).Flat F ↔ F = E := by
+  simp [flat_iff_cl_self, eq_comm]
+
+@[simp] lemma emptyOn_flat_iff : (emptyOn α).Flat F ↔ F = ∅ := by
+  simp [← loopyOn_empty]
+
+@[simp] lemma freeOn_flat_iff {E : Set α} : (freeOn E).Flat F ↔ F ⊆ E := by
+  simp [← uniqueBaseOn_self, uniqueBaseOn_flat_iff Subset.rfl]
+
+
+
   -- TODO : Cyclic flats.
 
 section Lattice

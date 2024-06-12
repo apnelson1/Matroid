@@ -687,7 +687,7 @@ section Constructions
   (cl_subset_ground _ _).antisymm
     (subset_trans (by rw [(loopyOn_base_iff.2 rfl).cl_eq]) (cl_subset_cl _ (empty_subset _)))
 
-@[simp] lemma cl_empty_eq_ground_iff : M.cl ∅ = M.E ↔ M = loopyOn M.E := by
+lemma cl_empty_eq_ground_iff : M.cl ∅ = M.E ↔ M = loopyOn M.E := by
   refine ⟨fun h ↦ eq_of_cl_eq_cl_forall ?_, fun h ↦ by rw [h, loopyOn_cl_eq, loopyOn_ground]⟩
   refine fun X ↦ subset_antisymm (by simp [cl_subset_ground]) ?_
   rw [loopyOn_cl_eq, ← h]

@@ -763,17 +763,6 @@ lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
 lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [eq_iff_indep_iff_indep_forall]
 
-/-- The matroid on `M.E` whose independent sets are the independent nonbases of `M`. -/
-def truncate (M : Matroid α) := M.projectBy (ModularCut.principal M M.E)
-
-@[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl
-
-@[simp] lemma truncate_indep_iff [M.RkPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.Base I := by
-  suffices M.Indep I → (¬M.E ⊆ M.cl I ↔ ¬M.Base I) by simpa [truncate, M.principal_ground_ne_top]
-  refine fun hI ↦ ⟨fun hcl hB ↦ hcl ?_, fun h hcl ↦ h (hI.base_of_spanning ?_)⟩
-  · simp [hB.cl_eq, Subset.rfl]
-  rwa [spanning_iff_ground_subset_cl]
-
 end projection
 
 section LinearClass

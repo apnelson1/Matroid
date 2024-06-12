@@ -139,6 +139,8 @@ lemma Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) :
   rw [← singleton_dep, comap_dep_iff]
   simp
 
+@[simp] lemma loopyOn_loop_iff {E : Set α} : (loopyOn E).Loop e ↔ e ∈ E := by
+  simp [Loop]
 
 end Loop
 
@@ -404,7 +406,8 @@ lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ 
 @[simp] lemma freeOn_nonloop_iff {E : Set α} : (freeOn E).Nonloop e ↔ e ∈ E := by
   rw [← indep_singleton, freeOn_indep_iff, singleton_subset_iff]
 
-@[simp] lemma uniqueBaseOn_nonloop_iff {I E : Set α} : (uniqueBaseOn I E).Nonloop e ↔ e ∈ I ∩ E := by
+@[simp] lemma uniqueBaseOn_nonloop_iff {I E : Set α} :
+    (uniqueBaseOn I E).Nonloop e ↔ e ∈ I ∩ E := by
   rw [← indep_singleton, uniqueBaseOn_indep_iff', singleton_subset_iff]
 
 lemma Nonloop.exists_mem_cocircuit (he : M.Nonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
@@ -452,6 +455,9 @@ lemma Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e}
 
 instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RkPos M :=
   M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
+
+@[simp] lemma loopyOn_loopless_iff {E : Set α} : Loopless (loopyOn E) ↔ E = ∅ := by
+  simp [loopless_iff_forall_not_loop, eq_empty_iff_forall_not_mem]
 
 /-- The matroid obtained by removing the loops of `e` -/
 def removeLoops (M : Matroid α) : Matroid α := M ↾ {e | M.Nonloop e}

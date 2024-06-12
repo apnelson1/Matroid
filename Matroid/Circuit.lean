@@ -1,5 +1,7 @@
 import Matroid.Equiv
 import Matroid.Closure
+import Matroid.Constructions.Basic
+
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
 -/
@@ -593,6 +595,54 @@ def Iso.ofForallCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.Circuit ↑C
       by rw [h]; simpa⟩ )
 
 end Iso
+
+section constructions
+
+variable {E D : Set α}
+
+@[simp] lemma uniqueBaseOn_dep_iff : (uniqueBaseOn I E).Dep D ↔ D.Nonempty ∧ ¬ (D ⊆ I) ∧ D ⊆ E := by
+  by_cases hD : D ⊆ E
+  · simp (config := {contextual := true}) [← not_indep_iff (M := uniqueBaseOn I E) hD, hD,
+      nonempty_iff_ne_empty, not_imp_not]
+  exact iff_of_false (fun h ↦ hD h.subset_ground) (by simp [hD])
+
+@[simp] lemma loopyOn_dep_iff : (loopyOn E).Dep D ↔ D.Nonempty ∧ D ⊆ E := by
+  simp [Dep, nonempty_iff_ne_empty]
+
+@[simp] lemma uniqueBaseOn_circuit_iff : (uniqueBaseOn I E).Circuit C ↔ ∃ e ∈ E \ I, C = {e} := by
+  simp only [circuit_iff_dep_forall_diff_singleton_indep, uniqueBaseOn_dep_iff,
+    uniqueBaseOn_indep_iff', subset_inter_iff, diff_singleton_subset_iff, mem_diff]
+  refine ⟨fun ⟨⟨⟨e,he⟩, hCI, hCE⟩, h2⟩ ↦ ⟨e, ⟨hCE he, fun heI ↦ hCI ?_⟩, ?_⟩, ?_⟩
+  · exact (h2 e he).1.trans (insert_subset heI Subset.rfl)
+  · suffices hsub : C.Subsingleton from hsub.eq_singleton_of_mem he
+    refine fun f hf f' hf' ↦ by_contra fun hne ↦ hCI ?_
+    simpa [inter_insert_eq hne] using subset_inter (h2 f hf).1 (h2 f' hf').1
+  rintro ⟨e, ⟨heI,heC⟩, rfl⟩
+  simp [heI, heC]
+
+@[simp] lemma loopyOn_circuit_iff {E : Set α} : (loopyOn E).Circuit C ↔ ∃ e ∈ E, C = {e} := by
+  simp [← uniqueBaseOn_empty]
+
+@[simp] lemma freeOn_not_circuit {E : Set α} : ¬ (freeOn E).Circuit C := by
+  simp [← uniqueBaseOn_self]
+
+@[simp] lemma emptyOn_not_circuit : ¬ (emptyOn α).Circuit C := by
+  simp [← freeOn_empty]
+
+@[simp] lemma girth_emptyOn : girth (emptyOn α) = ⊤ := by
+  simp [girth]
+
+@[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
+  simp [Subset.rfl]
+
+lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
+  have _ : RkPos (loopyOn E)✶ := by rw [loopyOn_dual_eq]; exact freeOn_rkPos hE
+  refine le_antisymm ?_ (one_le_girth _)
+  simp only [girth_le_iff, loopyOn_circuit_iff]
+  exact ⟨{hE.some}, ⟨_, hE.some_mem, rfl⟩, by simp⟩
+
+
+end constructions
 section Equiv
 
 -- variable {β : Type*} {N : Matroid β}

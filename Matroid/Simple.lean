@@ -1,4 +1,5 @@
 import Matroid.Parallel
+import Matroid.Minor.Iso
 
 open Set Set.Notation
 
@@ -110,12 +111,29 @@ lemma simple_iff_forall_pair_indep : M.Simple ↔ ∀ ⦃e f⦄, e ∈ M.E → f
   exact ⟨fun e he hl ↦ hl.dep.not_indep <| by simpa using h he he,
     fun e f hef ↦ hef.eq_of_indep (h hef.mem_ground_left hef.mem_ground_right) ⟩
 
+@[simp] lemma simple_uniqueBaseOn_iff {E : Set α} : Simple (uniqueBaseOn I E) ↔ E ⊆ I := by
+  simp only [simple_iff_forall_pair_indep, uniqueBaseOn_ground, uniqueBaseOn_indep_iff',
+    subset_inter_iff, pair_subset_iff]
+  exact ⟨fun h e heE ↦ (h heE heE).1.1, by tauto⟩
+
+instance simple_freeOn {E : Set α} : Simple (freeOn E) := by
+  simp [← uniqueBaseOn_self, Subset.rfl]
+
+instance simple_emptyOn {α : Type*} : Simple (emptyOn α) := by
+  simp [simple_iff_forall_pair_indep]
+
 lemma Simple.map {β : Type*} (hM : M.Simple) {f : α → β} (hf : M.E.InjOn f) :
     Simple (M.map f hf) := by
   simp only [simple_iff_forall_pair_indep, map_ground, mem_image, map_indep_iff,
     forall_exists_index, and_imp]
   rintro _ _ x hx rfl y hy rfl
   exact ⟨_, pair_indep hx hy, by simp [image_insert_eq]⟩
+
+lemma Simple.of_iso {β : Type*} {N : Matroid β} (hM : M.Simple) (i : M ≂ N) : N.Simple := by
+  obtain (h | h) := isEmpty_or_nonempty β
+  · rw [eq_emptyOn N]; infer_instance
+  obtain ⟨f, hf, rfl⟩ := i.exists_eq_map
+  exact hM.map hf
 
 lemma simple_iff_forall_parallel_class [Loopless M] :
     M.Simple ↔ ∀ P ∈ M.parallelClasses, encard P = 1 := by
@@ -238,7 +256,7 @@ one element from each parallel class. -/
 def IsSimplification (N M : Matroid α) : Prop :=
   ∃ (f : M.parallelClasses.RepFun), N = M ↾ f '' {e | M.Nonloop e}
 
-/-- Each simplification of `M` determines with a function that picks a representative from each
+/-- Each simplification of `M` corresponds to a function that picks a representative from each
 parallel class. Even though the choice is unique, this is noncomputable. -/
 noncomputable def IsSimplification.repFun (h : N.IsSimplification M) : M.parallelClasses.RepFun :=
   h.choose
@@ -411,384 +429,37 @@ lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.cl
   rw [simplification_eq_self_iff]
   exact M.simplification_simple
 
+lemma simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
+  M.simplification_isSimplification.restriction
+
 end Simplification
 
 
+section minor
 
+lemma Minor.exists_minor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
+    ∃ M₀, N ≤m M₀ ∧ IsSimplification M₀ M := by
+  obtain ⟨I, hI, hr, -⟩ := hNM.exists_contract_spanning_restrict
+  have hN' := hr.eq_restrict ▸
+    M.contract_restrict_eq_restrict_contract _ _ (subset_diff.1 hr.subset).2.symm
+  have h : (M ↾ (N.E ∪ I)).Simple := by
+    apply Indep.simple_of_contract_simple (I := I) _ (by rwa [← hN'])
+    refine restrict_indep_iff.2 ⟨hI, subset_union_right⟩
+  obtain ⟨M₀, hM₀, h⟩ := h.exists_restriction_isSimplification_of_restriction (M := M)
+    (restrict_restriction _ _ (union_subset hNM.subset hI.subset_ground))
+  refine ⟨M₀, Minor.trans ?_ h.minor, hM₀⟩
+  rw [hN']
+  simpa using contract_minor _ _
 
+lemma Simple.minor_iff_minor_simplification {β : Type*} (hN : N.Simple) {M : Matroid β} :
+    Nonempty (N ≤i M) ↔ Nonempty (N ≤i M.simplification) := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨e.trans M.simplification_restriction.minor.isoMinor⟩⟩
+  obtain ⟨M₀, hM₀, ⟨i, -⟩⟩ := e.exists_iso
+  obtain ⟨M', hM₀M', hM'⟩ := hM₀.exists_minor_isSimplification (hN.of_iso i)
+  exact ⟨i.isoMinor.trans
+    (hM₀M'.isoMinor.trans (hM'.iso (M.simplification_isSimplification)).isoMinor)⟩
 
-
-
-
--- variable {M : Matroid α} {c : α → α}
-
--- /-- A function that chooses a representative from the parallel class for each nonloop,
---   and is the identity elsewhere. Such a function corresponds to a restriction of `M`
---   that is simple  -/
--- def ParallelChoiceFunction (M : Matroid α) (c : α → α) : Prop :=
---   (∀ {e}, ¬ M.Nonloop e → c e = e) ∧ (∀ {e}, M.Nonloop e → M.Parallel e (c e)) ∧
---     (∀ {e f}, M.Nonloop e → M.Nonloop f → (M.Parallel e f ↔ c e = c f))
-
--- lemma ParallelChoiceFunction.parallel_iff_of_nonloop (hc : M.ParallelChoiceFunction c)
---   (he : M.Nonloop e) (hf : M.Nonloop f) : M.Parallel e f ↔ c e = c f := hc.2.2 he hf
-
--- lemma ParallelChoiceFunction.eq_of_parallel (hc : M.ParallelChoiceFunction c)
---     (hef : M.Parallel e f) : c e = c f :=
---   (hc.parallel_iff_of_nonloop hef.nonloop_left hef.nonloop_right).1 hef
-
--- lemma ParallelChoiceFunction.parallel_apply (hc : M.ParallelChoiceFunction c)
---     (he : M.Nonloop e) : M.Parallel e (c e) :=
---   hc.2.1 he
-
--- lemma ParallelChoiceFunction.nonloop (hc : M.ParallelChoiceFunction c)
---     (he : M.Nonloop e) : M.Nonloop (c e) :=
---   (hc.parallel_apply he).nonloop_right
-
--- lemma ParallelChoiceFunction.eq_self (hc : M.ParallelChoiceFunction c) (he : ¬M.Nonloop e) :
---     c e = e := hc.1 he
-
--- lemma ParallelChoiceFunction.idem (hc : M.ParallelChoiceFunction c) (e : α) : c (c e) = c e := by
---   obtain (he | he) := em (M.Nonloop e)
---   · rw [hc.eq_of_parallel]
---     rw [parallel_comm]
---     exact hc.parallel_apply he
---   rw [hc.eq_self he, hc.eq_self he]
-
--- lemma ParallelChoiceFunction.nonloop_apply_iff (hc : M.ParallelChoiceFunction c) :
---     M.Nonloop (c e) ↔ M.Nonloop e := by
---   refine ⟨fun h ↦ by_contra fun he ↦ ?_, hc.nonloop⟩
---   rw [hc.eq_self he] at h
---   exact he h
-
--- lemma ParallelChoiceFunction.parallel_of_apply_eq (hc : M.ParallelChoiceFunction c)
---     (he : M.Nonloop e) (hef : c e = c f) : M.Parallel e f := by
---   apply (hc.parallel_iff_of_nonloop he _).2 hef
---   rwa [← hc.nonloop_apply_iff, ← hef, hc.nonloop_apply_iff]
-
--- lemma ParallelChoiceFunction.preimage_image_setOf_nonloop (hc : M.ParallelChoiceFunction c) :
---     c ⁻¹' (c '' {e | M.Nonloop e}) = {e | M.Nonloop e} := by
---   simp only [ext_iff, mem_preimage, mem_image, mem_setOf_eq]
---   exact fun x ↦ ⟨fun ⟨y, hy, hyx⟩ ↦ (hc.parallel_of_apply_eq hy hyx).nonloop_right,
---     fun hx ↦ ⟨_, hx, rfl⟩⟩
-
--- lemma ParallelChoiceFunction.image_setOf_nonloop_subset (hc : M.ParallelChoiceFunction c) :
---     c '' {e | M.Nonloop e} ⊆ {e | M.Nonloop e} := by
---   rintro _ ⟨e, he, rfl⟩; exact hc.nonloop he
-
--- lemma ParallelChoiceFunction.injOn (hc : M.ParallelChoiceFunction c) (hX : (M ↾ X).Simple) :
---     InjOn c X := by
---   simp only [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_nonloop,
---     restrict_ground_eq, restrict_nonloop_iff, restrict_parallel_iff, and_imp] at hX
---   exact fun e he f hf hef ↦ hX.2 _ _ (hc.parallel_of_apply_eq (hX.1 _ he).1 hef) he hf
-
--- /-- Any simple restriction of `M` can be extended to a parallel choice function. -/
--- lemma extends_to_parallelChoiceFunction {M : Matroid α} {X : Set α} (hX : (M ↾ X).Simple) :
---     ∃ c, M.ParallelChoiceFunction c ∧ EqOn c id X := by
---   classical
---   have hc : ∀ {x}, M.Nonloop x → {y | M.Parallel x y}.Nonempty :=
---     fun {x} hx ↦ ⟨x, hx.parallel_self⟩
-
---   set φ := fun e ↦ if he : M.Nonloop e then
---     (if heX : ∃ x ∈ X, M.Parallel e x then heX.choose else (hc he).some) else e with hφ_def
-
---   have hnl : ∀ {e}, M.Nonloop e → M.Parallel e (φ e) := by
---     intro e
---     simp only [hφ_def]
---     split_ifs with h he
---     · exact fun _ ↦ he.choose_spec.2
---     · exact fun _ ↦ (hc h).some_mem
---     exact Nonloop.parallel_self
-
---   have h_eq : ∀ {e} {f}, M.Parallel (φ e) (φ f) → φ e = φ f := by
---     intro e f
---     simp only [hφ_def]
---     obtain (he | he) := em' (M.Nonloop e)
---     · rw [dif_neg he]
---       exact fun h ↦ (he h.nonloop_left).elim
---     obtain (hf | hf) := em' (M.Nonloop f)
---     · rw [dif_neg hf]
---       exact fun h ↦ (hf h.nonloop_right).elim
---     rw [dif_pos he, dif_pos hf]
---     split_ifs with heX hfX hfX <;> intro hp
---     · refine Parallel.eq (M := M ↾ X) ?_
---       rw [restrict_parallel_iff]
---       exact ⟨hp, heX.choose_spec.1, hfX.choose_spec.1⟩
---     · exact (hfX ⟨heX.choose, heX.choose_spec.1, (hp.trans (hc hf).some_mem.symm).symm⟩).elim
---     · exact (heX ⟨hfX.choose, hfX.choose_spec.1, Parallel.trans (hc he).some_mem hp⟩).elim
---     convert rfl using 2
---     simp only [Set.ext_iff, mem_setOf_eq]
---     have hef := (Parallel.trans (hc he).some_mem hp).trans (hc hf).some_mem.symm
---     exact fun _ ↦ ⟨hef.trans, hef.symm.trans⟩
-
---   refine ⟨φ, ⟨fun {e} he ↦ by simp [hφ_def,he], fun he ↦ hnl he, fun {e} {f} he hf ↦ ?_⟩,
---     fun e heX ↦ ?_⟩
---   · exact ⟨fun h ↦ h_eq <| (hnl he).symm.trans (h.trans (hnl hf)),
---       fun h ↦ (hnl he).trans (h ▸ (hnl hf).symm)⟩
-
---   obtain ⟨hnl',-⟩ := restrict_nonloop_iff.1 <| toNonloop (M := M ↾ X) heX
-
---   refine Parallel.eq (M := M ↾ X) ?_
---   rw [restrict_parallel_iff, id, and_iff_right ((hnl hnl').symm), and_iff_left heX]
---   simp only [hφ_def]
---   have he' : ∃ x ∈ X, M.Parallel e x := by
---     exact ⟨e, heX, hnl'.parallel_self⟩
---   rw [dif_pos hnl', dif_pos he']
---   exact he'.choose_spec.1
-
--- lemma exists_parallelChoiceFunction (M : Matroid α) : ∃ c, M.ParallelChoiceFunction c := by
---   obtain ⟨c, hc, -⟩ := extends_to_parallelChoiceFunction (M := M) (X := ∅) (by simp; infer_instance)
---   exact ⟨c,hc⟩
-
--- @[simp] lemma parallelChoiceFunction_removeLoops_iff :
---     M.removeLoops.ParallelChoiceFunction c ↔ M.ParallelChoiceFunction c := by
---   simp [ParallelChoiceFunction]
-
--- /-- The simplification of `M` (with respect to a choice function `c`) as a restriction of `M`. -/
--- def simplificationWrt (M : Matroid α) (c : α → α) : Matroid α :=
---   M ↾ (c '' {e | M.Nonloop e})
-
--- @[simp] lemma removeLoops_simplificationWrt_eq (M : Matroid α) (c : α → α)
---     (hc : M.ParallelChoiceFunction c) :
---     M.removeLoops.simplificationWrt c = M.simplificationWrt c := by
---   simp_rw [simplificationWrt, removeLoops_eq_restr, restrict_nonloop_iff, mem_setOf_eq, and_self]
---   rw [restrict_restrict_eq]
---   exact ParallelChoiceFunction.image_setOf_nonloop_subset hc
-
--- /-- The simplification of `M` relative to a classically chosen parallel choice function.
---   Defined to depend only on `M.removeLoops`, so the same choice is made even if loops
---   are removed/added to `M`. -/
--- def simplification (M : Matroid α) : Matroid α :=
---   M.removeLoops.simplificationWrt M.removeLoops.exists_parallelChoiceFunction.choose
-
--- lemma simplification_eq_wrt (M : Matroid α) :
---     M.simplification = M.simplificationWrt M.removeLoops.exists_parallelChoiceFunction.choose := by
---   rw [simplification, removeLoops_simplificationWrt_eq]
---   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
-
--- lemma exists_simplification_eq_wrt (M : Matroid α) :
---     ∃ c, M.ParallelChoiceFunction c ∧ M.simplification = M.simplificationWrt c := by
---   use M.removeLoops.exists_parallelChoiceFunction.choose
---   rw [simplification_eq_wrt]
---   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
-
--- @[simp] lemma removeLoops_simplification_eq (M : Matroid α) :
---     M.removeLoops.simplification = M.simplification := by
---   simp [simplification]
-
--- @[simp] lemma simplificationWrt_ground_eq (M : Matroid α) (c : α → α) :
---   (M.simplificationWrt c).E = c '' {e | M.Nonloop e} := rfl
-
--- lemma Nonloop.mem_simplificationWrt_ground (he : M.Nonloop e) (c : α → α) :
---     c e ∈ (M.simplificationWrt c).E := ⟨_, he, rfl⟩
-
--- lemma simplificationWrt_simple (M : Matroid α) {c : α → α}
---     (hc : M.ParallelChoiceFunction c) : (M.simplificationWrt c).Simple := by
---   simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_nonloop,
---     simplificationWrt, restrict_ground_eq, restrict_nonloop_iff, mem_image]
---   simp only [mem_setOf_eq, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
---     restrict_parallel_iff, mem_image]
---   use fun e he ↦ ⟨(hc.2.1 he).nonloop_right, ⟨_, he, rfl⟩⟩
---   rintro e f hef x hx rfl y hy rfl
---   rw [← hc.2.2 hx hy]
---   exact ((hef.trans (hc.2.1 hy).symm).symm.trans (hc.2.1 hx).symm).symm
-
--- instance simplification_simple (M : Matroid α) : M.simplification.Simple := by
---   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
---   rw [hM]
---   exact simplificationWrt_simple M hc
-
--- lemma comap_simplificationWrt (M : Matroid α) (hc : M.ParallelChoiceFunction c) :
---     (M.simplificationWrt c).comap c = M.removeLoops := by
---   simp only [simplificationWrt, removeLoops_eq_restr, eq_iff_indep_iff_indep_forall,
---     comap_ground_eq, restrict_ground_eq, hc.preimage_image_setOf_nonloop, comap_indep_iff,
---     restrict_indep_iff, image_subset_iff, true_and]
---   intro I hI
---   simp only [hI, and_true]
---   refine ⟨fun ⟨hi, hinj⟩ ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
---   · exact hi.of_parallelMap hinj (fun e heI ↦ hc.parallel_apply (hI heI))
---   · exact h.parallelMap (fun e heI ↦ hc.parallel_apply (hI heI))
---   exact hc.injOn h.restr_simple
-
--- /-- Any two simplifications are isomorphic -/
--- noncomputable def simplificationWrt_iso {c c' : α → α} (hc : M.ParallelChoiceFunction c)
---   (hc' : M.ParallelChoiceFunction c') : (M.simplificationWrt c).Iso (M.simplificationWrt c') :=
---   let L := {e | M.Nonloop e}
---   have lem :  ∀ {c₁ c₂ : α → α} (_ : M.ParallelChoiceFunction c₁)
---     (_ : M.ParallelChoiceFunction c₂) ⦃x : α⦄, x ∈ c₁ '' L → c₁ (c₂ x) = x := by
---     rintro c₁ c₂ hc₁ hc₂ _ ⟨e, he, rfl⟩
---     apply hc₁.eq_of_parallel
---     apply ((hc₁.parallel_apply he).trans _).symm
---     apply hc₂.parallel_of_apply_eq
---     · rwa [hc₁.nonloop_apply_iff]
---     rw [hc₂.idem]
---   let π : PartialEquiv α α := {
---     toFun := c'
---     invFun := c
---     source := c '' L
---     target := c' '' L
---     map_source' := ( by
---       rintro _ ⟨e, (he : M.Nonloop e), rfl⟩
---       exact mem_image_of_mem c' (hc.nonloop he) )
---     map_target' := ( by
---       rintro _ ⟨e, he, rfl⟩
---       exact mem_image_of_mem c (hc'.nonloop he) )
---     left_inv' := lem hc hc'
---     right_inv' := lem hc' hc }
---   isoOfMapParallelRestr (c '' L) (c' '' L)
---     ( by
---       simp only [image_subset_iff]
---       exact fun e he ↦ (hc.nonloop he).mem_ground)
---     π rfl rfl
---     ( by
---       rintro _ ⟨e,-,rfl⟩ he'
---       change M.Loop (c' _)
---       rwa [hc'.eq_self he'.not_nonloop] )
---     ( by
---       rintro _ ⟨e,-,rfl⟩ he'
---       exact hc'.parallel_apply he' )
-
--- /-- If `M ↾ X` is a simple restriction of `M`, then every parallel choice function `c`
---   induces an isomorphism from `M ↾ X` to `M ↾ (c '' X)`. -/
--- lemma ParallelChoiceFunction.iso_of_simple_restr (hc : M.ParallelChoiceFunction c)
---     (hX : (M ↾ X).Simple) : ∃ φ : (M ↾ X).Iso (M ↾ (c '' X)), ∀ e ∈ X, φ e = c e  := by
---   obtain ⟨c', hc', hC'X⟩ := extends_to_parallelChoiceFunction hX
---   have hss : X ⊆ {e | M.Nonloop e} := fun e he ↦ (toNonloop (M := M ↾ X) he).of_restrict
---   have hss' : X ⊆ (M.simplificationWrt c').E := by
---     rw [simplificationWrt, restrict_ground_eq, ← hC'X.image_eq_self]
---     exact image_subset _ hss
---   set φ := (simplificationWrt_iso hc' hc).restrict X hss' with hφ
---   refine ⟨((Iso.ofEq ?_).trans φ).trans (Iso.ofEq ?_), ?_⟩
---   · rwa [simplificationWrt, restrict_restrict_eq]
---   · simp only [simplificationWrt_iso, isoOfMapParallelRestr_toPartialEquiv, simplificationWrt]
---     rw [restrict_restrict_eq]
---     exact image_subset _ hss
---   simp [simplificationWrt_iso, hφ]
-
--- /-- Any simplification is isomorphic to the classical one. This is defined in tactic mode for now -/
--- noncomputable def simplificationWrt_iso_simplification (hc : M.ParallelChoiceFunction c) :
---     (M.simplificationWrt c).Iso M.simplification := by
---   rw [simplification_eq_wrt]
---   apply simplificationWrt_iso hc
---   simpa using M.removeLoops.exists_parallelChoiceFunction.choose_spec
-
--- lemma simplificationWrt_isIso_simplification (hc : M.ParallelChoiceFunction c) :
---     M.simplificationWrt c ≂ M.simplification :=
---   (simplificationWrt_iso_simplification hc).isIso
-
--- lemma simplificationWrt_restriction (hc : M.ParallelChoiceFunction c) :
---     M.simplificationWrt c ≤r M :=
---   restrict_restriction _ _ <| hc.image_setOf_nonloop_subset.trans (fun _ ↦ Nonloop.mem_ground)
-
--- lemma simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
---   (simplificationWrt_restriction M.removeLoops.exists_parallelChoiceFunction.choose_spec).trans
---     M.removeLoops_restriction
-
--- lemma simplificationWrt_eq_self_iff (hc : M.ParallelChoiceFunction c) :
---     M.simplificationWrt c = M ↔ M.Simple := by
---   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
---   · rw [← h]; exact M.simplificationWrt_simple hc
---   rw [eq_comm]
---   apply (simplificationWrt_restriction hc).minor.eq_of_ground_subset
---   exact fun e he ↦ ⟨e, toNonloop he, Parallel.eq (hc.parallel_apply (toNonloop he)).symm⟩
-
--- @[simp] lemma simplification_eq_self_iff (M : Matroid α) : M.simplification = M ↔ M.Simple := by
---   rw [simplification_eq_wrt, simplificationWrt_eq_self_iff]
---   simpa using M.exists_parallelChoiceFunction.choose_spec
-
--- @[simp] lemma simplification_eq_self (M : Matroid α) [Simple M] : M.simplification = M := by
---   rwa [simplification_eq_self_iff]
-
--- lemma exists_loop_or_parallel_of_simplificationWrt_strictRestriction
---     (hc : M.ParallelChoiceFunction c) (hsN : M.simplificationWrt c < r N) (hNM : N ≤r M) :
---     (∃ e, N.Loop e) ∨ (∃ e, N.Parallel e (c e) ∧ e ≠ c e) := by
---   obtain ⟨R, hR, hsi⟩ := hsN.exists_eq_restrict
---   obtain ⟨e, heN, heR⟩ := exists_of_ssubset hR
---   refine (N.loop_or_nonloop e).elim (fun h ↦ Or.inl ⟨e,h⟩)
---     (fun he ↦ Or.inr ⟨e, ?_, fun hce ↦ heR ?_⟩)
---   · refine (hc.parallel_apply (he.of_restriction hNM)).parallel_restriction hNM heN (hR.subset ?_)
---     rw [← restrict_ground_eq (M := N) (R := R), ← hsi]
---     exact (he.of_restriction hNM).mem_simplificationWrt_ground c
---   rw [← restrict_ground_eq (M := N) (R := R), ← hsi, hce]
---   exact (he.of_restriction hNM).mem_simplificationWrt_ground c
-
--- lemma eq_simplificationWrt_of_restriction [Simple N] (hc : M.ParallelChoiceFunction c)
---     (hsN : M.simplificationWrt c ≤r N) (hNM : N ≤r M)  :
---     N = M.simplificationWrt c := by
---   obtain (rfl | hM) := hsN.eq_or_strictRestriction
---   · rfl
---   obtain (⟨e,he⟩ | ⟨e,hef⟩) := exists_loop_or_parallel_of_simplificationWrt_strictRestriction
---     hc hM hNM
---   · exact (N.not_loop e he).elim
---   exact (hef.2 hef.1.eq).elim
-
--- /-- If `N` is below `M` but strictly above `M.simplification` in the restriction order, then
---   `N` has a loop or an element parallel to something in the simplification. -/
--- lemma exists_loop_or_parallel_of_simplification_strictRestriction
---     (hsN : M.simplification <r N) (hNM : N ≤r M) :
---     (∃ e, N.Loop e) ∨
---     (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
---   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
---   obtain (he | ⟨e,he,hce⟩) :=
---     exists_loop_or_parallel_of_simplificationWrt_strictRestriction hc (hM ▸ hsN) hNM
---   · exact Or.inl he
---   refine Or.inr ⟨e,_, he, ?_⟩
---   rw [hM] at hsN ⊢
---   have hr := (he.nonloop_left.of_restriction hNM).mem_simplificationWrt_ground c
---   refine ⟨fun h' ↦ ?_, hr⟩
---   have _ := M.simplificationWrt_simple hc
---   exact hce (he.parallel_restriction hsN.restriction h' hr).eq
-
--- lemma exists_parallel_of_simplification_strictRestriction [Loopless N]
---     (hsN : M.simplification <r N) (hNM : N ≤r M) :
---     (∃ e f, N.Parallel e f ∧ e ∉ M.simplification.E ∧ f ∈ M.simplification.E) := by
---    obtain (⟨e,he⟩ | h) := exists_loop_or_parallel_of_simplification_strictRestriction hsN hNM
---    · exact (N.not_loop e he).elim
---    assumption
-
--- lemma eq_simplification_of_restriction [Simple N] (hsN : M.simplification ≤r N) (hNM : N ≤r M) :
---     N = M.simplification := by
---   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
---   rw [hM]
---   exact eq_simplificationWrt_of_restriction hc (by rwa [← hM]) hNM
-
--- set_option pp.proofs.withType true
-
--- /-- Elements of a simplification are equivalent to parallel classes of `M`. -/
--- @[simps] noncomputable def simplificationWrt_equiv (hc : M.ParallelChoiceFunction c) :
---     (M.simplificationWrt c).E ≃ {P // P ∈ M.parallelClasses} where
---   toFun e :=
---     let h : M.Nonloop e := by
---       have _ := M.simplificationWrt_simple hc
---       exact (Matroid.toNonloop e.prop).of_restriction (simplificationWrt_restriction hc)
---     ⟨M.parallelClasses.partOf e, M.parallelClasses.partOf_mem h⟩
---   invFun P := ⟨c <| M.parallelClasses.rep P.prop, by
---     simp only [simplificationWrt_ground_eq, mem_image, mem_setOf_eq]
---     exact ⟨_, M.parallelClasses.rep_mem' _, rfl⟩⟩
---   left_inv e := by
---     obtain ⟨_, ⟨e, (he : M.Nonloop e), rfl⟩⟩ := e
---     simp only [simplificationWrt_ground_eq, Subtype.mk.injEq]
---     refine hc.eq_of_parallel ((hc.parallel_apply he).trans ?_).symm
---     simpa using M.parallelClasses.rep_mem <|
---       M.parallelClasses.partOf_mem (hc.parallel_apply he).nonloop_right
---   right_inv P := by
---     obtain ⟨P, hP⟩ := P
---     simp only [parallelClasses_partOf_eq, Subtype.mk.injEq]
---     convert M.parallelClasses.setOf_rel_rep_eq hP using 1
---     ext f
---     exact (hc.parallel_apply (M.parallelClasses.rep_mem' hP)).symm.parallel_iff_right
-
--- /-- Elements of the (classical) simplification are equivalent to parallel classes. -/
--- noncomputable def simplification_equiv (M : Matroid α) :
---     M.simplification.E ≃ {P // P ∈ M.parallelClasses} :=
---   let h := M.exists_simplification_eq_wrt
---   (Equiv.Set.ofEq (congr_arg Matroid.E h.choose_spec.2)).trans
---     (simplificationWrt_equiv h.choose_spec.1)
-
-
-
-
--- -- TODO - API for the above equivalences. (Don't know exactly what this entails. )
-
+end minor
 
 -- end Simplification
 

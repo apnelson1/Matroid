@@ -21,15 +21,8 @@ section Loop
 
 variable {α : Type*} {M M' : Matroid α} {e f : α} {I : Set α}
 
--- def addLoops (M : Matroid α) (L : Set α) : Matroid α := (M ＼ L) ↾ (M.E ∪ L)
-
 /-- Add a loop `e` to a matroid `M`. Has the junk value `M` if `e ∈ M.E` -/
 def addLoop (M : Matroid α) (e : α) : Matroid α := M ↾ (insert e M.E)
-
-theorem addLoop_eq_extendBy (he : e ∉ M.E) : M.addLoop e = M.extendBy e ⊤ := by
-  suffices ∀ I ⊆ insert e M.E, M.Indep I → (I ⊆ insert e M.E ↔ e ∉ I) by
-    simpa [eq_iff_indep_iff_indep_forall, addLoop, ModularCut.ExtIndep]
-  exact fun I hIE hI ↦ iff_of_true hIE <| not_mem_subset hI.subset_ground he
 
 lemma addLoop_eq_self (he : e ∈ M.E) : M.addLoop e = M := by
   rw [addLoop, insert_eq_of_mem he, restrict_ground_eq_self]
@@ -97,42 +90,21 @@ end Loop
 
 section Parallel
 
-variable {α : Type*} {M M' : Matroid α} {e f x : α} {I C : Set α}
+variable {α : Type*} [DecidableEq α] {M M' : Matroid α} {e f x : α} {I C : Set α}
 
-def parallelExtend (M : Matroid α) (e f : α) :=
-    M.extendBy f (ModularCut.principal M {e})
-
--- /-- Replace `f` with a parallel copy of `e` in `M`. Intended for use where `e` is a nonloop
---   and `f ∉ M.E`. When this is not the case, the junk value is described by
---   either `parallelExtend_not_nonloop` or `parallelExtend_delete_eq` -/
--- def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
---   (M.comap (update id f e)) ↾ (insert f M.E)
-
-lemma parallelExtend_eq_comap (M : Matroid α) (e f : α) [DecidableEq α] :
-    M.parallelExtend e f = M.comap (update id f e) ↾ (insert f M.E) := by
-  classical
-  refine eq_of_indep_iff_indep_forall rfl ?_
-  -- simp only [parallelExtend, eq_iff_indep_iff_indep_forall, extendBy_E, restrict_ground_eq,
-  --   extendBy_Indep, ModularCut.ExtIndep, ModularCut.mem_principal_iff, cl_flat,
-  --   singleton_subset_iff, true_and, restrict_indep_iff, comap_indep_iff, image_update, id_eq,
-  --   image_id', update_id_injOn_iff]
-
-  intro I hI
-
-  by_cases hfI : f ∈ I
-  · suffices M.Indep (I \ {f}) ∧ e ∉ M.cl (I \ {f}) ↔ M.Indep (insert e (I \ {f})) ∧ (e ∈ I → f = e)
-      by simpa [parallelExtend, ModularCut.ExtIndep, hfI, show I ⊆ insert f M.E from hI]
-    simp only [insert_indep_iff, mem_diff, mem_singleton_iff, not_and, Decidable.not_not, eq_comm,
-      and_assoc, and_congr_right_iff]
-    refine fun hIf ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+/-- Replace `f` with a parallel copy of `e` in `M`. Intended for use where `e` is a nonloop
+  and `f ∉ M.E`. When this is not the case, the junk value is described by
+  either `parallelExtend_not_nonloop` or `parallelExtend_delete_eq` -/
+def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
+  (M.comap (update id f e)) ↾ (insert f M.E)
 
 @[simp] lemma parallelExtend_ground (M : Matroid α) (e f : α) :
     (M.parallelExtend e f).E = insert f M.E := rfl
 
--- @[simp] lemma parallelExtend_self (M : Matroid α) (e : α) : M.parallelExtend e e = M.addLoop e := by
---     simp [eq_of_indep_iff_indep_forall]
-  -- change comap _ (update id e (id e)) ↾ _ = _
-  -- rw [update_eq_self, comap_id, addLoop]
+@[simp] lemma parallelExtend_self (M : Matroid α) (e : α) :
+    M.parallelExtend e e = M.addLoop e := by
+  change comap _ (update id e (id e)) ↾ _ = _
+  rw [update_eq_self, comap_id, addLoop]
 
 lemma parallelExtend_not_nonloop (he : ¬M.Nonloop e) (f : α) :
     M.parallelExtend e f = (M ＼ f).addLoop f := by
@@ -295,24 +267,47 @@ lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
 
   simp [hdel _ hfI, hfI]
 
-
 lemma parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Circuit C ↔ M.Circuit C ∨ C = {e,f} ∨
         f ∈ C ∧ e ∉ C ∧ M.Circuit (insert e (C \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact hf he.mem_ground
-  simp only [circuit_iff_dep_forall_diff_singleton_indep, parallelExtend_indep_iff he hf, mem_diff,
-    dep_iff, mem_singleton_iff, not_and, Decidable.not_not, mem_insert_iff, forall_eq_or_imp,
-    insert_diff_of_mem, and_imp]
-  obtain (hfC | hfC) := em' (f ∈ C)
-  · have hne : C ≠ {e,f} := by rintro rfl; exact hfC (.inr rfl)
-    simp [hfC, hne, subset_insert_iff]
-  simp only [hfC, not_true_eq_false, false_and, true_and, false_or, not_and, parallelExtend_ground,
-    true_implies]
-  obtain (heC | heC) := em (e ∈ C)
-  · simp only [heC, not_true_eq_false, false_implies, true_and, true_implies,
-      show ¬C ⊆ M.E from sorry, and_false, false_and, or_false, false_or]
-    sorry
+  by_cases hfC : f ∈ C; swap
+  · suffices h' : ((M.parallelExtend e f) ＼ f).Circuit C ↔ M.Circuit C by
+      rw [deleteElem, delete_circuit_iff, disjoint_singleton_right, and_iff_left hfC] at h'
+      simp [h', hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
+    rw [parallelExtend_delete_eq _ hf]
+  suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} ∨ e ∉ C ∧ M.Circuit (insert e (C \ {f})) by
+    simpa [show ¬ M.Circuit C from fun hC ↦ hf (hC.subset_ground hfC), hfC]
+  by_cases heC : e ∈ C
+  · simp only [heC, not_true_eq_false, false_and, or_false]
+    have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
+    exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
+      by rintro rfl; assumption⟩
+  simp only [heC, not_false_eq_true, true_and, show C ≠ {e,f} by rintro rfl; simp at heC, false_or]
   sorry
+  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  -- ·
+
+
+
+    -- suffices (M.parallelExtend e f).Circuit C ↔ M.Circuit C by
+    --   simpa [hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
+    -- have hC' : ((M.parallelExtend e f) ＼ f).Circuit C := by
+    --   rw [parallelExtend_delete_eq _ hf]
+  -- simp only [circuit_iff_dep_forall_diff_singleton_indep, parallelExtend_indep_iff he hf, mem_diff,
+  --   dep_iff, mem_singleton_iff, not_and, Decidable.not_not, mem_insert_iff, forall_eq_or_imp,
+  --   insert_diff_of_mem, and_imp]
+
+  -- obtain (hfC | hfC) := em' (f ∈ C)
+  -- · have hne : C ≠ {e,f} := by rintro rfl; exact hfC (.inr rfl)
+  --   simp [hfC, hne, subset_insert_iff]
+  -- simp only [hfC, not_true_eq_false, false_and, true_and, false_or, not_and, parallelExtend_ground,
+  --   true_implies]
+  -- obtain (heC | heC) := em (e ∈ C)
+  -- · simp only [heC, not_true_eq_false, false_implies, true_and, true_implies,
+  --     show ¬C ⊆ M.E from sorry, and_false, false_and, or_false, false_or]
+  --   sorry
+  -- sorry
 
 
 
