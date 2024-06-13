@@ -25,6 +25,7 @@ Topics in this repo are listed below.
 * Relative Rank : Matroid/Minor/Rank
 * Flats : Matroid/Flat
 * Truncations : Matroid/Constructions/Truncate
+* Parallel elements : Matroid/Parallel
 * Simplicity and simplification : Matroid/Simple
 * Modular sets, pairs and families : Matroid/Modular
 * Modular cuts, extensions and projections : Matroid/Extension
@@ -32,10 +33,10 @@ Topics in this repo are listed below.
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
 * Uniform matroids : Matroid/Uniform
+* Parallel and series extensions : Matroid/Constructions/ParallelExtension
 
 The following currently need a few fixes to work correctly. 
 * Transversal matroids : Matroid/Transversal
-* Parallel and series extensions : Matroid/ParallelExtension
 * Matroid invariants and minor-closed properties : Matroid/Class
 * Representability : Matroid/Representation/* 
   (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
