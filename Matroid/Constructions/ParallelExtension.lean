@@ -12,10 +12,9 @@ section Set
 /-- Replace the elements of `S` with parallel copies of `e`. -/
 def parallelExtendSet {α : Type*} (M : Matroid α) (e : α) (S : Set α) [DecidablePred (· ∈ S)] :
     Matroid α :=
-  M.comap (fun x ↦ if (x ∈ S) then e else x)
+  M.comap (fun x ↦ if x ∈ S then e else x)
 
 end Set
-
 
 section Loop
 
@@ -212,36 +211,6 @@ lemma parallelExtend_cl_eq_of_not_mem_not_mem (he : M.Nonloop e) (hf : f ∉ M.E
   simp only [deleteElem, delete_cl_eq, diff_singleton_eq_self hfX']
   rw [diff_singleton_eq_self hfX]
 
--- lemma foo (he : M.Nonloop e) (hf : f ∉ M.E) (X : Set α) {heX : e ∉ M.cl X} :
---     (M.parallelExtend e f).cl X = (X ∩ {f}) ∪ M.cl (X \ {f}) := by
---   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
---   have hfX' : f ∉ (M.parallelExtend e f).cl (X \ {f}) := by
---     rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_cl_eq, mem_diff,
---       (parallelExtend_parallel he f).mem_cl_iff_mem_cl] at heX
---     simpa [(show e ≠ f by rintro rfl; exact hf he.mem_ground)] using heX
---   obtain (hf | hf) := em (f ∈ X)
---   · rw [inter_eq_self_of_subset_right (by simpa), singleton_union]
---     simp only [deleteElem, delete_cl_eq, sdiff_idem, insert_diff_singleton]
---     refine subset_antisymm ?_ ?_
---     ·
---   rw [inter_singleton_eq_empty.2 hf, empty_union, deleteElem, delete_cl_eq, diff_diff,
---     union_self, diff_singleton_eq_self hf, diff_singleton_eq_self]
---   rwa [← diff_singleton_eq_self hf]
-
-
--- lemma parallelExtend_cl_eq_of_not_mem_mem (he : M.Nonloop e) (hf : f ∉ M.E) (X : Set α)
---     (heX : e ∉ M.cl X) (hfX : f ∈ X) :
---     (M.parallelExtend e f).cl X = insert f (M.cl (insert e (X \ {f}))) := by
---   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
---   simp only [deleteElem, delete_cl_eq, sdiff_idem, insert_diff_singleton]
---   rw [← M.parallelExtend_delete_eq e hf] at heX
-
---   simp [(show e ≠ f by rintro rfl; exact hf he.mem_ground),
---     (parallelExtend_parallel he f).mem_cl_iff_mem_cl] at heX
---   ext x
---   ·
-    -- simp only [deleteElem, delete_cl_eq, mem_diff, mem_single
-
 lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Indep I ↔
       (f ∉ I ∧ M.Indep I) ∨ (f ∈ I ∧ e ∉ I ∧ M.Indep (insert e (I \ {f}))) := by
@@ -264,97 +233,28 @@ lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
       (parallelExtend_parallel he f).parallel'.symm.indep_substitute_iff hfI heI, hdel]
     rintro (rfl | h); exact hef rfl
     exact h.2 rfl
-
   simp [hdel _ hfI, hfI]
 
 lemma parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     (M.parallelExtend e f).Circuit C ↔ M.Circuit C ∨ C = {e,f} ∨
         f ∈ C ∧ e ∉ C ∧ M.Circuit (insert e (C \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact hf he.mem_ground
-
-  by_cases hfC : f ∈ C; swap
-  · suffices h' : ((M.parallelExtend e f) ＼ f).Circuit C ↔ M.Circuit C by
-      rw [deleteElem, delete_circuit_iff, disjoint_singleton_right, and_iff_left hfC] at h'
-      simp [h', hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
+  have aux : ∀ ⦃C' : Set α⦄, f ∉ C' → ((M.parallelExtend e f).Circuit C' ↔ M.Circuit C') := by
+    intro C' hfC'
+    suffices h' : ((M.parallelExtend e f) ＼ f).Circuit C' ↔ M.Circuit C' by
+      simpa [deleteElem, delete_circuit_iff, hfC'] using h'
     rw [parallelExtend_delete_eq _ hf]
-  rw [← (M.parallelExtend_parallel he f).parallel'.eq_map_swap]
-
-  sorry
-  -- suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} ∨ e ∉ C ∧ M.Circuit (insert e (C \ {f})) by
-  --   simpa [show ¬ M.Circuit C from fun hC ↦ hf (hC.subset_ground hfC), hfC]
-  -- by_cases heC : e ∈ C
-  -- · simp only [heC, not_true_eq_false, false_and, or_false]
-  --   have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
-  --   exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
-  --     by rintro rfl; assumption⟩
-  -- simp only [heC, not_false_eq_true, true_and, show C ≠ {e,f} by rintro rfl; simp at heC, false_or]
-  -- sorry
-  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  -- ·
-
-
-
-    -- suffices (M.parallelExtend e f).Circuit C ↔ M.Circuit C by
-    --   simpa [hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
-    -- have hC' : ((M.parallelExtend e f) ＼ f).Circuit C := by
-    --   rw [parallelExtend_delete_eq _ hf]
-  -- simp only [circuit_iff_dep_forall_diff_singleton_indep, parallelExtend_indep_iff he hf, mem_diff,
-  --   dep_iff, mem_singleton_iff, not_and, Decidable.not_not, mem_insert_iff, forall_eq_or_imp,
-  --   insert_diff_of_mem, and_imp]
-
-  -- obtain (hfC | hfC) := em' (f ∈ C)
-  -- · have hne : C ≠ {e,f} := by rintro rfl; exact hfC (.inr rfl)
-  --   simp [hfC, hne, subset_insert_iff]
-  -- simp only [hfC, not_true_eq_false, false_and, true_and, false_or, not_and, parallelExtend_ground,
-  --   true_implies]
-  -- obtain (heC | heC) := em (e ∈ C)
-  -- · simp only [heC, not_true_eq_false, false_implies, true_and, true_implies,
-  --     show ¬C ⊆ M.E from sorry, and_false, false_and, or_false, false_or]
-  --   sorry
-  -- sorry
-
-
-
-  -- simp only [circuit_iff_dep_forall_diff_singleton_indep, dep_iff, parallelExtend_indep_iff he hf,
-  --   not_or, not_and, parallelExtend_ground, mem_diff, mem_singleton_iff, Decidable.not_not,
-  --   mem_insert_iff, forall_eq_or_imp, insert_diff_of_mem, and_imp]
-  -- obtain (hfC | hfC) := em' (f ∈ C)
-  -- · rw [circuit_iff_delete_of_disjoint (disjoint_singleton_right.2 hfC), ← deleteElem,
-  --     parallelExtend_delete_eq _ hf, iff_false_intro hfC, false_and, or_false, or_iff_left]
-  --   rintro rfl
-  --   simp at hfC
-  -- refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  -- · sorry
-  -- sorry
-
-  -- obtain (hfC | hfC) := em' (f ∈ C)
-  -- · rw [circuit_iff_delete_of_disjoint (disjoint_singleton_right.2 hfC), ← deleteElem,
-  --     parallelExtend_delete_eq _ hf, iff_false_intro hfC, false_and, or_false, or_iff_left]
-  --   rintro rfl
-  --   simp at hfC
-  -- set i := isoOfSwapParallel (parallelExtend_parallel he f).parallel' with hi_def
-  -- obtain (hss | hnss) := em (C ⊆ (parallelExtend M e f).E)
-  -- · have hnC : ¬ M.Circuit C := fun hC ↦ hf (hC.subset_ground hfC)
-  --   rw [or_iff_right hnC, and_iff_right hfC]
-  --   by_cases heC : e ∈ C
-  --   · rw [iff_true_intro heC, not_true, false_and, or_false]
-  --     have hC := (parallelExtend_parallel he f).circuit_of_ne hef
-  --     exact ⟨fun h ↦ (hC.eq_of_subset_circuit h (pair_subset heC hfC)).symm, fun h ↦ by rwa [h]⟩
-  --   have hfC' : f ∉ i '' (M.E ↓∩ C) := by simpa [hi_def]
-  --   rw [or_iff_right (show C ≠ {e,f} by rintro rfl; exact heC (Or.inl rfl)), and_iff_right heC,
-  --     i.on_circuit_iff, circuit_iff_delete_of_disjoint (disjoint_singleton_right.2 hfC'),
-  --     ← deleteElem, parallelExtend_delete_eq _ hf, parallel_swap_apply, parallelExtend_ground,
-  --     PartialEquiv.restr_coe, Equiv.toPartialEquiv_apply, Equiv.swap_comm,
-  --     Equiv.swap_image_eq_exchange hfC heC]
-
-  -- refine iff_of_false (fun hC ↦ hnss hC.subset_ground) ?_
-  -- rw [parallelExtend_ground] at hnss
-  -- rintro (hC | rfl | hC)
-  -- · exact hnss (hC.subset_ground.trans (subset_insert _ _))
-  -- · exact hnss (pair_subset (mem_insert_of_mem _ he.mem_ground) (mem_insert _ _))
-  -- have hss := hC.2.2.subset_ground
-  -- rw [insert_subset_iff, diff_subset_iff, singleton_union] at hss
-  -- exact hnss hss.2
+  by_cases hfC : f ∈ C; swap
+  · simp [aux hfC, hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
+  simp only [show ¬M.Circuit C from fun h ↦ hf <| h.subset_ground hfC, hfC, true_and, false_or]
+  by_cases heC : e ∈ C
+  · suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} by simpa [heC]
+    have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
+    exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
+      by rintro rfl; assumption⟩
+  rw [← (M.parallelExtend_parallel he f).parallel'.eq_mapEquiv_swap, mapEquiv_circuit_iff,
+    Equiv.symm_swap, Equiv.swap_comm, Equiv.swap_image_eq_exchange hfC heC, aux (by simp [hef.symm])]
+  simp [heC, show C ≠ {e,f} by rintro rfl; simp at heC]
 
 instance parallelExtend_finite (M : Matroid α) [M.Finite] (e f : α) :
     (M.parallelExtend e f).Finite :=

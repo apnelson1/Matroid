@@ -100,7 +100,7 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     rintro _ ⟨F, hF, rfl⟩
     exact (U.forall_flat F hF).map hf
   forall_superset := by
-    simp_rw [flat_map_iff']
+    simp_rw [flat_map_iff]
     rintro _ F' ⟨F, hF, rfl⟩ ⟨F', hF', rfl⟩ hss
     refine ⟨F', U.forall_superset _ _ hF hF' ?_, rfl⟩
     rwa [← hf.image_subset_image_iff (U.forall_flat F hF).subset_ground hF'.subset_ground]
@@ -488,7 +488,7 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
     rw [extIndep_iff_of_not_mem heI] at hI
     simpa [heI, hI] using (h e heI heX).2
 
-  obtain (heI | heI) := em (e ∈ I)
+  by_cases heI : e ∈ I
   · have hxe : x ≠ e := by rintro rfl; contradiction
     rw [extIndep_iff_of_mem heI] at hI
     rw [extIndep_iff_of_mem (.inr heI), ← insert_diff_singleton_comm hxe,

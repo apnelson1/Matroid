@@ -348,6 +348,13 @@ lemma map_circuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn 
   rintro _ D hD rfl hss
   rw [h' hD ((hf.image_subset_image_iff hD.subset_ground h.subset_ground).1 hss)]
 
+lemma mapEquiv_circuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
+    (M.mapEquiv f).Circuit C ↔ M.Circuit (f.symm '' C) := by
+  rw [mapEquiv_eq_map, map_circuit_iff]
+  exact ⟨by rintro ⟨C, hC, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
+
+
+
 section Dual
 
 variable {B : Set α}

@@ -64,24 +64,18 @@ lemma flat_iff_cl_self : M.Flat F ↔ M.cl F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left⟩)
     (M.subset_cl F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact cl_flat _ _⟩
 
-lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) (hFE : F ⊆ M.E) :
-    (M.map f hf).Flat (f '' F) ↔ M.Flat F := by
-  rw [flat_iff_cl_self, map_cl_eq, ← cl_inter_ground, hf.preimage_image_inter hFE,
-    hf.image_eq_image_iff (M.cl_subset_ground _) hFE, flat_iff_cl_self]
+lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
+    (M.map f hf).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f '' F₀ := by
+  simp only [flat_iff_cl_self, map_cl_eq]
+  refine ⟨fun h ↦ ⟨M.cl (f ⁻¹' F), by simp, h.symm⟩, ?_⟩
+  rintro ⟨F, hF, rfl⟩
+  rw [← cl_inter_ground, hf.preimage_image_inter, hF]
+  exact hF.symm.subset.trans <| M.cl_subset_ground _
 
 lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
     (M.map f hf).Flat (f '' F) := by
   rw [flat_iff_cl_self, map_cl_eq, ← cl_inter_ground, hf.preimage_image_inter hF.subset_ground,
     hF.cl]
-
-lemma flat_map_iff' {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
-    (M.map f hf).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f '' F₀ := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨F, hF, rfl⟩ := subset_image_iff.1 h.subset_ground
-    rw [flat_map_iff hf hF] at h
-    exact ⟨F, h, rfl⟩
-  rintro ⟨F, hF, rfl⟩
-  exact hF.map hf
 
 lemma flat_iff_subset_cl_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.cl F ⊆ F := by
   rw [flat_iff_cl_self, subset_antisymm_iff, and_iff_left_iff_imp]
@@ -214,7 +208,7 @@ lemma flatCl_mono (M : Matroid α) : Monotone M.flatCl :=
   fun _ _ ↦ M.cl_subset_cl
 
 /-- The flats of a matroid form a complete lattice. -/
-instance flatLattice (M : Matroid α) : CompleteLattice M.FlatOf where
+instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   sup F₁ F₂ := M.flatCl (F₁ ∪ F₂)
   le_sup_left F F' := subset_union_left.trans (M.subset_cl _)
   le_sup_right F F' := subset_union_right.trans (M.subset_cl _)
@@ -677,7 +671,7 @@ lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
     (M ／ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
   rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
-/-- FlatOf of `M ／ C` are equivalent to flats of `M` containing `C`-/
+/-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def flatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
     {F // (M ／ C).Flat F} ≃ {F // M.Flat F ∧ C ⊆ F} where
   toFun F := ⟨F ∪ C, by simp [subset_union_right, F.prop.union_flat_of_contract]⟩

@@ -61,7 +61,7 @@ lemma delete_subset_ground (M : Matroid α) (D : Set α) : (M ＼ D).E ⊆ M.E :
 @[simp] lemma deleteElem (M : Matroid α) (e : α) : M ＼ e = M ＼ ({e} : Set α) := rfl
 
 lemma deleteElem_eq_self (he : e ∉ M.E) : M ＼ e = M := by
-  rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff,sdiff_eq_left,
+  rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff, sdiff_eq_left,
     disjoint_singleton_right]
 
 instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ＼ e) := by

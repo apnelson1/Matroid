@@ -1,5 +1,5 @@
 import Matroid.Simple
-import Matroid.ForMathlib.SumCard
+import Matroid.ForMathlib.Card
 
 open Set
 open PSetoid

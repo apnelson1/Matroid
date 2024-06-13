@@ -6,7 +6,7 @@ import Matroid.Flat
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
   largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
-  taken over all `X ⊆ E`. We also derive Rado's theorem as a corollary. -/
+  taken over all `X ⊆ E`.  -/
 
 open Set
 

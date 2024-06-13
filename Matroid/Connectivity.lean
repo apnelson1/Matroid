@@ -95,7 +95,7 @@ lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).Con
   exact hC.1.mem_connectedTo_mem heC hfC
 
 lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.ConnectedTo e f := by
-  rw [delete_eq_restrict] at hef; apply hef.of_restrict <| diff_subset _ _
+  rw [delete_eq_restrict] at hef; apply hef.of_restrict diff_subset
 
 lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M.ConnectedTo e f := by
   replace hef := hef.to_dual
@@ -366,7 +366,7 @@ variable {B B' I I' J K X Y : Set α}
 lemma Indep.encard_inter_add_erk_dual_eq_of_cl_eq_cl (hI : M.Indep I) (hI' : M.Indep I')
     (hII' : M.cl I = M.cl I') (hJ : M.Indep J) :
     (I ∩ J).encard + (M ↾ (I ∪ J))✶.erk = (I' ∩ J).encard + (M ↾ (I' ∪ J))✶.erk := by
-  obtain ⟨K, hK, hIK⟩ := hI.subset_basis_of_subset (subset_union_left I J)
+  obtain ⟨K, hK, hIK⟩ := hI.subset_basis_of_subset (subset_union_left (s := I) (t := J))
   have hsk := (hK.indep.subset_skew_diff hIK)
   rw [skew_iff_cl_skew_left] at hsk
   have' hdj := hsk.disjoint_of_indep_subset_right (hK.indep.diff _) Subset.rfl
@@ -548,7 +548,8 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
 
   obtain ⟨I, hI⟩ := M.exists_basis X
   obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
-  obtain ⟨BX, hBX, hIBX⟩ := hI.indep.subset_basis_of_subset (subset_union_left I J)
+  obtain ⟨BX, hBX, hIBX⟩ := hI.indep.subset_basis_of_subset
+    (subset_union_left (s := I) (t := J))
   have hIJE : M.Spanning (I ∪ J) := by
     rw [spanning_iff_cl, ← cl_cl_union_cl_eq_cl_union, hI.cl_eq_cl, hJ.cl_eq_cl,
       cl_cl_union_cl_eq_cl_union, union_diff_cancel hX, cl_ground]
@@ -561,7 +562,7 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
   have hBXdual := hBXb.compl_inter_basis_of_inter_basis hI
   rw [diff_inter_diff, union_comm, ← diff_diff] at hBXdual
 
-  obtain ⟨BY, hBY, hJBY⟩ := hJ.indep.subset_basis_of_subset (subset_union_right (BX ∩ X) J)
+  obtain ⟨BY, hBY, hJBY⟩ := hJ.indep.subset_basis_of_subset (subset_union_right (s := BX ∩ X))
   have hBYb : M.Base BY := by rw [← basis_ground_iff, ← hIJE.cl_eq]; exact hBY.basis_cl_right
 
   obtain rfl : J = BY ∩ (M.E \ X) := hJ.eq_of_subset_indep (hBYb.indep.inter_right _)
@@ -571,7 +572,8 @@ lemma conn_compl_dual (M : Matroid α) (X : Set α) : M.conn X (M.E \ X) = M✶.
   rw [diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hBYdual
 
   rw [hBYdual.basis'.conn_eq_of_disjoint hBXdual.basis' disjoint_sdiff_right,
-    hI.basis'.conn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.erk_dual_restrict, union_diff_distrib, diff_eq_empty.2 inter_subset_left, empty_union,
+    hI.basis'.conn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.erk_dual_restrict,
+    union_diff_distrib, diff_eq_empty.2 inter_subset_left, empty_union,
     Basis.erk_dual_restrict (hBYb.compl_base_dual.basis_ground.basis_subset _ _)]
 
   · rw [union_diff_distrib, diff_eq_empty.2 (diff_subset_diff_left hX), empty_union, diff_diff,

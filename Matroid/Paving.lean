@@ -1,10 +1,9 @@
 import Matroid.Circuit
 import Matroid.Flat
-import Matroid.Class
 
 open Set
 
-variable {α : Type*} {M : Matroid α}
+variable {α : Type*} {N M : Matroid α} {C D : Set α}
 
 namespace Matroid
 
@@ -47,8 +46,8 @@ theorem SparsePaving.dual (h : M.SparsePaving) : M✶.SparsePaving := by
 theorem SparsePaving.minor (h : M.SparsePaving) (hNM : N ≤m M) : N.SparsePaving :=
   ⟨h.1.minor hNM, h.dual.1.minor hNM.dual⟩
 
-instance minorClosed_paving : MinorClosed.{u} Matroid.Paving where
-  forall_minor := fun h hN ↦ Paving.minor hN h
+-- instance minorClosed_paving : MinorClosed.{u} Matroid.Paving where
+--   forall_minor := fun h hN ↦ Paving.minor hN h
 
-instance minorClosed_sparsePaving : MinorClosed.{u} Matroid.SparsePaving where
-  forall_minor := fun h hN ↦ SparsePaving.minor hN h
+-- instance minorClosed_sparsePaving : MinorClosed.{u} Matroid.SparsePaving where
+--   forall_minor := fun h hN ↦ SparsePaving.minor hN h

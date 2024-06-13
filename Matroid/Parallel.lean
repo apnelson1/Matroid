@@ -366,7 +366,7 @@ lemma Parallel'.indep_substitute_iff (h_para : M.Parallel' e f) (he : e ∈ I) (
   have hef : e ≠ f := by rintro rfl; exact hf he
   simp [insert_diff_singleton_comm hef, insert_eq_of_mem he, diff_singleton_eq_self hf]
 
-lemma Parallel'.eq_map_swap (h : M.Parallel' e f) [DecidableEq α] :
+lemma Parallel'.eq_mapEquiv_swap (h : M.Parallel' e f) [DecidableEq α] :
     M.mapEquiv (Equiv.swap e f) = M := by
   have hrw := Equiv.swap_image_eq_self
       (show e ∈ M.E ↔ f ∈ M.E by simp [h.mem_ground_left, h.mem_ground_right])
