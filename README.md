@@ -25,6 +25,7 @@ Topics in this repo are listed below.
 * Relative Rank : Matroid/Minor/Rank
 * Flats : Matroid/Flat
 * Truncations : Matroid/Constructions/Truncate
+* Parallel elements : Matroid/Parallel
 * Simplicity and simplification : Matroid/Simple
 * Modular sets, pairs and families : Matroid/Modular
 * Modular cuts, extensions and projections : Matroid/Extension
