@@ -39,18 +39,6 @@ theorem InjOn.exists_subset_injOn_subset_range_eq (hinj : InjOn f r) (hrs : r �
   obtain ⟨u, hru, hus, h⟩ := hinj.bijOn_image.exists_extend_of_subset hrs
     (image_subset f hrs) Subset.rfl
   exact ⟨u, hru, hus, h.image_eq, h.injOn⟩
-
-@[simp] theorem surjOn_empty_iff {f : α → β} {t : Set β} : SurjOn f ∅ t ↔ t = ∅ := by
-  simp [SurjOn, subset_empty_iff]
-
-@[simp] theorem mapsTo_empty_iff {f : α → β} {s : Set α} : MapsTo f s ∅ ↔ s = ∅ := by
-  simp [mapsTo', subset_empty_iff]
-
-@[simp] theorem bijOn_empty_iff_left {f : α → β} {s : Set α} : BijOn f s ∅ ↔ s = ∅ :=
-  ⟨fun h ↦ by simpa using h.mapsTo, by rintro rfl; exact bijOn_empty f⟩
-
-@[simp] theorem bijOn_empty_iff_right {f : α → β} {t : Set β} : BijOn f ∅ t ↔ t = ∅ :=
-  ⟨fun h ↦ by simpa using h.surjOn, by rintro rfl; exact bijOn_empty f⟩
 section Update
 
 variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}

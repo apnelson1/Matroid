@@ -39,7 +39,7 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
 # Main Definitions.
 
 * `Matroid.ModularCut` : a collection of flats in a matroid closed under taking superflats and
-    under intersections of modular families.
+    under taking intersections of modular families.
 
 * `ModularCut.principal M X` : the modular cut of `M` comprising all the flats containing `X`
 
@@ -194,17 +194,19 @@ instance (M : Matroid α) : BoundedOrder M.ModularCut where
   bot := ModularCut.empty M
   bot_le _ _ := by simp
 
-lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U := by
-  obtain (hU | ⟨F, hF⟩) := (U : Set (Set α)).eq_empty_or_nonempty
-  · left
-    ext x
-    change x ∈ (U : Set (Set α)) ↔ x ∈ ∅
-    simp [hU]
-  exact .inr <| U.superset_mem hF M.ground_flat (U.flat_of_mem hF).subset_ground
-
 @[simp] protected lemma ModularCut.not_mem_bot (M : Matroid α) (X : Set α) :
     ¬ X ∈ (⊥ : M.ModularCut) :=
   not_mem_empty X
+
+lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U := by
+  obtain (hU | ⟨F, hF⟩) := (U : Set (Set α)).eq_empty_or_nonempty
+  · refine .inl <| ?_
+    rw [SetLike.ext'_iff, hU, ModularCut.bot]
+
+
+
+  exact .inr <| U.superset_mem hF M.ground_flat (U.flat_of_mem hF).subset_ground
+
 
 protected lemma ModularCut.mem_top_of_flat (hF : M.Flat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
