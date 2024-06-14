@@ -112,9 +112,7 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     · simp only [sInter_image, mem_image, SetLike.mem_coe]
       refine ⟨_, hwin, ?_⟩
       rw [← InjOn.image_biInter_eq (f := f) (by simpa using hne), sInter_eq_biInter]
-      refine hf.mono ?_
-      simpa only [iUnion_subset_iff]
-
+      exact hf.mono <| by simpa only [iUnion_subset_iff]
     simp only [Subtype.forall]
     refine fun F hF ↦ ?_
     simp only [Subtype.forall, mem_image, forall_exists_index] at hYs h_eq
@@ -123,13 +121,11 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     rw [hf.image_eq_image_iff (hFsE F hF) hYs.subset_ground] at h_eq
     rwa [← h_eq] at hYs
 
-@[simp] lemma ModularCut.mem_mk_iff (S : Set (Set α)) (h₁ : ∀ F ∈ S, M.Flat F)
-  (h₂ : ∀ F F', F ∈ S → M.Flat F' → F ⊆ F' → F' ∈ S)
-  (h₃ : ∀ xs ⊆ S, xs.Nonempty → M.ModularFamily (fun x : xs ↦ x) → ⋂₀ xs ∈ S) {X : Set α} :
-  X ∈ ModularCut.mk S h₁ h₂ h₃ ↔ X ∈ S := Iff.rfl
+@[simp] lemma ModularCut.mem_mk_iff (S : Set (Set α)) (h₁) (h₂) (h₃) {X : Set α} :
+  X ∈ ModularCut.mk (M := M) S h₁ h₂ h₃ ↔ X ∈ S := Iff.rfl
 
 lemma ModularCut.flat_of_mem (U : M.ModularCut) (hF : F ∈ U) : M.Flat F :=
-    U.forall_flat F hF
+  U.forall_flat F hF
 
 lemma ModularCut.superset_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : M.Flat F') (hFF' : F ⊆ F') :
     F' ∈ U :=
@@ -156,9 +152,8 @@ lemma ModularCut.iInter_mem (U : M.ModularCut) {ι : Type*} [Nonempty ι] (Fs : 
 lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U) (h : M.ModularPair F F') :
     F ∩ F' ∈ U := by
   rw [inter_eq_iInter]
-  apply U.iInter_mem
-  · simp [hF, hF']
-  exact h
+  apply U.iInter_mem _ _ h
+  simp [hF, hF']
 
 lemma ModularCut.cl_mem_of_mem (hF : F ∈ U) : M.cl F ∈ U := by
   rwa [(U.flat_of_mem hF).cl]
@@ -194,19 +189,15 @@ instance (M : Matroid α) : BoundedOrder M.ModularCut where
   bot := ModularCut.empty M
   bot_le _ _ := by simp
 
-@[simp] protected lemma ModularCut.not_mem_bot (M : Matroid α) (X : Set α) :
-    ¬ X ∈ (⊥ : M.ModularCut) :=
+@[simp] protected lemma ModularCut.not_mem_bot (X : Set α) : X ∉ (⊥ : M.ModularCut) :=
   not_mem_empty X
+
+@[simp] lemma ModularCut.coe_bot (M : Matroid α) : ((⊥ : M.ModularCut) : Set (Set α)) = ∅ := rfl
 
 lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U := by
   obtain (hU | ⟨F, hF⟩) := (U : Set (Set α)).eq_empty_or_nonempty
-  · refine .inl <| ?_
-    rw [SetLike.ext'_iff, hU, ModularCut.bot]
-
-
-
+  · exact .inl <| SetLike.ext'_iff.2 <| by simp [hU]
   exact .inr <| U.superset_mem hF M.ground_flat (U.flat_of_mem hF).subset_ground
-
 
 protected lemma ModularCut.mem_top_of_flat (hF : M.Flat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
@@ -215,11 +206,9 @@ protected lemma ModularCut.mem_top_of_flat (hF : M.Flat F) : F ∈ (⊤ : M.Modu
   ⟨fun h ↦ h.1, ModularCut.mem_top_of_flat⟩
 
 lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.cl ∅ ∈ U := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro rfl
-    exact ⟨M.cl_flat ∅, empty_subset _⟩
+  refine ⟨by rintro rfl; exact ⟨M.cl_flat ∅, empty_subset _⟩, fun h ↦ ?_⟩
   simp only [SetLike.ext_iff, mem_top_iff]
-  refine fun F ↦ ⟨U.flat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
+  exact fun F ↦ ⟨U.flat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
 
 lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut) := by
   rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
@@ -423,7 +412,7 @@ lemma ModularCut.ExtIndep.diff_singleton_indep {U : M.ModularCut} (h : U.ExtInde
   obtain (h | h) := h; exact h.1.diff _; exact h.1
 
 lemma ModularCut.ExtIndep.subset (h : U.ExtIndep e I) (hJI : J ⊆ I) : U.ExtIndep e J := by
-  obtain (heJ | heJ) := em (e ∈ J)
+  by_cases heJ : e ∈ J
   · rw [extIndep_iff_of_mem (hJI heJ)] at h
     rw [extIndep_iff_of_mem heJ, and_iff_right (h.1.subset (diff_subset_diff_left hJI))]
     exact fun hJU ↦ h.2 <| U.cl_superset_mem' hJU <| diff_subset_diff_left hJI
