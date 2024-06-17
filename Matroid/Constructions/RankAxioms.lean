@@ -10,6 +10,7 @@ structure RankMatroid (α : Type*) where
   (E : Set α)
   /-- The (relative) rank function -/
   (relRank : Set α → Set α → ℕ∞)
+
   (relRank_le_encard_diff : ∀ A B, relRank A B ≤ (B \ A).encard)
   (relRank_union_le_relRank_inter : ∀ A B, relRank A (A ∪ B) ≤ relRank (A ∩ B) B)
   (relRank_add_cancel : ∀ ⦃A B C⦄, A ⊆ B → B ⊆ C → relRank A C = relRank A B + relRank B C)
@@ -160,7 +161,6 @@ lemma Indep.subset_maximal_iff_relRank_zero (hI_indep : M.Indep I) (hI : I ⊆ X
   simp [he.2] at hcon
   simp [hcon] at h
 
-
 @[simps!] protected def matroid (M : RankMatroid α) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
   (E := M.E)
@@ -177,13 +177,12 @@ lemma Indep.subset_maximal_iff_relRank_zero (hI_indep : M.Indep I) (hI : I ⊆ X
     rw [hrw, hB.subset_maximal_iff_relRank_zero hB.subset_ground] at hBmax
     have hr : ¬ (M.relRank I (I ∪ B) = 0) := by
       refine fun h0 ↦ hInmax ?_
-      rw [M.relRank_add_cancel subset_union_left (union_subset hI.subset_ground hB.subset_ground),
-        h0, zero_add]
+      rw [M.relRank_add_cancel subset_union_left
+        (union_subset hI.subset_ground hB.subset_ground), h0]
       simpa [hBmax] using M.relRank_mono_left (show B ⊆ I ∪ B from subset_union_right) (X := M.E)
-    rw [← hI.subset_maximal_iff_relRank_zero subset_union_left,
-      mem_maximals_iff_forall_ssubset_not_mem] at hr
-    simp only [mem_setOf_eq, hI, subset_union_left, and_self, not_and, true_and, not_forall,
-      Classical.not_imp, not_not, exists_prop, exists_and_left] at hr
+    replace hr := show ∃ x, I ⊂ x ∧ M.Indep x ∧ x ⊆ I ∪ B by
+      simpa [hI, ← hI.subset_maximal_iff_relRank_zero subset_union_left,
+        mem_maximals_iff_forall_ssubset_not_mem] using hr
     obtain ⟨J, hIJ, hJ, hJIB⟩ := hr
     obtain ⟨x, hxJ, hxI⟩ := exists_of_ssubset hIJ
     refine ⟨x, ⟨?_, hxI⟩, hJ.subset <| insert_subset hxJ hIJ.subset⟩
