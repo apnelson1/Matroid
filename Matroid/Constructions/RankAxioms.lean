@@ -14,8 +14,9 @@ structure RankMatroid (α : Type*) where
   (relRank_le_encard_diff : ∀ A B, relRank A B ≤ (B \ A).encard)
   (relRank_union_le_relRank_inter : ∀ A B, relRank A (A ∪ B) ≤ relRank (A ∩ B) B)
   (relRank_add_cancel : ∀ ⦃A B C⦄, A ⊆ B → B ⊆ C → relRank A C = relRank A B + relRank B C)
-  (relRank_sUnion_eq_zero : ∀ ⦃S : Set (Set α)⦄, ∀ ⦃A : Set α⦄,
-    (∀ B ∈ S, A ⊆ B ∧ relRank A B = 0) → relRank A (⋃₀ S) = 0)
+  -- A simpler version of the axiom from Bruhn et al.
+  (relRank_diff_eq_zero : ∀ (A B : Set α), A ⊆ B →
+    (∀ x ∈ B \ A, relRank A (insert x A) = 0) → relRank A B = 0)
 
   (relRank_compl_ground_eq : relRank ∅ Eᶜ = 0)
   (relRank_eq_union_right : ∀ A B, relRank A B = relRank A (B ∪ A))
@@ -27,9 +28,6 @@ structure RankMatroid (α : Type*) where
 namespace RankMatroid
 
 variable {α : Type*} {A B I J X : Set α} {x : α} {M : RankMatroid α}
-
-def Basis' (M : RankMatroid α) (I A : Set α) : Prop :=
-  I ∈ maximals (· ⊆ ·) {I | M.Indep I ∧ I ⊆ A}
 
 @[simp] lemma relRank_self_eq_zero {M : RankMatroid α} : M.relRank A A = 0 := by
   obtain h := M.relRank_le_encard_diff A A
@@ -58,13 +56,13 @@ lemma Indep.relRank_diff_singleton {M : RankMatroid α} (h : M.Indep I) (hx : x 
 lemma relRank_eq_diff_right {M : RankMatroid α} : M.relRank A B = M.relRank A (B \ A) := by
   rw [M.relRank_eq_union_right A (B \ A), diff_union_self, relRank_eq_union_right]
 
-lemma relRank_mono_right {M : RankMatroid α} (hAB : A ⊆ B) :
+lemma relRank_mono_right (M : RankMatroid α) (hAB : A ⊆ B) :
     M.relRank X A ≤ M.relRank X B := by
   rw [M.relRank_eq_union_right _ A, M.relRank_eq_union_right _ B,
     M.relRank_add_cancel subset_union_right (union_subset_union_left X hAB)]
   simp only [self_le_add_right]
 
-lemma relRank_mono_left {M : RankMatroid α} (hAB : A ⊆ B) :
+lemma relRank_mono_left (M : RankMatroid α) (hAB : A ⊆ B) :
     M.relRank B X ≤ M.relRank A X := by
   calc
     M.relRank B X = M.relRank B (X ∪ B) := by rw [relRank_eq_union_right]
@@ -84,9 +82,9 @@ lemma relRank_inter_ground {M : RankMatroid α} : M.relRank (A ∩ M.E) (B ∩ M
     rw [relRank_eq_diff_right, diff_self_inter, diff_eq_compl_inter, <-nonpos_iff_eq_zero]
     have h : M.relRank ∅ (M.Eᶜ ∩ A) ≤ 0 := by
       rw [<-M.relRank_compl_ground_eq]
-      exact relRank_mono_right inter_subset_left
+      exact M.relRank_mono_right inter_subset_left
     refine LE.le.trans ?_ h
-    exact relRank_mono_left <| empty_subset (A ∩ M.E)
+    exact M.relRank_mono_left <| empty_subset (A ∩ M.E)
   symm
   calc
     M.relRank A B = M.relRank A (B ∪ A) := by rw [relRank_eq_union_right]
@@ -141,17 +139,9 @@ lemma Indep.subset_maximal_iff_relRank_zero (hI_indep : M.Indep I) (hI : I ⊆ X
   suffices (∀ ⦃y : Set α⦄, M.Indep y → y ⊆ X → I ⊆ y → I = y) ↔ M.relRank I X = 0 by
     simpa [mem_maximals_iff, hI_indep, hI]
   refine ⟨fun h ↦ ?_, fun h J hJ hJX hIJ ↦ ?_⟩
-  · have h' := M.relRank_sUnion_eq_zero (S := (fun a ↦ insert a I) '' (X \ I)) (A := I)
-    simp only [mem_image, forall_exists_index, and_imp, sUnion_image] at h'
-    obtain (h_empt | hne) := (X \ I).eq_empty_or_nonempty
-    · rw [hI.antisymm (diff_eq_empty.1 h_empt), relRank_self_eq_zero]
-    simp_rw [← singleton_union, ← biUnion_distrib_union _ hne, biUnion_of_singleton,
-      singleton_union, diff_union_self, ← relRank_eq_union_right] at h'
-    apply h'
-    rintro _ x hx rfl
-    refine ⟨subset_insert _ _, by_contra fun hnez ↦ ?_⟩
-    rw [h (y := insert x I) (hI_indep.insert_indep_of_relRank_ne_zero hnez)
-      (insert_subset hx.1 hI) (subset_insert _ _)] at hx
+  · refine M.relRank_diff_eq_zero I X hI fun x hx ↦ by_contra fun hne ↦ ?_
+    rw [h (hI_indep.insert_indep_of_relRank_ne_zero hne) (insert_subset hx.1 hI)
+      (subset_insert _ _)] at hx
     simp at hx
   obtain (rfl | hssu) := hIJ.eq_or_ssubset; rfl
   obtain ⟨e, he⟩ := exists_of_ssubset hssu
@@ -160,6 +150,16 @@ lemma Indep.subset_maximal_iff_relRank_zero (hI_indep : M.Indep I) (hI : I ⊆ X
   have hcon := (hJ.subset (insert_subset he.1 hIJ)).relRank_diff_singleton (.inl rfl)
   simp [he.2] at hcon
   simp [hcon] at h
+
+-- This is a proof of the original version of the axiom using the weaker one.
+-- lemma relRank_sUnion_eq_zero {S : Set (Set α)} {A : Set α}
+--     (h : ∀ B ∈ S, A ⊆ B ∧ M.relRank A B = 0) : M.relRank A (⋃₀ S) = 0 := by
+--   obtain (rfl | ⟨B₀, hB₀⟩) := eq_empty_or_nonempty S
+--   · simpa using M.relRank_mono_left (empty_subset A) (X := ∅)
+--   refine M.relRank_diff_eq_zero _ _ (subset_sUnion_of_subset _ _ (h _ hB₀).1 hB₀) ?_
+--   simp only [mem_diff, mem_sUnion, and_imp, forall_exists_index]
+--   refine fun e B hBS heB _ ↦ ?_
+--   simpa [(h B hBS).2 ] using M.relRank_mono_right (X := A) (insert_subset heB (h B hBS).1)
 
 @[simps!] protected def matroid (M : RankMatroid α) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
