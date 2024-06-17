@@ -8,6 +8,17 @@ variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 open Set Function
 
 
+section ENat
+
+lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ n := by
+  refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
+  lift n to ℕ using hne
+  specialize h (n+1)
+  norm_cast at h
+  simp at h
+
+end ENat
+
 section Lattice
 
 
