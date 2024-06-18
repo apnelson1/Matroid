@@ -126,6 +126,10 @@ lemma Indep.insert_indep_of_relRank_ne_zero (hI : M.Indep I) (hx : M.relRank I (
   suffices ∀ a ∈ I, ¬M.relRank (insert x I \ {a}) (insert x I) = 0 by
     simpa [indep_iff, M.relRank_add_cancel diff_subset (subset_insert _ _), hx]
   intro a haI hr
+  have h' := M.relRank_union_le_relRank_inter I (insert x I \ {a})
+
+  -- rw [← inter_diff_right_comm, diff_union_eq_union_of_subset _ (by simpa),
+  --   union_eq_self_of_subset_right (subset_insert _ _)] at h'
   have hcon := M.relRank_add_cancel (show I \ {a} ⊆ I from diff_subset) (subset_insert x I)
   have hax : x ≠ a := by rintro rfl; simp [haI] at hx
   rw [relRank_insert_eq_one_of_ne hx, hI.relRank_diff_singleton haI, M.relRank_add_cancel
@@ -229,7 +233,7 @@ namespace RankMatroid
 
 variable {α : Type*} {A B I J X : Set α} {M : RankMatroid α} {x : α}
 
-lemma relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hA : A ⊆ B) (hB : M.Indep B) :
+lemma relRank_indeps_eq_encard_diff (M : RankMatroid α) (hA : A ⊆ B) (hB : M.Indep B) :
     M.relRank A B = (B \ A).encard := by
   classical
   suffices aux : ∀ (D : Finset α), Disjoint A D → (D : Set α) ⊆ B → D.card ≤ M.relRank A (A ∪ D) by
@@ -262,16 +266,12 @@ lemma relRank_indeps_eq_encard_diff (M : RankMatroid α) {A B : Set α} (hA : A 
   rw [union_comm, ←insert_union]
   exact hB.subset (union_subset (by simpa using hDB) hA)
 
-@[simp] theorem rankMatroid_relRank_eq_matroid_relRank (M : RankMatroid α)
-    {A B : Set α} : M.matroid.relRank A B = M.relRank A B := by
+@[simp] theorem rankMatroid_relRank_eq_matroid_relRank (M : RankMatroid α) :
+    M.matroid.relRank A B = M.relRank A B := by
   suffices h : ∀ {A B}, A ⊆ B → B ⊆ M.E → M.relRank A B = M.matroid.relRank A B by
-    set A' := A ∩ M.E
-    set B' := (B ∩ M.E) ∪ A'
-    rw [<-relRank_inter_ground, relRank_eq_union_right, <-M.matroid.relRank_inter_ground_left,
-        <-M.matroid.relRank_inter_ground_right, M.matroid.relRank_eq_union_right,
-        union_comm (a := B ∩ M.E), matroid_E,
-        h subset_union_left (union_subset inter_subset_right inter_subset_right),
-        union_comm]
+    rw [← relRank_inter_ground, relRank_eq_union_right, ← Matroid.relRank_inter_ground_left,
+      ← Matroid.relRank_inter_ground_right, matroid_E, Matroid.relRank_eq_union_right]
+    apply (h _ _).symm <;> simp
   intro A B hA hB
   obtain ⟨I, J, hI, ⟨hI_basis_A, _⟩, ⟨hJ_basis_B, _⟩, h⟩ := M.matroid.relRank_intro hA hB
   rw [h]; clear h;

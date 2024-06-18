@@ -222,6 +222,30 @@ lemma Iso.exists_eq_map' (e : M ≂ N) [M.Nonempty] :
   have := N.nonempty_type
   e.exists_eq_map
 
+lemma Iso.empty_empty_or_exists_eq_map (e : M ≂ N) :
+    (M = emptyOn α ∧ N = emptyOn β) ∨ ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+  obtain (rfl | hne) := M.eq_emptyOn_or_nonempty
+  · simp [e.right_eq_empty]
+  exact .inr e.exists_eq_map'
+
+lemma Finite.of_iso (hM : M.Finite) (e : M ≂ N) : N.Finite := by
+  have h := e.toEquiv.finite_iff.mp
+  simp_rw [finite_coe_iff] at h
+  exact ⟨h M.ground_finite⟩
+
+lemma Finitary.of_iso (hM : M.Finitary) (e : M ≂ N) : N.Finitary := by
+  obtain (h | h) := isEmpty_or_nonempty β
+  · rw [eq_emptyOn N]; infer_instance
+  obtain ⟨f,hf,rfl⟩ := e.exists_eq_map
+  infer_instance
+
+lemma Iso.finite_iff (e : M ≂ N) : M.Finite ↔ N.Finite :=
+  ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+
+lemma Iso.finitary_iff (e : M ≂ N) : M.Finitary ↔ N.Finitary :=
+  ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
+
+
 end map
 
 section dual

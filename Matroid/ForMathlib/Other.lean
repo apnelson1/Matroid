@@ -17,6 +17,14 @@ lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ 
   norm_cast at h
   simp at h
 
+@[simp] lemma ENat.lt_one_iff (n : ℕ∞) : n < 1 ↔ n = 0 := by
+  rw [← not_iff_not, not_lt, ENat.one_le_iff_ne_zero]
+
+@[simp] theorem zero_ne_top : (0 : ℕ∞) ≠ ⊤ :=
+  ENat.coe_toNat_eq_self.mp rfl
+
+
+
 end ENat
 
 section Lattice

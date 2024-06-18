@@ -1,12 +1,10 @@
-import Matroid.Minor.Iso
-import Matroid.Simple
+-- import Matroid.Minor.Iso
+-- import Matroid.Simple
 import Matroid.Extension
-import Matroid.ForMathlib.Card
+-- import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
-import Matroid.ForMathlib.LinearAlgebra.Vandermonde
-import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
-import Matroid.ForMathlib.Other
+-- import Matroid.ForMathlib.Other
 
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
@@ -234,734 +232,541 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
   (v.restrict X).comap (incl X)
 
-
--- def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
-
--- /- Carry a representation across a matroid isomorphism -/
--- noncomputable def Rep.iso {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) :
---     N.Rep 𝔽 W :=
---   ((v.comap i.symm).restrict N.E).ofEq i.symm.eq_comap.symm
-
--- lemma Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) {x : β}
---     (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
---   simp [iso, indicator_of_mem hx]
-
-/-- The `Matroid` whose independent sets are the sets with linearly independent image-/
-@[simps!] protected def onUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
+/-- The `𝔽`-representable matroid whose ground set is all of a vector space `W` over `𝔽` -/
+protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module 𝔽 W] : Matroid W :=
   IndepMatroid.matroid <| IndepMatroid.ofFinitary
-    (E := univ)
-    (Indep := fun I ↦ LinearIndependent 𝔽 (I.restrict v))
-    (indep_empty := linearIndependent_empty_type)
-    (indep_subset := fun I J hI hJI ↦ by convert hI.comp _ (inclusion_injective hJI))
-    (indep_aug := by
-      intro I J hI hIfin hJ hJfin hcard
-      have hIinj : InjOn v I := by rw [injOn_iff_injective]; exact hI.injective
-      have h : ¬ (v '' J ⊆ span 𝔽 (v '' I))
-      · refine fun hle ↦ hcard.not_le ?_
-        rw [← span_le, ← range_restrict, ← range_restrict] at hle
-        have _ := hIfin.fintype; have _ := hJfin.fintype
-        have _ : FiniteDimensional 𝔽 (span 𝔽 (Set.range (I.restrict v)))
-        · apply FiniteDimensional.span_of_finite; simpa using hIfin.image v
+  (E := univ)
+  (Indep := fun (I : Set W) ↦ LinearIndependent 𝔽 ((↑) : I → W))
+  (indep_empty := linearIndependent_empty _ _)
+  (indep_subset := fun I J hJ hIJ ↦ hJ.mono hIJ)
+  (indep_aug := by
+    intro I J hI hIfin hJ hJfin hIJ
+    have hssu : ¬ (J ⊆ span 𝔽 I) := by
+      rw [← span_le]
+      refine fun hss ↦ hIJ.not_le ?_
+      have _ := hIfin.fintype
+      have _ := hJfin.fintype
+      have _ : Module.Finite 𝔽 (span 𝔽 I) := FiniteDimensional.span_of_finite _ hIfin
+      rw [ncard_eq_toFinset_card' J, ncard_eq_toFinset_card' I, ← finrank_span_set_eq_card hJ,
+        ← finrank_span_set_eq_card hI]
+      exact finrank_le_finrank_of_le hss
+    obtain ⟨a, haJ, ha⟩ := not_subset.1 hssu
+    refine ⟨a, haJ, not_mem_subset subset_span ha, ?_⟩
+    simp only [SetLike.mem_coe] at ha
+    simpa [linearIndependent_insert (not_mem_subset subset_span ha), ha])
+  (indep_compact := fun I hI ↦ linearIndependent_of_finite_index _ fun t ht ↦ by
+      simpa [← linearIndependent_image Subtype.val_injective.injOn] using
+        hI ((↑) '' t) (by simp) (ht.image _) )
+  (subset_ground := by simp)
 
-        convert finrank_le_finrank_of_le hle
-        <;> rw [finrank_span_eq_card (by assumption),
-          ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card]
+/-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
+with and a ground set `E : Set α`.  -/
+protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :=
+    (Matroid.onModule 𝔽 W).comapOn E f
 
-      obtain ⟨_, ⟨e, he, rfl⟩, heI⟩ := not_subset.1 h
-      have' heI' : v e ∉ v '' I := fun h ↦ heI (Submodule.subset_span h)
-      have heI'' : e ∉ I := fun h' ↦ heI' (mem_image_of_mem v h')
-      refine' ⟨e, he, heI'', _⟩
-      simp only
-      have hi : LinearIndependent 𝔽 (v '' I).incl := (linearIndependent_image hIinj).1 hI
-      have h_end : LinearIndependent 𝔽 (incl _) := hi.insert heI
-      rwa [← image_insert_eq,
-        ← linearIndependent_image <| (injOn_insert heI'').2 ⟨hIinj, heI'⟩] at h_end)
-    (indep_compact := by
-      refine fun I hI ↦ linearIndependent_of_finite_index _ (fun t ht ↦ ?_)
-      have hi : LinearIndependent _ _ := hI (Subtype.val '' t) (by aesop) (ht.image Subtype.val)
-      have h_im : LinearIndependent 𝔽 _ := hi.image
-      apply LinearIndependent.of_subtype_range _
-      · exact (linearIndependent_equiv (Equiv.Set.ofEq (by ext; simp : v '' _ = _))).1 h_im
-      rintro ⟨⟨x,hx⟩,hx'⟩ ⟨⟨y ,hy⟩, hy'⟩ (hxy : v x = v y)
-      simp only [Subtype.mk.injEq]
-      convert (hi.injective.eq_iff (a := ⟨x,by aesop⟩) (b := ⟨y,by aesop⟩)).1 hxy
-      simp only [Subtype.mk.injEq])
-    (subset_ground := fun _ _ ↦ subset_univ _)
+@[simp] lemma ofFun_ground_eq {f : α → W} {E : Set α} : (Matroid.ofFun 𝔽 E f).E = E := rfl
 
--- @[simp] lemma matroidOnUnivOfFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
---   (I : Set α) :
---    (matroidOnUnivOfFun 𝔽 f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) :=
---    by simp [matroidOnUnivOfFun, indepMatroidOnUnivOfFun]
+@[simp] lemma ofFun_indep_iff {f : α → W} {E : Set α} :
+    (Matroid.ofFun 𝔽 E f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ InjOn f I ∧ I ⊆ E := by
+  simp only [Matroid.ofFun, Matroid.onModule, comapOn_indep_iff, IndepMatroid.matroid_Indep,
+    IndepMatroid.ofFinitary_indep, and_congr_left_iff, and_imp]
+  intro hinj _
+  rw [← linearIndependent_image hinj]
+  rfl
 
--- @[simp] lemma matroidOnUnivOfFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
---   (matroidOnUnivOfFun 𝔽 f).E = univ := rfl
+instance matroidOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+    Finitary (Matroid.ofFun 𝔽 E f) := by
+  rw [Matroid.ofFun, Matroid.onModule, comapOn]; infer_instance
+
+lemma matroidOfFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) :
+    (Matroid.ofFun 𝔽 E f).Finite :=
+  ⟨hfin⟩
+
+
+-- -- def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
+
+-- -- /- Carry a representation across a matroid isomorphism -/
+-- -- noncomputable def Rep.iso {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) :
+-- --     N.Rep 𝔽 W :=
+-- --   ((v.comap i.symm).restrict N.E).ofEq i.symm.eq_comap.symm
+
+-- -- lemma Rep.iso_apply {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) {x : β}
+-- --     (hx : x ∈ N.E) : v.iso i x = v (i.symm x) := by
+-- --   simp [iso, indicator_of_mem hx]
+
+
+
+-- -- /-- The `Matroid` whose independent sets are the sets with linearly independent image-/
+-- -- @[simps!] protected def onUnivOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (v : α → W) : Matroid α :=
+
+
+
+-- -- -- @[simp] lemma matroidOnUnivOfFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
+-- -- --   (I : Set α) :
+-- -- --    (matroidOnUnivOfFun 𝔽 f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) :=
+-- -- --    by simp [matroidOnUnivOfFun, indepMatroidOnUnivOfFun]
+
+-- -- -- @[simp] lemma matroidOnUnivOfFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
+-- -- --   (matroidOnUnivOfFun 𝔽 f).E = univ := rfl
 
 -- instance matroidOnUnivOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
 --     Finitary (matroidOnUnivOfFun 𝔽 f) := by
 --   rw [matroidOnUnivOfFun, indepMatroidOnUnivOfFun]; infer_instance
 
-@[simps!] protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :=
-  (Matroid.onUnivOfFun 𝔽 f) ↾ E
+-- -- @[simps!] protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :=
+-- --   (Matroid.onUnivOfFun 𝔽 f) ↾ E
 
-lemma matroidOfFun_indep_iff (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
-    (E : Set α) (hf : support f ⊆ E) (I : Set α) :
-    (Matroid.ofFun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by
-  simp only [ofFun_Indep, and_iff_left_iff_imp]
-  exact fun hli ↦ subset_trans (fun x hxI ↦ by exact hli.ne_zero ⟨x, hxI⟩) hf
+-- lemma matroidOfFun_indep_iff (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W)
+--     (E : Set α) (hf : support f ⊆ E) (I : Set α) :
+--     (Matroid.ofFun 𝔽 f E).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) := by
+--   simp only [ofFun_Indep, and_iff_left_iff_imp]
+--   exact fun hli ↦ subset_trans (fun x hxI ↦ by exact hli.ne_zero ⟨x, hxI⟩) hf
 
-instance matroidOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
-    Finitary (Matroid.ofFun 𝔽 f E) := by
-  rw [Matroid.ofFun, Matroid.onUnivOfFun]; infer_instance
+-- instance matroidOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+--     Finitary (Matroid.ofFun 𝔽 f E) := by
+--   rw [Matroid.ofFun, Matroid.onUnivOfFun]; infer_instance
 
-lemma matroidOfFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) :
-    (Matroid.ofFun 𝔽 f E).Finite :=
-  ⟨hfin⟩
+-- lemma matroidOfFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) :
+--     (Matroid.ofFun 𝔽 f E).Finite :=
+--   ⟨hfin⟩
 
-@[simps!] def Rep.ofFunUniv (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
-    (Matroid.onUnivOfFun 𝔽 f).Rep 𝔽 W where
-  to_fun := f
-  valid' := by simp [IsRep]
+-- @[simps!] def Rep.ofFunUniv (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) :
+--     (Matroid.onUnivOfFun 𝔽 f).Rep 𝔽 W where
+--   to_fun := f
+--   valid' := by simp [IsRep]
 
-@[simp] lemma Rep.ofFunUniv_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (a : α) :
-    (Rep.ofFunUniv 𝔽 f) a = f a := rfl
+-- @[simp] lemma Rep.ofFunUniv_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (a : α) :
+--     (Rep.ofFunUniv 𝔽 f) a = f a := rfl
 
-@[simps!] noncomputable def Rep.ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
-    (Matroid.ofFun 𝔽 f E).Rep 𝔽 W := (Rep.ofFunUniv 𝔽 f).restrict E
+-- @[simps!] noncomputable def Rep.ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+--     (Matroid.ofFun 𝔽 f E).Rep 𝔽 W := (Rep.ofFunUniv 𝔽 f).restrict E
 
-@[simp] lemma Rep.ofFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (a : α) :
-    (Rep.ofFun 𝔽 f E) a = indicator E f a := by
-  rfl
+-- @[simp] lemma Rep.ofFun_apply (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (a : α) :
+--     (Rep.ofFun 𝔽 f E) a = indicator E f a := by
+--   rfl
 
-lemma Rep.ofFun_apply_mem (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) {a : α} (ha : a ∈ E) :
-    (Rep.ofFun 𝔽 f E) a = f a := by
-  simp [ha]
+-- lemma Rep.ofFun_apply_mem (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) {a : α} (ha : a ∈ E) :
+--     (Rep.ofFun 𝔽 f E) a = f a := by
+--   simp [ha]
 
-@[simp] lemma ofFun_indicator_eq (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
-    Matroid.ofFun 𝔽 (indicator E f) E = Matroid.ofFun 𝔽 f E := by
-  simp only [eq_iff_indep_iff_indep_forall, ofFun_E, ofFun_Indep, and_congr_left_iff, true_and]
-  intro I hIE _
-  convert Iff.rfl using 2
-  ext ⟨x,hx⟩
-  simp [restrict_apply, indicator_of_mem (hIE hx)]
+-- @[simp] lemma ofFun_indicator_eq (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+--     Matroid.ofFun 𝔽 (indicator E f) E = Matroid.ofFun 𝔽 f E := by
+--   simp only [eq_iff_indep_iff_indep_forall, ofFun_E, ofFun_Indep, and_congr_left_iff, true_and]
+--   intro I hIE _
+--   convert Iff.rfl using 2
+--   ext ⟨x,hx⟩
+--   simp [restrict_apply, indicator_of_mem (hIE hx)]
 
-/-- A function from `↑(E : Set α)` to a vector space determines a matroid with ground set `E`. -/
-protected def ofSubtypeFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
-    Matroid α := Matroid.ofFun 𝔽 (Function.extend Subtype.val f 0) E
+-- /-- A function from `↑(E : Set α)` to a vector space determines a matroid with ground set `E`. -/
+-- protected def ofSubtypeFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
+--     Matroid α := Matroid.ofFun 𝔽 (Function.extend Subtype.val f 0) E
 
-@[simp] lemma ofSubtypeFun_indep_iff (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) (I : Set α) :
-    (Matroid.ofSubtypeFun 𝔽 f).Indep I
-      ↔ ∃ (I₀ : Set E), LinearIndependent 𝔽 (I₀.restrict f) ∧ I = ↑I₀ := by
-  simp only [Matroid.ofSubtypeFun, ofFun_Indep]
-  refine ⟨fun ⟨h,hIE⟩ ↦ ?_, ?_⟩
-  · rw [← Subtype.range_val (s := E), subset_range_iff_exists_image_eq] at hIE
-    obtain ⟨I₀, rfl⟩ := hIE
-    refine ⟨_, ?_, rfl⟩
-    convert h.comp (imageFactorization Subtype.val I₀) _
-    ext x
-    simp only [restrict_apply, comp_apply, Subtype.exists, exists_prop, exists_eq_right,
-      imageFactorization, exists_apply_eq_apply, not_true, Subtype.val_injective.extend_apply]
-    apply Subtype.val_injective.injOn.imageFactorization_injective
-  rintro ⟨I, hI, rfl⟩
-  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
-  set  g : (Subtype.val '' I) → I := fun x ↦ ⟨⟨x,
-    ( by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simp)⟩, (by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simpa )⟩ with hg
-  convert hI.comp g ?_
-  · ext x
-    obtain ⟨_,⟨x,hx,rfl⟩⟩ := x
-    simp [Subtype.val_injective.extend_apply]
-  rintro ⟨_,⟨⟨x,hxE⟩,hx,rfl⟩⟩ ⟨_,⟨⟨y,hyE⟩,hy,rfl⟩⟩ hxy
-  simpa [hg] using hxy
+-- @[simp] lemma ofSubtypeFun_indep_iff (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) (I : Set α) :
+--     (Matroid.ofSubtypeFun 𝔽 f).Indep I
+--       ↔ ∃ (I₀ : Set E), LinearIndependent 𝔽 (I₀.restrict f) ∧ I = ↑I₀ := by
+--   simp only [Matroid.ofSubtypeFun, ofFun_Indep]
+--   refine ⟨fun ⟨h,hIE⟩ ↦ ?_, ?_⟩
+--   · rw [← Subtype.range_val (s := E), subset_range_iff_exists_image_eq] at hIE
+--     obtain ⟨I₀, rfl⟩ := hIE
+--     refine ⟨_, ?_, rfl⟩
+--     convert h.comp (imageFactorization Subtype.val I₀) _
+--     ext x
+--     simp only [restrict_apply, comp_apply, Subtype.exists, exists_prop, exists_eq_right,
+--       imageFactorization, exists_apply_eq_apply, not_true, Subtype.val_injective.extend_apply]
+--     apply Subtype.val_injective.injOn.imageFactorization_injective
+--   rintro ⟨I, hI, rfl⟩
+--   simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
+--   set  g : (Subtype.val '' I) → I := fun x ↦ ⟨⟨x,
+--     ( by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simp)⟩, (by obtain ⟨_,⟨x,hx,rfl⟩⟩ := x; simpa )⟩ with hg
+--   convert hI.comp g ?_
+--   · ext x
+--     obtain ⟨_,⟨x,hx,rfl⟩⟩ := x
+--     simp [Subtype.val_injective.extend_apply]
+--   rintro ⟨_,⟨⟨x,hxE⟩,hx,rfl⟩⟩ ⟨_,⟨⟨y,hyE⟩,hy,rfl⟩⟩ hxy
+--   simpa [hg] using hxy
 
-@[simp] lemma ofSubtypeFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
-    (Matroid.ofSubtypeFun 𝔽 f).E = E := rfl
+-- @[simp] lemma ofSubtypeFun_ground (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
+--     (Matroid.ofSubtypeFun 𝔽 f).E = E := rfl
 
-/-- `f : (E : Set α) → W` gives a representation of the matroid on `α` it constructs-/
-@[simps!] noncomputable def ofSubtypeFun_rep (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
-    (Matroid.ofSubtypeFun 𝔽 f).Rep 𝔽 W where
-      to_fun := Subtype.val.extend f 0
-      valid' := (by
-        classical
-        convert (Rep.ofFun 𝔽 (Subtype.val.extend f 0) E).isRep
-        ext a
-        rw [Rep.ofFun_apply, indicator_apply, extend]
-        simp only [Subtype.exists, exists_prop, exists_eq_right, Pi.zero_apply]
-        split_ifs <;> rfl )
+-- /-- `f : (E : Set α) → W` gives a representation of the matroid on `α` it constructs-/
+-- @[simps!] noncomputable def ofSubtypeFun_rep (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : E → W) :
+--     (Matroid.ofSubtypeFun 𝔽 f).Rep 𝔽 W where
+--       to_fun := Subtype.val.extend f 0
+--       valid' := (by
+--         classical
+--         convert (Rep.ofFun 𝔽 (Subtype.val.extend f 0) E).isRep
+--         ext a
+--         rw [Rep.ofFun_apply, indicator_apply, extend]
+--         simp only [Subtype.exists, exists_prop, exists_eq_right, Pi.zero_apply]
+--         split_ifs <;> rfl )
 
--- @[simp] lemma matroidOfSubtypeFun_rep_apply {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
---     (f : E → W) (e : E) : matroidOfSubtypeFun_rep 𝔽 f e = f e := by
---   change Subtype.val.extend f 0 e = f e
---   rw [Function.Injective.extend_apply Subtype.val_injective]
+-- -- @[simp] lemma matroidOfSubtypeFun_rep_apply {E : Set α} (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W]
+-- --     (f : E → W) (e : E) : matroidOfSubtypeFun_rep 𝔽 f e = f e := by
+-- --   change Subtype.val.extend f 0 e = f e
+-- --   rw [Function.Injective.extend_apply Subtype.val_injective]
 
-lemma Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
-  rintro _ ⟨e, he ,rfl⟩
-  obtain (heB | heB) := em (e ∈ B)
-  · exact subset_span (mem_image_of_mem _ heB)
-  by_contra h'
-  have hind : LinearIndependent 𝔽 ((insert (v e) (v '' B)).incl) :=
-    (LinearIndependent.insert ?_ h')
-  · rw [← image_insert_eq, ← v.indep_iff_image_of_inj] at hind
-    · exact heB (hB.mem_of_insert_indep hind)
-    rw [injOn_insert heB, and_iff_right (v.injOn_of_indep hB.indep)]
-    exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
-  exact v.indep_image hB.indep
+-- lemma Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
+--   rintro _ ⟨e, he ,rfl⟩
+--   obtain (heB | heB) := em (e ∈ B)
+--   · exact subset_span (mem_image_of_mem _ heB)
+--   by_contra h'
+--   have hind : LinearIndependent 𝔽 ((insert (v e) (v '' B)).incl) :=
+--     (LinearIndependent.insert ?_ h')
+--   · rw [← image_insert_eq, ← v.indep_iff_image_of_inj] at hind
+--     · exact heB (hB.mem_of_insert_indep hind)
+--     rw [injOn_insert heB, and_iff_right (v.injOn_of_indep hB.indep)]
+--     exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
+--   exact v.indep_image hB.indep
 
-lemma Rep.span_range_eq_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
-     span 𝔽 (range (Set.restrict B v)) = span 𝔽 (range v) := by
-  rw [range_restrict, eq_comm]
-  exact span_eq_of_le _ (v.range_subset_span_base hB) (span_mono (image_subset_range _ _))
+-- lemma Rep.span_range_eq_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
+--      span 𝔽 (range (Set.restrict B v)) = span 𝔽 (range v) := by
+--   rw [range_restrict, eq_comm]
+--   exact span_eq_of_le _ (v.range_subset_span_base hB) (span_mono (image_subset_range _ _))
 
-/-- A representation is `FullRank` if its vectors span the space -/
-def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
+-- /-- A representation is `FullRank` if its vectors span the space -/
+-- def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
 
-/-- Restrict a representation to the submodule spanned by its image -/
-def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
-  to_fun := codRestrict v _ (fun x ↦ subset_span (mem_range_self _))
-  valid' := (by
-    intro I
-    rw [v.indep_iff]
-    refine ⟨fun h ↦ LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coeSubtype]),
-      fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩ )
-
-lemma Rep.FullRank.span_range {v : M.Rep 𝔽 W} (h : v.FullRank) : span 𝔽 (range v) = ⊤ := by
-  rwa [eq_top_iff]
-
-lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by
-  rw [FullRank, eq_top_iff]
-
-lemma Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
-  (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
-
-@[simp] lemma Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
-  v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
-
-lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) :
-    v.restrict_span.FullRank := by
-  change _ ≤ span 𝔽 _
-  rw [restrict_span_eq_inclusion]
-  change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
-  rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
-  change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
-  simp
-
-/-- A base of `M` gives a linear basis in a full-rank representation -/
-noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.Base B) :
-    _root_.Basis B 𝔽 W :=
-  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, v.span_range_eq_span_base hB] )
-
-lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
-    (v.mapEquiv ψ).FullRank := by
-  rw [Rep.fullRank_iff, Rep.mapEquiv, map', map, ← Rep.to_fun_eq_coe]
-  simp [LinearEquiv.coe_coe, range_comp, h.span_range, span_image]
-
-/-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
-noncomputable def Rep.basis_of_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
-  (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (v.span_range_eq_span_base hB)
-
-/-- The natural representation with rows indexed by a base with `Finsupp` -/
-noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    M.Rep 𝔽 (B →₀ 𝔽) :=
-  v.restrict_span.mapEquiv (v.restrict_span_fullRank.basis_of_base hB).repr
-
-lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
-    (v.standardRep' hB) e e = 1 := by
-  simp only [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
-  simp
-
-lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) :
-    (v.standardRep' hB) e f = 0 := by
-  simp [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
-  exact Finsupp.single_eq_of_ne hef
-
-lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
-  v.restrict_span_fullRank.mapEquiv _
-
-/-- The natural representation with rows indexed by a base -/
-noncomputable def Rep.standardRep [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    M.Rep 𝔽 (B → 𝔽) :=
-  have := hB.finite.to_subtype
-  (v.standardRep' hB).mapEquiv (Finsupp.linearEquivFunOnFinite 𝔽 𝔽 B)
-
-lemma Rep.standardRep_eq_one [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
-    (v.standardRep hB) e e = 1 := by
-  classical
-  have := hB.finite.to_subtype
-  simp [standardRep, v.standardRep_eq_one' hB]
-
-lemma Rep.standardRep_eq_zero [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B)
-  (hef : e ≠ f) : (v.standardRep hB) e f = 0 := by
-  classical
-  have := hB.finite.to_subtype
-  simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
-
-lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    (v.standardRep hB).FullRank :=
-  (v.standardRep_fullRank' hB).mapEquiv _
-
-section Constructions
-
--- Loopy matroids are trivially representable over every field.
-def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
-  to_fun := 0
-  valid' := by
-    refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · obtain rfl := loopyOn_indep_iff.1 h
-      apply linearIndependent_empty_type
-    rw [loopyOn_indep_iff, eq_empty_iff_forall_not_mem]
-    exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
-
--- The empty matroid is trivially representable over every field.
-def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
-  (loopyRep ∅ 𝔽).ofEq <| loopyOn_empty _
-
--- TODO: The free matroid is trivially representable over every field.
--- def freeRep [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)] (𝔽 : Type*) [Field 𝔽] :
---     (freeOn E).Rep 𝔽 (α → 𝔽) where
---   to_fun e := if e ∈ E then Pi.single e 1 else 0
---   valid' := by
+-- /-- Restrict a representation to the submodule spanned by its image -/
+-- def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
+--   to_fun := codRestrict v _ (fun x ↦ subset_span (mem_range_self _))
+--   valid' := (by
 --     intro I
---     simp
-
-
-
-
-end Constructions
-
-section Representable
-
-/-- A matroid is representable if it has a representation -/
-def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
-
-/-- Noncomputably extract a representation from proof of representability -/
-noncomputable def Representable.rep (h : M.Representable 𝔽) : M.Rep 𝔽 (α → 𝔽) :=
-  Nonempty.some h
-
-lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
-  have ⟨B, hB⟩ := M.exists_base
-  set v' := v.standardRep' hB
-  refine ⟨(v'.map' Finsupp.lcoeFun ?_).map'
-    (Function.ExtendByZero.linearMap _ Subtype.val) ?_⟩
-  · rw [Submodule.eq_bot_iff]; rintro x hx; simpa [Finsupp.lcoeFun] using hx
-  rw [Submodule.eq_bot_iff]
-  rintro x hx
-  ext i
-  simp only [ExtendByZero.linearMap, LinearMap.mem_ker, LinearMap.coe_mk, AddHom.coe_mk] at hx
-  convert congr_fun hx i
-  rw [Subtype.val_injective.extend_apply]
-
-lemma IsRep.representable {v : α → W} (h : M.IsRep 𝔽 v) : M.Representable 𝔽 :=
-  Rep.representable ⟨v, h⟩
-
-lemma ofFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
-    (Matroid.ofFun 𝔽 f E).Representable 𝔽 :=
-  (Rep.ofFun 𝔽 f E).representable
-
-lemma Representable.exists_standardRep' (h : Representable M 𝔽) (hB : M.Base B) :
-    ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
-  let ⟨v⟩ := h; ⟨v.standardRep' hB, v.standardRep_fullRank' hB⟩
-
-lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (hB : M.Base B) :
-    ∃ v : M.Rep 𝔽 (B → 𝔽), v.FullRank  :=
-  let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
-
-lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
-    ∃ v : M.Rep 𝔽 (Fin M.rk → 𝔽), v.FullRank := by
-  obtain ⟨B, hB⟩ := M.exists_base
-  have _ := hB.finite.fintype
-  obtain ⟨v, hv⟩ := h.exists_standardRep hB
-  have hcard := hB.ncard
-  rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
-  use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
-  exact hv.mapEquiv _
-
-lemma representable_emptyOn (α 𝔽 : Type*) [Field 𝔽] : (emptyOn α).Representable 𝔽 :=
-  (emptyRep α 𝔽).representable
-
-lemma representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
-    (loopyOn E).Representable 𝔽 :=
-  (loopyRep E 𝔽).representable
-
--- lemma Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
---     (h : M.Representable 𝔽) (hMN : M ≂ N) : N.Representable 𝔽 := by
---   obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
---   · apply representable_emptyOn
---   exact (h.rep.iso e).representable
-
--- lemma IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) :
---     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
---   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
-
-/-- The property of being a finite `𝔽`-representable matroid. -/
-class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
-  rep : M.Representable 𝔽
-  finite : M.Finite
-
-lemma finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
-  FieldRep.finite 𝔽
-
-/-- The property of being finite and representable over all fields. -/
-class FieldRegular (M : Matroid α) : Prop where
-  (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
-
-/-- The property of being finite and representable over some field. -/
-class FieldSomeRep (M : Matroid α) : Prop where
-  (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
-
-lemma fieldRep_def (𝔽 : Type*) [Field 𝔽] : FieldRep 𝔽 M ↔ M.Representable 𝔽 ∧ M.Finite :=
-  ⟨fun ⟨h1,h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
-
-end Representable
-
-lemma Rep.subset_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
-    v '' X ⊆ span 𝔽 (v '' I) := by
-  rintro _ ⟨e, he, rfl⟩
-  obtain (heI | heI) := em (v e ∈ v '' I)
-  · exact subset_span heI
-  obtain (heI' | heI') := em (e ∈ I)
-  · exact (heI (mem_image_of_mem _ heI')).elim
-  have hi := h.insert_not_indep ⟨he, heI'⟩
-  rw [v.indep_iff_image, injOn_insert heI', and_iff_left heI,
-    and_iff_left (v.injOn_of_indep h.indep), image_insert_eq, (linearIndependent_insert heI),
-    not_and, not_not] at hi
-  exact hi <| v.indep_image h.indep
-
-lemma Rep.subset_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) : v '' X ⊆ span 𝔽 (v '' I) :=
-  v.subset_span_of_basis' h.basis'
-
-lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
-    span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
-  refine le_antisymm ?_ (span_mono (image_subset v <| inter_subset_left))
-  rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
-    inter_union_diff]
-  apply span_mono (union_subset (subset_insert _ _) _)
-  rintro _ ⟨e, he, rfl⟩
-  left
-  rw [← nmem_support]
-  exact not_mem_subset v.support_subset_ground he.2
-
-@[simp] lemma Rep.span_eq_span_cl (v : M.Rep 𝔽 W) (X : Set α) :
-    span 𝔽 (v '' M.cl X) = span 𝔽 (v '' X) := by
-  rw [v.span_eq_span_inter_ground X, ← cl_inter_ground, le_antisymm_iff,
-    and_iff_left (span_mono (image_subset _ (M.subset_cl _)))]
-  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  rw [← hI.cl_eq_cl]
-  exact (span_mono <| v.subset_span_of_basis hI.indep.basis_cl).trans <|
-    span_le.2 (span_mono (image_subset _ hI.subset))
-
-lemma Rep.span_eq_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
-    span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
-  le_antisymm (span_mono (image_subset _ h.subset)) (span_le.2 (v.subset_span_of_basis' h))
-
-lemma Rep.span_eq_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) :
-    span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
-  v.span_eq_span_of_basis' h.basis'
-
-lemma Rep.span_le_span_of_cl_subset_cl (v : M.Rep 𝔽 W) (h : M.cl X ⊆ M.cl Y) :
-    span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-  refine span_le.2 <| (v.subset_span_of_basis' hI).trans <| span_le.2 ?_
-  rw [← v.span_eq_span_cl]
-  exact (image_subset _ (hI.basis_cl_right.subset.trans h)).trans subset_span
-
-lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
-    v '' X ⊆ span 𝔽 (v '' Y) ↔ X ⊆ M.cl Y := by
-  -- obtain ⟨I, hI⟩ := M.exists_basis' X
-
-  refine ⟨fun h e heX ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨I, hI⟩ := M.exists_basis' Y
-    -- have hsp := h (mem_image_of_mem _ heX)
-    rw [← v.span_eq_span_of_basis' hI] at h
-    rw [← hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
-
-    specialize h (mem_image_of_mem _ heX)
-    refine fun hi ↦ by_contra fun heI ↦ ?_
-    have hind := v.indep_image hi
-    rw [image_insert_eq, linearIndependent_insert] at hind
-    · exact (hind.2 h).elim
-    refine fun heI' ↦ heI ?_
-    rwa [← (v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
-  rw [← v.span_eq_span_cl]
-  exact (image_subset v h).trans subset_span
-
-
--- Ugly proof in the second part
-lemma Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (span 𝔽 (v '' X)) := by
-  obtain ⟨I, hI⟩ := M.exists_basis' (X)
-  rw [← hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _),
-    ← image_subset_iff, and_iff_left]
-  · exact (v.subset_span_of_basis hI.indep.basis_cl).trans (span_mono (image_subset _ hI.subset))
-  rintro x ⟨hxE, hx⟩
-  rw [mem_preimage] at hx
-
-  rw [hI.indep.mem_cl_iff, or_iff_not_imp_right, dep_iff,
-    and_iff_left <| insert_subset hxE hI.indep.subset_ground]
-  refine fun hxI hi ↦ ?_
-  apply (v.onIndep hi).not_mem_span_image (s := Subtype.val ⁻¹' I)
-    (x := ⟨x, mem_insert _ _⟩) (by simpa)
-
-  have hsp := span_mono (v.subset_span_of_basis' hI) hx
-
-  rw [span_coe_eq_restrictScalars, restrictScalars_self] at hsp
-  convert hsp
-  aesop
-
-lemma Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
-    span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
-  rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
-  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff inter_subset_right, cl_inter_ground]
-  constructor
-  · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
-  rw [h, ← cl_inter_ground]
-  exact subset_cl _ _
-
-section Minor
-
-/-- Contracting a set preserves representability. -/
-@[simps!] def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) :
-  (M ／ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
-    to_fun := Submodule.Quotient.mk ∘ v
-    valid' :=
-  ( by
-    intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
-    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
-      (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; rfl), union_comm, v.indep_iff,
-      and_right_comm, ← disjoint_union_right, union_diff_self,
-      union_eq_self_of_subset_left hI.subset]
-    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
-    · refine (h.2.mono_index _ subset_union_right).map ?_
-      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
-      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ J = J by simp]
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ I = I by simp]
-      exact (h.1.mono_right hI.subset).preimage _
-    · rw [disjoint_iff_forall_ne]
-      rintro i hiJ _ hiI rfl
-      apply h.ne_zero ⟨i, hiJ⟩
-      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
-      exact subset_span (mem_image_of_mem _ hiI)
-    rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
-
-@[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
-  v.restrict (M.E \ D)
-
-lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
-    N.Representable 𝔽 := by
-  rw [minor_iff_exists_contract_delete] at hNM
-  obtain ⟨C, D, rfl⟩ := hNM
-  obtain ⟨v⟩ := hM
-  exact ((v.contract C).delete D).representable
-
-end Minor
-
-section Simple
-
-lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
-    v e = 0 ↔ M.Loop e := by
-  rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
-  simp only [default_coe_singleton, Set.restrict_apply, ne_eq, not_not]
-
-lemma Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
-  (v.eq_zero_iff e).2 h
-
-lemma Rep.ne_zero_of_nonloop (v : M.Rep 𝔽 W) (h : M.Nonloop e) : v e ≠ 0 := by
-  rw [Ne, v.eq_zero_iff e]; exact h.not_loop
-
-lemma Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
-    v e ≠ 0 ↔ M.Nonloop e :=
-  ⟨fun h ↦ by rwa [← not_loop_iff, ← v.eq_zero_iff e], v.ne_zero_of_nonloop⟩
-
-lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
-  rw [loopless_iff_forall_nonloop]
-  exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e he).2 (h e he),
-    fun h e he ↦ (v.ne_zero_iff_nonloop e he).1 (h e he)⟩
-
-@[simp] lemma removeLoops_representable_iff :
-    M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
-  refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
-  · rw [M.eq_restrict_removeLoops]
-    exact (v.restrict M.E).representable
-  rw [removeLoops_eq_restr]
-  exact (v.restrict _).representable
-
-lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
-    M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ v e = c • v f := by
-  obtain (hfE | hfE) := em' (f ∈ M.E)
-  · refine iff_of_false (fun h ↦ hfE h.mem_ground_right) ?_
-    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_nonloop he)]
-  obtain (hf | hf) := M.loop_or_nonloop f
-  · refine iff_of_false (fun h ↦ h.nonloop_right.not_loop hf) ?_
-    simp [v.eq_zero_of_loop hf, iff_true_intro (v.ne_zero_of_nonloop he)]
-
-  obtain (rfl | hef) := eq_or_ne e f
-  · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, (one_smul _ _).symm⟩
-
-  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff, not_iff_comm,
-    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
-  simp only [ne_eq, not_exists, not_and]
-  refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
-    h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel hc, one_smul])⟩
-  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
-  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel hc, one_smul]
-
-lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
-    M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), v e = c • (v f) → e = f := by
-  simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
-  refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
-  · refine (v.parallel_iff ?_).2 ⟨c, ?_, h_eq⟩
-    · rw [← v.ne_zero_iff_nonloop e]; exact h0 _ he
-    rintro rfl
-    exact h0 e he <| by simp [h_eq]
-  · obtain ⟨f, hf⟩ := M.exists_nonloop
-    obtain rfl := h he hf.mem_ground 0 (by simp [h0])
-    exact v.ne_zero_of_nonloop hf h0
-  obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.nonloop_right).1 hef
-  exact h (by aesop_mat) (by aesop_mat) c h_eq
-
-lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
-  obtain (hl | hpos) := M.eq_loopyOn_or_rkPos
-  · rw [simple_iff_loopless_eq_of_parallel_forall, hl, loopyOn_loopless_iff] at h
-    simp [h.1]
-  exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul]
-
--- @[simp] lemma simplification_representable_iff :
---     M.simplification.Representable 𝔽 ↔ M.Representable 𝔽 := by
---   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
---   rw [hM]
---   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
---   rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
---   exact (v.preimage _).representable
-
-end Simple
-section Uniform
-
-/-- A uniform matroid on at most `|𝔽|+1` elements is `𝔽`-representable -/
-lemma uniform_rep_of_le {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (univ : Set 𝔽) + 1) :
-    Representable (unif a b) 𝔽 := by
-  have hinj : Nonempty (Fin b ↪ (Option 𝔽))
-  · refine ⟨Embedding.trans (Nonempty.some ?_) (Equiv.Set.univ (Option 𝔽)).toEmbedding⟩
-    rw [Fin.nonempty_embedding_iff_le_encard]
-    convert hb
-    rw [encard_univ, PartENat.card_option, encard_univ]
-    convert PartENat.withTopAddEquiv.map_add (PartENat.card 𝔽) 1
-    exact (PartENat.withTopEquiv_natCast 1).symm
-  obtain ⟨i,hi⟩ := hinj
-  set A := Matrix.rectProjVandermonde i a
-  exact IsRep.representable
-    (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
-
-end Uniform
-
-
-
-section Dual
-
-variable {ι η 𝔽 : Type*} [Field 𝔽]
-
-abbrev Rep.toMatrix {M : Matroid α} {η 𝔽 : Type*} [Field 𝔽] (v : M.Rep 𝔽 (η → 𝔽)) : Matrix η α 𝔽 :=
-  (Matrix.of v)ᵀ
-
-lemma Rep.colBasis_eq_base (v : M.Rep 𝔽 (η → 𝔽)) : v.toMatrix.ColBasis = M.Base := by
-  ext B
-  change _ ↔ B ∈ {B | M.Base B}
-  simp_rw [setOf_base_eq_maximals_setOf_indep, colBasis_iff_maximal_linearIndependent, v.indep_iff]
-  rfl
-
-lemma eq_dual_of_rowSpace_eq_nullSpace_on_univ [Fintype α] {M N : Matroid α}
-    (hM : M.E = univ) (hN : N.E = univ) (vM : M.Rep 𝔽 (ι → 𝔽)) (vN : N.Rep 𝔽 (η → 𝔽))
-    (h : vM.toMatrix.rowSpace = vN.toMatrix.nullSpace) : N = M✶ := by
-  apply eq_of_base_iff_base_forall (by rw [hN, dual_ground, hM]) (fun B _ ↦ ?_)
-  rw [← vN.colBasis_eq_base, dual_base_iff, ← vM.colBasis_eq_base, hM, ← compl_eq_univ_diff,
-    colBasis_iff_colBasis_compl_of_orth h, compl_compl]
-
-lemma eq_dual_of_rowSpace_eq_nullSpace {M N : Matroid α} {E : Set α} (hE : E.Finite)
-    (hME : M.E = E) (hNE : N.E = E) (vM : M.Rep 𝔽 (ι → 𝔽)) (vN : N.Rep 𝔽 (η → 𝔽))
-    (h : (vM.toMatrix.colSubmatrix E).rowSpace = (vN.toMatrix.colSubmatrix E).nullSpace) :
-    N = M✶ := by
-  apply eq_of_restrictSubtype_eq hNE (by rwa [dual_ground])
-  rw [← restrictSubtype_dual']
-  have _ := hE.fintype
-  have _ := (hNE.symm ▸ hE).fintype
-  have _ := (hME.symm ▸ hE).fintype
-  refine eq_dual_of_rowSpace_eq_nullSpace_on_univ (by simp) (by simp)
-    (vM.restrictSubtype E) (vN.restrictSubtype E) ?_
-  convert h
-  · ext
-    simp [Rep.restrictSubtype, Rep.comap, Rep.ofGround]
-  · ext
-    simp [Rep.restrictSubtype, Rep.comap, Rep.ofGround]
-  exact hME
-
-/-- The dual of a representable matroid is representable -/
-lemma Representable.dual [M.Finite] (h : M.Representable 𝔽) : M✶.Representable 𝔽 := by
-  obtain ⟨v⟩ := h
-  set ns : Submodule 𝔽 (M✶.E → 𝔽) := (v.toMatrix.colSubmatrix M.E).nullSpace
-  obtain b := Basis.ofVectorSpace 𝔽 ns
-  have : Fintype M✶.E := M.ground_finite.fintype
-  set Mdrep := (Matroid.ofSubtypeFun_rep 𝔽 b.toRowMatrix.colFun)
-  have Mdrep' := Mdrep.representable
-  rwa [← eq_dual_of_rowSpace_eq_nullSpace (ground_finite M) rfl (by simp) v Mdrep]
-  have hbs := b.toRowMatrix_rowSpace
-  change _ = nullSpace _ at hbs
-  rw [← orthSpace_nullSpace_eq_rowSpace, eq_comm, eq_orthSpace_comm,
-    orthSpace_nullSpace_eq_rowSpace] at hbs
-  rw [← hbs]
-  apply congr_arg
-
-  ext i j
-  simp [Mdrep]
-
-  rw [extend_apply']
-
-
-
-
-@[simp] lemma dual_representable_iff [M.Finite] : M✶.Representable 𝔽 ↔ M.Representable 𝔽 :=
-  ⟨fun h ↦ dual_dual M ▸ h.dual, Representable.dual⟩
-
-
--- TODO  : if [I|A] represents M, then [Aᵀ|I] represents M✶
-
-end Dual
-
--- section Extension
-
--- variable [DecidableEq α]
-
--- noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
---   v.restrict (insert e M.E)
-
--- noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
---   (v.preimage (update id f e)).restrict (insert f M.E)
-
--- lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x ≠ f) :
---     v.parallelExtend e f x = v x := by
---   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, Rep.preimage_apply]
---   simp only [mem_insert_iff, comp_apply, ne_eq]
---   split_ifs with h
---   · rw [update_noteq hx, id]
---   rw [v.eq_zero_of_not_mem_ground (not_mem_subset (subset_insert _ _) h)]
-
--- @[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
---     v.parallelExtend e f f = v e := by
---   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, if_pos (mem_insert _ _)]
+--     rw [v.indep_iff]
+--     refine ⟨fun h ↦ LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coeSubtype]),
+--       fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩ )
+
+-- lemma Rep.FullRank.span_range {v : M.Rep 𝔽 W} (h : v.FullRank) : span 𝔽 (range v) = ⊤ := by
+--   rwa [eq_top_iff]
+
+-- lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by
+--   rw [FullRank, eq_top_iff]
+
+-- lemma Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
+--   (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
+
+-- @[simp] lemma Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
+--   v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
+
+-- lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) :
+--     v.restrict_span.FullRank := by
+--   change _ ≤ span 𝔽 _
+--   rw [restrict_span_eq_inclusion]
+--   change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
+--   rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
+--   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
 --   simp
 
--- lemma Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
---     (M.parallelExtend e f).Representable 𝔽 :=
---   (h.rep.parallelExtend e f).representable
+-- /-- A base of `M` gives a linear basis in a full-rank representation -/
+-- noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.Base B) :
+--     _root_.Basis B 𝔽 W :=
+--   Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, v.span_range_eq_span_base hB] )
 
--- /-- This doesn't actually need finiteness; constructing the obvious explicit
---   representation for the series extension is TODO. -/
--- lemma Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
---     (M.seriesExtend e f).Representable 𝔽 := by
---   rw [← dual_representable_iff, seriesExtend_dual]
---   apply Representable.parallelExtend
---   exact v.representable.dual
+-- lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
+--     (v.mapEquiv ψ).FullRank := by
+--   rw [Rep.fullRank_iff, Rep.mapEquiv, map', map, ← Rep.to_fun_eq_coe]
+--   simp [LinearEquiv.coe_coe, range_comp, h.span_range, span_image]
+
+-- /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
+-- noncomputable def Rep.basis_of_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
+--     _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
+--   (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (v.span_range_eq_span_base hB)
+
+-- /-- The natural representation with rows indexed by a base with `Finsupp` -/
+-- noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.Base B) :
+--     M.Rep 𝔽 (B →₀ 𝔽) :=
+--   v.restrict_span.mapEquiv (v.restrict_span_fullRank.basis_of_base hB).repr
+
+-- lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+--     (v.standardRep' hB) e e = 1 := by
+--   simp only [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
+--     Rep.restrict_span_apply, Basis.mk_repr]
+--   rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
+--   simp
+
+-- lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) :
+--     (v.standardRep' hB) e f = 0 := by
+--   simp [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
+--     Rep.restrict_span_apply, Basis.mk_repr]
+--   rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
+--   exact Finsupp.single_eq_of_ne hef
+
+-- lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
+--   v.restrict_span_fullRank.mapEquiv _
+
+-- /-- The natural representation with rows indexed by a base -/
+-- noncomputable def Rep.standardRep [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+--     M.Rep 𝔽 (B → 𝔽) :=
+--   have := hB.finite.to_subtype
+--   (v.standardRep' hB).mapEquiv (Finsupp.linearEquivFunOnFinite 𝔽 𝔽 B)
+
+-- lemma Rep.standardRep_eq_one [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+--     (v.standardRep hB) e e = 1 := by
+--   classical
+--   have := hB.finite.to_subtype
+--   simp [standardRep, v.standardRep_eq_one' hB]
+
+-- lemma Rep.standardRep_eq_zero [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B)
+--   (hef : e ≠ f) : (v.standardRep hB) e f = 0 := by
+--   classical
+--   have := hB.finite.to_subtype
+--   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
+
+-- lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+--     (v.standardRep hB).FullRank :=
+--   (v.standardRep_fullRank' hB).mapEquiv _
+
+-- section Constructions
+
+-- -- Loopy matroids are trivially representable over every field.
+-- def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
+--   to_fun := 0
+--   valid' := by
+--     refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--     · obtain rfl := loopyOn_indep_iff.1 h
+--       apply linearIndependent_empty_type
+--     rw [loopyOn_indep_iff, eq_empty_iff_forall_not_mem]
+--     exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
+
+-- -- The empty matroid is trivially representable over every field.
+-- def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
+--   (loopyRep ∅ 𝔽).ofEq <| loopyOn_empty _
+
+-- -- TODO: The free matroid is trivially representable over every field.
+-- -- def freeRep [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)] (𝔽 : Type*) [Field 𝔽] :
+-- --     (freeOn E).Rep 𝔽 (α → 𝔽) where
+-- --   to_fun e := if e ∈ E then Pi.single e 1 else 0
+-- --   valid' := by
+-- --     intro I
+-- --     simp
 
 
--- end Extension
+
+
+-- end Constructions
+
+-- section Representable
+
+-- /-- A matroid is representable if it has a representation -/
+-- def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
+
+-- /-- Noncomputably extract a representation from proof of representability -/
+-- noncomputable def Representable.rep (h : M.Representable 𝔽) : M.Rep 𝔽 (α → 𝔽) :=
+--   Nonempty.some h
+
+-- lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
+--   have ⟨B, hB⟩ := M.exists_base
+--   set v' := v.standardRep' hB
+--   refine ⟨(v'.map' Finsupp.lcoeFun ?_).map'
+--     (Function.ExtendByZero.linearMap _ Subtype.val) ?_⟩
+--   · rw [Submodule.eq_bot_iff]; rintro x hx; simpa [Finsupp.lcoeFun] using hx
+--   rw [Submodule.eq_bot_iff]
+--   rintro x hx
+--   ext i
+--   simp only [ExtendByZero.linearMap, LinearMap.mem_ker, LinearMap.coe_mk, AddHom.coe_mk] at hx
+--   convert congr_fun hx i
+--   rw [Subtype.val_injective.extend_apply]
+
+-- lemma IsRep.representable {v : α → W} (h : M.IsRep 𝔽 v) : M.Representable 𝔽 :=
+--   Rep.representable ⟨v, h⟩
+
+-- lemma ofFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+--     (Matroid.ofFun 𝔽 f E).Representable 𝔽 :=
+--   (Rep.ofFun 𝔽 f E).representable
+
+-- lemma Representable.exists_standardRep' (h : Representable M 𝔽) (hB : M.Base B) :
+--     ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
+--   let ⟨v⟩ := h; ⟨v.standardRep' hB, v.standardRep_fullRank' hB⟩
+
+-- lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (hB : M.Base B) :
+--     ∃ v : M.Rep 𝔽 (B → 𝔽), v.FullRank  :=
+--   let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
+
+-- lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
+--     ∃ v : M.Rep 𝔽 (Fin M.rk → 𝔽), v.FullRank := by
+--   obtain ⟨B, hB⟩ := M.exists_base
+--   have _ := hB.finite.fintype
+--   obtain ⟨v, hv⟩ := h.exists_standardRep hB
+--   have hcard := hB.ncard
+--   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
+--   use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
+--   exact hv.mapEquiv _
+
+-- lemma representable_emptyOn (α 𝔽 : Type*) [Field 𝔽] : (emptyOn α).Representable 𝔽 :=
+--   (emptyRep α 𝔽).representable
+
+-- lemma representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
+--     (loopyOn E).Representable 𝔽 :=
+--   (loopyRep E 𝔽).representable
+
+-- -- lemma Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
+-- --     (h : M.Representable 𝔽) (hMN : M ≂ N) : N.Representable 𝔽 := by
+-- --   obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
+-- --   · apply representable_emptyOn
+-- --   exact (h.rep.iso e).representable
+
+-- -- lemma IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) :
+-- --     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
+-- --   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
+
+-- /-- The property of being a finite `𝔽`-representable matroid. -/
+-- class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
+--   rep : M.Representable 𝔽
+--   finite : M.Finite
+
+-- lemma finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
+--   FieldRep.finite 𝔽
+
+-- /-- The property of being finite and representable over all fields. -/
+-- class FieldRegular (M : Matroid α) : Prop where
+--   (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
+
+-- /-- The property of being finite and representable over some field. -/
+-- class FieldSomeRep (M : Matroid α) : Prop where
+--   (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
+
+-- lemma fieldRep_def (𝔽 : Type*) [Field 𝔽] : FieldRep 𝔽 M ↔ M.Representable 𝔽 ∧ M.Finite :=
+--   ⟨fun ⟨h1,h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
+
+-- end Representable
+
+-- lemma Rep.subset_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
+--     v '' X ⊆ span 𝔽 (v '' I) := by
+--   rintro _ ⟨e, he, rfl⟩
+--   obtain (heI | heI) := em (v e ∈ v '' I)
+--   · exact subset_span heI
+--   obtain (heI' | heI') := em (e ∈ I)
+--   · exact (heI (mem_image_of_mem _ heI')).elim
+--   have hi := h.insert_not_indep ⟨he, heI'⟩
+--   rw [v.indep_iff_image, injOn_insert heI', and_iff_left heI,
+--     and_iff_left (v.injOn_of_indep h.indep), image_insert_eq, (linearIndependent_insert heI),
+--     not_and, not_not] at hi
+--   exact hi <| v.indep_image h.indep
+
+-- lemma Rep.subset_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) : v '' X ⊆ span 𝔽 (v '' I) :=
+--   v.subset_span_of_basis' h.basis'
+
+-- lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
+--     span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
+--   refine le_antisymm ?_ (span_mono (image_subset v <| inter_subset_left))
+--   rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
+--     inter_union_diff]
+--   apply span_mono (union_subset (subset_insert _ _) _)
+--   rintro _ ⟨e, he, rfl⟩
+--   left
+--   rw [← nmem_support]
+--   exact not_mem_subset v.support_subset_ground he.2
+
+-- @[simp] lemma Rep.span_eq_span_cl (v : M.Rep 𝔽 W) (X : Set α) :
+--     span 𝔽 (v '' M.cl X) = span 𝔽 (v '' X) := by
+--   rw [v.span_eq_span_inter_ground X, ← cl_inter_ground, le_antisymm_iff,
+--     and_iff_left (span_mono (image_subset _ (M.subset_cl _)))]
+--   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
+--   rw [← hI.cl_eq_cl]
+--   exact (span_mono <| v.subset_span_of_basis hI.indep.basis_cl).trans <|
+--     span_le.2 (span_mono (image_subset _ hI.subset))
+
+-- lemma Rep.span_eq_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
+--     span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
+--   le_antisymm (span_mono (image_subset _ h.subset)) (span_le.2 (v.subset_span_of_basis' h))
+
+-- lemma Rep.span_eq_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) :
+--     span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
+--   v.span_eq_span_of_basis' h.basis'
+
+-- lemma Rep.span_le_span_of_cl_subset_cl (v : M.Rep 𝔽 W) (h : M.cl X ⊆ M.cl Y) :
+--     span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
+--   obtain ⟨I, hI⟩ := M.exists_basis' X
+--   refine span_le.2 <| (v.subset_span_of_basis' hI).trans <| span_le.2 ?_
+--   rw [← v.span_eq_span_cl]
+--   exact (image_subset _ (hI.basis_cl_right.subset.trans h)).trans subset_span
+
+-- lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
+--     v '' X ⊆ span 𝔽 (v '' Y) ↔ X ⊆ M.cl Y := by
+--   -- obtain ⟨I, hI⟩ := M.exists_basis' X
+
+--   refine ⟨fun h e heX ↦ ?_, fun h ↦ ?_⟩
+--   · obtain ⟨I, hI⟩ := M.exists_basis' Y
+--     -- have hsp := h (mem_image_of_mem _ heX)
+--     rw [← v.span_eq_span_of_basis' hI] at h
+--     rw [← hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
+
+--     specialize h (mem_image_of_mem _ heX)
+--     refine fun hi ↦ by_contra fun heI ↦ ?_
+--     have hind := v.indep_image hi
+--     rw [image_insert_eq, linearIndependent_insert] at hind
+--     · exact (hind.2 h).elim
+--     refine fun heI' ↦ heI ?_
+--     rwa [← (v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
+--   rw [← v.span_eq_span_cl]
+--   exact (image_subset v h).trans subset_span
+
+
+-- -- Ugly proof in the second part
+-- lemma Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (span 𝔽 (v '' X)) := by
+--   obtain ⟨I, hI⟩ := M.exists_basis' (X)
+--   rw [← hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _),
+--     ← image_subset_iff, and_iff_left]
+--   · exact (v.subset_span_of_basis hI.indep.basis_cl).trans (span_mono (image_subset _ hI.subset))
+--   rintro x ⟨hxE, hx⟩
+--   rw [mem_preimage] at hx
+
+--   rw [hI.indep.mem_cl_iff, or_iff_not_imp_right, dep_iff,
+--     and_iff_left <| insert_subset hxE hI.indep.subset_ground]
+--   refine fun hxI hi ↦ ?_
+--   apply (v.onIndep hi).not_mem_span_image (s := Subtype.val ⁻¹' I)
+--     (x := ⟨x, mem_insert _ _⟩) (by simpa)
+
+--   have hsp := span_mono (v.subset_span_of_basis' hI) hx
+
+--   rw [span_coe_eq_restrictScalars, restrictScalars_self] at hsp
+--   convert hsp
+--   aesop
+
+-- lemma Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
+--     span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
+--   rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
+--   simp_rw [le_antisymm_iff, span_le, v.subset_span_iff inter_subset_right, cl_inter_ground]
+--   constructor
+--   · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
+--   rw [h, ← cl_inter_ground]
+--   exact subset_cl _ _
+
+
+
+-- -- section Extension
+
+-- -- variable [DecidableEq α]
+
+-- -- noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
+-- --   v.restrict (insert e M.E)
+
+-- -- noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
+-- --   (v.preimage (update id f e)).restrict (insert f M.E)
+
+-- -- lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x ≠ f) :
+-- --     v.parallelExtend e f x = v x := by
+-- --   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, Rep.preimage_apply]
+-- --   simp only [mem_insert_iff, comp_apply, ne_eq]
+-- --   split_ifs with h
+-- --   · rw [update_noteq hx, id]
+-- --   rw [v.eq_zero_of_not_mem_ground (not_mem_subset (subset_insert _ _) h)]
+
+-- -- @[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
+-- --     v.parallelExtend e f f = v e := by
+-- --   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, if_pos (mem_insert _ _)]
+-- --   simp
+
+-- -- lemma Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
+-- --     (M.parallelExtend e f).Representable 𝔽 :=
+-- --   (h.rep.parallelExtend e f).representable
+
+-- -- /-- This doesn't actually need finiteness; constructing the obvious explicit
+-- --   representation for the series extension is TODO. -/
+-- -- lemma Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
+-- --     (M.seriesExtend e f).Representable 𝔽 := by
+-- --   rw [← dual_representable_iff, seriesExtend_dual]
+-- --   apply Representable.parallelExtend
+-- --   exact v.representable.dual
+
+
+-- -- end Extension

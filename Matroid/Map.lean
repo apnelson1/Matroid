@@ -9,8 +9,8 @@ open Set.Notation
 
 This file defines maps and comaps, which move a matroid on one type to a matroid on another
 using a function between the types. The constructions are (up to isomorphism)
-just combinations of restrictions and parallel extensions, so are not difficult.
-Isomorphism itself will be defined in future additions.
+just combinations of restrictions and parallel extensions, so are not mathematically difficult.
+Isomorphism itself will be defined in a future addition.
 
 Because a matroid `M : Matroid α` is defined with am embedded ground set `M.E : Set α`
 which contains all the structure of `M`, there are several types of map and comap
@@ -19,6 +19,14 @@ for instance, we could map `M : Matroid α` to a `Matroid β` using either
 a function `f : α → β`, a function `f : ↑M.E → β` or indeed a function `f : ↑M.E → ↑E`
 for some `E : Set β`. We attempt to give definitions that capture most reasonable use cases.
 
+Since `Matroid.map` and `Matroid.comap` are defined in terms of bare functions rather than
+functions defined on subtypes, they are often easier to work in practice than the subtype variants.
+In fact, the statement that `N = Matroid.map M f hf` for some `f : α → β` and `hf : InjOn M.E f`
+is equivalent to the existence of an isomorphism from `M` to `N`,
+except in the trivial degenerate case where `M` is an empty matroid on a nonempty type and `N`
+is an empty matroid on an empty type.
+This can be simpler to use than an actual formal isomorphism, which requires subtypes.
+
 ## Main definitions
 
 In the definitions below, `M` and `N` are matroids on `α` and `β` respectively.
@@ -26,7 +34,7 @@ In the definitions below, `M` and `N` are matroids on `α` and `β` respectively
 * For `f : α → β`, `Matroid.comap N f` is the matroid on `α` with ground set `f ⁻¹' N.E`
   in which each `I` is independent if and only if `f` is injective on `I` and
   `f '' I` is independent in `N`.
-  (If `x` is a nonloop of `N`, then `f ⁻¹' {x}` is a parallel class of `N.comap f`.)
+  (If `x` is a nonloop of `N`, then `f ⁻¹' {x}` is a parallel class of `N.comap f`)
 
 * `Matroid.comapOn N f E` is the restriction of `N.comap f` to `E` for some `E : Set α`.
 
@@ -93,7 +101,9 @@ namespace Matroid
 variable {α β : Type*} {f : α → β} {E I s : Set α} {M : Matroid α} {N : Matroid β}
 
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`.
-Elements with the same image are parallel and the ground set is `f ⁻¹' M.E`. -/
+Elements with the same (nonloop) image are parallel and the ground set is `f ⁻¹' M.E`.
+The matroids `M.comap f` and `M ↾ range f` have isomorphic simplifications;
+the preimage of each nonloop of `M ↾ range f` is a parallel class. -/
 def comap (N : Matroid β) (f : α → β) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
   ( E := f ⁻¹' N.E )
@@ -203,8 +213,20 @@ lemma comap_indep_iff_of_injOn (hf : InjOn f (f ⁻¹' N.E)) :
     subset_inter_iff, ← and_assoc, and_congr_left_iff, and_iff_left_iff_imp, and_imp]
   exact fun _ h _ ↦ (image_subset_iff.1 h.indep.subset_ground)
 
+instance comap_finitary (N : Matroid β) [N.Finitary] (f : α → β) : (N.comap f).Finitary := by
+  refine ⟨fun I hI ↦ ?_⟩
+  rw [comap_indep_iff, indep_iff_forall_finite_subset_indep]
+  simp only [forall_subset_image_iff]
+  refine ⟨fun J hJ hfin ↦ ?_,
+    fun x hx y hy ↦ (hI _ (pair_subset hx hy) (by simp)).2 (by simp) (by simp)⟩
+  obtain ⟨J', hJ'J, hJ'⟩ := (surjOn_image f J).exists_bijOn_subset
+  rw [← hJ'.image_eq] at hfin ⊢
+  exact (hI J' (hJ'J.trans hJ) (hfin.of_finite_image hJ'.injOn)).1
+
 /-- The pullback of a matroid on `β` by a function `f : α → β` to a matroid on `α`,
-restricted to a ground set `E`. Elements with the same image are parallel. -/
+restricted to a ground set `E`.
+The matroids `M.comapOn f E` and `M ↾ (f '' E)` have isomorphic simplifications;
+elements with the same nonloop image are parallel. -/
 def comapOn (N : Matroid β) (E : Set α) (f : α → β) : Matroid α := (N.comap f) ↾ E
 
 lemma comapOn_preimage_eq (N : Matroid β) (f : α → β) : N.comapOn (f ⁻¹' N.E) f = N.comap f := by
@@ -400,6 +422,46 @@ lemma map_basis_iff' {I X : Set β} {hf} :
 @[simp] lemma map_freeOn (f : α → β) (hf) : (freeOn E).map f hf = freeOn (f '' E) := by
   rw [← dual_inj]; simp
 
+@[simp] lemma map_id : M.map id (injOn_id M.E) = M := by
+  simp [eq_iff_indep_iff_indep_forall]
+
+lemma map_comap {f : α → β} (h_range : N.E ⊆ range f) (hf : InjOn f (f ⁻¹' N.E)) :
+    (N.comap f).map f hf = N := by
+  refine eq_of_indep_iff_indep_forall (by simpa [image_preimage_eq_iff]) ?_
+  simp only [map_ground, comap_ground_eq, map_indep_iff, comap_indep_iff, forall_subset_image_iff]
+  refine fun I hI ↦ ⟨fun ⟨I₀, ⟨hI₀, _⟩, hII₀⟩ ↦ ?_, fun h ↦ ⟨_, ⟨h, hf.mono hI⟩, rfl⟩⟩
+  suffices h : I₀ ⊆ f ⁻¹' N.E by rw [InjOn.image_eq_image_iff hf hI h] at hII₀; rwa [hII₀]
+  exact (subset_preimage_image f I₀).trans <| preimage_mono (f := f) hI₀.subset_ground
+
+lemma comap_map {f : α → β} (hf : f.Injective) : (M.map f hf.injOn).comap f = M := by
+  simp [eq_iff_indep_iff_indep_forall, preimage_image_eq _ hf, and_iff_left hf.injOn,
+    image_eq_image hf]
+
+instance [M.Nonempty] {f : α → β} (hf) : (M.map f hf).Nonempty :=
+  ⟨by simp [M.ground_nonempty]⟩
+
+instance [M.Finite] {f : α → β} (hf) : (M.map f hf).Finite :=
+  ⟨M.ground_finite.image f⟩
+
+instance [M.Finitary] {f : α → β} (hf) : (M.map f hf).Finitary := by
+  refine ⟨fun I hI ↦ ?_⟩
+  simp only [map_indep_iff]
+  have h' : I ⊆ f '' M.E := by
+    intro e he
+    obtain ⟨I₀, hI₀, h_eq⟩ := hI {e} (by simpa) (by simp)
+    exact image_subset f hI₀.subset_ground <| h_eq.subset rfl
+  obtain ⟨I₀, hI₀E, rfl⟩ := subset_image_iff.1 h'
+  refine ⟨I₀, indep_of_forall_finite_subset_indep _ fun J₀ hJ₀I₀ hJ₀ ↦ ?_, rfl⟩
+  specialize hI (f '' J₀) (image_subset f hJ₀I₀) (hJ₀.image _)
+  rwa [map_image_indep_iff (hJ₀I₀.trans hI₀E)] at hI
+
+instance [M.FiniteRk] {f : α → β} (hf) : (M.map f hf).FiniteRk :=
+  let ⟨_, hB⟩ := M.exists_base
+  (hB.map hf).finiteRk_of_finite (hB.finite.image _)
+
+instance [M.RkPos] {f : α → β} (hf) : (M.map f hf).RkPos :=
+  let ⟨_, hB⟩ := M.exists_base
+  (hB.map hf).rkPos_of_nonempty (hB.nonempty.image _)
 
 end map
 
@@ -447,6 +509,21 @@ lemma Basis.mapEmbedding {X : Set α} (hIX : M.Basis I X) (f : α ↪ β) :
     (M.mapEmbedding f).Basis (f '' I) (f '' X) := by
   apply hIX.map
 
+instance [M.Nonempty] {f : α ↪ β} : (M.mapEmbedding f).Nonempty :=
+  inferInstanceAs (M.map f f.injective.injOn).Nonempty
+
+instance [M.Finite] {f : α ↪ β} : (M.mapEmbedding f).Finite :=
+  inferInstanceAs (M.map f f.injective.injOn).Finite
+
+instance [M.Finitary] {f : α ↪ β} : (M.mapEmbedding f).Finitary :=
+  inferInstanceAs (M.map f f.injective.injOn).Finitary
+
+instance [M.FiniteRk] {f : α ↪ β} : (M.mapEmbedding f).FiniteRk :=
+  inferInstanceAs (M.map f f.injective.injOn).FiniteRk
+
+instance [M.RkPos] {f : α ↪ β} : (M.mapEmbedding f).RkPos :=
+  inferInstanceAs (M.map f f.injective.injOn).RkPos
+
 end mapEmbedding
 
 section mapEquiv
@@ -472,6 +549,21 @@ lemma mapEquiv_eq_map (f : α ≃ β) : M.mapEquiv f = M.map f f.injective.injOn
 @[simp] lemma mapEquiv_base_iff {B : Set β} : (M.mapEquiv f).Base B ↔ M.Base (f.symm '' B) := by
   rw [mapEquiv_eq_map, map_base_iff]
   exact ⟨by rintro ⟨I, hI, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
+
+instance [M.Nonempty] {f : α ≃ β} : (M.mapEquiv f).Nonempty :=
+  inferInstanceAs (M.map f f.injective.injOn).Nonempty
+
+instance [M.Finite] {f : α ≃ β} : (M.mapEquiv f).Finite :=
+  inferInstanceAs (M.map f f.injective.injOn).Finite
+
+instance [M.Finitary] {f : α ≃ β} : (M.mapEquiv f).Finitary :=
+  inferInstanceAs (M.map f f.injective.injOn).Finitary
+
+instance [M.FiniteRk] {f : α ≃ β} : (M.mapEquiv f).FiniteRk :=
+  inferInstanceAs (M.map f f.injective.injOn).FiniteRk
+
+instance [M.RkPos] {f : α ≃ β} : (M.mapEquiv f).RkPos :=
+  inferInstanceAs (M.map f f.injective.injOn).RkPos
 
 end mapEquiv
 
@@ -513,5 +605,15 @@ lemma eq_of_restrictSubtype_eq (hM : M.E = E) (hN : N.E = E)
 
 lemma restrictSubtype_dual' (hM : M.E = E) : (M.restrictSubtype E)✶ = M✶.restrictSubtype E := by
   rw [← hM, restrictSubtype_dual]
+
+/-- `M.restrictSubtype M.E` is isomorphic to `M ↾ X`. -/
+lemma map_val_restrictSubtype_eq (M : Matroid α) (X : Set α) :
+    (M.restrictSubtype X).map (↑) Subtype.val_injective.injOn = M ↾ X := by
+  simp [restrictSubtype, map_comap, Subset.rfl]
+
+/-- `M.restrictSubtype M.E` is isomorphic to `M`. -/
+lemma map_val_restrictSubtype_ground_eq (M : Matroid α) :
+    (M.restrictSubtype M.E).map (↑) Subtype.val_injective.injOn = M := by
+  rw [map_val_restrictSubtype_eq, restrict_ground_eq_self]
 
 end restrictSubtype
