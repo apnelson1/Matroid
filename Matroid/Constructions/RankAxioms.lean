@@ -302,125 +302,82 @@ namespace IndepMatroid
 variable {α : Type*}
 
 def ofFiniteRankAxioms (E : Set α) (r : Set α → ℕ)
-    (rank_le_encard : ∀ X, r X ≤ X.encard)
+    (rank_le_encard : ∀ A, r A ≤ A.encard)
     (monotonicity : ∀ ⦃A B⦄, A ⊆ B → r A ≤ r B)
     (submodularity : ∀ A B, r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
     (rank_inter_ground : ∀ A, r A = r (A ∩ E))
     : IndepMatroid α := by
-  set Indep : Set α → Prop := fun X ↦ r X = X.encard with h_indep
+  set Indep := fun X ↦ r X = X.encard with h_indep
+  have indep_empty : Indep ∅ := by
+    simp only [h_indep, le_antisymm (rank_le_encard ∅) (by simp)]
   have rank_le_ncard : {X : Set α} → Finite X → r X ≤ X.ncard := by
     intro X hX
-    have := rank_le_encard X
-    rwa [<-Set.Finite.cast_ncard_eq, @Nat.cast_le ℕ∞] at this
-    exact hX
-  have indep_empty : Indep ∅ := by
-    rw [h_indep];
-    have h := rank_le_ncard finite_empty;
-    simp only [encard_empty]
-    simp only [ncard_empty] at h
-    exact congr_arg _ (Nat.eq_zero_of_le_zero h)
-  have indep_empty_ncard : r ∅ = (∅ : Set α).ncard := by
-    have h := rank_le_ncard finite_empty;
-    simp only [ncard_empty] at h ⊢
-    exact Nat.eq_zero_of_le_zero h
+    rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq hX]
+    apply rank_le_encard
   have indep_finite : ∀ ⦃I : Set α⦄, Indep I → I.Finite := by
     intro I hI_indep
-    rw [h_indep] at hI_indep
-    exact finite_of_encard_eq_coe hI_indep.symm
+    exact finite_of_encard_eq_coe <| Eq.symm <| by simpa [h_indep] using hI_indep
   have subset_ground : ∀ ⦃I : Set α⦄, Indep I → I ⊆ E := by
     intro I hI_indep
-    have hIE_indep : Indep (I ∩ E) := by
-      refine LE.le.antisymm (rank_le_encard <| I ∩ E) ?_
-      have := submodularity (I ∩ E) (I \ E)
-      simp only [inter_union_diff, rank_inter_ground (I \ E), inter_assoc,
-        inter_diff_self, diff_inter_self, inter_empty, indep_empty_ncard,
-        ncard_empty, add_zero] at this
-      rw [<-@Nat.cast_le ℕ∞] at this
-      refine le_trans ?_ this
-      rw [hI_indep]
-      exact encard_mono (inter_subset_left)
-    have hIE_finite : (I ∩ E).Finite := indep_finite hIE_indep
-    rw [h_indep] at hIE_indep hI_indep; rw [rank_inter_ground, hIE_indep] at hI_indep
-    rw [<-Set.encard_diff_add_encard_inter I E] at hI_indep
-    nth_rewrite 1 [<-zero_add (I ∩ E).encard] at hI_indep
-    exact diff_eq_empty.mp (encard_eq_zero.mp (WithTop.add_right_cancel
-        (encard_ne_top_iff.mpr hIE_finite) hI_indep).symm)
+    suffices h : Indep (I ∩ E) by
+      simp only [h_indep, rank_inter_ground I, h] at hI_indep
+      refine inter_eq_left.mp ?_
+      exact Finite.eq_of_subset_of_encard_le' (indep_finite h) inter_subset_left (by rw [hI_indep])
+    refine le_antisymm (rank_le_encard <| I ∩ E) ?_
+    have h := submodularity (I ∩ E) (I \ E)
+    rw [inter_union_diff, rank_inter_ground (I \ E), inter_assoc,
+      inter_diff_self, diff_inter_self, inter_empty, add_le_add_iff_right <| r ∅,
+      <-@Nat.cast_le ℕ∞] at h
+    refine le_trans (by simp [hI_indep]; exact encard_mono inter_subset_left) h
   have indep_ncard : {I : Set α} → Indep I → r I = I.ncard := by
     intro I hI
-    have hI_finite : I.Finite := indep_finite hI
-    rw [h_indep] at hI
-    rw [<-Set.Finite.cast_ncard_eq hI_finite] at hI
-    refine Nat.le_antisymm (rank_le_ncard hI_finite) ?_
-    rw [<-@Nat.cast_le ℕ∞, hI]
+    refine Nat.le_antisymm (rank_le_ncard <| indep_finite hI) ?_
+    rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq <| indep_finite hI, hI]
   have indep_subset : ∀ ⦃I J : Set α⦄, Indep J → I ⊆ J → Indep I := by
     intro I J hJ_indep hI
     have hJ_finite : Finite J := indep_finite hJ_indep
-    have hI_finite : Finite I := Finite.subset hJ_finite hI
-    rw [h_indep]; dsimp only
-    rw [<-Set.Finite.cast_ncard_eq hI_finite]
-    apply congrArg Nat.cast
-    refine LE.le.antisymm (rank_le_ncard hI_finite) ?_
-    have := submodularity I (J \ I)
-    rw [union_diff_self, inter_diff_self, indep_empty_ncard, ncard_empty,
-      add_zero, union_eq_self_of_subset_left hI, indep_ncard hJ_indep] at this
-    have := Nat.sub_le_of_le_add (this.trans (add_le_add (le_refl (r I))
-      (rank_le_ncard (Finite.subset hJ_finite diff_subset))))
-    simpa only [ncard_diff hI hJ_finite,
-      Nat.sub_sub_self (ncard_le_ncard hI hJ_finite)] using this
+    refine LE.le.antisymm (rank_le_encard I) ?_
+    have h := (@Nat.cast_le ℕ∞).mpr <| submodularity I (J \ I)
+    rw [Nat.cast_add, union_diff_self, inter_diff_self, indep_empty, encard_empty, add_zero,
+      union_eq_self_of_subset_left hI, hJ_indep, <-Finite.cast_ncard_eq <| hJ_finite,
+      Nat.cast_le, <-ncard_diff_add_ncard_of_subset hI <| hJ_finite, add_comm] at h
+    have h' := add_le_of_add_le_left h <| rank_le_ncard <| Finite.subset hJ_finite diff_subset
+    rwa [add_le_add_iff_right, <-@Nat.cast_le ℕ∞,
+      Finite.cast_ncard_eq <| Finite.subset hJ_finite hI] at h'
   have indep_bdd : ∃ (n : ℕ), ∀ (I : Set α), Indep I → I.encard ≤ n := by
-    use r E
-    intro I hI_indep
+    use r E; intro I hI_indep
     simp_rw [<-hI_indep, Nat.cast_le, monotonicity <| subset_ground hI_indep]
   have indep_aug : ∀ ⦃I J : Set α⦄, Indep I → Indep J → I.encard < J.encard
       → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I) := by
     intro I J hI_indep hJ_indep hIJ
-    by_contra!; rw [h_indep] at this; dsimp only at this
+    by_contra! h_con
     have hI_finite : Finite I := indep_finite hI_indep
     have hJ_finite : Finite J := indep_finite hJ_indep
     have h : ∀ e ∈ J, e ∉ I → r (insert e I) = I.ncard := by
-      intro e he he'
-      have h' := this e he he'
-      rw [<-Set.Finite.cast_ncard_eq (Finite.insert e hI_finite)] at h'
-      refine Nat.le_antisymm ?_ ?_
-      · have h : r (insert e I) ≠ (insert e I).ncard := by
-          contrapose! h'; exact congrArg _ h'
-        have h_lt := Nat.lt_iff_le_and_ne.mpr ⟨(rank_le_ncard (Finite.insert e hI_finite)), h⟩
-        rw [ncard_insert_of_not_mem he' hI_finite] at h_lt
-        exact Nat.le_of_lt_succ h_lt
-      rw [<-indep_ncard hI_indep]
-      exact monotonicity (subset_insert e I)
-    have h_induc : ∀ n : ℕ, ∀ S ⊆ J \ I, S.encard = n → r I = r (I ∪ S) := by
-      intro n
-      induction n with
-      | zero =>
-        intro S _ hS_encard
-        rw [encard_eq_zero.mp hS_encard, union_empty]
-      | succ n hn =>
-        intro S hS hS_encard
-        rw [<-Set.Finite.cast_ncard_eq
-          (Set.Finite.subset hJ_finite <| hS.trans Set.diff_subset), Nat.cast_inj] at hS_encard
-        obtain ⟨y, T, hy, rfl, hT⟩ := eq_insert_of_ncard_eq_succ hS_encard
-        refine LE.le.antisymm (monotonicity (subset_union_left)) ?_
-        rw [<-Set.singleton_union, union_union_distrib_left]
-        have := submodularity (I ∪ {y}) (I ∪ T)
-        nth_rw 3 [union_singleton] at this
-        have hT_JI : T ⊆ J \ I := (subset_insert y T).trans hS
-        have hy_JI : y ∈ J \ I := hS (mem_insert y T)
-        have hT_finite : T.Finite := Set.Finite.subset hJ_finite <| hT_JI.trans Set.diff_subset
-        have hT : T.encard = (n : ℕ∞) := by
-          rw [<-Set.Finite.cast_ncard_eq hT_finite]
-          exact congrArg Nat.cast hT
-        rwa [<-hn T ((subset_insert y T).trans hS) hT,
-          h y (mem_of_mem_diff hy_JI) (not_mem_of_mem_diff hy_JI),
-          <-Set.union_inter_distrib_left, singleton_inter_eq_empty.mpr hy,
-          union_empty, add_le_add_iff_right, <-indep_ncard hI_indep] at this
-    have hI_IJ := h_induc (J \ I).ncard (J \ I) subset_rfl
-      (Set.Finite.cast_ncard_eq (Set.Finite.subset hJ_finite Set.diff_subset)).symm
-    simp only [union_diff_self] at hI_IJ
-    have h_bad : r J ≤ r (I ∪ J) := monotonicity subset_union_right
-    rw [<-hI_IJ, indep_ncard hI_indep, indep_ncard hJ_indep, <-@Nat.cast_le ℕ∞] at h_bad
-    rw [Set.Finite.cast_ncard_eq hI_finite, Set.Finite.cast_ncard_eq hJ_finite] at h_bad
-    exact LT.lt.not_le hIJ h_bad
+      intro e he he'; specialize h_con e he he'; simp only [h_indep] at h_con
+      obtain h | h := LE.le.eq_or_lt <| rank_le_encard (insert e I)
+      · contradiction
+      rw [encard_insert_of_not_mem he', <-Finite.cast_ncard_eq hI_finite,
+        <-Nat.cast_one, <-Nat.cast_add, Nat.cast_lt, Nat.lt_add_one_iff] at h
+      refine le_antisymm h (by rw [<-indep_ncard hI_indep]; exact monotonicity <| subset_insert _ _)
+    have h_induc : ∀ (S : Finset α), (S : Set α) ⊆ J \ I → r I = r (I ∪ S) := by
+      classical
+      intro S hS
+      induction' S using Finset.induction with a S ha IH; simp
+      rw [Finset.coe_insert a S] at hS
+      refine LE.le.antisymm (monotonicity (subset_union_left)) ?_
+      have := submodularity (I ∪ {a}) (I ∪ S)
+      have ha_JI : a ∈ J \ I := hS <| mem_insert a S
+      rwa [<-union_inter_distrib_left, (singleton_inter_eq_empty.mpr ha : {a} ∩ (S : Set α) = ∅),
+        union_empty, <-IH <| (subset_insert a S).trans hS, union_right_comm, <-union_assoc,
+        union_self, add_le_add_iff_right, @union_singleton α a I,
+        h a (mem_of_mem_diff ha_JI) (not_mem_of_mem_diff ha_JI), <-indep_ncard hI_indep,
+        union_assoc, union_singleton, <-Finset.coe_insert] at this
+    have : Fintype ↑(J \ I) := Finite.fintype <| Finite.subset hJ_finite diff_subset
+    have h_bad := h_induc (J \ I).toFinset (subset_toFinset.mp subset_rfl)
+    rw [<-hI_indep, <-hJ_indep, Nat.cast_lt, h_bad] at hIJ;
+    simp only [coe_toFinset, union_diff_self] at hIJ
+    exact not_le_of_gt hIJ <| monotonicity subset_union_right
   exact IndepMatroid.ofBddAugment E Indep indep_empty indep_subset indep_aug indep_bdd subset_ground
 
 def ofFiniteRankAxioms' (E : Set α) (r : Set α → ℕ)
