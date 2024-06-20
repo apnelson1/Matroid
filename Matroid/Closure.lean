@@ -522,13 +522,13 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
 @[simp] lemma comap_cl_eq {β : Type*} (M : Matroid β) (f : α → β) (X : Set α) :
     (M.comap f).cl X = f ⁻¹' M.cl (f '' X) := by
   obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
-  obtain ⟨hI', -, hIinj⟩ := comap_basis'_iff.1 hI
+  obtain ⟨hI', hIinj, -⟩ := comap_basis'_iff.1 hI
   rw [← hI.cl_eq_cl]
   ext x
   obtain (hxE | hxE) := em' (f x ∈ M.E)
   · apply iff_of_false <;> exact (fun h ↦ hxE (by simpa using mem_ground_of_mem_cl h))
 
-  obtain (hxI | hxI) := em (x ∈ I)
+  by_cases hxI : x ∈ I
   · exact iff_of_true (mem_cl_of_mem _ hxI hI.indep.subset_ground)
       (mem_cl_of_mem' _ (mem_image_of_mem f (hI.subset hxI))
         (hI'.indep.subset_ground (mem_image_of_mem f hxI)))
@@ -536,7 +536,7 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
   rw [hI.indep.mem_cl_iff_of_not_mem hxI, ← not_indep_iff hss, comap_indep_iff,
     injOn_insert hxI, not_and, not_and, not_not, iff_true_intro hIinj, true_imp_iff]
 
-  obtain (hxI' | hxI') := em (f x ∈ f '' I)
+  by_cases hxI' : f x ∈ f '' I
   · simp [hxI', hxE, mem_cl_of_mem' _ (hI'.subset hxI') hxE]
 
   rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,

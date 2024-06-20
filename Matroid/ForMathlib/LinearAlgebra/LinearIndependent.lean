@@ -215,3 +215,13 @@ theorem LinearIndependent.union_index' {R M ι : Type*} [Field R] [AddCommGroup 
   convert (Submodule.range_ker_disjoint ht).symm
   · simp
   aesop
+
+theorem linearIndependent_zero_iff {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
+    [Module R M] : LinearIndependent R (0 : ι → M) ↔ IsEmpty ι := by
+  refine ⟨fun h ↦ ?_, fun h ↦ linearIndependent_empty_type⟩
+  obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; assumption
+  exact False.elim <| h.ne_zero i rfl
+
+@[simp] theorem linearIndependent_zero_iff' {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
+    [Module R M] {s : Set ι} : LinearIndependent R (0 : s → M) ↔ s = ∅ := by
+  rw [linearIndependent_zero_iff, isEmpty_coe_sort]

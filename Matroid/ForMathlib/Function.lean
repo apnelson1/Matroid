@@ -9,38 +9,14 @@ namespace Set
 variable {α β : Type*} {r s s₁ s₂: Set α} {t t' t₁ t₂ : Set β} {f : α → β}
 
 
+@[simp] lemma injOn_const_iff {b : β} : InjOn (fun _ ↦ b : α → β) s ↔ s.Subsingleton :=
+  ⟨fun h _ hx _ hy ↦ h hx hy rfl, fun h _ hx _ hy _ ↦ h hx hy⟩
 
-/-- If `f` maps `s` bijectively to `t` and a set `t'` is contained in the image of some `s₁ ⊇ s`,
-then `s₁` has a subset containing `s` that `f` maps bijectively to `t'`.-/
-theorem BijOn.exists_extend_of_subset (h : BijOn f s t) (hss₁ : s ⊆ s₁) (htt' : t ⊆ t')
-    (ht' : SurjOn f s₁ t') : ∃ s', s ⊆ s' ∧ s' ⊆ s₁ ∧ Set.BijOn f s' t' := by
-  obtain ⟨r, hrss, hbij⟩ := exists_subset_bijOn ((s₁ ∩ f ⁻¹' t') \ f ⁻¹' t) f
-  rw [image_diff_preimage, image_inter_preimage] at hbij
-  refine ⟨s ∪ r, subset_union_left, ?_, ?_, ?_, fun y hyt' ↦ ?_⟩
-  · exact union_subset hss₁ <| hrss.trans <| diff_subset.trans inter_subset_left
-  · rw [mapsTo', image_union, hbij.image_eq, h.image_eq, union_subset_iff]
-    exact ⟨htt', diff_subset.trans inter_subset_right⟩
-  · rw [injOn_union, and_iff_right h.injOn, and_iff_right hbij.injOn]
-    · refine fun x hxs y hyr hxy ↦ (hrss hyr).2 ?_
-      rw [← h.image_eq]
-      exact ⟨x, hxs, hxy⟩
-    exact (subset_diff.1 hrss).2.symm.mono_left h.mapsTo
-  rw [image_union, h.image_eq, hbij.image_eq, union_diff_self]
-  exact .inr ⟨ht' hyt', hyt'⟩
+-- @[simp] lemma injOn_zero_iff [Zero (α → β)] : InjOn (0 : α → β) s ↔ s.Subsingleton :=
+--   ⟨fun h _ hx _ hy ↦ h hx hy rfl, fun h _ hx _ hy _ ↦ h hx hy⟩
 
-/-- If `f` maps `s` bijectively to `t`, and `t'` is a superset of `t` contained in the range of `f`,
-then `f` maps some superset of `s` bijectively to `t'`. -/
-theorem BijOn.exists_extend (h : BijOn f s t) (htt' : t ⊆ t') (ht' : t' ⊆ range f) :
-    ∃ s', s ⊆ s' ∧ BijOn f s' t' := by
-  simpa using h.exists_extend_of_subset (subset_univ s) htt' (by simpa [SurjOn])
 
-theorem InjOn.exists_subset_injOn_subset_range_eq (hinj : InjOn f r) (hrs : r ⊆ s) :
-    ∃ (u : Set α), r ⊆ u ∧ u ⊆ s ∧ f '' u = f '' s ∧ Set.InjOn f u := by
-  obtain ⟨u, hru, hus, h⟩ := hinj.bijOn_image.exists_extend_of_subset hrs
-    (image_subset f hrs) Subset.rfl
-  exact ⟨u, hru, hus, h.image_eq, h.injOn⟩
 section Update
-
 variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}
 
 @[simp] theorem image_update (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :

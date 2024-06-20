@@ -6,14 +6,6 @@ open Set
 
 variable {α : Type*} {M : Matroid α}
 
------------- For mathlib
-
-@[simp] lemma ENat.lt_one_iff (n : ℕ∞) : n < 1 ↔ n = 0 := by
-  rw [← not_iff_not, not_lt, ENat.one_le_iff_ne_zero]
-
-------------
-
-
 namespace Matroid
 
 section Connected
@@ -129,16 +121,13 @@ private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M
 
 lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M.ConnectedTo f e₂) :
     M.ConnectedTo e₁ e₂ := by
-  obtain (rfl | hne) := eq_or_ne e₁ e₂
-  · simp [h₁.mem_ground_left]
-  obtain (rfl | hne₁) := eq_or_ne e₁ f
-  · assumption
-  obtain (rfl | hne₂) := eq_or_ne f e₂
-  · assumption
+  obtain (rfl | hne) := eq_or_ne e₁ e₂; simp [h₁.mem_ground_left]
+  obtain (rfl | hne₁) := eq_or_ne e₁ f; assumption
+  obtain (rfl | hne₂) := eq_or_ne f e₂; assumption
   obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_cocircuit_of_ne hne₁
   obtain ⟨C₂, hC₂, hfC₂, he₂C₂⟩ := h₂.exists_circuit_of_ne hne₂
 
-  obtain (he₂K₁ | he₂K₁) := em (e₂ ∈ K₁); exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
+  by_cases he₂K₁ : e₂ ∈ K₁; exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
 
   have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.diff_singleton_indep hfC₂).subset
       (subset_diff_singleton diff_subset (by simp [hfK₁]))

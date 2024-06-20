@@ -385,45 +385,6 @@ theorem exists_colBasis_superset {A : Matrix m n R} {t₀ : Set n}
 theorem exists_colBasis (A : Matrix m n R) : ∃ t, A.ColBasis t :=
   Aᵀ.exists_rowBasis
 
--- theorem colBasis_submatrix_foo (ht : A.colSpace = (A.colSubmatrix t).colSpace)
---   {t' : Set n} (ht' : t' ⊆ t) :
---     A.ColBasis t' ↔ (A.colSubmatrix t).ColBasis (t.subtypeOrderIso.symm ⟨t',ht'⟩) := by
---   simp_rw [colBasis_iff_maximal_linearIndependent]
---   set t₀ : {x // x ⊆ t} := ⟨t', ht'⟩
---   -- obtain rfl : t' = t₀ := rfl
-
---   change (t₀ : Set n) ∈ _ ↔ t₀ ∈ (t.subtypeOrderIso.toEquiv.symm) ⁻¹' (maximals (· ≤ · ) _)
-
---   rw [← mem_preimage]
---   have := t.subtypeOrderEmbedding
---   change _ ∈ t.subtypeOrderEmbedding ⁻¹' _ ↔ _
-
---   rw [← Equiv.image_eq_preimage, RelIso.coe_toEquiv, ← RelIso.coe_toRelEmbedding,
---     ← RelEmbedding.maximals_image_eq]
---   simp
---   have := (subtypeOrderIso t).toRelEmbedding.maximals_image_eq
-
-
-
--- theorem colBasis_submatrix_foo (hs : A.colSpace = (A.colSubmatrix t).colSpace) (t' : Set t) :
---     (A.colSubmatrix t).ColBasis t' ↔ A.ColBasis (t.subtypeOrderIso t').1 := by
---   have hrw : {b | LinearIndependent R ((A.colSubmatrix t).colSubmatrix b).colFun} =
---     t.subtypeOrderIso ⁻¹' {r | LinearIndependent R (r.1.restrict A.colFun)}
---   · ext r
---     sorry
---   simp_rw [colBasis_iff_maximal_linearIndependent]
---   rw [← mem_preimage]
-
-
---   simp_rw [colBasis_iff_maximal_linearIndependent, hrw, RelIso.maximals_preimage_eq,
---     ← mem_preimage]
-
---   simp
---   convert Iff.rfl
-
-
-
-
 end DivisionRing
 section Field
 
@@ -680,15 +641,17 @@ theorem colBasis_iff_colBasis_compl_of_orth (h : A₁.rowSpace = A₂.nullSpace)
   rw [← orthSpace_rowSpace_eq_nullSpace, h, orthSpace_orthSpace]
 
 end NullSpace
+
+
 section Rank
+
+variable {K : Type*} [Field K] {A : Matrix m n K}
 
 noncomputable def rank' {R : Type*} [CommRing R] (A : Matrix m n R) : ℕ := finrank R <| colSpace A
 
 theorem rank'_eq_finrank_mulVecLin {R : Type*} [CommRing R] [Fintype n] (A : Matrix m n R) :
     A.rank' = finrank R (LinearMap.range A.mulVecLin) := by
   rw [rank', colSpace_eq_lin_range]
-
-variable {K : Type*} [Field K] {A : Matrix m n K}
 
 theorem ncard_colBasis (ht : A.ColBasis t) : t.ncard = A.rank' := by
   obtain (hfin | hinf) := t.finite_or_infinite
@@ -702,7 +665,7 @@ theorem ncard_colBasis (ht : A.ColBasis t) : t.ncard = A.rank' := by
 theorem ncard_rowBasis_eq_ncard_colBasis (hs : A.RowBasis s) (ht : A.ColBasis t) :
     s.ncard = t.ncard := by
   have ht' := hs.submatrix_colBasis ht
-  refine s.finite_or_infinite.elim (fun hfin ↦ ?_) (fun hinf ↦ ?_)
+  obtain (hfin | hinf) := s.finite_or_infinite
   · have _ := hfin.fintype
     have hb := ht'.basisFun hs.linearIndependent
     have _ := hb.linearIndependent.fintype_index
