@@ -232,7 +232,8 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
   (v.restrict X).comap (incl X)
 
-/-- The `𝔽`-representable matroid whose ground set is all of a vector space `W` over `𝔽` -/
+/-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
+and independence is linear independence.  -/
 protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module 𝔽 W] : Matroid W :=
   IndepMatroid.matroid <| IndepMatroid.ofFinitary
   (E := univ)
@@ -272,12 +273,12 @@ protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f 
 @[simp] lemma ofFun_ground_eq {f : α → W} {E : Set α} : (Matroid.ofFun 𝔽 E f).E = E := rfl
 
 @[simp] lemma ofFun_indep_iff {f : α → W} {E : Set α} :
-    (Matroid.ofFun 𝔽 E f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ InjOn f I ∧ I ⊆ E := by
-  simp only [Matroid.ofFun, Matroid.onModule, comapOn_indep_iff, IndepMatroid.matroid_Indep,
-    IndepMatroid.ofFinitary_indep, and_congr_left_iff, and_imp]
-  intro hinj _
-  rw [← linearIndependent_image hinj]
-  rfl
+    (Matroid.ofFun 𝔽 E f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ I ⊆ E := by
+  rw [Matroid.ofFun, comapOn_indep_iff]
+  by_cases hinj : InjOn f I
+  · simp only [Matroid.onModule, comapOn_indep_iff, IndepMatroid.matroid_Indep,
+      IndepMatroid.ofFinitary_indep, ← linearIndependent_image hinj, and_iff_right hinj]; rfl
+  exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
 noncomputable def repOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=

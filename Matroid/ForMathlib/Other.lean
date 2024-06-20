@@ -148,37 +148,30 @@ end Swap
 
 section Matrix
 
-variable {m n R : Type} [Semiring R]
+variable {m n R ι : Type} [Semiring R]
 
-/-- For a semiring `R`, the modules `(n → R)` and `Matrix Unit n R` are linearly equivalent. -/
-def Matrix.row_linearEquiv (n R : Type) [Semiring R] : (n → R) ≃ₗ[R] Matrix Unit n R where
-  toFun := Matrix.row
-  invFun A i := A () i
+/-- For a semiring `R` and a singleton type `ι`, the modules `(n → R)` and `Matrix ι n R` are
+linearly equivalent. -/
+@[simps] def Matrix.row_linearEquiv (n R ι : Type*) [Semiring R] [Unique ι] :
+    (n → R) ≃ₗ[R] Matrix ι n R where
+  toFun := Matrix.row ι
+  invFun A i := A default i
   map_add' := Matrix.row_add
   map_smul' := Matrix.row_smul
   left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ rfl
+  right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
 
-@[simp] theorem Matrix.row_linearEquiv_apply (x : n → R) :
-    Matrix.row_linearEquiv n R x = Matrix.row x := rfl
 
-@[simp] theorem Matrix.row_linearEquiv_apply_symm (A : Matrix Unit n R) :
-    (Matrix.row_linearEquiv n R).symm A = A () := rfl
-
-/-- For a semiring `R`, the modules `(m → R)` and `Matrix m Unit r` are linearly equivalent. -/
-def Matrix.col_linearEquiv (m R : Type) [Semiring R] : (m → R) ≃ₗ[R] Matrix m Unit R where
-  toFun := Matrix.col
-  invFun A i := A i ()
+/-- For a semiring `R` and a singleton type `ι`,
+the modules `(m → R)` and `Matrix m ι r` are linearly equivalent. -/
+@[simps!] def Matrix.col_linearEquiv (m R ι : Type*) [Unique ι] [Semiring R] :
+    (m → R) ≃ₗ[R] Matrix m ι R where
+  toFun := Matrix.col ι
+  invFun A i := A i default
   map_add' := Matrix.col_add
   map_smul' := Matrix.col_smul
   left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ rfl
-
-@[simp] theorem Matrix.col_linearEquiv_apply (x : m → R) :
-    Matrix.col_linearEquiv m R x = Matrix.col x := rfl
-
-@[simp] theorem Matrix.col_linearEquiv_apply_symm (A : Matrix m Unit R) (i : m) :
-    (Matrix.col_linearEquiv m R).symm A i = A i () := rfl
+  right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
 
 theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {s : Set α} {t : Set β}
     (hst : t ⊆ f '' s) : ∃ t₀, t₀ ⊆ s ∧ t = f '' t₀ := by
