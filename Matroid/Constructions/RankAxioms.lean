@@ -307,19 +307,22 @@ def ofFiniteRankAxioms (E : Set α) (r : Set α → ℕ)
     (submodularity : ∀ A B, r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
     (rank_inter_ground : ∀ A, r A = r (A ∩ E))
     : IndepMatroid α := by
-  set Indep := fun X ↦ r X = X.encard with h_indep
+  set Indep : Finset α → Prop := fun X ↦ r X = X.card with h_indep
+  have rank_le_card : (X : Finset α) → r X ≤ X.card := by
+    sorry
   have indep_empty : Indep ∅ := by
-    simp only [h_indep, le_antisymm (rank_le_encard ∅) (by simp)]
-  have rank_le_ncard : {X : Set α} → Finite X → r X ≤ X.ncard := by
-    intro X hX
-    rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq hX]
-    apply rank_le_encard
-  have indep_finite : ∀ ⦃I : Set α⦄, Indep I → I.Finite := by
+    simp only [h_indep, le_antisymm (rank_le_card ∅) (by simp)]
+  -- have rank_le_ncard : {X : Set α} → Finite X → r X ≤ X.ncard := by
+  --   intro X hX
+  --   rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq hX]
+  --   apply rank_le_encard
+  -- have indep_finite : ∀ ⦃I : Set α⦄, Indep I → I.Finite := by
+  --   intro I hI_indep
+  --   exact finite_of_encard_eq_coe <| Eq.symm <| by simpa [h_indep] using hI_indep
+  have subset_ground : ∀ ⦃I : Finset α⦄, Indep I → ↑I ⊆ E := by
     intro I hI_indep
-    exact finite_of_encard_eq_coe <| Eq.symm <| by simpa [h_indep] using hI_indep
-  have subset_ground : ∀ ⦃I : Set α⦄, Indep I → I ⊆ E := by
-    intro I hI_indep
-    suffices h : Indep (I ∩ E) by
+    have : Fintype ↑(↑I ∩ E) := Fintype.ofFinite ↑(↑I ∩ E)
+    suffices h : Indep (↑I ∩ E).toFinset by
       simp only [h_indep, rank_inter_ground I, h] at hI_indep
       refine inter_eq_left.mp ?_
       exact Finite.eq_of_subset_of_encard_le' (indep_finite h) inter_subset_left (by rw [hI_indep])
@@ -380,7 +383,7 @@ def ofFiniteRankAxioms (E : Set α) (r : Set α → ℕ)
     exact not_le_of_gt hIJ <| monotonicity subset_union_right
   exact IndepMatroid.ofBddAugment E Indep indep_empty indep_subset indep_aug indep_bdd subset_ground
 
-def ofFiniteRankAxioms' (E : Set α) (r : Set α → ℕ)
+def ofFiniteRankAxioms' {E : Set α} (hE : Finite E) (r : Set α → ℕ)
     (rank_empty : r ∅ = 0)
     (submodularity : ∀ A B, r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
     (rank_step : ∀ A, ∀ x, r A ≤ r (A ∪ {x}) ∧ r (A ∪ {x}) ≤ r A + 1)
@@ -416,43 +419,42 @@ def ofFiniteRankAxioms' (E : Set α) (r : Set α → ℕ)
         rw [hX]; exact OrderTop.le_top (r X : ℕ∞)
     exact fun X ↦ h_induc X.encard X rfl
   have monotonicity : ∀ ⦃A B⦄, A ⊆ B → r A ≤ r B := by
-    sorry
-    -- intro A B hA
-    -- suffices h : ∀ A B, A ⊆ B → B ⊆ E → r A ≤ r B by
-    --   rw [rank_inter_ground A, rank_inter_ground B]
-    --   exact h (A ∩ E) (B ∩ E) (inter_subset_inter_left E hA) inter_subset_right
-    -- clear A B hA
-    -- have h_induc : ∀ n : ℕ, ∀ {A B : Set α}, A ⊆ B → B ⊆ E → A.ncard + n = B.ncard → r A ≤ r B := by
-    --   intro n A B hA hB
-    --   have hB_finite : B.Finite := sorry
-    --   have hA_finite := Finite.subset hB_finite hA
-    --   induction n generalizing A B with
-    --   | zero =>
-    --     intro h; simp [add_zero] at h
-    --     rw [eq_of_subset_of_ncard_le hA h.ge hB_finite]
-    --   | succ n hn =>
-    --     intro h;
-    --     rw [<-Set.ncard_diff_add_ncard_of_subset hA hB_finite, add_comm] at h
-    --     simp only [add_left_inj] at h
-    --     obtain ⟨x, S, _, hxS, hS⟩ := eq_insert_of_ncard_eq_succ h.symm
-    --     have : B = (A ∪ S) ∪ {x} := by
-    --       rw [union_assoc, union_singleton, hxS,
-    --         union_diff_self, union_eq_self_of_subset_left hA]
-    --     have hAS : (A ∪ S) ⊆ B := by rw [this]; exact subset_union_left
-    --     have hAS_disjoint : Disjoint A S := by
-    --       have : S ⊆ B \ A := by rw [<-hxS]; exact subset_insert x S
-    --       exact (subset_diff.mp this).right.symm
-    --     have hAS_finite : (A ∪ S).Finite := Finite.subset hB_finite hAS
-    --     have hAS_encard : A.ncard + n = (A ∪ S).ncard := by
-    --       rw [ncard_union_eq hAS_disjoint hA_finite
-    --         (Finite.subset hAS_finite subset_union_right), add_right_inj, hS]
-    --     rw [this]
-    --     exact le_trans (hn subset_union_left (hAS.trans hB) hAS_finite hA_finite hAS_encard)
-    --       (rank_step (A ∪ S) x).left
-    -- intro A B hA hB
-    -- have h_ncard : A.ncard + (B \ A).ncard = B.ncard := by
-    --   rw [ncard_diff hA (Finite.subset hE hB),
-    --       Nat.add_sub_cancel' (ncard_le_ncard hA (Finite.subset hE hB))]
-    -- exact h_induc (B \ A).ncard hA hB h_ncard
+    intro A B hA
+    suffices h : ∀ A B, A ⊆ B → B ⊆ E → r A ≤ r B by
+      rw [rank_inter_ground A, rank_inter_ground B]
+      exact h (A ∩ E) (B ∩ E) (inter_subset_inter_left E hA) inter_subset_right
+    clear A B hA
+    have h_induc : ∀ n : ℕ, ∀ {A B : Set α}, A ⊆ B → B ⊆ E → A.ncard + n = B.ncard → r A ≤ r B := by
+      intro n A B hA hB
+      have hB_finite : B.Finite := sorry
+      have hA_finite := Finite.subset hB_finite hA
+      induction n generalizing A B with
+      | zero =>
+        intro h; simp [add_zero] at h
+        rw [eq_of_subset_of_ncard_le hA h.ge hB_finite]
+      | succ n hn =>
+        intro h;
+        rw [<-Set.ncard_diff_add_ncard_of_subset hA hB_finite, add_comm] at h
+        simp only [add_left_inj] at h
+        obtain ⟨x, S, _, hxS, hS⟩ := eq_insert_of_ncard_eq_succ h.symm
+        have : B = (A ∪ S) ∪ {x} := by
+          rw [union_assoc, union_singleton, hxS,
+            union_diff_self, union_eq_self_of_subset_left hA]
+        have hAS : (A ∪ S) ⊆ B := by rw [this]; exact subset_union_left
+        have hAS_disjoint : Disjoint A S := by
+          have : S ⊆ B \ A := by rw [<-hxS]; exact subset_insert x S
+          exact (subset_diff.mp this).right.symm
+        have hAS_finite : (A ∪ S).Finite := Finite.subset hB_finite hAS
+        have hAS_encard : A.ncard + n = (A ∪ S).ncard := by
+          rw [ncard_union_eq hAS_disjoint hA_finite
+            (Finite.subset hAS_finite subset_union_right), add_right_inj, hS]
+        rw [this]
+        exact le_trans (hn subset_union_left (hAS.trans hB) hAS_finite hA_finite hAS_encard)
+          (rank_step (A ∪ S) x).left
+    intro A B hA hB
+    have h_ncard : A.ncard + (B \ A).ncard = B.ncard := by
+      rw [ncard_diff hA (Finite.subset hE hB),
+          Nat.add_sub_cancel' (ncard_le_ncard hA (Finite.subset hE hB))]
+    exact h_induc (B \ A).ncard hA hB h_ncard
   exact IndepMatroid.ofFiniteRankAxioms E r
     rank_le_ncard monotonicity submodularity rank_inter_ground
