@@ -297,7 +297,7 @@ lemma relRank_indeps_eq_encard_diff (M : RankMatroid α) (hA : A ⊆ B) (hB : M.
 
 end RankMatroid
 
-namespace IndepMatroid
+namespace Matroid
 
 variable {α : Type*}
 
@@ -305,164 +305,173 @@ def ofFiniteRankAxioms (E : Set α) (r : Set α → ℕ)
     (rank_le_encard : ∀ A, r A ≤ A.encard)
     (monotonicity : ∀ ⦃A B⦄, A ⊆ B → r A ≤ r B)
     (submodularity : ∀ A B, r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
-    (rank_inter_ground : ∀ A, r A = r (A ∩ E))
-    : IndepMatroid α := by
-  set Indep := fun X ↦ r X = X.encard with h_indep
+    (rank_inter_ground : ∀ A, r A = r (A ∩ E)) :
+    Matroid α :=
+  let Indep := fun X ↦ r X = X.encard
   have indep_empty : Indep ∅ := by
-    simp only [h_indep, le_antisymm (rank_le_encard ∅) (by simp)]
-  have rank_le_ncard : {X : Set α} → Finite X → r X ≤ X.ncard := by
-    intro X hX
-    rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq hX]
-    apply rank_le_encard
-  have indep_finite : ∀ ⦃I : Set α⦄, Indep I → I.Finite := by
-    intro I hI_indep
-    exact finite_of_encard_eq_coe <| Eq.symm <| by simpa [h_indep] using hI_indep
-  have subset_ground : ∀ ⦃I : Set α⦄, Indep I → I ⊆ E := by
-    intro I hI_indep
-    suffices h : Indep (I ∩ E) by
-      simp only [h_indep, rank_inter_ground I, h] at hI_indep
-      refine inter_eq_left.mp ?_
-      exact Finite.eq_of_subset_of_encard_le' (indep_finite h) inter_subset_left (by rw [hI_indep])
-    refine le_antisymm (rank_le_encard <| I ∩ E) ?_
-    have h := submodularity (I ∩ E) (I \ E)
-    rw [inter_union_diff, rank_inter_ground (I \ E), inter_assoc,
-      inter_diff_self, diff_inter_self, inter_empty, add_le_add_iff_right <| r ∅,
-      <-@Nat.cast_le ℕ∞] at h
-    refine le_trans (by simp [hI_indep]; exact encard_mono inter_subset_left) h
-  have indep_ncard : {I : Set α} → Indep I → r I = I.ncard := by
-    intro I hI
-    refine Nat.le_antisymm (rank_le_ncard <| indep_finite hI) ?_
-    rw [<-@Nat.cast_le ℕ∞, Set.Finite.cast_ncard_eq <| indep_finite hI, hI]
-  have indep_subset : ∀ ⦃I J : Set α⦄, Indep J → I ⊆ J → Indep I := by
-    intro I J hJ_indep hI
-    have hJ_finite : Finite J := indep_finite hJ_indep
-    refine LE.le.antisymm (rank_le_encard I) ?_
-    have h := (@Nat.cast_le ℕ∞).mpr <| submodularity I (J \ I)
-    rw [Nat.cast_add, union_diff_self, inter_diff_self, indep_empty, encard_empty, add_zero,
-      union_eq_self_of_subset_left hI, hJ_indep, <-Finite.cast_ncard_eq <| hJ_finite,
-      Nat.cast_le, <-ncard_diff_add_ncard_of_subset hI <| hJ_finite, add_comm] at h
-    have h' := add_le_of_add_le_left h <| rank_le_ncard <| Finite.subset hJ_finite diff_subset
-    rwa [add_le_add_iff_right, <-@Nat.cast_le ℕ∞,
-      Finite.cast_ncard_eq <| Finite.subset hJ_finite hI] at h'
-  have indep_bdd : ∃ (n : ℕ), ∀ (I : Set α), Indep I → I.encard ≤ n := by
-    use r E; intro I hI_indep
-    simp_rw [<-hI_indep, Nat.cast_le, monotonicity <| subset_ground hI_indep]
+    simp [Indep, le_antisymm (rank_le_encard ∅)]
+  have indep_finite : ∀ ⦃I : Set α⦄, Indep I → I.Finite := fun I hI ↦
+    finite_of_encard_eq_coe <| Eq.symm <| by simpa using hI
+  have subset_ground : ∀ ⦃I : Set α⦄, Indep I → I ⊆ E := fun I hI ↦ by
+    have hle := add_le_add_left (rank_le_encard (I ∩ E)) ((I \ E).encard)
+    rw [← rank_inter_ground, hI, WithTop.add_le_add_iff_left] at hle
+    · simpa using (indep_finite hI).eq_of_subset_of_encard_le inter_subset_left hle
+    exact encard_ne_top_iff.2 <| (indep_finite hI).subset diff_subset
+  have indep_subset : ∀ ⦃I J : Set α⦄, Indep J → I ⊆ J → Indep I := fun I J hJ hIJ ↦ by
+    have hsm := (Nat.cast_le (α := ENat)).2 (submodularity (J \ I) I)
+    rw [diff_union_self, union_eq_self_of_subset_right hIJ, diff_inter_self,  Nat.cast_add, hJ,
+       Nat.cast_add, ← encard_diff_add_encard_of_subset hIJ, add_assoc] at hsm
+    replace hsm := hsm.trans (add_le_add_right (rank_le_encard _) _)
+    rw [WithTop.add_le_add_iff_left] at hsm
+    · exact (le_self_add.trans hsm).antisymm' <| rank_le_encard I
+    exact encard_ne_top_iff.2 <| (indep_finite hJ).subset diff_subset
+  have indep_bdd : ∃ (n : ℕ), ∀ (I : Set α), Indep I → I.encard ≤ n :=
+    ⟨r E, fun I hI ↦ by simp_rw [<-hI, Nat.cast_le, monotonicity <| subset_ground hI]⟩
   have indep_aug : ∀ ⦃I J : Set α⦄, Indep I → Indep J → I.encard < J.encard
       → ∃ e ∈ J, e ∉ I ∧ Indep (insert e I) := by
-    intro I J hI_indep hJ_indep hIJ
+    intro I J hI hJ hIJ
     by_contra! h_con
-    have hI_finite : Finite I := indep_finite hI_indep
-    have hJ_finite : Finite J := indep_finite hJ_indep
-    have h : ∀ e ∈ J, e ∉ I → r (insert e I) = I.ncard := by
-      intro e he he'; specialize h_con e he he'; simp only [h_indep] at h_con
-      obtain h | h := LE.le.eq_or_lt <| rank_le_encard (insert e I)
-      · contradiction
-      rw [encard_insert_of_not_mem he', <-Finite.cast_ncard_eq hI_finite,
-        <-Nat.cast_one, <-Nat.cast_add, Nat.cast_lt, Nat.lt_add_one_iff] at h
-      refine le_antisymm h (by rw [<-indep_ncard hI_indep]; exact monotonicity <| subset_insert _ _)
-    have h_induc : ∀ (S : Finset α), (S : Set α) ⊆ J \ I → r I = r (I ∪ S) := by
+    have h : ∀ e ∈ J, e ∉ I → r (insert e I) = I.encard := by
+      refine fun e heJ heI ↦ by_contra fun hne ↦ h_con e heJ heI <| (rank_le_encard _).antisymm ?_
+      rw [encard_insert_of_not_mem heI,
+        ENat.add_one_le_iff (by simpa [encard_ne_top_iff] using indep_finite hI), lt_iff_le_and_ne,
+        and_iff_left <| Ne.symm hne, ← hI, Nat.cast_le]
+      exact monotonicity <| subset_insert _ _
+    have h_induc : ∀ (S : Finset α), (S : Set α) ⊆ J \ I → r I = r (I ∪ S) := fun S hS ↦ by
       classical
-      intro S hS
       induction' S using Finset.induction with a S ha IH; simp
-      rw [Finset.coe_insert a S] at hS
-      refine LE.le.antisymm (monotonicity (subset_union_left)) ?_
-      have := submodularity (I ∪ {a}) (I ∪ S)
-      have ha_JI : a ∈ J \ I := hS <| mem_insert a S
-      rwa [<-union_inter_distrib_left, (singleton_inter_eq_empty.mpr ha : {a} ∩ (S : Set α) = ∅),
-        union_empty, <-IH <| (subset_insert a S).trans hS, union_right_comm, <-union_assoc,
-        union_self, add_le_add_iff_right, @union_singleton α a I,
-        h a (mem_of_mem_diff ha_JI) (not_mem_of_mem_diff ha_JI), <-indep_ncard hI_indep,
-        union_assoc, union_singleton, <-Finset.coe_insert] at this
-    have : Fintype ↑(J \ I) := Finite.fintype <| Finite.subset hJ_finite diff_subset
-    have h_bad := h_induc (J \ I).toFinset (subset_toFinset.mp subset_rfl)
-    rw [<-hI_indep, <-hJ_indep, Nat.cast_lt, h_bad] at hIJ;
-    simp only [coe_toFinset, union_diff_self] at hIJ
-    exact not_le_of_gt hIJ <| monotonicity subset_union_right
-  exact IndepMatroid.ofBddAugment E Indep indep_empty indep_subset indep_aug indep_bdd subset_ground
+      simp only [Finset.coe_insert, insert_subset_iff, mem_diff] at hS
+      have hsm := submodularity (insert a I) (S ∪ I)
+      rw [insert_inter_of_not_mem (by simp [ha, hS]), ← Nat.cast_le (α := ℕ∞), Nat.cast_add,
+        Nat.cast_add, inter_eq_self_of_subset_left subset_union_right, h _ hS.1.1 hS.1.2, hI,
+        add_comm, WithTop.add_le_add_iff_left (by rw [encard_ne_top_iff]; exact indep_finite hI),
+        insert_union, union_eq_self_of_subset_left subset_union_right, union_comm,
+        ← union_insert, ← Finset.coe_insert, ← IH hS.2, Nat.cast_le] at hsm
+      exact hsm.antisymm' <| monotonicity subset_union_left
+    have hr : r I = r (I ∪ J) := by
+      simpa using h_induc ((indep_finite hJ).diff I).toFinset (by simp [Subset.rfl])
+    have hle := (monotonicity subset_union_right).trans hr.symm.le
+    rw [← Nat.cast_le (α := ℕ∞), hI, hJ] at hle
+    exact hle.not_lt hIJ
+  IndepMatroid.matroid <|
+  IndepMatroid.ofBddAugment E Indep indep_empty indep_subset indep_aug indep_bdd subset_ground
 
-def ofFiniteRankAxioms' (E : Set α) (hE : Finite E) (r : Set α → ℕ)
+def ofFiniteRankAxioms' (E : Set α) (hE : E.Finite) (r : Set α → ℕ)
     (rank_empty : r ∅ = 0)
     (submodularity : ∀ A B, r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
-    (rank_step : ∀ A, ∀ x, r A ≤ r (A ∪ {x}) ∧ r (A ∪ {x}) ≤ r A + 1)
-    (rank_inter_ground : ∀ A, r A = r (A ∩ E))
-    : IndepMatroid α := by
+    (rank_le_insert : ∀ A x, r A ≤ r (insert x A))
+    (rank_insert_le : ∀ A x, r (insert x A) ≤ r A + 1)
+    (rank_inter_ground : ∀ A, r A = r (A ∩ E)) : Matroid α :=
   have rank_le_ncard : ∀ (X : Set α), r X ≤ X.encard := by
-    have h_induc : ∀ (n : ℕ∞), ∀ (X : Set α), X.encard = n → r X ≤ X.encard := by
-      intro n X hX
-      induction n using ENat.nat_induction generalizing X with
-      | h0 =>
-        rw [encard_eq_zero.mp hX, rank_empty, encard_empty]
-        simp only [CharP.cast_eq_zero, le_refl]
-      | hsuc n hn =>
-        have hX_finite : Finite X := by
-          have : (n.succ : ℕ∞) ≠ ⊤ := by exact ENat.coe_ne_top n.succ
-          rw [<-hX, encard_ne_top_iff] at this;
-          assumption
-        have h : X.ncard = n + 1 := by
-          rw [<-Set.Finite.cast_ncard_eq hX_finite, Nat.succ_eq_add_one] at hX
-          rwa [<-WithTop.coe_eq_coe]
-        obtain ⟨x, Y, hx, rfl, hY⟩ := eq_insert_of_ncard_eq_succ h
-        have hY_finite := Finite.subset hX_finite (subset_insert x Y)
-        have hY' : Y.encard = n := by
-          rw [<-Set.Finite.cast_ncard_eq hY_finite, hY]
-        rw [encard_insert_of_not_mem hx, <-Set.union_singleton,
-          <-Set.Finite.cast_ncard_eq hY_finite, <-ENat.coe_one,
-          <-ENat.coe_add Y.ncard 1, Nat.cast_le]
-        have hY : r Y ≤ Y.ncard := by
-          have := hn Y hY'
-          rwa [<-Set.Finite.cast_ncard_eq hY_finite, @Nat.cast_le] at this
-        exact (rank_step Y x).right.trans (add_le_add hY (le_refl 1))
-      | htop _ =>
-        rw [hX]; exact OrderTop.le_top (r X : ℕ∞)
-    exact fun X ↦ h_induc X.encard X rfl
+    suffices hfin : ∀ (X : Finset α), r X ≤ X.card by
+      intro X
+      obtain (hX | hX) := X.finite_or_infinite.symm
+      · simp [hX.encard_eq]
+      simpa [Finite.encard_eq_coe_toFinset_card hX, Nat.cast_le] using hfin hX.toFinset
+    intro X
+    classical
+    induction' X using Finset.induction with e X heX hX
+    · simp [rank_empty]
+    rw [Finset.coe_insert, Finset.card_insert_of_not_mem (by simpa)]
+    exact (rank_insert_le X e).trans (add_le_add_right hX 1)
   have monotonicity : ∀ ⦃A B⦄, A ⊆ B → r A ≤ r B := by
-    intro A B hA
-    suffices h : ∀ A B, A ⊆ B → B ⊆ E → r A ≤ r B by
-      rw [rank_inter_ground A, rank_inter_ground B]
-      exact h (A ∩ E) (B ∩ E) (inter_subset_inter_left E hA) inter_subset_right
-    clear A B hA
-    have h_induc : ∀ n : ℕ, ∀ {A B : Set α}, A ⊆ B → B ⊆ E → A.ncard + n = B.ncard → r A ≤ r B := by
-      intro n A B hA hB
-      have hB_finite : B.Finite := Finite.subset hE hB
-      have hA_finite := Finite.subset hB_finite hA
-      induction n generalizing A B with
-      | zero =>
-        intro h; simp [add_zero] at h
-        rw [eq_of_subset_of_ncard_le hA h.ge hB_finite]
-      | succ n hn =>
-        intro h;
-        rw [<-Set.ncard_diff_add_ncard_of_subset hA hB_finite, add_comm] at h
-        simp only [add_left_inj] at h
-        obtain ⟨x, S, _, hxS, hS⟩ := eq_insert_of_ncard_eq_succ h.symm
-        have : B = (A ∪ S) ∪ {x} := by
-          rw [union_assoc, union_singleton, hxS,
-            union_diff_self, union_eq_self_of_subset_left hA]
-        have hAS : (A ∪ S) ⊆ B := by rw [this]; exact subset_union_left
-        have hAS_disjoint : Disjoint A S := by
-          have : S ⊆ B \ A := by rw [<-hxS]; exact subset_insert x S
-          exact (subset_diff.mp this).right.symm
-        have hAS_finite : (A ∪ S).Finite := Finite.subset hB_finite hAS
-        have hAS_encard : A.ncard + n = (A ∪ S).ncard := by
-          rw [ncard_union_eq hAS_disjoint hA_finite
-            (Finite.subset hAS_finite subset_union_right), add_right_inj, hS]
-        rw [this]
-        exact le_trans (hn subset_union_left (hAS.trans hB) hAS_finite hA_finite hAS_encard)
-          (rank_step (A ∪ S) x).left
-    intro A B hA hB
-    have h_ncard : A.ncard + (B \ A).ncard = B.ncard := by
-      rw [ncard_diff hA (Finite.subset hE hB),
-          Nat.add_sub_cancel' (ncard_le_ncard hA (Finite.subset hE hB))]
-    exact h_induc (B \ A).ncard hA hB h_ncard
-  exact IndepMatroid.ofFiniteRankAxioms E r
-    rank_le_ncard monotonicity submodularity rank_inter_ground
+    classical
+    intro A B hAB
+    have aux : ∀ I : Finset α, r A ≤ r (A ∪ I) := fun I ↦ by
+      induction' I using Finset.induction with e I _ hI
+      · simp
+      exact hI.trans ((rank_le_insert _ e).trans (by simp))
+    refine (aux (hE.inter_of_right B).toFinset).trans ?_
+    rw [Finite.coe_toFinset, rank_inter_ground (A ∪ B ∩ E), union_inter_distrib_right,
+      inter_assoc, inter_self, ← union_inter_distrib_right, ← rank_inter_ground,
+      union_eq_self_of_subset_left hAB]
+  ofFiniteRankAxioms E r rank_le_ncard monotonicity submodularity rank_inter_ground
+
+-- def ofFinitaryRankAxioms' [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)]
+--     (r : Finset α → ℕ)
+--     (rank_empty : r ∅ = 0)
+--     (rank_insert_le : ∀ A x, r (insert x A) ≤ r A + 1)
+--     (submodularity : ∀ A (x y : α), r A + r (A ∪ {x,y}) ≤ r (insert x A) + r (insert y A))
+--     (rank_inter_ground : ∀ A, r A = r (A.filter (· ∈ E))) :
+--     Matroid α := by
+
+--   classical
+--   -- let Indep : Finset α → Prop := fun I ↦ r I = I.card
+--   have rank_le_card : ∀ X, r X ≤ X.card := by
+--     intro X
+--     classical
+--     induction' X using Finset.induction with e X heX hX
+--     · simp [rank_empty]
+--     rw [Finset.card_insert_of_not_mem (by simpa)]
+--     exact (rank_insert_le X e).trans (add_le_add_right hX 1)
+--   have rank_mono : ∀ X Y, r X ≤ r (X ∪ Y) := by
+--     intro X Y
+--     induction' Y using Finset.induction with e Y heY hY
+--     · simp
+--     rw [Finset.union_insert]
+--     exact hY.trans (by simpa [Finset.union_comm, Finset.insert_eq] using submodularity (X ∪ Y) e e)
+--   refine IndepMatroid.matroid <| IndepMatroid.ofFinset E (fun I ↦ r I = I.card) (by simpa) ?_ ?_ ?_
+--   · intro I J (hI : _ = _) hIJ
+--     suffices h' : ∀ D, (I ∪ D).card ≤ r (I ∪ D) → r I = I.card by
+--       exact h' J <| by simpa [Finset.union_eq_right.2 hIJ] using hI.symm.le
+--     intro D
+--     induction' D using Finset.induction with e D heD hD
+--     · rw [Finset.union_empty]
+--       exact fun h ↦ h.antisymm' (rank_le_card _)
+--     rw [Finset.union_insert]
+--     by_cases heI : e ∈ I
+--     · rwa [Finset.insert_eq_of_mem (by simp [heI])]
+--     refine fun hle ↦ hD ?_
+--     replace hle := hle.trans (rank_insert_le _ _)
+--     rwa [Finset.card_insert_of_not_mem (by simp [heI, heD]), add_le_add_iff_right] at hle
+--   · refine fun I J (hI : _ = _) (hJ : _ = _) hIJ ↦ ?_
+--     by_contra! hcon
+--     have haux : ∀ S ⊆ J \ I, r (I ∪ S) = r I := by
+--       intro S
+--       induction' S using Finset.induction with e S heS ih
+--       · simp
+--       simp only [Finset.insert_subset_iff, Finset.mem_sdiff, Finset.union_insert, and_imp]
+--       intro heJ heI hSJI
+--       induction' S using Finset.induction with f S hfS ih'
+--       · rw [Finset.union_empty, le_antisymm_iff, ← Nat.lt_add_one_iff,
+--           hI, ← I.card_insert_of_not_mem heI, lt_iff_le_and_ne, and_iff_right (rank_le_card _),
+--           and_iff_right (hcon e heJ heI), ← hI, Finset.insert_eq, Finset.union_comm]
+--         apply rank_mono
+--       specialize ih hSJI
+--       suffices h' : r (I ∪ S ∪ ({e,f})) ≤ r I by
+--         rw [Finset.insert_eq, Finset.union_comm, Finset.insert_eq, Finset.union_comm {f},
+--           Finset.union_assoc, S.union_assoc, ← Finset.insert_eq, Finset.pair_comm, ← I.union_assoc]
+--         exact h'.antisymm (by rw [I.union_assoc]; apply rank_mono)
+--       have hsm := submodularity (I ∪ S) e f
+--       simp only [Finset.mem_insert, not_or] at heS
+--       have hIS : r (I ∪ S) = r I := by
+--         rw [← ih, Finset.union_insert, le_antisymm_iff, Finset.insert_eq, Finset.union_comm {f},
+--           and_iff_right (rank_mono _ _), Finset.union_assoc, S.union_comm, ← S.insert_eq, ih]
+--         apply rank_mono
+--       rw [Finset.insert_subset_iff] at hSJI
+--       rw [ih' heS.2 (fun _ ↦ hIS) hSJI.2, ← Finset.union_insert, ih, hIS] at hsm
+--       linarith
+--     have := haux (J \ I)
+
+
+
+
+
+
+
+    -- intro I J (hI : _ = _) hIJ
+    -- induction' J using Finset.induction with e J heJ hJ
+    -- · simpa [Finset.subset_empty.1 hIJ]
+
+
 
 def ofFinitaryRankAxioms [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)]
     (r : Finset α → ℕ)
     (rank_le_card : ∀ A, r A ≤ A.card)
     (monotonicity : ∀ ⦃A B⦄, A ⊆ B → r A ≤ r B)
     (submodularity : ∀ (A B : Finset α), r (A ∪ B) + r (A ∩ B) ≤ r A + r B)
-    (rank_inter_ground : ∀ A, r A = r (A.filter (· ∈ E))) : IndepMatroid α := by
-  set Indep : Set α → Prop := fun J ↦ ∀ I, ↑I ⊆ J → r I = I.card
+    (rank_inter_ground : ∀ A, r A = r (A.filter (· ∈ E))) : Matroid α :=
+  let Indep : Set α → Prop := fun J ↦ ∀ I, ↑I ⊆ J → r I = I.card
   have r_empty : r ∅ = 0 := by rw [<-nonpos_iff_eq_zero]; exact rank_le_card ∅
   have indep_empty : Indep ∅ := by
     intro I hI
@@ -535,5 +544,5 @@ def ofFinitaryRankAxioms [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)
     · contradiction
     rw [r_empty] at hx
     contradiction
-  exact IndepMatroid.ofFinitary E Indep indep_empty
+  IndepMatroid.matroid <| IndepMatroid.ofFinitary E Indep indep_empty
     indep_subset indep_aug indep_compact subset_ground
