@@ -377,7 +377,7 @@ def ofFiniteRankAxioms' (E : Set α) (hE : E.Finite) (r : Set α → ℕ)
       union_eq_self_of_subset_left hAB]
   ofFiniteRankAxioms E r rank_le_ncard monotonicity submodularity rank_inter_ground
 
-def ofFinitaryRankAxioms' [DecidableEq α] (E : Set α) (r : Finset α → ℕ)
+def ofFinsetRankAxioms [DecidableEq α] (E : Set α) (r : Finset α → ℕ)
     (rank_empty : r ∅ = 0)
     (rank_singleton : ∀ e, r {e} ≤ 1)
     (submodularity : ∀ A (x y : α), r A + r (A ∪ {x,y}) ≤ r (insert x A) + r (insert y A))
@@ -455,6 +455,11 @@ def ofFinitaryRankAxioms' [DecidableEq α] (E : Set α) (r : Finset α → ℕ)
     simp at hle
   IndepMatroid.matroid <| IndepMatroid.ofFinset E (fun I ↦ r I = I.card)
     indep_empty indep_subset indep_aug indep_support
+
+lemma ofFinsetRankAxioms_rank_eq [DecidableEq α] (E : Set α) (r : Finset α → ℕ)
+    (h1) (h2) (h3) (h4) (X : Finset α) :
+    (Matroid.ofFinsetRankAxioms E r h1 h2 h3 h4).r X = r X := by
+  sorry
 
 def ofFinitaryRankAxioms [DecidableEq α] (E : Set α) [DecidablePred (· ∈ E)]
     (r : Finset α → ℕ)
