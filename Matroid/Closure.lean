@@ -105,6 +105,7 @@ lemma mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aesop
 lemma not_mem_of_mem_diff_cl (he : e ∈ M.E \ M.cl X) : e ∉ X :=
   fun heX ↦ he.2 <| M.mem_cl_of_mem' heX he.1
 
+@[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
 
 lemma cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
