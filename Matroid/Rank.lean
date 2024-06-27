@@ -71,11 +71,6 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.erk := by
 @[simp] lemma erk_emptyOn (α : Type*) : (emptyOn α).erk = 0 := by
   simp [← (show (emptyOn α).Base ∅ by simp).encard]
 
-lemma Iso.erk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.erk = N.erk := by
-  obtain (rfl | hne) := M.eq_emptyOn_or_nonempty
-  · simp [e.right_eq_empty]
-  obtain ⟨f, hf, rfl⟩ := e.exists_eq_map'; simp
-
 @[simp] lemma er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [← hI.basis_inter_ground.encard, ← hI.encard]
 
@@ -755,9 +750,6 @@ lemma Indep.exists_insert_of_ncard_lt [FiniteRk M] {J : Set α} (hI : M.Indep I)
 @[simp] lemma rk_map {β : Type*} (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).rk = M.rk := by
   simp [rk]
-
-lemma Iso.rk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rk = N.rk := by
-  rw [rk, e.erk_eq]
 
 end Rank
 

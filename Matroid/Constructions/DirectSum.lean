@@ -1,6 +1,6 @@
 import Mathlib.Data.Matroid.Map
 
-open Set BigOperators Set.Notation
+open Set
 
 universe u v
 
@@ -17,6 +17,8 @@ variable {α β ι : Type*}
     · simpa using h.ne_of_mem ha hb
     · simpa using h.symm.ne_of_mem ha hb
     simp [Subtype.val_inj]
+
+#check Disjoint.sumSubtypeEmbedding
 
 @[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inl {s t r : Set α} (h : Disjoint s t) :
     .inl ⁻¹' (h.sumSubtypeEmbedding ⁻¹' r) = r ∩ s := by

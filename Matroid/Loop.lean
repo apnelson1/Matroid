@@ -443,12 +443,13 @@ lemma loopless_iff_forall_not_loop : M.Loopless ↔ ∀ e ∈ M.E, ¬M.Loop e :=
   ⟨fun _ e _ ↦ M.not_loop e,
     fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 (h e he)⟩
 
-lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → 1 < C.encard := by
-  simp_rw [lt_iff_not_le, encard_le_one_iff_eq, not_or, not_exists, ← nonempty_iff_ne_empty]
-  refine ⟨fun h C hC ↦ ⟨hC.nonempty, fun e ↦ ?_⟩,
-    fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 fun hel ↦
-      (h _ (singleton_circuit.2 hel)).2 e rfl⟩
-  rintro rfl; rw [singleton_circuit] at hC; exact M.not_loop e hC
+lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nontrivial := by
+  suffices (∃ x ∈ M.E, M.Loop x) ↔ ∃ x, M.Circuit x ∧ x.Subsingleton by
+    simpa [loopless_iff_forall_not_loop, ← not_iff_not (a := ∀ _, _)]
+  refine ⟨fun ⟨e, _, he⟩ ↦ ⟨{e}, he.circuit, by simp⟩, fun ⟨C, hC, hCs⟩ ↦ ?_⟩
+  obtain (rfl | ⟨e, rfl⟩) := hCs.eq_empty_or_singleton
+  · simpa using hC.nonempty
+  exact ⟨e, (singleton_circuit.1 hC).mem_ground, singleton_circuit.1 hC⟩
 
 lemma Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e} :=
   Set.ext fun _ ↦  ⟨fun he ↦ toNonloop he, Nonloop.mem_ground⟩

@@ -1,0 +1,123 @@
+Date : 2024-06-27 08:05:26
+Directory : /Users/peternelson/GitHub/Matroid
+Total : 82 files,  16885 codes, 3179 comments, 4551 blanks, all 24615 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| lean4    |         81 |     16,845 |      3,179 |      4,538 |     24,562 |
+| Markdown |          1 |         40 |          0 |         13 |         53 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                      | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                         |         82 |     16,885 |      3,179 |      4,551 |     24,615 |
+| . (Files)                                                                                 |          3 |         75 |          0 |         19 |         94 |
+| Matroid                                                                                   |         79 |     16,810 |      3,179 |      4,532 |     24,521 |
+| Matroid (Files)                                                                           |         19 |      6,027 |      1,050 |      1,806 |      8,883 |
+| Matroid/Constructions                                                                     |         12 |      2,226 |        125 |        361 |      2,712 |
+| Matroid/ForMathlib                                                                        |         24 |      2,986 |        434 |        942 |      4,362 |
+| Matroid/ForMathlib (Files)                                                                |         14 |      1,692 |        266 |        594 |      2,552 |
+| Matroid/ForMathlib/Data                                                                   |          1 |         36 |         18 |         13 |         67 |
+| Matroid/ForMathlib/Data/Set                                                               |          1 |         36 |         18 |         13 |         67 |
+| Matroid/ForMathlib/LinearAlgebra                                                          |          8 |      1,242 |        137 |        325 |      1,704 |
+| Matroid/ForMathlib/LinearAlgebra (Files)                                                  |          6 |        685 |        102 |        165 |        952 |
+| Matroid/ForMathlib/LinearAlgebra/Matrix                                                   |          2 |        557 |         35 |        160 |        752 |
+| Matroid/ForMathlib/Order                                                                  |          1 |         16 |         13 |         10 |         39 |
+| Matroid/Minor                                                                             |          3 |      1,154 |        201 |        375 |      1,730 |
+| Matroid/Old                                                                               |         15 |      3,765 |        975 |        789 |      5,529 |
+| Matroid/Other                                                                             |          2 |        198 |         32 |         47 |        277 |
+| Matroid/Representation                                                                    |          4 |        454 |        362 |        212 |      1,028 |
++-------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                  | language | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /Users/peternelson/GitHub/Matroid/Matroid.lean                                            | lean4    |         18 |          0 |          1 |         19 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Circuit.lean                                    | lean4    |        496 |        114 |        125 |        735 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Class.lean                                      | lean4    |         56 |        233 |        100 |        389 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Clone.lean                                      | lean4    |         34 |          0 |         11 |         45 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Closure.lean                                    | lean4    |        559 |        163 |        168 |        890 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Connectivity.lean                               | lean4    |        401 |        109 |        161 |        671 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Basic.lean                        | lean4    |         21 |          0 |         10 |         31 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/ClosureAxioms.lean                | lean4    |        313 |         14 |         30 |        357 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/DirectSum.lean                    | lean4    |        134 |         10 |         36 |        180 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Matching.lean                     | lean4    |         72 |          0 |          9 |         81 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/ParallelExtension.lean            | lean4    |        288 |          9 |         63 |        360 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Quotient.lean                     | lean4    |          0 |          1 |          1 |          2 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/RankAxioms.lean                   | lean4    |        489 |          7 |         44 |        540 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Relax.lean                        | lean4    |        109 |          4 |         26 |        139 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Transversal.lean                  | lean4    |        413 |          5 |         28 |        446 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Truncate.lean                     | lean4    |        154 |         22 |         44 |        220 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/TwoSum.lean                       | lean4    |          8 |          0 |          4 |         12 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Constructions/Uniform.lean                      | lean4    |        225 |         53 |         66 |        344 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Equiv.lean                                      | lean4    |        269 |          4 |         63 |        336 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Extension.lean                                  | lean4    |        553 |        100 |        118 |        771 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Flat.lean                                       | lean4    |        846 |        127 |        206 |      1,179 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Card.lean                            | lean4    |        129 |          0 |         21 |        150 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Data/Set/Finite.lean                 | lean4    |         36 |         18 |         13 |         67 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/ENatTopology.lean                    | lean4    |        371 |        158 |        148 |        677 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/ForMathlib.lean                      | lean4    |          3 |          6 |          1 |         10 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Function.lean                        | lean4    |         79 |          2 |         20 |        101 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Lattice.lean                         | lean4    |          7 |          4 |          6 |         17 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/Dual.lean              | lean4    |         15 |          0 |          5 |         20 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/FiniteDimensional.lean | lean4    |          5 |          1 |          2 |          8 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/LinearIndependent.lean | lean4    |        199 |          1 |         28 |        228 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/Matrix/Rowspace.lean   | lean4    |        536 |         35 |        147 |        718 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/Matrix/ToLin.lean      | lean4    |         21 |          0 |         13 |         34 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/StdBasis.lean          | lean4    |        323 |         93 |        107 |        523 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/Submodule.lean         | lean4    |         31 |          0 |          6 |         37 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/LinearAlgebra/Vandermonde.lean       | lean4    |        112 |          7 |         17 |        136 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Logic_Embedding_Set.lean             | lean4    |        124 |          8 |         47 |        179 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/MatroidBasic.lean                    | lean4    |         20 |          0 |          8 |         28 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Order/Minimal.lean                   | lean4    |         16 |         13 |         10 |         39 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Other.lean                           | lean4    |        115 |         19 |         55 |        189 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/PartialEquiv.lean                    | lean4    |        120 |          4 |         27 |        151 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/PartitionOf.lean                     | lean4    |         93 |         11 |         35 |        139 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/PreimageVal.lean                     | lean4    |         15 |         14 |         15 |         44 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/Set.lean                             | lean4    |         70 |          2 |         24 |         96 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/SetPartition.lean                    | lean4    |        479 |         33 |        161 |        673 |
+| /Users/peternelson/GitHub/Matroid/Matroid/ForMathlib/SetSubtype.lean                      | lean4    |         67 |          5 |         26 |         98 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Ingleton.lean                                   | lean4    |         12 |          0 |          7 |         19 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Init.lean                                       | lean4    |          2 |          0 |          1 |          3 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Intersection.lean                               | lean4    |        120 |         51 |         44 |        215 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Loop.lean                                       | lean4    |        585 |         13 |        188 |        786 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Minor/Basic.lean                                | lean4    |        775 |         54 |        239 |      1,068 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Minor/Iso.lean                                  | lean4    |        144 |        143 |         67 |        354 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Minor/Rank.lean                                 | lean4    |        235 |          4 |         69 |        308 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Modular.lean                                    | lean4    |        741 |         24 |        176 |        941 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/AltAxioms.lean                              | lean4    |        261 |         30 |         48 |        339 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/CanonicallyOrdered.lean                     | lean4    |         39 |          6 |         17 |         62 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/Constructors.lean                           | lean4    |          0 |        144 |         20 |        164 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/Dual.lean                                   | lean4    |        227 |          9 |         57 |        293 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/Finsum.lean                                 | lean4    |         93 |         77 |         59 |        229 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/Kung.lean                                   | lean4    |         33 |         12 |         24 |         69 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/ModularCut.lean                             | lean4    |        688 |         22 |         46 |        756 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/Transversal.lean                            | lean4    |        365 |          1 |         36 |        402 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/_Equiv'.lean                                | lean4    |        338 |         15 |        102 |        455 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/_Equiv.lean                                 | lean4    |        341 |         63 |         94 |        498 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/_ModularCut.lean                            | lean4    |        780 |         84 |         72 |        936 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/_Representation.lean                        | lean4    |        136 |          9 |         43 |        188 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/_Subspace.lean                              | lean4    |         56 |          8 |         19 |         83 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/aa'.lean                                    | lean4    |        216 |        423 |         79 |        718 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Old/dual'.lean                                  | lean4    |        192 |         72 |         73 |        337 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Other/Colex.lean                                | lean4    |         17 |          0 |          8 |         25 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Other/Rado.lean                                 | lean4    |        181 |         32 |         39 |        252 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Parallel.lean                                   | lean4    |        345 |         26 |        113 |        484 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Paving.lean                                     | lean4    |         33 |          6 |         15 |         54 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Points.lean                                     | lean4    |         39 |          3 |         10 |         52 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Rank.lean                                       | lean4    |        578 |         20 |        203 |        801 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Representation/Basic.lean                       | lean4    |        279 |        351 |        161 |        791 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Representation/Dual.lean                        | lean4    |         56 |          2 |         21 |         79 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Representation/Matrix.lean                      | lean4    |          6 |          0 |          4 |         10 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Representation/Minor.lean                       | lean4    |        113 |          9 |         26 |        148 |
+| /Users/peternelson/GitHub/Matroid/Matroid/Simple.lean                                     | lean4    |        354 |         57 |         95 |        506 |
+| /Users/peternelson/GitHub/Matroid/Matroid/scratch.lean                                    | lean4    |          4 |          0 |          2 |          6 |
+| /Users/peternelson/GitHub/Matroid/README.md                                               | Markdown |         40 |          0 |         13 |         53 |
+| /Users/peternelson/GitHub/Matroid/lakefile.lean                                           | lean4    |         17 |          0 |          5 |         22 |
+| Total                                                                                     |          |     16,885 |      3,179 |      4,551 |     24,615 |
++-------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

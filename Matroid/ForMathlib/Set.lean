@@ -67,12 +67,11 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = s \ r ∩ t := by
   simp_rw [diff_eq, inter_right_comm]
 
-lemma inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
+lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
-  rw [insert_eq, insert_eq, ← inter_union_distrib_right, Disjoint.inter_eq _, empty_union]
-  rwa [disjoint_singleton]
+  aesop
 
-lemma union_insert_eq {A : Set α} {b c : α} :
+lemma insert_union_insert_eq {A : Set α} {b c : α} :
     (insert b A) ∪ (insert c A) = insert c (insert b A) := by
   rw [insert_eq, insert_eq, ← union_union_distrib_right, @union_comm _ {b} _,
     union_assoc, ← insert_eq, ← insert_eq]

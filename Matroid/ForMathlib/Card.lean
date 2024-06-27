@@ -10,6 +10,11 @@ variable {α β : Type*} {s t : Set α} {n : ℕ}
 @[simp] lemma encard_le_one_iff_subsingleton : s.encard ≤ 1 ↔ s.Subsingleton := by
   rw [encard_le_one_iff, Set.Subsingleton]; tauto
 
+@[simp] lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
+  rw [← not_iff_not, ← not_lt, not_not, Set.not_nontrivial_iff, ← encard_le_one_iff_subsingleton,
+    (by norm_num : (2 : ℕ∞) = 1 + 1)]
+  exact ⟨ENat.le_of_lt_add_one, fun h ↦ h.trans_lt (by norm_num)⟩
+
 theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
   rw [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter, WithTop.add_left_cancel_iff

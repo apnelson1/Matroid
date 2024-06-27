@@ -24,10 +24,10 @@ lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hype
     ∃ f, f ∈ H \ B ∧ (M.Base (insert f (B \ {e})) ∨ insert f (B \ {e}) = H) := by
   by_contra! h
 
-  have h1 : H \ {e} ⊆ M.cl (B \ {e})
-  · refine fun x hx ↦ by_contra fun hcl ↦ ?_
-    have hxB : x ∉ B
-    · exact fun hxB' ↦ hcl (M.mem_cl_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
+  have h1 : H \ {e} ⊆ M.cl (B \ {e}) := by
+    refine fun x hx ↦ by_contra fun hcl ↦ ?_
+    have hxB : x ∉ B := by
+      exact fun hxB' ↦ hcl (M.mem_cl_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
 
     refine (h x ⟨hx.1, hxB⟩).1 (hB.exchange_base_of_indep hxB ?_)
     rwa [← (hB.indep.diff {e}).not_mem_cl_iff_of_not_mem (not_mem_subset diff_subset hxB)
@@ -37,8 +37,8 @@ lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hype
     hHc.cl_diff_singleton_eq_cl, hH.flat.cl] at h1
   obtain hBH := hH.eq_of_subset (hB.hyperplane_of_cl_diff_singleton he) h1
 
-  have hb : M.Basis (B \ {e}) H
-  · exact (hB.indep.diff _).basis_of_subset_of_subset_cl
+  have hb : M.Basis (B \ {e}) H := by
+    exact (hB.indep.diff _).basis_of_subset_of_subset_cl
       ((M.subset_cl (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
   obtain ⟨f, ⟨hfH, hfBe⟩, hfB⟩ := hHc.basis_iff_insert_eq.1 hb
   refine (h _ ⟨hfH, fun hfB ↦ hfBe ⟨hfB, fun (hfe : f = e) ↦ ?_⟩⟩).2 hfB.symm
@@ -69,8 +69,8 @@ def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
             refine ⟨f, hf, hf'.elim Or.inl (Or.inr ∘ ?_)⟩
             rintro rfl
             exact ⟨hB'h, hB'c, hB'cc⟩
-        · have hB'B : (B' \ B).Nonempty
-          · rw [nonempty_iff_ne_empty, ne_eq, diff_eq_empty]; intro hB'B
+        · have hB'B : (B' \ B).Nonempty := by
+            rw [nonempty_iff_ne_empty, ne_eq, diff_eq_empty]; intro hB'B
             obtain (hB' | hB') := hB'
             · exact hBcc.not_spanning (hB'.spanning.superset hB'B)
             rw [hB'.2.1.eq_of_subset_circuit hBc hB'B, diff_self] at he
@@ -89,8 +89,8 @@ def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
           rwa [M.antichain_of_circuit_hyperplane.eq (hZ.elim Or.inl (Or.inr ∘ And.right))
             (hBJ.elim Or.inl (Or.inr ∘ And.right)) (hZJ.trans hJBJ)]
 
-        have hI : M.Indep I
-        · refine hB.elim (fun h ↦ h.indep.subset hIB)
+        have hI : M.Indep I := by
+          refine hB.elim (fun h ↦ h.indep.subset hIB)
             (fun h ↦ h.2.1.ssubset_indep (hIB.ssubset_of_ne ?_))
           rintro rfl
           exact hsmall ⟨I, Or.inr h, hIB, hIX⟩
