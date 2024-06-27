@@ -1,7 +1,8 @@
-import Matroid.Map
+import Mathlib.Data.Matroid.Map
 import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.PreimageVal
 import Matroid.ForMathlib.Logic_Embedding_Set
+import Matroid.ForMathlib.MatroidBasic
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
@@ -28,7 +29,7 @@ instance : EquivLike (M ≂ N) M.E N.E where
 lemma Iso.indep_image_iff (e : M ≂ N) {I : Set M.E} : M.Indep ↑I ↔ N.Indep ↑(e '' I) :=
   e.indep_image_iff' I
 
-lemma Iso.image_indep (e : M ≂ N) {I : Set M.E} (hI : M.Indep I) : N.Indep (↑(e '' I)) :=
+lemma Iso.image_indep (e : M ≂ N) {I : Set M.E} (hI : M.Indep I) : N.Indep ↑(e '' I) :=
   e.indep_image_iff.1 hI
 
 lemma Iso.dep_image_iff (e : M ≂ N) {D : Set M.E} : M.Dep ↑D ↔ N.Dep ↑(e '' D) := by
@@ -197,8 +198,7 @@ noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
 
 /-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
-lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] :
-    ∃ (f : α → β) (hf : InjOn f M.E), N = M.map f hf := by
+lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] : ∃ (f : α → β) (h : _), N = M.map f h := by
   classical
   set f : α → β := fun x ↦ if hx : x ∈ M.E then e ⟨x,hx⟩ else Classical.arbitrary (α → β) x
   have hf_im' : ∀ X ⊆ M.E, f '' X = e '' (M.E ↓∩ X) := by

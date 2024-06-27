@@ -1,4 +1,4 @@
-import Matroid.Map
+import Mathlib.Data.Matroid.Map
 import Matroid.Equiv
 import Matroid.Circuit
 import Matroid.Loop

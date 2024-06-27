@@ -1,5 +1,5 @@
 import Matroid.Circuit
-import Matroid.Map
+import Mathlib.Data.Matroid.Map
 import Mathlib.Order.SymmDiff
 
 /-
