@@ -15,8 +15,9 @@ lemma biInter_subset_biUnion (s : ι → Set α) {u : Set ι} (hu : u.Nonempty) 
 
 lemma inter_distrib_biInter (s : ι → Set α) {u : Set ι} (hu : u.Nonempty) (t : Set α) :
     t ∩ ⋂ i ∈ u, s i = ⋂ i ∈ u, t ∩ s i := by
-  have := hu.coe_sort
-  rw [biInter_eq_iInter, inter_iInter, biInter_eq_iInter]
+  exact Eq.symm (inter_biInter hu (fun i ↦ s i) t)
+  -- have := hu.coe_sort
+  -- rw [biInter_eq_iInter, inter_iInter, biInter_eq_iInter]
 
 lemma biInter_distrib_inter (s : ι → Set α) {u : Set ι} (hu : u.Nonempty) (t : Set α) :
     (⋂ i ∈ u, s i) ∩ t = ⋂ i ∈ u, s i ∩ t := by

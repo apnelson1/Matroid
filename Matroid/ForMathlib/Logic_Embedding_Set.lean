@@ -145,12 +145,11 @@ section EquivSubset
 
 /-- The restriction of an equivalence `e : s ≃ t` to a subset `a` of `s` and its image `b`. -/
 @[simps] def Equiv.subsetEquivSubset {α β : Type*} {a s : Set α} {b t : Set β} (e : s ≃ t)
-    (has : a ⊆ s) (hbt : b ⊆ t) (h_eq : ∀ x, (e x).1 ∈ b ↔ x.1 ∈ a) : a ≃ b :=
-    Equiv.mk
-      (toFun := fun x ↦ ⟨(e ⟨x.1, has x.2⟩).1, by rw [h_eq]; simp⟩)
-      (invFun := fun x ↦ ⟨(e.symm ⟨x.1, hbt x.2⟩).1, by rw [← h_eq]; simp⟩)
-      (left_inv := fun _ ↦ by simp)
-      (right_inv := fun _ ↦ by simp)
+    (has : a ⊆ s) (hbt : b ⊆ t) (h_eq : ∀ x, (e x).1 ∈ b ↔ x.1 ∈ a) : a ≃ b where
+  toFun x := ⟨(e ⟨x.1, has x.2⟩).1, by simp [h_eq]⟩
+  invFun x := ⟨(e.symm ⟨x.1, hbt x.2⟩).1, by simp [← h_eq]⟩
+  left_inv _ := by simp
+  right_inv _ := by simp
 
 @[simp] theorem Equiv.subsetEquivSubset_image_val {α β : Type*} {a s : Set α} {b t : Set β}
     (e : s ≃ t) (has) (hbt : b ⊆ t) (h_eq) (u : Set a) :
@@ -160,7 +159,8 @@ section EquivSubset
     inclusion_mk, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_and_left,
     subsetEquivSubset, coe_fn_mk, Subtype.mk.injEq, exists_prop]
   constructor
-  · rintro ⟨hxb, ⟨v, hva, hvu, rfl⟩⟩; simp [has hva, hva, hvu]
+  · rintro ⟨hxb, ⟨v, hva, hvu, rfl⟩⟩
+    simp [has hva, hva, hvu]
   simp only [forall_exists_index, and_imp]
   rintro hxt v hva hvu hvs hvx
   refine ⟨?_, ⟨v, hva, hvu, by rw [hvx]⟩⟩

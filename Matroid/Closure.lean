@@ -1,12 +1,6 @@
-import Mathlib.Data.Matroid.Constructions
-import Mathlib.Data.Matroid.Restrict
-import Matroid.ForMathlib.Set
-import Matroid.Equiv
+import Mathlib.Data.Matroid.Map
 
-open scoped BigOperators
-
-open Set Set.Notation
-
+open Set
 namespace Matroid
 
 variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
@@ -24,8 +18,7 @@ lemma Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
 
 /-- The closure of a subset of the ground set is the intersection of the flats containing it.
   A set `X` that doesn't satisfy `X ⊆ M.E` has the junk value `M.cl X := M.cl (X ∩ M.E)`. -/
-def cl (M : Matroid α) (X : Set α) : Set α :=
-  ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
+def cl (M : Matroid α) (X : Set α) : Set α := ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F}
 
 lemma cl_def (M : Matroid α) (X : Set α) : M.cl X = ⋂₀ {F | M.Flat F ∧ X ∩ M.E ⊆ F} := rfl
 
@@ -37,10 +30,10 @@ lemma cl_def' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
 lemma cl_subset_ground (M : Matroid α) (X : Set α) : M.cl X ⊆ M.E :=
   sInter_subset_of_mem ⟨M.ground_flat, inter_subset_right⟩
 
-lemma ground_subset_cl_iff : (M.E ⊆ M.cl X) ↔ M.cl X = M.E := by
+lemma ground_subset_cl_iff : M.E ⊆ M.cl X ↔ M.cl X = M.E := by
   simp [M.cl_subset_ground X, subset_antisymm_iff]
 
-lemma cl_eq_sInter_of_subset {M : Matroid α} (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma cl_eq_sInter_of_subset (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.cl X = ⋂₀ {F : Set α | M.Flat F ∧ X ⊆ F} :=
   by rw [cl, inter_eq_self_of_subset_left hX]
 
@@ -112,7 +105,6 @@ lemma mem_cl_of_mem' (M : Matroid α) (heX : e ∈ X) (h : e ∈ M.E := by aesop
 lemma not_mem_of_mem_diff_cl (he : e ∈ M.E \ M.cl X) : e ∉ X :=
   fun heX ↦ he.2 <| M.mem_cl_of_mem' heX he.1
 
--- @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma mem_ground_of_mem_cl (he : e ∈ M.cl X) : e ∈ M.E := (M.cl_subset_ground _) he
 
 lemma cl_iUnion_cl_eq_cl_iUnion (M : Matroid α) (Xs : ι → Set α) :
@@ -176,8 +168,7 @@ lemma mem_cl_self (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) : e
 
 -- Independence and Bases
 
-lemma Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) :
-    M.cl I = {x | M.Basis I (insert x I)} := by
+lemma Indep.cl_eq_setOf_basis_insert (hI : M.Indep I) : M.cl I = {x | M.Basis I (insert x I)} := by
   set F := {x | M.Basis I (insert x I)}
   have hIF : M.Basis I F := hI.basis_setOf_insert_basis
 
@@ -363,12 +354,6 @@ lemma Indep.cl_inter_eq_inter_cl (h : M.Indep (I ∪ J)) : M.cl (I ∩ J) = M.cl
   · exact iInter_congr (by simp)
   rwa [← union_eq_iUnion]
 
-
-  -- have' := iInter_mono (fun i ↦ M.subset_cl (Xs i) )
-  -- simp only [ext_iff, mem_iInter]
-  -- refine fun x ↦ ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
-  -- ·
-
 lemma basis_iff_basis_cl_of_subset (hIX : I ⊆ X) (hX : X ⊆ M.E := by aesop_mat) :
     M.Basis I X ↔ M.Basis I (M.cl X) :=
   ⟨fun h ↦ h.basis_cl_right, fun h ↦ h.basis_subset hIX (M.subset_cl X hX)⟩
@@ -542,7 +527,7 @@ lemma restrict_cl_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aeso
   rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,
     hI'.indep.insert_indep_iff_of_not_mem hxI', mem_diff, and_iff_right hxE, not_not, hI'.cl_eq_cl]
 
-lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) (X : Set β) :
+@[simp] lemma map_cl_eq {β : Type*} (M : Matroid α) (f : α → β) (hf) (X : Set β) :
     (M.map f hf).cl X = f '' M.cl (f ⁻¹' X) := by
   suffices h' : ∀ X ⊆ f '' M.E, (M.map f hf).cl X = f '' (M.cl (f ⁻¹' X)) by
     convert h' (X ∩ f '' M.E) inter_subset_right using 1
@@ -719,7 +704,8 @@ lemma Indep.inter_basis_cl_iff_subset_cl_inter {X : Set α} (hI : M.Indep I) :
 lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
     (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
   refine (hI.inter_left _).basis_of_subset_of_subset_cl inter_subset_left ?_
-  simp_rw [biInter_distrib_inter _ hA,
+  have := biInter_inter hA X I
+  simp_rw [← biInter_inter hA,
     cl_biInter_eq_biInter_cl_of_biUnion_indep hA (I := fun i ↦ (X i) ∩ I) (hI.subset (by simp)),
     subset_iInter_iff]
   exact fun i hiA ↦ (biInter_subset_of_mem hiA).trans (h i hiA).subset_cl
@@ -739,32 +725,6 @@ lemma Basis.cl_inter_basis_cl (h : M.Basis (X ∩ I) X) (hI : M.Indep I) :
   rw [hI.inter_basis_cl_iff_subset_cl_inter] at h ⊢
   exact (M.cl_subset_cl_of_subset_cl h).trans (M.cl_subset_cl
     (inter_subset_inter_left _ (h.trans (M.cl_subset_cl inter_subset_left))))
-
-section Iso
-
-/-- If an equivalence between `M.E` and `N.E` respects the closure function, it is an isomorphism-/
-def isoOfForallImageCl {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
-    (h : ∀ X : Set M.E, N.cl ↑(e '' X) = e '' (M.E ↓∩ M.cl ↑X)) : M ≂ N where
-  toEquiv := e
-  indep_image_iff' I := by
-    rw [indep_iff_not_mem_cl_diff_forall, indep_iff_not_mem_cl_diff_forall]
-    simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
-      mem_image_equiv]
-    refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' y hy hyI ?_, fun h' x hx hxI h'' ↦
-      h' (e ⟨x,hx⟩).1 (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
-    · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
-        simp [image_diff e.injective, hyx, Set.preimage_val_image_val_eq_self]
-      have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.cl (↑I \ {y}) := by simpa [h_eq, h] using hxI
-      simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
-    have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by
-      simp [image_diff e.injective]
-    rw [h_eq, h]
-    simpa
-
-@[simp] lemma isoOfForallImageCl_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h) (x : M.E) :
-  (isoOfForallImageCl e h) x = e x := rfl
-
-end Iso
 
 end Matroid
 

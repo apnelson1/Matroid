@@ -1,5 +1,4 @@
-import Mathlib.Data.Matroid.Map
-import Matroid.ForMathlib.Function
+import Matroid.Closure
 import Matroid.ForMathlib.PreimageVal
 import Matroid.ForMathlib.Logic_Embedding_Set
 import Matroid.ForMathlib.MatroidBasic
@@ -281,3 +280,26 @@ def Iso.restrict (e : M ≂ N) {R : Set α} {S : Set β} (hR : R ⊆ M.E) (hS : 
     convert e.indep_image_iff (I := (embeddingOfSubset _ _ hR) '' I) using 2 <;> simp
 
 end restrict
+
+
+/-- If an equivalence between `M.E` and `N.E` respects the closure function, it is an isomorphism-/
+def isoOfForallImageCl {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
+    (h : ∀ X : Set M.E, N.cl ↑(e '' X) = e '' (M.E ↓∩ M.cl ↑X)) : M ≂ N where
+  toEquiv := e
+  indep_image_iff' I := by
+    rw [indep_iff_not_mem_cl_diff_forall, indep_iff_not_mem_cl_diff_forall]
+    simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
+      mem_image_equiv]
+    refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' y hy hyI ?_, fun h' x hx hxI h'' ↦
+      h' (e ⟨x,hx⟩).1 (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
+    · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
+        simp [image_diff e.injective, hyx, Set.preimage_val_image_val_eq_self]
+      have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.cl (↑I \ {y}) := by simpa [h_eq, h] using hxI
+      simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
+    have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by
+      simp [image_diff e.injective]
+    rw [h_eq, h]
+    simpa
+
+@[simp] lemma isoOfForallImageCl_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h) (x : M.E) :
+  (isoOfForallImageCl e h) x = e x := rfl
