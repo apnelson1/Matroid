@@ -275,6 +275,7 @@ structure FinsetRankMatroid (α : Type*) [DecidableEq α] where
   r_singleton : ∀ e, r {e} ≤ 1
   r_insert_insert : ∀ X e f, r X + r (insert e (insert f X)) ≤ r (insert e X) + r (insert f X)
   r_singleton_of_not_mem_ground : ∀ e ∉ E, r {e} = 0
+
 namespace FinsetRankMatroid
 
 variable {α : Type*} {X Y I J : Finset α} {e f : α} [DecidableEq α] {M : FinsetRankMatroid α}
