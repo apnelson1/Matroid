@@ -71,15 +71,15 @@ lemma Circuit.subset_cl_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.cl 
   · rw [(hC.diff_singleton_basis he).cl_eq_cl]; exact M.subset_cl _
   rw [diff_singleton_eq_self he]; exact M.subset_cl _
 
-lemma Circuit.subset_cl_diff_subsingleton (hC : M.Circuit C) {Z : Set α} (hZ : Z.encard ≤ 1) :
+lemma Circuit.subset_cl_diff_subsingleton (hC : M.Circuit C) {Z : Set α} (hZ : Z.Subsingleton) :
     C ⊆ M.cl (C \ Z) := by
-  obtain (rfl | ⟨x, rfl⟩) := encard_le_one_iff_eq.1 hZ
-  · rw [diff_empty]; apply M.subset_cl _
+  obtain (rfl | ⟨x, rfl⟩) := hZ.eq_empty_or_singleton
+  · simpa using M.subset_cl _
   exact hC.subset_cl_diff_singleton _
 
-lemma Circuit.cl_diff_subsingleton_eq_cl (hC : M.Circuit C) {Z : Set α} (hZ : Z.encard ≤ 1) :
+lemma Circuit.cl_diff_subsingleton_eq_cl (hC : M.Circuit C) {Z : Set α} (hZ : Z.Subsingleton) :
     M.cl (C \ Z) = M.cl C := by
-  obtain (rfl | ⟨x, rfl⟩) := encard_le_one_iff_eq.1 hZ
+  obtain (rfl | ⟨x, rfl⟩) := hZ.eq_empty_or_singleton
   · simp
   rw [hC.cl_diff_singleton_eq_cl]
 
@@ -128,6 +128,8 @@ lemma Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
 
+
+
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `insert e I` if `e ∉ M.cl I`. -/
 def fundCct (M : Matroid α) (e : α) (I : Set α) :=
@@ -158,8 +160,6 @@ lemma Indep.fundCct_circuit (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
     M.Circuit (M.fundCct e I) := by
   rw [circuit_iff_dep_forall_diff_singleton_indep,
     ← not_indep_iff (fundCct_subset_ground (M.cl_subset_ground I he.1)), fundCct_eq_sInter he.1]
-  --   fundCct_eq_sInter he.1, circuit_iff_dep_forall_diff_singleton_indep,
-  -- ← not_indep_iff ()]
   have hu : M.Indep (⋃₀ {J : Set α | J ⊆ I ∧ e ∈ M.cl J}) :=
     hI.subset (sUnion_subset fun J ↦ And.left)
   have hI' : I ∈ {J : Set α | J ⊆ I ∧ e ∈ M.cl J} := ⟨rfl.subset, he.1⟩
@@ -183,12 +183,32 @@ lemma Indep.fundCct_circuit (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
     exact (hf _ ⟨diff_subset.trans (sInter_subset_of_mem hI'), hcl⟩).2 rfl
   exact fun h'e ↦ he.2 (diff_subset.trans (sInter_subset_of_mem hI') h'e)
 
+lemma Indep.mem_fundCct_iff (hI : M.Indep I) (he : e ∈ M.cl I \ I) :
+    x ∈ M.fundCct e I ↔ M.Indep (insert e I \ {x}) := by
+  obtain (rfl | hne) := eq_or_ne x e
+  · simp [hI.subset diff_subset, mem_fundCct]
+  obtain (hxI | hxI) := em' (x ∈ I)
+  · refine iff_of_false (not_mem_subset (M.fundCct_subset_insert _ _) (by simp [hne, hxI])) ?_
+    rw [diff_singleton_eq_self (by simp [hne, hxI]), hI.insert_indep_iff_of_not_mem he.2]
+    simp [he.1]
+  suffices (∀ t ⊆ I, e ∈ M.cl t → x ∈ t) ↔ e ∉ M.cl (I \ {x}) by
+    simpa [fundCct_eq_sInter he.1, hne, ← insert_diff_singleton_comm hne.symm,
+    and_iff_right (show e ∈ M.E by aesop_mat),
+    (hI.subset diff_subset).insert_indep_iff_of_not_mem (show e ∉ I \ {x} by simp [he.2])]
+  refine ⟨fun h he ↦ (h _ diff_subset he).2 rfl,
+    fun h J hJI heJ ↦ by_contra fun hxJ ↦ hI.not_mem_cl_diff_of_mem hxI ?_⟩
+  rw [← union_eq_self_of_subset_left (subset_diff_singleton hJI hxJ), ← M.cl_union_cl_left_eq]
+  have h1 : e ∈ M.cl (insert x (I \ {x})) := by simpa [hxI] using he.1
+  exact mem_of_mem_of_subset (mem_cl_insert h h1)
+    (M.cl_subset_cl (insert_subset (.inl heJ) subset_union_right))
+
 lemma Base.fundCct_circuit {B : Set α} (hB : M.Base B) (hx : x ∈ M.E \ B) :
     M.Circuit (M.fundCct x B) := by
   apply hB.indep.fundCct_circuit; rwa [hB.cl_eq]
 
 lemma Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit C := by
-  rw [dep_iff, indep_iff_not_mem_cl_diff_forall] at hX; push_neg at hX
+  rw [dep_iff, indep_iff_not_mem_cl_diff_forall] at hX
+  push_neg at hX
   obtain ⟨⟨e, he, heX⟩, hXE⟩ := hX
   -- Why doesn't `aesop_mat` work on the next line?
   obtain ⟨I, hI⟩ := M.exists_basis (X \ {e}) (diff_subset.trans hXE)
@@ -301,10 +321,9 @@ lemma Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h :
     ∃ C, M.Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} := by
   have hne : (C₁ \ C₂).Nonempty := by
     rw [nonempty_iff_ne_empty, Ne, diff_eq_empty]
-    -- simp_rw [nonempty_iff_ne_empty]
     exact fun hss ↦ h (hC₁.eq_of_subset_circuit hC₂ hss)
-  obtain (he₁ | he₁) := em (e ∈ C₁)
-  · obtain (he₂ | he₂) := em (e ∈ C₂)
+  by_cases he₁ : e ∈ C₁
+  · by_cases he₂ : e ∈ C₂
     · obtain ⟨C, h⟩ :=  hC₁.strong_elimination hC₂ ⟨he₁,he₂⟩ hne.some_mem
       exact ⟨C, h.1, h.2.1⟩
     exact ⟨C₂, hC₂, subset_diff_singleton subset_union_right he₂⟩
@@ -312,15 +331,13 @@ lemma Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h :
 
 lemma Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep I)
     (hCI : C ⊆ insert e I) : C = M.fundCct e I := by
-  have heI : e ∉ I := by
-    intro heI; rw [insert_eq_of_mem heI] at hCI; exact (hC.dep.superset hCI).not_indep hI
-  have heC : e ∈ C := by
-    refine' by_contra fun heC ↦ (hI.subset _).not_dep hC.dep
-    rwa [← singleton_union, ← diff_subset_iff, diff_singleton_eq_self heC] at hCI
-  have he : e ∈ M.cl I := by
-    rw [mem_cl_iff_exists_circuit_of_not_mem heI]; exact ⟨C, hC, heC, hCI⟩
+  obtain (he | he) := em' <| e ∈ M.E
+  · exact False.elim <| ((hI.diff {e}).subset
+      (by simpa using subset_diff_singleton hCI (not_mem_subset hC.subset_ground he))).not_dep
+      hC.dep
   by_contra! hne
-  obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination (hI.fundCct_circuit ⟨he,heI⟩) hne e
+  obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination
+    (hI.fundCct_circuit (hI.insert_dep_iff.1 <| hC.dep.superset hCI)) hne e
   refine' hCf.dep.not_indep (hI.subset (hCfss.trans _))
   rw [diff_subset_iff, singleton_union, union_subset_iff, and_iff_right hCI]
   exact fundCct_subset_insert _ _
@@ -352,9 +369,6 @@ lemma mapEquiv_circuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
     (M.mapEquiv f).Circuit C ↔ M.Circuit (f.symm '' C) := by
   rw [mapEquiv_eq_map, map_circuit_iff]
   exact ⟨by rintro ⟨C, hC, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
-
-
-
 section Dual
 
 variable {B : Set α}
@@ -495,7 +509,8 @@ variable {k : ℕ∞}
 noncomputable def girth (M : Matroid α) : ℕ∞ := ⨅ C ∈ {C | M.Circuit C}, C.encard
 
 lemma one_le_girth (M : Matroid α) : 1 ≤ M.girth := by
-  simp_rw [girth, le_iInf_iff, one_le_encard_iff_nonempty]; exact fun _ ↦ Circuit.nonempty
+  simp_rw [girth, le_iInf_iff, one_le_encard_iff_nonempty]
+  exact fun _ ↦ Circuit.nonempty
 
 lemma Circuit.girth_le_card (hC : M.Circuit C) : M.girth ≤ C.encard := by
   simp only [girth, mem_setOf_eq, iInf_le_iff, le_iInf_iff]
