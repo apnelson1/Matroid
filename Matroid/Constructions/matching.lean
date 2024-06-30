@@ -91,6 +91,40 @@ lemma bijOn_reassign_with_matching {G :  α → β → Prop} {f : β → α} {s 
     · exact hv' ▸ hxy ▸ hG
     · exact (heq ((mem_diff v).mpr ⟨hv, hv'⟩)) ▸ h.2 v hv
 
+lemma Finset.pair_eq_union {a b : α} : ({a, b} : Finset α) = ({a} : Finset α) ∪ ({b} : Finset α)
+  := by apply Eq.refl
+
+lemma Finset.subset_pair_left {a b : α} : ({a} : Finset α) ⊆ ({a, b} : Finset α) := by
+  simp_all only [Finset.singleton_subset_iff, Finset.mem_insert, Finset.mem_singleton, true_or]
+
+lemma Finset.subset_pair_right {a b : α} : ({b} : Finset α) ⊆ ({a, b} : Finset α) :=
+  Finset.pair_comm a b ▸ Finset.subset_pair_left
+
+lemma Finset.pair_diff_left {a b : α} (hne : a ≠ b) :
+  ({a, b} : Finset α) \ ({a} : Finset α) = ({b} : Finset α) := by
+  ext1 x
+  simp_all only [mem_sdiff, mem_insert, mem_singleton]
+  refine ⟨fun ⟨h, h'⟩ ↦ (false_or_iff (x = b)).mp ((eq_false h') ▸ h),
+     fun h ↦ ⟨Or.inr h, ne_eq x a ▸ h ▸ (Ne.symm hne)⟩⟩
+
+lemma Finset.pair_diff_right {a b : α} (hne : a ≠ b) :
+  ({a, b} : Finset α) \ ({b} : Finset α) = ({a} : Finset α) :=
+  Finset.pair_comm a b ▸ Finset.pair_diff_left (Ne.symm hne)
+
+lemma Finset.insert_sdiff_self_of_not_mem {a : α} {s : Finset α} (h : a ∉ s) :
+  insert a s \ {a} = s := by
+  ext1 x
+  simp_all only [mem_sdiff, mem_insert, mem_singleton]
+  refine ⟨fun ⟨h, h'⟩ ↦ (false_or_iff _).mp ((eq_false h') ▸ h),
+     fun hx ↦ ⟨Or.inr hx, ne_eq x a ▸ ?_⟩⟩
+  contrapose! h
+  exact h ▸ hx
+
+lemma Nat.le_sSup {s : Set ℕ} {m : ℕ} (h : BddAbove s) (hm : m ∈ s) : m ≤ sSup s := by
+  obtain ⟨n, hn⟩ := h
+  set s' := {n - a | a ∈ s}
+  sorry
+
 
 
 
@@ -109,32 +143,28 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
   set Bmatch := fun (I : Set α) (J : Set β) (f : β → α) ↦ matching G I J f with hBM
   set BIndep := fun (J : Set β) ↦ ∃ I : Set α , ∃ f : β → α,
     MA.Indep I ∧ Bmatch I J f with hBI
-  set max_overlapping_matchings := fun  (I J : Set β) ↦
-  {(f, g) : (β → α) × (β → α) | ∃ IA JA, matching G IA I f ∧ MA.Indep IA ∧ matching G JA J g ∧
-    MA.Indep JA ∧ ∀ ⦃f' g' : β → α⦄, ∀ IA' JA', matching G IA' I f'  ∧ MA.Indep IA' ∧
-    matching G JA' J g' ∧ MA.Indep JA' →
-    {x ∈ I ∩ J | f' x = g' x}.ncard ≤ {x ∈ I ∩ J | f x = g x}.ncard}
 
-  have exist_max_overlapping_matching {I J : Set β} (hI : BIndep I) (hJ : BIndep J): ∃ f g,
-    (f, g) ∈ max_overlapping_matchings I J := by
-    have h : ∀ f g : β → α , {x ∈ I ∩ J | f x = g x}.ncard ≤ (I ∩ J).ncard := by
-          intro _ _
-          apply ncard_mono
-          refine fun x hx ↦ ?_
-          simp only [mem_setOf_eq] at hx
-          exact hx.1
-    have (n : Nat) : (I ∩ J).ncard = n → ∃ f g, (f, g) ∈ max_overlapping_matchings I J := by
-      obtain ⟨IA, f, hIAI, hIAM⟩ := hI
-      obtain ⟨JA, g, hJAI, hJAM⟩ := hJ
-      induction' n with n ih
-      · refine fun hncard ↦ ⟨f, g, ?_⟩
-        simp only [mem_setOf_eq, max_overlapping_matchings]
-        refine ⟨IA, JA, hIAM, hIAI,  hJAM, hJAI, fun f' g' IA' JA' _ ↦ ?_⟩
-        exact  le_trans (h f' g') (hncard ▸ (Nat.cast_nonneg {x | x ∈ I ∩ J ∧ f x = g x}.ncard))
-      · refine fun hncard ↦ ⟨f, g, ?_⟩
-        obtain _ := (ncard_eq_succ (finite_of_finite_univ (I ∩ J))).mp hncard
-        sorry
-    sorry
+  have exist_max_overlapping_matching {I J : Set β} (hI : BIndep I) (hJ : BIndep J): ∃ f g IA JA,
+    matching G IA I f ∧ MA.Indep IA ∧ matching G JA J g ∧ MA.Indep JA ∧
+    ∀ f' g' IA' JA', matching G IA' I f' ∧ MA.Indep IA' ∧ matching G JA' J g' ∧ MA.Indep JA' →
+    {x ∈ I ∩ J | f' x = g' x}.ncard ≤ {x ∈ I ∩ J | f x = g x}.ncard := by
+    set s := {n | ∃ f g IA JA, matching G IA I f ∧ MA.Indep IA ∧ matching G JA J g ∧ MA.Indep JA
+    ∧ {x ∈ I ∩ J | f x = g x}.ncard = n}
+    obtain ⟨IA, f, hIAI, hIAM⟩ := hI
+    obtain ⟨JA, g, hJAI, hJAM⟩ := hJ
+    have hnem : s.Nonempty := by
+      refine ⟨{x ∈ I ∩ J | f x = g x}.ncard,
+        mem_setOf_eq ▸ ⟨f, g, IA, JA, hIAM, hIAI, hJAM, hJAI, rfl⟩⟩
+    have hbd : BddAbove s := by
+      refine bddAbove_def.mpr ⟨(I ∩ J).ncard, fun x hx ↦ ?_⟩
+      obtain ⟨_, _, _, _, _, _, _, _, _, h⟩ := mem_setOf_eq ▸ hx
+      refine ncard_mono (fun x hx ↦ (mem_setOf_eq ▸ hx).1)
+    obtain ⟨f, g, IA, JA, hIAM, hIAI, hJAM, hJAI, h⟩ := Nat.sSup_mem hnem hbd
+    refine ⟨f, g, IA, JA, hIAM, hIAI, hJAM, hJAI,
+      fun f' g' IA' JA' ⟨hIA'M, hIA'I, hJA'M, hJA'I⟩ ↦ h ▸ ?_⟩
+    have hin : {x | x ∈ I ∩ J ∧ f' x = g' x}.ncard ∈ s := by
+      refine mem_setOf.mpr ⟨f', g', IA', JA', hIA'M, hIA'I, hJA'M, hJA'I, rfl⟩
+    exact Nat.le_sSup hbd hin
 
   have h_indep_empty : BIndep ∅ := by
     rw [hBI, hBM]
@@ -164,9 +194,7 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
 
     (indep_aug := by
       refine fun I J hI hJ hIJ ↦ ?_
-      obtain ⟨f, g, hmax⟩ := exist_max_overlapping_matching hI hJ
-      simp only [max_overlapping_matchings, and_imp, exists_and_left, mem_setOf_eq] at hmax
-      obtain ⟨IA, hIAM, hIAI, JA, hJAM, hJAI, h⟩ := hmax
+      obtain ⟨f, g, IA, JA, hIAM, hIAI, hJAM, hJAI, h⟩ := exist_max_overlapping_matching hI hJ
       have hIJ : IA.encard < JA.encard := by
         rw [← BijOn.image_eq hJAM.left, ← BijOn.image_eq hIAM.left,
           InjOn.encard_image (BijOn.injOn hJAM.left), InjOn.encard_image (BijOn.injOn hIAM.left),
@@ -190,12 +218,12 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
           exact mem_image_of_mem f h
         obtain ⟨f', hf', hf'M, heq⟩ :=
           bijOn_reassign_with_matching hIAM h (not_mem_of_mem_diff heA) hG
-        refine ⟨f', g, (insert eA (IA \ {f (invFunOn g J eA)})), JA, hf'M, ?_, hJAM, hJAI, ?_⟩
+        refine ⟨f', g, (insert eA (IA \ {f (invFunOn g J eA)})), JA, ⟨hf'M, ?_, hJAM, hJAI⟩, ?_⟩
         exact (insert_diff_singleton_comm hne IA) ▸ Matroid.Indep.subset heAI diff_subset
         apply ncard_strictMono
         simp only [lt_eq_ssubset]
-        refine ssubset_of_subset_not_subset (fun a ⟨haI, haJ⟩ ↦ ?_) (not_subset.mpr ⟨(invFunOn g J eA),
-          ?_, ?_⟩)
+        refine ssubset_of_subset_not_subset (fun a ⟨haI, haJ⟩ ↦ ?_)
+          (not_subset.mpr ⟨(invFunOn g J eA), ?_, ?_⟩)
         simp only [mem_inter_iff, mem_setOf_eq]
         refine ⟨⟨h, (Function.invFunOn_mem hg)⟩, ?_⟩
         nth_rw 1 [hf', (Function.invFunOn_eq hg)]
@@ -239,17 +267,6 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
       )
 
 
--- import Mathlib.Data.Matroid.Basic
--- import Mathlib.Data.Fintype.Basic
--- import Matroid.Rank
--- import Matroid.Constructions.RankAxioms
-
--- open Set Function Classical
-
--- variable {α β : Type*}
-
--- def matching (G : α → β → Prop) (I :Set α) (J : Set β) (f : β → α) :=
---   BijOn f J I ∧ (∀ v ∈ J, G (f v) v)
 
 -- def N (G : α → β → Prop) (X : Finset β) := { u | ∃ v ∈ X, G u v}
 
@@ -271,34 +288,7 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
 --   simp only [N, setOf_subset_setOf, forall_exists_index, and_imp]
 --   refine fun a x hx hG ↦ ⟨x, h hx, hG⟩
 
--- lemma Finset.pair_eq_union {a b : α} : ({a, b} : Finset α) = ({a} : Finset α) ∪ ({b} : Finset α)
---   := by apply Eq.refl
 
--- lemma Finset.subset_pair_left {a b : α} : ({a} : Finset α) ⊆ ({a, b} : Finset α) := by
---   simp_all only [Finset.singleton_subset_iff, Finset.mem_insert, Finset.mem_singleton, true_or]
-
--- lemma Finset.subset_pair_right {a b : α} : ({b} : Finset α) ⊆ ({a, b} : Finset α) :=
---   Finset.pair_comm a b ▸ Finset.subset_pair_left
-
--- lemma Finset.pair_diff_left {a b : α} (hne : a ≠ b) :
---   ({a, b} : Finset α) \ ({a} : Finset α) = ({b} : Finset α) := by
---   ext1 x
---   simp_all only [mem_sdiff, mem_insert, mem_singleton]
---   refine ⟨fun ⟨h, h'⟩ ↦ (false_or_iff (x = b)).mp ((eq_false h') ▸ h),
---      fun h ↦ ⟨Or.inr h, ne_eq x a ▸ h ▸ (Ne.symm hne)⟩⟩
-
--- lemma Finset.pair_diff_right {a b : α} (hne : a ≠ b) :
---   ({a, b} : Finset α) \ ({b} : Finset α) = ({a} : Finset α) :=
---   Finset.pair_comm a b ▸ Finset.pair_diff_left (Ne.symm hne)
-
--- lemma Finset.insert_sdiff_self_of_not_mem {a : α} {s : Finset α} (h : a ∉ s) :
---   insert a s \ {a} = s := by
---   ext1 x
---   simp_all only [mem_sdiff, mem_insert, mem_singleton]
---   refine ⟨fun ⟨h, h'⟩ ↦ (false_or_iff _).mp ((eq_false h') ▸ h),
---      fun hx ↦ ⟨Or.inr hx, ne_eq x a ▸ ?_⟩⟩
---   contrapose! h
---   exact h ▸ hx
 
 -- def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α] (MA: Matroid α)
 --   (G : α → β → Prop) : Matroid β := by
