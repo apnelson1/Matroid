@@ -121,9 +121,8 @@ lemma Finset.insert_sdiff_self_of_not_mem {a : α} {s : Finset α} (h : a ∉ s)
   exact h ▸ hx
 
 lemma Nat.le_sSup {s : Set ℕ} {m : ℕ} (h : BddAbove s) (hm : m ∈ s) : m ≤ sSup s := by
-  obtain ⟨n, hn⟩ := h
-  set s' := {n - a | a ∈ s}
-  sorry
+  exact le_csSup h hm
+
 
 
 
