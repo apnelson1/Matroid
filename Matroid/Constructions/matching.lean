@@ -120,13 +120,6 @@ lemma Finset.insert_sdiff_self_of_not_mem {a : α} {s : Finset α} (h : a ∉ s)
   contrapose! h
   exact h ▸ hx
 
-lemma Nat.le_sSup {s : Set ℕ} {m : ℕ} (h : BddAbove s) (hm : m ∈ s) : m ≤ sSup s := by
-  exact le_csSup h hm
-
-
-
-
-
 
 -- lemma clstuff (M : Matroid α) {I J : Set α} {e : α} (hI : M.Indep I) (hIJ : J ⊆ I) (he : e ∈ I \ J):
 --   e ∉ M.cl J := by
@@ -163,7 +156,7 @@ def Matroid_from_bipartite [Fintype α] [Fintype β] [Nonempty β] [Nonempty α]
       fun f' g' IA' JA' ⟨hIA'M, hIA'I, hJA'M, hJA'I⟩ ↦ h ▸ ?_⟩
     have hin : {x | x ∈ I ∩ J ∧ f' x = g' x}.ncard ∈ s := by
       refine mem_setOf.mpr ⟨f', g', IA', JA', hIA'M, hIA'I, hJA'M, hJA'I, rfl⟩
-    exact Nat.le_sSup hbd hin
+    exact le_csSup hbd hin
 
   have h_indep_empty : BIndep ∅ := by
     rw [hBI, hBM]
