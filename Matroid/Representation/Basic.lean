@@ -1,6 +1,6 @@
 -- import Matroid.Minor.Iso
 -- import Matroid.Simple
-import Matroid.Extension
+import Matroid.Constructions.ParallelExtension
 -- import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
@@ -10,7 +10,7 @@ import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Function Set Submodule FiniteDimensional BigOperators Matrix
+open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 
 namespace Matroid
 
@@ -99,7 +99,7 @@ lemma Rep.support_subset_ground (v : M.Rep 𝔽 W) : support v ⊆ M.E :=
 
 /-- A function from `M.E` to a module determines a representation -/
 @[simps!] noncomputable def Rep.ofSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
-    (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
+    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
     M.Rep 𝔽 W :=
   Rep.ofGround
   ( fun a ↦ if ha : a ∈ M.E then f ⟨a,ha⟩ else 0 )
@@ -232,6 +232,39 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
   (v.restrict X).comap (incl X)
 
+noncomputable def Rep.matroidMap (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.InjOn f)
+    [DecidablePred (∃ y, f y = ·)] :
+    (M.map f hf).Rep 𝔽 W := by
+  set v' := fun (x : β) ↦ if h : ∃ y, f y = x then v h.choose else 0 with hv'
+  refine Rep.ofGround v' (fun x ↦ ?_) ?_
+  · simp only [mem_support, map_ground, hv']
+    split_ifs with h
+    · exact fun hne ↦ ⟨_, v.support_subset_ground hne, h.choose_spec⟩
+    simp
+  simp only [map_ground, map_indep_iff, forall_subset_image_iff]
+  refine fun I hIE ↦ ⟨fun ⟨I', hI', h_eq⟩ ↦ ?_, fun h ↦ ?_⟩
+  · obtain rfl : I = I' := (hf.image_eq_image_iff hIE hI'.subset_ground).1 h_eq
+
+    refine LinearIndependent.image_of_comp (f := f) (s := I) _ ?_
+
+    convert v.indep_iff.1 hI' using 1
+    ext ⟨x, hx⟩
+    simp [hv']
+    have := v.injOn_of_indep hI'
+
+
+
+
+    -- simp only [map_ground, support_subset_iff, ne_eq, dite_eq_right_iff, forall_exists_index,
+    --   not_forall, mem_image]
+    -- rintro _ a rfl hne
+    -- have := h.
+
+  --   where
+  -- to_fun x := if h : ∃ y, f y = x then v h.choose else 0
+  -- valid' := by
+  --   simp [IsRep]
+
 /-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
 and independence is linear independence.  -/
 protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module 𝔽 W] : Matroid W :=
@@ -297,7 +330,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
 @[simp] lemma ofFun_zero (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) :
     (Matroid.ofFun 𝔽 E (0 : α → W)) = loopyOn E := by
   simp only [eq_loopyOn_iff, ofFun_ground_eq, ofFun_indep_iff, and_imp, true_and]
-  rintro X _ hXi _ -
+  rintro X _ hXi -
   rw [show X.restrict 0 = 0 by rfl] at hXi
   simpa using hXi
 
@@ -562,90 +595,95 @@ def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 �
 
 -- end Constructions
 
--- section Representable
+section Representable
 
--- /-- A matroid is representable if it has a representation -/
--- def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
+/-- A matroid is representable if it has a representation -/
+def Representable (M : Matroid α) (𝔽 : Type*) [Field 𝔽] : Prop := Nonempty (M.Rep 𝔽 (α → 𝔽))
 
--- /-- Noncomputably extract a representation from proof of representability -/
--- noncomputable def Representable.rep (h : M.Representable 𝔽) : M.Rep 𝔽 (α → 𝔽) :=
---   Nonempty.some h
+/-- Noncomputably extract a representation from proof of representability -/
+noncomputable def Representable.rep (h : M.Representable 𝔽) : M.Rep 𝔽 (α → 𝔽) :=
+  Nonempty.some h
 
--- lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
---   have ⟨B, hB⟩ := M.exists_base
---   set v' := v.standardRep' hB
---   refine ⟨(v'.map' Finsupp.lcoeFun ?_).map'
---     (Function.ExtendByZero.linearMap _ Subtype.val) ?_⟩
---   · rw [Submodule.eq_bot_iff]; rintro x hx; simpa [Finsupp.lcoeFun] using hx
---   rw [Submodule.eq_bot_iff]
---   rintro x hx
---   ext i
---   simp only [ExtendByZero.linearMap, LinearMap.mem_ker, LinearMap.coe_mk, AddHom.coe_mk] at hx
---   convert congr_fun hx i
---   rw [Subtype.val_injective.extend_apply]
+lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 := by
+  have ⟨B, hB⟩ := M.exists_base
+  set v' := v.standardRep' hB
+  refine ⟨(v'.map' Finsupp.lcoeFun ?_).map'
+    (Function.ExtendByZero.linearMap _ Subtype.val) ?_⟩
+  · rw [Submodule.eq_bot_iff]; rintro x hx; simpa [Finsupp.lcoeFun] using hx
+  rw [Submodule.eq_bot_iff]
+  rintro x hx
+  ext i
+  simp only [ExtendByZero.linearMap, LinearMap.mem_ker, LinearMap.coe_mk, AddHom.coe_mk] at hx
+  convert congr_fun hx i
+  rw [Subtype.val_injective.extend_apply]
 
--- lemma IsRep.representable {v : α → W} (h : M.IsRep 𝔽 v) : M.Representable 𝔽 :=
---   Rep.representable ⟨v, h⟩
+lemma IsRep.representable {v : α → W} (h : M.IsRep 𝔽 v) : M.Representable 𝔽 :=
+  Rep.representable ⟨v, h⟩
 
--- lemma ofFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
---     (Matroid.ofFun 𝔽 f E).Representable 𝔽 :=
---   (Rep.ofFun 𝔽 f E).representable
+lemma ofFun_representable (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+    (Matroid.ofFun 𝔽 E f).Representable 𝔽 :=
+  (repOfFun 𝔽 E f).representable
 
--- lemma Representable.exists_standardRep' (h : Representable M 𝔽) (hB : M.Base B) :
---     ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
---   let ⟨v⟩ := h; ⟨v.standardRep' hB, v.standardRep_fullRank' hB⟩
+lemma Representable.exists_standardRep' (h : Representable M 𝔽) (hB : M.Base B) :
+    ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
+  let ⟨v⟩ := h; ⟨v.standardRep' hB, v.standardRep_fullRank' hB⟩
 
--- lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (hB : M.Base B) :
---     ∃ v : M.Rep 𝔽 (B → 𝔽), v.FullRank  :=
---   let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
+lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (hB : M.Base B) :
+    ∃ v : M.Rep 𝔽 (B → 𝔽), v.FullRank  :=
+  let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
 
--- lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
---     ∃ v : M.Rep 𝔽 (Fin M.rk → 𝔽), v.FullRank := by
---   obtain ⟨B, hB⟩ := M.exists_base
---   have _ := hB.finite.fintype
---   obtain ⟨v, hv⟩ := h.exists_standardRep hB
---   have hcard := hB.ncard
---   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
---   use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
---   exact hv.mapEquiv _
+lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
+    ∃ v : M.Rep 𝔽 (Fin M.rk → 𝔽), v.FullRank := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  have _ := hB.finite.fintype
+  obtain ⟨v, hv⟩ := h.exists_standardRep hB
+  have hcard := hB.ncard
+  rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card] at hcard
+  use v.mapEquiv <| LinearEquiv.piCongrLeft' 𝔽 (fun _ ↦ 𝔽) (Fintype.equivFinOfCardEq hcard)
+  exact hv.mapEquiv _
 
--- lemma representable_emptyOn (α 𝔽 : Type*) [Field 𝔽] : (emptyOn α).Representable 𝔽 :=
---   (emptyRep α 𝔽).representable
+lemma representable_emptyOn (α 𝔽 : Type*) [Field 𝔽] : (emptyOn α).Representable 𝔽 :=
+  (emptyRep α 𝔽).representable
 
--- lemma representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
---     (loopyOn E).Representable 𝔽 :=
---   (loopyRep E 𝔽).representable
+lemma representable_loopyOn (E : Set α) (𝔽 : Type*) [Field 𝔽] :
+    (loopyOn E).Representable 𝔽 :=
+  (loopyRep E 𝔽).representable
 
--- -- lemma Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
--- --     (h : M.Representable 𝔽) (hMN : M ≂ N) : N.Representable 𝔽 := by
--- --   obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
--- --   · apply representable_emptyOn
--- --   exact (h.rep.iso e).representable
+lemma Representable.map (h : M.Representable 𝔽) (f : α → β) (hf : M.E.InjOn f) :
+    (M.map f hf).Representable 𝔽 := by
+  have := h.rep.map f hf
 
--- -- lemma IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) :
--- --     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
--- --   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
 
--- /-- The property of being a finite `𝔽`-representable matroid. -/
--- class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
---   rep : M.Representable 𝔽
---   finite : M.Finite
+-- lemma Representable.of_isIso {α β : Type*} {M : Matroid α} {N : Matroid β}
+--     (h : M.Representable 𝔽) (hMN : M ≂ N) : N.Representable 𝔽 := by
+--   obtain (⟨-, rfl⟩ | ⟨⟨e⟩⟩) := hMN
+--   · apply representable_emptyOn
+--   exact (h.rep.iso e).representable
 
--- lemma finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
---   FieldRep.finite 𝔽
+-- lemma IsIso.representable_iff {α β : Type*} {M : Matroid α} {N : Matroid β} (hMN : M ≂ N) :
+--     M.Representable 𝔽 ↔ N.Representable 𝔽 :=
+--   ⟨fun h ↦ h.of_isIso hMN, fun h ↦ h.of_isIso hMN.symm⟩
 
--- /-- The property of being finite and representable over all fields. -/
--- class FieldRegular (M : Matroid α) : Prop where
---   (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
+/-- The property of being a finite `𝔽`-representable matroid. -/
+class FieldRep (𝔽 : Type*) [Field 𝔽] (M : Matroid α) : Prop where
+  rep : M.Representable 𝔽
+  finite : M.Finite
 
--- /-- The property of being finite and representable over some field. -/
--- class FieldSomeRep (M : Matroid α) : Prop where
---   (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
+lemma finite_of_fieldRep {𝔽 : Type*} (M : Matroid α) [Field 𝔽] [FieldRep 𝔽 M] : M.Finite :=
+  FieldRep.finite 𝔽
 
--- lemma fieldRep_def (𝔽 : Type*) [Field 𝔽] : FieldRep 𝔽 M ↔ M.Representable 𝔽 ∧ M.Finite :=
---   ⟨fun ⟨h1,h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
+/-- The property of being finite and representable over all fields. -/
+class FieldRegular (M : Matroid α) : Prop where
+  (rep_forall : ∀ (𝔽 : Type) [Field 𝔽], FieldRep 𝔽 M)
 
--- end Representable
+/-- The property of being finite and representable over some field. -/
+class FieldSomeRep (M : Matroid α) : Prop where
+  (rep_some : ∃ (𝔽 : Type) (_ : Field 𝔽), FieldRep 𝔽 M)
+
+lemma fieldRep_def (𝔽 : Type*) [Field 𝔽] : FieldRep 𝔽 M ↔ M.Representable 𝔽 ∧ M.Finite :=
+  ⟨fun ⟨h1,h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2⟩⟩
+
+end Representable
 
 -- lemma Rep.subset_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
 --     v '' X ⊆ span 𝔽 (v '' I) := by
@@ -751,40 +789,53 @@ def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 �
 
 
 
--- -- section Extension
+section Extension
 
--- -- variable [DecidableEq α]
+variable [DecidableEq α]
 
--- -- noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
--- --   v.restrict (insert e M.E)
+noncomputable def Rep.addLoop (v : M.Rep 𝔽 W) (e : α) : (M.addLoop e).Rep 𝔽 W :=
+  v.restrict (insert e M.E)
 
--- -- noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
--- --   (v.preimage (update id f e)).restrict (insert f M.E)
+noncomputable def Rep.parallelExtend (v : M.Rep 𝔽 W) (e f : α) : (M.parallelExtend e f).Rep 𝔽 W :=
+  (v.comap (update id f e)).restrict (insert f M.E)
 
--- -- lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x ≠ f) :
--- --     v.parallelExtend e f x = v x := by
--- --   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, Rep.preimage_apply]
--- --   simp only [mem_insert_iff, comp_apply, ne_eq]
--- --   split_ifs with h
--- --   · rw [update_noteq hx, id]
--- --   rw [v.eq_zero_of_not_mem_ground (not_mem_subset (subset_insert _ _) h)]
+lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x ≠ f) :
+    v.parallelExtend e f x = v x := by
+  rw [Rep.parallelExtend, Rep.restrict_apply, indicator, Rep.comap_apply]
+  split_ifs with h
+  · rw [update_noteq hx, id]
+  rw [v.eq_zero_of_not_mem_ground (not_mem_subset (subset_insert _ _) h)]
 
--- -- @[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
--- --     v.parallelExtend e f f = v e := by
--- --   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, if_pos (mem_insert _ _)]
--- --   simp
+@[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
+    v.parallelExtend e f f = v e := by
+  rw [Rep.parallelExtend, Rep.restrict_apply, indicator, if_pos (mem_insert _ _)]
+  simp
 
--- -- lemma Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
--- --     (M.parallelExtend e f).Representable 𝔽 :=
--- --   (h.rep.parallelExtend e f).representable
+-- noncomputable def se_foo (𝔽 : Type*) [Field 𝔽] (v : α → W) (e f : α) (a : α) : W × 𝔽 :=
+--     if a = f then ⟨v e, 1⟩ else ⟨v a, 0⟩
 
--- -- /-- This doesn't actually need finiteness; constructing the obvious explicit
--- --   representation for the series extension is TODO. -/
--- -- lemma Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
--- --     (M.seriesExtend e f).Representable 𝔽 := by
--- --   rw [← dual_representable_iff, seriesExtend_dual]
--- --   apply Representable.parallelExtend
--- --   exact v.representable.dual
+-- lemma foo (M : Matroid α) (v : M.Rep 𝔽 W) (he : e ∈ M.E) (hnl : ¬ M.Coloop e) (hf : f ∉ M.E) :
+--     (Matroid.ofFun 𝔽 E (se_foo 𝔽 v e f)) = M.seriesExtend e f := by
+--   rw [eq_seriesExtend_iff he hnl hf]
+--   simp
+
+-- noncomputable def Representable.seriesExtend (v : M.Rep 𝔽 W) (e f : α) :
+--     (M.seriesExtend e f).Rep 𝔽 (W × 𝔽) where
+--   to_fun x := if x = f then ⟨v e,1⟩ else ⟨v x,0⟩
+--   valid' := by
+--     _
+
+-- lemma Representable.parallelExtend (h : M.Representable 𝔽) (e f : α) :
+--     (M.parallelExtend e f).Representable 𝔽 :=
+--   (h.rep.parallelExtend e f).representable
+
+-- /-- This doesn't actually need finiteness; constructing the obvious explicit
+--   representation for the series extension is TODO. -/
+-- lemma Representable.seriesExtend [M.Finite] (v : M.Rep 𝔽 W) (e f : α) :
+--     (M.seriesExtend e f).Representable 𝔽 := by
+--   rw [← dual_representable_iff, seriesExtend_dual]
+--   apply Representable.parallelExtend
+--   exact v.representable.dual
 
 
--- -- end Extension
+end Extension
