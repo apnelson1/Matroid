@@ -2,7 +2,7 @@ import Mathlib.Data.Matroid.Restrict
 
 open Set
 
-variable {α : Type*}
+variable {α : Type*} {M : Matroid α}
 namespace Matroid
 
 lemma nonempty_type (M : Matroid α) [h : M.Nonempty] : Nonempty α :=
@@ -25,3 +25,9 @@ lemma insert_base_of_insert_indep {M : Matroid α} {I : Set α} {e f : α}
   obtain (rfl | hef) := eq_or_ne e f; assumption
   simpa [diff_singleton_eq_self he, hfI]
     using heI.exchange_base_of_indep (e := e) (f := f) (by simp [hef.symm, hf])
+
+lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (hJ : M.Indep J)
+    (hIJ : I.card < J.card) : ∃ e ∈ J, e ∉ I ∧ M.Indep (insert e I) := by
+  obtain ⟨x, hx, hxI⟩ := hI.augment hJ (by simpa [encard_eq_coe_toFinset_card] )
+  simp only [mem_diff, Finset.mem_coe] at hx
+  exact ⟨x, hx.1, hx.2, hxI⟩

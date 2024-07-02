@@ -98,3 +98,35 @@ lemma update_injOn_iff {f : α → β} {s : Set α} {a : α} {b : β} :
   exact (h has hbs).symm
 
 end Update
+
+
+section BijOn
+
+variable {f : α → β} {s : Set α} {t : Set β} {x : α} {y : β}
+
+lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
+    BijOn f (insert x s) (insert y t) ↔ y = f x ∧ y ∉ t := by
+  simp only [BijOn, MapsTo, mem_insert_iff, forall_eq_or_imp, injOn_insert hx, h.image_eq,
+    and_iff_right h.injOn, SurjOn, image_insert_eq, insert_subset_iff, subset_insert, and_true]
+  obtain (rfl | hne) := eq_or_ne y (f x)
+  · simp only [true_or, true_and, and_true, and_iff_right_iff_imp]
+    exact fun _ a has ↦ by simp [h.mapsTo has]
+  simp only [hne.symm, hne]
+  tauto
+
+lemma BijOn.insert_not_mem (h : BijOn f s t) (hx : x ∉ s) (hx' : f x ∉ t) :
+    BijOn f (insert x s) (insert (f x) t) := by
+  simpa [h.bijOn_insert_iff hx]
+
+lemma BijOn.diff_singleton (h : BijOn f s t) (hx : x ∈ s) : BijOn f (s \ {x}) (t \ {f x}) := by
+  convert h.subset_left diff_subset
+  rw [h.injOn.image_diff, h.image_eq, inter_eq_self_of_subset_right (by simpa), image_singleton]
+
+lemma BijOn.bijOn_update [DecidableEq α] (h : BijOn f s t) (hx : x ∈ s) (hy : y ∉ t) :
+    BijOn (Function.update f x y) s (insert y (t \ {f x})) := by
+  rw [show s = insert x (s \ {x}) by simp [hx]]
+  have h_eq : EqOn f (Function.update f x y) (s \ {x}) := fun a h ↦ Eq.symm <| update_noteq h.2 _ f
+  rw [((h.diff_singleton hx).congr h_eq).bijOn_insert_iff (by simp)]
+  simp [hy]
+
+end BijOn
