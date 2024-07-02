@@ -8,51 +8,57 @@ variable {α β ι : Type*}
 
 -- a little API for mathlib.
 
+section Disjoint
+
+variable {α ι : Type*} {s t r : Set α}
+
 /-- For disjoint `s t : Set α`, the natural injection from `↑s ⊕ ↑t` to `α`. -/
-@[simps] def Disjoint.sumSubtypeEmbedding {s t : Set α} (h : Disjoint s t) : s ⊕ t ↪ α where
-  toFun := Sum.elim Subtype.val Subtype.val
+@[simps] def Disjoint.sumSubtypeEmbedding (h : Disjoint s t) : s ⊕ t ↪ α where
+  toFun := Sum.elim (↑) (↑)
   inj' := by
-    rintro (⟨a,ha⟩ | ⟨a,ha⟩) (⟨b,hb⟩ | ⟨b,hb⟩)
+    rintro (⟨a, ha⟩ | ⟨a, ha⟩) (⟨b, hb⟩ | ⟨b, hb⟩)
     · simp [Subtype.val_inj]
     · simpa using h.ne_of_mem ha hb
     · simpa using h.symm.ne_of_mem ha hb
     simp [Subtype.val_inj]
 
-#check Disjoint.sumSubtypeEmbedding
-
-@[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inl {s t r : Set α} (h : Disjoint s t) :
+@[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inl (h : Disjoint s t) :
     .inl ⁻¹' (h.sumSubtypeEmbedding ⁻¹' r) = r ∩ s := by
-  ext; simp
+  ext
+  simp
 
 @[simp] theorem Disjoint.sumSubtypeEmbedding_preimage_inr {s t r : Set α} (h : Disjoint s t) :
     .inr ⁻¹' (h.sumSubtypeEmbedding ⁻¹' r) = r ∩ t := by
-  ext; simp
+  ext
+  simp
 
 @[simp] theorem Disjoint.sumSubtypeEmbedding_range {s t : Set α} (h : Disjoint s t) :
     range h.sumSubtypeEmbedding = s ∪ t := by
-  ext; simp
+  ext
+  simp
 
-/-- For an indexed family `s` of disjoint sets in `α`, the natural injection from the
-sigma-type `(i : ι) × ↑(s i)` to `α`. -/
-@[simps] def Set.PairwiseDisjoint.sigmaSubtypeEmbedding {s : ι → Set α}
-    (h : PairwiseDisjoint univ s) : ((i : ι) × (s i)) ↪ α where
-      toFun := fun ⟨i, x⟩ ↦ x.1
-      inj' := by
-        rintro ⟨i,x⟩ ⟨j,y⟩ (hxy : x.1 = y.1)
-        obtain rfl : i = j := Set.PairwiseDisjoint.elim h (mem_univ i) (mem_univ j)
-          (not_disjoint_iff.2 ⟨x.1,x.2, by rw [hxy]; exact y.2⟩)
-        rw [Subtype.val_inj] at hxy
-        rw [hxy]
+/-- For an indexed family `s : ι → Set α` of disjoint sets,
+the natural injection from the sigma-type `(i : ι) × ↑(s i)` to `α`. -/
+@[simps] def Pairwise.disjointSigmaSubtypeEmbedding {s : ι → Set α} (h : Pairwise (Disjoint on s)) :
+    (i : ι) × s i ↪ α where
+  toFun x := x.2.1
+  inj' := by
+    rintro ⟨i,⟨x,hx⟩⟩ ⟨j,⟨-,hx'⟩⟩ rfl
+    obtain rfl : i = j := h.eq (not_disjoint_iff.2 ⟨_, hx, hx'⟩)
+    rfl
 
-@[simp] theorem Set.PairwiseDisjoint.sigmaSubtypeEmbedding_preimage {s : ι → Set α}
-    (h : PairwiseDisjoint univ s) (i : ι) (r : Set α) :
-    Sigma.mk i ⁻¹' (h.sigmaSubtypeEmbedding ⁻¹' r) = r ∩ (s i) := by
-  ext; simp
+@[simp] theorem Pairwise.disjointSigmaSubtypeEmbedding_preimage {s : ι → Set α}
+    (h : Pairwise (Disjoint on s)) (i : ι) (r : Set α) :
+    Sigma.mk i ⁻¹' (h.disjointSigmaSubtypeEmbedding ⁻¹' r) = r ∩ s i := by
+  ext
+  simp
 
-@[simp] theorem Set.PairwiseDisjoint.sigmaSubtypeEmbedding_range {s : ι → Set α}
-    (h : PairwiseDisjoint univ s) : Set.range h.sigmaSubtypeEmbedding = ⋃ i : ι, s i := by
-  ext; simp
+@[simp] theorem Pairwise.dijsointSigmaSubtypeEmbedding_range {s : ι → Set α}
+    (h : Pairwise (Disjoint on s)) : Set.range h.disjointSigmaSubtypeEmbedding = ⋃ i, s i := by
+  ext
+  simp
 
+end Disjoint
 namespace Matroid
 
 section Sigma
@@ -117,23 +123,57 @@ protected def sigma {α : ι → Type*} (M : (i : ι) → Matroid (α i)) : Matr
     (Matroid.sigma M).Base B ↔ ∀ i, (M i).Base (Sigma.mk i ⁻¹' B) := Iff.rfl
 
 @[simp] theorem sigma_ground_eq {α : ι → Type*} {M : (i : ι) → Matroid (α i)} :
-  (Matroid.sigma M).E = ⋃ (i : ι), (Sigma.mk i '' (M i).E) := rfl
+  (Matroid.sigma M).E = ⋃ i, (Sigma.mk i '' (M i).E) := rfl
+
+theorem Finitary.sigma {α : ι → Type*} {M : (i : ι) → Matroid (α i)} (h : ∀ i, (M i).Finitary) :
+    (Matroid.sigma M).Finitary := by
+  refine ⟨fun I hI ↦ ?_⟩
+  simp only [sigma_indep_iff] at hI ⊢
+  intro i
+  apply indep_of_forall_finite_subset_indep
+  intro J hJI hJ
+  convert hI (Sigma.mk i '' J) (by simpa) (hJ.image _) i
+  rw [sigma_mk_preimage_image_eq_self]
+
+/-- Given an indexed family `Ms : ι → Matroid α` of matroids on the same type, the direct
+sum of these matroids as a matroid on the product type `ι × α`. -/
+protected def prod {α ι : Type*} (Ms : ι → Matroid α) : Matroid (ι × α) :=
+  (Matroid.sigma Ms).mapEquiv <| Equiv.sigmaEquivProd ι α
+
+@[simp] theorem prod_indep_iff {α ι : Type*} (Ms : ι → Matroid α) (I : Set (ι × α)) :
+    (Matroid.prod Ms).Indep I ↔ ∀ i, (Ms i).Indep (Prod.mk i ⁻¹' I) := by
+  simp only [Matroid.prod, mapEquiv_indep_iff, Equiv.sigmaEquivProd_symm_apply, sigma_indep_iff]
+  convert Iff.rfl
+  ext
+  simp
+
+@[simp] theorem prod_ground_eq {α ι : Type*} (Ms : ι → Matroid α) :
+    (Matroid.prod Ms).E = ⋃ i, Prod.mk i '' (Ms i).E := by
+  ext
+  simp [Matroid.prod]
+
+theorem Finitary.prod {α ι : Type*} (Ms : ι → Matroid α) (h : ∀ i, (Ms i).Finitary) :
+    (Matroid.prod Ms).Finitary := by
+  have := Finitary.sigma h
+  rw [Matroid.prod]
+  infer_instance
 
 /-- The direct sum of an indexed collection of matroids on `α` with disjoint ground sets,
 itself a matroid on `α` -/
-protected def sigmaDisjoint (M : ι → Matroid α) (h : PairwiseDisjoint univ (fun i ↦ (M i).E)) :
+protected def sigmaDisjoint (M : ι → Matroid α) (h : Pairwise (Disjoint on fun i ↦ (M i).E)) :
     Matroid α :=
-  (Matroid.sigma (fun i ↦ (M i).restrictSubtype (M i).E)).mapEmbedding h.sigmaSubtypeEmbedding
+  (Matroid.sigma (fun i ↦ (M i).restrictSubtype (M i).E)).mapEmbedding
+    h.disjointSigmaSubtypeEmbedding
 
-@[simp] theorem sigmaDisjoint_ground_eq {M : ι → Matroid α}
-    (h : PairwiseDisjoint univ (fun i ↦ (M i).E)) :
+@[simp] theorem sigmaDisjoint_ground_eq {M : ι → Matroid α} (h) :
     (Matroid.sigmaDisjoint M h).E = ⋃ i : ι, (M i).E := by
   ext; simp [Matroid.sigmaDisjoint, mapEmbedding, restrictSubtype]
 
-@[simp] theorem sigma'_indep_iff {M : ι → Matroid α} {h : PairwiseDisjoint univ (fun i ↦ (M i).E)}
+@[simp] theorem sigma'_indep_iff {M : ι → Matroid α} {h}
     {I : Set α} : (Matroid.sigmaDisjoint M h).Indep I ↔
       (∀ i, (M i).Indep (I ∩ (M i).E)) ∧ I ⊆ ⋃ i : ι, (M i).E := by
-  simp [Matroid.sigmaDisjoint, h.sigmaSubtypeEmbedding_preimage]
+  simp [Matroid.sigmaDisjoint, h.disjointSigmaSubtypeEmbedding_preimage]
+
 
 end Sigma
 

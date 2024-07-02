@@ -106,6 +106,7 @@ variable {f : α → β} {s : Set α} {t : Set β} {x : α} {y : β}
 
 lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
     BijOn f (insert x s) (insert y t) ↔ y = f x ∧ y ∉ t := by
+  simp [BijOn]
   simp only [BijOn, MapsTo, mem_insert_iff, forall_eq_or_imp, injOn_insert hx, h.image_eq,
     and_iff_right h.injOn, SurjOn, image_insert_eq, insert_subset_iff, subset_insert, and_true]
   obtain (rfl | hne) := eq_or_ne y (f x)
