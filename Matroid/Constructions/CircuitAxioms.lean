@@ -13,7 +13,7 @@ structure FinsetCircuitMatroid (α : Type*) [DecidableEq α] where
   (empty_not_circuit : ¬Circuit ∅)
   (circuit_antichain : IsAntichain (· ⊆ ·) {C | Circuit C})
   (circuit_elimination : ∀ ⦃C₁ C₂ e⦄, Circuit C₁ → Circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ →
-    ∃ C, Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e})
+    ∃ C, Circuit C ∧ C ⊆ (C₁ ∪ C₂).erase e)
   (circuit_subset_ground : ∀ ⦃C⦄, Circuit C → ↑C ⊆ E)
 
   (Indep : Finset α → Prop)
@@ -21,7 +21,20 @@ structure FinsetCircuitMatroid (α : Type*) [DecidableEq α] where
 
 namespace FinsetCircuitMatroid
 
+
 variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetCircuitMatroid α}
+
+lemma intro_elimination_nontrivial {Circuit : Finset α → Prop}
+    (h_antichain : IsAntichain (· ⊆ ·) {C | Circuit C}) {C₁ C₂ : Finset α} {e : α}
+    (hC₁ : Circuit C₁) (hC₂ : Circuit C₂) (h_ne : C₁ ≠ C₂) (he : e ∈ C₁ ∩ C₂) :
+    C₁.Nontrivial ∧ C₂.Nontrivial := by
+  obtain ⟨heC₁, heC₂⟩ := mem_inter.mp he
+  refine ⟨?_, ?_⟩
+  <;> rw [← one_lt_card_iff_nontrivial]
+  <;> by_contra!
+  <;> have h_con := singleton_of_mem_card_le_one this (by assumption)
+  · exact h_antichain hC₁ hC₂ h_ne (by rwa [← singleton_subset_iff, ← h_con] at heC₂)
+  exact h_antichain hC₂ hC₁ h_ne.symm (by rwa [← singleton_subset_iff, ← h_con] at heC₁)
 
 lemma Circuit.subset_ground (hC : M.Circuit C) : (C : Set α) ⊆ M.E :=
   M.circuit_subset_ground hC
@@ -106,7 +119,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
   have h_ne : Cf ≠ Cg := by rintro rfl; simpa using hCg_subset (mem_inter.1 hg).1
   obtain ⟨C, hC, hC_subset⟩ := M.circuit_elimination hCf hCg h_ne <|
     mem_inter.mpr ⟨he_mem hCf_subset hCf, he_mem hCg_subset hCg⟩
-  rw [union_sdiff_distrib] at hC_subset
+  rw [← sdiff_singleton_eq_erase, union_sdiff_distrib] at hC_subset
   exact hK_indep.not_circuit_of_subset
     (hC_subset.trans <| union_subset (h_subset hCf_subset) (h_subset hCg_subset)) hC
 
