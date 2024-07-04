@@ -9,29 +9,6 @@ import Mathlib.Data.Finset.Basic
 
 open Finset
 
--- Prop 11.1.1
--- for any increasing submodular f : 2^E → ℤ, {C | Minimal and nonempty and f(C) < |C|} is circuits of some matroid
-
--- Cor 11.1.2
--- I independent in M(f) iff |I'| ≤ f(I') for all nonempty subsets of I' of I
-
--- Lemma 11.1.4
--- f integer valued, increasing, submodular function on 2^E. h(X) := f(X) + 1 also integer valued,
--- increasing, and submodular?? (might not need)
-
--- Polymatroid definition
-
--- Prop 11.1.7
--- f polymatroid, r(X) in M(f) is min {f(Y) + |X - Y| : Y ⊆ X}
-
--- Theorem 11.1.9
--- f polymatroid on 2^E iff, for some matroid, there is function φ from E to set of flats of M such that
--- f(X) = r(⋃_{x ∈ X} φ(x)) for all X ⊆ E
--- Prop 11.1.10 is helper
-
--- Prop 11.1.11 (Proof in exercise 9)
--- Matroid from lattice, generalizes Prop 11.1.7, 11.1.1
-
 variable {α β : Type*}
 
 -- Should this be predicate or class?
