@@ -1,6 +1,7 @@
 import Mathlib.Data.Matroid.Map
+import Matroid.ForMathlib.MatroidBasic
 
-open Set
+open Set Set.Notation
 
 universe u v
 
@@ -36,6 +37,8 @@ variable {α ι : Type*} {s t r : Set α}
     range h.sumSubtypeEmbedding = s ∪ t := by
   ext
   simp
+
+
 
 /-- For an indexed family `s : ι → Set α` of disjoint sets,
 the natural injection from the sigma-type `(i : ι) × ↑(s i)` to `α`. -/
@@ -125,6 +128,29 @@ protected def sigma {α : ι → Type*} (M : (i : ι) → Matroid (α i)) : Matr
 @[simp] theorem sigma_ground_eq {α : ι → Type*} {M : (i : ι) → Matroid (α i)} :
   (Matroid.sigma M).E = ⋃ i, (Sigma.mk i '' (M i).E) := rfl
 
+theorem sigma_basis_iff {α : ι → Type*} {M : (i : ι) → Matroid (α i)} {I X : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).Basis I X ↔ ∀ i, (M i).Basis (Sigma.mk i ⁻¹' I) (Sigma.mk i ⁻¹' X) := by
+  simp only [Basis, sigma_indep_iff, mem_maximals_iff, mem_setOf_eq, and_imp, and_assoc,
+    sigma_ground_eq, forall_and, and_congr_right_iff]
+  refine fun hI ↦ ⟨fun ⟨hIX, h, h'⟩ ↦ ⟨fun i ↦ preimage_mono hIX, fun i I₀ hI₀ hI₀X hII₀ ↦ ?_, ?_⟩,
+    fun ⟨hIX, h', h''⟩ ↦ ⟨?_, ?_, ?_⟩⟩
+  · refine hII₀.antisymm ?_
+    specialize h (y := I ∪ Sigma.mk i '' I₀)
+    simp only [preimage_union, union_subset_iff, hIX, image_subset_iff, hI₀X, and_self,
+      subset_union_left, true_implies] at h
+    rw [h, preimage_union, sigma_mk_preimage_image_eq_self]
+    · exact subset_union_right
+    intro j
+    obtain (rfl | hij) := eq_or_ne i j
+    · rwa [sigma_mk_preimage_image_eq_self, union_eq_self_of_subset_left hII₀]
+    rw [sigma_mk_preimage_image' hij, union_empty]
+    apply hI
+  · exact fun i ↦ by simpa using preimage_mono (f := Sigma.mk i) h'
+  · exact fun ⟨i, x⟩ hx ↦ by simpa using hIX i hx
+  · refine fun J hJ hJX hIJ ↦ hIJ.antisymm fun ⟨i,x⟩ hx ↦ ?_
+    simpa using (h' i (hJ i) (preimage_mono hJX) (preimage_mono hIJ)).symm.subset hx
+  exact fun ⟨i,x⟩ hx ↦ mem_iUnion_of_mem i <| by simpa using h'' i hx
+
 theorem Finitary.sigma {α : ι → Type*} {M : (i : ι) → Matroid (α i)} (h : ∀ i, (M i).Finitary) :
     (Matroid.sigma M).Finitary := by
   refine ⟨fun I hI ↦ ?_⟩
@@ -179,26 +205,49 @@ end Sigma
 
 section Sum
 
+variable {α : Type u} {β : Type v}
+
+/-- An auxiliary matroid that is propositionally but not definitionally equal to the direct sum. -/
+def directSum_aux (M : Matroid α) (N : Matroid β) : Matroid (α ⊕ β) :=
+  let S := Matroid.sigma (Bool.rec (M.mapEquiv Equiv.ulift.symm) (N.mapEquiv Equiv.ulift.symm))
+  let e := Equiv.sumEquivSigmaBool (ULift.{v} α) (ULift.{u} β)
+  (S.mapEquiv e.symm).mapEquiv (Equiv.sumCongr Equiv.ulift Equiv.ulift)
+
+lemma directSum_ground_aux (M : Matroid α) (N : Matroid β) :
+    (directSum_aux M N).E = (.inl '' M.E) ∪ (.inr '' N.E) := by
+  simp [directSum_aux, Set.ext_iff, mapEquiv, mapEmbedding, Equiv.ulift, Equiv.sumEquivSigmaBool]
+
+lemma directSum_indep_aux (M : Matroid α) (N : Matroid β) {I : Set (α ⊕ β)} :
+    (directSum_aux M N).Indep I ↔ M.Indep (Sum.inl ⁻¹' I) ∧ N.Indep (Sum.inr ⁻¹' I) := by
+  simp only [directSum_aux, mapEquiv_indep_iff, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
+    Equiv.symm_symm, sigma_indep_iff, Bool.forall_bool, Equiv.ulift_apply]
+  convert Iff.rfl <;>
+    simp [Set.ext_iff, Equiv.ulift, Equiv.sumEquivSigmaBool]
+
 /-- The direct sum of two matroids. -/
-@[simps!] def directSum {α : Type u} {β : Type v} (M : Matroid α) (N : Matroid β) :
-    Matroid (α ⊕ β) := Matroid.ofExistsMatroid
+@[simps!] def directSum (M : Matroid α) (N : Matroid β) : Matroid (α ⊕ β) :=
+  Matroid.ofExistsMatroid
   (E := (.inl '' M.E) ∪ (.inr '' N.E))
   (Indep := fun I ↦ M.Indep (Sum.inl ⁻¹' I) ∧ N.Indep (Sum.inr ⁻¹' I))
-  (hM :=
-    let S := Matroid.sigma (Bool.rec (M.mapEquiv Equiv.ulift.symm) (N.mapEquiv Equiv.ulift.symm))
-    let e := Equiv.sumEquivSigmaBool (ULift.{v} α) (ULift.{u} β)
-    let MS := (S.mapEquiv e.symm).mapEquiv (Equiv.sumCongr Equiv.ulift Equiv.ulift)
-    by
-    refine ⟨MS, ?_, fun I ↦ ?_⟩
-    · simp [Set.ext_iff, MS, e, S, mapEquiv, mapEmbedding, Equiv.ulift, Equiv.sumEquivSigmaBool]
-    simp only [MS, e, S, mapEquiv_indep_iff, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
-      Equiv.symm_symm, sigma_indep_iff, Bool.forall_bool, Equiv.ulift_apply]
-    convert Iff.rfl <;>
-    simp [Set.ext_iff, Equiv.ulift, Equiv.sumEquivSigmaBool] )
+  (hM := ⟨_, (directSum_ground_aux M N).symm, fun _ ↦ directSum_indep_aux M N⟩)
+
+lemma directSum_eq_aux (M : Matroid α) (N : Matroid β) : directSum M N = directSum_aux M N :=
+  eq_of_indep_iff_indep_forall (by simp [directSum, directSum_ground_aux])
+    (fun I _ ↦ by simp [directSum, directSum_indep_aux, Matroid.ofExistsMatroid])
+
+lemma directSum_basis_iff {M : Matroid α} {N : Matroid β} {I X : Set (α ⊕ β)} :
+    (M.directSum N).Basis I X ↔
+      (M.Basis (Sum.inl ⁻¹' I) (Sum.inl ⁻¹' X) ∧ N.Basis (Sum.inr ⁻¹' I) (Sum.inr ⁻¹' X)) := by
+  simp only [directSum_eq_aux, directSum_aux, mapEquiv_basis_iff, Equiv.sumCongr_symm,
+    Equiv.sumCongr_apply, Equiv.symm_symm, sigma_basis_iff, Bool.forall_bool, Equiv.ulift_apply,
+    Equiv.sumEquivSigmaBool, Equiv.coe_fn_mk, Equiv.ulift]
+  convert Iff.rfl
+  all_goals
+  · ext; simp
 
 /-- The direct sum of two matroids on `α` with disjoint ground sets, as a `Matroid α`.
 Implemented by mapping a matroid on `M.E ⊕ N.E` into `α`.  -/
-@[simps!] def disjointSum (M N : Matroid α) (h : Disjoint M.E N.E) : Matroid α :=
+def disjointSum (M N : Matroid α) (h : Disjoint M.E N.E) : Matroid α :=
   ((M.restrictSubtype M.E).directSum (N.restrictSubtype N.E)).mapEmbedding h.sumSubtypeEmbedding
 
 @[simp] theorem disjointSum_ground_eq {M N : Matroid α} {h : Disjoint M.E N.E} :
@@ -215,6 +264,45 @@ theorem Indep.eq_union_image_of_disjointSum {M N : Matroid α} {h : Disjoint M.E
   rw [disjointSum_indep_iff] at hI
   refine ⟨I ∩ M.E, I ∩ N.E, hI.1, hI.2.1, h.mono inf_le_right inf_le_right, ?_⟩
   rw [← inter_union_distrib_left, inter_eq_self_of_subset_left hI.2.2]
+
+lemma disjointSum_basis_iff {M N : Matroid α} {hdj : Disjoint M.E N.E} {I X : Set α} :
+    (M.disjointSum N hdj).Basis I X ↔ M.Basis (I ∩ M.E) (X ∩ M.E) ∧ N.Basis (I ∩ N.E) (X ∩ N.E)
+      ∧ I ⊆ M.E ∪ N.E ∧ X ⊆ M.E ∪ N.E := by
+  simp only [disjointSum, mapEmbedding, restrictSubtype, restrict_ground_eq_self, map_basis_iff',
+    directSum_basis_iff, comap_basis_iff, and_iff_right (Subtype.val_injective.injOn)]
+
+  refine ⟨fun h ↦ ?_, fun ⟨hl, hr, hI, hX⟩ ↦ ?_⟩
+  · obtain ⟨I, X, ⟨⟨hl, -⟩,⟨hr, -⟩⟩, rfl, rfl⟩ := h
+    simp_rw [← hdj.sumSubtypeEmbedding_preimage_inl, ← hdj.sumSubtypeEmbedding_preimage_inr]
+    simp_rw [preimage_image_eq _ hdj.sumSubtypeEmbedding.injective]
+    refine ⟨hl, hr, ?_⟩
+    simp only [Disjoint.sumSubtypeEmbedding_apply, image_subset_iff, preimage_union]
+    constructor
+    all_goals
+    · rintro (⟨x, h⟩ | ⟨y, h⟩)
+      <;> simp [h]
+  have hIX : I ⊆ X := by
+    convert union_subset_union hl.subset hr.subset <;>
+    rwa [← inter_union_distrib_left, eq_comm, inter_eq_left]
+  use (Sum.inl '' (M.E ↓∩ I) ∪ Sum.inr '' (N.E ↓∩ I))
+  use (Sum.inl '' (M.E ↓∩ X) ∪ Sum.inr '' (N.E ↓∩ X))
+  simp only [preimage_union, preimage_image_eq _ Sum.inl_injective, preimage_inl_image_inr,
+    union_empty, Subtype.image_preimage_coe, inter_comm M.E, hl, preimage_mono hIX, and_self,
+    preimage_inr_image_inl, preimage_image_eq _ Sum.inr_injective, empty_union, inter_comm N.E, hr,
+    Disjoint.sumSubtypeEmbedding_apply, true_and]
+  simp [image_union, image_image, ← union_inter_distrib_right, hX, hIX.trans hX]
+
+
+
+
+
+
+
+
+
+
+
+
 
 end Sum
 

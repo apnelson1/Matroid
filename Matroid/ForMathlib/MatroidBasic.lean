@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Restrict
+import Mathlib.Data.Matroid.Map
 
 open Set
 
@@ -31,3 +31,10 @@ lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (
   obtain ⟨x, hx, hxI⟩ := hI.augment hJ (by simpa [encard_eq_coe_toFinset_card] )
   simp only [mem_diff, Finset.mem_coe] at hx
   exact ⟨x, hx.1, hx.2, hxI⟩
+
+@[simp] lemma mapEquiv_basis_iff {α β : Type*} {M : Matroid α} (f : α ≃ β) {I X : Set β} :
+    (M.mapEquiv f).Basis I X ↔ M.Basis (f.symm '' I) (f.symm '' X) := by
+  rw [mapEquiv_eq_map, map_basis_iff']
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨_, _, h, by simp, by simp⟩⟩
+  obtain ⟨I, X, hIX, rfl, rfl⟩ := h
+  simpa
