@@ -88,6 +88,13 @@ open Matroid
     (Indep := fun I ↦ ∀ ⦃C⦄, C ⊆ I → ¬Circuit C)
     (indep_iff := by simp)
 
+@[simp] theorem circuit_ofSubmodular_iff [DecidableEq α] {f : Finset α → ℤ}
+    (h_sub : Submodular f) (h_mono : Monotone f) (C : Finset α) :
+    (ofSubmodular h_sub h_mono).Circuit C ↔
+    C ∈ minimals (· ⊆ ·) {C | C.Nonempty ∧ f C < C.card} := by
+  unfold ofSubmodular
+  simp only [FinsetCircuitMatroid.matroid_circuit_iff]
+
 -- corollary 11.1.2
 @[simp] theorem indep_ofSubmodular_iff [DecidableEq α] {f : Finset α → ℤ}
     (h_sub : Submodular f) (h_mono : Monotone f) (I : Finset α) :
@@ -115,9 +122,13 @@ variable {f : Finset α → ℤ}
 @[simps!] def ofPolymatroidFn [DecidableEq α] (h : PolymatroidFn f) :=
   ofSubmodular h.submodular h.mono
 
-@[simp] theorem indep_ofPolymatroidFn_iff [DecidableEq α] (hf : PolymatroidFn f) (I : Finset α):
+@[simp] theorem indep_ofPolymatroidFn_iff [DecidableEq α] (hf : PolymatroidFn f) (I : Finset α) :
     (ofPolymatroidFn hf).Indep I ↔ ∀ I' ⊆ I, I'.Nonempty → I'.card ≤ f I' := by
   simp only [ofPolymatroidFn, indep_ofSubmodular_iff]
+
+theorem ofPolymatroidFn_nonempty_indep_le [DecidableEq α] {hf : PolymatroidFn f} {I : Finset α}
+    (h' : I.Nonempty) (h : (ofPolymatroidFn hf).Indep I) : I.card ≤ f I := by
+  exact (indep_ofPolymatroidFn_iff hf I).mp h I subset_rfl h'
 
 theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidFn f} {X : Finset α}
     (hX_indep : (ofPolymatroidFn hf).Indep X) :
@@ -153,10 +164,10 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
   have hB_fintype : Fintype ↑B := by exact hB_finite.fintype
   rw [← Set.coe_toFinset B] at hB
   refine ⟨?_, ?_⟩; swap
-  · intro Y hY
+  · intro Y _
     rw [← hB.r]
     simp only [M] at hB
-    obtain ⟨W, hW_subset, hW, h⟩ := polymatroid_rank_eq_on_indep hB.indep
+    obtain ⟨W, _, hW, h⟩ := polymatroid_rank_eq_on_indep hB.indep
     rw [hW]
     calc f W + ↑(B.toFinset \ W).card
       _ ≤ f (Y ∩ B.toFinset) + ↑(B.toFinset \ (Y ∩ B.toFinset)).card :=
@@ -170,11 +181,99 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
   have h_choice : ∀ e : ↑(X \ B.toFinset),
       ∃ I ⊆ B.toFinset, M.Indep I ∧ f (insert ↑e I) < (insert ↑e I).card := by
     intro e
-    sorry
-  choose I h_subset h_indep hf using h_choice
+    have h_ins : M.Dep (insert e.val B) := by
+      have : ↑e ∈ X.toSet \ ↑B.toFinset := by
+        rw [← coe_sdiff]
+        exact e.2
+      replace this := hB.insert_dep this
+      simpa only [Set.coe_toFinset] using this
+    obtain ⟨C, hC_subset, hC⟩ := h_ins.exists_circuit_subset
+    have : Fintype ↑C := by
+      have : C ⊆ ↑(insert ↑e B.toFinset) := by
+        rwa [coe_insert, Set.coe_toFinset]
+      exact ((insert ↑e B.toFinset).finite_toSet.subset this).fintype
+    set I := C.toFinset.erase e
+    have hI : I ⊆ B.toFinset := by
+      intro x hx
+      obtain ⟨hxe, hx⟩ := mem_erase.mp hx
+      simp only [Set.mem_toFinset] at hx ⊢
+      obtain ⟨h, h⟩ := Set.mem_insert_iff.mp <| hC_subset hx
+      · contradiction
+      assumption
+    use I
+    refine ⟨hI, hB.indep.subset hI, ?_⟩
+    by_cases he : ↑e ∈ C.toFinset; swap
+    · exfalso
+      simp only [Set.mem_toFinset] at he
+      have := ((Set.subset_insert_iff_of_not_mem he).mp hC_subset)
+      rw [← Set.coe_toFinset B] at this
+      exact hC.dep.1 <| hB.indep.subset this
+    rw [insert_erase he]
+    simp only [M, ofPolymatroidFn] at hC
+    rw [← Set.coe_toFinset C, circuit_ofSubmodular_iff hf.submodular hf.mono] at hC
+    exact hC.1.2
+  choose I h_subset h_indep h_lt using h_choice
   set Ie := fun e : ↑(X \ B.toFinset) ↦ insert ↑e (I e)
-  have h_induc : ∀ Y : Finset ↑(X \ B.toFinset), f (Finset.biUnion Y Ie) ≤ (Finset.biUnion Y I).card := by
-    sorry
+  have h_induc : ∀ Y : Finset ↑(X \ B.toFinset), Y.Nonempty →
+    f (Finset.biUnion Y Ie) ≤ (Finset.biUnion Y I).card := by
+    intro Y hY_nonempty
+    induction' hY_nonempty using Finset.Nonempty.strong_induction
+    case h₀ a =>
+      have ha : ↑a ∈ X \ B.toFinset := coe_mem a
+      replace ha : ↑a ∉ I a := by
+        specialize h_subset a
+        contrapose! ha
+        exact not_mem_sdiff_of_mem_right <| h_subset ha
+      simp only [singleton_biUnion, Ie]
+      rw [← Int.lt_add_one_iff, ← Nat.cast_one, ← Nat.cast_add, ← card_insert_of_not_mem ha]
+      exact h_lt a
+    case h₁ Y hY IH =>
+      obtain ⟨T, a, ha, b, hb, hab, h⟩ := Nontrivial.exists_cons_eq hY
+      set Y' := (cons b T hb) with hY'
+      have hIH := IH Y' (nonempty_cons hb) (by rw [← h]; exact ssubset_cons _)
+      rw [← h, cons_eq_insert, ← hY', biUnion_insert, biUnion_insert]
+      calc f (Ie a ∪ Y'.biUnion Ie)
+        _ ≤ f (Ie a) + f (Y'.biUnion Ie) - f (Ie a ∩ Y'.biUnion Ie) := by
+          have := hf.submodular (Ie a) (Y'.biUnion Ie)
+          simp only [inf_eq_inter, sup_eq_union] at this
+          linarith [this]
+        _ ≤ f (Ie a) + f (Y'.biUnion Ie) - (Ie a ∩ Y'.biUnion Ie).card := by
+          have : Ie a ∩ Y'.biUnion Ie ⊆ I a := by
+            intro x hx
+            obtain (rfl | h) := mem_insert.mp <| mem_of_mem_inter_left hx; swap
+            · assumption
+            exfalso
+            replace hx := mem_of_mem_inter_right hx
+            simp only [mem_biUnion, Subtype.exists] at hx
+            obtain ⟨e, he, heY', h_con⟩ := hx
+            have : a ∉ Y' := (Iff.not mem_cons).mpr (not_or_intro hab ha)
+            obtain (rfl | h) := mem_insert.mp h_con
+            · simp only [Subtype.coe_eta] at heY'
+              exact this heY'
+            replace this := h_subset ⟨e, he⟩ <| h
+            exact (mem_sdiff.mp a.2).right this
+          obtain (h_empty | h_nonempty) := eq_empty_or_nonempty (Ie a ∩ Y'.biUnion Ie)
+          · rw [h_empty, card_empty, ← bot_eq_empty, hf.zero_at_bot, Nat.cast_zero]
+          linarith [ofPolymatroidFn_nonempty_indep_le h_nonempty <|
+            (h_indep a).subset <| coe_subset.mpr this]
+        _ ≤ f (Ie a) + f (Y'.biUnion Ie) - (I a ∩ Y'.biUnion I).card := by
+          have : I a ∩ Y'.biUnion I ⊆ (Ie a ∩ Y'.biUnion Ie) := by
+            refine inter_subset_inter ?_ ?_
+            · exact subset_insert (↑a) (I a)
+            refine biUnion_mono fun a _ ↦ subset_insert (↑a) (I a)
+          linarith [card_mono this]
+        _ ≤ f (Ie a) + (Y'.biUnion I).card - (I a ∩ Y'.biUnion I).card := by
+          linarith [hIH]
+        _ ≤ (I a).card + (Y'.biUnion I).card - (I a ∩ Y'.biUnion I).card := by
+          have : {a} ⊂ Y := by
+            refine Finset.ssubset_iff_subset_ne.mpr ⟨?_, ?_⟩
+            · simp only [singleton_subset_iff, ← h]
+              exact mem_cons_self a (cons b T hb)
+            exact Ne.symm (Nontrivial.ne_singleton hY)
+          specialize IH {a} (singleton_nonempty a) this
+          simp only [singleton_biUnion] at IH
+          linarith [IH]
+        _ = (I a ∪ Y'.biUnion I).card := by exact Eq.symm cast_card_union
   use univ.biUnion Ie
   refine ⟨?_, ?_⟩
   · intro x hx
@@ -187,18 +286,39 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
   have h_eq : X \ univ.biUnion Ie = B.toFinset \ univ.biUnion I := by
     ext x; refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     <;> refine mem_sdiff.mpr ⟨?_, ?_⟩
-    · sorry
-    <;> aesop
+    · have :  X \ B.toFinset ⊆ univ.biUnion Ie := by
+        intro a ha
+        simp only [univ_eq_attach, mem_biUnion, mem_attach, true_and, Subtype.exists]
+        use a, ha
+        exact mem_insert_self a (I ⟨a, ha⟩)
+      replace h := sdiff_subset_sdiff (subset_refl X) this <| h
+      simp only [sdiff_sdiff_right_self, inf_eq_inter] at h
+      exact mem_of_mem_inter_right h
+    -- thanks aesop
+    · simp_all only [Set.coe_toFinset, Set.subset_toFinset, Subtype.forall, mem_sdiff,
+      Set.mem_toFinset, ofPolymatroidFn_Indep, IndepMatroid.ofFinset_indep, univ_eq_attach,
+        mem_biUnion, mem_attach, mem_insert, true_and, Subtype.exists, not_exists, not_or,
+        not_false_eq_true, and_self, exists_false, M, Ie]
+    · exact hB.subset (mem_sdiff.mp h).left
+    -- thanks aesop
+    simp_all only [Set.coe_toFinset, Set.subset_toFinset, Subtype.forall, mem_sdiff,
+      Set.mem_toFinset, ofPolymatroidFn_Indep, IndepMatroid.ofFinset_indep, univ_eq_attach,
+      mem_biUnion, mem_attach, true_and, Subtype.exists, not_exists, mem_insert, not_false_eq_true,
+      and_self, or_false, exists_prop, exists_eq_right', not_true_eq_false, and_false, M, Ie]
   rw [h_eq, cast_card_sdiff, add_sub]
-  · linarith [h_induc univ]
+  · obtain (rfl | hXB) := eq_or_ne X B.toFinset
+    · simp only [sdiff_self, bot_eq_empty, not_mem_empty, isEmpty_subtype, not_false_eq_true,
+      implies_true, univ_eq_empty, biUnion_empty, Set.toFinset_card, card_empty, Nat.cast_zero,
+      sub_zero, add_le_iff_nonpos_left, ge_iff_le]
+      rw [← bot_eq_empty, hf.zero_at_bot]
+    have h_nonempty : (@univ ↑(X \ B.toFinset) _).Nonempty := by
+      have := hXB.symm.ssubset_of_subset <| Finset.coe_subset.mp hB.subset
+      obtain ⟨x, hx⟩ := Finset.exists_of_ssubset this
+      simp only [univ_eq_attach, attach_nonempty_iff]
+      use x
+      exact mem_sdiff.mpr hx
+    linarith [h_induc univ h_nonempty]
   intro x hx
   simp only [mem_biUnion, mem_univ, true_and] at hx
   obtain ⟨e, he⟩ := hx
   exact h_subset e he
-
-example (h : ∀ i : ℕ, ∃ j, i < j ∧ j < i+i) : True := by
-  choose! f h h' using h
-  guard_hyp f : ℕ → ℕ
-  guard_hyp h : ∀ (i : ℕ), i < f i
-  guard_hyp h' : ∀ (i : ℕ), f i < i + i
-  trivial
