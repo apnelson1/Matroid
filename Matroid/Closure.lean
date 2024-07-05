@@ -1,6 +1,7 @@
 import Mathlib.Data.Matroid.Map
 import Mathlib.Order.Closure
 import Matroid.Constructions.DirectSum
+import Matroid.Constructions.Coexpand
 
 open Set
 namespace Matroid
@@ -64,16 +65,35 @@ lemma closure_eq_sInter (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aeso
     M.closure X = ⋂₀ {F | M.Flat F ∧ X ⊆ F} := by
   simp [closure_eq_union_sInter, inter_eq_self_of_subset_left hX, union_eq_self_of_subset_left]
 
+lemma flat_coexpand_iff {F : Set α} : M.coexpand.Flat F ↔ M.Flat (F ∩ M.E) := by
+  simp only [flat_iff, basis_iff', coexpand_indep_iff, coexpand_ground_eq, subset_univ, and_true,
+    and_imp, subset_inter_iff, inter_subset_right]
+  refine ⟨fun h I X hI hIF _ h' _ hIX hImax hXE ↦ ⟨?_, hXE⟩, fun h ↦ ?_⟩
+  · specialize h (I := I ∪ (F \ M.E)) (X := X ∪ (F \ M.E))
+    simp only [union_inter_distrib_right, inter_eq_self_of_subset_left hI.subset_ground,
+      diff_inter_self, union_empty, hI, union_subset_iff, hIF, diff_subset_iff, subset_union_right,
+      and_self, and_imp, hIX.trans subset_union_left, and_true, true_implies] at h
+    refine h (fun J hJ hIJ hFJ hJF ↦ ?_) ?_
+    · obtain rfl : I = J ∩ M.E :=
+        h' _ hJ (subset_inter hIJ hI.subset_ground) (inter_subset_left.trans hJF) inter_subset_right
+      simp only [subset_antisymm_iff, union_subset_iff, inter_subset_left, diff_subset_iff, hFJ,
+        and_self, true_and]
+      rw [← diff_subset_iff, diff_self_inter]
 
 
-def woah (M : Matroid α) := M.disjointSum (freeOn M.Eᶜ) disjoint_compl_right
 
-lemma flat_woah_iff {F : Set α} : M.woah.Flat F ↔ M.Flat (F ∩ M.E) := by
-  simp [woah, flat_iff, disjointSum_basis_iff, freeOn_ground, ← diff_eq, freeOn_basis_iff,
-    diff_subset_iff, union_compl_self, subset_univ, and_true, and_self, and_imp,
-    disjointSum_ground_eq, subset_inter_iff, inter_subset_right, subset_antisymm_iff]
-  refine ⟨fun h I X hI hIX ↦ ⟨?_, hIX.subset_ground⟩, fun h ↦ ?_⟩
-  ·
+
+-- def woah (M : Matroid α) := M.disjointSum (freeOn M.Eᶜ) disjoint_compl_right
+
+-- lemma flat_woah_iff {F : Set α} : M.woah.Flat F ↔ M.Flat (F ∩ M.E) := by
+--   simp [woah, flat_iff, disjointSum_basis_iff, freeOn_ground, ← diff_eq, freeOn_basis_iff,
+--     diff_subset_iff, union_compl_self, subset_univ, and_true, and_self, and_imp,
+--     disjointSum_ground_eq, subset_inter_iff, inter_subset_right, subset_antisymm_iff]
+--   refine ⟨fun h I X hI hIX ↦ ⟨?_, hIX.subset_ground⟩, fun h ↦ ?_⟩
+--   · specialize h (I := I ∪ (F \ M.E)) (X := X ∪ (F \ M.E))
+--     simp [diff_subset_iff, ← union_assoc, union_inter_distrib_right,
+--       inter_eq_self_of_subset_left hI.indep.subset_ground, hI,
+--       inter_eq_self_of_subset_left hIX.subset_ground, hIX, true_implies] at h
     -- specialize h (I := I) (X := X)
     -- simp only [inter_eq_self_of_subset_left hI.indep.subset_ground, hI,
     --   inter_eq_self_of_subset_left hIX.subset_ground, hIX, true_implies] at h
