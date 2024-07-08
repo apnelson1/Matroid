@@ -291,10 +291,8 @@ lemma Basis.closure_eq_closure (h : M.Basis I X) : M.closure I = M.closure X := 
 lemma Basis.closure_eq_right (h : M.Basis I (M.closure X)) : M.closure I = M.closure X :=
   M.closure_closure X ▸ h.closure_eq_closure
 
--- lemma Basis'.closure_eq_closure (h : M.Basis' I X) : M.closure I = (M.closure X) ∪ (X \ I) := by
---   rw [basis'_iff_basis_inter_ground] at h
---   rw [h.closure_eq_closure, closure_inter_ground, inter_assoc, inter_self]
-  -- rw [← closure_inter_ground _ X, h.basis_inter_ground.closure_eq_closure]
+lemma Basis'.closure_right_eq (h : M.Basis' I X) : M.closure X = (M.closure I) ∪ (X \ M.E) := by
+  rw [h.basis_inter_ground.closure_eq_closure, M.closure_inter_ground X]
 
 lemma Basis.subset_closure (h : M.Basis I X) : X ⊆ M.closure I := by
   rw [← closure_subset_closure_iff_subset_closure, h.closure_eq_closure]
@@ -470,6 +468,8 @@ lemma basis_iff_indep_closure : M.Basis I X ↔ M.Indep I ∧ X ⊆ M.closure I 
   ⟨fun h ↦ ⟨h.indep, h.subset_closure, h.subset⟩, fun h ↦
     (basis_union_iff_indep_closure.mpr ⟨h.1, h.2.1⟩).basis_subset h.2.2 subset_union_right⟩
 
+
+
 lemma Basis.eq_of_closure_subset (hI : M.Basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.closure J) : J = I := by
   rw [← hI.indep.closure_inter_eq_self_of_subset hJI, inter_eq_self_of_subset_right]
   exact hI.subset.trans hJ
@@ -494,65 +494,32 @@ lemma mem_closure_insert (he : e ∉ M.closure X) (hef : e ∈ M.closure (insert
   rw [← coexpand_closure_eq] at *
   set M' := M.coexpand
 
-  -- suffices aux : ∀ e f X, e ≠ f → e ∈ M.E \ M.closure X → e ∈ M.closure (insert f X) → X ⊆ M.E →
-  --     f ∈ M.closure (insert e X) by
-  --   obtain (rfl | hne) := eq_or_ne e f
-  --   · exact mem_closure_of_mem _ <| .inl rfl
-  --   obtain (heE | heE) := em' <| e ∈ M.E
-  --   · rw [mem_closure_iff_mem_of_not_mem_ground heE] at he hef
-  --     contrapose! hne
-  --     rwa [mem_insert_iff, or_iff_left he] at hef
-  --   obtain (hfE | hfE) := em' <| f ∈ M.E
-  --   · contrapose! hne
-  --     rwa [closure_insert_of_not_mem_ground hfE, mem_insert_iff, or_iff_left he] at hef
-  --   apply mem_of_mem_of_subset <| aux e f (X ∩ M.E) hne
-  --     ⟨heE, not_mem_subset (M.closure_subset_closure inter_subset_left) he⟩ _
-  --     inter_subset_right
-  --   · exact M.closure_subset_closure <| insert_subset_insert inter_subset_left
-  --   rwa [closure_inter_ground, mem_union, mem_diff, iff_true_intro heE, not_true, and_false,
-  --     or_false, insert_inter_of_mem hfE] at hef
-      -- (M.closure_subset_closure ?_)
+  obtain ⟨I, hI⟩ := M'.exists_basis X
+  rw [← hI.closure_eq_closure, hI.indep.not_mem_closure_iff] at he
+  rw [← closure_insert_closure_eq_closure_insert, ← hI.closure_eq_closure,
+    closure_insert_closure_eq_closure_insert, he.1.mem_closure_iff] at *
+  rw [or_iff_not_imp_left, not_dep_iff, insert_comm]
+  intro hi
+  rw [(hi.subset (subset_insert _ _)).mem_closure_iff, or_iff_not_imp_left, not_dep_iff,
+    imp_iff_right hi, mem_insert_iff, or_iff_left he.2] at hef
+  simp [hef]
 
-    -- exact aux _ _ _ hne ⟨heE, he⟩ hef
-  -- clear! e f X
-  -- rintro e f X hne ⟨he, heX⟩ hef hX
-  -- obtain ⟨I, hI⟩ := M.exists
-  -- suffices f ∈ M.closure (insert e (X ∩ M.E)) by
-  --   simpa [M.closure_inter_ground (insert e X), hne.symm, hfE, insert_inter_of_mem heE]
+lemma closure_exchange (he : e ∈ M.closure (insert f X) \ M.closure X) :
+    f ∈ M.closure (insert e X) \ M.closure X :=
+  ⟨mem_closure_insert he.2 he.1, fun hf ↦ by simp [closure_insert_eq_of_mem_closure hf] at he⟩
 
-  -- simp
-  -- simp [M.closure_inter_ground (insert e X)]
-
-  -- rw [← closure_inter_ground] at *
-  -- have hfE : f ∈ M.E := by
-  --   by_contra! hfE; rw [insert_inter_of_not_mem hfE] at hef; exact he hef
-  -- have heE : e ∈ M.E := (M.closure_subset_ground _) hef
-  -- rw [insert_inter_of_mem hfE] at hef; rw [insert_inter_of_mem heE]
-
-  -- obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  -- rw [← hI.closure_eq_closure, hI.indep.not_mem_closure_iff] at he
-  -- rw [← closure_insert_closure_eq_closure_insert, ← hI.closure_eq_closure, closure_insert_closure_eq_closure_insert, he.1.mem_closure_iff] at *
-  -- rw [or_iff_not_imp_left, dep_iff, insert_comm,
-  --   and_iff_left (insert_subset heE (insert_subset hfE hI.indep.subset_ground)), not_not]
-  -- intro h
-  -- rw [(h.subset (subset_insert _ _)).mem_closure_iff, or_iff_right (h.not_dep), mem_insert_iff,
-  --   or_iff_left he.2] at hef
-  -- subst hef; apply mem_insert
-
-lemma closure_exchange (he : e ∈ M.closure (insert f X) \ M.closure X) : f ∈ M.closure (insert e X) \ M.closure X :=
-  ⟨mem_closure_insert he.2 he.1, fun hf ↦
-    by rwa [closure_insert_eq_of_mem_closure hf, diff_self, iff_false_intro (not_mem_empty _)] at he⟩
-
-lemma closure_exchange_iff : e ∈ M.closure (insert f X) \ M.closure X ↔ f ∈ M.closure (insert e X) \ M.closure X :=
+lemma closure_exchange_iff :
+    e ∈ M.closure (insert f X) \ M.closure X ↔ f ∈ M.closure (insert e X) \ M.closure X :=
   ⟨closure_exchange, closure_exchange⟩
 
 lemma closure_insert_eq_closure_insert_of_mem (he : e ∈ M.closure (insert f X) \ M.closure X) :
     M.closure (insert e X) = M.closure (insert f X) := by
-  have hf := closure_exchange he
-  rw [eq_comm, ← closure_closure, ← insert_eq_of_mem he.1, closure_insert_closure_eq_closure_insert, insert_comm, ← closure_closure,
-    ← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hf.1, closure_closure, closure_closure]
+  rw [eq_comm, ← closure_closure, ← insert_eq_of_mem he.1, closure_insert_closure_eq_closure_insert,
+    insert_comm, ← closure_closure, ← closure_insert_closure_eq_closure_insert,
+    insert_eq_of_mem (closure_exchange he).1, closure_closure, closure_closure]
 
-lemma closure_diff_singleton_eq_closure (h : e ∈ M.closure (X \ {e})) : M.closure (X \ {e}) = M.closure X := by
+lemma closure_diff_singleton_eq_closure (h : e ∈ M.closure (X \ {e})) :
+    M.closure (X \ {e}) = M.closure X := by
   refine' (em (e ∈ X)).elim (fun h' ↦ _) (fun h' ↦ by rw [diff_singleton_eq_self h'])
   convert M.closure_insert_closure_eq_closure_insert e (X \ {e}) using 1
   · rw [insert_eq_of_mem h, closure_closure]
@@ -572,87 +539,92 @@ lemma indep_iff_not_mem_closure_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
   exact mem_of_mem_of_subset
     (hJ.subset_closure he) (M.closure_subset_closure (subset_diff_singleton hJ.subset heJ))
 
-lemma indep_iff_not_mem_closure_diff_forall' : M.Indep I ↔ I ⊆ M.E ∧ ∀ e ∈ I, e ∉ M.closure (I \ {e}) :=
-  ⟨fun h ↦ ⟨h.subset_ground, (indep_iff_not_mem_closure_diff_forall h.subset_ground).mp h⟩, fun h ↦
-    (indep_iff_not_mem_closure_diff_forall h.1).mpr h.2⟩
+lemma indep_iff_not_mem_closure_diff_forall' :
+    M.Indep I ↔ (∀ e ∈ I, e ∉ M.closure (I \ {e})) ∧ I ⊆ M.E :=
+  ⟨fun h ↦ ⟨(indep_iff_not_mem_closure_diff_forall h.subset_ground).mp h, h.subset_ground⟩, fun h ↦
+    (indep_iff_not_mem_closure_diff_forall h.2).mpr h.1⟩
 
 lemma Indep.not_mem_closure_diff_of_mem (hI : M.Indep I) (he : e ∈ I) : e ∉ M.closure (I \ {e}) :=
-  (indep_iff_not_mem_closure_diff_forall'.1 hI).2 e he
+  (indep_iff_not_mem_closure_diff_forall'.1 hI).1 e he
 
-lemma indep_iff_closure_diff_ne_forall : M.Indep I ↔ ∀ e ∈ I, M.closure (I \ {e}) ≠ M.closure I := by
-  rw [indep_iff_not_mem_closure_diff_forall']
-  refine' ⟨fun ⟨hIE, h⟩ e heI h_eq ↦ h e heI (h_eq.symm.subset (M.mem_closure_of_mem heI)),
-    fun h ↦ ⟨fun e heI ↦ by_contra fun heE ↦ h e heI _,fun e heI hin ↦ h e heI
-      (by rw [closure_diff_singleton_eq_closure hin])⟩⟩
-  rw [← closure_inter_ground, inter_comm, inter_diff_distrib_left,
-    inter_singleton_eq_empty.mpr heE, diff_empty, inter_comm, closure_inter_ground]
+lemma indep_iff_closure_diff_ne_forall :
+    M.Indep I ↔ (∀ e ∈ I, M.closure (I \ {e}) ≠ M.closure I) ∧ I ⊆ M.E := by
+  rw [indep_iff_not_mem_closure_diff_forall', and_congr_left_iff]
+  exact fun _ ↦ ⟨fun h e heI h_eq ↦ h e heI <| h_eq ▸ M.subset_closure I heI,
+    fun h e heI hmem ↦ h e heI <| by rwa [mem_closure_diff_singleton_iff_closure heI] at hmem⟩
 
-lemma Indep.closure_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) : M.closure (I \ {e}) ⊂ M.closure I :=
-  ssubset_of_subset_of_ne (M.closure_mono diff_subset) (indep_iff_closure_diff_ne_forall.mp hI _ he)
+lemma Indep.closure_diff_singleton_ssubset (hI : M.Indep I) (he : e ∈ I) :
+    M.closure (I \ {e}) ⊂ M.closure I :=
+  (M.closure_subset_closure diff_subset).ssubset_of_ne <|
+    (indep_iff_closure_diff_ne_forall.1 hI).1 e he
 
 lemma indep_iff_closure_ssubset_ssubset_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ (∀ J, J ⊂ I → M.closure J ⊂ M.closure I) := by
-  rw [indep_iff_not_mem_closure_diff_forall]
-  refine' ⟨fun h J hJI ↦ (M.closure_subset_closure hJI.subset).ssubset_of_ne (fun h_eq ↦ _),
-    fun h e heI hin ↦ _⟩
-  · obtain ⟨e,heJ,h'⟩ := ssubset_iff_insert.1 hJI
-    apply h e (h' (mem_insert _ _))
-    have heI := M.mem_closure_of_mem (h' (mem_insert e J))
-    rw [← h_eq] at heI
-    refine' mem_of_mem_of_subset heI (M.closure_subset_closure _)
-    rw [subset_diff, disjoint_singleton_right, and_iff_left heJ]
-    exact (subset_insert _ _).trans h'
-  refine' (h (I \ {e}) (diff_singleton_sSubset.2 heI)).ne _
-  rw [← closure_closure, ← insert_eq_of_mem hin, closure_insert_closure_eq_closure_insert, insert_diff_singleton,
-    insert_eq_of_mem heI]
+  refine ⟨fun hI J hJI ↦ ?_,
+    fun h ↦ indep_iff_closure_diff_ne_forall.2 ⟨fun e heI ↦ (h _ (by simpa)).ne, hI⟩⟩
+  obtain ⟨e, heI, heJ⟩ := exists_of_ssubset hJI
+  exact ssubset_of_subset_of_ssubset
+    (M.closure_subset_closure (subset_diff_singleton hJI.subset heJ)) <|
+    hI.closure_diff_singleton_ssubset heI
 
-lemma eq_of_closure_eq_closure_forall {M₁ M₂ : Matroid α} (h : ∀ X, M₁.closure X = M₂.closure X) : M₁ = M₂ :=
-  eq_of_indep_iff_indep_forall (by simpa using h univ)
-    (fun _ _ ↦ by simp_rw [indep_iff_closure_diff_ne_forall, h])
+lemma ext_closure {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (h : ∀ X, M₁.closure X = M₂.closure X) :
+    M₁ = M₂ :=
+  eq_of_indep_iff_indep_forall hE fun I _ ↦ by simp_rw [indep_iff_closure_diff_ne_forall, h, hE]
 
 @[simp] lemma restrict_closure_eq' (M : Matroid α) (X R : Set α) :
-    (M ↾ R).closure X = (M.closure (X ∩ R) ∩ R) ∪ (R \ M.E) := by
-  rw [← closure_inter_ground, restrict_ground_eq]
-  ext e
+    (M ↾ R).closure X = (M.closure (X ∩ R) ∩ R) ∪ (X \ R) ∪ (R \ M.E) := by
+  rw [closure_inter_ground, restrict_ground_eq, eq_comm, closure_inter_ground]
   obtain ⟨I, hI⟩ := (M ↾ R).exists_basis (X ∩ R)
   have hI' := (basis_restrict_iff'.mp hI).1
-  rw [← hI.closure_eq_closure, ← M.closure_inter_ground (X ∩ R), ← hI'.closure_eq_closure, mem_union, mem_inter_iff,
-    hI'.indep.mem_closure_iff, hI.indep.mem_closure_iff, restrict_dep_iff, insert_subset_iff,
-    dep_iff, insert_subset_iff, and_iff_left hI'.indep.subset_ground, mem_diff,
-    and_iff_left (show I ⊆ R from hI.indep.subset_ground)]
-  have hIR : I ⊆ R := hI.indep.subset_ground
-  by_cases he : e ∈ M.E; aesop
-  simp only [iff_false_intro he, and_false, false_or, and_true, ← mem_inter_iff, ← mem_union,
-    inter_eq_self_of_subset_left hIR, union_comm I, and_iff_right
-      (show ¬M.Indep (insert e I) from fun hi ↦ he (hi.subset_ground (mem_insert _ _))),
-    not_false_iff]
+  ext e
+  simp only [← hI'.closure_eq_closure, mem_union, mem_inter_iff, hI'.indep.mem_closure_iff, dep_iff,
+    insert_subset_iff, hI'.indep.subset_ground, and_true, mem_diff, ← hI.closure_eq_closure,
+    hI.indep.mem_closure_iff, restrict_indep_iff, show I ⊆ R from hI.indep.subset_ground, not_and,
+    restrict_ground_eq]
+  by_cases heR : e ∈ R
+  · by_cases heE : e ∈ M.E
+    · simp [heR, heE]
+    simp [heR, heE, show ¬ M.Indep (insert e I) from fun h ↦ heE <| h.subset_ground <| .inl rfl]
+  suffices e ∈ I → e ∈ X by simpa [heR]
+  exact fun heI ↦ (hI.subset heI).1
 
 lemma restrict_closure_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).closure X = M.closure X ∩ R := by
-  rw [restrict_closure_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR]
+  rw [restrict_closure_eq', diff_eq_empty.mpr hR, union_empty, inter_eq_self_of_subset_left hXR,
+    diff_eq_empty.2 hXR, union_empty]
 
 @[simp] lemma comap_closure_eq {β : Type*} (M : Matroid β) (f : α → β) (X : Set α) :
-    (M.comap f).closure X = f ⁻¹' M.closure (f '' X) := by
+    (M.comap f).closure X = X ∪ f ⁻¹' M.closure (f '' X) := by
   obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
   obtain ⟨hI', hIinj, -⟩ := comap_basis'_iff.1 hI
-  rw [← hI.closure_eq_closure]
+  simp only [hI.closure_right_eq, comap_ground_eq, hI'.closure_right_eq, preimage_union]
   ext x
+  simp [hI.indep.mem_closure_iff, image_insert_eq, hI'.indep.mem_closure_iff, dep_iff,
+    insert_subset_iff]
   obtain (hxE | hxE) := em' (f x ∈ M.E)
-  · apply iff_of_false <;> exact (fun h ↦ hxE (by simpa using mem_ground_of_mem_closure h))
+  · simp [hxE, or_comm, show ¬ M.Indep (insert (f x) _) from sorry, iff_def]
+    aesop
 
-  by_cases hxI : x ∈ I
-  · exact iff_of_true (mem_closure_of_mem _ hxI hI.indep.subset_ground)
-      (mem_closure_of_mem' _ (mem_image_of_mem f (hI.subset hxI))
-        (hI'.indep.subset_ground (mem_image_of_mem f hxI)))
-  have hss : insert x I ⊆ (M.comap f).E := insert_subset hxE hI.indep.subset_ground
-  rw [hI.indep.mem_closure_iff_of_not_mem hxI, ← not_indep_iff hss, comap_indep_iff,
-    injOn_insert hxI, not_and, not_and, not_not, iff_true_intro hIinj, true_imp_iff]
 
-  by_cases hxI' : f x ∈ f '' I
-  · simp [hxI', hxE, mem_closure_of_mem' _ (hI'.subset hxI') hxE]
 
-  rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,
-    hI'.indep.insert_indep_iff_of_not_mem hxI', mem_diff, and_iff_right hxE, not_not, hI'.closure_eq_closure]
+  -- rw [← hI.closure_eq_closure]
+  -- ext x
+  -- obtain (hxE | hxE) := em' (f x ∈ M.E)
+  -- · apply iff_of_false <;> exact (fun h ↦ hxE (by simpa using mem_ground_of_mem_closure h))
+
+  -- by_cases hxI : x ∈ I
+  -- · exact iff_of_true (mem_closure_of_mem _ hxI hI.indep.subset_ground)
+  --     (mem_closure_of_mem' _ (mem_image_of_mem f (hI.subset hxI))
+  --       (hI'.indep.subset_ground (mem_image_of_mem f hxI)))
+  -- have hss : insert x I ⊆ (M.comap f).E := insert_subset hxE hI.indep.subset_ground
+  -- rw [hI.indep.mem_closure_iff_of_not_mem hxI, ← not_indep_iff hss, comap_indep_iff,
+  --   injOn_insert hxI, not_and, not_and, not_not, iff_true_intro hIinj, true_imp_iff]
+
+  -- by_cases hxI' : f x ∈ f '' I
+  -- · simp [hxI', hxE, mem_closure_of_mem' _ (hI'.subset hxI') hxE]
+
+  -- rw [iff_false_intro hxI', imp_false, mem_preimage, image_insert_eq,
+  --   hI'.indep.insert_indep_iff_of_not_mem hxI', mem_diff, and_iff_right hxE, not_not, hI'.closure_eq_closure]
 
 @[simp] lemma map_closure_eq {β : Type*} (M : Matroid α) (f : α → β) (hf) (X : Set β) :
     (M.map f hf).closure X = f '' M.closure (f ⁻¹' X) := by
