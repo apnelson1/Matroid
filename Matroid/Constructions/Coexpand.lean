@@ -37,3 +37,11 @@ lemma coexpand_base_iff : M.coexpand.Base B ↔ M.Base (B ∩ M.E) ∧ M.Eᶜ �
   exact fun x hxI hxE ↦ hIEB ⟨hxI, hxE⟩
 
 @[simp] lemma coexpand_ground_eq : M.coexpand.E = univ := rfl
+
+@[simp] lemma coexpand_dep_iff {D : Set α} : M.coexpand.Dep D ↔ M.Dep (D ∩ M.E) := by
+  rw [dep_iff]
+  simp
+
+@[aesop unsafe 10% (rule_sets := [Matroid])]
+lemma subset_ground_coexpand (M : Matroid α) (X : Set α) : X ⊆ M.coexpand.E :=
+  subset_univ X
