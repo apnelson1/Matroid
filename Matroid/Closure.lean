@@ -520,6 +520,13 @@ lemma closure_exchange_iff :
     e ∈ M.closure (insert f X) \ M.closure X ↔ f ∈ M.closure (insert e X) \ M.closure X :=
   ⟨closure_exchange, closure_exchange⟩
 
+lemma mem_closure_insert_comm (h : e ∈ M.closure X ↔ f ∈ M.closure X) :
+    e ∈ M.closure (insert f X) ↔ f ∈ M.closure (insert e X) := by
+  by_cases he : e ∈ M.closure X
+  · exact iff_of_true (M.closure_subset_closure (subset_insert _ _) he)
+      (M.closure_subset_closure (subset_insert _ _) (by rwa [← h]))
+  simpa [he, mt h.2 he] using closure_exchange_iff (e := e) (f := f) (M := M) (X := X)
+
 lemma closure_insert_eq_closure_insert_of_mem (he : e ∈ M.closure (insert f X) \ M.closure X) :
     M.closure (insert e X) = M.closure (insert f X) := by
   rw [eq_comm, ← closure_closure, ← insert_eq_of_mem he.1, closure_insert_closure_eq_closure_insert,

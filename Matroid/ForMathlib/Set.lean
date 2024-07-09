@@ -93,3 +93,17 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
   refine diff_subset.ssubset_of_ne fun h_eq ↦ ?_
   rw [sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right hst] at h_eq
   simp [h_eq] at hs
+
+lemma biUnion_congr {s₁ s₂ : Set ι} {t₁ t₂ : ι → Set α} (hs : s₁ = s₂) (h : ∀ i ∈ s₁, t₁ i = t₂ i) :
+    ⋃ x ∈ s₁, t₁ x = ⋃ x ∈ s₂, t₂ x := by
+  subst hs
+  simp only [subset_antisymm_iff, iUnion_subset_iff]
+  constructor <;>
+  exact fun i hi ↦ h i hi ▸ subset_biUnion_of_mem hi
+
+lemma biInter_congr {s₁ s₂ : Set ι} {t₁ t₂ : ι → Set α} (hs : s₁ = s₂) (h : ∀ i ∈ s₁, t₁ i = t₂ i) :
+    ⋂ x ∈ s₁, t₁ x = ⋂ x ∈ s₂, t₂ x := by
+  subst hs
+  simp only [subset_antisymm_iff, subset_iInter_iff]
+  constructor <;>
+  exact fun i hi ↦ h i hi ▸ biInter_subset_of_mem hi

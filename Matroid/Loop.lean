@@ -1,6 +1,7 @@
 import Matroid.Circuit
 import Mathlib.Data.Matroid.Map
 import Mathlib.Order.SymmDiff
+import Matroid.ForMathlib.Set
 
 /-
   A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.closure ∅`.
@@ -628,7 +629,7 @@ lemma Base.mem_coloop_iff_forall_not_mem_fundCct (hB : M.Base B) (he : e ∈ B) 
   have h' : M.E \ {e} ⊆ M.closure (B \ {e}) := by
     rintro x ⟨hxE, hne : x ≠ e⟩
     obtain (hx | hx) := em (x ∈ B)
-    · exact M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground) ⟨hx, hne⟩
+    · exact M.subset_closure (B \ {e}) ⟨hx, hne⟩
     have h_cct := (hB.fundCct_circuit ⟨hxE, hx⟩).mem_closure_diff_singleton_of_mem
       (M.mem_fundCct x B)
     refine (M.closure_subset_closure (subset_diff_singleton ?_ ?_)) h_cct
@@ -650,36 +651,56 @@ lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
   rw [he.mem_closure_iff_mem]
 
 lemma closure_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure ∅) : M.closure X ∩ K = X ∩ K := by
-  have hKE : K ∩ M.E = K := by
-    rw [inter_eq_left, ← dual_ground]; exact hK.trans (closure_subset_ground _ _)
-  rw [← hKE, ← inter_assoc X, inter_right_comm, hKE, ← closure_inter_ground,
-    subset_antisymm_iff, and_iff_left (inter_subset_inter_left K (M.subset_closure _)),
-    ← inter_eq_self_of_subset_right hK, ← inter_assoc, closure_inter_coloops_eq,
-    inter_assoc]
+  ext e
+  simp only [mem_inter_iff, and_congr_left_iff]
+  exact fun heK ↦ Coloop.mem_closure_iff_mem (hK heK)
 
 lemma closure_insert_coloop_eq (X : Set α) (he : M.Coloop e) :
     M.closure (insert e X) = insert e (M.closure X) := by
-  rw [ subset_antisymm_iff, insert_subset_iff, and_iff_left (M.closure_subset_closure (subset_insert _ _)),
-    and_iff_left (M.mem_closure_of_mem' (mem_insert _ _)), ← union_singleton (s := M.closure X),
-    ← diff_subset_iff, subset_singleton_iff]
-  refine fun f hf ↦ (he.mem_of_mem_closure (closure_exchange hf).1).elim Eq.symm (fun heX ↦ False.elim ?_)
-  simp [insert_eq_of_mem heX] at hf
+  by_cases heX : e ∈ X
+  · rw [insert_eq_of_mem heX, insert_eq_of_mem (mem_closure_of_mem _ heX)]
+  ext f
+  by_cases hx : f ∈ M.closure X
+  · exact iff_of_true (mem_of_mem_of_subset hx (M.closure_subset_closure (subset_insert _ _)))
+      (.inr hx)
+  rw [mem_closure_insert_comm (by simp [he.mem_closure_iff_mem, heX, hx]), he.mem_closure_iff_mem,
+    mem_insert_iff, or_iff_left heX, eq_comm, mem_insert_iff, or_iff_left hx]
 
 lemma closure_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure ∅) :
     M.closure (X ∪ K) = M.closure X ∪ K := by
-  rw [← closure_union_closure_left_eq]
-  refine' (M.subset_closure _).antisymm' fun e he ↦ _
-  obtain he' | ⟨C, hC, heC, hCss⟩ := (mem_closure_iff_mem_or_exists_circuit
-    (union_subset (M.closure_subset_ground _) (hK.trans (M✶.closure_subset_ground _)))).1 he
-  · exact he'
-  have hCX : C \ {e} ⊆ M.closure X := by
-    rw [diff_subset_iff, singleton_union]
-    refine (subset_inter hCss Subset.rfl).trans ?_
-    rintro f ⟨rfl | h1 | h2, h⟩
-    · apply mem_insert
-    · exact Or.inr h1
-    exact (hC.not_coloop_of_mem h (hK h2)).elim
-  exact Or.inl (M.closure_subset_closure_of_subset_closure hCX (hC.mem_closure_diff_singleton_of_mem heC))
+  obtain (rfl | hne) := K.eq_empty_or_nonempty
+  · simp
+  rw [show M.closure X ∪ K = ⋃ e ∈ K , insert e (M.closure X) from sorry,
+    ← biUnion_congr rfl (show ∀ e ∈ K, M.closure (insert e X) = insert e (M.closure X) from sorry),
+    ← ]
+  rw [show X ∪ K = ⋃ e ∈ K, insert e X by
+    simp_rw [← union_singleton, ← union_distrib_biUnion _ hne, biUnion_of_singleton],
+    ← closure_biUnion_closure_eq_closure_biUnion,
+    biUnion_congr rfl (show ∀ e ∈ K, M.closure (insert e X) = insert e (M.closure X) from
+      fun e heK ↦ closure_insert_coloop_eq _ (hK heK))]
+  simp_rw [← union_singleton, ← union_distrib_biUnion _ hne]
+
+
+
+  -- rw [union_comm, show K = ⋃ (e ∈ K), {e} from sorry, ← biUnion_union]
+  -- ext e
+  -- by_cases he : e ∈ M.closure X
+  -- · exact iff_of_true (M.closure_subset_closure subset_union_left he) (.inl he)
+
+
+  -- rw [← closure_union_closure_left_eq]
+  -- refine' (M.subset_closure _).antisymm' fun e he ↦ _
+  -- obtain he' | ⟨C, hC, heC, hCss⟩ := (mem_closure_iff_mem_or_exists_circuit
+  --   (union_subset (M.closure_subset_ground _) (hK.trans (M✶.closure_subset_ground _)))).1 he
+  -- · exact he'
+  -- have hCX : C \ {e} ⊆ M.closure X := by
+  --   rw [diff_subset_iff, singleton_union]
+  --   refine (subset_inter hCss Subset.rfl).trans ?_
+  --   rintro f ⟨rfl | h1 | h2, h⟩
+  --   · apply mem_insert
+  --   · exact Or.inr h1
+  --   exact (hC.not_coloop_of_mem h (hK h2)).elim
+  -- exact Or.inl (M.closure_subset_closure_of_subset_closure hCX (hC.mem_closure_diff_singleton_of_mem heC))
 
 lemma closure_eq_of_subset_coloops (hK : K ⊆ M✶.closure ∅) : M.closure K = K ∪ M.closure ∅ := by
   rw [← empty_union K, closure_union_eq_of_subset_coloops _ hK, empty_union, union_comm]
