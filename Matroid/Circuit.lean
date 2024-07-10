@@ -70,7 +70,7 @@ lemma Circuit.closure_diff_singleton_eq_closure (hC : M.Circuit C) (e : α) :
 lemma Circuit.subset_closure_diff_singleton (hC : M.Circuit C) (e : α) :
     C ⊆ M.closure (C \ {e}) := by
   by_cases he : e ∈ C
-  · rw [(hC.diff_singleton_basis he).closure_eq_closure]
+  · rw [← (hC.diff_singleton_basis he).closure_eq_closure]
     apply subset_closure
   rw [diff_singleton_eq_self he]; exact M.subset_closure _
 
@@ -226,7 +226,7 @@ lemma Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit C 
   obtain ⟨⟨e, he, heX⟩, hXE⟩ := hX
   -- Why doesn't `aesop_mat` work on the next line?
   obtain ⟨I, hI⟩ := M.exists_basis (X \ {e}) (diff_subset.trans hXE)
-  rw [← hI.closure_eq_closure] at heX
+  rw [hI.closure_eq_closure] at heX
   exact ⟨_, (fundCct_subset_insert e I).trans
     (insert_subset he (hI.subset.trans diff_subset)),
     hI.indep.fundCct_circuit ⟨heX, not_mem_subset hI.subset (not_mem_diff_of_mem rfl)⟩⟩
@@ -255,7 +255,7 @@ lemma mem_closure_iff_mem_or_exists_circuit :
   refine ⟨fun h ↦ ?_, fun ⟨C, hC, heC, hCX⟩ ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M'.exists_basis X
     exact ⟨M'.fundCct e I,
-      hI.indep.fundCct_circuit ⟨by rwa [hI.closure_eq_closure], not_mem_subset hI.subset heX⟩,
+      hI.indep.fundCct_circuit ⟨by rwa [← hI.closure_eq_closure], not_mem_subset hI.subset heX⟩,
       mem_fundCct M' e I, (fundCct_subset_insert _ _).trans (insert_subset_insert hI.subset)⟩
   exact mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
     (M'.closure_subset_closure <| by simpa)

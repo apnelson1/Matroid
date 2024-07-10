@@ -294,12 +294,6 @@ lemma nonloop_iff_mem_compl_loops : M.Nonloop e ↔ e ∈ M.E \ M.closure ∅ :=
 lemma setOf_nonloop_eq (M : Matroid α) : {e | M.Nonloop e} = M.E \ M.closure ∅ :=
   Set.ext (fun _ ↦ nonloop_iff_mem_compl_loops)
 
-lemma not_nonloop_iff_closure : ¬ M.Nonloop e ↔ M.closure {e} = M.closure ∅ := by
-  by_cases he : e ∈ M.E
-  · simp [Nonloop, and_comm, not_and, not_not, loop_iff_closure_eq_closure_empty', he]
-  simp [← closure_inter_ground, singleton_inter_eq_empty.2 he,
-    (show ¬ M.Nonloop e from fun h ↦ he h.mem_ground)]
-
 lemma loop_or_nonloop (M : Matroid α) (e : α) (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ∨ M.Nonloop e := by
   rw [Nonloop, and_iff_left he]; apply em
@@ -586,7 +580,7 @@ lemma Circuit.not_coloop_of_mem (hC : M.Circuit C) (heC : e ∈ C) : ¬M.Coloop 
 lemma Coloop.mem_closure_iff_mem (he : M.Coloop e) : e ∈ M.closure X ↔ e ∈ X := by
   rw [closure_eq_union_closure_inter_ground_self, mem_union, or_iff_right_iff_imp]
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  rw [← hI.closure_eq_closure]
+  rw [hI.closure_eq_closure]
   obtain ⟨B, hB, rfl⟩ := hI.exists_basis_inter_eq_of_superset inter_subset_right
   have heB := (basis_ground_iff.1 hB).mem_of_coloop he
   have h' := (hB.indep.closure_inter_eq_self_of_subset (inter_subset_left (t := X ∩ M.E))).subset
@@ -668,39 +662,17 @@ lemma closure_insert_coloop_eq (X : Set α) (he : M.Coloop e) :
 
 lemma closure_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure ∅) :
     M.closure (X ∪ K) = M.closure X ∪ K := by
-  obtain (rfl | hne) := K.eq_empty_or_nonempty
-  · simp
-  rw [show M.closure X ∪ K = ⋃ e ∈ K , insert e (M.closure X) from sorry,
-    ← biUnion_congr rfl (show ∀ e ∈ K, M.closure (insert e X) = insert e (M.closure X) from sorry),
-    ← ]
-  rw [show X ∪ K = ⋃ e ∈ K, insert e X by
-    simp_rw [← union_singleton, ← union_distrib_biUnion _ hne, biUnion_of_singleton],
-    ← closure_biUnion_closure_eq_closure_biUnion,
-    biUnion_congr rfl (show ∀ e ∈ K, M.closure (insert e X) = insert e (M.closure X) from
-      fun e heK ↦ closure_insert_coloop_eq _ (hK heK))]
-  simp_rw [← union_singleton, ← union_distrib_biUnion _ hne]
-
-
-
-  -- rw [union_comm, show K = ⋃ (e ∈ K), {e} from sorry, ← biUnion_union]
-  -- ext e
-  -- by_cases he : e ∈ M.closure X
-  -- · exact iff_of_true (M.closure_subset_closure subset_union_left he) (.inl he)
-
-
-  -- rw [← closure_union_closure_left_eq]
-  -- refine' (M.subset_closure _).antisymm' fun e he ↦ _
-  -- obtain he' | ⟨C, hC, heC, hCss⟩ := (mem_closure_iff_mem_or_exists_circuit
-  --   (union_subset (M.closure_subset_ground _) (hK.trans (M✶.closure_subset_ground _)))).1 he
-  -- · exact he'
-  -- have hCX : C \ {e} ⊆ M.closure X := by
-  --   rw [diff_subset_iff, singleton_union]
-  --   refine (subset_inter hCss Subset.rfl).trans ?_
-  --   rintro f ⟨rfl | h1 | h2, h⟩
-  --   · apply mem_insert
-  --   · exact Or.inr h1
-  --   exact (hC.not_coloop_of_mem h (hK h2)).elim
-  -- exact Or.inl (M.closure_subset_closure_of_subset_closure hCX (hC.mem_closure_diff_singleton_of_mem heC))
+  refine subset_antisymm (fun e he ↦ ?_) (union_subset (M.closure_mono subset_union_left)
+    (M.subset_closure_of_subset subset_union_right))
+  obtain (heX | heK) | ⟨C, hC, heC, hCss⟩ := mem_closure_iff_mem_or_exists_circuit.1 he
+  · exact .inl <| M.mem_closure_of_mem heX
+  · exact .inr heK
+  refine .inl <| mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+    (M.closure_subset_closure <| diff_singleton_subset_iff.2 ?_)
+  have hdj : Disjoint C K := disjoint_right.2 fun f hfK hfC ↦ Coloop.not_mem_circuit (hK hfK) hC hfC
+  refine (subset_diff.2 ⟨hCss, hdj⟩).trans ?_
+  rw [insert_diff_of_not_mem _ (fun heK ↦ Coloop.not_mem_circuit (hK heK) hC heC), union_diff_right]
+  exact insert_subset_insert diff_subset
 
 lemma closure_eq_of_subset_coloops (hK : K ⊆ M✶.closure ∅) : M.closure K = K ∪ M.closure ∅ := by
   rw [← empty_union K, closure_union_eq_of_subset_coloops _ hK, empty_union, union_comm]
