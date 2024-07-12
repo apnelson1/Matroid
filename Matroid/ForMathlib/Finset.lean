@@ -67,4 +67,19 @@ lemma exists_minimal_satisfying_subset (P : Finset α → Prop) {s : Finset α}
   push_neg at h₂
   exact h₂ ha'
 
--- def minimum_under_map [LinearOrder β] (f : Finset α → β) : β :=
+lemma finset_biUnion_union (s t : Finset α) (u : α → Finset β) [DecidableEq β]:
+    (s ∪ t).biUnion u = s.biUnion u ∪ t.biUnion u := by
+  aesop
+
+lemma finset_biUnion_inter (s t : Finset α) (u : α → Finset β) [DecidableEq β]:
+    (s ∩ t).biUnion u ⊆ s.biUnion u ∩ t.biUnion u := by
+  simp only [biUnion_subset_iff_forall_subset, mem_union]
+  intro x h
+  obtain ⟨hs, ht⟩ := mem_inter.mp h
+  refine subset_inter ?_ ?_
+  <;> intro a ha
+  <;> aesop
+
+lemma erase_inter_distrib (s : Finset α) (t : Finset α) (a : α) :
+    (s ∩ t).erase a = s.erase a ∩ t.erase a := by
+  aesop

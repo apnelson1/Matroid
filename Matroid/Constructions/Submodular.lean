@@ -8,6 +8,9 @@ import Mathlib.Data.Finset.Union
 import Mathlib.Order.Antichain
 import Mathlib.Data.Finset.Basic
 import Matroid.Rank
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Nat.Cast.Order
+import Mathlib.Algebra.Ring.Int
 
 open Finset
 
@@ -130,10 +133,10 @@ theorem ofPolymatroidFn_nonempty_indep_le [DecidableEq α] {hf : PolymatroidFn f
     (h' : I.Nonempty) (h : (ofPolymatroidFn hf).Indep I) : I.card ≤ f I := by
   exact (indep_ofPolymatroidFn_iff hf I).mp h I subset_rfl h'
 
-theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidFn f} {X : Finset α}
+private theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidFn f} {X : Finset α}
     (hX_indep : (ofPolymatroidFn hf).Indep X) :
     (∃ Y ⊆ X, (ofPolymatroidFn hf).r X = f Y + (X \ Y).card ∧
-     ∀ Y' ⊆ X, f Y + (X \ Y).card ≤ f Y' + (X \ Y').card) := by
+    ∀ Y' ⊆ X, f Y + (X \ Y).card ≤ f Y' + (X \ Y').card) := by
   set M := ofPolymatroidFn hf
   unfold r
   rw [hX_indep.er, Set.encard_coe_eq_coe_finsetCard, ENat.toNat_coe]
@@ -154,7 +157,6 @@ theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidFn f} {X 
   simp only [Nat.cast_zero, sub_zero, zero_add, le_refl]
 
 -- proposition 11.1.7
--- need to refactor
 theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset α) :
     (∃ Y ⊆ X, f Y + (X \ Y).card ≤ (ofPolymatroidFn hf).r X) ∧
     (∀ Y ⊆ X, (ofPolymatroidFn hf).r X ≤ f Y + (X \ Y).card) := by
@@ -322,3 +324,239 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
   simp only [mem_biUnion, mem_univ, true_and] at hx
   obtain ⟨e, he⟩ := hx
   exact h_subset e he
+
+-- theorem 11.2.3
+theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
+    {A : ι → Finset α} (hA_nonempty : ∀ i, (A i).Nonempty)
+    {f : Finset α → ℕ} (hf_submodular : Submodular f) (hf_mono : Monotone f) :
+    (∃ e : ι → α, (∀ i : ι, e i ∈ A i) ∧ (∀ K : Finset ι, K.card ≤ f (Finset.image e K))) ↔
+    (∀ K : Finset ι, K.card ≤ f (K.biUnion A)) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨e, he_mem, he⟩ := h
+    intro K
+    refine le_trans (he K) ?_
+    refine hf_mono ?_
+    intro a ha
+    obtain ⟨i, hi, hei⟩ := mem_image.mp ha
+    specialize he_mem i
+    rw [hei] at he_mem
+    simp only [mem_biUnion]
+    use i
+  by_cases h_base : ∀ i, ¬(A i).Nontrivial
+  · replace h_base : ∀ (i : ι), ∃ e, A i = {e} := by
+      intro i
+      obtain hgood | hbad := (hA_nonempty i).exists_eq_singleton_or_nontrivial
+      · assumption
+      exfalso; exact h_base i hbad
+    choose e he using h_base
+    use e
+    refine ⟨fun i ↦ by rw [he i]; exact mem_singleton.mpr rfl, fun K ↦ ?_⟩
+    specialize h K
+    suffices K.biUnion A = image e K by exact le_of_le_of_eq h (congrArg f this)
+    ext x
+    simp only [mem_biUnion, mem_image, he, mem_singleton]
+    tauto
+  push_neg at h_base
+  obtain ⟨i, hAi⟩ := h_base
+  have h_induc : ∃ x ∈ A i, ∀ K : Finset ι,
+      K.card ≤ f (K.biUnion <| Function.update A i ((A i).erase x)) := by
+    by_contra! h_con
+    obtain ⟨x₁, hx₁, x₂, hx₂, hx₁x₂⟩ := hAi
+    simp only [mem_coe] at hx₁ hx₂
+    obtain ⟨K₁, hK₁⟩ := h_con x₁ hx₁
+    obtain ⟨K₂, hK₂⟩ := h_con x₂ hx₂
+    by_cases hiK₁ : i ∈ K₁; swap
+    · absurd hK₁; push_neg
+      specialize h K₁
+      suffices K₁.biUnion A = K₁.biUnion (Function.update A i ((A i).erase x₁)) by rwa [← this]
+      refine biUnion_congr rfl (fun j hj ↦ ?_)
+      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₁)
+      exact Eq.symm (Function.update_noteq (id (Ne.symm this)) ((A i).erase x₁) A)
+    by_cases hiK₂ : i ∈ K₂; swap
+    · absurd hK₂; push_neg
+      specialize h K₂
+      suffices K₂.biUnion A = K₂.biUnion (Function.update A i ((A i).erase x₂)) by rwa [← this]
+      refine biUnion_congr rfl (fun j hj ↦ ?_)
+      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₂)
+      exact Eq.symm (Function.update_noteq (id (Ne.symm this)) ((A i).erase x₂) A)
+    suffices h_bad : (K₁.card : ℤ) + K₂.card - 1 ≤ K₁.card + K₂.card - 2 by linarith
+    set A'₁ := (Function.update A i ((A i).erase x₁))
+    set A'₂ := (Function.update A i ((A i).erase x₂))
+    calc (K₁.card : ℤ) + K₂.card - 1
+      _ = (K₁ ∪ K₂).card + ((K₁ ∩ K₂).erase i).card := by
+        rw [cast_card_union, cast_card_erase_of_mem <| mem_inter.mpr ⟨hiK₁, hiK₂⟩]
+        ring
+      _ ≤ f ((K₁ ∪ K₂).biUnion A) + ((K₁ ∩ K₂).erase i).card := by
+        linarith [h <| K₁ ∪ K₂]
+      _ ≤ f ((K₁ ∪ K₂).biUnion A) + f (((K₁ ∩ K₂).erase i).biUnion A) := by
+        linarith [h <| (K₁ ∩ K₂).erase i]
+      _ ≤ f (K₁.biUnion A ∪ K₂.biUnion A) + f (((K₁ ∩ K₂).erase i).biUnion A) := by
+        rw [finset_biUnion_union K₁ K₂ A]
+      _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) + f (((K₁ ∩ K₂).erase i).biUnion A) := by
+        simp only [tsub_le_iff_right, sub_add_cancel, add_le_add_iff_right, Nat.cast_le]
+        apply hf_mono
+        simp only [le_eq_subset]
+        intro x hx
+        simp only [mem_union, mem_biUnion] at hx
+        obtain ⟨j, hj, hx⟩ | ⟨j, hj, hx⟩ := hx
+        <;> obtain rfl | h_neij := eq_or_ne i j
+        · obtain rfl | h_ne := eq_or_ne x x₂
+          · refine mem_union_left _ ?_
+            simp only [mem_biUnion, A'₁]
+            use i
+            simp only [Function.update_same, mem_erase]
+            exact ⟨(by assumption), hx₁x₂.symm, hx₂⟩
+          refine mem_union_right _ ?_
+          simp only [mem_biUnion, A'₂]
+          use i
+          simp only [Function.update_same, mem_erase]
+          exact ⟨hiK₂, h_ne, (by assumption)⟩
+        · refine mem_union_left _ ?_
+          simp only [mem_biUnion, A'₁]
+          use j
+          simp only [Function.update_noteq h_neij.symm ((A i).erase x₁) A]
+          exact ⟨hj, hx⟩
+        · obtain rfl | h_ne := eq_or_ne x x₂
+          · refine mem_union_left _ ?_
+            simp only [mem_biUnion, A'₁]
+            use i
+            simp only [Function.update_same, mem_erase]
+            exact ⟨(by assumption), hx₁x₂.symm, hx₂⟩
+          refine mem_union_right _ ?_
+          simp only [mem_biUnion, A'₂]
+          use i
+          simp only [Function.update_same, mem_erase]
+          exact ⟨hiK₂, h_ne, (by assumption)⟩
+        refine mem_union_right _ ?_
+        simp only [mem_biUnion, A'₂]
+        use j
+        simp only [Function.update_noteq h_neij.symm ((A i).erase x₂) A]
+        exact ⟨hj, hx⟩
+      _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) +
+          f ((K₁.erase i).biUnion A ∩ (K₂.erase i).biUnion A) := by
+        simp only [tsub_le_iff_right, sub_add_cancel, add_le_add_iff_left, Nat.cast_le]
+        apply hf_mono
+        simp only [le_eq_subset, erase_inter_distrib]
+        exact finset_biUnion_inter (K₁.erase i) (K₂.erase i) A
+      _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) +
+          f ((K₁.erase i).biUnion A'₁ ∩ (K₂.erase i).biUnion A'₂) := by
+        simp only [tsub_le_iff_right, sub_add_cancel, add_le_add_iff_left, Nat.cast_le]
+        apply hf_mono
+        simp [le_eq_subset]
+        refine inter_subset_inter ?_ ?_
+        <;> rw [biUnion_subset_iff_forall_subset]
+        <;> intro j hj
+        <;> intro x hx
+        <;> simp only [mem_biUnion, A'₁, A'₂]
+        <;> use j
+        <;> refine ⟨hj, ?_⟩
+        · simp only [Function.update_noteq (ne_of_mem_erase hj) ((A i).erase x₁) A]; exact hx
+        simp only [Function.update_noteq (ne_of_mem_erase hj) ((A i).erase x₂) A]; exact hx
+      _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) + f (K₁.biUnion A'₁ ∩ K₂.biUnion A'₂) := by
+        simp only [add_le_add_iff_left, Nat.cast_le]
+        apply hf_mono
+        refine inter_subset_inter ?_ ?_
+        <;> exact biUnion_subset_biUnion_of_subset_left _ <| erase_subset i _
+      _ ≤ f (K₁.biUnion A'₁) + f (K₂.biUnion A'₂) := by
+        simp only [tsub_le_iff_right, sub_add_cancel, ← Nat.cast_add, Nat.cast_le, ← inf_eq_inter,
+          ← sup_eq_union]
+        linarith [hf_submodular (K₁.biUnion A'₁) (K₂.biUnion A'₂)]
+      _ ≤ K₁.card + K₂.card - 2 := by
+        linarith
+  obtain ⟨x, hx_mem, hA'⟩ := h_induc
+  set A' := Function.update A i ((A i).erase x)
+  have hA'_nonempty : ∀ i, (A' i).Nonempty := by
+    intro j
+    obtain rfl | h_ne := eq_or_ne i j
+    · simp only [A', Function.update_same]
+      exact (erase_nonempty hx_mem).mpr hAi
+    simp only [A', Function.update_noteq h_ne.symm, hA_nonempty j]
+  obtain ⟨e, he_mem, he⟩ := (generalized_halls_marriage hA'_nonempty hf_submodular hf_mono).mpr hA'
+  use e
+  refine ⟨?_, he⟩
+  intro j
+  specialize he_mem j
+  obtain rfl | h_ne := eq_or_ne i j
+  · simp only [A', Function.update_same] at he_mem
+    exact mem_of_mem_erase he_mem
+  simpa [A', Function.update_noteq h_ne.symm] using he_mem
+termination_by ∑ i, (A i).card
+decreasing_by
+  simp_wf
+  refine Finset.sum_lt_sum ?_ ?_
+  · intro j hj
+    refine card_le_card ?_
+    obtain rfl | h_ne := eq_or_ne i j
+    · simp only [Function.update_same]
+      exact erase_subset x (A i)
+    simp only [Function.update_noteq h_ne.symm, subset_rfl]
+  use i
+  refine ⟨(by simp only [mem_univ]), ?_⟩
+  refine card_lt_card ?_
+  simp only [Function.update_same]
+  exact erase_ssubset hx_mem
+
+def Transversal {ι : Type*} [DecidableEq ι] [Fintype ι] (f : ι → α) (A : ι → Finset α) :=
+  f.Injective ∧ ∀ i, f i ∈ A i
+
+-- theorem 11.2.2
+theorem rado {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
+    (M : Matroid α) (A : ι → Finset α) :
+    (∃ e, Transversal e A ∧ M.Indep (Set.range e)) ↔
+    (∀ K : Finset ι, K.card ≤ M.r (K.biUnion A)) := by
+  by_cases hA_nonempty : ∀ i, (A i).Nonempty; swap
+  · simp only [not_forall, not_nonempty_iff_eq_empty] at hA_nonempty
+    obtain ⟨i, hAi⟩ := hA_nonempty
+    apply iff_of_false
+    <;> push_neg
+    · intro e he; exfalso
+      replace he := hAi ▸ he.2 i
+      simp only [not_mem_empty] at he
+    use {i}
+    simp only [hAi, singleton_biUnion, card_singleton, Nat.lt_one_iff, coe_empty, r_empty]
+  set f : Finset α → ℕ := fun S ↦ M.r (S : Set α)
+  have hf_submodular : Submodular f := by
+    intro a b
+    simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
+    exact rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)
+  have hf_mono : Monotone f := by
+    intro a b hab
+    simp only [le_eq_subset, ← coe_subset] at hab
+    rw [← rFin.er_le_er_iff
+      (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    exact M.er_mono hab
+  have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono
+  simp only [f] at h
+  rw [← h]
+  refine exists_congr (fun e ↦ ?_)
+  unfold Transversal
+  refine ⟨fun ⟨⟨he_inj, he_mem⟩, he_indep⟩ ↦ ⟨he_mem, ?_⟩, fun ⟨he_mem, he⟩ ↦ ?_⟩
+  · intro K
+    simp only [← card_image_of_injective K he_inj]
+    have h_indep : M.Indep (image e K : Set α) := he_indep.subset coe_image_subset_range
+    rw [← @Nat.cast_le ℕ∞, ← Set.encard_coe_eq_coe_finsetCard (image e K),
+      M.coe_r_eq_er_of_finite <| finite_toSet (image e K), h_indep.er]
+  refine ⟨⟨?_, he_mem⟩, ?_⟩
+  · intro a b hab
+    contrapose! he
+    use {a, b}
+    simp only [image_insert, image_singleton, coe_insert, coe_singleton, hab]
+    simp only [Set.mem_singleton_iff, Set.insert_eq_of_mem, card_pair he]
+    rw [← @Nat.cast_lt ℕ∞, M.coe_r_eq_er_of_finite <| Set.finite_singleton (e b),
+      Nat.cast_two]
+    have := Set.encard_singleton (e b) ▸ M.er_le_encard {e b}
+    refine this.trans_lt Nat.one_lt_ofNat
+  specialize he univ
+  simp only [coe_image, coe_univ, Set.image_univ] at he
+  rw [← @Nat.cast_le ℕ∞, M.coe_r_eq_er_of_finite <| Set.finite_range e] at he
+  rw [indep_iff_er_eq_encard_of_finite <| Set.finite_range e]
+  refine le_antisymm (er_le_encard M (Set.range e)) ?_
+  refine le_trans ?_ he
+  simp only [Set.encard_eq_coe_toFinset_card, Set.toFinset_range, Nat.cast_le, card_image_le]
+
+-- theorem 11.2.1
+theorem halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α] (A : ι → Finset α) :
+    (∃ e, Transversal e A) ↔ (∀ K : Finset ι, K.card ≤ (K.biUnion A).card) := by
+  have h := rado (freeOn Set.univ) A
+  simp only [freeOn_indep_iff, Set.subset_univ, and_true, freeOn_r_eq, Set.ncard_coe_Finset] at h
+  assumption
