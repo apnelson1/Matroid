@@ -125,8 +125,7 @@ whose finite independent sets are those `H`-matchable to an independent set of `
 This doesn't require `M` to be finitary to be well-defined,
 but only depends on the collection of finite independent sets of `M`.
 This construction fails to be a matroid if we try to allow infinite sets to be independent;
-see the docstring of `Data.Matroid.Map`.
--/
+see the docstring of `Data.Matroid.Map`. -/
 def adjMap [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β) : Matroid β :=
   (IndepMatroid.matroid <| IndepMatroid.ofFinset univ (M.AdjIndep Adj) (.inl rfl)
     (fun _ _ ↦ Matroid.AdjIndep.subset) (fun _ _ ↦ Matroid.AdjIndep.augment) (by simp)) ↾ E
