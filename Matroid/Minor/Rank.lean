@@ -154,6 +154,18 @@ lemma Basis.relRank_eq_encard_diff_of_subset_basis (hI : M.Basis I X) (hJ : M.Ba
   rw [← relRank_cl_left, ← hI.cl_eq_cl, relRank_cl_left, ← relRank_cl_right, ← hJ.cl_eq_cl,
     relRank_cl_right, hJ.indep.relRank_of_subset hIJ]
 
+lemma relRank_le_er_diff (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ M.er (Y \ X) := by
+  rw [M.relRank_eq_diff_right]
+  apply relRank_le_er
+
+lemma relRank_le_encard_diff (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ (Y \ X).encard :=
+  (M.relRank_le_er_diff X Y).trans <| M.er_le_encard _
+
+lemma relRank_insert_le (M : Matroid α) (X : Set α) (e : α) : M.relRank X (insert e X) ≤ 1 := by
+  refine (M.relRank_le_encard_diff X (insert e X)).trans ?_
+  rw [encard_le_one_iff]
+  aesop
+
 lemma relRank_add_er_eq (M : Matroid α) (C X : Set α) :
     M.relRank C X + M.er C = M.er (X ∪ C) := by
   obtain ⟨I, D, hIC, hD, -, hM⟩ := M.exists_eq_contract_indep_delete C

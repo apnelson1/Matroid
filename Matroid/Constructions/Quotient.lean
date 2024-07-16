@@ -21,19 +21,16 @@ infixl:50 " ≤q " => Matroid.Quotient
 infixl:50 " ≤w " => Matroid.WeakLE
 --(hE: M₁.E=M₂.E)
 
-lemma cl_flat_idk (X F: Set α) (M: Matroid α) (hFlat: M.Flat F) (hXF: X⊆ F) : M.cl X ⊆ F:= by
-  have hclF: M.cl X ⊆ M.cl F := by exact cl_subset_cl M hXF
-  have hF: M.cl F =F := by exact Flat.cl hFlat
-  rw[hF.symm]
-  exact hclF
+lemma cl_flat_idk (X F: Set α) (M : Matroid α) (hFlat : M.Flat F) (hXF: X ⊆ F) : M.cl X ⊆ F := by
+  exact Flat.cl_subset_of_subset hFlat hXF
 
-lemma top_thingy (a b:ℕ∞) (hab: a+b≤ a) (ht: a ≠ ⊤): b=0 := by
+lemma top_thingy (a b:ℕ∞) (hab: a+b ≤ a) (ht: a ≠ ⊤): b=0 := by
   have haa: a + b ≤ a + 0:= by
     exact le_add_right hab
   --exact WithTop.add_le_add_iff_left.1 (a:=a) (b:=b) (c:=0) ht haa
   sorry
 
-lemma top_thingy_i (a b c:ℕ∞) (hab: b ≤ c): b+a≤ c+a := by
+lemma top_thingy_i (a b c : ℕ∞) (hab: b ≤ c): b + a ≤ c + a := by
   exact add_le_add_right hab a
   --exact WithTop.add_le_add_iff_left.1 (a:=a) (b:=b) (c:=0) ht haa
   --exact WithTop.add_le_add_iff_left.1 (a:=a) (b:=b) (c:=0) ht haa
@@ -128,6 +125,7 @@ M₂.relRank X Y ≤ M₁.relRank X Y := by
     rw[hx0]
     exact zero_le_one' ℕ∞
     have hxne: M₂.relRank X (insert y X)≠ 0:= by exact hx0
+    #check RankMatroid.relRank_insert_eq_one_of_ne
     --have h1:= relRank_insert_eq_one_of_ne hxne
     sorry
   have h2: M₂.relRank X Y ≤ M₂.relRank (insert y X) Y +1 := by
