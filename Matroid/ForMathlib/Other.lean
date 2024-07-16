@@ -186,3 +186,5 @@ abbrev Set.incl (s : Set α) : s → α := Subtype.val
 
 @[simp] theorem isEmpty_fin_iff {b : ℕ} : IsEmpty (Fin b) ↔ b = 0 := by
   cases b <;> simp [Fin.isEmpty]
+
+end Matrix

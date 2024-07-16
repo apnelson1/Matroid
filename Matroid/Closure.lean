@@ -158,6 +158,9 @@ lemma closure_diff_self_eq_closure_inter_ground_diff (M : Matroid α) (X : Set �
 @[simp] lemma subset_closure (M : Matroid α) (X : Set α) : X ⊆ M.closure X :=
   M.closure.le_closure X
 
+@[simp] lemma closure_subset_ground_iff : M.closure X ⊆ M.E ↔ X ⊆ M.E :=
+  ⟨fun h ↦ (M.subset_closure X).trans h, fun h ↦ M.closure_subset_ground X h⟩
+
 lemma mem_closure_iff_forall_mem_flat (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.closure X ↔ ∀ F, M.Flat F → X ⊆ F → e ∈ F := by
   simp [M.closure_eq_sInter X]

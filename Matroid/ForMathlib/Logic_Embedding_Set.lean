@@ -176,3 +176,5 @@ section EquivSubset
 
 
 end EquivSubset
+
+end embeddingInsert

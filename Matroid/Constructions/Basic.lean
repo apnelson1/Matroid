@@ -28,3 +28,5 @@ lemma uniqueBaseOn_rkPos (hIE : I ⊆ E) (hI : I.Nonempty) : RkPos (uniqueBaseOn
 
 lemma freeOn_rkPos (hE : E.Nonempty) : RkPos (freeOn E) := by
   rw [← uniqueBaseOn_self]; exact uniqueBaseOn_rkPos Subset.rfl hE
+
+end Matroid

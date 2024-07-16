@@ -670,3 +670,5 @@ lemma RepFun.coeFun_eq_id_of_eq_discrete  (f : P.RepFun) (hP : P = Partition.dis
 
 
 end RepFun
+
+end Partition

@@ -32,6 +32,7 @@ theorem Subset.eq_image_val {s x : Set α} (hsx : x ⊆ s) : ∃ (y : Set s), x 
 theorem Subset.image_val_preimage_val_eq {s x : Set α} (hsx : x ⊆ s) : ↑(s ↓∩ x) = x := by
   simpa
 
+end Set
 -- theorem forall_setSubtype_pred_iff {s : Set α} {P : Set α → Prop} :
 --     (∀ (x : Set s), P (↑x)) ↔ ∀ x ⊆ s, P x :=
 --   ⟨ fun h x hx ↦ by simpa [image_val_preimage_val_of_subset hx] using h (s ↓∩ x),

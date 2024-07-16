@@ -131,3 +131,5 @@ lemma BijOn.bijOn_update [DecidableEq α] (h : BijOn f s t) (hx : x ∈ s) (hy :
   simp [hy]
 
 end BijOn
+
+end Set

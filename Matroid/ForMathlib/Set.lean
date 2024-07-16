@@ -107,3 +107,5 @@ lemma biInter_congr {s₁ s₂ : Set ι} {t₁ t₂ : ι → Set α} (hs : s₁ 
   simp only [subset_antisymm_iff, subset_iInter_iff]
   constructor <;>
   exact fun i hi ↦ h i hi ▸ biInter_subset_of_mem hi
+
+end Set

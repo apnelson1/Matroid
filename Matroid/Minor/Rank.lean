@@ -311,3 +311,5 @@ lemma Nonloop.contract_r_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonlo
   exact eq_sub_of_add_eq rfl
 
 end Rank
+
+end Matroid

@@ -332,3 +332,5 @@ lemma Iso.erk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.erk = N.erk := 
 
 lemma Iso.rk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rk = N.rk := by
   rw [rk, e.erk_eq]
+
+end Matroid

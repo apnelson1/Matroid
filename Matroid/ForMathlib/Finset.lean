@@ -67,4 +67,6 @@ lemma exists_minimal_satisfying_subset (P : Finset α → Prop) {s : Finset α}
   push_neg at h₂
   exact h₂ ha'
 
+
+end Finset
 -- def minimum_under_map [LinearOrder β] (f : Finset α → β) : β :=

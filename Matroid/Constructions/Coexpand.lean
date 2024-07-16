@@ -45,3 +45,5 @@ lemma coexpand_base_iff : M.coexpand.Base B ↔ M.Base (B ∩ M.E) ∧ M.Eᶜ �
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma subset_ground_coexpand (M : Matroid α) (X : Set α) : X ⊆ M.coexpand.E :=
   subset_univ X
+
+end Matroid

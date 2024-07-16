@@ -38,3 +38,5 @@ lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨_, _, h, by simp, by simp⟩⟩
   obtain ⟨I, X, hIX, rfl, rfl⟩ := h
   simpa
+
+end Matroid
