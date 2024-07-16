@@ -244,6 +244,13 @@ lemma relRank_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
   · rw [← cl_insert_cl_eq_cl_insert, insert_eq_of_mem he, cl_cl] at hY'
     exact Or.inr hY'.2
   exact Or.inl ⟨_, ⟨hY'.1, he⟩, hY'.2⟩
+
+lemma relRank_insert_eq_one (he : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E := by aesop_mat) :
+    M.relRank X (insert e X) = 1 := by
+  rw [relRank_eq_one_iff]
+  exact ⟨e, by simp [he.2], M.subset_cl _ <| insert_subset he.1 hX⟩
+
+
 section Contract
 
 lemma er_contract_le_er (M : Matroid α) (C X : Set α) : (M ／ C).er X ≤ M.er X :=
