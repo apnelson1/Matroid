@@ -155,7 +155,7 @@ section unif
 variable {a b a' b' : ℕ}
 
 /-- A canonical uniform matroid, with rank `a` and ground type `Fin b`.
-  (In the junk case where `b < a`, then the matroid is free, and the rank is `b` instead).  -/
+(In the junk case where `b < a`, then the matroid is free, and the rank is `b` instead).  -/
 def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 
 @[simp] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl

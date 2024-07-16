@@ -8,8 +8,7 @@ namespace Matrix
 
 variable {R α K : Type*} [CommRing R] [Field K] {n : ℕ} {a : α} {f v : α → R}
 
-theorem vandermonde_isUnit_iff {v : Fin n → K} :
-    IsUnit (vandermonde v) ↔ Injective v := by
+theorem vandermonde_isUnit_iff {v : Fin n → K} : IsUnit (vandermonde v) ↔ Injective v := by
   rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, det_vandermonde_ne_zero_iff]
 
 /-- A rectangular Vandermonde matrix; its columns are indexed by `Fin n`,
@@ -69,11 +68,11 @@ theorem rectProjVandermonde_eq_rectVandermonde {v : α → Option R} (hv : ∀ i
 theorem rectProjVandermonde_linearIndependent_rows [Fintype α] {v : α → Option K}
     (hv : Injective v) (hn : Fintype.card α ≤ n) :
     LinearIndependent K (rectProjVandermonde v n).rowFun := by
+  classical
   obtain (rfl | n) := n
   · have : IsEmpty α := by
       rwa [Nat.le_zero, Fintype.card_eq_zero_iff] at hn
     apply linearIndependent_empty_type
-  classical
 
   obtain (h0 | ⟨a0, ha0⟩) := em' (∃ a, v a = none)
   · push_neg at h0
@@ -125,9 +124,8 @@ theorem rectProjVandermonde_rowSet_linearIndependent_iff {v : α → Option K} {
     replace h := LinearIndependent.mono_index _ h hts
     have hc := h.fintype_card_le_finrank
     rw [FiniteDimensional.finrank_fintype_fun_eq_card, Fintype.card_fin,
-      ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ncard_def, ht,
-      ENat.toNat_add (by simp) (ENat.coe_toNat_eq_self.mp rfl),
-      ENat.toNat_coe, _root_.map_one, add_le_iff_nonpos_right] at hc
+      ← Nat.cast_le (α := ℕ∞), ← toFinset_card, ← encard_eq_coe_toFinset_card, ht,
+      ENat.add_one_le_iff (by simp)] at hc
     simp at hc
   rw [encard_le_coe_iff_finite_ncard_le] at h
   have _ := h.1.fintype

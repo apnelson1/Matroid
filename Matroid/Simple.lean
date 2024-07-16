@@ -353,6 +353,9 @@ lemma IsSimplification.of_restriction {M' : Matroid α} (h : N.IsSimplification 
   simp only [restrict_parallel_iff]
   exact ⟨f, ⟨hf.1, hf.2, he.mem_ground, hNM'.subset hf.1⟩, by tauto⟩
 
+-- lemma IsSimplification.eq_comap (h : N.IsSimplification M) :
+--     ∃ f : α → α, range f = N.E ∧ M.removeLoops = N.comap f
+
 /-- Any two simplifications of `M` are isomorphic. -/
 noncomputable def IsSimplification.iso {N N' : Matroid α} (hN : N.IsSimplification M)
     (hN' : N'.IsSimplification M) : N ≂ N' :=
@@ -434,8 +437,6 @@ lemma simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
   M.simplification_isSimplification.restriction
 
 end Simplification
-
-
 section minor
 
 lemma Minor.exists_minor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :

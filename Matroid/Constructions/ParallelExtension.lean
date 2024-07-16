@@ -1,6 +1,6 @@
 import Matroid.Simple
 import Matroid.Extension
-import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Function
 
 open Set Function Set.Notation
 namespace Matroid
@@ -135,15 +135,9 @@ lemma parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef :
 lemma parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     (M.parallelExtend e f) ＼ f = M ＼ f := by
   classical
-  simp only [parallelExtend, deleteElem, eq_iff_indep_iff_indep_forall, delete_ground,
-    restrict_ground_eq, mem_insert_iff, true_or, not_true_eq_false, mem_singleton_iff,
-    insert_diff_of_mem, subset_diff, disjoint_singleton_right, delete_indep_iff, restrict_indep_iff,
-    comap_indep_iff, ne_eq, image_update, id_eq, image_id', mem_diff, update_id_injOn_iff,
-    and_congr_left_iff, and_imp, true_and]
-  rintro I - hf -
-  simp only [hf, not_false_eq_true, diff_singleton_eq_self, ite_false, IsEmpty.forall_iff, and_true,
-    and_iff_left_iff_imp]
-  exact fun hI ↦ hI.subset_ground.trans <| subset_insert _ _
+  suffices ∀ I ⊆ M.E, _ → _ → I ⊆ insert f M.E by simpa (config := {contextual := true})
+    [parallelExtend,eq_iff_indep_iff_indep_forall, subset_diff]
+  exact fun I hI _ _ ↦ hI.trans (subset_insert _ _)
 
 lemma parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ＼ f = M := by
   rwa [parallelExtend_delete_eq', deleteElem, delete_eq_self_iff, disjoint_singleton_left]
