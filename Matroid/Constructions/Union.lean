@@ -11,14 +11,16 @@ universe u
 
 variable {α ι β: Type*}
 
-open Classical
+open Set Classical
 
 def AdjIndep' (M : Matroid α) (Adj : α → β → Prop) (I : Set β) :=
   I = ∅ ∨ ∃ (I₀ : Set α) (f : β → α), M.Indep I₀ ∧ IsMatching Adj f I₀ I
 
 @[simp] lemma adjMap_indep_iff' [DecidableEq β] (M : Matroid α) (Adj : α → β → Prop) (E : Set β)
     {I : Set β} : (M.adjMap Adj E).Indep I ↔ M.AdjIndep' Adj I ∧ (I : Set β) ⊆ E := by
-  sorry
+  simp [AdjIndep', adjMap, IndepMatroid.ofFinset, AdjIndep]
+  refine fun hIE ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  ·
 
 noncomputable def N_singleton [Fintype α] (Adj : α → β → Prop) (v : β) := {u | Adj u v}.toFinset
 
@@ -45,13 +47,13 @@ protected def Union [DecidableEq α] (Ms : ι → Matroid α) : Matroid α :=
 --         refine ⟨(f v).1, v, hv, ?_⟩
 --         nth_rw 3 [← hAdj]
 
-lemma union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matroid α}
-  (h : ∀ i, (Ms i).Finite) {I : Set α} (hI : (Matroid.Union Ms).Indep I) :
+lemma union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matroid α} {I : Set α}
+    (hI : (Matroid.Union Ms).Indep I) :
     ∃ Is : ι → Set α, ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i) := by
     simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', prod_indep_iff, exists_and_left,
     Set.subset_univ, and_true] at hI
     obtain heq | hne := eq_or_ne I ∅
-    · refine ⟨(fun ι ↦ ∅), by simp only [Set.iUnion_empty, heq, empty_indep, implies_true,
+    · refine ⟨(fun _ ↦ ∅), by simp only [Set.iUnion_empty, heq, empty_indep, implies_true,
         and_self]⟩
     · simp only [hne, false_or] at hI
       obtain ⟨I', h, ⟨f, hB, hAdj⟩⟩ := hI
@@ -67,14 +69,14 @@ lemma union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matro
         nth_rw 3 [← hAdj]
 
 lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
-  (h : ∀ i, (Ms i).Finite) {I : Set α} (Is : ι → Set α) (hD : Set.univ.PairwiseDisjoint Is)
+  {I : Set α} (Is : ι → Set α) (hD : Set.univ.PairwiseDisjoint Is)
   (hI : ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
     (Matroid.Union Ms).Indep I := by
     simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', Set.subset_univ, and_true]
     obtain rfl | h := eq_or_ne I ∅
     · simp only [true_or]
     · simp only [h, prod_indep_iff, exists_and_left, false_or]
-      refine ⟨{(i, v) | (i ∈ Set.univ) ∧ v ∈ Is i}  , fun i ↦ ?_, ?_⟩
+      refine ⟨{(i, v) | (i ∈ Set.univ) ∧ v ∈ Is i}, fun i ↦ ?_, ?_⟩
       simp only [Set.mem_univ, true_and, Set.preimage_setOf_eq, Set.setOf_mem_eq, hI.2 i]
       simp_rw [IsMatching, Set.mem_univ, true_and]
       set f := fun x : ι × α ↦ x.2 with hf
@@ -101,12 +103,19 @@ lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms
       simp only [show (Function.invFunOn f {x | x.2 ∈ Is x.1} v).2 =
         f (Function.invFunOn f {x | x.2 ∈ Is x.1} v) by rfl, Function.invFunOn_eq (himage ▸ hv)]
 
-lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → Matroid α}
-  (h : ∀ i, (Ms i).Finite) {I : Set α} : (Matroid.Union Ms).Indep I ↔
+lemma finset_union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
+    {I : Finset α} (Is : ι → Finset α) (hD : Set.univ.PairwiseDisjoint Is)
+    (hI : (⋃ (i : ι), Is i).toFinset = I ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
+    (Matroid.Union Ms).Indep I := by
+  apply union_indep' (fun i ↦ Is i) (by simpa)
+  simp [← hI.1, coe_toFinset, true_and, hI.2]
+
+lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → Matroid α} {I : Set α} :
+    (Matroid.Union Ms).Indep I ↔
     ∃ Is : ℕ → Set α, ⋃ (i : ℕ), Is i = (I : Set α) ∧ ∀ (i : ℕ), (Ms i).Indep (Is i) := by
-    refine iff_def'.mpr ⟨fun ⟨Is, hU, hI⟩ ↦ ?_, union_indep h⟩
+    refine iff_def'.mpr ⟨fun ⟨Is, hU, hI⟩ ↦ ?_, union_indep⟩
     set Js := disjointed Is with hJ
-    refine union_indep' h Js (Pairwise.set_pairwise (hJ ▸ (disjoint_disjointed Is)) Set.univ)
+    refine union_indep' Js (Pairwise.set_pairwise (hJ ▸ (disjoint_disjointed Is)) Set.univ)
       ⟨by simp [hJ ▸ iUnion_disjointed ▸ hU],
       fun i ↦ Matroid.Indep.subset (hI i) (disjointed_subset Is i)⟩
 
@@ -116,9 +125,9 @@ def Intersection [DecidableEq α] (Ms : ι → Matroid α) : Set (Set α) :=
   sorry
 
 noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): PolymatroidFn M.r where
- submodular := M.r_submod
- mono := M.r_mono
- zero_at_bot := M.r_empty
+  submodular := M.r_submod
+  mono := M.r_mono
+  zero_at_bot := M.r_empty
 
 @[simp] theorem prod_rk_eq_rk_sum_on_indep {α ι : Type*} [Fintype ι] [Fintype α]
   {Ms : ι → Matroid α} {I : Set (ι × α)} (h : (Matroid.prod Ms).Indep I):
@@ -190,7 +199,7 @@ theorem adjMap_rank_eq [DecidableEq β] [Nonempty α] [Fintype α] [Fintype β] 
   (∃ Y , M.r {v | ∃ u ∈ Y, Adj v u} + (Finset.univ \ Y).card ≤ (M.adjMap Adj Set.univ).rk) ∧
     (∀ Y , (M.adjMap Adj Set.univ).rk ≤ M.r {v | ∃ u ∈ Y, Adj v u} + (Finset.univ \ Y).card) := by
   set f := fun I : Finset β ↦ (M.r (I.biUnion (N_singleton Adj)) : ℤ) with hf
-  have : PolymatroidFn f := by
+  have hf_poly : PolymatroidFn f := by
     refine ⟨fun X Y ↦ hf ▸ ?_, ?_, ?_⟩
     · simp only [Finset.inf_eq_inter, Finset.sup_eq_union]
       have : ((X ∪ Y).biUnion (N_singleton Adj)) =
@@ -216,9 +225,9 @@ theorem adjMap_rank_eq [DecidableEq β] [Nonempty α] [Fintype α] [Fintype β] 
         Nat.cast_zero]
 
   rw [rk_def, adjMap_ground_eq]
-  obtain h := polymatroid_rank_eq this Finset.univ
+  obtain h := polymatroid_rank_eq hf_poly Finset.univ
 
-  have heq : ∀ I : Finset β , (ofPolymatroidFn this).Indep I ↔ (M.adjMap Adj Set.univ).Indep I := by
+  have heq : ∀ I : Finset β , (ofPolymatroidFn hf_poly).Indep I ↔ (M.adjMap Adj Set.univ).Indep I := by
     intro I
     simp only [IndepMatroid.ofFinset_indep, adjMap_indep_iff, Finset.coe_subset,
       indep_ofPolymatroidFn_iff]
@@ -293,11 +302,16 @@ theorem adjMap_rank_eq [DecidableEq β] [Nonempty α] [Fintype α] [Fintype β] 
         Finset.mem_univ, true_and] at hin
       simp only [hv, ↓reduceDite, e', hin]
 
-  have hE : (ofPolymatroidFn this).E = (M.adjMap Adj Set.univ).E := by
-    simp only [ofPolymatroidFn_E, adjMap_ground_eq]
+  -- have hE : (ofPolymatroidFn hf_poly).E = (M.adjMap Adj Set.univ).E := rfl
 
-  have : (ofPolymatroidFn this) ≂ (M.adjMap Adj Set.univ) := by
-    exact Matroid.Iso.mk
+
+  have h_eq' : (ofPolymatroidFn hf_poly) = M.adjMap Adj univ := by
+    refine eq_of_indep_iff_indep_forall rfl (fun J hJE ↦ ?_)
+    simpa using heq J.toFinset
+
+
+  -- have : (ofPolymatroidFn hf_poly) ≂ (M.adjMap Adj Set.univ) := by
+  --   exact Matroid.Iso.mk
 
 
 
