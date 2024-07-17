@@ -3,6 +3,7 @@ import Matroid.Constructions.DirectSum
 import Mathlib.Order.Disjointed
 import Matroid.Constructions.Submodular
 import Matroid.Rank
+import Matroid.Equiv
 
 namespace Matroid
 
@@ -185,10 +186,9 @@ noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): Polymatroi
   simp_rw [← Basis'.r hI, ← Basis'.r (this _)]
   exact prod_rk_eq_rk_sum_on_indep hI.1.1
 
-theorem adjMap_rank_eq [DecidableEq β] [Fintype α] [Fintype β] (M : Matroid α) (Adj : α → β → Prop)
-  (E : Finset β) :
-  (∃ Y ⊆ E, M.r {v | ∃ u ∈ Y, Adj v u} + (E \ Y).card ≤ (M.adjMap Adj E).rk) ∧
-    (∀ Y ⊆ E, (M.adjMap Adj E).rk ≤ M.r {v | ∃ u ∈ Y, Adj v u} + (E \ Y).card) := by
+theorem adjMap_rank_eq [DecidableEq β] [Nonempty α] [Fintype α] [Fintype β] (M : Matroid α) (Adj : α → β → Prop) :
+  (∃ Y , M.r {v | ∃ u ∈ Y, Adj v u} + (Finset.univ \ Y).card ≤ (M.adjMap Adj Set.univ).rk) ∧
+    (∀ Y , (M.adjMap Adj Set.univ).rk ≤ M.r {v | ∃ u ∈ Y, Adj v u} + (Finset.univ \ Y).card) := by
   set f := fun I : Finset β ↦ (M.r (I.biUnion (N_singleton Adj)) : ℤ) with hf
   have : PolymatroidFn f := by
     refine ⟨fun X Y ↦ hf ▸ ?_, ?_, ?_⟩
@@ -216,9 +216,9 @@ theorem adjMap_rank_eq [DecidableEq β] [Fintype α] [Fintype β] (M : Matroid �
         Nat.cast_zero]
 
   rw [rk_def, adjMap_ground_eq]
-  obtain h := polymatroid_rank_eq this E
+  obtain h := polymatroid_rank_eq this Finset.univ
 
-  have heq : ∀ I : Finset β , (ofPolymatroidFn this).Indep I ↔ (M.adjMap Adj E).Indep I := by
+  have heq : ∀ I : Finset β , (ofPolymatroidFn this).Indep I ↔ (M.adjMap Adj Set.univ).Indep I := by
     intro I
     simp only [IndepMatroid.ofFinset_indep, adjMap_indep_iff, Finset.coe_subset,
       indep_ofPolymatroidFn_iff]
@@ -227,7 +227,7 @@ theorem adjMap_rank_eq [DecidableEq β] [Fintype α] [Fintype β] (M : Matroid �
       obtain h | h := ha.1
       · obtain h := Finset.subset_empty.mp (h ▸ hI')
         simp only [h, Finset.card_empty, Finset.biUnion_empty, Finset.coe_empty, r_empty, le_refl]
-      · obtain hindep := Set.ncard_coe_Finset I' ▸ Indep.r <| (adjMap_indep_iff M Adj E).mpr
+      · obtain hindep := Set.ncard_coe_Finset I' ▸ Indep.r <| (adjMap_indep_iff M Adj Set.univ).mpr
           ⟨AdjIndep.subset ha.1 hI', subset_trans hI' ha.2⟩
         obtain h | ⟨I₀, f, h', h''⟩ := (AdjIndep.subset ha.1 hI')
         · simp only [h, Finset.card_empty, Finset.biUnion_empty, Finset.coe_empty, r_empty, le_refl]
@@ -243,7 +243,64 @@ theorem adjMap_rank_eq [DecidableEq β] [Fintype α] [Fintype β] (M : Matroid �
             true_and]
           exact hadj ▸ (IsMatching.adj h'' hu)
 
-    obtain h := (rado M <| I.toSet.restrict (N_singleton Adj)).mpr
+    obtain h := (rado M <| fun i : ↑I ↦ (N_singleton Adj i)).mpr
+    simp only [hf, Nat.cast_le] at hp
+    have hp : ∀ I' ⊆ I, I'.card ≤ M.r ↑(I'.biUnion (N_singleton Adj)) := by
+      intro I' hI'
+      obtain rfl | hem := eq_or_ne I' ∅
+      simp only [Finset.card_empty, Finset.biUnion_empty, Finset.coe_empty, r_empty, le_refl]
+      exact hp I' hI' <| Finset.nonempty_of_ne_empty hem
+    have : ∀ (K : Finset { x // x ∈ I }), K.card ≤ M.r ↑(K.biUnion fun i ↦ N_singleton Adj ↑i):= by
+    -- thanks Max for this proof
+      intro K
+      have hsub : Finset.image Subtype.val K ⊆ I := by
+        refine fun x hx ↦ ?_
+        simp only [Finset.mem_image, Subtype.exists, exists_and_right, exists_eq_right] at hx
+        exact hx.1
+      have : (Finset.image Subtype.val K).card = K.card := by
+        simp [Finset.card_image_iff.mpr Set.injOn_subtype_val]
+      specialize hp (Finset.image Subtype.val K) hsub
+      simp only [this] at hp
+      refine le_trans hp (le_of_eq ?_)
+      apply congrArg
+      apply congrArg
+      exact Finset.image_biUnion
+    obtain ⟨e, ⟨hinj, hin⟩, hi⟩ := h this
+    refine ⟨?_, Set.subset_univ _⟩
+    simp only [AdjIndep, exists_and_left]
+    obtain rfl | hem := eq_or_ne I ∅
+    simp only [Finset.coe_empty, true_or]
+    simp only [hem, false_or]
+    set e' := fun x ↦ if h : x ∈ I then e ⟨x, h⟩ else Classical.arbitrary α
+    refine ⟨(Set.range e).toFinset, (Set.coe_toFinset (Set.range e)).symm ▸ hi, ⟨e', ⟨⟨fun x hx ↦ ?_,
+      fun x hx y hy hxy ↦ ?_, fun x hx ↦ ?_⟩, ?_⟩⟩⟩
+    · simp only [Finset.mem_coe] at hx
+      simp only [hx, Set.toFinset_range, Finset.univ_eq_attach, Finset.coe_image, Set.mem_image,
+        Finset.mem_coe, Finset.mem_attach, true_and, Subtype.exists, e']
+      refine ⟨x, hx, by simp only [↓reduceDite]⟩
+    · simp only [Finset.mem_coe] at hx hy
+      simp only [hx, ↓reduceDite, hy, e'] at hxy
+      exact Subtype.mk_eq_mk.mp (hinj hxy)
+    · simp only [Set.mem_image, Finset.mem_coe, e']
+      simp only [Set.toFinset_range, Finset.univ_eq_attach, Finset.coe_image, Set.mem_image,
+        Finset.mem_coe, Finset.mem_attach, true_and, Subtype.exists] at hx
+      obtain ⟨a, b, hab⟩ := hx
+      refine ⟨a, b, by simp only [b, ↓reduceDite, hab]⟩
+    · intro v hv
+      simp only [Finset.mem_coe] at hv
+      specialize hin ⟨v, hv⟩
+      simp only [N_singleton, Set.mem_setOf_eq, Set.toFinset_setOf, Finset.mem_filter,
+        Finset.mem_univ, true_and] at hin
+      simp only [hv, ↓reduceDite, e', hin]
+
+  have hE : (ofPolymatroidFn this).E = (M.adjMap Adj Set.univ).E := by
+    simp only [ofPolymatroidFn_E, adjMap_ground_eq]
+
+  have : (ofPolymatroidFn this) ≂ (M.adjMap Adj Set.univ) := by
+    exact Matroid.Iso.mk
+
+
+
 
 
 
