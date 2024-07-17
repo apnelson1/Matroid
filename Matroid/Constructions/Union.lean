@@ -202,9 +202,11 @@ theorem adjMap_rank_eq [DecidableEq β] [Fintype α] [Fintype β] (M : Matroid �
       simp only [Finset.coe_biUnion, Finset.coe_inter, Set.mem_inter_iff, Finset.mem_coe,
         N_singleton, Set.le_eq_subset, Set.subset_inter_iff, Set.iUnion_subset_iff, and_imp,
         Set.mem_setOf_eq, Set.toFinset_setOf, Finset.coe_filter, Finset.mem_univ, true_and]
-      refine ⟨fun x h1 h2 y h3 ↦ ?_, fun x y h1 h2 h3 ↦ ⟨y, h2, h3⟩⟩
+      refine ⟨fun x h1 h2 y h3 ↦ ?_, fun x h1 h2 y h3 ↦ ?_⟩
       simp only [Set.mem_iUnion, Set.mem_setOf_eq, exists_prop]
       exact ⟨x, ⟨h1, h3⟩⟩
+      simp only [Set.mem_iUnion, Set.mem_setOf_eq, exists_prop]
+      exact ⟨x, ⟨h2, h3⟩⟩
     · refine fun X Y h ↦ hf ▸ Nat.cast_le.mpr (M.r_mono ?_)
       simp only [Set.le_eq_subset, Finset.coe_biUnion, Finset.mem_coe, Set.iUnion_subset_iff]
       refine fun x h1 y h2 ↦ ?_
