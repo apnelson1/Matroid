@@ -171,7 +171,7 @@ lemma relRank_add_er_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.relRank X Y + M.er X = M.er Y := by
   rw [relRank_add_er_eq, union_eq_self_of_subset_right hXY]
 
-lemma rFin.relRank_eq_sub (hY : M.FinRank X) (hXY : X ⊆ Y) :
+lemma FinRank.relRank_eq_sub (hY : M.FinRank X) (hXY : X ⊆ Y) :
     M.relRank X Y = M.er Y - M.er X := by
   rw [← relRank_add_er_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY

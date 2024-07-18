@@ -72,9 +72,14 @@ lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
     (M.map f hf).Flat (f '' F) :=
   (flat_map_iff hf).2 ⟨F, hF, rfl⟩
 
-lemma flat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.closure F ⊆ F := by
+lemma flat_iff_closure_self_subset (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.closure F ⊆ F := by
   rw [flat_iff_closure_self, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_closure F
+
+lemma flat_iff_closure_self_subset' : M.Flat F ↔ M.closure F ⊆ F ∧ F ⊆ M.E := by
+  by_cases hF : F ⊆ M.E
+  · rw [and_iff_left hF, flat_iff_closure_self_subset]
+  exact iff_of_false (fun h ↦ hF h.subset_ground) (by simp [hF])
 
 lemma exists_mem_closure_not_mem_of_not_flat (h : ¬ M.Flat F) (hF : F ⊆ M.E := by aesop_mat) :
     ∃ e, e ∈ M.closure F \ F := by
@@ -432,38 +437,26 @@ lemma Flat.covBy_closure_insert (hF : M.Flat F) (he : e ∉ F) (heE : e ∈ M.E 
     F ⋖[M] M.closure (insert e F) :=
   hF.covBy_iff_eq_closure_insert.2 ⟨e, ⟨heE, he⟩, rfl⟩
 
-lemma closure_covBy_closure_iff (hY : X ⊆ M.E := by aesop_mat) : (M.closure X) ⋖[M] (M.closure Y) ↔
+lemma closure_covBy_closure_iff (hX : X ⊆ M.E := by aesop_mat) : (M.closure X) ⋖[M] (M.closure Y) ↔
     ∃ e ∈ M.E, e ∈ Y ∧ e ∉ M.closure X ∧ M.closure (insert e X) = M.closure Y := by
-
   by_cases hY : Y ⊆ M.E
-  · refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · refine ⟨fun h ↦ ?_, fun ⟨e, he, _, heX, h_eq⟩ ↦ ?_⟩
     · obtain ⟨e, heY, heX⟩ := exists_of_closure_ssubset h.ssubset
-      refine ⟨e, hY heY, heY, heX, h.eq_of_ssubset_of_subset ?_ ?_ ?_⟩
+      refine ⟨e, hY heY, heY, heX, ?_⟩
+      rw [← h.closure_insert_eq ⟨M.subset_closure Y heY, heX⟩,
+        closure_insert_closure_eq_closure_insert]
+    rw [← h_eq]
+    rw [← closure_insert_closure_eq_closure_insert]
+    exact (M.closure_flat X).covBy_closure_insert heX
+  refine iff_of_false (fun h ↦ hY ((M.subset_closure Y).trans h.subset_ground_right))
+    (fun ⟨e, he, _, _, h_eq⟩ ↦ hY (closure_subset_ground_iff.1 ?_))
+  rw [← h_eq, closure_subset_ground_iff]
+  exact insert_subset he hX
 
-    rw [closure_covBy_iff]
-    simp only [mem_diff, and_assoc]
-    have := exists_mem_of_cl
-    refine ⟨fun ⟨e, he, heX, h_eq⟩ ↦ ⟨e, he, ?_, heX, h_eq.symm⟩, fun h ↦ ?_⟩
-
-
-    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  rw [closure_covBy_iff]
-  refine ⟨fun ⟨e, he, hYX⟩ ↦ ?_, fun ⟨e, he, _, heX, h_eq⟩ ↦ ⟨e, ⟨he, heX⟩, h_eq.symm⟩ ⟩
-  by_contra! hcon
-  have hY : Y ∩ M.E ⊆ M.closure X := by
-    refine fun f hf ↦ by_contra fun hfX ↦ hcon f hf.2 hf.1 hfX ?_
-    rw [hYX]
-    apply closure_insert_eq_closure_insert_of_mem ⟨?_, hfX⟩
-    rw [← hYX, ← closure_inter_ground]
-    exact M.subset_closure _ (by aesop_mat) hf
-  replace hY := M.closure_subset_closure_of_subset_closure hY
-  rw [closure_inter_ground, hYX] at hY
-  exact he.2 <| hY (M.mem_closure_of_mem' (mem_insert _ _) he.1)
-
-
-lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) : M.closure (I \ {e}) ⋖[M] M.closure I := by
-  simpa [closure_insert_closure_eq_closure_insert, he] using
-    (M.closure_flat _).covBy_closure_insert (not_mem_closure_diff_of_mem hI he) (hI.subset_ground he)
+lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
+    M.closure (I \ {e}) ⋖[M] M.closure I := by
+  rw [closure_covBy_closure_iff (diff_subset.trans hI.subset_ground)]
+  exact ⟨e, by simp [he, hI.subset_ground he, hI.not_mem_closure_diff_of_mem he]⟩
 
 lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
     M.closure I ⋖[M] M.closure (insert e I) := by
@@ -471,7 +464,8 @@ lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I)
     (hI.insert_indep_iff.2 <| .inl he).closure_diff_covBy (.inl rfl)
 
 lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) : F' = M.closure (insert e F) :=
-  Eq.symm <| h.eq_of_ssubset_of_subset (M.closure_flat (insert e F))
+  Eq.symm <| h.eq_of_ssubset_of_subset (M.closure_flat (insert e F)
+      (insert_subset (h.subset_ground_right he.1) h.subset_ground_left))
     (h.flat_left.covBy_closure_insert he.2 (h.flat_right.subset_ground he.1)).ssubset
     (h.flat_right.closure_subset_of_subset (insert_subset he.1 h.subset))
 
@@ -479,7 +473,7 @@ lemma Flat.covBy_iff_relRank_eq_one (hF₀ : M.Flat F₀) (hF : M.Flat F) :
     F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.relRank F₀ F = 1 := by
   simp_rw [hF₀.covBy_iff_eq_closure_insert, relRank_eq_one_iff hF.subset_ground, hF₀.closure]
   refine ⟨?_, fun ⟨hss, e, he, h⟩ ↦ ⟨e, ?_, h.antisymm ?_⟩⟩
-  · rintro ⟨e, ⟨he, heE⟩, rfl⟩
+  · rintro ⟨e, ⟨-, heE⟩, rfl⟩
     refine ⟨M.subset_closure_of_subset (subset_insert _ _), ⟨e, ⟨?_, heE⟩, rfl.subset⟩⟩
     exact M.mem_closure_of_mem (mem_insert _ _)
   · apply diff_subset_diff_left hF.subset_ground he
@@ -497,10 +491,7 @@ lemma Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E \
     ∃! F₁, e ∈ F₁ ∧ (F₀ ⋖[M] F₁) := by
   simp_rw [hF₀.covBy_iff_eq_closure_insert]
   use M.closure (insert e F₀)
-  refine' ⟨_, _⟩
-  · constructor
-    · exact (M.inter_ground_subset_closure (insert e F₀)) ⟨mem_insert _ _, he.1⟩
-    use e, he
+  refine ⟨⟨M.mem_closure_of_mem (mem_insert _ _), ⟨e, he, rfl⟩⟩, ?_⟩
   simp only [exists_prop, and_imp, forall_exists_index]
   rintro X heX f _ rfl
   rw [hF₀.closure_insert_eq_closure_insert_of_mem ⟨heX, he.2⟩]
@@ -529,8 +520,10 @@ lemma Flat.exists_covBy_right_of_ssubset (hF₀ : M.Flat F₀) (hF₁ : M.Flat F
     rw [hF₀.eq_closure_of_basis hI, hF₁.eq_closure_of_basis hJ] at hss
     exact hss.ne rfl
   obtain ⟨e, heJ, heI⟩ := exists_of_ssubset hssu
-  refine ⟨M.closure (J \ {e}), hI.subset_cl.trans (M.closure_subset_closure (subset_diff_singleton hIJ heI)), ?_⟩
-  convert (M.closure_flat (J \ {e})).covBy_closure_insert ?_ (hJ.indep.subset_ground heJ)
+  refine ⟨M.closure (J \ {e}), hI.subset_closure.trans
+    (M.closure_subset_closure (subset_diff_singleton hIJ heI)), ?_⟩
+  convert (M.closure_flat (J \ {e})
+    (diff_subset.trans hJ.indep.subset_ground)).covBy_closure_insert ?_ (hJ.indep.subset_ground heJ)
   · rw [closure_insert_closure_eq_closure_insert, insert_diff_singleton, insert_eq_of_mem heJ,
       hF₁.eq_closure_of_basis hJ]
   exact hJ.indep.not_mem_closure_diff_of_mem heJ
@@ -602,37 +595,35 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
     X ∈ hF.covByPartition ↔ ∃ F', ((F ⋖[M] F') ∧ F' \ F = X) := by
   simp [Flat.covByPartition]
 
-@[simp] lemma Flat.partOf_covByPartition_eq (hF : M.Flat F) (e : α) :
+@[simp] lemma Flat.partOf_covByPartition_eq (hF : M.Flat F) (e : α) (he : e ∈ M.E := by aesop_mat) :
     hF.covByPartition.partOf e = M.closure (insert e F) \ F := by
-  by_cases he : e ∈ M.E \ F
-  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem he)
-    obtain rfl := hFF'.closure_insert_eq (hF'.symm.subset <| hF.covByPartition.mem_partOf he)
-    exact hF'.symm
-  have hrw : insert e F ∩ M.E = F := by
-    refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
-    rw [← singleton_union, union_inter_distrib_right, union_subset_iff,
-       (and_iff_left inter_subset_left)]
-    rintro f ⟨rfl, hf⟩
-    exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
-  rw [← closure_inter_ground, hrw, hF.closure, diff_self, hF.covByPartition.partOf_eq_empty he]
+  by_cases heF : e ∈ F
+  · rw [hF.covByPartition.partOf_eq_empty (fun h ↦ h.2 heF),
+      insert_eq_of_mem heF, hF.closure, diff_self]
+  obtain ⟨F', hFF', hF'⟩ :=
+    hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem (show e ∈ M.E \ F from ⟨he, heF⟩))
+  rw [← hF', hFF'.closure_insert_eq]
+  rw [hF']
+  exact Partition.mem_partOf hF.covByPartition ⟨he, heF⟩
 
 @[simp] lemma Flat.rel_covByPartition_iff (hF : M.Flat F) {e f : α} :
     hF.covByPartition.Rel e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
-  simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
-    exists_prop, exists_and_left, and_congr_right_iff]
-  refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
-  rw [← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert e F)),
-    ← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert f F)), hF.closure,
-    ← diff_union_self, h, diff_union_self]
+  simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', mem_diff, exists_prop,
+    and_congr_right_iff, and_imp]
+  intro he _ hf _
+  rw [partOf_covByPartition_eq _ _ he, partOf_covByPartition_eq _ _ hf, subset_antisymm_iff,
+    diff_subset_iff, diff_subset_iff]
+  simp_rw [union_diff_self,
+    union_eq_self_of_subset_left (subset_closure_of_subset _ (subset_insert _ _)),
+    subset_antisymm_iff]
 
 lemma Flat.rel_covByPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
     hF.covByPartition.Rel e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
   rw [hF.rel_covByPartition_iff, and_iff_right he, and_iff_right_iff_imp]
-  refine fun hclosure ↦ ⟨by_contra fun hf ↦ ?_, fun hfF ↦ ?_⟩
-  · rw [← M.closure_inter_ground (insert f F), insert_inter_of_not_mem hf,
-      inter_eq_self_of_subset_left hF.subset_ground, hF.closure] at hcl
-    exact he.2 <| hcl.subset (M.mem_closure_of_mem (mem_insert e F))
+  refine fun hcl ↦ ⟨mem_of_mem_of_subset ?_ (hcl.symm.subset.trans ?_), fun hfF ↦ ?_⟩
+  · exact mem_closure_of_mem _ (by simp)
+  · exact M.closure_subset_ground _ (by aesop_mat)
   rw [insert_eq_of_mem hfF, hF.closure] at hcl
   exact he.2 <| hcl.subset (M.mem_closure_of_mem (mem_insert e F))
 
@@ -663,17 +654,19 @@ lemma Flat.rel_covByPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
 
 section Minor
 
-lemma flat_contract (X C : Set α) : (M ／ C).Flat (M.closure (X ∪ C) \ C) := by
-  rw [flat_iff_closure_self, contract_closure_eq, diff_union_self, ← M.closure_union_closure_right_eq,
-    union_eq_self_of_subset_right (M.closure_subset_closure subset_union_right), closure_cl]
+lemma flat_contract (X C : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    (M ／ C).Flat (M.closure (X ∪ C) \ C) := by
+  rw [flat_iff_closure_self _, contract_closure_eq]
+  · simp [union_assoc, (sdiff_eq_left (x := C)).2 disjoint_sdiff_right]
+  rw [contract_ground, diff_subset_iff, union_diff_self, union_comm (b := M.E)]
+  refine (M.closure_subset_ground_union _).trans ?_
+  rw [← union_assoc, union_eq_self_of_subset_right hX]
 
 @[simp] lemma flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
-  rw [flat_iff_closure_self, contract_closure_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
-    union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_closure_self, subset_antisymm_iff,
-    and_congr_right_iff]
-  exact fun _ _ ↦ ⟨fun h ↦ M.subset_closure _ (union_subset (h.trans (M.closure_subset_ground _)) hC),
-    fun h ↦ subset_union_left.trans h⟩
+  rw [flat_iff_closure_self_subset', contract_closure_eq, contract_ground, subset_diff,
+    diff_subset_iff, diff_union_self, flat_iff_closure_self_subset', union_subset_iff,
+    and_iff_left hC, union_comm, and_assoc]
 
 lemma Flat.union_flat_of_contract (hF : (M ／ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
     M.Flat (F ∪ C) :=
@@ -683,12 +676,12 @@ lemma flat_contract_iff' :
     (M ／ C).Flat F ↔ (M.Flat (F ∪ (C ∩ M.E)) ∧ Disjoint F (C ∩ M.E)) := by
   rw [← contract_inter_ground_eq, flat_contract_iff]
 
-lemma Flat.union_flat_of_contract' (hF : (M ／ C).Flat F) : M.Flat (F ∪ M.closure C) := by
-  replace hF := (flat_contract_iff'.1 hF).1.closure
-  rw [← closure_union_closure_right_eq, closure_inter_ground] at hF
-  rw [flat_iff_subset_closure_self (union_subset _ (M.closure_subset_ground _)), hF]
-  · exact union_subset_union_right _ <| (M.subset_closure _).trans (M.closure_inter_ground _).subset
-  exact subset_union_left.trans (hF.symm.subset.trans (M.closure_subset_ground _))
+lemma Flat.union_flat_of_contract' (hF : (M ／ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
+    M.Flat (F ∪ M.closure C) := by
+  rw [flat_contract_iff] at hF
+  rwa [flat_iff_closure_self_subset', closure_union_closure_right_eq, hF.1.closure,
+    and_iff_right (union_subset_union_right _ (M.subset_closure C)), union_subset_iff,
+    and_iff_right (subset_union_left.trans hF.1.subset_ground), closure_subset_ground_iff]
 
 lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
     (M ／ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
@@ -705,12 +698,12 @@ lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
 
 lemma flat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
     (M ↾ R).Flat F ↔ ∃ F', M.Flat F' ∧ F = F' ∩ R := by
-  refine ⟨fun h ↦ ⟨M.closure F, M.closure_flat F, ?_⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨M.closure F, M.closure_flat F (h.subset_ground.trans hR), ?_⟩, ?_⟩
   · nth_rw 1 [← h.closure]
     have hFR : F ⊆ R := h.subset_ground
-    simp [inter_eq_self_of_subset_left hFR, diff_subset, diff_eq_empty.2 hR]
+    simpa [inter_eq_self_of_subset_left hFR, diff_subset, diff_eq_empty.2 hR]
   rintro ⟨F, hF, rfl⟩
-  rw [flat_iff_subset_closure_self]
+  rw [flat_iff_closure_self_subset]
   suffices M.closure (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, diff_eq_empty.2 hR]
   exact inter_subset_left.trans (hF.closure_subset_of_subset inter_subset_left)
 
@@ -767,8 +760,8 @@ lemma Hyperplane.closure_eq_ground_of_ssuperset (hH : M.Hyperplane H) (hX : H �
     (M.closure_subset_closure (insert_subset heX hX.subset)))
 
 lemma Hyperplane.spanning_of_ssuperset (hH : M.Hyperplane H) (hX : H ⊂ X)
-    (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Spanning X := by rw [spanning_iff_closure, hH.closure_eq_ground_of_ssuperset hX]
+    (hXE : X ⊆ M.E := by aesop_mat) : M.Spanning X := by
+  rw [spanning_def, hH.closure_eq_ground_of_ssuperset hX]
 
 lemma Hyperplane.not_spanning (hH : M.Hyperplane H) : ¬M.Spanning H := by
   rw [hH.flat.spanning_iff]; exact hH.ssubset_ground.ne
@@ -797,9 +790,8 @@ lemma hyperplane_iff_maximal_nonspanning :
       fun F hF hHF hFE ↦ or_iff_not_imp_right.mpr fun hFE' ↦ _⟩
   · have h' := h.2 (insert_subset he.1 h.1.1)
     simp only [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
-      imp_false, Classical.not_not, spanning_iff_cl]  at h'
-    rw [spanning_iff_cl] at h'
-    rw [h', ← not_spanning_iff_closure h.1.1]
+      imp_false, Classical.not_not, spanning_def] at h'
+    rw [h', ← not_spanning_iff_closure h.1.1 ]
     exact h.1.2
   have h' := h.2 hFE
   rw [hF.spanning_iff] at h'
@@ -853,8 +845,9 @@ lemma Hyperplane.inter_ssubset_right_of_ne (h₁ : M.Hyperplane H₁) (h₂ : M.
 
 lemma Base.hyperplane_of_closure_diff_singleton (hB : M.Base B) (heB : e ∈ B) :
     M.Hyperplane (M.closure (B \ {e})) := by
-  rw [hyperplane_iff_covBy, Flat.covBy_iff_eq_closure_insert (M.closure_flat _)]
-  refine' ⟨e, ⟨hB.subset_ground heB, _⟩, _⟩
+  rw [hyperplane_iff_covBy, Flat.covBy_iff_eq_closure_insert
+    (M.closure_flat _ (diff_subset.trans hB.subset_ground))]
+  refine ⟨e, ⟨hB.subset_ground heB, ?_⟩, ?_⟩
   · rw [(hB.indep.diff {e}).not_mem_closure_iff (hB.subset_ground heB)]
     simpa [insert_eq_of_mem heB] using hB.indep
   simpa [insert_eq_of_mem heB] using hB.closure_eq.symm
@@ -864,20 +857,18 @@ lemma Hyperplane.ssuperset_eq_univ_of_flat (hH : M.Hyperplane H) (hF : M.Flat F)
   hH.covBy.eq_of_ssubset_of_subset hF h hF.subset_ground
 
 lemma Hyperplane.closure_insert_eq_univ (hH : M.Hyperplane H) (he : e ∈ M.E \ H) :
-    M.closure (insert e H) = M.E := by
-  refine' hH.ssuperset_eq_univ_of_flat (M.closure_flat _)
-    ((ssubset_insert he.2).trans_subset (M.subset_closure _ _))
-  rw [insert_eq, union_subset_iff, singleton_subset_iff]
-  exact ⟨he.1, hH.subset_ground⟩
+    M.closure (insert e H) = M.E :=
+  hH.ssuperset_eq_univ_of_flat (M.closure_flat _)
+    ((ssubset_insert he.2).trans_subset (M.subset_closure _))
 
-lemma exists_hyperplane_sep_of_not_mem_closure (h : e ∈ M.E \ M.closure X) (hX : X ⊆ M.E := by aesop_mat) :
-    ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
+lemma exists_hyperplane_sep_of_not_mem_closure (h : e ∈ M.E \ M.closure X)
+    (hX : X ⊆ M.E := by aesop_mat) : ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_basis X
-  rw [← hI.closure_eq_closure, mem_diff, hI.indep.not_mem_closure_iff] at h
+  rw [hI.closure_eq_closure, mem_diff, hI.indep.not_mem_closure_iff] at h
   obtain ⟨B, hB, heIB⟩ := h.2.1.exists_base_superset
   rw [insert_subset_iff] at heIB
   refine ⟨_, hB.hyperplane_of_closure_diff_singleton heIB.1, ?_, ?_⟩
-  · exact hI.subset_cl.trans (M.closure_subset_closure (subset_diff_singleton heIB.2 h.2.2))
+  · exact hI.subset_closure.trans (M.closure_subset_closure (subset_diff_singleton heIB.2 h.2.2))
   exact hB.indep.not_mem_closure_diff_of_mem heIB.1
 
 lemma closure_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
@@ -889,13 +880,9 @@ lemma closure_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.
   obtain ⟨H, hH, hXH, heH'⟩ := exists_hyperplane_sep_of_not_mem_closure ⟨heE, hx⟩
   exact heH' (heH H ⟨hH, hXH⟩)
 
-lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e ∈ M.E := by aesop_mat) :
-    e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
-  simp_rw [← M.closure_inter_ground X,
-    M.closure_eq_sInter_hyperplanes _ (inter_subset_left.trans hX), mem_inter_iff, and_iff_left he,
-    mem_sInter, mem_setOf_eq, and_imp]
-  exact ⟨fun h H hH hXH ↦ h _ hH (inter_subset_left.trans hXH),
-    fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
+lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat)
+    (he : e ∈ M.E := by aesop_mat) : e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
+  simp [M.closure_eq_sInter_hyperplanes X, he]
 
 lemma mem_dual_closure_iff_forall_circuit (hX : X ⊆ M.E := by aesop_mat)
   (he : e ∈ M.E := by aesop_mat) :
@@ -937,17 +924,22 @@ lemma Hyperplane.inter_covBy_comm (hH₁ : M.Hyperplane H₁) (hH₂ : M.Hyperpl
 lemma Hyperplane.basis_hyperplane_delete (hH : M.Hyperplane H) (hI : M.Basis I H) :
     (M ＼ (H \ I)).Hyperplane I := by
   obtain ⟨e, he, heH⟩ := exists_of_ssubset hH.ssubset_ground
+  have heI := not_mem_subset hI.subset heH
   have hB : M.Base (insert e I) := by
     refine Indep.base_of_spanning ?_ ?_
-    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH), hI.closure_eq_closure,
-        hH.flat.closure, mem_diff, and_iff_left heH]
-    rw [spanning_iff_closure, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure, hH.flat.closure,
-      hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
+    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH),
+        ← hI.closure_eq_closure, hH.flat.closure, mem_diff, and_iff_left heH]
+    rw [spanning_def, ← closure_insert_closure_eq_closure_insert, ← hI.closure_eq_closure,
+      hH.flat.closure, hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
+
   convert Base.hyperplane_of_closure_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
-  · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,
-    not_false_eq_true, diff_singleton_eq_self, delete_closure_eq]
-    rw [disjoint_sdiff_right.sdiff_eq_left, hI.closure_eq_closure, hH.flat.closure, diff_diff_cancel_left]
-    exact hI.subset
+  · simp only [mem_singleton_iff, insert_diff_of_mem, heI, not_false_eq_true,
+      diff_singleton_eq_self, delete_closure_eq]
+    rw [inter_eq_self_of_subset_left, diff_diff_right, eq_comm, union_eq_right,
+      union_subset_iff, and_iff_left inter_subset_right, ← hH.flat.closure, hI.closure_eq_closure]
+    · simp
+    exact subset_diff.2 ⟨hI.indep.subset_ground, disjoint_sdiff_right⟩
+
   simp only [delete_base_iff]
   refine hB.indep.basis_of_forall_insert ?_ fun x ⟨⟨hxE, _⟩, hx⟩ ↦ hB.insert_dep ⟨hxE, hx⟩
   suffices insert e I ∩ (H \ I) = ∅ by simpa [insert_subset_iff, he, heH, subset_diff,
@@ -983,9 +975,9 @@ lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
   ⟨M.closure_flat {e}, by rw [er_closure_eq, he.indep.er, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
-  simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left, true_and,
-    and_congr_right_iff, and_iff_right_iff_imp]
-  exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
+  simp only [covBy_iff_relRank_eq_one, relRank_closure_left, relRank_empty_left, Point]
+  rw [and_iff_right (M.closure_flat _), ← and_assoc, and_iff_left_of_imp (a := M.Flat P)]
+  exact fun h ↦ h.closure_subset_of_subset (empty_subset _)
 
 lemma Point.covBy (hP : M.Point P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2 hP
 
@@ -1006,7 +998,7 @@ lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧
 lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Point P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
   rw [Point, flat_contract_iff, covBy_iff_relRank_eq_one, relRank_closure_left,
-    union_comm C, ← relRank_eq_relRank_union, and_iff_right (closure_flat _ _),
+    union_comm C, ← relRank_eq_union_right, and_iff_right (closure_flat _ _),
     ← relRank_eq_er_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
     and_congr_left_iff, iff_and_self]
   rintro h - -
@@ -1014,37 +1006,31 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
   exact M.closure_subset_closure subset_union_right
 
 /-- Points of `M ／ C` are equivalent to flats covering `M.closure C`. -/
-@[simps] def pointContractCovByEquiv (M : Matroid α) (C : Set α) :
+@[simps] def pointContractCovByEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
     {P // (M ／ C).Point P} ≃ {F // M.closure C ⋖[M] F} where
   toFun P := ⟨P ∪ M.closure C, by
-    obtain ⟨P, hP⟩ := P
-    rw [← contract_inter_ground_eq, point_contract_iff, closure_inter_ground] at hP
-    convert hP.1 using 1
-    rw [subset_antisymm_iff, union_subset_iff, and_iff_right subset_union_right,
-      union_subset_iff, and_iff_left subset_union_left, ← hP.1.flat_right.closure,
-      ← closure_inter_ground]
-    exact ⟨M.closure_subset_closure subset_union_left, (M.subset_closure _).trans subset_union_right⟩⟩
+    obtain ⟨P, hP'⟩ := P
+    rw [point_contract_iff] at hP'
+    convert hP'.1 using 1
+    exact subset_antisymm (union_subset subset_union_right hP'.1.subset)
+      (union_subset ((M.subset_closure C).trans subset_union_right) subset_union_left) ⟩
   invFun P := ⟨P \ C, by
     obtain ⟨P, hP⟩ := P
-    rw [← closure_inter_ground] at hP
-    rwa [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← contract_inter_ground_eq,
-      point_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self,
-      union_eq_self_of_subset_left, closure_inter_ground]
+    rwa [ point_contract_iff, and_iff_left disjoint_sdiff_left, union_diff_self,
+      union_eq_self_of_subset_left]
     exact (M.subset_closure _).trans hP.subset ⟩
   left_inv := by
     rintro ⟨P,hP⟩
     simp only [Subtype.mk.injEq]
-    rw [← contract_inter_ground_eq, point_contract_iff] at hP
-    rw [← closure_inter_ground, diff_eq_diff_inter_of_subset (union_subset _ (M.closure_subset_ground _)),
-      subset_antisymm_iff, diff_subset_iff, union_subset_iff, subset_diff,
-      and_iff_right subset_union_right, and_iff_right hP.1.subset, and_iff_left hP.2]
-    · exact subset_union_left
-    exact subset_union_right.trans hP.1.subset_ground_right
+    rw [point_contract_iff] at hP
+    rw [subset_antisymm_iff, diff_subset_iff, subset_diff, and_iff_right subset_union_left,
+      and_iff_left hP.2, union_subset_iff, and_iff_right subset_union_right]
+    exact hP.1.subset
   right_inv := by
     rintro ⟨P, hP⟩
     simp only [Subtype.mk.injEq]
-    rw [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← closure_inter_ground,
-      diff_union_eq_union_of_subset P (M.subset_closure (C ∩ M.E)), union_eq_left, closure_inter_ground]
+    rw [subset_antisymm_iff, union_subset_iff, and_iff_left hP.subset, and_iff_right diff_subset,
+      union_comm, union_diff_cancel' (M.subset_closure C)]
     exact hP.subset
 
 -- lemma encard_ground_eq_encard_loops_add_sum_points (M : Matroid α) : M.E.encard =
@@ -1094,7 +1080,7 @@ lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.clos
   rw [(M.closure_flat {e}).covBy_iff_relRank_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
     singleton_subset_iff, iff_self_and, relRank_closure_left]
   intro heL
-  rw [(M.rFin_singleton e).relRank_eq_sub (by simpa), he.er_eq, hL.er]
+  rw [(M.finRank_singleton e).relRank_eq_sub (by simpa), he.er_eq, hL.er]
   rfl
 
 lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by

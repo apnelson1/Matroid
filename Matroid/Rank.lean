@@ -472,10 +472,10 @@ lemma Indep.subset_finite_basis_of_subset_of_finRank (hI : M.Indep I) (hIX : I �
     (hX : M.FinRank X) (hXE : X ⊆ M.E := by aesop_mat) : ∃ J, M.Basis J X ∧ I ⊆ J ∧ J.Finite :=
   (hI.subset_basis_of_subset hIX).imp fun _ hJ => ⟨hJ.1, hJ.2, hJ.1.finite_of_finRank hX⟩
 
-lemma FinRank_singleton (M : Matroid α) (e : α) : M.FinRank {e} :=
+lemma finRank_singleton (M : Matroid α) (e : α) : M.FinRank {e} :=
   M.FinRank_of_finite (finite_singleton e)
 
-@[simp] lemma FinRank_empty (M : Matroid α) : M.FinRank ∅ :=
+@[simp] lemma finRank_empty (M : Matroid α) : M.FinRank ∅ :=
   M.FinRank_of_finite finite_empty
 
 lemma FinRank.subset (h : M.FinRank Y) (hXY : X ⊆ Y) : M.FinRank X :=
@@ -538,13 +538,13 @@ lemma FinRank.diff (hX : M.FinRank X) (D : Set α) : M.FinRank (X \ D) :=
   hX.subset diff_subset
 
 lemma FinRank.insert (hX : M.FinRank X) (e : α) : M.FinRank (insert e X) := by
-  rw [← union_singleton]; exact hX.union (M.FinRank_singleton e)
+  rw [← union_singleton]; exact hX.union (M.finRank_singleton e)
 
 @[simp] lemma FinRank_insert_iff : M.FinRank (insert e X) ↔ M.FinRank X := by
-  rw [← singleton_union, (M.FinRank_singleton e).FinRank_union_iff]
+  rw [← singleton_union, (M.finRank_singleton e).FinRank_union_iff]
 
 @[simp] lemma FinRank_diff_singleton_iff : M.FinRank (X \ {e}) ↔ M.FinRank X := by
-  rw [(M.FinRank_singleton e).FinRank_diff_iff]
+  rw [(M.finRank_singleton e).FinRank_diff_iff]
 
 lemma to_finRank (M : Matroid α) [FiniteRk M] (X : Set α) : M.FinRank X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
