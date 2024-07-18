@@ -43,30 +43,32 @@ lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     {f | M.Parallel e f} = {e} := by
   simp_rw [parallel_iff_eq he, setOf_eq_eq_singleton']
 
-@[simp] lemma cl_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.cl {e} = {e} := by
-  rw [cl_eq_parallel_class_union_loops, parallel_class_eq he, cl_empty_eq_empty, union_empty]
+@[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.closure {e} = {e} := by
+  rw [closure_eq_parallel_class_union_loops _ _, parallel_class_eq he, closure_empty_eq_empty,
+    union_empty]
 
 /-- We need `RkPos` or something similar here, since otherwise the matroid whose only element is
   a loop is a counterexample. -/
-lemma simple_iff_cl_subset_self_forall [RkPos M] :
-    M.Simple ↔ ∀ e, M.Nonloop e → M.cl {e} ⊆ {e} := by
-  refine ⟨fun h e he ↦ by rw [cl_singleton_eq], fun h ↦ ?_⟩
+lemma simple_iff_closure_subset_self_forall [RkPos M] :
+    M.Simple ↔ ∀ e, M.Nonloop e → M.closure {e} ⊆ {e} := by
+  refine ⟨fun h e he ↦ by rw [closure_singleton_eq], fun h ↦ ?_⟩
   have hl : M.Loopless := by
     rw [loopless_iff_forall_not_loop]
     intro e _ hel
     obtain ⟨f, hf⟩ := M.exists_nonloop
-    obtain (rfl : e = f) := (h f hf).subset (hel.mem_cl _)
+    obtain (rfl : e = f) := (h f hf).subset (hel.mem_closure _)
     exact hf.not_loop hel
   rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
-  exact fun e f hp ↦ (h _ hp.nonloop_right) hp.mem_cl
+  exact fun e f hp ↦ (h _ hp.nonloop_right) hp.mem_closure
 
-lemma cl_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.cl X = X := by
+lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.closure X = X := by
   obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
-  · exact M.cl_empty_eq_empty
-  exact cl_singleton_eq he
+  · exact M.closure_empty_eq_empty
+  exact closure_singleton_eq he
 
 lemma singleton_flat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.Flat {e} := by
-  rw [← cl_singleton_eq]; apply cl_flat
+  rw [← closure_singleton_eq]
+  exact closure_flat _ _ (by simpa)
 
 lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := by aesop_mat) :
     M.Indep {e,f} := by
@@ -200,11 +202,11 @@ lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M 
 
 lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
     M.Loopless := by
-  rw [loopless_iff_cl_empty] at *
+  rw [loopless_iff_closure_empty] at *
   rw [contract_loops_eq, diff_eq_empty] at h
-  rw [restrict_cl_eq', empty_inter, union_empty_iff] at hC
-  rw [← inter_union_diff (s := M.cl ∅) (t := C), hC.1, empty_union, diff_eq_empty]
-  exact (M.cl_subset_cl <| empty_subset C).trans h
+  rw [restrict_closure_eq', empty_inter, union_empty_iff, union_empty,
+    inter_eq_self_of_subset_left ((M.closure_subset_closure (empty_subset C)).trans h)] at hC
+  exact hC.1
 
 lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
     M.Simple := by
@@ -223,8 +225,9 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
     exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
       (contract_minor_of_mem _ hfC)
   apply h
-  rw [parallel_iff, contract_cl_eq, contract_cl_eq, ← cl_union_cl_left_eq, hef.cl_eq_cl,
-    cl_union_cl_left_eq, and_iff_left rfl]
+  rw [parallel_iff, contract_closure_eq, contract_closure_eq, ← closure_union_closure_left_eq,
+    hef.closure_eq_closure, closure_union_closure_left_eq, diff_singleton_eq_self heC,
+    diff_singleton_eq_self hfC, and_iff_left rfl]
   exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
 
 lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
@@ -334,7 +337,7 @@ lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M �
   · exact fun a ha ↦ by simp_rw [dif_neg (show ¬ M.Nonloop a from ha)]
   · intro a (ha : M.Nonloop a); simp [dif_pos ha, (hf ha).1.2]
   · intro a b (hab : M.Parallel a b)
-    simp only [hab.nonloop_left, ↓reduceDite, hab.nonloop_right]
+    simp only [hab.nonloop_left, ↓reduceDIte, hab.nonloop_right]
     exact Eq.symm <| (hf hab.nonloop_left).2 (f hab.nonloop_right)
       ⟨(hf hab.nonloop_right).1.1, hab.trans (hf hab.nonloop_right).1.2⟩
   convert hr.eq_restrict.symm
@@ -417,7 +420,7 @@ lemma simplification_factorsThrough_removeLoops :
     Function.FactorsThrough (α := Matroid α) simplification removeLoops :=
   fun _ _ h ↦ by rw [simplification, h, simplification]
 
-lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.cl ∅) :
+lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.closure ∅) :
     (M ＼ X).simplification = M.simplification :=
   simplification_factorsThrough_removeLoops (removeLoops_del_eq_removeLoops hX)
 

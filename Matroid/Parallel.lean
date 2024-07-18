@@ -288,15 +288,17 @@ def isoOfMapParallelRestr {X Y : Set α} (φ : X ≃ Y) (h_para : ∀ e : X,  M.
 
       simp [preimage_val_eq_univ_of_subset hXE, diff_eq_empty.2 hYE]
       ext x
-      simp only [mem_inter_iff, mem_image, mem_preimage, Subtype.exists, exists_and_left]
-      refine ⟨fun ⟨hx,hxY⟩  ↦ ⟨φ.symm ⟨_,hxY⟩, ?_⟩, ?_⟩
-      · simp only [Subtype.coe_eta, Equiv.apply_symm_apply, Subtype.coe_prop, exists_const, and_true]
-        exact mem_of_mem_of_subset (by simpa using (h_para (φ.symm ⟨x,hxY⟩)).mem_cl) <|
-          M.closure_subset_closure_of_subset_closure (by simpa)
-      rintro ⟨x, hx', hx, rfl⟩
-      simp only [Subtype.coe_prop, and_true]
-      exact mem_of_mem_of_subset (h_para ⟨x,hx⟩).symm.mem_closure <|
-          M.closure_subset_closure_of_subset_closure (by simpa) )
+      simp only [mem_union, mem_inter_iff, mem_image, mem_preimage]
+      refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+      · obtain ⟨hxZ, hzY⟩ | ⟨x, hx, rfl⟩ := h
+        · refine ⟨φ.symm ⟨x, hzY⟩, .inl ?_, by simp⟩
+          rwa [(h_para _).mem_closure_iff_mem_closure, Equiv.apply_symm_apply]
+        exact ⟨_, .inr ⟨_, hx, rfl⟩, rfl⟩
+
+      obtain ⟨⟨y, hy⟩, hcl | ⟨⟨y',hy'⟩, hx'', rfl : y' = y⟩, rfl⟩ := h
+      · rw [← (h_para _).mem_closure_iff_mem_closure, and_iff_right hcl]
+        exact .inl (Subtype.prop _)
+      exact .inr ⟨_, hx'', rfl⟩ )
 
 /-- If `φ` is a permutation of `M.E` that maps each element to something `Parallel'`, then
 `φ` determines an automorphism of `M`. -/
@@ -452,7 +454,9 @@ lemma mem_parallelClasses_iff_eq_closure_diff_loops {P : Set α} :
 
 lemma mem_parallelClasses_iff {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.Nonloop e ∧ P = {f | M.Parallel e f} := by
-  simp_rw [mem_parallelClasses_iff_eq_closure_diff_loops, setOf_parallel_eq_closure_diff_loops]
+  rw [mem_parallelClasses_iff_eq_closure_diff_loops]
+  refine exists_congr fun a ↦ and_congr_right_iff.2 fun ha ↦ ?_
+  rw [setOf_parallel_eq_closure_diff_loops M a ha.mem_ground]
 
 @[simp] lemma parallelClasses_partOf_eq (M : Matroid α) (e : α) :
     M.parallelClasses.partOf e = {f | M.Parallel e f} :=

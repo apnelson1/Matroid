@@ -122,6 +122,9 @@ lemma closure_flat (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat
   rw [flat_iff_isClosed, and_iff_left (M.closure_subset_ground X)]
   exact M.closure.isClosed_closure X
 
+@[simp] lemma closure_empty_flat (M : Matroid α) : M.Flat <| M.closure ∅ :=
+  M.closure_flat ∅
+
 @[simp] lemma ground_subset_closure_iff (hX : X ⊆ M.E := by aesop_mat) :
     M.E ⊆ M.closure X ↔ M.closure X = M.E := by
   simp [M.closure_subset_ground X, subset_antisymm_iff]

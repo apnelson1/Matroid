@@ -352,4 +352,6 @@ lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
 
 -- end free_loopy
 
+end Iso
+
 end Matroid

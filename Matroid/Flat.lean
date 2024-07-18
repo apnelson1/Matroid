@@ -82,9 +82,10 @@ lemma flat_iff_closure_self_subset' : M.Flat F ↔ M.closure F ⊆ F ∧ F ⊆ M
   exact iff_of_false (fun h ↦ hF h.subset_ground) (by simp [hF])
 
 lemma exists_mem_closure_not_mem_of_not_flat (h : ¬ M.Flat F) (hF : F ⊆ M.E := by aesop_mat) :
-    ∃ e, e ∈ M.closure F \ F := by
+    ∃ e ∈ M.E, e ∈ M.closure F \ F := by
   rw [flat_iff_closure_self, subset_antisymm_iff, and_iff_left (M.subset_closure F)] at h
-  exact not_subset.1 h
+  obtain ⟨e, he⟩ := not_subset.1 h
+  exact ⟨e, M.closure_subset_ground F hF he.1, he⟩
 
 lemma flat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
     M.Flat F ↔ ∀ e ∈ M.E \ F, M.closure F ⊂ M.closure (insert e F) := by
@@ -458,12 +459,13 @@ lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
   rw [closure_covBy_closure_iff (diff_subset.trans hI.subset_ground)]
   exact ⟨e, by simp [he, hI.subset_ground he, hI.not_mem_closure_diff_of_mem he]⟩
 
-lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
-    M.closure I ⋖[M] M.closure (insert e I) := by
-  simpa [not_mem_of_mem_diff_closure he] using
-    (hI.insert_indep_iff.2 <| .inl he).closure_diff_covBy (.inl rfl)
+lemma closure_covBy_closure_insert (X : Set α) (heX : e ∈ M.E \ M.closure X)
+    (hXE : X ⊆ M.E := by aesop_mat) : M.closure X ⋖[M] M.closure (insert e X) := by
+  rw [← closure_insert_closure_eq_closure_insert]
+  exact (M.closure_flat X).covBy_closure_insert heX.2
 
-lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) : F' = M.closure (insert e F) :=
+lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) :
+    F' = M.closure (insert e F) :=
   Eq.symm <| h.eq_of_ssubset_of_subset (M.closure_flat (insert e F)
       (insert_subset (h.subset_ground_right he.1) h.subset_ground_left))
     (h.flat_left.covBy_closure_insert he.2 (h.flat_right.subset_ground he.1)).ssubset

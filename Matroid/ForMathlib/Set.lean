@@ -67,6 +67,9 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = s \ r ∩ t := by
   simp_rw [diff_eq, inter_right_comm]
 
+lemma inter_diff_eq_diff_inter {s t r : Set α} : s ∩ (t \ r) = (s \ r) ∩ t := by
+  simp_rw [diff_eq, inter_comm t, inter_assoc]
+
 lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
   aesop

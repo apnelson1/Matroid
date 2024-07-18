@@ -162,14 +162,19 @@ lemma circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
     M.Circuit C ↔ (M ＼ D).Circuit C :=
   ⟨fun h ↦ delete_circuit_iff.2 ⟨h, hCD⟩, fun h ↦ h.of_delete⟩
 
-@[simp] lemma delete_closure_eq (M : Matroid α) (D X : Set α) :
+lemma delete_closure_eq (M : Matroid α) (D X : Set α) :
     (M ＼ D).closure X = M.closure (X ∩ (M.E \ D)) \ D ∪ X  := by
   rw [← restrict_compl, restrict_closure_eq', sdiff_sdiff_self, bot_eq_empty, union_empty,
     diff_eq, ← inter_assoc, inter_eq_self_of_subset_left (t := M.E), ← diff_eq]
   exact M.closure_subset_ground _ (inter_subset_right.trans inter_subset_left)
 
+lemma delete_closure_eq' (M : Matroid α) {D X : Set α} (hdj : Disjoint X D):
+    (M ＼ D).closure X = M.closure X \ D := by
+  rw [delete_closure_eq, inter_diff_eq_diff_inter, eq_comm,
+    closure_eq_union_closure_inter_ground_self, union_diff_distrib, sdiff_eq_left.2 hdj]
+
 lemma delete_loops_eq (M : Matroid α) (D : Set α) : (M ＼ D).closure ∅ = M.closure ∅ \ D := by
-  simp
+  simp [delete_closure_eq]
 
 @[simp] lemma delete_empty (M : Matroid α) : M ＼ (∅ : Set α) = M := by
   rw [delete_eq_self_iff]; exact empty_disjoint _
