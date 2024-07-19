@@ -322,8 +322,11 @@ lemma Basis.closure_eq_right (h : M.Basis I (M.closure X)) : M.closure I = M.clo
 lemma Basis.subset_closure (h : M.Basis I X) : X ⊆ M.closure I := by
   rw [← closure_subset_closure_iff_subset_closure, h.closure_eq_closure]
 
-lemma Basis'.closure_eq_closure (h : M.Basis' I X) : M.closure I = M.closure (X ∩ M.E) := by
+lemma Basis'.closure_left_eq (h : M.Basis' I X) : M.closure I = M.closure (X ∩ M.E) := by
   rw [h.basis_inter_ground.closure_eq_closure]
+
+lemma Basis'.closure_right_eq (h : M.Basis' I X) : M.closure X = M.closure I ∪ X := by
+  rw [h.closure_left_eq, closure_eq_union_closure_inter_ground_self]
 
 lemma Basis.basis_closure_right (h : M.Basis I X) : M.Basis I (M.closure X) := by
   rw [h.closure_eq_closure]
@@ -386,6 +389,15 @@ lemma Indep.insert_diff_indep_iff (hI : M.Indep (I \ {e})) (heI : e ∈ I) :
 lemma Indep.basis_of_subset_of_subset_closure (hI : M.Indep I) (hIX : I ⊆ X) (hXI : X ⊆ M.closure I) :
     M.Basis I X :=
   hI.basis_closure.basis_subset hIX hXI
+
+lemma basis_iff_basis_closure : M.Basis I X ↔ M.Basis I (M.closure X) ∧ I ⊆ X :=
+  ⟨fun h ↦ ⟨h.basis_closure_right, h.subset⟩, fun h ↦ h.1.indep.basis_of_subset_of_subset_closure
+    h.2 <| (M.subset_closure X).trans h.1.subset_closure⟩
+
+lemma basis'_iff_basis'_closure : M.Basis' I X ↔ M.Basis' I (M.closure X) ∧ I ⊆ X := by
+  rw [basis'_iff_basis_inter_ground, basis_iff_basis_closure, basis'_iff_basis_inter_ground,
+    closure_self_inter_ground_eq, subset_inter_iff, and_congr_right_iff, and_iff_left_iff_imp]
+  exact fun h _ ↦ h.indep.subset_ground
 
 lemma basis_iff_indep_subset_closure : M.Basis I X ↔ M.Indep I ∧ I ⊆ X ∧ X ⊆ M.closure I :=
   ⟨fun h ↦ ⟨h.indep, h.subset, h.subset_closure⟩, fun h ↦ h.1.basis_of_subset_of_subset_closure h.2.1 h.2.2⟩

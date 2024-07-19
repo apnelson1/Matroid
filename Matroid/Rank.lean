@@ -120,7 +120,7 @@ lemma er_lt_top_of_finite (M : Matroid α) (hX : X.Finite) : M.er X < ⊤ := by
   exact hX.subset hI.subset
 
 lemma Basis'.er_eq_er_union (hIX : M.Basis' I X) (Y : Set α) : M.er (I ∪ Y) = M.er (X ∪ Y) := by
-  rw [← er_union_closure_left_eq, hIX.closure_eq_closure, er_union_closure_left_eq,
+  rw [← er_union_closure_left_eq, hIX.closure_left_eq, er_union_closure_left_eq,
     ← er_inter_ground_eq, union_inter_distrib_right, inter_assoc, inter_self, eq_comm,
     ← er_inter_ground_eq, union_inter_distrib_right]
 
