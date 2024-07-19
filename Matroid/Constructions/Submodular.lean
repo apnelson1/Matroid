@@ -11,6 +11,7 @@ import Matroid.Rank
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Nat.Cast.Order
 import Mathlib.Algebra.Ring.Int
+import Init.Classical
 
 open Finset
 
@@ -496,12 +497,96 @@ decreasing_by
   simp only [Function.update_same]
   exact erase_ssubset hx_mem
 
-def Transversal {ι : Type*} [DecidableEq ι] [Fintype ι] (f : ι → α) (A : ι → Finset α) :=
+variable {ι : Type*} [Fintype ι]
+
+def Transversal [DecidableEq ι] (f : ι → α) (A : ι → Finset α) :=
   f.Injective ∧ ∀ i, f i ∈ A i
 
+def Transverses (T : Finset α) (A : ι → Finset α) :=
+  ∃ (f : T → ι), f.Injective ∧ ∀ t, t.1 ∈ A (f t)
+
+def Transverses' (T : Finset α) (A : ι → Finset α) :=
+  ∃ (f : α → ι), Set.InjOn f T.toSet ∧ ∀ t ∈ T, t ∈ A (f t)
+
+lemma transverses_of_empty (A : ι → Finset α) : Transverses ∅ A := by
+  unfold Transverses
+  simp only [IsEmpty.forall_iff, and_true]
+  have : IsEmpty { x : α // x ∈ (∅ : Finset α) } := by exact instIsEmpty
+  have : Nonempty ({ x : α // x ∈ (∅ : Finset α) } → ι) := by exact instNonemptyOfInhabited
+  use Classical.choice this
+  exact Function.injective_of_subsingleton (Classical.choice this)
+
+lemma transverses'_of_empty [Nonempty ι] (A : ι → Finset α) : Transverses' ∅ A := by
+  unfold Transverses'
+  simp only [coe_empty, Set.injOn_empty, not_mem_empty, false_implies, implies_true, and_self]
+  exact (exists_const (α → ι)).mpr trivial
+
+lemma transverses_mono {T : Finset α} {T' : Finset α} {A : ι → Finset α}
+    (hT : Transverses T A) (hT' : T' ⊆ T) : Transverses T' A := by
+  obtain ⟨f, hf_inj, hf⟩ := hT
+  set f' := fun x : ↑T' ↦ f ⟨x.val, hT' x.property⟩
+  use f'
+  refine ⟨?_, ?_⟩
+  · intro x y hxy
+    replace hxy := hf_inj hxy
+    simp only [Subtype.mk.injEq] at hxy
+    exact SetCoe.ext hxy
+  intro x
+  exact hf ⟨↑x, hT' x.property⟩
+
+lemma transverses_of_transverses' {T : Finset α} {A : ι → Finset α}
+    (h : Transverses' T A) : Transverses T A := by
+  obtain ⟨f, hf_inj, hf⟩ := h
+  set f' := fun x : ↑T ↦ f x.val
+  use f'
+  refine ⟨?_, ?_⟩
+  · intro x y hxy
+    simp only [f'] at hxy
+    replace hxy := hf_inj x.property y.property hxy
+    exact SetCoe.ext hxy
+  simp only [coe_mem, f']
+  intro t
+  exact hf t.val t.property
+
+lemma transverses_iff_transverses' (T : Finset α) [Nonempty ι] (A : ι → Finset α) :
+    Transverses' T A ↔ Transverses T A := by
+  refine ⟨transverses_of_transverses', fun h ↦ ?_⟩
+  obtain ⟨f, hf_inj, hf⟩ := h
+  set j := (fun _ ↦ Classical.arbitrary ι)
+  use Function.extend Subtype.val f j
+  refine ⟨?_, ?_⟩
+  · intro x hx y hy hxy
+    rw [Function.Injective.extend_apply Subtype.val_injective f j ⟨x, hx⟩] at hxy
+    rw [Function.Injective.extend_apply Subtype.val_injective f j ⟨y, hy⟩] at hxy
+    apply hf_inj at hxy
+    simpa [Subtype.mk.inj] using hxy
+  intro t ht
+  rw [Function.Injective.extend_apply Subtype.val_injective f j ⟨t, ht⟩]
+  exact hf ⟨t, ht⟩
+
+lemma transverses_of_image_univ [DecidableEq α]
+    {A : ι → Finset α} {f : ι → α} (hi : ∀ i, f i ∈ A i) : Transverses (image f univ) A := by
+  have h_choose : ∀ x : ↑(image f univ), ∃ i, f i = x.val := by
+    intro x
+    simpa [mem_image, mem_univ, true_and] using x.property
+  choose f' hf' using h_choose
+  use f'
+  refine ⟨?_, ?_⟩
+  · intro x y hxy
+    replace hxy := congrArg f hxy
+    rw [hf' x, hf' y] at hxy
+    exact SetCoe.ext hxy
+  intro x
+  rw [← hf' x]
+  exact hi (f' x)
+
+lemma transverses_of_subset_image_univ {T : Finset α} [DecidableEq α]
+    {A : ι → Finset α} {f : ι → α} (hi : ∀ i, f i ∈ A i) (hf : T ⊆ image f univ) :
+    Transverses T A := by
+  exact transverses_mono (transverses_of_image_univ hi) hf
+
 -- theorem 11.2.2
-theorem rado {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
-    (M : Matroid α) (A : ι → Finset α) :
+theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Finset α) :
     (∃ e, Transversal e A ∧ M.Indep (Set.range e)) ↔
     (∀ K : Finset ι, K.card ≤ M.r (K.biUnion A)) := by
   by_cases hA_nonempty : ∀ i, (A i).Nonempty; swap
@@ -553,6 +638,410 @@ theorem rado {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
   refine le_antisymm (er_le_encard M (Set.range e)) ?_
   refine le_trans ?_ he
   simp only [Set.encard_eq_coe_toFinset_card, Set.toFinset_range, Nat.cast_le, card_image_le]
+
+theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
+    (M : Matroid α) (A : ι → Finset α) {d : ℕ} (hd : d ≤ Fintype.card ι):
+    (∃ T, Transverses T A ∧ M.Indep ↑T ∧ T.card + d = Fintype.card ι) ↔
+    (∀ K : Finset ι, K.card ≤ M.r (K.biUnion A) + d) := by
+  by_cases hd_pos : d = 0
+  · rw [hd_pos]
+    simp only [add_zero]
+    rw [← rado M A]
+    refine ⟨fun ⟨T, hT⟩ ↦ ?_, fun ⟨e, he_trans, he_indep⟩ ↦ ?_⟩
+    · sorry
+    use (Set.range e).toFinset
+    simp only [Set.toFinset_range, coe_image, coe_univ, Set.image_univ]
+    refine ⟨?_, he_indep, ?_⟩
+    · sorry
+    sorry
+  rw [← ne_eq, ← Nat.one_le_iff_ne_zero] at hd_pos
+  by_cases hA_nonempty : ∀ i, (A i).Nonempty; swap
+  · push_neg at hA_nonempty
+    obtain ⟨i, hi⟩ := hA_nonempty
+    have hι : 1 ≤ Fintype.card ι := hd_pos.trans hd
+    simp only [not_nonempty_iff_eq_empty] at hi
+    set ι' := {j : ι // j ≠ i}
+    set A' : ι' → Finset α := fun j ↦ A ↑j
+    have hι' : Fintype.card ι' = Fintype.card ι - 1 := by
+      rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq]
+    have hd' : d - 1 ≤ Fintype.card ι' := by
+      rw [hι']
+      exact Nat.sub_le_sub_right hd 1
+    have h_rem : (∀ K : Finset ι, K.card ≤ M.r (K.biUnion A) + d) ↔
+          ∀ (K : Finset ι'), K.card ≤ M.r ↑(K.biUnion A') + (d - 1) := by
+      refine ⟨?_, ?_⟩
+      · intro h
+        intro K'
+        set K := Finset.cons i (Finset.image Subtype.val K') (by
+          by_contra! h_bad
+          simp only [ne_eq, mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+            not_true_eq_false, IsEmpty.exists_iff] at h_bad
+        )
+        specialize h <| K
+        rw [card_cons, Finset.card_image_of_injective K' Subtype.val_injective] at h
+        suffices h_good : M.r ↑(K.biUnion A) = M.r ↑(K'.biUnion A') by
+          zify [hd_pos] at h_good h ⊢
+          linarith
+        apply congrArg
+        apply congrArg
+        simp only [K, A', ne_eq, cons_eq_insert, biUnion_insert, hi, empty_union]
+        exact image_biUnion
+      intro h
+      intro K
+      by_cases hi : i ∈ K
+      · have : ∀ j : ↑(K.erase i), j.val ≠ i := by
+          intro j
+          exact ne_of_mem_erase j.2
+        set f : ↑(K.erase i) → ι' := fun j ↦ ⟨j.val, this j⟩
+        specialize h <| image f (K.erase i).attach
+        have h_eq : (image f (K.erase i).attach).card = K.card - 1 := by
+          rw [← card_erase_of_mem hi]
+          nth_rw 2 [← card_attach]
+          apply Finset.card_image_of_injective
+          intro a b hab
+          simp only [f] at hab
+          have := congrArg Subtype.val hab
+          dsimp only at this
+          exact SetCoe.ext this
+        rw [h_eq,  tsub_le_iff_right] at h
+        refine le_trans h ?_
+        suffices M.r ↑((image f (K.erase i).attach).biUnion A') ≤ M.r ↑(K.biUnion A) by
+          rw [add_assoc]
+          refine Nat.add_le_add this <| Nat.add_le_of_le_sub hd_pos le_rfl
+        refine rFin.r_le_r_of_er_le_er ?_ ?_
+        · apply rFin_of_finite
+          exact finite_toSet (K.biUnion A)
+        apply M.er_mono
+        simp only [image_biUnion, Set.le_eq_subset, coe_subset]
+        simp only [biUnion_subset_iff_forall_subset, mem_attach, true_implies, Subtype.forall,
+          mem_erase, ne_eq, A']
+        rintro j ⟨hj_ne, hj⟩
+        exact subset_biUnion_of_mem A hj
+      have : ∀ j : ↑K, j.val ≠ i := by
+        intro j
+        contrapose! hi
+        rw [← hi]
+        exact j.2
+      set f : ↑K → ι' := fun j ↦ ⟨j.val, this j⟩
+      specialize h <| image f K.attach
+      have h_eq : (image f K.attach).card = K.attach.card := by
+        refine Finset.card_image_of_injective K.attach ?_
+        intro a b hab
+        simp only [f] at hab
+        have := congrArg Subtype.val hab
+        dsimp only at this
+        exact SetCoe.ext this
+      rw [h_eq, card_attach, image_biUnion] at h
+      refine le_trans h ?_
+      suffices M.r ↑(K.attach.biUnion fun a ↦ A' (f a)) = M.r ↑(K.biUnion A) by
+        rw [this]
+        simp only [coe_biUnion, mem_coe, add_le_add_iff_left, tsub_le_iff_right,
+          le_add_iff_nonneg_right, zero_le]
+      apply congrArg
+      apply congrArg
+      ext x
+      simp only [A', f, mem_biUnion, mem_attach, true_and, Subtype.exists]
+      exact bex_def
+    obtain h := rado' M A' hd'
+    rw [h_rem, ← h]
+    refine ⟨?_, ?_⟩
+    · refine fun ⟨T, hT_trans, hT_indep, hT_card⟩ ↦ ?_
+      have hT_trans' : Transverses T A' := by
+        obtain ⟨f, hf_inj, hf_mem⟩ := hT_trans
+        have hf : ∀ x : T, f x ≠ i := by
+          intro x
+          specialize hf_mem x
+          contrapose! hf_mem
+          rw [hf_mem, hi]
+          exact not_mem_empty _
+        use fun x ↦ ⟨f x, hf x⟩
+        refine ⟨?_, ?_⟩
+        · intro x x' hx
+          dsimp at hx
+          exact hf_inj <| congrArg Subtype.val hx
+        intro x
+        exact hf_mem x
+      have hT_card' : T.card + (d - 1) = Fintype.card ι' := by
+        zify [hd_pos, hι, hι']
+        linarith
+      exact ⟨T, hT_trans', hT_indep, hT_card'⟩
+    refine fun ⟨T, hT_trans, hT_indep, hT_card⟩ ↦ ?_
+    have hT_trans' : Transverses T A := by
+      obtain ⟨f, hf_inj, hf_mem⟩ := hT_trans
+      use fun x ↦ ↑(f x)
+      refine ⟨?_, ?_⟩
+      · exact Function.Injective.comp Subtype.val_injective hf_inj
+      intro x
+      exact hf_mem x
+    have hT_card' : T.card + d = Fintype.card ι := by
+      zify [hι, hd_pos] at hι' hT_card ⊢
+      linarith
+    exact ⟨T, hT_trans', hT_indep, hT_card'⟩
+
+  set f : Finset α → ℕ := fun S ↦ M.r (S : Set α) + d
+  have hf_submodular : Submodular f := by
+    intro a b
+    simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
+    linarith [rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+  have hf_mono : Monotone f := by
+    intro a b hab
+    simp only [le_eq_subset, ← coe_subset] at hab
+    simp only [f, add_le_add_iff_right]
+    rw [← rFin.er_le_er_iff
+      (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    exact M.er_mono hab
+
+  have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono
+  rw [← h]
+  refine ⟨?_, ?_⟩
+  · refine fun ⟨T, hT_trans, hT_indep, hT_card⟩ ↦ ?_
+    obtain ⟨e, he_inj, he_mem⟩ := hT_trans
+    sorry
+  refine fun ⟨e, he_mem, he_card⟩ ↦ ?_
+  suffices ∃ T, Transverses T A ∧ M.Indep ↑T ∧ Fintype.card ι ≤ T.card + d by
+    sorry
+  obtain ⟨T, hT⟩ := M.exists_basis' (image e univ)
+  have : Fintype T := by sorry
+  use T.toFinset
+  simp only [Set.coe_toFinset]
+  refine ⟨?_, hT.indep, ?_⟩
+  · have hT_subset : T.toFinset ⊆ image e univ := by
+      exact Set.toFinset_subset.mpr hT.subset
+    exact transverses_of_subset_image_univ he_mem hT_subset
+  specialize he_card univ
+  simp only [f, ← hT.r, hT.indep.r, card_univ] at he_card
+  rwa [← Set.ncard_eq_toFinset_card']
+
+  -- have : (∃ T, Transverses T A ∧ M.Indep ↑T ∧ T.card + d = Fintype.card ι) ↔
+  --   ∀ (K : Finset ι), K.card ≤ M.r ↑(K.biUnion A) + d := by sorry
+  -- assumption
+
+-- termination_by d
+
+  -- set ι' := {i : ι // (A i).Nonempty}
+  -- have hA_nonempty : ∀ i : ι', (A i).Nonempty := fun i ↦ i.2
+  -- by_cases Nonempty ι'; swap
+  -- · simp only [not_forall, not_nonempty_iff_eq_empty] at hA_nonempty
+  --   sorry
+    -- obtain ⟨i, hAi⟩ := hA_nonempty
+    -- apply iff_of_false
+    -- <;> push_neg
+    -- · intro e he; exfalso
+    --   obtain ⟨f, _, hf⟩ := he
+    --   replace he := hAi ▸ he.2 i
+    --   simp only [not_mem_empty] at he
+    -- use {i}
+    -- simp only [hAi, singleton_biUnion, card_singleton, Nat.lt_one_iff, coe_empty, r_empty]
+  -- set f : Finset α → ℕ := fun S ↦ M.r (S : Set α) + d
+  -- have hf_submodular : Submodular f := by
+  --   intro a b
+  --   simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
+  --   linarith [rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+  -- have hf_mono : Monotone f := by
+  --   intro a b hab
+  --   simp only [le_eq_subset, ← coe_subset] at hab
+  --   simp only [f, add_le_add_iff_right]
+  --   rw [← rFin.er_le_er_iff
+  --     (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+  --   exact M.er_mono hab
+
+
+  -- refine ⟨?_, ?_⟩
+  -- · refine fun ⟨T, ⟨f, hf_inj, hf⟩, hT_indep, hT_card⟩ ↦ ?_
+  --   have cheat : Nonempty { x // x ∈ T } := sorry
+  --   intro K
+  --   set finv : ι → α := fun i ↦ (f.invFun i).val
+  --   calc
+  --     K.card ≤ M.r ((K ∩ (Set.range f).toFinset).biUnion A) + d := by
+  --       suffices h : K.card - d ≤ M.r ((K ∩ (Set.range f).toFinset).biUnion A) by
+  --         exact Nat.le_add_of_sub_le h
+  --       suffices h : K.card - d ≤ M.r (image finv (K ∩ (Set.range f).toFinset)) by
+  --         apply le_trans h ?_
+  --         have : M.rFin ((K ∩ (Set.range f).toFinset).biUnion A) := by
+  --           apply M.rFin_of_finite
+  --           exact finite_toSet ((K ∩ (Set.range f).toFinset).biUnion A)
+  --         apply this.r_le_r_of_er_le_er
+  --         apply M.er_mono
+  --         simp only [Set.le_eq_subset, coe_subset]
+  --         intro x hx
+  --         simp only [Set.toFinset_range, univ_eq_attach, mem_image, mem_inter, mem_attach, true_and,
+  --           Subtype.exists] at hx
+  --         obtain ⟨i, ⟨hiK, h⟩, hi⟩ := hx
+  --         obtain ⟨a, b, hab⟩ := h
+  --         simp only [mem_biUnion]
+  --         use i
+  --         refine ⟨mem_inter.mpr ⟨hiK, ?_⟩, ?_⟩
+  --         · simp only [Set.toFinset_range, univ_eq_attach, mem_image, mem_attach, true_and,
+  --           Subtype.exists]
+  --           use a, b
+  --         simp only [finv, Function.invFun] at hi
+  --         split at hi
+  --         next h =>
+  --           rw [← Exists.choose_spec h, ← hi]
+  --           exact hf h.choose
+  --         next h =>
+  --           simp only [Subtype.exists, not_exists] at h
+  --           exfalso
+  --           exact h a b hab
+  --       suffices h : (K ∩ (Set.range f).toFinset).card ≤
+  --           M.r ↑(image finv (K ∩ (Set.range f).toFinset)) by
+  --         apply le_trans ?_ h
+  --         have : (K ∩ (Set.range f).toFinset) = K \ (Set.range f).toFinsetᶜ := by
+  --           rename_i inst inst_1 inst_2 h_1 f_2 x
+  --           simp_all only [Subtype.forall, implies_true, nonempty_subtype, Set.toFinset_range,
+  --             univ_eq_attach, coe_image, coe_inter, sdiff_compl, inf_eq_inter, ι', f_2, finv]
+  --         rw [this]
+  --         refine le_trans ?_ (le_card_sdiff ((Set.range f).toFinsetᶜ) K)
+  --         refine Nat.sub_le_sub_left ?_ K.card
+  --         rw [card_compl]
+  --         simp only [tsub_le_iff_right]
+  --         rw [add_comm, ← hT_card, add_le_add_iff_right]
+  --         simp only [Set.toFinset_range, univ_eq_attach]
+  --         rw [card_image_of_injective T.attach hf_inj, card_attach]
+  --       have : ↑(image finv (K ∩ (Set.range f).toFinset)) ⊆ (T : Set α) := by
+  --         simp only [coe_subset]
+  --         intro x hx
+  --         simp only [Set.toFinset_range, univ_eq_attach, mem_image, mem_inter, mem_attach, true_and,
+  --           Subtype.exists] at hx
+  --         obtain ⟨i, ⟨hiK, t, ht, hf⟩, hix⟩ := hx
+  --         simp only [finv, Function.invFun] at hix
+  --         split at hix
+  --         next h =>
+  --           rw [← hix]
+  --           simp only [coe_mem]
+  --         next h =>
+  --           simp only [Subtype.exists, not_exists] at h
+  --           exfalso
+  --           exact h t ht hf
+  --       rw [(hT_indep.subset this).r, Set.ncard_coe_Finset]
+  --       refine Nat.le_of_eq ?_
+  --       symm
+  --       rw [card_image_iff]
+  --       have : ↑(K ∩ (Set.range f).toFinset) ⊆ Set.range f := by
+  --         simp only [coe_inter, Set.coe_toFinset, Set.inter_subset_right]
+  --       apply Set.InjOn.mono this ?_
+  --       simp only [finv]
+  --       intro a ha b hb h
+  --       dsimp only at h
+  --       unfold Function.invFun at h
+  --       split at h
+  --       <;> split at h
+  --       next h₁ h₂ =>
+  --         rw [← Exists.choose_spec h₁, ← Exists.choose_spec h₂]
+  --         apply congrArg
+  --         exact SetCoe.ext h
+  --       next h₁ h₂ =>
+  --         exfalso
+  --         simp only [Set.mem_range] at hb
+  --         exact h₂ hb
+  --       next h₁ h₂ =>
+  --         exfalso
+  --         simp only [Set.mem_range] at ha
+  --         exact h₁ ha
+  --       next h₁ h₂ =>
+  --         exfalso
+  --         simp only [Set.mem_range] at hb
+  --         exact h₂ hb
+  --     _ ≤ M.r (K.biUnion A) + d := by
+  --       simp only [add_le_add_iff_right]
+  --       have : M.rFin (K.biUnion A) := by
+  --         apply M.rFin_of_finite
+  --         exact finite_toSet (K.biUnion A)
+  --       apply this.r_le_r_of_er_le_er
+  --       apply M.er_mono
+  --       simp only [Set.le_eq_subset, coe_subset]
+  --       apply biUnion_subset_biUnion_of_subset_left
+  --       exact inter_subset_left
+  -- refine fun h_card ↦ ?_
+
+  -- have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono
+  -- simp only [f] at h
+  -- have h_mpr : ∀ (K : Finset ι'), K.card ≤ M.r ↑(K.biUnion fun i ↦ A ↑i) + d := by
+  --   intro K
+  --   specialize h_card (Finset.image Subtype.val K)
+  --   have h_card' : (image Subtype.val K).card = K.card := by
+  --     simp only [Finset.card_image_iff.mpr Set.injOn_subtype_val]
+  --   simp only [h_card'] at h_card
+  --   refine le_trans h_card ?_
+  --   apply le_of_eq
+  --   simp only [add_left_inj]
+  --   apply congrArg
+  --   apply congrArg
+  --   exact image_biUnion
+  -- obtain ⟨e, he_mem, he_card⟩ := h.mpr h_mpr
+  -- obtain ⟨T, hT⟩ := M.exists_basis' (Set.range e)
+  -- have : Fintype T := by
+  --   sorry
+  -- use T.toFinset
+  -- simp only [Set.coe_toFinset]
+  -- refine ⟨?_, hT.indep, ?_⟩
+  -- · sorry
+  -- specialize h_card univ
+  -- sorry
+  -- simp only [f] at h
+  -- have h_eq : (∀ (K : Finset ι'), K.card ≤ M.r ↑(K.biUnion fun i ↦ A ↑i) + d) ↔
+  --             ∀ (K : Finset ι), K.card ≤ M.r ↑(K.biUnion A) + d := by
+  --   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  --   <;> sorry
+  --   -- · intro K
+
+
+  -- rw [← h_eq, ← h]
+  -- unfold Transverses
+  -- refine ⟨?_, ?_⟩
+  -- · refine fun ⟨T, ⟨f, hf_inj, hf⟩, hT_indep, hT_card⟩ ↦ ?_
+  --   -- α := {x // x ∈ T}
+  --   -- β := ι'
+  --   -- γ := α
+  --   have h_nonempty : Nonempty {x // x ∈ T} := by sorry
+  --   obtain ⟨x₀⟩ := h_nonempty
+  --   -- #check
+  --   obtain e := hf_inj.invOfMemRange
+  --   -- ι' → α
+  --   set e' := fun i : ι' ↦
+  --     if h : ∃ x, f x = i
+  --     then (by
+  --       exact A i
+  --     )
+  --     else Classical.choice i.2
+  --   #check Function.extend (fun i : ↑(Set.range f) ↦ i.1) e
+  --   set e' := Function.extend (fun i : ↑(Set.range f) ↦ i.1) e (fun i ↦ Classical.choice i.2)
+  --   use fun i ↦ e' i.1
+  --   refine ⟨?_, ?_⟩
+  --   · intro i
+  --     simp only [e', Function.extend]
+  --     split
+  --     <;> sorry
+  --   sorry
+  -- sorry
+      -- next h => obtain ⟨x, rfl⟩ := h
+      -- next h =>
+      --   _
+      -- case
+    -- use Function.extend (fun i : { x // x ∈ T } ↦ ⟨i.1, by sorry⟩) f id
+  -- refine ⟨fun ⟨⟨he_inj, he_mem⟩, he_indep⟩ ↦ ⟨he_mem, ?_⟩, fun ⟨he_mem, he⟩ ↦ ?_⟩
+  -- · intro K
+  --   simp only [← card_image_of_injective K he_inj]
+  --   have h_indep : M.Indep (image e K : Set α) := he_indep.subset coe_image_subset_range
+  --   rw [← @Nat.cast_le ℕ∞, ← Set.encard_coe_eq_coe_finsetCard (image e K),
+  --     M.coe_r_eq_er_of_finite <| finite_toSet (image e K), h_indep.er]
+  -- refine ⟨⟨?_, he_mem⟩, ?_⟩
+  -- · intro a b hab
+  --   contrapose! he
+  --   use {a, b}
+  --   simp only [image_insert, image_singleton, coe_insert, coe_singleton, hab]
+  --   simp only [Set.mem_singleton_iff, Set.insert_eq_of_mem, card_pair he]
+  --   rw [← @Nat.cast_lt ℕ∞, M.coe_r_eq_er_of_finite <| Set.finite_singleton (e b),
+  --     Nat.cast_two]
+  --   have := Set.encard_singleton (e b) ▸ M.er_le_encard {e b}
+  --   refine this.trans_lt Nat.one_lt_ofNat
+  -- specialize he univ
+  -- simp only [coe_image, coe_univ, Set.image_univ] at he
+  -- rw [← @Nat.cast_le ℕ∞, M.coe_r_eq_er_of_finite <| Set.finite_range e] at he
+  -- rw [indep_iff_er_eq_encard_of_finite <| Set.finite_range e]
+  -- refine le_antisymm (er_le_encard M (Set.range e)) ?_
+  -- refine le_trans ?_ he
+  -- simp only [Set.encard_eq_coe_toFinset_card, Set.toFinset_range, Nat.cast_le, card_image_le]
 
 -- theorem 11.2.1
 theorem halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α] (A : ι → Finset α) :
