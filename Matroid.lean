@@ -14,5 +14,5 @@ import Matroid.Connectivity
 import Matroid.Paving
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
-import Matroid.Constructions.DirectSum
+import Matroid.Constructions.Sum
 import Matroid.Constructions.Uniform

@@ -16,7 +16,7 @@ Topics in this repo are listed below.
 
 * Isomorphism : Matroid/Equiv
 * Maps and comaps between matroids : Matroid/Map
-* Direct sums : Matroid/Constructions/DirectSum
+* Direct sums : Matroid/Constructions/Sum
 * The closure function : Matroid/Closure
 * Circuits and cocircuits : Matroid/Circuit
 * Loops : Matroid/Loop

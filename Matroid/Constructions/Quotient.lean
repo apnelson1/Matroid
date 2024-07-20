@@ -27,18 +27,18 @@ lemma Quotient.ground_eq (h : M ≤q N) : M.E = N.E :=
 lemma Quotient.flat_of_flat (h : M ≤q N) (hF : M.Flat F) : N.Flat F :=
   h.2 F hF
 
-lemma cl_flat_idk (X F: Set α) (M : Matroid α) (hFlat : M.Flat F) (hXF: X ⊆ F) : M.cl X ⊆ F := by
-  exact Flat.cl_subset_of_subset hFlat hXF
+lemma closure_flat_idk (X F: Set α) (M : Matroid α) (hFlat : M.Flat F) (hXF: X ⊆ F) : M.closure X ⊆ F := by
+  exact Flat.closure_subset_of_subset hFlat hXF
 
 lemma top_thingy {a b : ℕ∞} (hab : a + b ≤ a) (ht : a ≠ ⊤) : b = 0 := by
   have haa : a + b ≤ a + 0 := le_add_right hab
   rwa [WithTop.add_le_add_iff_left ht, nonpos_iff_eq_zero] at haa
 
-lemma Quotient.cl_subset_cl (h : M ≤q N) (X : Set α) : N.cl X ⊆ M.cl X := by
-  rw [← cl_inter_ground, ← cl_inter_ground (M := M), ← h.ground_eq]
-  rw [← (h.flat_of_flat (M.cl_flat _)).cl]
-  apply N.cl_subset_cl
-  exact M.subset_cl _
+lemma Quotient.closure_subset_closure (h : M ≤q N) (X : Set α) : N.closure X ⊆ M.closure X := by
+  rw [← closure_inter_ground, ← closure_inter_ground (M := M), ← h.ground_eq]
+  rw [← (h.flat_of_flat (M.closure_flat _)).closure]
+  apply N.closure_subset_closure
+  exact M.subset_closure _
 
 theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y)
     (hYE: Y ⊆ M₁.E) : M₂.relRank X Y ≤ M₁.relRank X Y := by
@@ -46,16 +46,16 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
   --Divide into cases finite and infinite
   obtain(hfin|hinf):= hcas
 
-  · by_cases hX : Y ⊆ M₁.cl X
+  · by_cases hX : Y ⊆ M₁.closure X
     . rw [(relRank_eq_zero_iff (M := M₂) _).2]
       · apply zero_le
-      · exact hX.trans (hQ.cl_subset_cl _)
+      · exact hX.trans (hQ.closure_subset_closure _)
       rwa [hQ.ground_eq]
 
     obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
     have hrw := fun M ↦
       relRank_add_of_subset_of_subset M (subset_insert y X) (insert_subset hyY hXY)
-    have hy : y ∈ Y \ M₁.cl X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
+    have hy : y ∈ Y \ M₁.closure X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
       rw [← hrw, relRank_insert_eq_one, add_comm, lt_iff_not_le]
       · intro hle

@@ -58,6 +58,10 @@ theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t
     Subtype.val '' (inclusion hst '' r) = r :=
   image_image Subtype.val (inclusion hst) r
 
+@[simp] lemma iUnion_preimage_image_sigmaMk_eq {ι : Type*} {α : ι → Type*}
+    {f : (i : ι) → Set (α i)} {j : ι} : ⋃ i, Sigma.mk j ⁻¹' (Sigma.mk i '' (f i)) = f j := by
+  aesop
+
 
 
 -- this is an `apply_coe` lemma in mathlib that should be renamed.

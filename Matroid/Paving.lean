@@ -20,8 +20,8 @@ theorem Paving.spanning_of_dep (hM : M.Paving) (hD : M.Dep D) : M.Spanning D := 
 def Paving.delete (hM : M.Paving) (D : Set α) : (M ＼ D).Paving := by
   simp_rw [Paving, delete_circuit_iff, and_imp]
   intro C hC hCD
-  rw [spanning_iff_cl _, delete_cl_eq, delete_ground, hCD.sdiff_eq_left,
-    (hM.spanning_of_circuit hC).cl_eq]
+  rw [spanning_iff_closure _, delete_closure_eq, delete_ground, hCD.sdiff_eq_left,
+    (hM.spanning_of_circuit hC).closure_eq]
   rw [delete_ground, subset_diff]
   exact ⟨hC.subset_ground, hCD⟩
 

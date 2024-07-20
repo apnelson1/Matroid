@@ -58,7 +58,7 @@ theorem IsoRestr.exists_restr_iso (i : N ≤ir M) : ∃ (M₀ : Matroid α) (_ :
     (fun I ↦ by
       simp only [← i.indep_image_iff, restrict_ground_eq, comp_apply, Equiv.ofInjective_apply,
         restrict_indep_iff, image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
-      simp only [image_image]; rfl ),
+      simp only [image_image] ),
      restrict_restriction _ _ <| by simp [range_comp]⟩
 
 /-- `≤ir ` is transitive. -/
