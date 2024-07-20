@@ -190,10 +190,10 @@ noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): Polymatroi
   have : ∀ i : ι, (Ms i).Basis' (Prod.mk i ⁻¹' I) (Prod.mk i ⁻¹' X)  := by
     intro i
     simp_all only [Basis', maximals, mem_setOf_eq, and_imp]
-    refine ⟨⟨(prod_indep_iff Ms I).mp hI.1.1 i, preimage_mono hI.1.2⟩, fun b hIb h h'↦ ?_⟩
+    refine ⟨⟨(prod_indep_iff).mp hI.1.1 i, preimage_mono hI.1.2⟩, fun b hIb h h'↦ ?_⟩
     have : (∀ (j : ι), (Ms j).Indep (Prod.mk j ⁻¹' (I ∪ (Prod.mk i '' b)))) := by
       intro j
-      by_cases h: j = i
+      by_cases h : j = i
       · rw [h, preimage_union]
         exact Matroid.Indep.subset hIb (union_subset h'
           (b.preimage_image_eq (Prod.mk.inj_left i)).subset)
@@ -202,8 +202,8 @@ noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): Polymatroi
           simp only [mem_preimage, mem_image, Prod.mk.injEq, exists_eq_right_right] at hx
           simp only [mem_empty_iff_false]
           simp_all only [not_true_eq_false]
-        simp only [preimage_union, this, union_empty, (prod_indep_iff Ms I).mp hI.1.1 j]
-    obtain h'' := hI.2 ((prod_indep_iff Ms (I ∪ (Prod.mk i '' b))).mpr this)
+        simp only [preimage_union, this, union_empty, prod_indep_iff.mp hI.1.1 j]
+    obtain h'' := hI.2 (prod_indep_iff.mpr this)
       (union_subset hI.1.2 (subset_trans (image_mono h) (image_preimage_subset _ _)))
       subset_union_left
     exact subset_trans (subset_preimage_image _ _)
@@ -310,21 +310,21 @@ theorem polymatroid_of_adjMap [DecidableEq β] [Nonempty α] [Fintype α] [Finty
     · simp only [Finset.mem_coe] at hx
       simp only [hx, toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image,
         Finset.mem_coe, Finset.mem_attach, true_and, Subtype.exists, e']
-      refine ⟨x, hx, by simp only [↓reduceDite]⟩
+      refine ⟨x, hx, by simp only [↓reduceDIte]⟩
     · simp only [Finset.mem_coe] at hx hy
-      simp only [hx, ↓reduceDite, hy, e'] at hxy
+      simp only [hx, ↓reduceDIte, hy, e'] at hxy
       exact Subtype.mk_eq_mk.mp (hinj hxy)
     · simp only [mem_image, Finset.mem_coe, e']
       simp only [toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image,
         Finset.mem_coe, Finset.mem_attach, true_and, Subtype.exists] at hx
       obtain ⟨a, b, hab⟩ := hx
-      refine ⟨a, b, by simp only [b, ↓reduceDite, hab]⟩
+      refine ⟨a, b, by simp only [b, ↓reduceDIte, hab]⟩
     · intro v hv
       simp only [Finset.mem_coe] at hv
       specialize hin ⟨v, hv⟩
       simp only [N_singleton, mem_setOf_eq, toFinset_setOf, Finset.mem_filter,
         Finset.mem_univ, true_and] at hin
-      simp only [hv, ↓reduceDite, e', hin]
+      simp only [hv, ↓reduceDIte, e', hin]
 
   have h_eq' : (ofPolymatroidFn hf_poly) = M.adjMap Adj univ := by
     refine eq_of_indep_iff_indep_forall rfl (fun J _ ↦ ?_)

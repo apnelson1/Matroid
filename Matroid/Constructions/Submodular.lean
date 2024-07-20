@@ -1,17 +1,8 @@
+
 import Mathlib.Order.Lattice
-import Mathlib.Algebra.Order.Group.Defs
-import Mathlib.Algebra.Order.Group.Int
-import Mathlib.Data.Matroid.Basic
-import Matroid.Constructions.CircuitAxioms
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Finset.Union
-import Mathlib.Order.Antichain
-import Mathlib.Data.Finset.Basic
 import Matroid.Rank
+import Matroid.Constructions.CircuitAxioms
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.Nat.Cast.Order
-import Mathlib.Algebra.Ring.Int
-import Init.Classical
 
 open Finset
 

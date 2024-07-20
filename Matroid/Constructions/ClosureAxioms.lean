@@ -28,7 +28,7 @@ lemma closure_subset_ground (M : ClMatroid α) (X : Set α) : M.closure X ⊆ M.
 lemma closure_inter_ground (M : ClMatroid α) (X : Set α) : M.closure (X ∩ M.E) = M.closure X := by
   rw [← inter_eq_self_of_subset_left (M.closure_subset_ground (X ∩ M.E)), M.closure_inter_inter_ground]
 
-@[simps] protected def indepMatroidOnUniv (M : ClMatroid α) (hE : M.E = univ) : IndepMatroid α :=
+@[simps!] protected def indepMatroidOnUniv (M : ClMatroid α) (hE : M.E = univ) : IndepMatroid α :=
   have h_indep_subset : ∀ ⦃I J⦄, M.ClIndep J → I ⊆ J → M.ClIndep I :=by
     intro I J Jindep Isubset
     rw [M.clIndep_iff]
@@ -107,7 +107,7 @@ IndepMatroid.mk
           · rw [M.clIndep_iff] at Zindep
             apply Zindep
             exact yinZ
-    obtain ⟨B, Bmax'⟩ := M.clIndep_maximal I Iindep (subset_union_left I I')
+    obtain ⟨B, Bmax'⟩ := M.clIndep_maximal I Iindep (subset_union_left (s := I) (t := I'))
     have hclI' :∀ y, y ∈ M.closure I'  := by
       intro y
       by_cases hyI' : y ∈ I'
@@ -156,7 +156,7 @@ IndepMatroid.mk
             rw [M.clIndep_iff]
             push_neg
             use y
-            refine ⟨diff_subset B {x}  hy, ?_⟩
+            refine ⟨diff_subset  hy, ?_⟩
             apply M.closure_subset_closure
             apply diff_subset
             exact {x}
