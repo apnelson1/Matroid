@@ -1,7 +1,7 @@
 import Mathlib.Data.Matroid.Map
 import Matroid.ForMathlib.MatroidMap
 import Mathlib.Logic.Embedding.Set
-import Matroid.ForMathlib.Logic_Embedding_Set
+-- import Matroid.ForMathlib.Logic_Embedding_Set
 
 open Set
 
@@ -13,6 +13,25 @@ section Sigma
 
 variable {ι : Type*} {α : ι → Type*} {M : (i : ι) → Matroid (α i)}
 
+
+theorem sigma_subset_sigma_iff {s t : (i : ι) → Set (α i)} {a b : Set ι} :
+    a.sigma s ⊆ b.sigma t ↔ ∀ i ∈ a, (s i).Nonempty → i ∈ b ∧ s i ⊆ t i := by
+  simp only [subset_def, mem_sigma_iff, and_imp, Sigma.forall, Set.Nonempty, forall_exists_index]
+  exact ⟨fun h i hia x hx ↦ ⟨(h _ _ hia hx).1, fun y hy ↦ (h _ _ hia hy).2⟩,
+    fun h i x hi hx ↦ ⟨(h i hi x hx).1, (h i hi x hx).2 x hx⟩⟩
+
+theorem sigma_subset_sigma_iff' {s t : (i : ι) → Set (α i)} {a b : Set ι} (hab : a ⊆ b) :
+    a.sigma s ⊆ b.sigma t ↔ ∀ i ∈ a, s i ⊆ t i := by
+  simp_rw [sigma_subset_sigma_iff]
+  refine ⟨fun h i hia ↦ ?_, fun h i hia _ ↦ ⟨hab hia, h i hia⟩⟩
+  obtain hi | hi := (s i).eq_empty_or_nonempty
+  · simp [hi]
+  exact ((h i hia) hi).2
+
+@[simp] theorem univ_sigma_preimage (s : Set (Σ i, α i)) :
+    (@univ ι).sigma (fun i ↦ Sigma.mk i ⁻¹' s) = s :=
+  ext <| by simp
+
 /-- An indexed collection of matroids on determines a 'direct sum' matroid on the sigma-type. -/
 protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α i) where
   E := univ.sigma (fun i ↦ (M i).E)
@@ -20,14 +39,15 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
   Base B := ∀ i, (M i).Base (Sigma.mk i ⁻¹' B)
 
   indep_iff' I := by
-    refine ⟨fun h ↦ ?_, fun ⟨B, hB, hIB⟩ i ↦ (hB i).indep.subset (preimage_mono hIB) ⟩
+    refine ⟨fun h ↦ ?_, fun ⟨B, hB, hIB⟩ i ↦ (hB i).indep.subset (preimage_mono hIB)⟩
     choose Bs hBs using fun i ↦ (h i).exists_base_superset
-    exact ⟨⋃ i, Sigma.mk i '' Bs i, fun i ↦ by simpa using (hBs i).1,
-      fun ⟨i, e⟩ he ↦ mem_iUnion.2 ⟨i, mem_image_of_mem (Sigma.mk i) ((hBs i).2 he)⟩⟩
+    refine ⟨univ.sigma Bs, fun i ↦ by simpa using (hBs i).1, ?_⟩
+    rw [← univ_sigma_preimage I, sigma_subset_sigma_iff' Subset.rfl]
+    exact fun i _ ↦ (hBs i).2
 
   exists_base := by
     choose B hB using fun i ↦ (M i).exists_base
-    refine ⟨⋃ i, Sigma.mk i '' B i, by simpa⟩
+    exact ⟨univ.sigma B, by simpa⟩
 
   base_exchange B₁ B₂ h₁ h₂ := by
     simp only [mem_diff, Sigma.exists, and_imp, Sigma.forall]
@@ -44,19 +64,27 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
     exact h₁ j
 
   maximality X _ I hI hIX := by
+
     choose Js hJs using
       fun i ↦ (hI i).subset_basis'_of_subset (preimage_mono (f := Sigma.mk i) hIX)
-    refine ⟨⋃ i, Sigma.mk i '' Js i, ?_⟩
-    simp only [mem_maximals_setOf_iff, preimage_iUnion, iUnion_preimage_image_sigmaMk_eq,
-      iUnion_subset_iff, image_subset_iff, and_imp]
-    refine ⟨⟨fun i ↦ (hJs i).1.indep,?_, fun i ↦ (hJs i).1.subset⟩, fun K hK _ hKX hJK ↦ ?_⟩
-    · rw [← iUnion_image_preimage_sigma_mk_eq_self (s := I)]
-      exact iUnion_mono (fun i ↦ image_subset _ (hJs i).2)
-    simp_rw [fun i ↦ (hJs i).1.eq_of_subset_indep (hK i) (hJK i) (preimage_mono hKX)]
-    rw [iUnion_image_preimage_sigma_mk_eq_self]
+
+    use univ.sigma Js
+
+    simp only [mem_maximals_setOf_iff, mem_univ, mk_preimage_sigma, and_imp,
+      sigma_subset_sigma_iff' Subset.rfl, true_implies]
+    refine ⟨⟨fun i ↦ (hJs i).1.indep, ⟨?_, ?_⟩⟩, fun S hS _ hSX h ↦ ?_⟩
+    · rw [← univ_sigma_preimage I, sigma_subset_sigma_iff' Subset.rfl]
+      exact fun i _ ↦ (hJs i).2
+    · rw [← univ_sigma_preimage X, sigma_subset_sigma_iff' Subset.rfl]
+      exact fun i _ ↦ (hJs i).1.subset
+    rw [← univ_sigma_preimage S] at h ⊢
+    rw [sigma_subset_sigma_iff' rfl.subset] at h
+    convert rfl with i
+    rw [(hJs i).1.eq_of_subset_indep (hS i) (h i <| mem_univ i)]
+    exact preimage_mono hSX
 
   subset_ground B hB := by
-    rw [show B = univ.sigma (fun i ↦ Sigma.mk i ⁻¹' B) from ext <| by simp]
+    rw [← univ_sigma_preimage B]
     apply sigma_mono Subset.rfl fun i ↦ (hB i).subset_ground
 
 @[simp] lemma sigma_indep_iff {I} :
