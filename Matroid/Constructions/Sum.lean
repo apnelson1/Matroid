@@ -15,7 +15,7 @@ variable {ι : Type*} {α : ι → Type*} {M : (i : ι) → Matroid (α i)}
 
 /-- An indexed collection of matroids on determines a 'direct sum' matroid on the sigma-type. -/
 protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α i) where
-  E := ⋃ (i : ι), (Sigma.mk i '' (M i).E)
+  E := univ.sigma (fun i ↦ (M i).E)
   Indep I := ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I)
   Base B := ∀ i, (M i).Base (Sigma.mk i ⁻¹' B)
 
@@ -55,10 +55,9 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
     simp_rw [fun i ↦ (hJs i).1.eq_of_subset_indep (hK i) (hJK i) (preimage_mono hKX)]
     rw [iUnion_image_preimage_sigma_mk_eq_self]
 
-  subset_ground := by
-    intro B hB
-    rw [← iUnion_image_preimage_sigma_mk_eq_self (s := B)]
-    exact iUnion_mono (fun i ↦ image_subset _ (hB i).subset_ground)
+  subset_ground B hB := by
+    rw [show B = univ.sigma (fun i ↦ Sigma.mk i ⁻¹' B) from ext <| by simp]
+    apply sigma_mono Subset.rfl fun i ↦ (hB i).subset_ground
 
 @[simp] lemma sigma_indep_iff {I} :
     (Matroid.sigma M).Indep I ↔ ∀ i, (M i).Indep (Sigma.mk i ⁻¹' I) := Iff.rfl
@@ -66,7 +65,7 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
 @[simp] lemma sigma_base_iff {B} :
     (Matroid.sigma M).Base B ↔ ∀ i, (M i).Base (Sigma.mk i ⁻¹' B) := Iff.rfl
 
-@[simp] lemma sigma_ground_eq : (Matroid.sigma M).E = ⋃ i, (Sigma.mk i '' (M i).E) := rfl
+@[simp] lemma sigma_ground_eq : (Matroid.sigma M).E = univ.sigma fun i ↦ (M i).E := rfl
 
 @[simp] lemma sigma_basis_iff {I X} :
     (Matroid.sigma M).Basis I X ↔ ∀ i, (M i).Basis (Sigma.mk i ⁻¹' I) (Sigma.mk i ⁻¹' X) := by
@@ -89,7 +88,7 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
   · exact fun ⟨i, x⟩ hx ↦ by simpa using hIX i hx
   · refine fun J hJ hJX hIJ ↦ hIJ.antisymm fun ⟨i,x⟩ hx ↦ ?_
     simpa using (h' i (hJ i) (preimage_mono hJX) (preimage_mono hIJ)).symm.subset hx
-  exact fun ⟨i,x⟩ hx ↦ mem_iUnion_of_mem i <| by simpa using h'' i hx
+  exact fun ⟨i,x⟩ hx ↦ by simpa using h'' i hx
 
 lemma Finitary.sigma (h : ∀ i, (M i).Finitary) : (Matroid.sigma M).Finitary := by
   refine ⟨fun I hI ↦ ?_⟩

@@ -8,6 +8,26 @@ variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : 
 
 -- Independence and Bases
 
+-- lemma Flat.insert_indep_of_not_mem (hF : M.Flat F) (hI : M.Indep I) (hIF : I ⊆ F)
+--     (he : e ∈ M.E) (heF : e ∉ F) : M.Indep (insert e I) := by
+--   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF
+--   obtain ⟨J', hJ', -⟩ := hJ.indep.subset_basis_of_subset (subset_insert e J)
+--   have heJ := (mt <| hF.1 (X := insert e J) hJ) (by simp [insert_subset_iff, heF])
+--   obtain ⟨f, hfJ', hfJ⟩ := hJ.indep.exists_insert_of_not_basis (subset_insert e J) heJ hJ'
+--   refine hfJ.subset (insert_subset (.inl <| Eq.symm ?_) (hIJ.trans (subset_insert _ _)))
+--   simpa [hfJ'.2] using mem_of_mem_of_subset hfJ' (diff_subset_diff_left hJ'.subset)
+
+-- lemma flat_iff_forall_insert_indep :
+--     M.Flat F ↔ (∀ ⦃I⦄, M.Indep I → I ⊆ F → ∀ e ∈ M.E, e ∉ F → M.Indep (insert e I)) ∧ F ⊆ M.E := by
+--   refine ⟨fun h ↦ ⟨fun I hI h' e he heF ↦ h.insert_indep_of_not_mem hI h' he heF, h.subset_ground⟩,
+--     fun ⟨h, hFE⟩ ↦ ⟨fun I X hIF hIX f hfX ↦ by_contra fun hfF ↦ ?_, hFE⟩⟩
+--   exact hfF <| hIF.subset <| hIX.mem_of_insert_indep hfX <|
+--     h hIX.indep hIF.subset f (hIX.subset_ground hfX) hfF
+
+@[simp] theorem closure_flat (M : Matroid α) (X : Set α) : M.Flat (M.closure X) := by
+  rw [flat_iff_isClosed, closure_eq_subtypeClosure]
+  exact ⟨by simp [subtypeClosure], M.subtypeClosure.isClosed_closure ⟨X ∩ M.E, inter_subset_right⟩⟩
+
 lemma Indep.closure_eq_setOf_basis_insert (hI : M.Indep I) :
     M.closure I = {x | M.Basis I (insert x I)} := by
   set F := {x | M.Basis I (insert x I)}
@@ -100,10 +120,10 @@ lemma insert_indep_iff : M.Indep (insert e I) ↔ M.Indep I ∧ (e ∉ I → e �
   · rw [hI.insert_indep_iff, and_iff_right hI, or_iff_not_imp_right]
   simp [hI, show ¬ M.Indep (insert e I) from fun h ↦ hI <| h.subset <| subset_insert _ _]
 
-/-- This can be used for rewriting if the LHS is inside a quantifier where `f = e` is not known.-/
+/-- This can be used for rewriting if the LHS is inside a binder and whether `f = e` is unknown.-/
 lemma Indep.insert_diff_indep_iff (hI : M.Indep (I \ {e})) (heI : e ∈ I) :
     M.Indep (insert f I \ {e}) ↔ f ∈ M.E \ M.closure (I \ {e}) ∨ f ∈ I := by
-  obtain (rfl | hne) := eq_or_ne e f
+  obtain rfl | hne := eq_or_ne e f
   · simp [hI, heI]
   rw [← insert_diff_singleton_comm hne.symm, hI.insert_indep_iff, mem_diff_singleton,
     and_iff_left hne.symm]
@@ -145,6 +165,40 @@ lemma Indep.closure_inter_eq_self_of_subset (hI : M.Indep I) (hJI : J ⊆ I) :
   rintro e ⟨heJ, heI⟩
   exact hJ.basis_closure.mem_of_insert_indep heJ (hI.subset (insert_subset heI hJI))
 
+lemma closure_iInter_eq_iInter_closure_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
+    (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :
+    M.closure (⋂ i, Is i) = (⋂ i, M.closure (Is i)) := by
+  suffices hF : M.Flat (⋂ i, M.closure (Is i)) by
+    refine subset_antisymm sorry ?_
+  -- have hss : ∀ i, M.Indep (Is i) := sorry
+  -- have hii : M.Indep (⋂ i, Is i) := sorry
+  -- simp only [subset_antisymm_iff, subset_iInter_iff]
+  -- refine ⟨fun h ↦ M.closure_subset_closure <| iInter_subset _ _, fun x hx ↦ ?_⟩
+  -- have hxE : x ∈ M.E := sorry
+  -- rw [hii.mem_closure_iff', and_iff_right hxE]
+  -- · rintro hxI _ ⟨j, rfl⟩
+  --   replace hx := mem_iInter.1 hx j
+  --   rw [Indep.mem_closure_iff'] at hx
+    -- refine fun hxI a ⟨b, rfl : Is b = a⟩ ↦ ?_
+
+Yes, at least for many parts of graph theory. When dealing with simple graphs, especially
+work within a fixed 'host graph' like Szemeredi stuff, it's less of a problem, because
+`SimpleGraph.Subgraph` is basically a set lattice. But for multigraphs and minors,
+all the issues that came up with matroids apply and will be even worse,
+because there is an interplay between vertex and edge types.
+
+The seemingly simple operation of contracting a single edge in a graph (i.e. identifying
+its endpoints) is a type theory minefield.
+
+
+
+
+
+
+
+  -- exact iInter_subset_of_subset h fun ⦃a⦄ a ↦ a
+
+
 lemma Indep.closure_sInter_eq_biInter_closure_of_forall_subset {Js : Set (Set α)} (hI : M.Indep I)
     (hne : Js.Nonempty) (hIs : ∀ J ∈ Js, J ⊆ I) : M.closure (⋂₀ Js) = (⋂ J ∈ Js, M.closure J)  := by
   rw [subset_antisymm_iff, subset_iInter₂_iff]
@@ -180,9 +234,10 @@ lemma Indep.closure_sInter_eq_biInter_closure_of_forall_subset {Js : Set (Set α
     exact hIs.trans diff_subset
   exact heEI.2 (hIs _ hX' heX)
 
-lemma closure_iInter_eq_iInter_closure_of_iUnion_indep {ι : Type*} [hι : Nonempty ι]
+lemma closure_iInter_eq_iInter_closure_of_iUnion_indep' {ι : Type*} [hι : Nonempty ι]
     (Is : ι → Set α) (h : M.Indep (⋃ i, Is i)) :
     M.closure (⋂ i, Is i) = (⋂ i, M.closure (Is i)) := by
+
   convert h.closure_sInter_eq_biInter_closure_of_forall_subset (range_nonempty Is)
     (by simp [subset_iUnion])
   simp
