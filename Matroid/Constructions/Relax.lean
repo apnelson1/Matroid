@@ -11,12 +11,12 @@ section Relax
 
 lemma Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
     (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by
-  have hcl := hH.cl_insert_eq hf.2 hf.1
-  rw [← cl_insert_cl_eq_cl_insert, ← hHc.cl_diff_singleton_eq_cl e, cl_insert_cl_eq_cl_insert,
-    ← spanning_iff_cl (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hcl
-  refine' hcl.base_of_indep _
-  rw [← (hHc.diff_singleton_indep he).not_mem_cl_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),
-    hHc.cl_diff_singleton_eq_cl e, hH.flat.cl]
+  have hclosure := hH.closure_insert_eq hf.2 hf.1
+  rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert,
+    ← spanning_iff_closure (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hclosure
+  apply hclosure.base_of_indep
+  rw [← (hHc.diff_singleton_indep he).not_mem_closure_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),
+    hHc.closure_diff_singleton_eq_closure e, hH.flat.closure]
   exact hf.2
 
 lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hyperplane H)
@@ -24,25 +24,25 @@ lemma Base.exists_exchange_of_circuit_of_hyperplane (hB : M.Base B) (hH : M.Hype
     ∃ f, f ∈ H \ B ∧ (M.Base (insert f (B \ {e})) ∨ insert f (B \ {e}) = H) := by
   by_contra! h
 
-  have h1 : H \ {e} ⊆ M.cl (B \ {e}) := by
-    refine fun x hx ↦ by_contra fun hcl ↦ ?_
+  have h1 : H \ {e} ⊆ M.closure (B \ {e}) := by
+    refine fun x hx ↦ by_contra fun hclosure ↦ ?_
     have hxB : x ∉ B := by
-      exact fun hxB' ↦ hcl (M.mem_cl_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
+      exact fun hxB' ↦ hclosure (M.mem_closure_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
 
     refine (h x ⟨hx.1, hxB⟩).1 (hB.exchange_base_of_indep hxB ?_)
-    rwa [← (hB.indep.diff {e}).not_mem_cl_iff_of_not_mem (not_mem_subset diff_subset hxB)
+    rwa [← (hB.indep.diff {e}).not_mem_closure_iff_of_not_mem (not_mem_subset diff_subset hxB)
       (hH.subset_ground hx.1)]
 
-  rw [← cl_subset_cl_iff_subset_cl (diff_subset.trans hH.subset_ground),
-    hHc.cl_diff_singleton_eq_cl, hH.flat.cl] at h1
-  obtain hBH := hH.eq_of_subset (hB.hyperplane_of_cl_diff_singleton he) h1
+  rw [← closure_subset_closure_iff_subset_closure (diff_subset.trans hH.subset_ground),
+    hHc.closure_diff_singleton_eq_closure, hH.flat.closure] at h1
+  obtain hBH := hH.eq_of_subset (hB.hyperplane_of_closure_diff_singleton he) h1
 
   have hb : M.Basis (B \ {e}) H := by
-    exact (hB.indep.diff _).basis_of_subset_of_subset_cl
-      ((M.subset_cl (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
+    exact (hB.indep.diff _).basis_of_subset_of_subset_closure
+      ((M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
   obtain ⟨f, ⟨hfH, hfBe⟩, hfB⟩ := hHc.basis_iff_insert_eq.1 hb
   refine (h _ ⟨hfH, fun hfB ↦ hfBe ⟨hfB, fun (hfe : f = e) ↦ ?_⟩⟩).2 hfB.symm
-  apply hB.indep.not_mem_cl_diff_of_mem he
+  apply hB.indep.not_mem_closure_diff_of_mem he
   rwa [← hBH, ← hfe]
 
 lemma antichain_of_circuit_hyperplane (M : Matroid α) :
@@ -116,7 +116,7 @@ lemma relaxSet_base_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M
 lemma relaxSet_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
     (M.relaxSet Hs).Indep I ↔ M.Indep I ∨ I ∈ Hs := by
   simp_rw [indep_iff, relaxSet_base_iff h]
-  refine' ⟨fun ⟨B, hB, hIB⟩ ↦ hB.elim (fun hB' ↦ Or.inl ⟨B, hB', hIB⟩) (fun hB' ↦ _),
+  refine ⟨fun ⟨B, hB, hIB⟩ ↦ hB.elim (fun hB' ↦ Or.inl ⟨B, hB', hIB⟩) (fun hB' ↦ ?_),
     fun h ↦ h.elim (fun ⟨B, hB, hIB⟩ ↦ ⟨B, Or.inl hB, hIB⟩) fun hI ↦ ⟨I, Or.inr hI, rfl.subset⟩⟩
   refine hIB.eq_or_ssubset.elim (fun h ↦ Or.inr (by rwa [h])) (fun hss ↦ Or.inl ?_)
   apply Indep.exists_base_superset (hB.elim (fun h' ↦ h'.indep.subset hIB)

@@ -186,23 +186,23 @@ lemma eq_parallelExtend_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
       fun hI ↦ he.2 (h.eq_of_indep (hI.subset (pair_subset heI hfI)))]
   simp [heI, h.parallel'.symm.indep_substitute_iff hfI heI]
 
-lemma parallelExtend_cl_eq_of_mem (he : M.Nonloop e) (hf : f ∉ M.E) (X : Set α)
-    (heX : e ∈ M.cl X) : (M.parallelExtend e f).cl X = insert f (M.cl X) := by
+lemma parallelExtend_closure_eq_of_mem (he : M.Nonloop e) (hf : f ∉ M.E) (X : Set α)
+    (heX : e ∈ M.closure X) : (M.parallelExtend e f).closure X = insert f (M.closure X) := by
   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
-  simp only [deleteElem, delete_cl_eq, insert_diff_singleton]
-  rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_cl_eq, mem_diff,
-    (parallelExtend_parallel he f).mem_cl_iff_mem_cl] at heX
-  rw [cl_diff_singleton_eq_cl heX.1, eq_comm, insert_eq_self]
-  exact mem_of_mem_of_subset heX.1 (cl_subset_cl _ diff_subset)
+  simp only [deleteElem, delete_closure_eq, insert_diff_singleton]
+  rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_closure_eq, mem_diff,
+    (parallelExtend_parallel he f).mem_closure_iff_mem_closure] at heX
+  rw [closure_diff_singleton_eq_closure heX.1, eq_comm, insert_eq_self]
+  exact mem_of_mem_of_subset heX.1 (closure_subset_closure _ diff_subset)
 
-lemma parallelExtend_cl_eq_of_not_mem_not_mem (he : M.Nonloop e) (hf : f ∉ M.E) {X : Set α}
-    (heX : e ∉ M.cl X) (hfX : f ∉ X) : (M.parallelExtend e f).cl X = M.cl X := by
+lemma parallelExtend_closure_eq_of_not_mem_not_mem (he : M.Nonloop e) (hf : f ∉ M.E) {X : Set α}
+    (heX : e ∉ M.closure X) (hfX : f ∉ X) : (M.parallelExtend e f).closure X = M.closure X := by
   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
-  have hfX' : f ∉ (M.parallelExtend e f).cl (X \ {f}) := by
-    rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_cl_eq, mem_diff,
-      (parallelExtend_parallel he f).mem_cl_iff_mem_cl] at heX
+  have hfX' : f ∉ (M.parallelExtend e f).closure (X \ {f}) := by
+    rw [← M.parallelExtend_delete_eq e hf, deleteElem, delete_closure_eq, mem_diff,
+      (parallelExtend_parallel he f).mem_closure_iff_mem_closure] at heX
     simpa [(show e ≠ f by rintro rfl; exact hf he.mem_ground)] using heX
-  simp only [deleteElem, delete_cl_eq, diff_singleton_eq_self hfX']
+  simp only [deleteElem, delete_closure_eq, diff_singleton_eq_self hfX']
   rw [diff_singleton_eq_self hfX]
 
 lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :

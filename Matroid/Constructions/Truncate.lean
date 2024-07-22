@@ -116,9 +116,9 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rkPos
     · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
-    suffices M.Indep I → (¬M.E ⊆ M.cl I ↔ M.Base I → I = ∅) by simpa [M.principal_ground_ne_top]
-    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.cl_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
-    have hIb := hI.base_of_ground_subset_cl hss
+    suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.Base I → I = ∅) by simpa [M.principal_ground_ne_top]
+    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
+    have hIb := hI.base_of_ground_subset_closure hss
     exact hIb.nonempty.ne_empty (h hIb))
 
 @[simp] lemma truncate_ground_eq : M.truncate.E = M.E := rfl

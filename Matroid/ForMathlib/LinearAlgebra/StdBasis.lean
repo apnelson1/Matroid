@@ -30,7 +30,7 @@ open Set BigOperators Submodule Function
 
 -- theorem ExtendByZero.linearMap_incl_eq {R : Type*} [Semiring R] (s : Set η) (x : s → R) (i : η)
 --   [Decidable (i ∈ s)] :
---     ExtendByZero.linearMap R s.incl x i = if h : i ∈ s then x ⟨i,h⟩ else 0 := by
+--     ExtendByZero.linearMap R s.inclosure x i = if h : i ∈ s then x ⟨i,h⟩ else 0 := by
 --   split_ifs
 --   simp
 
@@ -42,7 +42,7 @@ variable {R : Type*} [Semiring R] {s : Set α}
 
 noncomputable def LinearMap.extendSubtype (R : Type*) [Semiring R] (s : Set α) :
     (s → R) →ₗ[R] (α → R)  :=
-  Function.ExtendByZero.linearMap R s.incl
+  Function.ExtendByZero.linearMap R s.inclosure
 
 theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
   {s : ι → η} (hs : Function.Injective s) :
@@ -425,7 +425,7 @@ theorem Set.relOrthSpace_subtypeFunEquiv (s : Set ι) (U : Submodule K (s → K)
       iff_self_and]
     rw [not_imp_comm]
     exact (Finsupp.mem_supported' _ _).1 l.2 _
-  refine ⟨⟨Finsupp.mapDomain s.incl l, ?_⟩, ?_, ?_⟩
+  refine ⟨⟨Finsupp.mapDomain s.inclosure l, ?_⟩, ?_, ?_⟩
   · rw [Finsupp.mem_supported']
     intro i hi
     rw [Finsupp.mapDomain_notin_range _ _ (by simpa)]
@@ -500,7 +500,7 @@ theorem Set.Finite.relOrthSpace_relOrthSpace {s : Set ι} (hs : s.Finite) (U : S
 --       have hss : y.support ⊆ s.toFinset
 --       · rwa [Set.subset_toFinset, ← Finsupp.fun_support_eq]
 --       rw [Finsupp.total_apply, Finsupp.sum, Finset.sum_subset hss (by aesop)]
---       · simp_rw [(show ∀ i : s, a (incl s i) = a i from fun _↦ rfl)]
+--       · simp_rw [(show ∀ i : s, a (inclosure s i) = a i from fun _↦ rfl)]
 --         exact Finset.sum_set_coe (s := s) (f := fun x ↦ y x * a x)
 --     · ext i
 --       simp only [ExtendByZero.linearMap_apply, Subtype.exists, not_exists]

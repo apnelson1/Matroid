@@ -82,9 +82,9 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - 
   lift k to ℕ using hk
   rw [spanning_iff_er', erk_eq_er_ground, unifOn_ground_eq, unifOn_er_eq', unifOn_er_eq',
     le_min_iff, min_le_iff, min_le_iff, iff_true_intro (le_refl _), or_true, and_true, inter_self]
-  refine' ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ _) (fun h ↦ Or.inl ⟨_,hXE⟩),
-    fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) _⟩
-  · refine' X.finite_or_infinite.elim (fun hfin ↦ Or.inr _) (fun hinf ↦ Or.inl ⟨_, hXE⟩)
+  refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),
+    fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) ?_⟩
+  · refine X.finite_or_infinite.elim (fun hfin ↦ .inr ?_) (fun hinf ↦ .inl ⟨?_, hXE⟩)
     · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' inter_subset_right h,
         inter_eq_self_of_subset_left hXE]
     rw [hinf.encard_eq]
@@ -113,7 +113,7 @@ theorem eq_unifOn_iff : M = unifOn E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.en
 theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤) :
     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) := by
   lift k to ℕ using hk
-  refine' eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ _)
+  refine eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ ?_)
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
   rw [← contract_inter_ground_eq, unifOn_ground_eq, inter_comm,
     contract_spanning_iff, unifOn_spanning_iff', unifOn_spanning_iff', tsub_le_iff_right,

@@ -25,7 +25,7 @@ section Minor
       union_eq_self_of_subset_left hI.subset]
     refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
     · refine (h.2.mono_index _ subset_union_right).map ?_
-      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl]
+      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure]
       convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
       · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ J = J by simp]
       · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ I = I by simp]
@@ -35,7 +35,7 @@ section Minor
       apply h.ne_zero ⟨i, hiJ⟩
       simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
       exact subset_span (mem_image_of_mem _ hiI)
-    rwa [v.span_eq_span_of_cl_eq_cl hI.cl_eq_cl] )
+    rwa [v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure] )
 
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)

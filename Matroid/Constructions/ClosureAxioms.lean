@@ -10,25 +10,25 @@ section ClMatroid
 
 structure ClMatroid (α : Type*) where
   (E : Set α)
-  (cl : Set α → Set α)
-  (subset_cl_self : ∀ X ⊆ E, X ⊆ cl X)
-  (cl_subset_cl : ∀ ⦃X Y : Set α⦄, X ⊆ Y → cl X ⊆ cl Y )
-  (cl_cl_eq_cl : ∀ X, cl (cl X) = cl X)
-  (cl_exchange : ∀ ⦃Z :Set α⦄ ⦃x y : α⦄, y ∈ cl (insert x Z) \ cl Z → x ∈ cl (insert y Z))
+  (closure : Set α → Set α)
+  (subset_closure_self : ∀ X ⊆ E, X ⊆ closure X)
+  (closure_subset_closure : ∀ ⦃X Y : Set α⦄, X ⊆ Y → closure X ⊆ closure Y )
+  (closure_closure_eq_closure : ∀ X, closure (closure X) = closure X)
+  (closure_exchange : ∀ ⦃Z :Set α⦄ ⦃x y : α⦄, y ∈ closure (insert x Z) \ closure Z → x ∈ closure (insert y Z))
   (ClIndep : Set α → Prop)
-  (clIndep_iff : ∀ ⦃I⦄, ClIndep I ↔ (∀ x ∈ I, x ∉ cl (I \ {x})))
+  (clIndep_iff : ∀ ⦃I⦄, ClIndep I ↔ (∀ x ∈ I, x ∉ closure (I \ {x})))
   (clIndep_maximal : ∀ ⦃X⦄, ExistsMaximalSubsetProperty ClIndep X)
-  (cl_inter_inter_ground : ∀ X, cl (X ∩ E) ∩ E = cl X)
+  (closure_inter_inter_ground : ∀ X, closure (X ∩ E) ∩ E = closure X)
 
 namespace ClMatroid
 
-lemma cl_subset_ground (M : ClMatroid α) (X : Set α) : M.cl X ⊆ M.E := by
-  rw [← M.cl_inter_inter_ground]; apply inter_subset_right
+lemma closure_subset_ground (M : ClMatroid α) (X : Set α) : M.closure X ⊆ M.E := by
+  rw [← M.closure_inter_inter_ground]; apply inter_subset_right
 
-lemma cl_inter_ground (M : ClMatroid α) (X : Set α) : M.cl (X ∩ M.E) = M.cl X := by
-  rw [← inter_eq_self_of_subset_left (M.cl_subset_ground (X ∩ M.E)), M.cl_inter_inter_ground]
+lemma closure_inter_ground (M : ClMatroid α) (X : Set α) : M.closure (X ∩ M.E) = M.closure X := by
+  rw [← inter_eq_self_of_subset_left (M.closure_subset_ground (X ∩ M.E)), M.closure_inter_inter_ground]
 
-@[simps] protected def indepMatroidOnUniv (M : ClMatroid α) (hE : M.E = univ) : IndepMatroid α :=
+@[simps!] protected def indepMatroidOnUniv (M : ClMatroid α) (hE : M.E = univ) : IndepMatroid α :=
   have h_indep_subset : ∀ ⦃I J⦄, M.ClIndep J → I ⊆ J → M.ClIndep I :=by
     intro I J Jindep Isubset
     rw [M.clIndep_iff]
@@ -45,10 +45,10 @@ lemma cl_inter_ground (M : ClMatroid α) (X : Set α) : M.cl (X ∩ M.E) = M.cl 
     have xj : x ∈ J := by
       apply Isubset
       exact xinI
-    have clIsubsetclJ : M.cl (I \ {x}) ⊆ M.cl (J \ {x}) := by
-      apply M.cl_subset_cl
+    have clIsubsetclJ : M.closure (I \ {x}) ⊆ M.closure (J \ {x}) := by
+      apply M.closure_subset_closure
       exact hij
-    have xinclj : x ∈ M.cl (J \ {x}) := by
+    have xinclj : x ∈ M.closure (J \ {x}) := by
       rw [subset_def] at clIsubsetclJ
       apply clIsubsetclJ
       exact hx
@@ -74,19 +74,19 @@ IndepMatroid.mk
     intro I I' Iindep Inotmax I'max
     rw [maximals, mem_setOf_eq] at I'max
     rw [maximals] at Inotmax
-    have hcl : ∀ Z, ∀ x,  M.ClIndep Z ∧ ¬M.ClIndep (insert x Z) → x ∈ M.cl Z := by
+    have hclosure : ∀ Z, ∀ x,  M.ClIndep Z ∧ ¬M.ClIndep (insert x Z) → x ∈ M.closure Z := by
       intro Z x hand
       rcases hand with ⟨Zindep, Zxdep⟩
       rw [M.clIndep_iff] at Zxdep
       simp only [mem_insert_iff, forall_eq_or_imp, mem_singleton_iff,     insert_diff_of_mem, not_and,
         not_forall, Classical.not_imp, not_not] at Zxdep
       by_cases xinZ : x ∈ Z
-      · apply M.subset_cl_self _ (by simp [hE])
+      · apply M.subset_closure_self _ (by simp [hE])
         exact xinZ
       · contrapose! Zxdep
         refine ⟨?_, ?_⟩
         · contrapose! Zxdep
-          apply M.cl_subset_cl
+          apply M.closure_subset_closure
           apply diff_subset
           exact {x}
           exact Zxdep
@@ -96,7 +96,7 @@ IndepMatroid.mk
             rw [insert_diff_singleton, insert_eq_self.mpr]
             exact yinZ
           rw [hZ]
-          apply M.cl_exchange
+          apply M.closure_exchange
           rw [mem_diff]
           refine ⟨?_, ?_⟩
           · rw [insert_diff_singleton_comm]
@@ -107,13 +107,13 @@ IndepMatroid.mk
           · rw [M.clIndep_iff] at Zindep
             apply Zindep
             exact yinZ
-    obtain ⟨B, Bmax'⟩ := M.clIndep_maximal I Iindep (subset_union_left I I')
-    have hclI' :∀ y, y ∈ M.cl I'  := by
+    obtain ⟨B, Bmax'⟩ := M.clIndep_maximal I Iindep (subset_union_left (s := I) (t := I'))
+    have hclI' :∀ y, y ∈ M.closure I'  := by
       intro y
       by_cases hyI' : y ∈ I'
-      · apply M.subset_cl_self _ (by simp [hE])
+      · apply M.subset_closure_self _ (by simp [hE])
         exact hyI'
-      · apply hcl
+      · apply hclosure
         constructor
         · exact I'max.left
         · contrapose! I'max
@@ -129,15 +129,15 @@ IndepMatroid.mk
               constructor
               · simp
               · exact hyI'
-    have hclI'B: M.cl I' ⊆ M.cl B := by
-      nth_rewrite 2 [← M.cl_cl_eq_cl]
-      apply M.cl_subset_cl
+    have hclI'B: M.closure I' ⊆ M.closure B := by
+      nth_rewrite 2 [← M.closure_closure_eq_closure]
+      apply M.closure_subset_closure
       rw [subset_def]
       intro x xinI'
       by_cases xinB :x ∈ B
-      · apply M.subset_cl_self _ (by simp [hE])
+      · apply M.subset_closure_self _ (by simp [hE])
         exact xinB
-      · apply hcl
+      · apply hclosure
         rw [maximals] at Bmax'
         simp only [mem_setOf_eq, and_imp] at Bmax'
         refine ⟨Bmax'.left.left, ?_⟩
@@ -146,7 +146,7 @@ IndepMatroid.mk
         use x
         refine ⟨?_, ?_⟩
         · simp only [mem_insert_iff, true_or]
-        · apply hcl
+        · apply hclosure
           refine ⟨?_, ?_⟩
           · rw [insert_diff_of_mem, M.clIndep_iff]
             intro y hy
@@ -156,8 +156,8 @@ IndepMatroid.mk
             rw [M.clIndep_iff]
             push_neg
             use y
-            refine ⟨diff_subset B {x}  hy, ?_⟩
-            apply M.cl_subset_cl
+            refine ⟨diff_subset  hy, ?_⟩
+            apply M.closure_subset_closure
             apply diff_subset
             exact {x}
             rw [diff_diff_comm]
@@ -177,8 +177,8 @@ IndepMatroid.mk
             contrapose! xinB
             rw [insert_subset_iff] at xinB
             exact xinB.left
-    have cl_max (Z : Set α) :  (∀ x, x ∈ M.cl Z) ∧ M.ClIndep Z → Z ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | M.ClIndep I}:= by
-      intro ⟨xincl, Zindep⟩
+    have closure_max (Z : Set α) :  (∀ x, x ∈ M.closure Z) ∧ M.ClIndep Z → Z ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | M.ClIndep I}:= by
+      intro ⟨xinclosure, Zindep⟩
       rw [maximals]
       simp only [mem_setOf_eq]
       refine ⟨Zindep, ?_⟩
@@ -191,12 +191,12 @@ IndepMatroid.mk
       push_neg
       use y
       refine ⟨hyJ, ?_⟩
-      apply M.cl_subset_cl
+      apply M.closure_subset_closure
       apply subset_diff.mpr
       refine ⟨ ZsubJ, disjoint_singleton_right.mpr hyZ⟩
-      apply xincl
+      apply xinclosure
     have Bmax : B ∈ maximals (fun x x_1 ↦ x ⊆ x_1) {I | M.ClIndep I} := by
-      apply cl_max
+      apply closure_max
       rw [maximals] at Bmax'
       simp only [mem_setOf_eq, and_imp] at Bmax'
       refine ⟨?_, Bmax'.left.left⟩
@@ -253,32 +253,32 @@ IndepMatroid.mk
 
 @[simp] lemma matroidOnUniv_indep_eq (M : ClMatroid α) (hM : M.E = univ) (I : Set α) : (M.matroidOnUniv hM).Indep I = M.ClIndep I := rfl
 
-lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
-    (M.matroidOnUniv hM).cl X = M.cl X := by
+lemma matroidOnUniv_closure_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
+    (M.matroidOnUniv hM).closure X = M.closure X := by
   obtain ⟨I, hI⟩ := (M.matroidOnUniv hM).exists_basis X (by simp [hM])
   have hi := hI.indep
   simp [matroidOnUniv, M.clIndep_iff] at hi
   refine subset_antisymm ?_ ?_
-  · simp_rw [← hI.cl_eq_cl, subset_def, hI.indep.mem_cl_iff']
+  · simp_rw [← hI.closure_eq_closure, subset_def, hI.indep.mem_closure_iff']
     simp [M.clIndep_iff]
     refine fun e h ↦ by_contra fun heX ↦ ?_
-    have heI : e ∉ I := not_mem_subset (hI.subset.trans (M.subset_cl_self X (by simp [hM]))) heX
-    have heI' : e ∉ M.cl I := not_mem_subset (M.cl_subset_cl hI.subset) heX
+    have heI : e ∉ I := not_mem_subset (hI.subset.trans (M.subset_closure_self X (by simp [hM]))) heX
+    have heI' : e ∉ M.closure I := not_mem_subset (M.closure_subset_closure hI.subset) heX
     simp only [heI, not_false_eq_true, diff_singleton_eq_self, heI', imp_false, not_forall,
       Classical.not_imp, not_not, true_implies] at h
     obtain ⟨a, haI, ha⟩ := h
     rw [← insert_diff_singleton_comm (by rintro rfl; contradiction)] at ha
-    exact heI' <| by simpa [haI] using M.cl_exchange ⟨ha, hi a haI⟩
-  · simp_rw [← hI.cl_eq_cl, subset_def, hI.indep.mem_cl_iff']
+    exact heI' <| by simpa [haI] using M.closure_exchange ⟨ha, hi a haI⟩
+  · simp_rw [← hI.closure_eq_closure, subset_def, hI.indep.mem_closure_iff']
     simp only [matroidOnUniv_E, mem_univ, matroidOnUniv_Indep, true_and]
     refine fun e h heI ↦ ?_
     rw [Matroid.Basis, maximals] at hI
     simp only [matroidOnUniv_Indep, mem_setOf_eq, and_imp, matroidOnUniv_E, subset_univ,
       and_true] at hI
-    have hIX: M.cl X = M.cl I := by
-      refine subset_antisymm ?_ (M.cl_subset_cl hI.left.right)
-      nth_rw 2 [← M.cl_cl_eq_cl]
-      apply cl_subset_cl
+    have hIX: M.closure X = M.closure I := by
+      refine subset_antisymm ?_ (M.closure_subset_closure hI.left.right)
+      nth_rw 2 [← M.closure_closure_eq_closure]
+      apply closure_subset_closure
       obtain ⟨⟨hI', hIX⟩ ,  hImax⟩ := hI
       contrapose! hImax
       simp [subset_def, not_forall, Classical.not_imp] at hImax
@@ -290,7 +290,7 @@ lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
         obtain ⟨x, hx, hx'⟩ := haI
         by_cases hxa: x = a
         · simp [hxa, mem_singleton_iff, insert_diff_of_mem] at hx'
-          apply cl_subset_cl
+          apply closure_subset_closure
           apply diff_subset
           exact {a}
           exact hx'
@@ -302,7 +302,7 @@ lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
             trivial
           · exact h₂
         rw [this]
-        apply M.cl_exchange
+        apply M.closure_exchange
         rw [mem_diff]
         refine ⟨ ?_,?_⟩
         · rw [insert_diff_singleton_comm]
@@ -318,7 +318,7 @@ lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
           · exact h₂
       · simp [subset_def]
         contrapose! haI
-        apply M.subset_cl_self
+        apply M.subset_closure_self
         simp [hM]
         exact haI
     rw [hIX] at h
@@ -333,8 +333,8 @@ lemma matroidOnUniv_cl_eq (M : ClMatroid α) (hM : M.E = univ) (X : Set α) :
 
 
 
-  -- apply hI.basis_cl_right.mem_of_insert_indep ?_ (by simpa [M.clIndep_iff, heI])
-  -- rw [← hI.cl_eq_cl, hI.indep.mem_cl_iff']
+  -- apply hI.basis_closure_right.mem_of_insert_indep ?_ (by simpa [M.clIndep_iff, heI])
+  -- rw [← hI.closure_eq_closure, hI.indep.mem_closure_iff']
   -- simp [M.clIndep_iff, heI]
 
 
@@ -345,12 +345,12 @@ end ClMatroid
 
 -- structure ClMatroid (α : Type*) where
 --   (E : Set α)
---   (cl : Set α → Set α)
---   (subset_cl_self : ∀ X ⊆ E, X ⊆ cl X)
---   (cl_subset : ∀ ⦃X Y : Set α⦄, X ⊆ Y → cl X ⊆ cl Y )
---   (cl_cl_eq_cl : ∀ X, cl (cl X) = cl X)
---   (cl_exchange : ∀ ⦃Z :Set α⦄ ⦃x y : α⦄, y ∈ cl (insert x Z) \ cl Z → x ∈ cl (insert y Z))
+--   (closure : Set α → Set α)
+--   (subset_closure_self : ∀ X ⊆ E, X ⊆ closure X)
+--   (closure_subset : ∀ ⦃X Y : Set α⦄, X ⊆ Y → closure X ⊆ closure Y )
+--   (closure_closure_eq_closure : ∀ X, closure (closure X) = closure X)
+--   (closure_exchange : ∀ ⦃Z :Set α⦄ ⦃x y : α⦄, y ∈ closure (insert x Z) \ closure Z → x ∈ closure (insert y Z))
 --   (ClIndep : Set α → Prop)
---   (clIndep_iff : ∀ ⦃I⦄, ClIndep I ↔ (∀ x ∈ I, x ∉ cl (I \ {x})))
+--   (clIndep_iff : ∀ ⦃I⦄, ClIndep I ↔ (∀ x ∈ I, x ∉ closure (I \ {x})))
 --   (clIndep_maximal : ∀ ⦃X⦄, ExistsMaximalSubsetProperty ClIndep X)
---   (cl_inter_inter_ground : ∀ X, cl (X ∩ E) ∩ E = cl X)
+--   (closure_inter_inter_ground : ∀ X, closure (X ∩ E) ∩ E = closure X)

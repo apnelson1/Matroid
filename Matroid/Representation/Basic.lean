@@ -51,18 +51,18 @@ lemma Rep.onIndep (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (
 lemma Rep.injOn_of_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn v I :=
   injOn_iff_injective.2 ((v.onIndep hI).injective)
 
-lemma Rep.indep_image (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (v '' I).incl := by
+lemma Rep.indep_image (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (v '' I).inclosure := by
   rw [← linearIndependent_image <| v.injOn_of_indep hI]
   exact v.onIndep hI
 
 lemma Rep.indep_iff_image_of_inj (v : M.Rep 𝔽 W) (h_inj : InjOn v I) :
-    M.Indep I ↔ LinearIndependent 𝔽 (v '' I).incl := by
+    M.Indep I ↔ LinearIndependent 𝔽 (v '' I).inclosure := by
   refine ⟨v.indep_image, fun hi ↦ ?_⟩
   rw [v.indep_iff, restrict_eq]
   exact (linearIndependent_image h_inj (R := 𝔽)).2 hi
 
 lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
-    M.Indep I ↔ LinearIndependent 𝔽 (v '' I).incl ∧ InjOn v I :=
+    M.Indep I ↔ LinearIndependent 𝔽 (v '' I).inclosure ∧ InjOn v I :=
   ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
     fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
 
@@ -215,7 +215,7 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
   (v.ofEq h : α → W) = v := rfl
 
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
-  (v.restrict X).comap (incl X)
+  (v.restrict X).comap (inclosure X)
 
 /-- Transfer a `Rep` along a matroid map. The definition involves extending a function with zero,
 so requires a `DecidablePred` assumption. -/
@@ -331,7 +331,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
 
 
 
--- -- def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (incl E)
+-- -- def Rep.onGround' (v : M.Rep 𝔽 W) (E : Set α) : (M.onGround E).Rep 𝔽 W := v.preimage (inclosure E)
 
 -- -- /- Carry a representation across a matroid isomorphism -/
 -- -- noncomputable def Rep.iso {M : Matroid α} {N : Matroid β} (v : M.Rep 𝔽 W) (i : Iso M N) :
@@ -696,13 +696,13 @@ lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
   rw [← nmem_support]
   exact not_mem_subset v.support_subset_ground he.2
 
-@[simp] lemma Rep.span_eq_span_cl (v : M.Rep 𝔽 W) (X : Set α) :
-    span 𝔽 (v '' M.cl X) = span 𝔽 (v '' X) := by
-  rw [v.span_eq_span_inter_ground X, ← cl_inter_ground, le_antisymm_iff,
-    and_iff_left (span_mono (image_subset _ (M.subset_cl _)))]
+@[simp] lemma Rep.span_eq_span_closure (v : M.Rep 𝔽 W) (X : Set α) :
+    span 𝔽 (v '' M.closure X) = span 𝔽 (v '' X) := by
+  rw [v.span_eq_span_inter_ground X, ← closure_inter_ground, le_antisymm_iff,
+    and_iff_left (span_mono (image_subset _ (M.subset_closure _)))]
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-  rw [← hI.cl_eq_cl]
-  exact (span_mono <| v.subset_span_of_basis hI.indep.basis_cl).trans <|
+  rw [← hI.closure_eq_closure]
+  exact (span_mono <| v.subset_span_of_basis hI.indep.basis_closure).trans <|
     span_le.2 (span_mono (image_subset _ hI.subset))
 
 lemma Rep.span_eq_span_of_basis' (v : M.Rep 𝔽 W) (h : M.Basis' I X) :
@@ -713,19 +713,19 @@ lemma Rep.span_eq_span_of_basis (v : M.Rep 𝔽 W) (h : M.Basis I X) :
     span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
   v.span_eq_span_of_basis' h.basis'
 
-lemma Rep.span_le_span_of_cl_subset_cl (v : M.Rep 𝔽 W) (h : M.cl X ⊆ M.cl Y) :
+lemma Rep.span_le_span_of_closure_subset_closure (v : M.Rep 𝔽 W) (h : M.closure X ⊆ M.closure Y) :
     span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   refine span_le.2 <| (v.subset_span_of_basis' hI).trans <| span_le.2 ?_
-  rw [← v.span_eq_span_cl]
-  exact (image_subset _ (hI.basis_cl_right.subset.trans h)).trans subset_span
+  rw [← v.span_eq_span_closure]
+  exact (image_subset _ (hI.basis_closure_right.subset.trans h)).trans subset_span
 
 lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
-    v '' X ⊆ span 𝔽 (v '' Y) ↔ X ⊆ M.cl Y := by
+    v '' X ⊆ span 𝔽 (v '' Y) ↔ X ⊆ M.closure Y := by
   refine ⟨fun h e heX ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_basis' Y
     rw [← v.span_eq_span_of_basis' hI] at h
-    rw [← hI.cl_eq_cl, hI.indep.mem_cl_iff', and_iff_right (hX heX)]
+    rw [← hI.closure_eq_closure, hI.indep.mem_closure_iff', and_iff_right (hX heX)]
 
     specialize h (mem_image_of_mem _ heX)
     refine fun hi ↦ by_contra fun heI ↦ ?_
@@ -734,20 +734,20 @@ lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
     · exact (hind.2 h).elim
     refine fun heI' ↦ heI ?_
     rwa [← (v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
-  rw [← v.span_eq_span_cl]
+  rw [← v.span_eq_span_closure]
   exact (image_subset v h).trans subset_span
 
 
 -- -- Ugly proof in the second part
-lemma Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (span 𝔽 (v '' X)) := by
+lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = M.E ∩ v ⁻¹' (span 𝔽 (v '' X)) := by
   obtain ⟨I, hI⟩ := M.exists_basis' (X)
-  rw [← hI.cl_eq_cl, subset_antisymm_iff, subset_inter_iff, and_iff_right (cl_subset_ground _ _),
+  rw [← hI.closure_eq_closure, subset_antisymm_iff, subset_inter_iff, and_iff_right (closure_subset_ground _ _),
     ← image_subset_iff, and_iff_left]
-  · exact (v.subset_span_of_basis hI.indep.basis_cl).trans (span_mono (image_subset _ hI.subset))
+  · exact (v.subset_span_of_basis hI.indep.basis_closure).trans (span_mono (image_subset _ hI.subset))
   rintro x ⟨hxE, hx⟩
   rw [mem_preimage] at hx
 
-  rw [hI.indep.mem_cl_iff, or_iff_not_imp_right, dep_iff,
+  rw [hI.indep.mem_closure_iff, or_iff_not_imp_right, dep_iff,
     and_iff_left <| insert_subset hxE hI.indep.subset_ground]
   refine fun hxI hi ↦ ?_
   apply (v.onIndep hi).not_mem_span_image (s := Subtype.val ⁻¹' I)
@@ -759,14 +759,14 @@ lemma Rep.cl_eq (v : M.Rep 𝔽 W) (X : Set α) : M.cl X = M.E ∩ v ⁻¹' (spa
   convert hsp
   aesop
 
-lemma Rep.span_eq_span_of_cl_eq_cl (v : M.Rep 𝔽 W) (h : M.cl X = M.cl Y) :
+lemma Rep.span_eq_span_of_closure_eq_closure (v : M.Rep 𝔽 W) (h : M.closure X = M.closure Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
   rw [span_eq_span_inter_ground, span_eq_span_inter_ground _ Y]
-  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff inter_subset_right, cl_inter_ground]
+  simp_rw [le_antisymm_iff, span_le, v.subset_span_iff inter_subset_right, closure_inter_ground]
   constructor
-  · rw [← h, ← cl_inter_ground]; exact subset_cl _ _
-  rw [h, ← cl_inter_ground]
-  exact subset_cl _ _
+  · rw [← h, ← closure_inter_ground]; exact subset_closure _ _
+  rw [h, ← closure_inter_ground]
+  exact subset_closure _ _
 
 
 

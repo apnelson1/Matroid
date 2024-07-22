@@ -28,12 +28,12 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
   convert (ENat.tsum_encard_eq_encard_sUnion (M ／ e).parallelClasses.pairwiseDisjoint).symm using 1
   · simp only [contract_elem, Partition.sUnion_eq, contract_nonloop_iff, mem_diff]
     congr
-    rw [cl_singleton_eq]
+    rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
     using 1
   rw [← ENat.tsum_comp_eq_tsum_of_equiv (toNonloop he).lineContractPointEquiv]
   refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
-  simp [Nonloop.lineContractPointEquiv, cl_singleton_eq he,
+  simp [Nonloop.lineContractPointEquiv, closure_singleton_eq he,
     diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
 
 theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
@@ -44,10 +44,10 @@ theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
 
 
 
-  -- have : ∀ L, (M.Line L ∧ e ∈ L) ↔ (M.cl {e} ⋖[M] L)
+  -- have : ∀ L, (M.Line L ∧ e ∈ L) ↔ (M.closure {e} ⋖[M] L)
   -- · intro L
 
-  -- rw [tsum_congr_subtype (Q := fun L ↦ M.cl {e} ⋖[M] L)]
+  -- rw [tsum_congr_subtype (Q := fun L ↦ M.closure {e} ⋖[M] L)]
 
 
 

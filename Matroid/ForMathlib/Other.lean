@@ -182,7 +182,7 @@ theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {
 
 theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
 
-abbrev Set.incl (s : Set α) : s → α := Subtype.val
+abbrev Set.inclosure (s : Set α) : s → α := Subtype.val
 
 @[simp] theorem isEmpty_fin_iff {b : ℕ} : IsEmpty (Fin b) ↔ b = 0 := by
   cases b <;> simp [Fin.isEmpty]

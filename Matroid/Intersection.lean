@@ -1,5 +1,5 @@
 
-import Matroid.Constructions.DirectSum
+import Matroid.Constructions.Sum
 import Mathlib.Data.Nat.Lattice
 import Matroid.Minor.Rank
 import Matroid.Flat
@@ -40,7 +40,7 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
-  · suffices 0 = M₂.r (M₂.E \ M₁.cl ∅) from ⟨∅, M₁.cl ∅, cl_subset_ground _ _, by simpa⟩
+  · suffices 0 = M₂.r (M₂.E \ M₁.closure ∅) from ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
     rw [eq_comm, r_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
   push_neg at hloop
@@ -105,9 +105,9 @@ theorem exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] 
     ∃ I X, M₁.Flat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind_aux M₁ M₂ hE
-  refine ⟨I, _, M₁.cl_flat X, h1, h2, (h1.ncard_le_r_add_r h2 _).antisymm ?_⟩
-  rw [r_cl_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
-  exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_cl M₁ X)) _
+  refine ⟨I, _, M₁.closure_flat X, h1, h2, (h1.ncard_le_r_add_r h2 _).antisymm ?_⟩
+  rw [r_closure_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
+  exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
 noncomputable def maxCommonInd (M₁ M₂ : Matroid α) : ℕ :=

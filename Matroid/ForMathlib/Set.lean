@@ -58,7 +58,7 @@ lemma diff_union_eq_union_of_subset (s : Set α) {t r : Set α} (h : t ⊆ r) :
 
 lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t ∩ s = r ∩ s) := by
   rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := r)]
-  refine' ⟨fun h ↦ _, fun h ↦ by rw [h]⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← diff_diff_cancel_left inter_subset_right, h, diff_diff_cancel_left inter_subset_right]
 
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
