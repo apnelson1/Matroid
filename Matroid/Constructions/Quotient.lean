@@ -16,6 +16,12 @@ def Quotient (M N : Matroid α) : Prop :=
 def WeakLE (M N : Matroid α) : Prop :=
   M.E = N.E ∧ ∀ D, N.Dep D → M.Dep D
 
+def Flat_Covers_Flat (M: Matroid α) (F₁ F₂ : Set α) : Prop :=
+  M.Flat F₁ ∧ M.Flat F₂ ∧ F₂ ⊆ F₁ ∧ M.relRank F₂ F₁ = 1
+
+def Quotient' (M₁ M₂ : Matroid α) : Prop :=
+ M₁.E = M₂.E ∧ ∀ X Y, X ⊆ Y → Y ⊆ M₁.E → M₂.relRank X Y ≤ M₁.relRank X Y
+
 infixl:50 " ≤q " => Matroid.Quotient
 
 infixl:50 " ≤w " => Matroid.WeakLE
@@ -79,7 +85,20 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
   refine le_top.trans hinf
 termination_by M₁.relRank X Y
 
-
+theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α}
+    (hYE : Y ⊆ M₁.E) (hX2: M₂.Flat X) (hco : Flat_Covers_Flat M₁ Y X) (hMX : M₁.relRank X (M₁.E)= M₂.relRank X (M₂.E) )
+    (hQ' : Quotient' M₁ M₂):
+    (Flat_Covers_Flat M₂ Y X) ∧ M₁.relRank Y (M₁.E)= M₂.relRank Y (M₁.E) := by
+      --have hcas:= lt_or_le (M₁.relRank X Y) ⊤
+      --obtain(hfin|hinf):= hcas
+      --unfold Flat_Covers_Flat at hco
+      have hey : ∃ y ∈ Y \ X, M₁.relRank X ({y}) = 1 := by
+        sorry
+      constructor
+      · refine ⟨?_ ,hX2 , hco.2.2.1 , ?_⟩
+        · sorry
+        · sorry
+      · sorry
 
 
 
