@@ -31,3 +31,6 @@ lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (
   obtain ⟨x, hx, hxI⟩ := hI.augment hJ (by simpa [encard_eq_coe_toFinset_card] )
   simp only [mem_diff, Finset.mem_coe] at hx
   exact ⟨x, hx.1, hx.2, hxI⟩
+
+lemma basis_restrict_univ_iff {I X : Set α} : (M ↾ univ).Basis I X ↔ M.Basis' I X := by
+  rw [basis_restrict_iff', basis'_iff_basis_inter_ground, and_iff_left (subset_univ _)]
