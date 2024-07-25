@@ -50,5 +50,18 @@ lemma restrictSubtype_base_iff {B : Set X} : (M.restrictSubtype X).Base B ↔ M.
   obtain ⟨I, X, hIX, rfl, rfl⟩ := h
   simpa
 
+lemma map_restrict (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) (R : Set α)
+    (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R).map f (hf.mono hR) = (M.map f hf) ↾ f '' R := by
+  refine eq_of_indep_iff_indep_forall rfl fun I (hI : I ⊆ f '' R) ↦ ?_
+  simp only [map_indep_iff, restrict_indep_iff, hI, and_true]
+  constructor
+  · rintro ⟨I₀, hI₀, -, rfl⟩
+    exact ⟨_, hI₀.1, rfl⟩
+  rintro ⟨I₀, hI₀, rfl⟩
+  exact ⟨_, ⟨hI₀, (hf.image_subset_image_iff hI₀.subset_ground hR).1 hI⟩, rfl⟩
+
+lemma comap_restrict (M : Matroid β) (f : α → β) (R : Set β) :
+    (M ↾ R).comap f = (M.comap f ↾ (f ⁻¹' R)) :=
+  eq_of_indep_iff_indep_forall rfl fun I _ ↦ by simp [and_assoc, and_comm (a := I ⊆ _)]
 
 end Matroid
