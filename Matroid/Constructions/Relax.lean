@@ -12,7 +12,8 @@ section Relax
 lemma Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
     (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by
   have hclosure := hH.closure_insert_eq hf.2 hf.1
-  rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert,
+  rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq_closure e,
+    closure_insert_closure_eq_closure_insert,
     ← spanning_iff_closure (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hclosure
   apply hclosure.base_of_indep
   rw [← (hHc.diff_singleton_indep he).not_mem_closure_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),

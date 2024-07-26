@@ -67,19 +67,20 @@ lemma Circuit.closure_diff_singleton_eq_closure (hC : M.Circuit C) (e : α) :
   (em (e ∈ C)).elim (fun he ↦ by rw [(hC.diff_singleton_basis he).closure_eq_closure])
     (fun he ↦ by rw [diff_singleton_eq_self he])
 
-lemma Circuit.subset_closure_diff_singleton (hC : M.Circuit C) (e : α) : C ⊆ M.closure (C \ {e}) := by
+lemma Circuit.subset_closure_diff_singleton (hC : M.Circuit C) (e : α) :
+    C ⊆ M.closure (C \ {e}) := by
   by_cases he : e ∈ C
   · rw [(hC.diff_singleton_basis he).closure_eq_closure]; exact M.subset_closure _
   rw [diff_singleton_eq_self he]; exact M.subset_closure _
 
-lemma Circuit.subset_closure_diff_subsingleton (hC : M.Circuit C) {Z : Set α} (hZ : Z.Subsingleton) :
-    C ⊆ M.closure (C \ Z) := by
+lemma Circuit.subset_closure_diff_subsingleton (hC : M.Circuit C) {Z : Set α}
+    (hZ : Z.Subsingleton) : C ⊆ M.closure (C \ Z) := by
   obtain (rfl | ⟨x, rfl⟩) := hZ.eq_empty_or_singleton
   · simpa using M.subset_closure _
   exact hC.subset_closure_diff_singleton _
 
-lemma Circuit.closure_diff_subsingleton_eq_closure (hC : M.Circuit C) {Z : Set α} (hZ : Z.Subsingleton) :
-    M.closure (C \ Z) = M.closure C := by
+lemma Circuit.closure_diff_subsingleton_eq_closure (hC : M.Circuit C) {Z : Set α}
+    (hZ : Z.Subsingleton) : M.closure (C \ Z) = M.closure C := by
   obtain (rfl | ⟨x, rfl⟩) := hZ.eq_empty_or_singleton
   · simp
   rw [hC.closure_diff_singleton_eq_closure]
@@ -159,7 +160,8 @@ lemma Indep.fundCct_eq_of_mem (hI : M.Indep I) (he : e ∈ I) : M.fundCct e I = 
 lemma Indep.fundCct_circuit (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
     M.Circuit (M.fundCct e I) := by
   rw [circuit_iff_dep_forall_diff_singleton_indep,
-    ← not_indep_iff (fundCct_subset_ground (M.closure_subset_ground I he.1)), fundCct_eq_sInter he.1]
+    ← not_indep_iff (fundCct_subset_ground (M.closure_subset_ground I he.1)),
+    fundCct_eq_sInter he.1]
   have hu : M.Indep (⋃₀ {J : Set α | J ⊆ I ∧ e ∈ M.closure J}) :=
     hI.subset (sUnion_subset fun J ↦ And.left)
   have hI' : I ∈ {J : Set α | J ⊆ I ∧ e ∈ M.closure J} := ⟨rfl.subset, he.1⟩
@@ -197,7 +199,8 @@ lemma Indep.mem_fundCct_iff (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
     (hI.subset diff_subset).insert_indep_iff_of_not_mem (show e ∉ I \ {x} by simp [he.2])]
   refine ⟨fun h he ↦ (h _ diff_subset he).2 rfl,
     fun h J hJI heJ ↦ by_contra fun hxJ ↦ hI.not_mem_closure_diff_of_mem hxI ?_⟩
-  rw [← union_eq_self_of_subset_left (subset_diff_singleton hJI hxJ), ← M.closure_union_closure_left_eq]
+  rw [← union_eq_self_of_subset_left (subset_diff_singleton hJI hxJ),
+    ← M.closure_union_closure_left_eq]
   have h1 : e ∈ M.closure (insert x (I \ {x})) := by simpa [hxI] using he.1
   exact mem_of_mem_of_subset (mem_closure_insert h h1)
     (M.closure_subset_closure (insert_subset (.inl heJ) subset_union_right))
@@ -668,89 +671,3 @@ lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
 end constructions
 
 end Matroid
-
-
--- end BasisExchange
-
--- -- section from_axioms TODO : Fix this for `matroid_in`.
--- -- /-- A collection of sets satisfying the circuit axioms determines a matroid_in -/
--- -- def matroid_in_of_circuit_of_finite [finite E] (circuit : set α → Prop)
--- -- (empty_not_circuit : ¬ circuit ∅) (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
--- -- (elimination : ∀ C₁ C₂ e,
--- --     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
--- -- matroid_in α :=
--- -- matroid_in_of_indep_of_finite (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
--- -- (λ I J hIJ hJ C hCI, hIJ C (hCI.trans hJ))
--- -- begin
--- --   by_contra! h,
--- --   obtain ⟨I,J,hI,hJ,hIJ,Hbad⟩ := h,
--- --   set indep := (λ I, ∀ C ⊆ I, ¬circuit C) with hi,
--- --   /- Choose an independent set `K ⊆ I ∪ J`, larger than `I`, for which `I \ K` is minimized -/
--- --   set sbad := {K : set α | indep K ∧ K ⊆ I ∪ J ∧ I.ncard < K.ncard} with hsbad,
--- --   have hbad_ne : sbad.nonempty := ⟨J, hJ, subset_union_right, hIJ⟩,
--- --   obtain ⟨K, ⟨hK, hKIJ, hIK⟩, hKmin⟩ :=
--- --     @set.finite.exists_minimal_wrt (set α) _ _ (λ X, (I \ X).ncard) sbad (to_finite sbad) hbad_ne,
--- --   simp only [hsbad, mem_set_of_eq, and_imp] at hKmin,
--- --   obtain hIK_empty | ⟨e, heI, heK⟩ := (I \ K).eq_empty_or_nonempty,
--- --   /- If `I \ K` is empty then we get an easy contradiction by augmenting `I` into `K`. -/
--- --   { obtain ⟨e,heK,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hIK,
--- --     have heJ : e ∈ J := by_contra (λ heJ, not_or heI heJ (hKIJ heK)),
--- --     obtain ⟨C, hCeI, hC⟩ := Hbad e heJ heI,
--- --     exact hK C (hCeI.trans (insert_subset.mpr ⟨heK, diff_eq_empty.mp hIK_empty⟩)) hC},
--- --   have hCf : ∀ f ∈ K \ I, ∃ Cf ⊆ (insert e K), circuit Cf ∧ f ∉ Cf ∧ e ∈ Cf,
--- --   { rintro f ⟨hfK,hfI⟩,
--- --     have hef : e ≠ f, from λ h, hfI (h ▸heI ),
--- --     set T := ((insert e K) \ {f}) with hT,
--- --     have hTIJ : T ⊆ I ∪ J, from
--- --       (diff_subset.trans (insert_subset.mpr ⟨or.inl heI,hKIJ⟩)),
--- --     have hTcard : T.ncard = K.ncard, by rw [hT, ncard_exchange' heK hfK],
--- --     have hITcard : (I \ T).ncard < (I \ K).ncard,
--- --     { rw [nat.lt_iff_add_one_le, hT, ← insert_diff_singleton_comm hef, ← union_singleton, ← diff_diff,
--- --         ncard_diff_singleton_add_one ],
--- --       { convert rfl.le using 2,
--- --         rw [diff_eq_compl_inter, diff_eq_compl_inter, diff_eq_compl_inter, compl_inter,
--- --           inter_distrib_right, compl_compl, singleton_inter_eq_empty.mpr hfI, empty_union]},
--- --       exact ⟨heI,λ he', heK he'.1⟩},
--- --     have hTi : ¬indep T, from
--- --       λ hTi, hITcard.ne (hKmin _ hTi hTIJ (hIK.trans_eq hTcard.symm) hITcard.le).symm,
--- --     push_neg at hTi,
--- --     obtain ⟨Cf, hCfT, hCf⟩ := hTi,
--- --     refine ⟨Cf, hCfT.trans diff_subset, hCf, _, _⟩,
--- --     { exact mt (@hCfT f) (not_mem_diff_of_mem (mem_singleton f))},
--- --     refine by_contra (λ heCf, hK Cf (λ x hxCf, _) hCf),
--- --     exact mem_of_mem_insert_of_ne (hCfT hxCf).1 (by {rintro rfl, exact heCf hxCf})},
--- --   obtain ⟨g,hgK,hgI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hIK,
--- --   obtain ⟨Cg, hCgss, hCg, hgCg, heCg⟩ := hCf g ⟨hgK,hgI⟩,
--- --   have hg_ex : ∃ g', g' ∈ Cg ∧ g' ∈ K \ I,
--- --   { by_contra! hg',
--- --     exact hI _ (λ x hx,
--- --       or.elim (hCgss hx) (λ h, h.symm ▸ heI) (λ hxK, by_contra (λ hxI, hg' _ hx ⟨hxK, hxI⟩))) hCg},
--- --   obtain ⟨g', hg', hg'KI⟩ := hg_ex,
--- --   obtain ⟨Cg', hCg'ss, hCg', hgCg', heCg'⟩ := hCf g' hg'KI,
--- --   have hne : Cg ≠ Cg',
--- --   { intro heq, rw ← heq at hgCg', exact hgCg' hg', },
--- --   obtain ⟨C, hCss, hC⟩ := elimination _ _ e hCg hCg' hne ⟨heCg, heCg'⟩,
--- --   refine hK C (hCss.trans _) hC,
--- --   rw [diff_subset_iff, singleton_union],
--- --   exact union_subset hCgss hCg'ss,
--- -- end
--- -- @[simp] lemma matroid_in_of_circuit_of_finite_apply [finite E] (circuit : set α → Prop)
--- --   (empty_not_circuit : ¬ circuit ∅)
--- --   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
--- --   (elimination : ∀ C₁ C₂ e,
--- --     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
--- --   (matroid_in_of_circuit_of_finite circuit empty_not_circuit antichain elimination).circuit = circuit :=
--- -- begin
--- --   ext C,
--- --   simp_rw [matroid_in_of_circuit_of_finite, matroid_in.circuit_iff_forall_ssubset,
--- --    matroid_in_of_indep_of_finite_apply,
--- -- not_forall, not_not, exists_prop],
--- --   refine ⟨λ h, _,λ h, ⟨⟨_,rfl.subset, h⟩,λ I hIC C' hC'I hC',
--- --     hIC.not_subset ((antichain C' C hC' h (hC'I.trans hIC.subset)) ▸ hC'I )⟩⟩,
--- --   obtain ⟨⟨C₀,hC₀C, hC₀⟩,hI⟩ := h,
--- --   obtain rfl | hC₀C := eq_or_ssubset_of_subset hC₀C,
--- --     assumption,
--- --   exact (hI _ hC₀C _ rfl.subset hC₀).elim,
--- -- end
--- -- end from_axioms
--- end Matroid

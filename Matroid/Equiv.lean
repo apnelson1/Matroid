@@ -301,8 +301,8 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     rw [h_eq, h]
     simpa
 
-@[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h) (x : M.E) :
-  (isoOfForallImageclosure e h) x = e x := rfl
+@[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h)
+    (x : M.E) : (isoOfForallImageclosure e h) x = e x := rfl
 
 
 lemma Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circuit ↑(e '' C) := by

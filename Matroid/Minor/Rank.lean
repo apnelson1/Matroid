@@ -64,8 +64,8 @@ lemma relRank_le_er (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ M.er Y :
 
 lemma relRank_eq_er_diff_contract (M : Matroid α) (X Y : Set α) :
     M.relRank X Y = (M ／ X).er (Y \ X) := by
-  rw [relRank_eq_er_contract, ← er_closure_eq, contract_closure_eq, eq_comm, ← er_closure_eq, contract_closure_eq,
-    diff_union_self]
+  rw [relRank_eq_er_contract, ← er_closure_eq, contract_closure_eq, eq_comm, ← er_closure_eq,
+    contract_closure_eq, diff_union_self]
 
 lemma relRank_eq_diff_right (M : Matroid α) (X Y : Set α) : M.relRank X Y = M.relRank X (Y \ X) :=
   M.relRank_eq_er_diff_contract X Y
@@ -119,12 +119,13 @@ lemma relRank_eq_zero_of_subset (M : Matroid α) (h : Y ⊆ X) : M.relRank X Y =
 
 lemma relRank_eq_relRank_union (M : Matroid α) (X Y : Set α) :
     M.relRank X Y = M.relRank X (Y ∪ X) := by
-  rw [relRank, ← er_closure_eq, contract_closure_eq, ← relRank_eq_er_diff_contract, relRank_closure_right]
+  rw [relRank, ← er_closure_eq, contract_closure_eq, ← relRank_eq_er_diff_contract,
+    relRank_closure_right]
 
 lemma Basis'.relRank_eq_encard_diff (hI : M.Basis' I (X ∪ C)) (hIC : M.Basis' (I ∩ C) C) :
     M.relRank C X = (I \ C).encard := by
-  rw [relRank_eq_relRank_union, relRank, ← er_closure_eq, contract_closure_eq, union_assoc, union_self,
-    ← hI.closure_eq_closure, ← relRank_eq_er_diff_contract, relRank_closure_right,
+  rw [relRank_eq_relRank_union, relRank, ← er_closure_eq, contract_closure_eq, union_assoc,
+    union_self, ← hI.closure_eq_closure, ← relRank_eq_er_diff_contract, relRank_closure_right,
     relRank_eq_er_diff_contract, Indep.er]
   rw [hIC.contract_eq_contract_delete, delete_indep_iff, hIC.indep.contract_indep_iff,
     diff_union_inter, and_iff_left hI.indep, ← disjoint_union_right, union_diff_self,
@@ -151,7 +152,8 @@ lemma Indep.relRank_of_subset (hI : M.Indep I) (hJ : J ⊆ I) : M.relRank J I = 
 
 lemma Basis.relRank_eq_encard_diff_of_subset_basis (hI : M.Basis I X) (hJ : M.Basis J Y)
     (hIJ : I ⊆ J) : M.relRank X Y = (J \ I).encard := by
-  rw [← relRank_closure_left, ← hI.closure_eq_closure, relRank_closure_left, ← relRank_closure_right, ← hJ.closure_eq_closure,
+  rw [← relRank_closure_left, ← hI.closure_eq_closure, relRank_closure_left,
+    ← relRank_closure_right, ← hJ.closure_eq_closure,
     relRank_closure_right, hJ.indep.relRank_of_subset hIJ]
 
 lemma relRank_le_er_diff (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ M.er (Y \ X) := by
@@ -215,9 +217,9 @@ lemma relRank_add_of_subset_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y 
 
 lemma relRank_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.relRank X Y = 0 ↔ Y ⊆ M.closure X := by
-  rw [← relRank_closure_left, relRank, er_eq_zero_iff', contract_loops_eq, closure_closure, diff_self,
-    subset_empty_iff, contract_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left hY,
-    diff_eq_empty]
+  rw [← relRank_closure_left, relRank, er_eq_zero_iff', contract_loops_eq, closure_closure,
+    diff_self, subset_empty_iff, contract_ground, ← inter_diff_assoc,
+    inter_eq_self_of_subset_left hY, diff_eq_empty]
 
 lemma relRank_eq_zero_iff' : M.relRank X Y = 0 ↔ Y ∩ M.E ⊆ M.closure X := by
   rw [← relRank_inter_ground_right, ← relRank_inter_ground_left, relRank_eq_zero_iff,
@@ -228,8 +230,8 @@ lemma relRank_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
   rw [← relRank_closure_left, relRank_eq_er_diff_contract, er_eq_one_iff
     (show Y \ (M.closure X) ⊆ (M ／ (M.closure X)).E from diff_subset_diff_left hY)]
   simp only [contract_closure_eq, singleton_union, diff_subset_iff, diff_union_self,
-    closure_insert_closure_eq_closure_insert, union_diff_self, contract_nonloop_iff, closure_closure,
-    union_eq_self_of_subset_left (M.closure_subset_closure (subset_insert _ X))]
+    closure_insert_closure_eq_closure_insert, union_diff_self, contract_nonloop_iff,
+    closure_closure, union_eq_self_of_subset_left (M.closure_subset_closure (subset_insert _ X))]
   exact ⟨fun ⟨e,he,_,hY'⟩ ↦ ⟨e,he,hY'⟩, fun ⟨e, he, hY'⟩ ↦ ⟨e, he, ⟨hY he.1, he.2⟩, hY'⟩⟩
 
 lemma relRank_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
@@ -273,7 +275,8 @@ lemma rFin.of_contract (hX : (M ／ C).rFin X) (hC : M.rFin C) : M.rFin X :=
 
 lemma rFin.contract_rFin_of_subset_union (h : M.rFin Z) (X C : Set α) (hX : X ⊆ M.closure (Z ∪ C)) :
     (M ／ C).rFin (X \ C) :=
-  (h.contract_rFin C).to_closure.subset (by rw [contract_closure_eq]; exact diff_subset_diff_left hX)
+  (h.contract_rFin C).to_closure.subset
+    (by rw [contract_closure_eq]; exact diff_subset_diff_left hX)
 
 lemma Minor.erk_le (h : N ≤m M) : N.erk ≤ M.erk := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h

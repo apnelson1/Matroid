@@ -62,8 +62,8 @@ lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} 
 
 lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
     (M.map f hf).Flat (f '' F) := by
-  rw [flat_iff_closure_self, map_closure_eq, ← closure_inter_ground, hf.preimage_image_inter hF.subset_ground,
-    hF.closure]
+  rw [flat_iff_closure_self, map_closure_eq, ← closure_inter_ground,
+    hf.preimage_image_inter hF.subset_ground, hF.closure]
 
 lemma flat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.closure F ⊆ F := by
   rw [flat_iff_closure_self, subset_antisymm_iff, and_iff_left_iff_imp]
@@ -109,8 +109,8 @@ lemma Flat.closure_exchange (hF : M.Flat F) (he : e ∈ M.closure (insert f F) \
     f ∈ M.closure (insert e F) \ F := by
   nth_rw 2 [← hF.closure] at *; exact Matroid.closure_exchange he
 
-lemma Flat.closure_insert_eq_closure_insert_of_mem (hF : M.Flat F) (he : e ∈ M.closure (insert f F) \ F) :
-    M.closure (insert e F) = M.closure (insert f F) :=
+lemma Flat.closure_insert_eq_closure_insert_of_mem (hF : M.Flat F)
+    (he : e ∈ M.closure (insert f F) \ F) : M.closure (insert e F) = M.closure (insert f F) :=
   Matroid.closure_insert_eq_closure_insert_of_mem (by rwa [hF.closure])
 
 lemma Flat.closure_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.closure X ⊆ F := by
@@ -120,7 +120,8 @@ lemma Flat.closure_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.closure X 
     M.closure X ⊆ F ↔ X ⊆ F :=
   ⟨(M.subset_closure X).trans, hF.closure_subset_of_subset⟩
 
-lemma Flat.closure_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.Indep I) : M.closure I = F ↔ M.Basis I F :=
+lemma Flat.closure_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.Indep I) :
+    M.closure I = F ↔ M.Basis I F :=
   ⟨by rintro rfl; exact hI.basis_closure, fun h ↦ by rw [h.closure_eq_closure, hF.closure]⟩
 
 lemma Flat.eq_closure_of_basis (hF : M.Flat F) (hI : M.Basis I F) : F = M.closure I :=
@@ -172,7 +173,8 @@ def Flat.toFlatOf (h : M.Flat F) : M.FlatOf := ⟨_,h⟩
 
 def flatclosure (M : Matroid α) (X : Set α) : M.FlatOf := ⟨_, M.closure_flat X⟩
 
-@[simp] lemma coe_flatclosure (M : Matroid α) (X : Set α) : (M.flatclosure X : Set α) = M.closure X := rfl
+@[simp] lemma coe_flatclosure (M : Matroid α) (X : Set α) :
+    (M.flatclosure X : Set α) = M.closure X := rfl
 
 @[simp] lemma FlatOf.coe_inj {F F' : M.FlatOf} : (F : Set α) = (F' : Set α) ↔ F = F' :=
   Subtype.coe_inj
@@ -210,7 +212,8 @@ instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   inf_le_right _ _ := inter_subset_right
   le_inf _ _ _ h h' := subset_inter h h'
   sSup Fs := M.flatclosure (⋃ F ∈ Fs, F)
-  le_sSup Fs F h := F.2.closure.symm.subset.trans <| M.closure_subset_closure (subset_biUnion_of_mem h)
+  le_sSup Fs F h := F.2.closure.symm.subset.trans <|
+    M.closure_subset_closure (subset_biUnion_of_mem h)
   sSup_le Fs F h := by
     simp only [FlatOf.le_iff, coe_flatclosure] at h ⊢
     refine F.coe_flat.closure_subset_of_subset ?_
@@ -367,7 +370,8 @@ lemma CovBy.eq_of_ssubset_of_subset (h : F₀ ⋖[M] F₁) (hF : M.Flat F) (hF�
     F = F₁ :=
   ((covBy_iff.1 h).2.2.2 F hF hF₀.subset hF₁).elim (fun h' ↦ (hF₀.ne.symm h').elim) id
 
-lemma CovBy.closure_insert_eq (h : F₀ ⋖[M] F₁) (he : e ∈ F₁ \ F₀) : M.closure (insert e F₀) = F₁ := by
+lemma CovBy.closure_insert_eq (h : F₀ ⋖[M] F₁) (he : e ∈ F₁ \ F₀) :
+    M.closure (insert e F₀) = F₁ := by
   refine
     h.eq_of_ssubset_of_subset (M.closure_flat _)
       ((ssubset_insert he.2).trans_subset (M.subset_closure _ ?_))
@@ -408,7 +412,8 @@ lemma CovBy.er_eq (h : F ⋖[M] F') : M.er F' = M.er F + 1 := by
   rw [er_closure_eq, h.flat_left.er_insert_eq_add_one]
   exact ⟨M.closure_subset_ground _ he.1, he.2⟩
 
-lemma closure_covBy_iff : (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
+lemma closure_covBy_iff :
+    (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
   simp_rw [(M.closure_flat X).covBy_iff_eq_closure_insert, closure_insert_closure_eq_closure_insert]
 
 lemma closure_covBy_closure_iff : (M.closure X) ⋖[M] (M.closure Y) ↔
@@ -430,16 +435,18 @@ lemma Flat.covBy_closure_insert (hF : M.Flat F) (he : e ∉ F) (heE : e ∈ M.E 
     F ⋖[M] M.closure (insert e F) :=
   hF.covBy_iff_eq_closure_insert.2 ⟨e, ⟨heE, he⟩, rfl⟩
 
-lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) : M.closure (I \ {e}) ⋖[M] M.closure I := by
-  simpa [closure_insert_closure_eq_closure_insert, he] using
-    (M.closure_flat _).covBy_closure_insert (not_mem_closure_diff_of_mem hI he) (hI.subset_ground he)
+lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
+    M.closure (I \ {e}) ⋖[M] M.closure I := by
+  simpa [closure_insert_closure_eq_closure_insert, he] using (M.closure_flat _).covBy_closure_insert
+    (not_mem_closure_diff_of_mem hI he) (hI.subset_ground he)
 
 lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
     M.closure I ⋖[M] M.closure (insert e I) := by
   simpa [not_mem_of_mem_diff_closure he] using
     (hI.insert_indep_iff.2 <| .inl he).closure_diff_covBy (.inl rfl)
 
-lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) : F' = M.closure (insert e F) :=
+lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) :
+    F' = M.closure (insert e F) :=
   Eq.symm <| h.eq_of_ssubset_of_subset (M.closure_flat (insert e F))
     (h.flat_left.covBy_closure_insert he.2 (h.flat_right.subset_ground he.1)).ssubset
     (h.flat_right.closure_subset_of_subset (insert_subset he.1 h.subset))
@@ -474,7 +481,8 @@ lemma Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E \
 /-- If `F` covers distinct flats `F₀` and `F₁`, then `F` is their join. -/
 lemma CovBy.eq_closure_union_of_covBy_of_ne (h₀ : F₀ ⋖[M] F) (h₁ : F₁ ⋖[M] F) (hne : F₀ ≠ F₁) :
     F = M.closure (F₀ ∪ F₁) := by
-  refine subset_antisymm ?_ (h₁.flat_right.closure_subset_of_subset (union_subset h₀.subset h₁.subset))
+  refine subset_antisymm ?_
+    (h₁.flat_right.closure_subset_of_subset (union_subset h₀.subset h₁.subset))
   have hnss : ¬ (F₀ ⊆ F₁) :=
     fun hss ↦ hne.symm <| h₀.eq_of_subset_of_ssubset h₁.flat_left hss h₁.ssubset
   obtain ⟨e, he₀, he₁⟩ := not_subset.1 hnss
@@ -495,7 +503,8 @@ lemma Flat.exists_covBy_right_of_ssubset (hF₀ : M.Flat F₀) (hF₁ : M.Flat F
     rw [hF₀.eq_closure_of_basis hI, hF₁.eq_closure_of_basis hJ] at hss
     exact hss.ne rfl
   obtain ⟨e, heJ, heI⟩ := exists_of_ssubset hssu
-  refine ⟨M.closure (J \ {e}), hI.subset_closure.trans (M.closure_subset_closure (subset_diff_singleton hIJ heI)), ?_⟩
+  refine ⟨M.closure (J \ {e}), hI.subset_closure.trans
+    (M.closure_subset_closure (subset_diff_singleton hIJ heI)), ?_⟩
   convert (M.closure_flat (J \ {e})).covBy_closure_insert ?_ (hJ.indep.subset_ground heJ)
   · rw [closure_insert_closure_eq_closure_insert, insert_diff_singleton, insert_eq_of_mem heJ,
       hF₁.eq_closure_of_basis hJ]
@@ -509,7 +518,8 @@ lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀
   rw [closure_closure_union_closure_eq_closure_union, ← singleton_union, ← singleton_union,
     ← union_union_distrib_right, union_comm {e₀}, union_assoc, singleton_union, singleton_union,
     ← M.closure_insert_closure_eq_closure_insert, h₀']
-  exact h₀.flat_right.covBy_closure_insert (fun h ↦ he₁.2 ⟨h, he₁.1⟩) (h₁.flat_right.subset_ground he₁.1)
+  exact h₀.flat_right.covBy_closure_insert (fun h ↦ he₁.2 ⟨h, he₁.1⟩)
+    (h₁.flat_right.subset_ground he₁.1)
 
 instance {M : Matroid α} : IsWeakUpperModularLattice M.FlatOf where
   covBy_sup_of_inf_covBy_covBy := by
@@ -560,8 +570,8 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
     (eq_sUnion := by
       simp only [sUnion_image, mem_setOf_eq, ext_iff, mem_diff, mem_iUnion, exists_and_left,
         exists_prop]
-      exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦
-        ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _), hF.covBy_closure_insert heF, heF⟩,
+      exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
+        hF.covBy_closure_insert heF, heF⟩,
         fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.flat_right.subset_ground heF', h⟩⟩ )
 
 @[simp] lemma Flat.mem_covByPartition_iff {X : Set α} (hF : M.Flat F) :
@@ -614,31 +624,35 @@ lemma Flat.rel_covByPartition_iff' (hF : M.Flat F) (he : e ∈ M.E \ F) :
   left_inv := by rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩; simp
   right_inv := by rintro ⟨F, hF⟩; simp [hF.subset]
 
--- this needs `ENatTopology`
--- lemma Flat.ground_encard_eq_tsum (hF₀ : M.Flat F₀) :
---     M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
---   rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
---   apply congr_arg (_ + ·)
---   have hcard := ENat.tsum_encard_eq_encard_sUnion hF₀.covByPartition.pairwiseDisjoint
---   simp only [SetLike.coe_sort_coe, Partition.sUnion_eq] at hcard
---   rw [← ENat.tsum_comp_eq_tsum_of_equiv hF₀.equivCovByPartition (fun F ↦ encard ((F : Set α) \ F₀)),
---     ← hcard]
---   apply tsum_congr
---   rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩
---   rw [hF₀.equivCovByPartition_apply_coe, diff_union_self, union_diff_right]
+/-
+this needs `ENatTopology`
+lemma Flat.ground_encard_eq_tsum (hF₀ : M.Flat F₀) :
+    M.E.encard = F₀.encard + ∑' F : {F // F₀ ⋖[M] F}, ((F : Set α) \ F₀).encard := by
+  rw [← encard_diff_add_encard_of_subset hF₀.subset_ground, add_comm]
+  apply congr_arg (_ + ·)
+  have hcard := ENat.tsum_encard_eq_encard_sUnion hF₀.covByPartition.pairwiseDisjoint
+  simp only [SetLike.coe_sort_coe, Partition.sUnion_eq] at hcard
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv hF₀.equivCovByPartition (fun F ↦ encard ((F : Set α) \ F₀)),
+    ← hcard]
+  apply tsum_congr
+  rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩
+  rw [hF₀.equivCovByPartition_apply_coe, diff_union_self, union_diff_right]
+-/
 
 section Minor
 
 lemma flat_contract (X C : Set α) : (M ／ C).Flat (M.closure (X ∪ C) \ C) := by
-  rw [flat_iff_closure_self, contract_closure_eq, diff_union_self, ← M.closure_union_closure_right_eq,
-    union_eq_self_of_subset_right (M.closure_subset_closure subset_union_right), closure_closure]
+  rw [flat_iff_closure_self, contract_closure_eq, diff_union_self,
+    ← M.closure_union_closure_right_eq, union_eq_self_of_subset_right
+    (M.closure_subset_closure subset_union_right), closure_closure]
 
 @[simp] lemma flat_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Flat F ↔ M.Flat (F ∪ C) ∧ Disjoint F C := by
   rw [flat_iff_closure_self, contract_closure_eq, subset_antisymm_iff, subset_diff, diff_subset_iff,
     union_comm C, ← and_assoc, and_congr_left_iff, flat_iff_closure_self, subset_antisymm_iff,
     and_congr_right_iff]
-  exact fun _ _ ↦ ⟨fun h ↦ M.subset_closure _ (union_subset (h.trans (M.closure_subset_ground _)) hC),
+  exact fun _ _ ↦
+    ⟨fun h ↦ M.subset_closure _ (union_subset (h.trans (M.closure_subset_ground _)) hC),
     fun h ↦ subset_union_left.trans h⟩
 
 lemma Flat.union_flat_of_contract (hF : (M ／ C).Flat F) (hC : C ⊆ M.E := by aesop_mat) :
@@ -722,8 +736,8 @@ lemma Hyperplane.ssubset_ground (hH : M.Hyperplane H) : H ⊂ M.E :=
 lemma Hyperplane.ssubset_univ (hH : M.Hyperplane H) : H ⊂ univ :=
   hH.ssubset_ground.trans_subset (subset_univ _)
 
-lemma Hyperplane.closure_insert_eq (hH : M.Hyperplane H) (heH : e ∉ H) (he : e ∈ M.E := by aesop_mat) :
-    M.closure (insert e H) = M.E :=
+lemma Hyperplane.closure_insert_eq (hH : M.Hyperplane H) (heH : e ∉ H)
+    (he : e ∈ M.E := by aesop_mat) : M.closure (insert e H) = M.E :=
   hH.covBy.closure_insert_eq ⟨he, heH⟩
 
 lemma Hyperplane.closure_eq_ground_of_ssuperset (hH : M.Hyperplane H) (hX : H ⊂ X)
@@ -835,8 +849,8 @@ lemma Hyperplane.closure_insert_eq_univ (hH : M.Hyperplane H) (he : e ∈ M.E \ 
   rw [insert_eq, union_subset_iff, singleton_subset_iff]
   exact ⟨he.1, hH.subset_ground⟩
 
-lemma exists_hyperplane_sep_of_not_mem_closure (h : e ∈ M.E \ M.closure X) (hX : X ⊆ M.E := by aesop_mat) :
-    ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
+lemma exists_hyperplane_sep_of_not_mem_closure (h : e ∈ M.E \ M.closure X)
+    (hX : X ⊆ M.E := by aesop_mat) : ∃ H, M.Hyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   rw [← hI.closure_eq_closure, mem_diff, hI.indep.not_mem_closure_iff] at h
   obtain ⟨B, hB, heIB⟩ := h.2.1.exists_base_superset
@@ -856,8 +870,8 @@ lemma closure_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.
   obtain ⟨H, hH, hXH, heH'⟩ := exists_hyperplane_sep_of_not_mem_closure ⟨heE, hx⟩
   exact heH' (heH H ⟨hH, hXH⟩)
 
-lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat) (he : e ∈ M.E := by aesop_mat) :
-    e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
+lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat)
+    (he : e ∈ M.E := by aesop_mat) : e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
   simp_rw [← M.closure_inter_ground X,
     M.closure_eq_sInter_hyperplanes _ (inter_subset_left.trans hX), mem_inter_iff, and_iff_left he,
     mem_sInter, mem_setOf_eq, and_imp]
@@ -906,14 +920,15 @@ lemma Hyperplane.basis_hyperplane_delete (hH : M.Hyperplane H) (hI : M.Basis I H
   obtain ⟨e, he, heH⟩ := exists_of_ssubset hH.ssubset_ground
   have hB : M.Base (insert e I) := by
     refine Indep.base_of_spanning ?_ ?_
-    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH), hI.closure_eq_closure,
-        hH.flat.closure, mem_diff, and_iff_left heH]
-    rw [spanning_iff_closure, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure, hH.flat.closure,
-      hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
+    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH),
+        hI.closure_eq_closure, hH.flat.closure, mem_diff, and_iff_left heH]
+    rw [spanning_iff_closure, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure,
+      hH.flat.closure, hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
   convert Base.hyperplane_of_closure_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
   · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,
     not_false_eq_true, diff_singleton_eq_self, delete_closure_eq]
-    rw [disjoint_sdiff_right.sdiff_eq_left, hI.closure_eq_closure, hH.flat.closure, diff_diff_cancel_left]
+    rw [disjoint_sdiff_right.sdiff_eq_left, hI.closure_eq_closure, hH.flat.closure,
+      diff_diff_cancel_left]
     exact hI.subset
   simp only [delete_base_iff]
   refine hB.indep.basis_of_forall_insert ?_ fun x ⟨⟨hxE, _⟩, hx⟩ ↦ hB.insert_dep ⟨hxE, hx⟩
@@ -950,8 +965,8 @@ lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
   ⟨M.closure_flat {e}, by rw [er_closure_eq, he.indep.er, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
-  simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left, true_and,
-    and_congr_right_iff, and_iff_right_iff_imp]
+  simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left,
+    true_and, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
 
 lemma Point.covBy (hP : M.Point P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2 hP
@@ -962,10 +977,11 @@ lemma Point.exists_eq_closure_nonloop (hP : M.Point P) : ∃ e, M.Nonloop e ∧ 
   obtain rfl := hP.flat.eq_closure_of_basis hI
   exact ⟨e, indep_singleton.1 hI.indep, rfl⟩
 
-lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P) : P = M.closure {e} := by
+lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P) :
+    P = M.closure {e} := by
   rw [← indep_singleton] at he
-  exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_er_le_of_finite (singleton_subset_iff.2 heP)
-    (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
+  exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_er_le_of_finite
+    (singleton_subset_iff.2 heP) (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
 
 lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
   ⟨Point.exists_eq_closure_nonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_point⟩
@@ -990,7 +1006,8 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     rw [subset_antisymm_iff, union_subset_iff, and_iff_right subset_union_right,
       union_subset_iff, and_iff_left subset_union_left, ← hP.1.flat_right.closure,
       ← closure_inter_ground]
-    exact ⟨M.closure_subset_closure subset_union_left, (M.subset_closure _).trans subset_union_right⟩⟩
+    exact ⟨M.closure_subset_closure subset_union_left,
+      (M.subset_closure _).trans subset_union_right⟩⟩
   invFun P := ⟨P \ C, by
     obtain ⟨P, hP⟩ := P
     rw [← closure_inter_ground] at hP
@@ -1002,7 +1019,8 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     rintro ⟨P,hP⟩
     simp only [Subtype.mk.injEq]
     rw [← contract_inter_ground_eq, point_contract_iff] at hP
-    rw [← closure_inter_ground, diff_eq_diff_inter_of_subset (union_subset _ (M.closure_subset_ground _)),
+    rw [← closure_inter_ground, diff_eq_diff_inter_of_subset
+      (union_subset _ (M.closure_subset_ground _)),
       subset_antisymm_iff, diff_subset_iff, union_subset_iff, subset_diff,
       and_iff_right subset_union_right, and_iff_right hP.1.subset, and_iff_left hP.2]
     · exact subset_union_left
@@ -1011,13 +1029,9 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     rintro ⟨P, hP⟩
     simp only [Subtype.mk.injEq]
     rw [diff_eq_diff_inter_of_subset hP.subset_ground_right, ← closure_inter_ground,
-      diff_union_eq_union_of_subset P (M.subset_closure (C ∩ M.E)), union_eq_left, closure_inter_ground]
+      diff_union_eq_union_of_subset P (M.subset_closure (C ∩ M.E)),
+      union_eq_left, closure_inter_ground]
     exact hP.subset
-
--- lemma encard_ground_eq_encard_loops_add_sum_points (M : Matroid α) : M.E.encard =
---     (M.closure ∅).encard + ∑' P : {P // M.Point P}, ((P : Set α) \ M.closure ∅).encard := by
---   rw [(M.closure_flat ∅).ground_encard_eq_tsum, tsum_congr_subtype (f := fun F ↦ encard (F \ M.closure ∅))]
---   simp [loops_covBy_iff]
 
 lemma Point.eq_or_eq_of_flat_of_subset (hP : M.Point P) (hF : M.Flat F) (h : F ⊆ P) :
     F = M.closure ∅ ∨ F = P :=
@@ -1110,7 +1124,8 @@ end LowRank
 --   ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :=
 -- matroid_of_closure_of_finite (λ X, ⋂₀ {F | flat F ∧ X ⊆ F})
 -- (λ X, subset_sInter (λ F, and.right))
--- (λ X Y hXY, subset_sInter (λ F hF, by {apply sInter_subset_of_mem, exact ⟨hF.1, hXY.trans hF.2⟩}))
+-- (λ X Y hXY, subset_sInter (λ F hF, by {apply sInter_subset_of_mem,
+-- exact ⟨hF.1, hXY.trans hF.2⟩}))
 -- (begin
 --   refine λ X, (subset_sInter (λ F, and.right)).antisymm' _,
 --   simp only [subset_sInter_iff, mem_set_of_eq, and_imp],

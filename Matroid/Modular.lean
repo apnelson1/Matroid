@@ -26,10 +26,12 @@ lemma ModularBase.indep (h : M.ModularBase B Xs) : M.Indep B :=
 lemma ModularBase.basis_inter (h : M.ModularBase B Xs) (i : ι) : M.Basis ((Xs i) ∩ B) (Xs i) :=
   h.2 i
 
-lemma ModularBase.subset_closure_inter (h : M.ModularBase B Xs) (i : ι) : Xs i ⊆ M.closure ((Xs i) ∩ B) :=
+lemma ModularBase.subset_closure_inter (h : M.ModularBase B Xs) (i : ι) :
+    Xs i ⊆ M.closure ((Xs i) ∩ B) :=
   (h.basis_inter i).subset_closure
 
-lemma ModularBase.closure_inter_eq (h : M.ModularBase B Xs) (i : ι) : M.closure (Xs i ∩ B) = M.closure (Xs i) :=
+lemma ModularBase.closure_inter_eq (h : M.ModularBase B Xs) (i : ι) :
+    M.closure (Xs i ∩ B) = M.closure (Xs i) :=
   (h.basis_inter i).closure_eq_closure
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
@@ -79,19 +81,21 @@ lemma exists_modularBase_of_iUnion_indep (h : M.Indep (⋃ i, Xs i)) :
   rw [inter_eq_self_of_subset_left <| iUnion_subset_iff.1 hIB i]
   exact (h.subset (subset_iUnion _ i)).basis_self
 
-lemma Base.modularBase_of_forall_subset_closure (hB : M.Base B) (h : ∀ i, Xs i ⊆ M.closure ((Xs i) ∩ B)) :
-    M.ModularBase B Xs := by
+lemma Base.modularBase_of_forall_subset_closure (hB : M.Base B)
+    (h : ∀ i, Xs i ⊆ M.closure ((Xs i) ∩ B)) : M.ModularBase B Xs := by
   exact ⟨hB, fun i ↦ hB.indep.inter_basis_closure_iff_subset_closure_inter.2 (h i)⟩
 
 lemma ModularBase.modularBase_of_forall_subset_subset_closure (hB : M.ModularBase B Xs)
     (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.closure (Xs i)) : M.ModularBase B Ys := by
   refine ⟨hB.base, fun i ↦ hB.indep.inter_basis_closure_iff_subset_closure_inter.2 ?_⟩
   refine (hYX i).trans (M.closure_subset_closure_of_subset_closure ?_)
-  exact (hB.2 i).subset_closure.trans (M.closure_subset_closure (inter_subset_inter_left B (hXY i)))
+  exact (hB.2 i).subset_closure.trans
+    (M.closure_subset_closure (inter_subset_inter_left B (hXY i)))
 
 lemma ModularBase.modularBase_cls (hB : M.ModularBase B Xs) :
     M.ModularBase B (fun i ↦ M.closure (Xs i)) :=
-  hB.modularBase_of_forall_subset_subset_closure (fun i ↦ M.subset_closure (Xs i)) (fun i ↦ Subset.rfl)
+  hB.modularBase_of_forall_subset_subset_closure (fun i ↦ M.subset_closure (Xs i))
+    (fun _ ↦ Subset.rfl)
 
 lemma ModularBase.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.ModularBase B Xs) :
     (⋂ i : ι, M.closure (Xs i)) = M.closure (⋂ i : ι, Xs i) := by
@@ -269,8 +273,10 @@ lemma modularPair_iff_exists_subsets_closure_inter :
     M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ X ⊆ M.closure (X ∩ I) ∧ Y ⊆ M.closure (Y ∩ I)  := by
   rw [modularPair_iff]
   refine ⟨fun ⟨I,hI,h⟩ ↦ ⟨I,hI,?_⟩, fun ⟨I,hI,h⟩ ↦ ⟨I,hI,?_⟩⟩
-  · rwa [← hI.inter_basis_closure_iff_subset_closure_inter, ← hI.inter_basis_closure_iff_subset_closure_inter]
-  rwa [hI.inter_basis_closure_iff_subset_closure_inter, hI.inter_basis_closure_iff_subset_closure_inter]
+  · rwa [← hI.inter_basis_closure_iff_subset_closure_inter,
+      ← hI.inter_basis_closure_iff_subset_closure_inter]
+  rwa [hI.inter_basis_closure_iff_subset_closure_inter,
+    hI.inter_basis_closure_iff_subset_closure_inter]
 
 lemma ModularPair.exists_subsets_closure_inter (h : M.ModularPair X Y) :
     ∃ I, M.Indep I ∧ X ⊆ M.closure (X ∩ I) ∧ Y ⊆ M.closure (Y ∩ I) :=
@@ -283,7 +289,8 @@ lemma modularPair_iff_exists_basis_basis :
     fun ⟨I,J,hI,hJ,hi⟩ ↦ ⟨_,hi, ?_⟩⟩
   simp_rw [hi.inter_basis_closure_iff_subset_closure_inter]
   use hI.subset_closure.trans (M.closure_subset_closure (subset_inter hI.subset subset_union_left))
-  exact hJ.subset_closure.trans (M.closure_subset_closure (subset_inter hJ.subset subset_union_right))
+  exact hJ.subset_closure.trans
+    (M.closure_subset_closure (subset_inter hJ.subset subset_union_right))
 
 lemma ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
     M.Basis I (X ∪ Y) ∧ M.Basis (I ∩ X) X ∧ M.Basis (I ∩ Y) Y ∧ M.Basis (I ∩ X ∩ Y) (X ∩ Y) := by
@@ -297,7 +304,8 @@ lemma ModularPair.exists_common_basis (h : M.ModularPair X Y) : ∃ I,
   have hi := hB.basis_iInter
   rwa [← inter_eq_iInter] at hi
 
-lemma ModularPair.inter_closure_eq (h : M.ModularPair X Y) : M.closure (X ∩ Y) = M.closure X ∩ M.closure Y := by
+lemma ModularPair.inter_closure_eq (h : M.ModularPair X Y) :
+    M.closure (X ∩ Y) = M.closure X ∩ M.closure Y := by
   convert (ModularFamily.iInter_closure_eq_closure_iInter h).symm
   · rw [inter_eq_iInter]
   simp_rw [Bool.cond_eq_ite, apply_ite, ← Bool.cond_eq_ite, inter_eq_iInter]
@@ -319,12 +327,12 @@ lemma ModularPair.of_subset_closure_subset_closure (h : M.ModularPair X Y) (hXX'
   · simp [hYY', hXX']
   simp [hY', hX']
 
-lemma ModularPair.of_subset_closure_left (h : M.ModularPair X Y) (hXX' : X ⊆ X') (hX' : X' ⊆ M.closure X) :
-    M.ModularPair X' Y :=
+lemma ModularPair.of_subset_closure_left (h : M.ModularPair X Y) (hXX' : X ⊆ X')
+    (hX' : X' ⊆ M.closure X) : M.ModularPair X' Y :=
   h.of_subset_closure_subset_closure hXX' hX' Subset.rfl (M.subset_closure Y)
 
-lemma ModularPair.of_subset_closure_right (h : M.ModularPair X Y) (hYY' : Y ⊆ Y') (hY' : Y' ⊆ M.closure Y) :
-    M.ModularPair X Y' :=
+lemma ModularPair.of_subset_closure_right (h : M.ModularPair X Y) (hYY' : Y ⊆ Y')
+    (hY' : Y' ⊆ M.closure Y) : M.ModularPair X Y' :=
   (h.symm.of_subset_closure_left hYY' hY').symm
 
 lemma ModularPair.of_basis_left (h : M.ModularPair I Y) (hIX : M.Basis I X) :
@@ -345,7 +353,8 @@ lemma ModularPair.closure_left (h : M.ModularPair X Y) : M.ModularPair (M.closur
 lemma ModularPair.closure_right (h : M.ModularPair X Y) : M.ModularPair X (M.closure Y) :=
   h.symm.closure_left.symm
 
-lemma ModularPair.closure_closure (h : M.ModularPair X Y) : M.ModularPair (M.closure X) (M.closure Y) :=
+lemma ModularPair.closure_closure (h : M.ModularPair X Y) :
+    M.ModularPair (M.closure X) (M.closure Y) :=
   h.closure_left.closure_right
 
 lemma modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.closure X) :
@@ -384,7 +393,8 @@ lemma rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.
   refine Basis.indep <| (hXfin.union hYfin).basis_of_subset_closure_of_subset_of_encard_le ?_
     (union_subset_union hIX.subset hIY.subset) (le_of_add_le_left hr.le)
   rw [← M.closure_union_closure_left_eq, ← M.closure_union_closure_right_eq]
-  exact (M.subset_closure _).trans (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
+  exact (M.subset_closure _).trans
+    (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
 
 lemma modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
@@ -416,20 +426,25 @@ lemma modularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     M.ModularPair (M.closure (insert e X)) (M.closure (insert f X)) := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
 
-  rw [← closure_insert_closure_eq_closure_insert, ← closure_insert_closure_eq_closure_insert (e := f), ← hI.closure_eq_closure]
+  rw [← closure_insert_closure_eq_closure_insert,
+    ← closure_insert_closure_eq_closure_insert (e := f), ← hI.closure_eq_closure]
   obtain (he | he) := em' (e ∈ M.E)
   · rw [← closure_inter_ground, insert_inter_of_not_mem he, closure_inter_ground]
-    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _)) (M.closure_subset_ground _)
+    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
+      (M.closure_subset_ground _)
   obtain (hf | hf) := em' (f ∈ M.E)
   · rw [ModularPair.comm, ← closure_inter_ground, insert_inter_of_not_mem hf, closure_inter_ground]
-    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _)) (M.closure_subset_ground _)
+    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
+      (M.closure_subset_ground _)
 
   obtain (hfI | hfI) := em (f ∈ M.closure I)
   · rw [ModularPair.comm, insert_eq_of_mem hfI]
-    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _)) (M.closure_subset_ground _)
+    exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
+      (M.closure_subset_ground _)
   rw [closure_insert_closure_eq_closure_insert, closure_insert_closure_eq_closure_insert]
   obtain (hef | hef) := em (e ∈ M.closure (insert f I))
-  · refine modularPair_of_subset (M.closure_subset_closure_of_subset_closure ?_) (M.closure_subset_ground _)
+  · refine modularPair_of_subset (M.closure_subset_closure_of_subset_closure ?_)
+      (M.closure_subset_ground _)
     exact insert_subset hef (M.subset_closure_of_subset (subset_insert _ _)
       (insert_subset hf hI.indep.subset_ground))
 
@@ -460,15 +475,18 @@ lemma ModularSet.subset_ground (h : M.ModularSet X) : X ⊆ M.E :=
   simp [ModularSet, modularPair_iff]
 
 lemma modularSet_iff_closure {M : Matroid α} {X : Set α} :
-    M.ModularSet X ↔ ∀ ⦃F⦄, M.Flat F → ∃ I, M.Indep I ∧ X ⊆ M.closure (X ∩ I) ∧ F ⊆ M.closure (F ∩ I) := by
+    M.ModularSet X ↔
+      ∀ ⦃F⦄, M.Flat F → ∃ I, M.Indep I ∧ X ⊆ M.closure (X ∩ I) ∧ F ⊆ M.closure (F ∩ I) := by
   rw [modularSet_iff]
   refine ⟨fun h F hF ↦ ?_, fun h F hF ↦ ?_⟩
   · obtain ⟨I, hI, hI'⟩ := h hF
     refine ⟨I, hI, ?_⟩
-    rwa [← hI.inter_basis_closure_iff_subset_closure_inter, ← hI.inter_basis_closure_iff_subset_closure_inter]
+    rwa [← hI.inter_basis_closure_iff_subset_closure_inter,
+      ← hI.inter_basis_closure_iff_subset_closure_inter]
   obtain ⟨I, hI, hI'⟩ := h hF
   refine ⟨I, hI, ?_⟩
-  rwa [hI.inter_basis_closure_iff_subset_closure_inter, hI.inter_basis_closure_iff_subset_closure_inter]
+  rwa [hI.inter_basis_closure_iff_subset_closure_inter,
+    hI.inter_basis_closure_iff_subset_closure_inter]
 
 lemma modularSet_ground (M : Matroid α) : M.ModularSet M.E :=
   modularSet_def.2 (fun _ hF ↦ (modularPair_of_subset hF.subset_ground Subset.rfl).symm)
@@ -523,7 +541,8 @@ lemma SkewFamily.loop_of_mem_inter (h : M.SkewFamily Xs) (hij : i ≠ j)
     (he : e ∈ Xs i ∩ Xs j) : M.Loop e :=
   h.2 hij he
 
-lemma SkewFamily.subset_loops_of_ne (h : M.SkewFamily Xs) (hij : i ≠ j) : Xs i ∩ Xs j ⊆ M.closure ∅ :=
+lemma SkewFamily.subset_loops_of_ne (h : M.SkewFamily Xs) (hij : i ≠ j) :
+    Xs i ∩ Xs j ⊆ M.closure ∅ :=
   h.2 hij
 
 lemma SkewFamily.disjoint_inter_indep (h : M.SkewFamily Xs) (hI : M.Indep I) (hij : i ≠ j) :
@@ -551,7 +570,8 @@ lemma SkewFamily.pairwise_disjoint_of_bases (h : M.SkewFamily Xs)
     (hIX : ∀ i, M.Basis (Is i) (Xs i)) : Pairwise (Disjoint on Is) :=
   h.pairwise_disjoint_of_indep_subsets (fun i ↦ (hIX i).subset) (fun i ↦ (hIX i).indep)
 
-lemma SkewFamily.cls_skewFamily (h : M.SkewFamily Xs) : M.SkewFamily (fun i ↦ M.closure (Xs i)) := by
+lemma SkewFamily.cls_skewFamily (h : M.SkewFamily Xs) :
+    M.SkewFamily (fun i ↦ M.closure (Xs i)) := by
   refine ⟨h.modularFamily.cls_modularFamily, fun i j hij ↦ ?_⟩
   have := M.closure_subset_closure_of_subset_closure <| h.subset_loops_of_ne hij
   rwa [← (h.modularFamily.modularPair i j).inter_closure_eq]
@@ -560,11 +580,12 @@ lemma Indep.skewFamily_of_disjoint_bases (hI : M.Indep (⋃ i, Is i))
     (hdj : Pairwise (Disjoint on Is)) (hIs : ∀ i, M.Basis (Is i) (Xs i)) : M.SkewFamily Xs := by
   refine ⟨hI.modularFamily fun i ↦ ?_, fun i j hij ↦ ?_⟩
   · rw [hI.inter_basis_closure_iff_subset_closure_inter]
-    exact (hIs i).subset_closure.trans (M.closure_subset_closure (subset_inter (hIs i).subset (subset_iUnion _ i)))
+    exact (hIs i).subset_closure.trans
+      (M.closure_subset_closure (subset_inter (hIs i).subset (subset_iUnion _ i)))
   refine (inter_subset_inter (M.subset_closure _ (hIs i).subset_ground)
     (M.subset_closure _ (hIs j).subset_ground)).trans ?_
-  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure, ← (hI.subset _).closure_inter_eq_inter_closure,
-    Disjoint.inter_eq <| hdj hij]
+  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure,
+    ← (hI.subset _).closure_inter_eq_inter_closure, Disjoint.inter_eq <| hdj hij]
   exact union_subset (subset_iUnion _ _) (subset_iUnion _ _)
 
 lemma skewFamily_iff_exist_bases : M.SkewFamily Xs ↔
@@ -622,11 +643,13 @@ lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, I
       exact hK'.subset_closure (Or.inr <| mem_biUnion hne hf)
 
     refine mem_of_mem_of_subset
-      (M.closure_subset_closure (subset_diff_singleton hK'.subset hfK') hclosure) (M.closure_subset_closure_of_subset_closure ?_)
+      (M.closure_subset_closure (subset_diff_singleton hK'.subset hfK') hclosure)
+      (M.closure_subset_closure_of_subset_closure ?_)
     simp only [mem_compl_iff, mem_singleton_iff, mem_union, mem_iUnion, exists_prop, not_exists,
       diff_singleton_subset_iff, union_subset_iff, iUnion_subset_iff]
     refine ⟨(hJs i₀).1.subset.trans ?_, fun i _ ↦ ?_⟩
-    · refine (huKs i₀).subset_closure.trans (subset_trans (M.closure_subset_closure ?_) (subset_insert _ _))
+    · refine (huKs i₀).subset_closure.trans (subset_trans (M.closure_subset_closure ?_)
+        (subset_insert _ _))
       refine subset_diff_singleton (subset_iUnion Ks i₀) (fun hf' ↦ ?_)
       exact (hdj hne).ne_of_mem hf hf' rfl
 
@@ -643,7 +666,8 @@ lemma SkewFamily.iUnion_indep_subset_indep (h : M.SkewFamily Xs) (hIX : ∀ i, I
     obtain (rfl | hi) := eq_or_ne i₀ i
     · apply M.subset_closure (K' \ {e}) (diff_subset.trans hK'.indep.subset_ground)
       exact ⟨hss hfi, fun (h : f = e) ↦ heJ <| h ▸ hf⟩
-    refine mem_of_mem_of_subset ((hJs i).1.subset.trans (huKs i).subset_closure hfi) (M.closure_subset_closure ?_)
+    refine mem_of_mem_of_subset ((hJs i).1.subset.trans (huKs i).subset_closure hfi)
+      (M.closure_subset_closure ?_)
     refine subset_diff_singleton (hK'' i hi.symm) (fun heK ↦ ?_)
     apply Loop.not_nonloop <| h.loop_of_mem_inter hi ⟨(hJs i₀).1.subset hei₀, (huKs i).subset heK⟩
     exact (hK'.indep.subset hss).nonloop_of_mem hei₀
@@ -661,7 +685,8 @@ lemma SkewFamily.iUnion_basis_iUnion (h : M.SkewFamily Xs) (hIs : ∀ i, M.Basis
     M.Basis (⋃ i, Is i) (⋃ i, Xs i) := by
   have hi := h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset) (fun i ↦ (hIs i).indep)
   exact hi.basis_of_subset_of_subset_closure (iUnion_mono (fun i ↦ (hIs i).subset)) <|
-    iUnion_subset (fun i ↦ (hIs i).subset_closure.trans (M.closure_subset_closure (subset_iUnion _ _)))
+    iUnion_subset
+      (fun i ↦ (hIs i).subset_closure.trans (M.closure_subset_closure (subset_iUnion _ _)))
 
 lemma SkewFamily.sum_er_eq_er_iUnion [Fintype ι] (h : M.SkewFamily Xs) :
     ∑ i, M.er (Xs i) = M.er (⋃ i, Xs i) := by
@@ -676,8 +701,8 @@ lemma rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype ι] (hXs : ∀ i, M.rFin 
   refine ⟨SkewFamily.sum_er_eq_er_iUnion, fun hsum ↦ ?_⟩
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (hXE i)
   rw [← er_closure_eq , ← M.closure_iUnion_closure_eq_closure_iUnion] at hsum
-  simp_rw [← (fun i ↦ M.er_closure_eq (Xs i)), ← (fun i ↦ (hIs i).closure_eq_closure), M.closure_iUnion_closure_eq_closure_iUnion,
-    er_closure_eq, (fun i ↦ (hIs i).indep.er)] at hsum
+  simp_rw [← (fun i ↦ M.er_closure_eq (Xs i)), ← (fun i ↦ (hIs i).closure_eq_closure),
+    M.closure_iUnion_closure_eq_closure_iUnion, er_closure_eq, (fun i ↦ (hIs i).indep.er)] at hsum
 
   apply Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
   · exact rFin.indep_of_encard_le_er
@@ -811,21 +836,23 @@ lemma skew_iff_closure_skew (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := 
     M.Skew X Y ↔ M.Skew (M.closure X) (M.closure Y) :=
   ⟨Skew.closure_skew, fun h ↦ h.mono (M.subset_closure X) (M.subset_closure Y)⟩
 
-lemma skew_iff_closure_skew_left (hX : X ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ M.Skew (M.closure X) Y := by
+lemma skew_iff_closure_skew_left (hX : X ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ M.Skew (M.closure X) Y := by
   by_cases hY : Y ⊆ M.E
   · rw [skew_iff_closure_skew, iff_comm, skew_iff_closure_skew, closure_closure]
   exact iff_of_false (fun h ↦ hY <| h.subset_ground_right) (fun h ↦ hY <| h.subset_ground_right)
 
-lemma skew_iff_closure_skew_right (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ M.Skew X (M.closure Y) := by
+lemma skew_iff_closure_skew_right (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ M.Skew X (M.closure Y) := by
   rw [skew_comm, skew_iff_closure_skew_left, skew_comm]
 
 lemma skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
     M.Skew X Y ↔ M.Skew X' Y' := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rwa [skew_iff_closure_skew hX.subset_ground hY.subset_ground, ← hX.closure_eq_closure, ← hY.closure_eq_closure,
-      ← skew_iff_closure_skew]
-  rwa [skew_iff_closure_skew hX.symm.subset_ground hY.symm.subset_ground, hX.closure_eq_closure, hY.closure_eq_closure,
-      ← skew_iff_closure_skew]
+  · rwa [skew_iff_closure_skew hX.subset_ground hY.subset_ground, ← hX.closure_eq_closure,
+      ← hY.closure_eq_closure, ← skew_iff_closure_skew]
+  rwa [skew_iff_closure_skew hX.symm.subset_ground hY.symm.subset_ground, hX.closure_eq_closure,
+    hY.closure_eq_closure, ← skew_iff_closure_skew]
 
 lemma skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) (Y \ M.closure ∅) :=
   skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) (M.loopEquiv_diff_loops Y)
@@ -834,7 +861,8 @@ lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) 
   skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) rfl
 
 lemma skew_iff_bases_skew (hI : M.Basis I X) (hJ : M.Basis J Y) : M.Skew I J ↔ M.Skew X Y :=
-  ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure, fun h ↦ h.mono hI.subset hJ.subset⟩
+  ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
+    fun h ↦ h.mono hI.subset hJ.subset⟩
 
 lemma Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
     (hJ : M.Indep J) (hJY : J ⊆ Y) : M.Indep (I ∪ J) := by
@@ -914,8 +942,8 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.closure ∅) (hX : X ⊆ M
 lemma Loop.skew (he : M.Loop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
-lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X ⊆ M.E) (hdj : Disjoint K X) :
-    M.Skew K X := by
+lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X ⊆ M.E)
+    (hdj : Disjoint K X) : M.Skew K X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_eq_delete_of_subset_coloops hK,
     delete_eq_restrict, restrict_restrict_eq]
   rwa [subset_diff, and_iff_left hdj.symm]

@@ -60,7 +60,7 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
     refine ⟨fun h ↦ ?_, fun ⟨B, hB, hIB⟩ i ↦ (hB i).indep.subset (preimage_mono hIB)⟩
     choose Bs hBs using fun i ↦ (h i).exists_base_superset
     refine ⟨univ.sigma Bs, fun i ↦ by simpa using (hBs i).1, ?_⟩
-    rw [← univ_sigma_preimage I]
+    rw [← univ_sigma_preimage_mk I]
     refine sigma_mono rfl.subset fun i ↦ (hBs i).2
 
   exists_base := by
@@ -88,18 +88,18 @@ protected def sigma (M : (i : ι) → Matroid (α i)) : Matroid ((i : ι) × α 
     use univ.sigma Js
     simp only [mem_maximals_setOf_iff, mem_univ, mk_preimage_sigma, and_imp]
     refine ⟨⟨fun i ↦ (hJs i).1.indep, ⟨?_, ?_⟩⟩, fun S hS _ hSX h ↦ h.antisymm ?_⟩
-    · rw [← univ_sigma_preimage I]
+    · rw [← univ_sigma_preimage_mk I]
       exact sigma_mono rfl.subset fun i ↦ (hJs i).2
-    · rw [← univ_sigma_preimage X]
+    · rw [← univ_sigma_preimage_mk X]
       exact sigma_mono rfl.subset fun i ↦ (hJs i).1.subset
-    rw [← univ_sigma_preimage S]
+    rw [← univ_sigma_preimage_mk S]
     refine sigma_mono rfl.subset fun i ↦ ?_
     rw [sigma_subset_iff] at h
     rw [(hJs i).1.eq_of_subset_indep (hS i) (h <| mem_univ i)]
     exact preimage_mono hSX
 
   subset_ground B hB := by
-    rw [← univ_sigma_preimage B]
+    rw [← univ_sigma_preimage_mk B]
     apply sigma_mono Subset.rfl fun i ↦ (hB i).subset_ground
 
 @[simp] lemma sigma_indep_iff {I} :

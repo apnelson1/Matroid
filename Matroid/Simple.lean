@@ -43,8 +43,10 @@ lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     {f | M.Parallel e f} = {e} := by
   simp_rw [parallel_iff_eq he, setOf_eq_eq_singleton']
 
-@[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) : M.closure {e} = {e} := by
-  rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, closure_empty_eq_empty, union_empty]
+@[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
+    M.closure {e} = {e} := by
+  rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, closure_empty_eq_empty,
+    union_empty]
 
 /-- We need `RkPos` or something similar here, since otherwise the matroid whose only element is
   a loop is a counterexample. -/
@@ -60,7 +62,8 @@ lemma simple_iff_closure_subset_self_forall [RkPos M] :
   rw [simple_iff_loopless_eq_of_parallel_forall, and_iff_right hl]
   exact fun e f hp ↦ (h _ hp.nonloop_right) hp.mem_closure
 
-lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) : M.closure X = X := by
+lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) :
+    M.closure X = X := by
   obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
   · exact M.closure_empty_eq_empty
   exact closure_singleton_eq he
@@ -223,8 +226,8 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
     exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
       (contract_minor_of_mem _ hfC)
   apply h
-  rw [parallel_iff, contract_closure_eq, contract_closure_eq, ← closure_union_closure_left_eq, hef.closure_eq_closure,
-    closure_union_closure_left_eq, and_iff_left rfl]
+  rw [parallel_iff, contract_closure_eq, contract_closure_eq, ← closure_union_closure_left_eq,
+    hef.closure_eq_closure, closure_union_closure_left_eq, and_iff_left rfl]
   exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
 
 lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=
@@ -233,7 +236,8 @@ lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : 
 -- @[simp] lemma simple_uniqueBaseOn_iff {I E : Set α} : (uniqueBaseOn I E).Simple ↔ E ⊆ I := by
 --   simp only [simple_iff_forall_pair_indep, uniqueBaseOn_ground, mem_singleton_iff,
 --     uniqueBaseOn_indep_iff', subset_inter_iff]
---   refine ⟨fun h x hxE ↦ by simpa using (h hxE hxE).1, fun h {e f} he hf ↦ ⟨subset_trans ?_ h, ?_⟩⟩
+--   refine ⟨fun h x hxE ↦ by simpa using (h hxE hxE).1, fun h {e f} he hf ↦
+-- ⟨subset_trans ?_ h, ?_⟩⟩
 --   <;> rintro x (rfl | rfl) <;> assumption
 
 -- instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
