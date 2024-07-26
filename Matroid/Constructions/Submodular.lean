@@ -6,6 +6,8 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 open Finset
 
+namespace Matroid
+
 variable {α β : Type*}
 
 -- Should this be predicate or class?
@@ -114,7 +116,7 @@ structure PolymatroidFn [Lattice α] [Bot α] [LinearOrderedAddCommMonoid β] (f
 
 variable {f : Finset α → ℤ}
 
-@[simps!] def ofPolymatroidFn [DecidableEq α] (h : PolymatroidFn f) :=
+@[simps!] def ofPolymatroidFn [DecidableEq α] (h : PolymatroidFn f) : Matroid α :=
   ofSubmodular h.submodular h.mono
 
 @[simp] theorem indep_ofPolymatroidFn_iff [DecidableEq α] (hf : PolymatroidFn f) (I : Finset α) :
@@ -147,6 +149,7 @@ private theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidF
   simp only [not_nonempty_iff_eq_empty] at hY_nonempty
   rw [hY_nonempty, card_empty, ← bot_eq_empty, hf.zero_at_bot]
   simp only [Nat.cast_zero, sub_zero, zero_add, le_refl]
+
 
 -- proposition 11.1.7
 theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset α) :
