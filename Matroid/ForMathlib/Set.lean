@@ -93,3 +93,6 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
   refine diff_subset.ssubset_of_ne fun h_eq ↦ ?_
   rw [sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right hst] at h_eq
   simp [h_eq] at hs
+
+theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
+  subset_antisymm (by simp) (image_subset f (subset_preimage_image _ _))

@@ -775,7 +775,9 @@ end projection
 section LinearClass
 
 /-
-TODO. I think linear classes only work for finite matroids; if `B` and `B'` are disjoint infinite bases of `M`, the class of hyperplanes `H` with `B\H` finite ought not to be a linear class, but I don't know what reasonable definition would forbid that.
+TODO. I think linear classes only work for finite matroids; if `B` and `B'` are disjoint infinite
+bases of `M`, the class of hyperplanes `H` with `B\H` finite ought not to be a linear class,
+but I don't know what reasonable definition would forbid that.
 -/
 
 -- def LinearClass (M : Matroid α) where
