@@ -249,8 +249,8 @@ lemma mem_closure_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
 
 lemma mem_closure_iff_exists_circuit_of_not_mem (he : e ∉ X) :
     e ∈ M.closure X ↔ ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ insert e X := by
-  rw [← closure_inter_ground, mem_closure_iff_mem_or_exists_circuit, mem_inter_iff, iff_false_intro he,
-    false_and_iff, false_or_iff]
+  rw [← closure_inter_ground, mem_closure_iff_mem_or_exists_circuit, mem_inter_iff,
+    iff_false_intro he, false_and_iff, false_or_iff]
   refine ⟨
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, h.trans ((insert_subset_insert inter_subset_left))⟩,
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, (subset_inter h hC.subset_ground).trans ?_⟩⟩
