@@ -322,7 +322,8 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
 
 -- theorem 11.2.3
 theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
-    {A : ι → Finset α} (hA_nonempty : ∀ i, (A i).Nonempty)
+    {A : ι → Finset α}
+    (hA_nonempty : ∀ i, (A i).Nonempty)
     {f : Finset α → ℕ} (hf_submodular : Submodular f) (hf_mono : Monotone f) :
     (∃ e : ι → α, (∀ i : ι, e i ∈ A i) ∧ (∀ K : Finset ι, K.card ≤ f (Finset.image e K))) ↔
     (∀ K : Finset ι, K.card ≤ f (K.biUnion A)) := by
@@ -873,6 +874,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
       replace hx := hx.2
       replace hy := hy.2
       simp only [mem_coe, mem_image_univ_iff_mem_range] at hx hy
+
       split at hxy
       <;> split at hxy
       next h₁ h₂ =>
@@ -882,15 +884,13 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
         rw [hf_inj.left_inv_of_invOfMemRange, hf_inj.left_inv_of_invOfMemRange] at hxy
         rwa [Classical.choose_spec h₁, Classical.choose_spec h₂] at hxy
       next h₁ h₂ =>
-        have : ∃ (a : ↑(Set.range f)), ↑a = y := by exact Set.exists_subtype_range_iff.mpr hy
-        exfalso
-        exact h₂ this
+        exact False.elim <| h₂ <| Set.exists_subtype_range_iff.mpr hy
       next h₁ h₂ =>
-        have : ∃ (a : ↑(Set.range f)), ↑a = x := by exact Set.exists_subtype_range_iff.mpr hx
+        have : ∃ (a : ↑(Set.range f)), ↑a = x := Set.exists_subtype_range_iff.mpr hx
         exfalso
         exact h₁ this
       next h₁ h₂ =>
-        have : ∃ (a : ↑(Set.range f)), ↑a = y := by exact Set.exists_subtype_range_iff.mpr hy
+        have : ∃ (a : ↑(Set.range f)), ↑a = y := Set.exists_subtype_range_iff.mpr hy
         exfalso
         exact h₂ this
     rw [← add_le_add_iff_left T.card]
@@ -911,8 +911,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
     symm
     exact (Nat.sub_eq_iff_eq_add hd).mp hT'_card.symm
   obtain ⟨T, hT⟩ := M.exists_basis' (image e univ)
-  have : Fintype T := by
-    exact finite_toSet (image e univ) |>.subset hT.subset |>.fintype
+  have : Fintype T := finite_toSet (image e univ) |>.subset hT.subset |>.fintype
   use T.toFinset
   simp only [Set.coe_toFinset]
   refine ⟨?_, hT.indep, ?_⟩
@@ -926,6 +925,5 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
 -- theorem 11.2.1
 theorem halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α] (A : ι → Finset α) :
     (∃ e, Transversal e A) ↔ (∀ K : Finset ι, K.card ≤ (K.biUnion A).card) := by
-  have h := rado (freeOn Set.univ) A
-  simp only [freeOn_indep_iff, Set.subset_univ, and_true, freeOn_r_eq, Set.ncard_coe_Finset] at h
-  assumption
+  simpa only [freeOn_indep_iff, Set.subset_univ, and_true, freeOn_r_eq, Set.ncard_coe_Finset]
+    using rado (freeOn Set.univ) A
