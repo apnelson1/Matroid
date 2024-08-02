@@ -40,35 +40,23 @@ def AdjIndep' (M : Matroid α) (Adj : α → β → Prop) (I : Set β) :=
       refine fun v hv ↦ hm.2 v (hJ hv)
 
 
-def N_singleton [Fintype α] (Adj : α → β → Prop) (v : β) := {u | Adj u v}
+def N_singleton (Adj : α → β → Prop) (v : β) := {u | Adj u v}
+def N (Adj : α → β → Prop) (V : Set β) := {u | ∃ v ∈ V, Adj u v}
 
 protected def Union [DecidableEq α] (Ms : ι → Matroid α) : Matroid α :=
-  (Matroid.prod Ms).adjMap (fun x y ↦ x.2 = y) univ
+  (Matroid.sum' Ms).adjMap (fun x y ↦ x.2 = y) univ
 
--- lemma union_indep_Finset {Ms : ι → Matroid α} {I : Finset α} (hI : (Matroid.Union Ms).Indep I) :
---     ∃ Is : ι → Set α, ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i) := by
---     simp only [Matroid.Union, adjMap_indep_iff, AdjIndep, prod_indep_iff, exists_and_left,
---     subset_univ, and_true] at hI
---     obtain heq | hne := eq_or_ne I ∅
---     · refine ⟨(fun ι ↦ ∅), by simp only [iUnion_empty, heq, Finset.coe_empty,
---       empty_indep, implies_true, and_self]⟩
---     · simp only [hne, false_or] at hI
---       obtain ⟨I', h, ⟨f, hB, hAdj⟩⟩ := hI
---       refine ⟨(fun i ↦ (Prod.mk i ⁻¹' I') : ι → Set α), (BijOn.image_eq hB) ▸ ?_, h⟩
---       refine subset_antisymm (fun v hv ↦ ?_) (fun v hv ↦ ?_)
---       · simp only [mem_iUnion, mem_preimage, mem_image] at hv
---         obtain ⟨i, x, hx, h⟩ := hv
---         specialize hAdj x hx
---         simp only [h ▸ hAdj ▸ hx]
---       · specialize hAdj v hv
---         simp only [mem_iUnion, mem_preimage, mem_image]
---         refine ⟨(f v).1, v, hv, ?_⟩
---         nth_rw 3 [← hAdj]
+protected def TwoUnion [DecidableEq α] (M : Matroid α) (N : Matroid α) : Matroid α :=
+  Matroid.Union (Bool.rec M N)
+
+-- protected def TwoUnion [DecidableEq α] (M₁ : Matroid α) (M₂ : Matroid α) : Matroid α :=
+--   (M₁.sum M₂).adjMap (fun x y ↦  x = .inl y ∨ x = .inr y) univ
+
 
 lemma union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matroid α} {I : Set α}
     (hI : (Matroid.Union Ms).Indep I) :
     ∃ Is : ι → Set α, ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i) := by
-    simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', prod_indep_iff, exists_and_left,
+    simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', sum'_indep_iff, exists_and_left,
     subset_univ, and_true] at hI
     obtain heq | hne := eq_or_ne I ∅
     · refine ⟨(fun _ ↦ ∅), by simp only [iUnion_empty, heq, empty_indep, implies_true,
@@ -86,6 +74,16 @@ lemma union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matro
         refine ⟨(f v).1, v, hv, ?_⟩
         nth_rw 3 [← hAdj]
 
+lemma finset_union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι → Matroid α}
+  {I : Finset α} (hI : (Matroid.Union Ms).Indep I) : ∃ Is : ι → Finset α,
+  ⋃ (i : ι), Is i = (I : Set α)  ∧ ∀ i : ι , (Ms i).Indep (Is i) := by
+  classical
+  obtain ⟨Is, hIs, hI⟩ := union_indep hI
+  refine ⟨fun i ↦ (Is i).toFinset, by simp only [coe_toFinset, hIs],
+    by simp only [coe_toFinset, hI, implies_true]⟩
+
+
+
 lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
   {I : Set α} (Is : ι → Set α) (hD : univ.PairwiseDisjoint Is)
   (hI : ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
@@ -93,7 +91,7 @@ lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms
     simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', subset_univ, and_true]
     obtain rfl | h := eq_or_ne I ∅
     · simp only [true_or]
-    · simp only [h, prod_indep_iff, exists_and_left, false_or]
+    · simp only [h, exists_and_left, false_or, sum'_indep_iff]
       refine ⟨{(i, v) | (i ∈ univ) ∧ v ∈ Is i}, fun i ↦ ?_, ?_⟩
       simp only [mem_univ, true_and, preimage_setOf_eq, setOf_mem_eq, hI.2 i]
       simp_rw [IsMatching, mem_univ, true_and]
@@ -121,12 +119,12 @@ lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms
       simp only [show (Function.invFunOn f {x | x.2 ∈ Is x.1} v).2 =
         f (Function.invFunOn f {x | x.2 ∈ Is x.1} v) by rfl, Function.invFunOn_eq (himage ▸ hv)]
 
--- lemma finset_union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
---     {I : Finset α} (Is : ι → Finset α) (hD : univ.PairwiseDisjoint Is)
---     (hI : (⋃ (i : ι), Is i).toFinset = I ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
---     (Matroid.Union Ms).Indep I := by
---   apply union_indep' (fun i ↦ Is i) (by simpa)
---   simp [← hI.1, coe_toFinset, true_and, hI.2]
+lemma finset_union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
+    {I : Finset α} (Is : ι → Finset α) (hD : univ.PairwiseDisjoint Is)
+    (hI : (⋃ (i : ι), Is i) = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
+    (Matroid.Union Ms).Indep I := by
+  apply union_indep' (fun i ↦ Is i) (by simpa)
+  simp [← hI.1, coe_toFinset, true_and, hI.2]
 
 lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → Matroid α} {I : Set α} :
     (Matroid.Union Ms).Indep I ↔
@@ -137,18 +135,100 @@ lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → 
       ⟨by simp [hJ ▸ iUnion_disjointed ▸ hU],
       fun i ↦ Matroid.Indep.subset (hI i) (disjointed_subset Is i)⟩
 
+lemma finunion_indep_iff [DecidableEq α] [Fintype α] [Fintype ι] [Nonempty α] [Nonempty ι]
+  {Ms : ι → Matroid α} {I : Finset α} : (Matroid.Union Ms).Indep I ↔
+    ∃ Is : ι → Finset α, ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i) := by
+    sorry
+
+
+lemma twounion_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {M₁ : Matroid α} {M₂ : Matroid α}
+  {I : Set α} :
+  (Matroid.TwoUnion M₁ M₂).Indep I ↔ ∃ I₁ I₂, I = I₁ ∪ I₂ ∧ M₁.Indep I₁ ∧ M₂.Indep I₂ := by
+  sorry
+
+
+-- lemma twounion_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {M₁ : Matroid α} {M₂ : Matroid α}
+--   {I : Set α} :
+--   (Matroid.TwoUnion M₁ M₂).Indep I ↔ ∃ I₁ I₂, I = I₁ ∪ I₂ ∧ M₁.Indep I₁ ∧ M₂.Indep I₂ := by
+--   classical
+--   simp only [Matroid.TwoUnion, adjMap_indep_iff', AdjIndep', sum_indep_iff, exists_and_left,
+--     subset_univ, and_true]
+--   refine Iff.intro (fun hI ↦ ?_) (fun hI ↦ ?_)
+--   · obtain rfl | hne := eq_or_ne I ∅
+--     · refine ⟨ ∅, ∅, by simp only [union_self, empty_indep, and_self]⟩
+--     · simp only [hne, false_or] at hI
+--       obtain ⟨I', ⟨hI1, hI2⟩, ⟨f, hb, hadj⟩⟩ := hI
+--       refine ⟨Sum.inl ⁻¹' (I' : Set (α ⊕ α)), Sum.inr ⁻¹' (I' : Set (α ⊕ α)), ?_,  hI1, hI2⟩
+--       simp only [← BijOn.image_eq hb]
+--       refine subset_antisymm (fun v hv ↦ ?_) (fun v hv ↦ ?_)
+--       · specialize hadj v hv
+--         simp only [mem_union, mem_preimage, mem_image]
+--         obtain inl | inr := hadj
+--         left
+--         exact ⟨v, hv, inl⟩
+--         right
+--         exact ⟨v, hv, inr⟩
+--       · simp only [mem_union, mem_preimage, mem_image] at hv
+--         obtain ⟨x, hx, inl⟩ | ⟨x, hx, inr⟩ := hv
+--         · specialize hadj x hx
+--           obtain inl' | inr' := hadj
+--           · rw [inl,  Sum.inl.inj_iff] at inl'
+--             exact inl' ▸ hx
+--           · simp only [inl] at inr'
+--         · specialize hadj x hx
+--           obtain inl' | inr' := hadj
+--           · simp only [inr] at inl'
+--           · rw [inr,  Sum.inr.inj_iff] at inr'
+--             exact inr' ▸ hx
+--   · obtain rfl | hne := eq_or_ne I ∅
+--     · simp only [true_or]
+--     · simp only [hne, false_or]
+--       obtain ⟨I₁,I₂, hI, hI1, hI2⟩ := hI
+--       rw [← union_diff_self] at hI
+--       rw [hI]
+--       refine ⟨(.inl '' I₁) ∪ (.inr '' (I₂ \ I₁)), ⟨?_, ?_⟩,
+--         fun x ↦ if x ∈ I₁ then .inl x else .inr x, ⟨fun x hx ↦ ?_ , ?_, ?_⟩, fun v hv ↦ ?_⟩
+--       · simp only [preimage_union, preimage_inl_image_inr, union_empty, preimage_image_eq
+--           I₁ Sum.inl_injective, hI1]
+--       · simp only [preimage_union, preimage_inr_image_inl, empty_union,
+--           preimage_image_eq (I₂ \ I₁) Sum.inr_injective,  Matroid.Indep.subset hI2 diff_subset]
+--       · simp only [mem_union, mem_image]
+--         obtain h1 | h2 := hx
+--         · left
+--           refine ⟨x, h1, by simp only [h1, ↓reduceIte]⟩
+--         · right
+--           refine ⟨x, h2, by simp only [h2.2, ↓reduceIte]⟩
+--       · refine fun x hx y hy hxy ↦ ?_
+--         obtain hx | hx := hx
+--         · obtain hy | hy := hy
+--           · simpa only [hx, ↓reduceIte, hy, Sum.inl.injEq] using hxy
+--           · simp only [hx, ↓reduceIte, hy.2] at hxy
+--         · obtain hy | hy := hy
+--           · simp only [hx.2, ↓reduceIte, hy] at hxy
+--           · simpa only [hx.2, ↓reduceIte, hy.2, Sum.inr.injEq] using hxy
+--       · refine fun x hx ↦ ?_
+--         simp only [union_diff_self, mem_image, mem_union]
+--         obtain inl | inr := hx
+--         · simp only [mem_image] at inl
+--           obtain ⟨x', hx', inl⟩ := inl
+--           refine ⟨x', by simp only [hx', true_or], by simp only [hx', ↓reduceIte, inl]⟩
+--         · simp only [mem_image] at inr
+--           obtain ⟨x', hx', inr⟩ := inr
+--           refine ⟨x', by simp only [hx'.1, or_true], by simp only [hx'.2, ↓reduceIte, inr]⟩
+--       · simp only [ite_eq_left_iff, imp_false, Decidable.not_not, ite_eq_right_iff, imp_false]
+--         tauto
 
 noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): PolymatroidFn M.r where
   submodular := M.r_submod
   mono := M.r_mono
   zero_at_bot := M.r_empty
 
-@[simp] theorem prod_er_eq_er_sum_on_indep {α ι : Type*} [Fintype ι] [Fintype α]
-  {Ms : ι → Matroid α} {I : Set (ι × α)} (h : (Matroid.prod Ms).Indep I):
-  (Matroid.prod Ms).er I = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' I) := by
+@[simp] theorem sum'_er_eq_er_sum_on_indep {α ι : Type*} [Fintype ι] [Fintype α]
+  {Ms : ι → Matroid α} {I : Set (ι × α)} (h : (Matroid.sum' Ms).Indep I):
+  (Matroid.sum' Ms).er I = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' I) := by
   classical
   rw [Indep.er h]
-  simp only [prod_indep_iff] at h
+  simp only [sum'_indep_iff] at h
   simp_rw [Indep.er (h _)]
   set f := fun x : ι × α ↦ x.1
   rw [← Finite.cast_ncard_eq I.toFinite,  I.ncard_eq_toFinset_card']
@@ -183,17 +263,17 @@ noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): Polymatroi
   simp only [← Finite.cast_ncard_eq {x_1 | (_, x_1) ∈ I}.toFinite, this, hcard, Nat.cast_sum]
 
 
-@[simp] theorem prod_er_eq_er_sum {α ι : Type*} [Fintype ι] [Fintype α]
+@[simp] theorem sum'_er_eq_er_sum {α ι : Type*} [Fintype ι] [Fintype α]
   (Ms : ι → Matroid α) (X : Set (ι × α)):
-  (Matroid.prod Ms).er X = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' X) := by
-  obtain ⟨I , hI⟩ := (Matroid.prod Ms).exists_basis' X
+  (Matroid.sum' Ms).er X = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' X) := by
+  obtain ⟨I , hI⟩ := (Matroid.sum' Ms).exists_basis' X
   have : ∀ i : ι, (Ms i).Basis' (Prod.mk i ⁻¹' I) (Prod.mk i ⁻¹' X)  := by
     intro i
     simp_all only [Basis', maximals, mem_setOf_eq, and_imp]
-    refine ⟨⟨(prod_indep_iff).mp hI.1.1 i, preimage_mono hI.1.2⟩, fun b hIb h h'↦ ?_⟩
+    refine ⟨⟨sum'_indep_iff.mp hI.1.1 i, preimage_mono hI.1.2⟩, fun b hIb h h'↦ ?_⟩
     have : (∀ (j : ι), (Ms j).Indep (Prod.mk j ⁻¹' (I ∪ (Prod.mk i '' b)))) := by
       intro j
-      by_cases h : j = i
+      by_cases h: j = i
       · rw [h, preimage_union]
         exact Matroid.Indep.subset hIb (union_subset h'
           (b.preimage_image_eq (Prod.mk.inj_left i)).subset)
@@ -202,24 +282,26 @@ noncomputable def PolymatroidFn_of_r (M : Matroid α) (_ : M.Finite): Polymatroi
           simp only [mem_preimage, mem_image, Prod.mk.injEq, exists_eq_right_right] at hx
           simp only [mem_empty_iff_false]
           simp_all only [not_true_eq_false]
-        simp only [preimage_union, this, union_empty, prod_indep_iff.mp hI.1.1 j]
-    obtain h'' := hI.2 (prod_indep_iff.mpr this)
+        simp only [preimage_union, this, union_empty, sum'_indep_iff.mp hI.1.1 j]
+    obtain h'' := hI.2 (sum'_indep_iff.mpr this)
       (union_subset hI.1.2 (subset_trans (image_mono h) (image_preimage_subset _ _)))
       subset_union_left
     exact subset_trans (subset_preimage_image _ _)
       (preimage_mono (union_subset_iff.mp h'').2)
   simp_rw [← Basis'.er hI, ← Basis'.er (this _)]
-  exact prod_er_eq_er_sum_on_indep hI.1.1
+  exact sum'_er_eq_er_sum_on_indep hI.1.1
 
-@[simp] theorem prod_r_eq_r_sum {α ι : Type*} [Fintype ι] [Fintype α]
+@[simp] theorem sum'_r_eq_r_sum {α ι : Type*} [Fintype ι] [Fintype α]
   (Ms : ι → Matroid α) (X : Set (ι × α)):
-  (Matroid.prod Ms).r X = ∑ i : ι, (Ms i).r (Prod.mk i ⁻¹' X) := by
-  obtain h := prod_er_eq_er_sum Ms X
+  (Matroid.sum' Ms).r X = ∑ i : ι, (Ms i).r (Prod.mk i ⁻¹' X) := by
+  obtain h := sum'_er_eq_er_sum Ms X
   rw [← Nat.cast_inj (R := ENat)]
   convert h
   rw [coe_r_eq]
   rw [Nat.cast_sum]
   simp_rw [coe_r_eq]
+
+
 
 theorem polymatroid_of_adjMap [DecidableEq β] [Nonempty α] [Fintype α] [Fintype β] (M : Matroid α)
  (Adj : α → β → Prop) : ∃f, ∃h : (PolymatroidFn f), ofPolymatroidFn h = M.adjMap Adj univ ∧
@@ -363,13 +445,53 @@ theorem matroid_partition [DecidableEq α] [Nonempty α] [Nonempty ι] [Fintype 
     (Finset.univ \ Y).card) := by
     classical
     simp only [Matroid.Union]
-    obtain ha := adjMap_rank_eq (Matroid.prod Ms) (fun x y ↦ x.2 = y)
-    simp_rw [prod_r_eq_r_sum] at ha
+    obtain ha := adjMap_rank_eq (Matroid.sum' Ms) (fun x y ↦ x.2 = y)
+    simp_rw [sum'_r_eq_r_sum] at ha
     simp only [exists_eq_right', preimage_setOf_eq, Finset.setOf_mem] at ha
     exact ha
 
+theorem twomatroid_partition [DecidableEq α] [Nonempty α] [Fintype α]
+  (M₁ : Matroid α) (M₂ : Matroid α) : (∃ Y : Finset α, M₁.r Y + M₂.r Y + (Finset.univ \ Y).card ≤
+    (Matroid.TwoUnion M₁ M₂).rk) ∧ (∀ Y : Finset α, (Matroid.TwoUnion M₁ M₂).rk ≤ M₁.r Y + M₂.r Y +
+    (Finset.univ \ Y).card) := by
+    simp only [Matroid.TwoUnion, Matroid.Union]
+    obtain ha := adjMap_rank_eq (Matroid.sum' fun t ↦ Bool.rec M₁ M₂ t) (fun x y ↦ x.2 = y)
+    simp_rw [sum'_r_eq_r_sum] at ha
+    simp only [exists_eq_right', preimage_setOf_eq, Finset.setOf_mem] at ha
+    sorry
+
+theorem twomatroid_partition' [DecidableEq α] [Nonempty α] [Fintype α]
+  (M₁ : Matroid α) (M₂ : Matroid α) : ∃ Y : Set α, M₁.er Y + M₂.er Y + (univ \ Y).encard =
+    (Matroid.TwoUnion M₁ M₂).erk := by
+  obtain ⟨⟨Y, hY⟩, h⟩ := twomatroid_partition M₁ M₂
+  have : ∀ Y : Finset α, (Finset.univ \ Y).card = (univ \ Y.toSet).ncard := by
+    intro Y
+    rw [← Finset.coe_univ, ← Finset.coe_sdiff, ncard_coe_Finset]
+  simp_rw [← coe_r_eq, ← coe_rk_eq,
+    ← Finite.cast_ncard_eq (Finite.subset (toFinite univ) (subset_univ _)), ← Nat.cast_add,
+    Nat.cast_inj]
+  refine ⟨Y, le_antisymm (by simp only [← this _, hY]) (by simp only [← this _, h Y])⟩
+
+lemma base_inter_encard_eq [DecidableEq α] {M₁ : Matroid α} {M₂ : Matroid α} {B₁ : Set α} {B₂ : Set α}
+  (h₁ : M₁.Base B₁) (h₂ : M₂.Base B₂) (ground_eq : M₁.E = M₂.E) : (B₁ ∩ B₂).encard + M₂.dual.erk =
+  (B₁ ∪ (M₂.E \ B₂)).encard  := by
+  rw [← Base.encard_compl_eq h₂, ← encard_union_add_encard_inter, inter_assoc, inter_diff_self,
+    inter_empty, encard_empty, add_zero, inter_union_distrib_right, union_diff_self,
+    union_eq_self_of_subset_left (Base.subset_ground h₂), inter_eq_self_of_subset_left <|
+    union_subset (ground_eq ▸ (Base.subset_ground h₁)) diff_subset]
+
+
+lemma union_base_eq_base_union [DecidableEq α] [Fintype α] [Nonempty α] {M : Matroid α}
+{N : Matroid α} : ∃ B C : Set α, (Matroid.TwoUnion M N).Base (B ∪ C):= by
+  simp [base_iff_maximal_indep]
+  obtain ⟨B, hB⟩ := (M.TwoUnion N).exists_base
+  sorry
+
+lemma asdf [DecidableEq α] [Fintype α] [Nonempty α] {M : Matroid α} {N : Matroid α} : 1 = 1 := by rfl
+
 
 theorem matroid_intersection [DecidableEq α] (M₁ : Matroid α) (M₂ : Matroid α)
-  (ground_eq : M₁.E = M₂.E) : ∀ k, (∃ I ⊆ M₁.E, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = k) ↔
-  ∀ X ⊆ M₁.E, k ≤ M₁.er X + M₂.er (M₂.E \ X) :=
+  (ground_eq : M₁.E = M₂.E) : ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.er X + M₂.er (M₂.E \ X)
+  := by
+
   sorry
