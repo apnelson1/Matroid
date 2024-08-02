@@ -46,9 +46,13 @@ def N (Adj : α → β → Prop) (V : Set β) := {u | ∃ v ∈ V, Adj u v}
 protected def Union [DecidableEq α] (Ms : ι → Matroid α) : Matroid α :=
   (Matroid.sum' Ms).adjMap (fun x y ↦ x.2 = y) univ
 
-protected def TwoUnion [DecidableEq α] (M : Matroid α) (N : Matroid α) : Matroid α :=
+protected def union [DecidableEq α] (M : Matroid α) (N : Matroid α) : Matroid α :=
   Matroid.Union (Bool.rec M N)
 
+@[simp] lemma Union_empty [DecidableEq α] [IsEmpty ι] (Ms : ι → Matroid α) :
+    Matroid.Union Ms = loopyOn univ := by
+  simp [eq_iff_indep_iff_indep_forall, Matroid.Union, adjMap, IndepMatroid.ofFinset, AdjIndep]
+  sorry
 -- protected def TwoUnion [DecidableEq α] (M₁ : Matroid α) (M₂ : Matroid α) : Matroid α :=
 --   (M₁.sum M₂).adjMap (fun x y ↦  x = .inl y ∨ x = .inr y) univ
 
@@ -82,12 +86,14 @@ lemma finset_union_indep [DecidableEq α] [Fintype α] [Nonempty ι] {Ms : ι �
   refine ⟨fun i ↦ (Is i).toFinset, by simp only [coe_toFinset, hIs],
     by simp only [coe_toFinset, hI, implies_true]⟩
 
-
-
-lemma union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty α] {Ms : ι → Matroid α}
+lemma union_indep' [DecidableEq α] [Fintype α] {Ms : ι → Matroid α}
   {I : Set α} (Is : ι → Set α) (hD : univ.PairwiseDisjoint Is)
   (hI : ⋃ (i : ι), Is i = (I : Set α) ∧ ∀ (i : ι), (Ms i).Indep (Is i)) :
     (Matroid.Union Ms).Indep I := by
+    obtain hα | hα := isEmpty_or_nonempty α
+    · simp [eq_empty_of_isEmpty I]
+    obtain hι | hι := isEmpty_or_nonempty ι
+    · sorry
     simp only [Matroid.Union, adjMap_indep_iff', AdjIndep', subset_univ, and_true]
     obtain rfl | h := eq_or_ne I ∅
     · simp only [true_or]
@@ -126,7 +132,7 @@ lemma finset_union_indep' [DecidableEq α] [Fintype α] [Nonempty ι] [Nonempty 
   apply union_indep' (fun i ↦ Is i) (by simpa)
   simp [← hI.1, coe_toFinset, true_and, hI.2]
 
-lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → Matroid α} {I : Set α} :
+lemma union_indep_iff_aux [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → Matroid α} {I : Set α} :
     (Matroid.Union Ms).Indep I ↔
     ∃ Is : ℕ → Set α, ⋃ (i : ℕ), Is i = (I : Set α) ∧ ∀ (i : ℕ), (Ms i).Indep (Is i) := by
     refine iff_def'.mpr ⟨fun ⟨Is, hU, hI⟩ ↦ ?_, union_indep⟩
@@ -134,6 +140,10 @@ lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ℕ → 
     refine union_indep' Js (Pairwise.set_pairwise (hJ ▸ (disjoint_disjointed Is)) univ)
       ⟨by simp [hJ ▸ iUnion_disjointed ▸ hU],
       fun i ↦ Matroid.Indep.subset (hI i) (disjointed_subset Is i)⟩
+
+-- lemma union_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {Ms : ι → Matroid α} {I : Set α} :
+--     (Matroid.Union Ms).Indep I ↔
+--     ∃ Is : ι → Set α, ⋃ i, Is i = (I : Set α) ∧ ∀ i, (Ms i).Indep (Is i) := by
 
 lemma finunion_indep_iff [DecidableEq α] [Fintype α] [Fintype ι] [Nonempty α] [Nonempty ι]
   {Ms : ι → Matroid α} {I : Finset α} : (Matroid.Union Ms).Indep I ↔
@@ -143,7 +153,7 @@ lemma finunion_indep_iff [DecidableEq α] [Fintype α] [Fintype ι] [Nonempty α
 
 lemma twounion_indep_iff [DecidableEq α] [Fintype α] [Nonempty α] {M₁ : Matroid α} {M₂ : Matroid α}
   {I : Set α} :
-  (Matroid.TwoUnion M₁ M₂).Indep I ↔ ∃ I₁ I₂, I = I₁ ∪ I₂ ∧ M₁.Indep I₁ ∧ M₂.Indep I₂ := by
+  (Matroid.union M₁ M₂).Indep I ↔ ∃ I₁ I₂, I = I₁ ∪ I₂ ∧ M₁.Indep I₁ ∧ M₂.Indep I₂ := by
   sorry
 
 
