@@ -3,7 +3,7 @@ import Mathlib.Data.Matroid.Restrict
 import Mathlib.Data.Fintype.Basic
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Function
-import Matroid.ForMathlib.MatroidBasic
+import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Rank
 
 open Set Function
