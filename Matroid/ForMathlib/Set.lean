@@ -98,11 +98,12 @@ theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f
   subset_antisymm (by simp) (image_subset f (subset_preimage_image _ _))
 
 theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
-    ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i := by
+    ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
   choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp
   use fun i ↦ {x ∈ s i | ∃ (h : x ∈ s i), f x (mem_iUnion_of_mem i h) = i}
-  refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| by simp) ?_⟩
+  refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| by simp) ?_,
+    fun i ↦ by simp only [sep_subset]⟩
   · simp only [mem_setOf_eq, not_and, not_exists, and_imp, forall_exists_index]
     exact fun a _ hfa hfi _ hfj haj ↦ hij <| by rw [← hfi, haj]
-  simp only [iUnion_subset_iff]
-  exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
+  · simp only [iUnion_subset_iff]
+    exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
