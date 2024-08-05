@@ -82,7 +82,7 @@ lemma not_mem_or_exists_eq_insert_not_mem (s : Set α) (x : α) :
 
 lemma biInter_diff_singleton_eq_diff (s : Set α) {t : Set α} (ht : t.Nonempty) :
     ⋂ (i ∈ t), s \ {i} = s \ t := by
-  simp only [ext_iff, mem_iInter, mem_diff, mem_singleton_iff]
+  simp only [Set.ext_iff, mem_iInter, mem_diff, mem_singleton_iff]
   exact fun x ↦ ⟨fun h ↦ ⟨(h _ ht.some_mem).1, fun hxt ↦ (h x hxt).2 rfl⟩,
     fun h y hyt ↦ ⟨h.1, fun hxy ↦ h.2 <| hxy.symm ▸ hyt⟩⟩
 
