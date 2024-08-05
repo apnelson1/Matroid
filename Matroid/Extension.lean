@@ -1,5 +1,5 @@
 import Matroid.ForMathlib.Order.Minimal
-import Matroid.ForMathlib.MatroidBasic
+import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Modular
 
 /-
