@@ -221,7 +221,7 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
   obtain ⟨I , hI⟩ := (Matroid.sum' Ms).exists_basis' X
   have : ∀ i : ι, (Ms i).Basis' (Prod.mk i ⁻¹' I) (Prod.mk i ⁻¹' X)  := by
     intro i
-    simp_all only [Basis', maximals, mem_setOf_eq, and_imp]
+    simp_all only [Basis', Maximal, mem_setOf_eq, and_imp]
     refine ⟨⟨sum'_indep_iff.mp hI.1.1 i, preimage_mono hI.1.2⟩, fun b hIb h h'↦ ?_⟩
     have : (∀ (j : ι), (Ms j).Indep (Prod.mk j ⁻¹' (I ∪ (Prod.mk i '' b)))) := by
       intro j
@@ -440,7 +440,6 @@ theorem matroid_partition' [DecidableEq α] [Fintype α]
     simp_rw [add_comm] at ha
     exact ha
 
-
 theorem matroid_partition_er' [DecidableEq α] [Fintype α]
   (M₁ : Matroid α) (M₂ : Matroid α) : ∃ Y : Set α, M₁.er Y + M₂.er Y + (univ \ Y).encard =
     (Matroid.union M₁ M₂).erk := by
@@ -461,7 +460,6 @@ lemma base_inter_encard_eq [DecidableEq α] {M₁ : Matroid α} {M₂ : Matroid 
     union_eq_self_of_subset_left (Base.subset_ground h₂), inter_eq_self_of_subset_left <|
     union_subset (ground_eq ▸ (Base.subset_ground h₁)) diff_subset]
 
-
 lemma exists_union_base_of_indep_union [DecidableEq α] [Fintype α] (M : Matroid α)
   (N : Matroid α) : ∃ B C : Set α, (Matroid.union M N).Base (B ∪ C) ∧ M.Indep B ∧ N.Indep C:= by
   obtain ⟨D, hD⟩ := (M.union N).exists_base
@@ -475,53 +473,85 @@ lemma exists_union_base_of_base_union [DecidableEq α] [Fintype α] (M : Matroid
   obtain ⟨_, hmax⟩ := base_iff_maximal_indep.mp h'
   obtain ⟨B', hB', hBsub⟩ := Indep.subset_basis'_of_subset hB (@subset_union_left α B C)
   have hBB': M.Base B' := by
-    refine base_iff_maximal_indep.mpr ⟨Basis'.indep hB', ?_⟩
+    rw [base_iff_maximal_indep, maximal_subset_iff', and_iff_right hB'.indep]
     contrapose! hmax
     obtain ⟨I, hI, hsub, hne⟩ := hmax
     refine ⟨I ∪ C, union_indep_iff'.mpr ⟨I, C, rfl, hI, hC⟩, union_subset_union_left C <|
        subset_trans hBsub hsub, ?_⟩
     contrapose! hne
-    simp only [Basis', maximals, mem_setOf] at hB'
-    exact subset_antisymm hsub (hB'.2 ⟨hI, (union_subset_iff.mp <| superset_of_eq hne).1⟩ hsub)
+    simp only [Basis', maximal_subset_iff', mem_setOf] at hB'
+    refine hB'.2 ⟨hI, subset_union_left.trans hne⟩ hsub
   obtain ⟨C', hC', hCsub⟩ := Indep.subset_basis'_of_subset hC (@subset_union_left α C B)
   have hBC': N.Base C' := by
-    refine base_iff_maximal_indep.mpr ⟨Basis'.indep hC', ?_⟩
+    rw [base_iff_maximal_indep, maximal_subset_iff', and_iff_right hC'.indep]
     contrapose! hmax
     obtain ⟨I, hI, hsub, hne⟩ := hmax
     refine ⟨B ∪ I, union_indep_iff'.mpr ⟨B, I, rfl, hB, hI⟩, union_subset_union_right B <|
        subset_trans hCsub hsub, ?_⟩
     contrapose! hne
-    simp only [Basis', maximals, mem_setOf] at hC'
-    exact subset_antisymm hsub (hC'.2 ⟨hI, union_comm B C ▸
-      (union_subset_iff.mp <| superset_of_eq hne).2⟩ hsub)
+    simp only [Basis', maximal_subset_iff', mem_setOf] at hC'
+    refine hC'.2 ⟨hI, (subset_union_right.trans hne).trans_eq (union_comm ..)⟩ hsub
   have heq : B' ∪ C' = B ∪ C := subset_antisymm (union_subset_iff.mpr ⟨Basis'.subset hB',
     union_comm B C ▸ Basis'.subset hC'⟩) (union_subset_union hBsub hCsub)
   exact ⟨ B', C', heq ▸ h', hBB', hBC'⟩
 
-theorem dual_rank (M : Matroid α) (X : Set α) : M.dual.er X + M.erk = M.er (M.E \ X) + X.encard :=by
-  sorry
-
-theorem ground_eq_erk_sum (M : Matroid α) : M.E.encard = M.erk + M.dual.erk := by
-  sorry
-
-
-theorem matroid_intersection [DecidableEq α] [Fintype α] (M : Matroid α) (N : Matroid α)
-  (ground_eq : M.E = N.E) (ground_univ : N.E = univ) : ∃ I X, M.Indep I ∧ N.Indep I ∧ I.encard =
-  M.er X + N.er (univ \ X):= by
+theorem matroid_intersection_aux [Fintype α] (M : Matroid α) (N : Matroid α) (ground_eq : M.E = N.E)
+    (ground_univ : N.E = univ) : ∃ I X, M.Indep I ∧ N.Indep I ∧ I.encard =
+    M.er X + N.er Xᶜ := by
+  classical
   obtain ⟨B, C, h, hB, hC⟩ := exists_union_base_of_base_union M N.dual
   obtain ⟨X, heq⟩ := matroid_partition_er' M N.dual
   obtain h' := base_inter_encard_eq hB (Base.compl_base_of_dual hC) ground_eq ▸ dual_ground ▸
     diff_diff_cancel_left (N.dual.subset_ground C hC) ▸ heq ▸ Base.encard h
   obtain hX := encard_diff_add_encard_of_subset <| subset_univ X
-  obtain hd := ground_univ ▸ dual_rank N X
-  obtain hg := ground_univ ▸ ground_eq_erk_sum N
+
+  obtain hd := ground_univ ▸ N.dual_er_add_erk X
+  obtain hg := ground_univ ▸ N.erk_add_dual_erk.symm
   refine ⟨B ∩ (N.E \ C), X, Matroid.Indep.subset (Matroid.Base.indep hB) inter_subset_left,
     Matroid.Indep.subset (Matroid.Base.indep (Base.compl_base_of_dual hC)) inter_subset_right, ?_⟩
-  have : (B ∩ (N.E \ C)).encard + N✶.erk + X.encard + N.erk =
+  have hcard : (B ∩ (N.E \ C)).encard + N✶.erk + X.encard + N.erk =
     M.er X + N✶.er X + (univ \ X).encard + X.encard + N.erk := by
     rw [h']
-  rw [add_comm, add_comm (B ∩ (N.E \ C)).encard, ← add_assoc, ← add_assoc, ← hg, add_assoc (M.er X),
+  -- have aux : _ + X.encard + (N.erk + N✶.erk)
+  --   = M.er X + (univ \ X).encard + X.encard + (N✶.er X + N.erk) := by
+  --   convert hcard using 1 <;> ac_rfl
+  -- rw [N.dual_er_add_erk, erk_add_dual_erk] at aux
+
+  rwa [add_comm, add_comm (B ∩ (N.E \ C)).encard, ← add_assoc, ← add_assoc, ← hg, add_assoc (M.er X),
      add_comm (N✶.er X), add_assoc (M.er X), add_assoc (univ \ X).encard, add_comm (N✶.er X),
      add_assoc (M.er X), add_assoc (univ \ X).encard, add_assoc X.encard, hd,
-     ← add_assoc (univ \ X).encard, hX, ← add_assoc univ.encard, add_comm (M.er X)] at this
-  sorry
+     ← add_assoc (univ \ X).encard, hX, ← add_assoc univ.encard, add_comm (M.er X),
+     add_assoc, add_assoc, add_assoc, WithTop.add_left_cancel_iff, add_comm (a := X.encard),
+     ← add_assoc, WithTop.add_right_cancel_iff, add_comm, ← compl_eq_univ_diff] at hcard
+  · exact encard_ne_top_iff.2 X.toFinite
+  exact encard_ne_top_iff.2 univ.toFinite
+
+theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
+    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.er X + M₂.er (M₂.E \ X) := by
+  suffices aux : ∀ (E : Set α) (M₁ M₂ : Matroid α), M₁.Finite → M₁.E = E → M₂.E = E →
+      ∃ I X, X ⊆ M₁.E ∩ M₂.E ∧  M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.er X + M₂.er (E \ X) by
+    obtain ⟨I, X, hX, hI₁, hI₂, hIX⟩ := aux M₁.E M₁ (M₂ ↾ M₁.E) (by assumption) rfl rfl
+    simp only [restrict_er_eq', inter_eq_self_of_subset_left diff_subset] at hIX
+    refine ⟨I, X ∪ (M₂.E \ M₁.E), hI₁, hI₂.of_restrict, ?_⟩
+    rw [← er_inter_ground_eq (X := _ \ _)] at hIX
+    sorry
+  clear! M₁ M₂
+  intro E M₁ M₂ hfin hM₁E hM₂E
+  classical
+  obtain ⟨I, X, hI₁, hI₂, hIX⟩ :=
+    @matroid_intersection_aux ↑E sorry (M₁.restrictSubtype E) (M₂.restrictSubtype E) rfl (by simp)
+  simp only [restrictSubtype, er_comap_eq, restrict_er_eq', image_val_inter_self_left_eq_coe,
+    image_val_compl, inter_eq_self_of_subset_left diff_subset] at hIX
+  refine ⟨I, X, by simp [hM₁E, hM₂E], (by simpa using hI₁), (by simpa using hI₂), ?_⟩
+  rwa [Subtype.val_injective.injOn.encard_image]
+
+
+
+  -- suffices aux1 : ∀ M₂' : Matroid α, M₂'.E = M₁.E →
+  --     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂'.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) by
+  --   obtain ⟨I, X, hX, hI, hI', hIcard⟩ := aux1 (M₂ ↾ M₁.E) rfl
+  --   refine ⟨I, (M₂.E \ M₁.E) ∪ X, hI, hI'.of_restrict, ?_⟩
+  --   rw [r_eq_r_inter_ground, union_inter_distrib_right, diff_inter_self, empty_union,
+  --     ← r_eq_r_inter_ground, ← diff_diff, diff_diff_right_self, diff_eq, inter_assoc]
+  --   sorry
+  -- intro M₂' h_eq

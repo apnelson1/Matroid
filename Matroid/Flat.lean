@@ -568,7 +568,7 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
       exact hne rfl )
     (forall_nonempty := by rintro _ ⟨_, hF₁, rfl⟩; exact exists_of_ssubset hF₁.ssubset )
     (eq_sUnion := by
-      simp only [sUnion_image, mem_setOf_eq, ext_iff, mem_diff, mem_iUnion, exists_and_left,
+      simp only [sUnion_image, mem_setOf_eq, Set.ext_iff, mem_diff, mem_iUnion, exists_and_left,
         exists_prop]
       exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
         hF.covBy_closure_insert heF, heF⟩,
@@ -757,46 +757,36 @@ lemma Hyperplane.flat_superset_eq_ground (hH : M.Hyperplane H) (hF : M.Flat F) (
     F = M.E := by rw [← hF.closure, hH.closure_eq_ground_of_ssuperset hHF]
 
 lemma hyperplane_iff_maximal_proper_flat :
-    M.Hyperplane H ↔ M.Flat H ∧ H ⊂ M.E ∧ ∀ F, H ⊂ F → M.Flat F → F = M.E := by
-  rw [hyperplane_iff_covBy, covBy_iff, and_iff_right M.ground_flat, and_congr_right_iff,
-    and_congr_right_iff]
-  simp_rw [or_iff_not_imp_left, ssubset_iff_subset_ne, and_imp]
-  exact fun _ _ _  ↦
-    ⟨fun h F hHF hne' hF ↦ h F hF hHF hF.subset_ground hne'.symm, fun h F hF hHF _ hne' ↦
-      h F hHF (Ne.symm hne') hF⟩
+    M.Hyperplane H ↔ Maximal (fun X ↦ M.Flat X ∧ X ⊂ M.E) H := by
+  simp_rw [hyperplane_iff_covBy, covBy_iff, and_iff_right M.ground_flat, maximal_subset_iff,
+    and_assoc, and_congr_right_iff, or_iff_not_imp_right]
+  exact fun _ _ ↦ ⟨fun h K hK hHK ↦ (h K hK.1 hHK hK.2.subset hK.2.ne).symm,
+    fun h F hF hHF _ hne ↦ Eq.symm <| h ⟨hF, hF.subset_ground.ssubset_of_ne hne⟩ hHF⟩
 
 lemma hyperplane_iff_maximal_nonspanning :
-    M.Hyperplane H ↔ H ∈ maximals (· ⊆ ·) {X | ¬M.Spanning X ∧ X ⊆ M.E} := by
-  simp_rw [and_comm (b := _ ⊆ _), mem_maximals_setOf_iff, and_imp]
-  refine ⟨fun h ↦ ⟨⟨h.subset_ground, h.not_spanning⟩, fun X hX hX' hHX ↦ ?_⟩, fun h ↦ ?_⟩
-  · exact by_contra fun hne ↦ hX' (h.spanning_of_ssuperset (hHX.ssubset_of_ne hne))
-  rw [hyperplane_iff_covBy, covBy_iff, and_iff_right M.ground_flat,
-    flat_iff_ssubset_closure_insert_forall h.1.1]
-  refine ⟨fun e he ↦ ?_, h.1.1.ssubset_of_ne (by rintro rfl; exact h.1.2 M.ground_spanning),
-    fun F hF hHF hFE ↦ or_iff_not_imp_right.mpr fun hFE' ↦ ?_⟩
-  · have h' := h.2 (insert_subset he.1 h.1.1)
-    simp only [subset_insert, forall_true_left, @eq_comm _ H, insert_eq_self, iff_false_intro he.2,
-      imp_false, Classical.not_not, spanning_iff_closure]  at h'
-    rw [spanning_iff_closure] at h'
-    rw [h', ← not_spanning_iff_closure h.1.1]
-    exact h.1.2
-  have h' := h.2 hFE
-  rw [hF.spanning_iff] at h'
-  rw [h' hFE' hHF]
+    M.Hyperplane H ↔ Maximal (fun X ↦ ¬ M.Spanning X ∧ X ⊆ M.E) H := by
+  rw [hyperplane_iff_maximal_proper_flat, iff_comm]
+  refine maximal_iff_maximal_of_imp_of_forall
+    (fun F hF ↦ ⟨fun hFs ↦ hF.2.ne (hF.1.eq_ground_of_spanning hFs), hF.2.subset⟩)
+    (fun S ⟨hS, hSE⟩ ↦ ⟨M.closure S, M.subset_closure S, M.closure_flat S,
+      (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
+  rwa [Spanning, and_iff_left hSE] at hS
 
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by
-  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, hyperplane_iff_maximal_nonspanning,
-    (and_comm (b := _ ⊆ _)), mem_minimals_setOf_iff, mem_maximals_setOf_iff,
-    diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
-  refine fun _ ↦ ⟨fun h X hXE hX hHX ↦ ?_, fun h X hX hXE hXH ↦ ?_⟩
-  · rw [← diff_diff_cancel_left hH, ← diff_diff_cancel_left hXE,
-      h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) diff_subset]
-    rw [← subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
-    exact hHX.trans subset_union_right
-  rw [h diff_subset hX, diff_diff_cancel_left hXE]
-  rw [subset_diff]
-  exact ⟨hH, hXH.symm⟩
+  rw [cocircuit_iff_minimal_compl_nonspanning, hyperplane_iff_maximal_nonspanning]
+  have := maximal_mem_image_antitone_iff ()
+  -- simp_rw [cocircuit_iff_minimal_nonspanning, hyperplane_iff_maximal_nonspanning,
+  --   (and_comm (b := _ ⊆ _)), minimal_subset_iff, maximal_subset_iff,
+  --   diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
+  -- refine fun _ ↦ ⟨fun h X hXE hX hHX ↦ ?_, fun h X hX hXE hXH ↦ ?_⟩
+  -- · rw [← diff_diff_cancel_left hH, ← diff_diff_cancel_left hXE,
+  --     h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) diff_subset]
+  --   rw [← subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
+  --   exact hHX.trans subset_union_right
+  -- rw [h diff_subset hX, diff_diff_cancel_left hXE]
+  -- rw [subset_diff]
+  -- exact ⟨hH, hXH.symm⟩
 
 @[simp] lemma compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by

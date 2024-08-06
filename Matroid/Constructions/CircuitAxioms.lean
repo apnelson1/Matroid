@@ -139,13 +139,12 @@ instance : Matroid.Finitary (M.matroid) := by
 
 @[simp] lemma matroid_circuit_iff : M.matroid.Circuit C ↔ M.Circuit C := by
   simp only [Matroid.circuit_def, Matroid.Dep, matroid_Indep, IndepMatroid.ofFinset_indep',
-    not_forall, Classical.not_imp, mem_minimals_iff, Set.mem_setOf_eq, coe_subset, and_imp,
-    forall_exists_index, exists_prop]
-
+    not_forall, Classical.not_imp, minimal_subset_iff, Set.mem_setOf_eq, coe_subset, and_imp,
+    forall_exists_index, exists_prop, matroid_E]
   refine ⟨fun ⟨⟨⟨D, hDC, hD⟩, hCE⟩, hmin⟩ ↦ ?_,
     fun h ↦ ⟨⟨⟨C, Subset.rfl,h.not_indep⟩, h.subset_ground⟩, fun X D hDX hD hX hXC ↦ ?_⟩⟩
   · obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hCE
-    rwa [coe_inj.1 <| hmin (y := C') C' Subset.rfl hC'.not_indep hC'.subset_ground
+    rwa [coe_inj.1 <| hmin (t := C') C' Subset.rfl hC'.not_indep hC'.subset_ground
       (by simpa using hCD'.trans hDC)]
 
   obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hX

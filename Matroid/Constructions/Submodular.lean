@@ -19,9 +19,9 @@ open Matroid
 -- prop 11.1.1
 @[simps!] def ofSubmodular [DecidableEq α] {f : Finset α → ℤ} (h_sub : Submodular f)
     (h_mono : Monotone f) : Matroid α := by
-  set Circuit := fun C ↦ C ∈ minimals (· ⊆ ·) {C | C.Nonempty ∧ f C < C.card}
-  have circuit_antichain := @minimals_antichain (Finset α) (· ⊆ ·) {C | C.Nonempty ∧ f C < C.card}
-    Finset.instIsAntisymmSubset
+  set Circuit := Minimal (fun X ↦ X.Nonempty ∧ f X < X.card)
+  have circuit_antichain := setOf_minimal_antichain (fun X ↦ X.Nonempty ∧ f X < X.card)
+
   have circuit_f_lt_card : ∀ ⦃C⦄, Circuit C → f C < C.card := fun C hC ↦ hC.1.2
   have indep_f_ge_card : ∀ ⦃I C⦄, Circuit C → I ⊂ C → I.Nonempty → I.card ≤ f I := by
     intro I C hC hI hI_nonempty
@@ -30,7 +30,7 @@ open Matroid
   exact FinsetCircuitMatroid.matroid <| FinsetCircuitMatroid.mk
     (E := Set.univ)
     (Circuit := Circuit)
-    (empty_not_circuit := fun h ↦ not_nonempty_empty (mem_minimals_iff.mp h).left.left)
+    (empty_not_circuit := fun h ↦ by simpa using h.1.1)
     (circuit_antichain := circuit_antichain)
     (circuit_elimination := by
       intro C₁ C₂ e hC₁ hC₂ h_ne he
@@ -87,8 +87,7 @@ open Matroid
 
 @[simp] theorem circuit_ofSubmodular_iff [DecidableEq α] {f : Finset α → ℤ}
     (h_sub : Submodular f) (h_mono : Monotone f) (C : Finset α) :
-    (ofSubmodular h_sub h_mono).Circuit C ↔
-    C ∈ minimals (· ⊆ ·) {C | C.Nonempty ∧ f C < C.card} := by
+    (ofSubmodular h_sub h_mono).Circuit C ↔ Minimal (fun X ↦ X.Nonempty ∧ f X < X.card) C := by
   unfold ofSubmodular
   simp only [FinsetCircuitMatroid.matroid_circuit_iff]
 

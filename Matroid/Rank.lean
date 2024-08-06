@@ -74,11 +74,16 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.erk := by
 @[simp] lemma er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [← hI.basis_inter_ground.encard, ← hI.encard]
 
-lemma er_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
+@[simp] lemma er_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
     (hX : X ⊆ M.E := by aesop_mat) : (M.map f hf).er (f '' X) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   rw [hI.er_eq_encard, (hI.map hf).er_eq_encard, (hf.mono hI.indep.subset_ground).encard_image]
 
+@[simp] lemma er_comap_eq {β : Type*} {f : α → β} (M : Matroid β) (X : Set α) :
+    (M.comap f).er X = M.er (f '' X) := by
+  obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
+  obtain ⟨hI', hinj, -⟩ := comap_basis'_iff.1 hI
+  rw [← hI.encard, ← hI'.encard, hinj.encard_image]
 
 -- lemma Iso.er_image_eq {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) (X : Set α)
 --     (hX : X ⊆ M.E := by aesop_mat) : N.er (e '' X) = M.er X := by
@@ -394,6 +399,33 @@ lemma er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
 
 lemma Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
   (hB.compl_base_dual).encard
+
+theorem dual_er_add_erk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M✶.er X + M.erk = M.er (M.E \ X) + X.encard := by
+  obtain ⟨I, hI⟩ := M✶.exists_basis X
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
+  obtain rfl : I = X ∩ B :=
+    hI.eq_of_subset_indep (hB.indep.inter_left X) (subset_inter hI.subset hIB) inter_subset_left
+  rw [inter_comm] at hI
+  have hIdual : M.Basis (M.E \ B ∩ (M.E \ X)) (M.E \ X) :=
+    by simpa using hB.inter_basis_iff_compl_inter_basis_dual.1 hI
+  rw [← hIdual.encard, ← hI.encard, ← hB.compl_base_of_dual.encard, ← encard_union_eq,
+    ← encard_union_eq]
+  · convert rfl using 2
+    ext x
+    simp only [mem_union, mem_inter_iff, mem_diff]
+    tauto
+  · exact disjoint_sdiff_left.mono_left inter_subset_right
+  exact disjoint_sdiff_right.mono_left inter_subset_left
+
+theorem dual_er_add_erk' (M : Matroid α) (X : Set α) :
+    M✶.er X + M.erk = M.er (M.E \ X) + (X ∩ M.E).encard := by
+  rw [← diff_inter_self_eq_diff, ← dual_er_add_erk .., ← dual_ground, er_inter_ground_eq]
+
+theorem erk_add_dual_erk (M : Matroid α) : M.erk + M✶.erk = M.E.encard := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [← hB.encard, ← hB.compl_base_dual.encard, ← encard_union_eq disjoint_sdiff_right,
+    union_diff_cancel hB.subset_ground]
 
 end Basic
 

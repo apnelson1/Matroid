@@ -316,7 +316,7 @@ lemma Indep.contract_dep_iff (hI : M.Indep I) :
     union_subset_iff, and_iff_left hI.subset_ground]
   tauto
 
-lemma Indep.union_contract_basis_union_of_basis (hI : M.Indep I) (hB : (M ／ I).Basis J X) :
+lemma Indep.union_basis_union_of_contract_basis (hI : M.Indep I) (hB : (M ／ I).Basis J X) :
     M.Basis (J ∪ I) (X ∪ I) := by
   have hi := hB.indep
   rw [hI.contract_indep_iff] at hi
@@ -334,11 +334,10 @@ lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I)) (hdj : 
     (M ／ I).Basis J X := by
   rw [disjoint_union_left] at hdj
   have hI := h.indep.subset subset_union_right
-  simp_rw [Basis, mem_maximals_setOf_iff, hI.contract_indep_iff, and_iff_right hdj.1,
+  simp_rw [Basis, maximal_subset_iff, hI.contract_indep_iff, and_iff_right hdj.1,
     and_iff_right h.indep, contract_ground, subset_diff, and_iff_left hdj.2,
     and_iff_left (subset_union_left.trans h.subset_ground), and_imp,
-    and_iff_right
-      (Disjoint.subset_left_of_subset_union (subset_union_left.trans h.subset) hdj.1)]
+    and_iff_right (Disjoint.subset_left_of_subset_union (subset_union_left.trans h.subset) hdj.1)]
   intro Y hYI hYi hYX hJY
   have hu :=
     h.eq_of_subset_indep hYi (union_subset_union_left _ hJY) (union_subset_union_left _ hYX)
