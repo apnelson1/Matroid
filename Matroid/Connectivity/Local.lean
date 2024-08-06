@@ -1,5 +1,5 @@
 import Matroid.Connectivity.Basic
-import Matroid.ForMathlib.MatroidMap
+import Matroid.ForMathlib.Matroid.Map
 
 open Set Set.Notation
 
