@@ -1,5 +1,4 @@
 
-import Matroid.Constructions.Sum
 import Mathlib.Data.Nat.Lattice
 import Matroid.Minor.Rank
 import Matroid.Flat

@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.Order.Minimal
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Modular
 

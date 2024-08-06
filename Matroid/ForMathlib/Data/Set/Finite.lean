@@ -6,22 +6,6 @@ open Set
 variable {α : Type*} {s : Set α}
 
 
-lemma infinite_iUnion {ι : Type*} [Infinite ι] {s : ι → Set α} (hs : Function.Injective s) :
-    (⋃ i, s i).Infinite :=
-  fun hfin ↦ @not_injective_infinite_finite ι _ _ hfin.finite_subsets.to_subtype
-    (fun i ↦ ⟨s i, subset_iUnion _ _⟩) fun i j h_eq ↦ hs (by simpa using h_eq)
-
-lemma Set.Infinite.biUnion {ι : Type*} {s : ι → Set α} {a : Set ι} (ha : a.Infinite)
-    (hs : a.InjOn s) : (⋃ i ∈ a, s i).Infinite := by
-  rw [biUnion_eq_iUnion]
-  have _ := ha.to_subtype
-  exact infinite_iUnion fun ⟨i,hi⟩ ⟨j,hj⟩ hij ↦ by simp [hs hi hj hij]
-
-lemma Set.Infinite.sUnion {s : Set (Set α)} (hs : s.Infinite) : (⋃₀ s).Infinite := by
-  rw [sUnion_eq_iUnion]
-  have _ := hs.to_subtype
-  exact infinite_iUnion Subtype.coe_injective
-
 -- lemma Infinite.exists_natEmbedding_initialSegment {α : Type*} [Infinite α] {n : ℕ}
 --     (f₀ : Fin n ↪ α) : ∃ f : ℕ ↪ α, ∀ i : Fin n, f₀ i = f i := by
 --   let g := (infinite_univ.diff (finite_range f₀)).natEmbedding

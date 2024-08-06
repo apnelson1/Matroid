@@ -1,7 +1,7 @@
 import Matroid.Rank
 import Matroid.ForMathlib.PreimageVal
 import Matroid.ForMathlib.Logic_Embedding_Set
-import Matroid.ForMathlib.MatroidBasic
+import Matroid.ForMathlib.Matroid.Basic
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 

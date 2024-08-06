@@ -335,7 +335,7 @@ lemma refl_of_rel {α : Type*} (r : α → α → Prop) [IsSymm α r] [IsTrans �
     rintro _ ⟨i, -, rfl⟩ _ ⟨j, -,rfl⟩ hij
     refine disjoint_iff_forall_ne.2 ?_
     rintro a (ha : r _ _) _ (hb : r _ _) rfl
-    simp only [ne_eq, ext_iff, mem_setOf_eq, not_forall] at hij
+    simp only [ne_eq, Set.ext_iff, mem_setOf_eq, not_forall] at hij
     obtain ⟨y, hy⟩ := hij
     exact hy ⟨fun hiy ↦ trans_of r hb (trans_of r (symm_of r ha) hiy),
       fun hjy ↦ trans_of r ha (trans_of r (symm_of r hb) hjy)⟩

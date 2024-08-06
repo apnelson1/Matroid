@@ -239,7 +239,7 @@ lemma closure_empty_eq_ground_iff : M.closure ∅ = M.E ↔ M = loopyOn M.E := b
 @[simp] lemma uniqueBaseOn_closure_eq (I E X : Set α) :
     (uniqueBaseOn I E).closure X = (X ∩ I ∩ E) ∪ (E \ I) := by
   have hb : (uniqueBaseOn (I ∩ E) E).Basis (X ∩ E ∩ (I ∩ E)) (X ∩ E) :=
-    (uniqueBaseOn_basis_iff inter_subset_right inter_subset_right).2 rfl
+    (uniqueBaseOn_basis_iff inter_subset_right).2 rfl
   ext e
   rw [← uniqueBaseOn_inter_ground_eq I E, ← closure_inter_ground _ X, uniqueBaseOn_ground,
     ← hb.closure_eq_closure, hb.indep.mem_closure_iff, dep_iff, uniqueBaseOn_indep_iff',

@@ -12,19 +12,22 @@ open Set Set.Notation
 namespace Matroid
 
 /-- A Circuit is a minimal dependent set -/
-def Circuit (M : Matroid α) (C : Set α) : Prop := C ∈ minimals (· ⊆ ·) {X | M.Dep X}
+def Circuit (M : Matroid α) (C : Set α) : Prop := Minimal M.Dep C
 
-lemma circuit_def : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
+lemma circuit_def : M.Circuit C ↔ Minimal M.Dep C := Iff.rfl
 
 lemma Circuit.dep (hC : M.Circuit C) : M.Dep C :=
-  hC.1
+  hC.prop
+
+lemma Circuit.minimal (hC : M.Circuit C) : Minimal M.Dep C :=
+  hC
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma Circuit.subset_ground (hC : M.Circuit C) : C ⊆ M.E :=
   hC.dep.subset_ground
 
 lemma circuit_iff : M.Circuit C ↔ M.Dep C ∧ ∀ ⦃I⦄, M.Dep I → I ⊆ C → I = C := by
-  simp [Circuit, mem_minimals_setOf_iff, and_congr_right_iff, eq_comm (b := C)]
+  simp_rw [circuit_def, minimal_subset_iff, eq_comm (a := C)]
 
 lemma Circuit.ssubset_indep (hC : M.Circuit C) (hXC : X ⊂ C) : M.Indep X := by
   rw [← not_dep_iff (hXC.subset.trans hC.subset_ground)]
@@ -88,8 +91,6 @@ lemma Circuit.closure_diff_subsingleton_eq_closure (hC : M.Circuit C) {Z : Set �
 lemma Circuit.mem_closure_diff_singleton_of_mem (hC : M.Circuit C) (heC : e ∈ C) :
     e ∈ M.closure (C \ {e}) :=
   (hC.subset_closure_diff_singleton e) heC
-
-lemma circuit_iff_mem_minimals : M.Circuit C ↔ C ∈ minimals (· ⊆ ·) {X | M.Dep X} := Iff.rfl
 
 lemma Circuit.eq_of_not_indep_subset (hC : M.Circuit C) (hX : ¬ M.Indep X) (hXC : X ⊆ C) :
     X = C :=
@@ -396,23 +397,19 @@ lemma coindep_iff_forall_subset_not_cocircuit :
     M.Coindep X ↔ (∀ K, K ⊆ X → ¬M.Cocircuit K) ∧ X ⊆ M.E :=
   indep_iff_forall_subset_not_circuit'
 
-lemma cocircuit_iff_mem_minimals :
-    M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ∀ B, M.Base B → (X ∩ B).Nonempty} := by
-  revert K
-  simp_rw [cocircuit_def, circuit_def, ← Set.ext_iff, dep_iff, ← coindep_def, dual_ground,
-    coindep_iff_exists', not_and, imp_not_comm (b := (_ ⊆ _)), not_exists, not_and, subset_diff,
-    not_and, not_disjoint_iff_nonempty_inter]
-  apply (minimals_eq_minimals_of_subset_of_forall _ _).symm
-  · exact fun K ⟨hK1, hK2⟩ B hB ↦ by rw [inter_comm]; exact hK1 hK2 B hB hB.subset_ground
-  refine fun K hK ↦ ⟨K ∩ M.E, ?_, inter_subset_left⟩
-  simp only [mem_setOf_eq, inter_subset_right, forall_true_left, and_true]
-  rintro B hB hBE
-  rw [inter_comm, inter_assoc, inter_eq_self_of_subset_right hBE]
-  exact hK B hB
+lemma cocircuit_iff_minimal :
+    M.Cocircuit K ↔ Minimal (fun X ↦ ∀ B, M.Base B → (X ∩ B).Nonempty) K := by
+  have aux : M✶.Dep = fun X ↦ (∀ B, M.Base B → (X ∩ B).Nonempty) ∧ X ⊆ M.E := by
+    ext; apply dual_dep_iff_forall
+  rw [cocircuit_def, circuit_def, aux, iff_comm]
+  refine minimal_iff_minimal_of_imp_of_forall (fun _ h ↦ h.1) fun X hX ↦
+    ⟨X ∩ M.E, inter_subset_left, fun B hB ↦ ?_, inter_subset_right⟩
+  rw [inter_assoc, inter_eq_self_of_subset_right hB.subset_ground]
+  exact hX B hB
 
-lemma cocircuit_iff_mem_minimals_compl_nonspanning :
-    M.Cocircuit K ↔ K ∈ minimals (· ⊆ ·) {X | ¬M.Spanning (M.E \ X)} := by
-  convert cocircuit_iff_mem_minimals with K
+lemma cocircuit_iff_minimal_compl_nonspanning :
+    M.Cocircuit K ↔ Minimal (fun X ↦ ¬ M.Spanning (M.E \ X)) K := by
+  convert cocircuit_iff_minimal with K
   simp_rw [spanning_iff_superset_base (S := M.E \ K), not_exists, subset_diff, not_and,
     not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp Base.subset_ground,
       inter_comm K]
@@ -423,9 +420,8 @@ lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.
   rintro ⟨e, heC, heK⟩
   simp_rw [nontrivial_iff_ne_singleton <| show e ∈ C ∩ K from ⟨heC, heK⟩]
   intro he
-  simp_rw [cocircuit_iff_mem_minimals_compl_nonspanning, mem_minimals_iff_forall_ssubset_not_mem,
-    mem_setOf, not_not] at hK
-  have' hKe := hK.2 (y := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
+  simp_rw [cocircuit_iff_minimal_compl_nonspanning, minimal_iff_forall_ssubset, not_not] at hK
+  have' hKe := hK.2 (t := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
   apply hK.1
   rw [spanning_iff_ground_subset_closure]; nth_rw 1 [← hKe.closure_eq, diff_diff_eq_sdiff_union]
   · refine (M.closure_subset_closure (subset_union_left (t := C))).trans ?_

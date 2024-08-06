@@ -1,4 +1,4 @@
-{"platform": "x86_64-apple-darwin22.6.0",
+{"platform": "arm64-apple-darwin23.5.0",
  "options": {},
- "leanHash": "c375e19f6b656fcd594cdca3a38b8578634df8cd",
+ "leanHash": "daa22187642d4cf6954c39a23eab20d8a8675416",
  "configHash": "7581811107471293166"}
