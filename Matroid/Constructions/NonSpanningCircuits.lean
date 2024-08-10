@@ -1,11 +1,20 @@
 import Mathlib.Data.Matroid.Basic
 import Mathlib.Data.Matroid.IndepAxioms
 import Matroid.Constructions.CircuitAxioms
+import Matroid.Rank
 
 
 open Set Matroid
 
 variable {α k V P ι : Type*} {I B X : Set α}
+
+
+namespace Matroid
+
+-- Circuit' for Matroid
+def Circuit' (M : Matroid α) (C : Finset α) : Prop := M.Circuit C ∧ C.card ≤ M.rk
+
+end Matroid
 
 -- Non-spanning circuits
 structure FinsetCircuit'Matroid (α : Type*) [DecidableEq α] where
@@ -17,7 +26,7 @@ structure FinsetCircuit'Matroid (α : Type*) [DecidableEq α] where
   (circuit'_elimination : ∀ ⦃C₁ C₂ e⦄, Circuit' C₁ → Circuit' C₂ → C₁ ≠ C₂ →
   e ∈ C₁ ∩ C₂ → ((C₁ ∪ C₂).erase e).card ≤ rk → ∃ C, Circuit' C ∧ C ⊆ (C₁ ∪ C₂).erase e)
   (non_spanning : ∀ ⦃C⦄, Circuit' C → C.card ≤ rk)
-  (exists_circuit'less_rk_set : ∃ S , S.card = rk ∧ ∀ ⦃C⦄, Circuit' C → ¬↑C ⊆ S)
+  (exists_circuit'less_rk_set : ∃ S : Finset α, S.card = rk ∧ ↑S ⊆ E ∧ ∀ ⦃C⦄, Circuit' C → ¬↑C ⊆ S)
   (circuit'_subset_ground : ∀ ⦃C⦄, Circuit' C → ↑C ⊆ E)
 
   (Circuit : Finset α → Prop)
@@ -123,6 +132,18 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetCircuit'Ma
       (Indep := fun I : Finset α ↦ ↑I ⊆ M.E ∧ ∀ ⦃C⦄, C ⊆ I → ¬Circuit C)
       (indep_iff := by refine fun I ↦ by simp only [not_or, not_and, Circuit])
 
+
+lemma circuit_not_indep : M.Circuit C → ¬M.Indep C := by
+  simp only [circuit_iff, indep_iff, not_or, not_and, not_forall, Classical.not_imp, not_not]
+  intro h _
+  by_cases h' : M.Circuit' C
+  contrapose! h'
+  exact (h' C subset_rfl).1
+  simp only [h', false_or] at h
+  exact ⟨C, subset_rfl, fun _ ↦ ⟨h.1, h.2.1, h.2.2⟩⟩
+
+lemma indep_not_circuit : M.Indep I → ¬M.Circuit I := imp_not_comm.mp circuit_not_indep
+
 @[simp] lemma matroid_circuit_iff : M.matroid.Circuit C ↔ M.Circuit C := by
   simp only [FinsetCircuit'Matroid.matroid, not_or, not_and,
     FinsetCircuitMatroid.matroid_circuit_iff, circuit_iff]
@@ -130,4 +151,61 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetCircuit'Ma
 @[simp] lemma matroid_indep_iff : M.matroid.Indep I ↔ M.Indep I := by
   simp only [matroid_Indep, IndepMatroid.ofFinset_indep, indep_iff, circuit_iff, not_or, not_and]
 
+@[simp] lemma matroid_rk_eq [Fintype α]: M.matroid.rk = M.rk := by
+  obtain ⟨I, hcard, h⟩ := M.exists_circuit'less_rk_set
+  simp_rw [imp_not_comm] at h
+  have hC: ∀ ⦃C : Finset α⦄, C ⊆ I → ¬M.Circuit C := by
+    intro C hsub
+    simp only [circuit_iff, not_or, not_and]
+    refine ⟨h.2 hsub, fun hCcard _ ↦ ?_⟩
+    obtain h := hcard ▸ hCcard ▸ (Finset.card_mono hsub)
+    linarith
+  obtain hI := matroid_indep_iff.mpr <| M.indep_iff.mpr ⟨h.1, hC⟩
+
+  have hB: ∀ ⦃C : Finset α⦄, M.rk + 1 ≤ C.card ∧ ↑C ⊆ M.E → ¬M.Indep C := by
+    intro C hC
+    obtain ⟨D, hDsub, hDcard⟩ := Finset.exists_subset_card_eq hC.1
+    by_cases hD : M.Circuit D
+    obtain hD := circuit_not_indep hD
+    contrapose! hD
+    exact matroid_indep_iff.mp <| Matroid.Indep.subset (matroid_indep_iff.mpr hD) hDsub
+    simp only [circuit_iff, not_or, not_and, imp_not_comm, not_forall, Classical.not_imp, not_not]
+      at hD
+    simp only [indep_iff, not_and, not_forall, Classical.not_imp, not_not]
+    intro hsub
+    obtain ⟨S, hSsub, hS⟩ := hD.2 hDcard <| subset_trans hDsub hsub
+    exact ⟨S, subset_trans hSsub hDsub, by simp only [circuit_iff, hS, true_or]⟩
+
+  have hBase : M.matroid.Base I := by
+    classical
+    simp only [base_iff_maximal_indep, Maximal]
+    refine ⟨hI, fun I'  hI' hsub ↦ ?_⟩
+    set J := I'.toFinset with hJ
+    have : I' = ↑J := hJ ▸ (coe_toFinset _).symm
+    obtain hsub' := hcard ▸ (Finset.card_mono <| this ▸ hsub)
+    obtain hlt | heq := lt_or_eq_of_le hsub'
+    obtain hcard :=  Nat.succ_eq_one_add _ ▸ Nat.succ_le_of_lt hlt
+    obtain hJ := this ▸ (not_iff_not.mpr matroid_indep_iff).mpr <|
+      hB ⟨add_comm 1 _ ▸ hcard, Indep.subset_ground (this ▸  hI')⟩
+    contradiction
+    simp only [le_eq_subset] at hsub
+    exact subset_of_eq (this ▸ (Finset.coe_inj.mpr <| Finset.eq_of_subset_of_card_le  (this ▸ hsub)
+      (le_of_eq <| hcard ▸ heq.symm))).symm
+  exact  (Base.ncard hBase) ▸ ncard_coe_Finset _ ▸ hcard
+
+
+@[simp] lemma matroid_circuit'_iff [Fintype α] : M.matroid.Circuit' C ↔ M.Circuit' C := by
+  simp only [Matroid.Circuit', matroid_circuit_iff, circuit_iff, or_and_right]
+  refine Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_)
+  obtain hC | hC := hC
+  exact hC.1
+  linarith [M.matroid_rk_eq ▸ hC.1.1 ▸ hC.2]
+  left
+  exact ⟨hC, M.matroid_rk_eq ▸ M.non_spanning hC⟩
+
 end FinsetCircuit'Matroid
+
+
+-- Circuit' in dual
+
+-- Matroid eq of rk eq circuit' eq
