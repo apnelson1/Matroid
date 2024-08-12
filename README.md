@@ -11,13 +11,13 @@ mathlib: these are
 * Matroid duality : Mathlib/Data/Matroid/Dual
 * Restricting a matroid to a set, and the restriction order : Mathlib/Data/Matroid/Restrict
 * Matroids with at most one base : Mathlib/Data/Matroid/Constructions
+* Maps and comaps between matroids : Matroid/Map
+* Matroid Closure : Mathlib/Data/Matroid/Closure
+* Direct Sums : Mathlib/Data/Matroid/Sum
 
 Topics in this repo are listed below. 
 
 * Isomorphism : Matroid/Equiv
-* Maps and comaps between matroids : Matroid/Map
-* Direct sums : Matroid/Constructions/Sum
-* The closure function : Matroid/Closure
 * Circuits and cocircuits : Matroid/Circuit
 * Loops : Matroid/Loop
 * The rank function : Matroid/Rank
@@ -36,8 +36,6 @@ Topics in this repo are listed below.
 * Parallel and series extensions : Matroid/Constructions/ParallelExtension
 
 The following currently need a few fixes to work correctly. 
-* Transversal matroids : Matroid/Transversal
-* Matroid invariants and minor-closed properties : Matroid/Class
 * Representability : Matroid/Representation/* 
   (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
 
