@@ -2,6 +2,7 @@ import Mathlib.Data.Matroid.Basic
 import Mathlib.Data.Matroid.IndepAxioms
 import Matroid.Constructions.CircuitAxioms
 import Matroid.Rank
+import Matroid.Circuit
 
 
 open Set Matroid
@@ -207,5 +208,79 @@ end FinsetCircuit'Matroid
 
 
 -- Circuit' in dual
+lemma circuit_of_circuit'_rk {M :Matroid α} [FiniteRk M] : ∀ C : Finset α, ↑C ⊆ M.E →
+  (M.Circuit C ↔ M.Circuit' C ∨ (C.card = M.rk + 1 ∧ (∀ D, M.Circuit' D → ¬D ⊆ C))) := by
+    refine fun C hsub ↦ (Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
+    simp only [Circuit', and_imp]
+    by_cases h : C.card ≤ M.rk
+    · left
+      exact ⟨hC, h⟩
+    · right
+      by_contra! h'
+      obtain _ :=  Nat.succ_eq_one_add _ ▸ Nat.succ_le_of_lt (not_le.mp h)
+      obtain ⟨I, hI⟩ := M.exists_basis C
+      obtain hI' := Indep.card_le_rk (Basis.indep hI)
+      obtain ⟨e, he, hin⟩ := (Circuit.basis_iff_insert_eq hC).mp hI
+      obtain _ := ncard_coe_Finset _ ▸ ((ncard_eq_succ (Finset.finite_toSet _)).mpr
+        ⟨e, I, he.2, hin.symm, rfl⟩)
+      have : C.card = M.rk + 1 := by linarith
+      obtain ⟨D, hCD, hDcard, hDsub⟩ := h' this
+      obtain heq := Finset.coe_inj.mp <| Circuit.eq_of_subset_circuit hCD hC hDsub
+      rw [heq] at hDcard
+      contradiction
+    simp only [Circuit', and_imp] at hC
+    obtain hC | ⟨hcard, hC⟩ := hC
+    exact hC.1
+    contrapose! hC
+    simp only [Circuit, Minimal, le_eq_subset, not_and, not_forall, Classical.not_imp] at hC
+    have : M.Dep ↑C := by
+      by_contra!
+      obtain a := ncard_coe_Finset _ ▸ Indep.card_le_rk <| (not_dep_iff hsub).mp this
+      linarith
+    obtain ⟨D, hD, hDsub, hnsub⟩ := hC this
+    obtain ⟨E, hEsub, hCE⟩ := Dep.exists_circuit_subset hD
+    have EFin: E.Finite := Circuit.finite hCE
+    have CFin: (C.toSet).Finite := Finset.finite_toSet _
+    refine ⟨(Finite.toFinset EFin), Finite.coe_toFinset _ ▸ hCE, ncard_eq_toFinset_card _ EFin ▸ ?_,
+      Finset.coe_subset.mp <| Finite.coe_toFinset _ ▸ (subset_trans hEsub hDsub)⟩
+    obtain hDlt := hcard ▸ ncard_coe_Finset C ▸ ncard_lt_ncard
+      (ssubset_of_subset_not_subset hDsub hnsub) CFin
+    obtain hEle := ncard_le_ncard hEsub <| Finite.subset CFin hDsub
+    exact Nat.lt_succ.mp (lt_of_le_of_lt hEle hDlt)
 
--- Matroid eq of rk eq circuit' eq
+
+
+
+
+lemma eq_of_circuit'_iff_circuit'_forall {M₁ M₂ : Matroid α} [FiniteRk M₁] [FiniteRk M₂]
+  (hE : M₁.E = M₂.E)  (hCiff : ∀ C : Finset α , ↑C ⊆ M₁.E → (M₁.Circuit' C ↔ M₂.Circuit' C))
+  (hrk : M₁.rk = M₂.rk ) : M₁ = M₂ := by
+  refine eq_of_circuit_iff_circuit_forall hE (fun C hsub ↦ Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
+  obtain CFin := Circuit.finite hC
+  obtain hC | hC := (circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (Finite.coe_toFinset CFin ▸ hsub)).mp (Finite.coe_toFinset _ ▸ hC)
+  obtain hC := (hCiff (Finite.toFinset CFin) (Finite.coe_toFinset _ ▸ hsub)).mp hC
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (hE ▸ Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
+  left
+  exact hC
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (hE ▸ Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
+  right
+  refine ⟨hrk ▸ hC.1, fun D hCD ↦ ?_⟩
+  obtain hDE := hE ▸ Circuit.subset_ground hCD.1
+  exact hC.2 D <| (hCiff D hDE).mpr hCD
+  obtain CFin := Circuit.finite hC
+  obtain hC | hC := (circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (hE ▸ Finite.coe_toFinset CFin ▸ hsub)).mp (Finite.coe_toFinset _ ▸ hC)
+  obtain hC := (hCiff (Finite.toFinset CFin) (Finite.coe_toFinset _ ▸ hsub)).mpr hC
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
+  left
+  exact hC
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_circuit'_rk (Finite.toFinset CFin)
+    (Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
+  right
+  refine ⟨hrk ▸ hC.1, fun D hCD ↦ ?_⟩
+  obtain hDE := Circuit.subset_ground hCD.1
+  exact hC.2 D <| (hCiff D hDE).mp hCD
