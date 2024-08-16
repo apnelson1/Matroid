@@ -487,7 +487,7 @@ lemma exists_union_base_of_base_union [DecidableEq α] [Fintype α] (Ms : ι →
       simp only [Function.update_noteq h.symm _ _, f]
       exact (hIs' a).indep
     · obtain h | h := eq_or_ne i a
-      exact subset_trans (h ▸ hsub) <|   Function.update_same i I Is' ▸ hf ▸ (subset_iUnion _ _)
+      exact subset_trans (h ▸ hsub) <| Function.update_same i I Is' ▸ hf ▸ (subset_iUnion _ _)
       exact hf ▸ Function.update_noteq h.symm _ Is' ▸ (subset_iUnion _ _)
     · contrapose! hne
       simp only [Basis', maximal_subset_iff', mem_setOf] at hIs'
@@ -570,11 +570,9 @@ theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
     obtain ⟨I, X, _, hI₁, hI₂, hIX⟩ := aux M₁.E M₁ (M₂ ↾ M₁.E) (by assumption) rfl rfl
     simp only [restrict_er_eq', inter_eq_self_of_subset_left diff_subset] at hIX
     refine ⟨I, X ∪ (M₂.E \ M₁.E), hI₁, hI₂.of_restrict, ?_⟩
-    rw [← er_inter_ground_eq (X := _ \ _)] at hIX
-    rw [← er_inter_ground_eq (X := _ ∪ _), union_inter_distrib_right, inter_comm (a := _ \ _),
+    rwa [← er_inter_ground_eq (X := _ ∪ _), union_inter_distrib_right, inter_comm (a := _ \ _),
       inter_diff_self, union_empty, er_inter_ground_eq, ← diff_diff, diff_diff_comm,
-      diff_diff_right_self, inter_diff_assoc, inter_comm]
-    exact hIX
+      diff_diff_right_self, inter_diff_assoc, inter_comm, er_inter_ground_eq]
   clear! M₁ M₂
   intro E M₁ M₂ hfin hM₁E hM₂E
   classical
