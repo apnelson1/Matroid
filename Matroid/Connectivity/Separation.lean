@@ -40,7 +40,7 @@ lemma Partition.left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
 lemma Partition.right_subset_ground (P : M.Partition) : P.2 ⊆ M.E := by
   rw [← P.union_eq]; apply subset_union_right
 
-noncomputable abbrev Partition.conn (P : M.Partition) : ℕ∞ := M.conn P.1 P.2
+noncomputable abbrev Partition.conn (P : M.Partition) : ℕ∞ := M.localConn P.1 P.2
 
 lemma Partition.compl_left (P : M.Partition) : M.E \ P.1 = P.2 := by
   simp [← P.union_eq, P.disjoint.symm]
@@ -49,14 +49,14 @@ lemma Partition.compl_right (P : M.Partition) : M.E \ P.2 = P.1 := by
   simp [← P.union_eq, P.disjoint]
 
 @[simp] lemma Partition.conn_symm (P : M.Partition) : P.symm.conn = P.conn :=
-  M.conn_comm _ _
+  M.localConn_comm _ _
 
 @[simp] lemma Partition.conn_dual (P : M.Partition) : P.dual.conn = P.conn := by
-  change M✶.conn _ _ = M.conn _ _
-  rw [← P.compl_left, conn_compl_dual, P.compl_left]; rfl
+  simp only [conn, dual, ← P.compl_left]
+  exact Eq.symm <| M.conn_dual P.left
 
 @[simp] lemma Partition.conn_eq_zero_iff {P : M.Partition} : P.conn = 0 ↔ M.Skew P.1 P.2 :=
-  M.conn_eq_zero P.left_subset_ground P.right_subset_ground
+  M.localConn_eq_zero P.left_subset_ground P.right_subset_ground
 
 def Partition.IsTutteSep (P : M.Partition) (k : ℕ) :=
   P.conn < k ∧ k ≤ P.1.encard ∧ k ≤ P.2.encard

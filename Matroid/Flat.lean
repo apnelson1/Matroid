@@ -1,5 +1,6 @@
 import Matroid.Minor.Rank
 import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.Minimal
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -774,19 +775,24 @@ lemma hyperplane_iff_maximal_nonspanning :
 
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by
-  rw [cocircuit_iff_minimal_compl_nonspanning, hyperplane_iff_maximal_nonspanning]
-  have := maximal_mem_image_antitone_iff ()
-  -- simp_rw [cocircuit_iff_minimal_nonspanning, hyperplane_iff_maximal_nonspanning,
-  --   (and_comm (b := _ ⊆ _)), minimal_subset_iff, maximal_subset_iff,
-  --   diff_diff_cancel_left hH, and_iff_right hH, subset_diff, and_imp, and_congr_right_iff]
-  -- refine fun _ ↦ ⟨fun h X hXE hX hHX ↦ ?_, fun h X hX hXE hXH ↦ ?_⟩
-  -- · rw [← diff_diff_cancel_left hH, ← diff_diff_cancel_left hXE,
-  --     h (y := M.E \ X) (by rwa [diff_diff_cancel_left hXE]) diff_subset]
-  --   rw [← subset_compl_iff_disjoint_left, diff_eq, compl_inter, compl_compl]
-  --   exact hHX.trans subset_union_right
-  -- rw [h diff_subset hX, diff_diff_cancel_left hXE]
-  -- rw [subset_diff]
-  -- exact ⟨hH, hXH.symm⟩
+  rw [cocircuit_iff_minimal_compl_nonspanning', hyperplane_iff_maximal_nonspanning, iff_comm]
+  convert (Set.ext_iff.1 <| image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
+    (s := {X | ¬ M.Spanning X ∧ X ⊆ M.E}) ?_) (M.E \ H)
+  · simp only [mem_setOf_eq, mem_image]
+    refine ⟨fun h ↦ ⟨H, h, rfl⟩, fun ⟨X, hX, h_eq⟩ ↦ ?_⟩
+    rw [diff_eq_diff_iff_inter_eq_inter, inter_eq_self_of_subset_left hX.prop.2,
+      inter_eq_self_of_subset_left hH] at h_eq
+    rwa [← h_eq]
+  · simp only [mem_image, mem_setOf_eq]
+    convert Iff.rfl with X
+    refine ⟨fun ⟨Y, hY, hYX⟩ ↦ ?_, fun h ↦ ⟨M.E \ X, ?_, ?_⟩⟩
+    · simp [← hYX, inter_eq_self_of_subset_right hY.2, diff_subset, hY.1]
+    · simp [h.1, diff_subset]
+    rw [diff_diff_cancel_left h.2]
+  simp only [mem_setOf_eq, sup_eq_union, le_eq_subset, and_imp]
+  refine fun X Y _ hX _ hY ↦ ⟨fun h ↦ ?_, diff_subset_diff_right⟩
+  rw [← diff_diff_cancel_left hX, ← diff_diff_cancel_left hY]
+  exact diff_subset_diff_right h
 
 @[simp] lemma compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by

@@ -12,8 +12,8 @@ variable {ι α : Type*} {M : Matroid α} {B I J X X' Y Y' F : Set α} {Xs Ys Js
 
 section ModularBase
 
-/-- A base `B` is a modular base for an indexed set family if it contains bases for all the sets
-  in the family. -/
+/-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
+in the family. -/
 def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
   M.Base B ∧ ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 
@@ -172,8 +172,7 @@ lemma ModularFamily.ofRestrict' {R : Set α}
   refine ⟨B', hB'.1, fun i ↦ ?_⟩
   obtain Basis := hB i
   have R_B'_inter_eq : R ∩ B' = B := by
-    rw [ext_iff]
-    refine fun x ↦ ⟨fun x_mem ↦ ?_, fun x_mem ↦ ⟨hBb.subset_ground x_mem, hB'.2 x_mem⟩⟩
+    refine Set.ext <| fun x ↦ ⟨fun x_mem ↦ ?_, fun x_mem ↦ ⟨hBb.subset_ground x_mem, hB'.2 x_mem⟩⟩
     by_contra x_nB
     apply (hB'.1.indep.subset (insert_subset x_mem.2 hB'.2)).not_dep
     rw [Dep, and_iff_left ((insert_subset x_mem.2 hB'.2).trans hB'.1.subset_ground)]

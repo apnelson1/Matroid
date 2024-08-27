@@ -414,6 +414,12 @@ lemma cocircuit_iff_minimal_compl_nonspanning :
     not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp Base.subset_ground,
       inter_comm K]
 
+lemma cocircuit_iff_minimal_compl_nonspanning' :
+    M.Cocircuit K ↔ Minimal (fun X ↦ ¬ M.Spanning (M.E \ X) ∧ X ⊆ M.E) K := by
+  rw [cocircuit_iff_minimal_compl_nonspanning]
+  exact minimal_iff_minimal_of_imp_of_forall (fun _ h ↦ h.1)
+    (fun X hX ↦ ⟨X ∩ M.E, inter_subset_left, by rwa [diff_inter_self_eq_diff], inter_subset_right⟩)
+
 lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.Cocircuit K) :
     Disjoint C K ∨ (C ∩ K).Nontrivial := by
   simp_rw [or_iff_not_imp_left, not_disjoint_iff]

@@ -25,7 +25,7 @@ def truncateToNat (M : Matroid α) (k : ℕ) : Matroid α :=
 
 /-- The truncation of a matroid to rank `k`. The independent sets of the truncation
 are the independent sets of the matroid of size at most `k`.  -/
-@[simps!] def truncateTo (M : Matroid α) (k : ℕ∞) : Matroid α :=
+def truncateTo (M : Matroid α) (k : ℕ∞) : Matroid α :=
   Matroid.ofExistsMatroid
     (E := M.E)
     (Indep := fun I ↦ M.Indep I ∧ I.encard ≤ k)
@@ -37,6 +37,8 @@ are the independent sets of the matroid of size at most `k`.  -/
 
 @[simp] theorem truncateTo_indep_iff : (M.truncateTo k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) :=
     Iff.rfl
+
+theorem truncateTo_indep_eq : (M.truncateTo k).Indep = fun I ↦ M.Indep I ∧ I.encard ≤ k := rfl
 
 @[simp] theorem truncateTo_ground_eq : (M.truncateTo k).E = M.E := rfl
 
@@ -60,16 +62,13 @@ theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncateTo k = M := b
 
 theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.erk) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
-  simp_rw [base_iff_maximal_indep, truncateTo_indep_iff, and_imp]
-  refine ⟨fun ⟨⟨hB, hBk⟩, h⟩ ↦ ⟨hB, hBk.antisymm (le_of_not_lt fun hlt ↦ ?_)⟩,
-    fun ⟨hB, hBk⟩ ↦ ⟨⟨ hB, hBk.le⟩,
-      fun I _ hIk hBI ↦ ?_⟩ ⟩
-  · obtain ⟨B', hB', hJB'⟩ := hB.exists_base_superset
-    obtain ⟨J, hBJ, hJB', h'⟩ :=
-      exists_superset_subset_encard_eq hJB' hBk (h_rk.trans_eq hB'.encard.symm)
-    rw [h _ (hB'.indep.subset hJB') h'.le hBJ] at hlt
-    exact hlt.ne h'
-  exact (finite_of_encard_eq_coe hBk).eq_of_subset_of_encard_le' hBI (hIk.trans_eq hBk.symm)
+  simp_rw [base_iff_maximal_indep, truncateTo_indep_eq, maximal_subset_iff, and_assoc,
+    and_congr_right_iff, and_imp]
+  refine fun hi ↦ ⟨fun ⟨hle, hmax⟩ ↦ ?_, fun h ↦ ⟨h.le, fun J _ hcard hBJ ↦ ?_⟩⟩
+  · obtain ⟨B', hB', hBB'⟩ := hi.exists_base_superset
+    obtain ⟨J, hBJ, hJB', h'⟩ := exists_superset_subset_encard_eq hBB' hle (by rwa [hB'.encard])
+    rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
+  exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
 
 theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rk : k ≤ M.erk) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by

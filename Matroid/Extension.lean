@@ -438,14 +438,13 @@ but it should not be used elsewhere; good API versions should be stated in terms
 `(M.extendBy e U).Basis`, and have less of a dense mess of logic on the RHS.
  -/
 private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e I)
-    (hIX : I ⊆ X) : I ∈ maximals (· ⊆ ·) {J | U.ExtIndep e J ∧ J ⊆ X} ↔
+    (hIX : I ⊆ X) : Maximal (fun J ↦ U.ExtIndep e J ∧ J ⊆ X) I ↔
         (M.closure (I \ {e}) = M.closure (X \ {e}) ∧ ((e ∈ I ↔ M.closure (X \ {e}) ∈ U) → e ∉ X))
       ∨ ((M.closure (I \ {e}) ⋖[M] M.closure (X \ {e})) ∧ e ∈ I ∧ M.closure (X \ {e}) ∈ U) := by
 
   have hss : I \ {e} ⊆ X \ {e} := diff_subset_diff_left hIX
   have hX' : X \ {e} ⊆ M.E := by simpa
-
-  rw [mem_maximals_iff_forall_insert (fun _ _ ht hst ↦ ⟨ht.1.subset hst, hst.trans ht.2⟩)]
+  rw [maximal_iff_forall_insert (fun _ _ ht hst ↦ ⟨ht.1.subset hst, hst.trans ht.2⟩)]
 
   simp only [hI, hIX, and_self, insert_subset_iff, and_true, not_and, true_and, imp_not_comm]
 
@@ -516,8 +515,7 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
 /-- This lemma is true without the coloop hypothesis, but it is easier to prove this first and
 then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
 private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ M.Coloop e)
-    (hI : U.ExtIndep e I) (hInmax : I ∉ maximals (· ⊆ ·) {I | U.ExtIndep e I})
-    (hBmax : B ∈ maximals (· ⊆ ·) {I | U.ExtIndep e I}) :
+    (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
   rw [coloop_iff_diff_closure, not_not] at he
   by_contra! hcon
@@ -531,16 +529,17 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
     union_subset hI.subset_insert_ground hB.subset_insert_ground
   have hIBe' : (I ∪ B) \ {e} ⊆ M.E := by rwa [diff_singleton_subset_iff]
 
-  have hImax : I ∈ maximals (· ⊆ ·) {J | U.ExtIndep e J ∧ J ⊆ I ∪ B} := by
-    rw [mem_maximals_iff_forall_insert (fun _ _ ht hst ↦ ⟨ht.1.subset hst, hst.trans ht.2⟩),
+  have hImax : Maximal (fun J ↦ U.ExtIndep e J ∧ J ⊆ I ∪ B) I := by
+    rw [maximal_iff_forall_insert (fun _ _ ht hst ↦ ⟨ht.1.subset hst, hst.trans ht.2⟩),
       and_iff_right hI, and_iff_right subset_union_left]
     intro x hxI h'
     rw [insert_subset_iff, mem_union, or_iff_right hxI] at h'
     exact hcon x ⟨h'.2.1, hxI⟩ h'.1
 
-  have hrw : {J | U.ExtIndep e J} = {J | U.ExtIndep e J ∧ J ⊆ insert e M.E} := by
-    simp only [ext_iff, mem_setOf_eq, iff_self_and]
-    exact  fun _ ↦ ExtIndep.subset_insert_ground
+  have hrw : U.ExtIndep e = fun J ↦ U.ExtIndep e J ∧ J ⊆ insert e M.E := by
+    ext x
+    simp only [iff_self_and]
+    exact ExtIndep.subset_insert_ground
 
   rw [hrw, U.maximal_extIndep_iff Subset.rfl hI hI.subset_insert_ground] at hInmax
   rw [hrw, U.maximal_extIndep_iff Subset.rfl hB hB.subset_insert_ground] at hBmax
@@ -577,7 +576,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
     refine by_contra fun hne ↦ hsp <| ?_
     rw [← closure_spanning_iff hIBe']
     have hssu := (M.closure_subset_closure hss).ssubset_of_ne hne
-    exact hBhp.spanning_of_ssuperset hssu
+    exact hBhp.spanning_of_ssuperset hssu <| closure_subset_ground _ _
 
   rw [extIndep_iff_of_mem heB] at hB
   replace hImax := show M.closure (I \ {e}) = M.closure (B \ {e}) ∧ e ∈ I by
@@ -587,8 +586,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
   exact hInmax <| (hImax.1.symm ▸ hBhp)
 
 private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
-    (hInmax : I ∉ maximals (· ⊆ ·) {I | U.ExtIndep e I})
-    (hBmax : B ∈ maximals (· ⊆ ·) {I | U.ExtIndep e I}) :
+    (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
   obtain (he | he) := em' (M.Coloop e)
   · exact U.extIndep_aug_of_not_coloop he hI hInmax hBmax
@@ -600,13 +598,6 @@ private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
 private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut)
     (hXE : X ⊆ insert e M.E) : ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
   intro I hI hIX
-  suffices hJ : ∃ J, I ⊆ J ∧ J ∈ maximals (· ⊆ ·) {K | U.ExtIndep e K ∧ K ⊆ X} by
-    obtain ⟨J, hIJ, hJ⟩ := hJ
-    refine ⟨J, ?_⟩
-    convert maximals_inter_subset (t := {K | I ⊆ K}) ⟨hJ, hIJ⟩ using 2
-    ext
-    simp only [mem_setOf_eq, mem_inter_iff]
-    tauto
   obtain ⟨J, hJ, hIJ⟩ :=
     hI.diff_singleton_indep.subset_basis_of_subset (diff_subset_diff_left hIX)
 
