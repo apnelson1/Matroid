@@ -226,18 +226,31 @@ def R₆ :  Matroid (Fin 6) := by
       not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])
 
+
+
+
 lemma R₆_id_self_dual : R₆✶ = R₆ := by
-  refine Matroid.eq_of_indep_iff_indep_forall rfl (fun I hI ↦ ?_)
-  have : ∀ I : Finset (Fin 6), R₆✶.Indep I ↔ R₆.Indep I := by
-    intro I
-    simp only [R₆, FinsetCircuit'Matroid.matroid_indep_iff, Fin.isValue, mem_insert_iff,
-      mem_singleton_iff, Nat.reduceAdd, forall_eq_or_imp, forall_eq, subset_univ, and_true, not_or,
-      not_and, Decidable.not_not, true_and, FinsetCircuit'Matroid.matroid_E, dual_indep_iff_exists',
-      FinsetCircuit'Matroid.matroid_Base, not_true_eq_false, imp_false]
-    refine Iff.intro (fun hI ↦ ?_) (fun hI ↦ ?_)
+  have h : R₆.rk = 3 := FinsetCircuit'Matroid.matroid_rk_eq
+  have : R₆.E.ncard = 6 := by
+    simp only [R₆, FinsetCircuit'Matroid.matroid_E, ncard_univ, Nat.card_eq_fintype_card,
+      Fintype.card_fin]
+  obtain h' := this ▸ h ▸ rk_add_dual_rk R₆
+  have : R₆✶.rk = 3 := by linarith
+  refine eq_of_circuit'_iff_circuit'_forall rfl (fun C hC ↦ ?_) ?_
+  · have : R₆✶.Circuit' C ↔ (C = {0, 1, 2} ∨ C = {3, 4, 5}) := by
+      refine Iff.intro ?_ fun hc ↦ ?_
+      · sorry
+      · simp [Circuit', cocircuit_iff_minimal_compl_nonspanning, this]
+        refine ⟨?_, by aesop⟩
+        · obtain hc | hc := hc
+          sorry
+          sorry
     sorry
-    sorry
-  sorry
+  · linarith
+
+
+
+
 
 -- Fano matroid in p643 of Oxley, vertices numbered from the top top-down left-right
 def F₇ :  Matroid (Fin 7) := by

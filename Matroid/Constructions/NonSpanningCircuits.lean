@@ -207,7 +207,8 @@ lemma indep_not_circuit : M.Indep I → ¬M.Circuit I := imp_not_comm.mp circuit
 end FinsetCircuit'Matroid
 
 
--- Circuit' in dual
+abbrev Cocircuit' (M : Matroid α) (K : Finset α) : Prop := M✶.Circuit' K
+
 lemma circuit_of_circuit'_rk {M :Matroid α} [FiniteRk M] : ∀ C : Finset α, ↑C ⊆ M.E →
   (M.Circuit C ↔ M.Circuit' C ∨ (C.card = M.rk + 1 ∧ (∀ D, M.Circuit' D → ¬D ⊆ C))) := by
     refine fun C hsub ↦ (Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
@@ -284,3 +285,10 @@ lemma eq_of_circuit'_iff_circuit'_forall {M₁ M₂ : Matroid α} [FiniteRk M₁
   refine ⟨hrk ▸ hC.1, fun D hCD ↦ ?_⟩
   obtain hDE := Circuit.subset_ground hCD.1
   exact hC.2 D <| (hCiff D hDE).mp hCD
+
+
+
+theorem rk_add_dual_rk (M : Matroid α) [M.Finite] : M.rk + M✶.rk = M.E.ncard := by
+  obtain h := M.erk_add_dual_erk
+  rwa [← coe_rk_eq, ← coe_rk_eq, ← ENat.coe_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
+  exact M.ground_finite
