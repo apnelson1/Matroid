@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Basic
+import Matroid.Connectivity.Skew
 import Matroid.ForMathlib.Matroid.Map
 
 open Set Set.Notation
@@ -185,7 +185,7 @@ lemma localConn_eq_zero (M : Matroid α) (hX : X ⊆ M.E := by aesop_mat)
   obtain ⟨J, hJ⟩ := M.exists_basis Y
   rw [skew_iff_closure_skew, localConn_closure_closure, ← hI.closure_eq_closure,
     ← hJ.closure_eq_closure, ← skew_iff_closure_skew, ← localConn_closure_closure,
-    hI.indep.localConn_eq hJ.indep, add_eq_zero_iff, encard_eq_zero, ← disjoint_iff_inter_eq_empty,
+    hI.indep.localConn_eq hJ.indep, add_eq_zero, encard_eq_zero, ← disjoint_iff_inter_eq_empty,
     erk_dual_restrict_eq_zero_iff, hI.indep.skew_iff_disjoint_union_indep hJ.indep]
 
 lemma localConn_eq_localConn_inter_ground (M : Matroid α) (X Y : Set α) :
@@ -265,6 +265,7 @@ lemma localConn_restrict_univ_eq (M : Matroid α) (X Y : Set α) :
 
 end localConn
 
+
 section conn
 
 
@@ -341,18 +342,5 @@ lemma conn_dual (M : Matroid α) (X : Set α) : M.conn X = M✶.conn X := by
     exact hBX.subset.trans (union_subset_union inter_subset_right inter_subset_left)
 
   exact union_subset (diff_subset.trans hX) (diff_subset.trans diff_subset)
-
--- lemma conn_submod (M : Matroid α) (X Y : Set α) :
---     M.conn (X ∪ Y) + M.conn (X ∩ Y) ≤ M.conn X + M.conn Y := by
---   simp_rw [← conn_restrict_univ_eq M]
---   set M' := M ↾ univ
---   have foo : ∀ A B {I J F}, M'.Basis I (A ∩ B) → M'.Basis J (Aᶜ ∩ Bᶜ) →
---       M'.Basis ((I ∪ J) \ F)
-  -- obtain ⟨Ii, hIi⟩ := M'.exists_basis (X ∩ Y)
-  -- obtain ⟨Ji
-  -- obtain ⟨I, hI⟩ := M'.exists_basis X
-  -- obtain ⟨J, hJ⟩ := M'.exists_basis Y
-
-
 
 end conn

@@ -6,7 +6,7 @@ namespace Matroid
 
 
 
-variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
+variable {α : Type*} {ι : Sort*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
 
 lemma indep_iff_not_mem_closure_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ e ∈ I, e ∉ M.closure (I \ {e}) := by
@@ -327,15 +327,15 @@ lemma restrict_closure_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by
 
 end Constructions
 
-variable {Xs Ys : Set (Set α)} {ι : Type*}
 
 lemma Indep.inter_basis_closure_iff_subset_closure_inter {X : Set α} (hI : M.Indep I) :
     M.Basis (X ∩ I) X ↔ X ⊆ M.closure (X ∩ I) :=
   ⟨Basis.subset_closure,
     fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_closure inter_subset_left h⟩
 
-lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
-    (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
+lemma Indep.interBasis_biInter {ι : Type*} (hI : M.Indep I) {X : ι → Set α} {A : Set ι}
+    (hA : A.Nonempty) (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) :
+    M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
   refine (hI.inter_left _).basis_of_subset_of_subset_closure inter_subset_left ?_
   have := biInter_inter hA X I
   simp_rw [← biInter_inter hA,
@@ -345,10 +345,12 @@ lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι}
 
 lemma Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
     (h : ∀ i, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i, X i) ∩ I) (⋂ i, X i) := by
-  rw [← biInter_univ]
-  exact hI.interBasis_biInter (by simp) (by simpa)
+  convert hI.interBasis_biInter (ι := PLift ι) univ_nonempty (X := fun i ↦ X i.down)
+    (by simpa using fun (i : PLift ι) ↦ h i.down) <;>
+  · simp only [mem_univ, iInter_true]
+    exact (iInter_plift_down X).symm
 
-lemma Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
+lemma Indep.interBasis_sInter {Xs : Set (Set α)} (hI : M.Indep I) (hXs : Xs.Nonempty)
     (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
   rw [sInter_eq_biInter]
   exact hI.interBasis_biInter hXs h

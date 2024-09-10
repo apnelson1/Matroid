@@ -47,30 +47,7 @@ theorem Equiv.exists_bijOn [Nonempty β] {s : Set α} {t : Set β} (e : s ≃ t)
   · rw [dif_pos hx]; exact Subtype.prop _
   simpa [dif_pos hx, dif_pos hy, Subtype.coe_inj] using hxy
 
-theorem Set.Finite.encard_le_iff_nonempty_embedding {s : Set α} {t : Set β} (hs : s.Finite) :
-    s.encard ≤ t.encard ↔ Nonempty (s ↪ t) := by
-  cases isEmpty_or_nonempty β
-  · simp only [t.eq_empty_of_isEmpty, encard_empty, nonpos_iff_eq_zero, encard_eq_zero]
-    constructor; rintro rfl; exact ⟨Embedding.ofIsEmpty⟩
-    rintro ⟨e⟩
-    exact isEmpty_coe_sort.1 e.toFun.isEmpty
-  refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ e.enccard_le⟩
-  obtain ⟨f, hst, hf⟩ := hs.exists_injOn_of_encard_le h
-  exact ⟨codRestrict (s.restrict f) t (fun x ↦ by aesop), hf.injective.codRestrict _⟩
 
-theorem Set.Finite.encard_le_iff_nonempty_embedding' {s : Set α} {t : Set β} (ht : t.Finite) :
-    s.encard ≤ t.encard ↔ Nonempty (s ↪ t) := by
-  obtain (hs | hs) := s.finite_or_infinite
-  · exact hs.encard_le_iff_nonempty_embedding
-  rw [hs.encard_eq, top_le_iff, encard_eq_top_iff, Set.Infinite, iff_true_intro ht,
-    not_true, false_iff]
-  rintro ⟨e⟩
-  have hle := e.enccard_le
-  rw [hs.encard_eq, top_le_iff, encard_eq_top_iff] at hle
-  exact hle ht
-
-@[simp] theorem encard_univ_fin (a : ℕ) : (univ : Set (Fin a)).encard = a := by
-  simp [encard_eq_coe_toFinset_card]
 
 
 

@@ -1,3 +1,4 @@
+import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 
 open Set

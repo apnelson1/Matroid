@@ -4,9 +4,9 @@ import Matroid.ForMathlib.Lattice
 
 open Set
 
-variable {α : Type*} [CompleteLattice α] {s x y z : α}
+variable {α : Type*} {s x y z : α}
 
-structure Partition (s : α) :=
+structure Partition [CompleteLattice α] (s : α) :=
   parts : Set α
   setIndependent : CompleteLattice.SetIndependent parts
   bot_not_mem : ⊥ ∉ parts
@@ -16,7 +16,7 @@ namespace Partition
 
 section Basic
 
-variable {P : Partition s}
+variable [CompleteLattice α] {P : Partition s}
 
 instance {α : Type*} [CompleteLattice α] {s : α} : SetLike (Partition s) α where
   coe := Partition.parts
@@ -72,9 +72,11 @@ lemma parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempty 
 @[simps!] def partsCongrEquiv {t : α} (P : Partition s) (hst : s = t) :
     (P : Set α) ≃ (P.congr hst : Set α) := Equiv.Set.ofEq rfl
 
-
-
 end Basic
+
+section indep
+
+variable [CompleteLattice α]
 
 /-- A `SetIndependent` collection not containing `⊥` gives a partition of its supremum. -/
 @[simps] def ofIndependent {u : Set α} (hs : CompleteLattice.SetIndependent u) (hbot : ⊥ ∉ u) :
@@ -130,10 +132,11 @@ instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
 @[simp] lemma mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) {a : α} :
     a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
 
+end indep
 
 section Order
 
-variable {α : Type*} [CompleteLattice α]
+variable {α : Type*} [CompleteLattice α] {s : α}
 
 instance {s : α} : PartialOrder (Partition s) where
   le P Q := ∀ x ∈ P, ∃ y ∈ Q, x ≤ y
@@ -354,9 +357,9 @@ lemma refl_of_rel {α : Type*} (r : α → α → Prop) [IsSymm α r] [IsTrans �
 @[simps!] def ofRel' (r : α → α → Prop) [IsTrans α r] [IsSymm α r] (hs : s = {x | r x x}) :=
   (ofRel r).congr hs.symm
 
-variable {r : α → α → Prop} [IsSymm α r] [IsTrans α r]  {s : Set α}
+variable {r : α → α → Prop} [IsSymm α r] [IsTrans α r] {s : Set α}
 
-lemma eqv_class_comm (x : α) : {y | r x y} = {y | r y x} := by
+lemma eqv_class_comm {r : α → α → Prop} [IsSymm α r] (x : α) : {y | r x y} = {y | r y x} := by
   simp_rw [symm_iff_of]
 
 lemma rel_iff_eqv_class_eq_right (hy : r y y) : r x y ↔ {z | r x z} = {z | r y z} := by

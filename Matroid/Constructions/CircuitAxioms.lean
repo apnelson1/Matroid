@@ -90,7 +90,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
     · simp only [coe_erase, coe_insert]
       exact Set.diff_subset.trans <| Set.insert_subset (hI.subset_ground heI) hK_indep.subset_ground
     have hssu : (I \ (insert e K).erase f) ⊂ I \ K := by
-      rw [sdiff_erase_not_mem hfI, Finset.ssubset_iff_subset_ne, Ne, ext_iff, not_forall]
+      rw [sdiff_erase_not_mem hfI, Finset.ssubset_iff_subset_ne, Ne, Finset.ext_iff, not_forall]
       exact ⟨(sdiff_subset_sdiff Subset.rfl (subset_insert _ _)), ⟨e, by simp [heI, heK]⟩⟩
     exact ⟨card_le_card hssu.subset, (card_lt_card hssu).ne.symm⟩
   obtain ⟨f, hfK, hfI⟩ : ∃ f ∈ K, f ∉ I :=

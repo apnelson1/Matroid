@@ -106,14 +106,16 @@ theorem IsoMinor.exists_iso (i : N ≤i M) :
   (h : ∃ (M₀ : Matroid α) (hM₀ : M₀ ≤m M) (e : N ≂ M₀), ∀ x, inclusion hM₀.subset (e x) = f x) :
   N ≤i M where
     toFun := f
-    inj' x y hxy := by obtain ⟨M₀, hM₀, e, he⟩ := h; simpa [← he] using hxy
+    inj' x y hxy := by
+      obtain ⟨M₀, hM₀, e, he⟩ := h
+      simpa [← he, Subtype.val_inj] using hxy
     exists_minor' := by
       obtain ⟨M₀, hM₀, e, he⟩ := h
       refine ⟨M₀, hM₀, ?_, fun I ↦ ?_⟩
       · ext x
         simp only [mem_image, mem_range, ← he, Subtype.exists, exists_and_right, exists_eq_right]
         refine ⟨fun h ↦  ⟨hM₀.subset h, _, (e.symm ⟨x,h⟩).2, by simp⟩, fun ⟨h, a, ha, h'⟩ ↦ ?_⟩
-        simp_rw [← Subtype.coe_inj, coe_inclusion] at h'
+        simp_rw [← Subtype.coe_inj] at h'
         subst h'
         simp
       rw [e.indep_image_iff]
@@ -124,7 +126,7 @@ theorem IsoMinor.exists_iso (i : N ≤i M) :
 /-- If `N ≂ M₀` and `M₀ ≤m M` then `N ≤i M`. -/
 @[simps] def Iso.transIsoMinor {M₀ : Matroid α} (e : N ≂ M₀) (hM₀ : M₀ ≤m M) : N ≤i M where
   toFun x := (inclusion hM₀.subset) (e x)
-  inj' := by rintro ⟨x, hx⟩ ⟨y, hy⟩; simp
+  inj' := by rintro ⟨x, hx⟩ ⟨y, hy⟩; simp [Subtype.val_inj]
   exists_minor' := ⟨M₀, hM₀, by simp, fun I ↦ by simp [e.indep_image_iff]⟩
 
 /-- If `M` and `N` are isomorphic, then `M ≤i N`. -/

@@ -4,6 +4,7 @@ import Mathlib.Data.Fintype.Lattice
 import Mathlib.Algebra.Group.Int
 import Mathlib.Algebra.Ring.Int
 
+set_option linter.unusedSectionVars false
 variable {α β : Type*} {s t r : Finset α} {a b : α}
 
 namespace Finset
