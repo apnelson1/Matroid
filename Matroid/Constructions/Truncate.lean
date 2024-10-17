@@ -19,7 +19,7 @@ def truncateToNat (M : Matroid α) (k : ℕ) : Matroid α :=
     rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
     obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
     exact ⟨e, he.1, he.2, hi,
-      (encard_insert_of_not_mem he.2).trans_le ((ENat.add_one_le_of_lt hIJ).trans hJc)⟩)
+      (encard_insert_of_not_mem he.2).trans_le ((Order.add_one_le_of_lt hIJ).trans hJc)⟩)
   (indep_bdd := ⟨k, fun _ ↦ And.right⟩)
   (subset_ground := fun _ h ↦ h.1.subset_ground)
 
