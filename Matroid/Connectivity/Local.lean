@@ -1,6 +1,7 @@
-import Matroid.Connectivity.Basic
+import Matroid.Connectivity.Skew
+import Matroid.ForMathlib.Matroid.Map
 
-open Set
+open Set Set.Notation
 
 namespace Matroid
 
@@ -184,7 +185,7 @@ lemma localConn_eq_zero (M : Matroid α) (hX : X ⊆ M.E := by aesop_mat)
   obtain ⟨J, hJ⟩ := M.exists_basis Y
   rw [skew_iff_closure_skew, localConn_closure_closure, ← hI.closure_eq_closure,
     ← hJ.closure_eq_closure, ← skew_iff_closure_skew, ← localConn_closure_closure,
-    hI.indep.localConn_eq hJ.indep, add_eq_zero_iff, encard_eq_zero, ← disjoint_iff_inter_eq_empty,
+    hI.indep.localConn_eq hJ.indep, add_eq_zero, encard_eq_zero, ← disjoint_iff_inter_eq_empty,
     erk_dual_restrict_eq_zero_iff, hI.indep.skew_iff_disjoint_union_indep hJ.indep]
 
 lemma localConn_eq_localConn_inter_ground (M : Matroid α) (X Y : Set α) :
@@ -200,15 +201,70 @@ lemma localConn_eq_localConn_inter_ground_right (M : Matroid α) (X Y : Set α) 
     M.localConn X Y = M.localConn X (Y ∩ M.E) := by
   rw [localConn_closure_right, ← closure_inter_ground, ← localConn_closure_right]
 
+@[simp] lemma localConn_restrict_eq (M : Matroid α) (X Y R : Set α) :
+    (M ↾ R).localConn X Y = M.localConn (X ∩ R) (Y ∩ R) := by
+  obtain ⟨I, hI⟩ := (M ↾ R).exists_basis' X
+  obtain ⟨J, hJ⟩ := (M ↾ R).exists_basis' Y
+  have ⟨hI', hI'R⟩ := basis'_restrict_iff.1 hI
+  have ⟨hJ', hJ'R⟩ := basis'_restrict_iff.1 hJ
+  rw [hI.localConn_eq hJ, hI'.localConn_eq hJ', restrict_restrict_eq _ (union_subset hI'R hJ'R)]
+
 lemma localConn_restrict_univ_eq (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).localConn X Y = M.localConn X Y := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-  obtain ⟨J, hJ⟩ := M.exists_basis' Y
-  rw [hI.localConn_eq hJ,
-    (basis_restrict_univ_iff.2 hI).localConn_eq (basis_restrict_univ_iff.2 hJ),
-    restrict_restrict_eq _ (subset_univ _)]
+  simp
+
+@[simp] lemma localConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : Set β) :
+    (M.map f hf).localConn X Y = M.localConn (f ⁻¹' X) (f ⁻¹' Y) := by
+  obtain ⟨I, hI⟩ := M.exists_basis (f ⁻¹' X ∩ M.E)
+  obtain ⟨J, hJ⟩ := M.exists_basis (f ⁻¹' Y ∩ M.E)
+  have hI' := hI.map hf
+  have hJ' := hJ.map hf
+  rw [image_preimage_inter] at hI' hJ'
+  rw [M.localConn_eq_localConn_inter_ground, hI.localConn_eq hJ,
+    localConn_eq_localConn_inter_ground, map_ground, hI'.localConn_eq hJ',
+    ← hf.image_inter hI.indep.subset_ground hJ.indep.subset_ground,
+    (hf.mono (inter_subset_left.trans hI.indep.subset_ground)).encard_image,
+    ← image_union, ← M.map_restrict f hf (I ∪ J), map_dual, erk_map]
+
+@[simp] lemma localConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :
+    (M.comap f).localConn X Y = M.localConn (f '' X) (f '' Y) := by
+  suffices aux : ∀ (N : Matroid β) X Y,
+      (N.comap f).localConn (f ⁻¹' (f '' X)) (f ⁻¹' (f '' Y)) = N.localConn (f '' X) (f '' Y) by
+    specialize aux (M ↾ univ) X Y
+    rw [← localConn_restrict_univ_eq, ← M.localConn_restrict_univ_eq, ← aux,
+      comap_restrict, preimage_univ, le_antisymm_iff]
+    refine ⟨(localConn_mono _ (subset_preimage_image _ _) (subset_preimage_image _ _)), ?_⟩
+    rw [localConn_closure_closure _ X, ← comap_restrict_univ]
+    refine localConn_mono _ ?_ ?_
+    all_goals
+    · rw [comap_closure_eq]
+      exact preimage_mono (subset_closure _ _)
+  intro N P Q
+
+  obtain ⟨I₀, hI₀⟩ := (N.comap f).exists_basis' (f ⁻¹' (f '' P) ∩ f ⁻¹' (f '' Q))
+  obtain ⟨IP, hIP, hI₀IP⟩ := hI₀.indep.subset_basis'_of_subset (hI₀.subset.trans inter_subset_left)
+  obtain ⟨IQ, hIQ, hI₀IQ⟩ := hI₀.indep.subset_basis'_of_subset (hI₀.subset.trans inter_subset_right)
+  obtain ⟨hIP', hPinj, hIPP⟩ := comap_basis'_iff.1 hIP
+  obtain ⟨hIQ', hQinj, hIQQ⟩ := comap_basis'_iff.1 hIQ
+
+  rw [image_preimage_image] at hIP' hIQ'
+
+  have hinj : InjOn f (IP ∪ IQ) := by
+    rw [show IP ∪ IQ = IP ∪ (IQ \ IP) by simp, injOn_union disjoint_sdiff_right,
+      and_iff_right hPinj, and_iff_right (hQinj.mono diff_subset)]
+    refine fun x hx y ⟨hyQ, hyP⟩ hxy ↦ hyP <| hI₀IP ?_
+    apply hI₀.mem_of_insert_indep
+    · simp only [mem_inter_iff, mem_preimage]
+      exact ⟨hxy ▸ (by simpa using hIP.subset hx), by simpa using hIQ.subset hyQ⟩
+    exact hIQ.indep.subset <| insert_subset hyQ hI₀IQ
+
+  rw [hIP.localConn_eq hIQ, hIP'.localConn_eq hIQ',
+    ← hinj.image_inter subset_union_left subset_union_right,
+    (hPinj.mono inter_subset_left).encard_image, ← image_union,
+    ← comapOn_map N hinj, map_dual, erk_map, comapOn]
 
 end localConn
+
 
 section conn
 
@@ -220,6 +276,10 @@ lemma conn_eq_localConn (M : Matroid α) (X : Set α) : M.conn X = M.localConn X
 lemma conn_eq_conn_inter_ground (M : Matroid α) (X : Set α) : M.conn X = M.conn (X ∩ M.E) := by
   rw [conn, localConn_eq_localConn_inter_ground_left, conn, diff_inter_self_eq_diff]
 
+lemma conn_eq_localConn' (M : Matroid α) (X : Set α) :
+    M.conn X = M.localConn (M.E ∩ X) (M.E \ X) := by
+  rw [conn_eq_conn_inter_ground, conn_eq_localConn, diff_inter_self_eq_diff, inter_comm]
+
 lemma conn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).conn X = M.conn X := by
    rw [conn, localConn_restrict_univ_eq, restrict_ground_eq,
     localConn_eq_localConn_inter_ground_right, diff_eq, inter_right_comm, univ_inter, ← diff_eq]
@@ -230,7 +290,7 @@ lemma conn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).conn X 
   simp
 
 /-- Connectivity is self-dual. -/
-lemma localConn_compl_dual (M : Matroid α) (X : Set α) : M.conn X = M✶.conn X := by
+lemma conn_dual (M : Matroid α) (X : Set α) : M.conn X = M✶.conn X := by
   suffices ∀ X ⊆ M.E, M.localConn X (M.E \ X) = M✶.localConn X (M.E \ X) by
     rw [conn, conn, localConn_eq_localConn_inter_ground_left,
       M✶.localConn_eq_localConn_inter_ground_left, ← diff_inter_self_eq_diff (s := M.E) (t := X),
@@ -282,14 +342,5 @@ lemma localConn_compl_dual (M : Matroid α) (X : Set α) : M.conn X = M✶.conn 
     exact hBX.subset.trans (union_subset_union inter_subset_right inter_subset_left)
 
   exact union_subset (diff_subset.trans hX) (diff_subset.trans diff_subset)
-
--- lemma conn_submod (M : Matroid α) (X Y : Set α) :
---     M.conn (X ∪ Y) + M.conn (X ∩ Y) ≤ M.conn X + M.conn Y := by
---   simp_rw [← conn_restrict_univ_eq M]
---   set M' := M ↾ univ
---   obtain ⟨I, hI⟩ := M'.exists_basis X
---   obtain ⟨J, hJ⟩ := M'.exists_basis Y
-
-
 
 end conn

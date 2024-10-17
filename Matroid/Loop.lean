@@ -40,11 +40,7 @@ lemma Loop.dep (he : M.Loop e) : M.Dep {e} :=
   singleton_dep.mpr he
 
 lemma singleton_circuit : M.Circuit {e} ↔ M.Loop e := by
-  simp_rw [← singleton_dep, circuit_def, mem_minimals_setOf_iff, and_iff_left_iff_imp,
-    subset_singleton_iff_eq]
-  rintro _ _ hY (rfl | rfl)
-  · simpa using hY.nonempty
-  rfl
+  simp [← singleton_dep, circuit_def, minimal_iff_forall_ssubset, ssubset_singleton_iff]
 
 lemma loop_iff_not_mem_base_forall (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ↔ ∀ B, M.Base B → e ∉ B := by

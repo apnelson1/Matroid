@@ -74,11 +74,16 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.erk := by
 @[simp] lemma er_inter_ground_eq (M : Matroid α) (X : Set α) : M.er (X ∩ M.E) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X; rw [← hI.basis_inter_ground.encard, ← hI.encard]
 
-lemma er_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
+@[simp] lemma er_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
     (hX : X ⊆ M.E := by aesop_mat) : (M.map f hf).er (f '' X) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   rw [hI.er_eq_encard, (hI.map hf).er_eq_encard, (hf.mono hI.indep.subset_ground).encard_image]
 
+@[simp] lemma er_comap_eq {β : Type*} {f : α → β} (M : Matroid β) (X : Set α) :
+    (M.comap f).er X = M.er (f '' X) := by
+  obtain ⟨I, hI⟩ := (M.comap f).exists_basis' X
+  obtain ⟨hI', hinj, -⟩ := comap_basis'_iff.1 hI
+  rw [← hI.encard, ← hI'.encard, hinj.encard_image]
 
 -- lemma Iso.er_image_eq {α β : Type*} {M : Matroid α} {N : Matroid β} (e : Iso M N) (X : Set α)
 --     (hX : X ⊆ M.E := by aesop_mat) : N.er (e '' X) = M.er X := by
@@ -286,8 +291,9 @@ lemma er_insert_eq_add_one (M : Matroid α) (X : Set α) (he : e ∈ M.E \ M.clo
     M.er (insert e X) = M.er X + 1 := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   rw [← hI.closure_eq_closure] at he
-  rw [← er_closure_eq, ← closure_insert_closure_eq_closure_insert, ← hI.closure_eq_closure, hI.er_eq_encard,
-    closure_insert_closure_eq_closure_insert, er_closure_eq, Indep.er, encard_insert_of_not_mem]
+  rw [← er_closure_eq, ← closure_insert_closure_eq_closure_insert, ← hI.closure_eq_closure,
+    hI.er_eq_encard, closure_insert_closure_eq_closure_insert, er_closure_eq, Indep.er,
+    encard_insert_of_not_mem]
   · exact fun heI ↦ he.2 (M.subset_closure I hI.indep.subset_ground heI)
   rw [hI.indep.insert_indep_iff]
   exact Or.inl he
@@ -375,7 +381,8 @@ lemma er_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
     rintro ⟨e, rfl⟩
     exact ⟨e, singleton_subset_iff.1 hI.subset, indep_singleton.1 hI.indep, hI.subset_closure⟩
   rw [← he.er_eq]
-  exact ((M.er_mono hXe).trans (M.er_closure_eq _).le).antisymm (M.er_mono (singleton_subset_iff.2 heX))
+  exact ((M.er_mono hXe).trans (M.er_closure_eq _).le).antisymm
+    (M.er_mono (singleton_subset_iff.2 heX))
 
 lemma er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
     M.er X ≤ 1 ↔ ∃ e ∈ M.E, X ⊆ M.closure {e} := by
@@ -392,6 +399,33 @@ lemma er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
 
 lemma Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
   (hB.compl_base_dual).encard
+
+theorem dual_er_add_erk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M✶.er X + M.erk = M.er (M.E \ X) + X.encard := by
+  obtain ⟨I, hI⟩ := M✶.exists_basis X
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
+  obtain rfl : I = X ∩ B :=
+    hI.eq_of_subset_indep (hB.indep.inter_left X) (subset_inter hI.subset hIB) inter_subset_left
+  rw [inter_comm] at hI
+  have hIdual : M.Basis (M.E \ B ∩ (M.E \ X)) (M.E \ X) :=
+    by simpa using hB.inter_basis_iff_compl_inter_basis_dual.1 hI
+  rw [← hIdual.encard, ← hI.encard, ← hB.compl_base_of_dual.encard, ← encard_union_eq,
+    ← encard_union_eq]
+  · convert rfl using 2
+    ext x
+    simp only [mem_union, mem_inter_iff, mem_diff]
+    tauto
+  · exact disjoint_sdiff_left.mono_left inter_subset_right
+  exact disjoint_sdiff_right.mono_left inter_subset_left
+
+theorem dual_er_add_erk' (M : Matroid α) (X : Set α) :
+    M✶.er X + M.erk = M.er (M.E \ X) + (X ∩ M.E).encard := by
+  rw [← diff_inter_self_eq_diff, ← dual_er_add_erk .., ← dual_ground, er_inter_ground_eq]
+
+theorem erk_add_dual_erk (M : Matroid α) : M.erk + M✶.erk = M.E.encard := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [← hB.encard, ← hB.compl_base_dual.encard, ← encard_union_eq disjoint_sdiff_right,
+    union_diff_cancel hB.subset_ground]
 
 end Basic
 
@@ -553,19 +587,21 @@ lemma to_rFin (M : Matroid α) [FiniteRk M] (X : Set α) : M.rFin X := by
   rw [← er_lt_top_iff, hI.er_eq_encard, encard_lt_top_iff]
   exact hI.indep.finite_of_subset_rFin hI.indep.subset_ground M.rFin_ground
 
-lemma rFin.closure_eq_closure_of_subset_of_er_ge_er (hX : M.rFin X) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
-    M.closure X = M.closure Y := by
+lemma rFin.closure_eq_closure_of_subset_of_er_ge_er (hX : M.rFin X) (hXY : X ⊆ Y)
+    (hr : M.er Y ≤ M.er X) : M.closure X = M.closure Y := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans hXY)
   rw [hI.er_eq_encard, hJ.er_eq_encard] at hr
-  rw [← closure_inter_ground, ← M.closure_inter_ground Y, ← hI.basis_inter_ground.closure_eq_closure,
+  rw [← closure_inter_ground, ← M.closure_inter_ground Y,
+    ← hI.basis_inter_ground.closure_eq_closure,
     ← hJ.basis_inter_ground.closure_eq_closure, Finite.eq_of_subset_of_encard_le'
       (hI.indep.finite_of_subset_rFin hI.subset hX) hIJ hr]
 
 lemma er_union_eq_of_subset_of_er_le_er (Z : Set α) (hXY : X ⊆ Y) (hr : M.er Y ≤ M.er X) :
     M.er (X ∪ Z) = M.er (Y ∪ Z) := by
   obtain hX' | hX' := em (M.rFin X)
-  · rw [← er_union_closure_left_eq, hX'.closure_eq_closure_of_subset_of_er_ge_er hXY hr, er_union_closure_left_eq]
+  · rw [← er_union_closure_left_eq, hX'.closure_eq_closure_of_subset_of_er_ge_er hXY hr,
+      er_union_closure_left_eq]
   rw [er_eq_top_iff.2, er_eq_top_iff.2]
   · exact not_rFin_of_er_ge hX' (M.er_mono (subset_union_of_subset_left hXY _))
   exact not_rFin_of_er_ge hX' (M.er_mono subset_union_left)

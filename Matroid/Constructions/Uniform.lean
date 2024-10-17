@@ -285,59 +285,60 @@ theorem unif_isoMinor_unif_iff' {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b�
   obtain ⟨d₂, rfl⟩ := Nat.exists_eq_add_of_le h₂
   rw [add_tsub_cancel_left, add_tsub_cancel_left, unif_isoMinor_unif_iff]
 
+/-
+theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
+    unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by
+  refine ⟨fun h ↦ ?_, fun ⟨hr, hr'⟩  ↦ ?_⟩
+  · constructor
+    · have hle := h.erk_le_erk
+      simp only [unif_erk_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
+      obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
+    have hle := h.dual.erk_le_erk
+    rw [unif_dual, unif_dual, unif_erk_eq_of_le (by simp), unif_erk_eq_of_le (by simp)] at hle
+    exact (WithTop.le_coe rfl).1 hle
+  have hbb' := add_le_add hr hr'
+  rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
 
--- theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
---     unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by
---   refine ⟨fun h ↦ ?_, fun ⟨hr, hr'⟩  ↦ ?_⟩
---   · constructor
---     · have hle := h.erk_le_erk
---       simp only [unif_erk_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
---       obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
---     have hle := h.dual.erk_le_erk
---     rw [unif_dual, unif_dual, unif_erk_eq_of_le (by simp), unif_erk_eq_of_le (by simp)] at hle
---     exact (WithTop.le_coe rfl).1 hle
---   have hbb' := add_le_add hr hr'
---   rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
+  obtain ⟨d,rfl⟩ := Nat.exists_eq_add_of_le hr
+  obtain ⟨d',rfl⟩ := Nat.exists_eq_add_of_le ha'b'
+  refine (unif_isoMinor_contr a b d).trans (unif_isoMinor_restr (a+d) ?_)
+  have hb' : b ≤ d' + a
+  · zify at hr'; simpa using hr'
+  linarith
 
---   obtain ⟨d,rfl⟩ := Nat.exists_eq_add_of_le hr
---   obtain ⟨d',rfl⟩ := Nat.exists_eq_add_of_le ha'b'
---   refine (unif_isoMinor_contr a b d).trans (unif_isoMinor_restr (a+d) ?_)
---   have hb' : b ≤ d' + a
---   · zify at hr'; simpa using hr'
---   linarith
+@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+  simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
--- @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
---   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
+theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
+    (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
+  obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
+  have hYs := hL.subset hYL
+  refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
+  rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
+  simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
+    and_iff_left hY]
+  refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
+  · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
+  exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
--- theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
---     (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
---   obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
---   have hYs := hL.subset hYL
---   refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
---   rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
---   simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
---     and_iff_left hY]
---   refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
---   · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
---   exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
-
--- theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
---     ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
---   refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
---     h <| line_isoRestr_of_simple_er_le_two hL hle hLr, fun h hR ↦ ?_⟩
---   obtain ⟨N, hNM, hN⟩ := hR
---   obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
---   rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff] at hN
---   simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff,
---     true_and] at hN
---   refine (h L ?_ ?_).ne hN.2
---   · simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
---       restrict_indep_iff, pair_subset_iff]
---     exact fun {e f} he hf ↦ ⟨by simp [hN.1 _ (pair_subset he hf)], he, hf⟩
---   obtain ⟨I, hI⟩ := M.exists_basis' L
---   rw [← hI.encard, ← hN.1 _ hI.subset]
---   exact hI.indep
+theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
+    ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
+  refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+    h <| line_isoRestr_of_simple_er_le_two hL hle hLr, fun h hR ↦ ?_⟩
+  obtain ⟨N, hNM, hN⟩ := hR
+  obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
+  rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff] at hN
+  simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff,
+    true_and] at hN
+  refine (h L ?_ ?_).ne hN.2
+  · simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
+      restrict_indep_iff, pair_subset_iff]
+    exact fun {e f} he hf ↦ ⟨by simp [hN.1 _ (pair_subset he hf)], he, hf⟩
+  obtain ⟨I, hI⟩ := M.exists_basis' L
+  rw [← hI.encard, ← hN.1 _ hI.subset]
+  exact hI.indep
 
 end unif
 
 end Uniform
+-/

@@ -10,9 +10,10 @@ import Matroid.Flat
 import Matroid.Minor.Rank
 import Matroid.Simple
 import Matroid.Modular
-import Matroid.Connectivity
+import Matroid.Connectivity.Basic
+import Matroid.Connectivity.Local
+import Matroid.Connectivity.Separation
 import Matroid.Paving
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
-import Matroid.Constructions.Sum
 import Matroid.Constructions.Uniform

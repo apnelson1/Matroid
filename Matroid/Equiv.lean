@@ -1,7 +1,7 @@
 import Matroid.Rank
 import Matroid.ForMathlib.PreimageVal
 import Matroid.ForMathlib.Logic_Embedding_Set
-import Matroid.ForMathlib.MatroidBasic
+import Matroid.ForMathlib.Matroid.Basic
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
@@ -116,7 +116,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     simpa using hIB
 
 lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e '' B)) := by
-  rw [base_iff_maximal_indep, ← e.indep_image_iff, and_iff_right hB.indep]
+  rw [base_iff_maximal_indep, maximal_subset_iff, ← e.indep_image_iff, and_iff_right hB.indep]
   intro I hI h'
   obtain ⟨I, rfl⟩ := Subset.eq_image_val hI.subset_ground
   replace hB := hB.eq_of_subset_indep (e.symm.image_indep hI)
@@ -142,12 +142,12 @@ section map
 
 lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
     M.Basis I X ↔ N.Basis ↑(e '' I) ↑(e '' X) := by
-  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, basis_iff_mem_maximals,
-    mem_maximals_iff, mem_setOf_eq, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
+  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, basis_iff_maximal,
+    maximal_subset_iff, mem_setOf_eq, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
     preimage_image, and_congr_right_iff]
   intro hI hIX
   refine ⟨fun h J hJ hJX hIJ ↦ ?_, fun h J hJ hJX hIJ ↦ ?_⟩
-  · specialize h (y := ↑(e.symm '' (N.E ↓∩ J)))
+  · specialize h (t := ↑(e.symm '' (N.E ↓∩ J)))
     simp only [image_symm_eq_preimage, e.indep_image_iff, image_preimage,
       Subtype.image_preimage_coe, inter_eq_self_of_subset_right hJ.subset_ground, hJ,
       image_subset_iff, preimage_val_image_val_eq_self, preimage_subset_iff, image_val_inj,
@@ -157,7 +157,7 @@ lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
       using (show N.E ↓∩ J ⊆ _ from preimage_mono (f := Subtype.val) hJX)
     obtain rfl := h (by convert hIJ)
     simp [hJ.subset_ground]
-  specialize h (y := ↑(e '' (M.E ↓∩ J)))
+  specialize h (t := ↑(e '' (M.E ↓∩ J)))
   simp only [← e.indep_image_iff, Subtype.image_preimage_coe,
     inter_eq_self_of_subset_right hJ.subset_ground, hJ, image_subset_iff,
     preimage_val_image_val_eq_self, preimage_image, image_val_inj, true_implies] at h
@@ -301,9 +301,8 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     rw [h_eq, h]
     simpa
 
-@[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h) (x : M.E) :
-  (isoOfForallImageclosure e h) x = e x := rfl
-
+@[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h)
+    (x : M.E) : (isoOfForallImageclosure e h) x = e x := rfl
 
 lemma Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circuit ↑(e '' C) := by
   simp_rw [circuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]

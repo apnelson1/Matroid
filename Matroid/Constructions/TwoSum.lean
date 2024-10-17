@@ -1,5 +1,4 @@
 import Matroid.Extension
-import Matroid.Constructions.Sum
 
 namespace Matroid
 

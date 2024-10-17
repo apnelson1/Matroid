@@ -47,7 +47,7 @@ theorem Set.embeddingOfSubset_preimage {s t : Set α} (hst : s ⊆ t) (r : Set t
 
 @[simp] theorem image_val_image_comp_inclusion (s : Set α) (r : Set s) {t t' : Set β} (ht : t ⊆ t')
     (f : s → t) : Subtype.val '' ((fun x ↦ inclusion ht (f x)) '' r) = ↑(f '' r) := by
-  simp_rw [image_image, coe_inclusion]
+  simp_rw [image_image ]
 
 @[simp] theorem image_val_range_comp_inclusion (s : Set α) {t t' : Set β} (ht : t ⊆ t') (
     f : s → t) : Subtype.val '' (range (fun x ↦ inclusion ht (f x))) = ↑(range f) := by

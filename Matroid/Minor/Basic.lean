@@ -162,7 +162,8 @@ lemma circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
     M.Circuit C ↔ (M ＼ D).Circuit C :=
   ⟨fun h ↦ delete_circuit_iff.2 ⟨h, hCD⟩, fun h ↦ h.of_delete⟩
 
-@[simp] lemma delete_closure_eq (M : Matroid α) (D X : Set α) : (M ＼ D).closure X = M.closure (X \ D) \ D := by
+@[simp] lemma delete_closure_eq (M : Matroid α) (D X : Set α) :
+    (M ＼ D).closure X = M.closure (X \ D) \ D := by
   rw [← restrict_compl, restrict_closure_eq', sdiff_sdiff_self, bot_eq_empty, union_empty,
     diff_eq, inter_comm M.E, ← inter_assoc X, ← diff_eq, closure_inter_ground,
     ← inter_assoc, ← diff_eq, inter_eq_left]
@@ -188,7 +189,8 @@ lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.closure �
   convert rfl using 2
   simp [Set.ext_iff, mem_setOf, Nonloop, Loop, mem_diff, and_comm]
 
-lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) : (M ＼ X).removeLoops =  M.removeLoops := by
+lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) :
+    (M ＼ X).removeLoops = M.removeLoops := by
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, delete_closure_eq, empty_diff,
     union_diff_self, union_eq_self_of_subset_left h]
 
@@ -314,7 +316,7 @@ lemma Indep.contract_dep_iff (hI : M.Indep I) :
     union_subset_iff, and_iff_left hI.subset_ground]
   tauto
 
-lemma Indep.union_contract_basis_union_of_basis (hI : M.Indep I) (hB : (M ／ I).Basis J X) :
+lemma Indep.union_basis_union_of_contract_basis (hI : M.Indep I) (hB : (M ／ I).Basis J X) :
     M.Basis (J ∪ I) (X ∪ I) := by
   have hi := hB.indep
   rw [hI.contract_indep_iff] at hi
@@ -332,11 +334,10 @@ lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I)) (hdj : 
     (M ／ I).Basis J X := by
   rw [disjoint_union_left] at hdj
   have hI := h.indep.subset subset_union_right
-  simp_rw [Basis, mem_maximals_setOf_iff, hI.contract_indep_iff, and_iff_right hdj.1,
+  simp_rw [Basis, maximal_subset_iff, hI.contract_indep_iff, and_iff_right hdj.1,
     and_iff_right h.indep, contract_ground, subset_diff, and_iff_left hdj.2,
     and_iff_left (subset_union_left.trans h.subset_ground), and_imp,
-    and_iff_right
-      (Disjoint.subset_left_of_subset_union (subset_union_left.trans h.subset) hdj.1)]
+    and_iff_right (Disjoint.subset_left_of_subset_union (subset_union_left.trans h.subset) hdj.1)]
   intro Y hYI hYi hYX hJY
   have hu :=
     h.eq_of_subset_indep hYi (union_subset_union_left _ hJY) (union_subset_union_left _ hYX)
@@ -436,8 +437,8 @@ instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
 @[simp] lemma contract_loop_iff_mem_closure : (M ／ C).Loop e ↔ e ∈ M.closure C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
   rw [hM, delete_loop_iff, ← singleton_dep, hI.indep.contract_dep_iff, disjoint_singleton_left,
-    singleton_union, hI.indep.insert_dep_iff, mem_diff, ← M.closure_inter_ground C, hI.closure_eq_closure,
-    and_comm (a := e ∉ I), and_self_right, ← mem_diff, ← mem_diff, diff_diff]
+    singleton_union, hI.indep.insert_dep_iff, mem_diff, ← M.closure_inter_ground C,
+    hI.closure_eq_closure, and_comm (a := e ∉ I), and_self_right, ← mem_diff, ← mem_diff, diff_diff]
   apply_fun Matroid.E at hM
   rw [delete_ground, contract_ground, contract_ground, diff_diff, diff_eq_diff_iff_inter_eq_inter,
     inter_comm, inter_comm M.E] at hM
@@ -461,7 +462,8 @@ lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
     exact ⟨M.closure_subset_ground _ h.1, h.2⟩
   suffices h' : e ∈ (M ／ C).closure X \ X ↔ e ∈ M.closure (X ∪ C) \ (X ∪ C) by
     rwa [mem_diff, and_iff_left heX, mem_diff, mem_union, or_iff_right heX, ← mem_diff] at h'
-  rw [← contract_loop_iff_mem_closure, ← contract_loop_iff_mem_closure, contract_contract, union_comm]
+  rw [← contract_loop_iff_mem_closure, ← contract_loop_iff_mem_closure, contract_contract,
+    union_comm]
 
 lemma Circuit.contract_dep (hK : M.Circuit K) (hCK : Disjoint C K) : (M ／ C).Dep K := by
   obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E)
@@ -536,10 +538,10 @@ lemma contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     and_iff_right (M.closure_subset_ground _ ),
     and_iff_right (subset_union_of_subset_right (M.closure_subset_ground _) C)]
   rw [← inter_eq_left (s := M.E), inter_union_distrib_left,
-    inter_eq_self_of_subset_right (M.closure_subset_ground _), subset_antisymm_iff, union_subset_iff,
-    and_iff_right inter_subset_left, union_eq_self_of_subset_left (s := M.E ∩ C),
-    and_iff_right (M.closure_subset_ground _), Iff.comm, ← closure_union_closure_right_eq,closure_inter_ground,
-    closure_union_closure_right_eq]
+    inter_eq_self_of_subset_right (M.closure_subset_ground _), subset_antisymm_iff,
+    union_subset_iff, and_iff_right inter_subset_left, union_eq_self_of_subset_left (s := M.E ∩ C),
+    and_iff_right (M.closure_subset_ground _), Iff.comm,
+    ← closure_union_closure_right_eq,closure_inter_ground, closure_union_closure_right_eq]
   · exact fun _ _ ↦ Iff.rfl
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (inter_subset_right.trans subset_union_right))
@@ -978,8 +980,8 @@ variable {E : Set α}
   rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]
 
 @[simp] lemma loopyOn_contract (E X : Set α) : (loopyOn E) ／ X = loopyOn (E \ X) := by
-  simp_rw [eq_loopyOn_iff_closure, contract_closure_eq, empty_union, loopyOn_closure_eq, contract_ground,
-    loopyOn_ground, true_and]
+  simp_rw [eq_loopyOn_iff_closure, contract_closure_eq, empty_union, loopyOn_closure_eq,
+    contract_ground, loopyOn_ground, true_and]
 
 @[simp] lemma minor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
   refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
@@ -988,7 +990,8 @@ variable {E : Set α}
 
 lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
     M ／ C = loopyOn (M.E \ C) := by
-  rw [eq_loopyOn_iff_closure, contract_ground, and_iff_left rfl, contract_closure_eq, empty_union, h.closure_eq]
+  rw [eq_loopyOn_iff_closure, contract_ground, and_iff_left rfl, contract_closure_eq,
+    empty_union, h.closure_eq]
 
 @[simp] lemma freeOn_delete (E X : Set α) : (freeOn E) ＼ X = freeOn (E \ X) := by
   rw [← loopyOn_dual_eq, ← contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
@@ -1016,52 +1019,3 @@ lemma restrict_subset_loops_eq (hX : X ⊆ M.closure ∅) : M ↾ X = loopyOn X 
 end Constructions
 
 end Matroid
-
-
-
-
--- lemma Flat.covby_iff_er_contract_eq (hF : M.Flat F) (hF' : M.Flat F') :
---     M.Covby F F' ↔ F ⊆ F' ∧ (M ／ F).er (F' \ F) = 1 :=
---   by
---   refine' (em' (F ⊆ F')).elim (fun h ↦ iff_of_false (h ∘ covby.subset) (h ∘ And.left)) fun hss ↦ _
---   obtain ⟨I, hI⟩ := M.exists_basis F
---   rw [hF.covby_iff_eq_closure_insert, and_iff_right hss]
---   refine' ⟨_, fun h ↦ _⟩
---   · rintro ⟨e, ⟨heE, heF⟩, rfl⟩
---     obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_superset (subset_insert e F)
---     rw [hJF'.basis_closure.er_contract_of_subset (M.subset_closure_of_subset (subset_insert e F)) hI]
---     rw [← encard_singleton e]; apply congr_arg
---     rw [subset_antisymm_iff, diff_subset_iff, singleton_subset_iff, mem_diff, and_iff_left heF,
---       union_singleton, and_iff_right hJF'.subset]
---     by_contra heJ
---     have hJF := hF.closure_subset_of_subset ((subset_insert_iff_of_not_mem heJ).mp hJF'.subset)
---     rw [hJF'.closure] at hJF
---     exact heF (hJF (M.mem_closure_of_mem (mem_insert e F)))
---   obtain ⟨J, hJF', rfl⟩ := hI.exists_basis_inter_eq_of_superset hss
---   rw [hJF'.er_contract_of_subset hss hI, ← ENat.coe_one, encard_eq_coe_iff, ncard_eq_one] at h
---   obtain ⟨e, he⟩ := h.2; use e
---   rw [← singleton_subset_iff, ← union_singleton, ← he,
---     and_iff_right (diff_subset_diff_left hJF'.subset_ground_left), union_diff_self, ←
---     closure_union_closure_right_eq, hJF'.closure, hF'.closure, union_eq_self_of_subset_left hss, hF'.closure]
-
--- lemma Covby.er_contract_eq (h : M.Covby F F') : (M ／ F).er (F' \ F) = 1 :=
---   ((h.flat_left.covby_iff_er_contract_eq h.flat_right).mp h).2
-
--- lemma Hyperplane.inter_right_covby_of_inter_left_covby {H₁ H₂ : Set α} (hH₁ : M.Hyperplane H₁)
---     (hH₂ : M.Hyperplane H₂) (h : M.Covby (H₁ ∩ H₂) H₁) : M.Covby (H₁ ∩ H₂) H₂ :=
---   by
---   rw [(hH₁.flat.inter hH₂.flat).covby_iff_er_contract_eq hH₁.flat] at h
---   rw [(hH₁.flat.inter hH₂.flat).covby_iff_er_contract_eq hH₂.flat,
---     and_iff_right inter_subset_right]
---   have h₁' := hH₁.covby.er_contract_eq
---   have h₂' := hH₂.covby.er_contract_eq
---   have h1 := M.contract_er_diff_add_contract_er_diff (inter_subset_left H₁ H₂) hH₁.subset_ground
---   have h2 := M.contract_er_diff_add_contract_er_diff (inter_subset_right H₁ H₂) hH₂.subset_ground
---   rwa [h.2, h₁', ← h2, h₂', ENat.add_eq_add_iff_right WithTop.one_ne_top, eq_comm] at h1
-
--- lemma Hyperplane.inter_covby_comm {H₁ H₂ : Set α} (hH₁ : M.Hyperplane H₁)
---     (hH₂ : M.Hyperplane H₂) : M.Covby (H₁ ∩ H₂) H₁ ↔ M.Covby (H₁ ∩ H₂) H₂ :=
---   ⟨hH₁.inter_right_covby_of_inter_left_covby hH₂, by rw [inter_comm]; intro h;
---     exact hH₂.inter_right_covby_of_inter_left_covby hH₁ h⟩
-
--- end Matroid

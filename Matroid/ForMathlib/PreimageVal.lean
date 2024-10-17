@@ -13,10 +13,6 @@ namespace Set
     (↑) '' ((fun x : s ↦ (⟨f x, mem_image_of_mem _ x.2⟩ : f '' s)) '' x) = f '' x := by
   aesop
 
--- @[simp] theorem image_val_image_eq_image_image_val (s : Set α) (t : Set β) (f : s → t) (x : Set s) :
---     ↑((f '' (s ↓∩ x))) = f '' ↑(s ↓∩ x) := by
---   rfl
---   -- aesop
 
 -- @[simp] theorem image_val_eq (s : Set α) (x : Set s) : Subtype.val '' x = ↑x := rfl
 

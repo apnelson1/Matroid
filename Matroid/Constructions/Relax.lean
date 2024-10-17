@@ -12,7 +12,8 @@ section Relax
 lemma Hyperplane.exchange_base_of_circuit (hH : M.Hyperplane H) (hHc : M.Circuit H) (he : e ∈ H)
     (hf : f ∈ M.E \ H) : M.Base (insert f (H \ {e})) := by
   have hclosure := hH.closure_insert_eq hf.2 hf.1
-  rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert,
+  rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq_closure e,
+    closure_insert_closure_eq_closure_insert,
     ← spanning_iff_closure (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hclosure
   apply hclosure.base_of_indep
   rw [← (hHc.diff_singleton_indep he).not_mem_closure_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),
@@ -58,9 +59,9 @@ lemma antichain_of_circuit_hyperplane (M : Matroid α) :
   (If `Hs` contains sets that are not circuit hyperplanes, they do not become bases.) -/
 def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
   Matroid.ofBase M.E
-    ( fun B ↦ M.Base B ∨ (B ∈ Hs ∧ M.Circuit B ∧ M.Hyperplane B) )
-    ( M.exists_base.imp fun _ ↦ Or.inl )
-    ( by
+    (fun B ↦ M.Base B ∨ (B ∈ Hs ∧ M.Circuit B ∧ M.Hyperplane B) )
+    (M.exists_base.imp fun _ ↦ Or.inl )
+    (by
         rintro B B' (hB | ⟨-, hBc, hBcc⟩) hB' e he
         · obtain (hB' | ⟨hB'h, hB'c, hB'cc⟩) := hB'
           · obtain ⟨f, hf⟩:= hB.exchange hB' he
@@ -79,33 +80,35 @@ def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
           refine ⟨f, hf, Or.inl (hBcc.exchange_base_of_circuit hBc he.1 ⟨?_, hf.2⟩)⟩
           exact hB'.elim (fun h ↦ h.subset_ground hf.1) (fun h ↦ h.2.1.subset_ground hf.1) )
 
-    ( by
+    (by
         intro X hXE I ⟨B, hB, hIB⟩ hIX
 
+        simp_rw [maximal_subset_iff, and_imp, forall_exists_index, and_imp]
+        -- Split into cases depending on whether there is a base or circuit-hyperplane between
+        -- `I` and `Z`.
         obtain (⟨Z, hZ, hIZ, hZX⟩ | hsmall) :=
           em (∃ Z, (M.Base Z ∨ Z ∈ Hs ∧ M.Circuit Z ∧ M.Hyperplane Z) ∧ I ⊆ Z ∧ Z ⊆ X)
-        · refine ⟨Z, ⟨⟨Z, hZ, rfl.subset⟩, hIZ, hZX⟩,
-            fun J ⟨⟨BJ, (hBJ : _ ∨ _), hJBJ⟩, _, _⟩ (hZJ : Z ⊆ J) ↦ ?_⟩
-          rwa [M.antichain_of_circuit_hyperplane.eq (hZ.elim Or.inl (Or.inr ∘ And.right))
-            (hBJ.elim Or.inl (Or.inr ∘ And.right)) (hZJ.trans hJBJ)]
+        · refine ⟨Z, hIZ, ⟨⟨Z,hZ, rfl.subset⟩, hZX⟩, fun J BJ hBJ hJBJ _ hZJ ↦ ?_⟩
+          obtain rfl := M.antichain_of_circuit_hyperplane.eq (hZ.elim Or.inl (Or.inr ∘ And.right))
+            (hBJ.elim .inl (.inr ∘ And.right)) (hZJ.trans hJBJ)
+          exact hZJ.antisymm hJBJ
 
-        have hI : M.Indep I := by
-          refine hB.elim (fun h ↦ h.indep.subset hIB)
-            (fun h ↦ h.2.1.ssubset_indep (hIB.ssubset_of_ne ?_))
-          rintro rfl
-          exact hsmall ⟨I, Or.inr h, hIB, hIX⟩
+        -- `I` is independent, since it is a proper subset of a circuit or base.
+        have hI : M.Indep I := hB.elim (fun h ↦ h.indep.subset hIB) (fun h ↦ h.2.1.ssubset_indep
+          (hIB.ssubset_of_ne fun h_eq ↦ hsmall ⟨I, .inr (h_eq ▸ h), h_eq ▸ hIB, hIX⟩))
 
         obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIX
         obtain ⟨BJ, hBJ, hJBJ⟩ := hJ.indep.exists_base_superset
-        refine ⟨J, ⟨⟨BJ, Or.inl hBJ, hJBJ⟩,hIJ,hJ.subset⟩,
-          fun K ⟨⟨BK, hBK, hKBK⟩, hIK, hKX⟩ (hJK : J ⊆ K) ↦ (?_ : K ⊆ J)⟩
-        rw [hJ.eq_of_subset_indep _ hJK hKX]
-        obtain (hBK | ⟨hBK,hBKc,hBKh⟩) := hBK
-        · exact hBK.indep.subset hKBK
-        refine hBKc.ssubset_indep (hKBK.ssubset_of_ne ?_)
-        rintro rfl
-        exact hsmall ⟨K, Or.inr ⟨hBK, hBKc, hBKh⟩, hIK, hKX⟩ )
-    ( by rintro B (hB | ⟨-, hB, -⟩) <;> aesop_mat )
+        refine ⟨J, hIJ, ⟨⟨BJ, .inl hBJ, hJBJ⟩, hJ.subset⟩, fun K BK hBK hKBK hKX hJK ↦ ?_⟩
+        by_cases hK : M.Indep K
+        · exact hJ.eq_of_subset_indep hK hJK hKX
+
+        refine False.elim <| hsmall ⟨BK, hBK, ?_⟩
+        obtain hBK | hBK := hBK
+        · exact False.elim <| hK <| hBK.indep.subset hKBK
+        obtain rfl := hBK.2.1.eq_of_not_indep_subset hK hKBK
+        exact ⟨hIJ.trans hJK, hKX⟩)
+    (by rintro B (hB | ⟨-, hB, -⟩) <;> aesop_mat )
 
 lemma relaxSet_base_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ M.Hyperplane H) :
     (M.relaxSet Hs).Base B ↔ M.Base B ∨ B ∈ Hs := by

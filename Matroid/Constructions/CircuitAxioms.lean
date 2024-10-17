@@ -90,7 +90,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
     · simp only [coe_erase, coe_insert]
       exact Set.diff_subset.trans <| Set.insert_subset (hI.subset_ground heI) hK_indep.subset_ground
     have hssu : (I \ (insert e K).erase f) ⊂ I \ K := by
-      rw [sdiff_erase_not_mem hfI, Finset.ssubset_iff_subset_ne, Ne, ext_iff, not_forall]
+      rw [sdiff_erase_not_mem hfI, Finset.ssubset_iff_subset_ne, Ne, Finset.ext_iff, not_forall]
       exact ⟨(sdiff_subset_sdiff Subset.rfl (subset_insert _ _)), ⟨e, by simp [heI, heK]⟩⟩
     exact ⟨card_le_card hssu.subset, (card_lt_card hssu).ne.symm⟩
   obtain ⟨f, hfK, hfI⟩ : ∃ f ∈ K, f ∉ I :=
@@ -139,13 +139,12 @@ instance : Matroid.Finitary (M.matroid) := by
 
 @[simp] lemma matroid_circuit_iff : M.matroid.Circuit C ↔ M.Circuit C := by
   simp only [Matroid.circuit_def, Matroid.Dep, matroid_Indep, IndepMatroid.ofFinset_indep',
-    not_forall, Classical.not_imp, mem_minimals_iff, Set.mem_setOf_eq, coe_subset, and_imp,
-    forall_exists_index, exists_prop]
-
+    not_forall, Classical.not_imp, minimal_subset_iff, Set.mem_setOf_eq, coe_subset, and_imp,
+    forall_exists_index, exists_prop, matroid_E]
   refine ⟨fun ⟨⟨⟨D, hDC, hD⟩, hCE⟩, hmin⟩ ↦ ?_,
     fun h ↦ ⟨⟨⟨C, Subset.rfl,h.not_indep⟩, h.subset_ground⟩, fun X D hDX hD hX hXC ↦ ?_⟩⟩
   · obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hCE
-    rwa [coe_inj.1 <| hmin (y := C') C' Subset.rfl hC'.not_indep hC'.subset_ground
+    rwa [coe_inj.1 <| hmin (t := C') C' Subset.rfl hC'.not_indep hC'.subset_ground
       (by simpa using hCD'.trans hDC)]
 
   obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hX

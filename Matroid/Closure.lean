@@ -6,29 +6,7 @@ namespace Matroid
 
 
 
-variable {α ι : Type*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
-
--- Independence and Bases
-
--- lemma Flat.insert_indep_of_not_mem (hF : M.Flat F) (hI : M.Indep I) (hIF : I ⊆ F)
---     (he : e ∈ M.E) (heF : e ∉ F) : M.Indep (insert e I) := by
---   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF
---   obtain ⟨J', hJ', -⟩ := hJ.indep.subset_basis_of_subset (subset_insert e J)
---   have heJ := (mt <| hF.1 (X := insert e J) hJ) (by simp [insert_subset_iff, heF])
---   obtain ⟨f, hfJ', hfJ⟩ := hJ.indep.exists_insert_of_not_basis (subset_insert e J) heJ hJ'
---   refine hfJ.subset (insert_subset (.inl <| Eq.symm ?_) (hIJ.trans (subset_insert _ _)))
---   simpa [hfJ'.2] using mem_of_mem_of_subset hfJ' (diff_subset_diff_left hJ'.subset)
-
--- lemma flat_iff_forall_insert_indep :
---     M.Flat F ↔ (∀ ⦃I⦄, M.Indep I → I ⊆ F → ∀ e ∈ M.E, e ∉ F → M.Indep (insert e I)) ∧ F ⊆ M.E := by
---   refine ⟨fun h ↦ ⟨fun I hI h' e he heF ↦ h.insert_indep_of_not_mem hI h' he heF, h.subset_ground⟩,
---     fun ⟨h, hFE⟩ ↦ ⟨fun I X hIF hIX f hfX ↦ by_contra fun hfF ↦ ?_, hFE⟩⟩
---   exact hfF <| hIF.subset <| hIX.mem_of_insert_indep hfX <|
---     h hIX.indep hIF.subset f (hIX.subset_ground hfX) hfF
-
--- @[simp] theorem closure_flat (M : Matroid α) (X : Set α) : M.Flat (M.closure X) := by
---   rw [flat_iff_isClosed, closure_eq_subtypeClosure]
---   exact ⟨by simp [subtypeClosure], M.subtypeClosure.isClosed_closure ⟨X ∩ M.E, inter_subset_right⟩⟩
+variable {α : Type*} {ι : Sort*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
 
 lemma indep_iff_not_mem_closure_diff_forall (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I ↔ ∀ e ∈ I, e ∉ M.closure (I \ {e}) := by
@@ -261,7 +239,7 @@ lemma closure_empty_eq_ground_iff : M.closure ∅ = M.E ↔ M = loopyOn M.E := b
 @[simp] lemma uniqueBaseOn_closure_eq (I E X : Set α) :
     (uniqueBaseOn I E).closure X = (X ∩ I ∩ E) ∪ (E \ I) := by
   have hb : (uniqueBaseOn (I ∩ E) E).Basis (X ∩ E ∩ (I ∩ E)) (X ∩ E) :=
-    (uniqueBaseOn_basis_iff inter_subset_right inter_subset_right).2 rfl
+    (uniqueBaseOn_basis_iff inter_subset_right).2 rfl
   ext e
   rw [← uniqueBaseOn_inter_ground_eq I E, ← closure_inter_ground _ X, uniqueBaseOn_ground,
     ← hb.closure_eq_closure, hb.indep.mem_closure_iff, dep_iff, uniqueBaseOn_indep_iff',
@@ -349,15 +327,15 @@ lemma restrict_closure_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by
 
 end Constructions
 
-variable {Xs Ys : Set (Set α)} {ι : Type*}
 
 lemma Indep.inter_basis_closure_iff_subset_closure_inter {X : Set α} (hI : M.Indep I) :
     M.Basis (X ∩ I) X ↔ X ⊆ M.closure (X ∩ I) :=
   ⟨Basis.subset_closure,
     fun h ↦ (hI.inter_left X).basis_of_subset_of_subset_closure inter_subset_left h⟩
 
-lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι} (hA : A.Nonempty)
-    (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
+lemma Indep.interBasis_biInter {ι : Type*} (hI : M.Indep I) {X : ι → Set α} {A : Set ι}
+    (hA : A.Nonempty) (h : ∀ i ∈ A, M.Basis ((X i) ∩ I) (X i)) :
+    M.Basis ((⋂ i ∈ A, X i) ∩ I) (⋂ i ∈ A, X i) := by
   refine (hI.inter_left _).basis_of_subset_of_subset_closure inter_subset_left ?_
   have := biInter_inter hA X I
   simp_rw [← biInter_inter hA,
@@ -367,10 +345,12 @@ lemma Indep.interBasis_biInter (hI : M.Indep I) {X : ι → Set α} {A : Set ι}
 
 lemma Indep.interBasis_iInter [Nonempty ι] {X : ι → Set α} (hI : M.Indep I)
     (h : ∀ i, M.Basis ((X i) ∩ I) (X i)) : M.Basis ((⋂ i, X i) ∩ I) (⋂ i, X i) := by
-  rw [← biInter_univ]
-  exact hI.interBasis_biInter (by simp) (by simpa)
+  convert hI.interBasis_biInter (ι := PLift ι) univ_nonempty (X := fun i ↦ X i.down)
+    (by simpa using fun (i : PLift ι) ↦ h i.down) <;>
+  · simp only [mem_univ, iInter_true]
+    exact (iInter_plift_down X).symm
 
-lemma Indep.interBasis_sInter (hI : M.Indep I) (hXs : Xs.Nonempty)
+lemma Indep.interBasis_sInter {Xs : Set (Set α)} (hI : M.Indep I) (hXs : Xs.Nonempty)
     (h : ∀ X ∈ Xs, M.Basis (X ∩ I) X) : M.Basis (⋂₀ Xs ∩ I) (⋂₀ Xs) := by
   rw [sInter_eq_biInter]
   exact hI.interBasis_biInter hXs h
@@ -382,163 +362,3 @@ lemma Basis.closure_inter_basis_closure (h : M.Basis (X ∩ I) X) (hI : M.Indep 
     (inter_subset_inter_left _ (h.trans (M.closure_subset_closure inter_subset_left))))
 
 end Matroid
-
-
-
-
-
--- -- section from_axioms
--- -- lemma closure_diff_singleton_eq_cl' (closure : set α → set α) (M.subset_closure : ∀ X, X ⊆ closure X)
--- -- (closure_mono : ∀ X Y, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X )
--- -- {x : α} {I : set α} (h : x ∈ closure (I \ {x})) :
--- --   closure (I \ {x}) = closure I :=
--- -- begin
--- --   refine (closure_mono _ _ diff_subset).antisymm _,
--- --   have h' := closure_mono _ _ (insert_subset.mpr ⟨h, (M.subset_closure _ )⟩),
--- --   rw [insert_diff_singleton, closure_idem] at h',
--- --   exact (closure_mono _ _ (subset_insert _ _)).trans h',
--- -- end
--- -- /-- A set is independent relative to a closure function if none of its elements are contained in
--- --   the closure of their removal -/
--- -- def closure_indep (closure : set α → set α) (I : set α) : Prop := ∀ e ∈ I, e ∉ closure (I \ {e})
--- -- lemma closure_indep_mono {closure : set α → set α} (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) {I J : set α}
--- -- (hJ : closure_indep closure J) (hIJ : I ⊆ J) :
--- --   closure_indep closure I :=
--- -- (λ e heI heclosure, hJ e (hIJ heI) (closure_mono (diff_subset_diff_left hIJ) heclosure))
--- -- lemma closure_indep_aux {e : α} {I : set α} {closure : set α → set α}
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- -- (h : closure_indep closure I) (heI : ¬closure_indep closure (insert e I)) :
--- -- e ∈ closure I :=
--- -- begin
--- --   have he : α ∉ I, by { intro he, rw [insert_eq_of_mem he] at heI, exact heI h },
--- --   rw [closure_indep] at heI, push_neg at heI,
--- --   obtain ⟨f, ⟨(rfl | hfI), hfclosure⟩⟩ := heI,
--- --   { rwa [insert_diff_self_of_not_mem he] at hfclosure },
--- --   have hne : α ≠ f, by { rintro rfl, exact he hfI },
--- --   rw [← insert_diff_singleton_comm hne] at hfclosure,
--- --   convert (closure_exchange (I \ {f}) e f ⟨hfclosure,h f hfI⟩).1,
--- --   rw [insert_diff_singleton, insert_eq_of_mem hfI],
--- -- end
--- -- /-- If the closure axioms hold, then `cl`-independence gives rise to a matroid -/
--- -- def matroid_of_closure (closure : set α → set α) (M.subset_closure : ∀ X, X ⊆ closure X)
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X )
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- -- (closure_indep_maximal : ∀ ⦃I X⦄, closure_indep closure I → I ⊆ X  →
--- --     (maximals (⊆) {J | closure_indep closure J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) :
--- -- matroid_in α :=
--- -- matroid_of_indep (closure_indep closure)
--- -- (λ e he _, not_mem_empty _ he) (λ I J hJ hIJ, closure_indep_mono closure_mono hJ hIJ)
--- -- (begin
--- --   refine λ I I' hI hIn hI'm, _,
--- --   obtain ⟨B, hB⟩ := closure_indep_maximal hI (subset_union_left I I'),
--- --   have hB' : B ∈ maximals (⊆) {J | closure_indep closure J},
--- --   { refine ⟨hB.1.1,(λ B' hB' hBB' e heB', by_contra (λ heB, _) )⟩,
--- --     have he' : α ∈ closure I',
--- --     { refine (em (e ∈ I')).elim (λ heI', (M.subset_closure I') heI')
--- --         (λ heI', closure_indep_aux closure_exchange hI'm.1 (λ hi, _)),
--- --       exact heI' (hI'm.2 hi (subset_insert e _) (mem_insert e _)) },
--- --       have hI'B : I' ⊆ closure B,
--- --     { refine λ f hf, (em (f ∈ B)).elim (λ h', M.subset_closure B h')
--- --         (λ hfB', closure_indep_aux closure_exchange hB.1.1 (λ hi, hfB' _)),
--- --       refine hB.2 ⟨hi,hB.1.2.1.trans (subset_insert _ _),_⟩ (subset_insert _ _) (mem_insert _ _),
--- --       exact insert_subset.mpr ⟨or.inr hf,hB.1.2.2⟩ },
--- --     have heBclosure := (closure_idem B).subset ((closure_mono hI'B) he'),
--- --     refine closure_indep_mono closure_mono hB' (insert_subset.mpr ⟨heB', hBB'⟩) e (mem_insert _ _) _,
--- --     rwa [insert_diff_of_mem _ (mem_singleton e), diff_singleton_eq_self heB] },
--- --   obtain ⟨f,hfB,hfI⟩ := exists_of_ssubset
--- --     (hB.1.2.1.ssubset_of_ne (by { rintro rfl, exact hIn hB' })),
--- --   refine ⟨f, ⟨_, hfI⟩, closure_indep_mono closure_mono hB.1.1 (insert_subset.mpr ⟨hfB,hB.1.2.1⟩)⟩,
--- --   exact or.elim (hB.1.2.2 hfB) (false.elim ∘ hfI) id,
--- -- end)
--- -- (λ I X hI hIX, closure_indep_maximal hI hIX)
--- -- lemma closure_indep_closure_eq {closure : set α → set α }
--- --   (M.subset_closure : ∀ X, X ⊆ closure X )
--- --   (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y )
--- --   (closure_idem : ∀ X, closure (closure X) = closure X )
--- --   (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- --   (closure_indep_maximal : ∀ ⦃I X⦄, closure_indep closure I → I ⊆ X →
--- --     (maximals (⊆) {J | closure_indep closure J ∧ I ⊆ J ∧ J ⊆ X }).nonempty ) (X : set α) :
--- -- closure X = X ∪ {e | ∃ I ⊆ X, closure_indep closure I ∧ ¬closure_indep closure (insert e I) }  :=
--- -- begin
--- --   ext f,
--- --   refine ⟨λ h, (em (f ∈ X)).elim or.inl (λ hf, or.inr _),
--- --     λ h, or.elim h (λ g, M.subset_closure X g) _⟩,
--- --   { have hd : ¬ (closure_indep closure (insert f X)),
--- --     { refine λ hi, hi f (mem_insert _ _) _, convert h,
--- --       rw [insert_diff_of_mem _ (mem_singleton f), diff_singleton_eq_self hf] },
--- --     obtain ⟨I, hI⟩ := closure_indep_maximal (λ e he h', not_mem_empty _ he) (empty_subset X),
--- --     have hXI : X ⊆ closure I,
--- --     { refine λ x hx, (em (x ∈ I)).elim (λ h', M.subset_closure _ h') (λ hxI, _),
--- --       refine closure_indep_aux closure_exchange hI.1.1 (λ hi, hxI _),
--- --       refine hI.2 ⟨hi, empty_subset (insert x I), _⟩ (subset_insert x _) (mem_insert _ _),
--- --       exact insert_subset.mpr ⟨hx, hI.1.2.2⟩ },
--- --     have hfI : f ∈ closure I, from (closure_mono (hXI)).trans_eq (closure_idem I) h,
--- --     refine ⟨I, hI.1.2.2, hI.1.1, λ hi, hf (hi f (mem_insert f _) _).elim⟩,
--- --     rwa [insert_diff_of_mem _ (mem_singleton f), diff_singleton_eq_self],
--- --     exact not_mem_subset hI.1.2.2 hf },
--- --   rintro ⟨I, hIX, hI, hfI⟩,
--- --   exact (closure_mono hIX) (closure_indep_aux closure_exchange hI hfI),
--- -- end
--- -- @[simp] lemma matroid_of_closure_apply {closure : set α → set α} (M.subset_closure : ∀ X, X ⊆ closure X)
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X)
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X)
--- -- (closure_indep_maximal : ∀ ⦃I X⦄, closure_indep closure I → I ⊆ X →
--- --     (maximals (⊆) {J | closure_indep closure J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) :
--- -- (matroid_of_closure closure M.subset_closure closure_mono closure_idem closure_exchange closure_indep_maximal).closure = closure :=
--- -- begin
--- --   ext1 X,
--- --   rw [(closure_indep_closure_eq M.subset_closure closure_mono closure_idem closure_exchange closure_indep_maximal X : closure X = _),
--- --     matroid_of_closure, matroid.closure_eq_set_of_indep_not_indep],
--- --   simp,
--- -- end
--- -- @[simp] lemma matroid_of_closure_indep_iff {closure : set α → set α} (M.subset_closure : ∀ X, X ⊆ closure X)
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X)
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X)
--- -- (closure_indep_maximal : ∀ ⦃I X⦄, closure_indep closure I → I ⊆ X →
--- --     (maximals (⊆) {J | closure_indep closure J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) {I : set α}:
--- -- (matroid_of_closure closure M.subset_closure closure_mono closure_idem closure_exchange closure_indep_maximal).indep I ↔ closure_indep closure I :=
--- -- by rw [matroid_of_closure, matroid_of_indep_apply]
--- -- /-- The maximality axiom isn't needed if all independent sets are at most some fixed size. -/
--- -- def matroid_of_closure_of_indep_bounded (closure : set α → set α)
--- --   (M.subset_closure : ∀ X, X ⊆ closure X )
--- --   (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y )
--- --   (closure_idem : ∀ X, closure (closure X) = closure X )
--- --   (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- --   (n : ℕ) (hn : ∀ I, closure_indep closure I → I.finite ∧ I.ncard ≤ n) :
--- -- matroid_in α := matroid_of_closure closure M.subset_closure closure_mono closure_idem closure_exchange
--- -- (exists_maximal_subset_property_of_bounded ⟨n, hn⟩)
--- -- @[simp] lemma matroid_of_closure_of_indep_bounded_apply (closure : set α → set α) (M.subset_closure : ∀ X, X ⊆ closure X )
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X )
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- -- (n : ℕ) (hn : ∀ I, closure_indep closure I → I.finite ∧ I.ncard ≤ n) :
--- -- (matroid_of_closure_of_indep_bounded closure M.subset_closure closure_mono closure_idem closure_exchange n hn).closure = closure :=
--- -- by simp [matroid_of_closure_of_indep_bounded]
--- -- instance (closure : set α → set α) (M.subset_closure : ∀ X, X ⊆ closure X )
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X )
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X )
--- -- (n : ℕ) (hn : ∀ I, closure_indep closure I → I.finite ∧ I.ncard ≤ n) :
--- -- matroid.finite_rk (matroid_of_closure_of_indep_bounded closure M.subset_closure closure_mono closure_idem closure_exchange n hn)
--- -- :=
--- -- begin
--- --   obtain ⟨B, h⟩ :=
--- --     (matroid_of_closure_of_indep_bounded closure M.subset_closure closure_mono closure_idem closure_exchange n hn).exists_base,
--- --   refine h.finite_rk_of_finite (hn _ _).1,
--- --   simp_rw [matroid_of_closure_of_indep_bounded, matroid_of_closure, matroid.base_iff_maximal_indep,
--- --     matroid_of_indep_apply] at h,
--- --   exact h.1,
--- -- end
--- -- /-- A finite matroid as defined by the closure axioms. -/
--- -- def matroid_of_closure_of_finite [finite E] (closure : set α → set α) (M.subset_closure : ∀ X, X ⊆ closure X )
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X)
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X) :
--- -- matroid_in α   :=
--- -- matroid_of_closure_of_indep_bounded closure M.subset_closure closure_mono closure_idem closure_exchange (nat.card E)
--- -- (λ I hI, ⟨to_finite _, by { rw [← ncard_univ], exact ncard_le_of_subset (subset_univ _) }⟩)
--- -- @[simp] lemma matroid_of_closure_of_finite_apply [finite E] (closure : set α → set α)
--- -- (M.subset_closure : ∀ X, X ⊆ closure X )
--- -- (closure_mono : ∀ ⦃X Y⦄, X ⊆ Y → closure X ⊆ closure Y) (closure_idem : ∀ X, closure (closure X) = closure X)
--- -- (closure_exchange : ∀ (X e f), f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ closure X) :
--- -- (matroid_of_closure_of_finite closure M.subset_closure closure_mono closure_idem closure_exchange).closure = closure :=
--- -- by simp [matroid_of_closure_of_finite]
--- -- end from_axioms
--- end Matroid

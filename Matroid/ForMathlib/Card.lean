@@ -3,7 +3,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Ring
 import Mathlib.Algebra.BigOperators.WithTop
 
-open Set BigOperators
+open Set BigOperators Function
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
@@ -13,7 +13,7 @@ variable {α β : Type*} {s t : Set α} {n : ℕ}
 @[simp] lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← not_iff_not, ← not_lt, not_not, Set.not_nontrivial_iff, ← encard_le_one_iff_subsingleton,
     (by norm_num : (2 : ℕ∞) = 1 + 1)]
-  exact ⟨ENat.le_of_lt_add_one, fun h ↦ h.trans_lt (by norm_num)⟩
+  exact ⟨Order.le_of_lt_add_one, fun h ↦ h.trans_lt (by norm_num)⟩
 
 theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
@@ -35,11 +35,11 @@ theorem Equiv.encard_univ_eq (e : α ≃ β) : encard (univ : Set α) = encard (
   rw [encard_univ, encard_univ, PartENat.card_congr e]
 
 theorem Equiv.encard_eq {s : Set α} {t : Set β} (e : s ≃ t) : s.encard = t.encard :=
-  e.toEmbedding.enccard_le.antisymm e.symm.toEmbedding.enccard_le
+  e.toEmbedding.encard_le.antisymm e.symm.toEmbedding.encard_le
 
 theorem Fin.nonempty_embedding_iff_le_encard : Nonempty (Fin n ↪ s) ↔ n ≤ s.encard := by
   refine ⟨fun ⟨i⟩ ↦ ?_, fun h ↦ ?_⟩
-  · convert ((Equiv.Set.univ (Fin n)).toEmbedding.trans i).enccard_le
+  · convert ((Equiv.Set.univ (Fin n)).toEmbedding.trans i).encard_le
     simp [encard_univ]
   obtain ⟨t, hts, hcard⟩ := exists_subset_encard_eq h
   have ht : t.Finite := finite_of_encard_eq_coe hcard
@@ -128,8 +128,10 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
     (add_le_add_right (encard_iUnion_le _) 1)
   rw [← add_assoc, WithTop.add_le_add_iff_right (by simp), ENat.add_one_le_iff] at hcon
   · exact hcon.ne rfl
-  refine (WithTop.sum_lt_top (fun i _ ↦ ?_)).ne
-  rw [encard_ne_top_iff]
+  apply LT.lt.ne
+  rw [WithTop.sum_lt_top (ι := ι) (α := ℕ) (s := Finset.univ) (f := fun i ↦ (s i \ {x}).encard)]
+  intro i _
+  rw [lt_top_iff_ne_top, encard_ne_top_iff]
   exact (hfin i).diff _
 
 theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
@@ -147,3 +149,25 @@ theorem pairwiseDisjoint_of_encard_sum_le_encard_iUnion {ι : Type*} [Fintype ι
     (hfin : ∀ i, (s i).Finite) (hle : ∑ i, encard (s i) ≤ encard (⋃ i, s i)) :
     univ.PairwiseDisjoint s := by
   rw [← encard_iUnion_eq_sum_iff_pairwiseDisjoint hfin, hle.antisymm (encard_iUnion_le s)]
+
+theorem Set.Finite.encard_le_iff_nonempty_embedding {s : Set α} {t : Set β} (hs : s.Finite) :
+    s.encard ≤ t.encard ↔ Nonempty (s ↪ t) := by
+  cases isEmpty_or_nonempty β
+  · simp only [t.eq_empty_of_isEmpty, encard_empty, nonpos_iff_eq_zero, encard_eq_zero]
+    constructor; rintro rfl; exact ⟨Embedding.ofIsEmpty⟩
+    rintro ⟨e⟩
+    exact isEmpty_coe_sort.1 e.toFun.isEmpty
+  refine ⟨fun h ↦ ?_, fun ⟨e⟩ ↦ e.encard_le⟩
+  obtain ⟨f, hst, hf⟩ := hs.exists_injOn_of_encard_le h
+  exact ⟨codRestrict (s.restrict f) t (fun x ↦ by aesop), hf.injective.codRestrict _⟩
+
+theorem Set.Finite.encard_le_iff_nonempty_embedding' {s : Set α} {t : Set β} (ht : t.Finite) :
+    s.encard ≤ t.encard ↔ Nonempty (s ↪ t) := by
+  obtain (hs | hs) := s.finite_or_infinite
+  · exact hs.encard_le_iff_nonempty_embedding
+  rw [hs.encard_eq, top_le_iff, encard_eq_top_iff, Set.Infinite, iff_true_intro ht,
+    not_true, false_iff]
+  rintro ⟨e⟩
+  have hle := e.encard_le
+  rw [hs.encard_eq, top_le_iff, encard_eq_top_iff] at hle
+  exact hle ht

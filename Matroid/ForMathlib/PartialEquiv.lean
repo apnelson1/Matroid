@@ -123,28 +123,28 @@ instance {α β : Type*} : Preorder (PartialEquiv α β) where
   le_refl φ := by simp [Subset.rfl]
   le_trans φ₁ φ₂ φ₃ h₁₂ h₂₃ := ⟨h₁₂.1.trans h₂₃.1, fun hi ↦ by rw [h₂₃.2 (h₁₂.1 hi), h₁₂.2 hi]⟩
 
-theorem PartialEquiv.eq_of_mem_source (h : φ ≤ φ') (ha : a ∈ φ.source) : φ' a = φ a :=
-  h.2 ha
+-- theorem PartialEquiv.eq_of_mem_source (h : φ ≤ φ') (ha : a ∈ φ.source) : φ' a = φ a :=
+--   h.2 ha
 
-theorem PartialEquiv.source_subset (h : φ ≤ φ') : φ.source ⊆ φ'.source :=
-  h.1
+-- theorem PartialEquiv.source_subset (h : φ ≤ φ') : φ.source ⊆ φ'.source :=
+--   h.1
 
-theorem PartialEquiv.target_subset (h : φ ≤ φ') : φ.target ⊆ φ'.target := by
-  rw [← φ.image_source_eq_target, ← φ'.image_source_eq_target]
-  rintro _ ⟨x,hx,rfl⟩
-  rw [← PartialEquiv.eq_of_mem_source h hx]
-  exact mem_image_of_mem _ (source_subset h hx)
+-- theorem PartialEquiv.target_subset (h : φ ≤ φ') : φ.target ⊆ φ'.target := by
+--   rw [← φ.image_source_eq_target, ← φ'.image_source_eq_target]
+--   rintro _ ⟨x,hx,rfl⟩
+--   rw [← PartialEquiv.eq_of_mem_source h hx]
+--   exact mem_image_of_mem _ (source_subset h hx)
 
-theorem PartialEquiv.symm_le_symm_of_le (h : φ ≤ φ') : φ.symm ≤ φ'.symm := by
-  refine ⟨target_subset h, fun {i} hi ↦ φ'.injOn ?_ ?_ ?_⟩
-  · exact φ'.map_target (target_subset h hi)
-  · exact h.1 <| φ.map_target hi
-  rw [eq_comm, h.2 (φ.map_target hi), φ.right_inv hi, φ'.right_inv (target_subset h hi)]
+-- theorem PartialEquiv.symm_le_symm_of_le (h : φ ≤ φ') : φ.symm ≤ φ'.symm := by
+--   refine ⟨target_subset h, fun {i} hi ↦ φ'.injOn ?_ ?_ ?_⟩
+--   · exact φ'.map_target (target_subset h hi)
+--   · exact h.1 <| φ.map_target hi
+--   rw [eq_comm, h.2 (φ.map_target hi), φ.right_inv hi, φ'.right_inv (target_subset h hi)]
 
-theorem PartialEquiv.symm_le_symm_iff_le : φ.symm ≤ φ'.symm ↔ φ ≤ φ' :=
-  ⟨symm_le_symm_of_le, fun h ↦ by simpa using symm_le_symm_of_le h⟩
+-- theorem PartialEquiv.symm_le_symm_iff_le : φ.symm ≤ φ'.symm ↔ φ ≤ φ' :=
+--   ⟨symm_le_symm_of_le, fun h ↦ by simpa using symm_le_symm_of_le h⟩
 
-theorem PartialEquiv.lt_insert (ha : a ∉ φ.source) (hb : b ∉ φ.target) : φ < φ.insert ha hb := by
-  refine ⟨⟨subset_insert _ _, fun hi ↦ φ.insert_apply_mem _ _ hi⟩, ?_⟩
-  simp only [insert_source, not_and]
-  exact fun h ↦ (ha <| h (Or.inl rfl)).elim
+-- theorem PartialEquiv.lt_insert (ha : a ∉ φ.source) (hb : b ∉ φ.target) : φ < φ.insert ha hb := by
+--   refine ⟨⟨subset_insert _ _, fun hi ↦ φ.insert_apply_mem _ _ hi⟩, ?_⟩
+--   simp only [insert_source, not_and]
+--   exact fun h ↦ (ha <| h (Or.inl rfl)).elim
