@@ -177,7 +177,7 @@ lemma Indep.fundCct_circuit (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
     simp only [insert_diff_of_mem, mem_singleton]
     exact
       subset_trans diff_subset ((sInter_subset_of_mem hI').trans (subset_sUnion_of_mem hI'))
-  rw [mem_insert_iff, mem_sInter, eq_comm, iff_false_intro hne, false_or_iff] at hf
+  rw [mem_insert_iff, mem_sInter, eq_comm, iff_false_intro hne, false_or] at hf
   have hi : M.Indep (⋂₀ {J : Set α | J ⊆ I ∧ e ∈ M.closure J} \ {f}) :=
     hI.subset (diff_subset.trans (sInter_subset_of_mem hI'))
   rw [← insert_diff_singleton_comm hne, hi.insert_indep_iff_of_not_mem, mem_diff,
@@ -251,7 +251,7 @@ lemma mem_closure_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
 lemma mem_closure_iff_exists_circuit_of_not_mem (he : e ∉ X) :
     e ∈ M.closure X ↔ ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ insert e X := by
   rw [← closure_inter_ground, mem_closure_iff_mem_or_exists_circuit, mem_inter_iff,
-    iff_false_intro he, false_and_iff, false_or_iff]
+    iff_false_intro he, false_and, false_or]
   refine ⟨
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, h.trans ((insert_subset_insert inter_subset_left))⟩,
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, (subset_inter h hC.subset_ground).trans ?_⟩⟩

@@ -1,6 +1,7 @@
 import Matroid.Minor.Rank
 import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Minimal
+import Matroid.ForMathlib.BooleanAlgebra
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -413,6 +414,22 @@ lemma CovBy.er_eq (h : F ⋖[M] F') : M.er F' = M.er F + 1 := by
   rw [er_closure_eq, h.flat_left.er_insert_eq_add_one]
   exact ⟨M.closure_subset_ground _ he.1, he.2⟩
 
+lemma Covby.er_eq_of_ssubset_of_subset (h : F ⋖[M] F') (hFX : F ⊂ X) (hXF' : X ⊆ F') :
+    M.er X = M.er F + 1 := by
+  obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
+  rw [← h.er_eq, le_antisymm_iff, and_iff_right (M.er_mono hXF'), h.er_eq,
+    ← h.flat_left.er_insert_eq_add_one ⟨(h.subset_ground_right (hXF'.subset heX)), heF⟩]
+  exact M.er_mono (insert_subset heX hFX.subset)
+
+lemma CovBy.r_eq_of_rFin (h : F ⋖[M] F') (hFin : M.rFin F) : M.r F' = M.r F + 1 := by
+  have hFin' : M.rFin F' := by
+    rw [← er_lt_top_iff, h.er_eq]
+    rw [← er_lt_top_iff] at hFin
+    exact lt_tsub_iff_right.mp hFin
+  have her := h.er_eq
+  rw [← hFin.coe_r_eq, ← hFin'.coe_r_eq] at her
+  norm_cast at her
+
 lemma closure_covBy_iff :
     (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
   simp_rw [(M.closure_flat X).covBy_iff_eq_closure_insert, closure_insert_closure_eq_closure_insert]
@@ -775,26 +792,25 @@ lemma hyperplane_iff_maximal_nonspanning :
 
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by
-  sorry
-  -- rw [cocircuit_iff_minimal_compl_nonspanning', hyperplane_iff_maximal_nonspanning, iff_comm]
-  -- convert (Set.ext_iff.1 <| image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
-  --   (s := {X | ¬ M.Spanning X ∧ X ⊆ M.E}) ?_) (M.E \ H)
-  -- ·
-  --   simp only [mem_setOf_eq, mem_image]
-  --   refine ⟨fun h ↦ ⟨H, h, rfl⟩, fun ⟨X, hX, h_eq⟩ ↦ ?_⟩
-  --   rw [diff_eq_diff_iff_inter_eq_inter, inter_eq_self_of_subset_left hX.prop.2,
-  --     inter_eq_self_of_subset_left hH] at h_eq
-  --   rwa [← h_eq]
-  -- · simp only [mem_image, mem_setOf_eq]
-  --   convert Iff.rfl with X
-  --   refine ⟨fun ⟨Y, hY, hYX⟩ ↦ ?_, fun h ↦ ⟨M.E \ X, ?_, ?_⟩⟩
-  --   · simp [← hYX, inter_eq_self_of_subset_right hY.2, diff_subset, hY.1]
-  --   · simp [h.1, diff_subset]
-  --   rw [diff_diff_cancel_left h.2]
-  -- simp only [mem_setOf_eq, sup_eq_union, le_eq_subset, and_imp]
-  -- refine fun X Y _ hX _ hY ↦ ⟨fun h ↦ ?_, diff_subset_diff_right⟩
-  -- rw [← diff_diff_cancel_left hX, ← diff_diff_cancel_left hY]
-  -- exact diff_subset_diff_right h
+  rw [cocircuit_iff_minimal_compl_nonspanning', hyperplane_iff_maximal_nonspanning, iff_comm]
+
+  have h_image := image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
+    (s := {X | ¬ M.Spanning X ∧ X ⊆ M.E}) (fun X Y hX hY ↦ sdiff_le_sdiff_iff_le hX.2 hY.2)
+
+  have h_inj : InjOn (M.E \ ·) {X | X ⊆ M.E} := fun X hX Y hY h_eq ↦ eq_of_sdiff_eq_sdiff hX hY h_eq
+
+  convert Set.ext_iff.1 h_image (M.E \ H) using 1
+  · exact Iff.symm <| h_inj.mem_image_iff (s := {X | X ⊆ M.E}) (fun _ h ↦ h.prop.2) hH
+
+  rw [iff_comm]
+  apply minimal_iff_minimal_of_imp_of_forall
+  · simp only [mem_image, mem_setOf_eq, and_imp]
+    exact fun X hX hXE ↦ ⟨M.E \ X, ⟨hX, diff_subset⟩, by simp [inter_eq_self_of_subset_right hXE]⟩
+
+  simp only [le_eq_subset, mem_image, mem_setOf_eq, and_imp]
+  rintro _ ⟨Y, ⟨hYsp, hYE⟩, rfl⟩
+  refine ⟨_, rfl.subset, ?_, diff_subset⟩
+  simpa [inter_eq_self_of_subset_right hYE]
 
 @[simp] lemma compl_hyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.Hyperplane (M.E \ K) ↔ M.Cocircuit K := by

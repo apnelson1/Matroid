@@ -187,6 +187,7 @@ lemma rFin.relRank_eq_sub (hY : M.rFin X) (hXY : X ⊆ Y) :
   rw [← relRank_add_er_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY
   rw [eq_comm, tsub_add_cancel_iff_le]
+
   exact le_add_self
 
 lemma Nonloop.relRank_add_one_eq (he : M.Nonloop e) (X : Set α) :

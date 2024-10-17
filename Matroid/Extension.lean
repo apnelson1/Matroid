@@ -173,7 +173,7 @@ lemma ModularCut.closure_mem_of_mem (hF : F ∈ U) : M.closure F ∈ U := by
   carrier := ∅
   forall_flat := by simp
   forall_superset := by simp
-  forall_inter := by simp [subset_empty_iff]
+  forall_inter := by simp
 
 instance (M : Matroid α) : PartialOrder M.ModularCut where
   le U U' := (U : Set (Set α)) ⊆ U'
@@ -431,8 +431,9 @@ lemma ModularCut.ExtIndep.subset_insert_ground (h : U.ExtIndep e I) : I ⊆ inse
   diff_singleton_subset_iff.1 h.diff_singleton_indep.subset_ground
 
 /-- This lemma gives the conditions under which `I` is a maximal `ExtIndep` subset of `X`;
-it is essentially characterizing when `(M.extendBy e U).Basis I X` before `M.extendBy e U`
-has been defined.
+it is essentially characterizing when `I` is a basis of `X` in the matroid
+`M.extendBy e U` before `M.extendBy e U` has actually been shown to be a matroid.
+
 We need the lemma here because it is invoked several times when defining `M.extendBy e U`,
 but it should not be used elsewhere; good API versions should be stated in terms of
 `(M.extendBy e U).Basis`, and have less of a dense mess of logic on the RHS.
@@ -512,7 +513,7 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
   rw [extIndep_iff_of_not_mem (by simp [heI, hne]), hI.insert_indep_iff_of_not_mem hxI, h.1] at hind
   refine not_mem_of_mem_diff_closure hind ⟨hi, hne.symm⟩
 
-/-- This lemma is true without the coloop hypothesis, but it is easier to prove this first and
+/-- This lemma is true even when `e` *is* a coloop of `M`, but it is easier to prove this first and
 then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
 private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ M.Coloop e)
     (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
@@ -554,20 +555,20 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
       simpa [hBmax.2, he, hBmax.1.closure_superset_eq hss, ← spanning_iff_closure hIeE] using hImax
     exact hInmax hImax.1 hImax.2
 
-  simp only [mem_singleton_iff, insert_diff_of_mem, he, not_false_eq_true, diff_singleton_eq_self,
-    closure_ground, hU, iff_true, mem_insert_iff, or_false, not_true_eq_false, and_false, imp_false,
-    and_true, not_or, not_and, not_not, mem_union, and_self_left, ← spanning_iff_closure hBeE,
-    ← spanning_iff_closure hIeE, ← hyperplane_iff_covBy] at hBmax hInmax
+  simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure hBeE, hU, iff_true,
+    mem_insert_iff, true_or, not_true_eq_false, imp_false, ← hyperplane_iff_covBy, and_true, ←
+    spanning_iff_closure hIeE, not_or, not_and, not_not] at hBmax hInmax
 
-  obtain (hsp | hsp) := em <| M.Spanning ((I ∪ B) \ {e})
-  · obtain (heI | heI) := em (e ∈ I)
+  by_cases hsp : M.Spanning ((I ∪ B) \ {e})
+  · by_cases heI : e ∈ I
     · replace hImax := show M.Hyperplane (M.closure (I \ {e})) by
         simpa [hsp.closure_eq, heI, hU, ← hyperplane_iff_covBy] using hImax
       exact hInmax.2 hImax heI
     replace hInmax := show ¬ M.Spanning (I \ {e}) by simpa [heI, hU] using hInmax
     replace hImax := show M.closure (I \ {e}) = M.E by
       simpa [hsp.closure_eq, heI, he, hU] using hImax
-    rw [spanning_iff_closure hIeE] at hInmax; contradiction
+    rw [spanning_iff_closure hIeE] at hInmax
+    contradiction
 
   obtain (⟨hBsp, -⟩ | ⟨hBhp, heB⟩) := hBmax
   · exact hsp <| hBsp.superset hss hIBe'
@@ -595,8 +596,8 @@ private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
   simp_rw [← hrw] at hInmax hBmax hI ⊢
   exact (U.delete {e}).extIndep_aug_of_not_coloop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
 
-private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut)
-    (hXE : X ⊆ insert e M.E) : ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
+private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
+  ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
   intro I hI hIX
   obtain ⟨J, hJ, hIJ⟩ :=
     hI.diff_singleton_indep.subset_basis_of_subset (diff_subset_diff_left hIX)
@@ -652,9 +653,8 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut)
 
   exact hconJ'.2 <| hJ.indep.closure_diff_covBy hxJI.1
 
-/-- Extend a matroid `M` by an element `e` using a modular cut `U`.
-(Intended for use when `e ∉ M.E`; if `e` already belongs to `M`,
-then this gives the extension of `M ＼ e` by `e` using `U`.) -/
+/-- Extend a matroid `M` by a new element `e` using a modular cut `U`.
+(If `e` already belongs to `M`, then this gives the extension of `M ＼ e` by `e` using `U`.) -/
 @[simps!] def extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
     (E := insert e M.E)
