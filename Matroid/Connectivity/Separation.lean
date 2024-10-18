@@ -90,7 +90,6 @@ lemma connected_iff_not_exists_tutteSep [M.Nonempty] :
   refine .inr fun z hzC ↦ ⟨hC.subset_ground hzC, fun (hz : M.ConnectedTo x z) ↦ ?_⟩
   exact hex <| hz.trans <| hC.mem_connectedTo_mem hzC he
 
--- def TutteConnected (k : ℕ) := ¬ ∃
 
 
 

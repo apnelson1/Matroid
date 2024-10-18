@@ -16,7 +16,7 @@ variable {α β : Type*} {r s s₁ s₂: Set α} {t t' t₁ t₂ : Set β} {f : 
 --   ⟨fun h _ hx _ hy ↦ h hx hy rfl, fun h _ hx _ hy _ ↦ h hx hy⟩
 
 section Update
-variable {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β} {a : α} {b : β}
+variable {α β : Type*} [DecidableEq α] {f : α → β} {a : α} {b : β}
 
 @[simp] theorem image_update (a : α) (f : α → β) (s : Set α) [Decidable (a ∈ s)] (b : β) :
     (update f a b) '' s = if a ∈ s then insert b (f '' (s \ {a})) else (f '' s) := by

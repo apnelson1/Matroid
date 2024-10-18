@@ -106,7 +106,7 @@ lemma SkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set α}
       (by simpa [PLift.forall]) (by simpa [PLift.forall])
     · exact (iUnion_plift_down Is).symm
     convert h
-    simp [skewFamily_iff, ModularFamily, ModularBase, PLift.forall]
+    simp [skewFamily_iff, ModularFamily, modularBase_iff, PLift.forall]
 
   clear! Is Xs
   intro η Is Xs h hIX hIs
@@ -178,8 +178,8 @@ lemma SkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.SkewFamily Xs
   suffices aux : ∀ (η : Type u) (Xs Ys : η → Set α), M.SkewFamily Xs → (∀ i, Ys i ⊆ Xs i) →
       M.SkewFamily Ys by
     convert aux (PLift ι) (fun i ↦ Xs i.down) (fun i ↦ Ys i.down) ?_ (by simpa [PLift.forall])
-    · simp [skewFamily_iff, ModularFamily, ModularBase, PLift.forall]
-    simpa [skewFamily_iff, ModularFamily, ModularBase, PLift.forall] using h
+    · simp [skewFamily_iff, ModularFamily, modularBase_iff, PLift.forall]
+    simpa [skewFamily_iff, ModularFamily, modularBase_iff, PLift.forall] using h
   clear! Xs Ys
   intro η Xs Ys h hYX
 
@@ -332,12 +332,6 @@ lemma skew_iff_exist_bases {X Y : Set α} :
     convert h2 <;> simp [Set.ext_iff, or_comm]
   refine ⟨fun i ↦ bif i then I else J, h1, ?_, by simpa, by simpa⟩
   convert h2 <;> simp [Set.ext_iff, or_comm]
-  --   :
-  --   M.Skew X Y ↔ ∃ I J, Disjoint I J ∧ M.Indep (I ∪ J) ∧ M.Basis I X ∧ M.Basis J Y := by
-  -- rw [skew_iff_exist_bases]
-  -- refine ⟨fun ⟨I, J, h⟩ ↦ ⟨I, J, h.1, h.2.1.indep, h.2.2⟩,
-  --   fun ⟨I, J, hdj, hi, hI, hJ⟩ ↦ ⟨I, J, hdj,
-  --     hi.basis_of_forall_insert (union_subset_union hI.subset hJ.subset) ?_, hI, hJ⟩⟩
 
 lemma Skew.closure_skew (h : M.Skew X Y) : M.Skew (M.closure X) (M.closure Y) := by
   have h' := SkewFamily.cls_skewFamily h
@@ -455,9 +449,3 @@ lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X 
 
 lemma Coloop.skew (he : M.Coloop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
-
-section circuit
-
--- theorem foo (h : M.Indep I) (hXI : ∀ i, Xs i ⊆ M.closure I)
-
-end circuit

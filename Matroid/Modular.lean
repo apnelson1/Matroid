@@ -14,11 +14,10 @@ section ModularBase
 
 /-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
 in the family. -/
-def ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) :=
-  M.Base B ∧ ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
-
-lemma ModularBase.base (h : M.ModularBase B Xs) : M.Base B :=
-  h.1
+@[mk_iff]
+structure ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop :=
+  base : M.Base B
+  forall_basis : ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 
 lemma ModularBase.indep (h : M.ModularBase B Xs) : M.Indep B :=
   h.base.indep
@@ -45,7 +44,7 @@ lemma ModularBase.subtype {Xs : η → Set α} (h : M.ModularBase B Xs) (A : Set
 @[simp] lemma modularBase_pair_iff {B X Y : Set α} :
     M.ModularBase B (fun i : ({X,Y} : Set (Set α)) ↦ i) ↔
       M.Base B ∧ M.Basis (X ∩ B) X ∧ M.Basis (Y ∩ B) Y := by
-  simp [ModularBase]
+  simp [modularBase_iff]
 
 lemma ModularBase.basis_iInter [Nonempty ι] (h : M.ModularBase B Xs) :
     M.Basis ((⋂ i, Xs i) ∩ B) (⋂ i, Xs i) :=
@@ -175,7 +174,6 @@ lemma ModularFamily.ofRestrict' {R : Set α}
     apply (hB'.1.indep.subset (insert_subset x_mem.2 hB'.2)).not_dep
     rw [Dep, and_iff_left ((insert_subset x_mem.2 hB'.2).trans hB'.1.subset_ground)]
     exact (restrict_dep_iff.1 (hBb.insert_dep ⟨x_mem.1, x_nB⟩)).1
-  simp only
   rw [basis_restrict_iff'] at Basis
   rw [ ← inter_eq_self_of_subset_left Basis.2, inter_right_comm _ R, inter_assoc, R_B'_inter_eq,
     inter_assoc, inter_eq_self_of_subset_right (hB'.2.trans hB'.1.subset_ground),
