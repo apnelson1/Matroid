@@ -1,3 +1,4 @@
+import Mathlib.Data.Matroid.Sum
 import Matroid.Extension
 
 namespace Matroid

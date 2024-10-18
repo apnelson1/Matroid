@@ -226,7 +226,7 @@ theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
 theorem unif_sub_dual (a b : ℕ) : (unif (b-a) b)✶ = unif a b := by
   rw [eq_comm, eq_dual_comm, unif_dual]
 
-theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
+@[simp] theorem unif_self_dual (a : ℕ) : (unif a (2*a))✶ = unif a (2*a) :=
   unif_dual' (two_mul a).symm
 
 theorem nonempty_iso_unif_iff :
