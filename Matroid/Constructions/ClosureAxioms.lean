@@ -14,9 +14,10 @@ structure ClosureMatroid (α : Type*) where
   (subset_closure_self : ∀ X ⊆ E, X ⊆ closure X)
   (closure_subset_closure : ∀ ⦃X Y : Set α⦄, X ⊆ Y → closure X ⊆ closure Y )
   (closure_closure_eq_closure : ∀ X, closure (closure X) = closure X)
-  (closure_exchange : ∀ ⦃Z x y⦄, y ∈ closure (insert x Z) \ closure Z → x ∈ closure (insert y Z))
+  (closure_exchange : ∀ ⦃X e f⦄, X ⊆ E → e ∈ E → f ∈ E →
+      f ∈ closure (insert e X) \ closure X → e ∈ closure (insert f X) \ X)
   (Indep : Set α → Prop)
-  (indep_iff : ∀ ⦃I⦄, Indep I ↔ (∀ x ∈ I, x ∉ closure (I \ {x})) ∧ I ⊆ E)
+  (indep_iff : ∀ ⦃I⦄, Indep I ↔ (∀ e ∈ I, e ∉ closure (I \ {e})) ∧ I ⊆ E)
   (indep_maximal : ∀ ⦃X⦄, X ⊆ E → ExistsMaximalSubsetProperty Indep X)
   (closure_inter_inter_ground : ∀ X, closure (X ∩ E) ∩ E = closure X)
 
@@ -50,8 +51,9 @@ lemma Indep.mem_closure_iff {M : ClosureMatroid α} {e : α} (hI : M.Indep I) (h
   refine fun h ↦ by_contra fun hcon ↦ hcon <| h fun x hxI hxcl ↦ hcon ?_
   rw [M.indep_iff] at hI
   rw [← insert_diff_singleton_comm (by rintro rfl; contradiction)] at hxcl
-  have hex := M.closure_exchange (Z := I \ {x}) (x := e) (y := x)
-  simpa [mem_diff, hxcl, hI.1 x hxI, insert_eq_of_mem hxI] using hex
+  have hex := M.closure_exchange (X := I \ {x}) (diff_subset.trans hI.2) he
+    (M.closure_subset_ground _ hxcl)
+  simpa [mem_diff, hxcl, hI.1 x hxI, insert_eq_of_mem hxI, heI] using hex
 
 @[simps!] protected def matroid (M : ClosureMatroid α) : Matroid α :=
     IndepMatroid.matroid <| IndepMatroid.mk
