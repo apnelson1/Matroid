@@ -15,7 +15,7 @@ structure FlatMatroid (α : Type*) where
 
 namespace FlatMatroid
 
-variable {α : Type*} {E F F' F₁ F₂ X Y I J : Set α} {M : FlatMatroid α}
+variable {α : Type*} {E F F' F₁ F₂ X Y I J : Set α} {e f : α} {M : FlatMatroid α}
 
 lemma ground_flat (M : FlatMatroid α) : M.Flat M.E := by
   simpa using M.flat_sInter ∅
@@ -64,38 +64,37 @@ lemma Flat.closure (hF : M.Flat F) : M.closure F = F :=
 lemma Indep.subset_ground (hI : M.Indep I) : I ⊆ M.E :=
   (M.indep_iff.1 hI).2
 
+lemma mem_closure_insert_self (M : FlatMatroid α) (heE : e ∈ M.E) (X : Set α) :
+    e ∈ M.closure (insert e X) := by
+  rw [← singleton_subset_iff]
+  exact (M.subset_closure (by simpa)).trans (M.closure_subset_closure (by simp))
 
-
-lemma foo (M : FlatMatroid α) (X : Set α) (e : α) (heE : e ∈ M.E) (heX : e ∉ M.closure X) :
+lemma closure_insert_minimal (M : FlatMatroid α) (X : Set α) (e : α) (heE : e ∈ M.E)
+    (heX : e ∉ M.closure X) :
     Minimal (fun F ↦ M.closure X ⊂ F ∧ M.Flat F) (M.closure (insert e X)) := by
+  have h_ex := M.flat_partition _ e (M.closure_flat X) heE heX
+  obtain ⟨F₀, heF₀, hF₀⟩ := h_ex.exists
+  convert hF₀
 
+  refine subset_antisymm (sInter_subset_of_mem ⟨?_, hF₀.prop.2⟩) ?_
+  · rw [inter_comm, inter_insert_of_mem heE, insert_subset_iff, and_iff_right heF₀,
+      inter_comm]
+    refine (M.subset_closure inter_subset_right).trans ?_
+    rw [closure_inter_ground]
+    exact hF₀.prop.1.subset
 
-
-  simp_rw [← M.closure_inter_ground X, ← M.closure_inter_ground (insert e X),
-    inter_comm, inter_insert_of_mem heE, inter_comm M.E]
-  rw [← closure_inter_ground] at heX
-  rw [minimal_iff_forall_ssubset, and_iff_left (M.closure_flat _),
-    ssubset_iff_subset_ne, and_iff_right (M.closure_subset_closure (subset_insert _ _))]
-  refine ⟨fun h_eq ↦ heX ?_, fun F hFss ⟨hXF, hF⟩ ↦ ?_⟩
-  · rw [h_eq, ← singleton_subset_iff]
-    exact (M.subset_closure (X := {e}) (by simpa)).trans (M.closure_subset_closure (by simp))
-  by_cases heF : e ∈ F
-  · rw [← hF.closure] at hFss
-    refine hFss.not_subset (M.closure_subset_closure (insert_subset heF ?_))
-    exact (M.subset_closure inter_subset_right).trans hXF.subset
-  simp at heX
-  obtain ⟨x, hxcl, hxF⟩ := exists_of_ssubset hFss
-  have h_unique_x := M.flat_partition F x hF (M.closure_subset_ground _ hxcl) hxF
-  have h_unique_e := M.flat_partition F e hF heE heF
-
-  obtain ⟨Fx, hxFx, hFx⟩ := h_unique_x.exists
-  obtain ⟨Fe, heFe, hFe⟩ := h_unique_e.exists
-  have hss1 : Fx ⊆ M.closure (insert x X) := by
-    simp
-    intro G hXG hG
-
-  have hss : Fx ⊆ Fe := by
-    rw [← (hFe.prop.2.closure)]
+  rw [← inter_eq_left]
+  refine hF₀.eq_of_subset ⟨?_, ?_⟩ inter_subset_left
+  · rw [ssubset_iff_subset_ne, subset_inter_iff, and_iff_right,
+      ne_eq, Set.ext_iff, not_forall]
+    · use e
+      rw [iff_false_left heX, mem_inter_iff, not_not, and_iff_right heF₀]
+      exact mem_closure_insert_self M heE X
+    exact ⟨hF₀.prop.1.subset, (M.closure_subset_closure (subset_insert _ _))⟩
+  convert M.flat_sInter {F₀, M.closure (insert e X)} _ using 1
+  · simp only [sInter_insert, sInter_singleton, left_eq_inter]
+    exact inter_subset_right.trans (M.closure_subset_ground _)
+  simp [hF₀.prop.2, M.closure_flat]
 
 
 
@@ -107,30 +106,40 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
   closure_closure_eq_closure := M.closure_closure
 
   closure_exchange := by
-    simp only [mem_diff, mem_sInter, mem_setOf_eq, and_imp, not_forall, Classical.not_imp,
-      forall_exists_index]
 
-    intro X e f h F hXF hF hfF F' hXF' hF'
-    have hfE : f ∈ M.E := h M.E inter_subset_right M.ground_flat
+    simp only [mem_diff, and_imp]
+    refine fun X e f hfeX hfX ↦ ?_
+
     have heE : e ∈ M.E := by
-      contrapose! hfF
-      refine h _ ?_ hF
-      rwa [inter_comm, inter_insert_of_not_mem hfF, inter_comm]
-    simp_rw [inter_comm _ M.E, inter_insert_of_mem hfE, inter_comm _ X] at hXF'
-    simp_rw [inter_comm _ M.E, inter_insert_of_mem heE, inter_comm _ X] at h
+      contrapose! hfX
+      rwa [← closure_inter_ground, inter_comm, inter_insert_of_not_mem hfX,
+        inter_comm, closure_inter_ground] at hfeX
 
-    specialize h (M.closure (insert e (X ∩ M.E)))
-      (M.subset_closure (insert_subset heE inter_subset_right)) (M.closure_flat _)
-    set X' := X ∩ M.E with hX'
-    have hfX' : f ∉ M.closure X' := by
-      refine not_mem_subset ?_ hfF
-      rw [← hF.closure]
-      exact M.closure_subset_closure hXF
-    have h_ex := M.flat_partition _ f (M.closure_flat X') hfE hfX'
-    have := h_ex.unique (y₁ := M.closure (insert e X')) (y₂ := M.closure (insert e X'))
-      ⟨h, ?_⟩
+    have hfE : f ∈ M.E := M.closure_subset_ground _ hfeX
+    rw [← closure_inter_ground, inter_comm, inter_insert_of_mem (by assumption),
+      inter_comm] at *
+    set X' := X ∩ M.E
+    by_contra hcon
+
+    have heX : e ∉ M.closure X' :=
+      not_mem_subset (M.closure_subset_closure (subset_insert _ _)) hcon
+
+    suffices hcl : M.closure (insert e X') = M.closure (insert f X') by
+      rw [← hcl] at hcon
+      exact hcon (mem_closure_insert_self M heE X')
+
+    have hmin := M.closure_insert_minimal X' e heE heX
+    refine Eq.symm <| hmin.eq_of_subset ⟨?_, M.closure_flat _⟩ ?_
+    · refine (M.closure_subset_closure (by simp)).ssubset_of_ne (fun h ↦ hfX ?_)
+      rw [h]
+      exact mem_closure_insert_self M hfE X'
 
 
+    rw [← (M.closure_flat (insert e X')).closure]
+
+    exact M.closure_subset_closure
+      (insert_subset hfeX ((M.subset_closure inter_subset_right).trans
+        (M.closure_subset_closure (subset_insert _ _))))
 
 
   Indep := M.Indep
