@@ -60,7 +60,7 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
 
     obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
     have hrw := fun M ↦
-      relRank_add_of_subset_of_subset M (subset_insert y X) (insert_subset hyY hXY)
+      relRank_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
     have hy : y ∈ Y \ M₁.closure X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
       rw [← hrw, relRank_insert_eq_one, add_comm, lt_iff_not_le]

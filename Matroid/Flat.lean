@@ -427,7 +427,7 @@ lemma CovBy.r_eq_of_rFin (h : F ⋖[M] F') (hFin : M.rFin F) : M.r F' = M.r F + 
     rw [← er_lt_top_iff] at hFin
     exact lt_tsub_iff_right.mp hFin
   have her := h.er_eq
-  rw [← hFin.coe_r_eq, ← hFin'.coe_r_eq] at her
+  rw [← hFin.cast_r_eq, ← hFin'.cast_r_eq] at her
   norm_cast at her
 
 lemma closure_covBy_iff :
@@ -552,7 +552,7 @@ lemma Flat.covBy_and_covBy_of_ssubset_of_ssubset_of_relRank_eq_two (hF₀ : M.Fl
     (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
   have h0le := hF₀.one_le_relRank_of_ssubset h₀
   have h1le := hF.one_le_relRank_of_ssubset h₁
-  rw [← M.relRank_add_of_subset_of_subset h₀.subset h₁.subset] at h
+  rw [← M.relRank_add_cancel h₀.subset h₁.subset] at h
   have h0top : M.relRank F₀ F ≠ ⊤ := by
     intro h'; rw [h'] at h; norm_cast at h
   have h1top : M.relRank F F₁ ≠ ⊤ := by
@@ -570,7 +570,7 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
     (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
   apply hF₀F'.flat_left.covBy_and_covBy_of_ssubset_of_ssubset_of_relRank_eq_two hF'F₁.flat_right
     ?_ hF h₀ h₁
-  rw [← M.relRank_add_of_subset_of_subset hF₀F'.subset hF'F₁.subset, hF'F₁.relRank_eq_one,
+  rw [← M.relRank_add_cancel hF₀F'.subset hF'F₁.subset, hF'F₁.relRank_eq_one,
     hF₀F'.relRank_eq_one]
   rfl
 

@@ -10,7 +10,7 @@ section Delete
 
 @[simp] lemma delete_er_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).er X = M.er (X \ D) := by
   rw [← restrict_compl, restrict_er_eq', diff_eq, inter_comm M.E, ← inter_assoc, ← diff_eq,
-    er_inter_ground_eq]
+    er_inter_ground]
 
 lemma delete_er_eq (M : Matroid α) (h : Disjoint X D) : (M ＼ D).er X = M.er X := by
   rwa [delete_er_eq', sdiff_eq_left.2]
@@ -24,8 +24,8 @@ lemma delete_er_eq_delete_er_diff (M : Matroid α) (D X : Set α) :
 
 lemma Coindep.delete_erk_eq (hX : M.Coindep X) : (M ＼ X).erk = M.erk := by
   rw [coindep_iff_closure_compl_eq_ground] at hX
-  rw [erk_eq_er_ground, delete_ground, delete_er_eq', diff_diff, union_self, ← er_closure_eq, hX,
-    erk_eq_er_ground]
+  rw [erk_def, delete_ground, delete_er_eq', diff_diff, union_self, ← er_closure_eq, hX,
+    erk_def]
 
 lemma Indep.delete_erk_dual_eq (hI : M.Indep I) : (M ／ I)✶.erk = M✶.erk := by
   rw [← hI.coindep.delete_erk_eq, contract_dual_eq_dual_delete]
@@ -59,7 +59,7 @@ lemma relRank_eq_er_contract (M : Matroid α) (X Y : Set α) : M.relRank X Y = (
 
 lemma relRank_le_er (M : Matroid α) (X Y : Set α) : M.relRank X Y ≤ M.er Y := by
   obtain ⟨I, hI⟩ := (M ／ X).exists_basis (Y ∩ (M ／ X).E)
-  rw [relRank, ← er_inter_ground_eq, ← hI.encard, ← hI.indep.of_contract.er]
+  rw [relRank, ← er_inter_ground, ← hI.encard, ← hI.indep.of_contract.er]
   exact M.er_mono (hI.subset.trans inter_subset_left)
 
 lemma relRank_eq_er_diff_contract (M : Matroid α) (X Y : Set α) :
@@ -102,7 +102,7 @@ lemma relRank_eq_zero_of_subset (M : Matroid α) (h : Y ⊆ X) : M.relRank X Y =
   refine le_antisymm ?_ ?_
   · rw [relRank_eq_er_diff_contract,  relRank, ← (M ／ X).er_closure_eq Y, contract_closure_eq]
     exact (M ／ X).er_mono (diff_subset_diff_left (M.closure_subset_closure subset_union_left))
-  rw [relRank, ← er_inter_ground_eq, contract_ground, ← inter_diff_assoc]
+  rw [relRank, ← er_inter_ground, contract_ground, ← inter_diff_assoc]
   exact er_mono _ <| diff_subset.trans
     ((M.subset_closure _).trans (M.closure_subset_closure inter_subset_left))
 
@@ -174,9 +174,9 @@ lemma relRank_add_er_eq (M : Matroid α) (C X : Set α) :
   obtain ⟨J, hJ, rfl⟩ := hIC.exists_basis_inter_eq_of_superset
     (subset_union_right (s := X ∩ M.E)) (by simp)
   rw [← relRank_inter_ground_left, ← relRank_inter_ground_right,
-    hJ.basis'.relRank_eq_encard_diff hIC.basis', ← er_inter_ground_eq,
+    hJ.basis'.relRank_eq_encard_diff hIC.basis', ← er_inter_ground,
     ← hIC.encard, encard_diff_add_encard_inter, hJ.encard, ← union_inter_distrib_right,
-    er_inter_ground_eq]
+    er_inter_ground]
 
 lemma relRank_add_er_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.relRank X Y + M.er X = M.er Y := by
@@ -200,7 +200,7 @@ lemma Nonloop.relRank_eq_sub_one (he : M.Nonloop e) (X : Set α) :
   rw [← he.relRank_add_one_eq, eq_comm, tsub_add_cancel_iff_le]
   exact le_add_self
 
-lemma relRank_add_of_subset_of_subset (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
+lemma relRank_add_cancel (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
     M.relRank X Y + M.relRank Y Z = M.relRank X Z := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans hXY)
@@ -259,7 +259,7 @@ section Contract
 lemma er_contract_le_er (M : Matroid α) (C X : Set α) : (M ／ C).er X ≤ M.er X :=
   by
   obtain ⟨I, hI⟩ := (M ／ C).exists_basis (X ∩ (M ／ C).E)
-  rw [← er_inter_ground_eq, ← hI.encard, ← hI.indep.of_contract.er]
+  rw [← er_inter_ground, ← hI.encard, ← hI.indep.of_contract.er]
   exact M.er_mono (hI.subset.trans inter_subset_left)
 
 lemma rFin.contract_rFin (h : M.rFin X) (C : Set α) : (M ／ C).rFin X := by
@@ -311,7 +311,7 @@ lemma restrict_r_eq (M : Matroid α) {R : Set α} (hXR : X ⊆ R) : (M ↾ R).r 
 
 lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
     (M ／ C).r X + M.r C = M.r (X ∪ C) := by
-  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, coe_r_eq, ← relRank_add_er_eq, relRank]
+  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_r_eq, ← relRank_add_er_eq, relRank]
 
 @[simp] lemma contract_r_cast_int_Eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
     ((M ／ C).r X : ℤ) = M.r (X ∪ C) - M.r C := by

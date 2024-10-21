@@ -249,9 +249,9 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
   obtain h := sum'_er_eq_er_sum Ms X
   rw [← Nat.cast_inj (R := ENat)]
   convert h
-  rw [coe_r_eq]
+  rw [cast_r_eq]
   rw [Nat.cast_sum]
-  simp_rw [coe_r_eq]
+  simp_rw [cast_r_eq]
 
 
 
@@ -447,7 +447,7 @@ theorem matroid_partition_er' [DecidableEq α] [Fintype α]
   have : ∀ Y : Finset α, (Finset.univ \ Y).card = (univ \ Y.toSet).ncard := by
     intro Y
     rw [← Finset.coe_univ, ← Finset.coe_sdiff, ncard_coe_Finset]
-  simp_rw [← coe_r_eq, ← coe_rk_eq,
+  simp_rw [← cast_r_eq, ← coe_rk_eq,
     ← Finite.cast_ncard_eq (Finite.subset (toFinite univ) (subset_univ _)), ← Nat.cast_add,
     Nat.cast_inj]
   refine ⟨Y, le_antisymm (by simp only [← this _, hY]) (by simp only [← this _, h Y])⟩
@@ -570,9 +570,9 @@ theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
     obtain ⟨I, X, _, hI₁, hI₂, hIX⟩ := aux M₁.E M₁ (M₂ ↾ M₁.E) (by assumption) rfl rfl
     simp only [restrict_er_eq', inter_eq_self_of_subset_left diff_subset] at hIX
     refine ⟨I, X ∪ (M₂.E \ M₁.E), hI₁, hI₂.of_restrict, ?_⟩
-    rwa [← er_inter_ground_eq (X := _ ∪ _), union_inter_distrib_right, inter_comm (a := _ \ _),
-      inter_diff_self, union_empty, er_inter_ground_eq, ← diff_diff, diff_diff_comm,
-      diff_diff_right_self, inter_diff_assoc, inter_comm, er_inter_ground_eq]
+    rwa [← er_inter_ground (X := _ ∪ _), union_inter_distrib_right, inter_comm (a := _ \ _),
+      inter_diff_self, union_empty, er_inter_ground, ← diff_diff, diff_diff_comm,
+      diff_diff_right_self, inter_diff_assoc, inter_comm, er_inter_ground]
   clear! M₁ M₂
   intro E M₁ M₂ hfin hM₁E hM₂E
   classical

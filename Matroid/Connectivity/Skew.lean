@@ -224,7 +224,7 @@ lemma rFin.skewFamily_iff_sum_er_eq_er_iUnion [Fintype η] {Xs : η → Set α}
 lemma skewFamily_iff_sum_er_eq_er_iUnion [Fintype η] [FiniteRk M] {Xs : η → Set α}
     (hXs : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.r (Xs i) = M.r (⋃ i, Xs i) := by
   simp_rw [rFin.skewFamily_iff_sum_er_eq_er_iUnion (fun i ↦ M.to_rFin (Xs i)) hXs,
-    ← M.coe_r_eq, ← Nat.cast_sum, Nat.cast_inj]
+    ← M.cast_r_eq, ← Nat.cast_sum, Nat.cast_inj]
 
 lemma skewFamily_iff_forall_circuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ M.E)
     (hdj : Pairwise (Disjoint on Xs)) :

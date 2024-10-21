@@ -54,11 +54,11 @@ theorem unifOn_er_eq (E : Set α) (k : ℕ∞) (hX : X ⊆ E) : (unifOn E k).er 
   rw [unifOn, truncateTo_er_eq, freeOn_er_eq hX]
 
 theorem unifOn_er_eq' (E : Set α) (k : ℕ∞) : (unifOn E k).er X = min (X ∩ E).encard k := by
-  rw [← er_inter_ground_eq, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
+  rw [← er_inter_ground, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
     unifOn_ground_eq]
 
 theorem unifOn_erk_eq (E : Set α) (k : ℕ∞) : (unifOn E k).erk = min E.encard k := by
-  rw [erk_eq_er_ground, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
+  rw [erk_def, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   rw [← rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
@@ -80,7 +80,7 @@ theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - 
 @[simp] theorem unifOn_spanning_iff' {k : ℕ∞} (hk : k ≠ ⊤) :
     (unifOn E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E  := by
   lift k to ℕ using hk
-  rw [spanning_iff_er', erk_eq_er_ground, unifOn_ground_eq, unifOn_er_eq', unifOn_er_eq',
+  rw [spanning_iff_er', erk_def, unifOn_ground_eq, unifOn_er_eq', unifOn_er_eq',
     le_min_iff, min_le_iff, min_le_iff, iff_true_intro (le_refl _), or_true, and_true, inter_self]
   refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) ?_⟩
@@ -167,7 +167,7 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
   rw [unif, unifOn_er_eq _ _ (subset_univ _)]
 
 @[simp] theorem unif_erk_eq (a b : ℕ) : (unif a b).erk = min a b := by
-  rw [erk_eq_er_ground, unif_er_eq]
+  rw [erk_def, unif_er_eq]
   simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
 
 @[simp] theorem unif_rk_eq (a b : ℕ) : (unif a b).rk = min a b := by
