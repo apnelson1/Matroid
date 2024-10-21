@@ -69,6 +69,9 @@ lemma Basis.encard_dual_switch_switch_eq {I I' J J' X Y : Set α}
     (I ∩ J).encard + (M ↾ (I ∪ J))✶.erk = (I' ∩ J').encard + (M ↾ (I' ∪ J'))✶.erk :=
   hI.basis'.encard_dual_switch_switch_eq hI'.basis' hJ.basis' hJ'.basis'
 
+/-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
+Defined to correctly describe the connectivity even when one or both sets has infinite rank.
+For a `ℕ`-valued version, see `Matroid.localConn`. -/
 noncomputable def localEConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
   let I := (M.exists_basis' X).choose
   let J := (M.exists_basis' Y).choose
@@ -287,10 +290,9 @@ end localEConn
 
 section localConn
 
-/-- The `ℕ`-valued local connectivity between sets `X` and `Y`,
-equal to `M.r X + M.r Y - M.r (X ∪ Y)` if both sets have finite rank.
-Often denoted in the literature as `⊓ (X, Y)`.
-Only mathematically meaningful if at least one of `X` and `Y` is known to have finite rank;
+/-- The `ℕ`-valued local connectivity between sets `X` and `Y`, often denoted `⊓ (X, Y)`.
+Equal to `M.r X + M.r Y - M.r (X ∪ Y)` if both sets have finite rank.
+This is only mathematically meaningful if at least one of `X` and `Y` is known to have finite rank;
 otherwise `Matroid.localEConn` is preferable. -/
 noncomputable def localConn (M : Matroid α) (X Y : Set α) : ℕ := (M.localEConn X Y).toNat
 
@@ -325,20 +327,28 @@ lemma localConn_inter_ground_right (M : Matroid α) (X Y : Set α) :
     M.localConn X (Y ∩ M.E) = M.localConn X Y := by
   simp [localConn]
 
+/-- The formula for local connectivity of two finite-rank sets in terms of the rank function.
+This uses `ℕ` subtraction which never overflows. -/
 lemma rFin.localConn_eq_r_add_r_sub (hX : M.rFin X) (hY : M.rFin Y) :
     M.localConn X Y = M.r X + M.r Y - M.r (X ∪ Y) := by
   rw [hX.r_add_r_eq_r_union_add_localConn hY, add_comm]
   exact Nat.eq_sub_of_add_eq rfl
 
+/-- The formula for local connectivity of two finite-rank sets written with `Int` subtraction,
+for use with `ring` and `linarith`. -/
 lemma rFin.localConn_cast_int_eq (hX : M.rFin X) (hY : M.rFin Y) :
     (M.localConn X Y : ℤ) = M.r X + M.r Y - M.r (X ∪ Y) := by
   rw [hX.localConn_eq_r_add_r_sub hY, ← Nat.cast_add]
   exact Int.natCast_sub (r_union_le_r_add_r _ _ _)
 
+/-- The formula for local connectivity in terms of the rank function.
+This uses `ℕ` subtraction which never overflows. -/
 lemma localConn_eq_r_add_r_sub (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     M.localConn X Y = M.r X + M.r Y - M.r (X ∪ Y) :=
   (M.to_rFin X).localConn_eq_r_add_r_sub (M.to_rFin Y)
 
+/-- The formula for local connectivity written in terms of `Int` subtraction,
+for use with `ring` and `linarith`. -/
 lemma localConn_cast_int_eq (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.r X + M.r Y - M.r (X ∪ Y) :=
   (M.to_rFin X).localConn_cast_int_eq (M.to_rFin Y)
@@ -432,8 +442,8 @@ end econn
 
 section conn
 
-/-- The `ℕ`-valued connectivity of a set `X` to its complement.
-Not very well-behaved unless `M` or its dual has finite rank,
+/-- The `ℕ`-valued connectivity of a set `X` to its complement, traditionally written `λ (X)`.
+Being `ℕ`-valued, this is not well-behaved unless `M` or its dual has finite rank,
 since a set with infinite connectivity to its complement has a `conn` of zero.
 If neither `M` nor `M✶` is known to have finite rank, then `Matroid.econn` is better. -/
 noncomputable def conn (M : Matroid α) (X : Set α) : ℕ := (M.econn X).toNat
@@ -460,13 +470,14 @@ lemma r_add_r_compl_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
   rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_r_eq, cast_r_eq, Nat.cast_add,
     rk_def, cast_r_eq, er_add_er_compl_eq, cast_conn_eq, erk_def]
 
-/-- A formula for the connectivity in terms of the rank function.
+/-- A formula for the connectivity of a set in terms of the rank function.
 The `ℕ` subtraction will never overflow.  -/
 lemma conn_eq_r_add_r_sub_rk (M : Matroid α) [FiniteRk M] (X : Set α) :
     M.conn X = M.r X + M.r (M.E \ X) - M.rk := by
   rw [conn_eq_localConn, localConn_eq_r_add_r_sub, union_diff_self, r_eq_rk subset_union_right]
 
-/-- A version of `Matroid.conn_eq_r_add_r_sub_rk` with `Int` subtraction. -/
+/-- A version of `Matroid.conn_eq_r_add_r_sub_rk` with `Int` subtraction,
+for use with `ring` and `linarith`. -/
 lemma int_cast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
     (M.conn X : ℤ) = M.r X + M.r (M.E \ X) - M.rk := by
   rw [conn_eq_r_add_r_sub_rk, ← Nat.cast_add, rk_def]
@@ -474,14 +485,12 @@ lemma int_cast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
   convert M.r_union_le_r_add_r X (M.E \ X) using 1
   rw [union_diff_self, r_eq_rk subset_union_right, rk_def]
 
-/-- This is also true for `econn` without `FiniteRk`, but the proof will be more difficult. TODO. -/
+/-- The function `M.conn` is submodular.
+This is also true for `econn` without `FiniteRk`, but the proof will be more difficult. TODO. -/
 lemma conn_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     M.conn (X ∩ Y) + M.conn (X ∪ Y) ≤ M.conn X + M.conn Y := by
   zify
   simp_rw [int_cast_conn_eq, diff_inter, ← diff_inter_diff]
   linarith [M.r_submod X Y, M.r_submod (M.E \ X) (M.E \ Y)]
-
-
-
 
 end conn
