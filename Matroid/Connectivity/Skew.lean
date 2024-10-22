@@ -257,6 +257,23 @@ lemma skewFamily_iff_forall_circuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ 
     exact hC.dep.not_indep ((hIs i).indep.subset hC')
   exact fun i j hne ↦ (hdj hne).mono ((hIs i).subset) ((hIs j).subset)
 
+lemma SkewFamily.exists_subset_of_circuit {Xs : η → Set α} (h : M.SkewFamily Xs) {C : Set α}
+    (hC : M.Circuit C) (hCss : C ⊆ ⋃ i, Xs i) : ∃ i, C ⊆ Xs i := by
+  set Ys := fun i ↦ (Xs i) ∩ C
+  have hYs := h.mono (Ys := Ys) (by simp [Ys])
+  by_cases hdj : Pairwise (Disjoint on Ys)
+  · rw [skewFamily_iff_forall_circuit (fun i ↦ inter_subset_right.trans hC.subset_ground) hdj] at hYs
+    obtain ⟨i, h⟩ := hYs C hC (by rwa [← iUnion_inter, subset_inter_iff, and_iff_left rfl.subset])
+    exact ⟨i, h.trans inter_subset_left⟩
+  simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, Classical.not_imp,
+    exists_prop, eq_empty_iff_forall_not_mem, not_not] at hdj
+  obtain ⟨i, j, hne, e, he⟩ := hdj
+  have hel := hYs.loop_of_mem_inter hne he
+  obtain rfl : C = {e} := hel.eq_of_circuit_mem hC
+    (mem_of_mem_of_subset he (inter_subset_left.trans inter_subset_right))
+  exact ⟨i, singleton_subset_iff.2 <| mem_of_mem_of_subset he
+    (inter_subset_left.trans inter_subset_left)⟩
+
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.SkewFamily (fun i ↦ bif i then X else Y)
 
@@ -433,6 +450,15 @@ lemma skew_iff_forall_circuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop_m
   · simp [← union_eq_iUnion, or_comm]
   · simp [hX, hY]
   rwa [pairwise_disjoint_on_bool]
+
+lemma Skew.subset_or_subset_of_circuit (h : M.Skew X Y) {C : Set α} (hC : M.Circuit C)
+    (hCss : C ⊆ X ∪ Y) : C ⊆ X ∨ C ⊆ Y := by
+  rw [Skew] at h
+  obtain ⟨rfl | rfl, hi⟩ := h.exists_subset_of_circuit hC <| by simpa [← union_eq_iUnion]
+  · right
+    simpa using hi
+  left
+  simpa using hi
 
 lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.closure ∅) (hX : X ⊆ M.E) : M.Skew L X := by
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]

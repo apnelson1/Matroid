@@ -95,8 +95,8 @@ lemma er_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
 lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
   lt_of_not_le fun hle ↦ hD.not_indep (indep_of_encard_le_two hle)
 
-lemma simple_iff_three_le_girth : M.Simple ↔ 3 ≤ M.girth := by
-  rw [le_girth_iff]
+lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
+  rw [iff_comm, le_girth_iff]
   refine ⟨fun h C hC ↦ le_of_not_lt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
   simp_rw [simple_iff_loopless_eq_of_parallel_forall, loopless_iff_forall_circuit,
@@ -107,7 +107,7 @@ lemma simple_iff_three_le_girth : M.Simple ↔ 3 ≤ M.girth := by
 
 lemma simple_iff_forall_circuit : M.Simple ↔ ∀ C, M.Circuit C → 2 < C.encard := by
   simp_rw [← ENat.add_one_le_iff (show 2 ≠ ⊤ by norm_num), show (2 : ℕ∞) + 1 = 3 from rfl,
-    simple_iff_three_le_girth, le_girth_iff]
+    ← three_le_girth_iff, le_girth_iff]
 
 lemma simple_iff_forall_pair_indep : M.Simple ↔ ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.Indep {e,f} := by
   refine ⟨fun h _ _ he hf ↦ pair_indep he hf, fun h ↦ ?_⟩
