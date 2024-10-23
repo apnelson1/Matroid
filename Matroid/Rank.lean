@@ -1,4 +1,5 @@
 import Matroid.Loop
+import Matroid.ForMathlib.Other
 
 /- The rank of a set in a matroid `M` is the size of one of its bases. When such bases are infinite,
   this quantity is too coarse to be useful for building API,
@@ -403,7 +404,7 @@ lemma er_le_one_iff [M.Nonempty] (hX : X ⊆ M.E := by aesop_mat) :
 lemma Base.encard_compl_eq (hB : M.Base B) : (M.E \ B).encard = M✶.erk :=
   (hB.compl_base_dual).encard
 
-theorem dual_er_add_erk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+lemma dual_er_add_erk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M✶.er X + M.erk = M.er (M.E \ X) + X.encard := by
   obtain ⟨I, hI⟩ := M✶.exists_basis X
   obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
@@ -421,14 +422,34 @@ theorem dual_er_add_erk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aeso
   · exact disjoint_sdiff_left.mono_left inter_subset_right
   exact disjoint_sdiff_right.mono_left inter_subset_left
 
-theorem dual_er_add_erk' (M : Matroid α) (X : Set α) :
+lemma dual_er_add_erk' (M : Matroid α) (X : Set α) :
     M✶.er X + M.erk = M.er (M.E \ X) + (X ∩ M.E).encard := by
   rw [← diff_inter_self_eq_diff, ← dual_er_add_erk .., ← dual_ground, er_inter_ground]
 
-theorem erk_add_dual_erk (M : Matroid α) : M.erk + M✶.erk = M.E.encard := by
+lemma erk_add_dual_erk (M : Matroid α) : M.erk + M✶.erk = M.E.encard := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard, ← hB.compl_base_dual.encard, ← encard_union_eq disjoint_sdiff_right,
     union_diff_cancel hB.subset_ground]
+
+lemma foo (M : Matroid α) (X : Set α) :
+    M.er X = ⨆ Y ∈ {S : Finset α | (S : Set α) ⊆ X}, M.er Y := by
+  simp only [mem_setOf_eq, le_antisymm_iff, iSup_le_iff]
+  refine ⟨?_, fun S hSX ↦ M.er_mono hSX⟩
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+
+  by_cases hX : M.er X = ⊤
+  · rw [hX, top_le_iff, ← WithTop.forall_ge_iff_eq_top]
+    intro n
+    rw [hI.er_eq_encard, encard_eq_top_iff] at hX
+    obtain ⟨J, hJI, rfl⟩ := hX.exists_subset_card_eq n
+    apply le_iSup₂_of_le J (hJI.trans hI.subset)
+    rw [(hI.indep.subset hJI).er, encard_coe_eq_coe_finsetCard]
+    rfl
+  rw [← hI.encard]
+  have :=
+
+
+
 
 end Basic
 
@@ -630,7 +651,6 @@ lemma rFin.iUnion [Fintype ι] {Xs : ι → Set α} (h : ∀ i, M.rFin (Xs i)) :
   rw [← rFin_closure_iff, ← M.closure_iUnion_closure_eq_closure_iUnion]
   simp_rw [← (hIs _).closure_eq_closure, M.closure_iUnion_closure_eq_closure_iUnion]
   exact (M.rFin_of_finite hfin).to_closure
-
 
 end rFin
 
@@ -859,6 +879,7 @@ lemma freeOn_er_eq (hXE : X ⊆ E) : (freeOn E).er X = X.encard := by
 
 lemma freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
   rw [← er_toNat_eq_r, freeOn_er_eq hXE, ncard_def]
+
 
 -- lemma IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≂ N) :
 --     M.erk = N.erk := by

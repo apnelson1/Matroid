@@ -10,6 +10,17 @@ open Set Function
 
 section ENat
 
+lemma WithTop.eq_top_iff_forall_le {α : Type*} [Preorder α] [NoMaxOrder α] {x : WithTop α} :
+    x = ⊤ ↔ ∀ (a : α), a ≤ x := by
+  refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
+  lift x to α using hne
+  obtain ⟨y, hy⟩ := exists_gt x
+  exact hy.not_le <| by simpa using h y
+
+lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x : WithBot α} :
+    x = ⊥ ↔ ∀ (a : α), x ≤ a :=
+  WithTop.eq_top_iff_forall_le (α := αᵒᵈ) (x := x)
+
 lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ n := by
   refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
   lift n to ℕ using hne
