@@ -339,7 +339,7 @@ lemma spanning_iff_er' [FiniteRk M] : M.Spanning X ↔ M.erk ≤ M.er X ∧ X �
   obtain ⟨B, hB, hJB⟩ := hJ.indep.exists_base_superset
   rw [← hJ.encard, ← hB.encard] at hr
   obtain rfl := hB.finite.eq_of_subset_of_encard_le hJB hr
-  rw [spanning_iff_superset_base]
+  rw [spanning_iff_exists_base_subset]
   exact ⟨J, hB, hJ.subset⟩
 
 lemma spanning_iff_er [FiniteRk M] (hX : X ⊆ M.E := by aesop_mat) :
@@ -431,26 +431,6 @@ lemma erk_add_dual_erk (M : Matroid α) : M.erk + M✶.erk = M.E.encard := by
   rw [← hB.encard, ← hB.compl_base_dual.encard, ← encard_union_eq disjoint_sdiff_right,
     union_diff_cancel hB.subset_ground]
 
-lemma foo (M : Matroid α) (X : Set α) :
-    M.er X = ⨆ Y ∈ {S : Finset α | (S : Set α) ⊆ X}, M.er Y := by
-  simp only [mem_setOf_eq, le_antisymm_iff, iSup_le_iff]
-  refine ⟨?_, fun S hSX ↦ M.er_mono hSX⟩
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-
-  by_cases hX : M.er X = ⊤
-  · rw [hX, top_le_iff, ← WithTop.forall_ge_iff_eq_top]
-    intro n
-    rw [hI.er_eq_encard, encard_eq_top_iff] at hX
-    obtain ⟨J, hJI, rfl⟩ := hX.exists_subset_card_eq n
-    apply le_iSup₂_of_le J (hJI.trans hI.subset)
-    rw [(hI.indep.subset hJI).er, encard_coe_eq_coe_finsetCard]
-    rfl
-  rw [← hI.encard]
-  have :=
-
-
-
-
 lemma Circuit.er_add_one_eq {C : Set α} (hC : M.Circuit C) : M.er C + 1 = C.encard := by
   obtain ⟨I, hI⟩ := M.exists_basis C
   obtain ⟨e, ⟨heC, heI⟩, rfl⟩ := hC.basis_iff_insert_eq.1 hI
@@ -507,6 +487,15 @@ lemma rFin.exists_finite_basis' (h : M.rFin X) : ∃ I, M.Basis' I X ∧ I.Finit
 lemma rFin.exists_finite_basis (h : M.rFin X) (hX : X ⊆ M.E := by aesop_mat) :
     ∃ I, M.Basis I X ∧ I.Finite :=
   (rFin_iff hX).1 h
+
+lemma rFin.exists_finset_basis' (h : M.rFin X) : ∃ (I : Finset α), M.Basis' I X := by
+  obtain ⟨I, hI, hfin⟩ := h.exists_finite_basis'
+  exact ⟨hfin.toFinset, by simpa⟩
+
+lemma rFin.exists_finset_basis (h : M.rFin X) (hX : X ⊆ M.E := by aesop_mat) :
+    ∃ (I : Finset α), M.Basis I X := by
+  obtain ⟨I, hI, hfin⟩ := h.exists_finite_basis
+  exact ⟨hfin.toFinset, by simpa⟩
 
 lemma Basis'.rFin_of_finite (hIX : M.Basis' I X) (h : I.Finite) : M.rFin X := by
   rwa [← er_ne_top_iff, ← hIX.encard, encard_ne_top_iff]
@@ -656,6 +645,25 @@ lemma rFin.iUnion [Fintype ι] {Xs : ι → Set α} (h : ∀ i, M.rFin (Xs i)) :
   rw [← rFin_closure_iff, ← M.closure_iUnion_closure_eq_closure_iUnion]
   simp_rw [← (hIs _).closure_eq_closure, M.closure_iUnion_closure_eq_closure_iUnion]
   exact (M.rFin_of_finite hfin).to_closure
+
+lemma er_eq_iSup_finset_er (M : Matroid α) (X : Set α) :
+    M.er X = ⨆ Y ∈ {S : Finset α | (S : Set α) ⊆ X}, M.er Y := by
+  simp only [mem_setOf_eq, le_antisymm_iff, iSup_le_iff]
+  refine ⟨?_, fun S hSX ↦ M.er_mono hSX⟩
+
+  by_cases hX : M.rFin X
+  · obtain ⟨I, hI⟩ := hX.exists_finset_basis'
+    exact le_iSup₂_of_le (i := I) hI.subset <| by rw [hI.er]
+
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [← er_eq_top_iff] at hX
+  rw [hX, top_le_iff, ← WithTop.forall_ge_iff_eq_top]
+  intro n
+  rw [hI.er_eq_encard, encard_eq_top_iff] at hX
+  obtain ⟨J, hJI, rfl⟩ := hX.exists_subset_card_eq n
+  apply le_iSup₂_of_le J (hJI.trans hI.subset)
+  rw [(hI.indep.subset hJI).er, encard_coe_eq_coe_finsetCard]
+  rfl
 
 end rFin
 

@@ -18,7 +18,7 @@ lemma Flat.inter (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.Flat (F₁ ∩ 
   rw [inter_eq_iInter]; apply Flat.iInter; simp [hF₁, hF₂]
 
 /-- The intersection of an arbitrary collection of flats with the ground set is a flat.
-  `Flat.iInter` is often more convenient, but this works when the collection is empty. -/
+`Matroid.Flat.iInter` is often more convenient, but this works when the collection is empty. -/
 lemma Flat.iInter_inter_ground {ι : Type*} {Fs : ι → Set α} (hFs : ∀ i, M.Flat (Fs i)) :
     M.Flat ((⋂ i, Fs i) ∩ M.E) := by
   obtain (hι | hι) := isEmpty_or_nonempty ι
@@ -113,7 +113,7 @@ lemma Flat.closure_exchange (hF : M.Flat F) (he : e ∈ M.closure (insert f F) \
 
 lemma Flat.closure_insert_eq_closure_insert_of_mem (hF : M.Flat F)
     (he : e ∈ M.closure (insert f F) \ F) : M.closure (insert e F) = M.closure (insert f F) :=
-  Matroid.closure_insert_eq_closure_insert_of_mem (by rwa [hF.closure])
+  Matroid.closure_insert_congr (by rwa [hF.closure])
 
 lemma Flat.closure_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.closure X ⊆ F := by
   have h' := M.closure_mono h; rwa [hF.closure] at h'
@@ -442,7 +442,7 @@ lemma closure_covBy_closure_iff : (M.closure X) ⋖[M] (M.closure Y) ↔
   have hY : Y ∩ M.E ⊆ M.closure X := by
     refine fun f hf ↦ by_contra fun hfX ↦ hcon f hf.2 hf.1 hfX ?_
     rw [hYX]
-    apply closure_insert_eq_closure_insert_of_mem ⟨?_, hfX⟩
+    apply closure_insert_congr ⟨?_, hfX⟩
     rw [← hYX, ← closure_inter_ground]
     exact M.subset_closure _ (by aesop_mat) hf
   replace hY := M.closure_subset_closure_of_subset_closure hY
@@ -788,7 +788,7 @@ lemma hyperplane_iff_maximal_nonspanning :
     (fun F hF ↦ ⟨fun hFs ↦ hF.2.ne (hF.1.eq_ground_of_spanning hFs), hF.2.subset⟩)
     (fun S ⟨hS, hSE⟩ ↦ ⟨M.closure S, M.subset_closure S, M.closure_flat S,
       (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
-  rwa [Spanning, and_iff_left hSE] at hS
+  rwa [spanning_iff, and_iff_left hSE] at hS
 
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.Hyperplane H := by

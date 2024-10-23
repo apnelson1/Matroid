@@ -212,7 +212,7 @@ lemma Base.fundCct_circuit {B : Set α} (hB : M.Base B) (hx : x ∈ M.E \ B) :
   apply hB.indep.fundCct_circuit; rwa [hB.closure_eq]
 
 lemma Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit C := by
-  rw [dep_iff, indep_iff_not_mem_closure_diff_forall] at hX
+  rw [dep_iff, indep_iff_forall_not_mem_closure_diff] at hX
   push_neg at hX
   obtain ⟨⟨e, he, heX⟩, hXE⟩ := hX
   -- Why doesn't `aesop_mat` work on the next line?
@@ -442,7 +442,7 @@ lemma cocircuit_iff_minimal :
 lemma cocircuit_iff_minimal_compl_nonspanning :
     M.Cocircuit K ↔ Minimal (fun X ↦ ¬ M.Spanning (M.E \ X)) K := by
   convert cocircuit_iff_minimal with K
-  simp_rw [spanning_iff_superset_base (S := M.E \ K), not_exists, subset_diff, not_and,
+  simp_rw [spanning_iff_exists_base_subset (S := M.E \ K), not_exists, subset_diff, not_and,
     not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp Base.subset_ground,
       inter_comm K]
 

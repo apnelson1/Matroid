@@ -532,7 +532,7 @@ lemma Basis.diff_subset_loops_contract (hIX : M.Basis I X) : X \ I ⊆ (M ／ I)
 
 lemma contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     (M ／ C).Spanning X ↔ M.Spanning (X ∪ (C ∩ M.E)) ∧ Disjoint X C := by
-  simp_rw [Spanning, contract_closure_eq, contract_ground, subset_diff, union_subset_iff,
+  simp_rw [spanning_iff, contract_closure_eq, contract_ground, subset_diff, union_subset_iff,
     and_iff_left inter_subset_right, ← and_assoc, and_congr_left_iff,
     subset_antisymm_iff, subset_diff, diff_subset_iff, and_iff_left disjoint_sdiff_left,
     and_iff_right (M.closure_subset_ground _ ),

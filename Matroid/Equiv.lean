@@ -287,11 +287,11 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     (h : ∀ X : Set M.E, N.closure ↑(e '' X) = e '' (M.E ↓∩ M.closure ↑X)) : M ≂ N where
   toEquiv := e
   indep_image_iff' I := by
-    rw [indep_iff_not_mem_closure_diff_forall, indep_iff_not_mem_closure_diff_forall]
+    rw [indep_iff_forall_not_mem_closure_diff, indep_iff_forall_not_mem_closure_diff]
     simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
       mem_image_equiv]
-    refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' y hy hyI ?_, fun h' x hx hxI h'' ↦
-      h' (e ⟨x,hx⟩).1 (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
+    refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' hy hyI ?_,
+      fun h' x hx hxI h'' ↦ h' (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
     · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
         simp [image_diff e.injective, hyx, Set.preimage_val_image_val_eq_self]
       have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.closure (↑I \ {y}) := by simpa [h_eq, h] using hxI
