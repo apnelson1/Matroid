@@ -438,6 +438,9 @@ lemma er_add_er_compl_eq (M : Matroid α) (X : Set α) :
   rw [econn_eq_localEConn, er_add_er_eq_er_union_add_localEConn, union_diff_self,
     ← er_inter_ground, inter_eq_self_of_subset_right subset_union_right, erk_def]
 
+lemma econn_le_er (M : Matroid α) (X : Set α) : M.econn X ≤ M.er X :=
+  localEConn_le_er_left _ _ _
+
 end econn
 
 section conn

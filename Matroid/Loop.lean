@@ -1,6 +1,7 @@
 import Matroid.Circuit
 import Mathlib.Data.Matroid.Map
 import Mathlib.Order.SymmDiff
+import Matroid.ForMathlib.Finset
 
 /-
   A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.closure ∅`.
@@ -143,11 +144,14 @@ end Loop
 
 section LoopEquiv
 
-lemma closure_union_loops_eq (M : Matroid α) (X : Set α) : M.closure (X ∪ M.closure ∅) = M.closure X := by
+lemma closure_union_loops_eq (M : Matroid α) (X : Set α) :
+    M.closure (X ∪ M.closure ∅) = M.closure X := by
   rw [closure_union_closure_right_eq, union_empty]
 
-@[simp] lemma closure_diff_loops_eq (M : Matroid α) (X : Set α) : M.closure (X \ M.closure ∅) = M.closure X := by
-  rw [← M.closure_union_loops_eq (X \ M.closure ∅), diff_union_self, closure_union_closure_right_eq, union_empty]
+@[simp] lemma closure_diff_loops_eq (M : Matroid α) (X : Set α) :
+    M.closure (X \ M.closure ∅) = M.closure X := by
+  rw [← M.closure_union_loops_eq (X \ M.closure ∅), diff_union_self,
+    closure_union_closure_right_eq, union_empty]
 
 /-- Two sets are `LoopEquiv` in `M` if their symmetric difference contains only loops. -/
 def LoopEquiv (M : Matroid α) (X Y : Set α) := X ∪ M.closure ∅ = Y ∪ M.closure ∅
@@ -443,6 +447,17 @@ lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nont
   obtain (rfl | ⟨e, rfl⟩) := hCs.eq_empty_or_singleton
   · simpa using hC.nonempty
   exact ⟨e, (singleton_circuit.1 hC).mem_ground, singleton_circuit.1 hC⟩
+
+@[simp] lemma one_lt_girth_iff : 1 < M.girth ↔ M.Loopless := by
+  simp_rw [loopless_iff_forall_circuit, ← Nat.cast_one (R := ℕ∞), lt_girth_iff',
+    Finset.one_lt_card_iff_nontrivial]
+  refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ by simpa using h C hC⟩
+  obtain hfin | hinf := C.finite_or_infinite
+  · simpa using h hfin.toFinset (by simpa)
+  exact hinf.nontrivial
+
+@[simp] lemma two_le_girth_iff : 2 ≤ M.girth ↔ M.Loopless := by
+  rw [show (2 : ℕ∞) = 1 + 1 from rfl, ENat.add_one_le_iff (by simp), one_lt_girth_iff]
 
 lemma Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e} :=
   Set.ext fun _ ↦  ⟨fun he ↦ toNonloop he, Nonloop.mem_ground⟩

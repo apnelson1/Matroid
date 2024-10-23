@@ -31,6 +31,15 @@ theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) 
   rw [hinf.encard_eq, iff_true_intro le_top, true_iff, iff_false_intro hinf, false_imp_iff]
   trivial
 
+theorem Set.encard_le_cast_iff {n : ℕ} :
+    s.encard ≤ n ↔ ∃ t : Finset α, (t : Set α) = s ∧ t.card ≤ n := by
+  rw [encard_le_coe_iff_finite_ncard_le]
+  refine ⟨fun h ↦ ⟨h.1.toFinset, by simp, ?_⟩, ?_⟩
+  · rw [ncard_eq_toFinset_card _ h.1] at h
+    exact h.2
+  rintro ⟨t, rfl, ht⟩
+  simpa
+
 theorem Equiv.encard_univ_eq (e : α ≃ β) : encard (univ : Set α) = encard (univ : Set β) := by
   rw [encard_univ, encard_univ, PartENat.card_congr e]
 

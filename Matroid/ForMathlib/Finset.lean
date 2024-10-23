@@ -84,3 +84,17 @@ lemma finset_biUnion_inter (s t : Finset α) (u : α → Finset β) [DecidableEq
 lemma erase_inter_distrib (s : Finset α) (t : Finset α) (a : α) :
     (s ∩ t).erase a = s.erase a ∩ t.erase a := by
   aesop
+
+@[simp] lemma coe_nontrivial {α : Type*} {s : Finset α} :
+    (s : Set α).Nontrivial ↔ s.Nontrivial := by
+  rfl
+
+end Finset
+
+@[simp] lemma Finite.toFinset_nontrivial {s : Set α} (h : s.Finite) :
+    h.toFinset.Nontrivial ↔ s.Nontrivial := by
+  rw [Finset.Nontrivial, h.coe_toFinset]
+
+@[simp] lemma Set.toFinset_nontrivial {s : Set α} [Fintype s] :
+    s.toFinset.Nontrivial ↔ s.Nontrivial := by
+  rw [Finset.Nontrivial, coe_toFinset]

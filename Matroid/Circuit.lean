@@ -1,12 +1,13 @@
 
 import Matroid.Closure
 import Matroid.Constructions.Basic
+import Matroid.ForMathlib.Card
 
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
 -/
 
-variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R : Set α} {e f x y : α}
+variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R E D : Set α} {e f x y : α}
 
 open Set Set.Notation
 namespace Matroid
@@ -374,6 +375,37 @@ lemma mapEquiv_circuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
     (M.mapEquiv f).Circuit C ↔ M.Circuit (f.symm '' C) := by
   rw [mapEquiv_eq_map, map_circuit_iff]
   exact ⟨by rintro ⟨C, hC, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
+
+@[simp] lemma uniqueBaseOn_dep_iff : (uniqueBaseOn I E).Dep D ↔ D.Nonempty ∧ ¬ (D ⊆ I) ∧ D ⊆ E := by
+  by_cases hD : D ⊆ E
+  · simp (config := {contextual := true}) [← not_indep_iff (M := uniqueBaseOn I E) hD, hD,
+      nonempty_iff_ne_empty, not_imp_not]
+  exact iff_of_false (fun h ↦ hD h.subset_ground) (by simp [hD])
+
+@[simp] lemma loopyOn_dep_iff : (loopyOn E).Dep D ↔ D.Nonempty ∧ D ⊆ E := by
+  simp [Dep, nonempty_iff_ne_empty]
+
+@[simp] lemma uniqueBaseOn_circuit_iff : (uniqueBaseOn I E).Circuit C ↔ ∃ e ∈ E \ I, C = {e} := by
+  simp only [circuit_iff_dep_forall_diff_singleton_indep, uniqueBaseOn_dep_iff,
+    uniqueBaseOn_indep_iff', subset_inter_iff, diff_singleton_subset_iff, mem_diff]
+  refine ⟨fun ⟨⟨⟨e,he⟩, hCI, hCE⟩, h2⟩ ↦ ⟨e, ⟨hCE he, fun heI ↦ hCI ?_⟩, ?_⟩, ?_⟩
+  · exact (h2 e he).1.trans (insert_subset heI Subset.rfl)
+  · suffices hsub : C.Subsingleton from hsub.eq_singleton_of_mem he
+    refine fun f hf f' hf' ↦ by_contra fun hne ↦ hCI ?_
+    convert subset_inter (h2 f hf).1 (h2 f' hf').1
+    aesop
+  rintro ⟨e, ⟨heI,heC⟩, rfl⟩
+  simp [heI, heC]
+
+@[simp] lemma freeOn_not_circuit {E : Set α} : ¬ (freeOn E).Circuit C := by
+  simp [← uniqueBaseOn_self]
+
+@[simp] lemma loopyOn_circuit_iff {E : Set α} : (loopyOn E).Circuit C ↔ ∃ e ∈ E, C = {e} := by
+  simp [← uniqueBaseOn_empty]
+
+@[simp] lemma emptyOn_not_circuit : ¬ (emptyOn α).Circuit C := by
+  simp [← freeOn_empty]
+
 section Dual
 
 variable {B : Set α}
@@ -530,6 +562,10 @@ lemma Circuit.girth_le_card (hC : M.Circuit C) : M.girth ≤ C.encard := by
 lemma girth_eq_top_iff : M.girth = ⊤ ↔ ∀ C, M.Circuit C → C.Infinite := by
   simp [girth, sInf_eq_top]
 
+@[simp] lemma girth_eq_top_iff_ground_indep [Finitary M] : M.girth = ⊤ ↔ M = freeOn M.E := by
+  rw [girth_eq_top_iff, eq_freeOn_iff, indep_iff_forall_subset_not_circuit, and_iff_right rfl]
+  exact ⟨fun h C _ hC ↦ h C hC hC.finite, fun h C hC _ ↦ h C hC.subset_ground hC⟩
+
 lemma le_girth_iff : k ≤ M.girth ↔ ∀ C, M.Circuit C → k ≤ C.encard := by
   simp [girth, le_sInf_iff]
 
@@ -540,21 +576,45 @@ lemma exists_circuit_girth (M : Matroid α) [RkPos M✶] :
       (fun C ↦ (C : Set α).encard)
   exact ⟨C, hC, by rw [hC', girth, iInf_subtype']⟩
 
-lemma girth_le_iff (M : Matroid α) [RkPos M✶] : M.girth ≤ k ↔ ∃ C, M.Circuit C ∧ C.encard ≤ k :=
+@[simp] lemma girth_emptyOn : girth (emptyOn α) = ⊤ := by
+  simp [girth]
+
+@[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
+  simp [Subset.rfl]
+
+lemma girth_le_iff [RkPos M✶] : M.girth ≤ k ↔ ∃ C, M.Circuit C ∧ C.encard ≤ k :=
   let ⟨C, hC⟩ := M.exists_circuit_girth
   ⟨fun h ↦ ⟨C, hC.1, hC.2.le.trans h⟩, fun ⟨_, hC, hCc⟩ ↦ (hC.girth_le_card).trans hCc⟩
 
-lemma girth_lt_iff (M : Matroid α) : M.girth < k ↔ ∃ C, M.Circuit C ∧ C.encard < k := by
+lemma girth_le_iff' {k : ℕ} : M.girth ≤ k ↔ ∃ C : Finset α, M.Circuit C ∧ C.card ≤ k := by
+  by_cases h : RkPos M✶
+  · simp_rw [girth_le_iff, encard_le_cast_iff]
+    aesop
+  rw [rkPos_iff_empty_not_base, not_not, empty_base_iff, ← dual_inj, dual_dual] at h
+  rw [show M = freeOn M.E by simpa using h]
+  simp
+
+lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
+  have _ : RkPos (loopyOn E)✶ := by rw [loopyOn_dual_eq]; exact freeOn_rkPos hE
+  refine le_antisymm ?_ (one_le_girth _)
+  simp only [girth_le_iff, loopyOn_circuit_iff]
+  exact ⟨{hE.some}, ⟨_, hE.some_mem, rfl⟩, by simp⟩
+
+lemma girth_lt_iff : M.girth < k ↔ ∃ C, M.Circuit C ∧ C.encard < k := by
   simp_rw [girth, iInf_lt_iff, mem_setOf_eq, bex_def]
+
+lemma lt_girth_iff [RkPos M✶] : k < M.girth ↔ ∀ C, M.Circuit C → k < C.encard := by
+  rw [lt_iff_not_le, girth_le_iff]
+  simp
+
+lemma lt_girth_iff' {k : ℕ} : k < M.girth ↔ ∀ C : Finset α, M.Circuit C → k < C.card := by
+  rw [lt_iff_not_le, girth_le_iff']
+  simp
 
 lemma indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   rw [indep_iff_forall_subset_not_circuit]
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
-
-@[simp] lemma girth_eq_top_iff_ground_indep [Finitary M] : M.girth = ⊤ ↔ M.Indep M.E := by
-  rw [girth_eq_top_iff, indep_iff_forall_subset_not_circuit]
-  exact ⟨fun h C _ hC ↦ h C hC hC.finite, fun h C hC _ ↦ h C hC.subset_ground hC⟩
 
 end Girth
 section BasisExchange
@@ -622,54 +682,5 @@ variable {β : Type*} {N : Matroid β}
 
 
 end Iso
-
-section constructions
-
-variable {E D : Set α}
-
-@[simp] lemma uniqueBaseOn_dep_iff : (uniqueBaseOn I E).Dep D ↔ D.Nonempty ∧ ¬ (D ⊆ I) ∧ D ⊆ E := by
-  by_cases hD : D ⊆ E
-  · simp (config := {contextual := true}) [← not_indep_iff (M := uniqueBaseOn I E) hD, hD,
-      nonempty_iff_ne_empty, not_imp_not]
-  exact iff_of_false (fun h ↦ hD h.subset_ground) (by simp [hD])
-
-@[simp] lemma loopyOn_dep_iff : (loopyOn E).Dep D ↔ D.Nonempty ∧ D ⊆ E := by
-  simp [Dep, nonempty_iff_ne_empty]
-
-@[simp] lemma uniqueBaseOn_circuit_iff : (uniqueBaseOn I E).Circuit C ↔ ∃ e ∈ E \ I, C = {e} := by
-  simp only [circuit_iff_dep_forall_diff_singleton_indep, uniqueBaseOn_dep_iff,
-    uniqueBaseOn_indep_iff', subset_inter_iff, diff_singleton_subset_iff, mem_diff]
-  refine ⟨fun ⟨⟨⟨e,he⟩, hCI, hCE⟩, h2⟩ ↦ ⟨e, ⟨hCE he, fun heI ↦ hCI ?_⟩, ?_⟩, ?_⟩
-  · exact (h2 e he).1.trans (insert_subset heI Subset.rfl)
-  · suffices hsub : C.Subsingleton from hsub.eq_singleton_of_mem he
-    refine fun f hf f' hf' ↦ by_contra fun hne ↦ hCI ?_
-    convert subset_inter (h2 f hf).1 (h2 f' hf').1
-    aesop
-  rintro ⟨e, ⟨heI,heC⟩, rfl⟩
-  simp [heI, heC]
-
-@[simp] lemma loopyOn_circuit_iff {E : Set α} : (loopyOn E).Circuit C ↔ ∃ e ∈ E, C = {e} := by
-  simp [← uniqueBaseOn_empty]
-
-@[simp] lemma freeOn_not_circuit {E : Set α} : ¬ (freeOn E).Circuit C := by
-  simp [← uniqueBaseOn_self]
-
-@[simp] lemma emptyOn_not_circuit : ¬ (emptyOn α).Circuit C := by
-  simp [← freeOn_empty]
-
-@[simp] lemma girth_emptyOn : girth (emptyOn α) = ⊤ := by
-  simp [girth]
-
-@[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
-  simp [Subset.rfl]
-
-lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
-  have _ : RkPos (loopyOn E)✶ := by rw [loopyOn_dual_eq]; exact freeOn_rkPos hE
-  refine le_antisymm ?_ (one_le_girth _)
-  simp only [girth_le_iff, loopyOn_circuit_iff]
-  exact ⟨{hE.some}, ⟨_, hE.some_mem, rfl⟩, by simp⟩
-
-
-end constructions
 
 end Matroid

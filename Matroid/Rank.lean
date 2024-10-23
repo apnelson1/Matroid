@@ -451,6 +451,11 @@ lemma foo (M : Matroid α) (X : Set α) :
 
 
 
+lemma Circuit.er_add_one_eq {C : Set α} (hC : M.Circuit C) : M.er C + 1 = C.encard := by
+  obtain ⟨I, hI⟩ := M.exists_basis C
+  obtain ⟨e, ⟨heC, heI⟩, rfl⟩ := hC.basis_iff_insert_eq.1 hI
+  rw [hI.er_eq_encard, encard_insert_of_not_mem heI]
+
 end Basic
 
 section rFin
@@ -682,6 +687,9 @@ lemma rFin.cast_r_eq (hX : M.rFin X) : (M.r X : ℕ∞) = M.er X := by
 lemma cast_r_eq_er_of_finite (M : Matroid α) (hX : X.Finite) : (M.r X : ℕ∞) = M.er X :=
   (M.rFin_of_finite hX).cast_r_eq
 
+lemma Finset.cast_r_eq (M : Matroid α) (X : Finset α) : (M.r X : ℕ∞) = M.er X :=
+  cast_r_eq_er_of_finite _ (by simp)
+
 @[simp] lemma cast_r_eq (M : Matroid α) [FiniteRk M] (X : Set α) : (M.r X : ℕ∞) = M.er X :=
   (M.to_rFin X).cast_r_eq
 
@@ -754,30 +762,34 @@ lemma r_le_rk (M : Matroid α) [FiniteRk M] (X : Set α) : M.r X ≤ M.rk := by
 lemma r_eq_rk (hX : M.E ⊆ X) : M.r X = M.rk := by
   rw [← r_inter_ground, inter_eq_self_of_subset_right hX, rk_def]
 
-lemma Indep.r (hI : M.Indep I) : M.r I = I.ncard := by
+lemma Indep.r_eq_ncard (hI : M.Indep I) : M.r I = I.ncard := by
   rw [← er_toNat_eq_r, hI.er, ncard_def]
+
+lemma Indep.r_eq_card {I : Finset α} (hI : M.Indep I) : M.r I = I.card := by
+  rw [hI.r_eq_ncard, ncard_coe_Finset]
 
 lemma r_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.r X ≤ X.ncard :=
   r_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_ncard hI (M.set_finite X))
 
-lemma Indep.card_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
-  rw [← hI.r]; exact M.r_mono h
+lemma Indep.ncard_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.r X := by
+  rw [← hI.r_eq_ncard]
+  exact M.r_mono h
 
-lemma Indep.card_le_rk [FiniteRk M] (hI : M.Indep I) : I.ncard ≤ M.rk :=
-  hI.r.symm.trans_le (M.r_le_rk I)
+lemma Indep.ncard_le_rk [FiniteRk M] (hI : M.Indep I) : I.ncard ≤ M.rk :=
+  hI.r_eq_ncard.symm.trans_le (M.r_le_rk I)
 
 lemma Basis'.card (h : M.Basis' I X) : I.ncard = M.r X := by
   rw [ncard_def, h.encard, ← er_toNat_eq_r]
 
-lemma Basis'.r (h : M.Basis' I X) : M.r I = M.r X := by
-  rw [← h.card, h.indep.r]
+lemma Basis'.r_eq_r (h : M.Basis' I X) : M.r I = M.r X := by
+  rw [← h.card, h.indep.r_eq_ncard]
 
-lemma Basis.card (h : M.Basis I X) : I.ncard = M.r X :=
+lemma Basis.ncard_eq_r (h : M.Basis I X) : I.ncard = M.r X :=
   h.basis'.card
 
-lemma Basis.r (h : M.Basis I X) : M.r I = M.r X :=
-  h.basis'.r
+lemma Basis.r_eq_r (h : M.Basis I X) : M.r I = M.r X :=
+  h.basis'.r_eq_r
 
 lemma r_eq_zero_iff [FiniteRk M] (hX : X ⊆ M.E) : M.r X = 0 ↔ X ⊆ M.closure ∅ := by
   rw [← er_eq_coe_iff, coe_zero, er_eq_zero_iff]
@@ -790,6 +802,10 @@ lemma Nonloop.r_eq (he : M.Nonloop e) : M.r {e} = 1 := by
 
 lemma Loop.r_eq (he : M.Loop e) : M.r {e} = 0 := by
   rw [r, he.er_eq]; rfl
+
+lemma Circuit.r_add_one_eq {C : Finset α} (hC : M.Circuit C) : M.r C + 1 = C.card := by
+  rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, ← encard_coe_eq_coe_finsetCard,
+    ← hC.er_add_one_eq, cast_r_eq_er_of_finite _ (by simp), Nat.cast_one]
 
 /-- The `ℕ`-valued rank function is submodular.
 If the `X` is finite-rank and `Y` is not,
