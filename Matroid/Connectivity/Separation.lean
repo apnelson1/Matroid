@@ -8,7 +8,7 @@ namespace Matroid
 
 section separation
 
-variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {a b : α}
+variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {a b : α} {A : Set α}
 
 protected structure Partition (M : Matroid α) where
   left : Set α
@@ -45,11 +45,6 @@ namespace Partition
 
 @[simp] lemma ofDual_dual (P : M✶.Partition) : P.ofDual.dual = P := rfl
 
-@[simps] protected def ofSet (M : Matroid α) (A : Set α) : M.Partition where
-  left := A ∩ M.E
-  right := M.E \ A
-  disjoint :=  disjoint_sdiff_right.mono_left inter_subset_left
-  union_eq := by rw [inter_comm, inter_union_diff]
 
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 protected lemma left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
@@ -83,13 +78,6 @@ lemma econn_eq_right (P : M.Partition) : P.econn = M.econn P.2 := by
 @[simp] lemma econn_eq_zero_iff {P : M.Partition} : P.econn = 0 ↔ M.Skew P.1 P.2 :=
   M.localEConn_eq_zero P.left_subset_ground P.right_subset_ground
 
-@[simp] lemma econn_ofSet (M : Matroid α) (A : Set α) :
-    (Partition.ofSet M A).econn = M.econn A := by
-  simp [econn]
-
-lemma ofSet_dual (M : Matroid α) (A : Set α) :
-    (Partition.ofSet M✶ A) = (Partition.ofSet M A).dual := rfl
-
 @[mk_iff]
 structure IsTutteSep (P : M.Partition) (k : ℕ∞) : Prop where
   conn_lt : P.econn < k
@@ -111,10 +99,24 @@ lemma IsTutteSep.zero_lt (h : P.IsTutteSep k) : 0 < k :=
 
 end Partition
 
+
+/-- The partition of `M` given by a subset of `M.E` and its complement.  -/
+@[simps] protected def partition (M : Matroid α) (A : Set α) (hA : A ⊆ M.E := by aesop_mat) :
+    M.Partition where
+  left := A
+  right := M.E \ A
+  disjoint :=  disjoint_sdiff_right
+  union_eq := by rwa [union_diff_cancel]
+
+@[simp] lemma econn_partition (hA : A ⊆ M.E) : (M.partition A).econn = M.econn A := by
+  simp [econn, Matroid.partition]
+
+lemma partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
+
 lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
-    (hcard : 2 * C.encard ≤ M.E.encard) : (Partition.ofSet M C).IsTutteSep C.encard := by
-  simp only [Partition.isTutteSep_iff, Partition.econn_ofSet, Partition.ofSet_left,
-    Partition.ofSet_right, inter_eq_self_of_subset_left hC.subset_ground, and_iff_right rfl.le]
+    (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
+  simp only [Partition.isTutteSep_iff, econn_partition, partition_left,
+    partition_right, inter_eq_self_of_subset_left hC.subset_ground, and_iff_right rfl.le]
   refine ⟨(M.econn_le_er C).trans_lt ?_, ?_⟩
   · rw [← hC.er_add_one_eq, ENat.lt_add_one_iff]
     rw [er_ne_top_iff]
@@ -124,16 +126,16 @@ lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
   rwa [encard_ne_top_iff]
 
 lemma Circuit.isTutteSep_finset {C : Finset α} (hC : M.Circuit C)
-    (hcard : 2 * C.card ≤ M.E.encard) : (Partition.ofSet M C).IsTutteSep C.card := by
+    (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]
 
 lemma Cocircuit.isTutteSep {C : Set α} (hC : M.Cocircuit C) (hfin : C.Finite)
-    (hcard : 2 * C.encard ≤ M.E.encard) : (Partition.ofSet M C).IsTutteSep C.encard := by
-  simpa [Partition.ofSet_dual] using hC.circuit.isTutteSep hfin hcard
+    (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
+  simpa [partition_dual] using hC.circuit.isTutteSep hfin hcard
 
 lemma Cocircuit.isTutteSep_finset {C : Finset α} (hC : M.Cocircuit C)
-    (hcard : 2 * C.card ≤ M.E.encard) : (Partition.ofSet M C).IsTutteSep C.card := by
+    (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]
 
@@ -148,7 +150,7 @@ lemma TutteConnected.mono {k : ℕ∞} (h : M.TutteConnected k) (hjk : j ≤ k) 
 lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConnected k :=
   fun j P hP ↦ by simpa [hP] using h (j := j) (P := P.ofDual)
 
-lemma tutteConnected_dual_iff {k : ℕ∞} : M✶.TutteConnected k ↔ M.TutteConnected k :=
+@[simp] lemma tutteConnected_dual_iff {k : ℕ∞} : M✶.TutteConnected k ↔ M.TutteConnected k :=
   ⟨fun h ↦ by simpa using h.dual, TutteConnected.dual⟩
 
 @[simp] lemma tutteConnected_one (M : Matroid α) : M.TutteConnected 1 :=
@@ -158,21 +160,20 @@ lemma tutteConnected_dual_iff {k : ℕ∞} : M✶.TutteConnected k ↔ M.TutteCo
   M.tutteConnected_one.mono <| zero_le _
 
 @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
-  simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, Connected, ‹M.Nonempty›, true_and,
+  simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›, true_and,
     show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
   refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_le fun hle ↦ ?_⟩
   · contrapose! h
     use 1
     simp only [Nat.cast_one, ENat.lt_one_iff, Partition.econn_eq_zero_iff,
       one_le_encard_iff_nonempty, le_refl, and_true]
-    set P := Partition.ofSet M {z | M.ConnectedTo e z}
+    set P := M.partition {z | M.ConnectedTo e z} (fun _ ↦ ConnectedTo.mem_ground_right)
     refine ⟨P, ?_, ⟨e, by simpa [P]⟩, ⟨f, by simp [P, h, hf]⟩⟩
     simp_rw [skew_iff_forall_circuit P.disjoint P.left_subset_ground, or_iff_not_imp_right,
       not_subset, ← P.compl_left, mem_diff, union_diff_self, not_and, not_not, forall_exists_index,
       and_imp]
     exact fun C hC _ a haC h' b hbC ↦
-      ⟨ConnectedTo.trans (h' (hC.subset_ground haC)).1 <| .inr ⟨C, hC, haC, hbC⟩,
-      (hC.subset_ground hbC)⟩
+      ConnectedTo.trans (h' (hC.subset_ground haC)) (hC.mem_connectedTo_mem haC hbC)
   rw [le_iff_eq_or_lt, ENat.lt_one_iff, or_comm] at hle
   obtain rfl | rfl := hle
   · simp at hPk
@@ -204,8 +205,7 @@ lemma TutteConnected.le_girth (h : M.TutteConnected k) (hk : 2*k ≤ M.E.encard 
   simp_rw [le_girth_iff]
   exact fun C hC ↦ hC.encard_ge_of_tutteConnected hk h
 
-lemma TutteConnected.loopless (h : M.TutteConnected 2) (hM : M.E.Nontrivial) :
-    M.Loopless := by
+lemma TutteConnected.loopless (h : M.TutteConnected 2) (hM : M.E.Nontrivial) : M.Loopless := by
   have : M.Nonempty := ⟨hM.nonempty⟩
   exact Connected.loopless (tutteConnected_two_iff.1 h) hM
 

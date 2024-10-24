@@ -1,38 +1,27 @@
-import Mathlib.Data.Set.Card
+import Mathlib
 
-variable {α β : Type*}
+variable {α : Type*}
 
-structure Multigraph (α β : Type*) where
-  V : Set α
-  E : Set β
-  inc : β → α → Prop
-  inc_mem_edge : ∀ e v, inc e v → e ∈ E
-  inc_mem_vx : ∀ e v, inc e v → v ∈ V
-  inc_exists : ∀ e, ∃ v ∈ V, inc e v
-  inc_card : ∀ e, {v | inc e v}.encard ≤ 2
+class HasDelete (α β : Type*) where
+  del : α → β → α
 
-namespace Multigraph
+infixl:75 " ＼ " => HasDelete.del
 
-def deleteEdges (G : Multigraph α β) (F : Set β) : Multigraph α β where
-  V := G.V
-  E := G.E \ F
-  inc e v := e ∉ F ∧ G.inc e v
-  inc_mem_edge := sorry
-  inc_mem_vx := sorry
-  inc_exists := sorry
-  inc_card := sorry
+def setDelete (s t : Set α) : Set α := s \ t
 
--- identify a set of `S` vertices to a vertex named `z`, which can be inside or outside `V`.
-def identify (G : Multigraph α β) (S : Set α) (z : α) : Multigraph α β where
-  V := insert z (G.V \ S)
-  E := G.E
-  inc e v := (v ∉ S ∧ G.inc e v) ∨ (v = z ∧ ∃ x ∈ S, G.inc e x)
-  inc_mem_edge := sorry
-  inc_mem_vx := sorry
-  inc_exists := sorry
-  inc_card := sorry
+instance setDel {α : Type*} : HasDelete (Set α) (Set α) :=
+  ⟨setDelete⟩
 
--- contract an edge `e` to a vertex `z`. We can choose `z` as an existing end of `e`, or
--- give it a new name from a vertex outside `V`.
-def contractEdge (G : Multigraph α β) (e : β) (z : α) : Multigraph α β :=
-  (G.identify {v | G.inc e v} z).deleteEdges {e}
+@[simp] lemma setdelete_eq_diff (s t : Set α) : s ＼ t = s \ t := rfl
+
+/-- Can this be an abbrev? -/
+instance elemDelete {α : Type*} : HasDelete (Set α) α := ⟨fun s x ↦ setDelete s {x}⟩
+
+
+example : ({1,2,3} : Set ℕ) ＼ ({3} : Set ℕ) = {1,2} := by
+  ext x
+  simp [setDelete, Set.mem_diff_singleton]
+
+
+example : ({1,2,3} : Set ℕ) ＼ 3 = {1,2} := by
+  sorry

@@ -148,7 +148,14 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   rwa [delete_circuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
     diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
 
-def Connected (M : Matroid α) := M.Nonempty ∧ ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.ConnectedTo e f
+@[mk_iff]
+structure Connected (M : Matroid α) : Prop where
+  nonempty : M.Nonempty
+  forall_connectedTo : ∀ ⦃e f⦄, e ∈ M.E → f ∈ M.E → M.ConnectedTo e f
+
+lemma Connected.connectedTo (hM : M.Connected) (x y : α) (hx : x ∈ M.E := by aesop_mat)
+    (hy : y ∈ M.E := by aesop_mat) : M.ConnectedTo x y :=
+  hM.forall_connectedTo hx hy
 
 lemma Connected.to_dual (hM : M.Connected) : M✶.Connected :=
   ⟨by have := hM.1; apply dual_nonempty, fun _ _ he hf ↦ (hM.2 he hf).to_dual⟩
@@ -188,6 +195,43 @@ lemma Connected.exists_circuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e �
 
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
+
+
+
+-- section Triple
+
+-- Attempted proof of
+
+-- theorem foo (M : Matroid α) (hM : 3 ≤ M.E.encard) :
+--     M.Connected ↔ ∀ X : Finset α,
+--       X.card = 3 → (∃ C, M.Circuit C ∧ (X : Set α) ⊆ C) ∨ ∃ K, M.Cocircuit K ∧ (X : Set α) ⊆ K := by
+--   -- rw [← not_lt, show (3 : ℕ∞) = 2 + 1 by norm_num, ENat.lt_add_one_iff (by norm_num),
+--   --   encard_eq_] at hM
+--   classical
+--   have h_nonempty : M.Nonempty := by
+--     rw [← ground_nonempty_iff, nonempty_iff_ne_empty, Ne, ← encard_eq_zero]
+--     intro h0
+--     simp [h0] at hM
+--   rw [iff_comm, connected_iff, and_iff_right h_nonempty]
+--   refine ⟨fun h e f he hf ↦ ?_, fun h X hX ↦ ?_⟩
+--   · obtain rfl | hef := eq_or_ne e f
+--     · simpa
+--     obtain ⟨g, hg, hge, hgf⟩ : ∃ x ∈ M.E, x ≠ e ∧ x ≠ f := by
+--       rw [← encard_diff_add_encard_of_subset (show {e,f} ⊆ M.E by simp [pair_subset_iff, he, hf]),
+--         encard_pair hef, show (3 : ℕ∞) = 1 + 2 by norm_num,
+--         WithTop.add_le_add_iff_right (by norm_num), one_le_encard_iff_nonempty, nonempty_def] at hM
+--       simpa only [mem_diff, mem_insert_iff, mem_singleton_iff, not_or] using hM
+
+--     obtain ⟨C, hC, hXC⟩ | ⟨K, hK, hXK⟩ :=
+--       h {e,f,g} (Finset.card_eq_three.2 ⟨_, _, _, hef, hge.symm, hgf.symm, rfl⟩)
+--     · exact hC.mem_connectedTo_mem (hXC <| by simp) (hXC <| by simp)
+--     exact hK.mem_connectedTo_mem (hXK <| by simp) (hXK <| by simp)
+
+
+
+
+-- end Triple
+
 
 section FinitaryCofinitary
 

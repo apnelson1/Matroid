@@ -483,6 +483,10 @@ lemma Circuit.contract_circuit (hK : M.Circuit K) (hC : C ⊂ K) : (M ／ C).Cir
   rintro rfl
   exact hI.2 Subset.rfl
 
+lemma Circuit.contractElem_circuit (hC : M.Circuit C) (hnt : C.Nontrivial) (heC : e ∈ C) :
+    (M ／ e).Circuit (C \ {e}) :=
+  hC.contract_circuit (ssubset_of_ne_of_subset hnt.ne_singleton.symm (by simpa))
+
 lemma Circuit.contract_dep_of_not_subset (hK : M.Circuit K) {C : Set α} (hKC : ¬ K ⊆ C) :
     (M ／ C).Dep (K \ C) := by
   have h' := hK.contract_circuit (C := C ∩ K) (inter_subset_right.ssubset_of_ne (by simpa))
