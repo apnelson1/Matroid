@@ -2,7 +2,9 @@ import Matroid.Minor.Rank
 
 import Matroid.Flat
 
-import Matroid.Constructions.RankAxioms
+import Mathlib.TFAE
+
+--import Mathlib.Topology.Continuity
 
 --relRank
 open Set
@@ -60,7 +62,7 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
 
     obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
     have hrw := fun M ↦
-      relRank_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
+      relRank_add_of_subset_of_subset M (subset_insert y X) (insert_subset hyY hXY)
     have hy : y ∈ Y \ M₁.closure X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
       rw [← hrw, relRank_insert_eq_one, add_comm, lt_iff_not_le]
@@ -77,7 +79,7 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
     have ht := hQ.relRank_le hiY hYE
 
     have hycard1 : M₁.relRank (insert y X) Y + 1 ≤ M₁.relRank X Y := by
-      exact ENat.add_one_le_of_lt hycard
+      exact Order.add_one_le_of_lt hycard
     have h1 := (add_le_add_right ht 1).trans hycard1
     refine le_trans ?_ h1
     rw [← hrw, add_comm]
@@ -98,7 +100,7 @@ lemma Insert_not_closure {M : Matroid α} {X : Set α }{x : α} (hx : x ∈ M.E)
   exact subset_closure_of_subset' M (fun ⦃a⦄ a ↦ a) hX
   --refine relRank_insert_eq_one ?he ?hX
 
-theorem Quo_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX: X ⊆ M₁.E)
+theorem Quo_2_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX: X ⊆ M₁.E)
     (hYZ: ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y ) :
     M₁.closure X ⊆ M₂.closure X := by
   have hXg: X = X ∩ M₂.E := by
@@ -138,6 +140,36 @@ theorem Quo_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX: X
     norm_num at hcon
   exact closure_flat_idk X (M₂.closure X) M₁ hFlat hXin
 
+theorem Quo_3_1 {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (hQ : ∀ X, M₁.closure X ⊆ M₂.closure X) :
+    M₂ ≤q M₁ := by
+  refine ⟨hE.symm, ?_ ⟩
+  intro F hF
+  apply flat_iff_closure_self.2
+  have hFE2 : F ⊆ M₂.E := hF.subset_ground
+  have hFE : F ⊆ M₁.E := by rwa[ hE.symm ] at hFE2
+  have hF1 : F ⊆ M₁.closure F := subset_closure_of_subset' M₁ (fun ⦃a⦄ a ↦ a) hFE
+  have hcl := hQ F
+  have hF2 : M₂.closure F = F := flat_iff_closure_self.1 hF
+  rw [hF2] at hcl
+  exact Eq.symm (Subset.antisymm hF1 hcl)
+
+--Write the following are equivalent thm
+
+theorem TFAE_Quotient {M₁ M₂ : Matroid α} {X Y Z : Set α} (hE : M₁.E = M₂.E) :
+  TFAE [M₂ ≤q M₁,
+    ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y,
+    ∀ X, M₁.closure X ⊆ M₂.closure ] := by
+  begin
+    tfae_have 1 → 2
+  end
+
+
+
+--Begin finite case
+
+--Lemma about finte rank
+
+
 
 theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α} [FiniteRk M]
     (hYE : Y ⊆ M₁.E) (hX2: M₂.Flat X) (hco : Flat_Covers_Flat M₁ Y X) (hMX : M₁.relRank X (M₁.E)= M₂.relRank X (M₂.E) )
@@ -146,8 +178,6 @@ theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α} [FiniteRk M]
       --have hcas:= lt_or_le (M₁.relRank X Y) ⊤
       --obtain(hfin|hinf):= hcas
       --unfold Flat_Covers_Flat at hco
-      have hey : ∃ y ∈ Y \ X, M₁.relRank X ({y}) = 1 := by
-        sorry
       constructor
       · refine ⟨?_ ,hX2 , hco.2.2.1 , ?_⟩
         · sorry
