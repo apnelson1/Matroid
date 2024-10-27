@@ -2,7 +2,7 @@ import Matroid.Minor.Rank
 
 import Matroid.Flat
 
-import Mathlib.TFAE
+--import Mathlib.TFAE
 
 --import Mathlib.Topology.Continuity
 
@@ -61,8 +61,8 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
       rwa [hQ.ground_eq]
 
     obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
-    have hrw := fun M ↦
-      relRank_add_of_subset_of_subset M (subset_insert y X) (insert_subset hyY hXY)
+
+    have hrw := fun M ↦ relRank_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
     have hy : y ∈ Y \ M₁.closure X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
       rw [← hrw, relRank_insert_eq_one, add_comm, lt_iff_not_le]
@@ -156,12 +156,10 @@ theorem Quo_3_1 {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (hQ : ∀ X, M�
 --Write the following are equivalent thm
 
 theorem TFAE_Quotient {M₁ M₂ : Matroid α} {X Y Z : Set α} (hE : M₁.E = M₂.E) :
-  TFAE [M₂ ≤q M₁,
+ List.TFAE [M₂ ≤q M₁,
     ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y,
-    ∀ X, M₁.closure X ⊆ M₂.closure ] := by
-  begin
-    tfae_have 1 → 2
-  end
+    ∀ X, M₁.closure X ⊆ M₂.closure X] := by sorry
+    --tfae_have 1 → 2
 
 
 
