@@ -10,13 +10,17 @@ import Matroid.Flat
 open Set
 namespace Matroid
 
-variable {α : Type*} {M N : Matroid α} {X Y F : Set α}
+variable {α : Type*} {M N M₁ M₂ : Matroid α} {X Y F : Set α}
 
-def Quotient (M N : Matroid α) : Prop :=
-  M.E = N.E ∧ ∀ F, M.Flat F → N.Flat F
+@[mk_iff]
+structure Quotient (M N : Matroid α) : Prop where
+  forall_flat_of_flat : ∀ F, M.Flat F → N.Flat F
+  ground_eq : M.E = N.E
 
-def WeakLE (M N : Matroid α) : Prop :=
-  M.E = N.E ∧ ∀ D, N.Dep D → M.Dep D
+@[mk_iff]
+structure WeakLE (M N : Matroid α) : Prop where
+  forall_dep_of_dep : ∀ D, N.Dep D → M.Dep D
+  ground_eq : M.E = N.E
 
 def Flat_Covers_Flat (M: Matroid α) (F₁ F₂ : Set α) : Prop :=
   M.Flat F₁ ∧ M.Flat F₂ ∧ F₂ ⊆ F₁ ∧ M.relRank F₂ F₁ = 1
@@ -29,14 +33,8 @@ infixl:50 " ≤q " => Matroid.Quotient
 infixl:50 " ≤w " => Matroid.WeakLE
 --(hE: M₁.E=M₂.E)
 
-lemma Quotient.ground_eq (h : M ≤q N) : M.E = N.E :=
-  h.1
-
 lemma Quotient.flat_of_flat (h : M ≤q N) (hF : M.Flat F) : N.Flat F :=
-  h.2 F hF
-
-lemma closure_flat_idk (X F: Set α) (M : Matroid α) (hFlat : M.Flat F) (hXF: X ⊆ F) : M.closure X ⊆ F := by
-  exact Flat.closure_subset_of_subset hFlat hXF
+  h.forall_flat_of_flat _ hF
 
 lemma top_thingy {a b : ℕ∞} (hab : a + b ≤ a) (ht : a ≠ ⊤) : b = 0 := by
   have haa : a + b ≤ a + 0 := le_add_right hab
@@ -138,20 +136,14 @@ theorem Quo_2_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX:
     have hcon:= hYZ (insert e (M₂.closure X)) (M₂.closure X) hi hEi
     rw[hc1, hc2] at hcon
     norm_num at hcon
-  exact closure_flat_idk X (M₂.closure X) M₁ hFlat hXin
+  exact hFlat.closure_subset_of_subset hXin
 
-theorem Quo_3_1 {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (hQ : ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X) :
-    M₂ ≤q M₁ := by
-  refine ⟨hE.symm, ?_ ⟩
-  intro F hF
-  apply flat_iff_closure_self.2
-  have hFE2 : F ⊆ M₂.E := hF.subset_ground
-  have hFE : F ⊆ M₁.E := by rwa[ hE.symm ] at hFE2
-  have hF1 : F ⊆ M₁.closure F := subset_closure_of_subset' M₁ (fun ⦃a⦄ a ↦ a) hFE
-  have hcl := hQ F
-  have hF2 : M₂.closure F = F := flat_iff_closure_self.1 hF
-  rw [hF2] at hcl
-  exact Eq.symm (Subset.antisymm hF1 (hcl hFE))
+theorem Quo_3_1 {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+    (hQ : ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X) : M₂ ≤q M₁ := by
+  refine ⟨fun F hF ↦ ?_, hE.symm⟩
+  have hFE : F ⊆ M₁.E := hF.subset_ground.trans_eq hE.symm
+  exact flat_iff_closure_self.2 <|
+    ((hQ _ hFE).trans hF.closure.subset).antisymm <| subset_closure _ _ hFE
 
 --Write the following are equivalent thm
 
@@ -176,17 +168,18 @@ theorem TFAE_Quotient {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) :
 
 --Begin finite case
 
-lemma Quo_finite {M₁ M₂ : Matroid α} [FiniteRk M₁] (hQ : M₂ ≤q M₁ ) :
-    FiniteRk M₂ := by sorry
+lemma Quotient.finite {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
+  rw [finiteRk_iff, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
+  rw [← hQ.ground_eq] at hM₁
+  exact (hQ.relRank_le (empty_subset _) hQ.ground_eq.subset).trans_lt hM₁
 
-theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α} [FiniteRk M₁]
-    (hYE : Y ⊆ M₁.E) (hX2: M₂.Flat X) (hco : CovBy M₁ X Y)
-    (hS : M₁.r X + M₂.r (M₂.E) = M₂.r X + M₁.r (M₁.E))
-    (hQ : M₂ ≤q M₁):
-    ∃ y ∈ Y, Y = M₂.closure (insert y X) := by
-
-  have hE : M₁.E = M₂.E := Eq.symm (Quotient.ground_eq hQ)
-  have hfr : FiniteRk M₂ := Quo_finite hQ
+theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X ⋖[M₁] Y) (hX2 : M₂.Flat X)
+    (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : ∃ y ∈ Y, Y = M₂.closure (insert y X) := by
+  have hYE := hco.subset_ground_right
+  have := hco.flat_left
+  rw [rk_def, rk_def] at hS
+  have hE : M₁.E = M₂.E := (Quotient.ground_eq hQ).symm
+  have hfr : FiniteRk M₂ := hQ.finite
   have hXY : X ⊆ Y := by exact CovBy.subset hco
   obtain⟨y , hy, hyy ⟩:= CovBy.exists_eq_closure_insert hco
   use y
@@ -194,32 +187,49 @@ theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α} [FiniteRk M₁]
   rw [hyy.symm]
   have hXy2 : M₂.Flat (M₂.closure (insert y X)) := closure_flat M₂ (insert y X)
   have hXy1 : M₁.Flat (M₂.closure (insert y X)) := Quotient.flat_of_flat hQ hXy2
-  have h1 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) ≤ M₁.relRank (M₂.closure (insert y X)) (M₁.E):= by
-    sorry
+  have h1 := hQ.relRank_le (M₂.closure_subset_ground (insert y X)) hE.symm.subset
+  have h2 := add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
+  -- have h1 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) ≤ M₁.relRank (M₂.closure (insert y X)) (M₁.E):= by
+  --   have := hQ.relRank_le (M₂.closure_subset_ground (insert y X)) hE.symm.subset
+  --   rwa [← hE] at this ⊢
+
+
+  --   sorry
     --exact (TFAE_Quotient hE) hQ
-  have h2 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) + M₂.er (M₂.closure (insert y X)) ≤
-      M₁.relRank (M₂.closure (insert y X)) (M₁.E) + M₂.er (M₂.closure (insert y X)):= by
-    exact add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
+  -- have h2 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) + M₂.er (M₂.closure (insert y X)) ≤
+  --     M₁.relRank (M₂.closure (insert y X)) (M₁.E) + M₂.er (M₂.closure (insert y X)) := by
+  --   exact add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
   have hcE1 : (M₂.closure (insert y X)) ⊆ M₂.E := closure_subset_ground M₂ (insert y X)
   rw [relRank_add_er_of_subset M₂ hcE1] at h2
   have h3 : M₂.er M₂.E + M₁.er (M₂.closure (insert y X)) ≤
-      M₁.relRank (M₂.closure (insert y X)) M₁.E + M₂.er (M₂.closure (insert y X)) + M₁.er (M₂.closure (insert y X)):= by
-    exact add_le_add_right h2 (M₁.er (M₂.closure (insert y X)))
+      M₁.relRank (M₂.closure (insert y X)) M₁.E + M₂.er (M₂.closure (insert y X)) +
+        M₁.er (M₂.closure (insert y X)):= by
+    convert add_le_add_right h2 _
   rw [hE.symm] at hcE1
-  rw [add_assoc, add_comm (M₂.er (M₂.closure (insert y X))) (M₁.er (M₂.closure (insert y X))), ←add_assoc, relRank_add_er_of_subset M₁ hcE1] at h3
+  rw [add_assoc, add_comm (M₂.er (M₂.closure (insert y X))) (M₁.er (M₂.closure (insert y X))),
+    ←add_assoc, relRank_add_er_of_subset M₁ hcE1] at h3
+  -- have h4 : M₂.r M₂.E + M₁.r (M₂.closure (insert y X)) ≤ M₁.r M₁.E + M₂.r (M₂.closure (insert y X)) := by
+  simp_rw [← cast_r_eq] at h3
+  norm_cast at h3
   --have hFin1 :  M₁.rFin
-  have h4 : M₂.r M₂.E + M₁.r (M₂.closure (insert y X)) ≤ M₁.r M₁.E + M₂.r (M₂.closure (insert y X)) := by sorry
-  have h5 : M₁.r X + (M₂.r M₂.E + M₁.r (M₂.closure (insert y X)))
-      ≤ M₁.r X + (M₁.r M₁.E + M₂.r (M₂.closure (insert y X))) := Nat.add_le_add_left h4 (M₁.r X)
-  rw [←add_assoc, hS, ←add_assoc ] at h5
-  have h6 : M₂.r X + M₁.r (M₂.closure (insert y X)) + M₁.r M₁.E
-      ≤ M₁.r X + M₂.r (M₂.closure (insert y X)) + M₁.r M₁.E := by sorry
+  -- have h4 : M₂.r M₂.E + M₁.r (M₂.closure (insert y X)) ≤ M₁.r M₁.E + M₂.r (M₂.closure (insert y X)) := by
+  --   simp_rw [← cast_r_eq] at h3
+  --   norm_cast at h3
+  have h5 := Nat.add_le_add_left h3 (M₁.r X)
+  -- have h5 : M₁.r X + (M₂.r M₂.E + M₁.r (M₂.closure (insert y X)))
+  --     ≤ M₁.r X + (M₁.r M₁.E + M₂.r (M₂.closure (insert y X))) := Nat.add_le_add_left h3 (M₁.r X)
+  rw [←add_assoc, hS, ←add_assoc, add_right_comm, add_right_comm (c := M₂.r _)] at h5
+  have h7 := Nat.add_le_add_iff_right.mp h5
+  -- have h6 : M₂.r X + M₁.r (M₂.closure (insert y X)) + M₁.r M₁.E
+  --     ≤ M₁.r X + M₂.r (M₂.closure (insert y X)) + M₁.r M₁.E := by
+  --   rwa [add_right_comm, add_right_comm (c := M₂.r _)] at h5
   have h7 : M₂.r X + M₁.r (M₂.closure (insert y X))
-      ≤ M₁.r X + M₂.r (M₂.closure (insert y X)) := Nat.add_le_add_iff_right.mp h6
+      ≤ M₁.r X + M₂.r (M₂.closure (insert y X)) := Nat.add_le_add_iff_right.mp h5
   have h8 : M₁.r (M₂.closure (insert y X))
       ≤ M₁.r X + M₂.r (M₂.closure (insert y X)) - M₂.r X  := Nat.le_sub_of_add_le' h7
   have hFin1 : M₂.rFin X := to_rFin M₂ X
-  have hXsub : X ⊆ (M₂.closure (insert y X)) := by sorry
+  have hXsub : X ⊆ (M₂.closure (insert y X)) :=
+    (M₂.subset_closure X hX2.subset_ground).trans <| M₂.closure_subset_closure (subset_insert _ _)
   --have h9 : M₁.r (M₂.closure (insert y X))
     --  ≤ M₁.r X + M₂.er (M₂.closure (insert y X)) - M₂.er X := by sorry
   --have h10 : M₁.r (M₂.closure (insert y X))
@@ -227,28 +237,32 @@ theorem Flat_covers {M₁ M₂ : Matroid α} {X Y : Set α} [FiniteRk M₁]
   --rw [rFin.relRank_eq_sub.symm hFin1 hXsub] at h9
   have hclXf : X = M₂.closure X := Eq.symm (Flat.closure hX2)
   have hy' : y ∈ M₂.E \ M₂.closure X := by
-    rw [hclXf.symm]
+    rw [← hclXf]
     refine ⟨?_ , not_mem_of_mem_diff hy ⟩
-    rw [hE.symm]
+    rw [← hE]
     exact hYE (mem_of_mem_diff hy)
-  have hX2 : X ⊆ M₂.E := by exact hX2.subset_ground
+  have hX2 : X ⊆ M₂.E := hX2.subset_ground
   --have hfdsf : M₂.er (M₂.closure (insert y X)) - M₂.er X = M₂.relRank X (M₂.closure (insert y X)) := Eq.symm (rFin.relRank_eq_sub hFin1 hXsub)
   --have hhelp : M₂.relRank X (insert y X) = M₂.relRank X (M₂.closure (insert y X)) := Eq.symm (relRank_closure_right M₂ X (insert y X))
   have hdi : M₂.er (M₂.closure (insert y X)) - M₂.er X = 1 := by
-    rw [Eq.symm (rFin.relRank_eq_sub hFin1 hXsub), (Eq.symm (relRank_closure_right M₂ X (insert y X))).symm ]
+    rw [← (rFin.relRank_eq_sub hFin1 hXsub), relRank_closure_right M₂ X (insert y X)]
     exact relRank_insert_eq_one hy' hX2
-  have hdi2 : M₂.r (M₂.closure (insert y X)) - M₂.r X = 1 := by
-    sorry
-  --rw [add_assoc, hdi2] at h8
+
+  rw [← cast_r_eq, ← cast_r_eq, ← ENat.coe_sub, ← Nat.cast_one, Nat.cast_inj] at hdi
+
+  -- This ^^^  is how you convert `hdi` to a statement about `ℕ`,
+  -- but it is unlikely you want to use `Nat` subtraction, since
+  -- it won't work nicely with `linarith` or `ring` anyway. To exploit `hS`, you will need to
+  -- phrase everything in terms of addition, and it probably makes sense to do things this
+  -- way in `ℕ∞` in advance.
 
   sorry
 
 
 
 
-    --CovBy M₂ X Y := by sorry
-    --Y = M₂.closure (insert y X)
-    --(Flat_Covers_Flat M₂ Y X) ∧ M₁.relRank Y (M₁.E)= M₂.relRank Y (M₁.E) := by
+
+
 
 
 

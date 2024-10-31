@@ -78,6 +78,11 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.erk := by
 lemma er_eq_erk (hX : M.E ⊆ X) : M.er X = M.erk := by
   rw [← er_inter_ground, inter_eq_self_of_subset_right hX, erk_def]
 
+lemma finiteRk_iff : M.FiniteRk ↔ M.erk ≠ ⊤ := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [← hB.encard, encard_ne_top_iff]
+  exact ⟨fun h ↦ hB.finite, fun h ↦ hB.finiteRk_of_finite h⟩
+
 @[simp] lemma er_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
     (hX : X ⊆ M.E := by aesop_mat) : (M.map f hf).er (f '' X) = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
