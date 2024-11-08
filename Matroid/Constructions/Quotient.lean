@@ -7,6 +7,8 @@ import Matroid.Flat
 --import Mathlib.Topology.Continuity
 
 --relRank
+universe u
+
 open Set
 namespace Matroid
 
@@ -257,7 +259,7 @@ lemma CovBy_equal_cont {M₁ : Matroid α} {X Y₁ Y₂: Set α} (hco1 : X ⋖[M
 theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X ⋖[M₁] Y) (hX2 : M₂.Flat X)
     (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : ∃ y ∈ Y, Y = M₂.closure (insert y X) := by
   have hYE := hco.subset_ground_right
-  have hF1X:= hco.flat_left
+  have hF1X := hco.flat_left
   rw [rk_def, rk_def] at hS
   have hE : M₁.E = M₂.E := (Quotient.ground_eq hQ).symm
   have hfr : FiniteRk M₂ := hQ.finite
@@ -336,12 +338,11 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   -- phrase everything in terms of addition, and it probably makes sense to do things this
   -- way in `ℕ∞` in advance.
   have hXaidcl : insert y X ⊆ M₂.E := by
-      rw[hE.symm]
+      rw [hE.symm]
       refine insert_subset ?ha fun ⦃a⦄ a_1 ↦ hYE (hXY a_1)
       exact hYE (mem_of_mem_diff hy)
   have hsubcl : insert y X ⊆ M₂.closure (insert y X) := subset_closure_of_subset' M₂ (fun ⦃a⦄ a ↦ a) hXaidcl
 
-  have hFin2 : M₁.rFin X := to_rFin M₁ X
   have h9 : M₁.r (M₂.closure (insert y X)) ≤ M₁.r X + (M₂.r (M₂.closure (insert y X)) - M₂.r X) :=
     Nat.le_trans h8 (add_tsub_le_assoc )
   rw [hdi] at h9
@@ -349,19 +350,37 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
     have hhm2 : M₁.r X + 1 = M₁.r (insert y X) := by
       have hhel : M₁.r (insert y X) = M₁.r (M₁.closure (insert y X)) := Eq.symm (r_closure_eq M₁)
       have hyEe : y ∈ M₁.E :=  hYE (mem_of_mem_diff hy)
-      have hcovy : X ⋖[M₁] M₁.closure (insert y X) := Flat.covBy_closure_insert hF1X (not_mem_of_mem_diff hy) (hyEe)
-      rw[hhel]
-      exact (CovBy.r_eq_of_rFin hcovy hFin2).symm
+      have hcovy : X ⋖[M₁] M₁.closure (insert y X) := hF1X.covBy_closure_insert
+        (not_mem_of_mem_diff hy) (hyEe)
+      rw [hhel]
+      exact (CovBy.r_eq_of_rFin hcovy (M₁.to_rFin X)).symm
     exact Nat.le_antisymm h9 (le_of_eq_of_le hhm2 (r_le_of_subset M₁ hsubcl))
 
   have hcovcl : X ⋖[M₁] M₂.closure (insert y X) := by
     have hX2 : M₁.Flat X := Quotient.flat_of_flat hQ hX2
     have hcls : X ⊂ M₂.closure (insert y X) := by
-      apply (ssubset_iff_of_subset hXsub).mpr
-      refine ⟨ y, hsubcl (mem_insert y X) , not_mem_of_mem_diff hy ⟩
+      rw [ssubset_iff_of_subset hXsub]
+      exact ⟨ y, hsubcl (mem_insert y X) , not_mem_of_mem_diff hy ⟩
     exact CovBy_rank_one hX2 hXy1 hf hcls
   apply CovBy_equal_cont hco hcovcl
-  refine ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), not_mem_of_mem_diff hy ⟩
+  exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), not_mem_of_mem_diff hy ⟩
 
-theorem Quo_1_4 {M₁ M₂ : Matroid α} [FiniteRk M₁] [FiniteRk M₂]
+theorem con_quotient_del (N : Matroid α) (X : Set α) [FiniteRk N] : (N ／ X) ≤q (N ＼ X) := sorry
+
+theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
+  (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : ∃ (N : Matroid α), N ／ f = M₁ ∧ N ＼ f = M₂ := sorry
+
+theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} {k : ℕ} [FiniteRk M₂] (h : M₁ ≤q M₂)
+  (hr : M₁.rk + k = M₂.rk) (hX₁ : Disjoint (X : Set α) M₁.E) (hcard : X.card = k) :
+  ∃ (N : Matroid α), N ／ (X : Set α) = M₁ ∧ N ＼ (X : Set α) = M₂ := sorry
+
+
+theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [FiniteRk M₂] (h : M₁ ≤q M₂) :
+  ∃ (β : Type u) (N : Matroid (α ⊕ β)),
+      M₁ = (N ／ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl ∧
+      M₂ = (N ＼ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl := sorry
+
+-- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
+
+
     --(hN : ∃ N, N ∈ Matroid α → ∃ X, X ⊆ N.E  )

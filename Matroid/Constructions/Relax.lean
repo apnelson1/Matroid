@@ -126,7 +126,7 @@ lemma relaxSet_indep_iff {Hs : Set (Set α)} (h : ∀ H ∈ Hs, M.Circuit H ∧ 
     (fun h' ↦ (h _ h').1.ssubset_indep hss))
 
 /-- Change a single nonbase `H` of `M` to a base, provided `H` is a circuit-hyperplane -/
-def relax (M : Matroid α) (H : Set α) : Matroid α := M.relaxSet ({H} : Set (Set α))
+def relax (M : Matroid α) (H : Set α) : Matroid α := M.relaxSet {H}
 
 lemma relax_base_iff (hH : M.Hyperplane X) (hC : M.Circuit X) :
     (M.relax X).Base B ↔ (M.Base B ∨ B = X) := by
