@@ -1,5 +1,5 @@
 import Matroid.Minor.Rank
-
+import Matroid.Extension
 import Matroid.Flat
 
 --import Mathlib.TFAE
@@ -376,6 +376,16 @@ theorem con_quotient_del (N : Matroid α) (X : Set α) (hXE : X ⊆ N.E) [Finite
   · refine Eq.symm (union_diff_cancel_right ?h.right.h)
     exact Set.disjoint_iff.mp (((flat_contract_iff hXE).1 hF).2 )
   --have hcon : N.Flat ((F \ X )) := by
+
+def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
+    (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : M₁.ModularCut where
+      carrier := { F | M₁.Flat F ∧ M₂.Flat F }
+      forall_flat := by
+        sorry
+      forall_superset := by
+        sorry
+      forall_inter := by
+        sorry
 
 theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
   (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : ∃ (N : Matroid α), N ／ f = M₁ ∧ N ＼ f = M₂ := by
