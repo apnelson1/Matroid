@@ -379,11 +379,19 @@ theorem con_quotient_del (N : Matroid α) (X : Set α) (hXE : X ⊆ N.E) [Finite
 
 def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
     (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : M₁.ModularCut where
-      carrier := { F | M₁.Flat F ∧ M₂.Flat F }
+      carrier := { F | M₁.Flat F ∧ M₂.Flat F ∧ (M₂.r F = M₁.r F + 1) }
       forall_flat := by
-        sorry
+        intro F hF
+        exact hF.1
       forall_superset := by
-        sorry
+        intro F F' hF hF' hFF'
+        refine ⟨ hF' , h.flat_of_flat hF'  , ?_ ⟩
+        · --let k := M₁.r F' - M₁.r F
+          have hbig : M₁.r F ≤ M₁.r F' := by sorry
+          have hin: ∃ k, M₁.r F + k = M₁.r F' := by exact Nat.le.dest hbig
+          suffices hsu : ∃k, M₁.r F' + k = M₁.r F by
+            sorry
+          sorry
       forall_inter := by
         sorry
 
