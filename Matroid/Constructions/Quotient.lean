@@ -206,7 +206,7 @@ lemma CovBy_rank_one {M : Matroid α} {X Y: Set α} [FiniteRk M]
     have hEq : M.r F = M.r X + 1 := by
       rw [hf] at hrY
       exact Nat.le_antisymm hrY ha
-    rw [hf.symm] at hEq
+    rw [←hf] at hEq
     exact Cov_Same_r hY hF hFcl hEq
   · left
     exact (Cov_Same_r hX hFX hXF hb).symm
@@ -249,8 +249,8 @@ lemma CovBy_equal_cont {M₁ : Matroid α} {X Y₁ Y₂: Set α} (hco1 : X ⋖[M
       refine ⟨ y, mem_closure_of_mem M₁ hyy hE1, hyx  ⟩
     exact hcon.symm ha
     exact hb
-  rw [h1.symm]
-  nth_rewrite 2 [h2.symm]
+  rw [ ←h1 ]
+  nth_rewrite 2 [ ←h2 ]
   rfl
 
 
@@ -365,10 +365,22 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   apply CovBy_equal_cont hco hcovcl
   exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), not_mem_of_mem_diff hy ⟩
 
-theorem con_quotient_del (N : Matroid α) (X : Set α) [FiniteRk N] : (N ／ X) ≤q (N ＼ X) := sorry
+theorem con_quotient_del (N : Matroid α) (X : Set α) (hXE : X ⊆ N.E) [FiniteRk N] : (N ／ X) ≤q (N ＼ X) := by
+  --have hE : (N ／ X).E = (N ＼ X).E := by exact rfl
+  refine⟨ ?_ , rfl ⟩
+  intro F hF
+  apply flat_delete_iff.2
+  use F ∪ X
+  constructor
+  · exact Flat.union_flat_of_contract hF hXE
+  · refine Eq.symm (union_diff_cancel_right ?h.right.h)
+    exact Set.disjoint_iff.mp (((flat_contract_iff hXE).1 hF).2 )
+  --have hcon : N.Flat ((F \ X )) := by
 
 theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
-  (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : ∃ (N : Matroid α), N ／ f = M₁ ∧ N ＼ f = M₂ := sorry
+  (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : ∃ (N : Matroid α), N ／ f = M₁ ∧ N ＼ f = M₂ := by
+  let U := { F | M₁.Flat F ∧ M₂.Flat F }
+  --have hmod : ( U : M₁.ModularCut ) := by
 
 theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} {k : ℕ} [FiniteRk M₂] (h : M₁ ≤q M₂)
   (hr : M₁.rk + k = M₂.rk) (hX₁ : Disjoint (X : Set α) M₁.E) (hcard : X.card = k) :
