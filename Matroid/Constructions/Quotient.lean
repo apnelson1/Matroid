@@ -387,13 +387,13 @@ theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub 
     rw [add_comm] at hk
     exact id (Eq.symm hk)
   · intro i hi
-    induction i
+    induction' i with n IH generalizing Y
     · simp only [zero_add] at hi
       have h1xf : M₁.Flat X := by exact flat_of_flat hQ hX2
       have hequal : X = Y := by sorry
       rw [hequal] at hX2
       rw [hequal] at hS
-      refine ⟨hX2, hS⟩
+      exact ⟨hX2, hS⟩
     · sorry
 
 def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₂ ≤q M₁)
