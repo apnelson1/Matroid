@@ -375,28 +375,57 @@ theorem con_quotient_del (N : Matroid α) (X : Set α) (hXE : X ⊆ N.E) [Finite
   · exact Flat.union_flat_of_contract hF hXE
   · refine Eq.symm (union_diff_cancel_right ?h.right.h)
     exact Set.disjoint_iff.mp (((flat_contract_iff hXE).1 hF).2 )
-  --have hcon : N.Flat ((F \ X )) := by
 
-def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
-    (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : M₁.ModularCut where
-      carrier := { F | M₁.Flat F ∧ M₂.Flat F ∧ (M₂.r F = M₁.r F + 1) }
+theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
+    (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk ) := by
+  --let k := M₁.r Y - M₁.r X
+  suffices hi : ∀ i : ℕ, M₁.r Y = i + M₁.r X → M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk )
+  · have hbig : M₁.r X ≤ M₁.r Y := by exact r_le_of_subset M₁ hsub
+    have hin: ∃ k, M₁.r X + k = M₁.r Y := Nat.le.dest hbig
+    obtain ⟨ k, hk ⟩ := hin
+    apply hi k
+    rw [add_comm] at hk
+    exact id (Eq.symm hk)
+  · intro i hi
+    induction i
+    · simp only [zero_add] at hi
+      have h1xf : M₁.Flat X := by exact flat_of_flat hQ hX2
+      have hequal : X = Y := by sorry
+      rw [hequal] at hX2
+      rw [hequal] at hS
+      refine ⟨hX2, hS⟩
+    · sorry
+
+def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₂ ≤q M₁)
+    (hr : M₂.rk + 1 = M₁.rk) (hf₁ : f ∉ M₁.E) : M₁.ModularCut where
+      carrier := { F | M₁.Flat F ∧ M₂.Flat F ∧ (M₁.r F = M₂.r F + 1) }
       forall_flat := by
         intro F hF
         exact hF.1
       forall_superset := by
         intro F F' hF hF' hFF'
-        refine ⟨ hF' , h.flat_of_flat hF'  , ?_ ⟩
-        · --let k := M₁.r F' - M₁.r F
-          have hbig : M₁.r F ≤ M₁.r F' := by sorry
-          have hin: ∃ k, M₁.r F + k = M₁.r F' := by exact Nat.le.dest hbig
-          suffices hsu : ∃k, M₁.r F' + k = M₁.r F by
-            sorry
-          sorry
+        refine ⟨ hF' , ?_  , ?_ ⟩
+        · sorry
+        · sorry
+        -- · have hqu : M₂.r F' - M₁.r F' ≤ M₂.rk - M₁.rk := by sorry
+        --   have heq : M₂.rk - M₁.rk = 1 := by exact Eq.symm (Nat.eq_sub_of_add_eq' hr)
+        --   rw [heq] at hqu
+        --   have heq2 : 1 ≤  M₂.r F' - M₁.r F' := by sorry
+        --   have heq3 :  M₂.r F' - M₁.r F' = 1 := by exact Eq.symm (Nat.le_antisymm heq2 hqu)
+        --   sorry
+          --rw [add_neg] at heq3
+          --apply add_neg_eq_iff_eq_add.1 heq3 (M₂.r F') (M₁.r F') (1)
+          --rw[ neg_add_eq_sub.sym (M₁.r F') (M₂.r F'), add_eq_of_eq_neg_add ] at heq3
       forall_inter := by
+        intro S hS hem hmod
+        --let k := M₁.r F' - M₁.r F
+          --have hbig : M₁.r F ≤ M₁.r F' := by sorry
+          --have hin: ∃ k, M₁.r F + k = M₁.r F' := by exact Nat.le.dest hbig
+          --suffices hsu : ∃k, M₁.r F' + k = M₁.r F by
         sorry
 
-theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₁ ≤q M₂)
-  (hr : M₁.rk + 1 = M₂.rk) (hf₁ : f ∉ M₁.E) : ∃ (N : Matroid α), N ／ f = M₁ ∧ N ＼ f = M₂ := by
+theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₁] (h : M₂ ≤q M₁)
+  (hr : M₂.rk + 1 = M₁.rk) (hf₁ : f ∉ M₂.E) : ∃ (N : Matroid α), N ／ f = M₂ ∧ N ＼ f = M₁ := by
   let U := { F | M₁.Flat F ∧ M₂.Flat F }
   --have hmod : ( U : M₁.ModularCut ) := by
 
@@ -411,6 +440,3 @@ theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [FiniteRk M₂] (
       M₂ = (N ＼ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl := sorry
 
 -- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
-
-
-    --(hN : ∃ N, N ∈ Matroid α → ∃ X, X ⊆ N.E  )
