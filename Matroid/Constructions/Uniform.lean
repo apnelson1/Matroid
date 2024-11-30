@@ -64,8 +64,9 @@ instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   rw [← rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
-theorem unifOn_dual_eq (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - k) := by
-  obtain (rfl | hk) := eq_or_ne k ⊤; simp
+theorem unifOn_dual_eq {k : ℕ∞} (hE : E.Finite) : (unifOn E k)✶ = unifOn E (E.encard - k) := by
+  obtain (rfl | hk) := eq_or_ne k ⊤
+  · simp [ENat.sub_top]
   lift k to ℕ using hk
   obtain (hle | hlt) := le_or_lt E.encard k
   · rw [unifOn_eq_of_le hle, freeOn_dual_eq, tsub_eq_zero_of_le hle, unifOn_zero]
@@ -113,7 +114,7 @@ theorem eq_unifOn_iff : M = unifOn E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.en
 theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠ ⊤) :
     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) := by
   lift k to ℕ using hk
-  refine eq_of_spanning_iff_spanning_forall (by simp) (fun S hS ↦ ?_)
+  refine ext_spanning (by simp) (fun S hS ↦ ?_)
   simp only [ge_iff_le, contract_ground, unifOn_ground_eq, diff_self_inter, subset_diff] at hS
   rw [← contract_inter_ground_eq, unifOn_ground_eq, inter_comm,
     contract_spanning_iff, unifOn_spanning_iff', unifOn_spanning_iff', tsub_le_iff_right,
