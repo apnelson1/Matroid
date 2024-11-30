@@ -376,8 +376,7 @@ modular pairs rather than families. -/
       obtain ⟨S, rfl⟩ := hFs.exists_finset_coe
       exact h S (by simpa using hne) (by simpa) hmod
     apply Finset.Nonempty.cons_induction
-    · suffices ∀ a ∈ U, _ → a ∈ U by simpa
-      exact fun _ h _ ↦ h
+    · simp (config := {contextual := true})
     simp only [Finset.coe_cons, insert_subset_iff, sInter_insert, and_imp]
     intro F S hFS hne IH hFU hSU hmod
 
@@ -390,7 +389,7 @@ modular pairs rather than families. -/
       rintro rfl; contradiction
     convert hmod.modularPair_singleton_compl_biInter ⟨F, by simp⟩
     simp only [mem_compl_iff, mem_singleton_iff, iInter_subtype, sInter_eq_iInter]
-    ext x;
+    ext x
     simp only [Finset.mem_coe, mem_iInter, Finset.mem_cons, Subtype.mk.injEq,
       iInter_iInter_eq_or_left, not_true_eq_false, iInter_of_empty, univ_inter]
     exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩

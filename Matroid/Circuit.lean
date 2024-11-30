@@ -131,7 +131,67 @@ lemma Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
 
+section Cyclic
 
+variable {A B : Set α}
+
+/-- A cyclic set is a union of circuits -/
+def Cyclic (M : Matroid α) (A : Set α) := ∃ Cs : Set (Set α), A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.Circuit C
+
+lemma Cyclic.exists (hA : M.Cyclic A) : ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.Circuit C := hA
+
+@[aesop unsafe 10% (rule_sets := [Matroid])]
+lemma Cyclic.subset_ground (hA : M.Cyclic A) : A ⊆ M.E := by
+  obtain ⟨Cs, rfl, h⟩ := hA.exists
+  simpa using fun C hC ↦ (h C hC).subset_ground
+
+@[simp] lemma empty_cyclic (M : Matroid α) : M.Cyclic ∅ :=
+  ⟨∅, by simp⟩
+
+lemma Circuit.cyclic (hC : M.Circuit C) : M.Cyclic C :=
+  ⟨{C}, by simpa⟩
+
+lemma Cyclic.exists_of_mem (hA : M.Cyclic A) (he : e ∈ A) : ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ A := by
+  obtain ⟨Cs, rfl, h⟩ := hA.exists
+  obtain ⟨C, hC, heC⟩ : ∃ t ∈ Cs, e ∈ t := by simpa only [mem_sUnion] using he
+  exact ⟨C, h C hC, heC, subset_sUnion_of_subset Cs C (fun ⦃a⦄ ↦ id) hC⟩
+
+lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ A := by
+  refine ⟨fun h e he ↦ h.exists_of_mem he, fun h ↦ ?_⟩
+  choose! Cs hCs using h
+  simp only [forall_and] at hCs
+  refine ⟨Cs '' A, ?_, by simpa using hCs.1⟩
+  simp only [sUnion_image, subset_antisymm_iff, iUnion_subset_iff, subset_def (s := A),
+    mem_iUnion, exists_prop, and_iff_left hCs.2.2]
+  exact fun e he ↦ ⟨e, he, hCs.2.1 _ he⟩
+
+lemma Cyclic.iUnion {ι : Type*} (As : ι → Set α) (hAs : ∀ i, M.Cyclic (As i)) :
+    M.Cyclic (⋃ i, As i) := by
+  choose f hf using fun i ↦ (hAs i).exists
+  refine ⟨⋃ i, f i, by aesop, ?_⟩
+  simp only [mem_iUnion, forall_exists_index]
+  exact fun C i hC ↦ (hf i).2 _ hC
+
+lemma Cyclic.sUnion (As : Set (Set α)) (hAs : ∀ A ∈ As, M.Cyclic A) : M.Cyclic (⋃₀ As) := by
+  rw [sUnion_eq_iUnion]
+  apply Cyclic.iUnion
+  simpa
+
+lemma Cyclic.biUnion {ι : Type*} {As : ι → Set α} {I : Set ι} (hAs : ∀ i ∈ I, M.Cyclic (As i)) :
+    M.Cyclic (⋃ i ∈ I, As i) := by
+  rw [biUnion_eq_iUnion]
+  apply Cyclic.iUnion
+  simpa
+
+lemma Cyclic.union (hA : M.Cyclic A) (hB : M.Cyclic B) : M.Cyclic (A ∪ B) := by
+  rw [union_eq_iUnion]
+  apply Cyclic.iUnion
+  simp [hA, hB]
+
+
+end Cyclic
+
+section Fundamental
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in
 `I ∪ {e}`. Has the junk value `{e}` if `e ∈ I` and `insert e I` if `e ∉ M.closure I`. -/
@@ -211,6 +271,8 @@ lemma Base.fundCct_circuit {B : Set α} (hB : M.Base B) (hx : x ∈ M.E \ B) :
     M.Circuit (M.fundCct x B) := by
   apply hB.indep.fundCct_circuit; rwa [hB.closure_eq]
 
+end Fundamental
+
 lemma Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit C := by
   rw [dep_iff, indep_iff_forall_not_mem_closure_diff] at hX
   push_neg at hX
@@ -228,6 +290,9 @@ lemma dep_iff_superset_circuit (hX : X ⊆ M.E := by aesop_mat) :
 
 lemma dep_iff_superset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) ∧ X ⊆ M.E :=
   ⟨fun h ↦ ⟨h.exists_circuit_subset, h.subset_ground⟩, fun ⟨⟨C, hCX, hC⟩, h⟩ ↦ hC.dep.superset hCX⟩
+
+-- lemma Indep.exists_circuit_of_insert_dep (hI : M.Indep I) (hdep : M.Dep (insert e I)) :
+--     ∃
 
 lemma indep_iff_forall_subset_not_circuit' :
     M.Indep I ↔ (∀ C, C ⊆ I → ¬M.Circuit C) ∧ I ⊆ M.E := by
@@ -257,6 +322,8 @@ lemma mem_closure_iff_exists_circuit_of_not_mem (he : e ∉ X) :
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, h.trans ((insert_subset_insert inter_subset_left))⟩,
     fun ⟨C, hC, heC, h⟩ ↦ ⟨C, hC, heC, (subset_inter h hC.subset_ground).trans ?_⟩⟩
   rw [insert_inter_of_mem (hC.subset_ground heC)]
+
+section Elimination
 
 /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is
   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version.
@@ -335,6 +402,8 @@ lemma Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h :
     exact ⟨C₂, hC₂, subset_diff_singleton subset_union_right he₂⟩
   exact ⟨C₁, hC₁, subset_diff_singleton subset_union_left he₁⟩
 
+end Elimination
+
 lemma Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep I)
     (hCI : C ⊆ insert e I) : C = M.fundCct e I := by
   obtain (he | he) := em' <| e ∈ M.E
@@ -348,7 +417,7 @@ lemma Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep
   rw [diff_subset_iff, singleton_union, union_subset_iff, and_iff_right hCI]
   exact fundCct_subset_insert _ _
 
-lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+lemma ext_circuit {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     (h : ∀ C, C ⊆ M₁.E → (M₁.Circuit C ↔ M₂.Circuit C)) : M₁ = M₂ := by
   have h' : ∀ C, M₁.Circuit C ↔ M₂.Circuit C := by
     exact fun C ↦ (em (C ⊆ M₁.E)).elim (h C)
@@ -424,6 +493,9 @@ lemma Circuit.cocircuit (hC : M.Circuit C) : M✶.Cocircuit C := by
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma Cocircuit.subset_ground (hC : M.Cocircuit C) : C ⊆ M.E :=
   hC.circuit.subset_ground
+
+@[simp] lemma dual_cocircuit_iff : M✶.Cocircuit C ↔ M.Circuit C := by
+  rw [cocircuit_def, dual_dual]
 
 lemma coindep_iff_forall_subset_not_cocircuit :
     M.Coindep X ↔ (∀ K, K ⊆ X → ¬M.Cocircuit K) ∧ X ⊆ M.E :=

@@ -884,6 +884,13 @@ lemma closure_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.
   obtain ⟨H, hH, hXH, heH'⟩ := exists_hyperplane_sep_of_not_mem_closure ⟨heE, hx⟩
   exact heH' (heH H ⟨hH, hXH⟩)
 
+lemma flat_iff_eq_sInter_hyperplanes : M.Flat F ↔
+  ∃ Hs : Set (Set α), (∀ H ∈ Hs, M.Hyperplane H) ∧ F = (⋂₀ Hs) ∩ M.E := by
+  refine ⟨fun h ↦ ⟨{H | M.Hyperplane H ∧ F ⊆ H}, by simp (config := {contextual := true}), ?_⟩, ?_⟩
+  · rw [← M.closure_eq_sInter_hyperplanes F, h.closure]
+  rintro ⟨Hs, hHs, rfl⟩
+  exact Flat.sInter_inter_ground (fun H hH ↦ (hHs H hH).flat)
+
 lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat)
     (he : e ∈ M.E := by aesop_mat) : e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
   simp_rw [← M.closure_inter_ground X,
@@ -958,6 +965,80 @@ lemma Hyperplane.basis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.Basis I
     union_comm]
 
 end Hyperplane
+
+lemma Cyclic.compl_flat_dual {A : Set α} (hA : M.Cyclic A) : M✶.Flat (M.E \ A) := by
+  rw [flat_iff_eq_sInter_hyperplanes]
+  obtain ⟨Cs, rfl, hCs⟩ := hA
+  refine ⟨(M.E \ ·) '' Cs, fun C hC ↦ ?_, ?_⟩
+  · obtain ⟨H, hH, rfl⟩ := show ∃ x ∈ Cs, M.E \ x = C by simpa only [mem_image] using hC
+    rw [← dual_ground, compl_hyperplane_iff_cocircuit, dual_cocircuit_iff]
+    exact hCs H hH
+  ext e
+  simp (config := {contextual := true}) [and_comm (a := e ∈ M.E)]
+
+lemma cyclic_iff_compl_flat_dual {A : Set α} (hA : A ⊆ M.E := by aesop_mat) :
+    M.Cyclic A ↔ M✶.Flat (M.E \ A) := by
+  refine ⟨Cyclic.compl_flat_dual, fun h ↦ ?_⟩
+  simp_rw [flat_iff_eq_sInter_hyperplanes, dual_ground] at h
+  obtain ⟨Hs, hHs, h_eq⟩ := h
+  apply_fun (M.E \ ·) at h_eq
+  rw [diff_diff_cancel_left hA, diff_inter_self_eq_diff, sInter_eq_iInter, diff_iInter] at h_eq
+  obtain rfl := h_eq
+  have hHs' : ∀ H ∈ Hs, M.Circuit (M.E \ H) := by
+    refine fun H hH ↦ ?_
+    rw [← M.dual_cocircuit_iff, ← dual_ground,
+      compl_cocircuit_iff_hyperplane (show H ⊆ M✶.E from (hHs H hH).subset_ground)]
+    exact hHs H hH
+  exact ⟨(M.E \ ·) '' Hs, by simp, by simpa⟩
+
+lemma Flat.compl_cyclic_dual (hF : M.Flat F) : M✶.Cyclic (M.E \ F) := by
+  rwa [cyclic_iff_compl_flat_dual, dual_dual, dual_ground, diff_diff_cancel_left hF.subset_ground]
+
+/-- If `N ≤q M`, then every circuit of `M` is cyclic (a union of circuits) in `N`. -/
+lemma foo_1 {N M : Matroid α} (hE : M.E = N.E) (h : ∀ X, M.closure X ⊆ N.closure X)
+    (hC : M.Circuit C) : N.Cyclic C := by
+  rw [cyclic_iff_forall_exists]
+  intro e heC
+  specialize h (C \ {e})
+  rw [hC.closure_diff_singleton_eq_closure] at h
+  have heN := (M.subset_closure C hC.subset_ground).trans h heC
+  have hCN : C ⊆ N.E := hC.subset_ground.trans_eq hE
+  rwa [mem_closure_iff_mem_or_exists_circuit (diff_subset.trans hCN), or_iff_right (by simp),
+    insert_diff_singleton, insert_eq_of_mem heC] at heN
+
+/-- If every circuit of `M` is cyclic (a union of circuits) in `N`, then `N ≤q M` -/
+lemma foo_2 {N M : Matroid α} (hE : M.E = N.E) (h : ∀ C, M.Circuit C → N.Cyclic C) (X : Set α) :
+    M.closure X ⊆ N.closure X := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  simp_rw [← hI.closure_eq_closure, subset_def]
+  refine fun e he ↦ ?_
+  by_cases heI : e ∈ I
+  · refine mem_of_mem_of_subset heI (subset_trans ?_ <| N.inter_ground_subset_closure X)
+    rw [← hE, subset_inter_iff]
+    exact ⟨hI.subset, hI.indep.subset_ground⟩
+  specialize h (M.fundCct e I) (hI.indep.fundCct_circuit ⟨he, heI⟩)
+  obtain ⟨C, hC, heC, hCI⟩ := h.exists_of_mem (M.mem_fundCct e I)
+  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+    (N.closure_subset_closure (subset_trans ?_ hI.subset))
+  rw [diff_singleton_subset_iff]
+  exact hCI.trans (fundCct_subset_insert e I)
+
+/-- Iff version of the above two lemmas -/
+lemma foo_iff {N M : Matroid α} (hE : M.E = N.E) :
+    (∀ X, M.closure X ⊆ N.closure X) ↔ (∀ C, M.Circuit C → N.Cyclic C) :=
+  ⟨fun h _ hC ↦ foo_1 hE h hC, foo_2 hE⟩
+
+/-- If `N ≤q M` then `M✶ ≤q N✶`, modulo the TFAE stuff -/
+lemma foo_dual {N M : Matroid α} (hE : M.E = N.E) (h : ∀ F, N.Flat F → M.Flat F) (X : Set α) :
+    N✶.closure X ⊆ M✶.closure X := by
+  apply foo_2 (by simp [hE.symm]) <| fun C hC ↦ ?_
+  rw [cyclic_iff_compl_flat_dual, dual_dual, dual_ground, hE]
+  exact h _ <| by simpa using hC.cyclic.compl_flat_dual
+
+
+
+
+
 
 
 
