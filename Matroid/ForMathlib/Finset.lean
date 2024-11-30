@@ -1,8 +1,9 @@
-import Mathlib.Data.Set.Finite
-import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Fintype.Lattice
-import Mathlib.Algebra.Group.Int
-import Mathlib.Algebra.Ring.Int
+-- import Mathlib.Data.Int.Cast.Basic
+-- import Mathlib.Algebra.Group.Int
+-- import Mathlib.Algebra.Ring.Int
 
 set_option linter.unusedSectionVars false
 variable {α β : Type*} {s t r : Finset α} {a b : α}
@@ -30,7 +31,7 @@ lemma erase_eq_empty_of_mem [DecidableEq α] {s : Finset α} {a : α} (h : a ∈
 
 lemma coe_card_inter [DecidableEq α] (s : Finset α) (t : Finset α) :
     (s ∩ t).card = (s.card : ℤ) + t.card - (s ∪ t).card := by
-  rw [Finset.card_inter, Nat.cast_sub, Nat.cast_add]
+  rw [Finset.card_inter, Int.natCast_sub, Int.natCast_add]
   exact card_union_le s t
 
 lemma singleton_subset_inter_and_union_subset_singleton [DecidableEq α] {s t : Finset α} {e : α}

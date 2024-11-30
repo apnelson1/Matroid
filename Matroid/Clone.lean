@@ -22,23 +22,25 @@ lemma clonal_iff_eq_mapEquiv_swap [DecidableEq α] : M.Clonal x y ↔ M = M.mapE
     fun h ↦ ⟨_, h, by simp, by simp, fun z h h' ↦ swap_apply_of_ne_of_ne h h'⟩⟩
 
 lemma Clonal.refl : M.Clonal x x :=
-  ⟨Equiv.refl α, by simp⟩
+  ⟨Equiv.refl α, by simp [eq_iff_indep_iff_indep_forall]⟩
 
 lemma Clonal.symm (h : M.Clonal x y) : M.Clonal y x := by
   obtain ⟨f, hfM, hfx, hfy, hf⟩ := h; exact ⟨f, hfM, hfy, hfx, by tauto⟩
 
-lemma Clonal.trans (hxy : M.Clonal x y) (hyz : M.Clonal y z) : M.Clonal x z := by
-  obtain (rfl | hxyne) := eq_or_ne x y; assumption
-  obtain (rfl | hyzne) := eq_or_ne y z; assumption
-  obtain (rfl | hxzne) := eq_or_ne x z; exact Clonal.refl
-  obtain ⟨f, hfM, hfx, hfy, hf⟩ := hxy
-  obtain ⟨g, hgM, hgy, hgz, hg⟩ := hyz
-  refine ⟨(f.trans g).trans f, ?_⟩
-  simp only [mapEquiv_trans, hfM.symm, hgM.symm, trans_apply, hfx, hgy,
-    show f z = z from hf hxzne.symm hyzne.symm, hgz, hfy, ne_eq, true_and]
-  refine fun a hax haz ↦ ?_
-  obtain (rfl | hay) := eq_or_ne a y
-  · rw [hfy, hg hxyne hxzne, hfx]
-  rw [hf hax hay, hg hay haz, hf hax hay]
+-- lemma Clonal.trans (hxy : M.Clonal x y) (hyz : M.Clonal y z) : M.Clonal x z := by
+--   obtain (rfl | hxyne) := eq_or_ne x y; assumption
+--   obtain (rfl | hyzne) := eq_or_ne y z; assumption
+--   obtain (rfl | hxzne) := eq_or_ne x z; exact Clonal.refl
+--   obtain ⟨f, hfM, hfx, hfy, hf⟩ := hxy
+--   obtain ⟨g, hgM, hgy, hgz, hg⟩ := hyz
+--   refine ⟨(f.trans g).trans f, ?_⟩
+--   simp [eq_iff_indep_iff_indep_forall, hfM.symm, show f z = z from hf hxzne.symm hyzne.symm, hfx,
+--     hgy, hgz, hfy]
+--   simp only [mapEquiv_trans, hfM.symm, hgM.symm, trans_apply, hfx, hgy,
+--     show f z = z from hf hxzne.symm hyzne.symm, hgz, hfy, ne_eq, true_and]
+--   refine fun a hax haz ↦ ?_
+--   obtain (rfl | hay) := eq_or_ne a y
+--   · rw [hfy, hg hxyne hxzne, hfx]
+--   rw [hf hax hay, hg hay haz, hf hax hay]
 
-lemma foo (f : α ≃ α) (h : ∀ x, M.Clonal x (f x)) : M = M.mapEquiv f := by
+-- lemma foo (f : α ≃ α) (h : ∀ x, M.Clonal x (f x)) : M = M.mapEquiv f := by

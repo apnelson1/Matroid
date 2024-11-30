@@ -766,7 +766,7 @@ lemma Hyperplane.closure_eq_ground_of_ssuperset (hH : M.Hyperplane H) (hX : H �
 
 lemma Hyperplane.spanning_of_ssuperset (hH : M.Hyperplane H) (hX : H ⊂ X)
     (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Spanning X := by rw [spanning_iff_closure, hH.closure_eq_ground_of_ssuperset hX]
+    M.Spanning X := by rw [spanning_iff_closure_eq, hH.closure_eq_ground_of_ssuperset hX]
 
 lemma Hyperplane.not_spanning (hH : M.Hyperplane H) : ¬M.Spanning H := by
   rw [hH.flat.spanning_iff]; exact hH.ssubset_ground.ne
@@ -936,7 +936,7 @@ lemma Hyperplane.basis_hyperplane_delete (hH : M.Hyperplane H) (hI : M.Basis I H
     refine Indep.base_of_spanning ?_ ?_
     · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH),
         hI.closure_eq_closure, hH.flat.closure, mem_diff, and_iff_left heH]
-    rw [spanning_iff_closure, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure,
+    rw [spanning_iff_closure_eq, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure,
       hH.flat.closure, hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
   convert Base.hyperplane_of_closure_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
   · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,

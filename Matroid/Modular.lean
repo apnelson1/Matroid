@@ -15,7 +15,7 @@ section ModularBase
 /-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
 in the family. -/
 @[mk_iff]
-structure ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop :=
+structure ModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
   base : M.Base B
   forall_basis : ∀ i, M.Basis ((Xs i) ∩ B) (Xs i)
 

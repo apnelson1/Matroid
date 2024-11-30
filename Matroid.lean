@@ -1,8 +1,9 @@
+import Matroid.Closure
 import Mathlib.Data.Matroid.Map
-import Matroid.Equiv
+-- import Matroid.Equiv
 import Matroid.Circuit
 import Matroid.Loop
-import Matroid.Closure
+
 import Matroid.Rank
 import Matroid.Minor.Basic
 import Matroid.Minor.Iso

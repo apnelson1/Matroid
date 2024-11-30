@@ -391,7 +391,7 @@ lemma econn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).econn 
   obtain ⟨BX, hBX, hIBX⟩ := hI.indep.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
 
   have hIJE : M.Spanning (I ∪ J) := by
-    rw [spanning_iff_closure, ← closure_closure_union_closure_eq_closure_union,
+    rw [spanning_iff_closure_eq, ← closure_closure_union_closure_eq_closure_union,
       hI.closure_eq_closure, hJ.closure_eq_closure, closure_closure_union_closure_eq_closure_union,
       union_diff_cancel hX, closure_ground]
 

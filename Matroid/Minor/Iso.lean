@@ -24,7 +24,7 @@ def Iso.contract (e : Iso M N) (C : Set α) :
 
 /-- `N ≤ir M` means that `N` is isomorphic to a restriction of `M`.
 Defined as a function from `N.E` to `M.E`. -/
-@[pp_nodot] structure IsoRestr (N : Matroid β) (M : Matroid α) :=
+@[pp_nodot] structure IsoRestr (N : Matroid β) (M : Matroid α) where
   (toFun : N.E → M.E)
   (inj' : Injective toFun)
   (indep_iff' : ∀ (I : Set N.E), N.Indep ↑I ↔ M.Indep ↑(toFun '' I))
@@ -71,7 +71,7 @@ def IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Ma
 /-- `N ≤i M` means that `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`.
 The data a term of this type contains is just a function from `N.E` to `M.E` rather than a choice of
 delete and contract-sets, which may not be unique.  -/
-@[pp_nodot] structure IsoMinor (N : Matroid β) (M : Matroid α) :=
+@[pp_nodot] structure IsoMinor (N : Matroid β) (M : Matroid α) where
   (toFun : N.E → M.E)
   (inj' : Injective toFun)
   (exists_minor' : ∃ M₀, M₀ ≤m M ∧ M₀.E = ↑(range toFun) ∧

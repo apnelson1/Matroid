@@ -1,0 +1,16 @@
+name = "Matroid"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["Matroid"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+autoImplicit = false
+pp.proofs.withType = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[lean_lib]]
+name = "Matroid"

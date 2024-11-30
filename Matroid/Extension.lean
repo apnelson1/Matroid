@@ -548,16 +548,17 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
 
   obtain (rfl | hU) := U.eq_bot_or_ground_mem
   · replace hBmax := show M.Spanning (B \ {e}) ∧ e ∈ B by
-      simpa [← spanning_iff_closure hBeE, he] using hBmax
+      simpa [← spanning_iff_closure_eq hBeE, he] using hBmax
     replace hInmax := show M.Spanning (I \ {e}) → e ∉ I by
-      simpa [← spanning_iff_closure hIeE, he] using hInmax
+      simpa [← spanning_iff_closure_eq hIeE, he] using hInmax
     replace hImax := show M.Spanning (I \ {e}) ∧ e ∈ I by
-      simpa [hBmax.2, he, hBmax.1.closure_superset_eq hss, ← spanning_iff_closure hIeE] using hImax
+      simpa [hBmax.2, he, hBmax.1.closure_eq_of_superset hss,
+        ← spanning_iff_closure_eq hIeE] using hImax
     exact hInmax hImax.1 hImax.2
 
-  simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure hBeE, hU, iff_true,
+  simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure_eq hBeE, hU, iff_true,
     mem_insert_iff, true_or, not_true_eq_false, imp_false, ← hyperplane_iff_covBy, and_true, ←
-    spanning_iff_closure hIeE, not_or, not_and, not_not] at hBmax hInmax
+    spanning_iff_closure_eq hIeE, not_or, not_and, not_not] at hBmax hInmax
 
   by_cases hsp : M.Spanning ((I ∪ B) \ {e})
   · by_cases heI : e ∈ I
@@ -567,7 +568,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
     replace hInmax := show ¬ M.Spanning (I \ {e}) by simpa [heI, hU] using hInmax
     replace hImax := show M.closure (I \ {e}) = M.E by
       simpa [hsp.closure_eq, heI, he, hU] using hImax
-    rw [spanning_iff_closure hIeE] at hInmax
+    rw [spanning_iff_closure_eq hIeE] at hInmax
     contradiction
 
   obtain (⟨hBsp, -⟩ | ⟨hBhp, heB⟩) := hBmax

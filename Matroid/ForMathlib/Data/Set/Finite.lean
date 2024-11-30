@@ -1,4 +1,4 @@
-import Mathlib.Data.Set.Finite
+import Mathlib.Data.Set.Finite.Lattice
 
 
 open Set

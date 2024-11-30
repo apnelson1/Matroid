@@ -1,14 +1,15 @@
 import Mathlib.Data.Setoid.Partition
 import Mathlib.Data.SetLike.Basic
-import Matroid.ForMathlib.Lattice
+import Mathlib.Data.Set.Finite.Powerset
+-- import Matroid.ForMathlib.Lattice
 
 open Set
 
 variable {α : Type*} {s x y z : α}
 
-structure Partition [CompleteLattice α] (s : α) :=
+structure Partition [CompleteLattice α] (s : α) where
   parts : Set α
-  setIndependent : CompleteLattice.SetIndependent parts
+  indep : sSupIndep parts
   bot_not_mem : ⊥ ∉ parts
   sSup_eq' : sSup parts = s
 
@@ -33,7 +34,7 @@ instance {α : Type*} [CompleteLattice α] {s : α} : SetLike (Partition s) α w
 
 lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) :
     Disjoint x y :=
-  P.setIndependent.pairwiseDisjoint hx hy hxy
+  P.indep.pairwiseDisjoint hx hy hxy
 
 lemma pairwiseDisjoint : Set.PairwiseDisjoint (P : Set α) id :=
   fun _ hx _ hy hxy ↦ P.disjoint hx hy hxy
@@ -59,7 +60,7 @@ lemma parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempty 
 
 @[simps] protected def congr {t : α} (P : Partition s) (hst : s = t) : Partition t where
   parts := P.parts
-  setIndependent := P.setIndependent
+  indep := P.indep
   bot_not_mem := P.bot_not_mem
   sSup_eq' := hst ▸ P.sSup_eq'
 
@@ -78,28 +79,28 @@ section indep
 
 variable [CompleteLattice α]
 
-/-- A `SetIndependent` collection not containing `⊥` gives a partition of its supremum. -/
-@[simps] def ofIndependent {u : Set α} (hs : CompleteLattice.SetIndependent u) (hbot : ⊥ ∉ u) :
+/-- A `sSupIndep` collection not containing `⊥` gives a partition of its supremum. -/
+@[simps] def ofIndependent {u : Set α} (hs : sSupIndep u) (hbot : ⊥ ∉ u) :
     Partition (sSup u) where
   parts := u
-  setIndependent := hs
+  indep := hs
   bot_not_mem := hbot
   sSup_eq' := rfl
 
-@[simp] lemma mem_ofIndependent_iff {u : Set α} (hu : CompleteLattice.SetIndependent u)
+@[simp] lemma mem_ofIndependent_iff {u : Set α} (hu : sSupIndep u)
     (h : ⊥ ∉ u) {a : α} : a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
 
-/-- A `SetIndependent` collection gives a partition of its supremum by removing `⊥`. -/
-def ofIndependent' {u : Set α} (hs : CompleteLattice.SetIndependent u) : Partition (sSup u) :=
+/-- A `sSupIndep` collection gives a partition of its supremum by removing `⊥`. -/
+def ofIndependent' {u : Set α} (hs : sSupIndep u) : Partition (sSup u) :=
   (ofIndependent (hs.mono (diff_subset (t := {⊥}))) (fun h ↦ h.2 rfl)).congr (by simp)
 
-@[simp] lemma mem_ofIndependent'_iff {u : Set α} (hu : CompleteLattice.SetIndependent u) {a : α} :
+@[simp] lemma mem_ofIndependent'_iff {u : Set α} (hu : sSupIndep u) {a : α} :
   a ∈ ofIndependent' hu ↔ a ∈ u ∧ a ≠ ⊥ := Iff.rfl
 
 /-- The partition with no parts. -/
 @[simps] protected def empty (α : Type*) [CompleteLattice α] : Partition (⊥ : α) where
   parts := ∅
-  setIndependent := by simp
+  indep := by simp
   bot_not_mem := by simp
   sSup_eq' := by simp
 
@@ -125,7 +126,7 @@ instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
 /-- The one-part partition. -/
 @[simps] def indiscrete (s : α) (hs : s ≠ ⊥) : Partition s where
   parts := {s}
-  setIndependent := by simp
+  indep := by simp [sSupIndep]
   bot_not_mem := by simpa using hs.symm
   sSup_eq' := sSup_singleton
 
@@ -161,7 +162,7 @@ instance {s : α} : PartialOrder (Partition s) where
     rwa [hxy.antisymm hyx']
 
 instance {s : α} : OrderTop (Partition s) where
-  top := (ofIndependent' (setIndependent_singleton s)).congr sSup_singleton
+  top := (ofIndependent' (sSupIndep_singleton s)).congr sSup_singleton
   le_top := by
     obtain (rfl | hs) := eq_or_ne s ⊥
     · simp
@@ -191,12 +192,12 @@ variable {α : Type*} [CompleteDistribLattice α] {s : α}
 
 @[simps] protected def bind (P : Partition s) (Qs : ∀ a ∈ P, Partition a) : Partition s where
   parts := ⋃ a : P, (Qs a a.prop)
-  setIndependent := by
+  indep := by
     intro b hb
     simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists] at hb
     obtain ⟨a, haP, hba : b ∈ Qs a haP⟩ := hb
-    have hdj1 := (Qs a haP).setIndependent hba
-    have hdj2 := (P.setIndependent haP).mono_left <| (Qs a haP).le_of_mem hba
+    have hdj1 := (Qs a haP).indep hba
+    have hdj2 := (P.indep haP).mono_left <| (Qs a haP).le_of_mem hba
     refine (hdj1.sup_right hdj2).mono_right ?_
     simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists, mem_parts, ge_iff_le,
       sSup_le_iff, mem_diff, mem_singleton_iff, and_imp, forall_exists_index]
@@ -298,7 +299,7 @@ lemma finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).Fi
 @[simps] def ofPairwiseDisjoint {p : Set (Set α)} (h : p.PairwiseDisjoint id) (h_empty : ∅ ∉ p):
     Partition (⋃₀ p) where
   parts := p
-  setIndependent := PairwiseDisjoint.setIndependent h
+  indep := PairwiseDisjoint.sSupIndep h
   bot_not_mem := h_empty
   sSup_eq' := rfl
 
@@ -307,7 +308,7 @@ lemma finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).Fi
   (forall_nonempty : ∀ s ∈ parts, s.Nonempty) (eq_sUnion : s = ⋃₀ parts) :
     Partition s where
   parts := parts
-  setIndependent := pairwiseDisjoint.setIndependent
+  indep := pairwiseDisjoint.sSupIndep
   bot_not_mem := fun h ↦ by simpa using forall_nonempty _ h
   sSup_eq' := eq_sUnion.symm
 
@@ -333,8 +334,8 @@ lemma refl_of_rel {α : Type*} (r : α → α → Prop) [IsSymm α r] [IsTrans �
   which it is reflexive. -/
 @[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [IsSymm α r] : Partition {x | r x x} where
   parts := ((fun a ↦ {x | r a x}) '' {x | r x x})
-  setIndependent := by
-    apply PairwiseDisjoint.setIndependent
+  indep := by
+    apply PairwiseDisjoint.sSupIndep
     rintro _ ⟨i, -, rfl⟩ _ ⟨j, -,rfl⟩ hij
     refine disjoint_iff_forall_ne.2 ?_
     rintro a (ha : r _ _) _ (hb : r _ _) rfl

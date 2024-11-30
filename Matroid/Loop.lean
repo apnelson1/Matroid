@@ -616,10 +616,10 @@ lemma coloop_iff_diff_nonspanning : M.Coloop e ↔ ¬ M.Spanning (M.E \ {e}) := 
     rw [closure_ground]
     exact (subset_insert _ _).trans subset_union_right
   · exact M.subset_closure X hX he
-  rw [spanning_iff_closure, diff_singleton_eq_self h', closure_ground]
+  rw [spanning_iff_closure_eq, diff_singleton_eq_self h', closure_ground]
 
 lemma coloop_iff_diff_closure : M.Coloop e ↔ M.closure (M.E \ {e}) ≠ M.E := by
-  rw [coloop_iff_diff_nonspanning, spanning_iff_closure]
+  rw [coloop_iff_diff_nonspanning, spanning_iff_closure_eq]
 
 lemma coloop_iff_not_mem_closure_compl (he : e ∈ M.E := by aesop_mat) :
     M.Coloop e ↔ e ∉ M.closure (M.E \ {e}) := by

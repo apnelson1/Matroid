@@ -2,6 +2,7 @@
 import Mathlib.Data.Nat.Lattice
 import Matroid.Minor.Rank
 import Matroid.Flat
+import Mathlib.Tactic.Linarith
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
   largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
@@ -15,8 +16,8 @@ variable {α : Type*} {M M₁ M₂ : Matroid α} {A I X E : Set α}
 
 lemma Indep.ncard_le_r_add_r [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I)
     (A : Set α) : I.ncard ≤ M₁.r A + M₂.r (M₂.E \ A) := by
-  rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite, ← (hI₁.inter_right A).r,
-    ← (hI₂.diff A).r]
+  rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
+    ← (hI₁.inter_right A).r_eq_ncard, ← (hI₂.diff A).r_eq_ncard]
   exact add_le_add (M₁.r_mono inter_subset_right)
     (M₂.r_mono (diff_subset_diff_left hI₂.subset_ground))
 
@@ -29,8 +30,8 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
     and_iff_right (diff_subset_diff_left hI₂.subset_ground), ← (hI₂.diff A).er,
     er_eq_er_iff, ← (hI₁.inter_right A).er, er_eq_er_iff]
 
-  rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite, ← (hI₁.inter_right A).r,
-    ← (hI₂.diff A).r] at h
+  rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
+    ← (hI₁.inter_right A).r_eq_ncard, ← (hI₂.diff A).r_eq_ncard] at h
   constructor <;>
   linarith [M₁.r_mono (show I ∩ A ⊆ A from inter_subset_right),
     M₂.r_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
@@ -94,9 +95,9 @@ theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
     ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   obtain ⟨I, X, -, hI₁, hI₂, hcard⟩ := exists_common_ind_aux M₁ (M₂ ↾ M₁.E) rfl
   refine ⟨I, (M₂.E \ M₁.E) ∪ X, hI₁, hI₂.of_restrict, ?_⟩
-  rw [← diff_diff, diff_diff_right_self, r_eq_r_inter_ground, union_inter_distrib_right,
-    disjoint_sdiff_left.inter_eq, empty_union, ← r_eq_r_inter_ground, hcard,
-    restrict_r_eq _ (by simp [diff_subset]), restrict_ground_eq, M₂.r_eq_r_inter_ground,
+  rw [← diff_diff, diff_diff_right_self, ← r_inter_ground, union_inter_distrib_right,
+    disjoint_sdiff_left.inter_eq, empty_union, r_inter_ground, hcard,
+    restrict_r_eq _ (by simp [diff_subset]), restrict_ground_eq, ← M₂.r_inter_ground,
     inter_diff_assoc, inter_comm]
 
 /-- A minimizer can be chosen in the matroid intersection theorem that is a flat of `M₁`.-/
@@ -142,12 +143,12 @@ theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] [M₂
 
 section Rado
 
-variable {ι : Type*} [Finite ι] {x : ι → α}
+variable {ι : Type*} {x : ι → α}
 
 lemma rado_necessary [FiniteRk M] {f : α → ι} (hx : ∀ i, f (x i) = i) (h_ind : M.Indep (range x))
     (S : Set ι) : S.ncard ≤ M.r (f ⁻¹' S) := by
   have hinj : Function.Injective x := fun i j h ↦ by rw [← hx i, ← hx j, h]
-  have hS := (h_ind.subset (image_subset_range x S)).r
+  have hS := (h_ind.subset (image_subset_range x S)).r_eq_ncard
   rw [ncard_image_of_injective _ hinj] at hS
   refine hS.symm.le.trans (M.r_le_of_subset ?_)
   rintro f ⟨i, hi, rfl⟩
