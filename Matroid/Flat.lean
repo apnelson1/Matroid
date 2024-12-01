@@ -372,6 +372,16 @@ lemma CovBy.eq_of_ssubset_of_subset (h : F₀ ⋖[M] F₁) (hF : M.Flat F) (hF�
     F = F₁ :=
   ((covBy_iff.1 h).2.2.2 F hF hF₀.subset hF₁).elim (fun h' ↦ (hF₀.ne.symm h').elim) id
 
+lemma CovBy.inter_eq_of_covby_of_ne (h₁ : F₀ ⋖[M] F₁) (h₂ : F₀ ⋖[M] F₂) (h_ne : F₁ ≠ F₂) :
+    F₀ = F₁ ∩ F₂ := by
+  contrapose! h_ne
+  have h₁' := h₁.eq_or_eq (h₁.flat_right.inter h₂.flat_right) (subset_inter h₁.subset h₂.subset)
+     inter_subset_left
+  have h₂' := h₂.eq_or_eq (h₁.flat_right.inter h₂.flat_right) (subset_inter h₁.subset h₂.subset)
+     inter_subset_right
+  rw [or_iff_right h_ne.symm] at h₁' h₂'
+  rw [← h₁', h₂']
+
 lemma CovBy.closure_insert_eq (h : F₀ ⋖[M] F₁) (he : e ∈ F₁ \ F₀) :
     M.closure (insert e F₀) = F₁ := by
   refine

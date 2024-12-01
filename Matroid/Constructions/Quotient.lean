@@ -90,18 +90,7 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
   refine le_top.trans hinf
 termination_by M₁.relRank X Y
 
-lemma Insert_not_closure {M : Matroid α} {X : Set α }{x : α} (hx : x ∈ M.E) (hX : X ⊆ M.E) (hno : x ∈ M.closure X) :
-    M.relRank X (insert x X) = 0 := by
-  refine relRank_eq_zero_iff'.mpr ?_
-  have hxx : (insert x X) ∩ M.E = insert x X := by
-    refine inter_eq_left.mpr ?_
-    exact insert_subset hx hX
-  rw [hxx]
-  refine insert_subset_iff.mpr ?_
-  constructor
-  exact hno
-  exact subset_closure_of_subset' M (fun ⦃a⦄ a ↦ a) hX
-  --refine relRank_insert_eq_one ?he ?hX
+
 
 theorem Quo_2_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX: X ⊆ M₁.E)
     (hYZ: ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y ) :
@@ -133,7 +122,9 @@ theorem Quo_2_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX:
     have hc2 : M₂.relRank (M₂.closure X) (insert e (M₂.closure X)) = 1 := by
       have hXi: (M₂.closure X ⊆ M₂.E) := by exact closure_subset_ground M₂ X
       exact relRank_insert_eq_one hee hXi
-    have hc1 : M₁.relRank (M₂.closure X) (insert e (M₂.closure X)) = 0 := Insert_not_closure (closure_subset_ground M₁ (M₂.closure X) (mem_of_mem_diff he)) hsu (mem_of_mem_diff he)
+    have hc1 : M₁.relRank (M₂.closure X) (insert e (M₂.closure X)) = 0 := by
+      rw [relRank_insert_eq_zero_iff', hE, imp_iff_right hee.1]
+      exact he.1
     have hi : M₂.closure X ⊆ insert e (M₂.closure X) := subset_insert e (M₂.closure X)
     have hhelp1 : e ∈ M₂.E := by exact mem_of_mem_diff hee
     have he1 : e ∈  M₁.E := by rwa[hE.symm] at hhelp1
@@ -213,48 +204,8 @@ lemma CovBy_rank_one {M : Matroid α} {X Y: Set α} [FiniteRk M]
 
 lemma CovBy_equal_cont {M₁ : Matroid α} {X Y₁ Y₂: Set α} (hco1 : X ⋖[M₁] Y₁) (hco : X ⋖[M₁] Y₂)
    (hy : ∃ y, y ∈ Y₁ ∩ Y₂ ∧ y ∉ X ) : Y₁ = Y₂ := by
-  have hEY1 : Y₁ ⊆ M₁.E := CovBy.subset_ground_right hco1
-  have hflat1 : Y₁ = M₁.closure Y₁ := Eq.symm (Flat.closure (CovBy.flat_right hco1))
-  have hflat2 : Y₂ = M₁.closure Y₂ := Eq.symm (Flat.closure (CovBy.flat_right hco))
-  have hE1 : Y₁ ∩ Y₂ ⊆ M₁.E := fun ⦃a⦄ a_1 ↦ hEY1 (inter_subset_left a_1)
-  have hini : X ⊆ Y₁ ∩ Y₂ := by
-    refine subset_inter ?rs ?rt
-    exact CovBy.subset hco1
-    exact CovBy.subset hco
-  have hincl : X ⊆ M₁.closure (Y₁ ∩ Y₂) := subset_closure_of_subset' M₁ hini fun ⦃a⦄ a_1 ↦ hE1 (hini a_1)
-  obtain ⟨y , hyy, hyx⟩ := hy
-  have hF : M₁.Flat (M₁.closure (Y₁ ∩ Y₂)) := closure_flat M₁ (Y₁ ∩ Y₂)
-  have hsubF : M₁.closure (Y₁ ∩ Y₂) ⊆ Y₁ := by
-    nth_rewrite 2 [hflat1]
-    exact closure_subset_closure M₁ (inter_subset_left)
-  have hsubF2 : M₁.closure (Y₁ ∩ Y₂) ⊆ Y₂ := by
-    nth_rewrite 2 [hflat2]
-    exact closure_subset_closure M₁ (inter_subset_right)
-  have h1: M₁.closure (Y₁ ∩ Y₂) = Y₁ := by
-    obtain (ha | hb ) := (covBy_iff.1 hco1).2.2.2 (M₁.closure (Y₁ ∩ Y₂)) hF hincl hsubF
-    by_contra
-    have hcon: M₁.closure (Y₁ ∩ Y₂) ≠ X := by
-      refine Ne.symm ?h
-      apply ne_of_not_superset
-      apply Set.not_subset.2
-      refine ⟨y, mem_closure_of_mem M₁ hyy hE1, hyx ⟩
-    exact hcon ha
-    exact hb
-  have h2: M₁.closure (Y₁ ∩ Y₂) = Y₂ := by
-    obtain (ha | hb ) := (covBy_iff.1 hco).2.2.2 (M₁.closure (Y₁ ∩ Y₂)) hF hincl hsubF2
-    by_contra
-    have hcon: X ≠ M₁.closure (Y₁ ∩ Y₂) := by
-      apply ne_of_not_superset
-      apply Set.not_subset.2
-      refine ⟨ y, mem_closure_of_mem M₁ hyy hE1, hyx  ⟩
-    exact hcon.symm ha
-    exact hb
-  rw [ ←h1 ]
-  nth_rewrite 2 [ ←h2 ]
-  rfl
-
-
-
+  contrapose! hy
+  simp [hco1.inter_eq_of_covby_of_ne hco hy]
 
 theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X ⋖[M₁] Y) (hX2 : M₂.Flat X)
     (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : ∃ y ∈ Y, Y = M₂.closure (insert y X) := by

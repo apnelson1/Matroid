@@ -92,6 +92,9 @@ lemma relRank_mono_left (M : Matroid α) {X X' : Set α} (Y : Set α) (h : X ⊆
 lemma relRank_eq_zero_of_subset (M : Matroid α) (h : Y ⊆ X) : M.relRank X Y = 0 := by
   rw [relRank_eq_diff_right, diff_eq_empty.2 h, relRank_empty_right]
 
+@[simp] lemma relRank_self (M : Matroid α) (X : Set α) : M.relRank X X = 0 :=
+  M.relRank_eq_zero_of_subset rfl.subset
+
 @[simp] lemma relRank_closure_left (M : Matroid α) (X Y : Set α) :
     M.relRank (M.closure X) Y = M.relRank X Y := by
   rw [relRank, relRank, contract_closure_eq_contract_delete, delete_er_eq', LoopEquiv.er_eq_er]
@@ -187,7 +190,6 @@ lemma rFin.relRank_eq_sub (hY : M.rFin X) (hXY : X ⊆ Y) :
   rw [← relRank_add_er_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY
   rw [eq_comm, tsub_add_cancel_iff_le]
-
   exact le_add_self
 
 lemma Nonloop.relRank_add_one_eq (he : M.Nonloop e) (X : Set α) :
@@ -225,6 +227,19 @@ lemma relRank_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
 lemma relRank_eq_zero_iff' : M.relRank X Y = 0 ↔ Y ∩ M.E ⊆ M.closure X := by
   rw [← relRank_inter_ground_right, ← relRank_inter_ground_left, relRank_eq_zero_iff,
     closure_inter_ground]
+
+lemma relRank_insert_eq_zero_iff (he : e ∈ M.E := by aesop_mat) :
+    M.relRank X (insert e X) = 0 ↔ e ∈ M.closure X := by
+  rw [relRank_eq_zero_iff', insert_inter_of_mem he, insert_subset_iff]
+  simp only [and_iff_left_iff_imp]
+  exact fun _ ↦ M.inter_ground_subset_closure X
+
+lemma relRank_insert_eq_zero_iff' :
+    M.relRank X (insert e X) = 0 ↔ (e ∈ M.E → e ∈ M.closure X) := by
+  by_cases he : e ∈ M.E
+  · rw [relRank_insert_eq_zero_iff, imp_iff_right he]
+  rw [← M.relRank_inter_ground_right, insert_inter_of_not_mem he, relRank_inter_ground_right]
+  simp [he]
 
 lemma relRank_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.relRank X Y = 1 ↔ ∃ e ∈ Y \ M.closure X, Y ⊆ M.closure (insert e X) := by
