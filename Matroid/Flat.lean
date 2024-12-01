@@ -739,6 +739,13 @@ lemma flat_delete_iff {D : Set α} :
 
 end Minor
 
+lemma ext_flat {M₁ M₂ : Matroid α} (hF : ∀ F, M₁.Flat F ↔ M₂.Flat F) : M₁ = M₂ :=
+  ext_closure fun X ↦ by simp [closure, hF,
+    ((hF _).1 M₁.ground_flat).subset_ground.antisymm ((hF _).2 M₂.ground_flat).subset_ground]
+
+lemma ext_iff_flat {M₁ M₂ : Matroid α} : M₁ = M₂ ↔ ∀ F, M₁.Flat F ↔ M₂.Flat F :=
+  ⟨fun h ↦ by simp [h], ext_flat⟩
+
 -- ### Hyperplanes
 section Hyperplane
 
@@ -1004,53 +1011,9 @@ lemma cyclic_iff_compl_flat_dual {A : Set α} (hA : A ⊆ M.E := by aesop_mat) :
 lemma Flat.compl_cyclic_dual (hF : M.Flat F) : M✶.Cyclic (M.E \ F) := by
   rwa [cyclic_iff_compl_flat_dual, dual_dual, dual_ground, diff_diff_cancel_left hF.subset_ground]
 
-/-- If `N ≤q M`, then every circuit of `M` is cyclic (a union of circuits) in `N`. -/
-lemma foo_1 {N M : Matroid α} (hE : M.E = N.E) (h : ∀ X, M.closure X ⊆ N.closure X)
-    (hC : M.Circuit C) : N.Cyclic C := by
-  rw [cyclic_iff_forall_exists]
-  intro e heC
-  specialize h (C \ {e})
-  rw [hC.closure_diff_singleton_eq_closure] at h
-  have heN := (M.subset_closure C hC.subset_ground).trans h heC
-  have hCN : C ⊆ N.E := hC.subset_ground.trans_eq hE
-  rwa [mem_closure_iff_mem_or_exists_circuit (diff_subset.trans hCN), or_iff_right (by simp),
-    insert_diff_singleton, insert_eq_of_mem heC] at heN
-
-/-- If every circuit of `M` is cyclic (a union of circuits) in `N`, then `N ≤q M` -/
-lemma foo_2 {N M : Matroid α} (hE : M.E = N.E) (h : ∀ C, M.Circuit C → N.Cyclic C) (X : Set α) :
-    M.closure X ⊆ N.closure X := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-  simp_rw [← hI.closure_eq_closure, subset_def]
-  refine fun e he ↦ ?_
-  by_cases heI : e ∈ I
-  · refine mem_of_mem_of_subset heI (subset_trans ?_ <| N.inter_ground_subset_closure X)
-    rw [← hE, subset_inter_iff]
-    exact ⟨hI.subset, hI.indep.subset_ground⟩
-  specialize h (M.fundCct e I) (hI.indep.fundCct_circuit ⟨he, heI⟩)
-  obtain ⟨C, hC, heC, hCI⟩ := h.exists_of_mem (M.mem_fundCct e I)
-  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
-    (N.closure_subset_closure (subset_trans ?_ hI.subset))
-  rw [diff_singleton_subset_iff]
-  exact hCI.trans (fundCct_subset_insert e I)
-
-/-- Iff version of the above two lemmas -/
-lemma foo_iff {N M : Matroid α} (hE : M.E = N.E) :
-    (∀ X, M.closure X ⊆ N.closure X) ↔ (∀ C, M.Circuit C → N.Cyclic C) :=
-  ⟨fun h _ hC ↦ foo_1 hE h hC, foo_2 hE⟩
-
-/-- If `N ≤q M` then `M✶ ≤q N✶`, modulo the TFAE stuff -/
-lemma foo_dual {N M : Matroid α} (hE : M.E = N.E) (h : ∀ F, N.Flat F → M.Flat F) (X : Set α) :
-    N✶.closure X ⊆ M✶.closure X := by
-  apply foo_2 (by simp [hE.symm]) <| fun C hC ↦ ?_
-  rw [cyclic_iff_compl_flat_dual, dual_dual, dual_ground, hE]
-  exact h _ <| by simpa using hC.cyclic.compl_flat_dual
-
-
-
-
-
-
-
+lemma flat_dual_iff_compl_cyclic (hF : F ⊆ M.E := by aesop_mat) :
+    M✶.Flat F ↔ M.Cyclic (M.E \ F) := by
+  rw [cyclic_iff_compl_flat_dual, diff_diff_cancel_left hF]
 
 section LowRank
 

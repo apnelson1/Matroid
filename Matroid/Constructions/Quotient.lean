@@ -24,15 +24,6 @@ structure WeakLE (M N : Matroid α) : Prop where
   forall_dep_of_dep : ∀ D, N.Dep D → M.Dep D
   ground_eq : M.E = N.E
 
-def Flat_Covers_Flat (M: Matroid α) (F₁ F₂ : Set α) : Prop :=
-  M.Flat F₁ ∧ M.Flat F₂ ∧ F₂ ⊆ F₁ ∧ M.relRank F₂ F₁ = 1
-
-def Quotient' (M₁ M₂ : Matroid α) : Prop :=
- M₁.E = M₂.E ∧ ∀ X Y, X ⊆ Y → Y ⊆ M₁.E → M₂.relRank X Y ≤ M₁.relRank X Y
-
- --def Quotient2 (M₁ M₂ N: Matroid α) : Prop :=
- --M₁.E = M₂.E ∧ ∃ X, X ⊆ N.E ∧ M₁ = N \ X ∧ M₂ = N / X
-
 infixl:50 " ≤q " => Matroid.Quotient
 
 infixl:50 " ≤w " => Matroid.WeakLE
@@ -40,6 +31,18 @@ infixl:50 " ≤w " => Matroid.WeakLE
 
 lemma Quotient.flat_of_flat (h : M ≤q N) (hF : M.Flat F) : N.Flat F :=
   h.forall_flat_of_flat _ hF
+
+lemma Quotient.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤q M₂) (h' : M₂ ≤q M₃) : M₁ ≤q M₃ where
+  forall_flat_of_flat _ := h'.flat_of_flat ∘ h.flat_of_flat
+  ground_eq := h.ground_eq.trans h'.ground_eq
+
+lemma Quotient.refl (M : Matroid α) : M ≤q M where
+  forall_flat_of_flat := by simp
+  ground_eq := rfl
+
+lemma Quotient.antisymm (h : M₁ ≤q M₂) (h' : M₂ ≤q M₁) : M₁ = M₂ :=
+  ext_flat fun _ ↦ ⟨h.flat_of_flat, h'.flat_of_flat⟩
+
 
 lemma top_thingy {a b : ℕ∞} (hab : a + b ≤ a) (ht : a ≠ ⊤) : b = 0 := by
   have haa : a + b ≤ a + 0 := le_add_right hab
@@ -51,11 +54,15 @@ lemma Quotient.closure_subset_closure (h : M ≤q N) (X : Set α) : N.closure X 
   apply N.closure_subset_closure
   exact M.subset_closure _
 
-theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y)
-    (hYE: Y ⊆ M₁.E) : M₂.relRank X Y ≤ M₁.relRank X Y := by
-  have hcas:= lt_or_le (M₁.relRank X Y) ⊤
+/-- Relative rank is monotone with respect to the quotient order for sets `X,Y` with `X ⊆ Y ⊆ E`.
+This hypothesis isn't required, but is included to facilitate the inductive proof.
+See `Quotient.relRank_le` for the stronger version applying to all `X` and `Y`.
+Note : including `X` as an implicit parameter is needed for well-founded induction to work. -/
+private theorem Quotient.relRank_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y) (hYE: Y ⊆ M₁.E) :
+    M₂.relRank X Y ≤ M₁.relRank X Y := by
+  have hcas := lt_or_le (M₁.relRank X Y) ⊤
   --Divide into cases finite and infinite
-  obtain(hfin|hinf):= hcas
+  obtain hfin | hinf := hcas
 
   · by_cases hX : Y ⊆ M₁.closure X
     . rw [(relRank_eq_zero_iff (M := M₂) _).2]
@@ -79,7 +86,7 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
     obtain ⟨hy', hycard⟩ := hy
 
     have hiY: insert y X ⊆ Y := insert_subset hy'.1 hXY
-    have ht := hQ.relRank_le hiY hYE
+    have ht := hQ.relRank_le_aux hiY hYE
 
     have hycard1 : M₁.relRank (insert y X) Y + 1 ≤ M₁.relRank X Y := by
       exact Order.add_one_le_of_lt hycard
@@ -90,76 +97,96 @@ theorem Quotient.relRank_le {M₁ M₂: Matroid α} (hQ : M₂ ≤q M₁) {X : S
   refine le_top.trans hinf
 termination_by M₁.relRank X Y
 
+/-- Relative rank is monotone with respect to the quotient order. -/
+theorem Quotient.relRank_le (hQ : M₂ ≤q M₁) (X Y : Set α) : M₂.relRank X Y ≤ M₁.relRank X Y := by
+  rw [← relRank_inter_ground_right, ← relRank_inter_ground_left,
+    ← M₁.relRank_inter_ground_right, ← M₁.relRank_inter_ground_left, hQ.ground_eq,
+      relRank_eq_union_right, M₁.relRank_eq_union_right]
+  exact hQ.relRank_le_aux subset_union_right <| union_subset inter_subset_right inter_subset_right
 
-
-theorem Quo_2_3 {M₁ M₂ : Matroid α} {X: Set α} (hE : M₁.E = M₂.E) (hX: X ⊆ M₁.E)
-    (hYZ: ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y ) :
-    M₁.closure X ⊆ M₂.closure X := by
-  have hXg: X = X ∩ M₂.E := by
-    refine left_eq_inter.mpr ?_
-    rw [hE] at hX
-    exact hX
-  have hXin : X ⊆ M₂.closure X := by
-    rw [hXg]
-    simp only [closure_inter_ground]
-    exact M₂.inter_ground_subset_closure X
-  have hFlat : M₁.Flat (M₂.closure X) := by
-    by_contra! hc
-    have hsu : M₂.closure X ⊆ M₁.E:= by
-      rw[hE]
-      exact closure_subset_ground M₂ X
-    have hex := exists_mem_closure_not_mem_of_not_flat hc hsu
-    obtain⟨e , he ⟩:= hex
-    have hee : e ∈ M₂.E \ M₂.closure (M₂.closure X) := by
-        refine (mem_diff e).mpr ?_
-        constructor
-        have hsue : M₁.closure (M₂.closure X) ⊆ M₂.E:= by
-          rw [hE.symm]
-          exact closure_subset_ground M₁ (M₂.closure X)
-        exact hsue (mem_of_mem_diff he)
-        simp only [closure_closure]
-        exact not_mem_of_mem_diff he
-    have hc2 : M₂.relRank (M₂.closure X) (insert e (M₂.closure X)) = 1 := by
-      have hXi: (M₂.closure X ⊆ M₂.E) := by exact closure_subset_ground M₂ X
-      exact relRank_insert_eq_one hee hXi
-    have hc1 : M₁.relRank (M₂.closure X) (insert e (M₂.closure X)) = 0 := by
-      rw [relRank_insert_eq_zero_iff', hE, imp_iff_right hee.1]
-      exact he.1
-    have hi : M₂.closure X ⊆ insert e (M₂.closure X) := subset_insert e (M₂.closure X)
-    have hhelp1 : e ∈ M₂.E := by exact mem_of_mem_diff hee
-    have he1 : e ∈  M₁.E := by rwa[hE.symm] at hhelp1
-    have hEi : insert e (M₂.closure X) ⊆ M₁.E := by exact insert_subset he1 hsu
-    have hcon:= hYZ (insert e (M₂.closure X)) (M₂.closure X) hi hEi
-    rw[hc1, hc2] at hcon
-    norm_num at hcon
-  exact hFlat.closure_subset_of_subset hXin
-
-theorem Quo_3_1 {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+theorem quotient_of_forall_closure_subset_closure (hE : M₁.E = M₂.E)
     (hQ : ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X) : M₂ ≤q M₁ := by
   refine ⟨fun F hF ↦ ?_, hE.symm⟩
   have hFE : F ⊆ M₁.E := hF.subset_ground.trans_eq hE.symm
   exact flat_iff_closure_self.2 <|
     ((hQ _ hFE).trans hF.closure.subset).antisymm <| subset_closure _ _ hFE
 
---Write the following are equivalent thm
+theorem quotient_of_forall_relRank_le (hE : M₁.E = M₂.E)
+    (hYZ : ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z) : M₂ ≤q M₁ := by
+  refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
+  have hX' : X ⊆ M₂.E := hX.trans hE.subset
 
-theorem TFAE_Quotient {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) :
+  have hXin : X ⊆ M₂.closure X := M₂.subset_closure X
+
+  refine Flat.closure_subset_of_subset ?_ hXin
+
+  by_contra! hc
+  obtain ⟨e, he, he'⟩ := exists_mem_closure_not_mem_of_not_flat hc
+    ((M₂.closure_subset_ground X).trans hE.symm.subset)
+  have heE := mem_of_mem_of_subset he <| M₁.closure_subset_ground _
+  have hrr := hYZ (M₂.closure X) (insert e (M₂.closure X)) (subset_insert _ _)
+    (insert_subset heE ((M₂.closure_subset_ground X).trans hE.symm.subset))
+
+  rw [(relRank_insert_eq_zero_iff).2 he, relRank_closure_left, nonpos_iff_eq_zero,
+    ← relRank_closure_right, closure_insert_closure_eq_closure_insert,
+    relRank_closure_right, relRank_insert_eq_zero_iff] at hrr
+  contradiction
+
+/-- If `M₂ ≤q M₁`, then every circuit of `M₁` is cyclic (a union of circuits) in `M₂`. -/
+lemma Quotient.cyclic_of_circuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.Circuit C) : M₂.Cyclic C := by
+  rw [cyclic_iff_forall_exists]
+  intro e heC
+  have hcl := hQ.closure_subset_closure (C \ {e})
+  rw [hC.closure_diff_singleton_eq_closure] at hcl
+  have heN := (M₁.subset_closure C hC.subset_ground).trans hcl heC
+  have hCN : C ⊆ M₂.E := hC.subset_ground.trans_eq hQ.ground_eq.symm
+  rwa [mem_closure_iff_mem_or_exists_circuit (diff_subset.trans hCN), or_iff_right (by simp),
+    insert_diff_singleton, insert_eq_of_mem heC] at heN
+
+/-- If every circuit of `M₁` is cyclic (a union of circuits) in `M₂`, then `M₂ ≤q M₁`. -/
+lemma quotient_of_forall_cyclic_of_circuit (hE : M₁.E = M₂.E)
+    (h : ∀ C, M₁.Circuit C → M₂.Cyclic C) : M₂ ≤q M₁ := by
+  refine quotient_of_forall_closure_subset_closure hE fun X hXE ↦ ?_
+  obtain ⟨I, hI⟩ := M₁.exists_basis X
+  simp_rw [← hI.closure_eq_closure, subset_def]
+  refine fun e he ↦ ?_
+  by_cases heI : e ∈ I
+  · exact mem_of_mem_of_subset heI <| hI.subset.trans (M₂.subset_closure X (hXE.trans hE.subset))
+  specialize h (M₁.fundCct e I) (hI.indep.fundCct_circuit ⟨he, heI⟩)
+  obtain ⟨C, hC, heC, hCI⟩ := h.exists_of_mem (M₁.mem_fundCct e I)
+  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+    (M₂.closure_subset_closure ?_)
+  rw [diff_singleton_subset_iff]
+  exact hCI.trans ((fundCct_subset_insert e I).trans (insert_subset_insert hI.subset))
+
+lemma Quotient.dual (hQ : M₂ ≤q M₁) : M₁✶ ≤q M₂✶ := by
+  refine quotient_of_forall_cyclic_of_circuit hQ.ground_eq fun C hC ↦ ?_
+  rw [cyclic_iff_compl_flat_dual
+    (show C ⊆ M₁✶.E from hC.subset_ground.trans hQ.ground_eq.subset), dual_dual, dual_ground]
+  rw [← cocircuit_def, ← compl_hyperplane_iff_cocircuit, hQ.ground_eq] at hC
+  exact hQ.flat_of_flat hC.flat
+
+lemma Quotient.of_dual (hQ : M₂✶ ≤q M₁✶) : M₁ ≤q M₂ := by
+  simpa using hQ.dual
+
+@[simp] lemma quotient_dual_iff : M₁✶ ≤q M₂✶ ↔ M₂ ≤q M₁ :=
+  ⟨Quotient.of_dual, Quotient.dual⟩
+
+
+theorem TFAE_Quotient (hE : M₁.E = M₂.E) :
  List.TFAE [M₂ ≤q M₁,
-    ∀ Y Z, Z ⊆ Y → Y ⊆ M₁.E → M₂.relRank Z Y ≤ M₁.relRank Z Y,
-    ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X] := by
-  tfae_have 1 → 2 := by
-    intro hQ
-    intro X Y hXY hXE
-    exact Quotient.relRank_le hQ hXY hXE
-
-  tfae_have 2 → 3 := by
-    intro hQ X hX
-    exact Quo_2_3 hE hX hQ
-
-  tfae_have 3 → 1 := by
-    intro hQ
-    exact Quo_3_1 hE hQ
-
+    ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z,
+    ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X,
+    ∀ C, M₁.Circuit C → M₂.Cyclic C,
+    M₁✶ ≤q M₂✶] := by
+  tfae_have 1 → 2 := fun hQ Y Z _ _ ↦ hQ.relRank_le _ _
+  tfae_have 2 → 1 := fun h ↦ quotient_of_forall_relRank_le hE fun Y Z ↦ h Y Z
+  tfae_have 3 → 1 := fun hQ ↦ quotient_of_forall_closure_subset_closure hE hQ
+  tfae_have 1 → 3 := fun hQ X _ ↦ hQ.closure_subset_closure X
+  tfae_have 1 → 4 := fun hQ _ hC ↦ hQ.cyclic_of_circuit hC
+  tfae_have 4 → 1 := fun h ↦ quotient_of_forall_cyclic_of_circuit hE h
+  tfae_have 1 → 5 := Quotient.dual
+  tfae_have 5 → 1 := Quotient.of_dual
   tfae_finish
 
 --Begin finite case
@@ -167,7 +194,7 @@ theorem TFAE_Quotient {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) :
 lemma Quotient.finite {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
   rw [finiteRk_iff, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
-  exact (hQ.relRank_le (empty_subset _) hQ.ground_eq.subset).trans_lt hM₁
+  exact (hQ.relRank_le _ _).trans_lt hM₁
 
 lemma Cov_Same_r {M : Matroid α} {X Y: Set α} [FiniteRk M] (hY : Y ⊆ M.E)
     (hFX : M.Flat X) (hXY : X ⊆ Y) (heq : M.r X = M.r Y) : X = Y := by
@@ -221,7 +248,7 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   --rw [hyy.symm]
   have hXy2 : M₂.Flat (M₂.closure (insert y X)) := closure_flat M₂ (insert y X)
   have hXy1 : M₁.Flat (M₂.closure (insert y X)) := Quotient.flat_of_flat hQ hXy2
-  have h1 := hQ.relRank_le (M₂.closure_subset_ground (insert y X)) hE.symm.subset
+  have h1 := hQ.relRank_le (M₂.closure (insert y X)) M₂.E
   have h2 := add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
   -- have h1 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) ≤ M₁.relRank (M₂.closure (insert y X)) (M₁.E):= by
   --   have := hQ.relRank_le (M₂.closure_subset_ground (insert y X)) hE.symm.subset
@@ -316,16 +343,10 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   apply CovBy_equal_cont hco hcovcl
   exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), not_mem_of_mem_diff hy ⟩
 
-theorem con_quotient_del (N : Matroid α) (X : Set α) (hXE : X ⊆ N.E) [FiniteRk N] : (N ／ X) ≤q (N ＼ X) := by
-  --have hE : (N ／ X).E = (N ＼ X).E := by exact rfl
-  refine⟨ ?_ , rfl ⟩
-  intro F hF
-  apply flat_delete_iff.2
-  use F ∪ X
-  constructor
-  · exact Flat.union_flat_of_contract hF hXE
-  · refine Eq.symm (union_diff_cancel_right ?h.right.h)
-    exact Set.disjoint_iff.mp (((flat_contract_iff hXE).1 hF).2 )
+theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
+  simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, flat_contract_iff', flat_delete_iff,
+    and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
+  exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
 
 theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
     (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk ) := by
@@ -378,6 +399,7 @@ def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M�
 theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₁] (h : M₂ ≤q M₁)
   (hr : M₂.rk + 1 = M₁.rk) (hf₁ : f ∉ M₂.E) : ∃ (N : Matroid α), N ／ f = M₂ ∧ N ＼ f = M₁ := by
   let U := { F | M₁.Flat F ∧ M₂.Flat F }
+  sorry
   --have hmod : ( U : M₁.ModularCut ) := by
 
 theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} {k : ℕ} [FiniteRk M₂] (h : M₁ ≤q M₂)
