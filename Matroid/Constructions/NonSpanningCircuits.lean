@@ -270,7 +270,7 @@ lemma circuit_of_NonspanningCircuit_rk {M :Matroid α} [FiniteRk M] : ∀ C : Fi
 lemma eq_of_NonspanningCircuit_iff_NonspanningCircuit_forall {M₁ M₂ : Matroid α} [FiniteRk M₁] [FiniteRk M₂]
   (hE : M₁.E = M₂.E)  (hCiff : ∀ C : Finset α , ↑C ⊆ M₁.E → (M₁.NonspanningCircuit C ↔ M₂.NonspanningCircuit C))
   (hrk : M₁.rk = M₂.rk ) : M₁ = M₂ := by
-  refine eq_of_circuit_iff_circuit_forall hE (fun C hsub ↦ Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
+  refine ext_circuit hE (fun C hsub ↦ Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
   obtain CFin := Circuit.finite hC
   obtain hC | hC := (circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
     (Finite.coe_toFinset CFin ▸ hsub)).mp (Finite.coe_toFinset _ ▸ hC)

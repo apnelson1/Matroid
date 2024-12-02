@@ -33,7 +33,7 @@ def truncateTo (M : Matroid α) (k : ℕ∞) : Matroid α :=
       (fun k ↦ ⟨M.truncateToNat k, rfl, fun _ ↦ by simp [truncateToNat]⟩))
 
 @[simp] theorem truncateTo_top (M : Matroid α) : M.truncateTo ⊤ = M :=
-  eq_of_indep_iff_indep_forall rfl (by simp [truncateTo])
+  ext_indep rfl (by simp [truncateTo])
 
 @[simp] theorem truncateTo_indep_iff : (M.truncateTo k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) :=
     Iff.rfl
@@ -43,7 +43,7 @@ theorem truncateTo_indep_eq : (M.truncateTo k).Indep = fun I ↦ M.Indep I ∧ I
 @[simp] theorem truncateTo_ground_eq : (M.truncateTo k).E = M.E := rfl
 
 @[simp] theorem truncateTo_zero (M : Matroid α) : M.truncateTo 0 = loopyOn M.E := by
-  refine eq_of_indep_iff_indep_forall rfl ?_
+  refine ext_indep rfl ?_
   suffices ∀ I ⊆ M.E, I = ∅ → M.Indep I by simpa
   rintro I - rfl; exact M.empty_indep
 
@@ -51,12 +51,12 @@ theorem truncateTo_indep_eq : (M.truncateTo k).Indep = fun I ↦ M.Indep I ∧ I
   rw [← ground_eq_empty_iff, truncateTo_ground_eq, emptyOn_ground]
 
 @[simp] theorem truncate_loopyOn (E : Set α) (k : ℕ∞) : (loopyOn E).truncateTo k = loopyOn E := by
-  apply eq_of_indep_iff_indep_forall (by simp)
+  apply ext_indep (by simp)
   suffices ∀ I ⊆ E, I = ∅ → encard I ≤ k by simpa
   rintro _ - rfl; simp
 
 theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncateTo k = M := by
-  refine eq_of_indep_iff_indep_forall truncateTo_ground_eq (fun I _ ↦ ?_)
+  refine ext_indep truncateTo_ground_eq (fun I _ ↦ ?_)
   rw [truncateTo_indep_iff, and_iff_left_iff_imp]
   exact fun hi ↦ hi.encard_le_erk.trans h_rk
 
@@ -180,7 +180,7 @@ lemma circuitOn_circuit_iff (hC : C.Nonempty) {C' : Set α} : (circuitOn C).Circ
 
 lemma ground_circuit_iff [M.Nonempty] : M.Circuit M.E ↔ M = circuitOn M.E := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · refine eq_of_circuit_iff_circuit_forall rfl <| fun C hC ↦ ?_
+  · refine ext_circuit rfl <| fun C hC ↦ ?_
     rw [circuitOn_circuit_iff h.nonempty]
     exact ⟨fun h' ↦ h'.eq_of_subset_circuit h hC, by rintro rfl; assumption⟩
   rw [h]
@@ -189,7 +189,7 @@ lemma ground_circuit_iff [M.Nonempty] : M.Circuit M.E ↔ M = circuitOn M.E := b
 lemma circuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by aesop_mat) :
     M.Circuit C ↔ M ↾ C = circuitOn C := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · refine eq_of_circuit_iff_circuit_forall rfl fun C' hC' ↦ ?_
+  · refine ext_circuit rfl fun C' hC' ↦ ?_
     rw [restrict_circuit_iff h.subset_ground, circuitOn_circuit_iff h.nonempty,
       and_iff_left (show C' ⊆ C from hC')]
     exact ⟨fun h' ↦ h'.eq_of_subset_circuit h hC', fun h' ↦ by rwa [h']⟩

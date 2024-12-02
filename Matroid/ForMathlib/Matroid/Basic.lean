@@ -35,3 +35,25 @@ lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (
 
 lemma basis_restrict_univ_iff {I X : Set α} : (M ↾ univ).Basis I X ↔ M.Basis' I X := by
   rw [basis_restrict_iff', basis'_iff_basis_inter_ground, and_iff_left (subset_univ _)]
+
+theorem ext_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+    (h : ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I)) : M₁ = M₂ := eq_of_indep_iff_indep_forall hE h
+
+theorem ext_base {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+    (h : ∀ ⦃B⦄, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B)) : M₁ = M₂ := eq_of_base_iff_base_forall hE h
+
+lemma ext_iff_base {M₁ M₂ : Matroid α} :
+    M₁ = M₂ ↔ M₁.E = M₂.E ∧ ∀ ⦃B⦄, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B) :=
+  ⟨fun h ↦ by simp [h], fun ⟨hE, h⟩ ↦ ext_base hE h⟩
+
+lemma ext_iff_indep {M₁ M₂ : Matroid α} :
+    M₁ = M₂ ↔ M₁.E = M₂.E ∧ ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I) :=
+  ⟨fun h ↦ by simp [h], fun ⟨hE, h⟩ ↦ ext_indep hE h⟩
+
+lemma ext_base_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (h₁ : ∀ ⦃B⦄, M₁.Base B → M₂.Indep B)
+    (h₂ : ∀ ⦃B⦄, M₂.Base B → M₁.Indep B) : M₁ = M₂ := by
+  refine ext_indep hE fun I hIE ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
+  · obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+    exact (h₁ hB).subset hIB
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+  exact (h₂ hB).subset hIB

@@ -57,7 +57,7 @@ lemma WeakLE.refl (M : Matroid α) : M ≤w M where
   ground_eq := rfl
 
 lemma WeakLE.antisymm (h : N ≤w M) (h' : M ≤w N) : N = M :=
-  eq_of_indep_iff_indep_forall h.ground_eq fun _ _ ↦ ⟨h.indep_of_indep, h'.indep_of_indep⟩
+  ext_indep h.ground_eq fun _ _ ↦ ⟨h.indep_of_indep, h'.indep_of_indep⟩
 
 lemma WeakLE.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤w M₂) (h' : M₂ ≤w M₃) : M₁ ≤w M₃ where
   forall_indep_of_indep _ := h'.indep_of_indep ∘ h.indep_of_indep
@@ -242,6 +242,7 @@ lemma Quotient.spanning_of_spanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M�
 
 lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB : M₁.Base B) (hB' : M₂.Indep B) :
     M₂ = M₁ := by
+  refine ext_base hQ.ground_eq fun B
   sorry
 
 theorem TFAE_Quotient (hE : M₁.E = M₂.E) :

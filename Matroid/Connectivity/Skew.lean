@@ -416,7 +416,7 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ (M ／ X) ↾ Y = M ↾ Y := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · refine eq_of_indep_iff_indep_forall rfl fun J (hJ : J ⊆ Y) ↦ ?_
+  · refine ext_indep rfl fun J (hJ : J ⊆ Y) ↦ ?_
     simp_rw [restrict_indep_iff, hI.contract_indep_iff, and_iff_left hJ]
     refine ⟨fun h ↦ h.1.subset subset_union_left,
       fun hJi ↦ ⟨?_, h.disjoint_of_indep_subset_right hJi hJ⟩⟩

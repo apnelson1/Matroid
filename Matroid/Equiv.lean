@@ -206,7 +206,7 @@ lemma Iso.exists_eq_map (e : M ≂ N) [Nonempty (α → β)] : ∃ (f : α → �
   have hf_im : ∀ X : Set M.E, f '' X = e '' X := fun X ↦ by
     rw [hf_im' _ (by simp), preimage_image_eq _ Subtype.val_injective]
   refine ⟨f, fun _ hx _ hy ↦ by simp [f, hx, hy, Subtype.val_inj],
-    eq_of_indep_iff_indep_forall ?_ ?_⟩
+    ext_indep ?_ ?_⟩
   · simp [map_ground, hf_im' _ Subset.rfl]
   simp_rw [map_indep_iff, ← Subtype.forall_set_subtype]
   refine fun I ↦ ⟨fun hI ↦ ⟨↑(e.symm '' I), ?_⟩, fun ⟨I₀, hI₀, h⟩ ↦ ?_⟩

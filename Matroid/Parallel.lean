@@ -377,7 +377,7 @@ lemma Parallel'.eq_mapEquiv_swap (h : M.Parallel' e f) [DecidableEq α] :
     M.mapEquiv (Equiv.swap e f) = M := by
   have hrw := Equiv.swap_image_eq_self
       (show e ∈ M.E ↔ f ∈ M.E by simp [h.mem_ground_left, h.mem_ground_right])
-  simp only [eq_iff_indep_iff_indep_forall, mapEquiv_ground_eq, hrw, mapEquiv_indep_iff,
+  simp only [ext_iff_indep, mapEquiv_ground_eq, hrw, mapEquiv_indep_iff,
     Equiv.symm_swap, true_and]
   rintro I -
   by_cases heI : e ∈ I

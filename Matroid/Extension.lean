@@ -667,7 +667,7 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X
 
 lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
     (M ＼ e).extendBy e (ModularCut.ofDeleteElem M e) = M := by
-  refine Eq.symm <| eq_of_indep_iff_indep_forall (by simp [he]) fun I hI ↦ ?_
+  refine Eq.symm <| ext_indep (by simp [he]) fun I hI ↦ ?_
   obtain (heI | heI) := em' (e ∈ I); simp [extIndep_iff_of_not_mem heI, heI]
   obtain ⟨I, rfl, heI'⟩ : ∃ J, I = insert e J ∧ e ∉ J := ⟨I \ {e}, by simp [heI], by simp⟩
   suffices
@@ -687,7 +687,7 @@ lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
 
 lemma ModularCut.extendBy_deleteElem (U : M.ModularCut) (he : e ∉ M.E) :
     (M.extendBy e U) ＼ e = M := by
-  refine eq_of_indep_iff_indep_forall (by simpa) fun I hI ↦ ?_
+  refine ext_indep (by simpa) fun I hI ↦ ?_
   obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
   simp [deleteElem, extIndep_iff_of_not_mem heI, heI]
 
@@ -758,7 +758,7 @@ lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
   simp [hU]
 
 lemma projectBy_top : M.projectBy ⊤ = M := by
-  simp [eq_iff_indep_iff_indep_forall]
+  simp [ext_iff_indep]
 
 end projection
 

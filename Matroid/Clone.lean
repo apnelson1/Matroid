@@ -22,7 +22,7 @@ lemma clonal_iff_eq_mapEquiv_swap [DecidableEq α] : M.Clonal x y ↔ M = M.mapE
     fun h ↦ ⟨_, h, by simp, by simp, fun z h h' ↦ swap_apply_of_ne_of_ne h h'⟩⟩
 
 lemma Clonal.refl : M.Clonal x x :=
-  ⟨Equiv.refl α, by simp [eq_iff_indep_iff_indep_forall]⟩
+  ⟨Equiv.refl α, by simp [ext_iff_indep]⟩
 
 lemma Clonal.symm (h : M.Clonal x y) : M.Clonal y x := by
   obtain ⟨f, hfM, hfx, hfy, hf⟩ := h; exact ⟨f, hfM, hfy, hfx, by tauto⟩
@@ -34,7 +34,7 @@ lemma Clonal.symm (h : M.Clonal x y) : M.Clonal y x := by
 --   obtain ⟨f, hfM, hfx, hfy, hf⟩ := hxy
 --   obtain ⟨g, hgM, hgy, hgz, hg⟩ := hyz
 --   refine ⟨(f.trans g).trans f, ?_⟩
---   simp [eq_iff_indep_iff_indep_forall, hfM.symm, show f z = z from hf hxzne.symm hyzne.symm, hfx,
+--   simp [ext_iff_indep, hfM.symm, show f z = z from hf hxzne.symm hyzne.symm, hfx,
 --     hgy, hgz, hfy]
 --   simp only [mapEquiv_trans, hfM.symm, hgM.symm, trans_apply, hfx, hgy,
 --     show f z = z from hf hxzne.symm hyzne.symm, hgz, hfy, ne_eq, true_and]

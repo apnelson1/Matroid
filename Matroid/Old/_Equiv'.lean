@@ -438,7 +438,7 @@ noncomputable def iso_comapOn [_root_.Nonempty α] (M : Matroid β) {f : α → 
     exact fun I hIE _ ↦ ⟨hf.injOn.mono hIE, hIE⟩ )
 
 theorem Iso.eq_comap {M : Matroid α} {N : Matroid β} (e : Iso M N) : M = N.comapOn M.E e := by
-  simp only [eq_iff_indep_iff_indep_forall, comapOn_ground_eq, comapOn_indep_iff, true_and]
+  simp only [ext_iff_indep, comapOn_ground_eq, comapOn_indep_iff, true_and]
   intro I hIE
   rw [and_iff_left hIE, ← e.on_indep_iff, iff_self_and]
   exact fun _ ↦ e.toPartialEquiv.bijOn.injOn.mono (by simpa)

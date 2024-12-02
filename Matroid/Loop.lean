@@ -490,7 +490,7 @@ lemma removeLoops_restriction (M : Matroid α) : M.removeLoops ≤r M :=
   restrict_restriction _ _ (fun _ h ↦ Nonloop.mem_ground h)
 
 lemma eq_restrict_removeLoops (M : Matroid α) : M = M.removeLoops ↾ M.E := by
-  rw [removeLoops, eq_iff_indep_iff_indep_forall]
+  rw [removeLoops, ext_iff_indep]
   simp only [restrict_ground_eq, restrict_indep_iff, true_and]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨⟨hI,fun e heI ↦ hI.nonloop_of_mem heI⟩, hIE⟩, fun hI ↦ hI.1.1⟩
 
@@ -746,11 +746,11 @@ lemma indep_of_subset_coloops (h : I ⊆ M✶.closure ∅) : M.Indep I :=
 
 /-- If two matroids agree on loops and coloops, and have the same independent sets after
   loops/coloops are removed, they are equal. -/
-lemma eq_of_indep_iff_indep_forall_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+lemma ext_indep_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     (hl : M₁.closure ∅ = M₂.closure ∅) (hc : M₁✶.closure ∅ = M₂✶.closure ∅)
     (h : ∀ I, I ⊆ M₁.E → Disjoint I (M₁.closure ∅ ∪ M₁✶.closure ∅) → (M₁.Indep I ↔ M₂.Indep I)) :
     M₁ = M₂ := by
-  refine eq_of_indep_iff_indep_forall hE fun I hI ↦ ?_
+  refine ext_indep hE fun I hI ↦ ?_
   rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ← hc]
   obtain hdj | hndj := em (Disjoint I (M₁.closure ∅))
   · rw [h _ (diff_subset.trans hI)]
@@ -767,7 +767,7 @@ section Constructions
 
 lemma eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.closure ∅ ∪ M✶.closure ∅) :
     M = uniqueBaseOn (M✶.closure ∅) M.E := by
-  refine eq_of_base_iff_base_forall rfl (fun B hBE ↦ ?_)
+  refine ext_base rfl (fun B hBE ↦ ?_)
   rw [uniqueBaseOn_base_iff (show M✶.closure ∅ ⊆ M.E from M✶.closure_subset_ground _)]
   rw [hE, ← diff_subset_iff] at hBE
   use fun h ↦ h.coloops_subset.antisymm' (by rwa [sdiff_eq_left.mpr h.indep.disjoint_loops] at hBE)

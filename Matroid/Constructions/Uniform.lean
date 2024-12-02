@@ -32,7 +32,7 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).tru
   simp [unifOn]
 
 theorem unifOn_eq_unifOn_min (E : Set α) (k : ℕ∞) : unifOn E k = unifOn E (min k E.encard) := by
-  simp only [ge_iff_le, eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff,
+  simp only [ge_iff_le, ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff,
     le_min_iff, and_congr_left_iff, iff_self_and, true_and]
   exact fun I hI _ _ ↦ encard_mono hI
 
@@ -70,7 +70,7 @@ theorem unifOn_dual_eq {k : ℕ∞} (hE : E.Finite) : (unifOn E k)✶ = unifOn E
   lift k to ℕ using hk
   obtain (hle | hlt) := le_or_lt E.encard k
   · rw [unifOn_eq_of_le hle, freeOn_dual_eq, tsub_eq_zero_of_le hle, unifOn_zero]
-  refine eq_of_base_iff_base_forall (by simp) (fun B hBE ↦ ?_)
+  refine ext_base (by simp) (fun B hBE ↦ ?_)
   simp only [dual_ground, unifOn_ground_eq] at hBE
   rw [dual_base_iff', unifOn_base_iff' ((tsub_le_self.trans_lt hE.encard_lt_top).ne) (by simp) hBE,
     unifOn_ground_eq, and_iff_left hBE, unifOn_base_iff hlt.le diff_subset,
@@ -104,7 +104,7 @@ theorem unifOn_spanning_iff {k : ℕ} (hk : k ≤ E.encard) (hX : X ⊆ E) :
 
 theorem eq_unifOn_iff : M = unifOn E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.encard ≤ k ∧ I ⊆ E :=
   ⟨by rintro rfl; simp,
-    fun ⟨hE, h⟩ ↦ eq_of_indep_iff_indep_forall (by simpa) fun I _↦ by simpa using h I⟩
+    fun ⟨hE, h⟩ ↦ ext_indep (by simpa) fun I _↦ by simpa using h I⟩
 
 @[simp] theorem unifOn_delete_eq (E D : Set α) (k : ℕ∞) :
     (unifOn E k) ＼ D = unifOn (E \ D) k := by
@@ -138,7 +138,7 @@ theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠
       and_iff_right (encard_pair_le _ _)]
     exact fun e f ↦ pair_subset
   rintro ⟨rfl, hr, hM⟩
-  simp only [eq_iff_indep_iff_indep_forall, unifOn_ground_eq, unifOn_indep_iff, true_and]
+  simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, true_and]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hr, hIE⟩,
     fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩
 
@@ -179,23 +179,22 @@ theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
 
 theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ B.encard = a := by
   rw [unif, unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
-  rwa [freeOn_erk_eq, encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
-    PartENat.withTopEquiv_natCast, Nat.cast_le]
+  rwa [freeOn_erk_eq, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
 
 @[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
   rw [unif_base_iff (Nat.le_add_right _ _)]
 
 theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   subst h
-  refine eq_of_base_iff_base_forall rfl (fun B _ ↦ ?_)
+  refine ext_base rfl (fun B _ ↦ ?_)
   rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _),
     unif_base_iff (Nat.le_add_left _ _),
     ← WithTop.add_right_cancel_iff (encard_ne_top_iff.2 B.toFinite),
     encard_diff_add_encard_of_subset (subset_univ _), Iff.comm,
     ← WithTop.add_left_cancel_iff (WithTop.coe_ne_top (a := a)), eq_comm]
   convert Iff.rfl
-  rw [encard_univ, PartENat.card_eq_coe_fintype_card, Fintype.card_fin,
-    PartENat.withTopEquiv_natCast, ENat.some_eq_coe, eq_comm, Nat.cast_add]
+  rw [encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, ENat.some_eq_coe, eq_comm,
+    Nat.cast_add]
 
 @[simp] theorem unif_add_left_dual (a b : ℕ) : (unif a (a + b))✶ = unif b (a+b) :=
   unif_dual' rfl
@@ -264,7 +263,7 @@ noncomputable def unif_isoRestr_unif (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i
   let R : Set (Fin b') := range (Fin.castLE hbb')
   have hM : Nonempty (((unif a b') ↾ R) ≂ unif a b) := by
     refine nonempty_iso_unif_iff.2 ⟨R, ?_⟩
-    suffices R.encard = b by simpa [eq_iff_indep_iff_indep_forall]
+    suffices R.encard = b by simpa [ext_iff_indep]
     rw [show R = range (Fin.castLE hbb') from rfl, ← image_univ, Function.Injective.encard_image,
       encard_univ_fin]
     exact (Fin.castLEEmb hbb').injective

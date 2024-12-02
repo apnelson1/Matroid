@@ -399,7 +399,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
 
 -- @[simp] lemma ofFun_indicator_eq (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
 --     Matroid.ofFun 𝔽 (indicator E f) E = Matroid.ofFun 𝔽 f E := by
---   simp only [eq_iff_indep_iff_indep_forall, ofFun_E, ofFun_Indep, and_congr_left_iff, true_and]
+--   simp only [ext_iff_indep, ofFun_E, ofFun_Indep, and_congr_left_iff, true_and]
 --   intro I hIE _
 --   convert Iff.rfl using 2
 --   ext ⟨x,hx⟩

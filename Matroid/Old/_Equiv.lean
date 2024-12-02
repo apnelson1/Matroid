@@ -470,7 +470,7 @@ theorem isIso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
     exact e.isEmpty
   refine (iso_of_forall_indep (PartialEquiv.ofSetEquiv e) (by simp) (by simp) ?_ (by simp)).isIso
   intro I hI
-  simp only [eq_iff_indep_iff_indep_forall, loopyOn_ground, loopyOn_indep_iff, true_and] at hM
+  simp only [ext_iff_indep, loopyOn_ground, loopyOn_indep_iff, true_and] at hM
   simpa using (hM I hI.subset_ground).1 hI
 
 
@@ -488,7 +488,7 @@ end IsIso
 --       simp only [emptyOn_ground, loopyOn_empty, hN, true_and]
 --       exact Fintype.card_eq.mp rfl
 --     refine ⟨?_, ⟨by simpa using i.toPartialEquiv.bijOn.equiv⟩⟩
---     apply eq_of_indep_iff_indep_forall (by simp) fun I hIE ↦ ?_
+--     apply ext_indep (by simp) fun I hIE ↦ ?_
 --     rw [i.on_indep_iff, loopyOn_indep_iff, loopyOn_indep_iff, image_eq_empty]
 --     sorry
 

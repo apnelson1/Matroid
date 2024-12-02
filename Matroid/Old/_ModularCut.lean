@@ -685,11 +685,11 @@ def ModularCut.extension (C : M.ModularCut) (e : α) := (C.extensionIndepMatroid
 /-- If `e ∈ M.E`, then the extension is just the matroid itself -/
 theorem ModularCut.extension_eq_self {e : α} (C : M.ModularCut) (he : e ∈ M.E) :
     C.extension e = M :=
-  eq_of_indep_iff_indep_forall (by simpa) (fun _ _ ↦ by simp [he])
+  ext_indep (by simpa) (fun _ _ ↦ by simp [he])
 
 theorem ModularCut.extension_delete (C : M.ModularCut) {e : α} (he : e ∉ M.E) :
     (C.extension e) ＼ e = M :=
-  eq_of_indep_iff_indep_forall (by simpa)
+  ext_indep (by simpa)
     (fun I hI ↦ by simp [show e ∉ I from fun heI ↦ by simpa using hI heI])
 
 theorem ModularCut.extension_closure_eq_of_mem {e : α} {X : Set α} (C : M.ModularCut) (he : e ∉ M.E) (hX : M.closure X ∈ C) :
@@ -898,7 +898,7 @@ def ModularCut.extensionEquiv (M : Matroid α) (e : α) (he : e ∉ M.E) :
   right_inv := by
     rintro ⟨N, hN, rfl⟩
     simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
-    apply eq_of_indep_iff_indep_forall (by simpa) (fun I hI ↦ ?_)
+    apply ext_indep (by simpa) (fun I hI ↦ ?_)
     by_cases heI : e ∈ I
     · simp only [deleteElem, mem_setOf_eq, extension_indep, delete_indep_iff,
         disjoint_singleton_right, heI, not_true_eq_false, and_false, delete_ground, mem_diff,

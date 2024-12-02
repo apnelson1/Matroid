@@ -23,7 +23,7 @@ lemma Rep.colBasis_eq_base (v : M.Rep 𝔽 (η → 𝔽)) : v.toMatrix.ColBasis 
 lemma eq_dual_of_rowSpace_eq_nullSpace_on_univ [Fintype α] {M N : Matroid α}
     (hM : M.E = univ) (hN : N.E = univ) (vM : M.Rep 𝔽 (ι → 𝔽)) (vN : N.Rep 𝔽 (η → 𝔽))
     (h : vM.toMatrix.rowSpace = vN.toMatrix.nullSpace) : N = M✶ := by
-  apply eq_of_base_iff_base_forall (by rw [hN, dual_ground, hM]) (fun B _ ↦ ?_)
+  apply ext_base (by rw [hN, dual_ground, hM]) (fun B _ ↦ ?_)
   rw [← vN.colBasis_eq_base, dual_base_iff, ← vM.colBasis_eq_base, hM, ← compl_eq_univ_diff,
     colBasis_iff_colBasis_compl_of_orth h, compl_compl]
 

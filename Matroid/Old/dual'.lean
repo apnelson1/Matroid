@@ -246,7 +246,7 @@ theorem setOf_dual_base_eq : setOf M✶.Base = (fun X ↦ M.E \ X) '' setOf M.Ba
   rwa [← h, diff_diff_cancel_left hB'.subset_ground]
 
 @[simp] theorem dual_dual (M : Matroid α) : M✶✶ = M :=
-  eq_of_base_iff_base_forall rfl (fun B (h : B ⊆ M.E) ↦
+  ext_base rfl (fun B (h : B ⊆ M.E) ↦
     by rw [dual_base_iff, dual_base_iff, dual_ground, diff_diff_cancel_left h])
 
 theorem Base.compl_base_of_dual (h : M✶.Base B) : M.Base (M.E \ B) :=

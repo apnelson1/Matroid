@@ -735,7 +735,7 @@ lemma modular_of_modular_restrict (M : Matroid α) (X : Set (Set α)) (hX : sUni
 def Modular_cut_equiv (M : Matroid α) (e_nE : e ∉ M.E) :
     {C | M.Modular_cut C} ≃ {N | (N ＼ e) = M} where
   toFun := fun C ↦ ⟨M.matroid_of_cut C.2 e_nE, by
-    apply eq_iff_indep_iff_indep_forall.2
+    apply ext_iff_indep.2
     refine' ⟨by simp [e_nE], _⟩
     simp [e_nE]
     intro I I_sub

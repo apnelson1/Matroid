@@ -42,7 +42,7 @@ def AdjIndep' (M : Matroid α) (Adj : α → β → Prop) (I : Set β) :=
 
 lemma adjMap_isEmpty [DecidableEq β] [Fintype β] [IsEmpty α] (M : Matroid α) (Adj : α → β → Prop) :
  (M.adjMap Adj univ) = loopyOn univ := by
-  refine eq_of_indep_iff_indep_forall rfl ?_
+  refine ext_indep rfl ?_
   simp only [adjMap_ground_eq, subset_univ, adjMap_indep_iff', AdjIndep', loopyOn_indep_iff,
     true_implies]
   refine fun I ↦ Iff.intro (fun hI ↦ ?_)
@@ -67,13 +67,13 @@ protected def union [DecidableEq α] (M : Matroid α) (N : Matroid α) : Matroid
     Matroid.Union Ms = loopyOn univ := by
   obtain hα | hα := isEmpty_or_nonempty α
   · simp only [Matroid.Union, adjMap, IndepMatroid.ofFinset, AdjIndep, sum'_indep_iff,
-    IsEmpty.forall_iff, true_and, eq_iff_indep_iff_indep_forall, restrict_ground_eq, loopyOn_ground,
+    IsEmpty.forall_iff, true_and, ext_iff_indep, restrict_ground_eq, loopyOn_ground,
     subset_univ, restrict_indep_iff, IndepMatroid.matroid_Indep, IndepMatroid.ofFinitary_indep,
     and_true, loopyOn_indep_iff, true_implies]
     refine fun I ↦ Iff.intro (fun _ ↦ ?_) (fun hI ↦ by simp only [hI, subset_empty_iff,
       Finset.coe_eq_empty, forall_eq, Finset.coe_empty, true_or])
     exact subset_empty_iff.mp <| (Set.univ_eq_empty_iff.mpr hα) ▸ subset_univ _
-  · simp [eq_iff_indep_iff_indep_forall, Matroid.Union, adjMap, IndepMatroid.ofFinset, AdjIndep]
+  · simp [ext_iff_indep, Matroid.Union, adjMap, IndepMatroid.ofFinset, AdjIndep]
     refine fun I ↦ Iff.intro (fun hI ↦ ?_) (fun hI ↦ by simp only [hI, subset_empty_iff,
       Finset.coe_eq_empty, forall_eq, Finset.coe_empty, true_or])
     contrapose! hI
@@ -260,7 +260,7 @@ theorem polymatroid_of_adjMap [DecidableEq β] [Fintype α] [Fintype β] (M : Ma
   ∀ Y,  f Y = M.r {v | ∃ u ∈ Y, Adj v u} := by
 classical
 obtain hα | hα := isEmpty_or_nonempty α
-· refine ⟨fun _ : Finset β ↦ (0 : ℤ), PolymatroidFn_of_zero, eq_of_indep_iff_indep_forall rfl
+· refine ⟨fun _ : Finset β ↦ (0 : ℤ), PolymatroidFn_of_zero, ext_indep rfl
     (fun J _ ↦ ?_), ?_⟩
   · have heq : ∀ I : Finset β, (ofPolymatroidFn PolymatroidFn_of_zero).Indep I.toSet ↔
       (M.adjMap Adj univ).Indep I := by
@@ -388,7 +388,7 @@ obtain hα | hα := isEmpty_or_nonempty α
       simp only [hv, ↓reduceDIte, e', hin]
 
   have h_eq' : (ofPolymatroidFn hf_poly) = M.adjMap Adj univ := by
-    refine eq_of_indep_iff_indep_forall rfl (fun J _ ↦ ?_)
+    refine ext_indep rfl (fun J _ ↦ ?_)
     simpa using heq J.toFinset
 
   have :  ∀ Y,  f Y = M.r {v | ∃ u ∈ Y, Adj v u} := by

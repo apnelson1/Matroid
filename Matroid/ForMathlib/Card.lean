@@ -41,7 +41,7 @@ theorem Set.encard_le_cast_iff {n : ℕ} :
   simpa
 
 theorem Equiv.encard_univ_eq (e : α ≃ β) : encard (univ : Set α) = encard (univ : Set β) := by
-  rw [encard_univ, encard_univ, PartENat.card_congr e]
+  rw [encard_univ, encard_univ, ENat.card_congr e]
 
 theorem Equiv.encard_eq {s : Set α} {t : Set β} (e : s ≃ t) : s.encard = t.encard :=
   e.toEmbedding.encard_le.antisymm e.symm.toEmbedding.encard_le
@@ -65,8 +65,8 @@ theorem Fin.nonempty_equiv_iff_encard_eq : Nonempty (s ≃ Fin n) ↔ s.encard =
   have _ := Finite.fintype (finite_of_encard_eq_coe h).to_subtype
   exact ⟨Fintype.equivFinOfCardEq <| by simpa [encard_eq_coe_toFinset_card, Nat.cast_inj] using h⟩
 
-@[simp] theorem PartENat.card_option (α : Type*) :
-    PartENat.card (Option α) = PartENat.card α + 1 := by
+@[simp] theorem ENat.card_option (α : Type*) :
+    ENat.card (Option α) = ENat.card α + 1 := by
   obtain (hα | hα) := finite_or_infinite α
   · have _ := Fintype.ofFinite α; simp
   simp

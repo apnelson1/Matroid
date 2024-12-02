@@ -421,7 +421,7 @@ def Matroid.is_Transversal [DecidableEq α] (M : Matroid α) : Prop :=
 theorem unif_is_transversal [DecidableEq α] (E : Finset α) (k : ℕ) :
     Matroid.is_Transversal (unif_on E.toSet k) := by
   refine' ⟨k, (fun (_ : Fin k) ↦ E), _⟩
-  rw [eq_iff_indep_iff_indep_forall, transversal_ground_eq, unif_on_ground_eq]
+  rw [ext_iff_indep, transversal_ground_eq, unif_on_ground_eq]
   refine' ⟨by rfl, fun I hIE ↦ _⟩
   obtain ⟨I', hI'⟩ := Set.Finite.exists_finset_coe (Set.Finite.subset (Finset.finite_toSet E) hIE)
   refine' ⟨fun hU ↦ _, fun hT ↦ _⟩

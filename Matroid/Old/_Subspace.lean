@@ -67,7 +67,7 @@ theorem SubspaceRep.representable (U : M.SubspaceRep 𝔽) [FiniteDimensional �
     M.Representable 𝔽 := by
   obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis 𝔽 U
   have hM : M = matroidOfFun 𝔽 (fun a i ↦ (b i).1 a : α → (s → 𝔽)) M.E
-  · rw [eq_iff_indep_iff_indep_forall]
+  · rw [ext_iff_indep]
     refine ⟨rfl, fun I hIE ↦ ?_⟩
     rw [matroidOfFun_indep_iff', and_iff_left hIE, U.indep_iff]
     simp_rw [← b.eq_ofFun, ← ofFun_comp_coe, ofFun_eq_top_iff]

@@ -346,7 +346,7 @@ lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I)) (hdj : 
   exact hu
 
 lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M✶.closure ∅) : M ／ X = M ＼ X := by
-  refine eq_of_indep_iff_indep_forall rfl fun I _ ↦ ?_
+  refine ext_indep rfl fun I _ ↦ ?_
   rw [(indep_of_subset_coloops hX).contract_indep_iff, delete_indep_iff, and_comm,
     union_indep_iff_indep_of_subset_coloops hX]
 
@@ -591,7 +591,7 @@ lemma contract_delete_diff (M : Matroid α) (C D : Set α) : M ／ C ＼ D = M �
 
 lemma contract_restrict_eq_restrict_contract (M : Matroid α) (C R : Set α) (h : Disjoint C R) :
     (M ／ C) ↾ R = (M ↾ (R ∪ C)) ／ C := by
-  refine eq_of_indep_iff_indep_forall (by simp [h.sdiff_eq_right]) (fun I _ ↦ ?_)
+  refine ext_indep (by simp [h.sdiff_eq_right]) (fun I _ ↦ ?_)
   obtain ⟨J, hJ⟩ := (M ↾ (R ∪ C)).exists_basis' C
   have hJ' : M.Basis' J C := by
     have := (basis'_restrict_iff.1 hJ).1
@@ -610,7 +610,7 @@ lemma restrict_contract_eq_contract_restrict (M : Matroid α) {C R : Set α} (hC
 /- TODO : Simplify this proof using the lemma above-/
 lemma contract_delete_comm (M : Matroid α) {C D : Set α} (hCD : Disjoint C D) :
     M ／ C ＼ D = M ＼ D ／ C := by
-  refine eq_of_indep_iff_indep_forall (by simp [diff_diff_comm]) (fun I hI ↦ ?_)
+  refine ext_indep (by simp [diff_diff_comm]) (fun I hI ↦ ?_)
   rw [delete_ground, contract_ground, subset_diff, subset_diff] at hI
   simp only [delete_ground, contract_ground, delete_indep_iff, and_iff_left hI.2]
   obtain ⟨J, hJ⟩ := (M ＼ D).exists_basis' C;  have hJ' := hJ
@@ -729,15 +729,19 @@ lemma Minor.finitary (h : N ≤m M) [Finitary M] : Finitary N := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
   infer_instance
 
+lemma Minor.le (h : N ≤m M) : N ≤ M := h
+
+lemma StrictMinor.lt (h : N <m M) : N < M := h
+
 @[simp] protected lemma le_iff (M M' : Matroid α) : M ≤ M' ↔ M ≤m M' := Iff.rfl
 
 @[simp] protected lemma lt_iff (M M' : Matroid α) : M < M' ↔ M <m M' := Iff.rfl
 
 lemma StrictMinor.minor (h : N <m M) : N ≤m M :=
-  le_of_lt h
+  h.lt.le
 
 lemma StrictMinor.not_minor (h : N <m M) : ¬ (M ≤m N) :=
-  not_le_of_lt h
+  h.lt.not_le
 
 lemma strictMinor_iff_minor_ne : N <m M ↔ N ≤m M ∧ N ≠ M :=
   lt_iff_le_and_ne (α := Matroid α)
@@ -755,13 +759,13 @@ lemma strictMinor_iff_minor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E :=
   ⟨fun h ↦ ⟨h.minor, h.ssubset⟩, fun ⟨h, hss⟩ ↦ ⟨h, fun h' ↦ hss.ne <| by rw [h'.antisymm h]⟩⟩
 
 lemma StrictMinor.trans_minor (h : N <m M) (h' : M ≤m M') : N <m M' :=
-  lt_of_lt_of_le h h'
+  h.lt.trans_le h'
 
 lemma Minor.trans_strictMinor (h : N ≤m M) (h' : M <m M') : N <m M' :=
-  lt_of_le_of_lt h h'
+  h.le.trans_lt h'
 
 lemma StrictMinor.trans (h : N <m M) (h' : M <m M') : N <m M' :=
-  lt_trans h h'
+  h.lt.trans h'
 
 lemma strictMinor_iff_exists_eq_contract_delete :
     N <m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ (C ∪ D).Nonempty ∧ N = M ／ C ＼ D := by
@@ -1004,7 +1008,7 @@ lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
   rw [← loopyOn_dual_eq, ← delete_dual_eq_dual_contract, loopyOn_delete, loopyOn_dual_eq]
 
 lemma restrict_indep_eq_freeOn (hI : M.Indep I) : M ↾ I = freeOn I := by
-  refine eq_of_indep_iff_indep_forall rfl (fun J _ ↦ ?_)
+  refine ext_indep rfl (fun J _ ↦ ?_)
   simp only [restrict_ground_eq, restrict_indep_iff, freeOn_indep_iff, and_iff_right_iff_imp]
   exact hI.subset
 
@@ -1014,7 +1018,7 @@ lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'
 
 lemma restrict_subset_loops_eq (hX : X ⊆ M.closure ∅) : M ↾ X = loopyOn X := by
-  refine eq_of_indep_iff_indep_forall rfl (fun I hI ↦ ?_)
+  refine ext_indep rfl (fun I hI ↦ ?_)
   simp only [restrict_indep_iff, loopyOn_indep_iff]
   use fun h ↦ h.1.eq_empty_of_subset_loops (h.2.trans hX)
   rintro rfl

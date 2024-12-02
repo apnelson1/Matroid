@@ -38,7 +38,7 @@ lemma eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.Loop e ∧ M' �
     · rintro rfl; simp at he'
     rintro ⟨h, rfl⟩; exact he' h.mem_ground
 
-  simp_rw [deleteElem, eq_iff_indep_iff_indep_forall, addLoop_ground, addLoop_indep_iff,
+  simp_rw [deleteElem, ext_iff_indep, addLoop_ground, addLoop_indep_iff,
     delete_ground, delete_indep_iff, disjoint_singleton_right, ← singleton_dep, dep_iff,
     singleton_subset_iff, and_iff_left he', subset_diff, disjoint_singleton_right, and_imp]
 
@@ -108,7 +108,7 @@ def parallelExtend (M : Matroid α) (e f : α) : Matroid α :=
 lemma parallelExtend_not_nonloop (he : ¬M.Nonloop e) (f : α) :
     M.parallelExtend e f = (M ＼ f).addLoop f := by
   classical
-  simp only [parallelExtend, deleteElem, eq_iff_indep_iff_indep_forall, restrict_ground_eq,
+  simp only [parallelExtend, deleteElem, ext_iff_indep, restrict_ground_eq,
     addLoop_ground, delete_ground, mem_diff, mem_singleton_iff, not_true_eq_false, and_false,
     insert_diff_singleton, restrict_indep_iff, comap_indep_iff, ne_eq, image_update, id_eq,
     image_id', update_id_injOn_iff, addLoop_indep_iff, delete_indep_iff, disjoint_singleton_right,
@@ -123,7 +123,7 @@ lemma parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef :
     M.parallelExtend e f = (M ＼ f).parallelExtend e f := by
   classical
   rw [parallelExtend, parallelExtend, deleteElem, delete_ground, insert_diff_singleton,
-    eq_iff_indep_iff_indep_forall]
+    ext_iff_indep]
   simp only [restrict_ground_eq, restrict_indep_iff, comap_indep_iff, ne_eq, image_update, id_eq,
     image_id', mem_diff, mem_singleton_iff, update_id_injOn_iff, delete_indep_iff,
     disjoint_singleton_right, and_congr_left_iff, iff_self_and, true_and]
@@ -136,7 +136,7 @@ lemma parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     (M.parallelExtend e f) ＼ f = M ＼ f := by
   classical
   suffices ∀ I ⊆ M.E, _ → _ → I ⊆ insert f M.E by simpa (config := {contextual := true})
-    [parallelExtend,eq_iff_indep_iff_indep_forall, subset_diff]
+    [parallelExtend,ext_iff_indep, subset_diff]
   exact fun I hI _ _ ↦ hI.trans (subset_insert _ _)
 
 lemma parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ＼ f = M := by
@@ -175,7 +175,7 @@ lemma eq_parallelExtend_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
   · rintro rfl; exact ⟨parallelExtend_parallel he f, parallelExtend_delete_eq e hf⟩
   rintro ⟨h, rfl⟩
   simp only [deleteElem, delete_nonloop_iff, mem_singleton_iff] at he
-  refine eq_of_indep_iff_indep_forall (by simp [insert_eq_of_mem h.mem_ground_right])
+  refine ext_indep (by simp [insert_eq_of_mem h.mem_ground_right])
     (fun I hI ↦ ?_)
   obtain (hfI | hfI) := em' (f ∈ I)
   · simp [hfI, parallelExtend, hI.trans (subset_insert _ _)]

@@ -3,6 +3,8 @@ import Matroid.Closure
 import Matroid.Constructions.Basic
 import Matroid.ForMathlib.Card
 
+import Matroid.ForMathlib.Matroid.Basic
+
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
 -/
@@ -423,7 +425,7 @@ lemma ext_circuit {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     exact fun C ↦ (em (C ⊆ M₁.E)).elim (h C)
       (fun hC ↦ iff_of_false (mt Circuit.subset_ground hC)
         (mt Circuit.subset_ground (fun hss ↦ hC (hss.trans_eq hE.symm))))
-  refine eq_of_indep_iff_indep_forall hE fun I hI ↦ ?_
+  refine ext_indep hE fun I hI ↦ ?_
   simp_rw [indep_iff_forall_subset_not_circuit hI, h',
     indep_iff_forall_subset_not_circuit (hI.trans_eq hE)]
 
