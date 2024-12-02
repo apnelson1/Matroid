@@ -14,20 +14,76 @@ namespace Matroid
 
 variable {α : Type*} {M N M₁ M₂ : Matroid α} {X Y F : Set α}
 
+section Weak
+
+variable {I B D : Set α}
+
+@[mk_iff]
+structure WeakLE (N M : Matroid α) : Prop where
+  forall_indep_of_indep : ∀ I, N.Indep I → M.Indep I
+  ground_eq : N.E = M.E
+
+infixl:50 " ≤w " => Matroid.WeakLE
+
+@[aesop unsafe 10% (rule_sets := [Matroid])]
+lemma WeakLE.subset_ground_of_subset_ground_left (h : N ≤w M) (hX : X ⊆ N.E := by aesop_mat) :
+    X ⊆ M.E :=
+  hX.trans h.ground_eq.subset
+
+@[aesop unsafe 10% (rule_sets := [Matroid])]
+lemma WeakLE.subset_ground_of_subset_ground_right (h : N ≤w M) (hX : X ⊆ M.E := by aesop_mat) :
+    X ⊆ N.E :=
+  hX.trans h.ground_eq.symm.subset
+
+lemma WeakLE.indep_of_indep (h : N ≤w M) (hI : N.Indep I) : M.Indep I :=
+  h.forall_indep_of_indep _ hI
+
+lemma WeakLE.dep_of_dep (h : N ≤w M) (hD : M.Dep D) : N.Dep D := by
+  have hIN := h.subset_ground_of_subset_ground_right hD.subset_ground
+  contrapose! hD
+  rw [not_dep_iff] at hD ⊢
+  exact h.indep_of_indep hD
+
+lemma weakLE_iff_forall_dep_of_dep : N ≤w M ↔ N.E = M.E ∧ ∀ D, M.Dep D → N.Dep D := by
+  refine ⟨fun h ↦ ⟨h.ground_eq, fun _ ↦ h.dep_of_dep⟩, fun h ↦ ⟨fun D hD ↦ ?_, h.1⟩⟩
+  have hDN : D ⊆ N.E := hD.subset_ground
+  have hDM : D ⊆ M.E := hDN.trans_eq h.1
+  contrapose! hD
+  rw [not_indep_iff] at hD ⊢
+  exact h.2 _ hD
+
+lemma WeakLE.refl (M : Matroid α) : M ≤w M where
+  forall_indep_of_indep := by simp
+  ground_eq := rfl
+
+lemma WeakLE.antisymm (h : N ≤w M) (h' : M ≤w N) : N = M :=
+  eq_of_indep_iff_indep_forall h.ground_eq fun _ _ ↦ ⟨h.indep_of_indep, h'.indep_of_indep⟩
+
+lemma WeakLE.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤w M₂) (h' : M₂ ≤w M₃) : M₁ ≤w M₃ where
+  forall_indep_of_indep _ := h'.indep_of_indep ∘ h.indep_of_indep
+  ground_eq := h.ground_eq.trans h'.ground_eq
+
+lemma WeakLE.delete (h : N ≤w M) (D : Set α) : N ＼ D ≤w M ＼ D := by
+  suffices ∀ (I : Set α), N.Indep I → Disjoint I D → M.Indep I by
+    simpa (config := { contextual := true }) [weakLE_iff, h.ground_eq]
+  exact fun I hI _ ↦ h.indep_of_indep hI
+
+lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ X := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [hI.contract_eq_contract_delete]
+  simp only [weakLE_iff, delete_indep_iff, hI.indep.contract_indep_iff, and_imp, delete_ground,
+    contract_ground, diff_diff, union_diff_self, union_eq_self_of_subset_left hI.subset, and_true]
+  refine fun J hJI hi hJ'  ↦ ⟨hi.subset subset_union_left, ?_⟩
+  simpa only [diff_union_self, disjoint_union_right, and_iff_left hJI] using hJ'.union_right hJI
+
+end Weak
+
 @[mk_iff]
 structure Quotient (M N : Matroid α) : Prop where
   forall_flat_of_flat : ∀ F, M.Flat F → N.Flat F
   ground_eq : M.E = N.E
 
-@[mk_iff]
-structure WeakLE (M N : Matroid α) : Prop where
-  forall_dep_of_dep : ∀ D, N.Dep D → M.Dep D
-  ground_eq : M.E = N.E
-
 infixl:50 " ≤q " => Matroid.Quotient
-
-infixl:50 " ≤w " => Matroid.WeakLE
---(hE: M₁.E=M₂.E)
 
 lemma Quotient.flat_of_flat (h : M ≤q N) (hF : M.Flat F) : N.Flat F :=
   h.forall_flat_of_flat _ hF
@@ -43,7 +99,6 @@ lemma Quotient.refl (M : Matroid α) : M ≤q M where
 lemma Quotient.antisymm (h : M₁ ≤q M₂) (h' : M₂ ≤q M₁) : M₁ = M₂ :=
   ext_flat fun _ ↦ ⟨h.flat_of_flat, h'.flat_of_flat⟩
 
-
 lemma top_thingy {a b : ℕ∞} (hab : a + b ≤ a) (ht : a ≠ ⊤) : b = 0 := by
   have haa : a + b ≤ a + 0 := le_add_right hab
   rwa [WithTop.add_le_add_iff_left ht, nonpos_iff_eq_zero] at haa
@@ -53,6 +108,13 @@ lemma Quotient.closure_subset_closure (h : M ≤q N) (X : Set α) : N.closure X 
   rw [← (h.flat_of_flat (M.closure_flat _)).closure]
   apply N.closure_subset_closure
   exact M.subset_closure _
+
+lemma Quotient.weakLE (h : N ≤q M) : N ≤w M := by
+  rw [weakLE_iff, and_iff_left h.ground_eq]
+  intro I hI
+  have hIE : I ⊆ M.E := hI.subset_ground.trans h.ground_eq.subset
+  rw [indep_iff_forall_not_mem_closure_diff] at hI ⊢
+  exact fun e heI hecl ↦ hI heI <| h.closure_subset_closure (I \ {e}) hecl
 
 /-- Relative rank is monotone with respect to the quotient order for sets `X,Y` with `X ⊆ Y ⊆ E`.
 This hypothesis isn't required, but is included to facilitate the inductive proof.
@@ -172,9 +234,19 @@ lemma Quotient.of_dual (hQ : M₂✶ ≤q M₁✶) : M₁ ≤q M₂ := by
 @[simp] lemma quotient_dual_iff : M₁✶ ≤q M₂✶ ↔ M₂ ≤q M₁ :=
   ⟨Quotient.of_dual, Quotient.dual⟩
 
+lemma Quotient.spanning_of_spanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M₁.Spanning S) :
+    M₂.Spanning S := by
+  rw [spanning_iff, and_iff_left (hS.subset_ground.trans hQ.ground_eq.symm.subset),
+    subset_antisymm_iff, and_iff_right <| M₂.closure_subset_ground _, hQ.ground_eq, ← hS.closure_eq]
+  exact hQ.closure_subset_closure S
+
+lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB : M₁.Base B) (hB' : M₂.Indep B) :
+    M₂ = M₁ := by
+  sorry
 
 theorem TFAE_Quotient (hE : M₁.E = M₂.E) :
- List.TFAE [M₂ ≤q M₁,
+ List.TFAE [
+    M₂ ≤q M₁,
     ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z,
     ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X,
     ∀ C, M₁.Circuit C → M₂.Cyclic C,
