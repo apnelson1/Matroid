@@ -554,6 +554,11 @@ lemma contract_spanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Spanning X ↔ M.Spanning (X ∪ C) ∧ Disjoint X C := by
   rw [contract_spanning_iff', inter_eq_self_of_subset_left hC]
 
+lemma Spanning.contract (hX : M.Spanning X) (C : Set α) : (M ／ C).Spanning (X \ C) := by
+  rw [contract_spanning_iff', and_iff_left disjoint_sdiff_left,
+    diff_eq_diff_inter_of_subset hX.subset_ground C, diff_union_self]
+  apply hX.superset subset_union_left
+
 lemma Nonloop.of_contract (h : (M ／ C).Nonloop e) : M.Nonloop e := by
   rw [← indep_singleton] at h ⊢
   exact h.of_contract

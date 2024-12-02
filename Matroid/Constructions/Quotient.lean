@@ -240,10 +240,66 @@ lemma Quotient.spanning_of_spanning (hQ : M₂ ≤q M₁) {S : Set α} (hS : M�
     subset_antisymm_iff, and_iff_right <| M₂.closure_subset_ground _, hQ.ground_eq, ← hS.closure_eq]
   exact hQ.closure_subset_closure S
 
-lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB : M₁.Base B) (hB' : M₂.Indep B) :
-    M₂ = M₁ := by
-  refine ext_base hQ.ground_eq fun B
-  sorry
+lemma Quotient.contract (hQ : M₂ ≤q M₁) (C : Set α) : M₂ ／ C ≤q M₁ ／ C := by
+  refine quotient_of_forall_closure_subset_closure (by simp [hQ.ground_eq]) fun X _ ↦ ?_
+  simp_rw [contract_closure_eq]
+  exact diff_subset_diff_left <| hQ.closure_subset_closure (X ∪ C)
+
+lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ ＼ D := by
+  rw [← quotient_dual_iff, delete_dual_eq_dual_contract, delete_dual_eq_dual_contract]
+  exact hQ.dual.contract D
+
+lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M₁ ↾ R := by
+  apply quotient_of_forall_closure_subset_closure (by simp)
+  simp only [restrict_ground_eq, restrict_closure_eq', union_subset_iff]
+  refine fun X hXR ↦ ⟨subset_trans ?_ subset_union_left,
+    subset_trans (by simp [hQ.ground_eq]) subset_union_right⟩
+  exact inter_subset_inter_left _ <| hQ.closure_subset_closure _
+
+-- lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.Base B) (hB₂ : M₂.Indep B) :
+--     M₂ = M₁ := by
+--   replace hB₂ := show M₂.Base B from
+--     hB₂.base_of_maximal fun J hJ hBJ ↦ hB₁.eq_of_subset_indep (hQ.weakLE.indep_of_indep hJ) hBJ
+--   refine ext_circuit_not_indep hQ.ground_eq (fun C hC hCi ↦ ?_)
+--     (fun C hC ↦ ((hQ.cyclic_of_circuit hC).dep_of_nonempty hC.nonempty).not_indep)
+
+
+
+  -- refine ext_base_indep hQ.ground_eq (fun B' hB' ↦ hQ.weakLE.indep_of_indep hB'.indep)
+  --   fun B' hB' ↦ ?_
+  -- have hB'E : B' ⊆ M₂.E := hB'.subset_ground.trans_eq hQ.ground_eq.symm
+
+  -- rw [indep_iff_forall_not_mem_closure_diff]
+  -- intro e heB' hecl
+
+
+
+
+  -- obtain ⟨f, hf, hfB⟩ : ∃ f ∈ B, M₁.Base (insert f (B' \ {e})) := by
+  --   by_cases heB : e ∈ B
+  --   · exact ⟨e, heB, by simpa [insert_eq_of_mem heB']⟩
+  --   obtain ⟨f, hf, hfB'⟩ := hB'.exchange hB₁ ⟨heB', heB⟩
+  --   exact ⟨f, hf.1, hfB'⟩
+
+  -- -- have := hQ.weakLE.indep_of_indep hfB.indep
+
+  -- -- have h1 : f ∈ M₁.closure B' := sorry
+  -- have h1 : B ⊆ M₂.closure (B' \ {e}) := by
+  --   intro f hfB
+
+  --   have h1' := hQ.closure_subset_closure _ h1
+  --   rwa [show B' = insert e (B' \ {e}) by simp [insert_eq_of_mem heB'],
+  --     ← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hecl, closure_closure] at h1'
+
+
+
+  -- have := hB'.spanning.contract (B' \ {e})
+  -- have hsp : (M₁ ／ (B' \ {e})).Spanning (B \ (B' \ {e}))
+
+
+
+
+
 
 theorem TFAE_Quotient (hE : M₁.E = M₂.E) :
  List.TFAE [

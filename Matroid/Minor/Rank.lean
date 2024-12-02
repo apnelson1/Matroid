@@ -268,7 +268,21 @@ lemma relRank_insert_eq_one (he : e ∈ M.E \ M.closure X) (hX : X ⊆ M.E := by
   rw [relRank_eq_one_iff]
   exact ⟨e, by simp [he.2], M.subset_closure _ <| insert_subset he.1 hX⟩
 
+lemma relRank_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hX : Disjoint X D)
+    (hY : Disjoint Y D) : (M ＼ D).relRank X Y = M.relRank X Y := by
+  rw [relRank_eq_er_contract, ← contract_delete_comm _ hX, delete_er_eq _ hY,
+    relRank_eq_er_contract]
 
+lemma relRank_delete_eq (M : Matroid α) (X Y D : Set α) :
+    (M ＼ D).relRank X Y = M.relRank (X \ D) (Y \ D) := by
+  rw [← relRank_inter_ground_left, ← relRank_inter_ground_right,
+    ← M.relRank_inter_ground_left, ← M.relRank_inter_ground_right,
+    relRank_delete_eq_of_disjoint, delete_ground]
+  convert rfl using 2
+  · aesop
+  · aesop
+  · exact disjoint_sdiff_left.mono_left inter_subset_right
+  exact disjoint_sdiff_left.mono_left inter_subset_right
 section Contract
 
 lemma er_contract_le_er (M : Matroid α) (C X : Set α) : (M ／ C).er X ≤ M.er X :=

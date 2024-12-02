@@ -158,6 +158,11 @@ lemma Cyclic.exists_of_mem (hA : M.Cyclic A) (he : e ∈ A) : ∃ C, M.Circuit C
   obtain ⟨C, hC, heC⟩ : ∃ t ∈ Cs, e ∈ t := by simpa only [mem_sUnion] using he
   exact ⟨C, h C hC, heC, subset_sUnion_of_subset Cs C (fun ⦃a⦄ ↦ id) hC⟩
 
+lemma Cyclic.dep_of_nonempty (hA : M.Cyclic A) (hA : A.Nonempty) : M.Dep A := by
+  obtain ⟨e, he⟩ := hA
+  obtain ⟨C, hC, -, hCA⟩ := hA.exists_of_mem he
+  exact hC.dep.superset hCA
+
 lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C, M.Circuit C ∧ e ∈ C ∧ C ⊆ A := by
   refine ⟨fun h e he ↦ h.exists_of_mem he, fun h ↦ ?_⟩
   choose! Cs hCs using h
@@ -428,6 +433,20 @@ lemma ext_circuit {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
   refine ext_indep hE fun I hI ↦ ?_
   simp_rw [indep_iff_forall_subset_not_circuit hI, h',
     indep_iff_forall_subset_not_circuit (hI.trans_eq hE)]
+
+lemma ext_circuit_not_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
+    (h₁ : ∀ ⦃C⦄, M₁.Circuit C → ¬ M₂.Indep C) (h₂ : ∀ ⦃C⦄, M₂.Circuit C → ¬ M₁.Indep C) :
+    M₁ = M₂ := by
+  refine ext_circuit hE fun C _ ↦ ⟨fun hC ↦ ?_, fun hC ↦ ?_⟩
+  · have hC₂ : C ⊆ M₂.E := by rwa [← hE]
+    specialize h₁ hC
+    rw [not_indep_iff] at h₁
+    obtain ⟨C', hC'C, hC'⟩ := h₁.exists_circuit_subset
+    rwa [← hC.eq_of_not_indep_subset (h₂ hC') hC'C]
+  specialize h₂ hC
+  rw [not_indep_iff] at h₂
+  obtain ⟨C', hC'C, hC'⟩ := h₂.exists_circuit_subset
+  rwa [← hC.eq_of_not_indep_subset (h₁ hC') hC'C]
 
 lemma map_circuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).Circuit C ↔ ∃ C₀, M.Circuit C₀ ∧ C = f '' C₀ := by
