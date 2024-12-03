@@ -1,4 +1,5 @@
 import Mathlib.Data.Set.Card
+import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Ring
 import Mathlib.Algebra.BigOperators.WithTop
@@ -12,8 +13,8 @@ variable {α β : Type*} {s t : Set α} {n : ℕ}
 
 @[simp] lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
   rw [← not_iff_not, ← not_lt, not_not, Set.not_nontrivial_iff, ← encard_le_one_iff_subsingleton,
-    (by norm_num : (2 : ℕ∞) = 1 + 1)]
-  exact ⟨Order.le_of_lt_add_one, fun h ↦ h.trans_lt (by norm_num)⟩
+    show (2 : ℕ∞) = 1 + 1 from rfl, ENat.lt_add_one_iff]
+  simp
 
 theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
     s.encard + t.encard = (s ∪ t).encard ↔ Disjoint s t := by
@@ -22,7 +23,8 @@ theorem Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite) :
 
 @[simp] theorem encard_pair_le (e f : α) : encard {e,f} ≤ 2 := by
   obtain (rfl | hne) := eq_or_ne e f
-  · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]; norm_num
+  · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]
+    simp
   rw [encard_pair hne]
 
 theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) := by

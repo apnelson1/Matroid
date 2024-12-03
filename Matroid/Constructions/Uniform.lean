@@ -1,4 +1,5 @@
 import Matroid.Constructions.Truncate
+import Matroid.ForMathlib.FinDiff
 import Mathlib.Tactic.Linarith
 import Matroid.Simple
 import Matroid.Minor.Iso
@@ -9,155 +10,6 @@ variable {α : Type*} {M : Matroid α} {E I B X Y C : Set α} {k : ℕ∞} {e f 
 
 open Set Set.Notation
 
-@[mk_iff]
-structure FinDiff (X Y : Set α) : Prop where
-  diff_left_finite : (X \ Y).Finite
-  encard_eq : (X \ Y).encard = (Y \ X).encard
-
-lemma FinDiff.diff_right_finite (h : FinDiff X Y) : (Y \ X).Finite := by
-  rw [← encard_lt_top_iff, ← h.encard_eq, encard_lt_top_iff]
-  exact h.diff_left_finite
-
-lemma FinDiff.symm (h : FinDiff X Y) : FinDiff Y X where
-  diff_left_finite := h.diff_right_finite
-  encard_eq := h.encard_eq.symm
-
-lemma finDiff_comm : FinDiff X Y ↔ FinDiff Y X :=
-  ⟨FinDiff.symm, FinDiff.symm⟩
-
-lemma finDiff_refl (X : Set α) : FinDiff X X := by
-  simp [finDiff_iff]
-
-lemma FinDiff.eq_of_subset (h : FinDiff X Y) (hXY : X ⊆ Y) : X = Y := by
-  have h' := h.encard_eq
-  rw [diff_eq_empty.2 hXY, encard_empty, eq_comm, encard_eq_zero, diff_eq_empty] at h'
-  exact hXY.antisymm h'
-
-lemma FinDiff.nonempty_of_nonempty (h : FinDiff X Y) (hXY : (Y \ X).Nonempty) :
-    (X \ Y).Nonempty := by
-  rwa [← encard_pos, h.encard_eq, encard_pos]
-
-lemma finDiff_exchange {e f : α} (he : e ∈ X) (hf : f ∉ X) : FinDiff X (insert f (X \ {e})) := by
-  rw [finDiff_iff, show X \ insert f (X \ {e}) = {e} by aesop,
-    show insert f (X \ {e}) \ X = {f} by aesop]
-  simp
-
-lemma finDiff_insert_insert {e f : α} (he : e ∉ X) (hf : f ∉ X) :
-    FinDiff (insert e X) (insert f X) := by
-  rw [finDiff_iff, show insert e X \ insert f X = {e} \ {f} by aesop,
-    show insert f X \ insert e X = {f} \ {e} by aesop]
-  obtain rfl | hne := eq_or_ne e f
-  · simp
-  rw [sdiff_eq_left.2 (by simpa), sdiff_eq_left.2 (by simpa using hne.symm)]
-  simp
-
-
-lemma FinDiff.finDiff_insert_insert (hXY : FinDiff X Y) (heX : e ∉ X) (hfY : f ∉ Y) :
-    FinDiff (insert e X) (insert f Y) := by
-
-  rw [finDiff_iff]
-  have aux : ∀ {a b : α} {P Q : Set α}, a ∉ P → b ∉ Q → a ≠ b →
-    (insert a P) \ (insert b Q) = ((P \ Q) \ {b} ∪ ({a}) \ Q) := by
-    intro a b P Q ha hb hab
-    ext x
-    obtain rfl | hne := eq_or_ne x a
-    · simp [hab, ha]
-    simp (config := {contextual := true}) [hne, hab, iff_def]
-
-  obtain rfl | hne := eq_or_ne e f
-  · simpa [show X \ insert e Y = X \ Y by aesop, show Y \ insert e X = Y \ X by aesop,
-      ← finDiff_iff]
-
-  rw [aux heX hfY hne, aux hfY heX hne.symm, finite_union, encard_union_eq, encard_union_eq,
-    and_iff_right (hXY.diff_left_finite.diff _), and_iff_right ((finite_singleton e).diff _)]
-  rotate_left
-  · exact Disjoint.mono (diff_subset.trans diff_subset) diff_subset (by simpa)
-  · exact Disjoint.mono (diff_subset.trans diff_subset) diff_subset (by simpa)
-  by_cases hfX : f ∈ X
-  · rw [diff_eq_empty.2 (show {f} ⊆ X by simpa), encard_empty, add_zero]
-    by_cases heY : e ∈ Y
-    · rw [diff_eq_empty.2 (show {e} ⊆ Y by simpa), encard_empty, add_zero,
-        encard_diff_singleton_of_mem (show e ∈ Y \ X by simp [heY, heX]),
-        encard_diff_singleton_of_mem (show f ∈ X \ Y by simp [hfY, hfX]), hXY.encard_eq]
-    rw [sdiff_eq_left.2 (show Disjoint {e} Y by simpa), encard_singleton,
-      diff_singleton_eq_self (show e ∉ Y \ X by simp [heY, heX]),
-      encard_diff_singleton_add_one (show f ∈ X \ Y by simp [hfX, hfY]), hXY.encard_eq]
-  rw [sdiff_eq_left.2 (show Disjoint {f} X by simpa), encard_singleton,
-    diff_singleton_eq_self (by simp [hfX, hfY]), hXY.encard_eq]
-  by_cases heY : e ∈ Y
-  · rw [diff_eq_empty.2 (show {e} ⊆ _ by simpa), encard_empty,
-      encard_diff_singleton_add_one (show e ∈ Y \ X by simp [heY, heX]), add_zero]
-  rw [sdiff_eq_left.2 (show Disjoint {e} Y by simpa), diff_singleton_eq_self (by simp [heY, heX]),
-    encard_singleton]
-
-lemma FinDiff.exchange_right (hXY : FinDiff X Y) {e f : α} (heY : e ∈ Y) (hfY : f ∉ Y) :
-    FinDiff X (insert f (Y \ {e})) := by
-  -- TODO : Prove with `insert_insert`
-  rw [finDiff_iff]
-  have hef : e ≠ f := by rintro rfl; contradiction
-  have hss : X \ insert f (Y \ {e}) ⊆ insert e (X \ Y) := by
-    simp (config := { contextual := true }) only [subset_def, mem_diff, mem_insert_iff,
-      mem_singleton_iff, not_or, not_and, not_not, true_and, and_imp]
-    tauto
-  rw [and_iff_right ((hXY.diff_left_finite.insert e).subset hss)]
-  have hrw : X \ insert f (Y \ {e}) = ((X \ Y) \ {f}) ∪ ({e} ∩ X) := by
-    ext x
-    obtain rfl | hne := eq_or_ne x e
-    · simp (config := {contextual := true}) [hef]
-    simp (config := {contextual := true}) [hne, iff_def, hfY]
-  have hrw2 : (insert f (Y \ {e})) \ X = ((Y \ X) \ {e}) ∪ ({f} \ X) := by
-    ext x
-    obtain rfl | hne := eq_or_ne x f
-    · simp (config := {contextual := true}) [iff_def, hef.symm, and_or_right]
-    simp (config := {contextual := true}) [iff_def, hne]
-  rw [hrw, hrw2, encard_union_eq, encard_union_eq]; rotate_left
-  · exact (disjoint_singleton_right.2 hfY).mono (diff_subset.trans diff_subset) diff_subset
-  · exact Disjoint.mono diff_subset inter_subset_left <| by simp [heY]
-  by_cases heX : e ∈ X
-  · rw [show {e} ∩ X = {e} by simp [heX], encard_singleton,
-      diff_singleton_eq_self (show e ∉ Y \ X by simp [heY, heX]), ← hXY.encard_eq]
-    by_cases hfX : f ∈ X
-    · simp [encard_diff_singleton_add_one (show f ∈ X \ Y by simp [hfX, hfY]),
-        diff_eq_empty.2 (show {f} ⊆ X by simpa)]
-    simp [show {f} \ X = {f} by simp [sdiff_eq_left, hfX],
-      diff_singleton_eq_self (show f ∉ X \ Y by simp [hfX, hfY])]
-  rw [singleton_inter_eq_empty.2 heX, encard_empty, add_zero]
-  by_cases hfX : f ∈ X
-  · rw [encard_diff_singleton_of_mem (by simp [hfX, hfY]),
-      encard_diff_singleton_of_mem (by simp [heY, heX]), diff_eq_empty.2 (show {f} ⊆ X by simpa),
-      hXY.encard_eq]
-    simp
-  rw [diff_singleton_eq_self (by simp [hfX, hfY]), hXY.encard_eq,
-    sdiff_eq_left.2 (show Disjoint {f} X by simpa), encard_singleton,
-    encard_diff_singleton_add_one (by simp [heY, heX])]
-
-lemma FinDiff.trans {X Y Z : Set α} (hXY : FinDiff X Y) (hYZ : FinDiff Y Z) : FinDiff X Z := by
-  obtain h | h := eq_empty_or_nonempty (Z \ Y)
-  · rw [diff_eq_empty] at h
-    rwa [hYZ.symm.eq_of_subset h]
-  obtain ⟨f, hfY, hfZ⟩ := hYZ.nonempty_of_nonempty h
-  obtain ⟨e, heZ, heY⟩ := h
-  have decr : (insert f (Z \ {e}) \ Y).encard < (Z \ Y).encard := by
-    rw [insert_diff_of_mem _ hfY, diff_diff_comm,
-      ← encard_diff_singleton_add_one (show e ∈ Z \ Y by simp [heZ, heY]), ENat.lt_add_one_iff]
-    simp [hYZ.diff_right_finite.diff {e}]
-
-  have IH : FinDiff Y (insert f (Z \ {e})) := hYZ.exchange_right heZ hfZ
-  have hd := FinDiff.trans hXY IH
-  have hne : e ≠ f := by rintro rfl; contradiction
-  convert hd.exchange_right (e := f) (f := e) (by simp) (by simp [heZ, hne])
-  simp only [mem_singleton_iff, insert_diff_of_mem]
-  rw [← insert_diff_of_not_mem _ (by simpa), insert_diff_singleton, insert_eq_of_mem heZ,
-    diff_singleton_eq_self hfZ]
-termination_by (Z \ Y).encard
-
-lemma finDiff_iff_exchange (heY : e ∈ Y) (hfY : f ∉ Y) :
-    FinDiff X Y ↔ FinDiff X (insert f (Y \ {e})) := by
-  refine ⟨fun h ↦ h.exchange_right heY hfY, fun h ↦ ?_⟩
-  convert h.exchange_right (e := f) (f := e) (by simp) (by aesop)
-  simp [mem_singleton_iff, insert_diff_of_mem,
-    insert_diff_singleton_comm (show e ≠ f by rintro rfl; contradiction),
-    insert_eq_of_mem heY, diff_singleton_eq_self hfY]
 
 namespace Matroid
 
@@ -439,10 +291,64 @@ theorem unif_isoMinor_unif_iff' {a₁ a₂ b₁ b₂ : ℕ} (h₁ : a₁ ≤ b�
 
 section Infinite
 
-def Uniform (M : Matroid α) := ∀ ⦃B e f⦄, M.Base B → e ∉ B → f ∈ B → M.Base (insert e (B \ {f}))
+variable {B B' : Set α}
+
+def Uniform (M : Matroid α) :=
+  ∀ ⦃B e f⦄, M.Base B → e ∈ M.E \ B → f ∈ B → M.Base (insert e (B \ {f}))
+
+lemma Uniform.dual (hM : M.Uniform) : M✶.Uniform := by
+  intro B e f hB he hf
+  have hne : e ≠ f := by rintro rfl; exact he.2 hf
+  have hBE : B ⊆ M.E := hB.subset_ground
+  convert (hM (hB.compl_base_of_dual) (by rwa [diff_diff_cancel_left hBE]) he).compl_base_dual
+    using 1
+  rw [← union_singleton, ← union_singleton, ← diff_diff, diff_diff_right,
+    diff_diff_cancel_left hBE, inter_eq_self_of_subset_right (show {e} ⊆ M.E by simpa using he.1),
+    union_diff_distrib, sdiff_eq_left.2 (show Disjoint ({e} : Set α) {f} by simp [hne])]
+
+@[simp] lemma uniform_dual_iff : M✶.Uniform ↔ M.Uniform :=
+  ⟨fun h ↦ by simpa using h.dual, Uniform.dual⟩
+
+lemma uniform_iff_forall_indep_or_spanning : M.Uniform ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X := by
+  refine ⟨fun h X hXE ↦ ?_, fun h B e f hB he hf ↦ ?_⟩
+  · obtain ⟨I, hIX⟩ := M.exists_basis X
+    obtain ⟨B, hB, rfl⟩ := hIX.exists_base
+    obtain h1 | h2 := hIX.subset.eq_or_ssubset
+    · rw [← h1]
+      exact .inl (hIX.indep)
+    obtain ⟨e, heBX, heX⟩ := exists_of_ssubset h2
+    obtain h1 | h2' := (show X ∩ B ⊆ B from inter_subset_right).eq_or_ssubset
+    · rw [inter_eq_right] at h1
+      exact .inr (hB.spanning.superset h1)
+    exfalso
+    obtain ⟨f, hfBX, hfB⟩ := exists_of_ssubset h2'
+    rw [mem_inter_iff, and_iff_left (by simpa)] at heX hfB
+    have hB' := h hB ⟨hXE heBX, heX⟩ hfBX
+    refine (heX <| (hIX.mem_of_insert_indep heBX (hB'.indep.subset ?_)).1)
+    refine insert_subset_insert ?_
+    rwa [subset_diff_singleton_iff, and_iff_right inter_subset_left, mem_inter_iff,
+      and_iff_right hfBX]
+  have hef : e ≠ f := by rintro rfl; exact he.2 hf
+  obtain (hi | hs) := h (insert e (B \ {f}))
+    (insert_subset he.1 (diff_subset.trans hB.subset_ground))
+  · exact hB.exchange_base_of_indep he.2 hi
+
+  have hss : insert e (B \ {f}) ⊆ M.E := insert_subset he.1 (diff_subset.trans hB.subset_ground)
+  suffices M✶.Base (M.E \ insert e (B \ {f})) by rwa [base_iff_dual_base_compl]
+  rw [spanning_iff_compl_coindep, coindep_def] at hs
+  have hrw : insert f ((M.E \ B) \ {e}) = M.E \ insert e (B \ {f}) := by
+    rw [eq_comm, ← union_singleton, ← diff_diff, diff_diff_right,
+      inter_eq_self_of_subset_right (show {f} ⊆ M.E by simpa using hB.subset_ground hf),
+      union_singleton, insert_diff_singleton_comm hef.symm]
+  rw [← hrw]
+  exact hB.compl_base_dual.exchange_base_of_indep (f := f) (e := e) (by simp [hf]) <| by rwa [hrw]
+
+lemma Uniform.indep_or_spanning (hM : M.Uniform) (hX : X ⊆ M.E) : M.Indep X ∨ M.Spanning X := by
+  rw [uniform_iff_forall_indep_or_spanning] at hM
+  exact hM X hX
 
 lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (h : M.Uniform) (hB : M.Base B)
-    (h_fin : FinDiff B B') : M.Base B' := by
+    (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.Base B' := by
   obtain h | h := (B' \ B).eq_empty_or_nonempty
   · rw [diff_eq_empty] at h
     rwa [h_fin.symm.eq_of_subset h]
@@ -456,23 +362,23 @@ lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (h : M.Uniform) (hB : M.Ba
     simp_rw [encard_ne_top_iff]
     exact h_fin.diff_right_finite.diff _
 
-  apply h.base_of_base_of_finDiff (h hB heB hfB)
-  rw [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
+  apply h.base_of_base_of_finDiff (h hB ⟨hB' heB', heB⟩ hfB)
+  rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
     and_iff_right (h_fin.diff_left_finite.diff _), ← singleton_union, union_comm, ← diff_diff,
     diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
     ← WithTop.add_right_cancel_iff (a := 1) (by simp),
     encard_diff_singleton_add_one (show f ∈ B \ B' from ⟨hfB, hfB'⟩),
-    encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩), h_fin.encard_eq]
+    encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩), h_fin.encard_diff_eq]
 termination_by (B' \ B).encard
 
 lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [PartialOrder α]
     (hP : ∀ ⦃x y⦄, P x → x ≤ y → P y) (h : Maximal (fun x ↦ P x ∧ Q x) a) : Maximal Q a :=
   ⟨h.prop.2, fun _ hb hab ↦ h.le_of_ge ⟨hP h.prop.1 hab, hb⟩ hab⟩
 
-@[simps!] def uniform_matroid_of_base (E : Set α) (Base : Set α → Prop)
+@[simps!] def UniformMatroidOfBase (E : Set α) (Base : Set α → Prop)
     (exists_base : ∃ B, Base B)
     (antichain : IsAntichain (· ⊆ ·) (setOf Base))
-    (exchange : ∀ ⦃B e f⦄, Base B → e ∈ B → f ∉ B → Base (insert f (B \ {e})))
+    (exchange : ∀ ⦃B e f⦄, Base B → e ∈ B → f ∈ E \ B → Base (insert f (B \ {e})))
     (contain : ∀ ⦃I X⦄, I ⊆ X → X ⊆ E → (X \ I).Infinite →
       ∃ B, Base B ∧ ((B ⊆ I) ∨ (I ⊆ B ∧ B ⊆ X) ∨ (X ⊆ B)))
     (subset_ground : ∀ ⦃B⦄, Base B → B ⊆ E) :
@@ -482,7 +388,7 @@ Matroid.ofBase E Base exists_base
     rintro B B' hB hB' e ⟨heB, heB'⟩
     contrapose! heB'
     rwa [antichain.eq hB' hB fun f hfB' ↦ by_contra fun hfB ↦ heB' f ⟨hfB', hfB⟩
-      (exchange hB heB hfB)])
+      (exchange hB heB ⟨subset_ground hB' hfB', hfB⟩)])
   (by
     intro X hX I hI hIX
     obtain hfin | hinf := (X \ I).finite_or_infinite
@@ -513,72 +419,175 @@ Matroid.ofBase E Base exists_base
     exact ⟨X, hIX, ⟨⟨B', hB', hXB'⟩, rfl.subset⟩, fun Y hY hXY ↦ hY.2⟩)
   subset_ground
 
-/-- Truncate a uniform matroid at a base `B₀`, by squashing every base at finite distance to `B₀`.
-For finite uniform matroids, this just reduces the rank by one. For infinite ones,
-This is weird, since it forms a proper quotient that still has a common base with `M` -/
-def LocalTruncate (hM : M.Uniform) {B₀ : Set α} (hB₀ : M.Base B₀) (hne : B₀.Nonempty) : Matroid α :=
-  uniform_matroid_of_base M.E
-    (fun B ↦ (M.Base B ∧ ¬ FinDiff B B₀) ∨ (∃ e ∉ B, FinDiff (insert e B) B₀))
-    (by
-      obtain ⟨e, he⟩ := hne
-      exact ⟨B₀ \ {e}, .inr ⟨e, (by simp), by simp [he, finDiff_refl]⟩⟩)
-    (by
+lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \ B').Finite) :
+    FinDiff B B' := by
+  rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
 
-      rintro B (⟨hB, hBB₀⟩ | ⟨e, heB, hBB₀⟩) B' (⟨hB', hB'B₀⟩ | ⟨e', he'B', hB'B₀⟩) hne hss
-      · obtain rfl : B = B' := hB.eq_of_subset_base hB' hss
-        contradiction
-      · have heB'ins := (hM.base_of_base_of_finDiff hB₀ hB'B₀.symm)
-        obtain rfl : B = insert e' B' :=
-          hB.eq_of_subset_base heB'ins <| hss.trans (subset_insert _ _)
-        exact he'B' (hss (mem_insert _ _))
-      · have heBins := (hM.base_of_base_of_finDiff hB₀ hBB₀.symm)
-        refine hB'B₀ (FinDiff.trans ?_ hBB₀)
-        obtain ⟨f, hfB', hfB⟩ := exists_of_ssubset (hss.ssubset_of_ne hne)
-        have hfBins : M.Base (insert f B) := insert_base_of_insert_indep heB hfB heBins
-          (hB'.indep.subset (insert_subset hfB' hss))
-        obtain rfl : insert f B = B' := hfBins.eq_of_subset_base hB' (insert_subset hfB' hss)
-        apply finDiff_insert_insert hfB heB
+@[simps! E Base] def Uniform.LocalTruncate (hM : M.Uniform) (hr : M.RkPos) (Bs : Set (Set α))
+    (hBs_base : ∀ ⦃B⦄, B ∈ Bs → M.Base B)
+    (hBs_finDiff : ∀ ⦃B B'⦄, B ∈ Bs → FinDiff B B' → B' ⊆ M.E → B' ∈ Bs) : Matroid α :=
+  UniformMatroidOfBase M.E (fun B ↦ (M.Base B ∧ B ∉ Bs) ∨ (∃ e ∉ B, insert e B ∈ Bs))
+  (by
+    obtain ⟨B, hB⟩ := M.exists_base
+    obtain ⟨e, he⟩ := hB.nonempty
+    by_cases hBb : B ∈ Bs
+    · exact ⟨B \ {e}, .inr ⟨e, by simpa [he]⟩⟩
+    exact ⟨B, .inl ⟨hB, hBb⟩⟩)
 
-      have heBins := hM.base_of_base_of_finDiff hB₀ hBB₀.symm
-      have he'B'ins := hM.base_of_base_of_finDiff hB₀ hB'B₀.symm
+  (by
+    rintro B (hB | ⟨e, h₁, h₁'⟩) B' (hB' | ⟨e', h₂, h₂'⟩) hne hss
+    · exact hne <| hB.1.eq_of_subset_base hB'.1 hss
+    · rw [hB.1.eq_of_subset_base (hBs_base h₂') (hss.trans (subset_insert _ _))] at hB
+      exact hB.2 h₂'
+    · refine hB'.2 (hBs_finDiff h₁' ?_ hB'.1.subset_ground)
+      refine ((hBs_base h₁').finDiff_of_finite_diff hB'.1 ((finite_singleton e).subset ?_))
+      rw [diff_subset_iff, union_singleton]
+      exact insert_subset_insert hss
+    have he'B : e' ∉ B := not_mem_subset hss h₂
+    have he'E : e' ∈ M.E := (hBs_base h₂').subset_ground (mem_insert _ _)
+    have hBE : B ⊆ M.E := (subset_insert _ _).trans (hBs_base h₁').subset_ground
+    have he'Bb := hBs_finDiff h₁' (finDiff_insert_insert h₁ he'B) (insert_subset he'E hBE)
+    have hins := (hBs_base he'Bb).eq_of_subset_base (hBs_base h₂') (insert_subset_insert hss)
+    apply_fun (fun X ↦ X \ {e'}) at hins
+    obtain rfl : B = B' := by simpa [he'B, h₂] using hins
+    contradiction)
 
-      by_cases heB' : e ∈ B'
-      · have h_eq : insert e B = insert e' B' := heBins.eq_of_subset_base he'B'ins
-          (insert_subset (mem_insert_of_mem _ heB') (hss.trans (subset_insert _ _)))
-        obtain rfl | he'B := h_eq.symm.subset (mem_insert e' B')
-        · contradiction
-        exact he'B' (hss he'B)
-      have hb := hM.base_of_base_of_finDiff he'B'ins (finDiff_insert_insert he'B' heB')
-      have h_eq := heBins.eq_of_subset_base hb (insert_subset_insert hss)
-      apply_fun (fun X ↦ X \ {e}) at h_eq
-      obtain rfl : B = B' := by simpa [heB, heB'] using h_eq
-      contradiction )
-    (by
-      rintro B e f (⟨hB, hBB₀⟩ | ⟨g, hgB, hgBB₀⟩) heB hfB
-      · left
-        rw [finDiff_comm, ← finDiff_iff_exchange heB hfB, finDiff_comm, and_iff_left hBB₀]
-        exact hM.base_of_base_of_finDiff hB (finDiff_exchange heB hfB)
+  (by
+    simp only [mem_insert_iff, mem_diff, mem_singleton_iff, not_or, not_and, not_not]
+    rintro B e f (⟨hB, hBb⟩ | ⟨g, hgB, hgBb⟩) heB hfB
+    · refine .inl ⟨hM hB hfB heB, fun hexch ↦ hBb <| hBs_finDiff hexch (FinDiff.symm ?_)
+        hB.subset_ground⟩
+      exact finDiff_exchange heB hfB.2
 
-      right
-      have hef : e ≠ f := by rintro rfl; contradiction
-      refine ⟨e, by simp [hef], FinDiff.trans ?_ hgBB₀⟩
-      rw [insert_diff_singleton_comm hef.symm, insert_diff_singleton,
-        insert_eq_of_mem (mem_insert_of_mem _ heB)]
-      exact finDiff_insert_insert hfB hgB )
-    (by
-      intro I X hIX hXE hinf
-      sorry
-    )
-    sorry
+    refine .inr ⟨e, ?_⟩
+    rw [insert_comm]
+    simp only [heB, imp_self, and_true, insert_diff_singleton, insert_eq_of_mem]
+    refine ⟨by rintro rfl; exact hfB.2 heB, ?_⟩
+    refine hBs_finDiff hgBb (finDiff_insert_insert hgB hfB.2) (insert_subset hfB.1 ?_)
+    exact (subset_insert _ _).trans (hBs_base hgBb).subset_ground )
 
+  (by
+    simp only
+    rintro I X hIX hXE hinf
 
+    by_cases hIb : I ∈ Bs
+    · obtain ⟨e, he⟩ := (hBs_base hIb).nonempty
+      exact ⟨I \ {e}, .inr ⟨e, by simp, by simpa [he]⟩, .inl diff_subset⟩
+    obtain rfl | hssu := hIX.eq_or_ssubset
+    · simp at hinf
 
+    by_cases hXb : X ∈ Bs
+    · obtain ⟨e, he⟩ := exists_of_ssubset hssu
+      exact ⟨X \ {e}, .inr ⟨e, by simp, by simpa [he]⟩,
+        .inr <| .inl ⟨subset_diff_singleton hssu.subset he.2, diff_subset⟩⟩
 
+    obtain (hIi | hIs) := hM.indep_or_spanning (hIX.trans hXE)
+    · obtain (hXi | hXs) := hM.indep_or_spanning hXE
+      · obtain ⟨B, hB, hXB⟩ := hXi.exists_base_superset
+        by_cases hBb : B ∈ Bs
+        · obtain ⟨f, hf⟩ := exists_of_ssubset (hXB.ssubset_of_ne <| by rintro rfl; contradiction)
+          exact ⟨B \ {f}, .inr ⟨f, by simpa [insert_eq_of_mem hf.1]⟩,
+            .inr (.inr (subset_diff_singleton hXB hf.2))⟩
+        exact ⟨B, .inl ⟨hB, hBb⟩, .inr (.inr hXB)⟩
+      obtain ⟨B', hB'⟩ := hXs.exists_base_subset
+      obtain ⟨B, hB, hIB, hBX⟩ := hIi.exists_base_subset_union_base hB'.1
+      replace hBX := hBX.trans (union_subset hIX hB'.2)
+      by_cases hBb : B ∈ Bs
+      · obtain ⟨e, he⟩ := exists_of_ssubset (hIB.ssubset_of_ne <| by rintro rfl; contradiction)
+        refine ⟨B \ {e}, .inr ⟨e, by simpa [he.1]⟩, .inr (.inl ?_)⟩
+        exact ⟨subset_diff_singleton hIB he.2, diff_subset.trans hBX⟩
+      exact ⟨B, .inl ⟨hB, hBb⟩, .inr (.inl ⟨hIB, hBX⟩)⟩
+    obtain ⟨B, hB⟩ := hIs.exists_base_subset
+    by_cases hBb : B ∈ Bs
+    · obtain ⟨e, he⟩ := hB.1.nonempty
+      exact ⟨B \ {e}, .inr ⟨e, by simpa [he]⟩, .inl <| diff_subset.trans hB.2⟩
+    exact ⟨B, .inl ⟨hB.1, hBb⟩, .inl hB.2⟩)
+  (by
+    rintro B (hB | ⟨e, hB⟩)
+    · exact hB.1.subset_ground
+    exact (subset_insert _ _).trans (hBs_base hB.2).subset_ground)
 
+@[simp] lemma localTruncate_indep_iff {hM : M.Uniform} {hr} {Bs} {hBs_base} {hBs_finDiff} :
+    (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).Indep I ↔ M.Indep I ∧ I ∉ Bs := by
+  refine ⟨?_, fun ⟨hI, hIBs⟩ ↦ ?_⟩
+  · rintro ⟨B, ⟨hB, hBb⟩ | ⟨e, heB, heBb⟩, hIB⟩
+    · refine ⟨hB.indep.subset hIB, fun hIb ↦ hBb ?_⟩
+      rwa [← (hBs_base hIb).eq_of_subset_base hB hIB]
+    refine ⟨(hBs_base heBb).indep.subset (hIB.trans (subset_insert _ _)), fun hIb ↦ heB ?_⟩
+    obtain rfl : I = insert e B :=
+      (hBs_base hIb).eq_of_subset_base (hBs_base heBb) (hIB.trans (subset_insert _ _))
+    exact hIB <| .inl rfl
+  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+  by_cases hBb : B ∈ Bs
+  · obtain ⟨e, he⟩ := exists_of_ssubset (hIB.ssubset_of_ne <| by rintro rfl; contradiction)
+    exact ⟨B \ {e}, .inr ⟨e, by simpa [he.1]⟩, subset_diff_singleton hIB he.2⟩
+  exact ⟨B, .inl ⟨hB, hBb⟩, hIB⟩
 
-    -- intro B B' hB hB' e he f
+lemma LocalTruncate.closure_eq_of_not_mem (hM : M.Uniform) (hr) (Bs) (hBs_base) (hBs_finDiff)
+    (hXE : X ⊆ M.E) (hX : ∀ e ∈ M.E \ X, insert e X ∉ Bs) :
+    (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).closure X = M.closure X := by
+  set M' := (hM.LocalTruncate hr Bs hBs_base hBs_finDiff) with hM'_def
+  by_cases hXs : M.Spanning X
+  · rw [hXs.closure_eq, show M.E = M'.E from rfl, ← spanning_iff_closure_eq,
+      spanning_iff_exists_base_subset', and_iff_left (show X ⊆ M'.E from hXE)]
+    simp only [hM'_def, Uniform.LocalTruncate_Base]
 
-    -- have := antichain.elim B' B
+    obtain ⟨B, hB, hBX⟩ := hXs.exists_base_subset
+    by_cases hBs : B ∈ Bs
+    · obtain ⟨e, he⟩ := hB.nonempty
+      exact ⟨B \ {e}, .inr ⟨e, by simpa [he]⟩, diff_subset.trans hBX⟩
+    exact ⟨B, .inl ⟨hB, hBs⟩, hBX⟩
+
+  obtain ⟨I, hI'⟩ := M'.exists_basis X
+  have hi := hI'.indep
+  simp only [hM'_def, localTruncate_indep_iff] at hi
+  have hI : M.Basis I X
+  · rw [hi.1.basis_iff_forall_insert_dep hI'.subset]
+    intro e he
+    rw [Dep, and_iff_left (insert_subset (hXE he.1) hi.1.subset_ground)]
+    intro hi
+    have hni := (hI'.insert_dep he).not_indep
+    simp only [localTruncate_indep_iff, hi, true_and, not_not, hM'_def] at hni
+    exact hXs <| (hBs_base hni).spanning.superset (insert_subset he.1 hI'.subset)
+  rw [← hI'.closure_eq_closure, ← hI.closure_eq_closure, Set.ext_iff]
+  simp only [hM'_def, hI'.indep.mem_closure_iff', Uniform.LocalTruncate_E, localTruncate_indep_iff,
+    and_imp, hI.indep.mem_closure_iff', and_congr_right_iff]
+
+  refine fun e heE ↦ ⟨fun heI heIBs ↦ ?_, fun h1 h2 h3 ↦ h1 h2⟩
+  by_contra heI'
+
+  refine heI' <| heI heIBs fun hins ↦ ?_
+  obtain rfl | hssu := hI.subset.eq_or_ssubset
+  · exact hX e ⟨heE, heI'⟩ hins
+
+  obtain ⟨f, hf⟩ := exists_of_ssubset hssu
+
+  have hins' := hBs_finDiff hins (B' := insert f I) (finDiff_insert_insert heI' hf.2)
+    (insert_subset (hXE hf.1) hi.1.subset_ground)
+  exact hXs <| (hBs_base hins').spanning.superset (insert_subset hf.1 hssu.subset)
+
+lemma LocalTruncate.closure_eq_of_mem (hM : M.Uniform) (hr) (Bs) (hBs_base) (hBs_finDiff)
+    {X : Set α} (hXB : X ∈ Bs) (heX : e ∈ X) :
+    (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).closure (X \ {e}) = M.E := by
+  rw [show M.E = (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).E from rfl,
+    ← spanning_iff_closure_eq _, spanning_iff_exists_base_subset']
+  simp only [Uniform.LocalTruncate_Base, Uniform.LocalTruncate_E]
+  refine ⟨⟨X \ {e}, .inr ⟨e, by simpa [heX]⟩, rfl.subset⟩, ?_⟩
+  · exact diff_subset.trans (hBs_base hXB).subset_ground
+  exact diff_subset.trans (hBs_base hXB).subset_ground
+
+lemma LocalTruncate.closure_subset_closure (hM : M.Uniform) (hr) (Bs) (hBs_base) (hBs_finDiff)
+    (X : Set α) (hXE : X ⊆ M.E) :
+    M.closure X ⊆ (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).closure X := by
+  by_cases hX : ∃ e ∈ M.E \ X, insert e X ∈ Bs
+  · obtain ⟨e, he, heX⟩ := hX
+    have hcl := LocalTruncate.closure_eq_of_mem hM hr Bs hBs_base hBs_finDiff heX (mem_insert _ _)
+    simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self he.2] at hcl
+    rw [hcl]
+    exact M.closure_subset_ground X
+  push_neg at hX
+  rwa [LocalTruncate.closure_eq_of_not_mem _ _ _ _ _ hXE]
+
 
 end Infinite
 
