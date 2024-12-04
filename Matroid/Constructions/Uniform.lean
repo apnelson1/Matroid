@@ -347,6 +347,17 @@ lemma Uniform.indep_or_spanning (hM : M.Uniform) (hX : X ⊆ M.E) : M.Indep X �
   rw [uniform_iff_forall_indep_or_spanning] at hM
   exact hM X hX
 
+lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ M.Spanning I) :
+    M.closure I = I := by
+  refine subset_antisymm (fun e he ↦ by_contra fun heI ↦ ?_) (subset_closure _ _)
+  rw [spanning_iff_closure_eq, ← closure_closure, ← insert_eq_of_mem he,
+    closure_insert_closure_eq_closure_insert, ← spanning_iff_closure_eq] at hIs
+
+  have hIe : M.Indep (insert e I) :=
+    (hM.indep_or_spanning (by aesop_mat)).elim id fun h ↦ (hIs h).elim
+  rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_not_mem heI] at he
+  exact he.not_indep hIe
+
 lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (h : M.Uniform) (hB : M.Base B)
     (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.Base B' := by
   obtain h | h := (B' \ B).eq_empty_or_nonempty
@@ -419,10 +430,23 @@ Matroid.ofBase E Base exists_base
     exact ⟨X, hIX, ⟨⟨B', hB', hXB'⟩, rfl.subset⟩, fun Y hY hXY ↦ hY.2⟩)
   subset_ground
 
+lemma uniformMatroidOfBase_uniform (E : Set α) (Base : Set α → Prop)
+    {exists_base} {antichain} {exchange} {contain} {subset_ground} :
+    (UniformMatroidOfBase E Base exists_base antichain exchange contain subset_ground).Uniform := by
+  simp only [Uniform, UniformMatroidOfBase_Base, UniformMatroidOfBase_E, mem_diff, and_imp]
+  exact fun B e f hB heE he hf ↦ exchange hB hf ⟨heE, he⟩
+
 lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \ B').Finite) :
     FinDiff B B' := by
   rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
 
+
+/-- Given a uniform matroid `M`, and a subset `Bs` of the bases of `M` that is closed under
+exchanges, we can make a new uniform matroid by turning all the sets in `Bs` into circuits.
+If `M` or its dual has finite rank, then `Bs` is necessarily the set of all bases of `M`,
+and this is just truncation. But if `M` and `M✶` both have infinite rank, this gives
+a quotient of `M` that is not just a truncation.
+-/
 @[simps! E Base] def Uniform.LocalTruncate (hM : M.Uniform) (hr : M.RkPos) (Bs : Set (Set α))
     (hBs_base : ∀ ⦃B⦄, B ∈ Bs → M.Base B)
     (hBs_finDiff : ∀ ⦃B B'⦄, B ∈ Bs → FinDiff B B' → B' ⊆ M.E → B' ∈ Bs) : Matroid α :=
@@ -523,10 +547,13 @@ lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \
     exact ⟨B \ {e}, .inr ⟨e, by simpa [he.1]⟩, subset_diff_singleton hIB he.2⟩
   exact ⟨B, .inl ⟨hB, hBb⟩, hIB⟩
 
+/-- This can be tidied up. -/
 lemma LocalTruncate.closure_eq_of_not_mem (hM : M.Uniform) (hr) (Bs) (hBs_base) (hBs_finDiff)
     (hXE : X ⊆ M.E) (hX : ∀ e ∈ M.E \ X, insert e X ∉ Bs) :
     (hM.LocalTruncate hr Bs hBs_base hBs_finDiff).closure X = M.closure X := by
   set M' := (hM.LocalTruncate hr Bs hBs_base hBs_finDiff) with hM'_def
+  obtain rfl | hssu := hXE.eq_or_ssubset
+  · rw [show M.E = M'.E from rfl, closure_ground, show M'.E = M.E from rfl, closure_ground]
   by_cases hXs : M.Spanning X
   · rw [hXs.closure_eq, show M.E = M'.E from rfl, ← spanning_iff_closure_eq,
       spanning_iff_exists_base_subset', and_iff_left (show X ⊆ M'.E from hXE)]
@@ -587,7 +614,6 @@ lemma LocalTruncate.closure_subset_closure (hM : M.Uniform) (hr) (Bs) (hBs_base)
     exact M.closure_subset_ground X
   push_neg at hX
   rwa [LocalTruncate.closure_eq_of_not_mem _ _ _ _ _ hXE]
-
 
 end Infinite
 
