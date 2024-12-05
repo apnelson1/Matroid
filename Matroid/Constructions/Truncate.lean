@@ -209,22 +209,28 @@ lemma Base.base_of_indep_of_finDiff (hB : M.Base B) (hI : M.Indep I) (hBI : FinD
     exact hBI.diff_left_finite.subset (diff_subset_diff_right hIB')
   rwa [(hBI.symm.trans hfin').eq_of_subset hIB']
 
-@[ext] structure PartialTruncateCollection (M : Matroid α) where
+
+/--
+A `TruncateFamily` is a collection of nonempty bases of `M` such that,
+for any two bases of `M` that both contain bases for a common hyperplane,
+either both or neither belongs to the collection.
+If `M` has finite rank or corank, the collection of all bases is the only `TruncateFamily`,
+but in general there can be others.
+
+Given such a collection `T`, we can form a new matroid by making all the sets in `T`
+into spanning circuits instead of bases.
+In the special case where `T` contains all the bases of `M`, this operation is just truncation.
+-/
+@[ext] structure TruncateFamily (M : Matroid α) where
   ToTruncate : Set α → Prop
   forall_nonempty : ∀ ⦃B⦄, ToTruncate B → B.Nonempty
   forall_base : ∀ ⦃B⦄, ToTruncate B → M.Base B
   toTruncate_of_toTruncate : ∀ ⦃B B' e e'⦄, ToTruncate B → e ∈ B → M.Base B' → e' ∈ B' →
       M.closure (B \ {e}) = M.closure (B' \ {e'}) → ToTruncate B'
 
-namespace PartialTruncateCollection
+namespace TruncateFamily
 
-@[simps] def top (M : Matroid α) [RkPos M] : M.PartialTruncateCollection where
-  ToTruncate := M.Base
-  forall_nonempty _ := Base.nonempty
-  forall_base _ := id
-  toTruncate_of_toTruncate := by tauto
-
-variable {T : M.PartialTruncateCollection}
+variable {T : M.TruncateFamily}
 
 lemma ToTruncate.base (hB : T.ToTruncate B) : M.Base B :=
   T.forall_base hB
@@ -285,18 +291,25 @@ lemma ToTruncate.finDiff {B B' : Set α} (hB : T.ToTruncate B) (hB' : M.Base B')
       ENat.lt_add_one_iff]
     simpa using hdiff.diff_right_finite.diff {f}
   have hfd : FinDiff B (insert e (B' \ {f})) := hdiff.trans (finDiff_exchange hf.1 he.2)
-  exact (PartialTruncateCollection.ToTruncate.finDiff hB heB hfd).of_exchange he.2 hf.1 hB'
+  exact (TruncateFamily.ToTruncate.finDiff hB heB hfd).of_exchange he.2 hf.1 hB'
 termination_by (B' \ B).encard
 
-def Indep (T : M.PartialTruncateCollection) (I : Set α) : Prop := M.Indep I ∧ ¬ T.ToTruncate I
+def Indep (T : M.TruncateFamily) (I : Set α) : Prop := M.Indep I ∧ ¬ T.ToTruncate I
 
 lemma indep_eq : T.Indep = fun I ↦ M.Indep I ∧ ¬ T.ToTruncate I := rfl
 
-def Below (T : M.PartialTruncateCollection) (B : Set α) : Prop :=
-  ∃ e ∈ M.E \ B, T.ToTruncate (insert e B)
+def Base (T : M.TruncateFamily) (B : Set α) : Prop :=
+  (M.Base B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∈ M.E \ B, T.ToTruncate (insert e B))
 
-def Base (T : M.PartialTruncateCollection) (B : Set α) : Prop :=
-  (M.Base B ∧ ¬ T.ToTruncate B) ∨ T.Below B
+lemma base_eq :
+    T.Base = fun B ↦ (M.Base B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∈ M.E \ B, T.ToTruncate (insert e B)) :=
+  rfl
+
+lemma base_eq' :
+    T.Base = fun B ↦ (M.Base B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∉ B, T.ToTruncate (insert e B)) := by
+  ext B
+  refine or_congr_right ⟨fun ⟨e, he⟩ ↦ ⟨e, he.1.2, he.2⟩, fun ⟨e, he⟩ ↦ ⟨e, ⟨?_, he.1⟩, he.2⟩⟩
+  exact he.2.base.subset_ground (mem_insert _ _)
 
 lemma ToTruncate.base_diff_singleton (hBt : T.ToTruncate B) (heB : e ∈ B) : T.Base (B \ {e}) :=
   .inr ⟨e, by simpa [hBt.base.subset_ground heB, heB] ⟩
@@ -313,7 +326,7 @@ lemma Base.indep (hB : T.Base B) : T.Indep B := by
 
 lemma Base.exists_toTruncate_insert (hB : T.Base B) (hBM : ¬ M.Base B) :
     ∃ e ∈ M.E \ B, T.ToTruncate (insert e B) := by
-  rwa [PartialTruncateCollection.Base, iff_false_intro hBM, false_and, false_or] at hB
+  rwa [TruncateFamily.Base, iff_false_intro hBM, false_and, false_or] at hB
 
 lemma Indep.indep (hI : T.Indep I) : M.Indep I :=
   hI.1
@@ -329,14 +342,14 @@ lemma Indep.subset (hI : T.Indep I) (hJI : J ⊆ I) : T.Indep J :=
 
 lemma maximal_indep_eq : Maximal (T.Indep) = T.Base := by
   ext B
-  rw [maximal_iff_forall_insert (fun _ _ ↦ PartialTruncateCollection.Indep.subset)]
+  rw [maximal_iff_forall_insert (fun _ _ ↦ TruncateFamily.Indep.subset)]
   by_cases hB : M.Base B
-  · rw [hB.partialTruncateBase_iff, PartialTruncateCollection.Indep, and_comm (a := M.Indep B),
+  · rw [hB.partialTruncateBase_iff, TruncateFamily.Indep, and_comm (a := M.Indep B),
       and_assoc, and_iff_left_iff_imp, and_iff_right hB.indep]
     intro h x hxB hi
     rw [hB.eq_of_subset_indep hi.1  (subset_insert _ _)] at hxB
     simp at hxB
-  simp only [PartialTruncateCollection.Base, hB, false_and, mem_diff, false_or]
+  simp only [TruncateFamily.Base, hB, false_and, mem_diff, false_or]
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨B₀, hB₀⟩ := M.exists_base
     obtain ⟨e, ⟨heB₀, heB⟩, heB'⟩ := h.1.1.exists_insert_of_not_base hB hB₀
@@ -347,7 +360,8 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.Base := by
   simpa [heB] using ht.exchange (e := x) (f := e) (by simp [hx, hex.symm]) (by simp)
     (by simpa [heB] using hxB.1)
 
-@[simps! E] protected def matroid (T : M.PartialTruncateCollection) :
+/-- The `Matroid` formed by truncating all the bases in `T`. -/
+@[simps! E] protected def matroid (T : M.TruncateFamily) :
     Matroid α := IndepMatroid.matroid <| IndepMatroid.mk
   (E := M.E)
   (Indep := T.Indep)
@@ -381,7 +395,7 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.Base := by
       fun I J hI hIJ ↦ ⟨⟨hI.1.1.subset hIJ, fun hI' ↦ (hI.1.subset hIJ).2 hI'⟩, hIJ.trans hI.2⟩
 
     simp only [maximal_iff_forall_insert h_mono, insert_subset_iff, not_and]
-    by_cases hJ : T.ToTruncate Jlb
+    by_cases hJ : T.ToTruncate J
     · obtain ⟨e, he⟩ := exists_of_ssubset (hIJ.ssubset_of_ne <| by rintro rfl; exact hI.2 hJ)
 
       refine ⟨J \ {e}, subset_diff_singleton hIJ he.2, ?_⟩
@@ -428,83 +442,63 @@ lemma matroid_closure_eq_closure (X : Set α) (hX : X ⊆ M.E) (hX : ¬ T.matroi
   rw [← hI'.closure_eq_closure, ← hI.closure_eq_closure, Set.ext_iff]
   simp [hI'.indep.mem_closure_iff', T.indep_eq, hI.indep.mem_closure_iff', aux]
 
+/-- The `TruncateFamily` consisting of all bases of `M`. This corresponds to the truncation of `M`.
+Empty if `M` has rank zero for technical reasons. -/
+@[simps] def top (M : Matroid α) : M.TruncateFamily where
+  ToTruncate B := M.Base B ∧ B.Nonempty
+  forall_nonempty B h := h.2
+  forall_base B h := h.1
+  toTruncate_of_toTruncate := by tauto
 
+@[simp] lemma matroid_top : (top M).matroid = M.truncate := by
+  refine ext_base rfl ?_
+  obtain h | h := M.eq_loopyOn_or_rkPos
+  · rw [h]
+    simp [(top _).base_eq', top_ToTruncate, truncate_base_iff, nonempty_iff_ne_empty]
 
+  suffices ∀ ⦃B : Set α⦄, B ⊆ M.E → M.Base B → ¬B.Nonempty → ∃ e ∉ B, M.Base (insert e B) by
+    simpa (config := {contextual := true}) [(top M).base_eq', top_ToTruncate, truncate_base_iff]
 
+  exact fun B _ hB hne ↦ (hne hB.nonempty).elim
 
+@[simps] def bot (M : Matroid α) : M.TruncateFamily where
+  ToTruncate B := False
+  forall_nonempty B h := h.elim
+  forall_base B h := h.elim
+  toTruncate_of_toTruncate := by tauto
 
+@[simp] lemma matroid_bot : (bot M).matroid = M :=
+  ext_base rfl <| by simp [(bot _).base_eq]
 
+lemma eq_top_or_bot_of_finiteRk [FiniteRk M] (T : M.TruncateFamily) : T = top M ∨ T = bot M := by
+  obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
+  · right
+    push_neg at h
+    ext
+    simp [h]
+  left
+  ext B
+  simp only [top_ToTruncate]
+  refine ⟨fun h ↦ ⟨h.base, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
+  exact hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨hB₀.base.finite.diff _, hB₀.base.encard_diff_comm hB⟩
 
+lemma eq_top_or_bot_of_finiteRk_dual [FiniteRk M✶] (T : M.TruncateFamily) :
+    T = top M ∨ T = bot M := by
+  obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
+  · right
+    push_neg at h
+    ext
+    simp [h]
+  left
+  ext B
+  simp only [top_ToTruncate]
+  refine ⟨fun h ↦ ⟨h.base, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
+  refine hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨?_, ?_⟩
+  · exact hB.compl_base_dual.finite.subset <| diff_subset_diff_left hB₀.base.subset_ground
+  convert hB.compl_base_dual.encard_diff_comm hB₀.base.compl_base_dual using 2
+  · rw [diff_diff_right, diff_eq_empty.2 diff_subset, empty_union, inter_comm,
+      inter_diff_distrib_left, inter_eq_self_of_subset_left hB₀.base.subset_ground, diff_self_inter]
+  rw [diff_diff_right, diff_eq_empty.2 diff_subset, empty_union, inter_comm,
+      inter_diff_distrib_left, inter_eq_self_of_subset_left hB.subset_ground, diff_self_inter]
 
---   by_cases hXs : M.Spanning X
---   · rw [hXs.closure_eq, show M.E = T.matroid.E from rfl, ← spanning_iff_closure_eq,
---       spanning_iff_exists_base_subset', and_iff_left (show X ⊆ T.matroid.E from hX)]
-
---     simp only [matroid_base_eq]
-
---     obtain ⟨B, hB, hBX⟩ := hXs.exists_base_subset
---     by_cases hBt : T.Base B
---     · exact ⟨B, hBt, hBX⟩
-
---     rw [hB.partialTruncateBase_iff, not_not] at hBt
---     obtain ⟨e, he⟩ := hBt.nonempty
---     exact ⟨_, hBt.base_diff_singleton he, diff_subset.trans hBX⟩
-
---   obtain ⟨I, hI'⟩ := T.matroid.exists_basis X
---   have hi := hI'.indep
---   simp only [matroid_indep_eq, indep_eq] at hi
---   -- simp only [hM'_def, localTruncate_indep_iff] at hi
---   have hI : M.Basis I X
---   · simp_rw [hi.1.basis_iff_forall_insert_dep hI'.subset, dep_iff, insert_subset_iff,
---       and_iff_left hi.1.subset_ground]
---     refine fun e he ↦ ⟨fun hi ↦ (hI'.insert_dep he).not_indep ⟨hi, fun hIt ↦ hXs ?_⟩,
---       (hI'.subset_ground he.1)⟩
---     exact hIt.base.spanning.superset (insert_subset he.1 hI'.subset)
-
-
-
-
---   rw [← hI'.closure_eq_closure, ← hI.closure_eq_closure, Set.ext_iff]
---   simp only [hI'.indep.mem_closure_iff', matroid_E, matroid_indep_eq, T.indep_eq, and_imp,
---     hI.indep.mem_closure_iff', and_congr_right_iff]
-
---   refine fun e heE ↦ ⟨fun h hi ↦ by_contra fun heI ↦ heI <| h hi fun heIt ↦ ?_, fun h ↦ ?_⟩
---   · have := heIt.base_of_insert heI
-
-
-  -- simp only [hM'_def, hI'.indep.mem_closure_iff', Uniform.LocalTruncate_E, localTruncate_indep_iff,
-  --   and_imp, hI.indep.mem_closure_iff', and_congr_right_iff]
-
-  -- refine fun e heE ↦ ⟨fun heI heIBs ↦ ?_, fun h1 h2 h3 ↦ h1 h2⟩
-  -- by_contra heI'
-
-  -- refine heI' <| heI heIBs fun hins ↦ ?_
-  -- obtain rfl | hssu := hI.subset.eq_or_ssubset
-  -- · exact hX e ⟨heE, heI'⟩ hins
-
-  -- obtain ⟨f, hf⟩ := exists_of_ssubset hssu
-
-  -- have hins' := hBs_finDiff hins (B' := insert f I) (finDiff_insert_insert heI' hf.2)
-  --   (insert_subset (hXE hf.1) hi.1.subset_ground)
-  -- exact hXs <| (hBs_base hins').spanning.superset (insert_subset hf.1 hssu.subset)
-
-    -- obtain rfl | hssu := hBX.eq_or_ssubset
-    -- · have := hBt.not_
-
-    -- simp
-    -- simp only [hM'_def, Uniform.LocalTruncate_Base]
-
-    -- obtain ⟨B, hB, hBX⟩ := hXs.exists_base_subset
-    -- by_cases hBs : B ∈ Bs
-    -- · obtain ⟨e, he⟩ := hB.nonempty
-    --   exact ⟨B \ {e}, .inr ⟨e, by simpa [he]⟩, diff_subset.trans hBX⟩
-    -- exact ⟨B, .inl ⟨hB, hBs⟩, hBX⟩
-  -- obtain ⟨I, hI⟩ := M.exists_basis X
-  -- have : X ⊆ T.matroid.E := hX
-  -- have hI' : T.matroid.Basis I X := by
-  --   rw [basis_iff_maximal]
-  --   simp_rw [T.matroid_indep_eq, T.indep_eq]
-
-
-
-end PartialTruncateCollection
+end TruncateFamily

@@ -1,12 +1,7 @@
 import Matroid.Minor.Rank
-import Matroid.Extension
+import Matroid.Constructions.Truncate
 import Matroid.Flat
 
---import Mathlib.TFAE
-
---import Mathlib.Topology.Continuity
-
---relRank
 universe u
 
 open Set
@@ -256,6 +251,8 @@ lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M�
     subset_trans (by simp [hQ.ground_eq]) subset_union_right⟩
   exact inter_subset_inter_left _ <| hQ.closure_subset_closure _
 
+
+
 -- lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.Base B) (hB₂ : M₂.Indep B) :
 --     M₂ = M₁ := by
 --   replace hB₂ := show M₂.Base B from
@@ -324,6 +321,27 @@ lemma Quotient.finite {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M�
   rw [finiteRk_iff, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.relRank_le _ _).trans_lt hM₁
+
+section Constructions
+
+lemma PartialTruncateCollection.quotient (T : M.PartialTruncateCollection) : T.matroid ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun X hX ↦ ?_
+  by_cases hXs : T.matroid.Spanning X
+  · simp [hXs.closure_eq, closure_subset_ground]
+  rw [T.matroid_closure_eq_closure X hX hXs]
+
+lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
+  obtain hM | h := M.eq_loopyOn_or_rkPos
+  · rw [hM]
+    simp [Quotient.refl]
+  rw [← PartialTruncateCollection.matroid_top]
+  exact PartialTruncateCollection.quotient _
+
+
+
+
+end Constructions
+
 
 lemma Cov_Same_r {M : Matroid α} {X Y: Set α} [FiniteRk M] (hY : Y ⊆ M.E)
     (hFX : M.Flat X) (hXY : X ⊆ Y) (heq : M.r X = M.r Y) : X = Y := by
