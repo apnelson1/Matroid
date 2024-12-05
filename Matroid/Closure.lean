@@ -6,7 +6,10 @@ namespace Matroid
 
 
 
-variable {α : Type*} {ι : Sort*} {M : Matroid α} {F I J X Y B C R : Set α} {e f x y : α}
+variable {α : Type*} {ι : Sort*} {M : Matroid α} {F S I J X Y B C R : Set α} {e f x y : α}
+
+lemma Indep.eq_of_spanning_subset (hI : M.Indep I) (hS : M.Spanning S) (hSI : S ⊆ I) : S = I :=
+  ((hI.subset hSI).base_of_spanning hS).eq_of_subset_indep hI hSI
 
 section Constructions
 
