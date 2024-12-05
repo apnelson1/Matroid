@@ -381,7 +381,7 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.Base := by
       fun I J hI hIJ ↦ ⟨⟨hI.1.1.subset hIJ, fun hI' ↦ (hI.1.subset hIJ).2 hI'⟩, hIJ.trans hI.2⟩
 
     simp only [maximal_iff_forall_insert h_mono, insert_subset_iff, not_and]
-    by_cases hJ : T.ToTruncate J
+    by_cases hJ : T.ToTruncate Jlb
     · obtain ⟨e, he⟩ := exists_of_ssubset (hIJ.ssubset_of_ne <| by rintro rfl; exact hI.2 hJ)
 
       refine ⟨J \ {e}, subset_diff_singleton hIJ he.2, ?_⟩
@@ -405,37 +405,28 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.Base := by
 @[simp] lemma matroid_base_eq : T.matroid.Base = T.Base := by
   simp [funext_iff, ← maximal_indep_eq, base_iff_maximal_indep, Maximal]
 
--- lemma matroid_closure_below_eq (X : Set α) (hX : T.Below X) : T.matroid.closure X = M.E := by
---   have hb := h.base_of_insert he
---   rw [← T.matroid_base_eq] at hb
---   rw [hb.closure_eq, matroid_E]
+lemma matroid_closure_eq_closure (X : Set α) (hX : X ⊆ M.E) (hX : ¬ T.matroid.Spanning X) :
+    T.matroid.closure X = M.closure X := by
+  obtain ⟨I, hI'⟩ := T.matroid.exists_basis X
+  have hi := hI'.indep
+  simp only [matroid_indep_eq, indep_eq] at hi
 
--- lemma matroid_closure_eq_closure (X : Set α) (hX : X ⊆ M.E)
---     (h : ∀ e ∈ M.E \ X, ¬ T.ToTruncate (insert e X)) : T.matroid.closure X = M.closure X := by
+  have aux : ∀ x, ¬ T.ToTruncate (insert x I) := by
+    refine fun x ht ↦ hX ?_
+    by_cases hxI : x ∈ I
+    · exact (hi.2 (by simpa [hxI] using ht)).elim
+    have hb := ht.base_of_insert hxI
+    rw [← T.matroid_base_eq] at hb
+    exact hb.spanning.superset hI'.subset
 
---   by_cases hXs' : T.matroid.Spanning X
---   · rw [hXs'.closure_eq, matroid_E]
---     obtain ⟨B, hB, hBX⟩ := hXs'.exists_base_subset
---     rw [matroid_base_eq] at hB
---     obtain h | ⟨e, he, heB⟩ := hB
---     · rw [(h.1.spanning.superset hBX).closure_eq]
+  have hI : M.Basis I X
+  · simp_rw [hi.1.basis_iff_forall_insert_dep hI'.subset, dep_iff, insert_subset_iff,
+      and_iff_left hi.1.subset_ground]
+    exact fun e he ↦ ⟨fun hi ↦ (hI'.insert_dep he).not_indep ⟨hi, aux _⟩,
+      (hI'.subset_ground he.1)⟩
 
---     obtain ⟨J, hJX, hBJ⟩ := (heB.base.indep.subset (subset_insert _ _)).subset_basis_of_subset hBX
-
---     -- obtain rfl | hssu := hBJ.eq_or_ssubset
---     -- ·
---     -- obtain rfl | hssu := hBX.eq_or_ssubset
---     -- · exact (h e he heB).elim
---     -- obtain ⟨f, hf⟩ := exists_of_ssubset hssu
-
-
---     -- -- have := heB.toTruncate_of_closure
---     -- #check heB.toTruncate_of_closure he.2 (J := J) (f := f)
---     -- obtain rfl | hssu := hBX.eq_or_ssubset
---     -- · obtain h | ⟨e, he, heB⟩ := hB
---     --   · rw [h.1.closure_eq]
---     --   exact (h e he heB).elim
-
+  rw [← hI'.closure_eq_closure, ← hI.closure_eq_closure, Set.ext_iff]
+  simp [hI'.indep.mem_closure_iff', T.indep_eq, hI.indep.mem_closure_iff', aux]
 
 
 
