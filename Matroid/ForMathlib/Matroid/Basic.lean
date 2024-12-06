@@ -1,4 +1,5 @@
-import Mathlib.Data.Matroid.Restrict
+import Mathlib.Data.Matroid.Closure
+import Mathlib.Data.Matroid.Constructions
 import Mathlib.Tactic
 
 open Set
@@ -57,3 +58,12 @@ lemma ext_base_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (h₁ : ∀
     exact (h₁ hB).subset hIB
   obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
   exact (h₂ hB).subset hIB
+
+lemma eq_loopyOn_or_rkPos' (M : Matroid α) : (∃ E, M = loopyOn E) ∨ M.RkPos := by
+  obtain h | h := M.eq_loopyOn_or_rkPos
+  · exact .inl ⟨M.E, h⟩
+  exact .inr h
+
+lemma rkPos_iff_empty_not_spanning : M.RkPos ↔ ¬ M.Spanning ∅ := by
+  rw [rkPos_iff_empty_not_base, not_iff_not]
+  exact ⟨fun h ↦ h.spanning, fun h ↦ h.base_of_indep M.empty_indep⟩

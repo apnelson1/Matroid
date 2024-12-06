@@ -293,43 +293,27 @@ section Infinite
 
 variable {B B' : Set α}
 
-def Uniform (M : Matroid α) :=
-  ∀ ⦃B e f⦄, M.Base B → e ∈ M.E \ B → f ∈ B → M.Base (insert e (B \ {f}))
+/-- Uniformity as a predicate. This is mainly useful for infinite matroids,
+where uniformity is structurally nontrivial. -/
+def Uniform (M : Matroid α) := ∀ ⦃X⦄, X ⊆ M.E → M.Indep X ∨ M.Spanning X
+
+lemma Uniform.indep_or_spanning (hM : M.Uniform) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M.Indep X ∨ M.Spanning X :=
+  hM hX
 
 lemma Uniform.dual (hM : M.Uniform) : M✶.Uniform := by
-  intro B e f hB he hf
-  have hne : e ≠ f := by rintro rfl; exact he.2 hf
-  have hBE : B ⊆ M.E := hB.subset_ground
-  convert (hM (hB.compl_base_of_dual) (by rwa [diff_diff_cancel_left hBE]) he).compl_base_dual
-    using 1
-  rw [← union_singleton, ← union_singleton, ← diff_diff, diff_diff_right,
-    diff_diff_cancel_left hBE, inter_eq_self_of_subset_right (show {e} ⊆ M.E by simpa using he.1),
-    union_diff_distrib, sdiff_eq_left.2 (show Disjoint ({e} : Set α) {f} by simp [hne])]
+  intro X hX
+  rw [← diff_diff_cancel_left hX, ← coindep_def, ← coindep_iff_compl_spanning,
+    dual_ground, ← spanning_iff_compl_coindep, dual_coindep_iff, or_comm]
+  exact hM diff_subset
 
 @[simp] lemma uniform_dual_iff : M✶.Uniform ↔ M.Uniform :=
   ⟨fun h ↦ by simpa using h.dual, Uniform.dual⟩
 
-lemma uniform_iff_forall_indep_or_spanning : M.Uniform ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X := by
-  refine ⟨fun h X hXE ↦ ?_, fun h B e f hB he hf ↦ ?_⟩
-  · obtain ⟨I, hIX⟩ := M.exists_basis X
-    obtain ⟨B, hB, rfl⟩ := hIX.exists_base
-    obtain h1 | h2 := hIX.subset.eq_or_ssubset
-    · rw [← h1]
-      exact .inl (hIX.indep)
-    obtain ⟨e, heBX, heX⟩ := exists_of_ssubset h2
-    obtain h1 | h2' := (show X ∩ B ⊆ B from inter_subset_right).eq_or_ssubset
-    · rw [inter_eq_right] at h1
-      exact .inr (hB.spanning.superset h1)
-    exfalso
-    obtain ⟨f, hfBX, hfB⟩ := exists_of_ssubset h2'
-    rw [mem_inter_iff, and_iff_left (by simpa)] at heX hfB
-    have hB' := h hB ⟨hXE heBX, heX⟩ hfBX
-    refine (heX <| (hIX.mem_of_insert_indep heBX (hB'.indep.subset ?_)).1)
-    refine insert_subset_insert ?_
-    rwa [subset_diff_singleton_iff, and_iff_right inter_subset_left, mem_inter_iff,
-      and_iff_right hfBX]
+lemma Uniform.exchange (hM : M.Uniform) (hB : M.Base B) (he : e ∈ M.E \ B) (hf : f ∈ B) :
+    M.Base (insert e (B \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact he.2 hf
-  obtain (hi | hs) := h (insert e (B \ {f}))
+  obtain (hi | hs) := hM (X := insert e (B \ {f}))
     (insert_subset he.1 (diff_subset.trans hB.subset_ground))
   · exact hB.exchange_base_of_indep he.2 hi
 
@@ -343,9 +327,65 @@ lemma uniform_iff_forall_indep_or_spanning : M.Uniform ↔ ∀ X ⊆ M.E, M.Inde
   rw [← hrw]
   exact hB.compl_base_dual.exchange_base_of_indep (f := f) (e := e) (by simp [hf]) <| by rwa [hrw]
 
-lemma Uniform.indep_or_spanning (hM : M.Uniform) (hX : X ⊆ M.E) : M.Indep X ∨ M.Spanning X := by
-  rw [uniform_iff_forall_indep_or_spanning] at hM
-  exact hM X hX
+lemma uniform_iff_forall_exchange : M.Uniform ↔
+  ∀ ⦃B e f⦄, M.Base B → e ∈ M.E \ B → f ∈ B → M.Base (insert e (B \ {f})) := by
+  refine ⟨fun h B e f hB he hf ↦ h.exchange hB he hf, fun h X hXE ↦ ?_⟩
+  obtain ⟨I, hIX⟩ := M.exists_basis X
+  obtain ⟨B, hB, rfl⟩ := hIX.exists_base
+  obtain h1 | h2 := hIX.subset.eq_or_ssubset
+  · rw [← h1]
+    exact .inl (hIX.indep)
+  obtain ⟨e, heBX, heX⟩ := exists_of_ssubset h2
+  obtain h1 | h2' := (show X ∩ B ⊆ B from inter_subset_right).eq_or_ssubset
+  · rw [inter_eq_right] at h1
+    exact .inr (hB.spanning.superset h1)
+  exfalso
+  obtain ⟨f, hfBX, hfB⟩ := exists_of_ssubset h2'
+  rw [mem_inter_iff, and_iff_left (by simpa)] at heX hfB
+  have hB' := h hB ⟨hXE heBX, heX⟩ hfBX
+  refine (heX <| (hIX.mem_of_insert_indep heBX (hB'.indep.subset ?_)).1)
+  refine insert_subset_insert ?_
+  rwa [subset_diff_singleton_iff, and_iff_right inter_subset_left, mem_inter_iff,
+    and_iff_right hfBX]
+
+lemma Uniform.contract (hM : M.Uniform) (C : Set α) : (M ／ C).Uniform := by
+  suffices h : ∀ C ⊆ M.E, (M ／ C).Uniform by convert h (C ∩ M.E) inter_subset_right using 1; simp
+  clear C
+  intro C hCE
+  obtain ⟨I, hI⟩ := M.exists_basis C
+  suffices ∀ X ⊆ M.E, Disjoint C X → M.Indep (X ∪ I) ∨ M.Spanning (X ∪ C) by
+    simpa (config := {contextual := true}) [Uniform, hI.contract_indep_iff,
+    contract_spanning_iff hCE, subset_diff, disjoint_comm]
+  exact fun X hXE hXC ↦ (hM.indep_or_spanning _ (union_subset hXE hI.indep.subset_ground)).elim .inl
+    fun h ↦ .inr <| h.superset (union_subset_union_right X hI.subset)
+
+lemma Uniform.delete (hM : M.Uniform) (D : Set α) : (M ＼ D).Uniform := by
+  rw [← uniform_dual_iff, delete_dual_eq_dual_contract]
+  exact hM.dual.contract D
+
+lemma Uniform.minor {N : Matroid α} (hM : M.Uniform) (hNM : N ≤m M) : N.Uniform := by
+  obtain ⟨C, D, -, -, -, rfl⟩ := hNM
+  exact (hM.contract C).delete D
+
+@[simp] lemma loopyOn_uniform (E : Set α) : (loopyOn E).Uniform :=
+  fun _ ↦ by simp (config := {contextual := true}) [spanning_iff]
+
+@[simp] lemma freeOn_uniform (E : Set α) : (freeOn E).Uniform :=
+  fun _ ↦ by simp (config := {contextual := true})
+
+lemma Uniform.truncate (hM : M.Uniform) : M.truncate.Uniform := by
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  · simp
+  intro X (hXE : X ⊆ M.E)
+  rw [truncate_indep_iff, truncate_spanning_iff]
+  obtain hX | hX := hM.indep_or_spanning X
+  · rw [and_iff_right hX, ← imp_iff_not_or]
+    intro hB
+    obtain ⟨e, he⟩ := hB.nonempty
+    exact ⟨e, hB.subset_ground he, by simpa [he] using hB.spanning⟩
+  obtain ⟨B, hB, hBX⟩ := hX.exists_base_subset
+  obtain ⟨e, he⟩ := hB.nonempty
+  exact .inr ⟨e, hB.subset_ground he, hX.superset (subset_insert _ _)⟩
 
 lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ M.Spanning I) :
     M.closure I = I := by
@@ -354,11 +394,11 @@ lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ 
     closure_insert_closure_eq_closure_insert, ← spanning_iff_closure_eq] at hIs
 
   have hIe : M.Indep (insert e I) :=
-    (hM.indep_or_spanning (by aesop_mat)).elim id fun h ↦ (hIs h).elim
+    (hM.indep_or_spanning _ (by aesop_mat)).elim id fun h ↦ (hIs h).elim
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_not_mem heI] at he
   exact he.not_indep hIe
 
-lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (h : M.Uniform) (hB : M.Base B)
+lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.Base B)
     (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.Base B' := by
   obtain h | h := (B' \ B).eq_empty_or_nonempty
   · rw [diff_eq_empty] at h
@@ -373,7 +413,7 @@ lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (h : M.Uniform) (hB : M.Ba
     simp_rw [encard_ne_top_iff]
     exact h_fin.diff_right_finite.diff _
 
-  apply h.base_of_base_of_finDiff (h hB ⟨hB' heB', heB⟩ hfB)
+  apply hM.base_of_base_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
   rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
     and_iff_right (h_fin.diff_left_finite.diff _), ← singleton_union, union_comm, ← diff_diff,
     diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
@@ -433,7 +473,8 @@ Matroid.ofBase E Base exists_base
 lemma uniformMatroidOfBase_uniform (E : Set α) (Base : Set α → Prop)
     {exists_base} {antichain} {exchange} {contain} {subset_ground} :
     (UniformMatroidOfBase E Base exists_base antichain exchange contain subset_ground).Uniform := by
-  simp only [Uniform, UniformMatroidOfBase_Base, UniformMatroidOfBase_E, mem_diff, and_imp]
+  simp only [uniform_iff_forall_exchange, UniformMatroidOfBase_Base, UniformMatroidOfBase_E,
+    mem_diff, and_imp]
   exact fun B e f hB heE he hf ↦ exchange hB hf ⟨heE, he⟩
 
 lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \ B').Finite) :

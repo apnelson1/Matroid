@@ -3,7 +3,7 @@ import Matroid.ForMathlib.Set
 
 open Set
 
-variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K : Set α}
+variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K S : Set α}
 
 namespace Matroid
 
@@ -193,6 +193,26 @@ lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) :
     (M ＼ X).removeLoops = M.removeLoops := by
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, delete_closure_eq, empty_diff,
     union_diff_self, union_eq_self_of_subset_left h]
+
+lemma Coindep.delete_base_iff (hD : M.Coindep D) : (M ＼ D).Base B ↔ M.Base B ∧ Disjoint B D := by
+  rw [Matroid.delete_base_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hss := h.subset
+    rw [subset_diff] at hss
+    have hcl := h.basis_closure_right
+    rw [hD.closure_compl, basis_ground_iff] at hcl
+    exact ⟨hcl, hss.2⟩
+  exact h.1.basis_ground.basis_subset (by simp [subset_diff, h.1.subset_ground, h.2]) diff_subset
+
+lemma Coindep.delete_rkPos [M.RkPos] (hD : M.Coindep D) : (M ＼ D).RkPos := by
+  simp [rkPos_iff_empty_not_base, hD.delete_base_iff, M.empty_not_base]
+
+lemma Coindep.delete_spanning_iff (hD : M.Coindep D) :
+    (M ＼ D).Spanning S ↔ M.Spanning S ∧ Disjoint S D := by
+  simp only [spanning_iff_exists_base_subset', hD.delete_base_iff, and_assoc, delete_ground,
+    subset_diff, and_congr_left_iff, and_imp]
+  refine fun hSE hSD ↦ ⟨fun ⟨B, hB, hBD, hBS⟩ ↦ ⟨B, hB, hBS⟩, fun ⟨B, hB, hBS⟩ ↦ ⟨B, hB, ?_, hBS⟩⟩
+  exact hSD.mono_left hBS
 
 
 end Delete
@@ -558,6 +578,10 @@ lemma Spanning.contract (hX : M.Spanning X) (C : Set α) : (M ／ C).Spanning (X
   rw [contract_spanning_iff', and_iff_left disjoint_sdiff_left,
     diff_eq_diff_inter_of_subset hX.subset_ground C, diff_union_self]
   apply hX.superset subset_union_left
+
+lemma Spanning.contract_eq_loopyOn (hX : M.Spanning X) : M ／ X = loopyOn (M.E \ X) := by
+  rw [eq_loopyOn_iff_closure]
+  simp [hX.closure_eq]
 
 lemma Nonloop.of_contract (h : (M ／ C).Nonloop e) : M.Nonloop e := by
   rw [← indep_singleton] at h ⊢

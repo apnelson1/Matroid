@@ -132,7 +132,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
   simp (config := {contextual := true}) [truncate, ModularCut.principal, eq_loopyOn_iff]
 
-lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
+@[simp] lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
   refine ⟨fun h ↦ ?_, fun ⟨e, he, hBe⟩ ↦ ?_⟩
   · obtain ⟨hB, hBb⟩ := truncate_indep_iff.1 h.indep
     obtain ⟨B', hB', hBB'⟩ := hB.exists_base_superset
@@ -147,6 +147,84 @@ lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (i
     exact ⟨hBe.indep.subset (subset_insert _ _), hBe.not_base_of_ssubset (ssubset_insert he)⟩
   simp only [truncate_ground_eq, mem_diff, truncate_indep_iff, not_and, not_not, and_imp]
   exact fun f _ hfB hfBi ↦ insert_base_of_insert_indep he hfB hBe hfBi
+
+@[simp] lemma truncate_spanning_iff [M.RkPos] {S : Set α} :
+    M.truncate.Spanning S ↔ ∃ e ∈ M.E, M.Spanning (insert e S) := by
+  simp only [spanning_iff_exists_base_subset', truncate_base_iff, truncate_ground_eq,
+    exists_and_left, insert_subset_iff, ← and_assoc, exists_and_right, and_congr_left_iff]
+  refine fun hSE ↦ ⟨fun ⟨B, ⟨e, he, heB⟩, hBS⟩ ↦ ?_, fun ⟨e, ⟨h, B, hB, hBS⟩, _⟩ ↦ ?_⟩
+  · have heE : e ∈ M.E := heB.subset_ground (mem_insert _ _)
+    exact ⟨e, ⟨heE, _, heB, insert_subset_insert hBS⟩, heE⟩
+  by_cases heB : e ∈ B
+  · exact ⟨B \ {e}, ⟨e, by simpa [heB]⟩, by simpa⟩
+  rw [← diff_singleton_subset_iff, diff_singleton_eq_self heB] at hBS
+  obtain ⟨f, hf⟩ := hB.nonempty
+  exact ⟨B \ {f}, ⟨f, by simpa [hf]⟩, diff_subset.trans hBS⟩
+
+lemma truncate_spanning_iff_of_ssubset {S : Set α} (hssu : S ⊂ M.E) :
+    M.truncate.Spanning S ↔ ∃ e ∈ M.E \ S, M.Spanning (insert e S) := by
+  obtain ⟨f, hf⟩ := exists_of_ssubset hssu
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  · simp only [truncate_loopyOn_eq, loopyOn_spanning_iff, show S ⊆ E from hssu.subset,
+      loopyOn_ground, mem_diff, insert_subset_iff, and_true, true_iff]
+    exact ⟨f, hf, hf.1⟩
+  rw [truncate_spanning_iff]
+  refine ⟨fun ⟨e, heE, he⟩ ↦ ?_, fun ⟨e, heE, he⟩ ↦ ⟨e, heE.1, he⟩⟩
+  by_cases heS : e ∈ S
+  · exact ⟨f, hf, he.superset (insert_subset (mem_insert_of_mem _ heS) (subset_insert _ _))⟩
+  exact ⟨e, ⟨heE, heS⟩, he⟩
+
+lemma Spanning.truncate_spanning {S : Set α} (hS : M.Spanning S) : M.truncate.Spanning S := by
+  obtain rfl | hssu := hS.subset_ground.eq_or_ssubset
+  · exact M.truncate.ground_spanning
+  rw [truncate_spanning_iff_of_ssubset hssu]
+  obtain ⟨f, hf⟩ := exists_of_ssubset hssu
+  exact ⟨f, hf, hS.superset (subset_insert _ _)⟩
+
+lemma Coindep.truncate_delete {D : Set α} (hD : M.Coindep D) :
+    (M ＼ D).truncate = M.truncate ＼ D := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  rw [truncate_ground_eq, delete_ground, subset_diff] at hI
+  simp [truncate_indep_iff', hD.delete_base_iff, delete_indep_iff, truncate_indep_iff, hI.2]
+
+lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.truncate ／ C := by
+  suffices aux : ∀ C ⊆ M.E, (M ／ C).truncate = M.truncate ／ C by
+    convert aux (C ∩ M.E) inter_subset_right using 1
+    simp
+    rw [← contract_inter_ground_eq, truncate_ground_eq]
+  clear C
+  intro C hCE
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  · simp
+  by_cases hC : M.Spanning C
+  · have hC' : M.truncate.Spanning C := by
+      rw [truncate_spanning_iff]
+      obtain ⟨B, hB⟩ := M.exists_base
+      obtain ⟨e, he⟩ := hB.nonempty
+      have heE := hB.subset_ground he
+      exact ⟨e, hB.subset_ground he, hC.superset (subset_insert _ _)⟩
+    simp [hC.contract_eq_loopyOn, hC'.contract_eq_loopyOn]
+
+  have hpos : (M ／ C).RkPos
+  · rwa [rkPos_iff_empty_not_spanning, contract_spanning_iff, empty_union,
+      and_iff_left (empty_disjoint _)]
+
+  refine ext_spanning rfl fun S hS ↦ ?_
+  simp only [truncate_ground_eq, contract_ground, subset_diff] at hS
+  simp only [truncate_spanning_iff, contract_ground, mem_diff, ← singleton_union,
+    contract_spanning_iff hCE, disjoint_union_left, disjoint_singleton_left, hS.2, and_true,
+    contract_spanning_iff (show C ⊆ M.truncate.E from hCE)]
+  simp_rw [singleton_union, insert_union]
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨e, he.1.1, he.2.1⟩, fun ⟨e, he⟩ ↦ ?_⟩
+  by_cases heC : e ∈ C
+  · obtain ⟨B, hB⟩ := (M ／ C).exists_base
+    obtain ⟨f, hf⟩ := hB.nonempty
+    have hf' : f ∈ M.E \ C := ⟨(hB.subset_ground.trans diff_subset) hf, (hB.subset_ground hf).2⟩
+    rw [insert_eq_of_mem (.inr heC)] at he
+    exact ⟨f, ⟨hf'.1, hf'.2⟩, he.2.superset (subset_insert _ _), hf'.2⟩
+  exact ⟨e, ⟨he.1, heC⟩, he.2, heC⟩
+
+
 
 end truncate
 

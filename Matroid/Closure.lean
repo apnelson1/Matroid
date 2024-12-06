@@ -21,6 +21,9 @@ section Constructions
     (subset_trans (by rw [(loopyOn_base_iff.2 rfl).closure_eq])
       (closure_subset_closure _ (empty_subset _)))
 
+@[simp] lemma loopyOn_spanning_iff {E : Set α} : (loopyOn E).Spanning X ↔ X ⊆ E := by
+  rw [spanning_iff, loopyOn_closure_eq, loopyOn_ground, and_iff_right rfl]
+
 lemma closure_empty_eq_ground_iff : M.closure ∅ = M.E ↔ M = loopyOn M.E := by
   refine ⟨fun h ↦ ext_closure ?_, fun h ↦ by rw [h, loopyOn_closure_eq, loopyOn_ground]⟩
   refine fun X ↦ subset_antisymm (by simp [closure_subset_ground]) ?_
@@ -115,6 +118,17 @@ lemma restrict_closure_eq (M : Matroid α) (hXR : X ⊆ R) (hR : R ⊆ M.E := by
   refine ⟨x, ⟨hx, fun hind ↦ ?_⟩, rfl⟩
   obtain ⟨x', hx', h_eq⟩ := h _ hind (by rw [image_insert_eq])
   rwa [← hf (hI'.indep.subset_ground hx') hx h_eq]
+
+lemma restrict_spanning_iff (hSR : S ⊆ R) (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Spanning S ↔ R ⊆ M.closure S := by
+  rw [spanning_iff, restrict_ground_eq, and_iff_left hSR, restrict_closure_eq _ hSR, inter_eq_right]
+
+lemma restrict_spanning_iff' : (M ↾ R).Spanning S ↔ R ∩ M.E ⊆ M.closure S ∧ S ⊆ R := by
+  rw [spanning_iff, restrict_closure_eq', restrict_ground_eq, and_congr_left_iff,
+    diff_eq_compl_inter, ← union_inter_distrib_right, inter_eq_right, union_comm,
+    ← diff_subset_iff, diff_compl]
+  intro hSR
+  rw [inter_eq_self_of_subset_left hSR]
 
 end Constructions
 
