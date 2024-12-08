@@ -350,20 +350,36 @@ lemma Indep.union_basis_union_of_contract_basis (hI : M.Indep I) (hB : (M ／ I)
     simp [hm]
   exact union_subset (hB.subset_ground.trans (contract_ground_subset_ground _ _)) hI.subset_ground
 
-lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I)) (hdj : Disjoint (J ∪ X) I) :
-    (M ／ I).Basis J X := by
-  rw [disjoint_union_left] at hdj
-  have hI := h.indep.subset subset_union_right
-  simp_rw [Basis, maximal_subset_iff, hI.contract_indep_iff, and_iff_right hdj.1,
-    and_iff_right h.indep, contract_ground, subset_diff, and_iff_left hdj.2,
-    and_iff_left (subset_union_left.trans h.subset_ground), and_imp,
-    and_iff_right (Disjoint.subset_left_of_subset_union (subset_union_left.trans h.subset) hdj.1)]
-  intro Y hYI hYi hYX hJY
-  have hu :=
-    h.eq_of_subset_indep hYi (union_subset_union_left _ hJY) (union_subset_union_left _ hYX)
-  apply_fun fun x : Set α ↦ x \ I at hu
-  simp_rw [union_diff_right, hdj.1.sdiff_eq_left, hYI.sdiff_eq_left] at hu
-  exact hu
+lemma Basis'.contract_basis'_diff_diff_of_subset (hIX : M.Basis' I X) (hJI : J ⊆ I) :
+    (M ／ J).Basis' (I \ J) (X \ J) := by
+  suffices ∀ ⦃K⦄, Disjoint K J → M.Indep (K ∪ J) → K ⊆ X → I ⊆ K ∪ J → K ⊆ I by
+    simpa (config := { contextual := true }) [Basis', (hIX.indep.subset hJI).contract_indep_iff,
+      subset_diff, maximal_subset_iff, disjoint_sdiff_left,
+      union_eq_self_of_subset_right hJI, hIX.indep, diff_subset.trans hIX.subset,
+      diff_subset_iff, subset_antisymm_iff, union_comm J]
+
+  exact fun K hJK hKJi hKX hIJK ↦ by
+    simp [hIX.eq_of_subset_indep hKJi hIJK (union_subset hKX (hJI.trans hIX.subset))]
+
+lemma Basis'.contract_basis'_diff_of_subset (hIX : M.Basis' I X) (hJI : J ⊆ I) :
+    (M ／ J).Basis' (I \ J) X := by
+  rw [basis'_iff_basis_inter_ground]
+  simpa [inter_diff_assoc] using (hIX.contract_basis'_diff_diff_of_subset hJI).basis_inter_ground
+
+lemma Basis.contract_basis_diff_diff_of_subset (hIX : M.Basis I X) (hJI : J ⊆ I) :
+    (M ／ J).Basis (I \ J) (X \ J) := by
+  have h := (hIX.basis'.contract_basis'_diff_of_subset hJI).basis_inter_ground
+  rwa [contract_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left hIX.subset_ground] at h
+
+lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I))
+    (hJI : Disjoint J I) (hXI : Disjoint X I) : (M ／ I).Basis J X := by
+  have  h' : (M ／ I).Basis' J X := by
+    simpa [hXI.sdiff_eq_left, hJI.sdiff_eq_left] using
+    h.basis'.contract_basis'_diff_diff_of_subset subset_union_right
+
+  rwa [basis'_iff_basis _ ] at h'
+  rw [contract_ground, subset_diff, and_iff_left hXI]
+  exact subset_union_left.trans h.subset_ground
 
 lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M✶.closure ∅) : M ／ X = M ＼ X := by
   refine ext_indep rfl fun I _ ↦ ?_

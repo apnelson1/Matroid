@@ -26,6 +26,22 @@ def Paving.exists_insert_of_dep (hM : M.Paving) (hD : M.Dep D) :
   have h_or := hM.indep_or_spanning D hD.subset_ground
   simpa [truncate_indep_iff, truncate_spanning_iff, hD.not_indep] using h_or
 
+lemma paving_iff_forall_circuit :
+    M.Paving ↔ ∀ C, M.Circuit C → ∃ e, M.Spanning (insert e C) := by
+  refine ⟨fun h C hC ↦ ?_, fun h X (hXE : X ⊆ M.E) ↦ ?_⟩
+  · obtain ⟨e, he⟩ := h.exists_insert_of_dep hC.dep
+    exact ⟨e, he.2⟩
+  obtain ⟨E, rfl⟩ | hpos := M.eq_loopyOn_or_rkPos'
+  · simp [show X ⊆ E from hXE]
+  rw [truncate_indep_iff, truncate_spanning_iff, ← not_dep_iff, ← not_or, ← imp_iff_not_or]
+  rintro (hX | hX)
+  · obtain ⟨C, hCX, hC⟩ := hX.exists_circuit_subset
+    obtain ⟨e, he⟩ := h C hC
+    have heE := he.subset_ground <| mem_insert _ _
+    exact ⟨e, heE, he.superset (insert_subset_insert hCX)⟩
+  obtain ⟨e, he⟩ := hX.nonempty
+  exact ⟨e, hX.subset_ground he, by simp [he, hX.spanning]⟩
+
 def Paving.exists_insert_of_dep_of_ssubset (hM : M.Paving) (hD : M.Dep D) (hDE : D ⊂ M.E) :
     ∃ e ∈ M.E \ D, M.Spanning (insert e D) := by
   obtain ⟨e, he, heD⟩ := hM.exists_insert_of_dep hD
@@ -55,50 +71,44 @@ lemma Paving.closure_hyperplane_of_dep_of_not_spanning (hM : M.Paving) (hD : M.D
     exact h.2 <| .inl rfl
   exact fun S T ⟨hT, hTE⟩ hST ↦ ⟨fun hS ↦ hT <| hS.superset hST, hST.trans hTE⟩
 
--- lemma Paving.base_exchange_circuit_of_not_base' (hM : M.Paving) (hB : M.Base B)
---     (heB : e ∈ M.E \ B) (hfB : f ∈ B) (hB' : ¬ M.Base (insert e (B \ {f}))) :
---     M.Circuit (insert e (B \ {f})) := by
---   obtain ⟨C, hC⟩
-
 lemma Paving.base_exchange_circuit_of_not_base (hM : M.Paving) (hB : M.Base B)
     (heB : e ∈ M.E \ B) (hfB : f ∈ B) (hB' : ¬ M.Base (insert e (B \ {f}))) :
     M.Circuit (insert e (B \ {f})) := by
-  set B' := insert e (B \ {f}) with hB'_def
-  have hB'E : B' ⊆ M.E := insert_subset heB.1 (diff_subset.trans hB.subset_ground)
-  have hB'd : M.Dep B' := by
-    rw [← not_indep_iff]
+
+  replace hB' := show M.Dep (insert e (B \ {f})) by
+    rw [dep_iff, and_iff_left (insert_subset heB.1 (diff_subset.trans hB.subset_ground))]
     contrapose! hB'
-    exact hB.exchange_base_of_indep heB.2 hB'
+    refine hB.exchange_base_of_indep heB.2 hB'
 
-  rw [circuit_iff_dep_forall_diff_singleton_indep, and_iff_right hB'd]
-
-  rintro x (rfl | ⟨hxB', hxf : x ≠ f⟩)
-  · simp only [hB'_def, mem_singleton_iff, insert_diff_of_mem]
-    exact hB.indep.subset (diff_subset.trans diff_subset)
-
-  rw [← not_dep_iff (diff_subset.trans hB'E)]
-  intro hd
-  obtain ⟨C, hCB', hC⟩ := hd.exists_circuit_subset
-  have hfE := hB.subset_ground hfB
-  have hfC : f ∉ M.closure C := by
+  obtain ⟨C, hCB', hC⟩ := hB'.exists_circuit_subset
+  have hcl : f ∉ M.closure C := by
     rw [← hC.closure_diff_singleton_eq_closure e]
-    apply not_mem_subset (M.closure_subset_closure (by simpa using hCB'.trans diff_subset))
-    exact hB.indep.not_mem_closure_diff_of_mem hfB
+    exact not_mem_subset (M.closure_subset_closure (by simpa)) <|
+      hB.indep.not_mem_closure_diff_of_mem hfB
 
-  have hfC' := hM.insert_spanning_of_dep_of_not_mem_closure hC.dep ⟨hfE, hfC⟩
+  have hfC : f ∉ C := not_mem_subset (M.subset_closure C) hcl
 
-  rw [spanning_iff_closure_eq, ← closure_insert_closure_eq_closure_insert,
-    ← hC.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert,
-    ← spanning_iff_closure_eq] at hfC'
+  have hCsp := hM.insert_spanning_of_dep_of_not_mem_closure hC.dep ⟨hB.subset_ground hfB, hcl⟩
 
-  obtain ⟨B₀, hB₀, hB₀ss⟩ := hfC'.exists_base_subset
-  rw [hB₀.eq_of_subset_base hB (hB₀ss.trans ?_)] at hB₀ss
-  · have hx := hB₀ss hxB'
-    rw [mem_insert_iff, or_iff_right hxf, mem_diff] at hx
-    simpa using hCB' hx.1
-  refine insert_subset hfB ((diff_subset_diff_left hCB').trans ?_)
-  simp only [hB'_def, diff_singleton_subset_iff, insert_comm]
-  exact insert_subset_insert (diff_subset.trans (subset_insert _ _))
+  have hss : insert f (C \ {e}) ⊆ B
+  · refine insert_subset hfB ?_
+    rw [diff_singleton_subset_iff]
+    exact hCB'.trans (insert_subset_insert diff_subset)
+
+  rw [spanning_iff, ← closure_insert_closure_eq_closure_insert,
+    ← hC.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert] at hCsp
+
+  have h_eq : insert f (C \ {e}) = B :=
+    hB.indep.eq_of_spanning_subset (by rw [spanning_iff_closure_eq, hCsp.1]) hss
+
+  have hef : e ≠ f := by rintro rfl; exact heB.2 hfB
+  have heC : e ∈ C
+  · by_contra heC
+    rw [← diff_singleton_subset_iff, diff_singleton_eq_self heC] at hCB'
+    exact hC.dep.not_indep (hB.indep.subset (hCB'.trans diff_subset))
+
+  rwa [← h_eq, insert_diff_of_mem _ (show f ∈ {f} from rfl), insert_diff_singleton_comm hef,
+    insert_diff_singleton, diff_singleton_eq_self (by simp [hef.symm, hfC]), insert_eq_of_mem heC]
 
 lemma Paving.restrict_uniform_of_nonspanning {R : Set α} (hM : M.Paving) (hRs : ¬ M.Spanning R)
     (hRE : R ⊆ M.E := by aesop_mat) : (M ↾ R).Uniform := by
@@ -229,3 +239,26 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_circuit_hyperplane :
   have hcl := h.2.closure_insert_eq_univ he
   rw [← spanning_iff_closure_eq] at hcl
   exact .inr ⟨e, he.1, hcl⟩
+
+section exp
+
+-- def Pav (M : Matroid α) := ∀ C, M.Circuit C → M.relRank C M.E ≤ 1
+
+
+-- lemma pav_iff_foo : M.Paving ↔ ∀ C, M.Circuit C → M.relRank C M.E ≤ 1 := by
+--   -- rw [paving_iff_forall_circuit]
+--   obtain rfl | hne := M.eq_emptyOn_or_nonempty
+--   · simp
+--   simp_rw [relRank_le_one_iff M.ground_nonempty]
+--   refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ ?_⟩
+--   · obtain ⟨e, he⟩ := h C hC
+
+  -- refine ⟨fun h C hC ↦ ?_, fun h ↦ ?_⟩
+  -- ·
+  --   obtain ⟨e, he, hsp⟩ := h.exists_insert_of_dep hC.dep
+
+
+
+
+-- lemma foo (hM : M.Pav) (hdu : M✶.Pav) (hC : M.Dep C) (hD : ¬ M.Spanning C) : M.Circuit C := by
+--   obtain ⟨

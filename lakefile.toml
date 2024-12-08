@@ -7,6 +7,7 @@ defaultTargets = ["Matroid"]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 autoImplicit = false
 pp.proofs.withType = false
+linter.docPrime = false
 
 [[require]]
 name = "mathlib"

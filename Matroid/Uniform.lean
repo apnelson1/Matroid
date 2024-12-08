@@ -32,7 +32,7 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ∞) : Matroid α := (freeOn E).tru
 @[simp] theorem unifOn_zero (E : Set α) : unifOn E 0 = loopyOn E := by
   simp [unifOn]
 
-@[simp] theorem unifOn_empty (α : Type*) (a : ℕ) : unifOn ∅ a = emptyOn α := by
+@[simp] theorem unifOn_empty (α : Type*) (a : ℕ∞) : unifOn ∅ a = emptyOn α := by
   simp [unifOn]
 
 theorem unifOn_eq_unifOn_min (E : Set α) (k : ℕ∞) : unifOn E k = unifOn E (min k E.encard) := by
@@ -134,17 +134,26 @@ theorem unifOn_contract_eq' {α : Type*} (E C : Set α) {k : ℕ∞} (hk : k ≠
     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) :=
   unifOn_contract_eq' E C WithTop.coe_ne_top
 
-@[simp] theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
-  constructor
+lemma eq_unifOn_of_erk_le_one [M.Loopless] (hM : M.erk ≤ 1) : ∃ E, M = unifOn E 1 := by
+  simp (config := { contextual := true }) only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff,
+    exists_eq_left', and_true]
+  exact fun I hIE ↦ ⟨fun hI ↦ hI.encard_le_erk.trans hM,
+    fun hI ↦ subsingleton_indep (encard_le_one_iff_subsingleton.1 hI) hIE⟩
+
+lemma eq_unifOn_of_erk_le_two [M.Simple] (hM : M.erk ≤ 2) : ∃ E, M = unifOn E 2 := by
+  simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, true_and]
+  exact ⟨_, rfl, fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hM, hIE⟩,
+    fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩⟩
+
+theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
+  refine ⟨?_, fun ⟨hE, hr, h⟩ ↦ ?_⟩
   · rintro rfl
     simp_rw [unifOn_ground_eq, unifOn_erk_eq, min_le_iff, iff_true_intro rfl.le,
       or_true, true_and, simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
       and_iff_right (encard_pair_le _ _)]
     exact fun e f ↦ pair_subset
-  rintro ⟨rfl, hr, hM⟩
-  simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, true_and]
-  exact fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hr, hIE⟩,
-    fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩
+  obtain ⟨E', rfl⟩ := eq_unifOn_of_erk_le_two hr
+  rw [show E' = E from hE]
 
 instance unifOn_loopless {k : ℕ∞} (E : Set α) : Loopless (unifOn E (k+1)) := by
   simp_rw [loopless_iff_forall_nonloop, ← indep_singleton, unifOn_indep_iff]
@@ -154,6 +163,23 @@ instance unifOn_simple {k : ℕ∞} (E : Set α) : Simple (unifOn E (k+2)) := by
   simp only [simple_iff_forall_pair_indep, unifOn_indep_iff, unifOn_ground_eq,
     mem_singleton_iff, pair_subset_iff]
   exact fun {e f} he hf ↦ ⟨(encard_pair_le e f).trans (self_le_add_left _ _), he, hf⟩
+
+@[simp] lemma circuitOn_dual (E : Set α) : (circuitOn E)✶ = unifOn E 1 := by
+  obtain rfl | ⟨f, hf⟩ := E.eq_empty_or_nonempty
+  · simp
+  refine ext_indep rfl fun I (hIE : I ⊆ E) ↦ ?_
+  rw [← coindep_def, coindep_iff_compl_spanning, circuitOn_spanning_iff ⟨f, hf⟩, unifOn_indep_iff,
+    and_iff_left hIE, circuitOn_ground, encard_le_one_iff_subsingleton]
+  simp_rw [subset_antisymm_iff, insert_subset_iff, and_iff_left diff_subset,
+    ← diff_singleton_subset_iff]
+  refine ⟨fun ⟨e, heE, he⟩ ↦ subsingleton_of_subset_singleton (a := e) ?_, fun h ↦ ?_⟩
+  · rwa [Set.diff_subset_diff_iff_subset (by simpa using heE) hIE] at he
+  obtain rfl | ⟨e, rfl⟩ := h.eq_empty_or_singleton
+  · exact ⟨f, hf, by simp⟩
+  exact ⟨e, by simpa using hIE, rfl.subset⟩
+
+lemma unifOn_one_dual (E : Set α) : (unifOn E 1)✶ = circuitOn E := by
+  rw [← circuitOn_dual, dual_dual]
 
 section unif
 
@@ -426,6 +452,21 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
     (hP : ∀ ⦃x y⦄, P x → x ≤ y → P y) (h : Maximal (fun x ↦ P x ∧ Q x) a) : Maximal Q a :=
   ⟨h.prop.2, fun _ hb hab ↦ h.le_of_ge ⟨hP h.prop.1 hab, hb⟩ hab⟩
 
+/-- A finite-rank uniform matroid is one of the obvious ones. -/
+lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
+    ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
+  refine ⟨M.E, M.rk, ext_base rfl fun B hBE ↦ ?_⟩
+  rw [coe_rk_eq, unifOn_base_iff' M.erk_lt_top.ne M.erk_le_encard_ground hBE,
+    iff_def, and_iff_right Base.encard]
+  intro hB
+  obtain ⟨B₀, hB₀⟩ := M.exists_base
+  refine hM.base_of_base_of_finDiff hB₀ ?_ hBE
+  rw [finDiff_iff, and_iff_right (hB₀.finite.diff _),
+    ← WithTop.add_right_cancel_iff (a := (B₀ ∩ B).encard), encard_diff_add_encard_inter,
+    inter_comm, encard_diff_add_encard_inter, hB₀.encard, hB]
+  rw [encard_ne_top_iff]
+  exact hB₀.finite.subset inter_subset_left
+
 @[simps!] def UniformMatroidOfBase (E : Set α) (Base : Set α → Prop)
     (exists_base : ∃ B, Base B)
     (antichain : IsAntichain (· ⊆ ·) (setOf Base))
@@ -483,6 +524,46 @@ lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \
 
 
 end Infinite
+
+section LowRank
+
+  -- obtain hlt | h_eq := hM.lt_or_eq
+  -- · rw [show (2 : ℕ∞) = 1 + 1 by norm_num] at hlt
+  --   obtain ⟨E, rfl⟩ := eq_unifOn_of_erk_le_one (Order.le_of_lt_add_one hlt)
+  --   refine ⟨E, ?_⟩
+  --   -- have := Order.le_of_lt_add_one hlt
+
+
+  -- have : M.erk = 1 := by
+  --   rw [erk_ne_ze]
+
+
+  -- obtain rfl | h := M.eq_emptyOn_or_nonempty
+  -- · simp [eq_comm (a := emptyOn α), ← ground_eq_empty_iff]
+  -- refine ⟨M.E, ext_base rfl fun B hBE ↦ ?_⟩
+  -- rw [unifOn_base_iff' (by simp) _ hBE]
+  -- have hMU : M.Uniform
+  -- · rw [uniform_iff_forall_exchange]
+  --   intro B e f hB he hf
+  --   refine hB.exchange_base_of_indep he.2 ?_
+
+  --   obtain rfl | ⟨x, rfl⟩ := encard_le_one_iff_eq.1 <| hB.encard.trans_le hM
+  --   · simp at hf
+  --   obtain rfl : f = x := hf
+  --   simpa using M.toNonloop
+  -- have hfin : M.FiniteRk := by
+  --   rw [finiteRk_iff]
+  --   aesop
+  -- obtain ⟨E, k, rfl⟩ := hMU.exists_eq_unifOn
+
+
+
+
+  -- rw [le_one_iff_] at hM
+
+-- lemma erk_eq_one_iff_eq_unifOn [M.Loopless] : M.erk
+
+end LowRank
 
 /-
 theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :

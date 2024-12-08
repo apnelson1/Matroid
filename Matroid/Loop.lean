@@ -429,6 +429,12 @@ lemma toNonloop [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.Nonloop e := by
   rw [← not_loop_iff, loop_iff_mem_closure_empty, closure_empty_eq_empty]; exact not_mem_empty _
 
+lemma subsingleton_indep [M.Loopless] (hI : I.Subsingleton) (hIE : I ⊆ M.E := by aesop_mat) :
+    M.Indep I := by
+  obtain rfl | ⟨x, rfl⟩ := hI.eq_empty_or_singleton
+  · simp
+  simpa using M.toNonloop
+
 lemma not_loop (M : Matroid α) [Loopless M] (e : α) : ¬ M.Loop e :=
   fun h ↦ (toNonloop (e := e)).not_loop h
 

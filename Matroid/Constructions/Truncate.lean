@@ -132,6 +132,10 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
   simp (config := {contextual := true}) [truncate, ModularCut.principal, eq_loopyOn_iff]
 
+@[simp] lemma truncate_emptyOn_eq (α : Type*) : (emptyOn α).truncate = emptyOn α := by
+  rw [← ground_eq_empty_iff]
+  rfl
+
 @[simp] lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
   refine ⟨fun h ↦ ?_, fun ⟨e, he, hBe⟩ ↦ ?_⟩
   · obtain ⟨hB, hBb⟩ := truncate_indep_iff.1 h.indep
@@ -237,6 +241,9 @@ def circuitOn (C : Set α) := (freeOn C).truncate
 
 @[simp] lemma circuitOn_ground : (circuitOn C).E = C := rfl
 
+@[simp] lemma circuitOn_empty (α : Type*) : circuitOn (∅ : Set α) = emptyOn α := by
+  simp [circuitOn]
+
 lemma circuitOn_indep_iff (hC : C.Nonempty) : (circuitOn C).Indep I ↔ I ⊂ C := by
   have := freeOn_rkPos hC
   simp [circuitOn, truncate_indep_iff, ssubset_iff_subset_ne]
@@ -256,6 +263,15 @@ lemma circuitOn_circuit_iff (hC : C.Nonempty) {C' : Set α} : (circuitOn C).Circ
   refine ⟨fun h ↦ h.eq_of_subset_circuit (circuitOn_ground_circuit hC) h.subset_ground, ?_⟩
   rintro rfl
   exact circuitOn_ground_circuit hC
+
+lemma circuitOn_spanning_iff (hC : C.Nonempty) {S : Set α} :
+    (circuitOn C).Spanning S ↔ ∃ e, insert e S = C := by
+  simp_rw [spanning_iff_exists_base_subset', circuitOn_ground, circuitOn_base_iff hC]
+  constructor
+  · rintro ⟨⟨B, ⟨e, heB, rfl⟩, hBS⟩, hSC⟩
+    exact ⟨e, subset_antisymm (insert_subset (by simp) hSC) (insert_subset_insert hBS)⟩
+  rintro ⟨e, rfl⟩
+  exact ⟨⟨S \ {e}, ⟨e, by simp⟩, diff_subset⟩, subset_insert _ _⟩
 
 lemma ground_circuit_iff [M.Nonempty] : M.Circuit M.E ↔ M = circuitOn M.E := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

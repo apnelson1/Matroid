@@ -21,6 +21,9 @@ theorem Restriction.indep_iff {α : Type*} {M N : Matroid α} (hMN : N ≤r M) {
     N.Indep I ↔ M.Indep I ∧ I ⊆ N.E :=
   ⟨fun h ↦ ⟨h.of_restriction hMN, h.subset_ground⟩, fun h ↦ h.1.indep_restriction hMN h.2⟩
 
+lemma Basis'.base_restrict {I X : Set α} (hIX : M.Basis' I X) : (M ↾ X).Base I :=
+  hIX
+
 lemma insert_base_of_insert_indep {M : Matroid α} {I : Set α} {e f : α}
     (he : e ∉ I) (hf : f ∉ I) (heI : M.Base (insert e I)) (hfI : M.Indep (insert f I)) :
     M.Base (insert f I) := by

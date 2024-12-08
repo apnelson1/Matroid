@@ -78,6 +78,11 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.erk := by
 lemma er_eq_erk (hX : M.E ⊆ X) : M.er X = M.erk := by
   rw [← er_inter_ground, inter_eq_self_of_subset_right hX, erk_def]
 
+lemma one_le_erk (M : Matroid α) [RkPos M] : 1 ≤ M.erk := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  rw [← hB.encard, one_le_encard_iff_nonempty]
+  exact hB.nonempty
+
 lemma finiteRk_iff : M.FiniteRk ↔ M.erk ≠ ⊤ := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard, encard_ne_top_iff]
