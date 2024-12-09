@@ -920,4 +920,67 @@ lemma freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
 --   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
 
 end Constructions
+section Nullity
+
+
+/-- The rank-deficiency of a set, as a term in `ℕ∞`. Cannot be defined with subtraction.
+For the `ℕ` version, the simpler expression `X.ncard - M.r X` is preferable.
+
+To reduce the number of `X ⊆ M.E` assumptions needed for lemmas,
+this is defined so that elements in `X \ M.E` contribute to the nullity of `X` in `M`,
+so `M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard`.
+(see `Matroid.nullity_eq_nullity_inter_ground_add_encard_diff` )-/
+noncomputable def nullity (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X)✶.erk
+
+lemma nullity_eq_erk_restrict_dual (M : Matroid α) (X : Set α) :
+    M.nullity X = (M ↾ X)✶.erk := rfl
+
+lemma nullity_restrict_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
+    (M ↾ Y).nullity X = M.nullity X := by
+  rw [nullity, restrict_restrict_eq _ hXY, nullity]
+
+lemma nullity_restrict_self (M : Matroid α) (X : Set α) : (M ↾ X).nullity X = M.nullity X :=
+  M.nullity_restrict_of_subset rfl.subset
+
+lemma Basis'.nullity_eq (hIX : M.Basis' I X) : M.nullity X = (X \ I).encard := by
+  rw [M.nullity_eq_erk_restrict_dual, ← hIX.base_restrict.compl_base_dual.encard]
+  rfl
+
+lemma Basis.nullity_eq (hIX : M.Basis I X) : M.nullity X = (X \ I).encard :=
+  hIX.basis'.nullity_eq
+
+lemma er_add_nullity_eq_encard (M : Matroid α) (X : Set α) :
+    M.er X + M.nullity X = X.encard := by
+  have h := (M ↾ X)✶.erk_add_dual_erk
+  simp only [dual_dual, erk_restrict, dual_ground, restrict_ground_eq] at h
+  rw [← h, add_comm, nullity_eq_erk_restrict_dual]
+
+lemma Indep.nullity_eq (hI : M.Indep I) : M.nullity I = 0 := by
+  rw [hI.basis_self.nullity_eq, diff_self, encard_empty]
+
+lemma nullity_eq_zero : M.nullity I = 0 ↔ M.Indep I := by
+  rw [iff_def, and_iff_left Indep.nullity_eq]
+  obtain ⟨J, hJI⟩ := M.exists_basis' I
+  rw [hJI.nullity_eq, encard_eq_zero, diff_eq_empty]
+  exact hJI.indep.subset
+
+lemma nullity_eq_nullity_inter_ground_add_encard_diff :
+    M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [hI.nullity_eq, hI.basis_inter_ground.nullity_eq, ← encard_union_eq]
+  · nth_rw 1 [← inter_union_diff X M.E, union_diff_distrib, diff_diff,
+      union_eq_self_of_subset_right hI.indep.subset_ground]
+  exact disjoint_sdiff_right.mono_left (diff_subset.trans inter_subset_right)
+
+lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.nullity Y := by
+  rw [← M.nullity_restrict_of_subset hXY, ← M.nullity_restrict_self Y]
+  obtain ⟨I, hI⟩ := (M ↾ Y).exists_basis X
+  obtain ⟨B, hB, rfl⟩ := hI.exists_base
+  rw [← basis_ground_iff, restrict_ground_eq] at hB
+  rw [hI.nullity_eq, hB.nullity_eq, diff_inter_self_eq_diff]
+  exact encard_le_card (diff_subset_diff_left hXY)
+
+end Nullity
+
+
 end Matroid
