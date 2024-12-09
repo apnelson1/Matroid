@@ -1,5 +1,6 @@
 import Matroid.Loop
 import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Matroid.Sum
 
 /- The rank of a set in a matroid `M` is the size of one of its bases. When such bases are infinite,
   this quantity is too coarse to be useful for building API,
@@ -806,6 +807,15 @@ lemma Basis'.r_eq_r (h : M.Basis' I X) : M.r I = M.r X := by
 lemma Basis.ncard_eq_r (h : M.Basis I X) : I.ncard = M.r X :=
   h.basis'.card
 
+lemma r_le_toFinset_card (M : Matroid α) {X : Set α} (hX : X.Finite) :
+    M.r X ≤ hX.toFinset.card := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [← hI.card, ncard_eq_toFinset_card _ (hX.subset hI.subset)]
+  exact Finset.card_mono (by simpa using hI.subset)
+
+lemma r_le_finset_card (M : Matroid α) (X : Finset α) : M.r X ≤ X.card := by
+  simpa using M.r_le_toFinset_card X.finite_toSet
+
 lemma Basis.r_eq_r (h : M.Basis I X) : M.r I = M.r X :=
   h.basis'.r_eq_r
 
@@ -914,10 +924,21 @@ lemma freeOn_er_eq (hXE : X ⊆ E) : (freeOn E).er X = X.encard := by
 lemma freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
   rw [← er_toNat_eq_r, freeOn_er_eq hXE, ncard_def]
 
+@[simp] lemma disjointSum_er_eq (M N : Matroid α) (hMN : Disjoint M.E N.E) (X : Set α) :
+    (M.disjointSum N hMN).er X = M.er (X ∩ M.E) + N.er (X ∩ N.E) := by
+  obtain ⟨B₁, hB₁⟩ := M.exists_basis (X ∩ M.E)
+  obtain ⟨B₂, hB₂⟩ := N.exists_basis (X ∩ N.E)
+  rw [← er_inter_ground, disjointSum_ground_eq, inter_union_distrib_left,
+    (hB₁.disjointSum_basis_union hB₂ hMN).er_eq_encard, hB₁.er_eq_encard, hB₂.er_eq_encard,
+    encard_union_eq (hMN.mono hB₁.indep.subset_ground hB₂.indep.subset_ground)]
 
--- lemma IsIso.erk_eq_erk {α β : Type*} {M : Matroid α} {N : Matroid β} (h : M ≂ N) :
---     M.erk = N.erk := by
---   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h; simp; exact e.erk_eq_erk
+@[simp] lemma disjointSum_erk_eq (M N : Matroid α) (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN).erk = M.erk + N.erk := by
+  rw [erk_def, erk_def, erk_def, disjointSum_er_eq, disjointSum_ground_eq,
+    inter_eq_self_of_subset_right subset_union_left,
+    inter_eq_self_of_subset_right subset_union_right]
+
+
 
 end Constructions
 section Nullity

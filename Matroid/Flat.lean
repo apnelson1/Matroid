@@ -981,6 +981,9 @@ lemma Hyperplane.basis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.Basis I
   rw [delete_eq_restrict, diff_diff_right, inter_eq_self_of_subset_right hI.indep.subset_ground,
     union_comm]
 
+lemma Hyperplane.er_add_one_eq (hH : M.Hyperplane H) : M.er H + 1 = M.erk := by
+  rw [← hH.covBy.er_eq, erk_def]
+
 end Hyperplane
 
 lemma Cyclic.compl_flat_dual {A : Set α} (hA : M.Cyclic A) : M✶.Flat (M.E \ A) := by

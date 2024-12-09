@@ -291,6 +291,9 @@ lemma circuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by a
   have h' := restrict_circuit_iff hC (C := C)
   rwa [and_iff_left Subset.rfl, h, iff_true_intro (circuitOn_ground_circuit hCne), true_iff] at h'
 
+lemma Circuit.restrict_eq_circuitOn (hC : M.Circuit C) : M ↾ C = circuitOn C := by
+  rwa [← circuit_iff_restr_eq_circuitOn hC.nonempty]
+
 end circuitOn
 
 variable {I J B B' : Set α} {e f : α}

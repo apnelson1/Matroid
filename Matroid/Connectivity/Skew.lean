@@ -429,6 +429,9 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
 
   exact hi.1.1.closure_skew.mono hI.subset_closure hJ.subset_closure
 
+lemma Skew.contract_restrict_eq (hXY : M.Skew X Y) : (M ／ X) ↾ Y = M ↾ Y :=
+  (skew_iff_contract_restrict_eq_restrict hXY.subset_ground_left hXY.subset_ground_right).1 hXY
+
 lemma empty_skew (hX : X ⊆ M.E) : M.Skew ∅ X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_empty]
 
