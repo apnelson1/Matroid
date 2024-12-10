@@ -584,6 +584,15 @@ lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M
     hF₀F'.relRank_eq_one]
   rfl
 
+lemma CovBy.insert_basis (hFF' : F ⋖[M] F') (hI : M.Basis I F) (he : e ∈ F' \ F) :
+    M.Basis (insert e I) F' := by
+  refine Indep.basis_of_subset_of_subset_closure ?_
+    (insert_subset he.1 (hI.subset.trans hFF'.subset)) ?_
+  · rw [hI.indep.insert_indep_iff, hI.closure_eq_closure, hFF'.flat_left.closure]
+    exact .inl ⟨hFF'.subset_ground_right he.1, he.2⟩
+  rw [← hFF'.closure_insert_eq he, ← closure_insert_closure_eq_closure_insert (X := I),
+    hI.closure_eq_closure, hFF'.flat_left.closure]
+
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
 @[simps!] def Flat.covByPartition (hF : M.Flat F) : Partition (M.E \ F) :=
   Partition.ofPairwiseDisjoint'
@@ -983,6 +992,58 @@ lemma Hyperplane.basis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.Basis I
 
 lemma Hyperplane.er_add_one_eq (hH : M.Hyperplane H) : M.er H + 1 = M.erk := by
   rw [← hH.covBy.er_eq, erk_def]
+
+lemma Hyperplane.insert_base_of_basis (hH : M.Hyperplane H) (hI : M.Basis I H) (he : e ∈ M.E \ H) :
+    M.Base (insert e I) := by
+  simpa using hH.covBy.insert_basis hI he
+
+lemma Hyperplane.exists_insert_base_of_basis (hH : M.Hyperplane H) (hI : M.Basis I H) :
+    ∃ e ∈ M.E \ H, M.Base (insert e I) := by
+  obtain ⟨e, he⟩ := exists_of_ssubset hH.ssubset_ground
+  exact ⟨e, he, hH.insert_base_of_basis hI he⟩
+
+lemma Hyperplane.inter_hyperplane_spanning_restrict {S : Set α} (hH : M.Hyperplane H)
+    (hS : M.Spanning S) (hcl : H ⊆ M.closure (H ∩ S)) : (M ↾ S).Hyperplane (H ∩ S) := by
+  obtain ⟨I, hI⟩ := M.exists_basis (H ∩ S) (inter_subset_left.trans hH.subset_ground)
+  have hIS := hI.subset.trans inter_subset_right
+  have hIH := hI.subset.trans inter_subset_left
+  have hIHb : M.Basis I H :=
+    hI.indep.basis_of_subset_of_subset_closure hIH <| by rwa [hI.closure_eq_closure]
+
+  obtain ⟨e, he⟩ : (S \ H).Nonempty
+  · rw [nonempty_iff_ne_empty, Ne, diff_eq_empty]
+    exact fun hSH ↦ hH.not_spanning <| hS.superset hSH
+
+  have heI : e ∉ I := not_mem_subset hIH.subset he.2
+
+  have heB : (M ↾ S).Base (insert e I)
+  · rw [hS.base_restrict_iff, and_iff_left (insert_subset he.1 hIS)]
+    exact hH.insert_base_of_basis hIHb ⟨hS.subset_ground he.1, he.2⟩
+
+  have hh := heB.hyperplane_of_closure_diff_singleton (mem_insert _ _)
+  simpa only [mem_singleton_iff, insert_diff_of_mem, heI, not_false_eq_true, diff_singleton_eq_self,
+    restrict_closure_eq', inter_eq_self_of_subset_left hIS, hIHb.closure_eq_closure,
+    hH.flat.closure, diff_eq_empty.2 hS.subset_ground, union_empty] using hh
+
+lemma Spanning.hyperplane_restrict_iff {S : Set α} (hS : M.Spanning S) :
+    (M ↾ S).Hyperplane H ↔ M.Hyperplane (M.closure H) ∧ H = M.closure H ∩ S := by
+  refine ⟨fun h ↦ ?_, fun ⟨hh, hcl⟩ ↦ ?_⟩
+  · obtain ⟨I, hI⟩ := (M ↾ S).exists_basis H h.subset_ground
+    obtain ⟨e, he : e ∈ S \ H, heB⟩ := h.exists_insert_base_of_basis hI
+    have heI : e ∉ I := not_mem_subset hI.subset he.2
+    rw [hS.base_restrict_iff, insert_subset_iff] at heB
+
+    rw [basis_restrict_iff] at hI
+    have hh' := heB.1.hyperplane_of_closure_diff_singleton (mem_insert _ _)
+
+    refine ⟨by simpa [heI, hI.1.closure_eq_closure] using hh',
+      subset_antisymm (subset_inter (M.subset_closure H hI.1.subset_ground) hI.2) ?_⟩
+    nth_rw 2 [← h.flat.closure]
+    rw [restrict_closure_eq _ hI.2]
+  rw [hcl]
+  apply hh.inter_hyperplane_spanning_restrict hS (closure_subset_closure_of_subset_closure ?_)
+  rw [← hcl]
+  exact M.subset_closure _ (hcl.subset.trans (inter_subset_right.trans hS.subset_ground))
 
 end Hyperplane
 

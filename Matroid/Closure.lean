@@ -11,6 +11,16 @@ variable {α : Type*} {ι : Sort*} {M : Matroid α} {F S I J X Y B C R : Set α}
 lemma Indep.eq_of_spanning_subset (hI : M.Indep I) (hS : M.Spanning S) (hSI : S ⊆ I) : S = I :=
   ((hI.subset hSI).base_of_spanning hS).eq_of_subset_indep hI hSI
 
+lemma Basis.spanning_iff_spanning (hIX : M.Basis I X) : M.Spanning I ↔ M.Spanning X := by
+  rw [spanning_iff_closure_eq, spanning_iff_closure_eq, hIX.closure_eq_closure]
+
+lemma Spanning.base_restrict_iff (hS : M.Spanning S) : (M ↾ S).Base B ↔ M.Base B ∧ B ⊆ S := by
+  rw [base_restrict_iff', basis'_iff_basis]
+  refine ⟨fun h ↦ ⟨?_, h.subset⟩, fun h ↦ h.1.indep.basis_of_subset_of_subset_closure h.2 ?_⟩
+  · exact h.indep.base_of_spanning <| by rwa [h.spanning_iff_spanning]
+  rw [h.1.closure_eq]
+  exact hS.subset_ground
+
 section Constructions
 
 @[simp] lemma emptyOn_closure_eq (X : Set α) : (emptyOn α).closure X = ∅ := by

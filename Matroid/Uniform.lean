@@ -158,6 +158,22 @@ instance unifOn_simple {k : ℕ∞} (E : Set α) : Simple (unifOn E (k+2)) := by
   · exact ⟨f, hf, by simp⟩
   exact ⟨e, by simpa using hIE, rfl.subset⟩
 
+@[simp] lemma unifOn_circuit_iff {n : ℕ} : (unifOn E n).Circuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
+  obtain hCE | hCE := em' (C ⊆ E)
+  · simp [hCE, show ¬ (unifOn E n).Circuit C from fun h ↦ hCE h.subset_ground]
+
+  rw [circuit_iff_dep_forall_diff_singleton_indep, and_iff_left hCE, ← not_indep_iff,
+    unifOn_indep_iff, and_iff_left hCE, not_le, ← ENat.add_one_le_iff (by simp)]
+
+  obtain rfl | ⟨e, heC⟩ := C.eq_empty_or_nonempty
+  · simp [eq_comm]
+
+  simp_rw [unifOn_indep_iff]
+
+  refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_lt ?_).symm,
+    fun h ↦ ⟨h.symm.le, fun e heC ↦ ⟨Eq.le ?_, diff_subset.trans hCE⟩⟩⟩
+  · rwa [← encard_diff_singleton_add_one heC, WithTop.add_lt_add_iff_right (by simp)] at hlt
+  rwa [← encard_diff_singleton_add_one heC, WithTop.add_right_cancel_iff (by simp)] at h
 
 
 section unif
