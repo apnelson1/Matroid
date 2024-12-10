@@ -69,6 +69,52 @@ lemma exists_of_not_binary (hM : ¬ M.Binary) : ∃ (C : Finset α) (X Y : Set �
   rw [← Finset.one_le_card, h]
   constructor <;> linarith
 
+lemma Binary.dual (hM : M.Binary) : M✶.Binary := by
+  intro C K hC hK h
+  rw [inter_comm] at h
+  convert hM K C (by simpa using hK.circuit) (by simpa using hC.cocircuit) h using 3
+  rw [inter_comm]
+
+
+lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) : N.Binary := by
+
+
+
+  suffices aux : ∀ (M : Matroid α) (X : Set α), M.Coindep X → M.Binary → (M ＼ X).Binary
+  · obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+    have h := (aux _ C ?_ (aux M D hD hM).dual).dual
+    · simpa [← contract_delete_comm _ hCD] using h
+    rwa [dual_coindep_iff, delete_indep_iff, and_iff_right hC]
+
+  suffices aux' : ∀ (M : Matroid α) (S : Set α), M.Spanning S → M.Binary → (M ↾ S).Binary
+  · refine fun M X hX hM ↦ ?_
+    rw [delete_eq_restrict]
+    exact aux' _ _ hX.compl_spanning hM
+
+  clear! N M
+  intro M S hS hM C D hC hD h
+  rw [restrict_circuit_iff] at hC
+  have hh := hD.compl_hyperplane
+  rw [restrict_ground_eq, hS.hyperplane_restrict_iff] at hh
+
+
+  suffices h_eq : C ∩ D = C ∩ (M.E \ M.closure (S \ D))
+  · convert hM C _ hC.1 hh.1.compl_cocircuit (by rwa [← h_eq]) using 3
+
+  rw [diff_eq, ← inter_assoc, inter_eq_self_of_subset_left hC.1.subset_ground,
+    ← inter_eq_self_of_subset_left hC.2, inter_assoc, inter_assoc, ← diff_eq,
+    ← diff_self_inter, inter_comm S (M.closure _), ← hh.2]
+  simp
+
+
+
+  -- have  := hD.compl_hyperplane
+
+  -- suffices ∀ (M : Matroid α) X, M.Coindep X → M.Binary → (M ＼ X).Binary
+  -- · sorry
+  -- sorry
+
+
 -- theorem odd_circuit_cocircuit_foo {C : Finset α} (hCc : M.Circuit C) (hCk : M.Cocircuit C)
 --     (hsp : M.Spanning C) (h_odd : Odd C.card) (h_minor : IsEmpty (unif 2 4 ≤i M)) :
 --     ∃ (e : α) (C₀ : Finset α), (e ∈ M.E \ C) ∧ C₀ ⊆ C ∧ (M ／ e).Circuit C₀ := by
