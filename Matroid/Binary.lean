@@ -77,28 +77,18 @@ lemma Binary.dual (hM : M.Binary) : M✶.Binary := by
 
 
 lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) : N.Binary := by
-
-
-
-  -- suffices aux : ∀ (M : Matroid α) (X : Set α), M.Coindep X → M.Binary → (M ＼ X).Binary
-  -- · obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
-  --   have h := (aux _ C ?_ (aux M D hD hM).dual).dual
-  --   · simpa [← contract_delete_comm _ hCD] using h
-  --   rwa [dual_coindep_iff, delete_indep_iff, and_iff_right hC]
-
-  suffices aux' : ∀ (M : Matroid α) (S : Set α), M.Spanning S → M.Binary → (M ↾ S).Binary
-  ·
-    obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
-    refine fun M X hX hM ↦ ?_
-    rw [delete_eq_restrict]
-    exact aux' _ _ hX.compl_spanning hM
+  suffices aux : ∀ ⦃M : Matroid α⦄ ⦃S : Set α⦄, M.Spanning S → M.Binary → (M ↾ S).Binary
+  · obtain ⟨I, R, hI, hIR, hR, rfl⟩ := hNM.exists_eq_contract_spanning_restrict
+    apply aux hR
+    rw [← dual_delete_dual_eq_contract]
+    apply (aux _ hM.dual).dual
+    rwa [← coindep_iff_compl_spanning, dual_coindep_iff]
 
   clear! N M
   intro M S hS hM C D hC hD h
   rw [restrict_circuit_iff] at hC
   have hh := hD.compl_hyperplane
   rw [restrict_ground_eq, hS.hyperplane_restrict_iff] at hh
-
 
   suffices h_eq : C ∩ D = C ∩ (M.E \ M.closure (S \ D))
   · convert hM C _ hC.1 hh.1.compl_cocircuit (by rwa [← h_eq]) using 3
@@ -217,10 +207,77 @@ lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) : N.Binar
 
 
 
-lemma rank_two_foo {e : α} (hr : M.rk = 2) (hM : M.Loopless) (he : M.Flat {e})
-    (hrestr : ¬ Nonempty (unif 2 4 ≤i M)) : ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂
-    ∧ Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
-  sorry
+lemma rank_two_foo {e : α} (hr : (M ＼ e).rk = 2) (he : M.Flat {e}) (hrestr : M.NoUniformMinor 2 4) :
+    ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧ Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
+  obtain ⟨I, hI⟩ := (M ＼ e).exists_base
+
+  have hl : (M ＼ e).Loopless
+  · rw [loopless_iff_closure_empty, deleteElem, delete_closure_eq, empty_diff, diff_eq_empty,
+      ← he.closure]
+    exact M.closure_subset_closure <| empty_subset _
+
+
+  have foo : ∀ x ∈ I, (M ＼ e).Cocircuit (M.closure {x})
+  · intro x hxI
+
+
+  rw [← hI.ncard, ncard_eq_two] at hr
+
+  obtain ⟨a, b, hab, rfl⟩ := hr
+
+
+lemma foo {C : Finset α} (hCc : M.Circuit C) (hCs : M.Spanning C) (hCh : M.Hyperplane (M.E \ C))
+    (hCi : M.Indep (M.E \ C)) (h_card : 3 ≤ C.card) (h_bin : M.NoUniformMinor 2 4) :
+    ∃ (N : Matroid α) (C' K' : Set α) (h : C' ∩ K' ⊂ C), N ≤m M ∧ N.Circuit C' ∧ N.Cocircuit K' ∧
+      ∃ (hfin' : (C' ∩ K').Finite), Odd hfin'.toFinset.card := by
+
+
+
+  obtain ⟨f, hf⟩ : (M.E \ C).Nonempty
+  · rw [nonempty_iff_ne_empty]
+    intro hss
+    have hle := (M.er_le_erk C).trans_eq hCh.er_add_one_eq.symm
+    rw [hss, er_empty, zero_add, ← WithTop.add_le_add_iff_right (show 1 ≠ ⊤ by simp),
+      hCc.er_add_one_eq] at hle
+    norm_cast at hle
+    linarith
+
+  set N := M ／ ((M.E \ ↑C) \ {f}) with hN
+  have hfl : ¬ N.Coloop f := sorry
+
+  have hNr : (N ＼ f).rk = 2
+  · rw [rk, deleteElem_erk_eq hfl, ← rk]
+    obtain ⟨e, he, hbas⟩ := hCh.exists_insert_base_of_basis (hCi.basis_self)
+    have hb' : N.Base {e, f}
+    simp only [sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, Finset.mem_coe] at he
+    · rw [hN, (hCi.diff _).contract_base_iff, ← singleton_union, union_assoc, disjoint_union_left]
+      simpa [hf, he.1, he.2]
+
+    rw [← hb'.ncard, ncard_pair (by rintro rfl; exact he.2 hf)]
+
+  have hNf : N.Flat {f}
+  · rw [flat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]
+    simpa [hCh.flat.closure]
+
+  have hNl : N.Loopless
+  · rw [loopless_iff_closure_empty, hN, contract_closure_eq, empty_union, diff_eq_empty,
+      subset_diff_singleton_iff]
+    nth_rw 2 [← hCh.flat.closure]
+    exact ⟨M.closure_mono diff_subset, hCi.not_mem_closure_diff_of_mem hf⟩
+
+
+  have hfoo := rank_two_foo (e := f) hNr hNf (h_bin.minor (contract_minor _ _))
+
+
+
+
+
+
+  -- rw [spanning_iff_compl_coindep, dual_ground, dual_coindep_iff] at hCMds
+  -- simp only [encard_coe_eq_coe_finsetCard] at hr
+
+  have := hCM.cocircuit_inter_nontrivial hCMd (by simpa using hCM.nonempty)
+
 
 lemma middle_foo {C : Finset α} (hCc : M.Circuit C) (hCk : M.Cocircuit C) (h_odd : Odd C.card)
     (h_binary : ¬ Nonempty (unif 2 4 ≤i M)) : ∃ (N : Matroid α) (C' K' : Set α) (h : C' ∩ K' ⊂ C),
