@@ -8,6 +8,8 @@ variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H�
 open Set
 namespace Matroid
 
+section Spanning
+
 lemma Flat.eq_ground_of_spanning (hF : M.Flat F) (h : M.Spanning F) : F = M.E := by
   rw [← hF.closure, h.closure_eq]
 
@@ -16,6 +18,8 @@ lemma Flat.spanning_iff (hF : M.Flat F) : M.Spanning F ↔ F = M.E :=
 
 lemma Flat.inter (hF₁ : M.Flat F₁) (hF₂ : M.Flat F₂) : M.Flat (F₁ ∩ F₂) := by
   rw [inter_eq_iInter]; apply Flat.iInter; simp [hF₁, hF₂]
+
+end Spanning
 
 /-- The intersection of an arbitrary collection of flats with the ground set is a flat.
 `Matroid.Flat.iInter` is often more convenient, but this works when the collection is empty. -/

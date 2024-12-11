@@ -6,7 +6,7 @@ namespace Matroid
 
 
 
-variable {α : Type*} {ι : Sort*} {M : Matroid α} {F S I J X Y B C R : Set α} {e f x y : α}
+variable {α : Type*} {ι : Sort*} {N M : Matroid α} {F S I J X Y B C R : Set α} {e f x y : α}
 
 lemma Indep.eq_of_spanning_subset (hI : M.Indep I) (hS : M.Spanning S) (hSI : S ⊆ I) : S = I :=
   ((hI.subset hSI).base_of_spanning hS).eq_of_subset_indep hI hSI
@@ -20,6 +20,21 @@ lemma Spanning.base_restrict_iff (hS : M.Spanning S) : (M ↾ S).Base B ↔ M.Ba
   · exact h.indep.base_of_spanning <| by rwa [h.spanning_iff_spanning]
   rw [h.1.closure_eq]
   exact hS.subset_ground
+
+lemma Spanning.compl_coindep (hS : M.Spanning S) : M.Coindep (M.E \ S) := by
+  rwa [← spanning_iff_compl_coindep]
+
+lemma Basis.base_of_spanning (hIX : M.Basis I X) (hX : M.Spanning X) : M.Base I :=
+  hIX.indep.base_of_spanning <| by rwa [hIX.spanning_iff_spanning]
+
+lemma Restriction.base_iff_of_spanning (hR : N ≤r M) (hN : M.Spanning N.E) :
+    N.Base B ↔ (M.Base B ∧ B ⊆ N.E) := by
+  obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hR
+  rw [Spanning.base_restrict_iff (show M.Spanning R from hN), restrict_ground_eq]
+
+
+
+
 
 section Constructions
 

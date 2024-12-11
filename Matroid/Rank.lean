@@ -362,6 +362,9 @@ lemma Spanning.er_eq (hX : M.Spanning X) : M.er X = M.erk := by
   rw [le_antisymm_iff, and_iff_right (M.er_le_erk _), ← hB.er]
   exact M.er_mono hBX
 
+lemma Spanning.erk_restrict (hX : M.Spanning X) : (M ↾ X).erk = M.erk := by
+  rw [erk_def, restrict_ground_eq, restrict_er_eq _ rfl.subset, hX.er_eq]
+
 lemma Loop.er_eq (he : M.Loop e) : M.er {e} = 0 := by
   rw [← er_closure_eq, he.closure, er_closure_eq, er_empty]
 

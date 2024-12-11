@@ -169,6 +169,12 @@ lemma circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
     ← inter_assoc, ← diff_eq, inter_eq_left]
   exact diff_subset.trans (M.closure_subset_ground _)
 
+lemma Loopless.delete (h : M.Loopless) (D : Set α) : (M ＼ D).Loopless := by
+  simp [loopless_iff_closure_empty]
+
+instance [h : M.Loopless] {D : Set α} : (M ＼ D).Loopless :=
+  h.delete D
+
 lemma delete_loops_eq (M : Matroid α) (D : Set α) : (M ＼ D).closure ∅ = M.closure ∅ \ D := by
   simp
 
@@ -295,6 +301,9 @@ lemma coindep_contract_iff : (M ／ C).Coindep X ↔ M.Coindep X ∧ Disjoint X 
 lemma Coindep.coindep_contract_of_disjoint (hX : M.Coindep X) (hXC : Disjoint X C) :
     (M ／ C).Coindep X :=
   coindep_contract_iff.mpr ⟨hX, hXC⟩
+
+@[simp] lemma contract_cocircuit_iff : (M ／ C).Cocircuit K ↔ M.Cocircuit K ∧ Disjoint K C := by
+  rw [cocircuit_def, contract_dual_eq_dual_delete, delete_circuit_iff]
 
 lemma Indep.contract_base_iff (hI : M.Indep I) :
     (M ／ I).Base B ↔ M.Base (B ∪ I) ∧ Disjoint B I := by

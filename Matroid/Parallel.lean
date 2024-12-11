@@ -155,6 +155,12 @@ lemma restrict_parallel_iff {R : Set α} :
     pair_subset_iff, and_imp]
   aesop
 
+lemma delete_parallel_iff {D : Set α} :
+    (M ＼ D).Parallel e f ↔ M.Parallel e f ∧ e ∉ D ∧ f ∉ D := by
+  rw [delete_eq_restrict, restrict_parallel_iff, and_congr_right_iff]
+  intro h
+  rw [mem_diff, and_iff_right h.mem_ground_left, mem_diff, and_iff_right h.mem_ground_right]
+
 @[simp] lemma removeLoops_parallel_iff : M.removeLoops.Parallel e f ↔ M.Parallel e f := by
   rw [removeLoops_eq_restr, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.nonloop_left, h.nonloop_right⟩)]

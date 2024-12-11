@@ -468,6 +468,11 @@ lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nont
 lemma Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e} :=
   Set.ext fun _ ↦  ⟨fun he ↦ toNonloop he, Nonloop.mem_ground⟩
 
+lemma Restriction.loopless [M.Loopless] (hR : N ≤r M) : N.Loopless := by
+  obtain ⟨R, hR, rfl⟩ := hR
+  rw [loopless_iff_closure_empty, restrict_closure_eq _ (empty_subset _), M.closure_empty_eq_empty,
+    empty_inter]
+
 instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RkPos M :=
   M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
 
