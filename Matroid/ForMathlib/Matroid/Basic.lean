@@ -39,6 +39,11 @@ lemma Indep.augment_finset [DecidableEq α] {I J : Finset α} (hI : M.Indep I) (
 lemma basis_restrict_univ_iff {I X : Set α} : (M ↾ univ).Basis I X ↔ M.Basis' I X := by
   rw [basis_restrict_iff', basis'_iff_basis_inter_ground, and_iff_left (subset_univ _)]
 
+lemma Indep.basis_iff_eq {I J : Set α} (hI : M.Indep I) : M.Basis J I ↔ J = I := by
+  refine ⟨fun h ↦ h.eq_of_subset_indep hI h.subset rfl.subset, ?_⟩
+  rintro rfl
+  exact hI.basis_self
+
 theorem ext_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     (h : ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I)) : M₁ = M₂ := eq_of_indep_iff_indep_forall hE h
 

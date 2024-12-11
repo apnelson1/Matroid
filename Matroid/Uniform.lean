@@ -579,6 +579,37 @@ lemma NoUniformMinor.minor {N a b} (hM : M.NoUniformMinor a b) (hNM : N ≤m M) 
   simp only [not_noUniformMinor_iff] at hM ⊢
   exact ⟨hM.some.trans_minor hNM⟩
 
+lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ E.encard) :
+    Nonempty (unif a b ≤ir unifOn E a) := by
+  obtain ⟨f, hf⟩ : ∃ f : ↑(unif a b).E → ↑(unifOn E ↑a).E, f.Injective
+  · obtain rfl | b := b
+    · exact ⟨finZeroElim ∘ Subtype.val, Function.injective_of_subsingleton _⟩
+    have : Nonempty E
+    · rw [nonempty_coe_sort, nonempty_iff_ne_empty]
+      rintro rfl
+      simp at h
+    obtain ⟨f, hf, hfi⟩ :=
+      finite_univ.exists_injOn_of_encard_le (α := Fin (b+1)) (β := E) (t := univ) (by simpa using h)
+    rw [← injective_iff_injOn_univ] at hfi
+    exact ⟨f ∘ Subtype.val, hfi.comp Subtype.val_injective⟩
+  exact ⟨⟨f, hf, fun I ↦ by simp [Subtype.val_injective.encard_image, hf.encard_image]⟩⟩
+
+@[simp] lemma unifOn_noUniformMinor_iff {a b : ℕ} :
+    ((unifOn E a).NoUniformMinor a b) ↔ E.encard < b := by
+  rw [← not_iff_not, not_noUniformMinor_iff, not_lt]
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ ⟨(nonempty_unif_isoRestr_unifOn a h).some.isoMinor⟩⟩
+  obtain ⟨f, hf, M₀, hm, hE, -⟩ := e
+  refine le_trans ?_ <| encard_mono hm.subset
+  rw [hE, Subtype.val_injective.encard_image, ← image_univ, hf.encard_image]
+  simp
+
+
+
+
+
+
+
+
       /-
       theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
           unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by

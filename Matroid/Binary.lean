@@ -207,14 +207,63 @@ lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) : N.Binar
 
 
 
-lemma rank_two_foo {e : α} (hr : (M ＼ e).rk = 2) (he : M.Flat {e}) (hrestr : M.NoUniformMinor 2 4) :
+lemma rank_two_foo {e : α} (hr : M.erk = 2) (hel : ¬ M.Coloop e) (he : M.Point {e})
+    (hU : M.NoUniformMinor 2 4) :
     ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧ Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
-  obtain ⟨I, hI⟩ := (M ＼ e).exists_base
+  obtain ⟨I, hI⟩ := M.exists_basis (M.E \ {e})
+  have hI' : M.Base I
+  · refine hI.indep.base_of_spanning ?_
+    rwa [hI.spanning_iff_spanning, ← not_not (a := M.Spanning _), ← coloop_iff_diff_nonspanning]
+  have hIE := hI'.subset_ground
 
-  have hl : (M ＼ e).Loopless
-  · rw [loopless_iff_closure_empty, deleteElem, delete_closure_eq, empty_diff, diff_eq_empty,
-      ← he.closure]
-    exact M.closure_subset_closure <| empty_subset _
+  -- obtain ⟨hI', -⟩ : M.Indep I ∧ _ := by simpa using hI.indep
+  have hl := he.loopless_of_singleton
+  have heE : e ∈ M.E := by simpa using he.subset_ground
+  --   exact M.closure_subset_closure <| empty_subset _
+
+  have hU : ∀ x ∈ (M ＼ e).E, ∃ y ∈ I, x ∈ M.closure {y}
+  · by_contra! hcon
+    obtain ⟨x, ⟨hxE, hne : x ≠ e⟩, hx⟩ := hcon
+    have hx' : ∀ y ∈ I, M.Indep {x,y}
+    · refine fun y hyI ↦ ?_
+      rw [(M.toNonloop).indep.insert_indep_iff]
+      exact .inl ⟨hxE, hx y hyI⟩
+
+    set N := M ↾ (I ∪ {e, x}) with hN
+    have hNM : N ≤m M := M.restrict_minor (union_subset hI'.subset_ground (pair_subset heE hxE))
+
+    have h_unif : N = unifOn (I ∪ {e, x}) 2
+    · rw [eq_unifOn_two_iff, hN, restrict_ground_eq, and_iff_right rfl, erk_restrict, ← hr,
+        and_iff_right (er_le_erk _ _), simple_iff_forall_pair_indep]
+      simp only [union_insert, union_singleton, restrict_ground_eq, mem_insert_iff,
+        restrict_indep_iff, pair_subset_iff]
+      rintro a b (rfl | rfl | haI)
+
+      · suffices b ∈ I → M.Indep {a, b} by
+          simpa (config := {contextual := true}) [or_imp, he.nonloop, he.insert_indep x hxE]
+        exact fun hbI ↦ he.insert_indep b
+      · simp (config := {contextual := true}) [or_imp, M.toNonloop, pair_comm _ e,
+          he.insert_indep _ hxE, M.toNonloop hxE, hx' b]
+      simp (config := { contextual := true }) only [haI, or_true, and_self, and_true, pair_comm a]
+
+      rintro (rfl | rfl | hbI)
+      · exact he.insert_indep a
+      · exact hx' _ haI
+      exact hI'.indep.subset (pair_subset hbI haI)
+
+    have hcard : encard (I ∪ {e, x}) = 4
+    · rw [encard_union_eq, hI'.encard, hr, encard_pair hne.symm]
+      · rfl
+      rw [← singleton_union, disjoint_union_right, and_iff_right (subset_diff.1 hI.subset).2,
+        disjoint_singleton_right]
+      exact fun hxI ↦ hx x hxI <| M.mem_closure_self _ hxE
+
+    replace hU := hU.minor hNM
+    rw [h_unif, show (2 : ℕ∞) = (2 : ℕ) from rfl, unifOn_noUniformMinor_iff, hcard] at hU
+    simp at hU
+
+
+
 
 
   have foo : ∀ x ∈ I, (M ＼ e).Cocircuit (M.closure {x})

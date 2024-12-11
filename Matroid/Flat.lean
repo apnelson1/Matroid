@@ -115,6 +115,11 @@ lemma Flat.closure_insert_eq_closure_insert_of_mem (hF : M.Flat F)
     (he : e ∈ M.closure (insert f F) \ F) : M.closure (insert e F) = M.closure (insert f F) :=
   Matroid.closure_insert_congr (by rwa [hF.closure])
 
+lemma Flat.insert_indep_of_basis (hF : M.Flat F) (hIF : M.Basis I F) (heI : e ∈ M.E \ F) :
+    M.Indep (insert e I) := by
+  rwa [hIF.indep.insert_indep_iff_of_not_mem, hIF.closure_eq_closure, hF.closure]
+  exact not_mem_subset hIF.subset heI.2
+
 lemma Flat.closure_subset_of_subset (hF : M.Flat F) (h : X ⊆ F) : M.closure X ⊆ F := by
   have h' := M.closure_mono h; rwa [hF.closure] at h'
 
@@ -1117,6 +1122,34 @@ lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P
 
 lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
   ⟨Point.exists_eq_closure_nonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_point⟩
+
+lemma Point.nonloop (hP : M.Point {e}) : M.Nonloop e := by
+  simpa using hP.er
+
+lemma Point.insert_indep (h : M.Point {e}) (f : α) (hf : f ∈ M.E := by aesop_mat) :
+    M.Indep {e, f} := by
+  obtain rfl | hne := eq_or_ne e f
+  · simp [h.nonloop]
+  simpa [pair_comm] using h.flat.insert_indep_of_basis (h.nonloop.indep.basis_self) ⟨hf, hne.symm⟩
+
+lemma point_singleton_iff [M.Nonempty] : M.Point {e} ↔ ∀ f ∈ M.E, M.Indep {e,f} := by
+  refine ⟨fun h f hf ↦ h.insert_indep f hf, fun h ↦ ?_⟩
+  obtain ⟨x, hx⟩ := M.ground_nonempty
+  have he : M.Nonloop e := (h x hx).nonloop_of_mem (mem_insert _ _)
+  have hF : M.Flat {e}
+  · simp only [flat_iff, he.indep.basis_iff_eq, singleton_subset_iff, he.mem_ground, and_true]
+    rintro _ X rfl he f hXf
+    rw [he.eq_of_subset_indep (h f (he.subset_ground hXf)) (by simp)
+      (by simpa [pair_subset_iff, hXf] using he.subset)]
+    simp
+  rw [← hF.closure]
+  exact he.closure_point
+
+lemma Point.loopless_of_singleton (h : M.Point {e}) : M.Loopless := by
+  rw [loopless_iff_closure_empty, ← subset_empty_iff]
+  nth_rw 2 [← diff_eq_empty.2 h.flat.closure.subset]
+  rw [subset_diff_singleton_iff]
+  exact ⟨M.closure_subset_closure (empty_subset _), h.nonloop.not_loop⟩
 
 lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Point P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by

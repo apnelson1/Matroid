@@ -372,6 +372,10 @@ lemma er_singleton_eq [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.er {e} = 1 :=
   (M.toNonloop he).er_eq
 
+@[simp] lemma er_singleton_eq_one_iff {e : α} : M.er {e} = 1 ↔ M.Nonloop e := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.er_eq⟩
+  rwa [← indep_singleton, indep_iff_er_eq_encard_of_finite (by simp), encard_singleton]
+
 lemma LoopEquiv.er_eq_er (h : M.LoopEquiv X Y) : M.er X = M.er Y := by
   rw [← M.er_closure_eq, h.closure_eq_closure, M.er_closure_eq]
 
