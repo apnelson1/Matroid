@@ -80,14 +80,16 @@ lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) : N.Binar
 
 
 
-  suffices aux : ∀ (M : Matroid α) (X : Set α), M.Coindep X → M.Binary → (M ＼ X).Binary
-  · obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
-    have h := (aux _ C ?_ (aux M D hD hM).dual).dual
-    · simpa [← contract_delete_comm _ hCD] using h
-    rwa [dual_coindep_iff, delete_indep_iff, and_iff_right hC]
+  -- suffices aux : ∀ (M : Matroid α) (X : Set α), M.Coindep X → M.Binary → (M ＼ X).Binary
+  -- · obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+  --   have h := (aux _ C ?_ (aux M D hD hM).dual).dual
+  --   · simpa [← contract_delete_comm _ hCD] using h
+  --   rwa [dual_coindep_iff, delete_indep_iff, and_iff_right hC]
 
   suffices aux' : ∀ (M : Matroid α) (S : Set α), M.Spanning S → M.Binary → (M ↾ S).Binary
-  · refine fun M X hX hM ↦ ?_
+  ·
+    obtain ⟨C, D, hC, hD, hCD, rfl⟩ := hNM.exists_contract_indep_delete_coindep
+    refine fun M X hX hM ↦ ?_
     rw [delete_eq_restrict]
     exact aux' _ _ hX.compl_spanning hM
 

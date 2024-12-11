@@ -445,7 +445,7 @@ section minor
 
 lemma Minor.exists_minor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
     ∃ M₀, N ≤m M₀ ∧ IsSimplification M₀ M := by
-  obtain ⟨I, hI, hr, -⟩ := hNM.exists_contract_spanning_restrict
+  obtain ⟨I, hI, hr, -⟩ := hNM.exists_spanning_restriction_contract
   have hN' := hr.eq_restrict ▸
     M.contract_restrict_eq_restrict_contract _ _ (subset_diff.1 hr.subset).2.symm
   have h : (M ↾ (N.E ∪ I)).Simple := by

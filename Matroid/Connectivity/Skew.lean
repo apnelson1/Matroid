@@ -1,4 +1,3 @@
-
 import Matroid.Modular
 
 universe u
@@ -434,6 +433,17 @@ lemma Skew.contract_restrict_eq (hXY : M.Skew X Y) : (M ／ X) ↾ Y = M ↾ Y :
 
 lemma empty_skew (hX : X ⊆ M.E) : M.Skew ∅ X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_empty]
+
+lemma exists_contract_indep_to_spanning (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
+    ∃ I, M.Indep I ∧ Disjoint I X ∧ (M ／ I) ↾ X = M ↾ X ∧ (M ／ I).Spanning X := by
+  obtain ⟨J, hJ⟩ := M.exists_basis X
+  obtain ⟨B, hB, rfl⟩ := hJ.exists_base
+  refine ⟨B \ X, hB.indep.diff _, disjoint_sdiff_left, Skew.contract_restrict_eq ?_, ?_⟩
+  · rw [skew_iff_closure_skew_right, ← hJ.closure_eq_closure, ← skew_iff_closure_skew_right]
+    simpa using (hB.indep.subset_skew_diff (diff_subset (t := X)))
+  rw [contract_spanning_iff (diff_subset.trans hB.subset_ground), union_diff_self,
+    and_iff_left disjoint_sdiff_right]
+  exact hB.spanning.superset subset_union_right
 
 lemma SkewFamily.skew_compl {Xs : η → Set α} (h : M.SkewFamily Xs) (A : Set η) :
     M.Skew (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by

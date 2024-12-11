@@ -955,11 +955,20 @@ lemma Minor.exists_contract_indep_delete_coindep (h : N ≤m M) :
   rw [disjoint_union_right, and_iff_left disjoint_sdiff_left]
   exact disjoint_of_subset diff_subset diff_subset hCD'.symm
 
-lemma Minor.exists_contract_spanning_restrict (h : N ≤m M) :
+lemma Minor.exists_spanning_restriction_contract (h : N ≤m M) :
     ∃ C, M.Indep C ∧ (N ≤r M ／ C) ∧ (M ／ C).closure N.E = (M ／ C).E := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
   refine ⟨C, hC, delete_restriction _ _, ?_⟩
   rw [← (hD.coindep_contract_of_disjoint hCD.symm).closure_compl, delete_ground]
+
+lemma Minor.exists_eq_contract_spanning_restrict (h : N ≤m M) :
+    ∃ I R, M.Indep I ∧ Disjoint I R ∧ (M ／ I).Spanning R ∧ N = (M ／ I) ↾ R := by
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
+  refine ⟨C, (M.E \ C) \ D, hC, disjoint_sdiff_right.mono_right diff_subset, ?_⟩
+  rw [contract_spanning_iff, diff_diff_comm, diff_union_self, and_iff_left disjoint_sdiff_left,
+    delete_eq_restrict, contract_ground, diff_diff_comm, and_iff_left rfl,
+    union_eq_self_of_subset_right (subset_diff.2 ⟨hC.subset_ground, hCD⟩)]
+  exact hD.compl_spanning
 
 /-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
 def Minor.C (h : N ≤m M) : Set α :=

@@ -386,11 +386,14 @@ lemma relRank_contract_le (M : Matroid α) (C X Y : Set α) :
     union_comm, ← contract_contract]
   exact (M ／ X).er_contract_le_er C Y
 
-
-
 end Contract
 
 section Rank
+
+lemma deleteElem_erk_eq (he : ¬ M.Coloop e) : (M ＼ e).erk = M.erk := by
+  rw [coloop_iff_diff_nonspanning, not_not] at he
+  rw [deleteElem, erk_def, delete_er_eq _ (by simp), delete_ground, ← er_closure_eq,
+    he.closure_eq, erk_def]
 
 lemma delete_r_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
   rw [r, r, delete_er_eq']

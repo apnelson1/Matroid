@@ -8,8 +8,7 @@ variable {α : Type*} {M : Matroid α}
 namespace Matroid
 
 lemma nonempty_type (M : Matroid α) [h : M.Nonempty] : Nonempty α :=
-  let ⟨⟨e,_⟩⟩ := h
-  ⟨e⟩
+  ⟨M.ground_nonempty.some⟩
 
 @[simp] theorem ofExistsMatroid_indep_eq {α : Type*} (E : Set α) (Indep) (hM) :
     (Matroid.ofExistsMatroid E Indep hM).Indep = Indep := rfl
@@ -54,6 +53,7 @@ lemma ext_iff_indep {M₁ M₂ : Matroid α} :
     M₁ = M₂ ↔ M₁.E = M₂.E ∧ ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I) :=
   ⟨fun h ↦ by simp [h], fun ⟨hE, h⟩ ↦ ext_indep hE h⟩
 
+/-- If every base of `M₁` is independent in `M₂` and vice versa, then `M₁ = M₂`. -/
 lemma ext_base_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (h₁ : ∀ ⦃B⦄, M₁.Base B → M₂.Indep B)
     (h₂ : ∀ ⦃B⦄, M₂.Base B → M₁.Indep B) : M₁ = M₂ := by
   refine ext_indep hE fun I hIE ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
