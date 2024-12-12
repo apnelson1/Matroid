@@ -220,7 +220,6 @@ lemma Coindep.delete_spanning_iff (hD : M.Coindep D) :
   refine fun hSE hSD ↦ ⟨fun ⟨B, hB, hBD, hBS⟩ ↦ ⟨B, hB, hBS⟩, fun ⟨B, hB, hBS⟩ ↦ ⟨B, hB, ?_, hBS⟩⟩
   exact hSD.mono_left hBS
 
-
 end Delete
 
 section Contract

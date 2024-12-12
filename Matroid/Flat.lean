@@ -799,6 +799,9 @@ lemma flat_delete_iff {D : Set α} :
     refine ⟨F, hF, ?_⟩
     rw [inter_eq_self_of_subset_left hF.subset_ground]
 
+lemma Flat.exists_of_delete {D : Set α} (hF : (M ＼ D).Flat F) : ∃ F₀, M.Flat F₀ ∧ F = F₀ \ D :=
+  flat_delete_iff.1 hF
+
 @[simp] lemma flat_deleteElem_iff : (M ＼ e).Flat F ↔ e ∉ F ∧ (M.Flat F ∨ M.Flat (insert e F)) := by
   rw [deleteElem, flat_delete_iff]
   constructor

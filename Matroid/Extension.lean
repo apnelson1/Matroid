@@ -396,6 +396,67 @@ modular pairs rather than families. -/
 
 end finite
 
+def foo {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E := by aesop_mat) : M.ModularCut where
+  carrier := (· ∪ C) '' U
+  forall_flat := by
+    simpa using fun F hF ↦ ((flat_contract_iff hC).1 (U.flat_of_mem hF)).1
+  forall_superset := by
+    simp only [mem_image, SetLike.mem_coe, forall_exists_index, and_imp]
+    rintro _ F G hGU rfl hF hFF
+    have h := (flat_contract_iff hC).1 <| U.flat_of_mem hGU
+    rw [union_subset_iff] at hFF
+
+    refine ⟨_,  U.superset_mem hGU (F' := F \ C) ?_ (by simp [subset_diff, h.2, hFF.1]),
+      by simp [hFF.2]⟩
+    rwa [flat_contract_iff hC, diff_union_of_subset hFF.2, and_iff_left disjoint_sdiff_left]
+  forall_inter := by
+    simp only [subset_def, mem_image, SetLike.mem_coe]
+    intro Fs hFs hne hmod
+    have h_inter := U.sInter_mem (Fs := (· \ C) '' Fs)
+    simp only [image_nonempty, hne, subset_def, mem_image, SetLike.mem_coe, forall_exists_index,
+      and_imp, forall_apply_eq_imp_iff₂, sInter_image, forall_const] at h_inter
+    refine ⟨_, h_inter (fun F hF ↦ ?_) ?_, ?_⟩
+    · obtain ⟨F, hFU, rfl⟩ := hFs F hF
+      have hFE := subset_diff.1 (U.flat_of_mem hFU).subset_ground
+      simpa [hFE.2.symm.sdiff_eq_right]
+    · obtain ⟨B, hB⟩ := hmod
+      obtain ⟨I, hI⟩ := M.exists_basis C
+      obtain ⟨B', hB', hIB', hB'ss⟩ := hI.indep.exists_base_subset_union_base hB.base
+
+      obtain rfl : I = B' ∩ C := hI.eq_of_subset_indep (hB'.indep.inter_right _)
+        (subset_inter hIB' hI.subset) inter_subset_right
+      refine ⟨B' \ C, ?_, ?_⟩
+      · refine Indep.base_of_spanning ?_ ?_
+        · simp [hI.contract_indep_iff, hB'.indep, disjoint_sdiff_right]
+        rw [contract_spanning_iff, diff_union_self, and_iff_left disjoint_sdiff_left]
+        exact hB'.spanning.superset subset_union_left
+          (union_subset hB'.subset_ground hI.subset_ground)
+      simp only [Subtype.forall, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+        diff_inter_diff_right]
+      intro F hF
+      obtain ⟨F, hFU, rfl⟩ := hFs F hF
+      obtain ⟨hFC, hdj⟩ := (flat_contract_iff hC).1 <| U.flat_of_mem hFU
+      simp only [union_diff_right, hdj.sdiff_eq_left]
+      refine Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_
+      · rw [hI.contract_indep_iff, and_iff_left disjoint_sdiff_right]
+        exact hB'.indep.subset (union_subset (diff_subset.trans inter_subset_right)
+          inter_subset_left)
+      sorry
+      sorry
+    -- sorry
+
+
+
+
+    simp_rw [diff_eq]
+    rw [← biInter_distrib_inter _ hne, sInter_eq_biInter, ← diff_eq, diff_union_of_subset]
+    simp only [subset_iInter_iff]
+    refine fun F hF ↦ ?_
+    obtain ⟨F, -, rfl⟩ := hFs F hF
+    simp
+
+
+
 section extensions
 
 /-- `U.ExtIndep e I` means that `I` is independent in the matroid obtained from `M`
