@@ -531,21 +531,16 @@ def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M�
           --suffices hsu : ∃k, M₁.r F' + k = M₁.r F by
         sorry
 
-theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₁] (h : M₂ ≤q M₁)
-  (hr : M₂.rk + 1 = M₁.rk) (hf₁ : f ∉ M₂.E) : ∃ (N : Matroid α), N ／ f = M₂ ∧ N ＼ f = M₁ := by
-  let U := { F | M₁.Flat F ∧ M₂.Flat F }
-  sorry
-  --have hmod : ( U : M₁.ModularCut ) := by
-
 lemma Quotient.exists_extension_quotient_contract_of_rk_lt {f : α} (hQ : M₂ ≤q M₁)
-    (hr : M₂.rk < M₁.rk) (hf : f ∉ M₂.E) : ∃ M, ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M₁ ／ f := by
+    (hr : M₂.rk < M₁.rk) (hf : f ∉ M₂.E) :
+    ∃ M, M.Nonloop f ∧ ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M ／ f := by
   have hfin : M₁.FiniteRk
   · rw [finiteRk_iff]
     intro h
     simp [rk, h] at hr
   obtain ⟨k, hkpos, hrk⟩ := exists_pos_add_of_lt hr
-  -- The discrepancy here is `k`. Now define the extension. The coloop condition stops you
-  -- from cheating by choosing the empty modular cut.
+  -- The discrepancy here is `k`. Now define the extension. The loop conditions stops you
+  -- from cheating by choosing trivial modular cuts.
   sorry
 
 
@@ -563,6 +558,21 @@ theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk 
     simp [hQ.eq_of_base_indep hB₁ hB.indep]
 
   rw [Finset.card_insert_of_not_mem heY] at hr
+  obtain ⟨M, henl, hecl, rfl, hQ'⟩ :=
+    hQ.exists_extension_quotient_contract_of_rk_lt (by linarith) (f := e) sorry
+
+
+
+  have hfin' : M.FiniteRk
+  · rwa [finiteRk_iff, ← lt_top_iff_ne_top, ← delete_elem_erk_eq hecl, lt_top_iff_ne_top,
+      ← finiteRk_iff]
+
+
+  have hre : (M ／ e).rk + 1 = (M ＼ e).rk
+  · rw [henl.contract_rk_add_one_eq, M.delete_elem_rk_eq hecl]
+
+  obtain ⟨N, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
+  sorry
 
   -- induction' k with k hk
   -- · obtain ⟨B, hB⟩ := M₂.exists_base
