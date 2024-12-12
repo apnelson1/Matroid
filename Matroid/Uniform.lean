@@ -211,6 +211,9 @@ theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ 
 @[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
   rw [unif_base_iff (Nat.le_add_right _ _)]
 
+@[simp] theorem unif_circuit_iff {C : Set (Fin b)} : (unif a b).Circuit C ↔ C.encard = a + 1 := by
+  rw [unif, unifOn_circuit_iff, and_iff_left (subset_univ _)]
+
 theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   subst h
   refine ext_base rfl (fun B _ ↦ ?_)
@@ -610,6 +613,7 @@ lemma no_line_minor_iff_of_erk_le_two (hM : M.erk ≤ 2) :
     ← not_iff_not, ← not_noUniformMinor_iff, not_not, not_not,
     unifOn_noUniformMinor_iff, unifOn_ground_eq]
 
+
 end IsoMinor
 
 
@@ -675,25 +679,7 @@ end IsoMinor
       -/
 
 /-
-theorem unif_isoMinor_unif_iff (hab : a ≤ b) (ha'b' : a' ≤ b') :
-    unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by
-  refine ⟨fun h ↦ ?_, fun ⟨hr, hr'⟩  ↦ ?_⟩
-  · constructor
-    · have hle := h.erk_le_erk
-      simp only [unif_erk_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
-      obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
-    have hle := h.dual.erk_le_erk
-    rw [unif_dual, unif_dual, unif_erk_eq_of_le (by simp), unif_erk_eq_of_le (by simp)] at hle
-    exact (WithTop.le_coe rfl).1 hle
-  have hbb' := add_le_add hr hr'
-  rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
 
-  obtain ⟨d,rfl⟩ := Nat.exists_eq_add_of_le hr
-  obtain ⟨d',rfl⟩ := Nat.exists_eq_add_of_le ha'b'
-  refine (unif_isoMinor_contr a b d).trans (unif_isoMinor_restr (a+d) ?_)
-  have hb' : b ≤ d' + a
-  · zify at hr'; simpa using hr'
-  linarith
 
 @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]

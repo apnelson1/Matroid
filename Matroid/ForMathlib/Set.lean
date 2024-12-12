@@ -107,3 +107,22 @@ theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
     exact fun a _ hfa hfi _ hfj haj ↦ hij <| by rw [← hfi, haj]
   · simp only [iUnion_subset_iff]
     exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
+
+
+variable {s t : Set α}
+
+@[simp] lemma diff_ssubset_left_iff : s \ t ⊂ s ↔ (s ∩ t).Nonempty := by
+  rw [ssubset_iff_subset_ne, and_iff_right diff_subset, Ne, sdiff_eq_left,
+    disjoint_iff_inter_eq_empty, nonempty_iff_ne_empty]
+
+@[simp] lemma inter_ssubset_right_iff : s ∩ t ⊂ t ↔ ¬ t ⊆ s := by
+  rw [ssubset_iff_subset_ne, and_iff_right inter_subset_right, Ne, inter_eq_right]
+
+@[simp] lemma inter_ssubset_left_iff : s ∩ t ⊂ s ↔ ¬ s ⊆ t := by
+  rw [ssubset_iff_subset_ne, and_iff_right inter_subset_left, Ne, inter_eq_left]
+
+@[simp] lemma ssubset_union_left_iff : s ⊂ s ∪ t ↔ ¬ t ⊆ s := by
+  rw [ssubset_iff_subset_ne, and_iff_right subset_union_left, Ne, eq_comm, union_eq_left]
+
+@[simp] lemma ssubset_union_right_iff : t ⊂ s ∪ t ↔ ¬ s ⊆ t := by
+  rw [ssubset_iff_subset_ne, and_iff_right subset_union_right, Ne, eq_comm, union_eq_right]

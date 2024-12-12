@@ -445,6 +445,25 @@ lemma exists_contract_indep_to_spanning (M : Matroid α) (X : Set α) (hX : X �
     and_iff_left disjoint_sdiff_right]
   exact hB.spanning.superset subset_union_right
 
+/-- For any set `X`, we can find a minor in which `X` is spanning and cospanning,
+such that both the restrict and corestriction to `X` are unchanged.  -/
+lemma exists_minor_restrict_corestrict_eq_spanning_cospanning (hX : X ⊆ M.E) :
+    ∃ N, N ≤m M ∧ N ↾ X = M ↾ X ∧ N✶ ↾ X = M✶ ↾ X ∧ N.Spanning X ∧ N✶.Spanning X := by
+  obtain ⟨I, hI, hIX, hI_eq, hIsp⟩ := M.exists_contract_indep_to_spanning X hX
+  obtain ⟨J, hJ, hJX, hJ_eq, hJsp⟩ := (M ／ I)✶.exists_contract_indep_to_spanning X
+    hIsp.subset_ground
+  refine ⟨M ／ I ＼ J, contract_delete_minor _ _ _, ?_, ?_, ?_, ?_⟩
+  · rw [← delete_compl _, delete_ground, contract_ground, delete_delete,
+      diff_diff_comm (t := J), union_diff_self, union_comm, ← delete_delete,
+      ← contract_ground, delete_compl _, hI_eq, ← delete_inter_ground_eq,
+      restrict_ground_eq, hJX.inter_eq, delete_empty]
+    · exact hIsp.subset_ground
+    exact hJsp.subset_ground
+  · rw [delete_dual_eq_dual_contract, hJ_eq, contract_dual_eq_dual_delete, delete_eq_restrict,
+      restrict_restrict_eq _ (show X ⊆ M✶.E \ I from hIsp.subset_ground)]
+  · rwa [Coindep.delete_spanning_iff hJ, and_iff_left hJX.symm]
+  rwa [delete_dual_eq_dual_contract]
+
 lemma SkewFamily.skew_compl {Xs : η → Set α} (h : M.SkewFamily Xs) (A : Set η) :
     M.Skew (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by
   rw [skew_iff_modularPair_inter_subset_loops]

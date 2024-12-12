@@ -182,3 +182,9 @@ theorem Set.Finite.encard_le_iff_nonempty_embedding' {s : Set α} {t : Set β} (
   have hle := e.encard_le
   rw [hs.encard_eq, top_le_iff, encard_eq_top_iff] at hle
   exact hle ht
+
+lemma Finite.encard_lt_encard' (hs : s.Finite) (hst : s ⊂ t) :
+    s.encard < t.encard := by
+  obtain hfin | hinf := t.finite_or_infinite
+  · exact hfin.encard_lt_encard hst
+  rwa [hinf.encard_eq, encard_lt_top_iff]
