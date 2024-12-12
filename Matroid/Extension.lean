@@ -358,9 +358,9 @@ end restrict
 
 section finite
 
-/-- For a finite matroid, the intersection condition can be replaced with a condition about
+/-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
 modular pairs rather than families. -/
-@[simps] def ModularCut.ofForallModularPairInter (M : Matroid α) [M.Finite] (U : Set (Set α))
+@[simps] def ModularCut.ofForallModularPairInter (M : Matroid α) [M.FiniteRk] (U : Set (Set α))
     (h_flat : ∀ F ∈ U, M.Flat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.Flat F' → F ⊆ F' → F' ∈ U)
     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.ModularPair F F' → F ∩ F' ∈ U) :
@@ -372,7 +372,7 @@ modular pairs rather than families. -/
     suffices h : ∀ (S : Finset (Set α)),
         S.Nonempty → ↑S ⊆ U → M.ModularFamily (fun (F : S) ↦ F) → ⋂₀ S ∈ U by
       intro Fs hFU hne hmod
-      have hFs : Fs.Finite := M.finite_setOf_flat.subset (fun F hF ↦ h_flat F (hFU hF))
+      have hFs : Fs.Finite := by simpa using hmod.finite_of_forall_flat fun F ↦ h_flat _ (hFU F.2)
       obtain ⟨S, rfl⟩ := hFs.exists_finset_coe
       exact h S (by simpa using hne) (by simpa) hmod
     apply Finset.Nonempty.cons_induction

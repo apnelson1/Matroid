@@ -229,6 +229,17 @@ lemma ModularFamily.mapEmbedding {β : Type*} (f : α ↪ β) (h : M.ModularFami
   convert (hBX i).mapEmbedding f
   rw [image_inter f.injective]
 
+/-- A `ModularFamily` of flats in a finite-rank matroid is finite. -/
+lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
+    (h_flat : ∀ i, M.Flat (Xs i)) : (range Xs).Finite := by
+  obtain ⟨B, hB⟩ := h
+  refine Finite.of_finite_image (f := fun X ↦ X ∩ B)
+    (hB.base.indep.finite.finite_subsets.subset (by simp)) ?_
+  simp only [InjOn, mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+  intro i j h_eq
+  rw [← (h_flat i).closure, ← (hB.basis_inter i).closure_eq_closure,
+    ← (h_flat j).closure, ← (hB.basis_inter j).closure_eq_closure, h_eq]
+
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
     M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
