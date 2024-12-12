@@ -75,3 +75,12 @@ lemma eq_loopyOn_or_rkPos' (M : Matroid α) : (∃ E, M = loopyOn E) ∨ M.RkPos
 lemma rkPos_iff_empty_not_spanning : M.RkPos ↔ ¬ M.Spanning ∅ := by
   rw [rkPos_iff_empty_not_base, not_iff_not]
   exact ⟨fun h ↦ h.spanning, fun h ↦ h.base_of_indep M.empty_indep⟩
+
+lemma exists_base_finset (M : Matroid α) [FiniteRk M] : ∃ B : Finset α, M.Base B := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  exact ⟨hB.finite.toFinset, by simpa⟩
+
+lemma exists_basis_finset (M : Matroid α) [FiniteRk M] (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+    ∃ I : Finset α, M.Basis I X := by
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  refine ⟨hI.indep.finite.toFinset, by simpa⟩

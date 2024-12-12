@@ -284,6 +284,12 @@ lemma Indep.basis_of_subset_of_er_le_of_finite (hI : M.Indep I) (hIX : I ⊆ X)
      le_antisymm_iff, and_iff_left (h.trans hI.er.le), ← hI.er]
   exact M.er_mono hIX
 
+lemma Indep.base_of_encard (hI : M.Indep I) (hIfin : I.Finite) (hIcard : M.erk ≤ I.encard) :
+    M.Base I := by
+  rw [← basis_ground_iff]
+  refine hI.basis_of_subset_of_er_le_of_finite hI.subset_ground ?_ hIfin
+  rwa [← erk_def, hI.er]
+
 lemma er_insert_le_add_one (M : Matroid α) (e : α) (X : Set α) :
     M.er (insert e X) ≤ M.er X + 1 := by
   rw [← union_singleton]
@@ -805,6 +811,13 @@ lemma Indep.ncard_le_r_of_subset [FiniteRk M] (hI : M.Indep I) (h : I ⊆ X) : I
 lemma Indep.ncard_le_rk [FiniteRk M] (hI : M.Indep I) : I.ncard ≤ M.rk :=
   hI.r_eq_ncard.symm.trans_le (M.r_le_rk I)
 
+lemma Indep.base_of_ncard [FiniteRk M] (hI : M.Indep I) (hIcard : M.rk ≤ I.ncard) : M.Base I :=
+  hI.base_of_encard hI.finite <| by rwa [← coe_rk_eq, ← hI.finite.cast_ncard_eq, Nat.cast_le]
+
+lemma Indep.base_of_card [FiniteRk M] {I : Finset α} (hI : M.Indep I) (hIcard : M.rk ≤ I.card) :
+    M.Base I :=
+  hI.base_of_ncard (by simpa)
+
 lemma Basis'.card (h : M.Basis' I X) : I.ncard = M.r X := by
   rw [ncard_def, h.encard, ← er_toNat_eq_r]
 
@@ -813,6 +826,15 @@ lemma Basis'.r_eq_r (h : M.Basis' I X) : M.r I = M.r X := by
 
 lemma Basis.ncard_eq_r (h : M.Basis I X) : I.ncard = M.r X :=
   h.basis'.card
+
+lemma Basis.finset_card {I : Finset α} (hIX : M.Basis I X) : I.card = M.r X := by
+  simpa using hIX.ncard_eq_r
+
+lemma Basis'.finset_card {I : Finset α} (hIX : M.Basis' I X) : I.card = M.r X := by
+  simpa using hIX.card
+
+lemma Base.finset_card {B : Finset α} (hB : M.Base B) : B.card = M.rk := by
+  simpa [rk_def] using hB.basis_ground.ncard_eq_r
 
 lemma r_le_toFinset_card (M : Matroid α) {X : Set α} (hX : X.Finite) :
     M.r X ≤ hX.toFinset.card := by

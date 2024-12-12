@@ -537,13 +537,37 @@ theorem Quotient.of_foo_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₁]
   sorry
   --have hmod : ( U : M₁.ModularCut ) := by
 
-theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} {k : ℕ} [FiniteRk M₂] (h : M₂ ≤q M₁)
-    (hr : M₂.rk + k = M₁.rk) (hX₁ : Disjoint (X : Set α) M₁.E) (hcard : X.card = k) :
+lemma Quotient.exists_extension_quotient_contract_of_rk_lt {f : α} (hQ : M₂ ≤q M₁)
+    (hr : M₂.rk < M₁.rk) (hf : f ∉ M₂.E) : ∃ M, ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M₁ ／ f := by
+  have hfin : M₁.FiniteRk
+  · rw [finiteRk_iff]
+    intro h
+    simp [rk, h] at hr
+  obtain ⟨k, hkpos, hrk⟩ := exists_pos_add_of_lt hr
+  -- The discrepancy here is `k`. Now define the extension. The coloop condition stops you
+  -- from cheating by choosing the empty modular cut.
+  sorry
+
+
+
+theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk M₁] (hQ : M₂ ≤q M₁)
+    (hr : M₂.rk + X.card = M₁.rk) (hX₁ : Disjoint (X : Set α) M₁.E) :
     ∃ (N : Matroid α), N ／ (X : Set α) = M₁ ∧ N ＼ (X : Set α) = M₂ := by
-  induction' k with k hk
-  · obtain ⟨B, hB⟩ := M₂.exists_base
-    have := (h.weakLE.indep_of_indep hB.indep).base_of_en
-    have := h.eq_of_base_indep
+  classical
+  have hM₂fin := hQ.finiteRk
+
+  induction' X using Finset.induction with e Y heY IH generalizing M₁
+  · obtain ⟨B, hB⟩ := M₂.exists_base_finset
+    have hB₁ : M₁.Base B := by simpa [← hr, hB.finset_card]
+      using (hQ.weakLE.indep_of_indep hB.indep).base_of_card
+    simp [hQ.eq_of_base_indep hB₁ hB.indep]
+
+  rw [Finset.card_insert_of_not_mem heY] at hr
+
+  -- induction' k with k hk
+  -- · obtain ⟨B, hB⟩ := M₂.exists_base
+  --   have := (h.weakLE.indep_of_indep hB.indep).base_of_ncard
+
 
 
 theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [FiniteRk M₂] (h : M₁ ≤q M₂) :

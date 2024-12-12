@@ -390,10 +390,13 @@ end Contract
 
 section Rank
 
-lemma deleteElem_erk_eq (he : ¬ M.Coloop e) : (M ＼ e).erk = M.erk := by
+lemma delete_elem_erk_eq (he : ¬ M.Coloop e) : (M ＼ e).erk = M.erk := by
   rw [coloop_iff_diff_nonspanning, not_not] at he
   rw [deleteElem, erk_def, delete_er_eq _ (by simp), delete_ground, ← er_closure_eq,
     he.closure_eq, erk_def]
+
+lemma delete_elem_rk_eq (M : Matroid α) (he : ¬ M.Coloop e) : (M ＼ e).rk = M.rk := by
+  rw [rk, delete_elem_erk_eq he, rk]
 
 lemma delete_r_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
   rw [r, r, delete_er_eq']
@@ -432,9 +435,14 @@ lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
   rw [← contract_r_add_eq]
   exact eq_sub_of_add_eq rfl
 
-lemma Nonloop.contract_r_add_one_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
+lemma Nonloop.contract_r_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
     (M ／ e).r X + 1 = M.r (insert e X) := by
   rw [← union_singleton, ← contract_r_add_eq, he.r_eq, contract_elem]
+
+lemma Nonloop.contract_rk_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
+    (M ／ e).rk + 1 = M.rk := by
+  rw [rk_def, he.contract_r_add_one_eq, contract_elem, contract_ground, insert_diff_singleton,
+    insert_eq_of_mem he.mem_ground, rk_def]
 
 lemma Nonloop.contract_r_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
     ((M ／ e).r X : ℤ) = M.r (insert e X) - 1 := by
