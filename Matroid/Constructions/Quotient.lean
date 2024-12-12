@@ -338,18 +338,17 @@ lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
 end Constructions
 
 
-lemma Cov_Same_r {M : Matroid α} {X Y: Set α} [FiniteRk M] (hY : Y ⊆ M.E)
-    (hFX : M.Flat X) (hXY : X ⊆ Y) (heq : M.r X = M.r Y) : X = Y := by
-  refine Subset.antisymm hXY ?h₂
-  apply Flat.subset_of_relRank_eq_zero hFX
-  have hX : M.rFin X := to_rFin M X
-  have hY : M.rFin Y := to_rFin M Y
-  have ham2 : M.er Y - M.er X = 0 := by
-    rw [(rFin.cast_r_eq hY).symm, (rFin.cast_r_eq hX).symm, ← ENat.coe_sub ]
-    have heq2 : M.r Y - M.r X = 0 := Eq.symm (Nat.eq_sub_of_add_eq' (id (Eq.symm heq.symm)))
-    exact congrArg Nat.cast heq2
-  rw [ham2.symm]
-  exact rFin.relRank_eq_sub hX hXY
+lemma Quotient.intCast_rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
+    (M₂.r Y : ℤ) - M₂.r X ≤ (M₁.r Y : ℤ) - M₁.r X := by
+  have _ : FiniteRk M₂ := hQ.finiteRk
+  rw [← Nat.cast_sub (M₂.r_mono hXY), ← Nat.cast_sub (M₁.r_mono hXY), Nat.cast_le,
+    ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_r_eq, ENat.coe_sub, cast_r_eq, cast_r_eq ,
+    cast_r_eq, ← (M₁.to_rFin X).relRank_eq_sub hXY, ← (M₂.to_rFin X).relRank_eq_sub hXY]
+  exact relRank_le hQ X Y
+
+lemma Quotient.rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
+    (M₁.r X : ℤ) - M₂.r X ≤ (M₁.r Y : ℤ) - M₂.r Y := by
+  linarith [hQ.intCast_rank_sub_mono hXY]
 
 lemma CovBy_rank_one {M : Matroid α} {X Y: Set α} [FiniteRk M]
     (hFX : M.Flat X) (hFY : M.Flat Y) (hf :M.r Y = M.r X + 1) (hXY : X ⊂ Y ) :

@@ -151,6 +151,23 @@ lemma Flat.one_le_relRank_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
     (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.relRank F X :=
   ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_relRank_eq_zero h_eq)
 
+lemma exists_insert_r_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
+    ∃ e ∈ M.E \ F, M.r (insert e F) = M.r F := by
+  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_not_mem_of_not_flat hnF
+  refine ⟨e, ⟨mem_ground_of_mem_closure hecl, heF⟩, ?_⟩
+  rw [← r_closure_eq, ← closure_insert_closure_eq_closure_insert]
+  simp [hecl]
+
+lemma Flat.insert_r_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
+    M.r (insert e F) = M.r F + 1 := by
+  rw [r, hF.er_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), r,
+    ENat.toNat_one]
+
+lemma Flat.eq_of_subset_of_r_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.r F' ≤ M.r F)
+    (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
+  refine hFF'.antisymm fun e heF' ↦ by_contra fun heF ↦ ?_
+  linarith [(hF.insert_r_eq ⟨by aesop_mat, heF⟩).symm.trans_le (M.r_mono (insert_subset heF' hFF'))]
+
 lemma finite_setOf_flat (M : Matroid α) [M.Finite] : {F | M.Flat F}.Finite :=
   M.ground_finite.finite_subsets.subset (fun _ hF ↦ hF.subset_ground)
 
