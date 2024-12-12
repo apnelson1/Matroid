@@ -197,42 +197,6 @@ lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
 
 
-
--- section Triple
-
--- Attempted proof of
-
--- theorem foo (M : Matroid α) (hM : 3 ≤ M.E.encard) :
---     M.Connected ↔ ∀ X : Finset α,
---       X.card = 3 → (∃ C, M.Circuit C ∧ (X : Set α) ⊆ C) ∨ ∃ K, M.Cocircuit K ∧ (X : Set α) ⊆ K := by
---   -- rw [← not_lt, show (3 : ℕ∞) = 2 + 1 by norm_num, ENat.lt_add_one_iff (by norm_num),
---   --   encard_eq_] at hM
---   classical
---   have h_nonempty : M.Nonempty := by
---     rw [← ground_nonempty_iff, nonempty_iff_ne_empty, Ne, ← encard_eq_zero]
---     intro h0
---     simp [h0] at hM
---   rw [iff_comm, connected_iff, and_iff_right h_nonempty]
---   refine ⟨fun h e f he hf ↦ ?_, fun h X hX ↦ ?_⟩
---   · obtain rfl | hef := eq_or_ne e f
---     · simpa
---     obtain ⟨g, hg, hge, hgf⟩ : ∃ x ∈ M.E, x ≠ e ∧ x ≠ f := by
---       rw [← encard_diff_add_encard_of_subset (show {e,f} ⊆ M.E by simp [pair_subset_iff, he, hf]),
---         encard_pair hef, show (3 : ℕ∞) = 1 + 2 by norm_num,
---         WithTop.add_le_add_iff_right (by norm_num), one_le_encard_iff_nonempty, nonempty_def] at hM
---       simpa only [mem_diff, mem_insert_iff, mem_singleton_iff, not_or] using hM
-
---     obtain ⟨C, hC, hXC⟩ | ⟨K, hK, hXK⟩ :=
---       h {e,f,g} (Finset.card_eq_three.2 ⟨_, _, _, hef, hge.symm, hgf.symm, rfl⟩)
---     · exact hC.mem_connectedTo_mem (hXC <| by simp) (hXC <| by simp)
---     exact hK.mem_connectedTo_mem (hXK <| by simp) (hXK <| by simp)
-
-
-
-
--- end Triple
-
-
 section FinitaryCofinitary
 
 variable [DecidablePred (Set.Infinite (α := Set α))]

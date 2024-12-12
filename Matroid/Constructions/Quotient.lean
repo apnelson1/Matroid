@@ -251,55 +251,7 @@ lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M�
     subset_trans (by simp [hQ.ground_eq]) subset_union_right⟩
   exact inter_subset_inter_left _ <| hQ.closure_subset_closure _
 
-
-
--- lemma Quotient.eq_of_base_indep (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.Base B) (hB₂ : M₂.Indep B) :
---     M₂ = M₁ := by
---   replace hB₂ := show M₂.Base B from
---     hB₂.base_of_maximal fun J hJ hBJ ↦ hB₁.eq_of_subset_indep (hQ.weakLE.indep_of_indep hJ) hBJ
---   refine ext_circuit_not_indep hQ.ground_eq (fun C hC hCi ↦ ?_)
---     (fun C hC ↦ ((hQ.cyclic_of_circuit hC).dep_of_nonempty hC.nonempty).not_indep)
-
-
-
-  -- refine ext_base_indep hQ.ground_eq (fun B' hB' ↦ hQ.weakLE.indep_of_indep hB'.indep)
-  --   fun B' hB' ↦ ?_
-  -- have hB'E : B' ⊆ M₂.E := hB'.subset_ground.trans_eq hQ.ground_eq.symm
-
-  -- rw [indep_iff_forall_not_mem_closure_diff]
-  -- intro e heB' hecl
-
-
-
-
-  -- obtain ⟨f, hf, hfB⟩ : ∃ f ∈ B, M₁.Base (insert f (B' \ {e})) := by
-  --   by_cases heB : e ∈ B
-  --   · exact ⟨e, heB, by simpa [insert_eq_of_mem heB']⟩
-  --   obtain ⟨f, hf, hfB'⟩ := hB'.exchange hB₁ ⟨heB', heB⟩
-  --   exact ⟨f, hf.1, hfB'⟩
-
-  -- -- have := hQ.weakLE.indep_of_indep hfB.indep
-
-  -- -- have h1 : f ∈ M₁.closure B' := sorry
-  -- have h1 : B ⊆ M₂.closure (B' \ {e}) := by
-  --   intro f hfB
-
-  --   have h1' := hQ.closure_subset_closure _ h1
-  --   rwa [show B' = insert e (B' \ {e}) by simp [insert_eq_of_mem heB'],
-  --     ← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hecl, closure_closure] at h1'
-
-
-
-  -- have := hB'.spanning.contract (B' \ {e})
-  -- have hsp : (M₁ ／ (B' \ {e})).Spanning (B \ (B' \ {e}))
-
-
-
-
-
-
-theorem TFAE_Quotient (hE : M₁.E = M₂.E) :
- List.TFAE [
+theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
     M₂ ≤q M₁,
     ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z,
     ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X,
@@ -316,15 +268,61 @@ theorem TFAE_Quotient (hE : M₁.E = M₂.E) :
   tfae_finish
 
 --Begin finite case
-
-lemma Quotient.finite {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
+lemma Quotient.finiteRk {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
   rw [finiteRk_iff, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.relRank_le _ _).trans_lt hM₁
 
+/-- If `M₂` is a finitary quotient of a matroid `M₁`, and some base of `M₁` is independent in `M₂`,
+then `M₁ = M₂`. This is not true for general matroids; see `Matroid.TruncateFamily`. -/
+lemma Quotient.eq_of_base_indep [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.Base B)
+    (hB₂ : M₂.Indep B) : M₂ = M₁ := by
+  replace hB₂ := show M₂.Base B from
+    hB₂.base_of_maximal fun J hJ hBJ ↦ hB₁.eq_of_subset_indep (hQ.weakLE.indep_of_indep hJ) hBJ
+  refine ext_circuit_not_indep hQ.ground_eq (fun C hC hCi ↦ ?_)
+    (fun C hC ↦ ((hQ.cyclic_of_circuit hC).dep_of_nonempty hC.nonempty).not_indep)
+
+  obtain ⟨e, heC, heB⟩ : ∃ e ∈ C, e ∉ B :=
+    not_subset.1 fun hss ↦ hC.dep.not_indep (hB₂.indep.subset hss)
+
+  obtain ⟨B', hB', hssB', hB'ss⟩ := hCi.exists_base_subset_union_base hB₁
+
+  -- extend `C \ {e}` to a basis of `B'` in `M₁`. Since `B'` spans `M₂`, this is a base of `M₂`.
+  obtain ⟨B'', hB'', hssB''⟩ := (hC.diff_singleton_indep heC).subset_basis_of_subset
+    (diff_subset.trans hssB') (hB'.subset_ground.trans_eq hQ.ground_eq.symm)
+
+  have hB''ss := hB''.subset
+  replace hB'' := hB''.base_of_spanning <| hQ.spanning_of_spanning hB'.spanning
+
+  have hrw1 : B' \ B = C \ B
+  · refine subset_antisymm ?_ (diff_subset_diff_left hssB')
+    rw [← union_diff_right (s := C)]
+    exact diff_subset_diff_left hB'ss
+
+  have hrw2 : B'' \ B = (C \ {e}) \ B
+  · rw [subset_antisymm_iff, and_iff_left (diff_subset_diff_left hssB''),
+      diff_subset_iff, union_diff_self, ← diff_singleton_eq_self heB, ← union_diff_distrib,
+      subset_diff_singleton_iff, union_comm, and_iff_right (hB''ss.trans hB'ss)]
+    exact fun heB'' ↦ hC.dep.not_indep
+      (hB''.indep.subset (by simpa [heC] using insert_subset heB'' hssB''))
+
+  have hcard := hB'.encard_diff_comm hB₁
+
+  rw [hrw1, ← encard_diff_singleton_add_one (show e ∈ C \ B from ⟨heC, heB⟩),
+    diff_diff_comm, ← hrw2, hB''.encard_diff_comm hB₂] at hcard
+
+  replace hcard := hcard.trans_le <| encard_mono <| diff_subset_diff_right hB''ss
+
+  have hfin : (B \ B'').encard ≠ ⊤
+  · rw [hB₂.encard_diff_comm hB'', hrw2, encard_ne_top_iff]
+    exact (hC.finite.diff _).diff _
+
+  rw [ENat.add_one_le_iff hfin] at hcard
+  exact hcard.ne rfl
 section Constructions
 
-lemma PartialTruncateCollection.quotient (T : M.PartialTruncateCollection) : T.matroid ≤q M := by
+/-- This gives an exotic example of a proper quotient that leaves some bases unchanged. -/
+lemma TruncateFamily.quotient (T : M.TruncateFamily) : T.matroid ≤q M := by
   refine quotient_of_forall_closure_subset_closure rfl fun X hX ↦ ?_
   by_cases hXs : T.matroid.Spanning X
   · simp [hXs.closure_eq, closure_subset_ground]
@@ -334,11 +332,8 @@ lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
   obtain hM | h := M.eq_loopyOn_or_rkPos
   · rw [hM]
     simp [Quotient.refl]
-  rw [← PartialTruncateCollection.matroid_top]
-  exact PartialTruncateCollection.quotient _
-
-
-
+  rw [← TruncateFamily.matroid_top]
+  exact TruncateFamily.quotient _
 
 end Constructions
 
@@ -387,7 +382,7 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   have hF1X := hco.flat_left
   rw [rk_def, rk_def] at hS
   have hE : M₁.E = M₂.E := (Quotient.ground_eq hQ).symm
-  have hfr : FiniteRk M₂ := hQ.finite
+  have hfr : FiniteRk M₂ := hQ.finiteRk
   have hXY : X ⊆ Y := CovBy.subset hco
   obtain⟨y , hy, _ ⟩:= CovBy.exists_eq_closure_insert hco
   use y
