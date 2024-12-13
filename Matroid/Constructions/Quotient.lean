@@ -483,6 +483,39 @@ theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X :=
     and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
   exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
 
+theorem Quotient.forall_superset_k [FiniteRk M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁) (hrk : (M₁.rk : ℤ) - M₂.rk = k)
+    (hFF' : F ⊆ F') (hF'E : F' ⊆ M₁.E) (hFk : (M₁.r F : ℤ) - M₂.r F = k) : (M₁.r F' : ℤ) - M₂.r F' = k := by
+  refine Eq.symm ((fun {x y} ↦ Int.eq_iff_le_and_ge.mpr) ?_)
+  refine ⟨ ?_, ?_⟩
+  rw[ ←hFk ]
+  exact hQ.rank_sub_mono hFF'
+  rw [←hrk]
+  have hE : M₁.E = M₂.E := Eq.symm hQ.ground_eq
+  rw [rk_def M₁, rk_def M₂, ←hE ]
+  exact hQ.rank_sub_mono hF'E
+
+theorem Quotient.forall_superset_flat [FiniteRk M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁) (hrk : (M₁.rk : ℤ) - M₂.rk = k)
+    (hFF' : F ⊆ F') (hF'E : F' ⊆ M₁.E) (hFk : (M₁.r F : ℤ) - M₂.r F = k) (hF'Flat1 : M₁.Flat F')
+    : M₂.Flat F' := by
+  by_contra! hcon
+  have hE : M₁.E = M₂.E := Eq.symm hQ.ground_eq
+  rw [hE] at hF'E
+  obtain ⟨e, heEF', hin ⟩ := exists_insert_r_eq_of_not_flat hF'E hcon
+  rw [← hE] at hF'E
+  rw [← hE] at heEF'
+  --have hF'eE : insert e F' ⊆ M₁.E := by exact insert_subset (mem_of_mem_diff heEF') hF'E
+  have h1 : M₁.r (insert e F') - M₂.r (insert e F') ≤ k := by
+    rw[ ←hrk, rk_def M₁, rk_def M₂, ←hE]
+    exact hQ.rank_sub_mono (insert_subset (mem_of_mem_diff heEF') hF'E )
+  have h2 : k < M₁.r (insert e F') - M₂.r (insert e F') := by
+    rw [ ←(hQ.forall_superset_k hrk hFF' hF'E hFk) ]
+    have hme : M₁.r (F') < M₁.r (insert e F') := by
+      rw [ Flat.insert_r_eq hF'Flat1 heEF' ]
+      exact lt_add_one (M₁.r F')
+    rw [hin]
+    linarith
+  exact Lean.Omega.Int.le_lt_asymm h1 h2
+
 theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
     (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk ) := by
   --let k := M₁.r Y - M₁.r X
@@ -503,13 +536,14 @@ theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub 
       exact ⟨hX2, hS⟩
     · sorry
 
-def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M₂] (h : M₂ ≤q M₁)
-    (hr : M₂.rk + 1 = M₁.rk) (hf₁ : f ∉ M₁.E) : M₁.ModularCut where
-      carrier := { F | M₁.Flat F ∧ M₂.Flat F ∧ (M₁.r F = M₂.r F + 1) }
-      forall_flat := by
+def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} {k : ℤ} [FiniteRk M₁] (h : M₂ ≤q M₁)
+    (hrk : (M₁.rk : ℤ) - M₂.rk = k) : ModularCut.ofForallModularPairInter where
+      M := M₁
+      U := { F | M₁.Flat F ∧ M₂.Flat F ∧ ((M₁.r F : ℤ) - M₂.r F = k) }
+      h_flat := by
         intro F hF
         exact hF.1
-      forall_superset := by
+      h_superset := by
         intro F F' hF hF' hFF'
         refine ⟨ hF' , ?_  , ?_ ⟩
         · sorry
@@ -523,7 +557,7 @@ def Quotient.modularCut_of_single {M₁ M₂ : Matroid α} {f : α} [FiniteRk M�
           --rw [add_neg] at heq3
           --apply add_neg_eq_iff_eq_add.1 heq3 (M₂.r F') (M₁.r F') (1)
           --rw[ neg_add_eq_sub.sym (M₁.r F') (M₂.r F'), add_eq_of_eq_neg_add ] at heq3
-      forall_inter := by
+      h_pair := by
         intro S hS hem hmod
         --let k := M₁.r F' - M₁.r F
           --have hbig : M₁.r F ≤ M₁.r F' := by sorry
