@@ -91,6 +91,9 @@ def ModularCut.congr {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.Modul
   forall_superset := by obtain rfl := hNM; exact U.forall_superset
   forall_inter := by obtain rfl := hNM; exact U.forall_inter
 
+@[simp] lemma ModularCut.mem_congr_iff {N : Matroid α} (U : M.ModularCut) {hNM : M = N} :
+    F ∈ U.congr hNM ↔ F ∈ U := Iff.rfl
+
 /-- Transfer a `ModularCut` along an injection -/
 def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).ModularCut where
@@ -395,32 +398,48 @@ modular pairs rather than families. -/
 
 end finite
 
-def ModularCut.of_contract_indep (U : (M ／ I).ModularCut) (hI : M.Indep I) : M.ModularCut where
-
-  carrier := (· ∪ I) '' U
+/-- A modular cut `U` in a contraction `M ／ C` gives rise to a modular cut in `M`.
+This corresponds to the freeest extension of `M` that contracts to the extension given by `U`. -/
+@[simps] def ModularCut.ofContract {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E) :
+    M.ModularCut where
+  carrier := (· ∪ C) '' U
   forall_flat := by
-    simpa using fun F hF ↦ ((flat_contract_iff hI.subset_ground).1 (U.flat_of_mem hF)).1
+    simpa using fun F hF ↦ ((flat_contract_iff hC).1 (U.flat_of_mem hF)).1
   forall_superset := by
     simp only [mem_image, SetLike.mem_coe, forall_exists_index, and_imp]
     rintro _ F G hGU rfl hF hFF
-    have h := (flat_contract_iff hI.subset_ground).1 <| U.flat_of_mem hGU
+    have h := (flat_contract_iff hC).1 <| U.flat_of_mem hGU
     rw [union_subset_iff] at hFF
 
-    refine ⟨_,  U.superset_mem hGU (F' := F \ I) ?_ (by simp [subset_diff, h.2, hFF.1]),
+    refine ⟨_,  U.superset_mem hGU (F' := F \ C) ?_ (by simp [subset_diff, h.2, hFF.1]),
       by simp [hFF.2]⟩
     rwa [flat_contract_iff, diff_union_of_subset hFF.2, and_iff_left disjoint_sdiff_left]
   forall_inter := by
     simp only [subset_def, mem_image, SetLike.mem_coe]
     intro Fs hFs hne hmod
-    have h_inter := U.sInter_mem (Fs := (· \ I) '' Fs)
+    have h_inter := U.sInter_mem (Fs := (· \ C) '' Fs)
     simp only [image_nonempty, hne, subset_def, mem_image, SetLike.mem_coe, forall_exists_index,
       and_imp, forall_apply_eq_imp_iff₂, sInter_image, forall_const] at h_inter
 
     refine ⟨_, h_inter (fun F hF ↦ ?_) ?_, ?_⟩
-    · obtain ⟨F, hFU, rfl⟩ := hFs F hF
+    ·
+      obtain ⟨F, hFU, rfl⟩ := hFs F hF
       have hFE := subset_diff.1 (U.flat_of_mem hFU).subset_ground
       simpa [hFE.2.symm.sdiff_eq_right]
-    · sorry
+    · have hcl : ∀ (F : ↑Fs), C ⊆ M.closure F
+      · rintro ⟨F, hF⟩
+        obtain ⟨F', hF', -, rfl⟩ := hFs F hF
+        simp [M.subset_closure_of_subset' subset_union_right hC]
+      have h' := hmod.contract (C := C) hcl
+      have hφ : ∀ X ∈ ((· \ C) '' Fs), X ∪ C ∈ Fs
+      · suffices ∀ F ∈ Fs, F ∪ C ∈ Fs by simpa
+        refine fun F hF ↦ ?_
+        obtain ⟨F', hF', -, rfl⟩ := hFs F hF
+        simpa [union_assoc]
+      set φ : ((· \ C) '' Fs) → Fs := fun ⟨X, hX⟩ ↦ ⟨X ∪ C, hφ X hX⟩ with hφ'
+      convert h'.comp φ
+      ext ⟨A, ⟨B, hB, rfl⟩⟩ e
+      simp [hφ']
 
 
     simp_rw [diff_eq]
@@ -428,47 +447,14 @@ def ModularCut.of_contract_indep (U : (M ／ I).ModularCut) (hI : M.Indep I) : M
     simp only [subset_iInter_iff]
     refine fun F hF ↦ ?_
     obtain ⟨F, -, rfl⟩ := hFs F hF
-    sorry
+    exact subset_union_right
 
-      -- obtain ⟨I, hI⟩ := M.exists_basis C
-
-      -- obtain ⟨B', hB', hIB', hB'ss⟩ := hI.indep.exists_base_subset_union_base hB.base
-
-      -- obtain rfl : I = B' ∩ C := hI.eq_of_subset_indep (hB'.indep.inter_right _)
-      --   (subset_inter hIB' hI.subset) inter_subset_right
-      -- refine ⟨B' \ C, ?_, ?_⟩
-      -- · refine Indep.base_of_spanning ?_ ?_
-      --   · simp [hI.contract_indep_iff, hB'.indep, disjoint_sdiff_right]
-      --   rw [contract_spanning_iff, diff_union_self, and_iff_left disjoint_sdiff_left]
-      --   exact hB'.spanning.superset subset_union_left
-      --     (union_subset hB'.subset_ground hI.subset_ground)
-      -- simp only [Subtype.forall, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-      --   diff_inter_diff_right]
-      -- intro F hF
-      -- obtain ⟨F, hFU, rfl⟩ := hFs F hF
-      -- obtain ⟨hFC, hdj⟩ := (flat_contract_iff hC).1 <| U.flat_of_mem hFU
-      -- simp only [union_diff_right, hdj.sdiff_eq_left]
-      -- refine Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_
-      -- · rw [hI.contract_indep_iff, and_iff_left disjoint_sdiff_right]
-      --   exact hB'.indep.subset (union_subset (diff_subset.trans inter_subset_right)
-      --     inter_subset_left)
-      -- · rw [diff_subset_iff, union_comm]
-      --   exact inter_subset_left
-      -- · have hb : M.Basis ((F ∪ C) ∩ B) (F ∪ C) := hB.basis_inter ⟨_, hF⟩
-      --   rw [union_comm, ← diff_subset_iff] at hB'ss
-      --   rw [contract_closure_eq, subset_diff, and_iff_left hdj, diff_union_self,
-      --     ← closure_union_closure_right_eq, ← hI.closure_eq_closure,
-      --     closure_union_closure_right_eq, inter_comm, ← inter_union_distrib_left,
-      --     union_assoc, union_self]
-      --   exact subset_union_left
-
-
-    -- sorry
-
-
-
-
-
+@[simp] lemma mem_ofContract_iff {C : Set α} (U : (M ／ C).ModularCut) {hC : C ⊆ M.E} :
+    F ∈ U.ofContract hC ↔ C ⊆ F ∧ F \ C ∈ U := by
+  simp only [ModularCut.ofContract, ModularCut.mem_mk_iff, mem_image, SetLike.mem_coe]
+  refine ⟨?_, fun h ↦ ⟨_, h.2, diff_union_of_subset h.1⟩⟩
+  rintro ⟨F, hF, rfl⟩
+  simpa [(subset_diff.1 (U.flat_of_mem hF).subset_ground).2.sdiff_eq_left]
 
 section extensions
 
@@ -835,6 +821,87 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [ext_iff_indep]
 
 end projection
+
+section ExtendContract
+
+variable {M N : Matroid α} {C D : Set α}
+
+lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ M.E)
+    (h_eq : M ／ C = N ＼ e) : ∃ (P : Matroid α), P ＼ e = M ∧ P ／ C = N := by
+  have heM : e ∉ M.E := fun heM ↦ by simpa [h_eq] using show e ∈ (M ／ C).E from ⟨heM, heC⟩
+  obtain heN | heN := em' <| e ∈ N.E
+  · use M
+    rw [h_eq, deleteElem, deleteElem, ← delete_inter_ground_eq, Disjoint.inter_eq (by simpa),
+      ← N.delete_inter_ground_eq, Disjoint.inter_eq (by simpa)]
+    simp
+
+  set UN := ModularCut.ofDeleteElem N e with hUN
+  set UM := (UN.congr h_eq.symm).ofContract hC
+  use M.extendBy e UM
+  rw [ModularCut.extendBy_deleteElem _ heM, and_iff_right rfl]
+  refine ext_indep ?_ ?_
+  · rw [contract_ground, extendBy_E, insert_diff_of_not_mem _ heC, ← contract_ground, h_eq,
+      deleteElem, delete_ground]
+    simpa
+  obtain ⟨IC, hIC⟩ := M.exists_basis C
+  have heIC : e ∉ IC := not_mem_subset hIC.subset heC
+  have hIC' : (M.extendBy e UM).Basis IC C
+  · rw [← UM.extendBy_deleteElem heM, deleteElem, delete_basis_iff] at hIC
+    exact hIC.1
+  intro I
+  simp only [contract_ground, extendBy_E]
+  rw [hIC'.contract_indep_iff, extendBy_Indep, subset_diff, and_imp, disjoint_comm]
+  simp (config := { contextual := true }) only [and_true]
+  intro hIE hdj
+
+  obtain heI | heI := em' (e ∈ I)
+  · rw [ModularCut.extIndep_iff_of_not_mem (by simp [heI, heIC]),
+      show N.Indep I ↔ (N ＼ e).Indep I by simp [heI], ← h_eq, hIC.contract_indep_iff,
+      and_iff_left hdj]
+
+  have hrw1 : M.closure ((I ∪ IC) \ {e}) = M.closure ((I \ {e}) ∪ C)
+  · rw [union_diff_distrib, diff_singleton_eq_self heIC,
+      closure_union_congr_right hIC.closure_eq_closure]
+
+  have hrw2 : (I \ {e}) ∪ IC = (I ∪ IC) \ {e}
+  · rw [union_diff_distrib, diff_singleton_eq_self heIC]
+
+  have hrw3 : N.Indep I ↔ (N ＼ e).Indep (I \ {e}) ∧ (N ＼ e).closure (I \ {e}) ∉ UN
+  · nth_rw 1 [← ModularCut.deleteElem_extendBy heN, ← hUN]
+    rw [extendBy_Indep, ModularCut.extIndep_iff_of_mem heI]
+
+  have hwin : C ⊆ M.closure (I \ {e} ∪ C) := M.subset_closure_of_subset' subset_union_right
+
+  rw [UM.extIndep_iff_of_mem (.inl heI)]
+  simp [← h_eq, hrw1, hrw2, hrw3, hwin, hIC.contract_indep_iff, hdj.mono_right diff_subset, UM]
+
+lemma exists_common_major_of_delete_eq_contractElem (heD : e ∉ D) (hD : D ⊆ M.E)
+    (h_eq : M ＼ D = N ／ e) : ∃ (P : Matroid α), P ／ e = M ∧ P ＼ D = N := by
+  rw [← dual_inj, delete_dual_eq_dual_contract, contract_elem, contract_dual_eq_dual_delete] at h_eq
+  obtain ⟨P, hPM, hPN⟩ := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
+  rw [eq_dual_iff_dual_eq] at hPM hPN
+  refine ⟨P✶, by simpa using hPM, by simpa using hPN⟩
+
+/-- If the contract-set is finite and disjoint from the delete-sets,
+then any two matroids with a common minor have a common major. -/
+lemma exists_common_major_of_contract_eq_delete {D : Finset α} (hCD : Disjoint C D) (hCE : C ⊆ M.E)
+    (h_eq : M ／ C = N ＼ (D : Set α)) : ∃ (P : Matroid α), P ＼ (D : Set α) = M ∧ P ／ C = N := by
+  classical
+  induction' D using Finset.induction with e D heD IH generalizing N
+  · exact ⟨M, by simp, by simpa using h_eq⟩
+
+  obtain ⟨hCD, heC⟩ : Disjoint C ↑D ∧ e ∉ C := by simpa [← union_singleton] using hCD
+
+  simp_rw [Finset.coe_insert, ← singleton_union, ← delete_delete] at h_eq ⊢
+
+  obtain ⟨P', hP'M, hP'N⟩ := IH hCD h_eq
+  have hCE' : C ⊆ P'.E
+  · rw [← hP'M] at hCE
+    exact hCE.trans diff_subset
+  obtain ⟨Q, hQ, rfl, hQN⟩ := exists_common_major_of_contract_eq_deleteElem heC hCE' hP'N
+  exact ⟨Q, by rwa [← hQ] at hP'M, rfl⟩
+
+end ExtendContract
 
 section LinearClass
 

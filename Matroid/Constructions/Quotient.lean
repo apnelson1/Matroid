@@ -547,7 +547,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rk_lt {f : α} (hQ : M₂ �
 
 theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk M₁] (hQ : M₂ ≤q M₁)
     (hr : M₂.rk + X.card = M₁.rk) (hX₁ : Disjoint (X : Set α) M₁.E) :
-    ∃ (N : Matroid α), N ／ (X : Set α) = M₁ ∧ N ＼ (X : Set α) = M₂ := by
+    ∃ (N : Matroid α), (X : Set α) ⊆ N.E ∧ N ＼ (X : Set α) = M₁ ∧ N ／ (X : Set α) = M₂ := by
   classical
   have hM₂fin := hQ.finiteRk
 
@@ -558,26 +558,29 @@ theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk 
     simp [hQ.eq_of_base_indep hB₁ hB.indep]
 
   rw [Finset.card_insert_of_not_mem heY] at hr
+  obtain ⟨-, heM₂⟩ : Disjoint (↑Y) M₂.E ∧ e ∉ M₂.E := by
+    simpa only [Finset.coe_insert, ← union_singleton, ← hQ.ground_eq, disjoint_union_left,
+      disjoint_singleton_left] using hX₁
+
   obtain ⟨M, henl, hecl, rfl, hQ'⟩ :=
-    hQ.exists_extension_quotient_contract_of_rk_lt (by linarith) (f := e) sorry
-
-
+    hQ.exists_extension_quotient_contract_of_rk_lt (by linarith) heM₂
 
   have hfin' : M.FiniteRk
   · rwa [finiteRk_iff, ← lt_top_iff_ne_top, ← delete_elem_erk_eq hecl, lt_top_iff_ne_top,
       ← finiteRk_iff]
 
-
   have hre : (M ／ e).rk + 1 = (M ＼ e).rk
   · rw [henl.contract_rk_add_one_eq, M.delete_elem_rk_eq hecl]
 
-  obtain ⟨N, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
-  sorry
+  obtain ⟨N, hNss, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
+  obtain ⟨P, rfl, rfl⟩ := exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
+  use P
+  simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
+    delete_delete, deleteElem, true_and]
+  rw [union_comm, ← contract_contract, ← contract_elem, and_iff_left rfl]
+  rw [contract_elem, contract_ground, subset_diff] at hNss
 
-  -- induction' k with k hk
-  -- · obtain ⟨B, hB⟩ := M₂.exists_base
-  --   have := (h.weakLE.indep_of_indep hB.indep).base_of_ncard
-
+  exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
 
 
 theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [FiniteRk M₂] (h : M₁ ≤q M₂) :

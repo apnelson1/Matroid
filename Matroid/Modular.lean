@@ -295,82 +295,49 @@ lemma ModularFamily.of_contract_indep (h : (M ／ I).ModularFamily Xs) (hI : M.I
     (M.subset_closure_of_subset' subset_union_right)
   simp [contract_closure_eq, diff_subset]
 
+/-- A `ModularBase` can be chosen to contain a prescribed independent subset of the intersection. -/
+lemma ModularFamily.exists_modularBase_superset_of_indep_of_subset_inter (h : M.ModularFamily Xs)
+    (hI : M.Indep I) (hIX : I ⊆ ⋂ i, Xs i) : ∃ B, M.ModularBase B Xs ∧ I ⊆ B := by
+  obtain he | hne := isEmpty_or_nonempty ι
+  · obtain ⟨B, hB⟩ := hI.exists_base_superset
+    refine ⟨B, ⟨hB.1, by simp⟩, hB.2⟩
+
+  obtain ⟨B, hB⟩ := h
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIX
+  exact ⟨_,  hB.switch hJ, hIJ.trans subset_union_right⟩
+
+/-- If `C` is spanned by the intersection of a modular family `Xs`,
+then we get a modular family in `M ／ C`.  -/
 lemma ModularFamily.contract (h : M.ModularFamily Xs) {C : Set α} (hC : ∀ i, C ⊆ M.closure (Xs i)) :
     (M ／ C).ModularFamily (fun i ↦ (Xs i) \ C) := by
   obtain he | hne := isEmpty_or_nonempty ι
   · simp
-  -- have hCE := (hC hne.some).trans (M.closure_subset_ground _)
+
   obtain ⟨I, hI⟩ := M.exists_basis' C
   rw [hI.contract_eq_contract_delete]
   refine ModularFamily.delete ?_ fun i ↦ disjoint_sdiff_left.mono_right diff_subset
-  obtain ⟨B, hB⟩ := h
-  set J := (⋂ i, Xs i) ∩ B with hJ
-  have hJX : M.Basis J (⋂ i, Xs i) := hB.basis_iInter
-  obtain ⟨I', hI', hII'⟩ := hI.indep.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
-    (union_subset hI.indep.subset_ground hJX.indep.subset_ground)
+  have hu := h.modularFamily_of_forall_subset_closure (Ys := fun i ↦ (Xs i ∪ C))
+    (fun _ ↦ subset_union_left)
+    (fun i ↦ union_subset (M.subset_closure _ (h.subset_ground_of_mem i)) (hC i))
 
-  have hdj : Disjoint (B \ J) I'
-  · sorry
+  obtain ⟨B, hB, hIB⟩ := hu.exists_modularBase_superset_of_indep_of_subset_inter hI.indep
+    (by simp [(hI.subset.trans subset_union_right)])
 
-  have hi' : M.Indep (B \ J ∪ I')
-  · sorry
-
-  have hi : (M ／ I).Indep (B \ J ∪ I' \ I)
-  · rwa [hI.indep.contract_indep_iff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
-      union_assoc, diff_union_of_subset hII', and_iff_right (hdj.mono_right hII')]
-
+  have hi : (M ／ I).Indep (B \ I) := by simp [hI.indep.contract_indep_iff,
+    union_eq_self_of_subset_right hIB, disjoint_sdiff_left, hB.indep]
   refine hi.modularFamily fun i ↦ (hi.inter_left _).basis_of_subset_of_subset_closure
     inter_subset_left ?_
-  rw [contract_closure_eq, inter_union_distrib_right, union_assoc, diff_union_of_subset hII']
-  have := hB.basis_inter i
 
+  rw [contract_closure_eq, inter_union_distrib_right, diff_union_of_subset hIB,
+    union_inter_distrib_right, inter_eq_self_of_subset_left hIB,
+    closure_union_congr_right hI.closure_eq_closure, inter_union_distrib_right,
+    diff_union_self, ← inter_union_distrib_right, diff_subset_iff, union_comm, diff_union_eq_union_of_subset _ hI.subset]
+  have hXb := (hB.basis_inter i).subset_closure
 
-
-
-
-
-
-
--- lemma ModularFamily.contract_indep (h : M.ModularFamily (fun i ↦ Xs i ∪ I))
---     (hdj : ∀ i, Disjoint (Xs i) I) (hI : M.Indep I) : (M ／ I).ModularFamily Xs := by
---   obtain he | hne := isEmpty_or_nonempty ι
---   · simp
---   obtain ⟨B, hB, h⟩ := h
---   set J := (⋂ i, (Xs i ∪ I)) ∩ B with hJ
-
---   have hJi : M.Indep J := hB.indep.inter_left _
---   have hcl : I ⊆ M.closure J
---   · rw [hJ, iInter_inter, closure_iInter_eq_iInter_closure_of_iUnion_indep _
---       (hB.indep.subset (by simp)), subset_iInter_iff]
---     intro i
---     rw [(h i).closure_eq_closure]
---     sorry
---   have hmod : (M ／ J).ModularFamily (fun i ↦ (Xs i \ J))
---   · refine ⟨B \ J, ?_, ?_⟩
---     · rwa [hJi.contract_base_iff, diff_union_of_subset inter_subset_right,
---         and_iff_left disjoint_sdiff_left]
---     simp_rw [diff_eq, ← inter_inter_distrib_right, ← diff_eq]
-
---     simp only [basis_iff_indep_subset_closure, hJi.contract_indep_iff, disjoint_sdiff_left,
---       diff_union_self, true_and, diff_subset_diff_left inter_subset_left, contract_closure_eq,
---       diff_subset_iff, union_diff_self]
---     intro i
---     sorry
---   sorry
-
-
-    -- refine fun i ↦ Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_
-    -- ·
-    -- fun i ↦ Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_⟩
-    -- · rwa [hJi.contract_base_iff, diff_union_of_subset inter_subset_right,
-    --     and_iff_left disjoint_sdiff_left]
-    -- · rw [diff_eq, diff_eq, ← inter_inter_distrib_right, ← diff_eq, hJi.contract_indep_iff,
-    --     and_iff_right disjoint_sdiff_left, diff_union_self, hJ, ← union_inter_distrib_right]
-    --   exact hB.indep.subset inter_subset_right
-    -- · exact inter_subset_left
-
-
-
+  refine (subset_union_left.trans (hXb.trans ?_))
+  refine (M.closure_subset_closure ?_).trans subset_union_left
+  rw [union_inter_distrib_right]
+  refine union_subset_union_right _ inter_subset_left
 
 /-- A `ModularFamily` of flats in a finite-rank matroid is finite. -/
 lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
