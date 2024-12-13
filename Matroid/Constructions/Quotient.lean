@@ -335,6 +335,7 @@ lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
   rw [← TruncateFamily.matroid_top]
   exact TruncateFamily.quotient _
 
+
 end Constructions
 
 lemma Quotient.intCast_rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
@@ -590,7 +591,8 @@ theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [FiniteRk M₂] (
 
 -- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
 
--- Construct a modular cut using `ModularCut.ofForallModularPairInter`, which now works for finite-rank matroids.
+-- Construct a modular cut using `ModularCut.ofForallModularPairInter`,
+-- which now works for finite-rank matroids.
 -- Use `modularPair_iff_r` to rewrite `ModularPair` with the rank definition.
 
 -- lemma something {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk M₂] (h : M₁ ≤q M₂)
