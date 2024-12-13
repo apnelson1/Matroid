@@ -47,8 +47,8 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
 * `ModularCut.ofDeleteElem` : the modular cut of `M ＼ e` corresponding to the extension `M`
     of `M ＼ e`.
 
-* `ModularCut.ofForallModularPairInter` : in the finite case, a modular cut in the classical sense
-    gives a modular cut in the more general sense.
+* `ModularCut.ofForallModularPairInter` : in the finite-rank case,
+  a modular cut in the classical sense gives a modular cut in the more general sense.
 
 * `Matroid.extendBy e U` : add an element `e` to a matroid `M` using a modular cut `U`.
 
@@ -495,8 +495,7 @@ it is essentially characterizing when `I` is a basis of `X` in the matroid
 
 We need the lemma here because it is invoked several times when defining `M.extendBy e U`,
 but it should not be used elsewhere; good API versions should be stated in terms of
-`(M.extendBy e U).Basis`, and have less of a dense mess of logic on the RHS.
- -/
+`(M.extendBy e U).Basis`, and have less of a dense mess of logic on the RHS. -/
 private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e I)
     (hIX : I ⊆ X) : Maximal (fun J ↦ U.ExtIndep e J ∧ J ⊆ X) I ↔
         (M.closure (I \ {e}) = M.closure (X \ {e}) ∧ ((e ∈ I ↔ M.closure (X \ {e}) ∈ U) → e ∉ X))
@@ -781,7 +780,9 @@ end extensions
 
 section projection
 
-/-- Extend `M` using the modular cut `U`, and contract the new element. -/
+/-- Extend `M` using the modular cut `U`, and contract the new element.
+Defining this in terms of `extendBy` would be difficult if `M.E = univ`,
+so we define it directly instead.   -/
 def projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α := Matroid.ofExistsMatroid
   (E := M.E)
   (Indep := fun I ↦ M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U))
@@ -819,6 +820,26 @@ lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
 
 lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [ext_iff_indep]
+
+@[simp] lemma extendBy_contract_eq (U : M.ModularCut) (he : e ∉ M.E) :
+    (M.extendBy e U) ／ e = M.projectBy U := by
+  refine ext_indep (by simpa) fun I hI ↦ ?_
+  have ⟨hIE, heI⟩ : I ⊆ M.E ∧ e ∉ I := by simpa [subset_diff] using hI
+  obtain rfl | hU := eq_or_ne U ⊤
+  · have hl : (M.extendBy e ⊤).Loop e
+    · rw [← singleton_dep, dep_iff, extendBy_Indep,
+      ModularCut.extIndep_iff_of_mem (show e ∈ {e} from rfl)]
+      simp
+    rw [contract_elem, contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
+      extendBy_Indep, ModularCut.extIndep_iff_of_not_mem heI, projectBy_indep_iff]
+    simp [heI]
+  have hnl : (M.extendBy e U).Nonloop e
+  · rw [← indep_singleton, extendBy_Indep, ModularCut.extIndep_iff_of_mem (by simp)]
+    simpa [← U.eq_top_iff]
+  rw [contract_elem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
+    ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
+  simp [hU, heI]
+
 
 end projection
 
