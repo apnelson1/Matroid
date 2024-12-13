@@ -650,8 +650,7 @@ lemma CovBy.insert_basis (hFF' : F ⋖[M] F') (hI : M.Basis I F) (he : e ∈ F' 
     (insert_subset he.1 (hI.subset.trans hFF'.subset)) ?_
   · rw [hI.indep.insert_indep_iff, hI.closure_eq_closure, hFF'.flat_left.closure]
     exact .inl ⟨hFF'.subset_ground_right he.1, he.2⟩
-  rw [← hFF'.closure_insert_eq he, ← closure_insert_closure_eq_closure_insert (X := I),
-    hI.closure_eq_closure, hFF'.flat_left.closure]
+  rw [← hFF'.closure_insert_eq he, closure_insert_congr_right hI.closure_eq_closure]
 
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
 @[simps!] def Flat.covByPartition (hF : M.Flat F) : Partition (M.E \ F) :=
@@ -798,6 +797,22 @@ lemma flat_delete_iff {D : Set α} :
   · rintro ⟨F, hF, rfl⟩
     refine ⟨F, hF, ?_⟩
     rw [inter_eq_self_of_subset_left hF.subset_ground]
+
+lemma flat_delete_iff' {D : Set α} :
+    (M ＼ D).Flat F ↔ M.closure F ⊆ F ∪ D ∧ Disjoint F D ∧ F ⊆ M.E := by
+  obtain hE | hE := em' (F ⊆ M.E \ D)
+  · rw [iff_false_intro (show ¬ (M ＼ D).Flat F from fun h ↦ hE h.subset_ground), false_iff,
+      and_comm (a := Disjoint _ _), ← subset_diff]
+    simp [hE]
+  have hE' := subset_diff.1 hE
+  rw [flat_iff_subset_closure_self, delete_closure_eq, diff_subset_iff, union_comm,
+    hE'.2.sdiff_eq_left , and_iff_left hE'.symm]
+
+lemma Flat.exists_of_delete {D : Set α} (hF : (M ＼ D).Flat F) : ∃ F₀, M.Flat F₀ ∧ F = F₀ \ D :=
+  flat_delete_iff.1 hF
+
+lemma Flat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).Flat F) : M.closure F ⊆ F ∪ D :=
+  (flat_delete_iff'.1 hF).1
 
 @[simp] lemma flat_deleteElem_iff : (M ＼ e).Flat F ↔ e ∉ F ∧ (M.Flat F ∨ M.Flat (insert e F)) := by
   rw [deleteElem, flat_delete_iff]
@@ -1029,8 +1044,8 @@ lemma Hyperplane.basis_hyperplane_delete (hH : M.Hyperplane H) (hI : M.Basis I H
     refine Indep.base_of_spanning ?_ ?_
     · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH),
         hI.closure_eq_closure, hH.flat.closure, mem_diff, and_iff_left heH]
-    rw [spanning_iff_closure_eq, ← closure_insert_closure_eq_closure_insert, hI.closure_eq_closure,
-      hH.flat.closure, hH.closure_eq_ground_of_ssuperset (ssubset_insert heH)]
+    rw [spanning_iff_closure_eq, closure_insert_congr_right hI.closure_eq_closure,
+      hH.closure_insert_eq heH he]
   convert Base.hyperplane_of_closure_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
   · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,
     not_false_eq_true, diff_singleton_eq_self, delete_closure_eq]

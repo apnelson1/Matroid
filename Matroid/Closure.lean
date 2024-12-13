@@ -32,10 +32,17 @@ lemma Restriction.base_iff_of_spanning (hR : N ≤r M) (hN : M.Spanning N.E) :
   obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hR
   rw [Spanning.base_restrict_iff (show M.Spanning R from hN), restrict_ground_eq]
 
+lemma closure_union_congr_left {X' : Set α} (h : M.closure X = M.closure X') :
+    M.closure (X ∪ Y) = M.closure (X' ∪ Y) := by
+  rw [← M.closure_union_closure_left_eq, h, M.closure_union_closure_left_eq]
 
+lemma closure_union_congr_right {Y' : Set α} (h : M.closure Y = M.closure Y') :
+    M.closure (X ∪ Y) = M.closure (X ∪ Y') := by
+  rw [← M.closure_union_closure_right_eq, h, M.closure_union_closure_right_eq]
 
-
-
+lemma closure_insert_congr_right (h : M.closure X = M.closure Y) :
+    M.closure (insert e X) = M.closure (insert e Y) := by
+  simp [← union_singleton, closure_union_congr_left h]
 section Constructions
 
 @[simp] lemma emptyOn_closure_eq (X : Set α) : (emptyOn α).closure X = ∅ := by

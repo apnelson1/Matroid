@@ -220,7 +220,6 @@ lemma Coindep.delete_spanning_iff (hD : M.Coindep D) :
   refine fun hSE hSD ↦ ⟨fun ⟨B, hB, hBD, hBS⟩ ↦ ⟨B, hB, hBS⟩, fun ⟨B, hB, hBS⟩ ↦ ⟨B, hB, ?_, hBS⟩⟩
   exact hSD.mono_left hBS
 
-
 end Delete
 
 section Contract
@@ -590,7 +589,7 @@ lemma contract_spanning_iff' (M : Matroid α) (C X : Set α) :
     inter_eq_self_of_subset_right (M.closure_subset_ground _), subset_antisymm_iff,
     union_subset_iff, and_iff_right inter_subset_left, union_eq_self_of_subset_left (s := M.E ∩ C),
     and_iff_right (M.closure_subset_ground _), Iff.comm,
-    ← closure_union_closure_right_eq,closure_inter_ground, closure_union_closure_right_eq]
+    closure_union_congr_right (M.closure_inter_ground _)]
   · exact fun _ _ ↦ Iff.rfl
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (inter_subset_right.trans subset_union_right))
