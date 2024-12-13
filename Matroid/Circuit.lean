@@ -615,6 +615,38 @@ lemma Indep.exists_cocircuit_inter_eq_mem (hI : M.Indep I) (heI : e ∈ I) :
     (mem_fundCocct _ _ _), singleton_subset_iff, and_iff_left heI, ← M.fundCocct_inter_eq (hIB heI)]
   exact inter_subset_inter_right _ hIB
 
+
+lemma Basis.switch_subset_of_basis_closure {I₀ J₀ : Set α} (hIX : M.Basis I X) (hI₀ : I₀ ⊆ I)
+    (hJ₀X : J₀ ⊆ X) (hJ₀ : M.Basis J₀ (M.closure I₀)) : M.Basis ((I \ I₀) ∪ J₀) X := by
+  have hdj : Disjoint (I \ I₀) J₀
+  · rw [disjoint_iff_forall_ne]
+    rintro e heII₀ _ heJ₀ rfl
+    refine hIX.indep.not_mem_closure_diff_of_mem heII₀.1 ?_
+    refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure <|
+      show I₀ ⊆ I \ {e} from subset_diff_singleton hI₀ heII₀.2
+    exact hJ₀.subset heJ₀
+  refine Indep.basis_of_subset_of_subset_closure ?_
+    (union_subset (diff_subset.trans hIX.subset) hJ₀X) ?_
+
+  · rw [indep_iff_forall_subset_not_circuit
+      (union_subset (diff_subset.trans hIX.indep.subset_ground) (hJ₀.indep.subset_ground))]
+    intro C hCss hC
+    obtain ⟨e, heC, heI⟩ : ∃ e ∈ C, e ∈ I \ I₀
+    · by_contra! hcon
+      exact hC.dep.not_indep <| hJ₀.indep.subset
+        fun e heC ↦ Or.elim (hCss heC) (fun h ↦ (hcon _ heC h).elim) id
+    refine hIX.indep.not_mem_closure_diff_of_mem heI.1 ?_
+    rw [← diff_union_of_subset hI₀, union_diff_distrib, diff_singleton_eq_self heI.2,
+      ← closure_union_closure_right_eq, ← M.closure_closure I₀, ← hJ₀.closure_eq_closure,
+      closure_union_closure_right_eq]
+    refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+      (M.closure_subset_closure ?_)
+    rwa [diff_subset_iff, ← union_assoc, union_diff_cancel (by simpa)]
+
+  rw [closure_union_congr_right hJ₀.closure_eq_closure, closure_union_closure_right_eq,
+    diff_union_of_subset hI₀]
+  exact hIX.subset_closure
+
 end Dual
 
 section Finitary

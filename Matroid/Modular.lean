@@ -103,18 +103,46 @@ lemma ModularBase.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.Modular
     exact M.closure_subset_closure (iInter_subset _ i)
   exact hB.base.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
 
-lemma ModularBase.contract_subset (hB : M.ModularBase B Xs) (hIB : I ⊆ B) :
-    (M ／ I).ModularBase (B \ I) (fun i ↦ (Xs i) \ I) := by
-  simp only [modularBase_iff, (hB.indep.subset hIB).contract_base_iff, diff_union_self,
-    union_eq_self_of_subset_right hIB, hB.base, disjoint_sdiff_left, and_self,
-    diff_inter_diff_right, basis_iff_indep_subset_closure, (hB.indep.subset hIB).contract_indep_iff,
-    true_and,  contract_closure_eq]
-  refine fun i ↦ ⟨hB.indep.subset (union_subset inter_subset_right hIB), ?_, ?_⟩
-  · exact diff_subset_diff_left inter_subset_left
-  rw [closure_union_congr_left (hB.basis_inter i).closure_eq_closure]
-  sorry
-  -- refine diff_subset_
+/-- Given a modular base `B` for `Xs`, we can switch out the intersection of `B` with the
+intersection of the `Xs` with any other base for the intersection of the `Xs`
+and still have a modular base. -/
+lemma ModularBase.switch (hB : M.ModularBase B Xs) (hIX : M.Basis I (⋂ i, Xs i)) :
+    M.ModularBase ((B \ ⋂ i, Xs i) ∪ I) Xs := by
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · refine ⟨?_, by simp⟩
+    rw [iInter_of_empty, diff_univ, empty_union, ← basis_ground_iff]
+    exact hIX.basis_subset hIX.indep.subset_ground <| by simp
+  set J := (⋂ i, Xs i) ∩ B with hJ
 
+  have hJB : M.Basis J _ := hB.basis_iInter
+  set B' := B \ J ∪ I with hB'
+  have hB'E : B' ⊆ M.E :=
+    union_subset (diff_subset.trans hB.base.subset_ground) hIX.indep.subset_ground
+  have hdj : Disjoint (B \ J) I
+  · rw [disjoint_iff_forall_ne]
+    rintro e heBJ _ heI rfl
+    apply hB.indep.not_mem_closure_diff_of_mem heBJ.1
+    refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure
+      (show J ⊆ B \ {e} from subset_diff_singleton inter_subset_right heBJ.2)
+    rw [hJB.closure_eq_closure, ← hIX.closure_eq_closure]
+    exact (M.subset_closure I) heI
+
+  simp_rw [modularBase_iff, show B \ ⋂ i, Xs i = B \ J by rw [hJ, diff_inter_self_eq_diff]]
+  refine ⟨?_, fun i ↦ ?_⟩
+  · rw [← basis_ground_iff]
+    refine hB.base.basis_ground.switch_subset_of_basis_closure inter_subset_right
+      hIX.indep.subset_ground ?_
+    rw [hJB.closure_eq_closure]
+    exact hIX.basis_closure_right
+  have hiX : I ⊆ Xs i := hIX.subset.trans (iInter_subset Xs i)
+  have hJX : J ⊆ Xs i := inter_subset_left.trans (iInter_subset Xs i)
+  rw [inter_union_distrib_left, ← inter_diff_assoc, inter_eq_self_of_subset_right hiX,  inter_comm,
+    ← diff_inter_self_eq_diff, ← inter_assoc, inter_eq_self_of_subset_left
+    (show J ⊆ B from inter_subset_right), inter_eq_self_of_subset_left hJX, inter_comm]
+  refine Basis.switch_subset_of_basis_closure (hB.basis_inter i)
+    (subset_inter hJX inter_subset_right) hiX ?_
+  rw [hJB.closure_eq_closure]
+  exact hIX.basis_closure_right
 
 
 end ModularBase
@@ -175,6 +203,18 @@ lemma ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopEqu
   refine ⟨B, hB.base, fun i ↦ ?_⟩
   rw [← (he i).basis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.basis_inter i
+
+lemma ModularFamily.restrict {R : Set α} (h : M.ModularFamily Xs) (hXR : ∀ i, Xs i ⊆ R) :
+    (M ↾ R).ModularFamily Xs := by
+  obtain ⟨B, hB⟩ := h
+  refine Indep.modularFamily (I := B ∩ R) (by simpa using hB.indep.inter_right R) fun i ↦ ?_
+  rw [basis_restrict_iff', inter_eq_self_of_subset_left (hB.subset_ground i),
+    inter_comm B, ← inter_assoc, inter_eq_self_of_subset_left (hXR i), and_iff_left (hXR i)]
+  exact hB.basis_inter i
+
+lemma ModularFamily.delete {D : Set α} (h : M.ModularFamily Xs) (hXD : ∀ i, Disjoint (Xs i) D) :
+    (M ＼ D).ModularFamily Xs :=
+  h.restrict fun i ↦ subset_diff.2 ⟨h.subset_ground_of_mem i, hXD i⟩
 
 lemma ModularFamily.ofRestrict' {R : Set α}
     (h : (M ↾ R).ModularFamily Xs) : M.ModularFamily (fun i ↦ (Xs i) ∩ M.E) := by
@@ -254,6 +294,42 @@ lemma ModularFamily.of_contract_indep (h : (M ／ I).ModularFamily Xs) (hI : M.I
   refine union_subset ((h i).subset_closure.trans ?_)
     (M.subset_closure_of_subset' subset_union_right)
   simp [contract_closure_eq, diff_subset]
+
+lemma ModularFamily.contract (h : M.ModularFamily Xs) {C : Set α} (hC : ∀ i, C ⊆ M.closure (Xs i)) :
+    (M ／ C).ModularFamily (fun i ↦ (Xs i) \ C) := by
+  obtain he | hne := isEmpty_or_nonempty ι
+  · simp
+  -- have hCE := (hC hne.some).trans (M.closure_subset_ground _)
+  obtain ⟨I, hI⟩ := M.exists_basis' C
+  rw [hI.contract_eq_contract_delete]
+  refine ModularFamily.delete ?_ fun i ↦ disjoint_sdiff_left.mono_right diff_subset
+  obtain ⟨B, hB⟩ := h
+  set J := (⋂ i, Xs i) ∩ B with hJ
+  have hJX : M.Basis J (⋂ i, Xs i) := hB.basis_iInter
+  obtain ⟨I', hI', hII'⟩ := hI.indep.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
+    (union_subset hI.indep.subset_ground hJX.indep.subset_ground)
+
+  have hdj : Disjoint (B \ J) I'
+  · sorry
+
+  have hi' : M.Indep (B \ J ∪ I')
+  · sorry
+
+  have hi : (M ／ I).Indep (B \ J ∪ I' \ I)
+  · rwa [hI.indep.contract_indep_iff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
+      union_assoc, diff_union_of_subset hII', and_iff_right (hdj.mono_right hII')]
+
+  refine hi.modularFamily fun i ↦ (hi.inter_left _).basis_of_subset_of_subset_closure
+    inter_subset_left ?_
+  rw [contract_closure_eq, inter_union_distrib_right, union_assoc, diff_union_of_subset hII']
+  have := hB.basis_inter i
+
+
+
+
+
+
+
 
 -- lemma ModularFamily.contract_indep (h : M.ModularFamily (fun i ↦ Xs i ∪ I))
 --     (hdj : ∀ i, Disjoint (Xs i) I) (hI : M.Indep I) : (M ／ I).ModularFamily Xs := by
