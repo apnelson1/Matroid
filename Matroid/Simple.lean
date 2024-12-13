@@ -226,8 +226,8 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
     exact (hef.symm.loop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
       (contract_minor_of_mem _ hfC)
   apply h
-  rw [parallel_iff, contract_closure_eq, contract_closure_eq, ← closure_union_closure_left_eq,
-    hef.closure_eq_closure, closure_union_closure_left_eq, and_iff_left rfl]
+  rw [parallel_iff, contract_closure_eq, contract_closure_eq, closure_union_congr_left
+    hef.closure_eq_closure, and_iff_left rfl]
   exact ⟨toNonloop ⟨hef.mem_ground_left, heC⟩, toNonloop ⟨hef.mem_ground_right, hfC⟩⟩
 
 lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : M.Simple :=

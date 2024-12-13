@@ -26,9 +26,8 @@ lemma Indep.encard_inter_add_erk_dual_congr (hI : M.Indep I) (hI' : M.Indep I')
 
     · exact subset_union_left
     · rw [contract_closure_eq, subset_diff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
-        and_iff_left (hdj.mono_left hB.subset), ← closure_union_closure_left_eq,
-        hB.closure_eq_closure, closure_closure, closure_union_closure_left_eq, union_diff_self,
-        union_eq_self_of_subset_left hIK, hK.closure_eq_closure]
+        and_iff_left (hdj.mono_left hB.subset), closure_union_congr_left hB.closure_eq_closure,
+        closure_union_closure_left_eq, union_diff_cancel hIK, hK.closure_eq_closure]
       exact union_subset (hB.subset.trans (M.closure_subset_closure subset_union_left))
         (M.subset_closure_of_subset (diff_subset.trans subset_union_right))
 

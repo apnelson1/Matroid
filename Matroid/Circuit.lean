@@ -556,9 +556,8 @@ lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.
   apply hK.1
   rw [spanning_iff_ground_subset_closure]; nth_rw 1 [← hKe.closure_eq, diff_diff_eq_sdiff_union]
   · refine (M.closure_subset_closure (subset_union_left (t := C))).trans ?_
-    rw [union_assoc, singleton_union, insert_eq_of_mem heC, ← closure_union_closure_right_eq,
-      ← hC.closure_diff_singleton_eq_closure e, closure_union_closure_right_eq,
-      union_eq_self_of_subset_right]
+    rw [union_assoc, singleton_union, insert_eq_of_mem heC, ← closure_union_congr_right
+      (hC.closure_diff_singleton_eq_closure e), union_eq_self_of_subset_right]
     rw [← he, diff_self_inter]
     exact diff_subset_diff_left hC.subset_ground
   rw [← he]; exact inter_subset_left.trans hC.subset_ground

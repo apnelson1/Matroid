@@ -103,6 +103,20 @@ lemma ModularBase.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.Modular
     exact M.closure_subset_closure (iInter_subset _ i)
   exact hB.base.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
 
+lemma ModularBase.contract_subset (hB : M.ModularBase B Xs) (hIB : I ⊆ B) :
+    (M ／ I).ModularBase (B \ I) (fun i ↦ (Xs i) \ I) := by
+  simp only [modularBase_iff, (hB.indep.subset hIB).contract_base_iff, diff_union_self,
+    union_eq_self_of_subset_right hIB, hB.base, disjoint_sdiff_left, and_self,
+    diff_inter_diff_right, basis_iff_indep_subset_closure, (hB.indep.subset hIB).contract_indep_iff,
+    true_and,  contract_closure_eq]
+  refine fun i ↦ ⟨hB.indep.subset (union_subset inter_subset_right hIB), ?_, ?_⟩
+  · exact diff_subset_diff_left inter_subset_left
+  rw [closure_union_congr_left (hB.basis_inter i).closure_eq_closure]
+  sorry
+  -- refine diff_subset_
+
+
+
 end ModularBase
 section ModularFamily
 
@@ -229,6 +243,59 @@ lemma ModularFamily.mapEmbedding {β : Type*} (f : α ↪ β) (h : M.ModularFami
   convert (hBX i).mapEmbedding f
   rw [image_inter f.injective]
 
+lemma ModularFamily.of_contract_indep (h : (M ／ I).ModularFamily Xs) (hI : M.Indep I) :
+    M.ModularFamily (fun i ↦ Xs i ∪ I) := by
+  obtain ⟨B, hB, h⟩ := h
+  rw [hI.contract_base_iff] at hB
+  refine ⟨B ∪ I, hB.1, fun i ↦ Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_⟩
+  · exact hB.1.indep.inter_left _
+  · exact inter_subset_left
+  rw [← inter_union_distrib_right]
+  refine union_subset ((h i).subset_closure.trans ?_)
+    (M.subset_closure_of_subset' subset_union_right)
+  simp [contract_closure_eq, diff_subset]
+
+-- lemma ModularFamily.contract_indep (h : M.ModularFamily (fun i ↦ Xs i ∪ I))
+--     (hdj : ∀ i, Disjoint (Xs i) I) (hI : M.Indep I) : (M ／ I).ModularFamily Xs := by
+--   obtain he | hne := isEmpty_or_nonempty ι
+--   · simp
+--   obtain ⟨B, hB, h⟩ := h
+--   set J := (⋂ i, (Xs i ∪ I)) ∩ B with hJ
+
+--   have hJi : M.Indep J := hB.indep.inter_left _
+--   have hcl : I ⊆ M.closure J
+--   · rw [hJ, iInter_inter, closure_iInter_eq_iInter_closure_of_iUnion_indep _
+--       (hB.indep.subset (by simp)), subset_iInter_iff]
+--     intro i
+--     rw [(h i).closure_eq_closure]
+--     sorry
+--   have hmod : (M ／ J).ModularFamily (fun i ↦ (Xs i \ J))
+--   · refine ⟨B \ J, ?_, ?_⟩
+--     · rwa [hJi.contract_base_iff, diff_union_of_subset inter_subset_right,
+--         and_iff_left disjoint_sdiff_left]
+--     simp_rw [diff_eq, ← inter_inter_distrib_right, ← diff_eq]
+
+--     simp only [basis_iff_indep_subset_closure, hJi.contract_indep_iff, disjoint_sdiff_left,
+--       diff_union_self, true_and, diff_subset_diff_left inter_subset_left, contract_closure_eq,
+--       diff_subset_iff, union_diff_self]
+--     intro i
+--     sorry
+--   sorry
+
+
+    -- refine fun i ↦ Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_
+    -- ·
+    -- fun i ↦ Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_⟩
+    -- · rwa [hJi.contract_base_iff, diff_union_of_subset inter_subset_right,
+    --     and_iff_left disjoint_sdiff_left]
+    -- · rw [diff_eq, diff_eq, ← inter_inter_distrib_right, ← diff_eq, hJi.contract_indep_iff,
+    --     and_iff_right disjoint_sdiff_left, diff_union_self, hJ, ← union_inter_distrib_right]
+    --   exact hB.indep.subset inter_subset_right
+    -- · exact inter_subset_left
+
+
+
+
 /-- A `ModularFamily` of flats in a finite-rank matroid is finite. -/
 lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
     (h_flat : ∀ i, M.Flat (Xs i)) : (range Xs).Finite := by
@@ -242,7 +309,7 @@ lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
 
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
-    M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
+  M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
 
 lemma ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
    obtain ⟨B, hB⟩ := h

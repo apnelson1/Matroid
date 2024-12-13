@@ -99,10 +99,12 @@ lemma loop_iff_closure_eq_closure_empty' : M.Loop e ↔ M.closure {e} = M.closur
   rw [← singleton_dep, dep_iff, singleton_subset_iff, and_congr_left_iff]
   intro he
   rw [not_indep_iff, singleton_dep]
-  exact ⟨fun h ↦ by rw [h.closure], fun h ↦ by rw [loop_iff_mem_closure_empty, ← h]; exact M.mem_closure_self e⟩
+  exact ⟨fun h ↦ by rw [h.closure],
+    fun h ↦ by rw [loop_iff_mem_closure_empty, ← h]; exact M.mem_closure_self e⟩
 
 lemma loop_iff_closure_eq_closure_empty (he : e ∈ M.E := by aesop_mat) :
-    M.Loop e ↔ M.closure {e} = M.closure ∅ := by rw [loop_iff_closure_eq_closure_empty', and_iff_left he]
+    M.Loop e ↔ M.closure {e} = M.closure ∅ := by
+  rw [loop_iff_closure_eq_closure_empty', and_iff_left he]
 
 lemma loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ M.E \ B := by
   refine ⟨fun h B hB ↦ mem_of_mem_of_subset h ?_, fun h ↦ ?_⟩
@@ -234,7 +236,8 @@ lemma LoopEquiv.subset_iff_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : I �
 lemma LoopEquiv.basis_iff (h : M.LoopEquiv X Y) : M.Basis I X ↔ M.Basis I Y := by
   rw [basis_iff_indep_subset_closure, basis_iff_indep_subset_closure, and_congr_right_iff]
   intro hI
-  rw [h.subset_iff_of_indep hI, and_congr_right_iff, show M.closure I = M.closure I ∪ M.closure ∅ by simp,
+  rw [h.subset_iff_of_indep hI, and_congr_right_iff,
+    show M.closure I = M.closure I ∪ M.closure ∅ by simp,
     union_comm, ← diff_subset_iff,  h.diff_eq_diff, diff_subset_iff]
   exact fun _ ↦ Iff.rfl
 
@@ -327,31 +330,38 @@ lemma Circuit.nonloop_of_mem_of_one_lt_card (hC : M.Circuit C) (h : 1 < C.encard
   rw [hlp.eq_of_circuit_mem hC he, encard_singleton] at h
   exact h.ne rfl
 
-lemma nonloop_of_not_mem_closure (h : e ∉ M.closure X) (he : e ∈ M.E := by aesop_mat) : M.Nonloop e :=
+lemma nonloop_of_not_mem_closure (h : e ∉ M.closure X) (he : e ∈ M.E := by aesop_mat) :
+    M.Nonloop e :=
   nonloop_of_not_loop he (fun hel ↦ h (hel.mem_closure X))
 
 lemma nonloop_iff_not_mem_closure_empty (he : e ∈ M.E := by aesop_mat) :
     M.Nonloop e ↔ e ∉ M.closure ∅ := by rw [Nonloop, loop_iff_mem_closure_empty, and_iff_left he]
 
-lemma Nonloop.mem_closure_singleton (he : M.Nonloop e) (hef : e ∈ M.closure {f}) : f ∈ M.closure {e} := by
+lemma Nonloop.mem_closure_singleton (he : M.Nonloop e) (hef : e ∈ M.closure {f}) :
+    f ∈ M.closure {e} := by
   rw [← union_empty {_}, singleton_union] at *
-  exact (M.closure_exchange (X := ∅) ⟨hef, (nonloop_iff_not_mem_closure_empty he.mem_ground).1 he⟩).1
+  exact (M.closure_exchange (X := ∅)
+    ⟨hef, (nonloop_iff_not_mem_closure_empty he.mem_ground).1 he⟩).1
 
-lemma Nonloop.mem_closure_comm (he : M.Nonloop e) (hf : M.Nonloop f) : f ∈ M.closure {e} ↔ e ∈ M.closure {f} :=
+lemma Nonloop.mem_closure_comm (he : M.Nonloop e) (hf : M.Nonloop f) :
+    f ∈ M.closure {e} ↔ e ∈ M.closure {f} :=
   ⟨hf.mem_closure_singleton, he.mem_closure_singleton⟩
 
-lemma Nonloop.nonloop_of_mem_closure (he : M.Nonloop e) (hef : e ∈ M.closure {f}) : M.Nonloop f := by
-  rw [Nonloop, and_comm];
+lemma Nonloop.nonloop_of_mem_closure (he : M.Nonloop e) (hef : e ∈ M.closure {f}) :
+    M.Nonloop f := by
+  rw [Nonloop, and_comm]
   by_contra! h; apply he.not_loop
   rw [loop_iff_mem_closure_empty] at *; convert hef using 1
   obtain (hf | hf) := em (f ∈ M.E)
-  · rw [← closure_closure _ ∅, ← insert_eq_of_mem (h hf), closure_insert_closure_eq_closure_insert, insert_emptyc_eq]
+  · rw [← closure_closure _ ∅, ← insert_eq_of_mem (h hf),
+      closure_insert_closure_eq_closure_insert, insert_emptyc_eq]
   rw [eq_comm, ← closure_inter_ground, inter_comm, inter_singleton_eq_empty.mpr hf]
 
-lemma Nonloop.closure_eq_of_mem_closure (he : M.Nonloop e) (hef : e ∈ M.closure {f}) : M.closure {e} = M.closure {f} := by
+lemma Nonloop.closure_eq_of_mem_closure (he : M.Nonloop e) (hef : e ∈ M.closure {f}) :
+    M.closure {e} = M.closure {f} := by
   rw [← closure_closure _ {f}, ← insert_eq_of_mem hef, closure_insert_closure_eq_closure_insert,
-    ← closure_closure _ {e}, ← insert_eq_of_mem (he.mem_closure_singleton hef), closure_insert_closure_eq_closure_insert,
-    pair_comm]
+    ← closure_closure _ {e}, ← insert_eq_of_mem (he.mem_closure_singleton hef),
+    closure_insert_closure_eq_closure_insert, pair_comm]
 
 lemma Nonloop.closure_eq_closure_iff_circuit_of_ne (he : M.Nonloop e) (hef : e ≠ f) :
     M.closure {e} = M.closure {f} ↔ M.Circuit {e, f} := by
@@ -362,7 +372,8 @@ lemma Nonloop.closure_eq_closure_iff_circuit_of_ne (he : M.Nonloop e) (hef : e �
     suffices ¬ M.Indep {e, f} by simpa [pair_diff_left hef, hf, pair_diff_right hef, he]
     rw [Indep.insert_indep_iff_of_not_mem (by simpa) (by simpa)]
     simp [← h, mem_closure_self _ _ he.mem_ground]
-  have hclosure := (h.closure_diff_singleton_eq_closure e).trans (h.closure_diff_singleton_eq_closure f).symm
+  have hclosure := (h.closure_diff_singleton_eq_closure e).trans
+    (h.closure_diff_singleton_eq_closure f).symm
   rwa [pair_diff_left hef, pair_diff_right hef, eq_comm] at hclosure
 
 lemma Nonloop.closure_eq_closure_iff_eq_or_dep (he : M.Nonloop e) (hf : M.Nonloop f) :
@@ -620,9 +631,9 @@ lemma coloop_iff_diff_nonspanning : M.Coloop e ↔ ¬ M.Spanning (M.E \ {e}) := 
   · simpa [hsp.closure_eq.symm ▸ h.2] using h.1 (M.E \ {e})
   · rw [spanning_iff_ground_subset_closure] at h
     refine by_contra fun he' ↦ h ?_
-    rw [← union_eq_self_of_subset_left (subset_diff_singleton hX he'), ← closure_union_closure_left_eq,
-      ← insert_eq_of_mem he, ← union_singleton, union_assoc, union_diff_self, singleton_union,
-      ← closure_ground]
+    rw [← union_eq_self_of_subset_left (subset_diff_singleton hX he'),
+      ← closure_union_closure_left_eq, ← insert_eq_of_mem he, ← union_singleton, union_assoc,
+      union_diff_self, singleton_union, ← closure_ground]
     apply M.closure_subset_closure
     rw [closure_ground]
     exact (subset_insert _ _).trans subset_union_right
