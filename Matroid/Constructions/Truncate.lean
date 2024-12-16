@@ -152,6 +152,28 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
   simp only [truncate_ground_eq, mem_diff, truncate_indep_iff, not_and, not_not, and_imp]
   exact fun f _ hfB hfBi ↦ insert_base_of_insert_indep he hfB hBe hfBi
 
+lemma Base.diff_singleton_truncate_base {e : α} (hB : M.Base B) (heB : e ∈ B) :
+    M.truncate.Base (B \ {e}) := by
+  have hpos : M.RkPos := hB.rkPos_of_nonempty ⟨e, heB⟩
+  rw [truncate_base_iff]
+  exact ⟨e, by simp, by simpa [heB]⟩
+
+lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate := by
+  refine quotient_of_forall_closure_subset_closure h.ground_eq.symm fun X (hXE : X ⊆ M₁.E) ↦ ?_
+  obtain rfl | hssu := hXE.eq_or_ssubset
+  · rw [← truncate_ground_eq, closure_ground, truncate_ground_eq, ← h.ground_eq,
+      ← M₂.truncate_ground_eq, closure_ground]
+  by_cases hX : M₁.truncate.Spanning X
+  · suffices hsp : M₂.truncate.Spanning X
+    · rw [hsp.closure_eq, truncate_ground_eq, h.ground_eq, ← truncate_ground_eq]
+      apply closure_subset_ground
+    rw [truncate_spanning_iff_of_ssubset (hssu.trans_eq h.ground_eq.symm)]
+    rw [truncate_spanning_iff_of_ssubset hssu] at hX
+    obtain ⟨e, ⟨heE, heX⟩, hS⟩ := hX
+    exact ⟨e, ⟨h.ground_eq.symm.subset heE, heX⟩, h.spanning_of_spanning hS⟩
+  rw [M₁.truncate_closure_eq_of_not_spanning hXE hX]
+  exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
+
 @[simp] lemma truncate_spanning_iff [M.RkPos] {S : Set α} :
     M.truncate.Spanning S ↔ ∃ e ∈ M.E, M.Spanning (insert e S) := by
   simp only [spanning_iff_exists_base_subset', truncate_base_iff, truncate_ground_eq,
@@ -178,6 +200,13 @@ lemma truncate_spanning_iff_of_ssubset {S : Set α} (hssu : S ⊂ M.E) :
   · exact ⟨f, hf, he.superset (insert_subset (mem_insert_of_mem _ heS) (subset_insert _ _))⟩
   exact ⟨e, ⟨heE, heS⟩, he⟩
 
+-- lemma truncate_closure_superset (M : Matroid α) (X : Set α) :
+--     M.closure X ⊆ M.truncate.closure X := by
+--   obtain ⟨I, hI⟩ := M.exists_basis' X
+--   have : M.truncate.
+
+  -- rw [truncate_spanning_iff] at hs
+
 lemma Spanning.truncate_spanning {S : Set α} (hS : M.Spanning S) : M.truncate.Spanning S := by
   obtain rfl | hssu := hS.subset_ground.eq_or_ssubset
   · exact M.truncate.ground_spanning
@@ -190,6 +219,12 @@ lemma Coindep.truncate_delete {D : Set α} (hD : M.Coindep D) :
   refine ext_indep rfl fun I hI ↦ ?_
   rw [truncate_ground_eq, delete_ground, subset_diff] at hI
   simp [truncate_indep_iff', hD.delete_base_iff, delete_indep_iff, truncate_indep_iff, hI.2]
+
+lemma truncate_restrict_of_not_spanning {R : Set α} (hSE : R ⊆ M.E) (hS : ¬ M.Spanning R) :
+    (M.truncate ↾ R) = M ↾ R := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [restrict_indep_iff, truncate_indep_iff', and_congr_left_iff, and_iff_left_iff_imp]
+  refine fun hIR _ hI ↦ (hS (hI.spanning.superset hIR)).elim
 
 lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.truncate ／ C := by
   suffices aux : ∀ C ⊆ M.E, (M ／ C).truncate = M.truncate ／ C by
@@ -599,3 +634,8 @@ lemma eq_top_or_bot_of_finiteRk_dual [FiniteRk M✶] (T : M.TruncateFamily) :
       inter_diff_distrib_left, inter_eq_self_of_subset_left hB.subset_ground, diff_self_inter]
 
 end TruncateFamily
+
+lemma truncate_closure_eq_of_not_spanning {X : Set α} (hXE : X ⊆ M.E := by aesop_mat)
+    (hs : ¬ M.truncate.Spanning X) : M.truncate.closure X = M.closure X := by
+  rw [← TruncateFamily.matroid_top] at hs ⊢
+  rwa [TruncateFamily.matroid_closure_eq_closure _ hXE]
