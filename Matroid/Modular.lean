@@ -331,7 +331,8 @@ lemma ModularFamily.contract (h : M.ModularFamily Xs) {C : Set α} (hC : ∀ i, 
   rw [contract_closure_eq, inter_union_distrib_right, diff_union_of_subset hIB,
     union_inter_distrib_right, inter_eq_self_of_subset_left hIB,
     closure_union_congr_right hI.closure_eq_closure, inter_union_distrib_right,
-    diff_union_self, ← inter_union_distrib_right, diff_subset_iff, union_comm, diff_union_eq_union_of_subset _ hI.subset]
+    diff_union_self, ← inter_union_distrib_right, diff_subset_iff, union_comm,
+    diff_union_eq_union_of_subset _ hI.subset]
   have hXb := (hB.basis_inter i).subset_closure
 
   refine (subset_union_left.trans (hXb.trans ?_))
