@@ -517,54 +517,52 @@ theorem Quotient.forall_superset_flat [FiniteRk M₁] {k : ℤ} {F F' : Set α} 
     linarith
   exact Lean.Omega.Int.le_lt_asymm h1 h2
 
-theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
-    (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk ) := by
-  --let k := M₁.r Y - M₁.r X
-  suffices hi : ∀ i : ℕ, M₁.r Y = i + M₁.r X → M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk )
-  · have hbig : M₁.r X ≤ M₁.r Y := by exact r_le_of_subset M₁ hsub
-    have hin: ∃ k, M₁.r X + k = M₁.r Y := Nat.le.dest hbig
-    obtain ⟨ k, hk ⟩ := hin
-    apply hi k
-    rw [add_comm] at hk
-    exact id (Eq.symm hk)
-  · intro i hi
-    induction' i with n IH generalizing Y
-    · simp only [zero_add] at hi
-      have h1xf : M₁.Flat X := by exact flat_of_flat hQ hX2
-      have hequal : X = Y := by sorry
-      rw [hequal] at hX2
-      rw [hequal] at hS
-      exact ⟨hX2, hS⟩
-    · sorry
+-- theorem Quotient.covBy_of_covBy_gen [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
+--     (hS : M₁.r X + M₂.rk = M₂.r X + M₁.rk) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk ) := by
+--   --let k := M₁.r Y - M₁.r X
+--   suffices hi : ∀ i : ℕ, M₁.r Y = i + M₁.r X → M₂.Flat Y ∧ ( M₁.r Y + M₂.rk = M₂.r Y + M₁.rk )
+--   · have hbig : M₁.r X ≤ M₁.r Y := by exact r_le_of_subset M₁ hsub
+--     have hin: ∃ k, M₁.r X + k = M₁.r Y := Nat.le.dest hbig
+--     obtain ⟨ k, hk ⟩ := hin
+--     apply hi k
+--     rw [add_comm] at hk
+--     exact id (Eq.symm hk)
+--   · intro i hi
+--     induction' i with n IH generalizing Y
+--     · simp only [zero_add] at hi
+--       have h1xf : M₁.Flat X := by exact flat_of_flat hQ hX2
+--       have hequal : X = Y := by sorry
+--       rw [hequal] at hX2
+--       rw [hequal] at hS
+--       exact ⟨hX2, hS⟩
+--     · sorry
 
-def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} {k : ℤ} [FiniteRk M₁] (h : M₂ ≤q M₁)
-    (hrk : (M₁.rk : ℤ) - M₂.rk = k) : ModularCut.ofForallModularPairInter where
-      M := M₁
-      U := { F | M₁.Flat F ∧ M₂.Flat F ∧ ((M₁.r F : ℤ) - M₂.r F = k) }
-      h_flat := by
-        intro F hF
-        exact hF.1
-      h_superset := by
-        intro F F' hF hF' hFF'
-        refine ⟨ hF' , ?_  , ?_ ⟩
-        · sorry
-        · sorry
-        -- · have hqu : M₂.r F' - M₁.r F' ≤ M₂.rk - M₁.rk := by sorry
-        --   have heq : M₂.rk - M₁.rk = 1 := by exact Eq.symm (Nat.eq_sub_of_add_eq' hr)
-        --   rw [heq] at hqu
-        --   have heq2 : 1 ≤  M₂.r F' - M₁.r F' := by sorry
-        --   have heq3 :  M₂.r F' - M₁.r F' = 1 := by exact Eq.symm (Nat.le_antisymm heq2 hqu)
-        --   sorry
-          --rw [add_neg] at heq3
-          --apply add_neg_eq_iff_eq_add.1 heq3 (M₂.r F') (M₁.r F') (1)
-          --rw[ neg_add_eq_sub.sym (M₁.r F') (M₂.r F'), add_eq_of_eq_neg_add ] at heq3
-      h_pair := by
-        intro S hS hem hmod
-        --let k := M₁.r F' - M₁.r F
-          --have hbig : M₁.r F ≤ M₁.r F' := by sorry
-          --have hin: ∃ k, M₁.r F + k = M₁.r F' := by exact Nat.le.dest hbig
-          --suffices hsu : ∃k, M₁.r F' + k = M₁.r F by
-        sorry
+def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} {k : ℤ} [FiniteRk M₁] (hQ : M₂ ≤q M₁)
+    (hrk : (M₁.rk : ℤ) - M₂.rk = k) := ModularCut.ofForallModularPairInter M₁
+    (U := { F | M₁.Flat F ∧ M₂.Flat F ∧ ((M₁.r F : ℤ) - M₂.r F = k) })
+    (h_flat := by
+      intro F hF
+      exact hF.1 )
+    (h_superset := by
+    intro F F' hF hF'Flat1 hFF'
+    have hF'E : F' ⊆ M₁.E := by exact hF'Flat1.subset_ground
+    refine ⟨ hF'Flat1, ?_, ?_⟩
+    ·exact hQ.forall_superset_flat hrk hFF' hF'E (hF.2.2) hF'Flat1
+    ·exact hQ.forall_superset_k hrk hFF' hF'E (hF.2.2))
+    (h_pair := by
+    intro F F' hF hF' hFF'M
+    refine ⟨Flat.inter hF.1 hF'.1, Flat.inter hF.2.1 hF'.2.1, ?_ ⟩
+    refine Eq.symm ((fun {x y} ↦ Int.eq_iff_le_and_ge.mpr) ?_)
+    constructor
+    · --have hhelp : ↑(M₁.r (F ∩ F')) ≤ ↑(M₂.r (F ∩ F')) := by sorry
+      --rw [hFF'M.er_add]
+      --ModularPair.er_add_er
+      sorry
+    · sorry
+    )
+
+
+
 
 lemma Quotient.exists_extension_quotient_contract_of_rk_lt {f : α} (hQ : M₂ ≤q M₁)
     (hr : M₂.rk < M₁.rk) (hf : f ∉ M₂.E) :
