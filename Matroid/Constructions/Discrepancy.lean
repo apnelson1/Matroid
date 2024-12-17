@@ -9,22 +9,6 @@ variable {α : Type*} {M N M₁ M₂ : Matroid α} {I J I₁ I₂ J₁ J₂ B B'
 
 namespace Quotient
 
-lemma truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate := by
-  refine quotient_of_forall_closure_subset_closure h.ground_eq.symm fun X (hXE : X ⊆ M₁.E) ↦ ?_
-  obtain rfl | hssu := hXE.eq_or_ssubset
-  · rw [← truncate_ground_eq, closure_ground, truncate_ground_eq, ← h.ground_eq,
-      ← M₂.truncate_ground_eq, closure_ground]
-  by_cases hX : M₁.truncate.Spanning X
-  · suffices hsp : M₂.truncate.Spanning X
-    · rw [hsp.closure_eq, truncate_ground_eq, h.ground_eq, ← truncate_ground_eq]
-      apply closure_subset_ground
-    rw [truncate_spanning_iff_of_ssubset (hssu.trans_eq h.ground_eq.symm)]
-    rw [truncate_spanning_iff_of_ssubset hssu] at hX
-    obtain ⟨e, ⟨heE, heX⟩, hS⟩ := hX
-    exact ⟨e, ⟨h.ground_eq.symm.subset heE, heX⟩, h.spanning_of_spanning hS⟩
-  rw [M₁.truncate_closure_eq_of_not_spanning hXE hX]
-  exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
-
 lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₂ ≤q M₁) (hIfin : I.Finite)
     (hI₀I : M₂.Basis I₀ I) (hI : M₁.Indep I) (hB₀ : M₂.Base B₀) (hB : M₁.Base B) (hB₀B : B₀ ⊆ B) :
     (I \ I₀).encard ≤ (B \ B₀).encard := by
