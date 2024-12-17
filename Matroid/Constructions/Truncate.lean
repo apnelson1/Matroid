@@ -158,22 +158,6 @@ lemma Base.diff_singleton_truncate_base {e : α} (hB : M.Base B) (heB : e ∈ B)
   rw [truncate_base_iff]
   exact ⟨e, by simp, by simpa [heB]⟩
 
-lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate := by
-  refine quotient_of_forall_closure_subset_closure h.ground_eq.symm fun X (hXE : X ⊆ M₁.E) ↦ ?_
-  obtain rfl | hssu := hXE.eq_or_ssubset
-  · rw [← truncate_ground_eq, closure_ground, truncate_ground_eq, ← h.ground_eq,
-      ← M₂.truncate_ground_eq, closure_ground]
-  by_cases hX : M₁.truncate.Spanning X
-  · suffices hsp : M₂.truncate.Spanning X
-    · rw [hsp.closure_eq, truncate_ground_eq, h.ground_eq, ← truncate_ground_eq]
-      apply closure_subset_ground
-    rw [truncate_spanning_iff_of_ssubset (hssu.trans_eq h.ground_eq.symm)]
-    rw [truncate_spanning_iff_of_ssubset hssu] at hX
-    obtain ⟨e, ⟨heE, heX⟩, hS⟩ := hX
-    exact ⟨e, ⟨h.ground_eq.symm.subset heE, heX⟩, h.spanning_of_spanning hS⟩
-  rw [M₁.truncate_closure_eq_of_not_spanning hXE hX]
-  exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
-
 @[simp] lemma truncate_spanning_iff [M.RkPos] {S : Set α} :
     M.truncate.Spanning S ↔ ∃ e ∈ M.E, M.Spanning (insert e S) := by
   simp only [spanning_iff_exists_base_subset', truncate_base_iff, truncate_ground_eq,

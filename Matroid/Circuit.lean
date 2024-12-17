@@ -667,6 +667,29 @@ lemma finitary_iff_forall_circuit_finite : M.Finitary ↔ ∀ C, M.Circuit C →
 lemma Cocircuit.finite [Finitary (M✶)] (hK : M.Cocircuit K) : K.Finite :=
   Circuit.finite hK
 
+/-- In a finitary matroid, each finite set spanned by `X` is spanned by a finite independent
+subset of `X`. -/
+lemma exists_subset_finite_closure_of_subset_closure {Y : Set α} [M.Finitary]
+    (hX : X.Finite) (hXY : X ⊆ M.closure Y) : ∃ I ⊆ Y, I.Finite ∧ M.Indep I ∧ X ⊆ M.closure I := by
+
+  obtain ⟨J, hJY⟩ := M.exists_basis' Y
+  have h_choose : ∀ e ∈ X, ∃ Je, Je ⊆ J ∧ Je.Finite ∧ e ∈ M.closure Je
+  · intro e he
+    by_cases heY : e ∈ J
+    · exact ⟨{e}, by simpa, by simp, M.mem_closure_of_mem' rfl⟩
+    obtain ⟨C, hC, heC, hCss⟩ := (mem_closure_iff_exists_circuit_of_not_mem heY).1
+      (by rw[hJY.closure_eq_closure]; exact hXY he)
+    exact ⟨C \ {e}, by simpa, hC.finite.diff _, hC.mem_closure_diff_singleton_of_mem heC⟩
+
+  choose! Js hJs using h_choose
+
+  have hu : ⋃ i ∈ X, Js i ⊆ J := by simpa [iUnion_subset_iff] using fun e heX ↦ (hJs e heX).1
+  refine ⟨⋃ i ∈ X, Js i, hu.trans hJY.subset, ?_, hJY.indep.subset hu, fun e heX ↦ ?_⟩
+  · exact hX.biUnion fun e he ↦ (hJs e he).2.1
+
+  refine mem_of_mem_of_subset (hJs e heX).2.2 (M.closure_subset_closure ?_)
+  exact subset_biUnion_of_mem heX
+
 end Finitary
 section Girth
 
