@@ -1,5 +1,5 @@
 import Matroid.Minor.Rank
-import Matroid.Modular
+import Matroid.Modular.Basic
 import Matroid.ForMathlib.Data.Set.Finite
 
 open Set

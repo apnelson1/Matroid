@@ -808,6 +808,35 @@ lemma flat_delete_iff' {D : Set α} :
   rw [flat_iff_subset_closure_self, delete_closure_eq, diff_subset_iff, union_comm,
     hE'.2.sdiff_eq_left , and_iff_left hE'.symm]
 
+lemma flat_restrict_iff' {R : Set α} :
+    (M ↾ R).Flat F ↔ F = M.closure F ∩ R ∪ (R \ M.E) := by
+  by_cases hFR : F ⊆ R
+  · rw [flat_iff_closure_self, M.restrict_closure_eq', inter_eq_self_of_subset_left hFR, eq_comm]
+  refine iff_of_false (fun h ↦ hFR h.subset_ground) fun h ↦ hFR ?_
+  rw [h, union_subset_iff, and_iff_left diff_subset]
+  exact inter_subset_right
+
+lemma Flat.flat_restrict' (hF : M.Flat F) (R : Set α) : (M ↾ R).Flat ((F ∩ R) ∪ (R \ M.E)) := by
+  rw [flat_restrict_iff', ← closure_inter_ground, union_inter_distrib_right,
+    diff_inter_self, union_empty, closure_inter_ground]
+  convert rfl using 2
+  simp only [subset_antisymm_iff, subset_inter_iff, inter_subset_right, and_true]
+  nth_rw 2 [← hF.closure]
+  exact ⟨inter_subset_left.trans (M.closure_subset_closure (inter_subset_left)),
+    M.subset_closure _ (inter_subset_left.trans hF.subset_ground)⟩
+
+lemma Flat.flat_restrict (hF : M.Flat F) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Flat (F ∩ R) := by
+  simpa [diff_eq_empty.2 hR] using hF.flat_restrict' R
+
+lemma Flat.closure_subset_of_flat_restrict {R : Set α} (hF : (M ↾ R).Flat F) :
+    M.closure F ⊆ F ∪ (M.E \ R) := by
+  rw [flat_restrict_iff'] at hF
+  nth_rw 2 [hF]
+  rw [union_assoc, ← diff_subset_iff, diff_self_inter, diff_subset_iff, ← union_assoc,
+    union_eq_self_of_subset_right diff_subset, union_diff_self]
+  exact (M.closure_subset_ground F).trans subset_union_right
+
 lemma Flat.exists_of_delete {D : Set α} (hF : (M ＼ D).Flat F) : ∃ F₀, M.Flat F₀ ∧ F = F₀ \ D :=
   flat_delete_iff.1 hF
 

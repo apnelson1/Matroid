@@ -10,7 +10,7 @@ import Matroid.Minor.Iso
 import Matroid.Flat
 import Matroid.Minor.Rank
 import Matroid.Simple
-import Matroid.Modular
+import Matroid.Modular.Basic
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Separation

@@ -2,7 +2,7 @@ import Matroid.Simple
 import Matroid.Closure
 import Matroid.ForMathlib.Other
 import Matroid.Minor.Basic
-import Matroid.Modular
+import Matroid.Modular.Basic
 
 namespace Matroid
 open Set BigOperators

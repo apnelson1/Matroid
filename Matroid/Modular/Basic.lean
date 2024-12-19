@@ -370,7 +370,7 @@ lemma ModularPair.subset_ground_left (h : M.ModularPair X Y) : X ⊆ M.E :=
 lemma ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
 
-@[simp] lemma modularPair_iff {M : Matroid α} {X Y : Set α} :
+lemma modularPair_iff {M : Matroid α} {X Y : Set α} :
     M.ModularPair X Y ↔ ∃ I, M.Indep I ∧ M.Basis (X ∩ I) X ∧ M.Basis (Y ∩ I) Y := by
   simp only [ModularPair, ModularFamily, mem_singleton_iff, modularBase_pair_iff, indep_iff]
   refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB.indep, ?_⟩,
@@ -574,9 +574,17 @@ lemma modularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
   rw [hI.indep.insert_indep_iff]
   exact .inl ⟨hf, hfI⟩
 
+lemma ModularPair.restrict {R : Set α} (hXY : M.ModularPair X Y) (hXR : X ⊆ R) (hYR : Y ⊆ R) :
+    (M ↾ R).ModularPair X Y :=
+  ModularFamily.restrict hXY <| by simp [hXR, hYR]
+
+lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ M.closure X)
+    (hCY : C ⊆ M.closure Y) : (M ／ C).ModularPair (X \ C) (Y \ C) := by
+  have hrw : (fun i ↦ bif i then X \ C else Y \ C) = fun i ↦ ((bif i then X else Y) \ C)
+  · ext (rfl | rfl) <;> rfl
+  rw [ModularPair, hrw]
+  simpa [hCX, hCY] using ModularFamily.contract (C := C) hXY
+
 end ModularFamily
-
-
-
 
 end Matroid

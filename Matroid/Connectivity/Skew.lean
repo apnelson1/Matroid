@@ -1,4 +1,4 @@
-import Matroid.Modular
+import Matroid.Modular.Basic
 
 universe u
 

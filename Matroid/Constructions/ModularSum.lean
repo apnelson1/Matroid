@@ -1,5 +1,5 @@
 import Mathlib.Data.Matroid.Sum
-import Matroid.Modular
+import Matroid.Modular.Basic
 
 variable {α β : Type*} {M N : Matroid α}
 

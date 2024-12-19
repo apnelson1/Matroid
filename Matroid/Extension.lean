@@ -1,5 +1,5 @@
 import Matroid.ForMathlib.Matroid.Basic
-import Matroid.Modular
+import Matroid.Modular.Basic
 
 /-
 
