@@ -1,4 +1,4 @@
-import Matroid.Modular.Basic
+import Matroid.Connectivity.Local
 
 namespace Matroid
 
@@ -82,7 +82,7 @@ lemma ModularSet.contract_subset {C : Set α} (hF : M.ModularSet F) (hC : C ⊆ 
   intro F' hF'
   rw [flat_contract_iff] at hF'
   simpa [hF'.2.sdiff_eq_left] using
-    (hF hF'.1).contract hC (M.subset_closure_of_subset' subset_union_right hCE)
+    (hF hF'.1).contract_subset_closure hC (M.subset_closure_of_subset' subset_union_right hCE)
 
 end ModularSet
 
@@ -99,6 +99,13 @@ lemma Modular.modularSet_of_flat (hM : M.Modular) (hF : M.Flat F) : M.ModularSet
 
 lemma modular_iff : M.Modular ↔ ∀ ⦃F⦄, M.Flat F → M.ModularSet F := Iff.rfl
 
+lemma modular_iff_forall_modularPair :
+    M.Modular ↔ ∀ ⦃F F'⦄, M.Flat F → M.Flat F' → M.ModularPair F F' :=
+  forall_cond_comm
+
+lemma Modular.modularPair (h : M.Modular) (hF : M.Flat F) (hF' : M.Flat F') : M.ModularPair F F' :=
+  h hF hF'
+
 lemma freeOn_modular (E : Set α) : (freeOn E).Modular := by
   intro F
   simp only [freeOn_flat_iff, modularSet_def, modularPair_iff, freeOn_indep_iff, freeOn_basis_iff,
@@ -111,7 +118,21 @@ lemma Modular.restrict_flat (hM : M.Modular) (hF : M.Flat F) : (M ↾ F).Modular
   exact ModularSet.restrict_flat (hM (hF₁.inter hF)) hF hF'.subset_ground
 
 lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
-  sorry
+  wlog h : C ⊆ M.E generalizing C with h'
+  · rw [← contract_inter_ground_eq]
+    apply h' _ inter_subset_right
+  intro F hF F' hF'
+  rw [flat_contract_iff] at hF hF'
+  convert (hM.modularPair (M.closure_flat (F ∪ C)) (M.closure_flat (F' ∪ C))).contract (C := C)
+    (M.subset_closure_of_subset' subset_union_right)
+    (M.subset_closure_of_subset' subset_union_right)
+
+  · rw [hF.1.closure, union_diff_right, hF.2.sdiff_eq_left]
+  rw [hF'.1.closure, union_diff_right, hF'.2.sdiff_eq_left]
+
+lemma modular_foo : M.Modular ↔ ∀ ⦃L H⦄, M.Line L → M.Hyperplane H → M.er (L ∩ H) ≠ 0 := by
+  refine ⟨fun h L H hL hH ↦ ?_, fun h ↦ ?_⟩
+  · have := h.localConn
 
 
 

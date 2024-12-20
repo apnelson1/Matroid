@@ -284,6 +284,38 @@ lemma localEConn_le_er_right (M : Matroid α) (X Y : Set α) : M.localEConn X Y 
   rw [localEConn_comm]
   apply localEConn_le_er_left
 
+lemma ModularPair.localEConn_eq_er_inter (h : M.ModularPair X Y) :
+    M.localEConn X Y = M.er (X ∩ Y) := by
+  obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_basis
+  rw [hIX.localEConn_eq hIY, ← hIi.encard, ← inter_inter_distrib_left, ← inter_union_distrib_left,
+    inter_eq_self_of_subset_left hIu.subset, hIu.indep.restrict_eq_freeOn, freeOn_dual_eq,
+    loopyOn_erk_eq, add_zero, ← inter_assoc]
+
+lemma rFin.modularPair_iff_localEConn_eq_er_inter (hX : M.rFin X) (Y : Set α)
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.ModularPair X Y ↔ M.localEConn X Y = M.er (X ∩ Y) := by
+  refine ⟨fun h ↦ h.localEConn_eq_er_inter, fun h ↦ ?_⟩
+  obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y)
+  obtain ⟨IX, hIX, hIX'⟩ := hIi.exists_basis_inter_eq_of_superset inter_subset_left
+  obtain ⟨IY, hIY, hIY'⟩ := hIi.exists_basis_inter_eq_of_superset inter_subset_right
+
+  have h_inter : Ii = IX ∩ IY
+  · exact hIi.eq_of_subset_indep (hIX.indep.inter_right _)
+      (subset_inter (by simp [← hIX']) (by simp [← hIY']))
+      (inter_subset_inter hIX.subset hIY.subset)
+
+  rw [hIX.localEConn_eq hIY, ← h_inter, hIi.encard, ← add_zero (a := M.er _), add_assoc, zero_add,
+    WithTop.add_left_cancel_iff (hX.inter_right Y).ne, erk_eq_zero_iff, ← eq_dual_iff_dual_eq,
+    loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff] at h
+
+  exact h.modularPair_of_union.of_basis_of_basis hIX hIY
+
+
+lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
+    (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn H X + 1 = M.er X := by
+  obtain ⟨I, hI⟩ := M.exists_basis H
+
+
 end localEConn
 
 section localConn
@@ -350,6 +382,25 @@ for use with `ring` and `linarith`. -/
 lemma localConn_cast_int_eq (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.r X + M.r Y - M.r (X ∪ Y) :=
   (M.to_rFin X).localConn_cast_int_eq (M.to_rFin Y)
+
+lemma ModularPair.localConn_eq_r_inter (h : M.ModularPair X Y) :
+    M.localConn X Y = M.r (X ∩ Y) := by
+  rw [localConn, h.localEConn_eq_er_inter, r]
+
+lemma rFin.modularPair_iff_localConn_eq_r_inter (hX : M.rFin X) (Y : Set α)
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.ModularPair X Y ↔ M.localConn X Y = M.r (X ∩ Y) := by
+  rw [hX.modularPair_iff_localEConn_eq_er_inter Y hXE hYE, localConn, r,
+    ← Nat.cast_inj (R := ℕ∞), ENat.coe_toNat, ENat.coe_toNat]
+  · rw [er_ne_top_iff]
+    exact hX.inter_right Y
+  rw [← WithTop.lt_top_iff_ne_top]
+  exact (M.localEConn_le_er_left _ _).trans_lt hX
+
+lemma modularPair_iff_localConn_eq_r_inter [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+    (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.r (X ∩ Y) :=
+  (M.to_rFin X).modularPair_iff_localConn_eq_r_inter _ hXE hYE
+
 
 end localConn
 

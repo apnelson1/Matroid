@@ -507,3 +507,106 @@ lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X 
 
 lemma Coloop.skew (he : M.Coloop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
+
+lemma Skew.restrict (hXY : M.Skew X Y) (R : Set α) : (M ↾ R).Skew (X ∩ R) (Y ∩ R) := by
+  rw [skew_iff_exist_bases]
+  simp only [basis_restrict_iff', union_subset_iff, inter_subset_right, and_self, and_true]
+  rw [← union_inter_distrib_right, inter_right_comm,
+    inter_eq_self_of_subset_left (union_subset hXY.subset_ground_left hXY.subset_ground_right),
+    inter_right_comm, inter_eq_self_of_subset_left hXY.subset_ground_left,
+    inter_right_comm, inter_eq_self_of_subset_left hXY.subset_ground_right,
+    union_inter_distrib_right]
+  replace hXY := hXY.mono (inter_subset_left (t := R)) (inter_subset_left (t := R))
+  rwa [skew_iff_exist_bases] at hXY
+
+lemma Skew.restrict_of_subset {R : Set α} (hXY : M.Skew X Y) (hXR : X ⊆ R) (hYR : Y ⊆ R) :
+    (M ↾ R).Skew X Y := by
+  convert hXY.restrict R <;> simpa
+
+lemma Skew.delete (hXY : M.Skew X Y) (D : Set α) : (M ＼ D).Skew (X \ D) (Y \ D) := by
+  convert hXY.restrict (M.E \ D) using 1
+  · rw [← inter_diff_assoc, inter_eq_self_of_subset_left hXY.subset_ground_left]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left hXY.subset_ground_right]
+
+lemma Skew.delete_of_disjoint {D : Set α} (hXY : M.Skew X Y) (hXD : Disjoint X D)
+    (hYD : Disjoint Y D) : (M ＼ D).Skew X Y := by
+  convert hXY.delete D
+  · exact hXD.sdiff_eq_left.symm
+  exact hYD.sdiff_eq_left.symm
+
+lemma Skew.contract_subset_left {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ X) :
+    (M ／ C).Skew (X \ C) (Y \ C) := by
+  obtain ⟨J, hJ⟩ := M.exists_basis C (hCX.trans hXY.subset_ground_left)
+  obtain ⟨I, hI, rfl⟩ := hJ.exists_basis_inter_eq_of_superset hCX
+  obtain ⟨K, hK⟩ := M.exists_basis Y
+  have hdj : Disjoint X K := (hXY.mono_right hK.subset).disjoint_of_indep_right hK.indep
+  have hi' : (M ／ C).Indep ((I \ C) ∪ K)
+  · rw [hJ.contract_indep_iff, disjoint_union_right, and_iff_right disjoint_sdiff_right,
+      union_right_comm, diff_union_inter]
+    exact ⟨(hXY.union_basis_union hI hK).indep, hdj.mono_left hCX⟩
+  have hsk := hi'.skew_iff_disjoint.2 (hdj.mono_left (diff_subset.trans hI.subset))
+  refine hsk.closure_skew.mono ?_ ?_
+  · rw [contract_closure_eq, diff_union_self, closure_union_congr_left hI.closure_eq_closure,
+      union_eq_self_of_subset_right hCX]
+    exact diff_subset_diff_left (M.subset_closure X)
+  rw [contract_closure_eq, closure_union_congr_left hK.closure_eq_closure]
+  exact diff_subset_diff_left (M.subset_closure_of_subset subset_union_left)
+
+lemma Skew.contract_subset_left_of_disjoint_loops {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ X)
+    (hY : Disjoint Y (M.closure ∅)) : (M ／ C).Skew (X \ C) Y := by
+  convert hXY.contract_subset_left hCX
+  rw [eq_comm, sdiff_eq_left, ← hY.sdiff_eq_left]
+  exact hXY.symm.diff_loops_disjoint_left.mono_right hCX
+
+lemma Skew.contract_subset_right_of_disjoint_loops {C : Set α} (hXY : M.Skew X Y) (hCY : C ⊆ Y)
+    (hX : Disjoint X (M.closure ∅)) : (M ／ C).Skew X (Y \ C) :=
+  (hXY.symm.contract_subset_left_of_disjoint_loops hCY hX).symm
+
+lemma Skew.contract_subset_right {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ Y) :
+    (M ／ C).Skew (X \ C) (Y \ C) :=
+  (hXY.symm.contract_subset_left hCX).symm
+
+lemma Skew.contract_subset_union {C : Set α} (hXY : M.Skew X Y) (hC : C ⊆ X ∪ Y) :
+    (M ／ C).Skew (X \ C) (Y \ C) := by
+  have h := (hXY.contract_subset_left (C := X ∩ C) inter_subset_left).contract_subset_right
+    (C := (Y \ X) ∩ C) ?_
+  · rwa [contract_contract, ← union_inter_distrib_right, union_diff_self,
+      inter_eq_self_of_subset_right hC, diff_self_inter, (sdiff_eq_left (x := X \ C)).2,
+      diff_diff, ← union_inter_distrib_right, union_diff_self,
+      inter_eq_self_of_subset_right hC] at h
+    exact disjoint_sdiff_left.mono_right inter_subset_right
+  rw [subset_diff, and_iff_right (inter_subset_left.trans diff_subset)]
+  exact disjoint_sdiff_left.mono inter_subset_left inter_subset_left
+
+lemma modularPair_iff_skew_contract_inter (hXY : X ∩ Y ⊆ M.E) :
+    M.ModularPair X Y ↔ (M ／ (X ∩ Y)).Skew (X \ Y) (Y \ X) := by
+
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [skew_iff_modularPair_inter_subset_loops, disjoint_sdiff_sdiff.inter_eq,
+      and_iff_left (empty_subset _)]
+    convert h.contract (C := X ∩ Y) inter_subset_left inter_subset_right using 1 <;> simp
+
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ Y)
+
+  obtain ⟨IX, hIX⟩ := (M ／ (X ∩ Y)).exists_basis (X \ Y) h.subset_ground_left
+  obtain ⟨IY, hIY⟩ := (M ／ (X ∩ Y)).exists_basis (Y \ X) h.subset_ground_right
+
+  have hi : M.Indep ((I ∪ IX) ∪ (I ∪ IY))
+  · rw [← union_union_distrib_left]
+    have hb := (h.union_basis_union hIX hIY).indep
+    rw [hI.contract_indep_iff, union_comm] at hb
+    exact hb.1
+
+  refine hi.modularPair_of_union.of_basis_of_basis ?_ ?_
+  · refine (hi.subset subset_union_left).basis_of_subset_of_subset_closure ?_ ?_
+    · exact union_subset (hI.subset.trans inter_subset_left) (hIX.subset.trans diff_subset)
+    have h := union_subset_union hIX.subset_closure hI.subset_closure
+    rw [diff_union_inter, contract_closure_eq, ← closure_union_congr_right hI.closure_eq_closure,
+      union_comm IX] at h
+    exact h.trans (union_subset diff_subset (M.closure_subset_closure subset_union_left))
+  refine (hi.subset subset_union_right).basis_of_subset_of_subset_closure ?_ ?_
+  · exact union_subset (hI.subset.trans inter_subset_right) (hIY.subset.trans diff_subset)
+  have h := union_subset_union hIY.subset_closure hI.subset_closure
+  rw [inter_comm, diff_union_inter, contract_closure_eq, inter_comm,
+    ← closure_union_congr_right hI.closure_eq_closure, union_comm IY] at h
+  exact h.trans (union_subset diff_subset (M.closure_subset_closure subset_union_left))

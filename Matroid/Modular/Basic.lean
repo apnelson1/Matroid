@@ -492,7 +492,7 @@ lemma ModularPair.er_add_er (h : M.ModularPair X Y) :
     ← encard_union_add_encard_inter, ← inter_union_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
-lemma rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+lemma rFin.modularPair_iff_er (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
   refine ⟨fun h ↦ h.er_add_er, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
@@ -514,10 +514,17 @@ lemma rFin.modularPair_iff (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
 
+lemma rFin.modularPair_iff_r (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+    (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
+  rw [hXfin.modularPair_iff_er hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_r_eq,
+    ← hYfin.cast_r_eq, ← (hXfin.inter_right Y).cast_r_eq, ← (hXfin.union hYfin).cast_r_eq,
+    Nat.cast_add, Nat.cast_add]
+
 lemma modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
-  simp_rw [(M.to_rFin X).modularPair_iff (M.to_rFin Y), ← cast_r_eq, ← Nat.cast_add, Nat.cast_inj]
+  rw [(M.to_rFin X).modularPair_iff_r (M.to_rFin Y)]
 
 lemma ModularFamily.modularPair_compl_biUnion {Xs : η → Set α} (h : M.ModularFamily Xs)
     (A : Set η) : M.ModularPair (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by
@@ -578,12 +585,16 @@ lemma ModularPair.restrict {R : Set α} (hXY : M.ModularPair X Y) (hXR : X ⊆ R
     (M ↾ R).ModularPair X Y :=
   ModularFamily.restrict hXY <| by simp [hXR, hYR]
 
-lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ M.closure X)
-    (hCY : C ⊆ M.closure Y) : (M ／ C).ModularPair (X \ C) (Y \ C) := by
+lemma ModularPair.contract_subset_closure {C : Set α} (hXY : M.ModularPair X Y)
+    (hCX : C ⊆ M.closure X) (hCY : C ⊆ M.closure Y) : (M ／ C).ModularPair (X \ C) (Y \ C) := by
   have hrw : (fun i ↦ bif i then X \ C else Y \ C) = fun i ↦ ((bif i then X else Y) \ C)
   · ext (rfl | rfl) <;> rfl
   rw [ModularPair, hrw]
   simpa [hCX, hCY] using ModularFamily.contract (C := C) hXY
+
+lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ X) (hCY : C ⊆ Y) :
+    (M ／ C).ModularPair (X \ C) (Y \ C) :=
+  hXY.contract_subset_closure (hCX.trans (M.subset_closure X)) (hCY.trans (M.subset_closure Y))
 
 end ModularFamily
 
