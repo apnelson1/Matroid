@@ -323,6 +323,41 @@ lemma rFin.modularPair_iff_localEConn_eq_er_inter (hX : M.rFin X) (Y : Set α)
 
   exact h.modularPair_of_union.of_basis_of_basis hIX hIY
 
+/-- For finite matroids, this is another rearrangement of the formula in
+`Matroid.er_add_er_eq_er_union_add_localEConn`.
+For infinite matroids it needs a separate proof. -/
+lemma localEConn_add_relRank_union_eq_er (M : Matroid α) (X Y : Set α) :
+    M.localEConn X Y + M.relRank Y (X ∪ Y) = M.er X := by
+  wlog hE : X ⊆ M.E ∧ Y ⊆ M.E generalizing X Y with aux
+  · rw [← localEConn_inter_ground, ← relRank_inter_ground_right, ← relRank_inter_ground_left,
+      union_inter_distrib_right, aux _ _ ⟨inter_subset_right, inter_subset_right⟩, er_inter_ground]
+  obtain ⟨hXE, hYE⟩ := hE
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ Y)
+  obtain ⟨IX, hIX, hIXi⟩ := hI.exists_basis_inter_eq_of_superset inter_subset_left
+  obtain ⟨IY, hIY, hIYi⟩ := hI.exists_basis_inter_eq_of_superset inter_subset_right
+  obtain ⟨K, hK, hIYK⟩ := hIY.indep.subset_basis_of_subset (X := IX ∪ IY) subset_union_right
+
+  have hK' : M.Basis K (X ∪ Y)
+  · refine hK.basis_closure_right.basis_subset
+      (hK.subset.trans (union_subset_union hIX.subset hIY.subset)) ?_
+    rw [closure_union_congr_left hIX.closure_eq_closure,
+      closure_union_congr_right hIY.closure_eq_closure]
+    exact M.subset_closure _ (union_subset hXE hYE)
+
+  have hbas : (M ↾ (IX ∪ IY))✶.Base ((IX ∪ IY) \ K) := by
+    simpa using hK.base_restrict.compl_base_dual
+
+  rw [hIX.er_eq_encard, hIX.localEConn_eq hIY, hIY.relRank_eq_encard_diff_of_subset_basis hK' hIYK,
+    ← hbas.encard, union_diff_distrib, diff_eq_empty.2 hIYK, union_empty, add_assoc,
+    ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
+    ← encard_diff_add_encard_inter IX IY, add_comm, eq_comm,
+    diff_union_diff_cancel_of_inter_subset_of_subset_union
+      (inter_subset_right.trans hIYK) hK.subset]
+
+lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
+    (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn X H + 1 = M.er X := by
+  rw [← M.localEConn_add_relRank_union_eq_er X H, ← relRank_closure_right,
+    (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.relRank_eq_one]
 
 
 
@@ -390,10 +425,7 @@ lemma localEConn_contract_skew {C Y : Set α} (hXC : M.Skew X C) :
   -- obtain ⟨J, hJ⟩ := ()
 -/
 
-lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
-    (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn H X + 1 = M.er X := by
-  obtain ⟨I, hI⟩ := M.exists_basis H
-  sorry
+
 
 
 end localEConn

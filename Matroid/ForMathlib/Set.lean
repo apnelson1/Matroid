@@ -109,7 +109,7 @@ theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
     exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
 
 
-variable {s t : Set α}
+variable {s t r : Set α}
 
 @[simp] lemma diff_ssubset_left_iff : s \ t ⊂ s ↔ (s ∩ t).Nonempty := by
   rw [ssubset_iff_subset_ne, and_iff_right diff_subset, Ne, sdiff_eq_left,
@@ -126,3 +126,13 @@ variable {s t : Set α}
 
 @[simp] lemma ssubset_union_right_iff : t ⊂ s ∪ t ↔ ¬ s ⊆ t := by
   rw [ssubset_iff_subset_ne, and_iff_right subset_union_right, Ne, eq_comm, union_eq_right]
+
+lemma diff_union_diff_cancel_of_inter_subset_of_subset_union (hi : s ∩ r ⊆ t) (hu : t ⊆ s ∪ r) :
+    (s \ t) ∪ (t \ r) = s \ r := by
+  refine subset_antisymm (union_subset ?_ ?_) ?_
+  · rwa [subset_diff, and_iff_right diff_subset, disjoint_iff_inter_eq_empty,
+      ← inter_diff_right_comm, diff_eq_empty]
+  · rwa [subset_diff, and_iff_left disjoint_sdiff_left, diff_subset_iff, union_comm]
+  rw [union_comm, diff_subset_iff, ← union_assoc, union_diff_self, union_assoc,
+    union_diff_self, ← union_assoc]
+  exact subset_union_right
