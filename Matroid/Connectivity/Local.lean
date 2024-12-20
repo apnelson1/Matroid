@@ -214,6 +214,19 @@ lemma localEConn_restrict_univ_eq (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).localEConn X Y = M.localEConn X Y := by
   simp
 
+lemma localEConn_restrict_of_subset (M : Matroid α) {R : Set α} (hXR : X ⊆ R) (hYR : Y ⊆ R) :
+    (M ↾ R).localEConn X Y = M.localEConn X Y := by
+  rw [localEConn_restrict_eq, inter_eq_self_of_subset_left hXR, inter_eq_self_of_subset_left hYR]
+
+lemma localEConn_delete_eq (M : Matroid α) (X Y D : Set α) :
+    (M ＼ D).localEConn X Y = M.localEConn (X \ D) (Y \ D) := by
+  rw [delete_eq_restrict, localEConn_restrict_eq, ← inter_diff_assoc, inter_diff_right_comm,
+    ← inter_diff_assoc, inter_diff_right_comm, localEConn_inter_ground]
+
+lemma localEConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disjoint X D)
+    (hYD : Disjoint Y D) : (M ＼ D).localEConn X Y = M.localEConn X Y := by
+  rw [localEConn_delete_eq, hXD.sdiff_eq_left, hYD.sdiff_eq_left]
+
 @[simp] lemma localEConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : Set β) :
     (M.map f hf).localEConn X Y = M.localEConn (f ⁻¹' X) (f ⁻¹' Y) := by
   obtain ⟨I, hI⟩ := M.exists_basis (f ⁻¹' X ∩ M.E)
@@ -309,8 +322,26 @@ lemma rFin.modularPair_iff_localEConn_eq_er_inter (hX : M.rFin X) (Y : Set α)
     loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff] at h
 
   exact h.modularPair_of_union.of_basis_of_basis hIX hIY
+
+
+
+
 /-
+
 ***** WIP
+
+lemma localEConn_contract_skew {C Y : Set α} (hXC : M.Skew X C) :
+    (M ／ C).localEConn X (Y \ C) = M.localEConn X Y := by
+  wlog hwlog : M.Indep X ∧ M.Indep (C ∪ Y) generalizing X C Y with h'
+  · obtain ⟨I, hI⟩ := M.exists_basis X
+    obtain ⟨K, hK⟩ := M.exists_basis C
+    obtain ⟨J, hJ, rfl⟩ :=
+      hK.exists_basis_inter_eq_of_superset (show C ⊆ C ∪ (Y ∩ M.E) from subset_union_left)
+    -- obtain ⟨J, hJ⟩ := (M ／ C).exists_basis' (Y \ C)
+    rw [hK.contract_eq_contract_delete, localEConn_delete_eq]
+    specialize h' (X := I) (C := J ∩ C) (Y := J) (hXC.mono hI.subset inter_subset_right)
+      ⟨hI.indep, hJ.indep.subset (union_subset inter_subset_left rfl.subset)⟩
+    -- rw [hK.contract_eq_contract_delete, delete_lo]
 
 lemma localEConn_contract_skew {C Y : Set α} (hXC : M.Skew X C) :
     (M ／ C).localEConn X (Y \ C) = M.localEConn X Y := by
