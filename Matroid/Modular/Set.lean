@@ -130,9 +130,9 @@ lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
   · rw [hF.1.closure, union_diff_right, hF.2.sdiff_eq_left]
   rw [hF'.1.closure, union_diff_right, hF'.2.sdiff_eq_left]
 
-lemma modular_foo : M.Modular ↔ ∀ ⦃L H⦄, M.Line L → M.Hyperplane H → M.er (L ∩ H) ≠ 0 := by
-  refine ⟨fun h L H hL hH ↦ ?_, fun h ↦ ?_⟩
-  · have := h.localConn
+-- lemma modular_foo : M.Modular ↔ ∀ ⦃L H⦄, M.Line L → M.Hyperplane H → M.er (L ∩ H) ≠ 0 := by
+--   refine ⟨fun h L H hL hH ↦ ?_, fun h ↦ ?_⟩
+--   · have := h.localConn
 
 
 

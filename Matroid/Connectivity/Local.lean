@@ -309,11 +309,60 @@ lemma rFin.modularPair_iff_localEConn_eq_er_inter (hX : M.rFin X) (Y : Set α)
     loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff] at h
 
   exact h.modularPair_of_union.of_basis_of_basis hIX hIY
+/-
+***** WIP
 
+lemma localEConn_contract_skew {C Y : Set α} (hXC : M.Skew X C) :
+    (M ／ C).localEConn X (Y \ C) = M.localEConn X Y := by
+  wlog hYE : Y ⊆ M.E generalizing Y with h'
+  · rw [← M.localEConn_inter_ground_right, ← h' inter_subset_right, ← diff_inter_diff_right,
+      ← contract_ground, localEConn_inter_ground_right]
+  wlog hXdj : Disjoint X C generalizing X with h'
+  · rw [← localEConn_inter_ground_left, contract_ground, ← inter_diff_assoc,
+      ← diff_inter_diff_right, ← contract_ground, localEConn_inter_ground_left,
+      h' (hXC.mono_left diff_subset) disjoint_sdiff_left, ← localEConn_closure_left,
+      ← localEConn_closure_left (X := X), ← diff_self_inter,
+      closure_diff_eq_closure_of_subset_loops]
+    exact Skew.inter_subset_loops hXC
+  have hXEC : X ⊆ (M ／ C).E := subset_diff.2 ⟨hXC.subset_ground_left, hXdj⟩
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  obtain ⟨J, hJ⟩ := (M ／ C).exists_basis (Y \ C) (diff_subset_diff_left hYE)
+  obtain ⟨K, hK⟩ := M.exists_basis C
+  have hI' : (M ／ C).Basis I X
+  · replace hI := hI.basis_restrict_of_subset rfl.subset
+    rw [← hXC.symm.contract_restrict_eq, basis_restrict_iff] at hI
+    exact hI.1
+
+  -- have hJss := subset_diff.1 hJ.subset
+  have hJi := hK.contract_indep_iff.1 hJ.indep
+  have hJY : J ⊆ Y := hJ.subset.trans diff_subset
+
+  have hCIJdj : Disjoint C (I ∪ J) :=
+    disjoint_union_right.2 ⟨hXdj.symm.mono_right hI.subset, hJi.2⟩
+
+  obtain ⟨J', hJ'Y, hJJ'⟩ := (hJi.1.subset subset_union_left).subset_basis_of_subset hJY
+
+
+  -- have hK : M.Basis (J ∪ K) Y
+  -- · refine Indep.basis_of_subset_of_subset_closure ?_ (union_subset hJss.1 ?_) ?_
+
+  have foo : I ∩ J = I ∩ J'
+  ·
+
+  rw [hI'.localEConn_eq hJ, contract_restrict_eq_restrict_contract _ _ _ hCIJdj,
+    contract_dual_eq_dual_delete, hI.localEConn_eq hJ'Y, erk_def]
+  simp only [delete_ground, dual_ground, restrict_ground_eq, union_diff_right, delete_er_eq',
+    sdiff_idem, hCIJdj.symm.sdiff_eq_left]
+
+
+
+  -- obtain ⟨J, hJ⟩ := ()
+-/
 
 lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
     (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn H X + 1 = M.er X := by
   obtain ⟨I, hI⟩ := M.exists_basis H
+  sorry
 
 
 end localEConn
