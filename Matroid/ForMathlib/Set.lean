@@ -136,3 +136,9 @@ lemma diff_union_diff_cancel_of_inter_subset_of_subset_union (hi : s ∩ r ⊆ t
   rw [union_comm, diff_subset_iff, ← union_assoc, union_diff_self, union_assoc,
     union_diff_self, ← union_assoc]
   exact subset_union_right
+
+@[simp] lemma iUnion_bool {s : Bool → Set α} : ⋃ i, s i = s true ∪ s false :=
+  Set.ext <| by simp [or_comm]
+
+@[simp] lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
+  Set.ext <| by simp [and_comm]

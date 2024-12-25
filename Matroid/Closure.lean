@@ -8,6 +8,22 @@ namespace Matroid
 
 variable {α : Type*} {ι : Sort*} {N M : Matroid α} {F S I J X Y B C R : Set α} {e f x y : α}
 
+lemma Indep.union_indep_iff_forall_not_mem_closure_right (hI : M.Indep I) (hJ : M.Indep J) :
+    M.Indep (I ∪ J) ↔ ∀ e ∈ J \ I, e ∉ M.closure (I ∪ (J \ {e})) := by
+  refine ⟨fun h e heJ hecl ↦ h.not_mem_closure_diff_of_mem (.inr heJ.1) ?_, fun h ↦ ?_⟩
+  · rwa [union_diff_distrib, diff_singleton_eq_self heJ.2]
+  obtain ⟨K, hKIJ, hK⟩ := hI.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
+  obtain rfl | hssu := hKIJ.subset.eq_or_ssubset
+  · exact hKIJ.indep
+  exfalso
+  obtain ⟨e, heI, heK⟩ := exists_of_ssubset hssu
+  have heJI : e ∈ J \ I := by
+    rw [← union_diff_right, union_comm]
+    exact ⟨heI, not_mem_subset hK heK⟩
+  refine h _ heJI ?_
+  rw [← diff_singleton_eq_self heJI.2, ← union_diff_distrib]
+  exact M.closure_subset_closure (subset_diff_singleton hKIJ.subset heK) <| hKIJ.subset_closure heI
+
 lemma Indep.eq_of_spanning_subset (hI : M.Indep I) (hS : M.Spanning S) (hSI : S ⊆ I) : S = I :=
   ((hI.subset hSI).base_of_spanning hS).eq_of_subset_indep hI hSI
 

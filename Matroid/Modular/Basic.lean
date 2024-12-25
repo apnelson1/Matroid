@@ -351,6 +351,10 @@ lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
   rw [← (h_flat i).closure, ← (hB.basis_inter i).closure_eq_closure,
     ← (h_flat j).closure, ← (hB.basis_inter j).closure_eq_closure, h_eq]
 
+end ModularFamily
+
+section ModularPair
+
 /-- Sets `X,Y` are a modular pair if some independent set contains bases for both. -/
 def ModularPair (M : Matroid α) (X Y : Set α) :=
   M.ModularFamily (fun i : Bool ↦ bif i then X else Y)
@@ -596,6 +600,10 @@ lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ X
     (M ／ C).ModularPair (X \ C) (Y \ C) :=
   hXY.contract_subset_closure (hCX.trans (M.subset_closure X)) (hCY.trans (M.subset_closure Y))
 
-end ModularFamily
+-- lemma Flat.modularPair_iff_foo (hF : M.Flat F) (hX : M.Flat X) :
+--     M.closure (F ∪ X) ∩ Y = M.closure (X ∪ (F ∩ Y))
+
+
+end ModularPair
 
 end Matroid
