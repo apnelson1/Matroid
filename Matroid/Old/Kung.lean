@@ -1,6 +1,6 @@
 import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.ENatTopology
-import Matroid.Flat
+import Matroid.Flat.LowRank
 
 open Set
 

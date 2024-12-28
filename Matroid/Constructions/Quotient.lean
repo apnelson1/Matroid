@@ -1,6 +1,6 @@
 import Matroid.Minor.Rank
 import Matroid.Constructions.Truncate
-import Matroid.Flat
+import Matroid.Flat.Hyperplane
 
 universe u
 

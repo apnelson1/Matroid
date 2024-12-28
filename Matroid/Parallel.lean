@@ -1,6 +1,7 @@
 import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
-import Matroid.Flat
+import Matroid.Flat.LowRank
+import Matroid.Flat.Hyperplane
 import Matroid.Equiv
 
 open Set Set.Notation

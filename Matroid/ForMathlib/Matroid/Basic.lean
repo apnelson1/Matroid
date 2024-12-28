@@ -84,3 +84,32 @@ lemma exists_basis_finset (M : Matroid α) [FiniteRk M] (X : Set α) (hXE : X �
     ∃ I : Finset α, M.Basis I X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   refine ⟨hI.indep.finite.toFinset, by simpa⟩
+
+/-- This needs `Finitary`.
+A counterexample would be the matroid on `[0,1)` whose ground set is a circuit,
+where the `Is` are the sets `[0,x)` for `x < 1`. -/
+lemma Indep.iUnion_directed [Finitary M] {ι : Type*} {Is : ι → Set α} (hIs : ∀ i, M.Indep (Is i))
+    (h_dir : Directed (· ⊆ ·) Is) : M.Indep (⋃ i, Is i) := by
+  obtain he | hne := isEmpty_or_nonempty ι
+  · simp
+  have aux : ∀ A : Set ι, A.Finite → ∃ j, ⋃ i ∈ A, Is i ⊆ Is j
+  · intro A hA
+    refine hA.induction_on' ⟨hne.some, by simp⟩ ?_
+    rintro i B hiA hBA hiB ⟨jB, hssjb⟩
+    obtain ⟨k, hk⟩ := h_dir i jB
+    simp only [mem_insert_iff, iUnion_iUnion_eq_or_left, union_subset_iff]
+    exact ⟨k, hk.1, hssjb.trans hk.2⟩
+
+  rw [indep_iff_forall_finite_subset_indep]
+  intro J hJss hJfin
+  obtain ⟨A, hAfin, hJA⟩ := finite_subset_iUnion hJfin hJss
+  obtain ⟨j, hj⟩ := aux A hAfin
+  exact ((hIs j).subset hj).subset hJA
+
+/-- This needs `Finitary`.
+A counterexample would be the matroid on `[0,1)` whose ground set is a circuit,
+where the `Is` are the sets `[0,x)` for `x < 1`. -/
+lemma Indep.sUnion_chain [Finitary M] {Is : Set (Set α)} (hIs : ∀ I ∈ Is, M.Indep I)
+    (h_chain : IsChain (· ⊆ ·) Is) : M.Indep (⋃₀ Is) := by
+  simpa [sUnion_eq_iUnion] using Indep.iUnion_directed (M := M) (Is := fun i : Is ↦ i.1)
+    (by simpa) h_chain.directed

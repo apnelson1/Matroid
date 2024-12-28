@@ -690,6 +690,10 @@ lemma exists_subset_finite_closure_of_subset_closure {Y : Set α} [M.Finitary]
   refine mem_of_mem_of_subset (hJs e heX).2.2 (M.closure_subset_closure ?_)
   exact subset_biUnion_of_mem heX
 
+lemma exists_mem_finite_closure_of_mem_closure {Y : Set α} [M.Finitary]
+    (he : e ∈ M.closure Y) : ∃ I ⊆ Y, I.Finite ∧ M.Indep I ∧ e ∈ M.closure I := by
+  simpa using M.exists_subset_finite_closure_of_subset_closure (X := {e}) (by simp [he]) (by simpa)
+
 end Finitary
 section Girth
 
@@ -823,11 +827,6 @@ lemma Basis.rev_exchange (hI₁ : M.Basis I₁ X) (hI₂ : M.Basis I₂ X) (he :
     (by simp only [mem_diff, mem_insert_iff, mem_singleton_iff]; tauto)
 
 end BasisExchange
-section Iso
 
-variable {β : Type*} {N : Matroid β}
-
-
-end Iso
 
 end Matroid

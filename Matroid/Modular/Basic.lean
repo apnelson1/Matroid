@@ -1,7 +1,9 @@
-import Matroid.Flat
+import Matroid.Flat.Lattice
 import Matroid.Simple
 import Matroid.ForMathlib.Card
+import Matroid.ForMathlib.Matroid.Basic
 import Mathlib.Order.ModularLattice
+import Mathlib.Order.Zorn
 
 open Set BigOperators Set.Notation
 
@@ -351,6 +353,69 @@ lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
   rw [← (h_flat i).closure, ← (hB.basis_inter i).closure_eq_closure,
     ← (h_flat j).closure, ← (hB.basis_inter j).closure_eq_closure, h_eq]
 
+-- lemma modularFamily_of_chain [Finitary M] (hX : IsChain (· ⊆ ·) (range Xs)) (hE : ∀ i, Xs i ⊆ M.E) :
+--     M.ModularFamily Xs := by
+--   -- set Is := {I : Set α | ∀ i, M.Basis (I ∩ Xs i) (Xs i) ∨ I ⊆ M.closure (Xs i)}
+--   -- refine Indep.modularFamily (I := ⋃₀ Is) ?_ ?_
+--   set Is : (Set (Set α)) :=
+--     {I : Set α | M.Indep I ∧ ∀ i, M.Basis (Xs i ∩ I) (Xs i) ∨ I ⊆ Xs i}
+--     with hIs
+--   have h_chain : ∀ Ks ⊆ Is, IsChain (· ⊆ ·) Ks → ∃ J ∈ Is, ∀ I ∈ Ks, I ⊆ J
+--   · intro Ks hKsIs h_chain
+--     refine ⟨⋃₀ Ks, ⟨?_, fun i ↦ ?_⟩, fun _ ↦ subset_sUnion_of_mem⟩
+--     · exact Indep.sUnion_chain (fun I hI ↦ (hKsIs hI).1) h_chain
+
+
+--     simp only [sUnion_subset_iff, or_iff_not_imp_right, not_forall, Classical.not_imp,
+--       forall_exists_index, and_imp]
+--     intro K hK hKcl
+
+--     have hbas : M.Basis (Xs i ∩ K) (Xs i) := by simpa [hKcl] using (hKsIs hK).2 i
+--     convert hbas using 1
+--     rw [subset_antisymm_iff, and_iff_left (inter_subset_inter_right _ (subset_sUnion_of_mem hK))]
+--     simp (config := { contextual := true }) only [subset_def, mem_inter_iff, mem_sUnion, true_and,
+--       and_imp, forall_exists_index]
+
+--     intro e heX K' hK' heK'
+--     obtain hle | hle := h_chain.total hK' hK
+--     · exact hle heK'
+
+--     obtain hbas' | hcl := (hKsIs hK').2 i
+--     · refine (hbas.mem_of_insert_indep heX (hbas'.indep.subset (insert_subset ⟨heX, heK'⟩ ?_))).2
+--       exact inter_subset_inter_right _ hle
+
+--     have h_eq := hbas.eq_of_subset_indep ?_ (inter_subset_inter_right _ hle) inter_subset_left
+--     refine (h_eq.symm.subset ⟨heX, heK'⟩).2
+--     exact (hKsIs hK').1.inter_left _
+
+--   obtain ⟨I, hI⟩ := zorn_subset Is h_chain
+--   refine hI.prop.1.modularFamily fun i ↦ ?_
+--   refine (hI.prop.2 i).elim id fun hIcl ↦ ?_
+
+
+
+
+--   refine (hI.prop.1.inter_left (Xs i)).basis_of_forall_insert inter_subset_left ?_
+
+
+--   simp only [inter_eq_self_of_subset_right hIcl, mem_diff, Dep, insert_subset_iff,
+--     hIcl.trans (hE i), and_true, and_imp]
+--   refine fun f hfX hfI ↦ ⟨fun hi ↦ hfI ?_, (hE i hfX)⟩
+
+
+
+
+--   refine hI.mem_of_prop_insert ⟨hi, fun j ↦ ?_⟩
+--   obtain hle | hle := hX.total (x := Xs i) (y := Xs j) (by simp) (by simp)
+--   · exact .inr (insert_subset (hle hfX) (hIcl.trans hle))
+
+--   obtain hbasj | b := (hI.prop.2 j)
+--   · rw [← hbasj.eq_of_subset_indep (hi.inter_left _)
+--       (inter_subset_inter_right _ (subset_insert _ _)) (inter_subset_left)]
+--     exact .inl hbasj
+
+
+
 end ModularFamily
 
 section ModularPair
@@ -599,6 +664,8 @@ lemma ModularPair.contract_subset_closure {C : Set α} (hXY : M.ModularPair X Y)
 lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ X) (hCY : C ⊆ Y) :
     (M ／ C).ModularPair (X \ C) (Y \ C) :=
   hXY.contract_subset_closure (hCX.trans (M.subset_closure X)) (hCY.trans (M.subset_closure Y))
+
+
 
 -- lemma Flat.modularPair_iff_foo (hF : M.Flat F) (hX : M.Flat X) :
 --     M.closure (F ∪ X) ∩ Y = M.closure (X ∪ (F ∩ Y))

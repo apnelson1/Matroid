@@ -1,5 +1,5 @@
 
-import Matroid.Flat
+import Matroid.Flat.Hyperplane
 
 variable {α : Type*} {M : Matroid α} {E I H B X : Set α} {e f : α}
 

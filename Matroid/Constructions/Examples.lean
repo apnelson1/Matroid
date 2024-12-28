@@ -2,10 +2,6 @@ import Matroid.Constructions.NonSpanningCircuits
 import Mathlib.Data.Matroid.Basic
 import Mathlib.Data.Matroid.Dual
 
--- import Matroid.Equiv
-
--- import Matroid.Flat
--- import Matroid.Constructions.Relax
 
 open Set
 

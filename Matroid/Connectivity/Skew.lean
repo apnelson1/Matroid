@@ -700,6 +700,25 @@ lemma modularPair_iff_skew_contract_inter (hXY : X ∩ Y ⊆ M.E) :
     ← closure_union_congr_right hI.closure_eq_closure, union_comm IY] at h
   exact h.trans (union_subset diff_subset (M.closure_subset_closure subset_union_left))
 
+lemma ModularPair.contract_subset_left {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ X) :
+    (M ／ C).ModularPair (X \ C) (Y \ C) := by
+  rw [modularPair_iff_skew_contract_inter
+    (inter_subset_left.trans (diff_subset_diff_left hXY.subset_ground_left))]
+  rw [modularPair_iff_skew_contract_inter (inter_subset_left.trans hXY.subset_ground_left)] at hXY
+  simp only [diff_inter_diff_right, contract_contract, union_diff_self, diff_diff_right,
+    diff_diff_comm (s := X), diff_inter_self, union_empty, diff_diff_comm (s := Y)]
+  rw [union_comm, ← contract_contract]
+  have h' := hXY.contract_subset_left (C := C \ Y) (diff_subset_diff_left hCX)
+  nth_rewrite 1 [← inter_eq_self_of_subset_left hCX, contract_contract]
+  have hrw : X ∩ Y ∪ C ∩ X = X ∩ Y ∪ (C \ Y)
+  · rw [inter_eq_self_of_subset_left hCX]
+    refine subset_antisymm ?_ (union_subset_union_right _ diff_subset)
+    rw [union_subset_iff, and_iff_right subset_union_left]
+    nth_rewrite 1 [← diff_union_inter C Y, union_comm]
+    exact union_subset_union_left _ (inter_subset_inter_left _ hCX)
+  rw [hrw, ← contract_contract]
+  exact h'.mono (diff_subset_diff_right diff_subset) (diff_subset_diff_right diff_subset)
+
 section ModularCompl
 
 

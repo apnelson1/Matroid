@@ -1,7 +1,7 @@
 
 import Mathlib.Data.Nat.Lattice
 import Matroid.Minor.Rank
-import Matroid.Flat
+import Matroid.Flat.LowRank
 import Mathlib.Tactic.Linarith
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
@@ -40,7 +40,8 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
-  · suffices 0 = M₂.r (M₂.E \ M₁.closure ∅) from ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
+  · suffices 0 = M₂.r (M₂.E \ M₁.closure ∅) from
+      ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
     rw [eq_comm, r_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
   push_neg at hloop
