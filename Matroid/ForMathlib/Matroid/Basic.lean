@@ -113,3 +113,11 @@ lemma Indep.sUnion_chain [Finitary M] {Is : Set (Set α)} (hIs : ∀ I ∈ Is, M
     (h_chain : IsChain (· ⊆ ·) Is) : M.Indep (⋃₀ Is) := by
   simpa [sUnion_eq_iUnion] using Indep.iUnion_directed (M := M) (Is := fun i : Is ↦ i.1)
     (by simpa) h_chain.directed
+
+lemma Basis'.exists_basis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.Basis' I X) (hXY : X ⊆ Y) :
+    ∃ J, M.Basis' J Y ∧ J ∩ X = I := by
+  obtain ⟨J, hJ, rfl⟩ :=
+    hIX.basis_inter_ground.exists_basis_inter_eq_of_superset (inter_subset_inter_left M.E hXY)
+  simp_rw [basis'_iff_basis_inter_ground]
+  refine ⟨J, hJ, ?_⟩
+  rw [inter_comm X, ← inter_assoc, inter_eq_self_of_subset_left hJ.indep.subset_ground]

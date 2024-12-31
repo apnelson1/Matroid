@@ -8,6 +8,12 @@ namespace Matroid
 
 variable {α : Type*} {ι : Sort*} {N M : Matroid α} {F S I J X Y B C R : Set α} {e f x y : α}
 
+lemma Basis.insert_basis_insert_of_not_mem_closure (hIX : M.Basis I X) (heI : e ∉ M.closure I)
+    (heE : e ∈ M.E := by aesop_mat) : M.Basis (insert e I) (insert e X) := by
+  refine hIX.insert_basis_insert ?_
+  rw [hIX.indep.insert_indep_iff]
+  exact .inl ⟨heE, heI⟩
+
 lemma Indep.union_indep_iff_forall_not_mem_closure_right (hI : M.Indep I) (hJ : M.Indep J) :
     M.Indep (I ∪ J) ↔ ∀ e ∈ J \ I, e ∉ M.closure (I ∪ (J \ {e})) := by
   refine ⟨fun h e heJ hecl ↦ h.not_mem_closure_diff_of_mem (.inr heJ.1) ?_, fun h ↦ ?_⟩

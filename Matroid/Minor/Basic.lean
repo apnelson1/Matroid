@@ -379,6 +379,15 @@ lemma Basis.contract_basis_diff_diff_of_subset (hIX : M.Basis I X) (hJI : J ⊆ 
   have h := (hIX.basis'.contract_basis'_diff_of_subset hJI).basis_inter_ground
   rwa [contract_ground, ← inter_diff_assoc, inter_eq_self_of_subset_left hIX.subset_ground] at h
 
+lemma Basis.contract_diff_basis_diff (hIX : M.Basis I X) (hJY : M.Basis J Y) (hIJ : I ⊆ J) :
+    (M ／ I).Basis (J \ I) (Y \ X) := by
+  refine (hJY.contract_basis_diff_diff_of_subset hIJ).basis_subset ?_ ?_
+  · rw [subset_diff, and_iff_right (diff_subset.trans hJY.subset),
+      hIX.eq_of_subset_indep (hJY.indep.inter_right X) (subset_inter hIJ hIX.subset)
+      inter_subset_right, diff_self_inter]
+    exact disjoint_sdiff_left
+  refine diff_subset_diff_right hIX.subset
+
 lemma Basis.contract_basis_union_union (h : M.Basis (J ∪ I) (X ∪ I))
     (hJI : Disjoint J I) (hXI : Disjoint X I) : (M ／ I).Basis J X := by
   have  h' : (M ／ I).Basis' J X := by
@@ -422,6 +431,14 @@ lemma Basis'.contract_indep_iff (hI : M.Basis' I X) :
 lemma Basis.contract_indep_iff (hI : M.Basis I X) :
     (M ／ X).Indep J ↔ M.Indep (J ∪ I) ∧ Disjoint X J :=
   hI.basis'.contract_indep_iff
+
+lemma Basis.contract_indep_diff_iff (hI : M.Basis I X) :
+    (M ／ X).Indep (J \ X) ↔ M.Indep ((J \ X) ∪ I) := by
+  rw [hI.contract_indep_iff, and_iff_left disjoint_sdiff_right]
+
+lemma Basis'.contract_indep_diff_iff (hI : M.Basis' I X) :
+    (M ／ X).Indep (J \ X) ↔ M.Indep ((J \ X) ∪ I) := by
+  rw [hI.contract_indep_iff, and_iff_left disjoint_sdiff_right]
 
 lemma contract_closure_eq_contract_delete (M : Matroid α) (C : Set α) :
     M ／ M.closure C = M ／ C ＼ (M.closure C \ C) := by

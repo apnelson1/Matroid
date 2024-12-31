@@ -143,6 +143,17 @@ lemma Flat.er_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
   rw [Matroid.er_insert_eq_add_one]
   rwa [hF.closure]
 
+lemma Flat.r_insert_eq_add_one (hF : M.Flat F) (hfin : M.rFin F) (he : e ∈ M.E \ F) :
+    M.r (insert e F) = M.r F + 1 := by
+  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_r_eq, hF.er_insert_eq_add_one he,
+    Nat.cast_add, hfin.cast_r_eq, Nat.cast_one]
+
+lemma Flat.r_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.rFin X)
+    (hX : X ⊆ M.E := by aesop_mat) : M.r F < M.r X := by
+  obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
+  rw [Nat.lt_iff_add_one_le, ← hF.r_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
+  exact hfin.r_le_of_subset (insert_subset heX hFX.subset)
+
 lemma Flat.subset_of_relRank_eq_zero (hF : M.Flat F) (hr : M.relRank F X = 0)
     (hX : X ⊆ M.E := by aesop_mat) : X ⊆ F := by
   rwa [relRank_eq_zero_iff, hF.closure] at hr
@@ -318,6 +329,9 @@ lemma Flat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).Flat F) : M.clo
     obtain (heF | heF) := em (e ∈ F) <;> simp [heF, hF]
   rintro ⟨heF, (hF | hF)⟩ <;> exact ⟨_, hF, by simp [heF]⟩
 
+lemma Flat.contract_subset_flat (hF : M.Flat F) (hC : C ⊆ F) : (M ／ C).Flat (F \ C) := by
+  rw [flat_iff_closure_self, contract_closure_eq, diff_union_of_subset hC, hF.closure]
+
 end Minor
 
 lemma ext_flat {M₁ M₂ : Matroid α} (hF : ∀ F, M₁.Flat F ↔ M₂.Flat F) : M₁ = M₂ :=
@@ -326,6 +340,39 @@ lemma ext_flat {M₁ M₂ : Matroid α} (hF : ∀ F, M₁.Flat F ↔ M₂.Flat F
 
 lemma ext_iff_flat {M₁ M₂ : Matroid α} : M₁ = M₂ ↔ ∀ F, M₁.Flat F ↔ M₂.Flat F :=
   ⟨fun h ↦ by simp [h], ext_flat⟩
+
+section Directed
+
+/-- Any downwards-directed collection of flats containing a flat of finite rank
+must contain its intersection. -/
+lemma Flat.iInter_mem_of_directed_of_rFin {ι : Type*} {F : ι → Set α} (hF : ∀ i, M.Flat (F i))
+    (h_dir : Directed (fun A B ↦ B ⊆ A) F) (h_fin : ∃ i, M.rFin (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
+  obtain ⟨j, hj⟩ := h_fin
+  have _ : Nonempty ι := ⟨j⟩
+  have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.r (F j ∩ F i)) univ
+  simp only [image_univ, univ_nonempty, mem_univ, forall_const, true_and, finite_iff_bddAbove]
+    at hmin
+  have hub : M.r (F j) ∈ upperBounds (range fun i ↦ M.r (F j ∩ F i))
+  · rintro _ ⟨X, rfl⟩
+    exact hj.r_le_of_subset inter_subset_left
+
+  obtain ⟨k₁, hk₁⟩ := hmin ⟨(M.r (F j)), hub⟩
+  obtain ⟨k, hkk₁ : _ ⊆ _, hkj : _ ⊆ _⟩ := h_dir k₁ j
+  refine ⟨k, (iInter_subset _ _).antisymm' (subset_iInter fun i ↦ ?_)⟩
+
+  by_contra hnss
+  obtain ⟨i', hki' : _ ⊆ _, hii' : _ ⊆ _⟩ := h_dir k i
+  have hss : F j ∩ F i' ⊂ F j ∩ F k₁
+  · obtain ⟨e, hek, hei⟩ := not_subset.1 hnss
+    refine (inter_subset_inter_right _ (hki'.trans hkk₁)).ssubset_of_ne fun h_eq ↦ hei ?_
+    exact hii' (h_eq.symm.subset ⟨hkj hek, hkk₁ hek⟩).2
+
+  have hlt := (((hF j).inter (hF i')).r_lt_of_superset hss (hj.inter_right _)
+    (inter_subset_left.trans (hF j).subset_ground))
+
+  exact hlt.ne <| (hk₁ _ hlt.le).symm
+
+end Directed
 
 
 -- section from_axioms

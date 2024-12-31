@@ -309,7 +309,7 @@ lemma Skew.disjoint [Loopless M] (h : M.Skew X Y) : Disjoint X Y := by
 
 lemma Skew.symm (h : M.Skew X Y) : M.Skew Y X := by
   rw [skew_iff_modularPair_inter_subset_loops] at h ⊢
-  rwa [inter_comm, ModularPair.comm]
+  rwa [inter_comm, modularPair_comm]
 
 lemma skew_comm : M.Skew X Y ↔ M.Skew Y X :=
   ⟨Skew.symm, Skew.symm⟩
@@ -609,6 +609,11 @@ lemma Skew.of_restrict {R : Set α} (h : (M ↾ R).Skew X Y) (hR : R ⊆ M.E := 
     subset_inter_iff] at h
   exact ⟨h.1.ofRestrict hR, h.2.1⟩
 
+lemma skew_restrict_iff {R : Set α} (hRE : R ⊆ M.E := by aesop_mat) :
+    (M ↾ R).Skew X Y ↔ M.Skew X Y ∧ X ⊆ R ∧ Y ⊆ R :=
+  ⟨fun h ↦ ⟨h.of_restrict, h.subset_ground_left, h.subset_ground_right⟩,
+    fun h ↦ h.1.restrict_of_subset h.2.1 h.2.2⟩
+
 lemma Skew.delete (hXY : M.Skew X Y) (D : Set α) : (M ＼ D).Skew (X \ D) (Y \ D) := by
   convert hXY.restrict (M.E \ D) using 1
   · rw [← inter_diff_assoc, inter_eq_self_of_subset_left hXY.subset_ground_left]
@@ -622,6 +627,11 @@ lemma Skew.delete_of_disjoint {D : Set α} (hXY : M.Skew X Y) (hXD : Disjoint X 
 
 lemma Skew.of_delete {D : Set α} (h : (M ＼ D).Skew X Y) : M.Skew X Y :=
   h.of_restrict
+
+lemma skew_delete_iff {D : Set α} :
+    (M ＼ D).Skew X Y ↔ M.Skew X Y ∧ Disjoint X D ∧ Disjoint Y D :=
+  ⟨fun h ↦ ⟨h.of_delete, (subset_diff.1 h.subset_ground_left).2,
+    (subset_diff.1 h.subset_ground_right).2⟩, fun h ↦ h.1.delete_of_disjoint h.2.1 h.2.2⟩
 
 lemma Skew.contract_subset_left {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ X) :
     (M ／ C).Skew (X \ C) (Y \ C) := by
@@ -718,6 +728,12 @@ lemma ModularPair.contract_subset_left {C : Set α} (hXY : M.ModularPair X Y) (h
     exact union_subset_union_left _ (inter_subset_inter_left _ hCX)
   rw [hrw, ← contract_contract]
   exact h'.mono (diff_subset_diff_right diff_subset) (diff_subset_diff_right diff_subset)
+
+lemma ModularPair.skew_contract_inter (hXY : M.ModularPair X Y) :
+    (M ／ (X ∩ Y)).Skew (X \ Y) (Y \ X) := by
+  rwa [← modularPair_iff_skew_contract_inter (inter_subset_left.trans hXY.subset_ground_left)]
+
+
 
 section ModularCompl
 

@@ -39,9 +39,6 @@ section basic
 @[simp] theorem range_coe' : range ((↑) : ℕ → ℕ∞) = Iio ⊤ :=
   WithTop.range_coe
 
-@[simp] theorem zero_ne_top : (0 : ℕ∞) ≠ ⊤ :=
-  coe_toNat_eq_self.mp rfl
-
 theorem eq_top_iff_forall_lt {n : ℕ∞} : n = ⊤ ↔ ∀ m : ℕ, m < n := by
   refine ⟨fun h m ↦ h ▸ coe_lt_top m ,fun h ↦ ?_⟩
   rw [← not_not (a := (n = ⊤)), ← Ne, ne_top_iff_exists]

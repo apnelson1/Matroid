@@ -428,14 +428,14 @@ lemma ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
    obtain ⟨B, hB⟩ := h
    exact ⟨B, hB.base, fun i ↦ by simpa using hB.2 !i⟩
 
-lemma ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
+lemma modularPair_comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
   ⟨ModularPair.symm, ModularPair.symm⟩
 
-@[aesop unsafe 5% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma ModularPair.subset_ground_left (h : M.ModularPair X Y) : X ⊆ M.E :=
   h.subset_ground_of_mem true
 
-@[aesop unsafe 5% (rule_sets := [Matroid])]
+@[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma ModularPair.subset_ground_right (h : M.ModularPair X Y) : Y ⊆ M.E :=
   h.subset_ground_of_mem false
 
@@ -544,6 +544,9 @@ lemma ModularPair.closure_closure (h : M.ModularPair X Y) :
     M.ModularPair (M.closure X) (M.closure Y) :=
   h.closure_left.closure_right
 
+lemma modularPair_loops (M : Matroid α) (hX : X ⊆ M.E) : M.ModularPair X (M.closure ∅) :=
+  ((M.modularPair_of_subset (empty_subset X) hX).closure_left).symm
+
 lemma modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.closure X) :
     M.ModularPair {e} X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
@@ -627,12 +630,12 @@ lemma modularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
       (M.closure_subset_ground _)
   obtain (hf | hf) := em' (f ∈ M.E)
-  · rw [ModularPair.comm, ← closure_inter_ground, insert_inter_of_not_mem hf, closure_inter_ground]
+  · rw [modularPair_comm, ← closure_inter_ground, insert_inter_of_not_mem hf, closure_inter_ground]
     exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
       (M.closure_subset_ground _)
 
   obtain (hfI | hfI) := em (f ∈ M.closure I)
-  · rw [ModularPair.comm, insert_eq_of_mem hfI]
+  · rw [modularPair_comm, insert_eq_of_mem hfI]
     exact modularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
       (M.closure_subset_ground _)
   rw [closure_insert_closure_eq_closure_insert, closure_insert_closure_eq_closure_insert]
@@ -671,6 +674,10 @@ lemma ModularPair.contract {C : Set α} (hXY : M.ModularPair X Y) (hCX : C ⊆ X
 --     M.closure (F ∪ X) ∩ Y = M.closure (X ∪ (F ∩ Y))
 
 
+
+
 end ModularPair
+
+
 
 end Matroid

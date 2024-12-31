@@ -1,4 +1,5 @@
 import Matroid.Minor.Basic
+import Matroid.ForMathlib.ENat
 
 open Set
 
@@ -321,6 +322,65 @@ lemma relRank_ground_le_iff {k : ℕ} (hX : X ⊆ M.E) :
   rw [← hDsp.closure_eq, relRank_closure_right, union_comm, ← relRank_eq_union_right]
   exact (M.relRank_le_encard_diff X D).trans ((encard_le_card diff_subset).trans <| by simpa)
 
+lemma relRank_union_le_relRank_inter_right (M : Matroid α) (X Y : Set α) :
+    M.relRank X (X ∪ Y) ≤ M.relRank (X ∩ Y) Y := by
+  wlog hE : X ⊆ M.E ∧ Y ⊆ M.E with aux
+  · convert aux _ (X ∩ M.E) (Y ∩ M.E) ⟨inter_subset_right, inter_subset_right⟩ using 1
+    · rw [← union_inter_distrib_right, relRank_inter_ground_right, relRank_inter_ground_left]
+    rw [← inter_inter_distrib_right, relRank_inter_ground_right, relRank_inter_ground_left]
+  obtain ⟨hXE, hYE⟩ := hE
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ Y)
+  obtain ⟨I', hI', rfl⟩ := hI.exists_basis_inter_eq_of_superset inter_subset_left
+  obtain ⟨J, hJ, rfl⟩ := hI'.exists_basis_inter_eq_of_superset (Y := X ∪ Y) subset_union_left
+  rw [hJ.relRank_eq_encard_diff_of_subset subset_union_left hI']
+  rw [inter_comm J, ← inter_inter_distrib_left, ← inter_assoc, inter_comm X, inter_assoc] at hI
+  have hi' : M.Indep (J ∩ (X ∩ Y) ∪ (J \ X)) :=
+    hJ.indep.subset (union_subset inter_subset_left diff_subset)
+  have hJYX : J \ X ⊆ Y := diff_subset_iff.2 hJ.subset
+  obtain ⟨K, hKX, hssK⟩ := hi'.subset_basis_of_subset
+    (union_subset (inter_subset_right.trans inter_subset_right) hJYX)
+  rw [hI.relRank_eq_encard_diff_of_subset_basis hKX (subset_union_left.trans hssK)]
+  refine encard_le_card ?_
+  rw [union_subset_iff] at hssK
+  rw [subset_diff, and_iff_right hssK.2]
+  exact disjoint_sdiff_left.mono_right (inter_subset_right.trans inter_subset_left)
+
+lemma relRank_union_le_relRank_inter_left (M : Matroid α) (X Y : Set α) :
+    M.relRank Y (X ∪ Y) ≤ M.relRank (X ∩ Y) X := by
+  rw [union_comm, inter_comm]
+  exact M.relRank_union_le_relRank_inter_right _ _
+
+lemma relRank_union_add_relRank_union_le_relRank_inter_union (X Y : Set α) :
+    M.relRank X (X ∪ Y) + M.relRank Y (X ∪ Y) ≤ M.relRank (X ∩ Y) (X ∪ Y) := by
+  rw [← ENat.mul_le_mul_left_iff (a := 2) (by simp) (by simp), two_mul, two_mul]
+  nth_rewrite 1 [← M.relRank_add_cancel inter_subset_left subset_union_left,
+    ← M.relRank_add_cancel inter_subset_right subset_union_right]
+  simp_rw [← add_assoc, add_comm (M.relRank (X ∩ Y) _)]
+  apply add_le_add_right
+  rw [add_assoc, add_assoc]
+  refine add_le_add_left (add_le_add ?_ ?_) _
+  · apply relRank_union_le_relRank_inter_left
+  apply relRank_union_le_relRank_inter_right
+
+-- lemma relRank_le_relRank_left_add_relRank_right (M : Matroid α) {A B : Set α} (hXA : X ⊆ A)
+--     (hXB : X ⊆ B) (hAY : A ⊆ Y) (hBY : B ⊆ Y) :
+--     M.relRank X Y ≤ M.relRank A Y + M.relRank B Y := by
+--   rw [← M.relRank_add_cancel hXA hAY, add_comm]
+--   have := M.relRank_union_le_relRank_inter_left
+
+
+
+
+
+  -- suffices h : 2 * M.relRank (X ∩ Y) (X ∪ Y) ≤ 2 * (M.relRank X (X ∪ Y) + M.relRank Y (X ∪ Y))
+  -- ·
+  -- rw [← mul_le_mul_iff_right]
+  -- refine le_trans (M.relRank_mono_right (Y' := Z ∪ (X ∪ Y)) _ subset_union_left) ?_
+
+  -- wlog hZ : Z = X ∪ Y with aux
+  -- · refine le_trans ()
+
+
 section Contract
 
 lemma er_contract_le_er_delete (M : Matroid α) (X Y : Set α) : (M ／ X).er Y ≤ (M ＼ X).er Y := by
@@ -385,6 +445,11 @@ lemma relRank_contract_le (M : Matroid α) (C X Y : Set α) :
   rw [relRank_eq_er_contract, relRank_eq_er_contract, contract_contract,
     union_comm, ← contract_contract]
   exact (M ／ X).er_contract_le_er C Y
+
+lemma erk_contract_eq_relRank_ground (M : Matroid α) (C : Set α) :
+    (M ／ C).erk = M.relRank C M.E := by
+  rw [relRank_eq_er_contract, erk_def, contract_ground, ← (M ／ C).er_inter_ground M.E,
+    contract_ground, inter_eq_self_of_subset_right diff_subset]
 
 end Contract
 

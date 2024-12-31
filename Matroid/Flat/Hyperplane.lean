@@ -167,6 +167,14 @@ lemma flat_iff_eq_sInter_hyperplanes : M.Flat F ↔
   rintro ⟨Hs, hHs, rfl⟩
   exact Flat.sInter_inter_ground (fun H hH ↦ (hHs H hH).flat)
 
+lemma Flat.eq_sInter_hyperplanes_of_ne_ground (hF : M.Flat F) (hFE : F ≠ M.E) :
+    ∃ (Hs : Set (Set α)), Hs.Nonempty ∧ (∀ H ∈ Hs, M.Hyperplane H) ∧ F = ⋂₀ Hs := by
+  obtain ⟨Hs, hHs, rfl⟩ := flat_iff_eq_sInter_hyperplanes.1 hF
+  obtain rfl | hne := Hs.eq_empty_or_nonempty
+  · simp at hFE
+  refine ⟨Hs, hne, hHs, inter_eq_left.2 ?_⟩
+  exact (sInter_subset_of_mem hne.some_mem).trans (hHs _ hne.some_mem).subset_ground
+
 lemma mem_closure_iff_forall_hyperplane (hX : X ⊆ M.E := by aesop_mat)
     (he : e ∈ M.E := by aesop_mat) : e ∈ M.closure X ↔ ∀ H, M.Hyperplane H → X ⊆ H → e ∈ H := by
   simp_rw [← M.closure_inter_ground X,
