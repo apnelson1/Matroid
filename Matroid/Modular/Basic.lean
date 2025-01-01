@@ -353,6 +353,10 @@ lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
   rw [← (h_flat i).closure, ← (hB.basis_inter i).closure_eq_closure,
     ← (h_flat j).closure, ← (hB.basis_inter j).closure_eq_closure, h_eq]
 
+
+  -- have := (subset_range_iff_exists_image_eq (α := ι) (s := C) (f := Xs)).1
+  -- have := h.comp (fun X : C ↦ X)
+
 -- lemma modularFamily_of_chain [Finitary M] (hX : IsChain (· ⊆ ·) (range Xs)) (hE : ∀ i, Xs i ⊆ M.E) :
 --     M.ModularFamily Xs := by
 --   -- set Is := {I : Set α | ∀ i, M.Basis (I ∩ Xs i) (Xs i) ∨ I ⊆ M.closure (Xs i)}

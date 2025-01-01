@@ -58,19 +58,6 @@ lemma flat_iff_closure_self : M.Flat F ↔ M.closure F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left⟩)
     (M.subset_closure F (Flat.subset_ground h)), fun h ↦ by rw [← h]; exact closure_flat _ _⟩
 
-lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
-    (M.map f hf).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f '' F₀ := by
-  simp only [flat_iff_closure_self, map_closure_eq]
-  refine ⟨fun h ↦ ⟨M.closure (f ⁻¹' F), by simp, h.symm⟩, ?_⟩
-  rintro ⟨F, hF, rfl⟩
-  rw [← closure_inter_ground, hf.preimage_image_inter, hF]
-  exact hF.symm.subset.trans <| M.closure_subset_ground _
-
-lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
-    (M.map f hf).Flat (f '' F) := by
-  rw [flat_iff_closure_self, map_closure_eq, ← closure_inter_ground,
-    hf.preimage_image_inter hF.subset_ground, hF.closure]
-
 lemma flat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) : M.Flat F ↔ M.closure F ⊆ F := by
   rw [flat_iff_closure_self, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_closure F
@@ -193,6 +180,36 @@ lemma uniqueBaseOn_flat_iff {I E : Set α} (hIE : I ⊆ E) : (uniqueBaseOn E I).
 
 @[simp] lemma freeOn_flat_iff {E : Set α} : (freeOn E).Flat F ↔ F ⊆ E := by
   simp [← uniqueBaseOn_self, uniqueBaseOn_flat_iff Subset.rfl]
+
+
+lemma flat_map_iff {β : Type*} {f : α → β} (hf : M.E.InjOn f) {F : Set β} :
+    (M.map f hf).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f '' F₀ := by
+  simp only [flat_iff_closure_self, map_closure_eq]
+  refine ⟨fun h ↦ ⟨M.closure (f ⁻¹' F), by simp, h.symm⟩, ?_⟩
+  rintro ⟨F, hF, rfl⟩
+  rw [← closure_inter_ground, hf.preimage_image_inter, hF]
+  exact hF.symm.subset.trans <| M.closure_subset_ground _
+
+lemma Flat.map {β : Type*} {f : α → β} (hF : M.Flat F) (hf : M.E.InjOn f) :
+    (M.map f hf).Flat (f '' F) := by
+  rw [flat_iff_closure_self, map_closure_eq, ← closure_inter_ground,
+    hf.preimage_image_inter hF.subset_ground, hF.closure]
+
+lemma Flat.comap {β : Type*} {F : Set β} {M : Matroid β} (hF : M.Flat F) (f : α → β) :
+    (M.comap f).Flat (f ⁻¹' F) := by
+  rw [flat_iff_closure_self, comap_closure_eq, subset_antisymm_iff]
+  refine ⟨preimage_mono (hF.closure_subset_of_subset (by simp)), fun y (hy : f y ∈ F) ↦ ?_⟩
+  exact mem_closure_of_mem' _ ⟨y, hy, rfl⟩ (hF.subset_ground hy)
+
+lemma flat_comap_iff_exists {β : Type*} {f : α → β} {F : Set α} {M : Matroid β} :
+    (M.comap f).Flat F ↔ ∃ F₀, M.Flat F₀ ∧ F = f ⁻¹' F₀ := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · rw [flat_iff_closure_self, comap_closure_eq] at h
+    exact ⟨M.closure (f '' F), M.closure_flat _, h.symm⟩
+  rintro ⟨F₀, hF₀, rfl⟩
+  exact hF₀.comap f
+
+
 
 
 

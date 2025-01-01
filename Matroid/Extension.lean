@@ -62,7 +62,7 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
 
 -/
 
-open Set Function Set.Notation
+open Set Function Set.Notation Option
 
 variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α}
 
@@ -395,6 +395,23 @@ modular pairs rather than families. -/
     simp only [Finset.mem_coe, mem_iInter, Finset.mem_cons, Subtype.mk.injEq,
       iInter_iInter_eq_or_left, not_true_eq_false, iInter_of_empty, univ_inter]
     exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩
+
+
+-- @[simps] def ModularCut.ofForallModularPairChainInter (M : Matroid α) (U : Set (Set α))
+--     (h_flat : ∀ F ∈ U, M.Flat F)
+--     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.Flat F' → F ⊆ F' → F' ∈ U)
+--     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.ModularPair F F' → F ∩ F' ∈ U)
+--     (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.ModularFamily (fun x : Cs ↦ x)
+--       → IsChain (· ⊆ ·) Cs → ⋂₀ Cs ∈ U) : M.ModularCut where
+--   carrier := U
+--   forall_flat := h_flat
+--   forall_superset := h_superset
+--   forall_inter := by
+--     intro Fs hFs hne hmod
+--     have := zorn_superset_nonempty (S := Fs) fun D hD hDchain hDne ↦ ⟨⋂₀ D, ?_, ?_⟩
+--     · sorry
+--     have := h_chain D (hD.trans hFs) hDne ?_ hDchain
+
 
 end finite
 
@@ -776,9 +793,57 @@ def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
     simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
     exact ModularCut.deleteElem_extendBy heN
 
+lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
+    e ∈ (M.extendBy e U).closure X ↔ e ∈ X ∨ M.closure X ∈ U := by
+  by_cases heX : e ∈ X
+  · simp [heX, mem_closure_of_mem']
+  obtain ⟨I, hI⟩ := (M.extendBy e U).exists_basis' X
+  have hI' : M.Basis' I X
+  · rwa [← U.extendBy_deleteElem he, deleteElem, delete_basis'_iff, diff_singleton_eq_self heX]
+
+  have heI := not_mem_subset hI'.subset heX
+  rw [← hI.closure_eq_closure, ← hI'.closure_eq_closure, or_iff_right heX,
+    ← not_iff_not, hI.indep.not_mem_closure_iff_of_not_mem heI, extendBy_Indep,
+    U.extIndep_iff_of_mem (.inl rfl)]
+  simp [heI, hI'.indep]
+
+lemma ModularCut.extendBy_closure_eq_self (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+    (hXU : M.closure X ∉ U) : (M.extendBy e U).closure X = M.closure X := by
+  nth_rewrite 2 [← U.extendBy_deleteElem he]
+  rw [deleteElem, delete_closure_eq, diff_singleton_eq_self heX, sdiff_eq_left.2]
+  rw [disjoint_singleton_right, mem_closure_extendBy_iff _ he]
+  simp [heX, hXU]
+
+lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+    (hXSU : M.closure X ∈ U) : (M.extendBy e U).closure X = insert e (M.closure X) := by
+  nth_rewrite 2 [← U.extendBy_deleteElem he]
+  rw [deleteElem, delete_closure_eq, insert_diff_singleton]
+  rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
+  exact .inr hXSU
+
 end extensions
 
 section projection
+
+private lemma projectBy_aux (U : M.ModularCut) :
+    ((((M.map _ (some_injective _).injOn).extendBy none
+    (U.map _ (some_injective _).injOn)) ／ (none : Option α)).comap Option.some).Indep I ↔
+    M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) := by
+  have hinj := Option.some_injective α
+  obtain (rfl | hU) := eq_or_ne U ⊤
+  · rw [contract_elem, contract_eq_delete_of_subset_loops]
+    · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj, hinj.injOn]
+    rw [singleton_subset_iff, ← loop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
+    simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
+  simp only [contract_elem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
+    forall_const]
+  rw [Indep.contract_indep_iff]
+  · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_closure_eq,
+      preimage_image_eq _ hinj, ModularCut.map, hU]
+  suffices M.closure ∅ ∉ U by
+    simpa [ModularCut.extIndep_iff_of_mem, (eq_comm (a := ∅)), map_closure_eq, ModularCut.map,
+      image_eq_image hinj]
+  rwa [Ne, ModularCut.eq_top_iff] at hU
 
 /-- Extend `M` using the modular cut `U`, and contract the new element.
 Defining this in terms of `extendBy` would be difficult if `M.E = univ`,
@@ -786,28 +851,17 @@ so we define it directly instead.   -/
 def projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α := Matroid.ofExistsMatroid
   (E := M.E)
   (Indep := fun I ↦ M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U))
-  (hM := by
-    have hinj := Option.some_injective α
-    have hf : InjOn some M.E := hinj.injOn
-    set M' := (M.map _ hf).extendBy none (U.map _ hf) with hM'
-    use (M' ／ (none : Option α)).comap (Option.some)
-    suffices ∀ (I : Set α),
-      ((M.map some hf).extendBy none (U.map some hf) ／ (none : Option α)).Indep (some '' I) ↔
-      M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) by
-      simpa [preimage_image_eq _ hinj, hinj.injOn, hM']
-    intro I
-    obtain (rfl | hU) := eq_or_ne U ⊤
-    · rw [contract_elem, contract_eq_delete_of_subset_loops]
-      · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj]
-      rw [singleton_subset_iff, ← loop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
-      simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
-    rw [contract_elem, Indep.contract_indep_iff]
-    · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_closure_eq,
-        preimage_image_eq _ hinj, ModularCut.map, hU]
-    suffices M.closure ∅ ∉ U by
-      simpa [ModularCut.extIndep_iff_of_mem, (eq_comm (a := ∅)), map_closure_eq, ModularCut.map,
-        image_eq_image hinj]
-    rwa [Ne, ModularCut.eq_top_iff] at hU )
+  (hM := ⟨_, by simp [(Option.some_injective α).preimage_image], fun _ ↦ projectBy_aux U⟩)
+
+/-- The messier expression for `projectBy`; `projectBy` is obtained from `M` by `map`ping it
+into `Option α`, extending by the new element `none` and contracting it, then `comap`ping
+back to `α`.  -/
+lemma projectBy_eq_map_comap (U : M.ModularCut) :
+    M.projectBy U = ((((M.map _ (some_injective _).injOn).extendBy none
+      (U.map _ (some_injective _).injOn)) ／ (none : Option α)).comap Option.some) := by
+  refine ext_indep (by simp [projectBy, (Option.some_injective α).preimage_image]) fun I _ ↦ ?_
+  rw [projectBy_aux, projectBy]
+  simp
 
 @[simp] lemma projectBy_ground_eq (U : M.ModularCut) : (M.projectBy U).E = M.E := rfl
 
@@ -839,7 +893,6 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
   rw [contract_elem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]
-
 
 end projection
 

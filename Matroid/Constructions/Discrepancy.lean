@@ -1,4 +1,4 @@
-import Matroid.Constructions.Quotient
+import Matroid.Order.Quotient
 
 open Set
 
@@ -95,10 +95,11 @@ when both ranks are infinite.
 It is defined by noncomputably choosing a nested basis pair `I₂ ⊆ I₁` for `X` in the two matroids,
 and taking the cardinality of `I₁ \ I₂`.
 
-This quantity is only sensible if `M₂` is finitary,
+This quantity is only sensible if `M₂` is finitary (even when `X` is the ground set),
 as otherwise it can depend on the choice of `I₁` and `I₂`; see `Matroid.TruncateFamily`. -/
 noncomputable def discrepancy {M₂ : Matroid α} (hQ : M₂ ≤q M₁) (X : Set α) :=
-  ((hQ.exists_basis_subset_pair X).choose.1 \ (hQ.exists_basis_subset_pair X).choose.2).encard
+  let h_ex := hQ.exists_basis_subset_pair X
+  (h_ex.choose.1 \ h_ex.choose.2).encard
 
 lemma exists_finite_witness {J₀ J : Set α} [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hJ₀X : M₂.Basis J₀ X) (hJX : M₁.Basis J X) (hss : J₀ ⊆ J) (hfin : (J \ J₀).Finite) :
