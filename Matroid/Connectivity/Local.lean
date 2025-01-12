@@ -1,6 +1,7 @@
 import Matroid.Connectivity.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
+import Matroid.Uniform
 
 open Set Set.Notation
 
@@ -563,6 +564,14 @@ lemma modularPair_iff_localConn_eq_r_inter [FiniteRk M] (hXE : X ⊆ M.E := by a
     (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.r (X ∩ Y) :=
   (M.to_rFin X).modularPair_iff_localConn_eq_r_inter _ hXE hYE
 
+lemma Circuit.localEConn_subset_compl {C : Set α} (hC : M.Circuit C) (hI : I.Nonempty)
+    (hIC : I ⊂ C) : M.localEConn I (C \ I) = 1 := by
+  obtain ⟨e, heC, heI⟩ := exists_of_ssubset hIC
+  have hi' : C \ I ⊂ C := by simpa [inter_eq_self_of_subset_right hIC.subset]
+  rw [(hC.ssubset_indep hIC).basis_self.localEConn_eq (hC.ssubset_indep hi').basis_self,
+    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset, hC.restrict_eq_circuitOn, circuitOn_dual, unifOn_erk_eq, min_eq_right
+    (by simpa using hC.nonempty)]
+  rfl
 
 end localConn
 

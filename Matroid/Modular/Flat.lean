@@ -1,4 +1,5 @@
 import Matroid.Connectivity.Local
+import Matroid.ForMathlib.Data.Set.Finite
 
 namespace Matroid
 
@@ -72,6 +73,12 @@ lemma modularFlat_singleton (M : Matroid α) [Simple M] (e : α) (he : e ∈ M.E
 lemma modularFlat_closure_subsingleton (M : Matroid α) (hX : X.Subsingleton) :
     M.ModularFlat (M.closure X) := by
   obtain rfl | ⟨e, rfl⟩ := hX.eq_empty_or_singleton <;> simp
+
+lemma Flat.modularFlat_of_er_le_one (hF : M.Flat F) (hr : M.er F ≤ 1) : M.ModularFlat F := by
+  obtain ⟨I, hI⟩ := M.exists_basis F
+  rw [hI.er_eq_encard, encard_le_one_iff_eq] at hr
+  rw [← hF.closure, ← hI.closure_eq_closure]
+  obtain rfl | ⟨e, rfl⟩ := hr <;> simp
 
 /-- In a simple matroid, being a modular flat is the same as being a modular pair with each flat. -/
 lemma ModularFlat.Flat [Simple M] : M.ModularFlat X ↔ ∀ ⦃F⦄, M.Flat F → M.ModularPair X F := by
@@ -218,6 +225,26 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   refine inter_subset_inter_right _ ?_
   rw [hF.eq_closure_of_basis hI]
   exact M.closure_mono hss
+
+lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
+    (h : ∀ ⦃H⦄, M.Hyperplane H → ¬ (L ∩ H ⊆ M.closure ∅)) : M.ModularFlat L := by
+  rw [hL.flat.modularFlat_iff_forall_skew_of_inter]
+  intro F hF hcl hsp
+  rw [← localEConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
+  intro hle
+  have hlc := M.localEConn_add_relRank_union_eq_er L F
+  rw [hL.er, ← relRank_closure_right, hsp.closure_eq, add_comm] at hlc
+  obtain h_eq | hlt := hle.eq_or_lt
+  · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_cancel_iff (by simp),
+      ← hF.hyperplane_iff_relRank_ground_eq_one] at hlc
+    exact h hlc hcl
+  replace hlt := show (2 : ℕ∞) ≤ _ from Order.add_one_le_of_lt hlt
+  rw [← zero_add (a := M.localEConn L F), ← hlc, WithTop.add_le_add_iff_right,
+    nonpos_iff_eq_zero, relRank_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
+  · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
+    simpa [hL.er] using M.er_mono hcl
+  rw [← lt_top_iff_ne_top]
+  exact (M.localEConn_le_er_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.er]))
 
 /-- If `X` is a modular flat, then in any contraction-minor in which `X` spans a nonloop `e`,
 there is an element of `X` parallel to `e`.
@@ -612,7 +639,32 @@ lemma ModularFlat.sInter [Finitary M] {Xs : Set (Set α)} (hne : Xs.Nonempty)
 
 end Lattice
 
+lemma ModularFlat.restrict (hF : M.ModularFlat F) (hFX : F ⊆ X) (hXE : X ⊆ M.E := by aesop_mat) :
+    (M ↾ X).ModularFlat F := by
+  have hF' := hF.flat.flat_restrict X
+  rw [inter_eq_self_of_subset_left hFX] at hF'
+  rw [hF'.modularFlat_iff_forall_contract_exists_parallel]
+  refine fun C e hCF he hecl  ↦ hF.exists_parallel_mem_of_minor ?_ ?_ he hecl
+  · exact (contract_minor _ _).trans (restrict_minor _ hXE)
+  simp [subset_diff, hFX, hCF.symm]
 
+lemma ModularFlat.contract (hF : M.ModularFlat F) (C : Set α) :
+    (M ／ C).ModularFlat ((M ／ C).closure F) := by
+  rw [← closure_inter_ground, contract_ground, ← inter_diff_assoc,
+    inter_eq_self_of_subset_left hF.subset_ground,
+    (closure_flat _ _).modularFlat_iff_forall_contract_exists_parallel]
+  intro A e hdj hnl hcl
+  rw [contract_contract] at hnl hcl
+  have h_ex := hF.exists_parallel_mem_of_contract hnl ?_
+  · obtain ⟨f, hfF, hfcl⟩ := h_ex
+    rw [← contract_contract] at hfcl
+    refine ⟨f, ?_, hfcl⟩
+    simp only [contract_closure_eq, diff_union_self, mem_diff]
+    exact ⟨mem_of_mem_of_subset hfF
+      (M.subset_closure_of_subset' subset_union_left hF.subset_ground), hfcl.mem_ground_right.1.2⟩
+  simp only [contract_closure_eq, diff_union_self, mem_diff, mem_union, not_or] at hcl ⊢
+  rwa [diff_union_eq_union_of_subset _ subset_union_left, closure_union_closure_left_eq,
+    union_comm C, ← union_union_distrib_right, union_right_comm, union_assoc] at hcl
 
 end ModularFlat
 
@@ -662,27 +714,299 @@ lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
   · rw [hF.1.closure, union_diff_right, hF.2.sdiff_eq_left]
   rw [hF'.1.closure, union_diff_right, hF'.2.sdiff_eq_left]
 
-/-- A `Finitary` matroid is modular iff every line meets every hyperplane in a point.
-This is possibly also true without `Finitary`. -/
-lemma modular_iff_forall_line_hyperplane [Finitary M] :
+lemma Circuit.chord_split_of_modular_subset {C I : Set α} (hC : M.Circuit C) (hIC : I ⊆ C)
+    (hnt : I.Nontrivial) (hnt' : (C \ I).Nontrivial) (hmod : M.ModularFlat (M.closure I)) :
+    ∃ e, e ∉ C ∧ M.Circuit (insert e I) ∧ M.Circuit (insert e (C \ I)) := by
+  have hssu : I ⊂ C := hIC.ssubset_of_ne (by rintro rfl; simp at hnt')
+  have hI := hC.ssubset_indep hssu
+  have hli := (hmod.modularPair (M.closure_flat (C \ I))).localEConn_eq_er_inter
+  obtain ⟨J, hJ⟩ := M.exists_basis (M.closure I ∩ M.closure (C \ I))
+  rw [localEConn_closure_closure, hC.localEConn_subset_compl hnt.nonempty hssu, eq_comm,
+    ← hJ.encard, encard_eq_one] at hli
+  obtain ⟨e, rfl⟩ := hli
+
+  suffices aux : ∀ X ⊂ C, X.Nontrivial → (C \ X).Nontrivial →
+      M.Basis {e} (M.closure X ∩ M.closure (C \ X)) → M.Circuit (insert e X)
+  · have hc1 := aux _ hssu hnt hnt' hJ
+
+    refine ⟨e, fun heC ↦ hc1.dep.not_indep (hC.ssubset_indep ?_), hc1, ?_⟩
+    · refine (insert_subset heC hssu.subset).ssubset_of_ne ?_
+      rintro rfl
+      have heI : e ∉ I
+      · intro heI
+        rw [insert_eq_of_mem heI] at hssu
+        exact hssu.ne rfl
+      simp [insert_diff_of_not_mem _ heI] at hnt'
+    refine aux _ ?_ hnt' (by rwa [diff_diff_cancel_left hIC]) ?_
+    · simpa [inter_eq_self_of_subset_right hIC] using hnt.nonempty
+    rwa [inter_comm, diff_diff_cancel_left hIC]
+
+  intro J hJC hJnt hCJnt hb
+
+  refine (hC.ssubset_indep hJC).insert_circuit_of_forall_of_nontrivial hJnt
+    (by simpa using hb.subset.trans inter_subset_left) fun f hfI heclf ↦ ?_
+  have hsk : M.Skew (J \ {f}) (C \ J)
+  · rw [Indep.skew_iff_disjoint]
+    · exact disjoint_sdiff_right.mono_left diff_subset
+    refine (hC.diff_singleton_indep (hJC.subset hfI)).subset
+      (union_subset (diff_subset_diff_left hJC.subset) (diff_subset_diff_right (by simpa)))
+  have henl : M.Nonloop e := indep_singleton.1 hJ.indep
+
+  refine henl.not_loop <| hsk.closure_skew.inter_subset_loops ⟨heclf, ?_⟩
+  simpa using hb.subset.trans inter_subset_right
+
+/- If `x,y, e1, e2, ...` is a countable circuit in a simple matroid, then there exist
+`y = f0, f1, f2, ...` so that for each `i`, both `ei, fi, f(i+1)` and `x,fi, ei, ...` are circuits.
+This is used to show that matroids with modular lines are finitary. -/
+private lemma modular_finitary_aux (hM : ∀ F, M.Flat F → M.er F ≤ 2 → M.ModularFlat F)
+    {e : ℕ → α} (h_inj : e.Injective) {x y : α} (hxy : x ≠ y) (hxe : x ∉ range e)
+    (hye : y ∉ range e) (h_circuit : M.Circuit (insert x (insert y (range e)))) :
+    ∃ f : ℕ → α, f 0 = y ∧ x ∉ range f
+    ∧ (Disjoint (range e) (range f)) ∧
+      (∀ i, M.Circuit {f i, f (i+1), e i}) ∧
+      (∀ i, M.Circuit (insert x (insert (f i) (e '' (Ici i))))) := by
+  have aux1 : ∀ ⦃g i⦄, M.Circuit (insert x (insert g (e '' Ici i))) → x ≠ g ∧ g ∉ range e
+  · intro g i h
+    rw [ne_comm, ← not_or, ← mem_insert_iff]
+    refine fun hgins ↦ h.dep.not_indep (h_circuit.ssubset_indep ?_)
+    refine HasSubset.Subset.ssubset_of_mem_not_mem (x := y) ?_ (by simp) ?_
+    · rw [insert_comm (b := y)]
+      refine subset_trans ?_ (subset_insert _ _)
+      obtain (rfl | hg) := hgins
+      · simp only [mem_insert_iff, mem_image, mem_Ici, true_or, insert_eq_of_mem]
+        exact insert_subset_insert (image_subset_range _ _)
+      exact insert_subset_insert (insert_subset hg (image_subset_range _ _))
+    rw [mem_insert_iff, not_or, and_iff_right hxy.symm, mem_insert_iff, not_or,
+      and_iff_left (not_mem_subset (image_subset_range _ _) hye)]
+    contrapose! hye
+    rwa [mem_insert_iff, ← hye, or_iff_right hxy.symm] at hgins
+
+  have aux2 : ∀ i (g : ↑(M.E \ range e)), M.Circuit (insert x (insert g.1 (e '' (Ici i)))) →
+    ∃ (g' : ↑(M.E \ range e)), (∀ j, g'.1 ≠ e j) ∧ M.Circuit {g.1,g'.1, e i} ∧
+      M.Circuit (insert x (insert g'.1 (e '' Ici (i+1))))
+  · rintro i ⟨g, hgE, hge⟩ hC
+    simp only [mem_diff, mem_range, not_exists, exists_and_left, exists_prop] at hC ⊢
+    have hxi : x ≠ e i := by rintro rfl; simp at hxe
+    have hg : ∀ j, g ≠ e j := by rintro j rfl; simp at hge
+    obtain ⟨hxg, hge⟩ := aux1 hC
+
+    have h_ex := hC.chord_split_of_modular_subset (I := {g, e i})
+      (by simp [pair_subset_iff, h_inj.eq_iff])
+      (by simp [hg i]) ?_ ?_
+    rotate_left
+    · refine Infinite.nontrivial (Infinite.diff ?_ (by simp))
+      simp only [insert_infinite_iff, infinite_image_iff h_inj.injOn]
+      exact Ici_infinite i
+    · refine hM _ (M.closure_flat _) ?_
+      rw [er_closure_eq]
+      exact (M.er_le_encard _).trans (by simp)
+    obtain ⟨g', hg'C, hgg', hg'x⟩ := h_ex
+    rw [insert_comm] at hgg'
+    rw [insert_diff_of_not_mem _ (by simp [hxg, hxi]), insert_diff_of_mem _ (by simp),
+      ← union_singleton (a := g), ← diff_diff, diff_singleton_eq_self, insert_comm,
+      ← Ioi_insert, image_insert_eq, insert_diff_of_mem _ (by simp),
+      diff_singleton_eq_self, show Ioi i = Ici (i+1) from rfl] at hg'x
+    · refine ⟨⟨g',?_⟩, ?_, hgg', hg'x⟩
+      · exact ⟨hgg'.subset_ground (by simp), (aux1 hg'x).2⟩
+      · rintro j rfl
+        refine hg'x.dep.not_indep (h_circuit.ssubset_indep ?_)
+        refine HasSubset.Subset.ssubset_of_mem_not_mem (x := y) ?_ (by simp) ?_
+        · refine insert_subset_insert (insert_subset (by simp) ?_)
+          exact (image_subset_range _ _).trans (subset_insert _ _)
+        rw [mem_insert_iff, or_iff_right hxy.symm]
+        exact not_mem_subset (by simp [insert_subset_iff]) hye
+    · simp [h_inj.eq_iff]
+    exact not_mem_subset (by simp) hge
+
+  choose! φ hφ using aux2
+
+  set y' : ↑(M.E \ range e) := ⟨y, h_circuit.subset_ground (by simp), hye⟩ with y'_def
+  set f : ℕ → ↑(M.E \ range e) := Nat.recAux y' φ with f_def
+  have hf_succ : ∀ n, f (n+1) = φ n (f n) := fun _ ↦ rfl
+
+  rw [← image_univ, ← show Ici 0 = univ by simp [Set.ext_iff, Nat.zero_le]] at h_circuit
+  have big : ∀ i, M.Circuit (insert x (insert ↑(f i) (e '' (Ici i))))
+  · intro n
+    induction' n with n IH
+    · exact h_circuit
+    exact (hφ n (f n) IH).2.2
+
+  have tri : ∀ i, M.Circuit {(f i).1, (f (i + 1)).1, e i}
+  · intro n
+    induction' n with n IH
+    · exact (hφ 0 y' h_circuit).2.1
+    exact (hφ (n+1) (f (n+1)) (big _)).2.1
+
+  refine ⟨Subtype.val ∘ f, rfl, ?_, ?_, tri, big⟩
+  · refine fun ⟨i, hi⟩ ↦ (big i).dep.not_indep (h_circuit.ssubset_indep ?_)
+    simp only [Function.comp_apply] at hi
+    rw [hi, insert_eq_of_mem (by simp), insert_comm]
+    refine (ssubset_insert ?_ ).trans_subset (insert_subset_insert (insert_subset_insert ?_))
+    · simp only [mem_insert_iff, hxy.symm, mem_image, mem_Ici, false_or, not_exists, not_and]
+      rintro _ _ rfl
+      simp at hye
+    exact image_mono fun x hx ↦ (by simp)
+  rw [disjoint_comm, disjoint_iff_forall_ne]
+  rintro _ ⟨n, hn, rfl⟩ _ ⟨m, hm, rfl⟩
+  induction' n with n IH
+  · simp [f_def, show y ≠ e m by rintro rfl; simp at hye]
+  exact (hφ n (f n) (big n)).1 m
+
+private lemma exists_of_modular_not_finitary (hM : ∀ L, M.Line L → M.ModularFlat L)
+    (hnotfin : ¬ M.Finitary) :
+    ∃ (N : Matroid α) (e f : ℕ → α) (x y : α),
+    x ≠ y
+    ∧ e.Injective
+    ∧ x ∉ range e
+    ∧ y ∉ range e
+    ∧ (Disjoint (range e) (range f))
+    ∧ x ∉ range f
+    ∧ f 0 = y
+    ∧ (∀ n, N.Circuit {f n, f (n+1), e n})
+    ∧ ∀ n, N.Circuit (insert x ((insert (f n)) (e '' Ici n))) := by
+  simp only [finitary_iff_forall_circuit_finite, not_forall, Classical.not_imp] at hnotfin
+  obtain ⟨C, hC, hCinf : C.Infinite⟩ := hnotfin
+  obtain ⟨x, hxC⟩ := hCinf.nonempty
+  obtain ⟨y, hyC, hyx : y ≠ x⟩ := (hCinf.diff (finite_singleton x)).nonempty
+  let e' := (hCinf.diff (t := {x,y}) (by simp)).natEmbedding
+  set e := Subtype.val ∘ e' with he_def
+  set X := (C \ {x,y}) \ range e with X_def
+  set N := M ／ X with hN_def
+  have hX' : range e = (C \ X) \ {x,y}
+  · have hss : range e ⊆ C \ {x,y}
+    · rw [he_def, range_comp]
+      refine (image_mono (subset_univ _)).trans ?_
+      rw [image_univ, Subtype.range_coe]
+    rw [X_def, diff_diff_right, diff_diff_cancel_left (pair_subset hxC hyC), union_diff_cancel_left,
+      eq_comm, inter_eq_right]
+    · exact hss.trans diff_subset
+    rw [Disjoint.inter_eq]
+    exact Disjoint.mono_right inter_subset_right (disjoint_sdiff_right.mono_right hss)
+  have he_inj : e.Injective := Subtype.val_injective.comp e'.injective
+  have hxe : x ∉ range e := by simp [hX']
+  have hye : y ∉ range e := by simp [hX']
+  have h_aux := modular_finitary_aux (M := N) (e := e) ?_ he_inj hyx.symm hxe hye
+  rotate_left
+  · intro F hF hr
+    obtain hlt | h2 := hr.lt_or_eq
+    · exact hF.modularFlat_of_er_le_one <| Order.le_of_lt_add_one hlt
+    obtain ⟨I, hI⟩ := (M ／ X).exists_basis F hF.subset_ground
+    rw [← hI.encard, le_iff_eq_or_lt] at hr
+    have hmod := (hM (M.closure I) ⟨M.closure_flat _, ?_⟩).contract X
+    · rwa [contract_closure_eq, closure_union_closure_left_eq, ← contract_closure_eq,
+        hI.closure_eq_closure, hF.closure] at hmod
+    rwa [er_closure_eq, hI.indep.of_contract.er, ← hI.er_eq_encard]
+  simp only [hX', not_exists] at h_aux
+
+  rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,
+    union_diff_cancel] at h_aux
+  swap
+  · simp [pair_subset_iff, X_def, hxC, hyC]
+  specialize h_aux <| hC.contract_circuit (C := X) ?_
+  · exact (diff_subset.trans diff_subset).ssubset_of_mem_not_mem hxC (by simp [X_def])
+  obtain ⟨f, rfl, hrange, hne, htri, hcirc⟩ := h_aux
+  exact ⟨N, e, f, x, f 0, hyx.symm, he_inj, hxe, hye,
+    by rwa [← hX'] at hne, hrange, rfl, htri, hcirc⟩
+
+/-- Every matroid whose lines are modular is finitary. -/
+lemma finitary_of_forall_line_modular (hM : ∀ L, M.Line L → M.ModularFlat L) : M.Finitary := by
+  by_contra hnotfin
+  obtain ⟨N, e, f, x, y, hxy, he, hxe, hye, hdj, hxf, rfl, htri, hcirc⟩ :=
+    exists_of_modular_not_finitary hM hnotfin
+
+  have hef : N.closure (range e) ⊆ N.closure (range f)
+  · refine N.closure_subset_closure_of_subset_closure ?_
+    rintro _ ⟨i, rfl⟩
+    refine mem_of_mem_of_subset
+      ((htri i).mem_closure_diff_singleton_of_mem (e := e i) (by simp)) ?_
+    exact N.closure_mono <| by simp [insert_subset_iff]
+
+  have hcl1 : x ∈ N.closure (range f)
+  · rw [← closure_closure, ← union_eq_self_of_subset_left hef,
+      closure_closure_union_closure_eq_closure_union]
+    refine mem_of_mem_of_subset ((hcirc 0).mem_closure_diff_singleton_of_mem (by simp)) ?_
+    refine N.closure_subset_closure ?_
+    rw [diff_subset_iff, singleton_union, ← union_singleton (a := f 0)]
+    exact insert_subset_insert (union_subset_union (by simp) (by simp))
+
+  rw [mem_closure_iff_exists_circuit_of_not_mem hxf] at hcl1
+  obtain ⟨C', hC', hxC', hC'ss⟩ := hcl1
+
+  rw [← singleton_union, ← diff_subset_iff, subset_range_iff_exists_image_eq] at hC'ss
+  obtain ⟨I, hI⟩ := hC'ss
+  obtain rfl | hIne := I.eq_empty_or_nonempty
+  · rw [image_empty, eq_comm, diff_eq_empty] at hI
+    refine hC'.dep.not_indep ((hcirc 0).ssubset_indep (hI.trans_ssubset ?_))
+    refine (ssubset_insert (s := {x}) (a := f 0) (by simp [hxy.symm])).trans_subset ?_
+    simp [pair_subset_iff]
+
+  set j := sInf I with hj
+  have hsp : N.closure (insert x (f '' (I \ {j}))) ⊆ N.closure (insert x (e '' (Ioi j)))
+  · refine N.closure_subset_closure_of_subset_closure (insert_subset ?_ ?_)
+    · exact mem_closure_of_mem' _ (by simp) (hC'.subset_ground hxC')
+    rintro _ ⟨i, hj, rfl⟩
+    refine mem_of_mem_of_subset
+      ((hcirc i).mem_closure_diff_singleton_of_mem (e := f i) (by simp))
+      (N.closure_subset_closure ?_)
+    rw [diff_subset_iff, singleton_union, insert_comm]
+    refine insert_subset_insert (insert_subset_insert (image_mono (fun x (hx : i ≤ x) ↦ ?_)))
+    exact ((Nat.sInf_le hj.1).lt_of_ne' hj.2).trans_le hx
+
+  have hcl : f j ∈ N.closure (insert x (C' \ {f j}))
+  · refine mem_of_mem_of_subset (hC'.mem_closure_diff_singleton_of_mem ?_) ?_
+    · exact mem_of_mem_of_subset (mem_image_of_mem f (Nat.sInf_mem hIne)) (by simp [hI])
+    exact N.closure_mono (subset_insert _ _)
+
+  have hC₀ : f j ∈ N.closure (insert x (e '' Ioi j))
+  · refine mem_of_mem_of_subset hcl (subset_trans (N.closure_subset_closure ?_) hsp)
+    rw [← insert_diff_singleton, diff_diff_comm, ← hI]
+    refine insert_subset_insert ?_
+    rw [diff_subset_iff, ← image_singleton, ← image_union, singleton_union, insert_diff_singleton]
+    exact image_mono (subset_insert _ _)
+
+  rw [mem_closure_iff_exists_circuit_of_not_mem] at hC₀
+  swap
+  · rintro (rfl | ⟨i, -, h⟩)
+    · simp at hxf
+    exact hdj.ne_of_mem (by simp) (by simp) h
+
+  obtain ⟨C₀, hC₀, hjC₀, hC₀ss⟩ := hC₀
+
+  refine hC₀.dep.not_indep ((hcirc j).ssubset_indep ?_)
+  refine (hC₀ss.trans ?_).ssubset_of_mem_not_mem (x := e j) ?_ ?_
+  · rw [insert_comm]
+    refine insert_subset_insert (insert_subset_insert (image_mono ?_))
+    exact Ioi_subset_Ici_self
+  · exact .inr (.inr ⟨j, by simp, rfl⟩)
+  refine not_mem_subset hC₀ss ?_
+
+  rintro (h1 | (rfl | h3))
+  · exact hdj.ne_of_mem (by simp) (by simp) h1
+  · simp at hxe
+  simp [he.eq_iff] at h3
+
+/-- A matroid is modular iff every line meets every hyperplane in a point. -/
+lemma modular_iff_forall_line_hyperplane :
     M.Modular ↔ ∀ ⦃L H⦄, M.Line L → M.Hyperplane H → ¬ (L ∩ H ⊆ M.closure ∅) := by
   refine ⟨fun h L H hL hH ↦ ?_, fun h F hF ↦ ?_⟩
   · exact hH.modularFlat_iff_forall_line.1 (h hH.flat) L hL
   obtain rfl | hssu := hF.subset_ground.eq_or_ssubset
   · simp
   obtain ⟨Hs, hne, hHs, rfl⟩ := hF.eq_sInter_hyperplanes_of_ne_ground hssu.ne
+  have hfin : M.Finitary
+  · refine finitary_of_forall_line_modular fun L hL ↦ ?_
+    exact hL.modularFlat_of_forall_hyperplane <| fun H hH ↦ h hL hH
   refine ModularFlat.sInter hne fun H hH ↦ ?_
   rw [(hHs _ hH).modularFlat_iff_forall_line]
   exact fun L hL ↦ h hL (hHs _ hH)
 
-lemma modular_iff_forall_line_hyperplane_nonempty_inter [Finitary M] [Loopless M] :
+lemma modular_iff_forall_line_hyperplane_nonempty_inter [Loopless M] :
     M.Modular ↔ ∀ ⦃L H⦄, M.Line L → M.Hyperplane H → (L ∩ H).Nonempty := by
   rw [modular_iff_forall_line_hyperplane]
   exact ⟨fun h L H hL hH ↦ nonempty_iff_ne_empty.2 fun h_eq ↦ by simpa [h_eq] using h hL hH,
     fun h L H hL hH hss ↦ (h hL hH).ne_empty <| by simpa using hss⟩
 
-
-
-
+lemma Modular.finitary (hM : M.Modular) : M.Finitary :=
+  finitary_of_forall_line_modular fun _ hL ↦ hM hL.flat
 
 end Modular

@@ -17,6 +17,9 @@ lemma Point.er (hP : M.Point P) : M.er P = 1 :=
 lemma Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
+lemma Point.rFin (hP : M.Point P) : M.rFin P := by
+  simp [← er_ne_top_iff, hP.er]
+
 lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
   ⟨M.closure_flat {e}, by rw [er_closure_eq, he.indep.er, encard_singleton]⟩
 
@@ -154,6 +157,9 @@ lemma Line.er (hL : M.Line L) : M.er L = 2 :=
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
+
+lemma Line.rFin (hL : M.Line L) : M.rFin L := by
+  simp [← er_ne_top_iff, hL.er]
 
 lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
   rw [(M.closure_flat {e}).covBy_iff_relRank_eq_one hL.flat, hL.flat.closure_subset_iff_subset,

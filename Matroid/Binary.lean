@@ -177,7 +177,7 @@ lemma exist_cocircuits_of_rank_two (hr : M.erk = 2) (hel : ¬ M.Coloop e) (he : 
   have hIM : (M ＼ e).Base I := hNe.base_of_base hI
 
   have hIcard : I.encard = 2
-  · rwa [hI.encard, hNe.erk_eq, deleteElem_erk_eq hel]
+  · rwa [hI.encard, hNe.erk_eq, delete_elem_erk_eq hel]
 
   obtain ⟨a,b, hab, rfl⟩ := encard_eq_two.1 hIcard
 

@@ -361,6 +361,10 @@ lemma Flat.covBy_iff_relRank_eq_one (hF₀ : M.Flat F₀) (hF : M.Flat F) :
   · apply diff_subset_diff_left hF.subset_ground he
   exact hF.closure_subset_iff_subset.2 <| insert_subset he.1 hss
 
+lemma Flat.covBy_iff_relRank_eq_one_of_subset (hF₀ : M.Flat F₀) (hF : M.Flat F) (hss : F₀ ⊆ F) :
+    F₀ ⋖[M] F ↔ M.relRank F₀ F = 1 := by
+  rw [hF₀.covBy_iff_relRank_eq_one hF, and_iff_right hss]
+
 lemma Flat.covBy_iff_r_eq_add_one [FiniteRk M] (hF₀ : M.Flat F₀) (hF : M.Flat F) :
     F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.r F = M.r F₀ + 1 := by
   rw [hF₀.covBy_iff_relRank_eq_one hF, and_congr_right_iff]

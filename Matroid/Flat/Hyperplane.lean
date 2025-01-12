@@ -30,6 +30,11 @@ lemma Hyperplane.ssubset_ground (hH : M.Hyperplane H) : H ⊂ M.E :=
 lemma Hyperplane.ssubset_univ (hH : M.Hyperplane H) : H ⊂ univ :=
   hH.ssubset_ground.trans_subset (subset_univ _)
 
+lemma Flat.hyperplane_iff_relRank_ground_eq_one (hH : M.Flat H) :
+    M.Hyperplane H ↔ M.relRank H M.E = 1 := by
+  rw [hyperplane_iff_covBy, hH.covBy_iff_relRank_eq_one M.ground_flat,
+    and_iff_right hH.subset_ground]
+
 lemma Hyperplane.closure_insert_eq (hH : M.Hyperplane H) (heH : e ∉ H)
     (he : e ∈ M.E := by aesop_mat) : M.closure (insert e H) = M.E :=
   hH.covBy.closure_insert_eq ⟨he, heH⟩

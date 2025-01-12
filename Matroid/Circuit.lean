@@ -133,6 +133,23 @@ lemma Circuit.eq_of_subset_circuit (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C
     C₁ = C₂ :=
   hC₂.eq_of_dep_subset hC₁.dep h
 
+lemma Indep.insert_circuit_of_forall (hI : M.Indep I) (heI : e ∉ I) (he : e ∈ M.closure I)
+    (h : ∀ f ∈ I, e ∉ M.closure (I \ {f})) : M.Circuit (insert e I) := by
+  rw [circuit_iff_dep_forall_diff_singleton_indep, hI.insert_dep_iff,
+    and_iff_right ⟨he, heI⟩]
+  simp_rw [← insert_diff_singleton (s := I)]
+  rintro f (rfl | ⟨hfI, hne : f ≠ e⟩)
+  · simp [hI.diff]
+  rw [insert_diff_singleton, ← insert_diff_singleton_comm hne.symm, (hI.diff _).insert_indep_iff,
+    mem_diff, mem_diff, and_iff_right (mem_ground_of_mem_closure he)]
+  exact .inl (h f hfI)
+
+lemma Indep.insert_circuit_of_forall_of_nontrivial (hI : M.Indep I) (hInt : I.Nontrivial)
+    (he : e ∈ M.closure I) (h : ∀ f ∈ I, e ∉ M.closure (I \ {f})) : M.Circuit (insert e I) := by
+  refine hI.insert_circuit_of_forall (fun heI ↦ ?_) he h
+  obtain ⟨f, hf, hne⟩ := hInt.exists_ne e
+  exact h f hf (mem_closure_of_mem' _ (by simp [heI, hne.symm]))
+
 section Cyclic
 
 variable {A B : Set α}

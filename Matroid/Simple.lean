@@ -77,6 +77,10 @@ lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := 
   · rw [pair_eq_singleton, indep_singleton]; exact toNonloop he
   rwa [← not_dep_iff, ← (toNonloop he).parallel_iff_dep (toNonloop hf) hne, parallel_iff_eq he]
 
+lemma pair_closure_line [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
+    (hf : f ∈ M.E := by aesop_mat) : M.Line (M.closure {e,f}) := by
+  rwa [Line, and_iff_right (M.closure_flat _), er_closure_eq, (pair_indep he hf).er, encard_pair]
+
 lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
   have hne : I.encard ≠ ⊤ := (h.trans_lt (by exact (cmp_eq_lt_iff 2 ⊤).mp rfl : (2 : ℕ∞) < ⊤ )).ne

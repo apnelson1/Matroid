@@ -42,9 +42,15 @@ lemma Set.Finite.subset_biUnion_mono_iff {ι : Type*} [LE ι] {v : ι → Set α
     exact ⟨v k, ⟨k, hka, rfl⟩, hv hik, hv hjk⟩
   simpa using hs.subset_sUnion_directedOn_iff doimage (hne.image v)
 
-/-- If `s` is an indexed family of nested sets, then a finite subset of their union is
+/-- If `s` is an indexed directed family of sets, then a finite subset of their union is
 a subset of a set in the family. -/
 lemma Set.Finite.subset_iUnion_mono_iff {ι : Type*} [LE ι] [IsDirected ι (· ≤ ·)] [Nonempty ι]
     {v : ι → Set α} (hs : s.Finite) (hv : ∀ ⦃i j⦄, i ≤ j → v i ⊆ v j) :
     s ⊆ ⋃ i, v i ↔ ∃ i, s ⊆ v i := by
   simp [← biUnion_univ, hs.subset_biUnion_mono_iff directedOn_univ univ_nonempty hv]
+
+@[simp] lemma insert_infinite_iff {x : α} {s : Set α} : (insert x s).Infinite ↔ s.Infinite := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mono (subset_insert _ _)⟩
+  contrapose! h
+  rw [not_infinite] at h ⊢
+  exact h.insert x

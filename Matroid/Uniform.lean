@@ -57,7 +57,7 @@ theorem unifOn_er_eq' (E : Set α) (k : ℕ) : (unifOn E k).er X = min (X ∩ E)
   rw [← er_inter_ground, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
     unifOn_ground_eq]
 
-theorem unifOn_erk_eq (E : Set α) (k : ℕ) : (unifOn E k).erk = min E.encard k := by
+@[simp] theorem unifOn_erk_eq (E : Set α) (k : ℕ) : (unifOn E k).erk = min E.encard k := by
   rw [erk_def, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by

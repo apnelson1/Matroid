@@ -142,3 +142,9 @@ lemma diff_union_diff_cancel_of_inter_subset_of_subset_union (hi : s ∩ r ⊆ t
 
 @[simp] lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
   Set.ext <| by simp [and_comm]
+
+lemma _root_.HasSubset.Subset.ssubset_of_mem_not_mem {x : α} (hst : s ⊆ t) (hxt : x ∈ t)
+    (hxs : x ∉ s) : s ⊂ t := hst.ssubset_of_not_subset fun a ↦ hxs (a hxt)
+
+@[simp] lemma pair_nontrivial_iff {x y : α} : ({x,y} : Set α).Nontrivial ↔ x ≠ y :=
+  ⟨by rintro h rfl; simp at h, nontrivial_pair⟩
