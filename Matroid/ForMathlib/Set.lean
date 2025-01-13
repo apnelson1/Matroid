@@ -101,7 +101,7 @@ theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
   choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp
   use fun i ↦ {x ∈ s i | ∃ (h : x ∈ s i), f x (mem_iUnion_of_mem i h) = i}
-  refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| by simp) ?_,
+  refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| fun _ _ h ↦ h.1) ?_,
     fun i ↦ by simp only [sep_subset]⟩
   · simp only [mem_setOf_eq, not_and, not_exists, and_imp, forall_exists_index]
     exact fun a _ hfa hfi _ hfj haj ↦ hij <| by rw [← hfi, haj]

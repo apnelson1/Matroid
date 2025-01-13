@@ -11,6 +11,7 @@ linter.docPrime = false
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
+rev = "v4.16.0-rc1"
 
 [[lean_lib]]
 name = "Matroid"

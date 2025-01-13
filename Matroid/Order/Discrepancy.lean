@@ -7,17 +7,15 @@ namespace Matroid
 variable {α : Type*} {M N M₁ M₂ : Matroid α} {I J I₁ I₂ J₁ J₂ B B' B₁ B₂ B₁' B₂' X Y : Set α}
     {e f : α}
 
-namespace Quotient
-
-lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₂ ≤q M₁) (hIfin : I.Finite)
+lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶) (hIfin : I.Finite)
     (hI₀I : M₂.Basis I₀ I) (hI : M₁.Indep I) (hB₀ : M₂.Base B₀) (hB : M₁.Base B) (hB₀B : B₀ ⊆ B) :
     (I \ I₀).encard ≤ (B \ B₀).encard := by
   obtain ⟨B', hB', hIB', hB'IB⟩ := hI.exists_base_subset_union_base hB
   obtain ⟨B'', hB'', hI₀B''⟩ := hI₀I.indep.subset_basis_of_subset (hI₀I.subset.trans hIB')
-    (hB'.subset_ground.trans_eq h.ground_eq.symm)
+    (hB'.subset_ground.trans_eq h.ground_eq)
   have hB''B' := hB''.subset
 
-  replace hB'' := hB''.base_of_spanning (h.spanning_of_spanning hB'.spanning)
+  replace hB'' := hB''.base_of_spanning (h.spanning_of_spanning_of_dual hB'.spanning)
 
   have hrw1 : B' \ B = I \ B
   · rwa [subset_antisymm_iff, and_iff_left (diff_subset_diff_left hIB'), diff_subset_iff,
@@ -72,6 +70,8 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₂ ≤q M₁) (hIfi
   refine add_le_add_right (encard_le_card ?_) _
   exact inter_subset_inter_right _ (diff_subset_diff_left hIB')
 
+namespace Quotient
+
 lemma eq_of_base_indep' [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.Base B)
     (hB₂ : M₂.Indep B) : M₂ = M₁ := by
   replace hB₂ := show M₂.Base B from
@@ -80,8 +80,8 @@ lemma eq_of_base_indep' [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set α} (hB�
     (fun C hC ↦ ((hQ.cyclic_of_circuit hC).dep_of_nonempty hC.nonempty).not_indep)
 
   obtain ⟨e, he⟩ := hC.nonempty
-  simpa [he] using
-    hQ.encard_diff_le_encard_diff hC.finite (hC.diff_singleton_basis he) hCi hB₂ hB₁ rfl.subset
+  simpa [he] using encard_diff_le_encard_diff hQ.dual.weakLE hC.finite
+    (hC.diff_singleton_basis he) hCi hB₂ hB₁ rfl.subset
 
 def exists_basis_subset_pair (hQ : M₂ ≤q M₁) (X : Set α) :
     ∃ Is : Set α × Set α, Is.2 ⊆ Is.1 ∧ M₁.Basis' Is.1 X ∧ M₂.Basis' Is.2 X := by
@@ -154,7 +154,7 @@ lemma encard_basis'_diff_basis'_mono [M₂.Finitary] (hQ : M₂ ≤q M₁)
 
   have hL : L ⊆ X := hLss.trans (union_subset hI₂.subset (hKss.1.trans hI₁.subset))
 
-  exact (hQ.restrict Y).encard_diff_le_encard_diff hLfin
+  exact encard_diff_le_encard_diff (hQ.restrict Y).dual.weakLE hLfin
     (hL₀L.basis_restrict_of_subset (hL.trans hXY))
     (hLi.indep_restrict_of_subset (hL.trans hXY))
     (by rwa [base_restrict_iff']) (by rwa [base_restrict_iff']) hJss

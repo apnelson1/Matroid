@@ -44,29 +44,6 @@ lemma Indep.basis_iff_eq {I J : Set α} (hI : M.Indep I) : M.Basis J I ↔ J = I
   rintro rfl
   exact hI.basis_self
 
-theorem ext_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
-    (h : ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I)) : M₁ = M₂ := eq_of_indep_iff_indep_forall hE h
-
-theorem ext_base {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
-    (h : ∀ ⦃B⦄, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B)) : M₁ = M₂ := eq_of_base_iff_base_forall hE h
-
-lemma ext_iff_base {M₁ M₂ : Matroid α} :
-    M₁ = M₂ ↔ M₁.E = M₂.E ∧ ∀ ⦃B⦄, B ⊆ M₁.E → (M₁.Base B ↔ M₂.Base B) :=
-  ⟨fun h ↦ by simp [h], fun ⟨hE, h⟩ ↦ ext_base hE h⟩
-
-lemma ext_iff_indep {M₁ M₂ : Matroid α} :
-    M₁ = M₂ ↔ M₁.E = M₂.E ∧ ∀ ⦃I⦄, I ⊆ M₁.E → (M₁.Indep I ↔ M₂.Indep I) :=
-  ⟨fun h ↦ by simp [h], fun ⟨hE, h⟩ ↦ ext_indep hE h⟩
-
-/-- If every base of `M₁` is independent in `M₂` and vice versa, then `M₁ = M₂`. -/
-lemma ext_base_indep {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E) (h₁ : ∀ ⦃B⦄, M₁.Base B → M₂.Indep B)
-    (h₂ : ∀ ⦃B⦄, M₂.Base B → M₁.Indep B) : M₁ = M₂ := by
-  refine ext_indep hE fun I hIE ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
-  · obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
-    exact (h₁ hB).subset hIB
-  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
-  exact (h₂ hB).subset hIB
-
 lemma eq_loopyOn_or_rkPos' (M : Matroid α) : (∃ E, M = loopyOn E) ∨ M.RkPos := by
   obtain h | h := M.eq_loopyOn_or_rkPos
   · exact .inl ⟨M.E, h⟩
