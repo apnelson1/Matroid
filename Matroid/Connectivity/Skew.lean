@@ -5,7 +5,7 @@ universe u
 variable {α η : Type*} {ι : Sort*} {M : Matroid α} {e f : α} {Xs Ys Is : ι → Set α} {i j : ι}
     {B I J X X' Y Y' F : Set α}
 
-open Set
+open Set Function
 
 namespace Matroid
 

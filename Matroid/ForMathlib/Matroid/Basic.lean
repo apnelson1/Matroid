@@ -71,7 +71,7 @@ lemma Indep.iUnion_directed [Finitary M] {ι : Type*} {Is : ι → Set α} (hIs 
   · simp
   have aux : ∀ A : Set ι, A.Finite → ∃ j, ⋃ i ∈ A, Is i ⊆ Is j
   · intro A hA
-    refine hA.induction_on' ⟨hne.some, by simp⟩ ?_
+    refine hA.induction_on_subset _ ⟨hne.some, by simp⟩ ?_
     rintro i B hiA hBA hiB ⟨jB, hssjb⟩
     obtain ⟨k, hk⟩ := h_dir i jB
     simp only [mem_insert_iff, iUnion_iUnion_eq_or_left, union_subset_iff]

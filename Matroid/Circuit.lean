@@ -696,7 +696,7 @@ lemma exists_subset_finite_closure_of_subset_closure {Y : Set α} [M.Finitary]
     · exact ⟨{e}, by simpa, by simp, M.mem_closure_of_mem' rfl⟩
     obtain ⟨C, hC, heC, hCss⟩ := (mem_closure_iff_exists_circuit_of_not_mem heY).1
       (by rw[hJY.closure_eq_closure]; exact hXY he)
-    exact ⟨C \ {e}, by simpa, hC.finite.diff _, hC.mem_closure_diff_singleton_of_mem heC⟩
+    exact ⟨C \ {e}, by simpa, hC.finite.diff, hC.mem_closure_diff_singleton_of_mem heC⟩
 
   choose! Js hJs using h_choose
 

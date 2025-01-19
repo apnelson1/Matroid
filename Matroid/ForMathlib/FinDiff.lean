@@ -66,8 +66,8 @@ lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : 
 
   have hfin1 := hPQ.diff_left_finite.inter_of_left Y
   have hfin2 := hPQ.diff_right_finite.inter_of_left X
-  have hfin3 : ((Q \ P) \ X).Finite := hPQ.diff_right_finite.diff _
-  have hfin4 : ((P \ Q) \ Y).Finite := hPQ.diff_left_finite.diff _
+  have hfin3 : ((Q \ P) \ X).Finite := hPQ.diff_right_finite.diff
+  have hfin4 : ((P \ Q) \ Y).Finite := hPQ.diff_left_finite.diff
 
   rw [finDiff_iff, ← diff_union_inter (X \ Y) Q, finDiff_iff, union_diff_distrib, ← diff_diff,
     union_comm Y, ← diff_diff, union_diff_distrib, ← diff_diff (s := Y), union_comm X, ← diff_diff,
@@ -131,7 +131,7 @@ lemma FinDiff.trans {X Y Z : Set α} (hXY : FinDiff X Y) (hYZ : FinDiff Y Z) : F
   have decr : (insert f (Z \ {e}) \ Y).encard < (Z \ Y).encard := by
     rw [insert_diff_of_mem _ hfY, diff_diff_comm,
       ← encard_diff_singleton_add_one (show e ∈ Z \ Y by simp [heZ, heY]), ENat.lt_add_one_iff]
-    simp [hYZ.diff_right_finite.diff {e}]
+    simp [hYZ.diff_right_finite.diff]
 
   have IH : FinDiff Y (insert f (Z \ {e})) := hYZ.exchange_right heZ hfZ
   have hd := FinDiff.trans hXY IH

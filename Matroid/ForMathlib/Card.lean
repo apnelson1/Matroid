@@ -143,7 +143,7 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
   rw [WithTop.sum_lt_top (ι := ι) (α := ℕ) (s := Finset.univ) (f := fun i ↦ (s i \ {x}).encard)]
   intro i _
   rw [lt_top_iff_ne_top, encard_ne_top_iff]
-  exact (hfin i).diff _
+  exact (hfin i).diff
 
 theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
     {s : ι → Set α} (hs : ∀ i ∈ u, (s i).Finite) :
