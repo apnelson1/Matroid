@@ -23,7 +23,7 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶)
 
   have hfin : (B \ B').encard ≠ ⊤
   · rw [hB.encard_diff_comm hB', hrw1, encard_ne_top_iff]
-    apply hIfin.diff _
+    apply hIfin.diff
 
   have hrw2 : B'' ∩ I = I₀
   · exact Eq.symm <| hI₀I.eq_of_subset_indep (hB''.indep.inter_right I)

@@ -20,31 +20,27 @@ Topics in this repo are listed below.
 * Isomorphism : Matroid/Equiv
 * Circuits and cocircuits : Matroid/Circuit
 * Loops : Matroid/Loop
-* The rank function : Matroid/Rank
+* The rank function : Matroid/Rank/*
 * Minors : Matroid/Minor/Basic and Matroid/Minor/Iso
 * Relative Rank : Matroid/Minor/Rank
-* Flats : Matroid/Flat
+* Flats, Hyperplanes, Covers : Matroid/Flat/*
 * Truncations : Matroid/Constructions/Truncate
 * Parallel elements : Matroid/Parallel
+* Parallel and series extension : Matroid/Constructions/ParallelExtension
 * Simplicity and simplification : Matroid/Simple
-* Modular sets, pairs and families : Matroid/Modular
+* Modular sets, matroids, pairs and families : Matroid/Modular/*
 * Modular cuts, extensions and projections : Matroid/Extension
-* Circuit-hyperplane relaxation : Matroid/Relax
+* Circuit-hyperplane relaxation : Matroid/Constructions/Relax
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
-* Uniform matroids : Matroid/Uniform
-* Parallel and series extensions : Matroid/Constructions/ParallelExtension
+* Uniform matroids (finite and infinite) : Matroid/Uniform
+* Connectivity, local connectivity and skewness : Matroid/Connectivity/*
+* Cryptomorphism for flats, circuits, closure and rank : Matroid/Axioms/*
+* Quotients and the weak order : Matroid/Order/*
 
 The following currently need a few fixes to work correctly. 
 * Representability : Matroid/Representation/* 
   (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
 
-  
 
-
-Additionally, there is some material from an earlier lean3 version of the repo 
-which is essentially done but needs to be ported. This includes
-
-- Kung's theorem on excluding a line minor
-- quotients/projections
 
