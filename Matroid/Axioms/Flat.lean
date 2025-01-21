@@ -1,4 +1,4 @@
-import Matroid.Constructions.ClosureAxioms
+import Matroid.Axioms.Closure
 import Matroid.Flat.Basic
 
 open Set
