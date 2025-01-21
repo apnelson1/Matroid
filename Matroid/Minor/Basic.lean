@@ -1,4 +1,4 @@
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Matroid.ForMathlib.Set
 
 open Set

@@ -554,7 +554,7 @@ lemma ModularFlat.biInter_finite {ι : Type*} {Xs : ι → Set α} {A : Set ι}
     (hXs : ∀ i, M.ModularFlat (Xs i)) (hAne : A.Nonempty) (hAfin : A.Finite) :
     M.ModularFlat (⋂ i ∈ A, Xs i) := by
   revert hAne
-  refine hAfin.induction_on' (by simp) ?_
+  refine hAfin.induction_on_subset _ (by simp) ?_
   simp only [insert_nonempty, mem_insert_iff, iInter_iInter_eq_or_left, forall_const]
   intro i B hiA hBA hiB h
   obtain rfl | hBne := B.eq_empty_or_nonempty
@@ -849,7 +849,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.Flat F → M.er F ≤ 2 → M.
   rw [disjoint_comm, disjoint_iff_forall_ne]
   rintro _ ⟨n, hn, rfl⟩ _ ⟨m, hm, rfl⟩
   induction' n with n IH
-  · simp [f_def, show y ≠ e m by rintro rfl; simp at hye]
+  · simp [f_def, y'_def, show y ≠ e m by rintro rfl; simp at hye]
   exact (hφ n (f n) (big n)).1 m
 
 private lemma exists_of_modular_not_finitary (hM : ∀ L, M.Line L → M.ModularFlat L)

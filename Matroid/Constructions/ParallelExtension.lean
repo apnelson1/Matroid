@@ -43,16 +43,16 @@ lemma eq_addLoop_iff (he : e ∉ M.E) : M' = M.addLoop e ↔ M'.Loop e ∧ M' �
     singleton_subset_iff, and_iff_left he', subset_diff, disjoint_singleton_right, and_imp]
 
   refine ⟨fun ⟨hE, hi⟩ ↦ ⟨?_, ?_, ?_⟩, fun ⟨hi, hE, h⟩ ↦ ⟨?_, fun I hIss ↦ ?_⟩⟩
-  · rw [hi _ (singleton_subset_iff.2 he')]
+  · rw [hi (singleton_subset_iff.2 he')]
     exact fun hei ↦ he (singleton_subset_iff.1 hei.subset_ground)
   · simp [hE, he]
   · rintro I hIss heI
-    rw [and_iff_left heI, hi _ hIss]
+    rw [and_iff_left heI, hi hIss]
   · rw [← hE, insert_diff_singleton, insert_eq_of_mem he']
   obtain (heI | heI) := em (e ∈ I)
   · exact iff_of_false (fun hI ↦ hi <| hI.subset (singleton_subset_iff.2 heI))
       (fun hI ↦ he <| hI.subset_ground heI)
-  specialize h I hIss
+  specialize h hIss
   simpa [heI] using h
 
 lemma addLoop_loop (he : e ∉ M.E) : (M.addLoop e).Loop e := by
@@ -166,7 +166,7 @@ lemma parallelExtend_parallel (he : M.Nonloop e) (f : α) : (M.parallelExtend e 
     and_iff_left hf.mem_ground, parallelExtend, restrict_indep_iff, comap_indep_iff,
     image_update, image_id, image_id,
     if_pos (mem_insert_of_mem _ (show f ∈ ({f} : Set α) from rfl))]
-  exact fun hcon ↦ hef <| hcon.1.2 (by simp) (by simp) (by simp [update_noteq hef e id])
+  exact fun hcon ↦ hef <| hcon.1.2 (by simp) (by simp) (by simp [update_of_ne hef e id])
 
 lemma eq_parallelExtend_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     M' = M.parallelExtend e f ↔ M'.Parallel e f ∧ M' ＼ f = M := by

@@ -1,5 +1,5 @@
 import Matroid.Paving
-import Matroid.Rank
+import Matroid.Rank.Nat
 
 open Set
 

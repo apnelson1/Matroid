@@ -315,7 +315,7 @@ lemma Quotient.eq_of_base_indep [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set �
 
   have hfin : (B \ B'').encard ≠ ⊤
   · rw [hB₂.encard_diff_comm hB'', hrw2, encard_ne_top_iff]
-    exact (hC.finite.diff _).diff _
+    exact hC.finite.diff.diff
 
   rw [ENat.add_one_le_iff hfin] at hcard
   exact hcard.ne rfl

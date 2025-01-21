@@ -1,6 +1,6 @@
 
 import Mathlib.Order.Lattice
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Matroid.Constructions.CircuitAxioms
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 

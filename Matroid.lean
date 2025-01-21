@@ -2,7 +2,9 @@ import Matroid.Closure
 import Mathlib.Data.Matroid.Map
 import Matroid.Circuit
 import Matroid.Loop
-import Matroid.Rank
+import Matroid.Rank.ENat
+import Matroid.Rank.Nat
+import Matroid.Rank.Finite
 import Matroid.Minor.Basic
 import Matroid.Minor.Iso
 import Matroid.Flat.LowRank

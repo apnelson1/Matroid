@@ -4,7 +4,7 @@ import Mathlib.Data.Fintype.Basic
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.Matroid.Basic
-import Matroid.Rank
+import Matroid.Rank.Nat
 
 open Set Function
 
@@ -93,7 +93,7 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
       refine ⟨hf.bijOn.bijOn_update hyI hxI₀, fun v hvs ↦ ?_⟩
       obtain (rfl | hne) := eq_or_ne v y
       · simp [hg.adj hy]
-      rw [update_noteq hne]
+      rw [update_of_ne hne]
       exact hf.adj hvs
 
     simp only [Finset.le_eq_subset, Finset.subset_iff, Finset.mem_filter, Finset.mem_inter, and_imp,
@@ -110,12 +110,12 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
   · nth_rw 2 [show g y = update f y (g y) y by simp]
     simp only [Finset.coe_insert]
     apply BijOn.insert_not_mem ?_ (by simpa) (by simpa)
-    exact hf.bijOn.congr fun a haI ↦ by rw [update_noteq (by rintro rfl; contradiction)]
+    exact hf.bijOn.congr fun a haI ↦ by rw [update_of_ne (by rintro rfl; contradiction)]
 
-  simp only [Finset.coe_insert, mem_insert_iff, Finset.mem_coe, forall_eq_or_imp, update_same,
+  simp only [Finset.coe_insert, mem_insert_iff, Finset.mem_coe, forall_eq_or_imp, update_self,
     hg.adj hyJ, true_and]
   intro a haI
-  rw [update_noteq (by rintro rfl; contradiction)]
+  rw [update_of_ne (by rintro rfl; contradiction)]
   exact hf.adj haI
 
 /-- Given `M : Matroid α` and a graph `H` with bipartition `(α, β)` described by an

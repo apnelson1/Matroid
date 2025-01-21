@@ -2,7 +2,7 @@ import Matroid.Constructions.Matching
 import Mathlib.Data.Matroid.Sum
 import Mathlib.Order.Disjointed
 import Matroid.Constructions.Submodular
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Mathlib.Algebra.BigOperators.Ring
 import Matroid.ForMathlib.Set
 
