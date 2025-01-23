@@ -556,6 +556,23 @@ theorem Quotient.forall_superset_flat [FiniteRk M₁] {k : ℤ} {F F' : Set α} 
 --       exact ⟨hX2, hS⟩
 --     · sorry
 
+theorem ayuda {a b c : ℤ} (h : a ≤ b) (h2 : b ≤ c) : a ≤ c := by exact Int.le_trans h h2
+
+  --Int.le_sub_right_of_add_le h
+-- eq_sub_of_add_eq h
+
+theorem Quotient.Finiterk {M₁ M₂ : Matroid α} {X : Set α} [FiniteRk M₁] (hQ : M₂ ≤q M₁) :
+    M₂.r X ≤ M₁.r X := by
+  have h1 := hQ.intCast_rank_sub_mono (empty_subset X)
+  simp only [r_empty, CharP.cast_eq_zero, sub_zero, Nat.cast_le] at h1
+  exact h1
+
+theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤ c := by linarith
+  --exact  Nat.eq_sub_of_add_eq' rfl
+
+--theorem ayuda3 {M : Matroid α} (hE : X ⊆ M.E ) (hE1 : Y ⊆ M.E ) : M.r (X ∩ Y) + M.r ( X ∪ Y) ≤ M.r X + M.r Y :=
+  --by sorry
+
 def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} {k : ℤ} [FiniteRk M₁] (hQ : M₂ ≤q M₁)
     (hrk : (M₁.rk : ℤ) - M₂.rk = k) := ModularCut.ofForallModularPairInter M₁
     (U := { F | M₁.Flat F ∧ M₂.Flat F ∧ ((M₁.r F : ℤ) - M₂.r F = k) })
@@ -572,12 +589,53 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} {k : ℤ} [FiniteRk M₁] 
       refine Eq.symm ((fun {x y} ↦ Int.eq_iff_le_and_ge.mpr) ?_)
       rw [modularPair_iff_r] at hFF'M
       zify at hFF'M
+      have hE : M₁.E = M₂.E := Eq.symm hQ.ground_eq
       constructor
-      · --have hhelp : ↑(M₁.r (F ∩ F')) ≤ ↑(M₂.r (F ∩ F')) := by sorry
-        --rw [hFF'M.er_add]
-        --ModularPair.er_add_er
+      ·
+        have h1 : M₁.r (F ∩ F') = ↑(M₁.r F) + ↑(M₁.r F') - ↑(M₁.r (F ∪ F')) := by
+          zify
+          rw [Nat.cast_sub, Nat.cast_add ]
+          apply eq_sub_of_add_eq hFF'M.symm
+          exact r_union_le_r_add_r M₁ F F'
+        rw [h1]
+        have hsubmod : ↑(M₂.r (F ∩ F')) ≤ ↑ (M₂.r F) + ↑(M₂.r F') - M₂.r (F ∪ F')  := by
+          zify
+          rw [Nat.cast_sub, Nat.cast_add ]
+          apply Int.le_sub_right_of_add_le
+          rw [ ←Nat.cast_add, ←Nat.cast_add ]
+          apply Int.ofNat_le.mpr
+          have hfini : M₂.FiniteRk := finiteRk hQ
+          exact r_submod M₂ F F'
+          exact r_union_le_r_add_r M₂ F F'
+        rw [←add_zero k, Eq.symm (Int.sub_self k), Nat.cast_sub, Nat.cast_add]
+        nth_rewrite 1 [←hF.2.2, ←hF'.2.2]
+        have h2 : M₁.r (F ∪ F') - M₂.r (F ∪ F') ≤ k := by
+          rw [←hrk, rk_def M₁, rk_def M₂, ←hE, ←r_inter_ground]
+          nth_rewrite 2 [←r_inter_ground]
+          rw [hQ.ground_eq ]
+          exact hQ.rank_sub_mono (inter_subset_right)
+        have h3 : (M₁.r F - M₂.r F) + (M₁.r F' - M₂.r F') - (M₁.r (F ∪ F') - M₂.r (F ∪ F'))
+        ≤ ↑(M₁.r F) + ↑(M₁.r F') - ↑(M₁.r (F ∪ F')) - ↑(M₂.r (F ∩ F')) := by
+          zify
+          rw[Nat.cast_sub, Nat.cast_sub, Nat.cast_sub, Nat.cast_sub, Nat.cast_add, Nat.cast_add, Nat.cast_sub, Nat.cast_sub]
+          have hhelp : 0 ≤ M₂.r F + M₂.r F' := Nat.le_add_left 0 ((M₂.r F).add (M₂.r F'))
+          ·
+            sorry
+          · exact Finiterk hQ
+          · exact Finiterk hQ
+          · exact r_union_le_r_add_r M₁ F F'
+          · rw [ ←h1 ]
+            exact Finiterk hQ
+          · exact Finiterk hQ
+          · sorry
+        --apply Numberstuff h2 h3
+        --suffices
         sorry
-      · sorry
+
+      · rw[ ←hrk, rk_def M₁, rk_def M₂, ←hE, ←r_inter_ground ]
+        nth_rewrite 2 [←r_inter_ground]
+        rw [hQ.ground_eq ]
+        exact hQ.rank_sub_mono (inter_subset_right)
     )
 
 
