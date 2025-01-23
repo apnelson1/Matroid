@@ -154,7 +154,7 @@ section Cyclic
 
 variable {A B : Set α}
 
-/-- A cyclic set is a union of circuits -/
+/-- A cyclic set is a (possibly empty) union of circuits -/
 def Cyclic (M : Matroid α) (A : Set α) := ∃ Cs : Set (Set α), A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.Circuit C
 
 lemma Cyclic.exists (hA : M.Cyclic A) : ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.Circuit C := hA
@@ -227,11 +227,11 @@ lemma fundCct_eq_sInter (he : e ∈ M.closure I) :
   rw [fundCct, inter_eq_self_of_subset_right]
   exact sInter_subset_of_mem ⟨Subset.rfl, he⟩
 
-lemma fundCct_subset_insert (e : α) (I : Set α) : M.fundCct e I ⊆ insert e I :=
+lemma fundCct_subset_insert (M : Matroid α) (e : α) (I : Set α) : M.fundCct e I ⊆ insert e I :=
   insert_subset_insert inter_subset_left
 
 lemma fundCct_subset_ground (he : e ∈ M.E) (hI : I ⊆ M.E := by aesop_mat) : M.fundCct e I ⊆ M.E :=
-  (fundCct_subset_insert e I).trans (insert_subset he hI)
+  (M.fundCct_subset_insert e I).trans (insert_subset he hI)
 
 lemma mem_fundCct (M : Matroid α) (e : α) (I : Set α) : e ∈ fundCct M e I :=
   mem_insert _ _
@@ -243,70 +243,40 @@ lemma Indep.fundCct_eq_of_mem (hI : M.Indep I) (he : e ∈ I) : M.fundCct e I = 
   simp only [mem_setOf, singleton_subset_iff, and_iff_right he]
   exact M.mem_closure_self _ (hI.subset_ground he)
 
-lemma Indep.fundCct_circuit (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
+lemma Indep.fundCct_circuit (hI : M.Indep I) (hecl : e ∈ M.closure I) (heI : e ∉ I) :
     M.Circuit (M.fundCct e I) := by
-  rw [circuit_iff_dep_forall_diff_singleton_indep,
-    ← not_indep_iff (fundCct_subset_ground (M.closure_subset_ground I he.1)),
-    fundCct_eq_sInter he.1]
-  have hu : M.Indep (⋃₀ {J : Set α | J ⊆ I ∧ e ∈ M.closure J}) :=
-    hI.subset (sUnion_subset fun J ↦ And.left)
-  have hI' : I ∈ {J : Set α | J ⊆ I ∧ e ∈ M.closure J} := ⟨rfl.subset, he.1⟩
-  refine ⟨fun hi ↦ ?_, fun f hf ↦ ?_⟩
-  · rw [Indep.insert_indep_iff_of_not_mem] at hi
-    rw [closure_sInter_eq_biInter_closure_of_sUnion_indep _  ⟨_, hI'⟩ hu] at hi
-    · simp at hi
-    · exact hI.subset (sInter_subset_of_mem hI')
-    exact fun heIs ↦ he.2 (sInter_subset_of_mem hI' heIs)
-  obtain rfl | hne := em (e = f)
-  · refine hu.subset ?_
-    simp only [insert_diff_of_mem, mem_singleton]
-    exact
-      subset_trans diff_subset ((sInter_subset_of_mem hI').trans (subset_sUnion_of_mem hI'))
-  rw [mem_insert_iff, mem_sInter, eq_comm, iff_false_intro hne, false_or] at hf
-  have hi : M.Indep (⋂₀ {J : Set α | J ⊆ I ∧ e ∈ M.closure J} \ {f}) :=
-    hI.subset (diff_subset.trans (sInter_subset_of_mem hI'))
-  rw [← insert_diff_singleton_comm hne, hi.insert_indep_iff_of_not_mem, mem_diff,
-    and_iff_right ((M.closure_subset_ground _) he.1)]
-  · intro hclosure
-    exact (hf _ ⟨diff_subset.trans (sInter_subset_of_mem hI'), hclosure⟩).2 rfl
-  exact fun h'e ↦ he.2 (diff_subset.trans (sInter_subset_of_mem hI') h'e)
+  apply (hI.inter_right _).insert_circuit_of_forall (by simp [heI])
+  · rw [(hI.subset _).closure_inter_eq_inter_closure, mem_inter_iff, and_iff_right hecl,
+      hI.closure_sInter_eq_biInter_closure_of_forall_subset _
+      (by simp (config := {contextual := true}))]
+    · simp
+    · exact ⟨I, rfl.subset, hecl⟩
+    exact union_subset rfl.subset (sInter_subset_of_mem ⟨rfl.subset, hecl⟩)
+  simp only [mem_inter_iff, mem_sInter, mem_setOf_eq, and_imp]
+  exact fun f hfI hf hecl ↦ (hf _ (diff_subset.trans inter_subset_left) hecl).2 rfl
 
-lemma Indep.mem_fundCct_iff (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
+lemma Indep.mem_fundCct_iff (hI : M.Indep I) (hecl : e ∈ M.closure I) (heI : e ∉ I) :
     x ∈ M.fundCct e I ↔ M.Indep (insert e I \ {x}) := by
   obtain (rfl | hne) := eq_or_ne x e
-  · simp [hI.subset diff_subset, mem_fundCct]
-  obtain (hxI | hxI) := em' (x ∈ I)
-  · refine iff_of_false (not_mem_subset (M.fundCct_subset_insert _ _) (by simp [hne, hxI])) ?_
-    rw [diff_singleton_eq_self (by simp [hne, hxI]), hI.insert_indep_iff_of_not_mem he.2]
-    simp [he.1]
+  · simp [hI.diff, mem_fundCct]
   suffices (∀ t ⊆ I, e ∈ M.closure t → x ∈ t) ↔ e ∉ M.closure (I \ {x}) by
-    simpa [fundCct_eq_sInter he.1, hne, ← insert_diff_singleton_comm hne.symm,
-    and_iff_right (show e ∈ M.E by aesop_mat),
-    (hI.subset diff_subset).insert_indep_iff_of_not_mem (show e ∉ I \ {x} by simp [he.2])]
-  refine ⟨fun h he ↦ (h _ diff_subset he).2 rfl,
-    fun h J hJI heJ ↦ by_contra fun hxJ ↦ hI.not_mem_closure_diff_of_mem hxI ?_⟩
-  rw [← union_eq_self_of_subset_left (subset_diff_singleton hJI hxJ),
-    ← M.closure_union_closure_left_eq]
-  have h1 : e ∈ M.closure (insert x (I \ {x})) := by simpa [hxI] using he.1
-  exact mem_of_mem_of_subset (mem_closure_insert h h1)
-    (M.closure_subset_closure (insert_subset (.inl heJ) subset_union_right))
+    simpa [fundCct_eq_sInter hecl, hne, ← insert_diff_singleton_comm hne.symm,
+      (hI.diff _).insert_indep_iff, mem_ground_of_mem_closure hecl, heI]
+  refine ⟨fun h hecl ↦ (h _ diff_subset hecl).2 rfl, fun h J hJ heJ ↦ by_contra fun hxJ ↦ h ?_⟩
+  exact M.closure_subset_closure (subset_diff_singleton hJ hxJ) heJ
 
-lemma Base.fundCct_circuit {B : Set α} (hB : M.Base B) (hx : x ∈ M.E \ B) :
-    M.Circuit (M.fundCct x B) := by
-  apply hB.indep.fundCct_circuit; rwa [hB.closure_eq]
+lemma Base.fundCct_circuit {B : Set α} (hB : M.Base B) (hxE : x ∈ M.E) (hxB : x ∉ B) :
+    M.Circuit (M.fundCct x B) :=
+  hB.indep.fundCct_circuit (by rwa [hB.closure_eq]) hxB
 
 end Fundamental
 
 lemma Dep.exists_circuit_subset (hX : M.Dep X) : ∃ C, C ⊆ X ∧ M.Circuit C := by
-  rw [dep_iff, indep_iff_forall_not_mem_closure_diff] at hX
-  push_neg at hX
-  obtain ⟨⟨e, he, heX⟩, hXE⟩ := hX
-  -- Why doesn't `aesop_mat` work on the next line?
-  obtain ⟨I, hI⟩ := M.exists_basis (X \ {e}) (diff_subset.trans hXE)
-  rw [← hI.closure_eq_closure] at heX
-  exact ⟨_, (fundCct_subset_insert e I).trans
-    (insert_subset he (hI.subset.trans diff_subset)),
-    hI.indep.fundCct_circuit ⟨heX, not_mem_subset hI.subset (not_mem_diff_of_mem rfl)⟩⟩
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  obtain ⟨e, heX, heI⟩ := exists_of_ssubset
+    (hI.subset.ssubset_of_ne (by rintro rfl; exact hI.indep.not_dep hX))
+  exact ⟨M.fundCct e I, (M.fundCct_subset_insert e I).trans (insert_subset heX hI.subset),
+    hI.indep.fundCct_circuit (hI.subset_closure heX) heI⟩
 
 lemma dep_iff_superset_circuit (hX : X ⊆ M.E := by aesop_mat) :
     M.Dep X ↔ ∃ C, C ⊆ X ∧ M.Circuit C :=
@@ -314,9 +284,6 @@ lemma dep_iff_superset_circuit (hX : X ⊆ M.E := by aesop_mat) :
 
 lemma dep_iff_superset_circuit' : M.Dep X ↔ (∃ C, C ⊆ X ∧ M.Circuit C) ∧ X ⊆ M.E :=
   ⟨fun h ↦ ⟨h.exists_circuit_subset, h.subset_ground⟩, fun ⟨⟨C, hCX, hC⟩, h⟩ ↦ hC.dep.superset hCX⟩
-
--- lemma Indep.exists_circuit_of_insert_dep (hI : M.Indep I) (hdep : M.Dep (insert e I)) :
---     ∃
 
 lemma indep_iff_forall_subset_not_circuit' :
     M.Indep I ↔ (∀ C, C ⊆ I → ¬M.Circuit C) ∧ I ⊆ M.E := by
@@ -333,8 +300,8 @@ lemma mem_closure_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
   refine ⟨fun h ↦ ?_, fun ⟨C, hC, heC, hCX⟩ ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_basis X
     rw [← hI.closure_eq_closure] at h
-    exact ⟨M.fundCct e I, hI.indep.fundCct_circuit ⟨h, not_mem_subset hI.subset he⟩,
-      M.mem_fundCct e I, (fundCct_subset_insert _ _).trans (insert_subset_insert hI.subset)⟩
+    exact ⟨M.fundCct e I, hI.indep.fundCct_circuit h (not_mem_subset hI.subset he),
+      M.mem_fundCct e I, (M.fundCct_subset_insert _ _).trans (insert_subset_insert hI.subset)⟩
   refine ((hC.subset_closure_diff_singleton e).trans (M.closure_subset_closure ?_)) heC
   rwa [diff_subset_iff, singleton_union]
 
@@ -435,11 +402,11 @@ lemma Circuit.eq_fundCct_of_subset_insert_indep (hC : M.Circuit C) (hI : M.Indep
       (by simpa using subset_diff_singleton hCI (not_mem_subset hC.subset_ground he))).not_dep
       hC.dep
   by_contra! hne
-  obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination
-    (hI.fundCct_circuit (hI.insert_dep_iff.1 <| hC.dep.superset hCI)) hne e
+  obtain ⟨hecl, heI⟩ := (hI.insert_dep_iff.1 <| hC.dep.superset hCI)
+  obtain ⟨Cf, hCf, hCfss⟩ := hC.elimination (hI.fundCct_circuit hecl heI) hne e
   refine hCf.dep.not_indep (hI.subset (hCfss.trans ?_))
   rw [diff_subset_iff, singleton_union, union_subset_iff, and_iff_right hCI]
-  exact fundCct_subset_insert _ _
+  apply fundCct_subset_insert
 
 lemma ext_circuit {M₁ M₂ : Matroid α} (hE : M₁.E = M₂.E)
     (h : ∀ C, C ⊆ M₁.E → (M₁.Circuit C ↔ M₂.Circuit C)) : M₁ = M₂ := by
@@ -606,8 +573,7 @@ lemma rk_Pos_iff_exists_cocircuit : M.RkPos ↔ ∃ K, M.Cocircuit K := by
 def fundCocct (e : α) (B : Set α) := M✶.fundCct e (M✶.E \ B)
 
 lemma fundCocct_cocircuit (he : e ∈ B) (hB : M.Base B) : M.Cocircuit <| M.fundCocct e B := by
-  apply hB.compl_base_dual.indep.fundCct_circuit
-  simp only [mem_diff, he, not_true_eq_false, and_false, not_false_eq_true, and_true]
+  apply hB.compl_base_dual.indep.fundCct_circuit _ (by simp [he])
   rw [hB.compl_base_dual.closure_eq, dual_ground]
   exact hB.subset_ground he
 
@@ -616,7 +582,7 @@ lemma mem_fundCocct (M : Matroid α) (e : α) (B : Set α) : e ∈ M.fundCocct e
 
 lemma fundCocct_subset_insert_compl (M : Matroid α) (e : α) (B : Set α) :
     M.fundCocct e B ⊆ insert e (M.E \ B) :=
-  fundCct_subset_insert _ _
+  fundCct_subset_insert ..
 
 lemma fundCocct_inter_eq (M : Matroid α) {B : Set α} (he : e ∈ B) :
     (M.fundCocct e B) ∩ B = {e} := by
@@ -789,14 +755,6 @@ section BasisExchange
 
 variable {I₁ I₂ B₁ B₂ : Set α}
 
-lemma Indep.rev_exchange_indep_iff (hI : M.Indep I) (he : e ∈ M.closure I \ I) :
-    M.Indep (insert e I \ {f}) ↔ f ∈ M.fundCct e I := by
-  simp_rw [indep_iff_forall_subset_not_circuit', and_iff_left (diff_subset.trans
-    (insert_subset ((M.closure_subset_ground I) he.1) hI.subset_ground)), imp_not_comm, subset_diff,
-    disjoint_singleton_right, not_and, not_not]
-  exact ⟨fun h ↦ h _ (hI.fundCct_circuit he) (fundCct_subset_insert _ _),
-    fun h C hC hCeI ↦ by rwa [hC.eq_fundCct_of_subset_insert_indep hI hCeI]⟩
-
 /- Given two bases `B₁,B₂` of `M` and an element `e` of `B₁ \ B₂`, we can find an `f ∈ B₂ \ B₁`
   so that swapping `e` for `f` in yields bases in both `B₁` and `B₂`.  -/
 lemma Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e ∈ B₁ \ B₂) :
@@ -807,12 +765,12 @@ lemma Base.strong_exchange (hB₁ : M.Base B₁) (hB₂ : M.Base B₂) (he : e �
       hB₁.exchange_base_of_indep' he.1 hf.2 h₂⟩
   have he₁ : e ∈ M.closure B₂ \ B₂ := by
     rw [hB₂.closure_eq]; exact ⟨hB₁.subset_ground he.1, he.2⟩
-  simp_rw [hB₂.indep.rev_exchange_indep_iff he₁]
+  simp_rw [← hB₂.indep.mem_fundCct_iff he₁.1 he₁.2]
   by_contra! h
 
-  have hC := hB₂.indep.fundCct_circuit he₁
+  have hC := hB₂.indep.fundCct_circuit he₁.1 he₁.2
   have hCss : M.fundCct e B₂ \ {e} ⊆ B₂ := by
-    rw [diff_subset_iff, singleton_union]; exact fundCct_subset_insert _ _
+    rw [diff_subset_iff, singleton_union]; exact fundCct_subset_insert ..
 
   have hclosure : M.fundCct e B₂ ⊆ M.closure (B₁ \ {e}) := by
     refine (hC.subset_closure_diff_singleton e).trans
