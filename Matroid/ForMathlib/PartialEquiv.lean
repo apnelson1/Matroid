@@ -81,24 +81,24 @@ variable [DecidableEq α] [DecidableEq β] {φ φ' : PartialEquiv α β} {a : α
   target := insert b e.target
   map_source' := by
     rintro x (rfl | hx)
-    · rw [update_same]
+    · rw [update_self]
       apply mem_insert
     rw [update_apply, if_neg (by rintro rfl; exact ha hx)]
     exact mem_insert_of_mem _ <| e.map_source hx
   map_target' := by
     rintro x (rfl | hx)
-    · rw [update_same]
+    · rw [update_self]
       apply mem_insert
     rw [update_apply, if_neg (by rintro rfl; exact hb hx)]
     exact mem_insert_of_mem _ <| e.map_target hx
   left_inv' := by
     rintro x (rfl | hx)
-    · rw [update_same, update_same]
+    · rw [update_self, update_self]
     rw [update_apply, update_apply, if_neg (show x ≠ a from fun h ↦ ha <| h ▸ hx),
       if_neg (by rintro rfl; exact hb <| e.map_source hx), e.left_inv hx]
   right_inv' := by
     rintro x (rfl | hx)
-    · rw [update_same, update_same]
+    · rw [update_self, update_self]
     rw [update_apply, update_apply, if_neg (show x ≠ b from fun h ↦ hb <| h ▸ hx),
       if_neg (by rintro rfl; exact ha <| e.map_target hx), e.right_inv hx]
 

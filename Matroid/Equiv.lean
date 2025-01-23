@@ -1,4 +1,4 @@
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Matroid.ForMathlib.PreimageVal
 import Matroid.ForMathlib.Logic_Embedding_Set
 import Matroid.ForMathlib.Matroid.Basic

@@ -433,11 +433,11 @@ lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.B
     rw [hrw, ← encard_diff_singleton_add_one (show e ∈ B' \ B from ⟨heB', heB⟩),
       ENat.lt_add_one_iff]
     simp_rw [encard_ne_top_iff]
-    exact h_fin.diff_right_finite.diff _
+    exact h_fin.diff_right_finite.diff
 
   apply hM.base_of_base_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
   rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
-    and_iff_right (h_fin.diff_left_finite.diff _), ← singleton_union, union_comm, ← diff_diff,
+    and_iff_right h_fin.diff_left_finite.diff, ← singleton_union, union_comm, ← diff_diff,
     diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
     ← WithTop.add_right_cancel_iff (a := 1) (by simp),
     encard_diff_singleton_add_one (show f ∈ B \ B' from ⟨hfB, hfB'⟩),
@@ -457,7 +457,7 @@ lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
   intro hB
   obtain ⟨B₀, hB₀⟩ := M.exists_base
   refine hM.base_of_base_of_finDiff hB₀ ?_ hBE
-  rw [finDiff_iff, and_iff_right (hB₀.finite.diff _),
+  rw [finDiff_iff, and_iff_right hB₀.finite.diff,
     ← WithTop.add_right_cancel_iff (a := (B₀ ∩ B).encard), encard_diff_add_encard_inter,
     inter_comm, encard_diff_add_encard_inter, hB₀.encard, hB]
   exact (hB₀.finite.inter_of_left B).encard_lt_top.ne

@@ -34,8 +34,9 @@ lemma WeakLE.indep_of_indep (h : N ≤w M) (hI : N.Indep I) : M.Indep I :=
 
 lemma WeakLE.spanning_of_spanning_of_dual {S : Set α} (h : N✶ ≤w M✶) (hS : N.Spanning S) :
     M.Spanning S := by
-  sorry
-  -- rw [spanning_iff_exists_base_subset'] at hS
+  rw [spanning_iff_compl_coindep (hS.subset_ground.trans (show N.E = M.E from h.ground_eq).subset),
+    coindep_def, ← dual_ground, ← h.ground_eq]
+  exact h.indep_of_indep hS.compl_coindep
 
 lemma WeakLE.dep_of_dep (h : N ≤w M) (hD : M.Dep D) : N.Dep D := by
   have hIN := h.subset_ground_of_subset_ground_right hD.subset_ground

@@ -1,4 +1,4 @@
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Matroid.ForMathlib.Set
 
 open Set
@@ -30,7 +30,7 @@ instance delElem {α : Type*} : HasDelete (Matroid α) α :=
   ⟨fun M e ↦ M.delete {e}⟩
 
 instance delete_finite [M.Finite] : (M ＼ D).Finite :=
-  ⟨M.ground_finite.diff D⟩
+  ⟨M.ground_finite.diff⟩
 
 instance deleteElem_finite [Matroid.Finite M] : (M ＼ e).Finite :=
   delete_finite

@@ -3,15 +3,8 @@ import Mathlib.Data.Set.Lattice
 variable {α ι : Type*}
 namespace Set
 
-lemma iInter_subset_iUnion [Nonempty ι] (s : ι → Set α) : ⋂ i, s i ⊆ ⋃ i, s i :=
-  (iInter_subset s (Classical.arbitrary ι)).trans (subset_iUnion s (Classical.arbitrary ι))
-
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
   (sInter_subset_of_mem hs.some_mem).trans (subset_sUnion_of_mem hs.some_mem)
-
-lemma biInter_subset_biUnion (s : ι → Set α) {u : Set ι} (hu : u.Nonempty) :
-    ⋂ i ∈ u, s i ⊆ ⋃ i ∈ u, s i :=
-  (biInter_subset_of_mem hu.choose_spec).trans (subset_biUnion_of_mem hu.choose_spec)
 
 lemma inter_distrib_biInter (s : ι → Set α) {u : Set ι} (hu : u.Nonempty) (t : Set α) :
     t ∩ ⋂ i ∈ u, s i = ⋂ i ∈ u, t ∩ s i := by
@@ -97,16 +90,16 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
   subset_antisymm (by simp) (image_subset f (subset_preimage_image _ _))
 
-theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
-    ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
-  choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp
-  use fun i ↦ {x ∈ s i | ∃ (h : x ∈ s i), f x (mem_iUnion_of_mem i h) = i}
-  refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| fun _ _ h ↦ h.1) ?_,
-    fun i ↦ by simp only [sep_subset]⟩
-  · simp only [mem_setOf_eq, not_and, not_exists, and_imp, forall_exists_index]
-    exact fun a _ hfa hfi _ hfj haj ↦ hij <| by rw [← hfi, haj]
-  · simp only [iUnion_subset_iff]
-    exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
+-- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
+--     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
+--   choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp
+--   use fun i ↦ {x ∈ s i | ∃ (h : x ∈ s i), f x (mem_iUnion_of_mem i h) = i}
+--   refine ⟨fun i j hij ↦ Set.disjoint_left.2 ?_, subset_antisymm (iUnion_mono <| fun _ _ h ↦ h.1) ?_,
+--     fun i ↦ by simp only [sep_subset]⟩
+--   · simp only [mem_setOf_eq, not_and, not_exists, and_imp, forall_exists_index]
+--     exact fun a _ hfa hfi _ hfj haj ↦ hij <| by rw [← hfi, haj]
+--   · simp only [iUnion_subset_iff]
+--     exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
 
 
 variable {s t r : Set α}

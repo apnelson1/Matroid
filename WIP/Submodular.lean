@@ -1,6 +1,6 @@
 
 import Mathlib.Order.Lattice
-import Matroid.Rank
+import Matroid.Rank.Nat
 import Matroid.Constructions.CircuitAxioms
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
@@ -108,7 +108,7 @@ open Matroid
   linarith [h I' h' h_nonempty]
 
 -- definition at bottom of page 406
-structure PolymatroidFn [Lattice α] [Bot α] [LinearOrderedAddCommMonoid β] (f : α → β) :=
+structure PolymatroidFn [Lattice α] [Bot α] [LinearOrderedAddCommMonoid β] (f : α → β) where
   (submodular : Submodular f)
   (mono : Monotone f)
   (zero_at_bot : f ⊥ = 0)
@@ -161,7 +161,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
   rw [← Set.coe_toFinset B] at hB
   refine ⟨?_, ?_⟩; swap
   · intro Y _
-    rw [← hB.r]
+    rw [← hB.r_eq_r]
     simp only [M] at hB
     obtain ⟨W, _, hW, h⟩ := polymatroid_rank_eq_on_indep hB.indep
     rw [hW]
@@ -226,7 +226,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
     case h₁ Y hY IH =>
       obtain ⟨T, a, ha, b, hb, hab, h⟩ := Nontrivial.exists_cons_eq hY
       set Y' := (cons b T hb) with hY'
-      have hIH := IH Y' (nonempty_cons hb) (by rw [← h]; exact ssubset_cons _)
+      have hIH := IH Y' (cons_nonempty hb) (by rw [← h]; exact ssubset_cons _)
       rw [← h, cons_eq_insert, ← hY', biUnion_insert, biUnion_insert]
       calc f (Ie a ∪ Y'.biUnion Ie)
         _ ≤ f (Ie a) + f (Y'.biUnion Ie) - f (Ie a ∩ Y'.biUnion Ie) := by
@@ -366,14 +366,14 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
       suffices K₁.biUnion A = K₁.biUnion (Function.update A i ((A i).erase x₁)) by rwa [← this]
       refine biUnion_congr rfl (fun j hj ↦ ?_)
       have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₁)
-      exact Eq.symm (Function.update_noteq (id (Ne.symm this)) ((A i).erase x₁) A)
+      exact Eq.symm (Function.update_of_ne (id (Ne.symm this)) ((A i).erase x₁) A)
     by_cases hiK₂ : i ∈ K₂; swap
     · absurd hK₂; push_neg
       specialize h K₂
       suffices K₂.biUnion A = K₂.biUnion (Function.update A i ((A i).erase x₂)) by rwa [← this]
       refine biUnion_congr rfl (fun j hj ↦ ?_)
       have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₂)
-      exact Eq.symm (Function.update_noteq (id (Ne.symm this)) ((A i).erase x₂) A)
+      exact Eq.symm (Function.update_of_ne (id (Ne.symm this)) ((A i).erase x₂) A)
     suffices h_bad : (K₁.card : ℤ) + K₂.card - 1 ≤ K₁.card + K₂.card - 2 by linarith
     set A'₁ := (Function.update A i ((A i).erase x₁))
     set A'₂ := (Function.update A i ((A i).erase x₂))
@@ -399,33 +399,33 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
           · refine mem_union_left _ ?_
             simp only [mem_biUnion, A'₁]
             use i
-            simp only [Function.update_same, mem_erase]
+            simp only [Function.update_self, mem_erase]
             exact ⟨(by assumption), hx₁x₂.symm, hx₂⟩
           refine mem_union_right _ ?_
           simp only [mem_biUnion, A'₂]
           use i
-          simp only [Function.update_same, mem_erase]
+          simp only [Function.update_self, mem_erase]
           exact ⟨hiK₂, h_ne, (by assumption)⟩
         · refine mem_union_left _ ?_
           simp only [mem_biUnion, A'₁]
           use j
-          simp only [Function.update_noteq h_neij.symm ((A i).erase x₁) A]
+          simp only [Function.update_of_ne h_neij.symm ((A i).erase x₁) A]
           exact ⟨hj, hx⟩
         · obtain rfl | h_ne := eq_or_ne x x₂
           · refine mem_union_left _ ?_
             simp only [mem_biUnion, A'₁]
             use i
-            simp only [Function.update_same, mem_erase]
+            simp only [Function.update_self, mem_erase]
             exact ⟨(by assumption), hx₁x₂.symm, hx₂⟩
           refine mem_union_right _ ?_
           simp only [mem_biUnion, A'₂]
           use i
-          simp only [Function.update_same, mem_erase]
+          simp only [Function.update_self, mem_erase]
           exact ⟨hiK₂, h_ne, (by assumption)⟩
         refine mem_union_right _ ?_
         simp only [mem_biUnion, A'₂]
         use j
-        simp only [Function.update_noteq h_neij.symm ((A i).erase x₂) A]
+        simp only [Function.update_of_ne h_neij.symm ((A i).erase x₂) A]
         exact ⟨hj, hx⟩
       _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) +
           f ((K₁.erase i).biUnion A ∩ (K₂.erase i).biUnion A) := by
@@ -445,8 +445,8 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
         <;> simp only [mem_biUnion, A'₁, A'₂]
         <;> use j
         <;> refine ⟨hj, ?_⟩
-        · simp only [Function.update_noteq (ne_of_mem_erase hj) ((A i).erase x₁) A]; exact hx
-        simp only [Function.update_noteq (ne_of_mem_erase hj) ((A i).erase x₂) A]; exact hx
+        · simp only [Function.update_of_ne (ne_of_mem_erase hj) ((A i).erase x₁) A]; exact hx
+        simp only [Function.update_of_ne (ne_of_mem_erase hj) ((A i).erase x₂) A]; exact hx
       _ ≤ f (K₁.biUnion A'₁ ∪ K₂.biUnion A'₂) + f (K₁.biUnion A'₁ ∩ K₂.biUnion A'₂) := by
         simp only [add_le_add_iff_left, Nat.cast_le]
         apply hf_mono
@@ -463,18 +463,18 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
   have hA'_nonempty : ∀ i, (A' i).Nonempty := by
     intro j
     obtain rfl | h_ne := eq_or_ne i j
-    · simp only [A', Function.update_same]
+    · simp only [A', Function.update_self]
       exact (erase_nonempty hx_mem).mpr hAi
-    simp only [A', Function.update_noteq h_ne.symm, hA_nonempty j]
+    simp only [A', Function.update_of_ne h_ne.symm, hA_nonempty j]
   obtain ⟨e, he_mem, he⟩ := (generalized_halls_marriage hA'_nonempty hf_submodular hf_mono).mpr hA'
   use e
   refine ⟨?_, he⟩
   intro j
   specialize he_mem j
   obtain rfl | h_ne := eq_or_ne i j
-  · simp only [A', Function.update_same] at he_mem
+  · simp only [A', Function.update_self] at he_mem
     exact mem_of_mem_erase he_mem
-  simpa [A', Function.update_noteq h_ne.symm] using he_mem
+  simpa [A', Function.update_of_ne h_ne.symm] using he_mem
 termination_by ∑ i, (A i).card
 decreasing_by
   simp_wf
@@ -482,13 +482,13 @@ decreasing_by
   · intro j hj
     refine card_le_card ?_
     obtain rfl | h_ne := eq_or_ne i j
-    · simp only [Function.update_same]
+    · simp only [Function.update_self]
       exact erase_subset x (A i)
-    simp only [Function.update_noteq h_ne.symm, subset_rfl]
+    simp only [Function.update_of_ne h_ne.symm, subset_rfl]
   use i
   refine ⟨(by simp only [mem_univ]), ?_⟩
   refine card_lt_card ?_
-  simp only [Function.update_same]
+  simp only [Function.update_self]
   exact erase_ssubset hx_mem
 
 theorem generalized_halls_marriage' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
@@ -499,31 +499,31 @@ theorem generalized_halls_marriage' {ι : Type*} [DecidableEq ι] [Fintype ι] [
     (∀ K : Finset ↑I, K.card ≤ f (K.biUnion A)) := by
   exact generalized_halls_marriage hA_nonempty hf_submodular hf_mono
 
-variable {ι : Type*} [Fintype ι] [Fintype α] [DecidableEq α]
+variable {ι : Type*}
 
-structure PartialTransversal (A : ι → Finset α) :=
+structure PartialTransversal (A : ι → Finset α) where
   (edges : Finset (ι × α))
   (mem : ∀ ⦃e⦄, e ∈ edges → e.2 ∈ A e.1)
   (uniq : ∀ ⦃e⦄, e ∈ edges → ∀ ⦃f⦄, f ∈ edges → e.1 = f.1 → e.2 = f.2)
   (inj : ∀ ⦃e⦄, e ∈ edges → ∀ ⦃f⦄, f ∈ edges → e.2 = f.2 → e.1 = f.1)
 
-variable {A : ι → Finset α} [DecidableEq ι] [DecidableEq α]
+variable {A : ι → Finset α}
 
-def PartialTransversal.left (T : PartialTransversal A) :
+def PartialTransversal.left [DecidableEq ι] (T : PartialTransversal A) :
     Finset ι :=
   T.edges.image Prod.fst
 
-def PartialTransversal.right (T : PartialTransversal A) :
+def PartialTransversal.right [DecidableEq α] (T : PartialTransversal A) :
     Finset α :=
   T.edges.image Prod.snd
 
-lemma PartialTransversal.left_mem_left {T : PartialTransversal A} {e : ι × α} (h : e ∈ T.edges) :
-    e.1 ∈ T.left := by
+lemma PartialTransversal.left_mem_left [DecidableEq ι] {T : PartialTransversal A} {e : ι × α}
+    (h : e ∈ T.edges) : e.1 ∈ T.left := by
   simp only [left, mem_image]
   use e
 
-lemma PartialTransversal.right_mem_right {T : PartialTransversal A} {e : ι × α} (h : e ∈ T.edges) :
-    e.2 ∈ T.right := by
+lemma PartialTransversal.right_mem_right [DecidableEq α] {T : PartialTransversal A} {e : ι × α}
+    (h : e ∈ T.edges) : e.2 ∈ T.right := by
   simp only [right, mem_image]
   use e
 
@@ -537,86 +537,92 @@ lemma PartialTransversal.inj' {T : PartialTransversal A} {i j : ι} {x : α} :
   intro hi hj
   exact T.inj hi hj rfl
 
-lemma PartialTransversal.mem_left {T : PartialTransversal A}
+lemma PartialTransversal.mem_left [DecidableEq ι] {T : PartialTransversal A}
     {i : ι} (h : i ∈ T.left) : ∃! x, ⟨i, x⟩ ∈ T.edges := by
   simp only [PartialTransversal.left, mem_image, Prod.exists,
     exists_and_right, exists_eq_right] at h
-  refine exists_unique_of_exists_of_unique h (fun x y ↦ T.uniq')
+  refine existsUnique_of_exists_of_unique h (fun x y ↦ T.uniq')
 
-lemma PartialTransversal.mem_right {T : PartialTransversal A}
+lemma PartialTransversal.mem_right [DecidableEq α] {T : PartialTransversal A}
     {x : α} (h : x ∈ T.right) : ∃! i, ⟨i, x⟩ ∈ T.edges := by
   simp only [PartialTransversal.right, mem_image, Prod.exists,
     exists_and_right, exists_eq_right] at h
-  refine exists_unique_of_exists_of_unique h (fun x y ↦ T.inj')
+  refine existsUnique_of_exists_of_unique h (fun x y ↦ T.inj')
 
-lemma PartialTransversal.mem_left_iff {T : PartialTransversal A}
+lemma PartialTransversal.mem_left_iff [DecidableEq ι] {T : PartialTransversal A}
     {i : ι} : i ∈ T.left ↔ ∃ x, ⟨i, x⟩ ∈ T.edges := by
   refine ⟨fun h ↦ (T.mem_left h).exists, fun h ↦ ?_⟩
   simp only [left, mem_image]
   obtain ⟨x, hx⟩ := h
   use (i, x)
 
-lemma PartialTransversal.mem_right_iff {T : PartialTransversal A}
+lemma PartialTransversal.mem_right_iff [DecidableEq α] {T : PartialTransversal A}
     {x : α} : x ∈ T.right ↔ ∃ i, ⟨i, x⟩ ∈ T.edges := by
   refine ⟨fun h ↦ (T.mem_right h).exists, fun h ↦ ?_⟩
   simp only [right, mem_image]
   obtain ⟨i, hi⟩ := h
   use (i, x)
 
-def PartialTransversal.fun (T : PartialTransversal A) : T.left → α :=
+def PartialTransversal.fun [Fintype α] [DecidableEq ι]
+  (T : PartialTransversal A) [DecidablePred (· ∈ T.edges)] : T.left → α :=
   fun i ↦ Fintype.choose _ (PartialTransversal.mem_left i.property)
 
-lemma PartialTransversal.fun_mem_edges {T : PartialTransversal A} (i : T.left) :
-    ⟨i, T.fun i⟩ ∈ T.edges := by
+lemma PartialTransversal.fun_mem_edges [Fintype α] [DecidableEq ι] {T : PartialTransversal A}
+    [DecidablePred (· ∈ T.edges)] (i : T.left) : ⟨i, T.fun i⟩ ∈ T.edges := by
   exact Fintype.choose_spec _ (PartialTransversal.mem_left i.property)
 
-lemma PartialTransversal.fun_mem_right {T : PartialTransversal A} (i : T.left) :
-    T.fun i ∈ T.right := by
+lemma PartialTransversal.fun_mem_right [Fintype α] [DecidableEq ι] [DecidableEq α]
+    {T : PartialTransversal A} [DecidablePred (· ∈ T.edges)] (i : T.left) : T.fun i ∈ T.right := by
   exact T.right_mem_right <| T.fun_mem_edges i
 
-lemma PartialTransversal.fun_mem {T : PartialTransversal A} (i : T.left) : T.fun i ∈ A i := by
+lemma PartialTransversal.fun_mem [Fintype α] [DecidableEq ι] [DecidableEq α]
+    {T : PartialTransversal A} [DecidablePred (· ∈ T.edges)] (i : T.left) : T.fun i ∈ A i := by
   exact T.mem <| T.fun_mem_edges i
 
-lemma PartialTransversal.fun_inj {T : PartialTransversal A} {i j : T.left}
+lemma PartialTransversal.fun_inj [Fintype α] [DecidableEq ι] [DecidableEq α]
+    {T : PartialTransversal A} [DecidablePred (· ∈ T.edges)] {i j : T.left}
     (h : T.fun i = T.fun j) : i = j := by
   exact SetCoe.ext <| T.inj (T.fun_mem_edges i) (T.fun_mem_edges j) h
 
-lemma PartialTransversal.fun_injective (T : PartialTransversal A) : T.fun.Injective :=
+lemma PartialTransversal.fun_injective [Fintype α] [DecidableEq ι] [DecidableEq α]
+    (T : PartialTransversal A) [DecidablePred (· ∈ T.edges)]: T.fun.Injective :=
   fun _ _ h ↦ fun_inj h
 
 def PartialTransversal.Total (T : PartialTransversal A) := ∀ i, ∃ x, ⟨i, x⟩ ∈ T.edges
 
-lemma PartialTransversal.Total.mem_left {T : PartialTransversal A} (hT : T.Total)
+lemma PartialTransversal.Total.mem_left [DecidableEq ι] {T : PartialTransversal A} (hT : T.Total)
     {i : ι} : i ∈ T.left := by
   simp only [PartialTransversal.left, mem_image, Prod.exists, exists_and_right, exists_eq_right]
   exact hT i
 
-lemma PartialTransversal.Total.left_eq_univ {T : PartialTransversal A} (hT : T.Total) :
-    T.left = univ := by
+lemma PartialTransversal.Total.left_eq_univ [DecidableEq ι] [Fintype ι]
+    {T : PartialTransversal A} (hT : T.Total) : T.left = univ := by
   refine univ_subset_iff.mp (fun i _ ↦ hT.mem_left)
 
 def PartialTransversal.card (T : PartialTransversal A) : ℕ :=
   T.edges.card
 
-@[simp] lemma PartialTransversal.card_left {T : PartialTransversal A} : T.left.card = T.card := by
+@[simp] lemma PartialTransversal.card_left [DecidableEq ι] {T : PartialTransversal A} :
+    T.left.card = T.card := by
   refine card_image_iff.mpr <| fun e he e' he' h ↦ Prod.ext_iff.mpr ⟨h, T.uniq he he' h⟩
 
-@[simp] lemma PartialTransversal.card_right {T : PartialTransversal A} : T.right.card = T.card := by
+@[simp] lemma PartialTransversal.card_right [DecidableEq α] {T : PartialTransversal A} :
+    T.right.card = T.card := by
   refine card_image_iff.mpr <| fun e he e' he' h ↦ Prod.ext_iff.mpr ⟨T.inj he he' h, h⟩
 
 noncomputable def PartialTransversal.encard (T : PartialTransversal A) : ℕ∞ :=
   T.edges.toSet.encard
 
-@[simp] lemma PartialTransversal.card_eq_iff_total {T : PartialTransversal A} :
-    T.card = Fintype.card ι ↔ T.Total := by
+@[simp] lemma PartialTransversal.card_eq_iff_total [DecidableEq ι] [Fintype ι]
+    {T : PartialTransversal A} : T.card = Fintype.card ι ↔ T.Total := by
   simp only [← card_left, card_eq_iff_eq_univ, eq_univ_iff_forall, mem_left_iff, Total]
 
 @[simp] lemma PartialTransversal.coe_card_eq_encard (T : PartialTransversal A) :
     ↑T.card = T.encard := by
   simp only [card, encard, Set.encard_coe_eq_coe_finsetCard]
 
-@[simps] def PartialTransversal.of_fun {I : Finset ι} {f : ↑I → α}
-    (h : ∀ i, f i ∈ A i) (hf : f.Injective) : PartialTransversal A where
+@[simps] def PartialTransversal.of_fun [DecidableEq (ι × α)] {I : Finset ι} {f : ↑I → α}
+    (h : ∀ i : I, f i ∈ A i) (hf : f.Injective) : PartialTransversal A where
   edges := Finset.image (fun i ↦ ⟨i.val, f i⟩) Finset.univ
   mem := by
     simp only [mem_image, mem_univ, true_and]
@@ -632,7 +638,7 @@ noncomputable def PartialTransversal.encard (T : PartialTransversal A) : ℕ∞ 
     rw [hf h]
 
 @[simp] lemma PartialTransversal.of_fun_mem_edges_iff {I : Finset ι} {f : ↑I → α}
-    {h : ∀ i, f i ∈ A i} {hf : f.Injective} {i : ι} {x : α} :
+    {h : ∀ i : I, f i ∈ A i} {hf : f.Injective} {i : ι} {x : α} :
     (i, x) ∈ (PartialTransversal.of_fun h hf).edges ↔ ∃ hi, f ⟨i, hi⟩ = x := by
   simp only [of_fun_edges, mem_image, mem_univ, true_and, Prod.mk.injEq, Subtype.exists,
     exists_and_left, exists_eq_left]

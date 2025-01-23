@@ -405,7 +405,7 @@ lemma ToTruncate.finDiff {B B' : Set α} (hB : T.ToTruncate B) (hB' : M.Base B')
   have hlt : ((insert e (B' \ {f})) \ B).encard < (B' \ B).encard := by
     rw [insert_diff_of_mem _ he.1, diff_diff_comm, ← encard_diff_singleton_add_one hf,
       ENat.lt_add_one_iff]
-    simpa using hdiff.diff_right_finite.diff {f}
+    simpa using hdiff.diff_right_finite.diff
   have hfd : FinDiff B (insert e (B' \ {f})) := hdiff.trans (finDiff_exchange hf.1 he.2)
   exact (TruncateFamily.ToTruncate.finDiff hB heB hfd).of_exchange he.2 hf.1 hB'
 termination_by (B' \ B).encard
@@ -596,7 +596,7 @@ lemma eq_top_or_bot_of_finiteRk [FiniteRk M] (T : M.TruncateFamily) : T = top M 
   ext B
   simp only [top_ToTruncate]
   refine ⟨fun h ↦ ⟨h.base, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
-  exact hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨hB₀.base.finite.diff _, hB₀.base.encard_diff_comm hB⟩
+  exact hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨hB₀.base.finite.diff, hB₀.base.encard_diff_comm hB⟩
 
 lemma eq_top_or_bot_of_finiteRk_dual [FiniteRk M✶] (T : M.TruncateFamily) :
     T = top M ∨ T = bot M := by

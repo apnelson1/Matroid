@@ -27,7 +27,8 @@ variable {α : Type*} {s : Set α}
 lemma Set.Finite.subset_sUnion_directedOn_iff (hs : s.Finite) {C : Set (Set α)}
     (hC : DirectedOn (· ⊆ ·) C) (hne : C.Nonempty) : s ⊆ ⋃₀ C ↔ ∃ t ∈ C, s ⊆ t := by
   refine ⟨fun h ↦ ?_, fun ⟨t, ht, hst⟩ ↦ subset_sUnion_of_subset _ _ hst ht⟩
-  apply hs.induction_on' (C := fun x ↦ ∃ u ∈ C, x ⊆ u) ⟨_, hne.some_mem,empty_subset _⟩
+  apply hs.induction_on_subset (motive := fun x _ ↦ ∃ u ∈ C, x ⊆ u) _
+    ⟨_, hne.some_mem,empty_subset _⟩
   rintro a t has - - ⟨u, huC, htu⟩
   obtain ⟨v, hvC, hav⟩ := h has
   obtain ⟨z, hzC, huz, hvz⟩ := hC _ huC _ hvC

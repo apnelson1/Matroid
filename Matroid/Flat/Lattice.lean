@@ -556,7 +556,7 @@ lemma Flat.inter_iUnion_closure_of_directed [Finitary M] {ι : Type*} {Xs : ι �
 
   have aux : ∀ A : Set ι, A.Finite → ∃ j, ⋃ i ∈ A, Xs i ⊆ Xs j
   · intro A hA
-    refine hA.induction_on' ⟨hne.some, by simp⟩ ?_
+    refine hA.induction_on_subset _ ⟨hne.some, by simp⟩ ?_
     rintro i B hiA hBA hiB ⟨jB, hssjb⟩
     obtain ⟨k, hk⟩ := h_dir i jB
     simp only [mem_insert_iff, iUnion_iUnion_eq_or_left, union_subset_iff]

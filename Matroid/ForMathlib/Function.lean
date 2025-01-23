@@ -2,7 +2,7 @@
 import Mathlib.Data.Set.Function
 import Mathlib.Data.Set.Subset
 
-open Function Set.Notation
+open Function Set Set.Notation
 
 namespace Set
 
@@ -24,14 +24,14 @@ variable {α β : Type*} [DecidableEq α] {f : α → β} {a : α} {b : β}
   · rw [subset_antisymm_iff, image_subset_iff]
     refine ⟨fun x hxs ↦ (em (x = a)).elim (fun heq ↦ ?_) (fun hne ↦ Or.inr ?_), fun x ↦ ?_⟩
     · rw [mem_preimage, update_apply, if_pos heq]; exact mem_insert _ _
-    · exact ⟨x, ⟨hxs, hne⟩, by rw [update_noteq hne]⟩
+    · exact ⟨x, ⟨hxs, hne⟩, by rw [update_of_ne hne]⟩
     rintro (rfl | ⟨x, hx, rfl⟩)
     · use a; simpa
-    exact ⟨x, hx.1, update_noteq hx.2 _ _⟩
+    exact ⟨x, hx.1, update_of_ne hx.2 _ _⟩
   rw [subset_antisymm_iff, image_subset_iff, image_subset_iff]
   refine ⟨fun x hxs ↦ ⟨x, hxs, ?_⟩, fun x hxs ↦ ⟨x, hxs, ?_⟩⟩
-  · rw [update_noteq]; rintro rfl; exact h hxs
-  rw [update_noteq]; rintro rfl; exact h hxs
+  · rw [update_of_ne]; rintro rfl; exact h hxs
+  rw [update_of_ne]; rintro rfl; exact h hxs
 
 lemma preimage_update_of_not_mem_not_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∉ s) :
     update f a b ⁻¹' s = f ⁻¹' s := by
@@ -73,20 +73,20 @@ lemma update_injective (hf : f.Injective) (a : α) (h : b ∉ range f) : (update
 lemma update_injOn_iff {f : α → β} {s : Set α} {a : α} {b : β} :
     InjOn (update f a b) s ↔ InjOn f (s \ {a}) ∧ (a ∈ s → ∀ x ∈ s, f x = b → x = a) := by
   refine ⟨fun h ↦ ⟨fun x hx y hy hxy ↦  h hx.1 hy.1 ?_, ?_⟩, fun h x hx y hy hxy ↦ ?_⟩
-  · rwa [update_noteq hx.2, update_noteq hy.2]
+  · rwa [update_of_ne hx.2, update_of_ne hy.2]
   · rintro has x hxs rfl
     by_contra! hne
     have h' := h hxs has
-    rw [update_noteq hne, update_same] at h'
+    rw [update_of_ne hne, update_self] at h'
     exact hne <| h' rfl
   obtain (rfl | hxa) := eq_or_ne x a
   · by_contra! hne
-    rw [update_same, update_noteq hne.symm] at hxy
+    rw [update_self, update_of_ne hne.symm] at hxy
     exact hne.symm <| h.2 hx y hy hxy.symm
   obtain (rfl | hya) := eq_or_ne y a
-  · rw [update_noteq hxa, update_same] at hxy
+  · rw [update_of_ne hxa, update_self] at hxy
     exact h.2 hy x hx hxy
-  rw [update_noteq hxa, update_noteq hya] at hxy
+  rw [update_of_ne hxa, update_of_ne hya] at hxy
   exact h.1 ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
 
 @[simp] lemma update_id_injOn_iff {a b : α} {s : Set α} :
@@ -104,7 +104,7 @@ section BijOn
 variable {f : α → β} {s : Set α} {t : Set β} {x : α} {y : β}
 
 lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
-    BijOn f (insert x s) (insert y t) ↔ y = f x ∧ y ∉ t := by
+    BijOn f (Insert.insert x s) (Insert.insert y t) ↔ y = f x ∧ y ∉ t := by
   simp [BijOn]
   simp only [BijOn, MapsTo, mem_insert_iff, forall_eq_or_imp, injOn_insert hx, h.image_eq,
     and_iff_right h.injOn, SurjOn, image_insert_eq, insert_subset_iff, subset_insert, and_true]
@@ -115,7 +115,7 @@ lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
   tauto
 
 lemma BijOn.insert_not_mem (h : BijOn f s t) (hx : x ∉ s) (hx' : f x ∉ t) :
-    BijOn f (insert x s) (insert (f x) t) := by
+    BijOn f (Insert.insert x s) (Insert.insert (f x) t) := by
   simpa [h.bijOn_insert_iff hx]
 
 lemma BijOn.diff_singleton (h : BijOn f s t) (hx : x ∈ s) : BijOn f (s \ {x}) (t \ {f x}) := by
@@ -123,9 +123,9 @@ lemma BijOn.diff_singleton (h : BijOn f s t) (hx : x ∈ s) : BijOn f (s \ {x}) 
   rw [h.injOn.image_diff, h.image_eq, inter_eq_self_of_subset_right (by simpa), image_singleton]
 
 lemma BijOn.bijOn_update [DecidableEq α] (h : BijOn f s t) (hx : x ∈ s) (hy : y ∉ t) :
-    BijOn (Function.update f x y) s (insert y (t \ {f x})) := by
-  rw [show s = insert x (s \ {x}) by simp [hx]]
-  have h_eq : EqOn f (Function.update f x y) (s \ {x}) := fun a h ↦ Eq.symm <| update_noteq h.2 _ f
+    BijOn (Function.update f x y) s (Insert.insert y (t \ {f x})) := by
+  rw [show s = Insert.insert x (s \ {x}) by simp [hx]]
+  have h_eq : EqOn f (Function.update f x y) (s \ {x}) := fun a h ↦ Eq.symm <| update_of_ne h.2 _ f
   rw [((h.diff_singleton hx).congr h_eq).bijOn_insert_iff (by simp)]
   simp [hy]
 

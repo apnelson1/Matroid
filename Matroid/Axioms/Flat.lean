@@ -1,4 +1,4 @@
-import Matroid.Constructions.ClosureAxioms
+import Matroid.Axioms.Closure
 import Matroid.Flat.Basic
 
 open Set
@@ -100,9 +100,8 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
   E := M.E
   closure := M.closure
   subset_closure_self := fun _ ↦ M.subset_closure
-  closure_subset_closure := fun _ _  ↦ M.closure_subset_closure
-  closure_closure_eq_closure := M.closure_closure
-
+  closure_subset_closure' := fun _ _ h _ ↦ M.closure_subset_closure h
+  closure_closure_eq_closure' _ _ := M.closure_closure _
   closure_exchange := by
 
     simp only [mem_diff, and_imp]
