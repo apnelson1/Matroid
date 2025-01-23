@@ -595,7 +595,7 @@ lemma coloop_iff_forall_mem_compl_circuit [RkPos M✶] :
   refine fun B hB ↦ by_contra fun heB ↦ ?_
   have heE : e ∈ M.E := Exists.elim M.exists_circuit (fun C hC ↦ (h C hC).1)
   rw [← hB.closure_eq] at heE
-  exact (h _ (hB.indep.fundCct_circuit ⟨heE, heB⟩)).2 (mem_fundCct _ _ _)
+  exact (h _ (hB.indep.fundCct_circuit heE heB)).2 (mem_fundCct _ _ _)
 
 lemma Circuit.not_coloop_of_mem (hC : M.Circuit C) (heC : e ∈ C) : ¬M.Coloop e :=
   fun h ↦ h.not_mem_circuit hC heC
@@ -652,15 +652,15 @@ lemma coloop_iff_not_mem_closure_compl (he : e ∈ M.E := by aesop_mat) :
 
 lemma Base.mem_coloop_iff_forall_not_mem_fundCct (hB : M.Base B) (he : e ∈ B) :
     M.Coloop e ↔ ∀ x ∈ M.E \ B, e ∉ M.fundCct x B := by
-  refine ⟨fun h x hx heC ↦ (h.not_mem_circuit <| hB.fundCct_circuit hx) heC, fun h ↦ ?_⟩
+  refine ⟨fun h x hx heC ↦ (h.not_mem_circuit <| hB.fundCct_circuit hx.1 hx.2) heC, fun h ↦ ?_⟩
   have h' : M.E \ {e} ⊆ M.closure (B \ {e}) := by
     rintro x ⟨hxE, hne : x ≠ e⟩
     obtain (hx | hx) := em (x ∈ B)
     · exact M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground) ⟨hx, hne⟩
-    have h_cct := (hB.fundCct_circuit ⟨hxE, hx⟩).mem_closure_diff_singleton_of_mem
+    have h_cct := (hB.fundCct_circuit hxE hx).mem_closure_diff_singleton_of_mem
       (M.mem_fundCct x B)
     refine (M.closure_subset_closure (subset_diff_singleton ?_ ?_)) h_cct
-    · simpa using fundCct_subset_insert _ _
+    · simpa using fundCct_subset_insert ..
     simp [hne.symm, h x ⟨hxE, hx⟩]
   rw [coloop_iff_not_mem_closure_compl (hB.subset_ground he)]
   exact not_mem_subset (M.closure_subset_closure_of_subset_closure h') <| hB.indep.not_mem_closure_diff_of_mem he
@@ -669,7 +669,7 @@ lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
     ∃ C, M.Circuit C ∧ e ∈ C := by
   simp only [coloop_iff_forall_mem_base, not_forall, Classical.not_imp, exists_prop] at he
   obtain ⟨B, hB, heB⟩ := he
-  exact ⟨M.fundCct e B, hB.fundCct_circuit ⟨heE,heB⟩, .inl rfl⟩
+  exact ⟨M.fundCct e B, hB.fundCct_circuit heE heB, .inl rfl⟩
 
 @[simp] lemma closure_inter_coloops_eq (M : Matroid α) (X : Set α) :
     M.closure X ∩ M✶.closure ∅ = X ∩ M✶.closure ∅ := by

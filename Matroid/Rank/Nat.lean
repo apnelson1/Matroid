@@ -227,4 +227,13 @@ lemma r_union_le_r_add_r (M : Matroid α) (X Y : Set α) : M.r (X ∪ Y) ≤ M.r
   rw [r, hFin]
   simp
 
+lemma ext_rank {M N : Matroid α} [FiniteRk M] [FiniteRk N] (hE : M.E = N.E)
+    (h : ∀ X ⊆ M.E, M.r X = N.r X) : M = N := by
+  simp_rw [ext_iff_indep, and_iff_right hE]
+  refine fun I hIE ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
+  · rw [indep_iff_er_eq_encard_of_finite hI.finite, ← cast_r_eq_er_of_finite _ hI.finite, ← h _ hIE,
+      hI.r_eq_ncard, hI.finite.cast_ncard_eq]
+  rw [indep_iff_er_eq_encard_of_finite hI.finite, ← cast_r_eq_er_of_finite _ hI.finite, h _ hIE,
+    hI.r_eq_ncard, hI.finite.cast_ncard_eq]
+
 end Rank
