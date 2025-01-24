@@ -279,8 +279,9 @@ def foo [M₁.FiniteRk] (hQ : M₂ ≤q M₁) {X : Set α} :
       exact hQ.nDiscrepancy_mono inter_subset_right
     have h4 := hQ.nDiscrepancy_le_of_subset (X := X) (Y := Y ∪ X) subset_union_right
     linarith
-  sorry
-
+  apply_fun fun X ↦ (rk X : ℤ) at h_eq
+  simp only [contract_rk_cast_int_eq] at h_eq
+  linarith [hQ.intCast_rk_sub_rk_eq_nDiscrepancy, hQ.intCast_r_sub_r_eq_nDiscrepancy X]
 
 
   -- refine ⟨fun h ↦ ext_indep (by simp [hQ.ground_eq]) fun I hI ↦ ?_, fun h ↦ ?_⟩

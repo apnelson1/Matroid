@@ -23,7 +23,7 @@ lemma Circuit.mem_connectedTo_mem (hC : M.Circuit C) (heC : e ∈ C) (hfC : f �
   .inr ⟨C, hC, heC, hfC⟩
 
 lemma connectedTo_self (he : e ∈ M.E) : M.ConnectedTo e e :=
-    .inl ⟨rfl, he⟩
+  .inl ⟨rfl, he⟩
 
 lemma ConnectedTo.symm (h : M.ConnectedTo e f) : M.ConnectedTo f e := by
   obtain (⟨rfl, hef⟩ | ⟨C, hC, heC, hfC⟩) := h
@@ -44,7 +44,7 @@ lemma ConnectedTo.mem_ground_right (h : M.ConnectedTo e f) : f ∈ M.E :=
   h.symm.mem_ground_left
 
 @[simp] lemma connectedTo_self_iff : M.ConnectedTo e e ↔ e ∈ M.E :=
-    ⟨fun h ↦ h.mem_ground_left, connectedTo_self⟩
+  ⟨fun h ↦ h.mem_ground_left, connectedTo_self⟩
 
 lemma ConnectedTo.nonloop_left_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.Nonloop e := by
   obtain ⟨C, hC, heC, hfC⟩ := h.exists_circuit_of_ne hef
@@ -111,11 +111,11 @@ private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_not_mem hxI,
       hI'.flat.closure]
     exact ⟨hx, hxI⟩
-  have hC := Base.fundCct_circuit hB (show x ∈ M.E \ insert e I by simp [hx, hxI, hxe])
+  have hC := Base.fundCct_circuit hB hx (by simp [hxe, hxI])
 
   refine hC.mem_connectedTo_mem (by_contra fun heC ↦ ?_) hfC
 
-  have hss := subset_diff_singleton (fundCct_subset_insert x (insert e I)) heC
+  have hss := subset_diff_singleton (fundCct_subset_insert _ x (insert e I)) heC
   simp only [insert_comm, mem_singleton_iff, insert_diff_of_mem] at hss
   exact hC.dep.not_indep (hxi.subset hss)
 
@@ -124,6 +124,8 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   obtain (rfl | hne) := eq_or_ne e₁ e₂; simp [h₁.mem_ground_left]
   obtain (rfl | hne₁) := eq_or_ne e₁ f; assumption
   obtain (rfl | hne₂) := eq_or_ne f e₂; assumption
+  obtain ⟨C₁, hC₁, heC₁, hfC₁⟩ := h₁.exists_circuit_of_ne hne₁
+  obtain ⟨C₂, hC₂, hfC₂, h⟩ := h₂.exists_circuit_of_ne hne₂
   obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_cocircuit_of_ne hne₁
   obtain ⟨C₂, hC₂, hfC₂, he₂C₂⟩ := h₂.exists_circuit_of_ne hne₂
 

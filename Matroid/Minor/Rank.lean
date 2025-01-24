@@ -500,6 +500,11 @@ lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
   rw [← contract_r_add_eq]
   exact eq_sub_of_add_eq rfl
 
+@[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (C : Set α) :
+    ((M ／ C).rk : ℤ) = M.rk - M.r C := by
+  rw [rk_def, contract_r_cast_int_eq, contract_ground, diff_union_self, ← r_inter_ground,
+    inter_eq_self_of_subset_right subset_union_left, rk_def]
+
 lemma Nonloop.contract_r_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
     (M ／ e).r X + 1 = M.r (insert e X) := by
   rw [← union_singleton, ← contract_r_add_eq, he.r_eq, contract_elem]
