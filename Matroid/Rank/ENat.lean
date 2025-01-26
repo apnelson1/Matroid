@@ -1,3 +1,4 @@
+import Matroid.Rank.Cardinal
 import Matroid.Loop
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Matroid.Sum
@@ -11,24 +12,34 @@ open Set ENat
 
 namespace Matroid
 
+universe u v
+
 variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : ℕ∞} {e f : α}
 
 section Basic
 
 /-- The rank `eRank M` of `M` is the `ℕ∞`-valued cardinality of a base of `M`. -/
-noncomputable def eRank (M : Matroid α) : ℕ∞ :=
-  M.exists_base.choose.encard
+noncomputable def eRank (M : Matroid α) : ℕ∞ := M.cRank.toENat
 
 /-- The rank `er X` of a set `X` is the `ℕ∞`-valued cardinality of one of its bases. -/
-noncomputable def eRk (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X).eRank
+noncomputable def eRk (M : Matroid α) (X : Set α) : ℕ∞ := (M.cRk X).toENat
 
 lemma eRank_def (M : Matroid α) : M.eRank = M.eRk M.E := by
-  rw [eRk, restrict_ground_eq_self]
+  rw [eRank, eRk, cRk_ground]
 
 @[simp] lemma eRank_restrict (M : Matroid α) (X : Set α) : (M ↾ X).eRank = M.eRk X := rfl
 
 lemma Basis'.encard (hI : M.Basis' I X) : I.encard = M.eRk X := by
-  rw [eRk, eRank, (M ↾ X).exists_base.choose_spec.card_eq_card_of_base hI]
+  rw [eRk, le_antisymm_iff]
+  refine ⟨Cardinal.toENat.monotone' hI.cardinalMk_le_cRk, ?_⟩
+  obtain hinf | hfin := I.infinite_or_finite
+  · simp [hinf.encard_eq]
+  rw [← Cardinal.toENat_ofENat I.encard]
+  refine Cardinal.toENat.monotone' (ciSup_le fun ⟨J, hJ⟩ ↦ ?_)
+  rw [← encard_lt_top_iff, ← (base_restrict_iff'.1 hJ).encard_eq_encard hI,
+    encard_lt_top_iff] at hfin
+  obtain ⟨J, rfl⟩ := hfin.exists_finset_coe
+  simp [← (base_restrict_iff'.1 hJ).encard_eq_encard hI]
 
 lemma Basis.encard (hI : M.Basis I X) : I.encard = M.eRk X :=
   hI.basis'.encard
@@ -69,7 +80,7 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.eRank := by
   simp [← (show (emptyOn α).Base ∅ by simp).encard]
 
 @[simp] lemma eRk_inter_ground (M : Matroid α) (X : Set α) : M.eRk (X ∩ M.E) = M.eRk X := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X; rw [← hI.basis_inter_ground.encard, ← hI.encard]
+  rw [eRk, eRk, cRk_inter_ground]
 
 lemma eRk_eq_eRank (hX : M.E ⊆ X) : M.eRk X = M.eRank := by
   rw [← eRk_inter_ground, inter_eq_self_of_subset_right hX, eRank_def]
@@ -255,7 +266,7 @@ lemma eRk_lt_encard_iff_dep_of_finite (hX : X.Finite) (hXE : X ⊆ M.E := by aes
 lemma eRk_lt_encard_of_dep [Matroid.Finite M] (hX : M.Dep X) : M.eRk X < X.encard :=
   eRk_lt_encard_of_dep_of_finite (M.set_finite X hX.subset_ground) hX
 
-lemma r_lt_card_iff_dep [Matroid.Finite M] (hXE : X ⊆ M.E := by aesop_mat) :
+lemma rk_lt_card_iff_dep [Matroid.Finite M] (hXE : X ⊆ M.E := by aesop_mat) :
     M.eRk X < X.encard ↔ M.Dep X :=
   eRk_lt_encard_iff_dep_of_finite (M.set_finite X)
 
@@ -468,8 +479,8 @@ variable {E : Set α}
 @[simp] lemma loopyOn_eRank_eq (E : Set α) : (loopyOn E).eRank = 0 := by
   rw [eRank_def, loopyOn_eRk_eq]
 
--- @[simp] lemma loopyOn_r_eq (E X : Set α) : (loopyOn E).r X = 0 := by
---   rw [← eRk_toNat_eq_r, loopyOn_eRk_eq]; rfl
+-- @[simp] lemma loopyOn_rk_eq (E X : Set α) : (loopyOn E).r X = 0 := by
+--   rw [← eRk_toNat_eq_rk, loopyOn_eRk_eq]; rfl
 
 @[simp] lemma eRank_eq_zero_iff : M.eRank = 0 ↔ M = loopyOn M.E := by
   refine ⟨fun h ↦ closure_empty_eq_ground_iff.1 ?_, fun h ↦ by rw [h, loopyOn_eRank_eq]⟩
@@ -493,8 +504,8 @@ lemma freeOn_eRk_eq (hXE : X ⊆ E) : (freeOn E).eRk X = X.encard := by
   obtain ⟨I, hI⟩ := (freeOn E).exists_basis X
   rw [hI.eRk_eq_encard, (freeOn_indep hXE).eq_of_basis hI]
 
--- lemma freeOn_r_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
---   rw [← eRk_toNat_eq_r, freeOn_eRk_eq hXE, ncard_def]
+-- lemma freeOn_rk_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
+--   rw [← eRk_toNat_eq_rk, freeOn_eRk_eq hXE, ncard_def]
 
 @[simp] lemma disjointSum_eRk_eq (M N : Matroid α) (hMN : Disjoint M.E N.E) (X : Set α) :
     (M.disjointSum N hMN).eRk X = M.eRk (X ∩ M.E) + N.eRk (X ∩ N.E) := by

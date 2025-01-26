@@ -330,5 +330,5 @@ lemma Iso.eRank_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.eRank = N.eRa
   · simp [e.right_eq_empty]
   obtain ⟨f, hf, rfl⟩ := e.exists_eq_map'; simp
 
-lemma Iso.rk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rk = N.rk := by
-  rw [rk, e.eRank_eq]
+lemma Iso.rank_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rank = N.rank := by
+  rw [rank, e.eRank_eq]

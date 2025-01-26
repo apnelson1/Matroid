@@ -56,12 +56,12 @@ theorem truncateTo_indep_eq : (M.truncateTo k).Indep = fun I ↦ M.Indep I ∧ I
   suffices ∀ I ⊆ E, I = ∅ → encard I ≤ k by simpa
   rintro _ - rfl; simp
 
-theorem truncate_eq_self_of_rk_le (h_rk : M.eRank ≤ k) : M.truncateTo k = M := by
+theorem truncate_eq_self_of_rank_le (h_rank : M.eRank ≤ k) : M.truncateTo k = M := by
   refine ext_indep truncateTo_ground_eq (fun I _ ↦ ?_)
   rw [truncateTo_indep_iff, and_iff_left_iff_imp]
-  exact fun hi ↦ hi.encard_le_eRank.trans h_rk
+  exact fun hi ↦ hi.encard_le_eRank.trans h_rank
 
-theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.eRank) :
+theorem truncateTo_base_iff {k : ℕ} (h_rank : k ≤ M.eRank) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
   simp_rw [base_iff_maximal_indep, truncateTo_indep_eq, maximal_subset_iff, and_assoc,
     and_congr_right_iff, and_imp]
@@ -71,9 +71,9 @@ theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.eRank) :
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
   exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
 
-theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rk : k ≤ M.eRank) :
+theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rank : k ≤ M.eRank) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
-  lift k to ℕ using (h_rk.trans_lt M.eRank_lt_top).ne; rwa [truncateTo_base_iff]
+  lift k to ℕ using (h_rank.trans_lt M.eRank_lt_top).ne; rwa [truncateTo_base_iff]
 
 instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) :=
 ⟨ by simp [ground_finite M] ⟩
@@ -81,7 +81,7 @@ instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) 
 instance truncateTo.finiteRk {k : ℕ} : FiniteRk (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_base
   refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
-  · rw [truncate_eq_self_of_rk_le h] at hB
+  · rw [truncate_eq_self_of_rank_le h] at hB
     rw [← encard_lt_top_iff, hB.encard]
     exact h.trans_lt (WithTop.coe_lt_top _)
   rw [truncateTo_base_iff h.le] at hB

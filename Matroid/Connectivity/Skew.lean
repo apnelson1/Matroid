@@ -181,7 +181,6 @@ lemma SkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.SkewFamily Xs
     simpa [skewFamily_iff, ModularFamily, modularBase_iff, PLift.forall] using h
   clear! Xs Ys
   intro η Xs Ys h hYX
-
   choose Is hIs using fun i ↦ M.exists_basis (Ys i) ((hYX i).trans (h.subset_ground_of_mem i))
   refine Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
   · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
@@ -221,9 +220,9 @@ lemma rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α
     (fun i ↦ (hXs i).finite_of_basis (hIs i)) (hsum.le.trans <| M.eRk_le_encard _)
 
 lemma skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [FiniteRk M] {Xs : η → Set α}
-    (hXs : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.r (Xs i) = M.r (⋃ i, Xs i) := by
+    (hXs : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.rk (Xs i) = M.rk (⋃ i, Xs i) := by
   simp_rw [rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.to_rFin (Xs i)) hXs,
-    ← M.cast_r_eq, ← Nat.cast_sum, Nat.cast_inj]
+    ← M.cast_rk_eq, ← Nat.cast_sum, Nat.cast_inj]
 
 lemma skewFamily_iff_forall_circuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ M.E)
     (hdj : Pairwise (Disjoint on Xs)) :

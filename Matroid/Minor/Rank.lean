@@ -434,10 +434,10 @@ lemma Minor.eRank_le (h : N ≤m M) : N.eRank ≤ M.eRank := by
   rw [← eRk_univ_eq, ← eRk_univ_eq, delete_eRk_eq']
   exact (M.eRk_contract_le_eRk _ _).trans (M.eRk_mono diff_subset)
 
-lemma Minor.rk_le (h : N ≤m M) [FiniteRk M] : N.rk ≤ M.rk := by
+lemma Minor.rank_le (h : N ≤m M) [FiniteRk M] : N.rank ≤ M.rank := by
   have hle := h.eRank_le
   have := h.finiteRk
-  rw [← M.coe_rk_eq, ← N.coe_rk_eq] at hle
+  rw [← M.coe_rank_eq, ← N.coe_rank_eq] at hle
   exact WithTop.coe_le_coe.1 hle
 
 lemma relRank_contract_le (M : Matroid α) (C X Y : Set α) :
@@ -460,63 +460,63 @@ lemma delete_elem_eRank_eq (he : ¬ M.Coloop e) : (M ＼ e).eRank = M.eRank := b
   rw [deleteElem, eRank_def, delete_eRk_eq _ (by simp), delete_ground, ← eRk_closure_eq,
     he.closure_eq, eRank_def]
 
-lemma delete_elem_rk_eq (M : Matroid α) (he : ¬ M.Coloop e) : (M ＼ e).rk = M.rk := by
-  rw [rk, delete_elem_eRank_eq he, rk]
+lemma delete_elem_rank_eq (M : Matroid α) (he : ¬ M.Coloop e) : (M ＼ e).rank = M.rank := by
+  rw [rank, delete_elem_eRank_eq he, rank]
 
-lemma delete_r_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).r X = M.r (X \ D) := by
-  rw [r, r, delete_eRk_eq']
+lemma delete_rk_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).rk X = M.rk (X \ D) := by
+  rw [rk, rk, delete_eRk_eq']
 
-lemma delete_r_eq_of_disjoint (M : Matroid α) (hDX : Disjoint X D) : (M ＼ D).r X = M.r X := by
-  rw [delete_r_eq', hDX.sdiff_eq_left]
+lemma delete_rk_eq_of_disjoint (M : Matroid α) (hDX : Disjoint X D) : (M ＼ D).rk X = M.rk X := by
+  rw [delete_rk_eq', hDX.sdiff_eq_left]
 
-lemma delete_elem_r_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ e).r X = M.r X := by
-  rw [deleteElem, delete_r_eq', diff_singleton_eq_self heX]
+lemma delete_elem_rk_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ e).rk X = M.rk X := by
+  rw [deleteElem, delete_rk_eq', diff_singleton_eq_self heX]
 
-lemma restrict_r_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).r X = M.r (X ∩ R) := by
-  rw [r, restrict_eRk_eq', r]
+lemma restrict_rk_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).rk X = M.rk (X ∩ R) := by
+  rw [rk, restrict_eRk_eq', rk]
 
-lemma restrict_r_eq (M : Matroid α) {R : Set α} (hXR : X ⊆ R) : (M ↾ R).r X = M.r X := by
-  rw [r, M.restrict_eRk_eq hXR, r]
+lemma restrict_rk_eq (M : Matroid α) {R : Set α} (hXR : X ⊆ R) : (M ↾ R).rk X = M.rk X := by
+  rw [rk, M.restrict_eRk_eq hXR, rk]
 
-lemma delete_rk_le (M : Matroid α) [M.FiniteRk] (D : Set α) : (M ＼ D).rk ≤ M.rk := by
-  rw [rk_def, rk_def, delete_r_eq']
-  exact M.r_mono (diff_subset.trans diff_subset)
+lemma delete_rank_le (M : Matroid α) [M.FiniteRk] (D : Set α) : (M ＼ D).rank ≤ M.rank := by
+  rw [rank_def, rank_def, delete_rk_eq']
+  exact M.rk_mono (diff_subset.trans diff_subset)
 
-lemma delete_rk_add_r_ge_rk (M : Matroid α) (D : Set α) : M.rk ≤ (M ＼ D).rk + M.r D := by
+lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
   obtain h | h := M.finite_or_infiniteRk
-  · rw [rk_def, rk_def, delete_r_eq', delete_ground, diff_diff, union_self]
-    refine le_trans ?_ (M.r_union_le_r_add_r (M.E \ D) D)
-    simp [M.r_mono subset_union_left]
+  · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]
+    refine le_trans ?_ (M.rk_union_le_rk_add_rk (M.E \ D) D)
+    simp [M.rk_mono subset_union_left]
   obtain ⟨B, hB⟩ := M.exists_base
-  rw [rk_def, r, ← eRank_def, ← hB.encard, hB.infinite.encard_eq]
+  rw [rank_def, rk, ← eRank_def, ← hB.encard, hB.infinite.encard_eq]
   simp
 
-lemma contract_r_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
-    (M ／ C).r X + M.r C = M.r (X ∪ C) := by
-  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_r_eq, ← relRank_add_eRk_eq, relRank]
+lemma contract_rk_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+    (M ／ C).rk X + M.rk C = M.rk (X ∪ C) := by
+  simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_rk_eq, ← relRank_add_eRk_eq, relRank]
 
-@[simp] lemma contract_r_cast_int_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
-    ((M ／ C).r X : ℤ) = M.r (X ∪ C) - M.r C := by
-  rw [← contract_r_add_eq]
+@[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+    ((M ／ C).rk X : ℤ) = M.rk (X ∪ C) - M.rk C := by
+  rw [← contract_rk_add_eq]
   exact eq_sub_of_add_eq rfl
 
-@[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (C : Set α) :
-    ((M ／ C).rk : ℤ) = M.rk - M.r C := by
-  rw [rk_def, contract_r_cast_int_eq, contract_ground, diff_union_self, ← r_inter_ground,
-    inter_eq_self_of_subset_right subset_union_left, rk_def]
-
-lemma Nonloop.contract_r_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
-    (M ／ e).r X + 1 = M.r (insert e X) := by
-  rw [← union_singleton, ← contract_r_add_eq, he.r_eq, contract_elem]
+@[simp] lemma contract_rank_cast_int_eq (M : Matroid α) [FiniteRk M] (C : Set α) :
+    ((M ／ C).rank : ℤ) = M.rank - M.rk C := by
+  rw [rank_def, contract_rk_cast_int_eq, contract_ground, diff_union_self, ← rk_inter_ground,
+    inter_eq_self_of_subset_right subset_union_left, rank_def]
 
 lemma Nonloop.contract_rk_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
-    (M ／ e).rk + 1 = M.rk := by
-  rw [rk_def, he.contract_r_add_one_eq, contract_elem, contract_ground, insert_diff_singleton,
-    insert_eq_of_mem he.mem_ground, rk_def]
+    (M ／ e).rk X + 1 = M.rk (insert e X) := by
+  rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq, contract_elem]
 
-lemma Nonloop.contract_r_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
-    ((M ／ e).r X : ℤ) = M.r (insert e X) - 1 := by
-  rw [← he.contract_r_add_one_eq]
+lemma Nonloop.contract_rank_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
+    (M ／ e).rank + 1 = M.rank := by
+  rw [rank_def, he.contract_rk_add_one_eq, contract_elem, contract_ground, insert_diff_singleton,
+    insert_eq_of_mem he.mem_ground, rank_def]
+
+lemma Nonloop.contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
+    ((M ／ e).rk X : ℤ) = M.rk (insert e X) - 1 := by
+  rw [← he.contract_rk_add_one_eq]
   exact eq_sub_of_add_eq rfl
 
 end Rank

@@ -628,7 +628,7 @@ lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (
   let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
 
 lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
-    ∃ v : M.Rep 𝔽 (Fin M.rk → 𝔽), v.FullRank := by
+    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
   obtain ⟨B, hB⟩ := M.exists_base
   have _ := hB.finite.fintype
   obtain ⟨v, hv⟩ := h.exists_standardRep hB

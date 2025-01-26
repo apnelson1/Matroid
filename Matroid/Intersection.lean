@@ -14,15 +14,15 @@ namespace Matroid
 
 variable {α : Type*} {M M₁ M₂ : Matroid α} {A I X E : Set α}
 
-lemma Indep.ncard_le_r_add_r [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I)
-    (A : Set α) : I.ncard ≤ M₁.r A + M₂.r (M₂.E \ A) := by
+lemma Indep.ncard_le_rk_add_rk [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I)
+    (A : Set α) : I.ncard ≤ M₁.rk A + M₂.rk (M₂.E \ A) := by
   rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
-    ← (hI₁.inter_right A).r_eq_ncard, ← (hI₂.diff A).r_eq_ncard]
-  exact add_le_add (M₁.r_mono inter_subset_right)
-    (M₂.r_mono (diff_subset_diff_left hI₂.subset_ground))
+    ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard]
+  exact add_le_add (M₁.rk_mono inter_subset_right)
+    (M₂.rk_mono (diff_subset_diff_left hI₂.subset_ground))
 
 lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I)
-    (hI₂ : M₂.Indep I) (h : M₁.r A + M₂.r (M₂.E \ A) ≤ I.ncard) :
+    (hI₂ : M₂.Indep I) (h : M₁.rk A + M₂.rk (M₂.E \ A) ≤ I.ncard) :
     M₁.Basis' (I ∩ A) A ∧ M₂.Basis' (I \ A) (M₂.E \ A) := by
   rw [basis'_iff_indep_encard_eq_of_finite (hI₁.finite.subset inter_subset_left),
     and_iff_right inter_subset_right, and_iff_right (hI₁.inter_right A),
@@ -31,18 +31,18 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
     eRk_eq_eRk_iff, ← (hI₁.inter_right A).er, eRk_eq_eRk_iff]
 
   rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
-    ← (hI₁.inter_right A).r_eq_ncard, ← (hI₂.diff A).r_eq_ncard] at h
+    ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard] at h
   constructor <;>
-  linarith [M₁.r_mono (show I ∩ A ⊆ A from inter_subset_right),
-    M₂.r_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
+  linarith [M₁.rk_mono (show I ∩ A ⊆ A from inter_subset_right),
+    M₂.rk_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
 private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
-    ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
+    ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
-  · suffices 0 = M₂.r (M₂.E \ M₁.closure ∅) from
+  · suffices 0 = M₂.rk (M₂.E \ M₁.closure ∅) from
       ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
-    rw [eq_comm, r_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
+    rw [eq_comm, rk_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
   push_neg at hloop
   obtain ⟨e, he, he₁, he₂⟩ := hloop
@@ -62,8 +62,8 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
 
   by_contra! hcon
   replace hcon :=
-    show ∀ I X, X ⊆ M₁.E → M₁.Indep I → M₂.Indep I → I.ncard + 1 ≤ M₁.r X + M₂.r (M₂.E \ X) from
-    fun I X hX h h' ↦ Nat.add_one_le_iff.2 <| (h.ncard_le_r_add_r h' X).lt_of_ne <| hcon I X hX h h'
+    show ∀ I X, X ⊆ M₁.E → M₁.Indep I → M₂.Indep I → I.ncard + 1 ≤ M₁.rk X + M₂.rk (M₂.E \ X) from
+    fun I X hX h h' ↦ Nat.add_one_le_iff.2 <| (h.ncard_le_rk_add_rk h' X).lt_of_ne <| hcon I X hX h h'
 
   have hcond := hcon Id (Xc ∩ Xd) (inter_subset_left.trans hXc.1) hId₁.of_delete hId₂.of_delete
 
@@ -72,20 +72,20 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
   rw [ncard_insert_of_not_mem hIc₁.1 (hIc₁.2.subset (subset_insert _ _)).finite,
     ← insert_union] at hcon
 
-  have hsm := M₁.r_submod (insert e Xc) Xd
+  have hsm := M₁.rk_submod (insert e Xc) Xd
   rw [insert_inter_of_not_mem hXd.2] at hsm
 
-  have hsm2 := M₂.r_submod (M₂.E \ Xc) ((M₂.E \ insert e Xd))
+  have hsm2 := M₂.rk_submod (M₂.E \ Xc) ((M₂.E \ insert e Xd))
   simp_rw [diff_eq, ← inter_inter_distrib_left, ← inter_union_distrib_left, ← compl_inter,
     ← compl_union, union_insert, ← insert_union, inter_comm Xc, insert_inter_of_not_mem hXc.2,
     inter_comm Xd, ← diff_eq] at hsm2
 
   zify at hcon hcond hId hIc hsm hsm2
 
-  rw [he₂.contract_r_cast_int_eq, he₁.contract_r_cast_int_eq, contract_elem, contract_ground,
+  rw [he₂.contract_rk_cast_int_eq, he₁.contract_rk_cast_int_eq, contract_elem, contract_ground,
     diff_diff_comm, insert_diff_singleton,
       insert_eq_of_mem (show e ∈ M₂.E \ Xc from ⟨he₂.mem_ground, hXc.2⟩)] at hIc
-  rw [delete_elem_r_eq _ hXd.2, delete_elem_r_eq _ (by simp), deleteElem, delete_ground,
+  rw [delete_elem_rk_eq _ hXd.2, delete_elem_rk_eq _ (by simp), deleteElem, delete_ground,
     diff_diff_comm, diff_diff, union_singleton] at hId
 
   linarith
@@ -93,22 +93,22 @@ termination_by M₁.E.ncard
 
 /-- The matroid intersection theorem. The hypothesis `M₁.E = M₂.E` isn't required. -/
 theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
-    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
+    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   obtain ⟨I, X, -, hI₁, hI₂, hcard⟩ := exists_common_ind_aux M₁ (M₂ ↾ M₁.E) rfl
   refine ⟨I, (M₂.E \ M₁.E) ∪ X, hI₁, hI₂.of_restrict, ?_⟩
-  rw [← diff_diff, diff_diff_right_self, ← r_inter_ground, union_inter_distrib_right,
-    disjoint_sdiff_left.inter_eq, empty_union, r_inter_ground, hcard,
-    restrict_r_eq _ (by simp [diff_subset]), restrict_ground_eq, ← M₂.r_inter_ground,
+  rw [← diff_diff, diff_diff_right_self, ← rk_inter_ground, union_inter_distrib_right,
+    disjoint_sdiff_left.inter_eq, empty_union, rk_inter_ground, hcard,
+    restrict_rk_eq _ (by simp [diff_subset]), restrict_ground_eq, ← M₂.rk_inter_ground,
     inter_diff_assoc, inter_comm]
 
 /-- A minimizer can be chosen in the matroid intersection theorem that is a flat of `M₁`.-/
 theorem exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
-    ∃ I X, M₁.Flat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.r X + M₂.r (M₂.E \ X) := by
+    ∃ I X, M₁.Flat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   have : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind_aux M₁ M₂ hE
-  refine ⟨I, _, M₁.closure_flat X, h1, h2, (h1.ncard_le_r_add_r h2 _).antisymm ?_⟩
-  rw [r_closure_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
-  exact add_le_add_left (M₂.r_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
+  refine ⟨I, _, M₁.closure_flat X, h1, h2, (h1.ncard_le_rk_add_rk h2 _).antisymm ?_⟩
+  rw [rk_closure_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
+  exact add_le_add_left (M₂.rk_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
 noncomputable def maxCommonInd (M₁ M₂ : Matroid α) : ℕ :=
@@ -134,11 +134,11 @@ lemma maxCommonInd_exists (M₁ M₂ : Matroid α) [M₁.Finite] :
   exact ncard_le_ncard hI.subset_ground M₁.ground_finite
 
 theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] [M₂.FiniteRk] :
-    maxCommonInd M₁ M₂ = ⨅ X, M₁.r X + M₂.r (M₂.E \ X) := by
+    maxCommonInd M₁ M₂ = ⨅ X, M₁.rk X + M₂.rk (M₂.E \ X) := by
   refine le_antisymm (le_ciInf fun X ↦ ?_) ?_
   · obtain ⟨I, hI₁, hI₂, hI⟩ := maxCommonInd_exists M₁ M₂
     rw [← hI]
-    exact hI₁.ncard_le_r_add_r hI₂ X
+    exact hI₁.ncard_le_rk_add_rk hI₂ X
   obtain ⟨I, X, hI₁, hI₂, h⟩ := exists_common_ind M₁ M₂
   exact (ciInf_le ⟨0, by simp [lowerBounds]⟩ X).trans (h.symm.le.trans (hI₁.le_maxCommonInd hI₂))
 
@@ -147,11 +147,11 @@ section Rado
 variable {ι : Type*} {x : ι → α}
 
 lemma rado_necessary [FiniteRk M] {f : α → ι} (hx : ∀ i, f (x i) = i) (h_ind : M.Indep (range x))
-    (S : Set ι) : S.ncard ≤ M.r (f ⁻¹' S) := by
+    (S : Set ι) : S.ncard ≤ M.rk (f ⁻¹' S) := by
   have hinj : Function.Injective x := fun i j h ↦ by rw [← hx i, ← hx j, h]
-  have hS := (h_ind.subset (image_subset_range x S)).r_eq_ncard
+  have hS := (h_ind.subset (image_subset_range x S)).rk_eq_ncard
   rw [ncard_image_of_injective _ hinj] at hS
-  refine hS.symm.le.trans (M.r_le_of_subset ?_)
+  refine hS.symm.le.trans (M.rk_le_of_subset ?_)
   rintro f ⟨i, hi, rfl⟩
   simpa [hx i]
 
@@ -168,7 +168,7 @@ end Rado
 --   have hS := (h_ind.subset (image_subset_range x S)).r,
 --   rw [ncard_image_of_injective _ (λ i j hij, by rw [←hx i, hij, hx j] : x.injective)] at hS,
 --   rw ←hS,
---   refine M.r_mono _,
+--   refine M.rk_mono _,
 --   rintro f ⟨i, hi, rfl⟩,
 --   rwa [mem_preimage, hx],
 -- end
@@ -186,11 +186,11 @@ end Rado
 --     rw [pi.one_apply, ncard_le_one_iff] at hcard,
 --     exact hne (hcard ⟨ha, (by simp)⟩ ⟨hb, by simp [hab]⟩)},
 
---   have hXc := (h (f '' Xᶜ)ᶜ).trans (M.r_mono _ : _ ≤ M.r X), swap,
+--   have hXc := (h (f '' Xᶜ)ᶜ).trans (M.rk_mono _ : _ ≤ M.r X), swap,
 --   { simp only [preimage_subset_iff, mem_compl_iff, mem_image, not_exists, not_and, not_imp_not],
 --     exact λ a h, h _ rfl},
 
---   simp only [partition_matroid_on_one_r_eq, pi.one_apply] at hIX,
+--   simp only [partition_matroid_on_one_rk_eq, pi.one_apply] at hIX,
 --   have hineq := (add_le_add_right hXc _).trans_eq hIX.symm,
 --   rw [add_comm, ncard_add_ncard_compl, ←ncard_univ, ←ncard_image_of_inj_on h_inj] at hineq,
 --   have himage := eq_of_subset_of_ncard_le (subset_univ _) hineq,

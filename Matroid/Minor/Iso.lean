@@ -193,9 +193,9 @@ lemma IsoMinor.eRank_le (e : N ≤i M) : N.eRank ≤ M.eRank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.eRank_eq.trans_le hM₀.eRank_le
 
-lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
+lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
-  exact i.rk_eq.trans_le hM₀.rk_le
+  exact i.rank_eq.trans_le hM₀.rank_le
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]

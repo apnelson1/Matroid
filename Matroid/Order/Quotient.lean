@@ -316,15 +316,15 @@ lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
 end Constructions
 
 lemma Quotient.intCast_rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
-    (M₂.r Y : ℤ) - M₂.r X ≤ (M₁.r Y : ℤ) - M₁.r X := by
+    (M₂.rk Y : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₁.rk X := by
   have _ : FiniteRk M₂ := hQ.finiteRk
-  rw [← Nat.cast_sub (M₂.r_mono hXY), ← Nat.cast_sub (M₁.r_mono hXY), Nat.cast_le,
-    ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_r_eq, ENat.coe_sub, cast_r_eq, cast_r_eq ,
-    cast_r_eq, ← (M₁.to_rFin X).relRank_eq_sub hXY, ← (M₂.to_rFin X).relRank_eq_sub hXY]
+  rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
+    ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
+    cast_rk_eq, ← (M₁.to_rFin X).relRank_eq_sub hXY, ← (M₂.to_rFin X).relRank_eq_sub hXY]
   exact relRank_le hQ X Y
 
 lemma Quotient.rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
-    (M₁.r X : ℤ) - M₂.r X ≤ (M₁.r Y : ℤ) - M₂.r Y := by
+    (M₁.rk X : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₂.rk Y := by
   linarith [hQ.intCast_rank_sub_mono hXY]
 
 theorem Quotient.wcovBy_of_covBy {F F' : Set α} (hQ : M₂ ≤q M₁) (hco : F ⋖[M₁] F') :

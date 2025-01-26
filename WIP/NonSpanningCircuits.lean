@@ -25,18 +25,18 @@ end Matroid
 -- Non-spanning circuits
 structure FinsetNonspanningCircuitMatroid (α : Type*) [DecidableEq α] where
   (E : Set α)
-  (rk : ℕ)
+  (rank : ℕ)
   (NonspanningCircuit : Finset α → Prop)
   (empty_not_NonspanningCircuit : ¬NonspanningCircuit ∅)
   (NonspanningCircuit_antichain : IsAntichain (· ⊆ ·) {C | NonspanningCircuit C})
   (NonspanningCircuit_elimination : ∀ ⦃C₁ C₂ e⦄, NonspanningCircuit C₁ → NonspanningCircuit C₂ → C₁ ≠ C₂ →
-  e ∈ C₁ ∩ C₂ → ((C₁ ∪ C₂).erase e).card ≤ rk → ∃ C, NonspanningCircuit C ∧ C ⊆ (C₁ ∪ C₂).erase e)
-  (non_spanning : ∀ ⦃C⦄, NonspanningCircuit C → C.card ≤ rk)
-  (exists_NonspanningCircuitless_rk_set : ∃ S : Finset α, S.card = rk ∧ ↑S ⊆ E ∧ ∀ ⦃C⦄, NonspanningCircuit C → ¬↑C ⊆ S)
+  e ∈ C₁ ∩ C₂ → ((C₁ ∪ C₂).erase e).card ≤ rank → ∃ C, NonspanningCircuit C ∧ C ⊆ (C₁ ∪ C₂).erase e)
+  (non_spanning : ∀ ⦃C⦄, NonspanningCircuit C → C.card ≤ rank)
+  (exists_NonspanningCircuitless_rank_set : ∃ S : Finset α, S.card = rank ∧ ↑S ⊆ E ∧ ∀ ⦃C⦄, NonspanningCircuit C → ¬↑C ⊆ S)
   (NonspanningCircuit_subset_ground : ∀ ⦃C⦄, NonspanningCircuit C → ↑C ⊆ E)
 
   (Circuit : Finset α → Prop)
-  (circuit_iff : ∀ ⦃C : Finset α⦄, Circuit C ↔ NonspanningCircuit C ∨ C.card = rk + 1
+  (circuit_iff : ∀ ⦃C : Finset α⦄, Circuit C ↔ NonspanningCircuit C ∨ C.card = rank + 1
     ∧ (∀ ⦃C' : Finset α⦄, NonspanningCircuit C' → ¬C' ⊆ C) ∧ ↑C ⊆ E)
 
   (Indep : Finset α → Prop)
@@ -48,10 +48,10 @@ namespace FinsetNonspanningCircuitMatroid
 variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspanningCircuitMatroid α}
 
 @[simps!] protected def matroid (M : FinsetNonspanningCircuitMatroid α) : Matroid α := by
-  set Circuit := fun I ↦ (M.NonspanningCircuit I ∨ (I.card = M.rk + 1 ∧ (∀ C, M.NonspanningCircuit C → ¬C ⊆ I)
+  set Circuit := fun I ↦ (M.NonspanningCircuit I ∨ (I.card = M.rank + 1 ∧ (∀ C, M.NonspanningCircuit C → ¬C ⊆ I)
     ∧ ↑I ⊆ M.E))
   have h_antichain : IsAntichain (fun x x_1 ↦ x ⊆ x_1) {C | (fun I ↦ M.NonspanningCircuit I ∨
-    I.card = M.rk + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C → ¬C ⊆ I) ∧ ↑I ⊆ M.E) C} := by
+    I.card = M.rank + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C → ¬C ⊆ I) ∧ ↑I ⊆ M.E) C} := by
     simp only [IsAntichain]
     refine fun C hC D hD hne ↦ ?_
     simp only [mem_setOf_eq] at hC hD
@@ -68,7 +68,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
       exact Finset.eq_of_subset_of_card_le hne <| le_trans hD.1.le hC.1.symm.le
 
   have h_subset_ground : ∀ ⦃C : Finset α⦄,
-    (fun I ↦ M.NonspanningCircuit I ∨ I.card = M.rk + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C → ¬C ⊆ I) ∧
+    (fun I ↦ M.NonspanningCircuit I ∨ I.card = M.rank + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C → ¬C ⊆ I) ∧
     ↑I ⊆ M.E) C → ↑C ⊆ M.E := by
     intro C hC
     obtain hC | hC := hC
@@ -78,7 +78,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
   exact FinsetCircuitMatroid.matroid <| FinsetCircuitMatroid.mk
     (E := M.E)
     (Circuit := fun I ↦ (M.NonspanningCircuit I ∨
-      (I.card = M.rk + 1 ∧ (∀ C, M.NonspanningCircuit C → ¬C ⊆ I) ∧ ↑I ⊆ M.E)))
+      (I.card = M.rank + 1 ∧ (∀ C, M.NonspanningCircuit C → ¬C ⊆ I) ∧ ↑I ⊆ M.E)))
     (empty_not_circuit := by
       simp only [M.empty_not_NonspanningCircuit, Finset.card_empty,
       self_eq_add_left, add_eq_zero, one_ne_zero, and_false, false_and, or_false, not_false_eq_true]
@@ -87,7 +87,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
     (circuit_elimination := by
       refine fun C D e hC hD hne he ↦ ?_
       simp only [mem_setOf_eq] at hC hD
-      have large_set : ∀ S : Finset α, ↑S ⊆ M.E → S.card > M.rk → ∃ C : Finset α, Circuit C ∧ C ⊆ S
+      have large_set : ∀ S : Finset α, ↑S ⊆ M.E → S.card > M.rank → ∃ C : Finset α, Circuit C ∧ C ⊆ S
         := by
         intro S hsub hcard
         obtain hcard :=  Nat.succ_eq_one_add _ ▸ Nat.succ_le_of_lt hcard
@@ -100,8 +100,8 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
           obtain ⟨C, hC, hCsub⟩ := hcon
           exact ⟨C, by simp only [hC, true_or, Circuit], subset_trans hCsub hDsub⟩
 
-      have card_up : ∀ C₁ C₂, (C₁.card = M.rk + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C →
-        ¬C ⊆ C₁) ∧ ↑C₁ ⊆ M.E) → Circuit C₂ → C₁ ≠ C₂ → (C₁ ∪ C₂).card > M.rk + 1 := by
+      have card_up : ∀ C₁ C₂, (C₁.card = M.rank + 1 ∧ (∀ (C : Finset α), M.NonspanningCircuit C →
+        ¬C ⊆ C₁) ∧ ↑C₁ ⊆ M.E) → Circuit C₂ → C₁ ≠ C₂ → (C₁ ∪ C₂).card > M.rank + 1 := by
         intro C₁ C₂ hC1 hC2 hne
         simp only [← hC1.1, gt_iff_lt]
         apply Finset.card_strictMono
@@ -111,7 +111,7 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
         contrapose! notsub
         exact (Finset.union_subset_iff.mp notsub).2
 
-      obtain hle | hgt := le_or_gt ((C ∪ D).erase e).card M.rk
+      obtain hle | hgt := le_or_gt ((C ∪ D).erase e).card M.rank
       obtain Cns | hC := hC
       obtain Dns | hD := hD
       obtain ⟨C', hC', hsub⟩ := M.NonspanningCircuit_elimination Cns Dns hne he hle
@@ -119,12 +119,12 @@ variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetNonspannin
       obtain hcard := card_up D C hD (by simp only [Circuit, Cns, true_or]) hne.symm
       obtain _ := not_le_of_lt <| Finset.union_comm C _ ▸
         (LE.le.trans_lt' Finset.pred_card_le_card_erase
-        (show M.rk + 1 - 1  < (D ∪ C).card - 1 by exact Nat.sub_lt_sub_right (show 1 ≤ M.rk + 1 by
+        (show M.rank + 1 - 1  < (D ∪ C).card - 1 by exact Nat.sub_lt_sub_right (show 1 ≤ M.rank + 1 by
         simp only [le_add_iff_nonneg_left, zero_le]) hcard))
       contradiction
       obtain hcard := card_up C D hC hD hne
       obtain _ := not_le_of_lt <| (LE.le.trans_lt' Finset.pred_card_le_card_erase
-        (show M.rk + 1 - 1  < (C ∪ D).card - 1 by exact Nat.sub_lt_sub_right (show 1 ≤ M.rk + 1 by
+        (show M.rank + 1 - 1  < (C ∪ D).card - 1 by exact Nat.sub_lt_sub_right (show 1 ≤ M.rank + 1 by
         simp only [le_add_iff_nonneg_left, zero_le]) hcard))
       contradiction
       obtain ⟨C', hC', hC'ss⟩ := large_set _ sorry hgt
@@ -164,8 +164,8 @@ lemma indep_not_circuit : M.Indep I → ¬M.Circuit I := imp_not_comm.mp circuit
 @[simp] lemma matroid_indep_iff : M.matroid.Indep I ↔ M.Indep I := by
   simp only [matroid_Indep, IndepMatroid.ofFinset_indep, indep_iff, circuit_iff, not_or, not_and]
 
-@[simp] lemma matroid_rk_eq [Fintype α]: M.matroid.rk = M.rk := by
-  obtain ⟨I, hcard, h⟩ := M.exists_NonspanningCircuitless_rk_set
+@[simp] lemma matroid_rank_eq [Fintype α]: M.matroid.rank = M.rank := by
+  obtain ⟨I, hcard, h⟩ := M.exists_NonspanningCircuitless_rank_set
   simp_rw [imp_not_comm] at h
   have hC: ∀ ⦃C : Finset α⦄, C ⊆ I → ¬M.Circuit C := by
     intro C hsub
@@ -175,7 +175,7 @@ lemma indep_not_circuit : M.Indep I → ¬M.Circuit I := imp_not_comm.mp circuit
     linarith
   obtain hI := matroid_indep_iff.mpr <| M.indep_iff.mpr ⟨h.1, hC⟩
 
-  have hB: ∀ ⦃C : Finset α⦄, M.rk + 1 ≤ C.card ∧ ↑C ⊆ M.E → ¬M.Indep C := by
+  have hB: ∀ ⦃C : Finset α⦄, M.rank + 1 ≤ C.card ∧ ↑C ⊆ M.E → ¬M.Indep C := by
     intro C hC
     obtain ⟨D, hDsub, hDcard⟩ := Finset.exists_subset_card_eq hC.1
     by_cases hD : M.Circuit D
@@ -213,32 +213,32 @@ lemma indep_not_circuit : M.Indep I → ¬M.Circuit I := imp_not_comm.mp circuit
   -- refine Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_)
   -- obtain hC | hC := hC
   -- exact hC.1
-  -- linarith [M.matroid_rk_eq ▸ hC.1.1 ▸ hC.2]
+  -- linarith [M.matroid_rank_eq ▸ hC.1.1 ▸ hC.2]
   -- left
-  -- exact ⟨hC, M.matroid_rk_eq ▸ M.non_spanning hC⟩
+  -- exact ⟨hC, M.matroid_rank_eq ▸ M.non_spanning hC⟩
 
 end FinsetNonspanningCircuitMatroid
 
 
 abbrev CoNonspanningCircuit (M : Matroid α) (K : Finset α) : Prop := M✶.NonspanningCircuit K
 
-lemma circuit_of_NonspanningCircuit_rk {M :Matroid α} [FiniteRk M] : ∀ C : Finset α, ↑C ⊆ M.E →
-  (M.Circuit C ↔ M.NonspanningCircuit C ∨ (C.card = M.rk + 1 ∧ (∀ D, M.NonspanningCircuit D → ¬D ⊆ C))) := by
+lemma circuit_of_NonspanningCircuit_rank {M :Matroid α} [FiniteRk M] : ∀ C : Finset α, ↑C ⊆ M.E →
+  (M.Circuit C ↔ M.NonspanningCircuit C ∨ (C.card = M.rank + 1 ∧ (∀ D, M.NonspanningCircuit D → ¬D ⊆ C))) := by
     sorry
     -- refine fun C hsub ↦ (Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
     -- simp only [NonspanningCircuit, and_imp]
-    -- by_cases h : C.card ≤ M.rk
+    -- by_cases h : C.card ≤ M.rank
     -- · left
     --   exact ⟨hC, h⟩
     -- · right
     --   by_contra! h'
     --   obtain _ :=  Nat.succ_eq_one_add _ ▸ Nat.succ_le_of_lt (not_le.mp h)
     --   obtain ⟨I, hI⟩ := M.exists_basis C
-    --   obtain hI' := Indep.card_le_rk (Basis.indep hI)
+    --   obtain hI' := Indep.card_le_rank (Basis.indep hI)
     --   obtain ⟨e, he, hin⟩ := (Circuit.basis_iff_insert_eq hC).mp hI
     --   obtain _ := ncard_coe_Finset _ ▸ ((ncard_eq_succ (Finset.finite_toSet _)).mpr
     --     ⟨e, I, he.2, hin.symm, rfl⟩)
-    --   have : C.card = M.rk + 1 := by linarith
+    --   have : C.card = M.rank + 1 := by linarith
     --   obtain ⟨D, hCD, hDcard, hDsub⟩ := h' this
     --   obtain heq := Finset.coe_inj.mp <| Circuit.eq_of_subset_circuit hCD hC hDsub
     --   rw [heq] at hDcard
@@ -250,7 +250,7 @@ lemma circuit_of_NonspanningCircuit_rk {M :Matroid α} [FiniteRk M] : ∀ C : Fi
     -- simp only [Circuit, Minimal, le_eq_subset, not_and, not_forall, Classical.not_imp] at hC
     -- have : M.Dep ↑C := by
     --   by_contra!
-    --   obtain a := ncard_coe_Finset _ ▸ Indep.card_le_rk <| (not_dep_iff hsub).mp this
+    --   obtain a := ncard_coe_Finset _ ▸ Indep.card_le_rank <| (not_dep_iff hsub).mp this
     --   linarith
     -- obtain ⟨D, hD, hDsub, hnsub⟩ := hC this
     -- obtain ⟨E, hEsub, hCE⟩ := Dep.exists_circuit_subset hD
@@ -269,40 +269,40 @@ lemma circuit_of_NonspanningCircuit_rk {M :Matroid α} [FiniteRk M] : ∀ C : Fi
 
 lemma eq_of_NonspanningCircuit_iff_NonspanningCircuit_forall {M₁ M₂ : Matroid α} [FiniteRk M₁] [FiniteRk M₂]
   (hE : M₁.E = M₂.E)  (hCiff : ∀ C : Finset α , ↑C ⊆ M₁.E → (M₁.NonspanningCircuit C ↔ M₂.NonspanningCircuit C))
-  (hrk : M₁.rk = M₂.rk ) : M₁ = M₂ := by
+  (hrank : M₁.rank = M₂.rank ) : M₁ = M₂ := by
   refine ext_circuit hE (fun C hsub ↦ Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
   obtain CFin := Circuit.finite hC
-  obtain hC | hC := (circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  obtain hC | hC := (circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (Finite.coe_toFinset CFin ▸ hsub)).mp (Finite.coe_toFinset _ ▸ hC)
   obtain hC := (hCiff (Finite.toFinset CFin) (Finite.coe_toFinset _ ▸ hsub)).mp hC
-  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (hE ▸ Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
   left
   exact hC
-  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (hE ▸ Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
   right
-  refine ⟨hrk ▸ hC.1, fun D hCD ↦ ?_⟩
+  refine ⟨hrank ▸ hC.1, fun D hCD ↦ ?_⟩
   obtain hDE := hE ▸ Circuit.subset_ground hCD.1
   exact hC.2 D <| (hCiff D hDE).mpr hCD
   obtain CFin := Circuit.finite hC
-  obtain hC | hC := (circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  obtain hC | hC := (circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (hE ▸ Finite.coe_toFinset CFin ▸ hsub)).mp (Finite.coe_toFinset _ ▸ hC)
   obtain hC := (hCiff (Finite.toFinset CFin) (Finite.coe_toFinset _ ▸ hsub)).mpr hC
-  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
   left
   exact hC
-  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rk (Finite.toFinset CFin)
+  refine Finite.coe_toFinset CFin ▸ ((circuit_of_NonspanningCircuit_rank (Finite.toFinset CFin)
     (Finite.coe_toFinset _ ▸ hsub)).mpr ?_)
   right
-  refine ⟨hrk ▸ hC.1, fun D hCD ↦ ?_⟩
+  refine ⟨hrank ▸ hC.1, fun D hCD ↦ ?_⟩
   obtain hDE := Circuit.subset_ground hCD.1
   exact hC.2 D <| (hCiff D hDE).mp hCD
 
 
 
-theorem rk_add_dual_rk (M : Matroid α) [M.Finite] : M.rk + M✶.rk = M.E.ncard := by
+theorem rank_add_dual_rank (M : Matroid α) [M.Finite] : M.rank + M✶.rank = M.E.ncard := by
   obtain h := M.eRank_add_dual_eRank
-  rwa [← coe_rk_eq, ← coe_rk_eq, ← ENat.coe_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
+  rwa [← coe_rank_eq, ← coe_rank_eq, ← ENat.coe_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
   exact M.ground_finite

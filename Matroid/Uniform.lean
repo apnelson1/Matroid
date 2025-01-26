@@ -41,10 +41,10 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
 --   exact fun I hI _ _ ↦ encard_mono hI
 
 -- @[simp] theorem unifOn_encard : unifOn E E.encard = freeOn E := by
---   rw [unifOn, truncate_eq_self_of_rk_le (freeOn_eRank_eq _).le]
+--   rw [unifOn, truncate_eq_self_of_rank_le (freeOn_eRank_eq _).le]
 
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
-  rw [unifOn, truncate_eq_self_of_rk_le (by rwa [freeOn_eRank_eq])]
+  rw [unifOn, truncate_eq_self_of_rank_le (by rwa [freeOn_eRank_eq])]
 
 theorem unifOn_base_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).Base B ↔ B.encard = k := by
@@ -198,8 +198,8 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
   rw [eRank_def, unif_eRk_eq]
   simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
 
-@[simp] theorem unif_rk_eq (a b : ℕ) : (unif a b).rk = min a b := by
-  rw [rk, unif_eRank_eq, ENat.toNat_coe]
+@[simp] theorem unif_rank_eq (a b : ℕ) : (unif a b).rank = min a b := by
+  rw [rank, unif_eRank_eq, ENat.toNat_coe]
 
 theorem unif_eRank_eq_of_le (hab : a ≤ b) : (unif a b).eRank = a := by
   simpa
@@ -301,7 +301,7 @@ noncomputable def unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (
 
 theorem unif_isoMinor_unif_iff {a₁ a₂ d₁ d₂ : ℕ} :
     Nonempty (unif a₁ (a₁ + d₁) ≤i unif a₂ (a₂ + d₂)) ↔ a₁ ≤ a₂ ∧ d₁ ≤ d₂ := by
-  refine ⟨fun ⟨e⟩ ↦ ⟨by simpa using e.rk_le, by simpa using IsoMinor.rk_le e.dual⟩, fun h ↦ ?_⟩
+  refine ⟨fun ⟨e⟩ ↦ ⟨by simpa using e.rank_le, by simpa using IsoMinor.rank_le e.dual⟩, fun h ↦ ?_⟩
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le h.1
   exact ⟨(unif_isoMinor_contr a₁ (a₁ + d₁) j).trans (unif_isoRestr_unif _ (by linarith)).isoMinor⟩
 
@@ -451,9 +451,9 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
 /-- A finite-rank uniform matroid is one of the obvious ones. -/
 lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
-  refine ⟨M.E, M.rk, ext_base rfl fun B hBE ↦ ?_⟩
-  rw [unifOn_base_iff (M.coe_rk_eq ▸ M.eRank_le_encard_ground) hBE,
-    coe_rk_eq, iff_def, and_iff_right Base.encard]
+  refine ⟨M.E, M.rank, ext_base rfl fun B hBE ↦ ?_⟩
+  rw [unifOn_base_iff (M.coe_rank_eq ▸ M.eRank_le_encard_ground) hBE,
+    coe_rank_eq, iff_def, and_iff_right Base.encard]
   intro hB
   obtain ⟨B₀, hB₀⟩ := M.exists_base
   refine hM.base_of_base_of_finDiff hB₀ ?_ hBE

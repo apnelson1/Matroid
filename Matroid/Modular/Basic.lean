@@ -590,17 +590,17 @@ lemma rFin.modularPair_iff_eRk (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X �
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
 
-lemma rFin.modularPair_iff_r (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+lemma rFin.modularPair_iff_rk (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
-    M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
-  rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_r_eq,
-    ← hYfin.cast_r_eq, ← (hXfin.inter_right Y).cast_r_eq, ← (hXfin.union hYfin).cast_r_eq,
+    M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
+  rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_rk_eq,
+    ← hYfin.cast_rk_eq, ← (hXfin.inter_right Y).cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 
-lemma modularPair_iff_r [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+lemma modularPair_iff_rk [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
-    M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
-  rw [(M.to_rFin X).modularPair_iff_r (M.to_rFin Y)]
+    M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
+  rw [(M.to_rFin X).modularPair_iff_rk (M.to_rFin Y)]
 
 lemma ModularFamily.modularPair_compl_biUnion {Xs : η → Set α} (h : M.ModularFamily Xs)
     (A : Set η) : M.ModularPair (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by

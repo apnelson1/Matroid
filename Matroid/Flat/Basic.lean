@@ -130,16 +130,16 @@ lemma Flat.eRk_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
   rw [Matroid.eRk_insert_eq_add_one]
   rwa [hF.closure]
 
-lemma Flat.r_insert_eq_add_one (hF : M.Flat F) (hfin : M.rFin F) (he : e ∈ M.E \ F) :
-    M.r (insert e F) = M.r F + 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_r_eq, hF.eRk_insert_eq_add_one he,
-    Nat.cast_add, hfin.cast_r_eq, Nat.cast_one]
+lemma Flat.rk_insert_eq_add_one (hF : M.Flat F) (hfin : M.rFin F) (he : e ∈ M.E \ F) :
+    M.rk (insert e F) = M.rk F + 1 := by
+  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
+    Nat.cast_add, hfin.cast_rk_eq, Nat.cast_one]
 
-lemma Flat.r_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.rFin X)
-    (hX : X ⊆ M.E := by aesop_mat) : M.r F < M.r X := by
+lemma Flat.rk_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.rFin X)
+    (hX : X ⊆ M.E := by aesop_mat) : M.rk F < M.rk X := by
   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
-  rw [Nat.lt_iff_add_one_le, ← hF.r_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
-  exact hfin.r_le_of_subset (insert_subset heX hFX.subset)
+  rw [Nat.lt_iff_add_one_le, ← hF.rk_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
+  exact hfin.rk_le_of_subset (insert_subset heX hFX.subset)
 
 lemma Flat.subset_of_relRank_eq_zero (hF : M.Flat F) (hr : M.relRank F X = 0)
     (hX : X ⊆ M.E := by aesop_mat) : X ⊆ F := by
@@ -149,22 +149,22 @@ lemma Flat.one_le_relRank_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
     (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.relRank F X :=
   ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_relRank_eq_zero h_eq)
 
-lemma exists_insert_r_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
-    ∃ e ∈ M.E \ F, M.r (insert e F) = M.r F := by
+lemma exists_insert_rk_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
+    ∃ e ∈ M.E \ F, M.rk (insert e F) = M.rk F := by
   obtain ⟨e, hecl, heF⟩ := exists_mem_closure_not_mem_of_not_flat hnF
   refine ⟨e, ⟨mem_ground_of_mem_closure hecl, heF⟩, ?_⟩
-  rw [← r_closure_eq, ← closure_insert_closure_eq_closure_insert]
+  rw [← rk_closure_eq, ← closure_insert_closure_eq_closure_insert]
   simp [hecl]
 
-lemma Flat.insert_r_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
-    M.r (insert e F) = M.r F + 1 := by
-  rw [r, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), r,
+lemma Flat.insert_rk_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
+    M.rk (insert e F) = M.rk F + 1 := by
+  rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), rk,
     ENat.toNat_one]
 
-lemma Flat.eq_of_subset_of_r_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.r F' ≤ M.r F)
+lemma Flat.eq_of_subset_of_rk_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.rk F' ≤ M.rk F)
     (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
   refine hFF'.antisymm fun e heF' ↦ by_contra fun heF ↦ ?_
-  linarith [(hF.insert_r_eq ⟨by aesop_mat, heF⟩).symm.trans_le (M.r_mono (insert_subset heF' hFF'))]
+  linarith [(hF.insert_rk_eq ⟨by aesop_mat, heF⟩).symm.trans_le (M.rk_mono (insert_subset heF' hFF'))]
 
 lemma finite_setOf_flat (M : Matroid α) [M.Finite] : {F | M.Flat F}.Finite :=
   M.ground_finite.finite_subsets.subset (fun _ hF ↦ hF.subset_ground)
@@ -366,14 +366,14 @@ lemma Flat.iInter_mem_of_directed_of_rFin {ι : Type*} {F : ι → Set α} (hF :
     (h_dir : Directed (fun A B ↦ B ⊆ A) F) (h_fin : ∃ i, M.rFin (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
   obtain ⟨j, hj⟩ := h_fin
   have _ : Nonempty ι := ⟨j⟩
-  have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.r (F j ∩ F i)) univ
+  have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.rk (F j ∩ F i)) univ
   simp only [image_univ, univ_nonempty, mem_univ, forall_const, true_and, finite_iff_bddAbove]
     at hmin
-  have hub : M.r (F j) ∈ upperBounds (range fun i ↦ M.r (F j ∩ F i))
+  have hub : M.rk (F j) ∈ upperBounds (range fun i ↦ M.rk (F j ∩ F i))
   · rintro _ ⟨X, rfl⟩
-    exact hj.r_le_of_subset inter_subset_left
+    exact hj.rk_le_of_subset inter_subset_left
 
-  obtain ⟨k₁, hk₁⟩ := hmin ⟨(M.r (F j)), hub⟩
+  obtain ⟨k₁, hk₁⟩ := hmin ⟨(M.rk (F j)), hub⟩
   obtain ⟨k, hkk₁ : _ ⊆ _, hkj : _ ⊆ _⟩ := h_dir k₁ j
   refine ⟨k, (iInter_subset _ _).antisymm' (subset_iInter fun i ↦ ?_)⟩
 
@@ -384,7 +384,7 @@ lemma Flat.iInter_mem_of_directed_of_rFin {ι : Type*} {F : ι → Set α} (hF :
     refine (inter_subset_inter_right _ (hki'.trans hkk₁)).ssubset_of_ne fun h_eq ↦ hei ?_
     exact hii' (h_eq.symm.subset ⟨hkj hek, hkk₁ hek⟩).2
 
-  have hlt := (((hF j).inter (hF i')).r_lt_of_superset hss (hj.inter_right _)
+  have hlt := (((hF j).inter (hF i')).rk_lt_of_superset hss (hj.inter_right _)
     (inter_subset_left.trans (hF j).subset_ground))
 
   exact hlt.ne <| (hk₁ _ hlt.le).symm
