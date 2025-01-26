@@ -1,5 +1,4 @@
 import Mathlib.Data.Matroid.Closure
-import Mathlib.Data.Matroid.Constructions
 import Mathlib.Tactic
 
 open Set
