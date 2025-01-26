@@ -340,7 +340,7 @@ protected lemma matroid_eRk_eq_sup (X : Set α) :
   · obtain ⟨I, hI⟩ := M.matroid.exists_basis' X
     obtain (hIfin | hIinf) := I.finite_or_infinite
     · obtain ⟨I, rfl⟩ := hIfin.exists_finset_coe
-      rw [← hI.er, FinsetRankMatroid.matroid_eRk_eq]
+      rw [← hI.eRk, FinsetRankMatroid.matroid_eRk_eq]
       exact le_biSup (f := fun X ↦ (M.r X : ℕ∞)) hI.subset
     suffices h : ⨆ Y ∈ S, (M.r Y : ℕ∞) = ⊤ by rw [h]; apply le_top
     rw [ENat.eq_top_iff_forall_le]

@@ -132,7 +132,7 @@ private theorem polymatroid_rank_eq_on_indep [DecidableEq α] {hf : PolymatroidF
     ∀ Y' ⊆ X, f Y + (X \ Y).card ≤ f Y' + (X \ Y').card) := by
   set M := ofPolymatroidFn hf
   unfold r
-  rw [hX_indep.er, Set.encard_coe_eq_coe_finsetCard, ENat.toNat_coe]
+  rw [hX_indep.eRk, Set.encard_coe_eq_coe_finsetCard, ENat.toNat_coe]
   use ∅
   simp only [empty_subset, sdiff_empty, self_eq_add_left, true_and]
   rw [← bot_eq_empty, hf.zero_at_bot]
@@ -278,7 +278,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
     exact insert_subset (sdiff_subset <| coe_mem e) ((h_subset e).trans hB.subset) <| he
   rw [← hB.r]
   unfold r
-  rw [hB.indep.er, Set.encard_coe_eq_coe_finsetCard, ENat.toNat_coe]
+  rw [hB.indep.eRk, Set.encard_coe_eq_coe_finsetCard, ENat.toNat_coe]
   have h_eq : X \ univ.biUnion Ie = B.toFinset \ univ.biUnion I := by
     ext x; refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     <;> refine mem_sdiff.mpr ⟨?_, ?_⟩
@@ -922,7 +922,7 @@ theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Fins
     simp only [← card_image_of_injective K he_inj]
     have h_indep : M.Indep (image e K : Set α) := he_indep.subset coe_image_subset_range
     rw [← @Nat.cast_le ℕ∞, ← Set.encard_coe_eq_coe_finsetCard (image e K),
-      M.cast_rk_eq_eRk_of_finite <| finite_toSet (image e K), h_indep.er]
+      M.cast_rk_eq_eRk_of_finite <| finite_toSet (image e K), h_indep.eRk]
   refine ⟨⟨?_, he_mem⟩, ?_⟩
   · intro a b hab
     contrapose! he
@@ -1161,7 +1161,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
         suffices h : ((image e (K ∩ image f univ)) : Set α) ⊆ (T : Set α) by
           replace h := hT_indep.subset h
           rw [← @Nat.cast_le ℕ∞, M.cast_rk_eq_eRk_of_finite <| finite_toSet _,
-              ← Set.encard_coe_eq_coe_finsetCard _, h.er]
+              ← Set.encard_coe_eq_coe_finsetCard _, h.eRk]
         simp only [coe_subset]
         intro x hx
         rw [mem_image] at hx

@@ -204,11 +204,11 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   refine ⟨fun h L hL hss ↦ ?_, fun h F hF hi hu ↦ ?_⟩
   · by_cases hLH : L ⊆ H
     · rw [inter_eq_self_of_subset_right hLH] at hss
-      simpa [hL.er] using M.eRk_mono hss
+      simpa [hL.eRk] using M.eRk_mono hss
     have hsk := h hL.flat hss (hH.spanning_of_ssuperset (by simpa))
     rw [← localEConn_eq_zero hH.subset_ground] at hsk
     have hr := hH.localEConn_add_one_eq hLH
-    rw [localEConn_comm, hsk, hL.er] at hr
+    rw [localEConn_comm, hsk, hL.eRk] at hr
     simp at hr
   obtain ⟨I, hI⟩ := M.exists_basis F
   rw [skew_iff_closure_skew_right, ← hI.closure_eq_closure, ← skew_iff_closure_skew_right]
@@ -221,7 +221,7 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   exfalso
   obtain ⟨e, f, hne, hss⟩ := nontrivial_iff_pair_subset.1 hI'
   refine h (M.closure {e,f}) ⟨M.closure_flat _, ?_⟩ (subset_trans ?_ hi)
-  · rw [eRk_closure_eq, (hI.indep.subset hss).er, encard_pair hne]
+  · rw [eRk_closure_eq, (hI.indep.subset hss).eRk, encard_pair hne]
   refine inter_subset_inter_right _ ?_
   rw [hF.eq_closure_of_basis hI]
   exact M.closure_mono hss
@@ -233,7 +233,7 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
   rw [← localEConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
   intro hle
   have hlc := M.localEConn_add_relRank_union_eq_eRk L F
-  rw [hL.er, ← relRank_closure_right, hsp.closure_eq, add_comm] at hlc
+  rw [hL.eRk, ← relRank_closure_right, hsp.closure_eq, add_comm] at hlc
   obtain h_eq | hlt := hle.eq_or_lt
   · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_cancel_iff (by simp),
       ← hF.hyperplane_iff_relRank_ground_eq_one] at hlc
@@ -242,9 +242,9 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
   rw [← zero_add (a := M.localEConn L F), ← hlc, WithTop.add_le_add_iff_right,
     nonpos_iff_eq_zero, relRank_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
   · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
-    simpa [hL.er] using M.eRk_mono hcl
+    simpa [hL.eRk] using M.eRk_mono hcl
   rw [← lt_top_iff_ne_top]
-  exact (M.localEConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.er]))
+  exact (M.localEConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.eRk]))
 
 /-- If `X` is a modular flat, then in any contraction-minor in which `X` spans a nonloop `e`,
 there is an element of `X` parallel to `e`.
@@ -611,7 +611,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
   set D := fun F₀ : {F₀ : Set α // M.Flat F₀ ∧ M.FinRk F₀ ∧ F₀ ⊆ F} ↦ F₀.1 with hD_def
   have hdirD : Directed (· ⊆ ·) D
   · rintro ⟨A, hA, hAfin, hAF⟩ ⟨B, hB, hBfin, hBF⟩
-    refine ⟨⟨_, M.closure_flat (A ∪ B), (hAfin.union hBfin).to_closure,
+    refine ⟨⟨_, M.closure_flat (A ∪ B), (hAfin.union hBfin).closure,
       hF.closure_subset_of_subset (union_subset hAF hBF)⟩,
       M.subset_closure_of_subset' subset_union_left, M.subset_closure_of_subset' subset_union_right⟩
 
@@ -621,7 +621,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
     have heE := hF.subset_ground heF
     refine M.mem_closure_of_mem' (mem_iUnion_of_mem ⟨M.closure {e}, ?_⟩ ?_)
     · rw [FinRk.closure_iff]
-      exact ⟨M.closure_flat _, M.FinRk.of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
+      exact ⟨M.closure_flat _, M.finRk_of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
     simp
     exact M.mem_closure_of_mem' rfl
 
@@ -895,7 +895,7 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.Line L → M.Modular
     have hmod := (hM (M.closure I) ⟨M.closure_flat _, ?_⟩).contract X
     · rwa [contract_closure_eq, closure_union_closure_left_eq, ← contract_closure_eq,
         hI.closure_eq_closure, hF.closure] at hmod
-    rwa [eRk_closure_eq, hI.indep.of_contract.er, ← hI.eRk_eq_encard]
+    rwa [eRk_closure_eq, hI.indep.of_contract.eRk, ← hI.eRk_eq_encard]
   simp only [hX', not_exists] at h_aux
 
   rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,

@@ -61,7 +61,7 @@ theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ 
   rw [eRank_def, unifOn_ground_eq, unifOn_eRk_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
-  rw [← FinRk.ground_iff_finiteRk, FinRk, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+  rw [← finRk_ground_iff_finiteRk, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
@@ -645,7 +645,7 @@ end IsoMinor
         simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
       theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
-          (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
+          (hcard : n ≤ L.encard) (hr : M.eRk L ≤ 2) : unif 2 n ≤ir M := by
         obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
         have hYs := hL.subset hYL
         refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
@@ -657,7 +657,7 @@ end IsoMinor
         exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
       theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
-          ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
+          ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
         refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
           h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
         obtain ⟨N, hNM, hN⟩ := hR
@@ -685,7 +685,7 @@ end IsoMinor
   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
 theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
-    (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
+    (hcard : n ≤ L.encard) (hr : M.eRk L ≤ 2) : unif 2 n ≤ir M := by
   obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
   have hYs := hL.subset hYL
   refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
@@ -697,7 +697,7 @@ theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L
   exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
 theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
-    ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
+    ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
   refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
     h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
   obtain ⟨N, hNM, hN⟩ := hR

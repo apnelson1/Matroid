@@ -177,11 +177,11 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
 
 @[simp] theorem sum'_eRk_eq_eRk_sum_on_indep {α ι : Type*} [Fintype ι] [Fintype α]
   {Ms : ι → Matroid α} {I : Set (ι × α)} (h : (Matroid.sum' Ms).Indep I):
-  (Matroid.sum' Ms).er I = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' I) := by
+  (Matroid.sum' Ms).eRk I = ∑ i : ι, (Ms i).eRk (Prod.mk i ⁻¹' I) := by
   classical
-  rw [Indep.er h]
+  rw [Indep.eRk h]
   simp only [sum'_indep_iff] at h
-  simp_rw [Indep.er (h _)]
+  simp_rw [Indep.eRk (h _)]
   set f := fun x : ι × α ↦ x.1
   rw [← Finite.cast_ncard_eq I.toFinite,  I.ncard_eq_toFinset_card']
   rw [Finset.card_eq_sum_card_fiberwise (by refine fun x _ ↦ Finset.mem_univ (f x))]
@@ -217,7 +217,7 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
 
 @[simp] theorem sum'_eRk_eq_eRk_sum {α ι : Type*} [Fintype ι] [Fintype α]
   (Ms : ι → Matroid α) (X : Set (ι × α)):
-  (Matroid.sum' Ms).er X = ∑ i : ι, (Ms i).er (Prod.mk i ⁻¹' X) := by
+  (Matroid.sum' Ms).eRk X = ∑ i : ι, (Ms i).eRk (Prod.mk i ⁻¹' X) := by
   obtain ⟨I , hI⟩ := (Matroid.sum' Ms).exists_basis' X
   have : ∀ i : ι, (Ms i).Basis' (Prod.mk i ⁻¹' I) (Prod.mk i ⁻¹' X)  := by
     intro i
@@ -240,7 +240,7 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
       subset_union_left
     exact subset_trans (subset_preimage_image _ _)
       (preimage_mono (union_subset_iff.mp h'').2)
-  simp_rw [← Basis'.er hI, ← Basis'.er (this _)]
+  simp_rw [← Basis'.eRk hI, ← Basis'.eRk (this _)]
   exact sum'_eRk_eq_eRk_sum_on_indep hI.1.1
 
 @[simp] theorem sum'_rk_eq_rk_sum {α ι : Type*} [Fintype ι] [Fintype α]
@@ -441,7 +441,7 @@ theorem matroid_partition' [DecidableEq α] [Fintype α]
     exact ha
 
 theorem matroid_partition_eRk' [DecidableEq α] [Fintype α]
-  (M₁ : Matroid α) (M₂ : Matroid α) : ∃ Y : Set α, M₁.er Y + M₂.er Y + (univ \ Y).encard =
+  (M₁ : Matroid α) (M₂ : Matroid α) : ∃ Y : Set α, M₁.eRk Y + M₂.eRk Y + (univ \ Y).encard =
     (Matroid.union M₁ M₂).eRank := by
   obtain ⟨⟨Y, hY⟩, h⟩ := matroid_partition' M₁ M₂
   have : ∀ Y : Finset α, (Finset.univ \ Y).card = (univ \ Y.toSet).ncard := by
@@ -534,7 +534,7 @@ lemma exists_union'_base_of_base_union' [DecidableEq α] [Fintype α] (M : Matro
 
 theorem matroid_intersection_aux [Fintype α] (M : Matroid α) (N : Matroid α) (ground_eq : M.E = N.E)
     (ground_univ : N.E = univ) : ∃ I X, M.Indep I ∧ N.Indep I ∧ I.encard =
-    M.er X + N.er Xᶜ := by
+    M.eRk X + N.eRk Xᶜ := by
   classical
   obtain ⟨B, C, h, hB, hC⟩ := exists_union'_base_of_base_union' M N.dual
   obtain ⟨X, heq⟩ := matroid_partition_eRk' M N.dual
@@ -547,26 +547,26 @@ theorem matroid_intersection_aux [Fintype α] (M : Matroid α) (N : Matroid α) 
   refine ⟨B ∩ (N.E \ C), X, Matroid.Indep.subset (Matroid.Base.indep hB) inter_subset_left,
     Matroid.Indep.subset (Matroid.Base.indep (Base.compl_base_of_dual hC)) inter_subset_right, ?_⟩
   have hcard : (B ∩ (N.E \ C)).encard + N✶.eRank + X.encard + N.eRank =
-    M.er X + N✶.er X + (univ \ X).encard + X.encard + N.eRank := by
+    M.eRk X + N✶.eRk X + (univ \ X).encard + X.encard + N.eRank := by
     rw [h']
   -- have aux : _ + X.encard + (N.eRank + N✶.eRank)
-  --   = M.er X + (univ \ X).encard + X.encard + (N✶.er X + N.eRank) := by
+  --   = M.eRk X + (univ \ X).encard + X.encard + (N✶.eRk X + N.eRank) := by
   --   convert hcard using 1 <;> ac_rfl
   -- rw [N.dual_eRk_add_eRank, eRank_add_dual_eRank] at aux
 
-  rwa [add_comm, add_comm (B ∩ (N.E \ C)).encard, ← add_assoc, ← add_assoc, ← hg, add_assoc (M.er X),
-     add_comm (N✶.er X), add_assoc (M.er X), add_assoc (univ \ X).encard, add_comm (N✶.er X),
-     add_assoc (M.er X), add_assoc (univ \ X).encard, add_assoc X.encard, hd,
-     ← add_assoc (univ \ X).encard, hX, ← add_assoc univ.encard, add_comm (M.er X),
+  rwa [add_comm, add_comm (B ∩ (N.E \ C)).encard, ← add_assoc, ← add_assoc, ← hg, add_assoc (M.eRk X),
+     add_comm (N✶.eRk X), add_assoc (M.eRk X), add_assoc (univ \ X).encard, add_comm (N✶.eRk X),
+     add_assoc (M.eRk X), add_assoc (univ \ X).encard, add_assoc X.encard, hd,
+     ← add_assoc (univ \ X).encard, hX, ← add_assoc univ.encard, add_comm (M.eRk X),
      add_assoc, add_assoc, add_assoc, WithTop.add_left_cancel_iff, add_comm (a := X.encard),
      ← add_assoc, WithTop.add_right_cancel_iff, add_comm, ← compl_eq_univ_diff] at hcard
   · exact encard_ne_top_iff.2 X.toFinite
   exact encard_ne_top_iff.2 univ.toFinite
 
 theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
-    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.er X + M₂.er (M₂.E \ X) := by
+    ∃ I X, M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.eRk X + M₂.eRk (M₂.E \ X) := by
   suffices aux : ∀ (E : Set α) (M₁ M₂ : Matroid α), M₁.Finite → M₁.E = E → M₂.E = E →
-      ∃ I X, X ⊆ M₁.E ∩ M₂.E ∧  M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.er X + M₂.er (E \ X) by
+      ∃ I X, X ⊆ M₁.E ∩ M₂.E ∧  M₁.Indep I ∧ M₂.Indep I ∧ I.encard = M₁.eRk X + M₂.eRk (E \ X) by
     obtain ⟨I, X, _, hI₁, hI₂, hIX⟩ := aux M₁.E M₁ (M₂ ↾ M₁.E) (by assumption) rfl rfl
     simp only [restrict_eRk_eq', inter_eq_self_of_subset_left diff_subset] at hIX
     refine ⟨I, X ∪ (M₂.E \ M₁.E), hI₁, hI₂.of_restrict, ?_⟩

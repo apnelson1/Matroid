@@ -22,7 +22,7 @@ theorem point_count_eq_card_iff_simple [Finite M] :
 
 /-- rank-`k` flats of `M ／ e` correspond to rank-`(k+1)` flats of `M` containing `e`. -/
 def Nonloop.contract_flat_equiv (he : M.Nonloop e) (k : ℕ) :
-  {F // (M ／ e).Flat F ∧ (M ／ e).er F = k} ≃ {F // M.Flat F ∧ M.er F = k + 1 ∧ e ∈ F} where
+  {F // (M ／ e).Flat F ∧ (M ／ e).eRk F = k} ≃ {F // M.Flat F ∧ M.eRk F = k + 1 ∧ e ∈ F} where
     toFun := fun F ↦ ⟨insert e F, by
       obtain ⟨F, hF⟩ := F
       rw [he.contract_flat_iff, ← WithTop.add_right_cancel_iff WithTop.one_ne_top,

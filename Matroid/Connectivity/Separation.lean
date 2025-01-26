@@ -120,7 +120,7 @@ lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
   refine ⟨(M.econn_le_eRk C).trans_lt ?_, ?_⟩
   · rw [← hC.eRk_add_one_eq, ENat.lt_add_one_iff]
     rw [eRk_ne_top_iff]
-    exact FinRk.of_finite M hfin
+    exact finRk_of_finite M hfin
   rwa [← encard_diff_add_encard_of_subset hC.subset_ground, two_mul,
     WithTop.add_le_add_iff_right] at hcard
   rwa [encard_ne_top_iff]

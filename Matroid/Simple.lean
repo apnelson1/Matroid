@@ -79,7 +79,7 @@ lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := 
 
 lemma pair_closure_line [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.Line (M.closure {e,f}) := by
-  rwa [Line, and_iff_right (M.closure_flat _), eRk_closure_eq, (pair_indep he hf).er, encard_pair]
+  rwa [Line, and_iff_right (M.closure_flat _), eRk_closure_eq, (pair_indep he hf).eRk, encard_pair]
 
 lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
@@ -94,7 +94,7 @@ lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := 
 
 lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.eRk {e,f} = 2 := by
-  rw [(pair_indep he).er, encard_pair hef]
+  rw [(pair_indep he).eRk, encard_pair hef]
 
 lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
   lt_of_not_le fun hle ↦ hD.not_indep (indep_of_encard_le_two hle)

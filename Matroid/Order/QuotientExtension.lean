@@ -34,23 +34,23 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   have hXy2 : M₂.Flat (M₂.closure (insert y X)) := closure_flat M₂ (insert y X)
   have hXy1 : M₁.Flat (M₂.closure (insert y X)) := Quotient.flat_of_flat hQ hXy2
   have h1 := hQ.relRank_le (M₂.closure (insert y X)) M₂.E
-  have h2 := add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
+  have h2 := add_le_add_right h1 (M₂.eRk (M₂.closure (insert y X)))
   -- have h1 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) ≤ M₁.relRank (M₂.closure (insert y X)) (M₁.E):= by
   --   have := hQ.relRank_le (M₂.closure_subset_ground (insert y X)) hE.symm.subset
   --   rwa [← hE] at this ⊢
   --   sorry
     --exact (TFAE_Quotient hE) hQ
-  -- have h2 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) + M₂.er (M₂.closure (insert y X)) ≤
-  --     M₁.relRank (M₂.closure (insert y X)) (M₁.E) + M₂.er (M₂.closure (insert y X)) := by
-  --   exact add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
+  -- have h2 : M₂.relRank (M₂.closure (insert y X)) (M₂.E) + M₂.eRk (M₂.closure (insert y X)) ≤
+  --     M₁.relRank (M₂.closure (insert y X)) (M₁.E) + M₂.eRk (M₂.closure (insert y X)) := by
+  --   exact add_le_add_right h1 (M₂.eRk (M₂.closure (insert y X)))
   have hcE1 : (M₂.closure (insert y X)) ⊆ M₂.E := closure_subset_ground M₂ (insert y X)
   rw [relRank_add_eRk_of_subset M₂ hcE1] at h2
-  have h3 : M₂.er M₂.E + M₁.er (M₂.closure (insert y X)) ≤
-      M₁.relRank (M₂.closure (insert y X)) M₁.E + M₂.er (M₂.closure (insert y X)) +
-        M₁.er (M₂.closure (insert y X)):= by
+  have h3 : M₂.eRk M₂.E + M₁.eRk (M₂.closure (insert y X)) ≤
+      M₁.relRank (M₂.closure (insert y X)) M₁.E + M₂.eRk (M₂.closure (insert y X)) +
+        M₁.eRk (M₂.closure (insert y X)):= by
     convert add_le_add_right h2 _
   rw [hE.symm] at hcE1
-  rw [add_assoc, add_comm (M₂.er (M₂.closure (insert y X))) (M₁.er (M₂.closure (insert y X))),
+  rw [add_assoc, add_comm (M₂.eRk (M₂.closure (insert y X))) (M₁.eRk (M₂.closure (insert y X))),
     ←add_assoc, relRank_add_eRk_of_subset M₁ hcE1] at h3
   -- have h4 : M₂.r M₂.E + M₁.r (M₂.closure (insert y X)) ≤ M₁.r M₁.E + M₂.r (M₂.closure (insert y X)) := by
   simp_rw [← cast_rk_eq] at h3
@@ -76,7 +76,7 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   have hXsub : X ⊆ (M₂.closure (insert y X)) :=
     (M₂.subset_closure X hX2.subset_ground).trans <| M₂.closure_subset_closure (subset_insert _ _)
   --have h9 : M₁.r (M₂.closure (insert y X))
-    --  ≤ M₁.r X + M₂.er (M₂.closure (insert y X)) - M₂.er X := by sorry
+    --  ≤ M₁.r X + M₂.eRk (M₂.closure (insert y X)) - M₂.eRk X := by sorry
   --have h10 : M₁.r (M₂.closure (insert y X))
       --≤ M₁.r X + M₂.relRank X (M₂.closure (insert y X)):= by sorry
   --rw [FinRk.relRank_eq_sub.symm hFin1 hXsub] at h9
@@ -87,9 +87,9 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
     rw [← hE]
     exact hYE (mem_of_mem_diff hy)
   have hX2E: X ⊆ M₂.E := hX2.subset_ground
-  --have hfdsf : M₂.er (M₂.closure (insert y X)) - M₂.er X = M₂.relRank X (M₂.closure (insert y X)) := Eq.symm (FinRk.relRank_eq_sub hFin1 hXsub)
+  --have hfdsf : M₂.eRk (M₂.closure (insert y X)) - M₂.eRk X = M₂.relRank X (M₂.closure (insert y X)) := Eq.symm (FinRk.relRank_eq_sub hFin1 hXsub)
   --have hhelp : M₂.relRank X (insert y X) = M₂.relRank X (M₂.closure (insert y X)) := Eq.symm (relRank_closure_right M₂ X (insert y X))
-  have hdi : M₂.er (M₂.closure (insert y X)) - M₂.er X = 1 := by
+  have hdi : M₂.eRk (M₂.closure (insert y X)) - M₂.eRk X = 1 := by
     rw [← (FinRk.relRank_eq_sub hFin1 hXsub), relRank_closure_right M₂ X (insert y X)]
     exact relRank_insert_eq_one hy' hX2E
 

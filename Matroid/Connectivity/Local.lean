@@ -433,8 +433,9 @@ lemma FinRk.modularPair_iff_localEConn_eq_eRk_inter (hX : M.FinRk X) (Y : Set α
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.localEConn_eq hIY, ← h_inter, hIi.encard, ← add_zero (a := M.eRk _), add_assoc, zero_add,
-    WithTop.add_left_cancel_iff (hX.inter_right Y).ne, eRank_eq_zero_iff, ← eq_dual_iff_dual_eq,
-    loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff] at h
+    WithTop.add_left_cancel_iff (hX.inter_right Y).eRk_ne_top, eRank_eq_zero_iff,
+    ← eq_dual_iff_dual_eq, loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff]
+    at h
 
   exact h.modularPair_of_union.of_basis_of_basis hIX hIY
 
@@ -494,7 +495,8 @@ lemma localConn_comm (M : Matroid α) (X Y : Set α) : M.localConn X Y = M.local
 
 lemma FinRk.cast_localConn_right_eq (hX : M.FinRk X) (Y : Set α) :
     (M.localConn X Y : ℕ∞) = M.localEConn X Y :=
-  ENat.coe_toNat fun htop ↦ hX.not_le <| htop.symm.le.trans <| M.localEConn_le_eRk_left X Y
+  ENat.coe_toNat fun htop ↦ hX.eRk_lt_top.not_le
+    <| htop.symm.le.trans <| M.localEConn_le_eRk_left X Y
 
 lemma FinRk.cast_localConn_left_eq (hY : M.FinRk Y) : (M.localConn X Y : ℕ∞) = M.localEConn X Y := by
   rw [localConn_comm, hY.cast_localConn_right_eq, localEConn_comm]
@@ -558,7 +560,7 @@ lemma FinRk.modularPair_iff_localConn_eq_rk_inter (hX : M.FinRk X) (Y : Set α)
   · rw [eRk_ne_top_iff]
     exact hX.inter_right Y
   rw [← WithTop.lt_top_iff_ne_top]
-  exact (M.localEConn_le_eRk_left _ _).trans_lt hX
+  exact (M.localEConn_le_eRk_left _ _).trans_lt hX.eRk_lt_top
 
 lemma modularPair_iff_localConn_eq_rk_inter [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
@@ -680,7 +682,7 @@ noncomputable def conn (M : Matroid α) (X : Set α) : ℕ := (M.econn X).toNat
 @[simp] lemma cast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
     (M.conn X : ℕ∞) = M.econn X := by
   rw [conn, econn_eq_localEConn]
-  exact ENat.coe_toNat ((localEConn_le_eRk_left _ _ _).trans_lt (M.to_finRk X)).ne
+  exact ENat.coe_toNat ((localEConn_le_eRk_left _ _ _).trans_lt (M.to_finRk X).eRk_lt_top).ne
 
 @[simp] lemma cast_conn_eq' (M : Matroid α) [FiniteRk M✶] : (M.conn X : ℕ∞) = M.econn X := by
   rw [← conn_dual, cast_conn_eq, econn_dual]

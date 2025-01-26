@@ -339,7 +339,7 @@ lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
 --     freeOn E ≤i M ↔ E.encard ≤ M.eRank := by
 --   rw [Matroid.freeOn_isoMinor_iff]
 --   refine ⟨fun ⟨f, hf⟩  ↦ ?_, fun h ↦ ?_⟩
---   · rw [encard_congr <| Equiv.ofInjective f f.2, ← hf.er]
+--   · rw [encard_congr <| Equiv.ofInjective f f.2, ← hf.eRk]
 --     apply eRk_le_eRank
 --   obtain ⟨B, hB⟩ := M.exists_base
 --   rw [← hB.encard, hE.encard_le_iff_nonempty_embedding] at h

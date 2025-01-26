@@ -10,18 +10,18 @@ namespace Matroid
 lemma Point.flat (hP : M.Point P) : M.Flat P :=
   hP.1
 
-lemma Point.er (hP : M.Point P) : M.eRk P = 1 :=
+lemma Point.eRk (hP : M.Point P) : M.eRk P = 1 :=
   hP.2
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
-lemma Point.FinRk.(hP : M.Point P) : M.FinRk P := by
-  simp [← eRk_ne_top_iff, hP.er]
+lemma Point.finRk (hP : M.Point P) : M.FinRk P := by
+  simp [← eRk_ne_top_iff, hP.eRk]
 
 lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
-  ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.er, encard_singleton]⟩
+  ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.eRk, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
   simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left,
@@ -32,7 +32,7 @@ lemma Point.covBy (hP : M.Point P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2
 
 lemma Point.exists_eq_closure_nonloop (hP : M.Point P) : ∃ e, M.Nonloop e ∧ P = M.closure {e} := by
   obtain ⟨I, hI⟩ := M.exists_basis P
-  obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard.trans hP.er
+  obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard.trans hP.eRk
   obtain rfl := hP.flat.eq_closure_of_basis hI
   exact ⟨e, indep_singleton.1 hI.indep, rfl⟩
 
@@ -40,13 +40,13 @@ lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P
     P = M.closure {e} := by
   rw [← indep_singleton] at he
   exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_eRk_le_of_finite
-    (singleton_subset_iff.2 heP) (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
+    (singleton_subset_iff.2 heP) (by rw [hP.eRk, he.eRk, encard_singleton]) (finite_singleton e)
 
 lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
   ⟨Point.exists_eq_closure_nonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_point⟩
 
 lemma Point.nonloop (hP : M.Point {e}) : M.Nonloop e := by
-  simpa using hP.er
+  simpa using hP.eRk
 
 lemma Point.insert_indep (h : M.Point {e}) (f : α) (hf : f ∈ M.E := by aesop_mat) :
     M.Indep {e, f} := by
@@ -151,21 +151,21 @@ abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.eRk L = 2
 lemma Line.flat (hL : M.Line L) : M.Flat L :=
   hL.1
 
-lemma Line.er (hL : M.Line L) : M.eRk L = 2 :=
+lemma Line.eRk (hL : M.Line L) : M.eRk L = 2 :=
   hL.2
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
 lemma Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
 
-lemma Line.FinRk.(hL : M.Line L) : M.FinRk L := by
-  simp [← eRk_ne_top_iff, hL.er]
+lemma Line.finRk (hL : M.Line L) : M.FinRk L := by
+  simp [← eRk_ne_top_iff, hL.eRk]
 
 lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
   rw [(M.closure_flat {e}).covBy_iff_relRank_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
     singleton_subset_iff, iff_self_and, relRank_closure_left]
   intro heL
-  rw [(M.FinRk.singleton e).relRank_eq_sub (by simpa), he.eRk_eq, hL.er]
+  rw [(M.finRk_singleton e).relRank_eq_sub (by simpa), he.eRk_eq, hL.eRk]
   rfl
 
 lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by
@@ -183,5 +183,5 @@ abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.eRk P = 3
 lemma Plane.flat (hP : M.Plane P) : M.Flat P :=
   hP.1
 
-lemma Plane.er (hP : M.Plane P) : M.eRk P = 3 :=
+lemma Plane.eRk (hP : M.Plane P) : M.eRk P = 3 :=
   hP.2
