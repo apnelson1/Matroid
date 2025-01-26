@@ -860,7 +860,7 @@ lemma projectBy_eq_map_comap (U : M.ModularCut) :
     M.projectBy U = ((((M.map _ (some_injective _).injOn).extendBy none
       (U.map _ (some_injective _).injOn)) ／ (none : Option α)).comap Option.some) := by
   refine ext_indep (by simp [projectBy, (Option.some_injective α).preimage_image]) fun I _ ↦ ?_
-  rw [projectBy_aux, projectBy]
+  rw [projectBy_aux, projectBy, Matroid.ofExistsMatroid]
   simp
 
 @[simp] lemma projectBy_ground_eq (U : M.ModularCut) : (M.projectBy U).E = M.E := rfl

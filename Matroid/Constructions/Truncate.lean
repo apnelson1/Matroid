@@ -34,7 +34,7 @@ def truncateTo (M : Matroid α) (k : ℕ∞) : Matroid α :=
       (fun k ↦ ⟨M.truncateToNat k, rfl, fun _ ↦ by simp [truncateToNat]⟩))
 
 @[simp] theorem truncateTo_top (M : Matroid α) : M.truncateTo ⊤ = M :=
-  ext_indep rfl (by simp [truncateTo])
+  ext_indep rfl (by simp [truncateTo, Matroid.ofExistsMatroid])
 
 @[simp] theorem truncateTo_indep_iff : (M.truncateTo k).Indep I ↔ (M.Indep I ∧ I.encard ≤ k) :=
     Iff.rfl
@@ -130,7 +130,8 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
 
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
-  simp (config := {contextual := true}) [truncate, ModularCut.principal, eq_loopyOn_iff]
+  simp (config := {contextual := true})
+    [truncate, ModularCut.principal, eq_loopyOn_iff, Matroid.ofExistsMatroid]
 
 @[simp] lemma truncate_emptyOn_eq (α : Type*) : (emptyOn α).truncate = emptyOn α := by
   rw [← ground_eq_empty_iff]

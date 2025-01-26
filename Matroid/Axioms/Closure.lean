@@ -1,6 +1,4 @@
-import Mathlib.Data.Matroid.Basic
-import Matroid.Closure
-import Mathlib.Data.Matroid.IndepAxioms
+import Mathlib.Data.Matroid.Closure
 
 open Set Matroid
 

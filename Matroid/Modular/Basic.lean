@@ -50,7 +50,7 @@ lemma ModularBase.subtype {Xs : η → Set α} (h : M.ModularBase B Xs) (A : Set
 
 lemma ModularBase.basis_iInter [Nonempty ι] (h : M.ModularBase B Xs) :
     M.Basis ((⋂ i, Xs i) ∩ B) (⋂ i, Xs i) :=
-  h.1.indep.interBasis_iInter (fun _ ↦ h.2 _)
+  h.1.indep.inter_Basis_iInter (fun _ ↦ h.2 _)
 
 lemma ModularBase.basis_iUnion (h : M.ModularBase B Xs) :
     M.Basis ((⋃ i, Xs i) ∩ B) (⋃ i, Xs i) := by
@@ -70,7 +70,7 @@ lemma Base.modularBase_of_forall_subset_closure (hB : M.Base B)
 
 lemma ModularBase.basis_biInter {Xs : η → Set α} (h : M.ModularBase B Xs) (hA : A.Nonempty) :
     M.Basis ((⋂ i ∈ A, Xs i) ∩ B) (⋂ i ∈ A, Xs i) :=
-  h.1.indep.interBasis_biInter hA (fun _ _ ↦ h.2 _)
+  h.1.indep.inter_Basis_biInter hA (fun _ _ ↦ h.2 _)
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
 lemma ModularBase.iInter_subset_ground [Nonempty ι] (h : M.ModularBase B Xs) : ⋂ i, Xs i ⊆ M.E :=

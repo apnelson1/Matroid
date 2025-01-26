@@ -4,13 +4,11 @@ import Matroid.Axioms.Flat
 import Matroid.Axioms.Rank
 import Matroid.Circuit
 import Matroid.Clone
-import Matroid.Closure
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
-import Matroid.Constructions.Basic
 import Matroid.Constructions.Matching
 import Matroid.Constructions.ParallelExtension
 import Matroid.Constructions.Project

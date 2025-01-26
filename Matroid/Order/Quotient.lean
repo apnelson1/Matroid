@@ -128,7 +128,7 @@ lemma Quotient.cyclic_of_circuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.C
   rw [cyclic_iff_forall_exists]
   intro e heC
   have hcl := hQ.closure_subset_closure (C \ {e})
-  rw [hC.closure_diff_singleton_eq_closure] at hcl
+  rw [hC.closure_diff_singleton_eq] at hcl
   have heN := (M₁.subset_closure C hC.subset_ground).trans hcl heC
   have hCN : C ⊆ M₂.E := hC.subset_ground.trans_eq hQ.ground_eq.symm
   rwa [mem_closure_iff_mem_or_exists_circuit (diff_subset.trans hCN), or_iff_right (by simp),
@@ -208,7 +208,7 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
 
 --Begin finite case
 lemma Quotient.finiteRk {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
-  rw [finiteRk_iff, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
+  rw [finiteRk_iff_erk_ne_top, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.relRank_le _ _).trans_lt hM₁
 

@@ -372,8 +372,8 @@ lemma Nonloop.closure_eq_closure_iff_circuit_of_ne (he : M.Nonloop e) (hef : e �
     suffices ¬ M.Indep {e, f} by simpa [pair_diff_left hef, hf, pair_diff_right hef, he]
     rw [Indep.insert_indep_iff_of_not_mem (by simpa) (by simpa)]
     simp [← h, mem_closure_self _ _ he.mem_ground]
-  have hclosure := (h.closure_diff_singleton_eq_closure e).trans
-    (h.closure_diff_singleton_eq_closure f).symm
+  have hclosure := (h.closure_diff_singleton_eq e).trans
+    (h.closure_diff_singleton_eq f).symm
   rwa [pair_diff_left hef, pair_diff_right hef, eq_comm] at hclosure
 
 lemma Nonloop.closure_eq_closure_iff_eq_or_dep (he : M.Nonloop e) (hf : M.Nonloop f) :

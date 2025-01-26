@@ -211,7 +211,7 @@ lemma Coindep.delete_base_iff (hD : M.Coindep D) : (M ＼ D).Base B ↔ M.Base B
   exact h.1.basis_ground.basis_subset (by simp [subset_diff, h.1.subset_ground, h.2]) diff_subset
 
 lemma Coindep.delete_rkPos [M.RkPos] (hD : M.Coindep D) : (M ＼ D).RkPos := by
-  simp [rkPos_iff_empty_not_base, hD.delete_base_iff, M.empty_not_base]
+  simp [rkPos_iff, hD.delete_base_iff, M.empty_not_base]
 
 lemma Coindep.delete_spanning_iff (hD : M.Coindep D) :
     (M ＼ D).Spanning S ↔ M.Spanning S ∧ Disjoint S D := by

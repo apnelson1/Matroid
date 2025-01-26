@@ -467,7 +467,7 @@ lemma IsSimplification.ground_eq_biUnion_closure [M.RkPos] (hNM : N.IsSimplifica
   refine ⟨fun x hx ↦ ?_, fun _ _ _ h ↦ mem_ground_of_mem_closure h⟩
   obtain hx' | hx' := M.loop_or_nonloop x hx
   · have hN : N.RkPos :=
-      rkPos_iff_empty_not_base.2 <| fun hN ↦ M.empty_not_base <| hNM.base_of_base hN
+      (rkPos_iff _).2 <| fun hN ↦ M.empty_not_base <| hNM.base_of_base hN
     obtain ⟨f, hf⟩ := N.exists_nonloop
     exact ⟨f, hf.mem_ground, hx'.mem_closure _⟩
   obtain ⟨f, hf⟩ := hNM.exists_unique hx'

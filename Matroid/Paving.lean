@@ -82,7 +82,7 @@ lemma Paving.base_exchange_circuit_of_not_base (hM : M.Paving) (hB : M.Base B)
 
   obtain ⟨C, hCB', hC⟩ := hB'.exists_circuit_subset
   have hcl : f ∉ M.closure C := by
-    rw [← hC.closure_diff_singleton_eq_closure e]
+    rw [← hC.closure_diff_singleton_eq e]
     exact not_mem_subset (M.closure_subset_closure (by simpa)) <|
       hB.indep.not_mem_closure_diff_of_mem hfB
 
@@ -96,7 +96,7 @@ lemma Paving.base_exchange_circuit_of_not_base (hM : M.Paving) (hB : M.Base B)
     exact hCB'.trans (insert_subset_insert diff_subset)
 
   rw [spanning_iff, ← closure_insert_closure_eq_closure_insert,
-    ← hC.closure_diff_singleton_eq_closure e, closure_insert_closure_eq_closure_insert] at hCsp
+    ← hC.closure_diff_singleton_eq e, closure_insert_closure_eq_closure_insert] at hCsp
 
   have h_eq : insert f (C \ {e}) = B :=
     hB.indep.eq_of_spanning_subset (by rw [spanning_iff_closure_eq, hCsp.1]) hss

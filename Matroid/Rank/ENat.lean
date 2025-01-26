@@ -79,7 +79,7 @@ lemma one_le_erk (M : Matroid α) [RkPos M] : 1 ≤ M.erk := by
   rw [← hB.encard, one_le_encard_iff_nonempty]
   exact hB.nonempty
 
-lemma finiteRk_iff : M.FiniteRk ↔ M.erk ≠ ⊤ := by
+lemma finiteRk_iff_erk_ne_top : M.FiniteRk ↔ M.erk ≠ ⊤ := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard, encard_ne_top_iff]
   exact ⟨fun h ↦ hB.finite, fun h ↦ hB.finiteRk_of_finite h⟩
@@ -533,8 +533,8 @@ lemma nullity_restrict_self (M : Matroid α) (X : Set α) : (M ↾ X).nullity X 
   M.nullity_restrict_of_subset rfl.subset
 
 lemma Basis'.nullity_eq (hIX : M.Basis' I X) : M.nullity X = (X \ I).encard := by
-  rw [M.nullity_eq_erk_restrict_dual, ← hIX.base_restrict.compl_base_dual.encard]
-  rfl
+  rw [M.nullity_eq_erk_restrict_dual, ← (base_restrict_iff'.2 hIX).compl_base_dual.encard,
+    restrict_ground_eq]
 
 lemma Basis.nullity_eq (hIX : M.Basis I X) : M.nullity X = (X \ I).encard :=
   hIX.basis'.nullity_eq
