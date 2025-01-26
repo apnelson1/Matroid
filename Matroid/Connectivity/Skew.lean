@@ -202,8 +202,8 @@ lemma SkewFamily.sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α} (h : M.
   rw [(h.iUnion_basis_iUnion hIs).eRk_eq_encard, encard_iUnion _ hdj]
   simp_rw [(hIs _).eRk_eq_encard]
 
-lemma rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α}
-    (hXs : ∀ i, M.rFin (Xs i)) (hXE : ∀ i, Xs i ⊆ M.E) :
+lemma FinRk.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α}
+    (hXs : ∀ i, M.FinRk (Xs i)) (hXE : ∀ i, Xs i ⊆ M.E) :
     M.SkewFamily Xs ↔ ∑ i, M.eRk (Xs i) = M.eRk (⋃ i, Xs i) := by
   refine ⟨SkewFamily.sum_eRk_eq_eRk_iUnion, fun hsum ↦ ?_⟩
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (hXE i)
@@ -212,8 +212,8 @@ lemma rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α
     M.closure_iUnion_closure_eq_closure_iUnion, eRk_closure_eq, (fun i ↦ (hIs i).indep.er)] at hsum
 
   apply Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
-  · exact rFin.indep_of_encard_le_eRk
-      ((rFin.iUnion hXs).subset (iUnion_mono (fun i ↦ (hIs i).subset)))
+  · exact FinRk.indep_of_encard_le_eRk
+      ((FinRk.iUnion hXs).subset (iUnion_mono (fun i ↦ (hIs i).subset)))
       ((encard_iUnion_le _).trans hsum.le)
   rw [← pairwise_univ]
   exact pairwiseDisjoint_of_encard_sum_le_encard_iUnion
@@ -221,7 +221,7 @@ lemma rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α
 
 lemma skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [FiniteRk M] {Xs : η → Set α}
     (hXs : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.rk (Xs i) = M.rk (⋃ i, Xs i) := by
-  simp_rw [rFin.skewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.to_rFin (Xs i)) hXs,
+  simp_rw [FinRk.skewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.to_finRk (Xs i)) hXs,
     ← M.cast_rk_eq, ← Nat.cast_sum, Nat.cast_inj]
 
 lemma skewFamily_iff_forall_circuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ M.E)

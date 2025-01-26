@@ -61,7 +61,7 @@ theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ 
   rw [eRank_def, unifOn_ground_eq, unifOn_eRk_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
-  rw [← rFin_ground_iff_finiteRk, rFin, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+  rw [← FinRk.ground_iff_finiteRk, FinRk, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :

@@ -756,12 +756,12 @@ theorem rado_v2 (M : Matroid α) (A : ι → Finset α) :
   have hf_submodular : Submodular f := by
     intro a b
     simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
-    exact rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)
+    exact FinRk.submod (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)
   have hf_mono : Monotone f := by
     intro a b hab
     simp only [le_eq_subset, ← coe_subset] at hab
-    rw [← rFin.eRk_le_eRk_iff
-      (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    rw [← FinRk.eRk_le_eRk_iff
+      (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)]
     exact M.eRk_mono hab
   have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono
   simp only [f] at h
@@ -905,12 +905,12 @@ theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Fins
   have hf_submodular : Submodular f := by
     intro a b
     simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
-    exact rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)
+    exact FinRk.submod (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)
   have hf_mono : Monotone f := by
     intro a b hab
     simp only [le_eq_subset, ← coe_subset] at hab
-    rw [← rFin.eRk_le_eRk_iff
-      (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    rw [← FinRk.eRk_le_eRk_iff
+      (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)]
     exact M.eRk_mono hab
   have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono
   simp only [f] at h
@@ -1042,8 +1042,8 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
         suffices M.r ↑((image f (K.erase i).attach).biUnion A') ≤ M.r ↑(K.biUnion A) by
           rw [add_assoc]
           refine Nat.add_le_add this <| Nat.add_le_of_le_sub hd_pos le_rfl
-        refine rFin.rk_le_rk_of_eRk_le_eRk ?_ ?_
-        · apply rFin_of_finite
+        refine FinRk.rk_le_rk_of_eRk_le_eRk ?_ ?_
+        · apply FinRk.of_finite
           exact finite_toSet (K.biUnion A)
         apply M.eRk_mono
         simp only [image_biUnion, Set.le_eq_subset, coe_subset]
@@ -1116,13 +1116,13 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
   have hf_submodular : Submodular f := by
     intro a b
     simp only [inf_eq_inter, sup_eq_union, f, coe_inter, coe_union]
-    linarith [rFin.submod (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    linarith [FinRk.submod (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)]
   have hf_mono : Monotone f := by
     intro a b hab
     simp only [le_eq_subset, ← coe_subset] at hab
     simp only [f, add_le_add_iff_right]
-    rw [← rFin.eRk_le_eRk_iff
-      (M.rFin_of_finite <| finite_toSet a) (M.rFin_of_finite <| finite_toSet b)]
+    rw [← FinRk.eRk_le_eRk_iff
+      (M.FinRk.of_finite <| finite_toSet a) (M.FinRk.of_finite <| finite_toSet b)]
     exact M.eRk_mono hab
 
   have h := generalized_halls_marriage hA_nonempty hf_submodular hf_mono

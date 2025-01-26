@@ -130,12 +130,12 @@ lemma Flat.eRk_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
   rw [Matroid.eRk_insert_eq_add_one]
   rwa [hF.closure]
 
-lemma Flat.rk_insert_eq_add_one (hF : M.Flat F) (hfin : M.rFin F) (he : e ∈ M.E \ F) :
+lemma Flat.rk_insert_eq_add_one (hF : M.Flat F) (hfin : M.FinRk F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
   rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_rk_eq, hF.eRk_insert_eq_add_one he,
     Nat.cast_add, hfin.cast_rk_eq, Nat.cast_one]
 
-lemma Flat.rk_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.rFin X)
+lemma Flat.rk_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.FinRk X)
     (hX : X ⊆ M.E := by aesop_mat) : M.rk F < M.rk X := by
   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
   rw [Nat.lt_iff_add_one_le, ← hF.rk_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
@@ -158,7 +158,7 @@ lemma exists_insert_rk_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
 
 lemma Flat.insert_rk_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
-  rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), rk,
+  rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_finRk]) (by simp), rk,
     ENat.toNat_one]
 
 lemma Flat.eq_of_subset_of_rk_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.rk F' ≤ M.rk F)
@@ -362,8 +362,8 @@ section Directed
 
 /-- Any downwards-directed collection of flats containing a flat of finite rank
 must contain its intersection. -/
-lemma Flat.iInter_mem_of_directed_of_rFin {ι : Type*} {F : ι → Set α} (hF : ∀ i, M.Flat (F i))
-    (h_dir : Directed (fun A B ↦ B ⊆ A) F) (h_fin : ∃ i, M.rFin (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
+lemma Flat.iInter_mem_of_directed_of_finRk {ι : Type*} {F : ι → Set α} (hF : ∀ i, M.Flat (F i))
+    (h_dir : Directed (fun A B ↦ B ⊆ A) F) (h_fin : ∃ i, M.FinRk (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
   obtain ⟨j, hj⟩ := h_fin
   have _ : Nonempty ι := ⟨j⟩
   have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.rk (F j ∩ F i)) univ

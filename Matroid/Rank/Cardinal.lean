@@ -5,6 +5,7 @@ Authors: Peter Nelson, Junyan Xu
 -/
 import Mathlib.Data.Matroid.Closure
 import Mathlib.Data.Matroid.Map
+import Matroid.ForMathlib.Card
 import Mathlib.SetTheory.Cardinal.Arithmetic
 
 /-!
@@ -102,6 +103,9 @@ theorem cRk_le_cardinalMk (M : Matroid α) (X : Set α) : M.cRk X ≤ #X :=
 @[simp] theorem cRk_ground (M : Matroid α) : M.cRk M.E = M.cRank := by
   rw [cRk, restrict_ground_eq_self]
 
+@[simp] theorem cRk_empty (M : Matroid α) : M.cRk ∅ = 0 :=
+  le_zero_iff.1 (by simpa using M.cRk_le_cardinalMk ∅)
+
 @[simp] theorem cRank_restrict (M : Matroid α) (X : Set α) : (M ↾ X).cRank = M.cRk X := rfl
 
 theorem cRk_mono (M : Matroid α) : Monotone M.cRk := by
@@ -175,6 +179,44 @@ theorem cRk_map_eq {β : Type u} {f : α → β} {X : Set β} (M : Matroid α) (
   lift_inj.1 <| M.cRk_comap_lift ..
 
 end Rank
+
+section Finite
+
+@[simp] theorem cRank_eq_zero : M.cRank = 0 ↔ ∃ E, M = loopyOn E := by
+  rw [← le_zero_iff, cRank_le_iff]
+  simp only [nonpos_iff_eq_zero, mk_eq_zero_iff, isEmpty_coe_sort, eq_loopyOn_iff,
+    exists_and_right, exists_eq', true_and]
+  refine ⟨fun h X hX hXi ↦ ?_, fun h B hB ↦ h _ hB.subset_ground hB.indep⟩
+  obtain ⟨B, hB, hXB⟩ := hXi.exists_base_superset
+  simpa [h hB] using hXB
+
+theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
+  rw [cRank_eq_zero]
+  exact ⟨by rintro ⟨E, rfl⟩; rfl, fun h ↦ ⟨M.E, h⟩⟩
+
+/-- A version of `Matroid.cRk_eq_zero_iff` applying to sets not contained in the ground set. -/
+theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
+  rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
+    restrict_ground_eq, subset_antisymm_iff]
+  simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
+  rw [union_comm, ← diff_subset_iff, diff_diff_right_self, subset_inter_iff,
+    and_iff_left inter_subset_left]
+
+theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
+    M.cRk X ≤ 1 ↔ ∃ e, X ⊆ M.closure {e} := by
+  simp_rw [cRk_le_iff, mk_le_one_iff_set_subsingleton]
+  refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ I hIX ↦ ?_⟩
+  · obtain ⟨I, hI⟩ := M.exists_basis X
+    obtain rfl | ⟨e, rfl⟩ := (h hI.basis').eq_empty_or_singleton
+    · exact ⟨Classical.arbitrary α, hI.subset_closure.trans (M.closure_subset_closure (by simp))⟩
+    exact ⟨e, hI.subset_closure⟩
+  obtain ⟨J, hJ, hIJ⟩ := hIX.indep.subset_basis_of_subset (hIX.subset.trans he)
+  obtain ⟨J', hJ'⟩ := M.exists_basis' {e}
+  refine encard_le_one_iff_subsingleton.1 ((encard_le_card hIJ).trans ?_)
+  rw [← hJ'.basis_closure_right.encard_eq_encard hJ]
+  exact (encard_le_card hJ'.subset).trans (by simp)
+
+end Finite
 
 section Invariant
 

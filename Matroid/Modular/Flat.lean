@@ -588,7 +588,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
       fun i ↦ iInter_subset_of_subset {i} (by simp)⟩
 
   -- The intersection is modular with every finite-rank flat.
-  have hfin : ∀ F, M.Flat F → M.rFin F → M.ModularPair (⋂ i, X i) F
+  have hfin : ∀ F, M.Flat F → M.FinRk F → M.ModularPair (⋂ i, X i) F
   · intro F hF hfin
     rw [modularPair_iff_forall_distrib_of_subset_left (Flat.iInter (fun i ↦ (hX i).flat))
       hF.subset_ground]
@@ -599,7 +599,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
       simp only [subset_inter_iff, inter_subset_right, and_true]
       exact fun _ _ ↦ inter_subset_left.trans
 
-    obtain ⟨i₀, hi₀⟩ := Flat.iInter_mem_of_directed_of_rFin (fun i ↦ (hX i).flat.inter hF) hdir'
+    obtain ⟨i₀, hi₀⟩ := Flat.iInter_mem_of_directed_of_finRk (fun i ↦ (hX i).flat.inter hF) hdir'
       ⟨Classical.arbitrary ι, hfin.inter_left _⟩
     rw [iInter_inter (s := F), ← hi₀, ← (hX i₀).distrib_of_subset_self hF (hYss i₀)]
     exact inter_subset_inter_left _ (iInter_subset _ _)
@@ -608,7 +608,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
   -- Since `⋂ i, X i` is a modular pair with every flat in the collection, it is modular with `F`.
   rw [modularFlat_iff, and_iff_right (Flat.iInter fun i ↦ (hX i).flat)]
   intro F hF
-  set D := fun F₀ : {F₀ : Set α // M.Flat F₀ ∧ M.rFin F₀ ∧ F₀ ⊆ F} ↦ F₀.1 with hD_def
+  set D := fun F₀ : {F₀ : Set α // M.Flat F₀ ∧ M.FinRk F₀ ∧ F₀ ⊆ F} ↦ F₀.1 with hD_def
   have hdirD : Directed (· ⊆ ·) D
   · rintro ⟨A, hA, hAfin, hAF⟩ ⟨B, hB, hBfin, hBF⟩
     refine ⟨⟨_, M.closure_flat (A ∪ B), (hAfin.union hBfin).to_closure,
@@ -620,8 +620,8 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
     refine ⟨hF.closure_subset_of_subset (iUnion_subset fun F₀ ↦ F₀.2.2.2), fun e heF ↦ ?_⟩
     have heE := hF.subset_ground heF
     refine M.mem_closure_of_mem' (mem_iUnion_of_mem ⟨M.closure {e}, ?_⟩ ?_)
-    · rw [rFin_closure_iff]
-      exact ⟨M.closure_flat _, M.rFin_of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
+    · rw [FinRk.closure_iff]
+      exact ⟨M.closure_flat _, M.FinRk.of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
     simp
     exact M.mem_closure_of_mem' rfl
 
