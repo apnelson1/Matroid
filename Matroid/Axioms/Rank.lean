@@ -330,17 +330,17 @@ protected lemma matroid_indep_iff' {I : Set α} :
     rwa [← Finset.coe_insert, FinsetRankMatroid.matroid_indep_iff]
   exact heI <| by simpa using hI.mem_of_insert_indep (e := e) (by simpa) hi
 
-@[simp] protected lemma matroid_er_eq (X : Finset α) : M.matroid.er X = M.r X := by
-  rw [← Matroid.cast_r_eq_er_of_finite _ (by simp), FinsetRankMatroid.matroid_r_eq]
+@[simp] protected lemma matroid_eRk_eq (X : Finset α) : M.matroid.eRk X = M.r X := by
+  rw [← Matroid.cast_r_eq_eRk_of_finite _ (by simp), FinsetRankMatroid.matroid_r_eq]
 
-protected lemma matroid_er_eq_sup (X : Set α) :
-    M.matroid.er X = ⨆ Y ∈ {Y : Finset α | (Y : Set α) ⊆ X}, (M.r Y : ℕ∞) := by
+protected lemma matroid_eRk_eq_sup (X : Set α) :
+    M.matroid.eRk X = ⨆ Y ∈ {Y : Finset α | (Y : Set α) ⊆ X}, (M.r Y : ℕ∞) := by
   refine le_antisymm ?_ ?_
   set S := {Y : Finset α | (Y : Set α) ⊆ X}
   · obtain ⟨I, hI⟩ := M.matroid.exists_basis' X
     obtain (hIfin | hIinf) := I.finite_or_infinite
     · obtain ⟨I, rfl⟩ := hIfin.exists_finset_coe
-      rw [← hI.er, FinsetRankMatroid.matroid_er_eq]
+      rw [← hI.er, FinsetRankMatroid.matroid_eRk_eq]
       exact le_biSup (f := fun X ↦ (M.r X : ℕ∞)) hI.subset
     suffices h : ⨆ Y ∈ S, (M.r Y : ℕ∞) = ⊤ by rw [h]; apply le_top
     rw [ENat.eq_top_iff_forall_le]
@@ -348,8 +348,8 @@ protected lemma matroid_er_eq_sup (X : Set α) :
     obtain ⟨J, hJI, rfl⟩ := hIinf.exists_subset_card_eq b
     rw [← FinsetRankMatroid.matroid_indep_iff.1 (hI.indep.subset hJI)]
     apply le_biSup _ (show J ∈ S from hJI.trans hI.subset)
-  simp only [mem_setOf_eq, ← FinsetRankMatroid.matroid_er_eq, iSup_le_iff]
-  exact fun Y hYX ↦ M.matroid.er_mono hYX
+  simp only [mem_setOf_eq, ← FinsetRankMatroid.matroid_eRk_eq, iSup_le_iff]
+  exact fun Y hYX ↦ M.matroid.eRk_mono hYX
 
 /-- A rank function on `Finset`s that is bounded above by cardinality, monotone and submodular
 gives rise to a `FinsetRankMatroid`. -/

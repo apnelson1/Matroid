@@ -41,27 +41,27 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
 --   exact fun I hI _ _ ↦ encard_mono hI
 
 -- @[simp] theorem unifOn_encard : unifOn E E.encard = freeOn E := by
---   rw [unifOn, truncate_eq_self_of_rk_le (freeOn_erk_eq _).le]
+--   rw [unifOn, truncate_eq_self_of_rk_le (freeOn_eRank_eq _).le]
 
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
-  rw [unifOn, truncate_eq_self_of_rk_le (by rwa [freeOn_erk_eq])]
+  rw [unifOn, truncate_eq_self_of_rk_le (by rwa [freeOn_eRank_eq])]
 
 theorem unifOn_base_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).Base B ↔ B.encard = k := by
-  rw [unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_erk_eq]
+  rw [unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_eRank_eq]
 
-theorem unifOn_er_eq (E : Set α) (k : ℕ) (hX : X ⊆ E) : (unifOn E k).er X = min X.encard k := by
-  rw [unifOn, truncateTo_er_eq, freeOn_er_eq hX]
+theorem unifOn_eRk_eq (E : Set α) (k : ℕ) (hX : X ⊆ E) : (unifOn E k).eRk X = min X.encard k := by
+  rw [unifOn, truncateTo_eRk_eq, freeOn_eRk_eq hX]
 
-theorem unifOn_er_eq' (E : Set α) (k : ℕ) : (unifOn E k).er X = min (X ∩ E).encard k := by
-  rw [← er_inter_ground, unifOn_er_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
+theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ E).encard k := by
+  rw [← eRk_inter_ground, unifOn_eRk_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
     unifOn_ground_eq]
 
-@[simp] theorem unifOn_erk_eq (E : Set α) (k : ℕ) : (unifOn E k).erk = min E.encard k := by
-  rw [erk_def, unifOn_ground_eq, unifOn_er_eq _ _ Subset.rfl]
+@[simp] theorem unifOn_eRank_eq (E : Set α) (k : ℕ) : (unifOn E k).eRank = min E.encard k := by
+  rw [eRank_def, unifOn_ground_eq, unifOn_eRk_eq _ _ Subset.rfl]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
-  rw [← rFin_ground_iff_finiteRk, rFin, unifOn_er_eq _ _ (by simp [rfl.subset])]
+  rw [← rFin_ground_iff_finiteRk, rFin, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
@@ -88,7 +88,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
 
 @[simp] theorem unifOn_spanning_iff' :
     (unifOn E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E  := by
-  rw [spanning_iff_er', erk_def, unifOn_ground_eq, unifOn_er_eq', unifOn_er_eq',
+  rw [spanning_iff_eRk', eRank_def, unifOn_ground_eq, unifOn_eRk_eq', unifOn_eRk_eq',
     le_min_iff, min_le_iff, min_le_iff, iff_true_intro (le_refl _), or_true, and_true, inter_self]
   refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) ?_⟩
@@ -191,22 +191,22 @@ def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
 @[simp] theorem unif_indep_iff (I) : (unif a b).Indep I ↔ I.encard ≤ a := by
   rw [unif, unifOn_indep_iff, and_iff_left (subset_univ _)]
 
-@[simp] theorem unif_er_eq (X) : (unif a b).er X = min X.encard a := by
-  rw [unif, unifOn_er_eq _ _ (subset_univ _)]
+@[simp] theorem unif_eRk_eq (X) : (unif a b).eRk X = min X.encard a := by
+  rw [unif, unifOn_eRk_eq _ _ (subset_univ _)]
 
-@[simp] theorem unif_erk_eq (a b : ℕ) : (unif a b).erk = min a b := by
-  rw [erk_def, unif_er_eq]
+@[simp] theorem unif_eRank_eq (a b : ℕ) : (unif a b).eRank = min a b := by
+  rw [eRank_def, unif_eRk_eq]
   simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
 
 @[simp] theorem unif_rk_eq (a b : ℕ) : (unif a b).rk = min a b := by
-  rw [rk, unif_erk_eq, ENat.toNat_coe]
+  rw [rk, unif_eRank_eq, ENat.toNat_coe]
 
-theorem unif_erk_eq_of_le (hab : a ≤ b) : (unif a b).erk = a := by
+theorem unif_eRank_eq_of_le (hab : a ≤ b) : (unif a b).eRank = a := by
   simpa
 
 theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ B.encard = a := by
   rw [unif, unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
-  rwa [freeOn_erk_eq, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
+  rwa [freeOn_eRank_eq, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
 
 @[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
   rw [unif_base_iff (Nat.le_add_right _ _)]
@@ -452,7 +452,7 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
 lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
   refine ⟨M.E, M.rk, ext_base rfl fun B hBE ↦ ?_⟩
-  rw [unifOn_base_iff (M.coe_rk_eq ▸ M.erk_le_encard_ground) hBE,
+  rw [unifOn_base_iff (M.coe_rk_eq ▸ M.eRank_le_encard_ground) hBE,
     coe_rk_eq, iff_def, and_iff_right Base.encard]
   intro hB
   obtain ⟨B₀, hB₀⟩ := M.exists_base
@@ -522,32 +522,32 @@ end Infinite
 
 section LowRank
 
-lemma eq_unifOn_of_erk_le_one [M.Loopless] (hM : M.erk ≤ 1) : ∃ E, M = unifOn E 1 := by
+lemma eq_unifOn_of_eRank_le_one [M.Loopless] (hM : M.eRank ≤ 1) : ∃ E, M = unifOn E 1 := by
   simp (config := { contextual := true }) only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff,
     exists_eq_left', and_true]
-  exact fun I hIE ↦ ⟨fun hI ↦ hI.encard_le_erk.trans hM,
+  exact fun I hIE ↦ ⟨fun hI ↦ hI.encard_le_eRank.trans hM,
     fun hI ↦ subsingleton_indep (encard_le_one_iff_subsingleton.1 hI) hIE⟩
 
-lemma eq_unifOn_of_erk_le_two [M.Simple] (hM : M.erk ≤ 2) : ∃ E, M = unifOn E 2 := by
+lemma eq_unifOn_of_eRank_le_two [M.Simple] (hM : M.eRank ≤ 2) : ∃ E, M = unifOn E 2 := by
   simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, true_and]
-  exact ⟨_, rfl, fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_erk.trans hM, hIE⟩,
+  exact ⟨_, rfl, fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_eRank.trans hM, hIE⟩,
     fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩⟩
 
-theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.erk ≤ 2 ∧ M.Simple := by
+theorem eq_unifOn_two_iff : M = unifOn E 2 ↔ M.E = E ∧ M.eRank ≤ 2 ∧ M.Simple := by
   refine ⟨?_, fun ⟨hE, hr, h⟩ ↦ ?_⟩
   · rintro rfl
-    simpa [unifOn_erk_eq] using unifOn_simple E
-  obtain ⟨E', rfl⟩ := eq_unifOn_of_erk_le_two hr
+    simpa [unifOn_eRank_eq] using unifOn_simple E
+  obtain ⟨E', rfl⟩ := eq_unifOn_of_eRank_le_two hr
   rw [show E' = E from hE]
 
 lemma unifOn_one_dual (E : Set α) : (unifOn E 1)✶ = circuitOn E := by
   rw [← circuitOn_dual, dual_dual]
 
 theorem nonempty_iso_line_iff {n : ℕ} :
-    Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+    Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
   simp [nonempty_iso_unif_iff', ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
-lemma erk_le_one_iff : M.erk ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E₀ E₁),
+lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E₀ E₁),
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by
   refine ⟨fun hr ↦ ⟨M.closure ∅, M.E \ M.closure ∅, disjoint_sdiff_right, ?_⟩, ?_⟩
   · refine ext_indep ?_ fun I hI ↦ ?_
@@ -557,14 +557,14 @@ lemma erk_le_one_iff : M.erk ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E�
     refine ⟨fun h ↦ ?_, fun ⟨hcl, hss, _⟩ ↦ ?_⟩
     · rw [and_iff_right h.disjoint_loops, ← encard_le_one_iff_subsingleton,
         and_iff_left (h.subset_ground.trans subset_union_right)]
-      exact (h.subset inter_subset_left).encard_le_erk.trans hr
+      exact (h.subset inter_subset_left).encard_le_eRank.trans hr
     have hI : I ∩ (M.E \ M.closure ∅) = I := by rwa [inter_eq_left, subset_diff, and_iff_left hcl]
     rw [hI] at hss
     obtain rfl | ⟨e, rfl⟩ := hss.eq_empty_or_singleton
     · exact M.empty_indep
     rwa [indep_singleton, nonloop_iff_not_mem_closure_empty, ← disjoint_singleton_left]
   rintro ⟨E₀, E₁, hdj, rfl⟩
-  simp [unifOn_erk_eq]
+  simp [unifOn_eRank_eq]
 
 end LowRank
 
@@ -606,9 +606,9 @@ lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ 
   rw [hE, Subtype.val_injective.encard_image, ← image_univ, hf.encard_image]
   simp
 
-lemma no_line_minor_iff_of_erk_le_two (hM : M.erk ≤ 2) :
+lemma no_line_minor_iff_of_eRank_le_two (hM : M.eRank ≤ 2) :
     M.NoUniformMinor 2 b ↔ M.simplification.E.encard < b := by
-  obtain ⟨E, he⟩ := eq_unifOn_of_erk_le_two (M := M.simplification) (by simpa)
+  obtain ⟨E, he⟩ := eq_unifOn_of_eRank_le_two (M := M.simplification) (by simpa)
   rw [← not_iff_not, not_noUniformMinor_iff, (unif_simple 0 b).minor_iff_minor_simplification, he,
     ← not_iff_not, ← not_noUniformMinor_iff, not_not, not_not,
     unifOn_noUniformMinor_iff, unifOn_ground_eq]
@@ -625,11 +625,11 @@ end IsoMinor
           unif a b ≤i unif a' b' ↔ a ≤ a' ∧ b - a ≤ b' - a' := by
         refine ⟨fun h ↦ ?_, fun ⟨hr, hr'⟩  ↦ ?_⟩
         · constructor
-          · have hle := h.erk_le_erk
-            simp only [unif_erk_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
+          · have hle := h.eRank_le_eRank
+            simp only [unif_eRank_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
             obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
-          have hle := h.dual.erk_le_erk
-          rw [unif_dual, unif_dual, unif_erk_eq_of_le (by simp), unif_erk_eq_of_le (by simp)] at hle
+          have hle := h.dual.eRank_le_eRank
+          rw [unif_dual, unif_dual, unif_eRank_eq_of_le (by simp), unif_eRank_eq_of_le (by simp)] at hle
           exact (WithTop.le_coe rfl).1 hle
         have hbb' := add_le_add hr hr'
         rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
@@ -641,10 +641,10 @@ end IsoMinor
         · zify at hr'; simpa using hr'
         linarith
 
-      @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+      @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
         simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
-      theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
+      theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
           (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
         obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
         have hYs := hL.subset hYL
@@ -653,13 +653,13 @@ end IsoMinor
         simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
           and_iff_left hY]
         refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
-        · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
+        · exact (hI.encard_le_eRk_of_subset (hIY.trans hYL)).trans hr
         exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
       theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
           ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
         refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
-          h <| line_isoRestr_of_simple_er_le_two hL hle hLr, fun h hR ↦ ?_⟩
+          h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
         obtain ⟨N, hNM, hN⟩ := hR
         obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
         rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff] at hN
@@ -681,10 +681,10 @@ end IsoMinor
 /-
 
 
-@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.erk ≤ 2 ∧ M.E.encard = n := by
+@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
-theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
+theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
     (hcard : n ≤ L.encard) (hr : M.er L ≤ 2) : unif 2 n ≤ir M := by
   obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
   have hYs := hL.subset hYL
@@ -693,13 +693,13 @@ theorem line_isoRestr_of_simple_er_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L)
   simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
     and_iff_left hY]
   refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
-  · exact (hI.encard_le_er_of_subset (hIY.trans hYL)).trans hr
+  · exact (hI.encard_le_eRk_of_subset (hIY.trans hYL)).trans hr
   exact (indep_of_encard_le_two (M := M ↾ Y) hI).of_restrict
 
 theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
     ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.er L ≤ 2 → L.encard < n := by
   refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
-    h <| line_isoRestr_of_simple_er_le_two hL hle hLr, fun h hR ↦ ?_⟩
+    h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
   obtain ⟨N, hNM, hN⟩ := hR
   obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
   rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff] at hN

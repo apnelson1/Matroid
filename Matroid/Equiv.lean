@@ -325,10 +325,10 @@ def Iso.ofForallCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.Circuit ↑C
     exact ⟨↑(e.symm '' C), by simpa [Set.preimage_val_image_val_eq_self] using hCD,
       by rw [h]; simpa⟩ )
 
-lemma Iso.erk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.erk = N.erk := by
+lemma Iso.eRank_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.eRank = N.eRank := by
   obtain (rfl | hne) := M.eq_emptyOn_or_nonempty
   · simp [e.right_eq_empty]
   obtain ⟨f, hf, rfl⟩ := e.exists_eq_map'; simp
 
 lemma Iso.rk_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rk = N.rk := by
-  rw [rk, e.erk_eq]
+  rw [rk, e.eRank_eq]

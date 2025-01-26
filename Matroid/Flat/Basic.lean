@@ -125,14 +125,14 @@ lemma Flat.closure_eq_iff_basis_of_indep (hF : M.Flat F) (hI : M.Indep I) :
 lemma Flat.eq_closure_of_basis (hF : M.Flat F) (hI : M.Basis I F) : F = M.closure I :=
   hI.subset_closure.antisymm (hF.closure_subset_of_subset hI.subset)
 
-lemma Flat.er_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
-    M.er (insert e F) = M.er F + 1 := by
-  rw [Matroid.er_insert_eq_add_one]
+lemma Flat.eRk_insert_eq_add_one (hF : M.Flat F) (he : e ∈ M.E \ F) :
+    M.eRk (insert e F) = M.eRk F + 1 := by
+  rw [Matroid.eRk_insert_eq_add_one]
   rwa [hF.closure]
 
 lemma Flat.r_insert_eq_add_one (hF : M.Flat F) (hfin : M.rFin F) (he : e ∈ M.E \ F) :
     M.r (insert e F) = M.r F + 1 := by
-  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_r_eq, hF.er_insert_eq_add_one he,
+  rw [← Nat.cast_inj (R := ℕ∞), (hfin.insert _).cast_r_eq, hF.eRk_insert_eq_add_one he,
     Nat.cast_add, hfin.cast_r_eq, Nat.cast_one]
 
 lemma Flat.r_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.rFin X)
@@ -158,7 +158,7 @@ lemma exists_insert_r_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
 
 lemma Flat.insert_r_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
     M.r (insert e F) = M.r F + 1 := by
-  rw [r, hF.er_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), r,
+  rw [r, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_rFin]) (by simp), r,
     ENat.toNat_one]
 
 lemma Flat.eq_of_subset_of_r_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.r F' ≤ M.r F)

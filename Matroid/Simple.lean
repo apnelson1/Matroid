@@ -79,7 +79,7 @@ lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := 
 
 lemma pair_closure_line [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.Line (M.closure {e,f}) := by
-  rwa [Line, and_iff_right (M.closure_flat _), er_closure_eq, (pair_indep he hf).er, encard_pair]
+  rwa [Line, and_iff_right (M.closure_flat _), eRk_closure_eq, (pair_indep he hf).er, encard_pair]
 
 lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by
@@ -92,8 +92,8 @@ lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := 
     exact pair_indep
   norm_num
 
-lemma er_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
-    (hf : f ∈ M.E := by aesop_mat) : M.er {e,f} = 2 := by
+lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
+    (hf : f ∈ M.E := by aesop_mat) : M.eRk {e,f} = 2 := by
   rw [(pair_indep he).er, encard_pair hef]
 
 lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
@@ -448,9 +448,9 @@ lemma IsSimplification.base_of_base {B : Set α} (hN : N.IsSimplification M) (hB
     M.Base B :=
   (hB.basis_of_restriction hN.restriction).base_of_spanning hN.ground_spanning
 
-lemma IsSimplification.erk_eq (hN : N.IsSimplification M) : N.erk = M.erk := by
+lemma IsSimplification.eRank_eq (hN : N.IsSimplification M) : N.eRank = M.eRank := by
   obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hN.restriction
-  exact hN.ground_spanning.erk_restrict
+  exact hN.ground_spanning.eRank_restrict
 
 lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, {x | M.Parallel e x} := by
@@ -543,8 +543,8 @@ lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.cl
 lemma simplification_restriction (M : Matroid α) : M.simplification ≤r M :=
   M.simplification_isSimplification.restriction
 
-@[simp] lemma simplification_erk_eq (M : Matroid α) : M.simplification.erk = M.erk := by
-  rw [M.simplification_isSimplification.erk_eq]
+@[simp] lemma simplification_eRank_eq (M : Matroid α) : M.simplification.eRank = M.eRank := by
+  rw [M.simplification_isSimplification.eRank_eq]
 
 end Simplification
 section minor

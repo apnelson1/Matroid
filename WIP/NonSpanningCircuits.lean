@@ -303,6 +303,6 @@ lemma eq_of_NonspanningCircuit_iff_NonspanningCircuit_forall {M₁ M₂ : Matroi
 
 
 theorem rk_add_dual_rk (M : Matroid α) [M.Finite] : M.rk + M✶.rk = M.E.ncard := by
-  obtain h := M.erk_add_dual_erk
+  obtain h := M.eRank_add_dual_eRank
   rwa [← coe_rk_eq, ← coe_rk_eq, ← ENat.coe_add, ← Finite.cast_ncard_eq, Nat.cast_inj] at h
   exact M.ground_finite

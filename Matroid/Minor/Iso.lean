@@ -189,9 +189,9 @@ noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
   have hex := e.exists_restr_iso
   hex.choose_spec.choose.isoMinor.trans hex.choose_spec.choose_spec.minor.isoMinor
 
-lemma IsoMinor.erk_le (e : N ≤i M) : N.erk ≤ M.erk := by
+lemma IsoMinor.eRank_le (e : N ≤i M) : N.eRank ≤ M.eRank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
-  exact i.erk_eq.trans_le hM₀.erk_le
+  exact i.eRank_eq.trans_le hM₀.eRank_le
 
 lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
@@ -231,9 +231,9 @@ lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
 -- theorem isoMinor_dual_iff : N✶ ≤i M✶ ↔ N ≤i M :=
 --   ⟨fun h ↦ by rw [← dual_dual M, ← dual_dual N]; exact h.dual, IsoMinor.dual⟩
 
--- theorem IsoMinor.erk_le_erk (h : N ≤i M) : N.erk ≤ M.erk := by
+-- theorem IsoMinor.eRank_le_eRank (h : N ≤i M) : N.eRank ≤ M.eRank := by
 --   obtain ⟨N', hN', hNM⟩ := h
---   exact hNM.erk_eq_erk.le.trans hN'.erk_le
+--   exact hNM.eRank_eq_eRank.le.trans hN'.eRank_le
 
 -- theorem IsoMinor.encard_ground_le_encard_ground (h : N ≤i M) : N.E.encard ≤ M.E.encard := by
 --   obtain ⟨N', hN', (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩)⟩ := h; simp
@@ -336,11 +336,11 @@ lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
 --   exact ⟨(Equiv.ofInjective f f.2).symm⟩
 
 -- theorem freeOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
---     freeOn E ≤i M ↔ E.encard ≤ M.erk := by
+--     freeOn E ≤i M ↔ E.encard ≤ M.eRank := by
 --   rw [Matroid.freeOn_isoMinor_iff]
 --   refine ⟨fun ⟨f, hf⟩  ↦ ?_, fun h ↦ ?_⟩
 --   · rw [encard_congr <| Equiv.ofInjective f f.2, ← hf.er]
---     apply er_le_erk
+--     apply eRk_le_eRank
 --   obtain ⟨B, hB⟩ := M.exists_base
 --   rw [← hB.encard, hE.encard_le_iff_nonempty_embedding] at h
 --   obtain ⟨e⟩ := h
@@ -349,7 +349,7 @@ lemma IsoMinor.rk_le (e : N ≤i M) [FiniteRk M] : N.rk ≤ M.rk := by
 --   simp
 
 -- theorem loopyOn_isoMinor_iff_of_finite {E : Set α} (hE : E.Finite) :
---     loopyOn E ≤i M ↔ E.encard ≤ M✶.erk := by
+--     loopyOn E ≤i M ↔ E.encard ≤ M✶.eRank := by
 --   rw [← isoMinor_dual_iff, loopyOn_dual_eq, freeOn_isoMinor_iff_of_finite hE]
 
 -- end free_loopy

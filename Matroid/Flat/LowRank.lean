@@ -5,12 +5,12 @@ variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H�
 open Set
 namespace Matroid
 
-@[reducible] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 1
+@[reducible] def Point (M : Matroid α) (P : Set α) := M.Flat P ∧ M.eRk P = 1
 
 lemma Point.flat (hP : M.Point P) : M.Flat P :=
   hP.1
 
-lemma Point.er (hP : M.Point P) : M.er P = 1 :=
+lemma Point.er (hP : M.Point P) : M.eRk P = 1 :=
   hP.2
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
@@ -18,10 +18,10 @@ lemma Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
 lemma Point.rFin (hP : M.Point P) : M.rFin P := by
-  simp [← er_ne_top_iff, hP.er]
+  simp [← eRk_ne_top_iff, hP.er]
 
 lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
-  ⟨M.closure_flat {e}, by rw [er_closure_eq, he.indep.er, encard_singleton]⟩
+  ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.er, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
   simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left,
@@ -39,7 +39,7 @@ lemma Point.exists_eq_closure_nonloop (hP : M.Point P) : ∃ e, M.Nonloop e ∧ 
 lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P) :
     P = M.closure {e} := by
   rw [← indep_singleton] at he
-  exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_er_le_of_finite
+  exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_eRk_le_of_finite
     (singleton_subset_iff.2 heP) (by rw [hP.er, he.er, encard_singleton]) (finite_singleton e)
 
 lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
@@ -77,7 +77,7 @@ lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Point P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
   rw [Point, flat_contract_iff, covBy_iff_relRank_eq_one, relRank_closure_left,
     union_comm C, ← relRank_eq_relRank_union, and_iff_right (closure_flat _ _),
-    ← relRank_eq_er_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
+    ← relRank_eq_eRk_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
     and_congr_left_iff, iff_and_self]
   rintro h - -
   rw [← h.closure]
@@ -146,12 +146,12 @@ lemma Point.subset_or_inter_eq_loops_of_flat (hP : M.Point P) (hF : M.Flat F) :
 
 
 
-abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.er L = 2
+abbrev Line (M : Matroid α) (L : Set α) := M.Flat L ∧ M.eRk L = 2
 
 lemma Line.flat (hL : M.Line L) : M.Flat L :=
   hL.1
 
-lemma Line.er (hL : M.Line L) : M.er L = 2 :=
+lemma Line.er (hL : M.Line L) : M.eRk L = 2 :=
   hL.2
 
 @[aesop unsafe 10% (rule_sets := [Matroid])]
@@ -159,29 +159,29 @@ lemma Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
 
 lemma Line.rFin (hL : M.Line L) : M.rFin L := by
-  simp [← er_ne_top_iff, hL.er]
+  simp [← eRk_ne_top_iff, hL.er]
 
 lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
   rw [(M.closure_flat {e}).covBy_iff_relRank_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
     singleton_subset_iff, iff_self_and, relRank_closure_left]
   intro heL
-  rw [(M.rFin_singleton e).relRank_eq_sub (by simpa), he.er_eq, hL.er]
+  rw [(M.rFin_singleton e).relRank_eq_sub (by simpa), he.eRk_eq, hL.er]
   rfl
 
 lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by
   refine ⟨fun h ↦ ⟨⟨h.flat_right, ?_⟩,h.subset <| M.mem_closure_self e⟩,
     fun ⟨hL, heL⟩ ↦ by rwa [← hL.mem_iff_covBy he]⟩
-  rw [h.er_eq, er_closure_eq, he.er_eq]
+  rw [h.eRk_eq, eRk_closure_eq, he.eRk_eq]
   rfl
 
 def Nonloop.lineContractPointEquiv (he : M.Nonloop e) :
     {P // (M ／ e).Point P} ≃ {L // M.Line L ∧ e ∈ L} :=
   (M.pointContractCovByEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.closure_covBy_iff))
 
-abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.er P = 3
+abbrev Plane (M : Matroid α) (P : Set α) := M.Flat P ∧ M.eRk P = 3
 
 lemma Plane.flat (hP : M.Plane P) : M.Flat P :=
   hP.1
 
-lemma Plane.er (hP : M.Plane P) : M.er P = 3 :=
+lemma Plane.er (hP : M.Plane P) : M.eRk P = 3 :=
   hP.2

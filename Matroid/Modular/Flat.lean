@@ -74,9 +74,9 @@ lemma modularFlat_closure_subsingleton (M : Matroid α) (hX : X.Subsingleton) :
     M.ModularFlat (M.closure X) := by
   obtain rfl | ⟨e, rfl⟩ := hX.eq_empty_or_singleton <;> simp
 
-lemma Flat.modularFlat_of_er_le_one (hF : M.Flat F) (hr : M.er F ≤ 1) : M.ModularFlat F := by
+lemma Flat.modularFlat_of_eRk_le_one (hF : M.Flat F) (hr : M.eRk F ≤ 1) : M.ModularFlat F := by
   obtain ⟨I, hI⟩ := M.exists_basis F
-  rw [hI.er_eq_encard, encard_le_one_iff_eq] at hr
+  rw [hI.eRk_eq_encard, encard_le_one_iff_eq] at hr
   rw [← hF.closure, ← hI.closure_eq_closure]
   obtain rfl | ⟨e, rfl⟩ := hr <;> simp
 
@@ -204,7 +204,7 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   refine ⟨fun h L hL hss ↦ ?_, fun h F hF hi hu ↦ ?_⟩
   · by_cases hLH : L ⊆ H
     · rw [inter_eq_self_of_subset_right hLH] at hss
-      simpa [hL.er] using M.er_mono hss
+      simpa [hL.er] using M.eRk_mono hss
     have hsk := h hL.flat hss (hH.spanning_of_ssuperset (by simpa))
     rw [← localEConn_eq_zero hH.subset_ground] at hsk
     have hr := hH.localEConn_add_one_eq hLH
@@ -221,7 +221,7 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   exfalso
   obtain ⟨e, f, hne, hss⟩ := nontrivial_iff_pair_subset.1 hI'
   refine h (M.closure {e,f}) ⟨M.closure_flat _, ?_⟩ (subset_trans ?_ hi)
-  · rw [er_closure_eq, (hI.indep.subset hss).er, encard_pair hne]
+  · rw [eRk_closure_eq, (hI.indep.subset hss).er, encard_pair hne]
   refine inter_subset_inter_right _ ?_
   rw [hF.eq_closure_of_basis hI]
   exact M.closure_mono hss
@@ -232,7 +232,7 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
   intro F hF hcl hsp
   rw [← localEConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
   intro hle
-  have hlc := M.localEConn_add_relRank_union_eq_er L F
+  have hlc := M.localEConn_add_relRank_union_eq_eRk L F
   rw [hL.er, ← relRank_closure_right, hsp.closure_eq, add_comm] at hlc
   obtain h_eq | hlt := hle.eq_or_lt
   · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_cancel_iff (by simp),
@@ -242,9 +242,9 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
   rw [← zero_add (a := M.localEConn L F), ← hlc, WithTop.add_le_add_iff_right,
     nonpos_iff_eq_zero, relRank_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
   · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
-    simpa [hL.er] using M.er_mono hcl
+    simpa [hL.er] using M.eRk_mono hcl
   rw [← lt_top_iff_ne_top]
-  exact (M.localEConn_le_er_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.er]))
+  exact (M.localEConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.er]))
 
 /-- If `X` is a modular flat, then in any contraction-minor in which `X` spans a nonloop `e`,
 there is an element of `X` parallel to `e`.
@@ -364,7 +364,7 @@ lemma Flat.modularSet_iff_forall_minor_exists_parallel (hX : M.Flat X) :
 lemma ModularFlat.inter_insert_closure_point_of_skew (hF : M.ModularFlat F)
     (hFX : M.Skew F X) (heFX : e ∈ M.closure (F ∪ X)) (heX : e ∉ M.closure X) :
     M.Point (F ∩ M.closure (insert e X)) := by
-  have hc := (hF.modularPair (M.closure_flat (insert e X))).localEConn_eq_er_inter
+  have hc := (hF.modularPair (M.closure_flat (insert e X))).localEConn_eq_eRk_inter
   rw [localEConn_closure_right, localEConn_insert_right_eq_add_one heX heFX, hFX.localEConn,
     zero_add] at hc
   rw [Point, ← hc, and_iff_left rfl]
@@ -719,7 +719,7 @@ lemma Circuit.chord_split_of_modular_subset {C I : Set α} (hC : M.Circuit C) (h
     ∃ e, e ∉ C ∧ M.Circuit (insert e I) ∧ M.Circuit (insert e (C \ I)) := by
   have hssu : I ⊂ C := hIC.ssubset_of_ne (by rintro rfl; simp at hnt')
   have hI := hC.ssubset_indep hssu
-  have hli := (hmod.modularPair (M.closure_flat (C \ I))).localEConn_eq_er_inter
+  have hli := (hmod.modularPair (M.closure_flat (C \ I))).localEConn_eq_eRk_inter
   obtain ⟨J, hJ⟩ := M.exists_basis (M.closure I ∩ M.closure (C \ I))
   rw [localEConn_closure_closure, hC.localEConn_subset_compl hnt.nonempty hssu, eq_comm,
     ← hJ.encard, encard_eq_one] at hli
@@ -758,7 +758,7 @@ lemma Circuit.chord_split_of_modular_subset {C I : Set α} (hC : M.Circuit C) (h
 /- If `x,y, e1, e2, ...` is a countable circuit in a simple matroid, then there exist
 `y = f0, f1, f2, ...` so that for each `i`, both `ei, fi, f(i+1)` and `x,fi, ei, ...` are circuits.
 This is used to show that matroids with modular lines are finitary. -/
-private lemma modular_finitary_aux (hM : ∀ F, M.Flat F → M.er F ≤ 2 → M.ModularFlat F)
+private lemma modular_finitary_aux (hM : ∀ F, M.Flat F → M.eRk F ≤ 2 → M.ModularFlat F)
     {e : ℕ → α} (h_inj : e.Injective) {x y : α} (hxy : x ≠ y) (hxe : x ∉ range e)
     (hye : y ∉ range e) (h_circuit : M.Circuit (insert x (insert y (range e)))) :
     ∃ f : ℕ → α, f 0 = y ∧ x ∉ range f
@@ -798,8 +798,8 @@ private lemma modular_finitary_aux (hM : ∀ F, M.Flat F → M.er F ≤ 2 → M.
       simp only [insert_infinite_iff, infinite_image_iff h_inj.injOn]
       exact Ici_infinite i
     · refine hM _ (M.closure_flat _) ?_
-      rw [er_closure_eq]
-      exact (M.er_le_encard _).trans (by simp)
+      rw [eRk_closure_eq]
+      exact (M.eRk_le_encard _).trans (by simp)
     obtain ⟨g', hg'C, hgg', hg'x⟩ := h_ex
     rw [insert_comm] at hgg'
     rw [insert_diff_of_not_mem _ (by simp [hxg, hxi]), insert_diff_of_mem _ (by simp),
@@ -889,13 +889,13 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.Line L → M.Modular
   rotate_left
   · intro F hF hr
     obtain hlt | h2 := hr.lt_or_eq
-    · exact hF.modularFlat_of_er_le_one <| Order.le_of_lt_add_one hlt
+    · exact hF.modularFlat_of_eRk_le_one <| Order.le_of_lt_add_one hlt
     obtain ⟨I, hI⟩ := (M ／ X).exists_basis F hF.subset_ground
     rw [← hI.encard, le_iff_eq_or_lt] at hr
     have hmod := (hM (M.closure I) ⟨M.closure_flat _, ?_⟩).contract X
     · rwa [contract_closure_eq, closure_union_closure_left_eq, ← contract_closure_eq,
         hI.closure_eq_closure, hF.closure] at hmod
-    rwa [er_closure_eq, hI.indep.of_contract.er, ← hI.er_eq_encard]
+    rwa [eRk_closure_eq, hI.indep.of_contract.er, ← hI.eRk_eq_encard]
   simp only [hX', not_exists] at h_aux
 
   rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,

@@ -56,12 +56,12 @@ theorem truncateTo_indep_eq : (M.truncateTo k).Indep = fun I ↦ M.Indep I ∧ I
   suffices ∀ I ⊆ E, I = ∅ → encard I ≤ k by simpa
   rintro _ - rfl; simp
 
-theorem truncate_eq_self_of_rk_le (h_rk : M.erk ≤ k) : M.truncateTo k = M := by
+theorem truncate_eq_self_of_rk_le (h_rk : M.eRank ≤ k) : M.truncateTo k = M := by
   refine ext_indep truncateTo_ground_eq (fun I _ ↦ ?_)
   rw [truncateTo_indep_iff, and_iff_left_iff_imp]
-  exact fun hi ↦ hi.encard_le_erk.trans h_rk
+  exact fun hi ↦ hi.encard_le_eRank.trans h_rk
 
-theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.erk) :
+theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.eRank) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
   simp_rw [base_iff_maximal_indep, truncateTo_indep_eq, maximal_subset_iff, and_assoc,
     and_congr_right_iff, and_imp]
@@ -71,16 +71,16 @@ theorem truncateTo_base_iff {k : ℕ} (h_rk : k ≤ M.erk) :
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
   exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
 
-theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rk : k ≤ M.erk) :
+theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rk : k ≤ M.eRank) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
-  lift k to ℕ using (h_rk.trans_lt M.erk_lt_top).ne; rwa [truncateTo_base_iff]
+  lift k to ℕ using (h_rk.trans_lt M.eRank_lt_top).ne; rwa [truncateTo_base_iff]
 
 instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) :=
 ⟨ by simp [ground_finite M] ⟩
 
 instance truncateTo.finiteRk {k : ℕ} : FiniteRk (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_base
-  refine ⟨B, hB, (le_or_lt M.erk k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
+  refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rk_le h] at hB
     rw [← encard_lt_top_iff, hB.encard]
     exact h.trans_lt (WithTop.coe_lt_top _)
@@ -94,13 +94,13 @@ theorem Indep.of_truncateTo (h : (M.truncateTo k).Indep I) : M.Indep I := by
 theorem Indep.encard_le_of_truncateTo (h : (M.truncateTo k).Indep I) : I.encard ≤ k :=
   (truncateTo_indep_iff.mp h).2
 
-theorem truncateTo_er_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
-    (M.truncateTo k).er X = min (M.er X) k := by
-  simp_rw [le_antisymm_iff, le_er_iff, er_le_iff, truncateTo_indep_iff]
+theorem truncateTo_eRk_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
+    (M.truncateTo k).eRk X = min (M.eRk X) k := by
+  simp_rw [le_antisymm_iff, le_eRk_iff, eRk_le_iff, truncateTo_indep_iff]
   obtain ⟨I, hI⟩ := M.exists_basis' X
   refine ⟨?_, ?_⟩
   · intro J hJX hJi
-    exact le_min (hJi.1.encard_le_er_of_subset hJX) hJi.2
+    exact le_min (hJi.1.encard_le_eRk_of_subset hJX) hJi.2
   obtain ⟨I₀, hI₀, hI₀ss⟩ := exists_subset_encard_eq (min_le_of_left_le (b := k) hI.encard.symm.le)
   exact ⟨_, hI₀.trans hI.subset, ⟨hI.indep.subset hI₀, hI₀ss.trans_le (min_le_right _ _)⟩, hI₀ss⟩
 

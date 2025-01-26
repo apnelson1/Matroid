@@ -44,14 +44,14 @@ theorem Quotient.covBy_of_covBy [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hco : X �
   --     M₁.relRank (M₂.closure (insert y X)) (M₁.E) + M₂.er (M₂.closure (insert y X)) := by
   --   exact add_le_add_right h1 (M₂.er (M₂.closure (insert y X)))
   have hcE1 : (M₂.closure (insert y X)) ⊆ M₂.E := closure_subset_ground M₂ (insert y X)
-  rw [relRank_add_er_of_subset M₂ hcE1] at h2
+  rw [relRank_add_eRk_of_subset M₂ hcE1] at h2
   have h3 : M₂.er M₂.E + M₁.er (M₂.closure (insert y X)) ≤
       M₁.relRank (M₂.closure (insert y X)) M₁.E + M₂.er (M₂.closure (insert y X)) +
         M₁.er (M₂.closure (insert y X)):= by
     convert add_le_add_right h2 _
   rw [hE.symm] at hcE1
   rw [add_assoc, add_comm (M₂.er (M₂.closure (insert y X))) (M₁.er (M₂.closure (insert y X))),
-    ←add_assoc, relRank_add_er_of_subset M₁ hcE1] at h3
+    ←add_assoc, relRank_add_eRk_of_subset M₁ hcE1] at h3
   -- have h4 : M₂.r M₂.E + M₁.r (M₂.closure (insert y X)) ≤ M₁.r M₁.E + M₂.r (M₂.closure (insert y X)) := by
   simp_rw [← cast_r_eq] at h3
   norm_cast at h3
@@ -194,7 +194,7 @@ example {a b c : ℤ} (h : a ≤ b) (h2 : b ≤ c) : a ≤ c := by exact Int.le_
   --Int.le_sub_right_of_add_le h
 -- eq_sub_of_add_eq h
 
-theorem Quotient.Finiterk {M₁ M₂ : Matroid α} {X : Set α} [FiniteRk M₁] (hQ : M₂ ≤q M₁) :
+theorem Quotient.FiniteRank {M₁ M₂ : Matroid α} {X : Set α} [FiniteRk M₁] (hQ : M₂ ≤q M₁) :
     M₂.r X ≤ M₁.r X := by
   have h1 := hQ.intCast_rank_sub_mono (empty_subset X)
   simp only [r_empty, CharP.cast_eq_zero, sub_zero, Nat.cast_le] at h1
@@ -274,7 +274,7 @@ theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk 
     hQ.exists_extension_quotient_contract_of_rk_lt (by linarith) heM₂
 
   have hfin' : M.FiniteRk
-  · rwa [finiteRk_iff, ← lt_top_iff_ne_top, ← delete_elem_erk_eq hecl, lt_top_iff_ne_top,
+  · rwa [finiteRk_iff, ← lt_top_iff_ne_top, ← delete_elem_eRank_eq hecl, lt_top_iff_ne_top,
       ← finiteRk_iff]
 
   have hre : (M ／ e).rk + 1 = (M ＼ e).rk

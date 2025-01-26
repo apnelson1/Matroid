@@ -253,8 +253,8 @@ lemma Hyperplane.basis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.Basis I
   rw [delete_eq_restrict, diff_diff_right, inter_eq_self_of_subset_right hI.indep.subset_ground,
     union_comm]
 
-lemma Hyperplane.er_add_one_eq (hH : M.Hyperplane H) : M.er H + 1 = M.erk := by
-  rw [← hH.covBy.er_eq, erk_def]
+lemma Hyperplane.eRk_add_one_eq (hH : M.Hyperplane H) : M.eRk H + 1 = M.eRank := by
+  rw [← hH.covBy.eRk_eq, eRank_def]
 
 lemma Hyperplane.insert_base_of_basis (hH : M.Hyperplane H) (hI : M.Basis I H) (he : e ∈ M.E \ H) :
     M.Base (insert e I) := by

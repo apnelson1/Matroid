@@ -78,7 +78,7 @@ instance : Invariant Matroid.RkPos :=
 instance : Invariant Matroid.Finitary :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
 
-instance : Invariant Matroid.erk :=
+instance : Invariant Matroid.eRank :=
   invariant_of_forall_map _ 0 (by simp) (by simp)
 
 end Invariant
@@ -103,8 +103,8 @@ end Invariant
 -- instance invariant_finiteRk : Invariant.{u} FiniteRk where
 --   on_iso := by intro _ _ _ _ hMN ; rw [hMN.finiteRk_iff]
 
--- instance invariant_erk : Invariant.{u} erk where
---   on_iso := by intro _ _ _ _ hMN; exact hMN.erk_eq_erk
+-- instance invariant_eRank : Invariant.{u} eRank where
+--   on_iso := by intro _ _ _ _ hMN; exact hMN.eRank_eq_eRank
 
 -- instance invariant_fieldRep {𝔽 : Type*} [Field 𝔽] : Invariant.{u} (FieldRep 𝔽) where
 --   on_iso := by

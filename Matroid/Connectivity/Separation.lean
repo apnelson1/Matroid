@@ -117,9 +117,9 @@ lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
   simp only [Partition.isTutteSep_iff, econn_partition, partition_left,
     partition_right, inter_eq_self_of_subset_left hC.subset_ground, and_iff_right rfl.le]
-  refine ⟨(M.econn_le_er C).trans_lt ?_, ?_⟩
-  · rw [← hC.er_add_one_eq, ENat.lt_add_one_iff]
-    rw [er_ne_top_iff]
+  refine ⟨(M.econn_le_eRk C).trans_lt ?_, ?_⟩
+  · rw [← hC.eRk_add_one_eq, ENat.lt_add_one_iff]
+    rw [eRk_ne_top_iff]
     exact rFin_of_finite M hfin
   rwa [← encard_diff_add_encard_of_subset hC.subset_ground, two_mul,
     WithTop.add_le_add_iff_right] at hcard

@@ -114,11 +114,11 @@ lemma Binary.isoMinor {N : Matroid β} (hM : M.Binary) (e : N ≤i M) : N.Binary
   obtain ⟨M₀, hM₀M, i, -⟩ := e.exists_iso
   exact (hM.minor hM₀M).iso i.symm
 
-lemma binary_of_erk_le_one (hM : M.erk ≤ 1) : M.Binary := by
+lemma binary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.Binary := by
   intro X hX
   obtain ⟨C, K, hC, hK, hX'⟩ := id hX
   have hC' : C.encard ≤ 2 :=
-    (hC.er_add_one_eq.symm.trans_le (add_le_add_right (M.er_le_erk C) 1)).trans
+    (hC.eRk_add_one_eq.symm.trans_le (add_le_add_right (M.eRk_le_eRank C) 1)).trans
     (add_le_add_right hM 1)
   replace hX' := (encard_le_card (hX'.subset.trans inter_subset_left)).trans hC'
   rw [encard_coe_eq_coe_finsetCard, Nat.cast_le_ofNat] at hX'
@@ -139,14 +139,14 @@ lemma binary_unif_iff {a b : ℕ} : (unif a b).Binary ↔ a ≤ 1 ∨ b ≤ a + 
     simp [unif_circuit_iff, cocircuit_def, unif_dual]
     rw [encard_insert_of_not_mem (by simp), encard_pair (by simp)]
   obtain h | h := h
-  · refine binary_of_erk_le_one (by simp [h])
-  refine (binary_of_erk_le_one ?_).of_dual
+  · refine binary_of_eRank_le_one (by simp [h])
+  refine (binary_of_eRank_le_one ?_).of_dual
   suffices (b : ℕ∞) ≤ a + 1 by simpa [unif_dual, add_comm]
   norm_cast
 
 end Binary
 
-lemma exist_cocircuits_of_rank_two (hr : M.erk = 2) (hel : ¬ M.Coloop e) (he : M.Point {e})
+lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.Point {e})
     (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧
     Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
 
@@ -165,7 +165,7 @@ lemma exist_cocircuits_of_rank_two (hr : M.erk = 2) (hel : ¬ M.Coloop e) (he : 
 
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
   replace hU := hU.minor hN.restriction.minor
-  rw [no_line_minor_iff_of_erk_le_two (hN.restriction.minor.erk_le.trans_eq hr),
+  rw [no_line_minor_iff_of_eRank_le_two (hN.restriction.minor.eRank_le.trans_eq hr),
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
     ← encard_diff_singleton_add_one (he.mem_simplification hN),
@@ -177,7 +177,7 @@ lemma exist_cocircuits_of_rank_two (hr : M.erk = 2) (hel : ¬ M.Coloop e) (he : 
   have hIM : (M ＼ e).Base I := hNe.base_of_base hI
 
   have hIcard : I.encard = 2
-  · rwa [hI.encard, hNe.erk_eq, delete_elem_erk_eq hel]
+  · rwa [hI.encard, hNe.eRank_eq, delete_elem_eRank_eq hel]
 
   obtain ⟨a,b, hab, rfl⟩ := encard_eq_two.1 hIcard
 
@@ -219,9 +219,9 @@ lemma exists_smaller_of_odd_circuit_cocircuit (hfin : C.Finite) (hCc : M.Circuit
   obtain ⟨f, hf⟩ : (M.E \ C).Nonempty
   · rw [nonempty_iff_ne_empty]
     intro hss
-    have hle := (M.er_le_erk C).trans_eq hCh.er_add_one_eq.symm
-    rw [hss, er_empty, zero_add, ← WithTop.add_le_add_iff_right (show 1 ≠ ⊤ by simp),
-      hCc.er_add_one_eq] at hle
+    have hle := (M.eRk_le_eRank C).trans_eq hCh.eRk_add_one_eq.symm
+    rw [hss, eRk_empty, zero_add, ← WithTop.add_le_add_iff_right (show 1 ≠ ⊤ by simp),
+      hCc.eRk_add_one_eq] at hle
     have hcon := hcard.trans hle
     norm_num at hcon
 
@@ -231,7 +231,7 @@ lemma exists_smaller_of_odd_circuit_cocircuit (hfin : C.Finite) (hCc : M.Circuit
   have hfl : ¬ N.Coloop f
   · simpa [hN, ← dual_loop_iff_coloop] using (hCs.compl_coindep.indep.nonloop_of_mem hf).not_loop
 
-  have hNr : N.erk = 2
+  have hNr : N.eRank = 2
   · obtain ⟨e, he, hbas⟩ := hCh.exists_insert_base_of_basis (hCi.basis_self)
     simp only [sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff, Finset.mem_coe] at he
     have hb' : N.Base {e, f}

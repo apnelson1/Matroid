@@ -279,24 +279,24 @@ lemma Flat.covBy_iff_eq_closure_insert (hF₀ : M.Flat F₀) :
   exact mem_of_mem_of_subset (hF₀.closure_exchange ⟨hFF₁ hfF, hfF₀⟩).1
     (hF.closure_subset_of_subset (insert_subset hfF hF₀F))
 
-lemma CovBy.er_eq (h : F ⋖[M] F') : M.er F' = M.er F + 1 := by
+lemma CovBy.eRk_eq (h : F ⋖[M] F') : M.eRk F' = M.eRk F + 1 := by
   obtain ⟨e, he, rfl⟩ := h.exists_eq_closure_insert
-  rw [er_closure_eq, h.flat_left.er_insert_eq_add_one]
+  rw [eRk_closure_eq, h.flat_left.eRk_insert_eq_add_one]
   exact ⟨M.closure_subset_ground _ he.1, he.2⟩
 
-lemma Covby.er_eq_of_ssubset_of_subset (h : F ⋖[M] F') (hFX : F ⊂ X) (hXF' : X ⊆ F') :
-    M.er X = M.er F + 1 := by
+lemma Covby.eRk_eq_of_ssubset_of_subset (h : F ⋖[M] F') (hFX : F ⊂ X) (hXF' : X ⊆ F') :
+    M.eRk X = M.eRk F + 1 := by
   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX
-  rw [← h.er_eq, le_antisymm_iff, and_iff_right (M.er_mono hXF'), h.er_eq,
-    ← h.flat_left.er_insert_eq_add_one ⟨(h.subset_ground_right (hXF'.subset heX)), heF⟩]
-  exact M.er_mono (insert_subset heX hFX.subset)
+  rw [← h.eRk_eq, le_antisymm_iff, and_iff_right (M.eRk_mono hXF'), h.eRk_eq,
+    ← h.flat_left.eRk_insert_eq_add_one ⟨(h.subset_ground_right (hXF'.subset heX)), heF⟩]
+  exact M.eRk_mono (insert_subset heX hFX.subset)
 
 lemma CovBy.r_eq_of_rFin (h : F ⋖[M] F') (hFin : M.rFin F) : M.r F' = M.r F + 1 := by
   have hFin' : M.rFin F' := by
-    rw [← er_lt_top_iff, h.er_eq]
-    rw [← er_lt_top_iff] at hFin
+    rw [← eRk_lt_top_iff, h.eRk_eq]
+    rw [← eRk_lt_top_iff] at hFin
     exact lt_tsub_iff_right.mp hFin
-  have her := h.er_eq
+  have her := h.eRk_eq
   rw [← hFin.cast_r_eq, ← hFin'.cast_r_eq] at her
   norm_cast at her
 

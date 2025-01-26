@@ -37,7 +37,7 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
     diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
 
 theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
-    M.numPoints ≤ ∑' i : {i : ℕ // i ≤ M.erk}, q ^ (i : ℕ) := by
+    M.numPoints ≤ ∑' i : {i : ℕ // i ≤ M.eRank}, q ^ (i : ℕ) := by
   _
 
 

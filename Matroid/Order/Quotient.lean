@@ -208,7 +208,7 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
 
 --Begin finite case
 lemma Quotient.finiteRk {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
-  rw [finiteRk_iff_erk_ne_top, erk_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
+  rw [finiteRk_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.relRank_le _ _).trans_lt hM₁
 

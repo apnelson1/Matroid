@@ -190,8 +190,8 @@ lemma encard_base_diff_eq_discrepancy_ground [M₂.Finitary] (hQ : M₂ ≤q M�
   hQ.encard_basis_diff_eq_discrepancy (by rwa [← hQ.ground_eq, basis_ground_iff])
     hB₁.basis_ground hss
 
-lemma er_left_add_discrepancy_eq [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set α) :
-    M₂.er X + hQ.discrepancy X = M₁.er X := by
+lemma eRk_left_add_discrepancy_eq [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set α) :
+    M₂.eRk X + hQ.discrepancy X = M₁.eRk X := by
   obtain ⟨I, hI⟩ := M₂.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_basis'_of_subset hI.subset
   rw [← hI.encard, ← hJ.encard, ← hQ.encard_basis'_diff_eq_discrepancy hI hJ hIJ,
@@ -235,17 +235,17 @@ lemma discrepancy_inter_ground [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set α
 lemma discrepancy_ne_top [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) : hQ.discrepancy X ≠ ⊤ := by
   have := hQ.finiteRk
   intro htop
-  have hdis := hQ.er_left_add_discrepancy_eq X
+  have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [htop] at hdis
-  simp [eq_comm, er_eq_top_iff, M₁.to_rFin X] at hdis
+  simp [eq_comm, eRk_eq_top_iff, M₁.to_rFin X] at hdis
 
 noncomputable abbrev nDiscrepancy (hQ : M₂ ≤q M₁) (X : Set α) : ℕ := (hQ.discrepancy X).toNat
 
 lemma r_left_add_nDiscrepancy_eq [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) :
     M₂.r X + hQ.nDiscrepancy X = M₁.r X := by
   have := hQ.finiteRk
-  have hdis := hQ.er_left_add_discrepancy_eq X
-  rw [r, r, ← hdis, ENat.toNat_add (by simp only [ne_eq, er_ne_top_iff, M₂.to_rFin X])
+  have hdis := hQ.eRk_left_add_discrepancy_eq X
+  rw [r, r, ← hdis, ENat.toNat_add (by simp only [ne_eq, eRk_ne_top_iff, M₂.to_rFin X])
     (hQ.discrepancy_ne_top _)]
 
 lemma nDiscrepancy_mono [M₁.FiniteRk] (hQ : M₂ ≤q M₁) : Monotone hQ.nDiscrepancy :=

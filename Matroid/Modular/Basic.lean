@@ -561,17 +561,17 @@ lemma modularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.clo
   rw [← singleton_union] at hI'
   exact hI'.indep.modularPair_of_union.of_basis_right hI
 
-lemma ModularPair.er_add_er (h : M.ModularPair X Y) :
-    M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
+lemma ModularPair.eRk_add_eRk (h : M.ModularPair X Y) :
+    M.eRk X + M.eRk Y = M.eRk (X ∩ Y) + M.eRk (X ∪ Y) := by
   obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_basis
-  rw [hIi.er_eq_encard, hIu.er_eq_encard, hIX.er_eq_encard, hIY.er_eq_encard,
+  rw [hIi.eRk_eq_encard, hIu.eRk_eq_encard, hIX.eRk_eq_encard, hIY.eRk_eq_encard,
     ← encard_union_add_encard_inter, ← inter_union_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
-lemma rFin.modularPair_iff_er (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
+lemma rFin.modularPair_iff_eRk (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
-    M.ModularPair X Y ↔ M.er X + M.er Y = M.er (X ∩ Y) + M.er (X ∪ Y) := by
-  refine ⟨fun h ↦ h.er_add_er, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
+    M.ModularPair X Y ↔ M.eRk X + M.eRk Y = M.eRk (X ∩ Y) + M.eRk (X ∪ Y) := by
+  refine ⟨fun h ↦ h.eRk_add_eRk, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
   obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y)
   have hifin : Ii.encard ≠ ⊤ := by
     simpa using (hXfin.inter_right Y).finite_of_basis hIi
@@ -580,8 +580,8 @@ lemma rFin.modularPair_iff_er (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆
   obtain ⟨IY, hIY, hY⟩ := hIi.indep.subset_basis_of_subset
     (hIi.subset.trans inter_subset_right)
   refine ⟨IX, IY, hIX, hIY, ?_⟩
-  rw [hIi.er_eq_encard, hIX.er_eq_encard, ← encard_diff_add_encard_of_subset hX,
-    add_comm (encard _), add_assoc, WithTop.add_left_cancel_iff hifin, hIY.er_eq_encard,
+  rw [hIi.eRk_eq_encard, hIX.eRk_eq_encard, ← encard_diff_add_encard_of_subset hX,
+    add_comm (encard _), add_assoc, WithTop.add_left_cancel_iff hifin, hIY.eRk_eq_encard,
     ← encard_union_add_encard_inter, ← union_eq_self_of_subset_left hY, ← union_assoc,
     diff_union_self, union_eq_self_of_subset_right hX] at hr
   refine Basis.indep <| (hXfin.union hYfin).basis_of_subset_closure_of_subset_of_encard_le ?_
@@ -593,7 +593,7 @@ lemma rFin.modularPair_iff_er (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆
 lemma rFin.modularPair_iff_r (hXfin : M.rFin X) (hYfin : M.rFin Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.r X + M.r Y = M.r (X ∩ Y) + M.r (X ∪ Y) := by
-  rw [hXfin.modularPair_iff_er hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_r_eq,
+  rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_r_eq,
     ← hYfin.cast_r_eq, ← (hXfin.inter_right Y).cast_r_eq, ← (hXfin.union hYfin).cast_r_eq,
     Nat.cast_add, Nat.cast_add]
 
