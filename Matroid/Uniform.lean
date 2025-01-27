@@ -34,14 +34,6 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
 @[simp] theorem unifOn_empty (α : Type*) (a : ℕ) : unifOn ∅ a = emptyOn α := by
   simp [unifOn]
 
--- theorem unifOn_eq_unifOn_min (E : Set α) (k : ℕ) : unifOn E k = unifOn E (min k E.encard) := by
---   simp only [ge_iff_le, ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff,
---     le_min_iff, and_congr_left_iff, iff_self_and, true_and]
---   exact fun I hI _ _ ↦ encard_mono hI
-
--- @[simp] theorem unifOn_encard : unifOn E E.encard = freeOn E := by
---   rw [unifOn, truncate_eq_self_of_rank_le (freeOn_eRank_eq _).le]
-
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
   rw [unifOn, truncate_eq_self_of_rank_le (by rwa [freeOn_eRank_eq])]
 
@@ -83,7 +75,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
     eq_tsub_iff_add_eq_of_le (by simpa), add_comm, eq_comm]
 
 @[simp] theorem unifOn_spanning_iff' :
-    (unifOn E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E  := by
+    (unifOn E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E := by
   rw [spanning_iff_eRk', eRank_def, unifOn_ground_eq, unifOn_eRk_eq', unifOn_eRk_eq',
     le_min_iff, min_le_iff, min_le_iff, iff_true_intro (le_refl _), or_true, and_true, inter_self]
   refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),

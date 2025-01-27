@@ -590,8 +590,9 @@ lemma FinRk.modularPair_iff_eRk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
 
-lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X ⊆ M.E := by aesop_mat)
-    (hYE : Y ⊆ M.E := by aesop_mat) :
+-- TODO : this might be true without one of the `FinRk` assumptions due to junk values.
+lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y)
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_rk_eq,
     ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
