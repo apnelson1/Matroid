@@ -1,4 +1,4 @@
-import Matroid.Rank.Cardinal
+import Mathlib.Data.Matroid.Closure
 
 variable {α ι : Type*} {M : Matroid α} {B X X' Y Y' I J : Set α} {e : α}
 
@@ -21,6 +21,7 @@ lemma Basis.finite_of_finite (hI : M.Basis I X) (hIfin : I.Finite) (hJ : M.Basis
 
 section FinRk
 
+/-- a `FinRk` set in `M` is one whose bases are all finite. -/
 def FinRk (M : Matroid α) (X : Set α) := (M ↾ X).FiniteRk
 
 lemma FinRk.finiteRk (hX : M.FinRk X) : (M ↾ X).FiniteRk :=
@@ -139,13 +140,13 @@ lemma FinRk.finRk_union_iff (hX : M.FinRk X) : M.FinRk (X ∪ Y) ↔ M.FinRk Y :
 lemma FinRk.finRk_diff_iff (hX : M.FinRk X) : M.FinRk (Y \ X) ↔ M.FinRk Y := by
   rw [← hX.finRk_union_iff, union_diff_self, hX.finRk_union_iff]
 
-lemma FinRk.inter_right (hX : M.FinRk X) (Y : Set α) : M.FinRk (X ∩ Y) :=
+lemma FinRk.inter_right (hX : M.FinRk X) : M.FinRk (X ∩ Y) :=
   hX.subset inter_subset_left
 
-lemma FinRk.inter_left (hX : M.FinRk X) (Y : Set α) : M.FinRk (Y ∩ X) :=
+lemma FinRk.inter_left (hX : M.FinRk X) : M.FinRk (Y ∩ X) :=
   hX.subset inter_subset_right
 
-lemma FinRk.diff (hX : M.FinRk X) (D : Set α) : M.FinRk (X \ D) :=
+lemma FinRk.diff (hX : M.FinRk X) : M.FinRk (X \ Y) :=
   hX.subset diff_subset
 
 lemma FinRk.insert (hX : M.FinRk X) (e : α) : M.FinRk (insert e X) := by
@@ -165,20 +166,10 @@ lemma FinRk.iUnion [Fintype ι] {Xs : ι → Set α} (h : ∀ i, M.FinRk (Xs i))
     M.FinRk (⋃ i, Xs i) := by
   choose Is hIs using fun i ↦ M.exists_basis' (Xs i)
   have hfin : (⋃ i, Is i).Finite := finite_iUnion <| fun i ↦ (h i).finite_of_basis' (hIs i)
-  rw [← FinRk.closure_iff, ← M.closure_iUnion_closure_eq_closure_iUnion]
-  simp_rw [← (hIs _).closure_eq_closure, M.closure_iUnion_closure_eq_closure_iUnion]
-  exact (M.finRk_of_finite hfin).closure
+  refine finRk_inter_ground_iff.1 <| (M.finRk_of_finite hfin).closure.subset ?_
+  rw [iUnion_inter, iUnion_subset_iff]
+  exact fun i ↦ (hIs i).basis_inter_ground.subset_closure.trans <| M.closure_subset_closure <|
+    subset_iUnion ..
 
-lemma crk_lt_aleph0_iff : M.FinRk X ↔ M.cRk X < aleph0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨I, hI⟩ := M.exists_basis' X
-    refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_finRk h))
-    rw [cRk_le_iff]
-    intro J hJ
-    rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
-    · simp [(hJ.finite_of_finRk h).countable]
-    simp [(hI.finite_of_finRk h).countable]
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-  exact hI.finRk_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
 
 end FinRk

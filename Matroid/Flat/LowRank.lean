@@ -24,7 +24,7 @@ lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
   ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.eRk, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
-  simp only [covBy_iff_relRank_eq_one, closure_flat, relRank_closure_left, relRank_empty_left,
+  simp only [covBy_iff_eRelRk_eq_one, closure_flat, eRelRk_closure_left, eRelRk_empty_left,
     true_and, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
 
@@ -75,9 +75,9 @@ lemma Point.loopless_of_singleton (h : M.Point {e}) : M.Loopless := by
 
 lemma point_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Point P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
-  rw [Point, flat_contract_iff, covBy_iff_relRank_eq_one, relRank_closure_left,
-    union_comm C, ← relRank_eq_relRank_union, and_iff_right (closure_flat _ _),
-    ← relRank_eq_eRk_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
+  rw [Point, flat_contract_iff, covBy_iff_eRelRk_eq_one, eRelRk_closure_left,
+    union_comm C, ← eRelRk_eq_eRelRk_union, and_iff_right (closure_flat _ _),
+    ← eRelRk_eq_eRk_contract, and_assoc, and_assoc, and_congr_right_iff, and_comm,
     and_congr_left_iff, iff_and_self]
   rintro h - -
   rw [← h.closure]
@@ -162,10 +162,10 @@ lemma Line.finRk (hL : M.Line L) : M.FinRk L := by
   simp [← eRk_ne_top_iff, hL.eRk]
 
 lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
-  rw [(M.closure_flat {e}).covBy_iff_relRank_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
-    singleton_subset_iff, iff_self_and, relRank_closure_left]
+  rw [(M.closure_flat {e}).covBy_iff_eRelRk_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
+    singleton_subset_iff, iff_self_and, eRelRk_closure_left]
   intro heL
-  rw [(M.finRk_singleton e).relRank_eq_sub (by simpa), he.eRk_eq, hL.eRk]
+  rw [(M.finRk_singleton e).eRelRk_eq_sub (by simpa), he.eRk_eq, hL.eRk]
   rfl
 
 lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by

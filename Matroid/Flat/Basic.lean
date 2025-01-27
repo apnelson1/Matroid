@@ -141,13 +141,13 @@ lemma Flat.rk_lt_of_superset (hF : M.Flat F) (hFX : F ⊂ X) (hfin : M.FinRk X)
   rw [Nat.lt_iff_add_one_le, ← hF.rk_insert_eq_add_one (hfin.subset hFX.subset) ⟨hX heX, heF⟩]
   exact hfin.rk_le_of_subset (insert_subset heX hFX.subset)
 
-lemma Flat.subset_of_relRank_eq_zero (hF : M.Flat F) (hr : M.relRank F X = 0)
+lemma Flat.subset_of_eRelRk_eq_zero (hF : M.Flat F) (hr : M.eRelRk F X = 0)
     (hX : X ⊆ M.E := by aesop_mat) : X ⊆ F := by
-  rwa [relRank_eq_zero_iff, hF.closure] at hr
+  rwa [eRelRk_eq_zero_iff, hF.closure] at hr
 
-lemma Flat.one_le_relRank_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
-    (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.relRank F X :=
-  ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_relRank_eq_zero h_eq)
+lemma Flat.one_le_eRelRk_of_ssubset (hF : M.Flat F) (hss : F ⊂ X)
+    (hX : X ⊆ M.E := by aesop_mat) : 1 ≤ M.eRelRk F X :=
+  ENat.one_le_iff_ne_zero.2 (fun h_eq ↦ hss.not_subset <| hF.subset_of_eRelRk_eq_zero h_eq)
 
 lemma exists_insert_rk_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
     ∃ e ∈ M.E \ F, M.rk (insert e F) = M.rk F := by
@@ -384,7 +384,7 @@ lemma Flat.iInter_mem_of_directed_of_finRk {ι : Type*} {F : ι → Set α} (hF 
     refine (inter_subset_inter_right _ (hki'.trans hkk₁)).ssubset_of_ne fun h_eq ↦ hei ?_
     exact hii' (h_eq.symm.subset ⟨hkj hek, hkk₁ hek⟩).2
 
-  have hlt := (((hF j).inter (hF i')).rk_lt_of_superset hss (hj.inter_right _)
+  have hlt := (((hF j).inter (hF i')).rk_lt_of_superset hss hj.inter_right
     (inter_subset_left.trans (hF j).subset_ground))
 
   exact hlt.ne <| (hk₁ _ hlt.le).symm

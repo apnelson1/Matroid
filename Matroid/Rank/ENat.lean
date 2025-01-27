@@ -1,4 +1,3 @@
-import Matroid.Rank.Cardinal
 import Matroid.Rank.Finite
 import Matroid.Loop
 import Matroid.ForMathlib.Other
@@ -17,30 +16,28 @@ universe u v
 
 variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : ℕ∞} {e f : α}
 
+instance (M : Matroid α) : Nonempty {B // M.Base B} :=
+  nonempty_subtype.2 M.exists_base
+
 section Basic
 
-/-- The rank `eRank M` of `M` is the `ℕ∞`-valued cardinality of a base of `M`. -/
-noncomputable def eRank (M : Matroid α) : ℕ∞ := M.cRank.toENat
+/-- The rank `Matroid.eRank M` of `M` is the `ℕ∞`-valued cardinality of each base of `M`. -/
+noncomputable def eRank (M : Matroid α) : ℕ∞ := ⨆ (B : {B // M.Base B}), B.1.encard
 
-/-- The rank `er X` of a set `X` is the `ℕ∞`-valued cardinality of one of its bases. -/
-noncomputable def eRk (M : Matroid α) (X : Set α) : ℕ∞ := (M.cRk X).toENat
+/-- The rank `Matroid.eRk M X` of a set `X` is the `ℕ∞`-valued cardinality of each of its bases. -/
+noncomputable abbrev eRk (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X).eRank
 
 lemma eRank_def (M : Matroid α) : M.eRank = M.eRk M.E := by
-  rw [eRank, eRk, cRk_ground]
+  rw [eRk, restrict_ground_eq_self]
 
 @[simp] lemma eRank_restrict (M : Matroid α) (X : Set α) : (M ↾ X).eRank = M.eRk X := rfl
 
-lemma Basis'.encard (hI : M.Basis' I X) : I.encard = M.eRk X := by
-  rw [eRk, le_antisymm_iff]
-  refine ⟨Cardinal.toENat.monotone' hI.cardinalMk_le_cRk, ?_⟩
-  obtain hinf | hfin := I.infinite_or_finite
-  · simp [hinf.encard_eq]
-  rw [← Cardinal.toENat_ofENat I.encard]
-  refine Cardinal.toENat.monotone' (ciSup_le fun ⟨J, hJ⟩ ↦ ?_)
-  rw [← encard_lt_top_iff, ← (base_restrict_iff'.1 hJ).encard_eq_encard hI,
-    encard_lt_top_iff] at hfin
-  obtain ⟨J, rfl⟩ := hfin.exists_finset_coe
-  simp [← (base_restrict_iff'.1 hJ).encard_eq_encard hI]
+lemma Base.encard (hB : M.Base B) : B.encard = M.eRank := by
+  simp [eRank, show ∀ B' : {B // M.Base B}, B'.1.encard = B.encard from
+    fun B' ↦ B'.2.card_eq_card_of_base hB]
+
+lemma Basis'.encard (hI : M.Basis' I X) : I.encard = M.eRk X :=
+  hI.base_restrict.encard
 
 lemma Basis.encard (hI : M.Basis I X) : I.encard = M.eRk X :=
   hI.basis'.encard
@@ -66,9 +63,6 @@ lemma Basis.eRk_eq_encard (hIX : M.Basis I X) : M.eRk X = I.encard := by
 lemma Base.eRk (hB : M.Base B) : M.eRk B = M.eRank := by
   rw [hB.indep.eRk, eRank_def, hB.basis_ground.encard]
 
-lemma Base.encard (hB : M.Base B) : B.encard = M.eRank := by
-  rw [hB.basis_ground.encard, eRank_def]
-
 @[simp] lemma eRank_map {β : Type*} (M : Matroid α) (f : α → β) (hf : InjOn f M.E) :
     (M.map f hf).eRank = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base
@@ -81,7 +75,8 @@ lemma Base.encard (hB : M.Base B) : B.encard = M.eRank := by
   simp [← (show (emptyOn α).Base ∅ by simp).encard]
 
 @[simp] lemma eRk_inter_ground (M : Matroid α) (X : Set α) : M.eRk (X ∩ M.E) = M.eRk X := by
-  rw [eRk, eRk, cRk_inter_ground]
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [← hI.eRk, hI.basis_inter_ground.eRk]
 
 lemma eRk_eq_eRank (hX : M.E ⊆ X) : M.eRk X = M.eRank := by
   rw [← eRk_inter_ground, inter_eq_self_of_subset_right hX, eRank_def]
@@ -628,7 +623,6 @@ lemma FinRk.basis_of_subset_closure_of_subset_of_encard_le (hX : M.FinRk X) (hXI
   have hJX := hJ.indep.basis_of_subset_of_subset_closure (hIJ.trans hIX) hXI
   rw [← hJX.encard] at hI
   rwa [← Finite.eq_of_subset_of_encard_le' (hX.finite_of_basis hJX) hIJ hI]
-
 
 lemma FinRk.closure_eq_closure_of_subset_of_eRk_ge_eRk (hX : M.FinRk X) (hXY : X ⊆ Y)
     (hr : M.eRk Y ≤ M.eRk X) : M.closure X = M.closure Y := by

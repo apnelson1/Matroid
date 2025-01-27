@@ -452,8 +452,8 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
 lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
   refine ⟨M.E, M.rank, ext_base rfl fun B hBE ↦ ?_⟩
-  rw [unifOn_base_iff (M.coe_rank_eq ▸ M.eRank_le_encard_ground) hBE,
-    coe_rank_eq, iff_def, and_iff_right Base.encard]
+  rw [unifOn_base_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
+    cast_rank_eq, iff_def, and_iff_right Base.encard]
   intro hB
   obtain ⟨B₀, hB₀⟩ := M.exists_base
   refine hM.base_of_base_of_finDiff hB₀ ?_ hBE

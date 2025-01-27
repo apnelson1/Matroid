@@ -6,6 +6,7 @@ Authors: Peter Nelson, Junyan Xu
 import Mathlib.Data.Matroid.Closure
 import Mathlib.Data.Matroid.Map
 import Matroid.ForMathlib.Card
+import Matroid.Rank.ENat
 import Mathlib.SetTheory.Cardinal.Arithmetic
 
 /-!
@@ -48,7 +49,7 @@ However, for matroids that do not satisfy `InvariantCardinalRank`, they are badl
 For instance, in general `cRk` is not submodular,
 and its value may differ on a set `X` and the closure of `X`.
 We state and prove theorems without the instance whenever possible,
-which sometime makes their proofs longer than they would be without the instance.
+which sometime makes their proofs longer than they would be with the instance.
 
 # TODO
 
@@ -67,8 +68,8 @@ namespace Matroid
 
 section Rank
 
-instance (M : Matroid α) : Nonempty {B // M.Base B} :=
-  nonempty_subtype.2 M.exists_base
+-- instance (M : Matroid α) : Nonempty {B // M.Base B} :=
+--   nonempty_subtype.2 M.exists_base
 
 variable {κ : Cardinal}
 
@@ -285,32 +286,33 @@ theorem Basis'.cardinalMk_eq_cRk (hIX : M.Basis' I X) : #I = M.cRk X := by
 theorem Basis.cardinalMk_eq_cRk (hIX : M.Basis I X) : #I = M.cRk X :=
   hIX.basis'.cardinalMk_eq_cRk
 
-@[simp] theorem cRk_closure (M : Matroid α) [InvariantCardinalRank M] (X : Set α) :
-    M.cRk (M.closure X) = M.cRk X := by
+variable (M : Matroid α) [InvariantCardinalRank M]
+
+@[simp] theorem cRk_closure (X) : M.cRk (M.closure X) = M.cRk X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   rw [← hI.basis_closure_right.cardinalMk_eq_cRk, ← hI.cardinalMk_eq_cRk]
 
-theorem cRk_closure_congr (hXY : M.closure X = M.closure Y) : M.cRk X = M.cRk Y := by
+theorem cRk_closure_congr {M} [InvariantCardinalRank M] (hXY : M.closure X = M.closure Y) :
+    M.cRk X = M.cRk Y := by
   rw [← cRk_closure, hXY, cRk_closure]
 
-@[simp] theorem cRk_union_closure_right_eq (M : Matroid α) [InvariantCardinalRank M] (X Y : Set α) :
+@[simp] theorem cRk_union_closure_right_eq (X Y : Set α) :
     M.cRk (X ∪ M.closure Y) = M.cRk (X ∪ Y) :=
   M.cRk_closure_congr (M.closure_union_closure_right_eq _ _)
 
-@[simp] theorem cRk_union_closure_left_eq (M : Matroid α) [InvariantCardinalRank M] (X Y : Set α) :
+@[simp] theorem cRk_union_closure_left_eq (X Y : Set α) :
     M.cRk (M.closure X ∪ Y) = M.cRk (X ∪ Y) :=
   M.cRk_closure_congr (M.closure_union_closure_left_eq _ _)
 
-@[simp] theorem cRk_insert_closure_eq (M : Matroid α) [InvariantCardinalRank M] (e : α)
-    (X : Set α) : M.cRk (insert e (M.closure X)) = M.cRk (insert e X) := by
+@[simp] theorem cRk_insert_closure_eq (e : α) (X : Set α) :
+    M.cRk (insert e (M.closure X)) = M.cRk (insert e X) := by
   rw [← union_singleton, cRk_union_closure_left_eq, union_singleton]
 
-theorem cRk_union_closure_eq (M : Matroid α) [InvariantCardinalRank M] (X Y : Set α) :
-    M.cRk (M.closure X ∪ M.closure Y) = M.cRk (X ∪ Y) := by
+theorem cRk_union_closure_eq (X Y : Set α) : M.cRk (M.closure X ∪ M.closure Y) = M.cRk (X ∪ Y) := by
   simp
 
 /-- The `Cardinal` rank function is submodular. -/
-theorem cRk_inter_add_cRk_union_le (M : Matroid α) [InvariantCardinalRank M] (X Y : Set α) :
+theorem cRk_inter_add_cRk_union_le (X Y : Set α) :
     M.cRk (X ∩ Y) + M.cRk (X ∪ Y) ≤ M.cRk X + M.cRk Y := by
   obtain ⟨Ii, hIi⟩ := M.exists_basis' (X ∩ Y)
   obtain ⟨IX, hIX, hIX'⟩ :=
@@ -388,5 +390,21 @@ instance invariantCardinalRank_comap (M : Matroid β) [InvariantCardinalRank M] 
   exact disjoint_sdiff_left.mono_right (diff_subset.trans inter_subset_left)
 
 end Instances
+
+section Finite
+
+lemma crk_lt_aleph0_iff : M.FinRk X ↔ M.cRk X < aleph0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨I, hI⟩ := M.exists_basis' X
+    refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_finRk h))
+    rw [cRk_le_iff]
+    intro J hJ
+    rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
+    · simp [(hJ.finite_of_finRk h).countable]
+    simp [(hI.finite_of_finRk h).countable]
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  exact hI.finRk_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
+
+end Finite
 
 end Matroid

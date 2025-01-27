@@ -242,14 +242,14 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_circuit_hyperplane :
 
 section exp
 
--- def Pav (M : Matroid α) := ∀ C, M.Circuit C → M.relRank C M.E ≤ 1
+-- def Pav (M : Matroid α) := ∀ C, M.Circuit C → M.eRelRk C M.E ≤ 1
 
 
--- lemma pav_iff_foo : M.Paving ↔ ∀ C, M.Circuit C → M.relRank C M.E ≤ 1 := by
+-- lemma pav_iff_foo : M.Paving ↔ ∀ C, M.Circuit C → M.eRelRk C M.E ≤ 1 := by
 --   -- rw [paving_iff_forall_circuit]
 --   obtain rfl | hne := M.eq_emptyOn_or_nonempty
 --   · simp
---   simp_rw [relRank_le_one_iff M.ground_nonempty]
+--   simp_rw [eRelRk_le_one_iff M.ground_nonempty]
 --   refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ ?_⟩
 --   · obtain ⟨e, he⟩ := h C hC
 

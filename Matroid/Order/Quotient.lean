@@ -47,28 +47,28 @@ lemma Quotient.weakLE (h : N ≤q M) : N ≤w M := by
 
 /-- Relative rank is monotone with respect to the quotient order for sets `X,Y` with `X ⊆ Y ⊆ E`.
 This hypothesis isn't required, but is included to facilitate the inductive proof.
-See `Quotient.relRank_le` for the stronger version applying to all `X` and `Y`.
+See `Quotient.eRelRk_le` for the stronger version applying to all `X` and `Y`.
 Note : including `X` as an implicit parameter is needed for well-founded induction to work. -/
-private theorem Quotient.relRank_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y) (hYE: Y ⊆ M₁.E) :
-    M₂.relRank X Y ≤ M₁.relRank X Y := by
-  have hcas := lt_or_le (M₁.relRank X Y) ⊤
+private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y) (hYE: Y ⊆ M₁.E) :
+    M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
+  have hcas := lt_or_le (M₁.eRelRk X Y) ⊤
   --Divide into cases finite and infinite
   obtain hfin | hinf := hcas
 
   · by_cases hX : Y ⊆ M₁.closure X
-    . rw [(relRank_eq_zero_iff (M := M₂) _).2]
+    . rw [(eRelRk_eq_zero_iff (M := M₂) _).2]
       · apply zero_le
       · exact hX.trans (hQ.closure_subset_closure _)
       rwa [hQ.ground_eq]
 
     obtain ⟨y, hyY, hyX⟩ := not_subset.1 hX
 
-    have hrw := fun M ↦ relRank_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
-    have hy : y ∈ Y \ M₁.closure X ∧ M₁.relRank (insert y X) Y < M₁.relRank X Y := by
+    have hrw := fun M ↦ eRelRk_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
+    have hy : y ∈ Y \ M₁.closure X ∧ M₁.eRelRk (insert y X) Y < M₁.eRelRk X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
-      rw [← hrw, relRank_insert_eq_one, add_comm, lt_iff_not_le]
+      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_le]
       · intro hle
-        have h' := (M₁.relRank_mono_left Y (subset_insert y X)).trans_lt hfin
+        have h' := (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin
         have h'' := top_thingy hle
         simp only [ne_eq, one_ne_zero, imp_false, Decidable.not_not] at h''
         exact h'.ne h''
@@ -77,23 +77,23 @@ private theorem Quotient.relRank_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY 
     obtain ⟨hy', hycard⟩ := hy
 
     have hiY: insert y X ⊆ Y := insert_subset hy'.1 hXY
-    have ht := hQ.relRank_le_aux hiY hYE
+    have ht := hQ.eRelRk_le_aux hiY hYE
 
-    have hycard1 : M₁.relRank (insert y X) Y + 1 ≤ M₁.relRank X Y := by
+    have hycard1 : M₁.eRelRk (insert y X) Y + 1 ≤ M₁.eRelRk X Y := by
       exact Order.add_one_le_of_lt hycard
     have h1 := (add_le_add_right ht 1).trans hycard1
     refine le_trans ?_ h1
     rw [← hrw, add_comm]
-    apply add_le_add_left <| relRank_insert_le M₂ X y
+    apply add_le_add_left <| eRelRk_insert_le M₂ X y
   refine le_top.trans hinf
-termination_by M₁.relRank X Y
+termination_by M₁.eRelRk X Y
 
 /-- Relative rank is monotone with respect to the quotient order. -/
-theorem Quotient.relRank_le (hQ : M₂ ≤q M₁) (X Y : Set α) : M₂.relRank X Y ≤ M₁.relRank X Y := by
-  rw [← relRank_inter_ground_right, ← relRank_inter_ground_left,
-    ← M₁.relRank_inter_ground_right, ← M₁.relRank_inter_ground_left, hQ.ground_eq,
-      relRank_eq_union_right, M₁.relRank_eq_union_right]
-  exact hQ.relRank_le_aux subset_union_right <| union_subset inter_subset_right inter_subset_right
+theorem Quotient.eRelRk_le (hQ : M₂ ≤q M₁) (X Y : Set α) : M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
+  rw [← eRelRk_inter_ground_right, ← eRelRk_inter_ground_left,
+    ← M₁.eRelRk_inter_ground_right, ← M₁.eRelRk_inter_ground_left, hQ.ground_eq,
+      eRelRk_eq_union_right, M₁.eRelRk_eq_union_right]
+  exact hQ.eRelRk_le_aux subset_union_right <| union_subset inter_subset_right inter_subset_right
 
 theorem quotient_of_forall_closure_subset_closure (hE : M₁.E = M₂.E)
     (hQ : ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X) : M₂ ≤q M₁ := by
@@ -102,8 +102,8 @@ theorem quotient_of_forall_closure_subset_closure (hE : M₁.E = M₂.E)
   exact flat_iff_closure_self.2 <|
     ((hQ _ hFE).trans hF.closure.subset).antisymm <| subset_closure _ _ hFE
 
-theorem quotient_of_forall_relRank_le (hE : M₁.E = M₂.E)
-    (hYZ : ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z) : M₂ ≤q M₁ := by
+theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
+    (hYZ : ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.eRelRk Y Z ≤ M₁.eRelRk Y Z) : M₂ ≤q M₁ := by
   refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
   have hX' : X ⊆ M₂.E := hX.trans hE.subset
 
@@ -118,9 +118,9 @@ theorem quotient_of_forall_relRank_le (hE : M₁.E = M₂.E)
   have hrr := hYZ (M₂.closure X) (insert e (M₂.closure X)) (subset_insert _ _)
     (insert_subset heE ((M₂.closure_subset_ground X).trans hE.symm.subset))
 
-  rw [(relRank_insert_eq_zero_iff).2 he, relRank_closure_left, nonpos_iff_eq_zero,
-    ← relRank_closure_right, closure_insert_closure_eq_closure_insert,
-    relRank_closure_right, relRank_insert_eq_zero_iff] at hrr
+  rw [(eRelRk_insert_eq_zero_iff).2 he, eRelRk_closure_left, nonpos_iff_eq_zero,
+    ← eRelRk_closure_right, closure_insert_closure_eq_closure_insert,
+    eRelRk_closure_right, eRelRk_insert_eq_zero_iff] at hrr
   contradiction
 
 /-- If `M₂ ≤q M₁`, then every circuit of `M₁` is cyclic (a union of circuits) in `M₂`. -/
@@ -192,12 +192,12 @@ lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M�
 
 theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
     M₂ ≤q M₁,
-    ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.relRank Y Z ≤ M₁.relRank Y Z,
+    ∀ Y Z, Y ⊆ Z → Z ⊆ M₁.E → M₂.eRelRk Y Z ≤ M₁.eRelRk Y Z,
     ∀ X ⊆ M₁.E, M₁.closure X ⊆ M₂.closure X,
     ∀ C, M₁.Circuit C → M₂.Cyclic C,
     M₁✶ ≤q M₂✶] := by
-  tfae_have 1 → 2 := fun hQ Y Z _ _ ↦ hQ.relRank_le _ _
-  tfae_have 2 → 1 := fun h ↦ quotient_of_forall_relRank_le hE fun Y Z ↦ h Y Z
+  tfae_have 1 → 2 := fun hQ Y Z _ _ ↦ hQ.eRelRk_le _ _
+  tfae_have 2 → 1 := fun h ↦ quotient_of_forall_eRelRk_le hE fun Y Z ↦ h Y Z
   tfae_have 3 → 1 := fun hQ ↦ quotient_of_forall_closure_subset_closure hE hQ
   tfae_have 1 → 3 := fun hQ X _ ↦ hQ.closure_subset_closure X
   tfae_have 1 → 4 := fun hQ _ hC ↦ hQ.cyclic_of_circuit hC
@@ -208,9 +208,9 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
 
 --Begin finite case
 lemma Quotient.finiteRk {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
-  rw [finiteRk_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← relRank_empty_left] at hM₁ ⊢
+  rw [finiteRk_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
-  exact (hQ.relRank_le _ _).trans_lt hM₁
+  exact (hQ.eRelRk_le _ _).trans_lt hM₁
 
 /-- If `M₂` is a finitary quotient of a matroid `M₁`, and some base of `M₁` is independent in `M₂`,
 then `M₁ = M₂`. This is not true for general matroids; see `Matroid.TruncateFamily`. -/
@@ -320,8 +320,8 @@ lemma Quotient.intCast_rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY 
   have _ : FiniteRk M₂ := hQ.finiteRk
   rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
     ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
-    cast_rk_eq, ← (M₁.to_finRk X).relRank_eq_sub hXY, ← (M₂.to_finRk X).relRank_eq_sub hXY]
-  exact relRank_le hQ X Y
+    cast_rk_eq, ← (M₁.to_finRk X).eRelRk_eq_sub hXY, ← (M₂.to_finRk X).eRelRk_eq_sub hXY]
+  exact eRelRk_le hQ X Y
 
 lemma Quotient.rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
     (M₁.rk X : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₂.rk Y := by

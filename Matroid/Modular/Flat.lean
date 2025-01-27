@@ -232,15 +232,15 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
   intro F hF hcl hsp
   rw [← localEConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
   intro hle
-  have hlc := M.localEConn_add_relRank_union_eq_eRk L F
-  rw [hL.eRk, ← relRank_closure_right, hsp.closure_eq, add_comm] at hlc
+  have hlc := M.localEConn_add_eRelRk_union_eq_eRk L F
+  rw [hL.eRk, ← eRelRk_closure_right, hsp.closure_eq, add_comm] at hlc
   obtain h_eq | hlt := hle.eq_or_lt
   · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_cancel_iff (by simp),
-      ← hF.hyperplane_iff_relRank_ground_eq_one] at hlc
+      ← hF.hyperplane_iff_eRelRk_ground_eq_one] at hlc
     exact h hlc hcl
   replace hlt := show (2 : ℕ∞) ≤ _ from Order.add_one_le_of_lt hlt
   rw [← zero_add (a := M.localEConn L F), ← hlc, WithTop.add_le_add_iff_right,
-    nonpos_iff_eq_zero, relRank_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
+    nonpos_iff_eq_zero, eRelRk_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
   · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
     simpa [hL.eRk] using M.eRk_mono hcl
   rw [← lt_top_iff_ne_top]
@@ -600,7 +600,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
       exact fun _ _ ↦ inter_subset_left.trans
 
     obtain ⟨i₀, hi₀⟩ := Flat.iInter_mem_of_directed_of_finRk (fun i ↦ (hX i).flat.inter hF) hdir'
-      ⟨Classical.arbitrary ι, hfin.inter_left _⟩
+      ⟨Classical.arbitrary ι, hfin.inter_left⟩
     rw [iInter_inter (s := F), ← hi₀, ← (hX i₀).distrib_of_subset_self hF (hYss i₀)]
     exact inter_subset_inter_left _ (iInter_subset _ _)
 

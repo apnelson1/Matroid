@@ -267,7 +267,7 @@ lemma intCast_rank_sub_rank_eq_nDiscrepancy [M₁.FiniteRk] (hQ : M₂ ≤q M₁
 def foo [M₁.FiniteRk] (hQ : M₂ ≤q M₁) {X : Set α} :
     hQ.nDiscrepancy X = hQ.nDiscrepancy M₁.E ↔ M₁ ／ X = M₂ ／ X := by
   have := hQ.finiteRk
-  refine ⟨fun h ↦ ext_rank (by simp [hQ.ground_eq]) (fun Y hY ↦ ?_), fun h_eq ↦ ?_⟩
+  refine ⟨fun h ↦ ext_rk (by simp [hQ.ground_eq]) (fun Y hY ↦ ?_), fun h_eq ↦ ?_⟩
   · zify
     simp only [contract_rk_cast_int_eq]
 

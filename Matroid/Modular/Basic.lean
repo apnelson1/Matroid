@@ -574,7 +574,7 @@ lemma FinRk.modularPair_iff_eRk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X
   refine ⟨fun h ↦ h.eRk_add_eRk, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
   obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y)
   have hifin : Ii.encard ≠ ⊤ := by
-    simpa using (hXfin.inter_right Y).finite_of_basis hIi
+    simpa using hXfin.inter_right.finite_of_basis hIi
   obtain ⟨IX, hIX, hX⟩ := hIi.indep.subset_basis_of_subset
     (hIi.subset.trans inter_subset_left)
   obtain ⟨IY, hIY, hY⟩ := hIi.indep.subset_basis_of_subset
@@ -594,7 +594,7 @@ lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X 
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_rk_eq,
-    ← hYfin.cast_rk_eq, ← (hXfin.inter_right Y).cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
+    ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 
 lemma modularPair_iff_rk [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)

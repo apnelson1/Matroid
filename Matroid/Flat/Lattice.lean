@@ -351,9 +351,9 @@ lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) 
     (h.flat_left.covBy_closure_insert he.2 (h.flat_right.subset_ground he.1)).ssubset
     (h.flat_right.closure_subset_of_subset (insert_subset he.1 h.subset))
 
-lemma Flat.covBy_iff_relRank_eq_one (hF₀ : M.Flat F₀) (hF : M.Flat F) :
-    F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.relRank F₀ F = 1 := by
-  simp_rw [hF₀.covBy_iff_eq_closure_insert, relRank_eq_one_iff hF.subset_ground, hF₀.closure]
+lemma Flat.covBy_iff_eRelRk_eq_one (hF₀ : M.Flat F₀) (hF : M.Flat F) :
+    F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.eRelRk F₀ F = 1 := by
+  simp_rw [hF₀.covBy_iff_eq_closure_insert, eRelRk_eq_one_iff hF.subset_ground, hF₀.closure]
   refine ⟨?_, fun ⟨hss, e, he, h⟩ ↦ ⟨e, ?_, h.antisymm ?_⟩⟩
   · rintro ⟨e, ⟨he, heE⟩, rfl⟩
     refine ⟨M.subset_closure_of_subset (subset_insert _ _), ⟨e, ⟨?_, heE⟩, rfl.subset⟩⟩
@@ -361,24 +361,24 @@ lemma Flat.covBy_iff_relRank_eq_one (hF₀ : M.Flat F₀) (hF : M.Flat F) :
   · apply diff_subset_diff_left hF.subset_ground he
   exact hF.closure_subset_iff_subset.2 <| insert_subset he.1 hss
 
-lemma Flat.covBy_iff_relRank_eq_one_of_subset (hF₀ : M.Flat F₀) (hF : M.Flat F) (hss : F₀ ⊆ F) :
-    F₀ ⋖[M] F ↔ M.relRank F₀ F = 1 := by
-  rw [hF₀.covBy_iff_relRank_eq_one hF, and_iff_right hss]
+lemma Flat.covBy_iff_eRelRk_eq_one_of_subset (hF₀ : M.Flat F₀) (hF : M.Flat F) (hss : F₀ ⊆ F) :
+    F₀ ⋖[M] F ↔ M.eRelRk F₀ F = 1 := by
+  rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_iff_right hss]
 
 lemma Flat.covBy_iff_rk_eq_add_one [FiniteRk M] (hF₀ : M.Flat F₀) (hF : M.Flat F) :
     F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.rk F = M.rk F₀ + 1 := by
-  rw [hF₀.covBy_iff_relRank_eq_one hF, and_congr_right_iff]
+  rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_congr_right_iff]
   intro hss
-  rw [(M.to_finRk _).relRank_eq_sub hss, eq_comm, ← cast_rk_eq, ← cast_rk_eq, ← ENat.coe_sub,
+  rw [(M.to_finRk _).eRelRk_eq_sub hss, eq_comm, ← cast_rk_eq, ← cast_rk_eq, ← ENat.coe_sub,
     ← ENat.coe_one, Nat.cast_inj, eq_tsub_iff_add_eq_of_le (M.rk_mono hss), eq_comm, add_comm]
 
-lemma CovBy.relRank_eq_one (h : F₀ ⋖[M] F₁) : M.relRank F₀ F₁ = 1 :=
-  ((h.flat_left.covBy_iff_relRank_eq_one h.flat_right).1 h).2
+lemma CovBy.eRelRk_eq_one (h : F₀ ⋖[M] F₁) : M.eRelRk F₀ F₁ = 1 :=
+  ((h.flat_left.covBy_iff_eRelRk_eq_one h.flat_right).1 h).2
 
-lemma covBy_iff_relRank_eq_one :
-    F₀ ⋖[M] F₁ ↔ M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊆ F₁ ∧ M.relRank F₀ F₁ = 1 :=
-  ⟨fun h ↦ ⟨h.flat_left, h.flat_right, h.subset, h.relRank_eq_one⟩,
-    fun ⟨hF₀, hF₁, hss, hr⟩ ↦ (hF₀.covBy_iff_relRank_eq_one hF₁).2 ⟨hss, hr⟩⟩
+lemma covBy_iff_eRelRk_eq_one :
+    F₀ ⋖[M] F₁ ↔ M.Flat F₀ ∧ M.Flat F₁ ∧ F₀ ⊆ F₁ ∧ M.eRelRk F₀ F₁ = 1 :=
+  ⟨fun h ↦ ⟨h.flat_left, h.flat_right, h.subset, h.eRelRk_eq_one⟩,
+    fun ⟨hF₀, hF₁, hss, hr⟩ ↦ (hF₀.covBy_iff_eRelRk_eq_one hF₁).2 ⟨hss, hr⟩⟩
 
 lemma Flat.exists_unique_flat_of_not_mem (hF₀ : M.Flat F₀) (he : e ∈ M.E \ F₀) :
     ∃! F₁, e ∈ F₁ ∧ (F₀ ⋖[M] F₁) := by
@@ -438,21 +438,21 @@ instance {M : Matroid α} : IsWeakUpperModularLattice M.FlatOf where
     simp only [ge_iff_le, FlatOf.le_iff, FlatOf.covBy_iff, FlatOf.coe_inf, FlatOf.coe_sup]
     exact CovBy.covBy_closure_union_of_inter_covBy
 
-/-- If `M.relRank F₀ F₁ = 2` for flats `F₀, F₁`, then every flat strictly between
+/-- If `M.eRelRk F₀ F₁ = 2` for flats `F₀, F₁`, then every flat strictly between
   `F₀` and `F₁` covers `F₀` and is covered by `F₁`. -/
-lemma Flat.covBy_and_covBy_of_ssubset_of_ssubset_of_relRank_eq_two (hF₀ : M.Flat F₀)
-    (hF₁ : M.Flat F₁) (h : M.relRank F₀ F₁ = 2) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₁) :
+lemma Flat.covBy_and_covBy_of_ssubset_of_ssubset_of_eRelRk_eq_two (hF₀ : M.Flat F₀)
+    (hF₁ : M.Flat F₁) (h : M.eRelRk F₀ F₁ = 2) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₁) :
     (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
-  have h0le := hF₀.one_le_relRank_of_ssubset h₀
-  have h1le := hF.one_le_relRank_of_ssubset h₁
-  rw [← M.relRank_add_cancel h₀.subset h₁.subset] at h
-  have h0top : M.relRank F₀ F ≠ ⊤ := by
+  have h0le := hF₀.one_le_eRelRk_of_ssubset h₀
+  have h1le := hF.one_le_eRelRk_of_ssubset h₁
+  rw [← M.eRelRk_add_cancel h₀.subset h₁.subset] at h
+  have h0top : M.eRelRk F₀ F ≠ ⊤ := by
     intro h'; rw [h'] at h; norm_cast at h
-  have h1top : M.relRank F F₁ ≠ ⊤ := by
+  have h1top : M.eRelRk F F₁ ≠ ⊤ := by
     intro h'; rw [h', add_top] at h; norm_cast at h
   have hle1 := WithTop.le_of_add_le_add_left h0top <| h.le.trans (add_le_add_right h0le 1)
   have hle0 := WithTop.le_of_add_le_add_right h1top <| h.le.trans (add_le_add_left h1le 1)
-  rw [hF₀.covBy_iff_relRank_eq_one hF, hF.covBy_iff_relRank_eq_one hF₁,
+  rw [hF₀.covBy_iff_eRelRk_eq_one hF, hF.covBy_iff_eRelRk_eq_one hF₁,
     and_iff_right h₀.subset, and_iff_right h₁.subset]
   exact ⟨hle0.antisymm h0le, hle1.antisymm h1le⟩
 
@@ -461,10 +461,10 @@ lemma Flat.covBy_and_covBy_of_ssubset_of_ssubset_of_relRank_eq_two (hF₀ : M.Fl
 lemma CovBy.covBy_and_covBy_of_covBy_of_ssubset_of_ssubset (hF₀F' : F₀ ⋖[M] F')
     (hF'F₁ : F' ⋖[M] F₁) (hF : M.Flat F) (h₀ : F₀ ⊂ F) (h₁ : F ⊂ F₁) :
     (F₀ ⋖[M] F) ∧ (F ⋖[M] F₁) := by
-  apply hF₀F'.flat_left.covBy_and_covBy_of_ssubset_of_ssubset_of_relRank_eq_two hF'F₁.flat_right
+  apply hF₀F'.flat_left.covBy_and_covBy_of_ssubset_of_ssubset_of_eRelRk_eq_two hF'F₁.flat_right
     ?_ hF h₀ h₁
-  rw [← M.relRank_add_cancel hF₀F'.subset hF'F₁.subset, hF'F₁.relRank_eq_one,
-    hF₀F'.relRank_eq_one]
+  rw [← M.eRelRk_add_cancel hF₀F'.subset hF'F₁.subset, hF'F₁.eRelRk_eq_one,
+    hF₀F'.eRelRk_eq_one]
   rfl
 
 lemma CovBy.insert_basis (hFF' : F ⋖[M] F') (hI : M.Basis I F) (he : e ∈ F' \ F) :

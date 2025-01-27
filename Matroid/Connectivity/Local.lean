@@ -85,11 +85,11 @@ lemma Basis'.localEConn_eq (hI : M.Basis' I X) (hJ : M.Basis' J Y) :
   simp_rw [localEConn, hI.encard_dual_congr₂ (M.exists_basis' X).choose_spec hJ
     (M.exists_basis' Y).choose_spec]
 
-lemma Basis'.localEConn_eq_encard_inter_add_relRank (hI : M.Basis' I X) (hJ : M.Basis' J Y) :
-    M.localEConn X Y = (I ∩ J).encard + M✶.relRank (M✶.E \ (I ∪ J)) M✶.E := by
+lemma Basis'.localEConn_eq_encard_inter_add_eRelRk (hI : M.Basis' I X) (hJ : M.Basis' J Y) :
+    M.localEConn X Y = (I ∩ J).encard + M✶.eRelRk (M✶.E \ (I ∪ J)) M✶.E := by
   rw [hI.localEConn_eq hJ,
     ← delete_compl (union_subset hI.indep.subset_ground hJ.indep.subset_ground),
-    delete_dual_eq_dual_contract, eRank_contract_eq_relRank_ground]
+    delete_dual_eq_dual_contract, eRank_contract_eq_eRelRk_ground]
   rfl
 
 lemma Basis.localEConn_eq (hI : M.Basis I X) (hJ : M.Basis J Y) :
@@ -433,7 +433,7 @@ lemma FinRk.modularPair_iff_localEConn_eq_eRk_inter (hX : M.FinRk X) (Y : Set α
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.localEConn_eq hIY, ← h_inter, hIi.encard, ← add_zero (a := M.eRk _), add_assoc, zero_add,
-    WithTop.add_left_cancel_iff (hX.inter_right Y).eRk_ne_top, eRank_eq_zero_iff,
+    WithTop.add_left_cancel_iff hX.inter_right.eRk_ne_top, eRank_eq_zero_iff,
     ← eq_dual_iff_dual_eq, loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff]
     at h
 
@@ -447,10 +447,10 @@ lemma localEConn_insert_right_eq_add_one {e : α} (heY : e ∉ M.closure Y)
 /-- For finite matroids, this is another rearrangement of the formula in
 `Matroid.eRk_add_eRk_eq_eRk_union_add_localEConn`.
 For infinite matroids it needs a separate proof. -/
-lemma localEConn_add_relRank_union_eq_eRk (M : Matroid α) (X Y : Set α) :
-    M.localEConn X Y + M.relRank Y (X ∪ Y) = M.eRk X := by
+lemma localEConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
+    M.localEConn X Y + M.eRelRk Y (X ∪ Y) = M.eRk X := by
   wlog hE : X ⊆ M.E ∧ Y ⊆ M.E generalizing X Y with aux
-  · rw [← localEConn_inter_ground, ← relRank_inter_ground_right, ← relRank_inter_ground_left,
+  · rw [← localEConn_inter_ground, ← eRelRk_inter_ground_right, ← eRelRk_inter_ground_left,
       union_inter_distrib_right, aux _ _ ⟨inter_subset_right, inter_subset_right⟩, eRk_inter_ground]
   obtain ⟨hXE, hYE⟩ := hE
   obtain ⟨I, hI⟩ := M.exists_basis (X ∩ Y)
@@ -468,7 +468,7 @@ lemma localEConn_add_relRank_union_eq_eRk (M : Matroid α) (X Y : Set α) :
   have hbas : (M ↾ (IX ∪ IY))✶.Base ((IX ∪ IY) \ K) := by
     simpa using hK.base_restrict.compl_base_dual
 
-  rw [hIX.eRk_eq_encard, hIX.localEConn_eq hIY, hIY.relRank_eq_encard_diff_of_subset_basis hK' hIYK,
+  rw [hIX.eRk_eq_encard, hIX.localEConn_eq hIY, hIY.eRelRk_eq_encard_diff_of_subset_basis hK' hIYK,
     ← hbas.encard, union_diff_distrib, diff_eq_empty.2 hIYK, union_empty, add_assoc,
     ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
     ← encard_diff_add_encard_inter IX IY, add_comm, eq_comm,
@@ -477,8 +477,8 @@ lemma localEConn_add_relRank_union_eq_eRk (M : Matroid α) (X Y : Set α) :
 
 lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
     (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn X H + 1 = M.eRk X := by
-  rw [← M.localEConn_add_relRank_union_eq_eRk X H, ← relRank_closure_right,
-    (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.relRank_eq_one]
+  rw [← M.localEConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,
+    (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.eRelRk_eq_one]
 
 end localEConn
 
@@ -558,7 +558,7 @@ lemma FinRk.modularPair_iff_localConn_eq_rk_inter (hX : M.FinRk X) (Y : Set α)
   rw [hX.modularPair_iff_localEConn_eq_eRk_inter Y hXE hYE, localConn, rk,
     ← Nat.cast_inj (R := ℕ∞), ENat.coe_toNat, ENat.coe_toNat]
   · rw [eRk_ne_top_iff]
-    exact hX.inter_right Y
+    exact hX.inter_right
   rw [← WithTop.lt_top_iff_ne_top]
   exact (M.localEConn_le_eRk_left _ _).trans_lt hX.eRk_lt_top
 
