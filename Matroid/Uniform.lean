@@ -19,15 +19,14 @@ namespace Matroid
 
 section Uniform
 
-/-- A uniform matroid with a given rank `k` and ground set `E`.
-  If `encard E ≤ k`, then every set is independent. ` -/
+/-- The uniform matroid with ground set `E`, whose independent sets are the finite sets of size
+at most `k`. -/
 def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).truncateTo k
 
 @[simp] theorem unifOn_ground_eq (E : Set α) : (unifOn E k).E = E := rfl
 
 @[simp] theorem unifOn_indep_iff : (unifOn E k).Indep I ↔ I.encard ≤ k ∧ I ⊆ E := by
   simp [unifOn, and_comm]
-
 
 @[simp] theorem unifOn_zero (E : Set α) : unifOn E 0 = loopyOn E := by
   simp [unifOn]
@@ -67,24 +66,21 @@ instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
     (unifOn E k)✶ = unifOn E (hE.toFinset.card - k) := by
   classical
-
-  obtain (hle | hlt) := le_or_lt E.encard k
-  · rw [unifOn_eq_of_le hle, freeOn_dual_eq, tsub_eq_zero_of_le, unifOn_zero]
-    rwa [hE.encard_eq_coe_toFinset_card, Nat.cast_le] at hle
-
   obtain ⟨E, rfl⟩ := hE.exists_finset_coe
+  obtain (hle | hlt) := le_or_lt E.card k
+  · rw [unifOn_eq_of_le (by simpa), freeOn_dual_eq, tsub_eq_zero_of_le (by simpa), unifOn_zero]
 
   refine ext_base (by simp) (fun B hBE ↦ ?_)
   obtain ⟨B, rfl⟩ := (hE.subset hBE).exists_finset_coe
   simp only [dual_ground, unifOn_ground_eq] at hBE
+  replace hlt := hlt.le
 
-  rw [dual_base_iff, unifOn_base_iff hlt.le (by simpa using diff_subset), unifOn_ground_eq,
-    unifOn_base_iff (by simp) hBE,  ← Finset.coe_sdiff, encard_coe_eq_coe_finsetCard,
-    Nat.cast_inj, encard_coe_eq_coe_finsetCard, Nat.cast_inj, toFinite_toFinset, E.toFinset_coe,
-    Finset.card_sdiff (by simpa using hBE),
-    tsub_eq_iff_eq_add_of_le (Finset.card_mono (by simpa using hBE)),
-    eq_tsub_iff_add_eq_of_le (by simpa using hlt.le), add_comm, eq_comm]
-
+  rw [dual_base_iff, unifOn_base_iff (by simpa) (by simpa using diff_subset),
+    unifOn_ground_eq, unifOn_base_iff (by simp) hBE, ← Finset.coe_sdiff,
+    encard_coe_eq_coe_finsetCard, Nat.cast_inj, encard_coe_eq_coe_finsetCard, Nat.cast_inj,
+    toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff (by simpa),
+    tsub_eq_iff_eq_add_of_le (Finset.card_mono (by simpa)),
+    eq_tsub_iff_add_eq_of_le (by simpa), add_comm, eq_comm]
 
 @[simp] theorem unifOn_spanning_iff' :
     (unifOn E k).Spanning X ↔ (k ≤ X.encard ∧ X ⊆ E) ∨ X = E  := by
@@ -112,8 +108,7 @@ theorem eq_unifOn_iff : M = unifOn E k ↔ M.E = E ∧ ∀ I, M.Indep I ↔ I.en
   ⟨by rintro rfl; simp,
     fun ⟨hE, h⟩ ↦ ext_indep (by simpa) fun I _↦ by simpa using h I⟩
 
-@[simp] theorem unifOn_delete_eq (E D : Set α) (k : ℕ) :
-    (unifOn E k) ＼ D = unifOn (E \ D) k := by
+@[simp] theorem unifOn_delete_eq (E D : Set α) (k : ℕ) : (unifOn E k) ＼ D = unifOn (E \ D) k := by
   simp_rw [eq_unifOn_iff, delete_ground, unifOn_ground_eq, true_and, delete_indep_iff,
     unifOn_indep_iff, subset_diff, and_assoc, imp_true_iff]
 
@@ -182,9 +177,9 @@ section unif
 
 variable {a b a' b' : ℕ}
 
-/-- A canonical uniform matroid, with rank `a` and ground type `Fin b`.
-(In the junk case where `b < a`, then the matroid is free, and the rank is `b` instead).  -/
-def unif (a b : ℕ) := unifOn (univ : Set (Fin b)) a
+/-- The canonical finite uniform matroid on ground type `Fin b`,
+whose independent sets are those of cardinality at most `a`. -/
+def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 
 @[simp] theorem unif_ground_eq (a b : ℕ) : (unif a b).E = univ := rfl
 
@@ -315,8 +310,9 @@ section Infinite
 
 variable {B B' : Set α}
 
-/-- Uniformity as a predicate. This is mainly useful for infinite matroids,
-where uniformity is structurally nontrivial. -/
+/-- Uniformity as a predicate ; a matroid is uniform if every subset of the ground set
+is independent or spanning.
+This is mainly useful for infinite matroids, where uniformity is structurally nontrivial. -/
 def Uniform (M : Matroid α) := ∀ ⦃X⦄, X ⊆ M.E → M.Indep X ∨ M.Spanning X
 
 lemma Uniform.indep_or_spanning (hM : M.Uniform) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
@@ -516,7 +512,6 @@ lemma uniformMatroidOfBase_uniform (E : Set α) (Base : Set α → Prop)
 lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \ B').Finite) :
     FinDiff B B' := by
   rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
-
 
 end Infinite
 

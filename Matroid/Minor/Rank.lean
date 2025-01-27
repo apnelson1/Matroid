@@ -95,8 +95,7 @@ lemma eRelRk_eq_eRk_diff_contract (M : Matroid α) (X Y : Set α) :
 lemma eRelRk_eq_diff_right (M : Matroid α) (X Y : Set α) : M.eRelRk X Y = M.eRelRk X (Y \ X) :=
   M.eRelRk_eq_eRk_diff_contract X Y
 
-lemma eRelRk_eq_union_right (M : Matroid α) (X Y : Set α) :
-    M.eRelRk X Y = M.eRelRk X (Y ∪ X) := by
+lemma eRelRk_eq_union_right (M : Matroid α) (X Y : Set α) : M.eRelRk X Y = M.eRelRk X (Y ∪ X) := by
   rw [eq_comm, eRelRk_eq_diff_right, union_diff_right, ← eRelRk_eq_diff_right]
 
 lemma eRelRk_eq_zero_of_subset (M : Matroid α) (h : Y ⊆ X) : M.eRelRk X Y = 0 := by
@@ -186,8 +185,7 @@ lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.eRelRk X Y + M.eRk X = M.eRk Y := by
   rw [eRelRk_add_eRk_eq, union_eq_self_of_subset_right hXY]
 
-lemma FinRk.eRelRk_eq_sub (hY : M.FinRk X) (hXY : X ⊆ Y) :
-    M.eRelRk X Y = M.eRk Y - M.eRk X := by
+lemma FinRk.eRelRk_eq_sub (hY : M.FinRk X) (hXY : X ⊆ Y) : M.eRelRk X Y = M.eRk Y - M.eRk X := by
   rw [← eRelRk_add_eRk_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY.eRk_lt_top
   rw [eq_comm, tsub_add_cancel_iff_le]
@@ -242,8 +240,7 @@ lemma eRelRk_insert_eq_zero_iff (he : e ∈ M.E := by aesop_mat) :
   simp only [and_iff_left_iff_imp]
   exact fun _ ↦ M.inter_ground_subset_closure X
 
-lemma eRelRk_insert_eq_zero_iff' :
-    M.eRelRk X (insert e X) = 0 ↔ (e ∈ M.E → e ∈ M.closure X) := by
+lemma eRelRk_insert_eq_zero_iff' : M.eRelRk X (insert e X) = 0 ↔ (e ∈ M.E → e ∈ M.closure X) := by
   by_cases he : e ∈ M.E
   · rw [eRelRk_insert_eq_zero_iff, imp_iff_right he]
   rw [← M.eRelRk_inter_ground_right, insert_inter_of_not_mem he, eRelRk_inter_ground_right]
@@ -382,7 +379,8 @@ lemma eRelRk_union_add_eRelRk_union_le_eRelRk_inter_union (X Y : Set α) :
 
 section Contract
 
-lemma eRk_contract_le_eRk_delete (M : Matroid α) (X Y : Set α) : (M ／ X).eRk Y ≤ (M ＼ X).eRk Y := by
+lemma eRk_contract_le_eRk_delete (M : Matroid α) (X Y : Set α) :
+    (M ／ X).eRk Y ≤ (M ＼ X).eRk Y := by
   obtain ⟨I, hI⟩ := (M ／ X).exists_basis (Y ∩ (M ／ X).E)
   rw [← eRk_inter_ground, ← hI.encard, ← hI.indep.of_contract.eRk, delete_eRk_eq']
   refine M.eRk_mono (hI.subset.trans ?_)
@@ -394,7 +392,8 @@ lemma eRk_contract_le_eRk (M : Matroid α) (C X : Set α) : (M ／ C).eRk X ≤ 
   rw [← eRk_inter_ground, ← hI.encard, ← hI.indep.of_contract.eRk]
   exact M.eRk_mono (hI.subset.trans inter_subset_left)
 
-lemma eRank_contract_le_eRank_delete (M : Matroid α) (X : Set α) : (M ／ X).eRank ≤ (M ＼ X).eRank := by
+lemma eRank_contract_le_eRank_delete (M : Matroid α) (X : Set α) :
+    (M ／ X).eRank ≤ (M ＼ X).eRank := by
   rw [eRank_def, eRank_def]
   exact M.eRk_contract_le_eRk_delete X (M.E \ X)
 
