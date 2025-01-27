@@ -177,6 +177,56 @@ lemma mem_closure_iff_exists_circuit_of_not_mem (he : e ∉ X) :
 
 section Elimination
 
+-- lemma multi_elimination' {ι : Type*} {J : Set α} (x : ι → α)
+--     (Is : ι → Set α) (h_not_mem : ∀ i, x i ∉ Is i) (hCs : ∀ i, M.Circuit (insert (x i) (Is i)))
+--     (hC : M.Circuit (J ∪ range x)) : ∃ C', M.Circuit C' ∧ C' ⊆ J ∪ ⋃ i, Is i := by
+
+lemma strong_multi_elimination' {ι : Type*} {J : Set α} (x : ι → α)
+    (Is : ι → Set α) (h_not_mem : ∀ i, x i ∉ Is i) (hCs : ∀ i, M.Circuit (insert (x i) (Is i)))
+    (hC : M.Circuit (J ∪ range x)) {z : α} (hzJ : z ∈ J) (hzI : ∀ i, z ∉ Is i) :
+    ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ J ∪ ⋃ i, Is i := by
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · exact ⟨J, by simpa [range_eq_empty] using hC, hzJ, by simp⟩
+  suffices hcl : z ∈ M.closure ((⋃ i, Is i) ∪ (J \ {z}))
+  · rw [mem_closure_iff_exists_circuit_of_not_mem (by simp [hzI])] at hcl
+    obtain ⟨C', hC', hzC', hC'ss⟩ := hcl
+    refine ⟨C', hC', hzC', ?_⟩
+    rwa [union_comm, ← insert_union, insert_diff_singleton, insert_eq_of_mem hzJ] at hC'ss
+  replace hCs := show ∀ (i : ι), M.closure (Is i) = M.closure ({x i} ∪ (Is i))
+    by simpa [diff_singleton_eq_self (h_not_mem _)] using
+      fun i ↦ (hCs i).closure_diff_singleton_eq (x i)
+  -- This is true because each `Is i` spans `x i` and `(range x) ∪ (J \ {z})` spans `z`.
+  rw [closure_union_congr_left <| closure_iUnion_congr _ _ hCs, iUnion_union_distrib,
+    iUnion_singleton_eq_range, union_right_comm]
+  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem (.inl hzJ))
+    (M.closure_subset_closure (subset_trans ?_ subset_union_left))
+  rw [union_diff_distrib, union_comm]
+  exact union_subset_union_left _ diff_subset
+
+lemma Circuit.strong_multi_elimination' {ι : Type*} (hC : M.Circuit C) (x : ι → α) (Cs : ι → Set α)
+    (hCs : ∀ i, M.Circuit (Cs i)) (h_mem_C : ∀ i, x i ∈ C) (h_mem : ∀ i, x i ∈ Cs i)
+    (h_unique : ∀ ⦃i i'⦄, x i ∈ Cs i' → i = i') {z : α} (hzC : z ∈ C) (hzCs : ∀ i, z ∉ Cs i) :
+    ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by
+  have hwin := M.strong_multi_elimination' x (fun i ↦ (Cs i \ {x i})) (J := C \ range x) (z := z)
+    (by simp) (fun i ↦ ?_) ?_ ⟨hzC, ?_⟩ ?_
+  · obtain ⟨C', hC', hzC', hC'ss⟩ := hwin
+    refine ⟨C', hC', hzC', hC'ss.trans ?_⟩
+    refine union_subset (diff_subset_diff_left subset_union_left)
+      (iUnion_subset fun i ↦ subset_diff.2
+        ⟨diff_subset.trans (subset_union_of_subset_right (subset_iUnion ..) _), ?_⟩)
+    rw [disjoint_iff_forall_ne]
+    rintro _ he _ ⟨j, hj, rfl⟩ rfl
+    obtain rfl : j = i := h_unique he.1
+    simp at he
+  · simpa [insert_eq_of_mem (h_mem i)] using hCs i
+  · rwa [diff_union_self, union_eq_self_of_subset_right]
+    rintro _ ⟨i, hi, rfl⟩
+    exact h_mem_C i
+  · rintro ⟨i, hi, rfl⟩
+    exact hzCs _ (h_mem i)
+  simp only [mem_diff, mem_singleton_iff, not_and, not_not]
+  exact fun i hzi ↦ (hzCs i hzi).elim
+
 /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is
   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version.
   The stronger version is required for axiomatizing infinite matroids via circuits.
