@@ -130,3 +130,10 @@ lemma BijOn.bijOn_update [DecidableEq α] (h : BijOn f s t) (hx : x ∈ s) (hy :
   simp [hy]
 
 end BijOn
+
+variable {f : α → β} {x : α} {y : β}
+
+@[simp] lemma injective_const_iff : Injective (fun (_ : α) ↦ y) ↔ Subsingleton α :=
+  ⟨fun h ↦ ⟨fun _ _ ↦ h rfl⟩, fun _ _ _ _ ↦ Subsingleton.elim ..⟩
+
+@[simp] lemma restrict_const (s : Set α) (y : β) : (s.restrict (fun _ : α ↦ y)) = fun _ ↦ y := rfl

@@ -177,7 +177,7 @@ lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he 
   have hIM : (M ＼ e).Base I := hNe.base_of_base hI
 
   have hIcard : I.encard = 2
-  · rwa [hI.encard, hNe.eRank_eq, delete_elem_eRank_eq hel]
+  · rwa [hI.encard_eq_eRank, hNe.eRank_eq, delete_elem_eRank_eq hel]
 
   obtain ⟨a,b, hab, rfl⟩ := encard_eq_two.1 hIcard
 
@@ -237,7 +237,7 @@ lemma exists_smaller_of_odd_circuit_cocircuit (hfin : C.Finite) (hCc : M.Circuit
     have hb' : N.Base {e, f}
     · rw [hN, (hCi.diff _).contract_base_iff, ← singleton_union, union_assoc, disjoint_union_left]
       simpa [hf, he.1, he.2]
-    rw [← hb'.encard, encard_pair (by rintro rfl; exact hf.2 he.2)]
+    rw [← hb'.encard_eq_eRank, encard_pair (by rintro rfl; exact hf.2 he.2)]
 
   have hfP : N.Point {f}
   · rw [Point, flat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]

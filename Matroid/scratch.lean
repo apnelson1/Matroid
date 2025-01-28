@@ -1,27 +1,12 @@
-import Mathlib
+import Mathlib.LinearAlgebra.LinearIndependent
 
-variable {α : Type*}
+variable {LongNameType 𝔽 : Type} [Field 𝔽] [AddCommGroup LongNameType] [Module 𝔽 LongNameType]
+  {s t : Set LongNameType}
 
-class HasDelete (α β : Type*) where
-  del : α → β → α
+lemma LinearIndependent.diff_index (hli : LinearIndependent 𝔽 ((↑) : s → LongNameType)) :
+    LinearIndependent 𝔽 ((↑) : (s \ t : Set LongNameType) → LongNameType) := sorry
 
-infixl:75 " ＼ " => HasDelete.del
+abbrev Set.incl {α : Type*} (s : Set α) : s → α := (↑)
 
-def setDelete (s t : Set α) : Set α := s \ t
-
-instance setDel {α : Type*} : HasDelete (Set α) (Set α) :=
-  ⟨setDelete⟩
-
-@[simp] lemma setdelete_eq_diff (s t : Set α) : s ＼ t = s \ t := rfl
-
-/-- Can this be an abbrev? -/
-instance elemDelete {α : Type*} : HasDelete (Set α) α := ⟨fun s x ↦ setDelete s {x}⟩
-
-
-example : ({1,2,3} : Set ℕ) ＼ ({3} : Set ℕ) = {1,2} := by
-  ext x
-  simp [setDelete, Set.mem_diff_singleton]
-
-
-example : ({1,2,3} : Set ℕ) ＼ 3 = {1,2} := by
-  sorry
+lemma LinearIndependent.diff_index_better (hli : LinearIndependent 𝔽 s.incl) :
+    LinearIndependent 𝔽 (s \ t).incl := sorry
