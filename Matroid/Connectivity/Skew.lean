@@ -209,7 +209,8 @@ lemma FinRk.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set �
   choose Is hIs using fun i ↦ M.exists_basis (Xs i) (hXE i)
   rw [← eRk_closure_eq , ← M.closure_iUnion_closure_eq_closure_iUnion] at hsum
   simp_rw [← (fun i ↦ M.eRk_closure_eq (Xs i)), ← (fun i ↦ (hIs i).closure_eq_closure),
-    M.closure_iUnion_closure_eq_closure_iUnion, eRk_closure_eq, (fun i ↦ (hIs i).indep.eRk)] at hsum
+    M.closure_iUnion_closure_eq_closure_iUnion, eRk_closure_eq,
+      (fun i ↦ (hIs i).indep.eRk_eq_encard)] at hsum
 
   apply Indep.skewFamily_of_disjoint_bases ?_ ?_ hIs
   · exact FinRk.indep_of_encard_le_eRk

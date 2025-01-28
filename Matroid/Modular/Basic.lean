@@ -377,7 +377,7 @@ lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
 --     have hbas : M.Basis (Xs i ∩ K) (Xs i) := by simpa [hKcl] using (hKsIs hK).2 i
 --     convert hbas using 1
 --     rw [subset_antisymm_iff, and_iff_left (inter_subset_inter_right _ (subset_sUnion_of_mem hK))]
---     simp (config := { contextual := true }) only [subset_def, mem_inter_iff, mem_sUnion, true_and,
+--     simp +contextual only [subset_def, mem_inter_iff, mem_sUnion, true_and,
 --       and_imp, forall_exists_index]
 
 --     intro e heX K' hK' heK'

@@ -90,7 +90,7 @@ lemma flat_iff_forall_circuit (hF : F ⊆ M.E := by aesop_mat) :
     refine (M.closure_subset_closure ?_) (hC.subset_closure_diff_singleton e heC)
     rwa [diff_subset_iff, singleton_union]
   refine (M.subset_closure F hF).antisymm' (fun e heF ↦ by_contra fun he' ↦ ?_)
-  obtain ⟨C, hC, heC, hCF⟩ := (mem_closure_iff_exists_circuit_of_not_mem he').mp heF
+  obtain ⟨C, hCF, hC, heC⟩ := (mem_closure_iff_exists_circuit_of_not_mem he').mp heF
   exact he' (h C e hC heC hCF)
 
 lemma flat_iff_forall_circuit' :

@@ -67,7 +67,8 @@ theorem truncateTo_base_iff {k : ℕ} (h_rank : k ≤ M.eRank) :
     and_congr_right_iff, and_imp]
   refine fun hi ↦ ⟨fun ⟨hle, hmax⟩ ↦ ?_, fun h ↦ ⟨h.le, fun J _ hcard hBJ ↦ ?_⟩⟩
   · obtain ⟨B', hB', hBB'⟩ := hi.exists_base_superset
-    obtain ⟨J, hBJ, hJB', h'⟩ := exists_superset_subset_encard_eq hBB' hle (by rwa [hB'.encard])
+    obtain ⟨J, hBJ, hJB', h'⟩ := exists_superset_subset_encard_eq hBB' hle
+      (by rwa [hB'.encard_eq_eRank])
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
   exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
 
@@ -82,7 +83,7 @@ instance truncateTo.finiteRk {k : ℕ} : FiniteRk (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_base
   refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rank_le h] at hB
-    rw [← encard_lt_top_iff, hB.encard]
+    rw [← encard_lt_top_iff, hB.encard_eq_eRank]
     exact h.trans_lt (WithTop.coe_lt_top _)
   rw [truncateTo_base_iff h.le] at hB
   rw [← encard_lt_top_iff, hB.2]
@@ -101,7 +102,8 @@ theorem truncateTo_eRk_eq (M : Matroid α) (k : ℕ∞) (X : Set α) :
   refine ⟨?_, ?_⟩
   · intro J hJX hJi
     exact le_min (hJi.1.encard_le_eRk_of_subset hJX) hJi.2
-  obtain ⟨I₀, hI₀, hI₀ss⟩ := exists_subset_encard_eq (min_le_of_left_le (b := k) hI.encard.symm.le)
+  obtain ⟨I₀, hI₀, hI₀ss⟩ := exists_subset_encard_eq
+    (min_le_of_left_le (b := k) hI.encard_eq_eRk.symm.le)
   exact ⟨_, hI₀.trans hI.subset, ⟨hI.indep.subset hI₀, hI₀ss.trans_le (min_le_right _ _)⟩, hI₀ss⟩
 
 end truncateTo
@@ -130,7 +132,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
 
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
-  simp (config := {contextual := true})
+  simp +contextual
     [truncate, ModularCut.principal, eq_loopyOn_iff, Matroid.ofExistsMatroid]
 
 @[simp] lemma truncate_emptyOn_eq (α : Type*) : (emptyOn α).truncate = emptyOn α := by
@@ -574,7 +576,7 @@ Empty if `M` has rank zero for technical reasons. -/
     simp [(top _).base_eq', top_ToTruncate, truncate_base_iff, nonempty_iff_ne_empty]
 
   suffices ∀ ⦃B : Set α⦄, B ⊆ M.E → M.Base B → ¬B.Nonempty → ∃ e ∉ B, M.Base (insert e B) by
-    simpa (config := {contextual := true}) [(top M).base_eq', top_ToTruncate, truncate_base_iff]
+    simpa +contextual [(top M).base_eq', top_ToTruncate, truncate_base_iff]
 
   exact fun B _ hB hne ↦ (hne hB.nonempty).elim
 

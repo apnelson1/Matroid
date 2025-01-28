@@ -194,7 +194,7 @@ lemma eRk_left_add_discrepancy_eq [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set
     M₂.eRk X + hQ.discrepancy X = M₁.eRk X := by
   obtain ⟨I, hI⟩ := M₂.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_basis'_of_subset hI.subset
-  rw [← hI.encard, ← hJ.encard, ← hQ.encard_basis'_diff_eq_discrepancy hI hJ hIJ,
+  rw [← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← hQ.encard_basis'_diff_eq_discrepancy hI hJ hIJ,
     add_comm, encard_diff_add_encard_of_subset hIJ]
 
 lemma discrepancy_mono [M₂.Finitary] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :

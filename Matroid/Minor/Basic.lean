@@ -361,7 +361,7 @@ lemma Indep.union_basis_union_of_contract_basis (hI : M.Indep I) (hB : (M ／ I)
 lemma Basis'.contract_basis'_diff_diff_of_subset (hIX : M.Basis' I X) (hJI : J ⊆ I) :
     (M ／ J).Basis' (I \ J) (X \ J) := by
   suffices ∀ ⦃K⦄, Disjoint K J → M.Indep (K ∪ J) → K ⊆ X → I ⊆ K ∪ J → K ⊆ I by
-    simpa (config := { contextual := true }) [Basis', (hIX.indep.subset hJI).contract_indep_iff,
+    simpa +contextual [Basis', (hIX.indep.subset hJI).contract_indep_iff,
       subset_diff, maximal_subset_iff, disjoint_sdiff_left,
       union_eq_self_of_subset_right hJI, hIX.indep, diff_subset.trans hIX.subset,
       diff_subset_iff, subset_antisymm_iff, union_comm J]

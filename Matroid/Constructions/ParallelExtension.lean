@@ -135,8 +135,8 @@ lemma parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef :
 lemma parallelExtend_delete_eq' (M : Matroid α) (e f : α) :
     (M.parallelExtend e f) ＼ f = M ＼ f := by
   classical
-  suffices ∀ I ⊆ M.E, _ → _ → I ⊆ insert f M.E by simpa (config := {contextual := true})
-    [parallelExtend,ext_iff_indep, subset_diff]
+  suffices ∀ I ⊆ M.E, _ → _ → I ⊆ insert f M.E by simpa +contextual [parallelExtend,
+    ext_iff_indep, subset_diff]
   exact fun I hI _ _ ↦ hI.trans (subset_insert _ _)
 
 lemma parallelExtend_delete_eq (e : α) (hf : f ∉ M.E) : (M.parallelExtend e f) ＼ f = M := by

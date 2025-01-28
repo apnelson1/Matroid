@@ -364,8 +364,8 @@ lemma Uniform.contract (hM : M.Uniform) (C : Set α) : (M ／ C).Uniform := by
   intro C hCE
   obtain ⟨I, hI⟩ := M.exists_basis C
   suffices ∀ X ⊆ M.E, Disjoint C X → M.Indep (X ∪ I) ∨ M.Spanning (X ∪ C) by
-    simpa (config := {contextual := true}) [Uniform, hI.contract_indep_iff,
-    contract_spanning_iff hCE, subset_diff, disjoint_comm]
+    simpa +contextual [Uniform, hI.contract_indep_iff, contract_spanning_iff hCE, subset_diff,
+      disjoint_comm]
   exact fun X hXE hXC ↦ (hM.indep_or_spanning _ (union_subset hXE hI.indep.subset_ground)).elim .inl
     fun h ↦ .inr <| h.superset (union_subset_union_right X hI.subset)
 
@@ -378,10 +378,10 @@ lemma Uniform.minor {N : Matroid α} (hM : M.Uniform) (hNM : N ≤m M) : N.Unifo
   exact (hM.contract C).delete D
 
 @[simp] lemma loopyOn_uniform (E : Set α) : (loopyOn E).Uniform :=
-  fun _ ↦ by simp (config := {contextual := true}) [spanning_iff]
+  fun _ ↦ by simp +contextual [spanning_iff]
 
 @[simp] lemma freeOn_uniform (E : Set α) : (freeOn E).Uniform :=
-  fun _ ↦ by simp (config := {contextual := true})
+  fun _ ↦ by simp +contextual
 
 lemma Uniform.truncate (hM : M.Uniform) : M.truncate.Uniform := by
   obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
@@ -441,14 +441,24 @@ lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
   refine ⟨M.E, M.rank, ext_base rfl fun B hBE ↦ ?_⟩
   rw [unifOn_base_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
-    cast_rank_eq, iff_def, and_iff_right Base.encard]
+    cast_rank_eq, iff_def, and_iff_right Base.encard_eq_eRank]
   intro hB
   obtain ⟨B₀, hB₀⟩ := M.exists_base
   refine hM.base_of_base_of_finDiff hB₀ ?_ hBE
   rw [finDiff_iff, and_iff_right hB₀.finite.diff,
     ← WithTop.add_right_cancel_iff (a := (B₀ ∩ B).encard), encard_diff_add_encard_inter,
-    inter_comm, encard_diff_add_encard_inter, hB₀.encard, hB]
+    inter_comm, encard_diff_add_encard_inter, hB₀.encard_eq_eRank, hB]
   exact (hB₀.finite.inter_of_left B).encard_lt_top.ne
+
+/-- A finitary non-free uniform matroid is one of the obvious ones. -/
+lemma Uniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RkPos] (hM : M.Uniform) :
+    ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
+  obtain ⟨C, hC⟩ := M.exists_circuit
+  obtain ⟨e, heC⟩ := hC.nonempty
+  obtain hCi | hCs := hM.indep_or_spanning C
+  · exact (hC.not_indep hCi).elim
+  have := ((hC.diff_singleton_basis heC).base_of_spanning hCs).finiteRk_of_finite hC.finite.diff
+  exact hM.exists_eq_unifOn
 
 @[simps!] def UniformMatroidOfBase (E : Set α) (Base : Set α → Prop)
     (exists_base : ∃ B, Base B)
@@ -510,8 +520,8 @@ end Infinite
 section LowRank
 
 lemma eq_unifOn_of_eRank_le_one [M.Loopless] (hM : M.eRank ≤ 1) : ∃ E, M = unifOn E 1 := by
-  simp (config := { contextual := true }) only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff,
-    exists_eq_left', and_true]
+  simp +contextual only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, exists_eq_left',
+    and_true]
   exact fun I hIE ↦ ⟨fun hI ↦ hI.encard_le_eRank.trans hM,
     fun hI ↦ subsingleton_indep (encard_le_one_iff_subsingleton.1 hI) hIE⟩
 

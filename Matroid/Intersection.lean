@@ -27,8 +27,8 @@ lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M
   rw [basis'_iff_indep_encard_eq_of_finite (hI₁.finite.subset inter_subset_left),
     and_iff_right inter_subset_right, and_iff_right (hI₁.inter_right A),
     basis'_iff_indep_encard_eq_of_finite hI₁.finite.diff, and_iff_right (hI₂.diff A),
-    and_iff_right (diff_subset_diff_left hI₂.subset_ground), ← (hI₂.diff A).eRk,
-    eRk_eq_eRk_iff, ← (hI₁.inter_right A).eRk, eRk_eq_eRk_iff]
+    and_iff_right (diff_subset_diff_left hI₂.subset_ground), ← (hI₂.diff A).eRk_eq_encard,
+    eRk_eq_eRk_iff, ← (hI₁.inter_right A).eRk_eq_encard, eRk_eq_eRk_iff]
 
   rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
     ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard] at h

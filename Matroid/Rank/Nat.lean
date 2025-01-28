@@ -24,7 +24,7 @@ lemma rank_def (M : Matroid α) : M.rank = M.rk M.E := by
 @[simp] lemma eRk_toNat_eq_rk (M : Matroid α) (X : Set α) : ENat.toNat (M.eRk X) = M.rk X := rfl
 
 lemma Base.ncard (hB : M.Base B) : B.ncard = M.rank := by
-  rw [rank_def, ← eRk_toNat_eq_rk, ncard_def, hB.encard, eRank_def]
+  rw [rank_def, ← eRk_toNat_eq_rk, ncard_def, hB.encard_eq_eRank, eRank_def]
 
 lemma FinRk.cast_rk_eq (hX : M.FinRk X) : (M.rk X : ℕ∞) = M.eRk X := by
   rw [rk, coe_toNat (by rwa [eRk_ne_top_iff])]
@@ -118,7 +118,7 @@ lemma rk_eq_rank (hX : M.E ⊆ X) : M.rk X = M.rank := by
   rw [← rk_inter_ground, inter_eq_self_of_subset_right hX, rank_def]
 
 lemma Indep.rk_eq_ncard (hI : M.Indep I) : M.rk I = I.ncard := by
-  rw [← eRk_toNat_eq_rk, hI.eRk, ncard_def]
+  rw [← eRk_toNat_eq_rk, hI.eRk_eq_encard, ncard_def]
 
 lemma Indep.rk_eq_card {I : Finset α} (hI : M.Indep I) : M.rk I = I.card := by
   rw [hI.rk_eq_ncard, ncard_coe_Finset]
@@ -142,7 +142,7 @@ lemma Indep.base_of_card [FiniteRk M] {I : Finset α} (hI : M.Indep I) (hIcard :
   hI.base_of_ncard (by simpa)
 
 lemma Basis'.card (h : M.Basis' I X) : I.ncard = M.rk X := by
-  rw [ncard_def, h.encard, ← eRk_toNat_eq_rk]
+  rw [ncard_def, h.encard_eq_eRk, ← eRk_toNat_eq_rk]
 
 lemma Basis'.rk_eq_rk (h : M.Basis' I X) : M.rk I = M.rk X := by
   rw [← h.card, h.indep.rk_eq_ncard]
@@ -196,7 +196,7 @@ lemma FinRk.submod (hX : M.FinRk X) (Y : Set α) :
   by_cases hY : M.FinRk Y
   · rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, Nat.cast_add, hX.cast_rk_eq, hY.cast_rk_eq,
       hX.inter_right.cast_rk_eq, (hX.union hY).cast_rk_eq]
-    apply eRk_inter_add_eRk_union_le_eRk_add_eRk
+    apply eRk_inter_add_eRk_union_le
   rw [rk_eq_zero_of_not_finRk hY,
     rk_eq_zero_of_not_finRk (not_finRk_superset hY subset_union_right), add_zero, add_zero]
   exact hX.rk_le_of_subset inter_subset_left

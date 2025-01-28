@@ -39,10 +39,10 @@ lemma closure_closure (M : FlatMatroid α) (X : Set α) : M.closure (M.closure X
   simp only [left_eq_inter]
   refine (sInter_subset_of_mem ?_).trans hF.subset_ground
   simp only [mem_setOf_eq, hF, and_true]
-  exact subset_trans (by simp (config := {contextual := true})) hssF
+  exact subset_trans (by simp +contextual) hssF
 
 lemma subset_closure (hX : X ⊆ M.E) : X ⊆ M.closure X := by
-  suffices ∀ F, X ∩ M.E ⊆ F → M.Flat F → X ⊆ F by simpa (config := { contextual := true })
+  suffices ∀ F, X ∩ M.E ⊆ F → M.Flat F → X ⊆ F by simpa +contextual
   exact fun F hXF _ ↦ by rwa [← inter_eq_self_of_subset_left hX]
 
 lemma closure_inter_ground (M : FlatMatroid α) (X : Set α) :

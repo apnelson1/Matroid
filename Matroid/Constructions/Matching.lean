@@ -70,7 +70,7 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
   have him : (φ '' S).Finite := by
     refine (I ∩ J).powerset.finite_toSet.subset ?_
     rintro _ ⟨⟨P,Q⟩,-,rfl⟩
-    simp (config := {contextual := true}) [φ, subset_def]
+    simp +contextual [φ, subset_def]
 
   obtain ⟨⟨⟨f, I₀⟩,⟨g, J₀⟩⟩, ⟨hI₀, hf, hJ₀, hg⟩, hmax⟩ :=
     Set.Finite.exists_maximal_wrt' φ S him hSne

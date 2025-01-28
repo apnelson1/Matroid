@@ -143,12 +143,12 @@ lemma quotient_of_forall_cyclic_of_circuit (hE : M₁.E = M₂.E)
   refine fun e he ↦ ?_
   by_cases heI : e ∈ I
   · exact mem_of_mem_of_subset heI <| hI.subset.trans (M₂.subset_closure X (hXE.trans hE.subset))
-  specialize h (M₁.fundCct e I) (hI.indep.fundCct_circuit he heI)
-  obtain ⟨C, hC, heC, hCI⟩ := h.exists_of_mem (M₁.mem_fundCct e I)
+  specialize h (M₁.fundCircuit e I) (hI.indep.fundCircuit_circuit he heI)
+  obtain ⟨C, hCI, hC, heC⟩ := h.exists_of_mem (M₁.mem_fundCircuit e I)
   refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
     (M₂.closure_subset_closure ?_)
   rw [diff_singleton_subset_iff]
-  exact hCI.trans ((fundCct_subset_insert _ e I).trans (insert_subset_insert hI.subset))
+  exact hCI.trans ((fundCircuit_subset_insert _ e I).trans (insert_subset_insert hI.subset))
 
 lemma Quotient.dual (hQ : M₂ ≤q M₁) : M₁✶ ≤q M₂✶ := by
   refine quotient_of_forall_cyclic_of_circuit hQ.ground_eq fun C hC ↦ ?_

@@ -221,7 +221,7 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
   exfalso
   obtain ⟨e, f, hne, hss⟩ := nontrivial_iff_pair_subset.1 hI'
   refine h (M.closure {e,f}) ⟨M.closure_flat _, ?_⟩ (subset_trans ?_ hi)
-  · rw [eRk_closure_eq, (hI.indep.subset hss).eRk, encard_pair hne]
+  · rw [eRk_closure_eq, (hI.indep.subset hss).eRk_eq_encard, encard_pair hne]
   refine inter_subset_inter_right _ ?_
   rw [hF.eq_closure_of_basis hI]
   exact M.closure_mono hss
@@ -722,7 +722,7 @@ lemma Circuit.chord_split_of_modular_subset {C I : Set α} (hC : M.Circuit C) (h
   have hli := (hmod.modularPair (M.closure_flat (C \ I))).localEConn_eq_eRk_inter
   obtain ⟨J, hJ⟩ := M.exists_basis (M.closure I ∩ M.closure (C \ I))
   rw [localEConn_closure_closure, hC.localEConn_subset_compl hnt.nonempty hssu, eq_comm,
-    ← hJ.encard, encard_eq_one] at hli
+    ← hJ.encard_eq_eRk, encard_eq_one] at hli
   obtain ⟨e, rfl⟩ := hli
 
   suffices aux : ∀ X ⊂ C, X.Nontrivial → (C \ X).Nontrivial →
@@ -891,11 +891,11 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.Line L → M.Modular
     obtain hlt | h2 := hr.lt_or_eq
     · exact hF.modularFlat_of_eRk_le_one <| Order.le_of_lt_add_one hlt
     obtain ⟨I, hI⟩ := (M ／ X).exists_basis F hF.subset_ground
-    rw [← hI.encard, le_iff_eq_or_lt] at hr
+    rw [← hI.encard_eq_eRk, le_iff_eq_or_lt] at hr
     have hmod := (hM (M.closure I) ⟨M.closure_flat _, ?_⟩).contract X
     · rwa [contract_closure_eq, closure_union_closure_left_eq, ← contract_closure_eq,
         hI.closure_eq_closure, hF.closure] at hmod
-    rwa [eRk_closure_eq, hI.indep.of_contract.eRk, ← hI.eRk_eq_encard]
+    rwa [eRk_closure_eq, hI.indep.of_contract.eRk_eq_encard, ← hI.eRk_eq_encard]
   simp only [hX', not_exists] at h_aux
 
   rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,
@@ -930,7 +930,7 @@ lemma finitary_of_forall_line_modular (hM : ∀ L, M.Line L → M.ModularFlat L)
     exact insert_subset_insert (union_subset_union (by simp) (by simp))
 
   rw [mem_closure_iff_exists_circuit_of_not_mem hxf] at hcl1
-  obtain ⟨C', hC', hxC', hC'ss⟩ := hcl1
+  obtain ⟨C', hC'ss, hC', hxC'⟩ := hcl1
 
   rw [← singleton_union, ← diff_subset_iff, subset_range_iff_exists_image_eq] at hC'ss
   obtain ⟨I, hI⟩ := hC'ss
@@ -970,7 +970,7 @@ lemma finitary_of_forall_line_modular (hM : ∀ L, M.Line L → M.ModularFlat L)
     · simp at hxf
     exact hdj.ne_of_mem (by simp) (by simp) h
 
-  obtain ⟨C₀, hC₀, hjC₀, hC₀ss⟩ := hC₀
+  obtain ⟨C₀, hC₀ss, hC₀, hjC₀⟩ := hC₀
 
   refine hC₀.dep.not_indep ((hcirc j).ssubset_indep ?_)
   refine (hC₀ss.trans ?_).ssubset_of_mem_not_mem (x := e j) ?_ ?_

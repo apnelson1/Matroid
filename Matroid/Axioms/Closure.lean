@@ -67,8 +67,8 @@ lemma Indep.subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.Indep I := by
 lemma Indep.mem_closure_iff (hI : M.Indep I) (he : e ∈ M.E)
     (heI : e ∉ I) : e ∈ M.closure I ↔ ¬ M.Indep (insert e I) := by
   suffices (e ∉ M.closure I → ∃ x ∈ I, x ∈ M.closure (insert e I \ {x})) → e ∈ M.closure I by
-    simpa (config := { contextual := true }) [mem_insert_iff, indep_iff,
-      diff_singleton_eq_self heI, insert_subset_iff, he, hI.subset_ground,  iff_def]
+    simpa +contextual [mem_insert_iff, indep_iff, diff_singleton_eq_self heI, insert_subset_iff, he,
+      hI.subset_ground,  iff_def]
 
   simp only [not_imp_comm (a := _ ∈ _), not_exists, not_and]
 

@@ -21,7 +21,7 @@ lemma Point.finRk (hP : M.Point P) : M.FinRk P := by
   simp [← eRk_ne_top_iff, hP.eRk]
 
 lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
-  ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.eRk, encard_singleton]⟩
+  ⟨M.closure_flat {e}, by rw [eRk_closure_eq, he.indep.eRk_eq_encard, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.Point P := by
   simp only [covBy_iff_eRelRk_eq_one, closure_flat, eRelRk_closure_left, eRelRk_empty_left,
@@ -32,7 +32,7 @@ lemma Point.covBy (hP : M.Point P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2
 
 lemma Point.exists_eq_closure_nonloop (hP : M.Point P) : ∃ e, M.Nonloop e ∧ P = M.closure {e} := by
   obtain ⟨I, hI⟩ := M.exists_basis P
-  obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard.trans hP.eRk
+  obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard_eq_eRk.trans hP.eRk
   obtain rfl := hP.flat.eq_closure_of_basis hI
   exact ⟨e, indep_singleton.1 hI.indep, rfl⟩
 
@@ -40,7 +40,8 @@ lemma Point.eq_closure_of_mem (hP : M.Point P) (he : M.Nonloop e) (heP : e ∈ P
     P = M.closure {e} := by
   rw [← indep_singleton] at he
   exact hP.flat.eq_closure_of_basis <| he.basis_of_subset_of_eRk_le_of_finite
-    (singleton_subset_iff.2 heP) (by rw [hP.eRk, he.eRk, encard_singleton]) (finite_singleton e)
+    (singleton_subset_iff.2 heP) (by rw [hP.eRk, he.eRk_eq_encard, encard_singleton])
+    (finite_singleton e)
 
 lemma point_iff_exists_eq_closure_nonloop : M.Point P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
   ⟨Point.exists_eq_closure_nonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_point⟩

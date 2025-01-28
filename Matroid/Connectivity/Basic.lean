@@ -60,9 +60,9 @@ lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
     rw [parallel_iff_circuit hne]
     apply hC.contract_diff_circuit (by simp) (by simp [pair_subset_iff, heC, hfC])
   obtain ⟨B, hB, heB⟩ := hpara.nonloop_left.exists_mem_base
-  have hK := fundCocct_cocircuit heB hB
-  refine Circuit.mem_connectedTo_mem hK.of_contract.circuit (mem_fundCocct _ _ _) ?_
-  exact hpara.mem_cocircuit_of_mem hK (mem_fundCocct _ _ _)
+  have hK := fundCocircuit_cocircuit heB hB
+  refine Circuit.mem_connectedTo_mem hK.of_contract.circuit (mem_fundCocircuit _ _ _) ?_
+  exact hpara.mem_cocircuit_of_mem hK (mem_fundCocircuit _ _ _)
 
 lemma ConnectedTo.of_dual (h : M✶.ConnectedTo e f) : M.ConnectedTo e f := by
   simpa using h.to_dual
@@ -104,18 +104,18 @@ private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M
   have hB : M.Base (insert e I) := by
     refine Indep.base_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.flat.closure]
-  simp only [hB.mem_coloop_iff_forall_not_mem_fundCct (.inr hfI), mem_diff, mem_insert_iff, not_or,
+  simp only [hB.mem_coloop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
     and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_not_mem hxI,
       hI'.flat.closure]
     exact ⟨hx, hxI⟩
-  have hC := Base.fundCct_circuit hB hx (by simp [hxe, hxI])
+  have hC := Base.fundCircuit_circuit hB hx (by simp [hxe, hxI])
 
   refine hC.mem_connectedTo_mem (by_contra fun heC ↦ ?_) hfC
 
-  have hss := subset_diff_singleton (fundCct_subset_insert _ x (insert e I)) heC
+  have hss := subset_diff_singleton (fundCircuit_subset_insert _ x (insert e I)) heC
   simp only [insert_comm, mem_singleton_iff, insert_diff_of_mem] at hss
   exact hC.dep.not_indep (hxi.subset hss)
 

@@ -378,7 +378,7 @@ modular pairs rather than families. -/
       obtain ⟨S, rfl⟩ := hFs.exists_finset_coe
       exact h S (by simpa using hne) (by simpa) hmod
     apply Finset.Nonempty.cons_induction
-    · simp (config := {contextual := true})
+    · simp +contextual
     simp only [Finset.coe_cons, insert_subset_iff, sInter_insert, and_imp]
     intro F S hFS hne IH hFU hSU hmod
 
@@ -925,7 +925,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
   intro I
   simp only [contract_ground, extendBy_E]
   rw [hIC'.contract_indep_iff, extendBy_Indep, subset_diff, and_imp, disjoint_comm]
-  simp (config := { contextual := true }) only [and_true]
+  simp +contextual only [and_true]
   intro hIE hdj
 
   obtain heI | heI := em' (e ∈ I)

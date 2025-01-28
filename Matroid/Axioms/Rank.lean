@@ -135,7 +135,7 @@ lemma Indep.subset_maximal_iff_eRelRk_zero (hI : M.Indep I) (hIX : I ⊆ X) :
 lemma Indep.aug (hI : M.Indep I) (hInotmax : ¬ Maximal M.Indep I) (hBmax : Maximal M.Indep B) :
     ∃ e ∈ B \ I, M.Indep (insert e I) := by
   have hrw : M.Indep = fun J ↦ M.Indep J ∧ J ⊆ M.E := by
-    simp (config := {contextual := true}) [funext_iff, Indep.subset_ground]
+    simp +contextual [funext_iff, Indep.subset_ground]
 
   have hB : M.Indep B := hBmax.prop
   rw [hrw, hB.subset_maximal_iff_eRelRk_zero hB.subset_ground] at hBmax
@@ -340,7 +340,7 @@ protected lemma matroid_eRk_eq_sup (X : Set α) :
   · obtain ⟨I, hI⟩ := M.matroid.exists_basis' X
     obtain (hIfin | hIinf) := I.finite_or_infinite
     · obtain ⟨I, rfl⟩ := hIfin.exists_finset_coe
-      rw [← hI.eRk, FinsetRankMatroid.matroid_eRk_eq]
+      rw [← hI.eRk_eq_eRk, FinsetRankMatroid.matroid_eRk_eq]
       exact le_biSup (f := fun X ↦ (M.r X : ℕ∞)) hI.subset
     suffices h : ⨆ Y ∈ S, (M.r Y : ℕ∞) = ⊤ by rw [h]; apply le_top
     rw [ENat.eq_top_iff_forall_le]

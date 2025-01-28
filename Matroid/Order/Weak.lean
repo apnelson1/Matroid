@@ -65,7 +65,7 @@ lemma WeakLE.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤w M₂) (h' : M₂
 
 lemma WeakLE.delete (h : N ≤w M) (D : Set α) : N ＼ D ≤w M ＼ D := by
   suffices ∀ (I : Set α), N.Indep I → Disjoint I D → M.Indep I by
-    simpa (config := { contextual := true }) [weakLE_iff, h.ground_eq]
+    simpa +contextual [weakLE_iff, h.ground_eq]
   exact fun I hI _ ↦ h.indep_of_indep hI
 
 lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ X := by

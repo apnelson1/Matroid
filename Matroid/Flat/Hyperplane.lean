@@ -167,7 +167,7 @@ lemma closure_eq_sInter_hyperplanes (M : Matroid α) (X : Set α) (hX : X ⊆ M.
 
 lemma flat_iff_eq_sInter_hyperplanes : M.Flat F ↔
   ∃ Hs : Set (Set α), (∀ H ∈ Hs, M.Hyperplane H) ∧ F = (⋂₀ Hs) ∩ M.E := by
-  refine ⟨fun h ↦ ⟨{H | M.Hyperplane H ∧ F ⊆ H}, by simp (config := {contextual := true}), ?_⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨{H | M.Hyperplane H ∧ F ⊆ H}, by simp +contextual, ?_⟩, ?_⟩
   · rw [← M.closure_eq_sInter_hyperplanes F, h.closure]
   rintro ⟨Hs, hHs, rfl⟩
   exact Flat.sInter_inter_ground (fun H hH ↦ (hHs H hH).flat)
@@ -318,7 +318,7 @@ lemma Cyclic.compl_flat_dual {A : Set α} (hA : M.Cyclic A) : M✶.Flat (M.E \ A
     rw [← dual_ground, compl_hyperplane_iff_cocircuit, dual_cocircuit_iff]
     exact hCs H hH
   ext e
-  simp (config := {contextual := true}) [and_comm (a := e ∈ M.E)]
+  simp +contextual [and_comm (a := e ∈ M.E)]
 
 lemma cyclic_iff_compl_flat_dual {A : Set α} (hA : A ⊆ M.E := by aesop_mat) :
     M.Cyclic A ↔ M✶.Flat (M.E \ A) := by
