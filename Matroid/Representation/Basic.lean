@@ -225,7 +225,6 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
   (v.restrict X).comap ((↑) : X → α)
 
--- lemma Rep.basis_iff (v : M.Rep 𝔽 W) (I X : Set α) : M.Basis I X ↔
 lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   ext e
@@ -332,7 +331,6 @@ and a ground set `E : Set α`.  -/
 protected def ofFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) : Matroid α :=
     (Matroid.onModule 𝔽 W).comapOn E f
 
-
 noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=
   ((repOnModule 𝔽 W).comap f).restrict E
@@ -347,7 +345,6 @@ instance matroidOfFun_finitary (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W
 lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFun 𝔽 E f).Finite :=
   ⟨hfin⟩
 
-
 @[simp] lemma ofFun_ground_eq {f : α → W} {E : Set α} : (Matroid.ofFun 𝔽 E f).E = E := rfl
 
 @[simp] lemma ofFun_indep_iff {f : α → W} {E : Set α} :
@@ -359,21 +356,42 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
     exact fun _ ↦ Iff.rfl
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
+lemma ofFun_congr {v v' : α → W} (hvv' : EqOn v v' E) :
+    Matroid.ofFun 𝔽 E v = Matroid.ofFun 𝔽 E v' := by
+  refine ext_indep rfl fun I (hI : I ⊆ E) ↦ ?_
+  simp only [ofFun_indep_iff, hI, and_true]
+  convert Iff.rfl using 2
+  ext ⟨e, he⟩
+  rw [restrict_apply, restrict_apply, hvv']
+  exact hI he
+
+@[simp] lemma ofFun_indicator {v : α → W} :
+    Matroid.ofFun 𝔽 E (E.indicator v) = Matroid.ofFun 𝔽 E v :=
+  ofFun_congr <| eqOn_indicator
+
 lemma ofFun_closure_eq {v : α → W} {E : Set α} (hvE : support v ⊆ E) :
     (Matroid.ofFun 𝔽 E v).closure X = v ⁻¹' (span 𝔽 (v '' X)) ∩ E := by
   rw [(repOfFun 𝔽 E v).closure_eq, repOfFun_coeFun_eq, ofFun_ground_eq, indicator_preimage]
   simp +contextual [indicator_eq_self.2 hvE]
 
+lemma ofFun_closure_eq_of_subset_ground {v : α → W} {E : Set α} (hXE : X ⊆ E) :
+    (Matroid.ofFun 𝔽 E v).closure X = v ⁻¹' (span 𝔽 (v '' X)) ∩ E := by
+  rw [← ofFun_indicator, ofFun_closure_eq (by simp), indicator_preimage,
+    ((Set.eqOn_indicator (f := v)).mono hXE).image_eq]
+  simp
 
-lemma _root_.Basis.ofFun_base {f : α → W} {E : Set α} {B : Set α} (b : _root_.Basis B 𝔽 W)
-    (hfb : ∀ x : B, f x = b x) : (Matroid.ofFun 𝔽 E f).Base B := by
+lemma _root_.Basis.ofFun_base {v : α → W} {E : Set α} {B : Set α} (b : _root_.Basis B 𝔽 W)
+    (hfb : ∀ x : B, v x = b x) (hBE : B ⊆ E) : (Matroid.ofFun 𝔽 E v).Base B := by
+  have hrw : v '' B = range b := by simp_rw [Set.ext_iff, mem_range, ← hfb]; aesop
+
   refine Indep.base_of_ground_subset_closure ?_ ?_
-  · rw [Matroid.ofFun_indep_iff, restrict_eq, and_iff_left]
-    · convert b.linearIndependent
-      ext e
-      exact hfb e
-    intro e heB
-    have := b.linearIndependent.ne_zero ⟨e, heB⟩
+  · rw [Matroid.ofFun_indep_iff, restrict_eq, and_iff_left hBE]
+    convert b.linearIndependent
+    ext e
+    exact hfb e
+  rw [ofFun_closure_eq_of_subset_ground hBE, hrw, b.span_eq]
+  simp
+
 
 
 
