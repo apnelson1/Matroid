@@ -2,7 +2,7 @@ import Mathlib.LinearAlgebra.LinearIndependent
 import Matroid.Simple
 -- import Matroid.ForMathlib.Function
 
-variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
+variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
@@ -18,16 +18,16 @@ end ForMathlib
 
 namespace Matroid
 
-/-- A function `v : α → W` represents `M` over `𝔽` if independence of `I` in `M` corresponds to
-linear independence of `v '' I` in `W`. -/
-def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] (v : α → W) :=
-  ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v)
+-- /-- A function `v : α → W` represents `M` over `𝔽` if independence of `I` in `M` corresponds to
+-- linear independence of `v '' I` in `W`. -/
+-- def IsRep (M : Matroid α) (𝔽 : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] (v : α → W) :=
+--   ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v)
 
-structure Rep (M : Matroid α) (𝔽 W : Type*) [CommSemiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] where
+structure Rep (M : Matroid α) (𝔽 W : Type*) [Semiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
-  (valid' : M.IsRep 𝔽 to_fun)
+  (valid' : ∀ I, M.Indep I ↔ LinearIndependent 𝔽 (I.restrict to_fun))
 
 instance : FunLike (M.Rep 𝔽 W) α W where
   coe v := v.to_fun
@@ -42,11 +42,14 @@ instance : FunLike (M.Rep 𝔽 W) α W where
 
 @[simp] lemma Rep.to_fun_eq_coe (v : M.Rep 𝔽 W) : v.to_fun = (v : α → W) := rfl
 
-@[simp] lemma Rep.coe_mk (f : α → W) (valid' : M.IsRep 𝔽 f) : (Rep.mk f valid' : α → W) = f := rfl
+-- @[simp] lemma Rep.coe_mk (f : α → W) (valid' : M.IsRep 𝔽 f) : (Rep.mk f valid' : α → W) = f := rfl
 
-lemma Rep.isRep (v : M.Rep 𝔽 W) : M.IsRep 𝔽 v := v.valid'
+-- lemma Rep.isRep (v : M.Rep 𝔽 W) : M.IsRep 𝔽 v := v.valid'
 
 lemma Rep.indep_iff (v : M.Rep 𝔽 W) : M.Indep I ↔ LinearIndependent 𝔽 (I.restrict v) :=
+  v.valid' I
+
+lemma Rep.indep_iff' (v : M.Rep 𝔽 W) : M.Indep I ↔ LinearIndependent 𝔽 (fun x : I ↦ v x) :=
   v.valid' I
 
 lemma Rep.onIndep (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndependent 𝔽 (I.restrict v) :=
@@ -222,6 +225,31 @@ def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
 noncomputable def Rep.restrictSubtype (v : M.Rep 𝔽 W) (X : Set α) : (M.restrictSubtype X).Rep 𝔽 W :=
   (v.restrict X).comap ((↑) : X → α)
 
+-- lemma Rep.basis_iff (v : M.Rep 𝔽 W) (I X : Set α) : M.Basis I X ↔
+lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  ext e
+  by_cases heI : e ∈ I
+  · refine iff_of_true ?_ (mem_inter ?_ ?_)
+    · exact mem_closure_of_mem' _ (hI.subset heI) (hI.indep.subset_ground heI)
+    exact subset_span (mem_image_of_mem v (hI.subset heI))
+    exact hI.indep.subset_ground heI
+  simp only [← hI.closure_eq_closure, hI.indep.mem_closure_iff', v.indep_iff, restrict_def,
+    linearIndependent_insert' heI, and_comm, heI, imp_false, not_and, mem_inter_iff, mem_preimage,
+    SetLike.mem_coe, and_congr_right_iff]
+  rw [← v.indep_iff', iff_true_intro hI.indep, not_true, imp_false, not_not]
+  refine fun he ↦ ⟨fun h ↦ mem_of_mem_of_subset h (span_mono (image_subset v hI.subset)),
+    fun h ↦ span_le.2 ?_ h⟩
+  rintro _ ⟨f, hf, rfl⟩
+  refine (em (f ∈ I)).elim (fun hfI ↦ subset_span <| mem_image_of_mem v hfI) (fun hfI ↦ ?_)
+  have hni := hI.insert_not_indep ⟨hf, hfI⟩
+  rwa [v.indep_iff, restrict_def, linearIndependent_insert' hfI, ← v.indep_iff',
+    and_iff_right hI.indep, not_not] at hni
+
+lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
+    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) := by
+  rw [v.closure_eq, mem_inter_iff, and_iff_left heE]
+  rfl
 
 /-- Transfer a `Rep` along a matroid map. The definition involves extending a function with zero,
 so requires a `DecidablePred` assumption. -/
@@ -268,10 +296,10 @@ lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePre
 
 /-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
 and independence is linear independence.  -/
-protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module 𝔽 W] : Matroid W :=
+protected def onModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] : Matroid W :=
   IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
   (E := univ)
-  (Indep := fun (I : Set W) ↦ LinearIndependent 𝔽 ((↑) : I → W))
+  (Indep := fun I ↦ LinearIndependent 𝔽 ((↑) : I → W))
   (indep_empty := linearIndependent_empty _ _)
   (indep_subset := fun I J hJ hIJ ↦ hJ.mono hIJ)
   (indep_aug := by
@@ -292,15 +320,33 @@ protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module �
   (indep_compact := linearIndependent_of_finite)
   (subset_ground := by simp)
 
-@[simps!] def repOnModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module 𝔽 W] :
+@[simps!] def repOnModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] :
     (Matroid.onModule 𝔽 W).Rep 𝔽 W where
   to_fun := id
   valid' _ := by rfl
 
+-- lemma repOnModule_closure (X : Set W) : Matroid.onModule
+
 /-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
 and a ground set `E : Set α`.  -/
-protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) : Matroid α :=
+protected def ofFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) : Matroid α :=
     (Matroid.onModule 𝔽 W).comapOn E f
+
+
+noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
+    (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=
+  ((repOnModule 𝔽 W).comap f).restrict E
+
+@[simp] lemma repOfFun_coeFun_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
+    (repOfFun 𝔽 E f : α → W) = indicator E f := rfl
+
+instance matroidOfFun_finitary (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
+    Finitary (Matroid.ofFun 𝔽 E f) := by
+  rw [Matroid.ofFun, Matroid.onModule, comapOn]; infer_instance
+
+lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFun 𝔽 E f).Finite :=
+  ⟨hfin⟩
+
 
 @[simp] lemma ofFun_ground_eq {f : α → W} {E : Set α} : (Matroid.ofFun 𝔽 E f).E = E := rfl
 
@@ -313,19 +359,24 @@ protected def ofFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f 
     exact fun _ ↦ Iff.rfl
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
-noncomputable def repOfFun (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
-    (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=
-  ((repOnModule 𝔽 W).comap f).restrict E
+lemma ofFun_closure_eq {v : α → W} {E : Set α} (hvE : support v ⊆ E) :
+    (Matroid.ofFun 𝔽 E v).closure X = v ⁻¹' (span 𝔽 (v '' X)) ∩ E := by
+  rw [(repOfFun 𝔽 E v).closure_eq, repOfFun_coeFun_eq, ofFun_ground_eq, indicator_preimage]
+  simp +contextual [indicator_eq_self.2 hvE]
 
-@[simp] lemma repOfFun_coeFun_eq (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
-    (repOfFun 𝔽 E f : α → W) = indicator E f := rfl
 
-instance matroidOfFun_finitary (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
-    Finitary (Matroid.ofFun 𝔽 E f) := by
-  rw [Matroid.ofFun, Matroid.onModule, comapOn]; infer_instance
+lemma _root_.Basis.ofFun_base {f : α → W} {E : Set α} {B : Set α} (b : _root_.Basis B 𝔽 W)
+    (hfb : ∀ x : B, f x = b x) : (Matroid.ofFun 𝔽 E f).Base B := by
+  refine Indep.base_of_ground_subset_closure ?_ ?_
+  · rw [Matroid.ofFun_indep_iff, restrict_eq, and_iff_left]
+    · convert b.linearIndependent
+      ext e
+      exact hfb e
+    intro e heB
+    have := b.linearIndependent.ne_zero ⟨e, heB⟩
 
-lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFun 𝔽 E f).Finite :=
-  ⟨hfin⟩
+
+
 
 -- @[simp] lemma ofFun_zero (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) :
 
