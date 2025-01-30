@@ -74,6 +74,22 @@ lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
   ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
     fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
 
+lemma Rep.indep_iff_forall_finsupp (v : M.Rep 𝔽 W) :
+    M.Indep I ↔ ∀ c : Finsupp.supported 𝔽 𝔽 I, Finsupp.linearCombination 𝔽 v c = 0 → c = 0 := by
+  rw [v.indep_iff', linearIndependent_iff]
+  refine ⟨fun h c hc ↦ ?_, fun h ↦ ?_⟩
+
+  · specialize h <| Finsupp.supportedEquivFinsupp I c
+
+    simp only [Finsupp.linearCombination, Finsupp.coe_lsum, Finsupp.sum,
+      Finsupp.supportedEquivFinsupp_apply_toFun, LinearMap.coe_smulRight, LinearMap.id_coe, id_eq,
+      EmbeddingLike.map_eq_zero_iff] at h
+    apply h
+    rw [← hc]
+    simp [Finsupp.linearCombination, Finsupp.sum]
+
+
+
 lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} : v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff, linearIndependent_unique_iff, -indep_singleton]
 

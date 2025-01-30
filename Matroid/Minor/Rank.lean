@@ -578,3 +578,19 @@ lemma nullity_contract_ge_of_disjoint (M : Matroid α) (hXC : Disjoint X C) :
     restrict_restrict_eq _ diff_subset, union_diff_cancel_right (Set.disjoint_iff.mp hXC)] at hle
 
 end Nullity
+
+section relRk
+
+noncomputable def relRk (X Y : Set α) : ℕ := (M.eRelRk X Y).toNat
+
+lemma relRk_intCast_eq_sub (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+    (M.relRk X Y : ℤ) = M.rk (X ∪ Y) - M.rk X := by
+  rw [relRk, eRelRk_eq_union_right, (M.to_finRk X).eRelRk_eq_sub subset_union_right,
+    ENat.toNat_sub (M.to_finRk X).eRk_ne_top, ← rk, ← rk, Nat.cast_sub , union_comm]
+  exact (M.rk_mono (subset_union_right))
+
+lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [FiniteRk M] (hXY : X ⊆ Y) :
+    (M.relRk X Y : ℤ) = M.rk Y - M.rk X := by
+  rw [relRk_intCast_eq_sub, union_eq_self_of_subset_left hXY]
+
+end relRk
