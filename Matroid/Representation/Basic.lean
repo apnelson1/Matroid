@@ -74,21 +74,24 @@ lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
   ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
     fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
 
-lemma Rep.indep_iff_forall_finsupp (v : M.Rep 𝔽 W) :
-    M.Indep I ↔ ∀ c : Finsupp.supported 𝔽 𝔽 I, Finsupp.linearCombination 𝔽 v c = 0 → c = 0 := by
+lemma Rep.indep_iff_forall_finsupp (v : M.Rep 𝔽 W) : M.Indep I ↔
+      ∀ c : α →₀ 𝔽, Finsupp.linearCombination 𝔽 v c = 0 → (c.support : Set α) ⊆ I → c = 0 := by
+  classical
   rw [v.indep_iff', linearIndependent_iff]
-  refine ⟨fun h c hc ↦ ?_, fun h ↦ ?_⟩
-
-  · specialize h <| Finsupp.supportedEquivFinsupp I c
-
-    simp only [Finsupp.linearCombination, Finsupp.coe_lsum, Finsupp.sum,
-      Finsupp.supportedEquivFinsupp_apply_toFun, LinearMap.coe_smulRight, LinearMap.id_coe, id_eq,
-      EmbeddingLike.map_eq_zero_iff] at h
-    apply h
+  refine ⟨fun h c hc hcs ↦ ?_, fun h c hc0 ↦ ?_⟩
+  · specialize h <| Finsupp.subtypeDomain (· ∈ I) c
+    rw [Finsupp.subtypeDomain_eq_zero_iff hcs] at h
+    refine h ?_
     rw [← hc]
-    simp [Finsupp.linearCombination, Finsupp.sum]
+    simp [Finsupp.linearCombination, Finset.sum_subtype_of_mem (f := fun x ↦ c x • v x) hcs,
+      Finsupp.sum]
+  have h' : (Finsupp.linearCombination 𝔽 (v ∘ Subtype.val)) c = 0 → c = 0 := by
+    simpa using h (c.embDomain (Embedding.subtype (· ∈ I)))
+  exact h' hc0
 
-
+lemma Rep.exists_finsupp_of_not_indep (v : M.Rep 𝔽 W) (hX : ¬ M.Indep X) :
+    ∃ c : α →₀ 𝔽, Finsupp.linearCombination 𝔽 v c = 0 ∧ (c.support : Set α) ⊆ X ∧ c ≠ 0 := by
+  simpa [v.indep_iff_forall_finsupp] using hX
 
 lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} : v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff, linearIndependent_unique_iff, -indep_singleton]
@@ -281,41 +284,12 @@ lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽) (h
   · simp
   simp +contextual [hne, Finsupp.single_apply_eq_zero]
 
-lemma Rep.exists_linearCombination_of_circuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.Circuit C) :
+lemma Rep.exists_finsupp_of_circuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.Circuit C) :
     ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by
-  have hni := hC.dep.not_indep
-
-  simp only [v.indep_iff, Finset.coe_sort_coe, linearIndependent_iff, not_forall,
-    Classical.not_imp, exists_prop] at hni
-  classical
-  obtain ⟨c, hc, hc0⟩ := hni
-  refine ⟨c.embDomain (Embedding.subtype (· ∈ C)), Finset.coe_inj.1 ?_, by simpa⟩
-  simp only [Finsupp.support_embDomain, Finset.coe_map, Embedding.coe_subtype]
-  refine ((image_subset_range ..).trans (by simp)).antisymm fun e heC ↦ ?_
-  by_contra he
-  have he' : ∀ (x : e ∈ C), c ⟨e, heC⟩ = 0 := by simpa using he
-  specialize he' heC
-  have hi := hC.diff_singleton_indep heC
-  rw [v.indep_iff', linearIndependent_iff'] at hi
-  specialize hi (c.embDomain ((Embedding.subtype (· ∈ C \ {e}))))
-
-
-  -- simp only [Finset.coe_sort_coe, Finsupp.support_embDomain, ← Finset.coe_inj, Finset.coe_map]
-  -- refine ((image_subset_range _ _).trans ?_).antisymm ?_
-  -- simp [Embedding.setSubtype, Embedding.subtype]
-
-
-
-  -- simp only [Finset.coe_sort_coe, Finsupp.support_embDomain, Finset.map_eq_image,
-  --   subset_antisymm_iff]
-  -- refine Finset.coe_image_subset_range
-  -- ext
-  -- rw [Finset.map_eq_image]
-  -- simp [Embedding.setSubtype]
-
-
-
-
+  obtain ⟨c, hc, h, h0⟩ := v.exists_finsupp_of_not_indep hC.dep.not_indep
+  refine ⟨c, subset_antisymm (by simpa using h) fun e heC ↦ ?_, hc⟩
+  simpa [subset_diff_singleton_iff, h] using
+    (mt <| v.indep_iff_forall_finsupp.1 (hC.diff_singleton_indep heC) c hc) h0
 
 /-- Transfer a `Rep` along a matroid map. The definition involves extending a function with zero,
 so requires a `DecidablePred` assumption. -/
