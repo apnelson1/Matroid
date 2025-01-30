@@ -250,6 +250,57 @@ lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
   rw [v.closure_eq, mem_inter_iff, and_iff_left heE]
   rfl
 
+/-- If some linear combination of columns of `M.E` is zero, the nonzero indices form a cyclic set.-/
+lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽) (hcE : (c.support : Set α) ⊆ M.E)
+    (hcv : c.linearCombination 𝔽 v = 0) : M.Cyclic c.support := by
+  rw [cyclic_iff_forall_mem_closure_diff_singleton]
+  intro e he
+  rw [v.mem_closure_iff (hcE he), Finsupp.mem_span_image_iff_linearCombination]
+  have hce : c e ≠ 0 := by simpa using he
+  use - (c e)⁻¹ • (c - Finsupp.single e (c e))
+  suffices ∀ (x : α), (¬c x = 0 → x = e) → c x - (Finsupp.single e (c e)) x = 0 by
+    simpa [Finsupp.mem_supported', hcv, hce, ← smul_assoc]
+  intro x
+  obtain rfl | hne := eq_or_ne x e
+  · simp
+  simp +contextual [hne, Finsupp.single_apply_eq_zero]
+
+lemma Rep.exists_linearCombination_of_circuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.Circuit C) :
+    ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by
+  have hni := hC.dep.not_indep
+
+  simp only [v.indep_iff, Finset.coe_sort_coe, linearIndependent_iff, not_forall,
+    Classical.not_imp, exists_prop] at hni
+  classical
+  obtain ⟨c, hc, hc0⟩ := hni
+  refine ⟨c.embDomain (Embedding.subtype (· ∈ C)), Finset.coe_inj.1 ?_, by simpa⟩
+  simp only [Finsupp.support_embDomain, Finset.coe_map, Embedding.coe_subtype]
+  refine ((image_subset_range ..).trans (by simp)).antisymm fun e heC ↦ ?_
+  by_contra he
+  have he' : ∀ (x : e ∈ C), c ⟨e, heC⟩ = 0 := by simpa using he
+  specialize he' heC
+  have hi := hC.diff_singleton_indep heC
+  rw [v.indep_iff', linearIndependent_iff'] at hi
+  specialize hi (c.embDomain ((Embedding.subtype (· ∈ C \ {e}))))
+
+
+  -- simp only [Finset.coe_sort_coe, Finsupp.support_embDomain, ← Finset.coe_inj, Finset.coe_map]
+  -- refine ((image_subset_range _ _).trans ?_).antisymm ?_
+  -- simp [Embedding.setSubtype, Embedding.subtype]
+
+
+
+  -- simp only [Finset.coe_sort_coe, Finsupp.support_embDomain, Finset.map_eq_image,
+  --   subset_antisymm_iff]
+  -- refine Finset.coe_image_subset_range
+  -- ext
+  -- rw [Finset.map_eq_image]
+  -- simp [Embedding.setSubtype]
+
+
+
+
+
 /-- Transfer a `Rep` along a matroid map. The definition involves extending a function with zero,
 so requires a `DecidablePred` assumption. -/
 noncomputable def Rep.matroidMap (v : M.Rep 𝔽 W) (f : α → β) (hf : M.E.InjOn f)
@@ -355,6 +406,9 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
     IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndependent_image hinj, and_congr_left_iff]
     exact fun _ ↦ Iff.rfl
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
+
+@[simp] lemma Rep.ofFun_self (v : M.Rep 𝔽 W) : Matroid.ofFun 𝔽 M.E v = M :=
+  ext_indep rfl fun I (hIE : I ⊆ M.E) ↦ by rw [ofFun_indep_iff, ← v.indep_iff, and_iff_left hIE]
 
 lemma ofFun_congr {v v' : α → W} (hvv' : EqOn v v' E) :
     Matroid.ofFun 𝔽 E v = Matroid.ofFun 𝔽 E v' := by

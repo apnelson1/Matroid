@@ -19,7 +19,7 @@ lemma exists_circuit_of_mem_closure (he : e ∈ M.closure X) (heX : e ∉ X) :
     hI.indep.fundCircuit_circuit (by rwa [hI.closure_eq_closure]) (not_mem_subset
     hI.subset heX), M.mem_fundCircuit e I⟩
 
-lemma mem_closure_iff_exists_circuit_of_not_mem (he : e ∉ X) :
+lemma mem_closure_iff_exists_circuit (he : e ∉ X) :
     e ∈ M.closure X ↔ ∃ C ⊆ insert e X, M.Circuit C ∧ e ∈ C :=
   ⟨fun h ↦ exists_circuit_of_mem_closure h he, fun ⟨C, hCX, hC, heC⟩ ↦ mem_of_mem_of_subset
     (hC.mem_closure_diff_singleton_of_mem heC) (M.closure_subset_closure (by simpa))⟩
@@ -37,7 +37,7 @@ lemma strong_multi_elimination_insert (h_not_mem : ∀ i, x i ∉ Is i)
   obtain hι | hι := isEmpty_or_nonempty ι
   · exact ⟨J, by simpa [range_eq_empty] using hC, hzJ, by simp⟩
   suffices hcl : z ∈ M.closure ((⋃ i, Is i) ∪ (J \ {z}))
-  · rw [mem_closure_iff_exists_circuit_of_not_mem (by simp [hzI])] at hcl
+  · rw [mem_closure_iff_exists_circuit (by simp [hzI])] at hcl
     obtain ⟨C', hC'ss, hC', hzC'⟩ := hcl
     refine ⟨C', hC', hzC', ?_⟩
     rwa [union_comm, ← insert_union, insert_diff_singleton, insert_eq_of_mem hzJ] at hC'ss
@@ -188,6 +188,14 @@ lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C ⊆ A, M.Circ
     iUnion_subset_iff, and_iff_left hCs.1]
   exact fun e he ↦ ⟨e, he, hCs.2.2 _ he⟩
 
+lemma cyclic_iff_forall_mem_closure_diff_singleton :
+    M.Cyclic A ↔ ∀ e ∈ A, e ∈ M.closure (A \ {e}) := by
+  simp_rw [cyclic_iff_forall_exists]
+  refine ⟨fun h e heA ↦ ?_, fun h e heA ↦ ?_⟩
+  · simp [heA, h, mem_closure_iff_exists_circuit (show e ∉ A \ {e} by simp)]
+  obtain ⟨C, hCss, hC, heC⟩ := exists_circuit_of_mem_closure (h e heA) (by simp)
+  exact ⟨C, by simpa [heA] using hCss, hC, heC⟩
+
 lemma Cyclic.iUnion {ι : Type*} (As : ι → Set α) (hAs : ∀ i, M.Cyclic (As i)) :
     M.Cyclic (⋃ i, As i) := by
   choose f hf using fun i ↦ (hAs i).exists
@@ -217,7 +225,7 @@ end Cyclic
 lemma mem_closure_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.closure X ↔ e ∈ X ∨ ∃ C ⊆ insert e X, M.Circuit C ∧ e ∈ C :=
   (em (e ∈ X)).elim (fun heX ↦ by simp [heX, M.mem_closure_of_mem heX])
-    fun heX ↦ by rw [mem_closure_iff_exists_circuit_of_not_mem heX, or_iff_right heX]
+    fun heX ↦ by rw [mem_closure_iff_exists_circuit heX, or_iff_right heX]
 
 lemma map_circuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).Circuit C ↔ ∃ C₀, M.Circuit C₀ ∧ C = f '' C₀ := by

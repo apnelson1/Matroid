@@ -1,10 +1,10 @@
 import Matroid.Representation.Basic
+import Matroid.Flat.Hyperplane
 
-
-variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
+variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Set Function Submodule
+open Set Function Submodule Finsupp Set.Notation
 
 namespace Matroid
 
@@ -119,7 +119,7 @@ lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
   (v.standardRep_fullRank' hB).mapEquiv _
 
 -- Loopy matroids are trivially representable over every field.
-def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
+def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
   to_fun := 0
   valid' := by
     refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
@@ -129,7 +129,7 @@ def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 �
     exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
 
 -- The empty matroid is trivially representable over every field.
-def emptyRep (α : Type*) (𝔽 : Type*) [Field 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
+def emptyRep (α : Type*) (𝔽 : Type*) [DivisionRing 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
   (loopyRep ∅ 𝔽).ofEq <| loopyOn_empty _
 
 protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· ∈ B)]
@@ -138,3 +138,97 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
     if heB : e ∈ B then Finsupp.single ⟨e,heB⟩ 1
     else if heE : e ∈ E then v ⟨e, ⟨heE, heB⟩⟩
     else 0
+
+section FinitaryBase
+
+variable {v : M.Rep 𝔽 (B →₀ 𝔽)}
+
+/-- `Rep.FinitaryBase` means that `v` is a representation comprising finitely
+supported `B`-indexed vectors that is the identity on `B`. It follows that `B` is a base. -/
+def Rep.FinitaryBase (v : M.Rep 𝔽 (B →₀ 𝔽)) : Prop := ∀ e : B, v e = Finsupp.single e 1
+
+lemma Rep.FinitaryBase.apply (hv : v.FinitaryBase) (e : B) : v e = Finsupp.single e 1 :=
+  hv e
+
+lemma Rep.FinitaryBase.apply_mem (hv : v.FinitaryBase) (he : e ∈ B) :
+    v e = Finsupp.single ⟨e,he⟩ 1 :=
+  hv ⟨e, he⟩
+
+lemma Rep.FinitaryBase.base (hv : v.FinitaryBase) : M.Base B := by
+  rw [← v.ofFun_self]
+  exact Finsupp.basisSingleOne.ofFun_base (fun x ↦ hv x) fun x hxB ↦
+    v.mem_ground_of_apply_ne_zero <| by simp [show v x = _ from hv ⟨x, hxB⟩]
+
+lemma Rep.FinitaryBase.injOn (hv : v.FinitaryBase) : Set.InjOn v B := by
+  intro e he f hf hef
+  rw [hv.apply_mem he, hv.apply_mem hf] at hef
+  simpa using (Finsupp.single_left_injective (by simp)) hef
+
+lemma Rep.FinitaryBase.image_coe_support_subset (_hv : v.FinitaryBase) {e : α} :
+    (↑) '' ((v e).support : Set B) ⊆ B := by
+  simp
+
+lemma Rep.FinitaryBase.image_eq (hv : v.FinitaryBase) (I : Set B) :
+    v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
+  ext e
+  simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
+  constructor
+  · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
+    exact ⟨y, hy, (hv.apply y).symm⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨x, ⟨_, hx, rfl⟩, hv.apply x⟩
+
+lemma Rep.FinitaryBase.image_subset_eq (hv : v.FinitaryBase) (hIB : I ⊆ B) :
+    v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
+  rw [← hv.image_eq]
+  simp [inter_eq_self_of_subset_right hIB]
+
+lemma Rep.FinitaryBase.mem_closure_iff (hv : v.FinitaryBase) (hIB : I ⊆ B) (heE : e ∈ M.E) :
+    e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
+  rw [v.closure_eq, mem_inter_iff, mem_preimage, hv.image_subset_eq hIB, SetLike.mem_coe,
+    Finsupp.basisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
+    and_iff_left heE]
+
+/-- For every column `e` of `M.E \ B`, the support of `v e` as a subset of `B`,
+together with `e` itself, make a circuit of `M`. -/
+lemma Rep.FinitaryBase.circuit_insert_support (hv : v.FinitaryBase) (heB : e ∉ B) (heE : e ∈ M.E) :
+    M.Circuit (insert e ((↑) '' ((v e).support : Set B))) := by
+  let b := Finsupp.basisSingleOne (ι := B) (R := 𝔽)
+  refine Indep.insert_circuit_of_forall (hv.base.indep.subset (by simp)) (by simp [heB]) ?_ ?_
+  · rw [hv.mem_closure_iff (by simp) heE]
+    simp
+  intro f hf hecl
+  rw [hv.mem_closure_iff (diff_subset.trans (by simp)) heE] at hecl
+  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq, subset_diff_singleton_iff]
+    at hecl
+  obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
+  simp at h
+
+lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B) :
+    ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
+  obtain heE | heE := em' (e ∈ M.E)
+  · rw [v.eq_zero_of_not_mem_ground heE, ← fundCircuit_diff_eq_inter _ he,
+      fundCircuit_eq_of_not_mem_ground heE]
+    simp
+  suffices hrw : insert e ((↑) '' ((v e).support : Set B)) = M.fundCircuit e B
+  · rw [← fundCircuit_diff_eq_inter _ he, ← hrw, insert_diff_of_mem _ (by simp),
+      diff_singleton_eq_self (by simp [he])]
+  refine Circuit.eq_fundCircuit_of_subset ?_ hv.base.indep (insert_subset_insert (by simp))
+  exact circuit_insert_support hv he heE
+
+/-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
+lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
+    M.Cocircuit (v · e).support := by
+  suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
+    rw [h_eq, compl_cocircuit_iff_hyperplane]
+    exact hv.base.hyperplane_of_closure_diff_singleton e.2
+  ext x
+  simp only [mem_support, ne_eq, mem_diff]
+  obtain hxE | hxE := em' (x ∈ M.E)
+  · simp [hxE, v.eq_zero_of_not_mem_ground hxE]
+  rw [hv.mem_closure_iff diff_subset hxE]
+  simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
+
+
+end FinitaryBase
+-- lemma Rep.FinitaryBase.support_eq (v : M.Rep 𝔽 (B →₀ F))

@@ -929,7 +929,7 @@ lemma finitary_of_forall_line_modular (hM : ∀ L, M.Line L → M.ModularFlat L)
     rw [diff_subset_iff, singleton_union, ← union_singleton (a := f 0)]
     exact insert_subset_insert (union_subset_union (by simp) (by simp))
 
-  rw [mem_closure_iff_exists_circuit_of_not_mem hxf] at hcl1
+  rw [mem_closure_iff_exists_circuit hxf] at hcl1
   obtain ⟨C', hC'ss, hC', hxC'⟩ := hcl1
 
   rw [← singleton_union, ← diff_subset_iff, subset_range_iff_exists_image_eq] at hC'ss
@@ -964,7 +964,7 @@ lemma finitary_of_forall_line_modular (hM : ∀ L, M.Line L → M.ModularFlat L)
     rw [diff_subset_iff, ← image_singleton, ← image_union, singleton_union, insert_diff_singleton]
     exact image_mono (subset_insert _ _)
 
-  rw [mem_closure_iff_exists_circuit_of_not_mem] at hC₀
+  rw [mem_closure_iff_exists_circuit] at hC₀
   swap
   · rintro (rfl | ⟨i, -, h⟩)
     · simp at hxf

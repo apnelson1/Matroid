@@ -330,7 +330,7 @@ lemma refl_of_rel {α : Type*} (r : α → α → Prop) [IsSymm α r] [IsTrans �
     (h : r x y) : r x x :=
   trans_of r h (symm_of r h)
 
-/-- A transitive, symmetric binary relation `r` induces a partition of the set of elements on
+/-- A transitive, symmetric CrossingBinary relation `r` induces a partition of the set of elements on
   which it is reflexive. -/
 @[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [IsSymm α r] : Partition {x | r x x} where
   parts := ((fun a ↦ {x | r a x}) '' {x | r x x})
@@ -386,7 +386,7 @@ lemma eqv_class_mem_ofRel (h : r x x) : {y | r x y} ∈ ofRel r :=
 lemma class_nonempty {t : Set α} (ht : t ∈ ofRel r) : t.Nonempty := by
   obtain ⟨x, hx, rfl⟩ := ht; exact ⟨x, hx⟩
 
-/-- Every partition of `s : Set α` induces a transitive, symmetric binary relation on `α`
+/-- Every partition of `s : Set α` induces a transitive, symmetric CrossingBinary relation on `α`
   whose equivalence classes are the parts of `P`. The relation is irreflexive outside `s`.  -/
 def Rel (P : Partition s) (a b : α) : Prop :=
   ∃ t ∈ P, a ∈ t ∧ b ∈ t

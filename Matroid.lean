@@ -2,7 +2,7 @@ import Matroid.Axioms.Circuit
 import Matroid.Axioms.Closure
 import Matroid.Axioms.Flat
 import Matroid.Axioms.Rank
-import Matroid.Binary.Crossing
+import Matroid.CrossingBinary.Crossing
 import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Connectivity.Basic
