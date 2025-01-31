@@ -1,4 +1,4 @@
-import Matroid.Representation.Basic
+import Matroid.Representation.Map
 import Matroid.Flat.Hyperplane
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
@@ -95,6 +95,9 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef
 
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
   v.restrict_span_fullRank.mapEquiv _
+
+lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
+  ⟨_, ⟨v.standardRep' M.exists_base.choose_spec⟩⟩
 
 /-- The natural representation of a `FiniteRk` matroid with rows indexed by a base -/
 noncomputable def Rep.standardRep [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :

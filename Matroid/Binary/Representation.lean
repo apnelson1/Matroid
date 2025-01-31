@@ -81,8 +81,7 @@ lemma CrossingBinary.eq_binaryProxy (hM : M.CrossingBinary) (hB : M.Base B) :
   intro hxC
   rw [repOfFun_coeFun_eq, indicator_of_mem (hC.subset_ground hxC)]
 
-theorem Tutte (hM : M.NoUniformMinor 2 4) :
-  ∃ (B : Set α), Nonempty (M.Rep (ZMod 2) (B →₀ ZMod 2)) := by
+theorem Tutte (hM : M.NoUniformMinor 2 4) : M.Representable (ZMod 2) := by
   rw [← crossingBinary_iff_no_U24_minor] at hM
   obtain ⟨B, hB⟩ := M.exists_base
   have h_eq := hM.eq_binaryProxy hB

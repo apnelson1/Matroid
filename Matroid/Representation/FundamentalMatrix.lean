@@ -1,16 +1,9 @@
-import Mathlib.LinearAlgebra.LinearIndependent
-import Matroid.Simple
 import Matroid.Representation.StandardRep
-import Matroid.Binary.Crossing
-import Matroid.Order.Quotient
-import Mathlib.Data.Finsupp.Indicator
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
 [DivisionRing R]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W'] [M.Finitary]
--- theorem Finsupp.support_indicator_eq {ι α : Type*} [Zero α] (s : Finset ι)
---   (f : (i : ι) → i ∈ s → α) :
---     ((Finsupp.indicator s f).support : Set ι) = {i ∈ s | f i }
+
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 
