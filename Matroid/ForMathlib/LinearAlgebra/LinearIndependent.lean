@@ -1,7 +1,8 @@
-import Mathlib.LinearAlgebra.FiniteDimensional
-import Mathlib.LinearAlgebra.Dual
-import Mathlib.LinearAlgebra.Quotient
-import Matroid.ForMathlib.Function
+-- import Mathlib.LinearAlgebra.FiniteDimensional
+-- import Mathlib.LinearAlgebra.Dual
+import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.LinearAlgebra.LinearIndependent
+-- import Matroid.ForMathlib.Function
 
 -- import Mathlib.Data.FunLike.Basic
 
@@ -11,50 +12,50 @@ variable {α ι W W' M R : Type*} [AddCommGroup W] [AddCommGroup W']
 
 open Function Set Submodule BigOperators
 
-theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R] [AddCommMonoid M]
-    [Module R M] {s : Finset ι} {f : ι → M} : ¬ LinearIndependent R ((s : Set ι).restrict f) ↔
-      ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
-  simp only [Finset.coe_sort_coe, not_linearIndependent_iff, Finset.univ_eq_attach, restrict_apply,
-    ne_eq, Subtype.exists, Finset.mem_coe]
-  refine ⟨fun ⟨g, hg0, b, hbs, hgb⟩ ↦ ?_, fun ⟨c,hc0,⟨b,hbs, hb0⟩,hc'⟩ ↦ ?_⟩
-  · set c := Function.extend Subtype.val g 0 with hc
-    have hc0 : ∀ x ∉ s, c x = 0 :=
-      fun x hxs ↦ by rw [hc, extend_apply' _ _ _ (by simpa), Pi.zero_apply]
-    have hc1 : ∀ x : s, c x = g x :=
-      fun ⟨x,hx⟩ ↦ by rw [hc, Subtype.val_injective.extend_apply]
-    refine ⟨c, ?_, ⟨b, hbs, by rwa [← hc1] at hgb⟩, hc0⟩
-    · rw [← Finset.sum_subset s.subset_univ (fun x _ hx ↦ by simp [hc0 x hx]), ← Finset.sum_attach]
-      simp_rw [hc1]; assumption
-  refine ⟨c ∘ Subtype.val, ?_, b, hbs, by simpa⟩
-  simp only [comp_apply]
-  rwa [s.sum_attach (fun x ↦ c x • f x),
-    Finset.sum_subset (s.subset_univ) (fun x _ hx ↦ by simp [hc' x hx])]
+-- theorem Fintype.not_linearIndependent_restrict_iff [Fintype ι] [CommSemiring R] [AddCommMonoid M]
+--     [Module R M] {s : Finset ι} {f : ι → M} : ¬ LinearIndependent R ((s : Set ι).restrict f) ↔
+--       ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
+--   simp only [Finset.coe_sort_coe, not_linearIndependent_iff, Finset.univ_eq_attach, restrict_apply,
+--     ne_eq, Subtype.exists, Finset.mem_coe]
+--   refine ⟨fun ⟨g, hg0, b, hbs, hgb⟩ ↦ ?_, fun ⟨c,hc0,⟨b,hbs, hb0⟩,hc'⟩ ↦ ?_⟩
+--   · set c := Function.extend Subtype.val g 0 with hc
+--     have hc0 : ∀ x ∉ s, c x = 0 :=
+--       fun x hxs ↦ by rw [hc, extend_apply' _ _ _ (by simpa), Pi.zero_apply]
+--     have hc1 : ∀ x : s, c x = g x :=
+--       fun ⟨x,hx⟩ ↦ by rw [hc, Subtype.val_injective.extend_apply]
+--     refine ⟨c, ?_, ⟨b, hbs, by rwa [← hc1] at hgb⟩, hc0⟩
+--     · rw [← Finset.sum_subset s.subset_univ (fun x _ hx ↦ by simp [hc0 x hx]), ← Finset.sum_attach]
+--       simp_rw [hc1]; assumption
+--   refine ⟨c ∘ Subtype.val, ?_, b, hbs, by simpa⟩
+--   simp only [comp_apply]
+--   rwa [s.sum_attach (fun x ↦ c x • f x),
+--     Finset.sum_subset (s.subset_univ) (fun x _ hx ↦ by simp [hc' x hx])]
 
-theorem Fintype.not_linearIndependent_restrict_iff' [Fintype ι] [CommSemiring R] [AddCommMonoid M]
-    [Module R M] {s : Set ι} {f : ι → M} : ¬ LinearIndependent R (s.restrict f) ↔
-      ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
-  obtain ⟨s,rfl⟩ := s.toFinite.exists_finset_coe
-  exact Fintype.not_linearIndependent_restrict_iff
+-- theorem Fintype.not_linearIndependent_restrict_iff' [Fintype ι] [CommSemiring R] [AddCommMonoid M]
+--     [Module R M] {s : Set ι} {f : ι → M} : ¬ LinearIndependent R (s.restrict f) ↔
+--       ∃ c : ι → R, ∑ i, c i • f i = 0 ∧ (∃ i ∈ s, c i ≠ 0) ∧ ∀ i, i ∉ s → c i = 0 := by
+--   obtain ⟨s,rfl⟩ := s.toFinite.exists_finset_coe
+--   exact Fintype.not_linearIndependent_restrict_iff
 
-theorem linearIndependent_restrict_iff [Semiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
-    {f : ι → M} : LinearIndependent R (s.restrict f) ↔
-      ∀ l : ι →₀ R, Finsupp.total ι M R f l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
-  classical
-  rw [linearIndependent_iff]
-  refine ⟨fun h l hl0 hls ↦ ?_, fun h l hl0 ↦ ?_⟩
-  · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ Subset.rfl _ (by simp)] at hl0
-    specialize h (Finsupp.comapDomain ((↑) : s → ι) l Subtype.val_injective.injOn)
-    simp only [Finsupp.total_comapDomain, restrict_apply] at h
-    rw [Finset.sum_preimage _ _ _ (fun x ↦ l x • f x)
-      (fun x hx hx' ↦ (hx' (by simpa using hls hx)).elim )] at h
-    simp_rw [DFunLike.ext_iff] at h ⊢
-    exact fun i ↦ by_contra fun hi ↦ hi <|
-      by simpa using (h hl0) ⟨i, hls (show i ∈ l.support by simpa using hi)⟩
-  specialize h l.extendDomain
-  rw [Finsupp.extendDomain_eq_embDomain_subtype, Finsupp.total_embDomain] at h
-  simp only [Embedding.coe_subtype, Finsupp.support_embDomain, Finset.coe_map, image_subset_iff,
-    Subtype.coe_preimage_self, subset_univ, Finsupp.embDomain_eq_zero, forall_true_left] at h
-  exact h hl0
+-- theorem linearIndependent_restrict_iff [Semiring R] [AddCommMonoid M] [Module R M] {s : Set ι}
+--     {f : ι → M} : LinearIndependent R (s.restrict f) ↔
+--       ∀ l : ι →₀ R, Finsupp.total ι M R f l = 0 → (l.support : Set ι) ⊆ s → l = 0 := by
+--   classical
+--   rw [linearIndependent_iff]
+--   refine ⟨fun h l hl0 hls ↦ ?_, fun h l hl0 ↦ ?_⟩
+--   · rw [Finsupp.total_apply, Finsupp.sum_of_support_subset _ Subset.rfl _ (by simp)] at hl0
+--     specialize h (Finsupp.comapDomain ((↑) : s → ι) l Subtype.val_injective.injOn)
+--     simp only [Finsupp.total_comapDomain, restrict_apply] at h
+--     rw [Finset.sum_preimage _ _ _ (fun x ↦ l x • f x)
+--       (fun x hx hx' ↦ (hx' (by simpa using hls hx)).elim )] at h
+--     simp_rw [DFunLike.ext_iff] at h ⊢
+--     exact fun i ↦ by_contra fun hi ↦ hi <|
+--       by simpa using (h hl0) ⟨i, hls (show i ∈ l.support by simpa using hi)⟩
+--   specialize h l.extendDomain
+--   rw [Finsupp.extendDomain_eq_embDomain_subtype, Finsupp.total_embDomain] at h
+--   simp only [Embedding.coe_subtype, Finsupp.support_embDomain, Finset.coe_map, image_subset_iff,
+--     Subtype.coe_preimage_self, subset_univ, Finsupp.embDomain_eq_zero, forall_true_left] at h
+--   exact h hl0
 
 theorem linearIndependent_subsingleton_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] [Subsingleton ι] {f : ι → M} : LinearIndependent R f ↔ ∀ i, f i ≠ 0 := by
@@ -114,64 +115,25 @@ theorem linearIndependent_sUnion_of_directed' {R M ι : Type*} [DivisionRing R] 
   specialize hs x x.prop y y.prop
   aesop
 
-theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V]
-  [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) : Finite α :=
-  Cardinal.lt_aleph0_iff_finite.1 <| LinearIndependent.lt_aleph0_of_finiteDimensional h
+-- theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V]
+--   [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) : Finite α :=
+--   Cardinal.lt_aleph0_iff_finite.1 <| LinearIndependent.lt_aleph0_of_finiteDimensional h
 
-noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
-    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
-    Fintype α :=
-  have _ := h.finite_index
-  Fintype.ofFinite α
+-- noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
+--     [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
+--     Fintype α :=
+--   have _ := h.finite_index
+--   Fintype.ofFinite α
 
-theorem LinearIndependent.finite_index_restrict {K : Type u} {V : Type v} [DivisionRing K]
-    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} {s : Set α}
-    (h : LinearIndependent K (s.restrict f)) : s.Finite :=
-  have := h.finite_index
-  s.toFinite
+-- theorem LinearIndependent.finite_index_restrict {K : Type u} {V : Type v} [DivisionRing K]
+--     [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} {s : Set α}
+--     (h : LinearIndependent K (s.restrict f)) : s.Finite :=
+--   have := h.finite_index
+--   s.toFinite
 
 variable {K V ι : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {f : ι → V}
   {s₀ s t : Set ι}
 
-theorem exists_linearIndependent_extension' (hli : LinearIndependent K (s₀.restrict f))
-    (hs₀t : s₀ ⊆ t) : ∃ (s : Set ι), s₀ ⊆ s ∧ s ⊆ t ∧ f '' t ⊆ span K (f '' s) ∧
-      LinearIndependent K (s.restrict f) := by
-  have hzorn := zorn_subset_nonempty {r | s₀ ⊆ r ∧ r ⊆ t ∧ LinearIndependent K (r.restrict f)}
-    ?_ s₀ ⟨Subset.rfl, hs₀t, hli⟩
-  · obtain ⟨m, ⟨hs₀m, hmt, hli⟩, -, hmax⟩ := hzorn
-    refine ⟨m, hs₀m, hmt, ?_, hli⟩
-    rintro _ ⟨x, hx, rfl⟩
-    by_contra hxm
-    have hxm' : x ∉ m := fun hxm' ↦ hxm <| subset_span <| mem_image_of_mem _ hxm'
-    have hli' := (linearIndependent_insert' hxm').2 ⟨hli, hxm⟩
-    rw [← hmax _ ⟨hs₀m.trans <| subset_insert _ _, insert_subset hx hmt, hli'⟩ (subset_insert _ _)]
-      at hxm'
-    exact hxm' <| mem_insert _ _
-  rintro c hcss hchain ⟨r, hr⟩
-  refine ⟨⋃₀ c, ⟨(hcss hr).1.trans <| subset_sUnion_of_mem hr,
-    sUnion_subset fun t' ht'c ↦ (hcss ht'c).2.1,?_⟩, fun _ ↦ subset_sUnion_of_mem⟩
-  apply linearIndependent_sUnion_of_directed' _ _ (IsChain.directedOn hchain)
-    (fun s hs ↦ (hcss hs).2.2)
-
-noncomputable def LinearIndependent.extend' (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
-    Set ι :=
-  Classical.choose <| exists_linearIndependent_extension' h hst
-
-theorem LinearIndependent.extend'_subset (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
-    h.extend' hst ⊆ t :=
-  (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.1
-
-theorem LinearIndependent.subset_extend' (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
-    s ⊆ h.extend' hst :=
-  (Classical.choose_spec (exists_linearIndependent_extension' h hst)).1
-
-theorem LinearIndependent.subset_span_extend' (h : LinearIndependent K (s.restrict f))
-    (hst : s ⊆ t) : f '' t ⊆ span K (f '' (h.extend' hst)) :=
-  (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.2.1
-
-theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.restrict f))
-    (hst : s ⊆ t) : LinearIndependent K ((h.extend' hst).restrict f) :=
-  (Classical.choose_spec (exists_linearIndependent_extension' h hst)).2.2.2
 
 theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
   [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
@@ -182,14 +144,15 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
   refine ⟨fun h ↦ ⟨fun h0 ↦ ?_, fun c hc ↦ h c⁻¹ ?_⟩, fun h c h' ↦ h.2 c⁻¹ ?_⟩
   · simp only [h0, smul_eq_zero] at h
     simpa using h 0
-  · rw [← hc, smul_smul, inv_mul_cancel, one_smul]
+  · rw [← hc, smul_smul, inv_mul_cancel₀, one_smul]
     rintro rfl; exact hi <| by simp [← hc]
-  rw [← h', smul_smul, inv_mul_cancel, one_smul]
+  rw [← h', smul_smul, inv_mul_cancel₀, one_smul]
   rintro rfl; exact h.1 <| by simp [← h']
 
 theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
-    (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
+    (ht : LinearIndependent R (t.restrict f))
+    (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
   refine (linearIndependent_image ?_).2 ?_
   · rw [injOn_union, and_iff_right <| injOn_iff_injective.2 hs.injective,
@@ -225,3 +188,45 @@ theorem linearIndependent_zero_iff {R M ι : Type*} [Ring R] [Nontrivial R] [Add
 @[simp] theorem linearIndependent_zero_iff' {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
     [Module R M] {s : Set ι} : LinearIndependent R (0 : s → M) ↔ s = ∅ := by
   rw [linearIndependent_zero_iff, isEmpty_coe_sort]
+
+section extend
+
+
+theorem exists_linearIndependent_extension_index (hli : LinearIndependent K (s₀.restrict f))
+    (hs₀t : s₀ ⊆ t) : ∃ (s : Set ι), s₀ ⊆ s ∧ s ⊆ t ∧ f '' t ⊆ span K (f '' s) ∧
+      LinearIndependent K (s.restrict f) := by
+  have hzorn := zorn_subset_nonempty {r | s₀ ⊆ r ∧ r ⊆ t ∧ LinearIndependent K (r.restrict f)}
+    ?_ s₀ ⟨Subset.rfl, hs₀t, hli⟩
+  · obtain ⟨m, hs₀m, hmax⟩ := hzorn
+    refine ⟨m, hs₀m, hmax.prop.2.1, ?_, hmax.prop.2.2⟩
+    rintro _ ⟨x, hx, rfl⟩
+    by_contra hxm
+    have hxm' : x ∉ m := fun hxm' ↦ hxm <| subset_span <| mem_image_of_mem _ hxm'
+    have hli' := (linearIndependent_insert' hxm').2 ⟨hmax.prop.2.2, hxm⟩
+    exact hxm' <| hmax.mem_of_prop_insert (x := x) ⟨hmax.prop.1.trans (subset_insert ..),
+      insert_subset hx hmax.prop.2.1, hli'⟩
+  rintro c hcss hchain ⟨r, hr⟩
+  refine ⟨⋃₀ c, ⟨(hcss hr).1.trans <| subset_sUnion_of_mem hr,
+    sUnion_subset fun t' ht'c ↦ (hcss ht'c).2.1,?_⟩, fun _ ↦ subset_sUnion_of_mem⟩
+  apply linearIndependent_sUnion_of_directed' _ _ (IsChain.directedOn hchain)
+    (fun s hs ↦ (hcss hs).2.2)
+
+noncomputable def LinearIndependent.extend_index (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
+    Set ι :=
+  Classical.choose <| exists_linearIndependent_extension_index h hst
+
+theorem LinearIndependent.extend_index_subset (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
+    h.extend_index hst ⊆ t :=
+  (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).2.1
+
+theorem LinearIndependent.subset_extend' (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
+    s ⊆ h.extend_index hst :=
+  (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).1
+
+theorem LinearIndependent.subset_span_extend' (h : LinearIndependent K (s.restrict f))
+    (hst : s ⊆ t) : f '' t ⊆ span K (f '' (h.extend_index hst)) :=
+  (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).2.2.1
+
+theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.restrict f))
+    (hst : s ⊆ t) : LinearIndependent K ((h.extend_index hst).restrict f) :=
+  (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).2.2.2

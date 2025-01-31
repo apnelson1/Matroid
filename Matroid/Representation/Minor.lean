@@ -6,7 +6,6 @@ variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matr
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix
 
-lemma
 
 namespace Matroid
 
@@ -16,76 +15,32 @@ section Minor
 @[simps!] def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) :
     (M ／ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
   to_fun := Submodule.mkQ _ ∘ v
-  valid' := by
-    classical
-    intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
-    convert linearIndependent_comp_subtype.symm
-    simp_rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
-      hI.contract_indep_iff, ← v.span_closure_congr hI.closure_eq_closure,
-      Finsupp.mem_span_image_iff_linearCombination, v.indep_iff, linearIndependent_comp_subtype]
-    refine ⟨fun ⟨h, hdj⟩ c hc ⟨c', hc'I, hc'c⟩ ↦ ?_, fun h ↦ ?_⟩
-    · have hsupp : c + (-c') ∈ Finsupp.supported 𝔽 𝔽 (J ∪ I) := sorry
-      obtain rfl : c = c' := by
-        simpa [add_eq_zero_iff_eq_neg] using h (c + (-c')) hsupp (by simp [hc'c])
-      simpa [(hdj.symm.mono_right hI.subset).inter_eq] using subset_inter hc hc'I
-    · have hdj :
-      let cI := ((Finsupp.restrictDom _ 𝔽 I) c)
-      let cJ := ((Finsupp.restrictDom _ 𝔽 J) c)
-      specialize h cJ.1 cJ.2 ⟨- cI.1, by simp, ?_⟩
-      -- · rw [map_neg, eq_comm, ← add_eq_zero_iff_eq_neg, ← LinearMap.map_add]
-      --   convert hc0
-      --   sorry
-
-
-
-
-
-
-
-
-      -- rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
-      --   Finsupp.mem_span_image_iff_linearCombination] at hc0
-      -- obtain ⟨c', hc'supp, hc'⟩ := hc0
-      -- rw [v.indep_iff, linearIndependent_comp_subtype] at h
-      -- have hsupp : c - c' ∈ Finsupp.supported 𝔽 𝔽 (J ∪ I)
-      -- · rw [Finsupp.mem_supported'] at hc'supp hc ⊢
-      --   simp only [mem_union, not_or, Finsupp.coe_sub, Pi.sub_apply, and_imp]
-      --   exact fun x hxI hxJ ↦ by simp [hc'supp x hxJ, hc x hxI]
-
-      -- obtain rfl : c = c' := by simpa [sub_eq_zero] using h.1 (c - c') hsupp (by simp [hc'])
-      -- simpa [(h.2.symm.mono_right hI.subset).inter_eq] using subset_inter hc hc'supp
-
-
-
-
-
-      -- rw [Finsupp.linearCombination_comp] at hc0
+  valid' :=
 
 
   --  where
   --   to_fun := Submodule.Quotient.mk ∘ v
   --   valid' :=
-  -- ( by
-  --   intro J
-  --   obtain ⟨I,hI⟩ := M.exists_basis' C
-  --   rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
-  --     (show Submodule.Quotient.mk = Submodule.mkQ _ by ext; rfl), union_comm, v.indep_iff,
-  --     and_right_comm, ← disjoint_union_right, union_diff_self,
-  --     union_eq_self_of_subset_left hI.subset]
-  --   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_,(v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
-  --   · refine (h.2.mono_index _ subset_union_right).map ?_
-  --     simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure]
-  --     convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
-  --     · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ J = J by simp]
-  --     · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ I = I by simp]
-  --     exact (h.1.mono_right hI.subset).preimage _
-  --   · rw [disjoint_iff_forall_ne]
-  --     rintro i hiJ _ hiI rfl
-  --     apply h.ne_zero ⟨i, hiJ⟩
-  --     simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
-  --     exact subset_span (mem_image_of_mem _ hiI)
-  --   rwa [v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure] )
+  ( by
+    intro J
+    obtain ⟨I,hI⟩ := M.exists_basis' C
+    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
+       union_comm, v.indep_iff,
+      and_right_comm, ← disjoint_union_right, union_diff_self,
+      union_eq_self_of_subset_left hI.subset]
+    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, (v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
+    · refine (h.2.mono_index _ subset_union_right).map ?_
+      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure]
+      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ J = J by simp]
+      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ I = I by simp]
+      exact (h.1.mono_right hI.subset).preimage _
+    · rw [disjoint_iff_forall_ne]
+      rintro i hiJ _ hiI rfl
+      apply h.ne_zero ⟨i, hiJ⟩
+      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
+      exact subset_span (mem_image_of_mem _ hiI)
+    rwa [v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure] )
 
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)
@@ -196,3 +151,51 @@ section Uniform
 --     (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
 
 end Uniform
+
+/-
+classical
+    intro J
+    obtain ⟨I,hI⟩ := M.exists_basis' C
+    convert linearIndependent_comp_subtype.symm
+    simp_rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
+      hI.contract_indep_iff, ← v.span_closure_congr hI.closure_eq_closure,
+      Finsupp.mem_span_image_iff_linearCombination, v.indep_iff, linearIndependent_comp_subtype]
+    refine ⟨fun ⟨h, hdj⟩ c hc ⟨c', hc'I, hc'c⟩ ↦ ?_, fun h ↦ ?_⟩
+    · have hsupp : c + (-c') ∈ Finsupp.supported 𝔽 𝔽 (J ∪ I) := sorry
+      obtain rfl : c = c' := by
+        simpa [add_eq_zero_iff_eq_neg] using h (c + (-c')) hsupp (by simp [hc'c])
+      simpa [(hdj.symm.mono_right hI.subset).inter_eq] using subset_inter hc hc'I
+    · have hdj :
+      let cI := ((Finsupp.restrictDom _ 𝔽 I) c)
+      let cJ := ((Finsupp.restrictDom _ 𝔽 J) c)
+      specialize h cJ.1 cJ.2 ⟨- cI.1, by simp, ?_⟩
+      -- · rw [map_neg, eq_comm, ← add_eq_zero_iff_eq_neg, ← LinearMap.map_add]
+      --   convert hc0
+      --   sorry
+
+
+
+
+
+
+
+
+      -- rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
+      --   Finsupp.mem_span_image_iff_linearCombination] at hc0
+      -- obtain ⟨c', hc'supp, hc'⟩ := hc0
+      -- rw [v.indep_iff, linearIndependent_comp_subtype] at h
+      -- have hsupp : c - c' ∈ Finsupp.supported 𝔽 𝔽 (J ∪ I)
+      -- · rw [Finsupp.mem_supported'] at hc'supp hc ⊢
+      --   simp only [mem_union, not_or, Finsupp.coe_sub, Pi.sub_apply, and_imp]
+      --   exact fun x hxI hxJ ↦ by simp [hc'supp x hxJ, hc x hxI]
+
+      -- obtain rfl : c = c' := by simpa [sub_eq_zero] using h.1 (c - c') hsupp (by simp [hc'])
+      -- simpa [(h.2.symm.mono_right hI.subset).inter_eq] using subset_inter hc hc'supp
+
+
+
+
+
+      -- rw [Finsupp.linearCombination_comp] at hc0
+
+-/
