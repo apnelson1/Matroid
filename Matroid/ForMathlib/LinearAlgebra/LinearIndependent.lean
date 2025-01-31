@@ -151,16 +151,13 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
 
 theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
-    (ht : LinearIndependent R (t.restrict f))
-    (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
+    (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
   refine (linearIndependent_image ?_).2 ?_
   · rw [injOn_union, and_iff_right <| injOn_iff_injective.2 hs.injective,
       and_iff_right <| injOn_iff_injective.2 ht.injective]
-    · intro x hx y hy he
-      rw [Submodule.disjoint_def] at hdj
-      apply hs.ne_zero ⟨x,hx⟩
-      simp [hdj _ (subset_span (mem_image_of_mem _ hx))
+    · refine fun x hx y hy he ↦ hs.ne_zero ⟨x,hx⟩ ?_
+      simp [(Submodule.disjoint_def.1 hdj) _ (subset_span (mem_image_of_mem _ hx))
         (by rw [he]; exact subset_span (mem_image_of_mem _ hy))]
     rw [disjoint_iff_forall_ne]
     rintro i his _ hit rfl
