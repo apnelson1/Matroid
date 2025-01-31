@@ -2,7 +2,7 @@
 -- import Mathlib.LinearAlgebra.Dual
 import Mathlib.LinearAlgebra.Quotient.Basic
 import Mathlib.LinearAlgebra.LinearIndependent
--- import Matroid.ForMathlib.Function
+import Matroid.ForMathlib.Function
 
 -- import Mathlib.Data.FunLike.Basic
 
@@ -80,11 +80,6 @@ theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [Add
   exact (linearIndependent_image (injOn_of_injective hinj)).1 <|
     h t (htfin.of_finite_image (injOn_of_injective hinj))
 
-theorem LinearIndependent.mono_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
-    [Module R M] (f : ι → M) {s t : Set ι} (h : LinearIndependent R (t.restrict f)) (hst : s ⊆ t) :
-    LinearIndependent R (s.restrict f) :=
-  (linearIndependent_image ((injOn_iff_injective.2 h.injective).mono hst )).2 <|
-    h.image.mono (image_subset _ hst)
 
 theorem linearIndependent_iUnion_of_directed' {R M ι η : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (s : η → Set ι) (hs : Directed (· ⊆ ·) s)
@@ -135,6 +130,12 @@ variable {K V ι : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] {f : ι
   {s₀ s t : Set ι}
 
 
+theorem LinearIndependent.mono_restrict {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
+    [Module R M] (f : ι → M) {s t : Set ι} (h : LinearIndependent R (t.restrict f)) (hst : s ⊆ t) :
+    LinearIndependent R (s.restrict f) :=
+  (linearIndependent_image ((injOn_iff_injective.2 h.injective).mono hst )).2 <|
+    h.image.mono (image_subset _ hst)
+
 theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
   [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
     LinearIndependent K (({i,j} : Set ι).restrict f) ↔ ∀ (c : K), c • f i ≠ f j := by
@@ -149,32 +150,58 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
   rw [← h', smul_smul, inv_mul_cancel₀, one_smul]
   rintro rfl; exact h.1 <| by simp [← h']
 
-theorem linearIndependent.union_index {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
+theorem LinearIndependent.restrict_union {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
     (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
-  refine (linearIndependent_image ?_).2 ?_
-  · rw [injOn_union, and_iff_right <| injOn_iff_injective.2 hs.injective,
-      and_iff_right <| injOn_iff_injective.2 ht.injective]
-    · refine fun x hx y hy he ↦ hs.ne_zero ⟨x,hx⟩ ?_
-      simp [(Submodule.disjoint_def.1 hdj) _ (subset_span (mem_image_of_mem _ hx))
-        (by rw [he]; exact subset_span (mem_image_of_mem _ hy))]
+  have aux : ∀ x ∈ s, ∀ y ∈ t, f x ≠ f y := by
+    refine fun x hx y hy hxy ↦ hs.ne_zero ⟨x, hx⟩ ?_
+    exact Submodule.disjoint_def'.1 hdj _ (subset_span (mem_image_of_mem f hx)) _
+      (subset_span (mem_image_of_mem f hy)) hxy
+  have hdj' : Disjoint s t := by
     rw [disjoint_iff_forall_ne]
-    rintro i his _ hit rfl
-    apply hs.ne_zero ⟨i, his⟩
-    exact (Submodule.disjoint_def.1 hdj) (f i) (subset_span (mem_image_of_mem _ his))
-      (subset_span (mem_image_of_mem _ hit))
-  rw [image_union]
-  exact LinearIndependent.union hs.image ht.image hdj
+    rintro x hx _ hx' rfl
+    exact aux _ hx _ hx' rfl
+  have hli := LinearIndependent.union hs.image ht.image hdj
+  rw [← image_union] at hli
+  refine (linearIndependent_image ?_).2 hli
+  rw [injOn_union hdj', injOn_iff_injective, injOn_iff_injective]
+  exact ⟨hs.injective, ht.injective, aux⟩
 
-theorem LinearIndependent.union_index' {R M ι : Type*} [Field R] [AddCommGroup M] [Module R M]
-    {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+theorem linearIndependent_restrict_union_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
+    [Module R M] {s t : Set ι} {f : ι → M} (hdj : Disjoint s t) :
+    LinearIndependent R ((s ∪ t).restrict f) ↔
+    (LinearIndependent R (s.restrict f)) ∧ (LinearIndependent R (t.restrict f))
+    ∧ Disjoint (span R (f '' s)) (span R (f '' t)) := by
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun h ↦ LinearIndependent.restrict_union  h.1 h.2.1 h.2.2⟩
+  · exact LinearIndependent.mono_restrict (f := f) h subset_union_left
+  · exact LinearIndependent.mono_restrict (f := f) h subset_union_right
+  convert h.disjoint_span_image (s := (↑) ⁻¹' s) (t := (↑) ⁻¹' t) (hdj.preimage _) <;> aesop
+
+theorem LinearIndependent.restrict_union_of_quotient {R M ι : Type*} [Field R] [AddCommGroup M]
+    [Module R M] {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
     (ht : LinearIndependent R (t.restrict ( (mkQ (span R (f '' s)) ∘ f)))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
-  apply linearIndependent.union_index hs ht.of_comp
+  apply hs.restrict_union ht.of_comp
   convert (Submodule.range_ker_disjoint ht).symm
   · simp
   aesop
+
+theorem linearIndependent_restrict_union_iff_quotient {R M ι : Type*} [Field R] [AddCommGroup M]
+    [Module R M] {s t : Set ι} {f : ι → M} (hst : Disjoint s t) :
+    LinearIndependent R ((s ∪ t).restrict f) ↔ LinearIndependent R (s.restrict f)
+      ∧ LinearIndependent R (t.restrict ((mkQ (span R (f '' s)) ∘ f))) := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.restrict_union_of_quotient h.2⟩
+  · exact h.mono_restrict (f := f) subset_union_left
+  apply (h.mono_restrict (f := f) subset_union_right).map
+  simp only [range_restrict, ker_mkQ]
+  exact ((linearIndependent_restrict_union_iff hst).1 h).2.2.symm
+
+theorem LinearIndependent.quotient_iff_union {R M ι : Type*} [Field R] [AddCommGroup M]
+    [Module R M] {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+    (hst : Disjoint s t) : LinearIndependent R (t.restrict ((mkQ (span R (f '' s)) ∘ f))) ↔
+    LinearIndependent R ((s ∪ t).restrict f) := by
+  rw [linearIndependent_restrict_union_iff_quotient hst, and_iff_right hs]
 
 theorem linearIndependent_zero_iff {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
     [Module R M] : LinearIndependent R (0 : ι → M) ↔ IsEmpty ι := by

@@ -137,3 +137,21 @@ variable {f : α → β} {x : α} {y : β}
   ⟨fun h ↦ ⟨fun _ _ ↦ h rfl⟩, fun _ _ _ _ ↦ Subsingleton.elim ..⟩
 
 @[simp] lemma restrict_const (s : Set α) (y : β) : (s.restrict (fun _ : α ↦ y)) = fun _ ↦ y := rfl
+
+@[simps] def Equiv.sumSet {s t : Set α} [DecidablePred (· ∈ s)] (h : Disjoint s t) :
+    s ⊕ t ≃ ↥(s ∪ t) where
+  toFun := Sum.elim (fun x ↦ ⟨x, by simp [x.2]⟩) (fun x ↦ ⟨x, by simp [x.2]⟩)
+  invFun x := if hx : x.1 ∈ s then .inl ⟨x, hx⟩ else .inr ⟨x, Or.elim x.2 (False.elim ∘ hx) id⟩
+  left_inv := by
+    rintro (⟨x, hx⟩ | ⟨x, hx⟩)
+    · simp [hx]
+    simp [show x ∉ s from fun hxs ↦ h.ne_of_mem hxs hx rfl]
+  right_inv := by
+    rintro ⟨x, hx | hx⟩
+    · simp [hx]
+    simp [show x ∉ s from fun hxs ↦ h.ne_of_mem hxs hx rfl]
+
+@[simp] lemma Equiv.sumSet_symm_sum_elim {s t : Set α} [DecidablePred (· ∈ s)] (h : Disjoint s t)
+    {f : α → β} {x : ↥(s ∪ t)} : Sum.elim (s.restrict f) (t.restrict f)
+      ((Equiv.sumSet h).symm x) = f x := by
+  by_cases h : x.1 ∈ s <;> simp [h]

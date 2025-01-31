@@ -8,44 +8,7 @@ open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 
 namespace Matroid
 
-/-! ### Constructors -/
 
-/-- A function with support contained in `M.E` that gives the correct independent sets
-  within the ground set gives a representation -/
-@[simps] def Rep.ofGround (f : α → W) (h_support : support f ⊆ M.E)
-    (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.restrict f))) : M.Rep 𝔽 W where
-  to_fun := f
-  valid' := ( by
-    intro I
-    by_cases hI : I ⊆ M.E
-    · rw [hf _ hI]
-    rw [← not_iff_not, iff_true_left (fun hi ↦ hI hi.subset_ground)]
-    intro h_ind
-    obtain ⟨e, heI, heE⟩ := not_subset.1 hI
-    have h0 := h_ind.ne_zero ⟨e, heI⟩
-    simp only [Function.comp_apply, ne_eq] at h0
-    apply not_mem_subset h_support heE
-    exact h0 )
-
-@[simp] lemma Rep.ofGround_apply (f : α → W) (hs : support f ⊆ M.E)
-  (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.restrict f))) (a : α) :
-    Rep.ofGround f hs hf a = f a := rfl
-
-/-- A function from `M.E` to a module determines a representation -/
-@[simps!] noncomputable def Rep.ofSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
-    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
-    M.Rep 𝔽 W :=
-  Rep.ofGround
-  ( fun a ↦ if ha : a ∈ M.E then f ⟨a,ha⟩ else 0 )
-  ( by aesop )
-  ( by
-    intro I hI
-    rw [← Subtype.range_val (s := M.E), subset_range_iff_exists_image_eq] at hI
-    obtain ⟨I, rfl⟩ := hI
-    rw [hf]
-    apply linearIndependent_equiv' <| Equiv.Set.image _ _ Subtype.val_injective
-    ext ⟨⟨x,hx⟩, hx'⟩
-    simp [dif_pos hx] )
 
 -- @[simp] lemma Rep.offSubtypeFun_apply (f : M.E → W) [DecidablePred (· ∈ M.E)]
 --     (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f))
@@ -71,7 +34,7 @@ def Rep.map (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W')
     (h_inj : Disjoint (span 𝔽 (range v)) (LinearMap.ker ψ)) : M.Rep 𝔽 W' where
   to_fun := ψ ∘ v
   valid' := fun I ↦ by
-    rw [v.indep_iff, restrict_eq, restrict_eq, comp_assoc]
+    rw [v.indep_iff, restrict_eq, comp_assoc]
     refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · apply h.map (h_inj.mono_left (span_mono _))
       rw [Set.range_comp]
@@ -86,6 +49,9 @@ def Rep.map' (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ
 /-- Compose a representation with a linear equivalence. -/
 def Rep.mapEquiv (v : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') : M.Rep 𝔽 W' := v.map' ψ ψ.ker
 
+@[simp] lemma Rep.map_apply (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (h_inj) (e : α) :
+    (v.map ψ h_inj) e = ψ (v e) := rfl
+
 @[simp] lemma Rep.map'_apply (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) (e : α) :
     (v.map' ψ hψ) e = ψ (v e) := rfl
 
@@ -99,20 +65,6 @@ def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W
 @[simp] lemma Rep.subtype_ofEq_apply {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W₁ = W₂)
     (e : α) : v.subtype_ofEq h e = LinearEquiv.ofEq _ _ h (v e) := rfl
 
-/-- A representation gives a representation of any restriction -/
-noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep 𝔽 W :=
-  Rep.ofGround (indicator X v) ( by simp )
-  ( by
-    simp only [restrict_ground_eq, restrict_indep_iff]
-    intro I hIX
-    rw [v.indep_iff, and_iff_left hIX]
-    convert Iff.rfl using 2
-    ext ⟨e, he⟩
-    simp [hIX he] )
-
-@[simp] lemma Rep.restrict_apply (v : M.Rep 𝔽 W) (X : Set α) :
-    (v.restrict X : α → W) = indicator X v := rfl
-
 /-- A representation gives a representation of a comap -/
 def Rep.comap {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.comap f).Rep 𝔽 W :=
   Rep.ofGround (v ∘ f)
@@ -121,7 +73,7 @@ def Rep.comap {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.comap f).
     exact fun x ↦ Not.imp_symm <| Rep.eq_zero_of_not_mem_ground _ )
   ( by
     intro I _
-    rw [comap_indep_iff, v.indep_iff, restrict_eq, restrict_eq, comp_assoc]
+    rw [comap_indep_iff, v.indep_iff, restrict_eq, comp_assoc]
     refine' ⟨fun ⟨h,hInj⟩ ↦ _, fun h ↦ ⟨LinearIndependent.image_of_comp _ _ _ h, ?_⟩⟩
     · exact h.comp (imageFactorization f I) (hInj.imageFactorization_injective)
     rintro x hx y hy hxy
@@ -137,7 +89,7 @@ lemma Rep.comap_coeFun_eq {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) :
 def Rep.ofEq {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) : N.Rep 𝔽 W :=
   Rep.ofGround v
   ( v.support_subset_ground.trans_eq (congr_arg _ h) )
-  ( by intro I _; rw [← h, v.indep_iff] )
+  ( by intro I _; rw [← h, v.indep_iff_restrict] )
 
 @[simp] lemma Rep.ofEq_apply {M N : Matroid α} (v : M.Rep 𝔽 W) (h : M = N) :
   (v.ofEq h : α → W) = v := rfl
@@ -252,7 +204,8 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
 @[simp] lemma Rep.ofFun_self (v : M.Rep 𝔽 W) : Matroid.ofFun 𝔽 M.E v = M :=
-  ext_indep rfl fun I (hIE : I ⊆ M.E) ↦ by rw [ofFun_indep_iff, ← v.indep_iff, and_iff_left hIE]
+  ext_indep rfl fun I (hIE : I ⊆ M.E) ↦ by rw [ofFun_indep_iff, ← v.indep_iff_restrict,
+    and_iff_left hIE]
 
 lemma ofFun_congr {v v' : α → W} (hvv' : EqOn v v' E) :
     Matroid.ofFun 𝔽 E v = Matroid.ofFun 𝔽 E v' := by

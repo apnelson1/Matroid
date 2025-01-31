@@ -6,6 +6,15 @@ variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matr
 
 open Set Function Submodule Finsupp Set.Notation
 
+theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
+  {s : ι → η} (hs : Function.Injective s) :
+    Injective <| Function.ExtendByZero.linearMap R s := by
+  intro x x' h
+  ext i
+  replace h := _root_.congr_fun h (s i)
+  simp only [ExtendByZero.linearMap_apply, exists_apply_eq_apply, not_true] at h
+  rwa [hs.extend_apply, hs.extend_apply] at h
+
 namespace Matroid
 
 lemma Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
@@ -79,7 +88,7 @@ noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.Base B) :
     M.Rep 𝔽 (B →₀ 𝔽) :=
   v.restrict_span.mapEquiv (v.restrict_span_fullRank.basis_of_base hB).repr
 
-lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+@[simp] lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
     (v.standardRep' hB) e e = 1 := by
   simp only [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
     Rep.restrict_span_apply, Basis.mk_repr]
@@ -96,30 +105,33 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
   v.restrict_span_fullRank.mapEquiv _
 
+/-- The natural representation of a matroid with rows indexed by a base -/
+noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.Base B) : M.Rep 𝔽 (B → 𝔽) :=
+  (v.standardRep' hB).map Finsupp.lcoeFun (by simp [Submodule.disjoint_def, Finsupp.lcoeFun])
+
 lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
-  ⟨_, ⟨v.standardRep' M.exists_base.choose_spec⟩⟩
+  let ⟨B, hB⟩ := M.exists_base
+  ⟨(v.standardRep hB).map' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
+    (LinearMap.ker_eq_bot.2 (ExtendByZero.linearMap_injective _ Subtype.val_injective))⟩
 
-/-- The natural representation of a `FiniteRk` matroid with rows indexed by a base -/
-noncomputable def Rep.standardRep [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    M.Rep 𝔽 (B → 𝔽) :=
-  have := hB.finite.to_subtype
-  (v.standardRep' hB).mapEquiv (Finsupp.linearEquivFunOnFinite 𝔽 𝔽 B)
-
-lemma Rep.standardRep_eq_one [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
     (v.standardRep hB) e e = 1 := by
-  classical
-  have := hB.finite.to_subtype
-  simp [standardRep, v.standardRep_eq_one' hB]
+  simp [standardRep]
 
-lemma Rep.standardRep_eq_zero [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B)
-  (hef : e ≠ f) : (v.standardRep hB) e f = 0 := by
-  classical
-  have := hB.finite.to_subtype
+lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) :
+  (v.standardRep hB) e f = 0 := by
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
+lemma Rep.standardRep_eq_mapEquiv [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+    v.standardRep hB = (v.standardRep' hB).mapEquiv
+      (@Finsupp.linearEquivFunOnFinite _ _ _ hB.finite.to_subtype ..) := by
+  ext e f
+  simp [standardRep]
+
 lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    (v.standardRep hB).FullRank :=
-  (v.standardRep_fullRank' hB).mapEquiv _
+    (v.standardRep hB).FullRank := by
+  rw [v.standardRep_eq_mapEquiv]
+  exact (v.standardRep_fullRank' hB).mapEquiv _
 
 -- Loopy matroids are trivially representable over every field.
 def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
@@ -141,6 +153,19 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
     if heB : e ∈ B then Finsupp.single ⟨e,heB⟩ 1
     else if heE : e ∈ E then v ⟨e, ⟨heE, heB⟩⟩
     else 0
+
+lemma Representable.exists_fin_rep [FiniteRk M] (hM : M.Representable 𝔽) :
+    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
+  let e : ↥B ≃ Fin M.rank := B.equivFinOfCardEq hB.finset_card
+  exact ⟨(hM.some.standardRep hB).mapEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
+    (Rep.standardRep_fullRank _ hB).mapEquiv _⟩
+
+lemma Representable.exists_fin_rep_of_eq {n : ℕ} [FiniteRk M] (hM : M.Representable 𝔽)
+    (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
+  subst hr
+  exact exists_fin_rep hM
 
 section FinitaryBase
 

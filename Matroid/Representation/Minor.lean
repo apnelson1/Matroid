@@ -1,4 +1,4 @@
-import Matroid.Representation.Basic
+import Matroid.Representation.StandardRep
 import Matroid.Uniform
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
@@ -15,32 +15,16 @@ section Minor
 @[simps!] def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) :
     (M ／ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
   to_fun := Submodule.mkQ _ ∘ v
-  valid' :=
-
-
-  --  where
-  --   to_fun := Submodule.Quotient.mk ∘ v
-  --   valid' :=
-  ( by
+  valid' := by
     intro J
     obtain ⟨I,hI⟩ := M.exists_basis' C
-    rw [hI.contract_eq_contract_delete, delete_indep_iff, hI.indep.contract_indep_iff,
-       union_comm, v.indep_iff,
-      and_right_comm, ← disjoint_union_right, union_diff_self,
-      union_eq_self_of_subset_left hI.subset]
-    refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, (v.indep_iff.1 hI.indep).union_index' ?_⟩⟩
-    · refine (h.2.mono_index _ subset_union_right).map ?_
-      simp only [range_restrict, ker_mkQ, ← v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure]
-      convert h.2.disjoint_span_image (s := (↑) ⁻¹' J) (t := (↑) ⁻¹' I) ?_
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ J = J by simp]
-      · rw [restrict_eq, image_comp, Subtype.image_preimage_coe, show (I ∪ J) ∩ I = I by simp]
-      exact (h.1.mono_right hI.subset).preimage _
-    · rw [disjoint_iff_forall_ne]
-      rintro i hiJ _ hiI rfl
-      apply h.ne_zero ⟨i, hiJ⟩
-      simp only [Set.restrict_apply, comp_apply, mkQ_apply, Quotient.mk_eq_zero]
-      exact subset_span (mem_image_of_mem _ hiI)
-    rwa [v.span_eq_span_of_closure_eq_closure hI.closure_eq_closure] )
+    by_cases hCJ : Disjoint C J
+    · rw [hI.contract_indep_iff, and_iff_left hCJ, ← v.span_closure_congr hI.closure_eq_closure,
+        (v.onIndep hI.indep).quotient_iff_union (hCJ.mono_left hI.subset), ← v.indep_iff_restrict,
+        union_comm]
+    refine iff_of_false (fun hi ↦ hCJ (subset_diff.1 hi.subset_ground).2.symm) fun hli ↦ ?_
+    obtain ⟨e, heC, heJ⟩ := not_disjoint_iff.1 hCJ
+    exact hli.ne_zero ⟨e, heJ⟩ <| by simpa using subset_span (mem_image_of_mem v heC)
 
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)
@@ -49,8 +33,7 @@ lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : 
     N.Representable 𝔽 := by
   rw [minor_iff_exists_contract_delete] at hNM
   obtain ⟨C, D, rfl⟩ := hNM
-  obtain ⟨v⟩ := hM
-  exact ((v.contract C).delete D).representable
+  exact ((hM.some.contract C).delete D).representable
 
 end Minor
 
@@ -59,7 +42,7 @@ section Simple
 lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
     v e = 0 ↔ M.Loop e := by
   rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
-  simp only [default_coe_singleton, Set.restrict_apply, ne_eq, not_not]
+  simp
 
 lemma Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
   (v.eq_zero_iff e).2 h
@@ -96,13 +79,13 @@ lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
   obtain (rfl | hef) := eq_or_ne e f
   · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, (one_smul _ _).symm⟩
 
-  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff, not_iff_comm,
+  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff_restrict, not_iff_comm,
     linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
   simp only [ne_eq, not_exists, not_and]
   refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
-    h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel hc, one_smul])⟩
+    h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel₀ hc, one_smul])⟩
   have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
-  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel hc, one_smul]
+  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
     M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), v e = c • (v f) → e = f := by
@@ -134,6 +117,25 @@ lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
 
 end Simple
 section Uniform
+
+lemma Representable.encard_le_of_line (h : (unifOn E 2).Representable 𝔽) :
+    E.encard ≤ ENat.card 𝔽 + 1 := by
+  obtain ⟨B, hB⟩ := (unifOn E 2).exists_base
+  obtain hlt | hle := lt_or_le E.encard 2
+  · rw [← ENat.add_one_le_iff (hlt.trans_le le_top).ne, ← one_add_one_eq_two,
+      WithTop.add_le_add_iff_right (by simp)] at hlt
+    exact hlt.trans (by simp)
+  have h_ex := h.exists_fin_rep_of_eq (n := 2)
+  rw [rank, unifOn_eRank_eq, min_eq_right (by simpa using hle), Nat.cast_ofNat, ENat.toNat_ofNat,
+    imp_iff_right rfl] at h_ex
+  obtain ⟨v, hb⟩ := h_ex
+  have hsimp := unifOn_simple E (k := 0)
+  have : (unifOn E 2).RkPos  := sorry
+  rw [zero_add, v.simple_iff] at hsimp
+  simp at hsimp
+
+
+
 
 /- A uniform matroid on at most `|𝔽|+1` elements is `𝔽`-representable -/
 -- lemma uniform_rep_of_le {a b : ℕ} {𝔽 : Type*} [Field 𝔽] (hb : b ≤ encard (univ : Set 𝔽) + 1) :

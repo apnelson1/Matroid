@@ -1,16 +1,17 @@
 import Mathlib.LinearAlgebra.LinearIndependent
-import Matroid.Simple
--- import Matroid.ForMathlib.Function
+import Matroid.Connectivity.Skew
+import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
+universe u v
 
 section ForMathlib
 
-@[simp] lemma linearIndependent_zero_iff : LinearIndependent 𝔽 (0 : α → W) ↔ IsEmpty α :=
-  ⟨fun h ↦ ⟨fun a ↦ h.ne_zero a rfl⟩, fun _ ↦ linearIndependent_empty_type⟩
+-- @[simp] lemma linearIndependent_zero_iff : LinearIndependent 𝔽 (0 : α → W) ↔ IsEmpty α :=
+--   ⟨fun h ↦ ⟨fun a ↦ h.ne_zero a rfl⟩, fun _ ↦ linearIndependent_empty_type⟩
 
 @[simp] lemma restrict_zero (X : Set α) : X.restrict (0 : α → W) = 0 := rfl
 
@@ -22,7 +23,7 @@ end ForMathlib
 namespace Matroid
 
 /-- `M.Rep 𝔽 W` is a function from `α` to a module `W` that represents `M`. -/
-structure Rep (M : Matroid α) (𝔽 W : Type*) [Semiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] where
+@[ext] structure Rep (M : Matroid α) (𝔽 W : Type*) [Semiring 𝔽] [AddCommMonoid W] [Module 𝔽 W] where
   -- A representation assigns a vector to each element of `α`
   (to_fun : α → W)
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
@@ -30,7 +31,7 @@ structure Rep (M : Matroid α) (𝔽 W : Type*) [Semiring 𝔽] [AddCommMonoid W
 
 /-- A `Representable` matroid is one that has a representation over `𝔽` -/
 def Representable (M : Matroid α) (𝔽 : Type*) [Semiring 𝔽] : Prop :=
-  ∃ (B : Set α), Nonempty (M.Rep 𝔽 (B →₀ 𝔽))
+  Nonempty (M.Rep 𝔽 (α → 𝔽))
 
 instance : FunLike (M.Rep 𝔽 W) α W where
   coe v := v.to_fun
@@ -172,3 +173,76 @@ lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W) (hXY : M.closure X ⊆ M.
 lemma Rep.span_closure_congr (v : M.Rep 𝔽 W) (hXY : M.closure X = M.closure Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) :=
   (v.span_le_of_closure_subset hXY.subset).antisymm (v.span_le_of_closure_subset hXY.symm.subset)
+
+@[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.closure ∅)) = ⊥ := by
+  simp [v.span_closure_congr (M.closure_closure ∅)]
+
+lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
+    M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  obtain ⟨J, hJ⟩ := M.exists_basis Y
+  rw [← skew_iff_bases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
+    ← v.span_closure_congr hI.closure_eq_closure, ← v.span_closure_congr hJ.closure_eq_closure,
+    v.indep_iff_restrict]
+  by_cases hdj : Disjoint I J
+  ·   rw [linearIndependent_restrict_union_iff hdj, ← v.indep_iff_restrict,
+      and_iff_right hdj, ← v.indep_iff_restrict, and_iff_right hI.indep, and_iff_right hJ.indep]
+  obtain ⟨x, hxI, hxJ⟩ := not_disjoint_iff.1 hdj
+  simp only [hdj, false_and, disjoint_def, false_iff, not_forall, Classical.not_imp, exists_prop,
+    exists_and_left]
+  refine ⟨v x, (subset_span (mem_image_of_mem v hxI)), (subset_span (mem_image_of_mem v hxJ)), ?_⟩
+  rw [v.eq_zero_iff_not_indep, not_not]
+  exact hI.indep.subset (by simpa)
+
+/-! ### Constructors -/
+
+/-- A function with support contained in `M.E` that gives the correct independent sets
+  within the ground set gives a representation -/
+@[simps] def Rep.ofGround (f : α → W) (h_support : support f ⊆ M.E)
+    (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.restrict f))) : M.Rep 𝔽 W where
+  to_fun := f
+  valid' := ( by
+    intro I
+    by_cases hI : I ⊆ M.E
+    · rw [hf _ hI]
+    rw [← not_iff_not, iff_true_left (fun hi ↦ hI hi.subset_ground)]
+    intro h_ind
+    obtain ⟨e, heI, heE⟩ := not_subset.1 hI
+    have h0 := h_ind.ne_zero ⟨e, heI⟩
+    simp only [Function.comp_apply, ne_eq] at h0
+    apply not_mem_subset h_support heE
+    exact h0 )
+
+@[simp] lemma Rep.ofGround_apply (f : α → W) (hs : support f ⊆ M.E)
+  (hf : ∀ I ⊆ M.E, (M.Indep I ↔ LinearIndependent 𝔽 (I.restrict f))) (a : α) :
+    Rep.ofGround f hs hf a = f a := rfl
+
+/-- A function from `M.E` to a module determines a representation -/
+@[simps!] noncomputable def Rep.ofSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
+    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
+    M.Rep 𝔽 W :=
+  Rep.ofGround
+  ( fun a ↦ if ha : a ∈ M.E then f ⟨a,ha⟩ else 0 )
+  ( by aesop )
+  ( by
+    intro I hI
+    rw [← Subtype.range_val (s := M.E), subset_range_iff_exists_image_eq] at hI
+    obtain ⟨I, rfl⟩ := hI
+    rw [hf]
+    apply linearIndependent_equiv' <| Equiv.Set.image _ _ Subtype.val_injective
+    ext ⟨⟨x,hx⟩, hx'⟩
+    simp [dif_pos hx] )
+
+/-- A representation gives a representation of any restriction -/
+noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep 𝔽 W :=
+  Rep.ofGround (indicator X v) ( by simp )
+  ( by
+    simp only [restrict_ground_eq, restrict_indep_iff]
+    intro I hIX
+    rw [v.indep_iff, and_iff_left hIX]
+    convert Iff.rfl using 2
+    ext ⟨e, he⟩
+    simp [hIX he] )
+
+@[simp] lemma Rep.restrict_apply (v : M.Rep 𝔽 W) (X : Set α) :
+    (v.restrict X : α → W) = indicator X v := rfl
