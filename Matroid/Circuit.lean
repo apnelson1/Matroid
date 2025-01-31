@@ -365,7 +365,7 @@ lemma rk_Pos_iff_exists_cocircuit : M.RkPos ↔ ∃ K, M.Cocircuit K := by
   rw [← dual_dual M, dual_rkPos_iff_exists_circuit, dual_dual M]
 
 /-- The fundamental cocircuit for `B`. Should be used when `B` is a base and `e ∈ B`. -/
-def fundCocircuit (e : α) (B : Set α) := M✶.fundCircuit e (M✶.E \ B)
+def fundCocircuit (M : Matroid α) (e : α) (B : Set α) := M✶.fundCircuit e (M✶.E \ B)
 
 lemma fundCocircuit_cocircuit (he : e ∈ B) (hB : M.Base B) :
     M.Cocircuit <| M.fundCocircuit e B := by
@@ -393,6 +393,52 @@ lemma Indep.exists_cocircuit_inter_eq_mem (hI : M.Indep I) (heI : e ∈ I) :
   rw [subset_antisymm_iff, subset_inter_iff, singleton_subset_iff, and_iff_right
     (mem_fundCocircuit _ _ _), singleton_subset_iff, and_iff_left heI, ← M.fundCocircuit_inter_eq (hIB heI)]
   exact inter_subset_inter_right _ hIB
+
+lemma Base.mem_fundCocircuit_iff_mem_fundCircuit {e f : α} (hB : M.Base B) :
+    e ∈ M.fundCocircuit f B ↔ f ∈ M.fundCircuit e B := by
+  suffices aux : ∀ {N : Matroid α} {B' : Set α} (hB' : N.Base B') {e f},
+      e ∈ N.fundCocircuit f B' → f ∈ N.fundCircuit e B' from
+    ⟨fun h ↦ aux hB h , fun h ↦ aux hB.compl_base_dual <| by
+      simpa [fundCocircuit, inter_eq_self_of_subset_right hB.subset_ground]⟩
+  clear! B M e f
+  intro M B hB e f he
+  obtain rfl | hne := eq_or_ne e f
+  · simp [mem_fundCircuit]
+  have hB' : M✶.Base (M✶.E \ B) := hB.compl_base_dual
+  obtain hfE | hfE := em' <| f ∈ M.E
+  · rw [fundCocircuit, fundCircuit_eq_of_not_mem_ground (by simpa)] at he
+    contradiction
+  obtain hfB | hfB := em' <| f ∈ B
+  · rw [fundCocircuit, fundCircuit_eq_of_mem (by simp [hfE, hfB])] at he
+    contradiction
+  obtain ⟨heE, heB⟩ : e ∈ M.E \ B :=
+    by simpa [hne] using (M.fundCocircuit_subset_insert_compl f B) he
+  rw [fundCocircuit, hB'.indep.mem_fundCircuit_iff (by rwa [hB'.closure_eq]) (by simp [hfB])] at he
+  rw [hB.indep.mem_fundCircuit_iff (by rwa [hB.closure_eq]) heB]
+  have hB' := (hB'.exchange_base_of_indep' ⟨heE, heB⟩ (by simp [hfE, hfB]) he).compl_base_of_dual
+  refine hB'.indep.subset ?_
+  simp only [dual_ground, diff_singleton_subset_iff]
+  rw [diff_diff_right, inter_eq_self_of_subset_right (by simpa), union_singleton, insert_comm,
+    ← union_singleton (s := M.E \ B), ← diff_diff, diff_diff_cancel_left hB.subset_ground]
+  simp [hfB]
+
+  -- · simp [mem_fundCircuit, mem_fundCocircuit]
+  -- obtain heE | heE := em' <| e ∈ M.E
+  -- · rw [fundCircuit_eq_of_not_mem_ground heE, mem_singleton_iff, iff_false_intro hne.symm,
+  --     iff_false]
+  --   exact fun hmem ↦ by simpa [hne, heE] using fundCocircuit_subset_insert_compl _ _ _ hmem
+  --   -- refine ⟨fun h ↦ ?_, fun h ↦ by simp [h, mem_fundCocircuit]⟩
+  -- by_cases heB : e ∈ B
+  -- · rw [fundCircuit_eq_of_mem heB, mem_singleton_iff]
+  --   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h, mem_fundCocircuit]⟩
+  --   obtain rfl | ⟨-, heB⟩ := M.fundCocircuit_subset_insert_compl f B h
+  --   · rfl
+  --   contradiction
+
+
+
+  -- rw [hB.indep.mem_fundCircuit_iff (by rwa [hB.closure_eq]) heB, fundCocircuit,
+  --   Indep.mem_fundCircuit_iff]
 
 lemma Basis.switch_subset_of_basis_closure {I₀ J₀ : Set α} (hIX : M.Basis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.Basis J₀ (M.closure I₀)) : M.Basis ((I \ I₀) ∪ J₀) X := by

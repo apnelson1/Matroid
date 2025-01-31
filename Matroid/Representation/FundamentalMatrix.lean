@@ -8,7 +8,6 @@ import Mathlib.Data.Finsupp.Indicator
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
 [DivisionRing R]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W'] [M.Finitary]
-
 -- theorem Finsupp.support_indicator_eq {ι α : Type*} [Zero α] (s : Finset ι)
 --   (f : (i : ι) → i ∈ s → α) :
 --     ((Finsupp.indicator s f).support : Set ι) = {i ∈ s | f i }
@@ -77,6 +76,12 @@ lemma Base.fundCoord_support (hB : M.Base B) :
     (↑) '' ((hB.fundCoord R e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   simp [Set.ext_iff, fundCoord, Base.coords, Finsupp.indicator]
 
+lemma Base.mem_fundCoord_support (hB : M.Base B) (e : B) {f : α} :
+    e ∈ (hB.fundCoord R f).support ↔ e.1 ∈ M.fundCircuit f B := by
+  rw [show e.1 ∈ M.fundCircuit f B ↔ e.1 ∈ (M.fundCircuit f B) ∩ B by simp [e.2],
+    ← hB.fundCoord_support (R := R)]
+  simp
+
 lemma Base.fundCoord_base (hB : M.Base B) : (Matroid.ofFun R M.E (hB.fundCoord R)).Base B :=
   Finsupp.basisSingleOne.ofFun_base (by simp) hB.subset_ground
 
@@ -91,7 +96,7 @@ lemma Base.fundCoord_finitaryBase (hB : M.Base B) (R : Type*) [DivisionRing R] :
   simp only [repOfFun_coeFun_eq]
   rw [indicator_of_mem (hB.subset_ground e.2), fundCoord_of_mem]
 
-lemma funCoord_fundCircuit (hB : M.Base B) (heB : e ∉ B) (heE : e ∈ M.E) :
+lemma fundCoord_fundCircuit (hB : M.Base B) (heB : e ∉ B) (heE : e ∈ M.E) :
     (Matroid.ofFun R M.E (hB.fundCoord R)).Circuit (M.fundCircuit e B) := by
   classical
   convert (hB.fundCoord_finitaryBase R).circuit_insert_support heB heE using 1
@@ -104,52 +109,9 @@ lemma funCoord_fundCircuit (hB : M.Base B) (heB : e ∉ B) (heE : e ∈ M.E) :
   rw [Base.fundCoord]
   simp
 
-
-  -- simp [hB.coords_toSet, hB.fundCoord_support]
-
-
-
-
-  -- classical
-  -- simp_rw [hB.fundCircuit_eq_insert_map heE, Finset.coe_insert, Finset.coe_map,
-  --   Embedding.setSubtype_apply]
-  -- refine Indep.insert_circuit_of_forall ?_ ?_ ?_ ?_
-  -- · exact hB.fundCoord_base.indep.subset (by simp)
-  -- · simp [heB]
-  -- · rw [hB.coords_toSet heE, Matroid.ofFun_closure_eq hB.support_fundCoord_subset,
-  --     mem_inter_iff, and_iff_left heE, Subtype.image_preimage_coe, mem_preimage, SetLike.mem_coe,
-  --     Finsupp.mem_span_image_iff_linearCombination, hB.fundCoord_eq_linearCombination]
-  --   refine ⟨(hB.fundCoord R e).embDomain (Embedding.setSubtype B), ?_, ?_⟩
-  --   · simp only [Base.fundCoord, Finsupp.mem_supported, Finsupp.support_embDomain, Finset.coe_map,
-  --       Embedding.setSubtype_apply, subset_inter_iff, image_subset_iff, Subtype.coe_preimage_self,
-  --       subset_univ, true_and]
-  --     refine (Finsupp.support_indicator_subset ..).trans ?_
-  --     rw [hB.coords_toSet heE]
-  --   simp only [Finsupp.linearCombination_embDomain]
-  --   convert rfl with _ x
-  --   simp
-  -- simp
-  -- rw [fundCircuit_eq_sInter (by rwa [hB.closure_eq])]
-  -- refine Indep.insert_circuit_of_forall ?_ ?_ ?_ ?_
-  -- · exact hB.fundCoord_base.indep.subset inter_subset_left
-  -- · simp [heB]
-  -- · rw [ofFun_closure_eq_of_subset_ground (inter_subset_left.trans hB.subset_ground),
-  --     mem_inter_iff, and_iff_left heE]
-  --   simp
-  --   rw [hB.fundCoord_eq_linearCombination, Finsupp.mem_span_image_iff_linearCombination]
-  --   use (hB.fundCoord R e).embDomain (Embedding.setSubtype B)
-  --   rw [Base.fundCoord]
-  --   simp
-
-
-
-
-
-
-  -- have := (Finsupp.basisSingleOne (ι := B) (R := R)).ofFun_base (E := M.E) (v := hB.fundCoord R)
-  -- refine Indep.base_of_ground_subset_closure ?_ ?_
-  -- · rw [ofFun_indep_iff, and_iff_left hB.subset_ground]
-  --   convert (Finsupp.basisSingleOne (ι := B) (R := R)).linearIndependent
-  --   ext ⟨i, hi⟩ ⟨j, hj⟩
-  --   simp [hB.fundCoord_of_mem hi]
-  -- rw [ofFun_ground_eq, ofFun_closure_eq (hB.support_fundCoord_subset)]
+lemma Base.fundCoord_row_support (hB : M.Base B) (R : Type*) [DivisionRing R] (e : B) :
+    (hB.fundCoord R · e).support = M.fundCocircuit e B := by
+  ext f
+  simp only [mem_support]
+  rw [← Finsupp.mem_support_iff, Base.mem_fundCoord_support,
+    hB.mem_fundCocircuit_iff_mem_fundCircuit]

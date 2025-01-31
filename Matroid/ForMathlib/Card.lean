@@ -92,7 +92,7 @@ theorem encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : univ.P
   exact fun i j hij ↦ hs (mem_univ i) (mem_univ j) hij
 
 theorem encard_biUnion {ι : Type*} {s : ι → Set α} (t : Finset ι)
-    (ht : (t : Set ι).PairwiseDisjoint s) : encard (⋃ i ∈ t, s i) = ∑ i in t, encard (s i) := by
+    (ht : (t : Set ι).PairwiseDisjoint s) : encard (⋃ i ∈ t, s i) = ∑ i ∈ t, encard (s i) := by
   convert encard_iUnion (fun i : t ↦ s i) ?_
   · ext x; simp
   · rw [Finset.univ_eq_attach, Finset.sum_attach _ (f := fun i ↦ (s i).encard)]
@@ -147,7 +147,7 @@ theorem encard_iUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} [Fintype ι] {s :
 
 theorem encard_biUnion_eq_sum_iff_pairwiseDisjoint {ι : Type*} {u : Finset ι}
     {s : ι → Set α} (hs : ∀ i ∈ u, (s i).Finite) :
-    encard (⋃ i ∈ u, s i) = ∑ i in u, encard (s i) ↔ (u : Set ι).PairwiseDisjoint s := by
+    encard (⋃ i ∈ u, s i) = ∑ i ∈ u, encard (s i) ↔ (u : Set ι).PairwiseDisjoint s := by
   change encard (⋃ i ∈ (u : Set ι), _) = _ ↔ _
   rw [biUnion_eq_iUnion]
   convert encard_iUnion_eq_sum_iff_pairwiseDisjoint (ι := u) (s := fun i ↦ s i) (by simpa)

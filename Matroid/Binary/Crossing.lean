@@ -67,6 +67,12 @@ lemma Iso.crossing_image {α β : Type*} {M : Matroid α} {N : Matroid β} {X : 
   rw [← image_inter_on (by simp), ← image_inter_on (by simp), image_val_inj, ← preimage_inter, ← hX]
   simp
 
+lemma Circuit.crossing_inter (hC : M.Circuit C) (hK : M.Cocircuit K) : M.Crossing (C ∩ K) :=
+  ⟨C, K, hC, hK, rfl⟩
+
+lemma Cocircuit.crossing_inter (hK : M.Cocircuit K) (hC : M.Circuit C) : M.Crossing (K ∩ C) :=
+  ⟨C, K, hC, hK, by rw [inter_comm]⟩
+
 end Crossing
 
 section CrossingBinary
