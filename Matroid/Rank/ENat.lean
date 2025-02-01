@@ -486,6 +486,9 @@ variable {E : Set α}
   rw [← hB.encard_eq_eRank, encard_eq_zero] at h
   rw [← h, hB.closure_eq]
 
+lemma exists_of_eRank_eq_zero (h : M.eRank = 0) : ∃ E, M = loopyOn E :=
+  ⟨M.E, by simpa using h⟩
+
 @[simp] lemma eRank_loopyOn_eq_zero (α : Type*) : (emptyOn α).eRank = 0 := by
   rw [eRank_eq_zero_iff, emptyOn_ground, loopyOn_empty]
 

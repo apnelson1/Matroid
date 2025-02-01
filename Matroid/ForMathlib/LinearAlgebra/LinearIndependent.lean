@@ -178,8 +178,9 @@ theorem linearIndependent_restrict_union_iff {R M ι : Type*} [DivisionRing R] [
   · exact LinearIndependent.mono_restrict (f := f) h subset_union_right
   convert h.disjoint_span_image (s := (↑) ⁻¹' s) (t := (↑) ⁻¹' t) (hdj.preimage _) <;> aesop
 
-theorem LinearIndependent.restrict_union_of_quotient {R M ι : Type*} [Field R] [AddCommGroup M]
-    [Module R M] {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+theorem LinearIndependent.restrict_union_of_quotient {R M ι : Type*} [DivisionRing R]
+    [AddCommGroup M] [Module R M] {s t : Set ι} {f : ι → M}
+    (hs : LinearIndependent R (s.restrict f))
     (ht : LinearIndependent R (t.restrict ( (mkQ (span R (f '' s)) ∘ f)))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
   apply hs.restrict_union ht.of_comp
@@ -187,8 +188,8 @@ theorem LinearIndependent.restrict_union_of_quotient {R M ι : Type*} [Field R] 
   · simp
   aesop
 
-theorem linearIndependent_restrict_union_iff_quotient {R M ι : Type*} [Field R] [AddCommGroup M]
-    [Module R M] {s t : Set ι} {f : ι → M} (hst : Disjoint s t) :
+theorem linearIndependent_restrict_union_iff_quotient {R M ι : Type*} [DivisionRing R]
+    [AddCommGroup M] [Module R M] {s t : Set ι} {f : ι → M} (hst : Disjoint s t) :
     LinearIndependent R ((s ∪ t).restrict f) ↔ LinearIndependent R (s.restrict f)
       ∧ LinearIndependent R (t.restrict ((mkQ (span R (f '' s)) ∘ f))) := by
   refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.restrict_union_of_quotient h.2⟩
@@ -197,7 +198,7 @@ theorem linearIndependent_restrict_union_iff_quotient {R M ι : Type*} [Field R]
   simp only [range_restrict, ker_mkQ]
   exact ((linearIndependent_restrict_union_iff hst).1 h).2.2.symm
 
-theorem LinearIndependent.quotient_iff_union {R M ι : Type*} [Field R] [AddCommGroup M]
+theorem LinearIndependent.quotient_iff_union {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
     (hst : Disjoint s t) : LinearIndependent R (t.restrict ((mkQ (span R (f '' s)) ∘ f))) ↔
     LinearIndependent R ((s ∪ t).restrict f) := by

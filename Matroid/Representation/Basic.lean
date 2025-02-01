@@ -1,4 +1,5 @@
 import Mathlib.LinearAlgebra.LinearIndependent
+import Mathlib.LinearAlgebra.Projectivization.Basic
 import Matroid.Connectivity.Skew
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 
@@ -246,3 +247,109 @@ noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep �
 
 @[simp] lemma Rep.restrict_apply (v : M.Rep 𝔽 W) (X : Set α) :
     (v.restrict X : α → W) = indicator X v := rfl
+
+section Simple
+
+lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
+    v e = 0 ↔ M.Loop e := by
+  rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
+  simp
+
+lemma Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
+  (v.eq_zero_iff e).2 h
+
+lemma Rep.ne_zero_of_nonloop (v : M.Rep 𝔽 W) (h : M.Nonloop e) : v e ≠ 0 := by
+  rw [Ne, v.eq_zero_iff e]; exact h.not_loop
+
+lemma Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) :
+    v e ≠ 0 ↔ M.Nonloop e := by
+  refine ⟨fun hne ↦ ?_, v.ne_zero_of_nonloop⟩
+  by_cases he : e ∈ M.E
+  · rwa [← not_loop_iff, ← v.eq_zero_iff e]
+  simp [v.eq_zero_of_not_mem_ground he] at hne
+
+lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
+  rw [loopless_iff_forall_nonloop]
+  exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e).2 (h e he),
+    fun h e he ↦ (v.ne_zero_iff_nonloop e).1 (h e he)⟩
+
+lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+    M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ c • v f = v e := by
+  obtain (hfE | hfE) := em' (f ∈ M.E)
+  · refine iff_of_false (fun h ↦ hfE h.mem_ground_right) ?_
+    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_nonloop he).symm]
+  obtain (hf | hf) := M.loop_or_nonloop f
+  · refine iff_of_false (fun h ↦ h.nonloop_right.not_loop hf) ?_
+    simp [v.eq_zero_of_loop hf, iff_true_intro (v.ne_zero_of_nonloop he).symm]
+
+  obtain (rfl | hef) := eq_or_ne e f
+  · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, one_smul ..⟩
+
+  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff_restrict, not_iff_comm,
+    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
+  simp only [ne_eq, not_exists, not_and]
+  refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
+    h c⁻¹ (by rw [← h_eq, smul_smul, inv_mul_cancel₀ hc, one_smul])⟩
+  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
+  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel₀ hc, one_smul]
+
+
+lemma Rep.parallel_iff' (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+    M.Parallel e f ↔ ∃ (c : 𝔽ˣ), c • v f = v e := by
+  rw [v.parallel_iff he]
+  exact ⟨fun ⟨c, hne, heq⟩ ↦ ⟨Units.mk0 c hne, by simpa⟩, fun ⟨c, heq⟩ ↦ ⟨c, by simp, heq⟩⟩
+
+lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
+    M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), c • (v f) = v e → e = f := by
+  simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
+  refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
+  · refine (v.parallel_iff ?_).2 ⟨c, ?_, h_eq⟩
+    · rw [← v.ne_zero_iff_nonloop e]; exact h0 _ he
+    rintro rfl
+    exact h0 e he <| by simp [← h_eq]
+  · obtain ⟨f, hf⟩ := M.exists_nonloop
+    obtain rfl := h he hf.mem_ground 0 (by simp [h0])
+    exact v.ne_zero_of_nonloop hf h0
+  obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.nonloop_right).1 hef
+  exact h (by aesop_mat) (by aesop_mat) c h_eq
+
+lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
+  obtain (hl | hpos) := M.eq_loopyOn_or_rkPos
+  · rw [simple_iff_loopless_eq_of_parallel_forall, hl, loopyOn_loopless_iff] at h
+    simp [h.1]
+  exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul, eq_comm]
+
+@[simp] noncomputable def Rep.projectivization [Nontrivial W] [DecidableEq W] (v : M.Rep 𝔽 W)
+    (e : α) : Projectivization 𝔽 W :=
+  if he : v e ≠ 0 then Projectivization.mk 𝔽 (v e) he else Classical.arbitrary _
+
+lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
+  exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
+
+variable [Nontrivial W] [DecidableEq W]
+
+lemma Rep.projectivization_nonloop_eq (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+    v.projectivization e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop he) := by
+  rw [Rep.projectivization, dif_pos]
+
+lemma Rep.projectivization_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
+    v.projectivization e = Classical.arbitrary _ := by
+  rw [Rep.projectivization, dif_neg]
+  rwa [v.ne_zero_iff_nonloop]
+
+lemma Rep.projectivization_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.projectivization M.E := by
+  intro x hx y hy hxy
+  rwa [v.projectivization_nonloop_eq (toNonloop hx), v.projectivization_nonloop_eq (toNonloop hy),
+    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toNonloop hx), parallel_iff_eq] at hxy
+
+
+
+-- @[simp] lemma simplification_representable_iff :
+--     M.simplification.Representable 𝔽 ↔ M.Representable 𝔽 := by
+--   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
+--   rw [hM]
+--   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
+--   rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
+--   exact (v.preimage _).representable
+
+end Simple

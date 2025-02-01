@@ -14,6 +14,8 @@ universe u
 
 open Set Set.Notation
 
+@[simp] lemma pair_subsingleton_iff {x y : α} : ({x, y} : Set α).Subsingleton ↔ x = y := by
+  aesop
 
 namespace Matroid
 
@@ -50,6 +52,9 @@ theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ 
 
 @[simp] theorem unifOn_eRank_eq (E : Set α) (k : ℕ) : (unifOn E k).eRank = min E.encard k := by
   rw [eRank_def, unifOn_ground_eq, unifOn_eRk_eq _ _ Subset.rfl]
+
+theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k := by
+  rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
 
 instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
   rw [← finRk_ground_iff_finiteRk, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
@@ -562,6 +567,31 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     rwa [indep_singleton, nonloop_iff_not_mem_closure_empty, ← disjoint_singleton_left]
   rintro ⟨E₀, E₁, hdj, rfl⟩
   simp [unifOn_eRank_eq]
+
+lemma unifOn_loopless_iff {n : ℕ} :
+    (unifOn E n).Loopless ↔ (n = 0 → E = ∅) := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro h rfl
+    simpa using h
+  obtain rfl | n := n
+  · simpa using h rfl
+  simp [loopless_iff_forall_nonloop, ← indep_singleton]
+
+lemma unifOn_simple_iff {n : ℕ} :
+    (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain rfl | rfl | n := n
+    · simp [unifOn_loopless_iff.1 h.loopless]
+    · have h : ∀ ⦃e f : α⦄, e ∈ E → f ∈ E → e = f := by
+        simpa +contextual [simple_iff_forall_pair_indep, pair_subset_iff] using h
+      exact .inr (.inl ⟨rfl, fun x hxE y hyE ↦ h hxE hyE ⟩)
+    exact .inr <| .inr <| by simp
+  simp +contextual only [simple_iff_forall_pair_indep, unifOn_ground_eq, unifOn_indep_iff,
+    pair_subset_iff, and_self, and_true]
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, h⟩ | h := h
+  · simp
+  · exact fun e f he hf ↦ by simpa using h he hf
+  exact fun e f he hf ↦ (encard_pair_le e f).trans (by simpa)
 
 end LowRank
 

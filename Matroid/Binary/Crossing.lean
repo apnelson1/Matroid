@@ -75,32 +75,32 @@ lemma Cocircuit.crossing_inter (hK : M.Cocircuit K) (hC : M.Circuit C) : M.Cross
 
 end Crossing
 
-section CrossingBinary
+section Binary
 
 /-- A matroid is Crossing-Binary if all its finite crossings are even.
-This is the same as having no U₂,₄-minor; see `crossingBinary_iff_no_U24_minor`.
+This is the same as having no U₂,₄-minor; see `binary_iff_no_U24_minor`.
 Relating this to binary representations is still TODO.  -/
-def CrossingBinary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.Crossing X → Even X.card
+def Binary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.Crossing X → Even X.card
 
-lemma CrossingBinary.even_of_finite (h : M.CrossingBinary) (hX : M.Crossing X) (hfin : X.Finite) :
+lemma Binary.even_of_finite (h : M.Binary) (hX : M.Crossing X) (hfin : X.Finite) :
     Even hfin.toFinset.card :=
   h (X := hfin.toFinset) (by simpa)
 
-lemma CrossingBinary.dual (hM : M.CrossingBinary) : M✶.CrossingBinary :=
+lemma Binary.dual (hM : M.Binary) : M✶.Binary :=
   fun _ hX ↦ hM hX.of_dual
 
-lemma CrossingBinary.of_dual (hM : M✶.CrossingBinary) : M.CrossingBinary :=
+lemma Binary.of_dual (hM : M✶.Binary) : M.Binary :=
   fun _ hX ↦ hM hX.dual
 
-@[simp] lemma CrossingBinary_dual_iff : M✶.CrossingBinary ↔ M.CrossingBinary :=
-  ⟨CrossingBinary.of_dual, CrossingBinary.dual⟩
+@[simp] lemma Binary_dual_iff : M✶.Binary ↔ M.Binary :=
+  ⟨Binary.of_dual, Binary.dual⟩
 
-lemma CrossingBinary.minor {N M : Matroid α} (hM : M.CrossingBinary) (hNM : N ≤m M) :
-    N.CrossingBinary := by
+lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) :
+    N.Binary := by
   refine fun X hX ↦ hM <| hX.of_minor hNM
 
-lemma CrossingBinary.iso {N : Matroid β} (hM : M.CrossingBinary) (i : M ≂ N) :
-    N.CrossingBinary := by
+lemma Binary.iso {N : Matroid β} (hM : M.Binary) (i : M ≂ N) :
+    N.Binary := by
   intro X hX
   have hX' : N.Crossing (N.E ↓∩ X) := by
     simpa [inter_eq_self_of_subset_right hX.subset_ground]
@@ -118,12 +118,12 @@ lemma CrossingBinary.iso {N : Matroid β} (hM : M.CrossingBinary) (i : M ≂ N) 
     ← encard_coe_eq_coe_finsetCard]
   simp
 
-lemma CrossingBinary.isoMinor {N : Matroid β} (hM : M.CrossingBinary) (e : N ≤i M) :
-    N.CrossingBinary := by
+lemma Binary.isoMinor {N : Matroid β} (hM : M.Binary) (e : N ≤i M) :
+    N.Binary := by
   obtain ⟨M₀, hM₀M, i, -⟩ := e.exists_iso
   exact (hM.minor hM₀M).iso i.symm
 
-lemma crossingBinary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.CrossingBinary := by
+lemma binary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.Binary := by
   intro X hX
   obtain ⟨C, K, hC, hK, hX'⟩ := id hX
   have hC' : C.encard ≤ 2 :=
@@ -136,7 +136,7 @@ lemma crossingBinary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.CrossingBinary := 
   simp [h]
   simp [h]
 
-lemma crossingBinary_unif_iff {a b : ℕ} : (unif a b).CrossingBinary ↔ a ≤ 1 ∨ b ≤ a + 1 := by
+lemma binary_unif_iff {a b : ℕ} : (unif a b).Binary ↔ a ≤ 1 ∨ b ≤ a + 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [or_iff_not_imp_left, not_le, ← not_lt, Nat.lt_iff_add_one_le, one_add_one_eq_two]
     intro h2a hab
@@ -148,12 +148,12 @@ lemma crossingBinary_unif_iff {a b : ℕ} : (unif a b).CrossingBinary ↔ a ≤ 
     simp [unif_circuit_iff, cocircuit_def, unif_dual]
     rw [encard_insert_of_not_mem (by simp), encard_pair (by simp)]
   obtain h | h := h
-  · refine crossingBinary_of_eRank_le_one (by simp [h])
-  refine (crossingBinary_of_eRank_le_one ?_).of_dual
+  · refine binary_of_eRank_le_one (by simp [h])
+  refine (binary_of_eRank_le_one ?_).of_dual
   suffices (b : ℕ∞) ≤ a + 1 by simpa [unif_dual, add_comm]
   norm_cast
 
-end CrossingBinary
+end Binary
 
 lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.Point {e})
     (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧
@@ -347,13 +347,13 @@ lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX :
 
 termination_by X.card
 
-theorem crossingBinary_iff_no_U24_minor (M : Matroid α) :
-    M.CrossingBinary ↔ M.NoUniformMinor 2 4 := by
+theorem binary_iff_no_U24_minor (M : Matroid α) :
+    M.Binary ↔ M.NoUniformMinor 2 4 := by
   rw [← not_iff_not]
   refine ⟨fun h ↦ ?_, fun h hbin ↦ ?_⟩
-  · simp only [CrossingBinary, not_forall, Classical.not_imp, Nat.not_even_iff_odd, exists_and_left] at h
+  · simp only [Binary, not_forall, Classical.not_imp, Nat.not_even_iff_odd, exists_and_left] at h
     obtain ⟨X, hX, hodd⟩ := h
     exact exists_uniformMinor_of_odd_crossing hX hodd
 
   simp only [not_noUniformMinor_iff] at h
-  simpa [crossingBinary_unif_iff] using hbin.isoMinor h.some
+  simpa [binary_unif_iff] using hbin.isoMinor h.some

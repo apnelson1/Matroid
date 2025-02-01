@@ -248,8 +248,8 @@ lemma Indep.simple_of_contract_simple (hI : M.Indep I) (h : (M ／ I).Simple) : 
 -- instance simple_freeOn {E : Set α} : (freeOn E).Simple := by
 --   rw [← uniqueBaseOn_eq_freeOn, simple_uniqueBaseOn_iff]
 
--- @[simp] lemma simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
---   rw [← uniqueBaseOn_eq_loopyOn, simple_uniqueBaseOn_iff, subset_empty_iff]
+@[simp] lemma simple_loopyOn_iff {E : Set α} : (loopyOn E).Simple ↔ E = ∅ := by
+  simp [← uniqueBaseOn_empty]
 
 
 

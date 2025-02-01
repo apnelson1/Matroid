@@ -1,3 +1,4 @@
+import Matroid.Representation.Minor
 import Matroid.Representation.FundamentalMatrix
 import Matroid.Binary.Crossing
 import Matroid.Order.Quotient
@@ -34,8 +35,6 @@ lemma Rep.cyclic_of_forall_row_even {C : Finset α} (v : M.Rep (ZMod 2) (ι →�
   · simp [ZMod.eq_zero_iff_even.2 (h_even i)]
   simp
 
-
-
 /-- If `C` is a circuit, then every row of the corresponding submatrix has even support. -/
 lemma Rep.row_even_of_circuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α} (hC : M.Circuit C)
     (i : ι) : Even {x ∈ C | v x i = 1}.card := by
@@ -51,7 +50,6 @@ lemma Rep.row_even_of_circuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finse
 
 variable [Finitary M] {C : Set α}
 
-
 /-- The Binary matroid that should be `M`. -/
 def Base.BinaryProxy (hB : M.Base B) := (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
 
@@ -65,7 +63,7 @@ instance {hB : M.Base B} : hB.BinaryProxy.Finitary :=
 lemma Base.binaryProxyRep_finitaryBase (hB : M.Base B) : hB.binaryProxyRep.FinitaryBase := by
   apply hB.fundCoord_finitaryBase
 
-lemma CrossingBinary.eq_binaryProxy (hM : M.CrossingBinary) (hB : M.Base B) :
+lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.Base B) :
     M = hB.BinaryProxy := by
   refine Eq.symm <| Quotient.eq_of_base_indep ?_ hB hB.fundCoord_base.indep
   refine quotient_of_forall_cyclic_of_circuit rfl fun C hC ↦ ?_
@@ -81,8 +79,11 @@ lemma CrossingBinary.eq_binaryProxy (hM : M.CrossingBinary) (hB : M.Base B) :
   intro hxC
   rw [repOfFun_coeFun_eq, indicator_of_mem (hC.subset_ground hxC)]
 
-theorem Tutte (hM : M.NoUniformMinor 2 4) : M.Representable (ZMod 2) := by
-  rw [← crossingBinary_iff_no_U24_minor] at hM
+theorem representable_iff_no_U24_minor : M.Representable (ZMod 2) ↔ M.NoUniformMinor 2 4 := by
+  refine ⟨fun h ↦ by simpa using h.noUniformMinor, fun h ↦ ?_⟩
+  rw [← binary_iff_no_U24_minor] at h
   obtain ⟨B, hB⟩ := M.exists_base
-  have h_eq := hM.eq_binaryProxy hB
-  exact ⟨(B : Set α), ⟨hB.binaryProxyRep.ofEq h_eq.symm⟩⟩
+  exact (hB.binaryProxyRep.ofEq (h.eq_binaryProxy hB).symm).representable
+
+theorem binary_iff_representable : M.Binary ↔ M.Representable (ZMod 2) := by
+  rw [binary_iff_no_U24_minor, representable_iff_no_U24_minor]

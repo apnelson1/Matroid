@@ -236,4 +236,10 @@ lemma ext_rk {M N : Matroid α} [FiniteRk M] [FiniteRk N] (hE : M.E = N.E)
   rw [indep_iff_eRk_eq_encard_of_finite hI.finite, ← cast_rk_eq_eRk_of_finite _ hI.finite, h _ hIE,
     hI.rk_eq_ncard, hI.finite.cast_ncard_eq]
 
+@[simp] lemma rank_eq_zero_iff [FiniteRk M] : M.rank = 0 ↔ M = loopyOn M.E := by
+  rw [rank, toNat_eq_zero, or_iff_left M.eRank_lt_top.ne, eRank_eq_zero_iff]
+
+lemma exists_of_rank_eq_zero [FiniteRk M] (h : M.rank = 0) : ∃ E, M = loopyOn E :=
+  ⟨M.E, rank_eq_zero_iff.1 h⟩
+
 end Rank

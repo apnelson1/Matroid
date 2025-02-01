@@ -109,11 +109,6 @@ lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standard
 noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.Base B) : M.Rep 𝔽 (B → 𝔽) :=
   (v.standardRep' hB).map Finsupp.lcoeFun (by simp [Submodule.disjoint_def, Finsupp.lcoeFun])
 
-lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
-  let ⟨B, hB⟩ := M.exists_base
-  ⟨(v.standardRep hB).map' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
-    (LinearMap.ker_eq_bot.2 (ExtendByZero.linearMap_injective _ Subtype.val_injective))⟩
-
 lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
     (v.standardRep hB) e e = 1 := by
   simp [standardRep]
@@ -144,8 +139,10 @@ def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep �
     exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
 
 -- The empty matroid is trivially representable over every field.
-def emptyRep (α : Type*) (𝔽 : Type*) [DivisionRing 𝔽] : (emptyOn α).Rep 𝔽 𝔽 :=
-  (loopyRep ∅ 𝔽).ofEq <| loopyOn_empty _
+def emptyRep (α : Type*) (𝔽 : Type*) [DivisionRing 𝔽] : (emptyOn α).Rep 𝔽 𝔽 where
+  to_fun := 0
+  valid' := by simp
+
 
 protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· ∈ B)]
     [DecidablePred (· ∈ E)] (v : (E \ B : Set α) → (B →₀ 𝔽)) : Matroid α :=
@@ -260,3 +257,34 @@ lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
 
 end FinitaryBase
 -- lemma Rep.FinitaryBase.support_eq (v : M.Rep 𝔽 (B →₀ F))
+
+section Representable
+
+/- This can't currently be moved to somewhere earlier,
+since the crucial `Rep.representable` relies on standard representations.
+-/
+
+lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
+  let ⟨B, hB⟩ := M.exists_base
+  ⟨(v.standardRep hB).map' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
+    (LinearMap.ker_eq_bot.2 (ExtendByZero.linearMap_injective _ Subtype.val_injective))⟩
+
+@[simp] lemma loopyOn_representable (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] :
+    (loopyOn E).Representable 𝔽 :=
+  (loopyRep E 𝔽).representable
+
+@[simp] lemma emptyOn_representable (α 𝔽: Type*) [DivisionRing 𝔽] :
+    (emptyOn α).Representable 𝔽 :=
+  (emptyRep α 𝔽).representable
+
+lemma Representable.map (hM : M.Representable 𝔽) {f : α → β} (hf : InjOn f M.E) :
+    (M.map f hf).Representable 𝔽 := by
+  classical
+  exact (hM.some.matroidMap f hf).representable
+
+lemma Representable.iso {N : Matroid β} (hM : M.Representable 𝔽) (i : M ≂ N) :
+    N.Representable 𝔽 := by
+  classical
+  obtain ⟨rfl, rfl⟩ | ⟨f, hf, rfl⟩ := i.empty_empty_or_exists_eq_map
+  · exact ⟨0, by simp⟩
+  exact hM.map hf

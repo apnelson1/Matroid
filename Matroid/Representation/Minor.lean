@@ -1,7 +1,8 @@
 import Matroid.Representation.StandardRep
+import Mathlib.LinearAlgebra.Projectivization.Cardinality
 import Matroid.Uniform
 
-variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [Field 𝔽]
+variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix
@@ -29,35 +30,68 @@ section Minor
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)
 
+lemma Representable.contract (hM : M.Representable 𝔽) {C : Set α} : (M ／ C).Representable 𝔽 :=
+  (hM.some.contract C).representable
+
+lemma Representable.delete (hM : M.Representable 𝔽) {D : Set α} : (M ＼ D).Representable 𝔽 :=
+  (hM.some.delete D).representable
+
+lemma Representable.restrict (hM : M.Representable 𝔽) {R : Set α} : (M ↾ R).Representable 𝔽 :=
+  (hM.some.restrict R).representable
+
 lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
     N.Representable 𝔽 := by
-  rw [minor_iff_exists_contract_delete] at hNM
-  obtain ⟨C, D, rfl⟩ := hNM
-  exact ((hM.some.contract C).delete D).representable
+  obtain ⟨C, D, -, -, -, rfl⟩ := hNM
+  exact hM.contract.delete
+
+lemma Representable.isoMinor {M : Matroid α} {N : Matroid β} (hM : M.Representable 𝔽)
+    (hNM : N ≤i M) : N.Representable 𝔽 :=
+  let ⟨_, hM₀, i, _⟩  := hNM.exists_iso
+  (hM.minor hM₀).iso i.symm
 
 end Minor
 
-section Simple
+variable {𝔽 : Type*} [Field 𝔽]
 
-lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
-    v e = 0 ↔ M.Loop e := by
-  rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
+lemma Representable.encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Representable 𝔽) :
+    M.E.encard ≤ ∑ i ∈ Finset.range (M.rank), (ENat.card 𝔽)^i := by
+  classical
+  -- If `M` has rank at most `1`, this is trivial.
+  obtain hle | hlt := le_or_lt M.eRank 1
+  · obtain ⟨E, rfl⟩ := M.eq_unifOn_of_eRank_le_one hle
+    have hE := unifOn_simple_iff.1 (by assumption)
+    replace hE := show E.Subsingleton by simpa using hE
+    obtain rfl | ⟨e, rfl⟩ := hE.eq_empty_or_singleton <;>
+    simp [rank]
+  have hr : 1 < M.rank := by rwa [← Nat.cast_lt (α := ℕ∞), cast_rank_eq]
+  -- If `𝔽` is infinite, this is trivial, because the RHS is infinite.
+  obtain hinf | hfin := (finite_or_infinite 𝔽).symm
+  · refine le_trans ?_ (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))
+    simp [ENat.card_eq_top_of_infinite (α := 𝔽)]
+  /- Otherwise `v` gives an injection from `M.E` to a finite projective space with
+  known cardinality, giving the upper bound on `M.E.encard`. -/
+
+  have : Nonempty (Fin M.rank) := ⟨1, hr⟩
+  obtain ⟨v, -⟩ := h.exists_fin_rep
+  rw [← v.projectivization_injOn.encard_image]
+  refine (encard_le_card (subset_univ _)).trans ?_
+  simp_rw [encard_univ, ENat.card_eq_coe_natCard]
+  norm_cast
+  rw [Projectivization.card_of_finrank]
   simp
 
-lemma Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
-  (v.eq_zero_iff e).2 h
+section Uniform
 
-lemma Rep.ne_zero_of_nonloop (v : M.Rep 𝔽 W) (h : M.Nonloop e) : v e ≠ 0 := by
-  rw [Ne, v.eq_zero_iff e]; exact h.not_loop
+lemma Representable.encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) :
+    E.encard ≤ ENat.card 𝔽 + 1 := by
+  obtain hlt | hle := lt_or_le E.encard (2 : ℕ)
+  · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
+  convert h.encard_le_of_simple
+  simp [unifOn_rank_eq hle]
 
-lemma Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
-    v e ≠ 0 ↔ M.Nonloop e :=
-  ⟨fun h ↦ by rwa [← not_loop_iff, ← v.eq_zero_iff e], v.ne_zero_of_nonloop⟩
-
-lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
-  rw [loopless_iff_forall_nonloop]
-  exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e he).2 (h e he),
-    fun h e he ↦ (v.ne_zero_iff_nonloop e he).1 (h e he)⟩
+lemma Representable.encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) :
+    a ≤ ENat.card 𝔽 + 1 :=  by
+  simpa using h.encard_le_of_unifOn_two
 
 @[simp] lemma removeLoops_representable_iff :
     M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
@@ -67,72 +101,16 @@ lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e �
   rw [removeLoops_eq_restr]
   exact (v.restrict _).representable
 
-lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
-    M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ v e = c • v f := by
-  obtain (hfE | hfE) := em' (f ∈ M.E)
-  · refine iff_of_false (fun h ↦ hfE h.mem_ground_right) ?_
-    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_nonloop he)]
-  obtain (hf | hf) := M.loop_or_nonloop f
-  · refine iff_of_false (fun h ↦ h.nonloop_right.not_loop hf) ?_
-    simp [v.eq_zero_of_loop hf, iff_true_intro (v.ne_zero_of_nonloop he)]
-
-  obtain (rfl | hef) := eq_or_ne e f
-  · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, (one_smul _ _).symm⟩
-
-  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff_restrict, not_iff_comm,
-    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
-  simp only [ne_eq, not_exists, not_and]
-  refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
-    h c⁻¹ (by rw [h_eq, smul_smul, inv_mul_cancel₀ hc, one_smul])⟩
-  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
-  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel₀ hc, one_smul]
-
-lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
-    M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), v e = c • (v f) → e = f := by
-  simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
-  refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
-  · refine (v.parallel_iff ?_).2 ⟨c, ?_, h_eq⟩
-    · rw [← v.ne_zero_iff_nonloop e]; exact h0 _ he
-    rintro rfl
-    exact h0 e he <| by simp [h_eq]
-  · obtain ⟨f, hf⟩ := M.exists_nonloop
-    obtain rfl := h he hf.mem_ground 0 (by simp [h0])
-    exact v.ne_zero_of_nonloop hf h0
-  obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.nonloop_right).1 hef
-  exact h (by aesop_mat) (by aesop_mat) c h_eq
-
-lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
-  obtain (hl | hpos) := M.eq_loopyOn_or_rkPos
-  · rw [simple_iff_loopless_eq_of_parallel_forall, hl, loopyOn_loopless_iff] at h
-    simp [h.1]
-  exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul]
-
--- @[simp] lemma simplification_representable_iff :
---     M.simplification.Representable 𝔽 ↔ M.Representable 𝔽 := by
---   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
---   rw [hM]
---   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
---   rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
---   exact (v.preimage _).representable
-
-end Simple
-section Uniform
-
-lemma Representable.encard_le_of_line (h : (unifOn E 2).Representable 𝔽) :
-    E.encard ≤ ENat.card 𝔽 + 1 := by
-  obtain ⟨B, hB⟩ := (unifOn E 2).exists_base
-  obtain hlt | hle := lt_or_le E.encard 2
-  · rw [← ENat.add_one_le_iff (hlt.trans_le le_top).ne, ← one_add_one_eq_two,
-      WithTop.add_le_add_iff_right (by simp)] at hlt
-    exact hlt.trans (by simp)
-  have h_ex := h.exists_fin_rep_of_eq (n := 2)
-  rw [rank, unifOn_eRank_eq, min_eq_right (by simpa using hle), Nat.cast_ofNat, ENat.toNat_ofNat,
-    imp_iff_right rfl] at h_ex
-  obtain ⟨v, hb⟩ := h_ex
-  have hsimp := unifOn_simple E (k := 0)
-  have : (unifOn E 2).RkPos  := sorry
-  rw [zero_add, v.simple_iff] at hsimp
-  simp at hsimp
+lemma Representable.noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
+    M.NoUniformMinor 2 (Fintype.card 𝔽 + 2) := by
+  by_contra hcon
+  obtain ⟨hm⟩ := not_noUniformMinor_iff.1 hcon
+  have hcon := (h.isoMinor hm).encard_le_of_unif_two
+  simp only [Nat.cast_add, Nat.cast_ofNat, ENat.card_eq_coe_fintype_card] at hcon
+  rw [show (2 :ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
+  · simp at hcon
+  simp only [WithTop.add_ne_top, ne_eq, WithTop.one_ne_top, not_false_eq_true, and_true]
+  exact ne_of_beq_false rfl
 
 
 
