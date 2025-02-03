@@ -197,6 +197,9 @@ lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.rank_eq.trans_le hM₀.rank_le
 
+/-- For `e : N ≤ir M`, `e.Spanning N M` means that `N` embeds in `M` as a spanning restriction. -/
+def IsoRestr.Spanning (e : N ≤ir M) : Prop := M.Spanning ((↑) '' range e)
+
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]
 --   obtain ⟨M₀,h,e,-⟩ := f.exists_iso

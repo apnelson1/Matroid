@@ -7,7 +7,7 @@ import Mathlib.Data.Matroid.Closure
 import Mathlib.Data.Matroid.Map
 import Mathlib.Data.Matroid.Rank.Cardinal
 import Matroid.ForMathlib.Card
-import Matroid.Rank.ENat
+import Matroid.Rank.Nat
 import Mathlib.SetTheory.Cardinal.Arithmetic
 
 /-!
@@ -109,17 +109,38 @@ theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
   rw [← hJ'.basis_closure_right.encard_eq_encard hJ]
   exact (encard_le_card hJ'.subset).trans (by simp)
 
-lemma crk_lt_aleph0_iff : M.FinRk X ↔ M.cRk X < aleph0 := by
+lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.FinRk X := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_basis' X
-    refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_finRk h))
-    rw [cRk_le_iff]
-    intro J hJ
-    rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
-    · simp [(hJ.finite_of_finRk h).countable]
-    simp [(hI.finite_of_finRk h).countable]
+    exact hI.finRk_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
+
   obtain ⟨I, hI⟩ := M.exists_basis' X
-  exact hI.finRk_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
+  refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_finRk h))
+  rw [cRk_le_iff]
+  intro J hJ
+  rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
+  · simp [(hJ.finite_of_finRk h).countable]
+  simp [(hI.finite_of_finRk h).countable]
+
+lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.FiniteRk := by
+  rw [← cRk_ground, crk_lt_aleph0_iff, finRk_ground_iff_finiteRk]
+
+@[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
+  obtain ⟨B, hB⟩ := M.exists_base
+  obtain (h | h) := M.finite_or_infiniteRk
+  · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_mk]
+  rw [← hB.encard_eq_eRank, hB.infinite.encard_eq, toENat_eq_top, ← not_lt, cRank_lt_aleph0_iff]
+  exact M.not_finiteRk
+
+@[simp] lemma cRk_toENat (M : Matroid α) (X : Set α) : (M.cRk X).toENat = M.eRk X := by
+  rw [cRk, cRank_toENat]
+
+@[simp] lemma cRank_toNat (M : Matroid α) : M.cRank.toNat = M.rank := by
+  rw [rank, ← cRank_toENat]
+  rfl
+
+@[simp] lemma cRk_toNat (M : Matroid α) (X : Set α) : (M.cRk X).toNat = M.rk X := by
+  rw [cRk, cRank_toNat, rk]
 
 end Finite
 

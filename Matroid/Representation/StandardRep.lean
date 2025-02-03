@@ -143,7 +143,6 @@ def emptyRep (α : Type*) (𝔽 : Type*) [DivisionRing 𝔽] : (emptyOn α).Rep 
   to_fun := 0
   valid' := by simp
 
-
 protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· ∈ B)]
     [DecidablePred (· ∈ E)] (v : (E \ B : Set α) → (B →₀ 𝔽)) : Matroid α :=
   Matroid.ofFun 𝔽 E <| fun e ↦

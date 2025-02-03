@@ -185,6 +185,10 @@ noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E
 @[simp] lemma repOfFun_coeFun_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (repOfFun 𝔽 E f : α → W) = indicator E f := rfl
 
+@[simp] lemma repOfFun_image_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
+    (repOfFun 𝔽 E f '' E) = f '' E := by
+  aesop
+
 instance matroidOfFun_finitary (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     Finitary (Matroid.ofFun 𝔽 E f) := by
   rw [Matroid.ofFun, Matroid.onModule, comapOn]; infer_instance
