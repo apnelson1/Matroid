@@ -138,6 +138,10 @@ lemma Iso.right_eq_empty (e : emptyOn α ≂ N) : N = emptyOn β := by
   simp only [emptyOn_ground] at h
   exact isEmpty_coe_sort.mp h.symm.isEmpty
 
+def empty_iso_empty (α β : Type*) : (emptyOn α) ≂ emptyOn β where
+  toEquiv := @Equiv.equivOfIsEmpty _ _ (by simp) (by simp)
+  indep_image_iff' := by simp
+
 section map
 
 lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :

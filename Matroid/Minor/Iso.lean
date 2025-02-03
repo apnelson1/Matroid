@@ -68,6 +68,32 @@ def IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Ma
   inj' := Injective.comp (EmbeddingLike.injective i₂) (EmbeddingLike.injective i₁)
   indep_iff' I := by rw [← i₁.indep_image_iff, ← i₂.indep_image_iff]; simp [image_image]
 
+/-- For `e : N ≤ir M`, `e.Spanning N M` means that `N` embeds in `M` as a spanning restriction. -/
+def IsoRestr.Spanning (e : N ≤ir M) : Prop := M.Spanning ((↑) '' range e)
+
+/-- Construct an `IsoRestr` from a function defined on all of `α` rather than a subtype. -/
+@[simps] def IsoRestr.ofFun (f : α → β) (hf : InjOn f M.E) (hfN : f '' M.E ⊆ N.E)
+    (hfI : ∀ I ⊆ M.E, M.Indep I ↔ N.Indep (f '' I)) : M ≤ir N where
+  toFun e := ⟨f e, hfN (mem_image_of_mem _ e.2)⟩
+  inj' _ _ := by simp [hf.eq_iff, Subtype.coe_inj]
+  indep_iff' I := by
+    rw [hfI _ (by simp)]
+    convert Iff.rfl
+    aesop
+
+@[simp] lemma IsoRestr_ofFun_apply (f : α → β) (hf : InjOn f M.E) (hfN : f '' M.E ⊆ N.E) (hfI)
+    (e : M.E) : (IsoRestr.ofFun f hf hfN hfI) e = ⟨f e, hfN (mem_image_of_mem _ e.2)⟩ := rfl
+
+lemma IsoRestr.ofFun_spanning (f : α → β) (hf : InjOn f M.E) (hfI) (hfs : N.Spanning (f '' M.E)) :
+    (IsoRestr.ofFun f hf hfs.subset_ground hfI).Spanning := by
+  have := hfs.subset_ground
+  simp only [Spanning]
+  convert hfs
+  aesop
+
+def IsoRestr.ofEmptyOn (M : Matroid β) : emptyOn α ≤ir M :=
+  (empty_iso_empty α β).isoRestr.trans (emptyOn_restriction M).isoRestr
+
 /-- `N ≤i M` means that `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`.
 The data a term of this type contains is just a function from `N.E` to `M.E` rather than a choice of
 delete and contract-sets, which may not be unique.  -/
@@ -197,8 +223,7 @@ lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.rank_eq.trans_le hM₀.rank_le
 
-/-- For `e : N ≤ir M`, `e.Spanning N M` means that `N` embeds in `M` as a spanning restriction. -/
-def IsoRestr.Spanning (e : N ≤ir M) : Prop := M.Spanning ((↑) '' range e)
+
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by
 --   rw [← ground_eq_empty_iff]

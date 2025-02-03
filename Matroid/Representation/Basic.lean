@@ -319,28 +319,6 @@ lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
     simp [h.1]
   exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul, eq_comm]
 
-@[simp] noncomputable def Rep.projectivization [Nontrivial W] [DecidableEq W] (v : M.Rep 𝔽 W)
-    (e : α) : Projectivization 𝔽 W :=
-  if he : v e ≠ 0 then Projectivization.mk 𝔽 (v e) he else Classical.arbitrary _
-
-lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
-  exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
-
-variable [Nontrivial W] [DecidableEq W]
-
-lemma Rep.projectivization_nonloop_eq (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
-    v.projectivization e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop he) := by
-  rw [Rep.projectivization, dif_pos]
-
-lemma Rep.projectivization_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
-    v.projectivization e = Classical.arbitrary _ := by
-  rw [Rep.projectivization, dif_neg]
-  rwa [v.ne_zero_iff_nonloop]
-
-lemma Rep.projectivization_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.projectivization M.E := by
-  intro x hx y hy hxy
-  rwa [v.projectivization_nonloop_eq (toNonloop hx), v.projectivization_nonloop_eq (toNonloop hy),
-    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toNonloop hx), parallel_iff_eq] at hxy
 
 
 

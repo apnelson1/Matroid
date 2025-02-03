@@ -5,7 +5,7 @@ import Matroid.Uniform
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Function Set Submodule FiniteDimensional BigOperators Matrix
+open Set Submodule
 
 
 namespace Matroid
@@ -53,64 +53,7 @@ end Minor
 
 variable {𝔽 : Type*} [Field 𝔽]
 
-lemma Representable.encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Representable 𝔽) :
-    M.E.encard ≤ ∑ i ∈ Finset.range (M.rank), (ENat.card 𝔽)^i := by
-  classical
-  -- If `M` has rank at most `1`, this is trivial.
-  obtain hle | hlt := le_or_lt M.eRank 1
-  · obtain ⟨E, rfl⟩ := M.eq_unifOn_of_eRank_le_one hle
-    have hE := unifOn_simple_iff.1 (by assumption)
-    replace hE := show E.Subsingleton by simpa using hE
-    obtain rfl | ⟨e, rfl⟩ := hE.eq_empty_or_singleton <;>
-    simp [rank]
-  have hr : 1 < M.rank := by rwa [← Nat.cast_lt (α := ℕ∞), cast_rank_eq]
-  -- If `𝔽` is infinite, this is trivial, because the RHS is infinite.
-  obtain hinf | hfin := (finite_or_infinite 𝔽).symm
-  · refine le_trans ?_ (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))
-    simp [ENat.card_eq_top_of_infinite (α := 𝔽)]
-  /- Otherwise `v` gives an injection from `M.E` to a finite projective space with
-  known cardinality, giving the upper bound on `M.E.encard`. -/
 
-  have : Nonempty (Fin M.rank) := ⟨1, hr⟩
-  obtain ⟨v, -⟩ := h.exists_fin_rep
-  rw [← v.projectivization_injOn.encard_image]
-  refine (encard_le_card (subset_univ _)).trans ?_
-  simp_rw [encard_univ, ENat.card_eq_coe_natCard]
-  norm_cast
-  rw [Projectivization.card_of_finrank]
-  simp
-
-section Uniform
-
-lemma Representable.encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) :
-    E.encard ≤ ENat.card 𝔽 + 1 := by
-  obtain hlt | hle := lt_or_le E.encard (2 : ℕ)
-  · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
-  convert h.encard_le_of_simple
-  simp [unifOn_rank_eq hle]
-
-lemma Representable.encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) :
-    a ≤ ENat.card 𝔽 + 1 :=  by
-  simpa using h.encard_le_of_unifOn_two
-
-@[simp] lemma removeLoops_representable_iff :
-    M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
-  refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
-  · rw [M.eq_restrict_removeLoops]
-    exact (v.restrict M.E).representable
-  rw [removeLoops_eq_restr]
-  exact (v.restrict _).representable
-
-lemma Representable.noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
-    M.NoUniformMinor 2 (Fintype.card 𝔽 + 2) := by
-  by_contra hcon
-  obtain ⟨hm⟩ := not_noUniformMinor_iff.1 hcon
-  have hcon := (h.isoMinor hm).encard_le_of_unif_two
-  simp only [Nat.cast_add, Nat.cast_ofNat, ENat.card_eq_coe_fintype_card] at hcon
-  rw [show (2 :ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
-  · simp at hcon
-  simp only [WithTop.add_ne_top, ne_eq, WithTop.one_ne_top, not_false_eq_true, and_true]
-  exact ne_of_beq_false rfl
 
 
 
@@ -130,7 +73,7 @@ lemma Representable.noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
 --   exact IsRep.representable
 --     (fun I ↦ by rw [Matrix.rectProjVandermonde_rowSet_linearIndependent_iff hi, unif_indep_iff])
 
-end Uniform
+
 
 /-
 classical

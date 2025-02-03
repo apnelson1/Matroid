@@ -68,3 +68,15 @@ lemma Basis'.exists_basis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.Basis'
   simp_rw [basis'_iff_basis_inter_ground]
   refine ⟨J, hJ, ?_⟩
   rw [inter_comm X, ← inter_assoc, inter_eq_self_of_subset_left hJ.indep.subset_ground]
+
+@[simp] lemma uniqueBaseOn_spanning_iff {X I E : Set α} :
+    (uniqueBaseOn I E).Spanning X ↔ I ∩ E ⊆ X ∧ X ⊆ E := by
+  rw [← uniqueBaseOn_inter_ground_eq, spanning_iff_exists_base_subset']
+  simp [uniqueBaseOn_base_iff (show I ∩ E ⊆ E from inter_subset_right)]
+
+@[simp] lemma freeOn_spanning_iff {X E : Set α} : (freeOn E).Spanning X ↔ X = E := by
+  rw [← uniqueBaseOn_self, uniqueBaseOn_spanning_iff]
+  simp [← subset_antisymm_iff, eq_comm]
+
+@[simp] lemma emptyOn_spanning_iff {X : Set α} : (emptyOn α).Spanning X ↔ X = ∅ := by
+  rw [← loopyOn_empty, loopyOn_spanning_iff, subset_empty_iff]

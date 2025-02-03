@@ -140,6 +140,13 @@ lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePre
   · rintro ⟨a, ha, rfl⟩
     exact ⟨a, ha, by rw [v.matroidMap_apply (hX ha)]⟩
 
+/-- Scale a representation by an invertible scalar for each element of `α`. -/
+@[simps] def Rep.scale (v : M.Rep 𝔽 W) (c : α → 𝔽ˣ) : M.Rep 𝔽 W where
+  to_fun := c • v
+  valid' I := by
+    rw [v.indep_iff]
+    exact LinearIndependent.units_smul_iff.symm
+
 /-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
 and independence is linear independence.  -/
 protected def onModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] : Matroid W :=
@@ -188,6 +195,11 @@ noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E
 @[simp] lemma repOfFun_image_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (repOfFun 𝔽 E f '' E) = f '' E := by
   aesop
+
+lemma repOfFun_apply (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] {f : α → W} (he : e ∈ E) :
+    (repOfFun 𝔽 E f) e = f e := by
+  change indicator E f e = f e
+  simp [he]
 
 instance matroidOfFun_finitary (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     Finitary (Matroid.ofFun 𝔽 E f) := by
@@ -250,3 +262,8 @@ lemma _root_.Basis.ofFun_base {v : α → W} {E : Set α} {B : Set α} (b : _roo
 @[simp] lemma ofFun_zero (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) :
     (Matroid.ofFun 𝔽 E (0 : α → W)) = loopyOn E := by
   simp +contextual [eq_loopyOn_iff]
+
+section Projective
+
+
+end Projective

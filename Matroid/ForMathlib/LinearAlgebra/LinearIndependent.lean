@@ -214,6 +214,23 @@ theorem linearIndependent_zero_iff {R M ι : Type*} [Ring R] [Nontrivial R] [Add
     [Module R M] {s : Set ι} : LinearIndependent R (0 : s → M) ↔ s = ∅ := by
   rw [linearIndependent_zero_iff, isEmpty_coe_sort]
 
+-- /-- Independently scaling each vector by a unit preserves linear independence. -/
+-- lemma LinearIndependent.unitMul {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] {f : ι → M}
+--     (h : LinearIndependent R f) (a : ι → Rˣ) : LinearIndependent R (fun i ↦ (a i) • (f i)) := by
+--   refine linearIndependent_iff.2 fun c hc ↦ ?_
+--   let c' : ι →₀ R := ⟨c.support, fun i ↦ (c i) * (a i), by simp⟩
+--   have hc' : (Finsupp.linearCombination R f) c' = 0 := by
+--     have hrw (x) : c' x • f x = c x • a x • f x := by
+--       simp [c', ← smul_eq_mul, @Units.smul_def]
+--     simp_rw [Finsupp.linearCombination_apply, Finsupp.sum, hrw]
+--     rwa [Finsupp.linearCombination_apply, Finsupp.sum] at hc
+--   simpa [c', Finsupp.ext_iff] using (linearIndependent_iff.1 h) c' hc'
+
+-- @[simp] lemma LinearIndependent.unitMul_iff {R M ι : Type*} [Ring R] [AddCommGroup M]
+--     [Module R M] {f : ι → M} {a : ι → Rˣ} :
+--     LinearIndependent R (fun i ↦ (a i) • (f i)) ↔ LinearIndependent R f :=
+--   ⟨fun h ↦ by simpa using h.unitMul fun i ↦ (a i)⁻¹ , fun h ↦ h.unitMul a⟩
+
 section extend
 
 
@@ -255,3 +272,10 @@ theorem LinearIndependent.subset_span_extend' (h : LinearIndependent K (s.restri
 theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.restrict f))
     (hst : s ⊆ t) : LinearIndependent K ((h.extend_index hst).restrict f) :=
   (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).2.2.2
+
+@[simp] theorem LinearIndependent.units_smul_iff {R M ι : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] {v : ι → M} {w : ι → Rˣ} :
+    LinearIndependent R (w • v) ↔ LinearIndependent R v := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.units_smul w⟩
+  convert h.units_smul (fun i ↦ (w i)⁻¹)
+  simp [funext_iff]

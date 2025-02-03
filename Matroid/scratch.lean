@@ -1,4 +1,8 @@
 import Mathlib
 
-example {α ι 𝔽 : Type*} [Field 𝔽] (f : ι ↪ α) : (ι → 𝔽) →ₗ[𝔽] (α → 𝔽) := by
-  apply?
+variable {R ι : Type*} [CommSemiring R] {φ : ι → Type*} {ψ : ι → Type*}
+
+#check LinearEquiv.piCongrRight
+
+example (c : ι → Rˣ) : (ι → R) ≃ₗ[R] (ι → R) :=
+  LinearEquiv.piCongrRight (fun i ↦ LinearEquiv.smulOfUnit (c i))
