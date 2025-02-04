@@ -29,6 +29,10 @@ noncomputable def Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization �
 lemma Rep.projFun_apply (v : M.Rep 𝔽 W) (e : α) :
     v.projFun e = Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
+@[simp]
+lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
+    v.projFun = fun e ↦ Projectivization.mk 𝔽 (v e) (by simp) := rfl
+
 -- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
 --     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
 --   rw [Rep.projFun, dif_pos]
@@ -46,23 +50,33 @@ lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun 
 lemma Rep.indep_iff_projFun (v : M.Rep 𝔽 W) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
   rw [v.indep_iff, Projectivization.linearIndependent_iff]
-  · convert Iff.rfl with e
-    simp [v.projFun_eq (hIE e.2)]
-  simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_nonloop (toNonloop (hIE heI))]
+  rfl
 
 @[simp]
-lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
+lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) :
     Independent (fun (x : (v.projFun '' I)) ↦ x.1) ↔ M.Indep I := by
-  rw [v.indep_iff_projFun hIE]
-  let e : I ≃ (v.projFun '' I) :=
-    Equiv.Set.imageOfInjOn v.projFun I (v.projFun_injOn.mono hIE)
+  rw [v.indep_iff_projFun]
+  let e : I ≃ (v.projFun '' I) := Equiv.Set.imageOfInjOn v.projFun I <| v.projFun_injective.injOn
   exact (Projectivization.independent_equiv e).symm
 
-variable {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [Module 𝔽 W] [Nontrivial W] [DecidableEq W]
+variable {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [Module 𝔽 W]
 
-lemma Rep.closure_eq_span_image_projFun [M.Loopless] (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) :
-    M.closure X = v.projFun ⁻¹' (span (V := W) (K := 𝔽) (v.projFun '' X)) := by
-  _
+lemma Rep.closure_eq_span_image_projFun (v : M.Rep 𝔽 W) (X : Set α) :
+    M.closure X = v.projFun ⁻¹' (span (v.projFun '' X)) := by
+  rw [v.closure_eq, ground_eq_univ, inter_univ]
+  ext a
+  simp only [mem_preimage, SetLike.mem_coe, projFun_eq, projFun_apply]
+  rw [← mem_span_image_rep_iff]
+  convert Iff.rfl
+  ext w
+  simp only [mem_image, exists_exists_and_eq_and]
+  constructor
+  · rintro ⟨b, hb, rfl⟩
+    refine ⟨b, hb, ?_⟩
+    simp
+
+
+  -- rw [← span_toSubmodule]
 
 end projFun
 
