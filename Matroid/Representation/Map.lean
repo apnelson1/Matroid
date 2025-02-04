@@ -178,6 +178,12 @@ protected def onModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Mo
   to_fun := id
   valid' _ := by rfl
 
+@[simp]
+lemma onModule_subsingleton (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W]
+    [Subsingleton W] :
+    Matroid.onModule 𝔽 W = loopyOn {0} := by
+  simp [eq_loopyOn_iff, Matroid.onModule, Set.ext_iff, Subsingleton.eq_zero]
+
 /-! ### Representations from functions -/
 
 /-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
@@ -262,8 +268,3 @@ lemma _root_.Basis.ofFun_base {v : α → W} {E : Set α} {B : Set α} (b : _roo
 @[simp] lemma ofFun_zero (𝔽 : Type*) [Field 𝔽] [Module 𝔽 W] (E : Set α) :
     (Matroid.ofFun 𝔽 E (0 : α → W)) = loopyOn E := by
   simp +contextual [eq_loopyOn_iff]
-
-section Projective
-
-
-end Projective

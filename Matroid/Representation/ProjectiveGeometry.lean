@@ -71,11 +71,19 @@ lemma Rep.projectivization_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.project
     Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toNonloop hx), parallel_iff_eq] at hxy
 
 lemma Rep.indep_iff_projectivization [M.Loopless] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
-    M.Indep I ↔ (Projectivization.Independent (fun x : I ↦ v.projectivization x)) := by
+    M.Indep I ↔ (Independent (fun x : I ↦ v.projectivization x)) := by
   rw [v.indep_iff, Projectivization.linearIndependent_iff]
   · convert Iff.rfl with e
     simp [v.projectivization_eq (hIE e.2)]
   simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_nonloop (toNonloop (hIE heI))]
+
+@[simp]
+lemma Rep.independent_image_projectivization_iff [M.Simple] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
+    Independent (fun (x : (v.projectivization '' I)) ↦ x.1) ↔ M.Indep I := by
+  rw [v.indep_iff_projectivization hIE]
+  let e : I ≃ (v.projectivization '' I) :=
+    Equiv.Set.imageOfInjOn v.projectivization I (v.projectivization_injOn.mono hIE)
+  exact (Projectivization.independent_equiv e).symm
 
 end Projectivization
 
@@ -85,6 +93,10 @@ end Projectivization
 
 noncomputable def projectiveGeometryRep : (projectiveGeometry 𝔽 W).Rep 𝔽 W :=
   repOfFun ..
+
+@[simp] lemma projectiveGeometryRep_apply_eq (e : Projectivization 𝔽 W) :
+    projectiveGeometryRep e = e.rep :=
+  repOfFun_apply _ (mem_univ e)
 
 @[simp] lemma projectiveGeometry_eq_empty [Subsingleton W] :
     projectiveGeometry 𝔽 W = emptyOn (Projectivization 𝔽 W) :=
@@ -101,19 +113,22 @@ instance : (projectiveGeometry 𝔽 W).Loopless := by
     repOfFun_apply _ (by simp)]
   exact rep_nonzero e
 
-lemma foo {I : Set (Projectivization 𝔽 W)} :
+lemma projectiveGeometry_indep_iff {I : Set (Projectivization 𝔽 W)} :
     (projectiveGeometry 𝔽 W).Indep I ↔ Projectivization.Independent (fun (x : I) ↦ x.1) := by
   classical
   obtain hW | hW := subsingleton_or_nontrivial W
-  · simp
-  rw [projectiveGeometryRep.indep_iff_projectivization]
+  · simp [eq_empty_of_isEmpty I]
+  rw [projectiveGeometryRep.indep_iff_projectivization (by simp)]
+  convert Iff.rfl with e
+  rw [Rep.projectivization_eq _ (by simp)]
+  simp
 
-lemma Rep.indep_projectivization_iff [Nontrivial W] [DecidableEq W] [M.Simple] (v : M.Rep 𝔽 W)
+lemma Rep.indep_image_projectivization_iff [Nontrivial W] [DecidableEq W] [M.Simple] (v : M.Rep 𝔽 W)
     (hIE : I ⊆ M.E) : (projectiveGeometry 𝔽 W).Indep (v.projectivization '' I) ↔ M.Indep I := by
-  rw [projectiveGeometryRep.projectivization_indep_iff (by simp), v.projectivization_indep_iff hIE]
+  rwa [projectiveGeometry_indep_iff, v.independent_image_projectivization_iff]
 
-  rw [projectiveGeometry, ofFun_indep_iff, v.indep_iff, and_iff_left (subset_univ _),
-    restrict_def]
+instance projectiveGeometry_simple : (projectiveGeometry 𝔽 W).Simple := by
+  simp [simple_iff_forall_pair_indep, projectiveGeometry_indep_iff]
 
 /-- The projective geometry of rank `n+1` over `GF(p^t)`.-/
 noncomputable def PG (n p t : ℕ) [Fact p.Prime] :=
@@ -129,7 +144,7 @@ instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 
-@[simp] lemma projectiveGeometry_rank : (ProjectiveGeometry 𝔽 W).rank = Module.finrank 𝔽 W := by
+@[simp] lemma projectiveGeometry_rank : (projectiveGeometry 𝔽 W).rank = Module.finrank 𝔽 W := by
   rw [← cRank_toNat, projectiveGeometry_cRank]
   rfl
 
@@ -137,29 +152,26 @@ instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
   simp [PG]
 
 lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽)
-    (hB : M.Base B) : ∃ (i : M ≤ir ProjectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
+    (hB : M.Base B) : ∃ (i : M ≤ir projectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
   classical
   obtain rfl | hne := M.eq_emptyOn_or_nonempty
   · refine ⟨IsoRestr.ofEmptyOn _, ?_⟩
     obtain rfl : B = ∅ := by simpa using hB
-    simp [IsoRestr.Spanning, projectiveGeometry_eq_empty, ProjectiveGeometry_E, emptyOn_ground]
+    simp [IsoRestr.Spanning, projectiveGeometry_eq_empty, projectiveGeometry_E, emptyOn_ground]
 
   have hBne := hB.nonempty.to_subtype
   have v := h.some.standardRep' hB
 
   refine ⟨IsoRestr.ofFun v.projectivization v.projectivization_injOn (by simp) ?_,
     IsoRestr.ofFun_spanning _ _ _ ?_⟩
-  ·
-
-
-
-  -- refine ⟨⟨fun (e : M.E) ↦ ?_, ?_, ?_⟩ , ?_⟩
-  -- · exact ⟨Projectivization.mk 𝔽 (v e.1) (v.ne_zero_of_nonloop (toNonloop (e := e.1) e.2)), by simp⟩
-  -- · sorry
-  -- · intro I
-  --   rw [ProjectiveGeometryRep.indep_iff]
-  --   simp
-
+  · intro I hIE
+    rwa [projectiveGeometry_indep_iff, v.independent_image_projectivization_iff]
+  rw [spanning_iff_exists_base_subset]
+  refine ⟨v.projectivization '' B, ?_, image_subset _ hB.subset_ground⟩
+  refine Indep.base_of_forall_insert ?_ fun e he ↦ ?_
+  · rw [v.indep_image_projectivization_iff hB.subset_ground]
+    exact hB.indep
+  rw [v.indep_image_projectivization_iff]
 
 lemma Representable.encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Representable 𝔽) :
     M.E.encard ≤ ∑ i ∈ Finset.range (M.rank), (ENat.card 𝔽)^i := by

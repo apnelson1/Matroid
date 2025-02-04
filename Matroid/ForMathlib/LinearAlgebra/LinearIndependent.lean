@@ -57,13 +57,21 @@ open Function Set Submodule BigOperators
 --     Subtype.coe_preimage_self, subset_univ, Finsupp.embDomain_eq_zero, forall_true_left] at h
 --   exact h hl0
 
+@[simp]
 theorem linearIndependent_subsingleton_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
-    [Module R M] [Subsingleton ι] {f : ι → M} : LinearIndependent R f ↔ ∀ i, f i ≠ 0 := by
+    [Module R M] [Subsingleton ι] (f : ι → M) : LinearIndependent R f ↔ ∀ i, f i ≠ 0 := by
   obtain (he | he) := isEmpty_or_nonempty ι
   · simp [linearIndependent_empty_type]
   obtain ⟨_⟩ := (unique_iff_subsingleton_and_nonempty (α := ι)).2 ⟨by assumption, he⟩
   rw [linearIndependent_unique_iff]
   exact ⟨fun h i ↦ by rwa [Unique.eq_default i], fun h ↦ h _⟩
+
+@[simp]
+theorem linearIndependent_subsingleton_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
+    [Module R M] [Subsingleton M] (f : ι → M) : LinearIndependent R f ↔ IsEmpty ι := by
+  obtain h | i := isEmpty_or_nonempty ι
+  · simpa
+  exact iff_of_false (fun hli ↦ hli.ne_zero i.some (Subsingleton.eq_zero (f i.some))) (by simp)
 
 theorem linearIndependent_of_finite_index {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] (f : ι → M) (h : ∀ (t : Set ι), t.Finite → LinearIndependent R (t.restrict f)) :
