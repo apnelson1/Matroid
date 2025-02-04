@@ -268,6 +268,10 @@ lemma Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) :
   · rwa [← not_loop_iff, ← v.eq_zero_iff e]
   simp [v.eq_zero_of_not_mem_ground he] at hne
 
+@[simp]
+lemma Rep.ne_zero [M.Loopless] [M.OnUniv] (v : M.Rep 𝔽 W) (e : α) : v e ≠ 0 := by
+  simp [v.ne_zero_iff_nonloop]
+
 lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
   rw [loopless_iff_forall_nonloop]
   exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e).2 (h e he),

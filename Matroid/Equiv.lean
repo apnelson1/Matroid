@@ -5,6 +5,8 @@ import Matroid.ForMathlib.Matroid.Basic
 
 variable {α β : Type*} {M : Matroid α} {N : Matroid β}
 
+universe u
+
 open Set Set.Notation
 namespace Matroid
 
@@ -336,3 +338,10 @@ lemma Iso.eRank_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.eRank = N.eRa
 
 lemma Iso.rank_eq {β : Type*} {N : Matroid β} (e : M ≂ N) : M.rank = N.rank := by
   rw [rank, e.eRank_eq]
+
+/-- Every matroid is isomorphic to an `OnUniv` matroid. -/
+lemma exists_iso_onUniv {α : Type u} (M : Matroid α) :
+    ∃ (β : Type u) (N : Matroid β), N.OnUniv ∧ Nonempty (M ≂ N) := by
+  refine ⟨_, M.restrictSubtype M.E, by simp [onUniv_iff], ?_⟩
+  rw [restrictSubtype, restrict_ground_eq_self]
+  exact ⟨(M.isoComap _ (by simp [BijOn, SurjOn, Subtype.val_injective.injOn])).symm⟩

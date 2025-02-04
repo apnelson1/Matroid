@@ -13,24 +13,33 @@ theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
     U.map (e₁₂.trans e₂₃) = (U.map e₁₂).map e₂₃ := by
   rw [← LinearEquiv.map_coe,  LinearEquiv.coe_trans, Submodule.map_comp]; rfl
 
-@[simp] theorem LinearMap.range_domRestrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
-    [AddCommMonoid M] [AddCommMonoid M₂] [Module R M] [Module R₂ M₂] {σ₁₂ : R →+* R₂}
-    [RingHomSurjective σ₁₂] (f : M →ₛₗ[σ₁₂] M₂) (p : Submodule R M) :
-    LinearMap.range (LinearMap.domRestrict f p) = p.map f := by
-  ext; simp
+lemma Submodule.mem_span_singleton₀ {R M : Type*} [DivisionRing R] [AddCommMonoid M] [Module R M]
+    {x y : M} (hx : x ≠ 0) : x ∈ Submodule.span R {y} ↔ ∃ (a : Rˣ), a • y = x := by
+  rw [mem_span_singleton]
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact ⟨Units.mk0 a (by rintro rfl; simp at hx), by simp⟩
+  rintro ⟨a, rfl⟩
+  exact ⟨a, rfl⟩
 
-@[simp] theorem LinearMap.domRestrict_injective {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
-    [AddCommMonoid M] [AddCommMonoid M₂] [Module R M] [Module R₂ M₂] {σ₁₂ : R →+* R₂}
-    {f : M →ₛₗ[σ₁₂] M₂} (hf : Function.Injective f) (p : Submodule R M) :
-    Function.Injective (f.domRestrict p) := by
-  intro x y h
-  apply_fun (↑) using Subtype.coe_injective
-  apply_fun f using hf
-  simpa using h
+-- @[simp] theorem LinearMap.range_domRestrict {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
+--     [AddCommMonoid M] [AddCommMonoid M₂] [Module R M] [Module R₂ M₂] {σ₁₂ : R →+* R₂}
+--     [RingHomSurjective σ₁₂] (f : M →ₛₗ[σ₁₂] M₂) (p : Submodule R M) :
+--     LinearMap.range (LinearMap.domRestrict f p) = p.map f := by
+--   ext; simp
 
-theorem LinearMap.finrank_map_of_inj {K V V₂ : Type*} [Ring K] [AddCommGroup V]
-    [Module K V] [AddCommGroup V₂] [Module K V₂] {f : V →ₗ[K] V₂}
-    (hf : Function.Injective ↑f) (U : Submodule K V) :
-    FiniteDimensional.finrank K (U.map f) = FiniteDimensional.finrank K U := by
-  rw [← LinearMap.finrank_range_of_inj (LinearMap.domRestrict_injective hf _),
-    LinearMap.range_domRestrict]
+-- @[simp] theorem LinearMap.domRestrict_injective {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
+--     [AddCommMonoid M] [AddCommMonoid M₂] [Module R M] [Module R₂ M₂] {σ₁₂ : R →+* R₂}
+--     {f : M →ₛₗ[σ₁₂] M₂} (hf : Function.Injective f) (p : Submodule R M) :
+--     Function.Injective (f.domRestrict p) := by
+--   intro x y h
+--   apply_fun (↑) using Subtype.coe_injective
+--   apply_fun f using hf
+--   simpa using h
+
+-- theorem LinearMap.finrank_map_of_inj {K V V₂ : Type*} [Ring K] [AddCommGroup V]
+--     [Module K V] [AddCommGroup V₂] [Module K V₂] {f : V →ₗ[K] V₂}
+--     (hf : Function.Injective ↑f) (U : Submodule K V) :
+--     FiniteDimensional.finrank K (U.map f) = FiniteDimensional.finrank K U := by
+--   rw [← LinearMap.finrank_range_of_inj (LinearMap.domRestrict_injective hf _),
+--     LinearMap.range_domRestrict]

@@ -2,6 +2,7 @@ import Matroid.Circuit
 import Mathlib.Data.Matroid.Map
 import Mathlib.Order.SymmDiff
 import Matroid.ForMathlib.Finset
+import Matroid.OnUniv
 
 /-
   A `Loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.closure ∅`.
@@ -433,12 +434,17 @@ class Loopless (M : Matroid α) : Prop where
 lemma loopless_iff_closure_empty : M.Loopless ↔ M.closure ∅ = ∅ :=
   ⟨fun h ↦ h.closure_empty, fun h ↦ ⟨h⟩⟩
 
-@[simp] lemma closure_empty_eq_empty (M : Matroid α) [Loopless M] : M.closure ∅ = ∅ :=
+@[simp]
+lemma closure_empty_eq_empty (M : Matroid α) [Loopless M] : M.closure ∅ = ∅ :=
   ‹Loopless M›.closure_empty
 
 lemma toNonloop [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.Nonloop e := by
   rw [← not_loop_iff, loop_iff_mem_closure_empty, closure_empty_eq_empty]; exact not_mem_empty _
+
+@[simp]
+lemma OnUniv.toNonloop [Loopless M] [OnUniv M] (e : α) : M.Nonloop e :=
+  Matroid.toNonloop (e := e)
 
 lemma subsingleton_indep [M.Loopless] (hI : I.Subsingleton) (hIE : I ⊆ M.E := by aesop_mat) :
     M.Indep I := by

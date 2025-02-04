@@ -8,42 +8,41 @@ import Matroid.ForMathlib.LinearAlgebra.Projective
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Set Projectivization Projectivization.Subspace Function
+open Set Projectivization Projectivization.Subspace
 
 namespace Matroid
 
 
 section projFun
 
-variable [OnUniv M] [Loopless M]
+noncomputable def Rep.projFun [Nontrivial W] [DecidableEq W] (v : M.Rep 𝔽 W)
+    (e : α) : Projectivization 𝔽 W :=
+  if he : v e ≠ 0 then Projectivization.mk 𝔽 (v e) he else Classical.arbitrary _
 
-noncomputable def Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
-  Projectivization.mk 𝔽 (v e) (by simp)
+lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
+  exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
 
--- lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
---   exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
+variable [Nontrivial W] [DecidableEq W]
 
--- variable [Nontrivial W] [DecidableEq W]
+lemma Rep.projFun_nonloop_eq (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop he) := by
+  rw [Rep.projFun, dif_pos]
 
-@[simp]
-lemma Rep.projFun_apply (v : M.Rep 𝔽 W) (e : α) :
-    v.projFun e = Projectivization.mk 𝔽 (v e) (by simp) := rfl
+lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
+    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
+  rw [Rep.projFun, dif_pos]
 
--- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
---     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
---   rw [Rep.projFun, dif_pos]
+lemma Rep.projFun_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
+    v.projFun e = Classical.arbitrary _ := by
+  rw [Rep.projFun, dif_neg]
+  rwa [v.ne_zero_iff_nonloop]
 
--- lemma Rep.projFun_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
---     v.projFun e = Classical.arbitrary _ := by
---   rw [Rep.projFun, dif_neg]
---   rwa [v.ne_zero_iff_nonloop]
+lemma Rep.projFun_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.projFun M.E := by
+  intro x hx y hy hxy
+  rwa [v.projFun_nonloop_eq (toNonloop hx), v.projFun_nonloop_eq (toNonloop hy),
+    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toNonloop hx), parallel_iff_eq] at hxy
 
-lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun := by
-  intro x y hxy
-  rwa [projFun_apply, projFun_apply, Projectivization.mk_eq_mk_iff,
-    ← v.parallel_iff' (by simp), parallel_iff_eq] at hxy
-
-lemma Rep.indep_iff_projFun (v : M.Rep 𝔽 W) :
+lemma Rep.indep_iff_projFun [M.Loopless] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
   rw [v.indep_iff, Projectivization.linearIndependent_iff]
   · convert Iff.rfl with e

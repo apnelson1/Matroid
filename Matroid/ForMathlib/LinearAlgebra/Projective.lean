@@ -1,5 +1,6 @@
 import Mathlib.LinearAlgebra.Projectivization.Independence
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+import Matroid.ForMathlib.LinearAlgebra.Submodule
 
 variable {ι K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
     {f : ι → Projectivization K V}
@@ -44,3 +45,17 @@ lemma independent_pair {u v : Projectivization K V} :
     (rep_nonzero u)).2 fun c hc ↦ hne ?_
   have hc0 : c ≠ 0 := by rintro rfl; simpa [v.rep_nonzero] using hc.symm
   simpa [← hc, mk_smul_eq' u.rep_nonzero hc0] using v.mk_rep
+
+@[simp] lemma submodule_span_range_rep (𝔽 W : Type*) [DivisionRing 𝔽] [AddCommGroup W]
+    [Module 𝔽 W] : Submodule.span 𝔽 (range (Projectivization.rep (K := 𝔽) (V := W))) = ⊤ := by
+  have b := Basis.ofVectorSpace 𝔽 W
+  ext x
+  simp only [Submodule.mem_top, iff_true]
+  refine mem_of_mem_of_subset (b.mem_span x) (Submodule.span_le.2 ?_)
+  rintro _ ⟨i, rfl⟩
+  have hi0 := b.ne_zero i
+  have hmem : b i ∈ Submodule.span 𝔽 {(mk (K := 𝔽) (V := W) (b i) hi0).rep} := by
+    rw [Submodule.mem_span_singleton₀ (b.ne_zero i), ← mk_eq_mk_iff _ _ _ hi0]
+    · simp only [mk_rep]
+    exact rep_nonzero (mk 𝔽 (b i) hi0)
+  exact mem_of_mem_of_subset hmem <| Submodule.span_mono <| by simp
