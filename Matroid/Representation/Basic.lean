@@ -175,6 +175,14 @@ lemma Rep.span_closure_congr (v : M.Rep 𝔽 W) (hXY : M.closure X = M.closure Y
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) :=
   (v.span_le_of_closure_subset hXY.subset).antisymm (v.span_le_of_closure_subset hXY.symm.subset)
 
+lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
+    M.closure X = M.closure Y ↔ span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
+  refine ⟨v.span_closure_congr, fun h ↦ ?_⟩
+  suffices aux : ∀ U V, span 𝔽 (v '' U) ≤ span 𝔽 (v '' V) → M.closure U ⊆ M.closure V from
+    (aux X Y h.le).antisymm (aux Y X h.symm.le)
+  intro U V hUV
+
+
 @[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.closure ∅)) = ⊥ := by
   simp [v.span_closure_congr (M.closure_closure ∅)]
 

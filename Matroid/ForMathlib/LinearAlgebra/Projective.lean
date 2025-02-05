@@ -111,6 +111,30 @@ lemma Subspace.mem_span_image_rep_iff (K : Type*) {V : Type*} [Field K] [AddComm
     a ∈ Submodule.span K (Projectivization.rep '' s) ↔ Projectivization.mk K a ha ∈ span s := by
   simp [Subspace.mem_span_iff_rep]
 
+--x ∈ span ((fun a ↦ Projectivization.mk 𝔽 (v a) ⋯) '' X) ↔ x.rep ∈ Submodule.span 𝔽 (⇑v '' X)
+
+lemma Subspace.rep_mem_span_image_iff (K : Type*) {V ι : Type*} [Field K] [AddCommGroup V]
+    [Module K V] {f : ι → Projectivization K V} (s : Set ι) {x : Projectivization K V} :
+    x.rep ∈ Submodule.span K ((Projectivization.rep ∘ f) '' s) ↔ x ∈ span (f '' s) := by
+  rw [image_comp, ← Subspace.mem_span_iff_rep]
+
+lemma Subspace.mem_span_image_iff (K : Type*) {V ι : Type*} [Field K] [AddCommGroup V]
+    [Module K V] {f : ι → V} {hf : ∀ i, f i ≠ 0} (s : Set ι) {x : Projectivization K V} :
+    x ∈ span ((fun i ↦ Projectivization.mk K (f i) (hf i)) '' s) ↔
+      x.rep ∈ Submodule.span K (f '' s) := by
+  simp_rw [← Subspace.rep_mem_span_image_iff, comp_apply]
+  convert Iff.rfl using 2
+  simp only [le_antisymm_iff, Submodule.span_le, subset_def, mem_image, SetLike.mem_coe,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, Submodule.mk_rep_mem_iff_mem]
+  refine ⟨fun a has ↦ ?_, fun a has ↦ ?_⟩
+  · have hmem : f a ∈ Submodule.span K {(Projectivization.mk K (f a) (hf a)).rep} := by
+      rw [← submodule_eq, submodule_mk]
+      exact Submodule.mem_span_singleton_self (f a)
+    refine mem_of_mem_of_subset hmem (Submodule.span_mono ?_)
+    simp only [singleton_subset_iff, mem_image]
+    exact ⟨a, has, rfl⟩
+  exact mem_of_mem_of_subset (mem_image_of_mem f has) Submodule.subset_span
+
 /-- The projective subspace corresponding to a given submodule -/
 def _root_.Submodule.toProjSubspace (W : Submodule K V) : Subspace K V where
   carrier := Projectivization.rep ⁻¹' W
@@ -122,6 +146,13 @@ def _root_.Submodule.toProjSubspace (W : Submodule K V) : Subspace K V where
 @[simp]
 lemma Submodule.mem_toProjSubspace_iff (W : Submodule K V) (x : Projectivization K V) :
     x ∈ W.toProjSubspace ↔ x.rep ∈ W := Iff.rfl
+
+lemma Submodule.toProjSubspace_span_image_eq (K : Type*) {V ι : Type*} [Field K] [AddCommGroup V]
+    [Module K V] {f : ι → V} {hf : ∀ i, f i ≠ 0} (s : Set ι) :
+    (Submodule.span K (f '' s)).toProjSubspace =
+    Subspace.span ((fun i ↦ Projectivization.mk K (f i) (hf i)) '' s) := by
+  ext x
+  exact (Subspace.mem_span_image_iff ..).symm
 
 def Subspace.toSubmodule (W : Subspace K V) :=
   Submodule.span K (Projectivization.rep '' (W : Set (Projectivization K V)))
@@ -151,16 +182,25 @@ lemma Subspace.toSubmodule_eq_span (W : Subspace K V) : W.toSubmodule
   · simp
   simp [hne, mem_span_image_rep_iff _ _ hne, Subspace.mem_toSubmodule_iff]
 
+@[simp] lemma toProjSubspace_toSubmodule (W : Submodule K V) :
+    W.toProjSubspace.toSubmodule = W := by
+  ext e
+  by_cases he : e = 0 <;>
+  simp [Subspace.mem_toSubmodule_iff, he]
+
+@[simp] lemma toSubmodule_toProjSubspace (W : Subspace K V) :
+    W.toSubmodule.toProjSubspace = W := by
+  ext
+  simp [Subspace.mem_toSubmodule_iff, rep_nonzero]
+
 /-- There is an order-preserving isomorphism between projective subspaces and submodules. -/
 @[simps]
-def Subspace.orderIso_submodule : (Subspace K V) ≃o (Submodule K V) where
+def Subspace.orderIso_submodule (K V : Type*) [Field K] [AddCommGroup V] [Module K V] :
+    (Subspace K V) ≃o (Submodule K V) where
   toFun := Subspace.toSubmodule
   invFun := Submodule.toProjSubspace
-  left_inv W := by ext; simp [Subspace.mem_toSubmodule_iff, rep_nonzero]
-  right_inv W := by
-    ext e
-    by_cases he : e = 0 <;>
-    simp [Subspace.mem_toSubmodule_iff, he]
+  left_inv := toSubmodule_toProjSubspace
+  right_inv := toProjSubspace_toSubmodule
   map_rel_iff' := by
     intro X₁ X₂
     simp only [Equiv.coe_fn_mk, SetLike.le_def, Subspace.mem_toSubmodule_iff, ne_eq, true_and,

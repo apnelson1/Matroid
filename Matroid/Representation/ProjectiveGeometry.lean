@@ -17,7 +17,7 @@ section projFun
 
 variable [OnUniv M] [Loopless M]
 
-noncomputable def Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
+abbrev Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
   Projectivization.mk 𝔽 (v e) (by simp)
 
 -- lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
@@ -29,7 +29,7 @@ noncomputable def Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization �
 lemma Rep.projFun_apply (v : M.Rep 𝔽 W) (e : α) :
     v.projFun e = Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
-@[simp]
+
 lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
     v.projFun = fun e ↦ Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
@@ -61,22 +61,28 @@ lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) :
 
 variable {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [Module 𝔽 W]
 
+lemma span_image_projFun_eq (v : M.Rep 𝔽 W) (X : Set α) :
+    span (v.projFun '' X) = (Submodule.span 𝔽 (v '' X)).toProjSubspace :=
+  (Submodule.toProjSubspace_span_image_eq ..).symm
+
 lemma Rep.closure_eq_span_image_projFun (v : M.Rep 𝔽 W) (X : Set α) :
     M.closure X = v.projFun ⁻¹' (span (v.projFun '' X)) := by
-  rw [v.closure_eq, ground_eq_univ, inter_univ]
-  ext a
-  simp only [mem_preimage, SetLike.mem_coe, projFun_eq, projFun_apply]
-  rw [← mem_span_image_rep_iff]
-  convert Iff.rfl
-  ext w
-  simp only [mem_image, exists_exists_and_eq_and]
-  constructor
-  · rintro ⟨b, hb, rfl⟩
-    refine ⟨b, hb, ?_⟩
-    simp
+  rw [v.closure_eq, ground_eq_univ, inter_univ, span_image_projFun_eq]
+  ext
+  simp
+
+lemma Rep.base_iff_proj (v : M.Rep 𝔽 W) (hv : FullRank v) (B : Set α) :
+    M.Base B ↔ Independent (fun x : B ↦ v.projFun x) ∧ span (v.projFun '' B) = ⊤ := by
+  rw [base_iff_indep_closure_eq,  ground_eq_univ,
+    v.indep_iff_projFun, and_congr_right_iff]
+  intro h
+  rw [span_image_projFun_eq, ← (Subspace.orderIso_submodule 𝔽 W).toEquiv.injective.eq_iff,
+    v.closure_eq]
+  simp
 
 
-  -- rw [← span_toSubmodule]
+
+
 
 end projFun
 

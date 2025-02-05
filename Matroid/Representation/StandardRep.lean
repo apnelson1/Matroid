@@ -31,10 +31,15 @@ lemma Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v �
     exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
   exact v.indep_image hB.indep
 
-lemma Rep.span_range_eq_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
-     span 𝔽 (range (Set.restrict B v)) = span 𝔽 (range v) := by
-  rw [range_restrict, eq_comm]
+lemma Rep.span_base_eq (v : M.Rep 𝔽 W) (hB : M.Base B) : span 𝔽 (v '' B) = span 𝔽 (range v) := by
+  rw [eq_comm]
   exact span_eq_of_le _ (v.range_subset_span_base hB) (span_mono (image_subset_range _ _))
+
+lemma Rep.span_spanning_eq (v : M.Rep 𝔽 W) {S : Set α} (hS : M.Spanning S) :
+    span 𝔽 (v '' S) = span 𝔽 (range v) := by
+  rw [← image_univ]
+  apply span_closure_congr
+  simp [hS.closure_eq]
 
 /-- A representation is `FullRank` if its vectors span the space -/
 def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
@@ -50,6 +55,10 @@ def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) wher
 
 lemma Rep.FullRank.span_range {v : M.Rep 𝔽 W} (h : v.FullRank) : span 𝔽 (range v) = ⊤ := by
   rwa [eq_top_iff]
+
+lemma Rep.FullRank.span_spanning {v : M.Rep 𝔽 W} (h : v.FullRank) {S : Set α} (hS : M.Spanning S) :
+    span 𝔽 (v '' S) = ⊤ := by
+  rw [← h.span_range, v.span_spanning_eq hS]
 
 lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by
   rw [FullRank, eq_top_iff]
@@ -71,7 +80,7 @@ lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank :
 /-- A base of `M` gives a linear basis in a full-rank representation -/
 noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.Base B) :
     _root_.Basis B 𝔽 W :=
-  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, v.span_range_eq_span_base hB] )
+  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, range_restrict, v.span_base_eq hB] )
 
 lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
     (v.mapEquiv ψ).FullRank := by
@@ -81,7 +90,7 @@ lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[�
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.basis_of_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
     _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
-  (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (v.span_range_eq_span_base hB)
+  (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (by simp [v.span_base_eq hB])
 
 /-- The natural representation with rows indexed by a base with `Finsupp` -/
 noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.Base B) :
