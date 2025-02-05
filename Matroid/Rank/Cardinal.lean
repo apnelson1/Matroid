@@ -105,9 +105,9 @@ theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
     exact ⟨e, hI.subset_closure⟩
   obtain ⟨J, hJ, hIJ⟩ := hIX.indep.subset_basis_of_subset (hIX.subset.trans he)
   obtain ⟨J', hJ'⟩ := M.exists_basis' {e}
-  refine encard_le_one_iff_subsingleton.1 ((encard_le_card hIJ).trans ?_)
+  refine encard_le_one_iff_subsingleton.1 ((encard_le_encard hIJ).trans ?_)
   rw [← hJ'.basis_closure_right.encard_eq_encard hJ]
-  exact (encard_le_card hJ'.subset).trans (by simp)
+  exact (encard_le_encard hJ'.subset).trans (by simp)
 
 lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.FinRk X := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

@@ -129,7 +129,7 @@ lemma binary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.Binary := by
   have hC' : C.encard ≤ 2 :=
     (hC.eRk_add_one_eq.symm.trans_le (add_le_add_right (M.eRk_le_eRank C) 1)).trans
     (add_le_add_right hM 1)
-  replace hX' := (encard_le_card (hX'.subset.trans inter_subset_left)).trans hC'
+  replace hX' := (encard_le_encard (hX'.subset.trans inter_subset_left)).trans hC'
   rw [encard_coe_eq_coe_finsetCard, Nat.cast_le_ofNat] at hX'
   obtain (h | h | h) : X.card = 1 ∨ X.card = 0 ∨ X.card = 2 := by omega
   · simpa [h] using hX.encard_ne_one

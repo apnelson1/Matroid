@@ -173,7 +173,7 @@ lemma Representable.encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Represent
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩
   obtain ⟨v, -⟩ := h.exists_fin_rep
   rw [← v.projFun_injOn.encard_image]
-  refine (encard_le_card (subset_univ _)).trans ?_
+  refine (encard_le_encard (subset_univ _)).trans ?_
   simp_rw [encard_univ, ENat.card_eq_coe_natCard]
   norm_cast
   sorry

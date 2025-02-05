@@ -145,7 +145,7 @@ lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePre
   to_fun := c • v
   valid' I := by
     rw [v.indep_iff]
-    exact LinearIndependent.units_smul_iff.symm
+    exact (LinearIndependent.units_smul_iff ..).symm
 
 /-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
 and independence is linear independence.  -/

@@ -171,17 +171,19 @@ lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W) (hXY : M.closure X ⊆ M.
   rw [v.closure_eq Y] at hXY
   exact (hXY (M.mem_closure_of_mem' he heE)).1
 
+lemma Rep.closure_subset_iff_span_le (v : M.Rep 𝔽 W) :
+    M.closure X ⊆ M.closure Y ↔ span 𝔽 (v '' X) ≤ span 𝔽 (v '' Y) := by
+  refine ⟨v.span_le_of_closure_subset, fun h e heX ↦ ?_⟩
+  rw [v.closure_eq, mem_inter_iff, mem_preimage, SetLike.mem_coe] at heX ⊢
+  exact ⟨h heX.1, heX.2⟩
+
 lemma Rep.span_closure_congr (v : M.Rep 𝔽 W) (hXY : M.closure X = M.closure Y) :
     span 𝔽 (v '' X) = span 𝔽 (v '' Y) :=
   (v.span_le_of_closure_subset hXY.subset).antisymm (v.span_le_of_closure_subset hXY.symm.subset)
 
 lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
-    M.closure X = M.closure Y ↔ span 𝔽 (v '' X) = span 𝔽 (v '' Y) := by
-  refine ⟨v.span_closure_congr, fun h ↦ ?_⟩
-  suffices aux : ∀ U V, span 𝔽 (v '' U) ≤ span 𝔽 (v '' V) → M.closure U ⊆ M.closure V from
-    (aux X Y h.le).antisymm (aux Y X h.symm.le)
-  intro U V hUV
-
+    M.closure X = M.closure Y ↔ span 𝔽 (v '' X) = span 𝔽 (v '' Y) :=
+  ⟨v.span_closure_congr, fun h ↦ by simp [subset_antisymm_iff, v.closure_subset_iff_span_le, h]⟩
 
 @[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.closure ∅)) = ⊥ := by
   simp [v.span_closure_congr (M.closure_closure ∅)]

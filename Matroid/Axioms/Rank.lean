@@ -38,7 +38,7 @@ lemma eRelRk_insert_eq_one_of_ne (h : M.eRelRk A (insert x A) ≠ 0) :
   refine le_antisymm ?_ (ENat.one_le_iff_ne_zero.2 h)
   refine (M.eRelRk_le_encard_diff _ _).trans ?_
   simp only [← singleton_union, union_diff_right]
-  exact (encard_le_card diff_subset).trans_eq <| by simp
+  exact (encard_le_encard diff_subset).trans_eq <| by simp
 
 lemma eRelRk_eq_diff_right : M.eRelRk A B = M.eRelRk A (B \ A) := by
   rw [M.eRelRk_eq_union_right A (B \ A), diff_union_self, eRelRk_eq_union_right]

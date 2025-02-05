@@ -580,7 +580,7 @@ lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.
   obtain ⟨B, hB, rfl⟩ := hI.exists_base
   rw [← basis_ground_iff, restrict_ground_eq] at hB
   rw [hI.nullity_eq, hB.nullity_eq, diff_inter_self_eq_diff]
-  exact encard_le_card (diff_subset_diff_left hXY)
+  exact encard_le_encard (diff_subset_diff_left hXY)
 
 end Nullity
 

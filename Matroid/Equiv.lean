@@ -269,6 +269,14 @@ def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
 @[simp] lemma Iso.dual_image (e : M ≂ N) (X : Set α) :
     Subtype.val '' (e.dual '' (M✶.E ↓∩ X)) = e '' (M.E ↓∩ X) := rfl
 
+@[simp] lemma Iso.dual_image' (e : M ≂ N) (X : Set M.E) : (e.dual '' X) = e '' X := rfl
+
+@[simp] lemma Iso.dual_image'' (e : M ≂ N) (X : Set M✶.E) : (e.dual '' X) = e '' X := rfl
+
+@[simp] lemma Iso.dual_apply (e : M ≂ N) (x : M.E) : e.dual x = e x := rfl
+
+@[simp] lemma Iso.dual_apply' (e : M ≂ N) (x : M✶.E) : e.dual x = e x := rfl
+
 def Iso.dual_comm (e : M ≂ N✶) : M✶ ≂ N :=
   e.dual.trans <| Iso.ofEq N.dual_dual
 
@@ -345,3 +353,13 @@ lemma exists_iso_onUniv {α : Type u} (M : Matroid α) :
   refine ⟨_, M.restrictSubtype M.E, by simp [onUniv_iff], ?_⟩
   rw [restrictSubtype, restrict_ground_eq_self]
   exact ⟨(M.isoComap _ (by simp [BijOn, SurjOn, Subtype.val_injective.injOn])).symm⟩
+
+lemma Iso.spanning_iff (i : M ≂ N) (X : Set M.E) :
+    M.Spanning X ↔ N.Spanning ↑(i '' X) := by
+  rw [spanning_iff_compl_coindep, spanning_iff_compl_coindep]
+  convert i.dual.indep_image_iff (I := Xᶜ) using 1
+  · simp [coindep_def]
+  rw [coindep_def]
+  convert Iff.rfl
+  rw [i.dual_image' Xᶜ, image_compl_eq (show Function.Bijective i from i.toEquiv.bijective)]
+  simp

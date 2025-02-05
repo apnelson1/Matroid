@@ -315,7 +315,7 @@ lemma eRelRk_ground_le_iff {k : ℕ} (hX : X ⊆ M.E) :
       show B \ X ⊆ M.E from diff_subset.trans hB.subset_ground]
 
   rw [← hDsp.closure_eq, eRelRk_closure_right, union_comm, ← eRelRk_eq_union_right]
-  exact (M.eRelRk_le_encard_diff X D).trans ((encard_le_card diff_subset).trans <| by simpa)
+  exact (M.eRelRk_le_encard_diff X D).trans ((encard_le_encard diff_subset).trans <| by simpa)
 
 lemma eRelRk_union_le_eRelRk_inter_right (M : Matroid α) (X Y : Set α) :
     M.eRelRk X (X ∪ Y) ≤ M.eRelRk (X ∩ Y) Y := by
@@ -335,7 +335,7 @@ lemma eRelRk_union_le_eRelRk_inter_right (M : Matroid α) (X Y : Set α) :
   obtain ⟨K, hKX, hssK⟩ := hi'.subset_basis_of_subset
     (union_subset (inter_subset_right.trans inter_subset_right) hJYX)
   rw [hI.eRelRk_eq_encard_diff_of_subset_basis hKX (subset_union_left.trans hssK)]
-  refine encard_le_card ?_
+  refine encard_le_encard ?_
   rw [union_subset_iff] at hssK
   rw [subset_diff, and_iff_right hssK.2]
   exact disjoint_sdiff_left.mono_right (inter_subset_right.trans inter_subset_left)
@@ -560,7 +560,7 @@ lemma nullity_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).nullity (X \
     (subset_diff.2 ⟨hIJ, hI'.2.2⟩) (diff_subset_diff_left hJX.subset)
 
   rw [hI.nullity_eq, hJX.nullity_eq, diff_diff, union_diff_self]
-  exact encard_le_card (diff_subset_diff_right subset_union_right)
+  exact encard_le_encard (diff_subset_diff_right subset_union_right)
 
 lemma nullity_contract_le (M : Matroid α) (hCX : C ⊆ X) :
     (M ／ C).nullity (X \ C) ≤ M.nullity X := by

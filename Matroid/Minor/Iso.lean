@@ -47,19 +47,40 @@ def Iso.isoRestr (e : N ≂ M) : N ≤ir M where
   inj' := EmbeddingLike.injective' e
   indep_iff' _ := indep_image_iff e
 
+@[simp]
+lemma Iso.isoRestr_apply (e : N ≂ M) (x : N.E) : e.isoRestr x = e x := rfl
+
+@[simp]
+lemma Iso.range_isoRestr (e : N ≂ M) : range e.isoRestr = univ := by
+  ext x
+  simp only [mem_range, isoRestr_apply, Subtype.exists, mem_univ, iff_true]
+  exact ⟨e.symm x, by simp⟩
+
 def Restriction.isoRestr {M N : Matroid α} (h : N ≤r M) : N ≤ir M where
   toFun := inclusion h.subset
   inj' := inclusion_injective h.subset
   indep_iff' I := by simp [h.indep_iff]
 
-theorem IsoRestr.exists_restr_iso (i : N ≤ir M) : ∃ (M₀ : Matroid α) (_ : N ≂ M₀), M₀ ≤r M :=
-  ⟨M ↾ ↑(range (Subtype.val ∘ i)),
-    Iso.mk (Equiv.ofInjective _ <| Subtype.val_injective.comp (EmbeddingLike.injective i))
-    (fun I ↦ by
-      simp only [← i.indep_image_iff, restrict_ground_eq, comp_apply, Equiv.ofInjective_apply,
-        restrict_indep_iff, image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
-      simp only [image_image] ),
-     restrict_restriction _ _ <| by simp [range_comp]⟩
+noncomputable def IsoRestr.iso_restrict_range_comp (i : N ≤ir M) : N ≂ (M ↾ range (val ∘ i)) :=
+  Iso.mk (Equiv.ofInjective _ <| Subtype.val_injective.comp (EmbeddingLike.injective i)) fun I ↦ by
+    simp only [← i.indep_image_iff, restrict_ground_eq, Equiv.ofInjective_apply, comp_apply,
+      restrict_indep_iff, image_subset_iff, coe_preimage_self, subset_univ, and_true]
+    simp [image_image]
+
+@[simp]
+lemma IsoRestr.iso_restrict_range_comp_apply (i : N ≤ir M) (e : N.E) :
+  (i.iso_restrict_range_comp e : range (val ∘ ⇑i)) = ⟨i e, by simp⟩ := rfl
+
+@[simp]
+lemma IsoRestr.iso_restrict_range_comp_apply_coe (i : N ≤ir M) (e : N.E) :
+    (i.iso_restrict_range_comp e : α) = i e := rfl
+
+theorem IsoRestr.exists_restr_iso (i : N ≤ir M) :
+    ∃ (M₀ : Matroid α) (e : N ≂ M₀) (hr : M₀ ≤r M), (inclusion hr.subset) ∘ e = i := by
+  refine
+    ⟨_, i.iso_restrict_range_comp, restrict_restriction _ _ <| by simp [range_comp], ?_⟩
+  ext x
+  exact i.iso_restrict_range_comp_apply_coe x
 
 /-- `≤ir ` is transitive. -/
 def IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
@@ -68,8 +89,46 @@ def IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Ma
   inj' := Injective.comp (EmbeddingLike.injective i₂) (EmbeddingLike.injective i₁)
   indep_iff' I := by rw [← i₁.indep_image_iff, ← i₂.indep_image_iff]; simp [image_image]
 
+@[simp]
+def IsoRestr.trans_apply {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
+    (i₁ : M₁ ≤ir M₂) (i₂ : M₂ ≤ir M₃) (x : M₁.E) : (i₁.trans i₂) x = i₂ (i₁ x) := rfl
+
+@[simp]
+lemma IsoRestr.range_trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
+    (i₁ : M₁ ≤ir M₂) (i₂ : M₂ ≤ir M₃) : range (i₁.trans i₂) = i₂ '' (range i₁) :=
+  range_comp i₂ i₁
+
 /-- For `e : N ≤ir M`, `e.Spanning N M` means that `N` embeds in `M` as a spanning restriction. -/
 def IsoRestr.Spanning (e : N ≤ir M) : Prop := M.Spanning ((↑) '' range e)
+
+lemma IsoRestr.Spanning.exists_restr_iso {i : N ≤ir M} (hi : i.Spanning) :
+    ∃ (M₀ : Matroid α) (e : N ≂ M₀) (hr : M₀ ≤r M),
+        M.Spanning M₀.E ∧ (inclusion hr.subset) ∘ e = i:=
+  ⟨_, i.iso_restrict_range_comp, restrict_restriction _ _ <| by simp [range_comp],
+    by rwa [restrict_ground_eq, range_comp], by
+    ext x
+    exact i.iso_restrict_range_comp_apply_coe x ⟩
+
+-- Disgusting proof!
+lemma IsoRestr.Spanning.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂}
+    {M₃ : Matroid α₃} {e₁ : M₁ ≤ir M₂} {e₂ : M₂ ≤ir M₃} (he₁ : e₁.Spanning) (he₂ : e₂.Spanning) :
+    (e₁.trans e₂).Spanning := by
+  obtain ⟨M₂', i, hM₂, hsp₂, he₁'⟩ := he₁.exists_restr_iso
+  obtain ⟨M₃', i', hM₃, hsp₃, he₂'⟩ := he₂.exists_restr_iso
+  simp only [Spanning, range_trans, ← he₁', ← he₂',
+    comp_apply, EquivLike.range_comp, range_inclusion, image_val_image_comp_inclusion]
+  have hsp' : M₂.Spanning ↑(M₂.E ↓∩ M₂'.E) := by simpa [inter_eq_self_of_subset_right hM₂.subset]
+  rw [i'.spanning_iff] at hsp'
+  obtain ⟨R, hR, rfl⟩ := hM₃.exists_eq_restrict
+  rw [restrict_spanning_iff (by simp)] at hsp'
+  rw [spanning_iff_ground_subset_closure _]
+  · replace hsp' := closure_subset_closure_of_subset_closure hsp'
+    rw [restrict_ground_eq] at hsp₃
+    rw [hsp₃.closure_eq] at hsp'
+    exact hsp'.trans (M₃.closure_mono <| by simp [subset_def])
+  refine (image_mono (image_subset_range _ _)).trans ?_
+  rw [i'.range_eq]
+  simpa using hM₃.subset
 
 /-- Construct an `IsoRestr` from a function defined on all of `α` rather than a subtype. -/
 @[simps] def IsoRestr.ofFun (f : α → β) (hf : InjOn f M.E) (hfN : f '' M.E ⊆ N.E)
@@ -90,6 +149,9 @@ lemma IsoRestr.ofFun_spanning (f : α → β) (hf : InjOn f M.E) (hfI) (hfs : N.
   simp only [Spanning]
   convert hfs
   aesop
+
+lemma Iso.isoRestr_spanning (e : N ≂ M) : e.isoRestr.Spanning := by
+  simp [IsoRestr.Spanning, spanning_iff_closure_eq]
 
 def IsoRestr.ofEmptyOn (M : Matroid β) : emptyOn α ≤ir M :=
   (empty_iso_empty α β).isoRestr.trans (emptyOn_restriction M).isoRestr
@@ -213,7 +275,7 @@ Useful for computability and defeq.  -/
 
 noncomputable def IsoRestr.isoMinor (e : N ≤ir M) : N ≤i M :=
   have hex := e.exists_restr_iso
-  hex.choose_spec.choose.isoMinor.trans hex.choose_spec.choose_spec.minor.isoMinor
+  hex.choose_spec.choose.isoMinor.trans <| hex.choose_spec.choose_spec.choose.minor.isoMinor
 
 lemma IsoMinor.eRank_le (e : N ≤i M) : N.eRank ≤ M.eRank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
@@ -265,7 +327,7 @@ lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
 
 -- theorem IsoMinor.encard_ground_le_encard_ground (h : N ≤i M) : N.E.encard ≤ M.E.encard := by
 --   obtain ⟨N', hN', (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩)⟩ := h; simp
---   have hss := encard_le_card <| e.image_ground.subset.trans hN'.subset
+--   have hss := encard_le_encard <| e.image_ground.subset.trans hN'.subset
 --   rwa [e.injOn_ground.encard_image] at hss
 
 -- end Iso

@@ -8,6 +8,8 @@ open Set BigOperators Function
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
+lemma Set.encard_le_encard (hst : s ⊆ t) : s.encard ≤ t.encard := encard_le_card hst
+
 @[simp] lemma encard_le_one_iff_subsingleton : s.encard ≤ 1 ↔ s.Subsingleton := by
   rw [encard_le_one_iff, Set.Subsingleton]; tauto
 

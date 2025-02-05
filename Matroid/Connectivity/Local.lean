@@ -141,7 +141,7 @@ lemma eRk_inter_le_localEConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) 
   obtain ⟨IX, hIX⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans inter_subset_left)
   obtain ⟨IY, hIY⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans inter_subset_right)
   rw [← hI.encard_eq_eRk, hIX.1.localEConn_eq hIY.1]
-  exact (encard_le_card (subset_inter hIX.2 hIY.2)).trans le_self_add
+  exact (encard_le_encard (subset_inter hIX.2 hIY.2)).trans le_self_add
 
 @[simp] lemma localEConn_closure_left (M : Matroid α) (X Y : Set α) :
     M.localEConn (M.closure X) Y = M.localEConn X Y := by
@@ -163,7 +163,7 @@ lemma localEConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : S
   obtain ⟨I, hI, hII'⟩ := hI'.indep.subset_basis'_of_subset (hI'.subset.trans hX)
   obtain ⟨J, hJ⟩ := M.exists_basis' Y
   rw [hI'.localEConn_eq hJ, hI.localEConn_eq hJ]
-  refine add_le_add (encard_le_card (inter_subset_inter_left _ hII')) (Minor.eRank_le ?_)
+  refine add_le_add (encard_le_encard (inter_subset_inter_left _ hII')) (Minor.eRank_le ?_)
   rw [dual_minor_iff]
   exact (Restriction.of_subset M (union_subset_union_left _ hII')).minor
 

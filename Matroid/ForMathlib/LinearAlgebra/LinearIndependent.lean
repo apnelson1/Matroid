@@ -280,10 +280,3 @@ theorem LinearIndependent.subset_span_extend' (h : LinearIndependent K (s.restri
 theorem LinearIndependent.linearIndependent_extend' (h : LinearIndependent K (s.restrict f))
     (hst : s ⊆ t) : LinearIndependent K ((h.extend_index hst).restrict f) :=
   (Classical.choose_spec (exists_linearIndependent_extension_index h hst)).2.2.2
-
-@[simp] theorem LinearIndependent.units_smul_iff {R M ι : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] {v : ι → M} {w : ι → Rˣ} :
-    LinearIndependent R (w • v) ↔ LinearIndependent R v := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.units_smul w⟩
-  convert h.units_smul (fun i ↦ (w i)⁻¹)
-  simp [funext_iff]
