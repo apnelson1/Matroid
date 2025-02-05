@@ -41,6 +41,10 @@ lemma Rep.span_spanning_eq (v : M.Rep 𝔽 W) {S : Set α} (hS : M.Spanning S) :
   apply span_closure_congr
   simp [hS.closure_eq]
 
+lemma Rep.spanning_iff (v : M.Rep 𝔽 W) {S : Set α} (hSE : S ⊆ M.E := by aesop_mat) :
+    M.Spanning S ↔ span 𝔽 (v '' S) = span 𝔽 (range v) := by
+  refine ⟨v.span_spanning_eq, fun h ↦ ?_⟩
+
 /-- A representation is `FullRank` if its vectors span the space -/
 def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
 
