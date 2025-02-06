@@ -11,144 +11,6 @@ variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R E D : Set α} {e 
 open Set Set.Notation
 namespace Matroid
 
-
-lemma exists_circuit_of_mem_closure (he : e ∈ M.closure X) (heX : e ∉ X) :
-    ∃ C ⊆ insert e X, M.Circuit C ∧ e ∈ C :=
-  let ⟨I, hI⟩ := M.exists_basis' X
-  ⟨_, (fundCircuit_subset_insert ..).trans (insert_subset_insert hI.subset),
-    hI.indep.fundCircuit_circuit (by rwa [hI.closure_eq_closure]) (not_mem_subset
-    hI.subset heX), M.mem_fundCircuit e I⟩
-
-lemma mem_closure_iff_exists_circuit (he : e ∉ X) :
-    e ∈ M.closure X ↔ ∃ C ⊆ insert e X, M.Circuit C ∧ e ∈ C :=
-  ⟨fun h ↦ exists_circuit_of_mem_closure h he, fun ⟨C, hCX, hC, heC⟩ ↦ mem_of_mem_of_subset
-    (hC.mem_closure_diff_singleton_of_mem heC) (M.closure_subset_closure (by simpa))⟩
-
-section Elimination
-
-variable {ι : Type*} (x : ι → α) (Is Cs : ι → Set α) {z : α} {J : Set α}
-
-/-- A version of `Matroid.Circuit.strong_multi_elimination` that is phrased using insertion. -/
-lemma strong_multi_elimination_insert (h_not_mem : ∀ i, x i ∉ Is i)
-    (hCs : ∀ i, M.Circuit (insert (x i) (Is i))) (hC : M.Circuit (J ∪ range x)) (hzJ : z ∈ J)
-    (hzI : ∀ i, z ∉ Is i) : ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ J ∪ ⋃ i, Is i := by
-  -- we may assume that `ι` is nonempty, and it suffices to show that
-  -- `z` is spanned by the union of the `Is` and `J \ {z}`.
-  obtain hι | hι := isEmpty_or_nonempty ι
-  · exact ⟨J, by simpa [range_eq_empty] using hC, hzJ, by simp⟩
-  suffices hcl : z ∈ M.closure ((⋃ i, Is i) ∪ (J \ {z}))
-  · rw [mem_closure_iff_exists_circuit (by simp [hzI])] at hcl
-    obtain ⟨C', hC'ss, hC', hzC'⟩ := hcl
-    refine ⟨C', hC', hzC', ?_⟩
-    rwa [union_comm, ← insert_union, insert_diff_singleton, insert_eq_of_mem hzJ] at hC'ss
-  replace hCs := show ∀ (i : ι), M.closure (Is i) = M.closure ({x i} ∪ (Is i))
-    by simpa [diff_singleton_eq_self (h_not_mem _)] using
-      fun i ↦ (hCs i).closure_diff_singleton_eq (x i)
-  -- This is true because each `Is i` spans `x i` and `(range x) ∪ (J \ {z})` spans `z`.
-  rw [closure_union_congr_left <| closure_iUnion_congr _ _ hCs, iUnion_union_distrib,
-    iUnion_singleton_eq_range, union_right_comm]
-  refine mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem (.inl hzJ))
-    (M.closure_subset_closure (subset_trans ?_ subset_union_left))
-  rw [union_diff_distrib, union_comm]
-  exact union_subset_union_left _ diff_subset
-
-/-- A generalization of the strong circuit elimination axiom `Matroid.Circuit.strong_elimination`
-to an infinite collection of circuits.
-This version is one of the axioms when defining infinite matroids via circuits.
-
-TODO : A similar statement will hold even when all mentions of `z` are removed. -/
-lemma Circuit.strong_multi_elimination (hC : M.Circuit C) (hCs : ∀ i, M.Circuit (Cs i))
-    (h_mem_C : ∀ i, x i ∈ C) (h_mem : ∀ i, x i ∈ Cs i) (h_unique : ∀ ⦃i i'⦄, x i ∈ Cs i' → i = i')
-    (hzC : z ∈ C) (hzCs : ∀ i, z ∉ Cs i) :
-    ∃ C', M.Circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, Cs i) \ range x := by
-  have hwin := M.strong_multi_elimination_insert x (fun i ↦ (Cs i \ {x i}))
-    (J := C \ range x) (z := z) (by simp) (fun i ↦ ?_) ?_ ⟨hzC, ?_⟩ ?_
-  · obtain ⟨C', hC', hzC', hC'ss⟩ := hwin
-    refine ⟨C', hC', hzC', hC'ss.trans ?_⟩
-    refine union_subset (diff_subset_diff_left subset_union_left)
-      (iUnion_subset fun i ↦ subset_diff.2
-        ⟨diff_subset.trans (subset_union_of_subset_right (subset_iUnion ..) _), ?_⟩)
-    rw [disjoint_iff_forall_ne]
-    rintro _ he _ ⟨j, hj, rfl⟩ rfl
-    obtain rfl : j = i := h_unique he.1
-    simp at he
-  · simpa [insert_eq_of_mem (h_mem i)] using hCs i
-  · rwa [diff_union_self, union_eq_self_of_subset_right]
-    rintro _ ⟨i, hi, rfl⟩
-    exact h_mem_C i
-  · rintro ⟨i, hi, rfl⟩
-    exact hzCs _ (h_mem i)
-  simp only [mem_diff, mem_singleton_iff, not_and, not_not]
-  exact fun i hzi ↦ (hzCs i hzi).elim
-
-/-- The strong circuit elimination axiom. For any two circuits `C₁,C₂` and all `e ∈ C₁ ∩ C₂` and
-`f ∈ C₁ \ C₂`, there is a circuit `C` with `f ∈ C ⊆ (C₁ ∪ C₂) \ {e}`. -/
-lemma Circuit.strong_elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (heC₁ : e ∈ C₁)
-    (heC₂ : e ∈ C₂) (hfC₁ : f ∈ C₁) (hfC₂ : f ∉ C₂) :
-    ∃ C, M.Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} ∧ f ∈ C := by
-  obtain ⟨C, hC, hfC, hCss⟩ := hC₁.strong_multi_elimination (fun i : Unit ↦ e) (fun _ ↦ C₂)
-    (by simpa) (z := f) (by simpa) (by simpa) (by simp) (by simpa) (by simpa)
-  exact ⟨C, hC, hCss.trans (diff_subset_diff (by simp) (by simp)), hfC⟩
-
-/-- The circuit elimination lemma : for any pair of distinct circuits `C₁,C₂` and any `e`, some
-circuit is contained in `(C₁ ∪ C₂) \ {e}`.
-
-This is one of the axioms when definining finitary matroid via circuits;
-as an axiom, it is usually stated with the extra assumption that `e ∈ C₁ ∩ C₂`. --/
-lemma Circuit.elimination (hC₁ : M.Circuit C₁) (hC₂ : M.Circuit C₂) (h : C₁ ≠ C₂) (e : α) :
-    ∃ C, M.Circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} := by
-  obtain ⟨f, hf₁, hf₂⟩ : (C₁ \ C₂).Nonempty := by
-    rw [nonempty_iff_ne_empty, Ne, diff_eq_empty]
-    exact fun hss ↦ h (hC₁.eq_of_subset_circuit hC₂ hss)
-  by_cases he₁ : e ∈ C₁
-  · by_cases he₂ : e ∈ C₂
-    · obtain ⟨C, hC, hC', -⟩ := hC₁.strong_elimination hC₂ he₁ he₂ hf₁ hf₂
-      exact ⟨C, hC, hC'⟩
-    exact ⟨C₂, hC₂, subset_diff_singleton subset_union_right he₂⟩
-  exact ⟨C₁, hC₁, subset_diff_singleton subset_union_left he₁⟩
-
-end Elimination
-
-section Finitary
-
-lemma Circuit.finite [Finitary M] (hC : M.Circuit C) : C.Finite := by
-  have hi := hC.dep.not_indep
-  rw [indep_iff_forall_finite_subset_indep] at hi; push_neg at hi
-  obtain ⟨J, hJC, hJfin, hJ⟩ := hi
-  rwa [← hC.eq_of_not_indep_subset hJ hJC]
-
-lemma finitary_iff_forall_circuit_finite : M.Finitary ↔ ∀ C, M.Circuit C → C.Finite := by
-  refine ⟨fun _ _ ↦ Circuit.finite, fun h ↦
-    ⟨fun I hI ↦ indep_iff_not_dep.2 ⟨fun hd ↦ ?_,fun x hx ↦ ?_⟩⟩ ⟩
-  · obtain ⟨C, hCI, hC⟩ := hd.exists_circuit_subset
-    exact hC.dep.not_indep <| hI _ hCI (h C hC)
-  simpa using (hI {x} (by simpa) (finite_singleton _)).subset_ground
-
-lemma exists_mem_finite_closure_of_mem_closure {Y : Set α} [M.Finitary] (he : e ∈ M.closure Y) :
-    ∃ I ⊆ Y, I.Finite ∧ M.Indep I ∧ e ∈ M.closure I := by
-  by_cases heY : e ∈ Y
-  · obtain ⟨J, hJ⟩ := M.exists_basis {e}
-    exact ⟨J, hJ.subset.trans (by simpa), (finite_singleton e).subset hJ.subset, hJ.indep,
-      by simpa using hJ.subset_closure⟩
-  obtain ⟨C, hCss, hC, heC⟩ := exists_circuit_of_mem_closure he heY
-  exact ⟨C \ {e}, by simpa, hC.finite.diff, hC.diff_singleton_indep heC,
-    hC.mem_closure_diff_singleton_of_mem heC⟩
-
-/-- In a finitary matroid, each finite set spanned by `X` is spanned by a finite independent
-subset of `X`. -/
-lemma exists_subset_finite_closure_of_subset_closure {Y : Set α} [M.Finitary]
-    (hX : X.Finite) (hXY : X ⊆ M.closure Y) : ∃ I ⊆ Y, I.Finite ∧ M.Indep I ∧ X ⊆ M.closure I := by
-  refine Set.Finite.induction_on_subset X hX ⟨∅, by simp⟩
-    (@fun e Z heX hZX heZ ⟨J, hJY, hJfin, hJ, hJcl⟩ ↦ ?_)
-  obtain ⟨K, hKY, hKfin, hK, heK⟩ := exists_mem_finite_closure_of_mem_closure (hXY heX)
-  obtain ⟨I, hI⟩ := M.exists_basis (J ∪ K)
-  refine ⟨I, hI.subset.trans (union_subset hJY hKY), (hJfin.union hKfin).subset hI.subset, hI.indep,
-    (subset_trans (insert_subset ?_ ?_) hI.closure_eq_closure.symm.subset)⟩
-  · exact mem_of_mem_of_subset heK (M.closure_subset_closure subset_union_right)
-  exact hJcl.trans (M.closure_subset_closure subset_union_left)
-
-end Finitary
-
 section Cyclic
 
 variable {A B : Set α}
@@ -220,7 +82,6 @@ lemma Cyclic.union (hA : M.Cyclic A) (hB : M.Cyclic B) : M.Cyclic (A ∪ B) := b
   simp [hA, hB]
 
 end Cyclic
-
 
 lemma mem_closure_iff_mem_or_exists_circuit (hX : X ⊆ M.E := by aesop_mat) :
     e ∈ M.closure X ↔ e ∈ X ∨ ∃ C ⊆ insert e X, M.Circuit C ∧ e ∈ C :=
@@ -324,31 +185,33 @@ lemma cocircuit_iff_minimal_compl_nonspanning' :
   exact minimal_iff_minimal_of_imp_of_forall (fun _ h ↦ h.1)
     (fun X hX ↦ ⟨X ∩ M.E, inter_subset_left, by rwa [diff_inter_self_eq_diff], inter_subset_right⟩)
 
-lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.Cocircuit K) :
-    Disjoint C K ∨ (C ∩ K).Nontrivial := by
-  simp_rw [or_iff_not_imp_left, not_disjoint_iff]
-  rintro ⟨e, heC, heK⟩
-  simp_rw [nontrivial_iff_ne_singleton <| show e ∈ C ∩ K from ⟨heC, heK⟩]
+lemma Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) :
+    C ∩ K ≠ {e} := by
   intro he
+  have heC : e ∈ C := (he.symm.subset rfl).1
   simp_rw [cocircuit_iff_minimal_compl_nonspanning, minimal_iff_forall_ssubset, not_not] at hK
   have' hKe := hK.2 (t := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
   apply hK.1
-  rw [spanning_iff_ground_subset_closure]; nth_rw 1 [← hKe.closure_eq, diff_diff_eq_sdiff_union]
+  rw [spanning_iff_ground_subset_closure]
+  nth_rw 1 [← hKe.closure_eq, diff_diff_eq_sdiff_union]
   · refine (M.closure_subset_closure (subset_union_left (t := C))).trans ?_
     rw [union_assoc, singleton_union, insert_eq_of_mem heC, ← closure_union_congr_right
       (hC.closure_diff_singleton_eq e), union_eq_self_of_subset_right]
     rw [← he, diff_self_inter]
     exact diff_subset_diff_left hC.subset_ground
-  rw [← he]; exact inter_subset_left.trans hC.subset_ground
+  rw [← he]
+  exact inter_subset_left.trans hC.subset_ground
 
 lemma Circuit.cocircuit_inter_nontrivial (hC : M.Circuit C) (hK : M.Cocircuit K)
     (hCK : (C ∩ K).Nonempty) : (C ∩ K).Nontrivial := by
-  simpa [or_iff_not_imp_left, not_disjoint_iff_nonempty_inter, imp_iff_right hCK] using
-    hC.cocircuit_disjoint_or_nontrivial_inter hK
+  obtain ⟨e, heCK⟩ := hCK
+  rw [nontrivial_iff_ne_singleton heCK]
+  exact hC.inter_cocircuit_ne_singleton hK
 
-lemma Circuit.inter_cocircuit_ne_singleton (hC : M.Circuit C) (hK : M.Cocircuit K) :
-    C ∩ K ≠ {e} :=
-  fun h ↦ by simpa [h] using hC.cocircuit_inter_nontrivial hK
+lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.Cocircuit K) :
+    Disjoint C K ∨ (C ∩ K).Nontrivial := by
+  rw [or_iff_not_imp_left, disjoint_iff_inter_eq_empty, ← ne_eq, ← nonempty_iff_ne_empty]
+  exact hC.cocircuit_inter_nontrivial hK
 
 lemma dual_rkPos_iff_exists_circuit : M✶.RkPos ↔ ∃ C, M.Circuit C := by
   rw [rkPos_iff, dual_base_iff, diff_empty, not_iff_comm, not_exists,
@@ -391,7 +254,8 @@ lemma Indep.exists_cocircuit_inter_eq_mem (hI : M.Indep I) (heI : e ∈ I) :
   obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
   refine ⟨M.fundCocircuit e B, fundCocircuit_cocircuit (hIB heI) hB, ?_⟩
   rw [subset_antisymm_iff, subset_inter_iff, singleton_subset_iff, and_iff_right
-    (mem_fundCocircuit _ _ _), singleton_subset_iff, and_iff_left heI, ← M.fundCocircuit_inter_eq (hIB heI)]
+    (mem_fundCocircuit _ _ _), singleton_subset_iff, and_iff_left heI,
+    ← M.fundCocircuit_inter_eq (hIB heI)]
   exact inter_subset_inter_right _ hIB
 
 lemma Base.mem_fundCocircuit_iff_mem_fundCircuit {e f : α} (hB : M.Base B) :

@@ -139,25 +139,28 @@ instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
 
 lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽)
     (hB : M.Base B) : ∃ (i : M ≤ir projectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
-  classical
-  obtain rfl | hne := M.eq_emptyOn_or_nonempty
-  · refine ⟨IsoRestr.ofEmptyOn _, ?_⟩
-    obtain rfl : B = ∅ := by simpa using hB
-    simp [IsoRestr.Spanning, projectiveGeometry_eq_empty, projectiveGeometry_E, emptyOn_ground]
+  wlog aux : M.OnUniv generalizing α with h
+    have := M.exists_iso
 
-  have hBne := hB.nonempty.to_subtype
-  have v := h.some.standardRep' hB
+  -- classical
+  -- obtain rfl | hne := M.eq_emptyOn_or_nonempty
+  -- · refine ⟨IsoRestr.ofEmptyOn _, ?_⟩
+  --   obtain rfl : B = ∅ := by simpa using hB
+  --   simp [IsoRestr.Spanning, projectiveGeometry_eq_empty, projectiveGeometry_E, emptyOn_ground]
 
-  refine ⟨IsoRestr.ofFun v.projFun v.projFun_injOn (by simp) ?_,
-    IsoRestr.ofFun_spanning _ _ _ ?_⟩
-  · intro I hIE
-    rwa [projectiveGeometry_indep_iff, v.independent_image_projFun_iff]
-  rw [spanning_iff_exists_base_subset]
-  refine ⟨v.projFun '' B, ?_, image_subset _ hB.subset_ground⟩
-  refine Indep.base_of_forall_insert ?_ fun e he ↦ ?_
-  · rw [v.indep_image_projFun_iff hB.subset_ground]
-    exact hB.indep
-  sorry
+  -- have hBne := hB.nonempty.to_subtype
+  -- have v := h.some.standardRep' hB
+
+  -- refine ⟨IsoRestr.ofFun v.projFun v.projFun_injOn (by simp) ?_,
+  --   IsoRestr.ofFun_spanning _ _ _ ?_⟩
+  -- · intro I hIE
+  --   rwa [projectiveGeometry_indep_iff, v.independent_image_projFun_iff]
+  -- rw [spanning_iff_exists_base_subset]
+  -- refine ⟨v.projFun '' B, ?_, image_subset _ hB.subset_ground⟩
+  -- refine Indep.base_of_forall_insert ?_ fun e he ↦ ?_
+  -- · rw [v.indep_image_projFun_iff hB.subset_ground]
+  --   exact hB.indep
+  -- sorry
   -- rw [v.indep_image_projFun_iff]
 
 lemma Representable.encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Representable 𝔽) :

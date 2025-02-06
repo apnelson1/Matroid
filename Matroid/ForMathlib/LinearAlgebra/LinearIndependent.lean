@@ -158,23 +158,65 @@ theorem linearIndependent_restrict_pair_iff {K V ι : Type*} [DivisionRing K] [A
   rw [← h', smul_smul, inv_mul_cancel₀, one_smul]
   rintro rfl; exact h.1 <| by simp [← h']
 
+theorem Submodule.disjoint_of_disjoint_span {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] {s t : Set M} (hst : Disjoint (span R s) (span R t)) :
+    Disjoint (s \ {0}) t := by
+  rw [disjoint_iff_forall_ne]
+  rintro v ⟨hvs, hv0 : v ≠ 0⟩ _ hvt rfl
+  exact hv0 <| (disjoint_def.1 hst) v (subset_span hvs) (subset_span hvt)
+
+theorem Submodule.disjoint_of_disjoint_span₀ {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] {s t : Set M} (hst : Disjoint (span R s) (span R t)) (h0s : 0 ∉ s) :
+    Disjoint s t := by
+  convert disjoint_of_disjoint_span hst
+  simp [h0s]
+
+-- theorem LinearIndependent.restrict_union' {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
+--     {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
+--     (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
+--     LinearIndependent R ((s ∪ t).restrict f) := by
+--   classical
+--   have hli := hs.to_subtype_range.union ht.to_subtype_range (by simpa)
+--   have hdjst : Disjoint s t := sorry
+--   have hdj' : Disjoint (range (f '' s)) (range (f '' t)) := sorry
+--   have :=
+--   have := Equiv.Set.union hdjst
+--   -- set f : ↥(range (s.restrict f) ∪ range (t.restrict f)) → ↥(s ∪ t) :=
+
+
+--   let i : ↥(s ∪ t) ≃ ↥(range (s.restrict f) ∪ range (t.restrict f)) := by
+--     sorry
+--   have := (linearIndependent_equiv i).2 hli
+
 theorem LinearIndependent.restrict_union {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hs : LinearIndependent R (s.restrict f))
     (ht : LinearIndependent R (t.restrict f)) (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
     LinearIndependent R ((s ∪ t).restrict f) := by
-  have aux : ∀ x ∈ s, ∀ y ∈ t, f x ≠ f y := by
-    refine fun x hx y hy hxy ↦ hs.ne_zero ⟨x, hx⟩ ?_
-    exact Submodule.disjoint_def'.1 hdj _ (subset_span (mem_image_of_mem f hx)) _
-      (subset_span (mem_image_of_mem f hy)) hxy
-  have hdj' : Disjoint s t := by
-    rw [disjoint_iff_forall_ne]
-    rintro x hx _ hx' rfl
-    exact aux _ hx _ hx' rfl
+  have h0 : 0 ∉ f '' s := by
+    simp only [mem_image, not_exists, not_and]
+    exact fun x hxs h0 ↦ (hs.ne_zero ⟨x, hxs⟩ (by simpa))
+  have hdj' := disjoint_of_disjoint_span₀ hdj h0
+  have hst := hdj'.of_image
   have hli := LinearIndependent.union hs.image ht.image hdj
-  rw [← image_union] at hli
-  refine (linearIndependent_image ?_).2 hli
-  rw [injOn_union hdj', injOn_iff_injective, injOn_iff_injective]
-  exact ⟨hs.injective, ht.injective, aux⟩
+  refine (linearIndependent_image ?_).2 ?_
+  · rw [injOn_union hst, injOn_iff_injective, injOn_iff_injective]
+
+    sorry
+
+  -- refine (linearIndependent_image ?_).2 hli
+  -- have aux : ∀ x ∈ s, ∀ y ∈ t, f x ≠ f y := by
+  --   refine fun x hx y hy hxy ↦ hs.ne_zero ⟨x, hx⟩ ?_
+  --   exact Submodule.disjoint_def'.1 hdj _ (subset_span (mem_image_of_mem f hx)) _
+  --     (subset_span (mem_image_of_mem f hy)) hxy
+  -- have hdj' : Disjoint s t := by
+  --   rw [disjoint_iff_forall_ne]
+  --   rintro x hx _ hx' rfl
+  --   exact aux _ hx _ hx' rfl
+  -- have hli := LinearIndependent.union hs.image ht.image hdj
+  -- rw [← image_union] at hli
+  -- refine (linearIndependent_image ?_).2 hli
+  -- rw [injOn_union hdj', injOn_iff_injective, injOn_iff_injective]
+  -- exact ⟨hs.injective, ht.injective, aux⟩
 
 theorem linearIndependent_restrict_union_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
     [Module R M] {s t : Set ι} {f : ι → M} (hdj : Disjoint s t) :
@@ -218,7 +260,8 @@ theorem linearIndependent_zero_iff {R M ι : Type*} [Ring R] [Nontrivial R] [Add
   obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; assumption
   exact False.elim <| h.ne_zero i rfl
 
-@[simp] theorem linearIndependent_zero_iff' {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
+@[simp]
+theorem linearIndependent_zero_coeSet_iff {R M ι : Type*} [Ring R] [Nontrivial R] [AddCommGroup M]
     [Module R M] {s : Set ι} : LinearIndependent R (0 : s → M) ↔ s = ∅ := by
   rw [linearIndependent_zero_iff, isEmpty_coe_sort]
 
