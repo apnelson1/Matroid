@@ -168,6 +168,10 @@ lemma rk_le_toFinset_card (M : Matroid α) {X : Set α} (hX : X.Finite) :
 lemma rk_le_finset_card (M : Matroid α) (X : Finset α) : M.rk X ≤ X.card := by
   simpa using M.rk_le_toFinset_card X.finite_toSet
 
+lemma rk_singleton_le (M : Matroid α) (e : α) : M.rk {e} ≤ 1 := by
+  convert M.rk_le_finset_card {e}
+  simp
+
 lemma Basis.rk_eq_rk (h : M.Basis I X) : M.rk I = M.rk X :=
   h.basis'.rk_eq_rk
 
