@@ -305,6 +305,10 @@ lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.rank_eq.trans_le hM₀.rank_le
 
+lemma IsoMinor.encard_ground_le (e : N ≤i M) : N.E.encard ≤ M.E.encard := by
+  obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
+  convert encard_le_encard hM₀.subset
+  exact i.toEquiv.encard_eq
 
 
 -- @[simp] theorem IsoMinor.eq_emptyOn (f : M ≤i emptyOn β) : M = emptyOn α := by

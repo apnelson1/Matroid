@@ -1,4 +1,4 @@
-import Matroid.Representation.Minor
+import Matroid.Representation.Projective
 import Matroid.Representation.FundamentalMatrix
 import Matroid.Binary.Crossing
 import Matroid.Order.Quotient

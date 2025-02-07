@@ -173,12 +173,18 @@ lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
   rw [← e.symm_image_image I, h]
   simp [hJ.subset_ground]
 
+@[simps]
 noncomputable def isoMap (M : Matroid α) (f : α → β) (hf : M.E.InjOn f) : M ≂ (M.map f hf) where
   toEquiv := Equiv.Set.imageOfInjOn _ _ hf
   indep_image_iff' := by
     intro I
     simp only [Equiv.Set.imageOfInjOn, map_ground, Equiv.coe_fn_mk, image_val_image_val_eq]
     rw [map_image_indep_iff <| Subtype.coe_image_subset M.E I]
+
+@[simps]
+noncomputable def isoMapEquiv (M : Matroid α) (f : α ≃ β) : M ≂ (M.mapEquiv f) where
+  toEquiv := Equiv.Set.image f _ f.injective
+  indep_image_iff' I := by simp
 
 noncomputable def isoComapOn (M : Matroid β) (f : α → β) {E : Set α} (hf : BijOn f E M.E) :
     (M.comapOn E f) ≂ M where

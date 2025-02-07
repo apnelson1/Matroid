@@ -304,3 +304,7 @@ lemma Representable.iso {N : Matroid β} (hM : M.Representable 𝔽) (i : M ≂ 
   obtain ⟨rfl, rfl⟩ | ⟨f, hf, rfl⟩ := i.empty_empty_or_exists_eq_map
   · exact ⟨0, by simp⟩
   exact hM.map hf
+
+lemma Representable.exists_fullRank_rep (hM : M.Representable 𝔽) (hB : M.Base B) :
+    ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
+  ⟨hM.some.standardRep' hB, (Nonempty.some hM).standardRep_fullRank' hB⟩
