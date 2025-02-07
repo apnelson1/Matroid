@@ -8,14 +8,16 @@ import Matroid.ForMathlib.LinearAlgebra.Projective
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Set Projectivization Projectivization.Subspace Function
+open Set Projectivization Projectivization.Subspace Function Subtype Set.Notation Matroid
 
-namespace Matroid
+
 
 
 section projFun
 
-variable [OnUniv M] [Loopless M]
+namespace Matroid
+
+variable [M.OnUniv] [M.Loopless]
 
 abbrev Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
   Projectivization.mk 𝔽 (v e) (by simp)
@@ -49,7 +51,7 @@ lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun 
 
 lemma Rep.indep_iff_projFun (v : M.Rep 𝔽 W) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
-  rw [v.indep_iff, ← Projectivization.independent_map_mk_iff]
+  rw [v.indep_iff, ← Projectivization.independent_comp_mk_iff]
   rfl
 
 @[simp]
@@ -81,66 +83,209 @@ lemma Rep.base_iff_proj {v : M.Rep 𝔽 W} (hv : FullRank v) (B : Set α) :
   rw [base_iff_indep_closure_eq, ← spanning_iff_closure_eq, v.indep_iff_projFun,
     hv.spanning_iff_projFun]
 
+end Matroid
+
 end projFun
 
-@[simps! E] noncomputable def projectiveGeometry (𝔽 W : Type*) [DivisionRing 𝔽] [AddCommGroup W]
-    [Module 𝔽 W] : Matroid (Projectivization 𝔽 W) :=
-  Matroid.ofFun 𝔽 Set.univ Projectivization.rep
+namespace Projectivization
 
-noncomputable def projectiveGeometryRep : (projectiveGeometry 𝔽 W).Rep 𝔽 W :=
-  repOfFun ..
+@[simps! E]
+protected noncomputable def matroid (𝔽 W : Type*) [DivisionRing 𝔽]
+    [AddCommGroup W] [Module 𝔽 W] : Matroid (Projectivization 𝔽 W) :=
+  (Module.matroid 𝔽 W).comap Projectivization.rep
+  -- Matroid.ofFun 𝔽 Set.univ Projectivization.rep
 
-instance projectiveGeometry_onUniv : OnUniv (projectiveGeometry 𝔽 W) :=
+noncomputable def matroidRep : (Projectivization.matroid 𝔽 W).Rep 𝔽 W :=
+  (Module.matroidRep 𝔽 W).comap _
+
+instance matroid_onUniv : OnUniv (Projectivization.matroid 𝔽 W) :=
   ⟨rfl⟩
 
-@[simp] lemma projectiveGeometryRep_apply_eq (e : Projectivization 𝔽 W) :
-    projectiveGeometryRep e = e.rep :=
-  repOfFun_apply _ (mem_univ e)
-
 @[simp] lemma projectiveGeometry_eq_empty [Subsingleton W] :
-    projectiveGeometry 𝔽 W = emptyOn (Projectivization 𝔽 W) :=
+    Projectivization.matroid 𝔽 W = emptyOn (Projectivization 𝔽 W) :=
   eq_emptyOn (α := Projectivization 𝔽 W) _
 
-lemma projectiveGeometryRep_fullRank : (projectiveGeometryRep (𝔽 := 𝔽) (W := W)).FullRank := by
-  rw [Rep.FullRank, projectiveGeometryRep, ← image_univ, repOfFun_image_eq, image_univ,
-    Projectivization.submodule_span_range_rep]
+@[simp] lemma matroidRep_apply_eq (e : Projectivization 𝔽 W) : matroidRep e = e.rep := rfl
 
-instance : (projectiveGeometry 𝔽 W).Loopless := by
-  simp [loopless_iff_forall_nonloop, ← projectiveGeometryRep.ne_zero_iff_nonloop, rep_nonzero]
+lemma matroidRep_fullRank : (matroidRep (𝔽 := 𝔽) (W := W)).FullRank :=
+  Rep.fullRank_iff.2 <| submodule_span_range_rep 𝔽 W ..
+
+instance : (Projectivization.matroid 𝔽 W).Loopless := by
+  simp [loopless_iff_forall_nonloop, ← matroidRep.ne_zero_iff_nonloop, rep_nonzero]
 
 @[simp]
-lemma projectiveGeometry_indep_iff {I : Set (Projectivization 𝔽 W)} :
-    (projectiveGeometry 𝔽 W).Indep I ↔ Projectivization.Independent (fun (x : I) ↦ x.1) := by
-  simp [projectiveGeometryRep.indep_iff_projFun]
+lemma matroidRep_indep_iff {I : Set (Projectivization 𝔽 W)} :
+    (Projectivization.matroid 𝔽 W).Indep I ↔ Projectivization.Independent (fun (x : I) ↦ x.1) := by
+  simp [matroidRep.indep_iff_projFun]
 
-instance projectiveGeometry_simple : (projectiveGeometry 𝔽 W).Simple := by
-  simp [simple_iff_forall_pair_indep, projectiveGeometry_indep_iff]
+instance matroid_simple : (Projectivization.matroid 𝔽 W).Simple := by
+  simp [simple_iff_forall_pair_indep]
+
+
+instance matroid_finitary : Finitary (Projectivization.matroid 𝔽 W) := by
+  rw [Projectivization.matroid]
+  infer_instance
 
 /-- The projective geometry of rank `n+1` over `GF(p^t)`.-/
 noncomputable def PG (n p t : ℕ) [Fact p.Prime] :=
-    Matroid.projectiveGeometry (GaloisField p t) (Fin (n+1) → GaloisField p t)
-
-instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
-  matroidOfFun_finitary ..
+    Projectivization.matroid (GaloisField p t) (Fin (n+1) → GaloisField p t)
 
 /-- TODO: Generalize this to arbitrary fullrank representations -/
-@[simp] lemma projectiveGeometry_cRank : (projectiveGeometry 𝔽 W).cRank = Module.rank 𝔽 W := by
-  obtain ⟨B, hB⟩ := (projectiveGeometry 𝔽 W).exists_base
-  have hr := (projectiveGeometryRep_fullRank.basis_of_base hB).mk_eq_rank
+@[simp]
+lemma matroid_cRank : (Projectivization.matroid 𝔽 W).cRank = Module.rank 𝔽 W := by
+  obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_base
+  have hr := (matroidRep_fullRank.basis_of_base hB).mk_eq_rank
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 
-@[simp] lemma projectiveGeometry_rank : (projectiveGeometry 𝔽 W).rank = Module.finrank 𝔽 W := by
-  rw [← cRank_toNat, projectiveGeometry_cRank]
+@[simp]
+lemma projectiveGeometry_rank : (Projectivization.matroid 𝔽 W).rank = Module.finrank 𝔽 W := by
+  rw [← cRank_toNat, Projectivization.matroid_cRank]
   rfl
+
+
+
+/-- Isomorphic vector spaces give isomorphic projective geometries. -/
+@[simp]
+noncomputable def matroid_congr [DivisionRing 𝔽] [AddCommGroup W] [AddCommGroup W']
+    [Module 𝔽 W] [Module 𝔽 W'] (i : W ≃ₗ[𝔽] W') :
+    Projectivization.matroid 𝔽 W ≂ Projectivization.matroid 𝔽 W' := by
+  let m := Projectivization.map (σ := RingHom.id 𝔽) i (V := W) (W := W') i.injective
+  have hm : m.Injective := (Projectivization.map_injective _ i.injective)
+  rw [Projectivization.matroid]
+  refine (isoMap _ m hm.injOn).trans (Iso.ofEq ?_)
+
+  refine ext_indep ?_ ?_
+  · simp
+    sorry
+  simp only [map_ground, ground_eq_univ, image_univ, map_indep_iff, matroidRep_indep_iff,
+    forall_subset_range_iff, image_eq_image hm, exists_eq_right']
+  refine fun s ↦ ?_
+  set i' := Equiv.Set.imageOfInjOn m s hm.injOn
+  rw [independent_iff, independent_iff, ← linearIndependent_equiv i',
+    ← i.linearIndependent_iff_of_injOn i.injective.injOn]
+
+  -- have hrw : ∀ e : s, ∃ c, (i ∘ Projectivization.rep ∘ fun x ↦ ↑x) e = c • e  := sorry
+
+  -- simp [i', Equiv.Set.imageOfInjOn]
+
+
+
+  -- have i' := Equiv.Set.imageOfInjOn m s hm.injOn
+  -- have := independent_equiv
+  -- have := independent_equiv' (K := 𝔽) (V := W) (f := Subtype.val) (g := Subtype.val) i'
+  -- convert (independent_equiv' (K := 𝔽) (V := W) i'.symm ?_)
+
+
+  -- refine ⟨(isoMap m ?_).trans ?_, ?_⟩
+  -- set f : Projectivization 𝔽 W → Projectivization 𝔽 W' :=
+  --   fun x ↦ Projectivization.mk 𝔽 (i x.rep) (by simp [rep_nonzero])
+  -- refine (isoMap _ f (fun x _ y _ hxy ↦ ?_)).trans (Iso.ofEq ?_)
+  -- ·
+  --   rw [mk_eq_mk_iff'] at hxy
+  --   obtain ⟨a, ha⟩ := hxy
+
+  --   apply_fun i.symm at ha
+  --   rw [map_smul, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply, eq_comm] at ha
+
+  --   have : Projectivization.mk 𝔽 x.rep x.rep_nonzero = Projectivization.mk 𝔽 (a • y.rep)
+  --     (by rw [← ha]; exact x.rep_nonzero)
+
+  --   rw [← mk_eq_]
+  --   have := i.symm.map_smul a (i y.rep)
+
 
 @[simp] lemma PG_rank (n p t : ℕ) [Fact p.Prime] : (PG n p t).rank = n+1 := by
   simp [PG]
 
+-- set_option diagnostics true
+lemma Representable.exists_isoRestr_projectiveGeometry'.{u} {α : Type u} {M : Matroid α} [M.Simple]
+    (h : M.Representable 𝔽) :
+    ∃ (β : Type u) (i : M ≤ir projectiveGeometry 𝔽 (β →₀ 𝔽)), i.Spanning := by
+  wlog hM : M.OnUniv generalizing M α with aux
+  · obtain ⟨γ, N, hN, ⟨iMN⟩⟩ := M.exists_iso_onUniv
+    have := ‹M.Simple›.of_iso iMN
+    have hNrep := h.iso iMN
+    obtain ⟨β, i, hi⟩ := aux hNrep hN
+    exact ⟨β, iMN.isoRestr.trans i, iMN.isoRestr_spanning.trans hi⟩
+  obtain ⟨B, hB⟩ := M.exists_base
+  have v := h.some.standardRep' hB
+  refine ⟨B, IsoRestr.ofFun v.projFun v.projFun_injective.injOn (by simp) (fun I hIE ↦ ?_), ?_⟩
+  · rw [projectiveGeometry_indep_iff]
+
+
 lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽)
     (hB : M.Base B) : ∃ (i : M ≤ir projectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
-  wlog aux : M.OnUniv generalizing α with h
-    have := M.exists_iso
+  have v := h.some.standardRep' hB
+  have hvr : v.FullRank := sorry
+  set f : M.E → Projectivization 𝔽 (B →₀ 𝔽) := fun x ↦ Projectivization.mk 𝔽 (v x) sorry
+  have hf : Injective f := sorry
+  refine ⟨IsoRestr.ofSubtypeFun f hf (by simp) fun I ↦ ?_, IsoRestr.ofSubtypeFun_spanning _ _ _ ?_⟩
+  · simp only [projectiveGeometry_indep_iff]
+    let e : I ≃ (f '' I) := Equiv.Set.imageOfInjOn f I hf.injOn
+    let e' : I ≃ val '' I := Equiv.Set.imageOfInjOn val I val_injective.injOn
+    rw [v.indep_iff, ← independent_comp_mk_iff, ← independent_equiv e, ← independent_equiv e']
+    · convert Iff.rfl
+      ext x
+      simp [e, e', Equiv.Set.imageOfInjOn, f]
+    simp only [comp_apply, ne_eq, Subtype.forall, mem_image, Subtype.exists, exists_and_right,
+      exists_eq_right, forall_exists_index, v.ne_zero_iff_nonloop, e', e, f]
+    exact fun a ha _ ↦ toNonloop ha
+
+  rw [projectiveGeometryRep_fullRank.spanning_iff]
+  simp
+  suffices h : Submodule.span 𝔽 (projectiveGeometryRep '' (f '' (M.E ↓∩ B))) = ⊤ by sorry
+  convert (hvr.basis_of_base hB).span_eq using 1
+  simp only [projectiveGeometryRep_apply_eq, f]
+  refine Submodule.span_eq_span ?_ ?_
+  · simp [subset_def]
+  simp only [Rep.FullRank.basis_of_base, Basis.coe_mk, range_restrict, subset_def, mem_image,
+    SetLike.mem_coe, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, f]
+  refine fun e heB ↦ ?_
+  suffices v e ∈ Submodule.span 𝔽 ((Projectivization.mk 𝔽 (v e)))
+  -- ext w
+  -- simp only [projectiveGeometryRep_apply_eq, mem_image, mem_preimage, Subtype.exists,
+  --   exists_and_left, Rep.FullRank.basis_of_base, Basis.coe_mk, range_restrict, f]
+  -- constructor
+  -- · rintro ⟨u, ⟨z, h1, h, rfl⟩, rfl⟩
+  --   refine ⟨z, h1, ?_⟩
+
+
+
+
+
+
+
+
+  -- refine ⟨IsoRestr.mk f sorry fun I ↦ ?_, ?_⟩
+  -- ·
+  --   -- have e : (I : Set α) ≃ Subtype.val '' (f '' I) := by
+  --   --   have := Equiv.ofInjective f hf
+  --   --   refine (Equiv.ofInjective _ Subtype.val_injective).trans ?_
+  --   simp only [projectiveGeometry_E, projectiveGeometry_indep_iff]
+  --   rw [← independent_equiv (Equiv.Set.univ α).symm]
+  --   -- have : α ≃ {x : α // x ∈ univ} := by exact (Equiv.Set.univ α).symm
+  --   set s := ((fun a ↦ ↑a) '' (f '' I))
+  --   -- rw [v.indep_iff_image_of_inj]
+  --   simp only [projectiveGeometry_E, projectiveGeometry_indep_iff,
+  --     independent_iff]
+  --   rw [v.indep_iff_image_of_inj]
+
+
+
+  --   rw [v.indep_iff_image_of_inj, linearIndependent_image]
+  --   · set s₁ := Projectivization.rep '' (val '' (f '' I))
+  --     set s₂ := v '' (val '' I)
+
+
+
+
+  --   rw [← Projectivization.independent_comp_mk_iff]
+  --   · have { x // x ∈ Subtype.val '' I }
+  --     refine (independent_equiv (K := 𝔽) (V := B →₀ 𝔽) ?_).symm
+
+  -- wlog aux : M.OnUniv generalizing α with h
+  --   have := M.exists_iso
 
   -- classical
   -- obtain rfl | hne := M.eq_emptyOn_or_nonempty

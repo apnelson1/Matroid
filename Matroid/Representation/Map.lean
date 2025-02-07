@@ -66,7 +66,7 @@ def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W
     (e : α) : v.subtype_ofEq h e = LinearEquiv.ofEq _ _ h (v e) := rfl
 
 /-- A representation gives a representation of a comap -/
-def Rep.comap {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.comap f).Rep 𝔽 W :=
+def Rep.comap {M : Matroid β} (v : M.Rep 𝔽 W) (f : α → β) : (M.comap f).Rep 𝔽 W :=
   Rep.ofGround (v ∘ f)
   ( by
     simp only [comap_ground_eq, support_subset_iff, Function.comp_apply, ne_eq, mem_preimage]
@@ -149,7 +149,8 @@ lemma Rep.matroidMap_image (v : M.Rep 𝔽 W) (f : α → β) (hf) [DecidablePre
 
 /-- The `𝔽`-representable matroid whose ground set is a vector space `W` over `𝔽`,
 and independence is linear independence.  -/
-protected def onModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] : Matroid W :=
+protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] :
+    Matroid W :=
   IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
   (E := univ)
   (Indep := fun I ↦ LinearIndependent 𝔽 ((↑) : I → W))
@@ -173,27 +174,31 @@ protected def onModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Mo
   (indep_compact := linearIndependent_of_finite)
   (subset_ground := by simp)
 
-@[simps!] def repOnModule (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W] :
-    (Matroid.onModule 𝔽 W).Rep 𝔽 W where
+@[simps!]
+protected def _root_.Module.matroidRep (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽]
+    [Module 𝔽 W] : (Module.matroid 𝔽 W).Rep 𝔽 W where
   to_fun := id
   valid' _ := by rfl
 
 @[simp]
-lemma onModule_subsingleton (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽] [Module 𝔽 W]
-    [Subsingleton W] :
-    Matroid.onModule 𝔽 W = loopyOn {0} := by
-  simp [eq_loopyOn_iff, Matroid.onModule, Set.ext_iff, Subsingleton.eq_zero]
+protected lemma _root_.Module.matroid_subsingleton (𝔽 W : Type*) [AddCommGroup W] [DivisionRing 𝔽]
+    [Module 𝔽 W] [Subsingleton W] : Module.matroid 𝔽 W = loopyOn {0} := by
+  simp [eq_loopyOn_iff, Module.matroid, Set.ext_iff, Subsingleton.eq_zero]
+
+instance _root_.Module.matroid_finitary : Finitary (Module.matroid 𝔽 W) := by
+  rw [Module.matroid]
+  infer_instance
 
 /-! ### Representations from functions -/
 
 /-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
 and a ground set `E : Set α`.  -/
 protected def ofFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) : Matroid α :=
-    (Matroid.onModule 𝔽 W).comapOn E f
+    (Module.matroid 𝔽 W).comapOn E f
 
 noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=
-  ((repOnModule 𝔽 W).comap f).restrict E
+  ((Module.matroidRep 𝔽 W).comap f).restrict E
 
 @[simp] lemma repOfFun_coeFun_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (repOfFun 𝔽 E f : α → W) = indicator E f := rfl
@@ -209,7 +214,8 @@ lemma repOfFun_apply (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] {f : α 
 
 instance matroidOfFun_finitary (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (f : α → W) (E : Set α) :
     Finitary (Matroid.ofFun 𝔽 E f) := by
-  rw [Matroid.ofFun, Matroid.onModule, comapOn]; infer_instance
+  rw [Matroid.ofFun, comapOn]
+  infer_instance
 
 lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFun 𝔽 E f).Finite :=
   ⟨hfin⟩
@@ -220,7 +226,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
     (Matroid.ofFun 𝔽 E f).Indep I ↔ LinearIndependent 𝔽 (I.restrict f) ∧ I ⊆ E := by
   rw [Matroid.ofFun, comapOn_indep_iff]
   by_cases hinj : InjOn f I
-  · simp only [Matroid.onModule, IndepMatroid.matroid_Indep, and_iff_right hinj,
+  · simp only [Module.matroid, IndepMatroid.matroid_Indep, and_iff_right hinj,
     IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndependent_image hinj, and_congr_left_iff]
     exact fun _ ↦ Iff.rfl
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective

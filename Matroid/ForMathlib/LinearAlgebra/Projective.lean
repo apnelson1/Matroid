@@ -7,8 +7,75 @@ variable {ι K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 open Set Function Projectivization
 
+#check Projectivization.map_mk
+
+section map
+
+-- have map ↑f ⋯ x = mk L (f x.rep) ⋯
+
+
+lemma Projectivization.mk_apply_rep {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] (f : V →ₛₗ[σ] W) (hf : Injective f) (x : Projectivization K V) :
+    mk L (f x.rep) (by simp [f.map_eq_zero_iff hf, x.rep_nonzero]) = map (σ := σ) f hf x := by
+  simpa using (map_mk (W := W) (σ := σ) f hf x.rep x.rep_nonzero).symm
+
+@[simps]
+def Projectivization.mapEquiv {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) :
+    Projectivization K V ≃ Projectivization L W where
+  toFun := Projectivization.map (σ := σ) f f.injective
+  invFun := Projectivization.map (σ := τ) f.symm f.symm.injective
+  left_inv x := by
+    simp [← (mk_apply_rep (σ := σ) (W := W) f f.injective x), map_mk]
+  right_inv y := by
+    simp [← (mk_apply_rep (σ := τ) (W := V) f.symm f.symm.injective y), map_mk]
+
 @[simp]
-lemma Projectivization.independent_map_mk_iff (f : ι → V) (hf0 : ∀ i, f i ≠ 0) :
+lemma Projectivization.mapEquiv_mk {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : V) (hx : x ≠ 0) :
+    Projectivization.mapEquiv f (mk K x hx) = mk L (f x) (by simpa) := by
+  simp [mapEquiv, map_mk]
+
+@[simp]
+lemma Projectivization.mapEquiv_mk_symm_mk {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    mk K (f.symm (mapEquiv f x).rep) (by simp [rep_nonzero]) = x := by
+  -- rw [mk_apply_rep (σ := τ) (V := W) (W := V) (f := f.symm) f.symm.injective (mapEquiv f x)]
+  convert mk_apply_rep (σ := τ) (V := W) (W := V) (f := f.symm) f.symm.injective (mapEquiv f x)
+  simp
+  have hrw := mapEquiv_mk f x.rep x.rep_nonzero
+
+  simp only [mk_rep] at hrw
+  -- have hrw := mapEquiv_mk f x.rep x.rep_nonzero
+  -- simp at hrw
+
+  refine Eq.trans ?_ x.mk_rep
+
+  rw [eq_comm, mk_eq_mk_iff']
+  have hrw : ∀ a : K, a • f.symm ((mapEquiv f) x).rep = f.symm ((σ a) • ((mapEquiv f) x).rep) := sorry
+  simp_rw [hrw]
+
+  have := x.mk_rep
+  have hrw := mapEquiv_mk f x.rep x.rep_nonzero
+
+  simp only [mk_rep] at hrw
+  simp_rw [hrw]
+
+
+-- @[simps!]
+-- def Projectivization.mapEquiv {K V W : Type*} [DivisionRing K] [AddCommGroup V]
+--     [Module K V] [AddCommGroup W] [Module K W] (f : V ≃ₗ[K] W) :
+--     Projectivization K V ≃ Projectivization K W :=
+--   mapSemilinearEquiv f
+
+
+
+@[simp]
+lemma Projectivization.independent_comp_mk_iff (f : ι → V) (hf0 : ∀ i, f i ≠ 0) :
     Independent (fun i ↦ mk K (f i) (hf0 i)) ↔ LinearIndependent K f := by
   rw [independent_iff]
   choose c hc using fun i ↦ exists_smul_eq_mk_rep K (f i) (hf0 i)
@@ -20,10 +87,31 @@ lemma Projectivization.Independent.linearIndependent {f : ι → V} {hf0 : ∀ i
     (h : Independent (fun i ↦ Projectivization.mk K (f i) (hf0 i))) : LinearIndependent K f := by
   simpa using h
 
-lemma LinearIndependent.independent_map_projectivization_mk {f : ι → V}
+lemma LinearIndependent.independent_comp_mk {f : ι → V}
     (h : LinearIndependent K f) :
     Independent (fun i ↦ Projectivization.mk K (f i) (h.ne_zero i)) := by
   simpa
+
+
+-- theorem Projectivization.map_mk {K : Type u_1} {V : Type u_2} [DivisionRing K] [AddCommGroup V] [Module K V] {L : Type u_3} {W : Type u_4} [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} (f : V →ₛₗ[σ] W) (hf : Function.Injective ⇑f) (v : V) (hv : v ≠ 0) :
+-- map f hf (mk K v hv) = mk L (f v) ⋯
+
+-- lemma foo mk K (f.symm (map ↑f ⋯ (v i)).rep)
+
+lemma Projectivization.mapEquiv_indep_iff {W : Type*} [AddCommGroup W] [Module K W] (f : V ≃ₗ[K] W)
+    (v : ι → Projectivization K V) :
+    Independent (Projectivization.mapEquiv f ∘ v) ↔ Independent v := by
+  rw [independent_iff, ← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn,
+    ← independent_comp_mk_iff]
+  · convert Iff.rfl with i
+    simp
+
+
+
+
+end map
+
+
 
 @[simp]
 theorem Projectivization.independent_subsingleton [Subsingleton ι] (f : ι → Projectivization K V) :
@@ -33,6 +121,12 @@ theorem Projectivization.independent_subsingleton [Subsingleton ι] (f : ι → 
 lemma Projectivization.independent_equiv {ι' : Type*} (e : ι ≃ ι') {f : ι' → Projectivization K V} :
     Independent (f ∘ e) ↔ Independent f := by
   rw [independent_iff (f := f), ← linearIndependent_equiv e, independent_iff, comp_assoc]
+
+lemma Projectivization.independent_equiv' {ι' : Type*} (e : ι ≃ ι')
+    {f : ι' → Projectivization K V} {g : ι → Projectivization K V} (h_eq : f ∘ e = g) :
+    Independent g ↔ Independent f := by
+  obtain rfl := h_eq
+  rw [independent_equiv]
 
 lemma Projectivization.Independent.comp {ι' : Type*} {v : ι → Projectivization K V}
     (hv : Independent v) (f : ι' → ι) (hf : Injective f) : Independent (v ∘ f) := by
@@ -73,6 +167,7 @@ lemma Projectivization.independent_pair {u v : Projectivization K V} :
   rw [independent_iff]
   obtain rfl | hne := eq_or_ne u v
   · simp [u.rep_nonzero]
+
   refine (linearIndependent_restrict_pair_iff (V := V) (K := K) (fun x ↦ x.rep) hne
     (rep_nonzero u)).2 fun c hc ↦ hne ?_
   have hc0 : c ≠ 0 := by rintro rfl; simpa [v.rep_nonzero] using hc.symm
@@ -92,7 +187,6 @@ lemma Projectivization.submodule_span_range_rep (K W : Type*) [DivisionRing K] [
     · simp only [mk_rep]
     exact rep_nonzero (mk K (b i) hi0)
   exact mem_of_mem_of_subset hmem <| Submodule.span_mono <| by simp
-
 
 variable {ι K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
@@ -212,7 +306,7 @@ lemma Projectivization.toSubmodule_toProjSubspace (W : Subspace K V) :
 /-- The natural isomorphism between the projective subspace lattice and the subspace lattice. -/
 @[simps]
 def Projectivization.subspace_orderIso_submodule (K V : Type*) [Field K] [AddCommGroup V]
-    [Module K V] : (Subspace K V) ≃o (Submodule K V) where
+    [Module K V] : Subspace K V ≃o Submodule K V where
   toFun := Subspace.toSubmodule
   invFun := Submodule.toProjSubspace
   left_inv := toSubmodule_toProjSubspace

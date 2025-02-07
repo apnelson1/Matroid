@@ -131,6 +131,26 @@ lemma IsoRestr.Spanning.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁}
   simpa using hM₃.subset
 
 /-- Construct an `IsoRestr` from a function defined on all of `α` rather than a subtype. -/
+@[simps] def IsoRestr.ofSubtypeFun (f : M.E → β) (hf : Injective f) (hfN : range f ⊆ N.E)
+    (hfI : ∀ I : Set M.E, M.Indep I ↔ N.Indep ↑(f '' I)) : M ≤ir N where
+  toFun e := ⟨f e, hfN (mem_range_self _)⟩
+  inj' _ _ := by simp [hf.eq_iff, Subtype.coe_inj]
+  indep_iff' I := by
+    rw [hfI]
+    convert Iff.rfl
+    aesop
+
+@[simp] lemma IsoRestr_ofSubtypeFun_apply (f : M.E → β) (hf) (hfN : range f ⊆ N.E) (hfI)
+    (e : M.E) : (IsoRestr.ofSubtypeFun f hf hfN hfI) e = ⟨f e, hfN (mem_range_self _)⟩ := rfl
+
+lemma IsoRestr.ofSubtypeFun_spanning (f : M.E → β) (hf : Injective f) (hfI)
+    (hfs : N.Spanning (range f)) : (IsoRestr.ofSubtypeFun f hf hfs.subset_ground hfI).Spanning := by
+  have := hfs.subset_ground
+  simp only [Spanning]
+  convert hfs
+  aesop
+
+/-- Construct an `IsoRestr` from a function defined on all of `α` rather than a subtype. -/
 @[simps] def IsoRestr.ofFun (f : α → β) (hf : InjOn f M.E) (hfN : f '' M.E ⊆ N.E)
     (hfI : ∀ I ⊆ M.E, M.Indep I ↔ N.Indep (f '' I)) : M ≤ir N where
   toFun e := ⟨f e, hfN (mem_image_of_mem _ e.2)⟩
