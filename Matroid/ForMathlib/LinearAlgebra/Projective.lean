@@ -32,6 +32,11 @@ def Projectivization.mapEquiv {K L V W : Type*} [DivisionRing K] [AddCommGroup V
   right_inv y := by
     simp [← (mk_apply_rep (σ := τ) (W := V) f.symm f.symm.injective y), map_mk]
 
+@[simp] lemma Projectivization.mapEquiv_symm {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) :
+    (mapEquiv f).symm = mapEquiv f.symm := rfl
+
 @[simp]
 lemma Projectivization.mapEquiv_mk {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
@@ -40,39 +45,68 @@ lemma Projectivization.mapEquiv_mk {K L V W : Type*} [DivisionRing K] [AddCommGr
   simp [mapEquiv, map_mk]
 
 @[simp]
-lemma Projectivization.mapEquiv_mk_symm_mk {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+lemma Projectivization.mapEquiv_symm_mapEquiv {K L V W : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    mapEquiv f.symm (mapEquiv f x) = x := by
+  have := Projectivization.map_comp (V := V) (W := W) (U := V) (σ := σ) (τ := τ)
+    (γ := RingHom.id K) f f.injective f.symm f.symm.injective
+  convert (congr_fun this x).symm
+  convert ((congr_fun Projectivization.map_id) x).symm
+  ext
+  simp
+
+@[simp]
+lemma Projectivization.mapEquiv_symm_mapEquiv {K L V W : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    mapEquiv f.symm (mapEquiv f x) = x := by
+  have := Projectivization.map_comp (V := V) (W := W) (U := V) (σ := σ) (τ := τ)
+    (γ := RingHom.id K) f f.injective f.symm f.symm.injective
+  convert (congr_fun this x).symm
+  convert ((congr_fun Projectivization.map_id) x).symm
+  ext
+  simp
+
+-- lemma Projectivization.ma
+
+lemma Projectivization.map_symm_map' {K L V W : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
+    map (f.symm : W →ₛₗ[τ] V) f.symm.injective (map (f : V →ₛₗ[σ] W) f.injective x) = x := by
+  have := Projectivization.map_comp (V := V) (W := W) (U := V) (σ := σ) (τ := τ)
+    (γ := RingHom.id K) f f.injective f.symm f.symm.injective
+  convert (congr_fun this x).symm
+  convert ((congr_fun Projectivization.map_id) x).symm
+  ext
+  simp
+
+@[simp]
+lemma Projectivization.map_symm_map {K V W : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [AddCommGroup W] [Module K W] (f : V ≃ₗ[K] W) (x : Projectivization K V) :
+    map (f.symm : W →ₗ[K] V) f.symm.injective (map (f : V →ₗ[K] W) f.injective x) = x := by
+  exact map_symm_map' f x
+
+@[simp]
+lemma Projectivization.map_map_symm' {K L V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [Field L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
+    [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization L W) :
+    map (f : V →ₛₗ[σ] W) f.injective (map (f.symm : W →ₛₗ[τ] V) f.symm.injective x) = x :=
+  map_symm_map' f.symm x
+
+@[simp]
+lemma Projectivization.symm_map_symm {K V W : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [AddCommGroup W] [Module K W] (f : V ≃ₗ[K] W) (x : Projectivization K V) :
+    map (f.symm : W →ₗ[K] V) f.symm.injective (map (f : V →ₗ[K] W) f.injective x) = x :=
+  map_symm_map' f x
+
+@[simp]
+lemma Projectivization.mapEquiv_mk_symm_mk {K L V W : Type*} [Field K] [AddCommGroup V]
     [Module K V] [DivisionRing L] [AddCommGroup W] [Module L W] {σ : K →+* L} {τ : L →+* K}
     [RingHomInvPair σ τ] [RingHomInvPair τ σ] (f : V ≃ₛₗ[σ] W) (x : Projectivization K V) :
     mk K (f.symm (mapEquiv f x).rep) (by simp [rep_nonzero]) = x := by
-  -- rw [mk_apply_rep (σ := τ) (V := W) (W := V) (f := f.symm) f.symm.injective (mapEquiv f x)]
   convert mk_apply_rep (σ := τ) (V := W) (W := V) (f := f.symm) f.symm.injective (mapEquiv f x)
   simp
-  have hrw := mapEquiv_mk f x.rep x.rep_nonzero
-
-  simp only [mk_rep] at hrw
-  -- have hrw := mapEquiv_mk f x.rep x.rep_nonzero
-  -- simp at hrw
-
-  refine Eq.trans ?_ x.mk_rep
-
-  rw [eq_comm, mk_eq_mk_iff']
-  have hrw : ∀ a : K, a • f.symm ((mapEquiv f) x).rep = f.symm ((σ a) • ((mapEquiv f) x).rep) := sorry
-  simp_rw [hrw]
-
-  have := x.mk_rep
-  have hrw := mapEquiv_mk f x.rep x.rep_nonzero
-
-  simp only [mk_rep] at hrw
-  simp_rw [hrw]
-
-
--- @[simps!]
--- def Projectivization.mapEquiv {K V W : Type*} [DivisionRing K] [AddCommGroup V]
---     [Module K V] [AddCommGroup W] [Module K W] (f : V ≃ₗ[K] W) :
---     Projectivization K V ≃ Projectivization K W :=
---   mapSemilinearEquiv f
-
-
 
 @[simp]
 lemma Projectivization.independent_comp_mk_iff (f : ι → V) (hf0 : ∀ i, f i ≠ 0) :
@@ -102,9 +136,16 @@ lemma Projectivization.mapEquiv_indep_iff {W : Type*} [AddCommGroup W] [Module K
     (v : ι → Projectivization K V) :
     Independent (Projectivization.mapEquiv f ∘ v) ↔ Independent v := by
   rw [independent_iff, ← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn,
-    ← independent_comp_mk_iff]
-  · convert Iff.rfl with i
-    simp
+    ← independent_comp_mk_iff _ (by simp [rep_nonzero])]
+  convert Iff.rfl with i
+  simp only [LinearEquiv.coe_coe, mapEquiv, Equiv.coe_fn_mk, comp_apply]
+  have h := mk_apply_rep (V := W) (W := V) (σ := RingHom.id K) (τ := RingHom.id K)
+    (f.symm : W →ₗ[K] V) f.symm.injective (map (f : V →ₗ[K] W) f.injective (v i))
+  convert h.symm
+  rw [eq_comm]
+  have := map_symm_map f
+
+
 
 
 
