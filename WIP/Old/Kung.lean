@@ -26,7 +26,7 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
   rw [← encard_diff_add_encard_of_subset (singleton_subset_iff.2 he), add_comm, encard_singleton]
   apply congr_arg (1 + ·)
   convert (ENat.tsum_encard_eq_encard_sUnion (M ／ e).parallelClasses.pairwiseDisjoint).symm using 1
-  · simp only [contract_elem, Partition.sUnion_eq, contract_nonloop_iff, mem_diff]
+  · simp only [contractElem, Partition.sUnion_eq, contract_nonloop_iff, mem_diff]
     congr
     rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)

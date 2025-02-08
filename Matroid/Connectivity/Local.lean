@@ -704,7 +704,8 @@ lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [FiniteRk M] (X : Set α) :
 
 /-- A version of `Matroid.conn_eq_rk_add_rk_sub_rank` with `Int` subtraction,
 for use with `ring` and `linarith`. -/
-lemma int_cast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
+@[simp]
+lemma intCast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
     (M.conn X : ℤ) = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_rk_add_rk_sub_rank, ← Nat.cast_add, rank_def]
   refine Int.ofNat_sub ?_
@@ -716,7 +717,7 @@ This is also true for `econn` without `FiniteRk`, but the proof will be more dif
 lemma conn_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     M.conn (X ∩ Y) + M.conn (X ∪ Y) ≤ M.conn X + M.conn Y := by
   zify
-  simp_rw [int_cast_conn_eq, diff_inter, ← diff_inter_diff]
+  simp_rw [intCast_conn_eq, diff_inter, ← diff_inter_diff]
   linarith [M.rk_submod X Y, M.rk_submod (M.E \ X) (M.E \ Y)]
 
 end conn

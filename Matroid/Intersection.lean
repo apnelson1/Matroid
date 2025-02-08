@@ -57,7 +57,7 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
   rw [he₁.contract_indep_iff] at hIc₁
   rw [he₂.contract_indep_iff] at hIc₂
 
-  simp only [contract_elem, contract_ground, deleteElem, delete_ground,
+  simp only [contractElem, contract_ground, deleteElem, delete_ground,
     subset_diff_singleton_iff] at hXc hXd
 
   by_contra! hcon
@@ -82,7 +82,7 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
 
   zify at hcon hcond hId hIc hsm hsm2
 
-  rw [he₂.contract_rk_cast_int_eq, he₁.contract_rk_cast_int_eq, contract_elem, contract_ground,
+  rw [he₂.contract_rk_cast_int_eq, he₁.contract_rk_cast_int_eq, contractElem, contract_ground,
     diff_diff_comm, insert_diff_singleton,
       insert_eq_of_mem (show e ∈ M₂.E \ Xc from ⟨he₂.mem_ground, hXc.2⟩)] at hIc
   rw [delete_elem_rk_eq _ hXd.2, delete_elem_rk_eq _ (by simp), deleteElem, delete_ground,

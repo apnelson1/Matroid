@@ -76,8 +76,27 @@ lemma FinRk.rk_le_rk_of_eRk_le_eRk (hY : M.FinRk Y) (hle : M.eRk X ≤ M.eRk Y) 
   rw [← eRk_lt_top_iff] at hY ⊢
   exact hle.trans_lt hY
 
+@[simp] lemma rk_ground (M : Matroid α) : M.rk M.E = M.rank :=
+  M.rank_def.symm
+
+@[simp]
 lemma rk_inter_ground (M : Matroid α) (X : Set α) : M.rk (X ∩ M.E) = M.rk X := by
   rw [← eRk_toNat_eq_rk, eRk_inter_ground, eRk_toNat_eq_rk]
+
+@[simp]
+lemma rk_ground_inter (M : Matroid α) (X : Set α) : M.rk (M.E ∩ X) = M.rk X := by
+  rw [inter_comm, rk_inter_ground]
+
+@[simp]
+lemma rk_union_ground (M : Matroid α) (X : Set α) : M.rk (X ∪ M.E) = M.rank := by
+  rw [rk, eRk_union_ground]
+
+@[simp]
+lemma rk_ground_union (M : Matroid α) (X : Set α) : M.rk (M.E ∪ X) = M.rank := by
+  rw [rk, eRk_ground_union]
+
+lemma rk_insert_of_not_mem_ground (X : Set α) (he : e ∉ M.E) : M.rk (insert e X) = M.rk X := by
+  rw [← rk_inter_ground, insert_inter_of_not_mem he, rk_inter_ground]
 
 lemma le_rk_iff [FiniteRk M] {n : ℕ} : n ≤ M.rk X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
   simp_rw [← coe_le_eRk_iff, le_eRk_iff,]
@@ -157,7 +176,8 @@ lemma Basis'.finset_card {I : Finset α} (hIX : M.Basis' I X) : I.card = M.rk X 
   simpa using hIX.card
 
 lemma Base.finset_card {B : Finset α} (hB : M.Base B) : B.card = M.rank := by
-  simpa [rank_def] using hB.basis_ground.ncard_eq_rk
+  convert hB.basis_ground.ncard_eq_rk <;>
+  simp
 
 lemma rk_le_toFinset_card (M : Matroid α) {X : Set α} (hX : X.Finite) :
     M.rk X ≤ hX.toFinset.card := by
@@ -213,6 +233,23 @@ lemma FinRk.submod_right (hY : M.FinRk Y) (X : Set α) :
 lemma rk_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
     M.rk (X ∩ Y) + M.rk (X ∪ Y) ≤ M.rk X + M.rk Y :=
   FinRk.submod (M.to_finRk X) Y
+
+-- TODO : `FinRk` versions of the following three lemmas
+lemma rk_submod_insert (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+    M.rk (insert e (X ∩ Y)) + M.rk (insert e (X ∪ Y)) ≤ M.rk (insert e X) + M.rk (insert e Y) := by
+  rw [insert_inter_distrib, insert_union_distrib]
+  apply M.rk_submod
+
+lemma rk_submod_compl (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+    M.rk (M.E \ (X ∪ Y)) + M.rk (M.E \ (X ∩ Y)) ≤ M.rk (M.E \ X) + M.rk (M.E \ Y) := by
+  rw [← diff_inter_diff, diff_inter]
+  apply rk_submod
+
+lemma rk_submod_insert_compl (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+    M.rk (M.E \ insert e (X ∪ Y)) + M.rk (M.E \ insert e (X ∩ Y)) ≤
+      M.rk (M.E \ insert e X) + M.rk (M.E \ insert e Y) := by
+  rw [insert_union_distrib, insert_inter_distrib]
+  exact M.rk_submod_compl (insert e X) (insert e Y)
 
 lemma Indep.exists_insert_of_ncard_lt [FiniteRk M] {J : Set α} (hI : M.Indep I) (hJ : M.Indep J)
     (hcard : I.ncard < J.ncard) : ∃ e ∈ J \ I, M.Indep (insert e I) := by

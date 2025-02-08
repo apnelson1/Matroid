@@ -831,11 +831,11 @@ private lemma projectBy_aux (U : M.ModularCut) :
     M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) := by
   have hinj := Option.some_injective α
   obtain (rfl | hU) := eq_or_ne U ⊤
-  · rw [contract_elem, contract_eq_delete_of_subset_loops]
+  · rw [contractElem, contract_eq_delete_of_subset_loops]
     · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj, hinj.injOn]
     rw [singleton_subset_iff, ← loop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
     simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
-  simp only [contract_elem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
+  simp only [contractElem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
     forall_const]
   rw [Indep.contract_indep_iff]
   · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_closure_eq,
@@ -884,13 +884,13 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
     · rw [← singleton_dep, dep_iff, extendBy_Indep,
       ModularCut.extIndep_iff_of_mem (show e ∈ {e} from rfl)]
       simp
-    rw [contract_elem, contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
+    rw [contractElem, contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
       extendBy_Indep, ModularCut.extIndep_iff_of_not_mem heI, projectBy_indep_iff]
     simp [heI]
   have hnl : (M.extendBy e U).Nonloop e
   · rw [← indep_singleton, extendBy_Indep, ModularCut.extIndep_iff_of_mem (by simp)]
     simpa [← U.eq_top_iff]
-  rw [contract_elem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
+  rw [contractElem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]
 
@@ -951,7 +951,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
 
 lemma exists_common_major_of_delete_eq_contractElem (heD : e ∉ D) (hD : D ⊆ M.E)
     (h_eq : M ＼ D = N ／ e) : ∃ (P : Matroid α), P ／ e = M ∧ P ＼ D = N := by
-  rw [← dual_inj, delete_dual_eq_dual_contract, contract_elem, contract_dual_eq_dual_delete] at h_eq
+  rw [← dual_inj, delete_dual_eq_dual_contract, contractElem, contract_dual_eq_dual_delete] at h_eq
   obtain ⟨P, hPM, hPN⟩ := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
   rw [eq_dual_iff_dual_eq] at hPM hPN
   refine ⟨P✶, by simpa using hPM, by simpa using hPN⟩

@@ -266,8 +266,12 @@ instance contractElem_finite [M.Finite] : (M ／ e).Finite :=
 lemma contract_ground_subset_ground (M : Matroid α) (C : Set α) : (M ／ C).E ⊆ M.E :=
   (M.contract_ground C).trans_subset diff_subset
 
-@[simp] lemma contract_elem (M : Matroid α) (e : α) : M ／ e = M ／ ({e} : Set α) :=
+@[simp] lemma contractElem (M : Matroid α) (e : α) : M ／ e = M ／ ({e} : Set α) :=
   rfl
+
+lemma contractElem_eq_self (he : e ∉ M.E) : M ／ e = M := by
+  rw [contractElem, ← dual_delete_dual_eq_contract, ← deleteElem, deleteElem_eq_self (by simpa),
+    dual_dual]
 
 @[simp] lemma contract_contract (M : Matroid α) (C₁ C₂ : Set α) :
     M ／ C₁ ／ C₂ = M ／ (C₁ ∪ C₂) := by
@@ -328,7 +332,7 @@ lemma Indep.contract_indep_iff (hI : M.Indep I) :
 
 lemma Nonloop.contract_indep_iff (he : M.Nonloop e) :
     (M ／ e).Indep I ↔ e ∉ I ∧ M.Indep (insert e I) := by
-  simp [contract_elem, he.indep.contract_indep_iff]
+  simp [contractElem, he.indep.contract_indep_iff]
 
 lemma Indep.union_indep_iff_contract_indep (hI : M.Indep I) :
     M.Indep (I ∪ J) ↔ (M ／ I).Indep (J \ I) := by
@@ -490,10 +494,10 @@ instance contract_finitary [Finitary M] : Finitary (M ／ C) := by
   exact union_subset_union Subset.rfl inter_subset_right
 
 instance contractElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ／ e) := by
-  rw [contract_elem]; infer_instance
+  rw [contractElem]; infer_instance
 
 instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
-  rw [contract_elem]; infer_instance
+  rw [contractElem]; infer_instance
 
 @[simp] lemma contract_loop_iff_mem_closure : (M ／ C).Loop e ↔ e ∈ M.closure C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
@@ -898,7 +902,7 @@ lemma strictMinor_iff_minor_contract_or_delete :
   · obtain ⟨C, D, hC, hD, hCD, ⟨e,(heC | heD)⟩, rfl⟩ :=
       strictMinor_iff_exists_eq_contract_delete.1 h
     · refine ⟨e, hC heC, Or.inl ?_⟩
-      rw [← insert_eq_of_mem heC, ← singleton_union, ← contract_contract, contract_elem ]
+      rw [← insert_eq_of_mem heC, ← singleton_union, ← contract_contract, contractElem ]
       apply contract_delete_minor
     refine ⟨e, hD heD, Or.inr ?_⟩
     rw [contract_delete_comm _ hCD, ← insert_eq_of_mem heD, ← singleton_union, ← delete_delete]

@@ -407,7 +407,7 @@ lemma eRank_contract_add_eRk (M : Matroid α) (C : Set α) : (M ／ C).eRank + M
 
 lemma Nonloop.eRank_contract_add_one (M : Matroid α) (he : M.Nonloop e) :
     (M ／ e).eRank + 1 = M.eRank := by
-  rw [contract_elem, ← M.eRank_contract_add_eRk {e}, he.eRk_eq]
+  rw [contractElem, ← M.eRank_contract_add_eRk {e}, he.eRk_eq]
 
 lemma FinRk.contract_finRk (h : M.FinRk X) (C : Set α) : (M ／ C).FinRk X := by
   rw [← eRk_lt_top_iff] at *; exact (eRk_contract_le_eRk _ _ _).trans_lt h
@@ -504,11 +504,11 @@ lemma contract_rk_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
 
 lemma Nonloop.contract_rk_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
     (M ／ e).rk X + 1 = M.rk (insert e X) := by
-  rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq, contract_elem]
+  rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq, contractElem]
 
 lemma Nonloop.contract_rank_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
     (M ／ e).rank + 1 = M.rank := by
-  rw [rank_def, he.contract_rk_add_one_eq, contract_elem, contract_ground, insert_diff_singleton,
+  rw [rank_def, he.contract_rk_add_one_eq, contractElem, contract_ground, insert_diff_singleton,
     insert_eq_of_mem he.mem_ground, rank_def]
 
 lemma Nonloop.contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :

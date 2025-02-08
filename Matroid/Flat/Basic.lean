@@ -264,7 +264,7 @@ lemma Flat.union_flat_of_contract' (hF : (M ／ C).Flat F) : M.Flat (F ∪ M.clo
 
 lemma Nonloop.contract_flat_iff (he : M.Nonloop e) :
     (M ／ e).Flat F ↔ M.Flat (insert e F) ∧ e ∉ F := by
-  rw [contract_elem, flat_contract_iff, union_singleton, disjoint_singleton_right]
+  rw [contractElem, flat_contract_iff, union_singleton, disjoint_singleton_right]
 
 /-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def flatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :

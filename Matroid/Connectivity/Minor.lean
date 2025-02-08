@@ -12,7 +12,7 @@ lemma ConnectedTo.delete_or_contract (hM : M.ConnectedTo x y) (hxe : x ≠ e) (h
   obtain rfl | hne := eq_or_ne x y
   · simp  [hxe, hM.mem_ground_left]
   suffices (∀ C, M.Circuit C → e ∉ C → x ∈ C → y ∉ C) → ∃ C, (M ／ e).Circuit C ∧ x ∈ C ∧ y ∈ C by
-    simpa [ConnectedTo, hne, deleteElem, - contract_elem, or_iff_not_imp_left]
+    simpa [ConnectedTo, hne, deleteElem, - contractElem, or_iff_not_imp_left]
   intro h
   obtain ⟨C, hC, hxC, hyC⟩ := hM.exists_circuit_of_ne hne
   have heC : e ∈ C := by
@@ -25,7 +25,7 @@ theorem Connected.delete_or_contract (hM : M.Connected) (hnt : M.E.Nontrivial) (
     (M ＼ e).Connected ∨ (M ／ e).Connected := by
 
   simp only [connected_iff, deleteElem, ← ground_nonempty_iff, delete_ground, Set.mem_diff,
-    Set.mem_singleton_iff, and_imp, contract_elem, contract_ground, or_iff_not_imp_left, not_and,
+    Set.mem_singleton_iff, and_imp, contractElem, contract_ground, or_iff_not_imp_left, not_and,
     not_forall, Classical.not_imp, exists_and_left, exists_prop, true_implies, true_and,
     show (M.E \ {e}).Nonempty from hnt.exists_ne e, forall_exists_index, and_imp]
 

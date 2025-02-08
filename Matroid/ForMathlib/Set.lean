@@ -141,3 +141,11 @@ lemma _root_.HasSubset.Subset.ssubset_of_mem_not_mem {x : α} (hst : s ⊆ t) (h
 
 @[simp] lemma pair_nontrivial_iff {x y : α} : ({x,y} : Set α).Nontrivial ↔ x ≠ y :=
   ⟨by rintro h rfl; simp at h, nontrivial_pair⟩
+
+lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (insert x t) := by
+  rw [diff_diff, singleton_union]
+
+
+@[simp]
+lemma insert_diff_insert {s t : Set α} {x : α} : insert x (s \ insert x t) = insert x (s \ t) := by
+  rw [← diff_singleton_diff_eq, diff_diff_comm, insert_diff_singleton]

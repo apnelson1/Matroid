@@ -147,7 +147,7 @@ lemma Parallel.mem_closure_iff_mem_closure (h : M.Parallel e f) {X : Set α} :
   exact mem_of_mem_of_subset h.mem_closure (M.closure_subset_closure_of_subset_closure (by simpa))
 
 lemma Parallel.loop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ e).Loop f := by
-  rw [loop_iff_mem_closure_empty, contract_elem, contract_loops_eq, mem_diff]
+  rw [loop_iff_mem_closure_empty, contractElem, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩
 
 lemma restrict_parallel_iff {R : Set α} :

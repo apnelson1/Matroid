@@ -6,6 +6,36 @@ namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {B B' I I' J K X Y : Set α}
 
+/- Put the `1` on the RHS! Your version below is stated in terms of `Nat` subtraction, so will be
+harder to use. -/
+lemma Exercise_for_DRP' (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α)
+    (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y))
+    ≤  1 + (M ＼ e).conn X + (M ／ e).conn Y := by
+  -- Apply submodularity fo the pairs `(X, insert e Y)` and `(M.E \ insert e X, Y)`, and simplify.
+  have hsm := M.rk_submod X (insert e Y)
+  rw [union_insert, inter_insert_of_not_mem heX] at hsm
+  have hsm' := M.rk_submod_compl (insert e X) Y
+  rw [insert_union, insert_inter_of_not_mem heY] at hsm'
+  -- Now `zify` and simplify.
+  zify
+  simp only [intCast_conn_eq, deleteElem, delete_ground, diff_singleton_diff_eq, contractElem,
+    contract_rk_cast_int_eq, union_singleton, contract_ground, insert_diff_insert,
+    contract_rank_cast_int_eq]
+  -- Rewrite this particular annoying term. If `e ∈ M.E` is assumed, this can be taken
+  -- care of more easily .
+  have hrw : M.rk (insert e (M.E \ Y)) = M.rk (M.E \ Y) := by
+    by_cases he : e ∈ M.E
+    · rw [insert_eq_of_mem (by simp [he, heY])]
+    rw [rk_insert_of_not_mem_ground _ he]
+
+  have hle : (M ＼ ({e} : Set α)).rank ≤ M.rank := delete_rank_le M {e}
+  have hle' : M.rk {e} ≤ 1 := rk_singleton_le M e
+
+  rw [delete_rk_eq_of_disjoint _ (by simpa), delete_rk_eq_of_disjoint _ (by simp), hrw]
+
+  linarith
+
+
 
 lemma Exercise_for_DRP (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) - 1
@@ -14,7 +44,7 @@ lemma Exercise_for_DRP (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (he
   have : M.rk {e} = 1 := Nonloop.rk_eq sorry
   --Here is where you use that 'e' is not a loop
   have hconY : M.rk (insert e Y) - 1 = ((M ／ e).rk Y : ℤ ) := by sorry
-    -- You can rewrite what it means to contract an element with set notation using contract_elem
+    -- You can rewrite what it means to contract an element with set notation using contractElem
     -- You can then use the definition of contracting for integers
     -- union_singleton opens insert e X to e ∪ X
     --linarith
@@ -46,7 +76,7 @@ lemma Exercise_for_DRP (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (he
   have hconYh : (M ／ e).E \ Y = M.E \ insert e Y :=  by sorry
   have hrkcon : (M ／ e).rk (M.E \ {e}) = (M ／ e).rank := rk_eq_rank fun ⦃a⦄ a ↦ a
   --Here I used a lot of rw
-  rw [Nat.cast_sub, Nat.cast_add, int_cast_conn_eq (M ＼ e) X, int_cast_conn_eq (M ／ e) Y, Nat.cast_one, hf ]
+  rw [Nat.cast_sub, Nat.cast_add, intCast_conn_eq (M ＼ e) X, intCast_conn_eq (M ／ e) Y, Nat.cast_one, hf ]
   rw[delete_elem_rk_eq, delete_elem_rk_eq, hdelx, hconYh, ←hrkcon]
   · linarith
   · sorry

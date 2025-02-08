@@ -285,8 +285,8 @@ theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [FiniteRk 
   use P
   simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
     delete_delete, deleteElem, true_and]
-  rw [union_comm, ← contract_contract, ← contract_elem, and_iff_left rfl]
-  rw [contract_elem, contract_ground, subset_diff] at hNss
+  rw [union_comm, ← contract_contract, ← contractElem, and_iff_left rfl]
+  rw [contractElem, contract_ground, subset_diff] at hNss
 
   exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
 

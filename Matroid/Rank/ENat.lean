@@ -73,12 +73,29 @@ lemma Base.eRk (hB : M.Base B) : M.eRk B = M.eRank := by
 @[simp] lemma eRank_emptyOn (α : Type*) : (emptyOn α).eRank = 0 := by
   simp [← (show (emptyOn α).Base ∅ by simp).encard_eq_eRank]
 
+@[simp] lemma eRk_ground (M : Matroid α) : M.eRk M.E = M.eRank :=
+  M.eRank_def.symm
+
 @[simp] lemma eRk_inter_ground (M : Matroid α) (X : Set α) : M.eRk (X ∩ M.E) = M.eRk X := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
   rw [← hI.eRk_eq_eRk, hI.basis_inter_ground.eRk]
 
+@[simp] lemma eRk_ground_inter (M : Matroid α) (X : Set α) : M.eRk (M.E ∩ X) = M.eRk X := by
+  rw [inter_comm, eRk_inter_ground]
+
 lemma eRk_eq_eRank (hX : M.E ⊆ X) : M.eRk X = M.eRank := by
   rw [← eRk_inter_ground, inter_eq_self_of_subset_right hX, eRank_def]
+
+@[simp]
+lemma eRk_union_ground (M : Matroid α) (X : Set α) : M.eRk (X ∪ M.E) = M.eRank := by
+  rw [← eRk_inter_ground, inter_eq_self_of_subset_right subset_union_right, eRank_def]
+
+@[simp]
+lemma eRk_ground_union (M : Matroid α) (X : Set α) : M.eRk (M.E ∪ X) = M.eRank := by
+  rw [union_comm, eRk_union_ground]
+
+lemma eRk_insert_of_not_mem_ground (X : Set α) (he : e ∉ M.E) : M.eRk (insert e X) = M.eRk X := by
+  rw [← eRk_inter_ground, insert_inter_of_not_mem he, eRk_inter_ground]
 
 lemma one_le_eRank (M : Matroid α) [RkPos M] : 1 ≤ M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base
@@ -215,6 +232,24 @@ lemma eRk_inter_add_eRk_union_le (M : Matroid α) (X Y : Set α) :
   exact add_le_add (eRk_le_encard _ _) (encard_mono (subset_inter hIX' hIY'))
 
 alias eRk_submod := eRk_inter_add_eRk_union_le
+
+-- The next three lemmas are convenient for the calculations that show up in connectivity arguments.
+lemma eRk_submod_insert (M : Matroid α) (X Y : Set α) :
+    M.eRk (insert e (X ∩ Y)) + M.eRk (insert e (X ∪ Y))
+      ≤ M.eRk (insert e X) + M.eRk (insert e Y) := by
+  rw [insert_inter_distrib, insert_union_distrib]
+  apply M.eRk_submod
+
+lemma eRk_submod_compl (M : Matroid α) (X Y : Set α) :
+    M.eRk (M.E \ (X ∪ Y)) + M.eRk (M.E \ (X ∩ Y)) ≤ M.eRk (M.E \ X) + M.eRk (M.E \ Y) := by
+  rw [← diff_inter_diff, diff_inter]
+  apply M.eRk_submod
+
+lemma eRk_submod_insert_compl (M : Matroid α) (X Y : Set α) :
+    M.eRk (M.E \ insert e (X ∪ Y)) + M.eRk (M.E \ insert e (X ∩ Y)) ≤
+      M.eRk (M.E \ insert e X) + M.eRk (M.E \ insert e Y) := by
+  rw [insert_union_distrib, insert_inter_distrib]
+  exact M.eRk_submod_compl (insert e X) (insert e Y)
 
 lemma eRk_eq_eRk_of_subset_le (hXY : X ⊆ Y) (hYX : M.eRk Y ≤ M.eRk X) : M.eRk X = M.eRk Y :=
   (M.eRk_mono hXY).antisymm hYX
