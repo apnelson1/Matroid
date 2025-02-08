@@ -720,4 +720,20 @@ lemma conn_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
   simp_rw [intCast_conn_eq, diff_inter, ← diff_inter_diff]
   linarith [M.rk_submod X Y, M.rk_submod (M.E \ X) (M.E \ Y)]
 
+lemma conn_inter_add_conn_union_union_le (M : Matroid α) [FiniteRk M] {A : Set α}
+    (hAX : Disjoint A X) (hAY : Disjoint A Y) :
+    M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ A) ≤ M.rk A + (M ＼ A).conn X + (M ／ A).conn Y := by
+  zify
+  simp only [intCast_conn_eq, delete_ground, contract_rk_cast_int_eq, contract_ground,
+    contract_rank_cast_int_eq]
+  rw [delete_rk_eq_of_disjoint _ hAX.symm, delete_rk_eq_of_disjoint _
+    (disjoint_sdiff_left.mono_left diff_subset), diff_diff, diff_diff_comm, diff_union_self,
+    rk_compl_union_of_disjoint _ hAY.symm, union_comm A]
+  have hle := delete_rank_le M A
+  have hsm := M.rk_submod X (Y ∪ A)
+  rw [inter_union_distrib_left, hAX.symm.inter_eq, union_empty, ← union_assoc] at hsm
+  have hsm' := M.rk_submod_compl (X ∪ A) Y
+  rw [union_right_comm, union_inter_distrib_right, hAY.inter_eq, union_empty] at hsm'
+  linarith
+
 end conn

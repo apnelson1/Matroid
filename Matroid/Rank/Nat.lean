@@ -98,6 +98,10 @@ lemma rk_ground_union (M : Matroid α) (X : Set α) : M.rk (M.E ∪ X) = M.rank 
 lemma rk_insert_of_not_mem_ground (X : Set α) (he : e ∉ M.E) : M.rk (insert e X) = M.rk X := by
   rw [← rk_inter_ground, insert_inter_of_not_mem he, rk_inter_ground]
 
+lemma rk_compl_union_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
+    M.rk (M.E \ X ∪ Y) = M.rk (M.E \ X) := by
+  rw [rk, eRk_compl_union_of_disjoint _ hXY, ← rk]
+
 lemma le_rk_iff [FiniteRk M] {n : ℕ} : n ≤ M.rk X ↔ ∃ I, I ⊆ X ∧ M.Indep I ∧ I.ncard = n := by
   simp_rw [← coe_le_eRk_iff, le_eRk_iff,]
   refine ⟨fun ⟨I, hIX, hI, hc⟩ ↦ ⟨I, hIX, hI, by rw [ncard_def, hc, toNat_coe]⟩,

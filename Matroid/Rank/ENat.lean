@@ -97,6 +97,12 @@ lemma eRk_ground_union (M : Matroid α) (X : Set α) : M.eRk (M.E ∪ X) = M.eRa
 lemma eRk_insert_of_not_mem_ground (X : Set α) (he : e ∉ M.E) : M.eRk (insert e X) = M.eRk X := by
   rw [← eRk_inter_ground, insert_inter_of_not_mem he, eRk_inter_ground]
 
+lemma eRk_compl_union_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
+    M.eRk (M.E \ X ∪ Y) = M.eRk (M.E \ X) := by
+  rw [← eRk_inter_ground, union_inter_distrib_right, inter_eq_self_of_subset_left diff_subset,
+    union_eq_self_of_subset_right
+      (subset_diff.2 ⟨inter_subset_right, hXY.symm.mono_left inter_subset_left⟩)]
+
 lemma one_le_eRank (M : Matroid α) [RkPos M] : 1 ≤ M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard_eq_eRank, one_le_encard_iff_nonempty]

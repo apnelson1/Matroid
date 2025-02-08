@@ -6,11 +6,11 @@ namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {B B' I I' J K X Y : Set α}
 
-/- Put the `1` on the RHS! Your version below is stated in terms of `Nat` subtraction, so will be
-harder to use. -/
-lemma Exercise_for_DRP' (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α)
-    (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y))
-    ≤  1 + (M ＼ e).conn X + (M ／ e).conn Y := by
+/- Put the `1` on the RHS! Your version below is stated in terms of `Nat` subtraction,
+so will be harder to apply. -/
+lemma Exercise_for_DRP' (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (heX : e ∉ X)
+    (heY : e ∉ Y) :
+    M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y)) ≤  1 + (M ＼ e).conn X + (M ／ e).conn Y := by
   -- Apply submodularity fo the pairs `(X, insert e Y)` and `(M.E \ insert e X, Y)`, and simplify.
   have hsm := M.rk_submod X (insert e Y)
   rw [union_insert, inter_insert_of_not_mem heX] at hsm
