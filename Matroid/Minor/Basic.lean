@@ -530,6 +530,35 @@ lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
   rw [← contract_loop_iff_mem_closure, ← contract_loop_iff_mem_closure, contract_contract,
     union_comm]
 
+-- TODO : `Basis'` version.
+lemma Basis.contract_basis (hIC : M.Basis I C) (hJY : M.Basis J Y) (h_ind : M.Indep (J \ C ∪ I)) :
+    (M ／ C).Basis (J \ C) (Y \ C) := by
+  refine Indep.basis_of_subset_of_subset_closure ?_ (diff_subset_diff_left hJY.subset) ?_
+  · rwa [hIC.contract_indep_diff_iff]
+  simp only [contract_closure_eq, diff_union_self, closure_union_congr_left hJY.closure_eq_closure]
+  exact diff_subset_diff_left (subset_closure_of_subset _ subset_union_left)
+
+lemma Basis.contract_basis_of_disjoint (hIC : M.Basis I C) (hJY : M.Basis J Y) (hdj : Disjoint C Y)
+    (h_ind : M.Indep (I ∪ J)) : (M ／ C).Basis J Y := by
+  refine Indep.basis_of_subset_of_subset_closure ?_ hJY.subset ?_
+  · rwa [hIC.contract_indep_iff, and_iff_left (hdj.mono_right hJY.subset), union_comm]
+  rw [contract_closure_eq, subset_diff, and_iff_left hdj.symm, closure_union_congr_left
+    hJY.closure_eq_closure]
+  exact subset_closure_of_subset _ subset_union_left
+
+-- TODO : `Basis'` version.
+lemma Indep.contract_basis (hI : M.Indep I) (hJY : M.Basis J Y) (h_ind : M.Indep (I ∪ J)) :
+    (M ／ I).Basis (J \ I) (Y \ I) := by
+  refine Indep.basis_of_subset_of_subset_closure ?_ (diff_subset_diff_left hJY.subset) ?_
+  · rwa [hI.contract_indep_iff, and_iff_right disjoint_sdiff_left, diff_union_self, union_comm]
+  simp only [contract_closure_eq, diff_union_self, closure_union_congr_left hJY.closure_eq_closure]
+  exact diff_subset_diff_left <| subset_closure_of_subset _ subset_union_left
+
+lemma Indep.contract_basis_of_disjoint (hI : M.Indep I) (hJY : M.Basis J Y) (hdj : Disjoint I Y)
+    (h_ind : M.Indep (I ∪ J)) : (M ／ I).Basis J Y := by
+  have hb := hI.contract_basis hJY h_ind
+  rwa [hdj.sdiff_eq_right, (hdj.mono_right hJY.subset).sdiff_eq_right] at hb
+
 lemma Circuit.contract_dep (hK : M.Circuit K) (hCK : Disjoint C K) : (M ／ C).Dep K := by
   obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E)
   rw [← contract_inter_ground_eq, Dep, hI.contract_indep_iff,

@@ -154,7 +154,6 @@ lemma Base.disjointSum_base_union {h} (hB : M.Base B) (hB' : N.Base B') :
 lemma Basis.disjointSum_basis_union {I J X Y : Set α} {M N : Matroid α} (hIX : M.Basis I X)
     (hJY : N.Basis J Y) (h) : (M.disjointSum N h).Basis (I ∪ J) (X ∪ Y) := by
 
-
   rw [disjointSum_basis_iff, union_inter_distrib_right, union_inter_distrib_right,
     (h.symm.mono_left hJY.indep.subset_ground).inter_eq, union_empty,
     (h.symm.mono_left hJY.subset_ground).inter_eq, union_empty,
@@ -167,5 +166,20 @@ lemma Basis.disjointSum_basis_union {I J X Y : Set α} {M N : Matroid α} (hIX :
     inter_eq_self_of_subset_left hJY.indep.subset_ground]
   exact ⟨hIX, hJY, union_subset_union hIX.subset hJY.subset,
     union_subset_union hIX.subset_ground hJY.subset_ground⟩
+
+-- TODO - generalize this to other sums.
+@[simp]
+lemma disjointSum_dual (M N : Matroid α) (hMN : Disjoint M.E N.E) :
+    (M.disjointSum N hMN)✶ = M✶.disjointSum N✶ hMN := by
+  refine ext_base (by simp) fun B hB ↦ ?_
+  rw [disjointSum_base_iff, dual_base_iff, disjointSum_base_iff]
+  simp only [disjointSum_ground_eq, dual_ground, inter_subset_right, dual_base_iff]
+  simp only [dual_ground, disjointSum_ground_eq] at hB
+  rw [union_diff_distrib, union_inter_distrib_right, inter_eq_self_of_subset_left diff_subset,
+      (hMN.symm.mono_left diff_subset).inter_eq, union_empty, union_inter_distrib_right,
+      inter_eq_self_of_subset_left diff_subset, (hMN.mono_left diff_subset).inter_eq, empty_union,
+      and_iff_left (union_subset_union diff_subset diff_subset)]
+  simp [hB]
+
 
 end disjointSum

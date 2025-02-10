@@ -1,5 +1,6 @@
 import Matroid.Rank.Finite
 import Matroid.Loop
+import Matroid.OnUniv
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Matroid.Sum
 
@@ -607,13 +608,10 @@ lemma Indep.nullity_eq (hI : M.Indep I) : M.nullity I = 0 := by
   rw [hJI.nullity_eq, encard_eq_zero, diff_eq_empty]
   exact hJI.indep.subset
 
-lemma nullity_eq_nullity_inter_ground_add_encard_diff :
-    M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
-  rw [hI.nullity_eq, hI.basis_inter_ground.nullity_eq, ← encard_union_eq]
-  · nth_rw 1 [← inter_union_diff X M.E, union_diff_distrib, diff_diff,
-      union_eq_self_of_subset_right hI.indep.subset_ground]
-  exact disjoint_sdiff_right.mono_left (diff_subset.trans inter_subset_right)
+lemma Circuit.nullity_eq {C : Set α} (hC : M.Circuit C) : M.nullity C = 1 := by
+  rw [(hC.diff_singleton_basis hC.nonempty.some_mem).nullity_eq, diff_diff_cancel_left
+     (by simpa using hC.nonempty.some_mem)]
+  simp
 
 lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.nullity Y := by
   rw [← M.nullity_restrict_of_subset hXY, ← M.nullity_restrict_self Y]
@@ -622,6 +620,70 @@ lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.
   rw [← basis_ground_iff, restrict_ground_eq] at hB
   rw [hI.nullity_eq, hB.nullity_eq, diff_inter_self_eq_diff]
   exact encard_le_encard (diff_subset_diff_left hXY)
+
+lemma nullity_supermodular (M : Matroid α) (X Y : Set α) :
+    M.nullity X + M.nullity Y ≤ M.nullity (X ∪ Y) + M.nullity (X ∩ Y) := by
+  obtain ⟨I, hI⟩ := M.exists_basis' (X ∩ Y)
+  obtain ⟨Ix, hIx, hIIx⟩ := hI.exists_basis'_inter_eq_of_superset inter_subset_left
+  obtain ⟨Iy, hIy, hIIy⟩ := hI.exists_basis'_inter_eq_of_superset inter_subset_right
+  obtain ⟨Iu, hIu, hIxIu⟩ := hIx.exists_basis'_inter_eq_of_superset (Y := X ∪ Iy) subset_union_left
+  have hIu' : M.Basis' Iu (X ∪ Y) := by
+    rw [basis'_iff_basis_closure, ← closure_union_congr_right hIy.closure_eq_closure,
+      and_iff_left (hIu.subset.trans (union_subset_union_right X hIy.subset))]
+    exact hIu.basis_closure_right
+  rw [hIx.nullity_eq, hIy.nullity_eq, hI.nullity_eq, hIu'.nullity_eq,
+    ← encard_union_add_encard_inter]
+  refine add_le_add (encard_le_encard ?_) (encard_le_encard ?_)
+  · suffices Disjoint (X \ Ix) Iu ∧ Disjoint (Y \ Iy) Iu by
+      simpa [subset_diff, diff_subset.trans subset_union_left, diff_subset.trans subset_union_right]
+    rw [← hIxIu, diff_inter_self_eq_diff, and_iff_right disjoint_sdiff_left, disjoint_iff_forall_ne]
+    rintro e ⟨heY, heIy⟩ _ heIu rfl
+    have heX : e ∈ X := by simpa [heIy] using hIu.subset heIu
+    exact heIy <| (hIIy.symm.subset <| hIIx.subset ⟨hIxIu.subset ⟨heIu, heX⟩, ⟨heX, heY⟩⟩).1
+  rw [← hIIx, diff_inter_self_eq_diff, ← inter_diff_assoc, diff_eq, diff_eq, diff_eq,
+    inter_assoc (a := X), inter_assoc X Y, inter_comm _ Y]
+  exact inter_subset_left
+
+lemma nullity_insert_eq_add_one (hecl : e ∈ M.closure X) (heX : e ∉ X) :
+    M.nullity (insert e X) = M.nullity X + 1 := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  have hI' : M.Basis' I (insert e X) := by
+    rw [basis'_iff_basis_closure, closure_insert_eq_of_mem_closure hecl]
+    exact ⟨hI.basis_closure_right, hI.subset.trans <| subset_insert ..⟩
+  rw [hI.nullity_eq, hI'.nullity_eq, insert_diff_of_not_mem _ (not_mem_subset hI.subset heX),
+    encard_insert_of_not_mem (not_mem_subset diff_subset heX)]
+
+lemma nullity_eq_nullity_inter_ground_add_encard_diff :
+    M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  rw [hI.nullity_eq, hI.basis_inter_ground.nullity_eq, ← encard_union_eq]
+  · nth_rw 1 [← inter_union_diff X M.E, union_diff_distrib, diff_diff,
+      union_eq_self_of_subset_right hI.indep.subset_ground]
+  exact disjoint_sdiff_right.mono_left (diff_subset.trans inter_subset_right)
+
+lemma nullity_corestrict_univ_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    (M✶ ↾ univ)✶.nullity X = M.nullity X := by
+  nth_rw 2 [← M.corestrict_univ_restrict_ground]
+  rw [nullity_restrict_of_subset _ hX]
+
+lemma nullity_corestrict_univ_eq_nullity_inter (M : Matroid α) (X : Set α) :
+    (M✶ ↾ univ)✶.nullity X = M.nullity (X ∩ M.E) := by
+  obtain ⟨B, hB⟩ := M.exists_basis' X
+  rw [hB.corestrict_univ_basis.nullity_eq, union_comm, ← diff_diff, sdiff_sdiff_right_self,
+    hB.basis_inter_ground.nullity_eq]
+  rfl
+
+lemma nullity_insert (heX : e ∉ M.closure X) (heE : e ∈ M.E := by aesop_mat) :
+    M.nullity (insert e X) = M.nullity X := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [nullity_eq_nullity_inter_ground_add_encard_diff,
+      insert_inter_of_mem heE, insert_diff_of_mem _ heE, aux (by simpa) (by simp),
+      ← nullity_eq_nullity_inter_ground_add_encard_diff]
+  obtain ⟨I, hI⟩ := M.exists_basis X
+  rw [(hI.insert_basis_insert_of_not_mem_closure (by rwa [hI.closure_eq_closure])).nullity_eq,
+    hI.nullity_eq]
+  simp only [mem_insert_iff, true_or, insert_diff_of_mem]
+  rw [diff_insert_of_not_mem (not_mem_subset (subset_closure ..) heX)]
 
 end Nullity
 
