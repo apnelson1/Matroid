@@ -14,20 +14,20 @@ lemma Indep.basis_iff_eq {I J : Set α} (hI : M.Indep I) : M.Basis J I ↔ J = I
   rintro rfl
   exact hI.basis_self
 
-lemma eq_loopyOn_or_rkPos' (M : Matroid α) : (∃ E, M = loopyOn E) ∨ M.RkPos := by
-  obtain h | h := M.eq_loopyOn_or_rkPos
+lemma eq_loopyOn_or_rankPos' (M : Matroid α) : (∃ E, M = loopyOn E) ∨ M.RankPos := by
+  obtain h | h := M.eq_loopyOn_or_rankPos
   · exact .inl ⟨M.E, h⟩
   exact .inr h
 
-lemma rkPos_iff_empty_not_spanning : M.RkPos ↔ ¬ M.Spanning ∅ := by
-  rw [rkPos_iff, not_iff_not]
+lemma rankPos_iff_empty_not_spanning : M.RankPos ↔ ¬ M.Spanning ∅ := by
+  rw [rankPos_iff, not_iff_not]
   exact ⟨fun h ↦ h.spanning, fun h ↦ h.base_of_indep M.empty_indep⟩
 
-lemma exists_base_finset (M : Matroid α) [FiniteRk M] : ∃ B : Finset α, M.Base B := by
+lemma exists_base_finset (M : Matroid α) [RankFinite M] : ∃ B : Finset α, M.Base B := by
   obtain ⟨B, hB⟩ := M.exists_base
   exact ⟨hB.finite.toFinset, by simpa⟩
 
-lemma exists_basis_finset (M : Matroid α) [FiniteRk M] (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+lemma exists_basis_finset (M : Matroid α) [RankFinite M] (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
     ∃ I : Finset α, M.Basis I X := by
   obtain ⟨I, hI⟩ := M.exists_basis X
   refine ⟨hI.indep.finite.toFinset, by simpa⟩

@@ -222,7 +222,7 @@ end FinsetNonspanningCircuitMatroid
 
 abbrev CoNonspanningCircuit (M : Matroid α) (K : Finset α) : Prop := M✶.NonspanningCircuit K
 
-lemma circuit_of_NonspanningCircuit_rank {M :Matroid α} [FiniteRk M] : ∀ C : Finset α, ↑C ⊆ M.E →
+lemma circuit_of_NonspanningCircuit_rank {M :Matroid α} [RankFinite M] : ∀ C : Finset α, ↑C ⊆ M.E →
   (M.Circuit C ↔ M.NonspanningCircuit C ∨ (C.card = M.rank + 1 ∧ (∀ D, M.NonspanningCircuit D → ¬D ⊆ C))) := by
     sorry
     -- refine fun C hsub ↦ (Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))
@@ -267,7 +267,7 @@ lemma circuit_of_NonspanningCircuit_rank {M :Matroid α} [FiniteRk M] : ∀ C : 
 
 
 
-lemma eq_of_NonspanningCircuit_iff_NonspanningCircuit_forall {M₁ M₂ : Matroid α} [FiniteRk M₁] [FiniteRk M₂]
+lemma eq_of_NonspanningCircuit_iff_NonspanningCircuit_forall {M₁ M₂ : Matroid α} [RankFinite M₁] [RankFinite M₂]
   (hE : M₁.E = M₂.E)  (hCiff : ∀ C : Finset α , ↑C ⊆ M₁.E → (M₁.NonspanningCircuit C ↔ M₂.NonspanningCircuit C))
   (hrank : M₁.rank = M₂.rank ) : M₁ = M₂ := by
   refine ext_circuit hE (fun C hsub ↦ Iff.intro (fun hC ↦ ?_) (fun hC ↦ ?_))

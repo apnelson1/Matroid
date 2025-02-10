@@ -313,7 +313,7 @@ lemma Rep.parallel_iff' (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
   rw [v.parallel_iff he]
   exact ⟨fun ⟨c, hne, heq⟩ ↦ ⟨Units.mk0 c hne, by simpa⟩, fun ⟨c, heq⟩ ↦ ⟨c, by simp, heq⟩⟩
 
-lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
+lemma Rep.simple_iff [RankPos M] (v : M.Rep 𝔽 W) :
     M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), c • (v f) = v e → e = f := by
   simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
   refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
@@ -328,7 +328,7 @@ lemma Rep.simple_iff [RkPos M] (v : M.Rep 𝔽 W) :
   exact h (by aesop_mat) (by aesop_mat) c h_eq
 
 lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
-  obtain (hl | hpos) := M.eq_loopyOn_or_rkPos
+  obtain (hl | hpos) := M.eq_loopyOn_or_rankPos
   · rw [simple_iff_loopless_eq_of_parallel_forall, hl, loopyOn_loopless_iff] at h
     simp [h.1]
   exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul, eq_comm]

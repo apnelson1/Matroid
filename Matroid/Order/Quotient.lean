@@ -207,8 +207,8 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
   tfae_finish
 
 --Begin finite case
-lemma Quotient.finiteRk {M₁ M₂ : Matroid α} [hM₁ : FiniteRk M₁] (hQ : M₂ ≤q M₁) : FiniteRk M₂ := by
-  rw [finiteRk_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
+lemma Quotient.rankFinite {M₁ M₂ : Matroid α} [hM₁ : RankFinite M₁] (hQ : M₂ ≤q M₁) : RankFinite M₂ := by
+  rw [rankFinite_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.eRelRk_le _ _).trans_lt hM₁
 
@@ -284,7 +284,7 @@ lemma TruncateFamily.quotient (T : M.TruncateFamily) : T.matroid ≤q M := by
   rw [T.matroid_closure_eq_closure X hX hXs]
 
 lemma truncate_quotient (M : Matroid α) : M.truncate ≤q M := by
-  obtain hM | h := M.eq_loopyOn_or_rkPos
+  obtain hM | h := M.eq_loopyOn_or_rankPos
   · rw [hM]
     simp [Quotient.refl]
   rw [← TruncateFamily.matroid_top]
@@ -315,15 +315,15 @@ lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
 
 end Constructions
 
-lemma Quotient.intCast_rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
+lemma Quotient.intCast_rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
     (M₂.rk Y : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₁.rk X := by
-  have _ : FiniteRk M₂ := hQ.finiteRk
+  have _ : RankFinite M₂ := hQ.rankFinite
   rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
     ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
     cast_rk_eq, ← (M₁.to_finRk X).eRelRk_eq_sub hXY, ← (M₂.to_finRk X).eRelRk_eq_sub hXY]
   exact eRelRk_le hQ X Y
 
-lemma Quotient.rank_sub_mono [FiniteRk M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
+lemma Quotient.rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
     (M₁.rk X : ℤ) - M₂.rk X ≤ (M₁.rk Y : ℤ) - M₂.rk Y := by
   linarith [hQ.intCast_rank_sub_mono hXY]
 

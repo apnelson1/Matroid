@@ -232,8 +232,8 @@ lemma discrepancy_inter_ground [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set α
   rw [← hQ.encard_basis_diff_eq_discrepancy hI' hJ.basis_inter_ground hIJ,
     ← hQ.encard_basis'_diff_eq_discrepancy hI hJ hIJ]
 
-lemma discrepancy_ne_top [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) : hQ.discrepancy X ≠ ⊤ := by
-  have := hQ.finiteRk
+lemma discrepancy_ne_top [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) : hQ.discrepancy X ≠ ⊤ := by
+  have := hQ.rankFinite
   intro htop
   have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [htop] at hdis
@@ -241,32 +241,32 @@ lemma discrepancy_ne_top [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) : hQ
 
 noncomputable abbrev nDiscrepancy (hQ : M₂ ≤q M₁) (X : Set α) : ℕ := (hQ.discrepancy X).toNat
 
-lemma rk_left_add_nDiscrepancy_eq [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) :
+lemma rk_left_add_nDiscrepancy_eq [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) :
     M₂.rk X + hQ.nDiscrepancy X = M₁.rk X := by
-  have := hQ.finiteRk
+  have := hQ.rankFinite
   have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [rk, rk, ← hdis, ENat.toNat_add (by simp only [ne_eq, eRk_ne_top_iff, M₂.to_finRk X])
     (hQ.discrepancy_ne_top _)]
 
-lemma nDiscrepancy_mono [M₁.FiniteRk] (hQ : M₂ ≤q M₁) : Monotone hQ.nDiscrepancy :=
-  have := hQ.finiteRk
+lemma nDiscrepancy_mono [M₁.RankFinite] (hQ : M₂ ≤q M₁) : Monotone hQ.nDiscrepancy :=
+  have := hQ.rankFinite
   fun X Y (hXY : X ⊆ Y) ↦ ENat.toNat_le_toNat (hQ.discrepancy_mono hXY) (hQ.discrepancy_ne_top _)
 
-lemma nDiscrepancy_le_of_subset [M₁.FiniteRk] (hQ : M₂ ≤q M₁) {X Y : Set α} (hXY : X ⊆ Y) :
+lemma nDiscrepancy_le_of_subset [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X Y : Set α} (hXY : X ⊆ Y) :
     hQ.nDiscrepancy X ≤ hQ.nDiscrepancy Y :=
   hQ.nDiscrepancy_mono hXY
 
-lemma intCast_rk_sub_rk_eq_nDiscrepancy [M₁.FiniteRk] (hQ : M₂ ≤q M₁) (X : Set α) :
+lemma intCast_rk_sub_rk_eq_nDiscrepancy [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) :
     (M₁.rk X : ℤ) - (M₂.rk X : ℤ) = hQ.nDiscrepancy X := by
   simp [← hQ.rk_left_add_nDiscrepancy_eq X]
 
-lemma intCast_rank_sub_rank_eq_nDiscrepancy [M₁.FiniteRk] (hQ : M₂ ≤q M₁) :
+lemma intCast_rank_sub_rank_eq_nDiscrepancy [M₁.RankFinite] (hQ : M₂ ≤q M₁) :
     (M₁.rank : ℤ) - M₂.rank  = hQ.nDiscrepancy M₁.E := by
   rw [rank_def, rank_def, hQ.ground_eq, intCast_rk_sub_rk_eq_nDiscrepancy]
 
-def foo [M₁.FiniteRk] (hQ : M₂ ≤q M₁) {X : Set α} :
+def foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
     hQ.nDiscrepancy X = hQ.nDiscrepancy M₁.E ↔ M₁ ／ X = M₂ ／ X := by
-  have := hQ.finiteRk
+  have := hQ.rankFinite
   refine ⟨fun h ↦ ext_rk (by simp [hQ.ground_eq]) (fun Y hY ↦ ?_), fun h_eq ↦ ?_⟩
   · zify
     simp only [contract_rk_cast_int_eq]

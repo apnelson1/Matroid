@@ -540,25 +540,25 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
   v.restrict_span_fullRank.mapEquiv _
 
-/-- The natural representation of a `FiniteRk` matroid with rows indexed by a base -/
-noncomputable def Rep.standardRep [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+/-- The natural representation of a `RankFinite` matroid with rows indexed by a base -/
+noncomputable def Rep.standardRep [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
     M.Rep 𝔽 (B → 𝔽) :=
   have := hB.finite.to_subtype
   (v.standardRep' hB).mapEquiv (Finsupp.linearEquivFunOnFinite 𝔽 𝔽 B)
 
-lemma Rep.standardRep_eq_one [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+lemma Rep.standardRep_eq_one [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
     (v.standardRep hB) e e = 1 := by
   classical
   have := hB.finite.to_subtype
   simp [standardRep, v.standardRep_eq_one' hB]
 
-lemma Rep.standardRep_eq_zero [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B)
+lemma Rep.standardRep_eq_zero [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B)
   (hef : e ≠ f) : (v.standardRep hB) e f = 0 := by
   classical
   have := hB.finite.to_subtype
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
-lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
     (v.standardRep hB).FullRank :=
   (v.standardRep_fullRank' hB).mapEquiv _
 
@@ -623,11 +623,11 @@ lemma Representable.exists_standardRep' (h : Representable M 𝔽) (hB : M.Base 
     ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
   let ⟨v⟩ := h; ⟨v.standardRep' hB, v.standardRep_fullRank' hB⟩
 
-lemma Representable.exists_standardRep [FiniteRk M] (h : Representable M 𝔽) (hB : M.Base B) :
+lemma Representable.exists_standardRep [RankFinite M] (h : Representable M 𝔽) (hB : M.Base B) :
     ∃ v : M.Rep 𝔽 (B → 𝔽), v.FullRank  :=
   let ⟨v⟩ := h; ⟨v.standardRep hB, v.standardRep_fullRank hB⟩
 
-lemma Representable.exists_fin_rep [FiniteRk M] (h : Representable M 𝔽) :
+lemma Representable.exists_fin_rep [RankFinite M] (h : Representable M 𝔽) :
     ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
   obtain ⟨B, hB⟩ := M.exists_base
   have _ := hB.finite.fintype

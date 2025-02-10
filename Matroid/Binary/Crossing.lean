@@ -203,7 +203,7 @@ lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he 
     simpa only [pairwiseDisjoint_singleton, mem_singleton_iff, ne_eq, hab,
       forall_eq, hab.symm, not_false_eq_true, forall_const, true_and] using h
 
-  have hpos : (M ＼ e).RkPos := hIM.rkPos_of_nonempty (by simp)
+  have hpos : (M ＼ e).RankPos := hIM.rankPos_of_nonempty (by simp)
 
   have hucl : (M ＼ e).closure {a} ∪ (M ＼ e).closure {b} = (M ＼ e).E
   · rw [hNe.ground_eq_biUnion_closure, ← hIe]

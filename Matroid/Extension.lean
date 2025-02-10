@@ -217,7 +217,7 @@ lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.closure ∅ ∈ U := by
 lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut) := by
   rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
 
-lemma principal_ground_ne_top (M : Matroid α) [RkPos M] : ModularCut.principal M M.E ≠ ⊤ := by
+lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
   simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_flat, true_and]
   obtain ⟨B, hB⟩ := M.exists_base
   obtain ⟨e, heB⟩ := hB.nonempty
@@ -362,7 +362,7 @@ section finite
 
 /-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
 modular pairs rather than families. -/
-@[simps] def ModularCut.ofForallModularPairInter (M : Matroid α) [M.FiniteRk] (U : Set (Set α))
+@[simps] def ModularCut.ofForallModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
     (h_flat : ∀ F ∈ U, M.Flat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.Flat F' → F ⊆ F' → F' ∈ U)
     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.ModularPair F F' → F ∩ F' ∈ U) :

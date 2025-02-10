@@ -568,17 +568,17 @@ def matroid_of_indep_of_bdd (E : Set α) (Indep : Set α → Prop) (h_empty : In
     (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).Indep = Indep := by
   simp [matroid_of_indep_of_bdd]
 
-/-- `matroid_of_indep_of_bdd` constructs a `FiniteRk` matroid. -/
+/-- `matroid_of_indep_of_bdd` constructs a `RankFinite` matroid. -/
 instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
     (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
     (h_aug : ∀⦃I B⦄, Indep I → I ∉ maximals (· ⊆ ·) (setOf Indep) →
       B ∈ maximals (· ⊆ ·) (setOf Indep) → ∃ x ∈ B \ I, Indep (insert x I))
     (h_bdd : ∃ (n : ℕ), ∀ I, Indep I → I.encard ≤ n )
     (h_support : ∀ I, Indep I → I ⊆ E) :
-    Matroid.FiniteRk (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
+    Matroid.RankFinite (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
 
   refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base.elim
-    (fun B hB ↦ hB.finiteRk_of_finite _)
+    (fun B hB ↦ hB.rankFinite_of_finite _)
   obtain ⟨n, h_bdd⟩ := h_bdd
   refine' finite_of_encard_le_coe (h_bdd _ _)
   rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
@@ -640,10 +640,10 @@ def matroid_of_exists_finite_base {α : Type*} (E : Set α) (Base : Set α → P
     (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base :=
   rfl
 
-/-- A matroid constructed with a finite Base is `FiniteRk` -/
+/-- A matroid constructed with a finite Base is `RankFinite` -/
 instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite}
     {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} :
-    Matroid.FiniteRk
+    Matroid.RankFinite
       (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) :=
   ⟨exists_finite_base⟩
 

@@ -365,7 +365,7 @@ lemma Flat.covBy_iff_eRelRk_eq_one_of_subset (hF₀ : M.Flat F₀) (hF : M.Flat 
     F₀ ⋖[M] F ↔ M.eRelRk F₀ F = 1 := by
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_iff_right hss]
 
-lemma Flat.covBy_iff_rk_eq_add_one [FiniteRk M] (hF₀ : M.Flat F₀) (hF : M.Flat F) :
+lemma Flat.covBy_iff_rk_eq_add_one [RankFinite M] (hF₀ : M.Flat F₀) (hF : M.Flat F) :
     F₀ ⋖[M] F ↔ F₀ ⊆ F ∧ M.rk F = M.rk F₀ + 1 := by
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_congr_right_iff]
   intro hss

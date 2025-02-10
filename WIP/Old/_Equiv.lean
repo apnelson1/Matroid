@@ -425,7 +425,7 @@ theorem IsIso.finite_iff (h : M ≂ N) : M.Finite ↔ N.Finite := by
   rw [← encard_ne_top_iff] at h ⊢
   rwa [e.encard_ground_eq]
 
-theorem IsIso.finiteRk_iff (h : M ≂ N) : M.FiniteRk ↔ N.FiniteRk := by
+theorem IsIso.rankFinite_iff (h : M ≂ N) : M.RankFinite ↔ N.RankFinite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
   · apply iff_of_true <;> infer_instance
   exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_base hB, hBfin.image _⟩,

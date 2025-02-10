@@ -48,9 +48,9 @@ lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
   rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, closure_empty_eq_empty,
     union_empty]
 
-/-- We need `RkPos` or something similar here, since otherwise the matroid whose only element is
+/-- We need `RankPos` or something similar here, since otherwise the matroid whose only element is
   a loop is a counterexample. -/
-lemma simple_iff_closure_subset_self_forall [RkPos M] :
+lemma simple_iff_closure_subset_self_forall [RankPos M] :
     M.Simple ↔ ∀ e, M.Nonloop e → M.closure {e} ⊆ {e} := by
   refine ⟨fun h e he ↦ by rw [closure_singleton_eq], fun h ↦ ?_⟩
   have hl : M.Loopless := by
@@ -461,14 +461,14 @@ lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.Is
   obtain ⟨f, hf⟩ := hNM.exists_unique (toNonloop hx)
   exact ⟨f, hf.1.1, hf.1.2.symm⟩
 
-lemma IsSimplification.ground_eq_biUnion_closure [M.RkPos] (hNM : N.IsSimplification M) :
+lemma IsSimplification.ground_eq_biUnion_closure [M.RankPos] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, M.closure {e} := by
   simp only [subset_antisymm_iff, subset_def, mem_iUnion, mem_setOf_eq, exists_prop,
     forall_exists_index, and_imp]
   refine ⟨fun x hx ↦ ?_, fun _ _ _ h ↦ mem_ground_of_mem_closure h⟩
   obtain hx' | hx' := M.loop_or_nonloop x hx
-  · have hN : N.RkPos :=
-      (rkPos_iff _).2 <| fun hN ↦ M.empty_not_base <| hNM.base_of_base hN
+  · have hN : N.RankPos :=
+      (rankPos_iff _).2 <| fun hN ↦ M.empty_not_base <| hNM.base_of_base hN
     obtain ⟨f, hf⟩ := N.exists_nonloop
     exact ⟨f, hf.mem_ground, hx'.mem_closure _⟩
   obtain ⟨f, hf⟩ := hNM.exists_unique hx'

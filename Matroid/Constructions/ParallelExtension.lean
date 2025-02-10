@@ -64,7 +64,7 @@ lemma addLoop_loop (he : e ∉ M.E) : (M.addLoop e).Loop e := by
 instance addLoop_finite (M : Matroid α) [M.Finite] (e : α) : (M.addLoop e).Finite :=
   ⟨M.ground_finite.insert e⟩
 
-instance addLoop_finiteRk (M : Matroid α) [M.FiniteRk] (e : α) : (M.addLoop e).FiniteRk := by
+instance addLoop_rankFinite (M : Matroid α) [M.RankFinite] (e : α) : (M.addLoop e).RankFinite := by
   obtain ⟨B, hB⟩ := (addLoop M e).exists_base
   exact ⟨⟨B, hB, (addLoop_indep_iff.1 hB.indep).finite⟩⟩
 
@@ -254,8 +254,8 @@ instance parallelExtend_finite (M : Matroid α) [M.Finite] (e f : α) :
     (M.parallelExtend e f).Finite :=
   ⟨M.ground_finite.insert f⟩
 
-instance parallelExtend_finiteRk (M : Matroid α) [FiniteRk M] (e f : α) :
-    (M.parallelExtend e f).FiniteRk := by
+instance parallelExtend_rankFinite (M : Matroid α) [RankFinite M] (e f : α) :
+    (M.parallelExtend e f).RankFinite := by
   obtain ⟨B, hB⟩ := (M.parallelExtend e f).exists_base
   have hB' : M.Indep (B \ {f}) := by
     rw [indep_iff_delete_of_disjoint (disjoint_sdiff_left (t := B) (s := {f})),

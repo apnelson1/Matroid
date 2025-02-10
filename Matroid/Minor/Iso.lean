@@ -301,7 +301,7 @@ lemma IsoMinor.eRank_le (e : N ≤i M) : N.eRank ≤ M.eRank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.eRank_eq.trans_le hM₀.eRank_le
 
-lemma IsoMinor.rank_le (e : N ≤i M) [FiniteRk M] : N.rank ≤ M.rank := by
+lemma IsoMinor.rank_le (e : N ≤i M) [RankFinite M] : N.rank ≤ M.rank := by
   obtain ⟨M₀, hM₀, i, -⟩ := e.exists_iso
   exact i.rank_eq.trans_le hM₀.rank_le
 

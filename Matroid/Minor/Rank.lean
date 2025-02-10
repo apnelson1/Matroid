@@ -431,9 +431,9 @@ lemma Minor.eRank_le (h : N ≤m M) : N.eRank ≤ M.eRank := by
   rw [← eRk_univ_eq, ← eRk_univ_eq, delete_eRk_eq']
   exact (M.eRk_contract_le_eRk _ _).trans (M.eRk_mono diff_subset)
 
-lemma Minor.rank_le (h : N ≤m M) [FiniteRk M] : N.rank ≤ M.rank := by
+lemma Minor.rank_le (h : N ≤m M) [RankFinite M] : N.rank ≤ M.rank := by
   have hle := h.eRank_le
-  have := h.finiteRk
+  have := h.rankFinite
   rw [← M.cast_rank_eq, ← N.cast_rank_eq] at hle
   exact WithTop.coe_le_coe.1 hle
 
@@ -475,12 +475,12 @@ lemma restrict_rk_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).rk X = M.rk (X
 lemma restrict_rk_eq (M : Matroid α) {R : Set α} (hXR : X ⊆ R) : (M ↾ R).rk X = M.rk X := by
   rw [rk, M.restrict_eRk_eq hXR, rk]
 
-lemma delete_rank_le (M : Matroid α) [M.FiniteRk] (D : Set α) : (M ＼ D).rank ≤ M.rank := by
+lemma delete_rank_le (M : Matroid α) [M.RankFinite] (D : Set α) : (M ＼ D).rank ≤ M.rank := by
   rw [rank_def, rank_def, delete_rk_eq']
   exact M.rk_mono (diff_subset.trans diff_subset)
 
 lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
-  obtain h | h := M.finite_or_infiniteRk
+  obtain h | h := M.finite_or_rankInfinite
   · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]
     refine le_trans ?_ (M.rk_union_le_rk_add_rk (M.E \ D) D)
     simp [M.rk_mono subset_union_left]
@@ -488,30 +488,30 @@ lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M �
   rw [rank_def, rk, ← eRank_def, ← hB.encard_eq_eRank, hB.infinite.encard_eq]
   simp
 
-lemma contract_rk_add_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+lemma contract_rk_add_eq (M : Matroid α) [RankFinite M] (C X : Set α) :
     (M ／ C).rk X + M.rk C = M.rk (X ∪ C) := by
   simp_rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_rk_eq, ← eRelRk_add_eRk_eq, eRelRk]
 
-@[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (C X : Set α) :
+@[simp] lemma contract_rk_cast_int_eq (M : Matroid α) [RankFinite M] (C X : Set α) :
     ((M ／ C).rk X : ℤ) = M.rk (X ∪ C) - M.rk C := by
   rw [← contract_rk_add_eq]
   exact eq_sub_of_add_eq rfl
 
-@[simp] lemma contract_rank_cast_int_eq (M : Matroid α) [FiniteRk M] (C : Set α) :
+@[simp] lemma contract_rank_cast_int_eq (M : Matroid α) [RankFinite M] (C : Set α) :
     ((M ／ C).rank : ℤ) = M.rank - M.rk C := by
   rw [rank_def, contract_rk_cast_int_eq, contract_ground, diff_union_self, ← rk_inter_ground,
     inter_eq_self_of_subset_right subset_union_left, rank_def]
 
-lemma Nonloop.contract_rk_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
+lemma Nonloop.contract_rk_add_one_eq [RankFinite M] (he : M.Nonloop e) :
     (M ／ e).rk X + 1 = M.rk (insert e X) := by
   rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq, contractElem]
 
-lemma Nonloop.contract_rank_add_one_eq [FiniteRk M] (he : M.Nonloop e) :
+lemma Nonloop.contract_rank_add_one_eq [RankFinite M] (he : M.Nonloop e) :
     (M ／ e).rank + 1 = M.rank := by
   rw [rank_def, he.contract_rk_add_one_eq, contractElem, contract_ground, insert_diff_singleton,
     insert_eq_of_mem he.mem_ground, rank_def]
 
-lemma Nonloop.contract_rk_cast_int_eq (M : Matroid α) [FiniteRk M] (he : M.Nonloop e) :
+lemma Nonloop.contract_rk_cast_int_eq (M : Matroid α) [RankFinite M] (he : M.Nonloop e) :
     ((M ／ e).rk X : ℤ) = M.rk (insert e X) - 1 := by
   rw [← he.contract_rk_add_one_eq]
   exact eq_sub_of_add_eq rfl
@@ -583,13 +583,13 @@ section relRk
 
 noncomputable def relRk (X Y : Set α) : ℕ := (M.eRelRk X Y).toNat
 
-lemma relRk_intCast_eq_sub (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+lemma relRk_intCast_eq_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.relRk X Y : ℤ) = M.rk (X ∪ Y) - M.rk X := by
   rw [relRk, eRelRk_eq_union_right, (M.to_finRk X).eRelRk_eq_sub subset_union_right,
     ENat.toNat_sub (M.to_finRk X).eRk_ne_top, ← rk, ← rk, Nat.cast_sub , union_comm]
   exact (M.rk_mono (subset_union_right))
 
-lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [FiniteRk M] (hXY : X ⊆ Y) :
+lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [RankFinite M] (hXY : X ⊆ Y) :
     (M.relRk X Y : ℤ) = M.rk Y - M.rk X := by
   rw [relRk_intCast_eq_sub, union_eq_self_of_subset_left hXY]
 

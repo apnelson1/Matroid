@@ -134,13 +134,13 @@ lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef 
   (v.standardRep hB) e f = 0 := by
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
-lemma Rep.standardRep_eq_mapEquiv [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+lemma Rep.standardRep_eq_mapEquiv [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
     v.standardRep hB = (v.standardRep' hB).mapEquiv
       (@Finsupp.linearEquivFunOnFinite _ _ _ hB.finite.to_subtype ..) := by
   ext e f
   simp [standardRep]
 
-lemma Rep.standardRep_fullRank [FiniteRk M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
     (v.standardRep hB).FullRank := by
   rw [v.standardRep_eq_mapEquiv]
   exact (v.standardRep_fullRank' hB).mapEquiv _
@@ -167,7 +167,7 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
     else if heE : e ∈ E then v ⟨e, ⟨heE, heB⟩⟩
     else 0
 
-lemma Representable.exists_fin_rep [FiniteRk M] (hM : M.Representable 𝔽) :
+lemma Representable.exists_fin_rep [RankFinite M] (hM : M.Representable 𝔽) :
     ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
   obtain ⟨B, hB⟩ := M.exists_base
   obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
@@ -175,7 +175,7 @@ lemma Representable.exists_fin_rep [FiniteRk M] (hM : M.Representable 𝔽) :
   exact ⟨(hM.some.standardRep hB).mapEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
     (Rep.standardRep_fullRank _ hB).mapEquiv _⟩
 
-lemma Representable.exists_fin_rep_of_eq {n : ℕ} [FiniteRk M] (hM : M.Representable 𝔽)
+lemma Representable.exists_fin_rep_of_eq {n : ℕ} [RankFinite M] (hM : M.Representable 𝔽)
     (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
   subst hr
   exact exists_fin_rep hM

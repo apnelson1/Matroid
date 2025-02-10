@@ -19,7 +19,7 @@ lemma Paving.truncate_uniform (hM : M.Paving) : M.truncate.Uniform :=
 /-- A Paving matroid is one where every circuit is spanning or nearly-spanning. -/
 def Paving.exists_insert_of_dep (hM : M.Paving) (hD : M.Dep D) :
     ∃ e ∈ M.E, M.Spanning (insert e D) := by
-  obtain ⟨E, rfl⟩ := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ := M.eq_loopyOn_or_rankPos'
   · simp only [loopyOn_ground, spanning_iff, loopyOn_closure_eq, true_and]
     obtain ⟨e, he⟩ := hD.nonempty
     exact ⟨e, hD.subset_ground he, insert_subset (hD.subset_ground he) hD.subset_ground⟩
@@ -31,7 +31,7 @@ lemma paving_iff_forall_circuit :
   refine ⟨fun h C hC ↦ ?_, fun h X (hXE : X ⊆ M.E) ↦ ?_⟩
   · obtain ⟨e, he⟩ := h.exists_insert_of_dep hC.dep
     exact ⟨e, he.2⟩
-  obtain ⟨E, rfl⟩ | hpos := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ | hpos := M.eq_loopyOn_or_rankPos'
   · simp [show X ⊆ E from hXE]
   rw [truncate_indep_iff, truncate_spanning_iff, ← not_dep_iff, ← not_or, ← imp_iff_not_or]
   rintro (hX | hX)
@@ -224,7 +224,7 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_circuit_hyperplane :
     tauto
   clear! M
   intro M hM X (hXE : X ⊆ M.E)
-  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rankPos'
   · simp [show X ⊆ E from hXE]
 
   rw [truncate_indep_iff]

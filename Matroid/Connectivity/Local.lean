@@ -507,7 +507,7 @@ lemma FinRk.rk_add_rk_eq_rk_union_add_localConn (hX : M.FinRk X) (hY : M.FinRk Y
   rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, Nat.cast_add, hX.cast_localConn_right_eq,
     hX.cast_rk_eq, hY.cast_rk_eq, (hX.union hY).cast_rk_eq, eRk_add_eRk_eq_eRk_union_add_localEConn]
 
-lemma rk_add_rk_eq_rk_union_add_localConn (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+lemma rk_add_rk_eq_rk_union_add_localConn (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.rk X + M.rk Y = M.rk (X ∪ Y) + M.localConn X Y :=
   (M.to_finRk X).rk_add_rk_eq_rk_union_add_localConn (M.to_finRk Y)
 
@@ -539,13 +539,13 @@ lemma FinRk.localConn_cast_int_eq (hX : M.FinRk X) (hY : M.FinRk Y) :
 
 /-- The formula for local connectivity in terms of the rank function.
 This uses `ℕ` subtraction which never overflows. -/
-lemma localConn_eq_rk_add_rk_sub (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+lemma localConn_eq_rk_add_rk_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.localConn X Y = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
   (M.to_finRk X).localConn_eq_rk_add_rk_sub (M.to_finRk Y)
 
 /-- The formula for local connectivity written in terms of `Int` subtraction,
 for use with `ring` and `linarith`. -/
-lemma localConn_cast_int_eq (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+lemma localConn_cast_int_eq (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
   (M.to_finRk X).localConn_cast_int_eq (M.to_finRk Y)
 
@@ -563,7 +563,7 @@ lemma FinRk.modularPair_iff_localConn_eq_rk_inter (hX : M.FinRk X) (Y : Set α)
   rw [← WithTop.lt_top_iff_ne_top]
   exact (M.localEConn_le_eRk_left _ _).trans_lt hX.eRk_lt_top
 
-lemma modularPair_iff_localConn_eq_rk_inter [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+lemma modularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
   (M.to_finRk X).modularPair_iff_localConn_eq_rk_inter _ hXE hYE
 
@@ -680,32 +680,32 @@ noncomputable def conn (M : Matroid α) (X : Set α) : ℕ := (M.econn X).toNat
 @[simp] lemma conn_inter_ground (M : Matroid α) (X : Set α) : M.conn (X ∩ M.E) = M.conn X := by
   rw [conn, econn_inter_ground, conn]
 
-@[simp] lemma cast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
+@[simp] lemma cast_conn_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     (M.conn X : ℕ∞) = M.econn X := by
   rw [conn, econn_eq_localEConn]
   exact ENat.coe_toNat ((localEConn_le_eRk_left _ _ _).trans_lt (M.to_finRk X).eRk_lt_top).ne
 
-@[simp] lemma cast_conn_eq' (M : Matroid α) [FiniteRk M✶] : (M.conn X : ℕ∞) = M.econn X := by
+@[simp] lemma cast_conn_eq' (M : Matroid α) [RankFinite M✶] : (M.conn X : ℕ∞) = M.econn X := by
   rw [← conn_dual, cast_conn_eq, econn_dual]
 
 lemma conn_eq_localConn (M : Matroid α) (X : Set α) : M.conn X = M.localConn X (M.E \ X) := by
   rw [conn, econn_eq_localEConn, localConn]
 
-lemma rk_add_rk_compl_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
+lemma rk_add_rk_compl_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     M.rk X + M.rk (M.E \ X) = M.rank + M.conn X := by
   rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, cast_rk_eq, cast_rk_eq, Nat.cast_add,
     rank_def, cast_rk_eq, eRk_add_eRk_compl_eq, cast_conn_eq, eRank_def]
 
 /-- A formula for the connectivity of a set in terms of the rank function.
 The `ℕ` subtraction will never overflow.  -/
-lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [FiniteRk M] (X : Set α) :
+lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [RankFinite M] (X : Set α) :
     M.conn X = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_localConn, localConn_eq_rk_add_rk_sub, union_diff_self, rk_eq_rank subset_union_right]
 
 /-- A version of `Matroid.conn_eq_rk_add_rk_sub_rank` with `Int` subtraction,
 for use with `ring` and `linarith`. -/
 @[simp]
-lemma intCast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
+lemma intCast_conn_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     (M.conn X : ℤ) = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_rk_add_rk_sub_rank, ← Nat.cast_add, rank_def]
   refine Int.ofNat_sub ?_
@@ -713,7 +713,7 @@ lemma intCast_conn_eq (M : Matroid α) [FiniteRk M] (X : Set α) :
   rw [union_diff_self, rk_eq_rank subset_union_right, rank_def]
 
 
-lemma conn_inter_add_conn_union_union_le (M : Matroid α) [FiniteRk M] {A : Set α}
+lemma conn_inter_add_conn_union_union_le (M : Matroid α) [RankFinite M] {A : Set α}
     (hAX : Disjoint A X) (hAY : Disjoint A Y) :
     M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ A) ≤ M.rk A + (M ＼ A).conn X + (M ／ A).conn Y := by
   zify
@@ -730,8 +730,8 @@ lemma conn_inter_add_conn_union_union_le (M : Matroid α) [FiniteRk M] {A : Set 
   linarith
 
 /-- The function `M.conn` is submodular.
-This is also true for `econn` without `FiniteRk`, but the proof will be more difficult. TODO. -/
-lemma conn_submod (M : Matroid α) [FiniteRk M] (X Y : Set α) :
+This is also true for `econn` without `RankFinite`, but the proof will be more difficult. TODO. -/
+lemma conn_submod (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.conn (X ∩ Y) + M.conn (X ∪ Y) ≤ M.conn X + M.conn Y := by
   simpa using M.conn_inter_add_conn_union_union_le (disjoint_empty X).symm (disjoint_empty Y).symm
 

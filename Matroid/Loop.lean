@@ -388,12 +388,12 @@ lemma Nonloop.closure_eq_closure_iff_eq_or_dep (he : M.Nonloop e) (hf : M.Nonloo
   · rwa [pair_diff_left hne, indep_singleton]
   rwa [pair_diff_right hne, indep_singleton]
 
-lemma exists_nonloop (M : Matroid α) [RkPos M] : ∃ e, M.Nonloop e :=
+lemma exists_nonloop (M : Matroid α) [RankPos M] : ∃ e, M.Nonloop e :=
   let ⟨_, hB⟩ := M.exists_base
   ⟨_, hB.indep.nonloop_of_mem hB.nonempty.some_mem⟩
 
-lemma Nonloop.rkPos (h : M.Nonloop e) : M.RkPos :=
-  h.indep.rkPos_of_nonempty (singleton_nonempty e)
+lemma Nonloop.rankPos (h : M.Nonloop e) : M.RankPos :=
+  h.indep.rankPos_of_nonempty (singleton_nonempty e)
 
 @[simp] lemma restrict_nonloop_iff {R : Set α} : (M ↾ R).Nonloop e ↔ M.Nonloop e ∧ e ∈ R := by
   rw [← indep_singleton, restrict_indep_iff, singleton_subset_iff, indep_singleton]
@@ -490,8 +490,8 @@ lemma Restriction.loopless [M.Loopless] (hR : N ≤r M) : N.Loopless := by
   rw [loopless_iff_closure_empty, restrict_closure_eq _ (empty_subset _), M.closure_empty_eq_empty,
     empty_inter]
 
-instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RkPos M :=
-  M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rkPos
+instance {M : Matroid α} [Matroid.Nonempty M] [Loopless M] : RankPos M :=
+  M.ground_nonempty.elim fun _ he ↦ (toNonloop he).rankPos
 
 @[simp] lemma loopyOn_loopless_iff {E : Set α} : Loopless (loopyOn E) ↔ E = ∅ := by
   simp [loopless_iff_forall_not_loop, eq_empty_iff_forall_not_mem]
@@ -594,7 +594,7 @@ lemma Loop.not_coloop (h : M.Loop e) : ¬M.Coloop e := by
 lemma Coloop.not_mem_circuit (he : M.Coloop e) (hC : M.Circuit C) : e ∉ C :=
   fun h ↦ (hC.cocircuit.nonloop_of_mem h).not_loop he
 
-lemma coloop_iff_forall_mem_compl_circuit [RkPos M✶] :
+lemma coloop_iff_forall_mem_compl_circuit [RankPos M✶] :
     M.Coloop e ↔ ∀ C, M.Circuit C → e ∈ M.E \ C := by
   refine ⟨fun h C hC ↦ ⟨h.mem_ground, h.not_mem_circuit hC⟩, fun h ↦ ?_⟩
   rw [coloop_iff_forall_mem_base]

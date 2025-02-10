@@ -22,7 +22,7 @@ variable [M.OnUniv] [M.Loopless]
 abbrev Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
   Projectivization.mk 𝔽 (v e) (by simp)
 
--- lemma nontrivial_of_rkPos [RkPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
+-- lemma nontrivial_of_rankPos [RankPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
 --   exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
 
 -- variable [Nontrivial W] [DecidableEq W]
@@ -202,7 +202,7 @@ lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (
 -- lemma representable_iff_exists_isoRestr.{u} {α : Type*} {M : Matroid α} {𝔽 : Type*} [Field 𝔽]
 --     [M.Simple] : M.Representable 𝔽 ↔ ∃ β : Type u,
 
-lemma encard_le_of_simple [FiniteRk M] [Simple M] (h : M.Representable 𝔽) :
+lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
     M.E.encard ≤ ∑ i ∈ Finset.range (M.rank), (ENat.card 𝔽)^i := by
   classical
   obtain hle | hlt := le_or_lt M.eRank 1

@@ -35,8 +35,8 @@ instance delete_finite [M.Finite] : (M ＼ D).Finite :=
 instance deleteElem_finite [Matroid.Finite M] : (M ＼ e).Finite :=
   delete_finite
 
-instance delete_finiteRk [FiniteRk M] : FiniteRk (M ＼ D) :=
-  restrict_finiteRk _
+instance delete_rankFinite [RankFinite M] : RankFinite (M ＼ D) :=
+  restrict_rankFinite _
 
 lemma restrict_compl (M : Matroid α) (D : Set α) : M ↾ (M.E \ D) = M ＼ D := rfl
 
@@ -64,7 +64,7 @@ lemma deleteElem_eq_self (he : e ∉ M.E) : M ＼ e = M := by
   rwa [deleteElem, delete_eq_restrict, restrict_eq_self_iff, sdiff_eq_left,
     disjoint_singleton_right]
 
-instance deleteElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ＼ e) := by
+instance deleteElem_rankFinite [RankFinite M] {e : α} : RankFinite (M ＼ e) := by
   rw [deleteElem]; infer_instance
 
 @[simp] lemma delete_delete (M : Matroid α) (D₁ D₂ : Set α) : M ＼ D₁ ＼ D₂ = M ＼ (D₁ ∪ D₂) := by
@@ -210,8 +210,8 @@ lemma Coindep.delete_base_iff (hD : M.Coindep D) : (M ＼ D).Base B ↔ M.Base B
     exact ⟨hcl, hss.2⟩
   exact h.1.basis_ground.basis_subset (by simp [subset_diff, h.1.subset_ground, h.2]) diff_subset
 
-lemma Coindep.delete_rkPos [M.RkPos] (hD : M.Coindep D) : (M ＼ D).RkPos := by
-  simp [rkPos_iff, hD.delete_base_iff, M.empty_not_base]
+lemma Coindep.delete_rankPos [M.RankPos] (hD : M.Coindep D) : (M ＼ D).RankPos := by
+  simp [rankPos_iff, hD.delete_base_iff, M.empty_not_base]
 
 lemma Coindep.delete_spanning_iff (hD : M.Coindep D) :
     (M ＼ D).Spanning S ↔ M.Spanning S ∧ Disjoint S D := by
@@ -471,7 +471,7 @@ lemma Indep.of_contract (hI : (M ／ C).Indep I) : M.Indep I := by
   rw [hM, delete_indep_iff, hJ.indep.contract_indep_iff] at hI
   exact hI.1.2.subset subset_union_left
 
-instance contract_finiteRk [FiniteRk M] : FiniteRk (M ／ C) := by
+instance contract_rankFinite [RankFinite M] : RankFinite (M ／ C) := by
   obtain ⟨B, hB⟩ := (M ／ C).exists_base
   refine ⟨B, hB, hB.indep.of_contract.finite⟩
 
@@ -493,7 +493,7 @@ instance contract_finitary [Finitary M] : Finitary (M ／ C) := by
   rw [inter_union_distrib_left]
   exact union_subset_union Subset.rfl inter_subset_right
 
-instance contractElem_finiteRk [FiniteRk M] {e : α} : FiniteRk (M ／ e) := by
+instance contractElem_rankFinite [RankFinite M] {e : α} : RankFinite (M ／ e) := by
   rw [contractElem]; infer_instance
 
 instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
@@ -824,7 +824,7 @@ instance (α : Type*) : PartialOrder (Matroid α) where
 lemma Minor.finite (h : N ≤m M) [M.Finite] : N.Finite :=
   ⟨M.ground_finite.subset h.subset⟩
 
-lemma Minor.finiteRk (h : N ≤m M) [FiniteRk M] : FiniteRk N := by
+lemma Minor.rankFinite (h : N ≤m M) [RankFinite M] : RankFinite N := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
   infer_instance
 

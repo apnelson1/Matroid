@@ -343,7 +343,7 @@ lemma ModularFamily.contract (h : M.ModularFamily Xs) {C : Set α} (hC : ∀ i, 
   refine union_subset_union_right _ inter_subset_left
 
 /-- A `ModularFamily` of flats in a finite-rank matroid is finite. -/
-lemma ModularFamily.finite_of_forall_flat [M.FiniteRk] (h : M.ModularFamily Xs)
+lemma ModularFamily.finite_of_forall_flat [M.RankFinite] (h : M.ModularFamily Xs)
     (h_flat : ∀ i, M.Flat (Xs i)) : (range Xs).Finite := by
   obtain ⟨B, hB⟩ := h
   refine Finite.of_finite_image (f := fun X ↦ X ∩ B)
@@ -598,7 +598,7 @@ lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y)
     ← hYfin.cast_rk_eq, ← hXfin.inter_right.cast_rk_eq, ← (hXfin.union hYfin).cast_rk_eq,
     Nat.cast_add, Nat.cast_add]
 
-lemma modularPair_iff_rk [FiniteRk M] (hXE : X ⊆ M.E := by aesop_mat)
+lemma modularPair_iff_rk [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [(M.to_finRk X).modularPair_iff_rk (M.to_finRk Y)]

@@ -22,13 +22,13 @@ lemma Basis.finite_of_finite (hI : M.Basis I X) (hIfin : I.Finite) (hJ : M.Basis
 section FinRk
 
 /-- a `FinRk` set in `M` is one whose bases are all finite. -/
-def FinRk (M : Matroid α) (X : Set α) := (M ↾ X).FiniteRk
+def FinRk (M : Matroid α) (X : Set α) := (M ↾ X).RankFinite
 
-lemma FinRk.finiteRk (hX : M.FinRk X) : (M ↾ X).FiniteRk :=
+lemma FinRk.rankFinite (hX : M.FinRk X) : (M ↾ X).RankFinite :=
   hX
 
 lemma FinRk.finite_of_basis' (h : M.FinRk X) (hI : M.Basis' I X) : I.Finite :=
-  have := h.finiteRk
+  have := h.rankFinite
   (base_restrict_iff'.2 hI).finite
 
 lemma FinRk.finite_of_basis (h : M.FinRk X) (hI : M.Basis I X) : I.Finite :=
@@ -108,11 +108,11 @@ lemma not_finRk_superset (h : ¬M.FinRk X) (hXY : X ⊆ Y) : ¬M.FinRk Y :=
 lemma FinRk.finite_of_indep_subset (hX : M.FinRk X) (hI : M.Indep I) (hIX : I ⊆ X) : I.Finite :=
   hI.finite_of_finRk (hX.to_inter_ground.subset (subset_inter hIX hI.subset_ground))
 
-@[simp] lemma finRk_ground_iff_finiteRk : M.FinRk M.E ↔ M.FiniteRk := by
+@[simp] lemma finRk_ground_iff_rankFinite : M.FinRk M.E ↔ M.RankFinite := by
   rw [FinRk, restrict_ground_eq_self]
 
-lemma finRk_ground (M : Matroid α) [FiniteRk M] : M.FinRk M.E := by
-  rwa [finRk_ground_iff_finiteRk]
+lemma finRk_ground (M : Matroid α) [RankFinite M] : M.FinRk M.E := by
+  rwa [finRk_ground_iff_rankFinite]
 
 lemma Indep.finite_of_subset_finRk (hI : M.Indep I) (hIX : I ⊆ X) (hX : M.FinRk X) : I.Finite :=
   hX.finite_of_indep_subset hI hIX
@@ -158,7 +158,7 @@ lemma FinRk.insert (hX : M.FinRk X) (e : α) : M.FinRk (insert e X) := by
 @[simp] lemma FinRk.diff_singleton_iff : M.FinRk (X \ {e}) ↔ M.FinRk X := by
   rw [(M.finRk_singleton e).finRk_diff_iff]
 
-lemma to_finRk (M : Matroid α) [FiniteRk M] (X : Set α) : M.FinRk X :=
+lemma to_finRk (M : Matroid α) [RankFinite M] (X : Set α) : M.FinRk X :=
   let ⟨_, hI⟩ := M.exists_basis' X
   hI.finRk_of_finite hI.indep.finite
 

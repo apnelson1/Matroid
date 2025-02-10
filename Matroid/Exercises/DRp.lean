@@ -8,7 +8,7 @@ variable {α : Type*} {M : Matroid α} {B B' I I' J K X Y : Set α}
 
 /- Put the `1` on the RHS! Your version below is stated in terms of `Nat` subtraction,
 so will be harder to apply. -/
-lemma Exercise_for_DRP' (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (heX : e ∉ X)
+lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (heX : e ∉ X)
     (heY : e ∉ Y) :
     M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y)) ≤  1 + (M ＼ e).conn X + (M ／ e).conn Y := by
   -- Apply submodularity fo the pairs `(X, insert e Y)` and `(M.E \ insert e X, Y)`, and simplify.
@@ -37,7 +37,7 @@ lemma Exercise_for_DRP' (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (h
 
 
 
-lemma Exercise_for_DRP (M : Matroid α) [FiniteRk M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
+lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) - 1
     ≤  (M ＼ e).conn X + (M ／ e).conn Y := by
   --The proof starts with getting all the equations for the contractions, there is 3 of them

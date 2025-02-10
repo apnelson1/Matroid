@@ -156,12 +156,12 @@ lemma exists_insert_rk_eq_of_not_flat (hFE : F ⊆ M.E) (hnF : ¬ M.Flat F) :
   rw [← rk_closure_eq, ← closure_insert_closure_eq_closure_insert]
   simp [hecl]
 
-lemma Flat.insert_rk_eq [M.FiniteRk] (hF : M.Flat F) (he : e ∈ M.E \ F) :
+lemma Flat.insert_rk_eq [M.RankFinite] (hF : M.Flat F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
   rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.to_finRk]) (by simp), rk,
     ENat.toNat_one]
 
-lemma Flat.eq_of_subset_of_rk_ge [FiniteRk M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.rk F' ≤ M.rk F)
+lemma Flat.eq_of_subset_of_rk_ge [RankFinite M] (hF : M.Flat F) (hFF' : F ⊆ F') (hle : M.rk F' ≤ M.rk F)
     (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
   refine hFF'.antisymm fun e heF' ↦ by_contra fun heF ↦ ?_
   linarith [(hF.insert_rk_eq ⟨by aesop_mat, heF⟩).symm.trans_le (M.rk_mono (insert_subset heF' hFF'))]

@@ -56,8 +56,8 @@ theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ 
 theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k := by
   rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
 
-instance {k : ℕ} {E : Set α} : FiniteRk (unifOn E k) := by
-  rw [← finRk_ground_iff_finiteRk, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
+  rw [← finRk_ground_iff_rankFinite, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
@@ -389,7 +389,7 @@ lemma Uniform.minor {N : Matroid α} (hM : M.Uniform) (hNM : N ≤m M) : N.Unifo
   fun _ ↦ by simp +contextual
 
 lemma Uniform.truncate (hM : M.Uniform) : M.truncate.Uniform := by
-  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rankPos'
   · simp
   intro X (hXE : X ⊆ M.E)
   rw [truncate_indep_iff, truncate_spanning_iff]
@@ -442,7 +442,7 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
   ⟨h.prop.2, fun _ hb hab ↦ h.le_of_ge ⟨hP h.prop.1 hab, hb⟩ hab⟩
 
 /-- A finite-rank uniform matroid is one of the obvious ones. -/
-lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
+lemma Uniform.exists_eq_unifOn [M.RankFinite] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
   refine ⟨M.E, M.rank, ext_base rfl fun B hBE ↦ ?_⟩
   rw [unifOn_base_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
@@ -456,13 +456,13 @@ lemma Uniform.exists_eq_unifOn [M.FiniteRk] (hM : M.Uniform) :
   exact (hB₀.finite.inter_of_left B).encard_lt_top.ne
 
 /-- A finitary non-free uniform matroid is one of the obvious ones. -/
-lemma Uniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RkPos] (hM : M.Uniform) :
+lemma Uniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
   obtain ⟨C, hC⟩ := M.exists_circuit
   obtain ⟨e, heC⟩ := hC.nonempty
   obtain hCi | hCs := hM.indep_or_spanning C
   · exact (hC.not_indep hCi).elim
-  have := ((hC.diff_singleton_basis heC).base_of_spanning hCs).finiteRk_of_finite hC.finite.diff
+  have := ((hC.diff_singleton_basis heC).base_of_spanning hCs).rankFinite_of_finite hC.finite.diff
   exact hM.exists_eq_unifOn
 
 @[simps!] def UniformMatroidOfBase (E : Set α) (Base : Set α → Prop)

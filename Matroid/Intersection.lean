@@ -14,14 +14,14 @@ namespace Matroid
 
 variable {α : Type*} {M M₁ M₂ : Matroid α} {A I X E : Set α}
 
-lemma Indep.ncard_le_rk_add_rk [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I)
+lemma Indep.ncard_le_rk_add_rk [RankFinite M₁] [RankFinite M₂] (hI₁ : M₁.Indep I) (hI₂ : M₂.Indep I)
     (A : Set α) : I.ncard ≤ M₁.rk A + M₂.rk (M₂.E \ A) := by
   rw [← ncard_inter_add_ncard_diff_eq_ncard I A hI₂.finite,
     ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard]
   exact add_le_add (M₁.rk_mono inter_subset_right)
     (M₂.rk_mono (diff_subset_diff_left hI₂.subset_ground))
 
-lemma Indep.basis'_basis'_of_ncard_eq [FiniteRk M₁] [FiniteRk M₂] (hI₁ : M₁.Indep I)
+lemma Indep.basis'_basis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (hI₁ : M₁.Indep I)
     (hI₂ : M₂.Indep I) (h : M₁.rk A + M₂.rk (M₂.E \ A) ≤ I.ncard) :
     M₁.Basis' (I ∩ A) A ∧ M₂.Basis' (I \ A) (M₂.E \ A) := by
   rw [basis'_iff_indep_encard_eq_of_finite (hI₁.finite.subset inter_subset_left),
@@ -133,7 +133,7 @@ lemma maxCommonInd_exists (M₁ M₂ : Matroid α) [M₁.Finite] :
   rintro _ I hI - rfl
   exact ncard_le_ncard hI.subset_ground M₁.ground_finite
 
-theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] [M₂.FiniteRk] :
+theorem matroid_intersection_minmax (M₁ M₂ : Matroid α) [M₁.Finite] [M₂.RankFinite] :
     maxCommonInd M₁ M₂ = ⨅ X, M₁.rk X + M₂.rk (M₂.E \ X) := by
   refine le_antisymm (le_ciInf fun X ↦ ?_) ?_
   · obtain ⟨I, hI₁, hI₂, hI⟩ := maxCommonInd_exists M₁ M₂
@@ -146,7 +146,7 @@ section Rado
 
 variable {ι : Type*} {x : ι → α}
 
-lemma rado_necessary [FiniteRk M] {f : α → ι} (hx : ∀ i, f (x i) = i) (h_ind : M.Indep (range x))
+lemma rado_necessary [RankFinite M] {f : α → ι} (hx : ∀ i, f (x i) = i) (h_ind : M.Indep (range x))
     (S : Set ι) : S.ncard ≤ M.rk (f ⁻¹' S) := by
   have hinj : Function.Injective x := fun i j h ↦ by rw [← hx i, ← hx j, h]
   have hS := (h_ind.subset (image_subset_range x S)).rk_eq_ncard

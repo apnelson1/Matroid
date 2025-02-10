@@ -213,19 +213,19 @@ lemma Circuit.cocircuit_disjoint_or_nontrivial_inter (hC : M.Circuit C) (hK : M.
   rw [or_iff_not_imp_left, disjoint_iff_inter_eq_empty, ← ne_eq, ← nonempty_iff_ne_empty]
   exact hC.cocircuit_inter_nontrivial hK
 
-lemma dual_rkPos_iff_exists_circuit : M✶.RkPos ↔ ∃ C, M.Circuit C := by
-  rw [rkPos_iff, dual_base_iff, diff_empty, not_iff_comm, not_exists,
+lemma dual_rankPos_iff_exists_circuit : M✶.RankPos ↔ ∃ C, M.Circuit C := by
+  rw [rankPos_iff, dual_base_iff, diff_empty, not_iff_comm, not_exists,
     ← ground_indep_iff_base, indep_iff_forall_subset_not_circuit]
   exact ⟨fun h C _ ↦ h C, fun h C hC ↦ h C hC.subset_ground hC⟩
 
-lemma Circuit.dual_rkPos (hC : M.Circuit C) : M✶.RkPos :=
-  dual_rkPos_iff_exists_circuit.mpr ⟨C, hC⟩
+lemma Circuit.dual_rankPos (hC : M.Circuit C) : M✶.RankPos :=
+  dual_rankPos_iff_exists_circuit.mpr ⟨C, hC⟩
 
-lemma exists_circuit [RkPos M✶] : ∃ C, M.Circuit C :=
-  dual_rkPos_iff_exists_circuit.1 (by assumption)
+lemma exists_circuit [RankPos M✶] : ∃ C, M.Circuit C :=
+  dual_rankPos_iff_exists_circuit.1 (by assumption)
 
-lemma rk_Pos_iff_exists_cocircuit : M.RkPos ↔ ∃ K, M.Cocircuit K := by
-  rw [← dual_dual M, dual_rkPos_iff_exists_circuit, dual_dual M]
+lemma rk_Pos_iff_exists_cocircuit : M.RankPos ↔ ∃ K, M.Cocircuit K := by
+  rw [← dual_dual M, dual_rankPos_iff_exists_circuit, dual_dual M]
 
 /-- The fundamental cocircuit for `B`. Should be used when `B` is a base and `e ∈ B`. -/
 def fundCocircuit (M : Matroid α) (e : α) (B : Set α) := M✶.fundCircuit e (M✶.E \ B)
@@ -368,7 +368,7 @@ lemma girth_eq_top_iff : M.girth = ⊤ ↔ ∀ C, M.Circuit C → C.Infinite := 
 lemma le_girth_iff : k ≤ M.girth ↔ ∀ C, M.Circuit C → k ≤ C.encard := by
   simp [girth, le_sInf_iff]
 
-lemma exists_circuit_girth (M : Matroid α) [RkPos M✶] :
+lemma exists_circuit_girth (M : Matroid α) [RankPos M✶] :
     ∃ C, M.Circuit C ∧ C.encard = M.girth := by
   obtain ⟨⟨C,hC⟩, (hC' : C.encard = _)⟩ :=
     @ciInf_mem ℕ∞ (setOf M.Circuit) _ _ (nonempty_coe_sort.mpr M.exists_circuit)
@@ -381,20 +381,20 @@ lemma exists_circuit_girth (M : Matroid α) [RkPos M✶] :
 @[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
   simp [Subset.rfl]
 
-lemma girth_le_iff [RkPos M✶] : M.girth ≤ k ↔ ∃ C, M.Circuit C ∧ C.encard ≤ k :=
+lemma girth_le_iff [RankPos M✶] : M.girth ≤ k ↔ ∃ C, M.Circuit C ∧ C.encard ≤ k :=
   let ⟨C, hC⟩ := M.exists_circuit_girth
   ⟨fun h ↦ ⟨C, hC.1, hC.2.le.trans h⟩, fun ⟨_, hC, hCc⟩ ↦ (hC.girth_le_card).trans hCc⟩
 
 lemma girth_le_iff' {k : ℕ} : M.girth ≤ k ↔ ∃ C : Finset α, M.Circuit C ∧ C.card ≤ k := by
-  by_cases h : RkPos M✶
+  by_cases h : RankPos M✶
   · simp_rw [girth_le_iff, encard_le_cast_iff]
     aesop
-  rw [rkPos_iff, not_not, empty_base_iff, ← dual_inj, dual_dual] at h
+  rw [rankPos_iff, not_not, empty_base_iff, ← dual_inj, dual_dual] at h
   rw [show M = freeOn M.E by simpa using h]
   simp
 
 lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
-  have _ : RkPos (loopyOn E)✶ := by rw [loopyOn_dual_eq]; exact freeOn_rkPos hE
+  have _ : RankPos (loopyOn E)✶ := by rw [loopyOn_dual_eq]; exact freeOn_rankPos hE
   refine le_antisymm ?_ (one_le_girth _)
   simp only [girth_le_iff, loopyOn_circuit_iff]
   exact ⟨{hE.some}, ⟨_, hE.some_mem, rfl⟩, by simp⟩
@@ -402,7 +402,7 @@ lemma girth_loopyOn (hE : E.Nonempty) : girth (loopyOn E) = 1 := by
 lemma girth_lt_iff : M.girth < k ↔ ∃ C, M.Circuit C ∧ C.encard < k := by
   simp_rw [girth, iInf_lt_iff, mem_setOf_eq, bex_def]
 
-lemma lt_girth_iff [RkPos M✶] : k < M.girth ↔ ∀ C, M.Circuit C → k < C.encard := by
+lemma lt_girth_iff [RankPos M✶] : k < M.girth ↔ ∀ C, M.Circuit C → k < C.encard := by
   rw [lt_iff_not_le, girth_le_iff]
   simp
 

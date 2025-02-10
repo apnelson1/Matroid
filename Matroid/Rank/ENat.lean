@@ -104,15 +104,15 @@ lemma eRk_compl_union_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
     union_eq_self_of_subset_right
       (subset_diff.2 ⟨inter_subset_right, hXY.symm.mono_left inter_subset_left⟩)]
 
-lemma one_le_eRank (M : Matroid α) [RkPos M] : 1 ≤ M.eRank := by
+lemma one_le_eRank (M : Matroid α) [RankPos M] : 1 ≤ M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard_eq_eRank, one_le_encard_iff_nonempty]
   exact hB.nonempty
 
-lemma finiteRk_iff_eRank_ne_top : M.FiniteRk ↔ M.eRank ≠ ⊤ := by
+lemma rankFinite_iff_eRank_ne_top : M.RankFinite ↔ M.eRank ≠ ⊤ := by
   obtain ⟨B, hB⟩ := M.exists_base
   rw [← hB.encard_eq_eRank, encard_ne_top_iff]
-  exact ⟨fun h ↦ hB.finite, fun h ↦ hB.finiteRk_of_finite h⟩
+  exact ⟨fun h ↦ hB.finite, fun h ↦ hB.rankFinite_of_finite h⟩
 
 @[simp] lemma eRk_map_eq {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
     (hX : X ⊆ M.E := by aesop_mat) : (M.map f hf).eRk (f '' X) = M.eRk X := by
@@ -395,7 +395,7 @@ lemma Indep.exists_insert_of_encard_lt {I J : Set α} (hI : M.Indep I) (hJ : M.I
   rw [indep_iff_eRk_eq_encard_of_finite (hIfin.insert e), hIe, encard_insert_of_not_mem he.2,
     hI.eRk_eq_encard]
 
-lemma spanning_iff_eRk' [FiniteRk M] : M.Spanning X ↔ M.eRank ≤ M.eRk X ∧ X ⊆ M.E := by
+lemma spanning_iff_eRk' [RankFinite M] : M.Spanning X ↔ M.eRank ≤ M.eRk X ∧ X ⊆ M.E := by
   refine ⟨fun h ↦ ?_, fun ⟨hr, hX⟩ ↦ ?_⟩
   · rw [eRank_def, ← eRk_closure_eq _ X, h.closure_eq]; exact ⟨rfl.le, h.subset_ground⟩
   obtain ⟨J, hJ⟩ := M.exists_basis X
@@ -405,7 +405,7 @@ lemma spanning_iff_eRk' [FiniteRk M] : M.Spanning X ↔ M.eRank ≤ M.eRk X ∧ 
   rw [spanning_iff_exists_base_subset]
   exact ⟨J, hB, hJ.subset⟩
 
-lemma spanning_iff_eRk [FiniteRk M] (hX : X ⊆ M.E := by aesop_mat) :
+lemma spanning_iff_eRk [RankFinite M] (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning X ↔ M.eRank ≤ M.eRk X := by
   rw [spanning_iff_eRk', and_iff_left hX]
 
@@ -762,8 +762,8 @@ lemma not_finRk_of_eRk_ge (h : ¬M.FinRk X) (hXY : M.eRk X ≤ M.eRk Y) : ¬M.Fi
   contrapose! h
   exact eRk_lt_top_iff.1 <| hXY.trans_lt h.eRk_lt_top
 
-lemma eRank_lt_top (M : Matroid α) [FiniteRk M] : M.eRank < ⊤ := by
-  rwa [eRank_def, eRk_lt_top_iff, finRk_ground_iff_finiteRk]
+lemma eRank_lt_top (M : Matroid α) [RankFinite M] : M.eRank < ⊤ := by
+  rwa [eRank_def, eRk_lt_top_iff, finRk_ground_iff_rankFinite]
 
 lemma FinRk.indep_of_encard_le_eRk (hX : M.FinRk I) (h : encard I ≤ M.eRk I) : M.Indep I := by
   rw [indep_iff_eRk_eq_encard_of_finite _]

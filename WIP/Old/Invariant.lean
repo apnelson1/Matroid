@@ -69,11 +69,11 @@ lemma invariant_pred_of_forall_map' {P : ∀ {α}, Matroid α → Prop} (h_empty
 instance : Invariant Matroid.Finite :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
 
-instance : Invariant Matroid.FiniteRk :=
+instance : Invariant Matroid.RankFinite :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
 
-instance : Invariant Matroid.RkPos :=
-  invariant_pred_of_forall_map' (by simp [rkPos_iff_empty_not_base]) fun _ _ _ _ ↦ by infer_instance
+instance : Invariant Matroid.RankPos :=
+  invariant_pred_of_forall_map' (by simp [rankPos_iff_empty_not_base]) fun _ _ _ _ ↦ by infer_instance
 
 instance : Invariant Matroid.Finitary :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
@@ -100,8 +100,8 @@ end Invariant
 -- instance invariant_finite : Invariant.{u} Matroid.Finite where
 --   on_iso := by intro _ _ _ _ hMN ; rw [hMN.finite_iff]
 
--- instance invariant_finiteRk : Invariant.{u} FiniteRk where
---   on_iso := by intro _ _ _ _ hMN ; rw [hMN.finiteRk_iff]
+-- instance invariant_rankFinite : Invariant.{u} RankFinite where
+--   on_iso := by intro _ _ _ _ hMN ; rw [hMN.rankFinite_iff]
 
 -- instance invariant_eRank : Invariant.{u} eRank where
 --   on_iso := by intro _ _ _ _ hMN; exact hMN.eRank_eq_eRank
@@ -134,8 +134,8 @@ end Invariant
 -- instance minorClosed_finite : MinorClosed.{u} Matroid.Finite where
 --   forall_minor := fun a _ ↦ Minor.finite a
 
--- instance minorClosed_finiteRk : MinorClosed.{u} FiniteRk where
---   forall_minor := fun a _ ↦ Minor.finiteRk a
+-- instance minorClosed_rankFinite : MinorClosed.{u} RankFinite where
+--   forall_minor := fun a _ ↦ Minor.rankFinite a
 
 -- instance minorClosed_finitary : MinorClosed.{u} Finitary where
 --   forall_minor := fun a _ ↦ Minor.finitary a

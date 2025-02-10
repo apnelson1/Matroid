@@ -72,14 +72,14 @@ theorem truncateTo_base_iff {k : ℕ} (h_rank : k ≤ M.eRank) :
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
   exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
 
-theorem truncate_base_iff_of_finiteRk [FiniteRk M] (h_rank : k ≤ M.eRank) :
+theorem truncate_base_iff_of_rankFinite [RankFinite M] (h_rank : k ≤ M.eRank) :
     (M.truncateTo k).Base B ↔ M.Indep B ∧ B.encard = k := by
   lift k to ℕ using (h_rank.trans_lt M.eRank_lt_top).ne; rwa [truncateTo_base_iff]
 
 instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) :=
 ⟨ by simp [ground_finite M] ⟩
 
-instance truncateTo.finiteRk {k : ℕ} : FiniteRk (M.truncateTo k) := by
+instance truncateTo.rankFinite {k : ℕ} : RankFinite (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_base
   refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rank_le h] at hB
@@ -116,7 +116,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
   (Indep := fun I ↦ M.Indep I ∧ (M.Base I → I = ∅))
   (hM := by
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
-    obtain (hM | hM) := M.eq_loopyOn_or_rkPos
+    obtain (hM | hM) := M.eq_loopyOn_or_rankPos
     · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
     suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.Base I → I = ∅) by simpa [M.principal_ground_ne_top]
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
@@ -127,7 +127,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
 
 lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I = ∅) := Iff.rfl
 
-@[simp] lemma truncate_indep_iff [M.RkPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.Base I := by
+@[simp] lemma truncate_indep_iff [M.RankPos] : M.truncate.Indep I ↔ M.Indep I ∧ ¬ M.Base I := by
   simp only [truncate_indep_iff', and_congr_right_iff]
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
 
@@ -139,7 +139,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
   rw [← ground_eq_empty_iff]
   rfl
 
-@[simp] lemma truncate_base_iff [M.RkPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
+@[simp] lemma truncate_base_iff [M.RankPos] : M.truncate.Base B ↔ ∃ e ∉ B, M.Base (insert e B) := by
   refine ⟨fun h ↦ ?_, fun ⟨e, he, hBe⟩ ↦ ?_⟩
   · obtain ⟨hB, hBb⟩ := truncate_indep_iff.1 h.indep
     obtain ⟨B', hB', hBB'⟩ := hB.exists_base_superset
@@ -157,11 +157,11 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.Base I → I
 
 lemma Base.diff_singleton_truncate_base {e : α} (hB : M.Base B) (heB : e ∈ B) :
     M.truncate.Base (B \ {e}) := by
-  have hpos : M.RkPos := hB.rkPos_of_nonempty ⟨e, heB⟩
+  have hpos : M.RankPos := hB.rankPos_of_nonempty ⟨e, heB⟩
   rw [truncate_base_iff]
   exact ⟨e, by simp, by simpa [heB]⟩
 
-@[simp] lemma truncate_spanning_iff [M.RkPos] {S : Set α} :
+@[simp] lemma truncate_spanning_iff [M.RankPos] {S : Set α} :
     M.truncate.Spanning S ↔ ∃ e ∈ M.E, M.Spanning (insert e S) := by
   simp only [spanning_iff_exists_base_subset', truncate_base_iff, truncate_ground_eq,
     exists_and_left, insert_subset_iff, ← and_assoc, exists_and_right, and_congr_left_iff]
@@ -177,7 +177,7 @@ lemma Base.diff_singleton_truncate_base {e : α} (hB : M.Base B) (heB : e ∈ B)
 lemma truncate_spanning_iff_of_ssubset {S : Set α} (hssu : S ⊂ M.E) :
     M.truncate.Spanning S ↔ ∃ e ∈ M.E \ S, M.Spanning (insert e S) := by
   obtain ⟨f, hf⟩ := exists_of_ssubset hssu
-  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rankPos'
   · simp only [truncate_loopyOn_eq, loopyOn_spanning_iff, show S ⊆ E from hssu.subset,
       loopyOn_ground, mem_diff, insert_subset_iff, and_true, true_iff]
     exact ⟨f, hf, hf.1⟩
@@ -220,7 +220,7 @@ lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.t
     rw [← contract_inter_ground_eq, truncate_ground_eq]
   clear C
   intro C hCE
-  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rkPos'
+  obtain ⟨E, rfl⟩ | h := M.eq_loopyOn_or_rankPos'
   · simp
   by_cases hC : M.Spanning C
   · have hC' : M.truncate.Spanning C := by
@@ -231,8 +231,8 @@ lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.t
       exact ⟨e, hB.subset_ground he, hC.superset (subset_insert _ _)⟩
     simp [hC.contract_eq_loopyOn, hC'.contract_eq_loopyOn]
 
-  have hpos : (M ／ C).RkPos
-  · rwa [rkPos_iff_empty_not_spanning, contract_spanning_iff, empty_union,
+  have hpos : (M ／ C).RankPos
+  · rwa [rankPos_iff_empty_not_spanning, contract_spanning_iff, empty_union,
       and_iff_left (empty_disjoint _)]
 
   refine ext_spanning rfl fun S hS ↦ ?_
@@ -267,7 +267,7 @@ def circuitOn (C : Set α) := (freeOn C).truncate
   simp [circuitOn]
 
 lemma circuitOn_indep_iff (hC : C.Nonempty) : (circuitOn C).Indep I ↔ I ⊂ C := by
-  have := freeOn_rkPos hC
+  have := freeOn_rankPos hC
   simp [circuitOn, truncate_indep_iff, ssubset_iff_subset_ne]
 
 lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔ D = C := by
@@ -276,7 +276,7 @@ lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔
   exact ⟨fun h ↦ h.1 h.2, by rintro rfl; simp [Subset.rfl]⟩
 
 lemma circuitOn_base_iff (hC : C.Nonempty) : (circuitOn C).Base B ↔ ∃ e ∉ B, insert e B = C := by
-  have _ := freeOn_rkPos hC; simp [circuitOn, truncate_base_iff]
+  have _ := freeOn_rankPos hC; simp [circuitOn, truncate_base_iff]
 
 lemma circuitOn_ground_circuit (hC : C.Nonempty) : (circuitOn C).Circuit C := by
   simp [circuit_iff_forall_ssubset, circuitOn_dep_iff hC, circuitOn_indep_iff hC]
@@ -571,7 +571,7 @@ Empty if `M` has rank zero for technical reasons. -/
 
 @[simp] lemma matroid_top : (top M).matroid = M.truncate := by
   refine ext_base rfl ?_
-  obtain h | h := M.eq_loopyOn_or_rkPos
+  obtain h | h := M.eq_loopyOn_or_rankPos
   · rw [h]
     simp [(top _).base_eq', top_ToTruncate, truncate_base_iff, nonempty_iff_ne_empty]
 
@@ -589,7 +589,7 @@ Empty if `M` has rank zero for technical reasons. -/
 @[simp] lemma matroid_bot : (bot M).matroid = M :=
   ext_base rfl <| by simp [(bot _).base_eq]
 
-lemma eq_top_or_bot_of_finiteRk [FiniteRk M] (T : M.TruncateFamily) : T = top M ∨ T = bot M := by
+lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) : T = top M ∨ T = bot M := by
   obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
   · right
     push_neg at h
@@ -601,7 +601,7 @@ lemma eq_top_or_bot_of_finiteRk [FiniteRk M] (T : M.TruncateFamily) : T = top M 
   refine ⟨fun h ↦ ⟨h.base, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
   exact hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨hB₀.base.finite.diff, hB₀.base.encard_diff_comm hB⟩
 
-lemma eq_top_or_bot_of_finiteRk_dual [FiniteRk M✶] (T : M.TruncateFamily) :
+lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) :
     T = top M ∨ T = bot M := by
   obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
   · right

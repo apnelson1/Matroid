@@ -122,15 +122,15 @@ lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.FinRk X := by
   · simp [(hJ.finite_of_finRk h).countable]
   simp [(hI.finite_of_finRk h).countable]
 
-lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.FiniteRk := by
-  rw [← cRk_ground, crk_lt_aleph0_iff, finRk_ground_iff_finiteRk]
+lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
+  rw [← cRk_ground, crk_lt_aleph0_iff, finRk_ground_iff_rankFinite]
 
 @[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base
-  obtain (h | h) := M.finite_or_infiniteRk
+  obtain (h | h) := M.finite_or_inrankFinite
   · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_mk]
   rw [← hB.encard_eq_eRank, hB.infinite.encard_eq, toENat_eq_top, ← not_lt, cRank_lt_aleph0_iff]
-  exact M.not_finiteRk
+  exact M.not_rankFinite
 
 @[simp] lemma cRk_toENat (M : Matroid α) (X : Set α) : (M.cRk X).toENat = M.eRk X := by
   rw [cRk, cRank_toENat]

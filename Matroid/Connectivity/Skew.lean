@@ -220,7 +220,7 @@ lemma FinRk.skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set �
   exact pairwiseDisjoint_of_encard_sum_le_encard_iUnion
     (fun i ↦ (hXs i).finite_of_basis (hIs i)) (hsum.le.trans <| M.eRk_le_encard _)
 
-lemma skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [FiniteRk M] {Xs : η → Set α}
+lemma skewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [RankFinite M] {Xs : η → Set α}
     (hXs : ∀ i, Xs i ⊆ M.E) : M.SkewFamily Xs ↔ ∑ i, M.rk (Xs i) = M.rk (⋃ i, Xs i) := by
   simp_rw [FinRk.skewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.to_finRk (Xs i)) hXs,
     ← M.cast_rk_eq, ← Nat.cast_sum, Nat.cast_inj]

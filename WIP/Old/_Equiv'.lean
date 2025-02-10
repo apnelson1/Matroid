@@ -299,7 +299,7 @@ theorem Iso.finite_iff (h : M ≃ N) : M.Finite ↔ N.Finite := by
   rw [← he.symm.groundEquiv.image_ground]
   exact hfin.image _
 
-theorem Iso.finiteRk_iff (h : M ≃ N) : M.FiniteRk ↔ N.FiniteRk := by
+theorem Iso.rankFinite_iff (h : M ≃ N) : M.RankFinite ↔ N.RankFinite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
   · apply iff_of_true <;> infer_instance
   exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, he.image_base hB, hBfin.image _⟩,
