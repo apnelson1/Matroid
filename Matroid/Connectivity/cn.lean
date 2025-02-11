@@ -532,6 +532,10 @@ lemma Basis'.econn_eq (hIX : M.Basis' I X) (hJX : M.Basis' J (M.E \ X)) :
     M.econn X = M.nullity (I ∪ J) := by
   rw [econn_eq_localEConn, hIX.localEConn_eq_of_disjoint hJX disjoint_sdiff_right]
 
+lemma Basis.econn_eq (hIX : M.Basis I X) (hJX : M.Basis J (M.E \ X)) :
+    M.econn X = M.nullity (I ∪ J) :=
+  hIX.basis'.econn_eq hJX.basis'
+
 lemma econn_eq_localEConn' (M : Matroid α) (X : Set α) :
     M.econn X = M.localEConn (M.E ∩ X) (M.E \ X) := by
   rw [← econn_inter_ground, econn_eq_localEConn, diff_inter_self_eq_diff, inter_comm]
@@ -566,7 +570,7 @@ lemma econn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)�
   wlog h : OnUniv M with aux
   · rw [← econn_corestrict_univ_eq, dual_dual, eq_comm, ← econn_restrict_univ_eq, aux _ _ ⟨rfl⟩]
   obtain ⟨I, hI⟩ := M.exists_basis X
-  obtain ⟨J, hJ⟩ := M.exists_basis Xᶜ
+  obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
   obtain ⟨B, hB, rfl⟩ := hI.exists_basis_inter_eq_of_superset (show X ⊆ X ∪ J from subset_union_left)
 
   have hsp : M.Spanning (X ∪ J) := by
@@ -585,7 +589,13 @@ lemma econn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)�
       compl_compl, compl_inter, compl_compl, compl_compl]
     exact hB.subset.trans (union_subset_union_right _ inter_subset_left)
 
-
+  rw [hB'dual.econn_eq hBdual, hI.econn_eq hJ, (hB.basis_subset ..).nullity_eq,
+    (hB'.compl_base_dual.basis_ground.basis_subset ..).nullity_eq,
+    ground_eq_univ, ← compl_eq_univ_diff, ← compl_eq_univ_diff, union_diff_distrib,
+    diff_eq_empty.2 inter_subset_left, empty_union, union_diff_distrib,
+    diff_eq_empty.2 inter_subset_left, empty_union, diff_compl, diff_eq, diff_eq,
+    inter_comm, inter_assoc]
+  · rw [compl_eq_univ_diff]
 
   sorry
   -- diff_compl,   diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hB'dual

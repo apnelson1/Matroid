@@ -21,6 +21,9 @@ lemma ground_eq_univ (M : Matroid α) [OnUniv M] : M.E = univ :=
 lemma OnUniv.subset_ground (M : Matroid α) [M.OnUniv] (X : Set α) : X ⊆ M.E := by
   simp [OnUniv.ground_eq]
 
+lemma OnUniv.ground_diff_eq (M : Matroid α) [M.OnUniv] (X : Set α) : M.E \ X = Xᶜ := by
+  rw [ground_eq_univ, compl_eq_univ_diff]
+
 lemma corestrict_univ_eq_disjointSum (M : Matroid α) :
     (M✶ ↾ univ)✶ = M.disjointSum (freeOn M.Eᶜ) disjoint_compl_right := by
   rw [← dual_inj, dual_dual, disjointSum_dual]

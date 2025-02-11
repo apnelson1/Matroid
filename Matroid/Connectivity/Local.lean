@@ -2,72 +2,63 @@ import Matroid.Connectivity.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
+import Mathlib.Tactic.TautoSet
 
 open Set Set.Notation
 
 namespace Matroid
 
-variable {α : Type*} {M : Matroid α} {B B' I I' J K X Y : Set α}
+variable {α : Type*} {M : Matroid α} {B B' I I' J J' K X Y : Set α}
 
 section localEConn
 
-lemma Indep.encard_inter_add_eRank_dual_congr (hI : M.Indep I) (hI' : M.Indep I')
-    (hII' : M.closure I = M.closure I') (hJ : M.Indep J) :
-    (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank = (I' ∩ J).encard + (M ↾ (I' ∪ J))✶.eRank := by
-  obtain ⟨K, hK, hIK⟩ := hI.subset_basis_of_subset (subset_union_left (s := I) (t := J))
+lemma Indep.encard_inter_add_nullity_eq (hI : M.Indep I) (hJ : M.Indep J) (hK : M.Basis K (I ∪ J))
+    (hIK : I ⊆ K) (hI' : M.Indep I') (hcl : M.closure I = M.closure I') :
+    (I' ∩ J).encard + M.nullity (I' ∪ J) = (J \ (K \ I)).encard := by
   have hsk := (hK.indep.subset_skew_diff hIK)
-  rw [skew_iff_closure_skew_left] at hsk
+  rw [skew_iff_closure_skew_left, hcl, ← skew_iff_closure_skew_left] at hsk
   have' hdj := hsk.disjoint_of_indep_subset_right (hK.indep.diff _) Subset.rfl
 
-  have hb : ∀ ⦃B⦄, M.Basis B (M.closure I) →
-      (M ／ (K \ I)).Basis B (B ∪ J \ (K \ I)) ∧ (K \ I ⊆ B ∪ J) := by
-    refine fun B hB ↦ ⟨Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_, ?_⟩
-    · rw [(hK.indep.diff _).contract_indep_iff]
-      exact ⟨hdj.mono_left hB.subset,
-        hsk.union_indep_of_indep_subsets hB.indep hB.subset (hK.indep.diff _) Subset.rfl⟩
+  set J₀ := (K \ I) with hJ₀
+  set J₁ := J \ (K \ I) with hJ₁
+  have hJ₀i : M.Indep J₀ := hK.indep.diff I
+  have hss : J₀ ⊆ I' ∪ J := (diff_subset_iff.2 hK.subset).trans subset_union_right
 
+  have hc1 : (M ／ J₀).Basis I' (I' ∪ J₁) := by
+    refine Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_
+    · rw [(hK.indep.diff _).contract_indep_iff]
+      refine ⟨hdj, hsk.union_indep_of_indep_subsets hI' rfl.subset (hK.indep.diff _) Subset.rfl⟩
     · exact subset_union_left
     · rw [contract_closure_eq, subset_diff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
-        and_iff_left (hdj.mono_left hB.subset), closure_union_congr_left hB.closure_eq_closure,
-        closure_union_closure_left_eq, union_diff_cancel hIK, hK.closure_eq_closure]
-      exact union_subset (hB.subset.trans (M.closure_subset_closure subset_union_left))
-        (M.subset_closure_of_subset (diff_subset.trans subset_union_right))
+        and_iff_left hdj, ← closure_union_congr_left hcl, union_diff_cancel hIK,
+        hK.closure_eq_closure, closure_union_congr_left hcl]
+      exact subset_closure_of_subset _ (union_subset_union_right _ diff_subset)
 
-    rw [diff_subset_iff, union_comm B, ← union_assoc]
-    exact hK.subset.trans <| subset_union_left
+  rw [← hJ₀i.nullity_contract_of_superset hss, union_diff_distrib, sdiff_eq_left.2 hdj,
+    hc1.nullity_eq, union_diff_left,
+    ← encard_union_eq (disjoint_sdiff_right.mono_left inter_subset_left),
+    ← inter_union_diff J (K \ I), ← hJ₁, inter_union_distrib_left, union_assoc,
+    inter_comm _ J₁, inter_union_diff, ← hJ₀, inter_comm J, ← inter_assoc,
+    hdj.inter_eq, empty_inter, empty_union]
 
-  have hb' : ∀ ⦃B⦄, M.Basis B (M.closure I) →
-      (B ∩ J).encard + (M ／ (K \ I) ↾ (B ∪ J \ (K \ I)))✶.eRank = (J \ (K \ I)).encard := by
-    intro B hB
-    rw [(hb hB).1.eRank_dual_restrict, union_diff_left,
-      ← encard_diff_add_encard_inter (J \ (K \ I)) B, add_comm, inter_comm _ B,
-      inter_diff_distrib_left, (hdj.mono_left hB.subset).inter_eq, diff_empty]
+lemma Basis'.encard_dual_congr (hI : M.Basis' I X) (hI' : M.Basis' I' X) (hJ : M.Basis' J Y)
+    (hJ' : M.Basis' J' Y) :
+    (I ∩ J).encard + M.nullity (I ∪ J) = (I' ∩ J').encard + M.nullity (I' ∪ J') := by
+  wlog hJJ' : J = J' generalizing I I' J J' X Y with h
+  · rw [h hI hI' hJ hJ rfl, inter_comm, union_comm, h hJ hJ' hI' hI' rfl, inter_comm, union_comm]
+  subst hJJ'
+  obtain ⟨K, hK, hIK⟩ := hI.indep.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
+    (union_subset hI.indep.subset_ground hJ.indep.subset_ground)
+  have hcl : M.closure I = M.closure I' := by rw [hI.closure_eq_closure, hI'.closure_eq_closure]
+  rw [hI.indep.encard_inter_add_nullity_eq hJ.indep hK hIK hI'.indep hcl,
+    hI.indep.encard_inter_add_nullity_eq hJ.indep hK hIK hI.indep rfl]
 
-  have hind : ∀ Y, (M ↾ (Y ∪ J)).Indep (K \ I) := fun Y ↦ by
-    rw [restrict_indep_iff, and_iff_right (hK.indep.diff I), diff_subset_iff, union_comm Y,
-      ← union_assoc]
-    exact hK.subset.trans subset_union_left
-  have hI'b := hII'.symm ▸ hI'.basis_closure
-  rw [← (hind I).contract_eRk_dual_eq,  ← (hind I').contract_eRk_dual_eq,
-    restrict_contract_eq_contract_restrict _ (hb hI.basis_closure).2,
-    restrict_contract_eq_contract_restrict _ (hb hI'b).2,
-    union_diff_distrib, sdiff_eq_left.2 disjoint_sdiff_right,
-    union_diff_distrib, sdiff_eq_left.2 (hdj.mono_left hI'b.subset), hb' hI.basis_closure, hb' hI'b]
-
-lemma Basis'.encard_dual_congr₂ {I I' J J' X Y : Set α} (hI : M.Basis' I X) (hI' : M.Basis' I' X)
-    (hJ : M.Basis' J Y) (hJ' : M.Basis' J' Y) :
-    (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank = (I' ∩ J').encard + (M ↾ (I' ∪ J'))✶.eRank := by
-  rw [hI.indep.encard_inter_add_eRank_dual_congr hI'.indep
-      (by rw [hI.closure_eq_closure, hI'.closure_eq_closure]) hJ.indep,
-    inter_comm, union_comm, hJ.indep.encard_inter_add_eRank_dual_congr hJ'.indep
-      (by rw [hJ.closure_eq_closure, hJ'.closure_eq_closure]) hI'.indep, inter_comm, union_comm]
-
-/-- If `X` and `Y` are sets, then `|I ∩ J| + (M ↾ (I ∪ J))✶.eRank` has the same value for
+/-- If `X` and `Y` are sets, then `|I ∩ J| + M.nullity (I ∪ J)` has the same value for
 every basis `I` of `X` and `J` of `Y`. -/
-lemma Basis.encard_dual_congr₂ {I I' J J' X Y : Set α} (hI : M.Basis I X) (hI' : M.Basis I' X)
+lemma Basis.encard_dual_congr₂ (hI : M.Basis I X) (hI' : M.Basis I' X)
     (hJ : M.Basis J Y) (hJ' : M.Basis J' Y) :
-    (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank = (I' ∩ J').encard + (M ↾ (I' ∪ J'))✶.eRank :=
-  hI.basis'.encard_dual_congr₂ hI'.basis' hJ.basis' hJ'.basis'
+    (I ∩ J).encard + M.nullity (I ∪ J) = (I' ∩ J').encard + M.nullity (I' ∪ J') :=
+  hI.basis'.encard_dual_congr hI'.basis' hJ.basis' hJ'.basis'
 
 /-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
 Defined to correctly describe the connectivity even when one or both sets has infinite rank.
@@ -75,33 +66,30 @@ For a `ℕ`-valued version, see `Matroid.localConn`. -/
 noncomputable def localEConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
   let I := (M.exists_basis' X).choose
   let J := (M.exists_basis' Y).choose
-  (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank
+  (I ∩ J).encard + M.nullity (I ∪ J)
 
 lemma localEConn_comm (M : Matroid α) (X Y : Set α) : M.localEConn X Y = M.localEConn Y X := by
   simp_rw [localEConn, union_comm, inter_comm]
 
 lemma Basis'.localEConn_eq (hI : M.Basis' I X) (hJ : M.Basis' J Y) :
-    M.localEConn X Y = (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank := by
-  simp_rw [localEConn, hI.encard_dual_congr₂ (M.exists_basis' X).choose_spec hJ
+    M.localEConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) := by
+  simp_rw [localEConn, hI.encard_dual_congr (M.exists_basis' X).choose_spec hJ
     (M.exists_basis' Y).choose_spec]
 
-lemma Basis'.localEConn_eq_encard_inter_add_eRelRk (hI : M.Basis' I X) (hJ : M.Basis' J Y) :
-    M.localEConn X Y = (I ∩ J).encard + M✶.eRelRk (M✶.E \ (I ∪ J)) M✶.E := by
-  rw [hI.localEConn_eq hJ,
-    ← delete_compl (union_subset hI.indep.subset_ground hJ.indep.subset_ground),
-    delete_dual_eq_dual_contract, eRank_contract_eq_eRelRk_ground]
-  rfl
-
 lemma Basis.localEConn_eq (hI : M.Basis I X) (hJ : M.Basis J Y) :
-    M.localEConn X Y = (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank :=
+    M.localEConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) :=
   hI.basis'.localEConn_eq hJ.basis'
 
 lemma Indep.localEConn_eq (hI : M.Indep I) (hJ : M.Indep J) :
-    M.localEConn I J = (I ∩ J).encard + (M ↾ (I ∪ J))✶.eRank :=
+    M.localEConn I J = (I ∩ J).encard + M.nullity (I ∪ J) :=
   hI.basis_self.localEConn_eq hJ.basis_self
 
 lemma Basis'.localEConn_eq_of_disjoint (hI : M.Basis' I X) (hJ : M.Basis' J Y)
-    (hXY : Disjoint X Y) : M.localEConn X Y = (M ↾ (I ∪ J))✶.eRank := by
+    (hXY : Disjoint X Y) : M.localEConn X Y = M.nullity (I ∪ J) := by
+  rw [hI.localEConn_eq hJ, (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
+
+lemma Basis.localEConn_eq_of_disjoint (hI : M.Basis I X) (hJ : M.Basis J Y)
+    (hXY : Disjoint X Y) : M.localEConn X Y = M.nullity (I ∪ J) := by
   rw [hI.localEConn_eq hJ, (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
 lemma localEConn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.Basis' I X)
@@ -111,7 +99,7 @@ lemma localEConn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.Bas
     refine hF.basis_inter_ground.basis_subset diff_subset
       (subset_inter (union_subset_union hI.subset hJ.subset)
       (union_subset hI.indep.subset_ground hJ.indep.subset_ground))
-  rw [hI.localEConn_eq hJ, hF'.eRank_dual_restrict, diff_diff_cancel_left hFIJ,
+  rw [hI.localEConn_eq hJ, hF'.nullity_eq, diff_diff_cancel_left hFIJ,
     (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
 lemma localEConn_eq_encard_of_diff' {F : Set α} (hXY : Disjoint X Y) (hI : M.Basis' I X)
@@ -132,9 +120,8 @@ lemma eRk_add_eRk_eq_eRk_union_add_localEConn (M : Matroid α) (X Y : Set α) :
       closure_closure_union_closure_eq_closure_union, ← hB.closure_eq_closure]
     exact ⟨hB.indep.basis_closure, hB.subset.trans (union_subset_union hI.subset hJ.subset)⟩
   rw [hI.localEConn_eq hJ, ← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← encard_union_add_encard_inter,
-    ← hB'.encard_eq_eRk, ← (base_restrict_iff'.2 hB).encard_compl_eq, restrict_ground_eq,
-    ← add_assoc, add_comm B.encard, add_assoc, add_comm B.encard,
-    encard_diff_add_encard_of_subset hB.subset, add_comm]
+    ← hB'.encard_eq_eRk, hB.nullity_eq, ← add_assoc, add_right_comm, add_comm B.encard,
+    encard_diff_add_encard_of_subset hB.subset]
 
 lemma eRk_inter_le_localEConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) ≤ M.localEConn X Y := by
   obtain ⟨I, hI⟩ := M.exists_basis' (X ∩ Y)
@@ -178,8 +165,8 @@ lemma localEConn_mono {X' Y' : Set α} (M : Matroid α) (hX : X' ⊆ X) (hY : Y'
 
 @[simp] lemma empty_localEConn (M : Matroid α) (X : Set α) : M.localEConn ∅ X = 0 := by
   obtain ⟨I, hI⟩ := M.exists_basis' X
-  rw [(M.empty_indep.basis_self.basis').localEConn_eq hI, empty_inter, encard_empty,
-    eRank_dual_restrict_eq_zero_iff.2 (by simpa using hI.indep), zero_add]
+  rw [(M.empty_indep.basis_self.basis').localEConn_eq hI]
+  simp [hI.indep]
 
 @[simp] lemma localEConn_empty (M : Matroid α) (X : Set α) : M.localEConn X ∅ = 0 := by
   rw [localEConn_comm, empty_localEConn]
@@ -188,7 +175,7 @@ lemma localEConn_subset (M : Matroid α) (hXY : X ⊆ Y) : M.localEConn X Y = M.
   obtain ⟨I, hI⟩ := M.exists_basis' X
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis'_of_subset (hI.subset.trans hXY)
   rw [hI.localEConn_eq hJ, inter_eq_self_of_subset_left hIJ, union_eq_self_of_subset_left hIJ,
-    hJ.indep.eRank_dual_restrict_eq, ← hI.encard_eq_eRk, add_zero]
+    hJ.indep.nullity_eq, ← hI.encard_eq_eRk, add_zero]
 
 lemma localEConn_eq_zero (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
     M.localEConn X Y = 0 ↔ M.Skew X Y := by
@@ -196,8 +183,8 @@ lemma localEConn_eq_zero (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by 
   obtain ⟨J, hJ⟩ := M.exists_basis Y
   rw [skew_iff_closure_skew, ← localEConn_closure_closure, ← hI.closure_eq_closure,
     ← hJ.closure_eq_closure, ← skew_iff_closure_skew, localEConn_closure_closure,
-    hI.indep.localEConn_eq hJ.indep, add_eq_zero, encard_eq_zero, ← disjoint_iff_inter_eq_empty,
-    eRank_dual_restrict_eq_zero_iff, hI.indep.skew_iff_disjoint_union_indep hJ.indep]
+    hI.indep.localEConn_eq hJ.indep]
+  simp [hI.indep.skew_iff_disjoint_union_indep hJ.indep, disjoint_iff_inter_eq_empty]
 
 lemma Skew.localEConn (hXY : M.Skew X Y) : M.localEConn X Y = 0 := by
   rwa [localEConn_eq_zero]
@@ -221,7 +208,8 @@ lemma localEConn_inter_ground (M : Matroid α) (X Y : Set α) :
   obtain ⟨J, hJ⟩ := (M ↾ R).exists_basis' Y
   have ⟨hI', hI'R⟩ := basis'_restrict_iff.1 hI
   have ⟨hJ', hJ'R⟩ := basis'_restrict_iff.1 hJ
-  rw [hI.localEConn_eq hJ, hI'.localEConn_eq hJ', restrict_restrict_eq _ (union_subset hI'R hJ'R)]
+  rw [hI.localEConn_eq hJ, hI'.localEConn_eq hJ',
+    nullity_restrict_of_subset _ (union_subset hI'R hJ'R)]
 
 lemma localEConn_restrict_univ_eq (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).localEConn X Y = M.localEConn X Y := by
@@ -249,8 +237,9 @@ lemma localEConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disj
   rw [image_preimage_inter] at hI' hJ'
   rw [← M.localEConn_inter_ground, hI.localEConn_eq hJ, ← localEConn_inter_ground, map_ground,
     hI'.localEConn_eq hJ', ← hf.image_inter hI.indep.subset_ground hJ.indep.subset_ground,
-    (hf.mono (inter_subset_left.trans hI.indep.subset_ground)).encard_image,
-    ← image_union, ← M.map_restrict f hf (I ∪ J), map_dual, eRank_map]
+    (hf.mono (inter_subset_left.trans hI.indep.subset_ground)).encard_image, ← image_union,
+    nullity_eq_eRank_restrict_dual, ← M.map_restrict f hf (I ∪ J), map_dual, eRank_map,
+    nullity_eq_eRank_restrict_dual]
 
 @[simp] lemma localEConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :
     (M.comap f).localEConn X Y = M.localEConn (f '' X) (f '' Y) := by
@@ -287,17 +276,16 @@ lemma localEConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disj
   rw [hIP.localEConn_eq hIQ, hIP'.localEConn_eq hIQ',
     ← hinj.image_inter subset_union_left subset_union_right,
     (hPinj.mono inter_subset_left).encard_image, ← image_union,
+    nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
     ← comapOn_map N hinj, map_dual, eRank_map, comapOn]
 
 @[simp] lemma localEConn_ground_eq (M : Matroid α) (X : Set α) : M.localEConn X M.E = M.eRk X := by
-  suffices hss : ∀ Y ⊆ M.E, M.localEConn Y M.E = M.eRk Y by
-    rw [← localEConn_inter_ground_left, ← eRk_inter_ground, ← hss _ inter_subset_right]
-  refine fun Y hYE ↦ ?_
-  obtain ⟨I, hI⟩ := M.exists_basis Y
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · rw [← localEConn_inter_ground_left, aux _ inter_subset_right, eRk_inter_ground]
+  obtain ⟨I, hI⟩ := M.exists_basis X
   obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
   rw [hI.localEConn_eq hB.basis_ground, hI.eRk_eq_encard, inter_eq_self_of_subset_left hIB,
-    union_eq_self_of_subset_left hIB, hB.indep.restrict_eq_freeOn, eRank_eq_zero_iff.2, add_zero]
-  simp
+    union_eq_self_of_subset_left hIB, hB.indep.nullity_eq, add_zero]
 
 @[simp] lemma ground_localEConn_eq (M : Matroid α) (X : Set α) : M.localEConn M.E X = M.eRk X := by
   rw [localEConn_comm, localEConn_ground_eq]
@@ -314,72 +302,44 @@ lemma ModularPair.localEConn_eq_eRk_inter (h : M.ModularPair X Y) :
     M.localEConn X Y = M.eRk (X ∩ Y) := by
   obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_basis
   rw [hIX.localEConn_eq hIY, ← hIi.encard_eq_eRk, ← inter_inter_distrib_left,
-    ← inter_union_distrib_left, inter_eq_self_of_subset_left hIu.subset,
-    hIu.indep.restrict_eq_freeOn, freeOn_dual_eq, loopyOn_eRank_eq, add_zero, ← inter_assoc]
+    ← inter_union_distrib_left, inter_eq_self_of_subset_left hIu.subset, hIu.indep.nullity_eq,
+    add_zero, inter_assoc]
+
 
 /-- Contracting a subset of `Y` that is skew to `X` doesn't change the local connectivity
 between `X` and `Y`. -/
-lemma localEConn_contract_right_skew_left {C Y : Set α} (hXC : M.Skew X C) (hCY : C ⊆ Y) :
+lemma localEConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hCY : C ⊆ Y) :
     (M ／ C).localEConn X (Y \ C) = M.localEConn X Y := by
-  obtain ⟨I, hI⟩ := M.exists_basis' C
-  obtain ⟨J, hJ, h_inter⟩ := hI.exists_basis'_inter_eq_of_superset hCY
-  have hIJ : I ⊆ J := by simp [← h_inter]
+  wlog hYE : Y ⊆ M.E generalizing Y with aux
+  · rw [← localEConn_inter_ground_right, contract_ground, diff_inter_diff_right,
+      aux (subset_inter hCY hXC.subset_ground_right) inter_subset_right,
+      localEConn_inter_ground_right]
+  wlog hC : M.Indep C generalizing C with aux
+  · obtain ⟨I, hI⟩ := M.exists_basis C
+    have hcl : (M ／ I).closure (Y \ C) = (M ／ I).closure (Y \ I) := by
+      simp [closure_union_congr_right hI.closure_eq_closure]
+    have ss : C \ I ⊆ (M ／ I).closure ∅ := by
+      simp only [contract_closure_eq, empty_union, hI.closure_eq_closure]
+      exact diff_subset_diff_left (subset_closure _ _)
+    rw [hI.contract_eq_contract_delete, localEConn_delete_eq,
+      ← localEConn_closure_closure, closure_diff_eq_closure_of_subset_loops _ _ ss,
+      sdiff_eq_left.2 (disjoint_sdiff_left.mono_right diff_subset), hcl,
+      localEConn_closure_closure, ← aux (hXC.mono_right hI.subset) (hI.subset.trans hCY) hI.indep]
 
-  obtain ⟨K, hK⟩ := M.exists_basis' X
+  obtain ⟨J, hJ, hCJ⟩ := hC.subset_basis_of_subset hCY
+  have hdj := hXC.disjoint_of_indep_right hC
+  have hbY := hC.contract_basis hJ <| hJ.indep.subset <| union_subset hCJ rfl.subset
+  obtain ⟨K, hK⟩ := M.exists_basis X
 
-  have hKC : Disjoint K C :=
-    hXC.diff_loops_disjoint_left.mono_left (subset_diff.2 ⟨hK.subset, hK.indep.disjoint_loops⟩)
+  have hbX : (M ／ C).Basis K X :=
+    hC.contract_basis_of_disjoint hK hdj.symm <|
+    hXC.symm.union_indep_of_indep_subsets hC rfl.subset hK.indep hK.subset
+  have hrw : K ∪ J \ C = (K ∪ J) \ C := by
+    rw [union_diff_distrib, (hdj.mono_left hK.subset).sdiff_eq_left]
+  rw [hK.localEConn_eq hJ, hbX.localEConn_eq hbY, hrw,
+    hC.nullity_contract_of_superset (hCJ.trans subset_union_right),
+    inter_diff_distrib_left, (hdj.mono_left hK.subset).inter_eq, diff_empty]
 
-  have hbY : (M ／ C).Basis' (J \ I) (Y \ C)
-  · rw [← h_inter, diff_self_inter, basis'_iff_basis_closure, basis_iff_indep_subset_closure,
-      contract_closure_eq, contract_closure_eq, diff_union_of_subset hCY,
-      diff_union_self, and_iff_left (diff_subset_diff_left hJ.subset), hI.contract_indep_diff_iff,
-      ← h_inter, diff_union_inter, and_iff_right hJ.indep, ← hJ.closure_eq_closure]
-    exact ⟨diff_subset_diff_left (M.subset_closure J hJ.indep.subset_ground),
-      diff_subset_diff_left <| M.closure_mono subset_union_left⟩
-
-  have hbX : (M ／ C).Basis' K X
-  · suffices h' : ((M ／ C) ↾ X).Basis' K X
-    · rw [basis'_restrict_iff, inter_self] at h'
-      exact h'.1
-    rwa [hXC.symm.contract_restrict_eq, basis'_restrict_iff, inter_self, and_iff_left hK.subset]
-
-  rw [hbX.localEConn_eq hbY, hK.localEConn_eq hJ, inter_diff_distrib_left,
-    (hKC.mono_right hI.subset).inter_eq, diff_empty]
-  convert rfl using 2
-  obtain ⟨B, hB, hJB⟩ := hJ.indep.subset_basis_of_subset subset_union_right
-    (union_subset hK.indep.subset_ground hJ.indep.subset_ground)
-
-  have hB' : (M ／ C ↾ (K ∪ (J \ I)))✶.Base (K \ B)
-  · suffices (M ／ C ↾ (K ∪ J \ I)).Base ((K ∪ J \ I) \ (K \ B)) by
-      simpa [dual_base_iff', diff_subset.trans subset_union_left]
-    rw [diff_diff_right, union_diff_left, union_inter_distrib_right,
-      inter_eq_self_of_subset_left (diff_subset.trans hJB), union_comm (K ∩ B),
-      ← union_assoc, union_eq_self_of_subset_left diff_subset]
-    refine Basis.base_restrict (Indep.basis_of_subset_of_subset_closure ?_ ?_ ?_)
-    · rw [hI.contract_indep_iff, disjoint_union_right, ← h_inter, diff_self_inter,
-        and_iff_right disjoint_sdiff_right,
-        and_iff_left (hKC.symm.mono_right inter_subset_left)]
-
-      exact hB.indep.subset <| union_subset
-        (union_subset (diff_subset.trans hJB) inter_subset_right) (inter_subset_left.trans hJB)
-    · exact union_subset subset_union_right (inter_subset_left.trans subset_union_left)
-
-    rw [contract_closure_eq, ← closure_union_congr_right hI.closure_eq_closure,
-      union_right_comm, diff_union_of_subset hIJ, ← inter_eq_self_of_subset_left hJB,
-      ← union_inter_distrib_right, union_comm J, inter_eq_self_of_subset_right hB.subset,
-      hB.closure_eq_closure, inter_eq_self_of_subset_left hJB, subset_diff,
-      disjoint_union_left, and_iff_right hKC, ← h_inter, diff_self_inter,
-      and_iff_left disjoint_sdiff_left]
-
-    exact M.subset_closure_of_subset (union_subset_union_right _ diff_subset)
-      (union_subset hK.indep.subset_ground hJ.indep.subset_ground)
-
-  rw [← hB.base_restrict.compl_base_dual.encard_eq_eRank, restrict_ground_eq, union_diff_distrib,
-    diff_eq_empty.2 hJB, union_empty, hB'.encard_eq_eRank]
-
-/-- TODO : prove this by showing that `⊓ (X ∪ D, Y) = ⊓ (X,Y) + r (D)` for all `D ⊆ cl(X ∪ Y)`
-that is skew to `X`. -/
 lemma localEConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     (heXY : e ∈ M.closure (X ∪ Y)) : M.localEConn (insert e X) Y = M.localEConn X Y + 1 := by
   have heE : e ∈ M.E := mem_ground_of_mem_closure heXY
@@ -388,37 +348,22 @@ lemma localEConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
       aux (by simpa) _ inter_subset_right, localEConn_inter_ground_left]
     rwa [← closure_inter_ground, union_inter_distrib_right, inter_assoc, inter_self,
       ← union_inter_distrib_right, closure_inter_ground]
-
   obtain ⟨I, hI⟩ := M.exists_basis X
-  have heI : e ∉ I := not_mem_subset hI.basis_closure_right.subset heX
-  have hIe := hI.insert_basis_insert_of_not_mem_closure (e := e) (by rwa [hI.closure_eq_closure])
   obtain ⟨J, hJ⟩ := M.exists_basis' Y
-  rw [hI.basis'.localEConn_eq hJ, hIe.basis'.localEConn_eq hJ]
+  have hIe : M.Basis (insert e I) (insert e X) := by
+    refine hI.insert_basis_insert ?_
+    rw [hI.indep.insert_indep_iff, hI.closure_eq_closure]
+    exact .inl ⟨heE, heX⟩
 
+  rw [hI.basis'.localEConn_eq hJ, hIe.basis'.localEConn_eq hJ, insert_union]
+  have heI : e ∉ I := not_mem_subset (hI.subset.trans (M.subset_closure X)) heX
   by_cases heJ : e ∈ J
-  · rw [insert_inter_of_mem heJ, encard_insert_of_not_mem (not_mem_subset inter_subset_left heI),
-      insert_union, insert_eq_of_mem (.inr heJ), add_right_comm]
+  · rw [insert_inter_of_mem heJ, insert_eq_of_mem (mem_union_right _ heJ),
+      encard_insert_of_not_mem (by simp [heI]), add_right_comm]
 
-  have hIJ : I ∪ J ⊆ M.E := union_subset hI.indep.subset_ground hJ.indep.subset_ground
-
-  obtain ⟨B, hB⟩ := (M ↾ (I ∪ J)).exists_base
-
-  have heB : e ∉ B := not_mem_subset hB.subset_ground (by simp [heI, heJ])
-
-  have hB' : (M ↾ (insert e (I ∪ J))).Base B
-  ·
-    rw [base_restrict_iff hIJ] at hB
-    refine Basis.base_restrict (hB.indep.basis_of_subset_of_subset_closure ?_ ?_)
-    · exact hB.subset.trans (subset_insert _ _)
-    rw [hB.closure_eq_closure]
-    refine insert_subset ?_ (M.subset_closure _)
-    rwa [closure_union_congr_left hI.closure_eq_closure,
-      closure_union_congr_right hJ.closure_eq_closure]
-
-  rw [insert_union, insert_inter_of_not_mem heJ, ← hB.compl_base_dual.encard_eq_eRank,
-    ← hB'.compl_base_dual.encard_eq_eRank, restrict_ground_eq, insert_diff_of_not_mem _ heB,
-      encard_insert_of_not_mem (by simp [heI, heJ]), ← add_assoc, restrict_ground_eq]
-
+  rw [insert_inter_of_not_mem heJ, nullity_insert_eq_add_one
+    (by rwa [closure_union_congr_left hI.closure_eq_closure,
+      closure_union_congr_right hJ.closure_eq_closure]) (by simp [heI, heJ]), add_assoc]
 
 lemma FinRk.modularPair_iff_localEConn_eq_eRk_inter (hX : M.FinRk X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
@@ -434,9 +379,7 @@ lemma FinRk.modularPair_iff_localEConn_eq_eRk_inter (hX : M.FinRk X) (Y : Set α
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.localEConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
-    zero_add, WithTop.add_left_cancel_iff hX.inter_right.eRk_ne_top, eRank_eq_zero_iff,
-    ← eq_dual_iff_dual_eq, loopyOn_dual_eq, dual_ground, restrict_ground_eq, restrict_eq_freeOn_iff]
-    at h
+    zero_add, WithTop.add_left_cancel_iff hX.inter_right.eRk_ne_top, nullity_eq_zero] at h
 
   exact h.modularPair_of_union.of_basis_of_basis hIX hIY
 
@@ -466,15 +409,12 @@ lemma localEConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
       closure_union_congr_right hIY.closure_eq_closure]
     exact M.subset_closure _ (union_subset hXE hYE)
 
-  have hbas : (M ↾ (IX ∪ IY))✶.Base ((IX ∪ IY) \ K) := by
-    simpa using hK.base_restrict.compl_base_dual
-
   rw [hIX.eRk_eq_encard, hIX.localEConn_eq hIY, hIY.eRelRk_eq_encard_diff_of_subset_basis hK' hIYK,
-    ← hbas.encard_eq_eRank, union_diff_distrib, diff_eq_empty.2 hIYK, union_empty, add_assoc,
+    hK.nullity_eq, union_diff_distrib, diff_eq_empty.2 hIYK, union_empty, add_assoc,
     ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
-    ← encard_diff_add_encard_inter IX IY, add_comm, eq_comm,
-    diff_union_diff_cancel_of_inter_subset_of_subset_union
-      (inter_subset_right.trans hIYK) hK.subset]
+    diff_union_diff_cancel_of_inter_subset_of_subset_union _ hK.subset, add_comm,
+    encard_diff_add_encard_inter]
+  exact (inter_subset_right.trans hIYK)
 
 lemma Hyperplane.localEConn_add_one_eq {H X : Set α} (hH : M.Hyperplane H) (hXH : ¬ (X ⊆ H))
     (hXE : X ⊆ M.E := by aesop_mat) : M.localEConn X H + 1 = M.eRk X := by
@@ -572,9 +512,8 @@ lemma Circuit.localEConn_subset_compl {C : Set α} (hC : M.Circuit C) (hI : I.No
   obtain ⟨e, heC, heI⟩ := exists_of_ssubset hIC
   have hi' : C \ I ⊂ C := by simpa [inter_eq_self_of_subset_right hIC.subset]
   rw [(hC.ssubset_indep hIC).basis_self.localEConn_eq (hC.ssubset_indep hi').basis_self,
-    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset, hC.restrict_eq_circuitOn, circuitOn_dual, unifOn_eRank_eq, min_eq_right
-    (by simpa using hC.nonempty)]
-  rfl
+    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
+    hC.nullity_eq]
 
 end localConn
 
@@ -589,6 +528,14 @@ lemma econn_eq_localEConn (M : Matroid α) (X : Set α) : M.econn X = M.localECo
 @[simp] lemma econn_inter_ground (M : Matroid α) (X : Set α) :  M.econn (X ∩ M.E) = M.econn X := by
   rw [econn, localEConn_inter_ground_left, econn, diff_inter_self_eq_diff]
 
+lemma Basis'.econn_eq (hIX : M.Basis' I X) (hJX : M.Basis' J (M.E \ X)) :
+    M.econn X = M.nullity (I ∪ J) := by
+  rw [econn_eq_localEConn, hIX.localEConn_eq_of_disjoint hJX disjoint_sdiff_right]
+
+lemma Basis.econn_eq (hIX : M.Basis I X) (hJX : M.Basis J (M.E \ X)) :
+    M.econn X = M.nullity (I ∪ J) :=
+  hIX.basis'.econn_eq hJX.basis'
+
 lemma econn_eq_localEConn' (M : Matroid α) (X : Set α) :
     M.econn X = M.localEConn (M.E ∩ X) (M.E \ X) := by
   rw [← econn_inter_ground, econn_eq_localEConn, diff_inter_self_eq_diff, inter_comm]
@@ -597,6 +544,23 @@ lemma econn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).econn 
    rw [econn, localEConn_restrict_univ_eq, restrict_ground_eq,
     ← localEConn_inter_ground_right, diff_eq, inter_right_comm, univ_inter, ← diff_eq]
 
+lemma econn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)✶.econn X = M.econn X := by
+  obtain ⟨I, hI⟩ := M.exists_basis' X
+  obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
+
+  have hJ' : (M✶ ↾ univ)✶.Basis (J ∪ (Xᶜ \ M.E)) ((M✶ ↾ univ)✶.E \ X) := by
+    rwa [dual_ground, restrict_ground_eq, ← compl_eq_univ_diff, corestrict_univ_basis_iff,
+      union_subset_iff, and_iff_left subset_union_right, and_iff_left diff_subset,
+      and_iff_left <| hJ.subset.trans <| diff_subset_compl .., ← diff_eq_compl_inter,
+      union_inter_distrib_right, disjoint_sdiff_left.inter_eq, union_empty,
+      inter_eq_self_of_subset_left hJ.indep.subset_ground]
+
+  rw [hI.corestrict_univ_basis.basis'.econn_eq hJ'.basis', hI.econn_eq hJ.basis',
+    nullity_corestrict_univ_eq_nullity_inter, union_right_comm, union_assoc, union_assoc,
+    ← union_diff_distrib, ← union_assoc, union_inter_distrib_right, disjoint_sdiff_left.inter_eq,
+    union_empty,
+    inter_eq_self_of_subset_left (union_subset hI.indep.subset_ground hJ.indep.subset_ground)]
+
 @[simp] lemma econn_compl (M : Matroid α) (X : Set α) : M.econn (M.E \ X) = M.econn X := by
   rw [eq_comm, ← econn_inter_ground, econn, diff_inter_self_eq_diff, econn, localEConn_comm,
     inter_comm]
@@ -604,57 +568,25 @@ lemma econn_restrict_univ_eq (M : Matroid α) (X : Set α) : (M ↾ univ).econn 
 
 /-- Connectivity is self-dual. -/
 @[simp] lemma econn_dual (M : Matroid α) (X : Set α) : M✶.econn X = M.econn X := by
-  suffices ∀ X ⊆ M.E, M.localEConn X (M.E \ X) = M✶.localEConn X (M.E \ X) by
-    rw [eq_comm, econn, econn, ← localEConn_inter_ground_left,
-      ← M✶.localEConn_inter_ground_left, ← diff_inter_self_eq_diff (s := M.E) (t := X),
-      this _ inter_subset_right, dual_ground, diff_inter_self_eq_diff]
-  intro X hX
-
+  wlog h : OnUniv M with aux
+  · rw [← econn_corestrict_univ_eq, dual_dual, eq_comm, ← econn_restrict_univ_eq, aux _ _ ⟨rfl⟩]
   obtain ⟨I, hI⟩ := M.exists_basis X
   obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
-  obtain ⟨BX, hBX, hIBX⟩ := hI.indep.subset_basis_of_subset (show I ⊆ I ∪ J from subset_union_left)
-
-  have hIJE : M.Spanning (I ∪ J) := by
-    rw [spanning_iff_closure_eq, ← closure_closure_union_closure_eq_closure_union,
-      hI.closure_eq_closure, hJ.closure_eq_closure, closure_closure_union_closure_eq_closure_union,
-      union_diff_cancel hX, closure_ground]
-
-  have hBXb : M.Base BX := by
-    rw [← basis_ground_iff, ← hIJE.closure_eq]
-    exact hBX.basis_closure_right
-
-  obtain rfl : I = BX ∩ X := hI.eq_of_subset_indep (hBXb.indep.inter_right _)
-    (subset_inter hIBX hI.subset) inter_subset_right
-
-  have hBXdual := hBXb.compl_inter_basis_of_inter_basis hI
-  rw [diff_inter_diff, union_comm, ← diff_diff] at hBXdual
-
-  obtain ⟨BY, hBY, hJBY⟩ := hJ.indep.subset_basis_of_subset (subset_union_right (s := BX ∩ X))
-  have hBYb : M.Base BY := by
-    rw [← basis_ground_iff, ← hIJE.closure_eq]
-    exact hBY.basis_closure_right
-
-  obtain rfl : J = BY ∩ (M.E \ X) := hJ.eq_of_subset_indep (hBYb.indep.inter_right _)
-    (subset_inter hJBY hJ.subset) inter_subset_right
-
-  have hBYdual := hBYb.compl_inter_basis_of_inter_basis hJ
-  rw [diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hBYdual
-
-  rw [hBYdual.basis'.localEConn_eq_of_disjoint hBXdual.basis' disjoint_sdiff_right,
-    hI.basis'.localEConn_eq_of_disjoint hJ.basis' disjoint_sdiff_right, hBX.eRank_dual_restrict,
-    union_diff_distrib, diff_eq_empty.2 inter_subset_left, empty_union,
-    Basis.eRank_dual_restrict (hBYb.compl_base_dual.basis_ground.basis_subset _ _)]
-
-  · rw [union_diff_distrib, diff_eq_empty.2 (diff_subset_diff_left hX), empty_union, diff_diff,
-      diff_diff, ← union_assoc, union_comm, ← diff_diff, diff_diff_cancel_left hBYb.subset_ground,
-      ← diff_diff, inter_diff_distrib_left, inter_eq_self_of_subset_left hBYb.subset_ground,
-      diff_self_inter]
-  · rw [← union_diff_cancel hX, union_diff_distrib, union_diff_cancel hX, diff_diff, diff_diff]
-    refine union_subset_union_right _ (diff_subset_diff_right ?_)
-    simp only [union_subset_iff, subset_union_left, true_and]
-    exact hBX.subset.trans (union_subset_union inter_subset_right inter_subset_left)
-
-  exact union_subset (diff_subset.trans hX) (diff_subset.trans diff_subset)
+  obtain ⟨B, hB, rfl⟩ := hI.exists_basis_inter_eq_of_superset <| subset_union_left (t := J)
+  have hsp : M.Spanning (X ∪ J) := by
+    simp [spanning_iff_closure_eq, closure_union_congr_right hJ.closure_eq_closure]
+  have hBdual := (hB.base_of_spanning hsp).compl_inter_basis_of_inter_basis hI
+  rw [diff_inter_diff, union_comm, ← diff_diff] at hBdual
+  obtain ⟨B', hB', rfl⟩ := hJ.exists_base
+  have hB'dual : M✶.Basis (B'ᶜ ∩ X) X := by
+    simpa [← compl_eq_univ_diff] using hB'.compl_inter_basis_of_inter_basis hJ
+  have hBss := hB.subset
+  have hgd := OnUniv.ground_diff_eq M X
+  rw [ hB'dual.econn_eq hBdual, hI.econn_eq hJ, OnUniv.ground_diff_eq,
+    (hB.basis_subset (by tauto_set) (by tauto_set)).nullity_eq,
+    (hB'.compl_base_dual.basis_ground.basis_subset (by tauto_set) (by simp)).nullity_eq,
+    OnUniv.ground_diff_eq,  union_diff_distrib]
+  exact congr_arg _ (by tauto_set)
 
 lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     M.eRk X + M.eRk (M.E \ X) = M.eRank + M.econn X := by
@@ -703,15 +635,13 @@ lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [RankFinite M] (X : Set α) :
   rw [conn_eq_localConn, localConn_eq_rk_add_rk_sub, union_diff_self, rk_eq_rank subset_union_right]
 
 /-- A version of `Matroid.conn_eq_rk_add_rk_sub_rank` with `Int` subtraction,
-for use with `ring` and `linarith`. -/
-@[simp]
+for use with `ring, linarith`, etc. -/
 lemma intCast_conn_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     (M.conn X : ℤ) = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_rk_add_rk_sub_rank, ← Nat.cast_add, rank_def]
   refine Int.ofNat_sub ?_
   convert M.rk_union_le_rk_add_rk X (M.E \ X) using 1
   rw [union_diff_self, rk_eq_rank subset_union_right, rank_def]
-
 
 lemma conn_inter_add_conn_union_union_le (M : Matroid α) [RankFinite M] {A : Set α}
     (hAX : Disjoint A X) (hAY : Disjoint A Y) :
