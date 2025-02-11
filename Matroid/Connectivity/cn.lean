@@ -2,6 +2,7 @@ import Matroid.Connectivity.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
+import Mathlib.Tactic.TautoSet
 
 open Set Set.Notation
 
@@ -566,93 +567,27 @@ lemma econn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)�
     inter_comm]
   simp
 
+/-- Connectivity is self-dual. -/
 @[simp] lemma econn_dual (M : Matroid α) (X : Set α) : M✶.econn X = M.econn X := by
   wlog h : OnUniv M with aux
   · rw [← econn_corestrict_univ_eq, dual_dual, eq_comm, ← econn_restrict_univ_eq, aux _ _ ⟨rfl⟩]
   obtain ⟨I, hI⟩ := M.exists_basis X
   obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
   obtain ⟨B, hB, rfl⟩ := hI.exists_basis_inter_eq_of_superset (show X ⊆ X ∪ J from subset_union_left)
-
   have hsp : M.Spanning (X ∪ J) := by
     simp [spanning_iff_closure_eq, closure_union_congr_right hJ.closure_eq_closure]
-
   have hBdual := (hB.base_of_spanning hsp).compl_inter_basis_of_inter_basis hI
   rw [diff_inter_diff, union_comm, ← diff_diff] at hBdual
-
   obtain ⟨B', hB', rfl⟩ := hJ.exists_base
-
   have hB'dual : M✶.Basis (B'ᶜ ∩ X) X := by
     simpa [← compl_eq_univ_diff] using hB'.compl_inter_basis_of_inter_basis hJ
-
-  have hss : Xᶜ \ B' ⊆ Xᶜ \ B := by
-    rw [diff_eq, diff_eq, subset_inter_iff, and_iff_right inter_subset_left, ← compl_subset_compl,
-      compl_compl, compl_inter, compl_compl, compl_compl]
-    exact hB.subset.trans (union_subset_union_right _ inter_subset_left)
-
-  rw [hB'dual.econn_eq hBdual, hI.econn_eq hJ, (hB.basis_subset ..).nullity_eq,
-    (hB'.compl_base_dual.basis_ground.basis_subset ..).nullity_eq,
-    ground_eq_univ, ← compl_eq_univ_diff, ← compl_eq_univ_diff, union_diff_distrib,
-    diff_eq_empty.2 inter_subset_left, empty_union, union_diff_distrib,
-    diff_eq_empty.2 inter_subset_left, empty_union, diff_compl, diff_eq, diff_eq,
-    inter_comm, inter_assoc]
-  · rw [compl_eq_univ_diff]
-
-  sorry
-  -- diff_compl,   diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hB'dual
-
-
-    -- union_diff_cancel hX, closure_ground]
-
-
-/-- Connectivity is self-dual. -/
-@[simp] lemma econn_dual' (M : Matroid α) (X : Set α) : M✶.econn X = M.econn X := by
-  suffices ∀ X ⊆ M.E, M.localEConn X (M.E \ X) = M✶.localEConn X (M.E \ X) by
-    rw [eq_comm, econn, econn, ← localEConn_inter_ground_left,
-      ← M✶.localEConn_inter_ground_left, ← diff_inter_self_eq_diff (s := M.E) (t := X),
-      this _ inter_subset_right, dual_ground, diff_inter_self_eq_diff]
-  intro X hX
-
-  obtain ⟨I, hI⟩ := M.exists_basis X
-  obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
-  obtain ⟨B, hB, rfl⟩ := hI.exists_basis_inter_eq_of_superset (show X ⊆ X ∪ J from subset_union_left)
-
-  have hsp : M.Spanning (X ∪ J) := by rw [spanning_iff_closure_eq,
-    closure_union_congr_right hJ.closure_eq_closure, union_diff_cancel hX, closure_ground]
-
-  have hBdual := (hB.base_of_spanning hsp).compl_inter_basis_of_inter_basis hI
-  rw [diff_inter_diff, union_comm, ← diff_diff] at hBdual
-
-  obtain ⟨B', hB', rfl⟩ := hJ.exists_basis_inter_eq_of_superset diff_subset
-  rw [basis_ground_iff] at hB'
-
-  have hB'dual := hB'.compl_inter_basis_of_inter_basis hJ
-  rw [diff_inter_diff, union_comm, ← diff_diff, diff_diff_cancel_left hX] at hB'dual
-
-
-  have hss := diff_subset_diff_right (s := M.E \ X) hB.subset
-  rw [union_inter_distrib_left, union_diff_self, ← union_inter_distrib_left, ← diff_diff,
-    sdiff_idem, inter_eq_self_of_subset_left hB'.subset_ground] at hss
-
-
-  rw [hI.localEConn_eq_of_disjoint hJ disjoint_sdiff_right,
-    hB'dual.localEConn_eq_of_disjoint hBdual disjoint_sdiff_right,
-    (hB.basis_subset ..).nullity_eq,
-    (hB'.compl_base_dual.basis_ground.basis_subset ..).nullity_eq]
-
-  · rw [union_diff_distrib, diff_eq_empty.2 inter_subset_left, empty_union, union_diff_distrib,
-      diff_eq_empty.2 (diff_subset_diff_left hX), empty_union, diff_diff, diff_diff,
-      ← union_assoc, union_comm, ← diff_diff, diff_diff_cancel_left hB'.subset_ground,
-      inter_diff_distrib_left, inter_eq_self_of_subset_left hB'.subset_ground, diff_self_inter,
-      diff_diff]
-
-  · exact subset_trans (by rw [← union_diff_distrib, union_diff_cancel hX])
-      (union_subset_union_right _ hss)
-
-  · exact union_subset (diff_subset.trans hX) (diff_subset.trans diff_subset)
-  · rw [← diff_subset_iff, diff_self_inter, diff_subset_iff]
-    exact hB.subset
-  · refine union_subset_union_left _ inter_subset_right
-
+  have hBss := hB.subset
+  have hgd := OnUniv.ground_diff_eq M X
+  rw [ hB'dual.econn_eq hBdual, hI.econn_eq hJ, OnUniv.ground_diff_eq,
+    (hB.basis_subset (by tauto_set) (by tauto_set)).nullity_eq,
+    (hB'.compl_base_dual.basis_ground.basis_subset (by tauto_set) (by simp)).nullity_eq,
+    OnUniv.ground_diff_eq,  union_diff_distrib]
+  exact congr_arg _ (by tauto_set)
 
 lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     M.eRk X + M.eRk (M.E \ X) = M.eRank + M.econn X := by

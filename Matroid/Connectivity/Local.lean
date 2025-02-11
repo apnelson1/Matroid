@@ -585,8 +585,8 @@ lemma econn_corestrict_univ_eq (M : Matroid α) (X : Set α) : (M✶ ↾ univ)�
   rw [ hB'dual.econn_eq hBdual, hI.econn_eq hJ, OnUniv.ground_diff_eq,
     (hB.basis_subset (by tauto_set) (by tauto_set)).nullity_eq,
     (hB'.compl_base_dual.basis_ground.basis_subset (by tauto_set) (by simp)).nullity_eq,
-    OnUniv.ground_diff_eq,  union_diff_distrib]
-  exact congr_arg _ (by tauto_set)
+    OnUniv.ground_diff_eq]
+  exact congr_arg _ <| by tauto_set
 
 lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     M.eRk X + M.eRk (M.E \ X) = M.eRank + M.econn X := by
