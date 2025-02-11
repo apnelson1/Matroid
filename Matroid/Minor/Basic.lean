@@ -1,4 +1,4 @@
-import Matroid.Rank.Nat
+import Matroid.Loop
 import Matroid.ForMathlib.Set
 
 open Set
@@ -10,6 +10,9 @@ namespace Matroid
 section Delete
 
 variable {D D₁ D₂ R : Set α}
+
+lemma eq_loopyOn_iff_closure {E : Set α} : M = loopyOn E ↔ M.closure ∅ = E ∧ M.E = E :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [← h', ← closure_empty_eq_ground_iff, h, h']⟩
 
 class HasDelete (α β : Type*) where
   del : α → β → α

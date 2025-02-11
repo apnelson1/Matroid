@@ -82,6 +82,12 @@ lemma sigma_closure_eq (X) :
   rw [← (hI' j).closure_eq_closure, (hI' j).indep.mem_closure_iff'] at hf
   exact hf.2 <| (h j).subset <| by simp [insert_subset_iff, preimage_mono (subset_insert ..)]
 
+lemma sigma_dual_eq : (Matroid.sigma M)✶ = Matroid.sigma (fun i ↦ (M i)✶) := by
+  refine ext_base rfl fun B hB ↦ ?_
+  simp only [dual_base_iff', sigma_ground_eq, sigma_base_iff, preimage_diff, mem_univ,
+    mk_preimage_sigma, forall_and, and_congr_right_iff]
+  exact fun _ ↦ ⟨fun h i ↦ (preimage_mono h).trans <| by simp, fun _ ↦ by simpa using hB⟩
+
 end sigma
 
 section disjointSigma
@@ -127,7 +133,8 @@ lemma Basis.disjointSigma_iUnion h (hI : ∀ i, (M i).Basis (I i) (X i)) :
 
 -- lemma disjointSigma_closure_eq (M : ι → Matroid α) {h} (X) :
 --     (Matroid.disjointSigma M h).closure X = ⋃ i, (M i).closure (X ∩ (M i).E) := by
---   _
+--   obtain ⟨I, hI⟩ := (Matroid.disjointSigma M h).exists_basis' X
+
 
 end disjointSigma
 

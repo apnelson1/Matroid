@@ -1,5 +1,4 @@
 import Matroid.Minor.Rank
-import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Minimal
 import Matroid.ForMathlib.BooleanAlgebra
 

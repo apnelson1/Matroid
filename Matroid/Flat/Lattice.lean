@@ -1,5 +1,5 @@
-
 import Matroid.Flat.Basic
+import Matroid.ForMathlib.SetPartition
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 

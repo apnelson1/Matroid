@@ -45,7 +45,6 @@ namespace Partition
 
 @[simp] lemma ofDual_dual (P : M✶.Partition) : P.ofDual.dual = P := rfl
 
-
 @[simp, aesop unsafe 10% (rule_sets := [Matroid])]
 protected lemma left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
   rw [← P.union_eq]; apply subset_union_left
@@ -98,7 +97,6 @@ lemma IsTutteSep.zero_lt (h : P.IsTutteSep k) : 0 < k :=
   pos_iff_ne_zero.mpr <| by rintro rfl; simpa using h.conn_lt
 
 end Partition
-
 
 /-- The partition of `M` given by a subset of `M.E` and its complement.  -/
 @[simps] protected def partition (M : Matroid α) (A : Set α) (hA : A ⊆ M.E := by aesop_mat) :
@@ -160,8 +158,8 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
   M.tutteConnected_one.mono <| zero_le _
 
 @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
-  simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›, true_and,
-    show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
+  simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›,
+    true_and, show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
   refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_le fun hle ↦ ?_⟩
   · contrapose! h
     use 1

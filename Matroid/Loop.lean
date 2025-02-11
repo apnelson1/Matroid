@@ -1,6 +1,4 @@
 import Matroid.Circuit
-import Mathlib.Data.Matroid.Map
-import Mathlib.Order.SymmDiff
 import Matroid.ForMathlib.Finset
 import Matroid.OnUniv
 
@@ -476,7 +474,9 @@ lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nont
     Finset.one_lt_card_iff_nontrivial]
   refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ by simpa using h C hC⟩
   obtain hfin | hinf := C.finite_or_infinite
-  · simpa using h hfin.toFinset (by simpa)
+  · have := h hfin.toFinset (by simpa)
+
+    simpa using h hfin.toFinset (by simpa)
   exact hinf.nontrivial
 
 @[simp] lemma two_le_girth_iff : 2 ≤ M.girth ↔ M.Loopless := by

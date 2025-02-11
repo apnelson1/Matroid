@@ -1,4 +1,5 @@
 import Matroid.Minor.Basic
+import Matroid.Rank.Nat
 import Matroid.ForMathlib.ENat
 
 open Set

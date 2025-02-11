@@ -534,9 +534,6 @@ lemma exists_of_eRank_eq_zero (h : M.eRank = 0) : ∃ E, M = loopyOn E :=
 @[simp] lemma eRank_loopyOn_eq_zero (α : Type*) : (emptyOn α).eRank = 0 := by
   rw [eRank_eq_zero_iff, emptyOn_ground, loopyOn_empty]
 
-lemma eq_loopyOn_iff_closure : M = loopyOn E ↔ M.closure ∅ = E ∧ M.E = E :=
-  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [← h', ← closure_empty_eq_ground_iff, h, h']⟩
-
 lemma eq_loopyOn_iff_eRank : M = loopyOn E ↔ M.eRank = 0 ∧ M.E = E :=
   ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [← h', ← eRank_eq_zero_iff, h]⟩
 
