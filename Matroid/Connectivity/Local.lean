@@ -730,8 +730,22 @@ protected def core (M : Matroid α) (X : Set α) := ((X \ M.closure ∅) \ M✶.
 lemma core_def (M : Matroid α) (X : Set α) : M.core X = ((X \ M.closure ∅) \ M✶.closure ∅) ∩ M.E :=
   rfl
 
+@[simp]
+lemma core_subset (M : Matroid α) (X : Set α) : M.core X ⊆ X :=
+  inter_subset_left.trans <| diff_subset.trans diff_subset
+
+@[simp, aesop safe (rule_sets := [Matroid])]
 lemma core_subset_ground (M : Matroid α) (X : Set α) : M.core X ⊆ M.E :=
   inter_subset_right
+
+@[simp]
+lemma core_inter_ground (M : Matroid α) (X : Set α) : M.core (X ∩ M.E) = M.core X := by
+  simp_rw [core_def]
+  tauto_set
+
+@[simp]
+lemma core_empty (M : Matroid α) : M.core ∅ = ∅ := by
+  simpa using M.core_subset ∅
 
 @[simp]
 lemma core_dual (M : Matroid α) (X : Set α) : M✶.core X = M.core X := by
@@ -748,5 +762,32 @@ lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.
 lemma eConn_core (M : Matroid α) : M.eConn (M.core X) = M.eConn X := by
   rw [Matroid.core, eConn_inter_ground, eConn_diff_of_subset_coloops _ rfl.subset,
     eConn_diff_of_subset_loops _ rfl.subset]
+
+@[simp]
+lemma core_core (M : Matroid α) (X : Set α) : M.core (M.core X) = M.core X := by
+  rw [core_def, core_def]
+  tauto_set
+
+@[simp]
+lemma core_union (M : Matroid α) (X Y : Set α) : M.core (X ∪ Y) = M.core X ∪ M.core Y := by
+  simp_rw [core_def]
+  tauto_set
+
+@[simp]
+lemma core_inter (M : Matroid α) (X Y : Set α) : M.core (X ∩ Y) = M.core X ∩ M.core Y := by
+  simp_rw [core_def]
+  tauto_set
+
+@[simp]
+lemma core_diff (M : Matroid α) (X Y : Set α) : M.core (X \ Y) = M.core X \ M.core Y := by
+  simp_rw [core_def]
+  tauto_set
+
+lemma core_subset_core (M : Matroid α) (hXY : X ⊆ Y) : M.core X ⊆ M.core Y := by
+  rw [← diff_eq_empty, ← core_diff, diff_eq_empty.2 hXY, core_empty]
+
+@[simp]
+lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X ∩ M.E :=
+  inter_subset_inter_left _ <| diff_subset.trans diff_subset
 
 end core

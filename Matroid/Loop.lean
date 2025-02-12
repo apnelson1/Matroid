@@ -506,7 +506,7 @@ def removeLoops (M : Matroid α) : Matroid α := M ↾ {e | M.Nonloop e}
 
 lemma removeLoops_eq_restr (M : Matroid α) : M.removeLoops = M ↾ {e | M.Nonloop e} := rfl
 
-@[simp] lemma removeLoops_ground_eq (M : Matroid α) : M.removeLoops.E = {e | M.Nonloop e} := rfl
+lemma removeLoops_ground_eq (M : Matroid α) : M.removeLoops.E = {e | M.Nonloop e} := rfl
 
 instance removeLoops_loopless (M : Matroid α) : Loopless M.removeLoops := by
   simp [loopless_iff_forall_nonloop, removeLoops]
