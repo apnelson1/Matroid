@@ -421,6 +421,11 @@ lemma Nonloop.exists_mem_cocircuit (he : M.Nonloop e) : ∃ K, M.Cocircuit K ∧
   obtain ⟨B, hB, heB⟩ := he.exists_mem_base
   exact ⟨_, fundCocircuit_cocircuit heB hB, mem_fundCocircuit M e B⟩
 
+@[simp]
+lemma closure_inter_setOf_nonloop_eq (M : Matroid α) (X : Set α) :
+    M.closure (X ∩ {e | M.Nonloop e}) = M.closure X := by
+  rw [setOf_nonloop_eq, ← inter_diff_assoc, closure_diff_loops_eq, closure_inter_ground]
+
 end Nonloop
 
 section Loopless
@@ -522,7 +527,23 @@ lemma eq_restrict_removeLoops (M : Matroid α) : M = M.removeLoops ↾ M.E := by
   simp only [restrict_ground_eq, restrict_indep_iff, true_and]
   exact fun I hIE ↦ ⟨fun hI ↦ ⟨⟨hI,fun e heI ↦ hI.nonloop_of_mem heI⟩, hIE⟩, fun hI ↦ hI.1.1⟩
 
-@[simp] lemma removeLoops_nonloop_iff : M.removeLoops.Nonloop e ↔ M.Nonloop e := by
+@[simp]
+lemma removeLoops_indep_eq : M.removeLoops.Indep = M.Indep := by
+  ext I
+  rw [removeLoops_eq_restr, restrict_indep_iff, and_iff_left_iff_imp]
+  exact fun h e ↦ h.nonloop_of_mem
+
+@[simp]
+lemma removeLoops_basis'_eq : M.removeLoops.Basis' = M.Basis' := by
+  ext
+  simp [Basis']
+
+@[simp] lemma removeLoops_base_eq : M.removeLoops.Base = M.Base := by
+  ext B
+  rw [base_iff_maximal_indep, removeLoops_indep_eq, base_iff_maximal_indep]
+
+@[simp]
+lemma removeLoops_nonloop_iff : M.removeLoops.Nonloop e ↔ M.Nonloop e := by
   rw [removeLoops_eq_restr, restrict_nonloop_iff, mem_setOf, and_self]
 
 lemma Nonloop.removeLoops_nonloop (he : M.Nonloop e) : M.removeLoops.Nonloop e :=
@@ -533,6 +554,11 @@ lemma Nonloop.removeLoops_nonloop (he : M.Nonloop e) : M.removeLoops.Nonloop e :
 
 lemma removeLoops_restr_eq_restr (hX : X ⊆ {e | M.Nonloop e}) : M.removeLoops ↾ X = M ↾ X := by
   rwa [removeLoops_eq_restr, restrict_restrict_eq]
+
+@[simp]
+lemma restrict_univ_removeLoops_eq : (M ↾ univ).removeLoops = M.removeLoops := by
+  rw [removeLoops_eq_restr, restrict_restrict_eq _ (subset_univ _), removeLoops_eq_restr]
+  simp
 
 end Loopless
 section Coloop
@@ -669,7 +695,8 @@ lemma Base.mem_coloop_iff_forall_not_mem_fundCircuit (hB : M.Base B) (he : e ∈
     · simpa using fundCircuit_subset_insert ..
     simp [hne.symm, h x ⟨hxE, hx⟩]
   rw [coloop_iff_not_mem_closure_compl (hB.subset_ground he)]
-  exact not_mem_subset (M.closure_subset_closure_of_subset_closure h') <| hB.indep.not_mem_closure_diff_of_mem he
+  exact not_mem_subset (M.closure_subset_closure_of_subset_closure h') <|
+    hB.indep.not_mem_closure_diff_of_mem he
 
 lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
     ∃ C, M.Circuit C ∧ e ∈ C := by
@@ -683,7 +710,8 @@ lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
   intro e he
   rw [he.mem_closure_iff_mem]
 
-lemma closure_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure ∅) : M.closure X ∩ K = X ∩ K := by
+lemma closure_inter_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure ∅) :
+     M.closure X ∩ K = X ∩ K := by
   have hKE : K ∩ M.E = K := by
     rw [inter_eq_left, ← dual_ground]; exact hK.trans (closure_subset_ground _ _)
   rw [← hKE, ← inter_assoc X, inter_right_comm, hKE, ← closure_inter_ground,
@@ -741,7 +769,8 @@ lemma closure_disjoint_coloops_of_disjoint_coloops (hX : Disjoint X (M✶.closur
     Disjoint (M.closure X) (M✶.closure ∅) :=
   closure_disjoint_of_disjoint_of_subset_coloops hX Subset.rfl
 
-lemma closure_union_coloops_eq (M : Matroid α) (X : Set α) : M.closure (X ∪ M✶.closure ∅) = M.closure X ∪ M✶.closure ∅ :=
+lemma closure_union_coloops_eq (M : Matroid α) (X : Set α) :
+    M.closure (X ∪ M✶.closure ∅) = M.closure X ∪ M✶.closure ∅ :=
   closure_union_eq_of_subset_coloops _ Subset.rfl
 
 lemma Coloop.not_mem_closure_of_not_mem (he : M.Coloop e) (hX : e ∉ X) : e ∉ M.closure X :=
@@ -791,6 +820,16 @@ lemma ext_indep_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.E = M
   refine iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) ?_
   rw [loop_iff_mem_closure_empty, hl, ← loop_iff_mem_closure_empty] at hel ; rw [hc]
   exact hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩
+
+@[simp]
+lemma removeLoops_coloop_eq (M : Matroid α) : M.removeLoops.Coloop = M.Coloop := by
+  ext e
+  rw [coloop_iff_forall_mem_base, removeLoops_base_eq, ← coloop_iff_forall_mem_base]
+
+@[simp]
+lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops✶.closure ∅ = M✶.closure ∅ := by
+  ext e
+  rw [← coloop_iff_mem_closure_empty, removeLoops_coloop_eq, coloop_iff_mem_closure_empty]
 
 end Coloop
 
