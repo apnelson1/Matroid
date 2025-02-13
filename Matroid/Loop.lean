@@ -831,6 +831,14 @@ lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops✶.closure ∅ = M
   ext e
   rw [← coloop_iff_mem_closure_empty, removeLoops_coloop_eq, coloop_iff_mem_closure_empty]
 
+/-- This turns a restriction into a restriction to a subset. -/
+lemma restrict_removeLoops (R : Set α) : (M ↾ R).removeLoops = (M ↾ (R ∩ M.E)).removeLoops := by
+  rw [removeLoops_eq_restr, restrict_restrict_eq _ (by simp [subset_def]),
+    removeLoops_eq_restr, restrict_restrict_eq _ (by simp [subset_def])]
+  convert rfl using 2
+  ext e
+  simp +contextual [Nonloop.mem_ground]
+
 end Coloop
 
 section Constructions

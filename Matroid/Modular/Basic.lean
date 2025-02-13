@@ -568,7 +568,7 @@ lemma ModularPair.eRk_add_eRk (h : M.ModularPair X Y) :
     ← encard_union_add_encard_inter, ← inter_union_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
-lemma FinRk.modularPair_iff_eRk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X ⊆ M.E := by aesop_mat)
+lemma IsRkFinite.modularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y) (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.eRk X + M.eRk Y = M.eRk (X ∩ Y) + M.eRk (X ∪ Y) := by
   refine ⟨fun h ↦ h.eRk_add_eRk, fun hr ↦ modularPair_iff_exists_basis_basis.2 ?_ ⟩
@@ -590,8 +590,8 @@ lemma FinRk.modularPair_iff_eRk (hXfin : M.FinRk X) (hYfin : M.FinRk Y) (hXE : X
   exact (M.subset_closure _).trans
     (M.closure_subset_closure (union_subset_union hIX.subset_closure hIY.subset_closure))
 
--- TODO : this might be true without one of the `FinRk` assumptions due to junk values.
-lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y)
+-- TODO : this might be true without one of the `IsRkFinite` assumptions due to junk values.
+lemma IsRkFinite.modularPair_iff_rk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
   rw [hXfin.modularPair_iff_eRk hYfin, ← Nat.cast_inj (R := ℕ∞), ← hXfin.cast_rk_eq,
@@ -601,7 +601,7 @@ lemma FinRk.modularPair_iff_rk (hXfin : M.FinRk X) (hYfin : M.FinRk Y)
 lemma modularPair_iff_rk [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.rk X + M.rk Y = M.rk (X ∩ Y) + M.rk (X ∪ Y) := by
-  rw [(M.to_finRk X).modularPair_iff_rk (M.to_finRk Y)]
+  rw [(M.isRkFinite_set X).modularPair_iff_rk (M.isRkFinite_set Y)]
 
 lemma ModularFamily.modularPair_compl_biUnion {Xs : η → Set α} (h : M.ModularFamily Xs)
     (A : Set η) : M.ModularPair (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by

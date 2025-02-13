@@ -17,7 +17,7 @@ lemma Point.eRk (hP : M.Point P) : M.eRk P = 1 :=
 lemma Point.subset_ground (hP : M.Point P) : P ⊆ M.E :=
   hP.1.subset_ground
 
-lemma Point.finRk (hP : M.Point P) : M.FinRk P := by
+lemma Point.isRkFinite (hP : M.Point P) : M.IsRkFinite P := by
   simp [← eRk_ne_top_iff, hP.eRk]
 
 lemma Nonloop.closure_point (he : M.Nonloop e) : M.Point (M.closure {e}) :=
@@ -159,14 +159,14 @@ lemma Line.eRk (hL : M.Line L) : M.eRk L = 2 :=
 lemma Line.subset_ground (hL : M.Line L) : L ⊆ M.E :=
   hL.1.subset_ground
 
-lemma Line.finRk (hL : M.Line L) : M.FinRk L := by
+lemma Line.isRkFinite (hL : M.Line L) : M.IsRkFinite L := by
   simp [← eRk_ne_top_iff, hL.eRk]
 
 lemma Line.mem_iff_covBy (hL : M.Line L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
   rw [(M.closure_flat {e}).covBy_iff_eRelRk_eq_one hL.flat, hL.flat.closure_subset_iff_subset,
     singleton_subset_iff, iff_self_and, eRelRk_closure_left]
   intro heL
-  rw [(M.finRk_singleton e).eRelRk_eq_sub (by simpa), he.eRk_eq, hL.eRk]
+  rw [isRkFinite_singleton.eRelRk_eq_sub (by simpa), he.eRk_eq, hL.eRk]
   rfl
 
 lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.Line L ∧ e ∈ L := by

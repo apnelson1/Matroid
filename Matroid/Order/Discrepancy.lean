@@ -237,7 +237,7 @@ lemma discrepancy_ne_top [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) : 
   intro htop
   have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [htop] at hdis
-  simp [eq_comm, eRk_eq_top_iff, M₁.to_finRk X] at hdis
+  simp [eq_comm, eRk_eq_top_iff, M₁.isRkFinite_set X] at hdis
 
 noncomputable abbrev nDiscrepancy (hQ : M₂ ≤q M₁) (X : Set α) : ℕ := (hQ.discrepancy X).toNat
 
@@ -245,7 +245,7 @@ lemma rk_left_add_nDiscrepancy_eq [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : S
     M₂.rk X + hQ.nDiscrepancy X = M₁.rk X := by
   have := hQ.rankFinite
   have hdis := hQ.eRk_left_add_discrepancy_eq X
-  rw [rk, rk, ← hdis, ENat.toNat_add (by simp only [ne_eq, eRk_ne_top_iff, M₂.to_finRk X])
+  rw [rk, rk, ← hdis, ENat.toNat_add (by simp only [ne_eq, eRk_ne_top_iff, M₂.isRkFinite_set X])
     (hQ.discrepancy_ne_top _)]
 
 lemma nDiscrepancy_mono [M₁.RankFinite] (hQ : M₂ ≤q M₁) : Monotone hQ.nDiscrepancy :=

@@ -21,7 +21,7 @@ lemma delete_eRk_eq_delete_eRk_diff (M : Matroid α) (D X : Set α) :
     (M ＼ D).eRk X = (M ＼ D).eRk (X \ D) := by
   simp
 
-@[simp] lemma delete_finRk_iff : (M ＼ D).FinRk X ↔ M.FinRk (X \ D) := by
+@[simp] lemma delete_isRkFinite_iff : (M ＼ D).IsRkFinite X ↔ M.IsRkFinite (X \ D) := by
   rw [← eRk_lt_top_iff, delete_eRk_eq', eRk_lt_top_iff]
 
 lemma Coindep.delete_eRank_eq (hX : M.Coindep X) : (M ＼ X).eRank = M.eRank := by
@@ -185,7 +185,7 @@ lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.eRelRk X Y + M.eRk X = M.eRk Y := by
   rw [eRelRk_add_eRk_eq, union_eq_self_of_subset_right hXY]
 
-lemma FinRk.eRelRk_eq_sub (hY : M.FinRk X) (hXY : X ⊆ Y) : M.eRelRk X Y = M.eRk Y - M.eRk X := by
+lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) : M.eRelRk X Y = M.eRk Y - M.eRk X := by
   rw [← eRelRk_add_eRk_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY.eRk_lt_top
   rw [eq_comm, tsub_add_cancel_iff_le]
@@ -410,21 +410,21 @@ lemma Nonloop.eRank_contract_add_one (M : Matroid α) (he : M.Nonloop e) :
     (M ／ e).eRank + 1 = M.eRank := by
   rw [contractElem, ← M.eRank_contract_add_eRk {e}, he.eRk_eq]
 
-lemma FinRk.contract_finRk (h : M.FinRk X) (C : Set α) : (M ／ C).FinRk X := by
+lemma IsRkFinite.contract_isRkFinite (h : M.IsRkFinite X) (C : Set α) : (M ／ C).IsRkFinite X := by
   rw [← eRk_lt_top_iff] at *; exact (eRk_contract_le_eRk _ _ _).trans_lt h
 
-lemma FinRk.union_of_contract (hX : (M ／ C).FinRk X) (hC : M.FinRk C) : M.FinRk (X ∪ C) := by
+lemma IsRkFinite.union_of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) : M.IsRkFinite (X ∪ C) := by
   rw [← eRk_lt_top_iff, ← M.eRelRk_add_eRk_eq, eRelRk]
   rw [← eRk_ne_top_iff] at hC hX
   rw [lt_top_iff_ne_top, Ne, WithTop.add_eq_top, not_or]
   exact ⟨hX, hC⟩
 
-lemma FinRk.of_contract (hX : (M ／ C).FinRk X) (hC : M.FinRk C) : M.FinRk X :=
+lemma IsRkFinite.of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) : M.IsRkFinite X :=
   (hX.union_of_contract hC).subset subset_union_left
 
-lemma FinRk.contract_finRk_of_subset_union (h : M.FinRk Z) (X C : Set α)
-    (hX : X ⊆ M.closure (Z ∪ C)) : (M ／ C).FinRk (X \ C) :=
-  (h.contract_finRk C).closure.subset
+lemma IsRkFinite.contract_isRkFinite_of_subset_union (h : M.IsRkFinite Z) (X C : Set α)
+    (hX : X ⊆ M.closure (Z ∪ C)) : (M ／ C).IsRkFinite (X \ C) :=
+  (h.contract_isRkFinite C).closure.subset
     (by rw [contract_closure_eq]; exact diff_subset_diff_left hX)
 
 lemma Minor.eRank_le (h : N ≤m M) : N.eRank ≤ M.eRank := by
@@ -586,8 +586,8 @@ noncomputable def relRk (X Y : Set α) : ℕ := (M.eRelRk X Y).toNat
 
 lemma relRk_intCast_eq_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.relRk X Y : ℤ) = M.rk (X ∪ Y) - M.rk X := by
-  rw [relRk, eRelRk_eq_union_right, (M.to_finRk X).eRelRk_eq_sub subset_union_right,
-    ENat.toNat_sub (M.to_finRk X).eRk_ne_top, ← rk, ← rk, Nat.cast_sub , union_comm]
+  rw [relRk, eRelRk_eq_union_right, (M.isRkFinite_set X).eRelRk_eq_sub subset_union_right,
+    ENat.toNat_sub (M.isRkFinite_set X).eRk_ne_top, ← rk, ← rk, Nat.cast_sub , union_comm]
   exact (M.rk_mono (subset_union_right))
 
 lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [RankFinite M] (hXY : X ⊆ Y) :

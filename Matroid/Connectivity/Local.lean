@@ -365,7 +365,7 @@ lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     (by rwa [closure_union_congr_left hI.closure_eq_closure,
       closure_union_congr_right hJ.closure_eq_closure]) (by simp [heI, heJ]), add_assoc]
 
-lemma FinRk.modularPair_iff_eLocalConn_eq_eRk_inter (hX : M.FinRk X) (Y : Set α)
+lemma IsRkFinite.modularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by
   refine ⟨fun h ↦ h.eLocalConn_eq_eRk_inter, fun h ↦ ?_⟩
@@ -443,22 +443,22 @@ noncomputable def localConn (M : Matroid α) (X Y : Set α) : ℕ := (M.eLocalCo
 lemma localConn_comm (M : Matroid α) (X Y : Set α) : M.localConn X Y = M.localConn Y X := by
   rw [localConn, eLocalConn_comm, localConn]
 
-lemma FinRk.cast_localConn_right_eq (hX : M.FinRk X) (Y : Set α) :
+lemma IsRkFinite.cast_localConn_right_eq (hX : M.IsRkFinite X) (Y : Set α) :
     (M.localConn X Y : ℕ∞) = M.eLocalConn X Y :=
   ENat.coe_toNat fun htop ↦ hX.eRk_lt_top.not_le
     <| htop.symm.le.trans <| M.eLocalConn_le_eRk_left X Y
 
-lemma FinRk.cast_localConn_left_eq (hY : M.FinRk Y) : (M.localConn X Y : ℕ∞) = M.eLocalConn X Y := by
+lemma IsRkFinite.cast_localConn_left_eq (hY : M.IsRkFinite Y) : (M.localConn X Y : ℕ∞) = M.eLocalConn X Y := by
   rw [localConn_comm, hY.cast_localConn_right_eq, eLocalConn_comm]
 
-lemma FinRk.rk_add_rk_eq_rk_union_add_localConn (hX : M.FinRk X) (hY : M.FinRk Y) :
+lemma IsRkFinite.rk_add_rk_eq_rk_union_add_localConn (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.rk X + M.rk Y = M.rk (X ∪ Y) + M.localConn X Y := by
   rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, Nat.cast_add, hX.cast_localConn_right_eq,
     hX.cast_rk_eq, hY.cast_rk_eq, (hX.union hY).cast_rk_eq, eRk_add_eRk_eq_eRk_union_add_eLocalConn]
 
 lemma rk_add_rk_eq_rk_union_add_localConn (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.rk X + M.rk Y = M.rk (X ∪ Y) + M.localConn X Y :=
-  (M.to_finRk X).rk_add_rk_eq_rk_union_add_localConn (M.to_finRk Y)
+  (M.isRkFinite_set X).rk_add_rk_eq_rk_union_add_localConn (M.isRkFinite_set Y)
 
 lemma localConn_inter_ground (M : Matroid α) (X Y : Set α) :
     M.localConn (X ∩ M.E) (Y ∩ M.E) = M.localConn X Y := by
@@ -474,14 +474,14 @@ lemma localConn_inter_ground_right (M : Matroid α) (X Y : Set α) :
 
 /-- The formula for local connectivity of two finite-rank sets in terms of the rank function.
 This uses `ℕ` subtraction which never overflows. -/
-lemma FinRk.localConn_eq_rk_add_rk_sub (hX : M.FinRk X) (hY : M.FinRk Y) :
+lemma IsRkFinite.localConn_eq_rk_add_rk_sub (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.localConn X Y = M.rk X + M.rk Y - M.rk (X ∪ Y) := by
   rw [hX.rk_add_rk_eq_rk_union_add_localConn hY, add_comm]
   exact Nat.eq_sub_of_add_eq rfl
 
 /-- The formula for local connectivity of two finite-rank sets written with `Int` subtraction,
 for use with `ring` and `linarith`. -/
-lemma FinRk.localConn_cast_int_eq (hX : M.FinRk X) (hY : M.FinRk Y) :
+lemma IsRkFinite.localConn_cast_int_eq (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) := by
   rw [hX.localConn_eq_rk_add_rk_sub hY, ← Nat.cast_add]
   exact Int.natCast_sub (rk_union_le_rk_add_rk _ _ _)
@@ -490,19 +490,19 @@ lemma FinRk.localConn_cast_int_eq (hX : M.FinRk X) (hY : M.FinRk Y) :
 This uses `ℕ` subtraction which never overflows. -/
 lemma localConn_eq_rk_add_rk_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.localConn X Y = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
-  (M.to_finRk X).localConn_eq_rk_add_rk_sub (M.to_finRk Y)
+  (M.isRkFinite_set X).localConn_eq_rk_add_rk_sub (M.isRkFinite_set Y)
 
 /-- The formula for local connectivity written in terms of `Int` subtraction,
 for use with `ring` and `linarith`. -/
 lemma localConn_cast_int_eq (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
-  (M.to_finRk X).localConn_cast_int_eq (M.to_finRk Y)
+  (M.isRkFinite_set X).localConn_cast_int_eq (M.isRkFinite_set Y)
 
 lemma ModularPair.localConn_eq_rk_inter (h : M.ModularPair X Y) :
     M.localConn X Y = M.rk (X ∩ Y) := by
   rw [localConn, h.eLocalConn_eq_eRk_inter, rk]
 
-lemma FinRk.modularPair_iff_localConn_eq_rk_inter (hX : M.FinRk X) (Y : Set α)
+lemma IsRkFinite.modularPair_iff_localConn_eq_rk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) := by
   rw [hX.modularPair_iff_eLocalConn_eq_eRk_inter Y hXE hYE, localConn, rk,
@@ -514,7 +514,7 @@ lemma FinRk.modularPair_iff_localConn_eq_rk_inter (hX : M.FinRk X) (Y : Set α)
 
 lemma modularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
     (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
-  (M.to_finRk X).modularPair_iff_localConn_eq_rk_inter _ hXE hYE
+  (M.isRkFinite_set X).modularPair_iff_localConn_eq_rk_inter _ hXE hYE
 
 lemma Circuit.eLocalConn_subset_compl {C : Set α} (hC : M.Circuit C) (hI : I.Nonempty)
     (hIC : I ⊂ C) : M.eLocalConn I (C \ I) = 1 := by
@@ -646,8 +646,6 @@ lemma Minor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X 
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 
-
-
 end eConn
 
 section conn
@@ -667,7 +665,7 @@ noncomputable def conn (M : Matroid α) (X : Set α) : ℕ := (M.eConn X).toNat
 @[simp] lemma cast_conn_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     (M.conn X : ℕ∞) = M.eConn X := by
   rw [conn, eConn_eq_eLocalConn]
-  exact ENat.coe_toNat ((eLocalConn_le_eRk_left _ _ _).trans_lt (M.to_finRk X).eRk_lt_top).ne
+  exact ENat.coe_toNat ((eLocalConn_le_eRk_left _ _ _).trans_lt (M.isRkFinite_set X).eRk_lt_top).ne
 
 @[simp] lemma cast_conn_eq' (M : Matroid α) [RankFinite M✶] : (M.conn X : ℕ∞) = M.eConn X := by
   rw [← conn_dual, cast_conn_eq, eConn_dual]
@@ -789,5 +787,22 @@ lemma core_subset_core (M : Matroid α) (hXY : X ⊆ Y) : M.core X ⊆ M.core Y 
 @[simp]
 lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X ∩ M.E :=
   inter_subset_inter_left _ <| diff_subset.trans diff_subset
+
+@[simp]
+lemma core_delete_subset (M : Matroid α) (X D : Set α) : (M ＼ D).core X ⊆ M.core X := by
+  simp_rw [core_def, delete_loops_eq, delete_dual_eq_dual_contract, contract_closure_eq,
+    delete_ground, empty_union]
+  have := M✶.closure_subset_closure (empty_subset D)
+  tauto_set
+
+@[simp]
+lemma core_restrict_subset (M : Matroid α) (X R : Set α) : (M ↾ R).core X ⊆ M.core X := by
+  rw [← removeLoops_core, restrict_removeLoops, removeLoops_core, ← delete_compl]
+  apply core_delete_subset
+
+@[simp]
+lemma core_contract_subset (M : Matroid α) (X C : Set α) : (M ／ C).core X ⊆ M.core X := by
+   rw [← core_dual, contract_dual_eq_dual_delete, ← M.core_dual]
+   apply core_delete_subset
 
 end core

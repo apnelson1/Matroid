@@ -9,7 +9,7 @@ variable {α : Type*} {M : Matroid α} {B I X Y : Set α} {e : α}
 section Rank
 
 /-- The `ℕ`-valued rank function, taking a junk value of zero for infinite-rank sets.
-Intended to be used in a `RankFinite` matroid, or when the argument is known to be `FinRk`.
+Intended to be used in a `RankFinite` matroid, or when the argument is known to be `IsRkFinite`.
 Otherwise `Matroid.eRk` is better.-/
 noncomputable def rk (M : Matroid α) (X : Set α) : ℕ := (M.eRk X).toNat
 
@@ -26,20 +26,20 @@ lemma rank_def (M : Matroid α) : M.rank = M.rk M.E := by
 lemma Base.ncard (hB : M.Base B) : B.ncard = M.rank := by
   rw [rank_def, ← eRk_toNat_eq_rk, ncard_def, hB.encard_eq_eRank, eRank_def]
 
-lemma FinRk.cast_rk_eq (hX : M.FinRk X) : (M.rk X : ℕ∞) = M.eRk X := by
+lemma IsRkFinite.cast_rk_eq (hX : M.IsRkFinite X) : (M.rk X : ℕ∞) = M.eRk X := by
   rw [rk, coe_toNat (by rwa [eRk_ne_top_iff])]
 
-lemma rk_eq_zero_of_not_finRk (hX : ¬ M.FinRk X) : M.rk X = 0 := by
+lemma rk_eq_zero_of_not_isRkFinite (hX : ¬ M.IsRkFinite X) : M.rk X = 0 := by
   simp [rk, eRk_eq_top_iff.2 hX]
 
 lemma cast_rk_eq_eRk_of_finite (M : Matroid α) (hX : X.Finite) : (M.rk X : ℕ∞) = M.eRk X :=
-  (M.finRk_of_finite hX).cast_rk_eq
+  (M.isRkFinite_of_finite hX).cast_rk_eq
 
 lemma Finset.cast_rk_eq (M : Matroid α) (X : Finset α) : (M.rk X : ℕ∞) = M.eRk X :=
   cast_rk_eq_eRk_of_finite _ (by simp)
 
 @[simp] lemma cast_rk_eq (M : Matroid α) [RankFinite M] (X : Set α) : (M.rk X : ℕ∞) = M.eRk X :=
-  (M.to_finRk X).cast_rk_eq
+  (M.isRkFinite_set X).cast_rk_eq
 
 @[simp] lemma cast_rank_eq (M : Matroid α) [RankFinite M] : (M.rank : ℕ∞) = M.eRank := by
   rw [eRank_def, rank_def, cast_rk_eq]
@@ -47,16 +47,16 @@ lemma Finset.cast_rk_eq (M : Matroid α) (X : Finset α) : (M.rk X : ℕ∞) = M
 lemma rk_eq_of_eRk_eq (h : M.eRk X = M.eRk Y) : M.rk X = M.rk Y := by
   rw [rk, rk, h]
 
-lemma FinRk.eRk_eq_eRk_iff (hX : M.FinRk X) (hY : M.FinRk Y) :
+lemma IsRkFinite.eRk_eq_eRk_iff (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.eRk X = M.eRk Y ↔ M.rk X = M.rk Y := by
   rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, Nat.cast_inj]
 
-lemma FinRk.eRk_le_eRk_iff (hX : M.FinRk X) (hY : M.FinRk Y) :
+lemma IsRkFinite.eRk_le_eRk_iff (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.eRk X ≤ M.eRk Y ↔ M.rk X ≤ M.rk Y := by
   rw [← hX.cast_rk_eq, ← hY.cast_rk_eq, Nat.cast_le]
 
 @[simp] lemma eRk_eq_eRk_iff [RankFinite M] : M.eRk X = M.eRk Y ↔ M.rk X = M.rk Y :=
-  (M.to_finRk X).eRk_eq_eRk_iff (M.to_finRk Y)
+  (M.isRkFinite_set X).eRk_eq_eRk_iff (M.isRkFinite_set Y)
 
 @[simp] lemma eRk_le_eRk_iff [RankFinite M] : M.eRk X ≤ M.eRk Y ↔ M.rk X ≤ M.rk Y := by
   rw [← cast_rk_eq, ← cast_rk_eq, Nat.cast_le]
@@ -70,9 +70,9 @@ lemma FinRk.eRk_le_eRk_iff (hX : M.FinRk X) (hY : M.FinRk Y) :
 @[simp] lemma coe_le_eRk_iff [RankFinite M] {n : ℕ} : (n : ℕ∞) ≤ M.eRk X ↔ n ≤ M.rk X := by
   rw [← cast_rk_eq, Nat.cast_le]
 
-lemma FinRk.rk_le_rk_of_eRk_le_eRk (hY : M.FinRk Y) (hle : M.eRk X ≤ M.eRk Y) :
+lemma IsRkFinite.rk_le_rk_of_eRk_le_eRk (hY : M.IsRkFinite Y) (hle : M.eRk X ≤ M.eRk Y) :
     M.rk X ≤ M.rk Y := by
-  rwa [← FinRk.eRk_le_eRk_iff _ hY]
+  rwa [← IsRkFinite.eRk_le_eRk_iff _ hY]
   rw [← eRk_lt_top_iff] at hY ⊢
   exact hle.trans_lt hY
 
@@ -119,7 +119,7 @@ lemma rk_mono (M : Matroid α) [RankFinite M] : Monotone M.rk := by
   rw [← eRk_le_eRk_iff]
   exact M.eRk_mono hXY
 
-lemma FinRk.rk_le_of_subset (hY : M.FinRk Y) (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y := by
+lemma IsRkFinite.rk_le_of_subset (hY : M.IsRkFinite Y) (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y := by
   rw [rk, rk, ← Nat.cast_le (α := ℕ∞), coe_toNat (hY.subset hXY).eRk_ne_top,
     coe_toNat hY.eRk_ne_top]
   exact M.eRk_mono hXY
@@ -219,26 +219,26 @@ lemma Circuit.rk_add_one_eq {C : Finset α} (hC : M.Circuit C) : M.rk C + 1 = C.
 
 /-- The `ℕ`-valued rank function is submodular.
 Due to junk values, we only need that `X` is finite-rank.  -/
-lemma FinRk.submod (hX : M.FinRk X) (Y : Set α) :
+lemma IsRkFinite.submod (hX : M.IsRkFinite X) (Y : Set α) :
     M.rk (X ∩ Y) + M.rk (X ∪ Y) ≤ M.rk X + M.rk Y := by
-  by_cases hY : M.FinRk Y
+  by_cases hY : M.IsRkFinite Y
   · rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, Nat.cast_add, hX.cast_rk_eq, hY.cast_rk_eq,
       hX.inter_right.cast_rk_eq, (hX.union hY).cast_rk_eq]
     apply eRk_inter_add_eRk_union_le
-  rw [rk_eq_zero_of_not_finRk hY,
-    rk_eq_zero_of_not_finRk (not_finRk_superset hY subset_union_right), add_zero, add_zero]
+  rw [rk_eq_zero_of_not_isRkFinite hY, add_zero,
+    rk_eq_zero_of_not_isRkFinite (X := X ∪ Y) (fun h ↦ hY <| h.subset subset_union_right), add_zero]
   exact hX.rk_le_of_subset inter_subset_left
 
-lemma FinRk.submod_right (hY : M.FinRk Y) (X : Set α) :
+lemma IsRkFinite.submod_right (hY : M.IsRkFinite Y) (X : Set α) :
     M.rk (X ∩ Y) + M.rk (X ∪ Y) ≤ M.rk X + M.rk Y := by
   rw [inter_comm, union_comm, add_comm (a := M.rk X)]
   apply hY.submod
 
 lemma rk_submod (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.rk (X ∩ Y) + M.rk (X ∪ Y) ≤ M.rk X + M.rk Y :=
-  FinRk.submod (M.to_finRk X) Y
+  IsRkFinite.submod (M.isRkFinite_set X) Y
 
--- TODO : `FinRk` versions of the following three lemmas
+-- TODO : `IsRkFinite` versions of the following three lemmas
 lemma rk_submod_insert (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.rk (insert e (X ∩ Y)) + M.rk (insert e (X ∪ Y)) ≤ M.rk (insert e X) + M.rk (insert e Y) := by
   rw [insert_inter_distrib, insert_union_distrib]
@@ -266,7 +266,7 @@ lemma Indep.exists_insert_of_ncard_lt [RankFinite M] {J : Set α} (hI : M.Indep 
   simp [rank]
 
 lemma rk_union_le_rk_add_rk (M : Matroid α) (X Y : Set α) : M.rk (X ∪ Y) ≤ M.rk X + M.rk Y := by
-  by_cases hFin : M.FinRk (X ∪ Y)
+  by_cases hFin : M.IsRkFinite (X ∪ Y)
   · exact (Nat.le_add_left ..).trans <| (hFin.subset subset_union_left).submod _
   rw [← eRk_ne_top_iff, not_not] at hFin
   rw [rk, hFin]
