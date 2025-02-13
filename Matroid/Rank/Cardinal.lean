@@ -109,21 +109,21 @@ theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
   rw [← hJ'.basis_closure_right.encard_eq_encard hJ]
   exact (encard_le_encard hJ'.subset).trans (by simp)
 
-lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.FinRk X := by
+lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.IsRkFinite X := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_basis' X
-    exact hI.finRk_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
+    exact hI.isRkFinite_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
 
   obtain ⟨I, hI⟩ := M.exists_basis' X
-  refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_finRk h))
+  refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_isRkFinite h))
   rw [cRk_le_iff]
   intro J hJ
   rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
-  · simp [(hJ.finite_of_finRk h).countable]
-  simp [(hI.finite_of_finRk h).countable]
+  · simp [(hJ.finite_of_isRkFinite h).countable]
+  simp [(hI.finite_of_isRkFinite h).countable]
 
 lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
-  rw [← cRk_ground, crk_lt_aleph0_iff, finRk_ground_iff_rankFinite]
+  rw [← cRk_ground, crk_lt_aleph0_iff, isRkFinite_ground_iff_rankFinite]
 
 @[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_base

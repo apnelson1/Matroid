@@ -1,7 +1,6 @@
 import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.Lattice
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Algebra.BigOperators.Ring
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.WithTop
 
 open Set BigOperators Function

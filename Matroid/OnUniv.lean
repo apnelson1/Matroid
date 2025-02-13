@@ -13,6 +13,9 @@ open Set
 class OnUniv (M : Matroid α) : Prop where
   ground_eq : M.E = univ
 
+instance : (M ↾ univ).OnUniv := ⟨rfl⟩
+instance [h : M.OnUniv] : M✶.OnUniv := ⟨h.1⟩
+
 @[simp]
 lemma ground_eq_univ (M : Matroid α) [OnUniv M] : M.E = univ :=
   OnUniv.ground_eq
@@ -20,6 +23,9 @@ lemma ground_eq_univ (M : Matroid α) [OnUniv M] : M.E = univ :=
 @[simp, aesop safe (rule_sets := [Matroid])]
 lemma OnUniv.subset_ground (M : Matroid α) [M.OnUniv] (X : Set α) : X ⊆ M.E := by
   simp [OnUniv.ground_eq]
+
+lemma OnUniv.ground_diff_eq (M : Matroid α) [M.OnUniv] (X : Set α) : M.E \ X = Xᶜ := by
+  rw [ground_eq_univ, compl_eq_univ_diff]
 
 lemma corestrict_univ_eq_disjointSum (M : Matroid α) :
     (M✶ ↾ univ)✶ = M.disjointSum (freeOn M.Eᶜ) disjoint_compl_right := by
@@ -73,3 +79,6 @@ lemma Basis'.corestrict_univ_union_basis_union {I X : Set α} (hIX : M.Basis' I 
   simp +contextual only [restrict_ground_eq, and_true]
   intro I hIE
   rw [inter_eq_self_of_subset_left hIE]
+
+@[simp] lemma restrict_univ_restrict_ground : (M ↾ univ) ↾ M.E = M :=
+  ext_indep rfl <| by simp +contextual

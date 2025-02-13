@@ -57,7 +57,7 @@ theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k 
   rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
-  rw [← finRk_ground_iff_rankFinite, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+  rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :

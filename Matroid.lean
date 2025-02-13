@@ -34,7 +34,6 @@ import Matroid.Order.Weak
 import Matroid.Parallel
 import Matroid.Paving
 import Matroid.Rank.ENat
-import Matroid.Rank.Finite
 import Matroid.Rank.Nat
 import Matroid.Simple
 import Matroid.Uniform

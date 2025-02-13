@@ -91,11 +91,3 @@ lemma erase_inter_distrib (s : Finset α) (t : Finset α) (a : α) :
   rfl
 
 end Finset
-
-@[simp] lemma Finite.toFinset_nontrivial {s : Set α} (h : s.Finite) :
-    h.toFinset.Nontrivial ↔ s.Nontrivial := by
-  rw [Finset.Nontrivial, h.coe_toFinset]
-
-@[simp] lemma Set.toFinset_nontrivial {s : Set α} [Fintype s] :
-    s.toFinset.Nontrivial ↔ s.Nontrivial := by
-  rw [Finset.Nontrivial, coe_toFinset]

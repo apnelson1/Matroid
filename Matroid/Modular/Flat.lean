@@ -206,9 +206,9 @@ lemma Hyperplane.modularFlat_iff_forall_line {H : Set α} (hH : M.Hyperplane H) 
     · rw [inter_eq_self_of_subset_right hLH] at hss
       simpa [hL.eRk] using M.eRk_mono hss
     have hsk := h hL.flat hss (hH.spanning_of_ssuperset (by simpa))
-    rw [← localEConn_eq_zero hH.subset_ground] at hsk
-    have hr := hH.localEConn_add_one_eq hLH
-    rw [localEConn_comm, hsk, hL.eRk] at hr
+    rw [← eLocalConn_eq_zero hH.subset_ground] at hsk
+    have hr := hH.eLocalConn_add_one_eq hLH
+    rw [eLocalConn_comm, hsk, hL.eRk] at hr
     simp at hr
   obtain ⟨I, hI⟩ := M.exists_basis F
   rw [skew_iff_closure_skew_right, ← hI.closure_eq_closure, ← skew_iff_closure_skew_right]
@@ -230,21 +230,21 @@ lemma Line.modularFlat_of_forall_hyperplane {L : Set α} (hL : M.Line L)
     (h : ∀ ⦃H⦄, M.Hyperplane H → ¬ (L ∩ H ⊆ M.closure ∅)) : M.ModularFlat L := by
   rw [hL.flat.modularFlat_iff_forall_skew_of_inter]
   intro F hF hcl hsp
-  rw [← localEConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
+  rw [← eLocalConn_eq_zero, ← ENat.lt_one_iff_eq_zero, ← not_le]
   intro hle
-  have hlc := M.localEConn_add_eRelRk_union_eq_eRk L F
+  have hlc := M.eLocalConn_add_eRelRk_union_eq_eRk L F
   rw [hL.eRk, ← eRelRk_closure_right, hsp.closure_eq, add_comm] at hlc
   obtain h_eq | hlt := hle.eq_or_lt
   · rw [← h_eq, (show (2 : ℕ∞) = 1 + 1 from rfl), WithTop.add_right_cancel_iff (by simp),
       ← hF.hyperplane_iff_eRelRk_ground_eq_one] at hlc
     exact h hlc hcl
   replace hlt := show (2 : ℕ∞) ≤ _ from Order.add_one_le_of_lt hlt
-  rw [← zero_add (a := M.localEConn L F), ← hlc, WithTop.add_le_add_iff_right,
+  rw [← zero_add (a := M.eLocalConn L F), ← hlc, WithTop.add_le_add_iff_right,
     nonpos_iff_eq_zero, eRelRk_ground_eq_zero_iff, spanning_iff_closure_eq, hF.closure] at hlt
   · rw [hlt, inter_eq_self_of_subset_left hL.subset_ground] at hcl
     simpa [hL.eRk] using M.eRk_mono hcl
   rw [← lt_top_iff_ne_top]
-  exact (M.localEConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.eRk]))
+  exact (M.eLocalConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.eRk]))
 
 /-- If `X` is a modular flat, then in any contraction-minor in which `X` spans a nonloop `e`,
 there is an element of `X` parallel to `e`.
@@ -364,8 +364,8 @@ lemma Flat.modularSet_iff_forall_minor_exists_parallel (hX : M.Flat X) :
 lemma ModularFlat.inter_insert_closure_point_of_skew (hF : M.ModularFlat F)
     (hFX : M.Skew F X) (heFX : e ∈ M.closure (F ∪ X)) (heX : e ∉ M.closure X) :
     M.Point (F ∩ M.closure (insert e X)) := by
-  have hc := (hF.modularPair (M.closure_flat (insert e X))).localEConn_eq_eRk_inter
-  rw [localEConn_closure_right, localEConn_insert_right_eq_add_one heX heFX, hFX.localEConn,
+  have hc := (hF.modularPair (M.closure_flat (insert e X))).eLocalConn_eq_eRk_inter
+  rw [eLocalConn_closure_right, eLocalConn_insert_right_eq_add_one heX heFX, hFX.eLocalConn,
     zero_add] at hc
   rw [Point, ← hc, and_iff_left rfl]
   exact hF.flat.inter (M.closure_flat _)
@@ -588,7 +588,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
       fun i ↦ iInter_subset_of_subset {i} (by simp)⟩
 
   -- The intersection is modular with every finite-rank flat.
-  have hfin : ∀ F, M.Flat F → M.FinRk F → M.ModularPair (⋂ i, X i) F
+  have hfin : ∀ F, M.Flat F → M.IsRkFinite F → M.ModularPair (⋂ i, X i) F
   · intro F hF hfin
     rw [modularPair_iff_forall_distrib_of_subset_left (Flat.iInter (fun i ↦ (hX i).flat))
       hF.subset_ground]
@@ -599,7 +599,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
       simp only [subset_inter_iff, inter_subset_right, and_true]
       exact fun _ _ ↦ inter_subset_left.trans
 
-    obtain ⟨i₀, hi₀⟩ := Flat.iInter_mem_of_directed_of_finRk (fun i ↦ (hX i).flat.inter hF) hdir'
+    obtain ⟨i₀, hi₀⟩ := Flat.iInter_mem_of_directed_of_isRkFinite (fun i ↦ (hX i).flat.inter hF) hdir'
       ⟨Classical.arbitrary ι, hfin.inter_left⟩
     rw [iInter_inter (s := F), ← hi₀, ← (hX i₀).distrib_of_subset_self hF (hYss i₀)]
     exact inter_subset_inter_left _ (iInter_subset _ _)
@@ -608,7 +608,7 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
   -- Since `⋂ i, X i` is a modular pair with every flat in the collection, it is modular with `F`.
   rw [modularFlat_iff, and_iff_right (Flat.iInter fun i ↦ (hX i).flat)]
   intro F hF
-  set D := fun F₀ : {F₀ : Set α // M.Flat F₀ ∧ M.FinRk F₀ ∧ F₀ ⊆ F} ↦ F₀.1 with hD_def
+  set D := fun F₀ : {F₀ : Set α // M.Flat F₀ ∧ M.IsRkFinite F₀ ∧ F₀ ⊆ F} ↦ F₀.1 with hD_def
   have hdirD : Directed (· ⊆ ·) D
   · rintro ⟨A, hA, hAfin, hAF⟩ ⟨B, hB, hBfin, hBF⟩
     refine ⟨⟨_, M.closure_flat (A ∪ B), (hAfin.union hBfin).closure,
@@ -620,8 +620,8 @@ lemma ModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set
     refine ⟨hF.closure_subset_of_subset (iUnion_subset fun F₀ ↦ F₀.2.2.2), fun e heF ↦ ?_⟩
     have heE := hF.subset_ground heF
     refine M.mem_closure_of_mem' (mem_iUnion_of_mem ⟨M.closure {e}, ?_⟩ ?_)
-    · rw [FinRk.closure_iff]
-      exact ⟨M.closure_flat _, M.finRk_of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
+    · rw [isRkFinite_closure_iff]
+      exact ⟨M.closure_flat _, M.isRkFinite_of_finite (by simp), hF.closure_subset_of_subset (by simpa)⟩
     simp
     exact M.mem_closure_of_mem' rfl
 
@@ -719,9 +719,9 @@ lemma Circuit.chord_split_of_modular_subset {C I : Set α} (hC : M.Circuit C) (h
     ∃ e, e ∉ C ∧ M.Circuit (insert e I) ∧ M.Circuit (insert e (C \ I)) := by
   have hssu : I ⊂ C := hIC.ssubset_of_ne (by rintro rfl; simp at hnt')
   have hI := hC.ssubset_indep hssu
-  have hli := (hmod.modularPair (M.closure_flat (C \ I))).localEConn_eq_eRk_inter
+  have hli := (hmod.modularPair (M.closure_flat (C \ I))).eLocalConn_eq_eRk_inter
   obtain ⟨J, hJ⟩ := M.exists_basis (M.closure I ∩ M.closure (C \ I))
-  rw [localEConn_closure_closure, hC.localEConn_subset_compl hnt.nonempty hssu, eq_comm,
+  rw [eLocalConn_closure_closure, hC.eLocalConn_subset_compl hnt.nonempty hssu, eq_comm,
     ← hJ.encard_eq_eRk, encard_eq_one] at hli
   obtain ⟨e, rfl⟩ := hli
 
