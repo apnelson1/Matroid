@@ -1,4 +1,6 @@
 import Matroid.Connectivity.Local
+import Matroid.Connectivity.Separation
+
 
 open Set Set.Notation
 
@@ -34,8 +36,6 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
   rw [delete_rk_eq_of_disjoint _ (by simpa), delete_rk_eq_of_disjoint _ (by simp), hrw]
 
   linarith
-
-
 
 lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e})
@@ -83,4 +83,6 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
 -- gh repo clone apnelson1/Matroid
 
 lemma book_854 (M : Matroid α) [RankFinite M] (X' Y': Set α  ) (hX'E : X' ⊆ M.E )
-    (hY'E : Y' ⊆ M.E \ X' ) (hXX' : X ⊆  X') (hYY' : Y ⊆ Y') : M.localConn X Y ≤ M.localConn X' Y' := by sorry
+    (hY'E : Y' ⊆ M.E \ X' ) (hXX' : X ⊆  X') (hYY' : Y ⊆ Y') : M.connBetween X Y ≤ M.connBetween X' Y' := by sorry
+
+--The correct notation is connBetween, see Separation for the infinite version, Peter is adding a bunch of lemmas to this section
