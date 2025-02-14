@@ -81,3 +81,6 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   · sorry
   sorry
 -- gh repo clone apnelson1/Matroid
+
+lemma book_854 (M : Matroid α) [RankFinite M] (X' Y': Set α  ) (hX'E : X' ⊆ M.E )
+    (hY'E : Y' ⊆ M.E \ X' ) (hXX' : X ⊆  X') (hYY' : Y ⊆ Y') : M.localConn X Y ≤ M.localConn X' Y' := by sorry
