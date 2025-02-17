@@ -38,11 +38,10 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
 
 
 lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
-    (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) - 1
-    ≤  (M ＼ e).conn X + (M ／ e).conn Y := by
+    (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e})
+    ≤  (M ＼ e).conn X + (M ／ e).conn Y + 1 := by
   --The proof starts with getting all the equations for the contractions, there is 3 of them
-  have : M.rk {e} = 1 := Nonloop.rk_eq sorry
-  --Here is where you use that 'e' is not a loop
+  have : M.rk {e} ≤ 1 := by sorry
   have hconY : M.rk (insert e Y) - 1 = ((M ／ e).rk Y : ℤ ) := by sorry
     -- You can rewrite what it means to contract an element with set notation using contractElem
     -- You can then use the definition of contracting for integers
@@ -64,9 +63,9 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   --This equation is the last one we need as aid.
   have hneed : ( (M ＼ e).rank : ℤ)  ≤ (M.rank : ℤ) := by sorry
   --We now want to subsitute the definition of connectivity with the following
-  have hf : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) - 1 =
+  have hf : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) =
       ((M.rk ( X ∪ Y ∪ {e}) : ℤ ) + ( M.rk ( X ∩ Y)) : ℤ ) +
-      ((M.rk (M.E \ (X ∩ Y)) + M.rk (M.E \ ( X ∪ Y ∪ {e}))) : ℤ ) - (2 * M.rank : ℤ ) -1 := by
+      ((M.rk (M.E \ (X ∩ Y)) + M.rk (M.E \ ( X ∪ Y ∪ {e}))) : ℤ ) - (2 * M.rank : ℤ ) := by
     --The proof is easy if we use int_cast_conn_eq and linarith
     sorry
   -- To not get annoyed with Lean we use zify. This let's us subtract without getting annoyed
@@ -76,12 +75,9 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   have hconYh : (M ／ e).E \ Y = M.E \ insert e Y :=  by sorry
   have hrkcon : (M ／ e).rk (M.E \ {e}) = (M ／ e).rank := rk_eq_rank fun ⦃a⦄ a ↦ a
   --Here I used a lot of rw
-  rw [Nat.cast_sub, Nat.cast_add, intCast_conn_eq (M ＼ e) X, intCast_conn_eq (M ／ e) Y, Nat.cast_one, hf ]
+  rw [intCast_conn_eq (M ＼ e) X, intCast_conn_eq (M ／ e) Y, hf ]
   rw[delete_elem_rk_eq, delete_elem_rk_eq, hdelx, hconYh, ←hrkcon]
   · linarith
   · sorry
   sorry
-  zify
-  sorry
-
 -- gh repo clone apnelson1/Matroid
