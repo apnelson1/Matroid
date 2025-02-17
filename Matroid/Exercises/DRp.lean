@@ -37,7 +37,7 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
 
 
 
-lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
+lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.IsNonloop e)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e})
     ≤  (M ＼ e).conn X + (M ／ e).conn Y + 1 := by
   --The proof starts with getting all the equations for the contractions, there is 3 of them

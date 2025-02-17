@@ -145,7 +145,7 @@ lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase 
   rw [v.standardRep_eq_mapEquiv]
   exact (v.standardRep_fullRank' hB).mapEquiv _
 
--- Loopy matroids are trivially representable over every field.
+-- IsLoopy matroids are trivially representable over every field.
 def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
   to_fun := 0
   valid' := by

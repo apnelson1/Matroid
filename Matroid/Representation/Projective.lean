@@ -23,7 +23,7 @@ abbrev Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
   Projectivization.mk 𝔽 (v e) (by simp)
 
 -- lemma nontrivial_of_rankPos [RankPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
---   exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
+--   exists_pair_ne := ⟨_, 0, v.ne_zero_of_isNonloop M.exists_isNonloop.choose_spec⟩
 
 -- variable [Nontrivial W] [DecidableEq W]
 
@@ -36,13 +36,13 @@ lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
     v.projFun = fun e ↦ Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
 -- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
---     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
+--     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (toIsNonloop he)) := by
 --   rw [Rep.projFun, dif_pos]
 
--- lemma Rep.projFun_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
+-- lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
 --     v.projFun e = Classical.arbitrary _ := by
 --   rw [Rep.projFun, dif_neg]
---   rwa [v.ne_zero_iff_nonloop]
+--   rwa [v.ne_zero_iff_isNonloop]
 
 lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun := by
   intro x y hxy
@@ -111,7 +111,7 @@ lemma matroidRep_fullRank : (matroidRep (𝔽 := 𝔽) (W := W)).FullRank :=
   Rep.fullRank_iff.2 <| submodule_span_range_rep 𝔽 W ..
 
 instance : (Projectivization.matroid 𝔽 W).Loopless := by
-  simp [loopless_iff_forall_nonloop, ← matroidRep.ne_zero_iff_nonloop, rep_nonzero]
+  simp [loopless_iff_forall_isNonloop, ← matroidRep.ne_zero_iff_isNonloop, rep_nonzero]
 
 @[simp]
 lemma matroidRep_indep_iff {I : Set (Projectivization 𝔽 W)} :

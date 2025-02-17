@@ -21,7 +21,7 @@ theorem point_count_eq_card_iff_simple [Finite M] :
   rw [point_count, ← ENat.finsum_mem_one_eq]
 
 /-- rank-`k` isFlats of `M ／ e` correspond to rank-`(k+1)` isFlats of `M` containing `e`. -/
-def Nonloop.contract_isFlat_equiv (he : M.Nonloop e) (k : ℕ) :
+def IsNonloop.contract_isFlat_equiv (he : M.IsNonloop e) (k : ℕ) :
   {F // (M ／ e).IsFlat F ∧ (M ／ e).eRk F = k} ≃ {F // M.IsFlat F ∧ M.eRk F = k + 1 ∧ e ∈ F} where
     toFun := fun F ↦ ⟨insert e F, by
       obtain ⟨F, hF⟩ := F
@@ -39,7 +39,7 @@ def Nonloop.contract_isFlat_equiv (he : M.Nonloop e) (k : ℕ) :
     left_inv := fun ⟨F, hF⟩ ↦ by simp [show e ∉ F from fun heF ↦ (hF.1.subset_ground heF).2 rfl]
     right_inv := fun ⟨F, hF⟩ ↦ by simp [hF.2.2]
 
-theorem Nonloop.point_count_contract_eq (he : M.Nonloop e) :
+theorem IsNonloop.point_count_contract_eq (he : M.IsNonloop e) :
     (M ／ e).point_count = {L | M.IsLine L ∧ e ∈ L}.encard := by
   rw [point_count_eq_num_points]
   apply encard_congr

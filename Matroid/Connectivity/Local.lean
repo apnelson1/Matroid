@@ -568,14 +568,14 @@ lemma eConn_eq_eLocalConn' (M : Matroid α) (X : Set α) :
 lemma removeLoops_eConn (M : Matroid α) : M.removeLoops.eConn = M.eConn := by
   ext X
   rw [eConn, removeLoops_eLocalConn, eConn, ← eLocalConn_closure_right, removeLoops_ground_eq,
-    diff_eq_compl_inter, closure_inter_setOf_nonloop_eq, ← closure_inter_ground,
+    diff_eq_compl_inter, closure_inter_setOf_isNonloop_eq, ← closure_inter_ground,
     ← diff_eq_compl_inter, eLocalConn_closure_right]
 
 lemma eConn_union_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.closure ∅) :
     M.eConn (X ∪ L) = M.eConn X := by
-  rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOf_nonloop_eq,
+  rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOf_isNonloop_eq,
     show (X ∪ L) ∩ (M.E \ M.closure ∅) = X ∩ (M.E \ M.closure ∅) by tauto_set,
-    ← setOf_nonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground]
+    ← setOf_isNonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground]
 
 lemma eConn_diff_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.closure ∅) :
     M.eConn (X \ L) = M.eConn X := by
@@ -772,7 +772,7 @@ end conn
 
 section core
 
-/-- The core of a set is its intersection with the set of nonloop, noncoloop elements.
+/-- The core of a set is its intersection with the set of isNonloop, noncoloop elements.
 This does not change the connectivity of a set, and is stable under duality.
 This is mostly an implementation detail,
 used for relating connectivity to junk elements . -/
@@ -805,7 +805,7 @@ lemma core_dual (M : Matroid α) (X : Set α) : M✶.core X = M.core X := by
 
 @[simp]
 lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.core X := by
-  rw [core_def, removeLoops_ground_eq, setOf_nonloop_eq, core_def, closure_empty_eq_empty,
+  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, closure_empty_eq_empty,
     removeLoops_coloops_eq]
   tauto_set
 

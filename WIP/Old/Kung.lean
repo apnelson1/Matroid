@@ -31,9 +31,9 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
     rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
     using 1
-  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toNonloop he).lineContractPointEquiv]
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toIsNonloop he).lineContractPointEquiv]
   refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
-  simp [Nonloop.lineContractPointEquiv, closure_singleton_eq he,
+  simp [IsNonloop.lineContractPointEquiv, closure_singleton_eq he,
     diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
 
 theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
@@ -56,7 +56,7 @@ theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
 
 -- /-- Any partition `Xs` of the nonloops of `M` that is coarser than the partition into
 --   parallel classes gives a decomposition of `M.numPoints` as a sum over the parts of `Xs`. -/
--- theorem foo' (M : Matroid α) (Xs : Partition {e | M.Nonloop e}) (hP : M.parallelClasses ≤ Xs) :
+-- theorem foo' (M : Matroid α) (Xs : Partition {e | M.IsNonloop e}) (hP : M.parallelClasses ≤ Xs) :
 --     M.numPoints = ∑' X : Xs, (M ↾ X).numPoints := by
 --   _
 

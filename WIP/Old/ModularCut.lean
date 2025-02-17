@@ -142,14 +142,14 @@ theorem IsBasis.exchange_isBase_of_indep {M : Matroid α} (hB : M.IsBasis B X) (
   · rw [Ys_eq_closure, sInter_singleton, Disjoint.inter_eq _, empty_isBasis_iff]
     · rw [disjoint_left]
       intro a a_closure a_B'
-      rw [← loop_iff_mem_closure_empty, loop_iff_not_mem_isBase_forall] at a_closure
+      rw [← isLoop_iff_mem_closure_empty, isLoop_iff_not_mem_isBase_forall] at a_closure
       exact a_closure B' B'_isBase a_B'
   · rwa [Ys_eq_Y, sInter_singleton, B'_inter]
   · rw [Ys_eq_pair, sInter_pair, ← Y_isFlat.closure, inter_eq_self_of_subset_left
     (M.closure_subset_closure (empty_subset _)), Disjoint.inter_eq _, empty_isBasis_iff]
     rw [disjoint_left]
     intro a a_closure a_B'
-    rw [← loop_iff_mem_closure_empty, loop_iff_not_mem_isBase_forall] at a_closure
+    rw [← isLoop_iff_mem_closure_empty, isLoop_iff_not_mem_isBase_forall] at a_closure
     exact a_closure B' B'_isBase a_B'
 
 theorem Modular_cut_pair {M : Matroid α} {C : Set (Set α)} (hC : M.Modular_cut C) (a b : α)

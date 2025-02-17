@@ -241,7 +241,7 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M�
 
 lemma Quotient.exists_extension_quotient_contract_of_rank_lt {f : α} (hQ : M₂ ≤q M₁)
     (hr : M₂.rank < M₁.rank) (hf : f ∉ M₂.E) :
-    ∃ M, M.Nonloop f ∧ ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M ／ f := by
+    ∃ M, M.IsNonloop f ∧ ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M ／ f := by
   have hfin : M₁.RankFinite
   · rw [rankFinite_iff]
     intro h

@@ -39,14 +39,14 @@ lemma Indep.isBasis'_isBasis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (h
 private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
-  by_cases hloop : ∀ e ∈ M₁.E, M₁.Loop e ∨ M₂.Loop e
+  by_cases hloop : ∀ e ∈ M₁.E, M₁.IsLoop e ∨ M₂.IsLoop e
   · suffices 0 = M₂.rk (M₂.E \ M₁.closure ∅) from
       ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
     rw [eq_comm, rk_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
   push_neg at hloop
   obtain ⟨e, he, he₁, he₂⟩ := hloop
-  rw [not_loop_iff] at he₁ he₂
+  rw [not_isLoop_iff] at he₁ he₂
 
   have : (M₁ ／ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
   have : (M₁ ＼ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite

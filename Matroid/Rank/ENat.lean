@@ -419,21 +419,21 @@ lemma Spanning.eRk_eq (hX : M.Spanning X) : M.eRk X = M.eRank := by
 lemma Spanning.eRank_restrict (hX : M.Spanning X) : (M ↾ X).eRank = M.eRank := by
   rw [eRank_def, restrict_ground_eq, restrict_eRk_eq _ rfl.subset, hX.eRk_eq]
 
-lemma Loop.eRk_eq (he : M.Loop e) : M.eRk {e} = 0 := by
+lemma IsLoop.eRk_eq (he : M.IsLoop e) : M.eRk {e} = 0 := by
   rw [← eRk_closure_eq, he.closure, eRk_closure_eq, eRk_empty]
 
-lemma Nonloop.eRk_eq (he : M.Nonloop e) : M.eRk {e} = 1 := by
+lemma IsNonloop.eRk_eq (he : M.IsNonloop e) : M.eRk {e} = 1 := by
   rw [← he.indep.isBasis_self.encard_eq_eRk, encard_singleton]
 
 lemma eRk_singleton_eq [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.eRk {e} = 1 :=
-  (M.toNonloop he).eRk_eq
+  (M.toIsNonloop he).eRk_eq
 
-@[simp] lemma eRk_singleton_eq_one_iff {e : α} : M.eRk {e} = 1 ↔ M.Nonloop e := by
+@[simp] lemma eRk_singleton_eq_one_iff {e : α} : M.eRk {e} = 1 ↔ M.IsNonloop e := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.eRk_eq⟩
   rwa [← indep_singleton, indep_iff_eRk_eq_encard_of_finite (by simp), encard_singleton]
 
-lemma LoopEquiv.eRk_eq_eRk (h : M.LoopEquiv X Y) : M.eRk X = M.eRk Y := by
+lemma IsLoopEquiv.eRk_eq_eRk (h : M.IsLoopEquiv X Y) : M.eRk X = M.eRk Y := by
   rw [← M.eRk_closure_eq, h.closure_eq_closure, M.eRk_closure_eq]
 
 lemma eRk_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
@@ -441,7 +441,7 @@ lemma eRk_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← hI.encard_eq_eRk, encard_eq_zero]
   exact ⟨by rintro rfl; exact hI.subset_closure, fun h ↦ eq_empty_of_forall_not_mem
-    fun x hx ↦ (hI.indep.nonloop_of_mem hx).not_loop (h (hI.subset hx))⟩
+    fun x hx ↦ (hI.indep.isNonloop_of_mem hx).not_isLoop (h (hI.subset hx))⟩
 
 lemma eRk_eq_zero_iff' : M.eRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
   rw [← eRk_inter_ground, eRk_eq_zero_iff]
@@ -450,7 +450,7 @@ lemma eRk_eq_zero_iff' : M.eRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
   rw [eRk_eq_zero_iff]
 
 lemma eRk_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :
-    M.eRk X = 1 ↔ ∃ e ∈ X, M.Nonloop e ∧ X ⊆ M.closure {e} := by
+    M.eRk X = 1 ↔ ∃ e ∈ X, M.IsNonloop e ∧ X ⊆ M.closure {e} := by
   refine ⟨?_, fun ⟨e, heX, he, hXe⟩ ↦ ?_⟩
   · obtain ⟨I, hI⟩ := M.exists_isBasis X
     rw [hI.eRk_eq_encard, encard_eq_one]

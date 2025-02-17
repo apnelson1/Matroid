@@ -130,8 +130,8 @@ theorem unifOn_contract_finset_eq {C : Finset α} (hCE : (C : Set α) ⊆ E) :
 --     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) :=
 --   unifOn_contract_eq' E C WithTop.coe_ne_top
 
-instance unifOn_loopless (E : Set α) : Loopless (unifOn E (k+1)) := by
-  simp_rw [loopless_iff_forall_nonloop, ← indep_singleton, unifOn_indep_iff]
+instance unifOn_isLoopless (E : Set α) : Loopless (unifOn E (k+1)) := by
+  simp_rw [loopless_iff_forall_isNonloop, ← indep_singleton, unifOn_indep_iff]
   simp
 
 instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
@@ -227,7 +227,7 @@ theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
 @[simp] theorem unif_add_right_dual (a b : ℕ) : (unif b (a + b))✶ = unif a (a+b) :=
   unif_dual' <| add_comm _ _
 
-instance unif_loopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
+instance unif_isLoopless (a b : ℕ) : Loopless (unif (a + 1) b) := by
   rw [unif]
   infer_instance
 
@@ -569,24 +569,24 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     rw [hI] at hss
     obtain rfl | ⟨e, rfl⟩ := hss.eq_empty_or_singleton
     · exact M.empty_indep
-    rwa [indep_singleton, nonloop_iff_not_mem_closure_empty, ← disjoint_singleton_left]
+    rwa [indep_singleton, isNonloop_iff_not_mem_closure_empty, ← disjoint_singleton_left]
   rintro ⟨E₀, E₁, hdj, rfl⟩
   simp [unifOn_eRank_eq]
 
-lemma unifOn_loopless_iff {n : ℕ} :
+lemma unifOn_isLoopless_iff {n : ℕ} :
     (unifOn E n).Loopless ↔ (n = 0 → E = ∅) := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro h rfl
     simpa using h
   obtain rfl | n := n
   · simpa using h rfl
-  simp [loopless_iff_forall_nonloop, ← indep_singleton]
+  simp [loopless_iff_forall_isNonloop, ← indep_singleton]
 
 lemma unifOn_simple_iff {n : ℕ} :
     (unifOn E n).Simple ↔ (n = 0 ∧ E = ∅) ∨ (n = 1 ∧ E.Subsingleton) ∨ 2 ≤ n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain rfl | rfl | n := n
-    · simp [unifOn_loopless_iff.1 h.loopless]
+    · simp [unifOn_isLoopless_iff.1 h.loopless]
     · have h : ∀ ⦃e f : α⦄, e ∈ E → f ∈ E → e = f := by
         simpa +contextual [simple_iff_forall_pair_indep, pair_subset_iff] using h
       exact .inr (.inl ⟨rfl, fun x hxE y hyE ↦ h hxE hyE ⟩)

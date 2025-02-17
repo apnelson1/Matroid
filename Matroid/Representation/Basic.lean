@@ -261,75 +261,75 @@ noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep �
 section Simple
 
 lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_mat) :
-    v e = 0 ↔ M.Loop e := by
+    v e = 0 ↔ M.IsLoop e := by
   rw [← singleton_not_indep he, v.indep_iff, linearIndependent_unique_iff]
   simp
 
-lemma Rep.eq_zero_of_loop (v : M.Rep 𝔽 W) (h : M.Loop e) : v e = 0 :=
+lemma Rep.eq_zero_of_isLoop (v : M.Rep 𝔽 W) (h : M.IsLoop e) : v e = 0 :=
   (v.eq_zero_iff e).2 h
 
-lemma Rep.ne_zero_of_nonloop (v : M.Rep 𝔽 W) (h : M.Nonloop e) : v e ≠ 0 := by
-  rw [Ne, v.eq_zero_iff e]; exact h.not_loop
+lemma Rep.ne_zero_of_isNonloop (v : M.Rep 𝔽 W) (h : M.IsNonloop e) : v e ≠ 0 := by
+  rw [Ne, v.eq_zero_iff e]; exact h.not_isLoop
 
-lemma Rep.ne_zero_iff_nonloop (v : M.Rep 𝔽 W) (e : α) :
-    v e ≠ 0 ↔ M.Nonloop e := by
-  refine ⟨fun hne ↦ ?_, v.ne_zero_of_nonloop⟩
+lemma Rep.ne_zero_iff_isNonloop (v : M.Rep 𝔽 W) (e : α) :
+    v e ≠ 0 ↔ M.IsNonloop e := by
+  refine ⟨fun hne ↦ ?_, v.ne_zero_of_isNonloop⟩
   by_cases he : e ∈ M.E
-  · rwa [← not_loop_iff, ← v.eq_zero_iff e]
+  · rwa [← not_isLoop_iff, ← v.eq_zero_iff e]
   simp [v.eq_zero_of_not_mem_ground he] at hne
 
 @[simp]
 lemma Rep.ne_zero [M.Loopless] [M.OnUniv] (v : M.Rep 𝔽 W) (e : α) : v e ≠ 0 := by
-  simp [v.ne_zero_iff_nonloop]
+  simp [v.ne_zero_iff_isNonloop]
 
 lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e ≠ 0 := by
-  rw [loopless_iff_forall_nonloop]
-  exact ⟨fun h e he ↦ (v.ne_zero_iff_nonloop e).2 (h e he),
-    fun h e he ↦ (v.ne_zero_iff_nonloop e).1 (h e he)⟩
+  rw [loopless_iff_forall_isNonloop]
+  exact ⟨fun h e he ↦ (v.ne_zero_iff_isNonloop e).2 (h e he),
+    fun h e he ↦ (v.ne_zero_iff_isNonloop e).1 (h e he)⟩
 
-lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
     M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ c • v f = v e := by
   obtain (hfE | hfE) := em' (f ∈ M.E)
   · refine iff_of_false (fun h ↦ hfE h.mem_ground_right) ?_
-    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_nonloop he).symm]
-  obtain (hf | hf) := M.loop_or_nonloop f
-  · refine iff_of_false (fun h ↦ h.nonloop_right.not_loop hf) ?_
-    simp [v.eq_zero_of_loop hf, iff_true_intro (v.ne_zero_of_nonloop he).symm]
+    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_isNonloop he).symm]
+  obtain (hf | hf) := M.isLoop_or_isNonloop f
+  · refine iff_of_false (fun h ↦ h.isNonloop_right.not_isLoop hf) ?_
+    simp [v.eq_zero_of_isLoop hf, iff_true_intro (v.ne_zero_of_isNonloop he).symm]
 
   obtain (rfl | hef) := eq_or_ne e f
   · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, one_smul ..⟩
 
   rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff_restrict, not_iff_comm,
-    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_nonloop he)]
+    linearIndependent_restrict_pair_iff _ hef (v.ne_zero_of_isNonloop he)]
   simp only [ne_eq, not_exists, not_and]
   refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
     h c⁻¹ (by rw [← h_eq, smul_smul, inv_mul_cancel₀ hc, one_smul])⟩
-  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_nonloop hf (by simp [← h'])
+  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_isNonloop hf (by simp [← h'])
   exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel₀ hc, one_smul]
 
 
-lemma Rep.parallel_iff' (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
+lemma Rep.parallel_iff' (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
     M.Parallel e f ↔ ∃ (c : 𝔽ˣ), c • v f = v e := by
   rw [v.parallel_iff he]
   exact ⟨fun ⟨c, hne, heq⟩ ↦ ⟨Units.mk0 c hne, by simpa⟩, fun ⟨c, heq⟩ ↦ ⟨c, by simp, heq⟩⟩
 
 lemma Rep.simple_iff [RankPos M] (v : M.Rep 𝔽 W) :
     M.Simple ↔ ∀ {e f} (_ : e ∈ M.E) (_ : f ∈ M.E) (c : 𝔽), c • (v f) = v e → e = f := by
-  simp_rw [simple_iff_loopless_eq_of_parallel_forall, v.loopless_iff]
+  simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, v.loopless_iff]
   refine ⟨fun ⟨h0,h1⟩ e f he _ c h_eq ↦ h1 e f ?_, fun h ↦ ⟨fun e he h0 ↦ ?_, fun e f hef ↦ ?_⟩⟩
   · refine (v.parallel_iff ?_).2 ⟨c, ?_, h_eq⟩
-    · rw [← v.ne_zero_iff_nonloop e]; exact h0 _ he
+    · rw [← v.ne_zero_iff_isNonloop e]; exact h0 _ he
     rintro rfl
     exact h0 e he <| by simp [← h_eq]
-  · obtain ⟨f, hf⟩ := M.exists_nonloop
+  · obtain ⟨f, hf⟩ := M.exists_isNonloop
     obtain rfl := h he hf.mem_ground 0 (by simp [h0])
-    exact v.ne_zero_of_nonloop hf h0
-  obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.nonloop_right).1 hef
+    exact v.ne_zero_of_isNonloop hf h0
+  obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.isNonloop_right).1 hef
   exact h (by aesop_mat) (by aesop_mat) c h_eq
 
 lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
   obtain (hl | hpos) := M.eq_loopyOn_or_rankPos
-  · rw [simple_iff_loopless_eq_of_parallel_forall, hl, loopyOn_loopless_iff] at h
+  · rw [simple_iff_isLoopless_eq_of_parallel_forall, hl, loopyOn_isLoopless_iff] at h
     simp [h.1]
   exact fun e he f hf h_eq ↦ (v.simple_iff.1 h) he hf 1 <| by rwa [one_smul, eq_comm]
 

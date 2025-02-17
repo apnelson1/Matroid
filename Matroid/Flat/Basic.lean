@@ -264,7 +264,7 @@ lemma IsFlat.union_isFlat_of_contract' (hF : (M ／ C).IsFlat F) : M.IsFlat (F �
   · exact union_subset_union_right _ <| (M.subset_closure _).trans (M.closure_inter_ground _).subset
   exact subset_union_left.trans (hF.symm.subset.trans (M.closure_subset_ground _))
 
-lemma Nonloop.contract_isFlat_iff (he : M.Nonloop e) :
+lemma IsNonloop.contract_isFlat_iff (he : M.IsNonloop e) :
     (M ／ e).IsFlat F ↔ M.IsFlat (insert e F) ∧ e ∉ F := by
   rw [contractElem, isFlat_contract_iff, union_singleton, disjoint_singleton_right]
 

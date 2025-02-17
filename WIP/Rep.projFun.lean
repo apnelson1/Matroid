@@ -20,34 +20,34 @@ noncomputable def Rep.projFun [Nontrivial W] [DecidableEq W] (v : M.Rep 𝔽 W)
   if he : v e ≠ 0 then Projectivization.mk 𝔽 (v e) he else Classical.arbitrary _
 
 lemma nontrivial_of_rankPos [RankPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
-  exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
+  exists_pair_ne := ⟨_, 0, v.ne_zero_of_isNonloop M.exists_isNonloop.choose_spec⟩
 
 variable [Nontrivial W] [DecidableEq W]
 
-lemma Rep.projFun_nonloop_eq (v : M.Rep 𝔽 W) (he : M.Nonloop e) :
-    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop he) := by
+lemma Rep.projFun_isNonloop_eq (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
+    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop he) := by
   rw [Rep.projFun, dif_pos]
 
 lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
-    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
+    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (toIsNonloop he)) := by
   rw [Rep.projFun, dif_pos]
 
-lemma Rep.projFun_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
+lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
     v.projFun e = Classical.arbitrary _ := by
   rw [Rep.projFun, dif_neg]
-  rwa [v.ne_zero_iff_nonloop]
+  rwa [v.ne_zero_iff_isNonloop]
 
 lemma Rep.projFun_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.projFun M.E := by
   intro x hx y hy hxy
-  rwa [v.projFun_nonloop_eq (toNonloop hx), v.projFun_nonloop_eq (toNonloop hy),
-    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toNonloop hx), parallel_iff_eq] at hxy
+  rwa [v.projFun_isNonloop_eq (toIsNonloop hx), v.projFun_isNonloop_eq (toIsNonloop hy),
+    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toIsNonloop hx), parallel_iff_eq] at hxy
 
 lemma Rep.indep_iff_projFun [M.Loopless] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
   rw [v.indep_iff, Projectivization.linearIndependent_iff]
   · convert Iff.rfl with e
     simp [v.projFun_eq (hIE e.2)]
-  simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_nonloop (toNonloop (hIE heI))]
+  simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_isNonloop (toIsNonloop (hIE heI))]
 
 @[simp]
 lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
@@ -85,9 +85,9 @@ lemma projectiveGeometryRep_fullRank : (projectiveGeometryRep (𝔽 := 𝔽) (W 
     Projectivization.submodule_span_range_rep]
 
 instance : (projectiveGeometry 𝔽 W).Loopless := by
-  simp_rw [loopless_iff_forall_nonloop]
+  simp_rw [loopless_iff_forall_isNonloop]
   rintro e -
-  rw [← projectiveGeometryRep.ne_zero_iff_nonloop, projectiveGeometryRep,
+  rw [← projectiveGeometryRep.ne_zero_iff_isNonloop, projectiveGeometryRep,
     repOfFun_apply _ (by simp)]
   exact rep_nonzero e
 

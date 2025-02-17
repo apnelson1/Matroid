@@ -207,11 +207,11 @@ lemma rk_eq_zero_iff [RankFinite M] (hX : X ⊆ M.E) : M.rk X = 0 ↔ X ⊆ M.cl
 @[simp] lemma rk_loops (M : Matroid α) : M.rk (M.closure ∅) = 0 := by
   simp [rk]
 
-lemma Nonloop.rk_eq (he : M.Nonloop e) : M.rk {e} = 1 := by
+lemma IsNonloop.rk_eq (he : M.IsNonloop e) : M.rk {e} = 1 := by
   rw [rk, he.eRk_eq]
   rfl
 
-lemma Loop.rk_eq (he : M.Loop e) : M.rk {e} = 0 := by
+lemma IsLoop.rk_eq (he : M.IsLoop e) : M.rk {e} = 0 := by
   rw [rk, he.eRk_eq]
   rfl
 

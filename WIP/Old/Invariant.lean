@@ -258,15 +258,15 @@ end Invariant
 -- class DeleteLoopClosed (P : ∀ {β : Type u}, Matroid β → Prop) : Prop :=
 --   (iff_deleteLoop : ∀ {α : Type u} {M : Matroid α} {e : α}, M.Loop e → (P (M ＼ e) ↔ P M))
 
--- theorem pred_delete_loop_iff [DeleteLoopClosed P] {M : Matroid α} (he : M.Loop e) :
+-- theorem pred_delete_isLoop_iff [DeleteLoopClosed P] {M : Matroid α} (he : M.Loop e) :
 --     P (M ＼ e) ↔ P M :=
 --   DeleteLoopClosed.iff_deleteLoop he
 
 -- theorem ExclMinor.loopless [DeleteLoopClosed P] [MinorClosed P] (hM : M.ExclMinor P) :
 --     M.Loopless := by
---   rw [loopless_iff_forall_not_loop]
+--   rw [loopless_iff_forall_not_isLoop]
 --   intro e heE he
---   rw [exclMinor_iff_forall_contract_delete, ← pred_delete_loop_iff he (P := P)] at hM
+--   rw [exclMinor_iff_forall_contract_delete, ← pred_delete_isLoop_iff he (P := P)] at hM
 --   exact hM.1 (hM.2 e heE).2
 
 -- @[simp] theorem pred_removeLoops_iff [DeleteLoopClosed P] {M : Matroid α} [M.Finite] :
@@ -281,8 +281,8 @@ end Invariant
 --     refine (hel <|
 --       (hX (insert e X) ⟨insert_subset heX hXss, ?_⟩ (by simp)).symm.subset (mem_insert _ _)).elim
 --     rw [mem_setOf_eq, hPX, ← union_singleton, ← delete_delete, ← deleteElem,
---       pred_delete_loop_iff (P := P)]
---     rwa [delete_loop_iff, and_iff_left hel]
+--       pred_delete_isLoop_iff (P := P)]
+--     rwa [delete_isLoop_iff, and_iff_left hel]
 --   rw [hPX, removeLoops_eq_delete]
 
 -- /-- A matroid property `P` is `RemoveLoopClosed` if `P M ↔ P M.removeLoops` for all `M`.
@@ -306,7 +306,7 @@ end Invariant
 --     ∀ {α : Type u} {M : Matroid α} {e f : α}, M.Parallel e f → e ≠ f → (P (M ＼ e) ↔ P M))
 
 -- -- instance DeleteParallelClosed.deleteLoopClosed [DeleteParallelClosed P] : DeleteLoopClosed P where
--- --   iff_deleteLoop := fun {_ _} ↦ iff_delete_loop
+-- --   iff_deleteLoop := fun {_ _} ↦ iff_delete_isLoop
 
 -- theorem pred_delete_parallel_iff [DeleteParallelClosed P] {M : Matroid α} (hef : M.Parallel e f)
 --   (hne : e ≠ f) : P (M ＼ e) ↔ P M :=
@@ -323,10 +323,10 @@ end Invariant
 --   obtain (rfl | hNs) := hNs.eq_or_isStrictRestriction
 --   · rwa [Iff.comm]
 --   obtain (⟨e,he⟩ | ⟨e,f,hef,he,hf⟩) :=
---     exists_loop_or_parallel_of_simplification_isStrictRestriction hNs hNM
---   · rw  [← pred_delete_loop_iff (P := P) he] at hNP
+--     exists_isLoop_or_parallel_of_simplification_isStrictRestriction hNs hNM
+--   · rw  [← pred_delete_isLoop_iff (P := P) he] at hNP
 --     have hesi : e ∉ M.simplification.E :=
---       fun he' ↦ M.simplification.not_loop e <| he.loop_isRestriction hNs.restriction he'
+--       fun he' ↦ M.simplification.not_isLoop e <| he.isLoop_isRestriction hNs.restriction he'
 --     rw [show N = N ＼ e from hmin (N ＼ e) ⟨⟨hNs.restriction.restriction_deleteElem hesi,hNP⟩,
 --       (delete_isRestriction _ _).trans hNM⟩ (delete_isRestriction _ _)] at he
 --     simp at he

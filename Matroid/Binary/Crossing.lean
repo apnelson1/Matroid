@@ -238,7 +238,8 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
   have hNM : N ≤m M := contract_minor _ _
 
   have hfl : ¬ N.Coloop f
-  · simpa [hN, ← dual_loop_iff_coloop] using (hCs.compl_coindep.indep.nonloop_of_mem hf).not_loop
+  · simpa [hN, ← dual_isLoop_iff_coloop] using
+      (hCs.compl_coindep.indep.isNonloop_of_mem hf).not_isLoop
 
   have hNr : N.eRank = 2
   · obtain ⟨e, he, hbas⟩ := hCh.exists_insert_isBase_of_isBasis (hCi.isBasis_self)

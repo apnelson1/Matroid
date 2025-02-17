@@ -222,7 +222,7 @@ lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principa
   simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB⟩ := hB.nonempty
-  exact fun h ↦ (hB.indep.nonloop_of_mem heB).not_loop <| h (hB.subset_ground heB)
+  exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)
 
 lemma ModularCut.mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
     (hJI : J ⊂ I) (h : ∀ e ∈ I \ J, M.closure (I \ {e}) ∈ U) : M.closure J ∈ U := by
@@ -595,7 +595,7 @@ then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
 private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ M.Coloop e)
     (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  rw [coloop_iff_diff_closure, not_not] at he
+  rw [coisLoop_iff_diff_closure, not_not] at he
   by_contra! hcon
 
   have hB : U.ExtIndep e B := hBmax.1
@@ -835,7 +835,7 @@ private lemma projectBy_aux (U : M.ModularCut) :
   obtain (rfl | hU) := eq_or_ne U ⊤
   · rw [contractElem, contract_eq_delete_of_subset_loops]
     · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj, hinj.injOn]
-    rw [singleton_subset_iff, ← loop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
+    rw [singleton_subset_iff, ← isLoop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
     simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
   simp only [contractElem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
     forall_const]
@@ -882,14 +882,14 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   have ⟨hIE, heI⟩ : I ⊆ M.E ∧ e ∉ I := by simpa [subset_diff] using hI
   obtain rfl | hU := eq_or_ne U ⊤
-  · have hl : (M.extendBy e ⊤).Loop e
+  · have hl : (M.extendBy e ⊤).IsLoop e
     · rw [← singleton_dep, dep_iff, extendBy_Indep,
       ModularCut.extIndep_iff_of_mem (show e ∈ {e} from rfl)]
       simp
     rw [contractElem, contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
       extendBy_Indep, ModularCut.extIndep_iff_of_not_mem heI, projectBy_indep_iff]
     simp [heI]
-  have hnl : (M.extendBy e U).Nonloop e
+  have hnl : (M.extendBy e U).IsNonloop e
   · rw [← indep_singleton, extendBy_Indep, ModularCut.extIndep_iff_of_mem (by simp)]
     simpa [← U.eq_top_iff]
   rw [contractElem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,

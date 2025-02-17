@@ -92,7 +92,7 @@ lemma IsModularFlat.IsFlat [Simple M] :
   intro h e heX
   have heE := M.mem_ground_of_mem_closure heX
   obtain ⟨I, hIu, hIX, hIe, hIi⟩ := (h (M.singleton_isFlat (heE))).exists_common_isBasis
-  rw [(M.toNonloop heE).indep.isBasis_iff_eq, inter_eq_right, singleton_subset_iff] at hIe
+  rw [(M.toIsNonloop heE).indep.isBasis_iff_eq, inter_eq_right, singleton_subset_iff] at hIe
   refine by_contra fun heX' ↦ hIu.indep.not_mem_closure_diff_of_mem hIe
     (mem_of_mem_of_subset heX (M.closure_subset_closure_of_subset_closure ?_))
   exact hIX.subset_closure.trans
@@ -219,9 +219,9 @@ lemma IsHyperplane.isModularFlat_iff_forall_isLIne {H : Set α} (hH : M.IsHyperp
   obtain hI' | hI' := I.subsingleton_or_nontrivial
   · obtain rfl | ⟨e, rfl⟩ := hI'.eq_empty_or_singleton
     · apply skew_empty hH.subset_ground
-    have he : M.Nonloop e := by simpa using hI.indep
+    have he : M.IsNonloop e := by simpa using hI.indep
     rw [he.skew_right_iff, hH.isFlat.closure]
-    exact fun heH ↦ he.not_loop <| hi ⟨heH, by simpa using hI.subset⟩
+    exact fun heH ↦ he.not_isLoop <| hi ⟨heH, by simpa using hI.subset⟩
   exfalso
   obtain ⟨e, f, hne, hss⟩ := nontrivial_iff_pair_subset.1 hI'
   refine h (M.closure {e,f}) ⟨M.closure_isFlat _, ?_⟩ (subset_trans ?_ hi)
@@ -250,26 +250,26 @@ lemma IsLine.isModularFlat_of_forall_isHyperplane {L : Set α} (hL : M.IsLine L)
   rw [← lt_top_iff_ne_top]
   exact (M.eLocalConn_le_eRk_left _ _).trans_lt (lt_top_iff_ne_top.2 (by simp [hL.eRk]))
 
-/-- If `X` is a modular isFlat, then in any contraction-minor in which `X` spans a nonloop `e`,
+/-- If `X` is a modular isFlat, then in any contraction-minor in which `X` spans a isNonloop `e`,
 there is an element of `X` parallel to `e`.
 TODO: clean up this proof. -/
 lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C : Set α}
-    (he : (M ／ C).Nonloop e) (hecl : e ∈ (M ／ C).closure X) : ∃ f ∈ X, (M ／ C).Parallel e f := by
+    (he : (M ／ C).IsNonloop e) (hecl : e ∈ (M ／ C).closure X) : ∃ f ∈ X, (M ／ C).Parallel e f := by
   wlog hC : M.Indep C with aux
   · obtain ⟨I, hI⟩ := M.exists_isBasis' C
-    rw [hI.contract_eq_contract_delete, delete_nonloop_iff] at he
+    rw [hI.contract_eq_contract_delete, delete_isNonloop_iff] at he
     rw [hI.contract_eq_contract_delete, delete_closure_eq] at hecl
     obtain ⟨f, hfX, hef⟩ := aux hX (C := I) he.1
       (mem_of_mem_of_subset hecl.1 (closure_subset_closure _ diff_subset)) hI.indep
     refine ⟨f, hfX, ?_⟩
     rw [hI.contract_eq_contract_delete, delete_parallel_iff, and_iff_right he.2, and_iff_right hef]
     intro ⟨hfC, hfI⟩
-    have hIf := hef.nonloop_right
-    rw [contract_nonloop_iff, hI.closure_eq_closure] at hIf
+    have hIf := hef.isNonloop_right
+    rw [contract_isNonloop_iff, hI.closure_eq_closure] at hIf
     exact hIf.2 <| M.mem_closure_of_mem' hfC
   have heE := he.of_contract.mem_ground
 
-  have hnl := contract_nonloop_iff.1 he
+  have hnl := contract_isNonloop_iff.1 he
   rw [contract_closure_eq] at hecl
 
   obtain ⟨J, hJ, hJX, hJI, hi⟩ := (hX.modularPair (M.closure_isFlat C)).exists_common_isBasis
@@ -311,7 +311,7 @@ lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C 
     (M.closure_subset_closure (subset_insert _ _))
 
 lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X) :
-    M.IsModularFlat X ↔ ∀ ⦃C : Set α⦄ ⦃e⦄, Disjoint C X → (M ／ C).Nonloop e →
+    M.IsModularFlat X ↔ ∀ ⦃C : Set α⦄ ⦃e⦄, Disjoint C X → (M ／ C).IsNonloop e →
       e ∈ (M ／ C).closure X → ∃ f ∈ X, (M ／ C).Parallel e f := by
   refine ⟨fun h C e _ henl hecl ↦ h.exists_parallel_mem_of_contract henl hecl , fun h ↦ ?_⟩
   rw [hX.isModularFlat_iff_forall_skew_of_inter]
@@ -333,22 +333,22 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
   specialize h hdj.symm (e := e)
   simp only [contract_ground, subset_diff, hJ.subset_ground, true_and, contract_closure_eq, ←
     closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl, mem_singleton_iff,
-    not_true_eq_false, and_false, not_false_eq_true, and_self, contract_nonloop_iff, hdj,
+    not_true_eq_false, and_false, not_false_eq_true, and_self, contract_isNonloop_iff, hdj,
     hI.indep.subset_ground heIJ.1, hI.indep.not_mem_closure_diff_of_mem heIJ.1, forall_const] at h
 
   obtain ⟨f, hfX, hef⟩ := h
 
-  refine hef.nonloop_right.of_contract.not_loop (hXFcl ⟨hfX, ?_⟩)
+  refine hef.isNonloop_right.of_contract.not_isLoop (hXFcl ⟨hfX, ?_⟩)
 
   replace hef := hef.symm.mem_closure
   rw [contract_closure_eq, union_diff_self, singleton_union, insert_eq_of_mem heIJ.1,
     ← hF.eq_closure_of_isBasis hI] at hef
   exact hef.1
 
-/-- If `X` is a modular isFlat, then any nonloop `e` spanned by `X` in a minor `N` is parallel
+/-- If `X` is a modular isFlat, then any isNonloop `e` spanned by `X` in a minor `N` is parallel
 in `N` to an element of `X`. -/
 lemma IsModularFlat.exists_parallel_mem_of_minor (hX : M.IsModularFlat X) {N : Matroid α}
-    (hNM : N ≤m M) (hXE : X ⊆ N.E) (he : N.Nonloop e) (heX : e ∈ N.closure X) :
+    (hNM : N ≤m M) (hXE : X ⊆ N.E) (he : N.IsNonloop e) (heX : e ∈ N.closure X) :
     ∃ f ∈ X, N.Parallel e f := by
   obtain ⟨I, R, hI, hdj, hsp, rfl⟩ := hNM.exists_eq_contract_spanning_restrict
   rw [restrict_closure_eq _ (show X ⊆ R from hXE) hsp.subset_ground] at heX
@@ -358,7 +358,7 @@ lemma IsModularFlat.exists_parallel_mem_of_minor (hX : M.IsModularFlat X) {N : M
   exact hXE hfX
 
 lemma IsFlat.modularSet_iff_forall_minor_exists_parallel (hX : M.IsFlat X) :
-    M.IsModularFlat X ↔ ∀ ⦃N : Matroid α⦄ e, N ≤m M → X ⊆ N.E → e ∈ N.closure X → N.Nonloop e →
+    M.IsModularFlat X ↔ ∀ ⦃N : Matroid α⦄ e, N ≤m M → X ⊆ N.E → e ∈ N.closure X → N.IsNonloop e →
       ∃ f ∈ X, N.Parallel e f := by
   refine ⟨fun h N e hNM hXE heX hnl ↦ h.exists_parallel_mem_of_minor hNM hXE hnl heX, fun h ↦ ?_⟩
   rw [hX.isModularFlat_iff_forall_contract_exists_parallel]
@@ -757,9 +757,9 @@ lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C
     · exact disjoint_sdiff_right.mono_left diff_subset
     refine (hC.diff_singleton_indep (hJC.subset hfI)).subset
       (union_subset (diff_subset_diff_left hJC.subset) (diff_subset_diff_right (by simpa)))
-  have henl : M.Nonloop e := indep_singleton.1 hJ.indep
+  have henl : M.IsNonloop e := indep_singleton.1 hJ.indep
 
-  refine henl.not_loop <| hsk.closure_skew.inter_subset_loops ⟨heclf, ?_⟩
+  refine henl.not_isLoop <| hsk.closure_skew.inter_subset_loops ⟨heclf, ?_⟩
   simpa using hb.subset.trans inter_subset_right
 
 /- If `x,y, e1, e2, ...` is a countable circuit in a simple matroid, then there exist

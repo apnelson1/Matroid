@@ -20,7 +20,7 @@ lemma IsPoint.subset_ground (hP : M.IsPoint P) : P ⊆ M.E :=
 lemma IsPoint.isRkFinite (hP : M.IsPoint P) : M.IsRkFinite P := by
   simp [← eRk_ne_top_iff, hP.eRk]
 
-lemma Nonloop.closure_isPoint (he : M.Nonloop e) : M.IsPoint (M.closure {e}) :=
+lemma IsNonloop.closure_isPoint (he : M.IsNonloop e) : M.IsPoint (M.closure {e}) :=
   ⟨M.closure_isFlat {e}, by rw [eRk_closure_eq, he.indep.eRk_eq_encard, encard_singleton]⟩
 
 lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.IsPoint P := by
@@ -30,37 +30,38 @@ lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.IsPoint P := by
 
 lemma IsPoint.covBy (hP : M.IsPoint P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2 hP
 
-lemma IsPoint.exists_eq_closure_nonloop (hP : M.IsPoint P) :
-    ∃ e, M.Nonloop e ∧ P = M.closure {e} := by
+lemma IsPoint.exists_eq_closure_isNonloop (hP : M.IsPoint P) :
+    ∃ e, M.IsNonloop e ∧ P = M.closure {e} := by
   obtain ⟨I, hI⟩ := M.exists_isBasis P
   obtain ⟨e, rfl⟩ := encard_eq_one.1 <| hI.encard_eq_eRk.trans hP.eRk
   obtain rfl := hP.isFlat.eq_closure_of_isBasis hI
   exact ⟨e, indep_singleton.1 hI.indep, rfl⟩
 
-lemma IsPoint.eq_closure_of_mem (hP : M.IsPoint P) (he : M.Nonloop e) (heP : e ∈ P) :
+lemma IsPoint.eq_closure_of_mem (hP : M.IsPoint P) (he : M.IsNonloop e) (heP : e ∈ P) :
     P = M.closure {e} := by
   rw [← indep_singleton] at he
   exact hP.isFlat.eq_closure_of_isBasis <| he.isBasis_of_subset_of_eRk_le_of_finite
     (singleton_subset_iff.2 heP) (by rw [hP.eRk, he.eRk_eq_encard, encard_singleton])
     (finite_singleton e)
 
-lemma isPoint_iff_exists_eq_closure_nonloop : M.IsPoint P ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} :=
-  ⟨IsPoint.exists_eq_closure_nonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_isPoint⟩
+lemma isPoint_iff_exists_eq_closure_isNonloop :
+    M.IsPoint P ↔ ∃ e, M.IsNonloop e ∧ P = M.closure {e} :=
+  ⟨IsPoint.exists_eq_closure_isNonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_isPoint⟩
 
-lemma IsPoint.nonloop (hP : M.IsPoint {e}) : M.Nonloop e := by
+lemma IsPoint.isNonloop (hP : M.IsPoint {e}) : M.IsNonloop e := by
   simpa using hP.eRk
 
 lemma IsPoint.insert_indep (h : M.IsPoint {e}) (f : α) (hf : f ∈ M.E := by aesop_mat) :
     M.Indep {e, f} := by
   obtain rfl | hne := eq_or_ne e f
-  · simp [h.nonloop]
-  simpa [pair_comm] using h.isFlat.insert_indep_of_isBasis (h.nonloop.indep.isBasis_self)
+  · simp [h.isNonloop]
+  simpa [pair_comm] using h.isFlat.insert_indep_of_isBasis (h.isNonloop.indep.isBasis_self)
     ⟨hf, hne.symm⟩
 
 lemma isPoint_singleton_iff [M.Nonempty] : M.IsPoint {e} ↔ ∀ f ∈ M.E, M.Indep {e,f} := by
   refine ⟨fun h f hf ↦ h.insert_indep f hf, fun h ↦ ?_⟩
   obtain ⟨x, hx⟩ := M.ground_nonempty
-  have he : M.Nonloop e := (h x hx).nonloop_of_mem (mem_insert _ _)
+  have he : M.IsNonloop e := (h x hx).isNonloop_of_mem (mem_insert _ _)
   have hF : M.IsFlat {e}
   · simp only [isFlat_iff, he.indep.isBasis_iff_eq, singleton_subset_iff, he.mem_ground, and_true]
     rintro _ X rfl he f hXf
@@ -74,7 +75,7 @@ lemma IsPoint.loopless_of_singleton (h : M.IsPoint {e}) : M.Loopless := by
   rw [loopless_iff_closure_empty, ← subset_empty_iff]
   nth_rw 2 [← diff_eq_empty.2 h.isFlat.closure.subset]
   rw [subset_diff_singleton_iff]
-  exact ⟨M.closure_subset_closure (empty_subset _), h.nonloop.not_loop⟩
+  exact ⟨M.closure_subset_closure (empty_subset _), h.isNonloop.not_isLoop⟩
 
 lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).IsPoint P ↔ (M.closure C ⋖[M] (C ∪ P)) ∧ Disjoint P C := by
@@ -164,20 +165,22 @@ lemma IsLine.subset_ground (hL : M.IsLine L) : L ⊆ M.E :=
 lemma IsLine.isRkFinite (hL : M.IsLine L) : M.IsRkFinite L := by
   simp [← eRk_ne_top_iff, hL.eRk]
 
-lemma IsLine.mem_iff_covBy (hL : M.IsLine L) (he : M.Nonloop e) : e ∈ L ↔ M.closure {e} ⋖[M] L := by
+lemma IsLine.mem_iff_covBy (hL : M.IsLine L) (he : M.IsNonloop e) :
+    e ∈ L ↔ M.closure {e} ⋖[M] L := by
   rw [(M.closure_isFlat {e}).covBy_iff_eRelRk_eq_one hL.isFlat, hL.isFlat.closure_subset_iff_subset,
     singleton_subset_iff, iff_self_and, eRelRk_closure_left]
   intro heL
   rw [isRkFinite_singleton.eRelRk_eq_sub (by simpa), he.eRk_eq, hL.eRk]
   rfl
 
-lemma Nonloop.closure_covBy_iff (he : M.Nonloop e) : M.closure {e} ⋖[M] L ↔ M.IsLine L ∧ e ∈ L := by
+lemma IsNonloop.closure_covBy_iff (he : M.IsNonloop e) :
+    M.closure {e} ⋖[M] L ↔ M.IsLine L ∧ e ∈ L := by
   refine ⟨fun h ↦ ⟨⟨h.isFlat_right, ?_⟩,h.subset <| M.mem_closure_self e⟩,
     fun ⟨hL, heL⟩ ↦ by rwa [← hL.mem_iff_covBy he]⟩
   rw [h.eRk_eq, eRk_closure_eq, he.eRk_eq]
   rfl
 
-def Nonloop.isLIneContractIsPointEquiv (he : M.Nonloop e) :
+def IsNonloop.isLIneContractIsPointEquiv (he : M.IsNonloop e) :
     {P // (M ／ e).IsPoint P} ≃ {L // M.IsLine L ∧ e ∈ L} :=
   (M.isPointContractCovByEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.closure_covBy_iff))
 

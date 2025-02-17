@@ -46,12 +46,12 @@ lemma ConnectedTo.mem_ground_right (h : M.ConnectedTo e f) : f ∈ M.E :=
 @[simp] lemma connectedTo_self_iff : M.ConnectedTo e e ↔ e ∈ M.E :=
   ⟨fun h ↦ h.mem_ground_left, connectedTo_self⟩
 
-lemma ConnectedTo.nonloop_left_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.Nonloop e := by
+lemma ConnectedTo.isNonloop_left_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.IsNonloop e := by
   obtain ⟨C, hC, heC, hfC⟩ := h.exists_isCircuit_of_ne hef
-  exact hC.nonloop_of_mem ⟨e, heC, f, hfC, hef⟩ heC
+  exact hC.isNonloop_of_mem ⟨e, heC, f, hfC, hef⟩ heC
 
-lemma ConnectedTo.nonloop_right_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.Nonloop f :=
-  h.symm.nonloop_left_of_ne hef.symm
+lemma ConnectedTo.isNonloop_right_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.IsNonloop f :=
+  h.symm.isNonloop_left_of_ne hef.symm
 
 lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
   obtain rfl | hne := eq_or_ne e f; exact connectedTo_self h.mem_ground_left
@@ -59,7 +59,7 @@ lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
   have hpara : (M ／ (C \ {e,f})).Parallel e f := by
     rw [parallel_iff_isCircuit hne]
     apply hC.contract_diff_isCircuit (by simp) (by simp [pair_subset_iff, heC, hfC])
-  obtain ⟨B, hB, heB⟩ := hpara.nonloop_left.exists_mem_isBase
+  obtain ⟨B, hB, heB⟩ := hpara.isNonloop_left.exists_mem_isBase
   have hK := fundCocircuit_cocircuit heB hB
   refine IsCircuit.mem_connectedTo_mem hK.of_contract.isCircuit (mem_fundCocircuit _ _ _) ?_
   exact hpara.mem_cocircuit_of_mem hK (mem_fundCocircuit _ _ _)
@@ -104,7 +104,7 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_coloop {I : Set α} (hI :
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
-  simp only [hB.mem_coloop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+  simp only [hB.mem_coisLoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
     not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
@@ -146,7 +146,7 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
       not_mem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])
   · exact he₂J ⟨he₂C₂, he₂K₁⟩
 
-  refine IsCircuit.not_coloop_of_mem ?_ he₂C₂
+  refine IsCircuit.not_coisLoop_of_mem ?_ he₂C₂
   rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
     diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
 
@@ -174,12 +174,12 @@ lemma Coloop.not_connected (he : M.Coloop e) (hE : M.E.Nontrivial) : ¬ M.Connec
   obtain ⟨K, hK, heK, -⟩ := (hconn he.mem_ground hfE).exists_isCircuit_of_ne hfe.symm
   exact he.not_mem_isCircuit hK heK
 
-lemma Loop.not_connected (he : M.Loop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
+lemma IsLoop.not_connected (he : M.IsLoop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   rw [← connected_dual_iff]
   exact he.dual_coloop.not_connected hE
 
 lemma Connected.loopless (hM : M.Connected) (hE : M.E.Nontrivial) : M.Loopless := by
-  rw [loopless_iff_forall_not_loop]
+  rw [loopless_iff_forall_not_isLoop]
   exact fun e _ hl ↦ hl.not_connected hE hM
 
 lemma Connected.exists_isCircuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E)

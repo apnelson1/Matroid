@@ -139,17 +139,17 @@ lemma IsBasis.of_delete (h : (M ＼ D).IsBasis I X) : M.IsBasis I X :=
 lemma IsBasis.to_delete (h : M.IsBasis I X) (hX : Disjoint X D) : (M ＼ D).IsBasis I X := by
   rw [delete_isBasis_iff]; exact ⟨h, hX⟩
 
-@[simp] lemma delete_loop_iff : (M ＼ D).Loop e ↔ M.Loop e ∧ e ∉ D := by
+@[simp] lemma delete_isLoop_iff : (M ＼ D).IsLoop e ↔ M.IsLoop e ∧ e ∉ D := by
   rw [← singleton_dep, delete_dep_iff, disjoint_singleton_left, singleton_dep]
 
-@[simp] lemma delete_nonloop_iff : (M ＼ D).Nonloop e ↔ M.Nonloop e ∧ e ∉ D := by
+@[simp] lemma delete_isNonloop_iff : (M ＼ D).IsNonloop e ↔ M.IsNonloop e ∧ e ∉ D := by
   rw [← indep_singleton, delete_indep_iff, disjoint_singleton_left, indep_singleton]
 
-lemma Nonloop.of_delete (h : (M ＼ D).Nonloop e) : M.Nonloop e :=
-  (delete_nonloop_iff.1 h).1
+lemma IsNonloop.of_delete (h : (M ＼ D).IsNonloop e) : M.IsNonloop e :=
+  (delete_isNonloop_iff.1 h).1
 
-lemma nonloop_iff_delete_of_not_mem (he : e ∉ D) : M.Nonloop e ↔ (M ＼ D).Nonloop e :=
-  ⟨fun h ↦ delete_nonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_delete⟩
+lemma isNonloop_iff_delete_of_not_mem (he : e ∉ D) : M.IsNonloop e ↔ (M ＼ D).IsNonloop e :=
+  ⟨fun h ↦ delete_isNonloop_iff.2 ⟨h, he⟩, fun h ↦ h.of_delete⟩
 
 @[simp] lemma delete_isCircuit_iff {C : Set α} :
     (M ＼ D).IsCircuit C ↔ M.IsCircuit C ∧ Disjoint C D := by
@@ -196,7 +196,7 @@ instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (
 lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.closure ∅ := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
-  simp [Set.ext_iff, mem_setOf, Nonloop, Loop, mem_diff, and_comm]
+  simp [Set.ext_iff, mem_setOf, IsNonloop, IsLoop, mem_diff, and_comm]
 
 lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) :
     (M ＼ X).removeLoops = M.removeLoops := by
@@ -335,7 +335,7 @@ lemma Indep.contract_indep_iff (hI : M.Indep I) :
     fun ⟨hdj, B, hB, hJB, hIB⟩ ↦ ⟨B \ I,⟨by simpa [union_eq_self_of_subset_right hIB],
       disjoint_sdiff_left⟩, subset_diff.2 ⟨hJB, hdj⟩ ⟩⟩
 
-lemma Nonloop.contract_indep_iff (he : M.Nonloop e) :
+lemma IsNonloop.contract_indep_iff (he : M.IsNonloop e) :
     (M ／ e).Indep I ↔ e ∉ I ∧ M.Indep (insert e I) := by
   simp [contractElem, he.indep.contract_indep_iff]
 
@@ -422,7 +422,7 @@ lemma IsBasis.contract_eq_contract_delete (hI : M.IsBasis I X) : M ／ X = M ／
   nth_rw 1 [← diff_union_of_subset hI.subset]
   rw [union_comm, ← contract_contract]
   refine contract_eq_delete_of_subset_loops fun e he ↦ ?_
-  rw [← loop_iff_mem_closure_empty, ← singleton_dep, hI.indep.contract_dep_iff,
+  rw [← isLoop_iff_mem_closure_empty, ← singleton_dep, hI.indep.contract_dep_iff,
     disjoint_singleton_left, and_iff_right he.2, singleton_union,
     ← hI.indep.mem_closure_iff_of_not_mem he.2]
   exact hI.subset_closure he.1
@@ -505,9 +505,9 @@ instance contractElem_rankFinite [RankFinite M] {e : α} : RankFinite (M ／ e) 
 instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
   rw [contractElem]; infer_instance
 
-@[simp] lemma contract_loop_iff_mem_closure : (M ／ C).Loop e ↔ e ∈ M.closure C \ C := by
+@[simp] lemma contract_isLoop_iff_mem_closure : (M ／ C).IsLoop e ↔ e ∈ M.closure C \ C := by
   obtain ⟨I, D, hI, -, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  rw [hM, delete_loop_iff, ← singleton_dep, hI.indep.contract_dep_iff, disjoint_singleton_left,
+  rw [hM, delete_isLoop_iff, ← singleton_dep, hI.indep.contract_dep_iff, disjoint_singleton_left,
     singleton_union, hI.indep.insert_dep_iff, mem_diff, ← M.closure_inter_ground C,
     hI.closure_eq_closure, and_comm (a := e ∉ I), and_self_right, ← mem_diff, ← mem_diff, diff_diff]
   apply_fun Matroid.E at hM
@@ -518,7 +518,7 @@ instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
       ⟨h.1, fun h' ↦ h.2 (hM.symm.subset ⟨h', M.closure_subset_ground _ h.1⟩).1⟩⟩
 
 lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
-  simp [Set.ext_iff, ← loop_iff_mem_closure_empty, contract_loop_iff_mem_closure]
+  simp [Set.ext_iff, ← isLoop_iff_mem_closure_empty, contract_isLoop_iff_mem_closure]
 
 @[simp] lemma contract_closure_eq (M : Matroid α) (C X : Set α) :
     (M ／ C).closure X = M.closure (X ∪ C) \ C := by
@@ -533,7 +533,7 @@ lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
     exact ⟨M.closure_subset_ground _ h.1, h.2⟩
   suffices h' : e ∈ (M ／ C).closure X \ X ↔ e ∈ M.closure (X ∪ C) \ (X ∪ C) by
     rwa [mem_diff, and_iff_left heX, mem_diff, mem_union, or_iff_right heX, ← mem_diff] at h'
-  rw [← contract_loop_iff_mem_closure, ← contract_loop_iff_mem_closure, contract_contract,
+  rw [← contract_isLoop_iff_mem_closure, ← contract_isLoop_iff_mem_closure, contract_contract,
     union_comm]
 
 -- TODO : `Basis'` version.
@@ -664,12 +664,12 @@ lemma Spanning.contract_eq_loopyOn (hX : M.Spanning X) : M ／ X = loopyOn (M.E 
   rw [eq_loopyOn_iff_closure]
   simp [hX.closure_eq]
 
-lemma Nonloop.of_contract (h : (M ／ C).Nonloop e) : M.Nonloop e := by
+lemma IsNonloop.of_contract (h : (M ／ C).IsNonloop e) : M.IsNonloop e := by
   rw [← indep_singleton] at h ⊢
   exact h.of_contract
 
-@[simp] lemma contract_nonloop_iff : (M ／ C).Nonloop e ↔ e ∈ M.E \ M.closure C := by
-  rw [nonloop_iff_mem_compl_loops, contract_ground, contract_loops_eq]
+@[simp] lemma contract_isNonloop_iff : (M ／ C).IsNonloop e ↔ e ∈ M.E \ M.closure C := by
+  rw [isNonloop_iff_mem_compl_loops, contract_ground, contract_loops_eq]
   refine ⟨fun ⟨he,heC⟩ ↦ ⟨he.1, fun h ↦ heC ⟨h, he.2⟩⟩,
     fun h ↦ ⟨⟨h.1, fun heC ↦ h.2 ?_⟩, fun h' ↦ h.2 h'.1⟩⟩
   rw [← closure_inter_ground]
@@ -790,13 +790,13 @@ lemma Indep.of_minor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
   obtain ⟨C,D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
   exact hI.of_delete.of_contract
 
-lemma Nonloop.of_minor (h : N.Nonloop e) (hNM : N ≤m M) : M.Nonloop e := by
+lemma IsNonloop.of_minor (h : N.IsNonloop e) (hNM : N ≤m M) : M.IsNonloop e := by
   obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
   exact h.of_delete.of_contract
 
-lemma Loop.minor (he : M.Loop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.Loop e := by
-  rw [← not_nonloop_iff]
-  exact fun hnl ↦ he.not_nonloop <| hnl.of_minor hNM
+lemma IsLoop.minor (he : M.IsLoop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.IsLoop e := by
+  rw [← not_isNonloop_iff]
+  exact fun hnl ↦ he.not_isNonloop <| hnl.of_minor hNM
 
 lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h

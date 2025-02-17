@@ -23,8 +23,8 @@ lemma SkewFamily.modularFamily (h : M.SkewFamily Xs) : M.ModularFamily Xs :=
 lemma SkewFamily.subset_ground_of_mem (h : M.SkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   h.modularFamily.subset_ground_of_mem i
 
-lemma SkewFamily.loop_of_mem_inter (h : M.SkewFamily Xs) (hij : i ≠ j)
-    (he : e ∈ Xs i ∩ Xs j) : M.Loop e :=
+lemma SkewFamily.isLoop_of_mem_inter (h : M.SkewFamily Xs) (hij : i ≠ j)
+    (he : e ∈ Xs i ∩ Xs j) : M.IsLoop e :=
   h.2 hij he
 
 lemma SkewFamily.subset_loops_of_ne (h : M.SkewFamily Xs) (hij : i ≠ j) :
@@ -35,7 +35,7 @@ lemma SkewFamily.disjoint_inter_indep (h : M.SkewFamily Xs) (hI : M.Indep I) (hi
     Disjoint (Xs i ∩ I) (Xs j) := by
   rw [disjoint_iff_forall_ne]
   rintro e ⟨hei, heI⟩ _ hej rfl
-  exact (hI.nonloop_of_mem heI).not_loop <| h.loop_of_mem_inter hij ⟨hei,hej⟩
+  exact (hI.isNonloop_of_mem heI).not_isLoop <| h.isLoop_of_mem_inter hij ⟨hei,hej⟩
 
 lemma SkewFamily.disjoint_of_indep_subset (h : M.SkewFamily Xs) (hI : M.Indep I) (hIX : I ⊆ Xs i)
     (hij : i ≠ j) : Disjoint I (Xs j) := by
@@ -167,8 +167,9 @@ lemma SkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set α}
     refine mem_of_mem_of_subset ((hJs i).1.subset.trans (huKs i).subset_closure hfi)
       (M.closure_subset_closure ?_)
     refine subset_diff_singleton (hK'' i hi.symm) (fun heK ↦ ?_)
-    apply Loop.not_nonloop <| h.loop_of_mem_inter hi ⟨(hJs i₀).1.subset hei₀, (huKs i).subset heK⟩
-    exact (hK'.indep.subset hss).nonloop_of_mem hei₀
+    apply IsLoop.not_isNonloop <| h.isLoop_of_mem_inter hi ⟨(hJs i₀).1.subset hei₀,
+      (huKs i).subset heK⟩
+    exact (hK'.indep.subset hss).isNonloop_of_mem hei₀
 
   exact hK'.indep.not_mem_closure_diff_of_mem (hss hei₀) he'
 
@@ -269,7 +270,7 @@ lemma SkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.SkewFami
   simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, Classical.not_imp,
     exists_prop, eq_empty_iff_forall_not_mem, not_not] at hdj
   obtain ⟨i, j, hne, e, he⟩ := hdj
-  have hel := hYs.loop_of_mem_inter hne he
+  have hel := hYs.isLoop_of_mem_inter hne he
   obtain rfl : C = {e} := hel.eq_of_isCircuit_mem hC
     (mem_of_mem_of_subset he (inter_subset_left.trans inter_subset_right))
   exact ⟨i, singleton_subset_iff.2 <| mem_of_mem_of_subset he
@@ -389,7 +390,7 @@ lemma Skew.inter_closure_eq (h : M.Skew X Y) : M.closure X ∩ M.closure Y = M.c
   h.closure_skew.inter_subset_loops.antisymm
     (subset_inter (M.closure_mono (empty_subset _)) (M.closure_mono (empty_subset _)))
 
-lemma skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
+lemma skew_iff_of_isLoopEquiv (hX : M.IsLoopEquiv X X') (hY : M.IsLoopEquiv Y Y') :
     M.Skew X Y ↔ M.Skew X' Y' := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rwa [skew_iff_closure_skew hX.subset_ground hY.subset_ground, ← hX.closure_eq_closure,
@@ -398,10 +399,10 @@ lemma skew_iff_of_loopEquiv (hX : M.LoopEquiv X X') (hY : M.LoopEquiv Y Y') :
     hY.closure_eq_closure, ← skew_iff_closure_skew]
 
 lemma skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) (Y \ M.closure ∅) :=
-  skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) (M.loopEquiv_diff_loops Y)
+  skew_iff_of_isLoopEquiv (M.isLoopEquiv_diff_loops X) (M.isLoopEquiv_diff_loops Y)
 
 lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) Y :=
-  skew_iff_of_loopEquiv (M.loopEquiv_diff_loops X) rfl
+  skew_iff_of_isLoopEquiv (M.isLoopEquiv_diff_loops X) rfl
 
 lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I J ↔ M.Skew X Y :=
   ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
@@ -456,15 +457,15 @@ lemma skew_insert_iff (he : e ∈ M.E) :
       (fun h ↦ hXE h.1.subset_ground_left)
   wlog hYE : Y ⊆ M.E
   · exact iff_of_false (fun h ↦ hYE h.subset_ground_right) (fun h ↦ hYE h.1.subset_ground_right)
-  obtain hl | hnl := M.loop_or_nonloop e
+  obtain hl | hnl := M.isLoop_or_isNonloop e
   · rw [skew_iff_diff_loops_skew_left, insert_diff_of_mem _ hl, ← skew_iff_diff_loops_skew_left]
     simp [hl.mem_closure X]
 
   by_cases heY : e ∈ Y
-  · refine iff_of_false (fun hsk ↦ hnl.not_loop ?_) ?_
+  · refine iff_of_false (fun hsk ↦ hnl.not_isLoop ?_) ?_
     · exact hsk.inter_subset_loops ⟨.inl rfl, by simpa using heY⟩
     rw [not_and, _root_.not_imp]
-    refine fun hsk ↦ ⟨M.mem_closure_of_mem' <| .inr heY  , fun hcl ↦ hnl.not_loop ?_⟩
+    refine fun hsk ↦ ⟨M.mem_closure_of_mem' <| .inr heY  , fun hcl ↦ hnl.not_isLoop ?_⟩
     exact hsk.inter_closure_eq.subset (show e ∈ _ from ⟨hcl, M.mem_closure_of_mem' heY⟩)
 
   by_cases heX : e ∈ M.closure X
@@ -541,7 +542,7 @@ lemma SkewFamily.skew_compl {Xs : η → Set α} (h : M.SkewFamily Xs) (A : Set 
   refine ⟨h.modularFamily.modularPair_compl_biUnion A, ?_⟩
   rintro e ⟨⟨_,⟨i,hi,rfl⟩,hi'⟩ ,⟨_,⟨j,hj,rfl⟩,hj'⟩⟩
   simp only [mem_iUnion, exists_prop] at hi' hj'
-  exact h.loop_of_mem_inter (show i ≠ j from fun hij ↦ hj'.1 <| hij ▸ hi'.1) ⟨hi'.2, hj'.2⟩
+  exact h.isLoop_of_mem_inter (show i ≠ j from fun hij ↦ hj'.1 <| hij ▸ hi'.1) ⟨hi'.2, hj'.2⟩
 
 lemma SkewFamily.skew_compl_singleton {Xs : η → Set α} (h : M.SkewFamily Xs) (i : η) :
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
@@ -568,7 +569,7 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.closure ∅) (hX : X ⊆ M
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]
   apply empty_skew hX
 
-lemma Loop.skew (he : M.Loop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
+lemma IsLoop.skew (he : M.IsLoop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
 lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X ⊆ M.E)
@@ -580,14 +581,14 @@ lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X 
 lemma Coloop.skew (he : M.Coloop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
 
-lemma Nonloop.skew_right_iff (he : M.Nonloop e) (hX : X ⊆ M.E := by aesop_mat) :
+lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_mat) :
     M.Skew X {e} ↔ e ∉ M.closure X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← skew_iff_isBases_skew hI he.indep.isBasis_self, ← hI.closure_eq_closure,
     Indep.skew_iff_disjoint_union_indep hI.indep he.indep, disjoint_singleton_right,
     hI.indep.not_mem_closure_iff, union_singleton, and_comm]
 
-lemma Nonloop.skew_left_iff (he : M.Nonloop e) (hX : X ⊆ M.E := by aesop_mat) :
+lemma IsNonloop.skew_left_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_mat) :
     M.Skew {e} X ↔ e ∉ M.closure X := by
   rw [← he.skew_right_iff, skew_comm]
 

@@ -199,8 +199,8 @@ lemma ModularFamily.cls_modularFamily (h : M.ModularFamily Xs) :
   refine ⟨B, hB, fun j ↦ ?_⟩
   rwa [Subsingleton.elim j i, inter_comm, hI.inter_eq_of_subset_indep hIB hB.indep]
 
-lemma ModularFamily_of_loopEquiv (h : M.ModularFamily Xs) (he : ∀ i, M.LoopEquiv (Xs i) (Ys i)) :
-    M.ModularFamily Ys := by
+lemma ModularFamily_of_isLoopEquiv (h : M.ModularFamily Xs)
+    (he : ∀ i, M.IsLoopEquiv (Xs i) (Ys i)) : M.ModularFamily Ys := by
   obtain ⟨B, hB⟩ := h
   refine ⟨B, hB.isBase, fun i ↦ ?_⟩
   rw [← (he i).isBasis_iff, ← (he i).inter_eq_of_indep hB.indep]
