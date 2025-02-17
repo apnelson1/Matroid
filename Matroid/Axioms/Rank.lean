@@ -199,8 +199,8 @@ lemma Indep.eRelRk_subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.eRelRk I J = (J \
       ← Matroid.eRelRk_inter_ground_right, matroid_E, Matroid.eRelRk_eq_union_right]
     apply (h _ _).symm <;> simp
   intro X Y hXY hY
-  obtain ⟨I, J, hI, hJ, hIJ⟩ := M.matroid.exists_basis_subset_basis hXY
-  rw [hI.eRelRk_eq_encard_diff_of_subset_basis hJ hIJ, ← Indep.eRelRk_subset hJ.indep hIJ]
+  obtain ⟨I, J, hI, hJ, hIJ⟩ := M.matroid.exists_isBasis_subset_isBasis hXY
+  rw [hI.eRelRk_eq_encard_diff_of_subset_isBasis hJ hIJ, ← Indep.eRelRk_subset hJ.indep hIJ]
   have h1 := M.eRelRk_add_cancel hIJ hJ.subset
   have h2 := M.eRelRk_add_cancel hI.subset hXY
   rw [(Indep.subset_maximal_iff_eRelRk_zero hI.indep hI.subset).1 hI.1, zero_add] at h2
@@ -321,7 +321,7 @@ protected lemma matroid_indep_iff' {I : Set α} :
   simp [FinsetRankMatroid.matroid, IndepMatroid.ofFinset_indep']
 
 @[simp] protected lemma matroid_rk_eq (X : Finset α) : M.matroid.rk X = M.r X := by
-  obtain ⟨I, hI⟩ := M.matroid.exists_basis' X
+  obtain ⟨I, hI⟩ := M.matroid.exists_isBasis' X
   obtain ⟨I, rfl⟩ := (X.finite_toSet.subset hI.subset).exists_finset_coe
   rw [← hI.card, ncard_coe_Finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
   refine (M.rk_mono (by simpa using hI.subset)).antisymm <| le_of_not_lt fun hlt ↦ ?_
@@ -337,7 +337,7 @@ protected lemma matroid_eRk_eq_sup (X : Set α) :
     M.matroid.eRk X = ⨆ Y ∈ {Y : Finset α | (Y : Set α) ⊆ X}, (M.r Y : ℕ∞) := by
   refine le_antisymm ?_ ?_
   set S := {Y : Finset α | (Y : Set α) ⊆ X}
-  · obtain ⟨I, hI⟩ := M.matroid.exists_basis' X
+  · obtain ⟨I, hI⟩ := M.matroid.exists_isBasis' X
     obtain (hIfin | hIinf) := I.finite_or_infinite
     · obtain ⟨I, rfl⟩ := hIfin.exists_finset_coe
       rw [← hI.eRk_eq_eRk, FinsetRankMatroid.matroid_eRk_eq]

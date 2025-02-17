@@ -73,7 +73,7 @@ instance : Invariant Matroid.RankFinite :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
 
 instance : Invariant Matroid.RankPos :=
-  invariant_pred_of_forall_map' (by simp [rankPos_iff_empty_not_base]) fun _ _ _ _ ↦ by infer_instance
+  invariant_pred_of_forall_map' (by simp [rankPos_iff_empty_not_isBase]) fun _ _ _ _ ↦ by infer_instance
 
 instance : Invariant Matroid.Finitary :=
   invariant_pred_of_forall_map (by infer_instance) fun _ _ _ _ ↦ by infer_instance
@@ -115,10 +115,10 @@ end Invariant
 -- section Restriction
 
 -- class RestrictionClosed (P : ∀ {α : Type u}, Matroid α → Prop) : Prop :=
---   (forall_restriction : ∀ {α : Type u} {N M : Matroid α}, N ≤r M → P M → P N)
+--   (forall_isRestriction : ∀ {α : Type u} {N M : Matroid α}, N ≤r M → P M → P N)
 
--- theorem Restriction.pred_restriction [RestrictionClosed P] (hNM : N ≤r M) (hM : P M) : P N :=
---   RestrictionClosed.forall_restriction hNM hM
+-- theorem Restriction.pred_isRestriction [RestrictionClosed P] (hNM : N ≤r M) (hM : P M) : P N :=
+--   RestrictionClosed.forall_isRestriction hNM hM
 
 -- end Restriction
 
@@ -315,25 +315,25 @@ end Invariant
 -- @[simp] theorem pred_simplification_iff (P : ∀ {β : Type u}, Matroid β → Prop)
 --     [DeleteParallelClosed P] {M : Matroid α} [M.Finite] : P M.simplification ↔ P M := by
 --   set S := {N | M.simplification ≤r N ∧ (P M ↔ P N)}
---   have := M.finite_setOf_restriction.inter_of_right S
+--   have := M.finite_setOf_isRestriction.inter_of_right S
 --   obtain ⟨(N : Matroid α), ⟨⟨hNs, hNP⟩,hNM : N ≤r M⟩,hmin⟩ := Finite.exists_minimal_wrt
 --     (α := Matroid α) (β := Matroidᵣ α) id _
---     (M.finite_setOf_restriction.inter_of_right {N | M.simplification ≤r N ∧ (P M ↔ P N)})
---     ⟨M, ⟨M.simplification_restriction,Iff.rfl⟩, Restriction.refl⟩
---   obtain (rfl | hNs) := hNs.eq_or_strictRestriction
+--     (M.finite_setOf_isRestriction.inter_of_right {N | M.simplification ≤r N ∧ (P M ↔ P N)})
+--     ⟨M, ⟨M.simplification_isRestriction,Iff.rfl⟩, Restriction.refl⟩
+--   obtain (rfl | hNs) := hNs.eq_or_isStrictRestriction
 --   · rwa [Iff.comm]
 --   obtain (⟨e,he⟩ | ⟨e,f,hef,he,hf⟩) :=
---     exists_loop_or_parallel_of_simplification_strictRestriction hNs hNM
+--     exists_loop_or_parallel_of_simplification_isStrictRestriction hNs hNM
 --   · rw  [← pred_delete_loop_iff (P := P) he] at hNP
 --     have hesi : e ∉ M.simplification.E :=
---       fun he' ↦ M.simplification.not_loop e <| he.loop_restriction hNs.restriction he'
+--       fun he' ↦ M.simplification.not_loop e <| he.loop_isRestriction hNs.restriction he'
 --     rw [show N = N ＼ e from hmin (N ＼ e) ⟨⟨hNs.restriction.restriction_deleteElem hesi,hNP⟩,
---       (delete_restriction _ _).trans hNM⟩ (delete_restriction _ _)] at he
+--       (delete_isRestriction _ _).trans hNM⟩ (delete_isRestriction _ _)] at he
 --     simp at he
 --   rw [← pred_delete_parallel_iff (P := P) hef (fun h ↦ he <| h ▸ hf)] at hNP
 --   rw [show N = N ＼ e from hmin (N ＼ e)
---     ⟨⟨hNs.restriction.restriction_deleteElem he,hNP⟩, (delete_restriction _ _).trans hNM⟩
---     (delete_restriction _ _)] at hef
+--     ⟨⟨hNs.restriction.restriction_deleteElem he,hNP⟩, (delete_isRestriction _ _).trans hNM⟩
+--     (delete_isRestriction _ _)] at hef
 --   exact (hef.nonloop_left.mem_ground.2 rfl).elim
 
 
@@ -373,7 +373,7 @@ end Invariant
 
 -- -- theorem ExclMinor.simple [SimpClosed P] [MinorClosed P] (hM : M.ExclMinor P) : M.Simple := by
 -- --   rw [← simplification_eq_self_iff]
--- --   apply hM.eq_of_not_prop_of_minor (simplification_restriction M).minor
+-- --   apply hM.eq_of_not_prop_of_minor (simplification_isRestriction M).minor
 -- --   simp_rw [pred_simplification_iff]
 -- --   exact hM.not_prop_self
 

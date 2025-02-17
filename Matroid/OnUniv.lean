@@ -43,33 +43,33 @@ lemma corestrict_univ_eq_disjointSum (M : Matroid α) :
 lemma corestrict_univ_indep_iff {I : Set α} : (M✶ ↾ univ)✶.Indep I ↔ M.Indep (I ∩ M.E) := by
   simp [corestrict_univ_eq_disjointSum]
 
-lemma corestrict_univ_base_iff {B : Set α} : (M✶ ↾ univ)✶.Base B ↔ M.Base (B ∩ M.E) ∧ M.Eᶜ ⊆ B := by
-  simp [corestrict_univ_eq_disjointSum, disjointSum_base_iff]
+lemma corestrict_univ_isBase_iff {B : Set α} : (M✶ ↾ univ)✶.IsBase B ↔ M.IsBase (B ∩ M.E) ∧ M.Eᶜ ⊆ B := by
+  simp [corestrict_univ_eq_disjointSum, disjointSum_isBase_iff]
 
-lemma corestrict_univ_basis_iff {I X : Set α} :
-    (M✶ ↾ univ)✶.Basis I X ↔ M.Basis (I ∩ M.E) (X ∩ M.E) ∧ I ⊆ X ∧ X \ M.E ⊆ I := by
-  simp only [corestrict_univ_eq_disjointSum, disjointSum_basis_iff, freeOn_ground, freeOn_basis_iff,
+lemma corestrict_univ_isBasis_iff {I X : Set α} :
+    (M✶ ↾ univ)✶.IsBasis I X ↔ M.IsBasis (I ∩ M.E) (X ∩ M.E) ∧ I ⊆ X ∧ X \ M.E ⊆ I := by
+  simp only [corestrict_univ_eq_disjointSum, disjointSum_isBasis_iff, freeOn_ground, freeOn_isBasis_iff,
     subset_antisymm_iff, subset_inter_iff, inter_subset_right, and_true, union_compl_self,
     subset_univ, and_comm (a := I ⊆ X), true_and, and_congr_right_iff, and_congr_left_iff]
   intro hb hIX
   rw [and_iff_right (inter_subset_left.trans hIX), diff_eq]
 
-lemma Basis'.corestrict_univ_basis {I X : Set α} (hIX : M.Basis' I X) :
-    (M✶ ↾ univ)✶.Basis (I ∪ (X \ M.E)) X := by
-  rwa [corestrict_univ_basis_iff, and_iff_left subset_union_right, union_subset_iff,
-    and_iff_right hIX.subset, and_iff_left diff_subset, ← basis'_iff_basis_inter_ground,
+lemma IsBasis'.corestrict_univ_isBasis {I X : Set α} (hIX : M.IsBasis' I X) :
+    (M✶ ↾ univ)✶.IsBasis (I ∪ (X \ M.E)) X := by
+  rwa [corestrict_univ_isBasis_iff, and_iff_left subset_union_right, union_subset_iff,
+    and_iff_right hIX.subset, and_iff_left diff_subset, ← isBasis'_iff_isBasis_inter_ground,
     union_inter_distrib_right, inter_eq_self_of_subset_left hIX.indep.subset_ground,
     disjoint_sdiff_left.inter_eq, union_empty]
 
-lemma Basis.corestrict_univ_basis {I X : Set α} (hIX : M.Basis I X) :
-    (M✶ ↾ univ)✶.Basis I X := by
-  simpa [diff_eq_empty.2 hIX.subset_ground, union_empty] using hIX.basis'.corestrict_univ_basis
+lemma IsBasis.corestrict_univ_isBasis {I X : Set α} (hIX : M.IsBasis I X) :
+    (M✶ ↾ univ)✶.IsBasis I X := by
+  simpa [diff_eq_empty.2 hIX.subset_ground, union_empty] using hIX.isBasis'.corestrict_univ_isBasis
 
-lemma Basis'.corestrict_univ_union_basis_union {I X : Set α} (hIX : M.Basis' I X) :
-    (M✶ ↾ univ)✶.Basis (I ∪ M.Eᶜ) (X ∪ M.Eᶜ) := by
+lemma IsBasis'.corestrict_univ_union_isBasis_union {I X : Set α} (hIX : M.IsBasis' I X) :
+    (M✶ ↾ univ)✶.IsBasis (I ∪ M.Eᶜ) (X ∪ M.Eᶜ) := by
   suffices (X ∪ M.Eᶜ) \ M.E ⊆ I ∪ M.Eᶜ by
-    simpa [corestrict_univ_basis_iff, union_inter_distrib_right, hIX.subset.trans subset_union_left,
-      inter_eq_self_of_subset_left hIX.indep.subset_ground, and_iff_right hIX.basis_inter_ground]
+    simpa [corestrict_univ_isBasis_iff, union_inter_distrib_right, hIX.subset.trans subset_union_left,
+      inter_eq_self_of_subset_left hIX.indep.subset_ground, and_iff_right hIX.isBasis_inter_ground]
   rw [union_comm I, diff_subset_iff, ← union_assoc]
   simp
 

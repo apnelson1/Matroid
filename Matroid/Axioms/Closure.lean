@@ -134,7 +134,7 @@ variable {M : ClosureMatroid α}
     rw [← PreClosureMatroid.closure_inter_ground,
       ← Matroid.closure_inter_ground, matroid_E, aux _ (by simp)]
   refine fun X hX ↦ ?_
-  obtain ⟨I, hI⟩ := M.matroid.exists_basis X
+  obtain ⟨I, hI⟩ := M.matroid.exists_isBasis X
   have hi := hI.indep
   simp only [ClosureMatroid.matroid, IndepMatroid.matroid_Indep] at hi
   rw [← hI.closure_eq_closure]

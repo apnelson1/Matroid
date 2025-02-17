@@ -198,7 +198,7 @@ lemma Projectivization.independent_pair {u v : Projectivization K V} :
 @[simp]
 lemma Projectivization.submodule_span_range_rep (K W : Type*) [DivisionRing K] [AddCommGroup W]
     [Module K W] : Submodule.span K (range (Projectivization.rep (K := K) (V := W))) = ⊤ := by
-  have b := Basis.ofVectorSpace K W
+  have b := IsBasis.ofVectorSpace K W
   ext x
   simp only [Submodule.mem_top, iff_true]
   refine mem_of_mem_of_subset (b.mem_span x) (Submodule.span_le.2 ?_)

@@ -11,15 +11,15 @@ lemma ConnectedTo.delete_or_contract (hM : M.ConnectedTo x y) (hxe : x ≠ e) (h
     (M ＼ e).ConnectedTo x y ∨ (M ／ e).ConnectedTo x y := by
   obtain rfl | hne := eq_or_ne x y
   · simp  [hxe, hM.mem_ground_left]
-  suffices (∀ C, M.Circuit C → e ∉ C → x ∈ C → y ∉ C) → ∃ C, (M ／ e).Circuit C ∧ x ∈ C ∧ y ∈ C by
+  suffices (∀ C, M.IsCircuit C → e ∉ C → x ∈ C → y ∉ C) → ∃ C, (M ／ e).IsCircuit C ∧ x ∈ C ∧ y ∈ C by
     simpa [ConnectedTo, hne, deleteElem, - contractElem, or_iff_not_imp_left]
   intro h
-  obtain ⟨C, hC, hxC, hyC⟩ := hM.exists_circuit_of_ne hne
+  obtain ⟨C, hC, hxC, hyC⟩ := hM.exists_isCircuit_of_ne hne
   have heC : e ∈ C := by
     contrapose hyC
     exact h C hC hyC hxC
   refine ⟨C \ {e}, ?_, by simpa [hxe], by simpa [hye]⟩
-  exact hC.contractElem_circuit (nontrivial_of_mem_mem_ne hxC hyC hne) heC
+  exact hC.contractElem_isCircuit (nontrivial_of_mem_mem_ne hxC hyC hne) heC
 
 theorem Connected.delete_or_contract (hM : M.Connected) (hnt : M.E.Nontrivial) (e : α) :
     (M ＼ e).Connected ∨ (M ／ e).Connected := by

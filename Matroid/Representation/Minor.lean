@@ -18,7 +18,7 @@ section Minor
   to_fun := Submodule.mkQ _ ∘ v
   valid' := by
     intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
+    obtain ⟨I,hI⟩ := M.exists_isBasis' C
     by_cases hCJ : Disjoint C J
     · rw [hI.contract_indep_iff, and_iff_left hCJ, ← v.span_closure_congr hI.closure_eq_closure,
         (v.onIndep hI.indep).quotient_iff_union (hCJ.mono_left hI.subset), ← v.indep_iff_restrict,
@@ -78,7 +78,7 @@ variable {𝔽 : Type*} [Field 𝔽]
 /-
 classical
     intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
+    obtain ⟨I,hI⟩ := M.exists_isBasis' C
     convert linearIndependent_comp_subtype.symm
     simp_rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
       hI.contract_indep_iff, ← v.span_closure_congr hI.closure_eq_closure,

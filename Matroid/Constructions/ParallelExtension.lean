@@ -65,7 +65,7 @@ instance addLoop_finite (M : Matroid α) [M.Finite] (e : α) : (M.addLoop e).Fin
   ⟨M.ground_finite.insert e⟩
 
 instance addLoop_rankFinite (M : Matroid α) [M.RankFinite] (e : α) : (M.addLoop e).RankFinite := by
-  obtain ⟨B, hB⟩ := (addLoop M e).exists_base
+  obtain ⟨B, hB⟩ := (addLoop M e).exists_isBase
   exact ⟨⟨B, hB, (addLoop_indep_iff.1 hB.indep).finite⟩⟩
 
 instance addLoop_finitary (M : Matroid α) [M.Finitary] (e : α) : (M.addLoop e).Finitary := by
@@ -229,24 +229,24 @@ lemma parallelExtend_indep_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     exact h.2 rfl
   simp [hdel _ hfI, hfI]
 
-lemma parallelExtend_circuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
-    (M.parallelExtend e f).Circuit C ↔ M.Circuit C ∨ C = {e,f} ∨
-        f ∈ C ∧ e ∉ C ∧ M.Circuit (insert e (C \ {f})) := by
+lemma parallelExtend_isCircuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
+    (M.parallelExtend e f).IsCircuit C ↔ M.IsCircuit C ∨ C = {e,f} ∨
+        f ∈ C ∧ e ∉ C ∧ M.IsCircuit (insert e (C \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact hf he.mem_ground
-  have aux : ∀ ⦃C' : Set α⦄, f ∉ C' → ((M.parallelExtend e f).Circuit C' ↔ M.Circuit C') := by
+  have aux : ∀ ⦃C' : Set α⦄, f ∉ C' → ((M.parallelExtend e f).IsCircuit C' ↔ M.IsCircuit C') := by
     intro C' hfC'
-    suffices h' : ((M.parallelExtend e f) ＼ f).Circuit C' ↔ M.Circuit C' by
-      simpa [deleteElem, delete_circuit_iff, hfC'] using h'
+    suffices h' : ((M.parallelExtend e f) ＼ f).IsCircuit C' ↔ M.IsCircuit C' by
+      simpa [deleteElem, delete_isCircuit_iff, hfC'] using h'
     rw [parallelExtend_delete_eq _ hf]
   by_cases hfC : f ∈ C; swap
   · simp [aux hfC, hfC, show C ≠ {e,f} by rintro rfl; simp at hfC]
-  simp only [show ¬M.Circuit C from fun h ↦ hf <| h.subset_ground hfC, hfC, true_and, false_or]
+  simp only [show ¬M.IsCircuit C from fun h ↦ hf <| h.subset_ground hfC, hfC, true_and, false_or]
   by_cases heC : e ∈ C
-  · suffices (M.parallelExtend e f).Circuit C ↔ C = {e, f} by simpa [heC]
-    have hC := (M.parallelExtend_parallel he f).circuit_of_ne hef
-    exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_circuit h (by simp [pair_subset_iff, heC, hfC]),
+  · suffices (M.parallelExtend e f).IsCircuit C ↔ C = {e, f} by simpa [heC]
+    have hC := (M.parallelExtend_parallel he f).isCircuit_of_ne hef
+    exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_isCircuit h (by simp [pair_subset_iff, heC, hfC]),
       by rintro rfl; assumption⟩
-  rw [← (M.parallelExtend_parallel he f).parallel'.eq_mapEquiv_swap, mapEquiv_circuit_iff,
+  rw [← (M.parallelExtend_parallel he f).parallel'.eq_mapEquiv_swap, mapEquiv_isCircuit_iff,
     Equiv.symm_swap, Equiv.swap_comm, Equiv.swap_image_eq_exchange hfC heC, aux (by simp [hef.symm])]
   simp [heC, show C ≠ {e,f} by rintro rfl; simp at heC]
 
@@ -256,7 +256,7 @@ instance parallelExtend_finite (M : Matroid α) [M.Finite] (e f : α) :
 
 instance parallelExtend_rankFinite (M : Matroid α) [RankFinite M] (e f : α) :
     (M.parallelExtend e f).RankFinite := by
-  obtain ⟨B, hB⟩ := (M.parallelExtend e f).exists_base
+  obtain ⟨B, hB⟩ := (M.parallelExtend e f).exists_isBase
   have hB' : M.Indep (B \ {f}) := by
     rw [indep_iff_delete_of_disjoint (disjoint_sdiff_left (t := B) (s := {f})),
       ← deleteElem, ← parallelExtend_delete_eq' M e f, deleteElem, delete_indep_iff,
@@ -271,10 +271,10 @@ instance parallelExtend_finitary (M : Matroid α) [Finitary M] (e f : α) :
   obtain (he | he) := em' (M.Nonloop e)
   · rw [parallelExtend_not_nonloop he]
     infer_instance
-  rw [parallelExtend_eq_parallelExtend_delete _ hef, finitary_iff_forall_circuit_finite]
+  rw [parallelExtend_eq_parallelExtend_delete _ hef, finitary_iff_forall_isCircuit_finite]
   intro C
-  rw [parallelExtend_circuit_iff, deleteElem, delete_circuit_iff, disjoint_singleton_right,
-    delete_circuit_iff]
+  rw [parallelExtend_isCircuit_iff, deleteElem, delete_isCircuit_iff, disjoint_singleton_right,
+    delete_isCircuit_iff]
   · rintro (h | rfl | h)
     · exact h.1.finite
     · exact toFinite {e, f}

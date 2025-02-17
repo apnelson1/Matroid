@@ -315,7 +315,7 @@ protected theorem tsum_eq_top_of_support_infinite (hf : f.support.Infinite) : �
   refine ⟨s', lt_of_lt_of_le ?_ (Finset.sum_le_sum (show ∀ i ∈ s', 1 ≤ f i from ?_))  ⟩
   · rw [Finset.sum_const, nsmul_eq_mul, mul_one,
       ← (finite_of_encard_eq_coe hsc).encard_eq_coe_toFinset_card, hsc, Nat.cast_lt]
-    exact Nat.lt.base b
+    exact Nat.lt.isBase b
   simp only [Finite.mem_toFinset, ENat.one_le_iff_ne_zero, s']
   exact hss
 

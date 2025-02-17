@@ -26,7 +26,7 @@ def matroidOnUnivOfSubspace (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensiona
     univ
     (fun I ↦ (U.map (LinearMap.fun_subtype 𝔽 I) = ⊤))
   ( by
-    obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis 𝔽 U
+    obtain ⟨s, ⟨b⟩⟩ := IsBasis.exists_isBasis 𝔽 U
     set v := repOfFunUniv 𝔽 <| fun a i ↦ (b i).1 a
     refine ⟨matroidOnUnivOfFun 𝔽 <| fun a i ↦ (b i).1 a, rfl, fun I ↦ ?_⟩
     rw [v.indep_iff_projSet_eq_top, v.projSet_eq_map]
@@ -65,7 +65,7 @@ def Rep.subspaceRep (v : M.Rep 𝔽 W) : M.SubspaceRep 𝔽 where
 
 theorem SubspaceRep.representable (U : M.SubspaceRep 𝔽) [FiniteDimensional 𝔽 U] :
     M.Representable 𝔽 := by
-  obtain ⟨s, ⟨b⟩⟩ := Basis.exists_basis 𝔽 U
+  obtain ⟨s, ⟨b⟩⟩ := IsBasis.exists_isBasis 𝔽 U
   have hM : M = matroidOfFun 𝔽 (fun a i ↦ (b i).1 a : α → (s → 𝔽)) M.E
   · rw [ext_iff_indep]
     refine ⟨rfl, fun I hIE ↦ ?_⟩

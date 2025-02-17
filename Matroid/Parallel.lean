@@ -14,7 +14,7 @@ section Parallel
 
 /-- The partition of the nonloops of `M` into parallel classes. -/
 def parallelClasses (M : Matroid α) : Partition {e | M.Nonloop e} :=
-  (M.closure_flat ∅).covByPartition.congr M.setOf_nonloop_eq.symm
+  (M.closure_isFlat ∅).covByPartition.congr M.setOf_nonloop_eq.symm
 
 def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
 
@@ -59,7 +59,7 @@ lemma Parallel.mem_ground_right (h : M.Parallel e f) : f ∈ M.E :=
 lemma Nonloop.parallel_iff_closure_eq_closure (he : M.Nonloop e) :
     M.Parallel e f ↔ M.closure {e} = M.closure {f} := by
   rw [Parallel, parallelClasses, Partition.rel_congr,
-    (M.closure_flat ∅).rel_covByPartition_iff' ⟨he.mem_ground, he.not_loop⟩]; simp
+    (M.closure_isFlat ∅).rel_covByPartition_iff' ⟨he.mem_ground, he.not_loop⟩]; simp
 
 lemma Parallel.mem_closure (h : M.Parallel e f) : e ∈ M.closure {f} := by
   rw [← h.closure_eq_closure]; exact mem_closure_of_mem' _ rfl
@@ -76,7 +76,7 @@ lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
     {f | M.Parallel e f} = M.closure {e} \ M.closure ∅ := by
   by_cases he : M.Nonloop e
   · rw [Parallel, parallelClasses, Partition.rel_congr,
-      Partition.setOf_rel_eq_partOf, (M.closure_flat ∅).partOf_covByPartition_eq,
+      Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
       closure_insert_closure_eq_closure_insert, insert_emptyc_eq]
   rw [not_nonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_not_mem]
   exact fun f hf ↦ he (Parallel.nonloop_left hf)
@@ -108,8 +108,8 @@ lemma Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := b
   rw [pair_comm, ← h.nonloop_left.indep.mem_closure_iff_of_not_mem hne.symm]
   exact h.symm.mem_closure
 
-lemma parallel_iff_circuit (hef : e ≠ f) : M.Parallel e f ↔ M.Circuit {e,f} := by
-  refine ⟨fun h ↦ circuit_iff_dep_forall_diff_singleton_indep.2 ⟨h.dep_of_ne hef, ?_⟩, fun h ↦ ?_⟩
+lemma parallel_iff_isCircuit (hef : e ≠ f) : M.Parallel e f ↔ M.IsCircuit {e,f} := by
+  refine ⟨fun h ↦ isCircuit_iff_dep_forall_diff_singleton_indep.2 ⟨h.dep_of_ne hef, ?_⟩, fun h ↦ ?_⟩
   · rintro x (rfl | rfl)
     · rw [pair_diff_left hef]; exact h.nonloop_right.indep
     · rw [pair_diff_right hef]; exact h.nonloop_left.indep
@@ -119,8 +119,8 @@ lemma parallel_iff_circuit (hef : e ≠ f) : M.Parallel e f ↔ M.Circuit {e,f} 
   rw [encard_pair hef]
   norm_num
 
-lemma Parallel.circuit_of_ne (hef : M.Parallel e f) (hne : e ≠ f) : M.Circuit {e,f} := by
-  rwa [parallel_iff_circuit hne] at hef
+lemma Parallel.isCircuit_of_ne (hef : M.Parallel e f) (hne : e ≠ f) : M.IsCircuit {e,f} := by
+  rwa [parallel_iff_isCircuit hne] at hef
 
 lemma Nonloop.parallel_iff_dep (he : M.Nonloop e) (hf : M.Nonloop f) (hef : e ≠ f) :
     M.Parallel e f ↔ M.Dep {e,f} := by
@@ -169,7 +169,7 @@ lemma delete_parallel_iff {D : Set α} :
 lemma Parallel.mem_cocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.Cocircuit K)
     (he : e ∈ K) : f ∈ K := by
   by_contra hf
-  have hK' := (hK.compl_hyperplane).flat.closure
+  have hK' := (hK.compl_hyperplane).isFlat.closure
   have hfK := hK'.symm.subset ⟨hef.mem_ground_right, hf⟩
   rw [← hef.mem_closure_iff_mem_closure, hK'] at hfK
   exact hfK.2 he
@@ -447,7 +447,7 @@ section ParallelClass
 
 lemma mem_parallelClasses_iff_eq_closure_diff_loops {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.Nonloop e ∧ P = M.closure {e} \ M.closure ∅ := by
-  simp only [parallelClasses, Partition.mem_congr_iff, Flat.mem_covByPartition_iff,
+  simp only [parallelClasses, Partition.mem_congr_iff, IsFlat.mem_covByPartition_iff,
     loops_covBy_iff, point_iff_exists_eq_closure_nonloop]
   constructor
   · rintro ⟨_, ⟨e, he, rfl⟩, rfl⟩

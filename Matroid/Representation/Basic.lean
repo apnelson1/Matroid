@@ -113,7 +113,7 @@ lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : 
   exact hI.subset (by simpa)
 
 lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
   ext e
   by_cases heI : e ∈ I
   · refine iff_of_true ?_ (mem_inter ?_ ?_)
@@ -152,7 +152,7 @@ lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽) (h
   · simp
   simp +contextual [hne, Finsupp.single_apply_eq_zero]
 
-lemma Rep.exists_finsupp_of_circuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.Circuit C) :
+lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.IsCircuit C) :
     ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by
   have hC' := hC.not_indep
   rw [v.indep_iff'] at hC'
@@ -190,9 +190,9 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
 
 lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
     M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by
-  obtain ⟨I, hI⟩ := M.exists_basis X
-  obtain ⟨J, hJ⟩ := M.exists_basis Y
-  rw [← skew_iff_bases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
+  rw [← skew_iff_isBases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
     ← v.span_closure_congr hI.closure_eq_closure, ← v.span_closure_congr hJ.closure_eq_closure,
     v.indep_iff_restrict]
   by_cases hdj : Disjoint I J
@@ -340,7 +340,7 @@ lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
 --     M.simplification.Representable 𝔽 ↔ M.Representable 𝔽 := by
 --   obtain ⟨c, hc, hM⟩ := M.exists_simplification_eq_wrt
 --   rw [hM]
---   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_restriction hc).minor⟩
+--   refine ⟨fun ⟨v⟩ ↦ ?_, fun h ↦ h.minor (simplificationWrt_isRestriction hc).minor⟩
 --   rw [← removeLoops_representable_iff, ← preimage_simplificationWrt M hc]
 --   exact (v.preimage _).representable
 

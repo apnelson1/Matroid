@@ -39,9 +39,9 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
   rw [unifOn, truncate_eq_self_of_rank_le (by rwa [freeOn_eRank_eq])]
 
-theorem unifOn_base_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
-    (unifOn E k).Base B ↔ B.encard = k := by
-  rw [unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_eRank_eq]
+theorem unifOn_isBase_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
+    (unifOn E k).IsBase B ↔ B.encard = k := by
+  rw [unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_eRank_eq]
 
 theorem unifOn_eRk_eq (E : Set α) (k : ℕ) (hX : X ⊆ E) : (unifOn E k).eRk X = min X.encard k := by
   rw [unifOn, truncateTo_eRk_eq, freeOn_eRk_eq hX]
@@ -67,13 +67,13 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
   obtain (hle | hlt) := le_or_lt E.card k
   · rw [unifOn_eq_of_le (by simpa), freeOn_dual_eq, tsub_eq_zero_of_le (by simpa), unifOn_zero]
 
-  refine ext_base (by simp) (fun B hBE ↦ ?_)
+  refine ext_isBase (by simp) (fun B hBE ↦ ?_)
   obtain ⟨B, rfl⟩ := (hE.subset hBE).exists_finset_coe
   simp only [dual_ground, unifOn_ground_eq] at hBE
   replace hlt := hlt.le
 
-  rw [dual_base_iff, unifOn_base_iff (by simpa) (by simpa using diff_subset),
-    unifOn_ground_eq, unifOn_base_iff (by simp) hBE, ← Finset.coe_sdiff,
+  rw [dual_isBase_iff, unifOn_isBase_iff (by simpa) (by simpa using diff_subset),
+    unifOn_ground_eq, unifOn_isBase_iff (by simp) hBE, ← Finset.coe_sdiff,
     encard_coe_eq_coe_finsetCard, Nat.cast_inj, encard_coe_eq_coe_finsetCard, Nat.cast_inj,
     toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff (by simpa),
     tsub_eq_iff_eq_add_of_le (Finset.card_mono (by simpa)),
@@ -152,11 +152,11 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
   · exact ⟨f, hf, by simp⟩
   exact ⟨e, by simpa using hIE, rfl.subset⟩
 
-@[simp] lemma unifOn_circuit_iff {n : ℕ} : (unifOn E n).Circuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
+@[simp] lemma unifOn_isCircuit_iff {n : ℕ} : (unifOn E n).IsCircuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
   obtain hCE | hCE := em' (C ⊆ E)
-  · simp [hCE, show ¬ (unifOn E n).Circuit C from fun h ↦ hCE h.subset_ground]
+  · simp [hCE, show ¬ (unifOn E n).IsCircuit C from fun h ↦ hCE h.subset_ground]
 
-  rw [circuit_iff_dep_forall_diff_singleton_indep, and_iff_left hCE, ← not_indep_iff,
+  rw [isCircuit_iff_dep_forall_diff_singleton_indep, and_iff_left hCE, ← not_indep_iff,
     unifOn_indep_iff, and_iff_left hCE, not_le, ← ENat.add_one_le_iff (by simp)]
 
   obtain rfl | ⟨e, heC⟩ := C.eq_empty_or_nonempty
@@ -196,21 +196,21 @@ def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 theorem unif_eRank_eq_of_le (hab : a ≤ b) : (unif a b).eRank = a := by
   simpa
 
-theorem unif_base_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).Base B ↔ B.encard = a := by
-  rw [unif, unifOn, truncateTo_base_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
+theorem unif_isBase_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).IsBase B ↔ B.encard = a := by
+  rw [unif, unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
   rwa [freeOn_eRank_eq, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
 
-@[simp] theorem unif_base_iff' {B : Set (Fin _)} : (unif a (a + b)).Base B ↔ B.encard = a := by
-  rw [unif_base_iff (Nat.le_add_right _ _)]
+@[simp] theorem unif_isBase_iff' {B : Set (Fin _)} : (unif a (a + b)).IsBase B ↔ B.encard = a := by
+  rw [unif_isBase_iff (Nat.le_add_right _ _)]
 
-@[simp] theorem unif_circuit_iff {C : Set (Fin b)} : (unif a b).Circuit C ↔ C.encard = a + 1 := by
-  rw [unif, unifOn_circuit_iff, and_iff_left (subset_univ _)]
+@[simp] theorem unif_isCircuit_iff {C : Set (Fin b)} : (unif a b).IsCircuit C ↔ C.encard = a + 1 := by
+  rw [unif, unifOn_isCircuit_iff, and_iff_left (subset_univ _)]
 
 theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
   subst h
-  refine ext_base rfl (fun B _ ↦ ?_)
-  rw [dual_base_iff, unif_ground_eq, unif_base_iff (Nat.le_add_right _ _),
-    unif_base_iff (Nat.le_add_left _ _),
+  refine ext_isBase rfl (fun B _ ↦ ?_)
+  rw [dual_isBase_iff, unif_ground_eq, unif_isBase_iff (Nat.le_add_right _ _),
+    unif_isBase_iff (Nat.le_add_left _ _),
     ← WithTop.add_right_cancel_iff (encard_ne_top_iff.2 B.toFinite),
     encard_diff_add_encard_of_subset (subset_univ _), Iff.comm,
     ← WithTop.add_left_cancel_iff (WithTop.coe_ne_top (a := a)), eq_comm]
@@ -285,7 +285,7 @@ noncomputable def unif_isoRestr_unif (a : ℕ) (hbb' : b ≤ b') : unif a b ≤i
     rw [show R = range (Fin.castLE hbb') from rfl, ← image_univ, Function.Injective.encard_image,
       encard_univ_fin]
     exact (Fin.castLEEmb hbb').injective
-  hM.some.symm.isoRestr.trans ((unif a b').restrict_restriction R).isoRestr
+  hM.some.symm.isoRestr.trans ((unif a b').restrict_isRestriction R).isoRestr
 
 noncomputable def unif_isoMinor_contr (a b d : ℕ) : unif a b ≤i unif (a+d) (b+d) := by
   have e := (unif_isoRestr_unif (b-a) (Nat.le_add_right b d)).isoMinor.dual
@@ -325,28 +325,29 @@ lemma Uniform.dual (hM : M.Uniform) : M✶.Uniform := by
 @[simp] lemma uniform_dual_iff : M✶.Uniform ↔ M.Uniform :=
   ⟨fun h ↦ by simpa using h.dual, Uniform.dual⟩
 
-lemma Uniform.exchange (hM : M.Uniform) (hB : M.Base B) (he : e ∈ M.E \ B) (hf : f ∈ B) :
-    M.Base (insert e (B \ {f})) := by
+lemma Uniform.exchange (hM : M.Uniform) (hB : M.IsBase B) (he : e ∈ M.E \ B) (hf : f ∈ B) :
+    M.IsBase (insert e (B \ {f})) := by
   have hef : e ≠ f := by rintro rfl; exact he.2 hf
   obtain (hi | hs) := hM (X := insert e (B \ {f}))
     (insert_subset he.1 (diff_subset.trans hB.subset_ground))
-  · exact hB.exchange_base_of_indep he.2 hi
+  · exact hB.exchange_isBase_of_indep he.2 hi
 
   have hss : insert e (B \ {f}) ⊆ M.E := insert_subset he.1 (diff_subset.trans hB.subset_ground)
-  suffices M✶.Base (M.E \ insert e (B \ {f})) by rwa [base_iff_dual_base_compl]
+  suffices M✶.IsBase (M.E \ insert e (B \ {f})) by rwa [base_iff_dual_isBase_compl]
   rw [spanning_iff_compl_coindep, coindep_def] at hs
   have hrw : insert f ((M.E \ B) \ {e}) = M.E \ insert e (B \ {f}) := by
     rw [eq_comm, ← union_singleton, ← diff_diff, diff_diff_right,
       inter_eq_self_of_subset_right (show {f} ⊆ M.E by simpa using hB.subset_ground hf),
       union_singleton, insert_diff_singleton_comm hef.symm]
   rw [← hrw]
-  exact hB.compl_base_dual.exchange_base_of_indep (f := f) (e := e) (by simp [hf]) <| by rwa [hrw]
+  exact hB.compl_isBase_dual.exchange_isBase_of_indep (f := f) (e := e)
+    (by simp [hf]) <| by rwa [hrw]
 
 lemma uniform_iff_forall_exchange : M.Uniform ↔
-  ∀ ⦃B e f⦄, M.Base B → e ∈ M.E \ B → f ∈ B → M.Base (insert e (B \ {f})) := by
+  ∀ ⦃B e f⦄, M.IsBase B → e ∈ M.E \ B → f ∈ B → M.IsBase (insert e (B \ {f})) := by
   refine ⟨fun h B e f hB he hf ↦ h.exchange hB he hf, fun h X hXE ↦ ?_⟩
-  obtain ⟨I, hIX⟩ := M.exists_basis X
-  obtain ⟨B, hB, rfl⟩ := hIX.exists_base
+  obtain ⟨I, hIX⟩ := M.exists_isBasis X
+  obtain ⟨B, hB, rfl⟩ := hIX.exists_isBase
   obtain h1 | h2 := hIX.subset.eq_or_ssubset
   · rw [← h1]
     exact .inl (hIX.indep)
@@ -367,7 +368,7 @@ lemma Uniform.contract (hM : M.Uniform) (C : Set α) : (M ／ C).Uniform := by
   suffices h : ∀ C ⊆ M.E, (M ／ C).Uniform by convert h (C ∩ M.E) inter_subset_right using 1; simp
   clear C
   intro C hCE
-  obtain ⟨I, hI⟩ := M.exists_basis C
+  obtain ⟨I, hI⟩ := M.exists_isBasis C
   suffices ∀ X ⊆ M.E, Disjoint C X → M.Indep (X ∪ I) ∨ M.Spanning (X ∪ C) by
     simpa +contextual [Uniform, hI.contract_indep_iff, contract_spanning_iff hCE, subset_diff,
       disjoint_comm]
@@ -398,7 +399,7 @@ lemma Uniform.truncate (hM : M.Uniform) : M.truncate.Uniform := by
     intro hB
     obtain ⟨e, he⟩ := hB.nonempty
     exact ⟨e, hB.subset_ground he, by simpa [he] using hB.spanning⟩
-  obtain ⟨B, hB, hBX⟩ := hX.exists_base_subset
+  obtain ⟨B, hB, hBX⟩ := hX.exists_isBase_subset
   obtain ⟨e, he⟩ := hB.nonempty
   exact .inr ⟨e, hB.subset_ground he, hX.superset (subset_insert _ _)⟩
 
@@ -413,8 +414,8 @@ lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ 
   rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_not_mem heI] at he
   exact he.not_indep hIe
 
-lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.Base B)
-    (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.Base B' := by
+lemma Uniform.isBase_of_isBase_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.IsBase B)
+    (h_fin : FinDiff B B') (hB' : B' ⊆ M.E) : M.IsBase B' := by
   obtain h | h := (B' \ B).eq_empty_or_nonempty
   · rw [diff_eq_empty] at h
     rwa [h_fin.symm.eq_of_subset h]
@@ -428,7 +429,7 @@ lemma Uniform.base_of_base_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.B
     simp_rw [encard_ne_top_iff]
     exact h_fin.diff_right_finite.diff
 
-  apply hM.base_of_base_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
+  apply hM.isBase_of_isBase_of_finDiff (hM.exchange hB ⟨hB' heB', heB⟩ hfB)
   rwa [finDiff_iff, insert_diff_of_mem _ heB', diff_diff_comm,
     and_iff_right h_fin.diff_left_finite.diff, ← singleton_union, union_comm, ← diff_diff,
     diff_diff_right, inter_singleton_eq_empty.2 hfB', union_empty,
@@ -444,12 +445,12 @@ lemma maximal_right_of_forall_ge {α : Type*} {P Q : α → Prop} {a : α} [Part
 /-- A finite-rank uniform matroid is one of the obvious ones. -/
 lemma Uniform.exists_eq_unifOn [M.RankFinite] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
-  refine ⟨M.E, M.rank, ext_base rfl fun B hBE ↦ ?_⟩
-  rw [unifOn_base_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
-    cast_rank_eq, iff_def, and_iff_right Base.encard_eq_eRank]
+  refine ⟨M.E, M.rank, ext_isBase rfl fun B hBE ↦ ?_⟩
+  rw [unifOn_isBase_iff (M.cast_rank_eq ▸ M.eRank_le_encard_ground) hBE,
+    cast_rank_eq, iff_def, and_iff_right IsBase.encard_eq_eRank]
   intro hB
-  obtain ⟨B₀, hB₀⟩ := M.exists_base
-  refine hM.base_of_base_of_finDiff hB₀ ?_ hBE
+  obtain ⟨B₀, hB₀⟩ := M.exists_isBase
+  refine hM.isBase_of_isBase_of_finDiff hB₀ ?_ hBE
   rw [finDiff_iff, and_iff_right hB₀.finite.diff,
     ← WithTop.add_right_cancel_iff (a := (B₀ ∩ B).encard), encard_diff_add_encard_inter,
     inter_comm, encard_diff_add_encard_inter, hB₀.encard_eq_eRank, hB]
@@ -458,22 +459,22 @@ lemma Uniform.exists_eq_unifOn [M.RankFinite] (hM : M.Uniform) :
 /-- A finitary non-free uniform matroid is one of the obvious ones. -/
 lemma Uniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M.Uniform) :
     ∃ (E : Set α) (k : ℕ), M = unifOn E k := by
-  obtain ⟨C, hC⟩ := M.exists_circuit
+  obtain ⟨C, hC⟩ := M.exists_isCircuit
   obtain ⟨e, heC⟩ := hC.nonempty
   obtain hCi | hCs := hM.indep_or_spanning C
   · exact (hC.not_indep hCi).elim
-  have := ((hC.diff_singleton_basis heC).base_of_spanning hCs).rankFinite_of_finite hC.finite.diff
+  have := ((hC.diff_singleton_isBasis heC).isBase_of_spanning hCs).rankFinite_of_finite hC.finite.diff
   exact hM.exists_eq_unifOn
 
-@[simps!] def UniformMatroidOfBase (E : Set α) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B)
-    (antichain : IsAntichain (· ⊆ ·) (setOf Base))
-    (exchange : ∀ ⦃B e f⦄, Base B → e ∈ B → f ∈ E \ B → Base (insert f (B \ {e})))
+@[simps!] def uniformMatroidOfBase (E : Set α) (IsBase : Set α → Prop)
+    (exists_isBase : ∃ B, IsBase B)
+    (antichain : IsAntichain (· ⊆ ·) (setOf IsBase))
+    (exchange : ∀ ⦃B e f⦄, IsBase B → e ∈ B → f ∈ E \ B → IsBase (insert f (B \ {e})))
     (contain : ∀ ⦃I X⦄, I ⊆ X → X ⊆ E → (X \ I).Infinite →
-      ∃ B, Base B ∧ ((B ⊆ I) ∨ (I ⊆ B ∧ B ⊆ X) ∨ (X ⊆ B)))
-    (subset_ground : ∀ ⦃B⦄, Base B → B ⊆ E) :
+      ∃ B, IsBase B ∧ ((B ⊆ I) ∨ (I ⊆ B ∧ B ⊆ X) ∨ (X ⊆ B)))
+    (subset_ground : ∀ ⦃B⦄, IsBase B → B ⊆ E) :
     Matroid α :=
-Matroid.ofBase E Base exists_base
+Matroid.ofBase E IsBase exists_isBase
   (by
     rintro B B' hB hB' e ⟨heB, heB'⟩
     contrapose! heB'
@@ -482,7 +483,7 @@ Matroid.ofBase E Base exists_base
   (by
     intro X hX I hI hIX
     obtain hfin | hinf := (X \ I).finite_or_infinite
-    · set S := {A | I ⊆ A ∧ (∃ B, Base B ∧ A ⊆ B) ∧ A ⊆ X} with hS_def
+    · set S := {A | I ⊆ A ∧ (∃ B, IsBase B ∧ A ⊆ B) ∧ A ⊆ X} with hS_def
       have hSfin : S.Finite := by
         refine Finite.of_finite_image (f := fun X ↦ X \ I) (hfin.finite_subsets.subset ?_) ?_
         · simp only [hS_def, image_subset_iff, preimage_setOf_eq, setOf_subset_setOf,
@@ -494,7 +495,7 @@ Matroid.ofBase E Base exists_base
       obtain ⟨J, hIJ : I ⊆ J, hJ⟩ := hSfin.exists_le_maximal (a := I) ⟨rfl.subset, hI, hIX⟩
       exact ⟨J, hIJ, maximal_right_of_forall_ge (fun x y hx hxy ↦ hx.trans hxy) hJ⟩
     simp only
-    have aux : ∀ B, Base B → B ⊆ X → Maximal (fun K ↦ (∃ B', Base B' ∧ K ⊆ B') ∧ K ⊆ X) B := by
+    have aux : ∀ B, IsBase B → B ⊆ X → Maximal (fun K ↦ (∃ B', IsBase B' ∧ K ⊆ B') ∧ K ⊆ X) B := by
       simp only [maximal_subset_iff, and_imp, forall_exists_index]
       exact fun B hB hBX ↦ ⟨⟨⟨B, hB, rfl.subset⟩, hBX⟩, fun K B' hB' hKB' hB'X hBK ↦
         hBK.antisymm <| by rwa [ antichain.eq hB hB' (hBK.trans hKB')]⟩
@@ -509,14 +510,14 @@ Matroid.ofBase E Base exists_base
     exact ⟨X, hIX, ⟨⟨B', hB', hXB'⟩, rfl.subset⟩, fun Y hY hXY ↦ hY.2⟩)
   subset_ground
 
-lemma uniformMatroidOfBase_uniform (E : Set α) (Base : Set α → Prop)
-    {exists_base} {antichain} {exchange} {contain} {subset_ground} :
-    (UniformMatroidOfBase E Base exists_base antichain exchange contain subset_ground).Uniform := by
-  simp only [uniform_iff_forall_exchange, UniformMatroidOfBase_Base, UniformMatroidOfBase_E,
+lemma uniformMatroidOfBase_uniform (E : Set α) (IsBase : Set α → Prop)
+    {exists_isBase} {ac} {exch} {contain} {subset_ground} :
+    (uniformMatroidOfBase E IsBase exists_isBase ac exch contain subset_ground).Uniform := by
+  simp only [uniform_iff_forall_exchange, uniformMatroidOfBase_IsBase, uniformMatroidOfBase_E,
     mem_diff, and_imp]
-  exact fun B e f hB heE he hf ↦ exchange hB hf ⟨heE, he⟩
+  exact fun B e f hB heE he hf ↦ exch hB hf ⟨heE, he⟩
 
-lemma Base.finDiff_of_finite_diff (hB : M.Base B) (hB' : M.Base B') (hBB' : (B \ B').Finite) :
+lemma IsBase.finDiff_of_finite_diff (hB : M.IsBase B) (hB' : M.IsBase B') (hBB' : (B \ B').Finite) :
     FinDiff B B' := by
   rw [finDiff_iff, and_iff_right hBB', hB.encard_diff_comm hB']
 
@@ -675,7 +676,7 @@ end IsoMinor
           (hcard : n ≤ L.encard) (hr : M.eRk L ≤ 2) : unif 2 n ≤ir M := by
         obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
         have hYs := hL.subset hYL
-        refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
+        refine ⟨M ↾ Y, restrict_isRestriction _ Y hYs.subset_ground, ?_⟩
         rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
         simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
           and_iff_left hY]
@@ -696,7 +697,7 @@ end IsoMinor
         · simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
             restrict_indep_iff, pair_subset_iff]
           exact fun {e f} he hf ↦ ⟨by simp [hN.1 _ (pair_subset he hf)], he, hf⟩
-        obtain ⟨I, hI⟩ := M.exists_basis' L
+        obtain ⟨I, hI⟩ := M.exists_isBasis' L
         rw [← hI.encard, ← hN.1 _ hI.subset]
         exact hI.indep
 
@@ -715,7 +716,7 @@ theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L
     (hcard : n ≤ L.encard) (hr : M.eRk L ≤ 2) : unif 2 n ≤ir M := by
   obtain ⟨Y, hYL, hY⟩ := exists_subset_encard_eq hcard
   have hYs := hL.subset hYL
-  refine ⟨M ↾ Y, restrict_restriction _ Y hYs.subset_ground, ?_⟩
+  refine ⟨M ↾ Y, restrict_isRestriction _ Y hYs.subset_ground, ?_⟩
   rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
   simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
     and_iff_left hY]
@@ -736,7 +737,7 @@ theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
   · simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
       restrict_indep_iff, pair_subset_iff]
     exact fun {e f} he hf ↦ ⟨by simp [hN.1 _ (pair_subset he hf)], he, hf⟩
-  obtain ⟨I, hI⟩ := M.exists_basis' L
+  obtain ⟨I, hI⟩ := M.exists_isBasis' L
   rw [← hI.encard, ← hN.1 _ hI.subset]
   exact hI.indep
 

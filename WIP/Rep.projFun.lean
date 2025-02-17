@@ -117,8 +117,8 @@ instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
 
 /-- TODO: Generalize this to arbitrary fullrank representations -/
 @[simp] lemma projectiveGeometry_cRank : (projectiveGeometry 𝔽 W).cRank = Module.rank 𝔽 W := by
-  obtain ⟨B, hB⟩ := (projectiveGeometry 𝔽 W).exists_base
-  have hr := (projectiveGeometryRep_fullRank.basis_of_base hB).mk_eq_rank
+  obtain ⟨B, hB⟩ := (projectiveGeometry 𝔽 W).exists_isBase
+  have hr := (projectiveGeometryRep_fullRank.isBasis_of_isBase hB).mk_eq_rank
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 
@@ -130,7 +130,7 @@ instance projectiveGeometry_finitary : Finitary (projectiveGeometry 𝔽 W) :=
   simp [PG]
 
 lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽)
-    (hB : M.Base B) : ∃ (i : M ≤ir projectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
+    (hB : M.IsBase B) : ∃ (i : M ≤ir projectiveGeometry 𝔽 (B →₀ 𝔽)), i.Spanning := by
   classical
   obtain rfl | hne := M.eq_emptyOn_or_nonempty
   · refine ⟨IsoRestr.ofEmptyOn _, ?_⟩
@@ -144,9 +144,9 @@ lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Represe
     IsoRestr.ofFun_spanning _ _ _ ?_⟩
   · intro I hIE
     rwa [projectiveGeometry_indep_iff, v.independent_image_projFun_iff]
-  rw [spanning_iff_exists_base_subset]
+  rw [spanning_iff_exists_isBase_subset]
   refine ⟨v.projFun '' B, ?_, image_subset _ hB.subset_ground⟩
-  refine Indep.base_of_forall_insert ?_ fun e he ↦ ?_
+  refine Indep.isBase_of_forall_insert ?_ fun e he ↦ ?_
   · rw [v.indep_image_projFun_iff hB.subset_ground]
     exact hB.indep
   sorry

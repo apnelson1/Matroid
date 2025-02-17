@@ -69,7 +69,7 @@ lemma WeakLE.delete (h : N ≤w M) (D : Set α) : N ＼ D ≤w M ＼ D := by
   exact fun I hI _ ↦ h.indep_of_indep hI
 
 lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ X := by
-  obtain ⟨I, hI⟩ := M.exists_basis' X
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.contract_eq_contract_delete]
   simp only [weakLE_iff, delete_indep_iff, hI.indep.contract_indep_iff, and_imp, delete_ground,
     contract_ground, diff_diff, union_diff_self, union_eq_self_of_subset_left hI.subset, and_true]

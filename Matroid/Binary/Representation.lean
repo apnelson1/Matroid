@@ -36,9 +36,9 @@ lemma Rep.cyclic_of_forall_row_even {C : Finset α} (v : M.Rep (ZMod 2) (ι →�
   simp
 
 /-- If `C` is a circuit, then every row of the corresponding submatrix has even support. -/
-lemma Rep.row_even_of_circuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α} (hC : M.Circuit C)
+lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α} (hC : M.IsCircuit C)
     (i : ι) : Even {x ∈ C | v x i = 1}.card := by
-  obtain ⟨c, rfl, hc⟩ := v.exists_finsupp_of_circuit hC
+  obtain ⟨c, rfl, hc⟩ := v.exists_finsupp_of_isCircuit hC
   apply_fun fun f ↦ f i at hc
   replace hc := show ∑ x ∈ c.support, c x * (v x) i = 0 by
     simpa [Finsupp.linearCombination, Finsupp.sum] using hc
@@ -51,22 +51,22 @@ lemma Rep.row_even_of_circuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finse
 variable [Finitary M] {C : Set α}
 
 /-- The Binary matroid that should be `M`. -/
-def Base.BinaryProxy (hB : M.Base B) := (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
+def IsBase.BinaryProxy (hB : M.IsBase B) := (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
 
-noncomputable def Base.binaryProxyRep (hB : M.Base B) :
+noncomputable def IsBase.binaryProxyRep (hB : M.IsBase B) :
     (hB.BinaryProxy.Rep (ZMod 2) (B →₀ ZMod 2)) :=
   repOfFun (ZMod 2) M.E (hB.fundCoord (ZMod 2))
 
-instance {hB : M.Base B} : hB.BinaryProxy.Finitary :=
+instance {hB : M.IsBase B} : hB.BinaryProxy.Finitary :=
   matroidOfFun_finitary ..
 
-lemma Base.binaryProxyRep_finitaryBase (hB : M.Base B) : hB.binaryProxyRep.FinitaryBase := by
+lemma IsBase.binaryProxyRep_finitaryBase (hB : M.IsBase B) : hB.binaryProxyRep.FinitaryBase := by
   apply hB.fundCoord_finitaryBase
 
-lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.Base B) :
+lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
     M = hB.BinaryProxy := by
-  refine Eq.symm <| Quotient.eq_of_base_indep ?_ hB hB.fundCoord_base.indep
-  refine quotient_of_forall_cyclic_of_circuit rfl fun C hC ↦ ?_
+  refine Eq.symm <| Quotient.eq_of_isBase_indep ?_ hB hB.fundCoord_isBase.indep
+  refine quotient_of_forall_cyclic_of_isCircuit rfl fun C hC ↦ ?_
   obtain ⟨C, rfl⟩ := hC.finite.exists_finset_coe
   refine hB.binaryProxyRep.cyclic_of_forall_row_even hC.subset_ground fun e ↦ ?_
   have hcc := M.fundCocircuit_cocircuit e.2 hB
@@ -82,7 +82,7 @@ lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.Base B) :
 theorem representable_iff_no_U24_minor : M.Representable (ZMod 2) ↔ M.NoUniformMinor 2 4 := by
   refine ⟨fun h ↦ by simpa using h.noUniformMinor, fun h ↦ ?_⟩
   rw [← binary_iff_no_U24_minor] at h
-  obtain ⟨B, hB⟩ := M.exists_base
+  obtain ⟨B, hB⟩ := M.exists_isBase
   exact (hB.binaryProxyRep.ofEq (h.eq_binaryProxy hB).symm).representable
 
 theorem binary_iff_representable : M.Binary ↔ M.Representable (ZMod 2) := by

@@ -18,7 +18,7 @@ mathlib: these are
 Topics in this repo are listed below. 
 
 * Isomorphism : Matroid/Equiv
-* Circuits and cocircuits : Matroid/Circuit
+* IsCircuits and cocircuits : Matroid/IsCircuit
 * Loops : Matroid/Loop
 * The rank function : Matroid/Rank/*
 * Minors : Matroid/Minor/Basic and Matroid/Minor/Iso
@@ -30,7 +30,7 @@ Topics in this repo are listed below.
 * Simplicity and simplification : Matroid/Simple
 * Modular sets, matroids, pairs and families : Matroid/Modular/*
 * Modular cuts, extensions and projections : Matroid/Extension
-* Circuit-hyperplane relaxation : Matroid/Constructions/Relax
+* IsCircuit-hyperplane relaxation : Matroid/Constructions/Relax
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
 * Uniform matroids (finite and infinite) : Matroid/Uniform

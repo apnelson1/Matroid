@@ -146,10 +146,10 @@ theorem GroundEquiv.isWeakMap_iff_symm_image_indep (h : GroundEquiv e M N) :
   rw [dep_iff, and_iff_left (h.image_subset_ground D)]
   exact fun hI ↦  (h' hI).not_dep (by rwa [h.symm_image_image D])
 
-theorem GroundEquiv.isWeakMap_of_symm_image_base (h : GroundEquiv e M N)
-    (h_base : ∀ ⦃B⦄, N.Base B → M.Base (e.symm '' B)) : IsWeakMap e M N :=
+theorem GroundEquiv.isWeakMap_of_symm_image_isBase (h : GroundEquiv e M N)
+    (h_isBase : ∀ ⦃B⦄, N.IsBase B → M.IsBase (e.symm '' B)) : IsWeakMap e M N :=
   h.isWeakMap_iff_symm_image_indep.2 fun _ ⟨_, hB, hIB⟩ ↦
-    (h_base hB).indep.subset (image_subset _ hIB)
+    (h_isBase hB).indep.subset (image_subset _ hIB)
 
 theorem IsWeakMap.restrict (h : IsWeakMap e M N) {X : Set α} (hX : X ⊆ M.E) {Y : Set β}
     (hY : Y ⊆ N.E) (hXY : e.IsImage X Y) :
@@ -191,10 +191,10 @@ theorem GroundEquiv.isIso_of_map_indep_map_indep (he : GroundEquiv e M N)
     IsIso e M N :=
   ⟨he.isWeakMap_iff_symm_image_indep.2 hNM, he.symm.isWeakMap_iff_symm_image_indep.2 (by simpa)⟩
 
-theorem GroundEquiv.isIso_of_map_base_map_base (he : GroundEquiv e M N)
-    (hMN : ∀ ⦃B⦄, M.Base B → N.Base (e '' B)) (hNM : ∀ ⦃B⦄, N.Base B → M.Base (e.symm '' B)) :
+theorem GroundEquiv.isIso_of_map_isBase_map_isBase (he : GroundEquiv e M N)
+    (hMN : ∀ ⦃B⦄, M.IsBase B → N.IsBase (e '' B)) (hNM : ∀ ⦃B⦄, N.IsBase B → M.IsBase (e.symm '' B)) :
       IsIso e M N :=
-  ⟨he.isWeakMap_of_symm_image_base hNM, he.symm.isWeakMap_of_symm_image_base (by simpa)⟩
+  ⟨he.isWeakMap_of_symm_image_isBase hNM, he.symm.isWeakMap_of_symm_image_isBase (by simpa)⟩
 
 theorem IsIso.image_indep (h : IsIso e M N) {I : Set α} (hI : M.Indep I) : N.Indep (e '' I) := by
   simpa using h.symm.isWeakMap.symm_image_indep hI
@@ -203,21 +203,21 @@ theorem IsIso.indep_iff_image_indep (h : IsIso e M N) {I : Set α} (hIE : I ⊆ 
     M.Indep I ↔ N.Indep (e '' I) :=
   ⟨h.image_indep, fun hI ↦ h.isWeakMap.indep_of_image hI⟩
 
-theorem IsIso.image_base (h : IsIso e M N) {B : Set α} (hB : M.Base B) : N.Base (e '' B) := by
-  refine Indep.base_of_maximal (h.image_indep hB.indep) (fun J hJ heJ ↦ ?_)
+theorem IsIso.image_isBase (h : IsIso e M N) {B : Set α} (hB : M.IsBase B) : N.IsBase (e '' B) := by
+  refine Indep.isBase_of_maximal (h.image_indep hB.indep) (fun J hJ heJ ↦ ?_)
   rw [hB.eq_of_subset_indep (h.isWeakMap.symm_image_indep hJ)
     (h.groundEquiv.subset_symm_image_of_image_subset hB.subset_ground heJ),
     h.groundEquiv.image_symm_image J]
 
-theorem IsIso.image_dual_base (h : IsIso e M N) {B : Set α} (hB : M✶.Base B) :
-    N✶.Base (e '' B) := by
-  rw [dual_base_iff', and_iff_left <| h.groundEquiv.image_subset_ground B hB.subset_ground,
+theorem IsIso.image_dual_isBase (h : IsIso e M N) {B : Set α} (hB : M✶.IsBase B) :
+    N✶.IsBase (e '' B) := by
+  rw [dual_isBase_iff', and_iff_left <| h.groundEquiv.image_subset_ground B hB.subset_ground,
     ← h.groundEquiv.image_ground, ← h.groundEquiv.injOn.image_diff hB.subset_ground]
-  exact (h.image_base <| hB.compl_base_of_dual)
+  exact (h.image_isBase <| hB.compl_isBase_of_dual)
 
 theorem IsIso.dual (h : IsIso e M N) : IsIso e M✶ N✶ :=
-  h.groundEquiv.dual.isIso_of_map_base_map_base (fun _ ↦ h.image_dual_base)
-    (fun _ ↦ h.symm.image_dual_base)
+  h.groundEquiv.dual.isIso_of_map_isBase_map_isBase (fun _ ↦ h.image_dual_isBase)
+    (fun _ ↦ h.symm.image_dual_isBase)
 
 def IsIso.restrict (h : IsIso e M N) {X : Set α} {Y : Set β} (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ N.E := by aesop_mat) (hXY : e.IsImage X Y) : IsIso hXY.restr (M ↾ X) (N ↾ Y) :=
@@ -302,8 +302,8 @@ theorem Iso.finite_iff (h : M ≃ N) : M.Finite ↔ N.Finite := by
 theorem Iso.rankFinite_iff (h : M ≃ N) : M.RankFinite ↔ N.RankFinite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e,he⟩⟩) := h
   · apply iff_of_true <;> infer_instance
-  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, he.image_base hB, hBfin.image _⟩,
-    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, he.symm.image_base hB, hBfin.image _⟩⟩
+  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, he.image_isBase hB, hBfin.image _⟩,
+    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, he.symm.image_isBase hB, hBfin.image _⟩⟩
 
 theorem Iso.dual (h : M ≃ N) : M✶ ≃ N✶ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e,he⟩⟩) := h

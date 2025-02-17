@@ -56,7 +56,7 @@ lemma Iso.range_isoRestr (e : N ≂ M) : range e.isoRestr = univ := by
   simp only [mem_range, isoRestr_apply, Subtype.exists, mem_univ, iff_true]
   exact ⟨e.symm x, by simp⟩
 
-def Restriction.isoRestr {M N : Matroid α} (h : N ≤r M) : N ≤ir M where
+def IsRestriction.isoRestr {M N : Matroid α} (h : N ≤r M) : N ≤ir M where
   toFun := inclusion h.subset
   inj' := inclusion_injective h.subset
   indep_iff' I := by simp [h.indep_iff]
@@ -78,7 +78,7 @@ lemma IsoRestr.iso_restrict_range_comp_apply_coe (i : N ≤ir M) (e : N.E) :
 theorem IsoRestr.exists_restr_iso (i : N ≤ir M) :
     ∃ (M₀ : Matroid α) (e : N ≂ M₀) (hr : M₀ ≤r M), (inclusion hr.subset) ∘ e = i := by
   refine
-    ⟨_, i.iso_restrict_range_comp, restrict_restriction _ _ <| by simp [range_comp], ?_⟩
+    ⟨_, i.iso_restrict_range_comp, restrict_isRestriction _ _ <| by simp [range_comp], ?_⟩
   ext x
   exact i.iso_restrict_range_comp_apply_coe x
 
@@ -104,7 +104,7 @@ def IsoRestr.Spanning (e : N ≤ir M) : Prop := M.Spanning ((↑) '' range e)
 lemma IsoRestr.Spanning.exists_restr_iso {i : N ≤ir M} (hi : i.Spanning) :
     ∃ (M₀ : Matroid α) (e : N ≂ M₀) (hr : M₀ ≤r M),
         M.Spanning M₀.E ∧ (inclusion hr.subset) ∘ e = i:=
-  ⟨_, i.iso_restrict_range_comp, restrict_restriction _ _ <| by simp [range_comp],
+  ⟨_, i.iso_restrict_range_comp, restrict_isRestriction _ _ <| by simp [range_comp],
     by rwa [restrict_ground_eq, range_comp], by
     ext x
     exact i.iso_restrict_range_comp_apply_coe x ⟩
@@ -174,7 +174,7 @@ lemma Iso.isoRestr_spanning (e : N ≂ M) : e.isoRestr.Spanning := by
   simp [IsoRestr.Spanning, spanning_iff_closure_eq]
 
 def IsoRestr.ofEmptyOn (M : Matroid β) : emptyOn α ≤ir M :=
-  (empty_iso_empty α β).isoRestr.trans (emptyOn_restriction M).isoRestr
+  (empty_iso_empty α β).isoRestr.trans (emptyOn_isRestriction M).isoRestr
 
 /-- `N ≤i M` means that `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M`.
 The data a term of this type contains is just a function from `N.E` to `M.E` rather than a choice of
@@ -368,27 +368,27 @@ lemma IsoMinor.encard_ground_le (e : N ≤i M) : N.E.encard ≤ M.E.encard := by
 --   obtain ⟨M', hMM', hNM'⟩ := h
 --   exact ⟨M', hMM'.minor, hNM'⟩
 
--- theorem Restriction.IsoRestr {N M : Matroid α} (h : N ≤r M) : N ≤ir M :=
+-- theorem IsRestriction.IsoRestr {N M : Matroid α} (h : N ≤r M) : N ≤ir M :=
 --   ⟨N, h, IsIso.refl N⟩
 
 -- theorem IsoRestr.refl (M : Matroid α) : M ≤ir M :=
---   Restriction.refl.IsoRestr
+--   IsRestriction.refl.IsoRestr
 
 -- theorem IsIso.isoRestr (h : N ≂ M) : M ≤ir N :=
---   ⟨N, Restriction.refl, h.symm⟩
+--   ⟨N, IsRestriction.refl, h.symm⟩
 
 -- @[simp] theorem emptyOn_isoRestr (β : Type*) (M : Matroid α) : emptyOn β ≤ir M :=
---   ⟨emptyOn α, by simp only [emptyOn_restriction], by simp only [isIso_emptyOn_iff]⟩
+--   ⟨emptyOn α, by simp only [emptyOn_isRestriction], by simp only [isIso_emptyOn_iff]⟩
 
 -- @[simp] theorem isoRestr_emptyOn_iff {M : Matroid α} : M ≤ir emptyOn β ↔ M = emptyOn α :=
 --   ⟨fun h ↦ isoMinor_emptyOn_iff.1 h.isoMinor, by rintro rfl; simp⟩
 
--- theorem Restriction.trans_isIso {N M : Matroid α} {M' : Matroid β} (h : N ≤r M) (h' : M ≂ M') :
+-- theorem IsRestriction.trans_isIso {N M : Matroid α} {M' : Matroid β} (h : N ≤r M) (h' : M ≂ M') :
 --     N ≤ir M' := by
 --   obtain (⟨rfl,rfl⟩ | ⟨⟨i⟩⟩) := h'
 --   · simpa using h
 --   obtain ⟨D, hD, rfl⟩ := h.exists_eq_delete
---   exact ⟨_, delete_restriction _ _, (i.delete hD).isIso⟩
+--   exact ⟨_, delete_isRestriction _ _, (i.delete hD).isIso⟩
 
 -- theorem IsoRestr.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
 --     (h₁₂ : M₁ ≤ir M₂) (h₂₃ : M₂ ≤ir M₃) : M₁ ≤ir M₃ := by
@@ -455,7 +455,7 @@ lemma IsoMinor.encard_ground_le (e : N ≤i M) : N.E.encard ≤ M.E.encard := by
 --   refine ⟨fun ⟨f, hf⟩  ↦ ?_, fun h ↦ ?_⟩
 --   · rw [encard_congr <| Equiv.ofInjective f f.2, ← hf.eRk]
 --     apply eRk_le_eRank
---   obtain ⟨B, hB⟩ := M.exists_base
+--   obtain ⟨B, hB⟩ := M.exists_isBase
 --   rw [← hB.encard, hE.encard_le_iff_nonempty_embedding] at h
 --   obtain ⟨e⟩ := h
 --   refine ⟨e.trans (Function.Embedding.subtype _), hB.indep.subset ?_⟩

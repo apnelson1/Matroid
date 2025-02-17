@@ -21,12 +21,12 @@ lemma Indep.ncard_le_rk_add_rk [RankFinite M₁] [RankFinite M₂] (hI₁ : M₁
   exact add_le_add (M₁.rk_mono inter_subset_right)
     (M₂.rk_mono (diff_subset_diff_left hI₂.subset_ground))
 
-lemma Indep.basis'_basis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (hI₁ : M₁.Indep I)
+lemma Indep.isBasis'_isBasis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (hI₁ : M₁.Indep I)
     (hI₂ : M₂.Indep I) (h : M₁.rk A + M₂.rk (M₂.E \ A) ≤ I.ncard) :
-    M₁.Basis' (I ∩ A) A ∧ M₂.Basis' (I \ A) (M₂.E \ A) := by
-  rw [basis'_iff_indep_encard_eq_of_finite (hI₁.finite.subset inter_subset_left),
+    M₁.IsBasis' (I ∩ A) A ∧ M₂.IsBasis' (I \ A) (M₂.E \ A) := by
+  rw [isBasis'_iff_indep_encard_eq_of_finite (hI₁.finite.subset inter_subset_left),
     and_iff_right inter_subset_right, and_iff_right (hI₁.inter_right A),
-    basis'_iff_indep_encard_eq_of_finite hI₁.finite.diff, and_iff_right (hI₂.diff A),
+    isBasis'_iff_indep_encard_eq_of_finite hI₁.finite.diff, and_iff_right (hI₂.diff A),
     and_iff_right (diff_subset_diff_left hI₂.subset_ground), ← (hI₂.diff A).eRk_eq_encard,
     eRk_eq_eRk_iff, ← (hI₁.inter_right A).eRk_eq_encard, eRk_eq_eRk_iff]
 
@@ -102,11 +102,11 @@ theorem exists_common_ind (M₁ M₂ : Matroid α) [M₁.Finite] :
     inter_diff_assoc, inter_comm]
 
 /-- A minimizer can be chosen in the matroid intersection theorem that is a flat of `M₁`.-/
-theorem exists_common_ind_with_flat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
-    ∃ I X, M₁.Flat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
+theorem exists_common_ind_with_isFlat_left (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
+    ∃ I X, M₁.IsFlat X ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   have : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind_aux M₁ M₂ hE
-  refine ⟨I, _, M₁.closure_flat X, h1, h2, (h1.ncard_le_rk_add_rk h2 _).antisymm ?_⟩
+  refine ⟨I, _, M₁.closure_isFlat X, h1, h2, (h1.ncard_le_rk_add_rk h2 _).antisymm ?_⟩
   rw [rk_closure_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
   exact add_le_add_left (M₂.rk_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
 
@@ -177,7 +177,7 @@ end Rado
 --   ∃ (x : ι → E), (∀ i, f (x i) = i) ∧ M.indep (range x) :=
 -- begin
 --   set M' := partition_matroid_on f 1 with hM',
---   obtain ⟨I, X, hI₁, hI₂, hIX, hF⟩ := exists_common_ind_with_flat_right M M',
+--   obtain ⟨I, X, hI₁, hI₂, hIX, hF⟩ := exists_common_ind_with_isFlat_right M M',
 --   obtain ⟨hIb₁,hIb₂⟩ := common_ind_eq_spec hI₁ hI₂ hIX.symm.le,
 
 --   have h_inj : inj_on f I,

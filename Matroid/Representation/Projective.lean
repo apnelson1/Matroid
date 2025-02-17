@@ -78,9 +78,9 @@ lemma Rep.FullRank.spanning_iff_projFun (v : M.Rep 𝔽 W) (hv : FullRank v) (S 
   rw [hv.spanning_iff, span_image_projFun_eq]
   simp
 
-lemma Rep.base_iff_proj {v : M.Rep 𝔽 W} (hv : FullRank v) (B : Set α) :
-    M.Base B ↔ Independent (fun x : B ↦ v.projFun x) ∧ span (v.projFun '' B) = ⊤ := by
-  rw [base_iff_indep_closure_eq, ← spanning_iff_closure_eq, v.indep_iff_projFun,
+lemma Rep.isBase_iff_proj {v : M.Rep 𝔽 W} (hv : FullRank v) (B : Set α) :
+    M.IsBase B ↔ Independent (fun x : B ↦ v.projFun x) ∧ span (v.projFun '' B) = ⊤ := by
+  rw [isBase_iff_indep_closure_eq, ← spanning_iff_closure_eq, v.indep_iff_projFun,
     hv.spanning_iff_projFun]
 
 end Matroid
@@ -132,8 +132,8 @@ noncomputable def PG (n p t : ℕ) [Fact p.Prime] :=
 /-- TODO: Generalize this to arbitrary fullrank representations -/
 @[simp]
 lemma matroid_cRank : (Projectivization.matroid 𝔽 W).cRank = Module.rank 𝔽 W := by
-  obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_base
-  have hr := (matroidRep_fullRank.basis_of_base hB).mk_eq_rank
+  obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_isBase
+  have hr := (matroidRep_fullRank.isBasis_of_isBase hB).mk_eq_rank
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 
@@ -170,15 +170,15 @@ variable {𝔽 : Type*} [Field 𝔽]
 
 namespace Matroid.Representable
 
-lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (hB : M.Base B) :
+lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (hB : M.IsBase B) :
     ∃ i : M ≤ir Projectivization.matroid 𝔽 (B →₀ 𝔽), i.Spanning := by
   wlog hM : M.OnUniv generalizing M α with aux
   · obtain ⟨γ, N, hN, ⟨iMN⟩⟩ := M.exists_iso_onUniv
     have := ‹M.Simple›.of_iso iMN
     have hNrep := h.iso iMN
     set B' : Set γ := ↑(iMN '' (M.E ↓∩ B)) with hB'_def
-    have hB' : N.Base B' := by
-      rw [iMN.symm.base_image_iff]
+    have hB' : N.IsBase B' := by
+      rw [iMN.symm.isBase_image_iff]
       simpa [inter_eq_self_of_subset_right hB.subset_ground]
     have e1 : (M.E ↓∩ B) ≃ B :=
       (Equiv.Set.image val _ val_injective).trans <| Equiv.Set.ofEq <| by simp [hB.subset_ground]
@@ -216,7 +216,7 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   · refine le_trans ?_ (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))
     simp [ENat.card_eq_top_of_infinite (α := 𝔽)]
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩
-  obtain ⟨B, hB⟩ := M.exists_base_finset
+  obtain ⟨B, hB⟩ := M.exists_isBase_finset
   obtain ⟨i, hi⟩ := h.exists_isoRestr_projectiveGeometry hB
   convert i.isoMinor.encard_ground_le
   have := hB.finite.to_subtype

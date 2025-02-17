@@ -83,6 +83,7 @@ lemma compl_right (P : M.Partition) : M.E \ P.2 = P.1 := by
 
 lemma eConn_eq_left (P : M.Partition) : P.eConn = M.eConn P.1 := by
   rw [eConn, ← compl_left]
+  rfl
 
 lemma eConn_eq_right (P : M.Partition) : P.eConn = M.eConn P.2 := by
   rw [← P.eConn_symm, P.symm.eConn_eq_left, symm_left]
@@ -167,7 +168,7 @@ end Partition
 
 lemma partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
 
-lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
+lemma IsCircuit.isTutteSep {C : Set α} (hC : M.IsCircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
   simp only [Partition.isTutteSep_iff, eConn_partition, partition_left,
     partition_right, inter_eq_self_of_subset_left hC.subset_ground, and_iff_right rfl.le]
@@ -179,14 +180,14 @@ lemma Circuit.isTutteSep {C : Set α} (hC : M.Circuit C) (hfin : C.Finite)
     WithTop.add_le_add_iff_right] at hcard
   rwa [encard_ne_top_iff]
 
-lemma Circuit.isTutteSep_finset {C : Finset α} (hC : M.Circuit C)
+lemma IsCircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCircuit C)
     (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]
 
 lemma Cocircuit.isTutteSep {C : Set α} (hC : M.Cocircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
-  simpa [partition_dual] using hC.circuit.isTutteSep hfin hcard
+  simpa [partition_dual] using hC.isCircuit.isTutteSep hfin hcard
 
 lemma Cocircuit.isTutteSep_finset {C : Finset α} (hC : M.Cocircuit C)
     (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
@@ -223,7 +224,7 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
       one_le_encard_iff_nonempty, le_refl, and_true]
     set P := M.partition {z | M.ConnectedTo e z} (fun _ ↦ ConnectedTo.mem_ground_right)
     refine ⟨P, ?_, ⟨e, by simpa [P]⟩, ⟨f, by simp [P, h, hf]⟩⟩
-    simp_rw [skew_iff_forall_circuit P.disjoint P.left_subset_ground, or_iff_not_imp_right,
+    simp_rw [skew_iff_forall_isCircuit P.disjoint P.left_subset_ground, or_iff_not_imp_right,
       not_subset, ← P.compl_left, mem_diff, union_diff_self, not_and, not_not, forall_exists_index,
       and_imp]
     exact fun C hC _ a haC h' b hbC ↦
@@ -238,13 +239,13 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
   obtain ⟨f, hf⟩ := hkr
   obtain ⟨rfl, -⟩ | ⟨C, hC, heC, hfC⟩ := h (P.left_subset_ground he) (P.right_subset_ground hf)
   · simp [← P.compl_left, he] at hf
-  obtain hl | hr := hPk.subset_or_subset_of_circuit hC (by simpa using hC.subset_ground)
+  obtain hl | hr := hPk.subset_or_subset_of_isCircuit hC (by simpa using hC.subset_ground)
   · rw [← P.compl_left] at hf
     exact hf.2 (hl hfC)
   rw [← P.compl_right] at he
   exact he.2 (hr heC)
 
-lemma Circuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.Circuit C)
+lemma IsCircuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
     (hM : 2*k ≤ M.E.encard + 2) (hconn : M.TutteConnected k) : k ≤ C.encard := by
   obtain hinf | hfin := C.finite_or_infinite.symm
   · simp [hinf.encard_eq]
@@ -472,12 +473,11 @@ lemma eConnBetween_removeLoops_eq (M : Matroid α) :
       rw [← removeLoops_core, and_iff_right (core_subset_ground ..)]
       exact P.disjoint.mono inter_subset_left hP.2
     simp only [eConn_partition, eLocalConn_inter_ground_left, diff_inter_self_eq_diff,
-      removeLoops_eLocalConn]
-    rw [← removeLoops_eLocalConn, ← eConn_eq_eLocalConn, removeLoops_eConn, ← hP_eq,
-      P.eConn_eq_left]
+      removeLoops_eLocalConn, removeLoops_eConn, ← hP_eq, P.eConn_eq_left]
+    rw [← removeLoops_eConn, eConn_inter_ground]
   obtain ⟨P, hP, hP_eq⟩ := M.removeLoops.exists_partition_eConn_eq_eConnBetween_core (by simpa)
   refine iInf_le_of_le ⟨M.partition P.left ?_, ?_⟩ ?_
-  · exact P.left_subset_ground.trans M.removeLoops_restriction.subset
+  · exact P.left_subset_ground.trans M.removeLoops_isRestriction.subset
   · rw [Partition.sepOf_iff_left _ (by simp)]
     simp only [partition_left]
     simp only [removeLoops_core] at hP

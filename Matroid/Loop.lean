@@ -39,24 +39,24 @@ lemma Loop.mem_ground (he : M.Loop e) : e ∈ M.E :=
 lemma Loop.dep (he : M.Loop e) : M.Dep {e} :=
   singleton_dep.mpr he
 
-lemma singleton_circuit : M.Circuit {e} ↔ M.Loop e := by
-  simp [← singleton_dep, circuit_def, minimal_iff_forall_ssubset, ssubset_singleton_iff]
+lemma singleton_isCircuit : M.IsCircuit {e} ↔ M.Loop e := by
+  simp [← singleton_dep, isCircuit_def, minimal_iff_forall_ssubset, ssubset_singleton_iff]
 
-lemma loop_iff_not_mem_base_forall (he : e ∈ M.E := by aesop_mat) :
-    M.Loop e ↔ ∀ B, M.Base B → e ∉ B := by
+lemma loop_iff_not_mem_isBase_forall (he : e ∈ M.E := by aesop_mat) :
+    M.Loop e ↔ ∀ B, M.IsBase B → e ∉ B := by
   rw [← singleton_dep, ← not_indep_iff, not_iff_comm, not_forall]
   simp_rw [_root_.not_imp, not_not, ← singleton_subset_iff, indep_iff]
 
-lemma Loop.circuit (he : M.Loop e) : M.Circuit {e} :=
-  singleton_circuit.mpr he
+lemma Loop.isCircuit (he : M.Loop e) : M.IsCircuit {e} :=
+  singleton_isCircuit.mpr he
 
 lemma Loop.mem_closure (he : M.Loop e) (X : Set α) : e ∈ M.closure X :=
   M.closure_mono (empty_subset _) he
 
-lemma Loop.mem_flat (he : M.Loop e) {F : Set α} (hF : M.Flat F) : e ∈ F := by
+lemma Loop.mem_isFlat (he : M.Loop e) {F : Set α} (hF : M.IsFlat F) : e ∈ F := by
   have := he.mem_closure F; rwa [hF.closure] at this
 
-lemma Flat.loops_subset (hF : M.Flat F) : M.closure ∅ ⊆ F := fun _ he ↦ Loop.mem_flat he hF
+lemma IsFlat.loops_subset (hF : M.IsFlat F) : M.closure ∅ ⊆ F := fun _ he ↦ Loop.mem_isFlat he hF
 
 lemma Loop.dep_of_mem (he : M.Loop e) (h : e ∈ X) (hXE : X ⊆ M.E := by aesop_mat) : M.Dep X :=
   he.dep.superset (singleton_subset_iff.mpr h) hXE
@@ -67,8 +67,8 @@ lemma Loop.not_indep_of_mem (he : M.Loop e) (h : e ∈ X) : ¬M.Indep X := fun h
 lemma Loop.not_mem_of_indep (he : M.Loop e) (hI : M.Indep I) : e ∉ I := fun h ↦
   he.not_indep_of_mem h hI
 
-lemma Loop.eq_of_circuit_mem (he : M.Loop e) (hC : M.Circuit C) (h : e ∈ C) : C = {e} := by
-  rw [he.circuit.eq_of_subset_circuit hC (singleton_subset_iff.mpr h)]
+lemma Loop.eq_of_isCircuit_mem (he : M.Loop e) (hC : M.IsCircuit C) (h : e ∈ C) : C = {e} := by
+  rw [he.isCircuit.eq_of_subset_isCircuit hC (singleton_subset_iff.mpr h)]
 
 lemma Indep.disjoint_loops (hI : M.Indep I) : Disjoint I (M.closure ∅) :=
   by_contra fun h ↦
@@ -78,17 +78,17 @@ lemma Indep.disjoint_loops (hI : M.Indep I) : Disjoint I (M.closure ∅) :=
 lemma Indep.eq_empty_of_subset_loops (hI : M.Indep I) (h : I ⊆ M.closure ∅) : I = ∅ :=
   eq_empty_iff_forall_not_mem.mpr fun _ he ↦ Loop.not_mem_of_indep (h he) hI he
 
-@[simp] lemma basis_loops_iff : M.Basis I (M.closure ∅) ↔ I = ∅ := by
+@[simp] lemma isBasis_loops_iff : M.IsBasis I (M.closure ∅) ↔ I = ∅ := by
   refine ⟨fun h ↦ h.indep.eq_empty_of_subset_loops h.subset, ?_⟩
   rintro rfl
-  exact M.empty_indep.basis_closure
+  exact M.empty_indep.isBasis_closure
 
 lemma closure_eq_loops_of_subset (h : X ⊆ M.closure ∅) : M.closure X = M.closure ∅ :=
   (closure_subset_closure_of_subset_closure h).antisymm (M.closure_mono (empty_subset _))
 
-lemma basis_iff_empty_of_subset_loops (hX : X ⊆ M.closure ∅) : M.Basis I X ↔ I = ∅ := by
+lemma isBasis_iff_empty_of_subset_loops (hX : X ⊆ M.closure ∅) : M.IsBasis I X ↔ I = ∅ := by
   refine ⟨fun h ↦ ?_, by rintro rfl; simpa⟩
-  replace h := (closure_eq_loops_of_subset hX) ▸ h.basis_closure_right
+  replace h := (closure_eq_loops_of_subset hX) ▸ h.isBasis_closure_right
   simpa using h
 
 lemma Loop.closure (he : M.Loop e) : M.closure {e} = M.closure ∅ :=
@@ -105,14 +105,14 @@ lemma loop_iff_closure_eq_closure_empty (he : e ∈ M.E := by aesop_mat) :
     M.Loop e ↔ M.closure {e} = M.closure ∅ := by
   rw [loop_iff_closure_eq_closure_empty', and_iff_left he]
 
-lemma loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ M.E \ B := by
+lemma loop_iff_forall_mem_compl_isBase : M.Loop e ↔ ∀ B, M.IsBase B → e ∈ M.E \ B := by
   refine ⟨fun h B hB ↦ mem_of_mem_of_subset h ?_, fun h ↦ ?_⟩
   · rw [subset_diff, and_iff_right (closure_subset_ground _ _), disjoint_iff_inter_eq_empty,
       hB.indep.closure_inter_eq_self_of_subset (empty_subset B)]
-  have he : e ∈ M.E := M.exists_base.elim (fun B hB ↦ (h B hB).1)
+  have he : e ∈ M.E := M.exists_isBase.elim (fun B hB ↦ (h B hB).1)
   rw [← singleton_dep, ← not_indep_iff]
   intro hei
-  obtain ⟨B, hB, heB⟩ := hei.exists_base_superset
+  obtain ⟨B, hB, heB⟩ := hei.exists_isBase_superset
   exact (h B hB).2 (singleton_subset_iff.mp heB)
 
 @[simp] lemma restrict_loop_iff {R : Set α} :
@@ -122,17 +122,17 @@ lemma loop_iff_forall_mem_compl_base : M.Loop e ↔ ∀ B, M.Base B → e ∈ M.
     or_iff_left_of_imp (fun he hi ↦ he (singleton_subset_iff.1 hi.subset_ground))]
   simp only [singleton_subset_iff, implies_true]
 
-lemma restriction_loop_iff (hNM : N ≤r M) :
+lemma isRestriction_loop_iff (hNM : N ≤r M) :
     N.Loop e ↔ e ∈ N.E ∧ M.Loop e := by
   obtain ⟨R, hR, rfl⟩ := hNM
   simp only [restrict_loop_iff, restrict_ground_eq, and_congr_right_iff, or_iff_left_iff_imp]
   exact fun heR heE ↦ (heE (hR heR)).elim
 
-lemma Loop.of_restriction (he : N.Loop e) (hNM : N ≤r M) : M.Loop e :=
-  ((restriction_loop_iff hNM).1 he).2
+lemma Loop.of_isRestriction (he : N.Loop e) (hNM : N ≤r M) : M.Loop e :=
+  ((isRestriction_loop_iff hNM).1 he).2
 
-lemma Loop.loop_restriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) : N.Loop e :=
-  (restriction_loop_iff hNM).2 ⟨heN, he⟩
+lemma Loop.loop_isRestriction (he : M.Loop e) (hNM : N ≤r M) (heN : e ∈ N.E) : N.Loop e :=
+  (isRestriction_loop_iff hNM).2 ⟨heN, he⟩
 
 @[simp] lemma comap_loop_iff {M : Matroid β} {f : α → β} : (M.comap f).Loop e ↔ M.Loop (f e) := by
   rw [← singleton_dep, comap_dep_iff]
@@ -232,21 +232,21 @@ lemma LoopEquiv.subset_iff_of_indep (h : M.LoopEquiv X Y) (hI : M.Indep I) : I �
   rw [← sdiff_eq_left.2 hI.disjoint_loops, diff_subset_iff, diff_subset_iff,
     union_comm, h.union_eq_union, union_comm]
 
-lemma LoopEquiv.basis_iff (h : M.LoopEquiv X Y) : M.Basis I X ↔ M.Basis I Y := by
-  rw [basis_iff_indep_subset_closure, basis_iff_indep_subset_closure, and_congr_right_iff]
+lemma LoopEquiv.isBasis_iff (h : M.LoopEquiv X Y) : M.IsBasis I X ↔ M.IsBasis I Y := by
+  rw [isBasis_iff_indep_subset_closure, isBasis_iff_indep_subset_closure, and_congr_right_iff]
   intro hI
   rw [h.subset_iff_of_indep hI, and_congr_right_iff,
     show M.closure I = M.closure I ∪ M.closure ∅ by simp,
     union_comm, ← diff_subset_iff,  h.diff_eq_diff, diff_subset_iff]
   exact fun _ ↦ Iff.rfl
 
-lemma basis_union_iff_basis_of_subset_loops (hL : L ⊆ M.closure ∅) :
-    M.Basis I (X ∪ L) ↔ M.Basis I X :=
-  (loopEquiv_union X hL).symm.basis_iff
+lemma isBasis_union_iff_isBasis_of_subset_loops (hL : L ⊆ M.closure ∅) :
+    M.IsBasis I (X ∪ L) ↔ M.IsBasis I X :=
+  (loopEquiv_union X hL).symm.isBasis_iff
 
-lemma basis_diff_iff_basis_of_subset_loops (hL : L ⊆ M.closure ∅) :
-    M.Basis I (X \ L) ↔ M.Basis I X :=
-  (loopEquiv_diff X hL).symm.basis_iff
+lemma isBasis_diff_iff_isBasis_of_subset_loops (hL : L ⊆ M.closure ∅) :
+    M.IsBasis I (X \ L) ↔ M.IsBasis I X :=
+  (loopEquiv_diff X hL).symm.isBasis_iff
 
 lemma closure_union_eq_closure_of_subset_loops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.closure ∅) :
     M.closure (X ∪ Y) = M.closure X :=
@@ -311,22 +311,22 @@ alias ⟨Indep.nonloop, Nonloop.indep⟩ := indep_singleton
 lemma Indep.nonloop_of_mem (hI : M.Indep I) (h : e ∈ I) : M.Nonloop e := by
   rw [← not_loop_iff (hI.subset_ground h)]; exact fun he ↦ (he.not_mem_of_indep hI) h
 
-lemma Nonloop.exists_mem_base (he : M.Nonloop e) : ∃ B, M.Base B ∧ e ∈ B := by
-  simpa using (indep_singleton.2 he).exists_base_superset
+lemma Nonloop.exists_mem_isBase (he : M.Nonloop e) : ∃ B, M.IsBase B ∧ e ∈ B := by
+  simpa using (indep_singleton.2 he).exists_isBase_superset
 
 lemma Cocircuit.nonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.Nonloop e := by
-  rw [← not_loop_iff (hK.subset_ground he), ← singleton_circuit]
+  rw [← not_loop_iff (hK.subset_ground he), ← singleton_isCircuit]
   intro he'
   obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.cocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
   exact hfe rfl
 
-lemma Circuit.nonloop_of_mem (hC : M.Circuit C) (hC' : C.Nontrivial) (he : e ∈ C) : M.Nonloop e :=
-  nonloop_of_not_loop (hC.subset_ground he) (fun hL ↦ by simp [hL.eq_of_circuit_mem hC he] at hC')
+lemma IsCircuit.nonloop_of_mem (hC : M.IsCircuit C) (hC' : C.Nontrivial) (he : e ∈ C) : M.Nonloop e :=
+  nonloop_of_not_loop (hC.subset_ground he) (fun hL ↦ by simp [hL.eq_of_isCircuit_mem hC he] at hC')
 
-lemma Circuit.nonloop_of_mem_of_one_lt_card (hC : M.Circuit C) (h : 1 < C.encard) (he : e ∈ C) :
+lemma IsCircuit.nonloop_of_mem_of_one_lt_card (hC : M.IsCircuit C) (h : 1 < C.encard) (he : e ∈ C) :
     M.Nonloop e := by
   refine nonloop_of_not_loop (hC.subset_ground he) (fun hlp ↦ ?_)
-  rw [hlp.eq_of_circuit_mem hC he, encard_singleton] at h
+  rw [hlp.eq_of_isCircuit_mem hC he, encard_singleton] at h
   exact h.ne rfl
 
 lemma nonloop_of_not_mem_closure (h : e ∉ M.closure X) (he : e ∈ M.E := by aesop_mat) :
@@ -362,11 +362,11 @@ lemma Nonloop.closure_eq_of_mem_closure (he : M.Nonloop e) (hef : e ∈ M.closur
     ← closure_closure _ {e}, ← insert_eq_of_mem (he.mem_closure_singleton hef),
     closure_insert_closure_eq_closure_insert, pair_comm]
 
-lemma Nonloop.closure_eq_closure_iff_circuit_of_ne (he : M.Nonloop e) (hef : e ≠ f) :
-    M.closure {e} = M.closure {f} ↔ M.Circuit {e, f} := by
+lemma Nonloop.closure_eq_closure_iff_isCircuit_of_ne (he : M.Nonloop e) (hef : e ≠ f) :
+    M.closure {e} = M.closure {f} ↔ M.IsCircuit {e, f} := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hf := he.nonloop_of_mem_closure (by rw [← h]; exact M.mem_closure_self e)
-    rw [circuit_iff_dep_forall_diff_singleton_indep, dep_iff, insert_subset_iff,
+    rw [isCircuit_iff_dep_forall_diff_singleton_indep, dep_iff, insert_subset_iff,
       and_iff_right he.mem_ground, singleton_subset_iff, and_iff_left hf.mem_ground]
     suffices ¬ M.Indep {e, f} by simpa [pair_diff_left hef, hf, pair_diff_right hef, he]
     rw [Indep.insert_indep_iff_of_not_mem (by simpa) (by simpa)]
@@ -379,15 +379,15 @@ lemma Nonloop.closure_eq_closure_iff_eq_or_dep (he : M.Nonloop e) (hf : M.Nonloo
     M.closure {e} = M.closure {f} ↔ e = f ∨ ¬M.Indep {e, f} := by
   obtain (rfl | hne) := eq_or_ne e f
   · exact iff_of_true rfl (Or.inl rfl)
-  simp_rw [he.closure_eq_closure_iff_circuit_of_ne hne, or_iff_right hne,
-    circuit_iff_dep_forall_diff_singleton_indep, dep_iff, insert_subset_iff, singleton_subset_iff,
+  simp_rw [he.closure_eq_closure_iff_isCircuit_of_ne hne, or_iff_right hne,
+    isCircuit_iff_dep_forall_diff_singleton_indep, dep_iff, insert_subset_iff, singleton_subset_iff,
     and_iff_left hf.mem_ground, and_iff_left he.mem_ground, and_iff_left_iff_imp]
   rintro hi x (rfl | rfl)
   · rwa [pair_diff_left hne, indep_singleton]
   rwa [pair_diff_right hne, indep_singleton]
 
 lemma exists_nonloop (M : Matroid α) [RankPos M] : ∃ e, M.Nonloop e :=
-  let ⟨_, hB⟩ := M.exists_base
+  let ⟨_, hB⟩ := M.exists_isBase
   ⟨_, hB.indep.nonloop_of_mem hB.nonempty.some_mem⟩
 
 lemma Nonloop.rankPos (h : M.Nonloop e) : M.RankPos :=
@@ -399,7 +399,7 @@ lemma Nonloop.rankPos (h : M.Nonloop e) : M.RankPos :=
 lemma Nonloop.of_restrict {R : Set α} (h : (M ↾ R).Nonloop e) : M.Nonloop e :=
   (restrict_nonloop_iff.1 h).1
 
-lemma Nonloop.of_restriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e := by
+lemma Nonloop.of_isRestriction (h : N.Nonloop e) (hNM : N ≤r M) : M.Nonloop e := by
   obtain ⟨R, -, rfl⟩ := hNM; exact h.of_restrict
 
 lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ (M ↾ R).Nonloop e :=
@@ -418,7 +418,7 @@ lemma nonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) : M.Nonloop e ↔ 
   rw [← indep_singleton, uniqueBaseOn_indep_iff', singleton_subset_iff]
 
 lemma Nonloop.exists_mem_cocircuit (he : M.Nonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
-  obtain ⟨B, hB, heB⟩ := he.exists_mem_base
+  obtain ⟨B, hB, heB⟩ := he.exists_mem_isBase
   exact ⟨_, fundCocircuit_cocircuit heB hB, mem_fundCocircuit M e B⟩
 
 @[simp]
@@ -466,16 +466,16 @@ lemma loopless_iff_forall_not_loop : M.Loopless ↔ ∀ e ∈ M.E, ¬M.Loop e :=
   ⟨fun _ e _ ↦ M.not_loop e,
     fun h ↦ loopless_iff_forall_nonloop.2 fun e he ↦ (not_loop_iff he).1 (h e he)⟩
 
-lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nontrivial := by
-  suffices (∃ x ∈ M.E, M.Loop x) ↔ ∃ x, M.Circuit x ∧ x.Subsingleton by
+lemma loopless_iff_forall_isCircuit : M.Loopless ↔ ∀ C, M.IsCircuit C → C.Nontrivial := by
+  suffices (∃ x ∈ M.E, M.Loop x) ↔ ∃ x, M.IsCircuit x ∧ x.Subsingleton by
     simpa [loopless_iff_forall_not_loop, ← not_iff_not (a := ∀ _, _)]
-  refine ⟨fun ⟨e, _, he⟩ ↦ ⟨{e}, he.circuit, by simp⟩, fun ⟨C, hC, hCs⟩ ↦ ?_⟩
+  refine ⟨fun ⟨e, _, he⟩ ↦ ⟨{e}, he.isCircuit, by simp⟩, fun ⟨C, hC, hCs⟩ ↦ ?_⟩
   obtain (rfl | ⟨e, rfl⟩) := hCs.eq_empty_or_singleton
   · simpa using hC.nonempty
-  exact ⟨e, (singleton_circuit.1 hC).mem_ground, singleton_circuit.1 hC⟩
+  exact ⟨e, (singleton_isCircuit.1 hC).mem_ground, singleton_isCircuit.1 hC⟩
 
 @[simp] lemma one_lt_girth_iff : 1 < M.girth ↔ M.Loopless := by
-  simp_rw [loopless_iff_forall_circuit, ← Nat.cast_one (R := ℕ∞), lt_girth_iff',
+  simp_rw [loopless_iff_forall_isCircuit, ← Nat.cast_one (R := ℕ∞), lt_girth_iff',
     Finset.one_lt_card_iff_nontrivial]
   refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ by simpa using h C hC⟩
   obtain hfin | hinf := C.finite_or_infinite
@@ -490,7 +490,7 @@ lemma loopless_iff_forall_circuit : M.Loopless ↔ ∀ C, M.Circuit C → C.Nont
 lemma Loopless.ground_eq (M : Matroid α) [Loopless M] : M.E = {e | M.Nonloop e} :=
   Set.ext fun _ ↦  ⟨fun he ↦ toNonloop he, Nonloop.mem_ground⟩
 
-lemma Restriction.loopless [M.Loopless] (hR : N ≤r M) : N.Loopless := by
+lemma IsRestriction.loopless [M.Loopless] (hR : N ≤r M) : N.Loopless := by
   obtain ⟨R, hR, rfl⟩ := hR
   rw [loopless_iff_closure_empty, restrict_closure_eq _ (empty_subset _), M.closure_empty_eq_empty,
     empty_inter]
@@ -519,8 +519,8 @@ lemma removeLoops_eq_self_iff : M.removeLoops = M ↔ M.Loopless := by
   rw [← h]
   infer_instance
 
-lemma removeLoops_restriction (M : Matroid α) : M.removeLoops ≤r M :=
-  restrict_restriction _ _ (fun _ h ↦ Nonloop.mem_ground h)
+lemma removeLoops_isRestriction (M : Matroid α) : M.removeLoops ≤r M :=
+  restrict_isRestriction _ _ (fun _ h ↦ Nonloop.mem_ground h)
 
 lemma eq_restrict_removeLoops (M : Matroid α) : M = M.removeLoops ↾ M.E := by
   rw [removeLoops, ext_iff_indep]
@@ -534,13 +534,13 @@ lemma removeLoops_indep_eq : M.removeLoops.Indep = M.Indep := by
   exact fun h e ↦ h.nonloop_of_mem
 
 @[simp]
-lemma removeLoops_basis'_eq : M.removeLoops.Basis' = M.Basis' := by
+lemma removeLoops_isBasis'_eq : M.removeLoops.IsBasis' = M.IsBasis' := by
   ext
-  simp [Basis']
+  simp [IsBasis']
 
-@[simp] lemma removeLoops_base_eq : M.removeLoops.Base = M.Base := by
+@[simp] lemma removeLoops_isBase_eq : M.removeLoops.IsBase = M.IsBase := by
   ext B
-  rw [base_iff_maximal_indep, removeLoops_indep_eq, base_iff_maximal_indep]
+  rw [isBase_iff_maximal_indep, removeLoops_indep_eq, isBase_iff_maximal_indep]
 
 @[simp]
 lemma removeLoops_nonloop_iff : M.removeLoops.Nonloop e ↔ M.Nonloop e := by
@@ -579,10 +579,10 @@ lemma Coloop.dual_loop (he : M.Coloop e) : M✶.Loop e :=
   he
 
 lemma Coloop.cocircuit (he : M.Coloop e) : M.Cocircuit {e} :=
-  Loop.circuit he
+  Loop.isCircuit he
 
 @[simp] lemma singleton_cocircuit : M.Cocircuit {e} ↔ M.Coloop e :=
-  singleton_circuit
+  singleton_isCircuit
 
 lemma Loop.dual_coloop (he : M.Loop e) : M✶.Coloop e :=
   by rwa [Coloop, dual_dual]
@@ -593,53 +593,53 @@ lemma Loop.dual_coloop (he : M.Loop e) : M✶.Coloop e :=
 @[simp] lemma dual_loop_iff_coloop : M✶.Loop e ↔ M.Coloop e :=
   ⟨fun h ↦ by rw [← dual_dual M]; exact h.dual_coloop, Coloop.dual_loop⟩
 
-lemma coloop_iff_forall_mem_base : M.Coloop e ↔ ∀ ⦃B⦄, M.Base B → e ∈ B := by
-  simp_rw [← dual_loop_iff_coloop, loop_iff_forall_mem_compl_base, dual_base_iff',
+lemma coloop_iff_forall_mem_isBase : M.Coloop e ↔ ∀ ⦃B⦄, M.IsBase B → e ∈ B := by
+  simp_rw [← dual_loop_iff_coloop, loop_iff_forall_mem_compl_isBase, dual_isBase_iff',
     dual_ground, mem_diff]
   refine ⟨fun h B hB ↦ ?_, fun h B ⟨hB, _⟩ ↦ ⟨hB.subset_ground (h hB), (h hB).2⟩⟩
   rw [← diff_diff_cancel_left hB.subset_ground]
   exact h (M.E \ B) ⟨(by rwa [diff_diff_cancel_left hB.subset_ground]), diff_subset⟩
 
-lemma Base.mem_of_coloop (hB : M.Base B) (he : M.Coloop e) : e ∈ B :=
-  coloop_iff_forall_mem_base.mp he hB
+lemma IsBase.mem_of_coloop (hB : M.IsBase B) (he : M.Coloop e) : e ∈ B :=
+  coloop_iff_forall_mem_isBase.mp he hB
 
-lemma Coloop.mem_of_base (he : M.Coloop e) (hB : M.Base B) : e ∈ B :=
-  coloop_iff_forall_mem_base.mp he hB
+lemma Coloop.mem_of_isBase (he : M.Coloop e) (hB : M.IsBase B) : e ∈ B :=
+  coloop_iff_forall_mem_isBase.mp he hB
 
-lemma Base.coloops_subset (hB : M.Base B) : M✶.closure ∅ ⊆ B :=
-  fun _ he ↦ Coloop.mem_of_base he hB
+lemma IsBase.coloops_subset (hB : M.IsBase B) : M✶.closure ∅ ⊆ B :=
+  fun _ he ↦ Coloop.mem_of_isBase he hB
 
 lemma Coloop.nonloop (h : M.Coloop e) : M.Nonloop e :=
-  let ⟨_, hB⟩ := M.exists_base
-  hB.indep.nonloop_of_mem ((coloop_iff_forall_mem_base.mp h) hB)
+  let ⟨_, hB⟩ := M.exists_isBase
+  hB.indep.nonloop_of_mem ((coloop_iff_forall_mem_isBase.mp h) hB)
 
 lemma Loop.not_coloop (h : M.Loop e) : ¬M.Coloop e := by
   rw [← dual_loop_iff_coloop]; rw [← dual_dual M, dual_loop_iff_coloop] at h
   exact h.nonloop.not_loop
 
-lemma Coloop.not_mem_circuit (he : M.Coloop e) (hC : M.Circuit C) : e ∉ C :=
+lemma Coloop.not_mem_isCircuit (he : M.Coloop e) (hC : M.IsCircuit C) : e ∉ C :=
   fun h ↦ (hC.cocircuit.nonloop_of_mem h).not_loop he
 
-lemma coloop_iff_forall_mem_compl_circuit [RankPos M✶] :
-    M.Coloop e ↔ ∀ C, M.Circuit C → e ∈ M.E \ C := by
-  refine ⟨fun h C hC ↦ ⟨h.mem_ground, h.not_mem_circuit hC⟩, fun h ↦ ?_⟩
-  rw [coloop_iff_forall_mem_base]
+lemma coloop_iff_forall_mem_compl_isCircuit [RankPos M✶] :
+    M.Coloop e ↔ ∀ C, M.IsCircuit C → e ∈ M.E \ C := by
+  refine ⟨fun h C hC ↦ ⟨h.mem_ground, h.not_mem_isCircuit hC⟩, fun h ↦ ?_⟩
+  rw [coloop_iff_forall_mem_isBase]
   refine fun B hB ↦ by_contra fun heB ↦ ?_
-  have heE : e ∈ M.E := Exists.elim M.exists_circuit (fun C hC ↦ (h C hC).1)
+  have heE : e ∈ M.E := Exists.elim M.exists_isCircuit (fun C hC ↦ (h C hC).1)
   rw [← hB.closure_eq] at heE
-  exact (h _ (hB.indep.fundCircuit_circuit heE heB)).2 (mem_fundCircuit _ _ _)
+  exact (h _ (hB.indep.fundCircuit_isCircuit heE heB)).2 (mem_fundCircuit _ _ _)
 
-lemma Circuit.not_coloop_of_mem (hC : M.Circuit C) (heC : e ∈ C) : ¬M.Coloop e :=
-  fun h ↦ h.not_mem_circuit hC heC
+lemma IsCircuit.not_coloop_of_mem (hC : M.IsCircuit C) (heC : e ∈ C) : ¬M.Coloop e :=
+  fun h ↦ h.not_mem_isCircuit hC heC
 
 lemma coloop_iff_forall_mem_closure_iff_mem :
     M.Coloop e ↔ (∀ X, e ∈ M.closure X ↔ e ∈ X) ∧ e ∈ M.E := by
-  rw [coloop_iff_forall_mem_base]
+  rw [coloop_iff_forall_mem_isBase]
   refine ⟨fun h ↦ ?_, fun h B hB ↦ ?_⟩
-  · have heE := M.exists_base.elim (fun _ hB ↦ hB.subset_ground (h hB))
+  · have heE := M.exists_isBase.elim (fun _ hB ↦ hB.subset_ground (h hB))
     refine ⟨fun X ↦ ⟨fun heX ↦ ?_, fun heX ↦ M.mem_closure_of_mem' heX⟩, heE⟩
-    obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E)
-    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_superset
+    obtain ⟨I, hI⟩ := M.exists_isBasis (X ∩ M.E)
+    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_isBase_superset
     rw [← closure_inter_ground, ← hI.closure_eq_closure] at heX
     exact (hI.subset ((hB.indep.closure_inter_eq_self_of_subset hIB).subset ⟨heX, h hB⟩)).1
   rw [← h.1, hB.closure_eq]
@@ -682,14 +682,14 @@ lemma coloop_iff_not_mem_closure_compl (he : e ∈ M.E := by aesop_mat) :
   obtain (rfl | hne) := eq_or_ne x e; assumption
   exact M.subset_closure (M.E \ {e}) diff_subset (show x ∈ M.E \ {e} from ⟨hx, hne⟩)
 
-lemma Base.mem_coloop_iff_forall_not_mem_fundCircuit (hB : M.Base B) (he : e ∈ B) :
+lemma IsBase.mem_coloop_iff_forall_not_mem_fundCircuit (hB : M.IsBase B) (he : e ∈ B) :
     M.Coloop e ↔ ∀ x ∈ M.E \ B, e ∉ M.fundCircuit x B := by
-  refine ⟨fun h x hx heC ↦ (h.not_mem_circuit <| hB.fundCircuit_circuit hx.1 hx.2) heC, fun h ↦ ?_⟩
+  refine ⟨fun h x hx heC ↦ (h.not_mem_isCircuit <| hB.fundCircuit_isCircuit hx.1 hx.2) heC, fun h ↦ ?_⟩
   have h' : M.E \ {e} ⊆ M.closure (B \ {e}) := by
     rintro x ⟨hxE, hne : x ≠ e⟩
     obtain (hx | hx) := em (x ∈ B)
     · exact M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground) ⟨hx, hne⟩
-    have h_cct := (hB.fundCircuit_circuit hxE hx).mem_closure_diff_singleton_of_mem
+    have h_cct := (hB.fundCircuit_isCircuit hxE hx).mem_closure_diff_singleton_of_mem
       (M.mem_fundCircuit x B)
     refine (M.closure_subset_closure (subset_diff_singleton ?_ ?_)) h_cct
     · simpa using fundCircuit_subset_insert ..
@@ -698,11 +698,11 @@ lemma Base.mem_coloop_iff_forall_not_mem_fundCircuit (hB : M.Base B) (he : e ∈
   exact not_mem_subset (M.closure_subset_closure_of_subset_closure h') <|
     hB.indep.not_mem_closure_diff_of_mem he
 
-lemma exists_mem_circuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
-    ∃ C, M.Circuit C ∧ e ∈ C := by
-  simp only [coloop_iff_forall_mem_base, not_forall, Classical.not_imp, exists_prop] at he
+lemma exists_mem_isCircuit_of_not_coloop (heE : e ∈ M.E) (he : ¬ M.Coloop e) :
+    ∃ C, M.IsCircuit C ∧ e ∈ C := by
+  simp only [coloop_iff_forall_mem_isBase, not_forall, Classical.not_imp, exists_prop] at he
   obtain ⟨B, hB, heB⟩ := he
-  exact ⟨M.fundCircuit e B, hB.fundCircuit_circuit heE heB, .inl rfl⟩
+  exact ⟨M.fundCircuit e B, hB.fundCircuit_isCircuit heE heB, .inl rfl⟩
 
 @[simp] lemma closure_inter_coloops_eq (M : Matroid α) (X : Set α) :
     M.closure X ∩ M✶.closure ∅ = X ∩ M✶.closure ∅ := by
@@ -733,7 +733,7 @@ lemma closure_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M✶.closure �
     M.closure (X ∪ K) = M.closure X ∪ K := by
   rw [← closure_union_closure_left_eq]
   refine (M.subset_closure _).antisymm' fun e he ↦ ?_
-  obtain he' | ⟨C, hCss, hC, heC⟩ := (mem_closure_iff_mem_or_exists_circuit
+  obtain he' | ⟨C, hCss, hC, heC⟩ := (mem_closure_iff_mem_or_exists_isCircuit
     (union_subset (M.closure_subset_ground _) (hK.trans (M✶.closure_subset_ground _)))).1 he
   · exact he'
   have hCX : C \ {e} ⊆ M.closure X := by
@@ -784,8 +784,8 @@ lemma Coloop.insert_indep_of_indep (he : M.Coloop e) (hI : M.Indep I) : M.Indep 
 lemma union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M✶.closure ∅) :
     M.Indep (I ∪ K) ↔ M.Indep I := by
   refine ⟨fun h ↦ h.subset subset_union_left, fun h ↦ ?_⟩
-  obtain ⟨B, hB, hIB⟩ := h.exists_base_superset
-  exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ Coloop.mem_of_base he hB))
+  obtain ⟨B, hB, hIB⟩ := h.exists_isBase_superset
+  exact hB.indep.subset (union_subset hIB (hK.trans fun e he ↦ Coloop.mem_of_isBase he hB))
 
 lemma diff_indep_iff_indep_of_subset_coloops (hK : K ⊆ M✶.closure ∅) :
     M.Indep (I \ K) ↔ M.Indep I := by
@@ -824,7 +824,7 @@ lemma ext_indep_disjoint_loops_coloops {M₁ M₂ : Matroid α} (hE : M₁.E = M
 @[simp]
 lemma removeLoops_coloop_eq (M : Matroid α) : M.removeLoops.Coloop = M.Coloop := by
   ext e
-  rw [coloop_iff_forall_mem_base, removeLoops_base_eq, ← coloop_iff_forall_mem_base]
+  rw [coloop_iff_forall_mem_isBase, removeLoops_isBase_eq, ← coloop_iff_forall_mem_isBase]
 
 @[simp]
 lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops✶.closure ∅ = M✶.closure ∅ := by
@@ -845,12 +845,12 @@ section Constructions
 
 lemma eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.closure ∅ ∪ M✶.closure ∅) :
     M = uniqueBaseOn (M✶.closure ∅) M.E := by
-  refine ext_base rfl (fun B hBE ↦ ?_)
-  rw [uniqueBaseOn_base_iff (show M✶.closure ∅ ⊆ M.E from M✶.closure_subset_ground _)]
+  refine ext_isBase rfl (fun B hBE ↦ ?_)
+  rw [uniqueBaseOn_isBase_iff (show M✶.closure ∅ ⊆ M.E from M✶.closure_subset_ground _)]
   rw [hE, ← diff_subset_iff] at hBE
   use fun h ↦ h.coloops_subset.antisymm' (by rwa [sdiff_eq_left.mpr h.indep.disjoint_loops] at hBE)
   rintro rfl
-  obtain ⟨B, hB⟩ := M.exists_base
+  obtain ⟨B, hB⟩ := M.exists_isBase
   rwa [hB.coloops_subset.antisymm ]
   refine subset_trans ?_ (diff_subset_iff.2 hE.subset)
   rw [subset_diff, and_iff_right hB.subset_ground]

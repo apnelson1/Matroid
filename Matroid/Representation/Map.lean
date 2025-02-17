@@ -259,11 +259,11 @@ lemma ofFun_closure_eq_of_subset_ground {v : α → W} {E : Set α} (hXE : X ⊆
     ((Set.eqOn_indicator (f := v)).mono hXE).image_eq]
   simp
 
-lemma _root_.Basis.ofFun_base {v : α → W} {E : Set α} {B : Set α} (b : _root_.Basis B 𝔽 W)
-    (hfb : ∀ x : B, v x = b x) (hBE : B ⊆ E) : (Matroid.ofFun 𝔽 E v).Base B := by
+lemma _root_.IsBasis.ofFun_isBase {v : α → W} {E : Set α} {B : Set α} (b : _root_.IsBasis B 𝔽 W)
+    (hfb : ∀ x : B, v x = b x) (hBE : B ⊆ E) : (Matroid.ofFun 𝔽 E v).IsBase B := by
   have hrw : v '' B = range b := by simp_rw [Set.ext_iff, mem_range, ← hfb]; aesop
 
-  refine Indep.base_of_ground_subset_closure ?_ ?_
+  refine Indep.isBase_of_ground_subset_closure ?_ ?_
   · rw [Matroid.ofFun_indep_iff, restrict_eq, and_iff_left hBE]
     convert b.linearIndependent
     ext e

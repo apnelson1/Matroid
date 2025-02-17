@@ -4,29 +4,29 @@ import Matroid.Circuit
 
 open Finset
 
-/-- A matroid described using a `Circuit` predicate on `Finset`s. Can be converted to a matroid
+/-- A matroid described using a `IsCircuit` predicate on `Finset`s. Can be converted to a matroid
 using `FinsertCircuitMatroid.matroid`. -/
 structure FinsetCircuitMatroid (α : Type*) [DecidableEq α] where
   (E : Set α)
-  (Circuit : Finset α → Prop)
+  (IsCircuit : Finset α → Prop)
 
-  (empty_not_circuit : ¬Circuit ∅)
-  (circuit_antichain : IsAntichain (· ⊆ ·) {C | Circuit C})
-  (circuit_elimination : ∀ ⦃C₁ C₂ e⦄, Circuit C₁ → Circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ →
-    ∃ C, Circuit C ∧ C ⊆ (C₁ ∪ C₂).erase e)
-  (circuit_subset_ground : ∀ ⦃C⦄, Circuit C → ↑C ⊆ E)
+  (empty_not_isCircuit : ¬IsCircuit ∅)
+  (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsCircuit C})
+  (circuit_elimination : ∀ ⦃C₁ C₂ e⦄, IsCircuit C₁ → IsCircuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ →
+    ∃ C, IsCircuit C ∧ C ⊆ (C₁ ∪ C₂).erase e)
+  (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → ↑C ⊆ E)
 
   (Indep : Finset α → Prop)
-  (indep_iff : ∀ ⦃I⦄, Indep I ↔ ↑I ⊆ E ∧ ∀ ⦃C⦄, C ⊆ I → ¬Circuit C)
+  (indep_iff : ∀ ⦃I⦄, Indep I ↔ ↑I ⊆ E ∧ ∀ ⦃C⦄, C ⊆ I → ¬IsCircuit C)
 
 namespace FinsetCircuitMatroid
 
 
 variable {α : Type*} [DecidableEq α] {I J C : Finset α} {M : FinsetCircuitMatroid α}
 
-lemma intro_elimination_nontrivial {Circuit : Finset α → Prop}
-    (h_antichain : IsAntichain (· ⊆ ·) {C | Circuit C}) {C₁ C₂ : Finset α} {e : α}
-    (hC₁ : Circuit C₁) (hC₂ : Circuit C₂) (h_ne : C₁ ≠ C₂) (he : e ∈ C₁ ∩ C₂) :
+lemma intro_elimination_nontrivial {IsCircuit : Finset α → Prop}
+    (h_antichain : IsAntichain (· ⊆ ·) {C | IsCircuit C}) {C₁ C₂ : Finset α} {e : α}
+    (hC₁ : IsCircuit C₁) (hC₂ : IsCircuit C₂) (h_ne : C₁ ≠ C₂) (he : e ∈ C₁ ∩ C₂) :
     C₁.Nontrivial ∧ C₂.Nontrivial := by
   obtain ⟨heC₁, heC₂⟩ := mem_inter.mp he
   refine ⟨?_, ?_⟩
@@ -36,27 +36,27 @@ lemma intro_elimination_nontrivial {Circuit : Finset α → Prop}
   · exact h_antichain hC₁ hC₂ h_ne (by rwa [← singleton_subset_iff, ← h_con] at heC₂)
   exact h_antichain hC₂ hC₁ h_ne.symm (by rwa [← singleton_subset_iff, ← h_con] at heC₁)
 
-lemma Circuit.subset_ground (hC : M.Circuit C) : (C : Set α) ⊆ M.E :=
+lemma IsCircuit.subset_ground (hC : M.IsCircuit C) : (C : Set α) ⊆ M.E :=
   M.circuit_subset_ground hC
 
 lemma indep_empty : M.Indep ∅ :=
-  M.indep_iff.2 <| by simp [subset_empty, empty_not_circuit]
+  M.indep_iff.2 <| by simp [subset_empty, empty_not_isCircuit]
 
 lemma Indep.subset_ground (hI : M.Indep I) : (I : Set α) ⊆ M.E :=
   (M.indep_iff.1 hI).1
 
-lemma Indep.not_circuit_of_subset (hI : M.Indep I) (hCI : C ⊆ I) : ¬ M.Circuit C :=
+lemma Indep.not_isCircuit_of_subset (hI : M.Indep I) (hCI : C ⊆ I) : ¬ M.IsCircuit C :=
   (M.indep_iff.1 hI).2 hCI
 
-lemma Circuit.not_indep (hC : M.Circuit C) : ¬ M.Indep C :=
-  fun hI ↦ hI.not_circuit_of_subset Subset.rfl hC
+lemma IsCircuit.not_indep (hC : M.IsCircuit C) : ¬ M.Indep C :=
+  fun hI ↦ hI.not_isCircuit_of_subset Subset.rfl hC
 
-lemma exists_circuit_subset (h : ¬ M.Indep I) (hIE : (I : Set α) ⊆ M.E) : ∃ C ⊆ I, M.Circuit C := by
+lemma exists_isCircuit_subset (h : ¬ M.Indep I) (hIE : (I : Set α) ⊆ M.E) : ∃ C ⊆ I, M.IsCircuit C := by
   simpa [M.indep_iff, hIE] using h
 
 lemma Indep.subset {M : FinsetCircuitMatroid α} (hJ : M.Indep J) (hI : I ⊆ J) : M.Indep I :=
   M.indep_iff.2 ⟨(coe_subset.2 hI).trans hJ.subset_ground,
-    fun _ hCI hC ↦ hJ.not_circuit_of_subset (hCI.trans hI) hC⟩
+    fun _ hCI hC ↦ hJ.not_isCircuit_of_subset (hCI.trans hI) hC⟩
 
 lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
     (hIJ : I.card < J.card) : ∃ e ∈ J, e ∉ I ∧ M.Indep (insert e I) := by
@@ -75,7 +75,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
     refine ⟨e, heJ, heI, hK_indep.subset <| insert_subset heK hssu.subset⟩
 
   obtain ⟨heI, heK⟩ := Finset.mem_sdiff.mp he
-  have hKfe : ∀ f ∈ K \ I, ∃ C ⊆ ((insert e K).erase f), M.Circuit C := by
+  have hKfe : ∀ f ∈ K \ I, ∃ C ⊆ ((insert e K).erase f), M.IsCircuit C := by
     intro f hf
     obtain ⟨hfK, hfI⟩ := mem_sdiff.mp hf
     contrapose! hK_min with hK_indep'
@@ -107,7 +107,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
     exact (insert_subset_iff.mp hCfKI).right
 
   obtain ⟨Cg, hCg_subset, hCg⟩ := hKfe g <| mem_of_mem_inter_right hg
-  have he_mem : ∀ ⦃C x⦄, C ⊆ (insert e K).erase x → M.Circuit C → e ∈ C := by
+  have he_mem : ∀ ⦃C x⦄, C ⊆ (insert e K).erase x → M.IsCircuit C → e ∈ C := by
     intro C x hC_subset hC; by_contra! heC
     replace hC_subset := hC_subset.trans <| erase_subset _ _
     rw [subset_insert_iff_of_not_mem heC] at hC_subset
@@ -120,7 +120,7 @@ lemma Indep.aug {M : FinsetCircuitMatroid α} (hI : M.Indep I) (hJ : M.Indep J)
   obtain ⟨C, hC, hC_subset⟩ := M.circuit_elimination hCf hCg h_ne <|
     mem_inter.mpr ⟨he_mem hCf_subset hCf, he_mem hCg_subset hCg⟩
   rw [← sdiff_singleton_eq_erase, union_sdiff_distrib] at hC_subset
-  exact hK_indep.not_circuit_of_subset
+  exact hK_indep.not_isCircuit_of_subset
     (hC_subset.trans <| union_subset (h_subset hCf_subset) (h_subset hCg_subset)) hC
 
 /-- A `FinsetCircuitMatroid` gives rise to a finitary `Matroid` with the same circuits. -/
@@ -137,29 +137,29 @@ instance : Matroid.Finitary (M.matroid) := by
   rw [FinsetCircuitMatroid.matroid, IndepMatroid.ofFinset]
   infer_instance
 
-@[simp] lemma matroid_circuit_iff : M.matroid.Circuit C ↔ M.Circuit C := by
-  simp only [Matroid.circuit_def, Matroid.Dep, matroid_Indep, IndepMatroid.ofFinset_indep',
+@[simp] lemma matroid_isCircuit_iff : M.matroid.IsCircuit C ↔ M.IsCircuit C := by
+  simp only [Matroid.isCircuit_def, Matroid.Dep, matroid_Indep, IndepMatroid.ofFinset_indep',
     not_forall, Classical.not_imp, minimal_subset_iff, Set.mem_setOf_eq, coe_subset, and_imp,
     forall_exists_index, exists_prop, matroid_E]
   refine ⟨fun ⟨⟨⟨D, hDC, hD⟩, hCE⟩, hmin⟩ ↦ ?_,
     fun h ↦ ⟨⟨⟨C, Subset.rfl,h.not_indep⟩, h.subset_ground⟩, fun X D hDX hD hX hXC ↦ ?_⟩⟩
-  · obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hCE
+  · obtain ⟨C', hCD', hC'⟩ := exists_isCircuit_subset hD <| subset_trans (by simpa) hCE
     rwa [coe_inj.1 <| hmin (t := C') C' Subset.rfl hC'.not_indep hC'.subset_ground
       (by simpa using hCD'.trans hDC)]
 
-  obtain ⟨C', hCD', hC'⟩ := exists_circuit_subset hD <| subset_trans (by simpa) hX
+  obtain ⟨C', hCD', hC'⟩ := exists_isCircuit_subset hD <| subset_trans (by simpa) hX
   have hC'X := (coe_subset.2 hCD').trans hDX
   obtain rfl := M.circuit_antichain.eq hC' h (by simpa using hC'X.trans hXC)
   exact hC'X.antisymm hXC
 
-lemma matroid_circuit_iff' {C : Set α} :
-    M.matroid.Circuit C ↔ ∃ (h : C.Finite), M.Circuit h.toFinset := by
-  simp only [← matroid_circuit_iff, Set.Finite.coe_toFinset, exists_prop, iff_and_self]
+lemma matroid_isCircuit_iff' {C : Set α} :
+    M.matroid.IsCircuit C ↔ ∃ (h : C.Finite), M.IsCircuit h.toFinset := by
+  simp only [← matroid_isCircuit_iff, Set.Finite.coe_toFinset, exists_prop, iff_and_self]
   exact fun h ↦ h.finite
 
 @[simp] lemma matroid_indep_iff : M.matroid.Indep I ↔ M.Indep I := by
-  rw [M.indep_iff, Matroid.indep_iff_forall_subset_not_circuit', and_comm]
-  simp only [matroid_E, matroid_circuit_iff', not_exists, and_congr_right_iff]
+  rw [M.indep_iff, Matroid.indep_iff_forall_subset_not_isCircuit', and_comm]
+  simp only [matroid_E, matroid_isCircuit_iff', not_exists, and_congr_right_iff]
   exact fun _ ↦ ⟨fun h C hCI hC ↦ h C (by simpa) (by simp) (by simpa),
     fun h C hCI hfin hC ↦ h (by simpa) hC⟩
 
