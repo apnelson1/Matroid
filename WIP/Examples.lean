@@ -54,7 +54,7 @@ def M_K₄ : Matroid (Fin 6) := by
     --   not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
     --   le_refl, forall_eq, and_self])
 
-lemma hyperplane_stuff : 1= 1 := by sorry
+lemma isHyperplane_stuff : 1= 1 := by sorry
 
 
 

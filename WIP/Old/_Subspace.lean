@@ -14,7 +14,7 @@ namespace Matroid
 def Rep.projSet (v : M.Rep 𝔽 W) (X : Set α) : Submodule 𝔽 (X → 𝔽) := ofFun 𝔽 (v ∘ Subtype.val)
 
 theorem Rep.projSet_eq_map (v : M.Rep 𝔽 W) (X : Set α) :
-    v.projSet X = (Submodule.ofFun 𝔽 v).map (LinearMap.fun_subtype 𝔽 X) := by
+    v.projSet X = (Submodule.ofFun 𝔽 v).map (IsLinearMap.fun_subtype 𝔽 X) := by
   ext x; simp only [projSet, mem_ofFun_iff, mem_map, exists_exists_eq_and]; aesop
 
 theorem Rep.indep_iff_projSet_eq_top (v : M.Rep 𝔽 W) : M.Indep I ↔ v.projSet I = ⊤ := by
@@ -24,7 +24,7 @@ theorem Rep.indep_iff_projSet_eq_top (v : M.Rep 𝔽 W) : M.Indep I ↔ v.projSe
 def matroidOnUnivOfSubspace (U : Submodule 𝔽 (α → 𝔽)) [FiniteDimensional 𝔽 U] : Matroid α :=
   matroid_of_indep_of_exists_matroid
     univ
-    (fun I ↦ (U.map (LinearMap.fun_subtype 𝔽 I) = ⊤))
+    (fun I ↦ (U.map (IsLinearMap.fun_subtype 𝔽 I) = ⊤))
   ( by
     obtain ⟨s, ⟨b⟩⟩ := IsBasis.exists_isBasis 𝔽 U
     set v := repOfFunUniv 𝔽 <| fun a i ↦ (b i).1 a
@@ -41,7 +41,7 @@ def matroid_of_subspace (E : Set α) (U : Submodule 𝔽 (α → 𝔽)) [FiniteD
   full dimension -/
 structure SubspaceRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] where
   ( space : Submodule 𝔽 (α → 𝔽) )
-  ( valid : ∀ I, M.Indep I ↔ space.map (LinearMap.fun_subtype 𝔽 I) = ⊤ )
+  ( valid : ∀ I, M.Indep I ↔ space.map (IsLinearMap.fun_subtype 𝔽 I) = ⊤ )
 
 instance {M : Matroid α} {𝔽 : Type*} [Field 𝔽] :
     CoeOut (SubspaceRep M 𝔽) (Submodule 𝔽 (α → 𝔽)) where
@@ -52,7 +52,7 @@ instance {M : Matroid α} {𝔽 : Type*} [Field 𝔽] :
   (U : SubspaceRep M 𝔽) : U.space = (↑U : Submodule 𝔽 (α → 𝔽)) := rfl
 
 @[simp] theorem SubspaceRep.indep_iff {M : Matroid α} {𝔽 : Type*} [Field 𝔽] (U : SubspaceRep M 𝔽)
-    {I : Set α} : M.Indep I ↔ (U : Submodule 𝔽 (α → 𝔽)).map (LinearMap.fun_subtype 𝔽 I) = ⊤ :=
+    {I : Set α} : M.Indep I ↔ (U : Submodule 𝔽 (α → 𝔽)).map (IsLinearMap.fun_subtype 𝔽 I) = ⊤ :=
   U.valid I
 
 /-- A representation `v` canonically gives a subspace representation (its 'row space')-/

@@ -8,6 +8,7 @@ namespace Matroid
 
 section Lattice
 
+-- TODO : rename this to `Flat` once the deprecated alias is gone.
 @[pp_nodot] def FlatOf (M : Matroid α) : Type _ := {F // M.IsFlat F}
 
 instance {M : Matroid α} : CoeOut M.FlatOf (Set α) where

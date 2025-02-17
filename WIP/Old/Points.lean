@@ -40,12 +40,12 @@ def Nonloop.contract_isFlat_equiv (he : M.Nonloop e) (k : ℕ) :
     right_inv := fun ⟨F, hF⟩ ↦ by simp [hF.2.2]
 
 theorem Nonloop.point_count_contract_eq (he : M.Nonloop e) :
-    (M ／ e).point_count = {L | M.Line L ∧ e ∈ L}.encard := by
+    (M ／ e).point_count = {L | M.IsLine L ∧ e ∈ L}.encard := by
   rw [point_count_eq_num_points]
   apply encard_congr
   simp only [coe_setOf]
   convert he.contract_isFlat_equiv 1 using 2
   ext L
-  simp [Line, and_assoc, one_add_one_eq_two]
+  simp [IsLine, and_assoc, one_add_one_eq_two]
 
 -- theorem foo (hM : M.simple) (he : e ∈ M.E) : M.E

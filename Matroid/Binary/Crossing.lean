@@ -155,7 +155,7 @@ lemma binary_unif_iff {a b : ℕ} : (unif a b).Binary ↔ a ≤ 1 ∨ b ≤ a + 
 
 end Binary
 
-lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.Point {e})
+lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.IsPoint {e})
     (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧
     Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
 
@@ -211,15 +211,15 @@ lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he 
 
   -- Each such closure is the complement of a hyperplane, so is a cocircuit. We're done.
   refine ⟨_, _, ?_, ?_, hdj, hucl⟩
-  · rw [← compl_hyperplane_iff_cocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
+  · rw [← compl_isHyperplane_iff_cocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
       ← pair_diff_left hab]
-    exact hIM.hyperplane_of_closure_diff_singleton (by simp)
-  rw [← compl_hyperplane_iff_cocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
+    exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
+  rw [← compl_isHyperplane_iff_cocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
     ← pair_diff_right hab]
-  exact hIM.hyperplane_of_closure_diff_singleton (by simp)
+  exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
 
 lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCircuit C)
-    (h_odd : Odd hfin.toFinset.card) (hCs : M.Spanning C) (hCh : M.Hyperplane (M.E \ C))
+    (h_odd : Odd hfin.toFinset.card) (hCs : M.Spanning C) (hCh : M.IsHyperplane (M.E \ C))
     (hCi : M.Indep (M.E \ C)) (hcard : 3 ≤ C.encard) (h_bin : M.NoUniformMinor 2 4) :
   ∃ (N : Matroid α) (K : Finset α),
     N ≤m M ∧ N.IsCircuit C ∧ N.Cocircuit K ∧ (K : Set α) ⊂ C ∧ Odd K.card := by
@@ -248,8 +248,8 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
       simpa [hf, he.1, he.2]
     rw [← hb'.encard_eq_eRank, encard_pair (by rintro rfl; exact hf.2 he.2)]
 
-  have hfP : N.Point {f}
-  · rw [Point, isFlat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]
+  have hfP : N.IsPoint {f}
+  · rw [IsPoint, isFlat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]
     simp [hCh.isFlat.closure, hf.1, hf.2, hCi.not_mem_closure_diff_of_mem hf]
 
 
@@ -338,7 +338,7 @@ lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX :
   have hN₂m := hcon.minor (hN₂N₁.trans hN₁M)
 
   obtain ⟨N₃, C₀, hN₃, hN₃C, hN₃K, hssu, h_odd'⟩ :=
-    exists_smaller_of_odd_isCircuit_cocircuit (by simp) hCN₂ (by simpa) hSN₂ hKN₂.compl_hyperplane
+    exists_smaller_of_odd_isCircuit_cocircuit (by simp) hCN₂ (by simpa) hSN₂ hKN₂.compl_isHyperplane
     (by simpa using hSdN₂.compl_coindep) hcard (hcon.minor (hN₂N₁.trans hN₁M))
 
   have hcr : N₃.Crossing C₀ := ⟨_, _, hN₃C, hN₃K, by rw [inter_eq_self_of_subset_right hssu.subset]⟩

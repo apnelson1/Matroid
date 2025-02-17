@@ -77,9 +77,9 @@ lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := 
   · rw [pair_eq_singleton, indep_singleton]; exact toNonloop he
   rwa [← not_dep_iff, ← (toNonloop he).parallel_iff_dep (toNonloop hf) hne, parallel_iff_eq he]
 
-lemma pair_closure_line [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
-    (hf : f ∈ M.E := by aesop_mat) : M.Line (M.closure {e,f}) := by
-  rwa [Line, and_iff_right (M.closure_isFlat _), eRk_closure_eq, (pair_indep he hf).eRk_eq_encard,
+lemma pair_closure_isLIne [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
+    (hf : f ∈ M.E := by aesop_mat) : M.IsLine (M.closure {e,f}) := by
+  rwa [IsLine, and_iff_right (M.closure_isFlat _), eRk_closure_eq, (pair_indep he hf).eRk_eq_encard,
     encard_pair]
 
 lemma indep_of_encard_le_two [Simple M] (h : I.encard ≤ 2) (hI : I ⊆ M.E := by aesop_mat) :
@@ -377,7 +377,7 @@ lemma IsSimplification.of_isRestriction {M' : Matroid α} (h : N.IsSimplificatio
   simp only [restrict_parallel_iff]
   exact ⟨f, ⟨hf.1, hf.2, he.mem_ground, hNM'.subset hf.1⟩, by tauto⟩
 
-lemma Point.mem_simplification (he : M.Point {e}) (hN : N.IsSimplification M) : e ∈ N.E := by
+lemma IsPoint.mem_simplification (he : M.IsPoint {e}) (hN : N.IsSimplification M) : e ∈ N.E := by
   have hcl := (hN.parallel_repFun he.nonloop).symm.mem_closure
   rw [he.isFlat.closure, mem_singleton_iff] at hcl
   rw [← hcl]

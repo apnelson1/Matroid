@@ -98,8 +98,8 @@ lemma ConnectedTo.of_minor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤
     M.ConnectedTo e f := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact hef.of_delete.of_contract
 
-private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M.Indep I)
-    (hI' : M.Hyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.Coloop f) :
+private lemma connectedTo_of_indep_isHyperplane_of_not_coloop {I : Set α} (hI : M.Indep I)
+    (hI' : M.IsHyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.Coloop f) :
     M.ConnectedTo e f := by
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
@@ -134,13 +134,13 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.diff_singleton_indep hfC₂).subset
       (subset_diff_singleton diff_subset (by simp [hfK₁]))
 
-  have hH := hK₁.compl_hyperplane
+  have hH := hK₁.compl_isHyperplane
 
   obtain ⟨J, hJ, he₂J⟩ :=
     hC₂i.subset_isBasis_of_subset (diff_subset_diff_left hC₂.subset_ground) hH.subset_ground
 
-  refine (connectedTo_of_indep_hyperplane_of_not_coloop ?_
-    (hH.isBasis_hyperplane_delete hJ) ?_ ?_ ?_).of_delete
+  refine (connectedTo_of_indep_isHyperplane_of_not_coloop ?_
+    (hH.isBasis_isHyperplane_delete hJ) ?_ ?_ ?_).of_delete
   · simp [disjoint_sdiff_right, hJ.indep]
   · simpa [h₁.mem_ground_left, he₁K₁] using
       not_mem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])

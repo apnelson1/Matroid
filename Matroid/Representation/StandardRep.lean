@@ -261,8 +261,8 @@ lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B)
 lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
     M.Cocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
-    rw [h_eq, compl_cocircuit_iff_hyperplane]
-    exact hv.isBase.hyperplane_of_closure_diff_singleton e.2
+    rw [h_eq, compl_cocircuit_iff_isHyperplane]
+    exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
   ext x
   simp only [mem_support, ne_eq, mem_diff]
   obtain hxE | hxE := em' (x ∈ M.E)

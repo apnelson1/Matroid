@@ -364,8 +364,8 @@ lemma ToTruncate.nonempty (hB : T.ToTruncate B) : B.Nonempty :=
 
 lemma ToTruncate.toTruncate_of_closure (hI : T.ToTruncate (insert e I)) (heI : e ∉ I) (hfJ : f ∉ J)
     (hJ : M.Indep (insert f J)) (hIJ : I ⊆ M.closure J) : T.ToTruncate (insert f J) := by
-  have hhp : M.Hyperplane (M.closure I) := by
-    simpa [heI] using hI.isBase.hyperplane_of_closure_diff_singleton (mem_insert _ _)
+  have hhp : M.IsHyperplane (M.closure I) := by
+    simpa [heI] using hI.isBase.isHyperplane_of_closure_diff_singleton (mem_insert _ _)
   replace hJ := show M.IsBase (insert f J) by
     refine hJ.isBase_of_ground_subset_closure ?_
     have hssu : M.closure I ⊂ M.closure (insert f J) := by

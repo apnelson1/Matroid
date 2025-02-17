@@ -60,9 +60,9 @@ lemma Paving.insert_spanning_of_dep_of_not_mem_closure (hM : M.Paving) (hD : M.D
     insert_comm, ← closure_insert_closure_eq_closure_insert, hf.closure_eq,
     insert_eq_of_mem he.1, closure_ground]
 
-lemma Paving.closure_hyperplane_of_dep_of_not_spanning (hM : M.Paving) (hD : M.Dep D)
-    (hDs : ¬ M.Spanning D) : M.Hyperplane (M.closure D) := by
-  rw [hyperplane_iff_maximal_nonspanning, maximal_iff_forall_insert, spanning_iff_closure_eq,
+lemma Paving.closure_isHyperplane_of_dep_of_not_spanning (hM : M.Paving) (hD : M.Dep D)
+    (hDs : ¬ M.Spanning D) : M.IsHyperplane (M.closure D) := by
+  rw [isHyperplane_iff_maximal_nonspanning, maximal_iff_forall_insert, spanning_iff_closure_eq,
     closure_closure, ← spanning_iff_closure_eq, and_iff_right hDs,
     and_iff_right (M.closure_subset_ground D)]
   · refine fun e he' h ↦ h.1 ?_
@@ -116,8 +116,8 @@ lemma Paving.restrict_uniform_of_nonspanning {R : Set α} (hM : M.Paving) (hRs :
   rw [restrict_indep_iff, restrict_spanning_iff hXR, and_iff_left hXR, or_iff_not_imp_left,
     not_indep_iff]
   intro hXd
-  have h1 := hM.closure_hyperplane_of_dep_of_not_spanning (hXd.superset hXR) hRs
-  have h2 := hM.closure_hyperplane_of_dep_of_not_spanning hXd (fun hs ↦ hRs (hs.superset hXR))
+  have h1 := hM.closure_isHyperplane_of_dep_of_not_spanning (hXd.superset hXR) hRs
+  have h2 := hM.closure_isHyperplane_of_dep_of_not_spanning hXd (fun hs ↦ hRs (hs.superset hXR))
   rw [h2.eq_of_subset h1 (M.closure_subset_closure hXR)]
   exact M.subset_closure R
 
@@ -197,29 +197,29 @@ lemma SparsePaving.isCircuit_of_dep_of_not_spanning (hM : M.SparsePaving) (hC : 
 
   exact hfin (fun h ↦ hCs h.spanning)
 
-lemma SparsePaving.hyperplane_of_dep_of_not_spanning {H : Set α} (hM : M.SparsePaving)
-    (hH : M.Dep H) (hHs : ¬ M.Spanning H) : M.Hyperplane H := by
-  rw [← compl_cocircuit_iff_hyperplane, Cocircuit]
+lemma SparsePaving.isHyperplane_of_dep_of_not_spanning {H : Set α} (hM : M.SparsePaving)
+    (hH : M.Dep H) (hHs : ¬ M.Spanning H) : M.IsHyperplane H := by
+  rw [← compl_cocircuit_iff_isHyperplane, Cocircuit]
   apply hM.dual.isCircuit_of_dep_of_not_spanning
   · rwa [← not_indep_iff, ← coindep_def, coindep_iff_compl_spanning,
       diff_diff_cancel_left hH.subset_ground]
   rwa [← M.dual_ground, ← coindep_iff_compl_spanning, dual_coindep_iff, not_indep_iff]
 
-theorem SparsePaving.indep_or_spanning_or_isCircuit_hyperplane (hM : M.SparsePaving)
-    (hXE : X ⊆ M.E) : M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.Hyperplane X) := by
+theorem SparsePaving.indep_or_spanning_or_isCircuit_isHyperplane (hM : M.SparsePaving)
+    (hXE : X ⊆ M.E) : M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.IsHyperplane X) := by
   rw [or_iff_not_imp_left, not_indep_iff, or_iff_not_imp_left]
   exact fun hXd hXs ↦ ⟨hM.isCircuit_of_dep_of_not_spanning hXd hXs,
-    hM.hyperplane_of_dep_of_not_spanning hXd hXs⟩
+    hM.isHyperplane_of_dep_of_not_spanning hXd hXs⟩
 
-theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_hyperplane :
-    M.SparsePaving ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.Hyperplane X) := by
+theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane :
+    M.SparsePaving ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.IsHyperplane X) := by
   suffices aux : ∀ (M : Matroid α),
-    (∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ M.IsCircuit X ∧ M.Hyperplane X) → M.Paving
-  · refine ⟨fun h X hX ↦ h.indep_or_spanning_or_isCircuit_hyperplane hX,
+    (∀ X ⊆ M.E, M.Indep X ∨ M.Spanning X ∨ M.IsCircuit X ∧ M.IsHyperplane X) → M.Paving
+  · refine ⟨fun h X hX ↦ h.indep_or_spanning_or_isCircuit_isHyperplane hX,
       fun h ↦ ⟨aux M h, aux M✶ fun X hX ↦ ?_⟩⟩
     rw [← coindep_def, coindep_iff_compl_spanning, M✶.spanning_iff_compl_coindep,
-      dual_coindep_iff, dual_ground, ← cocircuit_def, ← compl_hyperplane_iff_cocircuit,
-      ← M✶.compl_cocircuit_iff_hyperplane, dual_ground, dual_cocircuit_iff]
+      dual_coindep_iff, dual_ground, ← cocircuit_def, ← compl_isHyperplane_iff_cocircuit,
+      ← M✶.compl_cocircuit_iff_isHyperplane, dual_ground, dual_cocircuit_iff]
     specialize h (M.E \ X) diff_subset
     tauto
   clear! M

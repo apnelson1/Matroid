@@ -634,13 +634,13 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
     exact hInmax hImax.1 hImax.2
 
   simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure_eq hBeE, hU,
-    iff_true, mem_insert_iff, true_or, not_true_eq_false, imp_false, ← hyperplane_iff_covBy,
+    iff_true, mem_insert_iff, true_or, not_true_eq_false, imp_false, ← isHyperplane_iff_covBy,
     and_true, ← spanning_iff_closure_eq hIeE, not_or, not_and, not_not] at hBmax hInmax
 
   by_cases hsp : M.Spanning ((I ∪ B) \ {e})
   · by_cases heI : e ∈ I
-    · replace hImax := show M.Hyperplane (M.closure (I \ {e})) by
-        simpa [hsp.closure_eq, heI, hU, ← hyperplane_iff_covBy] using hImax
+    · replace hImax := show M.IsHyperplane (M.closure (I \ {e})) by
+        simpa [hsp.closure_eq, heI, hU, ← isHyperplane_iff_covBy] using hImax
       exact hInmax.2 hImax heI
     replace hInmax := show ¬ M.Spanning (I \ {e}) by simpa [heI, hU] using hInmax
     replace hImax := show M.closure (I \ {e}) = M.E by
@@ -661,7 +661,7 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
   replace hImax := show M.closure (I \ {e}) = M.closure (B \ {e}) ∧ e ∈ I by
     simpa [heB, ← hclclosure, hB.2] using hImax
 
-  replace hInmax := show ¬M.Hyperplane (M.closure (I \ {e})) by simpa [hImax.2] using hInmax
+  replace hInmax := show ¬M.IsHyperplane (M.closure (I \ {e})) by simpa [hImax.2] using hInmax
   exact hInmax <| (hImax.1.symm ▸ hBhp)
 
 private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
@@ -989,7 +989,7 @@ but I don't know what reasonable definition would forbid that.
 
 -- def LinearClass (M : Matroid α) where
 --   carrier : Set (Set α)
---   forall_hyperplane : ∀ H ∈ carrier, M.Hyperplane H
+--   forall_isHyperplane : ∀ H ∈ carrier, M.IsHyperplane H
 --   forall_hyper' : ∀ H₁ H₂ ∈ carrier,
 
 end LinearClass
