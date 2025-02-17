@@ -208,7 +208,7 @@ theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤
 
 def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M₂ ≤q M₁) :
     M₁.ModularCut :=
-  ModularCut.ofForallModularPairInter M₁
+  ModularCut.ofForallIsModularPairInter M₁
   (U := { F | M₁.IsFlat F ∧ M₂.IsFlat F ∧ hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E})
   (h_isFlat := fun F hF ↦ hF.1)
   (h_superset := by
@@ -226,7 +226,7 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M�
     refine ⟨IsFlat.inter hF₁ hF'₁, IsFlat.inter hF₂ hF'₂, ?_ ⟩
 
     have h1 := M₂.rk_submod F F'
-    have h2 := (modularPair_iff_rk).1 hFF'M
+    have h2 := (isModularPair_iff_rk).1 hFF'M
     have hd1 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy F
     have hd2 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy F'
     have hd3 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy (F ∪ F')
@@ -298,9 +298,9 @@ theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂]
 
 -- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
 
--- Construct a modular cut using `ModularCut.ofForallModularPairInter`,
+-- Construct a modular cut using `ModularCut.ofForallIsModularPairInter`,
 -- which now works for finite-rank matroids.
--- Use `modularPair_iff_rk` to rewrite `ModularPair` with the rank definition.
+-- Use `isModularPair_iff_rk` to rewrite `IsModularPair` with the rank definition.
 
 -- lemma something {M₁ M₂ : Matroid α} {X : Finset α} [RankFinite M₂] (h : M₁ ≤q M₂)
 --     (hr : M₁.rank + X.card = M₂.rank) (hX₁ : Disjoint (X : Set α) M₁.E) :

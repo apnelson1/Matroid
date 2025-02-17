@@ -47,7 +47,7 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
 * `ModularCut.ofDeleteElem` : the modular cut of `M ＼ e` corresponding to the extension `M`
     of `M ＼ e`.
 
-* `ModularCut.ofForallModularPairInter` : in the finite-rank case,
+* `ModularCut.ofForallIsModularPairInter` : in the finite-rank case,
   a modular cut in the classical sense gives a modular cut in the more general sense.
 
 * `Matroid.extendBy e U` : add an element `e` to a matroid `M` using a modular cut `U`.
@@ -76,7 +76,8 @@ element outside `M` and hence also the projections of `M`; see `Matroid.extendBy
   (carrier : Set (Set α))
   (forall_isFlat : ∀ F ∈ carrier, M.IsFlat F)
   (forall_superset : ∀ F F', F ∈ carrier → M.IsFlat F' → F ⊆ F' → F' ∈ carrier)
-  (forall_inter : ∀ Fs ⊆ carrier, Fs.Nonempty → M.ModularFamily (fun x : Fs ↦ x) → ⋂₀ Fs ∈ carrier)
+  (forall_inter : ∀ Fs ⊆ carrier,
+    Fs.Nonempty → M.IsModularFamily (fun x : Fs ↦ x) → ⋂₀ Fs ∈ carrier)
 
 variable {U : M.ModularCut}
 
@@ -107,7 +108,7 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     refine ⟨F', U.forall_superset _ _ hF hF' ?_, rfl⟩
     rwa [← hf.image_subset_image_iff (U.forall_isFlat F hF).subset_ground hF'.subset_ground]
   forall_inter := by
-    simp_rw [modularFamily_map_iff, subset_image_iff]
+    simp_rw [isModularFamily_map_iff, subset_image_iff]
     rintro _ ⟨Fs, hFs, rfl⟩ hne ⟨Ys, ⟨B, hB, hYs⟩, h_eq⟩
     have hFsE : ∀ F ∈ Fs, F ⊆ M.E := fun F hF ↦ (U.forall_isFlat F (hFs hF)).subset_ground
     have hwin := U.forall_inter Fs hFs (by simpa using hne) ⟨B, hB, ?_⟩
@@ -142,19 +143,19 @@ lemma ModularCut.closure_superset_mem' (U : M.ModularCut) (hX : M.closure X ∈ 
   U.closure_superset_mem hX (M.closure_subset_closure hXY)
 
 lemma ModularCut.sInter_mem (U : M.ModularCut) {Fs : Set (Set α)} (hne : Fs.Nonempty) (hFs : Fs ⊆ U)
-    (hFs_mod : M.ModularFamily (fun F : Fs ↦ F)) : ⋂₀ Fs ∈ U :=
+    (hFs_mod : M.IsModularFamily (fun F : Fs ↦ F)) : ⋂₀ Fs ∈ U :=
   U.forall_inter Fs hFs hne hFs_mod
 
 lemma ModularCut.iInter_mem (U : M.ModularCut) {ι : Type*} [Nonempty ι] (Fs : ι → Set α)
-    (hFs : ∀ i, Fs i ∈ U) (hFs_mod : M.ModularFamily Fs) : ⋂ i, Fs i ∈ U := by
+    (hFs : ∀ i, Fs i ∈ U) (hFs_mod : M.IsModularFamily Fs) : ⋂ i, Fs i ∈ U := by
   have hwin := U.sInter_mem (Fs := range Fs) (range_nonempty Fs) ?_ ?_
   · simpa using hwin
   · rintro _ ⟨i, hi, rfl⟩; exact hFs i
   obtain ⟨B, hB, hB'⟩ := hFs_mod
   exact ⟨B, hB, by simpa⟩
 
-lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U) (h : M.ModularPair F F') :
-    F ∩ F' ∈ U := by
+lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U)
+    (h : M.IsModularPair F F') : F ∩ F' ∈ U := by
   rw [inter_eq_iInter]
   apply U.iInter_mem _ _ h
   simp [hF, hF']
@@ -227,14 +228,14 @@ lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principa
 lemma ModularCut.mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
     (hJI : J ⊂ I) (h : ∀ e ∈ I \ J, M.closure (I \ {e}) ∈ U) : M.closure J ∈ U := by
   set Is : ↑(I \ J) → Set α := fun e ↦ I \ {e.1} with hIs
-  have hmod : M.ModularFamily Is := hI.modularFamily_of_subsets (by simp [hIs])
+  have hmod : M.IsModularFamily Is := hI.isModularFamily_of_subsets (by simp [hIs])
   have hne := nonempty_of_ssubset hJI
   have h_inter : ⋂ e, Is e = J := by
     rw [hIs, ← biInter_eq_iInter (t := fun x _ ↦ I \ {x}), biInter_diff_singleton_eq_diff _ hne,
       diff_diff_right, diff_self, empty_union, inter_eq_self_of_subset_right hJI.subset]
   have _ := hne.coe_sort
   rw [← h_inter, ← hmod.iInter_closure_eq_closure_iInter]
-  exact U.iInter_mem _ (fun ⟨i, hi⟩ ↦ h _ (by simpa)) hmod.cls_modularFamily
+  exact U.iInter_mem _ (fun ⟨i, hi⟩ ↦ h _ (by simpa)) hmod.cls_isModularFamily
 
 /-- If `X` spans a flat outside `U`, but `X ∪ {y}` spans a flat in `U` for all
 `y ∈ Y \ M.closure X`, then `M.closure X` is covered by `M.closure Y`. -/
@@ -285,7 +286,7 @@ def ModularCut.restrict (U : M.ModularCut) {R : Set α} (hR : R ⊆ M.E) : (M �
     replace hmod := hmod.ofRestrict hR
     have _ := hne.coe_sort
     rw [sInter_eq_iInter, ← hmod.iInter_closure_eq_closure_iInter]
-    exact U.iInter_mem _ (fun i ↦ (hXs i.2).2) hmod.cls_modularFamily
+    exact U.iInter_mem _ (fun i ↦ (hXs i.2).2) hmod.cls_isModularFamily
 
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
 def ModularCut.delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
@@ -363,17 +364,17 @@ section finite
 
 /-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
 modular pairs rather than families. -/
-@[simps] def ModularCut.ofForallModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
+@[simps] def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
-    (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.ModularPair F F' → F ∩ F' ∈ U) :
+    (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U) :
     M.ModularCut where
   carrier := U
   forall_isFlat := h_isFlat
   forall_superset := h_superset
   forall_inter := by
     suffices h : ∀ (S : Finset (Set α)),
-        S.Nonempty → ↑S ⊆ U → M.ModularFamily (fun (F : S) ↦ F) → ⋂₀ S ∈ U by
+        S.Nonempty → ↑S ⊆ U → M.IsModularFamily (fun (F : S) ↦ F) → ⋂₀ S ∈ U by
       intro Fs hFU hne hmod
       have hFs : Fs.Finite :=
         by simpa using hmod.finite_of_forall_isFlat fun F ↦ h_isFlat _ (hFU F.2)
@@ -391,7 +392,7 @@ modular pairs rather than families. -/
       refine ⟨⟨F, by simp⟩, ⟨F', by simp [hF']⟩, ?_⟩
       simp only [ne_eq, Subtype.mk.injEq]
       rintro rfl; contradiction
-    convert hmod.modularPair_singleton_compl_biInter ⟨F, by simp⟩
+    convert hmod.isModularPair_singleton_compl_biInter ⟨F, by simp⟩
     simp only [mem_compl_iff, mem_singleton_iff, iInter_subtype, sInter_eq_iInter]
     ext x
     simp only [Finset.mem_coe, mem_iInter, Finset.mem_cons, Subtype.mk.injEq,
@@ -399,11 +400,11 @@ modular pairs rather than families. -/
     exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩
 
 
--- @[simps] def ModularCut.ofForallModularPairChainInter (M : Matroid α) (U : Set (Set α))
+-- @[simps] def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
 --     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
 --     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
---     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.ModularPair F F' → F ∩ F' ∈ U)
---     (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.ModularFamily (fun x : Cs ↦ x)
+--     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U)
+--     (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.IsModularFamily (fun x : Cs ↦ x)
 --       → IsChain (· ⊆ ·) Cs → ⋂₀ Cs ∈ U) : M.ModularCut where
 --   carrier := U
 --   forall_isFlat := h_isFlat

@@ -308,7 +308,7 @@ lemma Indep.encard_inter_add_nullity_le_eLocalConn (hI : M.Indep I) (hIX : I ⊆
   exact add_le_add (encard_le_encard (inter_subset_inter hII' hJJ')) <|
     M.nullity_le_of_subset <| union_subset_union hII' hJJ'
 
-lemma ModularPair.eLocalConn_eq_eRk_inter (h : M.ModularPair X Y) :
+lemma IsModularPair.eLocalConn_eq_eRk_inter (h : M.IsModularPair X Y) :
     M.eLocalConn X Y = M.eRk (X ∩ Y) := by
   obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_isBasis
   rw [hIX.eLocalConn_eq hIY, ← hIi.encard_eq_eRk, ← inter_inter_distrib_left,
@@ -375,9 +375,9 @@ lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     (by rwa [closure_union_congr_left hI.closure_eq_closure,
       closure_union_congr_right hJ.closure_eq_closure]) (by simp [heI, heJ]), add_assoc]
 
-lemma IsRkFinite.modularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
+lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
-    M.ModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by
+    M.IsModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by
   refine ⟨fun h ↦ h.eLocalConn_eq_eRk_inter, fun h ↦ ?_⟩
   obtain ⟨Ii, hIi⟩ := M.exists_isBasis (X ∩ Y)
   obtain ⟨IX, hIX, hIX'⟩ := hIi.exists_isBasis_inter_eq_of_superset inter_subset_left
@@ -391,7 +391,7 @@ lemma IsRkFinite.modularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (
   rw [hIX.eLocalConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
     zero_add, WithTop.add_left_cancel_iff hX.inter_right.eRk_ne_top, nullity_eq_zero] at h
 
-  exact h.modularPair_of_union.of_isBasis_of_isBasis hIX hIY
+  exact h.isModularPair_of_union.of_isBasis_of_isBasis hIX hIY
 
 lemma eLocalConn_insert_right_eq_add_one {e : α} (heY : e ∉ M.closure Y)
     (heXY : e ∈ M.closure (X ∪ Y)) : M.eLocalConn X (insert e Y) = M.eLocalConn X Y + 1 := by
@@ -507,23 +507,23 @@ lemma localConn_cast_int_eq (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
   (M.isRkFinite_set X).localConn_cast_int_eq (M.isRkFinite_set Y)
 
-lemma ModularPair.localConn_eq_rk_inter (h : M.ModularPair X Y) :
+lemma IsModularPair.localConn_eq_rk_inter (h : M.IsModularPair X Y) :
     M.localConn X Y = M.rk (X ∩ Y) := by
   rw [localConn, h.eLocalConn_eq_eRk_inter, rk]
 
-lemma IsRkFinite.modularPair_iff_localConn_eq_rk_inter (hX : M.IsRkFinite X) (Y : Set α)
+lemma IsRkFinite.isModularPair_iff_localConn_eq_rk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
-    M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) := by
-  rw [hX.modularPair_iff_eLocalConn_eq_eRk_inter Y hXE hYE, localConn, rk,
+    M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) := by
+  rw [hX.isModularPair_iff_eLocalConn_eq_eRk_inter Y hXE hYE, localConn, rk,
     ← Nat.cast_inj (R := ℕ∞), ENat.coe_toNat, ENat.coe_toNat]
   · rw [eRk_ne_top_iff]
     exact hX.inter_right
   rw [← WithTop.lt_top_iff_ne_top]
   exact (M.eLocalConn_le_eRk_left _ _).trans_lt hX.eRk_lt_top
 
-lemma modularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
-    (hYE : Y ⊆ M.E := by aesop_mat) : M.ModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
-  (M.isRkFinite_set X).modularPair_iff_localConn_eq_rk_inter _ hXE hYE
+lemma isModularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E := by aesop_mat)
+    (hYE : Y ⊆ M.E := by aesop_mat) : M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
+  (M.isRkFinite_set X).isModularPair_iff_localConn_eq_rk_inter _ hXE hYE
 
 lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : I.Nonempty)
     (hIC : I ⊂ C) : M.eLocalConn I (C \ I) = 1 := by

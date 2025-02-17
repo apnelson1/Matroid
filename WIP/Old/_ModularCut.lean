@@ -9,15 +9,15 @@ open Set BigOperators
 variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 
 --- predicate (functions to `Prop`) should be in upper camel case, without underscores
--- def ModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.Modular Xs B
+-- def IsModularFamily (M : Matroid α) (Xs : Set (Set α)) := ∃ B, M.Modular Xs B
 
--- theorem ModularFamily.subset (hXs : M.ModularFamily Xs) (hYs : Ys ⊆ Xs) : M.ModularFamily Ys := by
+-- theorem IsModularFamily.subset (hXs : M.IsModularFamily Xs) (hYs : Ys ⊆ Xs) : M.IsModularFamily Ys := by
 --   obtain ⟨B, hB⟩ := hXs
 --   exact ⟨B, hB.subset hYs⟩
 
--- def ModularPair (M : Matroid α) (X Y : Set α) : Prop := M.ModularFamily {X,Y}
+-- def IsModularPair (M : Matroid α) (X Y : Set α) : Prop := M.IsModularFamily {X,Y}
 
--- theorem modularPair_iff : M.ModularPair X Y ↔
+-- theorem isModularPair_iff : M.IsModularPair X Y ↔
 --     ∃ I, M.IsBasis I (X ∪ Y) ∧ M.IsBasis (X ∩ I) X
 --       ∧ M.IsBasis (Y ∩ I) Y ∧ M.IsBasis (X ∩ Y ∩ I) (X ∩ Y):= by
 --   refine ⟨fun ⟨B, hB⟩ ↦ ?_, fun ⟨I, hu, hIX, hIY, hi⟩ ↦ ?_⟩
@@ -40,14 +40,14 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 --   rwa [← hi.inter_eq_of_subset_indep (inter_subset_inter_right _ hIB) (hB.indep.inter_left _),
 --       inter_right_comm, inter_self] at hi
 
--- theorem ModularPair.symm (h : M.ModularPair X Y) : M.ModularPair Y X := by
---   rw [ModularPair] at h ⊢; rwa [pair_comm]
+-- theorem IsModularPair.symm (h : M.IsModularPair X Y) : M.IsModularPair Y X := by
+--   rw [IsModularPair] at h ⊢; rwa [pair_comm]
 
--- theorem ModularPair.comm : M.ModularPair X Y ↔ M.ModularPair Y X :=
---   ⟨ModularPair.symm, ModularPair.symm⟩
+-- theorem IsModularPair.comm : M.IsModularPair X Y ↔ M.IsModularPair Y X :=
+--   ⟨IsModularPair.symm, IsModularPair.symm⟩
 
 -- def ModularSet (M : Matroid α) (X : Set α) : Prop :=
---     ∀ {F}, M.IsFlat F → M.ModularPair X F
+--     ∀ {F}, M.IsFlat F → M.IsModularPair X F
 
 -- def ModularMatroid (M : Matroid α) : Prop :=
 --     ∀ {F}, M.IsFlat F → M.ModularSet F
@@ -57,7 +57,7 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 --   obtain ⟨I, hI⟩ := M.exists_isBasis F
 --   obtain ⟨B, hB, hIB⟩ := hI.indep
 --   obtain rfl := hI.inter_eq_of_subset_indep hIB hB.indep
---   refine modularPair_iff.2 ⟨B, ?_⟩
+--   refine isModularPair_iff.2 ⟨B, ?_⟩
 --   rw [union_eq_self_of_subset_right hF.subset_ground,
 --     inter_eq_self_of_subset_right hB.subset_ground, basis_ground_iff,
 --     inter_eq_self_of_subset_right hF.subset_ground, inter_comm F]
@@ -66,7 +66,7 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 -- theorem modular_loops (M : Matroid α) : M.ModularSet (M.closure ∅) := by
 --   intro F hF
 --   obtain ⟨I, hI⟩ := M.exists_isBasis F
---   refine modularPair_iff.2 ⟨I, ?_⟩
+--   refine isModularPair_iff.2 ⟨I, ?_⟩
 --   rwa [isBasis_loops_iff,inter_right_comm, inter_comm _ I,  hI.indep.disjoint_loops.inter_eq,
 --     and_iff_right rfl, empty_inter, empty_isBasis_iff,
 --     inter_eq_self_of_subset_left hF.loops_subset, union_eq_self_of_subset_left hF.loops_subset,
@@ -78,7 +78,7 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
   (Fs : Set (Set α))
   (forall_isFlat : ∀ {F}, F ∈ Fs → M.IsFlat F)
   (up_closed : ∀ {F F'}, F ∈ Fs → F ⊆ F' → M.IsFlat F' → F' ∈ Fs)
-  (modular : ∀ Xs ⊆ Fs, Xs.Nonempty → M.ModularFamily (fun X : Xs ↦ X) → ⋂₀ Xs ∈ Fs)
+  (modular : ∀ Xs ⊆ Fs, Xs.Nonempty → M.IsModularFamily (fun X : Xs ↦ X) → ⋂₀ Xs ∈ Fs)
 
 /-- Instance so `M.ModularCut` can be treated like a set via coercion. -/
 instance {M : Matroid α} : SetLike (M.ModularCut) (Set α) where
@@ -103,11 +103,11 @@ theorem ModularCut.isFlat {F : Set α} (C : M.ModularCut) (hF : F ∈ C) : M.IsF
     C.forall_isFlat hF
 
 theorem ModularCut.sInter (C : M.ModularCut) (hXs : Xs ⊆ C)
-    (hXsmod : M.ModularFamily (fun X : Xs ↦ X)) (hne : Xs.Nonempty) : ⋂₀ Xs ∈ C :=
+    (hXsmod : M.IsModularFamily (fun X : Xs ↦ X)) (hne : Xs.Nonempty) : ⋂₀ Xs ∈ C :=
   C.modular _ hXs hne hXsmod
 
 theorem ModularCut.inter {F F' : Set α} (C : M.ModularCut) (hF : F ∈ C) (hF' : F' ∈ C)
-    (hFF' : M.ModularPair F F') : F ∩ F' ∈ C := by
+    (hFF' : M.IsModularPair F F') : F ∩ F' ∈ C := by
   rw [← sInter_pair]
   apply C.sInter (pair_subset hF hF') _ (by simp)
   let ⟨B, hB⟩ := hFF'
@@ -122,7 +122,7 @@ theorem ModularCut.inter {F F' : Set α} (C : M.ModularCut) (hF : F ∈ C) (hF' 
 lemma ModularCut.insert_closure {a b : α} {X : Set α} (C : M.ModularCut) (hI : M.Indep (insert a (insert b X)))
     (ha : M.closure (insert a X) ∈ C) (hb : M.closure (insert b X) ∈ C) (hne : a ≠ b) : M.closure X ∈ C := by
   rw [← (@inter_insert_eq _ X _ _ hne), Indep.closure_inter_eq_inter_closure]
-  · apply C.inter ha hb (modularPair_iff.2 ⟨(insert a (insert b X)), hI, _⟩)
+  · apply C.inter ha hb (isModularPair_iff.2 ⟨(insert a (insert b X)), hI, _⟩)
     rw [hI.closure_inter_eq_self_of_subset (subset_insert _ _), hI.closure_inter_eq_self_of_subset]
     · refine' ⟨Indep.isBasis_closure (hI.subset _), Indep.isBasis_closure (hI.subset (subset_insert _ _))⟩
       rw [insert_comm]
@@ -140,21 +140,21 @@ theorem IsBasis.exchange_isBase_of_indep {M : Matroid α} {f e : α} {X : Set α
 
 
 
-lemma ModularBase.subset {M : Matroid α} {X Y : Set (Set α)} {B : Set α}
-    (hmod : M.ModularBase B (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.ModularBase B (fun y : Y ↦ y) :=
+lemma IsModularBase.subset {M : Matroid α} {X Y : Set (Set α)} {B : Set α}
+    (hmod : M.IsModularBase B (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.IsModularBase B (fun y : Y ↦ y) :=
   ⟨hmod.1, fun i ↦ hmod.2 ⟨i.1, hsub i.2⟩⟩
 
 
-lemma ModularFamily.subset {M : Matroid α} {X Y : Set (Set α)}
-    (hmod : M.ModularFamily (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.ModularFamily (fun y : Y ↦ y) := by
+lemma IsModularFamily.subset {M : Matroid α} {X Y : Set (Set α)}
+    (hmod : M.IsModularFamily (fun x : X ↦ x)) (hsub : Y ⊆ X) : M.IsModularFamily (fun y : Y ↦ y) := by
   obtain ⟨B, hB⟩ := hmod
   refine' ⟨B, hB.subset hsub⟩
 
 
 lemma modular_finite_intersection {M : Matroid α} {X : Set (Set α)} {Fs : Set (Set α)}
     (forall_isFlat : ∀ {F}, F ∈ Fs → M.IsFlat F)
-    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularPair F F' → F ∩ F' ∈ Fs)
-    (hfin : X.Finite) (hsub : X ⊆ Fs) (hmod : M.ModularFamily (fun x : X ↦ x)) (hnone : X.Nonempty) :
+    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.IsModularPair F F' → F ∩ F' ∈ Fs)
+    (hfin : X.Finite) (hsub : X ⊆ Fs) (hmod : M.IsModularFamily (fun x : X ↦ x)) (hnone : X.Nonempty) :
     sInter X ∈ Fs := by
   obtain (⟨x, rfl⟩ | X_nt) := hnone.exists_eq_singleton_or_nontrivial
   · rwa [sInter_singleton, ← singleton_subset_iff]
@@ -175,7 +175,7 @@ lemma modular_finite_intersection {M : Matroid α} {X : Set (Set α)} {Fs : Set 
     exact fun x_mem ↦ absurd rfl x_mem.2
   have:= encard_lt
   apply modular_finite_intersection forall_isFlat pair_modular (hfin.subset diff_subset) (diff_subset.trans
-   hsub) (ModularFamily.subset ⟨B, B_mod⟩ diff_subset) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
+   hsub) (IsModularFamily.subset ⟨B, B_mod⟩ diff_subset) ⟨y, ⟨(pair_subset_iff.1 xy_sub).2, _⟩⟩
   exact xy_ne.symm
 termination_by _ => X.encard
 
@@ -184,7 +184,7 @@ termination_by _ => X.encard
 @[simps] def ModularCut.ofForallPair {M : Matroid α} [M.Finite] {Fs : Set (Set α)}
     (forall_isFlat : ∀ {F}, F ∈ Fs → M.IsFlat F)
     (up_closed : ∀ {F F'}, F ∈ Fs → F ⊆ F' → M.IsFlat F' → F' ∈ Fs)
-    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.ModularPair F F' → F ∩ F' ∈ Fs) :
+    (pair_modular : ∀ {F F'}, F ∈ Fs → F' ∈ Fs → M.IsModularPair F F' → F ∩ F' ∈ Fs) :
     M.ModularCut where
   Fs := Fs
   forall_isFlat := forall_isFlat
@@ -849,9 +849,9 @@ theorem ModularCut.extension_isFlat_iff {F : Set α} {C : M.ModularCut} (hC : C.
   modular := by
     intro Xs Xs_sub Xs_none mod
     refine' ⟨IsFlat.sInter Xs_none (fun F F_mem ↦ (Xs_sub F_mem).1), _⟩
-    have mod': ModularFamily M (fun X : Xs ↦ X) := mod.ofRestrict diff_subset
+    have mod': IsModularFamily M (fun X : Xs ↦ X) := mod.ofRestrict diff_subset
     haveI Xsne : _root_.Nonempty ↑Xs := nonempty_coe_sort.2 Xs_none
-    rw [sInter_eq_iInter, ←ModularFamily.iInter_closure_eq_closure_iInter mod', mem_iInter]
+    rw [sInter_eq_iInter, ←IsModularFamily.iInter_closure_eq_closure_iInter mod', mem_iInter]
     exact fun X ↦ (Xs_sub X.2).2
 
 

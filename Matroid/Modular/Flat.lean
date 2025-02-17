@@ -14,10 +14,10 @@ section IsModularFlat
 /-- A `IsModularFlat` is a flat that is a modular pair with every other flat. -/
 @[mk_iff] structure IsModularFlat (M : Matroid α) (X : Set α) : Prop where
   isFlat : M.IsFlat X
-  modularPair : ∀ ⦃F⦄, M.IsFlat F → M.ModularPair X F
+  isModularPair : ∀ ⦃F⦄, M.IsFlat F → M.IsModularPair X F
 
-lemma IsFlat.isModularFlat_of_forall (hX : M.IsFlat X) (h : ∀ ⦃F⦄, M.IsFlat F → M.ModularPair X F) :
-    M.IsModularFlat X :=
+lemma IsFlat.isModularFlat_of_forall (hX : M.IsFlat X)
+    (h : ∀ ⦃F⦄, M.IsFlat F → M.IsModularPair X F) : M.IsModularFlat X :=
   ⟨hX, h⟩
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
@@ -27,7 +27,7 @@ lemma IsModularFlat.subset_ground (h : M.IsModularFlat X) : X ⊆ M.E :=
 lemma isModularFlat_iff_forall_exists_isBasis : M.IsModularFlat X ↔
     M.IsFlat X ∧ ∀ ⦃F⦄, M.IsFlat F →
       ∃ I, M.Indep I ∧ M.IsBasis (X ∩ I) X ∧ M.IsBasis (F ∩ I) F := by
-  simp [isModularFlat_iff, modularPair_iff]
+  simp [isModularFlat_iff, isModularPair_iff]
 
 lemma modularSet_iff_closure :
     M.IsModularFlat X ↔ M.IsFlat X ∧
@@ -44,10 +44,10 @@ lemma modularSet_iff_closure :
     hI.inter_isBasis_closure_iff_subset_closure_inter]
 
 @[simp] lemma isModularFlat_ground (M : Matroid α) : M.IsModularFlat M.E :=
-  ⟨M.ground_isFlat, fun _ hF ↦ (modularPair_of_subset hF.subset_ground Subset.rfl).symm⟩
+  ⟨M.ground_isFlat, fun _ hF ↦ (isModularPair_of_subset hF.subset_ground Subset.rfl).symm⟩
 
 @[simp] lemma isModularFlat_loops (M : Matroid α) : M.IsModularFlat (M.closure ∅) :=
-  ⟨M.closure_isFlat ∅, fun _ h ↦ modularPair_of_subset h.loops_subset h.subset_ground⟩
+  ⟨M.closure_isFlat ∅, fun _ h ↦ isModularPair_of_subset h.loops_subset h.subset_ground⟩
 
 @[simp] lemma isModularFlat_empty (M : Matroid α) [Loopless M] : M.IsModularFlat ∅ := by
   rw [← M.closure_empty_eq_empty]
@@ -56,11 +56,11 @@ lemma modularSet_iff_closure :
 @[simp] lemma isModularFlat_closure_singleton (M : Matroid α) (e : α) :
     M.IsModularFlat (M.closure {e}) where
   isFlat := M.closure_isFlat _
-  modularPair F hF := by
+  isModularPair F hF := by
     by_cases h : M.closure {e} ⊆ F
-    · apply modularPair_of_subset h hF.subset_ground
+    · apply isModularPair_of_subset h hF.subset_ground
     by_cases he : e ∈ M.E
-    · refine (modularPair_singleton he hF.subset_ground fun hecl ↦ h ?_).closure_left
+    · refine (isModularPair_singleton he hF.subset_ground fun hecl ↦ h ?_).closure_left
       rw [hF.closure] at hecl
       exact hF.closure_subset_of_subset (by simpa)
     rw [← closure_inter_ground, singleton_inter_eq_empty.2 he] at h
@@ -84,7 +84,7 @@ lemma IsFlat.isModularFlat_of_eRk_le_one (hF : M.IsFlat F) (hr : M.eRk F ≤ 1) 
 
 /-- In a simple matroid, being a modular flat is the same as being a modular pair with each flat. -/
 lemma IsModularFlat.IsFlat [Simple M] :
-    M.IsModularFlat X ↔ ∀ ⦃F⦄, M.IsFlat F → M.ModularPair X F := by
+    M.IsModularFlat X ↔ ∀ ⦃F⦄, M.IsFlat F → M.IsModularPair X F := by
   wlog hX : X ⊆ M.E
   · exact iff_of_false (fun h ↦ hX h.subset_ground)
       fun h ↦ hX ((h (M.closure_isFlat ∅)).subset_ground_left)
@@ -104,7 +104,7 @@ lemma IsModularFlat.restrict_isFlat (hF : M.IsModularFlat F) (hF' : M.IsFlat F')
   · rw [isFlat_restrict_iff', hF.isFlat.closure, diff_eq_empty.2 hF'.subset_ground,
       inter_eq_self_of_subset_left hFF', union_empty]
   obtain ⟨F₁, hF₁, rfl⟩ := (isFlat_restrict_iff hF'.subset_ground).1 hF₂
-  exact (hF.modularPair (hF₁.inter hF')).restrict hFF' inter_subset_right
+  exact (hF.isModularPair (hF₁.inter hF')).restrict hFF' inter_subset_right
 
 lemma IsModularFlat.contract_subset {C : Set α} (hF : M.IsModularFlat F) (hC : C ⊆ F) :
     (M ／ C).IsModularFlat (F \ C) := by
@@ -113,7 +113,7 @@ lemma IsModularFlat.contract_subset {C : Set α} (hF : M.IsModularFlat F) (hC : 
   · rw [isFlat_contract_iff, diff_union_of_subset hC, and_iff_right hF.isFlat]
     exact disjoint_sdiff_left
   rw [isFlat_contract_iff] at hF'
-  simpa [hF'.2.sdiff_eq_left] using (hF.modularPair hF'.1).contract_subset_closure (C := C)
+  simpa [hF'.2.sdiff_eq_left] using (hF.isModularPair hF'.1).contract_subset_closure (C := C)
     (by simpa [hF.isFlat.closure]) (M.subset_closure_of_subset' subset_union_right)
 
 /-- A isFlat is modular iff it is skew to every complementary isFlat. -/
@@ -123,7 +123,7 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
   rw [isModularFlat_iff, and_iff_right hX]
   refine ⟨fun h F hF hr hs ↦ ?_, fun h Y hY ↦ ?_⟩
   · specialize h hF
-    rw [modularPair_iff_skew_contract_inter (hr.trans (M.closure_subset_ground _)),
+    rw [isModularPair_iff_skew_contract_inter (hr.trans (M.closure_subset_ground _)),
       contract_eq_delete_of_subset_loops hr, ← diff_inter_self_eq_diff,
       ← diff_inter_self_eq_diff (t := X), inter_comm F] at h
     rw [skew_iff_diff_loops_skew]
@@ -167,7 +167,7 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
   have hi1 := hX'.isBasis_inter_isBasis_eq hIZ hIY hIX' subset_union_right hss
   have hiu := hX'.union_isBasis_top hIZ hIY hIX' subset_union_right hss
 
-  rw [modularPair_iff_exists_isBasis_isBasis]
+  rw [isModularPair_iff_exists_isBasis_isBasis]
 
   have hrw : IU \ IZ = IU ∩ X
   · nth_rewrite 1 [← inter_eq_self_of_subset_left hIU.subset]
@@ -254,7 +254,8 @@ lemma IsLine.isModularFlat_of_forall_isHyperplane {L : Set α} (hL : M.IsLine L)
 there is an element of `X` parallel to `e`.
 TODO: clean up this proof. -/
 lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C : Set α}
-    (he : (M ／ C).IsNonloop e) (hecl : e ∈ (M ／ C).closure X) : ∃ f ∈ X, (M ／ C).Parallel e f := by
+    (he : (M ／ C).IsNonloop e) (hecl : e ∈ (M ／ C).closure X) :
+    ∃ f ∈ X, (M ／ C).Parallel e f := by
   wlog hC : M.Indep C with aux
   · obtain ⟨I, hI⟩ := M.exists_isBasis' C
     rw [hI.contract_eq_contract_delete, delete_isNonloop_iff] at he
@@ -272,7 +273,7 @@ lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C 
   have hnl := contract_isNonloop_iff.1 he
   rw [contract_closure_eq] at hecl
 
-  obtain ⟨J, hJ, hJX, hJI, hi⟩ := (hX.modularPair (M.closure_isFlat C)).exists_common_isBasis
+  obtain ⟨J, hJ, hJX, hJI, hi⟩ := (hX.isModularPair (M.closure_isFlat C)).exists_common_isBasis
   have hJE := hJ.indep.subset_ground
   have hsk := hJ.indep.subset_skew_diff (J := J ∩ X) inter_subset_left
 
@@ -291,7 +292,7 @@ lemma IsModularFlat.exists_parallel_mem_of_contract (hX : M.IsModularFlat X) {C 
 
   by_contra! hcon
 
-  refine hnsk <| (hX.modularPair (M.closure_isFlat _)).skew_of_inter_subset_loops ?_
+  refine hnsk <| (hX.isModularPair (M.closure_isFlat _)).skew_of_inter_subset_loops ?_
   nth_rewrite 1 [← diff_union_inter X (M.closure (J \ X)), union_inter_distrib_right]
   rw [union_subset_iff, inter_assoc,
     inter_eq_self_of_subset_left (M.closure_subset_closure (subset_insert _ _)),
@@ -368,7 +369,7 @@ lemma IsFlat.modularSet_iff_forall_minor_exists_parallel (hX : M.IsFlat X) :
 lemma IsModularFlat.inter_insert_closure_isPoint_of_skew (hF : M.IsModularFlat F)
     (hFX : M.Skew F X) (heFX : e ∈ M.closure (F ∪ X)) (heX : e ∉ M.closure X) :
     M.IsPoint (F ∩ M.closure (insert e X)) := by
-  have hc := (hF.modularPair (M.closure_isFlat (insert e X))).eLocalConn_eq_eRk_inter
+  have hc := (hF.isModularPair (M.closure_isFlat (insert e X))).eLocalConn_eq_eRk_inter
   rw [eLocalConn_closure_right, eLocalConn_insert_right_eq_add_one heX heFX, hFX.eLocalConn,
     zero_add] at hc
   rw [IsPoint, ← hc, and_iff_left rfl]
@@ -376,7 +377,7 @@ lemma IsModularFlat.inter_insert_closure_isPoint_of_skew (hF : M.IsModularFlat F
 
 section Lattice
 
-/-- This isn't true with just a simple `ModularPair F X` assumption,
+/-- This isn't true with just a simple `IsModularPair F X` assumption,
 for example when `M` is a triangle `{e,f,g}` in which `X = {e} ⊆ {e,f} = Y` and `F = {g}`.-/
 lemma IsModularFlat.distrib_of_subset (hF : M.IsModularFlat F) (hX : M.IsFlat X) (hY : M.IsFlat Y)
     (hXY : X ⊆ Y) : M.closure (X ∪ F) ∩ Y = M.closure (X ∪ (F ∩ Y)) := by
@@ -418,8 +419,8 @@ lemma IsFlat.isModularFlat_iff_forall_distrib_of_subset (hF : M.IsFlat F) :
       closure_closure_union_closure_eq_closure_union, union_empty] at hcon
   exact hcon.subset ⟨hecl, hJ.subset heJ⟩
 
-lemma ModularPair.distrib_of_subset_left (hFX : M.ModularPair F X) (hF : M.IsFlat F) (hYF : Y ⊆ F) :
-    F ∩ M.closure (X ∪ Y) = M.closure ((F ∩ X) ∪ Y) := by
+lemma IsModularPair.distrib_of_subset_left (hFX : M.IsModularPair F X) (hF : M.IsFlat F)
+    (hYF : Y ⊆ F) : F ∩ M.closure (X ∪ Y) = M.closure ((F ∩ X) ∪ Y) := by
   have hss : Y \ (F ∩ X) ⊆ F \ X
   · rw [← diff_self_inter (s := F)]
     exact diff_subset_diff_left hYF
@@ -441,11 +442,12 @@ lemma ModularPair.distrib_of_subset_left (hFX : M.ModularPair F X) (hF : M.IsFla
   refine subset_inter (union_subset inter_subset_left hYF) (M.subset_closure_of_subset' ?_)
   exact union_subset_union_left _ inter_subset_right
 
-lemma modularPair_iff_forall_distrib_of_subset_left (hF : M.IsFlat F) (hXE : X ⊆ M.E) :
-    M.ModularPair F X ↔ ∀ Y ⊆ F, M.IsFlat Y → F ∩ M.closure (X ∪ Y) ⊆ M.closure ((F ∩ X) ∪ Y) := by
+lemma isModularPair_iff_forall_distrib_of_subset_left (hF : M.IsFlat F) (hXE : X ⊆ M.E) :
+    M.IsModularPair F X
+    ↔ ∀ Y ⊆ F, M.IsFlat Y → F ∩ M.closure (X ∪ Y) ⊆ M.closure ((F ∩ X) ∪ Y) := by
   refine ⟨fun h Y hYF hY ↦ (h.distrib_of_subset_left hF hYF).subset, fun h ↦ ?_⟩
   have hFXE : F ∩ X ⊆ M.E := (inter_subset_left.trans hF.subset_ground)
-  rw [modularPair_iff_skew_contract_inter hFXE]
+  rw [isModularPair_iff_skew_contract_inter hFXE]
   obtain ⟨I, hI⟩ := M.exists_isBasis (F ∩ X)
   obtain ⟨IF, hIF, hIF_eq⟩ := hI.exists_isBasis_inter_eq_of_superset inter_subset_left
   obtain ⟨IX, hIX, hIX_eq⟩ := hI.exists_isBasis_inter_eq_of_superset inter_subset_right
@@ -483,13 +485,13 @@ lemma modularPair_iff_forall_distrib_of_subset_left (hF : M.IsFlat F) (hXE : X �
 lemma IsModularFlat.distrib_of_subset_self (hF : M.IsModularFlat F) (hX : M.IsFlat X) (hY : Y ⊆ F) :
     F ∩ M.closure (X ∪ Y) = M.closure (F ∩ X ∪ Y) := by
   rw [← closure_union_closure_left_eq,
-    (hF.modularPair (M.closure_isFlat X)).distrib_of_subset_left hF.isFlat hY, hX.closure]
+    (hF.isModularPair (M.closure_isFlat X)).distrib_of_subset_left hF.isFlat hY, hX.closure]
 
 lemma IsFlat.isModularFlat_iff_forall_distrib_of_subset_self (hF : M.IsFlat F) :
     M.IsModularFlat F ↔ ∀ X Y, M.IsFlat X → M.IsFlat Y → Y ⊆ F →
       F ∩ M.closure (X ∪ Y) ⊆ M.closure ((F ∩ X) ∪ Y) := by
   refine ⟨fun h X Y hX hY hYF ↦ ?_, fun h ↦ ?_⟩
-  · exact ((h.modularPair hX).distrib_of_subset_left h.isFlat hYF).subset
+  · exact ((h.isModularPair hX).distrib_of_subset_left h.isFlat hYF).subset
   rw [hF.isModularFlat_iff_forall_skew_of_inter]
   rintro X hX hFX -
   obtain ⟨I, hI⟩ := M.exists_isBasis F
@@ -511,14 +513,14 @@ lemma IsFlat.isModularFlat_iff_forall_distrib_of_subset_self (hF : M.IsFlat F) :
 
 /-- If `F` gives a modular pair with every set in some directed collection, then it gives
 a modular pair with the span of their union. -/
-lemma IsFlat.modularPair_iUnion_of_directed [Finitary M] {ι : Type*} {D : ι → Set α}
-    (hF : M.IsFlat F) (hdir : Directed (· ⊆ ·) D) (hFD : ∀ i, M.ModularPair F (D i)) :
-    M.ModularPair F (M.closure (⋃ i, D i)) := by
+lemma IsFlat.isModularPair_iUnion_of_directed [Finitary M] {ι : Type*} {D : ι → Set α}
+    (hF : M.IsFlat F) (hdir : Directed (· ⊆ ·) D) (hFD : ∀ i, M.IsModularPair F (D i)) :
+    M.IsModularPair F (M.closure (⋃ i, D i)) := by
   obtain hι | hι := isEmpty_or_nonempty ι
   · simp only [iUnion_of_empty]
-    exact M.modularPair_loops hF.subset_ground
+    exact M.isModularPair_loops hF.subset_ground
 
-  rw [modularPair_iff_forall_distrib_of_subset_left hF (M.closure_subset_ground _)]
+  rw [isModularPair_iff_forall_distrib_of_subset_left hF (M.closure_subset_ground _)]
   intro Y hYss hY
   have hdir' : Directed (· ⊆ ·) fun i ↦ M.closure (D i ∪ Y)
   · intro i j
@@ -542,8 +544,8 @@ lemma IsModularFlat.closure_iUnion_of_directed [Finitary M] {ι : Type*} (Fs : �
     (hFs : ∀ i, M.IsModularFlat (Fs i)) (hdir : Directed (· ⊆ ·) Fs) :
     M.IsModularFlat (M.closure (⋃ i, Fs i)) := by
   rw [isModularFlat_iff, and_iff_right (M.closure_isFlat _)]
-  exact fun X hX ↦ (hX.modularPair_iUnion_of_directed hdir
-    (fun i ↦ ((hFs i).modularPair hX).symm)).symm
+  exact fun X hX ↦ (hX.isModularPair_iUnion_of_directed hdir
+    (fun i ↦ ((hFs i).isModularPair hX).symm)).symm
 
 lemma IsModularFlat.inter (hX : M.IsModularFlat X) (hY : M.IsModularFlat Y) :
     M.IsModularFlat (X ∩ Y) := by
@@ -593,9 +595,9 @@ lemma IsModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → S
       fun i ↦ iInter_subset_of_subset {i} (by simp)⟩
 
   -- The intersection is modular with every finite-rank isFlat.
-  have hfin : ∀ F, M.IsFlat F → M.IsRkFinite F → M.ModularPair (⋂ i, X i) F
+  have hfin : ∀ F, M.IsFlat F → M.IsRkFinite F → M.IsModularPair (⋂ i, X i) F
   · intro F hF hfin
-    rw [modularPair_iff_forall_distrib_of_subset_left (IsFlat.iInter (fun i ↦ (hX i).isFlat))
+    rw [isModularPair_iff_forall_distrib_of_subset_left (IsFlat.iInter (fun i ↦ (hX i).isFlat))
       hF.subset_ground]
     simp only [subset_iInter_iff]
     intro Y hYss hY
@@ -632,7 +634,7 @@ lemma IsModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → S
     exact M.mem_closure_of_mem' rfl
 
   rw [← hU]
-  refine (IsFlat.iInter (fun i ↦ (hX i).isFlat)).modularPair_iUnion_of_directed hdirD  ?_
+  refine (IsFlat.iInter (fun i ↦ (hX i).isFlat)).isModularPair_iUnion_of_directed hdirD  ?_
   rintro ⟨F₀, hF₀, hF₀fin, hmod⟩
   exact hfin F₀ hF₀ hF₀fin
 
@@ -687,18 +689,18 @@ lemma Modular.modularSet_of_isFlat (hM : M.Modular) (hF : M.IsFlat F) : M.IsModu
 
 lemma modular_iff : M.Modular ↔ ∀ ⦃F⦄, M.IsFlat F → M.IsModularFlat F := Iff.rfl
 
-lemma modular_iff_forall_modularPair :
-    M.Modular ↔ ∀ ⦃F F'⦄, M.IsFlat F → M.IsFlat F' → M.ModularPair F F' := by
+lemma modular_iff_forall_isModularPair :
+    M.Modular ↔ ∀ ⦃F F'⦄, M.IsFlat F → M.IsFlat F' → M.IsModularPair F F' := by
   simp_rw [Modular, isModularFlat_iff]
   aesop
 
-lemma Modular.modularPair (h : M.Modular) (hF : M.IsFlat F) (hF' : M.IsFlat F') :
-    M.ModularPair F F' :=
-  (h hF).modularPair hF'
+lemma Modular.isModularPair (h : M.Modular) (hF : M.IsFlat F) (hF' : M.IsFlat F') :
+    M.IsModularPair F F' :=
+  (h hF).isModularPair hF'
 
 lemma freeOn_modular (E : Set α) : (freeOn E).Modular := by
   intro F
-  simp only [freeOn_isFlat_iff, isModularFlat_iff, modularPair_iff, freeOn_indep_iff,
+  simp only [freeOn_isFlat_iff, isModularFlat_iff, isModularPair_iff, freeOn_indep_iff,
     freeOn_isBasis_iff, inter_eq_left]
   aesop
 
@@ -714,7 +716,8 @@ lemma Modular.contract (hM : M.Modular) (C : Set α) : (M ／ C).Modular := by
 
   refine fun F hF ↦ ⟨hF, fun F' hF' ↦ ?_⟩
   rw [isFlat_contract_iff] at hF hF'
-  convert (hM.modularPair (M.closure_isFlat (F ∪ C)) (M.closure_isFlat (F' ∪ C))).contract (C := C)
+  convert (hM.isModularPair (M.closure_isFlat (F ∪ C))
+    (M.closure_isFlat (F' ∪ C))).contract (C := C)
     (M.subset_closure_of_subset' subset_union_right)
     (M.subset_closure_of_subset' subset_union_right)
 
@@ -726,7 +729,7 @@ lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C
     ∃ e, e ∉ C ∧ M.IsCircuit (insert e I) ∧ M.IsCircuit (insert e (C \ I)) := by
   have hssu : I ⊂ C := hIC.ssubset_of_ne (by rintro rfl; simp at hnt')
   have hI := hC.ssubset_indep hssu
-  have hli := (hmod.modularPair (M.closure_isFlat (C \ I))).eLocalConn_eq_eRk_inter
+  have hli := (hmod.isModularPair (M.closure_isFlat (C \ I))).eLocalConn_eq_eRk_inter
   obtain ⟨J, hJ⟩ := M.exists_isBasis (M.closure I ∩ M.closure (C \ I))
   rw [eLocalConn_closure_closure, hC.eLocalConn_subset_compl hnt.nonempty hssu, eq_comm,
     ← hJ.encard_eq_eRk, encard_eq_one] at hli
@@ -993,7 +996,7 @@ lemma finitary_of_forall_isLIne_modular (hM : ∀ L, M.IsLine L → M.IsModularF
   · simp at hxe
   simp [he.eq_iff] at h3
 
-/-- A matroid is modular iff every line meets every isHyperplane in a point. -/
+/-- A matroid is modular iff every line meets every hyperplane in a point. -/
 lemma modular_iff_forall_isLIne_isHyperplane :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → ¬ (L ∩ H ⊆ M.closure ∅) := by
   refine ⟨fun h L H hL hH ↦ ?_, fun h F hF ↦ ?_⟩
