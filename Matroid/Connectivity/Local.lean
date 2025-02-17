@@ -150,9 +150,9 @@ lemma eLocalConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : S
   obtain ⟨I, hI, hII'⟩ := hI'.indep.subset_isBasis'_of_subset (hI'.subset.trans hX)
   obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
   rw [hI'.eLocalConn_eq hJ, hI.eLocalConn_eq hJ]
-  refine add_le_add (encard_le_encard (inter_subset_inter_left _ hII')) (Minor.eRank_le ?_)
-  rw [dual_minor_iff]
-  exact (IsRestriction.of_subset M (union_subset_union_left _ hII')).minor
+  refine add_le_add (encard_le_encard (inter_subset_inter_left _ hII')) (IsMinor.eRank_le ?_)
+  rw [dual_isMinor_iff]
+  exact (IsRestriction.of_subset M (union_subset_union_left _ hII')).isMinor
 
 lemma eLocalConn_mono_right {Y' : Set α} (M : Matroid α) (X : Set α) (hY : Y' ⊆ Y) :
     M.eLocalConn X Y' ≤ M.eLocalConn X Y := by
@@ -695,7 +695,7 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
   rw [← eConn_dual, contract_dual_eq_dual_delete, ← M.eConn_dual]
   apply eConn_delete_le
 
-lemma Minor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
+lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 

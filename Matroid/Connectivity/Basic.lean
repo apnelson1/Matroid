@@ -94,7 +94,7 @@ lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M
   rw [contract_dual_eq_dual_delete] at hef
   exact hef.of_delete.of_dual
 
-lemma ConnectedTo.of_minor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
+lemma ConnectedTo.of_isMinor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
     M.ConnectedTo e f := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact hef.of_delete.of_contract
 

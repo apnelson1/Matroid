@@ -691,7 +691,7 @@ lemma Cocircuit.delete_diff_cocircuit {X : Set α} (hK : M.Cocircuit K) (hXK : X
 
 end Contract
 
-section Minor
+section IsMinor
 
 variable {M₀ M₁ M₂ : Matroid α}
 
@@ -766,57 +766,57 @@ lemma delete_contract_delete (M : Matroid α) (D C D' : Set α) (h : Disjoint C 
   rw [delete_contract_delete', sdiff_eq_left.mpr h]
 
 /- `N` is a minor of `M` if `N = M ／ C ＼ D` for disjoint sets `C,D ⊆ M.E`-/
-def Minor (N M : Matroid α) : Prop :=
+def IsMinor (N M : Matroid α) : Prop :=
   ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ N = M ／ C ＼ D
 
-def StrictMinor (N M : Matroid α) : Prop :=
-  Minor N M ∧ ¬Minor M N
+def IsStrictMinor (N M : Matroid α) : Prop :=
+  IsMinor N M ∧ ¬IsMinor M N
 
-infixl:50 " ≤m " => Matroid.Minor
-infixl:50 " <m " => Matroid.StrictMinor
+infixl:50 " ≤m " => Matroid.IsMinor
+infixl:50 " <m " => Matroid.IsStrictMinor
 
-lemma contract_delete_minor (M : Matroid α) (C D : Set α) : M ／ C ＼ D ≤m M := by
+lemma contract_delete_isMinor (M : Matroid α) (C D : Set α) : M ／ C ＼ D ≤m M := by
   rw [contract_delete_diff, ← contract_inter_ground_eq, ← delete_inter_ground_eq,
     contract_ground, diff_inter_self_eq_diff, diff_inter_diff_right, inter_diff_right_comm]
   refine ⟨_,_, inter_subset_right, inter_subset_right, ?_, rfl⟩
   exact disjoint_of_subset inter_subset_left inter_subset_left disjoint_sdiff_right
 
-lemma minor_def : N ≤m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ N = M ／ C ＼ D := Iff.rfl
+lemma isMinor_def : N ≤m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ N = M ／ C ＼ D := Iff.rfl
 
-lemma minor_iff_exists_contract_delete : N ≤m M ↔ ∃ C D : Set α, N = M ／ C ＼ D :=
-  ⟨fun ⟨C, D, h⟩ ↦ ⟨_,_,h.2.2.2⟩, fun ⟨C, D, h⟩ ↦ by rw [h]; apply contract_delete_minor⟩
+lemma isMinor_iff_exists_contract_delete : N ≤m M ↔ ∃ C D : Set α, N = M ／ C ＼ D :=
+  ⟨fun ⟨C, D, h⟩ ↦ ⟨_,_,h.2.2.2⟩, fun ⟨C, D, h⟩ ↦ by rw [h]; apply contract_delete_isMinor⟩
 
-lemma Indep.of_minor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
-  obtain ⟨C,D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
+lemma Indep.of_isMinor (hI : N.Indep I) (hNM : N ≤m M) : M.Indep I := by
+  obtain ⟨C,D, rfl⟩ := isMinor_iff_exists_contract_delete.1 hNM
   exact hI.of_delete.of_contract
 
-lemma IsNonloop.of_minor (h : N.IsNonloop e) (hNM : N ≤m M) : M.IsNonloop e := by
-  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 hNM
+lemma IsNonloop.of_isMinor (h : N.IsNonloop e) (hNM : N ≤m M) : M.IsNonloop e := by
+  obtain ⟨C, D, rfl⟩ := isMinor_iff_exists_contract_delete.1 hNM
   exact h.of_delete.of_contract
 
-lemma IsLoop.minor (he : M.IsLoop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.IsLoop e := by
+lemma IsLoop.of_isMinor (he : M.IsLoop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.IsLoop e := by
   rw [← not_isNonloop_iff]
-  exact fun hnl ↦ he.not_isNonloop <| hnl.of_minor hNM
+  exact fun hnl ↦ he.not_isNonloop <| hnl.of_isMinor hNM
 
-lemma Minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
+lemma IsMinor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [delete_ground, contract_ground, subset_diff, subset_diff] at hE
   rw [← contract_inter_ground_eq, hE.1.2.symm.inter_eq, contract_empty, ← delete_inter_ground_eq,
     hE.2.symm.inter_eq, delete_empty]
 
-lemma Minor.subset (h : N ≤m M) : N.E ⊆ M.E := by
+lemma IsMinor.subset (h : N ≤m M) : N.E ⊆ M.E := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact diff_subset.trans diff_subset
 
-lemma Minor.refl {M : Matroid α} : M ≤m M :=
-  minor_iff_exists_contract_delete.2 ⟨∅, ∅, by simp⟩
+lemma IsMinor.refl {M : Matroid α} : M ≤m M :=
+  isMinor_iff_exists_contract_delete.2 ⟨∅, ∅, by simp⟩
 
-lemma Minor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M₂ ≤m M₃) : M₁ ≤m M₃ := by
+lemma IsMinor.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤m M₂) (h' : M₂ ≤m M₃) : M₁ ≤m M₃ := by
   obtain ⟨C₁, D₁, -, -, -, rfl⟩ := h
   obtain ⟨C₂, D₂, -, -, -, rfl⟩ := h'
   rw [contract_delete_contract_delete']
-  apply contract_delete_minor
+  apply contract_delete_isMinor
 
-lemma Minor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
+lemma IsMinor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
   h'.eq_of_ground_subset h.subset
 
 /-- The minor order is a `PartialOrder` on `Matroid α`. We prefer the spelling `M ≤m M'`
@@ -824,62 +824,62 @@ lemma Minor.antisymm (h : N ≤m M) (h' : M ≤m N) : N = M :=
 instance (α : Type*) : PartialOrder (Matroid α) where
   le M M' := M ≤m M'
   lt M M' := M <m M'
-  le_refl M := Minor.refl
-  le_trans _ _ _ h h' := Minor.trans h h'
-  le_antisymm _ _ h h' := Minor.antisymm h h'
+  le_refl M := IsMinor.refl
+  le_trans _ _ _ h h' := IsMinor.trans h h'
+  le_antisymm _ _ h h' := IsMinor.antisymm h h'
 
-lemma Minor.finite (h : N ≤m M) [M.Finite] : N.Finite :=
+lemma IsMinor.finite (h : N ≤m M) [M.Finite] : N.Finite :=
   ⟨M.ground_finite.subset h.subset⟩
 
-lemma Minor.rankFinite (h : N ≤m M) [RankFinite M] : RankFinite N := by
-  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
+lemma IsMinor.rankFinite (h : N ≤m M) [RankFinite M] : RankFinite N := by
+  obtain ⟨C, D, rfl⟩ := isMinor_iff_exists_contract_delete.1 h
   infer_instance
 
-lemma Minor.finitary (h : N ≤m M) [Finitary M] : Finitary N := by
-  obtain ⟨C, D, rfl⟩ := minor_iff_exists_contract_delete.1 h
+lemma IsMinor.finitary (h : N ≤m M) [Finitary M] : Finitary N := by
+  obtain ⟨C, D, rfl⟩ := isMinor_iff_exists_contract_delete.1 h
   infer_instance
 
-lemma Minor.le (h : N ≤m M) : N ≤ M := h
+lemma IsMinor.le (h : N ≤m M) : N ≤ M := h
 
-lemma StrictMinor.lt (h : N <m M) : N < M := h
+lemma IsStrictMinor.lt (h : N <m M) : N < M := h
 
 @[simp] protected lemma le_iff (M M' : Matroid α) : M ≤ M' ↔ M ≤m M' := Iff.rfl
 
 @[simp] protected lemma lt_iff (M M' : Matroid α) : M < M' ↔ M <m M' := Iff.rfl
 
-lemma StrictMinor.minor (h : N <m M) : N ≤m M :=
+lemma IsStrictMinor.isMinor (h : N <m M) : N ≤m M :=
   h.lt.le
 
-lemma StrictMinor.not_minor (h : N <m M) : ¬ (M ≤m N) :=
+lemma IsStrictMinor.not_isMinor (h : N <m M) : ¬ (M ≤m N) :=
   h.lt.not_le
 
-lemma strictMinor_iff_minor_ne : N <m M ↔ N ≤m M ∧ N ≠ M :=
+lemma isStrictMinor_iff_isMinor_ne : N <m M ↔ N ≤m M ∧ N ≠ M :=
   lt_iff_le_and_ne (α := Matroid α)
 
-lemma StrictMinor.ne (h : N <m M) : N ≠ M :=
+lemma IsStrictMinor.ne (h : N <m M) : N ≠ M :=
   LT.lt.ne h
 
-lemma strictMinor_irrefl (M : Matroid α) : ¬ (M <m M) :=
+lemma isStrictMinor_irrefl (M : Matroid α) : ¬ (M <m M) :=
   lt_irrefl M
 
-lemma StrictMinor.ssubset (h : N <m M) : N.E ⊂ M.E :=
-  h.minor.subset.ssubset_of_ne (fun hE ↦ h.ne (h.minor.eq_of_ground_subset hE.symm.subset).symm)
+lemma IsStrictMinor.ssubset (h : N <m M) : N.E ⊂ M.E :=
+  h.isMinor.subset.ssubset_of_ne (fun hE ↦ h.ne (h.isMinor.eq_of_ground_subset hE.symm.subset).symm)
 
-lemma strictMinor_iff_minor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E :=
-  ⟨fun h ↦ ⟨h.minor, h.ssubset⟩, fun ⟨h, hss⟩ ↦ ⟨h, fun h' ↦ hss.ne <| by rw [h'.antisymm h]⟩⟩
+lemma isStrictMinor_iff_isMinor_ssubset : N <m M ↔ N ≤m M ∧ N.E ⊂ M.E :=
+  ⟨fun h ↦ ⟨h.isMinor, h.ssubset⟩, fun ⟨h, hss⟩ ↦ ⟨h, fun h' ↦ hss.ne <| by rw [h'.antisymm h]⟩⟩
 
-lemma StrictMinor.trans_minor (h : N <m M) (h' : M ≤m M') : N <m M' :=
+lemma IsStrictMinor.trans_isMinor (h : N <m M) (h' : M ≤m M') : N <m M' :=
   h.lt.trans_le h'
 
-lemma Minor.trans_strictMinor (h : N ≤m M) (h' : M <m M') : N <m M' :=
+lemma IsMinor.trans_isStrictMinor (h : N ≤m M) (h' : M <m M') : N <m M' :=
   h.le.trans_lt h'
 
-lemma StrictMinor.trans (h : N <m M) (h' : M <m M') : N <m M' :=
+lemma IsStrictMinor.trans (h : N <m M) (h' : M <m M') : N <m M' :=
   h.lt.trans h'
 
-lemma strictMinor_iff_exists_eq_contract_delete :
+lemma isStrictMinor_iff_exists_eq_contract_delete :
     N <m M ↔ ∃ C D, C ⊆ M.E ∧ D ⊆ M.E ∧ Disjoint C D ∧ (C ∪ D).Nonempty ∧ N = M ／ C ＼ D := by
-  rw [strictMinor_iff_minor_ssubset, minor_def]
+  rw [isStrictMinor_iff_isMinor_ssubset, isMinor_def]
   constructor
   rintro ⟨⟨C, D, hC, hD, hCD, rfl⟩, hss⟩
   · refine ⟨C, D, hC, hD, hCD, ?_, rfl⟩
@@ -892,97 +892,97 @@ lemma strictMinor_iff_exists_eq_contract_delete :
     and_iff_right diff_subset]
   exact fun hss ↦ (hss ((union_subset hC hD) he)).2 he
 
-lemma contract_minor (M : Matroid α) (C : Set α) : M ／ C ≤m M := by
-  rw [← (M ／ C).delete_empty]; apply contract_delete_minor
+lemma contract_isMinor (M : Matroid α) (C : Set α) : M ／ C ≤m M := by
+  rw [← (M ／ C).delete_empty]; apply contract_delete_isMinor
 
-lemma contract_minor_of_subset (M : Matroid α) {C C' : Set α} (hCC' : C ⊆ C') :
+lemma contract_isMinor_of_subset (M : Matroid α) {C C' : Set α} (hCC' : C ⊆ C') :
     M ／ C' ≤m M ／ C := by
   rw [← diff_union_of_subset hCC', union_comm, ← contract_contract]
-  apply contract_minor
+  apply contract_isMinor
 
-lemma contract_minor_of_mem (M : Matroid α) {C : Set α} (he : e ∈ C) :
+lemma contract_isMinor_of_mem (M : Matroid α) {C : Set α} (he : e ∈ C) :
     M ／ C ≤m M ／ e :=
-  M.contract_minor_of_subset (singleton_subset_iff.2 he)
+  M.contract_isMinor_of_subset (singleton_subset_iff.2 he)
 
-lemma delete_minor (M : Matroid α) (D : Set α) : M ＼ D ≤m M := by
-  nth_rw 1 [← M.contract_empty]; apply contract_delete_minor
+lemma delete_isMinor (M : Matroid α) (D : Set α) : M ＼ D ≤m M := by
+  nth_rw 1 [← M.contract_empty]; apply contract_delete_isMinor
 
-lemma restrict_minor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R) ≤m M := by
-  rw [← delete_compl]; apply delete_minor
+lemma restrict_isMinor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R) ≤m M := by
+  rw [← delete_compl]; apply delete_isMinor
 
-lemma IsRestriction.minor (h : N ≤r M) : N ≤m M := by
-  rw [← h.eq_restrict, ← delete_compl h.subset]; apply delete_minor
+lemma IsRestriction.isMinor (h : N ≤r M) : N ≤m M := by
+  rw [← h.eq_restrict, ← delete_compl h.subset]; apply delete_isMinor
 
-lemma IsStrictRestriction.strictMinor (h : N <r M) : N <m M :=
-  ⟨h.isRestriction.minor, fun h' ↦ h.ssubset.not_subset h'.subset⟩
+lemma IsStrictRestriction.isStrictMinor (h : N <r M) : N <m M :=
+  ⟨h.isRestriction.isMinor, fun h' ↦ h.ssubset.not_subset h'.subset⟩
 
-lemma restrict_strictMinor (hR : R ⊂ M.E) : M ↾ R <m M :=
-  (restrict_isStrictRestriction hR).strictMinor
+lemma restrict_isStrictMinor (hR : R ⊂ M.E) : M ↾ R <m M :=
+  (restrict_isStrictRestriction hR).isStrictMinor
 
-lemma delete_contract_minor (M : Matroid α) (D C : Set α) : M ＼ D ／ C ≤m M :=
-  ((M ＼ D).contract_minor C).trans (M.delete_minor D)
+lemma delete_contract_isMinor (M : Matroid α) (D C : Set α) : M ＼ D ／ C ≤m M :=
+  ((M ＼ D).contract_isMinor C).trans (M.delete_isMinor D)
 
-lemma contract_restrict_minor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
+lemma contract_restrict_isMinor (M : Matroid α) (C : Set α) (hR : R ⊆ M.E \ C) :
     (M ／ C) ↾ R ≤m M := by
-  rw [← delete_compl]; apply contract_delete_minor
+  rw [← delete_compl]; apply contract_delete_isMinor
 
-lemma contractElem_strictMinor (he : e ∈ M.E) : M ／ e <m M :=
-  ⟨contract_minor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
+lemma contractElem_isStrictMinor (he : e ∈ M.E) : M ／ e <m M :=
+  ⟨contract_isMinor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
 
-lemma deleteElem_strictMinor (he : e ∈ M.E) : M ＼ e <m M :=
-  ⟨delete_minor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
+lemma deleteElem_isStrictMinor (he : e ∈ M.E) : M ＼ e <m M :=
+  ⟨delete_isMinor M {e}, fun hM ↦ (hM.subset he).2 rfl⟩
 
-lemma strictMinor_iff_minor_contract_or_delete :
+lemma isStrictMinor_iff_isMinor_contract_or_delete :
     N <m M ↔ ∃ e ∈ M.E, N ≤m M ／ e ∨ N ≤m M ＼ e := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨C, D, hC, hD, hCD, ⟨e,(heC | heD)⟩, rfl⟩ :=
-      strictMinor_iff_exists_eq_contract_delete.1 h
+      isStrictMinor_iff_exists_eq_contract_delete.1 h
     · refine ⟨e, hC heC, Or.inl ?_⟩
       rw [← insert_eq_of_mem heC, ← singleton_union, ← contract_contract, contractElem ]
-      apply contract_delete_minor
+      apply contract_delete_isMinor
     refine ⟨e, hD heD, Or.inr ?_⟩
     rw [contract_delete_comm _ hCD, ← insert_eq_of_mem heD, ← singleton_union, ← delete_delete]
-    apply delete_contract_minor
+    apply delete_contract_isMinor
   rintro ⟨e, he, (hc | hd)⟩
-  · exact hc.trans_strictMinor (contractElem_strictMinor he)
-  exact hd.trans_strictMinor (deleteElem_strictMinor he)
+  · exact hc.trans_isStrictMinor (contractElem_isStrictMinor he)
+  exact hd.trans_isStrictMinor (deleteElem_isStrictMinor he)
 
-lemma Minor.strictMinor_or_eq (h : N ≤m M) : N <m M ∨ N = M := by
-  rw [strictMinor_iff_minor_ne, and_iff_right h]
+lemma IsMinor.isStrictMinor_or_eq (h : N ≤m M) : N <m M ∨ N = M := by
+  rw [isStrictMinor_iff_isMinor_ne, and_iff_right h]
   exact ne_or_eq N M
 
-lemma Minor.dual (h : N ≤m M) : N✶ ≤m M✶ := by
+lemma IsMinor.dual (h : N ≤m M) : N✶ ≤m M✶ := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [delete_dual_eq_dual_contract, contract_dual_eq_dual_delete]
-  apply delete_contract_minor
+  apply delete_contract_isMinor
 
-lemma Minor.of_dual (h : N✶ ≤m M✶) : N ≤m M := by
+lemma IsMinor.of_dual (h : N✶ ≤m M✶) : N ≤m M := by
   simpa using h.dual
 
-lemma dual_minor_iff : N✶ ≤m M✶ ↔ N ≤m M :=
-  ⟨Minor.of_dual, Minor.dual⟩
+lemma dual_isMinor_iff : N✶ ≤m M✶ ↔ N ≤m M :=
+  ⟨IsMinor.of_dual, IsMinor.dual⟩
 
-lemma minor_dual_iff_dual_minor : N ≤m M✶ ↔ N✶ ≤m M := by
-  rw [← dual_minor_iff, dual_dual]
+lemma isMinor_dual_iff_dual_isMinor : N ≤m M✶ ↔ N✶ ≤m M := by
+  rw [← dual_isMinor_iff, dual_dual]
 
-lemma StrictMinor.dual (h : N <m M) : N✶ <m M✶ := by
-  rwa [StrictMinor, dual_minor_iff, dual_minor_iff]
+lemma IsStrictMinor.dual (h : N <m M) : N✶ <m M✶ := by
+  rwa [IsStrictMinor, dual_isMinor_iff, dual_isMinor_iff]
 
-lemma StrictMinor.of_dual (h : N✶ <m M✶) : N <m M := by
+lemma IsStrictMinor.of_dual (h : N✶ <m M✶) : N <m M := by
   simpa using h.dual
 
-lemma dual_strictMinor_iff: N✶ <m M✶ ↔ N <m M :=
-  ⟨StrictMinor.of_dual, StrictMinor.dual⟩
+lemma dual_isStrictMinor_iff: N✶ <m M✶ ↔ N <m M :=
+  ⟨IsStrictMinor.of_dual, IsStrictMinor.dual⟩
 
-lemma strictMinor_dual_iff_dual_strictMinor : N <m M✶ ↔ N✶ <m M := by
-  rw [← dual_strictMinor_iff, dual_dual]
+lemma isStrictMinor_dual_iff_dual_isStrictMinor : N <m M✶ ↔ N✶ <m M := by
+  rw [← dual_isStrictMinor_iff, dual_dual]
 
-lemma StrictMinor.encard_ground_lt [M.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
+lemma IsStrictMinor.encard_ground_lt [M.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
   M.ground_finite.encard_lt_encard hNM.ssubset
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
-lemma Minor.exists_contract_indep_delete_coindep (h : N ≤m M) :
+lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ N = M ／ C ＼ D := by
   obtain ⟨C', D', hC', hD', hCD', rfl⟩ := h
   obtain ⟨I, hI⟩ := M.exists_isBasis C'
@@ -1020,13 +1020,13 @@ lemma Minor.exists_contract_indep_delete_coindep (h : N ≤m M) :
   rw [disjoint_union_right, and_iff_left disjoint_sdiff_left]
   exact disjoint_of_subset diff_subset diff_subset hCD'.symm
 
-lemma Minor.exists_spanning_isRestriction_contract (h : N ≤m M) :
+lemma IsMinor.exists_spanning_isRestriction_contract (h : N ≤m M) :
     ∃ C, M.Indep C ∧ (N ≤r M ／ C) ∧ (M ／ C).closure N.E = (M ／ C).E := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
   refine ⟨C, hC, delete_isRestriction _ _, ?_⟩
   rw [← (hD.coindep_contract_of_disjoint hCD.symm).closure_compl, delete_ground]
 
-lemma Minor.exists_eq_contract_spanning_restrict (h : N ≤m M) :
+lemma IsMinor.exists_eq_contract_spanning_restrict (h : N ≤m M) :
     ∃ I R, M.Indep I ∧ Disjoint I R ∧ (M ／ I).Spanning R ∧ N = (M ／ I) ↾ R := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
   refine ⟨C, (M.E \ C) \ D, hC, disjoint_sdiff_right.mono_right diff_subset, ?_⟩
@@ -1035,48 +1035,48 @@ lemma Minor.exists_eq_contract_spanning_restrict (h : N ≤m M) :
     union_eq_self_of_subset_right (subset_diff.2 ⟨hC.subset_ground, hCD⟩)]
   exact hD.compl_spanning
 
-/-- Classically choose an independent contract-set from a proof that `N` is a minor of `M`. -/
-def Minor.C (h : N ≤m M) : Set α :=
+/-- Classically choose an independent contract-set from a proof that `N` is a isMinor of `M`. -/
+def IsMinor.C (h : N ≤m M) : Set α :=
   h.exists_contract_indep_delete_coindep.choose
 
-/-- Classically choose a coindependent delete-set from a proof that `N` is a minor of `M`. -/
-def Minor.D (h : N ≤m M) : Set α :=
+/-- Classically choose a coindependent delete-set from a proof that `N` is a isMinor of `M`. -/
+def IsMinor.D (h : N ≤m M) : Set α :=
   h.exists_contract_indep_delete_coindep.choose_spec.choose
 
-lemma Minor.C_indep (h : N ≤m M) : M.Indep h.C := by
+lemma IsMinor.C_indep (h : N ≤m M) : M.Indep h.C := by
   obtain ⟨-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec; exact h
 
-lemma Minor.D_coindep (h : N ≤m M) : M.Coindep h.D := by
+lemma IsMinor.D_coindep (h : N ≤m M) : M.Coindep h.D := by
   obtain ⟨-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
 
-lemma Minor.disjoint (h : N ≤m M) : Disjoint h.C h.D := by
+lemma IsMinor.disjoint (h : N ≤m M) : Disjoint h.C h.D := by
   obtain ⟨-,-,h,-⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
 
-lemma Minor.eq_con_del (h : N ≤m M) : N = M ／ h.C ＼ h.D := by
+lemma IsMinor.eq_con_del (h : N ≤m M) : N = M ／ h.C ＼ h.D := by
   obtain ⟨-,-,-,h⟩ := h.exists_contract_indep_delete_coindep.choose_spec.choose_spec; exact h
 
-lemma Minor.C_union_D_eq (h : N ≤m M) : h.C ∪ h.D = M.E \ N.E := by
+lemma IsMinor.C_union_D_eq (h : N ≤m M) : h.C ∪ h.D = M.E \ N.E := by
   simp only [h.eq_con_del, delete_ground, contract_ground, diff_diff]
   rw [Set.diff_diff_cancel_left]
   exact union_subset h.C_indep.subset_ground h.D_coindep.subset_ground
 
-lemma Minor.C_disjoint (h : N ≤m M) : Disjoint h.C N.E :=
+lemma IsMinor.C_disjoint (h : N ≤m M) : Disjoint h.C N.E :=
   (subset_diff.1 h.C_union_D_eq.subset).2.mono_left subset_union_left
 
-lemma Minor.D_disjoint (h : N ≤m M) : Disjoint h.D N.E :=
+lemma IsMinor.D_disjoint (h : N ≤m M) : Disjoint h.D N.E :=
   (subset_diff.1 h.C_union_D_eq.subset).2.mono_left subset_union_right
 
-lemma Minor.eq_con_restr (h : N ≤m M) : N = (M ／ h.C) ↾ N.E := by
+lemma IsMinor.eq_con_restr (h : N ≤m M) : N = (M ／ h.C) ↾ N.E := by
   simp [h.eq_con_del, ← restrict_compl]
 
-lemma StrictMinor.C_union_D_nonempty (h : N <m M) : (h.minor.C ∪ h.minor.D).Nonempty := by
-  rw [h.minor.C_union_D_eq]
+lemma IsStrictMinor.C_union_D_nonempty (h : N <m M) : (h.isMinor.C ∪ h.isMinor.D).Nonempty := by
+  rw [h.isMinor.C_union_D_eq]
   exact nonempty_of_ssubset h.ssubset
 
-lemma finite_setOf_minor (M : Matroid α) [M.Finite] : {N | N ≤m M}.Finite :=
+lemma finite_setOf_isMinor (M : Matroid α) [M.Finite] : {N | N ≤m M}.Finite :=
   (finite_setOf_matroid M.ground_finite).subset (fun _ hNM ↦ hNM.subset)
 
-end Minor
+end IsMinor
 
 section Constructions
 
@@ -1091,15 +1091,15 @@ variable {E : Set α}
 @[simp] lemma emptyOn_isRestriction (M : Matroid α) : emptyOn α ≤r M :=
   ⟨∅, empty_subset _, by simp⟩
 
-@[simp] lemma emptyOn_minor (M : Matroid α) : emptyOn α ≤m M :=
-  M.emptyOn_isRestriction.minor
+@[simp] lemma emptyOn_isMinor (M : Matroid α) : emptyOn α ≤m M :=
+  M.emptyOn_isRestriction.isMinor
 
-@[simp] lemma minor_emptyOn_iff : M ≤m emptyOn α ↔ M = emptyOn α :=
+@[simp] lemma isMinor_emptyOn_iff : M ≤m emptyOn α ↔ M = emptyOn α :=
   ⟨fun h ↦ ground_eq_empty_iff.1 (eq_empty_of_subset_empty h.subset),
-    by rintro rfl; apply emptyOn_minor⟩
+    by rintro rfl; apply emptyOn_isMinor⟩
 
 @[simp] lemma isRestriction_emptyOn_iff : M ≤r emptyOn α ↔ M = emptyOn α := by
-  refine ⟨fun h ↦ minor_emptyOn_iff.1 h.minor, ?_⟩
+  refine ⟨fun h ↦ isMinor_emptyOn_iff.1 h.isMinor, ?_⟩
   rintro rfl
   exact IsRestriction.refl
 
@@ -1110,9 +1110,9 @@ variable {E : Set α}
   simp_rw [eq_loopyOn_iff_closure, contract_closure_eq, empty_union, loopyOn_closure_eq,
     contract_ground, loopyOn_ground, true_and]
 
-@[simp] lemma minor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
+@[simp] lemma isMinor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
   refine ⟨fun h ↦ ⟨by obtain ⟨C, D, _, _, _, rfl⟩ := h; simp, h.subset⟩, fun ⟨h, hss⟩ ↦ ?_⟩
-  convert (loopyOn E).restrict_minor hss using 1
+  convert (loopyOn E).restrict_isMinor hss using 1
   rw [h, loopyOn_ground, loopyOn_restrict]
 
 lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :

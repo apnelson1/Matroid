@@ -429,12 +429,12 @@ lemma IsRkFinite.contract_isRkFinite_of_subset_union (h : M.IsRkFinite Z) (X C :
   (h.contract_isRkFinite C).closure.subset
     (by rw [contract_closure_eq]; exact diff_subset_diff_left hX)
 
-lemma Minor.eRank_le (h : N ≤m M) : N.eRank ≤ M.eRank := by
+lemma IsMinor.eRank_le (h : N ≤m M) : N.eRank ≤ M.eRank := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h
   rw [← eRk_univ_eq, ← eRk_univ_eq, delete_eRk_eq']
   exact (M.eRk_contract_le_eRk _ _).trans (M.eRk_mono diff_subset)
 
-lemma Minor.rank_le (h : N ≤m M) [RankFinite M] : N.rank ≤ M.rank := by
+lemma IsMinor.rank_le (h : N ≤m M) [RankFinite M] : N.rank ≤ M.rank := by
   have hle := h.eRank_le
   have := h.rankFinite
   rw [← M.cast_rank_eq, ← N.cast_rank_eq] at hle

@@ -612,7 +612,7 @@ lemma NoUniformMinor.minor {N a b} (hM : M.NoUniformMinor a b) (hNM : N ≤m M) 
     N.NoUniformMinor a b := by
   contrapose! hM
   simp only [not_noUniformMinor_iff] at hM ⊢
-  exact ⟨hM.some.trans_minor hNM⟩
+  exact ⟨hM.some.trans_isMinor hNM⟩
 
 lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ E.encard) :
     Nonempty (unif a b ≤ir unifOn E a) := by
@@ -641,8 +641,8 @@ lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ 
 lemma no_line_minor_iff_of_eRank_le_two (hM : M.eRank ≤ 2) :
     M.NoUniformMinor 2 b ↔ M.simplification.E.encard < b := by
   obtain ⟨E, he⟩ := eq_unifOn_of_eRank_le_two (M := M.simplification) (by simpa)
-  rw [← not_iff_not, not_noUniformMinor_iff, (unif_simple 0 b).minor_iff_minor_simplification, he,
-    ← not_iff_not, ← not_noUniformMinor_iff, not_not, not_not,
+  rw [← not_iff_not, not_noUniformMinor_iff, (unif_simple 0 b).isMinor_iff_isMinor_simplification,
+      he, ← not_iff_not, ← not_noUniformMinor_iff, not_not, not_not,
     unifOn_noUniformMinor_iff, unifOn_ground_eq]
 
 

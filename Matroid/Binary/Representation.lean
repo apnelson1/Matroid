@@ -79,11 +79,11 @@ lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
   intro hxC
   rw [repOfFun_coeFun_eq, indicator_of_mem (hC.subset_ground hxC)]
 
-theorem representable_iff_no_U24_minor : M.Representable (ZMod 2) ↔ M.NoUniformMinor 2 4 := by
+theorem representable_iff_no_U24_isMinor : M.Representable (ZMod 2) ↔ M.NoUniformMinor 2 4 := by
   refine ⟨fun h ↦ by simpa using h.noUniformMinor, fun h ↦ ?_⟩
-  rw [← binary_iff_no_U24_minor] at h
+  rw [← binary_iff_no_U24_isMinor] at h
   obtain ⟨B, hB⟩ := M.exists_isBase
   exact (hB.binaryProxyRep.ofEq (h.eq_binaryProxy hB).symm).representable
 
 theorem binary_iff_representable : M.Binary ↔ M.Representable (ZMod 2) := by
-  rw [binary_iff_no_U24_minor, representable_iff_no_U24_minor]
+  rw [binary_iff_no_U24_isMinor, representable_iff_no_U24_isMinor]

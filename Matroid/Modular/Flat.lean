@@ -348,7 +348,7 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
 
 /-- If `X` is a modular isFlat, then any isNonloop `e` spanned by `X` in a minor `N` is parallel
 in `N` to an element of `X`. -/
-lemma IsModularFlat.exists_parallel_mem_of_minor (hX : M.IsModularFlat X) {N : Matroid α}
+lemma IsModularFlat.exists_parallel_mem_of_isMinor (hX : M.IsModularFlat X) {N : Matroid α}
     (hNM : N ≤m M) (hXE : X ⊆ N.E) (he : N.IsNonloop e) (heX : e ∈ N.closure X) :
     ∃ f ∈ X, N.Parallel e f := by
   obtain ⟨I, R, hI, hdj, hsp, rfl⟩ := hNM.exists_eq_contract_spanning_restrict
@@ -358,13 +358,13 @@ lemma IsModularFlat.exists_parallel_mem_of_minor (hX : M.IsModularFlat X) {N : M
   rw [restrict_parallel_iff, and_iff_right hef, and_iff_right heX.2]
   exact hXE hfX
 
-lemma IsFlat.modularSet_iff_forall_minor_exists_parallel (hX : M.IsFlat X) :
+lemma IsFlat.modularSet_iff_forall_isMinor_exists_parallel (hX : M.IsFlat X) :
     M.IsModularFlat X ↔ ∀ ⦃N : Matroid α⦄ e, N ≤m M → X ⊆ N.E → e ∈ N.closure X → N.IsNonloop e →
       ∃ f ∈ X, N.Parallel e f := by
-  refine ⟨fun h N e hNM hXE heX hnl ↦ h.exists_parallel_mem_of_minor hNM hXE hnl heX, fun h ↦ ?_⟩
+  refine ⟨fun h N e hNM hXE heX hnl ↦ h.exists_parallel_mem_of_isMinor hNM hXE hnl heX, fun h ↦ ?_⟩
   rw [hX.isModularFlat_iff_forall_contract_exists_parallel]
   intro C e hCX he hecl
-  exact h e (M.contract_minor C) (subset_diff.2 ⟨hX.subset_ground, hCX.symm⟩) hecl he
+  exact h e (M.contract_isMinor C) (subset_diff.2 ⟨hX.subset_ground, hCX.symm⟩) hecl he
 
 lemma IsModularFlat.inter_insert_closure_isPoint_of_skew (hF : M.IsModularFlat F)
     (hFX : M.Skew F X) (heFX : e ∈ M.closure (F ∪ X)) (heX : e ∉ M.closure X) :
@@ -652,8 +652,8 @@ lemma IsModularFlat.restrict (hF : M.IsModularFlat F) (hFX : F ⊆ X)
   have hF' := hF.isFlat.isFlat_restrict X
   rw [inter_eq_self_of_subset_left hFX] at hF'
   rw [hF'.isModularFlat_iff_forall_contract_exists_parallel]
-  refine fun C e hCF he hecl  ↦ hF.exists_parallel_mem_of_minor ?_ ?_ he hecl
-  · exact (contract_minor _ _).trans (restrict_minor _ hXE)
+  refine fun C e hCF he hecl  ↦ hF.exists_parallel_mem_of_isMinor ?_ ?_ he hecl
+  · exact (contract_isMinor _ _).trans (restrict_isMinor _ hXE)
   simp [subset_diff, hFX, hCF.symm]
 
 lemma IsModularFlat.contract (hF : M.IsModularFlat F) (C : Set α) :

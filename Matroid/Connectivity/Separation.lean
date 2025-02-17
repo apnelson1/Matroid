@@ -509,7 +509,7 @@ lemma eConnBetween_contract_le (M : Matroid α) (X Y C : Set α) :
   rw [← eConnBetween_dual_eq, contract_dual_eq_dual_delete, ← M.eConnBetween_dual_eq]
   apply eConnBetween_delete_le
 
-lemma Minor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :
+lemma IsMinor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :
     N.eConnBetween X Y ≤ M.eConnBetween X Y := by
   obtain ⟨C, D, h, -, -, rfl⟩ := hNM
   exact le_trans ((M ／ C).eConnBetween_delete_le X Y D) <| (M.eConnBetween_contract_le X Y C)

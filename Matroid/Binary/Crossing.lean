@@ -53,7 +53,7 @@ lemma Crossing.of_delete {D : Set α} (hD : (M ＼ D).Crossing X) : M.Crossing X
   rw [delete_dual_eq_dual_contract] at hd
   exact hd.of_contract.of_dual
 
-lemma Crossing.of_minor {N : Matroid α} (hX : N.Crossing X) (hNM : N ≤m M) : M.Crossing X := by
+lemma Crossing.of_isMinor {N : Matroid α} (hX : N.Crossing X) (hNM : N ≤m M) : M.Crossing X := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact hX.of_delete.of_contract
 
@@ -78,7 +78,7 @@ end Crossing
 section Binary
 
 /-- A matroid is Crossing-Binary if all its finite crossings are even.
-This is the same as having no U₂,₄-minor; see `binary_iff_no_U24_minor`.
+This is the same as having no U₂,₄-minor; see `binary_iff_no_U24_isMinor`.
 Relating this to binary representations is still TODO.  -/
 def Binary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.Crossing X → Even X.card
 
@@ -95,9 +95,9 @@ lemma Binary.of_dual (hM : M✶.Binary) : M.Binary :=
 @[simp] lemma Binary_dual_iff : M✶.Binary ↔ M.Binary :=
   ⟨Binary.of_dual, Binary.dual⟩
 
-lemma Binary.minor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) :
+lemma Binary.of_isMinor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) :
     N.Binary := by
-  refine fun X hX ↦ hM <| hX.of_minor hNM
+  refine fun X hX ↦ hM <| hX.of_isMinor hNM
 
 lemma Binary.iso {N : Matroid β} (hM : M.Binary) (i : M ≂ N) :
     N.Binary := by
@@ -121,7 +121,7 @@ lemma Binary.iso {N : Matroid β} (hM : M.Binary) (i : M ≂ N) :
 lemma Binary.isoMinor {N : Matroid β} (hM : M.Binary) (e : N ≤i M) :
     N.Binary := by
   obtain ⟨M₀, hM₀M, i, -⟩ := e.exists_iso
-  exact (hM.minor hM₀M).iso i.symm
+  exact (hM.of_isMinor hM₀M).iso i.symm
 
 lemma binary_of_eRank_le_one (hM : M.eRank ≤ 1) : M.Binary := by
   intro X hX
@@ -173,8 +173,8 @@ lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he 
       he.isFlat.closure, diff_empty]
 
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
-  replace hU := hU.minor hN.restriction.minor
-  rw [no_line_minor_iff_of_eRank_le_two (hN.restriction.minor.eRank_le.trans_eq hr),
+  replace hU := hU.minor hN.restriction.isMinor
+  rw [no_line_minor_iff_of_eRank_le_two (hN.restriction.isMinor.eRank_le.trans_eq hr),
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
     ← encard_diff_singleton_add_one (he.mem_simplification hN),
@@ -235,7 +235,7 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
     norm_num at hcon
 
   set N := M ／ ((M.E \ ↑C) \ {f}) with hN
-  have hNM : N ≤m M := contract_minor _ _
+  have hNM : N ≤m M := contract_isMinor _ _
 
   have hfl : ¬ N.Coloop f
   · simpa [hN, ← dual_isLoop_iff_coloop] using
@@ -277,20 +277,20 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
   obtain ⟨C₂, rfl⟩ := hfin'.2.exists_finset_coe
 
   have hC₁_even : ¬ Odd C₁.card :=
-    h_odd (M ＼ f) C₁ (delete_minor _ _) (by simpa [hf.2]) hC₁.of_contract (by simpa)
+    h_odd (M ＼ f) C₁ (delete_isMinor ..) (by simpa [hf.2]) hC₁.of_contract (by simpa)
 
   have hC₂_even : ¬ Odd C₂.card :=
-    h_odd (M ＼ f) C₂ (delete_minor _ _) (by simpa [hf.2]) hC₂.of_contract (by simpa)
+    h_odd (M ＼ f) C₂ (delete_isMinor ..) (by simpa [hf.2]) hC₂.of_contract (by simpa)
 
   rw [Nat.not_odd_iff_even] at hC₁_even hC₂_even ⊢
   rw [toFinite_toFinset, toFinset_union, Finset.toFinset_coe, Finset.toFinset_coe,
     Finset.card_union_eq_card_add_card.2 (by simpa using hdj)]
   exact hC₁_even.add hC₂_even
 
-lemma IsCircuit.exists_minor_inter_isCircuit_cocircuit_of_cocircuit (hC : M.IsCircuit C)
+lemma IsCircuit.exists_isMinor_inter_isCircuit_cocircuit_of_cocircuit (hC : M.IsCircuit C)
     (hK : M.Cocircuit K) (h_inter : (C ∩ K).Nonempty) :
     ∃ N, N ≤m M ∧ N.IsCircuit (C ∩ K) ∧ N.Cocircuit (C ∩ K) := by
-  refine ⟨M ／ (C \ K) ＼ (K \ C), contract_delete_minor _ _ _, ?_, ?_⟩
+  refine ⟨M ／ (C \ K) ＼ (K \ C), contract_delete_isMinor .., ?_, ?_⟩
   · simpa [delete_isCircuit_iff, disjoint_sdiff_right.mono_left inter_subset_left]
       using hC.contract_isCircuit (C := C \ K) (by simpa)
   simp only [contract_delete_comm _ disjoint_sdiff_sdiff, contract_cocircuit_iff,
@@ -298,11 +298,11 @@ lemma IsCircuit.exists_minor_inter_isCircuit_cocircuit_of_cocircuit (hC : M.IsCi
   rw [cocircuit_def, delete_dual_eq_dual_contract]
   simpa [inter_comm C K] using hK.isCircuit.contract_isCircuit (C := K \ C) (by simpa [inter_comm])
 
-lemma IsCircuit.exists_minor_spanning_cospanning_of_cocircuit (hC : M.IsCircuit C)
+lemma IsCircuit.exists_isMinor_spanning_cospanning_of_cocircuit (hC : M.IsCircuit C)
     (hK : M.Cocircuit C) :
     ∃ N, N ≤m M ∧ N.IsCircuit C ∧ N.Cocircuit C ∧ N.Spanning C ∧ N✶.Spanning C := by
   obtain ⟨N, hNM, hr, hcr, hsp, hcsp⟩ :=
-    exists_minor_restrict_corestrict_eq_spanning_cospanning hC.subset_ground
+    exists_isMinor_restrict_corestrict_eq_spanning_cospanning hC.subset_ground
   refine ⟨N, hNM, ?_, ?_, hsp, hcsp⟩
   · rwa [isCircuit_iff_restr_eq_circuitOn hC.nonempty, hr,
       ← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
@@ -329,10 +329,10 @@ lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX :
     exact le_trans (by norm_num) hcard
 
   by_contra hcon
-  obtain ⟨N₁, hN₁M, hCN₁, hKN₁⟩ := hC.exists_minor_inter_isCircuit_cocircuit_of_cocircuit hK hne
+  obtain ⟨N₁, hN₁M, hCN₁, hKN₁⟩ := hC.exists_isMinor_inter_isCircuit_cocircuit_of_cocircuit hK hne
 
   obtain ⟨N₂, hN₂N₁, hCN₂, hKN₂, hSN₂, hSdN₂⟩ :=
-    hCN₁.exists_minor_spanning_cospanning_of_cocircuit hKN₁
+    hCN₁.exists_isMinor_spanning_cospanning_of_cocircuit hKN₁
 
   rw [← hCK] at *
 
@@ -348,7 +348,7 @@ lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX :
 
 termination_by X.card
 
-theorem binary_iff_no_U24_minor (M : Matroid α) :
+theorem binary_iff_no_U24_isMinor (M : Matroid α) :
     M.Binary ↔ M.NoUniformMinor 2 4 := by
   rw [← not_iff_not]
   refine ⟨fun h ↦ ?_, fun h hbin ↦ ?_⟩

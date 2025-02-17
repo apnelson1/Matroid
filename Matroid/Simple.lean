@@ -225,12 +225,12 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
   · by_cases hfC : f ∈ C
     · exact hC _ _ hef heC hfC
     refine by_contra fun hne ↦ not_isLoop (M ／ C) f ?_
-    exact (hef.isLoop_of_contract hne).minor
-      ⟨hef.mem_ground_right, hfC⟩ (contract_minor_of_mem _ heC)
+    exact (hef.isLoop_of_contract hne).of_isMinor
+      ⟨hef.mem_ground_right, hfC⟩ (contract_isMinor_of_mem _ heC)
   by_cases hfC : f ∈ C
   · refine by_contra fun (hne : e ≠ f) ↦ not_isLoop (M ／ C) e ?_
-    exact (hef.symm.isLoop_of_contract hne.symm).minor ⟨hef.mem_ground_left, heC⟩
-      (contract_minor_of_mem _ hfC)
+    exact (hef.symm.isLoop_of_contract hne.symm).of_isMinor ⟨hef.mem_ground_left, heC⟩
+      (contract_isMinor_of_mem _ hfC)
   apply h
   rw [parallel_iff, contract_closure_eq, contract_closure_eq, closure_union_congr_left
     hef.closure_eq_closure, and_iff_left rfl]
@@ -552,7 +552,7 @@ lemma simplification_isRestriction (M : Matroid α) : M.simplification ≤r M :=
 end Simplification
 section minor
 
-lemma Minor.exists_minor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
+lemma IsMinor.exists_isMinor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
     ∃ M₀, N ≤m M₀ ∧ IsSimplification M₀ M := by
   obtain ⟨I, hI, hr, -⟩ := hNM.exists_spanning_isRestriction_contract
   have hN' := hr.eq_restrict ▸
@@ -562,15 +562,15 @@ lemma Minor.exists_minor_isSimplification (hNM : N ≤m M) (hN : N.Simple) :
     refine restrict_indep_iff.2 ⟨hI, subset_union_right⟩
   obtain ⟨M₀, hM₀, h⟩ := h.exists_isRestriction_isSimplification_of_isRestriction (M := M)
     (restrict_isRestriction _ _ (union_subset hNM.subset hI.subset_ground))
-  refine ⟨M₀, Minor.trans ?_ h.minor, hM₀⟩
+  refine ⟨M₀, IsMinor.trans ?_ h.isMinor, hM₀⟩
   rw [hN']
-  simpa using contract_minor _ _
+  simpa using contract_isMinor _ _
 
-lemma Simple.minor_iff_minor_simplification {β : Type*} (hN : N.Simple) {M : Matroid β} :
+lemma Simple.isMinor_iff_isMinor_simplification {β : Type*} (hN : N.Simple) {M : Matroid β} :
     Nonempty (N ≤i M) ↔ Nonempty (N ≤i M.simplification) := by
-  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨e.trans M.simplification_isRestriction.minor.isoMinor⟩⟩
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨e.trans M.simplification_isRestriction.isMinor.isoMinor⟩⟩
   obtain ⟨M₀, hM₀, ⟨i, -⟩⟩ := e.exists_iso
-  obtain ⟨M', hM₀M', hM'⟩ := hM₀.exists_minor_isSimplification (hN.of_iso i)
+  obtain ⟨M', hM₀M', hM'⟩ := hM₀.exists_isMinor_isSimplification (hN.of_iso i)
   exact ⟨i.isoMinor.trans
     (hM₀M'.isoMinor.trans (hM'.iso (M.simplification_isSimplification)).isoMinor)⟩
 
@@ -578,7 +578,7 @@ end minor
 
 -- end Simplification
 
--- section Minor
+-- section IsMinor
 
 -- /-- Any simple restriction of `M` is a restriction of a simplification of `M`-/
 -- lemma IsRestriction.exists_isRestriction_simplificationWrt (h : N ≤r M) [Simple N] :
@@ -591,7 +591,7 @@ end minor
 --hcN heN⟩)
 
 -- /-- Any simple minor of `M` is a minor of a simplification of `M`-/
--- lemma Minor.exists_minor_simplificationWrt {N M : Matroid α} [Simple N] (hN : N ≤m M) :
+-- lemma IsMinor.exists_minor_simplificationWrt {N M : Matroid α} [Simple N] (hN : N ≤m M) :
 --     ∃ c, M.ParallelChoiceFunction c ∧ N ≤m M.simplificationWrt c := by
 --   obtain ⟨I, hI, hr, -⟩ := hN.exists_contract_spanning_restrict
 --   have hN' := hr.eq_restrict ▸
@@ -603,7 +603,7 @@ end minor
 --   obtain ⟨c, hc, hrc⟩ := hres.exists_isRestriction_simplificationWrt
 --   refine ⟨c, hc, ?_⟩
 --   rw [← hr.eq_restrict]
---   apply Minor.trans ?_ hrc.minor
+--   apply IsMinor.trans ?_ hrc.minor
 --   rw [contract_restrict_eq_restrict_contract _ _ _ (subset_diff.1 hr.subset).2.symm]
 --   apply contract_minor
 
@@ -617,4 +617,4 @@ end minor
 --     (M.simplificationWrt_isIso_simplification hc).isoMinor
 
 
--- end Minor
+-- end IsMinor

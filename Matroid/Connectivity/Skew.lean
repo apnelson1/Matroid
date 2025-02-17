@@ -520,12 +520,12 @@ lemma exists_contract_indep_to_spanning (M : Matroid α) (X : Set α) (hX : X �
 
 /-- For any set `X`, we can find a minor in which `X` is spanning and cospanning,
 such that both the restrict and corestriction to `X` are unchanged.  -/
-lemma exists_minor_restrict_corestrict_eq_spanning_cospanning (hX : X ⊆ M.E) :
+lemma exists_isMinor_restrict_corestrict_eq_spanning_cospanning (hX : X ⊆ M.E) :
     ∃ N, N ≤m M ∧ N ↾ X = M ↾ X ∧ N✶ ↾ X = M✶ ↾ X ∧ N.Spanning X ∧ N✶.Spanning X := by
   obtain ⟨I, hI, hIX, hI_eq, hIsp⟩ := M.exists_contract_indep_to_spanning X hX
   obtain ⟨J, hJ, hJX, hJ_eq, hJsp⟩ := (M ／ I)✶.exists_contract_indep_to_spanning X
     hIsp.subset_ground
-  refine ⟨M ／ I ＼ J, contract_delete_minor _ _ _, ?_, ?_, ?_, ?_⟩
+  refine ⟨M ／ I ＼ J, contract_delete_isMinor _ _ _, ?_, ?_, ?_, ?_⟩
   · rw [← delete_compl _, delete_ground, contract_ground, delete_delete,
       diff_diff_comm (t := J), union_diff_self, union_comm, ← delete_delete,
       ← contract_ground, delete_compl _, hI_eq, ← delete_inter_ground_eq,
