@@ -12,7 +12,7 @@ a single-element extension of `M` by `e` is a matroid `M'` for which
 In 1965, Crapo proved that the single-element extensions of a finite matroid `M` are
 described precisely by the 'modular cuts' of `M`; a modular cut is an upper ideal in the
 lattice of flats of `M` that is closed under taking intersections of modular pairs.
-(in a finite matroid, `A,B` is  modular pair if `r A + r B = r (A ∪ B) + r (A ∩ B)`).
+(in a finite matroid, `A,B` is  modular pair if `rk A + rk B = rk (A ∪ B) + rk (A ∩ B)`).
 Given a modular cut `U`, the flats of `M` spanning the new element `e` in the extension `M'` are
 precisely those in `U`. See [Oxley 7.2].
 
@@ -167,7 +167,8 @@ lemma ModularCut.closure_mem_of_mem (hF : F ∈ U) : M.closure F ∈ U := by
   carrier := {F | M.IsFlat F ∧ X ⊆ F}
   forall_isFlat _ h := h.1
   forall_superset _ _ hF hF' hFF' := ⟨hF', hF.2.trans hFF'⟩
-  forall_inter _ hS hne _ := ⟨IsFlat.sInter hne fun _ h ↦ (hS h).1, subset_sInter fun _ h ↦ (hS h).2⟩
+  forall_inter _ hS hne _ := ⟨IsFlat.sInter hne fun _ h ↦ (hS h).1,
+    subset_sInter fun _ h ↦ (hS h).2⟩
 
 @[simp] lemma ModularCut.mem_principal_iff : F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := Iff.rfl
 
@@ -374,7 +375,8 @@ modular pairs rather than families. -/
     suffices h : ∀ (S : Finset (Set α)),
         S.Nonempty → ↑S ⊆ U → M.ModularFamily (fun (F : S) ↦ F) → ⋂₀ S ∈ U by
       intro Fs hFU hne hmod
-      have hFs : Fs.Finite := by simpa using hmod.finite_of_forall_isFlat fun F ↦ h_isFlat _ (hFU F.2)
+      have hFs : Fs.Finite :=
+        by simpa using hmod.finite_of_forall_isFlat fun F ↦ h_isFlat _ (hFU F.2)
       obtain ⟨S, rfl⟩ := hFs.exists_finset_coe
       exact h S (by simpa using hne) (by simpa) hmod
     apply Finset.Nonempty.cons_induction
@@ -631,9 +633,9 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
         ← spanning_iff_closure_eq hIeE] using hImax
     exact hInmax hImax.1 hImax.2
 
-  simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure_eq hBeE, hU, iff_true,
-    mem_insert_iff, true_or, not_true_eq_false, imp_false, ← hyperplane_iff_covBy, and_true, ←
-    spanning_iff_closure_eq hIeE, not_or, not_and, not_not] at hBmax hInmax
+  simp only [mem_singleton_iff, insert_diff_of_mem, he, ← spanning_iff_closure_eq hBeE, hU,
+    iff_true, mem_insert_iff, true_or, not_true_eq_false, imp_false, ← hyperplane_iff_covBy,
+    and_true, ← spanning_iff_closure_eq hIeE, not_or, not_and, not_not] at hBmax hInmax
 
   by_cases hsp : M.Spanning ((I ∪ B) \ {e})
   · by_cases heI : e ∈ I

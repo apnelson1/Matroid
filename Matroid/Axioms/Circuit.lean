@@ -51,7 +51,8 @@ lemma Indep.not_isCircuit_of_subset (hI : M.Indep I) (hCI : C ⊆ I) : ¬ M.IsCi
 lemma IsCircuit.not_indep (hC : M.IsCircuit C) : ¬ M.Indep C :=
   fun hI ↦ hI.not_isCircuit_of_subset Subset.rfl hC
 
-lemma exists_isCircuit_subset (h : ¬ M.Indep I) (hIE : (I : Set α) ⊆ M.E) : ∃ C ⊆ I, M.IsCircuit C := by
+lemma exists_isCircuit_subset (h : ¬ M.Indep I) (hIE : (I : Set α) ⊆ M.E) :
+    ∃ C ⊆ I, M.IsCircuit C := by
   simpa [M.indep_iff, hIE] using h
 
 lemma Indep.subset {M : FinsetCircuitMatroid α} (hJ : M.Indep J) (hI : I ⊆ J) : M.Indep I :=

@@ -43,14 +43,16 @@ lemma corestrict_univ_eq_disjointSum (M : Matroid α) :
 lemma corestrict_univ_indep_iff {I : Set α} : (M✶ ↾ univ)✶.Indep I ↔ M.Indep (I ∩ M.E) := by
   simp [corestrict_univ_eq_disjointSum]
 
-lemma corestrict_univ_isBase_iff {B : Set α} : (M✶ ↾ univ)✶.IsBase B ↔ M.IsBase (B ∩ M.E) ∧ M.Eᶜ ⊆ B := by
+lemma corestrict_univ_isBase_iff {B : Set α} :
+    (M✶ ↾ univ)✶.IsBase B ↔ M.IsBase (B ∩ M.E) ∧ M.Eᶜ ⊆ B := by
   simp [corestrict_univ_eq_disjointSum, disjointSum_isBase_iff]
 
 lemma corestrict_univ_isBasis_iff {I X : Set α} :
     (M✶ ↾ univ)✶.IsBasis I X ↔ M.IsBasis (I ∩ M.E) (X ∩ M.E) ∧ I ⊆ X ∧ X \ M.E ⊆ I := by
-  simp only [corestrict_univ_eq_disjointSum, disjointSum_isBasis_iff, freeOn_ground, freeOn_isBasis_iff,
-    subset_antisymm_iff, subset_inter_iff, inter_subset_right, and_true, union_compl_self,
-    subset_univ, and_comm (a := I ⊆ X), true_and, and_congr_right_iff, and_congr_left_iff]
+  simp only [corestrict_univ_eq_disjointSum, disjointSum_isBasis_iff, freeOn_ground,
+    freeOn_isBasis_iff, subset_antisymm_iff, subset_inter_iff, inter_subset_right, and_true,
+    union_compl_self,subset_univ, and_comm (a := I ⊆ X), true_and, and_congr_right_iff,
+    and_congr_left_iff]
   intro hb hIX
   rw [and_iff_right (inter_subset_left.trans hIX), diff_eq]
 
@@ -68,8 +70,9 @@ lemma IsBasis.corestrict_univ_isBasis {I X : Set α} (hIX : M.IsBasis I X) :
 lemma IsBasis'.corestrict_univ_union_isBasis_union {I X : Set α} (hIX : M.IsBasis' I X) :
     (M✶ ↾ univ)✶.IsBasis (I ∪ M.Eᶜ) (X ∪ M.Eᶜ) := by
   suffices (X ∪ M.Eᶜ) \ M.E ⊆ I ∪ M.Eᶜ by
-    simpa [corestrict_univ_isBasis_iff, union_inter_distrib_right, hIX.subset.trans subset_union_left,
-      inter_eq_self_of_subset_left hIX.indep.subset_ground, and_iff_right hIX.isBasis_inter_ground]
+    simpa [corestrict_univ_isBasis_iff, union_inter_distrib_right,
+      hIX.subset.trans subset_union_left, inter_eq_self_of_subset_left hIX.indep.subset_ground,
+      and_iff_right hIX.isBasis_inter_ground]
   rw [union_comm I, diff_subset_iff, ← union_assoc]
   simp
 

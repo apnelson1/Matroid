@@ -205,8 +205,8 @@ lemma SparsePaving.hyperplane_of_dep_of_not_spanning {H : Set α} (hM : M.Sparse
       diff_diff_cancel_left hH.subset_ground]
   rwa [← M.dual_ground, ← coindep_iff_compl_spanning, dual_coindep_iff, not_indep_iff]
 
-theorem SparsePaving.indep_or_spanning_or_isCircuit_hyperplane (hM : M.SparsePaving) (hXE : X ⊆ M.E) :
-    M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.Hyperplane X) := by
+theorem SparsePaving.indep_or_spanning_or_isCircuit_hyperplane (hM : M.SparsePaving)
+    (hXE : X ⊆ M.E) : M.Indep X ∨ M.Spanning X ∨ (M.IsCircuit X ∧ M.Hyperplane X) := by
   rw [or_iff_not_imp_left, not_indep_iff, or_iff_not_imp_left]
   exact fun hXd hXs ↦ ⟨hM.isCircuit_of_dep_of_not_spanning hXd hXs,
     hM.hyperplane_of_dep_of_not_spanning hXd hXs⟩

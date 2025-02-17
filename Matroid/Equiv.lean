@@ -264,7 +264,8 @@ section dual
 def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
   let e' : M✶.E ≃ N✶.E := ((Equiv.setCongr rfl).trans (e : M.E ≃ N.E)).trans (Equiv.setCongr rfl)
   Iso.ofForallBase e' (by
-    simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ, dual_isBase_iff]
+    simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
+      dual_isBase_iff]
     intro B
     simp_rw [show M.E = Subtype.val '' (univ : Set M.E) by simp,
       show N.E = Subtype.val '' (univ : Set N.E) by simp]
@@ -324,7 +325,8 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
 @[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h)
     (x : M.E) : (isoOfForallImageclosure e h) x = e x := rfl
 
-lemma Iso.isCircuit_image (e : M ≂ N) {C : Set M.E} (hC : M.IsCircuit C) : N.IsCircuit ↑(e '' C) := by
+lemma Iso.isCircuit_image (e : M ≂ N) {C : Set M.E} (hC : M.IsCircuit C) :
+    N.IsCircuit ↑(e '' C) := by
   simp_rw [isCircuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]
   intro I hI hIC
   obtain ⟨I,rfl⟩ := Subset.eq_image_val hI.subset_ground
@@ -333,7 +335,8 @@ lemma Iso.isCircuit_image (e : M ≂ N) {C : Set M.E} (hC : M.IsCircuit C) : N.I
     preimage_subset_iff, image_val_inj] at hIC hC
   simp [← hC hIC]
 
-def Iso.ofForallIsCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.IsCircuit ↑C ↔ N.IsCircuit ↑(e '' C)) :
+def Iso.ofForallIsCircuit (e : M.E ≃ N.E)
+    (h : ∀ (C : Set M.E), M.IsCircuit ↑C ↔ N.IsCircuit ↑(e '' C)) :
     M ≂ N := Iso.ofForallDep e (fun D ↦ by
     rw [dep_iff_superset_isCircuit, dep_iff_superset_isCircuit]
     refine ⟨fun ⟨C, hCD, hC⟩ ↦ ?_, fun ⟨C, hCD, hC⟩ ↦ ?_⟩

@@ -9,8 +9,8 @@ open Set
 
 section Relax
 
-lemma Hyperplane.exchange_isBase_of_isCircuit (hH : M.Hyperplane H) (hHc : M.IsCircuit H) (he : e ∈ H)
-    (hf : f ∈ M.E \ H) : M.IsBase (insert f (H \ {e})) := by
+lemma Hyperplane.exchange_isBase_of_isCircuit (hH : M.Hyperplane H) (hHc : M.IsCircuit H)
+    (he : e ∈ H) (hf : f ∈ M.E \ H) : M.IsBase (insert f (H \ {e})) := by
   have hclosure := hH.closure_insert_eq hf.2 hf.1
   rw [← closure_insert_closure_eq_closure_insert, ← hHc.closure_diff_singleton_eq e,
     closure_insert_closure_eq_closure_insert,

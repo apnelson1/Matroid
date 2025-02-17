@@ -203,7 +203,8 @@ lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) :
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, delete_closure_eq, empty_diff,
     union_diff_self, union_eq_self_of_subset_left h]
 
-lemma Coindep.delete_isBase_iff (hD : M.Coindep D) : (M ＼ D).IsBase B ↔ M.IsBase B ∧ Disjoint B D := by
+lemma Coindep.delete_isBase_iff (hD : M.Coindep D) :
+    (M ＼ D).IsBase B ↔ M.IsBase B ∧ Disjoint B D := by
   rw [Matroid.delete_isBase_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hss := h.subset
@@ -211,7 +212,8 @@ lemma Coindep.delete_isBase_iff (hD : M.Coindep D) : (M ＼ D).IsBase B ↔ M.Is
     have hcl := h.isBasis_closure_right
     rw [hD.closure_compl, isBasis_ground_iff] at hcl
     exact ⟨hcl, hss.2⟩
-  exact h.1.isBasis_ground.isBasis_subset (by simp [subset_diff, h.1.subset_ground, h.2]) diff_subset
+  exact h.1.isBasis_ground.isBasis_subset (by simp [subset_diff, h.1.subset_ground, h.2])
+    diff_subset
 
 lemma Coindep.delete_rankPos [M.RankPos] (hD : M.Coindep D) : (M ＼ D).RankPos := by
   simp [rankPos_iff, hD.delete_isBase_iff, M.empty_not_isBase]
@@ -379,7 +381,8 @@ lemma IsBasis'.contract_isBasis'_diff_diff_of_subset (hIX : M.IsBasis' I X) (hJI
 lemma IsBasis'.contract_isBasis'_diff_of_subset (hIX : M.IsBasis' I X) (hJI : J ⊆ I) :
     (M ／ J).IsBasis' (I \ J) X := by
   rw [isBasis'_iff_isBasis_inter_ground]
-  simpa [inter_diff_assoc] using (hIX.contract_isBasis'_diff_diff_of_subset hJI).isBasis_inter_ground
+  simpa [inter_diff_assoc] using
+    (hIX.contract_isBasis'_diff_diff_of_subset hJI).isBasis_inter_ground
 
 lemma IsBasis.contract_isBasis_diff_diff_of_subset (hIX : M.IsBasis I X) (hJI : J ⊆ I) :
     (M ／ J).IsBasis (I \ J) (X \ J) := by
@@ -534,15 +537,15 @@ lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
     union_comm]
 
 -- TODO : `Basis'` version.
-lemma IsBasis.contract_isBasis (hIC : M.IsBasis I C) (hJY : M.IsBasis J Y) (h_ind : M.Indep (J \ C ∪ I)) :
-    (M ／ C).IsBasis (J \ C) (Y \ C) := by
+lemma IsBasis.contract_isBasis (hIC : M.IsBasis I C) (hJY : M.IsBasis J Y)
+    (h_ind : M.Indep (J \ C ∪ I)) : (M ／ C).IsBasis (J \ C) (Y \ C) := by
   refine Indep.isBasis_of_subset_of_subset_closure ?_ (diff_subset_diff_left hJY.subset) ?_
   · rwa [hIC.contract_indep_diff_iff]
   simp only [contract_closure_eq, diff_union_self, closure_union_congr_left hJY.closure_eq_closure]
   exact diff_subset_diff_left (subset_closure_of_subset _ subset_union_left)
 
-lemma IsBasis.contract_isBasis_of_disjoint (hIC : M.IsBasis I C) (hJY : M.IsBasis J Y) (hdj : Disjoint C Y)
-    (h_ind : M.Indep (I ∪ J)) : (M ／ C).IsBasis J Y := by
+lemma IsBasis.contract_isBasis_of_disjoint (hIC : M.IsBasis I C) (hJY : M.IsBasis J Y)
+    (hdj : Disjoint C Y) (h_ind : M.Indep (I ∪ J)) : (M ／ C).IsBasis J Y := by
   refine Indep.isBasis_of_subset_of_subset_closure ?_ hJY.subset ?_
   · rwa [hIC.contract_indep_iff, and_iff_left (hdj.mono_right hJY.subset), union_comm]
   rw [contract_closure_eq, subset_diff, and_iff_left hdj.symm, closure_union_congr_left
@@ -569,7 +572,8 @@ lemma IsCircuit.contract_dep (hK : M.IsCircuit K) (hCK : Disjoint C K) : (M ／ 
     and_iff_left (hCK.symm.mono_right inter_subset_left), and_iff_left hK.subset_ground]
   exact fun hi ↦ hK.dep.not_indep (hi.subset subset_union_left)
 
-lemma IsCircuit.contract_isCircuit (hK : M.IsCircuit K) (hC : C ⊂ K) : (M ／ C).IsCircuit (K \ C) := by
+lemma IsCircuit.contract_isCircuit (hK : M.IsCircuit K) (hC : C ⊂ K) :
+    (M ／ C).IsCircuit (K \ C) := by
   have hCi := hK.ssubset_indep hC
   rw [isCircuit_iff_forall_ssubset, hCi.contract_dep_iff, and_iff_right (disjoint_sdiff_left),
     diff_union_self, union_eq_self_of_subset_right hC.subset, and_iff_right hK.dep]

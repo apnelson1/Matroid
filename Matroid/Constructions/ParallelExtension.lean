@@ -247,7 +247,8 @@ lemma parallelExtend_isCircuit_iff (he : M.Nonloop e) (hf : f ∉ M.E) :
     exact ⟨fun h ↦ Eq.symm <| hC.eq_of_subset_isCircuit h (by simp [pair_subset_iff, heC, hfC]),
       by rintro rfl; assumption⟩
   rw [← (M.parallelExtend_parallel he f).parallel'.eq_mapEquiv_swap, mapEquiv_isCircuit_iff,
-    Equiv.symm_swap, Equiv.swap_comm, Equiv.swap_image_eq_exchange hfC heC, aux (by simp [hef.symm])]
+    Equiv.symm_swap, Equiv.swap_comm, Equiv.swap_image_eq_exchange hfC heC,
+    aux (by simp [hef.symm])]
   simp [heC, show C ≠ {e,f} by rintro rfl; simp at heC]
 
 instance parallelExtend_finite (M : Matroid α) [M.Finite] (e f : α) :

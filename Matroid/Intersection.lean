@@ -62,8 +62,10 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
 
   by_contra! hcon
   replace hcon :=
-    show ∀ I X, X ⊆ M₁.E → M₁.Indep I → M₂.Indep I → I.ncard + 1 ≤ M₁.rk X + M₂.rk (M₂.E \ X) from
-    fun I X hX h h' ↦ Nat.add_one_le_iff.2 <| (h.ncard_le_rk_add_rk h' X).lt_of_ne <| hcon I X hX h h'
+    show ∀ I X, X ⊆ M₁.E → M₁.Indep I → M₂.Indep I →
+      I.ncard + 1 ≤ M₁.rk X + M₂.rk (M₂.E \ X) from
+    fun I X hX h h' ↦ Nat.add_one_le_iff.2 <| (h.ncard_le_rk_add_rk h' X).lt_of_ne <|
+      hcon I X hX h h'
 
   have hcond := hcon Id (Xc ∩ Xd) (inter_subset_left.trans hXc.1) hId₁.of_delete hId₂.of_delete
 
@@ -204,9 +206,9 @@ end Rado
 --   exact (hx i).1,
 -- end
 
--- /-- Rado's theorem: Given a partition `f : E → ι` of the ground set `E` of a matroid `M`, there is a
---   transversal of `f` that is independent in `M` if and only if the rank of the preimage of every set
---   `S` in `ι` is at least its cardinality. -/
+-- /-- Rado's theorem: Given a partition `f : E → ι` of the ground set `E` of a matroid `M`,
+-- there is a transversal of `f` that is independent in `M` if and only if the rank of the preimage
+-- of every set `S` in `ι` is at least its cardinality. -/
 -- theorem rado_iff {M : matroid E} {f : E → ι} :
 --   (∃ (x : ι → E), (∀ i, f (x i) = i) ∧ M.indep (range x)) ↔ ∀ S, ncard S ≤ M.r (f ⁻¹' S) :=
 -- ⟨λ h S, exists.elim h (λ x hx, rado_necessary hx.1 hx.2 _) , rado_sufficient _⟩

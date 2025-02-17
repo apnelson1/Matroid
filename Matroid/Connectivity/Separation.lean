@@ -514,7 +514,8 @@ lemma Minor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :
   obtain ⟨C, D, h, -, -, rfl⟩ := hNM
   exact le_trans ((M ／ C).eConnBetween_delete_le X Y D) <| (M.eConnBetween_contract_le X Y C)
 
--- lemma foo [M.RankFinite] (M : Matroid α) (X Y : Set α) (he : e ∈ M.E) (heX : e ∉ X) (heY : e ∉ Y) :
+-- lemma foo [M.RankFinite] (M : Matroid α) (X Y : Set α) (he : e ∈ M.E) (heX : e ∉ X)
+--  (heY : e ∉ Y) :
 --     (M ／ e).eConnBetween X Y = M.eConnBetween X Y ∨
 --     (M ＼ e).eConnBetween X Y = M.eConnBetween X Y := by
 --   sorry

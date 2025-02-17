@@ -27,8 +27,8 @@ lemma exists_isBase_finset (M : Matroid α) [RankFinite M] : ∃ B : Finset α, 
   obtain ⟨B, hB⟩ := M.exists_isBase
   exact ⟨hB.finite.toFinset, by simpa⟩
 
-lemma exists_isBasis_finset (M : Matroid α) [RankFinite M] (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
-    ∃ I : Finset α, M.IsBasis I X := by
+lemma exists_isBasis_finset (M : Matroid α) [RankFinite M] (X : Set α)
+    (hXE : X ⊆ M.E := by aesop_mat) : ∃ I : Finset α, M.IsBasis I X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   refine ⟨hI.indep.finite.toFinset, by simpa⟩
 
@@ -61,8 +61,8 @@ lemma Indep.sUnion_chain [Finitary M] {Is : Set (Set α)} (hIs : ∀ I ∈ Is, M
   simpa [sUnion_eq_iUnion] using Indep.iUnion_directed (M := M) (Is := fun i : Is ↦ i.1)
     (by simpa) h_chain.directed
 
-lemma IsBasis'.exists_isBasis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.IsBasis' I X) (hXY : X ⊆ Y) :
-    ∃ J, M.IsBasis' J Y ∧ J ∩ X = I := by
+lemma IsBasis'.exists_isBasis'_inter_eq_of_superset {I X Y : Set α} (hIX : M.IsBasis' I X)
+    (hXY : X ⊆ Y) : ∃ J, M.IsBasis' J Y ∧ J ∩ X = I := by
   obtain ⟨J, hJ, rfl⟩ :=
     hIX.isBasis_inter_ground.exists_isBasis_inter_eq_of_superset (inter_subset_inter_left M.E hXY)
   simp_rw [isBasis'_iff_isBasis_inter_ground]

@@ -53,7 +53,8 @@ lemma Point.insert_indep (h : M.Point {e}) (f : α) (hf : f ∈ M.E := by aesop_
     M.Indep {e, f} := by
   obtain rfl | hne := eq_or_ne e f
   · simp [h.nonloop]
-  simpa [pair_comm] using h.isFlat.insert_indep_of_isBasis (h.nonloop.indep.isBasis_self) ⟨hf, hne.symm⟩
+  simpa [pair_comm] using h.isFlat.insert_indep_of_isBasis (h.nonloop.indep.isBasis_self)
+    ⟨hf, hne.symm⟩
 
 lemma point_singleton_iff [M.Nonempty] : M.Point {e} ↔ ∀ f ∈ M.E, M.Indep {e,f} := by
   refine ⟨fun h f hf ↦ h.insert_indep f hf, fun h ↦ ?_⟩

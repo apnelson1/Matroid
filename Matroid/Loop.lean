@@ -320,7 +320,8 @@ lemma Cocircuit.nonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.Nonloop e
   obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.cocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
   exact hfe rfl
 
-lemma IsCircuit.nonloop_of_mem (hC : M.IsCircuit C) (hC' : C.Nontrivial) (he : e ∈ C) : M.Nonloop e :=
+lemma IsCircuit.nonloop_of_mem (hC : M.IsCircuit C) (hC' : C.Nontrivial) (he : e ∈ C) :
+    M.Nonloop e :=
   nonloop_of_not_loop (hC.subset_ground he) (fun hL ↦ by simp [hL.eq_of_isCircuit_mem hC he] at hC')
 
 lemma IsCircuit.nonloop_of_mem_of_one_lt_card (hC : M.IsCircuit C) (h : 1 < C.encard) (he : e ∈ C) :
@@ -684,7 +685,8 @@ lemma coloop_iff_not_mem_closure_compl (he : e ∈ M.E := by aesop_mat) :
 
 lemma IsBase.mem_coloop_iff_forall_not_mem_fundCircuit (hB : M.IsBase B) (he : e ∈ B) :
     M.Coloop e ↔ ∀ x ∈ M.E \ B, e ∉ M.fundCircuit x B := by
-  refine ⟨fun h x hx heC ↦ (h.not_mem_isCircuit <| hB.fundCircuit_isCircuit hx.1 hx.2) heC, fun h ↦ ?_⟩
+  refine ⟨fun h x hx heC ↦ (h.not_mem_isCircuit <| hB.fundCircuit_isCircuit hx.1 hx.2) heC,
+    fun h ↦ ?_⟩
   have h' : M.E \ {e} ⊆ M.closure (B \ {e}) := by
     rintro x ⟨hxE, hne : x ≠ e⟩
     obtain (hx | hx) := em (x ∈ B)

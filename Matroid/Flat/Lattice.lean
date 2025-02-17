@@ -224,12 +224,12 @@ lemma CovBy.eq_or_eq (h : F₀ ⋖[M] F₁) (hF : M.IsFlat F) (h₀ : F₀ ⊆ F
     F = F₀ ∨ F = F₁ :=
   (covBy_iff.1 h).2.2.2 F hF h₀ h₁
 
-lemma CovBy.eq_of_subset_of_ssubset (h : F₀ ⋖[M] F₁) (hF : M.IsFlat F) (hF₀ : F₀ ⊆ F) (hF₁ : F ⊂ F₁) :
-    F = F₀ :=
+lemma CovBy.eq_of_subset_of_ssubset (h : F₀ ⋖[M] F₁) (hF : M.IsFlat F) (hF₀ : F₀ ⊆ F)
+    (hF₁ : F ⊂ F₁) : F = F₀ :=
   ((covBy_iff.1 h).2.2.2 F hF hF₀ hF₁.subset).elim id fun h' ↦ (hF₁.ne h').elim
 
-lemma CovBy.eq_of_ssubset_of_subset (h : F₀ ⋖[M] F₁) (hF : M.IsFlat F) (hF₀ : F₀ ⊂ F) (hF₁ : F ⊆ F₁) :
-    F = F₁ :=
+lemma CovBy.eq_of_ssubset_of_subset (h : F₀ ⋖[M] F₁) (hF : M.IsFlat F) (hF₀ : F₀ ⊂ F)
+    (hF₁ : F ⊆ F₁) : F = F₁ :=
   ((covBy_iff.1 h).2.2.2 F hF hF₀.subset hF₁).elim (fun h' ↦ (hF₀.ne.symm h').elim) id
 
 lemma CovBy.inter_eq_of_covby_of_ne (h₁ : F₀ ⋖[M] F₁) (h₂ : F₀ ⋖[M] F₂) (h_ne : F₁ ≠ F₂) :
@@ -302,7 +302,8 @@ lemma CovBy.rk_eq_of_isRkFinite (h : F ⋖[M] F') (hFin : M.IsRkFinite F) : M.rk
 
 lemma closure_covBy_iff :
     (M.closure X) ⋖[M] F ↔ ∃ e ∈ M.E \ M.closure X, F = M.closure (insert e X) := by
-  simp_rw [(M.closure_isFlat X).covBy_iff_eq_closure_insert, closure_insert_closure_eq_closure_insert]
+  simp_rw [(M.closure_isFlat X).covBy_iff_eq_closure_insert,
+    closure_insert_closure_eq_closure_insert]
 
 lemma closure_covBy_closure_iff : (M.closure X) ⋖[M] (M.closure Y) ↔
     ∃ e ∈ M.E, e ∈ Y ∧ e ∉ M.closure X ∧ M.closure (insert e X) = M.closure Y := by
@@ -337,8 +338,9 @@ lemma IsFlat.wCovby_of_subset_closure_insert (hF₀ : M.IsFlat F₀) (hF₁ : M.
 
 lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
     M.closure (I \ {e}) ⋖[M] M.closure I := by
-  simpa [closure_insert_closure_eq_closure_insert, he] using (M.closure_isFlat _).covBy_closure_insert
-    (not_mem_closure_diff_of_mem hI he) (hI.subset_ground he)
+  simpa [closure_insert_closure_eq_closure_insert, he] using
+    (M.closure_isFlat _).covBy_closure_insert (not_mem_closure_diff_of_mem hI he)
+      (hI.subset_ground he)
 
 lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
     M.closure I ⋖[M] M.closure (insert e I) := by
@@ -361,8 +363,8 @@ lemma IsFlat.covBy_iff_eRelRk_eq_one (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F) :
   · apply diff_subset_diff_left hF.subset_ground he
   exact hF.closure_subset_iff_subset.2 <| insert_subset he.1 hss
 
-lemma IsFlat.covBy_iff_eRelRk_eq_one_of_subset (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F) (hss : F₀ ⊆ F) :
-    F₀ ⋖[M] F ↔ M.eRelRk F₀ F = 1 := by
+lemma IsFlat.covBy_iff_eRelRk_eq_one_of_subset (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F)
+    (hss : F₀ ⊆ F) : F₀ ⋖[M] F ↔ M.eRelRk F₀ F = 1 := by
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, and_iff_right hss]
 
 lemma IsFlat.covBy_iff_rk_eq_add_one [RankFinite M] (hF₀ : M.IsFlat F₀) (hF : M.IsFlat F) :

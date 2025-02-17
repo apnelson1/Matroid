@@ -118,7 +118,8 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
     · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
-    suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by simpa [M.principal_ground_ne_top]
+    suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
+      simpa [M.principal_ground_ne_top]
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
     have hIb := hI.isBase_of_ground_subset_closure hss
     exact hIb.nonempty.ne_empty (h hIb))
@@ -139,7 +140,8 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
   rw [← ground_eq_empty_iff]
   rfl
 
-@[simp] lemma truncate_isBase_iff [M.RankPos] : M.truncate.IsBase B ↔ ∃ e ∉ B, M.IsBase (insert e B) := by
+@[simp] lemma truncate_isBase_iff [M.RankPos] :
+    M.truncate.IsBase B ↔ ∃ e ∉ B, M.IsBase (insert e B) := by
   refine ⟨fun h ↦ ?_, fun ⟨e, he, hBe⟩ ↦ ?_⟩
   · obtain ⟨hB, hBb⟩ := truncate_indep_iff.1 h.indep
     obtain ⟨B', hB', hBB'⟩ := hB.exists_isBase_superset
@@ -148,7 +150,8 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
     rwa [h.eq_of_subset_indep ?_ (subset_diff_singleton hBB' heB), insert_diff_singleton,
       insert_eq_of_mem heB']
     rw [truncate_indep_iff]
-    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <| diff_singleton_sSubset.mpr heB'⟩
+    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <|
+      diff_singleton_sSubset.mpr heB'⟩
   refine Indep.isBase_of_forall_insert ?_ ?_
   · rw [truncate_indep_iff]
     exact ⟨hBe.indep.subset (subset_insert _ _), hBe.not_isBase_of_ssubset (ssubset_insert he)⟩
@@ -423,7 +426,8 @@ def IsBase (T : M.TruncateFamily) (B : Set α) : Prop :=
   (M.IsBase B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∈ M.E \ B, T.ToTruncate (insert e B))
 
 lemma isBase_eq :
-    T.IsBase = fun B ↦ (M.IsBase B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∈ M.E \ B, T.ToTruncate (insert e B)) :=
+    T.IsBase =
+    fun B ↦ (M.IsBase B ∧ ¬ T.ToTruncate B) ∨ (∃ e ∈ M.E \ B, T.ToTruncate (insert e B)) :=
   rfl
 
 lemma isBase_eq' :
@@ -452,10 +456,12 @@ lemma IsBase.exists_toTruncate_insert (hB : T.IsBase B) (hBM : ¬ M.IsBase B) :
 lemma Indep.indep (hI : T.Indep I) : M.Indep I :=
   hI.1
 
-lemma _root_.Matroid.IsBase.partialTruncateBase_iff (hB : M.IsBase B) : T.IsBase B ↔ ¬ T.ToTruncate B :=
+lemma _root_.Matroid.IsBase.partialTruncateBase_iff (hB : M.IsBase B) :
+    T.IsBase B ↔ ¬ T.ToTruncate B :=
   ⟨fun h h' ↦ h.indep.2 h', fun h ↦ .inl ⟨hB, h⟩⟩
 
-lemma _root_.Matroid.IsBase.partialTruncateBase (hB : M.IsBase B) (hBt : ¬ T.ToTruncate B) : T.IsBase B :=
+lemma _root_.Matroid.IsBase.partialTruncateBase (hB : M.IsBase B) (hBt : ¬ T.ToTruncate B) :
+    T.IsBase B :=
   .inl ⟨hB, hBt⟩
 
 lemma Indep.subset (hI : T.Indep I) (hJI : J ⊆ I) : T.Indep J :=
@@ -591,7 +597,8 @@ Empty if `M` has rank zero for technical reasons. -/
 @[simp] lemma matroid_bot : (bot M).matroid = M :=
   ext_isBase rfl <| by simp [(bot _).isBase_eq]
 
-lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) : T = top M ∨ T = bot M := by
+lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) :
+    T = top M ∨ T = bot M := by
   obtain h | ⟨B₀, hB₀⟩ := em' (∃ B, T.ToTruncate B)
   · right
     push_neg at h
@@ -601,7 +608,8 @@ lemma eq_top_or_bot_of_rankFinite [RankFinite M] (T : M.TruncateFamily) : T = to
   ext B
   simp only [top_ToTruncate]
   refine ⟨fun h ↦ ⟨h.isBase, h.nonempty⟩, fun ⟨hB, hBne⟩ ↦ ?_⟩
-  exact hB₀.finDiff hB <| (finDiff_iff _ _).2 ⟨hB₀.isBase.finite.diff, hB₀.isBase.encard_diff_comm hB⟩
+  exact hB₀.finDiff hB <| (finDiff_iff _ _).2
+    ⟨hB₀.isBase.finite.diff, hB₀.isBase.encard_diff_comm hB⟩
 
 lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) :
     T = top M ∨ T = bot M := by
@@ -618,7 +626,8 @@ lemma eq_top_or_bot_of_rankFinite_dual [RankFinite M✶] (T : M.TruncateFamily) 
   · exact hB.compl_isBase_dual.finite.subset <| diff_subset_diff_left hB₀.isBase.subset_ground
   convert hB.compl_isBase_dual.encard_diff_comm hB₀.isBase.compl_isBase_dual using 2
   · rw [diff_diff_right, diff_eq_empty.2 diff_subset, empty_union, inter_comm,
-      inter_diff_distrib_left, inter_eq_self_of_subset_left hB₀.isBase.subset_ground, diff_self_inter]
+      inter_diff_distrib_left, inter_eq_self_of_subset_left hB₀.isBase.subset_ground,
+      diff_self_inter]
   rw [diff_diff_right, diff_eq_empty.2 diff_subset, empty_union, inter_comm,
       inter_diff_distrib_left, inter_eq_self_of_subset_left hB.subset_ground, diff_self_inter]
 

@@ -124,7 +124,8 @@ theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
   contradiction
 
 /-- If `M₂ ≤q M₁`, then every circuit of `M₁` is cyclic (a union of circuits) in `M₂`. -/
-lemma Quotient.cyclic_of_isCircuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.IsCircuit C) : M₂.Cyclic C := by
+lemma Quotient.cyclic_of_isCircuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.IsCircuit C) :
+    M₂.Cyclic C := by
   rw [cyclic_iff_forall_exists]
   intro e heC
   have hcl := hQ.closure_subset_closure (C \ {e})
@@ -179,8 +180,8 @@ lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ 
   exact hQ.dual.contract D
 
 theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
-  simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, isFlat_contract_iff', isFlat_delete_iff,
-    and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
+  simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, isFlat_contract_iff',
+    isFlat_delete_iff, and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
   exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
 
 lemma Quotient.restrict (hQ : M₂ ≤q M₁) (R : Set α) : M₂ ↾ R ≤q M₁ ↾ R := by
@@ -207,7 +208,8 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
   tfae_finish
 
 --Begin finite case
-lemma Quotient.rankFinite {M₁ M₂ : Matroid α} [hM₁ : RankFinite M₁] (hQ : M₂ ≤q M₁) : RankFinite M₂ := by
+lemma Quotient.rankFinite {M₁ M₂ : Matroid α} [hM₁ : RankFinite M₁] (hQ : M₂ ≤q M₁) :
+    RankFinite M₂ := by
   rw [rankFinite_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.eRelRk_le _ _).trans_lt hM₁
@@ -320,7 +322,8 @@ lemma Quotient.intCast_rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hX
   have _ : RankFinite M₂ := hQ.rankFinite
   rw [← Nat.cast_sub (M₂.rk_mono hXY), ← Nat.cast_sub (M₁.rk_mono hXY), Nat.cast_le,
     ← Nat.cast_le (α := ℕ∞), ENat.coe_sub, cast_rk_eq, ENat.coe_sub, cast_rk_eq, cast_rk_eq ,
-    cast_rk_eq, ← (M₁.isRkFinite_set X).eRelRk_eq_sub hXY, ← (M₂.isRkFinite_set X).eRelRk_eq_sub hXY]
+    cast_rk_eq, ← (M₁.isRkFinite_set X).eRelRk_eq_sub hXY,
+    ← (M₂.isRkFinite_set X).eRelRk_eq_sub hXY]
   exact eRelRk_le hQ X Y
 
 lemma Quotient.rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :

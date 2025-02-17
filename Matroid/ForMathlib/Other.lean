@@ -81,7 +81,8 @@ theorem Set.Finite.encard_eq_iff_nonempty_equiv {s : Set α} {t : Set β} (ht : 
 
 
 
--- @[simp] theorem PartialEquiv.ofSetEquiv_apply_symm [Nonempty α] [Nonempty β] {s : Set α} {t : Set β}
+-- @[simp] theorem PartialEquiv.ofSetEquiv_apply_symm [Nonempty α] [Nonempty β]
+-- {s : Set α} {t : Set β}
 --     (e : s ≃ t) (y : t) : (PartialEquiv.ofSetEquiv e).symm y = e.symm y := by
 
 --   simp only [ofSetEquiv, Subtype.forall, BijOn.toPartialEquiv_symm_apply]

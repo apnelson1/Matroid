@@ -173,7 +173,8 @@ lemma eRk_lt_top_of_finite (M : Matroid α) (hX : X.Finite) : M.eRk X < ⊤ := b
   rw [hI.eRk_eq_encard, encard_lt_top_iff]
   exact hX.subset hI.subset
 
-lemma IsBasis'.eRk_eq_eRk_union (hIX : M.IsBasis' I X) (Y : Set α) : M.eRk (I ∪ Y) = M.eRk (X ∪ Y) := by
+lemma IsBasis'.eRk_eq_eRk_union (hIX : M.IsBasis' I X) (Y : Set α) :
+    M.eRk (I ∪ Y) = M.eRk (X ∪ Y) := by
   rw [← eRk_union_closure_left_eq, hIX.closure_eq_closure, eRk_union_closure_left_eq]
 
 lemma IsBasis'.eRk_eq_eRk_insert (hIX : M.IsBasis' I X) (e : α) :
@@ -624,7 +625,8 @@ lemma nullity_supermodular (M : Matroid α) (X Y : Set α) :
   obtain ⟨I, hI⟩ := M.exists_isBasis' (X ∩ Y)
   obtain ⟨Ix, hIx, hIIx⟩ := hI.exists_isBasis'_inter_eq_of_superset inter_subset_left
   obtain ⟨Iy, hIy, hIIy⟩ := hI.exists_isBasis'_inter_eq_of_superset inter_subset_right
-  obtain ⟨Iu, hIu, hIxIu⟩ := hIx.exists_isBasis'_inter_eq_of_superset (Y := X ∪ Iy) subset_union_left
+  obtain ⟨Iu, hIu, hIxIu⟩ := hIx.exists_isBasis'_inter_eq_of_superset (Y := X ∪ Iy)
+    subset_union_left
   have hIu' : M.IsBasis' Iu (X ∪ Y) := by
     rw [isBasis'_iff_isBasis_closure, ← closure_union_congr_right hIy.closure_eq_closure,
       and_iff_left (hIu.subset.trans (union_subset_union_right X hIy.subset))]
@@ -741,8 +743,8 @@ lemma eRk_eq_iSup_finset_eRk (M : Matroid α) (X : Set α) :
   rw [(hI.indep.subset hJI).eRk_eq_encard, encard_coe_eq_coe_finsetCard]
   rfl
 
-lemma IsRkFinite.isBasis_of_subset_closure_of_subset_of_encard_le (hX : M.IsRkFinite X) (hXI : X ⊆ M.closure I)
-    (hIX : I ⊆ X) (hI : I.encard ≤ M.eRk X) : M.IsBasis I X := by
+lemma IsRkFinite.isBasis_of_subset_closure_of_subset_of_encard_le (hX : M.IsRkFinite X)
+    (hXI : X ⊆ M.closure I) (hIX : I ⊆ X) (hI : I.encard ≤ M.eRk X) : M.IsBasis I X := by
   obtain ⟨J, hJ⟩ := M.exists_isBasis (I ∩ M.E)
   have hIJ := hJ.subset.trans inter_subset_left
   rw [← closure_inter_ground] at hXI
@@ -777,14 +779,16 @@ lemma eRk_union_eq_of_subsets_of_eRks_le (hX : X ⊆ X') (hY : Y ⊆ Y') (hXX' :
   rw [eRk_union_eq_of_subset_of_eRk_le_eRk _ hX hXX', union_comm,
     eRk_union_eq_of_subset_of_eRk_le_eRk _ hY hYY', union_comm]
 
-lemma not_isRkFinite_of_eRk_ge (h : ¬M.IsRkFinite X) (hXY : M.eRk X ≤ M.eRk Y) : ¬M.IsRkFinite Y := by
+lemma not_isRkFinite_of_eRk_ge (h : ¬M.IsRkFinite X) (hXY : M.eRk X ≤ M.eRk Y) :
+    ¬M.IsRkFinite Y := by
   contrapose! h
   exact eRk_lt_top_iff.1 <| hXY.trans_lt h.eRk_lt_top
 
 lemma eRank_lt_top (M : Matroid α) [RankFinite M] : M.eRank < ⊤ := by
   rwa [eRank_def, eRk_lt_top_iff, isRkFinite_ground_iff_rankFinite]
 
-lemma IsRkFinite.indep_of_encard_le_eRk (hX : M.IsRkFinite I) (h : encard I ≤ M.eRk I) : M.Indep I := by
+lemma IsRkFinite.indep_of_encard_le_eRk (hX : M.IsRkFinite I) (h : encard I ≤ M.eRk I) :
+    M.Indep I := by
   rw [indep_iff_eRk_eq_encard_of_finite _]
   · exact (M.eRk_le_encard I).antisymm h
   simpa using h.trans_lt hX.eRk_lt_top

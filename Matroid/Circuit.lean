@@ -115,7 +115,8 @@ lemma mapEquiv_isCircuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
 @[simp] lemma loopyOn_dep_iff : (loopyOn E).Dep D ↔ D.Nonempty ∧ D ⊆ E := by
   simp [Dep, nonempty_iff_ne_empty]
 
-@[simp] lemma uniqueBaseOn_isCircuit_iff : (uniqueBaseOn I E).IsCircuit C ↔ ∃ e ∈ E \ I, C = {e} := by
+@[simp] lemma uniqueBaseOn_isCircuit_iff :
+    (uniqueBaseOn I E).IsCircuit C ↔ ∃ e ∈ E \ I, C = {e} := by
   simp only [isCircuit_iff_dep_forall_diff_singleton_indep, uniqueBaseOn_dep_iff,
     uniqueBaseOn_indep_iff', subset_inter_iff, diff_singleton_subset_iff, mem_diff]
   refine ⟨fun ⟨⟨⟨e,he⟩, hCI, hCE⟩, h2⟩ ↦ ⟨e, ⟨hCE he, fun heI ↦ hCI ?_⟩, ?_⟩, ?_⟩
@@ -279,7 +280,8 @@ lemma IsBase.mem_fundCocircuit_iff_mem_fundCircuit {e f : α} (hB : M.IsBase B) 
     by simpa [hne] using (M.fundCocircuit_subset_insert_compl f B) he
   rw [fundCocircuit, hB'.indep.mem_fundCircuit_iff (by rwa [hB'.closure_eq]) (by simp [hfB])] at he
   rw [hB.indep.mem_fundCircuit_iff (by rwa [hB.closure_eq]) heB]
-  have hB' := (hB'.exchange_isBase_of_indep' ⟨heE, heB⟩ (by simp [hfE, hfB]) he).compl_isBase_of_dual
+  have hB' :=
+    (hB'.exchange_isBase_of_indep' ⟨heE, heB⟩ (by simp [hfE, hfB]) he).compl_isBase_of_dual
   refine hB'.indep.subset ?_
   simp only [dual_ground, diff_singleton_subset_iff]
   rw [diff_diff_right, inter_eq_self_of_subset_right (by simpa), union_singleton, insert_comm,

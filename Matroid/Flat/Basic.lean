@@ -57,7 +57,8 @@ lemma isFlat_iff_closure_self : M.IsFlat F ↔ M.closure F = F :=
   ⟨fun h ↦ subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left⟩)
     (M.subset_closure F (IsFlat.subset_ground h)), fun h ↦ by rw [← h]; exact closure_isFlat _ _⟩
 
-lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) : M.IsFlat F ↔ M.closure F ⊆ F := by
+lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) :
+    M.IsFlat F ↔ M.closure F ⊆ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_closure F
 
@@ -160,15 +161,17 @@ lemma IsFlat.insert_rk_eq [M.RankFinite] (hF : M.IsFlat F) (he : e ∈ M.E \ F) 
   rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.isRkFinite_set]) (by simp), rk,
     ENat.toNat_one]
 
-lemma IsFlat.eq_of_subset_of_rk_ge [RankFinite M] (hF : M.IsFlat F) (hFF' : F ⊆ F') (hle : M.rk F' ≤ M.rk F)
-    (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
+lemma IsFlat.eq_of_subset_of_rk_ge [RankFinite M] (hF : M.IsFlat F) (hFF' : F ⊆ F')
+    (hle : M.rk F' ≤ M.rk F) (hF' : F' ⊆ M.E := by aesop_mat) : F = F' := by
   refine hFF'.antisymm fun e heF' ↦ by_contra fun heF ↦ ?_
-  linarith [(hF.insert_rk_eq ⟨by aesop_mat, heF⟩).symm.trans_le (M.rk_mono (insert_subset heF' hFF'))]
+  linarith [(hF.insert_rk_eq ⟨by aesop_mat, heF⟩).symm.trans_le
+    (M.rk_mono (insert_subset heF' hFF'))]
 
 lemma finite_setOf_isFlat (M : Matroid α) [M.Finite] : {F | M.IsFlat F}.Finite :=
   M.ground_finite.finite_subsets.subset (fun _ hF ↦ hF.subset_ground)
 
-lemma uniqueBaseOn_isFlat_iff {I E : Set α} (hIE : I ⊆ E) : (uniqueBaseOn E I).IsFlat F ↔ F ⊆ I := by
+lemma uniqueBaseOn_isFlat_iff {I E : Set α} (hIE : I ⊆ E) :
+    (uniqueBaseOn E I).IsFlat F ↔ F ⊆ I := by
   simp [isFlat_iff_closure_eq, diff_eq_empty.2 hIE, inter_assoc, inter_eq_self_of_subset_right hIE]
 
 @[simp] lemma loopyOn_isFlat_iff {E : Set α} : (loopyOn E).IsFlat F ↔ F = E := by
@@ -311,7 +314,8 @@ lemma isFlat_restrict_iff' {R : Set α} :
   rw [h, union_subset_iff, and_iff_left diff_subset]
   exact inter_subset_right
 
-lemma IsFlat.isFlat_restrict' (hF : M.IsFlat F) (R : Set α) : (M ↾ R).IsFlat ((F ∩ R) ∪ (R \ M.E)) := by
+lemma IsFlat.isFlat_restrict' (hF : M.IsFlat F) (R : Set α) :
+    (M ↾ R).IsFlat ((F ∩ R) ∪ (R \ M.E)) := by
   rw [isFlat_restrict_iff', ← closure_inter_ground, union_inter_distrib_right,
     diff_inter_self, union_empty, closure_inter_ground]
   convert rfl using 2
@@ -332,13 +336,15 @@ lemma IsFlat.closure_subset_of_isFlat_restrict {R : Set α} (hF : (M ↾ R).IsFl
     union_eq_self_of_subset_right diff_subset, union_diff_self]
   exact (M.closure_subset_ground F).trans subset_union_right
 
-lemma IsFlat.exists_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) : ∃ F₀, M.IsFlat F₀ ∧ F = F₀ \ D :=
+lemma IsFlat.exists_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) :
+    ∃ F₀, M.IsFlat F₀ ∧ F = F₀ \ D :=
   isFlat_delete_iff.1 hF
 
 lemma IsFlat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) : M.closure F ⊆ F ∪ D :=
   (isFlat_delete_iff'.1 hF).1
 
-@[simp] lemma isFlat_deleteElem_iff : (M ＼ e).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
+@[simp] lemma isFlat_deleteElem_iff :
+    (M ＼ e).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
   rw [deleteElem, isFlat_delete_iff]
   constructor
   · rintro ⟨F, hF, rfl⟩
@@ -361,8 +367,9 @@ section Directed
 
 /-- Any downwards-directed collection of flats containing a flat of finite rank
 must contain its intersection. -/
-lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set α} (hF : ∀ i, M.IsFlat (F i))
-    (h_dir : Directed (fun A B ↦ B ⊆ A) F) (h_fin : ∃ i, M.IsRkFinite (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
+lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set α}
+    (hF : ∀ i, M.IsFlat (F i)) (h_dir : Directed (fun A B ↦ B ⊆ A) F)
+    (h_fin : ∃ i, M.IsRkFinite (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
   obtain ⟨j, hj⟩ := h_fin
   have _ : Nonempty ι := ⟨j⟩
   have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.rk (F j ∩ F i)) univ
@@ -394,7 +401,8 @@ end Directed
 -- section from_axioms
 -- lemma matroid_of_isFlat_aux [finite E] (isFlat : set α → Prop) (univ_isFlat : isFlat univ)
 -- (isFlat_inter : ∀ F₁ F₂, isFlat F₁ → isFlat F₂ → isFlat (F₁ ∩ F₂)) (X : set α) :
---   isFlat (⋂₀ {F | isFlat F ∧ X ⊆ F}) ∧ ∀ F₀, isFlat F₀ → ((⋂₀ {F | isFlat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
+--   isFlat (⋂₀ {F | isFlat F ∧ X ⊆ F}) ∧
+-- ∀ F₀, isFlat F₀ → ((⋂₀ {F | isFlat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
 -- begin
 --   set F₁ := ⋂₀ {F | isFlat F ∧ X ⊆ F} with hF₁,
 --   refine ⟨_, λ F₀ hF₀, ⟨λ hF₁F₀, _, λ hXF, _⟩⟩ ,
@@ -461,7 +469,8 @@ end Directed
 --   rw hunique FXe ⟨hFXe, insert_subset.mpr ⟨heFXe, hFXFXe⟩, hFXemin⟩ at hssu,
 --   rwa ← (hmin _ hFXf hFXFXf hssu) at hfFXf,
 -- end)
--- @[simp] lemma matroid_of_isFlat_apply [finite E] (isFlat : set α → Prop) (univ_isFlat : isFlat univ)
+-- @[simp] lemma matroid_of_isFlat_apply [finite E] (isFlat : set α → Prop)
+--  (univ_isFlat : isFlat univ)
 -- (isFlat_inter : ∀ F₁ F₂, isFlat F₁ → isFlat F₂ → isFlat (F₁ ∩ F₂))
 -- (isFlat_partition : ∀ F₀ e, isFlat F₀ → e ∉ F₀ →
 -- ∃! F₁, isFlat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, isFlat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :

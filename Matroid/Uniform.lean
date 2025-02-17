@@ -57,7 +57,8 @@ theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k 
   rw [rank, unifOn_eRank_eq, min_eq_right hk, ENat.toNat_coe]
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
-  rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff, unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+  rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff,
+    unifOn_eRk_eq _ _ (by simp [rfl.subset])]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
@@ -152,7 +153,8 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
   · exact ⟨f, hf, by simp⟩
   exact ⟨e, by simpa using hIE, rfl.subset⟩
 
-@[simp] lemma unifOn_isCircuit_iff {n : ℕ} : (unifOn E n).IsCircuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
+@[simp] lemma unifOn_isCircuit_iff {n : ℕ} :
+    (unifOn E n).IsCircuit C ↔ C.encard = n + 1 ∧ C ⊆ E := by
   obtain hCE | hCE := em' (C ⊆ E)
   · simp [hCE, show ¬ (unifOn E n).IsCircuit C from fun h ↦ hCE h.subset_ground]
 
@@ -203,7 +205,8 @@ theorem unif_isBase_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).IsBase B 
 @[simp] theorem unif_isBase_iff' {B : Set (Fin _)} : (unif a (a + b)).IsBase B ↔ B.encard = a := by
   rw [unif_isBase_iff (Nat.le_add_right _ _)]
 
-@[simp] theorem unif_isCircuit_iff {C : Set (Fin b)} : (unif a b).IsCircuit C ↔ C.encard = a + 1 := by
+@[simp] theorem unif_isCircuit_iff {C : Set (Fin b)} :
+    (unif a b).IsCircuit C ↔ C.encard = a + 1 := by
   rw [unif, unifOn_isCircuit_iff, and_iff_left (subset_univ _)]
 
 theorem unif_dual' {n : ℕ} (h : a + b = n) : (unif a n)✶ = unif b n := by
@@ -463,7 +466,8 @@ lemma Uniform.exists_eq_unifOn_of_finitary [M.Finitary] [M✶.RankPos] (hM : M.U
   obtain ⟨e, heC⟩ := hC.nonempty
   obtain hCi | hCs := hM.indep_or_spanning C
   · exact (hC.not_indep hCi).elim
-  have := ((hC.diff_singleton_isBasis heC).isBase_of_spanning hCs).rankFinite_of_finite hC.finite.diff
+  have := ((hC.diff_singleton_isBasis heC).isBase_of_spanning hCs).rankFinite_of_finite
+    hC.finite.diff
   exact hM.exists_eq_unifOn
 
 @[simps!] def uniformMatroidOfBase (E : Set α) (IsBase : Set α → Prop)
@@ -657,7 +661,8 @@ end IsoMinor
             simp only [unif_eRank_eq, ge_iff_le, Nat.cast_le, le_min_iff, min_le_iff] at hle
             obtain ⟨(haa'| hba'), (- | -)⟩ := hle <;> linarith
           have hle := h.dual.eRank_le_eRank
-          rw [unif_dual, unif_dual, unif_eRank_eq_of_le (by simp), unif_eRank_eq_of_le (by simp)] at hle
+          rw [unif_dual, unif_dual, unif_eRank_eq_of_le (by simp),
+          -- unif_eRank_eq_of_le (by simp)] at hle
           exact (WithTop.le_coe rfl).1 hle
         have hbb' := add_le_add hr hr'
         rw [Nat.add_sub_cancel' hab, Nat.add_sub_cancel' ha'b'] at hbb'
@@ -669,7 +674,8 @@ end IsoMinor
         · zify at hr'; simpa using hr'
         linarith
 
-      @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
+      @[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔
+      --M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
         simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
       theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)
@@ -678,7 +684,8 @@ end IsoMinor
         have hYs := hL.subset hYL
         refine ⟨M ↾ Y, restrict_isRestriction _ Y hYs.subset_ground, ?_⟩
         rw [IsIso.comm, isIso_unif_iff, eq_unifOn_iff]
-        simp only [restrict_ground_eq, restrict_indep_iff, Nat.cast_ofNat, and_congr_left_iff, true_and,
+        simp only [restrict_ground_eq, restrict_indep_iff,
+        --Nat.cast_ofNat, and_congr_left_iff, true_and,
           and_iff_left hY]
         refine fun I hIY ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
         · exact (hI.encard_le_eRk_of_subset (hIY.trans hYL)).trans hr
@@ -709,7 +716,8 @@ end IsoMinor
 /-
 
 
-@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
+@[simp] theorem isIso_line_iff {n : ℕ} : M ≂ unif 2 n ↔
+  --M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
   simp [isIso_unif_iff, ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
 
 theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L).Simple)

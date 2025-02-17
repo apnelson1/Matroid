@@ -357,7 +357,8 @@ lemma ModularFamily.finite_of_forall_isFlat [M.RankFinite] (h : M.ModularFamily 
   -- have := (subset_range_iff_exists_image_eq (α := ι) (s := C) (f := Xs)).1
   -- have := h.comp (fun X : C ↦ X)
 
--- lemma modularFamily_of_chain [Finitary M] (hX : IsChain (· ⊆ ·) (range Xs)) (hE : ∀ i, Xs i ⊆ M.E) :
+-- lemma modularFamily_of_chain [Finitary M] (hX : IsChain (· ⊆ ·) (range Xs))
+--  (hE : ∀ i, Xs i ⊆ M.E) :
 --     M.ModularFamily Xs := by
 --   -- set Is := {I : Set α | ∀ i, M.IsBasis (I ∩ Xs i) (Xs i) ∨ I ⊆ M.closure (Xs i)}
 --   -- refine Indep.modularFamily (I := ⋃₀ Is) ?_ ?_
@@ -484,7 +485,8 @@ lemma modularPair_iff_exists_isBasis_isBasis :
     (M.closure_subset_closure (subset_inter hJ.subset subset_union_right))
 
 lemma ModularPair.exists_common_isBasis (h : M.ModularPair X Y) : ∃ I,
-    M.IsBasis I (X ∪ Y) ∧ M.IsBasis (I ∩ X) X ∧ M.IsBasis (I ∩ Y) Y ∧ M.IsBasis (I ∩ X ∩ Y) (X ∩ Y) := by
+    M.IsBasis I (X ∪ Y) ∧ M.IsBasis (I ∩ X) X ∧
+    M.IsBasis (I ∩ Y) Y ∧ M.IsBasis (I ∩ X ∩ Y) (X ∩ Y) := by
   obtain ⟨B, hB⟩ := h
   refine ⟨(X ∪ Y) ∩ B, ?_⟩
   rw [inter_right_comm, inter_eq_self_of_subset_right subset_union_left,
@@ -568,8 +570,8 @@ lemma ModularPair.eRk_add_eRk (h : M.ModularPair X Y) :
     ← encard_union_add_encard_inter, ← inter_union_distrib_left, ← inter_inter_distrib_left,
     ← inter_assoc, inter_eq_self_of_subset_left hIu.subset, add_comm]
 
-lemma IsRkFinite.modularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y) (hXE : X ⊆ M.E := by aesop_mat)
-    (hYE : Y ⊆ M.E := by aesop_mat) :
+lemma IsRkFinite.modularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkFinite Y)
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.ModularPair X Y ↔ M.eRk X + M.eRk Y = M.eRk (X ∩ Y) + M.eRk (X ∪ Y) := by
   refine ⟨fun h ↦ h.eRk_add_eRk, fun hr ↦ modularPair_iff_exists_isBasis_isBasis.2 ?_ ⟩
   obtain ⟨Ii, hIi⟩ := M.exists_isBasis (X ∩ Y)

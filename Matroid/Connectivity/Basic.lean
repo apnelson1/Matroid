@@ -54,7 +54,7 @@ lemma ConnectedTo.nonloop_right_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : 
   h.symm.nonloop_left_of_ne hef.symm
 
 lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
-  obtain (rfl | hne) := eq_or_ne e f; exact connectedTo_self h.mem_ground_left
+  obtain rfl | hne := eq_or_ne e f; exact connectedTo_self h.mem_ground_left
   obtain ⟨C, hC, heC, hfC⟩ := h.exists_isCircuit_of_ne hne
   have hpara : (M ／ (C \ {e,f})).Parallel e f := by
     rw [parallel_iff_isCircuit hne]
@@ -104,8 +104,8 @@ private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
-  simp only [hB.mem_coloop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
-    and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
+  simp only [hB.mem_coloop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+    not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_not_mem hxI,
@@ -182,8 +182,8 @@ lemma Connected.loopless (hM : M.Connected) (hE : M.E.Nontrivial) : M.Loopless :
   rw [loopless_iff_forall_not_loop]
   exact fun e _ hl ↦ hl.not_connected hE hM
 
-lemma Connected.exists_isCircuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E) (hne : e ≠ f) :
-    ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C :=
+lemma Connected.exists_isCircuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E)
+    (hne : e ≠ f) : ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C :=
   (h.2 he hf).exists_isCircuit_of_ne hne
 
 lemma Connected.exists_isCircuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e ∈ M.E)

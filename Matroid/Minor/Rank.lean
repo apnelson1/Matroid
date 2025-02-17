@@ -185,7 +185,8 @@ lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.eRelRk X Y + M.eRk X = M.eRk Y := by
   rw [eRelRk_add_eRk_eq, union_eq_self_of_subset_right hXY]
 
-lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) : M.eRelRk X Y = M.eRk Y - M.eRk X := by
+lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) :
+    M.eRelRk X Y = M.eRk Y - M.eRk X := by
   rw [← eRelRk_add_eRk_of_subset _ hXY]
   apply WithTop.add_right_cancel <| ne_top_of_lt hY.eRk_lt_top
   rw [eq_comm, tsub_add_cancel_iff_le]
@@ -413,7 +414,8 @@ lemma Nonloop.eRank_contract_add_one (M : Matroid α) (he : M.Nonloop e) :
 lemma IsRkFinite.contract_isRkFinite (h : M.IsRkFinite X) (C : Set α) : (M ／ C).IsRkFinite X := by
   rw [← eRk_lt_top_iff] at *; exact (eRk_contract_le_eRk _ _ _).trans_lt h
 
-lemma IsRkFinite.union_of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) : M.IsRkFinite (X ∪ C) := by
+lemma IsRkFinite.union_of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) :
+    M.IsRkFinite (X ∪ C) := by
   rw [← eRk_lt_top_iff, ← M.eRelRk_add_eRk_eq, eRelRk]
   rw [← eRk_ne_top_iff] at hC hX
   rw [lt_top_iff_ne_top, Ne, WithTop.add_eq_top, not_or]

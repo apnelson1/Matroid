@@ -150,18 +150,20 @@ lemma rk_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.
     M.rk X ≤ X.ncard :=
   rk_le_iff.2 <| fun {I} hI _ ↦ (ncard_le_ncard hI (M.set_finite X))
 
-lemma Indep.ncard_le_rk_of_subset [RankFinite M] (hI : M.Indep I) (h : I ⊆ X) : I.ncard ≤ M.rk X := by
+lemma Indep.ncard_le_rk_of_subset [RankFinite M] (hI : M.Indep I) (h : I ⊆ X) :
+    I.ncard ≤ M.rk X := by
   rw [← hI.rk_eq_ncard]
   exact M.rk_mono h
 
 lemma Indep.ncard_le_rank [RankFinite M] (hI : M.Indep I) : I.ncard ≤ M.rank :=
   hI.rk_eq_ncard.symm.trans_le (M.rk_le_rank I)
 
-lemma Indep.isBase_of_ncard [RankFinite M] (hI : M.Indep I) (hIcard : M.rank ≤ I.ncard) : M.IsBase I :=
+lemma Indep.isBase_of_ncard [RankFinite M] (hI : M.Indep I) (hIcard : M.rank ≤ I.ncard) :
+    M.IsBase I :=
   hI.isBase_of_encard hI.finite <| by rwa [← cast_rank_eq, ← hI.finite.cast_ncard_eq, Nat.cast_le]
 
-lemma Indep.isBase_of_card [RankFinite M] {I : Finset α} (hI : M.Indep I) (hIcard : M.rank ≤ I.card) :
-    M.IsBase I :=
+lemma Indep.isBase_of_card [RankFinite M] {I : Finset α} (hI : M.Indep I)
+    (hIcard : M.rank ≤ I.card) : M.IsBase I :=
   hI.isBase_of_ncard (by simpa)
 
 lemma IsBasis'.card (h : M.IsBasis' I X) : I.ncard = M.rk X := by

@@ -256,8 +256,8 @@ lemma Hyperplane.isBasis_hyperplane_restrict (hH : M.Hyperplane H) (hI : M.IsBas
 lemma Hyperplane.eRk_add_one_eq (hH : M.Hyperplane H) : M.eRk H + 1 = M.eRank := by
   rw [← hH.covBy.eRk_eq, eRank_def]
 
-lemma Hyperplane.insert_isBase_of_isBasis (hH : M.Hyperplane H) (hI : M.IsBasis I H) (he : e ∈ M.E \ H) :
-    M.IsBase (insert e I) := by
+lemma Hyperplane.insert_isBase_of_isBasis (hH : M.Hyperplane H) (hI : M.IsBasis I H)
+    (he : e ∈ M.E \ H) : M.IsBase (insert e I) := by
   simpa using hH.covBy.insert_isBasis hI he
 
 lemma Hyperplane.exists_insert_isBase_of_isBasis (hH : M.Hyperplane H) (hI : M.IsBasis I H) :

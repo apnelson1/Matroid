@@ -89,7 +89,8 @@ lemma Indep.skewFamily_iff_pairwise_disjoint {Is : η → Set α} (hI : M.Indep 
     M.SkewFamily Is ↔ Pairwise (Disjoint on Is) := by
   refine ⟨fun h ↦ h.pairwise_disjoint_of_indep_subsets
     (fun _ ↦ Subset.rfl) (fun i ↦ hI.subset (subset_iUnion _ _)),
-    fun h ↦ hI.skewFamily_of_disjoint_isBases ?_ (fun i ↦ (hI.subset (subset_iUnion _ _)).isBasis_self)⟩
+    fun h ↦ hI.skewFamily_of_disjoint_isBases ?_
+      (fun i ↦ (hI.subset (subset_iUnion _ _)).isBasis_self)⟩
   exact h
 
 /--
@@ -261,7 +262,8 @@ lemma SkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.SkewFami
   set Ys := fun i ↦ (Xs i) ∩ C
   have hYs := h.mono (Ys := Ys) (by simp [Ys])
   by_cases hdj : Pairwise (Disjoint on Ys)
-  · rw [skewFamily_iff_forall_isCircuit (fun i ↦ inter_subset_right.trans hC.subset_ground) hdj] at hYs
+  · rw [skewFamily_iff_forall_isCircuit (fun i ↦ inter_subset_right.trans hC.subset_ground) hdj]
+      at hYs
     obtain ⟨i, h⟩ := hYs C hC (by rwa [← iUnion_inter, subset_inter_iff, and_iff_left rfl.subset])
     exact ⟨i, h.trans inter_subset_left⟩
   simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, Classical.not_imp,
@@ -346,7 +348,8 @@ lemma Skew.mono_right (h : M.Skew X Y) (hY : Y' ⊆ Y) : M.Skew X Y' :=
   h.mono Subset.rfl hY
 
 lemma skew_iff_exist_isBases {X Y : Set α} :
-    M.Skew X Y ↔ ∃ I J, Disjoint I J ∧ M.IsBasis (I ∪ J) (X ∪ Y) ∧ M.IsBasis I X ∧ M.IsBasis J Y := by
+    M.Skew X Y ↔
+    ∃ I J, Disjoint I J ∧ M.IsBasis (I ∪ J) (X ∪ Y) ∧ M.IsBasis I X ∧ M.IsBasis J Y := by
   simp only [Skew, skewFamily_iff_exist_isBases, Bool.forall_bool, cond_false, cond_true,
     ← pairwise_disjoint_on_bool]
   refine ⟨fun ⟨Is, h1, h2, h3⟩ ↦ ?_, fun ⟨I, J, h1, h2, h3X, h3Y⟩ ↦ ?_⟩
@@ -545,7 +548,8 @@ lemma SkewFamily.skew_compl_singleton {Xs : η → Set α} (h : M.SkewFamily Xs)
   convert h.skew_compl {i}; simp
 
 lemma skew_iff_forall_isCircuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
-    (hY : Y ⊆ M.E := by aesop_mat) : M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
+    (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   rw [Skew, skewFamily_iff_forall_isCircuit]
   · simp [← union_eq_iUnion, or_comm]
   · simp [hX, hY]
@@ -802,8 +806,8 @@ lemma ModularCompl.right_subset (h : M.ModularCompl F₀ F₁ F F') : F' ⊆ F�
 lemma ModularCompl.subset (h : M.ModularCompl F₀ F₁ F F') : F₀ ⊆ F₁ :=
   h.subset_left.trans h.left_subset
 
-lemma IsFlat.exists_modularCompl (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F₁) (hF : M.IsFlat F) (hF₀F : F₀ ⊆ F)
-    (hFF₁ : F ⊆ F₁) : ∃ F', M.ModularCompl F₀ F₁ F F' := by
+lemma IsFlat.exists_modularCompl (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F₁) (hF : M.IsFlat F)
+    (hF₀F : F₀ ⊆ F) (hFF₁ : F ⊆ F₁) : ∃ F', M.ModularCompl F₀ F₁ F F' := by
   obtain ⟨I, hI⟩ := M.exists_isBasis F₀
   obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis_inter_eq_of_superset hF₀F
   obtain ⟨K, hK, rfl⟩ := hJ.exists_isBasis_inter_eq_of_superset hFF₁
@@ -845,8 +849,8 @@ lemma modularCompl_loops_ground_iff {F F' : Set α} (hF : M.IsFlat F) (hF' : M.I
   rw [← h.inter_closure_eq, hF.closure, hF'.closure]
 
 lemma ModularCompl.isBasis_inter_isBasis_eq {J' : Set α} (h : M.ModularCompl F₀ F₁ F F')
-    (hI : M.IsBasis I F₀) (hJ : M.IsBasis J F) (hJ' : M.IsBasis J' F') (hIJ : I ⊆ J) (hIJ' : I ⊆ J') :
-    J ∩ J' = I := by
+    (hI : M.IsBasis I F₀) (hJ : M.IsBasis J F) (hJ' : M.IsBasis J' F') (hIJ : I ⊆ J)
+    (hIJ' : I ⊆ J') : J ∩ J' = I := by
   have hcl := h.modularPair.inter_closure_eq
   rw [h.inter_eq, ← hI.closure_eq_closure, ← hJ.closure_eq_closure,
     ← hJ'.closure_eq_closure] at hcl
@@ -861,9 +865,9 @@ lemma ModularCompl.isBasis_inter_right_eq (h : M.ModularCompl F₀ F₁ F F')
   rw [← h.inter_eq, inter_comm]
   exact inter_subset_inter_left _ hJ.subset
 
-lemma ModularCompl.union_isBasis_top {J' : Set α} (h : M.ModularCompl F₀ F₁ F F') (hI : M.IsBasis I F₀)
-    (hJ : M.IsBasis J F) (hJ' : M.IsBasis J' F') (hIJ : I ⊆ J) (hIJ' : I ⊆ J') :
-    M.IsBasis (J ∪ J') F₁ := by
+lemma ModularCompl.union_isBasis_top {J' : Set α} (h : M.ModularCompl F₀ F₁ F F')
+    (hI : M.IsBasis I F₀) (hJ : M.IsBasis J F) (hJ' : M.IsBasis J' F') (hIJ : I ⊆ J)
+    (hIJ' : I ⊆ J') : M.IsBasis (J ∪ J') F₁ := by
   refine Indep.isBasis_of_subset_of_subset_closure ?_
     (union_subset (hJ.subset.trans h.left_subset) (hJ'.subset.trans h.right_subset))
     (by rw [closure_union_congr_left hJ.closure_eq_closure,
