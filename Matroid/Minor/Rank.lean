@@ -41,10 +41,11 @@ lemma Indep.eRank_dual_restrict_eq (hI : M.Indep I) : (M ↾ I)✶.eRank = 0 := 
 
 lemma IsBasis.eRank_dual_restrict_of_disjoint (hB : M.IsBasis I (I ∪ X)) (hdj : Disjoint I X) :
     (M ↾ (I ∪ X))✶.eRank = X.encard := by
-  rw [← IsBase.encard_compl_eq hB.restrict_base]; simp [hdj.sdiff_eq_right]
+  rw [← IsBase.encard_compl_eq hB.restrict_isBase]
+  simp [hdj.sdiff_eq_right]
 
 lemma IsBasis.eRank_dual_restrict (hB : M.IsBasis I X) : (M ↾ X)✶.eRank = (X \ I).encard := by
-  rw [← IsBase.encard_compl_eq hB.restrict_base, restrict_ground_eq]
+  rw [← IsBase.encard_compl_eq hB.restrict_isBase, restrict_ground_eq]
 
 @[simp] lemma eRank_dual_restrict_eq_zero_iff : (M ↾ I)✶.eRank = 0 ↔ M.Indep I := by
   rw [← restrict_eq_freeOn_iff, eRank_eq_zero_iff, dual_ground, restrict_ground_eq,

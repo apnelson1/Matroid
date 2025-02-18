@@ -322,7 +322,7 @@ lemma Indep.contract_isBase_iff (hI : M.Indep I) :
     delete_isBase_iff, dual_dual, delete_ground, diff_diff, union_comm, union_subset_iff,
     subset_diff, ← and_assoc, and_congr_left_iff, dual_ground, and_iff_left hIE, and_congr_left_iff]
   refine fun _ _ ↦
-    ⟨fun h ↦ h.base_of_base_subset hB₀ (subset_diff.mpr ⟨hB₀.subset_ground, ?_⟩), fun hB ↦
+    ⟨fun h ↦ h.isBase_of_isBase_subset hB₀ (subset_diff.mpr ⟨hB₀.subset_ground, ?_⟩), fun hB ↦
       hB.isBasis_of_subset diff_subset (diff_subset_diff_right subset_union_right)⟩
   exact disjoint_of_subset_left hfk disjoint_sdiff_left
 

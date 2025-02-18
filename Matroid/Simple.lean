@@ -449,7 +449,7 @@ lemma IsSimplification.ground_spanning (hN : N.IsSimplification M) : M.Spanning 
 
 lemma IsSimplification.isBase_of_isBase {B : Set α} (hN : N.IsSimplification M) (hB : N.IsBase B) :
     M.IsBase B :=
-  (Base.isBasis_of_isRestriction hB hN.restriction).isBase_of_spanning hN.ground_spanning
+  (IsBase.isBasis_of_isRestriction hB hN.restriction).isBase_of_spanning hN.ground_spanning
 
 lemma IsSimplification.eRank_eq (hN : N.IsSimplification M) : N.eRank = M.eRank := by
   obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hN.restriction
