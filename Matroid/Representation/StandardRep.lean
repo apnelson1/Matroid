@@ -17,7 +17,8 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
 
 namespace Matroid
 
-lemma Rep.range_subset_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) : range v ⊆ span 𝔽 (v '' B) := by
+lemma Rep.range_subset_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    range v ⊆ span 𝔽 (v '' B) := by
   rintro _ ⟨e, he ,rfl⟩
   obtain (heB | heB) := em (e ∈ B)
   · exact subset_span (mem_image_of_mem _ heB)
@@ -31,7 +32,8 @@ lemma Rep.range_subset_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) : range 
     exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
   exact v.indep_image hB.indep
 
-lemma Rep.span_isBase_eq (v : M.Rep 𝔽 W) (hB : M.IsBase B) : span 𝔽 (v '' B) = span 𝔽 (range v) := by
+lemma Rep.span_isBase_eq (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    span 𝔽 (v '' B) = span 𝔽 (range v) := by
   rw [eq_comm]
   exact span_eq_of_le _ (v.range_subset_span_isBase hB) (span_mono (image_subset_range _ _))
 
@@ -86,9 +88,9 @@ lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank :
   simp
 
 /-- A base of `M` gives a linear basis in a full-rank representation -/
-noncomputable def Rep.FullRank.isBasis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.IsBase B) :
-    _root_.IsBasis B 𝔽 W :=
-  IsBasis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, range_restrict, v.span_isBase_eq hB] )
+noncomputable def Rep.FullRank.basis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank)
+    (hB : M.IsBase B) : _root_.Basis B 𝔽 W :=
+  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, range_restrict, v.span_isBase_eq hB] )
 
 lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
     (v.mapEquiv ψ).FullRank := by
@@ -97,25 +99,25 @@ lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[�
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
-    _root_.IsBasis B 𝔽 (span 𝔽 (range v)) :=
+    _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
   (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (by simp [v.span_isBase_eq hB])
 
 /-- The natural representation with rows indexed by a base with `Finsupp` -/
 noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     M.Rep 𝔽 (B →₀ 𝔽) :=
-  v.restrict_span.mapEquiv (v.restrict_span_fullRank.isBasis_of_isBase hB).repr
+  v.restrict_span.mapEquiv (v.restrict_span_fullRank.basis_of_isBase hB).repr
 
 @[simp] lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
     (v.standardRep' hB) e e = 1 := by
-  simp only [Rep.standardRep', Rep.FullRank.isBasis_of_isBase, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, IsBasis.mk_repr]
+  simp only [Rep.standardRep', Rep.FullRank.basis_of_isBase, Rep.mapEquiv_apply,
+    Rep.restrict_span_apply, Basis.mk_repr]
   rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
   simp
 
 lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (hef : e ≠ f) :
     (v.standardRep' hB) e f = 0 := by
-  simp [Rep.standardRep', Rep.FullRank.isBasis_of_isBase, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, IsBasis.mk_repr]
+  simp [Rep.standardRep', Rep.FullRank.basis_of_isBase, Rep.mapEquiv_apply,
+    Rep.restrict_span_apply, Basis.mk_repr]
   rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
   exact Finsupp.single_eq_of_ne hef
 
@@ -197,7 +199,7 @@ lemma Rep.FinitaryBase.apply_mem (hv : v.FinitaryBase) (he : e ∈ B) :
 
 lemma Rep.FinitaryBase.isBase (hv : v.FinitaryBase) : M.IsBase B := by
   rw [← v.ofFun_self]
-  exact Finsupp.isBasisSingleOne.ofFun_isBase (fun x ↦ hv x) fun x hxB ↦
+  exact Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ hv x) fun x hxB ↦
     v.mem_ground_of_apply_ne_zero <| by simp [show v x = _ from hv ⟨x, hxB⟩]
 
 lemma Rep.FinitaryBase.injOn (hv : v.FinitaryBase) : Set.InjOn v B := by
@@ -210,9 +212,9 @@ lemma Rep.FinitaryBase.image_coe_support_subset (_hv : v.FinitaryBase) {e : α} 
   simp
 
 lemma Rep.FinitaryBase.image_eq (hv : v.FinitaryBase) (I : Set B) :
-    v '' I = Finsupp.isBasisSingleOne (ι := B) (R := 𝔽) '' I := by
+    v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
-  simp only [mem_image, exists_and_right, exists_eq_right, coe_isBasisSingleOne]
+  simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
   constructor
   · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
     exact ⟨y, hy, (hv.apply y).symm⟩
@@ -220,21 +222,21 @@ lemma Rep.FinitaryBase.image_eq (hv : v.FinitaryBase) (I : Set B) :
   exact ⟨x, ⟨_, hx, rfl⟩, hv.apply x⟩
 
 lemma Rep.FinitaryBase.image_subset_eq (hv : v.FinitaryBase) (hIB : I ⊆ B) :
-    v '' I = Finsupp.isBasisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
+    v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
   rw [← hv.image_eq]
   simp [inter_eq_self_of_subset_right hIB]
 
 lemma Rep.FinitaryBase.mem_closure_iff (hv : v.FinitaryBase) (hIB : I ⊆ B) (heE : e ∈ M.E) :
     e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
   rw [v.closure_eq, mem_inter_iff, mem_preimage, hv.image_subset_eq hIB, SetLike.mem_coe,
-    Finsupp.isBasisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
+    Finsupp.basisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
     and_iff_left heE]
 
 /-- For every column `e` of `M.E \ B`, the support of `v e` as a subset of `B`,
 together with `e` itself, make a circuit of `M`. -/
-lemma Rep.FinitaryBase.isCircuit_insert_support (hv : v.FinitaryBase) (heB : e ∉ B) (heE : e ∈ M.E) :
-    M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
-  let b := Finsupp.isBasisSingleOne (ι := B) (R := 𝔽)
+lemma Rep.FinitaryBase.isCircuit_insert_support (hv : v.FinitaryBase) (heB : e ∉ B)
+    (heE : e ∈ M.E) : M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
+  let b := Finsupp.basisSingleOne (ι := B) (R := 𝔽)
   refine Indep.insert_isCircuit_of_forall (hv.isBase.indep.subset (by simp)) (by simp [heB]) ?_ ?_
   · rw [hv.mem_closure_iff (by simp) heE]
     simp
@@ -255,7 +257,7 @@ lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B)
   · rw [← fundCircuit_diff_eq_inter _ he, ← hrw, insert_diff_of_mem _ (by simp),
       diff_singleton_eq_self (by simp [he])]
   refine IsCircuit.eq_fundCircuit_of_subset ?_ hv.isBase.indep (insert_subset_insert (by simp))
-  exact circuit_insert_support hv he heE
+  exact isCircuit_insert_support hv he heE
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
 lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :

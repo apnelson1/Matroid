@@ -54,7 +54,8 @@ lemma IsBase.fundCoord_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.fundCoord R e = Finsupp.single ⟨e, he⟩ 1 := by
   rw [fundCoord, coords_of_mem hB he, Finsupp.single_eq_indicator]
 
-@[simp] lemma IsBase.fundCoord_mem (hB : M.IsBase B) (e : B) : hB.fundCoord R e = Finsupp.single e 1 :=
+@[simp] lemma IsBase.fundCoord_mem (hB : M.IsBase B) (e : B) :
+    hB.fundCoord R e = Finsupp.single e 1 :=
   hB.fundCoord_of_mem e.2
 
 lemma IsBase.fundCoord_of_not_mem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
@@ -76,11 +77,11 @@ lemma IsBase.mem_fundCoord_support (hB : M.IsBase B) (e : B) {f : α} :
   simp
 
 lemma IsBase.fundCoord_isBase (hB : M.IsBase B) : (Matroid.ofFun R M.E (hB.fundCoord R)).IsBase B :=
-  Finsupp.isBasisSingleOne.ofFun_isBase (by simp) hB.subset_ground
+  Finsupp.basisSingleOne.ofFun_isBase (by simp) hB.subset_ground
 
 lemma IsBase.fundCoord_eq_linearCombination (hB : M.IsBase B) :
     hB.fundCoord R e = Finsupp.linearCombination R (Finsupp.single · 1) (hB.fundCoord R e) := by
-  rw [Base.fundCoord, Finsupp.linearCombination_apply, Finsupp.indicator_eq_sum_single]
+  rw [IsBase.fundCoord, Finsupp.linearCombination_apply, Finsupp.indicator_eq_sum_single]
   simp
 
 lemma IsBase.fundCoord_finitaryBase (hB : M.IsBase B) (R : Type*) [DivisionRing R] :
@@ -97,10 +98,7 @@ lemma fundCoord_fundCircuit (hB : M.IsBase B) (heB : e ∉ B) (heE : e ∈ M.E) 
   simp only [Finset.coe_insert, Finset.coe_map, Embedding.setSubtype_apply, repOfFun_coeFun_eq]
   convert rfl
   ext x
-  simp only [Finsupp.mem_support_iff, ne_eq]
-  rw [Set.indicator_of_mem heE]
-  rw [Base.fundCoord]
-  simp
+  simp [Finsupp.mem_support_iff, ne_eq, Set.indicator_of_mem heE, IsBase.fundCoord]
 
 lemma IsBase.fundCoord_row_support (hB : M.IsBase B) (R : Type*) [DivisionRing R] (e : B) :
     (hB.fundCoord R · e).support = M.fundCocircuit e B := by

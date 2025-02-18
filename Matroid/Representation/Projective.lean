@@ -133,7 +133,7 @@ noncomputable def PG (n p t : ℕ) [Fact p.Prime] :=
 @[simp]
 lemma matroid_cRank : (Projectivization.matroid 𝔽 W).cRank = Module.rank 𝔽 W := by
   obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_isBase
-  have hr := (matroidRep_fullRank.isBasis_of_isBase hB).mk_eq_rank
+  have hr := (matroidRep_fullRank.basis_of_isBase hB).mk_eq_rank
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 

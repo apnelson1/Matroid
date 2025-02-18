@@ -7,6 +7,12 @@ open Set BigOperators Function
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
+lemma Cardinal.toENat_mk (J : Set α) : (Cardinal.mk J).toENat = J.encard := by
+  obtain hfin | hinf := J.finite_or_infinite
+  · obtain ⟨J, rfl⟩ := hfin.exists_finset_coe
+    simp
+  rwa [hinf.encard_eq, toENat_eq_top, aleph0_le_mk_iff, infinite_coe_iff]
+
 @[simp] lemma encard_le_one_iff_subsingleton : s.encard ≤ 1 ↔ s.Subsingleton := by
   rw [encard_le_one_iff, Set.Subsingleton]; tauto
 

@@ -36,8 +36,8 @@ lemma Rep.cyclic_of_forall_row_even {C : Finset α} (v : M.Rep (ZMod 2) (ι →�
   simp
 
 /-- If `C` is a circuit, then every row of the corresponding submatrix has even support. -/
-lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α} (hC : M.IsCircuit C)
-    (i : ι) : Even {x ∈ C | v x i = 1}.card := by
+lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α}
+    (hC : M.IsCircuit C) (i : ι) : Even {x ∈ C | v x i = 1}.card := by
   obtain ⟨c, rfl, hc⟩ := v.exists_finsupp_of_isCircuit hC
   apply_fun fun f ↦ f i at hc
   replace hc := show ∑ x ∈ c.support, c x * (v x) i = 0 by
@@ -72,9 +72,9 @@ lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
   have hcc := M.fundCocircuit_cocircuit e.2 hB
 
   rw [← hB.fundCoord_row_support (ZMod 2) e] at hcc
-  convert hM.even_of_finite (hC.crossing_inter hcc) (hC.finite.subset (by simp))
+  convert hM.even_of_finite (hC.isCrossing_inter hcc) (hC.finite.subset (by simp))
   ext x
-  simp only [Base.binaryProxyRep, Finset.mem_filter, Finite.mem_toFinset, mem_inter_iff,
+  simp only [IsBase.binaryProxyRep, Finset.mem_filter, Finite.mem_toFinset, mem_inter_iff,
     Finset.mem_coe, mem_support, ne_eq, ne_zero_iff, and_congr_right_iff]
   intro hxC
   rw [repOfFun_coeFun_eq, indicator_of_mem (hC.subset_ground hxC)]

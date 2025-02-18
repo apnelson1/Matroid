@@ -505,7 +505,7 @@ lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank :
 
 /-- A base of `M` gives a linear basis in a full-rank representation -/
 noncomputable def Rep.FullRank.isBasis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.IsBase B) :
-    _root_.IsBasis B 𝔽 W :=
+    Basis B 𝔽 W :=
   IsBasis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, v.span_range_eq_span_isBase hB] )
 
 lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
@@ -515,7 +515,7 @@ lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[�
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
-    _root_.IsBasis B 𝔽 (span 𝔽 (range v)) :=
+    Basis B 𝔽 (span 𝔽 (range v)) :=
   (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (v.span_range_eq_span_isBase hB)
 
 /-- The natural representation with rows indexed by a base with `Finsupp` -/

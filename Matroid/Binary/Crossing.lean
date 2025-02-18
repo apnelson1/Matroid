@@ -13,32 +13,32 @@ namespace Matroid
 
 variable {α β : Type*} {M : Matroid α} {C K X Y B I J : Set α} {e f : α}
 
-section Crossing
+section IsCrossing
 
 /-- A `Crossing` is the intersection of a circuit and a cocircuit. -/
-def Crossing (M : Matroid α) (X : Set α) := ∃ C K, M.IsCircuit C ∧ M.Cocircuit K ∧ X = C ∩ K
+def IsCrossing (M : Matroid α) (X : Set α) := ∃ C K, M.IsCircuit C ∧ M.Cocircuit K ∧ X = C ∩ K
 
-lemma Crossing.dual (h : M.Crossing X) : M✶.Crossing X := by
+lemma IsCrossing.dual (h : M.IsCrossing X) : M✶.IsCrossing X := by
   obtain ⟨C, K, hC, hK, rfl⟩ := h
   exact ⟨K, C, hK, by simpa, inter_comm C K⟩
 
-lemma Crossing.of_dual (h : M✶.Crossing X) : M.Crossing X :=
+lemma IsCrossing.of_dual (h : M✶.IsCrossing X) : M.IsCrossing X :=
   M.dual_dual.symm ▸ h.dual
 
-@[simp] lemma crossing_dual_iff : M✶.Crossing X ↔ M.Crossing X :=
-  ⟨Crossing.of_dual, Crossing.dual⟩
+@[simp] lemma isCrossing_dual_iff : M✶.IsCrossing X ↔ M.IsCrossing X :=
+  ⟨IsCrossing.of_dual, IsCrossing.dual⟩
 
-lemma Crossing.subset_ground (h : M.Crossing X) : X ⊆ M.E := by
+lemma IsCrossing.subset_ground (h : M.IsCrossing X) : X ⊆ M.E := by
   obtain ⟨C, K, hC, -, rfl⟩ := h
   exact inter_subset_left.trans hC.subset_ground
 
-lemma Crossing.encard_ne_one (h : M.Crossing X) : X.encard ≠ 1 := by
+lemma IsCrossing.encard_ne_one (h : M.IsCrossing X) : X.encard ≠ 1 := by
   rw [Ne, encard_eq_one]
   rintro ⟨e, rfl⟩
   obtain ⟨C, K, hC, hK, h'⟩ := h
   exact hC.inter_cocircuit_ne_singleton hK h'.symm
 
-lemma Crossing.of_contract (hC : (M ／ C).Crossing X) : M.Crossing X := by
+lemma IsCrossing.of_contract (hC : (M ／ C).IsCrossing X) : M.IsCrossing X := by
   obtain ⟨X, Y, hX, hY, rfl⟩ := hC
   obtain ⟨X', hX', hXX', hX'X⟩ := hX.subset_isCircuit_of_contract
   rw [contract_cocircuit_iff] at hY
@@ -48,17 +48,18 @@ lemma Crossing.of_contract (hC : (M ／ C).Crossing X) : M.Crossing X := by
   rw [union_inter_distrib_right, hY.2.symm.inter_eq, union_empty]
   exact inter_subset_left
 
-lemma Crossing.of_delete {D : Set α} (hD : (M ＼ D).Crossing X) : M.Crossing X := by
+lemma IsCrossing.of_delete {D : Set α} (hD : (M ＼ D).IsCrossing X) : M.IsCrossing X := by
   have hd := hD.dual
   rw [delete_dual_eq_dual_contract] at hd
   exact hd.of_contract.of_dual
 
-lemma Crossing.of_isMinor {N : Matroid α} (hX : N.Crossing X) (hNM : N ≤m M) : M.Crossing X := by
+lemma IsCrossing.of_isMinor {N : Matroid α} (hX : N.IsCrossing X) (hNM : N ≤m M) :
+    M.IsCrossing X := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact hX.of_delete.of_contract
 
-lemma Iso.crossing_image {α β : Type*} {M : Matroid α} {N : Matroid β} {X : Set M.E}
-    (i : M ≂ N) (hX : M.Crossing X) : N.Crossing ↑(i '' X) := by
+lemma Iso.isCrossing_image {α β : Type*} {M : Matroid α} {N : Matroid β} {X : Set M.E}
+    (i : M ≂ N) (hX : M.IsCrossing X) : N.IsCrossing ↑(i '' X) := by
   obtain ⟨C, K, hC, hK, hX⟩ := hX
   have hC' : M.IsCircuit (M.E ↓∩ C) := by simpa [inter_eq_self_of_subset_right hC.subset_ground]
   have hK' : M✶.IsCircuit (M✶.E ↓∩ K) := by simpa [inter_eq_self_of_subset_right hK.subset_ground]
@@ -67,22 +68,21 @@ lemma Iso.crossing_image {α β : Type*} {M : Matroid α} {N : Matroid β} {X : 
   rw [← image_inter_on (by simp), ← image_inter_on (by simp), image_val_inj, ← preimage_inter, ← hX]
   simp
 
-lemma IsCircuit.crossing_inter (hC : M.IsCircuit C) (hK : M.Cocircuit K) : M.Crossing (C ∩ K) :=
+lemma IsCircuit.isCrossing_inter (hC : M.IsCircuit C) (hK : M.Cocircuit K) : M.IsCrossing (C ∩ K) :=
   ⟨C, K, hC, hK, rfl⟩
 
-lemma Cocircuit.crossing_inter (hK : M.Cocircuit K) (hC : M.IsCircuit C) : M.Crossing (K ∩ C) :=
+lemma Cocircuit.isCrossing_inter (hK : M.Cocircuit K) (hC : M.IsCircuit C) : M.IsCrossing (K ∩ C) :=
   ⟨C, K, hC, hK, by rw [inter_comm]⟩
 
-end Crossing
+end IsCrossing
 
 section Binary
 
-/-- A matroid is Crossing-Binary if all its finite crossings are even.
-This is the same as having no U₂,₄-minor; see `binary_iff_no_U24_isMinor`.
-Relating this to binary representations is still TODO.  -/
-def Binary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.Crossing X → Even X.card
+/-- A matroid is Crossing-Binary if all its finite isCrossings are even.
+This is the same as having no U₂,₄-minor; see `binary_iff_no_U24_isMinor`.  -/
+def Binary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.IsCrossing X → Even X.card
 
-lemma Binary.even_of_finite (h : M.Binary) (hX : M.Crossing X) (hfin : X.Finite) :
+lemma Binary.even_of_finite (h : M.Binary) (hX : M.IsCrossing X) (hfin : X.Finite) :
     Even hfin.toFinset.card :=
   h (X := hfin.toFinset) (by simpa)
 
@@ -102,7 +102,7 @@ lemma Binary.of_isMinor {N M : Matroid α} (hM : M.Binary) (hNM : N ≤m M) :
 lemma Binary.iso {N : Matroid β} (hM : M.Binary) (i : M ≂ N) :
     N.Binary := by
   intro X hX
-  have hX' : N.Crossing (N.E ↓∩ X) := by
+  have hX' : N.IsCrossing (N.E ↓∩ X) := by
     simpa [inter_eq_self_of_subset_right hX.subset_ground]
   have hcard_eq : (Subtype.val '' (⇑i ⁻¹' N.E ↓∩ ↑X)).encard = (X : Set β).encard
   · rw [Subtype.val_injective.injOn.encard_image,
@@ -113,7 +113,7 @@ lemma Binary.iso {N : Matroid β} (hM : M.Binary) (i : M ≂ N) :
   have hfin : (Subtype.val '' (⇑i.symm '' N.E ↓∩ ↑X)).Finite
   · simp [← encard_ne_top_iff, hcard_eq]
 
-  convert hM.even_of_finite (i.symm.crossing_image hX') hfin
+  convert hM.even_of_finite (i.symm.isCrossing_image hX') hfin
   rw [← Nat.cast_inj (R := ℕ∞), ← encard_coe_eq_coe_finsetCard, ← hcard_eq,
     ← encard_coe_eq_coe_finsetCard]
   simp
@@ -309,7 +309,7 @@ lemma IsCircuit.exists_isMinor_spanning_cospanning_of_cocircuit (hC : M.IsCircui
   rwa [cocircuit_def, isCircuit_iff_restr_eq_circuitOn hC.nonempty, hcr,
     ← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
 
-lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX : M.Crossing X)
+lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX : M.IsCrossing X)
     (h_odd : Odd X.card) : ¬ M.NoUniformMinor 2 4  := by
 
   obtain ⟨C, K, hC, hK, hCK⟩ := hX
@@ -342,9 +342,10 @@ lemma exists_uniformMinor_of_odd_crossing {M : Matroid α} {X : Finset α} (hX :
     exists_smaller_of_odd_isCircuit_cocircuit (by simp) hCN₂ (by simpa) hSN₂ hKN₂.compl_isHyperplane
     (by simpa using hSdN₂.compl_coindep) hcard (hcon.minor (hN₂N₁.trans hN₁M))
 
-  have hcr : N₃.Crossing C₀ := ⟨_, _, hN₃C, hN₃K, by rw [inter_eq_self_of_subset_right hssu.subset]⟩
+  have hcr : N₃.IsCrossing C₀ := ⟨_, _, hN₃C, hN₃K,
+    by rw [inter_eq_self_of_subset_right hssu.subset]⟩
   have hlt := Finset.card_strictMono hssu
-  exact exists_uniformMinor_of_odd_crossing hcr h_odd' <| hN₂m.minor hN₃
+  exact exists_uniformMinor_of_odd_isCrossing hcr h_odd' <| hN₂m.minor hN₃
 
 termination_by X.card
 
@@ -354,7 +355,7 @@ theorem binary_iff_no_U24_isMinor (M : Matroid α) :
   refine ⟨fun h ↦ ?_, fun h hbin ↦ ?_⟩
   · simp only [Binary, not_forall, Classical.not_imp, Nat.not_even_iff_odd, exists_and_left] at h
     obtain ⟨X, hX, hodd⟩ := h
-    exact exists_uniformMinor_of_odd_crossing hX hodd
+    exact exists_uniformMinor_of_odd_isCrossing hX hodd
 
   simp only [not_noUniformMinor_iff] at h
   simpa [binary_unif_iff] using hbin.isoMinor h.some

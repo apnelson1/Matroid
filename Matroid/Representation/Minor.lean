@@ -39,7 +39,7 @@ lemma Representable.delete (hM : M.Representable 𝔽) {D : Set α} : (M ＼ D).
 lemma Representable.restrict (hM : M.Representable 𝔽) {R : Set α} : (M ↾ R).Representable 𝔽 :=
   (hM.some.restrict R).representable
 
-lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
+lemma Representable.of_isMinor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
     N.Representable 𝔽 := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact hM.contract.delete
@@ -47,7 +47,7 @@ lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : 
 lemma Representable.isoMinor {M : Matroid α} {N : Matroid β} (hM : M.Representable 𝔽)
     (hNM : N ≤i M) : N.Representable 𝔽 :=
   let ⟨_, hM₀, i, _⟩  := hNM.exists_iso
-  (hM.minor hM₀).iso i.symm
+  (hM.of_isMinor hM₀).iso i.symm
 
 end Minor
 

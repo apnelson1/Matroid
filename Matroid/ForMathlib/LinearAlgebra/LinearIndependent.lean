@@ -52,12 +52,14 @@ theorem linearIndependent_sUnion_restrict_of_directed {R M ι : Type*} [Division
   specialize hs x x.prop y y.prop
   aesop
 
--- theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K] [AddCommGroup V]
+-- theorem LinearIndependent.finite_index {K : Type u} {V : Type v} [DivisionRing K]
+--[AddCommGroup V]
 --   [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) : Finite α :=
 --   Cardinal.lt_aleph0_iff_finite.1 <| LinearIndependent.lt_aleph0_of_finiteDimensional h
 
 -- noncomputable def LinearIndependent.fintype_index {K : Type u} {V : Type v} [DivisionRing K]
---     [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V} (h : LinearIndependent K f) :
+--     [AddCommGroup V] [Module K V] [FiniteDimensional K V] {f : α → V}
+--(h : LinearIndependent K f) :
 --     Fintype α :=
 --   have _ := h.finite_index
 --   Fintype.ofFinite α
@@ -181,8 +183,8 @@ theorem exists_linearIndependent_extension' {s t : Set V}
   convert exists_linearIndependent_extension_restrict (f := id) hs hst <;>
   simp
 
-noncomputable def LinearIndependent.extend_index (h : LinearIndependent K (s.restrict f)) (hst : s ⊆ t) :
-    Set ι :=
+noncomputable def LinearIndependent.extend_index (h : LinearIndependent K (s.restrict f))
+    (hst : s ⊆ t) : Set ι :=
   Classical.choose <| exists_linearIndependent_extension_restrict h hst
 
 theorem LinearIndependent.extend_index_subset (h : LinearIndependent K (s.restrict f))

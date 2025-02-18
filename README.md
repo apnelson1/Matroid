@@ -3,8 +3,8 @@ The goal is eventually to have is all included in the lean4 math library :
 https://github.com/leanprover-community/mathlib4
 
 
-At the time of writing, a few files originally here have been transferred to 
-mathlib: these are
+At the time of writing, the contents of this repo are being submitted to mathlib piece by piece.
+Currently already in mathlib are : 
 
 * The definition of a matroid in terms of the base axioms : Mathlib/Data/Matroid/Basic
 * Construction of matroids in terms of independence axioms : Mathlib/Data/Matroid/IndepAxioms
@@ -12,8 +12,11 @@ mathlib: these are
 * Restricting a matroid to a set, and the restriction order : Mathlib/Data/Matroid/Restrict
 * Matroids with at most one base : Mathlib/Data/Matroid/Constructions
 * Maps and comaps between matroids : Matroid/Map
-* Matroid Closure : Mathlib/Data/Matroid/Closure
-* Direct Sums : Mathlib/Data/Matroid/Sum
+* Matroid closure : Mathlib/Data/Matroid/Closure
+* Matroid circuits : Mathlib/Data/Matroid/Circuit
+* Cardinal-valued matroid rank : Mathlib/Data/Matroid/Rank/Cardinal
+* Finite-rank sets : Mathlib/Data/Matroid/Rank/Finite
+* Direct sums : Mathlib/Data/Matroid/Sum
 
 Topics in this repo are listed below. 
 
@@ -34,13 +37,10 @@ Topics in this repo are listed below.
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
 * Uniform matroids (finite and infinite) : Matroid/Uniform
-* Connectivity, local connectivity and skewness : Matroid/Connectivity/*
+* Connectivity, local connectivity, skewness and connectivity between sets : Matroid/Connectivity/*
 * Cryptomorphism for flats, circuits, closure and rank : Matroid/Axioms/*
 * Quotients and the weak order : Matroid/Order/*
-
-The following currently need a few fixes to work correctly. 
-* Representability : Matroid/Representation/* 
-  (Some of this requires a fair amount of linear algebra stuff to be added to mathlib to work - see Matroid/ForMathlib)
-
-
+* Representability : Matroid/Representation/*
+* Circuit/cocircuit intersections : Matroid/Binary/Crossing
+* Tutte's excluded minor theorem for finitary binary matroids : Matroid/Binary/Representation
 
