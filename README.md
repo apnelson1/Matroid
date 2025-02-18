@@ -2,7 +2,6 @@ This repo is aiming to formalize the bread and butter of matroid theory in lean4
 The goal is eventually to have is all included in the lean4 math library : 
 https://github.com/leanprover-community/mathlib4
 
-
 At the time of writing, the contents of this repo are being submitted to mathlib piece by piece.
 Currently already in mathlib are : 
 
@@ -21,7 +20,7 @@ Currently already in mathlib are :
 Topics in this repo are listed below. 
 
 * Isomorphism : Matroid/Equiv
-* IsCircuits and cocircuits : Matroid/IsCircuit
+* Circuits and cocircuits : Matroid/IsCircuit
 * Loops : Matroid/Loop
 * The rank function : Matroid/Rank/*
 * Minors : Matroid/Minor/Basic and Matroid/Minor/Iso
@@ -33,7 +32,7 @@ Topics in this repo are listed below.
 * Simplicity and simplification : Matroid/Simple
 * Modular sets, matroids, pairs and families : Matroid/Modular/*
 * Modular cuts, extensions and projections : Matroid/Extension
-* IsCircuit-hyperplane relaxation : Matroid/Constructions/Relax
+* Circuit-hyperplane relaxation : Matroid/Constructions/Relax
 * Paving matroids : Matroid/Paving
 * The matroid intersection theorem : Matroid/Intersection
 * Uniform matroids (finite and infinite) : Matroid/Uniform
@@ -44,3 +43,5 @@ Topics in this repo are listed below.
 * Circuit/cocircuit intersections : Matroid/Binary/Crossing
 * Tutte's excluded minor theorem for finitary binary matroids : Matroid/Binary/Representation
 
+If you have any feature requests or thoughts, please contact me at apnelson@uwaterloo.ca - 
+I am more than happy to see others make use of this code!
