@@ -31,7 +31,7 @@ intersections of arbitrary 'modular families'. Modular families are collections 
 with a common basis; they are defined in `Matroid.Modular`.
 
 In this file, we define modular cuts, show that they parametrize single-element extensions
-of arbitrary matroids, and show that they specialize to Crapo's modular cuts in the finite case.
+of arbitrary matroids, and that they specialize to Crapo's modular cuts in the finite-rank case.
 We also define the 'projection' of `M` associated with each modular cut `U` of `M`; this is the
 matroid obtained from `M` by extending using `U`, then contracting the new element.
 
@@ -85,15 +85,15 @@ instance (M : Matroid α) : SetLike (ModularCut M) (Set α) where
   coe := ModularCut.carrier
   coe_injective' U U' := by cases U; cases U'; simp
 
-/-- Transfer a `ModularCut` across an equality. -/
-def ModularCut.congr {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
+/-- Transfer a `ModularCut` across a matroid equality. -/
+def ModularCut.copy {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
   carrier := U
   forall_isFlat := by obtain rfl := hNM; exact U.forall_isFlat
   forall_superset := by obtain rfl := hNM; exact U.forall_superset
   forall_inter := by obtain rfl := hNM; exact U.forall_inter
 
-@[simp] lemma ModularCut.mem_congr_iff {N : Matroid α} (U : M.ModularCut) {hNM : M = N} :
-    F ∈ U.congr hNM ↔ F ∈ U := Iff.rfl
+@[simp] lemma ModularCut.mem_copy_iff {N : Matroid α} (U : M.ModularCut) {hNM : M = N} :
+    F ∈ U.copy hNM ↔ F ∈ U := Iff.rfl
 
 /-- Transfer a `ModularCut` along an injection -/
 def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f) :
@@ -783,7 +783,7 @@ lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extend
 /-- Single-element extensions are equivalent to modular cuts. -/
 def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
     {N : Matroid α // (e ∈ N.E ∧ N ＼ e = M)} ≃ M.ModularCut where
-  toFun N := (ModularCut.ofDeleteElem N e).congr N.2.2
+  toFun N := (ModularCut.ofDeleteElem N e).copy N.2.2
   invFun U := ⟨M.extendBy e U, by simp, U.extendBy_deleteElem he⟩
   left_inv := by
     rintro ⟨N, heN, rfl⟩
@@ -913,7 +913,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
     simp
 
   set UN := ModularCut.ofDeleteElem N e with hUN
-  set UM := (UN.congr h_eq.symm).ofContract hC
+  set UM := (UN.copy h_eq.symm).ofContract hC
   use M.extendBy e UM
   rw [ModularCut.extendBy_deleteElem _ heM, and_iff_right rfl]
   refine ext_indep ?_ ?_

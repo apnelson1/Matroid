@@ -60,8 +60,8 @@ noncomputable def IsBase.binaryProxyRep (hB : M.IsBase B) :
 instance {hB : M.IsBase B} : hB.BinaryProxy.Finitary :=
   matroidOfFun_finitary ..
 
-lemma IsBase.binaryProxyRep_finitaryBase (hB : M.IsBase B) : hB.binaryProxyRep.FinitaryBase := by
-  apply hB.fundCoord_finitaryBase
+lemma IsBase.binaryProxyRep_isStandard (hB : M.IsBase B) : hB.binaryProxyRep.IsStandard := by
+  apply hB.fundCoord_isStandard
 
 lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
     M = hB.BinaryProxy := by

@@ -194,17 +194,31 @@ instance _root_.Module.matroid_finitary : Finitary (Module.matroid 𝔽 W) := by
 /-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
 and a ground set `E : Set α`.  -/
 protected def ofFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) : Matroid α :=
-    (Module.matroid 𝔽 W).comapOn E f
+  (Module.matroid 𝔽 W).comapOn E f
+
+lemma ofFun_congr {v v' : α → W} (hvv' : EqOn v v' E) :
+    Matroid.ofFun 𝔽 E v = Matroid.ofFun 𝔽 E v' := by
+  refine ext_indep rfl fun I (hI : I ⊆ E) ↦ ?_
+  simp [Matroid.ofFun, (hvv'.mono hI).image_eq, (hvv'.mono hI).injOn_iff]
+
+@[simp] lemma ofFun_indicator {v : α → W} :
+    Matroid.ofFun 𝔽 E (E.indicator v) = Matroid.ofFun 𝔽 E v :=
+  ofFun_congr <| eqOn_indicator
 
 noncomputable def repOfFun (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (Matroid.ofFun 𝔽 E f).Rep 𝔽 W :=
   ((Module.matroidRep 𝔽 W).comap f).restrict E
 
-@[simp] lemma repOfFun_coeFun_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
+lemma repOfFun_coeFun_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (repOfFun 𝔽 E f : α → W) = indicator E f := rfl
+
+lemma repOfFun_coeFun_eq' (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W)
+    (hf : support f ⊆ E) : (repOfFun 𝔽 E f : α → W) = f := by
+  rwa [repOfFun_coeFun_eq, indicator_eq_self]
 
 @[simp] lemma repOfFun_image_eq (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] (E : Set α) (f : α → W) :
     (repOfFun 𝔽 E f '' E) = f '' E := by
+  rw [repOfFun_coeFun_eq]
   aesop
 
 lemma repOfFun_apply (𝔽 : Type*) [DivisionRing 𝔽] [Module 𝔽 W] {f : α → W} (he : e ∈ E) :
@@ -234,19 +248,6 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
 @[simp] lemma Rep.ofFun_self (v : M.Rep 𝔽 W) : Matroid.ofFun 𝔽 M.E v = M :=
   ext_indep rfl fun I (hIE : I ⊆ M.E) ↦ by rw [ofFun_indep_iff, ← v.indep_iff_restrict,
     and_iff_left hIE]
-
-lemma ofFun_congr {v v' : α → W} (hvv' : EqOn v v' E) :
-    Matroid.ofFun 𝔽 E v = Matroid.ofFun 𝔽 E v' := by
-  refine ext_indep rfl fun I (hI : I ⊆ E) ↦ ?_
-  simp only [ofFun_indep_iff, hI, and_true]
-  convert Iff.rfl using 2
-  ext ⟨e, he⟩
-  rw [restrict_apply, restrict_apply, hvv']
-  exact hI he
-
-@[simp] lemma ofFun_indicator {v : α → W} :
-    Matroid.ofFun 𝔽 E (E.indicator v) = Matroid.ofFun 𝔽 E v :=
-  ofFun_congr <| eqOn_indicator
 
 lemma ofFun_closure_eq {v : α → W} {E : Set α} (hvE : support v ⊆ E) :
     (Matroid.ofFun 𝔽 E v).closure X = v ⁻¹' (span 𝔽 (v '' X)) ∩ E := by

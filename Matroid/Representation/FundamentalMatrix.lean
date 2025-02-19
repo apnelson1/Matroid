@@ -84,8 +84,8 @@ lemma IsBase.fundCoord_eq_linearCombination (hB : M.IsBase B) :
   rw [IsBase.fundCoord, Finsupp.linearCombination_apply, Finsupp.indicator_eq_sum_single]
   simp
 
-lemma IsBase.fundCoord_finitaryBase (hB : M.IsBase B) (R : Type*) [DivisionRing R] :
-    (Matroid.repOfFun R M.E (hB.fundCoord R)).FinitaryBase := by
+lemma IsBase.fundCoord_isStandard (hB : M.IsBase B) (R : Type*) [DivisionRing R] :
+    (Matroid.repOfFun R M.E (hB.fundCoord R)).IsStandard := by
   intro e
   simp only [repOfFun_coeFun_eq]
   rw [indicator_of_mem (hB.subset_ground e.2), fundCoord_of_mem]
@@ -93,7 +93,7 @@ lemma IsBase.fundCoord_finitaryBase (hB : M.IsBase B) (R : Type*) [DivisionRing 
 lemma fundCoord_fundCircuit (hB : M.IsBase B) (heB : e ∉ B) (heE : e ∈ M.E) :
     (Matroid.ofFun R M.E (hB.fundCoord R)).IsCircuit (M.fundCircuit e B) := by
   classical
-  convert (hB.fundCoord_finitaryBase R).isCircuit_insert_support heB heE using 1
+  convert (hB.fundCoord_isStandard R).isCircuit_insert_support heB heE using 1
   rw [hB.fundCircuit_eq_insert_map]
   simp only [Finset.coe_insert, Finset.coe_map, Embedding.setSubtype_apply, repOfFun_coeFun_eq]
   convert rfl

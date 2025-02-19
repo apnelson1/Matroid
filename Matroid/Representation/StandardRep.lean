@@ -133,7 +133,7 @@ lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
   simp [standardRep]
 
 lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (hef : e ≠ f) :
-  (v.standardRep hB) e f = 0 := by
+    (v.standardRep hB) e f = 0 := by
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
 lemma Rep.standardRep_eq_mapEquiv [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
@@ -169,64 +169,80 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
     else if heE : e ∈ E then v ⟨e, ⟨heE, heB⟩⟩
     else 0
 
-lemma Representable.exists_fin_rep [RankFinite M] (hM : M.Representable 𝔽) :
-    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
-  obtain ⟨B, hB⟩ := M.exists_isBase
-  obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
-  let e : ↥B ≃ Fin M.rank := B.equivFinOfCardEq hB.finset_card
-  exact ⟨(hM.some.standardRep hB).mapEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
-    (Rep.standardRep_fullRank _ hB).mapEquiv _⟩
+section IsStandard
 
-lemma Representable.exists_fin_rep_of_eq {n : ℕ} [RankFinite M] (hM : M.Representable 𝔽)
-    (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
-  subst hr
-  exact exists_fin_rep hM
 
-section FinitaryBase
+
+/-- A representation over `B → 𝔽` or `B →₀ 𝔽` `IsStandard` if it is the identity on `B`.
+The definition is agnostic as to whether the representation is `Finsupp` or `Function`,
+and is phrased without `Function.Pi` to avoid decidability assumptions.  -/
+@[mk_iff]
+structure Rep.IsStandard {γ : Type*} [FunLike γ B 𝔽] [AddCommGroup γ] [Module 𝔽 γ]
+    (v : M.Rep 𝔽 γ) : Prop where
+  apply_eq : ∀ x : B, v x.1 x = 1
+  apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
 
 variable {v : M.Rep 𝔽 (B →₀ 𝔽)}
 
-/-- `Rep.FinitaryBase` means that `v` is a representation comprising finitely
-supported `B`-indexed vectors that is the identity on `B`. It follows that `B` is a base. -/
-def Rep.FinitaryBase (v : M.Rep 𝔽 (B →₀ 𝔽)) : Prop := ∀ e : B, v e = Finsupp.single e 1
+lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
+    v e = Finsupp.single e 1 := by
+  ext i
+  obtain rfl | hne := eq_or_ne e i
+  · rw [single_eq_same, hv.apply_eq]
+  rw [single_eq_of_ne hne, hv.apply_ne hne]
 
-lemma Rep.FinitaryBase.apply (hv : v.FinitaryBase) (e : B) : v e = Finsupp.single e 1 :=
-  hv e
+-- `Rep.IsStandard` means that `v` is a representation comprising finitely
+-- supported `B`-indexed vectors that is the identity on `B`. It follows that `B` is a base.
+-- def Rep.IsStandard (v : M.Rep 𝔽 (B →₀ 𝔽)) : Prop := ∀ e : B, v e = Finsupp.single e 1
 
-lemma Rep.FinitaryBase.apply_mem (hv : v.FinitaryBase) (he : e ∈ B) :
+-- lemma Rep.IsStandard.apply (hv : v.IsStandard) (e : B) : v e = Finsupp.single e 1 :=
+--   hv e
+
+lemma Rep.IsStandard.apply_finsupp_mem (hv : v.IsStandard) (he : e ∈ B) :
     v e = Finsupp.single ⟨e,he⟩ 1 :=
-  hv ⟨e, he⟩
+  hv.apply_finsupp ⟨e, he⟩
 
-lemma Rep.FinitaryBase.isBase (hv : v.FinitaryBase) : M.IsBase B := by
+lemma Rep.IsStandard.isBase (hv : v.IsStandard) : M.IsBase B := by
   rw [← v.ofFun_self]
-  exact Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ hv x) fun x hxB ↦
-    v.mem_ground_of_apply_ne_zero <| by simp [show v x = _ from hv ⟨x, hxB⟩]
+  apply Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ by simp [hv.apply_finsupp x])
+  exact fun e heB ↦ v.mem_ground_of_apply_ne_zero <| by simp [hv.apply_finsupp_mem heB]
 
-lemma Rep.FinitaryBase.injOn (hv : v.FinitaryBase) : Set.InjOn v B := by
+lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    (v.standardRep' hB).IsStandard := by
+  simp only [standardRep', FullRank.basis_of_isBase, isStandard_iff, to_fun_eq_coe, mapEquiv_apply,
+    restrict_span_apply, rangeFactorization, inclusion_mk, Basis.mk_repr, ne_eq,
+    Subtype.mk.injEq]
+  refine ⟨fun e ↦ ?_, fun e f hef ↦ ?_⟩
+  · rw [LinearIndependent.repr_eq_single _ e, single_eq_same]
+    simp
+  rw [LinearIndependent.repr_eq_single _ e, single_eq_of_ne hef]
+  simp
+
+lemma Rep.IsStandard.injOn (hv : v.IsStandard) : Set.InjOn v B := by
   intro e he f hf hef
-  rw [hv.apply_mem he, hv.apply_mem hf] at hef
+  rw [hv.apply_finsupp_mem he, hv.apply_finsupp_mem hf] at hef
   simpa using (Finsupp.single_left_injective (by simp)) hef
 
-lemma Rep.FinitaryBase.image_coe_support_subset (_hv : v.FinitaryBase) {e : α} :
+lemma Rep.IsStandard.image_coe_support_subset (_hv : v.IsStandard) {e : α} :
     (↑) '' ((v e).support : Set B) ⊆ B := by
   simp
 
-lemma Rep.FinitaryBase.image_eq (hv : v.FinitaryBase) (I : Set B) :
+lemma Rep.IsStandard.image_eq (hv : v.IsStandard) (I : Set B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
   simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
   constructor
   · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
-    exact ⟨y, hy, (hv.apply y).symm⟩
+    exact ⟨y, hy, (hv.apply_finsupp y).symm⟩
   rintro ⟨x, hx, rfl⟩
-  exact ⟨x, ⟨_, hx, rfl⟩, hv.apply x⟩
+  exact ⟨x, ⟨_, hx, rfl⟩, hv.apply_finsupp x⟩
 
-lemma Rep.FinitaryBase.image_subset_eq (hv : v.FinitaryBase) (hIB : I ⊆ B) :
+lemma Rep.IsStandard.image_subset_eq (hv : v.IsStandard) (hIB : I ⊆ B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
   rw [← hv.image_eq]
   simp [inter_eq_self_of_subset_right hIB]
 
-lemma Rep.FinitaryBase.mem_closure_iff (hv : v.FinitaryBase) (hIB : I ⊆ B) (heE : e ∈ M.E) :
+lemma Rep.IsStandard.mem_closure_iff (hv : v.IsStandard) (hIB : I ⊆ B) (heE : e ∈ M.E) :
     e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
   rw [v.closure_eq, mem_inter_iff, mem_preimage, hv.image_subset_eq hIB, SetLike.mem_coe,
     Finsupp.basisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
@@ -234,7 +250,7 @@ lemma Rep.FinitaryBase.mem_closure_iff (hv : v.FinitaryBase) (hIB : I ⊆ B) (he
 
 /-- For every column `e` of `M.E \ B`, the support of `v e` as a subset of `B`,
 together with `e` itself, make a circuit of `M`. -/
-lemma Rep.FinitaryBase.isCircuit_insert_support (hv : v.FinitaryBase) (heB : e ∉ B)
+lemma Rep.IsStandard.isCircuit_insert_support (hv : v.IsStandard) (heB : e ∉ B)
     (heE : e ∈ M.E) : M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
   let b := Finsupp.basisSingleOne (ι := B) (R := 𝔽)
   refine Indep.insert_isCircuit_of_forall (hv.isBase.indep.subset (by simp)) (by simp [heB]) ?_ ?_
@@ -247,7 +263,7 @@ lemma Rep.FinitaryBase.isCircuit_insert_support (hv : v.FinitaryBase) (heB : e �
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
-lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B) :
+lemma Rep.IsStandard.image_val_support_eq (hv : v.IsStandard) (he : e ∉ B) :
     ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   obtain heE | heE := em' (e ∈ M.E)
   · rw [v.eq_zero_of_not_mem_ground heE, ← fundCircuit_diff_eq_inter _ he,
@@ -260,7 +276,7 @@ lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B)
   exact isCircuit_insert_support hv he heE
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
-lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
+lemma Rep.IsStandard.cocircuit_insert_support (hv : v.IsStandard) (e : B) :
     M.Cocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
     rw [h_eq, compl_cocircuit_iff_isHyperplane]
@@ -273,8 +289,8 @@ lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
   simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
 
 
-end FinitaryBase
--- lemma Rep.FinitaryBase.support_eq (v : M.Rep 𝔽 (B →₀ F))
+end IsStandard
+-- lemma Rep.IsStandard.support_eq (v : M.Rep 𝔽 (B →₀ F))
 
 section Representable
 
@@ -310,3 +326,20 @@ lemma Representable.iso {N : Matroid β} (hM : M.Representable 𝔽) (i : M ≂ 
 lemma Representable.exists_fullRank_rep (hM : M.Representable 𝔽) (hB : M.IsBase B) :
     ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
   ⟨hM.some.standardRep' hB, (Nonempty.some hM).standardRep_fullRank' hB⟩
+
+lemma Representable.exists_isStandard_rep (hM : M.Representable 𝔽) (hB : M.IsBase B) :
+    ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.IsStandard :=
+  ⟨hM.some.standardRep' hB, Rep.standardRep'_isStandard (Nonempty.some hM) hB⟩
+
+lemma Representable.exists_fin_rep [RankFinite M] (hM : M.Representable 𝔽) :
+    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
+  let e : ↥B ≃ Fin M.rank := B.equivFinOfCardEq hB.finset_card
+  exact ⟨(hM.some.standardRep hB).mapEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
+    (Rep.standardRep_fullRank _ hB).mapEquiv _⟩
+
+lemma Representable.exists_fin_rep_of_eq {n : ℕ} [RankFinite M] (hM : M.Representable 𝔽)
+    (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
+  subst hr
+  exact exists_fin_rep hM
