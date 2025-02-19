@@ -171,18 +171,43 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
 
 section IsStandard
 
-
+variable {γ : Type*} {B : Set α} [FunLike γ B 𝔽] [AddCommGroup γ] [Module 𝔽 γ]
 
 /-- A representation over `B → 𝔽` or `B →₀ 𝔽` `IsStandard` if it is the identity on `B`.
 The definition is agnostic as to whether the representation is `Finsupp` or `Function`,
-and is phrased without `Function.Pi` to avoid decidability assumptions.  -/
+and is phrased without `Function.Pi` to avoid decidability assumptions.
+
+In the `Finsupp` case, this implies that `B` is a base - see `Matroid.Rep.IsStandard.isBase`.
+
+In the `Function` case, we really need a `FiniteRank` assumption for this to be sensible,
+since, if `I` is an infinite identity matrix and `1` means the all-ones vector, then `[I | 1]`
+represents a free matroid in which `I` doesn't correspond to a base. -/
 @[mk_iff]
-structure Rep.IsStandard {γ : Type*} [FunLike γ B 𝔽] [AddCommGroup γ] [Module 𝔽 γ]
-    (v : M.Rep 𝔽 γ) : Prop where
+structure Rep.IsStandard (v : M.Rep 𝔽 γ) : Prop where
   apply_eq : ∀ x : B, v x.1 x = 1
   apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
 
-variable {v : M.Rep 𝔽 (B →₀ 𝔽)}
+structure Rep.IsStandard' (v : M.Rep 𝔽 (B → 𝔽)) : Prop where
+  apply_eq : ∀ x : B, v x.1 x = 1
+  apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
+
+lemma Rep.IsStandard.apply_mem_eq {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : e ∈ B) :
+    v e ⟨e, he⟩ = 1 :=
+  hv.apply_eq ⟨e,he⟩
+
+lemma Rep.IsStandard.apply_mem_ne {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : e ∈ B)
+    (hf : f ∈ B) (hef : e ≠ f) : v e ⟨f, hf⟩ = 0 :=
+  hv.apply_ne (x := ⟨e, he⟩) (y := ⟨f, hf⟩) (by simpa)
+
+lemma Rep.IsStandard.injOn {v : M.Rep 𝔽 γ} (hv : v.IsStandard) : Set.InjOn v B := by
+  refine fun e he f hf hef ↦ by_contra fun hne ↦ ?_
+  replace hef := DFunLike.congr_fun hef ⟨e, he⟩
+  rw [hv.apply_mem_eq, hv.apply_mem_ne hf _ <| Ne.symm hne] at hef
+  simp at hef
+
+lemma Rep.IsStandard.image_coe_support_subset {v : M.Rep 𝔽 γ} (_ : v.IsStandard) {e : α} :
+    (↑) '' (support (v e) : Set B) ⊆ B := by
+  simp
 
 lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
     v e = Finsupp.single e 1 := by
@@ -191,18 +216,17 @@ lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsSt
   · rw [single_eq_same, hv.apply_eq]
   rw [single_eq_of_ne hne, hv.apply_ne hne]
 
--- `Rep.IsStandard` means that `v` is a representation comprising finitely
--- supported `B`-indexed vectors that is the identity on `B`. It follows that `B` is a base.
--- def Rep.IsStandard (v : M.Rep 𝔽 (B →₀ 𝔽)) : Prop := ∀ e : B, v e = Finsupp.single e 1
+lemma isStandard_finsupp_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} :
+    v.IsStandard ↔ ∀ e : B, v e = Finsupp.single e 1 := by
+  refine ⟨fun h e ↦ h.apply_finsupp e, fun h ↦ ?_⟩
+  simp only [Rep.isStandard_iff, h, single_eq_same, implies_true, ne_eq, true_and]
+  exact fun _ _ ↦ single_eq_of_ne
 
--- lemma Rep.IsStandard.apply (hv : v.IsStandard) (e : B) : v e = Finsupp.single e 1 :=
---   hv e
-
-lemma Rep.IsStandard.apply_finsupp_mem (hv : v.IsStandard) (he : e ∈ B) :
+lemma Rep.IsStandard.apply_finsupp_mem {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∈ B) :
     v e = Finsupp.single ⟨e,he⟩ 1 :=
   hv.apply_finsupp ⟨e, he⟩
 
-lemma Rep.IsStandard.isBase (hv : v.IsStandard) : M.IsBase B := by
+lemma Rep.IsStandard.isBase {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) : M.IsBase B := by
   rw [← v.ofFun_self]
   apply Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ by simp [hv.apply_finsupp x])
   exact fun e heB ↦ v.mem_ground_of_apply_ne_zero <| by simp [hv.apply_finsupp_mem heB]
@@ -218,16 +242,7 @@ lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
   rw [LinearIndependent.repr_eq_single _ e, single_eq_of_ne hef]
   simp
 
-lemma Rep.IsStandard.injOn (hv : v.IsStandard) : Set.InjOn v B := by
-  intro e he f hf hef
-  rw [hv.apply_finsupp_mem he, hv.apply_finsupp_mem hf] at hef
-  simpa using (Finsupp.single_left_injective (by simp)) hef
-
-lemma Rep.IsStandard.image_coe_support_subset (_hv : v.IsStandard) {e : α} :
-    (↑) '' ((v e).support : Set B) ⊆ B := by
-  simp
-
-lemma Rep.IsStandard.image_eq (hv : v.IsStandard) (I : Set B) :
+lemma Rep.IsStandard.image_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (I : Set B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
   simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
@@ -237,21 +252,21 @@ lemma Rep.IsStandard.image_eq (hv : v.IsStandard) (I : Set B) :
   rintro ⟨x, hx, rfl⟩
   exact ⟨x, ⟨_, hx, rfl⟩, hv.apply_finsupp x⟩
 
-lemma Rep.IsStandard.image_subset_eq (hv : v.IsStandard) (hIB : I ⊆ B) :
+lemma Rep.IsStandard.image_subset_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (hIB : I ⊆ B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
   rw [← hv.image_eq]
   simp [inter_eq_self_of_subset_right hIB]
 
-lemma Rep.IsStandard.mem_closure_iff (hv : v.IsStandard) (hIB : I ⊆ B) (heE : e ∈ M.E) :
-    e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
+lemma Rep.IsStandard.mem_closure_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (hIB : I ⊆ B)
+    (heE : e ∈ M.E) : e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
   rw [v.closure_eq, mem_inter_iff, mem_preimage, hv.image_subset_eq hIB, SetLike.mem_coe,
     Finsupp.basisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
     and_iff_left heE]
 
 /-- For every column `e` of `M.E \ B`, the support of `v e` as a subset of `B`,
 together with `e` itself, make a circuit of `M`. -/
-lemma Rep.IsStandard.isCircuit_insert_support (hv : v.IsStandard) (heB : e ∉ B)
-    (heE : e ∈ M.E) : M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
+lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard)
+    (heB : e ∉ B) (heE : e ∈ M.E) : M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
   let b := Finsupp.basisSingleOne (ι := B) (R := 𝔽)
   refine Indep.insert_isCircuit_of_forall (hv.isBase.indep.subset (by simp)) (by simp [heB]) ?_ ?_
   · rw [hv.mem_closure_iff (by simp) heE]
@@ -263,7 +278,7 @@ lemma Rep.IsStandard.isCircuit_insert_support (hv : v.IsStandard) (heB : e ∉ B
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
-lemma Rep.IsStandard.image_val_support_eq (hv : v.IsStandard) (he : e ∉ B) :
+lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∉ B) :
     ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   obtain heE | heE := em' (e ∈ M.E)
   · rw [v.eq_zero_of_not_mem_ground heE, ← fundCircuit_diff_eq_inter _ he,
@@ -276,7 +291,7 @@ lemma Rep.IsStandard.image_val_support_eq (hv : v.IsStandard) (he : e ∉ B) :
   exact isCircuit_insert_support hv he heE
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
-lemma Rep.IsStandard.cocircuit_insert_support (hv : v.IsStandard) (e : B) :
+lemma Rep.IsStandard.cocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
     M.Cocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
     rw [h_eq, compl_cocircuit_iff_isHyperplane]

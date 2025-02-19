@@ -40,3 +40,4 @@ lemma foo (M : Matroid α) [Finitary M] [DecidableEq α] (hB : M.IsBase B) (hM :
   simp only [ofReducedMatrix, mapEmbedding_indep_iff, ofFun_indep_iff, subset_univ, and_true,
     Embedding.sumSet_range, union_diff_self]
   intro I hIE
+  rw [v.indep_iff]

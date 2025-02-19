@@ -1,16 +1,15 @@
 import Mathlib
 
-variable {R M ι : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] {x : ι}
+structure MyType (α M : Type*) where
+  a₀ : α
+  to_fun : α → M
 
-open Submodule
+variable {α M : Type*}
 
-notation:65 f:65 " ⇂ " s:66 => fun x : ↥s ↦ f x
+def MyPred [FunLike M ℕ ℝ] (A : MyType α M) : Prop := A.to_fun A.a₀ 3 = 37
 
-theorem linearIndependent_restrict_union {R M ι : Type*} [CommSemiring R] [AddCommGroup M]
-    [Module R M] {s t : Set ι} {f : ι → M}
-    (hs : LinearIndependent R (f ⇂ s)) (ht : LinearIndependent R (f ⇂ t))
-    (hdj : Disjoint (span R (f '' s)) (span R (f '' t))) :
-    LinearIndependent R (f ⇂ (s ∪ t)) := by
-  eta_expand at f
+example (A : MyType α (ℕ →₀ ℝ)) : MyPred A := sorry
+-- typechecks fine
 
-  sorry
+example (A : MyType α (ℕ → ℝ)) : MyPred A := sorry
+-- failed to synthesize `FunLike (ℕ → ℝ) ℕ ℝ`
