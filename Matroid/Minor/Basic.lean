@@ -310,8 +310,8 @@ lemma Coindep.coindep_contract_of_disjoint (hX : M.Coindep X) (hXC : Disjoint X 
     (M ／ C).Coindep X :=
   coindep_contract_iff.mpr ⟨hX, hXC⟩
 
-@[simp] lemma contract_cocircuit_iff : (M ／ C).Cocircuit K ↔ M.Cocircuit K ∧ Disjoint K C := by
-  rw [cocircuit_def, contract_dual_eq_dual_delete, delete_isCircuit_iff]
+@[simp] lemma contract_isCocircuit_iff : (M ／ C).Cocircuit K ↔ M.Cocircuit K ∧ Disjoint K C := by
+  rw [isCocircuit_def, contract_dual_eq_dual_delete, delete_isCircuit_iff]
 
 lemma Indep.contract_isBase_iff (hI : M.Indep I) :
     (M ／ I).IsBase B ↔ M.IsBase (B ∪ I) ∧ Disjoint B I := by
@@ -676,17 +676,17 @@ lemma IsNonloop.of_contract (h : (M ／ C).IsNonloop e) : M.IsNonloop e := by
   exact (M.subset_closure (C ∩ M.E)) ⟨heC, h.1⟩
 
 lemma Cocircuit.of_contract (hK : (M ／ C).Cocircuit K) : M.Cocircuit K := by
-  rw [cocircuit_def, contract_dual_eq_dual_delete] at hK
+  rw [isCocircuit_def, contract_dual_eq_dual_delete] at hK
   exact hK.of_delete
 
-lemma Cocircuit.delete_cocircuit {D : Set α} (hK : M.Cocircuit K) (hD : D ⊂ K) :
+lemma Cocircuit.delete_isCocircuit {D : Set α} (hK : M.Cocircuit K) (hD : D ⊂ K) :
     (M ＼ D).Cocircuit (K \ D) := by
-  rw [cocircuit_def, delete_dual_eq_dual_contract]
+  rw [isCocircuit_def, delete_dual_eq_dual_contract]
   exact hK.isCircuit.contract_isCircuit hD
 
-lemma Cocircuit.delete_diff_cocircuit {X : Set α} (hK : M.Cocircuit K) (hXK : X ⊆ K)
+lemma Cocircuit.delete_diff_isCocircuit {X : Set α} (hK : M.Cocircuit K) (hXK : X ⊆ K)
     (hX : X.Nonempty) : (M ＼ (K \ X)).Cocircuit X := by
-  rw [cocircuit_def, delete_dual_eq_dual_contract]
+  rw [isCocircuit_def, delete_dual_eq_dual_contract]
   exact hK.isCircuit.contract_diff_isCircuit hX hXK
 
 end Contract

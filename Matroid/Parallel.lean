@@ -167,7 +167,7 @@ lemma delete_parallel_iff {D : Set α} :
   rw [removeLoops_eq_restr, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.isNonloop_left, h.isNonloop_right⟩)]
 
-lemma Parallel.mem_cocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.Cocircuit K)
+lemma Parallel.mem_isCocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.Cocircuit K)
     (he : e ∈ K) : f ∈ K := by
   by_contra hf
   have hK' := (hK.compl_isHyperplane).isFlat.closure

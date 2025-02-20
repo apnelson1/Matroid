@@ -320,7 +320,7 @@ lemma IsNonloop.exists_mem_isBase (he : M.IsNonloop e) : ∃ B, M.IsBase B ∧ e
 lemma Cocircuit.isNonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.IsNonloop e := by
   rw [← not_isLoop_iff (hK.subset_ground he), ← singleton_isCircuit]
   intro he'
-  obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.cocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
+  obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.isCocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
   exact hfe rfl
 
 lemma IsCircuit.isNonloop_of_mem (hC : M.IsCircuit C) (hC' : C.Nontrivial) (he : e ∈ C) :
@@ -424,9 +424,9 @@ lemma isNonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) :
     (uniqueBaseOn I E).IsNonloop e ↔ e ∈ I ∩ E := by
   rw [← indep_singleton, uniqueBaseOn_indep_iff', singleton_subset_iff]
 
-lemma IsNonloop.exists_mem_cocircuit (he : M.IsNonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
+lemma IsNonloop.exists_mem_isCocircuit (he : M.IsNonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
   obtain ⟨B, hB, heB⟩ := he.exists_mem_isBase
-  exact ⟨_, fundCocircuit_cocircuit heB hB, mem_fundCocircuit M e B⟩
+  exact ⟨_, fundCocircuit_isCocircuit heB hB, mem_fundCocircuit M e B⟩
 
 @[simp]
 lemma closure_inter_setOf_isNonloop_eq (M : Matroid α) (X : Set α) :
@@ -585,10 +585,10 @@ lemma coloops_eq_dual_closure_empty : {e | M.Coloop e} = M✶.closure ∅ := rfl
 lemma Coloop.dual_isLoop (he : M.Coloop e) : M✶.IsLoop e :=
   he
 
-lemma Coloop.cocircuit (he : M.Coloop e) : M.Cocircuit {e} :=
+lemma Coloop.isCocircuit (he : M.Coloop e) : M.Cocircuit {e} :=
   IsLoop.isCircuit he
 
-@[simp] lemma singleton_cocircuit : M.Cocircuit {e} ↔ M.Coloop e :=
+@[simp] lemma singleton_isCocircuit : M.Cocircuit {e} ↔ M.Coloop e :=
   singleton_isCircuit
 
 lemma IsLoop.dual_coloop (he : M.IsLoop e) : M✶.Coloop e :=
@@ -625,7 +625,7 @@ lemma IsLoop.not_coloop (h : M.IsLoop e) : ¬M.Coloop e := by
   exact h.isNonloop.not_isLoop
 
 lemma Coloop.not_mem_isCircuit (he : M.Coloop e) (hC : M.IsCircuit C) : e ∉ C :=
-  fun h ↦ (hC.cocircuit.isNonloop_of_mem h).not_isLoop he
+  fun h ↦ (hC.isCocircuit.isNonloop_of_mem h).not_isLoop he
 
 lemma coisLoop_iff_forall_mem_compl_isCircuit [RankPos M✶] :
     M.Coloop e ↔ ∀ C, M.IsCircuit C → e ∈ M.E \ C := by

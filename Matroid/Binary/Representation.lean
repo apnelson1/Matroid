@@ -1,5 +1,6 @@
 import Matroid.Representation.Projective
 import Matroid.Representation.FundamentalMatrix
+import Matroid.Representation.CycleSpace
 import Matroid.Binary.Crossing
 import Matroid.Order.Quotient
 
@@ -38,7 +39,8 @@ lemma Rep.cyclic_of_forall_row_even {C : Finset α} (v : M.Rep (ZMod 2) (ι →�
 /-- If `C` is a circuit, then every row of the corresponding submatrix has even support. -/
 lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Finset α}
     (hC : M.IsCircuit C) (i : ι) : Even {x ∈ C | v x i = 1}.card := by
-  obtain ⟨c, rfl, hc⟩ := v.exists_finsupp_of_isCircuit hC
+  obtain ⟨c, hcC, hc⟩ := v.exists_finsupp_of_isCircuit hC
+  obtain rfl : c.support = C := by simpa using hcC
   apply_fun fun f ↦ f i at hc
   replace hc := show ∑ x ∈ c.support, c x * (v x) i = 0 by
     simpa [Finsupp.linearCombination, Finsupp.sum] using hc
@@ -69,7 +71,7 @@ lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
   refine quotient_of_forall_cyclic_of_isCircuit rfl fun C hC ↦ ?_
   obtain ⟨C, rfl⟩ := hC.finite.exists_finset_coe
   refine hB.binaryProxyRep.cyclic_of_forall_row_even hC.subset_ground fun e ↦ ?_
-  have hcc := M.fundCocircuit_cocircuit e.2 hB
+  have hcc := M.fundCocircuit_isCocircuit e.2 hB
 
   rw [← hB.fundCoord_row_support (ZMod 2) e] at hcc
   convert hM.even_of_finite (hC.isCrossing_inter hcc) (hC.finite.subset (by simp))

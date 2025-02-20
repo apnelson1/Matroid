@@ -72,9 +72,9 @@ lemma isHyperplane_iff_maximal_nonspanning :
       (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
   rwa [spanning_iff, and_iff_left hSE] at hS
 
-@[simp] lemma compl_cocircuit_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
+@[simp] lemma compl_isCocircuit_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.Cocircuit (M.E \ H) ↔ M.IsHyperplane H := by
-  rw [cocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
+  rw [isCocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
 
   have h_image := image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
     (s := {X | ¬ M.Spanning X ∧ X ⊆ M.E}) (fun X Y hX hY ↦ sdiff_le_sdiff_iff_le hX.2 hY.2)
@@ -94,16 +94,16 @@ lemma isHyperplane_iff_maximal_nonspanning :
   refine ⟨_, rfl.subset, ?_, diff_subset⟩
   simpa [inter_eq_self_of_subset_right hYE]
 
-@[simp] lemma compl_isHyperplane_iff_cocircuit (h : K ⊆ M.E := by aesop_mat) :
+@[simp] lemma compl_isHyperplane_iff_isCocircuit (h : K ⊆ M.E := by aesop_mat) :
     M.IsHyperplane (M.E \ K) ↔ M.Cocircuit K := by
-  rw [← compl_cocircuit_iff_isHyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
+  rw [← compl_isCocircuit_iff_isHyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
     inter_eq_left.mpr h]
 
-lemma IsHyperplane.compl_cocircuit (hH : M.IsHyperplane H) : M.Cocircuit (M.E \ H) :=
-  (compl_cocircuit_iff_isHyperplane hH.subset_ground).mpr hH
+lemma IsHyperplane.compl_isCocircuit (hH : M.IsHyperplane H) : M.Cocircuit (M.E \ H) :=
+  (compl_isCocircuit_iff_isHyperplane hH.subset_ground).mpr hH
 
 lemma Cocircuit.compl_isHyperplane {K : Set α} (hK : M.Cocircuit K) : M.IsHyperplane (M.E \ K) :=
-  (compl_isHyperplane_iff_cocircuit hK.subset_ground).mpr hK
+  (compl_isHyperplane_iff_isCocircuit hK.subset_ground).mpr hK
 
 lemma univ_not_isHyperplane (M : Matroid α) : ¬M.IsHyperplane univ :=
   fun h ↦ h.ssubset_univ.ne rfl
@@ -193,11 +193,11 @@ lemma mem_dual_closure_iff_forall_isCircuit (hX : X ⊆ M.E := by aesop_mat)
   (he : e ∈ M.E := by aesop_mat) :
     e ∈ M✶.closure X ↔ ∀ C, M.IsCircuit C → e ∈ C → (X ∩ C).Nonempty := by
   rw [← dual_dual M]
-  simp_rw [← cocircuit_def, dual_dual M, mem_closure_iff_forall_isHyperplane (M := M✶) hX he]
+  simp_rw [← isCocircuit_def, dual_dual M, mem_closure_iff_forall_isHyperplane (M := M✶) hX he]
   refine ⟨fun h C hC heC ↦ by_contra fun hne ↦ ?_, fun h H hH hXE ↦ by_contra fun he' ↦ ?_⟩
   · rw [nonempty_iff_ne_empty, not_not, ← disjoint_iff_inter_eq_empty] at hne
     exact (h _ hC.compl_isHyperplane (subset_diff.mpr ⟨hX, hne⟩)).2 heC
-  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, he'⟩
+  obtain ⟨f, hf⟩ := h _ hH.compl_isCocircuit ⟨he, he'⟩
   exact hf.2.2 (hXE hf.1)
 
 lemma IsFlat.subset_isHyperplane_of_ne_ground (hF : M.IsFlat F) (h : F ≠ M.E) :
@@ -316,7 +316,7 @@ lemma Cyclic.compl_isFlat_dual {A : Set α} (hA : M.Cyclic A) : M✶.IsFlat (M.E
   obtain ⟨Cs, rfl, hCs⟩ := hA
   refine ⟨(M.E \ ·) '' Cs, fun C hC ↦ ?_, ?_⟩
   · obtain ⟨H, hH, rfl⟩ := show ∃ x ∈ Cs, M.E \ x = C by simpa only [mem_image] using hC
-    rw [← dual_ground, compl_isHyperplane_iff_cocircuit, dual_cocircuit_iff]
+    rw [← dual_ground, compl_isHyperplane_iff_isCocircuit, dual_isCocircuit_iff]
     exact hCs H hH
   ext e
   simp +contextual [and_comm (a := e ∈ M.E)]
@@ -331,8 +331,8 @@ lemma cyclic_iff_compl_isFlat_dual {A : Set α} (hA : A ⊆ M.E := by aesop_mat)
   obtain rfl := h_eq
   have hHs' : ∀ H ∈ Hs, M.IsCircuit (M.E \ H) := by
     refine fun H hH ↦ ?_
-    rw [← M.dual_cocircuit_iff, ← dual_ground,
-      compl_cocircuit_iff_isHyperplane (show H ⊆ M✶.E from (hHs H hH).subset_ground)]
+    rw [← M.dual_isCocircuit_iff, ← dual_ground,
+      compl_isCocircuit_iff_isHyperplane (show H ⊆ M✶.E from (hHs H hH).subset_ground)]
     exact hHs H hH
   exact ⟨(M.E \ ·) '' Hs, by simp, by simpa⟩
 

@@ -36,12 +36,12 @@ lemma IsCrossing.encard_ne_one (h : M.IsCrossing X) : X.encard ≠ 1 := by
   rw [Ne, encard_eq_one]
   rintro ⟨e, rfl⟩
   obtain ⟨C, K, hC, hK, h'⟩ := h
-  exact hC.inter_cocircuit_ne_singleton hK h'.symm
+  exact hC.inter_isCocircuit_ne_singleton hK h'.symm
 
 lemma IsCrossing.of_contract (hC : (M ／ C).IsCrossing X) : M.IsCrossing X := by
   obtain ⟨X, Y, hX, hY, rfl⟩ := hC
   obtain ⟨X', hX', hXX', hX'X⟩ := hX.subset_isCircuit_of_contract
-  rw [contract_cocircuit_iff] at hY
+  rw [contract_isCocircuit_iff] at hY
   refine ⟨X', Y, hX', hY.1, (inter_subset_inter_left _ hXX').antisymm
     (subset_inter ?_ inter_subset_right)⟩
   refine (inter_subset_inter_left Y hX'X).trans ?_
@@ -145,7 +145,7 @@ lemma binary_unif_iff {a b : ℕ} : (unif a b).Binary ↔ a ≤ 1 ∨ b ≤ a + 
       exact ⟨h2a, by linarith⟩
     have h_even := h.isoMinor hm.some (X := {0,1,2}) ⟨{0,1,2}, {0,1,2}, ?_⟩
     · simp [Nat.even_iff] at h_even
-    simp [unif_isCircuit_iff, cocircuit_def, unif_dual]
+    simp [unif_isCircuit_iff, isCocircuit_def, unif_dual]
     rw [encard_insert_of_not_mem (by simp), encard_pair (by simp)]
   obtain h | h := h
   · refine binary_of_eRank_le_one (by simp [h])
@@ -155,7 +155,7 @@ lemma binary_unif_iff {a b : ℕ} : (unif a b).Binary ↔ a ≤ 1 ∨ b ≤ a + 
 
 end Binary
 
-lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.IsPoint {e})
+lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.IsPoint {e})
     (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ e).Cocircuit C₁ ∧ (M ＼ e).Cocircuit C₂ ∧
     Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
 
@@ -211,14 +211,14 @@ lemma exist_cocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he 
 
   -- Each such closure is the complement of a hyperplane, so is a cocircuit. We're done.
   refine ⟨_, _, ?_, ?_, hdj, hucl⟩
-  · rw [← compl_isHyperplane_iff_cocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
+  · rw [← compl_isHyperplane_iff_isCocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
       ← pair_diff_left hab]
     exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
-  rw [← compl_isHyperplane_iff_cocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
+  rw [← compl_isHyperplane_iff_isCocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
     ← pair_diff_right hab]
   exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
 
-lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCircuit C)
+lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsCircuit C)
     (h_odd : Odd hfin.toFinset.card) (hCs : M.Spanning C) (hCh : M.IsHyperplane (M.E \ C))
     (hCi : M.Indep (M.E \ C)) (hcard : 3 ≤ C.encard) (h_bin : M.NoUniformMinor 2 4) :
   ∃ (N : Matroid α) (K : Finset α),
@@ -254,7 +254,7 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
     simp [hCh.isFlat.closure, hf.1, hf.2, hCi.not_mem_closure_diff_of_mem hf]
 
 
-  obtain ⟨C₁, C₂, hC₁, hC₂, hdj, hu⟩ := exist_cocircuits_of_rank_two hNr hfl hfP (h_bin.minor hNM)
+  obtain ⟨C₁, C₂, hC₁, hC₂, hdj, hu⟩ := exist_isCocircuits_of_rank_two hNr hfl hfP (h_bin.minor hNM)
 
   obtain rfl : C₁ ∪ C₂ = C
   · simpa [hu, hN, diff_diff_right, inter_eq_self_of_subset_right hCc.subset_ground,
@@ -287,18 +287,18 @@ lemma exists_smaller_of_odd_isCircuit_cocircuit (hfin : C.Finite) (hCc : M.IsCir
     Finset.card_union_eq_card_add_card.2 (by simpa using hdj)]
   exact hC₁_even.add hC₂_even
 
-lemma IsCircuit.exists_isMinor_inter_isCircuit_cocircuit_of_cocircuit (hC : M.IsCircuit C)
+lemma IsCircuit.exists_isMinor_inter_isCircuit_isCocircuit_of_isCocircuit (hC : M.IsCircuit C)
     (hK : M.Cocircuit K) (h_inter : (C ∩ K).Nonempty) :
     ∃ N, N ≤m M ∧ N.IsCircuit (C ∩ K) ∧ N.Cocircuit (C ∩ K) := by
   refine ⟨M ／ (C \ K) ＼ (K \ C), contract_delete_isMinor .., ?_, ?_⟩
   · simpa [delete_isCircuit_iff, disjoint_sdiff_right.mono_left inter_subset_left]
       using hC.contract_isCircuit (C := C \ K) (by simpa)
-  simp only [contract_delete_comm _ disjoint_sdiff_sdiff, contract_cocircuit_iff,
+  simp only [contract_delete_comm _ disjoint_sdiff_sdiff, contract_isCocircuit_iff,
     disjoint_sdiff_right.mono_left inter_subset_right, and_true]
-  rw [cocircuit_def, delete_dual_eq_dual_contract]
+  rw [isCocircuit_def, delete_dual_eq_dual_contract]
   simpa [inter_comm C K] using hK.isCircuit.contract_isCircuit (C := K \ C) (by simpa [inter_comm])
 
-lemma IsCircuit.exists_isMinor_spanning_cospanning_of_cocircuit (hC : M.IsCircuit C)
+lemma IsCircuit.exists_isMinor_spanning_cospanning_of_isCocircuit (hC : M.IsCircuit C)
     (hK : M.Cocircuit C) :
     ∃ N, N ≤m M ∧ N.IsCircuit C ∧ N.Cocircuit C ∧ N.Spanning C ∧ N✶.Spanning C := by
   obtain ⟨N, hNM, hr, hcr, hsp, hcsp⟩ :=
@@ -306,7 +306,7 @@ lemma IsCircuit.exists_isMinor_spanning_cospanning_of_cocircuit (hC : M.IsCircui
   refine ⟨N, hNM, ?_, ?_, hsp, hcsp⟩
   · rwa [isCircuit_iff_restr_eq_circuitOn hC.nonempty, hr,
       ← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
-  rwa [cocircuit_def, isCircuit_iff_restr_eq_circuitOn hC.nonempty, hcr,
+  rwa [isCocircuit_def, isCircuit_iff_restr_eq_circuitOn hC.nonempty, hcr,
     ← isCircuit_iff_restr_eq_circuitOn hC.nonempty]
 
 lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX : M.IsCrossing X)
@@ -320,7 +320,7 @@ lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX
       simp only [mul_zero, zero_add, Finset.card_eq_one] at hk
       obtain ⟨e, he⟩ := hk
       rw [he, Finset.coe_singleton] at hCK
-      exact hC.inter_cocircuit_ne_singleton hK hCK.symm
+      exact hC.inter_isCocircuit_ne_singleton hK hCK.symm
     rw [← hCK, encard_coe_eq_coe_finsetCard, Nat.ofNat_le_cast]
     linarith
 
@@ -329,17 +329,17 @@ lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX
     exact le_trans (by norm_num) hcard
 
   by_contra hcon
-  obtain ⟨N₁, hN₁M, hCN₁, hKN₁⟩ := hC.exists_isMinor_inter_isCircuit_cocircuit_of_cocircuit hK hne
+  obtain ⟨N₁, hN₁M, hCN₁, hKN₁⟩ := hC.exists_isMinor_inter_isCircuit_isCocircuit_of_isCocircuit hK hne
 
   obtain ⟨N₂, hN₂N₁, hCN₂, hKN₂, hSN₂, hSdN₂⟩ :=
-    hCN₁.exists_isMinor_spanning_cospanning_of_cocircuit hKN₁
+    hCN₁.exists_isMinor_spanning_cospanning_of_isCocircuit hKN₁
 
   rw [← hCK] at *
 
   have hN₂m := hcon.minor (hN₂N₁.trans hN₁M)
 
   obtain ⟨N₃, C₀, hN₃, hN₃C, hN₃K, hssu, h_odd'⟩ :=
-    exists_smaller_of_odd_isCircuit_cocircuit (by simp) hCN₂ (by simpa) hSN₂ hKN₂.compl_isHyperplane
+    exists_smaller_of_odd_isCircuit_isCocircuit (by simp) hCN₂ (by simpa) hSN₂ hKN₂.compl_isHyperplane
     (by simpa using hSdN₂.compl_coindep) hcard (hcon.minor (hN₂N₁.trans hN₁M))
 
   have hcr : N₃.IsCrossing C₀ := ⟨_, _, hN₃C, hN₃K,

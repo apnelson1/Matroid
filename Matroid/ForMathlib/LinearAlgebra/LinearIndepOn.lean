@@ -207,6 +207,26 @@ theorem linearIndepOn_id_pair {x y : V} (hx : x ≠ 0) (hy : ∀ a : K, a • x 
   pair_comm y x ▸ (LinearIndepOn.id_singleton K hx).insert (x := y) <|
     mt mem_span_singleton.1 <| not_exists.2 hy
 
+theorem linearIndepOn_iff {R M : Type*} {v : ι → M} [Ring R] [AddCommGroup M] [Module R M] :
+    LinearIndepOn R v s ↔
+      ∀ l ∈ Finsupp.supported R R s, (Finsupp.linearCombination R v) l = 0 → l = 0 :=
+  linearIndepOn_iffₛ.trans ⟨fun h l hl ↦ h l hl 0 (zero_mem _), fun h f hf g hg eq ↦
+    sub_eq_zero.mp (h (f - g) (sub_mem hf hg) <| by rw [map_sub, eq, sub_self])⟩
+
+/-- An indexed set of vectors is linearly dependent iff there is a nontrivial
+`Finsupp.linearCombination` of the vectors that is zero. -/
+theorem linearDepOn_iff' {R M : Type*} {v : ι → M} [Ring R] [AddCommGroup M] [Module R M] :
+    ¬LinearIndepOn R v s ↔
+      ∃ f : ι →₀ R, f ∈ Finsupp.supported R R s ∧ Finsupp.linearCombination R v f = 0 ∧ f ≠ 0 := by
+  simp [linearIndepOn_iff, and_left_comm]
+
+
+/-- A version of `linearDepOn_iff'` with `Finsupp.linearCombination` unfolded. -/
+theorem linearDepOn_iff {R M : Type*} {v : ι → M} [Ring R] [AddCommGroup M] [Module R M] :
+    ¬LinearIndepOn R v s ↔
+      ∃ f : ι →₀ R, f ∈ Finsupp.supported R R s ∧ ∑ i ∈ f.support, f i • v i = 0 ∧ f ≠ 0 :=
+  linearDepOn_iff'
+
 
 -- FOR MATHLIB
 theorem LinearIndepOn_iff_linearIndepOn_image_injOn [Nontrivial R] :

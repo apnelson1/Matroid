@@ -60,9 +60,9 @@ lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
     rw [parallel_iff_isCircuit hne]
     apply hC.contract_diff_isCircuit (by simp) (by simp [pair_subset_iff, heC, hfC])
   obtain ⟨B, hB, heB⟩ := hpara.isNonloop_left.exists_mem_isBase
-  have hK := fundCocircuit_cocircuit heB hB
+  have hK := fundCocircuit_isCocircuit heB hB
   refine IsCircuit.mem_connectedTo_mem hK.of_contract.isCircuit (mem_fundCocircuit _ _ _) ?_
-  exact hpara.mem_cocircuit_of_mem hK (mem_fundCocircuit _ _ _)
+  exact hpara.mem_isCocircuit_of_mem hK (mem_fundCocircuit _ _ _)
 
 lemma ConnectedTo.of_dual (h : M✶.ConnectedTo e f) : M.ConnectedTo e f := by
   simpa using h.to_dual
@@ -74,7 +74,7 @@ lemma Cocircuit.mem_connectedTo_mem (hK : M.Cocircuit K) (heK : e ∈ K) (hfK : 
     M.ConnectedTo e f :=
   (hK.isCircuit.mem_connectedTo_mem heK hfK).of_dual
 
-lemma ConnectedTo.exists_cocircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
+lemma ConnectedTo.exists_isCocircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
     ∃ K, M.Cocircuit K ∧ e ∈ K ∧ f ∈ K :=
   h.to_dual.exists_isCircuit_of_ne hne
 
@@ -126,7 +126,7 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   obtain (rfl | hne₂) := eq_or_ne f e₂; assumption
   obtain ⟨C₁, hC₁, heC₁, hfC₁⟩ := h₁.exists_isCircuit_of_ne hne₁
   obtain ⟨C₂, hC₂, hfC₂, h⟩ := h₂.exists_isCircuit_of_ne hne₂
-  obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_cocircuit_of_ne hne₁
+  obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_isCocircuit_of_ne hne₁
   obtain ⟨C₂, hC₂, hfC₂, he₂C₂⟩ := h₂.exists_isCircuit_of_ne hne₂
 
   by_cases he₂K₁ : e₂ ∈ K₁; exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
@@ -313,7 +313,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   have hd : M'.Dep (⋃ i, X i) := by
     rw [← not_indep_iff hXE]
     refine fun hi ↦ ?_
-    obtain ⟨K, hK, hKX⟩ := hi.exists_cocircuit_inter_eq_mem (e := e 0) (mem_iUnion_of_mem 0 <| rfl)
+    obtain ⟨K, hK, hKX⟩ := hi.exists_isCocircuit_inter_eq_mem (e := e 0) (mem_iUnion_of_mem 0 <| rfl)
     obtain ⟨A, rfl⟩ := subset_range_iff_exists_image_eq.1 <| hK.subset_ground
     obtain ⟨m, hm : A ⊆ Iic m⟩ := (Finite.of_finite_image hK.finite e.injective.injOn).bddAbove
     obtain ⟨C, hC : C ∈ cSet m⟩ := (cSet_infinite Cs e m).nonempty
@@ -326,7 +326,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
       rw [cSet_inter_image_Iic (h0 hC).1 hC ]
       exact subset_iUnion _ m
 
-    exact (h0 hC).2.inter_cocircuit_ne_singleton hK hi
+    exact (h0 hC).2.inter_isCocircuit_ne_singleton hK hi
 
   obtain ⟨C, hCX, hC⟩ := hd.exists_isCircuit_subset
   obtain ⟨B, hB, hCB⟩ := finite_subset_iUnion hC.finite hCX

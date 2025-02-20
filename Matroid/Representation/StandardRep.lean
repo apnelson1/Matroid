@@ -324,10 +324,10 @@ lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv :
   exact isCircuit_insert_support hv he heE
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
-lemma Rep.IsStandard.cocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
+lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
     M.Cocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
-    rw [h_eq, compl_cocircuit_iff_isHyperplane]
+    rw [h_eq, compl_isCocircuit_iff_isHyperplane]
     exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
   ext x
   simp only [mem_support, ne_eq, mem_diff]
