@@ -51,8 +51,7 @@ lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun 
 
 lemma Rep.indep_iff_projFun (v : M.Rep 𝔽 W) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
-  rw [v.indep_iff, ← Projectivization.independent_comp_mk_iff]
-  rfl
+  rw [v.indep_iff, LinearIndepOn, ← Projectivization.independent_comp_mk_iff]
 
 @[simp]
 lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) :

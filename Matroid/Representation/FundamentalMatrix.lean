@@ -86,6 +86,7 @@ lemma IsBase.fundCoord_eq_linearCombination (hB : M.IsBase B) :
 
 lemma IsBase.fundCoord_isStandard (hB : M.IsBase B) (R : Type*) [DivisionRing R] :
     (Matroid.repOfFun R M.E (hB.fundCoord R)).IsStandard := by
+  rw [isStandard_finsupp_iff]
   intro e
   simp only [repOfFun_coeFun_eq]
   rw [indicator_of_mem (hB.subset_ground e.2), fundCoord_of_mem]

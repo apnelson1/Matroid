@@ -209,6 +209,10 @@ theorem linearIndepOn_id_pair {x y : V} (hx : x ≠ 0) (hy : ∀ a : K, a • x 
 
 
 -- FOR MATHLIB
+theorem LinearIndepOn_iff_linearIndepOn_image_injOn [Nontrivial R] :
+    LinearIndepOn R v s ↔ LinearIndepOn R id (v '' s) ∧ InjOn v s :=
+  ⟨fun h ↦ ⟨h.image, h.injOn⟩, fun h ↦ (linearIndepOn_iff_image h.2).2 h.1⟩
+
 @[simp]
 theorem linearIndepOn_zero_iff [Nontrivial R] : LinearIndepOn R (0 : ι → M) s ↔ s = ∅ := by
   convert linearIndependent_zero_iff (ι := s) (R := R) (M := M)

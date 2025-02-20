@@ -1,6 +1,7 @@
 import Matroid.Representation.StandardRep
 import Matroid.Order.Quotient
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 -- Experiments with getting duality to work nicely.
 
@@ -29,6 +30,7 @@ def ofReducedMatrix {m n : Type*} [DecidableEq m] (P : n → m → 𝔽) : Matro
 
 
 
+
 lemma foo (M : Matroid α) [Finitary M] [DecidableEq α] (hB : M.IsBase B) (hM : M.Representable 𝔽) :
     ∃ P : ↥(M.E \ B) → B → 𝔽,
       M = (ofReducedMatrix P).mapEmbedding (Embedding.sumSet disjoint_sdiff_right) := by
@@ -41,3 +43,4 @@ lemma foo (M : Matroid α) [Finitary M] [DecidableEq α] (hB : M.IsBase B) (hM :
     Embedding.sumSet_range, union_diff_self]
   intro I hIE
   rw [v.indep_iff]
+  sorry

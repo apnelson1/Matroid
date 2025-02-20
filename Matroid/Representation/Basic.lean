@@ -220,8 +220,6 @@ noncomputable def Rep.restrict (v : M.Rep 𝔽 W) (X : Set α) : (M ↾ X).Rep �
 
 section Simple
 
-
-
 @[simp]
 lemma Rep.ne_zero [M.Loopless] [M.OnUniv] (v : M.Rep 𝔽 W) (e : α) : v e ≠ 0 := by
   simp [v.ne_zero_iff_isNonloop]

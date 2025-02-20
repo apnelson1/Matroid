@@ -1,6 +1,6 @@
 import Mathlib.LinearAlgebra.Projectivization.Independence
 import Mathlib.LinearAlgebra.Projectivization.Subspace
-import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
 import Matroid.ForMathlib.LinearAlgebra.Submodule
 
 variable {ι K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
@@ -189,11 +189,11 @@ lemma Projectivization.independent_pair {u v : Projectivization K V} :
   rw [independent_iff]
   obtain rfl | hne := eq_or_ne u v
   · simp [u.rep_nonzero]
-
-  refine (linearIndependent_restrict_pair_iff (V := V) (K := K) (fun x ↦ x.rep) hne
-    (rep_nonzero u)).2 fun c hc ↦ hne ?_
+  rw [linearIndependent_comp_subtype_iff, linearIndepOn_pair_iff _ hne (rep_nonzero u)]
+  refine fun c hc ↦ hne ?_
+  rw [← v.mk_rep]
   have hc0 : c ≠ 0 := by rintro rfl; simpa [v.rep_nonzero] using hc.symm
-  simpa [← hc, mk_smul_eq' u.rep_nonzero hc0] using v.mk_rep
+  simp_rw [← hc, mk_smul_eq' u.rep_nonzero hc0, mk_rep]
 
 @[simp]
 lemma Projectivization.submodule_span_range_rep (K W : Type*) [DivisionRing K] [AddCommGroup W]

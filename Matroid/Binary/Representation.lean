@@ -10,10 +10,10 @@ variable {α β W W' 𝔽 R ι : Type*} {e f x : α} {I E B X Y : Set α} {M : M
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 
 @[simp] lemma ne_one_iff {x : ZMod 2} : x ≠ 1 ↔ x = 0 := by
-  induction' x using Fin.cases with x hx
+  obtain ⟨(x | x | x), hx⟩ := x
   · simp
-  obtain rfl : x = 0 := by exact Fin.fin_one_eq_zero x
-  simp
+  · simp
+  linarith
 
 @[simp] lemma ne_zero_iff {x : ZMod 2} : x ≠ 0 ↔ x = 1 := by
   rw [not_iff_comm, ← ne_one_iff]

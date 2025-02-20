@@ -151,6 +151,16 @@ instance _root_.Module.matroid_finitary : Finitary (Module.matroid 𝔽 W) := by
   rw [Module.matroid]
   infer_instance
 
+lemma Rep.eq_comap (v : M.Rep 𝔽 W) : M = (_root_.Module.matroid 𝔽 W).comapOn M.E v := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [v.indep_iff, Module.matroid, comapOn_indep_iff, IndepMatroid.matroid_Indep,
+    IndepMatroid.ofFinitaryCardAugment_indep, hI, and_true, linearIndependent_subtype_iff]
+  rw [LinearIndepOn_iff_linearIndepOn_image_injOn]
+
+lemma Rep.finitary (v : M.Rep 𝔽 W) : M.Finitary := by
+  rw [v.eq_comap]
+  exact comapOn_finitary
+
 /-! ### Representations from functions -/
 
 /-- The `𝔽`-representable matroid given by a function `f : α → W` for a vector space `W` over `𝔽`,
