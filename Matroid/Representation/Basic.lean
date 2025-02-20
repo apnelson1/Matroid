@@ -1,7 +1,7 @@
-import Mathlib.LinearAlgebra.LinearIndependent
+-- import Mathlib.LinearAlgebra.LinearIndependent
 import Mathlib.LinearAlgebra.Projectivization.Basic
 import Matroid.Connectivity.Skew
-import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
+-- import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
@@ -9,18 +9,6 @@ variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matr
 
 open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 universe u v
-
-section ForMathlib
-
--- @[simp] lemma linearIndependent_zero_iff : LinearIndependent 𝔽 (0 : α → W) ↔ IsEmpty α :=
---   ⟨fun h ↦ ⟨fun a ↦ h.ne_zero a rfl⟩, fun _ ↦ linearIndependent_empty_type⟩
-
-@[simp] lemma restrict_zero (X : Set α) : X.restrict (0 : α → W) = 0 := rfl
-
--- lemma foo : LinearIndependent 𝔽 (fun x : I ↦ v x)
---       ∀ c : α →₀ 𝔽, Finsupp.linearCombination 𝔽 v c = 0 → (c.support : Set α) ⊆ I → c = 0 := by
-
-end ForMathlib
 
 namespace Matroid
 
@@ -31,9 +19,6 @@ namespace Matroid
   -- A set is independent in `M` if and only if its image is linearly independent over `𝔽` in `W`
   (indep_iff' : ∀ I, M.Indep I ↔ LinearIndepOn 𝔽 to_fun I)
 
-/-- A `Representable` matroid is one that has a representation over `𝔽` -/
-def Representable (M : Matroid α) (𝔽 : Type*) [Semiring 𝔽] : Prop :=
-  Nonempty (M.Rep 𝔽 (α → 𝔽))
 
 instance : FunLike (M.Rep 𝔽 W) α W where
   coe v := v.to_fun
@@ -184,9 +169,8 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
     ← v.span_closure_congr hI.closure_eq_closure, ← v.span_closure_congr hJ.closure_eq_closure,
     v.indep_iff]
   by_cases hdj : Disjoint I J
-  ·  rw [← linearIndependent_restrict_iff', linearIndependent_restrict_union_iff hdj,
-      linearIndependent_restrict_iff', linearIndependent_restrict_iff', ← v.indep_iff,
-      ← v.indep_iff, and_iff_right hdj,  and_iff_right hI.indep, and_iff_right hJ.indep]
+  ·  rw [linearIndepOn_union_iff hdj, ← v.indep_iff, ← v.indep_iff, and_iff_right hdj,
+      and_iff_right hI.indep, and_iff_right hJ.indep]
   obtain ⟨x, hxI, hxJ⟩ := not_disjoint_iff.1 hdj
   simp only [hdj, false_and, disjoint_def, false_iff, not_forall, Classical.not_imp, exists_prop,
     exists_and_left]
@@ -199,9 +183,9 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
 /-- A function with support contained in `M.E` that gives the correct independent sets
   within the ground set gives a representation -/
 @[simps] def Rep.ofGround (v : α → W) (h_support : support v ⊆ M.E)
-    (hv : ∀ I ⊆ M.E, M.Indep I ↔ LinearIndepOn 𝔽 v I) : M.Rep 𝔽 W where
+    (h_indep : ∀ I ⊆ M.E, M.Indep I ↔ LinearIndepOn 𝔽 v I) : M.Rep 𝔽 W where
   to_fun := v
-  indep_iff' I := (em (I ⊆ M.E)).elim (hv _) fun hI ↦ iff_of_false (mt Indep.subset_ground hI)
+  indep_iff' I := (em (I ⊆ M.E)).elim (h_indep _) fun hI ↦ iff_of_false (mt Indep.subset_ground hI)
     fun hi ↦ hI fun _ heI ↦ h_support <| hi.ne_zero heI
 
 @[simp] lemma Rep.ofGround_apply (f : α → W) (hs : support f ⊆ M.E)
@@ -249,25 +233,11 @@ lemma Rep.loopless_iff (v : M.Rep 𝔽 W) : M.Loopless ↔ ∀ e ∈ M.E, v e �
 
 lemma Rep.parallel_iff (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
     M.Parallel e f ↔ ∃ (c : 𝔽), c ≠ 0 ∧ c • v f = v e := by
-  obtain (hfE | hfE) := em' (f ∈ M.E)
-  · refine iff_of_false (fun h ↦ hfE h.mem_ground_right) ?_
-    simp [v.eq_zero_of_not_mem_ground hfE, iff_true_intro (v.ne_zero_of_isNonloop he).symm]
-  obtain (hf | hf) := M.isLoop_or_isNonloop f
-  · refine iff_of_false (fun h ↦ h.isNonloop_right.not_isLoop hf) ?_
-    simp [v.eq_zero_of_isLoop hf, iff_true_intro (v.ne_zero_of_isNonloop he).symm]
-
-  obtain (rfl | hef) := eq_or_ne e f
-  · exact iff_of_true hf.parallel_self ⟨1, one_ne_zero, one_smul ..⟩
-
-  rw [he.parallel_iff_dep hf hef, ← not_indep_iff, v.indep_iff, not_iff_comm,
-    ← linearIndependent_restrict_iff', linearIndependent_restrict_pair_iff _ hef
-    (v.ne_zero_of_isNonloop he)]
-  simp only [ne_eq, not_exists, not_and]
-  refine ⟨fun h c h' ↦ ?_, fun h c hc h_eq ↦
-    h c⁻¹ (by rw [← h_eq, smul_smul, inv_mul_cancel₀ hc, one_smul])⟩
-  have hc : c ≠ 0 := by rintro rfl; exact v.ne_zero_of_isNonloop hf (by simp [← h'])
-  exact h c⁻¹ (by simpa) <| by rw [← h', smul_smul, inv_mul_cancel₀ hc, one_smul]
-
+  rw [he.parallel_iff_mem_closure, v.closure_eq]
+  simp only [image_singleton, mem_inter_iff, mem_preimage, SetLike.mem_coe, he.mem_ground, and_true,
+    ne_eq, mem_span_singleton]
+  refine ⟨fun ⟨a, ha⟩ ↦ ⟨a, fun ha0 ↦ v.ne_zero_of_isNonloop he ?_, ha⟩, fun ⟨c, hc0, hc⟩ ↦ ⟨c, hc⟩⟩
+  rw [← ha, ha0, zero_smul]
 
 lemma Rep.parallel_iff' (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
     M.Parallel e f ↔ ∃ (c : 𝔽ˣ), c • v f = v e := by
@@ -288,7 +258,7 @@ lemma Rep.simple_iff [RankPos M] (v : M.Rep 𝔽 W) :
   obtain ⟨c,-,h_eq⟩ := (v.parallel_iff hef.symm.isNonloop_right).1 hef
   exact h (by aesop_mat) (by aesop_mat) c h_eq
 
-lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) (h : M.Simple) : InjOn v M.E := by
+lemma Rep.injOn_of_simple (v : M.Rep 𝔽 W) [h : M.Simple] : InjOn v M.E := by
   obtain (hl | hpos) := M.eq_loopyOn_or_rankPos
   · rw [simple_iff_isLoopless_eq_of_parallel_forall, hl, loopyOn_isLoopless_iff] at h
     simp [h.1]
