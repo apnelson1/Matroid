@@ -64,7 +64,6 @@ lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
   refine fun hc' ↦ hc0 <| (linearIndepOn_iff.1 <| v.onIndep <| hC.diff_singleton_indep heC) c ?_ hc
   simpa [Finsupp.mem_supported, subset_diff_singleton_iff, hc']
 
-
 lemma Rep.exists_mem_cycleSpace_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
     ∃ w ∈ v.cycleSpace, w.support = C := by
   obtain ⟨c, rfl, hc⟩ := v.exists_finsupp_of_isCircuit hC
@@ -72,6 +71,7 @@ lemma Rep.exists_mem_cycleSpace_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircui
 
 /- Every finite cyclic set is the support of a vector in the cycle space. -/
 -- I don't know if this is true for larger fields than GF(2).
+-- This is false for a GF(3)-representation of U2,4.
 -- lemma Rep.exists_eq_support_mem_cycleSpace_of_cyclic_of_finite (v : M.Rep 𝔽 W) (hX : M.Cyclic X)
 --     (hfin : X.Finite) : ∃ c, c ∈ v.cycleSpace ∧ X = support c := by
 --   obtain rfl | hne := X.eq_empty_or_nonempty
