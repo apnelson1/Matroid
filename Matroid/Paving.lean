@@ -199,7 +199,7 @@ lemma SparsePaving.isCircuit_of_dep_of_not_spanning (hM : M.SparsePaving) (hC : 
 
 lemma SparsePaving.isHyperplane_of_dep_of_not_spanning {H : Set α} (hM : M.SparsePaving)
     (hH : M.Dep H) (hHs : ¬ M.Spanning H) : M.IsHyperplane H := by
-  rw [← compl_isCocircuit_iff_isHyperplane, Cocircuit]
+  rw [← compl_isCocircuit_iff_isHyperplane, IsCocircuit]
   apply hM.dual.isCircuit_of_dep_of_not_spanning
   · rwa [← not_indep_iff, ← coindep_def, coindep_iff_compl_spanning,
       diff_diff_cancel_left hH.subset_ground]

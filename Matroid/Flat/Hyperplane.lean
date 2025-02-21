@@ -73,7 +73,7 @@ lemma isHyperplane_iff_maximal_nonspanning :
   rwa [spanning_iff, and_iff_left hSE] at hS
 
 @[simp] lemma compl_isCocircuit_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
-    M.Cocircuit (M.E \ H) ↔ M.IsHyperplane H := by
+    M.IsCocircuit (M.E \ H) ↔ M.IsHyperplane H := by
   rw [isCocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
 
   have h_image := image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)
@@ -95,14 +95,15 @@ lemma isHyperplane_iff_maximal_nonspanning :
   simpa [inter_eq_self_of_subset_right hYE]
 
 @[simp] lemma compl_isHyperplane_iff_isCocircuit (h : K ⊆ M.E := by aesop_mat) :
-    M.IsHyperplane (M.E \ K) ↔ M.Cocircuit K := by
+    M.IsHyperplane (M.E \ K) ↔ M.IsCocircuit K := by
   rw [← compl_isCocircuit_iff_isHyperplane, diff_diff_right, diff_self, empty_union, inter_comm,
     inter_eq_left.mpr h]
 
-lemma IsHyperplane.compl_isCocircuit (hH : M.IsHyperplane H) : M.Cocircuit (M.E \ H) :=
+lemma IsHyperplane.compl_isCocircuit (hH : M.IsHyperplane H) : M.IsCocircuit (M.E \ H) :=
   (compl_isCocircuit_iff_isHyperplane hH.subset_ground).mpr hH
 
-lemma Cocircuit.compl_isHyperplane {K : Set α} (hK : M.Cocircuit K) : M.IsHyperplane (M.E \ K) :=
+lemma IsCocircuit.compl_isHyperplane {K : Set α} (hK : M.IsCocircuit K) :
+    M.IsHyperplane (M.E \ K) :=
   (compl_isHyperplane_iff_isCocircuit hK.subset_ground).mpr hK
 
 lemma univ_not_isHyperplane (M : Matroid α) : ¬M.IsHyperplane univ :=

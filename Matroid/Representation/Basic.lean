@@ -35,21 +35,21 @@ lemma Rep.onIndep (v : M.Rep 𝔽 W) (hI : M.Indep I) : LinearIndepOn 𝔽 v I :
 lemma Rep.injOn_of_indep (v : M.Rep 𝔽 W) (hI : M.Indep I) : InjOn v I :=
   injOn_iff_injective.2 ((v.onIndep hI).injective)
 
-lemma Rep.indep_image (v : M.Rep 𝔽 W) (hI : M.Indep I) :
-    LinearIndependent 𝔽 ((↑) : (v '' I) → W) := by
-  rw [← linearIndependent_image <| v.injOn_of_indep hI]
-  exact v.onIndep hI
+-- lemma Rep.indep_image (v : M.Rep 𝔽 W) (hI : M.Indep I) :
+--     LinearIndependent 𝔽 ((↑) : (v '' I) → W) := by
+--   rw [← linearIndependent_image <| v.injOn_of_indep hI]
+--   exact v.onIndep hI
 
-lemma Rep.indep_iff_image_of_inj (v : M.Rep 𝔽 W) (h_inj : InjOn v I) :
-    M.Indep I ↔ LinearIndependent 𝔽 ((↑) : (v '' I) → W) := by
-  refine ⟨v.indep_image, fun hi ↦ ?_⟩
-  rw [v.indep_iff]
-  exact (linearIndependent_image h_inj (R := 𝔽)).2 hi
+-- lemma Rep.indep_iff_image_of_inj (v : M.Rep 𝔽 W) (h_inj : InjOn v I) :
+--     M.Indep I ↔ LinearIndependent 𝔽 ((↑) : (v '' I) → W) := by
+--   refine ⟨v.indep_image, fun hi ↦ ?_⟩
+--   rw [v.indep_iff]
+--   exact (linearIndependent_image h_inj (R := 𝔽)).2 hi
 
-lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
-    M.Indep I ↔ LinearIndependent 𝔽 ((↑) : (v '' I) → W) ∧ InjOn v I :=
-  ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
-    fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
+-- lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
+--     M.Indep I ↔ LinearIndependent 𝔽 ((↑) : (v '' I) → W) ∧ InjOn v I :=
+--   ⟨fun h ↦ ⟨v.indep_image h, v.injOn_of_indep h⟩,
+--     fun h ↦ (v.indep_iff_image_of_inj h.2).2 h.1⟩
 
 lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} : v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff]
@@ -110,9 +110,8 @@ lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' s
   · rw [v.mem_closure_iff, mem_inter_iff, and_iff_left he, mem_preimage, SetLike.mem_coe]
   simp [he, not_mem_subset (M.closure_subset_ground X) he]
 
-/-- A version of `Rep.mem_closure_iff` with supportedness in the equivalence rather than in the
-hypothesis-/
-lemma Rep.mem_closure_iff' (v : M.Rep 𝔽 W) : e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) ∧ e ∈ M.E := by
+lemma Rep.mem_closure_iff' (v : M.Rep 𝔽 W) :
+    e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) ∧ e ∈ M.E := by
   simp [v.closure_eq]
 
 lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W) (hXY : M.closure X ⊆ M.closure Y) :
@@ -140,6 +139,32 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
 
 @[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.closure ∅)) = ⊥ := by
   simp [v.span_closure_congr (M.closure_closure ∅)]
+
+/- If some linear combination of columns of `M.E` is zero, the nonzero indices form a cyclic set.-/
+-- lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽)
+-- (hcE : (c.support : Set α) ⊆ M.E)
+--     (hcv : c.linearCombination 𝔽 v = 0) : M.Cyclic c.support := by
+--   rw [cyclic_iff_forall_mem_closure_diff_singleton]
+--   intro e he
+--   rw [v.mem_closure_iff (hcE he), Finsupp.mem_span_image_iff_linearCombination]
+--   have hce : c e ≠ 0 := by simpa using he
+--   use - (c e)⁻¹ • (c - Finsupp.single e (c e))
+--   suffices ∀ (x : α), (¬c x = 0 → x = e) → c x - (Finsupp.single e (c e)) x = 0 by
+--     simpa [Finsupp.mem_supported', hcv, hce, ← smul_assoc]
+--   intro x
+--   obtain rfl | hne := eq_or_ne x e
+--   · simp
+--   simp +contextual [hne, Finsupp.single_apply_eq_zero]
+
+-- lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) {C : Finset α} (hC : M.IsCircuit C) :
+--     ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by
+--   have hC' := hC.not_indep
+--   rw [v.indep_iff] at hC'
+--   obtain ⟨c, h, hc, h0⟩ := linearDepOn_iff.1 hC'
+--   refine ⟨c, subset_antisymm (by simpa using h) fun e heC ↦ ?_, hc⟩
+--   contrapose! h0
+--   refine (linearIndepOn_iff.1 <| v.indep_iff.1 <| hC.diff_singleton_indep heC) _ ?_ hc
+--   simpa [Finsupp.mem_supported, subset_diff_singleton_iff, h0] using h
 
 lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
     M.Skew X Y ↔ Disjoint (span 𝔽 (v '' X)) (span 𝔽 (v '' Y)) := by

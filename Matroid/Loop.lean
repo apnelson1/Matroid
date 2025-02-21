@@ -317,7 +317,7 @@ lemma Indep.isNonloop_of_mem (hI : M.Indep I) (h : e ∈ I) : M.IsNonloop e := b
 lemma IsNonloop.exists_mem_isBase (he : M.IsNonloop e) : ∃ B, M.IsBase B ∧ e ∈ B := by
   simpa using (indep_singleton.2 he).exists_isBase_superset
 
-lemma Cocircuit.isNonloop_of_mem (hK : M.Cocircuit K) (he : e ∈ K) : M.IsNonloop e := by
+lemma IsCocircuit.isNonloop_of_mem (hK : M.IsCocircuit K) (he : e ∈ K) : M.IsNonloop e := by
   rw [← not_isLoop_iff (hK.subset_ground he), ← singleton_isCircuit]
   intro he'
   obtain ⟨f, ⟨rfl, -⟩, hfe⟩ := (he'.isCocircuit_inter_nontrivial hK ⟨e, by simp [he]⟩).exists_ne e
@@ -424,7 +424,7 @@ lemma isNonloop_iff_restrict_of_mem {R : Set α} (he : e ∈ R) :
     (uniqueBaseOn I E).IsNonloop e ↔ e ∈ I ∩ E := by
   rw [← indep_singleton, uniqueBaseOn_indep_iff', singleton_subset_iff]
 
-lemma IsNonloop.exists_mem_isCocircuit (he : M.IsNonloop e) : ∃ K, M.Cocircuit K ∧ e ∈ K := by
+lemma IsNonloop.exists_mem_isCocircuit (he : M.IsNonloop e) : ∃ K, M.IsCocircuit K ∧ e ∈ K := by
   obtain ⟨B, hB, heB⟩ := he.exists_mem_isBase
   exact ⟨_, fundCocircuit_isCocircuit heB hB, mem_fundCocircuit M e B⟩
 
@@ -585,10 +585,10 @@ lemma coloops_eq_dual_closure_empty : {e | M.Coloop e} = M✶.closure ∅ := rfl
 lemma Coloop.dual_isLoop (he : M.Coloop e) : M✶.IsLoop e :=
   he
 
-lemma Coloop.isCocircuit (he : M.Coloop e) : M.Cocircuit {e} :=
+lemma Coloop.isCocircuit (he : M.Coloop e) : M.IsCocircuit {e} :=
   IsLoop.isCircuit he
 
-@[simp] lemma singleton_isCocircuit : M.Cocircuit {e} ↔ M.Coloop e :=
+@[simp] lemma singleton_isCocircuit : M.IsCocircuit {e} ↔ M.Coloop e :=
   singleton_isCircuit
 
 lemma IsLoop.dual_coloop (he : M.IsLoop e) : M✶.Coloop e :=

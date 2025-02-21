@@ -308,6 +308,10 @@ lemma ground_isCircuit_iff [M.Nonempty] : M.IsCircuit M.E ↔ M = circuitOn M.E 
   rw [h]
   exact circuitOn_ground_isCircuit M.ground_nonempty
 
+lemma eq_circuitOn_of_ground_isCircuit (h : M.IsCircuit M.E) : ∃ E, M = circuitOn E :=
+  have : M.Nonempty := ⟨_, h.subset_ground h.nonempty.some_mem⟩
+  ⟨M.E, ground_isCircuit_iff.1 h⟩
+
 lemma isCircuit_iff_restr_eq_circuitOn (hCne : C.Nonempty) (hC : C ⊆ M.E := by aesop_mat) :
     M.IsCircuit C ↔ M ↾ C = circuitOn C := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

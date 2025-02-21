@@ -31,13 +31,21 @@ lemma Rep.spanning_iff (v : M.Rep 𝔽 W) {S : Set α} (hSE : S ⊆ M.E := by ae
 def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
 
 /-- Restrict a representation to the submodule spanned by its image -/
-def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
+@[simps] def Rep.restrictSpan (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
   to_fun := codRestrict v _ (fun x ↦ subset_span (mem_range_self _))
   indep_iff' := (by
     intro I
     rw [v.indep_iff]
     refine ⟨fun h ↦ LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coe_subtype]),
       fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩ )
+
+@[simp] lemma Rep.restrictSpan_apply (v : M.Rep 𝔽 W) (e : α) :
+    v.restrictSpan e = v e := rfl
+
+lemma Rep.restrictSpan_comp (v : M.Rep 𝔽 W) :
+    v.restrictSpan.comp' (Submodule.subtype _) (by simp) = v := by
+  ext
+  rfl
 
 lemma Rep.FullRank.span_range {v : M.Rep 𝔽 W} (h : v.FullRank) : span 𝔽 (range v) = ⊤ := by
   rwa [eq_top_iff]
@@ -53,16 +61,16 @@ lemma Rep.FullRank.spanning_iff (v : M.Rep 𝔽 W) (h : v.FullRank) {S : Set α}
 lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by
   rw [FullRank, eq_top_iff]
 
-lemma Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
-    (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by
+lemma Rep.restrictSpan_eq_inclusion (v : M.Rep 𝔽 W) :
+    (v.restrictSpan : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by
   ext; rfl
 
 @[simp] lemma Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
-    v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
+    v.restrictSpan e = Set.inclusion subset_span (rangeFactorization v e) := rfl
 
-lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank := by
+lemma Rep.restrictSpan_fullRank (v : M.Rep 𝔽 W) : v.restrictSpan.FullRank := by
   change _ ≤ span 𝔽 _
-  rw [restrict_span_eq_inclusion]
+  rw [restrictSpan_eq_inclusion]
   change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
   rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
@@ -87,7 +95,7 @@ noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
 /-- The natural representation with rows indexed by a base with `Finsupp` -/
 noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     M.Rep 𝔽 (B →₀ 𝔽) :=
-  v.restrict_span.compEquiv (v.restrict_span_fullRank.basis_of_isBase hB).repr
+  v.restrictSpan.compEquiv (v.restrictSpan_fullRank.basis_of_isBase hB).repr
 
 @[simp] lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
     (v.standardRep' hB) e e = 1 := by
@@ -102,7 +110,7 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (h
   rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), Finsupp.single_eq_of_ne hef]
 
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.IsBase B) : (v.standardRep' hB).FullRank :=
-  v.restrict_span_fullRank.compEquiv _
+  v.restrictSpan_fullRank.compEquiv _
 
 /-- The natural representation of a matroid with rows indexed by a base -/
 noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.Rep 𝔽 (B → 𝔽) :=
@@ -127,7 +135,17 @@ lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase 
   rw [v.standardRep_eq_mapEquiv]
   exact (v.standardRep_fullRank' hB).compEquiv _
 
--- IsLoopy matroids are trivially representable over every field.
+lemma exists_eq_comp_standardRep' {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [Module 𝔽 W]
+    (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    ∃ (φ : (B →₀ 𝔽) →ₗ[𝔽] W) (hφ : LinearMap.ker φ = ⊥), v = (v.standardRep' hB).comp' φ hφ := by
+  let ψ := (v.restrictSpan_fullRank.basis_of_isBase hB).repr
+  let r := (span 𝔽 (range v)).subtype
+  refine ⟨r.comp ψ.symm.toLinearMap, ?_, ?_⟩
+  · rw [LinearMap.ker_comp, ker_subtype, comap_bot, LinearEquiv.ker]
+  have h2 := v.restrictSpan_comp.symm
+  rwa [← v.restrictSpan.compEquiv_compEquiv_symm ψ] at h2
+
+-- Loopy matroids are trivially representable over every field.
 def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
   to_fun := 0
   indep_iff' := by simp
@@ -325,7 +343,7 @@ lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv :
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
 lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
-    M.Cocircuit (v · e).support := by
+    M.IsCocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
     rw [h_eq, compl_isCocircuit_iff_isHyperplane]
     exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
