@@ -238,6 +238,8 @@ theorem linearIndepOn_zero_iff [Nontrivial R] : LinearIndepOn R (0 : ι → M) s
   convert linearIndependent_zero_iff (ι := s) (R := R) (M := M)
   simp
 
+
+
 theorem linearIndepOn_insert_iff {a : ι} {f : ι → V} :
     LinearIndepOn K f (insert a s) ↔ LinearIndepOn K f s ∧ (f a ∈ span K (f '' s) → a ∈ s) := by
   by_cases has : a ∈ s
@@ -258,6 +260,10 @@ theorem LinearIndepOn.not_mem_span_iff {a : ι} {f : ι → V} (h : LinearIndepO
   · simp only [has, not_true_eq_false, insert_eq_of_mem, false_and, iff_false, not_not]
     exact subset_span <| mem_image_of_mem f has
   simp [linearIndepOn_insert_iff, has, h]
+
+theorem LinearIndepOn.mem_span_iff {a : ι} {f : ι → V} (h : LinearIndepOn K f s) :
+    f a ∈ Submodule.span K (f '' s) ↔ (LinearIndepOn K f (insert a s) → a ∈ s) := by
+  rw [← not_iff_not, h.not_mem_span_iff, ← not_iff_not, not_and, not_not, not_imp_not]
 
 theorem LinearIndepOn.not_mem_span_iff_id {s : Set V} {a : V} (h : LinearIndepOn K id s) :
     a ∉ Submodule.span K s ↔ a ∉ s ∧ LinearIndepOn K id (insert a s) := by
