@@ -14,6 +14,9 @@ This is the right null space of a matrix representation of `M`. -/
 noncomputable def Rep.cycleSpace (v : M.Rep 𝔽 W) :=
     (LinearMap.ker (Finsupp.linearCombination 𝔽 v) ⊓ Finsupp.supported 𝔽 𝔽 M.E)
 
+noncomputable def Rep.cycleSpace' (v : M.Rep 𝔽 W) :=
+    (LinearMap.ker (Finsupp.linearCombinationOn _ _ 𝔽 v M.E))
+
 lemma Rep.supported_finiteDimensional [M.Finite] (_ : M.Rep 𝔽 W) :
     FiniteDimensional 𝔽 <| Finsupp.supported 𝔽 𝔽 M.E :=
   have := M.ground_finite.to_subtype
@@ -28,14 +31,26 @@ lemma Rep.mem_cycleSpace_iff (v : M.Rep 𝔽 W) :
     c ∈ v.cycleSpace ↔ c.linearCombination 𝔽 v = 0 ∧ support c ⊆ M.E := by
   simp [Rep.cycleSpace, Finsupp.mem_supported]
 
+lemma Rep.mem_cycleSpace'_iff (v : M.Rep 𝔽 W) {c : Finsupp.supported 𝔽 𝔽 M.E} :
+    c ∈ v.cycleSpace' ↔ c.1.linearCombination 𝔽 v = 0 := by
+  simp [cycleSpace', Finsupp.linearCombinationOn, LinearMap.codRestrict]
+
 lemma Rep.support_subset_ground_of_mem_cycleSpace (v : M.Rep 𝔽 W) (hc : c ∈ v.cycleSpace) :
     support c ⊆ M.E :=
   (v.mem_cycleSpace_iff.1 hc).2
 
 @[simp]
+lemma Rep.cycleSpace'_comp (v : M.Rep 𝔽 W) (φ : W →ₗ[𝔽] W') (hφ) :
+    (v.comp φ hφ).cycleSpace' = v.cycleSpace' := by
+  simp_rw [disjoint_def, ← image_univ, Finsupp.mem_span_image_iff_linearCombination] at hφ
+  simp_rw [SetLike.ext_iff, mem_cycleSpace'_iff, comp_coeFun,
+    ← LinearMap.map_finsupp_linearCombination, ← LinearMap.mem_ker (f := φ)]
+  exact fun x ↦ ⟨fun h ↦ hφ _ ⟨_, by simp, rfl⟩ h, fun h ↦ by simp [h]⟩
+
+@[simp]
 lemma Rep.cycleSpace_comp (v : M.Rep 𝔽 W) (φ : W →ₗ[𝔽] W') (hφ) :
     (v.comp φ hφ).cycleSpace = v.cycleSpace := by
-  rw [disjoint_def] at hφ
+  simp_rw [disjoint_def] at hφ
   ext x
   simp only [mem_cycleSpace_iff, comp_coeFun, Finsupp.fun_support_eq, and_congr_left_iff]
   rw [← LinearMap.map_finsupp_linearCombination, ← LinearMap.mem_ker]
@@ -182,6 +197,11 @@ lemma Rep.mem_cocycleSpace_iff (v : M.Rep 𝔽 W) {x : α → 𝔽} :
   · rw [mem_cocycleSpace_iff_of_support v hsupp, and_iff_left hsupp]
   simp [Rep.cocycleSpace, hsupp]
 
+lemma Rep.row_mem_cocycleSpace (v : M.Rep 𝔽 (β → 𝔽)) (b : β) : (v · b) ∈ v.cocycleSpace := by
+  refine v.mem_cocycleSpace_iff.2 ⟨fun y hy ↦ ?_, ?_⟩
+  · simpa [Finsupp.linearCombination, Finsupp.sum] using congr_fun (v.mem_cycleSpace_iff.1 hy).1 b
+  exact subset_trans (by simp +contextual [not_imp_not]) v.support_subset_ground
+
 lemma Rep.mem_cycleSpace_iff_forall_of_support (v : M.Rep 𝔽 W) {y : α →₀ 𝔽} (hy : support y ⊆ M.E) :
     y ∈ v.cycleSpace ↔ ∀ x ∈ v.cocycleSpace, Finsupp.linearCombination 𝔽 x y = 0 := by
   obtain ⟨B, hB⟩ := M.exists_isBase
@@ -202,3 +222,9 @@ lemma Rep.mem_cycleSpace_iff_forall (v : M.Rep 𝔽 W) {y : α →₀ 𝔽} :
   by_cases hsupp : support y ⊆ M.E
   · rw [mem_cycleSpace_iff_forall_of_support _ hsupp, and_iff_left hsupp]
   simp only [mem_cycleSpace_iff, and_congr_left_iff, hsupp, false_imp_iff]
+
+lemma cocycleSpace_eq_span [Fintype β] (v : M.Rep 𝔽 (β → 𝔽)) :
+    v.cocycleSpace = span 𝔽 (range fun b ↦ (v · b)) := by
+  simp only [le_antisymm_iff, span_le, range_subset_iff, SetLike.mem_coe, and_iff_left
+    (fun y ↦ v.row_mem_cocycleSpace y)]
+  refine fun x hx ↦ ?_
