@@ -53,7 +53,8 @@ lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Fin
 variable [Finitary M] {C : Set α}
 
 /-- The Binary matroid that should be `M`. -/
-def IsBase.BinaryProxy (hB : M.IsBase B) := (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
+def IsBase.BinaryProxy (hB : M.IsBase B) :=
+  (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
 
 noncomputable def IsBase.binaryProxyRep (hB : M.IsBase B) :
     (hB.BinaryProxy.Rep (ZMod 2) (B →₀ ZMod 2)) :=
@@ -65,7 +66,7 @@ instance {hB : M.IsBase B} : hB.BinaryProxy.Finitary :=
 lemma IsBase.binaryProxyRep_isStandard (hB : M.IsBase B) : hB.binaryProxyRep.IsStandard := by
   apply hB.fundCoord_isStandard
 
-lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
+lemma CrossingBinary.eq_binaryProxy (hM : M.CrossingBinary) (hB : M.IsBase B) :
     M = hB.BinaryProxy := by
   refine Eq.symm <| Quotient.eq_of_isBase_indep ?_ hB hB.fundCoord_isBase.indep
   refine quotient_of_forall_cyclic_of_isCircuit rfl fun C hC ↦ ?_
@@ -81,11 +82,14 @@ lemma Binary.eq_binaryProxy (hM : M.Binary) (hB : M.IsBase B) :
   intro hxC
   rw [repOfFun_coeFun_eq, indicator_of_mem (hC.subset_ground hxC)]
 
+/-- Tutte's excluded minor characterization of the binary matroids :
+A matroid has a `GF(2)`-representation iff it has no `U₂,₄`-minor.
+This version applies to all finitary matroids. -/
 theorem representable_iff_no_U24_isMinor : M.Representable (ZMod 2) ↔ M.NoUniformMinor 2 4 := by
   refine ⟨fun h ↦ by simpa using h.noUniformMinor, fun h ↦ ?_⟩
-  rw [← binary_iff_no_U24_isMinor] at h
+  rw [← crossingBinary_iff_no_U24_isMinor] at h
   obtain ⟨B, hB⟩ := M.exists_isBase
   exact (hB.binaryProxyRep.ofEq (h.eq_binaryProxy hB).symm).representable
 
-theorem binary_iff_representable : M.Binary ↔ M.Representable (ZMod 2) := by
-  rw [binary_iff_no_U24_isMinor, representable_iff_no_U24_isMinor]
+theorem crossingBinary_iff_representable : M.CrossingBinary ↔ M.Representable (ZMod 2) := by
+  rw [crossingBinary_iff_no_U24_isMinor, representable_iff_no_U24_isMinor]

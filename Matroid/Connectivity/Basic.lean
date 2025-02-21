@@ -70,12 +70,12 @@ lemma ConnectedTo.of_dual (h : M✶.ConnectedTo e f) : M.ConnectedTo e f := by
 @[simp] lemma connectedTo_dual_iff : M✶.ConnectedTo e f ↔ M.ConnectedTo e f :=
   ⟨ConnectedTo.of_dual, ConnectedTo.to_dual⟩
 
-lemma Cocircuit.mem_connectedTo_mem (hK : M.Cocircuit K) (heK : e ∈ K) (hfK : f ∈ K) :
+lemma IsCocircuit.mem_connectedTo_mem (hK : M.IsCocircuit K) (heK : e ∈ K) (hfK : f ∈ K) :
     M.ConnectedTo e f :=
   (hK.isCircuit.mem_connectedTo_mem heK hfK).of_dual
 
 lemma ConnectedTo.exists_isCocircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
-    ∃ K, M.Cocircuit K ∧ e ∈ K ∧ f ∈ K :=
+    ∃ K, M.IsCocircuit K ∧ e ∈ K ∧ f ∈ K :=
   h.to_dual.exists_isCircuit_of_ne hne
 
 lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).ConnectedTo e f) :

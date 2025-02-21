@@ -475,7 +475,7 @@ lemma Rep.span_range_eq_span_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
 def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
 
 /-- Restrict a representation to the submodule spanned by its image -/
-def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
+def Rep.restrictSpan (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
   to_fun := codRestrict v _ (fun x ↦ subset_span (mem_range_self _))
   valid' := (by
     intro I
@@ -490,10 +490,10 @@ lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) =
   rw [FullRank, eq_top_iff]
 
 lemma Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
-  (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
+  (v.restrictSpan : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
 
 @[simp] lemma Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
-  v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
+  v.restrictSpan e = Set.inclusion subset_span (rangeFactorization v e) := rfl
 
 lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank := by
   change _ ≤ span 𝔽 _

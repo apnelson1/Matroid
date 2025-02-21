@@ -185,11 +185,11 @@ lemma IsCircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCircuit C)
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]
 
-lemma Cocircuit.isTutteSep {C : Set α} (hC : M.Cocircuit C) (hfin : C.Finite)
+lemma IsCocircuit.isTutteSep {C : Set α} (hC : M.IsCocircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
   simpa [partition_dual] using hC.isCircuit.isTutteSep hfin hcard
 
-lemma Cocircuit.isTutteSep_finset {C : Finset α} (hC : M.Cocircuit C)
+lemma IsCocircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCocircuit C)
     (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]

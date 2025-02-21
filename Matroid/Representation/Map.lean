@@ -27,11 +27,30 @@ def Rep.compEquiv (v : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') : M.Rep 𝔽 W' :=
 @[simp] lemma Rep.comp_apply (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (h_inj) (e : α) :
     (v.comp ψ h_inj) e = ψ (v e) := rfl
 
+@[simp] lemma Rep.comp_coeFun (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (h_inj) :
+    (v.comp ψ h_inj) = ψ ∘ v := rfl
+
 @[simp] lemma Rep.comp'_apply (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (hψ : LinearMap.ker ψ = ⊥) (e : α) :
     (v.comp' ψ hψ) e = ψ (v e) := rfl
 
+@[simp] lemma Rep.comp'_coeFun (v : M.Rep 𝔽 W) (ψ : W →ₗ[𝔽] W') (h_inj) :
+    (v.comp' ψ h_inj) = ψ ∘ v := rfl
+
 @[simp] lemma Rep.compEquiv_apply (v : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') (e : α) :
     (v.compEquiv ψ) e = ψ (v e) := rfl
+
+@[simp] lemma Rep.compEquiv_coeFun (v : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') :
+    v.compEquiv ψ = ψ ∘ v := rfl
+
+@[simp] lemma Rep.compEquiv_compEquiv_symm (v : M.Rep 𝔽 W) (ψ : W ≃ₗ[𝔽] W') :
+    (v.compEquiv ψ).compEquiv ψ.symm = v := by
+  ext
+  simp
+
+@[simp] lemma Rep.compEquiv_symm_compEquiv (v : M.Rep 𝔽 W') (ψ : W ≃ₗ[𝔽] W') :
+    (v.compEquiv ψ.symm).compEquiv ψ = v := by
+  ext
+  simp
 
 /--  Compose a representation with a module equality -/
 def Rep.subtype_ofEq {W₁ W₂ : Submodule 𝔽 W} (v : M.Rep 𝔽 W₁) (h : W₁ = W₂) : M.Rep 𝔽 W₂ :=
@@ -115,7 +134,7 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
     Matroid W :=
   IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
   (E := univ)
-  (Indep := fun I ↦ LinearIndependent 𝔽 ((↑) : I → W))
+  (Indep := fun I ↦ LinearIndepOn 𝔽 id I)
   (indep_empty := linearIndependent_empty _ _)
   (indep_subset := fun I J hJ hIJ ↦ hJ.mono hIJ)
   (indep_aug := by
@@ -132,8 +151,8 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
     obtain ⟨a, haJ, ha⟩ := not_subset.1 hssu
     refine ⟨a, haJ, not_mem_subset subset_span ha, ?_⟩
     simp only [SetLike.mem_coe] at ha
-    simpa [linearIndependent_insert (not_mem_subset subset_span ha), ha])
-  (indep_compact := linearIndependent_of_finite)
+    simpa [linearIndepOn_insert (not_mem_subset subset_span ha), ha])
+  (indep_compact := linearIndepOn_of_finite)
   (subset_ground := by simp)
 
 @[simps!]
@@ -213,8 +232,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
   rw [Matroid.ofFun, comapOn_indep_iff]
   by_cases hinj : InjOn v I
   · simp only [Module.matroid, IndepMatroid.matroid_Indep, and_iff_right hinj,
-    IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndependent_image hinj, and_congr_left_iff]
-    exact fun _ ↦ Iff.rfl
+    IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndepOn_iff_image hinj, and_congr_left_iff]
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
 @[simp] lemma Rep.ofFun_self (v : M.Rep 𝔽 W) : Matroid.ofFun 𝔽 M.E v = M :=
