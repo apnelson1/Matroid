@@ -117,10 +117,8 @@ theorem LinearIndepOn.union {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [
   have hdj := (disjoint_of_disjoint_span₀ hdj hs.zero_not_mem_image).of_image
   rw [LinearIndepOn]
   convert (hli.comp _ (Equiv.Set.union hdj).injective) with ⟨x, hx | hx⟩
-  · rw [comp_apply, Equiv.Set.union_apply_left _ hx]
-    simp
-  rw [comp_apply, Equiv.Set.union_apply_right _ hx]
-  simp
+  · rw [comp_apply, Equiv.Set.union_apply_left _ hx, Sum.elim_inl]
+  rw [comp_apply, Equiv.Set.union_apply_right _ hx, Sum.elim_inr]
 
 theorem linearIndepOn_union_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hdj : Disjoint s t) :
@@ -194,7 +192,7 @@ theorem LinearIndepOn.exists_maximal (hli : LinearIndepOn R v s₀) (hs₀t : s�
       fun _ hs ↦ subset_sUnion_of_mem hs⟩) s₀ ⟨hs₀t, hli⟩
 
 noncomputable def LinearIndepOn.extension (hli : LinearIndepOn R v s) (hst : s ⊆ t) : Set ι :=
-    (hli.exists_maximal hst).choose
+  (hli.exists_maximal hst).choose
 
 lemma LinearIndepOn.extension_maximal (hli : LinearIndepOn R v s) (hst : s ⊆ t) :
     Maximal (fun r ↦ r ⊆ t ∧ LinearIndepOn R v r) (hli.extension hst) :=
