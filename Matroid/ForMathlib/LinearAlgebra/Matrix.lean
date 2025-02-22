@@ -5,29 +5,47 @@ namespace Matrix
 
 section Cardinal
 
+
+
 open Set Submodule Cardinal
+
+@[simp]
+lemma Set.toENat_cardinalMk {α : Type*} (s : Set α) : (#s).toENat = s.encard := rfl
+
+@[simp]
+lemma Set.cast_fintype_card {α : Type*} (s : Set α) [Fintype s] :
+    (Fintype.card s : ℕ∞) = s.encard := by
+  simp [encard_eq_coe_toFinset_card]
 
 universe u
 
-variable {m m₁ m₂ n n₁ n₂ R : Type*} {A A₁ A₂ : Matrix m n R} {s : Set m} {t : Set n}
+variable {m n R : Type*} {A A₁ A₂ : Matrix m n R} {s : Set m} {t : Set n}
 
+/-- The rank of a matrix, defined as the dimension of its column space.  -/
 noncomputable def cRank [Semiring R] (A : Matrix m n R) : Cardinal :=
   Module.rank R (Submodule.span R (Set.range Aᵀ))
 
-noncomputable def rank' [Semiring R] (A : Matrix m n R) : ℕ := A.cRank.toNat
+/-- The rank of a matrix, defined as the dimension of its column space, as a term in `ℕ∞`. -/
+noncomputable def eRank [Semiring R] (A : Matrix m n R) : ℕ∞ := A.cRank.toENat
 
-lemma rank'_eq_rank [CommRing R] [Fintype n] (A : Matrix m n R) : A.rank' = A.rank := by
-  rw [rank', cRank, rank, ← Module.finrank, @range_mulVecLin]
+-- This means we could redefine mathlib's `Matrix.rank` as `A.eRank.toNat` to not need finiteness.
+lemma eRank_toNat [CommRing R] [Fintype n] (A : Matrix m n R) : A.eRank.toNat = A.rank := by
+  rw [eRank, cRank, rank, range_mulVecLin, toNat_toENat, Module.finrank]
 
-def IsRowBasis (R : Type*) [Semiring R] (A : Matrix m n R) (s : Set m) :=
-    Maximal (LinearIndepOn R A ·) s
+/-- For `A : Matrix m n R` and `s : Set m`,
+`A.IsRowBasis R s` means that `s` indexes an `R`-basis for the row space of `A`. -/
+def IsRowBasis (R : Type*) [Semiring R] (A : Matrix m n R) (s : Set m) : Prop :=
+  Maximal (LinearIndepOn R A ·) s
+
+/-- For `A : Matrix m n R` and `t : Set n`,
+`A.IsColBasis R t` means that `t` indexes an `R`-basis for the column space of `A`. -/
+def IsColBasis (R : Type*) [Semiring R] (A : Matrix m n R) (t : Set n) : Prop :=
+  Aᵀ.IsRowBasis R t
 
 lemma exists_isRowBasis (R : Type*) [DivisionRing R] (A : Matrix m n R) :
     ∃ s, A.IsRowBasis R s := by
   obtain ⟨s, -, hs⟩ := (linearIndepOn_empty R A).exists_maximal (subset_univ _)
   exact ⟨s, by simpa using hs⟩
-
-def IsColBasis (R : Type*) [Semiring R] (A : Matrix m n R) := Aᵀ.IsRowBasis R
 
 lemma IsRowBasis.isColBasis_transpose [Semiring R] (h : A.IsRowBasis R s) : Aᵀ.IsColBasis R s :=
   h
@@ -38,15 +56,7 @@ lemma exists_isColBasis (R : Type*) [DivisionRing R] (A : Matrix m n R) : ∃ s,
 lemma IsColBasis.isRowBasis_transpose [Semiring R] (h : A.IsColBasis R t) : Aᵀ.IsRowBasis R t :=
   h
 
-lemma IsRowBasis.isRowBasis_univ_submatrix [Semiring R] (h : A.IsRowBasis R s) :
-    (A.submatrix (fun x : s ↦ x) id).IsRowBasis R univ := by
-  sorry
-
-lemma IsColBasis.isColBasis_univ_submatrix [Semiring R] (h : A.IsColBasis R t) :
-    (A.submatrix id (fun x : t ↦ x)).IsColBasis R univ := by
-  sorry
-
-lemma IsRowBasis.span_eq [Field R] (hs : A.IsRowBasis R s) :
+lemma IsRowBasis.span_eq [DivisionRing R] (hs : A.IsRowBasis R s) :
     span R (A '' s) = span R (range A) := by
   refine span_eq_span (span_le.1 <| span_mono <| image_subset_range ..) ?_
   rintro _ ⟨i, rfl⟩
@@ -67,28 +77,35 @@ lemma range_submatrix_right {α l : Type*} (A : Matrix m n α) (c_reindex : l �
   simp_all only [mem_range, mem_image, exists_exists_eq_and]
   rfl
 
-lemma IsRowBasis.span_submatrix_eq [Field R] (hs : A.IsRowBasis R s) :
+lemma IsRowBasis.span_submatrix_eq [DivisionRing R] (hs : A.IsRowBasis R s) :
     span R (range (A.submatrix (fun x : s ↦ x) id)) = span R (range A) := by
   simp [← hs.span_eq]
 
-lemma IsColBasis.span_submatrix_eq [Field R] (hs : A.IsColBasis R t) :
+lemma IsColBasis.span_submatrix_eq [DivisionRing R] (hs : A.IsColBasis R t) :
     span R (range (A.submatrix id (fun x : t ↦ x))ᵀ) = span R (range Aᵀ) := by
   simp [← hs.span_eq]
 
-noncomputable def IsRowBasis.basis [Field R] (hs : A.IsRowBasis R s) :
+/-- If `A.IsRowBasis R s`, then `s` naturally indexes an `R`-`Basis` for the row space of `A`. -/
+noncomputable def IsRowBasis.basis [DivisionRing R] (hs : A.IsRowBasis R s) :
     Basis s R <| span R (range A) :=
-  (Basis.span hs.prop.linearIndependent).map <| LinearEquiv.ofEq _ _ <|
-    by rw [← image_eq_range, hs.span_eq]
+  (Basis.span hs.prop.linearIndependent).map <|
+    LinearEquiv.ofEq _ _ <| by rw [← image_eq_range, hs.span_eq]
 
-lemma IsRowBasis.ncard_eq [Field R] (h : A.IsRowBasis R s) : s.ncard = Aᵀ.rank' := by
-  simpa using congr_arg Cardinal.toNat h.basis.mk_eq_rank
+/-- If `A.IsColBasis R t`, then `t` naturally indexes an `R`-`Basis` for the column space of `A`. -/
+noncomputable def IsColBasis.basis [DivisionRing R] (ht : A.IsColBasis R t) :
+    Basis t R <| span R (range Aᵀ) :=
+  ht.isRowBasis_transpose.basis
 
-lemma IsColBasis.ncard_eq [Field R] (h : A.IsColBasis R t) : t.ncard = A.rank' := by
-  simpa using congr_arg Cardinal.toNat h.basis.mk_eq_rank
+-- lemma IsColBasis.ncard_eq [Field R] (h : A.IsColBasis R t) : t.ncard = A.rank' := by
+--   simpa using congr_arg Cardinal.toNat h.basis.mk_eq_rank
+
+lemma IsColBasis.encard_eq [DivisionRing R] (h : A.IsColBasis R t) : t.encard = A.eRank := by
+  simpa using congr_arg Cardinal.toENat h.basis.mk_eq_rank
 
 theorem linearIndepOn_col_le_of_span_row_le {m₁ m₂ : Type*} [CommRing R] {A₁ : Matrix m₁ n R}
     {A₂ : Matrix m₂ n R} (h : span R (range A₁) ≤ span R (range A₂)) :
     LinearIndepOn R A₁ᵀ ≤ LinearIndepOn R A₂ᵀ := by
+  -- Perhaps this proof can be simplified by not fully unfolding `LinearCombination` and `sum`.
   refine fun t ht ↦ linearIndepOn_iff.2 fun l hl hl0 ↦ linearIndepOn_iff.1 ht l hl ?_
   ext i
   have hi : A₁ i ∈ span R (range A₂) := h <| subset_span <| mem_range_self ..
@@ -107,18 +124,19 @@ theorem linearIndepOn_row_le_of_span_col_le {n₁ n₂ : Type*} [CommRing R] {A�
     LinearIndepOn R A₁ ≤ LinearIndepOn R A₂ := by
   simpa using linearIndepOn_col_le_of_span_row_le h
 
-lemma linearIndepOn_col_eq_of_span_row_eq [CommRing R] {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
-    (h : span R (range A₁) = span R (range A₂)) : LinearIndepOn R A₁ᵀ = LinearIndepOn R A₂ᵀ :=
+lemma linearIndepOn_col_eq_of_span_row_eq {m₁ m₂ : Type*} [CommRing R] {A₁ : Matrix m₁ n R}
+    {A₂ : Matrix m₂ n R} (h : span R (range A₁) = span R (range A₂)) :
+    LinearIndepOn R A₁ᵀ = LinearIndepOn R A₂ᵀ :=
   (linearIndepOn_col_le_of_span_row_le h.le).antisymm
     (linearIndepOn_col_le_of_span_row_le h.symm.le)
 
-theorem linearIndepOn_row_eq_of_span_col_eq {n₁ n₂ : Type*} [CommRing R] {A₁ : Matrix m n₁ R}
+lemma linearIndepOn_row_eq_of_span_col_eq {n₁ n₂ : Type*} [CommRing R] {A₁ : Matrix m n₁ R}
     {A₂ : Matrix m n₂ R} (h : span R (range A₁ᵀ) = span R (range A₂ᵀ)) :
     LinearIndepOn R A₁ = LinearIndepOn R A₂ := by
   simpa using linearIndepOn_col_eq_of_span_row_eq h
 
-lemma isColBasis_iff_of_span_row_eq [CommRing R] {A₁ : Matrix m₁ n R} {A₂ : Matrix m₂ n R}
-    (h : span R (range A₁) = span R (range A₂)) (t : Set n) :
+lemma isColBasis_iff_of_span_row_eq {m₁ m₂ : Type*} [CommRing R] {A₁ : Matrix m₁ n R}
+    {A₂ : Matrix m₂ n R} (h : span R (range A₁) = span R (range A₂)) (t : Set n) :
     A₁.IsColBasis R t ↔ A₂.IsColBasis R t := by
   rw [IsColBasis, IsRowBasis, linearIndepOn_col_eq_of_span_row_eq h, IsColBasis, IsRowBasis]
 
@@ -130,44 +148,48 @@ lemma IsRowBasis.submatrix_isRowBasis [Field R] (hs : A.IsRowBasis R s) (ht : A.
     (A.submatrix id (fun x : t ↦ x)).IsRowBasis R s :=
   IsColBasis.submatrix_isColBasis (A := Aᵀ) hs ht
 
--- lemma IsRowBasis.submatrix_row_linearIndependent [Field R] (hs : A.IsRowBasis R s) :
---     LinearIndependent R (A.submatrix (fun x : s ↦ x) id) :=
---   hs.prop.linearIndependent
+/-- An auxiliary lemma used to prove `IsRowBasis.encard_eq`.
+It is difficult to make this as a claim within the proof itself,
+due to universe issues when swapping row/column types.  -/
+private lemma basis_encard_le_aux [Field R] (hs : A.IsRowBasis R s)
+    (ht : A.IsColBasis R t) : s.encard ≤ t.encard := by
+  wlog hfin : t.Finite
+  · simp [Infinite.encard_eq hfin]
+  have := hfin.fintype
+  convert OrderHomClass.mono toENat <|
+    (hs.submatrix_isRowBasis ht).prop.linearIndependent.cardinal_lift_le_rank <;>
+  simp
 
+/-- The `encard` of a row basis is equal to the rank of the column space.
+Unlike the column basis case, this requires a `Field` assumption.
+(One can also prove `s.encard = Aᵀ.eRank` with `h.IsColBasis.encard_eq`,
+and this just needs `DivisionRing`. ) -/
+lemma IsRowBasis.encard_eq [Field R] (h : A.IsRowBasis R s) : s.encard = A.eRank := by
+  obtain ⟨t, ht⟩ := A.exists_isColBasis
+  rw [← ht.encard_eq]
+  exact (basis_encard_le_aux h ht).antisymm (basis_encard_le_aux ht.isRowBasis_transpose h)
+
+/-- The `eRank` of a (possibly infinite) matrix over a field is the `eRank` of its transpose.
+This is not true for `cRank`, because of (say) the matrix `id : Matrix (ℕ → ℚ) ℕ ℚ`,
+which has countable-dimensional column space and uncountable-dimensional row space. -/
+lemma eRank_transpose [Field R] (A : Matrix m n R) : Aᵀ.eRank = A.eRank := by
+  obtain ⟨t, ht⟩ := A.exists_isColBasis
+  rw [← ht.isRowBasis_transpose.encard_eq, ht.encard_eq]
+
+/-- A matrix with finite linearly independent row set has full column space. -/
 lemma span_col_eq_top_of_linearIndependent_row [Fintype m] [Field R] (h : LinearIndependent R A) :
     span R (range Aᵀ) = ⊤ := by
-  classical
-  obtain ⟨t, ht⟩ := A.exists_isColBasis
-  have htfin := Finite.fintype ht.prop.linearIndependent.finite
-  have hs : A.IsRowBasis R univ := by simpa +contextual [IsRowBasis, maximal_subset_iff]
-  suffices h' : Module.finrank R (span R (range (A.submatrix id (fun x : t ↦ x))ᵀ))
-    = Module.finrank R (m → R) by
-    rw [← top_le_iff, ← eq_top_of_finrank_eq h']
-    exact span_mono <| by simp
-  rw [← rank_eq_finrank_span_cols, rank_eq_finrank_span_row,
-    finrank_span_eq_card (by simpa using (hs.submatrix_isRowBasis ht).prop),
-    Module.finrank_fintype_fun_eq_card]
+  apply eq_top_of_finrank_eq
+  rw [Module.finrank, ← Matrix.cRank, ← Cardinal.toNat_toENat, ← Matrix.eRank, ← eRank_transpose,
+    Matrix.eRank, Matrix.cRank, transpose_transpose, toNat_toENat,
+    show Module.rank R ↥(span R (range A)) = ↑(Fintype.card m) by
+    simpa using (Basis.span h).mk_eq_rank.symm]
+  simp
 
+/-- A matrix with finite linearly independent column set has full row space. -/
 lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : LinearIndependent R Aᵀ) :
     span R (range A) = ⊤ := by
   rw [← Aᵀ.span_col_eq_top_of_linearIndependent_row h, transpose_transpose]
-
-
-lemma rank'_transpose [Field R] (A : Matrix m n R) : Aᵀ.rank' = A.rank' := by
-  classical
-  obtain ⟨s, hs⟩ := A.exists_isRowBasis
-  obtain ⟨t, ht⟩ := A.exists_isColBasis
-  set A' := A.submatrix (fun x : s ↦ x) (fun x : t ↦ x)
-  have hcol : A'.IsColBasis R univ :=
-    ht.isColBasis_univ_submatrix.submatrix_isColBasis (hs.submatrix_isRowBasis ht)
-  have hrow : A'.IsRowBasis R univ :=
-    hs.isRowBasis_univ_submatrix.submatrix_isRowBasis (ht.submatrix_isColBasis hs)
-
-  rw [← hs.ncard_eq, ← ht.ncard_eq, show t.ncard = A'.rank' by simpa using hcol.ncard_eq,
-    show s.ncard = A'ᵀ.rank' by simpa using hrow.ncard_eq]
-  have := hcol.ncard_eq
-  simp at this
-
 
 end Cardinal
 
