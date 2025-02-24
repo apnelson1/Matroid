@@ -2,6 +2,7 @@ import Matroid.ForMathlib.Card
 import Mathlib.Data.Matroid.Circuit
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Set
+import Mathlib.Tactic.TFAE
 
 /-!
   A `IsCircuit` of a matroid is a minimal dependent set.
@@ -33,7 +34,6 @@ lemma exists_isCircuit [RankPos M✶] : ∃ C, M.IsCircuit C :=
 
 lemma rk_Pos_iff_exists_isCocircuit : M.RankPos ↔ ∃ K, M.IsCocircuit K := by
   rw [← dual_dual M, dual_rankPos_iff_exists_isCircuit, dual_dual M]
-
 
 lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsBasis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.IsBasis J₀ (M.closure I₀)) : M.IsBasis ((I \ I₀) ∪ J₀) X := by
@@ -68,18 +68,23 @@ lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsB
 
 end Dual
 
-
 lemma IsCocircuit.finite [Finitary (M✶)] (hK : M.IsCocircuit K) : K.Finite :=
   IsCircuit.finite hK
-
-
 
 section Cyclic
 
 variable {A B : Set α}
 
-/-- A cyclic set is a (possibly empty) union of circuits -/
-def Cyclic (M : Matroid α) (A : Set α) := ∃ Cs : Set (Set α), A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C
+lemma IsCircuit.exists_mem_of_mem_isCocircuit (hC : M.IsCircuit C) (hK : M.IsCocircuit K)
+    (heC : e ∈ C) (heK : e ∈ K) : ∃ f, f ∈ C ∧ f ∈ K ∧ f ≠ e := by
+  obtain ⟨f, hf, hfe⟩ := (hC.isCocircuit_inter_nontrivial hK ⟨e, heC, heK⟩).exists_ne e
+  exact ⟨f, hf.1, hf.2, hfe⟩
+
+/-- A cyclic set is a (possibly empty) union of circuits.
+This is the same as a complement of a flat in the dual matroid,
+and a number of other conditions; see `Matroid.cyclic_tfae`. -/
+def Cyclic (M : Matroid α) (A : Set α) : Prop :=
+  ∃ Cs : Set (Set α), A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C
 
 lemma Cyclic.exists (hA : M.Cyclic A) : ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C := hA
 
@@ -113,13 +118,83 @@ lemma cyclic_iff_forall_exists : M.Cyclic A ↔ ∀ e ∈ A, ∃ C ⊆ A, M.IsCi
     iUnion_subset_iff, and_iff_left hCs.1]
   exact fun e he ↦ ⟨e, he, hCs.2.2 _ he⟩
 
+lemma dual_cyclic_iff (hA : A ⊆ M.E := by aesop_mat) : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) := by
+  simp_rw [cyclic_iff_forall_exists, ← isCocircuit_def, isFlat_iff_closure_eq,
+    subset_antisymm_iff, and_iff_left (M.subset_closure (M.E \ A)), subset_diff,
+    and_iff_right (M.closure_subset_ground (M.E \ A)), disjoint_iff_forall_ne]
+  simp only [ne_eq, imp_not_comm, forall_eq']
+  refine ⟨fun h e heA hecl ↦ ?_, fun h e heA ↦ ?_⟩
+  · obtain ⟨C, hCss, hC, heC⟩ := (mem_closure_iff_exists_isCircuit (by simp [heA])).1 hecl
+    obtain ⟨K, hKA, hK, heK⟩ := h e heA
+    obtain ⟨f, hfC, hfK, hfe⟩ := hC.exists_mem_of_mem_isCocircuit hK heC heK
+    specialize hCss hfC
+    rw [mem_insert_iff, or_iff_right hfe] at hCss
+    exact hCss.2 <| hKA hfK
+  obtain ⟨I, hI⟩ := M.exists_isBasis (M.E \ A)
+  have heI : e ∉ M.closure I := fun heI ↦ h heA <| M.closure_subset_closure hI.subset heI
+  have hi : M.Indep (insert e I) := by exact (hI.indep.not_mem_closure_iff.1 heI).1
+  obtain ⟨B, hB, hIB⟩ := hi.exists_isBase_superset
+  refine ⟨_, ?_, hB.compl_closure_diff_singleton_isCocircuit <| hIB <| mem_insert .., ?_⟩
+  · rw [diff_subset_comm]
+    refine hI.subset_closure.trans (M.closure_subset_closure ?_)
+    rw [subset_diff_singleton_iff, and_iff_left (not_mem_subset (M.subset_closure ..) heI)]
+    exact (subset_insert ..).trans hIB
+  exact ⟨hA heA, hB.indep.not_mem_closure_diff_of_mem (hIB (mem_insert ..))⟩
+
+/-- A version of `Matroid.dual_cyclic_iff` where the supportedness assumption is part of the
+equivalence rather than the hypothesis. -/
+lemma dual_cyclic_iff' : M✶.Cyclic A ↔ M.IsFlat (M.E \ A) ∧ A ⊆ M.E := by
+  by_cases hAE : A ⊆ M.E
+  · simp [dual_cyclic_iff, hAE]
+  exact iff_of_false (mt Cyclic.subset_ground hAE) <| fun h ↦ hAE h.2
+
+lemma cyclic_iff_compl_isFlat_dual (hA : A ⊆ M.E := by aesop_mat) :
+    M.Cyclic A ↔ M✶.IsFlat (M.E \ A) := by
+  rw [← dual_ground, ← dual_cyclic_iff, dual_dual]
+
+lemma Cyclic.compl_isFlat_dual (hA : M.Cyclic A) : M✶.IsFlat (M.E \ A) := by
+  rwa [← dual_dual M, dual_cyclic_iff, dual_ground] at hA
+
+lemma compl_cyclic_iff (hAE : A ⊆ M.E := by aesop_mat) : M.Cyclic (M.E \ A) ↔ M✶.IsFlat A := by
+  rw [← dual_dual M, dual_cyclic_iff, dual_dual, dual_ground, diff_diff_cancel_left hAE]
+
+lemma cyclic_tfae : List.TFAE [
+    M.Cyclic A,
+    ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C,
+    ∀ e ∈ A, ∃ C ⊆ A, M.IsCircuit C ∧ e ∈ C,
+    ∀ e ∈ A, e ∈ M.closure (A \ {e}),
+    (∀ K, M.IsCocircuit K → (A ∩ K).encard ≠ 1) ∧ A ⊆ M.E,
+    M✶.IsFlat (M.E \ A) ∧ A ⊆ M.E] := by
+  simp only [Ne, encard_eq_one, not_exists]
+  tfae_have 1 <-> 2 := Iff.rfl
+  tfae_have 1 <-> 3 := by rw [cyclic_iff_forall_exists]
+  tfae_have 3 <-> 4 := by
+    convert Iff.rfl with e heA
+    simp_rw [mem_closure_iff_exists_isCircuit (show e ∉ A \ {e} by simp), insert_diff_singleton,
+      insert_eq_of_mem heA]
+  tfae_have 1 <-> 6 := by
+    rw [← dual_dual M, dual_cyclic_iff', dual_dual, dual_dual, dual_ground]
+  tfae_have 5 <-> 6 := by
+    simp_rw [isCocircuit_def, and_congr_left_iff, isFlat_iff_closure_eq,
+      subset_antisymm_iff (b := M.E \ A), and_iff_left (M✶.subset_closure (M.E \ A)), subset_diff,
+      disjoint_right]
+    set N := M✶
+    refine fun hAE : A ⊆ N.E ↦ ⟨fun h ↦ ⟨N.closure_subset_ground .., fun e heA hcl ↦ ?_⟩,
+      fun h C hC e hAKe ↦ ?_⟩
+    · obtain ⟨C, hCss, hC, heC⟩ := exists_isCircuit_of_mem_closure hcl (by simp [heA])
+      refine h C hC e <| subset_antisymm (fun f hf ↦ ?_) (by simp [heA, heC])
+      obtain rfl | hf' := hCss hf.2
+      · rfl
+      exact (hf'.2 hf.1).elim
+    obtain ⟨heA, heC⟩ := hAKe.symm.subset rfl
+    refine h.2 heA <| mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC) ?_
+    rw [← hAKe, diff_inter_self_eq_diff]
+    exact N.closure_subset_closure <| diff_subset_diff_left hC.subset_ground
+  tfae_finish
+
 lemma cyclic_iff_forall_mem_closure_diff_singleton :
-    M.Cyclic A ↔ ∀ e ∈ A, e ∈ M.closure (A \ {e}) := by
-  simp_rw [cyclic_iff_forall_exists]
-  refine ⟨fun h e heA ↦ ?_, fun h e heA ↦ ?_⟩
-  · simp [heA, h, mem_closure_iff_exists_isCircuit (show e ∉ A \ {e} by simp)]
-  obtain ⟨C, hCss, hC, heC⟩ := exists_isCircuit_of_mem_closure (h e heA) (by simp)
-  exact ⟨C, by simpa [heA] using hCss, hC, heC⟩
+    M.Cyclic A ↔ ∀ e ∈ A, e ∈ M.closure (A \ {e}) :=
+  cyclic_tfae.out 0 3
 
 lemma Cyclic.iUnion {ι : Type*} (As : ι → Set α) (hAs : ∀ i, M.Cyclic (As i)) :
     M.Cyclic (⋃ i, As i) := by

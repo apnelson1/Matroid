@@ -311,35 +311,3 @@ lemma Spanning.isHyperplane_restrict_iff {S : Set α} (hS : M.Spanning S) :
   exact M.subset_closure _ (hcl.subset.trans (inter_subset_right.trans hS.subset_ground))
 
 end IsHyperplane
-
-lemma Cyclic.compl_isFlat_dual {A : Set α} (hA : M.Cyclic A) : M✶.IsFlat (M.E \ A) := by
-  rw [isFlat_iff_eq_sInter_isHyperplanes]
-  obtain ⟨Cs, rfl, hCs⟩ := hA
-  refine ⟨(M.E \ ·) '' Cs, fun C hC ↦ ?_, ?_⟩
-  · obtain ⟨H, hH, rfl⟩ := show ∃ x ∈ Cs, M.E \ x = C by simpa only [mem_image] using hC
-    rw [← dual_ground, compl_isHyperplane_iff_isCocircuit, dual_isCocircuit_iff]
-    exact hCs H hH
-  ext e
-  simp +contextual [and_comm (a := e ∈ M.E)]
-
-lemma cyclic_iff_compl_isFlat_dual {A : Set α} (hA : A ⊆ M.E := by aesop_mat) :
-    M.Cyclic A ↔ M✶.IsFlat (M.E \ A) := by
-  refine ⟨Cyclic.compl_isFlat_dual, fun h ↦ ?_⟩
-  simp_rw [isFlat_iff_eq_sInter_isHyperplanes, dual_ground] at h
-  obtain ⟨Hs, hHs, h_eq⟩ := h
-  apply_fun (M.E \ ·) at h_eq
-  rw [diff_diff_cancel_left hA, diff_inter_self_eq_diff, sInter_eq_iInter, diff_iInter] at h_eq
-  obtain rfl := h_eq
-  have hHs' : ∀ H ∈ Hs, M.IsCircuit (M.E \ H) := by
-    refine fun H hH ↦ ?_
-    rw [← M.dual_isCocircuit_iff, ← dual_ground,
-      compl_isCocircuit_iff_isHyperplane (show H ⊆ M✶.E from (hHs H hH).subset_ground)]
-    exact hHs H hH
-  exact ⟨(M.E \ ·) '' Hs, by simp, by simpa⟩
-
-lemma IsFlat.compl_cyclic_dual (hF : M.IsFlat F) : M✶.Cyclic (M.E \ F) := by
-  rwa [cyclic_iff_compl_isFlat_dual, dual_dual, dual_ground, diff_diff_cancel_left hF.subset_ground]
-
-lemma isFlat_dual_iff_compl_cyclic (hF : F ⊆ M.E := by aesop_mat) :
-    M✶.IsFlat F ↔ M.Cyclic (M.E \ F) := by
-  rw [cyclic_iff_compl_isFlat_dual, diff_diff_cancel_left hF]
