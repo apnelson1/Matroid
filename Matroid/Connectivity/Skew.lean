@@ -14,7 +14,7 @@ namespace Matroid
 @[mk_iff]
 structure IsSkewFamily (M : Matroid α) (Xs : ι → Set α) : Prop where
   modular : M.IsModularFamily Xs
-  disj : ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.closure ∅
+  disj : ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.loops
 
 lemma IsSkewFamily.isModularFamily (h : M.IsSkewFamily Xs) : M.IsModularFamily Xs :=
   h.1
@@ -28,7 +28,7 @@ lemma IsSkewFamily.isLoop_of_mem_inter (h : M.IsSkewFamily Xs) (hij : i ≠ j)
   h.2 hij he
 
 lemma IsSkewFamily.subset_loops_of_ne (h : M.IsSkewFamily Xs) (hij : i ≠ j) :
-    Xs i ∩ Xs j ⊆ M.closure ∅ :=
+    Xs i ∩ Xs j ⊆ M.loops :=
   h.2 hij
 
 lemma IsSkewFamily.disjoint_inter_indep (h : M.IsSkewFamily Xs) (hI : M.Indep I) (hij : i ≠ j) :
@@ -201,7 +201,6 @@ lemma IsSkewFamily.sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η → Set α} (h : 
     ∑ i, M.eRk (Xs i) = M.eRk (⋃ i, Xs i) := by
   choose Is hIs using fun i ↦ M.exists_isBasis (Xs i) (h.subset_ground_of_mem i)
   have hdj := (h.pairwise_disjoint_of_isBases hIs)
-  rw [← pairwise_univ] at hdj
   rw [(h.iUnion_isBasis_iUnion hIs).eRk_eq_encard, encard_iUnion _ hdj]
   simp_rw [(hIs _).eRk_eq_encard]
 
@@ -219,8 +218,7 @@ lemma IsRkFinite.isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] {Xs : η �
   · exact IsRkFinite.indep_of_encard_le_eRk
       ((IsRkFinite.iUnion hXs).subset (iUnion_mono (fun i ↦ (hIs i).subset)))
       ((encard_iUnion_le _).trans hsum.le)
-  rw [← pairwise_univ]
-  exact pairwiseDisjoint_of_encard_sum_le_encard_iUnion
+  exact pairwiseDisjoint_of_sum_encard_le_encard_iUnion
     (fun i ↦ (hXs i).finite_of_isBasis (hIs i)) (hsum.le.trans <| M.eRk_le_encard _)
 
 lemma isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [RankFinite M] {Xs : η → Set α}
@@ -292,19 +290,19 @@ lemma Skew.isModularPair (h : M.Skew X Y) : M.IsModularPair X Y :=
   h.isModularFamily
 
 lemma skew_iff_isModularPair_inter_subset_loops :
-    M.Skew X Y ↔ M.IsModularPair X Y ∧ X ∩ Y ⊆ M.closure ∅ := by
+    M.Skew X Y ↔ M.IsModularPair X Y ∧ X ∩ Y ⊆ M.loops := by
   rw [Skew, isSkewFamily_iff, IsModularPair, and_congr_right_iff]
   simp [inter_comm X Y]
 
 lemma IsModularPair.skew_of_inter_subset_loops (h : M.IsModularPair X Y)
-    (hss : X ∩ Y ⊆ M.closure ∅) : M.Skew X Y := by
+    (hss : X ∩ Y ⊆ M.loops) : M.Skew X Y := by
   rwa [skew_iff_isModularPair_inter_subset_loops, and_iff_right h]
 
 lemma IsModularPair.skew_of_disjoint (h : M.IsModularPair X Y) (hdj : Disjoint X Y) :
     M.Skew X Y :=
   h.skew_of_inter_subset_loops (by simp [hdj.inter_eq])
 
-lemma Skew.inter_subset_loops (h : M.Skew X Y) : X ∩ Y ⊆ M.closure ∅ :=
+lemma Skew.inter_subset_loops (h : M.Skew X Y) : X ∩ Y ⊆ M.loops :=
   (skew_iff_isModularPair_inter_subset_loops.1 h).2
 
 lemma Skew.disjoint [Loopless M] (h : M.Skew X Y) : Disjoint X Y := by
@@ -336,7 +334,7 @@ lemma Skew.disjoint_of_indep_left (h : M.Skew I X) (hI : M.Indep I) : Disjoint I
 lemma Skew.disjoint_of_indep_right (h : M.Skew X I) (hI : M.Indep I) : Disjoint X I :=
   h.disjoint_of_indep_subset_right hI Subset.rfl
 
-lemma Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.closure ∅) Y := by
+lemma Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.loops) Y := by
   rw [disjoint_iff_inter_eq_empty, ← inter_diff_right_comm, diff_eq_empty]
   exact h.inter_subset_loops
 
@@ -387,7 +385,7 @@ lemma Skew.closure_skew_right (h : M.Skew X Y) : M.Skew X (M.closure Y) := by
 lemma Skew.closure_skew_left (h : M.Skew X Y) : M.Skew (M.closure X) Y := by
   rwa [← skew_iff_closure_skew_left]
 
-lemma Skew.inter_closure_eq (h : M.Skew X Y) : M.closure X ∩ M.closure Y = M.closure ∅ :=
+lemma Skew.inter_closure_eq (h : M.Skew X Y) : M.closure X ∩ M.closure Y = M.loops :=
   h.closure_skew.inter_subset_loops.antisymm
     (subset_inter (M.closure_mono (empty_subset _)) (M.closure_mono (empty_subset _)))
 
@@ -399,10 +397,10 @@ lemma skew_iff_of_isLoopEquiv (hX : M.IsLoopEquiv X X') (hY : M.IsLoopEquiv Y Y'
   rwa [skew_iff_closure_skew hX.symm.subset_ground hY.symm.subset_ground, hX.closure_eq_closure,
     hY.closure_eq_closure, ← skew_iff_closure_skew]
 
-lemma skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) (Y \ M.closure ∅) :=
+lemma skew_iff_diff_loops_skew : M.Skew X Y ↔ M.Skew (X \ M.loops) (Y \ M.loops) :=
   skew_iff_of_isLoopEquiv (M.isLoopEquiv_diff_loops X) (M.isLoopEquiv_diff_loops Y)
 
-lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.closure ∅) Y :=
+lemma skew_iff_diff_loops_skew_left : M.Skew X Y ↔ M.Skew (X \ M.loops) Y :=
   skew_iff_of_isLoopEquiv (M.isLoopEquiv_diff_loops X) rfl
 
 lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I J ↔ M.Skew X Y :=
@@ -566,14 +564,14 @@ lemma Skew.subset_or_subset_of_isCircuit (h : M.Skew X Y) {C : Set α} (hC : M.I
   left
   simpa using hi
 
-lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.closure ∅) (hX : X ⊆ M.E) : M.Skew L X := by
+lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : M.Skew L X := by
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]
   apply empty_skew hX
 
 lemma IsLoop.skew (he : M.IsLoop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
-lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.closure ∅) (hX : X ⊆ M.E)
+lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.loops) (hX : X ⊆ M.E)
     (hdj : Disjoint K X) : M.Skew K X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_eq_delete_of_subset_coloops hK,
     delete_eq_restrict, restrict_restrict_eq]
@@ -658,13 +656,13 @@ lemma Skew.contract_subset_left {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ X) 
   exact diff_subset_diff_left (M.subset_closure_of_subset subset_union_left)
 
 lemma Skew.contract_subset_left_of_disjoint_loops {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ X)
-    (hY : Disjoint Y (M.closure ∅)) : (M ／ C).Skew (X \ C) Y := by
+    (hY : Disjoint Y (M.loops)) : (M ／ C).Skew (X \ C) Y := by
   convert hXY.contract_subset_left hCX
   rw [eq_comm, sdiff_eq_left, ← hY.sdiff_eq_left]
   exact hXY.symm.diff_loops_disjoint_left.mono_right hCX
 
 lemma Skew.contract_subset_right_of_disjoint_loops {C : Set α} (hXY : M.Skew X Y) (hCY : C ⊆ Y)
-    (hX : Disjoint X (M.closure ∅)) : (M ／ C).Skew X (Y \ C) :=
+    (hX : Disjoint X (M.loops)) : (M ／ C).Skew X (Y \ C) :=
   (hXY.symm.contract_subset_left_of_disjoint_loops hCY hX).symm
 
 lemma Skew.contract_subset_right {C : Set α} (hXY : M.Skew X Y) (hCX : C ⊆ Y) :
@@ -840,10 +838,10 @@ lemma IsFlat.exists_modularCompl (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F₁)
   exact hK.indep.subset (union_subset inter_subset_left
     (union_subset inter_subset_left diff_subset))
 
-/-- Two flats are `ModularCompl` in the interval `[M.closure ∅, M.E]` iff they are skew
+/-- Two flats are `ModularCompl` in the interval `[M.loops, M.E]` iff they are skew
 with spanning union. -/
 lemma modularCompl_loops_ground_iff {F F' : Set α} (hF : M.IsFlat F) (hF' : M.IsFlat F'):
-    M.ModularCompl (M.closure ∅) M.E F F' ↔ M.Skew F F' ∧ M.Spanning (F ∪ F') := by
+    M.ModularCompl (M.loops) M.E F F' ↔ M.Skew F F' ∧ M.Spanning (F ∪ F') := by
   rw [modularCompl_iff, and_iff_right hF, and_iff_right hF', spanning_iff_closure_eq,
     and_comm (b := M.IsModularPair _ _), ← and_assoc, and_congr_left_iff]
   refine fun hcl ↦ ⟨fun ⟨h, hmod⟩ ↦ ?_, fun h ↦ ⟨?_, h.isModularPair ⟩⟩

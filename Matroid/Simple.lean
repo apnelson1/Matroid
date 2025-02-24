@@ -45,8 +45,7 @@ lemma parallel_class_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
 
 @[simp] lemma closure_singleton_eq [Simple M] (he : e ∈ M.E := by aesop_mat) :
     M.closure {e} = {e} := by
-  rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, closure_empty_eq_empty,
-    union_empty]
+  rw [closure_eq_parallel_class_union_loops, parallel_class_eq he, loops_eq_empty, union_empty]
 
 /-- We need `RankPos` or something similar here, since otherwise the matroid whose only element is
   a loop is a counterexample. -/
@@ -65,7 +64,7 @@ lemma simple_iff_closure_subset_self_forall [RankPos M] :
 lemma closure_eq_self_of_subset_singleton [Simple M] (he : e ∈ M.E) (hX : X ⊆ {e}) :
     M.closure X = X := by
   obtain (rfl | rfl) := subset_singleton_iff_eq.1 hX
-  · exact M.closure_empty_eq_empty
+  · exact M.loops_eq_empty
   exact closure_singleton_eq he
 
 lemma singleton_isFlat [Simple M] (he : e ∈ M.E := by aesop_mat) : M.IsFlat {e} := by
@@ -208,10 +207,10 @@ lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M 
 
 lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
     M.Loopless := by
-  rw [loopless_iff_closure_empty] at *
+  rw [loopless_iff_loops] at *
   rw [contract_loops_eq, diff_eq_empty] at h
-  rw [restrict_closure_eq', empty_inter, union_empty_iff] at hC
-  rw [← inter_union_diff (s := M.closure ∅) (t := C), hC.1, empty_union, diff_eq_empty]
+  rw [restrict_loops_eq', union_empty_iff] at hC
+  rw [← inter_union_diff (s := M.loops) (t := C), hC.1, empty_union, diff_eq_empty]
   exact (M.closure_subset_closure <| empty_subset C).trans h
 
 lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M ／ C).Simple) :
@@ -530,7 +529,7 @@ lemma simplification_factorsThrough_removeLoops :
     Function.FactorsThrough (α := Matroid α) simplification removeLoops :=
   fun _ _ h ↦ by rw [simplification, h, simplification]
 
-lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.closure ∅) :
+lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.loops) :
     (M ＼ X).simplification = M.simplification :=
   simplification_factorsThrough_removeLoops (removeLoops_del_eq_removeLoops hX)
 

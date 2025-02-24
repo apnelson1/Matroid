@@ -63,7 +63,7 @@ variable {α : Type*} {M : Matroid α} {I B : Set α} {Ys Xs : (Set (Set α))}
 --     inter_eq_self_of_subset_right hF.subset_ground, inter_comm F]
 --   exact ⟨hB, hB, hI, hI⟩
 
--- theorem modular_loops (M : Matroid α) : M.ModularSet (M.closure ∅) := by
+-- theorem modular_loops (M : Matroid α) : M.ModularSet (M.loops) := by
 --   intro F hF
 --   obtain ⟨I, hI⟩ := M.exists_isBasis F
 --   refine isModularPair_iff.2 ⟨I, ?_⟩

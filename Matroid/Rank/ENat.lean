@@ -437,16 +437,16 @@ lemma IsLoopEquiv.eRk_eq_eRk (h : M.IsLoopEquiv X Y) : M.eRk X = M.eRk Y := by
   rw [← M.eRk_closure_eq, h.closure_eq_closure, M.eRk_closure_eq]
 
 lemma eRk_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
-    M.eRk X = 0 ↔ X ⊆ M.closure ∅ := by
+    M.eRk X = 0 ↔ X ⊆ M.loops := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← hI.encard_eq_eRk, encard_eq_zero]
   exact ⟨by rintro rfl; exact hI.subset_closure, fun h ↦ eq_empty_of_forall_not_mem
     fun x hx ↦ (hI.indep.isNonloop_of_mem hx).not_isLoop (h (hI.subset hx))⟩
 
-lemma eRk_eq_zero_iff' : M.eRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
+lemma eRk_eq_zero_iff' : M.eRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [← eRk_inter_ground, eRk_eq_zero_iff]
 
-@[simp] lemma eRk_loops (M : Matroid α) : M.eRk (M.closure ∅) = 0 := by
+@[simp] lemma eRk_loops (M : Matroid α) : M.eRk M.loops = 0 := by
   rw [eRk_eq_zero_iff]
 
 lemma eRk_eq_one_iff (hX : X ⊆ M.E := by aesop_mat) :

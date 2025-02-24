@@ -3,27 +3,67 @@ import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
 
 namespace Matrix
 
-section Cardinal
-
-
 
 open Set Submodule Cardinal
-
+-- PR separately.
 @[simp]
 lemma Set.toENat_cardinalMk {α : Type*} (s : Set α) : (#s).toENat = s.encard := rfl
 
+-- PR separately.
 @[simp]
-lemma Set.cast_fintype_card {α : Type*} (s : Set α) [Fintype s] :
-    (Fintype.card s : ℕ∞) = s.encard := by
+lemma Set.coe_fintype_card {α : Type*} (s : Set α) [Fintype s] : Fintype.card s = s.encard := by
   simp [encard_eq_coe_toFinset_card]
 
-universe u
+universe u v w u₁ u₂
 
 variable {m n R : Type*} {A A₁ A₂ : Matrix m n R} {s : Set m} {t : Set n}
 
+@[simp]
+lemma range_submatrix_left {α l : Type*} (A : Matrix m n α) (r_reindex : l → m) :
+    range (A.submatrix r_reindex id) = A '' range r_reindex := by
+  ext x
+  simp only [mem_range, mem_image, exists_exists_eq_and]
+  rfl
+
+lemma range_submatrix_right {α l : Type*} (A : Matrix m n α) (c_reindex : l → n) :
+    range (A.submatrix id c_reindex) = (· ∘ c_reindex) '' range A := by
+  ext x
+  simp only [mem_range, mem_image, exists_exists_eq_and]
+  rfl
+
 /-- The rank of a matrix, defined as the dimension of its column space.  -/
 noncomputable def cRank [Semiring R] (A : Matrix m n R) : Cardinal :=
-  Module.rank R (Submodule.span R (Set.range Aᵀ))
+  Module.rank R (span R (Set.range Aᵀ))
+
+lemma cRank_mono_col {n₀ : Type*} [Semiring R] (A : Matrix m n R) (c : n₀ → n) :
+    (A.submatrix id c).cRank ≤ A.cRank := by
+  apply Submodule.rank_mono <| span_mono ?_
+  rintro _ ⟨x, rfl⟩
+  exact ⟨c x, rfl⟩
+
+lemma cRank_lift_mono_row {m : Type u₁} {m₀ : Type u₂} {R : Type u} [Semiring R] (A : Matrix m n R)
+    (r : m₀ → m) : lift.{u₁, max u₂ u} (A.submatrix r id).cRank ≤ lift.{u₂, max u₁ u} A.cRank := by
+  let f : (m → R) →ₗ[R] (m₀ → R) := (LinearMap.funLeft R R r)
+  have h_eq : Submodule.map f (span R (range Aᵀ)) = span R (range (A.submatrix r id)ᵀ) := by
+    rw [LinearMap.map_span, ← image_univ, image_image, transpose_submatrix, range_submatrix_right]
+    convert rfl
+    aesop
+  rw [cRank, ← h_eq]
+  have hwin := lift_rank_map_le f (span R (range Aᵀ))
+  simp_rw [← lift_umax] at hwin ⊢
+  exact hwin
+
+lemma cRank_mono_row {m m₀ : Type u} [Semiring R] (A : Matrix m n R) (r : m₀ → m) :
+    (A.submatrix r id).cRank ≤ A.cRank  := by
+  simpa using A.cRank_lift_mono_row r
+
+lemma cRank_le_card_row [Semiring R] [StrongRankCondition R] [Fintype m] (A : Matrix m n R) :
+    A.cRank ≤ Fintype.card m :=
+  (Submodule.rank_le (span R (range Aᵀ))).trans <| by rw [rank_fun']
+
+lemma cRank_le_card_col [Semiring R] [StrongRankCondition R] [Fintype n] (A : Matrix m n R) :
+    A.cRank ≤ Fintype.card n :=
+  (rank_span_le ..).trans <| by simpa using Cardinal.mk_range_le_lift (f := Aᵀ)
 
 /-- The rank of a matrix, defined as the dimension of its column space, as a term in `ℕ∞`. -/
 noncomputable def eRank [Semiring R] (A : Matrix m n R) : ℕ∞ := A.cRank.toENat
@@ -31,6 +71,24 @@ noncomputable def eRank [Semiring R] (A : Matrix m n R) : ℕ∞ := A.cRank.toEN
 -- This means we could redefine mathlib's `Matrix.rank` as `A.eRank.toNat` to not need finiteness.
 lemma eRank_toNat [CommRing R] [Fintype n] (A : Matrix m n R) : A.eRank.toNat = A.rank := by
   rw [eRank, cRank, rank, range_mulVecLin, toNat_toENat, Module.finrank]
+
+lemma eRank_toNat_eq_finrank [Semiring R] (A : Matrix m n R) :
+    A.eRank.toNat = Module.finrank R (span R (range Aᵀ)) := by
+  simp [eRank, cRank, Module.finrank]
+
+lemma eRank_mono_col {n₀ : Type*} [Semiring R] (A : Matrix m n R) (c : n₀ → n) :
+    (A.submatrix id c).eRank ≤ A.eRank :=
+  OrderHomClass.mono _ <| A.cRank_mono_col c
+
+lemma eRank_mono_row {m₀ : Type*} [Semiring R] (A : Matrix m n R) (r : m₀ → m) :
+    (A.submatrix r id).eRank ≤ A.eRank := by
+  obtain hlt | hle := lt_or_le A.cRank Cardinal.aleph0
+  · simpa using (toENat_le_iff_of_lt_aleph0 (by simpa)).2 <| A.cRank_lift_mono_row r
+  simp [eRank, toENat_eq_top.2 hle]
+
+lemma eRank_mono {m₀ n₀ : Type*} [Semiring R] (A : Matrix m n R) (r : m₀ → m) (c : n₀ → n) :
+    (A.submatrix r c).eRank ≤ A.eRank :=
+  ((A.submatrix r id).eRank_mono_col c).trans (A.eRank_mono_row r)
 
 /-- For `A : Matrix m n R` and `s : Set m`,
 `A.IsRowBasis R s` means that `s` indexes an `R`-basis for the row space of `A`. -/
@@ -57,25 +115,8 @@ lemma IsColBasis.isRowBasis_transpose [Semiring R] (h : A.IsColBasis R t) : Aᵀ
   h
 
 lemma IsRowBasis.span_eq [DivisionRing R] (hs : A.IsRowBasis R s) :
-    span R (A '' s) = span R (range A) := by
-  refine span_eq_span (span_le.1 <| span_mono <| image_subset_range ..) ?_
-  rintro _ ⟨i, rfl⟩
-  by_contra h
-  rw [SetLike.mem_coe, hs.prop.not_mem_span_iff] at h
-  exact h.1 <| hs.mem_of_prop_insert h.2
-
-@[simp]
-lemma range_submatrix_left {α l : Type*} (A : Matrix m n α) (r_reindex : l → m) :
-    range (A.submatrix r_reindex id) = A '' range r_reindex := by
-  ext x
-  simp only [mem_range, mem_image, exists_exists_eq_and]
-  rfl
-
-lemma range_submatrix_right {α l : Type*} (A : Matrix m n α) (c_reindex : l → n) :
-    range (A.submatrix id c_reindex) = (· ∘ c_reindex) '' range A := by
-  ext x
-  simp_all only [mem_range, mem_image, exists_exists_eq_and]
-  rfl
+    span R (A '' s) = span R (range A) :=
+  LinearIndepOn.span_eq_top_of_maximal hs
 
 lemma IsRowBasis.span_submatrix_eq [DivisionRing R] (hs : A.IsRowBasis R s) :
     span R (range (A.submatrix (fun x : s ↦ x) id)) = span R (range A) := by
@@ -170,27 +211,24 @@ lemma IsRowBasis.encard_eq [Field R] (h : A.IsRowBasis R s) : s.encard = A.eRank
   exact (basis_encard_le_aux h ht).antisymm (basis_encard_le_aux ht.isRowBasis_transpose h)
 
 /-- The `eRank` of a (possibly infinite) matrix over a field is the `eRank` of its transpose.
-This is not true for `cRank`, because of (say) the matrix `id : Matrix (ℕ → ℚ) ℕ ℚ`,
-which has countable-dimensional column space and uncountable-dimensional row space. -/
+This is not true for division rings (as easily seen with the quaternion matrix [[1,i],[j,k]]),
+and is also untrue if `cRank` is cardinal_valued; for example, the matrix `id : Matrix (ℕ → ℚ) ℕ ℚ`
+has a countable-dimensional column space and an uncountable-dimensional row space. -/
+@[simp]
 lemma eRank_transpose [Field R] (A : Matrix m n R) : Aᵀ.eRank = A.eRank := by
   obtain ⟨t, ht⟩ := A.exists_isColBasis
   rw [← ht.isRowBasis_transpose.encard_eq, ht.encard_eq]
 
 /-- A matrix with finite linearly independent row set has full column space. -/
 lemma span_col_eq_top_of_linearIndependent_row [Fintype m] [Field R] (h : LinearIndependent R A) :
-    span R (range Aᵀ) = ⊤ := by
-  apply eq_top_of_finrank_eq
-  rw [Module.finrank, ← Matrix.cRank, ← Cardinal.toNat_toENat, ← Matrix.eRank, ← eRank_transpose,
-    Matrix.eRank, Matrix.cRank, transpose_transpose, toNat_toENat,
-    show Module.rank R ↥(span R (range A)) = ↑(Fintype.card m) by
-    simpa using (Basis.span h).mk_eq_rank.symm]
-  simp
+    span R (range Aᵀ) = ⊤ :=
+  eq_top_of_finrank_eq <| by
+    rw [← eRank_toNat_eq_finrank, ← eRank_transpose, eRank_toNat_eq_finrank, transpose_transpose,
+    Module.finrank_eq_card_basis (Basis.span h), Module.finrank_fintype_fun_eq_card]
 
 /-- A matrix with finite linearly independent column set has full row space. -/
 lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : LinearIndependent R Aᵀ) :
     span R (range A) = ⊤ := by
   rw [← Aᵀ.span_col_eq_top_of_linearIndependent_row h, transpose_transpose]
-
-end Cardinal
 
 end Matrix

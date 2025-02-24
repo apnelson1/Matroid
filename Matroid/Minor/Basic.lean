@@ -11,8 +11,9 @@ section Delete
 
 variable {D D₁ D₂ R : Set α}
 
-lemma eq_loopyOn_iff_closure {E : Set α} : M = loopyOn E ↔ M.closure ∅ = E ∧ M.E = E :=
-  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [← h', ← closure_empty_eq_ground_iff, h, h']⟩
+lemma eq_loopyOn_iff_closure {E : Set α} : M = loopyOn E ↔ M.loops = E ∧ M.E = E :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦
+    by rw [← h', ← closure_empty_eq_ground_iff, ← loops, h, h']⟩
 
 class HasDelete (α β : Type*) where
   del : α → β → α
@@ -172,14 +173,14 @@ lemma circuit_iff_delete_of_disjoint {C : Set α} (hCD : Disjoint C D) :
     ← inter_assoc, ← diff_eq, inter_eq_left]
   exact diff_subset.trans (M.closure_subset_ground _)
 
+@[simp] lemma delete_loops_eq (M : Matroid α) (D : Set α) : (M ＼ D).loops = M.loops \ D := by
+  simp [loops]
+
 lemma Loopless.delete (h : M.Loopless) (D : Set α) : (M ＼ D).Loopless := by
-  simp [loopless_iff_closure_empty]
+  simp [loopless_iff_loops]
 
 instance [h : M.Loopless] {D : Set α} : (M ＼ D).Loopless :=
   h.delete D
-
-lemma delete_loops_eq (M : Matroid α) (D : Set α) : (M ＼ D).closure ∅ = M.closure ∅ \ D := by
-  simp
 
 @[simp] lemma delete_empty (M : Matroid α) : M ＼ (∅ : Set α) = M := by
   rw [delete_eq_self_iff]; exact empty_disjoint _
@@ -193,15 +194,15 @@ instance delete_finitary (M : Matroid α) [Finitary M] (D : Set α) : Finitary (
 instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (M ＼ e) := by
   rw [deleteElem]; infer_instance
 
-lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.closure ∅ := by
+lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.loops := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
   simp [Set.ext_iff, mem_setOf, IsNonloop, IsLoop, mem_diff, and_comm]
 
-lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.closure ∅) :
+lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
     (M ＼ X).removeLoops = M.removeLoops := by
-  rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, delete_closure_eq, empty_diff,
-    union_diff_self, union_eq_self_of_subset_left h]
+  rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
+    empty_diff, union_diff_self, union_eq_self_of_subset_left h]
 
 lemma Coindep.delete_isBase_iff (hD : M.Coindep D) :
     (M ＼ D).IsBase B ↔ M.IsBase B ∧ Disjoint B D := by
@@ -409,12 +410,12 @@ lemma IsBasis.contract_isBasis_union_union (h : M.IsBasis (J ∪ I) (X ∪ I))
   rw [contract_ground, subset_diff, and_iff_left hXI]
   exact subset_union_left.trans h.subset_ground
 
-lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M✶.closure ∅) : M ／ X = M ＼ X := by
+lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M✶.loops) : M ／ X = M ＼ X := by
   refine ext_indep rfl fun I _ ↦ ?_
   rw [(indep_of_subset_coloops hX).contract_indep_iff, delete_indep_iff, and_comm,
     union_indep_iff_indep_of_subset_coloops hX]
 
-lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.closure ∅) : M ／ X = M ＼ X := by
+lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.loops) : M ／ X = M ＼ X := by
   rw [← dual_inj, contract_dual_eq_dual_delete, delete_dual_eq_dual_contract, eq_comm,
     contract_eq_delete_of_subset_coloops]
   rwa [dual_dual]
@@ -423,7 +424,7 @@ lemma IsBasis.contract_eq_contract_delete (hI : M.IsBasis I X) : M ／ X = M ／
   nth_rw 1 [← diff_union_of_subset hI.subset]
   rw [union_comm, ← contract_contract]
   refine contract_eq_delete_of_subset_loops fun e he ↦ ?_
-  rw [← isLoop_iff_mem_closure_empty, ← singleton_dep, hI.indep.contract_dep_iff,
+  rw [← isLoop_iff, ← singleton_dep, hI.indep.contract_dep_iff,
     disjoint_singleton_left, and_iff_right he.2, singleton_union,
     ← hI.indep.mem_closure_iff_of_not_mem he.2]
   exact hI.subset_closure he.1
@@ -518,8 +519,9 @@ instance contractElem_finitary [Finitary M] {e : α} : Finitary (M ／ e) := by
     ⟨fun h ↦ ⟨h.1, fun heC ↦ h.2 (hM.subset ⟨heC, M.closure_subset_ground _ h.1⟩).1⟩, fun h ↦
       ⟨h.1, fun h' ↦ h.2 (hM.symm.subset ⟨h', M.closure_subset_ground _ h.1⟩).1⟩⟩
 
-lemma contract_loops_eq : (M ／ C).closure ∅ = M.closure C \ C := by
-  simp [Set.ext_iff, ← isLoop_iff_mem_closure_empty, contract_isLoop_iff_mem_closure]
+@[simp]
+lemma contract_loops_eq : (M ／ C).loops = M.closure C \ C := by
+  simp [Set.ext_iff, ← isLoop_iff, contract_isLoop_iff_mem_closure]
 
 @[simp] lemma contract_closure_eq (M : Matroid α) (C X : Set α) :
     (M ／ C).closure X = M.closure (X ∪ C) \ C := by
@@ -631,7 +633,7 @@ lemma Dep.of_contract (h : (M ／ C).Dep X) (hC : C ⊆ M.E := by aesop_mat) : M
     and_iff_left hi] at h
   exact h.1 (subset_diff.1 h.2).2
 
-lemma IsBasis.diff_subset_loops_contract (hIX : M.IsBasis I X) : X \ I ⊆ (M ／ I).closure ∅ := by
+lemma IsBasis.diff_subset_loops_contract (hIX : M.IsBasis I X) : X \ I ⊆ (M ／ I).loops := by
   rw [diff_subset_iff, contract_loops_eq, union_diff_self,
     union_eq_self_of_subset_left (M.subset_closure I)]
   exact hIX.subset_closure
@@ -991,7 +993,7 @@ lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
   have hIK : Disjoint I K := disjoint_of_subset hI.subset hK.subset hCD'
   use I ∪ D' \ K, C' \ I ∪ K
   refine ⟨?_, ?_, ?_, ?_⟩
-  · have hss : (D' \ K) \ I ⊆ (M✶ ／ K ＼ I).closure ∅ := by
+  · have hss : (D' \ K) \ I ⊆ (M✶ ／ K ＼ I).loops := by
       rw [delete_loops_eq];
       exact diff_subset_diff_left hK.diff_subset_loops_contract
     rw [← delete_dual_eq_dual_contract, ← contract_dual_eq_dual_delete] at hss
@@ -1000,7 +1002,7 @@ lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
       diff_union_self, union_comm] at hi
     exact hi.1.2
   · rw [coindep_def]
-    have hss : (C' \ I) \ K ⊆ (M ／ I ＼ K)✶✶.closure ∅ := by
+    have hss : (C' \ I) \ K ⊆ (M ／ I ＼ K)✶✶.loops := by
       rw [dual_dual, delete_loops_eq];
       exact diff_subset_diff_left hI.diff_subset_loops_contract
     have hi := indep_of_subset_coloops hss
@@ -1118,8 +1120,7 @@ variable {E : Set α}
 
 lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
     M ／ C = loopyOn (M.E \ C) := by
-  rw [eq_loopyOn_iff_closure, contract_ground, and_iff_left rfl, contract_closure_eq,
-    empty_union, h.closure_eq]
+  rw [eq_loopyOn_iff_closure, contract_ground, and_iff_left rfl, contract_loops_eq, h.closure_eq]
 
 @[simp] lemma freeOn_delete (E X : Set α) : (freeOn E) ＼ X = freeOn (E \ X) := by
   rw [← loopyOn_dual_eq, ← contract_dual_eq_dual_delete, loopyOn_contract, loopyOn_dual_eq]
@@ -1137,7 +1138,7 @@ lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   have h' := restrict_indep_iff (M := M) (I := I) (R := I)
   rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'
 
-lemma restrict_subset_loops_eq (hX : X ⊆ M.closure ∅) : M ↾ X = loopyOn X := by
+lemma restrict_subset_loops_eq (hX : X ⊆ M.loops) : M ↾ X = loopyOn X := by
   refine ext_indep rfl (fun I hI ↦ ?_)
   simp only [restrict_indep_iff, loopyOn_indep_iff]
   use fun h ↦ h.1.eq_empty_of_subset_loops (h.2.trans hX)

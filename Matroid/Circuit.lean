@@ -17,86 +17,16 @@ section Dual
 
 variable {B : Set α}
 
-/-- A cocircuit is a circuit of the dual matroid, or equivalently the complement of a hyperplane -/
-abbrev IsCocircuit (M : Matroid α) (K : Set α) : Prop := M✶.IsCircuit K
-
-lemma isCocircuit_def : M.IsCocircuit K ↔ M✶.IsCircuit K := Iff.rfl
-
 lemma IsCocircuit.isCircuit (hK : M.IsCocircuit K) : M✶.IsCircuit K :=
   hK
 
 lemma IsCircuit.isCocircuit (hC : M.IsCircuit C) : M✶.IsCocircuit C := by
   rwa [isCocircuit_def, dual_dual]
 
-@[aesop unsafe 10% (rule_sets := [Matroid])]
-lemma IsCocircuit.subset_ground (hC : M.IsCocircuit C) : C ⊆ M.E :=
-  hC.isCircuit.subset_ground
-
-@[simp] lemma dual_isCocircuit_iff : M✶.IsCocircuit C ↔ M.IsCircuit C := by
-  rw [isCocircuit_def, dual_dual]
-
-lemma coindep_iff_forall_subset_not_isCocircuit :
-    M.Coindep X ↔ (∀ K, K ⊆ X → ¬M.IsCocircuit K) ∧ X ⊆ M.E :=
-  indep_iff_forall_subset_not_isCircuit'
-
-lemma isCocircuit_iff_minimal :
-    M.IsCocircuit K ↔ Minimal (fun X ↦ ∀ B, M.IsBase B → (X ∩ B).Nonempty) K := by
-  have aux : M✶.Dep = fun X ↦ (∀ B, M.IsBase B → (X ∩ B).Nonempty) ∧ X ⊆ M.E := by
-    ext; apply dual_dep_iff_forall
-  rw [isCocircuit_def, isCircuit_def, aux, iff_comm]
-  refine minimal_iff_minimal_of_imp_of_forall (fun _ h ↦ h.1) fun X hX ↦
-    ⟨X ∩ M.E, inter_subset_left, fun B hB ↦ ?_, inter_subset_right⟩
-  rw [inter_assoc, inter_eq_self_of_subset_right hB.subset_ground]
-  exact hX B hB
-
-lemma isCocircuit_iff_minimal_compl_nonspanning :
-    M.IsCocircuit K ↔ Minimal (fun X ↦ ¬ M.Spanning (M.E \ X)) K := by
-  convert isCocircuit_iff_minimal with K
-  simp_rw [spanning_iff_exists_isBase_subset (S := M.E \ K), not_exists, subset_diff, not_and,
-    not_disjoint_iff_nonempty_inter, ← and_imp, and_iff_left_of_imp IsBase.subset_ground,
-      inter_comm K]
-
-lemma isCocircuit_iff_minimal_compl_nonspanning' :
-    M.IsCocircuit K ↔ Minimal (fun X ↦ ¬ M.Spanning (M.E \ X) ∧ X ⊆ M.E) K := by
-  rw [isCocircuit_iff_minimal_compl_nonspanning]
-  exact minimal_iff_minimal_of_imp_of_forall (fun _ h ↦ h.1)
-    (fun X hX ↦ ⟨X ∩ M.E, inter_subset_left, by rwa [diff_inter_self_eq_diff], inter_subset_right⟩)
-
-lemma IsCircuit.inter_isCocircuit_ne_singleton (hC : M.IsCircuit C) (hK : M.IsCocircuit K) :
-    C ∩ K ≠ {e} := by
-  intro he
-  have heC : e ∈ C := (he.symm.subset rfl).1
-  simp_rw [isCocircuit_iff_minimal_compl_nonspanning, minimal_iff_forall_ssubset, not_not] at hK
-  have' hKe := hK.2 (t := K \ {e}) (diff_singleton_sSubset.2 (he.symm.subset rfl).2)
-  apply hK.1
-  rw [spanning_iff_ground_subset_closure]
-  nth_rw 1 [← hKe.closure_eq, diff_diff_eq_sdiff_union]
-  · refine (M.closure_subset_closure (subset_union_left (t := C))).trans ?_
-    rw [union_assoc, singleton_union, insert_eq_of_mem heC, ← closure_union_congr_right
-      (hC.closure_diff_singleton_eq e), union_eq_self_of_subset_right]
-    rw [← he, diff_self_inter]
-    exact diff_subset_diff_left hC.subset_ground
-  rw [← he]
-  exact inter_subset_left.trans hC.subset_ground
-
-lemma IsCircuit.isCocircuit_inter_nontrivial (hC : M.IsCircuit C) (hK : M.IsCocircuit K)
-    (hCK : (C ∩ K).Nonempty) : (C ∩ K).Nontrivial := by
-  obtain ⟨e, heCK⟩ := hCK
-  rw [nontrivial_iff_ne_singleton heCK]
-  exact hC.inter_isCocircuit_ne_singleton hK
-
-lemma IsCircuit.isCocircuit_disjoint_or_nontrivial_inter (hC : M.IsCircuit C)
-    (hK : M.IsCocircuit K) : Disjoint C K ∨ (C ∩ K).Nontrivial := by
-  rw [or_iff_not_imp_left, disjoint_iff_inter_eq_empty, ← ne_eq, ← nonempty_iff_ne_empty]
-  exact hC.isCocircuit_inter_nontrivial hK
-
 lemma dual_rankPos_iff_exists_isCircuit : M✶.RankPos ↔ ∃ C, M.IsCircuit C := by
   rw [rankPos_iff, dual_isBase_iff, diff_empty, not_iff_comm, not_exists,
     ← ground_indep_iff_isBase, indep_iff_forall_subset_not_isCircuit]
   exact ⟨fun h C _ ↦ h C, fun h C hC ↦ h C hC.subset_ground hC⟩
-
-lemma IsCircuit.dual_rankPos (hC : M.IsCircuit C) : M✶.RankPos :=
-  dual_rankPos_iff_exists_isCircuit.mpr ⟨C, hC⟩
 
 lemma exists_isCircuit [RankPos M✶] : ∃ C, M.IsCircuit C :=
   dual_rankPos_iff_exists_isCircuit.1 (by assumption)
@@ -104,65 +34,6 @@ lemma exists_isCircuit [RankPos M✶] : ∃ C, M.IsCircuit C :=
 lemma rk_Pos_iff_exists_isCocircuit : M.RankPos ↔ ∃ K, M.IsCocircuit K := by
   rw [← dual_dual M, dual_rankPos_iff_exists_isCircuit, dual_dual M]
 
-/-- The fundamental cocircuit for `B`. Should be used when `B` is a base and `e ∈ B`. -/
-def fundCocircuit (M : Matroid α) (e : α) (B : Set α) := M✶.fundCircuit e (M✶.E \ B)
-
-lemma fundCocircuit_isCocircuit (he : e ∈ B) (hB : M.IsBase B) :
-    M.IsCocircuit <| M.fundCocircuit e B := by
-  apply hB.compl_isBase_dual.indep.fundCircuit_isCircuit _ (by simp [he])
-  rw [hB.compl_isBase_dual.closure_eq, dual_ground]
-  exact hB.subset_ground he
-
-lemma mem_fundCocircuit (M : Matroid α) (e : α) (B : Set α) : e ∈ M.fundCocircuit e B :=
-  mem_insert _ _
-
-lemma fundCocircuit_subset_insert_compl (M : Matroid α) (e : α) (B : Set α) :
-    M.fundCocircuit e B ⊆ insert e (M.E \ B) :=
-  fundCircuit_subset_insert ..
-
-lemma fundCocircuit_inter_eq (M : Matroid α) {B : Set α} (he : e ∈ B) :
-    (M.fundCocircuit e B) ∩ B = {e} := by
-  refine subset_antisymm ?_ (singleton_subset_iff.2 ⟨M.mem_fundCocircuit _ _, he⟩)
-  refine (inter_subset_inter_left _ (M.fundCocircuit_subset_insert_compl _ _)).trans ?_
-  simp +contextual
-
-lemma Indep.exists_isCocircuit_inter_eq_mem (hI : M.Indep I) (heI : e ∈ I) :
-    ∃ K, M.IsCocircuit K ∧ K ∩ I = {e} := by
-  obtain ⟨B, hB, hIB⟩ := hI.exists_isBase_superset
-  refine ⟨M.fundCocircuit e B, fundCocircuit_isCocircuit (hIB heI) hB, ?_⟩
-  rw [subset_antisymm_iff, subset_inter_iff, singleton_subset_iff, and_iff_right
-    (mem_fundCocircuit _ _ _), singleton_subset_iff, and_iff_left heI,
-    ← M.fundCocircuit_inter_eq (hIB heI)]
-  exact inter_subset_inter_right _ hIB
-
-lemma IsBase.mem_fundCocircuit_iff_mem_fundCircuit {e f : α} (hB : M.IsBase B) :
-    e ∈ M.fundCocircuit f B ↔ f ∈ M.fundCircuit e B := by
-  suffices aux : ∀ {N : Matroid α} {B' : Set α} (hB' : N.IsBase B') {e f},
-      e ∈ N.fundCocircuit f B' → f ∈ N.fundCircuit e B' from
-    ⟨fun h ↦ aux hB h , fun h ↦ aux hB.compl_isBase_dual <| by
-      simpa [fundCocircuit, inter_eq_self_of_subset_right hB.subset_ground]⟩
-  clear! B M e f
-  intro M B hB e f he
-  obtain rfl | hne := eq_or_ne e f
-  · simp [mem_fundCircuit]
-  have hB' : M✶.IsBase (M✶.E \ B) := hB.compl_isBase_dual
-  obtain hfE | hfE := em' <| f ∈ M.E
-  · rw [fundCocircuit, fundCircuit_eq_of_not_mem_ground (by simpa)] at he
-    contradiction
-  obtain hfB | hfB := em' <| f ∈ B
-  · rw [fundCocircuit, fundCircuit_eq_of_mem (by simp [hfE, hfB])] at he
-    contradiction
-  obtain ⟨heE, heB⟩ : e ∈ M.E \ B :=
-    by simpa [hne] using (M.fundCocircuit_subset_insert_compl f B) he
-  rw [fundCocircuit, hB'.indep.mem_fundCircuit_iff (by rwa [hB'.closure_eq]) (by simp [hfB])] at he
-  rw [hB.indep.mem_fundCircuit_iff (by rwa [hB.closure_eq]) heB]
-  have hB' :=
-    (hB'.exchange_isBase_of_indep' ⟨heE, heB⟩ (by simp [hfE, hfB]) he).compl_isBase_of_dual
-  refine hB'.indep.subset ?_
-  simp only [dual_ground, diff_singleton_subset_iff]
-  rw [diff_diff_right, inter_eq_self_of_subset_right (by simpa), union_singleton, insert_comm,
-    ← union_singleton (s := M.E \ B), ← diff_diff, diff_diff_cancel_left hB.subset_ground]
-  simp [hfB]
 
 lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsBasis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.IsBasis J₀ (M.closure I₀)) : M.IsBasis ((I \ I₀) ∪ J₀) X := by

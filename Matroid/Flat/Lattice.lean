@@ -71,13 +71,13 @@ instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   sInf_le Fs F h := inter_subset_left.trans (biInter_subset_of_mem (by simpa))
   le_sInf Fs F h := subset_inter (by simpa) F.coe_subset_ground
   top := ⟨M.E, M.ground_isFlat⟩
-  bot := M.flatClosure ∅
+  bot := ⟨M.loops, M.isFlat_closure _⟩
   le_top F := F.coe_isFlat.subset_ground
   bot_le F := F.coe_isFlat.closure_subset_of_subset (empty_subset _)
 
 @[simp] lemma FlatOf.coe_top (M : Matroid α) : ((⊤ : M.FlatOf) : Set α) = M.E := rfl
 
-@[simp] lemma FlatOf.coe_bot (M : Matroid α) : ((⊥ : M.FlatOf) : Set α) = M.closure ∅ := rfl
+@[simp] lemma FlatOf.coe_bot (M : Matroid α) : ((⊥ : M.FlatOf) : Set α) = M.loops := rfl
 
 @[simp] lemma FlatOf.coe_sup (F₁ F₂ : M.FlatOf) :
     ((F₁ ⊔ F₂ : M.FlatOf) : Set α) = M.closure (F₁ ∪ F₂) := rfl

@@ -63,7 +63,7 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶)
   apply_fun (· + ((I \ I₀) \ B).encard) at hcalc1
   rw [add_assoc, ← encard_union_eq (disjoint_sdiff_right.mono diff_subset diff_subset),
     ← union_diff_distrib, union_diff_cancel hI₀I.subset, ← hrw1,
-    hB'.encard_diff_comm hB, hrw3, add_assoc, add_comm, WithTop.add_right_cancel_iff hfin] at hcalc1
+    hB'.encard_diff_comm hB, hrw3, add_assoc, add_comm, WithTop.add_right_inj hfin] at hcalc1
 
   rw [← hcalc1, ← encard_diff_add_encard_inter (t := B), add_comm, inter_comm, ← hrw2,
     diff_inter_self_eq_diff]

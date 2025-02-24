@@ -175,7 +175,7 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (h
   have hNe : (N ＼ e).IsSimplification (M ＼ e)
   · convert hN.delete (D := {e}) (by simpa)
     simp only [deleteElem, mem_singleton_iff, iUnion_iUnion_eq_left]
-    rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.closure_empty,
+    rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.loops,
       he.isFlat.closure, diff_empty]
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
   replace hU := hU.minor hN.restriction.isMinor

@@ -313,7 +313,8 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   have hd : M'.Dep (⋃ i, X i) := by
     rw [← not_indep_iff hXE]
     refine fun hi ↦ ?_
-    obtain ⟨K, hK, hKX⟩ := hi.exists_isCocircuit_inter_eq_mem (e := e 0) (mem_iUnion_of_mem 0 <| rfl)
+    obtain ⟨K, hK, hKX⟩ := hi.exists_isCocircuit_inter_eq_mem (e := e 0)
+      (mem_iUnion_of_mem 0 <| rfl)
     obtain ⟨A, rfl⟩ := subset_range_iff_exists_image_eq.1 <| hK.subset_ground
     obtain ⟨m, hm : A ⊆ Iic m⟩ := (Finite.of_finite_image hK.finite e.injective.injOn).bddAbove
     obtain ⟨C, hC : C ∈ cSet m⟩ := (cSet_infinite Cs e m).nonempty

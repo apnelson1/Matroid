@@ -328,7 +328,7 @@ lemma eLocalConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hC
   · obtain ⟨I, hI⟩ := M.exists_isBasis C
     have hcl : (M ／ I).closure (Y \ C) = (M ／ I).closure (Y \ I) := by
       simp [closure_union_congr_right hI.closure_eq_closure]
-    have ss : C \ I ⊆ (M ／ I).closure ∅ := by
+    have ss : C \ I ⊆ (M ／ I).loops := by
       simp only [contract_closure_eq, empty_union, hI.closure_eq_closure]
       exact diff_subset_diff_left (subset_closure _ _)
     rw [hI.contract_eq_contract_delete, eLocalConn_delete_eq,
@@ -389,7 +389,7 @@ lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X)
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.eLocalConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
-    zero_add, WithTop.add_left_cancel_iff hX.inter_right.eRk_ne_top, nullity_eq_zero] at h
+    zero_add, WithTop.add_left_inj hX.inter_right.eRk_ne_top, nullity_eq_zero] at h
 
   exact h.isModularPair_of_union.of_isBasis_of_isBasis hIX hIY
 
@@ -571,13 +571,13 @@ lemma removeLoops_eConn (M : Matroid α) : M.removeLoops.eConn = M.eConn := by
     diff_eq_compl_inter, closure_inter_setOf_isNonloop_eq, ← closure_inter_ground,
     ← diff_eq_compl_inter, eLocalConn_closure_right]
 
-lemma eConn_union_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.closure ∅) :
+lemma eConn_union_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X ∪ L) = M.eConn X := by
   rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOf_isNonloop_eq,
-    show (X ∪ L) ∩ (M.E \ M.closure ∅) = X ∩ (M.E \ M.closure ∅) by tauto_set,
+    show (X ∪ L) ∩ (M.E \ M.loops) = X ∩ (M.E \ M.loops) by tauto_set,
     ← setOf_isNonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground]
 
-lemma eConn_diff_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.closure ∅) :
+lemma eConn_diff_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X \ L) = M.eConn X := by
   rw [← eConn_union_of_subset_loops _ hL, diff_union_self, eConn_union_of_subset_loops _ hL]
 
@@ -642,11 +642,11 @@ lemma eConn_compl' (M : Matroid α) (X : Set α) : M.eConn Xᶜ = M.eConn X := b
     OnUniv.ground_diff_eq]
   exact congr_arg _ <| by tauto_set
 
-lemma eConn_union_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.closure ∅) :
+lemma eConn_union_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.loops) :
     M.eConn (X ∪ L) = M.eConn X := by
   rw [← eConn_dual, eConn_union_of_subset_loops _ hL, eConn_dual]
 
-lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.closure ∅) :
+lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.loops) :
     M.eConn (X \ L) = M.eConn X := by
   rw [← eConn_dual, eConn_diff_of_subset_loops _ hL, eConn_dual]
 
@@ -772,13 +772,12 @@ end conn
 
 section core
 
-/-- The core of a set is its intersection with the set of isNonloop, noncoloop elements.
+/-- The core of a set is its intersection with the set of nonloop, noncoloop elements.
 This does not change the connectivity of a set, and is stable under duality.
-This is mostly an implementation detail,
-used for relating connectivity to junk elements . -/
-protected def core (M : Matroid α) (X : Set α) := ((X \ M.closure ∅) \ M✶.closure ∅) ∩ M.E
+This is mostly an implementation detail, used for relating connectivity to junk elements . -/
+protected def core (M : Matroid α) (X : Set α) := ((X \ M.loops) \ M.coloops) ∩ M.E
 
-lemma core_def (M : Matroid α) (X : Set α) : M.core X = ((X \ M.closure ∅) \ M✶.closure ∅) ∩ M.E :=
+lemma core_def (M : Matroid α) (X : Set α) : M.core X = ((X \ M.loops) \ M.coloops) ∩ M.E :=
   rfl
 
 @[simp]
@@ -800,12 +799,12 @@ lemma core_empty (M : Matroid α) : M.core ∅ = ∅ := by
 
 @[simp]
 lemma core_dual (M : Matroid α) (X : Set α) : M✶.core X = M.core X := by
-  rw [core_def, dual_dual, diff_diff_comm, dual_ground]
+  rw [core_def, coloops, dual_dual, diff_diff_comm, dual_ground]
   rfl
 
 @[simp]
 lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.core X := by
-  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, closure_empty_eq_empty,
+  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, removeLoops_loops_eq,
     removeLoops_coloops_eq]
   tauto_set
 
@@ -843,7 +842,7 @@ lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X �
 
 @[simp]
 lemma core_delete_subset (M : Matroid α) (X D : Set α) : (M ＼ D).core X ⊆ M.core X := by
-  simp_rw [core_def, delete_loops_eq, delete_dual_eq_dual_contract, contract_closure_eq,
+  simp_rw [core_def, delete_loops_eq, coloops, delete_dual_eq_dual_contract, contract_closure_eq,
     delete_ground, empty_union]
   have := M✶.closure_subset_closure (empty_subset D)
   tauto_set

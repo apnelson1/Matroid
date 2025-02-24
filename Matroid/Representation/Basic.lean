@@ -137,8 +137,8 @@ lemma Rep.span_closure_congr_iff (v : M.Rep 𝔽 W) :
     M.closure X = M.closure Y ↔ span 𝔽 (v '' X) = span 𝔽 (v '' Y) :=
   ⟨v.span_closure_congr, fun h ↦ by simp [subset_antisymm_iff, v.closure_subset_iff_span_le, h]⟩
 
-@[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.closure ∅)) = ⊥ := by
-  simp [v.span_closure_congr (M.closure_closure ∅)]
+@[simp] lemma Rep.span_image_loops (v : M.Rep 𝔽 W) : span 𝔽 (v '' (M.loops)) = ⊥ := by
+  simp [v.span_closure_congr (M.closure_loops)]
 
 /- If some linear combination of columns of `M.E` is zero, the nonzero indices form a cyclic set.-/
 -- lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽)

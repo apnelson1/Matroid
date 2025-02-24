@@ -201,10 +201,10 @@ lemma rk_singleton_le (M : Matroid α) (e : α) : M.rk {e} ≤ 1 := by
 lemma IsBasis.rk_eq_rk (h : M.IsBasis I X) : M.rk I = M.rk X :=
   h.isBasis'.rk_eq_rk
 
-lemma rk_eq_zero_iff [RankFinite M] (hX : X ⊆ M.E) : M.rk X = 0 ↔ X ⊆ M.closure ∅ := by
+lemma rk_eq_zero_iff [RankFinite M] (hX : X ⊆ M.E) : M.rk X = 0 ↔ X ⊆ M.loops := by
   rw [← eRk_eq_coe_iff, coe_zero, eRk_eq_zero_iff]
 
-@[simp] lemma rk_loops (M : Matroid α) : M.rk (M.closure ∅) = 0 := by
+@[simp] lemma rk_loops (M : Matroid α) : M.rk (M.loops) = 0 := by
   simp [rk]
 
 lemma IsNonloop.rk_eq (he : M.IsNonloop e) : M.rk {e} = 1 := by

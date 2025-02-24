@@ -14,6 +14,7 @@ This is the right null space of a matrix representation of `M`. -/
 noncomputable def Rep.cycleSpace (v : M.Rep 𝔽 W) :=
     (LinearMap.ker (Finsupp.linearCombination 𝔽 v) ⊓ Finsupp.supported 𝔽 𝔽 M.E)
 
+/-- `cycleSpace'` is the cycle space as a subspace of `Finsupp.supported 𝔽 𝔽 M.E`.-/
 noncomputable def Rep.cycleSpace' (v : M.Rep 𝔽 W) :=
     (LinearMap.ker (Finsupp.linearCombinationOn _ _ 𝔽 v M.E))
 
@@ -143,6 +144,8 @@ lemma mem_mySupported_iff {s : Set α} {x : α → 𝔽} :
     x ∈ mySupported 𝔽 s ↔ support x ⊆ s := by
   simp [mySupported, not_imp_comm]
 
+
+
 /-- The `cocycleSpace` of an `𝔽`-representation of `M : Matroid α` is the set of vectors
 in `α → 𝔽` that are supported on `M.E`, and are orthogonal to every vector in the `cycleSpace`.
 This corresponds to the 'row space' of a matrix representation.  -/
@@ -223,8 +226,8 @@ lemma Rep.mem_cycleSpace_iff_forall (v : M.Rep 𝔽 W) {y : α →₀ 𝔽} :
   · rw [mem_cycleSpace_iff_forall_of_support _ hsupp, and_iff_left hsupp]
   simp only [mem_cycleSpace_iff, and_congr_left_iff, hsupp, false_imp_iff]
 
-lemma cocycleSpace_eq_span [Fintype β] (v : M.Rep 𝔽 (β → 𝔽)) :
-    v.cocycleSpace = span 𝔽 (range fun b ↦ (v · b)) := by
-  simp only [le_antisymm_iff, span_le, range_subset_iff, SetLike.mem_coe, and_iff_left
-    (fun y ↦ v.row_mem_cocycleSpace y)]
-  refine fun x hx ↦ ?_
+-- lemma cocycleSpace_eq_span [Fintype β] (v : M.Rep 𝔽 (β → 𝔽)) :
+--     v.cocycleSpace = span 𝔽 (range fun b ↦ (v · b)) := by
+--   simp only [le_antisymm_iff, span_le, range_subset_iff, SetLike.mem_coe, and_iff_left
+--     (fun y ↦ v.row_mem_cocycleSpace y)]
+--   refine fun x hx ↦ ?_

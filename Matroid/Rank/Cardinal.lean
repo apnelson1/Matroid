@@ -88,7 +88,7 @@ theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
   exact ⟨by rintro ⟨E, rfl⟩; rfl, fun h ↦ ⟨M.E, h⟩⟩
 
 /-- A version of `Matroid.cRk_eq_zero_iff` applying to sets not contained in the ground set. -/
-theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
+theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
     restrict_ground_eq, subset_antisymm_iff]
   simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
@@ -118,7 +118,8 @@ lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.IsRkFinite X := by
   refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_isRkFinite h))
   rw [cRk_le_iff]
   intro J hJ
-  rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
+  rw [← toENat_strictMonoOn.le_iff_le, toENat_cardinalMk, toENat_cardinalMk,
+    hI.encard_eq_encard hJ]
   · simp [(hJ.finite_of_isRkFinite h).countable]
   simp [(hI.finite_of_isRkFinite h).countable]
 
@@ -128,7 +129,7 @@ lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
 @[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain (h | h) := M.finite_or_rankInfinite
-  · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_mk]
+  · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_cardinalMk]
   rw [← hB.encard_eq_eRank, hB.infinite.encard_eq, toENat_eq_top, ← not_lt, cRank_lt_aleph0_iff]
   exact M.not_rankFinite
 

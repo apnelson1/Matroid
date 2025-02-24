@@ -211,7 +211,7 @@ protected lemma ModularCut.mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.
 @[simp] lemma ModularCut.mem_top_iff : F ∈ (⊤ : M.ModularCut) ↔ M.IsFlat F :=
   ⟨fun h ↦ h.1, ModularCut.mem_top_of_isFlat⟩
 
-lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.closure ∅ ∈ U := by
+lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.loops ∈ U := by
   refine ⟨by rintro rfl; exact ⟨M.closure_isFlat ∅, empty_subset _⟩, fun h ↦ ?_⟩
   simp only [SetLike.ext_iff, mem_top_iff]
   exact fun F ↦ ⟨U.isFlat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
@@ -836,14 +836,14 @@ private lemma projectBy_aux (U : M.ModularCut) :
   obtain (rfl | hU) := eq_or_ne U ⊤
   · rw [contractElem, contract_eq_delete_of_subset_loops]
     · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj, hinj.injOn]
-    rw [singleton_subset_iff, ← isLoop_iff_mem_closure_empty, ← singleton_dep, dep_iff]
+    rw [singleton_subset_iff, ← isLoop_iff, ← singleton_dep, dep_iff]
     simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
   simp only [contractElem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
     forall_const]
   rw [Indep.contract_indep_iff]
   · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_closure_eq,
       preimage_image_eq _ hinj, ModularCut.map, hU]
-  suffices M.closure ∅ ∉ U by
+  suffices M.loops ∉ U by
     simpa [ModularCut.extIndep_iff_of_mem, (eq_comm (a := ∅)), map_closure_eq, ModularCut.map,
       image_eq_image hinj]
   rwa [Ne, ModularCut.eq_top_iff] at hU

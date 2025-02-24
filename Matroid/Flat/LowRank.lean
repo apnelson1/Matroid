@@ -23,12 +23,12 @@ lemma IsPoint.isRkFinite (hP : M.IsPoint P) : M.IsRkFinite P := by
 lemma IsNonloop.closure_isPoint (he : M.IsNonloop e) : M.IsPoint (M.closure {e}) :=
   ⟨M.closure_isFlat {e}, by rw [eRk_closure_eq, he.indep.eRk_eq_encard, encard_singleton]⟩
 
-lemma loops_covBy_iff : M.closure ∅ ⋖[M] P ↔ M.IsPoint P := by
+lemma loops_covBy_iff : M.loops ⋖[M] P ↔ M.IsPoint P := by
   simp only [covBy_iff_eRelRk_eq_one, closure_isFlat, eRelRk_closure_left, eRelRk_empty_left,
     true_and, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
 
-lemma IsPoint.covBy (hP : M.IsPoint P) : M.closure ∅ ⋖[M] P := loops_covBy_iff.2 hP
+lemma IsPoint.covBy (hP : M.IsPoint P) : M.loops ⋖[M] P := loops_covBy_iff.2 hP
 
 lemma IsPoint.exists_eq_closure_isNonloop (hP : M.IsPoint P) :
     ∃ e, M.IsNonloop e ∧ P = M.closure {e} := by
@@ -72,7 +72,7 @@ lemma isPoint_singleton_iff [M.Nonempty] : M.IsPoint {e} ↔ ∀ f ∈ M.E, M.In
   exact he.closure_isPoint
 
 lemma IsPoint.loopless_of_singleton (h : M.IsPoint {e}) : M.Loopless := by
-  rw [loopless_iff_closure_empty, ← subset_empty_iff]
+  rw [loopless_iff_loops, ← subset_empty_iff, loops]
   nth_rw 2 [← diff_eq_empty.2 h.isFlat.closure.subset]
   rw [subset_diff_singleton_iff]
   exact ⟨M.closure_subset_closure (empty_subset _), h.isNonloop.not_isLoop⟩
@@ -125,11 +125,11 @@ lemma isPoint_contract_iff (hC : C ⊆ M.E := by aesop_mat) :
     exact hP.subset
 
 lemma IsPoint.eq_or_eq_of_isFlat_of_subset (hP : M.IsPoint P) (hF : M.IsFlat F) (h : F ⊆ P) :
-    F = M.closure ∅ ∨ F = P :=
+    F = M.loops ∨ F = P :=
   hP.covBy.eq_or_eq hF hF.loops_subset h
 
 lemma IsPoint.subset_or_inter_eq_loops_of_isFlat (hP : M.IsPoint P) (hF : M.IsFlat F) :
-    P ⊆ F ∨ P ∩ F = M.closure ∅ := by
+    P ⊆ F ∨ P ∩ F = M.loops := by
   obtain (h | h) := hP.eq_or_eq_of_isFlat_of_subset (hP.isFlat.inter hF) inter_subset_left
   · exact Or.inr h
   exact Or.inl (inter_eq_left.1 h)

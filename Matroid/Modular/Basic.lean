@@ -554,7 +554,7 @@ lemma IsModularPair.closure_closure (h : M.IsModularPair X Y) :
     M.IsModularPair (M.closure X) (M.closure Y) :=
   h.closure_left.closure_right
 
-lemma isModularPair_loops (M : Matroid α) (hX : X ⊆ M.E) : M.IsModularPair X (M.closure ∅) :=
+lemma isModularPair_loops (M : Matroid α) (hX : X ⊆ M.E) : M.IsModularPair X (M.loops) :=
   ((M.isModularPair_of_subset (empty_subset X) hX).closure_left).symm
 
 lemma isModularPair_singleton (he : e ∈ M.E) (hX : X ⊆ M.E) (heX : e ∉ M.closure X) :
@@ -587,7 +587,7 @@ lemma IsRkFinite.isModularPair_iff_eRk (hXfin : M.IsRkFinite X) (hYfin : M.IsRkF
     (hIi.subset.trans inter_subset_right)
   refine ⟨IX, IY, hIX, hIY, ?_⟩
   rw [hIi.eRk_eq_encard, hIX.eRk_eq_encard, ← encard_diff_add_encard_of_subset hX,
-    add_comm (encard _), add_assoc, WithTop.add_left_cancel_iff hifin, hIY.eRk_eq_encard,
+    add_comm (encard _), add_assoc, WithTop.add_left_inj hifin, hIY.eRk_eq_encard,
     ← encard_union_add_encard_inter, ← union_eq_self_of_subset_left hY, ← union_assoc,
     diff_union_self, union_eq_self_of_subset_right hX] at hr
   refine IsBasis.indep <| (hXfin.union hYfin).isBasis_of_subset_closure_of_subset_of_encard_le ?_

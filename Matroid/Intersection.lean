@@ -40,8 +40,8 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
   have _ : M₂.Finite := ⟨hE.symm ▸ M₁.ground_finite⟩
   by_cases hloop : ∀ e ∈ M₁.E, M₁.IsLoop e ∨ M₂.IsLoop e
-  · suffices 0 = M₂.rk (M₂.E \ M₁.closure ∅) from
-      ⟨∅, M₁.closure ∅, closure_subset_ground _ _, by simpa⟩
+  · suffices 0 = M₂.rk (M₂.E \ M₁.loops) from
+      ⟨∅, M₁.loops, closure_subset_ground _ _, by simpa⟩
     rw [eq_comm, rk_eq_zero_iff diff_subset, diff_subset_iff, ← hE]
     simpa [subset_def]
   push_neg at hloop

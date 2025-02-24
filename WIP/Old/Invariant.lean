@@ -271,10 +271,10 @@ end Invariant
 
 -- @[simp] theorem pred_removeLoops_iff [DeleteLoopClosed P] {M : Matroid α} [M.Finite] :
 --     P M.removeLoops ↔ P M := by
---   set S := (M.closure ∅).powerset ∩ {X : Set α | (P M ↔ P (M ＼ X))}
+--   set S := (M.loops).powerset ∩ {X : Set α | (P M ↔ P (M ＼ X))}
 --   have hfin : S.Finite
 --   · exact (M.ground_finite.subset (M.closure_subset_ground ∅)).finite_subsets.inter_of_left _
---   obtain ⟨X, ⟨hXss : _ ⊆ M.closure ∅, hPX : P M ↔ P (M ＼ X)⟩, hX⟩ :=
+--   obtain ⟨X, ⟨hXss : _ ⊆ M.loops, hPX : P M ↔ P (M ＼ X)⟩, hX⟩ :=
 --     Finite.exists_maximal_wrt id S hfin ⟨∅, by simp⟩
 --   obtain (hss | rfl) := hXss.ssubset_or_eq
 --   · obtain ⟨e, heX, hel⟩ := exists_of_ssubset hss
