@@ -1,5 +1,7 @@
 import Matroid.Uniform
 import Matroid.Connectivity.Skew
+import Mathlib.Tactic.ENatToNat
+import Mathlib.Tactic.TautoSet
 
 open Set.Notation
 
@@ -92,6 +94,13 @@ def CrossingBinary (M : Matroid α) : Prop := ∀ ⦃X : Finset α⦄, M.IsCross
 lemma CrossingBinary.even_of_finite (h : M.CrossingBinary) (hX : M.IsCrossing X) (hfin : X.Finite) :
     Even hfin.toFinset.card :=
   h (X := hfin.toFinset) (by simpa)
+
+lemma CrossingBinary.even_of_isCrossing (h : M.CrossingBinary) (hX : M.IsCrossing X) :
+    Even X.encard := by
+  obtain hfin | hinf := X.finite_or_infinite
+  · rw [hfin.encard_eq_coe_toFinset_card, ENat.even_natCast]
+    exact h.even_of_finite hX hfin
+  simp [hinf.encard_eq]
 
 lemma CrossingBinary.dual (hM : M.CrossingBinary) : M✶.CrossingBinary :=
   fun _ hX ↦ hM hX.of_dual
@@ -332,3 +341,86 @@ theorem crossingBinary_iff_no_U24_isMinor (M : Matroid α) :
 section Cyclic
 
 variable {A : Set α}
+
+lemma Even.add_even [Semiring α] {a b : α} (ha : Even a) (hb : Even b) : Even (a + b) := by
+  obtain ⟨a, rfl⟩ := ha
+  obtain ⟨b, rfl⟩ := hb
+  rw [add_right_comm, ← add_assoc, add_comm a b, add_assoc]
+  exact ⟨b + a, rfl⟩
+
+-- lemma foo (hM : M.CrossingBinary) (hA : M.Cyclic A) (hAfin : A.Finite) (hK : M.IsCocircuit K) :
+--     Even (A ∩ K).encard := by
+--   classical
+--   obtain ⟨A, rfl⟩ := hAfin.exists_finset_coe
+--   induction' A using Finset.strongInduction with A IH
+--   obtain rfl | hne := A.eq_empty_or_nonempty
+--   · simp
+--   obtain ⟨C, hCA, hC⟩ := (hA.dep_of_nonempty hne).exists_isCircuit_subset
+--   obtain ⟨C, rfl⟩ := (hAfin.subset hCA).exists_finset_coe
+--   have hcard {K'} (hK' : M.IsCocircuit K') :
+--       Even (((A \ C : Finset α) : Set α) ∩ K').encard ↔ Even (A ∩ K' : Set α).encard := by
+--     rw [← diff_union_of_subset hCA, union_inter_distrib_right, encard_union_eq (by tauto_set),
+--       ENat.even_add, iff_true_intro (hM.even_of_isCrossing (hC.isCrossing_inter hK')), iff_true,
+--       Finset.coe_sdiff]
+--     · simp only [ne_eq, encard_eq_top_iff, not_infinite]
+--       exact hAfin.subset (by tauto_set)
+--     simp only [ne_eq, encard_eq_top_iff, not_infinite]
+--     exact hAfin.subset (by tauto_set)
+
+--   have hssu : A \ C ⊂ A := by
+--     have := diff_ssubset hCA hC.nonempty
+--     norm_cast at this
+--   have h_even := IH _ hssu ?_ (Finset.finite_toSet ..)
+--   · rwa [← hcard hK]
+--   rw [cyclic_iff_forall_inter_isCocircuit_encard_ne
+--(by simp [diff_subset.trans hA.subset_ground])]
+--   intro K' hK' h1
+--   have hne : ¬ Even (((A \ C : Finset α) : Set α) ∩ K').encard := by
+--     rw [h1, ← Nat.cast_one, ENat.even_natCast]
+--     exact Nat.not_even_one
+
+  -- rw [hcard hK] at hne
+
+
+
+
+
+
+    -- refine Finset.sdiff_subset.ssubset_of_ne fun h_eq ↦ ?_
+    -- have : C.Nonempty := by simpa using hC.nonempty
+
+
+
+
+
+  -- have := IH (A \ C) (Finset.diff_subset.ss)
+
+
+
+  -- obtain ⟨C, A₀, hCA₀, hA₀A, hC, hA₀, hu⟩ := hA.exists_eq_union_isCircuit_cyclic_ssubset hne
+
+
+
+  -- refine Set.Finite.induction_on A hA (by simp) ?_
+
+
+-- lemma CrossingBinary.cyclic_iff_forall_inter_isCocircuit_even
+--     (hM : M.CrossingBinary) (hA : A.Finite) (hAE : A ⊆ M.E := by aesop_mat) :
+--     M.Cyclic A ↔ ∀ K, M.IsCocircuit K → Even (A ∩ K).encard := by
+--   refine ⟨fun h K hK ↦ ?_,
+--     fun h ↦ (cyclic_iff_forall_inter_isCocircuit_encard_ne hAE).2 fun K hK h_even ↦ ?_⟩
+--   · obtain rfl | hne := A.eq_empty_or_nonempty
+--     · simp
+--     obtain ⟨C, A₀, hCA, hA₀A, hC, hA₀, hssu⟩ := h.exists_eq_union_isCircuit_cyclic_ssubset hne
+--     have hlt : A₀.encard < A.encard := by
+--       sorry
+--     have := CrossingBinary.cyclic_iff_forall_inter_isCocircuit_even
+
+--     -- rw [← hssu, ← union_diff_self, union_inter_distrib_right, encard_union_eq]
+--     -- ·
+
+--   obtain ⟨r, hr⟩ := h K hK
+--   rw [h_even] at hr
+--   enat_to_nat
+--   omega
+-- decreasing_by hlt

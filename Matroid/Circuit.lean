@@ -192,6 +192,10 @@ lemma cyclic_tfae : List.TFAE [
     exact N.closure_subset_closure <| diff_subset_diff_left hC.subset_ground
   tfae_finish
 
+lemma cyclic_iff_forall_inter_isCocircuit_encard_ne (hAE : A ⊆ M.E := by aesop_mat) :
+    M.Cyclic A ↔ ∀ K, M.IsCocircuit K → (A ∩ K).encard ≠ 1 := by
+  rw [cyclic_tfae.out 0 4 rfl rfl, and_iff_left hAE]
+
 lemma cyclic_iff_forall_mem_closure_diff_singleton :
     M.Cyclic A ↔ ∀ e ∈ A, e ∈ M.closure (A \ {e}) :=
   cyclic_tfae.out 0 3
