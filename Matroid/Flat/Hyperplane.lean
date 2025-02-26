@@ -74,6 +74,13 @@ lemma isHyperplane_iff_maximal_nonspanning :
 
 @[simp] lemma compl_isCocircuit_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.IsCocircuit (M.E \ H) ↔ M.IsHyperplane H := by
+  -- rw [isCocircuit_def, ← minimal_nonempty_cyclic_iff_isCircuit,
+  --   isHyperplane_iff_maximal_proper_isFlat, iff_comm]
+  -- apply maximal_apply_anti_bijOn_iff (f := fun s ↦ M.E \ s)
+  -- · rw [bijOn_iff]
+  -- -- refine maximal_apply_anti_iff (fun F ↦ ?_) (fun A hA ↦ ⟨M.E \ A, ?_, ?_⟩) ?_
+  -- -- · by_cases hF : F ⊆ M.E
+
   rw [isCocircuit_iff_minimal_compl_nonspanning', isHyperplane_iff_maximal_nonspanning, iff_comm]
 
   have h_image := image_antitone_setOf_maximal_mem (f := fun X ↦ M.E \ X)

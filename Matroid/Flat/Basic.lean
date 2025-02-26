@@ -67,13 +67,6 @@ lemma exists_mem_closure_not_mem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)] at h
   exact not_subset.1 h
 
-lemma IsFlat.compl_cyclic_dual (hF : M.IsFlat F) : M✶.Cyclic (M.E \ F) := by
-  rwa [cyclic_iff_compl_isFlat_dual, dual_dual, dual_ground, diff_diff_cancel_left hF.subset_ground]
-
-lemma isFlat_dual_iff_compl_cyclic (hF : F ⊆ M.E := by aesop_mat) :
-    M✶.IsFlat F ↔ M.Cyclic (M.E \ F) := by
-  rw [cyclic_iff_compl_isFlat_dual, diff_diff_cancel_left hF]
-
 lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
     M.IsFlat F ↔ ∀ e ∈ M.E \ F, M.closure F ⊂ M.closure (insert e F) := by
   refine ⟨fun h e he ↦ (M.closure_subset_closure (subset_insert _ _)).ssubset_of_ne ?_, fun h ↦ ?_⟩

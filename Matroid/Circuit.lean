@@ -158,6 +158,17 @@ lemma Cyclic.compl_isFlat_dual (hA : M.Cyclic A) : M✶.IsFlat (M.E \ A) := by
 lemma compl_cyclic_iff (hAE : A ⊆ M.E := by aesop_mat) : M.Cyclic (M.E \ A) ↔ M✶.IsFlat A := by
   rw [← dual_dual M, dual_cyclic_iff, dual_dual, dual_ground, diff_diff_cancel_left hAE]
 
+lemma compl_cyclic_dual_iff {F : Set α} (hF : F ⊆ M.E := by aesop_mat) :
+    M✶.Cyclic (M.E \ F) ↔ M.IsFlat F := by
+  rw [dual_cyclic_iff, diff_diff_cancel_left hF]
+
+lemma IsFlat.compl_cyclic_dual {F : Set α} (hF : M.IsFlat F) : M✶.Cyclic (M.E \ F) := by
+  rwa [cyclic_iff_compl_isFlat_dual, dual_dual, dual_ground, diff_diff_cancel_left hF.subset_ground]
+
+lemma isFlat_dual_iff_compl_cyclic {F : Set α} (hF : F ⊆ M.E := by aesop_mat) :
+    M✶.IsFlat F ↔ M.Cyclic (M.E \ F) := by
+  rw [cyclic_iff_compl_isFlat_dual, diff_diff_cancel_left hF]
+
 lemma cyclic_tfae : List.TFAE [
     M.Cyclic A,
     ∃ Cs, A = ⋃₀ Cs ∧ ∀ C ∈ Cs, M.IsCircuit C,
