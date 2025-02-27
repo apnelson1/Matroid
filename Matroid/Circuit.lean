@@ -18,19 +18,6 @@ section Dual
 
 variable {B : Set α}
 
-lemma IsCocircuit.isCircuit (hK : M.IsCocircuit K) : M✶.IsCircuit K :=
-  hK
-
-lemma IsCircuit.isCocircuit (hC : M.IsCircuit C) : M✶.IsCocircuit C := by
-  rwa [isCocircuit_def, dual_dual]
-
-lemma dual_rankPos_iff_exists_isCircuit : M✶.RankPos ↔ ∃ C, M.IsCircuit C := by
-  rw [rankPos_iff, dual_isBase_iff, diff_empty, not_iff_comm, not_exists,
-    ← ground_indep_iff_isBase, indep_iff_forall_subset_not_isCircuit]
-  exact ⟨fun h C _ ↦ h C, fun h C hC ↦ h C hC.subset_ground hC⟩
-
-lemma exists_isCircuit [RankPos M✶] : ∃ C, M.IsCircuit C :=
-  dual_rankPos_iff_exists_isCircuit.1 (by assumption)
 
 lemma rk_Pos_iff_exists_isCocircuit : M.RankPos ↔ ∃ K, M.IsCocircuit K := by
   rw [← dual_dual M, dual_rankPos_iff_exists_isCircuit, dual_dual M]
