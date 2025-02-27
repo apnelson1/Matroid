@@ -5,14 +5,7 @@ namespace Matrix
 
 
 open Set Submodule Cardinal
--- PR separately.
-@[simp]
-lemma Set.toENat_cardinalMk {α : Type*} (s : Set α) : (#s).toENat = s.encard := rfl
 
--- PR separately.
-@[simp]
-lemma Set.coe_fintype_card {α : Type*} (s : Set α) [Fintype s] : Fintype.card s = s.encard := by
-  simp [encard_eq_coe_toFinset_card]
 
 universe u v w u₁ u₂
 
@@ -230,5 +223,30 @@ lemma span_col_eq_top_of_linearIndependent_row [Fintype m] [Field R] (h : Linear
 lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : LinearIndependent R Aᵀ) :
     span R (range A) = ⊤ := by
   rw [← Aᵀ.span_col_eq_top_of_linearIndependent_row h, transpose_transpose]
+
+
+
+section Submatrix
+
+variable [Ring R]
+
+/-- If a column-submatrix of `A` has linearly independent rows, then so does `A`. -/
+theorem rows_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ ≃ m) (f : n₀ → n)
+    (h : LinearIndependent R (A.submatrix e f)) : LinearIndependent R A := by
+    classical
+  rw [linearIndependent_iff'] at h ⊢
+  intro s c hc i his
+  rw [← h (s.image e.symm) (c ∘ e) _ (e.symm i) (by simpa)]
+  · simp
+  ext j
+  convert congr_fun hc (f j)
+  simp
+
+/-- If a row-submatrix of `A` has linearly independent columns, then so does `A`. -/
+theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m) (f : n₀ ≃ n)
+    (h : LinearIndependent R (A.submatrix e f)ᵀ) : LinearIndependent R Aᵀ :=
+  rows_linearIndependent_of_submatrix f e h
+
+end Submatrix
 
 end Matrix

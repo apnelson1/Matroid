@@ -1,6 +1,7 @@
 import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.Data.Set.Card
 
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
@@ -213,6 +214,16 @@ lemma LinearIndepOn.span_eq_of_maximal_subset
 lemma LinearIndepOn.span_eq_top_of_maximal (hmax : Maximal (LinearIndepOn R v ·) s) :
     span R (v '' s) = span R (range v) := by
   rw [← image_univ, LinearIndepOn.span_eq_of_maximal_subset (t := univ) (by simpa)]
+
+lemma LinearIndependent.enatCard_le_toENat_rank {f : ι → M} (h : LinearIndependent R f) :
+    ENat.card ι ≤ (Module.rank R M).toENat := by
+  simpa [ENat.card] using OrderHom.mono (β := ℕ∞) Cardinal.toENat h.cardinal_lift_le_rank
+
+lemma LinearIndepOn.encard_le_toENat_rank (h : LinearIndepOn R v s) :
+    Set.encard s ≤ (Module.rank R M).toENat :=
+  h.linearIndependent.enatCard_le_toENat_rank
+  -- have := h.linearIndependent.cardinal_lift_le_rank
+  -- have := @OrderHom.mono Cardinal.{max u_10 u_12} ℕ∞ _ _ Cardinal.toENat this
 
 -- lemma linearIndepOn.extension_span_eq (hli : LinearIndepOn R v s) (hst : s ⊆ t) :
 
