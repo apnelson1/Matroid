@@ -168,6 +168,17 @@ lemma biVandermonde_eq_mul_vandermonde (v w : Fin (n+1) → K) (hw : ∀ i, w i 
   ext i j
   simp_rw [biVandermonde_row_eq_mul_vandermonde_row _ (hw i), of_apply, Pi.smul_apply]
 
+lemma foo' (v w : Fin (n+1) → K) {i₀ : Fin (n+1)}
+    (hw : ∀ i ≠ i₀, w i ≠ 0) :
+    (biVandermonde v w).submatrix i₀.succAbove castSucc =
+    .of fun i j ↦ (w (i₀.succAbove i))^n •
+      (vandermonde ((fun i ↦ (v i) / (w i)) ∘ i₀.succAbove)) i j := by
+  ext i j
+  simp only [submatrix_apply, coe_eq_castSucc, vandermonde_apply, coe_castSucc, smul_eq_mul,
+    of_apply]
+  rw [biVandermonde_row_eq_mul_vandermonde_row _ (hw _ (succAbove_ne i₀ i))]
+  simp
+
 lemma biVandermonde_det_eq_zero_of_zero {v w : Fin (n+2) → K} {i} (hvi : v i = 0)
     (hwi : w i = 0) : (biVandermonde v w).det = 0 :=
   det_eq_zero_of_row_eq_zero i <| by simp [← funext_iff, biVandermonde_row_eq_zero_of_zero hvi hwi]
@@ -207,17 +218,19 @@ theorem foo (v w : Fin n → K) : (biVandermonde v w).det =
     ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, ((v j * w i) - (v i * w j)) := by
   obtain rfl | n := n
   · simp
-  obtain ⟨i₀, i₀', hlt, hi₀, hi₀'⟩ | hnot := em (∃ i₀ i₀', i₀ < i₀' ∧ w i₀ = 0 ∧ w i₀' = 0)
-  ·
-    rw [det_zero_of_column_eq hlt.ne, eq_comm, Finset.prod_eq_zero (i := i₀) (by simp)]
-    · rw [Finset.prod_eq_zero (i := i₀') (by simpa)]
-      simp [hi₀, hi₀']
-
+  obtain ⟨i₀, i₀', hne, h_mul⟩ | h_mul := em <| ∃ i i', i ≠ i' ∧ v i * w i' = v i' * w i
+  · rw [biVandermonde_det_eq_zero_of_mul_eq_mul hne h_mul, eq_comm,
+      Finset.prod_eq_zero (i := i₀ ⊓ i₀') (by simp)]
+    rw [Finset.prod_eq_zero (i := i₀ ⊔ i₀') (by simp [Finset.mem_Ioi, inf_lt_sup.2 hne])]
+    obtain hlt | hlt := hne.lt_or_lt
+    · simp [inf_eq_left.2 hlt.le, sup_eq_right.2 hlt.le, ← h_mul]
+    simp [inf_eq_right.2 hlt.le, sup_eq_left.2 hlt.le, h_mul]
+  simp only [ne_eq, not_exists, not_and, not_imp_not] at h_mul
 
 
   obtain hw | ⟨i₀, hi₀⟩ := em' (0 ∈ range w)
   · replace hw : ∀ i, w i ≠ 0 := by simpa [mem_range] using hw
-    simp_rw [biVandermonde_eq_mul_vandermonde _ _ hw, det_mul_column,
+    simp_rw [biVandermonde_eq_mul_vandermonde _ _ hw, smul_eq_mul, det_mul_column,
       det_vandermonde, div_sub_div _ _ (hw _) (hw _), Finset.prod_div_distrib, ← mul_div_assoc,
       mul_comm (a := w _) (b := v _)]
     rw [div_eq_iff (by simp [Ne, Finset.prod_eq_zero_iff, hw]), mul_comm]
@@ -230,10 +243,26 @@ theorem foo (v w : Fin n → K) : (biVandermonde v w).det =
     rw [← mul_div_assoc, div_eq_iff (by simp [hw, Finset.prod_eq_zero_iff]), mul_comm,
       Finset.prod_comm' (s' := Finset.Iio) (t' := Finset.univ) (by simp)]
     simp
-  obtain ⟨i₀', hne, hi₀'⟩ | hi₀ := em (∃ j ≠ i₀, w j = 0)
-  ·
-    · rw [Finset.prod_eq_zero (i := max i₀ i₀') (by simp)]
-      rw [Finset.prod_eq_zero (i := i₀')]
+
+
+  rw [det_succ_row _ i₀, Finset.sum_eq_single (a := Fin.last n)
+    (fun b _ hb ↦ by simp [biVandermonde_row_zero_right _ hi₀, Pi.single_eq_of_ne hb]) (by simp)]
+  simp [biVandermonde_row_zero_right _ hi₀]
+  rw [foo']
+  · simp_rw [smul_eq_mul, det_mul_column, det_vandermonde, Fin.prod_univ_succAbove _ i₀]
+    simp only [Function.comp_apply, hi₀, mul_zero, zero_sub]
+    simp_rw [neg_mul_eq_mul_neg, Finset.prod_mul_distrib]
+    simp
+  -- have hrw : (biVandermonde v w).submatrix i₀.succAbove castSucc =
+  --    .of fun i j ↦ (w (i₀.succAbove i))⁻¹ * biVandermonde (v ∘ i₀.succAbove) (w ∘ i₀.succAbove) i j := by
+  --   ext i j
+  --   simp [biVandermonde_apply]
+  --   sorry
+
+  -- obtain ⟨i₀', hne, hi₀'⟩ | hi₀ := em (∃ j ≠ i₀, w j = 0)
+  -- ·
+  --   · rw [Finset.prod_eq_zero (i := max i₀ i₀') (by simp)]
+  --     rw [Finset.prod_eq_zero (i := i₀')]
 
 
 
