@@ -5,7 +5,7 @@ import Matroid.ForMathlib.Set
 import Mathlib.Tactic.TFAE
 
 /-!
-  A `IsCircuit` of a matroid is a minimal dependent set.
+  A `Circuit` of a matroid is a minimal dependent set.
 -/
 
 variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R E D : Set α} {e f x y : α}
@@ -18,9 +18,6 @@ section Dual
 
 variable {B : Set α}
 
-
-lemma rk_Pos_iff_exists_isCocircuit : M.RankPos ↔ ∃ K, M.IsCocircuit K := by
-  rw [← dual_dual M, dual_rankPos_iff_exists_isCircuit, dual_dual M]
 
 lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsBasis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.IsBasis J₀ (M.closure I₀)) : M.IsBasis ((I \ I₀) ∪ J₀) X := by

@@ -1,7 +1,6 @@
 import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.Data.Set.Card
 
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
@@ -37,6 +36,7 @@ theorem LinearIndepOn_iff_linearIndepOn_image_injOn [Nontrivial R] :
     LinearIndepOn R v s ↔ LinearIndepOn R id (v '' s) ∧ InjOn v s :=
   ⟨fun h ↦ ⟨h.id_image, h.injOn⟩, fun h ↦ (linearIndepOn_iff_image h.2).2 h.1⟩
 
+
 @[simp]
 theorem linearIndepOn_zero_iff [Nontrivial R] : LinearIndepOn R (0 : ι → M) s ↔ s = ∅ := by
   convert linearIndependent_zero_iff (ι := s) (R := R) (M := M)
@@ -49,6 +49,7 @@ theorem linearIndepOn_insert_iff {a : ι} {f : ι → V} :
   by_cases has : a ∈ s
   · simp [insert_eq_of_mem has, has]
   simp [linearIndepOn_insert has, has]
+
 
 theorem linearIndepOn_id_insert_iff {a : V} {s : Set V} :
     LinearIndepOn K id (insert a s) ↔ LinearIndepOn K id s ∧ (a ∈ span K s → a ∈ s) := by
@@ -69,6 +70,7 @@ theorem LinearIndepOn.not_mem_span_iff_id {s : Set V} {a : V} (h : LinearIndepOn
     a ∉ Submodule.span K s ↔ a ∉ s ∧ LinearIndepOn K id (insert a s) := by
   simpa using h.not_mem_span_iff (a := a)
 
+
 theorem LinearIndepOn.congr {v w : ι → M} {s : Set ι} (hli : LinearIndepOn R v s) (h : EqOn v w s) :
     LinearIndepOn R w s := by
   rw [← linearIndependent_comp_subtype_iff] at hli ⊢
@@ -79,6 +81,8 @@ theorem LinearIndepOn.congr {v w : ι → M} {s : Set ι} (hli : LinearIndepOn R
 theorem linearIndepOn_congr {v w : ι → M} {s : Set ι} (h : EqOn v w s) :
     LinearIndepOn R v s ↔ LinearIndepOn R w s :=
   ⟨fun h' ↦ h'.congr h, fun h' ↦ h'.congr h.symm⟩
+
+
 
 noncomputable def Basis.spanImage {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     {v : ι → M} {s : Set ι} (hli : LinearIndepOn R v s) : Basis s R (span R (v '' s)) :=
@@ -109,6 +113,8 @@ theorem LinearIndepOn.zero_not_mem_image {R M ι : Type*} [Semiring R] [Nontrivi
     (hs : LinearIndepOn R f s) : 0 ∉ f '' s :=
   fun ⟨_, hi, h0⟩ ↦ hs.ne_zero hi h0
 
+
+
 /-- derive the `id` version from this -/
 theorem LinearIndepOn.union {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {v : ι → M} (hs : LinearIndepOn R v s) (ht : LinearIndepOn R v t)
@@ -121,6 +127,8 @@ theorem LinearIndepOn.union {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [
   · rw [comp_apply, Equiv.Set.union_apply_left _ hx, Sum.elim_inl]
   rw [comp_apply, Equiv.Set.union_apply_right _ hx, Sum.elim_inr]
 
+
+
 theorem linearIndepOn_union_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup M] [Module R M]
     {s t : Set ι} {f : ι → M} (hdj : Disjoint s t) :
     LinearIndepOn R f (s ∪ t) ↔
@@ -129,6 +137,7 @@ theorem linearIndepOn_union_iff {R M ι : Type*} [DivisionRing R] [AddCommGroup 
     fun h ↦ h.1.union h.2.1 h.2.2⟩
   convert h.disjoint_span_image (s := (↑) ⁻¹' s) (t := (↑) ⁻¹' t) (hdj.preimage _) <;>
   aesop
+
 
 /-- Replace the unprimed version with this. -/
 theorem LinearIndepOn.union_of_quotient' {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
@@ -154,13 +163,25 @@ theorem LinearIndepOn.quotient_iff_union {R M ι : Type*} [DivisionRing R] [AddC
     LinearIndepOn R (mkQ (span R (f '' s)) ∘ f) t ↔ LinearIndepOn R f (s ∪ t) := by
   rw [linearIndepOn_union_iff_quotient hst, and_iff_right hs]
 
+-- done
+
 theorem linearIndepOn_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
-  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0):
+  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) (hi : f i ≠ 0) :
     LinearIndepOn K f {i, j} ↔ ∀ (c : K), c • f i ≠ f j := by
   rw [pair_comm]
   convert linearIndepOn_insert (s := {i}) (a := j) hij.symm
   simp [hi, mem_span_singleton, linearIndependent_unique_iff]
 
+theorem linearDepOn_pair_iff {K V ι : Type*} [DivisionRing K] [AddCommGroup V]
+  [Module K V] {i j : ι} (f : ι → V) (hij : i ≠ j) :
+    ¬ LinearIndepOn K f {i, j} ↔ ∃ c d : K, c • f i = d • f j ∧ ¬ (c = 0 ∧ d = 0) := by
+  by_cases hi : f i = 0
+  · exact iff_of_true (fun h ↦ h.ne_zero (by simp) hi) ⟨1, 0, by simp [hi]⟩
+  simp only [linearIndepOn_pair_iff f hij hi, ne_eq, not_forall, not_not, not_and]
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, 1, by simpa, by simp⟩, fun ⟨c, d, h, hcd⟩ ↦ ⟨d⁻¹ * c, ?_⟩⟩
+  rw [mul_smul, h, inv_smul_smul₀]
+  rintro rfl
+  exact hcd (by simpa [hi] using h) rfl
 
 @[simp]
 theorem Basis.mkImage_apply {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
@@ -214,16 +235,6 @@ lemma LinearIndepOn.span_eq_of_maximal_subset
 lemma LinearIndepOn.span_eq_top_of_maximal (hmax : Maximal (LinearIndepOn R v ·) s) :
     span R (v '' s) = span R (range v) := by
   rw [← image_univ, LinearIndepOn.span_eq_of_maximal_subset (t := univ) (by simpa)]
-
-lemma LinearIndependent.enatCard_le_toENat_rank {f : ι → M} (h : LinearIndependent R f) :
-    ENat.card ι ≤ (Module.rank R M).toENat := by
-  simpa [ENat.card] using OrderHom.mono (β := ℕ∞) Cardinal.toENat h.cardinal_lift_le_rank
-
-lemma LinearIndepOn.encard_le_toENat_rank (h : LinearIndepOn R v s) :
-    Set.encard s ≤ (Module.rank R M).toENat :=
-  h.linearIndependent.enatCard_le_toENat_rank
-  -- have := h.linearIndependent.cardinal_lift_le_rank
-  -- have := @OrderHom.mono Cardinal.{max u_10 u_12} ℕ∞ _ _ Cardinal.toENat this
 
 -- lemma linearIndepOn.extension_span_eq (hli : LinearIndepOn R v s) (hst : s ⊆ t) :
 

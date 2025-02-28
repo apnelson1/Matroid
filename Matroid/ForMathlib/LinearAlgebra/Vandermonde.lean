@@ -113,28 +113,137 @@ theorem rectVandermonde_linearIndependent_rows [Fintype α] {v : α → K} (hv :
 
 set_option linter.style.longLine false
 
+lemma Fin.add_rev_cast (j : Fin (n+1)) : j.1 + j.rev.1 = n := by
+  simp only [val_rev, Nat.reduceSubDiff]
+  omega
+
+lemma Fin.pow_rev (j : Fin (n+1)) {a : K} (ha : a ≠ 0) : a ^ j.rev.1 = a ^ n / a ^ j.1 := by
+  rw [eq_div_iff (by simp [ha]), ← pow_add, add_comm, Fin.add_rev_cast]
+
 def biVandermonde (v w : Fin n → R) : Matrix (Fin n) (Fin n) R :=
   .of fun i j ↦ (v i)^(j : ℕ) * (w i)^(rev j : ℕ)
 
-lemma biVandermonde_eq_mul_vandermonde (v w : Fin (n+1) → K) (hw : ∀ i, w i ≠ 0) :
-    biVandermonde v w = .of fun i j ↦ (w i)^n * (vandermonde (fun i ↦ (v i) / (w i))) i j := by
-  ext i j
+theorem biVandermonde_apply (v w : Fin n → R) (i j : Fin n) :
+    biVandermonde v w i j = (v i)^(j : ℕ) * (w i)^(rev j : ℕ) := rfl
+
+theorem biVandermonde_row_zero_left {v : Fin (n+1) → R} {i} (hv : v i = 0)
+    (w : Fin (n+1) → R) : biVandermonde v w i = Pi.single 0 ((w i) ^ n) := by
+  ext j
+  rw [biVandermonde_apply, hv, Pi.single_apply]
+  split_ifs with hj
+  · simp [hj]
+  rw [zero_pow (mt (by simp [Fin.ext_iff]) hj), zero_mul]
+
+theorem biVandermonde_row_zero_right (v : Fin (n+1) → R) {w : Fin (n+1) → R} {i}  (hw : w i = 0) :
+    biVandermonde v w i = Pi.single (Fin.last n) ((v i) ^ n) := by
+  ext j
+  rw [biVandermonde_apply, hw, Pi.single_apply]
+  split_ifs with hj
+  · simp [hj]
+  rw [zero_pow (mt _ hj), mul_zero]
+  rw [← rev_inj, rev_last]
+  simp [Fin.ext_iff]
+
+theorem biVandermonde_apply_of_ne (v : Fin (n+1) → K) {w : Fin (n+1) → K} {i j} (hw : w i ≠ 0) :
+    biVandermonde v w i j = (v i) ^ j.1 * (w i) ^ n / (w i) ^ j.1 := by
+  rw [biVandermonde_apply, Fin.pow_rev _ hw, mul_div_assoc]
+
+theorem eq_biVandermonde_apply_iff {v w : Fin (n+1) → K} {i j} {a : K} (hw : w i ≠ 0) :
+    biVandermonde v w i j = a ↔ (w i) ^ j.1 * a = (v i) ^ j.1 * (w i) ^ n := by
+  rw [biVandermonde_apply_of_ne _ hw, div_eq_iff (by simp [hw]), eq_comm, mul_comm]
+
+lemma biVandermonde_row_eq_zero_of_zero {v w : Fin (n+2) → K} {i} (hv : v i = 0) (hw : w i = 0) :
+    biVandermonde v w i = 0 := by
+  simp [biVandermonde_row_zero_left hv, hw]
+
+lemma biVandermonde_row_eq_mul_vandermonde_row (v : Fin (n+1) → K) {i : Fin (n+1)}
+    {w : Fin (n+1) → K} (hi : w i ≠ 0) :
+    biVandermonde v w i = (w i)^n • (vandermonde (fun i ↦ (v i) / (w i))) i := by
+  ext j
   simp only [biVandermonde, Nat.reduceSubDiff, of_apply, vandermonde, div_pow, mul_div]
-  rw [eq_div_iff (by simp [hw i]), mul_assoc, ← pow_add, mul_comm]
-  congr
-  simp [Nat.sub_add_cancel (is_le j)]
+  rw [Fin.pow_rev _ hi, Pi.smul_apply, smul_eq_mul, of_apply, mul_div_left_comm]
+
+lemma biVandermonde_eq_mul_vandermonde (v w : Fin (n+1) → K) (hw : ∀ i, w i ≠ 0) :
+    biVandermonde v w = .of fun i j ↦ (w i)^n • (vandermonde (fun i ↦ (v i) / (w i))) i j := by
+  ext i j
+  simp_rw [biVandermonde_row_eq_mul_vandermonde_row _ (hw i), of_apply, Pi.smul_apply]
+
+lemma biVandermonde_det_eq_zero_of_zero {v w : Fin (n+2) → K} {i} (hvi : v i = 0)
+    (hwi : w i = 0) : (biVandermonde v w).det = 0 :=
+  det_eq_zero_of_row_eq_zero i <| by simp [← funext_iff, biVandermonde_row_eq_zero_of_zero hvi hwi]
+
+lemma biVandermonde_det_eq_zero_of_mul_eq_mul {v w : Fin n → K} {i i' : Fin n} (hne : i ≠ i')
+    (hvw : v i * w i' = v i' * w i) : (biVandermonde v w).det = 0 := by
+  obtain rfl | rfl | n := n
+  · apply finZeroElim i
+  · exact (hne (by omega)).elim
+  suffices h : ¬ LinearIndepOn K (biVandermonde v w) {i,i'} by
+    rw [← not_ne_iff, ← isUnit_iff_ne_zero, ← isUnit_iff_isUnit_det,
+      ← linearIndependent_rows_iff_isUnit]
+    exact fun h' ↦ h <| h'.linearIndepOn.mono <| subset_univ _
+  rw [linearDepOn_pair_iff _ hne]
+  by_cases hwi : w i = 0
+  · by_cases hvi : v i = 0
+    · exact ⟨1, 0, by simp [biVandermonde_row_eq_zero_of_zero hvi hwi]⟩
+    have hwi' : w i' = 0 := by simpa [hwi, hvi] using hvw
+    by_cases hvi' : v i' = 0
+    · refine ⟨0, 1, by simp [biVandermonde_row_eq_zero_of_zero hvi' hwi']⟩
+    refine ⟨(v i') ^ (n+1), (v i) ^ (n+1), funext fun j ↦ ?_, (by simp [hvi, hvi'])⟩
+    simp [biVandermonde_row_zero_right _ hwi, biVandermonde_row_zero_right _ hwi', Pi.single_apply,
+      mul_comm]
+  by_cases hwi' : w i' = 0
+  · obtain hvi' : v i' = 0 := by simpa [hwi', hwi] using hvw
+    exact ⟨0, 1, by simp [biVandermonde_row_eq_zero_of_zero hvi' hwi']⟩
+  have hv : vandermonde (fun i ↦ v i / w i) i = vandermonde (fun i ↦ v i / w i) i' := by
+    ext j
+    rw [vandermonde_apply, (div_eq_div_iff hwi hwi').2 hvw]
+    rfl
+  refine ⟨(w i') ^ (n+1), (w i) ^ (n+1), ?_⟩
+  simp [biVandermonde_row_eq_mul_vandermonde_row _ hwi, hv,
+    biVandermonde_row_eq_mul_vandermonde_row _ hwi', hwi, hwi', smul_comm (m := (w i) ^ (n+1))]
+
 
 theorem foo (v w : Fin n → K) : (biVandermonde v w).det =
     ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, ((v j * w i) - (v i * w j)) := by
   obtain rfl | n := n
   · simp
-  obtain hw | ⟨i, hi⟩ := em' (0 ∈ range w)
+  obtain ⟨i₀, i₀', hlt, hi₀, hi₀'⟩ | hnot := em (∃ i₀ i₀', i₀ < i₀' ∧ w i₀ = 0 ∧ w i₀' = 0)
+  ·
+    rw [det_zero_of_column_eq hlt.ne, eq_comm, Finset.prod_eq_zero (i := i₀) (by simp)]
+    · rw [Finset.prod_eq_zero (i := i₀') (by simpa)]
+      simp [hi₀, hi₀']
+
+
+
+  obtain hw | ⟨i₀, hi₀⟩ := em' (0 ∈ range w)
   · replace hw : ∀ i, w i ≠ 0 := by simpa [mem_range] using hw
     simp_rw [biVandermonde_eq_mul_vandermonde _ _ hw, det_mul_column,
       det_vandermonde, div_sub_div _ _ (hw _) (hw _), Finset.prod_div_distrib, ← mul_div_assoc,
       mul_comm (a := w _) (b := v _)]
     rw [div_eq_iff (by simp [Ne, Finset.prod_eq_zero_iff, hw]), mul_comm]
-    c
+    convert rfl using 2
+    have hrw (x : Fin (n+1)) : (w x) ^ (Finset.Ioi x).card = (w x) ^ n / (w x) ^ x.1 := by
+      rw [eq_div_iff (by simp [hw])]
+      simp [← pow_add, Nat.sub_add_cancel x.is_le]
+    simp_rw [Finset.prod_mul_distrib, Finset.prod_const, hrw, Finset.prod_div_distrib,
+      Finset.prod_pow]
+    rw [← mul_div_assoc, div_eq_iff (by simp [hw, Finset.prod_eq_zero_iff]), mul_comm,
+      Finset.prod_comm' (s' := Finset.Iio) (t' := Finset.univ) (by simp)]
+    simp
+  obtain ⟨i₀', hne, hi₀'⟩ | hi₀ := em (∃ j ≠ i₀, w j = 0)
+  ·
+    · rw [Finset.prod_eq_zero (i := max i₀ i₀') (by simp)]
+      rw [Finset.prod_eq_zero (i := i₀')]
+
+
+
+
+
+
+
+    -- , Finset.prod_const, card_Ioi, add_tsub_cancel_right
+
+
 
 
 
