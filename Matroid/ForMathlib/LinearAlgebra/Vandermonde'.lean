@@ -47,7 +47,7 @@ private theorem projVandermonde_det_of_field (v w : Fin n → K) :
     rw [det_eq_zero_of_column_eq_zero 0]
     · simp [Fin.prod_univ_succ, h0, hne]
     exact fun i ↦ by simp [projVandermonde_apply, h0, hne]
-  -- We can assume by permuting rows that `w 0 ≠ 0`.
+  -- We can assume by permuting rows that `w 0 ≠ 0`. (This makes reindexing with induction easier.)
   wlog hi₀0 : i₀ = 0 generalizing v w i₀ with aux
   · rw [← mul_right_inj' (a := -1) (by simp)]
     convert aux (v ∘ Equiv.swap 0 i₀) (w ∘ Equiv.swap 0 i₀) (i₀ := 0) (by simp [hi₀]) rfl
@@ -59,7 +59,7 @@ private theorem projVandermonde_det_of_field (v w : Fin n → K) :
     simp [Equiv.Perm.sign_swap (Ne.symm hi₀0)]
   obtain rfl := hi₀0
   /- Let `W` be obtained from the matrix by subtracting `r = (v 0) / (w 0)` times each column
-  from the next column, starting from the penultimate column. -/
+  from the next column, starting from the penultimate column. This doesn't change the determinant.-/
   set r := v 0 / w 0 with hr
   set W : Matrix (Fin (n+1)) (Fin (n+1)) K := .of fun i ↦
     (cons (projVandermonde v w i 0)
@@ -80,11 +80,10 @@ private theorem projVandermonde_det_of_field (v w : Fin n → K) :
     (fun i j ↦ by simp [W, r, projVandermonde_apply]), det_succ_row_zero,
     Finset.sum_eq_single 0 _ (by simp)]
   · rw [succAbove_zero, hW_eq, det_mul_column, ih]
-    simp only [Nat.succ_eq_add_one, val_zero, add_zero, projVandermonde, val_rev, Nat.reduceSubDiff,
-      of_apply, pow_zero, tsub_zero, one_mul, val_succ, coe_castSucc, cons_zero,
-      Function.comp_apply, W, r]
-    rw [prod_univ_succ, ← mul_assoc (a := _ ^ n),
-      show (w 0) ^ n = ∏ x : Fin n, w 0 by simp, ← Finset.prod_mul_distrib]
+    simp only [Nat.succ_eq_add_one, val_zero, pow_zero, projVandermonde, val_rev, Nat.reduceSubDiff,
+      of_apply, tsub_zero, one_mul, val_succ, coe_castSucc, cons_zero, Function.comp_apply, W, r]
+    rw [prod_univ_succ, ← mul_assoc (a := _ ^ n), show (w 0) ^ n = ∏ x : Fin n, w 0 by simp,
+      ← Finset.prod_mul_distrib]
     simp_rw [mul_sub, ← mul_assoc (a := w 0), mul_div_cancel₀ _ hi₀, mul_comm (w 0)]
     simp
   intro j _ hj0
@@ -102,23 +101,20 @@ theorem projVandermonde_map {R' : Type*} [CommRing R'] (φ : R →+* R') (v w : 
   simp [projVandermonde]
 
 theorem projVandermonde_det (v w : Fin n → R) : (projVandermonde v w).det =
-    ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, ((v j * w i) - (v i * w j)) := by
+    ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, (v j * w i - v i * w j) := by
   let R' := MvPolynomial (Fin n × Bool) ℤ
   let K := FractionRing R'
-  set coordFun : Fin n × Bool → R := fun x ↦ (if x.2 then v else w) x.1 with hcoord
-  set φ : R' →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) coordFun with hφ
-  have hφv (i : Fin n) : φ (MvPolynomial.X ⟨i, true⟩) = v i := MvPolynomial.eval₂Hom_X' ..
-  have hφw (i : Fin n) : φ (MvPolynomial.X ⟨i, false⟩) = w i := MvPolynomial.eval₂Hom_X' ..
-  set v' : Fin n → K := fun i ↦ (algebraMap R' K) (MvPolynomial.X ⟨i, true⟩) with hv'
-  set w' : Fin n → K := fun i ↦ (algebraMap R' K) (MvPolynomial.X ⟨i, false⟩) with hw'
-  have hdet := projVandermonde_det_of_field v' w'
-  simp only [hv', hw', RingHom.mapMatrix_apply] at hdet
+  let coordFun : Fin n × Bool → R := fun x ↦ (if x.2 then v else w) x.1
+  let φ : R' →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) coordFun
+  let u : Fin n × Bool → FractionRing R' := fun i ↦ (algebraMap R' _) (MvPolynomial.X ⟨i.1, i.2⟩)
+  have hdet := projVandermonde_det_of_field (u ⟨· , true⟩) (u ⟨·, false⟩)
+  simp only [u, RingHom.mapMatrix_apply] at hdet
   norm_cast at hdet
   rw [projVandermonde_map, ← RingHom.map_det,
     (algebraMap_injective_of_field_isFractionRing R' K K K).eq_iff] at hdet
   replace hdet := congr_arg φ <| hdet
-  simp only [RingHom.map_det, RingHom.mapMatrix_apply, map_prod, map_sub, _root_.map_mul,
-    hφv, hφw] at hdet
+  simp only [RingHom.map_det, RingHom.mapMatrix_apply, coe_eval₂Hom, map_prod, eval₂_sub, eval₂_mul,
+    eval₂_X, ↓reduceIte, Bool.false_eq_true, R', φ, coordFun] at hdet
   convert hdet
   ext i j
-  simp [projVandermonde, hφv, hφw]
+  simp [projVandermonde, u]
