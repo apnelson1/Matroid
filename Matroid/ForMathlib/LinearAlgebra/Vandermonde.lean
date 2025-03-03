@@ -14,85 +14,11 @@ section WithTop
 
 variable {n : ℕ} {i j : Fin n} {v : Fin n → WithTop R}
 
-/-- The `n × n` matrix whose `i`th row is `[1, a, a^2, ...]` if `v i = ↑a`,
-and `[0, 0, ..., 1]` if `v i = ⊤`.
-The exceptional type of row can be thought of as a normalization of the regular type of row,
-with `a = ⊤`.-/
-def vandermondeTop (v : Fin n → WithTop R) : Matrix (Fin n) (Fin n) R :=
-  .of fun i j => (v i).recTopCoe (if j.1 + 1 = n then 1 else 0) (· ^ (j : ℕ))
-
-lemma vandermondeTop_apply_ne_top (hi : v i ≠ ⊤) :
-    vandermondeTop v i j = ((v i).untop hi) ^ (j : ℕ) := by
-  lift v i to R using hi with a ha
-  simp [vandermondeTop, of_apply, WithTop.untop_coe, ← ha]
-
-lemma vandermondeTop_apply_top_zero (hi : v i = ⊤) (hj : j.1 + 1 < n) :
-    vandermondeTop v i j = 0 := by
-  simp [vandermondeTop, hi, hj.ne]
-
-lemma vandermondeTop_apply_top_one (hi : v i = ⊤) (hj : j.1 + 1 = n) :
-    vandermondeTop v i j = 1 := by
-  simp [vandermondeTop, hi, hj]
-
-lemma vandermondeTop_apply_top_eq_ite {n : ℕ} {i j : Fin (n+1)} {v : Fin (n+1) → WithTop R}
-    (hi : v i = ⊤) : vandermondeTop v i j = if j = Fin.last n then 1 else 0 := by
-  obtain rfl | hlt := j.le_last.eq_or_lt
-  · simp [vandermondeTop_apply_top_one hi]
-  rw [vandermondeTop_apply_top_zero hi (by omega), if_neg hlt.ne]
-
-lemma vandermondeTop_eq_vandermonde (hv : ∀ i, (v i ≠ ⊤)) :
-    vandermondeTop v = vandermonde fun i ↦ (v i).untop (hv i) := by
-  obtain rfl | n := n
-  · exact ext_of_single_vecMul (congrFun rfl)
-  ext i j
-  exact vandermondeTop_apply_ne_top (hv i)
-
-/-- If a `vandermondeTop` matrix has exactly one 'infinity' row,
-then its determinant is (up to sign) equal to that of the `vandermonde` matrix obtained by removing
-this infinity row and the last column. -/
-lemma det_vandermondeTop_of_unique {v : Fin (n+1) → WithTop R} {i₀ : Fin (n+1)}
-    (hv : ∀ i, v i = ⊤ ↔ i = i₀) :
-    (vandermondeTop v).det = (-1) ^ (i₀.1 + n) *
-      (vandermonde (fun i ↦ (v (i₀.succAbove i)).untop
-      (fun h ↦ i₀.succAbove_ne i <| (hv _).1 h))).det := by
-  have hi₀ : v i₀ = ⊤ := (hv i₀).2 rfl
-  have aux (i) : v (i₀.succAbove i) ≠ ⊤ := fun h ↦ i₀.succAbove_ne i <| (hv _).1 h
-  rw [det_succ_row (i := i₀), Fintype.sum_eq_single (Fin.last n)]
-  · convert rfl
-    · simp [vandermondeTop_apply_top_eq_ite hi₀]
-    rw [← vandermondeTop_eq_vandermonde]
-    ext i j
-    rw [vandermondeTop_apply_ne_top (by apply aux), submatrix_apply,
-      vandermondeTop_apply_ne_top (aux _)]
-    simp
-  exact fun i hi ↦ by simp [vandermondeTop_apply_top_eq_ite hi₀, if_neg hi]
-
-lemma det_vandermondeTop_ne_zero_iff [IsDomain R] {v : Fin n → WithTop R} :
-    det (vandermondeTop v) ≠ 0 ↔ Function.Injective v := by
-  obtain rfl | n := n
-  · simp [Function.injective_of_subsingleton v]
-  refine ⟨fun h i j hij ↦ by_contra fun hne ↦ h (det_zero_of_row_eq hne ?_), fun h ↦ ?_⟩
-  · ext k
-    simp [vandermondeTop, hij]
-  obtain ⟨i₀, hi₀⟩ | htop := em <| ⊤ ∈ Set.range v
-  · have aux (i) : v i = ⊤ ↔ i = i₀ := ⟨fun hi ↦ by rw [← h.eq_iff, hi, hi₀], fun h ↦ h ▸ hi₀⟩
-    simp only [det_vandermondeTop_of_unique aux, ne_eq, mul_eq_zero, pow_eq_zero_iff', neg_eq_zero,
-      one_ne_zero, AddLeftCancelMonoid.add_eq_zero, not_and, false_and, false_or,
-      det_vandermonde_ne_zero_iff]
-    intro i j (hij : (v (i₀.succAbove i)).untop _ = (v (i₀.succAbove j)).untop _)
-    rwa [WithTop.eq_untop_iff, WithTop.coe_untop, h.eq_iff, Fin.succAbove_right_inj] at hij
-  rw [vandermondeTop_eq_vandermonde (by simpa using htop), det_vandermonde_ne_zero_iff]
-  intro i j (hij : (v i).untop _ = (v j).untop _)
-  rwa [WithTop.eq_untop_iff, WithTop.coe_untop, h.eq_iff] at hij
 
 end WithTop
 
 theorem vandermonde_isUnit_iff {v : Fin n → K} : IsUnit (vandermonde v) ↔ Injective v := by
   rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, det_vandermonde_ne_zero_iff]
-
-theorem vandermondeTop_isUnit_iff {v : Fin n → WithTop K} :
-    IsUnit (vandermondeTop v) ↔ Injective v := by
-  rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, det_vandermondeTop_ne_zero_iff]
 
 /-- A rectangular Vandermonde matrix; its columns are indexed by `Fin n`,
     and its rows are geometric progressions `(1, a, a², ..., a^(n-1))`. -/
@@ -214,39 +140,6 @@ lemma Fin.pow_rev (j : Fin (n+1)) {a : K} (ha : a ≠ 0) : a ^ j.rev.1 = a ^ n /
 --   simp [projVandermonde_row_eq_mul_vandermonde_row _ hwi, hv,
 --     projVandermonde_row_eq_mul_vandermonde_row _ hwi', hwi, hwi', smul_comm (m := (w i) ^ (n+1))]
 
-def projVandermonde (v w : Fin n → R) : Matrix (Fin n) (Fin n) R :=
-  .of fun i j ↦ (v i)^(j : ℕ) * (w i)^(rev j : ℕ)
-
-private theorem projVandermonde_det_of_field (v w : Fin n → K) : (projVandermonde v w).det =
-    ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, ((v j * w i) - (v i * w j)) := by
-  sorry
-
-theorem projVandermonde_map {R' : Type*} [CommRing R'] (φ : R →+* R') (v w : Fin n → R) :
-    projVandermonde (fun i ↦ φ (v i)) (fun i ↦ φ (w i)) = φ.mapMatrix (projVandermonde v w) := by
-  ext i j
-  simp [projVandermonde]
-
-theorem projVandermonde_det (v w : Fin n → R) : (projVandermonde v w).det =
-    ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, ((v j * w i) - (v i * w j)) := by
-  let R' := MvPolynomial (Fin n × Bool) ℤ
-  let K := FractionRing R'
-  set coordFun : Fin n × Bool → R := fun x ↦ (if x.2 then v else w) x.1 with hcoord
-  set φ : R' →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) coordFun with hφ
-  have hφv (i : Fin n) : φ (MvPolynomial.X ⟨i, true⟩) = v i := MvPolynomial.eval₂Hom_X' ..
-  have hφw (i : Fin n) : φ (MvPolynomial.X ⟨i, false⟩) = w i := MvPolynomial.eval₂Hom_X' ..
-  set v' : Fin n → K := fun i ↦ (algebraMap R' K) (MvPolynomial.X ⟨i, true⟩) with hv'
-  set w' : Fin n → K := fun i ↦ (algebraMap R' K) (MvPolynomial.X ⟨i, false⟩) with hw'
-  have hdet := projVandermonde_det_of_field v' w'
-  simp only [hv', hw', RingHom.mapMatrix_apply] at hdet
-  norm_cast at hdet
-  rw [projVandermonde_map, ← RingHom.map_det,
-    (algebraMap_injective_of_field_isFractionRing R' K K K).eq_iff] at hdet
-  replace hdet := congr_arg φ <| hdet
-  simp only [RingHom.map_det, RingHom.mapMatrix_apply, map_prod, map_sub, _root_.map_mul,
-    hφv, hφw] at hdet
-  convert hdet
-  ext i j
-  simp [projVandermonde, hφv, hφw]
 
 
 
