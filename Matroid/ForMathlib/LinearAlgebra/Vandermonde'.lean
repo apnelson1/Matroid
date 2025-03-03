@@ -54,7 +54,7 @@ private theorem projVandermonde_det_of_field (v w : Fin n → K) :
     · convert (det_permute (M := projVandermonde v w) (σ := Equiv.swap 0 i₀)).symm using 2
       simp [Equiv.Perm.sign_swap (Ne.symm hi₀0)]
     rw [← eq_comm]
-    convert prod_comp_eq_of_swap_eq_neg' (fun i j ↦ v j * w i - v i * w j) (by simp)
+    convert prod_Ioi_comp_eq_sign_mul_prod (f := fun i j ↦ v j * w i - v i * w j) (by simp)
       (Equiv.swap 0 i₀) using 2
     simp [Equiv.Perm.sign_swap (Ne.symm hi₀0)]
   obtain rfl := hi₀0
@@ -103,18 +103,12 @@ theorem projVandermonde_map {R' : Type*} [CommRing R'] (φ : R →+* R') (v w : 
 theorem projVandermonde_det (v w : Fin n → R) : (projVandermonde v w).det =
     ∏ i : Fin n, ∏ j ∈ Finset.Ioi i, (v j * w i - v i * w j) := by
   let R' := MvPolynomial (Fin n × Bool) ℤ
-  let K := FractionRing R'
-  let coordFun : Fin n × Bool → R := fun x ↦ (if x.2 then v else w) x.1
-  let φ : R' →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) coordFun
   let u : Fin n × Bool → FractionRing R' := fun i ↦ (algebraMap R' _) (MvPolynomial.X ⟨i.1, i.2⟩)
   have hdet := projVandermonde_det_of_field (u ⟨· , true⟩) (u ⟨·, false⟩)
   simp only [u, RingHom.mapMatrix_apply] at hdet
   norm_cast at hdet
-  rw [projVandermonde_map, ← RingHom.map_det,
-    (algebraMap_injective_of_field_isFractionRing R' K K K).eq_iff] at hdet
-  replace hdet := congr_arg φ <| hdet
-  simp only [RingHom.map_det, RingHom.mapMatrix_apply, coe_eval₂Hom, map_prod, eval₂_sub, eval₂_mul,
-    eval₂_X, ↓reduceIte, Bool.false_eq_true, R', φ, coordFun] at hdet
-  convert hdet
-  ext i j
-  simp [projVandermonde, u]
+  rw [projVandermonde_map, ← RingHom.map_det, IsFractionRing.coe_inj] at hdet
+  apply_fun MvPolynomial.eval₂Hom (Int.castRingHom R) (fun x ↦ (if x.2 then v else w) x.1) at hdet
+  rw [RingHom.map_det] at hdet
+  convert hdet <;>
+  simp [← Matrix.ext_iff, projVandermonde, u, R']
