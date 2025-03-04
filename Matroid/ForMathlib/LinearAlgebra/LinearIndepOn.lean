@@ -1,6 +1,7 @@
 import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.Data.Set.Card
 
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
@@ -31,25 +32,20 @@ theorem linearIndepOn_singleton_iff (R : Type*) {ι M : Type*} [Ring R] [Nontriv
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
-
 theorem LinearIndepOn_iff_linearIndepOn_image_injOn [Nontrivial R] :
     LinearIndepOn R v s ↔ LinearIndepOn R id (v '' s) ∧ InjOn v s :=
   ⟨fun h ↦ ⟨h.id_image, h.injOn⟩, fun h ↦ (linearIndepOn_iff_image h.2).2 h.1⟩
-
 
 @[simp]
 theorem linearIndepOn_zero_iff [Nontrivial R] : LinearIndepOn R (0 : ι → M) s ↔ s = ∅ := by
   convert linearIndependent_zero_iff (ι := s) (R := R) (M := M)
   simp
 
-
-
 theorem linearIndepOn_insert_iff {a : ι} {f : ι → V} :
     LinearIndepOn K f (insert a s) ↔ LinearIndepOn K f s ∧ (f a ∈ span K (f '' s) → a ∈ s) := by
   by_cases has : a ∈ s
   · simp [insert_eq_of_mem has, has]
   simp [linearIndepOn_insert has, has]
-
 
 theorem linearIndepOn_id_insert_iff {a : V} {s : Set V} :
     LinearIndepOn K id (insert a s) ↔ LinearIndepOn K id s ∧ (a ∈ span K s → a ∈ s) := by
@@ -235,6 +231,10 @@ lemma LinearIndepOn.span_eq_of_maximal_subset
 lemma LinearIndepOn.span_eq_top_of_maximal (hmax : Maximal (LinearIndepOn R v ·) s) :
     span R (v '' s) = span R (range v) := by
   rw [← image_univ, LinearIndepOn.span_eq_of_maximal_subset (t := univ) (by simpa)]
+
+lemma LinearIndepOn.encard_le_toENat_rank (hs : LinearIndepOn R v s) :
+    s.encard ≤ (Module.rank R M).toENat := by
+  simpa using OrderHom.mono (β := ℕ∞) Cardinal.toENat <| hs.linearIndependent.cardinal_lift_le_rank
 
 -- lemma linearIndepOn.extension_span_eq (hli : LinearIndepOn R v s) (hst : s ⊆ t) :
 

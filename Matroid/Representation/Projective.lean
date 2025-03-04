@@ -226,31 +226,3 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   norm_cast
   rw [Projectivization.card_of_finrank 𝔽 (B →₀ 𝔽) (n := M.rank)]
   simp [hB.finset_card]
-
-lemma encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) : E.encard ≤ ENat.card 𝔽 + 1 := by
-  obtain hlt | hle := lt_or_le E.encard (2 : ℕ)
-  · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
-  convert h.encard_le_of_simple
-  simp [unifOn_rank_eq hle]
-
-lemma encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) : a ≤ ENat.card 𝔽 + 1 :=  by
-  simpa using h.encard_le_of_unifOn_two
-
-@[simp] lemma removeLoops_representable_iff :
-    M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
-  refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
-  · rw [M.eq_restrict_removeLoops]
-    exact (v.restrict M.E).representable
-  rw [removeLoops_eq_restr]
-  exact (v.restrict _).representable
-
-lemma noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
-    M.NoUniformMinor 2 (Fintype.card 𝔽 + 2) := by
-  by_contra hcon
-  obtain ⟨hm⟩ := not_noUniformMinor_iff.1 hcon
-  have hcon := (h.isoMinor hm).encard_le_of_unif_two
-  simp only [Nat.cast_add, Nat.cast_ofNat, ENat.card_eq_coe_fintype_card] at hcon
-  rw [show (2 :ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
-  · simp at hcon
-  simp only [WithTop.add_ne_top, ne_eq, WithTop.one_ne_top, not_false_eq_true, and_true]
-  exact ne_of_beq_false rfl
