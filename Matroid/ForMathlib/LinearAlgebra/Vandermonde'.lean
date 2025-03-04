@@ -1,6 +1,7 @@
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.LinearAlgebra.Vandermonde
 import Matroid.ForMathlib.Perm
+import Mathlib.Algebra.Algebra.Basic
 
 set_option linter.style.longLine false
 
@@ -142,79 +143,43 @@ section Rect
 
 variable {α K : Type*} [Field K] {n : ℕ} {v w : α → K}
 
-lemma rectVandermonde_rows_linear_independent [Fintype α] (hcard : Fintype.card α ≤ n)
-    (hvw : ∀ ⦃i i'⦄, v i * w i' = v i' * w i → i = i') (h0 : ∀ ⦃i⦄, v i = 0 → w i ≠ 0):
+lemma rectVandermonde_rows_linearIndependent [Fintype α] (hcard : Fintype.card α ≤ n)
+    (hvw : ∀ ⦃i i'⦄, v i * w i' = v i' * w i → i = i') (h0 : ∀ ⦃i⦄, v i = 0 → w i ≠ 0) :
     LinearIndependent K (rectVandermonde v w n) := by
   obtain ⟨m, rfl⟩ := exists_add_of_le hcard
   set e := (Fintype.equivFin α).symm
-
-  -- set m₀ := Fintype.card α
-
-  let R' := MvPolynomial (Fin m × Bool) K
-  let um : Fin m × Bool → R' := fun i ↦ (MvPolynomial.X ⟨i.1, i.2⟩)
-
-  let u (b : Bool) : Fin (Fintype.card α + m) → FractionRing R' :=
-    (algebraMap R' _) ∘
-    Fin.append (fun i ↦ (MvPolynomial.C (if b then v (e i) else w (e i)))) (um ⟨·, b⟩)
-
-  have hli : LinearIndependent (FractionRing R') (projVandermonde (u true) (u false)) := by
+  set m₀ := Fintype.card α
+  let v' : Fin (m₀ + m) → FractionRing (MvPolynomial (Fin m) K) :=
+    (algebraMap _ _) ∘ Fin.append (MvPolynomial.C ∘ v ∘ e) MvPolynomial.X
+  let w' : Fin (m₀ + m) → FractionRing (MvPolynomial (Fin m) K) :=
+    (algebraMap ((MvPolynomial (Fin m) K)) _) ∘ Fin.append (MvPolynomial.C ∘ w ∘ e) 1
+  have hli : LinearIndependent (FractionRing (MvPolynomial (Fin m) K)) (projVandermonde v' w') := by
     rw [linearIndependent_rows_iff_isUnit, Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
-    simp only [Ne, ↓reduceIte, Bool.false_eq_true, projVandermonde_det, Function.comp_apply,
-      Finset.prod_eq_zero_iff, Finset.mem_univ, Finset.mem_Ioi, sub_eq_zero, true_and, not_exists,
-      not_and, R', u]
+    simp only [projVandermonde_det, Function.comp_apply, ne_eq, Finset.prod_eq_zero_iff,
+      Finset.mem_univ, Finset.mem_Ioi, sub_eq_zero, true_and, not_exists, not_and, v', w']
     norm_cast
-    intro i j
-    refine i.addCases (fun i' ↦ ?_) fun i' ↦ ?_
-    · refine j.addCases (fun j' hij h0' ↦ hij.ne ?_) (fun i _ h0' ↦ ?_)
-      · norm_cast at h0'
-        simp only [append_left, u, ← C_mul, C_inj] at h0'
-        rw [show j' = i' by simpa using hvw h0']
-      replace h0' : w (e i') = 0 ∧ v (e i') = 0 := by
-        simpa [mul_comm (a := X _), MvPolynomial.C_mul_X_eq_monomial, monomial_eq_monomial_iff, um,
-          Finsupp.single_left_inj] using h0'
-      exact h0 h0'.2 h0'.1
-    refine j.addCases (fun j' ↦ by simp [(castAdd_lt_natAdd ..).not_lt])
-      fun i hlt h0' ↦ hlt.ne <| (eq_or_ne i i').elim (fun h ↦ by rw [h]) fun hne ↦ ?_
-    simp only [X, append_right, monomial_mul, mul_one, ne_eq, one_ne_zero, not_false_eq_true,
-      monomial_left_inj, u, um] at h0'
-    replace h0' : (Finsupp.single (i, true) 1) (i', true) = 1 := by
-      simpa [u] using DFunLike.congr_fun h0' ⟨i', true⟩
-    rw [Finsupp.single_eq_of_ne (by simpa)] at h0'
-    contradiction
-
-  have hliK : LinearIndependent K (projVandermonde (u true) (u false)) :=
-    (hli.restrict_scalars (R := R') <|
-      by simp [Function.Injective, ← Algebra.algebraMap_eq_smul_one]).restrict_scalars <|
-      by simp [Function.Injective, ← Algebra.algebraMap_eq_smul_one, R']
-
-
-  have hli' := hliK.comp _ ((castAdd_injective ..).comp e.symm.injective)
-  have f : (Fin (Fintype.card α + m) → K) →ₗ[K] (Fin (Fintype.card α + m) → FractionRing R') := by
-
-
-  -- let i : K →+* FractionRing R' := (algebraMap R' _).comp MvPolynomial.C
-  -- set j : (Fin (Fintype.card α + m) → FractionRing R')
-  -- have := hli'.map_of_injective_injective i (by _)
-  -- let j : K →+ FractionRing R' := fun x ↦ (algebraMap R' _) (MvPolynomial.C x)
-  -- have := hli'.map_of_injec
-  sorry
-
-
-
-
-
-
-
-
-
-
-
-
-  -- let v' : Fin (m₀ + m) → R :=
-  --   Fin.append (fun i ↦ MvPolynomial.C (v (e i))) (MvPolynomial.X ⟨·, true⟩)
-  -- let w' : Fin (m₀ + m) → R :=
-  --   Fin.append (fun i ↦ MvPolynomial.C (w (e i))) (MvPolynomial.X ⟨·, false⟩)
-
-  -- let v' : Fin (m₀ + m) → K := fun i ↦ if i
+    refine fun i j ↦ i.addCases (fun i' ↦ ?_) fun i' ↦ j.addCases (fun j' ↦ ?_) fun j' ↦ ?_
+    · refine j.addCases (fun j' hlt heq ↦ hlt.ne ?_) fun j' hlt ↦ ?_
+      · simp only [append_left, Function.comp_apply] at heq
+        rw [← C_mul, ← C_mul, C_inj] at heq
+        rw [show j' = i' by simpa using hvw heq]
+      simp only [append_right, append_left, Function.comp_apply, Pi.one_apply, mul_one,
+        mul_comm (X j'), MvPolynomial.C_mul_X_eq_monomial]
+      rw [C_apply, monomial_eq_monomial_iff]
+      simp [imp_not_comm]
+      apply h0
+    · simp [(Fin.castAdd_lt_natAdd ..).not_lt]
+    simp +contextual [imp_not_comm]
+  have hli' := (hli.restrict_scalars' K).comp _ ((castAdd_injective ..).comp e.symm.injective)
+  refine LinearIndependent.of_comp (LinearMap.compLeft
+    (Algebra.linearMap K (FractionRing (MvPolynomial (Fin m) K))) (Fin (m₀ + m))) ?_
+  convert hli'
+  ext a i
+  simp only [rectVandermonde, val_rev, Function.comp_apply, LinearMap.compLeft_apply, of_apply,
+    Algebra.linearMap_apply, _root_.map_mul, map_pow, projVandermonde, append_left,
+    Equiv.apply_symm_apply, v', w']
+  norm_cast
+  rw [← C_pow, ← C_pow, ← C_mul]
+  rfl
 
 end Rect
