@@ -1,4 +1,4 @@
-import Matroid.Representation.Projective
+import Matroid.Representation.Uniform
 import Matroid.Representation.FundamentalMatrix
 import Matroid.Representation.CycleSpace
 import Matroid.Binary.Crossing
@@ -52,7 +52,8 @@ lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Fin
 
 variable [Finitary M] {C : Set α}
 
-/-- The Binary matroid that should be `M`. -/
+/-- The Binary matroid that should be `M`, with representation given by the fundamental matrix
+of a base `B`. If `M` is binary, this is equal to `M`. -/
 def IsBase.BinaryProxy (hB : M.IsBase B) :=
   (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
 

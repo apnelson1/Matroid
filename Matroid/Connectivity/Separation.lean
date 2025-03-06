@@ -349,13 +349,28 @@ and preserved by intersections with the ground set, duality and adding/removing 
 noncomputable def eConnBetween (M : Matroid α) (X Y : Set α) : ℕ∞ :=
   ⨅ P : {P : M.Partition // P.SepOf (M.core X) (M.core Y)}, P.1.eConn
 
-lemma Partition.SepOf.eConnBetween_le_of_inter (hP : P.SepOf (M.core X) (M.core Y)) :
+lemma Partition.SepOf.eConnBetween_le_of_core (hP : P.SepOf (M.core X) (M.core Y)) :
     M.eConnBetween X Y ≤ P.eConn :=
   iInf_le_of_le ⟨P, hP⟩ rfl.le
 
 lemma Partition.SepOf.eConnBetween_le (hP : P.SepOf X Y) :
     M.eConnBetween X Y ≤ P.eConn :=
-  (hP.mono (M.core_subset X) (M.core_subset Y)).eConnBetween_le_of_inter
+  (hP.mono (M.core_subset X) (M.core_subset Y)).eConnBetween_le_of_core
+
+lemma eConnBetween_symm (M : Matroid α) : M.eConnBetween X Y = M.eConnBetween Y X := by
+  apply le_antisymm <;>
+  exact le_iInf fun ⟨P, hP⟩ ↦ iInf_le_of_le ⟨P.symm, by simpa⟩ (by simp)
+
+lemma eConnBetween_le_eConn_left (M : Matroid α) (hdj : Disjoint X Y) :
+    M.eConnBetween X Y ≤ M.eConn X := by
+  have h : (M.partition (M.core X)).SepOf (M.core X) (M.core Y) := by
+    simpa [Partition.sepOf_iff, subset_diff] using hdj.symm.mono (core_subset ..) (core_subset ..)
+  exact h.eConnBetween_le_of_core.trans <| by simp
+
+lemma eConnBetween_le_eConn_right (M : Matroid α) (hdj : Disjoint X Y) :
+    M.eConnBetween X Y ≤ M.eConn Y := by
+  rw [eConnBetween_symm]
+  exact M.eConnBetween_le_eConn_left hdj.symm
 
 lemma le_eConnBetween_iff_forall_sepOf_core {k : ℕ∞} : k ≤ M.eConnBetween X Y ↔
     ∀ (P : M.Partition), P.SepOf (M.core X) (M.core Y) → k ≤ P.eConn := by
@@ -396,10 +411,6 @@ lemma eConnBetween_of_not_disjoint (M : Matroid α) (hXY : ¬ Disjoint (M.core X
     M.eConnBetween X Y = ⊤ := by
   simp [eConnBetween, iInf_subtype, show ∀ P : M.Partition, ¬ P.SepOf (M.core X) (M.core Y) from
     fun P hP ↦ hXY <| P.disjoint.mono hP.1 hP.2]
-
-lemma eConnBetween_symm (M : Matroid α) : M.eConnBetween X Y = M.eConnBetween Y X := by
-  apply le_antisymm <;>
-  exact le_iInf fun ⟨P, hP⟩ ↦ iInf_le_of_le ⟨P.symm, by simpa⟩ (by simp)
 
 lemma eConnBetween_mono_left (M : Matroid α) (hX : X' ⊆ X) (Y : Set α) :
     M.eConnBetween X' Y ≤ M.eConnBetween X Y :=
@@ -520,6 +531,60 @@ lemma IsMinor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :
 --     (M ＼ e).eConnBetween X Y = M.eConnBetween X Y := by
 --   sorry
 
+section Nat
 
+/-- The connectivity of a partition as a natural number. -/
+noncomputable def Partition.conn (P : M.Partition) : ℕ := P.eConn.toNat
+
+/-- The minimum connectivity of all partitions of `M` separating `X` and `Y`, as a natural number.-/
 noncomputable def connBetween (M : Matroid α) (X Y : Set α) : ℕ :=
   (M.eConnBetween X Y).toNat
+
+lemma coe_connBetween (M : Matroid α) [RankFinite M] (X Y : Set α) (hdj : Disjoint X Y) :
+    (M.connBetween X Y : ℕ∞) = M.eConnBetween X Y := by
+  rw [connBetween, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
+  refine (M.eConnBetween_le_eConn_left hdj).trans_lt ?_
+  rw [← M.cast_conn_eq]
+  apply ENat.coe_lt_top
+
+lemma exists_partition_conn_eq_connBetween (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
+    ∃ P : M.Partition, P.SepOf X Y ∧ P.conn = M.connBetween X Y := by
+  obtain ⟨P, hP, hconn⟩ := exists_partition_eConn_eq_eConnBetween hXY hXE hYE
+  exact ⟨P, hP, congr_arg _ hconn⟩
+
+lemma Partition.SepOf.connBetween_le_conn [RankFinite M] (hP : P.SepOf X Y) :
+    M.connBetween X Y ≤ P.conn := by
+  rw [← Nat.cast_le (α := ℕ∞), coe_connBetween _ _ _ hP.disjoint, Partition.conn, P.eConn_eq_left,
+    ← cast_conn_eq, ENat.coe_toNat (ENat.coe_ne_top _), cast_conn_eq, ← P.eConn_eq_left]
+  · exact hP.eConnBetween_le
+
+
+
+
+
+
+-- theorem foo (P : Matroid α → Prop) [M.Finite]
+--(ih : ∀ M, M.Finite → (∀ N, N.E ⊂ M.E → P N) → P M) :
+--     P M := by
+--   obtain hE | ⟨e, he⟩ := M.E.eq_empty_or_nonempty
+--   · exact ih M (by assumption) fun N hN ↦ by simp [hE, ssubset_iff_exists] at hN
+--   have decr := M.ground_finite.encard_lt_encard <| diff_singleton_sSubset.2 he
+
+
+    -- simp [hE] at ih
+
+
+-- theorem conn_del_lemma (M : Matroid α) [M.Finite] (e : α) (he : e ∈ M.E) (hXE : X ⊆ M.E)
+--(hYE : Y ⊆ M.E)
+--     (heX : e ∉ X) (heY : e ∉ Y) (hXY : k ≤ M.connBetween X Y) :
+--     k ≤ (M ＼ e).connBetween X Y ∨ k ≤ (M ／ e).connBetween X Y := by
+--   sorry
+
+
+
+
+  -- simp_rw [eConnBetween_eq_iInf hXY hXE hYE]
+  -- set α := {P : M.Partition // P.SepOf X Y}
+  -- have hne : Nonempty α := ⟨_, partition_sepOf hXY hXE hYE⟩
+  -- obtain ⟨⟨P,h⟩, hP⟩ := ENat.exists_eq_iInf (f := fun i : α ↦ i.1.eConn)
+  -- exact ⟨P, h, hP⟩
