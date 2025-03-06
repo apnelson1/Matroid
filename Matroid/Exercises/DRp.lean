@@ -37,7 +37,7 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
 
   linarith
 
-lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E) (heco : M.Nonloop e)
+lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e})
     ≤  (M ＼ e).conn X + (M ／ e).conn Y + 1 := by
   --The proof starts with getting all the equations for the contractions, there is 3 of them
@@ -83,6 +83,51 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
 -- gh repo clone apnelson1/Matroid
 
 lemma book_854 (M : Matroid α) [RankFinite M] (X' Y': Set α  ) (hX'E : X' ⊆ M.E )
-    (hY'E : Y' ⊆ M.E \ X' ) (hXX' : X ⊆  X') (hYY' : Y ⊆ Y') : M.connBetween X Y ≤ M.connBetween X' Y' := by sorry
+    (hY'E : Y' ⊆ M.E \ X' ) (hXX' : X ⊆ X') (hYY' : Y ⊆ Y') :
+    M.connBetween X Y ≤ M.connBetween X' Y' := by sorry
 
---The correct notation is connBetween, see Separation for the infinite version, Peter is adding a bunch of lemmas to this section
+--The correct notation is connBetween, see Separation for the infinite version,
+--Peter is adding a bunch of lemmas to this section
+
+lemma exists_partition_Conn_eq_ConnBetween (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
+    ∃ P : M.Partition, P.SepOf X Y ∧ P.eConn = M.connBetween X Y := by sorry
+
+lemma book_855_del {X₁ D : Set α} (M : Matroid α) [RankFinite M] (hX₁E : X₁ ⊆ M.E) :
+    ( M ＼ D ).connBetween (X₁ \ D) ((M.E \ X₁) \ D) ≤ M.connBetween X₁ (M.E \ X₁) := by
+  suffices hi : ∀ i : ℕ, D.ncard ≤ i → ( M ＼ D ).connBetween (X₁ \ D) ((M.E \ X₁) \ D) ≤ M.connBetween X₁ (M.E \ X₁)
+  · sorry
+  · intro i hi
+    induction' i with n IH generalizing D
+    have hD : D = ∅ := by sorry --Ask Peter
+    rw [hD]
+    simp only [delete_empty, diff_empty, le_refl]
+    --Induction step
+    sorry
+
+lemma book_855 {C D X' Y': Set α} (M : Matroid α) [RankFinite M] (hX' : X' ⊆ M.E ) (hY' : Y' ⊆ M.E \ X')
+    (hX : X ⊆ X' \ (C ∪ D)) (hY : Y ⊆ (Y' \ (C ∪ D)))  :
+    ((M ／ C ) ＼ D ).connBetween X Y ≤ M.connBetween X' Y' := by
+  --Suffices is a tactic used to reduce the goal to prove something that implies the goal. It creates two goals.
+  --The first goal is to prove that the new hypothesis implies the result
+  -- Second goal is to prove the added hypothesis
+  --We will be using this tactic to set up the induction late
+  suffices hNM : ((M ／ C ) ＼ D ).connBetween X Y ≤ M.connBetween X Y
+  · have h854 : M.connBetween X Y ≤ M.connBetween X' Y' := by sorry
+    exact Nat.le_trans hNM h854
+  · have hex : ∃ X₁ ⊆ M.E, X ⊆ X₁ ∧ Y ⊆ M.E \ X₁ ∧ M.connBetween X₁ (M.E \ X₁) = M.connBetween X Y := by
+      sorry
+      --Let's leave this one like this for now.
+      --Peter seems to have a similar lemma for eNat and I will bug him to make it for connBetween
+    obtain ⟨X₁, hX₁ ⟩ := hex
+    have h813 : ((M ／ C ) ＼ D ).connBetween (X₁ \ (D ∪ C)) ((M.E \ X₁) \ (D ∪ C))
+        ≤ M.connBetween X₁ (M.E \ X₁) := by
+      sorry
+    sorry
+
+
+--There are 3 things to work in for next week:
+--Lemma book_854 should be the easiest mathematically but I didn't add anything to the lean proof.
+--Lemma book_855 has a sketch. Hardes part is using duality to apply lemma book_855_del.
+--This one will have one sorry.
+--Lemma book_855_del is the series of inequalities form the book but we need to use induction instead of just saying wlog.
+--Alternatively the same proof without induction will work by dividing D into X₁ and the complement.
