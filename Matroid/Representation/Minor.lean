@@ -15,17 +15,15 @@ section Minor
 /-- Contracting a set preserves representability. -/
 @[simps!] def Rep.contract (v : M.Rep 𝔽 W) (C : Set α) :
     (M ／ C).Rep 𝔽 (W ⧸ (span 𝔽 (v '' C))) where
-  to_fun := Submodule.mkQ _ ∘ v
-  valid' := by
-    intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
+  to_fun := mkQ _ ∘ v
+  indep_iff' J := by
+    obtain ⟨I,hI⟩ := M.exists_isBasis' C
     by_cases hCJ : Disjoint C J
     · rw [hI.contract_indep_iff, and_iff_left hCJ, ← v.span_closure_congr hI.closure_eq_closure,
-        (v.onIndep hI.indep).quotient_iff_union (hCJ.mono_left hI.subset), ← v.indep_iff_restrict,
-        union_comm]
-    refine iff_of_false (fun hi ↦ hCJ (subset_diff.1 hi.subset_ground).2.symm) fun hli ↦ ?_
+        (v.onIndep hI.indep).quotient_iff_union (hCJ.mono_left hI.subset), v.indep_iff, union_comm]
     obtain ⟨e, heC, heJ⟩ := not_disjoint_iff.1 hCJ
-    exact hli.ne_zero ⟨e, heJ⟩ <| by simpa using subset_span (mem_image_of_mem v heC)
+    exact iff_of_false (fun hi ↦ hCJ (subset_diff.1 hi.subset_ground).2.symm)
+      fun hli ↦ hli.ne_zero heJ <| by simpa using subset_span (mem_image_of_mem v heC)
 
 @[simps!] noncomputable def Rep.delete (v : M.Rep 𝔽 W) (D : Set α) : (M ＼ D).Rep 𝔽 W :=
   v.restrict (M.E \ D)
@@ -39,7 +37,7 @@ lemma Representable.delete (hM : M.Representable 𝔽) {D : Set α} : (M ＼ D).
 lemma Representable.restrict (hM : M.Representable 𝔽) {R : Set α} : (M ↾ R).Representable 𝔽 :=
   (hM.some.restrict R).representable
 
-lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
+lemma Representable.of_isMinor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : N ≤m M) :
     N.Representable 𝔽 := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact hM.contract.delete
@@ -47,7 +45,7 @@ lemma Representable.minor {M N : Matroid α} (hM : M.Representable 𝔽) (hNM : 
 lemma Representable.isoMinor {M : Matroid α} {N : Matroid β} (hM : M.Representable 𝔽)
     (hNM : N ≤i M) : N.Representable 𝔽 :=
   let ⟨_, hM₀, i, _⟩  := hNM.exists_iso
-  (hM.minor hM₀).iso i.symm
+  (hM.of_isMinor hM₀).iso i.symm
 
 end Minor
 
@@ -78,7 +76,7 @@ variable {𝔽 : Type*} [Field 𝔽]
 /-
 classical
     intro J
-    obtain ⟨I,hI⟩ := M.exists_basis' C
+    obtain ⟨I,hI⟩ := M.exists_isBasis' C
     convert linearIndependent_comp_subtype.symm
     simp_rw [← LinearMap.map_finsupp_linearCombination, mkQ_apply, Quotient.mk_eq_zero,
       hI.contract_indep_iff, ← v.span_closure_congr hI.closure_eq_closure,

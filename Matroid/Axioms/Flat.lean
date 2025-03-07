@@ -5,26 +5,27 @@ open Set
 
 structure FlatMatroid (α : Type*) where
   E : Set α
-  Flat : Set α → Prop
-  flat_sInter : ∀ Fs : Set (Set α), (∀ F ∈ Fs, Flat F) → Flat (⋂₀ Fs ∩ E)
-  flat_partition : ∀ F e, Flat F → e ∈ E → e ∉ F →
-    ∃! F', e ∈ F' ∧ Minimal (fun X ↦ F ⊂ X ∧ Flat X) F'
+  IsFlat : Set α → Prop
+  isFlat_sInter : ∀ Fs : Set (Set α), (∀ F ∈ Fs, IsFlat F) → IsFlat (⋂₀ Fs ∩ E)
+  isFlat_partition : ∀ F e, IsFlat F → e ∈ E → e ∉ F →
+    ∃! F', e ∈ F' ∧ Minimal (fun X ↦ F ⊂ X ∧ IsFlat X) F'
   Indep : Set α → Prop
-  indep_iff : ∀ ⦃I⦄, Indep I ↔ (∀ e ∈ I, ∃ F, Flat F ∧ I ∩ F = I \ {e}) ∧ I ⊆ E
+  indep_iff : ∀ ⦃I⦄, Indep I ↔ (∀ e ∈ I, ∃ F, IsFlat F ∧ I ∩ F = I \ {e}) ∧ I ⊆ E
   indep_maximal : ∀ ⦃X⦄, X ⊆ E → Matroid.ExistsMaximalSubsetProperty Indep X
-  subset_ground : ∀ F, Flat F → F ⊆ E
+  subset_ground : ∀ F, IsFlat F → F ⊆ E
 
 namespace FlatMatroid
 
 variable {α : Type*} {E F F' F₁ F₂ X Y I J : Set α} {e f : α} {M : FlatMatroid α}
 
-lemma ground_flat (M : FlatMatroid α) : M.Flat M.E := by
-  simpa using M.flat_sInter ∅
+lemma ground_isFlat (M : FlatMatroid α) : M.IsFlat M.E := by
+  simpa using M.isFlat_sInter ∅
 
-lemma Flat.subset_ground (hF : M.Flat F) : F ⊆ M.E :=
+lemma IsFlat.subset_ground (hF : M.IsFlat F) : F ⊆ M.E :=
   M.subset_ground F hF
 
-@[reducible] def closure (M : FlatMatroid α) (X : Set α) : Set α := ⋂₀ {F | X ∩ M.E ⊆ F ∧ M.Flat F}
+@[reducible] def closure (M : FlatMatroid α) (X : Set α) : Set α :=
+    ⋂₀ {F | X ∩ M.E ⊆ F ∧ M.IsFlat F}
 
 lemma closure_subset_closure (M : FlatMatroid α) (hXY : X ⊆ Y) : M.closure X ⊆ M.closure Y := by
   simp only [closure, subset_sInter_iff, mem_setOf_eq, and_imp]
@@ -42,7 +43,7 @@ lemma closure_closure (M : FlatMatroid α) (X : Set α) : M.closure (M.closure X
   exact subset_trans (by simp +contextual) hssF
 
 lemma subset_closure (hX : X ⊆ M.E) : X ⊆ M.closure X := by
-  suffices ∀ F, X ∩ M.E ⊆ F → M.Flat F → X ⊆ F by simpa +contextual
+  suffices ∀ F, X ∩ M.E ⊆ F → M.IsFlat F → X ⊆ F by simpa +contextual
   exact fun F hXF _ ↦ by rwa [← inter_eq_self_of_subset_left hX]
 
 lemma closure_inter_ground (M : FlatMatroid α) (X : Set α) :
@@ -52,13 +53,13 @@ lemma closure_inter_ground (M : FlatMatroid α) (X : Set α) :
   exact sInter_subset_of_mem <| by simpa
 
 lemma closure_subset_ground (M : FlatMatroid α) (X : Set α) : M.closure X ⊆ M.E :=
-  sInter_subset_of_mem ⟨inter_subset_right, M.ground_flat⟩
+  sInter_subset_of_mem ⟨inter_subset_right, M.ground_isFlat⟩
 
-lemma closure_flat (M : FlatMatroid α) (X : Set α) : M.Flat (M.closure X) := by
+lemma closure_isFlat (M : FlatMatroid α) (X : Set α) : M.IsFlat (M.closure X) := by
   rw [← inter_eq_self_of_subset_left (M.closure_subset_ground X)]
-  exact M.flat_sInter _ <| by simp
+  exact M.isFlat_sInter _ <| by simp
 
-lemma Flat.closure (hF : M.Flat F) : M.closure F = F :=
+lemma IsFlat.closure (hF : M.IsFlat F) : M.closure F = F :=
   subset_antisymm (sInter_subset_of_mem (by simp [hF])) (M.subset_closure hF.subset_ground)
 
 lemma Indep.subset_ground (hI : M.Indep I) : I ⊆ M.E :=
@@ -71,8 +72,8 @@ lemma mem_closure_insert_self (M : FlatMatroid α) (heE : e ∈ M.E) (X : Set α
 
 lemma closure_insert_minimal (M : FlatMatroid α) (X : Set α) (e : α) (heE : e ∈ M.E)
     (heX : e ∉ M.closure X) :
-    Minimal (fun F ↦ M.closure X ⊂ F ∧ M.Flat F) (M.closure (insert e X)) := by
-  have h_ex := M.flat_partition _ e (M.closure_flat X) heE heX
+    Minimal (fun F ↦ M.closure X ⊂ F ∧ M.IsFlat F) (M.closure (insert e X)) := by
+  have h_ex := M.isFlat_partition _ e (M.closure_isFlat X) heE heX
   obtain ⟨F₀, heF₀, hF₀⟩ := h_ex.exists
   convert hF₀
 
@@ -91,10 +92,10 @@ lemma closure_insert_minimal (M : FlatMatroid α) (X : Set α) (e : α) (heE : e
       rw [iff_false_left heX, mem_inter_iff, not_not, and_iff_right heF₀]
       exact mem_closure_insert_self M heE X
     exact ⟨hF₀.prop.1.subset, (M.closure_subset_closure (subset_insert _ _))⟩
-  convert M.flat_sInter {F₀, M.closure (insert e X)} _ using 1
+  convert M.isFlat_sInter {F₀, M.closure (insert e X)} _ using 1
   · simp only [sInter_insert, sInter_singleton, left_eq_inter]
     exact inter_subset_right.trans (M.closure_subset_ground _)
-  simp [hF₀.prop.2, M.closure_flat]
+  simp [hF₀.prop.2, M.closure_isFlat]
 
 protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
   E := M.E
@@ -120,12 +121,12 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
       exact hcon (mem_closure_insert_self M heE X)
 
     have hmin := M.closure_insert_minimal X e heE heXcl
-    refine Eq.symm <| hmin.eq_of_subset ⟨?_, M.closure_flat _⟩ ?_
+    refine Eq.symm <| hmin.eq_of_subset ⟨?_, M.closure_isFlat _⟩ ?_
     · refine (M.closure_subset_closure (by simp)).ssubset_of_ne (fun h ↦ hfX ?_)
       rw [h]
       exact mem_closure_insert_self M hfE X
 
-    rw [← (M.closure_flat (insert e X)).closure]
+    rw [← (M.closure_isFlat (insert e X)).closure]
 
     exact M.closure_subset_closure (insert_subset hfeX ((M.subset_closure hX).trans
       (M.closure_subset_closure (subset_insert _ _))))
@@ -135,7 +136,7 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
   Indep := M.Indep
   indep_iff := by
     simp_rw [indep_iff, and_congr_left_iff]
-    refine fun I hI ↦ ⟨fun h e heI hecl ↦ ?_, fun h e heI ↦ ⟨_, M.closure_flat (I \ {e}), ?_⟩⟩
+    refine fun I hI ↦ ⟨fun h e heI hecl ↦ ?_, fun h e heI ↦ ⟨_, M.closure_isFlat (I \ {e}), ?_⟩⟩
     · obtain ⟨F, hF, hfI⟩ := h e heI
       simp only [closure, mem_sInter, mem_setOf_eq, and_imp] at hecl
       have := hfI.subset ⟨heI, (hecl F ?_ hF)⟩
@@ -153,8 +154,8 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
 
 protected def matroid (M : FlatMatroid α) : Matroid α := M.closureMatroid.matroid
 
-@[simp] lemma matroid_flat_iff : M.matroid.Flat F ↔ M.Flat F := by
-  rw [Matroid.flat_iff_closure_self, FlatMatroid.matroid, ClosureMatroid.matroid_closure_eq]
-  refine ⟨fun h ↦ ?_, Flat.closure⟩
+@[simp] lemma matroid_isFlat_iff : M.matroid.IsFlat F ↔ M.IsFlat F := by
+  rw [Matroid.isFlat_iff_closure_self, FlatMatroid.matroid, ClosureMatroid.matroid_closure_eq]
+  refine ⟨fun h ↦ ?_, IsFlat.closure⟩
   rw [← h]
-  apply M.closure_flat
+  apply M.closure_isFlat

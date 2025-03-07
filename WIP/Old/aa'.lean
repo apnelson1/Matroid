@@ -48,9 +48,9 @@ lemma diff_diff_singleton {a : α} {s t : Set α} (hs : a ∈ s) :
    are definitionally the complements of the
    bases of the primal -/
 def dual' (M : Matroid α) : Matroid α :=
-  matroid_of_base M.E ( fun B ↦ B ⊆ M.E ∧ M.Base (M.E \ B) )
+  matroid_of_isBase M.E ( fun B ↦ B ⊆ M.E ∧ M.IsBase (M.E \ B) )
     ( by
-      obtain ⟨B, hB⟩ := M.exists_base'
+      obtain ⟨B, hB⟩ := M.exists_isBase'
       refine' ⟨M.E \ B, _⟩
       simp_rw [sdiff_sdiff_right_self, ge_iff_le, le_eq_subset, inf_eq_inter,
         inter_eq_self_of_subset_right hB.subset_ground]
@@ -61,7 +61,7 @@ def dual' (M : Matroid α) : Matroid α :=
       have hxE : x ∈ M.E := hB₁.1 hx.1
 
       obtain ⟨B'', hB'', hB''₁, hB''₂⟩ :=
-        (hB₂.2.indep.diff (B₁ \ { x })).exists_base_subset_union_base hB₁.2
+        (hB₂.2.indep.diff (B₁ \ { x })).exists_isBase_subset_union_isBase hB₁.2
 
       rw [diff_diff_singleton (show x ∈ M.E \ B₂ from ⟨hxE, hx.2⟩),
         insert_union, ← union_diff_distrib, ← diff_diff_singleton (show x ∈ _ ∪ _ from Or.inr hxE),
@@ -73,7 +73,7 @@ def dual' (M : Matroid α) : Matroid α :=
           and_iff_right hB''₂.2]
         rintro rfl
         rw [diff_diff_singleton hxE] at hB''
-        exact hB₁.2.insert_not_base (fun h ↦ h.2 hx.1) hB''
+        exact hB₁.2.insert_not_isBase (fun h ↦ h.2 hx.1) hB''
 
       obtain ⟨e, ⟨heE, heB''⟩, heI⟩ := exists_of_ssubset hssu
 
@@ -93,7 +93,7 @@ def dual' (M : Matroid α) : Matroid α :=
       rw [insert_diff_singleton_comm (Ne.symm hxe), diff_diff_singleton (hB₁.1 hx.1),
         ← union_singleton (a := e), ← diff_diff]
 
-      apply hB₁.2.exchange_base_of_indep (fun h ↦ h.2 hx.1)
+      apply hB₁.2.exchange_isBase_of_indep (fun h ↦ h.2 hx.1)
         (hB''.indep.subset (insert_subset (hB''₁ ⟨⟨hB₁.1 hx.1,hx.2⟩,fun h ↦ h.2 rfl⟩) _))
 
 
@@ -115,8 +115,8 @@ def dual' (M : Matroid α) : Matroid α :=
           -- -- rw [this]
           -- have : M.Indep (insert x ((M.E \ B₁) \ {e})) := sorry
           -- -- by subset of B''
-          -- have : M.Base  (insert x ((M.E \ B₁) \ {e})) :=
-          --   Base.exchange_base_of_indep hB₁.2 (not_mem_diff_of_mem hx.1) this
+          -- have : M.IsBase  (insert x ((M.E \ B₁) \ {e})) :=
+          --   IsBase.exchange_isBase_of_indep hB₁.2 (not_mem_diff_of_mem hx.1) this
           -- exact this
 
 
@@ -124,8 +124,8 @@ def dual' (M : Matroid α) : Matroid α :=
           unfold ExistsMaximalSubsetProperty
       simp only [forall_exists_index, and_imp]
       rintro X hX I Y hY hYb hIY hIX
-      obtain ⟨J, hJ⟩ := M.exists_basis (M.E \ X)
-      obtain ⟨B', hB', hJB', hB'JB⟩ := hJ.indep.exists_base_subset_union_base hYb
+      obtain ⟨J, hJ⟩ := M.exists_isBasis (M.E \ X)
+      obtain ⟨B', hB', hJB', hB'JB⟩ := hJ.indep.exists_isBase_subset_union_isBase hYb
 
       use X \ B'
       rw [mem_maximals_setOf_iff]
@@ -150,8 +150,8 @@ def dual' (M : Matroid α) : Matroid α :=
       -- have hI'B : Disjoint I' B :=
       --   (subset_diff.mp hI'B).2
 
-      -- obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X)
-      -- obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB
+      -- obtain ⟨I, hI⟩ :=  M.exists_isBasis (M.E \ X)
+      -- obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_isBase_subset_union_isBase hB
 
       -- refine' ⟨(X \ B') ∩ M.E,
       --   ⟨⟨M.E \ B', ⟨⟨diff_subset _ _, by { rwa [diff_diff_cancel_left hB'.subset_ground] }⟩,
@@ -186,7 +186,7 @@ def dual' (M : Matroid α) : Matroid α :=
       --       _ ⊆ _ := by rw [inter_distrib_left, hdj.symm.inter_eq, union_empty]
       --       _ ⊆ _ := inter_subset_right
 
-      -- obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_base_subset_union_base hB''
+      -- obtain ⟨B₁,hB₁,hI'B₁,hB₁I⟩ := (hB'.indep.subset hI').exists_isBase_subset_union_isBase hB''
       -- rw [union_comm, ← union_assoc, union_eq_self_of_subset_right inter_subset_left] at hB₁I
 
       -- have : B₁ = B'
@@ -211,10 +211,10 @@ def dual' (M : Matroid α) : Matroid α :=
 /- end of dual matroid -/
 
 /-
-def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop)
+def matroid_of_indep_of_forall_subset_isBase (E : Set α) (Indep : Set α → Prop)
   (h_exists_maximal_indep_subset : ∀ X, X ⊆ E → ∃ I, I ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X})
   (h_subset : ∀ ⦃I J⦄, Indep J → I ⊆ J → Indep I)
-  (h_basis : ∀ ⦃I I'⦄, Indep I → I' ∈ maximals (· ⊆ ·) {I | Indep I} →
+  (h_isBasis : ∀ ⦃I I'⦄, Indep I → I' ∈ maximals (· ⊆ ·) {I | Indep I} →
     ∃ B, B ∈ maximals (· ⊆ ·) {I | Indep I} ∧ I ⊆ B ∧ B ⊆ I ∪ I')
   (h_support : ∀ ⦃I⦄, Indep I → I ⊆ E) : Matroid α :=
   -- made `I` implicit in this def's `h_support`, unlike in that of `matroid_of_indep`
@@ -227,7 +227,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
   (fun I J hI hIJ ↦ h_subset hI hIJ)
   (by {
     rintro I B hI h'I hB
-    obtain ⟨B', hB'⟩ := h_basis hI hB
+    obtain ⟨B', hB'⟩ := h_isBasis hI hB
     obtain ⟨x, hx⟩ : ∃ x, x ∈ B' \ I := by {
       simp_rw [mem_diff]
       by_contra! h
@@ -249,25 +249,25 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
     exact ⟨x, ⟨hxB, hx.2⟩, h_subset hB'.1.1 this⟩
   })
   (by {
-    let Base   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I }
-    let Base'  : Set α → Prop := { B | B ⊆ E ∧ Base (E \ B) }
-    let Indep' : Set α → Prop := { I | ∃ B, Base' B ∧ I ⊆ B }
+    let IsBase   : Set α → Prop := maximals (· ⊆ ·) { I | Indep I }
+    let IsBase'  : Set α → Prop := { B | B ⊆ E ∧ IsBase (E \ B) }
+    let Indep' : Set α → Prop := { I | ∃ B, IsBase' B ∧ I ⊆ B }
 
     have dual_subset : ∀ I J, Indep' J → I ⊆ J → Indep' I :=
       fun I J ⟨B, hB⟩ hIJ ↦ ⟨B, hB.1, hIJ.trans hB.2⟩
 
-    have dual_base_compl : ∀ B, Base B → Base' (E \ B) := by
+    have dual_isBase_compl : ∀ B, IsBase B → IsBase' (E \ B) := by
       rintro B hB
       rw [← diff_diff_cancel_left (h_support hB.1)] at hB
       exact ⟨diff_subset _ _, hB⟩
 
-    have dual_base_indep : ∀ ⦃B⦄, Base' B → Indep' B :=
+    have dual_isBase_indep : ∀ ⦃B⦄, IsBase' B → Indep' B :=
       fun B hB ↦ ⟨B, hB, subset_refl _⟩
 
     have dual_support : ∀ I, Indep' I → I ⊆ E :=
       fun I ⟨B, hB⟩ ↦ hB.2.trans hB.1.1
 
-    have dual_indep_maximals_eq_dual_base : maximals (· ⊆ ·) {I | Indep' I } = Base' := by
+    have dual_indep_maximals_eq_dual_isBase : maximals (· ⊆ ·) {I | Indep' I } = IsBase' := by
       ext X
       refine' ⟨fun ⟨⟨B, hB⟩, hX⟩ ↦ _, _⟩
       . by_contra! h
@@ -276,7 +276,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           refine' ⟨hB.2, _⟩
           rintro rfl
           exact h hB.1
-        exact hX'.not_subset (hX (dual_base_indep hB.1) hX'.subset)
+        exact hX'.not_subset (hX (dual_isBase_indep hB.1) hX'.subset)
       . rintro hX
         rw [maximals]
         by_contra! h
@@ -285,16 +285,16 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         obtain ⟨I, ⟨hI, hXI, hIX⟩⟩ := h ⟨X, hX, subset_refl X⟩
         obtain ⟨B, ⟨hB, hIB⟩⟩ := hI
 
-        have hXc : Base (E \ X) := hX.2
-        have hBc : Base (E \ B) := hB.2
+        have hXc : IsBase (E \ X) := hX.2
+        have hBc : IsBase (E \ B) := hB.2
         have hBcXc := (compl_ssubset hX.1 hB.1 (ssubset_of_ssubset_of_subset ⟨hXI, hIX⟩ hIB))
 
         exact hBcXc.not_subset (hBc.2 hXc.1 hBcXc.subset)
 
 
-    have aux0 : ∀ I, Base I → (E \ I) ∈ maximals (· ⊆ ·) { I | Indep' I } := by {
+    have aux0 : ∀ I, IsBase I → (E \ I) ∈ maximals (· ⊆ ·) { I | Indep' I } := by {
       rintro I hI
-      rw [dual_indep_maximals_eq_dual_base]
+      rw [dual_indep_maximals_eq_dual_isBase]
       use diff_subset _ _
       rw [diff_diff_cancel_left (h_support hI.1)]
       exact hI
@@ -307,19 +307,19 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         obtain ⟨T, hT⟩ := hI'
 
         let B := E \ T
-        have hB : Base B := hT.1.2
+        have hB : IsBase B := hT.1.2
         have hI'B : Disjoint I' B := disjoint_of_subset_left hT.2 disjoint_sdiff_right
 
 
-        rw [dual_indep_maximals_eq_dual_base] at hBt
+        rw [dual_indep_maximals_eq_dual_isBase] at hBt
         let B' := E \ Bt
-        have hB' : Base B' := hBt.2
+        have hB' : IsBase B' := hBt.2
 
-        obtain ⟨B'', hB''⟩ := @h_basis (B' \ I') B (h_subset hB'.1 diff_subset) hB
+        obtain ⟨B'', hB''⟩ := @h_isBasis (B' \ I') B (h_subset hB'.1 diff_subset) hB
 
         refine' ⟨E \ B'', _, _, _⟩
-        . rw [dual_indep_maximals_eq_dual_base]
-          exact dual_base_compl B'' hB''.1
+        . rw [dual_indep_maximals_eq_dual_isBase]
+          exact dual_isBase_compl B'' hB''.1
         . rintro e he
           use hT.1.1 (hT.2 he)
           rintro he'
@@ -337,19 +337,19 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           exact this
         }
 
-    have aux2' : ∀ X B, X ⊆ E → Base B →
+    have aux2' : ∀ X B, X ⊆ E → IsBase B →
         (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} →
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) := by
       rintro X B hX hB hBX
       refine' ⟨_, _⟩
       . refine' ⟨_, inter_subset_right⟩
         . refine' ⟨(E \ B), _, inter_subset_left⟩
-          have : Base (E \ (E \ B)) := by
+          have : IsBase (E \ (E \ B)) := by
             rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1)]
             exact hB
           exact ⟨diff_subset _ _, this⟩
       . by_contra! g
-        obtain ⟨B', hB'⟩ : ∃ B', Base B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
+        obtain ⟨B', hB'⟩ : ∃ B', IsBase B' ∧ (B' ∩ (E \ X) ⊂ B ∩ (E \ X)) := by
           obtain ⟨I, h⟩ := g
           obtain ⟨⟨Bt, hBt⟩, _⟩ := h.1
           have h₁ : (E \ B) ∩ (E \ X) ⊂ I :=
@@ -364,7 +364,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
           use hBt.1.2
           exact ssubset_of_subset_of_ssubset (inter_subset_inter_left _
             (diff_subset_diff_right hBt.2)) h₂
-        obtain ⟨I', hI'⟩ := h_basis hBX.1.1 hB'.1
+        obtain ⟨I', hI'⟩ := h_isBasis hBX.1.1 hB'.1
 
         have h₁I'B : I' ∩ X ⊆ B ∩ X := by {
           have := inter_subset_inter_left X hI'.2.1
@@ -389,14 +389,14 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
         exact hI'B.not_subset (hI'.1.2 hB.1 hI'B.subset)
 
-    have exists_base_contains_indep : ∀ I, Indep I → ∃ B, Base B ∧ I ⊆ B := by {
+    have exists_isBase_contains_indep : ∀ I, Indep I → ∃ B, IsBase B ∧ I ⊆ B := by {
       rintro I hI
       obtain ⟨I', hI'⟩ := h_exists_maximal_indep_subset E (subset_refl _)
-      obtain ⟨B, hB⟩ := h_basis hI ⟨hI'.1.1, fun X hX hI'X ↦ hI'.2 ⟨hX, h_support hX⟩ hI'X⟩
+      obtain ⟨B, hB⟩ := h_isBasis hI ⟨hI'.1.1, fun X hX hI'X ↦ hI'.2 ⟨hX, h_support hX⟩ hI'X⟩
       exact ⟨B, hB.1, hB.2.1⟩
     }
 
-    have aux2'' : ∀ X B, X ⊆ E → Base B →
+    have aux2'' : ∀ X B, X ⊆ E → IsBase B →
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)} →
         B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} := by
       {
@@ -405,7 +405,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         by_contra! g
         obtain ⟨I, h⟩ := g
 
-        obtain ⟨Bt, hBt⟩ := exists_base_contains_indep I h.1.1
+        obtain ⟨Bt, hBt⟩ := exists_isBase_contains_indep I h.1.1
 
         have h₁ : B ∩ X ⊂ I :=
           ⟨h.2.1, h.2.2⟩
@@ -443,10 +443,10 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         have h₉ : I' ⊂ (E \ B) :=
           ssubset_of_subset_of_compl_ssubset' (dual_support I' hI'.1.1) diff_subset hX h₆ h₈
 
-        exact h₉.not_subset (hI'.1.2 (dual_base_indep (dual_base_compl B hB)) h₉.subset)
+        exact h₉.not_subset (hI'.1.2 (dual_isBase_indep (dual_isBase_compl B hB)) h₉.subset)
       }
 
-    have aux2 : ∀ X B, X ⊆ E → Base B →
+    have aux2 : ∀ X B, X ⊆ E → IsBase B →
         (B ∩ X ∈ maximals (· ⊆ ·) {I | Indep I ∧ I ⊆ X} ↔
         (E \ B) ∩ (E \ X) ∈ maximals (· ⊆ ·) {I' | Indep' I' ∧ I' ⊆ (E \ X)}) :=
       fun X B hX hB ↦ ⟨aux2' X B hX hB, aux2'' X B hX hB⟩
@@ -461,7 +461,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       have : ∀ I, Indep I ∧ I ⊆ E ↔ Indep I :=
         fun I ↦ ⟨fun h ↦ h.1, fun h ↦ ⟨h, h_support h⟩⟩
       simp_rw [this] at hBh
-      obtain ⟨B', hB'⟩ := h_basis hI'.1.1 hBh
+      obtain ⟨B', hB'⟩ := h_isBasis hI'.1.1 hBh
 
       have I'eq : I' = B' ∩ X :=
         subset_antisymm (subset_inter_iff.mpr ⟨hB'.2.1, hI'.1.2⟩)
@@ -470,7 +470,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
       rw [I'eq] at hI'
       have hB'c := (aux2 X B' hX hB'.1).mp hI'
 
-      obtain ⟨B, hB⟩ := h_basis hI.1 hB'.1
+      obtain ⟨B, hB⟩ := h_isBasis hI.1 hB'.1
 
       have h₁ : B ∩ (E \ X) ⊆ B' ∩ (E \ X) := by {
         have tmp := inter_subset_inter_left (E \ X) hB.2.2
@@ -483,7 +483,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
         compl_subset_inter h₁
       have h₃ : E \ B ∩ (E \ X) ∈ {I' | Indep' I' ∧ I' ⊆ E \ X} := by {
         refine' ⟨⟨E \ B, _, inter_subset_left⟩, inter_subset_right⟩
-        have : Base (E \ (E \ B)) := by {
+        have : IsBase (E \ (E \ B)) := by {
           rw [diff_diff_right_self, inter_eq_self_of_subset_right (h_support hB.1.1)]
           exact hB.1
         }
@@ -510,7 +510,7 @@ def matroid_of_indep_of_forall_subset_base (E : Set α) (Indep : Set α → Prop
 
 def directSum {ι : Type*} (Ms : ι → Matroid α)
   (hEs : Pairwise (Disjoint on (fun i ↦ (Ms i).E))) :=
-  matroid_of_indep_of_forall_subset_base
+  matroid_of_indep_of_forall_subset_isBase
     (⋃ i, (Ms i).E)
     (fun I ↦ (I ⊆ ⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).Indep (I ∩ (Ms i).E))
     (by {
@@ -577,11 +577,11 @@ instance (E : Set α) (Indep : Set α → Prop) (h_empty : Indep ∅)
     (h_support : ∀ I, Indep I → I ⊆ E) :
     Matroid.RankFinite (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
 
-  refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base.elim
+  refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_isBase.elim
     (fun B hB ↦ hB.rankFinite_of_finite _)
   obtain ⟨n, h_bdd⟩ := h_bdd
   refine' finite_of_encard_le_coe (h_bdd _ _)
-  rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
+  rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_isBase]
   exact ⟨_, hB, rfl.subset⟩
 
 /-- If there is an absolute upper bound on the size of an independent set, then matroids
@@ -620,44 +620,44 @@ def matroid_of_indep_of_bdd_augment (E : Set α) (Indep : Set α → Prop) (h_em
       = Indep := by
   simp [matroid_of_indep_of_bdd_augment]
 
-/-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
-def matroid_of_exists_finite_base {α : Type*} (E : Set α) (Base : Set α → Prop)
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
-  matroid_of_base E Base
-    (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange
+/-- A collection of IsBases with the exchange property and at least one finite member is a matroid -/
+def matroid_of_exists_finite_isBase {α : Type*} (E : Set α) (Base : Set α → Prop)
+    (exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite) (base_exchange : ExchangeProperty IsBase)
+    (support : ∀ B, IsBase B → B ⊆ E) : Matroid α :=
+  matroid_of_isBase E IsBase
+    (by { obtain ⟨B,h⟩ := exists_finite_isBase; exact ⟨B,h.1⟩ }) base_exchange
     (by {
-      obtain ⟨B, hB, hfin⟩ := exists_finite_base
+      obtain ⟨B, hB, hfin⟩ := exists_finite_isBase
       refine' fun X _ ↦ Matroid.existsMaximalSubsetProperty_of_bdd
         ⟨B.ncard, fun Y ⟨B', hB', hYB'⟩ ↦ _⟩ X
-      rw [hfin.cast_ncard_eq, encard_base_eq_of_exch base_exchange hB hB']
+      rw [hfin.cast_ncard_eq, encard_isBase_eq_of_exch base_exchange hB hB']
       exact encard_mono hYB' })
     support
 
-@[simp] theorem matroid_of_exists_finite_base_apply {α : Type*} (E : Set α) (Base : Set α → Prop)
-    (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) :
-    (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base :=
+@[simp] theorem matroid_of_exists_finite_isBase_apply {α : Type*} (E : Set α) (Base : Set α → Prop)
+    (exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite) (base_exchange : ExchangeProperty IsBase)
+    (support : ∀ B, IsBase B → B ⊆ E) :
+    (matroid_of_exists_finite_isBase E IsBase exists_finite_isBase base_exchange support).IsBase = IsBase :=
   rfl
 
-/-- A matroid constructed with a finite Base is `RankFinite` -/
-instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite}
-    {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} :
+/-- A matroid constructed with a finite IsBase is `RankFinite` -/
+instance {E : Set α} {Base : Set α → Prop} {exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite}
+    {base_exchange : ExchangeProperty IsBase} {support : ∀ B, IsBase B → B ⊆ E} :
     Matroid.RankFinite
-      (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) :=
-  ⟨exists_finite_base⟩
+      (matroid_of_exists_finite_isBase E IsBase exists_finite_isBase base_exchange support) :=
+  ⟨exists_finite_isBase⟩
 
-def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
-  matroid_of_exists_finite_base E Base
-    (by { obtain ⟨B,hB⟩ := exists_base; exact ⟨B,hB, hE.subset (support _ hB)⟩ })
+def matroid_of_isBase_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
+    (exists_isBase : ∃ B, IsBase B) (base_exchange : ExchangeProperty IsBase)
+    (support : ∀ B, IsBase B → B ⊆ E) : Matroid α :=
+  matroid_of_exists_finite_isBase E IsBase
+    (by { obtain ⟨B,hB⟩ := exists_isBase; exact ⟨B,hB, hE.subset (support _ hB)⟩ })
     base_exchange support
 
-@[simp] theorem matroid_of_base_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
-    (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
-    (support : ∀ B, Base B → B ⊆ E) :
-    (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl
+@[simp] theorem matroid_of_isBase_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
+    (exists_isBase : ∃ B, IsBase B) (base_exchange : ExchangeProperty IsBase)
+    (support : ∀ B, IsBase B → B ⊆ E) :
+    (matroid_of_isBase_of_finite hE IsBase exists_isBase base_exchange support).IsBase = IsBase := rfl
 
 /-- A collection of subsets of a finite ground set satisfying the usual independence axioms
   determines a matroid -/
@@ -695,11 +695,11 @@ end Matroid
 
 /- Restrict a matroid to a set containing a known basis. This is a special case of restriction
   and only has auxiliary use -/
--- def bRestr (M : Matroid α) {B₀ R : Set α} (hB₀ : M.Base B₀) (hB₀R : B₀ ⊆ R) (hR : R ⊆ M.E) :
+-- def bRestr (M : Matroid α) {B₀ R : Set α} (hB₀ : M.IsBase B₀) (hB₀R : B₀ ⊆ R) (hR : R ⊆ M.E) :
 --     Matroid α where
 --   ground := R
---   Base B := M.Base B ∧ B ⊆ R
---   exists_base' := ⟨B₀, ⟨hB₀, hB₀R⟩⟩
+--   IsBase B := M.IsBase B ∧ B ⊆ R
+--   exists_isBase' := ⟨B₀, ⟨hB₀, hB₀R⟩⟩
 --   base_exchange' := by
 --     rintro B B' ⟨hB, hBR⟩ ⟨hB', hB'R⟩ e he
 --     obtain ⟨f, hf⟩ := hB.exchange hB' he
@@ -709,9 +709,9 @@ end Matroid
 --     obtain ⟨J, ⟨⟨BJ, hBJ, hJBJ⟩, hJ⟩, hJmax⟩ := M.maximality' X (hXR.trans hR) Y ⟨B, hB, hYB⟩ hYX
 --     simp only [mem_setOf_eq, and_imp, forall_exists_index] at hJmax
 --     obtain ⟨BJ', hBJ', hJBJ'⟩ :=
---       (hBJ.indep.subset hJBJ).subset_basis_of_subset (subset_union_left _ B₀)
+--       (hBJ.indep.subset hJBJ).subset_isBasis_of_subset (subset_union_left _ B₀)
 --         (union_subset (hJ.2.trans (hXR.trans hR)) (hB₀R.trans hR))
---     have' hBJ'b := hB₀.base_of_basis_superset subset_union_right hBJ'
+--     have' hBJ'b := hB₀.isBase_of_isBasis_superset subset_union_right hBJ'
 --     refine' ⟨J, ⟨⟨BJ', ⟨hBJ'b, hBJ'.subset.trans (union_subset (hJ.2.trans hXR) hB₀R)⟩, hJBJ'⟩,hJ⟩,
 --       fun K ⟨⟨BK, ⟨hBK, _⟩, hKBK⟩, hYK, hKX⟩ hKJ ↦ hJmax BK hBK hKBK hYK hKX hKJ⟩
 --   subset_ground' := by tauto

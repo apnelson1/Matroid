@@ -67,13 +67,13 @@ theorem Module.dom_finite_of_finite (R : Type*) [DivisionRing R] (hfin : Module.
   have := FiniteDimensional.of_injective (Finsupp.lcoeFun : (α →₀ R) →ₗ[R] (α → R))
     (fun f g h ↦ by ext x; simpa using congr_fun h x)
   exact Fintype.finite <| FiniteDimensional.fintypeBasisIndex
-    (Finsupp.basisSingleOne : Basis α R (α →₀ R))
+    (Finsupp.isBasisSingleOne : IsBasis α R (α →₀ R))
 
 end coords
 
 variable {α W W' R : Type*} [AddCommGroup W] [Field R] [Module R W] [AddCommGroup W'] [Module R W']
 
-@[simp] theorem Basis.total_comp_repr (f : Basis α R W) (g : α → R) :
+@[simp] theorem IsBasis.total_comp_repr (f : IsBasis α R W) (g : α → R) :
     ((Finsupp.total α R R g).comp f.repr.toLinearMap) ∘ f = g := by
   ext; simp
 
@@ -102,7 +102,7 @@ theorem linearIndependent_iff_forall_exists_eq_dual_comp {f : α → W} :
     refine congr_arg _ <| Subtype.coe_injective ?_
     have hrw := LinearMap.congr_fun hi ⟨f a, subset_span (mem_range_self a)⟩
     simp only [LinearMap.coe_comp, coeSubtype, Function.comp_apply, LinearMap.id_coe, id_eq] at hrw
-    simp only [hrw, Basis.span_apply]
+    simp only [hrw, IsBasis.span_apply]
 
   obtain ⟨φ, hφ⟩ := h <| Function.update 0 a (1 : R)
   have hc := φ.congr_arg hl
@@ -149,7 +149,7 @@ theorem ofFun_comp_coe (f : α → W) (s : Set α) :
   ext; aesop
 
 
-def ofFun_repr (f : α → W) (b : Basis ι R W) : ι → ofFun R f :=
+def ofFun_repr (f : α → W) (b : IsBasis ι R W) : ι → ofFun R f :=
   fun i ↦ ⟨fun a ↦ (b.repr ∘ f) a i, ( by
         simp only [Function.comp_apply, mem_ofFun_iff]
         exact ⟨b.coord i, funext fun _ ↦ rfl⟩ ) ⟩
@@ -164,7 +164,7 @@ def ofFun_repr (f : α → W) (b : Basis ι R W) : ι → ofFun R f :=
 /-- For every `ι`-indexed basis of a subspace `U` of `α → R`, there is a canonical
   `f : α → (ι → R)` for which `U = ofFun R f`. I think this breaks if `U` isn't
     finite-dimensional -/
-theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b : Basis ι R U) :
+theorem IsBasis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b : IsBasis ι R U) :
     ofFun R (fun a i ↦ (b i).1 a) = U := by
   have _ := FiniteDimensional.fintypeBasisIndex b
   ext x
@@ -175,12 +175,12 @@ theorem Basis.eq_ofFun {U : Submodule R (α → R)} [FiniteDimensional R U] (b :
     convert (b.equivFun.symm φ').prop
     ext x
     rw [Function.comp_apply, (piEquiv ι R R).symm_apply_eq.1 hφ', piEquiv_apply_apply]
-    simp only [Basis.equivFun_symm_apply, AddSubmonoid.coe_finset_sum,
+    simp only [IsBasis.equivFun_symm_apply, AddSubmonoid.coe_finset_sum,
       coe_toAddSubmonoid, Finset.sum_apply]
     exact Finset.sum_congr rfl fun y _ ↦ mul_comm _ _
   use (piEquiv ι R R) <| b.equivFun ⟨x, h⟩
   ext i
-  simp only [Basis.equivFun_apply, Function.comp_apply, piEquiv_apply_apply]
+  simp only [IsBasis.equivFun_apply, Function.comp_apply, piEquiv_apply_apply]
   convert congr_fun (congr_arg Subtype.val (b.sum_repr ⟨x, h⟩)) i
   simp only [smul_eq_mul, AddSubmonoid.coe_finset_sum, coe_toAddSubmonoid, SetLike.val_smul,
     Finset.sum_apply, Pi.smul_apply]

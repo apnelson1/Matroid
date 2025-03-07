@@ -50,11 +50,11 @@
 --     (h_support : ∀ I, Indep I → I ⊆ E) :
 --     Matroid.RankFinite (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support) := by
 
---   refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_base.elim
+--   refine' (matroid_of_indep_of_bdd E Indep h_empty h_subset h_aug h_bdd h_support).exists_isBase.elim
 --     (fun B hB ↦ hB.rankFinite_of_finite _)
 --   obtain ⟨n, h_bdd⟩ := h_bdd
 --   refine' finite_of_encard_le_coe (h_bdd _ _)
---   rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_base]
+--   rw [← matroid_of_indep_of_bdd_apply E Indep, indep_iff_subset_isBase]
 --   exact ⟨_, hB, rfl.subset⟩
 
 -- /-- If there is an absolute upper bound on the size of an independent set, then matroids
@@ -93,44 +93,44 @@
 --       = Indep := by
 --   simp [matroid_of_indep_of_bdd_augment]
 
--- /-- A collection of Bases with the exchange property and at least one finite member is a matroid -/
--- def matroid_of_exists_finite_base {α : Type*} (E : Set α) (Base : Set α → Prop)
---     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
---     (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
---   matroid_of_base E Base
---     (by { obtain ⟨B,h⟩ := exists_finite_base; exact ⟨B,h.1⟩ }) base_exchange
+-- /-- A collection of IsBases with the exchange property and at least one finite member is a matroid -/
+-- def matroid_of_exists_finite_isBase {α : Type*} (E : Set α) (Base : Set α → Prop)
+--     (exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite) (base_exchange : ExchangeProperty IsBase)
+--     (support : ∀ B, IsBase B → B ⊆ E) : Matroid α :=
+--   matroid_of_isBase E IsBase
+--     (by { obtain ⟨B,h⟩ := exists_finite_isBase; exact ⟨B,h.1⟩ }) base_exchange
 --     (by {
---       obtain ⟨B, hB, hfin⟩ := exists_finite_base
+--       obtain ⟨B, hB, hfin⟩ := exists_finite_isBase
 --       refine' fun X _ ↦ Matroid.existsMaximalSubsetProperty_of_bdd
 --         ⟨B.ncard, fun Y ⟨B', hB', hYB'⟩ ↦ _⟩ X
---       rw [hfin.cast_ncard_eq, encard_base_eq_of_exch base_exchange hB hB']
+--       rw [hfin.cast_ncard_eq, encard_isBase_eq_of_exch base_exchange hB hB']
 --       exact encard_mono hYB' })
 --     support
 
--- @[simp] theorem matroid_of_exists_finite_base_apply {α : Type*} (E : Set α) (Base : Set α → Prop)
---     (exists_finite_base : ∃ B, Base B ∧ B.Finite) (base_exchange : ExchangeProperty Base)
---     (support : ∀ B, Base B → B ⊆ E) :
---     (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support).Base = Base :=
+-- @[simp] theorem matroid_of_exists_finite_isBase_apply {α : Type*} (E : Set α) (Base : Set α → Prop)
+--     (exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite) (base_exchange : ExchangeProperty IsBase)
+--     (support : ∀ B, IsBase B → B ⊆ E) :
+--     (matroid_of_exists_finite_isBase E IsBase exists_finite_isBase base_exchange support).IsBase = IsBase :=
 --   rfl
 
--- /-- A matroid constructed with a finite Base is `RankFinite` -/
--- instance {E : Set α} {Base : Set α → Prop} {exists_finite_base : ∃ B, Base B ∧ B.Finite}
---     {base_exchange : ExchangeProperty Base} {support : ∀ B, Base B → B ⊆ E} :
+-- /-- A matroid constructed with a finite IsBase is `RankFinite` -/
+-- instance {E : Set α} {Base : Set α → Prop} {exists_finite_isBase : ∃ B, IsBase B ∧ B.Finite}
+--     {base_exchange : ExchangeProperty IsBase} {support : ∀ B, IsBase B → B ⊆ E} :
 --     Matroid.RankFinite
---       (matroid_of_exists_finite_base E Base exists_finite_base base_exchange support) :=
---   ⟨exists_finite_base⟩
+--       (matroid_of_exists_finite_isBase E IsBase exists_finite_isBase base_exchange support) :=
+--   ⟨exists_finite_isBase⟩
 
--- def matroid_of_base_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
---     (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
---     (support : ∀ B, Base B → B ⊆ E) : Matroid α :=
---   matroid_of_exists_finite_base E Base
---     (by { obtain ⟨B,hB⟩ := exists_base; exact ⟨B,hB, hE.subset (support _ hB)⟩ })
+-- def matroid_of_isBase_of_finite {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
+--     (exists_isBase : ∃ B, IsBase B) (base_exchange : ExchangeProperty IsBase)
+--     (support : ∀ B, IsBase B → B ⊆ E) : Matroid α :=
+--   matroid_of_exists_finite_isBase E IsBase
+--     (by { obtain ⟨B,hB⟩ := exists_isBase; exact ⟨B,hB, hE.subset (support _ hB)⟩ })
 --     base_exchange support
 
--- @[simp] theorem matroid_of_base_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
---     (exists_base : ∃ B, Base B) (base_exchange : ExchangeProperty Base)
---     (support : ∀ B, Base B → B ⊆ E) :
---     (matroid_of_base_of_finite hE Base exists_base base_exchange support).Base = Base := rfl
+-- @[simp] theorem matroid_of_isBase_of_finite_apply {E : Set α} (hE : E.Finite) (Base : Set α → Prop)
+--     (exists_isBase : ∃ B, IsBase B) (base_exchange : ExchangeProperty IsBase)
+--     (support : ∀ B, IsBase B → B ⊆ E) :
+--     (matroid_of_isBase_of_finite hE IsBase exists_isBase base_exchange support).IsBase = IsBase := rfl
 
 -- /-- A collection of subsets of a finite ground set satisfying the usual independence axioms
 --   determines a matroid -/

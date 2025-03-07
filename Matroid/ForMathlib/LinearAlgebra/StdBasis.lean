@@ -16,12 +16,12 @@ open Set BigOperators Submodule Function
 
 @[simp] theorem Module.piEquiv_apply_symm [CommSemiring R] [Fintype α] [DecidableEq α]
     (y : Module.Dual R (α → R)) (i : α) : (Module.piEquiv α R R).symm y i = y (Pi.single i 1) := by
-  simp only [piEquiv, Basis.constr, Pi.basisFun_apply, LinearMap.stdBasis_apply,
+  simp only [piEquiv, IsBasis.constr, Pi.isBasisFun_apply, LinearMap.stdBasis_apply,
     LinearEquiv.coe_symm_mk]; rfl
 
 @[simp] theorem Module.Dual.sum_update [Field R] [Fintype α] [DecidableEq α]
   (y : Module.Dual R (α → R)) (x : α → R) : ∑ i, y (Function.update 0 i 1) * x i = y x := by
-  rw [← LinearMap.congr_fun ((Pi.basisFun R α).sum_dual_apply_smul_coord y) x]
+  rw [← LinearMap.congr_fun ((Pi.isBasisFun R α).sum_dual_apply_smul_coord y) x]
   simp [LinearMap.stdBasis_apply]
 
 @[simp] theorem Module.Dual.sum_pi_single [Field R] [Fintype α] [DecidableEq α]
@@ -311,9 +311,9 @@ theorem orthSpace_eq [Fintype η] (U : Submodule R (η → R)) :
   intro y hy
   convert h y hy using 1
   simp [Module.piEquiv_apply_symm]
-  convert DFunLike.congr_fun ((Pi.basisFun R η).sum_dual_apply_smul_coord w) y using 1
-  simp only [Pi.basisFun_apply, LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.smul_apply,
-    Basis.coord_apply, Pi.basisFun_repr, smul_eq_mul]
+  convert DFunLike.congr_fun ((Pi.isBasisFun R η).sum_dual_apply_smul_coord w) y using 1
+  simp only [Pi.isBasisFun_apply, LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.smul_apply,
+    IsBasis.coord_apply, Pi.isBasisFun_repr, smul_eq_mul]
   rfl
 
 variable {K : Type*} [Field K] [Fintype η] {U V : Subspace K (η → K)}

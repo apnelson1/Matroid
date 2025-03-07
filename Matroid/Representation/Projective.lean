@@ -23,7 +23,7 @@ abbrev Rep.projFun (v : M.Rep 𝔽 W) (e : α) : Projectivization 𝔽 W :=
   Projectivization.mk 𝔽 (v e) (by simp)
 
 -- lemma nontrivial_of_rankPos [RankPos M] (v : M.Rep 𝔽 W) : Nontrivial W where
---   exists_pair_ne := ⟨_, 0, v.ne_zero_of_nonloop M.exists_nonloop.choose_spec⟩
+--   exists_pair_ne := ⟨_, 0, v.ne_zero_of_isNonloop M.exists_isNonloop.choose_spec⟩
 
 -- variable [Nontrivial W] [DecidableEq W]
 
@@ -36,13 +36,13 @@ lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
     v.projFun = fun e ↦ Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
 -- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
---     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_nonloop (toNonloop he)) := by
+--     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (toIsNonloop he)) := by
 --   rw [Rep.projFun, dif_pos]
 
--- lemma Rep.projFun_not_nonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.Nonloop e) :
+-- lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
 --     v.projFun e = Classical.arbitrary _ := by
 --   rw [Rep.projFun, dif_neg]
---   rwa [v.ne_zero_iff_nonloop]
+--   rwa [v.ne_zero_iff_isNonloop]
 
 lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun := by
   intro x y hxy
@@ -51,8 +51,7 @@ lemma Rep.projFun_injective [M.Simple] (v : M.Rep 𝔽 W) : Injective v.projFun 
 
 lemma Rep.indep_iff_projFun (v : M.Rep 𝔽 W) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
-  rw [v.indep_iff, ← Projectivization.independent_comp_mk_iff]
-  rfl
+  rw [v.indep_iff, LinearIndepOn, ← Projectivization.independent_comp_mk_iff]
 
 @[simp]
 lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) :
@@ -78,9 +77,9 @@ lemma Rep.FullRank.spanning_iff_projFun (v : M.Rep 𝔽 W) (hv : FullRank v) (S 
   rw [hv.spanning_iff, span_image_projFun_eq]
   simp
 
-lemma Rep.base_iff_proj {v : M.Rep 𝔽 W} (hv : FullRank v) (B : Set α) :
-    M.Base B ↔ Independent (fun x : B ↦ v.projFun x) ∧ span (v.projFun '' B) = ⊤ := by
-  rw [base_iff_indep_closure_eq, ← spanning_iff_closure_eq, v.indep_iff_projFun,
+lemma Rep.isBase_iff_proj {v : M.Rep 𝔽 W} (hv : FullRank v) (B : Set α) :
+    M.IsBase B ↔ Independent (fun x : B ↦ v.projFun x) ∧ span (v.projFun '' B) = ⊤ := by
+  rw [isBase_iff_indep_closure_eq, ← spanning_iff_closure_eq, v.indep_iff_projFun,
     hv.spanning_iff_projFun]
 
 end Matroid
@@ -111,7 +110,7 @@ lemma matroidRep_fullRank : (matroidRep (𝔽 := 𝔽) (W := W)).FullRank :=
   Rep.fullRank_iff.2 <| submodule_span_range_rep 𝔽 W ..
 
 instance : (Projectivization.matroid 𝔽 W).Loopless := by
-  simp [loopless_iff_forall_nonloop, ← matroidRep.ne_zero_iff_nonloop, rep_nonzero]
+  simp [loopless_iff_forall_isNonloop, ← matroidRep.ne_zero_iff_isNonloop, rep_nonzero]
 
 @[simp]
 lemma matroidRep_indep_iff {I : Set (Projectivization 𝔽 W)} :
@@ -132,8 +131,8 @@ noncomputable def PG (n p t : ℕ) [Fact p.Prime] :=
 /-- TODO: Generalize this to arbitrary fullrank representations -/
 @[simp]
 lemma matroid_cRank : (Projectivization.matroid 𝔽 W).cRank = Module.rank 𝔽 W := by
-  obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_base
-  have hr := (matroidRep_fullRank.basis_of_base hB).mk_eq_rank
+  obtain ⟨B, hB⟩ := (Projectivization.matroid 𝔽 W).exists_isBase
+  have hr := (matroidRep_fullRank.basis_of_isBase hB).mk_eq_rank
   simp only [Cardinal.lift_id] at hr
   rw [← hr, hB.cardinalMk_eq_cRank]
 
@@ -170,15 +169,15 @@ variable {𝔽 : Type*} [Field 𝔽]
 
 namespace Matroid.Representable
 
-lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (hB : M.Base B) :
+lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (hB : M.IsBase B) :
     ∃ i : M ≤ir Projectivization.matroid 𝔽 (B →₀ 𝔽), i.Spanning := by
   wlog hM : M.OnUniv generalizing M α with aux
   · obtain ⟨γ, N, hN, ⟨iMN⟩⟩ := M.exists_iso_onUniv
     have := ‹M.Simple›.of_iso iMN
     have hNrep := h.iso iMN
     set B' : Set γ := ↑(iMN '' (M.E ↓∩ B)) with hB'_def
-    have hB' : N.Base B' := by
-      rw [iMN.symm.base_image_iff]
+    have hB' : N.IsBase B' := by
+      rw [iMN.symm.isBase_image_iff]
       simpa [inter_eq_self_of_subset_right hB.subset_ground]
     have e1 : (M.E ↓∩ B) ≃ B :=
       (Equiv.Set.image val _ val_injective).trans <| Equiv.Set.ofEq <| by simp [hB.subset_ground]
@@ -216,7 +215,7 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   · refine le_trans ?_ (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))
     simp [ENat.card_eq_top_of_infinite (α := 𝔽)]
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩
-  obtain ⟨B, hB⟩ := M.exists_base_finset
+  obtain ⟨B, hB⟩ := M.exists_isBase_finset
   obtain ⟨i, hi⟩ := h.exists_isoRestr_projectiveGeometry hB
   convert i.isoMinor.encard_ground_le
   have := hB.finite.to_subtype
@@ -227,31 +226,3 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
   norm_cast
   rw [Projectivization.card_of_finrank 𝔽 (B →₀ 𝔽) (n := M.rank)]
   simp [hB.finset_card]
-
-lemma encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) : E.encard ≤ ENat.card 𝔽 + 1 := by
-  obtain hlt | hle := lt_or_le E.encard (2 : ℕ)
-  · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
-  convert h.encard_le_of_simple
-  simp [unifOn_rank_eq hle]
-
-lemma encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) : a ≤ ENat.card 𝔽 + 1 :=  by
-  simpa using h.encard_le_of_unifOn_two
-
-@[simp] lemma removeLoops_representable_iff :
-    M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
-  refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
-  · rw [M.eq_restrict_removeLoops]
-    exact (v.restrict M.E).representable
-  rw [removeLoops_eq_restr]
-  exact (v.restrict _).representable
-
-lemma noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
-    M.NoUniformMinor 2 (Fintype.card 𝔽 + 2) := by
-  by_contra hcon
-  obtain ⟨hm⟩ := not_noUniformMinor_iff.1 hcon
-  have hcon := (h.isoMinor hm).encard_le_of_unif_two
-  simp only [Nat.cast_add, Nat.cast_ofNat, ENat.card_eq_coe_fintype_card] at hcon
-  rw [show (2 :ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
-  · simp at hcon
-  simp only [WithTop.add_ne_top, ne_eq, WithTop.one_ne_top, not_false_eq_true, and_true]
-  exact ne_of_beq_false rfl

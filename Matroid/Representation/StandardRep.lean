@@ -17,24 +17,6 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
 
 namespace Matroid
 
-lemma Rep.range_subset_span_base (v : M.Rep 𝔽 W) (hB : M.Base B) : range v ⊆ span 𝔽 (v '' B) := by
-  rintro _ ⟨e, he ,rfl⟩
-  obtain (heB | heB) := em (e ∈ B)
-  · exact subset_span (mem_image_of_mem _ heB)
-  set f := v e
-  by_contra h'
-  have hind : LinearIndependent 𝔽 ((↑) : (insert f (v '' B) : Set W) → W) :=
-    (LinearIndependent.insert ?_ h')
-  · rw [← image_insert_eq, ← v.indep_iff_image_of_inj] at hind
-    · exact heB (hB.mem_of_insert_indep hind)
-    rw [injOn_insert heB, and_iff_right (v.injOn_of_indep hB.indep)]
-    exact fun h'' ↦ h' <| mem_of_mem_of_subset h'' subset_span
-  exact v.indep_image hB.indep
-
-lemma Rep.span_base_eq (v : M.Rep 𝔽 W) (hB : M.Base B) : span 𝔽 (v '' B) = span 𝔽 (range v) := by
-  rw [eq_comm]
-  exact span_eq_of_le _ (v.range_subset_span_base hB) (span_mono (image_subset_range _ _))
-
 lemma Rep.span_spanning_eq (v : M.Rep 𝔽 W) {S : Set α} (hS : M.Spanning S) :
     span 𝔽 (v '' S) = span 𝔽 (range v) := by
   rw [← image_univ]
@@ -49,13 +31,21 @@ lemma Rep.spanning_iff (v : M.Rep 𝔽 W) {S : Set α} (hSE : S ⊆ M.E := by ae
 def Rep.FullRank (v : M.Rep 𝔽 W) : Prop := ⊤ ≤ span 𝔽 (range v)
 
 /-- Restrict a representation to the submodule spanned by its image -/
-def Rep.restrict_span (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
+@[simps] def Rep.restrictSpan (v : M.Rep 𝔽 W) : M.Rep 𝔽 (span 𝔽 (range v)) where
   to_fun := codRestrict v _ (fun x ↦ subset_span (mem_range_self _))
-  valid' := (by
+  indep_iff' := (by
     intro I
     rw [v.indep_iff]
     refine ⟨fun h ↦ LinearIndependent.of_comp (Submodule.subtype _) (by rwa [coe_subtype]),
       fun h ↦ h.map' (Submodule.subtype _) (ker_subtype _)⟩ )
+
+@[simp] lemma Rep.restrictSpan_apply (v : M.Rep 𝔽 W) (e : α) :
+    v.restrictSpan e = v e := rfl
+
+lemma Rep.restrictSpan_comp (v : M.Rep 𝔽 W) :
+    v.restrictSpan.comp' (Submodule.subtype _) (by simp) = v := by
+  ext
+  rfl
 
 lemma Rep.FullRank.span_range {v : M.Rep 𝔽 W} (h : v.FullRank) : span 𝔽 (range v) = ⊤ := by
   rwa [eq_top_iff]
@@ -71,94 +61,112 @@ lemma Rep.FullRank.spanning_iff (v : M.Rep 𝔽 W) (h : v.FullRank) {S : Set α}
 lemma Rep.fullRank_iff {v : M.Rep 𝔽 W} : v.FullRank ↔ span 𝔽 (range v) = ⊤ := by
   rw [FullRank, eq_top_iff]
 
-lemma Rep.restrict_span_eq_inclusion (v : M.Rep 𝔽 W) :
-  (v.restrict_span : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by ext; rfl
+lemma Rep.restrictSpan_eq_inclusion (v : M.Rep 𝔽 W) :
+    (v.restrictSpan : α → _) = Set.inclusion subset_span ∘ rangeFactorization v := by
+  ext; rfl
 
 @[simp] lemma Rep.restrict_span_apply (v : M.Rep 𝔽 W) (e : α) :
-  v.restrict_span e = Set.inclusion subset_span (rangeFactorization v e) := rfl
+    v.restrictSpan e = Set.inclusion subset_span (rangeFactorization v e) := rfl
 
-lemma Rep.restrict_span_fullRank (v : M.Rep 𝔽 W) : v.restrict_span.FullRank := by
+lemma Rep.restrictSpan_fullRank (v : M.Rep 𝔽 W) : v.restrictSpan.FullRank := by
   change _ ≤ span 𝔽 _
-  rw [restrict_span_eq_inclusion]
+  rw [restrictSpan_eq_inclusion]
   change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
   rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
   simp
 
 /-- A base of `M` gives a linear basis in a full-rank representation -/
-noncomputable def Rep.FullRank.basis_of_base {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.Base B) :
+noncomputable def Rep.FullRank.basis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.IsBase B) :
     _root_.Basis B 𝔽 W :=
-  Basis.mk (v.onIndep hB.indep) ( by rw [← h.span_range, range_restrict, v.span_base_eq hB] )
+  Basis.mkImage (v.onIndep hB.indep) (h.span_spanning hB.spanning).symm.le
 
-lemma Rep.FullRank.mapEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
-    (v.mapEquiv ψ).FullRank := by
-  rw [Rep.fullRank_iff, Rep.mapEquiv, map', map, ← Rep.to_fun_eq_coe]
+lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
+    (v.compEquiv ψ).FullRank := by
+  rw [Rep.fullRank_iff, Rep.compEquiv, comp', comp, ← Rep.to_fun_eq_coe]
   simp [LinearEquiv.coe_coe, range_comp, h.span_range, span_image]
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
-noncomputable def Rep.basis_of_base (v : M.Rep 𝔽 W) (hB : M.Base B) :
+noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
-  (Basis.span (v.onIndep hB.indep)).map <| LinearEquiv.ofEq _ _ (by simp [v.span_base_eq hB])
-
+  (Basis.spanImage (v.onIndep hB.indep)).map <|
+    LinearEquiv.ofEq _ _ <| v.span_spanning_eq hB.spanning
+  --
 /-- The natural representation with rows indexed by a base with `Finsupp` -/
-noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.Base B) :
+noncomputable def Rep.standardRep' (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     M.Rep 𝔽 (B →₀ 𝔽) :=
-  v.restrict_span.mapEquiv (v.restrict_span_fullRank.basis_of_base hB).repr
+  v.restrictSpan.compEquiv (v.restrictSpan_fullRank.basis_of_isBase hB).repr
 
-@[simp] lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+@[simp] lemma Rep.standardRep_eq_one' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
     (v.standardRep' hB) e e = 1 := by
-  simp only [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
-  simp
+  simp only [standardRep', FullRank.basis_of_isBase, Basis.mkImage, restrict_span_apply,
+    compEquiv_apply, Basis.mk_repr]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), single_eq_same]
 
-lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) :
+lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (hef : e ≠ f) :
     (v.standardRep' hB) e f = 0 := by
-  simp [Rep.standardRep', Rep.FullRank.basis_of_base, Rep.mapEquiv_apply,
-    Rep.restrict_span_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp)]
-  exact Finsupp.single_eq_of_ne hef
+  simp only [standardRep', FullRank.basis_of_isBase, Basis.mkImage, restrict_span_apply,
+    compEquiv_apply, Basis.mk_repr]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), Finsupp.single_eq_of_ne hef]
 
-lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.Base B) : (v.standardRep' hB).FullRank :=
-  v.restrict_span_fullRank.mapEquiv _
+lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.IsBase B) : (v.standardRep' hB).FullRank :=
+  v.restrictSpan_fullRank.compEquiv _
 
 /-- The natural representation of a matroid with rows indexed by a base -/
-noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.Base B) : M.Rep 𝔽 (B → 𝔽) :=
-  (v.standardRep' hB).map Finsupp.lcoeFun (by simp [Submodule.disjoint_def, Finsupp.lcoeFun])
+noncomputable def Rep.standardRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.Rep 𝔽 (B → 𝔽) :=
+  (v.standardRep' hB).comp Finsupp.lcoeFun (by simp [Submodule.disjoint_def, Finsupp.lcoeFun])
 
-lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.Base B) (e : B) :
+lemma Rep.standardRep_eq_one (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e : B) :
     (v.standardRep hB) e e = 1 := by
   simp [standardRep]
 
-lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.Base B) (e f : B) (hef : e ≠ f) :
-  (v.standardRep hB) e f = 0 := by
+lemma Rep.standardRep_eq_zero (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (hef : e ≠ f) :
+    (v.standardRep hB) e f = 0 := by
   simp [standardRep, v.standardRep_eq_zero' hB _ _ hef]
 
-lemma Rep.standardRep_eq_mapEquiv [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
-    v.standardRep hB = (v.standardRep' hB).mapEquiv
+lemma Rep.standardRep_eq_mapEquiv [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    v.standardRep hB = (v.standardRep' hB).compEquiv
       (@Finsupp.linearEquivFunOnFinite _ _ _ hB.finite.to_subtype ..) := by
   ext e f
   simp [standardRep]
 
-lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.Base B) :
+lemma Rep.standardRep_fullRank [RankFinite M] (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
     (v.standardRep hB).FullRank := by
   rw [v.standardRep_eq_mapEquiv]
-  exact (v.standardRep_fullRank' hB).mapEquiv _
+  exact (v.standardRep_fullRank' hB).compEquiv _
+
+lemma exists_eq_comp_standardRep' {𝔽 W : Type*} [Field 𝔽] [AddCommGroup W] [Module 𝔽 W]
+    (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    ∃ (φ : (B →₀ 𝔽) →ₗ[𝔽] W) (hφ : LinearMap.ker φ = ⊥), v = (v.standardRep' hB).comp' φ hφ := by
+  let ψ := (v.restrictSpan_fullRank.basis_of_isBase hB).repr
+  let r := (span 𝔽 (range v)).subtype
+  refine ⟨r.comp ψ.symm.toLinearMap, ?_, ?_⟩
+  · rw [LinearMap.ker_comp, ker_subtype, comap_bot, LinearEquiv.ker]
+  have h2 := v.restrictSpan_comp.symm
+  rwa [← v.restrictSpan.compEquiv_compEquiv_symm ψ] at h2
 
 -- Loopy matroids are trivially representable over every field.
 def loopyRep (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] : (loopyOn E).Rep 𝔽 𝔽 where
   to_fun := 0
-  valid' := by
-    refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · obtain rfl := loopyOn_indep_iff.1 h
-      apply linearIndependent_empty_type
-    rw [loopyOn_indep_iff, eq_empty_iff_forall_not_mem]
-    exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
+  indep_iff' := by simp
 
 -- The empty matroid is trivially representable over every field.
 def emptyRep (α : Type*) (𝔽 : Type*) [DivisionRing 𝔽] : (emptyOn α).Rep 𝔽 𝔽 where
   to_fun := 0
-  valid' := by simp
+  indep_iff' := by simp
+
+noncomputable def freeRep (E : Set α) [DecidablePred (· ∈ E)] (𝔽 : Type*) [DivisionRing 𝔽] :
+    (freeOn E).Rep 𝔽 (E →₀ 𝔽) where
+  to_fun x := if hx : x ∈ E then Finsupp.single ⟨x, hx⟩ 1 else 0
+  indep_iff' I := by
+    simp only [freeOn_indep_iff, LinearIndepOn]
+    refine ⟨fun h ↦ ?_, fun h e heI ↦ by_contra fun heE ↦ ?_⟩
+    · convert (Finsupp.basisSingleOne (R := 𝔽)).linearIndependent.comp _ (Set.inclusion_injective h)
+        with ⟨x, hx⟩
+      simp [dif_pos (h hx)]
+    have hcon := h.ne_zero ⟨e, heI⟩
+    rw [dif_neg heE] at hcon
+    exact hcon rfl
 
 protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· ∈ B)]
     [DecidablePred (· ∈ E)] (v : (E \ B : Set α) → (B →₀ 𝔽)) : Matroid α :=
@@ -167,75 +175,151 @@ protected noncomputable def ofBaseCobaseFun (B E : Set α) [DecidablePred (· �
     else if heE : e ∈ E then v ⟨e, ⟨heE, heB⟩⟩
     else 0
 
-lemma Representable.exists_fin_rep [RankFinite M] (hM : M.Representable 𝔽) :
-    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
-  obtain ⟨B, hB⟩ := M.exists_base
-  obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
-  let e : ↥B ≃ Fin M.rank := B.equivFinOfCardEq hB.finset_card
-  exact ⟨(hM.some.standardRep hB).mapEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
-    (Rep.standardRep_fullRank _ hB).mapEquiv _⟩
+section FunStandard
 
-lemma Representable.exists_fin_rep_of_eq {n : ℕ} [RankFinite M] (hM : M.Representable 𝔽)
-    (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
-  subst hr
-  exact exists_fin_rep hM
+variable {i : β → α} {v : M.Rep 𝔽 (β → 𝔽)}
 
-section FinitaryBase
+/-- Given an injection `i` from the rows to the columns of a matrix representation `v` of `M`,
+`Rep.FunStandard v i` means that the range of `i` indexes an identity submatrix. -/
+structure Rep.FunStandard (v : M.Rep 𝔽 (β → 𝔽)) (i : β → α) : Prop where
+  apply_eq : ∀ b, v (i b) b = 1
+  apply_ne : ∀ ⦃b b'⦄, b ≠ b' → v (i b) b' = 0
 
-variable {v : M.Rep 𝔽 (B →₀ 𝔽)}
+lemma Rep.FunStandard.injective (hv : v.FunStandard i) : Injective i :=
+  fun _ _ hbb' ↦ by_contra fun hne ↦ by simpa [hbb', hv.apply_eq] using hv.apply_ne hne
 
-/-- `Rep.FinitaryBase` means that `v` is a representation comprising finitely
-supported `B`-indexed vectors that is the identity on `B`. It follows that `B` is a base. -/
-def Rep.FinitaryBase (v : M.Rep 𝔽 (B →₀ 𝔽)) : Prop := ∀ e : B, v e = Finsupp.single e 1
+lemma Rep.FunStandard.subset_ground (hv : v.FunStandard i) : range i ⊆ M.E := by
+  rintro _ ⟨b, rfl⟩
+  exact v.mem_ground_of_apply_ne_zero fun hb ↦ by simpa [hb] using hv.apply_eq b
 
-lemma Rep.FinitaryBase.apply (hv : v.FinitaryBase) (e : B) : v e = Finsupp.single e 1 :=
-  hv e
+lemma Rep.FunStandard.apply_eq_single [DecidableEq β] (hv : v.FunStandard i) (b : β) :
+    v (i b) = Pi.single b 1 := by
+  ext b'
+  obtain rfl | hne := eq_or_ne b b'
+  · simp [hv.apply_eq]
+  rw [hv.apply_ne hne, Pi.single_eq_of_ne hne.symm]
 
-lemma Rep.FinitaryBase.apply_mem (hv : v.FinitaryBase) (he : e ∈ B) :
-    v e = Finsupp.single ⟨e,he⟩ 1 :=
-  hv ⟨e, he⟩
+lemma Rep.FunStandard.IsBase [M.RankFinite] (hv : v.FunStandard i) : M.IsBase (range i) := by
+  classical
+  have h1 : M.Indep (range i) := by
+    rw [v.indep_iff, linearIndepOn_range_iff hv.injective]
+    convert (Finsupp.basisSingleOne (ι := β) (R := 𝔽)).linearIndependent.map
+      (f := Finsupp.lcoeFun) (by simp)
+    ext x y
+    simp [Finsupp.single, Pi.single, hv.apply_eq_single]
+  have hβ : Finite β := h1.finite.of_injective_finite_range hv.injective
+  refine h1.isBase_of_spanning ?_
+  rw [v.spanning_iff, le_antisymm_iff, and_iff_right (span_mono (image_subset_range ..))]
+  have hss : range (Pi.basisFun 𝔽 β) ⊆ v '' (range i) := by
+    rintro _ ⟨b, rfl⟩
+    exact ⟨i b, mem_range_self b, by rw [hv.apply_eq_single, Pi.basisFun_apply]⟩
+  exact le_trans (by simp) <| span_mono hss
 
-lemma Rep.FinitaryBase.base (hv : v.FinitaryBase) : M.Base B := by
-  rw [← v.ofFun_self]
-  exact Finsupp.basisSingleOne.ofFun_base (fun x ↦ hv x) fun x hxB ↦
-    v.mem_ground_of_apply_ne_zero <| by simp [show v x = _ from hv ⟨x, hxB⟩]
+end FunStandard
 
-lemma Rep.FinitaryBase.injOn (hv : v.FinitaryBase) : Set.InjOn v B := by
-  intro e he f hf hef
-  rw [hv.apply_mem he, hv.apply_mem hf] at hef
-  simpa using (Finsupp.single_left_injective (by simp)) hef
+section IsStandard
 
-lemma Rep.FinitaryBase.image_coe_support_subset (_hv : v.FinitaryBase) {e : α} :
-    (↑) '' ((v e).support : Set B) ⊆ B := by
+
+
+
+
+variable {γ : Type*} {B : Set α} [FunLike γ B 𝔽] [AddCommGroup γ] [Module 𝔽 γ]
+
+/-- A representation over `B → 𝔽` or `B →₀ 𝔽` `IsStandard` if it is the identity on `B`.
+The definition is agnostic as to whether the representation is `Finsupp` or `Function`,
+and is phrased without `Function.Pi` to avoid decidability assumptions.
+
+In the `Finsupp` case, this implies that `B` is a base - see `Matroid.Rep.IsStandard.isBase`.
+
+In the `Function` case, we really need a `FiniteRank` assumption for this to be sensible,
+since, if `I` is an infinite identity matrix and `1` means the all-ones vector, then `[I | 1]`
+represents a free matroid in which `I` doesn't correspond to a base. -/
+@[mk_iff]
+structure Rep.IsStandard (v : M.Rep 𝔽 γ) : Prop where
+  apply_eq : ∀ x : B, v x.1 x = 1
+  apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
+
+structure Rep.IsStandard' (v : M.Rep 𝔽 (B → 𝔽)) : Prop where
+  apply_eq : ∀ x : B, v x.1 x = 1
+  apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
+
+lemma Rep.IsStandard.apply_mem_eq {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : e ∈ B) :
+    v e ⟨e, he⟩ = 1 :=
+  hv.apply_eq ⟨e,he⟩
+
+lemma Rep.IsStandard.apply_mem_ne {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : e ∈ B)
+    (hf : f ∈ B) (hef : e ≠ f) : v e ⟨f, hf⟩ = 0 :=
+  hv.apply_ne (x := ⟨e, he⟩) (y := ⟨f, hf⟩) (by simpa)
+
+lemma Rep.IsStandard.injOn {v : M.Rep 𝔽 γ} (hv : v.IsStandard) : Set.InjOn v B := by
+  refine fun e he f hf hef ↦ by_contra fun hne ↦ ?_
+  replace hef := DFunLike.congr_fun hef ⟨e, he⟩
+  rw [hv.apply_mem_eq, hv.apply_mem_ne hf _ <| Ne.symm hne] at hef
+  simp at hef
+
+lemma Rep.IsStandard.image_coe_support_subset {v : M.Rep 𝔽 γ} (_ : v.IsStandard) {e : α} :
+    (↑) '' (support (v e) : Set B) ⊆ B := by
   simp
 
-lemma Rep.FinitaryBase.image_eq (hv : v.FinitaryBase) (I : Set B) :
+lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
+    v e = Finsupp.single e 1 := by
+  ext i
+  obtain rfl | hne := eq_or_ne e i
+  · rw [single_eq_same, hv.apply_eq]
+  rw [single_eq_of_ne hne, hv.apply_ne hne]
+
+lemma isStandard_finsupp_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} :
+    v.IsStandard ↔ ∀ e : B, v e = Finsupp.single e 1 := by
+  refine ⟨fun h e ↦ h.apply_finsupp e, fun h ↦ ?_⟩
+  simp only [Rep.isStandard_iff, h, single_eq_same, implies_true, ne_eq, true_and]
+  exact fun _ _ ↦ single_eq_of_ne
+
+lemma Rep.IsStandard.apply_finsupp_mem {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∈ B) :
+    v e = Finsupp.single ⟨e,he⟩ 1 :=
+  hv.apply_finsupp ⟨e, he⟩
+
+lemma Rep.IsStandard.isBase {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) : M.IsBase B := by
+  rw [← v.ofFun_self]
+  apply Finsupp.basisSingleOne.ofFun_isBase (fun x ↦ by simp [hv.apply_finsupp x])
+  exact fun e heB ↦ v.mem_ground_of_apply_ne_zero <| by simp [hv.apply_finsupp_mem heB]
+
+lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
+    (v.standardRep' hB).IsStandard := by
+  simp only [standardRep', FullRank.basis_of_isBase, isStandard_iff, compEquiv_apply,
+    restrict_span_apply, rangeFactorization, inclusion_mk, Basis.mkImage_repr, ne_eq]
+  refine ⟨fun e ↦ ?_, fun e f hne ↦ ?_⟩
+  · rw [LinearIndependent.repr_eq_single, single_eq_same]
+    rfl
+  rw [LinearIndependent.repr_eq_single, single_eq_of_ne hne]
+  rfl
+
+lemma Rep.IsStandard.image_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (I : Set B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
   simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
   constructor
   · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
-    exact ⟨y, hy, (hv.apply y).symm⟩
+    exact ⟨y, hy, (hv.apply_finsupp y).symm⟩
   rintro ⟨x, hx, rfl⟩
-  exact ⟨x, ⟨_, hx, rfl⟩, hv.apply x⟩
+  exact ⟨x, ⟨_, hx, rfl⟩, hv.apply_finsupp x⟩
 
-lemma Rep.FinitaryBase.image_subset_eq (hv : v.FinitaryBase) (hIB : I ⊆ B) :
+lemma Rep.IsStandard.image_subset_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (hIB : I ⊆ B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' (B ↓∩ I) := by
   rw [← hv.image_eq]
   simp [inter_eq_self_of_subset_right hIB]
 
-lemma Rep.FinitaryBase.mem_closure_iff (hv : v.FinitaryBase) (hIB : I ⊆ B) (heE : e ∈ M.E) :
-    e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
+lemma Rep.IsStandard.mem_closure_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (hIB : I ⊆ B)
+    (heE : e ∈ M.E) : e ∈ M.closure I ↔ ((v e).support : Set B) ⊆ B ↓∩ I := by
   rw [v.closure_eq, mem_inter_iff, mem_preimage, hv.image_subset_eq hIB, SetLike.mem_coe,
     Finsupp.basisSingleOne.mem_span_image, basisSingleOne_repr, LinearEquiv.refl_apply,
     and_iff_left heE]
 
 /-- For every column `e` of `M.E \ B`, the support of `v e` as a subset of `B`,
 together with `e` itself, make a circuit of `M`. -/
-lemma Rep.FinitaryBase.circuit_insert_support (hv : v.FinitaryBase) (heB : e ∉ B) (heE : e ∈ M.E) :
-    M.Circuit (insert e ((↑) '' ((v e).support : Set B))) := by
+lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard)
+    (heB : e ∉ B) (heE : e ∈ M.E) : M.IsCircuit (insert e ((↑) '' ((v e).support : Set B))) := by
   let b := Finsupp.basisSingleOne (ι := B) (R := 𝔽)
-  refine Indep.insert_circuit_of_forall (hv.base.indep.subset (by simp)) (by simp [heB]) ?_ ?_
+  refine Indep.insert_isCircuit_of_forall (hv.isBase.indep.subset (by simp)) (by simp [heB]) ?_ ?_
   · rw [hv.mem_closure_iff (by simp) heE]
     simp
   intro f hf hecl
@@ -245,7 +329,7 @@ lemma Rep.FinitaryBase.circuit_insert_support (hv : v.FinitaryBase) (heB : e ∉
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
-lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B) :
+lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∉ B) :
     ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   obtain heE | heE := em' (e ∈ M.E)
   · rw [v.eq_zero_of_not_mem_ground heE, ← fundCircuit_diff_eq_inter _ he,
@@ -254,15 +338,15 @@ lemma Rep.FinitaryBase.image_val_support_eq (hv : v.FinitaryBase) (he : e ∉ B)
   suffices hrw : insert e ((↑) '' ((v e).support : Set B)) = M.fundCircuit e B
   · rw [← fundCircuit_diff_eq_inter _ he, ← hrw, insert_diff_of_mem _ (by simp),
       diff_singleton_eq_self (by simp [he])]
-  refine Circuit.eq_fundCircuit_of_subset ?_ hv.base.indep (insert_subset_insert (by simp))
-  exact circuit_insert_support hv he heE
+  refine IsCircuit.eq_fundCircuit_of_subset ?_ hv.isBase.indep (insert_subset_insert (by simp))
+  exact isCircuit_insert_support hv he heE
 
 /-- For every `e ∈ B`, the support of the row of `v` corresponding to `e` is a cocircuit of `M`. -/
-lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
-    M.Cocircuit (v · e).support := by
+lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
+    M.IsCocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
-    rw [h_eq, compl_cocircuit_iff_hyperplane]
-    exact hv.base.hyperplane_of_closure_diff_singleton e.2
+    rw [h_eq, compl_isCocircuit_iff_isHyperplane]
+    exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
   ext x
   simp only [mem_support, ne_eq, mem_diff]
   obtain hxE | hxE := em' (x ∈ M.E)
@@ -271,18 +355,21 @@ lemma Rep.FinitaryBase.cocircuit_insert_support (hv : v.FinitaryBase) (e : B) :
   simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
 
 
-end FinitaryBase
--- lemma Rep.FinitaryBase.support_eq (v : M.Rep 𝔽 (B →₀ F))
+end IsStandard
+-- lemma Rep.IsStandard.support_eq (v : M.Rep 𝔽 (B →₀ F))
 
 section Representable
 
-/- This can't currently be moved to somewhere earlier,
-since the crucial `Rep.representable` relies on standard representations.
--/
+/-- A `Representable` matroid is one that has a representation over `𝔽`.
+To avoid quantifying over types, we require that the representation is over the module `α → 𝔽`.
+`Rep.Representable`, which is defined later, makes this definition useful.  -/
+def Representable (M : Matroid α) (𝔽 : Type*) [Semiring 𝔽] : Prop :=
+  Nonempty (M.Rep 𝔽 (α → 𝔽))
 
+/-- Any representation makes a matroid representable. -/
 lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
-  let ⟨B, hB⟩ := M.exists_base
-  ⟨(v.standardRep hB).map' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
+  let ⟨B, hB⟩ := M.exists_isBase
+  ⟨(v.standardRep hB).comp' (ExtendByZero.linearMap 𝔽 ((↑) : B → α))
     (LinearMap.ker_eq_bot.2 (ExtendByZero.linearMap_injective _ Subtype.val_injective))⟩
 
 @[simp] lemma loopyOn_representable (E : Set α) (𝔽 : Type*) [DivisionRing 𝔽] :
@@ -296,7 +383,7 @@ lemma Rep.representable (v : M.Rep 𝔽 W) : M.Representable 𝔽 :=
 lemma Representable.map (hM : M.Representable 𝔽) {f : α → β} (hf : InjOn f M.E) :
     (M.map f hf).Representable 𝔽 := by
   classical
-  exact (hM.some.matroidMap f hf).representable
+  exact (hM.some.map f hf).representable
 
 lemma Representable.iso {N : Matroid β} (hM : M.Representable 𝔽) (i : M ≂ N) :
     N.Representable 𝔽 := by
@@ -305,6 +392,23 @@ lemma Representable.iso {N : Matroid β} (hM : M.Representable 𝔽) (i : M ≂ 
   · exact ⟨0, by simp⟩
   exact hM.map hf
 
-lemma Representable.exists_fullRank_rep (hM : M.Representable 𝔽) (hB : M.Base B) :
+lemma Representable.exists_fullRank_rep (hM : M.Representable 𝔽) (hB : M.IsBase B) :
     ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.FullRank :=
   ⟨hM.some.standardRep' hB, (Nonempty.some hM).standardRep_fullRank' hB⟩
+
+lemma Representable.exists_isStandard_rep (hM : M.Representable 𝔽) (hB : M.IsBase B) :
+    ∃ v : M.Rep 𝔽 (B →₀ 𝔽), v.IsStandard :=
+  ⟨hM.some.standardRep' hB, Rep.standardRep'_isStandard (Nonempty.some hM) hB⟩
+
+lemma Representable.exists_fin_rep [RankFinite M] (hM : M.Representable 𝔽) :
+    ∃ v : M.Rep 𝔽 (Fin M.rank → 𝔽), v.FullRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨B, rfl⟩ := hB.finite.exists_finset_coe
+  let e : ↥B ≃ Fin M.rank := B.equivFinOfCardEq hB.finset_card
+  exact ⟨(hM.some.standardRep hB).compEquiv (LinearEquiv.funCongrLeft _ _ e.symm),
+    (Rep.standardRep_fullRank _ hB).compEquiv _⟩
+
+lemma Representable.exists_fin_rep_of_eq {n : ℕ} [RankFinite M] (hM : M.Representable 𝔽)
+    (hr : M.rank = n) : ∃ v : M.Rep 𝔽 (Fin n → 𝔽), v.FullRank := by
+  subst hr
+  exact exists_fin_rep hM

@@ -1,7 +1,7 @@
 
 import Mathlib.Order.Lattice
 import Matroid.Rank.Nat
-import Matroid.Constructions.CircuitAxioms
+import Matroid.Constructions.IsCircuitAxioms
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 open Finset
@@ -19,18 +19,18 @@ open Matroid
 -- prop 11.1.1
 @[simps!] def ofSubmodular [DecidableEq α] {f : Finset α → ℤ} (h_sub : Submodular f)
     (h_mono : Monotone f) : Matroid α := by
-  set Circuit := Minimal (fun X ↦ X.Nonempty ∧ f X < X.card)
+  set IsCircuit := Minimal (fun X ↦ X.Nonempty ∧ f X < X.card)
   have circuit_antichain := setOf_minimal_antichain (fun X ↦ X.Nonempty ∧ f X < X.card)
 
-  have circuit_f_lt_card : ∀ ⦃C⦄, Circuit C → f C < C.card := fun C hC ↦ hC.1.2
-  have indep_f_ge_card : ∀ ⦃I C⦄, Circuit C → I ⊂ C → I.Nonempty → I.card ≤ f I := by
+  have circuit_f_lt_card : ∀ ⦃C⦄, IsCircuit C → f C < C.card := fun C hC ↦ hC.1.2
+  have indep_f_ge_card : ∀ ⦃I C⦄, IsCircuit C → I ⊂ C → I.Nonempty → I.card ≤ f I := by
     intro I C hC hI hI_nonempty
     by_contra! h_lt
     exact not_ssubset_of_subset (hC.2 ⟨hI_nonempty, h_lt⟩ hI.subset) hI
   exact FinsetCircuitMatroid.matroid <| FinsetCircuitMatroid.mk
     (E := Set.univ)
-    (Circuit := Circuit)
-    (empty_not_circuit := fun h ↦ by simpa using h.1.1)
+    (IsCircuit := IsCircuit)
+    (empty_not_isCircuit := fun h ↦ by simpa using h.1.1)
     (circuit_antichain := circuit_antichain)
     (circuit_elimination := by
       intro C₁ C₂ e hC₁ hC₂ h_ne he
@@ -49,7 +49,7 @@ open Matroid
         rfl
       obtain ⟨hC₁_ne, hC₂_ne⟩ := FinsetCircuitMatroid.intro_elimination_nontrivial
         circuit_antichain hC₁ hC₂ h_ne he
-      have hfCi : ∀ ⦃C⦄, Circuit C → e ∈ C → C.Nontrivial → f C = C.card - 1 := by
+      have hfCi : ∀ ⦃C⦄, IsCircuit C → e ∈ C → C.Nontrivial → f C = C.card - 1 := by
         intro C hC he hC_non
         refine le_antisymm ?_ ?_
         · rw [Int.le_sub_one_iff]; exact circuit_f_lt_card hC
@@ -82,14 +82,14 @@ open Matroid
         _ < D.card := sub_one_lt _
     )
     (circuit_subset_ground := by simp)
-    (Indep := fun I ↦ ∀ ⦃C⦄, C ⊆ I → ¬Circuit C)
+    (Indep := fun I ↦ ∀ ⦃C⦄, C ⊆ I → ¬IsCircuit C)
     (indep_iff := by simp)
 
 @[simp] theorem circuit_ofSubmodular_iff [DecidableEq α] {f : Finset α → ℤ}
     (h_sub : Submodular f) (h_mono : Monotone f) (C : Finset α) :
-    (ofSubmodular h_sub h_mono).Circuit C ↔ Minimal (fun X ↦ X.Nonempty ∧ f X < X.card) C := by
+    (ofSubmodular h_sub h_mono).IsCircuit C ↔ Minimal (fun X ↦ X.Nonempty ∧ f X < X.card) C := by
   unfold ofSubmodular
-  simp only [FinsetCircuitMatroid.matroid_circuit_iff]
+  simp only [FinsetCircuitMatroid.matroid_isCircuit_iff]
 
 -- corollary 11.1.2
 @[simp] theorem indep_ofSubmodular_iff [DecidableEq α] {f : Finset α → ℤ}
@@ -155,7 +155,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
     (∃ Y ⊆ X, f Y + (X \ Y).card ≤ (ofPolymatroidFn hf).r X) ∧
     (∀ Y ⊆ X, (ofPolymatroidFn hf).r X ≤ f Y + (X \ Y).card) := by
   set M := ofPolymatroidFn hf
-  obtain ⟨B, hB⟩ := M.exists_basis X (by simp only [ofPolymatroidFn_E, Set.subset_univ, M])
+  obtain ⟨B, hB⟩ := M.exists_isBasis X (by simp only [ofPolymatroidFn_E, Set.subset_univ, M])
   have hB_finite : B.Finite := Set.Finite.subset X.finite_toSet hB.subset
   have hB_fintype : Fintype ↑B := by exact hB_finite.fintype
   rw [← Set.coe_toFinset B] at hB
@@ -183,7 +183,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
         exact e.2
       replace this := hB.insert_dep this
       simpa only [Set.coe_toFinset] using this
-    obtain ⟨C, hC_subset, hC⟩ := h_ins.exists_circuit_subset
+    obtain ⟨C, hC_subset, hC⟩ := h_ins.exists_isCircuit_subset
     have : Fintype ↑C := by
       have : C ⊆ ↑(insert ↑e B.toFinset) := by
         rwa [coe_insert, Set.coe_toFinset]
@@ -337,13 +337,13 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
     rw [hei] at he_mem
     simp only [mem_biUnion]
     use i
-  by_cases h_base : ∀ i, ¬(A i).Nontrivial
-  · replace h_base : ∀ (i : ι), ∃ e, A i = {e} := by
+  by_cases h_isBase : ∀ i, ¬(A i).Nontrivial
+  · replace h_isBase : ∀ (i : ι), ∃ e, A i = {e} := by
       intro i
       obtain hgood | hbad := (hA_nonempty i).exists_eq_singleton_or_nontrivial
       · assumption
-      exfalso; exact h_base i hbad
-    choose e he using h_base
+      exfalso; exact h_isBase i hbad
+    choose e he using h_isBase
     use e
     refine ⟨fun i ↦ by rw [he i]; exact mem_singleton.mpr rfl, fun K ↦ ?_⟩
     specialize h K
@@ -351,8 +351,8 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
     ext x
     simp only [mem_biUnion, mem_image, he, mem_singleton]
     tauto
-  push_neg at h_base
-  obtain ⟨i, hAi⟩ := h_base
+  push_neg at h_isBase
+  obtain ⟨i, hAi⟩ := h_isBase
   have h_induc : ∃ x ∈ A i, ∀ K : Finset ι,
       K.card ≤ f (K.biUnion <| Function.update A i ((A i).erase x)) := by
     by_contra! h_con
@@ -1217,7 +1217,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
     refine ⟨transverses_mono hT_trans hT', hT_indep.subset hT', ?_⟩
     symm
     exact (Nat.sub_eq_iff_eq_add hd).mp hT'_card.symm
-  obtain ⟨T, hT⟩ := M.exists_basis' (image e univ)
+  obtain ⟨T, hT⟩ := M.exists_isBasis' (image e univ)
   have : Fintype T := finite_toSet (image e univ) |>.subset hT.subset |>.fintype
   use T.toFinset
   simp only [Set.coe_toFinset]

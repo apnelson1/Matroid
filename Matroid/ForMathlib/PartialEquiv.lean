@@ -148,3 +148,24 @@ instance {α β : Type*} : Preorder (PartialEquiv α β) where
 --   refine ⟨⟨subset_insert _ _, fun hi ↦ φ.insert_apply_mem _ _ hi⟩, ?_⟩
 --   simp only [insert_source, not_and]
 --   exact fun h ↦ (ha <| h (Or.inl rfl)).elim
+
+@[simps] def Set.diffPartialEquiv (s : Set α) : PartialEquiv (Set α) (Set α) where
+  toFun t := s \ t
+  invFun t := s \ t
+  source := Iic s
+  target := Iic s
+  map_source' := by simp
+  map_target' := by simp
+  left_inv' := by simp
+  right_inv' := by simp
+
+-- lemma PartialEquiv.minimal_iff_apply {α β : Type*} [Preorder α] [Preorder β] {P : α → Prop}
+--     {Q : β → Prop} (f : PartialEquiv α β)
+--     (hPQ : ∀ ⦃x⦄, x ∈ f.source → (P x ↔ Q (f x)))
+--     -- (hP : ∀ ⦃x⦄, P x → x ∈ f.source)
+--     (hQ : ∀ ⦃y⦄, Q y → y ∈ f.target)
+--     (hmono : ∀ ⦃x x'⦄, P x → P x' → (f x ≤ f x' ↔ x ≤ x')) {x : α}
+--     (hx : x ∈ f.source) :
+--     Minimal P x ↔ Minimal Q (f x) := by
+--   refine ⟨fun h ↦ ⟨(hPQ hx).1 h.prop, fun y hy hyx ↦ ?_⟩, fun h ↦ ⟨?_, ?_⟩⟩
+--   ·

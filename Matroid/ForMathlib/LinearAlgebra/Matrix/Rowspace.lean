@@ -138,11 +138,11 @@ def ColBasis {R : Type*} [Semiring R] (A : Matrix m n R) (t : Set n) := Aᵀ.Row
 variable [Ring R]
 
 /-- A `RowBasis` as a `Basis` for the row space -/
-noncomputable def RowBasis.basis (h : A.RowBasis s) : Basis s R A.rowSpace :=
+noncomputable def RowBasis.isBasis (h : A.RowBasis s) : IsBasis s R A.rowSpace :=
    (Basis.span h.1).map <| LinearEquiv.ofEq _ _ h.2
 
-@[simp] theorem RowBasis.basis_apply (h : A.RowBasis s) (i : s) : h.basis i = A i := by
-  ext; simp only [basis, Basis.map_apply, LinearEquiv.coe_ofEq_apply, Basis.span_apply]; rfl
+@[simp] theorem RowBasis.isBasis_apply (h : A.RowBasis s) (i : s) : h.isBasis i = A i := by
+  ext; simp only [isBasis, IsBasis.map_apply, LinearEquiv.coe_ofEq_apply, IsBasis.span_apply]; rfl
 
 theorem RowBasis.linearIndependent (h : A.RowBasis s) :
     LinearIndependent R (A.rowSubmatrix s).rowFun :=
@@ -153,11 +153,11 @@ theorem RowBasis.rowSpace_eq (h : A.RowBasis s) :
   h.2
 
 /-- A `ColBasis` as a `Basis` for the column space -/
-noncomputable def ColBasis.basis (h : A.ColBasis t) : Basis t R A.colSpace :=
-  RowBasis.basis h
+noncomputable def ColBasis.isBasis (h : A.ColBasis t) : IsBasis t R A.colSpace :=
+  RowBasis.isBasis h
 
-@[simp] theorem ColBasis.basis_apply (h : A.ColBasis t) (j : t) : h.basis j = Aᵀ j :=
-  funext <| congrFun (RowBasis.basis_apply h j)
+@[simp] theorem ColBasis.isBasis_apply (h : A.ColBasis t) (j : t) : h.isBasis j = Aᵀ j :=
+  funext <| congrFun (RowBasis.isBasis_apply h j)
 
 theorem ColBasis.linearIndependent (h : A.ColBasis t) :
     LinearIndependent R (A.colSubmatrix t).colFun :=
@@ -528,24 +528,24 @@ theorem ColBasis.submatrix_rowBasis (ht : A.ColBasis t) (hs : A.RowBasis s) :
 
 /-- If an `m × n` matrix `A` with entries in `R` has linearly independent rows,
     a column basis for `A` gives a basis for `m → R`. -/
-noncomputable def ColBasis.basisFun [Fintype m] (ht : A.ColBasis t)
-  (hA : LinearIndependent K A.rowFun) : Basis t K (m → K) :=
+noncomputable def ColBasis.isBasisFun [Fintype m] (ht : A.ColBasis t)
+  (hA : LinearIndependent K A.rowFun) : IsBasis t K (m → K) :=
     (Basis.span ht.linearIndependent).map <| LinearEquiv.ofTop _ <| eq_top_iff'.2 fun x ↦
     ( by
       rw [span_eq_colSpace, ht.colSpace_eq, colSpace_eq_top_iff_linearIndependent_rows.2 hA]
       trivial )
 
-@[simp] theorem ColBasis.basisFun_apply [Fintype m] (ht : A.ColBasis t)
-    (hA : LinearIndependent K A.rowFun) (j : t) : ht.basisFun hA j = (A · j) := by
+@[simp] theorem ColBasis.isBasisFun_apply [Fintype m] (ht : A.ColBasis t)
+    (hA : LinearIndependent K A.rowFun) (j : t) : ht.isBasisFun hA j = (A · j) := by
   ext x; exact congr_fun (Basis.span_apply ht.linearIndependent j) x
 
-noncomputable def RowBasis.basisFun [Fintype n] (hs : A.RowBasis s)
-    (hA : LinearIndependent K A.colFun) : Basis s K (n → K) :=
-  hs.colBasis_transpose.basisFun hA
+noncomputable def RowBasis.isBasisFun [Fintype n] (hs : A.RowBasis s)
+    (hA : LinearIndependent K A.colFun) : IsBasis s K (n → K) :=
+  hs.colBasis_transpose.isBasisFun hA
 
-@[simp] theorem RowBasis.basisFun_apply [Fintype n] (hs : A.RowBasis s)
-    (hA : LinearIndependent K Aᵀ) (i : s) : hs.basisFun hA i = A i := by
-  ext; simp [basisFun]
+@[simp] theorem RowBasis.isBasisFun_apply [Fintype n] (hs : A.RowBasis s)
+    (hA : LinearIndependent K Aᵀ) (i : s) : hs.isBasisFun hA i = A i := by
+  ext; simp [isBasisFun]
 
 end Field
 section NullSpace
@@ -656,10 +656,10 @@ theorem rank'_eq_finrank_mulVecLin {R : Type*} [CommRing R] [Fintype n] (A : Mat
 theorem ncard_colBasis (ht : A.ColBasis t) : t.ncard = A.rank' := by
   obtain (hfin | hinf) := t.finite_or_infinite
   · have _ := hfin.fintype
-    rw [rank', finrank, rank_eq_card_basis ht.basis, Cardinal.toNat_natCast,
+    rw [rank', finrank, rank_eq_card_isBasis ht.isBasis, Cardinal.toNat_natCast,
       ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
   rw [hinf.ncard, rank', @finrank_of_infinite_dimensional _ _ _ _ _ fun hfin ↦ hinf <| ?_]
-  have _ := ht.basis.linearIndependent.finite_index
+  have _ := ht.isBasis.linearIndependent.finite_index
   exact toFinite t
 
 theorem ncard_rowBasis_eq_ncard_colBasis (hs : A.RowBasis s) (ht : A.ColBasis t) :
@@ -667,15 +667,15 @@ theorem ncard_rowBasis_eq_ncard_colBasis (hs : A.RowBasis s) (ht : A.ColBasis t)
   have ht' := hs.submatrix_colBasis ht
   obtain (hfin | hinf) := s.finite_or_infinite
   · have _ := hfin.fintype
-    have hb := ht'.basisFun hs.linearIndependent
+    have hb := ht'.isBasisFun hs.linearIndependent
     have _ := hb.linearIndependent.fintype_index
     rw [← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card,
-      Nat.card_eq_fintype_card, ← finrank_eq_card_basis hb, finrank_fintype_fun_eq_card]
+      Nat.card_eq_fintype_card, ← finrank_eq_card_isBasis hb, finrank_fintype_fun_eq_card]
   rw [hinf.ncard, Infinite.ncard]
   refine fun htfin ↦ hinf ?_
   have _ := htfin.fintype
   have hs' := ht.submatrix_rowBasis hs
-  have hb := hs'.basisFun ht.linearIndependent
+  have hb := hs'.isBasisFun ht.linearIndependent
   have _ := hb.linearIndependent.fintype_index
   exact s.toFinite
 
@@ -693,19 +693,19 @@ end Rank
 
 end Matrix
 
-section Basis
+section IsBasis
 
 variable {R m n : Type*} [CommRing R] {U : Submodule R (n → R)}
 
 /-- Given a basis for a submodule `U` of `n → R`, put its vectors as the rows of a matrix,
   whose row space will then be `U` . -/
-noncomputable def Basis.toRowMatrix (b : Basis m R U) : Matrix m n R :=
+noncomputable def IsBasis.toRowMatrix (b : IsBasis m R U) : Matrix m n R :=
   Matrix.of (fun i j ↦ (b i : (n → R)) j)
 
-@[simp] theorem Basis.toRowMatrix_apply (b : Basis m R U) (i : m) (j : n) :
+@[simp] theorem IsBasis.toRowMatrix_apply (b : IsBasis m R U) (i : m) (j : n) :
   b.toRowMatrix i j = (b i : n → R) j := rfl
 
-@[simp] theorem Basis.toRowMatrix_rowSpace (b : Basis m R U) : b.toRowMatrix.rowSpace = U := by
+@[simp] theorem IsBasis.toRowMatrix_rowSpace (b : IsBasis m R U) : b.toRowMatrix.rowSpace = U := by
   convert congr_arg (fun (W : Submodule R U) ↦ W.map (Submodule.subtype U)) b.span_eq
   · rw [Matrix.rowSpace, map_span]
     convert rfl
@@ -714,4 +714,4 @@ noncomputable def Basis.toRowMatrix (b : Basis m R U) : Matrix m n R :=
     rfl
   simp
 
-end Basis
+end IsBasis

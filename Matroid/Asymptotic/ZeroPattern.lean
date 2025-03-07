@@ -5,7 +5,7 @@ import Mathlib.Data.Complex.Exponential
 import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Card
 import Mathlib.Analysis.Normed.Module.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+import Mathlib.Analysis.SpecialFunctions.Log.IsBase
 
 universe u1 u2 u3 u4
 

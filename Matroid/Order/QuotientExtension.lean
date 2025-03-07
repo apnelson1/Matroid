@@ -11,7 +11,7 @@ section Weak
 
 -- Use `Flat.covBy_iff_rk_eq_add_one` instead of this
 -- lemma CovBy_rank_one {M : Matroid α} {X Y: Set α} [RankFinite M]
---     (hFX : M.Flat X) (hFY : M.Flat Y) (hf :M.r Y = M.r X + 1) (hXY : X ⊂ Y ) :
+--     (hFX : M.IsFlat X) (hFY : M.IsFlat Y) (hf :M.r Y = M.r X + 1) (hXY : X ⊂ Y ) :
 --     X ⋖[M] Y := by
 
 -- lemma CovBy_equal_cont {M₁ : Matroid α} {X Y₁ Y₂: Set α} (hco1 : X ⋖[M₁] Y₁) (hco : X ⋖[M₁] Y₂)
@@ -19,10 +19,10 @@ section Weak
 --   contrapose! hy
 --   simp [hco1.inter_eq_of_covby_of_ne hco hy]
 
-theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X ⋖[M₁] Y) (hX2 : M₂.Flat X)
+theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X ⋖[M₁] Y) (hX2 : M₂.IsFlat X)
     (hS : M₁.rk X + M₂.rank = M₂.rk X + M₁.rank) : ∃ y ∈ Y, Y = M₂.closure (insert y X) := by
   have hYE := hco.subset_ground_right
-  have hF1X := hco.flat_left
+  have hF1X := hco.isFlat_left
   rw [rank_def, rank_def] at hS
   have hE : M₁.E = M₂.E := (Quotient.ground_eq hQ).symm
   have hfr : RankFinite M₂ := hQ.rankFinite
@@ -31,8 +31,8 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   use y
   refine ⟨ mem_of_mem_diff hy , ?_ ⟩
   --rw [hyy.symm]
-  have hXy2 : M₂.Flat (M₂.closure (insert y X)) := closure_flat M₂ (insert y X)
-  have hXy1 : M₁.Flat (M₂.closure (insert y X)) := Quotient.flat_of_flat hQ hXy2
+  have hXy2 : M₂.IsFlat (M₂.closure (insert y X)) := closure_isFlat M₂ (insert y X)
+  have hXy1 : M₁.IsFlat (M₂.closure (insert y X)) := Quotient.isFlat_of_isFlat hQ hXy2
   have h1 := hQ.eRelRk_le (M₂.closure (insert y X)) M₂.E
   have h2 := add_le_add_right h1 (M₂.eRk (M₂.closure (insert y X)))
   -- have h1 : M₂.eRelRk (M₂.closure (insert y X)) (M₂.E) ≤ M₁.eRelRk (M₂.closure (insert y X)) (M₁.E):= by
@@ -80,7 +80,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   --have h10 : M₁.r (M₂.closure (insert y X))
       --≤ M₁.r X + M₂.eRelRk X (M₂.closure (insert y X)):= by sorry
   --rw [IsRkFinite.eRelRk_eq_sub.symm hFin1 hXsub] at h9
-  have hclXf : X = M₂.closure X := Eq.symm (Flat.closure hX2)
+  have hclXf : X = M₂.closure X := Eq.symm (IsFlat.closure hX2)
   have hy' : y ∈ M₂.E \ M₂.closure X := by
     rw [← hclXf]
     refine ⟨?_ , not_mem_of_mem_diff hy ⟩
@@ -120,7 +120,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
     exact Nat.le_antisymm h9 (le_of_eq_of_le hhm2 (rk_le_of_subset M₁ hsubcl))
 
   have hcovcl : X ⋖[M₁] M₂.closure (insert y X) := by
-    have hX2 : M₁.Flat X := Quotient.flat_of_flat hQ hX2
+    have hX2 : M₁.IsFlat X := Quotient.isFlat_of_isFlat hQ hX2
     have hcls : X ⊂ M₂.closure (insert y X) := by
       rw [ssubset_iff_of_subset hXsub]
       exact ⟨ y, hsubcl (mem_insert y X) , not_mem_of_mem_diff hy ⟩
@@ -144,15 +144,15 @@ theorem Quotient.forall_superset_k [RankFinite M₁] {k : ℤ} {F F' : Set α} (
 
   exact hQ.rank_sub_mono inter_subset_right
 
-theorem Quotient.forall_superset_flat [RankFinite M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁)
+theorem Quotient.forall_superset_isFlat [RankFinite M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁)
 
     (hrank : (M₁.rank : ℤ) - M₂.rank = k)
-    (hFF' : F ⊆ F') (hF'E : F' ⊆ M₁.E) (hFk : (M₁.rk F : ℤ) - M₂.rk F = k) (hF'Flat1 : M₁.Flat F')
-    : M₂.Flat F' := by
+    (hFF' : F ⊆ F') (hF'E : F' ⊆ M₁.E) (hFk : (M₁.rk F : ℤ) - M₂.rk F = k) (hF'IsFlat1 : M₁.IsFlat F')
+    : M₂.IsFlat F' := by
   by_contra! hcon
   have hE : M₁.E = M₂.E := Eq.symm hQ.ground_eq
   rw [hE] at hF'E
-  obtain ⟨e, heEF', hin ⟩ := exists_insert_rk_eq_of_not_flat hF'E hcon
+  obtain ⟨e, heEF', hin ⟩ := exists_insert_rk_eq_of_not_isFlat hF'E hcon
   rw [← hE] at hF'E
   rw [← hE] at heEF'
   --have hF'eE : insert e F' ⊆ M₁.E := by exact insert_subset (mem_of_mem_diff heEF') hF'E
@@ -162,17 +162,17 @@ theorem Quotient.forall_superset_flat [RankFinite M₁] {k : ℤ} {F F' : Set α
   have h2 : k < M₁.rk (insert e F') - M₂.rk (insert e F') := by
     rw [ ←(hQ.forall_superset_k hrank hFF' hFk) ]
     have hme : M₁.rk (F') < M₁.rk (insert e F') := by
-      rw [ Flat.insert_rk_eq hF'Flat1 heEF' ]
+      rw [ IsFlat.insert_rk_eq hF'IsFlat1 heEF' ]
       exact lt_add_one (M₁.rk F')
     rw [hin]
     linarith
   linarith
 
 
--- theorem Quotient.covBy_of_covBy_gen [RankFinite M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.Flat X)
---     (hS : M₁.r X + M₂.rank = M₂.r X + M₁.rank) : M₂.Flat Y ∧ ( M₁.r Y + M₂.rank = M₂.r Y + M₁.rank ) := by
+-- theorem Quotient.covBy_of_covBy_gen [RankFinite M₁] (hQ : M₂ ≤q M₁) (hsub : X ⊆ Y) (hX2 : M₂.IsFlat X)
+--     (hS : M₁.r X + M₂.rank = M₂.r X + M₁.rank) : M₂.IsFlat Y ∧ ( M₁.r Y + M₂.rank = M₂.r Y + M₁.rank ) := by
 --   --let k := M₁.r Y - M₁.r X
---   suffices hi : ∀ i : ℕ, M₁.r Y = i + M₁.r X → M₂.Flat Y ∧ ( M₁.r Y + M₂.rank = M₂.r Y + M₁.rank )
+--   suffices hi : ∀ i : ℕ, M₁.r Y = i + M₁.r X → M₂.IsFlat Y ∧ ( M₁.r Y + M₂.rank = M₂.r Y + M₁.rank )
 --   · have hbig : M₁.r X ≤ M₁.r Y := by exact rk_le_of_subset M₁ hsub
 --     have hin: ∃ k, M₁.r X + k = M₁.r Y := Nat.le.dest hbig
 --     obtain ⟨ k, hk ⟩ := hin
@@ -182,7 +182,7 @@ theorem Quotient.forall_superset_flat [RankFinite M₁] {k : ℤ} {F F' : Set α
 --   · intro i hi
 --     induction' i with n IH generalizing Y
 --     · simp only [zero_add] at hi
---       have h1xf : M₁.Flat X := by exact flat_of_flat hQ hX2
+--       have h1xf : M₁.IsFlat X := by exact isFlat_of_isFlat hQ hX2
 --       have hequal : X = Y := by sorry
 --       rw [hequal] at hX2
 --       rw [hequal] at hS
@@ -208,14 +208,14 @@ theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤
 
 def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M₂ ≤q M₁) :
     M₁.ModularCut :=
-  ModularCut.ofForallModularPairInter M₁
-  (U := { F | M₁.Flat F ∧ M₂.Flat F ∧ hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E})
-  (h_flat := fun F hF ↦ hF.1)
+  ModularCut.ofForallIsModularPairInter M₁
+  (U := { F | M₁.IsFlat F ∧ M₂.IsFlat F ∧ hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E})
+  (h_isFlat := fun F hF ↦ hF.1)
   (h_superset := by
-    intro F F' hF hF'Flat1 hFF'
-    have hF'E : F' ⊆ M₁.E := hF'Flat1.subset_ground
-    refine ⟨ hF'Flat1, ?_, ?_⟩
-    · apply hQ.forall_superset_flat _ hFF' hF'E rfl hF'Flat1
+    intro F F' hF hF'IsFlat1 hFF'
+    have hF'E : F' ⊆ M₁.E := hF'IsFlat1.subset_ground
+    refine ⟨ hF'IsFlat1, ?_, ?_⟩
+    · apply hQ.forall_superset_isFlat _ hFF' hF'E rfl hF'IsFlat1
       rw [hQ.intCast_rank_sub_rank_eq_nDiscrepancy, hQ.intCast_rk_sub_rk_eq_nDiscrepancy, hF.2.2]
     · refine (hQ.nDiscrepancy_le_of_subset hF'E).antisymm ?_
       rw [← hF.2.2]
@@ -223,10 +223,10 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M�
   (h_pair := by
     have := hQ.rankFinite
     rintro F F' ⟨hF₁, hF₂, hFr⟩ ⟨hF'₁, hF'₂, hF'r⟩ hFF'M
-    refine ⟨Flat.inter hF₁ hF'₁, Flat.inter hF₂ hF'₂, ?_ ⟩
+    refine ⟨IsFlat.inter hF₁ hF'₁, IsFlat.inter hF₂ hF'₂, ?_ ⟩
 
     have h1 := M₂.rk_submod F F'
-    have h2 := (modularPair_iff_rk).1 hFF'M
+    have h2 := (isModularPair_iff_rk).1 hFF'M
     have hd1 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy F
     have hd2 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy F'
     have hd3 := hQ.intCast_rk_sub_rk_eq_nDiscrepancy (F ∪ F')
@@ -241,7 +241,7 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M�
 
 lemma Quotient.exists_extension_quotient_contract_of_rank_lt {f : α} (hQ : M₂ ≤q M₁)
     (hr : M₂.rank < M₁.rank) (hf : f ∉ M₂.E) :
-    ∃ M, M.Nonloop f ∧ ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M ／ f := by
+    ∃ M, M.IsNonloop f ∧ ¬ M.Coloop f ∧ M ＼ f = M₁ ∧ M₂ ≤q M ／ f := by
   have hfin : M₁.RankFinite
   · rw [rankFinite_iff]
     intro h
@@ -260,10 +260,10 @@ theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [RankFinit
   have hM₂fin := hQ.rankFinite
 
   induction' X using Finset.induction with e Y heY IH generalizing M₁
-  · obtain ⟨B, hB⟩ := M₂.exists_base_finset
-    have hB₁ : M₁.Base B := by simpa [← hr, hB.finset_card]
-      using (hQ.weakLE.indep_of_indep hB.indep).base_of_card
-    simp [hQ.eq_of_base_indep hB₁ hB.indep]
+  · obtain ⟨B, hB⟩ := M₂.exists_isBase_finset
+    have hB₁ : M₁.IsBase B := by simpa [← hr, hB.finset_card]
+      using (hQ.weakLE.indep_of_indep hB.indep).isBase_of_card
+    simp [hQ.eq_of_isBase_indep hB₁ hB.indep]
 
   rw [Finset.card_insert_of_not_mem heY] at hr
   obtain ⟨-, heM₂⟩ : Disjoint (↑Y) M₂.E ∧ e ∉ M₂.E := by
@@ -298,9 +298,9 @@ theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂]
 
 -- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
 
--- Construct a modular cut using `ModularCut.ofForallModularPairInter`,
+-- Construct a modular cut using `ModularCut.ofForallIsModularPairInter`,
 -- which now works for finite-rank matroids.
--- Use `modularPair_iff_rk` to rewrite `ModularPair` with the rank definition.
+-- Use `isModularPair_iff_rk` to rewrite `IsModularPair` with the rank definition.
 
 -- lemma something {M₁ M₂ : Matroid α} {X : Finset α} [RankFinite M₂] (h : M₁ ≤q M₂)
 --     (hr : M₁.rank + X.card = M₂.rank) (hX₁ : Disjoint (X : Set α) M₁.E) :

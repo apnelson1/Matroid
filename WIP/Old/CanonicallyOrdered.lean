@@ -44,8 +44,8 @@ namespace WithTop
 
 set_option trace.Meta.synthInstance true
 
-noncomputable example : CompleteLinearOrder ENNReal := by
-  exact ENNReal.instCompleteLinearOrderENNReal
+noncomputable example : CompleteIsLinearOrder ENNReal := by
+  exact ENNReal.instCompleteIsLinearOrderENNReal
   -- show_term {infer_instance}
 
 -- #check StrictMono.embedding_of_ordConnected

@@ -10,7 +10,7 @@ open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
 namespace Matroid
 
 /-- The intersection of `M.fundCircuit e B` with `B` as a `Finset B` in a finitary matroid. -/
-noncomputable def Base.coords (hB : M.Base B) (e : α) : Finset B :=
+noncomputable def IsBase.coords (hB : M.IsBase B) (e : α) : Finset B :=
   Finite.toFinset (s := (B ↓∩ M.fundCircuit e B))
   (by
     refine Finite.preimage Subtype.val_injective.injOn ?_
@@ -18,25 +18,25 @@ noncomputable def Base.coords (hB : M.Base B) (e : α) : Finset B :=
     · rw [fundCircuit_eq_of_mem heB]
       simp
     by_cases heE : e ∈ M.E
-    · exact (hB.fundCircuit_circuit heE heB).finite
+    · exact (hB.fundCircuit_isCircuit heE heB).finite
     rw [fundCircuit_eq_of_not_mem_ground heE]
     simp )
 
-lemma Base.coords_of_mem (hB : M.Base B) (he : e ∈ B) :
+lemma IsBase.coords_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.coords e = {⟨e, he⟩} := by
   ext ⟨x, hx⟩
   simp [coords, hB.subset_ground he, fundCircuit_eq_of_mem he]
 
-lemma Base.coords_of_not_mem_ground (hB : M.Base B) (heE : e ∉ M.E) : hB.coords e = ∅ := by
+lemma IsBase.coords_of_not_mem_ground (hB : M.IsBase B) (heE : e ∉ M.E) : hB.coords e = ∅ := by
   suffices ∀ a ∈ B, a ≠ e by
     simpa [coords, fundCircuit_eq_of_not_mem_ground heE, eq_empty_iff_forall_not_mem]
   rintro x hxB rfl
   exact heE <| hB.subset_ground hxB
 
-lemma Base.coords_toSet (hB : M.Base B) : (hB.coords e : Set B) = B ↓∩ (M.fundCircuit e B) := by
+lemma IsBase.coords_toSet (hB : M.IsBase B) : (hB.coords e : Set B) = B ↓∩ (M.fundCircuit e B) := by
   simp [coords]
 
-lemma Base.fundCircuit_eq_insert_map [DecidableEq α] (hB : M.Base B) :
+lemma IsBase.fundCircuit_eq_insert_map [DecidableEq α] (hB : M.IsBase B) :
     M.fundCircuit e B = insert e ((hB.coords e).map (Embedding.setSubtype B)) := by
   by_cases heB : e ∈ B
   · simp [fundCircuit_eq_of_mem heB, Set.ext_iff, coords]
@@ -44,67 +44,66 @@ lemma Base.fundCircuit_eq_insert_map [DecidableEq α] (hB : M.Base B) :
     insert_eq_of_mem (mem_fundCircuit ..)]
 
 /-- The column of the `B`-fundamental matrix of `M` corresponding to `e`, as a `Finsupp`. -/
-noncomputable def Base.fundCoord (hB : M.Base B) (R : Type*) [Semiring R] (e : α) :
+noncomputable def IsBase.fundCoord (hB : M.IsBase B) (R : Type*) [Semiring R] (e : α) :
     B →₀ R :=
   Finsupp.indicator (hB.coords e) (fun _ _ ↦ 1)
 
 variable {R : Type*} [DivisionRing R]
 
-lemma Base.fundCoord_of_mem (hB : M.Base B) (he : e ∈ B) :
+lemma IsBase.fundCoord_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.fundCoord R e = Finsupp.single ⟨e, he⟩ 1 := by
   rw [fundCoord, coords_of_mem hB he, Finsupp.single_eq_indicator]
 
-@[simp] lemma Base.fundCoord_mem (hB : M.Base B) (e : B) : hB.fundCoord R e = Finsupp.single e 1 :=
+@[simp] lemma IsBase.fundCoord_mem (hB : M.IsBase B) (e : B) :
+    hB.fundCoord R e = Finsupp.single e 1 :=
   hB.fundCoord_of_mem e.2
 
-lemma Base.fundCoord_of_not_mem_ground (hB : M.Base B) (he : e ∉ M.E) :
+lemma IsBase.fundCoord_of_not_mem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
     hB.fundCoord R e = 0 := by
   rw [fundCoord, coords_of_not_mem_ground hB he]
   rfl
 
-lemma Base.support_fundCoord_subset (hB : M.Base B) : support (hB.fundCoord R) ⊆ M.E :=
+lemma IsBase.support_fundCoord_subset (hB : M.IsBase B) : support (hB.fundCoord R) ⊆ M.E :=
   support_subset_iff'.2 fun _ ↦ hB.fundCoord_of_not_mem_ground
 
-lemma Base.fundCoord_support (hB : M.Base B) :
+lemma IsBase.fundCoord_support (hB : M.IsBase B) :
     (↑) '' ((hB.fundCoord R e).support : Set B) = (M.fundCircuit e B) ∩ B := by
-  simp [Set.ext_iff, fundCoord, Base.coords, Finsupp.indicator]
+  simp [Set.ext_iff, fundCoord, IsBase.coords, Finsupp.indicator]
 
-lemma Base.mem_fundCoord_support (hB : M.Base B) (e : B) {f : α} :
+lemma IsBase.mem_fundCoord_support (hB : M.IsBase B) (e : B) {f : α} :
     e ∈ (hB.fundCoord R f).support ↔ e.1 ∈ M.fundCircuit f B := by
   rw [show e.1 ∈ M.fundCircuit f B ↔ e.1 ∈ (M.fundCircuit f B) ∩ B by simp [e.2],
     ← hB.fundCoord_support (R := R)]
   simp
 
-lemma Base.fundCoord_base (hB : M.Base B) : (Matroid.ofFun R M.E (hB.fundCoord R)).Base B :=
-  Finsupp.basisSingleOne.ofFun_base (by simp) hB.subset_ground
+lemma IsBase.fundCoord_isBase (hB : M.IsBase B) : (Matroid.ofFun R M.E (hB.fundCoord R)).IsBase B :=
+  Finsupp.basisSingleOne.ofFun_isBase (by simp) hB.subset_ground
 
-lemma Base.fundCoord_eq_linearCombination (hB : M.Base B) :
+lemma IsBase.fundCoord_eq_linearCombination (hB : M.IsBase B) :
     hB.fundCoord R e = Finsupp.linearCombination R (Finsupp.single · 1) (hB.fundCoord R e) := by
-  rw [Base.fundCoord, Finsupp.linearCombination_apply, Finsupp.indicator_eq_sum_single]
+  rw [IsBase.fundCoord, Finsupp.linearCombination_apply, Finsupp.indicator_eq_sum_single]
   simp
 
-lemma Base.fundCoord_finitaryBase (hB : M.Base B) (R : Type*) [DivisionRing R] :
-    (Matroid.repOfFun R M.E (hB.fundCoord R)).FinitaryBase := by
+lemma IsBase.fundCoord_isStandard (hB : M.IsBase B) (R : Type*) [DivisionRing R] :
+    (Matroid.repOfFun R M.E (hB.fundCoord R)).IsStandard := by
+  rw [isStandard_finsupp_iff]
   intro e
   simp only [repOfFun_coeFun_eq]
   rw [indicator_of_mem (hB.subset_ground e.2), fundCoord_of_mem]
 
-lemma fundCoord_fundCircuit (hB : M.Base B) (heB : e ∉ B) (heE : e ∈ M.E) :
-    (Matroid.ofFun R M.E (hB.fundCoord R)).Circuit (M.fundCircuit e B) := by
+lemma fundCoord_fundCircuit (hB : M.IsBase B) (heB : e ∉ B) (heE : e ∈ M.E) :
+    (Matroid.ofFun R M.E (hB.fundCoord R)).IsCircuit (M.fundCircuit e B) := by
   classical
-  convert (hB.fundCoord_finitaryBase R).circuit_insert_support heB heE using 1
+  convert (hB.fundCoord_isStandard R).isCircuit_insert_support heB heE using 1
   rw [hB.fundCircuit_eq_insert_map]
   simp only [Finset.coe_insert, Finset.coe_map, Embedding.setSubtype_apply, repOfFun_coeFun_eq]
   convert rfl
   ext x
-  simp only [Finsupp.mem_support_iff, ne_eq]
-  rw [Set.indicator_of_mem heE]
-  rw [Base.fundCoord]
-  simp
+  simp [Finsupp.mem_support_iff, ne_eq, Set.indicator_of_mem heE, IsBase.fundCoord]
 
-lemma Base.fundCoord_row_support (hB : M.Base B) (R : Type*) [DivisionRing R] (e : B) :
+lemma IsBase.fundCoord_row_support (hB : M.IsBase B) (R : Type*) [DivisionRing R] (e : B) :
     (hB.fundCoord R · e).support = M.fundCocircuit e B := by
   ext f
   simp only [mem_support]
-  rw [← Finsupp.mem_support_iff, Base.mem_fundCoord_support,
+  rw [← Finsupp.mem_support_iff, IsBase.mem_fundCoord_support,
     hB.mem_fundCocircuit_iff_mem_fundCircuit]

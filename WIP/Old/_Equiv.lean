@@ -17,13 +17,13 @@ structure Iso (M : Matroid α) (N : Matroid β) where
   (toPartialEquiv : PartialEquiv α β)
   (source_eq' : toPartialEquiv.source = M.E)
   (target_eq' : toPartialEquiv.target = N.E)
-  (setOf_base_eq' : setOf N.Base = (image toPartialEquiv) '' (setOf M.Base))
+  (setOf_isBase_eq' : setOf N.IsBase = (image toPartialEquiv) '' (setOf M.IsBase))
 
 instance {M : Matroid α} {N : Matroid β} : CoeFun (Iso M N) (fun _ ↦ (α → β)) where
   coe e := (e.toPartialEquiv : α → β)
 
-theorem Iso.setOf_base_eq (e : Iso M N) : setOf N.Base = (image e) '' (setOf M.Base) :=
-  e.setOf_base_eq'
+theorem Iso.setOf_isBase_eq (e : Iso M N) : setOf N.IsBase = (image e) '' (setOf M.IsBase) :=
+  e.setOf_isBase_eq'
 
 @[simp] theorem Iso.source_eq (e : Iso M N) : e.toPartialEquiv.source = M.E :=
   e.source_eq'
@@ -61,10 +61,10 @@ theorem Iso.image_subset_ground (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by
 theorem Iso.injOn_ground (e : Iso M N) : InjOn e M.E := by
   rw [← e.source_eq]; exact e.toPartialEquiv.injOn
 
-theorem Iso.on_base_iff (e : Iso M N) (hB : B ⊆ M.E := by aesop_mat) :
-    M.Base B ↔ N.Base (e '' B) := by
-  change (_ ↔ _ ∈ setOf N.Base)
-  simp_rw [e.setOf_base_eq', mem_image, mem_setOf_eq]
+theorem Iso.on_isBase_iff (e : Iso M N) (hB : B ⊆ M.E := by aesop_mat) :
+    M.IsBase B ↔ N.IsBase (e '' B) := by
+  change (_ ↔ _ ∈ setOf N.IsBase)
+  simp_rw [e.setOf_isBase_eq', mem_image, mem_setOf_eq]
   refine' ⟨fun h ↦ ⟨B, h, rfl⟩, fun ⟨B', h, h'⟩ ↦ _⟩
   rw [e.injOn_ground.image_eq_image_iff_of_subset h.subset_ground hB] at h'
   rwa [← h']
@@ -73,7 +73,7 @@ def Iso.refl (M : Matroid α) : Iso M M where
   toPartialEquiv := ofSet M.E
   source_eq' := rfl
   target_eq' := rfl
-  setOf_base_eq' := by simp
+  setOf_isBase_eq' := by simp
 
 @[simp] theorem Iso.refl_toPartialEquiv (M : Matroid α) :
     (Iso.refl M).toPartialEquiv = ofSet M.E := rfl
@@ -82,8 +82,8 @@ def Iso.symm (e : Iso M N) : Iso N M where
   toPartialEquiv := e.toPartialEquiv.symm
   source_eq' := by rw [symm_source, e.target_eq']
   target_eq' := by rw [symm_target, e.source_eq']
-  setOf_base_eq' := by
-    { rw [e.setOf_base_eq']
+  setOf_isBase_eq' := by
+    { rw [e.setOf_isBase_eq']
       ext B
       simp only [mem_setOf_eq, mem_image, exists_exists_and_eq_and]
       refine' ⟨fun h ↦ ⟨B, h, _⟩, fun ⟨B', hB', h⟩ ↦ _⟩
@@ -105,7 +105,7 @@ def Iso.trans {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α�
   { rw [trans_target, e₁₂.target_eq', e₂₃.target_eq', inter_eq_left, ← e₂₃.source_eq',
     ← e₂₃.target_eq']
     exact target_subset_preimage_source _ }
-  setOf_base_eq' := by rw [e₂₃.setOf_base_eq', e₁₂.setOf_base_eq']; ext B; simp [image_image]
+  setOf_isBase_eq' := by rw [e₂₃.setOf_isBase_eq', e₁₂.setOf_isBase_eq']; ext B; simp [image_image]
 
 @[simp] theorem Iso.trans_toPartialEquiv {M₁ : Matroid α₁} {M₂ : Matroid α₂} {M₃ : Matroid α₃}
     (e₁₂ : Iso M₁ M₂) (e₂₃ : Iso M₂ M₃) :
@@ -132,7 +132,7 @@ def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
   toPartialEquiv := ofSet M.E
   source_eq' := rfl
   target_eq' := by simp [h]
-  setOf_base_eq' := by simp [h]
+  setOf_isBase_eq' := by simp [h]
 
 @[simp] theorem Iso.ofEq_toPartialEquiv {M N : Matroid α} (h : M = N) :
     (Iso.ofEq h).toPartialEquiv = ofSet M.E := rfl
@@ -144,7 +144,7 @@ def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
 --   toPartialEquiv := f
 --   source_eq' := h_source
 --   target_eq' := h_target
---   setOf_base_eq' :=
+--   setOf_isBase_eq' :=
 --   ( by
 --     ext B
 --     have lN : ∀ {J}, J ⊆ N.E → f.symm '' J ⊆ M.E := fun hJ ↦
@@ -205,17 +205,17 @@ theorem Iso.prop_subset_iff_subset (e : Iso M N) (hM : ∀ {X}, PM X → X ⊆ M
 end transfer
 
 /-- A `PartialEquiv` that respects bases is an isomorphism. -/
-def iso_of_forall_base (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
-    (on_base : ∀ B, M.Base B → N.Base (e '' B))
-    (on_base_symm : ∀ B, N.Base B → M.Base (e.symm '' B)) : Iso M N where
+def iso_of_forall_isBase (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
+    (on_isBase : ∀ B, M.IsBase B → N.IsBase (e '' B))
+    (on_isBase_symm : ∀ B, N.IsBase B → M.IsBase (e.symm '' B)) : Iso M N where
   toPartialEquiv := e
   source_eq' := hM
   target_eq' := hN
-  setOf_base_eq' := by
-  { refine' Set.ext (fun B ↦ ⟨fun (hB : N.Base B) ↦ ⟨_, on_base_symm B hB,_⟩,_⟩)
+  setOf_isBase_eq' := by
+  { refine' Set.ext (fun B ↦ ⟨fun (hB : N.IsBase B) ↦ ⟨_, on_isBase_symm B hB,_⟩,_⟩)
     · rw [e.image_symm_image_of_subset_target (hB.subset_ground.trans_eq hN.symm)]
     rintro ⟨B, hB, rfl⟩
-    exact on_base B hB }
+    exact on_isBase B hB }
 
 /-- A `PartialEquiv` that respects independence is an isomorphism. -/
 def iso_of_forall_indep (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.target = N.E)
@@ -224,13 +224,13 @@ def iso_of_forall_indep (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.t
   toPartialEquiv := e
   source_eq' := hM
   target_eq' := hN
-  setOf_base_eq' := by
+  setOf_isBase_eq' := by
   { have setOfIndep : setOf N.Indep = (Set.image e) '' (setOf M.Indep) := by
       refine' subset_antisymm (fun I (hI : N.Indep I) ↦ ⟨_, on_indep_symm I hI, _⟩) _
       · rintro _ ⟨I, (hI : M.Indep I), rfl⟩; exact on_indep I hI
       · rw [e.image_symm_image_of_subset_target (hI.subset_ground.trans_eq hN.symm)]
-    rw [setOf_base_eq_maximals_setOf_indep, setOfIndep, ← image_maximals_of_rel_iff_rel
-      (r := (· ⊆ ·)), ← setOf_base_eq_maximals_setOf_indep]
+    rw [setOf_isBase_eq_maximals_setOf_indep, setOfIndep, ← image_maximals_of_rel_iff_rel
+      (r := (· ⊆ ·)), ← setOf_isBase_eq_maximals_setOf_indep]
     rintro I J (hI : M.Indep I) (hJ : M.Indep J)
     rw [e.injOn.image_subset_image_iff_of_subset (hI.subset_ground.trans hM.symm.subset)
       (hJ.subset_ground.trans hM.symm.subset)] }
@@ -260,15 +260,15 @@ def iso_of_forall_indep' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.
     (on_indep : ∀ I, I ⊆ M.E → (M.Indep I ↔ N.Indep (e '' I))) :
   (iso_of_forall_indep' e hM hN on_indep).toPartialEquiv = e := rfl
 
-theorem Iso.on_base (e : Iso M N) (hB : M.Base B) : N.Base (e '' B) := by
-  rwa [← e.on_base_iff]
+theorem Iso.on_isBase (e : Iso M N) (hB : M.IsBase B) : N.IsBase (e '' B) := by
+  rwa [← e.on_isBase_iff]
 
 theorem Iso.on_indep (e : Iso M N) (hI : M.Indep I) : N.Indep (e '' I) := by
   change (_ ∈ (setOf N.Indep))
-  rw [setOf_indep_eq, e.setOf_base_eq]
+  rw [setOf_indep_eq, e.setOf_isBase_eq]
   simp only [SetLike.mem_coe, mem_lowerClosure, mem_image, mem_setOf_eq, le_eq_subset,
     image_subset_iff, exists_exists_and_eq_and]
-  obtain ⟨B, hB, hIB⟩ := hI.exists_base_superset
+  obtain ⟨B, hB, hIB⟩ := hI.exists_isBase_superset
   exact ⟨B, hB, hIB.trans (subset_preimage_image _ _)⟩
 
 theorem Iso.on_indep_symm (e : Iso M N) (h : N.Indep (e '' I)) (hI : I ⊆ M.E := by aesop_mat) :
@@ -282,9 +282,9 @@ theorem Iso.on_indep_iff (e : Iso M N) (hI : I ⊆ M.E := by aesop_mat) :
 theorem Iso.setOf_indep_eq (e : Iso M N) : setOf N.Indep = (image e) '' (setOf M.Indep) :=
   e.setOf_prop_eq Indep.subset_ground e.on_indep e.symm.on_indep
 
-theorem Iso.on_base_symm (e : Iso M N) (h : N.Base (e '' B)) (hB : B ⊆ M.E := by aesop_mat) :
-    M.Base B :=
-  e.on_prop_symm (e.symm.on_base) h
+theorem Iso.on_isBase_symm (e : Iso M N) (h : N.IsBase (e '' B)) (hB : B ⊆ M.E := by aesop_mat) :
+    M.IsBase B :=
+  e.on_prop_symm (e.symm.on_isBase) h
 
 theorem Iso.on_dep (e : Iso M N) (h : M.Dep D) : N.Dep (e '' D) := by
   rw [Dep, and_iff_left (e.image_subset_ground D)]; exact fun hI ↦ h.not_indep (e.on_indep_symm hI)
@@ -301,17 +301,17 @@ theorem Iso.encard_ground_eq (e : Iso M N) : M.E.encard = N.E.encard := by
 
 /-- The duals of isomorphic matroids are isomorphic -/
 def Iso.dual (e : Iso M N) : Iso M✶ N✶ :=
-  iso_of_forall_base e.toPartialEquiv
+  iso_of_forall_isBase e.toPartialEquiv
     (by simp) (by simp)
     (by {
-      simp_rw [dual_base_iff', image_subset_iff, and_imp]
+      simp_rw [dual_isBase_iff', image_subset_iff, and_imp]
       refine fun B hB hBE ↦ ⟨?_, hBE.trans e.ground_subset_preimage_ground⟩
-      convert e.on_base hB
+      convert e.on_isBase hB
       rw [e.injOn_ground.image_diff hBE, e.image_ground] } )
     (by {
-      simp only [image_subset_iff, dual_base_iff', and_imp]
+      simp only [image_subset_iff, dual_isBase_iff', and_imp]
       refine fun B hB hBE ↦ ⟨?_, hBE.trans e.symm.ground_subset_preimage_ground⟩
-      convert e.symm.on_base hB
+      convert e.symm.on_isBase hB
       rw [e.symm.injOn_ground.image_diff hBE, e.symm.image_ground, symm_apply] } )
 
 @[simp] theorem Iso.dual_apply (e : Iso M N) : e.dual.toPartialEquiv = e.toPartialEquiv := rfl
@@ -337,8 +337,8 @@ def Iso.restrict (e : Iso M N) (R : Set α) (hR : R ⊆ M.E := by aesop_mat) :
     (e.restrict R hR).toPartialEquiv = e.toPartialEquiv.restr R := by
   simp [restrict]
 
-theorem Iso.on_basis (e : Iso M N) (hI : M.Basis I X) : N.Basis (e '' I) (e '' X) := by
-  rw [← base_restrict_iff _, (e.restrict X).symm.on_base_iff _, base_restrict_iff]
+theorem Iso.on_isBasis (e : Iso M N) (hI : M.IsBasis I X) : N.IsBasis (e '' I) (e '' X) := by
+  rw [← base_restrict_iff _, (e.restrict X).symm.on_isBase_iff _, base_restrict_iff]
   · convert hI
     simp only [symm_apply, restrict_apply, restr_coe_symm]
     apply e.toPartialEquiv.symm_image_image_of_subset_source
@@ -428,8 +428,8 @@ theorem IsIso.finite_iff (h : M ≂ N) : M.Finite ↔ N.Finite := by
 theorem IsIso.rankFinite_iff (h : M ≂ N) : M.RankFinite ↔ N.RankFinite := by
   obtain (⟨rfl,rfl⟩ | ⟨⟨e⟩⟩) := h
   · apply iff_of_true <;> infer_instance
-  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_base hB, hBfin.image _⟩,
-    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, e.symm.on_base hB, hBfin.image _⟩⟩
+  exact ⟨fun ⟨B, hB, hBfin⟩ ↦ ⟨e '' B, e.on_isBase hB, hBfin.image _⟩,
+    fun ⟨B, hB, hBfin⟩ ↦ ⟨e.symm '' B, e.symm.on_isBase hB, hBfin.image _⟩⟩
 
 theorem IsIso.dual (h : M ≂ N) : M✶ ≂ N✶ := by
   obtain (⟨rfl, rfl⟩ | ⟨⟨e⟩⟩) := h

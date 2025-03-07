@@ -3,6 +3,7 @@ import Matroid.Axioms.Closure
 import Matroid.Axioms.Flat
 import Matroid.Axioms.Rank
 import Matroid.Binary.Crossing
+import Matroid.Binary.Representation
 import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Connectivity.Basic
@@ -35,5 +36,11 @@ import Matroid.Parallel
 import Matroid.Paving
 import Matroid.Rank.ENat
 import Matroid.Rank.Nat
+import Matroid.Representation.Basic
+import Matroid.Representation.FundamentalMatrix
+import Matroid.Representation.Map
+import Matroid.Representation.Minor
+import Matroid.Representation.Projective
+import Matroid.Representation.StandardRep
 import Matroid.Simple
 import Matroid.Uniform

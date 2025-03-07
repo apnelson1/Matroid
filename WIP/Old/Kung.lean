@@ -1,6 +1,6 @@
 import Matroid.Constructions.Uniform
 import Matroid.ForMathlib.ENatTopology
-import Matroid.Flat.LowRank
+import Matroid.IsFlat.LowRank
 
 open Set
 
@@ -22,7 +22,7 @@ theorem numPoints_eq_encard_ground_simplification (M : Matroid α) :
   simp [numPoints_eq_encard_ground_simplification]
 
 theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e ∈ M.E) :
-    M.E.encard = 1 + ∑' L : {L // M.Line L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
+    M.E.encard = 1 + ∑' L : {L // M.IsLine L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
   rw [← encard_diff_add_encard_of_subset (singleton_subset_iff.2 he), add_comm, encard_singleton]
   apply congr_arg (1 + ·)
   convert (ENat.tsum_encard_eq_encard_sUnion (M ／ e).parallelClasses.pairwiseDisjoint).symm using 1
@@ -31,9 +31,9 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
     rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
     using 1
-  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toNonloop he).lineContractPointEquiv]
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toIsNonloop he).lineContractPointEquiv]
   refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
-  simp [Nonloop.lineContractPointEquiv, closure_singleton_eq he,
+  simp [IsNonloop.lineContractPointEquiv, closure_singleton_eq he,
     diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]
 
 theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
@@ -44,7 +44,7 @@ theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
 
 
 
-  -- have : ∀ L, (M.Line L ∧ e ∈ L) ↔ (M.closure {e} ⋖[M] L)
+  -- have : ∀ L, (M.IsLine L ∧ e ∈ L) ↔ (M.closure {e} ⋖[M] L)
   -- · intro L
 
   -- rw [tsum_congr_subtype (Q := fun L ↦ M.closure {e} ⋖[M] L)]
@@ -56,12 +56,12 @@ theorem kung {q : ℕ} (M : Matroid α) (hM : ¬ (unif 2 (q+2) ≤i M)) :
 
 -- /-- Any partition `Xs` of the nonloops of `M` that is coarser than the partition into
 --   parallel classes gives a decomposition of `M.numPoints` as a sum over the parts of `Xs`. -/
--- theorem foo' (M : Matroid α) (Xs : Partition {e | M.Nonloop e}) (hP : M.parallelClasses ≤ Xs) :
+-- theorem foo' (M : Matroid α) (Xs : Partition {e | M.IsNonloop e}) (hP : M.parallelClasses ≤ Xs) :
 --     M.numPoints = ∑' X : Xs, (M ↾ X).numPoints := by
 --   _
 
 -- theorem foo [Simple M] {e : α} (he : e ∈ M.E) :
---     M.E.encard = 1 + ∑' L : {L // M.Line L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
+--     M.E.encard = 1 + ∑' L : {L // M.IsLine L ∧ e ∈ L}, ((L : Set α) \ {e}).encard := by
 
 
 -- theorem Point.foo {P : Set α} (hP : M.Point P) :

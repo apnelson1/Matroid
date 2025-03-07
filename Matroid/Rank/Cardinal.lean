@@ -37,9 +37,9 @@ both for itself and all its minors.
 It is not the case that all matroids are `InvariantCardinalRank`,
 since the equicardinality of bases in general matroids is independent of ZFC
 (see the module docstring of `Mathlib.Data.Matroid.Basic`).
-Lemmas like `Matroid.Base.cardinalMk_diff_comm` become true for all matroids
+Lemmas like `Matroid.IsBase.cardinalMk_diff_comm` become true for all matroids
 only if they are weakened by replacing `Cardinal.mk`
-with the cruder `ℕ∞`-valued `Set.encard`; see, for example, `Matroid.Base.encard_diff_comm`.
+with the cruder `ℕ∞`-valued `Set.encard`; see, for example, `Matroid.IsBase.encard_diff_comm`.
 
 # Implementation Details
 
@@ -80,7 +80,7 @@ section Finite
   simp only [nonpos_iff_eq_zero, mk_eq_zero_iff, isEmpty_coe_sort, eq_loopyOn_iff,
     exists_and_right, exists_eq', true_and]
   refine ⟨fun h X hX hXi ↦ ?_, fun h B hB ↦ h _ hB.subset_ground hB.indep⟩
-  obtain ⟨B, hB, hXB⟩ := hXi.exists_base_superset
+  obtain ⟨B, hB, hXB⟩ := hXi.exists_isBase_superset
   simpa [h hB] using hXB
 
 theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
@@ -88,7 +88,7 @@ theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
   exact ⟨by rintro ⟨E, rfl⟩; rfl, fun h ↦ ⟨M.E, h⟩⟩
 
 /-- A version of `Matroid.cRk_eq_zero_iff` applying to sets not contained in the ground set. -/
-theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.closure ∅ := by
+theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
     restrict_ground_eq, subset_antisymm_iff]
   simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
@@ -99,26 +99,27 @@ theorem cRk_le_one_iff [Nonempty α] (hX : X ⊆ M.E := by aesop_mat) :
     M.cRk X ≤ 1 ↔ ∃ e, X ⊆ M.closure {e} := by
   simp_rw [cRk_le_iff, mk_le_one_iff_set_subsingleton]
   refine ⟨fun h ↦ ?_, fun ⟨e, he⟩ I hIX ↦ ?_⟩
-  · obtain ⟨I, hI⟩ := M.exists_basis X
-    obtain rfl | ⟨e, rfl⟩ := (h hI.basis').eq_empty_or_singleton
+  · obtain ⟨I, hI⟩ := M.exists_isBasis X
+    obtain rfl | ⟨e, rfl⟩ := (h hI.isBasis').eq_empty_or_singleton
     · exact ⟨Classical.arbitrary α, hI.subset_closure.trans (M.closure_subset_closure (by simp))⟩
     exact ⟨e, hI.subset_closure⟩
-  obtain ⟨J, hJ, hIJ⟩ := hIX.indep.subset_basis_of_subset (hIX.subset.trans he)
-  obtain ⟨J', hJ'⟩ := M.exists_basis' {e}
+  obtain ⟨J, hJ, hIJ⟩ := hIX.indep.subset_isBasis_of_subset (hIX.subset.trans he)
+  obtain ⟨J', hJ'⟩ := M.exists_isBasis' {e}
   refine encard_le_one_iff_subsingleton.1 ((encard_le_encard hIJ).trans ?_)
-  rw [← hJ'.basis_closure_right.encard_eq_encard hJ]
+  rw [← hJ'.isBasis_closure_right.encard_eq_encard hJ]
   exact (encard_le_encard hJ'.subset).trans (by simp)
 
 lemma crk_lt_aleph0_iff : M.cRk X < aleph0 ↔ M.IsRkFinite X := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨I, hI⟩ := M.exists_basis' X
+  · obtain ⟨I, hI⟩ := M.exists_isBasis' X
     exact hI.isRkFinite_of_finite <| by simpa using hI.cardinalMk_le_cRk.trans_lt h
 
-  obtain ⟨I, hI⟩ := M.exists_basis' X
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
   refine lt_of_le_of_lt ?_ (mk_lt_aleph0_iff.2 (hI.finite_of_isRkFinite h))
   rw [cRk_le_iff]
   intro J hJ
-  rw [← toENat_strictMonoOn.le_iff_le, toENat_mk, toENat_mk, hI.encard_eq_encard hJ]
+  rw [← toENat_strictMonoOn.le_iff_le, toENat_cardinalMk, toENat_cardinalMk,
+    hI.encard_eq_encard hJ]
   · simp [(hJ.finite_of_isRkFinite h).countable]
   simp [(hI.finite_of_isRkFinite h).countable]
 
@@ -126,9 +127,9 @@ lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
   rw [← cRk_ground, crk_lt_aleph0_iff, isRkFinite_ground_iff_rankFinite]
 
 @[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
-  obtain ⟨B, hB⟩ := M.exists_base
-  obtain (h | h) := M.finite_or_inrankFinite
-  · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_mk]
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain (h | h) := M.finite_or_rankInfinite
+  · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_cardinalMk]
   rw [← hB.encard_eq_eRank, hB.infinite.encard_eq, toENat_eq_top, ← not_lt, cRank_lt_aleph0_iff]
   exact M.not_rankFinite
 

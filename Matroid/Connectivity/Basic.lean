@@ -12,13 +12,13 @@ section Connected
 
 variable {C K : Set α} {e f g : α}
 
-def ConnectedTo (M : Matroid α) (e f : α) := (e = f ∧ e ∈ M.E) ∨ ∃ C, M.Circuit C ∧ e ∈ C ∧ f ∈ C
+def ConnectedTo (M : Matroid α) (e f : α) := (e = f ∧ e ∈ M.E) ∨ ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C
 
-lemma ConnectedTo.exists_circuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
-    ∃ C, M.Circuit C ∧ e ∈ C ∧ f ∈ C := by
+lemma ConnectedTo.exists_isCircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
+    ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
   simpa [ConnectedTo, hne] using h
 
-lemma Circuit.mem_connectedTo_mem (hC : M.Circuit C) (heC : e ∈ C) (hfC : f ∈ C) :
+lemma IsCircuit.mem_connectedTo_mem (hC : M.IsCircuit C) (heC : e ∈ C) (hfC : f ∈ C) :
     M.ConnectedTo e f :=
   .inr ⟨C, hC, heC, hfC⟩
 
@@ -46,23 +46,23 @@ lemma ConnectedTo.mem_ground_right (h : M.ConnectedTo e f) : f ∈ M.E :=
 @[simp] lemma connectedTo_self_iff : M.ConnectedTo e e ↔ e ∈ M.E :=
   ⟨fun h ↦ h.mem_ground_left, connectedTo_self⟩
 
-lemma ConnectedTo.nonloop_left_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.Nonloop e := by
-  obtain ⟨C, hC, heC, hfC⟩ := h.exists_circuit_of_ne hef
-  exact hC.nonloop_of_mem ⟨e, heC, f, hfC, hef⟩ heC
+lemma ConnectedTo.isNonloop_left_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.IsNonloop e := by
+  obtain ⟨C, hC, heC, hfC⟩ := h.exists_isCircuit_of_ne hef
+  exact hC.isNonloop_of_mem ⟨e, heC, f, hfC, hef⟩ heC
 
-lemma ConnectedTo.nonloop_right_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.Nonloop f :=
-  h.symm.nonloop_left_of_ne hef.symm
+lemma ConnectedTo.isNonloop_right_of_ne (h : M.ConnectedTo e f) (hef : e ≠ f) : M.IsNonloop f :=
+  h.symm.isNonloop_left_of_ne hef.symm
 
 lemma ConnectedTo.to_dual (h : M.ConnectedTo e f) : M✶.ConnectedTo e f := by
-  obtain (rfl | hne) := eq_or_ne e f; exact connectedTo_self h.mem_ground_left
-  obtain ⟨C, hC, heC, hfC⟩ := h.exists_circuit_of_ne hne
+  obtain rfl | hne := eq_or_ne e f; exact connectedTo_self h.mem_ground_left
+  obtain ⟨C, hC, heC, hfC⟩ := h.exists_isCircuit_of_ne hne
   have hpara : (M ／ (C \ {e,f})).Parallel e f := by
-    rw [parallel_iff_circuit hne]
-    apply hC.contract_diff_circuit (by simp) (by simp [pair_subset_iff, heC, hfC])
-  obtain ⟨B, hB, heB⟩ := hpara.nonloop_left.exists_mem_base
-  have hK := fundCocircuit_cocircuit heB hB
-  refine Circuit.mem_connectedTo_mem hK.of_contract.circuit (mem_fundCocircuit _ _ _) ?_
-  exact hpara.mem_cocircuit_of_mem hK (mem_fundCocircuit _ _ _)
+    rw [parallel_iff_isCircuit hne]
+    apply hC.contract_diff_isCircuit (by simp) (by simp [pair_subset_iff, heC, hfC])
+  obtain ⟨B, hB, heB⟩ := hpara.isNonloop_left.exists_mem_isBase
+  have hK := fundCocircuit_isCocircuit heB hB
+  refine IsCircuit.mem_connectedTo_mem hK.of_contract.isCircuit (mem_fundCocircuit _ _ _) ?_
+  exact hpara.mem_isCocircuit_of_mem hK (mem_fundCocircuit _ _ _)
 
 lemma ConnectedTo.of_dual (h : M✶.ConnectedTo e f) : M.ConnectedTo e f := by
   simpa using h.to_dual
@@ -70,20 +70,20 @@ lemma ConnectedTo.of_dual (h : M✶.ConnectedTo e f) : M.ConnectedTo e f := by
 @[simp] lemma connectedTo_dual_iff : M✶.ConnectedTo e f ↔ M.ConnectedTo e f :=
   ⟨ConnectedTo.of_dual, ConnectedTo.to_dual⟩
 
-lemma Cocircuit.mem_connectedTo_mem (hK : M.Cocircuit K) (heK : e ∈ K) (hfK : f ∈ K) :
+lemma IsCocircuit.mem_connectedTo_mem (hK : M.IsCocircuit K) (heK : e ∈ K) (hfK : f ∈ K) :
     M.ConnectedTo e f :=
-  (hK.circuit.mem_connectedTo_mem heK hfK).of_dual
+  (hK.isCircuit.mem_connectedTo_mem heK hfK).of_dual
 
-lemma ConnectedTo.exists_cocircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
-    ∃ K, M.Cocircuit K ∧ e ∈ K ∧ f ∈ K :=
-  h.to_dual.exists_circuit_of_ne hne
+lemma ConnectedTo.exists_isCocircuit_of_ne (h : M.ConnectedTo e f) (hne : e ≠ f) :
+    ∃ K, M.IsCocircuit K ∧ e ∈ K ∧ f ∈ K :=
+  h.to_dual.exists_isCircuit_of_ne hne
 
 lemma ConnectedTo.of_restrict {R : Set α} (hR : R ⊆ M.E) (hef : (M ↾ R).ConnectedTo e f) :
     M.ConnectedTo e f := by
   obtain (rfl | hne) := eq_or_ne e f
   · simp [hR hef.mem_ground_left]
-  obtain ⟨C, hC, heC, hfC⟩ := hef.exists_circuit_of_ne hne
-  rw [restrict_circuit_iff] at hC
+  obtain ⟨C, hC, heC, hfC⟩ := hef.exists_isCircuit_of_ne hne
+  rw [restrict_isCircuit_iff] at hC
   exact hC.1.mem_connectedTo_mem heC hfC
 
 lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.ConnectedTo e f := by
@@ -94,24 +94,24 @@ lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M
   rw [contract_dual_eq_dual_delete] at hef
   exact hef.of_delete.of_dual
 
-lemma ConnectedTo.of_minor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
+lemma ConnectedTo.of_isMinor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
     M.ConnectedTo e f := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact hef.of_delete.of_contract
 
-private lemma connectedTo_of_indep_hyperplane_of_not_coloop {I : Set α} (hI : M.Indep I)
-    (hI' : M.Hyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.Coloop f) :
+private lemma connectedTo_of_indep_isHyperplane_of_not_coloop {I : Set α} (hI : M.Indep I)
+    (hI' : M.IsHyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.Coloop f) :
     M.ConnectedTo e f := by
-  have hB : M.Base (insert e I) := by
-    refine Indep.base_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
-    · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.flat.closure]
-  simp only [hB.mem_coloop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
-    and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
+  have hB : M.IsBase (insert e I) := by
+    refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
+    · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
+  simp only [hB.mem_coisLoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+    not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_not_mem hxI,
-      hI'.flat.closure]
+      hI'.isFlat.closure]
     exact ⟨hx, hxI⟩
-  have hC := Base.fundCircuit_circuit hB hx (by simp [hxe, hxI])
+  have hC := IsBase.fundCircuit_isCircuit hB hx (by simp [hxe, hxI])
 
   refine hC.mem_connectedTo_mem (by_contra fun heC ↦ ?_) hfC
 
@@ -124,30 +124,30 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   obtain (rfl | hne) := eq_or_ne e₁ e₂; simp [h₁.mem_ground_left]
   obtain (rfl | hne₁) := eq_or_ne e₁ f; assumption
   obtain (rfl | hne₂) := eq_or_ne f e₂; assumption
-  obtain ⟨C₁, hC₁, heC₁, hfC₁⟩ := h₁.exists_circuit_of_ne hne₁
-  obtain ⟨C₂, hC₂, hfC₂, h⟩ := h₂.exists_circuit_of_ne hne₂
-  obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_cocircuit_of_ne hne₁
-  obtain ⟨C₂, hC₂, hfC₂, he₂C₂⟩ := h₂.exists_circuit_of_ne hne₂
+  obtain ⟨C₁, hC₁, heC₁, hfC₁⟩ := h₁.exists_isCircuit_of_ne hne₁
+  obtain ⟨C₂, hC₂, hfC₂, h⟩ := h₂.exists_isCircuit_of_ne hne₂
+  obtain ⟨K₁, hK₁, he₁K₁, hfK₁⟩ := h₁.exists_isCocircuit_of_ne hne₁
+  obtain ⟨C₂, hC₂, hfC₂, he₂C₂⟩ := h₂.exists_isCircuit_of_ne hne₂
 
   by_cases he₂K₁ : e₂ ∈ K₁; exact (hK₁.mem_connectedTo_mem he₁K₁ he₂K₁)
 
   have hC₂i : M.Indep (C₂ \ K₁) := (hC₂.diff_singleton_indep hfC₂).subset
       (subset_diff_singleton diff_subset (by simp [hfK₁]))
 
-  have hH := hK₁.compl_hyperplane
+  have hH := hK₁.compl_isHyperplane
 
   obtain ⟨J, hJ, he₂J⟩ :=
-    hC₂i.subset_basis_of_subset (diff_subset_diff_left hC₂.subset_ground) hH.subset_ground
+    hC₂i.subset_isBasis_of_subset (diff_subset_diff_left hC₂.subset_ground) hH.subset_ground
 
-  refine (connectedTo_of_indep_hyperplane_of_not_coloop ?_
-    (hH.basis_hyperplane_delete hJ) ?_ ?_ ?_).of_delete
+  refine (connectedTo_of_indep_isHyperplane_of_not_coloop ?_
+    (hH.isBasis_isHyperplane_delete hJ) ?_ ?_ ?_).of_delete
   · simp [disjoint_sdiff_right, hJ.indep]
   · simpa [h₁.mem_ground_left, he₁K₁] using
       not_mem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])
   · exact he₂J ⟨he₂C₂, he₂K₁⟩
 
-  refine Circuit.not_coloop_of_mem ?_ he₂C₂
-  rwa [delete_circuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
+  refine IsCircuit.not_coisLoop_of_mem ?_ he₂C₂
+  rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
     diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
 
 @[mk_iff]
@@ -171,29 +171,29 @@ lemma Connected.of_dual (hM : M✶.Connected) : M.Connected := by
 lemma Coloop.not_connected (he : M.Coloop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   obtain ⟨f, hfE, hfe⟩ := hE.exists_ne e
   rintro ⟨-, hconn⟩
-  obtain ⟨K, hK, heK, -⟩ := (hconn he.mem_ground hfE).exists_circuit_of_ne hfe.symm
-  exact he.not_mem_circuit hK heK
+  obtain ⟨K, hK, heK, -⟩ := (hconn he.mem_ground hfE).exists_isCircuit_of_ne hfe.symm
+  exact he.not_mem_isCircuit hK heK
 
-lemma Loop.not_connected (he : M.Loop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
+lemma IsLoop.not_connected (he : M.IsLoop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   rw [← connected_dual_iff]
   exact he.dual_coloop.not_connected hE
 
 lemma Connected.loopless (hM : M.Connected) (hE : M.E.Nontrivial) : M.Loopless := by
-  rw [loopless_iff_forall_not_loop]
+  rw [loopless_iff_forall_not_isLoop]
   exact fun e _ hl ↦ hl.not_connected hE hM
 
-lemma Connected.exists_circuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E) (hne : e ≠ f) :
-    ∃ C, M.Circuit C ∧ e ∈ C ∧ f ∈ C :=
-  (h.2 he hf).exists_circuit_of_ne hne
+lemma Connected.exists_isCircuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : f ∈ M.E)
+    (hne : e ≠ f) : ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C :=
+  (h.2 he hf).exists_isCircuit_of_ne hne
 
-lemma Connected.exists_circuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e ∈ M.E)
-    (hf : f ∈ M.E) : ∃ C, M.Circuit C ∧ e ∈ C ∧ f ∈ C := by
+lemma Connected.exists_isCircuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e ∈ M.E)
+    (hf : f ∈ M.E) : ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
   obtain (rfl | hne) := eq_or_ne e f
   · obtain (he' | he') := em (M.Coloop e)
     · exact False.elim <| he'.not_connected hM h
-    obtain ⟨C, hC, heC⟩ := exists_mem_circuit_of_not_coloop he he'
+    obtain ⟨C, hC, heC⟩ := exists_mem_isCircuit_of_not_coloop he he'
     exact ⟨C, hC, heC, heC⟩
-  exact (h.2 he hf).exists_circuit_of_ne hne
+  exact (h.2 he hf).exists_isCircuit_of_ne hne
 
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
@@ -258,17 +258,17 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   classical
   refine ⟨by_contra fun hinf ↦ ?_⟩
 
-  have hcinf : ∀ e ∈ M.E, {C | M.Circuit C ∧ e ∈ C}.Infinite := by
+  have hcinf : ∀ e ∈ M.E, {C | M.IsCircuit C ∧ e ∈ C}.Infinite := by
     intro e he hfin
     have hfin' := Set.Finite.sUnion hfin (fun C hC ↦ hC.1.finite)
     obtain ⟨f, hf⟩ := (Infinite.diff hinf hfin').nonempty
-    obtain ⟨C, hC, heC, hfC⟩ := hM.exists_circuit (Infinite.nontrivial hinf) he hf.1
+    obtain ⟨C, hC, heC, hfC⟩ := hM.exists_isCircuit (Infinite.nontrivial hinf) he hf.1
     exact hf.2 ⟨C, ⟨hC, heC⟩, hfC⟩
 
   -- Choose an element `e₀`, a sequence of distinct circuits containing `e₀`, and an enumeration `e`
   -- of the union of these circuits.
   obtain ⟨e, Cs, hCs, he⟩ : ∃ (e : ℕ ↪ α) (Cs : ℕ ↪ Set α),
-      (∀ i, e 0 ∈ Cs i ∧ M.Circuit (Cs i)) ∧ range e = ⋃ i, Cs i := by
+      (∀ i, e 0 ∈ Cs i ∧ M.IsCircuit (Cs i)) ∧ range e = ⋃ i, Cs i := by
     obtain ⟨e₀, he₀⟩ := Set.Infinite.nonempty hinf
     set Cs' := (hcinf e₀ he₀).natEmbedding
     set U := (⋃ i, (Cs' i).1)
@@ -282,7 +282,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
 
     refine ⟨e.toEmbedding.trans <| Function.Embedding.subtype _,
       Cs'.trans <| Function.Embedding.subtype _, fun i ↦ ?_, ?_⟩
-    · suffices M.Circuit (Cs' i).1 ∧ e₀ ∈ (Cs' i).1 by simpa [e, and_comm]
+    · suffices M.IsCircuit (Cs' i).1 ∧ e₀ ∈ (Cs' i).1 by simpa [e, and_comm]
       exact (Cs' i).2
     suffices U = ⋃ i, (Cs' i).1 by simpa [Function.Embedding.trans]
     rfl
@@ -296,12 +296,12 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   set X := X Cs e with hX
   set cSet := cSet Cs e
 
-  have h0 : ∀ {i C}, C ∈ cSet i → (e 0 ∈ C ∧ M'.Circuit C) := by
+  have h0 : ∀ {i C}, C ∈ cSet i → (e 0 ∈ C ∧ M'.IsCircuit C) := by
     refine @fun i C h ↦ ?_
     obtain ⟨j, rfl⟩ : ∃ (i : ℕ), Cs i = C := by simpa [cSet, Matroid.cSet] using
       (show C ∈ cSet 0 from cSet_antitone (zero_le _) h)
     exact ⟨(hCs j).1,
-      (hCs j).2.circuit_restrict_of_subset <|(subset_iUnion ..).trans he.symm.subset⟩
+      (hCs j).2.isCircuit_restrict_of_subset <|(subset_iUnion ..).trans he.symm.subset⟩
 
   have hXE : ⋃ i, X i ⊆ M'.E := by
     refine iUnion_subset fun i ↦ ?_
@@ -313,7 +313,8 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   have hd : M'.Dep (⋃ i, X i) := by
     rw [← not_indep_iff hXE]
     refine fun hi ↦ ?_
-    obtain ⟨K, hK, hKX⟩ := hi.exists_cocircuit_inter_eq_mem (e := e 0) (mem_iUnion_of_mem 0 <| rfl)
+    obtain ⟨K, hK, hKX⟩ := hi.exists_isCocircuit_inter_eq_mem (e := e 0)
+      (mem_iUnion_of_mem 0 <| rfl)
     obtain ⟨A, rfl⟩ := subset_range_iff_exists_image_eq.1 <| hK.subset_ground
     obtain ⟨m, hm : A ⊆ Iic m⟩ := (Finite.of_finite_image hK.finite e.injective.injOn).bddAbove
     obtain ⟨C, hC : C ∈ cSet m⟩ := (cSet_infinite Cs e m).nonempty
@@ -326,9 +327,9 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
       rw [cSet_inter_image_Iic (h0 hC).1 hC ]
       exact subset_iUnion _ m
 
-    exact (h0 hC).2.inter_cocircuit_ne_singleton hK hi
+    exact (h0 hC).2.inter_isCocircuit_ne_singleton hK hi
 
-  obtain ⟨C, hCX, hC⟩ := hd.exists_circuit_subset
+  obtain ⟨C, hCX, hC⟩ := hd.exists_isCircuit_subset
   obtain ⟨B, hB, hCB⟩ := finite_subset_iUnion hC.finite hCX
   obtain ⟨m, hm : ∀ _, _⟩ := hB.bddAbove
 

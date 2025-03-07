@@ -102,7 +102,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
   indep_image_iff' I := by rw [← not_dep_iff, he, not_dep_iff]
 
 @[simps] def Iso.ofForallBase (e : M.E ≃ N.E)
-    (he : ∀ (B : Set M.E), M.Base B ↔ N.Base (↑(e '' B))) : M ≂ N where
+    (he : ∀ (B : Set M.E), M.IsBase B ↔ N.IsBase (↑(e '' B))) : M ≂ N where
   toEquiv := e
   indep_image_iff' := by
     intro I
@@ -117,8 +117,8 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
     simpa using hIB
 
-lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e '' B)) := by
-  rw [base_iff_maximal_indep, maximal_subset_iff, ← e.indep_image_iff, and_iff_right hB.indep]
+lemma Iso.isBase_image (e : M ≂ N) {B : Set M.E} (hB : M.IsBase B) : N.IsBase (↑(e '' B)) := by
+  rw [isBase_iff_maximal_indep, maximal_subset_iff, ← e.indep_image_iff, and_iff_right hB.indep]
   intro I hI h'
   obtain ⟨I, rfl⟩ := Subset.eq_image_val hI.subset_ground
   replace hB := hB.eq_of_subset_indep (e.symm.image_indep hI)
@@ -127,8 +127,8 @@ lemma Iso.base_image (e : M ≂ N) {B : Set M.E} (hB : M.Base B) : N.Base (↑(e
   simp only [image_subset_iff, preimage_val_image_val_eq_self] at h'
   simp [hB h', image_image]
 
-lemma Iso.base_image_iff (e : M ≂ N) {B : Set M.E} : M.Base B ↔ N.Base (↑(e '' B)) :=
-  ⟨e.base_image, fun h ↦ by simpa using e.symm.base_image h⟩
+lemma Iso.isBase_image_iff (e : M ≂ N) {B : Set M.E} : M.IsBase B ↔ N.IsBase (↑(e '' B)) :=
+  ⟨e.isBase_image, fun h ↦ by simpa using e.symm.isBase_image h⟩
 
 lemma Iso.nonempty_right (e : M ≂ N) [M.Nonempty] : N.Nonempty := by
   obtain ⟨x,hx⟩ := M.ground_nonempty
@@ -146,9 +146,9 @@ def empty_iso_empty (α β : Type*) : (emptyOn α) ≂ emptyOn β where
 
 section map
 
-lemma Iso.basis_image_iff (e : M ≂ N) {I X : Set M.E} :
-    M.Basis I X ↔ N.Basis ↑(e '' I) ↑(e '' X) := by
-  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, basis_iff_maximal,
+lemma Iso.isBasis_image_iff (e : M ≂ N) {I X : Set M.E} :
+    M.IsBasis I X ↔ N.IsBasis ↑(e '' I) ↑(e '' X) := by
+  simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, isBasis_iff_maximal,
     maximal_subset_iff, mem_setOf_eq, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
     preimage_image, and_congr_right_iff]
   intro hI hIX
@@ -264,11 +264,12 @@ section dual
 def Iso.dual (e : M ≂ N) : M✶ ≂ N✶ :=
   let e' : M✶.E ≃ N✶.E := ((Equiv.setCongr rfl).trans (e : M.E ≃ N.E)).trans (Equiv.setCongr rfl)
   Iso.ofForallBase e' (by
-    simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ, dual_base_iff]
+    simp only [dual_ground, image_subset_iff, Subtype.coe_preimage_self, subset_univ,
+      dual_isBase_iff]
     intro B
     simp_rw [show M.E = Subtype.val '' (univ : Set M.E) by simp,
       show N.E = Subtype.val '' (univ : Set N.E) by simp]
-    rw [← image_val_diff, ← image_val_diff, e.base_image_iff, image_diff, image_univ, e.range_eq]
+    rw [← image_val_diff, ← image_val_diff, e.isBase_image_iff, image_diff, image_univ, e.range_eq]
     · rfl
     exact (Equiv.injective (e : M.E ≃ N.E)))
 
@@ -324,8 +325,9 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
 @[simp] lemma isoOfForallImageclosure_apply {β : Type*} {N : Matroid β} (e : M.E ≃ N.E) (h)
     (x : M.E) : (isoOfForallImageclosure e h) x = e x := rfl
 
-lemma Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circuit ↑(e '' C) := by
-  simp_rw [circuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]
+lemma Iso.isCircuit_image (e : M ≂ N) {C : Set M.E} (hC : M.IsCircuit C) :
+    N.IsCircuit ↑(e '' C) := by
+  simp_rw [isCircuit_iff, ← e.dep_image_iff, and_iff_right hC.dep]
   intro I hI hIC
   obtain ⟨I,rfl⟩ := Subset.eq_image_val hI.subset_ground
   replace hC := hC.eq_of_dep_subset (e.symm.image_dep hI)
@@ -333,9 +335,10 @@ lemma Iso.circuit_image (e : M ≂ N) {C : Set M.E} (hC : M.Circuit C) : N.Circu
     preimage_subset_iff, image_val_inj] at hIC hC
   simp [← hC hIC]
 
-def Iso.ofForallCircuit (e : M.E ≃ N.E) (h : ∀ (C : Set M.E), M.Circuit ↑C ↔ N.Circuit ↑(e '' C)) :
+def Iso.ofForallIsCircuit (e : M.E ≃ N.E)
+    (h : ∀ (C : Set M.E), M.IsCircuit ↑C ↔ N.IsCircuit ↑(e '' C)) :
     M ≂ N := Iso.ofForallDep e (fun D ↦ by
-    rw [dep_iff_superset_circuit, dep_iff_superset_circuit]
+    rw [dep_iff_superset_isCircuit, dep_iff_superset_isCircuit]
     refine ⟨fun ⟨C, hCD, hC⟩ ↦ ?_, fun ⟨C, hCD, hC⟩ ↦ ?_⟩
     · obtain ⟨C, rfl⟩ := Subset.eq_image_val hC.subset_ground
       refine ⟨_, ?_, (h _).1 hC⟩
