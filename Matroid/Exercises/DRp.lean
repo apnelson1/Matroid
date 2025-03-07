@@ -81,3 +81,27 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   · sorry
   sorry
 -- gh repo clone apnelson1/Matroid
+
+theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
+    ∃ N, N ≤m M ∧ N.E = X ∪ Y ∧ N.conn X = M.connBetween X Y := by
+  by_cases hE : X ∪ Y = M.E
+  · refine ⟨M, IsMinor.refl, hE.symm, ?_⟩
+    have hY : Y = M.E \ X := sorry
+    subst hY
+    rw [conn, connBetween, eConnBetween_self_compl]
+  have he : ∃ e ∈ M.E, e ∉ X ∪ Y
+  · rw [← not_subset]
+    contrapose! hE
+    exact (union_subset hXE hYE).antisymm hE
+  obtain ⟨e, heE, heXY⟩ := he
+  have hdel : (M ＼ e).E.encard < M.E.encard := by
+    sorry
+  have hcon : (M ／ e).E.encard < M.E.encard := by
+    sorry
+  have t1 := TLT (M ／ e) hXY
+  have t2 := TLT (M ＼ e) hXY
+
+  sorry
+
+
+termination_by M.E.encard

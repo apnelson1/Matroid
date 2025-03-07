@@ -33,7 +33,7 @@ lemma noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :
   obtain ⟨hm⟩ := not_noUniformMinor_iff.1 hcon
   have hcon := (h.isoMinor hm).encard_le_of_unif_two
   simp only [Nat.cast_add, Nat.cast_ofNat, ENat.card_eq_coe_fintype_card] at hcon
-  rw [show (2 :ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
+  rw [show (2 : ℕ∞) = 1 + 1 from rfl, ← add_assoc, ENat.add_one_le_iff] at hcon
   · simp at hcon
   simp only [WithTop.add_ne_top, ne_eq, WithTop.one_ne_top, not_false_eq_true, and_true]
   exact ne_of_beq_false rfl
