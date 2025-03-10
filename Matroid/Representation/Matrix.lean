@@ -14,35 +14,35 @@ abbrev Matrix.rowSubmatrixOn {α β R : Type*} (A : Matrix α β R) (s : Set α)
     A.submatrix ((↑) : s → α) id
 
 
-notation:max A"["s", " t"]" => Matrix.submatrixOn A s t
+-- notation:max A"["s", " t"]" => Matrix.submatrixOn A s t
 
-notation:max A"["s",*]" => Matrix.rowSubmatrixOn A s
+-- notation:max A"["s",*]" => Matrix.rowSubmatrixOn A s
 
-lemma foo (A : Matrix α β 𝔽) (s : Set α) (t : Set β) (hst : A[s,t] = 0) :
-    LinearIndependent 𝔽 A ↔ LinearIndependent 𝔽 A[s,tᶜ] ∧ LinearIndependent 𝔽 A[sᶜ,*] := by
-  refine ⟨fun h ↦ ⟨?_, h.comp _ Subtype.val_injective⟩, fun h ↦ ?_⟩
-  · have hli := h.comp ((↑) : s → α) Subtype.val_injective
-    refine hli.map_injOn (f := LinearMap.funLeft 𝔽 𝔽 (Subtype.val : ↥tᶜ → β)) ?_
-    simp only [InjOn, SetLike.mem_coe, Finsupp.mem_span_range_iff_exists_finsupp, Finsupp.sum,
-      Function.comp_apply, funext_iff, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
-      LinearMap.funLeft, LinearMap.coe_mk, AddHom.coe_mk, Subtype.forall, mem_compl_iff,
-      forall_exists_index]
+-- lemma foo (A : Matrix α β 𝔽) (s : Set α) (t : Set β) (hst : A[s,t] = 0) :
+--     LinearIndependent 𝔽 A ↔ LinearIndependent 𝔽 A[s,tᶜ] ∧ LinearIndependent 𝔽 A[sᶜ,*] := by
+--   refine ⟨fun h ↦ ⟨?_, h.comp _ Subtype.val_injective⟩, fun h ↦ ?_⟩
+--   · have hli := h.comp ((↑) : s → α) Subtype.val_injective
+--     refine hli.map_injOn (f := LinearMap.funLeft 𝔽 𝔽 (Subtype.val : ↥tᶜ → β)) ?_
+--     simp only [InjOn, SetLike.mem_coe, Finsupp.mem_span_range_iff_exists_finsupp, Finsupp.sum,
+--       Function.comp_apply, funext_iff, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
+--       LinearMap.funLeft, LinearMap.coe_mk, AddHom.coe_mk, Subtype.forall, mem_compl_iff,
+--       forall_exists_index]
 
-    -- simp [DFunLike.ext_iff]
-    intro x x' hx y y' hy hxy i
-    rw [← hx, ← hy]
+--     -- simp [DFunLike.ext_iff]
+--     intro x x' hx y y' hy hxy i
+--     rw [← hx, ← hy]
 
 
-    ext i
-    intro x hx y hy hxy
-    simp at hx
-    simp [Finsupp.mem_span_range_iff_exists_finsupp] at hx
-    ext i
+--     ext i
+--     intro x hx y hy hxy
+--     simp at hx
+--     simp [Finsupp.mem_span_range_iff_exists_finsupp] at hx
+--     ext i
 
-    simp [LinearMap.funLeft_apply]
-  sorry
-    -- rw [linearIndependent_iff'] at h ⊢
-    -- simp only [Subtype.forall]
+--     simp [LinearMap.funLeft_apply]
+--   sorry
+--     -- rw [linearIndependent_iff'] at h ⊢
+--     -- simp only [Subtype.forall]
 
 
 

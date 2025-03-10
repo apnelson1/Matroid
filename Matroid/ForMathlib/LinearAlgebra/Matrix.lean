@@ -1,5 +1,8 @@
 import Mathlib.Data.Matrix.Rank
+import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.Data.Finset.Preimage
 import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
+import Matroid.ForMathlib.Minimal
 
 namespace Matrix
 
@@ -93,6 +96,14 @@ def IsRowBasis (R : Type*) [Semiring R] (A : Matrix m n R) (s : Set m) : Prop :=
 def IsColBasis (R : Type*) [Semiring R] (A : Matrix m n R) (t : Set n) : Prop :=
   Aᵀ.IsRowBasis R t
 
+lemma isRowBasis_univ (R : Type*) [Semiring R] (A : Matrix m n R) :
+    A.IsRowBasis R univ ↔ LinearIndependent R fun i ↦ A i := by
+  simp [IsRowBasis]
+
+lemma isColBasis_univ (R : Type*) [Semiring R] (A : Matrix m n R) :
+    A.IsColBasis R univ ↔ LinearIndependent R fun i ↦ Aᵀ i := by
+  simp [IsColBasis, isRowBasis_univ]
+
 lemma exists_isRowBasis (R : Type*) [DivisionRing R] (A : Matrix m n R) :
     ∃ s, A.IsRowBasis R s := by
   obtain ⟨s, -, hs⟩ := (linearIndepOn_empty R A).exists_maximal (subset_univ _)
@@ -174,6 +185,11 @@ lemma isColBasis_iff_of_span_row_eq {m₁ m₂ : Type*} [CommRing R] {A₁ : Mat
     A₁.IsColBasis R t ↔ A₂.IsColBasis R t := by
   rw [IsColBasis, IsRowBasis, linearIndepOn_col_eq_of_span_row_eq h, IsColBasis, IsRowBasis]
 
+lemma isRowBasis_iff_of_span_col_eq {n₁ n₂ : Type*} [CommRing R] {A₁ : Matrix m n₁ R}
+    {A₂ : Matrix m n₂ R} (h : span R (range A₁ᵀ) = span R (range A₂ᵀ)) (s : Set m) :
+    A₁.IsRowBasis R s ↔ A₂.IsRowBasis R s :=
+  isColBasis_iff_of_span_row_eq h s
+
 lemma IsColBasis.submatrix_isColBasis [Field R] (ht : A.IsColBasis R t) (hs : A.IsRowBasis R s) :
     (A.submatrix (fun x : s ↦ x) id).IsColBasis R t :=
   (isColBasis_iff_of_span_row_eq hs.span_submatrix_eq _).2 ht
@@ -228,25 +244,197 @@ lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : Linear
 
 section Submatrix
 
-variable [Ring R]
+variable [Semiring R]
 
 /-- If a column-submatrix of `A` has linearly independent rows, then so does `A`. -/
 theorem rows_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ ≃ m) (f : n₀ → n)
-    (h : LinearIndependent R (A.submatrix e f)) : LinearIndependent R A := by
+    (h : LinearIndependent R (fun i ↦ A.submatrix e f i)) : LinearIndependent R (fun i ↦ A i) := by
     classical
-  rw [linearIndependent_iff'] at h ⊢
-  intro s c hc i his
-  rw [← h (s.image e.symm) (c ∘ e) _ (e.symm i) (by simpa)]
-  · simp
-  ext j
-  convert congr_fun hc (f j)
-  simp
+  rw [linearIndependent_iff'ₛ] at h ⊢
+  intro s c c' hc i his
+  simpa using h (s.image e.symm) (c ∘ e) (c' ∘ e)
+    (funext fun j ↦ by simpa using congr_fun hc (f j)) (e.symm i) (by simpa)
 
 /-- If a row-submatrix of `A` has linearly independent columns, then so does `A`. -/
 theorem cols_linearIndependent_of_submatrix {m₀ n₀ : Type*} (e : m₀ → m) (f : n₀ ≃ n)
-    (h : LinearIndependent R (A.submatrix e f)ᵀ) : LinearIndependent R Aᵀ :=
+    (h : LinearIndependent R (fun i ↦ (A.submatrix e f)ᵀ i)) : LinearIndependent R (fun i ↦ Aᵀ i) :=
   rows_linearIndependent_of_submatrix f e h
 
+variable (R) in
+theorem rows_linearIndependent_iff_reindex {m₀ n₀ : Type*} (e : m₀ ≃ m) (f : n₀ ≃ n) :
+    LinearIndependent R (fun i ↦ A.submatrix e f i) ↔ LinearIndependent R (fun i ↦ A i) :=
+  ⟨fun h ↦ rows_linearIndependent_of_submatrix _ _ h,
+    fun h ↦ rows_linearIndependent_of_submatrix e.symm f.symm (by simpa)⟩
+
+variable (R) in
+theorem cols_linearIndependent_iff_reindex {m₀ n₀ : Type*} (e : m₀ ≃ m) (f : n₀ ≃ n) :
+    LinearIndependent R (fun i ↦ (A.submatrix e f)ᵀ i) ↔ LinearIndependent R (fun i ↦ Aᵀ i) :=
+  ⟨fun h ↦ cols_linearIndependent_of_submatrix _ _ h,
+    fun h ↦ cols_linearIndependent_of_submatrix e.symm f.symm (by simpa)⟩
+
 end Submatrix
+
+section Block
+
+variable {l m n o : Type*} [Semiring R]
+
+@[simp]
+lemma fromCols_zero_right_linearIndependent_iff (A : Matrix l n R) :
+    (LinearIndependent R fun i ↦ Matrix.fromCols A (0 : Matrix l o R) i)
+    ↔ LinearIndependent R fun i ↦ A i := by
+  refine ⟨fun h ↦ h.map_injOn (LinearMap.funLeft R R .inl) ?_, fun h ↦ ?_⟩
+  · simp only [InjOn, SetLike.mem_coe, Finsupp.mem_span_range_iff_exists_finsupp, Finsupp.sum,
+      LinearMap.funLeft, LinearMap.coe_mk, AddHom.coe_mk, forall_exists_index,
+      forall_apply_eq_imp_iff]
+    intro c c' h
+    suffices ∀ (a : n), ∑ x ∈ c.support, c x * A x a = ∑ x ∈ c'.support, c' x * A x a by
+      simpa [funext_iff]
+    exact fun a ↦ by simpa using congr_fun h a
+  /- `Function.ExtendByZero.linearMap` isn't type-heterogeneous, so we need to roll our own. -/
+  let f : (n → R) →ₗ[R] (n ⊕ o → R) := {
+    toFun := fun x ↦ Sum.elim x 0
+    map_add' := fun _ _ ↦ funext <| Sum.rec (by simp) (by simp)
+    map_smul' := fun _ _ ↦ funext <| Sum.rec (by simp) (by simp) }
+  exact h.map_injOn f <| by simp +contextual [f, InjOn, funext_iff]
+
+@[simp]
+lemma fromCols_zero_left_linearIndependent_iff (A : Matrix l o R) :
+    (LinearIndependent R fun i ↦ Matrix.fromCols (0 : Matrix l n R) A i)
+    ↔ LinearIndependent R fun i ↦ A i := by
+  rw [← fromCols_zero_right_linearIndependent_iff A (o := n),
+    ← rows_linearIndependent_iff_reindex R (Equiv.refl l) (Equiv.sumComm n o)]
+  convert Iff.rfl
+  ext i (j | j)
+  <;> simp [fromCols]
+
+lemma fromBlocks_linearIndependent_of_lower_triangular {R : Type*} [Ring R] {A : Matrix n l R}
+    {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ A i))
+    (hD : LinearIndependent R (fun i ↦ D i)) (B : Matrix n m R) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i) := by
+  rw [linearIndependent_iff'] at hA hD ⊢
+  intro s c hc i his
+  rw [← s.toLeft_disjSum_toRight, Finset.sum_disj_sum] at hc
+  simp only [funext_iff, Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
+    Sum.forall, fromBlocks_apply₁₁, fromBlocks_apply₂₁, zero_apply, mul_zero, Finset.sum_const_zero,
+    add_zero, fromBlocks_apply₁₂, fromBlocks_apply₂₂] at hc
+  have hin {j : n} (hj : j ∈ s.toLeft) : c (.inl j) = 0 :=
+    hA s.toLeft (c ∘ .inl) (by simpa [funext_iff] using hc.1) _ hj
+  cases i with
+  | inl i => exact hin (by simpa)
+  | inr i =>
+  refine hD s.toRight (c ∘ .inr) (funext fun j ↦ ?_) _ (by simpa)
+  convert hc.2 j
+  simp only [Function.comp_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, self_eq_add_left]
+  rw [Finset.sum_eq_zero]
+  exact fun i hi ↦ by simp [hin hi]
+
+
+
+
+
+-- lemma fromBlocks_zero_linearIndependent_of_diag' {R : Type*} [Ring R] {A : Matrix n l R}
+--     {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ A i))
+--     (hD : LinearIndependent R (fun i ↦ D i)) (B : Matrix n m R) :
+--     LinearIndependent R (fun i ↦ (Matrix.fromBlocks A 0 B D) i) := by
+--   sorry
+  -- simp_rw [linearIndependent_iff, Finsupp.linearCombination_apply] at *
+  -- intro l hl
+  -- specialize hA (l.comapDomain Sum.inl Sum.inl_injective.injOn)
+  -- specialize hD (l.comapDomain Sum.inr Sum.inr_injective.injOn)
+  -- simp only [Finsupp.sum, Finsupp.comapDomain_support, Finsupp.comapDomain_apply] at hA hD hl
+  -- specialize hA ?_
+  -- · ext j
+  --   convert congr_fun hl (Sum.inl j)
+  --   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
+  --   convert Finset.sum_preimage Sum.inl l.support Sum.inl_injective.injOn
+  --     (fun i ↦ l i * ((Matrix.fromBlocks A B 0 D) i (Sum.inl j)))
+  --   simp
+  -- ext (i | i)
+  -- · exact DFunLike.congr_fun hA i
+  -- refine DFunLike.congr_fun (hD ?_) i
+  -- ext j
+  -- convert congr_fun hl (Sum.inr j)
+  -- simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply]
+
+
+-- lemma fromBlocks_zero_linearIndependent_iff {R : Type*} [Ring R]
+--     {A : Matrix n l R} {B : Matrix n m R} {D : Matrix o m R} :
+--     LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i) ↔
+--     LinearIndependent R (fun i ↦ Matrix.fromCols A B i) ∧ LinearIndependent R (fun i ↦ D i) := by
+--   refine ⟨fun h ↦ ⟨h.comp Sum.inl Sum.inl_injective, ?_⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
+--   · rw [← fromCols_zero_left_linearIndependent_iff]
+--     exact h.comp Sum.inr Sum.inr_injective
+--   rw [linearIndependent_iff'] at h1 h2 ⊢
+--   intro s c hc i his
+--   rw [← s.toLeft_disjSum_toRight, Finset.sum_disj_sum] at hc
+--   simp [funext_iff] at hc
+
+--   have hin (j : n) (hj : j ∈ s.toLeft) : c (.inl j) = 0 := by
+
+--     refine h1 s.toLeft (c ∘ .inl) ?_ (by simpa) hj
+--     ext (k | k)
+--     · simpa using congr_fun hc (.inl k)
+
+--     -- simp
+--     -- replace hc := congr_fun hc (.inr k)
+--     -- simp
+--     -- simp at hc
+
+--   -- simp only [hin, zero_smul, Finset.sum_const_zero, zero_add] at hc
+--   cases i with
+--   | inl i => apply hin _ (by simpa)
+--   | inr i =>
+--   refine h2 s.toRight (c ∘ .inr) (funext fun j ↦ ?_) i (by simpa)
+--   convert congr_fun hc (.inr j)
+--   suffices ∑ x ∈ s.toLeft, c (Sum.inl x) * B x j = 0 by simpa
+--   exact Finset.sum_eq_zero fun x hx ↦ by simp [hin x hx]
+  -- by simpa using congr_fun hc (.inr j)
+
+
+
+  -- have := h1 s.toLeft (c ∘ .inl) sorry (.inr i)
+  -- refine h1 s.toLeft (c ∘ .inl) ?_ ?_ ?_his
+  --   sorry
+  -- cases i with
+  -- | inl i => exact hin i
+  -- | inr i =>
+
+  -- -- refine i.rec hin fun i ↦ ?_
+  -- refine h2 s.toRight (c₁ ∘ .inr) (c₂ ∘ .inr) ?_ i (by simpa)
+  -- ext j
+  -- replace hc := congr_fun hc (.inr j)
+  -- simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, fromBlocks_apply₁₂, smul_eq_mul,
+  --   fromBlocks_apply₂₂, hin] at hc
+  -- convert add_left_cancel hc <;> simp
+
+  -- cases i with
+  -- |
+
+  --   inl i =>
+  --   refine h1 s.toLeft (c₁ ∘ .inl) (c₂ ∘ .inl) ?_ i (by simpa)
+  --   ext (j | j)
+  --   · simpa using congr_fun hc (.inl j)
+
+
+  --   sorry
+  --   -- rw [← s.toLeft_disjSum_toRight, Finset.sum_disj_sum, Finset.sum_eq_zero (s := s.toRight),
+  --   --   add_zero] at hc
+  --   -- · sorry
+  --   -- sorry
+
+
+  -- | inr i =>
+
+
+
+  -- rw [← s.toLeft_disjSum_toRight]
+
+
+
+
+
+
+
+end Block
 
 end Matrix
