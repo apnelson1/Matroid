@@ -102,7 +102,7 @@ lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
   have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
     (span_mono (image_mono hIX.subset)).antisymm <| span_le.2 (v.isBasis'_iff.1 hIX).2.2
   rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).not_mem_span_iff,
-    hIX.indep.not_mem_closure_iff, and_comm, v.indep_iff]
+    hIX.indep.not_mem_closure_iff, v.indep_iff]
 
 lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
   ext e

@@ -39,7 +39,7 @@ lemma cRank_mono_col {n₀ : Type*} [Semiring R] (A : Matrix m n R) (c : n₀ �
 
 lemma cRank_lift_mono_row {m : Type u₁} {m₀ : Type u₂} {R : Type u} [Semiring R] (A : Matrix m n R)
     (r : m₀ → m) : lift.{u₁, max u₂ u} (A.submatrix r id).cRank ≤ lift.{u₂, max u₁ u} A.cRank := by
-  let f : (m → R) →ₗ[R] (m₀ → R) := (LinearMap.funLeft R R r)
+  let f : (m → R) →ₗ[R] (m₀ → R) := LinearMap.funLeft R R r
   have h_eq : Submodule.map f (span R (range Aᵀ)) = span R (range (A.submatrix r id)ᵀ) := by
     rw [LinearMap.map_span, ← image_univ, image_image, transpose_submatrix, range_submatrix_right]
     convert rfl
@@ -141,12 +141,11 @@ noncomputable def IsColBasis.basis [DivisionRing R] (ht : A.IsColBasis R t) :
     Basis t R <| span R (range Aᵀ) :=
   ht.isRowBasis_transpose.basis
 
--- lemma IsColBasis.ncard_eq [Field R] (h : A.IsColBasis R t) : t.ncard = A.rank' := by
---   simpa using congr_arg Cardinal.toNat h.basis.mk_eq_rank
-
 lemma IsColBasis.encard_eq [DivisionRing R] (h : A.IsColBasis R t) : t.encard = A.eRank := by
   simpa using congr_arg Cardinal.toENat h.basis.mk_eq_rank
 
+/-- If the row space of `A₁` is a subspace of the row space of `A₂`, then independence of
+a set of columns of `A₁` implies independence in `A₂`. -/
 theorem linearIndepOn_col_le_of_span_row_le {m₁ m₂ : Type*} [CommRing R] {A₁ : Matrix m₁ n R}
     {A₂ : Matrix m₂ n R} (h : span R (range A₁) ≤ span R (range A₂)) :
     LinearIndepOn R A₁ᵀ ≤ LinearIndepOn R A₂ᵀ := by
@@ -169,12 +168,14 @@ theorem linearIndepOn_row_le_of_span_col_le {n₁ n₂ : Type*} [CommRing R] {A�
     LinearIndepOn R A₁ ≤ LinearIndepOn R A₂ := by
   simpa using linearIndepOn_col_le_of_span_row_le h
 
+/-- Two matrices with the same row space have the same linearly independent sets of columns. -/
 lemma linearIndepOn_col_eq_of_span_row_eq {m₁ m₂ : Type*} [CommRing R] {A₁ : Matrix m₁ n R}
     {A₂ : Matrix m₂ n R} (h : span R (range A₁) = span R (range A₂)) :
     LinearIndepOn R A₁ᵀ = LinearIndepOn R A₂ᵀ :=
   (linearIndepOn_col_le_of_span_row_le h.le).antisymm
     (linearIndepOn_col_le_of_span_row_le h.symm.le)
 
+/-- Two matrices with the same column space have the same linearly independent sets of rows. -/
 lemma linearIndepOn_row_eq_of_span_col_eq {n₁ n₂ : Type*} [CommRing R] {A₁ : Matrix m n₁ R}
     {A₂ : Matrix m n₂ R} (h : span R (range A₁ᵀ) = span R (range A₂ᵀ)) :
     LinearIndepOn R A₁ = LinearIndepOn R A₂ := by
@@ -201,8 +202,8 @@ lemma IsRowBasis.submatrix_isRowBasis [Field R] (hs : A.IsRowBasis R s) (ht : A.
 /-- An auxiliary lemma used to prove `IsRowBasis.encard_eq`.
 It is difficult to make this as a claim within the proof itself,
 due to universe issues when swapping row/column types.  -/
-private lemma basis_encard_le_aux [Field R] (hs : A.IsRowBasis R s)
-    (ht : A.IsColBasis R t) : s.encard ≤ t.encard := by
+private lemma basis_encard_le_aux [Field R] (hs : A.IsRowBasis R s) (ht : A.IsColBasis R t) :
+    s.encard ≤ t.encard := by
   wlog hfin : t.Finite
   · simp [Infinite.encard_eq hfin]
   have := hfin.fintype
@@ -211,9 +212,8 @@ private lemma basis_encard_le_aux [Field R] (hs : A.IsRowBasis R s)
   simp
 
 /-- The `encard` of a row basis is equal to the rank of the column space.
-Unlike the column basis case, this requires a `Field` assumption.
-(One can also prove `s.encard = Aᵀ.eRank` with `h.IsColBasis.encard_eq`,
-and this just needs `DivisionRing`. ) -/
+Unlike the column basis case (where this is essentially just the definition), this needs a `Field`.
+One can also prove with `DivisionRing` that `s.encard = Aᵀ.eRank` using `h.IsColBasis.encard_eq` -/
 lemma IsRowBasis.encard_eq [Field R] (h : A.IsRowBasis R s) : s.encard = A.eRank := by
   obtain ⟨t, ht⟩ := A.exists_isColBasis
   rw [← ht.encard_eq]
@@ -221,7 +221,7 @@ lemma IsRowBasis.encard_eq [Field R] (h : A.IsRowBasis R s) : s.encard = A.eRank
 
 /-- The `eRank` of a (possibly infinite) matrix over a field is the `eRank` of its transpose.
 This is not true for division rings (as easily seen with the quaternion matrix [[1,i],[j,k]]),
-and is also untrue if `cRank` is cardinal_valued; for example, the matrix `id : Matrix (ℕ → ℚ) ℕ ℚ`
+and is also untrue if rank is cardinal_valued; for example, the matrix `id : Matrix (ℕ → ℚ) ℕ ℚ`
 has a countable-dimensional column space and an uncountable-dimensional row space. -/
 @[simp]
 lemma eRank_transpose [Field R] (A : Matrix m n R) : Aᵀ.eRank = A.eRank := by
@@ -239,8 +239,6 @@ lemma span_col_eq_top_of_linearIndependent_row [Fintype m] [Field R] (h : Linear
 lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : LinearIndependent R Aᵀ) :
     span R (range A) = ⊤ := by
   rw [← Aᵀ.span_col_eq_top_of_linearIndependent_row h, transpose_transpose]
-
-
 
 section Submatrix
 
@@ -307,7 +305,7 @@ lemma fromCols_zero_left_linearIndependent_iff (A : Matrix l o R) :
   ext i (j | j)
   <;> simp [fromCols]
 
-lemma fromBlocks_linearIndependent_of_lower_triangular {R : Type*} [Ring R] {A : Matrix n l R}
+lemma fromBlocks_linearIndependent_of_zero₁₂ {R : Type*} [Ring R] {A : Matrix n l R}
     {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ A i))
     (hD : LinearIndependent R (fun i ↦ D i)) (B : Matrix n m R) :
     LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i) := by
@@ -328,7 +326,11 @@ lemma fromBlocks_linearIndependent_of_lower_triangular {R : Type*} [Ring R] {A :
   rw [Finset.sum_eq_zero]
   exact fun i hi ↦ by simp [hin hi]
 
-
+-- lemma fromBlocks_linearIndependent_iff_of_zero₁₂ {R : Type*} [Ring R] {A : Matrix n l R}
+--     {B : Matrix n m R} {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ Aᵀ i)) :
+--     LinearIndependent R (Matrix.fromBlocks A B 0 D) ↔
+--     LinearIndependent R (Matrix.fromCols A B) ∧ LinearIndependent R D := by
+--   _
 
 
 
