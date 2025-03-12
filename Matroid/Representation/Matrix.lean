@@ -55,15 +55,24 @@ set_option linter.style.longLine false
 structure MatrixRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] (B : Set α) where
   toMatrix : Matrix B ↥(M.E \ B) 𝔽
   forall_indep_iff' : ∀ (X : Set B) (Y : Set ↥(M.E \ B)),
-    M.Indep (X ∪ Y) ↔ LinearIndependent 𝔽 (toMatrix.submatrix ((↑) : X → B) ((↑) : Y → ↥(M.E \ B)))ᵀ
+    M.Indep (X ∪ Y) ↔ LinearIndependent 𝔽 (toMatrix.submatrix (fun x : ↥Xᶜ ↦ x.1) (fun y : Y ↦ y.1))ᵀ
   -- forall_indep_iff : ∀ {I : Set α} (hI : I ⊆ M.E), M.Indep I ↔ LinearIndependent 𝔽
   --   (toMatrix.submatrix (fun x : ↥(B \ I) ↦ ⟨x, x.2.1⟩) (fun y : ↥(I \ B) ↦ ⟨y, hI y.2.1, y.2.2⟩))ᵀ
 
-noncomputable def Rep.IsStandard.toMatrixRep (v : M.Rep 𝔽 (B →₀ 𝔽)) (hv : v.IsStandard) :
+noncomputable def Rep.IsStandard.toMatrixRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽)) (hv : v.IsStandard') :
     M.MatrixRep 𝔽 B where
   toMatrix := .of fun e f ↦ v f.1 e
   forall_indep_iff' := by
+    classical
     intro X Y
+    rw [v.indep_iff]
+    have' := Matrix.fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows
+      (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (K := 𝔽) (B := .of fun i j ↦ v j i)
+      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i)
+
+    convert Matrix.fromBlocks_zero₂₂_cols_linearIndependent_iff
+      (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (R := 𝔽) (B := .of fun i j ↦ v j i)
+      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) ?_
     sorry
 
 

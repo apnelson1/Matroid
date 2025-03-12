@@ -235,10 +235,25 @@ lemma span_col_eq_top_of_linearIndependent_row [Fintype m] [Field R] (h : Linear
     rw [← eRank_toNat_eq_finrank, ← eRank_transpose, eRank_toNat_eq_finrank, transpose_transpose,
     Module.finrank_eq_card_basis (Basis.span h), Module.finrank_fintype_fun_eq_card]
 
+lemma span_col_eq_top_iff_linearIndependent_row {K : Type*} [Fintype m] [Field K]
+    {A : Matrix m n K} : span K (range Aᵀ) = ⊤ ↔ LinearIndependent K A := by
+  refine ⟨fun h ↦ ?_, span_col_eq_top_of_linearIndependent_row⟩
+  obtain ⟨s, hs⟩ := A.exists_isRowBasis
+  obtain ⟨s, rfl⟩ := s.toFinite.exists_finset_coe
+  have hr := hs.encard_eq
+  rw [eRank, cRank, h] at hr
+  obtain rfl : s = Finset.univ := by simpa [Finset.card_eq_iff_eq_univ] using hr
+  rw [← linearIndepOn_univ, ← Finset.coe_univ]
+  exact hs.prop
+
 /-- A matrix with finite linearly independent column set has full row space. -/
 lemma span_row_eq_top_of_linearIndependent_col [Fintype n] [Field R] (h : LinearIndependent R Aᵀ) :
     span R (range A) = ⊤ := by
   rw [← Aᵀ.span_col_eq_top_of_linearIndependent_row h, transpose_transpose]
+
+lemma span_row_eq_top_iff_linearIndependent_col {K : Type*} [Fintype n] [Field K]
+    {A : Matrix m n K} : span K (range A) = ⊤ ↔ LinearIndependent K Aᵀ :=
+  span_col_eq_top_iff_linearIndependent_row
 
 section Submatrix
 
@@ -274,48 +289,84 @@ end Submatrix
 
 section Block
 
-variable {l m n o : Type*} [Semiring R]
+
+
+variable {m m₁ m₂ n n₁ n₂ : Type*}
+
+section Ring
+variable [Ring R] {A : Matrix m₁ n₁ R} {B : Matrix m₁ n₂ R}
+  {C : Matrix m₂ n₁ R} {D : Matrix m₂ n₂ R}
 
 @[simp]
-lemma fromCols_zero_right_linearIndependent_iff (A : Matrix l n R) :
-    (LinearIndependent R fun i ↦ Matrix.fromCols A (0 : Matrix l o R) i)
+lemma fromCols_zero_right_linearIndependent_rows_iff (A : Matrix m n₁ R) :
+    (LinearIndependent R fun i ↦ Matrix.fromCols A (0 : Matrix m n₂ R) i)
     ↔ LinearIndependent R fun i ↦ A i := by
   refine ⟨fun h ↦ h.map_injOn (LinearMap.funLeft R R .inl) ?_, fun h ↦ ?_⟩
   · simp only [InjOn, SetLike.mem_coe, Finsupp.mem_span_range_iff_exists_finsupp, Finsupp.sum,
       LinearMap.funLeft, LinearMap.coe_mk, AddHom.coe_mk, forall_exists_index,
       forall_apply_eq_imp_iff]
     intro c c' h
-    suffices ∀ (a : n), ∑ x ∈ c.support, c x * A x a = ∑ x ∈ c'.support, c' x * A x a by
+    suffices ∀ (a : n₁), ∑ x ∈ c.support, c x * A x a = ∑ x ∈ c'.support, c' x * A x a by
       simpa [funext_iff]
     exact fun a ↦ by simpa using congr_fun h a
   /- `Function.ExtendByZero.linearMap` isn't type-heterogeneous, so we need to roll our own. -/
-  let f : (n → R) →ₗ[R] (n ⊕ o → R) := {
+  let f : (n₁ → R) →ₗ[R] (n₁ ⊕ n₂ → R) := {
     toFun := fun x ↦ Sum.elim x 0
     map_add' := fun _ _ ↦ funext <| Sum.rec (by simp) (by simp)
     map_smul' := fun _ _ ↦ funext <| Sum.rec (by simp) (by simp) }
   exact h.map_injOn f <| by simp +contextual [f, InjOn, funext_iff]
 
 @[simp]
-lemma fromCols_zero_left_linearIndependent_iff (A : Matrix l o R) :
-    (LinearIndependent R fun i ↦ Matrix.fromCols (0 : Matrix l n R) A i)
+lemma fromCols_zero_left_linearIndependent_rows_iff (A : Matrix m n₂ R) :
+    (LinearIndependent R fun i ↦ Matrix.fromCols (0 : Matrix m n₁ R) A i)
     ↔ LinearIndependent R fun i ↦ A i := by
-  rw [← fromCols_zero_right_linearIndependent_iff A (o := n),
-    ← rows_linearIndependent_iff_reindex R (Equiv.refl l) (Equiv.sumComm n o)]
+  rw [← fromCols_zero_right_linearIndependent_rows_iff A (n₂ := n₁),
+    ← rows_linearIndependent_iff_reindex R (Equiv.refl m) (Equiv.sumComm n₁ n₂)]
   convert Iff.rfl
   ext i (j | j)
   <;> simp [fromCols]
 
-lemma fromBlocks_linearIndependent_of_zero₁₂ {R : Type*} [Ring R] {A : Matrix n l R}
-    {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ A i))
-    (hD : LinearIndependent R (fun i ↦ D i)) (B : Matrix n m R) :
-    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i) := by
+variable (D) in
+lemma fromBlocks_zero₁₁_rows_linearIndependent_iff (hC : LinearIndependent R (fun i ↦ C i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks 0 B C D) i) ↔
+    LinearIndependent R (fun i ↦ B i) := by
+  refine ⟨fun h ↦ ?_, fun hB ↦ ?_⟩
+  · rw [← fromCols_zero_left_linearIndependent_rows_iff (n₁ := n₁)]
+    exact h.comp Sum.inl Sum.inl_injective
+  rw [linearIndependent_iff'] at hC hB ⊢
+  intro s c hc i his
+  rw [← s.toLeft_disjSum_toRight, Finset.sum_disj_sum] at hc
+  simp only [funext_iff, Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
+    Sum.forall, fromBlocks_apply₁₁, zero_apply, mul_zero, Finset.sum_const_zero, fromBlocks_apply₂₁,
+    zero_add, fromBlocks_apply₁₂, fromBlocks_apply₂₂] at hc
+  have hin {j : m₂} (hj : j ∈ s.toRight) : c (.inr j) = 0 :=
+    hC _ (c ∘ .inr) (by simpa [funext_iff] using hc.1) _ hj
+  cases i with
+  | inr i => exact hin (by simpa)
+  | inl i =>
+  refine hB s.toLeft (c ∘ .inl) (funext fun j ↦ ?_) _ (by simpa)
+  convert hc.2 j
+  simp only [Function.comp_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, self_eq_add_right]
+  rw [Finset.sum_eq_zero]
+  exact fun i hi ↦ by simp [hin hi]
+
+
+variable (B) in
+/-- If `A` has linearly independent rows, then `[[A,B],[0,D]]` has linearly independent rows
+if and only if `D` does. -/
+lemma fromBlocks_zero₁₂_rows_linearIndependent_iff (hA : LinearIndependent R (fun i ↦ A i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i) ↔
+    LinearIndependent R (fun i ↦ D i) := by
+  refine ⟨fun h ↦ ?_, fun hD ↦ ?_⟩
+  · rw [← fromCols_zero_left_linearIndependent_rows_iff (n₁ := n₁)]
+    exact h.comp Sum.inr Sum.inr_injective
   rw [linearIndependent_iff'] at hA hD ⊢
   intro s c hc i his
   rw [← s.toLeft_disjSum_toRight, Finset.sum_disj_sum] at hc
   simp only [funext_iff, Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
     Sum.forall, fromBlocks_apply₁₁, fromBlocks_apply₂₁, zero_apply, mul_zero, Finset.sum_const_zero,
     add_zero, fromBlocks_apply₁₂, fromBlocks_apply₂₂] at hc
-  have hin {j : n} (hj : j ∈ s.toLeft) : c (.inl j) = 0 :=
+  have hin {j : m₁} (hj : j ∈ s.toLeft) : c (.inl j) = 0 :=
     hA s.toLeft (c ∘ .inl) (by simpa [funext_iff] using hc.1) _ hj
   cases i with
   | inl i => exact hin (by simpa)
@@ -325,6 +376,128 @@ lemma fromBlocks_linearIndependent_of_zero₁₂ {R : Type*} [Ring R] {A : Matri
   simp only [Function.comp_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, self_eq_add_left]
   rw [Finset.sum_eq_zero]
   exact fun i hi ↦ by simp [hin hi]
+
+lemma fromBlocks_zero₁₁_cols_linearIndependent_iff (hB : LinearIndependent R (fun i ↦ Bᵀ i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks 0 B C D) i)ᵀ ↔
+    LinearIndependent R (fun i ↦ Cᵀ i) := by
+  rwa [fromBlocks_transpose, transpose_zero, fromBlocks_zero₁₁_rows_linearIndependent_iff]
+
+lemma fromBlocks_zero₂₂_rows_linearIndependent_iff (hB : LinearIndependent R (fun i ↦ B i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B C 0) i) ↔
+    LinearIndependent R (fun i ↦ C i) := by
+  rw [← fromBlocks_zero₁₁_rows_linearIndependent_iff A hB]
+  convert rows_linearIndependent_iff_reindex R (Equiv.sumComm m₁ m₂) (Equiv.sumComm n₁ n₂)
+  ext (i | i) (j | j) <;>
+  rfl
+
+lemma fromBlocks_zero₂₂_cols_linearIndependent_iff (hB : LinearIndependent R (fun i ↦ Cᵀ i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B C 0)ᵀ i)  ↔
+    LinearIndependent R (fun i ↦ Bᵀ i) := by
+  rwa [fromBlocks_transpose, transpose_zero, fromBlocks_zero₂₂_rows_linearIndependent_iff]
+
+variable (C) in
+/-- If `D` has linearly independent rows, then `[[A,0],[C,D]]` has linearly independent rows
+if and only if `A` does. -/
+lemma fromBlocks_zero₂₁_rows_linearIndependent_iff (hD : LinearIndependent R (fun i ↦ D i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A 0 C D) i) ↔
+    LinearIndependent R (fun i ↦ A i) := by
+  rw [← fromBlocks_zero₁₂_rows_linearIndependent_iff C hD (D := A)]
+  convert rows_linearIndependent_iff_reindex R (Equiv.sumComm m₁ m₂) (Equiv.sumComm n₁ n₂)
+  ext (i | i) (j | j) <;>
+  rfl
+
+variable (B) in
+/-- If `D` has linearly independent columns, then `[[A,B],[0,D]]` has linearly independent columns
+if and only if `A` does. -/
+lemma fromBlocks_zero₁₂_cols_linearIndependent_iff (hD : LinearIndependent R (fun i ↦ Dᵀ i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A B 0 D) i)ᵀ ↔
+    LinearIndependent R (fun i ↦ Aᵀ i) := by
+  rwa [fromBlocks_transpose, Matrix.transpose_zero, fromBlocks_zero₂₁_rows_linearIndependent_iff]
+
+variable (C) in
+/-- If `A` has linearly independent columns, then `[[A,0],[C,D]]` has linearly independent columns
+if and only if `D` does. -/
+lemma fromBlocks_zero₂₁_cols_linearIndependent_iff (hA : LinearIndependent R (fun i ↦ Aᵀ i)) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A 0 C D) i)ᵀ ↔
+    LinearIndependent R (fun i ↦ Dᵀ i) := by
+  rwa [fromBlocks_transpose, Matrix.transpose_zero, fromBlocks_zero₁₂_rows_linearIndependent_iff]
+
+/-- `[[A,0],[0,D]]` has linearly independent rows iff `A` and `D` do. -/
+@[simp]
+lemma fromBlocks_zero₁₁_zero₂₂_rows_linearIndependent_iff :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks A 0 0 D) i) ↔
+    LinearIndependent R A ∧ LinearIndependent R D := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h1, h2⟩ ↦ (fromBlocks_zero₁₂_rows_linearIndependent_iff _ h1).2 h2⟩
+  · rw [← fromCols_zero_right_linearIndependent_rows_iff (n₁ := n₁)]
+    exact h.comp Sum.inl Sum.inl_injective
+  rw [← fromCols_zero_left_linearIndependent_rows_iff (n₂ := n₂)]
+  exact h.comp Sum.inr Sum.inr_injective
+
+end Ring
+
+section Field
+
+
+variable {K : Type*} [Field K] {m m₁ m₂ n n₁ n₂ : Type*}
+{A : Matrix m₁ n₁ K} {B : Matrix m₁ n₂ K} {C : Matrix m₂ n₁ K} {D : Matrix m₂ n₂ K}
+
+/-- If `B` has linearly independent columns and has finite column type, then `[[0,B],[C,D]]` has
+linearly independent rows if and only if both `B` and `C` do. -/
+lemma fromBlocks_zero₁₁_rows_linearIndependent_iff_of_cols [Fintype n₂]
+    (hB : LinearIndependent K (fun i ↦ Bᵀ i)) :
+    LinearIndependent K (fun i ↦ (Matrix.fromBlocks 0 B C D) i)
+    ↔ LinearIndependent K (fun i ↦ B i) ∧ LinearIndependent K (fun i ↦ C i) := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨_, h⟩ ↦ by rwa [fromBlocks_zero₁₁_rows_linearIndependent_iff D h]⟩
+  · rw [← fromCols_zero_left_linearIndependent_rows_iff (n₁ := n₁)]
+    refine h.comp Sum.inl Sum.inl_injective
+  rw [linearIndependent_iff] at h ⊢
+  intro c hc0
+  have hsp : Finsupp.linearCombination K D c ∈ span K (range B) := by
+    simp [span_row_eq_top_of_linearIndependent_col hB]
+  obtain ⟨d, hd⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hsp
+  specialize h (c.embDomain Function.Embedding.inr - d.embDomain Function.Embedding.inl) ?_
+  · ext (j | j)
+    simp only [map_sub, Finsupp.linearCombination_embDomain]
+    · simpa [Finsupp.sum, Finsupp.linearCombination] using congr_fun hc0 j
+    convert sub_eq_zero_of_eq (congr_fun hd.symm j)
+    rw [@Finsupp.linearCombination_apply, Finsupp.sum_sub_index, Finsupp.sum_embDomain,
+      Finsupp.sum_embDomain]
+    · simp [Finsupp.linearCombination, Finsupp.sum]
+    simp [funext_iff, sub_smul]
+  ext i
+  convert DFunLike.congr_fun h (Function.Embedding.inr i)
+  rw [Finsupp.sub_apply, Finsupp.embDomain_apply, Finsupp.embDomain_notin_range _ _ _ (by simp),
+    sub_zero]
+
+/-- If `B` has linearly independent columns and has finite column type, then `[[0,B],[C,D]]` has
+linearly independent rows if and only if both `B` and `C` do. -/
+lemma fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows [Fintype m₂]
+    (hB : LinearIndependent K (fun i ↦ C i)) :
+    LinearIndependent K (fun i ↦ (Matrix.fromBlocks 0 B C D)ᵀ i)
+    ↔ LinearIndependent K (fun i ↦ Bᵀ i) ∧ LinearIndependent K (fun i ↦ Cᵀ i) := by
+  rw [fromBlocks_transpose, transpose_zero,
+    fromBlocks_zero₁₁_rows_linearIndependent_iff_of_cols (by simpa), and_comm]
+
+
+
+
+
+
+
+/- If `C` has linearly independent rows and has finite row type, then `[[0,B],[C,D]]` has
+linearly independent columns if and only if both `B` and `C` do. -/
+-- lemma foo [Fintype m₂] (hC : LinearIndependent R (fun i ↦ C i)) :
+--     LinearIndependent R (fun i ↦ (Matrix.fromBlocks 0 B C D)ᵀ i)
+--     ↔ LinearIndependent R (fun i ↦ Cᵀ i) ∧ LinearIndependent R (fun i ↦ Bᵀ i) := by
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   ·
+
+end Field
+
+
+
+
+
 
 -- lemma fromBlocks_linearIndependent_iff_of_zero₁₂ {R : Type*} [Ring R] {A : Matrix n l R}
 --     {B : Matrix n m R} {D : Matrix o m R} (hA : LinearIndependent R (fun i ↦ Aᵀ i)) :

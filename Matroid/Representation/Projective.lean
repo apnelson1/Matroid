@@ -88,6 +88,7 @@ end projFun
 
 namespace Projectivization
 
+/-- The natural `𝔽`-representable matroid whose ground set is a projective geometry over `𝔽`. -/
 @[simps! E]
 protected noncomputable def matroid (𝔽 W : Type*) [DivisionRing 𝔽]
     [AddCommGroup W] [Module 𝔽 W] : Matroid (Projectivization 𝔽 W) :=
@@ -169,6 +170,8 @@ variable {𝔽 : Type*} [Field 𝔽]
 
 namespace Matroid.Representable
 
+/-- Every simple `𝔽`-representable matroid is isomorphic to a
+spanning restriction of a projective geometry over `𝔽`. -/
 lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (hB : M.IsBase B) :
     ∃ i : M ≤ir Projectivization.matroid 𝔽 (B →₀ 𝔽), i.Spanning := by
   wlog hM : M.OnUniv generalizing M α with aux
@@ -198,11 +201,10 @@ lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (
     forall_apply_eq_imp_iff, Projectivization.Subspace.mem_span_image_rep_iff _ _ (v.ne_zero _)]
   exact fun e ↦ mem_of_mem_of_subset (by simp) (subset_span _)
 
--- lemma representable_iff_exists_isoRestr.{u} {α : Type*} {M : Matroid α} {𝔽 : Type*} [Field 𝔽]
---     [M.Simple] : M.Representable 𝔽 ↔ ∃ β : Type u,
-
+/-- A simple rank-`r` `F`-representable matroid has at most
+`1 + |𝔽| + |𝔽|^2 + ... + |𝔽|^(r-1)` elements. Also true for infinite `𝔽`. -/
 lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
-    M.E.encard ≤ ∑ i ∈ Finset.range (M.rank), (ENat.card 𝔽)^i := by
+    M.E.encard ≤ ∑ i ∈ Finset.range M.rank, (ENat.card 𝔽)^i := by
   classical
   obtain hle | hlt := le_or_lt M.eRank 1
   · obtain ⟨E, rfl⟩ := M.eq_unifOn_of_eRank_le_one hle
