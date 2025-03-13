@@ -55,25 +55,91 @@ set_option linter.style.longLine false
 structure MatrixRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] (B : Set α) where
   toMatrix : Matrix B ↥(M.E \ B) 𝔽
   forall_indep_iff' : ∀ (X : Set B) (Y : Set ↥(M.E \ B)),
-    M.Indep (X ∪ Y) ↔ LinearIndependent 𝔽 (toMatrix.submatrix (fun x : ↥Xᶜ ↦ x.1) (fun y : Y ↦ y.1))ᵀ
+    M.Indep (X ∪ Y) ↔
+    LinearIndependent 𝔽 (toMatrix.submatrix (fun x : ↥Xᶜ ↦ x.1) (fun y : Y ↦ y.1))ᵀ
   -- forall_indep_iff : ∀ {I : Set α} (hI : I ⊆ M.E), M.Indep I ↔ LinearIndependent 𝔽
-  --   (toMatrix.submatrix (fun x : ↥(B \ I) ↦ ⟨x, x.2.1⟩) (fun y : ↥(I \ B) ↦ ⟨y, hI y.2.1, y.2.2⟩))ᵀ
+  -- (toMatrix.submatrix (fun x : ↥(B \ I) ↦ ⟨x, x.2.1⟩) (fun y : ↥(I \ B) ↦ ⟨y, hI y.2.1, y.2.2⟩))ᵀ
 
-noncomputable def Rep.IsStandard.toMatrixRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽)) (hv : v.IsStandard') :
-    M.MatrixRep 𝔽 B where
+theorem linearIndepOn_image_injOn_iff {ι ι' R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {e : ι → ι'} {f : ι' → M} {s : Set ι} (he : InjOn e s) :
+    LinearIndepOn R (f ∘ e) s ↔ LinearIndepOn R f (e '' s) := by
+  rw [← linearIndependent_set_coe_iff, ← linearIndependent_set_coe_iff]
+  exact linearIndependent_equiv' (Equiv.Set.imageOfInjOn _ _ he) <|
+    by simp [funext_iff, Equiv.Set.imageOfInjOn]
+
+noncomputable def Rep.IsStandard.toMatrixRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽))
+    (hv : v.IsStandard') : M.MatrixRep 𝔽 B where
   toMatrix := .of fun e f ↦ v f.1 e
   forall_indep_iff' := by
     classical
     intro X Y
     rw [v.indep_iff]
-    have' := Matrix.fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows
+    have hli : LinearIndependent 𝔽 <| of (fun (i : X) (j : X) ↦ v (j : α) i) := by
+      convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
+      ext ⟨k, hk⟩ ⟨j, hj⟩
+      simp [hv.apply_eq_single, Pi.single_comm, Pi.single_apply]
+    have hli' : LinearIndependent 𝔽 <| (of (fun (i : X) (j : X) ↦ v (j : α) i))ᵀ := by
+      convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
+      ext ⟨k, hk⟩ ⟨j, hj⟩
+      simp [hv.apply_eq_single, Pi.single_apply]
+    convert Matrix.fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows
       (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (K := 𝔽) (B := .of fun i j ↦ v j i)
-      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i)
+      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) hli
+    swap
+    · rw [and_iff_left hli']
+      rfl
 
-    convert Matrix.fromBlocks_zero₂₂_cols_linearIndependent_iff
-      (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (R := 𝔽) (B := .of fun i j ↦ v j i)
-      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) ?_
-    sorry
+    -- have aux (Q : Set α) (P : Set Q) : LinearIndependent 𝔽
+    -- ((fun i : P ↦ (fromBlocks 0 (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i))ᵀ i) ∘ Sum.inl) ↔
+  -- LinearIndepOn 𝔽 (⇑v) (Subtype.val '' X)
+    let ψ : (B → 𝔽) ≃ₗ[𝔽] (↥Xᶜ ⊕ X → 𝔽) :=
+      LinearEquiv.funCongrLeft _ _ <| ((Equiv.Set.sumCompl X).symm.trans (Equiv.sumComm _ _)).symm
+
+
+    rw [linearIndepOn_union_iff sorry, linearIndependent_sum, ← ψ.symm.linearIndependent_iff]
+    convert Iff.rfl
+    · rw [← linearIndepOn_image_injOn_iff Subtype.val_injective.injOn,
+        ← linearIndependent_set_coe_iff]
+      convert Iff.rfl with i
+      ext j
+
+
+      simp [ψ, LinearMap.funLeft, Sum.swap, fromBlocks, Equiv.Set.sumCompl]
+      rw [IsStandard'.apply_eq_single hv ↑i]
+      simp
+
+
+
+    --  Equiv.sumCongr
+    --     (Equiv.Set.imageOfInjOn _ _ Subtype.val_injective.injOn)
+    --     (Equiv.Set.imageOfInjOn _ _ Subtype.val_injective.injOn) |>.trans
+    --     (Equiv.Set.union sorry).symm
+
+
+    -- rw [← linearIndependent_set_coe_iff, ← ψ.linearIndependent_iff]
+    -- refine linearIndependent_equiv' (R := 𝔽) e.symm ?_
+    -- ext ⟨i, hi⟩ ⟨j, hj⟩
+    -- by_cases hjX : ⟨j, hj⟩ ∈ X
+    -- obtain ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩ := hi
+    -- · simp [ψ, fromBlocks, Equiv.Set.union, Equiv.Set.union', e, hi, hjX]
+    --   split_ifs
+    --   simp [Equiv.Set.imageOfInjOn]
+    -- simp [e, ψ]
+
+
+
+
+
+
+
+
+
+
+
+    -- convert Matrix.fromBlocks_zero₂₂_cols_linearIndependent_iff
+    --   (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (R := 𝔽) (B := .of fun i j ↦ v j i)
+    --   (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) ?_
+    -- sorry
 
 
 
