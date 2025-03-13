@@ -52,7 +52,7 @@ set_option linter.style.longLine false
 
 -- lemma foo (𝔽 )
 
-structure MatrixRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] (B : Set α) where
+structure ReducedRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] (B : Set α) where
   toMatrix : Matrix B ↥(M.E \ B) 𝔽
   forall_indep_iff' : ∀ (X : Set B) (Y : Set ↥(M.E \ B)),
     M.Indep (X ∪ Y) ↔
@@ -67,46 +67,82 @@ theorem linearIndepOn_image_injOn_iff {ι ι' R M : Type*} [Ring R] [AddCommGrou
   exact linearIndependent_equiv' (Equiv.Set.imageOfInjOn _ _ he) <|
     by simp [funext_iff, Equiv.Set.imageOfInjOn]
 
-noncomputable def Rep.IsStandard.toMatrixRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽))
-    (hv : v.IsStandard') : M.MatrixRep 𝔽 B where
+lemma aux {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
+    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hYB : Disjoint Y B) :
+    LinearIndepOn 𝔽 Pᵀ (((↑) '' X) ∪ Y) ↔
+    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1))ᵀ := by
+  sorry
+
+lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set α) (hX : X ⊆ B)
+    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hYB : Disjoint Y B) :
+    LinearIndepOn 𝔽 Pᵀ (X ∪ Y) ↔
+    LinearIndependent 𝔽
+      (P.submatrix (Set.inclusion (show B \ X ⊆ B from diff_subset)) (fun i : Y ↦ i.1))ᵀ := by
+  sorry
+
+noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽))
+    (hv : v.IsStandard') : M.ReducedRep 𝔽 B where
   toMatrix := .of fun e f ↦ v f.1 e
   forall_indep_iff' := by
     classical
     intro X Y
-    rw [v.indep_iff]
-    have hli : LinearIndependent 𝔽 <| of (fun (i : X) (j : X) ↦ v (j : α) i) := by
-      convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
-      ext ⟨k, hk⟩ ⟨j, hj⟩
-      simp [hv.apply_eq_single, Pi.single_comm, Pi.single_apply]
-    have hli' : LinearIndependent 𝔽 <| (of (fun (i : X) (j : X) ↦ v (j : α) i))ᵀ := by
-      convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
-      ext ⟨k, hk⟩ ⟨j, hj⟩
-      simp [hv.apply_eq_single, Pi.single_apply]
-    convert Matrix.fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows
-      (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (K := 𝔽) (B := .of fun i j ↦ v j i)
-      (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) hli
-    swap
-    · rw [and_iff_left hli']
-      rfl
-
-    -- have aux (Q : Set α) (P : Set Q) : LinearIndependent 𝔽
-    -- ((fun i : P ↦ (fromBlocks 0 (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i))ᵀ i) ∘ Sum.inl) ↔
-  -- LinearIndepOn 𝔽 (⇑v) (Subtype.val '' X)
-    let ψ : (B → 𝔽) ≃ₗ[𝔽] (↥Xᶜ ⊕ X → 𝔽) :=
-      LinearEquiv.funCongrLeft _ _ <| ((Equiv.Set.sumCompl X).symm.trans (Equiv.sumComm _ _)).symm
-
-
-    rw [linearIndepOn_union_iff sorry, linearIndependent_sum, ← ψ.symm.linearIndependent_iff]
-    convert Iff.rfl
-    · rw [← linearIndepOn_image_injOn_iff Subtype.val_injective.injOn,
-        ← linearIndependent_set_coe_iff]
-      convert Iff.rfl with i
-      ext j
-
-
-      simp [ψ, LinearMap.funLeft, Sum.swap, fromBlocks, Equiv.Set.sumCompl]
-      rw [IsStandard'.apply_eq_single hv ↑i]
+    set P := (Matrix.of v)ᵀ
+    simp_rw [v.indep_iff, show v = fun i j ↦ Pᵀ i j from rfl]
+    rw [aux _ _ hv.apply_eq_single]
+    · apply linearIndependent_equiv' (Equiv.Set.image _ Y Subtype.val_injective).symm
+      ext i j
+      obtain ⟨_, ⟨i, hi, rfl⟩⟩ := i
       simp
+    refine disjoint_left.2 ?_
+    rintro _ ⟨⟨a,ha'⟩, ha, rfl⟩ haB
+    exact ha'.2 haB
+
+noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (· ∈ B)]
+    [DecidableEq B] (P : M.ReducedRep 𝔽 B) := _
+    -- M.Rep 𝔽 (B → 𝔽) := Rep.ofSubtypeFun
+    -- (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
+    -- (by
+    --   intro I
+
+    -- )
+
+      -- change LinearIndependent 𝔽 (fun (j : Subtype.val '' Y) ↦ (P.submatrix _ _)ᵀ j) ↔ _
+      -- rw [linearIndependent_set_coe_iff]
+  --   rw [v.indep_iff]
+  --   have hli : LinearIndependent 𝔽 <| of (fun (i : X) (j : X) ↦ v (j : α) i) := by
+  --     convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
+  --     ext ⟨k, hk⟩ ⟨j, hj⟩
+  --     simp [hv.apply_eq_single, Pi.single_comm, Pi.single_apply]
+  --   have hli' : LinearIndependent 𝔽 <| (of (fun (i : X) (j : X) ↦ v (j : α) i))ᵀ := by
+  --     convert (Pi.basisFun (η := ↥X) 𝔽).linearIndependent with ⟨a, ha⟩
+  --     ext ⟨k, hk⟩ ⟨j, hj⟩
+  --     simp [hv.apply_eq_single, Pi.single_apply]
+
+  --   convert Matrix.fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows
+  --     (m₁ := ↥Xᶜ) (m₂ := X) (n₁ := X) (n₂ := Y) (K := 𝔽) (B := .of fun i j ↦ v j i)
+  --     (D := .of fun i j ↦ v j i) (C := .of fun i j ↦ v j i) hli
+  --   swap
+  --   · rw [and_iff_left hli']
+  --     rfl
+
+  --   -- have aux (Q : Set α) (P : Set Q) : LinearIndependent 𝔽
+  --   -- ((fun i : P ↦ (fromBlocks 0 (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i) (of fun i j ↦ v ↑↑j ↑i))ᵀ i) ∘ Sum.inl) ↔
+  -- -- LinearIndepOn 𝔽 (⇑v) (Subtype.val '' X)
+  --   let ψ : (B → 𝔽) ≃ₗ[𝔽] (↥Xᶜ ⊕ X → 𝔽) :=
+  --     LinearEquiv.funCongrLeft _ _ <| ((Equiv.Set.sumCompl X).symm.trans (Equiv.sumComm _ _)).symm
+
+
+  --   rw [linearIndepOn_union_iff sorry, linearIndependent_sum, ← ψ.symm.linearIndependent_iff]
+  --   convert Iff.rfl
+  --   · rw [← linearIndepOn_image_injOn_iff Subtype.val_injective.injOn,
+  --       ← linearIndependent_set_coe_iff]
+  --     convert Iff.rfl with i
+  --     ext j
+
+
+  --     simp [ψ, LinearMap.funLeft, Sum.swap, fromBlocks, Equiv.Set.sumCompl]
+  --     rw [IsStandard'.apply_eq_single hv ↑i]
+  --     simp
 
 
 
@@ -143,7 +179,7 @@ noncomputable def Rep.IsStandard.toMatrixRep [Fintype B] (v : M.Rep 𝔽 (B → 
 
 
 
-noncomputable def Rep.toMatrixRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.MatrixRep 𝔽 B where
+noncomputable def Rep.toReducedRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.ReducedRep 𝔽 B where
   toMatrix := .of fun e f ↦ v.standardRep hB f.1 e
   forall_indep_iff' := by
     intro X Y

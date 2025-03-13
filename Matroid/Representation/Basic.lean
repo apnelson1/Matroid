@@ -199,7 +199,7 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
 
 /-- A function from `M.E` to a module determines a representation -/
 @[simps!] noncomputable def Rep.ofSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
-    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
+    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndepOn 𝔽 f I) :
     M.Rep 𝔽 W :=
   Rep.ofGround
   ( fun a ↦ if ha : a ∈ M.E then f ⟨a,ha⟩ else 0 )
