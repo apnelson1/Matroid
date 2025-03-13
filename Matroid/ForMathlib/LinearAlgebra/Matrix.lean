@@ -433,27 +433,18 @@ lemma fromBlocks_zero₁₁_zero₂₂_rows_linearIndependent_iff :
   rw [← fromCols_zero_left_linearIndependent_rows_iff (n₂ := n₂)]
   exact h.comp Sum.inr Sum.inr_injective
 
-end Ring
-
-section Field
-
-
-variable {K : Type*} [Field K] {m m₁ m₂ n n₁ n₂ : Type*}
-{A : Matrix m₁ n₁ K} {B : Matrix m₁ n₂ K} {C : Matrix m₂ n₁ K} {D : Matrix m₂ n₂ K}
-
 /-- If `B` has linearly independent columns and has finite column type, then `[[0,B],[C,D]]` has
 linearly independent rows if and only if both `B` and `C` do. -/
-lemma fromBlocks_zero₁₁_rows_linearIndependent_iff_of_cols [Fintype n₂]
-    (hB : LinearIndependent K (fun i ↦ Bᵀ i)) :
-    LinearIndependent K (fun i ↦ (Matrix.fromBlocks 0 B C D) i)
-    ↔ LinearIndependent K (fun i ↦ B i) ∧ LinearIndependent K (fun i ↦ C i) := by
+lemma fromBlocks_zero₁₁_rows_linearIndependent_iff_of_span
+    (hB : span R (range B) = ⊤) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks 0 B C D) i)
+    ↔ LinearIndependent R (fun i ↦ B i) ∧ LinearIndependent R (fun i ↦ C i) := by
   refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨_, h⟩ ↦ by rwa [fromBlocks_zero₁₁_rows_linearIndependent_iff D h]⟩
   · rw [← fromCols_zero_left_linearIndependent_rows_iff (n₁ := n₁)]
     refine h.comp Sum.inl Sum.inl_injective
   rw [linearIndependent_iff] at h ⊢
   intro c hc0
-  have hsp : Finsupp.linearCombination K D c ∈ span K (range B) := by
-    simp [span_row_eq_top_of_linearIndependent_col hB]
+  have hsp : Finsupp.linearCombination R D c ∈ span R (range B) := by simp [hB]
   obtain ⟨d, hd⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hsp
   specialize h (c.embDomain Function.Embedding.inr - d.embDomain Function.Embedding.inl) ?_
   · ext (j | j)
@@ -471,12 +462,12 @@ lemma fromBlocks_zero₁₁_rows_linearIndependent_iff_of_cols [Fintype n₂]
 
 /-- If `B` has linearly independent columns and has finite column type, then `[[0,B],[C,D]]` has
 linearly independent rows if and only if both `B` and `C` do. -/
-lemma fromBlocks_zero₁₁_cols_linearIndependent_iff_of_rows [Fintype m₂]
-    (hB : LinearIndependent K (fun i ↦ C i)) :
-    LinearIndependent K (fun i ↦ (Matrix.fromBlocks 0 B C D)ᵀ i)
-    ↔ LinearIndependent K (fun i ↦ Bᵀ i) ∧ LinearIndependent K (fun i ↦ Cᵀ i) := by
+lemma fromBlocks_zero₁₁_cols_linearIndependent_iff_of_span
+    (hC : span R (range Cᵀ) = ⊤) :
+    LinearIndependent R (fun i ↦ (Matrix.fromBlocks 0 B C D)ᵀ i)
+    ↔ LinearIndependent R (fun i ↦ Bᵀ i) ∧ LinearIndependent R (fun i ↦ Cᵀ i) := by
   rw [fromBlocks_transpose, transpose_zero,
-    fromBlocks_zero₁₁_rows_linearIndependent_iff_of_cols (by simpa), and_comm]
+    fromBlocks_zero₁₁_rows_linearIndependent_iff_of_span hC, and_comm]
 
 
 
@@ -492,7 +483,7 @@ linearly independent columns if and only if both `B` and `C` do. -/
 --   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
 --   ·
 
-end Field
+end Ring
 
 
 

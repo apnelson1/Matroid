@@ -54,6 +54,7 @@ set_option linter.style.longLine false
 
 structure ReducedRep (M : Matroid α) (𝔽 : Type*) [Field 𝔽] (B : Set α) where
   toMatrix : Matrix B ↥(M.E \ B) 𝔽
+  subset_ground : B ⊆ M.E
   forall_indep_iff' : ∀ (X : Set B) (Y : Set ↥(M.E \ B)),
     M.Indep (X ∪ Y) ↔
     LinearIndependent 𝔽 (toMatrix.submatrix (fun x : ↥Xᶜ ↦ x.1) (fun y : Y ↦ y.1))ᵀ
@@ -80,9 +81,10 @@ lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : 
       (P.submatrix (Set.inclusion (show B \ X ⊆ B from diff_subset)) (fun i : Y ↦ i.1))ᵀ := by
   sorry
 
-noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽))
+noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽)) (hB : B ⊆ M.E)
     (hv : v.IsStandard') : M.ReducedRep 𝔽 B where
   toMatrix := .of fun e f ↦ v f.1 e
+  subset_ground := hB
   forall_indep_iff' := by
     classical
     intro X Y
@@ -98,13 +100,18 @@ noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B →
     exact ha'.2 haB
 
 noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (· ∈ B)]
-    [DecidableEq B] (P : M.ReducedRep 𝔽 B) := _
-    -- M.Rep 𝔽 (B → 𝔽) := Rep.ofSubtypeFun
-    -- (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
-    -- (by
-    --   intro I
+    [DecidableEq B] (P : M.ReducedRep 𝔽 B) : M.Rep 𝔽 (B → 𝔽) :=  Rep.ofSubtypeFun
+    (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
+    (by
+      intro I
+      set X := (Set.inclusion P.subset_ground) ⁻¹' I with hX
+      set Y := (Set.inclusion (show M.E \ B ⊆ M.E from diff_subset)) ⁻¹' I with hY
+      have hIXY : Subtype.val '' I = Subtype.val '' X ∪ Subtype.val '' Y := by
+        simp +contextual [hX, hY, Set.ext_iff, em, or_imp,
+          show ∀ x ∈ B, x ∈ M.E from fun x hx ↦ P.subset_ground hx]
+      rw [hIXY, P.forall_indep_iff']
 
-    -- )
+    )
 
       -- change LinearIndependent 𝔽 (fun (j : Subtype.val '' Y) ↦ (P.submatrix _ _)ᵀ j) ↔ _
       -- rw [linearIndependent_set_coe_iff]

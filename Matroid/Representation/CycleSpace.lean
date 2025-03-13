@@ -202,10 +202,8 @@ lemma coe_restrictDom {α M R : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   simp only [Finsupp.restrictDom_apply, Finsupp.filter_apply, ite_eq_left_iff]
   exact fun hi ↦ by rw [show f.1 i = 0 by simpa using not_mem_subset f.2 hi]
 
-noncomputable def thing (v : M.Rep 𝔽 W) :=
-  (dualAnnihilator v.supportedCycleSpace)
-
-#check thing
+-- noncomputable def thing (v : M.Rep 𝔽 W) :=
+--   (dualAnnihilator v.supportedCycleSpace)
 
 /-- The `cocycleSpace` of an `𝔽`-representation of `M : Matroid α` is the set of vectors
 in `α → 𝔽` that are supported on `M.E`, and are orthogonal to every vector in the `cycleSpace`.
