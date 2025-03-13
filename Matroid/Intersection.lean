@@ -34,7 +34,7 @@ lemma Indep.isBasis'_isBasis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (h
     ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard] at h
   constructor <;>
   linarith [M₁.rk_mono (show I ∩ A ⊆ A from inter_subset_right),
-    M₂.rk_mono (show I \ A ⊆ M₂.E \ A froTLT (M ／ e) hXY m diff_subset_diff_left hI₂.subset_ground)]
+    M₂.rk_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
 private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by

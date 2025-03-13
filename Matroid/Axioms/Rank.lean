@@ -1,6 +1,7 @@
 import Matroid.ForMathlib.Other
 import Matroid.Minor.Rank
 import Mathlib.Tactic.Linarith
+import Mathlib.Data.ENat.Basic
 
 open Set
 
@@ -160,7 +161,7 @@ lemma Indep.eRelRk_subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.eRelRk I J = (J \
     obtain hfin | hinf := (J \ I).finite_or_infinite
     · simpa [disjoint_sdiff_right, diff_subset, union_eq_self_of_subset_left hIJ,
         hfin.encard_eq_coe_toFinset_card] using aux hfin.toFinset
-    rw [hinf.encard_eq, top_le_iff, ENat.eq_top_iff_forall_le]
+    rw [hinf.encard_eq, top_le_iff, ← ENat.eq_top_iff_forall_le]
     refine fun m ↦ ?_
     obtain ⟨D, hDss, rfl⟩ := hinf.exists_subset_card_eq m
     refine (aux D (Disjoint.mono_right hDss disjoint_sdiff_right) (hDss.trans diff_subset)).trans ?_
@@ -343,7 +344,7 @@ protected lemma matroid_eRk_eq_sup (X : Set α) :
       rw [← hI.eRk_eq_eRk, FinsetRankMatroid.matroid_eRk_eq]
       exact le_biSup (f := fun X ↦ (M.r X : ℕ∞)) hI.subset
     suffices h : ⨆ Y ∈ S, (M.r Y : ℕ∞) = ⊤ by rw [h]; apply le_top
-    rw [ENat.eq_top_iff_forall_le]
+    rw [← ENat.eq_top_iff_forall_le]
     intro b
     obtain ⟨J, hJI, rfl⟩ := hIinf.exists_subset_card_eq b
     rw [← FinsetRankMatroid.matroid_indep_iff.1 (hI.indep.subset hJI)]

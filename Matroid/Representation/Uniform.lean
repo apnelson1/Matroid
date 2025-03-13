@@ -43,7 +43,7 @@ end Representable
 def unifOn_rep (emb : α ↪ Option 𝔽) (a : ℕ) : (unifOn (univ : Set α) a).Rep 𝔽 (Fin a → 𝔽) where
   to_fun := rectVandermonde (fun i ↦ (emb i).elim 1 id) (fun i ↦ (emb i).elim 0 1) a
   indep_iff' I := by
-    rw [rectVandermonde_linearIndepOn_iff']
+    rw [rectVandermonde_linearIndepOn_iff₀]
     · simp only [unifOn_indep_iff, subset_univ, and_true, iff_self_and]
       refine fun _ i j hi hj heq ↦ (emb.apply_eq_iff_eq ..).1 <| ?_
       obtain hi' | ⟨x, hix⟩ := (emb i).eq_none_or_eq_some

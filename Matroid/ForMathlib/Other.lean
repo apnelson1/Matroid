@@ -21,12 +21,12 @@ lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x
     x = ⊥ ↔ ∀ (a : α), x ≤ a :=
   WithTop.eq_top_iff_forall_le (α := αᵒᵈ) (x := x)
 
-lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ n := by
-  refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
-  lift n to ℕ using hne
-  specialize h (n+1)
-  norm_cast at h
-  simp at h
+-- lemma ENat.eq_top_iff_forall_le {n : ℕ∞} : n = ⊤ ↔ ∀ (m : ℕ), m ≤ n := by
+--   refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
+--   lift n to ℕ using hne
+--   specialize h (n+1)
+--   norm_cast at h
+--   simp at h
 
 @[simp] lemma ENat.lt_one_iff (n : ℕ∞) : n < 1 ↔ n = 0 := by
   rw [← not_iff_not, not_lt, ENat.one_le_iff_ne_zero]
