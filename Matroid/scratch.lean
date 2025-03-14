@@ -1,78 +1,67 @@
-import Mathlib.Data.Matrix.Rank
+import Mathlib
+
+set_option linter.style.longLine false
 
 open Set
-variable {X Y F : Type*} [Field F] [Fintype X] [Fintype Y]
+variable {X Y F : Type*} [Field F] [Fintype X] [Fintype Y] [Zero Y]
 
-lemma Matrix.exists_submatrix_span_rows (A : Matrix X Y F) : ∃ r : Fin A.rank → X, 
-    Submodule.span F (range (A.submatrix r id)) = Submodule.span F (range A) := by 
-  classical
-  set t := LinearIndepOn.extend (K := F) (s := ∅) (t := range A) (by simp) (by simp) with ht
-  have htA : t ⊆ range A := LinearIndepOn.extend_subset ..
-  obtain ⟨s', hs't⟩ := subset_range_iff_exists_image_eq.1 htA
-  obtain ⟨s, hs, hinj⟩ := exists_image_eq_and_injOn (s := s') (f := A)
-  -- rw [hs't, ht] at hs
-  have hsp : Submodule.span F (A '' s) = Submodule.span F (range A) := by
-    rw [hs, hs't, ht]
-    apply LinearIndepOn.span_extend_eq_span
-  rw [← hsp]
-  apply_fun Module.finrank F at hsp
-  have hli : LinearIndepOn F A s := by
-    sorry
-  
-  have hb := Basis.span hli.linearIndependent
-  
-  have hcard := Module.finrank_eq_card_basis (R := F) hb
-  -- rw [← toFinset_card] at hcard
-  have foo : Module.finrank F ↥(Submodule.span F (A '' s)) = s.toFinset.card := by
-    rw [hsp, toFinset_card, ← hcard]
-    congr
-    · ext
-      convert Iff.rfl
-      simp 
+-- open Classical in
+-- def aux {k : ℕ} (X Y : Type*) [Fintype X] [Fintype Y] [Zero Y] :
+--     {f : X → Y // f.support.toFinset.card = k} ≃ (s : {s : Finset X // s.card = k}) × (s.1 → {y : Y // y ≠ 0}) where
+--   toFun f := ⟨⟨f.1.support.toFinset, f.2⟩, fun x ↦ ⟨f.1 x.1, by
+--     _
 
-    
-     
-  simp at hcard 
+--     ⟩⟩
+--   invFun s := by
+--     refine ⟨fun x ↦ if h : x ∈ s.1.1 then s.2 ⟨x, h⟩ else 0, ?_⟩
+--     convert s.1.2
 
-  rw [← Matrix.rank_eq_finrank_span_row] at hcard
-  -- rw [← Matrix.rank_eq_finrank_span_row, finrank_span_set_eq_card, toFinset_image,
-  --   Finset.card_image_of_injOn (by simpa)] at hsp
+--   left_inv := _
+--   right_inv := _
 
+open Classical in
+example {k l : ℕ} (hkl : k + l = Fintype.card X) {A : Finset Y} :
+    Fintype.card {f : X → Y // (f ⁻¹' A).toFinset.card = k}
+    = ((Fintype.card X).choose k) * (A.card) ^ k * Aᶜ.card ^ l := by
+  set ψ : {f : X → Y // (f ⁻¹' (A)).toFinset.card = k} → Finset X := fun f ↦ (f.1 ⁻¹' A).toFinset
+  have hψ : Set.MapsTo ψ Finset.univ.toSet ({u : Finset X | u.card = k} : Finset _) := by simp [ψ]
+  rw [← Finset.card_univ, Finset.card_eq_sum_card_fiberwise hψ]
+  simp only [Finset.univ_filter_card_eq, ψ]
+  rw [mul_assoc, ← Finset.card_univ, ← Finset.card_powersetCard, ← smul_eq_mul, ← Finset.sum_const]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  rw [Finset.univ_filter_card_eq]
 
-lemma Matrix.exists_submatrix_rank (A : Matrix X Y F) :
-    ∃ r : Fin A.rank → X, (A.submatrix r id).rank = A.rank := by
-  classical
-  -- simp only [Matrix.rank_eq_finrank_span_row]
-  set t := LinearIndepOn.extend (K := F) (s := ∅) (t := range A) (by simp) (by simp) with ht
-  have htA : t ⊆ range A := LinearIndepOn.extend_subset ..
-  obtain ⟨s', hs't⟩ := subset_range_iff_exists_image_eq.1 htA
-  obtain ⟨s, hs, hinj⟩ := exists_image_eq_and_injOn (s := s') (f := A)
-  -- rw [hs't, ht] at hs
-  have hsp : Submodule.span F (A '' s) = Submodule.span F (range A) := by
-    rw [hs, hs't, ht]
-    apply LinearIndepOn.span_extend_eq_span
-  apply_fun Module.finrank F at hsp
+  -- rw [← Fintype.card_finset_len]
+  -- let σ := fun (s : Finset X) ↦ (s → A) × (↥sᶜ → ↥Aᶜ)
+  -- let t := fun (s : Finset X) ↦ (Finset.univ : Finset (σ s))
+  -- convert Finset.card_sigma {s : Finset X | s.card = k} t
+  -- · set ψ : { f : X → Y // (f ⁻¹' A).toFinset.card = k } → (i : Finset X) × σ i := fun f ↦
+  --     ⟨(f.1 ⁻¹' A).toFinset,
+  --       fun x ↦ ⟨f.1 x.1, (by obtain ⟨x, hx⟩ := x; simpa using hx)⟩,
+  --       fun x ↦ ⟨f.1 x.1, by obtain ⟨x, hx⟩ := x; simpa using hx⟩⟩
+  --   have hinj : Function.Injective ψ := sorry
+  --   rw [← Finset.card_univ, ← Finset.card_image_of_injective _ hinj]
+  --   convert rfl
+  --   ext ⟨x, x1, x2⟩
+  --   simp only [Finset.univ_filter_card_eq, Finset.mem_sigma, Finset.mem_powersetCard,
+  --     Finset.subset_univ, true_and, Finset.mem_univ, and_true, Finset.mem_image, Sigma.mk.injEq,
+  --     Subtype.exists, toFinset_card, Fintype.card_ofFinset, exists_and_left, t, ψ, σ]
+  --   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩µ
 
-  -- have hrank := congr_arg (Module.finrank F ·) hsp
-  rw [← Matrix.rank_eq_finrank_span_row, finrank_span_set_eq_card, toFinset_image,
-    Finset.card_image_of_injOn (by simpa)] at hsp
-  -- rw [← hsp]
-  -- have hrank : A.rank =
-  have hli : LinearIndepOn F A (s.toFinset) := by
-    sorry
-  have hb := Basis.span hli.linearIndependent
-  have hcard := Module.finrank_eq_card_finset_basis (R := F) hb
-  rw [← Matrix.rank_eq_finrank_span_row] at hcard
+    -- rw [← Fintype.card_range (f := (⟨ψ, hinj⟩ : _ ↪ _))]
 
 
-  -- have hcard : s.toFinset.card = Module.finrank F (Submodule.span F (range A)) := by
-  --   have := LinearIndependent.ca
-  set φ := Finset.eq  uivFinOfCardEq hsp
-  use fun x ↦ (φ.symm x).1
-  convert hcard
+
+  simp only [Fintype.card_finset_len, Finset.univ_filter_card_eq]
+  rw [← Finset.card_univ, ← Finset.card_powersetCard, mul_assoc, ← smul_eq_mul, ← Finset.sum_const]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  simp [t, σ, ← hkl, show s.card = k by simpa using hs, Finset.card_compl]
+
+  -- have hrw : ∀ x ∈ Finset.powersetCard k (Finset.univ : Finset X), (t x).card = (A.card ^ k)
 
 
 
 
-
-  sorry
+  -- have : Fintype.card {X : Finset (Fin n) // X.card = k} = n.choose k := by
+  --   rw [Fintype.card_finset_len]
+  --   simp

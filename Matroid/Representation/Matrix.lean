@@ -68,6 +68,13 @@ theorem linearIndepOn_image_injOn_iff {ι ι' R M : Type*} [Ring R] [AddCommGrou
   exact linearIndependent_equiv' (Equiv.Set.imageOfInjOn _ _ he) <|
     by simp [funext_iff, Equiv.Set.imageOfInjOn]
 
+theorem linearIndepOn_image_injOn_iff' {ι ι' R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {e : ι → ι'} {f : ι' → M} {g : ι → M} {s : Set ι} (he : InjOn e s)
+    (hg : ∀ ⦃x⦄, x ∈ s → g x = f (e x)) :
+    LinearIndepOn R g s ↔ LinearIndepOn R f (e '' s) := by
+  rw [ ← linearIndepOn_image_injOn_iff he, linearIndepOn_congr hg]
+  rfl
+
 lemma aux {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
     (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hYB : Disjoint Y B) :
     LinearIndepOn 𝔽 Pᵀ (((↑) '' X) ∪ Y) ↔
@@ -99,19 +106,41 @@ noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B →
     rintro _ ⟨⟨a,ha'⟩, ha, rfl⟩ haB
     exact ha'.2 haB
 
-noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (· ∈ B)]
+noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (· ∈ B)] [Fintype B]
     [DecidableEq B] (P : M.ReducedRep 𝔽 B) : M.Rep 𝔽 (B → 𝔽) :=  Rep.ofSubtypeFun
     (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
     (by
+      classical
+      set fn := (fun x : M.E ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
       intro I
       set X := (Set.inclusion P.subset_ground) ⁻¹' I with hX
       set Y := (Set.inclusion (show M.E \ B ⊆ M.E from diff_subset)) ⁻¹' I with hY
       have hIXY : Subtype.val '' I = Subtype.val '' X ∪ Subtype.val '' Y := by
-        simp +contextual [hX, hY, Set.ext_iff, em, or_imp,
+        simp +contextual [hX, hY, Set.ext_iff, em, or_imp, iff_def,
           show ∀ x ∈ B, x ∈ M.E from fun x hx ↦ P.subset_ground hx]
-      rw [hIXY, P.forall_indep_iff']
+
+
+      rw [hIXY, P.forall_indep_iff', linearIndepOn_image_injOn_iff' Subtype.val_injective.injOn
+        (f := fun x ↦ if hx : x ∈ M.E then fn ⟨x, hx⟩ else 0) (by simp), hIXY, iff_comm]
+
+      -- have := P.1
+      set P' : Matrix B α 𝔽 := .of fun i j ↦ if hj : j ∈ M.E \ B then P.1 i ⟨j, hj⟩
+        else if hjB : j ∈ B then Pi.single (f := fun _ : B ↦ 𝔽) i 1 ⟨j, hjB⟩ else 0
+
+
+      convert aux P' X sorry (Subtype.val '' Y) sorry with i
+      · ext ⟨j, hj⟩
+        by_cases hiE : i ∈ M.E
+        · simp +contextual [hiE, fn, P']
+        simp [P', fn]
+
+        by_cases hiB : i ∈ B
+        · simp [hiB, ]
+
+
 
     )
+
 
       -- change LinearIndependent 𝔽 (fun (j : Subtype.val '' Y) ↦ (P.submatrix _ _)ᵀ j) ↔ _
       -- rw [linearIndependent_set_coe_iff]
@@ -186,19 +215,19 @@ noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (
 
 
 
-noncomputable def Rep.toReducedRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.ReducedRep 𝔽 B where
-  toMatrix := .of fun e f ↦ v.standardRep hB f.1 e
-  forall_indep_iff' := by
-    intro X Y
-    rw [v.indep_iff, linearIndepOn_union_iff_quotient, ← v.indep_iff,
-      and_iff_right (hB.indep.subset (by simp))]
-    simp only [v.indep_iff, linearIndepOn_iff, transpose_submatrix, linearIndependent_iff]
-    refine ⟨fun h c hc0 ↦ ?_, fun h ↦ ?_⟩
-    · simp [Finsupp.linearCombination, Finsupp.sum, Matrix.of] at hc0
-      sorry
-    sorry
-    sorry
-    -- rw [v.indep_iff, linearIndepOn_union_iff_quotient, ← v.indep_iff,
+-- noncomputable def Rep.toReducedRep (v : M.Rep 𝔽 W) (hB : M.IsBase B) : M.ReducedRep 𝔽 B where
+--   toMatrix := .of fun e f ↦ v.standardRep hB f.1 e
+--   forall_indep_iff' := by
+--     intro X Y
+--     rw [v.indep_iff, linearIndepOn_union_iff_quotient, ← v.indep_iff,
+--       and_iff_right (hB.indep.subset (by simp))]
+--     simp only [v.indep_iff, linearIndepOn_iff, transpose_submatrix, linearIndependent_iff]
+--     refine ⟨fun h c hc0 ↦ ?_, fun h ↦ ?_⟩
+--     · simp [Finsupp.linearCombination, Finsupp.sum, Matrix.of] at hc0
+--       sorry
+--     sorry
+--     sorry
+--     -- rw [v.indep_iff, linearIndepOn_union_iff_quotient, ← v.indep_iff,
     --   and_iff_right (hB.indep.subset (by simp))]
     -- swap
     -- · refine (disjoint_sdiff_inter (s := M.E) (t := B)).symm.mono ?_ ?_
