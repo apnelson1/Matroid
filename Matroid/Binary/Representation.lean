@@ -8,13 +8,10 @@ import Matroid.Order.Quotient
 variable {α β W W' 𝔽 R ι : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
 [DivisionRing R] [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
+open Function Set
 
 @[simp] lemma ne_one_iff {x : ZMod 2} : x ≠ 1 ↔ x = 0 := by
-  obtain ⟨(x | x | x), hx⟩ := x
-  · simp
-  · simp
-  linarith
+  fin_cases x <;> simp
 
 @[simp] lemma ne_zero_iff {x : ZMod 2} : x ≠ 0 ↔ x = 1 := by
   rw [not_iff_comm, ← ne_one_iff]

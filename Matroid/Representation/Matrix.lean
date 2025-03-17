@@ -75,18 +75,98 @@ theorem linearIndepOn_image_injOn_iff' {ι ι' R M : Type*} [Ring R] [AddCommGro
   rw [ ← linearIndepOn_image_injOn_iff he, linearIndepOn_congr hg]
   rfl
 
-lemma aux {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
-    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hYB : Disjoint Y B) :
+lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
+    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
     LinearIndepOn 𝔽 Pᵀ (((↑) '' X) ∪ Y) ↔
     LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1))ᵀ := by
-  sorry
+  classical
+  let Q := P.submatrix id (fun j : ↥(((↑) '' X) ∪ Y) ↦ j.1)
+  have hQB : ∀ i j {h'}, ⟨j.1, h'⟩ ∈ X → Q i j = if i.1 = j.1 then 1 else 0 := by
+    rintro i ⟨j, (hj | hj)⟩ h' hjX
+    · simp only [submatrix_apply, id_eq, Q]
+      rw [← P.transpose_apply, hB ⟨j, h'⟩, Pi.single_apply]
+      simp_rw [← Subtype.val_inj]
+    exact hdj.not_mem_of_mem_left (a := j) (by simpa [h'] using hjX) hj |>.elim
 
-lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set α) (hX : X ⊆ B)
-    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hYB : Disjoint Y B) :
-    LinearIndepOn 𝔽 Pᵀ (X ∪ Y) ↔
-    LinearIndependent 𝔽
-      (P.submatrix (Set.inclusion (show B \ X ⊆ B from diff_subset)) (fun i : Y ↦ i.1))ᵀ := by
-  sorry
+
+
+
+  change LinearIndependent 𝔽 Q.colFun ↔ LinearIndependent 𝔽
+    (Q.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun j : Y ↦ ⟨j, .inr j.2⟩)).colFun
+  have h0 : Q.block Xᶜ ( _ ↓∩ ((↑) '' X)) = 0 := by aesop
+  let e : X → (↑(((Subtype.val '' X) ∪ Y) ↓∩ Subtype.val '' X)) := fun x ↦ ⟨⟨x,sorry⟩, sorry⟩
+  have hsurj : e.Surjective := sorry
+  set C := (Q.block Xᶜᶜ (((↑) '' X ∪ Y) ↓∩ ↑X)) with hC
+  have h1 : C.submatrix (Equiv.Set.ofEq (compl_compl X).symm) e = 1 := sorry
+
+  have htop : span 𝔽 (range (1 : Matrix X X 𝔽).colFun) = ⊤ := sorry
+  rw [span_col_eq_top_iff_linearIndependent_rows, ← h1,
+    linearIndependent_rows_submatrix_iff_of_surjective _ _ hsurj,
+    ← span_col_eq_top_iff_linearIndependent_rows] at htop
+
+
+  nth_rw 1 [Q.eq_fromBlocks_block_reindex Xᶜ ( _ ↓∩ ((↑) '' X)), reindex_apply,
+    linearIndependent_cols_iff_submatrix, h0, ← hC,
+    fromBlocks_zero₁₁_linearIndependent_cols_iff_of_span htop,
+    ← linearIndependent_cols_submatrix_iff_of_surjective _ _ hsurj]
+
+
+  -- rw [P.eq_fromBlocks_block_reindex Xᶜ Y]
+  -- simp only [reindex_apply, submatrix_submatrix]
+  -- rw [fromBlocks_]
+
+
+lemma aux {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
+    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
+    LinearIndepOn 𝔽 Pᵀ (((↑) '' X) ∪ Y) ↔
+    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1))ᵀ := by
+  classical
+  rw [LinearIndepOn]
+  -- have hPX : P.submatrix (fun i : X ↦ i.1) (fun i : X ↦ i.1) = 1 := sorry
+  convert fromBlocks_zero₁₁_cols_linearIndependent_iff_of_span (R := 𝔽) (m₁ := ↥Xᶜ) (m₂ := X)
+    (n₁ := X) (n₂ := Y) (B := P.submatrix (↑) (↑)) (C := P.submatrix (↑) (↑))
+      (D := P.submatrix (↑) (↑)) sorry
+  have ha1 (a : ↥Xᶜ) (i : α) (hiB : i ∈ B) : 0 = P a.1 i ↔ (a.1.1 ≠ i) := sorry
+  -- have ha2 (a : ↥X) (i : α) (hiB : i ∈ B) : 0 = P a.1 i ↔ (a.1.1 ≠ i) := sorry
+  · let e : ↥((↑X) ∪ Y) ≃ X ⊕ Y :=
+
+      (Equiv.Set.union hdj).trans <|
+        Equiv.sumCongr ((Equiv.Set.image _ X Subtype.val_injective).symm) (Equiv.refl _)
+
+
+    set ψ : (B → 𝔽) →ₗ[𝔽] ((↥Xᶜ ⊕ X) → 𝔽) := LinearMap.funLeft _ _ (Sum.elim (↑) (↑))
+    have hinj : InjOn ⇑ψ ↑(span 𝔽 (range fun (x : ↥(↑X ∪ Y)) ↦ Pᵀ ↑x)) := by
+      refine fun x _ y _ hxy ↦ funext fun ⟨i, hi⟩ ↦ ?_
+      simp only [funext_iff, LinearMap.funLeft_apply, Sum.forall, Sum.elim_inl, Subtype.forall,
+        mem_compl_iff, Sum.elim_inr, ← forall_and, ← or_imp, em', forall_const, ψ] at hxy
+      exact hxy i hi
+
+    rw [← linearIndependent_equiv e, ← ψ.linearIndependent_iff_of_injOn hinj]
+    convert Iff.rfl
+
+    rw [funext_iff]
+    rintro ⟨i, (⟨⟨i, hiB⟩, hi, rfl⟩ | hi)⟩
+    . simp only [Equiv.coe_trans, Function.comp_apply, Equiv.sumCongr_apply, Equiv.coe_refl,
+      funext_iff, transpose_apply, LinearMap.funLeft_apply, Sum.forall, Sum.elim_inl,
+      Sum.elim_inr, e, ψ]
+      rw [Equiv.Set.union_apply_left]
+      · simp only [Sum.map_inl, fromBlocks_apply₁₁, zero_apply, fromBlocks_apply₂₁,
+          submatrix_apply, ψ, e]
+        refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun j ↦ ?_⟩
+        · rw [ha1 _ _ hiB]
+          rintro rfl
+          contradiction
+        have hwin := Equiv.Set.image_symm_apply (α := B) (f := Subtype.val) (s := X)
+          Subtype.val_injective ⟨i, hiB⟩ (by simpa [hiB])
+        rw [← Subtype.val_inj, ← Subtype.val_inj] at hwin
+        rw [hwin]
+    simp only [Equiv.coe_trans, Function.comp_apply, Equiv.sumCongr_apply, Equiv.coe_refl,
+      funext_iff, transpose_apply, LinearMap.funLeft_apply, Sum.forall, Sum.elim_inl,
+      Sum.elim_inr, e, ψ]
+    refine ⟨fun a ↦ ?_, fun a ↦ ?_⟩ <;>
+    · rw [Equiv.Set.union_apply_right]
+      · simp
+      simpa
 
 noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B → 𝔽)) (hB : B ⊆ M.E)
     (hv : v.IsStandard') : M.ReducedRep 𝔽 B where
@@ -97,49 +177,33 @@ noncomputable def Rep.IsStandard.toReducedRep [Fintype B] (v : M.Rep 𝔽 (B →
     intro X Y
     set P := (Matrix.of v)ᵀ
     simp_rw [v.indep_iff, show v = fun i j ↦ Pᵀ i j from rfl]
-    rw [aux _ _ hv.apply_eq_single]
+    rw [aux _ _ hv.apply_eq_single _ (by simp +contextual [disjoint_left])]
     · apply linearIndependent_equiv' (Equiv.Set.image _ Y Subtype.val_injective).symm
       ext i j
       obtain ⟨_, ⟨i, hi, rfl⟩⟩ := i
       simp
-    refine disjoint_left.2 ?_
-    rintro _ ⟨⟨a,ha'⟩, ha, rfl⟩ haB
-    exact ha'.2 haB
+
 
 noncomputable def ReducedRep.toRep [DecidablePred (· ∈ M.E)] [DecidablePred (· ∈ B)] [Fintype B]
     [DecidableEq B] (P : M.ReducedRep 𝔽 B) : M.Rep 𝔽 (B → 𝔽) :=  Rep.ofSubtypeFun
-    (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
-    (by
-      classical
-      set fn := (fun x : M.E ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
-      intro I
-      set X := (Set.inclusion P.subset_ground) ⁻¹' I with hX
-      set Y := (Set.inclusion (show M.E \ B ⊆ M.E from diff_subset)) ⁻¹' I with hY
-      have hIXY : Subtype.val '' I = Subtype.val '' X ∪ Subtype.val '' Y := by
-        simp +contextual [hX, hY, Set.ext_iff, em, or_imp, iff_def,
-          show ∀ x ∈ B, x ∈ M.E from fun x hx ↦ P.subset_ground hx]
-
-
-      rw [hIXY, P.forall_indep_iff', linearIndepOn_image_injOn_iff' Subtype.val_injective.injOn
-        (f := fun x ↦ if hx : x ∈ M.E then fn ⟨x, hx⟩ else 0) (by simp), hIXY, iff_comm]
-
-      -- have := P.1
-      set P' : Matrix B α 𝔽 := .of fun i j ↦ if hj : j ∈ M.E \ B then P.1 i ⟨j, hj⟩
-        else if hjB : j ∈ B then Pi.single (f := fun _ : B ↦ 𝔽) i 1 ⟨j, hjB⟩ else 0
-
-
-      convert aux P' X sorry (Subtype.val '' Y) sorry with i
-      · ext ⟨j, hj⟩
-        by_cases hiE : i ∈ M.E
-        · simp +contextual [hiE, fn, P']
-        simp [P', fn]
-
-        by_cases hiB : i ∈ B
-        · simp [hiB, ]
-
-
-
-    )
+  (fun x ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
+  (by
+    set fn := (fun x : M.E ↦ if hx : x.1 ∈ B then (Pi.single ⟨x, hx⟩ 1) else (P.1 · ⟨x, x.2, hx⟩))
+    intro I
+    set X := (Set.inclusion P.subset_ground) ⁻¹' I with hX
+    set Y := (Set.inclusion (show M.E \ B ⊆ M.E from diff_subset)) ⁻¹' I with hY
+    have hIXY : Subtype.val '' I = Subtype.val '' X ∪ Subtype.val '' Y := by
+      simp +contextual [hX, hY, Set.ext_iff, em, or_imp, iff_def,
+        show ∀ x ∈ B, x ∈ M.E from fun x hx ↦ P.subset_ground hx]
+    set fn' := fun x ↦ if hx : x ∈ M.E then fn ⟨x, hx⟩ else 0
+    rw [hIXY, P.forall_indep_iff', linearIndepOn_image_injOn_iff' Subtype.val_injective.injOn
+      (f := fn') (by simp [fn']), hIXY, iff_comm]
+    have hsing : ∀ (i : ↑B), fn' ↑i = Pi.single i 1 :=
+      fun ⟨i, hi⟩ ↦ by simp [funext_iff, fn', dite_apply, P.subset_ground hi, fn, hi]
+    convert aux (.of fn')ᵀ X hsing (Subtype.val '' Y) (by simp +contextual [disjoint_left]) using 1
+    rw [linearIndependent_equiv' (Equiv.Set.image _ _ Subtype.val_injective)]
+    ext ⟨⟨i,hi'⟩, hi⟩ j
+    simp [fn', fn, dite_apply, hi'.2, hi'.1] )
 
 
       -- change LinearIndependent 𝔽 (fun (j : Subtype.val '' Y) ↦ (P.submatrix _ _)ᵀ j) ↔ _
