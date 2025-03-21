@@ -97,7 +97,7 @@ lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : 
   let e : X → (↑(((Subtype.val '' X) ∪ Y) ↓∩ Subtype.val '' X)) := fun x ↦ ⟨⟨x,sorry⟩, sorry⟩
   have hsurj : e.Surjective := sorry
   set C := (Q.block Xᶜᶜ (((↑) '' X ∪ Y) ↓∩ ↑X)) with hC
-  have h1 : C.submatrix (Equiv.Set.ofEq (compl_compl X).symm) e = 1 := sorry
+  have h1 : C.submatrix (Equiv.setCongr (compl_compl X).symm) e = 1 := sorry
 
   have htop : span 𝔽 (range (1 : Matrix X X 𝔽).colFun) = ⊤ := sorry
   rw [span_col_eq_top_iff_linearIndependent_rows, ← h1,

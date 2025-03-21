@@ -71,7 +71,7 @@ lemma parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempty 
     x ∈ P.congr hst ↔ x ∈ P := Iff.rfl
 
 @[simps!] def partsCongrEquiv {t : α} (P : Partition s) (hst : s = t) :
-    (P : Set α) ≃ (P.congr hst : Set α) := Equiv.Set.ofEq rfl
+    (P : Set α) ≃ (P.congr hst : Set α) := Equiv.setCongr rfl
 
 end Basic
 

@@ -735,7 +735,7 @@ lemma eRk_eq_iSup_finset_eRk (M : Matroid α) (X : Set α) :
 
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [← eRk_eq_top_iff] at hX
-  rw [hX, top_le_iff, ← WithTop.forall_ge_iff_eq_top]
+  rw [hX, top_le_iff, WithTop.eq_top_iff_forall_le]
   intro n
   rw [hI.eRk_eq_encard, encard_eq_top_iff] at hX
   obtain ⟨J, hJI, rfl⟩ := hX.exists_subset_card_eq n
