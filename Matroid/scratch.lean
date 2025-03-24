@@ -1,118 +1,173 @@
-import Mathlib
+import Mathlib.Topology.UnitInterval
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
-variable {α : Type*} {n : ℕ}
+variable {α R K M : Type*} {n : ℕ} [Ring R] [Field K] [AddCommGroup M] [Module K M]
 
-section DecEq
+variable {x y z : EuclideanSpace ℝ (Fin n)}
 
-variable [DecidableEq α]
+section List
 
-/-- A string `a` `IsCompatible` with `s : Finset α` and `f : α → ℕ` if `a i ∈ s` for all `i`,
-and each `x ∈ s` occurs exactly `f x` times in `a`.
-`IsCompatible` could have just been defined with an `∧`, but
-defining it as a prop-valued structure with named fields means that for `h : IsCompatible s f a`,
-you can write `h.forall_mem i` to prove that `a i ∈ s`,
-and `h.forall_preimage_card x` to show that `x ∈ s → ({i : Fin n | a i = x} : Finset _).card = f x`.
-Also, `mk_iff` means that a lemma `isCompatible_iff` is automatically generated. -/
-@[mk_iff]
-structure IsCompatible (s : Finset α) (f : α → ℕ) (a : Fin n → α) : Prop where
-  forall_mem : ∀ i, a i ∈ s
-  forall_preimage_card : ∀ x ∈ s, ({i : Fin n | a i = x} : Finset _).card = f x
+lemma List.reverse_sorted (R : α → α → Prop) (L : List α) :
+    L.reverse.Sorted R ↔ L.Sorted (flip R) := by
+  induction L with
+  | nil => simp
+  | cons head tail ih =>
+  simp only [List.reverse_cons, List.sorted_cons, ← ih]
+  simp [List.Sorted, List.pairwise_append, flip, and_comm]
 
-structure IsCompat (s : Finset α) (f : α → ℕ) (l : List α) : Prop where
-  forall_mem : ∀ i, l.get i ∈ s
-  forall_length : ∀ x ∈ s, (l.filter (· = x)).length = f x
+lemma List.sorted_append (R : α → α → Prop) (L₁ L₂ : List α) :
+    (L₁ ++ L₂).Sorted R ↔ L₁.Sorted R ∧ L₂.Sorted R ∧ ∀ a ∈ L₁, ∀ b ∈ L₂, R a b := by
+  rw [Sorted, pairwise_append]
 
-/-- The type of strings that are compatible with `s` is finite,
-since it maps injectively into the finite type `Fin n → s`.  -/
-noncomputable instance fintype_compatible (s : Finset α) (f : α → ℕ) :
-    Fintype {a : Fin n → α // IsCompatible s f a} := by
-  have : Finite {a : Fin n → α // IsCompatible s f a} := by
-    refine Finite.of_injective (β := Fin n → s) (fun a i ↦ ⟨a.1 i, a.2.forall_mem i⟩) ?_
-    rintro ⟨a, ha⟩ ⟨b, hb⟩ hab
-    simpa [funext_iff] using hab
-  induction'
-  apply Fintype.ofFinite
+end List
 
--- def foo' {m n : ℕ} (f : α → ℕ) (s : Finset α) {x : α} (hxs : x ∉ s) (hn : ∑ x ∈ s, f x = n) :
---     {a // IsCompat (Finset.cons x s hxs) f a} ≃
---     {q : Finset (Fin n) // q.card = f x} × {a // IsCompat s f a} where
---   toFun p := by
---     refine ⟨⟨({j | p.1.get j = x} : Finset _), ?_⟩, ?_⟩
---   invFun := _
---   left_inv := _
---   right_inv := _
-
-def foo {m n : ℕ} (f : α → ℕ) (s : Finset α) {x : α} (hxs : x ∉ s) (hnm : n = f x + m) :
-    {a : Fin n → α // IsCompatible (Finset.cons x s hxs) f a} ≃
-    {q : Finset (Fin n) // q.card = f x} × {a : Fin m → α // IsCompatible s f a} where
-  toFun p := ⟨⟨({j | p.1 j = x} : Finset _), sorry⟩,
-    ⟨fun i ↦ p.1 (by
-
-    have := (Finset.sort (· ≤ ·) {j | p.1 j ≠ x}).get i
-
-    ), sorry⟩⟩
-  invFun := _
-  left_inv := _
-  right_inv := _
-
-lemma card_compatible_eq (s : Finset α) (f : α → ℕ) (hsum : ∑ x ∈ s, f x = n) :
-    Fintype.card {a : Fin n → α // IsCompatible s f a} = Nat.multinomial s f := by
-  -- Use induction on `s`
-  induction s using Finset.cons_induction generalizing n with
-  | empty =>
-  -- we get some trivial goal if `s` is empty.
-    obtain rfl : 0 = n := by simpa using hsum
-    simp [show ∀ (a : Fin 0 → α), IsCompatible ∅ f a from fun a ↦ ⟨by simp, by simp⟩]
-  | @cons i s his IH =>
-  rw [Finset.sum_cons] at hsum
-  rw [Nat.multinomial_cons, ← IH rfl, hsum, Fintype.card_congr (foo f s his hsum.symm)]
-  simp [Fintype.card_finset_len, Fintype.card_fin]
-
-end DecEq
-
-lemma Finsupp.multinomial_spec (f : α →₀ ℕ) :
-    (f.prod fun _ n ↦ n.factorial) * f.multinomial = (f.sum fun _ ↦ id).factorial :=
-  Nat.multinomial_spec f.support f
-
-theorem Finsupp.natInduction {α : Type u_1} {p : (α →₀ ℕ) → Prop} (f : α →₀ ℕ) (h0 : p 0)
-    (IH : ∀ (a : α) (f : α →₀ ℕ), p f → p (single a 1 + f)) : p f := by
-  classical
-  obtain rfl | hne := eq_or_ne f 0
-  · exact h0
-  obtain ⟨a, ha⟩ : ∃ a, f a ≠ 0 := by simpa [DFunLike.ext_iff] using hne
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero ha
-  have h_eq : f = single a 1 + (f.update a k) := by
-    ext i
-    obtain rfl | hne := eq_or_ne i a
-    · simp [Finsupp.update, hk, add_comm]
-    simp only [update, coe_add, coe_mk, Pi.add_apply, Finsupp.single]
-    aesop
-  have hlt : (f.update a k).sum (fun _ ↦ id) < f.sum (fun _ ↦ id) := by
-    nth_rewrite 2 [h_eq]
-    rw [Finsupp.sum_add_index' (by simp) (by simp)]
-    simp
-  rw [h_eq]
-  exact IH a _ (Finsupp.natInduction (f.update a k) h0 IH)
-termination_by Finsupp.sum f (fun _ ↦ id)
+open unitInterval
 
 
-
--- lemma Finsupp.multinomial_add_single_one (f : α →₀ ℕ) (i : α) :
---   (f.update i (f i + 1)).multinomial = 2 := by
-
--- lemma Finsupp.multinomial_add_one (f : α →₀ ℕ) (i : α) :
---     (f.update i (f i + 1)).multinomial = 2 := by
---   classical
---   -- have hsupp : (f.update i (f i + 1)).support = insert i f.support := sorry
---   have hrw : (f.update i (f i + 1)).sum (fun _ ↦ id) = f.sum (fun _ ↦ id) + 1 := by
---     simpa [← add_assoc, add_right_comm] using f.sum_update_add (g := fun _ ↦ id) i (f i + 1)
-
---   sorry
+section ConvexComb
 
 
---   rw [(f.update i (f i + 1)).multinomial_update i]
---   simp [hrw]
---   have := f.multinomial_update i
---   have := (f.update i (f i + 1)).multinomial_spec
+def convComb {M : Type*} [Add M] [SMul ℝ M] (a b : M) (t : unitInterval) : M :=
+  (symm t).1 • a + t.1 • b
 
---   simp [Finsupp.sum, hsupp] at this
+@[simp]
+lemma convComb_symm {M : Type*} [AddCommMonoid M] [SMul ℝ M] (a b : M) (t : unitInterval) :
+    convComb a b (σ t) = convComb b a t := by
+  simp [convComb, add_comm]
+
+end ConvexComb
+
+
+noncomputable def unitInterval.half : I := ⟨1/2, by simp; linarith⟩
+
+@[simp] lemma unitInterval.zero_lt_half : 0 < half := by
+  simp [half, ← Subtype.coe_lt_coe]
+
+@[simp] lemma unitInterval.half_lt_one : half < 1 := by
+  simp only [half, one_div, ← Subtype.coe_lt_coe, Set.Icc.coe_one]
+  linarith
+
+
+def unitInterval.between (a b t : I) : I :=
+  ⟨convComb a.1 b.1 t, by
+    simp only [coe_symm_eq, smul_eq_mul, Set.mem_Icc, convComb]
+    constructor
+    · calc 0 = 0 * a.1 + 0 * b.1 := by simp
+           _ ≤ _ := by gcongr <;> unit_interval
+    calc _ ≤ (1 - t.1) * 1 + t.1 * 1 := by gcongr <;> unit_interval
+         _ ≤ 1                       := by linarith ⟩
+
+@[simp] lemma between_apply (a b t : I) :
+    between a b t = (1 - t.1) * a.1 + t * b.1 := rfl
+
+@[simp]
+lemma unitInterval.symm_between (a b t : I) : σ (between a b t) = between (σ a) (σ b) t := by
+  simp only [symm, between, convComb, smul_eq_mul, Subtype.mk.injEq]
+  ring
+
+lemma unitInterval.between_symm (a b t : I) : between a b (σ t) = between b a t := by
+  simp only [symm, between, convComb, smul_eq_mul, Subtype.mk.injEq]
+  ring
+
+lemma unitInterval.between_strictMono {a b : I} (hab : a < b) : StrictMono (between a b) := by
+  intro s t hst
+  rw [← Subtype.coe_lt_coe]
+  simp only [between_apply]
+  suffices a.1 + s.1 * (b.1 - a.1) < a.1 + t.1 * (b.1 - a.1) by linarith
+  simp only [add_lt_add_iff_left]
+  gcongr
+  simpa
+
+@[simp]
+lemma unitInterval.between_one (a b : I) : between a b 1 = b := by
+  simp [← Subtype.val_inj]
+
+@[simp]
+lemma unitInterval.between_zero (a b : I) : between a b 0 = a := by
+  simp [← Subtype.val_inj]
+
+lemma unitInterval.left_le_between {a b : I} (hab : a < b) (t : I) : a ≤ between a b t := by
+  nth_rw 1 [← between_zero a b]
+  exact (between_strictMono hab).monotone <| nonneg t
+
+lemma unitInterval.between_le_right {a b : I} (hab : a < b) (t : I) : between a b t ≤ b := by
+  nth_rw 2 [← between_one a b]
+  exact (between_strictMono hab).monotone <| le_one t
+
+lemma convComb_convComb (a b : M) (s t r : I) :
+    convComb (convComb a b s) (convComb a b t) r = convComb a b (between s t r)
+
+lemma unitInterval.between_between (a b s t r : I) :
+    between (between a b s) (between a b t) r = between a b (between s t r) := by
+  simp [← Subtype.coe_inj, between_apply]
+  ring
+
+structure PolygonParam' {x y : EuclideanSpace ℝ (Fin n)} (P : Path x y) where
+  length : ℕ
+  c : Fin (length + 1) → I
+  strictMono : StrictMono c
+  piecewiseLinear : ∀ (i : Fin length) (t : I),
+    P (between (c i.castSucc) (c i.succ) t) = convComb (P (c i.castSucc)) (P (c i.succ)) t
+
+
+structure PolygonParam (P : Path x y) where
+  corners : List I
+  ne_nil : corners ≠ []
+  head_eq : List.head corners ne_nil = 0
+  last_eq : List.getLast corners ne_nil = 1
+  sorted : List.Sorted (· ≤ ·) corners
+  piecewiseLinear :
+    corners.Chain' (fun c₁ c₂ ↦ ∀ t : I, P (between c₁ c₂ t) = convComb (P c₁) (P c₂) t)
+
+  -- ∀ {c} (t : I),
+  --   c ∈ corners.zip corners.tail →
+  --   P (between c.1 c.2 t) = convComb (P c.1) (P c.2) t
+
+def PolygonParam.symm {P : Path x y} (lP : PolygonParam P) : PolygonParam P.symm where
+  corners := (lP.corners.map unitInterval.symm).reverse
+  sorted := by
+    rw [List.reverse_sorted, Function.flip_def, strictAnti_symm.sorted_ge_listMap]
+    exact lP.sorted
+  ne_nil := by simp [lP.ne_nil]
+  head_eq := by simp [lP.last_eq]
+  last_eq := by simp [lP.head_eq]
+  piecewiseLinear := by
+    simp only [Path.symm_apply, Function.comp_apply, Set.mem_Icc]
+    rw [List.chain'_reverse, List.chain'_map]
+    simp only [flip, symm_symm, symm_between]
+    convert lP.piecewiseLinear using 3 with a b
+    apply symmHomeomorph.toEquiv.forall_congr
+    simp only [Homeomorph.coe_toEquiv, symmHomeomorph_apply, between_symm, convComb_symm,
+      implies_true]
+
+noncomputable def PolygonParam.trans {x y z : EuclideanSpace ℝ (Fin n)} {P : Path x y}
+    {Q : Path y z} (lP : PolygonParam P) (lQ : PolygonParam Q) : PolygonParam (P.trans Q) where
+  corners := (lP.corners.map (between 0 half)) ++ (lQ.corners.map (between half 1))
+  ne_nil := by simp [lP.ne_nil]
+  head_eq := by simp [List.head_append, lP.ne_nil, lP.head_eq, between, convComb]
+
+
+  last_eq := by simp [List.getLast_append, lQ.ne_nil, between, convComb, lQ.last_eq]
+  sorted := by
+    rw [List.sorted_append, (between_strictMono zero_lt_half).sorted_le_listMap,
+      (between_strictMono half_lt_one).sorted_le_listMap, and_iff_right lP.sorted,
+      and_iff_right lQ.sorted]
+    simp only [one_div, List.mem_map,  forall_exists_index, and_imp, Subtype.mk_le_mk]
+    rintro a t ht rfl b s hs rfl
+    exact (between_le_right (by simp) _).trans (left_le_between (by simp) _)
+
+
+  piecewiseLinear := by
+    simp_rw [List.chain'_append, List.chain'_map]
+    simp only [List.getLast?_map, Option.mem_def, Option.map_eq_some', List.head?_map,
+      forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, between_between]
+
+
+  -- c : Fin (length + 1) → unitInterval
+  -- strictMono : StrictMono c
+  -- piecewiseLinear : ∀ (i : Fin length) (t : unitInterval),
+  --   P (between (c i.castSucc) (c i.succ) t) = convComb (P (c i.castSucc)) (P (c i.succ)) t
+
+-- def IsPolygonal {x y : EuclideanSpace ℝ (Fin n)} (P : Path x y) : Prop :=
+--     ∃ (k : ℕ) (c : Fin (k + 1) → unitInterval), ∀ (i : Fin k) (t : unitInterval),
+--       P (between (c i.castSucc) (c i.succ) t) = convComb (P (c i.castSucc)) (P (c i.succ)) t
