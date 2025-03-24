@@ -90,7 +90,7 @@ theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
 /-- A version of `Matroid.cRk_eq_zero_iff` applying to sets not contained in the ground set. -/
 theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
-    restrict_ground_eq, subset_antisymm_iff]
+    restrict_ground_eq, subset_antisymm_iff, loops]
   simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
   rw [union_comm, ← diff_subset_iff, diff_diff_right_self, subset_inter_iff,
     and_iff_left inter_subset_left]

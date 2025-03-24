@@ -117,7 +117,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
   (hM := by
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
-    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
+    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl, loops]
     suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
       simpa [M.principal_ground_ne_top]
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
@@ -150,8 +150,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
     rwa [h.eq_of_subset_indep ?_ (subset_diff_singleton hBB' heB), insert_diff_singleton,
       insert_eq_of_mem heB']
     rw [truncate_indep_iff]
-    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <|
-      diff_singleton_sSubset.mpr heB'⟩
+    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <| diff_singleton_ssubset.2 heB'⟩
   refine Indep.isBase_of_forall_insert ?_ ?_
   · rw [truncate_indep_iff]
     exact ⟨hBe.indep.subset (subset_insert _ _), hBe.not_isBase_of_ssubset (ssubset_insert he)⟩

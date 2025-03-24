@@ -57,8 +57,6 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
   simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
 
-lemma inter_diff_right_comm {s t r : Set α} : (s ∩ t) \ r = s \ r ∩ t := by
-  simp_rw [diff_eq, inter_right_comm]
 
 lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
@@ -105,48 +103,15 @@ theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f
 
 variable {s t r : Set α}
 
-@[simp] lemma diff_ssubset_left_iff : s \ t ⊂ s ↔ (s ∩ t).Nonempty := by
-  rw [ssubset_iff_subset_ne, and_iff_right diff_subset, Ne, sdiff_eq_left,
-    disjoint_iff_inter_eq_empty, nonempty_iff_ne_empty]
-
-@[simp] lemma inter_ssubset_right_iff : s ∩ t ⊂ t ↔ ¬ t ⊆ s := by
-  rw [ssubset_iff_subset_ne, and_iff_right inter_subset_right, Ne, inter_eq_right]
-
-@[simp] lemma inter_ssubset_left_iff : s ∩ t ⊂ s ↔ ¬ s ⊆ t := by
-  rw [ssubset_iff_subset_ne, and_iff_right inter_subset_left, Ne, inter_eq_left]
-
-@[simp] lemma ssubset_union_left_iff : s ⊂ s ∪ t ↔ ¬ t ⊆ s := by
-  rw [ssubset_iff_subset_ne, and_iff_right subset_union_left, Ne, eq_comm, union_eq_left]
-
-@[simp] lemma ssubset_union_right_iff : t ⊂ s ∪ t ↔ ¬ s ⊆ t := by
-  rw [ssubset_iff_subset_ne, and_iff_right subset_union_right, Ne, eq_comm, union_eq_right]
-
-lemma diff_union_diff_cancel_of_inter_subset_of_subset_union (hi : s ∩ r ⊆ t) (hu : t ⊆ s ∪ r) :
-    (s \ t) ∪ (t \ r) = s \ r := by
-  refine subset_antisymm (union_subset ?_ ?_) ?_
-  · rwa [subset_diff, and_iff_right diff_subset, disjoint_iff_inter_eq_empty,
-      ← inter_diff_right_comm, diff_eq_empty]
-  · rwa [subset_diff, and_iff_left disjoint_sdiff_left, diff_subset_iff, union_comm]
-  rw [union_comm, diff_subset_iff, ← union_assoc, union_diff_self, union_assoc,
-    union_diff_self, ← union_assoc]
-  exact subset_union_right
-
 @[simp] lemma iUnion_bool {s : Bool → Set α} : ⋃ i, s i = s true ∪ s false :=
   Set.ext <| by simp [or_comm]
 
 @[simp] lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
   Set.ext <| by simp [and_comm]
 
-lemma _root_.HasSubset.Subset.ssubset_of_mem_not_mem {x : α} (hst : s ⊆ t) (hxt : x ∈ t)
-    (hxs : x ∉ s) : s ⊂ t := hst.ssubset_of_not_subset fun a ↦ hxs (a hxt)
 
 @[simp] lemma pair_nontrivial_iff {x y : α} : ({x,y} : Set α).Nontrivial ↔ x ≠ y :=
   ⟨by rintro h rfl; simp at h, nontrivial_pair⟩
 
 lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (insert x t) := by
   rw [diff_diff, singleton_union]
-
-
-@[simp]
-lemma insert_diff_insert {s t : Set α} {x : α} : insert x (s \ insert x t) = insert x (s \ t) := by
-  rw [← diff_singleton_diff_eq, diff_diff_comm, insert_diff_singleton]

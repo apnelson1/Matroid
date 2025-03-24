@@ -329,7 +329,7 @@ lemma eLocalConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hC
     have hcl : (M ／ I).closure (Y \ C) = (M ／ I).closure (Y \ I) := by
       simp [closure_union_congr_right hI.closure_eq_closure]
     have ss : C \ I ⊆ (M ／ I).loops := by
-      simp only [contract_closure_eq, empty_union, hI.closure_eq_closure]
+      simp only [contract_closure_eq, empty_union, hI.closure_eq_closure, loops]
       exact diff_subset_diff_left (subset_closure _ _)
     rw [hI.contract_eq_contract_delete, eLocalConn_delete_eq,
       ← eLocalConn_closure_closure, closure_diff_eq_closure_of_subset_loops _ _ ss,
@@ -423,7 +423,7 @@ lemma eLocalConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
     hIY.eRelRk_eq_encard_diff_of_subset_isBasis hK' hIYK, hK.nullity_eq, union_diff_distrib,
     diff_eq_empty.2 hIYK, union_empty, add_assoc,
     ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
-    diff_union_diff_cancel_of_inter_subset_of_subset_union _ hK.subset, add_comm,
+    diff_union_diff_cancel' _ hK.subset, add_comm,
     encard_diff_add_encard_inter]
   exact (inter_subset_right.trans hIYK)
 
@@ -842,8 +842,8 @@ lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X �
 
 @[simp]
 lemma core_delete_subset (M : Matroid α) (X D : Set α) : (M ＼ D).core X ⊆ M.core X := by
-  simp_rw [core_def, delete_loops_eq, coloops, delete_dual_eq_dual_contract, contract_closure_eq,
-    delete_ground, empty_union]
+  simp_rw [core_def, delete_loops_eq, coloops, delete_dual_eq_dual_contract, contract_loops_eq,
+    delete_ground]
   have := M✶.closure_subset_closure (empty_subset D)
   tauto_set
 

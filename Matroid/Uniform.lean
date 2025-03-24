@@ -557,7 +557,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by
   refine ⟨fun hr ↦ ⟨M.loops, M.E \ M.loops, disjoint_sdiff_right, ?_⟩, ?_⟩
   · refine ext_indep ?_ fun I hI ↦ ?_
-    · simp [union_eq_self_of_subset_left (M.closure_subset_ground ∅)]
+    · simp [union_eq_self_of_subset_left M.loops_subset_ground]
     suffices M.Indep I ↔ Disjoint I (M.loops) ∧ (I ∩ (M.E \ M.loops)).Subsingleton ∧
       I ⊆ M.loops ∪ M.E by simpa [encard_le_one_iff_subsingleton, ← disjoint_iff_inter_eq_empty]
     refine ⟨fun h ↦ ?_, fun ⟨hcl, hss, _⟩ ↦ ?_⟩

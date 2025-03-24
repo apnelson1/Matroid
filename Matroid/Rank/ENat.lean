@@ -420,7 +420,7 @@ lemma Spanning.eRank_restrict (hX : M.Spanning X) : (M ↾ X).eRank = M.eRank :=
   rw [eRank_def, restrict_ground_eq, restrict_eRk_eq _ rfl.subset, hX.eRk_eq]
 
 lemma IsLoop.eRk_eq (he : M.IsLoop e) : M.eRk {e} = 0 := by
-  rw [← eRk_closure_eq, he.closure, eRk_closure_eq, eRk_empty]
+  rw [← eRk_closure_eq, he.closure, loops, eRk_closure_eq, eRk_empty]
 
 lemma IsNonloop.eRk_eq (he : M.IsNonloop e) : M.eRk {e} = 1 := by
   rw [← he.indep.isBasis_self.encard_eq_eRk, encard_singleton]

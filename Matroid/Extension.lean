@@ -220,7 +220,8 @@ lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut
   rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
 
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
-  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and]
+  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and,
+    loops]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB⟩ := hB.nonempty
   exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)
@@ -892,7 +893,7 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
     simp [heI]
   have hnl : (M.extendBy e U).IsNonloop e
   · rw [← indep_singleton, extendBy_Indep, ModularCut.extIndep_iff_of_mem (by simp)]
-    simpa [← U.eq_top_iff]
+    simpa [← U.eq_top_iff, closure_empty]
   rw [contractElem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]

@@ -70,7 +70,7 @@ lemma Indep.isSkewFamily_of_disjoint_isBases {Is Xs : η → Set α} (hI : M.Ind
       (M.closure_subset_closure (subset_inter (hIs i).subset (subset_iUnion _ i)))
   refine (inter_subset_inter (M.subset_closure _ (hIs i).subset_ground)
     (M.subset_closure _ (hIs j).subset_ground)).trans ?_
-  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure,
+  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure, loops,
     ← (hI.subset _).closure_inter_eq_inter_closure, Disjoint.inter_eq <| hdj hij]
   exact union_subset (subset_iUnion _ _) (subset_iUnion _ _)
 
@@ -608,7 +608,7 @@ lemma Skew.restrict_of_subset {R : Set α} (hXY : M.Skew X Y) (hXR : X ⊆ R) (h
 
 lemma Skew.of_restrict {R : Set α} (h : (M ↾ R).Skew X Y) (hR : R ⊆ M.E := by aesop_mat) :
     M.Skew X Y := by
-  rw [skew_iff_isModularPair_inter_subset_loops] at h ⊢
+  rw [skew_iff_isModularPair_inter_subset_loops, loops] at h ⊢
   simp only [restrict_closure_eq', empty_inter, diff_eq_empty.2 hR, union_empty,
     subset_inter_iff] at h
   exact ⟨h.1.ofRestrict hR, h.2.1⟩

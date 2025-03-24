@@ -25,7 +25,7 @@ lemma IsNonloop.closure_isPoint (he : M.IsNonloop e) : M.IsPoint (M.closure {e})
 
 lemma loops_covBy_iff : M.loops ⋖[M] P ↔ M.IsPoint P := by
   simp only [covBy_iff_eRelRk_eq_one, closure_isFlat, eRelRk_closure_left, eRelRk_empty_left,
-    true_and, and_congr_right_iff, and_iff_right_iff_imp]
+    true_and, and_congr_right_iff, and_iff_right_iff_imp, loops]
   exact fun h _ ↦ h.closure_subset_of_subset (empty_subset _)
 
 lemma IsPoint.covBy (hP : M.IsPoint P) : M.loops ⋖[M] P := loops_covBy_iff.2 hP

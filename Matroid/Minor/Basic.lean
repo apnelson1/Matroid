@@ -12,7 +12,7 @@ section Delete
 variable {D D₁ D₂ R : Set α}
 
 lemma eq_loopyOn_iff_closure {E : Set α} : M = loopyOn E ↔ M.loops = E ∧ M.E = E :=
-  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦
+  ⟨fun h ↦ by rw [h, loops]; simp, fun ⟨h,h'⟩ ↦
     by rw [← h', ← closure_empty_eq_ground_iff, ← loops, h, h']⟩
 
 class HasDelete (α β : Type*) where
@@ -197,12 +197,12 @@ instance deleteElem_finitary (M : Matroid α) [Finitary M] (e : α) : Finitary (
 lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.loops := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
-  simp [Set.ext_iff, mem_setOf, IsNonloop, IsLoop, mem_diff, and_comm]
+  simp [Set.ext_iff, mem_setOf, isNonloop_iff, isLoop_iff, mem_diff, and_comm]
 
 lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
     (M ＼ X).removeLoops = M.removeLoops := by
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
-    empty_diff, union_diff_self, union_eq_self_of_subset_left h]
+    empty_diff, union_diff_self, closure_empty, union_eq_self_of_subset_left h]
 
 lemma Coindep.delete_isBase_iff (hD : M.Coindep D) :
     (M ＼ D).IsBase B ↔ M.IsBase B ∧ Disjoint B D := by
@@ -1110,7 +1110,7 @@ variable {E : Set α}
   rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]
 
 @[simp] lemma loopyOn_contract (E X : Set α) : (loopyOn E) ／ X = loopyOn (E \ X) := by
-  simp_rw [eq_loopyOn_iff_closure, contract_closure_eq, empty_union, loopyOn_closure_eq,
+  simp_rw [eq_loopyOn_iff_closure, loops, contract_closure_eq, empty_union, loopyOn_closure_eq,
     contract_ground, loopyOn_ground, true_and]
 
 @[simp] lemma isMinor_loopyOn_iff : M ≤m loopyOn E ↔ M = loopyOn M.E ∧ M.E ⊆ E := by
