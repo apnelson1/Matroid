@@ -91,7 +91,7 @@ lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.C
 
 lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M.ConnectedTo e f := by
   replace hef := hef.to_dual
-  rw [contract_dual_eq_dual_delete] at hef
+  rw [dual_contract] at hef
   exact hef.of_delete.of_dual
 
 lemma ConnectedTo.of_isMinor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
@@ -290,7 +290,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   -- Restrict `M` to the union of the circuits.
   set M' := M ↾ range e with hM'
   have : M'✶.Finitary := by
-    rw [hM', ← delete_compl, delete_dual_eq_dual_contract]
+    rw [hM', ← delete_compl, dual_delete]
     exact contract_finitary
 
   set X := X Cs e with hX

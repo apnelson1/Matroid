@@ -955,7 +955,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
 
 lemma exists_common_major_of_delete_eq_contractElem (heD : e ∉ D) (hD : D ⊆ M.E)
     (h_eq : M ＼ D = N ／ e) : ∃ (P : Matroid α), P ／ e = M ∧ P ＼ D = N := by
-  rw [← dual_inj, delete_dual_eq_dual_contract, contractElem, contract_dual_eq_dual_delete] at h_eq
+  rw [← dual_inj, dual_delete, contractElem, dual_contract] at h_eq
   obtain ⟨P, hPM, hPN⟩ := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
   rw [eq_dual_iff_dual_eq] at hPM hPN
   refine ⟨P✶, by simpa using hPM, by simpa using hPN⟩

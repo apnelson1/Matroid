@@ -34,7 +34,7 @@ lemma eRank_delete_le (M : Matroid α) (D : Set α) : (M ＼ D).eRank ≤ M.eRan
   exact M.eRk_mono diff_subset
 
 lemma Indep.delete_eRank_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eRank := by
-  rw [← hI.coindep.delete_eRank_eq, contract_dual_eq_dual_delete]
+  rw [← hI.coindep.delete_eRank_eq, dual_contract]
 
 lemma Indep.eRank_dual_restrict_eq (hI : M.Indep I) : (M ↾ I)✶.eRank = 0 := by
   simp [hI.restrict_eq_freeOn]
@@ -52,7 +52,7 @@ lemma IsBasis.eRank_dual_restrict (hB : M.IsBasis I X) : (M ↾ X)✶.eRank = (X
     eq_comm, eq_dual_comm, loopyOn_dual_eq]
 
 lemma Indep.contract_eRk_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eRank := by
-  rw [contract_dual_eq_dual_delete, hI.coindep.delete_eRank_eq]
+  rw [dual_contract, hI.coindep.delete_eRank_eq]
 
 end Delete
 
@@ -532,7 +532,7 @@ lemma Indep.nullity_contract_of_superset (hI : M.Indep I) (hIX : I ⊆ X) :
 
 lemma nullity_eq_eRelRk (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
     M.nullity X = M✶.eRelRk (M.E \ X) M.E := by
-  rw [nullity, eRelRk_eq_eRk_diff_contract, ← delete_compl, delete_dual_eq_dual_contract, eRank_def]
+  rw [nullity, eRelRk_eq_eRk_diff_contract, ← delete_compl, dual_delete, eRank_def]
   simp
 
 lemma nullity_dual_eq (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
@@ -570,15 +570,15 @@ lemma nullity_contract_le (M : Matroid α) (hCX : C ⊆ X) :
     (M ／ C).nullity (X \ C) ≤ M.nullity X := by
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
     contract_restrict_eq_restrict_contract _ _ _ disjoint_sdiff_right, diff_union_self,
-    union_eq_self_of_subset_right hCX, contract_dual_eq_dual_delete]
+    union_eq_self_of_subset_right hCX, dual_contract]
   apply eRank_delete_le
 
 lemma nullity_contract_ge_of_disjoint (M : Matroid α) (hXC : Disjoint X C) :
     M.nullity X ≤ (M ／ C).nullity X := by
   have hle := (M ↾ (X ∪ C))✶.eRank_contract_le_eRank_delete C
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
-    contract_restrict_eq_restrict_contract _ _ _ hXC.symm, contract_dual_eq_dual_delete]
-  rwa [← delete_dual_eq_dual_contract, delete_eq_restrict, restrict_ground_eq,
+    contract_restrict_eq_restrict_contract _ _ _ hXC.symm, dual_contract]
+  rwa [← dual_delete, delete_eq_restrict, restrict_ground_eq,
     restrict_restrict_eq _ diff_subset, union_diff_cancel_right (Set.disjoint_iff.mp hXC)] at hle
 
 end Nullity

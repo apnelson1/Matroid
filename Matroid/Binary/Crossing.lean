@@ -53,7 +53,7 @@ lemma IsCrossing.of_contract (hC : (M ／ C).IsCrossing X) : M.IsCrossing X := b
 
 lemma IsCrossing.of_delete {D : Set α} (hD : (M ＼ D).IsCrossing X) : M.IsCrossing X := by
   have hd := hD.dual
-  rw [delete_dual_eq_dual_contract] at hd
+  rw [dual_delete] at hd
   exact hd.of_contract.of_dual
 
 lemma IsCrossing.of_isMinor {N : Matroid α} (hX : N.IsCrossing X) (hNM : N ≤m M) :
@@ -305,7 +305,7 @@ lemma IsCrossing.exists_isMinor_isCircuit_isCocircuit (hX : M.IsCrossing X) (hXn
   rw [IsCocircuit, isCircuit_iff_restr_eq_circuitOn hXne, hN₂r',
     ← isCircuit_iff_restr_eq_circuitOn hXne, ← isCocircuit_def, hN₁,
     contract_delete_comm _ disjoint_sdiff_sdiff, contract_isCocircuit_iff, and_iff_left hdj2,
-    ← diff_inter_self_eq_diff, isCocircuit_def, delete_dual_eq_dual_contract]
+    ← diff_inter_self_eq_diff, isCocircuit_def, dual_delete]
   exact hK.isCircuit.contract_diff_isCircuit hXne inter_subset_right
 
 lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX : M.IsCrossing X)

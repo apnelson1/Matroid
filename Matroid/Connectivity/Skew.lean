@@ -530,10 +530,10 @@ lemma exists_isMinor_restrict_corestrict_eq_spanning_cospanning (hX : X ⊆ M.E)
       restrict_ground_eq, hJX.inter_eq, delete_empty]
     · exact hIsp.subset_ground
     exact hJsp.subset_ground
-  · rw [delete_dual_eq_dual_contract, hJ_eq, contract_dual_eq_dual_delete, delete_eq_restrict,
+  · rw [dual_delete, hJ_eq, dual_contract, delete_eq_restrict,
       restrict_restrict_eq _ (show X ⊆ M✶.E \ I from hIsp.subset_ground)]
   · rwa [Coindep.delete_spanning_iff hJ, and_iff_left hJX.symm]
-  rwa [delete_dual_eq_dual_contract]
+  rwa [dual_delete]
 
 lemma IsSkewFamily.skew_compl {Xs : η → Set α} (h : M.IsSkewFamily Xs) (A : Set η) :
     M.Skew (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by

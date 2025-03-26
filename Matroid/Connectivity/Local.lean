@@ -692,7 +692,7 @@ lemma eConn_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).eConn X ≤ M.
   apply eConn_restrict_le
 
 lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ M.eConn X := by
-  rw [← eConn_dual, contract_dual_eq_dual_delete, ← M.eConn_dual]
+  rw [← eConn_dual, dual_contract, ← M.eConn_dual]
   apply eConn_delete_le
 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
@@ -842,7 +842,7 @@ lemma core_subset_inter_ground (M : Matroid α) (X : Set α) : M.core X ⊆ X �
 
 @[simp]
 lemma core_delete_subset (M : Matroid α) (X D : Set α) : (M ＼ D).core X ⊆ M.core X := by
-  simp_rw [core_def, delete_loops_eq, coloops, delete_dual_eq_dual_contract, contract_loops_eq,
+  simp_rw [core_def, delete_loops_eq, coloops, dual_delete, contract_loops_eq,
     delete_ground]
   have := M✶.closure_subset_closure (empty_subset D)
   tauto_set
@@ -854,7 +854,7 @@ lemma core_restrict_subset (M : Matroid α) (X R : Set α) : (M ↾ R).core X �
 
 @[simp]
 lemma core_contract_subset (M : Matroid α) (X C : Set α) : (M ／ C).core X ⊆ M.core X := by
-   rw [← core_dual, contract_dual_eq_dual_delete, ← M.core_dual]
+   rw [← core_dual, dual_contract, ← M.core_dual]
    apply core_delete_subset
 
 end core

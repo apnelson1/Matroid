@@ -176,7 +176,7 @@ lemma Quotient.contract (hQ : M₂ ≤q M₁) (C : Set α) : M₂ ／ C ≤q M�
   exact diff_subset_diff_left <| hQ.closure_subset_closure (X ∪ C)
 
 lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ ＼ D := by
-  rw [← quotient_dual_iff, delete_dual_eq_dual_contract, delete_dual_eq_dual_contract]
+  rw [← quotient_dual_iff, dual_delete, dual_delete]
   exact hQ.dual.contract D
 
 theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by

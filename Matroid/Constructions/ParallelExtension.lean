@@ -82,7 +82,7 @@ lemma addCoisLoop_eq_self (he : e ∈ M.E) : M.addColoop e = M := by
 
 lemma eq_addCoisLoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ (M' ／ e) = M := by
   rw [addColoop, eq_dual_comm, eq_comm, eq_addLoop_iff (show e ∉ M✶.E from he),
-    dual_isLoop_iff_coloop, eq_dual_comm, deleteElem, dual_delete_dual_eq_contract, contractElem,
+    dual_isLoop_iff_coloop, eq_dual_comm, deleteElem, dual_delete_dual, contractElem,
     eq_comm]
 
 end IsLoop
@@ -314,28 +314,28 @@ def seriesExtend (M : Matroid α) (e f : α) : Matroid α := (M✶.parallelExten
 lemma seriesExtend_coloop (he : M.Coloop e) (f : α) :
     M.seriesExtend e f = (M ／ f).addColoop f := by
   rw [seriesExtend, parallelExtend_not_isNonloop, addColoop, deleteElem, contractElem,
-    contract_dual_eq_dual_delete]
+    dual_contract]
   simp [isNonloop_iff, dual_isLoop_iff_coloop, he]
 
 lemma seriesExtend_not_mem_ground (he : e ∉ M.E) (f : α) :
     M.seriesExtend e f = (M ／ f).addColoop f := by
   rw [seriesExtend, parallelExtend_not_isNonloop, addColoop, contractElem, deleteElem,
-    contract_dual_eq_dual_delete]
+    dual_contract]
   simp [isNonloop_iff, he]
 
 lemma seriesExtend_eq_seriesExtend_contract (M : Matroid α) {e f : α} (hef : e ≠ f):
     M.seriesExtend e f = (M ／ f).seriesExtend e f := by
   rw [seriesExtend, parallelExtend_eq_parallelExtend_delete _ hef, seriesExtend]
-  simp only [deleteElem, contractElem, contract_dual_eq_dual_delete]
+  simp only [deleteElem, contractElem, dual_contract]
 
 lemma seriesExtend_contract_eq' (M : Matroid α) (e f : α) :
     ((M.seriesExtend e f) ／ f) = M ／ f := by
-  rw [seriesExtend, contractElem, ← delete_dual_eq_dual_contract, ← deleteElem,
+  rw [seriesExtend, contractElem, ← dual_delete, ← deleteElem,
     parallelExtend_delete_eq']
   simp
 
 lemma seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f ／ f) = M := by
-  rw [seriesExtend, contractElem, ← delete_dual_eq_dual_contract, ← deleteElem,
+  rw [seriesExtend, contractElem, ← dual_delete, ← deleteElem,
     parallelExtend_delete_eq _ (show f ∉ M✶.E from hf), dual_dual]
 
 lemma seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
@@ -347,7 +347,7 @@ lemma seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
 lemma eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.Coloop e) (hf : f ∉ M.E) :
     M' = M.seriesExtend e f ↔ M'.Series e f ∧ ((M' ／ f) = M) := by
   rw [seriesExtend, eq_dual_comm, eq_comm, eq_parallelExtend_iff _ (show f ∉ M✶.E from hf),
-    deleteElem, ← contract_dual_eq_dual_delete, ← contractElem, dual_inj, Series]
+    deleteElem, ← dual_contract, ← contractElem, dual_inj, Series]
   rwa [isNonloop_iff, and_iff_left (show e ∈ M✶.E from heE), dual_isLoop_iff_coloop]
 
 instance seriesExtend_finite (M : Matroid α) [M.Finite] : (M.seriesExtend e f).Finite :=

@@ -378,7 +378,7 @@ lemma Uniform.contract (hM : M.Uniform) (C : Set α) : (M ／ C).Uniform := by
     fun h ↦ .inr <| h.superset (union_subset_union_right X hI.subset)
 
 lemma Uniform.delete (hM : M.Uniform) (D : Set α) : (M ＼ D).Uniform := by
-  rw [← uniform_dual_iff, delete_dual_eq_dual_contract]
+  rw [← uniform_dual_iff, dual_delete]
   exact hM.dual.contract D
 
 lemma Uniform.minor {N : Matroid α} (hM : M.Uniform) (hNM : N ≤m M) : N.Uniform := by
