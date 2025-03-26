@@ -75,16 +75,33 @@ theorem linearIndepOn_image_injOn_iff' {ι ι' R M : Type*} [Ring R] [AddCommGro
   rw [ ← linearIndepOn_image_injOn_iff he, linearIndepOn_congr hg]
   rfl
 
+-- lemma Equiv.Set.image_subtype_symm_apply (t : Set α) (s : Set t) (x : α) (hx : x ∈ Subtype.val '' s):
+--     (Equiv.Set.image _ s Subtype.val_injective).symm ⟨x, sorry⟩ = ⟨⟨x, sorry⟩, sorry⟩ := by
+--   rfl
+
+@[simps?] def foo {s t : Set α} (hst : s ⊆ t) : s ≃ t ↓∩ s where
+  toFun x := ⟨⟨x, hst (by simp)⟩, by simp⟩
+  invFun x := ⟨x.1.1, by aesop⟩
+  left_inv x := rfl
+  right_inv x := rfl
+
 lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : Set B)
-    (hB : ∀ i : B, Pᵀ i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
-    LinearIndepOn 𝔽 Pᵀ (((↑) '' X) ∪ Y) ↔
-    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1))ᵀ := by
+    (hB : ∀ i : B, P.colFun i = Pi.single i 1) (Y : Set α) (hdj : Disjoint ((↑) '' X) Y) :
+    LinearIndepOn 𝔽 P.colFun (((↑) '' X) ∪ Y) ↔
+    LinearIndependent 𝔽 (P.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun i : Y ↦ i.1)).colFun := by
   classical
+  let c := (↑) '' X ∪ Y
+  -- have := foo (t := c) subset_union_left
+  let Q := P.submatrix id (fun j : c ↦ j.1)
+  change LinearIndependent 𝔽 Q.colFun ↔ LinearIndependent 𝔽
+    (Q.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun j : Y ↦ ⟨j, .inr j.2⟩)).colFun
+
+
   let Q := P.submatrix id (fun j : ↥(((↑) '' X) ∪ Y) ↦ j.1)
   have hQB : ∀ i j {h'}, ⟨j.1, h'⟩ ∈ X → Q i j = if i.1 = j.1 then 1 else 0 := by
     rintro i ⟨j, (hj | hj)⟩ h' hjX
     · simp only [submatrix_apply, id_eq, Q]
-      rw [← P.transpose_apply, hB ⟨j, h'⟩, Pi.single_apply]
+      rw [← P.colFun_apply, hB ⟨j, h'⟩, Pi.single_apply]
       simp_rw [← Subtype.val_inj]
     exact hdj.not_mem_of_mem_left (a := j) (by simpa [h'] using hjX) hj |>.elim
 
@@ -94,10 +111,38 @@ lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : 
   change LinearIndependent 𝔽 Q.colFun ↔ LinearIndependent 𝔽
     (Q.submatrix (fun i : ↥Xᶜ ↦ i.1) (fun j : Y ↦ ⟨j, .inr j.2⟩)).colFun
   have h0 : Q.block Xᶜ ( _ ↓∩ ((↑) '' X)) = 0 := by aesop
-  let e : X → (↑(((Subtype.val '' X) ∪ Y) ↓∩ Subtype.val '' X)) := fun x ↦ ⟨⟨x,sorry⟩, sorry⟩
-  have hsurj : e.Surjective := sorry
+  -- have := foo (t := c) subset_union_left
+  set e : (c ↓∩ (↑) '' X) ≃ X := (foo (t := c) subset_union_left).symm
+      -- (Equiv.Set.image  _ _ Subtype.val_injective).trans
+      -- <| (Equiv.Set.ofEq (by aesop)).trans (Equiv.Set.image _ _ Subtype.val_injective).symm with he
+
   set C := (Q.block Xᶜᶜ (((↑) '' X ∪ Y) ↓∩ ↑X)) with hC
-  have h1 : C.submatrix (Equiv.setCongr (compl_compl X).symm) e = 1 := sorry
+
+  have h1 : C.submatrix (Equiv.Set.ofEq (compl_compl X).symm) e.symm = 1 := by
+    -- simp [← Matrix.ext_iff, e]
+    ext i j
+
+    simp [C, e]
+
+    rw [hQB]
+    · sorry
+    simp [e]
+
+    rw [hej]
+    simp only [Equiv.coe_trans, submatrix_apply, Equiv.Set.ofEq_apply, Function.comp_apply,
+      Equiv.Set.image_apply, block_apply, one_apply, Subtype.mk.injEq, C]
+
+    -- rw [hQB]
+    -- -- rw [hQB _ _ (by aesop)]
+    -- -- simp +contextual [eq_ite_iff]
+
+    -- -- rw [hQB _ _ sorry]
+    -- aesop
+    -- convert rfl
+
+    -- simp [e, ← Subtype.val_inj]
+
+
 
   have htop : span 𝔽 (range (1 : Matrix X X 𝔽).colFun) = ⊤ := sorry
   rw [span_col_eq_top_iff_linearIndependent_rows, ← h1,
