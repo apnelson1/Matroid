@@ -311,9 +311,9 @@ lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate 
 lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
   nth_rewrite 1 [projectBy_eq_map_comap]
   convert ((((M.map some _)).extendBy none
-      (U.map some _)).con_quotient_del {none}).comap some
+      (U.map some ((Option.some_injective _).injOn))).con_quotient_del {none}).comap some
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]
-  rw [← deleteElem, ModularCut.extendBy_deleteElem _ (by simp)]
+  rw [ModularCut.extendBy_deleteElem _ (by simp)]
 
 end Constructions
 

@@ -180,8 +180,8 @@ lemma IsNonloop.closure_covBy_iff (he : M.IsNonloop e) :
   rw [h.eRk_eq, eRk_closure_eq, he.eRk_eq]
   rfl
 
-def IsNonloop.isLIneContractIsPointEquiv (he : M.IsNonloop e) :
-    {P // (M ／ e).IsPoint P} ≃ {L // M.IsLine L ∧ e ∈ L} :=
+def IsNonloop.LineContractElemPointEquiv (he : M.IsNonloop e) :
+    {P // (M ／ {e}).IsPoint P} ≃ {L // M.IsLine L ∧ e ∈ L} :=
   (M.isPointContractCovByEquiv {e}).trans (Equiv.subtypeEquivRight (fun _ ↦ he.closure_covBy_iff))
 
 abbrev IsPlane (M : Matroid α) (P : Set α) := M.IsFlat P ∧ M.eRk P = 3

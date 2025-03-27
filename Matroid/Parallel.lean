@@ -147,8 +147,8 @@ lemma Parallel.mem_closure_iff_mem_closure (h : M.Parallel e f) {X : Set α} :
       (M.closure_subset_closure_of_subset_closure (by simpa))
   exact mem_of_mem_of_subset h.mem_closure (M.closure_subset_closure_of_subset_closure (by simpa))
 
-lemma Parallel.isLoop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ e).IsLoop f := by
-  rw [isLoop_iff, contractElem, contract_loops_eq, mem_diff]
+lemma Parallel.isLoop_contractElem (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ {e}).IsLoop f := by
+  rw [isLoop_iff, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩
 
 lemma restrict_parallel_iff {R : Set α} :

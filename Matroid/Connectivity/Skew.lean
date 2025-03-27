@@ -407,11 +407,15 @@ lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I
   ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
     fun h ↦ h.mono hI.subset hJ.subset⟩
 
+/-- Can we just lose this one by the below? -/
 lemma Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
     (hJ : M.Indep J) (hJY : J ⊆ Y) : M.Indep (I ∪ J) := by
   rw [union_eq_iUnion]
   exact IsSkewFamily.iUnion_indep_subset_indep h (Is := fun i ↦ bif i then I else J)
     (Bool.rec (by simpa) (by simpa)) (Bool.rec (by simpa) (by simpa))
+
+lemma Skew.union_indep (h : M.Skew I J) (hI : M.Indep I) (hJ : M.Indep J) : M.Indep (I ∪ J) :=
+  h.union_indep_of_indep_subsets hI rfl.subset hJ rfl.subset
 
 lemma Skew.union_isBasis_union (h : M.Skew X Y) (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) :
     M.IsBasis (I ∪ J) (X ∪ Y) := by

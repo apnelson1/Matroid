@@ -316,7 +316,7 @@ lemma IsBasis.contract_isBasis (h : M.IsBasis I X) (hJC : M.IsBasis J C)
     (h_ind : M.Indep (I \ C ∪ J)) : (M ／ C).IsBasis (I \ C) (X \ C) :=
   h.contract_isBasis_of_isBasis' hJC.isBasis' h_ind
 
-lemma IsBasis.contract_isBasis_of_disjoint  (h : M.IsBasis I X) (hJC : M.IsBasis J C)
+lemma IsBasis.contract_isBasis_of_disjoint (h : M.IsBasis I X) (hJC : M.IsBasis J C)
     (hdj : Disjoint C X) (h_ind : M.Indep (I ∪ J)) : (M ／ C).IsBasis I X := by
   have h' := h.contract_isBasis hJC
   rwa [(hdj.mono_right h.subset).sdiff_eq_right, hdj.sdiff_eq_right, imp_iff_right h_ind] at h'
@@ -329,7 +329,7 @@ lemma IsBasis.contract_isBasis_of_indep (h : M.IsBasis I X) (h_ind : M.Indep (I 
     (M ／ J).IsBasis (I \ J) (X \ J) :=
   h.contract_isBasis (h_ind.subset subset_union_right).isBasis_self (by simpa)
 
-lemma IsBasis.contract_isBasis_of_disjoint_ind (h : M.IsBasis I X) (hdj : Disjoint J X)
+lemma IsBasis.contract_isBasis_of_disjoint_indep (h : M.IsBasis I X) (hdj : Disjoint J X)
     (h_ind : M.Indep (I ∪ J)) : (M ／ J).IsBasis I X := by
   rw [← hdj.sdiff_eq_right, ← (hdj.mono_right h.subset).sdiff_eq_right]
   exact h.contract_isBasis_of_indep h_ind

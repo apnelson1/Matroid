@@ -338,12 +338,12 @@ lemma eLocalConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hC
 
   obtain ⟨J, hJ, hCJ⟩ := hC.subset_isBasis_of_subset hCY
   have hdj := hXC.disjoint_of_indep_right hC
-  have hbY := hC.contract_isBasis hJ <| hJ.indep.subset <| union_subset hCJ rfl.subset
+  have hbY : (M ／ C).IsBasis (J \ C) (Y \ C) :=
+    hJ.contract_isBasis_of_indep (J := C) (hJ.indep.subset (by simpa))
   obtain ⟨K, hK⟩ := M.exists_isBasis X
-
   have hbX : (M ／ C).IsBasis K X :=
-    hC.contract_isBasis_of_disjoint hK hdj.symm <|
-    hXC.symm.union_indep_of_indep_subsets hC rfl.subset hK.indep hK.subset
+    hK.contract_isBasis_of_disjoint_indep hdj.symm <|
+      (hXC.mono_left hK.subset).union_indep hK.indep hC
   have hrw : K ∪ J \ C = (K ∪ J) \ C := by
     rw [union_diff_distrib, (hdj.mono_left hK.subset).sdiff_eq_left]
   rw [hK.eLocalConn_eq hJ, hbX.eLocalConn_eq hbY, hrw,

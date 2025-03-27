@@ -224,11 +224,11 @@ lemma Simple.of_restrict_contract {C : Set α} (hC : (M ↾ C).Simple) (h : (M �
   · by_cases hfC : f ∈ C
     · exact hC _ _ hef heC hfC
     refine by_contra fun hne ↦ not_isLoop (M ／ C) f ?_
-    exact (hef.isLoop_of_contract hne).of_isMinor
+    exact (hef.isLoop_contractElem hne).of_isMinor
       ⟨hef.mem_ground_right, hfC⟩ (contract_isMinor_of_mem _ heC)
   by_cases hfC : f ∈ C
   · refine by_contra fun (hne : e ≠ f) ↦ not_isLoop (M ／ C) e ?_
-    exact (hef.symm.isLoop_of_contract hne.symm).of_isMinor ⟨hef.mem_ground_left, heC⟩
+    exact (hef.symm.isLoop_contractElem hne.symm).of_isMinor ⟨hef.mem_ground_left, heC⟩
       (contract_isMinor_of_mem _ hfC)
   apply h
   rw [parallel_iff, contract_closure_eq, contract_closure_eq, closure_union_congr_left

@@ -264,9 +264,9 @@ lemma IsFlat.union_isFlat_of_contract' (hF : (M ／ C).IsFlat F) : M.IsFlat (F �
   · exact union_subset_union_right _ <| (M.subset_closure _).trans (M.closure_inter_ground _).subset
   exact subset_union_left.trans (hF.symm.subset.trans (M.closure_subset_ground _))
 
-lemma IsNonloop.contract_isFlat_iff (he : M.IsNonloop e) :
-    (M ／ e).IsFlat F ↔ M.IsFlat (insert e F) ∧ e ∉ F := by
-  rw [contractElem, isFlat_contract_iff, union_singleton, disjoint_singleton_right]
+lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
+    (M ／ {e}).IsFlat F ↔ M.IsFlat (insert e F) ∧ e ∉ F := by
+  rw [isFlat_contract_iff, union_singleton, disjoint_singleton_right]
 
 /-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def isFlatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
@@ -343,9 +343,9 @@ lemma IsFlat.exists_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) :
 lemma IsFlat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) : M.closure F ⊆ F ∪ D :=
   (isFlat_delete_iff'.1 hF).1
 
-@[simp] lemma isFlat_deleteElem_iff :
-    (M ＼ e).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
-  rw [deleteElem, isFlat_delete_iff]
+@[simp] lemma deleteElem_isFlat_iff :
+    (M ＼ {e}).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
+  rw [isFlat_delete_iff]
   constructor
   · rintro ⟨F, hF, rfl⟩
     obtain (heF | heF) := em (e ∈ F) <;> simp [heF, hF]

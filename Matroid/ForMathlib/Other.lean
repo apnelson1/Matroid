@@ -135,43 +135,43 @@ end Swap
 --     exact iff_of_true ⟨hf, h_ne.symm⟩ he
 --   rw [and_iff_left hxe]
 
-section Matrix
+-- section Matrix
 
-variable {m n R ι : Type} [Semiring R]
+-- variable {m n R ι : Type} [Semiring R]
 
-/-- For a semiring `R` and a singleton type `ι`, the modules `(n → R)` and `Matrix ι n R` are
-linearly equivalent. -/
-@[simps] def Matrix.row_linearEquiv (n R ι : Type*) [Semiring R] [Unique ι] :
-    (n → R) ≃ₗ[R] Matrix ι n R where
-  toFun := Matrix.row ι
-  invFun A i := A default i
-  map_add' := Matrix.row_add
-  map_smul' := Matrix.row_smul
-  left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
+-- /-- For a semiring `R` and a singleton type `ι`, the modules `(n → R)` and `Matrix ι n R` are
+-- linearly equivalent. -/
+-- @[simps] def Matrix.row_linearEquiv (n R ι : Type*) [Semiring R] [Unique ι] :
+--     (n → R) ≃ₗ[R] Matrix ι n R where
+--   toFun := Matrix.row ι
+--   invFun A i := A default i
+--   map_add' := Matrix.row_add
+--   map_smul' := Matrix.row_smul
+--   left_inv := fun _ ↦ rfl
+--   right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
 
 
-/-- For a semiring `R` and a singleton type `ι`,
-the modules `(m → R)` and `Matrix m ι r` are linearly equivalent. -/
-@[simps!] def Matrix.col_linearEquiv (m R ι : Type*) [Unique ι] [Semiring R] :
-    (m → R) ≃ₗ[R] Matrix m ι R where
-  toFun := Matrix.col ι
-  invFun A i := A i default
-  map_add' := Matrix.col_add
-  map_smul' := Matrix.col_smul
-  left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
+-- /-- For a semiring `R` and a singleton type `ι`,
+-- the modules `(m → R)` and `Matrix m ι r` are linearly equivalent. -/
+-- @[simps!] def Matrix.col_linearEquiv (m R ι : Type*) [Unique ι] [Semiring R] :
+--     (m → R) ≃ₗ[R] Matrix m ι R where
+--   toFun := Matrix.col ι
+--   invFun A i := A i default
+--   map_add' := Matrix.col_add
+--   map_smul' := Matrix.col_smul
+--   left_inv := fun _ ↦ rfl
+--   right_inv := fun _ ↦ by ext; simp [Unique.eq_default]
 
-theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {s : Set α} {t : Set β}
-    (hst : t ⊆ f '' s) : ∃ t₀, t₀ ⊆ s ∧ t = f '' t₀ := by
-  refine ⟨f ⁻¹' t ∩ s, inter_subset_right, subset_antisymm (fun x hxt ↦ ?_) ?_⟩
-  · obtain ⟨a, ha, rfl⟩ := hst hxt
-    exact ⟨a, mem_inter hxt ha, rfl⟩
-  simp [image_subset_iff, inter_subset_left]
+-- theorem exists_eq_image_subset_of_subset_image {α β : Type*} {f : α → β} {s : Set α} {t : Set β}
+--     (hst : t ⊆ f '' s) : ∃ t₀, t₀ ⊆ s ∧ t = f '' t₀ := by
+--   refine ⟨f ⁻¹' t ∩ s, inter_subset_right, subset_antisymm (fun x hxt ↦ ?_) ?_⟩
+--   · obtain ⟨a, ha, rfl⟩ := hst hxt
+--     exact ⟨a, mem_inter hxt ha, rfl⟩
+--   simp [image_subset_iff, inter_subset_left]
 
-theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
+-- theorem Set.restrict_id_eq (s : Set α) : s.restrict id = Subtype.val := rfl
 
-abbrev Set.inclosure (s : Set α) : s → α := Subtype.val
+-- abbrev Set.inclosure (s : Set α) : s → α := Subtype.val
 
-@[simp] theorem isEmpty_fin_iff {b : ℕ} : IsEmpty (Fin b) ↔ b = 0 := by
-  cases b <;> simp [Fin.isEmpty]
+-- @[simp] theorem isEmpty_fin_iff {b : ℕ} : IsEmpty (Fin b) ↔ b = 0 := by
+--   cases b <;> simp [Fin.isEmpty]

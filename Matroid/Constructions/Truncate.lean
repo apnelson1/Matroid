@@ -207,7 +207,8 @@ lemma Coindep.truncate_delete {D : Set α} (hD : M.Coindep D) :
     (M ＼ D).truncate = M.truncate ＼ D := by
   refine ext_indep rfl fun I hI ↦ ?_
   rw [truncate_ground_eq, delete_ground, subset_diff] at hI
-  simp [truncate_indep_iff', hD.delete_isBase_iff, delete_indep_iff, truncate_indep_iff, hI.2]
+  rw [delete_indep_iff, truncate_indep_iff', hD.delete_isBase_iff, and_iff_left hI.2,
+    truncate_indep_iff', delete_indep_iff, and_iff_left hI.2, and_iff_left hI.2]
 
 lemma truncate_restrict_of_not_spanning {R : Set α} (hSE : R ⊆ M.E) (hS : ¬ M.Spanning R) :
     (M.truncate ↾ R) = M ↾ R := by
