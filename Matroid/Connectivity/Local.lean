@@ -642,11 +642,11 @@ lemma eConn_compl' (M : Matroid α) (X : Set α) : M.eConn Xᶜ = M.eConn X := b
     OnUniv.ground_diff_eq]
   exact congr_arg _ <| by tauto_set
 
-lemma eConn_union_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.loops) :
+lemma eConn_union_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M.coloops) :
     M.eConn (X ∪ L) = M.eConn X := by
   rw [← eConn_dual, eConn_union_of_subset_loops _ hL, eConn_dual]
 
-lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M✶.loops) :
+lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M.coloops) :
     M.eConn (X \ L) = M.eConn X := by
   rw [← eConn_dual, eConn_diff_of_subset_loops _ hL, eConn_dual]
 

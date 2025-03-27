@@ -11,7 +11,7 @@ namespace Matroid
 
 
 
-lemma closure1 (heE : e ∈ M.E) (he : ¬ M.Coloop e)
+lemma closure1 (heE : e ∈ M.E) (he : ¬ M.IsColoop e)
     (h : ∀ a ∈ M.E, ∃ X Y, Disjoint X Y ∧ a ∉ X ∧ a ∉ Y ∧ e ∉ X ∧ e ∉ Y
       ∧ M.closure (insert a X) = M.closure Y ∧ e ∈ M.closure Y) :
     ∃ X Y, Disjoint X Y ∧ e ∉ X ∧ e ∉ Y ∧ M.closure X = M.closure Y ∧ e ∈ M.closure Y := by
@@ -21,7 +21,7 @@ lemma closure1 (heE : e ∈ M.E) (he : ¬ M.Coloop e)
     obtain ⟨B, hB⟩ := M.exists_isBase
     obtain rfl | rfl := subset_singleton_iff_eq.1 <| hB.subset_ground.trans h_eq.symm.subset
     · rwa [hB.closure_eq]
-    rwa [coisLoop_iff_not_mem_closure_compl, not_not, h_eq, diff_self] at he
+    rwa [isColoop_iff_not_mem_closure_compl, not_not, h_eq, diff_self] at he
   -- otherwise, let `a ∈ M.E \ {e}`, and let `Xa` and `Ya` be sets given by the hypothesis for `a`.
   obtain ⟨a, haE, hae : a ≠ e⟩ := exists_of_ssubset hssu
   obtain ⟨Xa, Ya, hdj, haX, haY, heX, heY, hclXY, hecl⟩ := h a haE

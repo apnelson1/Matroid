@@ -456,12 +456,12 @@ end Contract
 
 section Rank
 
-lemma deleteElem_eRank_eq (he : ¬ M.Coloop e) : (M ＼ {e}).eRank = M.eRank := by
-  rw [coisLoop_iff_diff_nonspanning, not_not] at he
+lemma deleteElem_eRank_eq (he : ¬ M.IsColoop e) : (M ＼ {e}).eRank = M.eRank := by
+  rw [isColoop_iff_diff_nonspanning, not_not] at he
   rw [eRank_def, delete_eRk_eq _ (by simp), delete_ground, ← eRk_closure_eq, he.closure_eq,
     eRank_def]
 
-lemma delete_elem_rank_eq (M : Matroid α) (he : ¬ M.Coloop e) : (M ＼ {e}).rank = M.rank := by
+lemma delete_elem_rank_eq (M : Matroid α) (he : ¬ M.IsColoop e) : (M ＼ {e}).rank = M.rank := by
   rw [rank, deleteElem_eRank_eq he, rank]
 
 lemma delete_rk_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).rk X = M.rk (X \ D) := by

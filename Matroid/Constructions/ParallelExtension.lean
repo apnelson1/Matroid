@@ -75,14 +75,15 @@ instance addLoop_finitary (M : Matroid α) [M.Finitary] (e : α) : (M.addLoop e)
 
 def addColoop (M : Matroid α) (e : α) : Matroid α := (M✶.addLoop e)✶
 
-lemma addCoisLoop_eq_self (he : e ∈ M.E) : M.addColoop e = M := by
+lemma addColoop_eq_self (he : e ∈ M.E) : M.addColoop e = M := by
   rwa [addColoop, addLoop_eq_self, dual_dual]
 
-@[simp] lemma addCoisLoop_ground (M : Matroid α) (e : α) : (M.addColoop e).E = insert e M.E := rfl
+@[simp] lemma addColoop_ground (M : Matroid α) (e : α) : (M.addColoop e).E = insert e M.E := rfl
 
-lemma eq_addCoisLoop_iff (he : e ∉ M.E) : M' = M.addColoop e ↔ M'.Coloop e ∧ (M' ／ {e}) = M := by
+lemma eq_addColoop_iff (he : e ∉ M.E) :
+    M' = M.addColoop e ↔ M'.IsColoop e ∧ (M' ／ {e}) = M := by
   rw [addColoop, eq_dual_comm, eq_comm, eq_addLoop_iff (show e ∉ M✶.E from he),
-    dual_isLoop_iff_coloop, eq_dual_comm, dual_delete_dual, eq_comm]
+    dual_isLoop_iff_isColoop, eq_dual_comm, dual_delete_dual, eq_comm]
 
 end IsLoop
 
@@ -288,7 +289,7 @@ section Series
 
 variable {α : Type*} [DecidableEq α] {M M' : Matroid α} {e f : α}
 
-/-- Coextend `e` by `f` in series. Intended for use where `e` is a non-coloop and `f ∉ M.E`. -/
+/-- Coextend `e` by `f` in series. Intended for use where `e` is a non-isColoop and `f ∉ M.E`. -/
 def seriesExtend (M : Matroid α) (e f : α) : Matroid α := (M✶.parallelExtend e f)✶
 
 @[simp] lemma seriesExtend_dual (M : Matroid α) (e f : α) :
@@ -306,10 +307,10 @@ def seriesExtend (M : Matroid α) (e f : α) : Matroid α := (M✶.parallelExten
     M.seriesExtend e e = M.addColoop e := by
   rw [seriesExtend, parallelExtend_self, addColoop]
 
-lemma seriesExtend_coloop (he : M.Coloop e) (f : α) :
+lemma seriesExtend_isColoop (he : M.IsColoop e) (f : α) :
     M.seriesExtend e f = (M ／ {f}).addColoop f := by
   rw [seriesExtend, parallelExtend_not_isNonloop, addColoop, dual_contract]
-  simp [isNonloop_iff, dual_isLoop_iff_coloop, he]
+  simp [isNonloop_iff, dual_isLoop_iff_isColoop, he]
 
 lemma seriesExtend_not_mem_ground (he : e ∉ M.E) (f : α) :
     M.seriesExtend e f = (M ／ {f}).addColoop f := by
@@ -329,17 +330,17 @@ lemma seriesExtend_contract_eq' (M : Matroid α) (e f : α) :
 lemma seriesExtend_contract_eq (e : α) (hf : f ∉ M.E) : (M.seriesExtend e f ／ {f}) = M := by
   rw [seriesExtend, ← dual_delete, parallelExtend_delete_eq _ (show f ∉ M✶.E from hf), dual_dual]
 
-lemma seriesExtend_series (heE : e ∈ M.E) (he : ¬M.Coloop e) (f : α) :
+lemma seriesExtend_series (heE : e ∈ M.E) (he : ¬M.IsColoop e) (f : α) :
     (M.seriesExtend e f).Series e f := by
   rw [Series, seriesExtend, dual_dual]
   apply parallelExtend_parallel
-  rwa [isNonloop_iff, dual_ground, and_iff_left heE, dual_isLoop_iff_coloop]
+  rwa [isNonloop_iff, dual_ground, and_iff_left heE, dual_isLoop_iff_isColoop]
 
-lemma eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.Coloop e) (hf : f ∉ M.E) :
+lemma eq_seriesExtend_iff (heE : e ∈ M.E) (he : ¬M.IsColoop e) (hf : f ∉ M.E) :
     M' = M.seriesExtend e f ↔ M'.Series e f ∧ ((M' ／ {f}) = M) := by
   rw [seriesExtend, eq_dual_comm, eq_comm, eq_parallelExtend_iff _ (show f ∉ M✶.E from hf),
     ← dual_contract, dual_inj, Series]
-  rwa [isNonloop_iff, and_iff_left (show e ∈ M✶.E from heE), dual_isLoop_iff_coloop]
+  rwa [isNonloop_iff, and_iff_left (show e ∈ M✶.E from heE), dual_isLoop_iff_isColoop]
 
 instance seriesExtend_finite (M : Matroid α) [M.Finite] : (M.seriesExtend e f).Finite :=
   ⟨M.ground_finite.insert f⟩

@@ -172,7 +172,7 @@ end CrossingBinary
 
 /-- If `e` is a non-coloop point in a rank-two matroid with no `U₂,₄`-minor,
 then `M ＼ e` is the disjoint union of two cocircuits. -/
-lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.IsPoint {e})
+lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) (he : M.IsPoint {e})
     (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ {e}).IsCocircuit C₁ ∧ (M ＼ {e}).IsCocircuit C₂ ∧
     Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
   have hl := he.loopless_of_singleton.delete {e}
@@ -251,8 +251,8 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
       insert_eq_self.2 hf, diff_diff_cancel_left hCc.subset_ground]
   have hNM : N ≤m M := contract_isMinor _ _
   -- Since `f` is in the coindependent set `M.E \ C`, it is not a coloop of `M` or `N`.
-  have hfl : ¬ N.Coloop f
-  · simpa [hN, ← dual_isLoop_iff_coloop] using
+  have hfl : ¬ N.IsColoop f
+  · simpa [hN, ← dual_isLoop_iff_isColoop] using
       (hCs.compl_coindep.indep.isNonloop_of_mem hf).not_isLoop
   -- `N` has rank two, since we contracted all but one element of an independent hyperplane.
   have hNr : N.eRank = 2

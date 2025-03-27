@@ -575,13 +575,13 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : 
 lemma IsLoop.skew (he : M.IsLoop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
-lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.loops) (hX : X ⊆ M.E)
+lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M.coloops) (hX : X ⊆ M.E)
     (hdj : Disjoint K X) : M.Skew K X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_eq_delete_of_subset_coloops hK,
     delete_eq_restrict, restrict_restrict_eq]
   rwa [subset_diff, and_iff_left hdj.symm]
 
-lemma Coloop.skew (he : M.Coloop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
+lemma IsColoop.skew (he : M.IsColoop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
 
 lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_mat) :

@@ -594,10 +594,10 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
 
 /-- This lemma is true even when `e` *is* a coloop of `M`, but it is easier to prove this first and
 then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
-private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ M.Coloop e)
+private lemma ModularCut.extIndep_aug_of_not_isColoop (U : ModularCut M) (he : ¬ M.IsColoop e)
     (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  rw [coisLoop_iff_diff_closure, not_not] at he
+  rw [isColoop_iff_diff_closure, not_not] at he
   by_contra! hcon
 
   have hB : U.ExtIndep e B := hBmax.1
@@ -669,12 +669,12 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
 private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
     (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  obtain (he | he) := em' (M.Coloop e)
-  · exact U.extIndep_aug_of_not_coloop he hI hInmax hBmax
+  obtain (he | he) := em' (M.IsColoop e)
+  · exact U.extIndep_aug_of_not_isColoop he hI hInmax hBmax
   have hrw : (U.delete {e}).ExtIndep e = U.ExtIndep e := by
     ext; simp [ExtIndep, he.mem_closure_iff_mem, ModularCut.mem_delete_elem_iff]
   simp_rw [← hrw] at hInmax hBmax hI ⊢
-  exact (U.delete {e}).extIndep_aug_of_not_coloop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
+  exact (U.delete {e}).extIndep_aug_of_not_isColoop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
 
 private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
   ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
