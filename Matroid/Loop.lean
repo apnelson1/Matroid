@@ -398,6 +398,58 @@ lemma IsBase.mem_isColoop_iff_forall_not_mem_fundCircuit (hB : M.IsBase B) (he :
   exact not_mem_subset (M.closure_subset_closure_of_subset_closure h') <|
     hB.indep.not_mem_closure_diff_of_mem he
 
+lemma IsBasis'.inter_coloops_subset (hIX : M.IsBasis' I X) : X ∩ M.coloops ⊆ I := by
+  intro e ⟨heX, (heI : M.IsColoop e)⟩
+  rwa [← heI.mem_closure_iff_mem, hIX.isBasis_closure_right.closure_eq_right,
+    heI.mem_closure_iff_mem]
+
+lemma IsBasis.inter_coloops_subset (hIX : M.IsBasis I X) : X ∩ M.coloops ⊆ I :=
+  hIX.isBasis'.inter_coloops_subset
+
+-- lemma isColoop_tfae {e : α} : List.TFAE [
+--     M.IsColoop e,
+--     e ∈ M.coloops,
+--     M.IsCocircuit {e},
+--     ∀ ⦃B⦄, M.IsBase B → e ∈ B,
+--     (∀ ⦃C⦄, M.IsCircuit C → e ∉ C) ∧ e ∈ M.E,
+--     ∀ X, M.closure (insert e X) = insert e (M.closure X)] := by
+--   tfae_have 1 <-> 2 := Iff.rfl
+--   tfae_have 1 <-> 3 := by
+--     rw [← dual_isLoop_iff_isColoop, ← singleton_isCircuit]
+--   tfae_have 1 <-> 4 := by
+--     simp_rw [← dual_isLoop_iff_isColoop, isLoop_iff_forall_mem_compl_isBase]
+--     refine ⟨fun h B hB ↦ ?_, fun h B hB ↦ h hB.compl_isBase_of_dual⟩
+--     obtain ⟨-, heB : e ∈ B⟩ := by simpa using h (M.E \ B) hB.compl_isBase_dual
+--     assumption
+--   tfae_have 3 -> 5 := fun h ↦
+--     ⟨fun C hC heC ↦ hC.inter_isCocircuit_ne_singleton h (e := e) (by simpa), h.subset_ground rfl⟩
+--   tfae_have 5 -> 4 := by
+--     refine fun ⟨h, heE⟩ B hB ↦ by_contra fun heB ↦ ?_
+--     rw [← hB.closure_eq] at heE
+--     obtain ⟨C, -, hC, heC⟩ := (mem_closure_iff_exists_isCircuit heB).1 heE
+--     exact h hC heC
+--   tfae_have 5 -> 6 := fun h X ↦ by
+--     rw [← closure_insert_closure_eq_closure_insert]
+--     refine (M.subset_closure _ (insert_subset h.2 (M.closure_subset_ground _))).antisymm' ?_
+--     rw [← diff_eq_empty, eq_empty_iff_forall_not_mem]
+--     refine fun f ⟨hf, hf'⟩ ↦ hf' <| .inr ?_
+--     obtain ⟨C, hCss, hC, hfC⟩ := (mem_closure_iff_exists_isCircuit hf').1 hf
+--     rw [insert_comm, subset_insert_iff_of_not_mem (h.1 hC)] at hCss
+--     exact (M.closure_subset_closure_of_subset_closure (by simpa)) <|
+--       hC.mem_closure_diff_singleton_of_mem hfC
+--   tfae_have 6 -> 4 := fun h B hB ↦ by_contra fun heB ↦ by
+--     sorry
+--   tfae_finish
+
+-- lemma closure_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M.coloops) :
+--     M.closure (X ∪ K) = M.closure X ∪ K := by
+--   obtain rfl | hne := K.eq_empty_or_nonempty; simp
+--   rw [← biUnion_of_singleton K, eq_comm, union_distrib_biUnion _ hne]
+--   have : ∀ i ∈ K, M.closure (X ∪ {i}) = (M.closure X) ∪ {i} := sorry
+--   rw [← iUnion₂_congr this, ← union_distrib_biUnion _ hne, biUni]
+  -- have : ⋃ x ∈ K, {x} = K := by exact biUnion_of_singleton K
+
+
 lemma exists_mem_isCircuit_of_not_isColoop (heE : e ∈ M.E) (he : ¬ M.IsColoop e) :
     ∃ C, M.IsCircuit C ∧ e ∈ C := by
   simp only [isColoop_iff_forall_mem_isBase, not_forall, Classical.not_imp, exists_prop] at he
