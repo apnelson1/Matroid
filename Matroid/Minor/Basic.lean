@@ -179,7 +179,7 @@ lemma IsBasis.contract_isBasis_union_union (h : M.IsBasis (J ∪ I) (X ∪ I))
 
 lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M.coloops) : M ／ X = M ＼ X := by
   refine ext_indep rfl fun I _ ↦ ?_
-  rw [(indep_of_subset_coloops hX).contract_indep_iff, delete_indep_iff, and_comm,
+  rw [(M.coloops_indep.subset hX).contract_indep_iff, delete_indep_iff, and_comm,
     union_indep_iff_indep_of_subset_coloops hX]
 
 lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.loops) : M ／ X = M ＼ X := by
@@ -760,8 +760,8 @@ lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
   · have hss : (D' \ K) \ I ⊆ (M✶ ／ K ＼ I).loops := by
       rw [delete_loops_eq];
       exact diff_subset_diff_left hK.diff_subset_loops_contract
-    rw [← dual_delete, ← dual_contract] at hss
-    have hi := indep_of_subset_coloops hss
+    rw [← dual_delete, ← dual_contract, dual_loops] at hss
+    have hi := (coloops_indep _).subset hss
     rw [← contract_delete_comm _ hIK, delete_indep_iff, hI.indep.contract_indep_iff,
       diff_union_self, union_comm] at hi
     exact hi.1.2
@@ -769,7 +769,7 @@ lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
     have hss : (C' \ I) \ K ⊆ (M ／ I ＼ K)✶.coloops := by
       rw [dual_coloops, delete_loops_eq]
       exact diff_subset_diff_left hI.diff_subset_loops_contract
-    have hi := indep_of_subset_coloops hss
+    have hi := (coloops_indep _).subset hss
     rw [dual_delete, dual_contract, ←
       contract_delete_comm _ hIK.symm, delete_indep_iff, hK.indep.contract_indep_iff,
       diff_union_self] at hi

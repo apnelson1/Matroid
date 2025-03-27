@@ -104,7 +104,7 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
-  simp only [hB.mem_isColoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+  simp only [hB.isColoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
     not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
