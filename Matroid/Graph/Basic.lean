@@ -182,26 +182,23 @@ noncomputable def degree (G : Graph α β) (v : α) : ℕ := (G.eDegree v).toNat
 
 lemma eDegree_le_two_mul_card_edgeSet (G : Graph α β) (v : α) : G.eDegree v ≤ 2 * G.E.encard := by
   rw [eDegree, ← ENat.tsum_one, ← tsum_subtype_eq_of_support_subset (s := G.E)]
-  · sorry
-  simp +contextual [Inc.edge_mem]
+  · rw [ENat.mul_tsum]
+    exact ENat.tsum_le_tsum <| by simp [Pi.le_def, G.incFun_le_two]
+  simpa using fun _ ↦ Inc.edge_mem
 
 @[simp] lemma natCast_degree_eq [Finite β] (G : Graph α β) (v : α) :
     (G.degree v : ℕ∞) = G.eDegree v := by
-  rw [degree, ENat.coe_toNat_eq_self, ne_eq, eDegree, ENat.tsum_eq_top_iff]
-  simp only [ENat.coe_ne_top, exists_false, or_false, Set.not_infinite]
-  apply Set.toFinite
+  rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
+  exact (G.eDegree_le_two_mul_card_edgeSet v).trans_lt <| by
+    simp [lt_top_iff_ne_top, ENat.mul_eq_top_iff, G.E.toFinite]
 
 lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
   rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
     Nat.cast_sum, ENat.coe_toNat]
-  refine WithTop.sum_ne_top.2 fun i _ ↦ ?_
-  rw [← WithTop.lt_top_iff_ne_top]
-  have := G.incFun_le_two i v
-  exact Batteries.compareOfLessAndEq_eq_lt.1 rfl
+  exact WithTop.sum_ne_top.2 fun i _ ↦ WithTop.coe_ne_top
 
-lemma degree_eq_finsum [Finite β] (G : Graph α β) (v : α) :
-    G.degree v = ∑ᶠ e, G.incFun e v := by
+lemma degree_eq_finsum [Finite β] (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.incFun e v := by
   have := Fintype.ofFinite β
   rw [degree_eq_fintype_sum, finsum_eq_sum_of_fintype]
 
@@ -218,10 +215,9 @@ lemma tsum_incFun_eq (he : e ∈ G.E) : ∑' v, (G.incFun e v : ℕ∞) = 2 := b
 
 theorem handshake_eDegree (G : Graph α β) : ∑' v, G.eDegree v = 2 * G.E.encard := by
   simp_rw [eDegree]
-  rw [ENat.tsum_comm, ← ENat.tsum_subtype_const', ← tsum_subtype_eq_of_support_subset (s := G.E)]
-  · simp
-  suffices ∀ e x, G.Inc e x → e ∈ G.E by simpa
-  exact fun _ _ ↦ Inc.edge_mem
+  rw [ENat.tsum_comm, ← ENat.tsum_subtype_const',
+    ← tsum_subtype_eq_of_support_subset (s := G.E) (by simpa using fun _ _ ↦ Inc.edge_mem)]
+  simp
 
 lemma handshake [Finite α] [Finite β] (G : Graph α β) : ∑ᶠ v, G.degree v = 2 * G.E.ncard := by
   have := Fintype.ofFinite α

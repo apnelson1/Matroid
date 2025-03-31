@@ -202,8 +202,8 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
   obtain ⟨a,b, hab, rfl⟩ := encard_eq_two.1 hIcard
   have hIe : {a,b} = (N ＼ {e}).E
   · apply Finite.eq_of_subset_of_encard_le ?_ hI.subset_ground (hU.trans_eq hIcard.symm)
-    rw [← encard_lt_top_iff]
-    exact hU.trans_lt (by exact Batteries.compareOfLessAndEq_eq_lt.mp rfl)
+    rw [← encard_lt_top_iff, hIcard]
+    decide
   -- `N \ e` is a simplification of `M ＼ e`, so the closures of `{a}` and `{b}`
   -- form a partition of `M ＼ e`.
   have hdj : Disjoint ((M ＼ {e}).closure {a}) ((M ＼ {e}).closure {b})

@@ -26,37 +26,6 @@ noncomputable def Basis.mkImage {ι R M : Type*} [Semiring R] [AddCommMonoid M] 
     Basis s R M :=
   Basis.mk hli.linearIndependent <| by rwa [← image_eq_range]
 
-lemma linearIndepOn_iff' {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] {s : Set ι}
-    {v : ι → M} : LinearIndepOn R v s ↔ ∀ (t : Finset ι) (g : ι → R), (t : Set ι) ⊆ s →
-    ∑ i ∈ t, g i • v i = 0 → ∀ i ∈ t, g i = 0 := by
-  classical
-  rw [LinearIndepOn, linearIndependent_iff']
-  refine ⟨fun h t g hts h0 i hit ↦ ?_, fun h t g h0 i hit ↦ ?_⟩
-  · refine h (t.preimage _ Subtype.val_injective.injOn) (fun i ↦ g i) ?_ ⟨i, hts hit⟩ (by simpa)
-    rwa [t.sum_preimage ((↑) : s → ι) Subtype.val_injective.injOn (fun i ↦ g i • v i)]
-    simp only [Subtype.range_coe_subtype, setOf_mem_eq, smul_eq_zero]
-    exact fun x hxt hxs ↦ (hxs (hts hxt)) |>.elim
-  replace h : ∀ i (hi : i ∈ s), ⟨i, hi⟩ ∈ t → ∀ (h : i ∈ s), g ⟨i, h⟩ = 0 := by
-    simpa [h0] using h (t.image (↑)) (fun i ↦ if hi : i ∈ s then g ⟨i, hi⟩ else 0)
-  apply h _ _ hit
-
-lemma linearIndepOn_iff'' {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    {s : Set ι} {v : ι → M} :
-    LinearIndepOn R v s ↔ ∀ (t : Finset ι) (g : ι → R), (t : Set ι) ⊆ s → (∀ i ∉ t, g i = 0) →
-    ∑ i ∈ t, g i • v i = 0 → ∀ i ∈ t, g i = 0 := by
-  classical
-  rw [LinearIndepOn, linearIndependent_iff'']
-  refine ⟨fun h t g hts hg h0 i hit ↦ ?_, fun h t g hg h0 i ↦ ?_⟩
-  · refine h (t.preimage Subtype.val Subtype.val_injective.injOn) (fun i ↦ g i)
-      (by simp +contextual [hg]) ?_ ⟨i, hts hit⟩
-    rwa [Finset.sum_preimage (Subtype.val : s → ι) (s := t) Subtype.val_injective.injOn
-      (fun i ↦ g i • v i) _]
-    simp only [Subtype.range_coe_subtype, setOf_mem_eq, smul_eq_zero]
-    exact fun x hxt hxs ↦ (hxs (hts hxt)) |>.elim
-  specialize h (t.image (↑)) (fun i ↦ if hi : i ∈ s then g ⟨i, hi⟩ else 0) (by simp)
-    (fun j hj ↦ ?_) (by simpa)
-  · simpa using fun hjs ↦ hg _ (by simpa [hjs] using hj)
-  exact (em (i ∈ t)).elim (by simpa +contextual using h i) (hg _)
 
 /-- Replace the unprimed version with this. -/
 theorem LinearIndepOn.union_of_quotient' {R M ι : Type*} [DivisionRing R] [AddCommGroup M]
@@ -146,10 +115,6 @@ lemma LinearIndepOn.span_eq_of_maximal_subset
 lemma LinearIndepOn.span_eq_top_of_maximal (hmax : Maximal (LinearIndepOn R v ·) s) :
     span R (v '' s) = span R (range v) := by
   rw [← image_univ, LinearIndepOn.span_eq_of_maximal_subset (t := univ) (by simpa)]
-
-lemma LinearIndepOn.encard_le_toENat_rank (hs : LinearIndepOn R v s) :
-    s.encard ≤ (Module.rank R M).toENat := by
-  simpa using OrderHom.mono (β := ℕ∞) Cardinal.toENat <| hs.linearIndependent.cardinal_lift_le_rank
 
 -- #check LinearIndepOn.encard_le_toENat_rank
 

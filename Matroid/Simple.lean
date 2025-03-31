@@ -104,8 +104,9 @@ lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   refine ⟨fun h C hC ↦ le_of_not_lt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
   simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
-    ← two_le_encard_iff_nontrivial]
-  refine ⟨fun C hC ↦ le_trans (by norm_num) (h C hC), fun e f hef ↦ by_contra fun hne ↦ ?_⟩
+    ← one_lt_encard_iff_nontrivial]
+  refine ⟨fun C hC ↦ (show (1 : ℕ∞) < 3 by norm_num).trans_le (h C hC),
+    fun e f hef ↦ by_contra fun hne ↦ ?_⟩
   have hcon := (h _ (hef.isCircuit_of_ne hne)).trans_eq (encard_pair hne)
   norm_num at hcon
 

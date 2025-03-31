@@ -484,7 +484,7 @@ lemma delete_rank_le (M : Matroid α) [M.RankFinite] (D : Set α) : (M ＼ D).ra
   exact M.rk_mono (diff_subset.trans diff_subset)
 
 lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
-  obtain h | h := M.finite_or_rankInfinite
+  obtain h | h := M.rankFinite_or_rankInfinite
   · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]
     refine le_trans ?_ (M.rk_union_le_rk_add_rk (M.E \ D) D)
     simp [M.rk_mono subset_union_left]

@@ -105,7 +105,9 @@ theorem Finset.pairwiseDisjoint_of_sum_encard_le_encard_biUnion {ι : Type*} {I 
     {s : ι → Set α} (hfin : ∀ i ∈ I, (s i).Finite)
     (hsum : ∑ i ∈ I, encard (s i) ≤ encard (⋃ i ∈ I, s i)) : (I : Set ι).PairwiseDisjoint s := by
   classical
-  induction' I using Finset.induction_on with x J hx IH; simp
+  induction I using Finset.induction_on with
+  | empty => simp
+  | @insert x J hx IH =>
   have hmono (K) (hK : K ⊆ insert x J) : ∑ i ∈ K, (s i).encard ≤ (⋃ i ∈ K, (s i)).encard := by
     rw [← Finset.sdiff_union_of_subset hK, Finset.sum_union Finset.sdiff_disjoint,
       Finset.set_biUnion_union] at hsum
@@ -113,9 +115,10 @@ theorem Finset.pairwiseDisjoint_of_sum_encard_le_encard_biUnion {ι : Type*} {I 
       (add_le_add_right (encard_biUnion_le _ s) _)
     exact WithTop.le_of_add_le_add_left
       (WithTop.sum_ne_top.2 <| fun i hi ↦ (hfin i (Finset.mem_sdiff.1 hi).1).encard_lt_top.ne) hsum
-  rw [PairwiseDisjoint, Finset.coe_insert, pairwise_insert_of_not_mem (by simpa),
+  rw [PairwiseDisjoint, Finset.coe_insert,
+    pairwise_insert_of_symmetric_of_not_mem (Symmetric.comap Disjoint.symm s) (by simpa),
     ← PairwiseDisjoint, and_iff_right (IH _ (hmono _ (by simp)))]
-  · simp_rw [Function.onFun, disjoint_comm, and_self, Finset.mem_coe]
+  · simp_rw [Function.onFun, Finset.mem_coe]
     refine fun b hbJ ↦ Finite.disjoint_of_sum_encard_le ?_ <|
     by simpa [Finset.sum_pair (show x ≠ b by rintro rfl; contradiction)] using
       hmono {x,b} (by simp [Finset.insert_subset_iff, hbJ])
@@ -159,9 +162,3 @@ theorem Set.Finite.encard_le_iff_nonempty_embedding' {s : Set α} {t : Set β} (
   have hle := e.encard_le
   rw [hs.encard_eq, top_le_iff, encard_eq_top_iff] at hle
   exact hle ht
-
-lemma Set.Finite.encard_lt_encard' (hs : s.Finite) (hst : s ⊂ t) :
-    s.encard < t.encard := by
-  obtain hfin | hinf := t.finite_or_infinite
-  · exact hfin.encard_lt_encard hst
-  rwa [hinf.encard_eq, encard_lt_top_iff]

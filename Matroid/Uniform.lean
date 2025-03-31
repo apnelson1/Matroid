@@ -87,7 +87,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
   refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) ?_⟩
   · refine X.finite_or_infinite.elim (fun hfin ↦ .inr ?_) (fun hinf ↦ .inl ⟨?_, hXE⟩)
-    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' inter_subset_right h,
+    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le inter_subset_right h,
         inter_eq_self_of_subset_left hXE]
     rw [hinf.encard_eq]
     apply le_top

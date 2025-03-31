@@ -70,7 +70,7 @@ theorem truncateTo_isBase_iff {k : ℕ} (h_rank : k ≤ M.eRank) :
     obtain ⟨J, hBJ, hJB', h'⟩ := exists_superset_subset_encard_eq hBB' hle
       (by rwa [hB'.encard_eq_eRank])
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
-  exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
+  exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le' hBJ <| hcard.trans_eq h.symm
 
 theorem truncate_isBase_iff_of_rankFinite [RankFinite M] (h_rank : k ≤ M.eRank) :
     (M.truncateTo k).IsBase B ↔ M.Indep B ∧ B.encard = k := by

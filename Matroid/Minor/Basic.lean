@@ -744,8 +744,8 @@ lemma dual_isStrictMinor_iff: N✶ <m M✶ ↔ N <m M :=
 lemma isStrictMinor_dual_iff_dual_isStrictMinor : N <m M✶ ↔ N✶ <m M := by
   rw [← dual_isStrictMinor_iff, dual_dual]
 
-lemma IsStrictMinor.encard_ground_lt [M.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
-  M.ground_finite.encard_lt_encard hNM.ssubset
+lemma IsStrictMinor.encard_ground_lt [N.Finite] (hNM : N <m M) : N.E.encard < M.E.encard :=
+  N.ground_finite.encard_lt_encard hNM.ssubset
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
