@@ -1,54 +1,60 @@
-import Mathlib.Combinatorics.SimpleGraph.Acyclic
-import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Data.Set.Card
-import Mathlib.Data.Fintype.Order
+import Mathlib
 
-variable {V : Type*} {G : SimpleGraph V}
+structure Graph (α β : Type*) where
+  V : Set α
+  E : Set β
+  incFun : β → α →₀ ℕ
+  sum_eq : ∀ ⦃e⦄, e ∈ E → (incFun e).sum (fun _ x ↦ x) = 2
+  vertex_support : ∀ ⦃e v⦄, incFun e v ≠ 0 → v ∈ V
+  edge_support : ∀ ⦃e v⦄, incFun e v ≠ 0 → e ∈ E
 
-/-- Deleting a non-bridge edge from a connected graph preserves connectedness. -/
-lemma SimpleGraph.Connected.connected_del_of_not_isBridge (hG : G.Connected) {x y : V}
-    (h : ¬ G.IsBridge s(x, y)) : (G \ fromEdgeSet {s(x, y)}).Connected := by
+variable {α β : Type*} {G : Graph α β} {x y : α} {e f : β}
+
+def Graph.Inc (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x ≠ 0
+
+def Graph.IsLoopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 2
+
+def Graph.IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 1
+
+lemma Graph.Inc.vx_mem (h : G.Inc e x) : x ∈ G.V :=
+  G.vertex_support h
+
+lemma Graph.Inc.edge_mem (h : G.Inc e x) : e ∈ G.E :=
+  G.edge_support h
+
+@[simp]
+lemma Graph.incFun_ne_zero : G.incFun e x ≠ 0 ↔ G.Inc e x := Iff.rfl
+
+noncomputable def Graph.edgeDel (G : Graph α β) (D : Set β) : Graph α β where
+  V := G.V
+  E := G.E \ D
+  incFun e :=
+    haveI := Classical.dec (e ∈ D)
+    if e ∈ D then 0 else G.incFun e
+  sum_eq e he := by simp [he.2, G.sum_eq he.1]
+  vertex_support e v h := G.vertex_support (e := e) <| by aesop
+  edge_support e v h := ⟨G.edge_support (v := v) (by aesop), by aesop⟩
+
+noncomputable def Graph.vxMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β where
+  V := f '' G.V
+  E := G.E
+  incFun e := (G.incFun e).mapDomain f
+  sum_eq e he := by rwa [Finsupp.sum_mapDomain_index (by simp) (by simp), G.sum_eq]
+  vertex_support e v := by
+    classical
+    suffices ∀ (x : α), G.Inc e x → f x = v → ∃ x ∈ G.V, f x = v by
+      simpa +contextual [Finsupp.mapDomain, Finsupp.sum, Finsupp.single_apply]
+    rintro x h rfl
+    exact ⟨x, h.vx_mem, rfl⟩
+  edge_support e v := by
+    classical
+    suffices ∀ (x : α), G.Inc e x → f x = v → e ∈ G.E by
+      simpa +contextual [Finsupp.mapDomain, Finsupp.sum, Finsupp.single_apply, Graph.Inc.edge_mem]
+    exact fun x h _ ↦ h.edge_mem
+
+@[simp]
+lemma Graph.vxMap_inc_iff {α' : Type*} (G : Graph α β) (f : α → α') (x : α') (e : β) :
+    (G.vxMap f).Inc e x ↔ ∃ v, f v = x ∧ G.Inc e v := by
   classical
-  simp only [isBridge_iff, not_and, not_not] at h
-  obtain hxy | hxy := em' <| G.Adj x y
-  · rwa [Disjoint.sdiff_eq_left (by simpa)]
-  refine (connected_iff_exists_forall_reachable _).2 ⟨x, fun w ↦ ?_⟩
-  obtain ⟨W⟩ := (hG.preconnected w x)
-  let P := W.toPath
-  obtain heP | heP := em' <| s(x,y) ∈ P.1.edges
-  · exact ⟨(P.1.toDeleteEdges {s(x,y)} (by aesop)).reverse⟩
-  have hyP := P.1.snd_mem_support_of_mem_edges heP
-  set P₁ := P.1.takeUntil y hyP with hP₁
-  have hxP₁ := Walk.endpoint_not_mem_support_takeUntil P.2 hyP hxy.ne
-  have heP₁ : s(x,y) ∉ P₁.edges := fun h ↦ hxP₁ <| P₁.fst_mem_support_of_mem_edges h
-  refine (h hxy).trans (Reachable.symm ⟨P₁.toDeleteEdges {s(x,y)} (by aesop)⟩)
-
-/-- A minimally connected graph is a tree. -/
-lemma SimpleGraph.isTree_of_minimal_connected (h : Minimal SimpleGraph.Connected G) :
-    SimpleGraph.IsTree G := by
-  rw [isTree_iff, and_iff_right h.prop, isAcyclic_iff_forall_adj_isBridge]
-  refine fun v w hvw ↦ by_contra fun hbr ↦ ?_
-  refine h.not_prop_of_lt ?_ (h.prop.connected_del_of_not_isBridge hbr)
-  rw [← edgeSet_ssubset_edgeSet]
-  simpa
-
-/-- Every connected graph on `n` vertices has at least `n-1` edges. -/
-lemma SimpleGraph.Connected.card_vert_le_card_edgeSet_add_one [Fintype V] (hG : G.Connected) :
-    Nat.card V ≤ Nat.card G.edgeSet + 1 := by
-  classical
-  obtain ⟨T, hTG, hmin⟩ := {H : SimpleGraph V | H.Connected}.toFinite.exists_minimal_le hG
-  have hT : T.IsTree := isTree_of_minimal_connected hmin
-  rw [Nat.card_eq_fintype_card, ← hT.card_edgeFinset, Set.Nat.card_coe_set_eq,
-    ← Set.ncard_coe_Finset, add_le_add_iff_right]
-  exact Set.ncard_mono <| by simpa
-
-lemma SimpleGraph.isTree_iff_connected_and_card [Fintype V] :
-    G.IsTree ↔ G.Connected ∧ Nat.card G.edgeSet + 1 = Nat.card V := by
-  classical
-  refine ⟨fun h ↦ ⟨h.isConnected, by simpa using h.card_edgeFinset⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, ?_⟩⟩
-  simp_rw [isAcyclic_iff_forall_adj_isBridge]
-  refine fun x y h ↦ by_contra fun hbr ↦ ?_
-  refine (h₁.connected_del_of_not_isBridge hbr).card_vert_le_card_edgeSet_add_one.not_lt ?_
-  simp only [← h₂, edgeSet_sdiff, edgeSet_fromEdgeSet, edgeSet_sdiff_sdiff_isDiag,
-    add_lt_add_iff_right, Set.Nat.card_coe_set_eq]
-  exact Set.ncard_diff_singleton_lt_of_mem h
+  simp +contextual [← incFun_ne_zero, Graph.vxMap, Finsupp.mapDomain, Finsupp.sum,
+    Finsupp.single_apply, and_comm]

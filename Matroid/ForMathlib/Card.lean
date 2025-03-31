@@ -7,10 +7,6 @@ open Set BigOperators Function
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
-@[simp] lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
-  rw [← not_iff_not, ← not_lt, not_not, Set.not_nontrivial_iff, ← encard_le_one_iff_subsingleton,
-    show (2 : ℕ∞) = 1 + 1 from rfl, ENat.lt_add_one_iff (by simp)]
-
 theorem Set.Finite.disjoint_of_sum_encard_le (h : (s ∪ t).Finite)
     (hle : s.encard + t.encard ≤ (s ∪ t).encard) : Disjoint s t := by
   rwa [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter,
@@ -27,6 +23,11 @@ theorem Set.Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite
   · simp only [mem_singleton_iff, insert_eq_of_mem, encard_singleton]
     simp
   rw [encard_pair hne]
+
+theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) :
+    ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
+  obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)
+  exact ⟨t, by simpa, by simp [encard_coe_eq_coe_finsetCard, hcard, Nat.cast_lt, - Nat.cast_add]⟩
 
 theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) := by
   obtain (hfin | hinf) := s.finite_or_infinite

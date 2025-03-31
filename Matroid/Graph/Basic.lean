@@ -1,140 +1,230 @@
-import Mathlib.Data.Set.Insert
+import Mathlib.Data.Set.Card
+import Mathlib.Data.Finsupp.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import Mathlib.Topology.Instances.ENat
+import Mathlib.Algebra.BigOperators.WithTop
+import Matroid.ForMathlib.Topology.ENat
 
-variable {α β : Type*}
 
-open Set Function
+/-- This lemma should be in mathlib. -/
+@[simp]
+lemma finsum_mem_const {α M : Type*} (s : Set α) [AddCommMonoid M] (c : M) :
+    ∑ᶠ x ∈ s, c = s.ncard • c := by
+  obtain h | h := s.finite_or_infinite
+  · rw [finsum_mem_eq_finite_toFinset_sum _ h, Set.ncard_eq_toFinset_card _ h]
+    simp
+  obtain rfl | hne := eq_or_ne c 0
+  · simp
+  rw [finsum_mem_eq_zero_of_infinite, h.ncard, zero_smul]
+  simpa [Function.support_const hne]
 
-structure Graph (α β : Type*) where
+/-- A graph where incidence is described by a map from `β` to `α →₀ ℕ`.
+`incFun e` is the column of the incidence matrix at `e`, where loops give value `2`. -/
+@[ext] structure Graph (α β : Type*) where
   V : Set α
   E : Set β
-  Inc : α → β → Prop
-  vx_mem_of_inc : ∀ ⦃v e⦄, Inc v e → v ∈ V
-  edge_mem_of_inc : ∀ ⦃v e⦄, Inc v e → e ∈ E
-  exists_vertex_inc : ∀ ⦃e⦄, e ∈ E → ∃ v, Inc v e
-  not_hypergraph : ∀ ⦃x y z e⦄, Inc x e → Inc y e → Inc z e → x = y ∨ y = z ∨ x = z
+  incFun : β → α →₀ ℕ
+  sum_eq : ∀ ⦃e⦄, e ∈ E → (incFun e).sum (fun _ x ↦ x) = 2
+  vertex_support : ∀ ⦃e v⦄, incFun e v ≠ 0 → v ∈ V
+  edge_support : ∀ ⦃e v⦄, incFun e v ≠ 0 → e ∈ E
 
-variable {G : Graph α β} {u v w x y : α} {e f g : β}
+variable {α α' β β' : Type*} {G : Graph α β} {x y v w : α} {e f : β}
 
 namespace Graph
 
-def IsLoop (G : Graph α β) (e : β) := ∃! x, G.Inc x e
+/-- Incidence -/
+def Inc (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x ≠ 0
 
-def Adj (G : Graph α β) (x y : α) : Prop :=
-  ∃ e, (G.Inc x e ∧ G.Inc y e ∧ x ≠ y) ∨ (G.Inc x e ∧ G.IsLoop e ∧ x = y)
+def IsLoopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 2
 
-lemma Inc.vx_mem (h : G.Inc x e) : x ∈ G.V :=
-  G.vx_mem_of_inc h
+def IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 1
 
-lemma Inc.edge_mem (h : G.Inc x e) : e ∈ G.E :=
-  G.edge_mem_of_inc h
+@[simp]
+lemma incFun_eq_one : G.incFun e x = 1 ↔ G.IsNonloopAt e x := Iff.rfl
 
-lemma adj_comm : G.Adj x y ↔ G.Adj y x := by
-  simp [Adj, and_comm]
+@[simp]
+lemma incFun_eq_two : G.incFun e x = 2 ↔ G.IsLoopAt e x := Iff.rfl
 
-def edgeNhd (G : Graph α β) (v : α) : Set β := {e | G.Inc v e}
+@[simp]
+lemma Inc.vx_mem (h : G.Inc e x) : x ∈ G.V :=
+  G.vertex_support h
 
-def vxNhd (G : Graph α β) (v : α) : Set α := {x | G.Adj v x}
+@[simp]
+lemma Inc.edge_mem (h : G.Inc e x) : e ∈ G.E :=
+  G.edge_support h
 
-def Connected (G : Graph α β) := Relation.TransGen (fun x y ↦ G.Adj x y ∨ x = y ∧ x ∈ G.V)
+lemma incFun_of_not_mem_edgeSet (he : e ∉ G.E) : G.incFun e = 0 := by
+  simp_rw [DFunLike.ext_iff]
+  exact fun x ↦ by_contra fun h' ↦ he <| G.edge_support h'
 
-lemma Adj.connected (h : G.Adj x y) : G.Connected x y :=
-  Relation.TransGen.single <| .inl h
+lemma incFun_of_not_mem_vertexSet (hv : v ∉ G.V) (e) : G.incFun e v = 0 :=
+  by_contra fun h' ↦ hv <| G.vertex_support h'
 
-lemma connected_self (hx : x ∈ G.V) : G.Connected x x :=
-  Relation.TransGen.single <| .inr ⟨rfl, hx⟩
+@[simp]
+lemma incFun_eq_zero : G.incFun e x = 0 ↔ ¬ G.Inc e x := by
+  rw [iff_not_comm]
+  rfl
 
-lemma Inc.connected_of_inc (hx : G.Inc x e) (hy : G.Inc y e) : G.Connected x y := by
-  _
+lemma incFun_ne_zero : G.incFun e x ≠ 0 ↔ G.Inc e x := Iff.rfl
 
-def restrict (G : Graph α β) (R : Set β) : Graph α β where
+lemma incFun_le_two (G : Graph α β) (e) (v) : G.incFun e v ≤ 2 := by
+  refine (em (G.Inc e v)).elim (fun h ↦ ?_) (fun h ↦ by simp [incFun_eq_zero.2 h])
+  rw [← G.sum_eq h.edge_mem, Finsupp.sum]
+  exact Finset.single_le_sum (by simp) (by simpa)
+
+lemma incFun_eq_zero_or_one_or_two (G : Graph α β) (e) (v) :
+    G.incFun e v = 0 ∨ G.incFun e v = 1 ∨ G.incFun e v = 2 := by
+  have := G.incFun_le_two e v
+  omega
+
+lemma IsLoopAt.inc (h : G.IsLoopAt e v) : G.Inc e v := by
+  rw [IsLoopAt] at h
+  simp [h, ← incFun_ne_zero]
+
+lemma IsNonloopAt.inc (h : G.IsNonloopAt e v) : G.Inc e v := by
+  rw [IsNonloopAt] at h
+  simp [h, ← incFun_ne_zero]
+
+lemma inc_iff_isLoopAt_or_isNonloopAt :
+    G.Inc e v ↔ G.IsLoopAt e v ∨ G.IsNonloopAt e v := by
+  rw [← incFun_ne_zero, IsLoopAt, IsNonloopAt]
+  have h := G.incFun_le_two e v
+  omega
+
+alias ⟨Inc.isLoopAt_or_isNonloopAt, _⟩ := inc_iff_isLoopAt_or_isNonloopAt
+
+lemma isLoopAt_iff : G.IsLoopAt e v ↔ G.Inc e v ∧ ∀ x, G.Inc e x → x = v := by
+  classical
+  wlog hev : G.Inc e v
+  · exact iff_of_false (fun h ↦ hev h.inc) (by simp [hev])
+  rw [IsLoopAt, ← G.sum_eq hev.edge_mem, Finsupp.sum,
+    Finset.sum_eq_sum_diff_singleton_add (i := v) (by simpa)]
+  aesop
+
+lemma IsLoopAt.eq_of_inc (h : G.IsLoopAt e v) (h_inc : G.Inc e x) : x = v :=
+  (isLoopAt_iff.1 h).2 _ h_inc
+
+lemma IsNonloopAt.not_isLoopAt (h : G.IsNonloopAt e v) : ¬ G.IsLoopAt e v := by
+  rw [IsNonloopAt] at h
+  simp [IsLoopAt, h]
+
+lemma IsLoopAt.not_isNonloopAt (h : G.IsLoopAt e v) : ¬ G.IsNonloopAt e v := by
+  rw [IsLoopAt] at h
+  simp [IsNonloopAt, h]
+
+lemma IsNonloopAt.exists_inc_ne (h : G.IsNonloopAt e v) : ∃ w, G.Inc e w ∧ w ≠ v := by
+  simpa [isLoopAt_iff, and_iff_right h.inc] using h.not_isLoopAt
+
+lemma isNonloopAt_iff : G.IsNonloopAt e v ↔ G.Inc e v ∧ ∃ x, G.Inc e x ∧ x ≠ v :=
+  ⟨fun h ↦ ⟨h.inc, h.exists_inc_ne⟩, fun ⟨h, _, hex, hxv⟩ ↦ h.isLoopAt_or_isNonloopAt.elim
+    (fun h' ↦ (hxv <| h'.eq_of_inc hex).elim) id⟩
+
+/-- Two graphs with the same incidences are the same. -/
+lemma ext_inc {G G' : Graph α β} (hV : G.V = G'.V) (hE : G.E = G'.E)
+    (h : ∀ e x, G.Inc e x ↔ G'.Inc e x) : G = G' := by
+  ext e x
+  · rw [hV]
+  · rw [hE]
+  obtain h0 | h1 | h2 := G'.incFun_eq_zero_or_one_or_two e x
+  · rwa [h0, G.incFun_eq_zero, h, ← G'.incFun_eq_zero]
+  · simp_rw [h1, G.incFun_eq_one, isNonloopAt_iff, h, ← isNonloopAt_iff]
+    rwa [← G'.incFun_eq_one]
+  simp_rw [h2, G.incFun_eq_two, isLoopAt_iff, h, ← isLoopAt_iff]
+  rwa [← G'.incFun_eq_two]
+
+/-- Restrict a graph to a subset `R` of the edge set. -/
+noncomputable def edgeRestrict (G : Graph α β) (R : Set β) : Graph α β where
   V := G.V
-  E := R ∩ G.E
-  Inc v e := e ∈ R ∧ G.Inc v e
-  vx_mem_of_inc _ _ h := G.vx_mem_of_inc h.2
-  edge_mem_of_inc _ _ h := ⟨h.1, G.edge_mem_of_inc h.2⟩
-  exists_vertex_inc e he := by
-    obtain ⟨v, hv⟩ := G.exists_vertex_inc he.2
-    exact ⟨v, he.1, hv⟩
-  not_hypergraph _ _ _ _ hex hey hez := G.not_hypergraph hex.2 hey.2 hez.2
+  E := G.E ∩ R
+  incFun e :=
+    have := Classical.dec (e ∈ R)
+    if e ∈ R then G.incFun e else 0
+  sum_eq e he := by simp [he.2, G.sum_eq he.1]
+  vertex_support e v h := G.vertex_support (e := e) <| by aesop
+  edge_support e v h := ⟨G.edge_support (v := v) (by aesop), by aesop⟩
 
-def edgeDel (G : Graph α β) (F : Set β) : Graph α β := G.restrict (G.E \ F)
+/-- Delete a subset `D` of the edges. -/
+noncomputable def edgeDel (G : Graph α β) (D : Set β) := G.edgeRestrict (G.E \ D)
 
-def vxMap {α' : Type*} (G : Graph α β) (φ : α → α') : Graph α' β where
-  V := φ '' G.V
+lemma vxMap_aux (G : Graph α β) {f : α → α'} {x : α'} :
+    (G.incFun e).mapDomain f x ≠ 0 ↔ ∃ v, f v = x ∧ G.Inc e v := by
+  classical
+  simp +contextual [← incFun_eq_zero, Finsupp.mapDomain, Finsupp.sum,
+    Finsupp.single_apply, and_comm, ← incFun_ne_zero]
+
+/-- Transport a graph to a new vertex type by mapping along a function.
+Edges between identified vertices become loops. -/
+noncomputable def vxMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β where
+  V := f '' G.V
   E := G.E
-  Inc v e := ∃ v₀, φ v₀ = v ∧ G.Inc v₀ e
-  vx_mem_of_inc v e := by
-    rintro ⟨v₀, rfl, hv₀⟩
-    exact mem_image_of_mem _ hv₀.vx_mem
-  edge_mem_of_inc v e := by
-    rintro ⟨v₀, rfl, hv₀⟩
-    exact hv₀.edge_mem
-  exists_vertex_inc e he := by
-    obtain ⟨v, hv⟩ := G.exists_vertex_inc he
-    exact ⟨φ v, v, rfl, hv⟩
-  not_hypergraph x y z e := by
-    rintro ⟨x, rfl, hx⟩ ⟨y, rfl, hy⟩ ⟨z, rfl, hz⟩
-    obtain h | h | h := G.not_hypergraph hx hy hz <;>
-    simp [h]
+  incFun e := (G.incFun e).mapDomain f
+  sum_eq e he := by rwa [Finsupp.sum_mapDomain_index (by simp) (by simp), G.sum_eq]
+  vertex_support e v := by
+    simp only [ne_eq, vxMap_aux, Set.mem_image, forall_exists_index, and_imp]
+    exact fun x hxv h ↦ ⟨x, h.vx_mem, hxv⟩
+  edge_support e v := by
+    simp only [ne_eq, vxMap_aux, forall_exists_index, and_imp]
+    exact fun _ _ ↦ Inc.edge_mem
 
-structure ContractFun (G : Graph α β) where
-  toFun : α → α
-  contractSet : Set β
-  idem : ∀ x, toFun (toFun x) = toFun x
-  map_not_mem : ∀ x, x ∉ G.V → toFun x = x
-  map_connected : ∀ x ∈ G.V, (G.restrict contractSet).Connected x (toFun x)
-  map_edge : ∀ ⦃x y e⦄, e ∈ contractSet → G.Inc x e → G.Inc y e → toFun x = toFun y
+/-- `vxMap` has the expected incidence predicate. -/
+@[simp]
+lemma vxMap_inc_iff {α' : Type*} (G : Graph α β) (f : α → α') (x : α') (e : β) :
+    (G.vxMap f).Inc e x ↔ ∃ v, f v = x ∧ G.Inc e v := by
+  rw [← incFun_ne_zero, ← vxMap_aux]
+  rfl
 
-instance {G : Graph α β} : CoeFun G.ContractFun fun (_ : G.ContractFun) ↦ α → α where
-  coe v := v.toFun
+/-- The degree of a vertex as a term in `ℕ∞`. -/
+noncomputable def eDegree (G : Graph α β) (v : α) : ℕ∞ := ∑' e, G.incFun e v
 
+/-- The degree of a vertex as a term in `ℕ` (with value zero if the degree is infinite). -/
+noncomputable def degree (G : Graph α β) (v : α) : ℕ := (G.eDegree v).toNat
 
--- def ContractFun.comp (m₁ m₂ : G.ContractFun) : G.ContractFun where
---   toFun := m₁ ∘ m₂
---   contractSet := m₁.contractSet ∪ m₂.contractSet
---   idem x := by
---     simp
---   map_not_mem := _
---   map_edge := _
+lemma eDegree_le_two_mul_card_edgeSet (G : Graph α β) (v : α) : G.eDegree v ≤ 2 * G.E.encard := by
+  rw [eDegree, ← ENat.tsum_one, ← tsum_subtype_eq_of_support_subset (s := G.E)]
+  · sorry
+  simp +contextual [Inc.edge_mem]
 
-def contract (m : G.ContractFun) : Graph α β where
-  V := m '' G.V
-  E := G.E \ m.contractSet
-  Inc v e := ∃ x, m x = v ∧ G.Inc x e ∧ e ∉ m.contractSet
-  vx_mem_of_inc v e := by
-    rintro ⟨x, rfl, h, -⟩
-    exact ⟨x, h.vx_mem, rfl⟩
-  edge_mem_of_inc v e := by
-    rintro ⟨x, rfl, hx⟩
-    exact ⟨hx.1.edge_mem, hx.2⟩
-  exists_vertex_inc e he := by
-    obtain ⟨v, hv⟩ := G.exists_vertex_inc he.1
-    exact ⟨m v, v, rfl, hv, he.2⟩
-  not_hypergraph _ _ _ e := by
-    rintro ⟨x, rfl, hx⟩ ⟨y, rfl, hy⟩ ⟨z, rfl, hz⟩
-    obtain h | h | h := G.not_hypergraph hx.1 hy.1 hz.1 <;>
-    simp [h]
+@[simp] lemma natCast_degree_eq [Finite β] (G : Graph α β) (v : α) :
+    (G.degree v : ℕ∞) = G.eDegree v := by
+  rw [degree, ENat.coe_toNat_eq_self, ne_eq, eDegree, ENat.tsum_eq_top_iff]
+  simp only [ENat.coe_ne_top, exists_false, or_false, Set.not_infinite]
+  apply Set.toFinite
 
-def Inc.contractFun (hxe : G.Inc x e) [DecidablePred (G.Inc · e)] : G.ContractFun where
-  toFun y := if G.Inc y e then x else y
-  contractSet := {e}
-  idem y := by
-    simp only
-    split_ifs <;>
-    simp
-  map_not_mem y hy := by
-    simp only
-    split_ifs with hy'
-    · exact False.elim <| hy hy'.vx_mem
-    rfl
-  map_connected y hy := by
-    simp only
-    split_ifs with hy'
-    ·
-  map_edge := _
+lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
+    G.degree v = ∑ e, G.incFun e v := by
+  rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
+    Nat.cast_sum, ENat.coe_toNat]
+  refine WithTop.sum_ne_top.2 fun i _ ↦ ?_
+  rw [← WithTop.lt_top_iff_ne_top]
+  have := G.incFun_le_two i v
+  exact Batteries.compareOfLessAndEq_eq_lt.1 rfl
 
-def IsContraction (H G : Graph α β) := ∃ m, H = G.contract m
+lemma degree_eq_finsum [Finite β] (G : Graph α β) (v : α) :
+    G.degree v = ∑ᶠ e, G.incFun e v := by
+  have := Fintype.ofFinite β
+  rw [degree_eq_fintype_sum, finsum_eq_sum_of_fintype]
 
-lemma isContraction_trans {G₁ G₂ G₃ : Graph α β} (hm : G₁.IsContraction G₂)
-    (hm' : G₂.IsContraction G₃) : G₁.IsContraction G₃ := by
-  sorry
+@[simp]
+lemma finsum_incFun_eq (he : e ∈ G.E) : ∑ᶠ v, G.incFun e v = 2 := by
+  rw [← G.sum_eq he, Finsupp.sum, finsum_eq_finset_sum_of_support_subset]
+  simp
+
+@[simp]
+lemma tsum_incFun_eq (he : e ∈ G.E) : ∑' v, (G.incFun e v : ℕ∞) = 2 := by
+  convert (Nat.cast_inj (R := ℕ∞)).2 <| G.sum_eq he
+  rw [Finsupp.sum, tsum_eq_sum' (s := (G.incFun e).support) (by simp)]
+  simp
+
+theorem handshake_eDegree (G : Graph α β) : ∑' v, G.eDegree v = 2 * G.E.encard := by
+  simp_rw [eDegree]
+  rw [ENat.tsum_comm, ← ENat.tsum_subtype_const', ← tsum_subtype_eq_of_support_subset (s := G.E)]
+  · simp
+  suffices ∀ e x, G.Inc e x → e ∈ G.E by simpa
+  exact fun _ _ ↦ Inc.edge_mem
+
+lemma handshake [Finite α] [Finite β] (G : Graph α β) : ∑ᶠ v, G.degree v = 2 * G.E.ncard := by
+  have := Fintype.ofFinite α
+  rw [← Nat.cast_inj (R := ℕ∞), finsum_eq_sum_of_fintype, Nat.cast_sum]
+  simp [natCast_degree_eq, ← tsum_eq_sum (s := Finset.univ) (by simp), handshake_eDegree,
+    G.E.toFinite.cast_ncard_eq]
