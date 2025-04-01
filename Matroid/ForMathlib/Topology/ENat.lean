@@ -198,9 +198,6 @@ theorem tsum_iUnion_eq_tsum (f : α → ℕ∞) (t : ι → Set α) (ht : Pairwi
     (ENat.tsum_comp_eq_tsum_of_bijective (sigmaToiUnion_bijective t (fun _ _ hij ↦ ht hij)) _).symm
     _ = _ := ENat.tsum_sigma' _
 
-
-
-
 section Card
 
 @[simp] protected theorem tsum_const (c : ℕ∞) : ∑' _ : ι, c = c * ENat.card ι := by
@@ -279,7 +276,8 @@ protected theorem tsum_inter_fiber_eq {ι} {s : Set ι} (f : ι → α) :
 
 protected theorem tsum_fiber_eq {ι} (f : ι → α) :
     ∑' (a : α), (f ⁻¹' {a}).encard = (univ : Set ι).encard := by
-  rw [← ENat.tsum_inter_fiber_eq (s := univ) f, tsum_congr]; intro b; rw [univ_inter]
+  rw [← ENat.tsum_inter_fiber_eq (s := univ) f, tsum_congr]
+  simp
 
 end Card
 

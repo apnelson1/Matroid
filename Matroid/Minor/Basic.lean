@@ -146,7 +146,7 @@ lemma IsBasis'.contract_isBasis'_diff_diff_of_subset (hIX : M.IsBasis' I X) (hJI
 lemma IsBasis'.contract_isBasis'_diff_of_subset (hIX : M.IsBasis' I X) (hJI : J ⊆ I) :
     (M ／ J).IsBasis' (I \ J) X := by
   rw [isBasis'_iff_isBasis_inter_ground]
-  simpa [inter_diff_assoc] using
+  simpa only [contract_ground, diff_inter_diff_right, inter_diff_assoc] using
     (hIX.contract_isBasis'_diff_diff_of_subset hJI).isBasis_inter_ground
 
 lemma IsBasis.contract_isBasis_diff_diff_of_subset (hIX : M.IsBasis I X) (hJI : J ⊆ I) :
@@ -719,57 +719,40 @@ lemma IsStrictMinor.encard_ground_lt [N.Finite] (hNM : N <m M) : N.E.encard < M.
   N.ground_finite.encard_lt_encard hNM.ssubset
 
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
-  a coindependent set -/
+  a coindependent set/ -/
 lemma IsMinor.exists_contract_indep_delete_coindep (h : N ≤m M) :
     ∃ C D, M.Indep C ∧ M.Coindep D ∧ Disjoint C D ∧ N = M ／ C ＼ D := by
-  obtain ⟨C', D', hC', hD', hCD', rfl⟩ := h.exists_eq_contract_delete_disjoint
-  obtain ⟨I, hI⟩ := M.exists_isBasis C'
-  obtain ⟨K, hK⟩ := M✶.exists_isBasis D'
-  have hIK : Disjoint I K := disjoint_of_subset hI.subset hK.subset hCD'
-  use I ∪ D' \ K, C' \ I ∪ K
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · have hss : (D' \ K) \ I ⊆ (M✶ ／ K ＼ I).loops := by
-      rw [delete_loops_eq];
-      exact diff_subset_diff_left hK.diff_subset_loops_contract
-    rw [← dual_delete, ← dual_contract, dual_loops] at hss
-    have hi := (coloops_indep _).subset hss
-    rw [← contract_delete_comm _ hIK, delete_indep_iff, hI.indep.contract_indep_iff,
-      diff_union_self, union_comm] at hi
-    exact hi.1.2
-  · rw [coindep_def]
-    have hss : (C' \ I) \ K ⊆ (M ／ I ＼ K)✶.coloops := by
-      rw [dual_coloops, delete_loops_eq]
-      exact diff_subset_diff_left hI.diff_subset_loops_contract
-    have hi := (coloops_indep _).subset hss
-    rw [dual_delete, dual_contract, ←
-      contract_delete_comm _ hIK.symm, delete_indep_iff, hK.indep.contract_indep_iff,
-      diff_union_self] at hi
-    exact hi.1.2
-  · rw [disjoint_union_left, disjoint_union_right, disjoint_union_right,
-      and_iff_right disjoint_sdiff_right, and_iff_right hIK, and_iff_left disjoint_sdiff_left]
-    exact disjoint_of_subset diff_subset diff_subset hCD'.symm
-  have hb : (M ／ C')✶.IsBasis K D' := by
-    rwa [dual_contract, delete_isBasis_iff, and_iff_left hCD'.symm]
-  rw [← dual_dual (M ／ C' ＼ D'), dual_delete, hb.contract_eq_contract_delete,
-    hI.contract_eq_contract_delete, dual_delete, dual_contract,
-    dual_dual, delete_delete, contract_delete_contract]
-  rw [disjoint_union_right, and_iff_left disjoint_sdiff_left]
-  exact disjoint_of_subset diff_subset diff_subset hCD'.symm
+  suffices aux : ∀ (M' : Matroid α) (C : Set α) (hC : C ⊆ M'.E),
+      ∃ I D, Disjoint I D ∧ M'.Indep I ∧ M'.Coindep D ∧ M' ／ I ＼ D = M' ／ C by
+    obtain ⟨C', D', hC', hD', hCD', rfl⟩ := h.exists_eq_contract_delete_disjoint
+    obtain ⟨I, D, hID, hI, hD, h_eq⟩ := aux (M ／ C')✶ D' (subset_diff.2 ⟨hD', hCD'.symm⟩)
+    obtain ⟨J, D₁, hJD₁, hJ, hD₁, h_eq'⟩ := aux M C' hC'
+    rw [← h_eq', dual_coindep_iff, delete_indep_iff, hJ.contract_indep_iff, union_comm] at hD
+    rw [← h_eq', dual_contract_delete, ← contract_delete_comm _ hJD₁.symm, delete_indep_iff,
+      hD₁.indep.contract_indep_iff] at hI
+    rw [← dual_inj, dual_contract_delete, eq_comm, dual_contract, dual_dual] at h_eq
+    refine ⟨J ∪ D, I ∪ D₁, hD.1.2, hI.1.2, by tauto_set, ?_⟩
+    rw [h_eq, ← h_eq', delete_delete, contract_delete_contract _ _ _ _ (by tauto_set), union_comm I]
+  refine fun M' C hC ↦ ?_
+  obtain ⟨I, hI⟩ := M'.exists_isBasis C
+  refine ⟨_, _, disjoint_sdiff_right, hI.indep, ?_, hI.contract_eq_contract_delete.symm⟩
+  refine Indep.of_delete (D := I) ((coloops_indep _).subset ?_)
+  rw [← dual_contract, dual_coloops, contract_loops_eq, hI.closure_eq_closure]
+  exact diff_subset_diff_left <| M'.subset_closure C
 
+/-- A version of the scum theorem where the minor is expressed as a contraction-restriction
+rather than a contraction-deletion.  -/
 lemma IsMinor.exists_spanning_isRestriction_contract (h : N ≤m M) :
     ∃ C, M.Indep C ∧ (N ≤r M ／ C) ∧ (M ／ C).closure N.E = (M ／ C).E := by
   obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
-  refine ⟨C, hC, delete_isRestriction _ _, ?_⟩
-  rw [← (hD.coindep_contract_of_disjoint hCD.symm).closure_compl, delete_ground]
+  exact ⟨C, hC, delete_isRestriction .., by
+    rw [← (hD.coindep_contract_of_disjoint hCD.symm).closure_compl, delete_ground]⟩
 
 lemma IsMinor.exists_eq_contract_spanning_restrict (h : N ≤m M) :
     ∃ I R, M.Indep I ∧ Disjoint I R ∧ (M ／ I).Spanning R ∧ N = (M ／ I) ↾ R := by
-  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep
-  refine ⟨C, (M.E \ C) \ D, hC, disjoint_sdiff_right.mono_right diff_subset, ?_⟩
-  rw [contract_spanning_iff, diff_diff_comm, diff_union_self, and_iff_left disjoint_sdiff_left,
-    delete_eq_restrict, contract_ground, diff_diff_comm, and_iff_left rfl,
-    union_eq_self_of_subset_right (subset_diff.2 ⟨hC.subset_ground, hCD⟩)]
-  exact hD.compl_spanning
+  obtain ⟨C, hC, hNC, hcl⟩ := h.exists_spanning_isRestriction_contract
+  obtain ⟨R, hR, rfl⟩ := hNC.exists_eq_restrict
+  exact ⟨C, R, hC, (subset_diff.1 hR).2.symm, ⟨hcl, hR⟩, rfl⟩
 
 /-- Classically choose an independent contract-set from a proof that `N` is a isMinor of `M`. -/
 def IsMinor.C (h : N ≤m M) : Set α :=
