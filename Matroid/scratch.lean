@@ -8,16 +8,10 @@ open Subgraph
 
 variable {V : Type*} {v : V} {G : SimpleGraph V} {H :  Subgraph G}
 
-def IsSpanningTree (H : Subgraph G) : Prop := H.spanningCoe.Connected ∧ H.spanningCoe.IsAcyclic
-
--- theorem Connected_Has_Spanning_Tree (hG : G.Connected) : ∃ (H : Subgraph G), H.IsSpanningTree := by
---   sorry
-
--- def IsMinimal (H : G.Subgraph) : Prop := Minimal (fun X ↦ X.spanningCoe.Connected) H
-    -- H.spanningCoe.Connected ∧ ∀ (K : Subgraph G), K.edgeSet ⊆ H.edgeSet → K.edgeSet ≠ H.edgeSet → ¬K.spanningCoe.Connected
-
-
--- theorem spanningCoe : H.spanningCoe.Connected ↔ H.Connected
+@[simp] lemma toSubgraph_spanningcoe {H G : SimpleGraph V} (hle : H ≤ G) :
+    (SimpleGraph.toSubgraph H hle).spanningCoe = H := by
+  ext
+  simp
 
 lemma Connected.exists_adj [Nontrivial V] (hG : G.Connected) (v : V) : ∃ w, G.Adj v w := by
   obtain ⟨x, hx⟩ := exists_ne v
@@ -30,6 +24,13 @@ lemma Connected.exists_adj [Nontrivial V] (hG : G.Connected) (v : V) : ∃ w, G.
   · exact ⟨a, h.symm⟩
   exact ih ne hP.1
 
+/-- If `H` is a subgraph and `H.spanningCoe` is connected, then `H.verts = Set.univ`. -/
+lemma verts_eq_univ_of_connected_spanningCoe [Nontrivial V] (h : H.spanningCoe.Connected) :
+    H.verts = Set.univ := by
+  refine Set.eq_univ_iff_forall.2 fun x ↦ by_contra fun hxV ↦ ?_
+  obtain ⟨w, hw⟩ := h.exists_adj x
+  exact hxV <| H.mem_verts_of_mem_edge (e := s(x,w)) (by simpa) (by simp)
+
 /-- If `H.verts = Set.univ`, then `H.coe` and `H.spanningCoe` are isomorphic. -/
 def Subgraph.coeIsoSpanningCoe (hV : H.verts = Set.univ) : H.coe ≃g H.spanningCoe where
   toFun x := x.1
@@ -38,12 +39,24 @@ def Subgraph.coeIsoSpanningCoe (hV : H.verts = Set.univ) : H.coe ≃g H.spanning
   right_inv x := by simp
   map_rel_iff' := by simp
 
-/-- If `H` is a subgraph and `H.spanningCoe` is connected, then `H.verts = Set.univ`. -/
-lemma verts_eq_univ_of_connected_spanningCoe [Nontrivial V] (h : H.spanningCoe.Connected) :
-    H.verts = Set.univ := by
-  refine Set.eq_univ_iff_forall.2 fun x ↦ by_contra fun hxV ↦ ?_
-  obtain ⟨w, hw⟩ := h.exists_adj x
-  exact hxV <| H.mem_verts_of_mem_edge (e := s(x,w)) (by simpa) (by simp)
+def Subgraph.IsSpanningTree (H : Subgraph G) : Prop :=
+  H.spanningCoe.Connected ∧ H.spanningCoe.IsAcyclic
+
+theorem Connected_Has_Spanning_Tree [Finite V] (hG : G.Connected) :
+    ∃ (H : Subgraph G), H.IsSpanningTree := by
+  obtain ⟨T, hTG, hT⟩ := hG.exists_isTree_le
+  exact ⟨SimpleGraph.toSubgraph T hTG, by simpa using hT.isConnected, by simpa using hT.IsAcyclic⟩
+
+
+
+
+
+-- def IsMinimal (H : G.Subgraph) : Prop := Minimal (fun X ↦ X.spanningCoe.Connected) H
+    -- H.spanningCoe.Connected ∧ ∀ (K : Subgraph G), K.edgeSet ⊆ H.edgeSet → K.edgeSet ≠ H.edgeSet → ¬K.spanningCoe.Connected
+
+
+-- theorem spanningCoe : H.spanningCoe.Connected ↔ H.Connected
+
 
 -- theorem connected_spanningCoe_of_vertex : H.spanningCoe.Connected ↔ H.Connected := by
 --   have :=
