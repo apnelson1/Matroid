@@ -56,8 +56,8 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
   obtain ⟨Ic, Xc, hXc, hIc₁, hIc₂, hIc⟩ :=
     exists_common_ind_aux (M₁ ／ {e}) (M₂ ／ {e}) (by simp [hE])
 
-  rw [he₁.contract_indep_iff] at hIc₁
-  rw [he₂.contract_indep_iff] at hIc₂
+  rw [he₁.contractElem_indep_iff] at hIc₁
+  rw [he₂.contractElem_indep_iff] at hIc₂
 
   simp only [contract_ground, delete_ground, subset_diff_singleton_iff] at hXc hXd
 

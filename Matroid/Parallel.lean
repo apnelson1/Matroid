@@ -77,7 +77,7 @@ lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
   by_cases he : M.IsNonloop e
   · rw [Parallel, parallelClasses, Partition.rel_congr, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
-      closure_insert_closure_eq_closure_insert, insert_emptyc_eq]
+      closure_insert_closure_eq_closure_insert, insert_empty_eq]
   rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_not_mem]
   exact fun f hf ↦ he (Parallel.isNonloop_left hf)
 

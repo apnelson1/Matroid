@@ -43,11 +43,10 @@ lemma IsCrossing.encard_ne_one (h : M.IsCrossing X) : X.encard ≠ 1 := by
 
 lemma IsCrossing.of_contract (hC : (M ／ C).IsCrossing X) : M.IsCrossing X := by
   obtain ⟨X, Y, hX, hY, rfl⟩ := hC
-  obtain ⟨X', hX', hXX', hX'X⟩ := hX.subset_isCircuit_of_contract
+  obtain ⟨X', hX', hXX', hX'X⟩ := hX.exists_subset_isCircuit_of_contract
   rw [contract_isCocircuit_iff] at hY
   refine ⟨X', Y, hX', hY.1, (inter_subset_inter_left _ hXX').antisymm
-    (subset_inter ?_ inter_subset_right)⟩
-  refine (inter_subset_inter_left Y hX'X).trans ?_
+    (subset_inter ((inter_subset_inter_left Y hX'X).trans ?_) inter_subset_right)⟩
   rw [union_inter_distrib_right, hY.2.symm.inter_eq, union_empty]
   exact inter_subset_left
 

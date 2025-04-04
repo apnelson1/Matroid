@@ -9,15 +9,12 @@ open Set Function
 
 namespace Matroid
 
-/-- A `SkewFamily` is a collection of sets having pairwise disjoint bases whose union is
-  independent. -/
+/-- A `SkewFamily` in a matroid is a collection of sets having pairwise disjoint bases
+whose union is independent. -/
 @[mk_iff]
 structure IsSkewFamily (M : Matroid α) (Xs : ι → Set α) : Prop where
-  modular : M.IsModularFamily Xs
+  isModularFamily : M.IsModularFamily Xs
   disj : ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.loops
-
-lemma IsSkewFamily.isModularFamily (h : M.IsSkewFamily Xs) : M.IsModularFamily Xs :=
-  h.1
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
 lemma IsSkewFamily.subset_ground_of_mem (h : M.IsSkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
