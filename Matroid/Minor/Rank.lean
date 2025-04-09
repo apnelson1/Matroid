@@ -56,7 +56,7 @@ lemma Indep.contract_eRk_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eR
 
 end Delete
 
-/-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ／ X`,
+/-- The relative `ℕ∞`-rank of sets `X` and `Y`, defined to be the `ℕ∞`-rank of `Y` in `M ／ X`,
 and equal to the minimum number of elements that need to be added to `X` to span `Y`.
 The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
 expression when `X ⊆ Y`, and sometimes more generally. -/
@@ -127,15 +127,19 @@ lemma eRelRk_mono_left (M : Matroid α) {X X' : Set α} (Y : Set α) (h : X ⊆ 
   rw [eRelRk, eRelRk, ← union_diff_cancel h, ← contract_contract]
   apply eRelRk_le_eRk
 
+lemma IsBasis'.eRelRk_eq_encard_of_union_isBasis_disjoint (hI : M.IsBasis' I X)
+    (hIJ : M.IsBasis' (I ∪ J) Y) (hdj : Disjoint I J) : M.eRelRk X Y = J.encard := by
+  rw [← eRelRk_closure_right, ← hIJ.closure_eq_closure, eRelRk_closure_right,
+    ← eRelRk_closure_left, ← hI.closure_eq_closure, eRelRk_closure_left,
+    eRelRk_eq_eRk_diff_contract, union_diff_cancel_left (hdj.inter_eq.subset), Indep.eRk_eq_encard]
+  rwa [hI.indep.contract_indep_iff, union_comm, disjoint_comm, and_iff_left hIJ.indep]
+
+/-- If `I` is a basis for `X ∪ C` containing a basis for `C`, then the relative rank of
+`C` and `X` is the size of `I \ C`. -/
 lemma IsBasis'.eRelRk_eq_encard_diff (hI : M.IsBasis' I (X ∪ C)) (hIC : M.IsBasis' (I ∩ C) C) :
     M.eRelRk C X = (I \ C).encard := by
-  rw [eRelRk_eq_eRelRk_union, eRelRk, ← eRk_closure_eq, contract_closure_eq, union_assoc,
-    union_self, ← hI.closure_eq_closure, ← eRelRk_eq_eRk_diff_contract, eRelRk_closure_right,
-    eRelRk_eq_eRk_diff_contract, Indep.eRk_eq_encard]
-  rw [hIC.contract_eq_contract_delete, delete_indep_iff, hIC.indep.contract_indep_iff,
-    diff_union_inter, and_iff_left hI.indep, ← disjoint_union_right, union_diff_self,
-    union_eq_self_of_subset_left inter_subset_right]
-  exact disjoint_sdiff_left
+  rw [eRelRk_eq_union_right, hIC.eRelRk_eq_encard_of_union_isBasis_disjoint (J := I \ C) (by simpa)
+    disjoint_sdiff_inter.symm]
 
 lemma IsBasis.eRelRk_eq_encard_diff (hI : M.IsBasis I (X ∪ C)) (hIC : M.IsBasis (I ∩ C) C) :
     M.eRelRk C X = (I \ C).encard :=
@@ -173,18 +177,16 @@ lemma eRelRk_insert_le (M : Matroid α) (X : Set α) (e : α) : M.eRelRk X (inse
   rw [encard_le_one_iff]
   aesop
 
-lemma eRelRk_add_eRk_eq (M : Matroid α) (C X : Set α) :
-    M.eRelRk C X + M.eRk C = M.eRk (X ∪ C) := by
-  obtain ⟨I, D, hIC, hD, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  obtain ⟨J, hJ, rfl⟩ := hIC.exists_isBasis_inter_eq_of_superset
-    (subset_union_right (s := X ∩ M.E)) (by simp)
-  rw [← eRelRk_inter_ground_left, ← eRelRk_inter_ground_right,
-    hJ.isBasis'.eRelRk_eq_encard_diff hIC.isBasis', ← eRk_inter_ground, ← hIC.encard_eq_eRk,
-    encard_diff_add_encard_inter, hJ.encard_eq_eRk, ← union_inter_distrib_right, eRk_inter_ground]
-
 lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.eRelRk X Y + M.eRk X = M.eRk Y := by
-  rw [eRelRk_add_eRk_eq, union_eq_self_of_subset_right hXY]
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset hXY
+  rw [hJ.eRelRk_eq_encard_diff_of_subset hXY hI, ← hI.encard_eq_eRk, encard_diff_add_encard_inter,
+    hJ.encard_eq_eRk]
+
+lemma eRelRk_add_eRk_eq (M : Matroid α) (C X : Set α) : M.eRelRk C X + M.eRk C = M.eRk (X ∪ C) := by
+  rw [eRelRk_eq_eRelRk_union, eRelRk_add_eRk_of_subset]
+  exact subset_union_right
 
 lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) :
     M.eRelRk X Y = M.eRk Y - M.eRk X := by
@@ -206,18 +208,12 @@ lemma IsNonloop.eRelRk_eq_sub_one (he : M.IsNonloop e) (X : Set α) :
 lemma eRelRk_add_cancel (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
     M.eRelRk X Y + M.eRelRk Y Z = M.eRelRk X Z := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans hXY)
-  obtain ⟨K, hK, hJK⟩ := hJ.indep.subset_isBasis'_of_subset (hJ.subset.trans hYZ)
-  obtain rfl := hI.inter_eq_of_subset_indep hIJ hJ.indep
-  obtain rfl := hJ.inter_eq_of_subset_indep hJK hK.indep
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset hXY
+  obtain ⟨J, hK, rfl⟩ := hJ.exists_isBasis'_inter_eq_of_superset hYZ
   rw [hJ.eRelRk_eq_encard_diff_of_subset hXY hI, hK.eRelRk_eq_encard_diff_of_subset hYZ hJ,
-    hK.eRelRk_eq_encard_diff_of_subset (hXY.trans hYZ)
-    (by rwa [inter_assoc, inter_eq_self_of_subset_right hXY] at hI),
-    ← encard_union_eq, diff_eq, diff_eq, inter_assoc, ← inter_union_distrib_left,
-    inter_union_distrib_right, union_compl_self, univ_inter, ← compl_inter,
-    inter_eq_self_of_subset_left hXY, diff_eq]
-  exact disjoint_of_subset_left (diff_subset.trans inter_subset_right)
-    disjoint_sdiff_right
+    hK.eRelRk_eq_encard_diff_of_subset (hXY.trans hYZ), ← encard_union_eq (by tauto_set),
+    union_comm, ← diff_self_inter, diff_union_diff_cancel' (by tauto_set) (by tauto_set)]
+  rwa [inter_assoc, inter_eq_self_of_subset_right hXY] at hI
 
 lemma eRelRk_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.eRelRk X Y = 0 ↔ Y ⊆ M.closure X := by

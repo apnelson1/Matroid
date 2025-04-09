@@ -269,7 +269,7 @@ lemma removeLoops_isColoop_eq (M : Matroid α) : M.removeLoops.IsColoop = M.IsCo
 @[simp]
 lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops.coloops = M.coloops := by
   ext e
-  rw [← isColoop_iff_mem_loops, removeLoops_isColoop_eq, isColoop_iff_mem_loops]
+  rw [← isColoop_iff_mem_coloops, removeLoops_isColoop_eq, isColoop_iff_mem_coloops]
 
 lemma restrict_removeLoops (R : Set α) : (M ↾ R).removeLoops = (M ↾ (R ∩ M.E)).removeLoops := by
   rw [removeLoops_eq_restr, restrict_restrict_eq _ (by simp [subset_def]),
