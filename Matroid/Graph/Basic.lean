@@ -40,6 +40,15 @@ def IsLoopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 2
 
 def IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := G.incFun e x = 1
 
+/-- Is there a more direct way to define this?
+`(G.IncFun e).support = {x,y}` is equivalent but requires decidability.
+-/
+def Inc₂ (G : Graph α β) (e : β) (x y : α) : Prop :=
+  (G.IsNonloopAt e x ∧ G.IsNonloopAt e y ∧ x ≠ y) ∨ (G.IsLoopAt e x ∧ x = y)
+
+lemma Inc.one_le_incFun (h : G.Inc e x) : 1 ≤ G.incFun e x := by
+  rwa [Inc, ← Nat.one_le_iff_ne_zero] at h
+
 @[simp]
 lemma incFun_eq_one : G.incFun e x = 1 ↔ G.IsNonloopAt e x := Iff.rfl
 
@@ -78,13 +87,25 @@ lemma incFun_eq_zero_or_one_or_two (G : Graph α β) (e) (v) :
   have := G.incFun_le_two e v
   omega
 
+lemma incFun_support_card_le (G : Graph α β) (e : β) : (G.incFun e).support.card ≤ 2 := by
+  by_cases he : e ∈ G.E
+  · simp only [← G.sum_eq he, Finsupp.sum, Finset.card_eq_sum_ones]
+    refine Finset.sum_le_sum ?_
+    simp only [Finsupp.mem_support_iff]
+    exact fun i a ↦ Inc.one_le_incFun a
+  simp [incFun_of_not_mem_edgeSet he]
+
 lemma IsLoopAt.inc (h : G.IsLoopAt e v) : G.Inc e v := by
   rw [IsLoopAt] at h
   simp [h, ← incFun_ne_zero]
 
+lemma IsLoopAt.incFun_eq (h : G.IsLoopAt e v) : G.incFun e v = 2 := h
+
 lemma IsNonloopAt.inc (h : G.IsNonloopAt e v) : G.Inc e v := by
   rw [IsNonloopAt] at h
   simp [h, ← incFun_ne_zero]
+
+lemma IsNonloopAt.incFun_eq (h : G.IsNonloopAt e v) : G.incFun e v = 1 := h
 
 lemma inc_iff_isLoopAt_or_isNonloopAt :
     G.Inc e v ↔ G.IsLoopAt e v ∨ G.IsNonloopAt e v := by
@@ -116,63 +137,109 @@ lemma IsLoopAt.not_isNonloopAt (h : G.IsLoopAt e v) : ¬ G.IsNonloopAt e v := by
 lemma IsNonloopAt.exists_inc_ne (h : G.IsNonloopAt e v) : ∃ w, G.Inc e w ∧ w ≠ v := by
   simpa [isLoopAt_iff, and_iff_right h.inc] using h.not_isLoopAt
 
+lemma IsNonloopAt.exists_isNonloopAt_ne (h : G.IsNonloopAt e v) :
+    ∃ w, G.IsNonloopAt e w ∧ w ≠ v := by
+  obtain ⟨w, hw, hne⟩ := h.exists_inc_ne
+  obtain hw | hw := hw.isLoopAt_or_isNonloopAt
+  · exact False.elim <| hne.symm <| hw.eq_of_inc h.inc
+  exact ⟨w, hw, hne⟩
+
 lemma isNonloopAt_iff : G.IsNonloopAt e v ↔ G.Inc e v ∧ ∃ x, G.Inc e x ∧ x ≠ v :=
   ⟨fun h ↦ ⟨h.inc, h.exists_inc_ne⟩, fun ⟨h, _, hex, hxv⟩ ↦ h.isLoopAt_or_isNonloopAt.elim
     (fun h' ↦ (hxv <| h'.eq_of_inc hex).elim) id⟩
 
-/-- Two graphs with the same incidences are the same. -/
-lemma ext_inc {G G' : Graph α β} (hV : G.V = G'.V) (hE : G.E = G'.E)
-    (h : ∀ e x, G.Inc e x ↔ G'.Inc e x) : G = G' := by
+lemma Inc₂.inc_left (h : G.Inc₂ e x y) : G.Inc e x :=
+  Or.elim h (fun h ↦ h.1.inc) fun h ↦ h.1.inc
+
+lemma Inc₂.inc_right (h : G.Inc₂ e x y) : G.Inc e y :=
+  Or.elim h (fun h ↦ h.2.1.inc) fun h ↦ (h.2.symm ▸ h.1.inc)
+
+lemma Inc₂.edge_mem (h : G.Inc₂ e x y) : e ∈ G.E :=
+  h.inc_left.edge_mem
+
+lemma Inc₂.vx_mem_left (h : G.Inc₂ e x y) : x ∈ G.V :=
+  h.inc_left.vx_mem
+
+lemma Inc₂.vx_mem_right (h : G.Inc₂ e x y) : y ∈ G.V :=
+  h.inc_right.vx_mem
+
+lemma Inc₂.symm (h : G.Inc₂ e x y) : G.Inc₂ e y x :=
+  Or.elim h (fun h' ↦ .inl ⟨h'.2.1, h'.1, h'.2.2.symm⟩) fun h' ↦ .inr ⟨h'.2 ▸ h'.1, h'.2.symm⟩
+
+lemma exists_inc_of_mem (he : e ∈ G.E) : ∃ x, G.Inc e x := by
+  simp_rw [Inc]
+  by_contra! hcon
+  simpa [Finsupp.sum, hcon] using G.sum_eq he
+
+lemma exists_inc₂_of_mem (he : e ∈ G.E) : ∃ x y, G.Inc₂ e x y := by
+  obtain ⟨x, hx⟩ := exists_inc_of_mem he
+  obtain hx | hx := hx.isLoopAt_or_isNonloopAt
+  · exact ⟨x, x, .inr ⟨hx, rfl⟩⟩
+  obtain ⟨y, hy, hyx⟩ := hx.exists_isNonloopAt_ne
+  exact ⟨y, x, .inl ⟨hy, hx, hyx⟩⟩
+
+@[simp]
+lemma inc₂_self_iff : G.Inc₂ e x x ↔ G.IsLoopAt e x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ .inr ⟨h,rfl⟩⟩
+  obtain h | h := h
+  · simp at h
+  exact h.1
+
+lemma Inc₂.eq_or_eq_of_inc {u : α} (he : G.Inc₂ e x y) (he₁ : G.Inc e u) : u = x ∨ u = y := by
+  classical
+  by_contra! hcon
+  have hcard := incFun_support_card_le G e
+  obtain ⟨hex, hey, hxy⟩ | ⟨hex, rfl⟩ := he
+  · have hss : {u, x, y} ⊆ (G.incFun e).support := by
+      simp [Finset.insert_subset_iff, he₁, hex.inc, hey.inc]
+    simpa [Finset.card_eq_three.2 ⟨u, x, y, by aesop⟩] using (Finset.card_le_card hss).trans hcard
+  exact hcon.1 <| hex.eq_of_inc he₁
+
+lemma Inc.exists_inc₂ (h : G.Inc e x) : ∃ y, G.Inc₂ e x y := by
+  obtain ⟨u, v, huv⟩ := exists_inc₂_of_mem h.edge_mem
+  obtain rfl | rfl := huv.eq_or_eq_of_inc h
+  · exact ⟨_, huv⟩
+  exact ⟨_, huv.symm⟩
+
+lemma inc_iff_inc₂ : G.Inc e x ↔ ∃ y, G.Inc₂ e x y :=
+  ⟨Inc.exists_inc₂, fun ⟨_, hy⟩ ↦ hy.inc_left⟩
+
+-- lemma inc₂_iff_inc : G.Inc₂ e x y ↔ G.Inc e x ∧ G.Inc e y ∧ (G.Is)
+
+lemma IsNonloopAt.exists_inc₂_ne (h : G.IsNonloopAt e x) : ∃ y ≠ x, G.Inc₂ e x y := by
+  obtain ⟨y, hy⟩ := h.exists_isNonloopAt_ne
+  exact ⟨y, hy.2, .inl ⟨h, hy.1, hy.2.symm⟩⟩
+
+lemma Inc₂.isNonloop_at_left_of_ne (h : G.Inc₂ e x y) (hne : x ≠ y) : G.IsNonloopAt e x := by
+  obtain ⟨he, -, -⟩ | ⟨he, rfl⟩ := h
+  · assumption
+  simp at hne
+
+lemma Inc₂.isNonloop_at_right_of_ne (h : G.Inc₂ e x y) (hne : x ≠ y) : G.IsNonloopAt e y := by
+  obtain ⟨-, he, -⟩ | ⟨he, rfl⟩ := h
+  · assumption
+  simp at hne
+
+/-- Two graphs with the same vertices and incidences are the same. -/
+lemma ext_inc {G H : Graph α β} (hV : G.V = H.V) (h : ∀ e x, G.Inc e x ↔ H.Inc e x) : G = H := by
   ext e x
   · rw [hV]
-  · rw [hE]
-  obtain h0 | h1 | h2 := G'.incFun_eq_zero_or_one_or_two e x
-  · rwa [h0, G.incFun_eq_zero, h, ← G'.incFun_eq_zero]
+  · refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+    · obtain ⟨x, hx⟩ := exists_inc_of_mem h'
+      exact ((h _ _).1 hx).edge_mem
+    obtain ⟨x, hx⟩ := exists_inc_of_mem h'
+    exact ((h _ _).2 hx).edge_mem
+  obtain h0 | h1 | h2 := H.incFun_eq_zero_or_one_or_two e x
+  · rwa [h0, G.incFun_eq_zero, h, ← H.incFun_eq_zero]
   · simp_rw [h1, G.incFun_eq_one, isNonloopAt_iff, h, ← isNonloopAt_iff]
-    rwa [← G'.incFun_eq_one]
+    rwa [← H.incFun_eq_one]
   simp_rw [h2, G.incFun_eq_two, isLoopAt_iff, h, ← isLoopAt_iff]
-  rwa [← G'.incFun_eq_two]
+  rwa [← H.incFun_eq_two]
 
-/-- Restrict a graph to a subset `R` of the edge set. -/
-noncomputable def edgeRestrict (G : Graph α β) (R : Set β) : Graph α β where
-  V := G.V
-  E := G.E ∩ R
-  incFun e :=
-    have := Classical.dec (e ∈ R)
-    if e ∈ R then G.incFun e else 0
-  sum_eq e he := by simp [he.2, G.sum_eq he.1]
-  vertex_support e v h := G.vertex_support (e := e) <| by aesop
-  edge_support e v h := ⟨G.edge_support (v := v) (by aesop), by aesop⟩
-
-/-- Delete a subset `D` of the edges. -/
-noncomputable def edgeDel (G : Graph α β) (D : Set β) := G.edgeRestrict (G.E \ D)
-
-lemma vxMap_aux (G : Graph α β) {f : α → α'} {x : α'} :
-    (G.incFun e).mapDomain f x ≠ 0 ↔ ∃ v, f v = x ∧ G.Inc e v := by
-  classical
-  simp +contextual [← incFun_eq_zero, Finsupp.mapDomain, Finsupp.sum,
-    Finsupp.single_apply, and_comm, ← incFun_ne_zero]
-
-/-- Transport a graph to a new vertex type by mapping along a function.
-Edges between identified vertices become loops. -/
-noncomputable def vxMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β where
-  V := f '' G.V
-  E := G.E
-  incFun e := (G.incFun e).mapDomain f
-  sum_eq e he := by rwa [Finsupp.sum_mapDomain_index (by simp) (by simp), G.sum_eq]
-  vertex_support e v := by
-    simp only [ne_eq, vxMap_aux, Set.mem_image, forall_exists_index, and_imp]
-    exact fun x hxv h ↦ ⟨x, h.vx_mem, hxv⟩
-  edge_support e v := by
-    simp only [ne_eq, vxMap_aux, forall_exists_index, and_imp]
-    exact fun _ _ ↦ Inc.edge_mem
-
-/-- `vxMap` has the expected incidence predicate. -/
-@[simp]
-lemma vxMap_inc_iff {α' : Type*} (G : Graph α β) (f : α → α') (x : α') (e : β) :
-    (G.vxMap f).Inc e x ↔ ∃ v, f v = x ∧ G.Inc e v := by
-  rw [← incFun_ne_zero, ← vxMap_aux]
-  rfl
+/-- Two graphs with the same vertices and 2-incidences are the same. -/
+lemma ext_inc₂ {G H : Graph α β} (hV : G.V = H.V) (h : ∀ e x y, G.Inc₂ e x y ↔ H.Inc₂ e x y) :
+    G = H :=
+  ext_inc hV (by simp [inc_iff_inc₂, h])
 
 /-- The degree of a vertex as a term in `ℕ∞`. -/
 noncomputable def eDegree (G : Graph α β) (v : α) : ℕ∞ := ∑' e, G.incFun e v
