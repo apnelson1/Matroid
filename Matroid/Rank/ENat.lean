@@ -434,7 +434,7 @@ lemma nullity_insert_eq_add_one (hecl : e ∈ M.closure X) (heX : e ∉ X) :
   rw [hI.nullity_eq, hI'.nullity_eq, insert_diff_of_not_mem _ (not_mem_subset hI.subset heX),
     encard_insert_of_not_mem (not_mem_subset diff_subset heX)]
 
-lemma nullity_eq_nullity_inter_ground_add_encard_diff :
+lemma nullity_eq_nullity_inter_ground_add_encard_diff (M : Matroid α) (X : Set α) :
     M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.nullity_eq, hI.isBasis_inter_ground.nullity_eq, ← encard_union_eq]
