@@ -92,7 +92,8 @@ lemma IsModularFlat.IsFlat [Simple M] :
   intro h e heX
   have heE := M.mem_ground_of_mem_closure heX
   obtain ⟨I, hIu, hIX, hIe, hIi⟩ := (h (M.singleton_isFlat (heE))).exists_common_isBasis
-  rw [(M.toIsNonloop heE).indep.isBasis_iff_eq, inter_eq_right, singleton_subset_iff] at hIe
+  rw [(M.isNonloop_of_loopless heE).indep.isBasis_iff_eq, inter_eq_right, singleton_subset_iff]
+    at hIe
   refine by_contra fun heX' ↦ hIu.indep.not_mem_closure_diff_of_mem hIe
     (mem_of_mem_of_subset heX (M.closure_subset_closure_of_subset_closure ?_))
   exact hIX.subset_closure.trans

@@ -1,4 +1,3 @@
-import Matroid.Minor.Basic
 import Matroid.Minor.Rank
 import Mathlib.Data.Matroid.Constructions
 import Matroid.Equiv

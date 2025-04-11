@@ -43,7 +43,6 @@ lemma IsPoint.eq_closure_of_mem (hP : M.IsPoint P) (he : M.IsNonloop e) (heP : e
   exact hP.isFlat.eq_closure_of_isBasis <| he.isBasis_of_eRk_ge (finite_singleton e)
     (singleton_subset_iff.2 heP) (by rw [hP.eRk, he.eRk_eq_encard, encard_singleton])
 
-
 lemma isPoint_iff_exists_eq_closure_isNonloop :
     M.IsPoint P ↔ ∃ e, M.IsNonloop e ∧ P = M.closure {e} :=
   ⟨IsPoint.exists_eq_closure_isNonloop, by rintro ⟨e, he, rfl⟩; exact he.closure_isPoint⟩
@@ -72,7 +71,7 @@ lemma isPoint_singleton_iff [M.Nonempty] : M.IsPoint {e} ↔ ∀ f ∈ M.E, M.In
   exact he.closure_isPoint
 
 lemma IsPoint.loopless_of_singleton (h : M.IsPoint {e}) : M.Loopless := by
-  rw [loopless_iff_loops, ← subset_empty_iff, loops]
+  rw [loopless_iff, ← subset_empty_iff, loops]
   nth_rw 2 [← diff_eq_empty.2 h.isFlat.closure.subset]
   rw [subset_diff_singleton_iff]
   exact ⟨M.closure_subset_closure (empty_subset _), h.isNonloop.not_isLoop⟩

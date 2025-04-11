@@ -22,9 +22,9 @@ lemma encard_le_of_unif_two {a : ℕ} (h : (unif 2 a).Representable 𝔽) : a �
 @[simp] lemma removeLoops_representable_iff :
     M.removeLoops.Representable 𝔽 ↔ M.Representable 𝔽 := by
   refine ⟨fun ⟨v⟩ ↦ ?_, fun ⟨v⟩ ↦ ?_⟩
-  · rw [M.eq_restrict_removeLoops]
+  · rw [← M.eq_restrict_removeLoops]
     exact (v.restrict M.E).representable
-  rw [removeLoops_eq_restr]
+  rw [removeLoops_eq_restrict]
   exact (v.restrict _).representable
 
 lemma noUniformMinor [Fintype 𝔽] (h : M.Representable 𝔽) :

@@ -1,5 +1,5 @@
 import Matroid.Connectivity.Separation
-import Matroid.Minor.Basic
+import Matroid.Minor.Order
 
 open Set
 

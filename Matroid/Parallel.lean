@@ -103,7 +103,7 @@ lemma IsNonloop.parallel_iff_mem_closure (he : M.IsNonloop e) :
 
 lemma Loopless.parallel_class_eq_closure (h : M.Loopless) (e : α) :
     {f | M.Parallel e f} = M.closure {e} := by
-  rw [setOf_parallel_eq_closure_diff_loops, h.loops, diff_empty]
+  rw [setOf_parallel_eq_closure_diff_loops, h.loops_eq_empty, diff_empty]
 
 lemma Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := by
   rw [pair_comm, ← h.isNonloop_left.indep.mem_closure_iff_of_not_mem hne.symm]
@@ -164,7 +164,7 @@ lemma delete_parallel_iff {D : Set α} :
   rw [mem_diff, and_iff_right h.mem_ground_left, mem_diff, and_iff_right h.mem_ground_right]
 
 @[simp] lemma removeLoops_parallel_iff : M.removeLoops.Parallel e f ↔ M.Parallel e f := by
-  rw [removeLoops_eq_restr, restrict_parallel_iff,
+  rw [removeLoops_eq_restrict, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.isNonloop_left, h.isNonloop_right⟩)]
 
 lemma Parallel.mem_isCocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.IsCocircuit K)

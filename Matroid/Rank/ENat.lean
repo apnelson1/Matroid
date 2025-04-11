@@ -208,7 +208,7 @@ lemma IsNonloop.eRk_eq (he : M.IsNonloop e) : M.eRk {e} = 1 := by
 
 lemma eRk_singleton_eq [Loopless M] (he : e ∈ M.E := by aesop_mat) :
     M.eRk {e} = 1 :=
-  (M.toIsNonloop he).eRk_eq
+  (M.isNonloop_of_loopless he).eRk_eq
 
 @[simp] lemma eRk_singleton_eq_one_iff {e : α} : M.eRk {e} = 1 ↔ M.IsNonloop e := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.eRk_eq⟩

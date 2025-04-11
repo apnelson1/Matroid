@@ -1,4 +1,4 @@
-import Matroid.Minor.Basic
+import Matroid.Minor.Order
 import Matroid.Rank.Nat
 import Matroid.ForMathlib.ENat
 
@@ -555,7 +555,7 @@ lemma nullity_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).nullity (X \
 lemma nullity_contract_le (M : Matroid α) (hCX : C ⊆ X) :
     (M ／ C).nullity (X \ C) ≤ M.nullity X := by
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
-    contract_restrict_eq_restrict_contract _ _ _ disjoint_sdiff_right, diff_union_self,
+    contract_restrict_eq_restrict_contract _ disjoint_sdiff_right, diff_union_self,
     union_eq_self_of_subset_right hCX, dual_contract]
   apply eRank_delete_le
 
@@ -563,7 +563,7 @@ lemma nullity_contract_ge_of_disjoint (M : Matroid α) (hXC : Disjoint X C) :
     M.nullity X ≤ (M ／ C).nullity X := by
   have hle := (M ↾ (X ∪ C))✶.eRank_contract_le_eRank_delete C
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
-    contract_restrict_eq_restrict_contract _ _ _ hXC.symm, dual_contract]
+    contract_restrict_eq_restrict_contract _ hXC.symm, dual_contract]
   rwa [← dual_delete, delete_eq_restrict, restrict_ground_eq,
     restrict_restrict_eq _ diff_subset, union_diff_cancel_right (Set.disjoint_iff.mp hXC)] at hle
 

@@ -435,7 +435,7 @@ lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) 
 @[simp]
 lemma removeLoops_eLocalConn (M : Matroid α) : M.removeLoops.eLocalConn = M.eLocalConn := by
   ext _ _
-  rw [removeLoops_eq_restr, eLocalConn_restrict_eq, ← eLocalConn_closure_closure]
+  rw [removeLoops_eq_restrict, eLocalConn_restrict_eq, ← eLocalConn_closure_closure]
   simp
 
 end eLocalConn
@@ -804,7 +804,7 @@ lemma core_dual (M : Matroid α) (X : Set α) : M✶.core X = M.core X := by
 
 @[simp]
 lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.core X := by
-  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, removeLoops_loops_eq,
+  rw [core_def, removeLoops_ground_eq, setOf_isNonloop_eq, core_def, loops_eq_empty,
     removeLoops_coloops_eq]
   tauto_set
 

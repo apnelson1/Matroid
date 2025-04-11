@@ -160,7 +160,8 @@ lemma Indep.ncard_le_rank [RankFinite M] (hI : M.Indep I) : I.ncard ≤ M.rank :
 
 lemma Indep.isBase_of_ncard [RankFinite M] (hI : M.Indep I) (hIcard : M.rank ≤ I.ncard) :
     M.IsBase I :=
-  hI.isBase_of_encard hI.finite <| by rwa [← cast_rank_eq, ← hI.finite.cast_ncard_eq, Nat.cast_le]
+  hI.isBase_of_eRk_ge hI.finite <| by
+    rwa [hI.eRk_eq_encard, ← cast_rank_eq, ← hI.finite.cast_ncard_eq, Nat.cast_le]
 
 lemma Indep.isBase_of_card [RankFinite M] {I : Finset α} (hI : M.Indep I)
     (hIcard : M.rank ≤ I.card) : M.IsBase I :=

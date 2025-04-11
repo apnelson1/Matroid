@@ -36,7 +36,8 @@ lemma Rep.projFun_eq (v : M.Rep 𝔽 W) :
     v.projFun = fun e ↦ Projectivization.mk 𝔽 (v e) (by simp) := rfl
 
 -- lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
---     v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (toIsNonloop he)) := by
+--     v.projFun e = Projectivization.mk 𝔽 (v e)
+--  (v.ne_zero_of_isNonloop (isNonloop_of_loopless he)) := by
 --   rw [Rep.projFun, dif_pos]
 
 -- lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
