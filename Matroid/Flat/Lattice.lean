@@ -555,7 +555,7 @@ lemma IsFlat.inter_iUnion_closure_of_directed [Finitary M] {ι : Type*} {Xs : ι
     (hF : M.IsFlat F) (hXs : ∀ i, M.IsFlat (Xs i)) (h_dir : Directed (· ⊆ ·) Xs) :
     F ∩ M.closure (⋃ i, Xs i) = M.closure (⋃ i, F ∩ Xs i) := by
   obtain he | hne := isEmpty_or_nonempty ι
-  · simp [hF.loops_subset]
+  · simp [closure_empty, hF.loops_subset]
 
   have aux : ∀ A : Set ι, A.Finite → ∃ j, ⋃ i ∈ A, Xs i ⊆ Xs j
   · intro A hA

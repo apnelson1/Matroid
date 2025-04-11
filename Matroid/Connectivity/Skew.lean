@@ -9,15 +9,12 @@ open Set Function
 
 namespace Matroid
 
-/-- A `SkewFamily` is a collection of sets having pairwise disjoint bases whose union is
-  independent. -/
+/-- A `SkewFamily` in a matroid is a collection of sets having pairwise disjoint bases
+whose union is independent. -/
 @[mk_iff]
 structure IsSkewFamily (M : Matroid α) (Xs : ι → Set α) : Prop where
-  modular : M.IsModularFamily Xs
+  isModularFamily : M.IsModularFamily Xs
   disj : ∀ ⦃i j⦄, i ≠ j → Xs i ∩ Xs j ⊆ M.loops
-
-lemma IsSkewFamily.isModularFamily (h : M.IsSkewFamily Xs) : M.IsModularFamily Xs :=
-  h.1
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
 lemma IsSkewFamily.subset_ground_of_mem (h : M.IsSkewFamily Xs) (i : ι) : Xs i ⊆ M.E :=
@@ -70,7 +67,7 @@ lemma Indep.isSkewFamily_of_disjoint_isBases {Is Xs : η → Set α} (hI : M.Ind
       (M.closure_subset_closure (subset_inter (hIs i).subset (subset_iUnion _ i)))
   refine (inter_subset_inter (M.subset_closure _ (hIs i).subset_ground)
     (M.subset_closure _ (hIs j).subset_ground)).trans ?_
-  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure,
+  rw [← (hIs i).closure_eq_closure, ← (hIs j).closure_eq_closure, loops,
     ← (hI.subset _).closure_inter_eq_inter_closure, Disjoint.inter_eq <| hdj hij]
   exact union_subset (subset_iUnion _ _) (subset_iUnion _ _)
 
@@ -407,11 +404,15 @@ lemma skew_iff_isBases_skew (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) : M.Skew I
   ⟨fun h ↦ h.closure_skew.mono hI.subset_closure hJ.subset_closure,
     fun h ↦ h.mono hI.subset hJ.subset⟩
 
+/-- Can we just lose this one by the below? -/
 lemma Skew.union_indep_of_indep_subsets (h : M.Skew X Y) (hI : M.Indep I) (hIX : I ⊆ X)
     (hJ : M.Indep J) (hJY : J ⊆ Y) : M.Indep (I ∪ J) := by
   rw [union_eq_iUnion]
   exact IsSkewFamily.iUnion_indep_subset_indep h (Is := fun i ↦ bif i then I else J)
     (Bool.rec (by simpa) (by simpa)) (Bool.rec (by simpa) (by simpa))
+
+lemma Skew.union_indep (h : M.Skew I J) (hI : M.Indep I) (hJ : M.Indep J) : M.Indep (I ∪ J) :=
+  h.union_indep_of_indep_subsets hI rfl.subset hJ rfl.subset
 
 lemma Skew.union_isBasis_union (h : M.Skew X Y) (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) :
     M.IsBasis (I ∪ J) (X ∪ Y) := by
@@ -530,10 +531,10 @@ lemma exists_isMinor_restrict_corestrict_eq_spanning_cospanning (hX : X ⊆ M.E)
       restrict_ground_eq, hJX.inter_eq, delete_empty]
     · exact hIsp.subset_ground
     exact hJsp.subset_ground
-  · rw [delete_dual_eq_dual_contract, hJ_eq, contract_dual_eq_dual_delete, delete_eq_restrict,
+  · rw [dual_delete, hJ_eq, dual_contract, delete_eq_restrict,
       restrict_restrict_eq _ (show X ⊆ M✶.E \ I from hIsp.subset_ground)]
   · rwa [Coindep.delete_spanning_iff hJ, and_iff_left hJX.symm]
-  rwa [delete_dual_eq_dual_contract]
+  rwa [dual_delete]
 
 lemma IsSkewFamily.skew_compl {Xs : η → Set α} (h : M.IsSkewFamily Xs) (A : Set η) :
     M.Skew (⋃ i ∈ A, Xs i) (⋃ i ∈ Aᶜ, Xs i) := by
@@ -571,13 +572,13 @@ lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : 
 lemma IsLoop.skew (he : M.IsLoop e) (hX : X ⊆ M.E) : M.Skew {e} X :=
   skew_of_subset_loops (by simpa) hX
 
-lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M✶.loops) (hX : X ⊆ M.E)
+lemma skew_of_subset_coloops {K : Set α} (hK : K ⊆ M.coloops) (hX : X ⊆ M.E)
     (hdj : Disjoint K X) : M.Skew K X := by
   rw [skew_iff_contract_restrict_eq_restrict, contract_eq_delete_of_subset_coloops hK,
     delete_eq_restrict, restrict_restrict_eq]
   rwa [subset_diff, and_iff_left hdj.symm]
 
-lemma Coloop.skew (he : M.Coloop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
+lemma IsColoop.skew (he : M.IsColoop e) (hX : X ⊆ M.E) (heX : e ∉ X) : M.Skew {e} X :=
   skew_of_subset_coloops (by simpa) hX (by simpa)
 
 lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_mat) :
@@ -608,7 +609,7 @@ lemma Skew.restrict_of_subset {R : Set α} (hXY : M.Skew X Y) (hXR : X ⊆ R) (h
 
 lemma Skew.of_restrict {R : Set α} (h : (M ↾ R).Skew X Y) (hR : R ⊆ M.E := by aesop_mat) :
     M.Skew X Y := by
-  rw [skew_iff_isModularPair_inter_subset_loops] at h ⊢
+  rw [skew_iff_isModularPair_inter_subset_loops, loops] at h ⊢
   simp only [restrict_closure_eq', empty_inter, diff_eq_empty.2 hR, union_empty,
     subset_inter_iff] at h
   exact ⟨h.1.ofRestrict hR, h.2.1⟩

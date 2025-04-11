@@ -34,7 +34,7 @@ lemma Indep.isBasis'_isBasis'_of_ncard_eq [RankFinite M₁] [RankFinite M₂] (h
     ← (hI₁.inter_right A).rk_eq_ncard, ← (hI₂.diff A).rk_eq_ncard] at h
   constructor <;>
   linarith [M₁.rk_mono (show I ∩ A ⊆ A from inter_subset_right),
-    M₂.rk_mono (show I \ A ⊆ M₂.E \ A froTLT (M ／ e) hXY m diff_subset_diff_left hI₂.subset_ground)]
+    M₂.rk_mono (show I \ A ⊆ M₂.E \ A from diff_subset_diff_left hI₂.subset_ground)]
 
 private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE : M₁.E = M₂.E) :
     ∃ I X, X ⊆ M₁.E ∧ M₁.Indep I ∧ M₂.Indep I ∧ I.ncard = M₁.rk X + M₂.rk (M₂.E \ X) := by
@@ -48,17 +48,18 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
   obtain ⟨e, he, he₁, he₂⟩ := hloop
   rw [not_isLoop_iff] at he₁ he₂
 
-  have : (M₁ ／ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
-  have : (M₁ ＼ e).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
+  have : (M₁ ／ {e}).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
+  have : (M₁ ＼ {e}).E.ncard < M₁.E.ncard := ncard_lt_ncard (by simpa) M₁.ground_finite
 
-  obtain ⟨Id, Xd, hXd, hId₁, hId₂, hId⟩ := exists_common_ind_aux (M₁ ＼ e) (M₂ ＼ e) (by simp [hE])
-  obtain ⟨Ic, Xc, hXc, hIc₁, hIc₂, hIc⟩ := exists_common_ind_aux (M₁ ／ e) (M₂ ／ e) (by simp [hE])
+  obtain ⟨Id, Xd, hXd, hId₁, hId₂, hId⟩ :=
+    exists_common_ind_aux (M₁ ＼ {e}) (M₂ ＼ {e}) (by simp [hE])
+  obtain ⟨Ic, Xc, hXc, hIc₁, hIc₂, hIc⟩ :=
+    exists_common_ind_aux (M₁ ／ {e}) (M₂ ／ {e}) (by simp [hE])
 
-  rw [he₁.contract_indep_iff] at hIc₁
-  rw [he₂.contract_indep_iff] at hIc₂
+  rw [he₁.contractElem_indep_iff] at hIc₁
+  rw [he₂.contractElem_indep_iff] at hIc₂
 
-  simp only [contractElem, contract_ground, deleteElem, delete_ground,
-    subset_diff_singleton_iff] at hXc hXd
+  simp only [contract_ground, delete_ground, subset_diff_singleton_iff] at hXc hXd
 
   by_contra! hcon
   replace hcon :=
@@ -84,10 +85,10 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
 
   zify at hcon hcond hId hIc hsm hsm2
 
-  rw [he₂.contract_rk_cast_int_eq, he₁.contract_rk_cast_int_eq, contractElem, contract_ground,
+  rw [he₂.contractElem_rk_intCast_eq, he₁.contractElem_rk_intCast_eq, contract_ground,
     diff_diff_comm, insert_diff_singleton,
       insert_eq_of_mem (show e ∈ M₂.E \ Xc from ⟨he₂.mem_ground, hXc.2⟩)] at hIc
-  rw [delete_elem_rk_eq _ hXd.2, delete_elem_rk_eq _ (by simp), deleteElem, delete_ground,
+  rw [deleteElem_rk_eq _ hXd.2, deleteElem_rk_eq _ (by simp), delete_ground,
     diff_diff_comm, diff_diff, union_singleton] at hId
 
   linarith

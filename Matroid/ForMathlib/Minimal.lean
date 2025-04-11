@@ -10,6 +10,22 @@ theorem minimal_congr (h : ∀ x, P x ↔ Q x) : Minimal P x ↔ Minimal Q x := 
 theorem maximal_congr (h : ∀ x, P x ↔ Q x) : Maximal P x ↔ Maximal Q x := by
   rw [show P = Q from funext fun x ↦ propext (h _)]
 
+@[simp]
+theorem maximal_top_iff {α : Type*} [LE α] [OrderTop α] {P : α → Prop} : Maximal P ⊤ ↔ P ⊤ := by
+  simp [Maximal]
+
+@[simp]
+theorem minimal_bot_iff {α : Type*} [LE α] [OrderBot α] {P : α → Prop} : Minimal P ⊥ ↔ P ⊥ := by
+  simp [Minimal]
+
+@[simp]
+theorem maximal_univ_iff (α : Type*) {P : Set α → Prop} : Maximal P univ ↔ P univ :=
+  maximal_top_iff
+
+@[simp]
+theorem minimal_empty_iff (α : Type*) {P : Set α → Prop} : Minimal P ∅ ↔ P ∅ :=
+  minimal_bot_iff
+
 variable {β : Type*} [Preorder β] {P : α  → Prop} {Q : β → Prop} {f : α → β} {g : β → α} {s : Set β}
 
 -- lemma minimal_apply_mono_bijOn_iff (hbij : BijOn f {x | P x} {y | Q y})

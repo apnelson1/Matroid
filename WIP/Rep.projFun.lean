@@ -29,7 +29,7 @@ lemma Rep.projFun_isNonloop_eq (v : M.Rep 𝔽 W) (he : M.IsNonloop e) :
   rw [Rep.projFun, dif_pos]
 
 lemma Rep.projFun_eq [M.Loopless] (v : M.Rep 𝔽 W) (he : e ∈ M.E) :
-    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (toIsNonloop he)) := by
+    v.projFun e = Projectivization.mk 𝔽 (v e) (v.ne_zero_of_isNonloop (isNonloop_of_loopless he)) := by
   rw [Rep.projFun, dif_pos]
 
 lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
@@ -39,15 +39,15 @@ lemma Rep.projFun_not_isNonloop_eq (v : M.Rep 𝔽 W) (he : ¬ M.IsNonloop e) :
 
 lemma Rep.projFun_injOn [M.Simple] (v : M.Rep 𝔽 W) : InjOn v.projFun M.E := by
   intro x hx y hy hxy
-  rwa [v.projFun_isNonloop_eq (toIsNonloop hx), v.projFun_isNonloop_eq (toIsNonloop hy),
-    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (toIsNonloop hx), parallel_iff_eq] at hxy
+  rwa [v.projFun_isNonloop_eq (isNonloop_of_loopless hx), v.projFun_isNonloop_eq (isNonloop_of_loopless hy),
+    Projectivization.mk_eq_mk_iff, ← v.parallel_iff' (isNonloop_of_loopless hx), parallel_iff_eq] at hxy
 
 lemma Rep.indep_iff_projFun [M.Loopless] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :
     M.Indep I ↔ (Independent (fun x : I ↦ v.projFun x)) := by
   rw [v.indep_iff, Projectivization.linearIndependent_iff]
   · convert Iff.rfl with e
     simp [v.projFun_eq (hIE e.2)]
-  simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_isNonloop (toIsNonloop (hIE heI))]
+  simp [show ∀ e ∈ I, v e ≠ 0 from fun e heI ↦ v.ne_zero_of_isNonloop (isNonloop_of_loopless (hIE heI))]
 
 @[simp]
 lemma Rep.independent_image_projFun_iff [M.Simple] (v : M.Rep 𝔽 W) (hIE : I ⊆ M.E) :

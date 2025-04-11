@@ -517,7 +517,7 @@ lemma eConnBetween_delete_le (M : Matroid α) (X Y D : Set α) :
 
 lemma eConnBetween_contract_le (M : Matroid α) (X Y C : Set α) :
     (M ／ C).eConnBetween X Y ≤ M.eConnBetween X Y := by
-  rw [← eConnBetween_dual_eq, contract_dual_eq_dual_delete, ← M.eConnBetween_dual_eq]
+  rw [← eConnBetween_dual_eq, dual_contract, ← M.eConnBetween_dual_eq]
   apply eConnBetween_delete_le
 
 lemma IsMinor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :

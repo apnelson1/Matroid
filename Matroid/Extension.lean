@@ -220,7 +220,8 @@ lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut
   rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
 
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
-  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and]
+  simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and,
+    loops]
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB⟩ := hB.nonempty
   exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)
@@ -295,7 +296,7 @@ def ModularCut.delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
 lemma ModularCut.mem_delete_elem_iff :
     F ∈ U.delete {e} ↔ (e ∉ F) ∧ (F ∈ U ∨ (insert e F ∈ U ∧ e ∈ M.closure F)) := by
   rw [ModularCut.delete, ModularCut.restrict, ModularCut.mem_mk_iff, mem_setOf_eq,
-    ← delete_eq_restrict, ← deleteElem, isFlat_deleteElem_iff]
+    ← delete_eq_restrict, deleteElem_isFlat_iff]
   constructor
   rintro ⟨⟨heF, (hF | hF)⟩, hFU⟩
   · rw [hF.closure] at hFU
@@ -322,17 +323,17 @@ lemma ModularCut.mem_delete_elem_iff :
 
 /-- Given an element `e` of a matroid `M`, the modular cut of `M ＼ e` corresponding to the
 extension `M` of `M ＼ e`. Intended to apply when `e ∈ M.E`. -/
-@[simps] def ModularCut.ofDeleteElem (M : Matroid α) (e : α) : (M ＼ e).ModularCut where
-  carrier := {F | (M ＼ e).IsFlat F ∧ e ∈ M.closure F}
+@[simps] def ModularCut.ofDeleteElem (M : Matroid α) (e : α) : (M ＼ {e}).ModularCut where
+  carrier := {F | (M ＼ {e}).IsFlat F ∧ e ∈ M.closure F}
   forall_isFlat _ h := h.1
   forall_superset := by
-    simp_rw [deleteElem, isFlat_delete_iff]
+    simp_rw [isFlat_delete_iff]
     rintro _ _ ⟨⟨F, -, rfl⟩, he⟩ ⟨F', hF', rfl⟩ hFF'
     exact ⟨⟨F',hF', rfl⟩, M.closure_subset_closure hFF' he⟩
   forall_inter := by
     refine fun Fs hFs hFne hmod ↦ ⟨IsFlat.sInter hFne fun F hF ↦ (hFs hF).1, ?_⟩
     have := hFne.coe_sort
-    rw [deleteElem, delete_eq_restrict] at hmod
+    rw [delete_eq_restrict] at hmod
     rw [sInter_eq_iInter, ← (hmod.ofRestrict diff_subset).iInter_closure_eq_closure_iInter,
       mem_iInter]
     exact fun ⟨F, hF⟩ ↦ (hFs hF).2
@@ -340,7 +341,7 @@ extension `M` of `M ＼ e`. Intended to apply when `e ∈ M.E`. -/
 lemma mem_ofDeleteElem_iff :
     F ∈ ModularCut.ofDeleteElem M e ↔ e ∉ F ∧ M.closure F = insert e F := by
   change _ ∧ _ ↔ _
-  rw [isFlat_deleteElem_iff, and_assoc, and_congr_right_iff]
+  rw [deleteElem_isFlat_iff, and_assoc, and_congr_right_iff]
   refine fun he ↦ ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨(hF | hF), heF⟩
     · rw [hF.closure] at heF; contradiction
@@ -351,7 +352,7 @@ lemma mem_ofDeleteElem_iff :
 
 @[simp] lemma mem_ofDeleteElem_iff' :
     F ∈ ModularCut.ofDeleteElem M e ↔ e ∈ M.closure F \ F ∧ M.IsFlat (insert e F) := by
-  simp only [deleteElem, mem_ofDeleteElem_iff, mem_diff]
+  simp only [mem_ofDeleteElem_iff, mem_diff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨h.1.2, ?_⟩⟩
   · rw [← h.2, and_iff_left <| M.closure_isFlat F, and_iff_left h.1, h.2]
     exact mem_insert _ _
@@ -593,10 +594,10 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
 
 /-- This lemma is true even when `e` *is* a coloop of `M`, but it is easier to prove this first and
 then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
-private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ M.Coloop e)
+private lemma ModularCut.extIndep_aug_of_not_isColoop (U : ModularCut M) (he : ¬ M.IsColoop e)
     (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  rw [coisLoop_iff_diff_closure, not_not] at he
+  rw [isColoop_iff_diff_closure, not_not] at he
   by_contra! hcon
 
   have hB : U.ExtIndep e B := hBmax.1
@@ -668,12 +669,12 @@ private lemma ModularCut.extIndep_aug_of_not_coloop (U : ModularCut M) (he : ¬ 
 private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
     (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
     ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  obtain (he | he) := em' (M.Coloop e)
-  · exact U.extIndep_aug_of_not_coloop he hI hInmax hBmax
+  obtain (he | he) := em' (M.IsColoop e)
+  · exact U.extIndep_aug_of_not_isColoop he hI hInmax hBmax
   have hrw : (U.delete {e}).ExtIndep e = U.ExtIndep e := by
     ext; simp [ExtIndep, he.mem_closure_iff_mem, ModularCut.mem_delete_elem_iff]
   simp_rw [← hrw] at hInmax hBmax hI ⊢
-  exact (U.delete {e}).extIndep_aug_of_not_coloop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
+  exact (U.delete {e}).extIndep_aug_of_not_isColoop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
 
 private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
   ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
@@ -745,7 +746,7 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X
     (subset_ground := fun _ ↦ ModularCut.ExtIndep.subset_insert_ground)
 
 lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
-    (M ＼ e).extendBy e (ModularCut.ofDeleteElem M e) = M := by
+    (M ＼ {e}).extendBy e (ModularCut.ofDeleteElem M e) = M := by
   refine Eq.symm <| ext_indep (by simp [he]) fun I hI ↦ ?_
   obtain (heI | heI) := em' (e ∈ I); simp [extIndep_iff_of_not_mem heI, heI]
   obtain ⟨I, rfl, heI'⟩ : ∃ J, I = insert e J ∧ e ∉ J := ⟨I \ {e}, by simp [heI], by simp⟩
@@ -765,10 +766,10 @@ lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
     (M.subset_closure I hIi.subset_ground) heI') heclosure
 
 lemma ModularCut.extendBy_deleteElem (U : M.ModularCut) (he : e ∉ M.E) :
-    (M.extendBy e U) ＼ e = M := by
+    (M.extendBy e U) ＼ {e} = M := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
-  simp [deleteElem, extIndep_iff_of_not_mem heI, heI]
+  simp [extIndep_iff_of_not_mem heI, heI]
 
 lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extendBy e) := by
   refine fun U U' h_eq ↦ SetLike.coe_set_eq.1 (Set.ext fun F ↦ ?_)
@@ -782,18 +783,18 @@ lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extend
 
 /-- Single-element extensions are equivalent to modular cuts. -/
 def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
-    {N : Matroid α // (e ∈ N.E ∧ N ＼ e = M)} ≃ M.ModularCut where
+    {N : Matroid α // (e ∈ N.E ∧ N ＼ {e} = M)} ≃ M.ModularCut where
   toFun N := (ModularCut.ofDeleteElem N e).copy N.2.2
   invFun U := ⟨M.extendBy e U, by simp, U.extendBy_deleteElem he⟩
   left_inv := by
     rintro ⟨N, heN, rfl⟩
-    simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
+    simp only [coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
     exact ModularCut.deleteElem_extendBy heN
   right_inv := by
     apply rightInverse_of_injective_of_leftInverse
     · exact fun U U' hUU' ↦ extendBy_injective M he (by simpa using hUU')
     rintro ⟨N, heN, rfl⟩
-    simp only [deleteElem, coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
+    simp only [coe_setOf, mem_setOf_eq, Subtype.mk.injEq]
     exact ModularCut.deleteElem_extendBy heN
 
 lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
@@ -802,7 +803,7 @@ lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
   · simp [heX, mem_closure_of_mem']
   obtain ⟨I, hI⟩ := (M.extendBy e U).exists_isBasis' X
   have hI' : M.IsBasis' I X
-  · rwa [← U.extendBy_deleteElem he, deleteElem, delete_isBasis'_iff, diff_singleton_eq_self heX]
+  · rwa [← U.extendBy_deleteElem he, delete_isBasis'_iff, diff_singleton_eq_self heX]
 
   have heI := not_mem_subset hI'.subset heX
   rw [← hI.closure_eq_closure, ← hI'.closure_eq_closure, or_iff_right heX,
@@ -813,14 +814,14 @@ lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
 lemma ModularCut.extendBy_closure_eq_self (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXU : M.closure X ∉ U) : (M.extendBy e U).closure X = M.closure X := by
   nth_rewrite 2 [← U.extendBy_deleteElem he]
-  rw [deleteElem, delete_closure_eq, diff_singleton_eq_self heX, sdiff_eq_left.2]
+  rw [delete_closure_eq, diff_singleton_eq_self heX, sdiff_eq_left.2]
   rw [disjoint_singleton_right, mem_closure_extendBy_iff _ he]
   simp [heX, hXU]
 
 lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXSU : M.closure X ∈ U) : (M.extendBy e U).closure X = insert e (M.closure X) := by
   nth_rewrite 2 [← U.extendBy_deleteElem he]
-  rw [deleteElem, delete_closure_eq, insert_diff_singleton]
+  rw [delete_closure_eq, insert_diff_singleton]
   rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
   exact .inr hXSU
 
@@ -830,16 +831,15 @@ section projection
 
 private lemma projectBy_aux (U : M.ModularCut) :
     ((((M.map _ (some_injective _).injOn).extendBy none
-    (U.map _ (some_injective _).injOn)) ／ (none : Option α)).comap Option.some).Indep I ↔
+    (U.map _ (some_injective _).injOn)) ／ {(none : Option α)}).comap Option.some).Indep I ↔
     M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U) := by
   have hinj := Option.some_injective α
   obtain (rfl | hU) := eq_or_ne U ⊤
-  · rw [contractElem, contract_eq_delete_of_subset_loops]
+  · rw [contract_eq_delete_of_subset_loops]
     · simp [ModularCut.extIndep_iff_of_not_mem, image_eq_image hinj, hinj.injOn]
     rw [singleton_subset_iff, ← isLoop_iff, ← singleton_dep, dep_iff]
     simp [ModularCut.extIndep_iff_of_mem, map_closure_eq, ModularCut.map, image_eq_image hinj]
-  simp only [contractElem, comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true,
-    forall_const]
+  simp only [comap_indep_iff, hinj.injOn, and_true, ne_eq, hU, not_false_eq_true, forall_const]
   rw [Indep.contract_indep_iff]
   · simp [ModularCut.extIndep_iff_of_mem, image_eq_image hinj, map_closure_eq,
       preimage_image_eq _ hinj, ModularCut.map, hU]
@@ -861,7 +861,7 @@ into `Option α`, extending by the new element `none` and contracting it, then `
 back to `α`.  -/
 lemma projectBy_eq_map_comap (U : M.ModularCut) :
     M.projectBy U = ((((M.map _ (some_injective _).injOn).extendBy none
-      (U.map _ (some_injective _).injOn)) ／ (none : Option α)).comap Option.some) := by
+      (U.map _ (some_injective _).injOn)) ／ {(none : Option α)}).comap Option.some) := by
   refine ext_indep (by simp [projectBy, (Option.some_injective α).preimage_image]) fun I _ ↦ ?_
   rw [projectBy_aux, projectBy, Matroid.ofExistsMatroid]
   simp
@@ -879,7 +879,7 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [ext_iff_indep]
 
 @[simp] lemma extendBy_contract_eq (U : M.ModularCut) (he : e ∉ M.E) :
-    (M.extendBy e U) ／ e = M.projectBy U := by
+    (M.extendBy e U) ／ {e} = M.projectBy U := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   have ⟨hIE, heI⟩ : I ⊆ M.E ∧ e ∉ I := by simpa [subset_diff] using hI
   obtain rfl | hU := eq_or_ne U ⊤
@@ -887,13 +887,13 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
     · rw [← singleton_dep, dep_iff, extendBy_Indep,
       ModularCut.extIndep_iff_of_mem (show e ∈ {e} from rfl)]
       simp
-    rw [contractElem, contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
+    rw [contract_eq_delete_of_subset_loops (by simpa), delete_indep_iff,
       extendBy_Indep, ModularCut.extIndep_iff_of_not_mem heI, projectBy_indep_iff]
     simp [heI]
   have hnl : (M.extendBy e U).IsNonloop e
   · rw [← indep_singleton, extendBy_Indep, ModularCut.extIndep_iff_of_mem (by simp)]
-    simpa [← U.eq_top_iff]
-  rw [contractElem, hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
+    simpa [← U.eq_top_iff, closure_empty]
+  rw [hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]
 
@@ -904,11 +904,11 @@ section ExtendContract
 variable {M N : Matroid α} {C D : Set α}
 
 lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ M.E)
-    (h_eq : M ／ C = N ＼ e) : ∃ (P : Matroid α), P ＼ e = M ∧ P ／ C = N := by
+    (h_eq : M ／ C = N ＼ {e}) : ∃ (P : Matroid α), P ＼ {e} = M ∧ P ／ C = N := by
   have heM : e ∉ M.E := fun heM ↦ by simpa [h_eq] using show e ∈ (M ／ C).E from ⟨heM, heC⟩
   obtain heN | heN := em' <| e ∈ N.E
   · use M
-    rw [h_eq, deleteElem, deleteElem, ← delete_inter_ground_eq, Disjoint.inter_eq (by simpa),
+    rw [h_eq, ← delete_inter_ground_eq, Disjoint.inter_eq (by simpa),
       ← N.delete_inter_ground_eq, Disjoint.inter_eq (by simpa)]
     simp
 
@@ -918,12 +918,12 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
   rw [ModularCut.extendBy_deleteElem _ heM, and_iff_right rfl]
   refine ext_indep ?_ ?_
   · rw [contract_ground, extendBy_E, insert_diff_of_not_mem _ heC, ← contract_ground, h_eq,
-      deleteElem, delete_ground]
+      delete_ground]
     simpa
   obtain ⟨IC, hIC⟩ := M.exists_isBasis C
   have heIC : e ∉ IC := not_mem_subset hIC.subset heC
   have hIC' : (M.extendBy e UM).IsBasis IC C
-  · rw [← UM.extendBy_deleteElem heM, deleteElem, delete_isBasis_iff] at hIC
+  · rw [← UM.extendBy_deleteElem heM, delete_isBasis_iff] at hIC
     exact hIC.1
   intro I
   simp only [contract_ground, extendBy_E]
@@ -933,7 +933,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
 
   obtain heI | heI := em' (e ∈ I)
   · rw [ModularCut.extIndep_iff_of_not_mem (by simp [heI, heIC]),
-      show N.Indep I ↔ (N ＼ e).Indep I by simp [heI], ← h_eq, hIC.contract_indep_iff,
+      show N.Indep I ↔ (N ＼ {e}).Indep I by simp [heI], ← h_eq, hIC.contract_indep_iff,
       and_iff_left hdj]
 
   have hrw1 : M.closure ((I ∪ IC) \ {e}) = M.closure ((I \ {e}) ∪ C)
@@ -943,7 +943,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
   have hrw2 : (I \ {e}) ∪ IC = (I ∪ IC) \ {e}
   · rw [union_diff_distrib, diff_singleton_eq_self heIC]
 
-  have hrw3 : N.Indep I ↔ (N ＼ e).Indep (I \ {e}) ∧ (N ＼ e).closure (I \ {e}) ∉ UN
+  have hrw3 : N.Indep I ↔ (N ＼ {e}).Indep (I \ {e}) ∧ (N ＼ {e}).closure (I \ {e}) ∉ UN
   · nth_rw 1 [← ModularCut.deleteElem_extendBy heN, ← hUN]
     rw [extendBy_Indep, ModularCut.extIndep_iff_of_mem heI]
 
@@ -953,8 +953,8 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
   simp [← h_eq, hrw1, hrw2, hrw3, hwin, hIC.contract_indep_iff, hdj.mono_right diff_subset, UM]
 
 lemma exists_common_major_of_delete_eq_contractElem (heD : e ∉ D) (hD : D ⊆ M.E)
-    (h_eq : M ＼ D = N ／ e) : ∃ (P : Matroid α), P ／ e = M ∧ P ＼ D = N := by
-  rw [← dual_inj, delete_dual_eq_dual_contract, contractElem, contract_dual_eq_dual_delete] at h_eq
+    (h_eq : M ＼ D = N ／ {e}) : ∃ (P : Matroid α), P ／ {e} = M ∧ P ＼ D = N := by
+  rw [← dual_inj, dual_delete, dual_contract] at h_eq
   obtain ⟨P, hPM, hPN⟩ := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
   rw [eq_dual_iff_dual_eq] at hPM hPN
   refine ⟨P✶, by simpa using hPM, by simpa using hPN⟩

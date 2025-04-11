@@ -1,6 +1,7 @@
 import Mathlib.Data.ENat.Basic
 import Mathlib.Data.Set.Card
-import Mathlib.Topology.Instances.ENNReal
+import Mathlib.Topology.Instances.ENNReal.Lemmas
+-- import Mathlib.Topology.Instances.ENat
 import Mathlib.Topology.Instances.Discrete
 import Matroid.ForMathlib.Card
 
@@ -221,7 +222,7 @@ section tsum
 
 variable {f g : α → ℕ∞}
 
-protected theorem hasSum : HasSum f (⨆ s : Finset α, ∑ a in s, f a) :=
+protected theorem hasSum : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :=
   tendsto_atTop_iSup fun _ _ ↦ Finset.sum_le_sum_of_subset
 
 @[simp] protected theorem summable : Summable f :=

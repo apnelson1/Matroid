@@ -239,6 +239,7 @@ structure Rep.IsStandard (v : M.Rep 𝔽 γ) : Prop where
   apply_eq : ∀ x : B, v x.1 x = 1
   apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
 
+@[mk_iff]
 structure Rep.IsStandard' (v : M.Rep 𝔽 (B → 𝔽)) : Prop where
   apply_eq : ∀ x : B, v x.1 x = 1
   apply_ne : ∀ ⦃x y : B⦄, x ≠ y → v x.1 y = 0
@@ -250,6 +251,13 @@ lemma Rep.IsStandard.apply_mem_eq {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : 
 lemma Rep.IsStandard.apply_mem_ne {v : M.Rep 𝔽 γ} (hv : v.IsStandard) (he : e ∈ B)
     (hf : f ∈ B) (hef : e ≠ f) : v e ⟨f, hf⟩ = 0 :=
   hv.apply_ne (x := ⟨e, he⟩) (y := ⟨f, hf⟩) (by simpa)
+
+lemma Rep.IsStandard'.apply_eq_single [DecidableEq B] {v : M.Rep 𝔽 (B → 𝔽)} (hv : v.IsStandard')
+    (x : B) : v x = Pi.single x 1 := by
+  ext i
+  obtain rfl | hne := eq_or_ne x i
+  · simp [hv.apply_eq]
+  rw [hv.apply_ne hne, Pi.single_eq_of_ne' hne]
 
 lemma Rep.IsStandard.injOn {v : M.Rep 𝔽 γ} (hv : v.IsStandard) : Set.InjOn v B := by
   refine fun e he f hf hef ↦ by_contra fun hne ↦ ?_

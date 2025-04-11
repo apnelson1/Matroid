@@ -87,7 +87,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
   refine ⟨fun ⟨h, hXE⟩ ↦ h.elim (fun h ↦ ?_) (fun h ↦ Or.inl ⟨?_,hXE⟩),
     fun h ↦ h.elim (fun ⟨hle, hXE⟩ ↦ ⟨Or.inr (by rwa [inter_eq_self_of_subset_left hXE]), hXE⟩ ) ?_⟩
   · refine X.finite_or_infinite.elim (fun hfin ↦ .inr ?_) (fun hinf ↦ .inl ⟨?_, hXE⟩)
-    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le' inter_subset_right h,
+    · rw [← (hfin.inter_of_left E).eq_of_subset_of_encard_le inter_subset_right h,
         inter_eq_self_of_subset_left hXE]
     rw [hinf.encard_eq]
     apply le_top
@@ -378,7 +378,7 @@ lemma Uniform.contract (hM : M.Uniform) (C : Set α) : (M ／ C).Uniform := by
     fun h ↦ .inr <| h.superset (union_subset_union_right X hI.subset)
 
 lemma Uniform.delete (hM : M.Uniform) (D : Set α) : (M ＼ D).Uniform := by
-  rw [← uniform_dual_iff, delete_dual_eq_dual_contract]
+  rw [← uniform_dual_iff, dual_delete]
   exact hM.dual.contract D
 
 lemma Uniform.minor {N : Matroid α} (hM : M.Uniform) (hNM : N ≤m M) : N.Uniform := by
@@ -557,7 +557,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by
   refine ⟨fun hr ↦ ⟨M.loops, M.E \ M.loops, disjoint_sdiff_right, ?_⟩, ?_⟩
   · refine ext_indep ?_ fun I hI ↦ ?_
-    · simp [union_eq_self_of_subset_left (M.closure_subset_ground ∅)]
+    · simp [union_eq_self_of_subset_left M.loops_subset_ground]
     suffices M.Indep I ↔ Disjoint I (M.loops) ∧ (I ∩ (M.E \ M.loops)).Subsingleton ∧
       I ⊆ M.loops ∪ M.E by simpa [encard_le_one_iff_subsingleton, ← disjoint_iff_inter_eq_empty]
     refine ⟨fun h ↦ ?_, fun ⟨hcl, hss, _⟩ ↦ ?_⟩

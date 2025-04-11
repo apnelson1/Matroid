@@ -24,7 +24,9 @@ import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
 import Matroid.Intersection
 import Matroid.Loop
-import Matroid.Minor.Basic
+import Matroid.Minor.Order
+import Matroid.Minor.Delete
+import Matroid.Minor.Contract
 import Matroid.Minor.Iso
 import Matroid.Minor.Rank
 import Matroid.Modular.Basic

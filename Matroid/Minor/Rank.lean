@@ -1,4 +1,4 @@
-import Matroid.Minor.Basic
+import Matroid.Minor.Order
 import Matroid.Rank.Nat
 import Matroid.ForMathlib.ENat
 
@@ -34,7 +34,7 @@ lemma eRank_delete_le (M : Matroid α) (D : Set α) : (M ＼ D).eRank ≤ M.eRan
   exact M.eRk_mono diff_subset
 
 lemma Indep.delete_eRank_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eRank := by
-  rw [← hI.coindep.delete_eRank_eq, contract_dual_eq_dual_delete]
+  rw [← hI.coindep.delete_eRank_eq, dual_contract]
 
 lemma Indep.eRank_dual_restrict_eq (hI : M.Indep I) : (M ↾ I)✶.eRank = 0 := by
   simp [hI.restrict_eq_freeOn]
@@ -52,11 +52,11 @@ lemma IsBasis.eRank_dual_restrict (hB : M.IsBasis I X) : (M ↾ X)✶.eRank = (X
     eq_comm, eq_dual_comm, loopyOn_dual_eq]
 
 lemma Indep.contract_eRk_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eRank := by
-  rw [contract_dual_eq_dual_delete, hI.coindep.delete_eRank_eq]
+  rw [dual_contract, hI.coindep.delete_eRank_eq]
 
 end Delete
 
-/-- The relative rank of sets `X` and `Y`, defined to be the rank of `Y` in `M ／ X`,
+/-- The relative `ℕ∞`-rank of sets `X` and `Y`, defined to be the `ℕ∞`-rank of `Y` in `M ／ X`,
 and equal to the minimum number of elements that need to be added to `X` to span `Y`.
 The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
 expression when `X ⊆ Y`, and sometimes more generally. -/
@@ -127,15 +127,21 @@ lemma eRelRk_mono_left (M : Matroid α) {X X' : Set α} (Y : Set α) (h : X ⊆ 
   rw [eRelRk, eRelRk, ← union_diff_cancel h, ← contract_contract]
   apply eRelRk_le_eRk
 
+/-- If `Y` contains a basis `I` for `X`, then `M.eRelRk X Y` is the number of elements that need
+to be added to `I` to give a basis for `Y`. -/
+lemma IsBasis'.eRelRk_eq_encard_of_union_isBasis_disjoint (hI : M.IsBasis' I X)
+    (hIJ : M.IsBasis' (I ∪ J) Y) (hdj : Disjoint I J) : M.eRelRk X Y = J.encard := by
+  rw [← eRelRk_closure_right, ← hIJ.closure_eq_closure, eRelRk_closure_right,
+    ← eRelRk_closure_left, ← hI.closure_eq_closure, eRelRk_closure_left,
+    eRelRk_eq_eRk_diff_contract, union_diff_cancel_left (hdj.inter_eq.subset), Indep.eRk_eq_encard]
+  rwa [hI.indep.contract_indep_iff, union_comm, disjoint_comm, and_iff_left hIJ.indep]
+
+/-- If `I` is a basis for `X ∪ C` containing a basis for `C`, then the relative rank of
+`C` and `X` is the size of `I \ C`. -/
 lemma IsBasis'.eRelRk_eq_encard_diff (hI : M.IsBasis' I (X ∪ C)) (hIC : M.IsBasis' (I ∩ C) C) :
     M.eRelRk C X = (I \ C).encard := by
-  rw [eRelRk_eq_eRelRk_union, eRelRk, ← eRk_closure_eq, contract_closure_eq, union_assoc,
-    union_self, ← hI.closure_eq_closure, ← eRelRk_eq_eRk_diff_contract, eRelRk_closure_right,
-    eRelRk_eq_eRk_diff_contract, Indep.eRk_eq_encard]
-  rw [hIC.contract_eq_contract_delete, delete_indep_iff, hIC.indep.contract_indep_iff,
-    diff_union_inter, and_iff_left hI.indep, ← disjoint_union_right, union_diff_self,
-    union_eq_self_of_subset_left inter_subset_right]
-  exact disjoint_sdiff_left
+  rw [eRelRk_eq_union_right, hIC.eRelRk_eq_encard_of_union_isBasis_disjoint (J := I \ C) (by simpa)
+    disjoint_sdiff_inter.symm]
 
 lemma IsBasis.eRelRk_eq_encard_diff (hI : M.IsBasis I (X ∪ C)) (hIC : M.IsBasis (I ∩ C) C) :
     M.eRelRk C X = (I \ C).encard :=
@@ -173,18 +179,16 @@ lemma eRelRk_insert_le (M : Matroid α) (X : Set α) (e : α) : M.eRelRk X (inse
   rw [encard_le_one_iff]
   aesop
 
-lemma eRelRk_add_eRk_eq (M : Matroid α) (C X : Set α) :
-    M.eRelRk C X + M.eRk C = M.eRk (X ∪ C) := by
-  obtain ⟨I, D, hIC, hD, -, hM⟩ := M.exists_eq_contract_indep_delete C
-  obtain ⟨J, hJ, rfl⟩ := hIC.exists_isBasis_inter_eq_of_superset
-    (subset_union_right (s := X ∩ M.E)) (by simp)
-  rw [← eRelRk_inter_ground_left, ← eRelRk_inter_ground_right,
-    hJ.isBasis'.eRelRk_eq_encard_diff hIC.isBasis', ← eRk_inter_ground, ← hIC.encard_eq_eRk,
-    encard_diff_add_encard_inter, hJ.encard_eq_eRk, ← union_inter_distrib_right, eRk_inter_ground]
-
 lemma eRelRk_add_eRk_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     M.eRelRk X Y + M.eRk X = M.eRk Y := by
-  rw [eRelRk_add_eRk_eq, union_eq_self_of_subset_right hXY]
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset hXY
+  rw [hJ.eRelRk_eq_encard_diff_of_subset hXY hI, ← hI.encard_eq_eRk, encard_diff_add_encard_inter,
+    hJ.encard_eq_eRk]
+
+lemma eRelRk_add_eRk_eq (M : Matroid α) (C X : Set α) : M.eRelRk C X + M.eRk C = M.eRk (X ∪ C) := by
+  rw [eRelRk_eq_eRelRk_union, eRelRk_add_eRk_of_subset]
+  exact subset_union_right
 
 lemma IsRkFinite.eRelRk_eq_sub (hY : M.IsRkFinite X) (hXY : X ⊆ Y) :
     M.eRelRk X Y = M.eRk Y - M.eRk X := by
@@ -206,18 +210,12 @@ lemma IsNonloop.eRelRk_eq_sub_one (he : M.IsNonloop e) (X : Set α) :
 lemma eRelRk_add_cancel (M : Matroid α) (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) :
     M.eRelRk X Y + M.eRelRk Y Z = M.eRelRk X Z := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans hXY)
-  obtain ⟨K, hK, hJK⟩ := hJ.indep.subset_isBasis'_of_subset (hJ.subset.trans hYZ)
-  obtain rfl := hI.inter_eq_of_subset_indep hIJ hJ.indep
-  obtain rfl := hJ.inter_eq_of_subset_indep hJK hK.indep
+  obtain ⟨J, hJ, rfl⟩ := hI.exists_isBasis'_inter_eq_of_superset hXY
+  obtain ⟨J, hK, rfl⟩ := hJ.exists_isBasis'_inter_eq_of_superset hYZ
   rw [hJ.eRelRk_eq_encard_diff_of_subset hXY hI, hK.eRelRk_eq_encard_diff_of_subset hYZ hJ,
-    hK.eRelRk_eq_encard_diff_of_subset (hXY.trans hYZ)
-    (by rwa [inter_assoc, inter_eq_self_of_subset_right hXY] at hI),
-    ← encard_union_eq, diff_eq, diff_eq, inter_assoc, ← inter_union_distrib_left,
-    inter_union_distrib_right, union_compl_self, univ_inter, ← compl_inter,
-    inter_eq_self_of_subset_left hXY, diff_eq]
-  exact disjoint_of_subset_left (diff_subset.trans inter_subset_right)
-    disjoint_sdiff_right
+    hK.eRelRk_eq_encard_diff_of_subset (hXY.trans hYZ), ← encard_union_eq (by tauto_set),
+    union_comm, ← diff_self_inter, diff_union_diff_cancel' (by tauto_set) (by tauto_set)]
+  rwa [inter_assoc, inter_eq_self_of_subset_right hXY] at hI
 
 lemma eRelRk_eq_zero_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.eRelRk X Y = 0 ↔ Y ⊆ M.closure X := by
@@ -316,7 +314,6 @@ lemma eRelRk_ground_le_iff {k : ℕ} (hX : X ⊆ M.E) :
     use D
     simp [hD_eq, hDcard, show M.Spanning (X ∪ B) from (hB.spanning.superset subset_union_right),
       show B \ X ⊆ M.E from diff_subset.trans hB.subset_ground]
-
   rw [← hDsp.closure_eq, eRelRk_closure_right, union_comm, ← eRelRk_eq_union_right]
   exact (M.eRelRk_le_encard_diff X D).trans ((encard_le_encard diff_subset).trans <| by simpa)
 
@@ -408,12 +405,13 @@ lemma eRank_contract_add_eRk (M : Matroid α) (C : Set α) : (M ／ C).eRank + M
     eRank_def, ← eRelRk_empty_left, eRelRk_add_cancel _ (empty_subset _) inter_subset_right,
     eRelRk_empty_left]
 
-lemma IsNonloop.eRank_contract_add_one (M : Matroid α) (he : M.IsNonloop e) :
-    (M ／ e).eRank + 1 = M.eRank := by
-  rw [contractElem, ← M.eRank_contract_add_eRk {e}, he.eRk_eq]
+lemma IsNonloop.eRank_contractElem_add_one (M : Matroid α) (he : M.IsNonloop e) :
+    (M ／ {e}).eRank + 1 = M.eRank := by
+  rw [← M.eRank_contract_add_eRk {e}, he.eRk_eq]
 
 lemma IsRkFinite.contract_isRkFinite (h : M.IsRkFinite X) (C : Set α) : (M ／ C).IsRkFinite X := by
-  rw [← eRk_lt_top_iff] at *; exact (eRk_contract_le_eRk _ _ _).trans_lt h
+  rw [← eRk_lt_top_iff] at *
+  exact (eRk_contract_le_eRk _ _ _).trans_lt h
 
 lemma IsRkFinite.union_of_contract (hX : (M ／ C).IsRkFinite X) (hC : M.IsRkFinite C) :
     M.IsRkFinite (X ∪ C) := by
@@ -456,13 +454,13 @@ end Contract
 
 section Rank
 
-lemma delete_elem_eRank_eq (he : ¬ M.Coloop e) : (M ＼ e).eRank = M.eRank := by
-  rw [coisLoop_iff_diff_nonspanning, not_not] at he
-  rw [deleteElem, eRank_def, delete_eRk_eq _ (by simp), delete_ground, ← eRk_closure_eq,
-    he.closure_eq, eRank_def]
+lemma deleteElem_eRank_eq (he : ¬ M.IsColoop e) : (M ＼ {e}).eRank = M.eRank := by
+  rw [isColoop_iff_diff_not_spanning, not_not] at he
+  rw [eRank_def, delete_eRk_eq _ (by simp), delete_ground, ← eRk_closure_eq, he.closure_eq,
+    eRank_def]
 
-lemma delete_elem_rank_eq (M : Matroid α) (he : ¬ M.Coloop e) : (M ＼ e).rank = M.rank := by
-  rw [rank, delete_elem_eRank_eq he, rank]
+lemma delete_elem_rank_eq (M : Matroid α) (he : ¬ M.IsColoop e) : (M ＼ {e}).rank = M.rank := by
+  rw [rank, deleteElem_eRank_eq he, rank]
 
 lemma delete_rk_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).rk X = M.rk (X \ D) := by
   rw [rk, rk, delete_eRk_eq']
@@ -470,8 +468,8 @@ lemma delete_rk_eq' (M : Matroid α) (D X : Set α) : (M ＼ D).rk X = M.rk (X \
 lemma delete_rk_eq_of_disjoint (M : Matroid α) (hDX : Disjoint X D) : (M ＼ D).rk X = M.rk X := by
   rw [delete_rk_eq', hDX.sdiff_eq_left]
 
-lemma delete_elem_rk_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ e).rk X = M.rk X := by
-  rw [deleteElem, delete_rk_eq', diff_singleton_eq_self heX]
+lemma deleteElem_rk_eq (M : Matroid α) (heX : e ∉ X) : (M ＼ {e}).rk X = M.rk X := by
+  rw [delete_rk_eq', diff_singleton_eq_self heX]
 
 lemma restrict_rk_eq' (M : Matroid α) (R X : Set α) : (M ↾ R).rk X = M.rk (X ∩ R) := by
   rw [rk, restrict_eRk_eq', rk]
@@ -484,7 +482,7 @@ lemma delete_rank_le (M : Matroid α) [M.RankFinite] (D : Set α) : (M ＼ D).ra
   exact M.rk_mono (diff_subset.trans diff_subset)
 
 lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
-  obtain h | h := M.finite_or_rankInfinite
+  obtain h | h := M.rankFinite_or_rankInfinite
   · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]
     refine le_trans ?_ (M.rk_union_le_rk_add_rk (M.E \ D) D)
     simp [M.rk_mono subset_union_left]
@@ -506,18 +504,18 @@ lemma contract_rk_add_eq (M : Matroid α) [RankFinite M] (C X : Set α) :
   rw [rank_def, contract_rk_cast_int_eq, contract_ground, diff_union_self, ← rk_inter_ground,
     inter_eq_self_of_subset_right subset_union_left, rank_def]
 
-lemma IsNonloop.contract_rk_add_one_eq [RankFinite M] (he : M.IsNonloop e) :
-    (M ／ e).rk X + 1 = M.rk (insert e X) := by
-  rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq, contractElem]
+lemma IsNonloop.contractElem_rk_add_one_eq [RankFinite M] (he : M.IsNonloop e) :
+    (M ／ {e}).rk X + 1 = M.rk (insert e X) := by
+  rw [← union_singleton, ← contract_rk_add_eq, he.rk_eq]
 
-lemma IsNonloop.contract_rank_add_one_eq [RankFinite M] (he : M.IsNonloop e) :
-    (M ／ e).rank + 1 = M.rank := by
-  rw [rank_def, he.contract_rk_add_one_eq, contractElem, contract_ground, insert_diff_singleton,
+lemma IsNonloop.contractElem_rank_add_one_eq [RankFinite M] (he : M.IsNonloop e) :
+    (M ／ {e}).rank + 1 = M.rank := by
+  rw [rank_def, he.contractElem_rk_add_one_eq, contract_ground, insert_diff_singleton,
     insert_eq_of_mem he.mem_ground, rank_def]
 
-lemma IsNonloop.contract_rk_cast_int_eq (M : Matroid α) [RankFinite M] (he : M.IsNonloop e) :
-    ((M ／ e).rk X : ℤ) = M.rk (insert e X) - 1 := by
-  rw [← he.contract_rk_add_one_eq]
+lemma IsNonloop.contractElem_rk_intCast_eq (M : Matroid α) [RankFinite M] (he : M.IsNonloop e) :
+    ((M ／ {e}).rk X : ℤ) = M.rk (insert e X) - 1 := by
+  rw [← he.contractElem_rk_add_one_eq]
   exact eq_sub_of_add_eq rfl
 
 end Rank
@@ -532,7 +530,7 @@ lemma Indep.nullity_contract_of_superset (hI : M.Indep I) (hIX : I ⊆ X) :
 
 lemma nullity_eq_eRelRk (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
     M.nullity X = M✶.eRelRk (M.E \ X) M.E := by
-  rw [nullity, eRelRk_eq_eRk_diff_contract, ← delete_compl, delete_dual_eq_dual_contract, eRank_def]
+  rw [nullity, eRelRk_eq_eRk_diff_contract, ← delete_compl, dual_delete, eRank_def]
   simp
 
 lemma nullity_dual_eq (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
@@ -546,45 +544,36 @@ lemma nullity_compl_dual_eq (M : Matroid α) (X : Set α) :
   rfl
 
 lemma nullity_delete (M : Matroid α) (hXD : Disjoint X D) : (M ＼ D).nullity X = M.nullity X := by
-  rw [delete_eq_restrict, M.nullity_eq_nullity_inter_ground_add_encard_diff,
-    nullity_eq_nullity_inter_ground_add_encard_diff, restrict_ground_eq,
-    nullity_restrict_of_subset _ inter_subset_right, inter_diff_distrib_left,
-    diff_diff_right, hXD.inter_eq, diff_empty, union_empty]
+  rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
+    delete_restrict_eq_restrict _ hXD.symm]
 
 lemma nullity_delete_le (M : Matroid α) (X D : Set α) : (M ＼ D).nullity (X \ D) ≤ M.nullity X := by
-  obtain ⟨I, hI⟩ := (M ＼ D).exists_isBasis' (X \ D)
-  have hI' := hI
-  rw [← restrict_compl, isBasis'_restrict_iff, diff_inter_diff_right, subset_diff] at hI'
-
-  obtain ⟨J, hJX, hIJ⟩ := hI'.1.indep.subset_isBasis'_of_subset
-    (hI'.1.subset.trans (diff_subset.trans inter_subset_left))
-
-  obtain rfl : I = J \ D := hI.eq_of_subset_indep
-    (by simp [hJX.indep.subset diff_subset, disjoint_sdiff_left])
-    (subset_diff.2 ⟨hIJ, hI'.2.2⟩) (diff_subset_diff_left hJX.subset)
-
-  rw [hI.nullity_eq, hJX.nullity_eq, diff_diff, union_diff_self]
-  exact encard_le_encard (diff_subset_diff_right subset_union_right)
+  rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual, delete_restrict_eq_restrict
+    _ disjoint_sdiff_right]
+  exact (dual_isMinor_iff.2 (IsRestriction.of_subset M diff_subset).isMinor).eRank_le
 
 lemma nullity_contract_le (M : Matroid α) (hCX : C ⊆ X) :
     (M ／ C).nullity (X \ C) ≤ M.nullity X := by
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
-    contract_restrict_eq_restrict_contract _ _ _ disjoint_sdiff_right, diff_union_self,
-    union_eq_self_of_subset_right hCX, contract_dual_eq_dual_delete]
+    contract_restrict_eq_restrict_contract _ disjoint_sdiff_right, diff_union_self,
+    union_eq_self_of_subset_right hCX, dual_contract]
   apply eRank_delete_le
 
 lemma nullity_contract_ge_of_disjoint (M : Matroid α) (hXC : Disjoint X C) :
     M.nullity X ≤ (M ／ C).nullity X := by
   have hle := (M ↾ (X ∪ C))✶.eRank_contract_le_eRank_delete C
   rw [nullity_eq_eRank_restrict_dual, nullity_eq_eRank_restrict_dual,
-    contract_restrict_eq_restrict_contract _ _ _ hXC.symm, contract_dual_eq_dual_delete]
-  rwa [← delete_dual_eq_dual_contract, delete_eq_restrict, restrict_ground_eq,
+    contract_restrict_eq_restrict_contract _ hXC.symm, dual_contract]
+  rwa [← dual_delete, delete_eq_restrict, restrict_ground_eq,
     restrict_restrict_eq _ diff_subset, union_diff_cancel_right (Set.disjoint_iff.mp hXC)] at hle
 
 end Nullity
 
 section relRk
 
+/-- `M.relRk X Y` is the relative rank of `X` and `Y` as a natural number.
+If `M.eRelRk X Y` is infinite, this has the junk value of zero.
+If `Y` has finite rank and `X ⊆ Y`, then this is the difference between the ranks of `X` and `Y`. -/
 noncomputable def relRk (X Y : Set α) : ℕ := (M.eRelRk X Y).toNat
 
 lemma relRk_intCast_eq_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :

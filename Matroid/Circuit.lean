@@ -276,7 +276,7 @@ lemma Cyclic.exists_eq_union_isCircuit_cyclic_ssubset (hA : M.Cyclic A) (hne : A
   · rw [h_eq]
     exact subset_iUnion₂_of_subset e he rfl.subset
   · refine ssubset_of_ssubset_of_eq
-      ((biUnion_subset_biUnion_left diff_subset).ssubset_of_mem_not_mem (x := e) ?_ ?_) h_eq.symm
+      ((biUnion_subset_biUnion_left diff_subset).ssubset_of_mem_not_mem (a := e) ?_ ?_) h_eq.symm
     · exact mem_biUnion he <| mem_insert ..
     simp only [mem_diff, mem_singleton_iff, mem_iUnion, exists_prop, not_exists, not_and, and_imp,
       not_imp_not]

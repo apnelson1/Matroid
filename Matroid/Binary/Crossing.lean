@@ -43,17 +43,16 @@ lemma IsCrossing.encard_ne_one (h : M.IsCrossing X) : X.encard ≠ 1 := by
 
 lemma IsCrossing.of_contract (hC : (M ／ C).IsCrossing X) : M.IsCrossing X := by
   obtain ⟨X, Y, hX, hY, rfl⟩ := hC
-  obtain ⟨X', hX', hXX', hX'X⟩ := hX.subset_isCircuit_of_contract
+  obtain ⟨X', hX', hXX', hX'X⟩ := hX.exists_subset_isCircuit_of_contract
   rw [contract_isCocircuit_iff] at hY
   refine ⟨X', Y, hX', hY.1, (inter_subset_inter_left _ hXX').antisymm
-    (subset_inter ?_ inter_subset_right)⟩
-  refine (inter_subset_inter_left Y hX'X).trans ?_
+    (subset_inter ((inter_subset_inter_left Y hX'X).trans ?_) inter_subset_right)⟩
   rw [union_inter_distrib_right, hY.2.symm.inter_eq, union_empty]
   exact inter_subset_left
 
 lemma IsCrossing.of_delete {D : Set α} (hD : (M ＼ D).IsCrossing X) : M.IsCrossing X := by
   have hd := hD.dual
-  rw [delete_dual_eq_dual_contract] at hd
+  rw [dual_delete] at hd
   exact hd.of_contract.of_dual
 
 lemma IsCrossing.of_isMinor {N : Matroid α} (hX : N.IsCrossing X) (hNM : N ≤m M) :
@@ -172,8 +171,8 @@ end CrossingBinary
 
 /-- If `e` is a non-coloop point in a rank-two matroid with no `U₂,₄`-minor,
 then `M ＼ e` is the disjoint union of two cocircuits. -/
-lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (he : M.IsPoint {e})
-    (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ e).IsCocircuit C₁ ∧ (M ＼ e).IsCocircuit C₂ ∧
+lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) (he : M.IsPoint {e})
+    (hU : M.NoUniformMinor 2 4) : ∃ C₁ C₂, (M ＼ {e}).IsCocircuit C₁ ∧ (M ＼ {e}).IsCocircuit C₂ ∧
     Disjoint C₁ C₂ ∧ C₁ ∪ C₂ = M.E \ {e} := by
   have hl := he.loopless_of_singleton.delete {e}
   have heE : e ∈ M.E := by simpa using he.subset_ground
@@ -181,10 +180,10 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (h
   -- we also have that `N ＼ e` is a simplification of `M ＼ e`.
   obtain ⟨N, hN⟩ := M.exists_isSimplification
   have heN : e ∈ N.E := he.mem_simplification hN
-  have hNe : (N ＼ e).IsSimplification (M ＼ e)
+  have hNe : (N ＼ {e}).IsSimplification (M ＼ {e})
   · convert hN.delete (D := {e}) (by simpa)
-    simp only [deleteElem, mem_singleton_iff, iUnion_iUnion_eq_left]
-    rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.loops,
+    simp only [mem_singleton_iff, iUnion_iUnion_eq_left]
+    rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.loops_eq_empty,
       he.isFlat.closure, diff_empty]
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
   replace hU := hU.minor hN.restriction.isMinor
@@ -192,27 +191,27 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.Coloop e) (h
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
     ← encard_diff_singleton_add_one (he.mem_simplification hN),
-    WithTop.add_le_add_iff_right (by simp), ← delete_ground, ← deleteElem] at hU
+    WithTop.add_le_add_iff_right (by simp), ← delete_ground] at hU
   -- Since `N ＼ e` has rank two and at most two elements,
   -- it must have a two-element ground set `{a,b}`.
-  obtain ⟨I, hI⟩ := (N ＼ e).exists_isBase
-  have hIM : (M ＼ e).IsBase I := hNe.isBase_of_isBase hI
+  obtain ⟨I, hI⟩ := (N ＼ {e}).exists_isBase
+  have hIM : (M ＼ {e}).IsBase I := hNe.isBase_of_isBase hI
   have hIcard : I.encard = 2
-  · rwa [hI.encard_eq_eRank, hNe.eRank_eq, delete_elem_eRank_eq hel]
+  · rwa [hI.encard_eq_eRank, hNe.eRank_eq, deleteElem_eRank_eq hel]
   obtain ⟨a,b, hab, rfl⟩ := encard_eq_two.1 hIcard
-  have hIe : {a,b} = (N ＼ e).E
+  have hIe : {a,b} = (N ＼ {e}).E
   · apply Finite.eq_of_subset_of_encard_le ?_ hI.subset_ground (hU.trans_eq hIcard.symm)
-    rw [← encard_lt_top_iff]
-    exact hU.trans_lt (by exact Batteries.compareOfLessAndEq_eq_lt.mp rfl)
+    rw [← encard_lt_top_iff, hIcard]
+    decide
   -- `N \ e` is a simplification of `M ＼ e`, so the closures of `{a}` and `{b}`
   -- form a partition of `M ＼ e`.
-  have hdj : Disjoint ((M ＼ e).closure {a}) ((M ＼ e).closure {b})
+  have hdj : Disjoint ((M ＼ {e}).closure {a}) ((M ＼ {e}).closure {b})
   · have h := hNe.closure_pairwiseDisjoint
     rw [← hIe, pair_comm, ← union_singleton, pairwiseDisjoint_union] at h
     simpa only [pairwiseDisjoint_singleton, mem_singleton_iff, ne_eq, hab,
       forall_eq, hab.symm, not_false_eq_true, forall_const, true_and] using h
-  have hpos : (M ＼ e).RankPos := hIM.rankPos_of_nonempty (by simp)
-  have hucl : (M ＼ e).closure {a} ∪ (M ＼ e).closure {b} = (M ＼ e).E
+  have hpos : (M ＼ {e}).RankPos := hIM.rankPos_of_nonempty (by simp)
+  have hucl : (M ＼ {e}).closure {a} ∪ (M ＼ {e}).closure {b} = (M ＼ {e}).E
   · rw [hNe.ground_eq_biUnion_closure, ← hIe]
     simp
   -- Each such closure is the complement of a hyperplane, so is a cocircuit. We're done.
@@ -251,8 +250,8 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
       insert_eq_self.2 hf, diff_diff_cancel_left hCc.subset_ground]
   have hNM : N ≤m M := contract_isMinor _ _
   -- Since `f` is in the coindependent set `M.E \ C`, it is not a coloop of `M` or `N`.
-  have hfl : ¬ N.Coloop f
-  · simpa [hN, ← dual_isLoop_iff_coloop] using
+  have hfl : ¬ N.IsColoop f
+  · simpa [hN, ← dual_isLoop_iff_isColoop] using
       (hCs.compl_coindep.indep.isNonloop_of_mem hf).not_isLoop
   -- `N` has rank two, since we contracted all but one element of an independent hyperplane.
   have hNr : N.eRank = 2
@@ -267,9 +266,9 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
   obtain ⟨C₁, C₂, hC₁, hC₂, hdj, hu⟩ := exist_isCocircuits_of_rank_two hNr hfl hfP (h_bin.minor hNM)
   -- We may assume that both are even, which contradicts oddness of `C`.
   contrapose! h_odd
-  specialize h_odd (M ＼ f) (delete_isMinor ..) (by simpa [hf.2])
+  specialize h_odd (M ＼ {f}) (delete_isMinor ..) (by simpa [hf.2])
   simp_rw [Nat.not_odd_iff_even, ssubset_iff_subset_ne, and_imp, ne_comm (b := C)] at h_odd
-  rw [hN, deleteElem, contract_delete_comm _ disjoint_sdiff_left, ← deleteElem] at hC₁ hC₂
+  rw [hN, contract_delete_comm _ disjoint_sdiff_left] at hC₁ hC₂
   obtain rfl : C₁ ∪ C₂ = C := by rw [hu, hNE]
   obtain ⟨C₁, rfl⟩ := (hfin.subset subset_union_left).exists_finset_coe
   obtain ⟨C₂, rfl⟩ := (hfin.subset subset_union_right).exists_finset_coe
@@ -305,7 +304,7 @@ lemma IsCrossing.exists_isMinor_isCircuit_isCocircuit (hX : M.IsCrossing X) (hXn
   rw [IsCocircuit, isCircuit_iff_restr_eq_circuitOn hXne, hN₂r',
     ← isCircuit_iff_restr_eq_circuitOn hXne, ← isCocircuit_def, hN₁,
     contract_delete_comm _ disjoint_sdiff_sdiff, contract_isCocircuit_iff, and_iff_left hdj2,
-    ← diff_inter_self_eq_diff, isCocircuit_def, delete_dual_eq_dual_contract]
+    ← diff_inter_self_eq_diff, isCocircuit_def, dual_delete]
   exact hK.isCircuit.contract_diff_isCircuit hXne inter_subset_right
 
 lemma exists_uniformMinor_of_odd_isCrossing {M : Matroid α} {X : Finset α} (hX : M.IsCrossing X)

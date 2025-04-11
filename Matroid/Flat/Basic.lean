@@ -1,6 +1,4 @@
 import Matroid.Minor.Rank
-import Matroid.ForMathlib.Minimal
-import Matroid.ForMathlib.BooleanAlgebra
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -13,10 +11,10 @@ lemma IsFlat.eq_ground_of_spanning (hF : M.IsFlat F) (h : M.Spanning F) : F = M.
   rw [← hF.closure, h.closure_eq]
 
 lemma IsFlat.spanning_iff (hF : M.IsFlat F) : M.Spanning F ↔ F = M.E :=
-  ⟨hF.eq_ground_of_spanning, by rintro rfl; exact M.ground_spanning⟩
+  ⟨hF.eq_ground_of_spanning, by simp +contextual [M.ground_spanning]⟩
 
 lemma IsFlat.inter (hF₁ : M.IsFlat F₁) (hF₂ : M.IsFlat F₂) : M.IsFlat (F₁ ∩ F₂) := by
-  rw [inter_eq_iInter]; apply IsFlat.iInter; simp [hF₁, hF₂]
+  simpa [hF₁, hF₂] using IsFlat.iInter (M := M) (Fs := fun b : Bool ↦ if b then F₁ else F₂)
 
 end Spanning
 
@@ -62,41 +60,45 @@ lemma isFlat_iff_subset_closure_self (hF : F ⊆ M.E := by aesop_mat) :
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left_iff_imp]
   exact fun _ ↦ M.subset_closure F
 
+lemma IsFlat.closure_subset_of_subset (hF : M.IsFlat F) (h : X ⊆ F) : M.closure X ⊆ F := by
+  have h' := M.closure_mono h; rwa [hF.closure] at h'
+
+@[simp] lemma IsFlat.closure_subset_iff_subset (hF : M.IsFlat F) (hX : X ⊆ M.E := by aesop_mat) :
+    M.closure X ⊆ F ↔ X ⊆ F :=
+  ⟨(M.subset_closure X).trans, hF.closure_subset_of_subset⟩
+
 lemma exists_mem_closure_not_mem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M.E := by aesop_mat) :
     ∃ e, e ∈ M.closure F \ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)] at h
   exact not_subset.1 h
 
+lemma IsFlat.ssubset_closure_insert (hF : M.IsFlat F) (heF : e ∉ F) (he : e ∈ M.E := by aesop_mat) :
+    F ⊂ M.closure (insert e F) :=
+  (M.subset_closure_of_subset (subset_insert _ _)).ssubset_of_mem_not_mem
+    (M.mem_closure_of_mem' (mem_insert _ _) he) heF
+
 lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
     M.IsFlat F ↔ ∀ e ∈ M.E \ F, M.closure F ⊂ M.closure (insert e F) := by
-  refine ⟨fun h e he ↦ (M.closure_subset_closure (subset_insert _ _)).ssubset_of_ne ?_, fun h ↦ ?_⟩
+  refine ⟨fun h e he ↦ ?_, fun h ↦ by_contra fun hcon ↦ ?_⟩
   · rw [h.closure]
-    exact fun h' ↦ mt ((Set.ext_iff.mp h') e).mpr (not_mem_of_mem_diff he)
-      ((M.subset_closure _ (insert_subset he.1 hF)) (mem_insert _ _))
-  rw [isFlat_iff_closure_eq]
-  by_contra h'
-  obtain ⟨e, he', heF⟩ := exists_of_ssubset
-    (ssubset_of_ne_of_subset (Ne.symm h') (M.subset_closure F))
-  have h'' := h e ⟨(M.closure_subset_ground F) he', heF⟩
-  rw [← M.closure_insert_closure_eq_closure_insert e F, insert_eq_of_mem he',
-    M.closure_closure] at h''
-  exact h''.ne rfl
+    exact h.ssubset_closure_insert he.2 he.1
+  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_not_mem_of_not_isFlat hcon hF
+  refine (h e ⟨mem_ground_of_mem_closure hecl, heF⟩).ne ?_
+  rw [← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hecl, closure_closure]
+
+lemma isFlat_iff_forall_isCircuit' :
+    M.IsFlat F ↔ (∀ C e, M.IsCircuit C → e ∈ C → C ⊆ insert e F → e ∈ F) ∧ F ⊆ M.E := by
+  refine ⟨fun h ↦ ⟨fun C e hC heC hCss ↦ ?_, h.subset_ground⟩, fun ⟨h, hFE⟩ ↦ ?_⟩
+  · exact mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC)
+      <| h.closure_subset_of_subset (by simpa)
+  rw [isFlat_iff_subset_closure_self]
+  refine fun e heF ↦ by_contra fun heF' ↦ heF' ?_
+  obtain ⟨C, hCss, hC, heC⟩ := exists_isCircuit_of_mem_closure heF heF'
+  exact h C e hC heC hCss
 
 lemma isFlat_iff_forall_isCircuit (hF : F ⊆ M.E := by aesop_mat) :
     M.IsFlat F ↔ ∀ C e, M.IsCircuit C → e ∈ C → C ⊆ insert e F → e ∈ F := by
-  rw [isFlat_iff_closure_eq]
-  refine ⟨fun h C e hC heC hCF ↦ ?_, fun h ↦ ?_⟩
-  · rw [← h]
-    refine (M.closure_subset_closure ?_) (hC.subset_closure_diff_singleton e heC)
-    rwa [diff_subset_iff, singleton_union]
-  refine (M.subset_closure F hF).antisymm' (fun e heF ↦ by_contra fun he' ↦ ?_)
-  obtain ⟨C, hCF, hC, heC⟩ := (mem_closure_iff_exists_isCircuit he').mp heF
-  exact he' (h C e hC heC hCF)
-
-lemma isFlat_iff_forall_isCircuit' :
-    M.IsFlat F ↔ (∀ C e, M.IsCircuit C → e ∈ C → C ⊆ insert e F → e ∈ F) ∧ F ⊆ M.E :=
-  ⟨fun h ↦ ⟨(isFlat_iff_forall_isCircuit h.subset_ground).mp h, h.subset_ground⟩, fun h ↦
-    (isFlat_iff_forall_isCircuit h.2).mpr h.1⟩
+  rw [isFlat_iff_forall_isCircuit', and_iff_left hF]
 
 lemma IsFlat.closure_exchange (hF : M.IsFlat F) (he : e ∈ M.closure (insert f F) \ F) :
     f ∈ M.closure (insert e F) \ F := by
@@ -110,13 +112,6 @@ lemma IsFlat.insert_indep_of_isBasis (hF : M.IsFlat F) (hIF : M.IsBasis I F) (he
     M.Indep (insert e I) := by
   rwa [hIF.indep.insert_indep_iff_of_not_mem, hIF.closure_eq_closure, hF.closure]
   exact not_mem_subset hIF.subset heI.2
-
-lemma IsFlat.closure_subset_of_subset (hF : M.IsFlat F) (h : X ⊆ F) : M.closure X ⊆ F := by
-  have h' := M.closure_mono h; rwa [hF.closure] at h'
-
-@[simp] lemma IsFlat.closure_subset_iff_subset (hF : M.IsFlat F) (hX : X ⊆ M.E := by aesop_mat) :
-    M.closure X ⊆ F ↔ X ⊆ F :=
-  ⟨(M.subset_closure X).trans, hF.closure_subset_of_subset⟩
 
 lemma IsFlat.closure_eq_iff_isBasis_of_indep (hF : M.IsFlat F) (hI : M.Indep I) :
     M.closure I = F ↔ M.IsBasis I F :=
@@ -264,9 +259,9 @@ lemma IsFlat.union_isFlat_of_contract' (hF : (M ／ C).IsFlat F) : M.IsFlat (F �
   · exact union_subset_union_right _ <| (M.subset_closure _).trans (M.closure_inter_ground _).subset
   exact subset_union_left.trans (hF.symm.subset.trans (M.closure_subset_ground _))
 
-lemma IsNonloop.contract_isFlat_iff (he : M.IsNonloop e) :
-    (M ／ e).IsFlat F ↔ M.IsFlat (insert e F) ∧ e ∉ F := by
-  rw [contractElem, isFlat_contract_iff, union_singleton, disjoint_singleton_right]
+lemma IsNonloop.contractElem_isFlat_iff (he : M.IsNonloop e) :
+    (M ／ {e}).IsFlat F ↔ M.IsFlat (insert e F) ∧ e ∉ F := by
+  rw [isFlat_contract_iff, union_singleton, disjoint_singleton_right]
 
 /-- Flats of `M ／ C` are equivalent to flats of `M` containing `C`-/
 @[simps] def isFlatContractEquiv (M : Matroid α) (C : Set α) (hC : C ⊆ M.E := by aesop_mat) :
@@ -343,9 +338,9 @@ lemma IsFlat.exists_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) :
 lemma IsFlat.closure_subset_of_delete {D : Set α} (hF : (M ＼ D).IsFlat F) : M.closure F ⊆ F ∪ D :=
   (isFlat_delete_iff'.1 hF).1
 
-@[simp] lemma isFlat_deleteElem_iff :
-    (M ＼ e).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
-  rw [deleteElem, isFlat_delete_iff]
+@[simp] lemma deleteElem_isFlat_iff :
+    (M ＼ {e}).IsFlat F ↔ e ∉ F ∧ (M.IsFlat F ∨ M.IsFlat (insert e F)) := by
+  rw [isFlat_delete_iff]
   constructor
   · rintro ⟨F, hF, rfl⟩
     obtain (heF | heF) := em (e ∈ F) <;> simp [heF, hF]

@@ -31,7 +31,7 @@ theorem encard_ground_eq_sum_encard_lines_through [Simple M] {e : α} (he : e �
     rw [closure_singleton_eq]
   convert ENat.tsum_comp_eq_tsum_of_equiv (M ／ e).parallelPointEquiv.symm (g := fun x ↦ x.1.encard)
     using 1
-  rw [← ENat.tsum_comp_eq_tsum_of_equiv (toIsNonloop he).lineContractPointEquiv]
+  rw [← ENat.tsum_comp_eq_tsum_of_equiv (isNonloop_of_loopless he).lineContractPointEquiv]
   refine tsum_congr (fun ⟨P,hP⟩ ↦ ?_)
   simp [IsNonloop.lineContractPointEquiv, closure_singleton_eq he,
     diff_singleton_eq_self (fun heP ↦ (hP.subset_ground heP).2 rfl)]

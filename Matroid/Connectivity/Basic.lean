@@ -91,20 +91,20 @@ lemma ConnectedTo.of_delete {D : Set α} (hef : (M ＼ D).ConnectedTo e f) : M.C
 
 lemma ConnectedTo.of_contract {C : Set α} (hef : (M ／ C).ConnectedTo e f) : M.ConnectedTo e f := by
   replace hef := hef.to_dual
-  rw [contract_dual_eq_dual_delete] at hef
+  rw [dual_contract] at hef
   exact hef.of_delete.of_dual
 
 lemma ConnectedTo.of_isMinor {N : Matroid α} (hef : N.ConnectedTo e f) (h : N ≤m M) :
     M.ConnectedTo e f := by
   obtain ⟨C, D, -, -, -, rfl⟩ := h; exact hef.of_delete.of_contract
 
-private lemma connectedTo_of_indep_isHyperplane_of_not_coloop {I : Set α} (hI : M.Indep I)
-    (hI' : M.IsHyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.Coloop f) :
+private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI : M.Indep I)
+    (hI' : M.IsHyperplane I) (heI : e ∈ M.E \ I) (hfI : f ∈ I) (hf : ¬ M.IsColoop f) :
     M.ConnectedTo e f := by
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
-  simp only [hB.mem_coisLoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+  simp only [hB.isColoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
     not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
@@ -139,14 +139,14 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
   obtain ⟨J, hJ, he₂J⟩ :=
     hC₂i.subset_isBasis_of_subset (diff_subset_diff_left hC₂.subset_ground) hH.subset_ground
 
-  refine (connectedTo_of_indep_isHyperplane_of_not_coloop ?_
+  refine (connectedTo_of_indep_isHyperplane_of_not_isColoop ?_
     (hH.isBasis_isHyperplane_delete hJ) ?_ ?_ ?_).of_delete
   · simp [disjoint_sdiff_right, hJ.indep]
   · simpa [h₁.mem_ground_left, he₁K₁] using
       not_mem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])
   · exact he₂J ⟨he₂C₂, he₂K₁⟩
 
-  refine IsCircuit.not_coisLoop_of_mem ?_ he₂C₂
+  refine IsCircuit.not_isColoop_of_mem ?_ he₂C₂
   rwa [delete_isCircuit_iff, and_iff_right hC₂, disjoint_iff_inter_eq_empty, ← inter_diff_assoc,
     diff_eq_empty, ← inter_diff_assoc, inter_eq_self_of_subset_left hC₂.subset_ground]
 
@@ -168,7 +168,7 @@ lemma Connected.of_dual (hM : M✶.Connected) : M.Connected := by
 @[simp] lemma connected_dual_iff : M✶.Connected ↔ M.Connected :=
   ⟨Connected.of_dual, Connected.to_dual⟩
 
-lemma Coloop.not_connected (he : M.Coloop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
+lemma IsColoop.not_connected (he : M.IsColoop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   obtain ⟨f, hfE, hfe⟩ := hE.exists_ne e
   rintro ⟨-, hconn⟩
   obtain ⟨K, hK, heK, -⟩ := (hconn he.mem_ground hfE).exists_isCircuit_of_ne hfe.symm
@@ -176,7 +176,7 @@ lemma Coloop.not_connected (he : M.Coloop e) (hE : M.E.Nontrivial) : ¬ M.Connec
 
 lemma IsLoop.not_connected (he : M.IsLoop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   rw [← connected_dual_iff]
-  exact he.dual_coloop.not_connected hE
+  exact he.dual_isColoop.not_connected hE
 
 lemma Connected.loopless (hM : M.Connected) (hE : M.E.Nontrivial) : M.Loopless := by
   rw [loopless_iff_forall_not_isLoop]
@@ -189,9 +189,9 @@ lemma Connected.exists_isCircuit_of_ne (h : M.Connected) (he : e ∈ M.E) (hf : 
 lemma Connected.exists_isCircuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e ∈ M.E)
     (hf : f ∈ M.E) : ∃ C, M.IsCircuit C ∧ e ∈ C ∧ f ∈ C := by
   obtain (rfl | hne) := eq_or_ne e f
-  · obtain (he' | he') := em (M.Coloop e)
+  · obtain (he' | he') := em (M.IsColoop e)
     · exact False.elim <| he'.not_connected hM h
-    obtain ⟨C, hC, heC⟩ := exists_mem_isCircuit_of_not_coloop he he'
+    obtain ⟨C, hC, heC⟩ := exists_mem_isCircuit_of_not_isColoop he he'
     exact ⟨C, hC, heC, heC⟩
   exact (h.2 he hf).exists_isCircuit_of_ne hne
 
@@ -290,7 +290,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
   -- Restrict `M` to the union of the circuits.
   set M' := M ↾ range e with hM'
   have : M'✶.Finitary := by
-    rw [hM', ← delete_compl, delete_dual_eq_dual_contract]
+    rw [hM', ← delete_compl, dual_delete]
     exact contract_finitary
 
   set X := X Cs e with hX

@@ -90,7 +90,7 @@ theorem cRank_eq_zero_iff : M.cRank = 0 ↔ M = loopyOn M.E := by
 /-- A version of `Matroid.cRk_eq_zero_iff` applying to sets not contained in the ground set. -/
 theorem cRk_eq_zero_iff' : M.cRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
   rw [cRk, cRank_eq_zero_iff, ← closure_empty_eq_ground_iff, restrict_closure_eq', empty_inter,
-    restrict_ground_eq, subset_antisymm_iff]
+    restrict_ground_eq, subset_antisymm_iff, loops]
   simp only [union_subset_iff, inter_subset_right, diff_subset, and_self, true_and]
   rw [union_comm, ← diff_subset_iff, diff_diff_right_self, subset_inter_iff,
     and_iff_left inter_subset_left]
@@ -128,20 +128,20 @@ lemma cRank_lt_aleph0_iff :  M.cRank < aleph0 ↔ M.RankFinite := by
 
 @[simp] lemma cRank_toENat (M : Matroid α) : M.cRank.toENat = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBase
-  obtain (h | h) := M.finite_or_rankInfinite
+  obtain (h | h) := M.rankFinite_or_rankInfinite
   · rw [← hB.cardinalMk_eq_cRank, ← hB.encard_eq_eRank, toENat_cardinalMk]
   rw [← hB.encard_eq_eRank, hB.infinite.encard_eq, toENat_eq_top, ← not_lt, cRank_lt_aleph0_iff]
   exact M.not_rankFinite
 
 @[simp] lemma cRk_toENat (M : Matroid α) (X : Set α) : (M.cRk X).toENat = M.eRk X := by
-  rw [cRk, cRank_toENat]
+  rw [cRk, cRank_toENat, eRk]
 
 @[simp] lemma cRank_toNat (M : Matroid α) : M.cRank.toNat = M.rank := by
   rw [rank, ← cRank_toENat]
   rfl
 
 @[simp] lemma cRk_toNat (M : Matroid α) (X : Set α) : (M.cRk X).toNat = M.rk X := by
-  rw [cRk, cRank_toNat, rk]
+  rw [cRk, cRank_toNat, rk, eRk]
 
 end Finite
 

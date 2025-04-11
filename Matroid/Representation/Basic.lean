@@ -102,7 +102,7 @@ lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
   have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
     (span_mono (image_mono hIX.subset)).antisymm <| span_le.2 (v.isBasis'_iff.1 hIX).2.2
   rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).not_mem_span_iff,
-    hIX.indep.not_mem_closure_iff, and_comm, v.indep_iff]
+    hIX.indep.not_mem_closure_iff, v.indep_iff]
 
 lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
   ext e
@@ -199,7 +199,7 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
 
 /-- A function from `M.E` to a module determines a representation -/
 @[simps!] noncomputable def Rep.ofSubtypeFun (f : M.E → W) [DecidablePred (· ∈ M.E)]
-    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f)) :
+    (hf : ∀ (I : Set M.E), M.Indep (Subtype.val '' I) ↔ LinearIndepOn 𝔽 f I) :
     M.Rep 𝔽 W :=
   Rep.ofGround
   ( fun a ↦ if ha : a ∈ M.E then f ⟨a,ha⟩ else 0 )

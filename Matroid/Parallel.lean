@@ -22,7 +22,7 @@ def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
 
 lemma parallel_iff :
     M.Parallel e f ↔ M.IsNonloop e ∧ M.IsNonloop f ∧ M.closure {e} = M.closure {f} := by
-  simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), isNonloop_iff_mem_compl_loops]
+  simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), isNonloop_iff_mem_compl_loops, loops]
 
 instance {M : Matroid α} : IsSymm α M.Parallel :=
   inferInstanceAs <| IsSymm α M.parallelClasses.Rel
@@ -75,15 +75,15 @@ lemma Parallel.parallel_iff_right (h : M.Parallel e f) {x : α} :
 lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
     {f | M.Parallel e f} = M.closure {e} \ M.loops := by
   by_cases he : M.IsNonloop e
-  · rw [Parallel, parallelClasses, Partition.rel_congr,
+  · rw [Parallel, parallelClasses, Partition.rel_congr, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
-      closure_insert_closure_eq_closure_insert, insert_emptyc_eq]
+      closure_insert_closure_eq_closure_insert, insert_empty_eq]
   rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_not_mem]
   exact fun f hf ↦ he (Parallel.isNonloop_left hf)
 
 lemma closure_eq_parallel_class_union_loops (M : Matroid α) (e : α) :
     M.closure {e} = {f | M.Parallel e f} ∪ M.loops := by
-  rw [setOf_parallel_eq_closure_diff_loops, diff_union_self,
+  rw [setOf_parallel_eq_closure_diff_loops, diff_union_self, loops,
     union_eq_self_of_subset_right (M.closure_mono (empty_subset _))]
 
 lemma IsNonloop.parallel_self (h : M.IsNonloop e) : M.Parallel e e :=
@@ -103,7 +103,7 @@ lemma IsNonloop.parallel_iff_mem_closure (he : M.IsNonloop e) :
 
 lemma Loopless.parallel_class_eq_closure (h : M.Loopless) (e : α) :
     {f | M.Parallel e f} = M.closure {e} := by
-  rw [setOf_parallel_eq_closure_diff_loops, h.loops, diff_empty]
+  rw [setOf_parallel_eq_closure_diff_loops, h.loops_eq_empty, diff_empty]
 
 lemma Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := by
   rw [pair_comm, ← h.isNonloop_left.indep.mem_closure_iff_of_not_mem hne.symm]
@@ -147,8 +147,8 @@ lemma Parallel.mem_closure_iff_mem_closure (h : M.Parallel e f) {X : Set α} :
       (M.closure_subset_closure_of_subset_closure (by simpa))
   exact mem_of_mem_of_subset h.mem_closure (M.closure_subset_closure_of_subset_closure (by simpa))
 
-lemma Parallel.isLoop_of_contract (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ e).IsLoop f := by
-  rw [isLoop_iff, contractElem, contract_loops_eq, mem_diff]
+lemma Parallel.isLoop_contractElem (hef : M.Parallel e f) (hne : e ≠ f) : (M ／ {e}).IsLoop f := by
+  rw [isLoop_iff, contract_loops_eq, mem_diff]
   exact ⟨hef.symm.mem_closure, hne.symm⟩
 
 lemma restrict_parallel_iff {R : Set α} :
@@ -164,7 +164,7 @@ lemma delete_parallel_iff {D : Set α} :
   rw [mem_diff, and_iff_right h.mem_ground_left, mem_diff, and_iff_right h.mem_ground_right]
 
 @[simp] lemma removeLoops_parallel_iff : M.removeLoops.Parallel e f ↔ M.Parallel e f := by
-  rw [removeLoops_eq_restr, restrict_parallel_iff,
+  rw [removeLoops_eq_restrict, restrict_parallel_iff,
     and_iff_left_of_imp (fun h ↦ ⟨h.isNonloop_left, h.isNonloop_right⟩)]
 
 lemma Parallel.mem_isCocircuit_of_mem {K : Set α}  (hef : M.Parallel e f) (hK : M.IsCocircuit K)
@@ -449,7 +449,7 @@ section ParallelClass
 lemma mem_parallelClasses_iff_eq_closure_diff_loops {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.IsNonloop e ∧ P = M.closure {e} \ M.loops := by
   simp only [parallelClasses, Partition.mem_congr_iff, IsFlat.mem_covByPartition_iff,
-    loops_covBy_iff, isPoint_iff_exists_eq_closure_isNonloop]
+    loops_covBy_iff, isPoint_iff_exists_eq_closure_isNonloop, closure_empty]
   constructor
   · rintro ⟨_, ⟨e, he, rfl⟩, rfl⟩
     exact ⟨e, he, rfl⟩
@@ -468,7 +468,7 @@ lemma mem_parallelClasses_iff {P : Set α} :
 @[simps] def parallelPointEquiv (M : Matroid α) : ↑(M.parallelClasses) ≃ {P // M.IsPoint P} where
   toFun P := ⟨P ∪ M.loops, by
     obtain ⟨e, he, h⟩ := mem_parallelClasses_iff_eq_closure_diff_loops.1 P.prop
-    rw [h, diff_union_self, union_eq_self_of_subset_right
+    rw [h, diff_union_self, loops, union_eq_self_of_subset_right
       (M.closure_subset_closure (empty_subset _))]
     exact he.closure_isPoint ⟩
   invFun P := ⟨P \ M.loops, by
@@ -482,11 +482,9 @@ lemma mem_parallelClasses_iff {P : Set α} :
   right_inv := by
     rintro ⟨P, hP⟩
     obtain ⟨e, -, rfl⟩ := hP.exists_eq_closure_isNonloop
-    simp
+    simp [loops]
 
 end ParallelClass
-
-section Series
 
 section Series
 

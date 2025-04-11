@@ -795,7 +795,7 @@ lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x �
 -- noncomputable def se_foo (𝔽 : Type*) [Field 𝔽] (v : α → W) (e f : α) (a : α) : W × 𝔽 :=
 --     if a = f then ⟨v e, 1⟩ else ⟨v a, 0⟩
 
--- lemma foo (M : Matroid α) (v : M.Rep 𝔽 W) (he : e ∈ M.E) (hnl : ¬ M.Coloop e) (hf : f ∉ M.E) :
+-- lemma foo (M : Matroid α) (v : M.Rep 𝔽 W) (he : e ∈ M.E) (hnl : ¬ M.IsColoop e) (hf : f ∉ M.E) :
 --     (Matroid.ofFun 𝔽 E (se_foo 𝔽 v e f)) = M.seriesExtend e f := by
 --   rw [eq_seriesExtend_iff he hnl hf]
 --   simp

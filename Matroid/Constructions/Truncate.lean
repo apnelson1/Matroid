@@ -70,7 +70,7 @@ theorem truncateTo_isBase_iff {k : ℕ} (h_rank : k ≤ M.eRank) :
     obtain ⟨J, hBJ, hJB', h'⟩ := exists_superset_subset_encard_eq hBB' hle
       (by rwa [hB'.encard_eq_eRank])
     rwa [hmax (hB'.indep.subset hJB') h'.le hBJ]
-  exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le hBJ <| hcard.trans_eq h.symm
+  exact (finite_of_encard_le_coe hcard).eq_of_subset_of_encard_le' hBJ <| hcard.trans_eq h.symm
 
 theorem truncate_isBase_iff_of_rankFinite [RankFinite M] (h_rank : k ≤ M.eRank) :
     (M.truncateTo k).IsBase B ↔ M.Indep B ∧ B.encard = k := by
@@ -117,7 +117,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
   (hM := by
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
-    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl]
+    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl, loops]
     suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
       simpa [M.principal_ground_ne_top]
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
@@ -150,8 +150,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
     rwa [h.eq_of_subset_indep ?_ (subset_diff_singleton hBB' heB), insert_diff_singleton,
       insert_eq_of_mem heB']
     rw [truncate_indep_iff]
-    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <|
-      diff_singleton_sSubset.mpr heB'⟩
+    exact ⟨hB'.indep.subset diff_subset, hB'.not_isBase_of_ssubset <| diff_singleton_ssubset.2 heB'⟩
   refine Indep.isBase_of_forall_insert ?_ ?_
   · rw [truncate_indep_iff]
     exact ⟨hBe.indep.subset (subset_insert _ _), hBe.not_isBase_of_ssubset (ssubset_insert he)⟩
@@ -208,7 +207,8 @@ lemma Coindep.truncate_delete {D : Set α} (hD : M.Coindep D) :
     (M ＼ D).truncate = M.truncate ＼ D := by
   refine ext_indep rfl fun I hI ↦ ?_
   rw [truncate_ground_eq, delete_ground, subset_diff] at hI
-  simp [truncate_indep_iff', hD.delete_isBase_iff, delete_indep_iff, truncate_indep_iff, hI.2]
+  rw [delete_indep_iff, truncate_indep_iff', hD.delete_isBase_iff, and_iff_left hI.2,
+    truncate_indep_iff', delete_indep_iff, and_iff_left hI.2, and_iff_left hI.2]
 
 lemma truncate_restrict_of_not_spanning {R : Set α} (hSE : R ⊆ M.E) (hS : ¬ M.Spanning R) :
     (M.truncate ↾ R) = M ↾ R := by

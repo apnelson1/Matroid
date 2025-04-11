@@ -16,5 +16,3 @@ protected lemma strongInductionGround {P : Matroid α → Prop} {M : Matroid α}
   have : N.Finite := ⟨M.ground_finite.subset hN.subset⟩
   apply Matroid.strongInductionGround (M := N) ih
 termination_by M.E.encard
-
-variable {F : Type*} [Field F] {X Y : Type} [Fintype X] [Fintype Y]
