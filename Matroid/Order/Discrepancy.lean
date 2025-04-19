@@ -286,6 +286,11 @@ def foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
   simp only [contract_rank_cast_int_eq] at h_eq
   linarith [hQ.intCast_rank_sub_rank_eq_nDiscrepancy, hQ.intCast_rk_sub_rk_eq_nDiscrepancy X]
 
+lemma nDiscrepancy_empty [M₁.RankFinite] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy ∅ = 0 := by
+  zify
+  rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ ∅ ]
+  simp only [rk_empty, CharP.cast_eq_zero, sub_self]
+
 
   -- refine ⟨fun h ↦ ext_indep (by simp [hQ.ground_eq]) fun I hI ↦ ?_, fun h ↦ ?_⟩
   -- · obtain ⟨J, D, h₂, h₁, hJD, hcard⟩ := hQ.exists_isBasis'_diff_isBasis' X
