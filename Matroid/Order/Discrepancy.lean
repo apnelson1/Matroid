@@ -291,6 +291,27 @@ lemma nDiscrepancy_empty [M₁.RankFinite] (hQ : M₂ ≤q M₁) : hQ.nDiscrepan
   rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ ∅ ]
   simp only [rk_empty, CharP.cast_eq_zero, sub_self]
 
+lemma nDiscrepancy_covers {F : Set α} (hF : M₁.IsFlat F) (hQ : M₂ ≤q M₁)
+(hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E): ∃ F₁, M₁.IsFlat F₁ ∧ (F ⋖[M₁] F₁) := by
+  have he : ∃ e, e ∈ M₁.E \ F := by
+    by_contra! hnot
+    have hFE : F ⊆ M₁.E := hF.subset_ground
+    --I'm pretty sure the following proof can be shorten, no idea how
+    have hEF : M₁.E = F := by
+      refine ext ?_
+      intro c
+      refine⟨ ?_ , (fun a ↦ hFE a)⟩
+      intro hs
+      by_contra hcg
+      exact hnot c (mem_diff_of_mem hs hcg)
+    rw [hEF ] at hdis
+    exact (lt_self_iff_false (hQ.nDiscrepancy F)).mp hdis
+  obtain ⟨e, he ⟩ := he
+  use M₁.closure (insert e F)
+  refine ⟨ (isFlat_closure (insert e F) ), hF.covBy_closure_insert (not_mem_of_mem_diff he)⟩
+
+
+
 
   -- refine ⟨fun h ↦ ext_indep (by simp [hQ.ground_eq]) fun I hI ↦ ?_, fun h ↦ ?_⟩
   -- · obtain ⟨J, D, h₂, h₁, hJD, hcard⟩ := hQ.exists_isBasis'_diff_isBasis' X
