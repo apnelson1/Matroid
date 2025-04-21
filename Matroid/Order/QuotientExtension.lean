@@ -252,22 +252,18 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     (hr : M₂.rank < M₁.rank) (hf : f ∉ M₂.E) :
     ∃ M, M.IsNonloop f ∧ ¬ M.IsColoop f ∧ M ＼ {f} = M₁ ∧ M₂ ≤q M ／ {f} := by
   --have hfin : M₁.RankFinite
-  --· rw [rankFinite_iff]
-    --intro h
-    --simp [rank, h] at hr
   have hfin : M₂.Finitary := by sorry
   obtain ⟨k, hkpos, hrank⟩ := exists_pos_add_of_lt hr
-  have hmodcut := Quotient.modularCut_of_k hQ
-  use extendBy M₁ f hmodcut
+  --have hmodcut := Quotient.modularCut_of_k hQ
+  use extendBy M₁ f (Quotient.modularCut_of_k hQ)
   have hf1 : f ∉ M₁.E := by rwa [hQ.ground_eq] at hf
-  refine ⟨?_, ?_, ModularCut.extendBy_deleteElem hmodcut hf1, ?_ ⟩
-  --exact ModularCut.deleteElem_extendBy hf2
+  refine ⟨?_, ?_, ModularCut.extendBy_deleteElem (Quotient.modularCut_of_k hQ) hf1, ?_ ⟩
   · by_contra! hcon
-    rw[ (M₁.extendBy f hmodcut).not_isNonloop_iff] at hcon
-    have hfcl : f ∈ (M₁.extendBy f hmodcut).closure (∅) := hcon.mem_closure ∅
+    rw[ (M₁.extendBy f (Quotient.modularCut_of_k hQ)).not_isNonloop_iff] at hcon
+    have hfcl : f ∈ (M₁.extendBy f (Quotient.modularCut_of_k hQ)).closure (∅) := hcon.mem_closure ∅
     rw [ModularCut.mem_closure_extendBy_iff ] at hfcl
     simp only [mem_empty_iff_false, false_or] at hfcl
-    have hcln : M₁.closure ∅ ∉ hmodcut := by
+    have hcln : M₁.closure ∅ ∉ (Quotient.modularCut_of_k hQ) := by
       have hdef : hQ.nDiscrepancy ∅ < hQ.nDiscrepancy M₁.E := by
         have hdiem : hQ.nDiscrepancy ∅ = 0 := by
           zify
@@ -282,21 +278,54 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         have h1 := eq_of_discrepancy_le_zero hQ hzero
         rw[ congrArg rank h1 ] at hr
         exact (lt_self_iff_false M₁.rank).mp hr
-      sorry
-      --rw[←hmodcut.mem_mk_iff ]
-      --have hfd : M₁.closure ∅ ∉ hmodcut.carrier := by sorry
+      by_contra! hcontra
+      have hdis : hQ.nDiscrepancy (M₁.closure ∅) = hQ.nDiscrepancy ∅ := by
+        zify
+        rw [←intCast_rk_sub_rk_eq_nDiscrepancy]
+        rw [←intCast_rk_sub_rk_eq_nDiscrepancy]
+        simp only [rk_closure_eq, rk_empty, CharP.cast_eq_zero, zero_sub, sub_self, neg_eq_zero,
+          Int.natCast_eq_zero]
+        have hempty12 : M₂.rk (M₁.closure ∅) ≤ M₁.rk (M₁.closure ∅) := FiniteRank hQ
+        have hles : M₁.rk (M₁.closure ∅) = 0 := by simp only [rk_closure_eq, rk_empty]
+        rw [hles] at hempty12
+        exact Nat.eq_zero_of_le_zero hempty12
+      have hco1 : hQ.nDiscrepancy ∅ = hQ.nDiscrepancy M₁.E := by
+        have hemp := hcontra.2.2
+        rwa[ ←hdis]
+      rw[hco1] at hdef
+      exact (lt_self_iff_false (hQ.nDiscrepancy M₁.E)).mp hdef
     exact hcln hfcl
     have hbds: M₁.E = M₂.E := Eq.symm hQ.ground_eq
     rw [Eq.symm hQ.ground_eq]
     exact hf
-  · sorry
-  · rw [extendBy_contract_eq hmodcut hf1 ]
+  · by_contra! hcontra
+    have hEU : M₁.E ∈ (Quotient.modularCut_of_k hQ) := by
+      have hFM1 : M₁.IsFlat M₁.E := ground_isFlat M₁
+      have hFM2 : M₂.IsFlat M₁.E :=  by
+        rw [←hQ.ground_eq]
+        exact ground_isFlat M₂
+      change _ ∧ _
+      refine ⟨hFM1, hFM2, rfl ⟩
+    have hmodE : f ∈ (M₁.extendBy f (Quotient.modularCut_of_k hQ)).closure M₁.E := by
+      apply ((Quotient.modularCut_of_k hQ).mem_closure_extendBy_iff hf1).2
+      right
+      simp only [closure_ground]
+      exact hEU
+    have hcol := hcontra.mem_of_mem_closure hmodE
+    exact hf1 hcol
+  · rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
     refine ⟨ ?_, ?_ ⟩
     intro F hF2
     have hF1 : M₁.IsFlat F := isFlat_of_isFlat hQ hF2
+    have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
+      sorry
     sorry
+    -- by_cases hin : F ∈ (Quotient.modularCut_of_k hQ)
+    -- · sorry
+    -- · sorry
     rw [hQ.ground_eq]
-    exact projectBy_ground_eq hmodcut
+    exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
+
 
 
   -- The discrepancy here is `k`. Now define the extension. The loop conditions stops you
