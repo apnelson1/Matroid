@@ -218,6 +218,8 @@ theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤
 --≤ M.r X + M.r Y :=
   --by sorry
 
+--lemma numb {a b : ℤ} (hno : ¬ (a = b) ) (hles : a < b) : b < a := by exact?
+
 def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M₂ ≤q M₁) :
     M₁.ModularCut :=
   ModularCut.ofForallIsModularPairInter M₁
@@ -248,13 +250,59 @@ def Quotient.modularCut_of_k {M₁ M₂ : Matroid α} [RankFinite M₁] (hQ : M�
       (inter_subset_left.trans hF₁.subset_ground)
     linarith )
 
+--This theorems should probably go in Extension
+lemma ModularCut.extendBy_rk_eq [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ M.E)
+    (heX : e ∉ X) (hXSU : M.closure X ∈ U) :
+    (M.extendBy e U).rk (insert e X) = M.rk X := by
+  have h0 := U.extendBy_deleteElem he
+  have heN : e ∈ (M.extendBy e U).closure X := by
+    apply (U.mem_closure_extendBy_iff he).2
+    right
+    exact hXSU
+  have h1 : (M.extendBy e U).rk X = (M.extendBy e U).rk ((M.extendBy e U).closure X) :=
+      Eq.symm (rk_closure_eq (M.extendBy e U))
+  have h2 : (M.extendBy e U).rk ( insert e X) = (M.extendBy e U).rk X := by
+    rw [h1, Eq.symm (closure_insert_eq_of_mem_closure heN)]
+    exact Eq.symm (rk_closure_eq (M.extendBy e U))
+  rw [h2]
+  nth_rewrite 2 [← U.extendBy_deleteElem he]
+  exact Eq.symm (deleteElem_rk_eq (M.extendBy e U) heX)
+
+lemma ModularCut.extendBy_rk_notin [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ M.E)
+    (heX : e ∉ X) (hXSU : M.closure X ∉ U) (hecl : e ∉ M.closure X):
+    (M.extendBy e U).rk (insert e X) = M.rk X + 1 := by
+  have heclX : e ∉ (M.extendBy e U).closure X := by
+     by_contra hcontra
+     have h1:= (U.mem_closure_extendBy_iff he).1 hcontra
+     exact not_or_intro heX hXSU h1
+  have h1 : (M.extendBy e U).rk (insert e X) = (M.extendBy e U).rk X + 1 := by
+    sorry
+  nth_rewrite 2 [←rk_closure_eq, ←U.extendBy_deleteElem he ]
+  rw [deleteElem_rk_eq (M.extendBy e U) hecl ]
+  rw [← U.extendBy_closure_eq_self he heX hXSU]
+  simp only [rk_closure_eq]
+  exact h1
+
+lemma ModularCut.rank_le [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ M.E)
+    (heX : e ∉ X) (hecl : e ∉ M.closure X) : (M.extendBy e U).rk (insert e X) ≤ M.rk X + 1 := by
+  by_cases hXin : M.closure X ∈ U
+  · exact Nat.le.intro (congrFun (congrArg HAdd.hAdd (U.extendBy_rk_eq he heX hXin )) 1)
+  · exact Nat.le_of_eq (U.extendBy_rk_notin he heX hXin hecl )
+
+lemma ModularCut.rank_ge [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ M.E)
+    (heX : e ∉ X) : M.rk X ≤ (M.extendBy e U).rk (insert e X)  := by sorry
+  -- by_cases hXin : M.closure X ∈ U
+  -- · exact Nat.le.intro (congrFun (congrArg HAdd.hAdd (U.extendBy_rk_eq he heX hXin )) 1)
+  -- · exact Nat.le_of_eq (U.extendBy_rk_notin he heX hXin hecl )
+
+--lemma foo {a : α} (h : a < a) : False := by exact
+
 lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {f : α} (hQ : M₂ ≤q M₁)
     (hr : M₂.rank < M₁.rank) (hf : f ∉ M₂.E) :
     ∃ M, M.IsNonloop f ∧ ¬ M.IsColoop f ∧ M ＼ {f} = M₁ ∧ M₂ ≤q M ／ {f} := by
   --have hfin : M₁.RankFinite
   have hfin : M₂.Finitary := by sorry
   obtain ⟨k, hkpos, hrank⟩ := exists_pos_add_of_lt hr
-  --have hmodcut := Quotient.modularCut_of_k hQ
   use extendBy M₁ f (Quotient.modularCut_of_k hQ)
   have hf1 : f ∉ M₁.E := by rwa [hQ.ground_eq] at hf
   refine ⟨?_, ?_, ModularCut.extendBy_deleteElem (Quotient.modularCut_of_k hQ) hf1, ?_ ⟩
@@ -275,9 +323,10 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         --   refine ENat.coe_toNat ?_
         --   exact discrepancy_ne_top hQ M₁.E
         --rw [ hdisc ] at hzero
-        have h1 := eq_of_discrepancy_le_zero hQ hzero
+        have h1 := eq_of_discrepancy_le_zero hQ ?_
         rw[ congrArg rank h1 ] at hr
         exact (lt_self_iff_false M₁.rank).mp hr
+        sorry
       by_contra! hcontra
       have hdis : hQ.nDiscrepancy (M₁.closure ∅) = hQ.nDiscrepancy ∅ := by
         zify
@@ -318,13 +367,66 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     intro F hF2
     have hF1 : M₁.IsFlat F := isFlat_of_isFlat hQ hF2
     have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
-      sorry
-    sorry
-    -- by_cases hin : F ∈ (Quotient.modularCut_of_k hQ)
-    -- · sorry
-    -- · sorry
+      have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+        by_contra! hcontra
+        have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
+            lt_of_le_of_ne (nDiscrepancy_le_of_subset hQ (((M₁.isFlat_iff F).1 hF1).2 )) hcontra
+        have hF₁ := nDiscrepancy_covers hF1 hQ hles
+        obtain ⟨ F₁, hcovby ⟩ := hF₁
+        sorry
+      change _ ∧ _
+      refine⟨ hF1, hF2, hnotmod ⟩
+    have hFex: F ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by
+      rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+      exact hF1.subset_ground
+    --apply (isFlat_iff_subset_closure_self (hFex)).2
+    rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+    apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
+    intro e heN
+    have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F ⊆
+        (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F) :=
+      Matroid.closure_subset_closure (M₁.extendBy f hQ.modularCut_of_k ／ {f}) (subset_insert e F)
+    by_contra hcontra
+    --simp only [contract_closure_eq, union_singleton] at hcontra
+    --simp only [contract_closure_eq, union_singleton] at hsub
+    have hcontra1 :(M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F
+        = (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F):= by
+      by_contra hc
+      exact hcontra (ssubset_iff_subset_ne.2 (And.symm ⟨hc, hsub⟩))
+    have hrnk : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk  F =
+        (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
+      rw [←rk_closure_eq] --, hcontra1 ]
+      nth_rewrite 2 [←rk_closure_eq]
+      exact congrArg (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk hcontra1
+    have hcon1 : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk F
+        < (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
+        zify
+        have : (M₁.extendBy f hQ.modularCut_of_k).RankFinite := by sorry
+        rw [contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k),
+        contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k) ]
+        simp only [union_singleton, sub_lt_sub_iff_right, Nat.cast_lt, gt_iff_lt]
+        have hfF : f ∉ F := fun a ↦ hf1 (hF1.subset_ground a)
+        have hfFe : f ∉ insert e F := by
+          have hef : f ≠ e := by aesop
+          aesop
+        have hXSU : M₁.closure F ∈ hQ.modularCut_of_k := by
+          rwa [isFlat_iff_closure_eq.mp hF1]
+        rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 hfF hXSU]
+        have h1 := (hQ.modularCut_of_k).rank_ge hf1 hfFe
+        have h2 : M₁.rk F < M₁.rk (insert e F) := by
+          have heFE : e ∈ M₁.E \ F := by
+            rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+            at heN
+            exact heN
+          rw [hF1.rk_insert_eq_add_one (isRkFinite_set M₁ F) heFE  ]
+          exact lt_add_one (M₁.rk F)
+        linarith
+    rw [hrnk] at hcon1
+    simp only [lt_self_iff_false] at hcon1
+    --rw[contract_closure_eq]
     rw [hQ.ground_eq]
     exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
+
 
 
 
