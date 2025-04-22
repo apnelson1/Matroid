@@ -279,39 +279,6 @@ lemma Adj.mem_right (h : G.Adj x y) : y ∈ G.V :=
 lemma Inc₂.adj (h : G.Inc₂ e x y) : G.Adj x y :=
   ⟨e, h⟩
 
-/-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
-@[simps] def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
-  V := G.V
-  E := E₀ ∩ G.E
-  Inc₂ e x y := e ∈ E₀ ∧ G.Inc₂ e x y
-  inc₂_symm e x y h := by rwa [G.inc₂_comm]
-  eq_or_eq_of_inc₂_of_inc₂ _ _ _ _ _ h h' := h.2.left_eq_or_eq_of_inc₂ h'.2
-  edge_mem_iff_exists_inc₂ e := ⟨fun h ↦ by simp [h, G.exists_inc₂_of_mem_edgeSet h.2, h.1],
-    fun ⟨x, y, h⟩ ↦ ⟨h.1, h.2.edge_mem⟩⟩
-  vx_mem_left_of_inc₂ _ _ _ h := h.2.vx_mem_left
-
-/-- Map `G : Graph α β` to a `Graph α' β` with the same edge set
-by applying a function `f : α → α'` to each vertex.
-Edges between identified vertices become loops. -/
-@[simps] def vxMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β where
-  V := f '' G.V
-  E := G.E
-  Inc₂ e x' y' := ∃ x y, G.Inc₂ e x y ∧ x' = f x ∧ y' = f y
-  inc₂_symm := by
-    rintro e - - ⟨x, y, h, rfl, rfl⟩
-    exact ⟨y, x, h.symm, rfl, rfl⟩
-  eq_or_eq_of_inc₂_of_inc₂ := by
-    rintro e - - - - ⟨x, y, hxy, rfl, rfl⟩ ⟨z, w, hzw, rfl, rfl⟩
-    obtain rfl | rfl := hxy.left_eq_or_eq_of_inc₂ hzw <;> simp
-  edge_mem_iff_exists_inc₂ e := by
-    refine ⟨fun h ↦ ?_, ?_⟩
-    · obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet h
-      exact ⟨_, _, _, _, hxy, rfl, rfl⟩
-    rintro ⟨-, -, x, y, h, rfl, rfl⟩
-    exact h.edge_mem
-  vx_mem_left_of_inc₂ := by
-    rintro e - - ⟨x, y, h, rfl, rfl⟩
-    exact mem_image_of_mem _ h.vx_mem_left
 
 
 /-! ### Extensionality -/

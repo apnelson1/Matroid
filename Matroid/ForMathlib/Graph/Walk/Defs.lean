@@ -458,6 +458,21 @@ lemma IsPath.not_isCycle (hP : G.IsPath w) (hnonempty : w.Nonempty) : ¬ G.IsCyc
 
 def Inc₂.walk (_h : G.Inc₂ e u v) : Walk α β := cons u e (nil v)
 
+
+lemma Walk.ValidIn.mem_of_mem_edge_of_inc (hVd : w.ValidIn G) (he : e ∈ w.edge) (h : G.Inc e u) :
+    u ∈ w := by
+  induction w with
+  | nil x => simp at he
+  | cons x e' w ih =>
+  simp only [mem_cons_iff, or_iff_not_imp_left]
+  simp only [cons_validIn] at hVd
+  intro hux
+  obtain rfl | h' : e = e' ∨ _ := by simpa using he
+  · simp [h.eq_of_inc₂_of_ne_left hVd.1 hux]
+  exact ih hVd.2 h'
+
+
+
 namespace Inc₂
 
 @[simp] lemma walk_first (h : G.Inc₂ e u v): h.walk.first = u := rfl
@@ -485,18 +500,6 @@ lemma walk_validIn (h : G.Inc₂ e u v) : h.walk.ValidIn G := by
 
 lemma walk_isPath (h : G.Inc₂ e u v) (hne : u ≠ v) : G.IsPath h.walk :=
   ⟨h.walk_validIn, by simp [hne]⟩
-
-lemma ValidIn.mem_of_mem_edge_of_inc (hVd : w.ValidIn G) (he : e ∈ w.edge) (h : G.Inc e u) :
-    u ∈ w := by
-  induction w with
-  | nil x => simp at he
-  | cons x e' w ih =>
-  simp only [mem_cons_iff, or_iff_not_imp_left]
-  simp only [cons_validIn] at hVd
-  intro hux
-  obtain rfl | h' : e = e' ∨ _ := by simpa using he
-  · simp [h.eq_of_inc₂_of_ne_left hVd.1 hux]
-  exact ih hVd.2 h'
 
 end Inc₂
 

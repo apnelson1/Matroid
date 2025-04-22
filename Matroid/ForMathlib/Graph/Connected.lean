@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.Graph.Walk
+import Matroid.ForMathlib.Graph.Walk.Dedup
 import Matroid.ForMathlib.Graph.Subgraph
 import Mathlib.Data.Set.Insert
 
@@ -77,6 +77,12 @@ lemma vxConnected_iff_exists_walk :
   refine ⟨VxConnected.exists_walk_validIn, ?_⟩
   rintro ⟨w, hw, rfl, rfl⟩
   exact hw.vxConnected
+
+lemma VxConnected.exists_isPath (h : G.VxConnected x y) :
+    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y := by
+  classical
+  obtain ⟨w, hw, rfl, rfl⟩ := h.exists_walk_validIn
+  exact ⟨w.dedup, by simp [hw.dedup_isPath]⟩
 
 @[mk_iff]
 structure Connected (G : Graph α β) : Prop where
