@@ -290,7 +290,8 @@ lemma ModularCut.rank_le [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ 
   · exact Nat.le_of_eq (U.extendBy_rk_notin he heX hXin hecl )
 
 lemma ModularCut.rank_ge [RankFinite M] {e : α} (U : M.ModularCut) (he : e ∉ M.E)
-    (heX : e ∉ X) : M.rk X ≤ (M.extendBy e U).rk (insert e X)  := by sorry
+    (heX : e ∉ X) : M.rk X ≤ (M.extendBy e U).rk (insert e X)  := by
+  sorry
   -- by_cases hXin : M.closure X ∈ U
   -- · exact Nat.le.intro (congrFun (congrArg HAdd.hAdd (U.extendBy_rk_eq he heX hXin )) 1)
   -- · exact Nat.le_of_eq (U.extendBy_rk_notin he heX hXin hecl )
@@ -411,7 +412,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
           aesop
         have hXSU : M₁.closure F ∈ hQ.modularCut_of_k := by
           rwa [isFlat_iff_closure_eq.mp hF1]
-        rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 hfF hXSU]
+        rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 (fun a ↦ hf1 (hF1.subset_ground a)) hXSU]
         have h1 := (hQ.modularCut_of_k).rank_ge hf1 hfFe
         have h2 : M₁.rk F < M₁.rk (insert e F) := by
           have heFE : e ∈ M₁.E \ F := by
@@ -423,7 +424,6 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         linarith
     rw [hrnk] at hcon1
     simp only [lt_self_iff_false] at hcon1
-    --rw[contract_closure_eq]
     rw [hQ.ground_eq]
     exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
 
