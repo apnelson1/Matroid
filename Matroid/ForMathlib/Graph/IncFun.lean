@@ -1,0 +1,144 @@
+import Matroid.ForMathlib.Graph.Basic
+import Mathlib.Data.Finsupp.Basic
+import Mathlib.Data.Set.Card
+import Matroid.ForMathlib.Card
+
+open Set
+
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
+
+namespace Graph
+
+/-- The set of ends of an edge `e`. -/
+def endSet (G : Graph α β) (e : β) : Set α := {x | G.Inc e x}
+
+@[simp]
+lemma mem_endSet_iff : x ∈ G.endSet e ↔ G.Inc e x := Iff.rfl
+
+lemma Inc₂.endSet_eq (h : G.Inc₂ e x y) : G.endSet e = {x,y} := by
+  ext a
+  simp only [mem_endSet_iff, mem_insert_iff, mem_singleton_iff]
+  refine ⟨fun h' ↦ h'.eq_or_eq_of_inc₂ h, ?_⟩
+  rintro (rfl | rfl)
+  · exact h.inc_left
+  exact h.inc_right
+
+lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : G.endSet e = {x} := by
+  rw [Inc₂.endSet_eq h, pair_eq_singleton]
+
+lemma endSet_eq_of_not_mem_edgeSet (he : e ∉ G.E) : G.endSet e = ∅ := by
+  simp only [endSet, eq_empty_iff_forall_not_mem, mem_setOf_eq]
+  exact fun x hx ↦ he hx.edge_mem
+
+lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 := by
+  by_cases heE : e ∈ G.E
+  · obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edgeSet heE
+    rw [h.endSet_eq]
+    exact encard_pair_le x y
+  simp [endSet_eq_of_not_mem_edgeSet heE]
+
+@[simp]
+lemma subsingleton_setOf_inc₂ (G : Graph α β) (e : β) (x : α) :
+    {y | G.Inc₂ e x y}.Subsingleton := by
+  simp only [Set.Subsingleton, mem_setOf_eq]
+  exact fun y hy z hz ↦ hy.eq_of_inc₂ hz
+
+@[simp]
+lemma endSet_finite (G : Graph α β) (e : β) : (G.endSet e).Finite :=
+  finite_of_encard_le_coe <| G.endSet_encard_le e
+
+noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
+  support := (G.endSet_finite e).toFinset
+  toFun x := {y | G.Inc₂ e x y}.ncard + ({y | G.Inc₂ e x y} ∩ {x}).ncard
+  mem_support_toFun x := by
+    obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
+    · simp [hy.inc₂_iff_eq]
+    simp [hx, inc₂_iff_inc]
+
+@[simp] lemma _root_.Set.singleton_inter_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
+     {x} ∩ s = if x ∈ s then {x} else ∅ := by
+  split_ifs <;> simpa
+
+@[simp] lemma _root_.Set.inter_singleton_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
+    s ∩ {x} = if x ∈ s then {x} else ∅ := by
+  split_ifs <;> simpa
+
+-- noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ :=
+--   (G.eIncFun e).mapRange ENat.toNat (by simp)
+
+lemma incFun_eq_zero_of_not_mem (he : e ∉ G.E) : G.incFun e = 0 := by
+  simp [DFunLike.ext_iff, incFun, not_inc₂_of_not_mem_edgeSet he]
+
+lemma incFun_le_two (G : Graph α β) (e : β) (x : α) : G.incFun e x ≤ 2 := by
+  obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
+  · suffices 1 + _ ≤ 2 by simpa [incFun, hy.inc₂_iff_eq]
+    have := ncard_singleton_inter y {x}
+    omega
+  simp [incFun, inc₂_iff_inc, hx]
+
+lemma IsNonloopAt.eIncFun_eq_one (h : G.IsNonloopAt e x) : G.incFun e x = 1 := by
+  obtain ⟨y, hne, hxy⟩ := h.exists_inc₂_ne
+  simp [incFun, hxy.inc₂_iff_eq, (show Disjoint {y} {x} by simpa).inter_eq]
+
+@[simp]
+lemma incFun_eq_one_iff : G.incFun e x = 1 ↔ G.IsNonloopAt e x := by
+  obtain (⟨y, hxy⟩ | hex) := em <| G.Inc e x
+  · simp [incFun, hxy.inc₂_iff_eq, isNonloopAt_iff, toFinite ({y} ∩ {x}), eq_comm (a := x)]
+  simp [incFun, mt Inc₂.inc_left hex, mt IsNonloopAt.inc hex]
+
+lemma IsNonloopAt.incFun_eq_one (h : G.IsNonloopAt e x) : G.incFun e x = 1 :=
+  incFun_eq_one_iff.2 h
+
+@[simp]
+lemma incFun_eq_two_iff : G.incFun e x = 2 ↔ G.IsLoopAt e x := by
+  obtain (⟨y, hxy⟩ | hex) := em <| G.Inc e x
+  · suffices 1 + _ = 2 ↔ x = y by simpa [incFun, hxy.inc₂_iff_eq, ← inc₂_self_iff]
+    obtain rfl | hne := eq_or_ne y x
+    · simp
+    simp [(show Disjoint {y} {x} by simpa).inter_eq, hne.symm]
+  simp [incFun, mt Inc₂.inc_left hex, hex, mt IsLoopAt.inc hex]
+
+lemma IsLoopAt.incFun_eq_two (h : G.IsLoopAt e x) : G.incFun e x = 2 :=
+  incFun_eq_two_iff.2 h
+
+
+
+@[simp]
+lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ G.E := by
+  refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_not_mem⟩
+  obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet he
+  obtain hx | hx := hxy.inc_left.isLoopAt_or_isNonloopAt
+  · have := h ▸ hx.incFun_eq_two
+    simp at this
+  have := h ▸ hx.incFun_eq_one
+  simp at this
+
+
+lemma IsLoopAt.incFun_eq (h : G.IsLoopAt e x) : G.incFun e x = 2 := by
+  simp only [incFun, Finsupp.coe_mk]
+  rw [ncard_eq_one.2, ncard_eq_one.2]
+  · exact ⟨x, by simpa⟩
+  refine ⟨x, ?_⟩
+  simp only [eq_singleton_iff_unique_mem, mem_setOf_eq, inc₂_self_iff, h, true_and]
+  exact fun y hxy ↦ (h.eq_of_inc hxy.inc_right).symm
+
+lemma IsNonloopAt.incFun_eq (h : G.IsNonloopAt e x) : G.incFun e x = 1 := by
+  simp only [incFun, Finsupp.coe_mk]
+  rw [ncard_eq_one.2,
+    (ncard_eq_zero ((G.subsingleton_setOf_inc₂ ..).finite.subset inter_subset_left)).2]
+  · simp [h.not_isLoopAt]
+  obtain ⟨h, y, hne, hxy⟩ := h
+  refine ⟨y, ?_⟩
+  simp only [Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
+  exact fun z ↦ ⟨fun hxz ↦ hxz.eq_of_inc₂ hxy, fun hzx ↦ hzx ▸ hxy⟩
+
+
+lemma sum_incFun_eq_two (he : e ∈ G.E) : (G.incFun e).sum (fun _ x ↦ x) = 2 := by
+  simp only [Finsupp.sum, incFun, Finsupp.coe_mk]
+  obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet he
+  obtain rfl | hne := eq_or_ne x y
+  · sorry
+  sorry
+
+
+end Graph
