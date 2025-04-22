@@ -1,5 +1,6 @@
 import Matroid.ForMathlib.Graph.Walk
 import Matroid.ForMathlib.Graph.Subgraph
+import Mathlib.Data.Set.Insert
 
 open Set Function List Nat
 
@@ -29,10 +30,7 @@ lemma VxConnected.symm (hxy : G.VxConnected x y) : G.VxConnected y x := by
 
 lemma VxConnected.mem_left (hxy : G.VxConnected x y) : x ∈ G.V := by
   induction hxy with
-  | @single a h =>
-    obtain h | h := h
-    · exact h.mem_left
-    exact h.2
+  | single h => exact h.elim Adj.mem_left And.right
   | tail _ _ h => exact h
 
 lemma VxConnected.mem_right (hxy : G.VxConnected x y) : y ∈ G.V :=
@@ -41,8 +39,6 @@ lemma VxConnected.mem_right (hxy : G.VxConnected x y) : y ∈ G.V :=
 @[simp]
 lemma vxConnected_self : G.VxConnected x x ↔ x ∈ G.V :=
   ⟨VxConnected.mem_left, VxConnected.refl⟩
-
-
 
 lemma Adj.vxConnected (h : G.Adj x y) : G.VxConnected x y := by
   rw [VxConnected, Relation.transGen_iff]
@@ -89,9 +85,15 @@ structure Connected (G : Graph α β) : Prop where
 
 lemma exists_of_not_connected (h : ¬ G.Connected) (hne : G.V.Nonempty) :
     ∃ X ⊂ G.V, X.Nonempty ∧ ∀ ⦃u v⦄, u ∈ X → G.Adj u v → v ∈ X := by
-  obtain ⟨x, hx⟩ := hne
-  refine ⟨{y | G.VxConnected x y}, ?_, ⟨x, by simpa⟩, fun u v (h : G.VxConnected x u) huv ↦ ?_⟩
-  · refine subset_of
+  simp only [connected_iff, hne, true_and, not_forall, Classical.not_imp,
+    exists_prop, exists_and_left] at h
+  obtain ⟨x, hx, y, hy, hxy⟩ := h
+  refine ⟨{z | G.VxConnected x z}, ?_, ⟨x, by simpa⟩, fun u v (h : G.VxConnected x u) huv ↦ ?_⟩
+  · exact HasSubset.Subset.ssubset_of_mem_not_mem
+      (fun z hz ↦ VxConnected.mem_right hz) hy (by simpa)
+  exact h.trans huv.vxConnected
+
+
 
 
 -- structure VxSeparation (G : Graph α β) (k : ℕ) where

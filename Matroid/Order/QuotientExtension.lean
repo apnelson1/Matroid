@@ -313,39 +313,55 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       exact hEU
     have hcol := hcontra.mem_of_mem_closure hmodE
     exact hf1 hcol
-  · rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
-    refine ⟨ ?_, ?_ ⟩
-    · by_contra! hcon
-      obtain ⟨F₀, hF₀, hF₀bad⟩ := hcon
-      let s := {F : Set α | M₁.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
-      have hsfin : (M₁.rk '' s).Finite := M₁.range_rk_finite.subset <| image_subset_range ..
-      have hsne : s.Nonempty := ⟨F₀, hQ.isFlat_of_isFlat hF₀, hF₀bad⟩
-      obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
-      simp only [mem_setOf_eq, and_imp, s] at hmax hFs
-      have hF1 : M₁.IsFlat F := hFs.1
-      have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
-        have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-          by_contra! hcontra
-          have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
-            have hFE : F ⊆ M₁.E := hF1.subset_ground
-            have he : ∃ e, e ∈ M₁.E \ F := by
-                --sorry
-              by_contra! hnot
-              have hEF : M₁.E = F := by
-                refine ext ?_
-                intro c
-                refine⟨ ?_ , (fun a ↦ hFE a)⟩
-                intro hs
-                by_contra hcg
-                exact (hnot c) (mem_diff_of_mem hs hcg)
-              rw [hEF] at hcontra
-              exact hcontra rfl
 
-
-            sorry
+  rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+  refine ⟨ ?_, ?_ ⟩
+  · by_contra! hcon
+    obtain ⟨F₀, hF₀, hF₀bad⟩ := hcon
+    let s := {F : Set α | M₁.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
+    have hsfin : (M₁.rk '' s).Finite := M₁.range_rk_finite.subset <| image_subset_range ..
+    have hsne : s.Nonempty := ⟨F₀, hQ.isFlat_of_isFlat hF₀, hF₀bad⟩
+    obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
+    simp only [mem_setOf_eq, and_imp, s] at hmax hFs
+    have hF1 : M₁.IsFlat F := hFs.1
+    have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
+      have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+        by_contra! hcontra
+        have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E := by
+          have hFE : F ⊂ M₁.E := by
+            refine hF1.subset_ground.ssubset_of_ne ?_
+            rintro rfl
+            contradiction
           sorry
         sorry
+      sorry
+    sorry
+  sorry
+    -- · by_contra! hcon
 
+    --   have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
+    --     have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+    --       by_contra! hcontra
+    --       have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
+    --         have hFE : F ⊆ M₁.E := hF1.subset_ground
+    --         have he : ∃ e, e ∈ M₁.E \ F := by
+    --             --sorry
+    --           by_contra! hnot
+    --           have hEF : M₁.E = F := by
+    --             refine ext ?_
+    --             intro c
+    --             refine⟨ ?_ , (fun a ↦ hFE a)⟩
+    --             intro hs
+    --             by_contra hcg
+    --             exact (hnot c) (mem_diff_of_mem hs hcg)
+    --           rw [hEF] at hcontra
+    --           exact hcontra rfl
+
+
+    --         sorry
+    --       sorry
+    --     sorry
+    -- sorry
 
             --   aesop
             -- obtain ⟨e, he ⟩ := he
@@ -369,8 +385,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       --     sorry
       --   change _ ∧ _
       --   refine⟨ hF1, hF2, hnotmod ⟩
-      sorry
-    · sorry
+
 
 
     --have hFex: F ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by sorry
