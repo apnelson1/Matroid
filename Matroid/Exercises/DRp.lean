@@ -12,7 +12,7 @@ variable {α : Type*} {M : Matroid α} {B B' I I' J K X Y : Set α}
 so will be harder to apply. -/
 lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (heX : e ∉ X)
     (heY : e ∉ Y) :
-    M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y)) ≤  1 + (M ＼ e).conn X + (M ／ e).conn Y := by
+    M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y)) ≤  1 + (M ＼ {e}).conn X + (M ／ {e}).conn Y := by
   -- Apply submodularity fo the pairs `(X, insert e Y)` and `(M.E \ insert e X, Y)`, and simplify.
   have hsm := M.rk_submod X (insert e Y)
   rw [union_insert, inter_insert_of_not_mem heX] at hsm
@@ -20,7 +20,8 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
   rw [insert_union, insert_inter_of_not_mem heY] at hsm'
   -- Now `zify` and simplify.
   zify
-  simp only [intCast_conn_eq, deleteElem, delete_ground, diff_singleton_diff_eq, contractElem,
+  --deleteElem,contractElem,
+  simp only [intCast_conn_eq, delete_ground, diff_singleton_diff_eq,
     contract_rk_cast_int_eq, union_singleton, contract_ground, insert_diff_insert,
     contract_rank_cast_int_eq]
   -- Rewrite this particular annoying term. If `e ∈ M.E` is assumed, this can be taken
@@ -41,20 +42,20 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
 
 lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (he : e ∈ M.E)
     (heX : e ∉ X) (heY : e ∉ Y) : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e})
-    ≤  (M ＼ e).conn X + (M ／ e).conn Y + 1 := by
+    ≤  (M ＼ {e}).conn X + (M ／ {e}).conn Y + 1 := by
   --The proof starts with getting all the equations for the contractions, there is 3 of them
   have : M.rk {e} ≤ 1 := by sorry
-  have hconY : M.rk (insert e Y) - 1 = ((M ／ e).rk Y : ℤ ) := by sorry
+  have hconY : M.rk (insert e Y) - 1 = ((M ／ {e}).rk Y : ℤ ) := by sorry
     -- You can rewrite what it means to contract an element with set notation using contractElem
     -- You can then use the definition of contracting for integers
     -- union_singleton opens insert e X to e ∪ X
     --linarith
-  have hconEY : M.rk (M.E \ Y) - 1 = ((M ／ e).rk (M.E \ (insert e Y)) : ℤ ) := by
+  have hconEY : M.rk (M.E \ Y) - 1 = ((M ／ {e}).rk (M.E \ (insert e Y)) : ℤ ) := by
     --similar to hconY but with an extra step since we need the following observation
     have hins : insert e (M.E \ insert e Y) =  M.E \ Y := by
       sorry
     sorry
-  have hconE : M.rank - 1 = ((M ／ e).rk (M.E \ {e}) : ℤ ) := by
+  have hconE : M.rank - 1 = ((M ／ {e}).rk (M.E \ {e}) : ℤ ) := by
     sorry
     -- This may be useful to finsih: rw [insert_diff_self_of_mem he, ←rank_def M]
   --End of the contractions. We are now going to get the equations of submodularity,
@@ -64,7 +65,7 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   have hsub2 : (M.rk (M.E \ (X ∩ Y)) : ℤ) + (M.rk (M.E \ ( X ∪ Y ∪ {e})) : ℤ)
       ≤ M.rk (M.E \ (insert e X)) + M.rk (M.E \ Y) := by sorry
   --This equation is the last one we need as aid.
-  have hneed : ( (M ＼ e).rank : ℤ)  ≤ (M.rank : ℤ) := by sorry
+  have hneed : ( (M ＼ {e}).rank : ℤ)  ≤ (M.rank : ℤ) := by sorry
   --We now want to subsitute the definition of connectivity with the following
   have hf : M.conn (X ∩ Y) + M.conn (X ∪ Y ∪ {e}) =
       ((M.rk ( X ∪ Y ∪ {e}) : ℤ ) + ( M.rk ( X ∩ Y)) : ℤ ) +
@@ -75,15 +76,17 @@ lemma Exercise_for_DRP (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) (
   zify
   -- We use the following 3 to change the rank function of a deletion
   --to the rank function of the matroid
-  have hdelx : (M ＼ e).E \ X = M.E \ insert e X := by sorry
-  have hconYh : (M ／ e).E \ Y = M.E \ insert e Y :=  by sorry
-  have hrkcon : (M ／ e).rk (M.E \ {e}) = (M ／ e).rank := rk_eq_rank fun ⦃a⦄ a ↦ a
+  have hdelx : (M ＼ {e}).E \ X = M.E \ insert e X := by sorry
+  have hconYh : (M ／ {e}).E \ Y = M.E \ insert e Y :=  by sorry
+  have hrkcon : (M ／ {e}).rk (M.E \ {e}) = (M ／ {e}).rank := rk_eq_rank fun ⦃a⦄ a ↦ a
   --Here I used a lot of rw
-  rw [intCast_conn_eq (M ＼ e) X, intCast_conn_eq (M ／ e) Y, hf ]
-  rw[delete_elem_rk_eq, delete_elem_rk_eq, hdelx, hconYh, ←hrkcon]
-  · linarith
-  · sorry
+  --rw [intCast_conn_eq (M ＼ e) X, intCast_conn_eq (M ／ e) Y, hf ]
+  --rw[delete_elem_rk_eq, delete_elem_rk_eq, hdelx, hconYh, ←hrkcon]
   sorry
+  --· --linarith
+    --sorry
+ -- · sorry
+  --sorry
 -- gh repo clone apnelson1/Matroid
 
 --lemma Check {a : ℕ} (h : a < a) : False := by exact (lt_self_iff_false a).mp h
@@ -92,7 +95,7 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     ∃ N, N ≤m M ∧ N.E = X ∪ Y ∧ N.conn X = M.connBetween X Y := by
   by_cases hE : X ∪ Y = M.E
   · refine ⟨M, IsMinor.refl, hE.symm, ?_⟩
-    have hY : Y = M.E \ X := sorry
+    have hY : Y = M.E \ X := Eq.symm (Disjoint.sdiff_eq_of_sup_eq hXY hE)
     subst hY
     rw [conn, connBetween, eConnBetween_self_compl]
   have he : ∃ e ∈ M.E, e ∉ X ∪ Y
@@ -100,24 +103,24 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     contrapose! hE
     exact (union_subset hXE hYE).antisymm hE
   obtain ⟨e, heE, heXY⟩ := he
-  have hdel : (M ＼ e).E.encard < M.E.encard := by
+  have hdel : (M ＼ {e}).E.encard < M.E.encard := by
     refine IsStrictMinor.encard_ground_lt ?_
     exact deleteElem_isStrictMinor heE
-  have hcon : (M ／ e).E.encard < M.E.encard := by
+  have hcon : (M ／ {e}).E.encard < M.E.encard := by
     exact hdel
-  have t1 := TLT (M ／ e) hXY
-  have t2 := TLT (M ＼ e) hXY
+  have t1 := TLT (M ／ {e}) hXY
+  have t2 := TLT (M ＼ {e}) hXY
   -- connectivity of M / e and M \ e is less or equal than in M so we can say in the
   -- 2 inductive step cases that they are equal
 
-  have minor_delConnBetween: (M ＼ e).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ＼ e).coe_connBetween X Y hXY]
-    simp only [deleteElem]
+  have minor_delConnBetween: (M ＼ {e}).connBetween X Y ≤ M.connBetween X Y := by
+    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ＼ {e}).coe_connBetween X Y hXY]
+    --simp only [deleteElem]
     apply M.eConnBetween_delete_le X Y {e}
 
-  have minor_contrConnBetween: (M ／ e).connBetween X Y ≤ M.connBetween X Y := by
-    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ／ e).coe_connBetween X Y hXY]
-    simp only [contractElem]
+  have minor_contrConnBetween: (M ／ {e}).connBetween X Y ≤ M.connBetween X Y := by
+    rw [← Nat.cast_le (α := ℕ∞), M.coe_connBetween X Y hXY, (M ／ {e}).coe_connBetween X Y hXY]
+    --simp only [contractElem]
     apply M.eConnBetween_contract_le X Y {e}
 
   have e_not_in_x: e ∉ X := by
@@ -128,56 +131,56 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
       exact heXY.right
 
   -- M / e and M \ e are minors of M
-  have del_minor_strict: (M ＼ e) <m M := deleteElem_isStrictMinor heE
-  have del_minor: (M ＼ e) ≤m M := IsStrictMinor.isMinor del_minor_strict
-  have contract_minor_strict:  (M ／ e) <m M := contractElem_isStrictMinor heE
-  have contract_minor: (M ／ e) ≤m M := IsStrictMinor.isMinor contract_minor_strict
+  have del_minor_strict: (M ＼ {e}) <m M := deleteElem_isStrictMinor heE
+  have del_minor: (M ＼ {e}) ≤m M := IsStrictMinor.isMinor del_minor_strict
+  have contract_minor_strict:  (M ／ {e}) <m M := contractElem_isStrictMinor heE
+  have contract_minor: (M ／ {e}) ≤m M := IsStrictMinor.isMinor contract_minor_strict
 
   -- N from t2 is a minor of M
-  have n_del_minor {N: Matroid α} (minor_m_del_e: N ≤m (M ＼ e)) : (N ≤m M) := by
+  have n_del_minor {N: Matroid α} (minor_m_del_e: N ≤m (M ＼ {e})) : (N ≤m M) := by
     apply IsMinor.trans minor_m_del_e del_minor
   -- N from t1 is a minor of M
-  have n_contract_minor {N: Matroid α} (minor_m_cont_e: N ≤m (M ／ e)) : (N ≤m M) := by
+  have n_contract_minor {N: Matroid α} (minor_m_cont_e: N ≤m (M ／ {e})) : (N ≤m M) := by
     apply IsMinor.trans minor_m_cont_e contract_minor
 
   -- this can probably be avoided - it just made it easier to write the next part, but should change
-  have use_t2: ∃ N, (N ≤m (M ＼ e) ∧ N.E = X ∪ Y ∧ N.conn X = (M ＼ e).connBetween X Y) := by
+  have use_t2: ∃ N, (N ≤m (M ＼ {e}) ∧ N.E = X ∪ Y ∧ N.conn X = (M ＼ {e}).connBetween X Y) := by
     apply t2
-    simp only [deleteElem, delete_ground]
+    --simp only [deleteElem, delete_ground]
     exact subset_diff_singleton hXE e_not_in_x
-    simp only [deleteElem, delete_ground]
+    --simp only [deleteElem, delete_ground]
     exact subset_diff_singleton hYE e_not_in_y
 
-  have use_t1: ∃ N, (N ≤m (M ／ e) ∧ N.E = X ∪ Y ∧ N.conn X = (M ／ e).connBetween X Y) := by
+  have use_t1: ∃ N, (N ≤m (M ／ {e}) ∧ N.E = X ∪ Y ∧ N.conn X = (M ／ {e}).connBetween X Y) := by
     apply t1
-    simp only [contractElem, delete_ground]
+    --simp only [contractElem, delete_ground]
     exact subset_diff_singleton hXE e_not_in_x
-    simp only [contractElem, delete_ground]
+    --simp only [contractElem, delete_ground]
     exact subset_diff_singleton hYE e_not_in_y
 
   --The following two sorrys are the easy case by induction I recommend one of you does this 5 sorry
-  by_cases hde : M.connBetween X Y ≤ (M ＼ e).connBetween X Y
+  by_cases hde : M.connBetween X Y ≤ (M ＼ {e}).connBetween X Y
 
   obtain ⟨n, hN⟩ := use_t2 -- minor N
   obtain ⟨minor, groundset, connectivity⟩ := hN
-  have replace_minor_t2 : (n ≤m M ∧ n.E = X ∪ Y ∧ n.conn X = (M ＼ e).connBetween X Y) := by
+  have replace_minor_t2 : (n ≤m M ∧ n.E = X ∪ Y ∧ n.conn X = (M ＼ {e}).connBetween X Y) := by
     apply n_del_minor at minor
     exact ⟨minor, ⟨groundset, connectivity⟩⟩
 
-  have equal_connBetween: (M ＼ e).connBetween X Y = M.connBetween X Y := by
+  have equal_connBetween: (M ＼ {e}).connBetween X Y = M.connBetween X Y := by
     exact Nat.le_antisymm minor_delConnBetween hde
 
   rw [← equal_connBetween]
   · use n -- give minor n as minor of M satisfying conditions
 
-  by_cases hco : M.connBetween X Y ≤ (M ／ e).connBetween X Y
+  by_cases hco : M.connBetween X Y ≤ (M ／ {e}).connBetween X Y
   obtain ⟨n, hN⟩ := use_t1 -- minor N
   obtain ⟨minor, groundset, connectivity⟩ := hN
-  have replace_minor_t1 : (n ≤m M ∧ n.E = X ∪ Y ∧ n.conn X = (M ／ e).connBetween X Y) := by
+  have replace_minor_t1 : (n ≤m M ∧ n.E = X ∪ Y ∧ n.conn X = (M ／ {e}).connBetween X Y) := by
     apply n_contract_minor at minor
     exact ⟨minor, ⟨groundset, connectivity⟩⟩
 
-  have equal_connBetween: (M ／ e).connBetween X Y = M.connBetween X Y := by
+  have equal_connBetween: (M ／ {e}).connBetween X Y = M.connBetween X Y := by
     exact Nat.le_antisymm minor_contrConnBetween hco
 
   rw [← equal_connBetween]
@@ -200,16 +203,16 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     exact mem_union_right X heXY
 
   --Then you use the partition lemmas to get
-  have hpardel : ∃ P : (M ＼ e).Partition, P.SepOf X Y ∧
-  P.conn = (M ＼ e).connBetween X Y := by
+  have hpardel : ∃ P : (M ＼ {e}).Partition, P.SepOf X Y ∧
+  P.conn = (M ＼ {e}).connBetween X Y := by
 
-    have X_sub_mdel : X ⊆ (M ＼ e).E := by
-      rw [@deleteElem, @delete_ground]
+    have X_sub_mdel : X ⊆ (M ＼ {e}).E := by
+      --rw [@deleteElem, @delete_ground]
       refine subset_diff_singleton hXE ?_
       exact he_not_in_X
 
-    have Y_sub_mdel : Y ⊆ (M ＼ e).E := by
-      rw [@deleteElem, @delete_ground]
+    have Y_sub_mdel : Y ⊆ (M ＼ {e}).E := by
+      --rw [@deleteElem, @delete_ground]
       refine subset_diff_singleton hYE ?_
       exact he_not_in_Y
 
@@ -218,16 +221,16 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
 --  contraction
 -- have hparcon : ∃ P : M.Partition, P.SepOf X (insert e Y) ∧ P.conn = (M ／ e).connBetween X Y := by
-  have hparcon : ∃ P : (M ／ e).Partition, P.SepOf X Y ∧
-  P.conn = (M ／ e).connBetween X Y := by
+  have hparcon : ∃ P : (M ／ {e}).Partition, P.SepOf X Y ∧
+  P.conn = (M ／ {e}).connBetween X Y := by
 
-    have X_sub_mdel : X ⊆ (M ／ e).E := by
-      rw [@contractElem, @contract_ground]
+    have X_sub_mdel : X ⊆ (M ／ {e}).E := by
+     -- rw [@contractElem, @contract_ground]
       refine subset_diff_singleton hXE ?_
       exact he_not_in_X
 
-    have Y_sub_mdel : Y ⊆ (M ／ e).E := by
-      rw [@contractElem, @contract_ground]
+    have Y_sub_mdel : Y ⊆ (M ／ {e}).E := by
+      --rw [@contractElem, @contract_ground]
       refine subset_diff_singleton hYE ?_
       exact he_not_in_Y
 
@@ -245,13 +248,13 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
 --Use the tactic obtain and the previous two haves to obtain the sets S and T
 
-  have hS : ∃ S ⊆ M.E \ (insert e Y), X ⊆ S ∧ (M ＼ e).conn S ≤ M.connBetween X Y - 1 := by
+  have hS : ∃ S ⊆ M.E \ (insert e Y), X ⊆ S ∧ (M ＼ {e}).conn S ≤ M.connBetween X Y - 1 := by
     have hSY : Pdel.1 ⊆ M.E \ (insert e Y) := by
       rw [@subset_diff]
       apply And.intro
-      have hPdel_sub : Pdel.left ⊆ (M ＼ e).E := Partition.left_subset_ground Pdel
-      have hMeSub : (M ＼ e).E ⊆ M.E := by
-        rw [@deleteElem, @delete_ground]
+      have hPdel_sub : Pdel.left ⊆ (M ＼ {e}).E := Partition.left_subset_ground Pdel
+      have hMeSub : (M ＼ {e}).E ⊆ M.E := by
+        --rw [@deleteElem, @delete_ground]
         exact diff_subset
       exact fun ⦃a⦄ a_1 ↦ hMeSub (hPdel_sub a_1)
       refine disjoint_insert_right.mpr ?_
@@ -266,24 +269,24 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
     have hSX : X ⊆ Pdel.left := hPdel.subset_left
 
-    have h_Pdel_left_conn : Pdel.conn = (M ＼ e).conn Pdel.1 := by
-      have h_Pdel_left_eConn : Pdel.eConn = (M ＼ e).eConn Pdel.1 := Partition.eConn_eq_left Pdel
+    have h_Pdel_left_conn : Pdel.conn = (M ＼ {e}).conn Pdel.1 := by
+      have h_Pdel_left_eConn : Pdel.eConn = (M ＼ {e}).eConn Pdel.1 := Partition.eConn_eq_left Pdel
       rw [Partition.conn, conn]
       exact congrArg ENat.toNat h_Pdel_left_eConn
 
-    have hSconn : (M ＼ e).conn Pdel.left ≤ M.connBetween X Y - 1 := by
+    have hSconn : (M ＼ {e}).conn Pdel.left ≤ M.connBetween X Y - 1 := by
       refine Nat.le_sub_one_of_lt ?_
       rw [← h_Pdel_left_conn, hPdel_conn]
       exact hde
     exact ⟨Pdel.left, hSY, hSX, hSconn⟩
 
-  have hT : ∃ T ⊆ M.E \ (insert e Y), X ⊆ T ∧ (M ／ e).conn T ≤ M.connBetween X Y - 1 := by
+  have hT : ∃ T ⊆ M.E \ (insert e Y), X ⊆ T ∧ (M ／ {e}).conn T ≤ M.connBetween X Y - 1 := by
     have hTY : Pcon.left ⊆ M.E \ (insert e Y) := by
       rw [@subset_diff]
       apply And.intro
-      have hPcon_sub : Pcon.left ⊆ (M ／ e).E := Partition.left_subset_ground Pcon
-      have hMeSub : (M ／ e).E ⊆ M.E := by
-        rw [@contractElem, @contract_ground]
+      have hPcon_sub : Pcon.left ⊆ (M ／ {e}).E := Partition.left_subset_ground Pcon
+      have hMeSub : (M ／ {e}).E ⊆ M.E := by
+        --rw [@contractElem, @contract_ground]
         exact diff_subset
       exact fun ⦃a⦄ a_1 ↦ hMeSub (hPcon_sub a_1)
       refine disjoint_insert_right.mpr ?_
@@ -297,13 +300,13 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
 
     have hTX : X ⊆ Pcon.left := hPcon.subset_left
 
-    have h_Pcon_left_conn : Pcon.conn = (M ／ e).conn Pcon.1 := by
-      have h_Pcon_left_eConn : Pcon.eConn = (M ／ e).eConn Pcon.1 := by
+    have h_Pcon_left_conn : Pcon.conn = (M ／ {e}).conn Pcon.1 := by
+      have h_Pcon_left_eConn : Pcon.eConn = (M ／ {e}).eConn Pcon.1 := by
         exact Partition.eConn_eq_left Pcon
       rw [Partition.conn, conn]
       exact congrArg ENat.toNat h_Pcon_left_eConn
 
-    have hTconn : (M ／ e).conn Pcon.left ≤ M.connBetween X Y - 1 := by
+    have hTconn : (M ／ {e}).conn Pcon.left ≤ M.connBetween X Y - 1 := by
       refine Nat.le_sub_one_of_lt ?_
       rw [← h_Pcon_left_conn, hPcon_conn]
       exact hco
@@ -331,7 +334,8 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
   --have hend : M.connBetween X Y ≤ M.connBetween X Y - 1 := by sorry
 
   --sorry
-  have h_ST : M.conn (S ∩ T) + M.conn (insert e (S ∪ T)) ≤ 1 + (M ＼ e).conn S + (M ／ e).conn T := by
+  have h_ST : M.conn (S ∩ T) + M.conn (insert e (S ∪ T))
+      ≤ 1 + (M ＼ {e}).conn S + (M ／ {e}).conn T := by
     have he_not_in_S : e ∉ S := by
       contrapose! hSY
       refine not_subset.mpr ?_
