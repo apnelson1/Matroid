@@ -251,6 +251,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     (hr : M₂.rank < M₁.rank) (hf : f ∉ M₂.E) :
     ∃ M, M.IsNonloop f ∧ ¬ M.IsColoop f ∧ M ＼ {f} = M₁ ∧ M₂ ≤q M ／ {f} := by
   --have hfin : M₁.RankFinite
+  classical
   have hfin : M₂.RankFinite := hQ.rankFinite
   obtain ⟨k, hkpos, hrank⟩ := exists_pos_add_of_lt hr
   use extendBy M₁ f (Quotient.modularCut_of_k hQ)
@@ -326,21 +327,28 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
           by_contra! hcontra
           have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
+            have hFE : F ⊆ M₁.E := hF1.subset_ground
             have he : ∃ e, e ∈ M₁.E \ F := by
+                --sorry
               by_contra! hnot
-              simp only [mem_diff, s]
-
-              have hFE : F ⊆ M₁.E := hF1.subset_ground
               have hEF : M₁.E = F := by
                 refine ext ?_
                 intro c
                 refine⟨ ?_ , (fun a ↦ hFE a)⟩
                 intro hs
                 by_contra hcg
-                exact (hnot c)
-                --exact hnot c (mem_diff_of_mem hs hcg)
-              aesop
-            obtain ⟨e, he ⟩ := he
+                exact (hnot c) (mem_diff_of_mem hs hcg)
+              rw [hEF] at hcontra
+              exact hcontra rfl
+
+
+            sorry
+          sorry
+        sorry
+
+
+            --   aesop
+            -- obtain ⟨e, he ⟩ := he
             -- use M₁.closure (insert e F)
             -- exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
               --rw [hEF ] at hdis
@@ -365,55 +373,55 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     · sorry
 
 
-    have hFex: F ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by
-      rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
-      exact hF1.subset_ground
+    --have hFex: F ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by sorry
+      --rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+      --exact hF1.subset_ground
     --apply (isFlat_iff_subset_closure_self (hFex)).2
-    rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
-    apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
-    intro e heN
-    have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F ⊆
-        (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F) :=
-      Matroid.closure_subset_closure (M₁.extendBy f hQ.modularCut_of_k ／ {f}) (subset_insert e F)
-    by_contra hcontra
-    --simp only [contract_closure_eq, union_singleton] at hcontra
-    --simp only [contract_closure_eq, union_singleton] at hsub
-    have hcontra1 :(M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F
-        = (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F):= by
-      by_contra hc
-      exact hcontra (ssubset_iff_subset_ne.2 (And.symm ⟨hc, hsub⟩))
-    have hrnk : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk  F =
-        (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
-      rw [←rk_closure_eq] --, hcontra1 ]
-      nth_rewrite 2 [←rk_closure_eq]
-      exact congrArg (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk hcontra1
-    have hcon1 : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk F
-        < (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
-        zify
-        have : (M₁.extendBy f hQ.modularCut_of_k).RankFinite := by sorry
-        rw [contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k),
-        contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k) ]
-        simp only [union_singleton, sub_lt_sub_iff_right, Nat.cast_lt, gt_iff_lt]
-        have hfF : f ∉ F := fun a ↦ hf1 (hF1.subset_ground a)
-        have hfFe : f ∉ insert e F := by
-          have hef : f ≠ e := by aesop
-          aesop
-        have hXSU : M₁.closure F ∈ hQ.modularCut_of_k := by
-          rwa [isFlat_iff_closure_eq.mp hF1]
-        rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 (fun a ↦ hf1 (hF1.subset_ground a)) hXSU]
-        have h1 := (hQ.modularCut_of_k).rank_ge hf1 hfFe
-        have h2 : M₁.rk F < M₁.rk (insert e F) := by
-          have heFE : e ∈ M₁.E \ F := by
-            rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
-            at heN
-            exact heN
-          rw [hF1.rk_insert_eq_add_one (isRkFinite_set M₁ F) heFE  ]
-          exact lt_add_one (M₁.rk F)
-        linarith
-    rw [hrnk] at hcon1
-    simp only [lt_self_iff_false] at hcon1
-    rw [hQ.ground_eq]
-    exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
+    -- rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+    -- apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
+    -- intro e heN
+    -- have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F ⊆
+    --     (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F) :=
+    --   Matroid.closure_subset_closure (M₁.extendBy f hQ.modularCut_of_k ／ {f}) (subset_insert e F)
+    -- by_contra hcontra
+    -- --simp only [contract_closure_eq, union_singleton] at hcontra
+    -- --simp only [contract_closure_eq, union_singleton] at hsub
+    -- have hcontra1 :(M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F
+    --     = (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F):= by
+    --   by_contra hc
+    --   exact hcontra (ssubset_iff_subset_ne.2 (And.symm ⟨hc, hsub⟩))
+    -- have hrnk : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk  F =
+    --     (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
+    --   rw [←rk_closure_eq] --, hcontra1 ]
+    --   nth_rewrite 2 [←rk_closure_eq]
+    --   exact congrArg (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk hcontra1
+    -- have hcon1 : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk F
+    --     < (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
+    --     zify
+    --     have : (M₁.extendBy f hQ.modularCut_of_k).RankFinite := by sorry
+    --     rw [contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k),
+    --     contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k) ]
+    --     simp only [union_singleton, sub_lt_sub_iff_right, Nat.cast_lt, gt_iff_lt]
+    --     have hfF : f ∉ F := fun a ↦ hf1 (hF1.subset_ground a)
+    --     have hfFe : f ∉ insert e F := by
+    --       have hef : f ≠ e := by aesop
+    --       aesop
+    --     have hXSU : M₁.closure F ∈ hQ.modularCut_of_k := by
+    --       rwa [isFlat_iff_closure_eq.mp hF1]
+    --     rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 (fun a ↦ hf1 (hF1.subset_ground a)) hXSU]
+    --     have h1 := (hQ.modularCut_of_k).rank_ge hf1 hfFe
+    --     have h2 : M₁.rk F < M₁.rk (insert e F) := by
+    --       have heFE : e ∈ M₁.E \ F := by
+    --         rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+    --         at heN
+    --         exact heN
+    --       rw [hF1.rk_insert_eq_add_one (isRkFinite_set M₁ F) heFE  ]
+    --       exact lt_add_one (M₁.rk F)
+    --     linarith
+    -- rw [hrnk] at hcon1
+    -- simp only [lt_self_iff_false] at hcon1
+    -- rw [hQ.ground_eq]
+    -- exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
 
 
 
@@ -424,42 +432,42 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 
 
 
-theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [RankFinite M₁] (hQ : M₂ ≤q M₁)
-    (hr : M₂.rank + X.card = M₁.rank) (hX₁ : Disjoint (X : Set α) M₁.E) :
-    ∃ (N : Matroid α), (X : Set α) ⊆ N.E ∧ N ＼ (X : Set α) = M₁ ∧ N ／ (X : Set α) = M₂ := by
-  classical
-  have hM₂fin := hQ.rankFinite
+-- theorem Quotient.of_foo_many {M₁ M₂ : Matroid α} {X : Finset α} [RankFinite M₁] (hQ : M₂ ≤q M₁)
+--     (hr : M₂.rank + X.card = M₁.rank) (hX₁ : Disjoint (X : Set α) M₁.E) :
+--     ∃ (N : Matroid α), (X : Set α) ⊆ N.E ∧ N ＼ (X : Set α) = M₁ ∧ N ／ (X : Set α) = M₂ := by
+--   classical
+--   have hM₂fin := hQ.rankFinite
 
-  induction' X using Finset.induction with e Y heY IH generalizing M₁
-  · obtain ⟨B, hB⟩ := M₂.exists_isBase_finset
-    have hB₁ : M₁.IsBase B := by simpa [← hr, hB.finset_card]
-      using (hQ.weakLE.indep_of_indep hB.indep).isBase_of_card
-    simp [hQ.eq_of_isBase_indep hB₁ hB.indep]
+--   induction' X using Finset.induction with e Y heY IH generalizing M₁
+--   · obtain ⟨B, hB⟩ := M₂.exists_isBase_finset
+--     have hB₁ : M₁.IsBase B := by simpa [← hr, hB.finset_card]
+--       using (hQ.weakLE.indep_of_indep hB.indep).isBase_of_card
+--     simp [hQ.eq_of_isBase_indep hB₁ hB.indep]
 
-  rw [Finset.card_insert_of_not_mem heY] at hr
-  obtain ⟨-, heM₂⟩ : Disjoint (↑Y) M₂.E ∧ e ∉ M₂.E := by
-    simpa only [Finset.coe_insert, ← union_singleton, ← hQ.ground_eq, disjoint_union_left,
-      disjoint_singleton_left] using hX₁
+--   rw [Finset.card_insert_of_not_mem heY] at hr
+--   obtain ⟨-, heM₂⟩ : Disjoint (↑Y) M₂.E ∧ e ∉ M₂.E := by
+--     simpa only [Finset.coe_insert, ← union_singleton, ← hQ.ground_eq, disjoint_union_left,
+--       disjoint_singleton_left] using hX₁
 
-  obtain ⟨M, henl, hecl, rfl, hQ'⟩ :=
-    hQ.exists_extension_quotient_contract_of_rank_lt (by linarith) heM₂
+--   obtain ⟨M, henl, hecl, rfl, hQ'⟩ :=
+--     hQ.exists_extension_quotient_contract_of_rank_lt (by linarith) heM₂
 
-  have hfin' : M.RankFinite
-  · rwa [rankFinite_iff, ← lt_top_iff_ne_top, ← delete_elem_eRank_eq hecl, lt_top_iff_ne_top,
-      ← rankFinite_iff]
+--   have hfin' : M.RankFinite
+--   · rwa [rankFinite_iff, ← lt_top_iff_ne_top, ← delete_elem_eRank_eq hecl, lt_top_iff_ne_top,
+--       ← rankFinite_iff]
 
-  have hre : (M ／ e).rank + 1 = (M ＼ e).rank
-  · rw [henl.contract_rank_add_one_eq, M.delete_elem_rank_eq hecl]
+--   have hre : (M ／ e).rank + 1 = (M ＼ e).rank
+--   · rw [henl.contract_rank_add_one_eq, M.delete_elem_rank_eq hecl]
 
-  obtain ⟨N, hNss, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
-  obtain ⟨P, rfl, rfl⟩ := exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
-  use P
-  simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
-    delete_delete, deleteElem, true_and]
-  rw [union_comm, ← contract_contract, ← contractElem, and_iff_left rfl]
-  rw [contractElem, contract_ground, subset_diff] at hNss
+--   obtain ⟨N, hNss, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
+--   obtain ⟨P, rfl, rfl⟩ := exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
+--   use P
+--   simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
+--     delete_delete, deleteElem, true_and]
+--   rw [union_comm, ← contract_contract, ← contractElem, and_iff_left rfl]
+--   rw [contractElem, contract_ground, subset_diff] at hNss
 
-  exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
+--   exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
 
 
 theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂] (h : M₁ ≤q M₂) :
