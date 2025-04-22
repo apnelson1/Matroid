@@ -321,8 +321,30 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       have hsne : s.Nonempty := ⟨F₀, hQ.isFlat_of_isFlat hF₀, hF₀bad⟩
       obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
       simp only [mem_setOf_eq, and_imp, s] at hmax hFs
+      have hF1 : M₁.IsFlat F := hFs.1
+      have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
+        have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+          by_contra! hcontra
+          have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
+            have he : ∃ e, e ∈ M₁.E \ F := by
+              by_contra! hnot
+              simp only [mem_diff, s]
 
-
+              have hFE : F ⊆ M₁.E := hF1.subset_ground
+              have hEF : M₁.E = F := by
+                refine ext ?_
+                intro c
+                refine⟨ ?_ , (fun a ↦ hFE a)⟩
+                intro hs
+                by_contra hcg
+                exact (hnot c)
+                --exact hnot c (mem_diff_of_mem hs hcg)
+              aesop
+            obtain ⟨e, he ⟩ := he
+            -- use M₁.closure (insert e F)
+            -- exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
+              --rw [hEF ] at hdis
+            --  lt_of_le_of_ne (nDiscrepancy_le_of_subset hQ (((M₁.isFlat_iff F).1 hF1).2 ))
 
 
 
