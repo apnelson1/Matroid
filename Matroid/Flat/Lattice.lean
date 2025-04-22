@@ -409,6 +409,11 @@ lemma IsFlat.exists_left_covBy_of_ssubset (hF₀ : M.IsFlat F₀) (hF₁ : M.IsF
   exact ⟨_, hF₀.covBy_closure_insert he.2 (hF₁.subset_ground he.1),
     hF₁.closure_subset_of_subset <| insert_subset he.1 hss.subset⟩
 
+lemma IsFlat.exists_covby_of_ne_ground (hF : M.IsFlat F) (hne : F ≠ M.E) : ∃ F', F ⋖[M] F' := by
+  obtain ⟨F', hF', -⟩ :=
+    hF.exists_left_covBy_of_ssubset M.ground_isFlat (hF.subset_ground.ssubset_of_ne hne)
+  exact ⟨F', hF'⟩
+
 lemma IsFlat.exists_covBy_right_of_ssubset (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F₁) (hss : F₀ ⊂ F₁) :
     ∃ F, (F₀ ⊆ F ∧ (F ⋖[M] F₁)) := by
   obtain ⟨I, J, hI, hJ, hIJ⟩ := M.exists_isBasis_subset_isBasis hss.subset

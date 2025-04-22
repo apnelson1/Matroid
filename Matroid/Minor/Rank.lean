@@ -481,6 +481,13 @@ lemma delete_rank_le (M : Matroid α) [M.RankFinite] (D : Set α) : (M ＼ D).ra
   rw [rank_def, rank_def, delete_rk_eq']
   exact M.rk_mono (diff_subset.trans diff_subset)
 
+lemma delete_eRank_add_eRk_ge_eRank (M : Matroid α) (D : Set α) :
+    M.eRank ≤ (M ＼ D).eRank + M.eRk D := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  rw [← eRk_ground, ← eRk_ground, delete_eRk_eq _ (by simpa using disjoint_sdiff_left),
+    delete_ground]
+  exact le_trans (by simp) <| M.eRk_union_le_eRk_add_eRk (M.E \ D) D
+
 lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M ＼ D).rank + M.rk D := by
   obtain h | h := M.rankFinite_or_rankInfinite
   · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]

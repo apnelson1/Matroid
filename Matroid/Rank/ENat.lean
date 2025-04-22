@@ -260,20 +260,13 @@ lemma IsBase.encard_compl_eq (hB : M.IsBase B) : (M.E \ B).encard = M✶.eRank :
 lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
   obtain ⟨I, hI⟩ := M✶.exists_isBasis X
-  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_isBase_superset
-  obtain rfl : I = X ∩ B :=
-    hI.eq_of_subset_indep (hB.indep.inter_left X) (subset_inter hI.subset hIB) inter_subset_left
-  rw [inter_comm] at hI
-  have hIdual : M.IsBasis (M.E \ B ∩ (M.E \ X)) (M.E \ X) :=
-    by simpa using hB.inter_isBasis_iff_compl_inter_isBasis_dual.1 hI
-  rw [← hIdual.encard_eq_eRk, ← hI.encard_eq_eRk, ← hB.compl_isBase_of_dual.encard_eq_eRank,
-    ← encard_union_eq, ← encard_union_eq]
-  · convert rfl using 2
-    ext x
-    simp only [mem_union, mem_inter_iff, mem_diff]
-    tauto
-  · exact disjoint_sdiff_left.mono_left inter_subset_right
-  exact disjoint_sdiff_right.mono_left inter_subset_left
+  obtain ⟨B, hB, rfl⟩ := hI.exists_isBasis_inter_eq_of_superset hX
+  have hB' : M✶.IsBase B := isBasis_ground_iff.1 hB
+  have hd : M.IsBasis (M.E \ B ∩ (M.E \ X)) (M.E \ X) := by
+    simpa using hB'.inter_isBasis_iff_compl_inter_isBasis_dual.1 hI
+  rw [← hB'.compl_isBase_of_dual.encard_eq_eRank, hI.eRk_eq_encard, hd.eRk_eq_encard,
+    ← encard_union_eq (by tauto_set), ← encard_union_eq (by tauto_set)]
+  exact congr_arg _ (by tauto_set)
 
 lemma dual_eRk_add_eRank' (M : Matroid α) (X : Set α) :
     M✶.eRk X + M.eRank = M.eRk (M.E \ X) + (X ∩ M.E).encard := by

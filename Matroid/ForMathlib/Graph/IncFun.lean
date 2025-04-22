@@ -47,6 +47,14 @@ lemma subsingleton_setOf_inc₂ (G : Graph α β) (e : β) (x : α) :
 lemma endSet_finite (G : Graph α β) (e : β) : (G.endSet e).Finite :=
   finite_of_encard_le_coe <| G.endSet_encard_le e
 
+/-- The 'incidence function' of a graph `G`. If `e : β` and `x : α`,
+then `G.incFun e x` is equal to `0` if `e` is not incident to `x`,
+`1` if `e` is a nonloop edge at `x` and `2` if `e` is a loop edge at `x`.
+It is defined this way so that `G.incFun e` sums to two for each `e ∈ G.E`,
+which is natural for the handshake theorem and linear algebra on graphs.
+
+The definition is contrivedly written in terms of `ncard` so it
+does not require any explicit decidability assumptions. -/
 noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
   support := (G.endSet_finite e).toFinset
   toFun x := {y | G.Inc₂ e x y}.ncard + ({y | G.Inc₂ e x y} ∩ {x}).ncard
@@ -54,6 +62,10 @@ noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
     obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
     · simp [hy.inc₂_iff_eq]
     simp [hx, inc₂_iff_inc]
+
+lemma Inc₂.incFun_support_eq [DecidableEq α] (h : G.Inc₂ e x y) :
+    (G.incFun e).support = {x,y} := by
+  simp [incFun, h.endSet_eq]
 
 @[simp] lemma _root_.Set.singleton_inter_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
      {x} ∩ s = if x ∈ s then {x} else ∅ := by
@@ -101,8 +113,6 @@ lemma incFun_eq_two_iff : G.incFun e x = 2 ↔ G.IsLoopAt e x := by
 lemma IsLoopAt.incFun_eq_two (h : G.IsLoopAt e x) : G.incFun e x = 2 :=
   incFun_eq_two_iff.2 h
 
-
-
 @[simp]
 lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ G.E := by
   refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_not_mem⟩
@@ -113,32 +123,13 @@ lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ G.E := by
   have := h ▸ hx.incFun_eq_one
   simp at this
 
-
-lemma IsLoopAt.incFun_eq (h : G.IsLoopAt e x) : G.incFun e x = 2 := by
-  simp only [incFun, Finsupp.coe_mk]
-  rw [ncard_eq_one.2, ncard_eq_one.2]
-  · exact ⟨x, by simpa⟩
-  refine ⟨x, ?_⟩
-  simp only [eq_singleton_iff_unique_mem, mem_setOf_eq, inc₂_self_iff, h, true_and]
-  exact fun y hxy ↦ (h.eq_of_inc hxy.inc_right).symm
-
-lemma IsNonloopAt.incFun_eq (h : G.IsNonloopAt e x) : G.incFun e x = 1 := by
-  simp only [incFun, Finsupp.coe_mk]
-  rw [ncard_eq_one.2,
-    (ncard_eq_zero ((G.subsingleton_setOf_inc₂ ..).finite.subset inter_subset_left)).2]
-  · simp [h.not_isLoopAt]
-  obtain ⟨h, y, hne, hxy⟩ := h
-  refine ⟨y, ?_⟩
-  simp only [Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
-  exact fun z ↦ ⟨fun hxz ↦ hxz.eq_of_inc₂ hxy, fun hzx ↦ hzx ▸ hxy⟩
-
-
 lemma sum_incFun_eq_two (he : e ∈ G.E) : (G.incFun e).sum (fun _ x ↦ x) = 2 := by
-  simp only [Finsupp.sum, incFun, Finsupp.coe_mk]
+  classical
   obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet he
   obtain rfl | hne := eq_or_ne x y
-  · sorry
-  sorry
+  · simp [Finsupp.sum, hxy.incFun_support_eq, hxy.inc₂_iff_eq, show G.IsLoopAt e x from hxy]
+  simp [Finsupp.sum, hxy.incFun_support_eq, Finset.sum_pair hne,
+    (hxy.isNonloopAt_of_ne hne).incFun_eq_one, (hxy.isNonloopAt_right_of_ne hne).incFun_eq_one]
 
 
 end Graph

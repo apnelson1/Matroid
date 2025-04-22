@@ -232,11 +232,23 @@ lemma Inc.isLoopAt_or_isNonloopAt (h : G.Inc e x) : G.IsLoopAt e x ∨ G.IsNonlo
   · exact .inl hy
   exact .inr ⟨hy.inc_left, y, hne.symm, hy⟩
 
+lemma Inc.isLoopAt_or_inc₂_ne (h : G.Inc e x) : G.IsLoopAt e x ∨ ∃ y ≠ x, G.Inc₂ e x y := by
+  obtain ⟨y, hy⟩ := h
+  obtain rfl | hne := eq_or_ne x y
+  · exact .inl hy
+  exact .inr ⟨y, hne.symm, hy⟩
+
 lemma Inc₂.isNonloopAt_iff_ne (h : G.Inc₂ e x y) : G.IsNonloopAt e x ↔ x ≠ y := by
   obtain rfl | hne := eq_or_ne x y
   · exact iff_of_false (IsLoopAt.not_isNonloop_at h x) <| by simp
   rw [isNonloopAt_iff]
   exact iff_of_true ⟨h.inc_left, ⟨y, hne.symm, h⟩⟩ hne
+
+lemma Inc₂.isNonloopAt_of_ne (h : G.Inc₂ e x y) (hxy : x ≠ y) : G.IsNonloopAt e x :=
+  h.isNonloopAt_iff_ne.2 hxy
+
+lemma Inc₂.isNonloopAt_right_of_ne (h : G.Inc₂ e x y) (hxy : x ≠ y) : G.IsNonloopAt e y :=
+  h.symm.isNonloopAt_iff_ne.2 hxy.symm
 
 lemma exists_isLoopAt_or_inc₂_of_mem_edgeSet (h : e ∈ G.E) :
     (∃ x, G.IsLoopAt e x) ∨ ∃ x y, G.Inc₂ e x y ∧ x ≠ y := by

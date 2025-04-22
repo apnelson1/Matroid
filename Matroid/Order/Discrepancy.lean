@@ -242,6 +242,10 @@ lemma discrepancy_ne_top [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) : 
   rw [htop] at hdis
   simp [eq_comm, eRk_eq_top_iff, M₁.isRkFinite_set X] at hdis
 
+@[simp]
+lemma discrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.discrepancy ∅ = 0 := by
+  simpa using hQ.eRk_left_add_discrepancy_eq ∅
+
 noncomputable abbrev nDiscrepancy (hQ : M₂ ≤q M₁) (X : Set α) : ℕ := (hQ.discrepancy X).toNat
 
 lemma rk_left_add_nDiscrepancy_eq [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) :
@@ -286,13 +290,14 @@ def foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
   simp only [contract_rank_cast_int_eq] at h_eq
   linarith [hQ.intCast_rank_sub_rank_eq_nDiscrepancy, hQ.intCast_rk_sub_rk_eq_nDiscrepancy X]
 
-lemma nDiscrepancy_empty [M₁.RankFinite] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy ∅ = 0 := by
-  zify
-  rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ ∅ ]
-  simp only [rk_empty, CharP.cast_eq_zero, sub_self]
+@[simp]
+lemma nDiscrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy ∅ = 0 := by
+  simp [nDiscrepancy]
+
+
 
 lemma nDiscrepancy_covers {F : Set α} (hF : M₁.IsFlat F) (hQ : M₂ ≤q M₁)
-(hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E): ∃ F₁, (F ⋖[M₁] F₁) := by
+(hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E) : ∃ F₁, (F ⋖[M₁] F₁) := by
   have he : ∃ e, e ∈ M₁.E \ F := by
     by_contra! hnot
     have hFE : F ⊆ M₁.E := hF.subset_ground

@@ -771,6 +771,11 @@ lemma ModularCut.extendBy_deleteElem (U : M.ModularCut) (he : e ∉ M.E) :
   obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
   simp [extIndep_iff_of_not_mem heI, heI]
 
+lemma ModularCut.extendBy_deleteElem' (U : M.ModularCut) : (M.extendBy e U) ＼ {e} = M ＼ {e} := by
+  refine ext_indep (by simp) fun I hI ↦ ?_
+  obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
+  simp [extIndep_iff_of_not_mem heI, heI]
+
 lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extendBy e) := by
   refine fun U U' h_eq ↦ SetLike.coe_set_eq.1 (Set.ext fun F ↦ ?_)
   obtain (hF | hF) := em' (M.IsFlat F)
@@ -824,6 +829,25 @@ lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) 
   rw [delete_closure_eq, insert_diff_singleton]
   rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
   exact .inr hXSU
+
+
+/-- Move to `closure` -/
+lemma Spanning.rankFinite_of_finite {S : Set α} (hS : M.Spanning S) (hSfin : S.Finite) :
+    M.RankFinite := by
+  obtain ⟨B, hB⟩ := hS.exists_isBase_subset
+  refine hB.1.rankFinite_of_finite <| hSfin.subset hB.2
+
+/-- Move to `minor`-/
+lemma RankFinite.ofDelete {D : Set α} (hD : M.IsRkFinite D) (hfin : (M ＼ D).RankFinite) :
+    M.RankFinite := by
+  rw [rankFinite_iff_eRank_ne_top, ← lt_top_iff_ne_top]
+  refine (M.delete_eRank_add_eRk_ge_eRank D).trans_lt ?_
+  simp [ENat.add_lt_top, eRk_lt_top_iff, hD, eRank_lt_top]
+
+instance (U : M.ModularCut) (e : α) [M.RankFinite] : (M.extendBy e U).RankFinite := by
+  refine RankFinite.ofDelete (D := {e}) isRkFinite_singleton ?_
+  rw [ModularCut.extendBy_deleteElem']
+  exact delete_rankFinite
 
 end extensions
 

@@ -290,4 +290,15 @@ lemma ext_rk {M N : Matroid α} [RankFinite M] [RankFinite N] (hE : M.E = N.E)
 lemma exists_of_rank_eq_zero [RankFinite M] (h : M.rank = 0) : ∃ E, M = loopyOn E :=
   ⟨M.E, rank_eq_zero_iff.1 h⟩
 
+@[simp]
+lemma range_rk_bddAbove (M : Matroid α) [RankFinite M] : BddAbove (range M.rk) :=
+  ⟨M.rank, by simp [upperBounds, M.rk_le_rank]⟩
+
+@[simp]
+lemma range_rk_finite (M : Matroid α) [RankFinite M] : (range M.rk).Finite :=
+   M.range_rk_bddAbove.finite
+
+
+
+
 end Rank
