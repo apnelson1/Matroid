@@ -1,5 +1,6 @@
 import Matroid.ForMathlib.Graph.Basic
 import Mathlib.Data.Set.Insert
+import Mathlib.Data.Finset.Dedup
 
 open Set Function List Nat
 
@@ -50,9 +51,18 @@ def edge : Walk α β → List β
 
 def edgeSet : Walk α β → Set β := fun w => {e | e ∈ w.edge}
 
+/-- Change this to `length w.edge`-/
 def length : Walk α β → ℕ
 | nil _ => 0
 | cons _ _ w => w.length + 1
+
+@[simp]
+lemma length_edge (w : Walk α β) : w.edge.length = w.length := by
+  induction w with simp_all [length, edge]
+
+@[simp]
+lemma length_vx (w : Walk α β) : w.vx.length = w.length + 1 := by
+  induction w with simp_all [length, vx]
 
 def ValidIn (w : Walk α β) (G : Graph α β) : Prop :=
   match w with
@@ -102,16 +112,9 @@ structure IsPathFrom (G : Graph α β) (S T : Set α) (W : Walk α β) : Prop ex
   G.IsPath W, G.IsWalkFrom S T W
 
 
--- def IsClosed (W : Walk α β) : Prop := W.first = W.last
 
-@[mk_iff]
-structure IsCycle (G : Graph α β) (W : Walk α β) : Prop where
-  validIn : W.ValidIn G
-  nodup' : W.vx.dropLast.Nodup
-  closed : W.first = W.last
 
-@[simp] lemma isCycle_simp (hVd : w.ValidIn G) (hnodup : w.vx.dropLast.Nodup)
-    (hclosed : w.first = w.last) : G.IsCycle w := IsCycle.mk hVd hnodup hclosed
+
 
 
 /- Properties between IsWalkFrom, IsTrail, IsPath, IsTrailFrom, IsPathFrom -/
@@ -156,8 +159,6 @@ lemma Walk.ValidIn.isPath (hVd : w.ValidIn G) (hvx : w.vx.Nodup) : G.IsPath w :=
 lemma Walk.ValidIn.isWalkFrom (hVd : w.ValidIn G) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
     G.IsWalkFrom S T w := ⟨hVd, hfirst, hlast⟩
 
-lemma Walk.ValidIn.isCycle (hVd : w.ValidIn G) (hvx : w.vx.dropLast.Nodup)
-    (hclosed : w.first = w.last) : G.IsCycle w := ⟨hVd, hvx, hclosed⟩
 
 lemma Walk.ValidIn.isTrailFrom (hVd : w.ValidIn G) (hedge : w.edge.Nodup) (hfirst : w.first ∈ S)
     (hlast : w.last ∈ T) : G.IsTrailFrom S T w := ⟨⟨hVd, hedge⟩, hfirst, hlast⟩
@@ -166,9 +167,6 @@ lemma Walk.ValidIn.isPathFrom (hVd : w.ValidIn G) (hvx : w.vx.Nodup) (hfirst : w
     (hlast : w.last ∈ T) : G.IsPathFrom S T w := ⟨⟨hVd, hvx⟩, hfirst, hlast⟩
 
 lemma IsTrail.isPath (hT : G.IsTrail w) (hvx : w.vx.Nodup) : G.IsPath w := ⟨hT.validIn, hvx⟩
-
-lemma IsTrail.isCycle (hT : G.IsTrail w) (hvx : w.vx.dropLast.Nodup) (hclosed : w.first = w.last) :
-    G.IsCycle w := ⟨hT.validIn, hvx, hclosed⟩
 
 lemma IsTrail.isTrailFrom (hT : G.IsTrail w) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
     G.IsTrailFrom S T w := ⟨hT, hfirst, hlast⟩
@@ -340,8 +338,18 @@ lemma IsPath.cons (h : G.IsPath (cons x e w)) : G.IsPath w := by
 
 namespace Walk
 
+
+@[simp]
+lemma vx_toFinset_toSet [DecidableEq α] (w : Walk α β) : (w.vx.toFinset : Set α) = w.vxSet := by
+  induction w with
+  | nil u => simp
+  | cons u e W ih =>
+  ext
+  simp [← ih]
+
 /- Properties between the basic properties of a walk -/
 
+@[simp]
 lemma vx_ne_nil : w.vx ≠ [] := by
   match w with
   | nil x => simp
@@ -371,6 +379,18 @@ lemma last_mem {w : Walk α β} : w.last ∈ w := by
 
 @[simp]
 lemma last_mem_vxSet : w.last ∈ w.vxSet := by simp
+
+@[ext]
+lemma ext_vx_edge {w₁ w₂ : Walk α β} (h_vx : w₁.vx = w₂.vx) (h_edge : w₁.edge = w₂.edge) :
+    w₁ = w₂ := by
+  match w₁ with
+  | nil u => cases w₂ with | nil v => simp_all | cons v f W => simp_all
+  | cons u e w₁ =>
+  match w₂ with
+  | nil u => simp_all
+  | cons v f w₂ =>
+  simp_all only [cons_vx, List.cons.injEq, cons_edge, cons.injEq, true_and]
+  exact ext_vx_edge h_vx.2 h_edge.2
 
 lemma last_eq_vx_getLast {w : Walk α β} : w.last = w.vx.getLast vx_ne_nil := by
   match w with
@@ -426,7 +446,10 @@ lemma Nonempty.not_iff : ¬ w.Nonempty ↔ ∃ x, w = nil x := by
   | cons x e w => simp only [Nonempty, not_true_eq_false, reduceCtorEq, exists_false]
 
 @[simp]
-lemma Nonempty.iff_length_pos : 0 < w.length ↔ w.Nonempty := by
+lemma length_pos_iff : 0 < w.length ↔ w.Nonempty := by
+  induction w with simp
+
+lemma length_ne_zero_iff : w.length ≠ 0 ↔ w.Nonempty := by
   induction w with simp
 
 lemma first_eq_last_of_not_nonempty (h : ¬ w.Nonempty) : w.first = w.last := by
@@ -447,14 +470,40 @@ lemma first_eq_last_iff (hnodup : w.vx.Nodup) : w.first = w.last ↔ ¬ w.Nonemp
 lemma first_ne_last_iff (hnodup : w.vx.Nodup) : w.first ≠ w.last ↔ w.Nonempty :=
   (first_eq_last_iff hnodup).not_left
 
+/-- A walk is `Nil` if it has just one vertex -/
+def Nil (W : Walk α β) : Prop := ¬ W.Nonempty
+
+@[simp] lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := Iff.rfl
+
+@[simp] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
+  rw [← not_nonempty_iff, not_not]
+
+@[simp]
+lemma length_eq_zero : w.length = 0 ↔ w.Nil := by
+  rw [← not_iff_not, ← Ne, length_ne_zero_iff, not_nil_iff]
+
+lemma nil_iff_eq_nil : Nil w ↔ ∃ x, w = nil x := by
+  induction w with simp [Nil]
+
+@[simp]
+lemma nil_nil (x : α) (β : Type*) : Nil (nil x (β := β)) := by
+  simp [Nil]
+
+@[simp]
+lemma not_nil_cons (w : Walk α β) (x) (e) : ¬ Nil (w.cons x e) := by
+  simp
+
+lemma Nil.eq_nil_of_mem (h : w.Nil) (hxw : x ∈ w) : w = nil x := by
+  induction w with simp_all
+
+lemma Nil.eq_nil_first (h : w.Nil) : w = nil w.first :=
+  h.eq_nil_of_mem <| by simp
+
+lemma Nil.eq_nil_last (h : w.Nil) : w = nil w.last :=
+  h.eq_nil_of_mem <| by simp
+
 end Walk
 open Walk
-
-lemma IsPath.not_isCycle (hP : G.IsPath w) (hnonempty : w.Nonempty) : ¬ G.IsCycle w := by
-  suffices heq : w.first ≠ w.last by
-    rintro ⟨hVd, hnodup, hclosed⟩
-    exact heq hclosed
-  rwa [first_ne_last_iff hP.nodup]
 
 def Inc₂.walk (_h : G.Inc₂ e u v) : Walk α β := cons u e (nil v)
 
@@ -502,6 +551,8 @@ lemma walk_isPath (h : G.Inc₂ e u v) (hne : u ≠ v) : G.IsPath h.walk :=
   ⟨h.walk_validIn, by simp [hne]⟩
 
 end Inc₂
+
+
 
 
 

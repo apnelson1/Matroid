@@ -121,6 +121,16 @@ lemma not_inc₂_of_not_mem_edgeSet (he : e ∉ G.E) (x y : α) : ¬ G.Inc₂ e 
   contrapose! he
   exact he.edge_mem
 
+lemma Inc₂.eq_and_eq_or_eq_and_eq_of_inc₂ {x' y' : α} (h : G.Inc₂ e x y) (h' : G.Inc₂ e x' y') :
+    (x = x' ∧ y = y') ∨ (x = y' ∧ y = x') := by
+  obtain rfl | rfl := h.left_eq_or_eq_of_inc₂ h'
+  · obtain rfl | rfl := h.symm.left_eq_or_eq_of_inc₂ h'
+    · obtain rfl | rfl := h'.symm.left_eq_or_eq_of_inc₂ h <;> simp
+    simp
+  obtain rfl | rfl := h.symm.left_eq_or_eq_of_inc₂ h'
+  · simp
+  obtain rfl | rfl := h'.left_eq_or_eq_of_inc₂ h <;> simp
+
 /-! ### Edge-vertex incidence -/
 
 /-- `G.Inc e x` means that `x` is one of the ends of `e`. -/

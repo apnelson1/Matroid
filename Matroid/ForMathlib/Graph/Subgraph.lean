@@ -2,21 +2,24 @@ import Matroid.ForMathlib.Graph.Walk.Defs
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
+open Set
+
 namespace Graph
 
 structure IsSubgraph (H G : Graph α β) : Prop where
   vx_subset : H.V ⊆ G.V
-  inc₂_of_inc₂ : ∀ e x y, H.Inc₂ e x y → G.Inc₂ e x y
+  inc₂_of_inc₂ : ∀ ⦃e x y⦄, H.Inc₂ e x y → G.Inc₂ e x y
 
 /-- The subgraph order -/
 instance : PartialOrder (Graph α β) where
   le := IsSubgraph
   le_refl _ := ⟨rfl.le, by simp⟩
-  le_trans _ _ _ h₁ h₂ := ⟨h₁.1.trans h₂.1, fun _ _ _ h ↦ h₂.2 _ _ _ (h₁.2 _ _ _ h)⟩
-  le_antisymm G H h₁ h₂ := Graph.ext (h₁.1.antisymm h₂.1) fun e x y ↦ ⟨h₁.2 e x y, h₂.2 e x y⟩
+  le_trans _ _ _ h₁ h₂ := ⟨h₁.1.trans h₂.1, fun _ _ _ h ↦ h₂.2 (h₁.2 h)⟩
+  le_antisymm G H h₁ h₂ := Graph.ext (h₁.1.antisymm h₂.1)
+    fun e x y ↦ ⟨fun a ↦ h₁.inc₂_of_inc₂ a, fun a ↦ h₂.inc₂_of_inc₂ a⟩
 
 lemma Inc₂.of_le (h : H.Inc₂ e x y) (hle : H ≤ G) : G.Inc₂ e x y :=
-  hle.2 _ _ _ h
+  hle.2 h
 
 lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
   (h.choose_spec.of_le hle).inc_left
@@ -31,6 +34,19 @@ lemma edgeSet_subset_of_le (h : H ≤ G) : H.E ⊆ G.E := by
   refine fun e he ↦ ?_
   obtain ⟨x, y, h'⟩ := exists_inc₂_of_mem_edgeSet he
   exact (h'.of_le h).edge_mem
+
+lemma le_iff : H ≤ G ↔ (H.V ⊆ G.V) ∧ ∀ ⦃e x y⦄, H.Inc₂ e x y → G.Inc₂ e x y :=
+  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+lemma Inc₂.of_le_of_mem (h : G.Inc₂ e x y) (hle : H ≤ G) (he : e ∈ H.E) : H.Inc₂ e x y := by
+  obtain ⟨u, v, huv⟩ := exists_inc₂_of_mem_edgeSet he
+  obtain ⟨rfl, rfl⟩ | ⟨rfl,rfl⟩ := (huv.of_le hle).eq_and_eq_or_eq_and_eq_of_inc₂ h
+  · assumption
+  exact huv.symm
+
+lemma inc₂_iff_inc₂_of_le_of_mem (hle : H ≤ G) (he : e ∈ H.E) :
+    G.Inc₂ e x y ↔ H.Inc₂ e x y :=
+  ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
 
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
 @[simps] def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
@@ -66,7 +82,6 @@ Edges between identified vertices become loops. -/
     rintro e - - ⟨x, y, h, rfl, rfl⟩
     exact Set.mem_image_of_mem _ h.vx_mem_left
 
-
 /-- The graph with vertex set `V` and no edges -/
 @[simps] def noEdgeGraph (V : Set α) (β : Type*) : Graph α β where
   V := V
@@ -77,37 +92,138 @@ Edges between identified vertices become loops. -/
   edge_mem_iff_exists_inc₂ := by simp
   vx_mem_left_of_inc₂ := by simp
 
-@[simps]
-protected def union (H G : Graph α β)
-    (h_inter : ∀ ⦃e x y⦄, e ∈ H.E → e ∈ G.E → (H.Inc₂ e x y ↔ G.Inc₂ e x y)) : Graph α β where
-  V := H.V ∪ G.V
-  E := H.E ∪ G.E
-  Inc₂ e x y := G.Inc₂ e x y ∨ H.Inc₂ e x y
+@[simp]
+lemma noEdgeGraph_le_iff {V : Set α} : noEdgeGraph V β ≤ G ↔ V ⊆ G.V := by
+  simp [le_iff]
+
+/-- A graph with a single edge `e` from `u` to `v` -/
+@[simps] def singleEdge (u v : α) (e : β) : Graph α β where
+  V := {u,v}
+  E := {e}
+  Inc₂ e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
+  inc₂_symm := by tauto
+  eq_or_eq_of_inc₂_of_inc₂ := by aesop
+  edge_mem_iff_exists_inc₂ := by tauto
+  vx_mem_left_of_inc₂ := by tauto
+
+@[simp] lemma singleEdge_le_iff : singleEdge u v e ≤ G ↔ G.Inc₂ e u v := by
+  simp only [le_iff, singleEdge_V, Set.pair_subset_iff, singleEdge_Inc₂, and_imp]
+  refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨⟨h.vx_mem_left, h.vx_mem_right⟩, ?_⟩⟩
+  rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+  · assumption
+  exact h.symm
+
+/-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
+def Compatible (G H : Graph α β) : Prop := ∀ ⦃e⦄, e ∈ G.E → e ∈ H.E → G.Inc₂ e = H.Inc₂ e
+
+lemma Compatible.symm (h : G.Compatible H) : H.Compatible G :=
+  fun _ hH hG ↦ (h hG hH).symm
+
+/-- Two subgraphs of the same graph are compatible. -/
+lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
+    H₁.Compatible H₂ := by
+  intro e he₁ he₂
+  ext x y
+  rw [← inc₂_iff_inc₂_of_le_of_mem h₁ he₁, ← inc₂_iff_inc₂_of_le_of_mem h₂ he₂]
+
+/-- The union of two graphs `G` and `H`. If there is an edge `e` whose `G`-ends differ from
+its `H`-ends, then `G` is favoured, so this is not commutative in general.
+
+(If `G` and `H` are `Compatible`, this doesn't occur.)
+Since this definition is mainly useful when `G` and `H` are `Compatible`, we  -/
+protected def union (G H : Graph α β) : Graph α β where
+  V := G.V ∪ H.V
+  E := G.E ∪ H.E
+  Inc₂ e x y := G.Inc₂ e x y ∨ (e ∉ G.E ∧ H.Inc₂ e x y)
   inc₂_symm e x y h := by rwa [G.inc₂_comm, H.inc₂_comm]
   eq_or_eq_of_inc₂_of_inc₂ := by
     rintro e x y v w (h | h) (h' | h')
     · exact h.left_eq_or_eq_of_inc₂ h'
-    · exact h.left_eq_or_eq_of_inc₂ <| (h_inter h'.edge_mem h.edge_mem).1 h'
-    · exact h.left_eq_or_eq_of_inc₂ <| (h_inter h.edge_mem h'.edge_mem).2 h'
-    exact h.left_eq_or_eq_of_inc₂ h'
+    · exact False.elim <| h'.1 h.edge_mem
+    · exact False.elim <| h.1 h'.edge_mem
+    exact h.2.left_eq_or_eq_of_inc₂ h'.2
   edge_mem_iff_exists_inc₂ e := by
-    refine ⟨?_, fun ⟨x, y, h⟩ ↦ h.elim (fun h' ↦ .inr h'.edge_mem) (fun h' ↦ .inl h'.edge_mem)⟩
-    rintro (he | he) <;>
+    refine ⟨?_, fun ⟨x, y, h⟩ ↦ h.elim (fun h' ↦ .inl h'.edge_mem) (fun h' ↦ .inr h'.2.edge_mem)⟩
+    rw [← Set.union_diff_self]
+    rintro (he | ⟨heH, heG⟩)
     · obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edgeSet he
-      exact ⟨x, y, by simp [h]⟩
+      exact ⟨x, y, .inl h⟩
+    obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edgeSet heH
+    exact ⟨x, y, .inr ⟨heG, h⟩⟩
   vx_mem_left_of_inc₂ := by
     rintro e x y (h | h)
-    · exact .inr h.vx_mem_left
-    exact .inl h.vx_mem_left
+    · exact .inl h.vx_mem_left
+    exact .inr h.2.vx_mem_left
 
--- def Walk.toGraph : Walk α β → Graph α β
---   | nil u => noEdgeGraph {u} β
---   | cons u e w => sorry
+instance : Union (Graph α β) where union := Graph.union
 
-  -- V := _
-  -- E := _
-  -- Inc₂ := _
-  -- inc₂_symm := _
-  -- eq_or_eq_of_inc₂_of_inc₂ := _
-  -- edge_mem_iff_exists_inc₂ := _
-  -- vx_mem_left_of_inc₂ := _
+@[simp]
+lemma union_vxSet (G H : Graph α β) : (G ∪ H).V = G.V ∪ H.V := rfl
+
+@[simp]
+lemma union_edgeSet (G H : Graph α β) : (G ∪ H).E = G.E ∪ H.E := rfl
+
+lemma union_inc₂_iff : (G ∪ H).Inc₂ e x y ↔ G.Inc₂ e x y ∨ (e ∉ G.E ∧ H.Inc₂ e x y) := Iff.rfl
+
+lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
+  suffices ∀ ⦃e : β⦄ ⦃x y : α⦄, H₁.Inc₂ e x y ∨ e ∉ H₁.E ∧ H₂.Inc₂ e x y → G.Inc₂ e x y by
+    simpa [le_iff, vxSet_subset_of_le h₁, vxSet_subset_of_le h₂, union_inc₂_iff]
+  rintro e x y (h | ⟨-, h⟩) <;>
+  exact h.of_le <| by assumption
+
+@[simp]
+lemma left_le_union (G H : Graph α β) : G ≤ G ∪ H := by
+  simp_rw [le_iff, union_inc₂_iff]
+  tauto
+
+lemma Compatible.union_inc₂_iff (h : Compatible G H) :
+    (G ∪ H).Inc₂ e x y ↔ G.Inc₂ e x y ∨ H.Inc₂ e x y := by
+  by_cases heG : e ∈ G.E
+  · simp only [Graph.union_inc₂_iff, heG, not_true_eq_false, false_and, or_false, iff_self_or]
+    exact fun heH ↦ by rwa [h heG heH.edge_mem]
+  simp [Graph.union_inc₂_iff, heG]
+
+lemma Compatible.union_comm (h : Compatible G H) : G ∪ H = H ∪ G :=
+  Graph.ext (Set.union_comm ..) fun _ _ _ ↦ by rw [h.union_inc₂_iff, h.symm.union_inc₂_iff, or_comm]
+
+lemma Compatible.right_le_union (h : Compatible G H) : H ≤ G ∪ H := by
+  simp [h.union_comm]
+
+lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compatible H₂) :
+    H₁ ∪ H₂ ≤ G ↔ H₁ ≤ G ∧ H₂ ≤ G :=
+  ⟨fun h ↦ ⟨(left_le_union ..).trans h, (h_compat.right_le_union ..).trans h⟩,
+    fun h ↦ union_le h.1 h.2⟩
+
+variable {w : Walk α β}
+
+/-- Turn `w : Walk α β` into a `Graph α β`. If the walk is not well-formed
+(i.e. it contains an edge appearing twice with different ends),
+then the first occurence of the edge determines its ends in `w.toGraph`. -/
+def Walk.toGraph : Walk α β → Graph α β
+  | nil u => noEdgeGraph {u} β
+  | cons u e w => (Graph.singleEdge u w.first e) ∪ w.toGraph
+
+@[simp]
+lemma toGraph_nil : (Walk.nil u (β := β)).toGraph = noEdgeGraph {u} β := rfl
+
+@[simp]
+lemma toGraph_cons : (w.cons u e).toGraph = (Graph.singleEdge u w.first e) ∪ w.toGraph := rfl
+
+@[simp]
+lemma Walk.toGraph_vxSet (w : Walk α β) : w.toGraph.V = w.vxSet := by
+  induction w with
+  | nil u => simp
+  | cons u e W ih =>
+  simp only [toGraph_cons, union_vxSet, singleEdge_V, ih, cons_vxSet]
+  rw [← singleton_union, union_assoc, singleton_union (s := W.vxSet), insert_eq_of_mem (by simp)]
+
+@[simp]
+lemma Walk.toGraph_edgeSet (w : Walk α β) : w.toGraph.E = w.edgeSet := by
+  induction w with simp_all
+
+lemma ValidIn.toGraph_le {w : Walk α β} (h : w.ValidIn G) : w.toGraph ≤ G := by
+  induction w with
+  | nil u => simpa [Walk.toGraph] using h
+  | cons u e W ih =>
+  simp only [Walk.cons_validIn] at h
+  exact union_le (by simpa using h.1) (ih h.2)
