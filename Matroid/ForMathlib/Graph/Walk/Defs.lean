@@ -12,7 +12,7 @@ namespace Graph
 
 inductive Walk (α β : Type*) where
 | nil (u : α) : Walk α β
-| cons (u : α) (e : β) (W : Walk α β) : Walk α β
+| cons (u : α) (e : β) (w : Walk α β) : Walk α β
 
 variable {w w₁ w₂ : Walk α β}
 namespace Walk

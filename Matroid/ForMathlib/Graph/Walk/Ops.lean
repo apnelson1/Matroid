@@ -29,7 +29,6 @@ def reverse : Walk α β → Walk α β
 | nil x => nil x
 | cons x e w => w.reverse.concat e x
 
-
 /-- Properties of dropLast operation -/
 @[simp]
 lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
@@ -194,6 +193,11 @@ lemma ValidIn.concat (hVd : w.ValidIn G) (h₂ : G.Inc₂ e w.last v) : (w.conca
     simp only [cons_validIn, cons_last, cons_concat, concat_first] at hVd h₂ ⊢
     exact ⟨hVd.1, ih hVd.2 h₂⟩
 
+@[simp]
+lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
+  induction w with
+  | nil => simp
+  | cons u f w ih => simp [ih, or_assoc]
 
 /- Properties of append operation -/
 @[simp]
@@ -541,6 +545,13 @@ lemma reverse_validIn_iff : (reverse w).ValidIn G ↔ w.ValidIn G :=
 @[simp]
 lemma reverse_isPath_iff : G.IsPath (reverse w) ↔ G.IsPath w :=
   ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
+
+
+@[simp]
+lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih => simp [ih, or_comm]
 
 end Walk
 

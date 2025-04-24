@@ -1,5 +1,4 @@
 import Matroid.ForMathlib.Graph.Walk.Ops
-
 import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 
 namespace Graph
@@ -13,42 +12,49 @@ namespace Walk
 
 set_option linter.style.longLine false
 
-def IsSubwalk : Walk α β → Walk α β → Prop
-  | nil x, w => x ∈ w
-  | cons _ _ _, nil _ => False
-  | cons x e w, cons y f w' => (x = y ∧ e = f ∧ w.IsSubwalk w') ∨ (cons x e w).IsSubwalk w'
+/-- This is a bad definition. I know what a prefix/suffix is, and what a contiguous subwalk is,
+but the definition of a 'subwalk' is a bit complicated, and possibly just meaningless .
+The current definition allows [x,e,z] to be a subwalk of [x,e,y,f,z] (via `cons₂`),
+which obviously shouldn't be allowed. -/
+inductive IsSubwalk {α β : Type*} : Walk α β → Walk α β → Prop
+  | nil x w (h : x ∈ w) : IsSubwalk (nil x) w
+  | cons x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk w₁ (cons x e w₂)
+  | cons₂ x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk (cons x e w₁) (cons x e w₂)
+
 
 @[simp]
-lemma nil_isSubwalk_iff : (nil x).IsSubwalk w ↔ x ∈ w := by
-  simp [IsSubwalk]
+lemma nil_isSubwalk_iff : (Walk.nil x (β := β)).IsSubwalk w ↔ x ∈ w := by
+  refine ⟨fun h ↦ ?_, IsSubwalk.nil _ _⟩
+  induction w with
+  | nil u => cases h with | nil _ => assumption
+  | cons u e W ih =>
+  cases h with
+  | nil _ => assumption
+  | cons x e _ _ h => simp [ih h]
 
 @[simp]
 lemma isSubwalk_nil_iff : w.IsSubwalk (nil x) ↔ w = nil x := by
-  induction w with simp_all [IsSubwalk]
+  refine ⟨fun h ↦ by cases h with | nil => simp_all, ?_⟩
+  rintro rfl
+  simp
+
+@[simp]
+lemma isSubwalk_refl (w : Walk α β) : w.IsSubwalk w := by
+  induction w with
+  | nil u => simp
+  | cons u e W ih => exact IsSubwalk.cons₂ _ _ _ _ ih
 
 lemma IsSubwalk.vx_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.vx <+ w₂.vx := by
-  match w₁ with
-  | nil u => simp_all
-  | cons u e w₁ =>
-  match w₂ with
-  | nil u => simp_all
-  | cons v f w₂ =>
-  obtain ⟨rfl, rfl, h⟩ | h := h
-  · simp [h.vx_sublist]
-  have hle : u :: w₁.vx <+ w₂.vx := by simpa using h.vx_sublist
-  exact hle.trans (by simp)
+  induction h with
+  | nil x w _ => simpa
+  | cons x e w₁ w₂ h ih => exact ih.trans (by simp)
+  | cons₂ x e w₁ w₂ h ih => simpa
 
 lemma IsSubwalk.edge_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.edge <+ w₂.edge := by
-  match w₁ with
-  | nil u => simp_all
-  | cons u e w₁ =>
-  match w₂ with
-  | nil u => simp_all
-  | cons v f w₂ =>
-  obtain ⟨rfl, rfl, h⟩ | h := h
-  · simp [h.edge_sublist]
-  have hle : e :: w₁.edge <+ w₂.edge := by simpa using h.edge_sublist
-  exact hle.trans (by simp)
+  induction h with
+  | nil x w _ => simp
+  | cons x e w₁ w₂ h ih => exact ih.trans (by simp)
+  | cons₂ x e w₁ w₂ h ih => simpa
 
 lemma IsSubwalk.length_le (h : w₁.IsSubwalk w₂) : w₁.length ≤ w₂.length := by
   rw [← length_edge, ← length_edge]
@@ -57,147 +63,188 @@ lemma IsSubwalk.length_le (h : w₁.IsSubwalk w₂) : w₁.length ≤ w₂.lengt
 lemma IsSubwalk.eq_of_length_ge (h : w₁.IsSubwalk w₂) (hge : w₂.length ≤ w₁.length) : w₁ = w₂ :=
   ext_vx_edge (h.vx_sublist.eq_of_length_le (by simpa)) <| h.edge_sublist.eq_of_length_le (by simpa)
 
+lemma IsSubwalk.trans (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₃) : w₁.IsSubwalk w₃ := by
+  induction h' generalizing w₁ with
+  | nil x w h' => simp_all
+  | cons x e w₂ w₃ h' ih => exact cons x e w₁ w₃ (ih h)
+  | cons₂ x e w₂ w₃ h' ih =>
+  cases h with
+  | nil y w₁ h =>
+    simp only [nil_isSubwalk_iff, mem_cons_iff] at h ⊢
+    exact h.elim .inl <| .inr ∘ h'.vx_sublist.mem
+  | cons x e w₁ w₂ h => apply (ih h).cons
+  | cons₂ x e w₁ w₂ h => apply (ih h).cons₂
+
+lemma IsSubwalk.antisymm (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₁) : w₁ = w₂ :=
+  h.eq_of_length_ge h'.length_le
+
+
 @[simp]
-lemma isSubwalk_refl (w : Walk α β) : w.IsSubwalk w := by
-  induction w with simp_all [IsSubwalk]
+lemma isSubwalk_cons_self (w : Walk α β) (x : α) (e : β) : w.IsSubwalk (cons x e w) :=
+  (isSubwalk_refl (w := w)).cons ..
+
+lemma IsSubwalk.concat (h : w₁.IsSubwalk w₂) (e : β) (x : α) : w₁.IsSubwalk (w₂.concat e x) := by
+  induction h with
+  | nil x w h => simp [h]
+  | cons y f w₁ w₂ h ih => simpa using ih.cons ..
+  | cons₂ y f w₁ w₂ h ih => simpa using ih.cons₂ ..
+
+lemma IsSubwalk.concat₂ (h : w₁.IsSubwalk w₂) (e : β) (x : α) :
+    (w₁.concat e x).IsSubwalk (w₂.concat e x) := by
+  induction w₂ with
+  | nil u => simp_all
+  | cons u f w₂ ih =>
+  simp_all
+  -- induction h with
+  -- | nil y w h =>
+  --   simp [h]
+  -- | cons x e w₁ w₂ h ih => sorry
+  -- | cons₂ x e w₁ w₂ h ih => sorry
 
 @[simp]
-lemma isSubwalk_cons (w : Walk α β) (x) (e) : w.IsSubwalk (cons x e w) := by
-  induction w with simp_all [IsSubwalk]
+lemma isSubwalk_concat_self (w : Walk α β) (e : β) (x : α) : w.IsSubwalk (w.concat e x) :=
+  (isSubwalk_refl (w := w)).concat ..
 
-lemma IsSubwalk.trans {w₁ w₂ w₃ : Walk α β} (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₃) :
-    w₁.IsSubwalk w₃ := by
-  match w₁ with
-  | nil u =>
-    simp_all only [nil_isSubwalk_iff]
-    exact h'.vx_sublist.mem h
-  | cons u₁ e₁ w₁ =>
-  match w₂ with
-  | nil u₂ => simp at h
-  | cons u₂ e₂ w₂ =>
-  obtain ⟨rfl, rfl, h⟩ | h := h
-  · match w₃ with
-    | nil u₃ => simp at h'
-    | cons u₃ e₃ w₃ =>
-    simp_all only [IsSubwalk]
-    obtain ⟨rfl, rfl, h'⟩ | h' := h'
-    · exact .inl ⟨rfl, rfl, h.trans h'⟩
-    exact .inr <| IsSubwalk.trans (by simp [IsSubwalk, h]) h'
-  match w₃ with
-  | nil u₃ => simp at h'
-  | cons u₃ e₃ w₃ =>
-  obtain ⟨rfl, rfl, h'⟩ | h' := h'
-  · exact (h.trans h').trans (by simp)
-  sorry
-  -- simp [IsSubwalk]
+lemma IsSubwalk.reverse (h : w₁.IsSubwalk w₂) : w₁.reverse.IsSubwalk w₂.reverse := by
+  induction h with
+  | nil => simpa
 
-  -- refine .inr (IsSubwalk.trans ?_ h')
-  -- simp [IsSubwalk, h]
+  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
 
-  -- refine .inr <| h.trans (IsSubwalk.trans ?_ h')
+  | cons₂ x e w₁ w₂ h ih =>
+  simp only [reverse_cons]
 
-
-
-
+  refine ih.concat₂ ..
 
 
 /-- ## Prefixes -/
 
 -- /-- `IsPrefix w w'` means that `w` is a prefix of `w'`. -/
-protected def IsPrefix : Walk α β → Walk α β → Prop :=
-  fun w W => ∃ w', w ++ w' = W ∧ w.last = w'.first
+inductive IsPrefix : Walk α β → Walk α β → Prop
+  | nil (w : Walk α β) : IsPrefix (nil w.first) w
+  | cons (x) (e) (w₁ w₂ : Walk α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)
 
-lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ ++ w₂) :=
-  ⟨w₂, rfl, hw⟩
+lemma IsPrefix.first_eq (h : IsPrefix w₁ w₂) : w₁.first = w₂.first := by
+  induction h with simp
 
-lemma IsPrefix.first_eq (h : w₁.IsPrefix w₂) : w₁.first = w₂.first := by
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  cases w₁ with simp_all
+lemma IsPrefix.exists_eq_append (h : IsPrefix w₁ w₂) :
+    ∃ w₁', w₁.last = w₁'.first ∧ w₁ ++ w₁' = w₂ := by
+  induction h with | nil => simp | cons => simpa
 
-lemma IsPrefix.length_le (h : w₁.IsPrefix w₂) : w₁.length ≤ w₂.length := by
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  simp
+lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ ++ w₂) := by
+  induction w₁ with
+  | nil u => convert IsPrefix.nil w₂
+  | cons u e w₁ ih => simpa using (ih hw).cons ..
 
-lemma IsPrefix.refl (w : Walk α β) : w.IsPrefix w :=
-  ⟨nil w.last, by simp [append_nil rfl]⟩
+lemma IsPrefix.isSubwalk (h : w₁.IsPrefix w₂) : w₁.IsSubwalk w₂ := by
+  induction h with
+  | nil w => simp
+  | cons x e w₁ w₂ h ih => apply ih.cons₂
+
+@[simp]
+lemma isPrefix_refl : w.IsPrefix w := by
+  induction w with
+  | nil u => exact IsPrefix.nil <| nil u
+  | cons _ _ _ ih => apply ih.cons
+
+@[simp]
+lemma isPrefix_nil_iff : w.IsPrefix (nil x) ↔ w = nil x :=
+  ⟨fun h ↦ isSubwalk_nil_iff.1 h.isSubwalk, fun h ↦ h ▸ isPrefix_refl⟩
+
+@[simp]
+lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
+  ⟨fun h ↦ by cases h with rfl, by rintro rfl; exact IsPrefix.nil w⟩
 
 lemma IsPrefix.trans (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₃) : w₁.IsPrefix w₃ := by
-    obtain ⟨w12, rfl, heq1⟩ := h
-    obtain ⟨w23, rfl, heq2⟩ := h'
-    rw [append_assoc]
-    exact isPrefix_append_right <| by cases w12 with simp_all
+  induction h' generalizing w₁ with
+  | nil w => simp_all
+  | cons x e w₂ w₃ h' ih =>
+  cases h with
+  | nil w => simp
+  | cons x e w₁ w₂ h => apply (ih h).cons
 
--- lemma IsPrefix.isSubwalk (h : w₁.IsPrefix w₂) : w₁.IsSubwalk w₂ := by
---   _
+lemma IsPrefix.vx_isPrefix (h : w₁.IsPrefix w₂) : w₁.vx <+: w₂.vx := by
+  induction h with
+  | nil w => induction w with | nil => simp | cons => simp
+  | cons => simpa
 
-lemma IsPrefix.eq_of_length_ge (h : w₁.IsPrefix w₂) (hge : w₂.length ≤ w₁.length) : w₁ = w₂ := by
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  simp only [append_length] at hge
-  rwa [((length_eq_zero (w := w₁')).1 <| by omega).eq_nil_first, append_nil]
+lemma IsPrefix.edge_isPrefix (h : w₁.IsPrefix w₂) : w₁.edge <+: w₂.edge := by
+  induction h with | nil => simp | cons => simpa
+
+lemma IsPrefix.eq_of_length_ge (h : w₁.IsPrefix w₂) (hge : w₂.length ≤ w₁.length) : w₁ = w₂ :=
+  h.isSubwalk.eq_of_length_ge hge
+
+lemma IsPrefix.length_le (h : w₁.IsPrefix w₂) : w₁.length ≤ w₂.length :=
+  h.isSubwalk.length_le
 
 lemma IsPrefix.antisymm (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
 lemma ValidIn.IsPrefix (hVd : w.ValidIn G) (hPf : w₁.IsPrefix w) : w₁.ValidIn G := by
-  obtain ⟨w₂, rfl, heq⟩ := hPf
+  obtain ⟨w₂, heq, rfl⟩ := hPf.exists_eq_append
   exact hVd.append_left_validIn heq
 
 lemma _root_.Graph.IsPath.IsPrefix (hPf : w₁.IsPrefix w) (hP : G.IsPath w) : G.IsPath w₁ := by
-  obtain ⟨w₂, rfl, heq⟩ := hPf
+  obtain ⟨w₂, heq, rfl⟩ := hPf.exists_eq_append
   exact append_left_isPath heq hP
 
 @[simp]
-lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ x = w.first := by
-  simp [Walk.IsPrefix]
-
-@[simp]
-lemma isPrefix_nil_iff : w.IsPrefix (nil x) ↔ w = nil x := by
-  cases w with simp [Walk.IsPrefix]
-
-@[simp]
-lemma cons_isPrefix_cons_iff :
-    (cons x e w₁).IsPrefix (cons y f w₂) ↔ x = y ∧ e = f ∧ w₁.IsPrefix w₂ := by
-  constructor
-  · rintro ⟨w₁', h, h'⟩
-    simp only [cons_append, cons.injEq] at h
-    rw [and_iff_right h.1, and_iff_right h.2.1, ← h.2.2]
-    exact isPrefix_append_right (by simpa using h')
-  rintro ⟨rfl, rfl, w₁', ⟨h, rfl⟩, h_eq⟩
-  exact ⟨w₁', by simpa⟩
-
-@[simp]
 lemma isPrefix_concat (w : Walk α β) (e) (x) : w.IsPrefix (w.concat e x) := by
-  induction w with | nil => simp | cons => simpa
+  induction w with
+  | nil => simp
+  | cons u f W ih => simpa only [cons_concat] using ih.cons ..
 
-lemma IsPrefix.vx_isPrefix {w₁ w₂ : Walk α β} (h : w₁.IsPrefix w₂) : w₁.vx <+: w₂.vx := by
-  match w₁ with
-  | nil u => cases w₂ with | nil => simp_all | cons => simp_all
-  | cons u e w₁ =>
-  match w₂ with
-  | nil v => simp_all
-  | cons v f W =>
-  simp only [cons_isPrefix_cons_iff] at h
-  simpa [h.1] using h.2.2.vx_isPrefix
-
-lemma IsPrefix.edge_isPrefix {w₁ w₂ : Walk α β} (h : w₁.IsPrefix w₂) : w₁.edge <+: w₂.edge := by
-  match w₁ with
-  | nil u => cases w₂ with | nil => simp_all | cons => simp_all
-  | cons u e w₁ =>
-  match w₂ with
-  | nil v => simp_all
-  | cons v f W =>
-  simp only [cons_isPrefix_cons_iff] at h
-  simpa [h.2.1] using h.2.2.edge_isPrefix
-
--- lemma IsPrefix.vxSet_subset (h : w₁.IsPrefix w₂) : w₁.
 
 /- ## Suffixes -/
 
-protected def IsSuffix : Walk α β → Walk α β → Prop :=
-    fun w W => ∃ w', w' ++ w = W ∧ w'.last = w.first
+inductive IsSuffix : Walk α β → Walk α β → Prop
+  | nil (w : Walk α β) : IsSuffix (nil w.last) w
+  | concat (e x w₁ w₂) (h : IsSuffix w₁ w₂) : IsSuffix (w₁.concat e x) (w₂.concat e x)
 
-lemma isSuffix_append_left (hw : w₁.last = w₂.first) : w₂.IsSuffix (w₁ ++ w₂) :=
-  ⟨w₁, rfl, hw⟩
+lemma IsSuffix.reverse_isPrefix_reverse (h : w₁.IsSuffix w₂) : w₁.reverse.IsPrefix w₂.reverse := by
+  induction h with
+  | nil => simp
+  | concat e x w₁ w₂ h ih => simp [ih.cons]
+
+lemma IsPrefix.reverse_isSuffix_reverse (h : w₁.IsPrefix w₂) : w₁.reverse.IsSuffix w₂.reverse := by
+  induction h with
+  | nil w => simpa [reverse_nil] using IsSuffix.nil w.reverse
+  | cons x e w₁ w₂ h ih => simpa using ih.concat e x
+
+@[simp]
+lemma reverse_isPrefix_reverse : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsSuffix w₂ :=
+  ⟨fun h ↦ by simpa using h.reverse_isSuffix_reverse, IsSuffix.reverse_isPrefix_reverse⟩
+
+@[simp]
+lemma reverse_isSuffix_reverse : w₁.reverse.IsSuffix w₂.reverse ↔ w₁.IsPrefix w₂ := by
+  nth_rewrite 2 [← w₁.reverse_reverse, ← w₂.reverse_reverse]
+  rw [reverse_isPrefix_reverse]
+
+@[simp]
+lemma isSuffix_refl : w.IsSuffix w := by
+  simpa using (isPrefix_refl (w := w.reverse)).reverse_isSuffix_reverse
+
+@[simp]
+lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x :=
+  ⟨fun h ↦ isSubwalk_nil_iff.1 h.isSubwalk, fun h ↦ h ▸ isPrefix_refl⟩
+
+@[simp]
+lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
+  ⟨fun h ↦ by cases h with rfl, by rintro rfl; exact IsPrefix.nil w⟩
+
+
+
+  -- induction h with
+  -- | nil w => sorry
+
+  -- | cons x e w₁ w₂ h ih => sorry
+
+
+-- protected def IsSuffix : Walk α β → Walk α β → Prop :=
+--     fun w W => ∃ w', w' ++ w = W ∧ w'.last = w.first
+
+-- lemma isSuffix_append_left (hw : w₁.last = w₂.first) : w₂.IsSuffix (w₁ ++ w₂) :=
+--   ⟨w₁, rfl, hw⟩
 
 @[simp]
 lemma reverse_isPrefix_reverse : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsSuffix w₂ := by
@@ -211,10 +258,6 @@ lemma reverse_isPrefix_reverse : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsS
   obtain ⟨w₁', rfl, h_eq⟩ := h
   exact ⟨w₁'.reverse, by rwa [reverse_append], by simpa using h_eq.symm⟩
 
-@[simp]
-lemma reverse_isSuffix_reverse : w₁.reverse.IsSuffix w₂.reverse ↔ w₁.IsPrefix w₂ := by
-  nth_rewrite 2 [← w₁.reverse_reverse, ← w₂.reverse_reverse]
-  rw [reverse_isPrefix_reverse]
 
 
 lemma IsSuffix.last_eq (h : w₁.IsSuffix w₂) : w₁.last = w₂.last := by
