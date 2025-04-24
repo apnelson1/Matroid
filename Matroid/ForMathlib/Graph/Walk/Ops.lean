@@ -376,7 +376,7 @@ lemma append_isPath (h : w₁.last = w₂.first) (h₁ : G.IsPath w₁) (h₂ : 
     cases w₁ with
     | nil u => simp at hx₁
     | cons u e W =>
-    rw [ ← dropLast_vx (by simp), mem_notation, ← mem_vxSet_iff,
+    rw [ ← dropLast_vx (by simp), mem_vx, ← mem_vxSet_iff,
       dropLast_vxSet_of_isPath h₁ (by simp)] at hx₁
     simp at hx₁
 

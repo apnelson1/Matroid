@@ -41,7 +41,7 @@ instance [DecidableEq α] : Decidable (x ∈ w) := by
   infer_instance
 
 @[simp]
-lemma mem_notation : (x ∈ w.vx) = (x ∈ w) := rfl
+lemma mem_vx : (x ∈ w.vx) = (x ∈ w) := rfl
 
 def vxSet : Walk α β → Set α := fun w => {x | x ∈ w}
 
@@ -189,7 +189,7 @@ namespace Walk
 
 @[simp] lemma nil_vx : (nil x : Walk α β).vx = [x] := rfl
 
-@[simp] lemma mem_nil_iff : x ∈ (nil u : Walk α β) ↔ x = u := by simp [← mem_notation]
+@[simp] lemma mem_nil_iff : x ∈ (nil u : Walk α β) ↔ x = u := by simp [← mem_vx]
 
 @[simp] lemma nil_vxSet : (nil x : Walk α β).vxSet = {x} := by simp [vxSet]
 
@@ -247,7 +247,7 @@ namespace Walk
 
 @[simp] lemma cons_vx : (cons x e w).vx = x :: w.vx := rfl
 
-@[simp] lemma mem_cons_iff : x ∈ (cons u e w) ↔ x = u ∨ x ∈ w := by simp [← mem_notation]
+@[simp] lemma mem_cons_iff : x ∈ (cons u e w) ↔ x = u ∨ x ∈ w := by simp [← mem_vx]
 
 @[simp] lemma cons_vxSet : (cons x e w).vxSet = {x} ∪ w.vxSet := by
   simp only [vxSet, mem_cons_iff, singleton_union]
@@ -299,9 +299,9 @@ lemma cons_vx_nodup (h : (cons x e w).vx.Nodup) : w.vx.Nodup := by
 @[simp] lemma cons_isPath : G.IsPath (cons x e w) ↔ G.IsPath w ∧ G.Inc₂ e x w.first ∧ x ∉ w := by
   constructor
   · refine fun ⟨hVd, hnodup⟩ ↦ ⟨?_, ?_, ?_⟩ <;> simp_all only [cons_validIn, cons_vx,
-    nodup_cons, mem_notation, not_false_eq_true, isPath_simp]
+    nodup_cons, mem_vx, not_false_eq_true, isPath_simp]
   · refine fun ⟨hP, h₂, hnin⟩ ↦ ⟨?_, ?_⟩ <;> simp_all only [not_false_eq_true,
-    and_self, cons_vx, nodup_cons, mem_notation, true_and, hP.validIn, hP.nodup, cons_validIn]
+    and_self, cons_vx, nodup_cons, mem_vx, true_and, hP.validIn, hP.nodup, cons_validIn]
 
 @[simp]
 lemma cons_isTrailFrom : G.IsTrailFrom S T (cons x e w) ↔
@@ -320,7 +320,7 @@ lemma cons_isPathFrom : G.IsPathFrom S T (cons x e w) ↔
   refine ⟨fun ⟨⟨hVd, hnodup⟩, hfirst, hlast⟩ ↦ ⟨?_, ?_, ?_, ?_, ?_⟩,
     fun ⟨hV, hS, hVd, hT⟩ ↦ ⟨⟨?_, ?_⟩, ?_, ?_⟩⟩
   <;> simp_all only [not_false_eq_true, and_self, cons_edge, nodup_cons, cons_validIn, cons_first,
-  cons_last, mem_notation, cons_vx, isPath_simp, cons_isPath, true_and, IsPath.validIn]
+  cons_last, mem_vx, cons_vx, isPath_simp, cons_isPath, true_and, IsPath.validIn]
   exact hV.nodup
 
 end Walk

@@ -12,46 +12,44 @@ namespace Walk
 
 set_option linter.style.longLine false
 
-/-- 'subwalk'-/
-inductive IsSubwalk {α β : Type*} : Walk α β → Walk α β → Prop
+/-- `w₁.IsSubwalk w₂` means that `w₁` is a walk using a subset of the vertices and edges of `w₂`
+in the same order that they appear in `w₂`.
+Examples include prefixes, suffixes and walks obtained from `w₂` by 'shortcutting'.  -/
+inductive IsSubwalk : Walk α β → Walk α β → Prop
   | nil x w (h : x ∈ w) : IsSubwalk (nil x) w
   | cons x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk w₁ (cons x e w₂)
   | cons₂ x e w₁ w₂ (h : IsSubwalk w₁ w₂) (h_eq : w₁.first = w₂.first) :
       IsSubwalk (cons x e w₁) (cons x e w₂)
 
-
 @[simp]
 lemma nil_isSubwalk_iff : (Walk.nil x (β := β)).IsSubwalk w ↔ x ∈ w := by
   refine ⟨fun h ↦ ?_, IsSubwalk.nil _ _⟩
   induction w with
-  | nil u => cases h with | nil _ => assumption
-  | cons u e W ih =>
-  cases h with
-  | nil _ => assumption
-  | cons x e _ _ h => simp [ih h]
+  | nil => cases h with | nil _ => assumption
+  | cons u e W ih => cases h with
+    | nil => assumption
+    | cons x e _ _ h => simp [ih h]
 
 @[simp]
-lemma isSubwalk_nil_iff : w.IsSubwalk (nil x) ↔ w = nil x := by
-  refine ⟨fun h ↦ by cases h with | nil => simp_all, ?_⟩
-  rintro rfl
-  simp
+lemma isSubwalk_nil_iff : w.IsSubwalk (nil x) ↔ w = nil x :=
+  ⟨fun h ↦ by cases h with simp_all, by rintro rfl; simp⟩
 
 @[simp]
 lemma isSubwalk_refl (w : Walk α β) : w.IsSubwalk w := by
   induction w with
-  | nil u => simp
+  | nil => simp
   | cons u e w ih => exact ih.cons₂ _ _ _ _ rfl
 
 lemma IsSubwalk.vx_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.vx <+ w₂.vx := by
   induction h with
-  | nil x w _ => simpa
-  | cons x e w₁ w₂ h ih => exact ih.trans (by simp)
+  | nil => simpa
+  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
   | cons₂ x e w₁ w₂ h ih => simpa
 
 lemma IsSubwalk.edge_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.edge <+ w₂.edge := by
   induction h with
-  | nil x w _ => simp
-  | cons x e w₁ w₂ h ih => exact ih.trans (by simp)
+  | nil => simp
+  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
   | cons₂ x e w₁ w₂ h ih => simpa
 
 lemma IsSubwalk.length_le (h : w₁.IsSubwalk w₂) : w₁.length ≤ w₂.length := by
@@ -65,17 +63,15 @@ lemma IsSubwalk.trans (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₃) : w�
   induction h' generalizing w₁ with
   | nil x w h' => simp_all
   | cons x e w₂ w₃ h' ih => exact cons x e w₁ w₃ (ih h)
-  | cons₂ x e w₂ w₃ h' h_eq ih =>
-  cases h with
-  | nil y w₁ h =>
-    simp only [nil_isSubwalk_iff, mem_cons_iff] at h ⊢
-    exact h.elim .inl <| .inr ∘ h'.vx_sublist.mem
-  | cons x e w₁ w₂ h => apply (ih h).cons
-  | cons₂ x e w₁ w₂ h h_eq' => exact (ih h).cons₂ _ _ _ _ (h_eq'.trans h_eq)
+  | cons₂ x e w₂ w₃ h' h_eq ih => cases h with
+    | nil y w₁ h =>
+      simp only [nil_isSubwalk_iff, mem_cons_iff] at h ⊢
+      exact h.elim .inl <| .inr ∘ h'.vx_sublist.mem
+    | cons x e w₁ w₂ h => apply (ih h).cons
+    | cons₂ x e w₁ w₂ h h_eq' => exact (ih h).cons₂ _ _ _ _ (h_eq'.trans h_eq)
 
 lemma IsSubwalk.antisymm (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
-
 
 @[simp]
 lemma isSubwalk_cons_self (w : Walk α β) (x : α) (e : β) : w.IsSubwalk (cons x e w) :=
@@ -87,25 +83,23 @@ lemma IsSubwalk.concat (h : w₁.IsSubwalk w₂) (e : β) (x : α) : w₁.IsSubw
   | cons y f w₁ w₂ h ih => simpa using ih.cons ..
   | cons₂ y f w₁ w₂ h h_eq ih => exact ih.cons₂ _ _ _ _ (by simpa)
 
+lemma IsSubwalk.validIn (h : w₁.IsSubwalk w₂) (hw₂ : w₂.ValidIn G) : w₁.ValidIn G := by
+  induction h with
+  | nil x w h => simp [hw₂.vx_mem_of_mem h]
+  | cons x e w₁ w₂ h ih => exact ih (cons_validIn.1 hw₂).2
+  | cons₂ x e w₁ w₂ h h_eq ih =>
+    rw [cons_validIn] at hw₂ ⊢
+    rw [h_eq]
+    exact ⟨hw₂.1, ih hw₂.2⟩
+
 lemma IsSubwalk.concat₂ (h : w₁.IsSubwalk w₂) (hlast : w₁.last = w₂.last) (e : β) (x : α) :
     (w₁.concat e x).IsSubwalk (w₂.concat e x) := by
-  -- induction w₂ with
-  -- | nil u => simp_all
-  -- | cons u f w₂ ih =>
-  -- simp_all
-
   induction h with
-  | nil y w h =>
-    induction w with
-    | nil u =>
-      obtain rfl : y = u := hlast
-      apply isSubwalk_refl
-    | cons u f w ih =>
-    obtain rfl | hyw : y = u ∨ y ∈ w := by simpa using h
-    · simp only [nil_concat, cons_concat]
-      apply IsSubwalk.cons₂
-  | cons x e w₁ w₂ h ih => sorry
-  | cons₂ x e w₁ w₂ h ih => sorry
+  | nil y w h => induction w with
+    | nil u => simp [show y = u by simpa using h]
+    | cons u f w ih => exact IsSubwalk.cons _ _ _ _ (by simpa [show y = w.last from hlast] using ih)
+  | cons y f w₁ w₂ h ih => exact (ih (by simpa using hlast)).cons y f
+  | cons₂ y f w₁ w₂ h h_eq ih => exact (ih (by simpa using hlast)).cons₂ y f _ _ (by simpa)
 
 @[simp]
 lemma isSubwalk_concat_self (w : Walk α β) (e : β) (x : α) : w.IsSubwalk (w.concat e x) :=
@@ -114,14 +108,11 @@ lemma isSubwalk_concat_self (w : Walk α β) (e : β) (x : α) : w.IsSubwalk (w.
 lemma IsSubwalk.reverse (h : w₁.IsSubwalk w₂) : w₁.reverse.IsSubwalk w₂.reverse := by
   induction h with
   | nil => simpa
-
   | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
+  | cons₂ x e w₁ w₂ h h_eq ih => apply ih.concat₂ <| by simpa
 
-  | cons₂ x e w₁ w₂ h ih =>
-  simp only [reverse_cons]
-
-  refine ih.concat₂ ..
-
+lemma IsSubwalk.of_reverse (h : w₁.reverse.IsSubwalk w₂.reverse) : w₁.IsSubwalk w₂ := by
+  simpa using h.reverse
 
 /-- ## Prefixes -/
 
@@ -145,7 +136,7 @@ lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ 
 lemma IsPrefix.isSubwalk (h : w₁.IsPrefix w₂) : w₁.IsSubwalk w₂ := by
   induction h with
   | nil w => simp
-  | cons x e w₁ w₂ h ih => apply ih.cons₂
+  | cons x e w₁ w₂ h ih => exact ih.cons₂ _ _ _ _ h.first_eq
 
 @[simp]
 lemma isPrefix_refl : w.IsPrefix w := by
@@ -164,14 +155,13 @@ lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
 lemma IsPrefix.trans (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₃) : w₁.IsPrefix w₃ := by
   induction h' generalizing w₁ with
   | nil w => simp_all
-  | cons x e w₂ w₃ h' ih =>
-  cases h with
-  | nil w => simp
-  | cons x e w₁ w₂ h => apply (ih h).cons
+  | cons x e w₂ w₃ h' ih => cases h with
+    | nil w => simp
+    | cons x e w₁ w₂ h => apply (ih h).cons
 
 lemma IsPrefix.vx_isPrefix (h : w₁.IsPrefix w₂) : w₁.vx <+: w₂.vx := by
   induction h with
-  | nil w => induction w with | nil => simp | cons => simp
+  | nil w => induction w with | _ => simp
   | cons => simpa
 
 lemma IsPrefix.edge_isPrefix (h : w₁.IsPrefix w₂) : w₁.edge <+: w₂.edge := by
@@ -194,12 +184,12 @@ lemma _root_.Graph.IsPath.IsPrefix (hPf : w₁.IsPrefix w) (hP : G.IsPath w) : G
   obtain ⟨w₂, heq, rfl⟩ := hPf.exists_eq_append
   exact append_left_isPath heq hP
 
-@[simp]
-lemma isPrefix_concat (w : Walk α β) (e) (x) : w.IsPrefix (w.concat e x) := by
-  induction w with
-  | nil => simp
-  | cons u f W ih => simpa only [cons_concat] using ih.cons ..
+lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.concat e x) := by
+  induction h with | nil => simp | cons y f w₁ w₂ h ih => exact ih.cons y f
 
+@[simp]
+lemma isPrefix_concat_self (w : Walk α β) (e) (x) : w.IsPrefix (w.concat e x) :=
+  isPrefix_refl.concat e x
 
 /- ## Suffixes -/
 
@@ -208,9 +198,7 @@ inductive IsSuffix : Walk α β → Walk α β → Prop
   | concat (e x w₁ w₂) (h : IsSuffix w₁ w₂) : IsSuffix (w₁.concat e x) (w₂.concat e x)
 
 lemma IsSuffix.reverse_isPrefix_reverse (h : w₁.IsSuffix w₂) : w₁.reverse.IsPrefix w₂.reverse := by
-  induction h with
-  | nil => simp
-  | concat e x w₁ w₂ h ih => simp [ih.cons]
+  induction h with | nil => simp | concat e x w₁ w₂ h ih => simp [ih.cons]
 
 lemma IsPrefix.reverse_isSuffix_reverse (h : w₁.IsPrefix w₂) : w₁.reverse.IsSuffix w₂.reverse := by
   induction h with
@@ -218,96 +206,56 @@ lemma IsPrefix.reverse_isSuffix_reverse (h : w₁.IsPrefix w₂) : w₁.reverse.
   | cons x e w₁ w₂ h ih => simpa using ih.concat e x
 
 @[simp]
-lemma reverse_isPrefix_reverse : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsSuffix w₂ :=
+lemma reverse_isPrefix_reverse_iff : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsSuffix w₂ :=
   ⟨fun h ↦ by simpa using h.reverse_isSuffix_reverse, IsSuffix.reverse_isPrefix_reverse⟩
 
 @[simp]
-lemma reverse_isSuffix_reverse : w₁.reverse.IsSuffix w₂.reverse ↔ w₁.IsPrefix w₂ := by
+lemma reverse_isSuffix_reverse_iff : w₁.reverse.IsSuffix w₂.reverse ↔ w₁.IsPrefix w₂ := by
   nth_rewrite 2 [← w₁.reverse_reverse, ← w₂.reverse_reverse]
-  rw [reverse_isPrefix_reverse]
+  rw [reverse_isPrefix_reverse_iff]
 
 @[simp]
 lemma isSuffix_refl : w.IsSuffix w := by
   simpa using (isPrefix_refl (w := w.reverse)).reverse_isSuffix_reverse
 
+lemma IsSuffix.isSubwalk (h : w₁.IsSuffix w₂) : w₁.IsSubwalk w₂ :=
+  h.reverse_isPrefix_reverse.isSubwalk.of_reverse
+
 @[simp]
 lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x :=
-  ⟨fun h ↦ isSubwalk_nil_iff.1 h.isSubwalk, fun h ↦ h ▸ isPrefix_refl⟩
+  ⟨fun h ↦ isSubwalk_nil_iff.1 h.isSubwalk, fun h ↦ h ▸ isSuffix_refl⟩
 
 @[simp]
-lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
-  ⟨fun h ↦ by cases h with rfl, by rintro rfl; exact IsPrefix.nil w⟩
+lemma nil_isSuffix_iff : (nil x).IsSuffix w ↔ w.last = x := by
+  rw [← reverse_isPrefix_reverse_iff, reverse_nil, nil_isPrefix_iff, reverse_first]
 
+lemma IsSuffix.last_eq (h : w₁.IsSuffix w₂) : w₁.last = w₂.last :=
+  by simpa using h.reverse_isPrefix_reverse.first_eq
 
-
-  -- induction h with
-  -- | nil w => sorry
-
-  -- | cons x e w₁ w₂ h ih => sorry
-
-
--- protected def IsSuffix : Walk α β → Walk α β → Prop :=
---     fun w W => ∃ w', w' ++ w = W ∧ w'.last = w.first
-
--- lemma isSuffix_append_left (hw : w₁.last = w₂.first) : w₂.IsSuffix (w₁ ++ w₂) :=
---   ⟨w₁, rfl, hw⟩
-
-@[simp]
-lemma reverse_isPrefix_reverse : w₁.reverse.IsPrefix w₂.reverse ↔ w₁.IsSuffix w₂ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨w₁', h, h_eq⟩ := h
-    simp only [reverse_last] at h_eq
-    have hrw : w₂ = w₁'.reverse ++ w₁ := by
-      rw [← reverse_inj_iff, reverse_append (by simpa using h_eq.symm), reverse_reverse, h]
-    rw [hrw]
-    apply isSuffix_append_left (by simpa using h_eq.symm)
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  exact ⟨w₁'.reverse, by rwa [reverse_append], by simpa using h_eq.symm⟩
-
-
-
-lemma IsSuffix.last_eq (h : w₁.IsSuffix w₂) : w₁.last = w₂.last := by
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  cases w₁ with simp_all
-
-lemma IsSuffix.length_le (h : w₁.IsSuffix w₂) : w₁.length ≤ w₂.length := by
-  obtain ⟨w₁', rfl, h_eq⟩ := h
-  simp
-
-@[simp]
-lemma IsSuffix.refl (w : Walk α β) : w.IsSuffix w :=
-  ⟨nil w.first, by simp [append_nil rfl]⟩
+lemma IsSuffix.length_le (h : w₁.IsSuffix w₂) : w₁.length ≤ w₂.length :=
+  h.isSubwalk.length_le
 
 lemma IsSuffix.trans (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₃) : w₁.IsSuffix w₃ := by
-    rw [← reverse_isPrefix_reverse] at *
-    exact h.trans h'
+  simpa using (h.reverse_isPrefix_reverse.trans h'.reverse_isPrefix_reverse)
 
-lemma IsSuffix.eq_of_length_ge (h : w₁.IsSuffix w₂) (hge : w₂.length ≤ w₁.length) : w₁ = w₂ := by
-  rw [← reverse_isPrefix_reverse] at h
-  refine reverse_inj (h.eq_of_length_ge <| by simpa)
+lemma IsSuffix.eq_of_length_ge (h : w₁.IsSuffix w₂) (hge : w₂.length ≤ w₁.length) : w₁ = w₂ :=
+  h.isSubwalk.eq_of_length_ge hge
 
 lemma IsSuffix.antisymm (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
 lemma ValidIn.isSuffix (hVd : w.ValidIn G) (hPf : w₁.IsSuffix w) : w₁.ValidIn G := by
-  simpa using hVd.reverse.IsPrefix <| reverse_isPrefix_reverse.2 hPf
+  simpa using hVd.reverse.IsPrefix hPf.reverse_isPrefix_reverse
 
 lemma _root_.Graph.IsPath.IsSuffix (hPf : w₁.IsSuffix w) (hP : G.IsPath w) : G.IsPath w₁ := by
-  simpa using hP.reverse.IsPrefix <| reverse_isPrefix_reverse.2 hPf
+  simpa using hP.reverse.IsPrefix <| reverse_isPrefix_reverse_iff.2 hPf
+
+lemma IsSuffix.cons (h : w₁.IsSuffix w₂) (x e) : w₁.IsSuffix (cons x e w₂) := by
+  simpa using (h.reverse_isPrefix_reverse.concat e x).reverse_isSuffix_reverse
 
 @[simp]
-lemma nil_isSuffix_iff : (nil x).IsSuffix w ↔ x = w.last := by
-  rw [← reverse_isPrefix_reverse, reverse_nil, nil_isPrefix_iff, reverse_first]
-
-@[simp]
-lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x := by
-  rw [← reverse_isPrefix_reverse, reverse_nil, isPrefix_nil_iff, reverse_eq_comm, reverse_nil]
-
-@[simp]
-lemma isSuffix_cons (w : Walk α β) (e) (x) : w.IsSuffix (cons x e w) := by
-  rw [← reverse_isPrefix_reverse, reverse_cons]
-  apply isPrefix_concat
-
+lemma isSuffix_cons_self (w : Walk α β) (e) (x) : w.IsSuffix (cons x e w) :=
+  isSuffix_refl.cons ..
 
 /-! # Cutting walks Off -/
 
@@ -339,27 +287,25 @@ lemma prefixUntil_prop_last {w : Walk α β} (h : ∃ u ∈ w, P u) : P (w.prefi
   induction w with
   | nil u => simpa using h
   | cons u e W ih =>
-  obtain h | h : P u ∨ ∃ a ∈ W, P a := by simpa using h
-  · simp [h]
-  simp [ih h, apply_ite]
+    obtain h | h : P u ∨ ∃ a ∈ W, P a := by simpa using h
+    · simp [h]
+    simp [ih h, apply_ite]
 
 lemma prefixUntil_not_prop (hx : x ∈ w.prefixUntil P) (hne : x ≠ (w.prefixUntil P).last) :
     ¬ P x := by
   induction w with
   | nil u => simp_all
   | cons u e W ih =>
-  by_cases hu : P u
-  · simp only [prefixUntil_cons, hu, ↓reduceIte, nil_last, ne_eq, mem_nil_iff] at hne hx
-    contradiction
-  simp only [prefixUntil_cons, hu, ↓reduceIte, cons_last, ne_eq, mem_cons_iff] at hne hx ih
-  obtain rfl | hx := hx
-  · assumption
-  exact ih hx hne
+    by_cases hu : P u
+    · simp only [prefixUntil_cons, hu, ↓reduceIte, nil_last, ne_eq, mem_nil_iff] at hne hx
+      contradiction
+    simp only [prefixUntil_cons, hu, ↓reduceIte, cons_last, ne_eq, mem_cons_iff] at hne hx ih
+    obtain rfl | hx := hx
+    · assumption
+    exact ih hx hne
 
 lemma Nonempty.prefixUntil_nil_iff (hw : Nonempty w) : (w.prefixUntil P).Nil ↔ P w.first := by
-  induction w with
-  | nil => simp at hw
-  | cons _ _ _  => simp [apply_ite]
+  induction w with | nil => simp at hw | cons => simp [apply_ite]
 
 lemma Nonempty.prefixUntil_nonempty_iff (hw : Nonempty w) :
     (w.prefixUntil P).Nonempty ↔ ¬ P w.first := by
@@ -368,11 +314,11 @@ lemma Nonempty.prefixUntil_nonempty_iff (hw : Nonempty w) :
 lemma prefixUntil_isPrefix (w : Walk α β) (P : α → Prop) [DecidablePred P] :
     (w.prefixUntil P).IsPrefix w := by
   induction w with
-  | nil u => simp
+  | nil => simp
   | cons u e W ih =>
-  by_cases hP : P u
-  · simp [hP]
-  simpa [hP]
+    by_cases hP : P u
+    · simp [hP]
+    simpa [hP] using ih.cons u e
 
 /-- Take the suffix starting at the first vertex satisfying a predicate `P`,
 (or the `Nil` walk on the last vertex if nothing satisfies `P`) -/
@@ -393,21 +339,21 @@ lemma suffixFrom_last (w : Walk α β) : (w.suffixFrom P).last = w.last := by
 
 lemma suffixFrom_first_prop {w : Walk α β} (h : ∃ u ∈ w, P u) : P (w.suffixFrom P).first := by
   induction w with
-  | nil u => simpa using h
+  | nil => simpa using h
   | cons u e W ih =>
-  obtain h | h : P u ∨ ∃ a ∈ W, P a := by simpa using h
-  · simp [h]
-  simp [ih h, apply_ite]
+    obtain h | h : P u ∨ ∃ a ∈ W, P a := by simpa using h
+    · simp [h]
+    simp [ih h, apply_ite]
 
 lemma suffixFrom_isSuffix (w : Walk α β) (P : α → Prop) [DecidablePred P] :
     (w.suffixFrom P).IsSuffix w := by
   induction w with
   | nil u => simp
   | cons u e W ih =>
-  simp only [suffixFrom_cons]
-  split_ifs
-  · simp
-  exact ih.trans (by simp)
+    simp only [suffixFrom_cons]
+    split_ifs
+    · simp
+    exact ih.trans (by simp)
 
 /-- Take the suffix of `w` starting at the last occurence of `P` in `w`.
 If `P` never occurs, this is all of `w`. -/
@@ -417,285 +363,104 @@ def suffixFromLast (w : Walk α β) (P : α → Prop) [DecidablePred P] : Walk �
 @[simp]
 lemma suffixFromLast_isSuffix (w : Walk α β) (P : α → Prop) [DecidablePred P] :
     (w.suffixFromLast P).IsSuffix w := by
-  rw [← reverse_isPrefix_reverse, suffixFromLast, reverse_reverse]
+  rw [← reverse_isPrefix_reverse_iff, suffixFromLast, reverse_reverse]
   apply prefixUntil_isPrefix
+
+lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).first := by
+  rw [suffixFromLast, reverse_first]
+  exact prefixUntil_prop_last (by simpa)
 
 /-- Given an element `u` of a walk `w`, take the walk starting from the first occurence of `u`. -/
 def firstAt [DecidableEq α] (w : Walk α β) (u : α) : Walk α β := w.suffixFrom (· = u)
 
-/-- Remove duplicate vertices from a walk -/
-def dedup [DecidableEq α] : Walk α β → Walk α β
+section dedup
+
+variable [DecidableEq α]
+
+/-- Remove duplicate vertices from a walk. -/
+def dedup : Walk α β → Walk α β
   | nil x => nil x
   | cons x e w =>
     have := (w.suffixFrom_isSuffix (· = x)).length_le
     if x ∈ w then dedup (w.suffixFrom (· = x)) else cons x e (dedup w)
   termination_by w => w.length
 
+@[simp]
+lemma dedup_nil (x : α) : (nil x (β := β)).dedup = nil x := by
+  simp [dedup]
 
--- lemma firstAt_length_le [DecidableEq α] {w : Walk α β} (h : u ∈ w) :
---     (firstAt w u h).length ≤ w.length := by
---   match w with
---   | nil x => simp [firstAt]
---   | cons x e w =>
---     simp only [firstAt, cons_length]
---     split_ifs with hin
---     · have := firstAt_length_le hin
---       omega
---     · simp
+lemma dedup_cons_eq_ite (x : α) (e : β) (w : Walk α β) :
+    (cons x e w).dedup = if x ∈ w then dedup (w.suffixFrom (· = x)) else cons x e w.dedup := by
+  simp [dedup]
 
--- def dedup [DecidableEq α] : Walk α β → Walk α β
--- | nil x => nil x
--- | cons x e w =>
---   if h : x ∈ w
---   then by
---     have := firstAt_length_le h
---     exact (firstAt w x h).dedup
---   else cons x e (dedup w)
--- termination_by w => w.length
+lemma dedup_cons_of_mem (hxw : x ∈ w) (e) : (cons x e w).dedup = dedup (w.suffixFrom (· = x)) := by
+  simp [dedup, hxw]
 
+lemma dedup_cons_of_not_mem (hxw : x ∉ w) (e) :
+    (cons x e w).dedup = cons x e (dedup w) := by
+  simp [dedup, hxw]
 
--- /- Properties of `firstAt` -/
--- @[simp]
--- lemma firstAt_nil (hx : x ∈ (nil u : Walk α β)) : (nil u).firstAt x hx = nil x := by
---   rw [mem_nil_iff] at hx
---   subst u
---   rfl
+@[simp]
+lemma dedup_first (w : Walk α β) : w.dedup.first = w.first := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
+    simp only [dedup, apply_ite, cons_first, ite_eq_right_iff]
+    rw [dedup_first]
+    exact fun huw ↦ suffixFrom_first_prop (P := (· = u)) ⟨_, huw, rfl⟩
+  termination_by w.length
 
--- @[simp]
--- lemma firstAt_first (hx : x ∈ w) : (w.firstAt x hx).first = x := by
---   induction w with
---   | nil u =>
---     rw [mem_nil_iff] at hx
---     exact hx.symm
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold firstAt
---     split_ifs with h
---     · exact ih h
---     · simp only [h, or_false, cons_first] at hx ⊢
---       exact hx.symm
+@[simp]
+lemma dedup_last (w : Walk α β) : w.dedup.last = w.last := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
+    simp only [cons_last]
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw, dedup_last, suffixFrom_last]
+    rw [dedup_cons_of_not_mem huw, cons_last, dedup_last]
+  termination_by w.length
 
--- @[simp]
--- lemma firstAt_last (hx : x ∈ w) : (w.firstAt x hx).last = w.last := by
---   induction w with
---   | nil u => rfl
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold firstAt
---     split_ifs with h
---     · simp only [h, ↓reduceDIte, cons_last]
---       exact ih h
---     · simp [h]
+lemma dedup_isSubwalk (w : Walk α β) : w.dedup.IsSubwalk w := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw]
+      refine (w.suffixFrom _).dedup_isSubwalk.trans ?_
+      exact (w.suffixFrom_isSuffix _).isSubwalk.trans <| by simp
+    rw [dedup_cons_of_not_mem huw]
+    exact (dedup_isSubwalk w).cons₂ _ _ _ _ (by simp)
+  termination_by w.length
 
--- @[simp]
--- lemma firstAt_length (hx : x ∈ w) : (w.firstAt x hx).length ≤ w.length := by
---   induction w with
---   | nil u => simp only [firstAt_nil, nil_length, le_refl]
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold firstAt
---     split_ifs with h
---     · simp only [h, ↓reduceDIte, cons_length]
---       have := ih h
---       omega
---     · simp [h]
+lemma dedup_vx_nodup (w : Walk α β) : w.dedup.vx.Nodup := by
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    have hle := (w.suffixFrom_isSuffix (· = u)).length_le.eq_or_lt
+    by_cases huw : u ∈ w
+    · rw [dedup_cons_of_mem huw]
+      apply dedup_vx_nodup
+    simp only [dedup_cons_of_not_mem huw, cons_vx, nodup_cons, mem_vx]
+    exact ⟨mt w.dedup_isSubwalk.vx_sublist.mem huw, w.dedup_vx_nodup⟩
+  termination_by w.length
 
--- @[simp]
--- lemma firstAt_sizeOf_le (hx : x ∈ w) : sizeOf (w.firstAt x hx) ≤ sizeOf w := by
---   induction w with
---   | nil u => simp only [firstAt_nil, nil.sizeOf_spec, sizeOf_default, add_zero, le_refl]
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold firstAt
---     split_ifs with h
---     · simp only [h, ↓reduceDIte, cons.sizeOf_spec, sizeOf_default, add_zero]
---       have := ih h
---       omega
---     · simp [h]
+lemma dedup_eq_self (hw : w.vx.Nodup) : w.dedup = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [cons_vx, nodup_cons, mem_vx] at hw
+    rw [dedup_cons_of_not_mem hw.1, ih hw.2]
 
--- lemma ValidIn.firstAt (hVd : w.ValidIn G) (hx : x ∈ w) : (w.firstAt x hx).ValidIn G := by
---   induction w with
---   | nil u =>
---     rw [mem_nil_iff] at hx
---     subst u
---     exact hVd
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold Walk.firstAt
---     split_ifs with h
---     · exact ih hVd.2 h
---     · simpa [h]
-
--- lemma firstAt_vx_count (hx : x ∈ w) : (w.firstAt x hx).vx.count x = 1 := by
---   induction w with
---   | nil u =>
---     rw [mem_nil_iff] at hx
---     subst u
---     simp
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold Walk.firstAt
---     split_ifs with h
---     · exact ih h
---     · simp only [h, or_false, cons_vx] at hx ⊢
---       subst u
---       simp [firstAt, count_eq_zero.2 h]
+lemma ValidIn.dedup (h : w.ValidIn G) : w.dedup.ValidIn G :=
+  w.dedup_isSubwalk.validIn h
 
 
--- lemma firstAt_vx_sublist (hx : x ∈ w) : (w.firstAt x hx).vx ⊆ w.vx := by
---   induction w with
---   | nil u =>
---     rw [mem_nil_iff] at hx
---     subst u
---     simp
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold Walk.firstAt
---     split_ifs with h
---     · refine (ih h).trans ?_
---       simp
---     · simp [h]
+end dedup
 
--- lemma firstAt_edge_sublist (hx : x ∈ w) : (w.firstAt x hx).edge ⊆ w.edge := by
---   induction w with
---   | nil u =>
---     rw [mem_nil_iff] at hx
---     subst u
---     simp
---   | cons u e W ih =>
---     rw [mem_cons_iff] at hx
---     unfold Walk.firstAt
---     split_ifs with h
---     · refine (ih h).trans ?_
---       simp
---     · simp [h]
-
--- @[simp]
--- lemma dedup_first (w : Walk α β) : w.dedup.first = w.first := by
---   match w with
---   | .nil u =>
---     unfold dedup
---     rfl
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · rw [cons_first, dedup_first (W.firstAt u h), firstAt_first]
---     · rfl
-
--- @[simp]
--- lemma dedup_last (w : Walk α β) : w.dedup.last = w.last := by
---   match w with
---   | .nil u =>
---     unfold dedup
---     rfl
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · rw [cons_last, dedup_last (W.firstAt u h), firstAt_last]
---     · simp only [cons_last]
---       exact dedup_last W
-
--- lemma dedup_length (w : Walk α β) : w.dedup.length ≤ w.length := by
---   match w with
---   | .nil u =>
---     simp [dedup]
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · simp only [cons_length]
---       refine (dedup_length (W.firstAt u h)).trans ?_
---       refine (firstAt_length_le h).trans ?_
---       exact Nat.le_add_right W.length 1
---     simp [dedup_length W]
-
--- lemma dedup_sizeOf_le (w : Walk α β) : sizeOf w.dedup ≤ sizeOf w := by
---   match w with
---   | .nil u =>
---     simp only [dedup, nil.sizeOf_spec, sizeOf_default, add_zero, le_refl]
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · simp only [cons.sizeOf_spec, sizeOf_default, add_zero]
---       refine (dedup_sizeOf_le (W.firstAt u h)).trans ?_
---       refine (firstAt_sizeOf_le h).trans ?_
---       exact Nat.le_add_left (sizeOf W) 1
---     simp [dedup_sizeOf_le W]
-
--- lemma ValidIn.dedup {w : Walk α β} (hVd : w.ValidIn G) : w.dedup.ValidIn G := by
---   match w with
---   | .nil u =>
---     unfold Walk.dedup
---     exact hVd
---   | .cons u e W =>
---     unfold Walk.dedup
---     split_ifs with h
---     · simp only [h, ↓reduceDIte]
---       exact (hVd.2.firstAt h).dedup
---     · simp only [hVd.2.dedup, cons_validIn, and_true]
---       convert hVd.1 using 1
---       exact dedup_first W
-
--- lemma dedup_vx_sublist {w : Walk α β} {x : α} (hx : x ∈ w.dedup) : x ∈ w := by
---   match w with
---   | .nil u =>
---     unfold dedup at hx
---     exact hx
---   | .cons u e W =>
---     unfold dedup at hx
---     split_ifs at hx with h
---     · simp only at hx
---       exact mem_of_mem_tail <| firstAt_vx_sublist h <| dedup_vx_sublist hx
---     · simp only [cons_vx, mem_cons, mem_notation, mem_cons_iff] at hx ⊢
---       exact hx.imp (·) dedup_vx_sublist
-
--- lemma dedup_edge_sublist (w : Walk α β) : w.dedup.edge ⊆ w.edge := by
---   match w with
---   | .nil u =>
---     unfold dedup
---     simp only [nil_edge, List.Subset.refl]
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · rw [cons_edge]
---       refine (dedup_edge_sublist (W.firstAt u h)).trans ?_
---       refine (firstAt_edge_sublist h).trans ?_
---       simp only [List.Subset.refl, subset_cons_of_subset]
---     · simp only [cons_edge, cons_subset, mem_cons, true_or, true_and]
---       refine (dedup_edge_sublist W).trans ?_
---       simp only [List.Subset.refl, subset_cons_of_subset]
-
--- lemma dedup_vx_nodup (w : Walk α β) : w.dedup.vx.Nodup := by
---   match w with
---   | .nil u =>
---     unfold dedup
---     simp only [nil_vx, nodup_cons, not_mem_nil, not_false_eq_true, nodup_nil, and_self]
---   | .cons u e W =>
---     unfold dedup
---     split_ifs with h
---     · simp only [h, ↓reduceDIte]
---       exact dedup_vx_nodup (W.firstAt u h)
---     · simp only [cons_vx, nodup_cons, dedup_vx_nodup W, and_true]
---       contrapose! h
---       exact dedup_vx_sublist h
-
--- lemma dedup_edge_nodup {w : Walk α β} (hVd : w.ValidIn G) : w.dedup.edge.Nodup := by
---   match w with
---   | .nil u =>
---     unfold dedup
---     simp only [nil_edge, nodup_nil]
---   | .cons u e W =>
---   unfold dedup
---   split_ifs with h
---   · simp only [h, ↓reduceDIte]
---     exact dedup_edge_nodup (hVd.2.firstAt h)
---   simp only [cons_edge, nodup_cons, dedup_edge_nodup hVd.2, and_true]
---   obtain ⟨hne, hVd⟩ := hVd
---   contrapose! h
---   exact dedup_vx_sublist <| hVd.dedup.mem_of_mem_edge_of_inc h hne.inc_left
-
--- lemma ValidIn.dedup_isPath (hVd : w.ValidIn G) : G.IsPath w.dedup where
---   validIn := ValidIn.dedup hVd
---   nodup := dedup_vx_nodup w
 
 -- end Walk
 -- open Walk
