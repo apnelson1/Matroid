@@ -83,6 +83,10 @@ lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
   | nil => simp
   | cons u f w ih => simp [ih, or_assoc]
 
+@[simp]
+lemma concat_nonempty (w : Walk α β) (e x) : (w.concat e x).Nonempty := by
+  induction w with simp_all
+
 /- Properties of append operation -/
 @[simp]
 lemma append_notation : append w₁ w₂ = w₁ ++ w₂ := rfl
@@ -342,6 +346,10 @@ lemma reverse_nil : (nil x : Walk α β).reverse = nil x := rfl
 
 @[simp]
 lemma reverse_cons : (cons x e w).reverse = (w.reverse).concat e x := rfl
+
+@[simp]
+lemma reverse_nonempty (w : Walk α β) : w.reverse.Nonempty ↔ w.Nonempty := by
+  induction w with simp_all
 
 @[simp]
 lemma reverse_first : (reverse w).first = w.last := by

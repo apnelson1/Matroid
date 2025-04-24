@@ -522,20 +522,22 @@ lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
 lemma dropLast_cons_nil : (cons x e (nil y) : Walk α β).dropLast = nil x := rfl
 
 @[simp]
+lemma dropLast_cons_cons :
+  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
+
+@[simp]
 lemma reverse_tail (w : Walk α β) : w.reverse.tail = w.dropLast.reverse := by
   induction w with
   | nil => simp
   | cons u e w ih =>
-  rw [reverse_cons, tail_concat]
-  simp [ih]
-
+  cases w with
+  | nil => simp
+  | cons x f w =>
+  rw [reverse_cons, tail_concat, ih, ← reverse_cons, dropLast_cons_cons]
+  simp
 
 /-- Properties of dropLast operation -/
 
-
-@[simp]
-lemma dropLast_cons_cons :
-  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
 
 @[simp]
 lemma dropLast_first {w : Walk α β} (h : w.Nonempty) : (w.dropLast).first = w.first := by
@@ -644,7 +646,7 @@ lemma last_not_mem_dropLast_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w
   rw [← mem_vxSet_iff, dropLast_vxSet_of_isPath hP hn] at h
   simp at h
 
-end dropLast
+end drop
 
 
 -- end Walk
