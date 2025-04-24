@@ -10,11 +10,9 @@ variable {α β : Type*} {G H : Graph α β} {u v x y z : α} {e e' f g : β} {S
 
 namespace Walk
 
-set_option linter.style.longLine false
-
-/-- `w₁.IsSubwalk w₂` means that `w₁` is a walk using a subset of the vertices and edges of `w₂`
+/-- `w₁.IsSubwalk w₂` means that `w₁` is a walk using some of the vertices and edges of `w₂`
 in the same order that they appear in `w₂`.
-Examples include prefixes, suffixes and walks obtained from `w₂` by 'shortcutting'.  -/
+Examples include prefixes, suffixes and walks obtained from `w₂` by shortcuts.  -/
 inductive IsSubwalk : Walk α β → Walk α β → Prop
   | nil x w (h : x ∈ w) : IsSubwalk (nil x) w
   | cons x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk w₁ (cons x e w₂)
@@ -119,7 +117,7 @@ lemma IsSubwalk.of_reverse (h : w₁.reverse.IsSubwalk w₂.reverse) : w₁.IsSu
 
 /-- ## Prefixes -/
 
--- /-- `IsPrefix w w'` means that `w` is a prefix of `w'`. -/
+-- /-- `IsPrefix w₁ w₂` means that `w₁` is a prefix of `w₂`. -/
 inductive IsPrefix : Walk α β → Walk α β → Prop
   | nil (w : Walk α β) : IsPrefix (nil w.first) w
   | cons (x) (e) (w₁ w₂ : Walk α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)
@@ -133,13 +131,11 @@ lemma IsPrefix.exists_eq_append (h : IsPrefix w₁ w₂) :
 
 lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ ++ w₂) := by
   induction w₁ with
-  | nil u => convert IsPrefix.nil w₂
+  | nil => convert IsPrefix.nil w₂
   | cons u e w₁ ih => simpa using (ih hw).cons ..
 
 lemma IsPrefix.isSubwalk (h : w₁.IsPrefix w₂) : w₁.IsSubwalk w₂ := by
-  induction h with
-  | nil w => simp
-  | cons x e w₁ w₂ h ih => exact ih.cons₂ _ _ _ _ h.first_eq
+  induction h with | nil => simp | cons _ _ _ _ h ih => exact ih.cons₂ _ _ _ _ h.first_eq
 
 lemma IsPrefix.mem (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
   h.isSubwalk.mem hx
@@ -271,7 +267,7 @@ lemma isSuffix_cons_self (w : Walk α β) (e) (x) : w.IsSuffix (cons x e w) :=
 variable {P : α → Prop} [DecidablePred P]
 
 /-- Take the prefix ending at the first vertex satisfying a predicate `P`
-(or the entire walk if nothing satisfies `P`) -/
+(or the entire walk if nothing satisfies `P`). -/
 def prefixUntil (w : Walk α β) (P : α → Prop) [DecidablePred P] : Walk α β :=
   match w with
   | nil x => nil x
@@ -382,6 +378,130 @@ lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).
 /-- Given an element `u` of a walk `w`, take the walk starting from the first occurence of `u`. -/
 def firstAt [DecidableEq α] (w : Walk α β) (u : α) : Walk α β := w.suffixFrom (· = u)
 
+section drop
+
+/-- Remove the first vertex and edge from a walk -/
+def tail : Walk α β → Walk α β
+  | nil x => nil x
+  | cons _ _ w => w
+
+@[simp]
+lemma tail_nil (x : α) : (nil x (β := β)).tail = nil x := rfl
+
+@[simp]
+lemma tail_cons (x e) (w : Walk α β) : (cons x e w).tail = w := rfl
+
+@[simp]
+lemma tail_last (w : Walk α β) : w.tail.last = w.last := by
+  induction w with simp
+
+lemma tail_vx (hw : w.Nonempty) : w.tail.vx = w.vx.tail := by
+  induction w with simp_all
+
+lemma tail_edge (w : Walk α β) : w.tail.edge = w.edge.tail := by
+  induction w with simp
+
+lemma mem_tail_iff_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
+    x ∈ w.tail ↔ x ∈ w ∧ x ≠ w.first := by
+  induction w with aesop
+
+lemma tail_vxSet_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
+    w.tail.vxSet = w.vxSet \ {w.first} := by
+  simp_rw [vxSet, mem_tail_iff_of_nodup hw hne]
+  aesop
+
+@[simp]
+lemma tail_isSuffix (w : Walk α β) : w.tail.IsSuffix w := by
+  induction w with simp
+
+@[simp]
+lemma eq_first_or_mem_tail (h : x ∈ w) : x = w.first ∨ x ∈ w.tail := by
+  induction w with simp_all
+
+lemma mem_iff_eq_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail := by
+  refine ⟨eq_first_or_mem_tail, ?_⟩
+  rintro (rfl | hx)
+  · simp
+  exact w.tail_isSuffix.mem hx
+
+lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.tail.concat e x := by
+  induction w with simp_all
+
+lemma eq_cons_of_nonempty (hw : w.Nonempty) :
+    w = cons w.first (w.firstEdge hw) w.tail := by
+  induction w with | nil => simp at hw | cons => simp [firstEdge]
+
+/-- Remove the last edge and vertex from a walk. This is the reverse of the reversed tail. -/
+def dropLast : Walk α β → Walk α β
+| nil x => nil x
+| cons x _ (nil _) => nil x
+| cons x e (cons y e' w) => cons x e ((cons y e' w).dropLast)
+
+@[simp]
+lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
+
+@[simp]
+lemma dropLast_cons_nil : (cons x e (nil y) : Walk α β).dropLast = nil x := rfl
+
+@[simp]
+lemma dropLast_cons_cons :
+  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
+
+@[simp]
+lemma reverse_tail (w : Walk α β) : w.reverse.tail = w.dropLast.reverse := by
+  induction w with
+  | nil => simp
+  | cons u e w ih => cases w with
+    | nil =>
+      simp
+    | cons x f w =>
+  rw [reverse_cons, tail_concat, ih, ← reverse_cons, dropLast_cons_cons]
+  simp
+
+@[simp] lemma reverse_dropLast (w : Walk α β) : w.reverse.dropLast = w.tail.reverse := by
+  simpa using (congr_arg reverse w.reverse.reverse_tail).symm
+
+lemma reverse_dropLast_reverse (w : Walk α β) : w.reverse.dropLast.reverse = w.tail := by
+  simp
+
+lemma reverse_tail_reverse (w : Walk α β) : w.reverse.tail.reverse = w.dropLast := by
+  simp
+
+@[simp]
+lemma dropLast_concat (w : Walk α β) (e x) : (w.concat e x).dropLast = w := by
+  rw [← reverse_tail_reverse, concat_reverse, tail_cons, reverse_reverse]
+
+@[simp]
+lemma dropLast_first (w : Walk α β) : (w.dropLast).first = w.first := by
+  rw [← reverse_last, ← reverse_tail, tail_last, reverse_last]
+
+@[simp]
+lemma dropLast_vx (h : w.Nonempty) : (w.dropLast).vx = w.vx.dropLast := by
+  rw [← reverse_tail_reverse, reverse_vx, tail_vx (by simpa)]
+  simp
+
+@[simp]
+lemma dropLast_edge (w : Walk α β) : (w.dropLast).edge = w.edge.dropLast := by
+  rw [← reverse_tail_reverse, reverse_edge, tail_edge, reverse_edge, ← dropLast_reverse,
+    List.reverse_reverse]
+
+lemma dropLast_validIn {w : Walk α β} (hVd : w.ValidIn G) : (w.dropLast).ValidIn G := by
+  rw [← reverse_validIn_iff, ← reverse_tail]
+  exact hVd.reverse.isSuffix w.reverse.tail_isSuffix
+
+lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = w.last := by
+  rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,
+    reverse_first]
+
+@[simp]
+lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
+    (w.dropLast).vxSet = w.vxSet \ {w.last} := by
+  rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
+  simp
+
+end drop
+
+
 section dedup
 
 variable [DecidableEq α]
@@ -464,190 +584,13 @@ lemma dedup_eq_self (hw : w.vx.Nodup) : w.dedup = w := by
     simp only [cons_vx, nodup_cons, mem_vx] at hw
     rw [dedup_cons_of_not_mem hw.1, ih hw.2]
 
+lemma dedup_eq_self_iff : w.dedup = w ↔ w.vx.Nodup :=
+  ⟨fun h ↦ by rw [← h]; exact dedup_vx_nodup w, dedup_eq_self⟩
+
 lemma ValidIn.dedup (h : w.ValidIn G) : w.dedup.ValidIn G :=
   w.dedup_isSubwalk.validIn h
 
 end dedup
-
-
-section drop
-
-/-- Remove the first vertex and edge from a walk -/
-def tail : Walk α β → Walk α β
-  | nil x => nil x
-  | cons _ _ w => w
-
-@[simp]
-lemma tail_nil (x : α) : (nil x (β := β)).tail = nil x := rfl
-
-@[simp]
-lemma tail_cons (x e) (w : Walk α β) : (cons x e w).tail = w := rfl
-
-@[simp]
-lemma tail_last (w : Walk α β) : w.tail.last = w.last := by
-  induction w with simp
-
-lemma tail_vx (hw : w.Nonempty) : w.tail.vx = w.vx.tail := by
-  induction w with simp_all
-
-lemma tail_edge (w : Walk α β) : w.tail.edge = w.edge.tail := by
-  induction w with simp
-
-lemma tail_isSuffix (w : Walk α β) : w.tail.IsSuffix w := by
-  induction w with simp
-
-@[simp]
-lemma eq_first_or_mem_tail (h : x ∈ w) : x = w.first ∨ x ∈ w.tail := by
-  induction w with simp_all
-
-lemma mem_iff_eq_first_of_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail := by
-  refine ⟨eq_first_or_mem_tail, ?_⟩
-  rintro (rfl | hx)
-  · simp
-  exact w.tail_isSuffix.mem hx
-
-lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.tail.concat e x := by
-  induction w with simp_all
-
-/-- Remove the last edge and vertex from a walk -/
-def dropLast : Walk α β → Walk α β
-| nil x => nil x
-| cons x _ (nil _) => nil x
-| cons x e (cons y e' w) => cons x e ((cons y e' w).dropLast)
-
-@[simp]
-lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
-
-@[simp]
-lemma dropLast_cons_nil : (cons x e (nil y) : Walk α β).dropLast = nil x := rfl
-
-@[simp]
-lemma dropLast_cons_cons :
-  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
-
-@[simp]
-lemma reverse_tail (w : Walk α β) : w.reverse.tail = w.dropLast.reverse := by
-  induction w with
-  | nil => simp
-  | cons u e w ih =>
-  cases w with
-  | nil => simp
-  | cons x f w =>
-  rw [reverse_cons, tail_concat, ih, ← reverse_cons, dropLast_cons_cons]
-  simp
-
-/-- Properties of dropLast operation -/
-
-
-@[simp]
-lemma dropLast_first {w : Walk α β} (h : w.Nonempty) : (w.dropLast).first = w.first := by
-  match w with
-  | .nil x => simp at h
-  | .cons x e (.nil y) => simp
-  | .cons x e (cons y e' w) => simp
-
-@[simp]
-lemma dropLast_vx {w : Walk α β} (h : w.Nonempty) : (w.dropLast).vx = w.vx.dropLast := by
-  match w with
-  | .nil x => simp only [Nonempty.not_nil] at h
-  | .cons x e (.nil y) => simp only [dropLast, nil_vx, cons_vx, dropLast_cons₂, dropLast_single]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast, cons_vx, dropLast_cons₂, List.cons.injEq, true_and]
-    rw [← cons_vx (e := e')]
-    apply dropLast_vx (by simp)
-
-@[simp]
-lemma dropLast_edge {w : Walk α β} (h : w.Nonempty) : (w.dropLast).edge = w.edge.dropLast := by
-  match w with
-  | .nil x => simp only [Nonempty.not_nil] at h
-  | .cons x e (.nil y) => simp only [dropLast, nil_edge, cons_edge, dropLast_single]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast, cons_edge, dropLast_cons₂, List.cons.injEq, true_and]
-    exact dropLast_edge (by simp)
-
-lemma dropLast_validIn {w : Walk α β} (hVd : w.ValidIn G) : (w.dropLast).ValidIn G := by
-  match w with
-  | .nil x => simp only [dropLast, hVd]
-  | .cons x e (.nil y) =>
-    simp only [cons_validIn, nil_first, nil_validIn] at hVd
-    exact hVd.1.vx_mem_left
-  | .cons x e (cons y e' w) =>
-    rw [dropLast, cons_validIn, dropLast_first (by simp)]
-    rw [cons_validIn] at hVd
-    exact ⟨hVd.1, dropLast_validIn hVd.2⟩
-
-lemma mem_dropLast_or_last_of_mem {w : Walk α β} (hu : u ∈ w) : u ∈ w.dropLast ∨ u = w.last := by
-  match w with
-  | .nil x => simpa using hu
-  | .cons x e (.nil y) =>
-    simp only [mem_cons_iff, mem_nil_iff] at hu
-    obtain rfl | rfl := hu <;> simp
-  | .cons x e (cons y e' w) =>
-    simp only [mem_cons_iff] at hu
-    obtain rfl | rfl | hu := hu
-    · simp
-    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
-      have := mem_dropLast_or_last_of_mem (by simp : u ∈ (cons u e' w))
-      rw [cons_last] at this
-      tauto
-    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
-      have := mem_dropLast_or_last_of_mem (by simp [hu] : u ∈ (cons y e' w))
-      rw [cons_last] at this
-      tauto
-
-lemma mem_of_mem_dropLast {w : Walk α β} (h : u ∈ w.dropLast) : u ∈ w := by
-  match w with
-  | .nil x => simpa using h
-  | .cons x e (.nil y) => simp_all only [dropLast_cons_nil, mem_nil_iff, mem_cons_iff, true_or]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast_cons_cons, mem_cons_iff] at h ⊢
-    obtain rfl | h := h
-    · left
-      rfl
-    · have := mem_of_mem_dropLast (w := cons y e' w) (by simpa only [Nonempty.cons_true,
-      dropLast_vx, cons_vx])
-      right
-      simpa only [mem_cons_iff] using this
-
-lemma mem_dropLast_or_last_of_mem_iff :
-    u ∈ w.dropLast ∨ u = w.last ↔ u ∈ w := by
-  refine ⟨?_, mem_dropLast_or_last_of_mem⟩
-  rintro (h | rfl)
-  · exact mem_of_mem_dropLast h
-  · exact last_mem
-
-@[simp]
-lemma dropLast_vxSet_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
-    (w.dropLast).vxSet = w.vxSet \ {w.last} := by
-  match w with
-  | .nil x => simp at hn
-  | .cons x e (.nil y) =>
-    simp only [dropLast_cons_nil, nil_vxSet, cons_vxSet, union_singleton, cons_last, nil_last,
-      mem_singleton_iff, insert_diff_of_mem]
-    rw [diff_singleton_eq_self]
-    simp only [mem_singleton_iff]
-    rintro rfl
-    simp at hP
-  | .cons x e (cons y e' w) =>
-    have := dropLast_vxSet_of_isPath (w := cons y e' w)
-    simp only [cons_isPath, Nonempty.cons_true, cons_vxSet, singleton_union, cons_last,
-      forall_const, and_imp, cons_first, mem_cons_iff, not_or, dropLast_cons_cons,
-      union_insert] at this hP ⊢
-    obtain ⟨⟨hP, h₂', hynin⟩, h₂, hne, hxnin⟩ := hP
-    rw [this hP h₂' hynin, ← insert_diff_of_not_mem, insert_comm]
-    simp only [mem_singleton_iff]
-    rintro rfl
-    simp only [last_mem, not_true_eq_false] at hxnin
-
-@[simp]
-lemma last_not_mem_dropLast_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
-    w.last ∉ w.dropLast := by
-  rintro h
-  rw [← mem_vxSet_iff, dropLast_vxSet_of_isPath hP hn] at h
-  simp at h
-
-end drop
-
 
 -- end Walk
 -- open Walk
@@ -747,7 +690,7 @@ end drop
 --     · by_cases hPy : P y
 --       · simp_all only [cons_validIn, cons_first, endIf_cons, dite_true, dite_eq_ite, ite_false,
 --         Nonempty.cons_true, mem_cons_iff, mem_nil_iff, cons_last, nil_last,
---         exists_eq_or_imp, not_false_eq_true, true_and, exists_eq_left, not_true_eq_false, false_and,
+--      exists_eq_or_imp, not_false_eq_true, true_and, exists_eq_left, not_true_eq_false, false_and,
 --         or_false]
 --         use e
 --         exact hVd.1

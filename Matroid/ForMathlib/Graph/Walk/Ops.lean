@@ -24,11 +24,6 @@ def append : Walk α β → Walk α β → Walk α β
 instance instAppend : Append (Walk α β) where
   append := append
 
-/-- Reverse the order of the vertices and edges of a walk. -/
-def reverse : Walk α β → Walk α β
-| nil x => nil x
-| cons x e w => w.reverse.concat e x
-
 
 
 /-- Properties of concat operation -/
@@ -340,6 +335,12 @@ lemma eq_append_cons_of_edge_mem {w : Walk α β} {e : β} (he : e ∈ w.edge) :
 
 
 
+/-- Reverse the order of the vertices and edges of a walk. -/
+def reverse : Walk α β → Walk α β
+| nil x => nil x
+| cons x e w => w.reverse.concat e x
+
+
 /-- Properties of reverse operation -/
 @[simp]
 lemma reverse_nil : (nil x : Walk α β).reverse = nil x := rfl
@@ -440,14 +441,18 @@ lemma reverse_validIn_iff : (reverse w).ValidIn G ↔ w.ValidIn G :=
 lemma reverse_isPath_iff : G.IsPath (reverse w) ↔ G.IsPath w :=
   ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
 
-
 @[simp]
 lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
   induction w with
   | nil => simp
   | cons u e w ih => simp [ih, or_comm]
 
+@[simp]
+lemma reverse_vxSet (w : Walk α β) : w.reverse.vxSet = w.vxSet := by
+  simp [vxSet]
+
 end Walk
+
 
 -- lemma Connected.exist_walk (h : G.Connected u v) : ∃ (W : Walk α β), W.ValidIn G ∧
 --     W.first = u ∧ W.last = v := by
