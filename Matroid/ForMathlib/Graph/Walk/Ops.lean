@@ -9,15 +9,14 @@ variable {α β : Type*} {G H : Graph α β} {u v x y z : α} {e e' f g : β} {S
   {F F' : Set β} {w w₁ w₂ : Walk α β}
 namespace Walk
 
+/-- Add an edge and a vertex to the end of a walk -/
 def concat : Walk α β → β → α → Walk α β
 | nil x, e, y => cons x e (nil y)
 | cons x e w, f, y => cons x e (w.concat f y)
 
-def dropLast : Walk α β → Walk α β
-| nil x => nil x
-| cons x _ (nil _) => nil x
-| cons x e (cons y e' w) => cons x e ((cons y e' w).dropLast)
 
+/-- Glue two walks `w₁, w₂` together. The last vertex of `w₁` is ignored,
+so this is most reasonable if `w₁.last = w₂.first` -/
 def append : Walk α β → Walk α β → Walk α β
 | nil _x, w => w
 | cons x e w, w' => cons x e (w.append w')
@@ -25,127 +24,12 @@ def append : Walk α β → Walk α β → Walk α β
 instance instAppend : Append (Walk α β) where
   append := append
 
+/-- Reverse the order of the vertices and edges of a walk. -/
 def reverse : Walk α β → Walk α β
 | nil x => nil x
 | cons x e w => w.reverse.concat e x
 
-/-- Properties of dropLast operation -/
-@[simp]
-lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
 
-@[simp]
-lemma dropLast_cons_nil : (cons x e (nil y) : Walk α β).dropLast = nil x := rfl
-
-@[simp]
-lemma dropLast_cons_cons :
-  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
-
-@[simp]
-lemma dropLast_first {w : Walk α β} (h : w.Nonempty) : (w.dropLast).first = w.first := by
-  match w with
-  | .nil x => simp at h
-  | .cons x e (.nil y) => simp
-  | .cons x e (cons y e' w) => simp
-
-@[simp]
-lemma dropLast_vx {w : Walk α β} (h : w.Nonempty) : (w.dropLast).vx = w.vx.dropLast := by
-  match w with
-  | .nil x => simp only [Nonempty.not_nil] at h
-  | .cons x e (.nil y) => simp only [dropLast, nil_vx, cons_vx, dropLast_cons₂, dropLast_single]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast, cons_vx, dropLast_cons₂, List.cons.injEq, true_and]
-    rw [← cons_vx (e := e')]
-    apply dropLast_vx (by simp)
-
-@[simp]
-lemma dropLast_edge {w : Walk α β} (h : w.Nonempty) : (w.dropLast).edge = w.edge.dropLast := by
-  match w with
-  | .nil x => simp only [Nonempty.not_nil] at h
-  | .cons x e (.nil y) => simp only [dropLast, nil_edge, cons_edge, dropLast_single]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast, cons_edge, dropLast_cons₂, List.cons.injEq, true_and]
-    exact dropLast_edge (by simp)
-
-lemma dropLast_validIn {w : Walk α β} (hVd : w.ValidIn G) : (w.dropLast).ValidIn G := by
-  match w with
-  | .nil x => simp only [dropLast, hVd]
-  | .cons x e (.nil y) =>
-    simp only [cons_validIn, nil_first, nil_validIn] at hVd
-    exact hVd.1.vx_mem_left
-  | .cons x e (cons y e' w) =>
-    rw [dropLast, cons_validIn, dropLast_first (by simp)]
-    rw [cons_validIn] at hVd
-    exact ⟨hVd.1, dropLast_validIn hVd.2⟩
-
-lemma mem_dropLast_or_last_of_mem {w : Walk α β} (hu : u ∈ w) : u ∈ w.dropLast ∨ u = w.last := by
-  match w with
-  | .nil x => simpa using hu
-  | .cons x e (.nil y) =>
-    simp only [mem_cons_iff, mem_nil_iff] at hu
-    obtain rfl | rfl := hu <;> simp
-  | .cons x e (cons y e' w) =>
-    simp only [mem_cons_iff] at hu
-    obtain rfl | rfl | hu := hu
-    · simp
-    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
-      have := mem_dropLast_or_last_of_mem (by simp : u ∈ (cons u e' w))
-      rw [cons_last] at this
-      tauto
-    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
-      have := mem_dropLast_or_last_of_mem (by simp [hu] : u ∈ (cons y e' w))
-      rw [cons_last] at this
-      tauto
-
-lemma mem_of_mem_dropLast {w : Walk α β} (h : u ∈ w.dropLast) : u ∈ w := by
-  match w with
-  | .nil x => simpa using h
-  | .cons x e (.nil y) => simp_all only [dropLast_cons_nil, mem_nil_iff, mem_cons_iff, true_or]
-  | .cons x e (cons y e' w) =>
-    simp only [dropLast_cons_cons, mem_cons_iff] at h ⊢
-    obtain rfl | h := h
-    · left
-      rfl
-    · have := mem_of_mem_dropLast (w := cons y e' w) (by simpa only [Nonempty.cons_true,
-      dropLast_vx, cons_vx])
-      right
-      simpa only [mem_cons_iff] using this
-
-lemma mem_dropLast_or_last_of_mem_iff :
-    u ∈ w.dropLast ∨ u = w.last ↔ u ∈ w := by
-  refine ⟨?_, mem_dropLast_or_last_of_mem⟩
-  rintro (h | rfl)
-  · exact mem_of_mem_dropLast h
-  · exact last_mem
-
-@[simp]
-lemma dropLast_vxSet_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
-    (w.dropLast).vxSet = w.vxSet \ {w.last} := by
-  match w with
-  | .nil x => simp at hn
-  | .cons x e (.nil y) =>
-    simp only [dropLast_cons_nil, nil_vxSet, cons_vxSet, union_singleton, cons_last, nil_last,
-      mem_singleton_iff, insert_diff_of_mem]
-    rw [diff_singleton_eq_self]
-    simp only [mem_singleton_iff]
-    rintro rfl
-    simp at hP
-  | .cons x e (cons y e' w) =>
-    have := dropLast_vxSet_of_isPath (w := cons y e' w)
-    simp only [cons_isPath, Nonempty.cons_true, cons_vxSet, singleton_union, cons_last,
-      forall_const, and_imp, cons_first, mem_cons_iff, not_or, dropLast_cons_cons,
-      union_insert] at this hP ⊢
-    obtain ⟨⟨hP, h₂', hynin⟩, h₂, hne, hxnin⟩ := hP
-    rw [this hP h₂' hynin, ← insert_diff_of_not_mem, insert_comm]
-    simp only [mem_singleton_iff]
-    rintro rfl
-    simp only [last_mem, not_true_eq_false] at hxnin
-
-@[simp]
-lemma last_not_mem_dropLast_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
-    w.last ∉ w.dropLast := by
-  rintro h
-  rw [← mem_vxSet_iff, dropLast_vxSet_of_isPath hP hn] at h
-  simp at h
 
 /-- Properties of concat operation -/
 @[simp]
@@ -373,12 +257,14 @@ lemma append_isPath (h : w₁.last = w₂.first) (h₁ : G.IsPath w₁) (h₂ : 
       nodup_append, h₁.nodup.sublist w₁.vx.dropLast_sublist, h₂.nodup, true_and] at hvxSet ⊢
     rintro x hx₁ hx₂
     obtain rfl := hvxSet x (List.mem_of_mem_dropLast hx₁) hx₂
-    cases w₁ with
-    | nil u => simp at hx₁
-    | cons u e W =>
-    rw [ ← dropLast_vx (by simp), mem_vx, ← mem_vxSet_iff,
-      dropLast_vxSet_of_isPath h₁ (by simp)] at hx₁
-    simp at hx₁
+    /- This should be its own lemma -/
+    have aux {l : List α} (hl : l ≠ []) (hl' : l.Nodup) : l.getLast hl ∉ l.dropLast := by
+      rw [← dropLast_append_getLast hl, nodup_append] at hl'
+      obtain ⟨-, h'⟩ := by simpa using hl'
+      assumption
+    rw [last_eq_vx_getLast] at hx₁
+    apply aux (by simp) h₁.nodup hx₁
+
 
 lemma append_left_isPath (h : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₁ where
   validIn := hP.validIn.append_left_validIn h

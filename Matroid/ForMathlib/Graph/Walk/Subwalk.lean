@@ -40,11 +40,14 @@ lemma isSubwalk_refl (w : Walk α β) : w.IsSubwalk w := by
   | nil => simp
   | cons u e w ih => exact ih.cons₂ _ _ _ _ rfl
 
-lemma IsSubwalk.vx_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.vx <+ w₂.vx := by
+lemma IsSubwalk.vx_sublist (h : w₁.IsSubwalk w₂) : w₁.vx <+ w₂.vx := by
   induction h with
   | nil => simpa
   | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
   | cons₂ x e w₁ w₂ h ih => simpa
+
+lemma IsSubwalk.mem (h : w₁.IsSubwalk w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
+  h.vx_sublist.mem hx
 
 lemma IsSubwalk.edge_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.edge <+ w₂.edge := by
   induction h with
@@ -138,6 +141,9 @@ lemma IsPrefix.isSubwalk (h : w₁.IsPrefix w₂) : w₁.IsSubwalk w₂ := by
   | nil w => simp
   | cons x e w₁ w₂ h ih => exact ih.cons₂ _ _ _ _ h.first_eq
 
+lemma IsPrefix.mem (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
+  h.isSubwalk.mem hx
+
 @[simp]
 lemma isPrefix_refl : w.IsPrefix w := by
   induction w with
@@ -220,6 +226,9 @@ lemma isSuffix_refl : w.IsSuffix w := by
 
 lemma IsSuffix.isSubwalk (h : w₁.IsSuffix w₂) : w₁.IsSubwalk w₂ :=
   h.reverse_isPrefix_reverse.isSubwalk.of_reverse
+
+lemma IsSuffix.mem (h : w₁.IsSuffix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
+  h.isSubwalk.mem hx
 
 @[simp]
 lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x :=
@@ -458,8 +467,184 @@ lemma dedup_eq_self (hw : w.vx.Nodup) : w.dedup = w := by
 lemma ValidIn.dedup (h : w.ValidIn G) : w.dedup.ValidIn G :=
   w.dedup_isSubwalk.validIn h
 
-
 end dedup
+
+
+section drop
+
+/-- Remove the first vertex and edge from a walk -/
+def tail : Walk α β → Walk α β
+  | nil x => nil x
+  | cons _ _ w => w
+
+@[simp]
+lemma tail_nil (x : α) : (nil x (β := β)).tail = nil x := rfl
+
+@[simp]
+lemma tail_cons (x e) (w : Walk α β) : (cons x e w).tail = w := rfl
+
+@[simp]
+lemma tail_last (w : Walk α β) : w.tail.last = w.last := by
+  induction w with simp
+
+lemma tail_vx (hw : w.Nonempty) : w.tail.vx = w.vx.tail := by
+  induction w with simp_all
+
+lemma tail_edge (w : Walk α β) : w.tail.edge = w.edge.tail := by
+  induction w with simp
+
+lemma tail_isSuffix (w : Walk α β) : w.tail.IsSuffix w := by
+  induction w with simp
+
+@[simp]
+lemma eq_first_or_mem_tail (h : x ∈ w) : x = w.first ∨ x ∈ w.tail := by
+  induction w with simp_all
+
+lemma mem_iff_eq_first_of_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail := by
+  refine ⟨eq_first_or_mem_tail, ?_⟩
+  rintro (rfl | hx)
+  · simp
+  exact w.tail_isSuffix.mem hx
+
+lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.tail.concat e x := by
+  induction w with simp_all
+
+/-- Remove the last edge and vertex from a walk -/
+def dropLast : Walk α β → Walk α β
+| nil x => nil x
+| cons x _ (nil _) => nil x
+| cons x e (cons y e' w) => cons x e ((cons y e' w).dropLast)
+
+@[simp]
+lemma dropLast_nil : (nil x : Walk α β).dropLast = nil x := rfl
+
+@[simp]
+lemma dropLast_cons_nil : (cons x e (nil y) : Walk α β).dropLast = nil x := rfl
+
+@[simp]
+lemma reverse_tail (w : Walk α β) : w.reverse.tail = w.dropLast.reverse := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+  rw [reverse_cons, tail_concat]
+  simp [ih]
+
+
+/-- Properties of dropLast operation -/
+
+
+@[simp]
+lemma dropLast_cons_cons :
+  (cons x e (cons y e' w) : Walk α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
+
+@[simp]
+lemma dropLast_first {w : Walk α β} (h : w.Nonempty) : (w.dropLast).first = w.first := by
+  match w with
+  | .nil x => simp at h
+  | .cons x e (.nil y) => simp
+  | .cons x e (cons y e' w) => simp
+
+@[simp]
+lemma dropLast_vx {w : Walk α β} (h : w.Nonempty) : (w.dropLast).vx = w.vx.dropLast := by
+  match w with
+  | .nil x => simp only [Nonempty.not_nil] at h
+  | .cons x e (.nil y) => simp only [dropLast, nil_vx, cons_vx, dropLast_cons₂, dropLast_single]
+  | .cons x e (cons y e' w) =>
+    simp only [dropLast, cons_vx, dropLast_cons₂, List.cons.injEq, true_and]
+    rw [← cons_vx (e := e')]
+    apply dropLast_vx (by simp)
+
+@[simp]
+lemma dropLast_edge {w : Walk α β} (h : w.Nonempty) : (w.dropLast).edge = w.edge.dropLast := by
+  match w with
+  | .nil x => simp only [Nonempty.not_nil] at h
+  | .cons x e (.nil y) => simp only [dropLast, nil_edge, cons_edge, dropLast_single]
+  | .cons x e (cons y e' w) =>
+    simp only [dropLast, cons_edge, dropLast_cons₂, List.cons.injEq, true_and]
+    exact dropLast_edge (by simp)
+
+lemma dropLast_validIn {w : Walk α β} (hVd : w.ValidIn G) : (w.dropLast).ValidIn G := by
+  match w with
+  | .nil x => simp only [dropLast, hVd]
+  | .cons x e (.nil y) =>
+    simp only [cons_validIn, nil_first, nil_validIn] at hVd
+    exact hVd.1.vx_mem_left
+  | .cons x e (cons y e' w) =>
+    rw [dropLast, cons_validIn, dropLast_first (by simp)]
+    rw [cons_validIn] at hVd
+    exact ⟨hVd.1, dropLast_validIn hVd.2⟩
+
+lemma mem_dropLast_or_last_of_mem {w : Walk α β} (hu : u ∈ w) : u ∈ w.dropLast ∨ u = w.last := by
+  match w with
+  | .nil x => simpa using hu
+  | .cons x e (.nil y) =>
+    simp only [mem_cons_iff, mem_nil_iff] at hu
+    obtain rfl | rfl := hu <;> simp
+  | .cons x e (cons y e' w) =>
+    simp only [mem_cons_iff] at hu
+    obtain rfl | rfl | hu := hu
+    · simp
+    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
+      have := mem_dropLast_or_last_of_mem (by simp : u ∈ (cons u e' w))
+      rw [cons_last] at this
+      tauto
+    · simp only [dropLast_cons_cons, mem_cons_iff, cons_last]
+      have := mem_dropLast_or_last_of_mem (by simp [hu] : u ∈ (cons y e' w))
+      rw [cons_last] at this
+      tauto
+
+lemma mem_of_mem_dropLast {w : Walk α β} (h : u ∈ w.dropLast) : u ∈ w := by
+  match w with
+  | .nil x => simpa using h
+  | .cons x e (.nil y) => simp_all only [dropLast_cons_nil, mem_nil_iff, mem_cons_iff, true_or]
+  | .cons x e (cons y e' w) =>
+    simp only [dropLast_cons_cons, mem_cons_iff] at h ⊢
+    obtain rfl | h := h
+    · left
+      rfl
+    · have := mem_of_mem_dropLast (w := cons y e' w) (by simpa only [Nonempty.cons_true,
+      dropLast_vx, cons_vx])
+      right
+      simpa only [mem_cons_iff] using this
+
+lemma mem_dropLast_or_last_of_mem_iff :
+    u ∈ w.dropLast ∨ u = w.last ↔ u ∈ w := by
+  refine ⟨?_, mem_dropLast_or_last_of_mem⟩
+  rintro (h | rfl)
+  · exact mem_of_mem_dropLast h
+  · exact last_mem
+
+@[simp]
+lemma dropLast_vxSet_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
+    (w.dropLast).vxSet = w.vxSet \ {w.last} := by
+  match w with
+  | .nil x => simp at hn
+  | .cons x e (.nil y) =>
+    simp only [dropLast_cons_nil, nil_vxSet, cons_vxSet, union_singleton, cons_last, nil_last,
+      mem_singleton_iff, insert_diff_of_mem]
+    rw [diff_singleton_eq_self]
+    simp only [mem_singleton_iff]
+    rintro rfl
+    simp at hP
+  | .cons x e (cons y e' w) =>
+    have := dropLast_vxSet_of_isPath (w := cons y e' w)
+    simp only [cons_isPath, Nonempty.cons_true, cons_vxSet, singleton_union, cons_last,
+      forall_const, and_imp, cons_first, mem_cons_iff, not_or, dropLast_cons_cons,
+      union_insert] at this hP ⊢
+    obtain ⟨⟨hP, h₂', hynin⟩, h₂, hne, hxnin⟩ := hP
+    rw [this hP h₂' hynin, ← insert_diff_of_not_mem, insert_comm]
+    simp only [mem_singleton_iff]
+    rintro rfl
+    simp only [last_mem, not_true_eq_false] at hxnin
+
+@[simp]
+lemma last_not_mem_dropLast_of_isPath {w : Walk α β} (hP : G.IsPath w) (hn : w.Nonempty) :
+    w.last ∉ w.dropLast := by
+  rintro h
+  rw [← mem_vxSet_iff, dropLast_vxSet_of_isPath hP hn] at h
+  simp at h
+
+end dropLast
 
 
 -- end Walk
