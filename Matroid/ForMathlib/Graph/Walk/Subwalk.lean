@@ -12,14 +12,12 @@ namespace Walk
 
 set_option linter.style.longLine false
 
-/-- This is a bad definition. I know what a prefix/suffix is, and what a contiguous subwalk is,
-but the definition of a 'subwalk' is a bit complicated, and possibly just meaningless .
-The current definition allows [x,e,z] to be a subwalk of [x,e,y,f,z] (via `cons₂`),
-which obviously shouldn't be allowed. -/
+/-- 'subwalk'-/
 inductive IsSubwalk {α β : Type*} : Walk α β → Walk α β → Prop
   | nil x w (h : x ∈ w) : IsSubwalk (nil x) w
   | cons x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk w₁ (cons x e w₂)
-  | cons₂ x e w₁ w₂ (h : IsSubwalk w₁ w₂) : IsSubwalk (cons x e w₁) (cons x e w₂)
+  | cons₂ x e w₁ w₂ (h : IsSubwalk w₁ w₂) (h_eq : w₁.first = w₂.first) :
+      IsSubwalk (cons x e w₁) (cons x e w₂)
 
 
 @[simp]
@@ -42,7 +40,7 @@ lemma isSubwalk_nil_iff : w.IsSubwalk (nil x) ↔ w = nil x := by
 lemma isSubwalk_refl (w : Walk α β) : w.IsSubwalk w := by
   induction w with
   | nil u => simp
-  | cons u e W ih => exact IsSubwalk.cons₂ _ _ _ _ ih
+  | cons u e w ih => exact ih.cons₂ _ _ _ _ rfl
 
 lemma IsSubwalk.vx_sublist {w₁ w₂ : Walk α β} (h : w₁.IsSubwalk w₂) : w₁.vx <+ w₂.vx := by
   induction h with
@@ -67,13 +65,13 @@ lemma IsSubwalk.trans (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₃) : w�
   induction h' generalizing w₁ with
   | nil x w h' => simp_all
   | cons x e w₂ w₃ h' ih => exact cons x e w₁ w₃ (ih h)
-  | cons₂ x e w₂ w₃ h' ih =>
+  | cons₂ x e w₂ w₃ h' h_eq ih =>
   cases h with
   | nil y w₁ h =>
     simp only [nil_isSubwalk_iff, mem_cons_iff] at h ⊢
     exact h.elim .inl <| .inr ∘ h'.vx_sublist.mem
   | cons x e w₁ w₂ h => apply (ih h).cons
-  | cons₂ x e w₁ w₂ h => apply (ih h).cons₂
+  | cons₂ x e w₁ w₂ h h_eq' => exact (ih h).cons₂ _ _ _ _ (h_eq'.trans h_eq)
 
 lemma IsSubwalk.antisymm (h : w₁.IsSubwalk w₂) (h' : w₂.IsSubwalk w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
@@ -87,19 +85,27 @@ lemma IsSubwalk.concat (h : w₁.IsSubwalk w₂) (e : β) (x : α) : w₁.IsSubw
   induction h with
   | nil x w h => simp [h]
   | cons y f w₁ w₂ h ih => simpa using ih.cons ..
-  | cons₂ y f w₁ w₂ h ih => simpa using ih.cons₂ ..
+  | cons₂ y f w₁ w₂ h h_eq ih => exact ih.cons₂ _ _ _ _ (by simpa)
 
-lemma IsSubwalk.concat₂ (h : w₁.IsSubwalk w₂) (e : β) (x : α) :
+lemma IsSubwalk.concat₂ (h : w₁.IsSubwalk w₂) (hlast : w₁.last = w₂.last) (e : β) (x : α) :
     (w₁.concat e x).IsSubwalk (w₂.concat e x) := by
-  induction w₂ with
-  | nil u => simp_all
-  | cons u f w₂ ih =>
-  simp_all
-  -- induction h with
-  -- | nil y w h =>
-  --   simp [h]
-  -- | cons x e w₁ w₂ h ih => sorry
-  -- | cons₂ x e w₁ w₂ h ih => sorry
+  -- induction w₂ with
+  -- | nil u => simp_all
+  -- | cons u f w₂ ih =>
+  -- simp_all
+
+  induction h with
+  | nil y w h =>
+    induction w with
+    | nil u =>
+      obtain rfl : y = u := hlast
+      apply isSubwalk_refl
+    | cons u f w ih =>
+    obtain rfl | hyw : y = u ∨ y ∈ w := by simpa using h
+    · simp only [nil_concat, cons_concat]
+      apply IsSubwalk.cons₂
+  | cons x e w₁ w₂ h ih => sorry
+  | cons₂ x e w₁ w₂ h ih => sorry
 
 @[simp]
 lemma isSubwalk_concat_self (w : Walk α β) (e : β) (x : α) : w.IsSubwalk (w.concat e x) :=
