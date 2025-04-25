@@ -49,15 +49,20 @@ lemma Adj.vxConnected (h : G.Adj x y) : G.VxConnected x y := by
 lemma Inc₂.vxConnected (h : G.Inc₂ e x y) : G.VxConnected x y :=
   h.adj.vxConnected
 
-lemma IsWalk.vxConnected (hw : G.IsWalk w) :
-    G.VxConnected w.first w.last := by
-  induction w with
-  | nil u =>
-    apply VxConnected.refl
-    simpa using hw
-  | cons u e W ih =>
-    simp_all only [cons_isWalk_iff, cons_first, cons_last, forall_const]
-    exact hw.1.vxConnected.trans ih
+lemma IsWalk.vxConnected_of_mem_of_mem (hw : G.IsWalk w) (hx : x ∈ w) (hy : y ∈ w) :
+    G.VxConnected x y := by
+  suffices aux : ∀ ⦃z⦄, z ∈ w → G.VxConnected z w.last from (aux hx).trans (aux hy).symm
+  clear hx hy
+  intro z hz
+  induction hw generalizing z with
+  | nil => simp_all
+  | cons' x e w h hw ih =>
+    obtain rfl | hz := by simpa using hz
+    · exact h.vxConnected.trans <| by simpa only [cons_last] using ih <| by simp
+    simpa using ih hz
+
+lemma IsWalk.vxConnected_first_last (hw : G.IsWalk w) : G.VxConnected w.first w.last :=
+  hw.vxConnected_of_mem_of_mem (by simp) <| by simp
 
 lemma VxConnected.exists_isWalk (h : G.VxConnected x y) :
     ∃ w, G.IsWalk w ∧ w.first = x ∧ w.last = y := by
@@ -77,13 +82,17 @@ lemma vxConnected_iff_exists_walk :
     G.VxConnected x y ↔ ∃ w, G.IsWalk w ∧ w.first = x ∧ w.last = y := by
   refine ⟨VxConnected.exists_isWalk, ?_⟩
   rintro ⟨w, hw, rfl, rfl⟩
-  exact hw.vxConnected
+  exact hw.vxConnected_first_last
 
 lemma VxConnected.exists_isPath (h : G.VxConnected x y) :
     ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y := by
   classical
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isWalk
   exact ⟨w.dedup, by simp [hw.dedup_isPath]⟩
+
+lemma VxConnected.of_le (h : H.VxConnected x y) (hle : H ≤ G) : G.VxConnected x y := by
+  obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isWalk
+  exact (hw.of_le hle).vxConnected_first_last
 
 /-- A graph is `Connected` if it is nonempty, and every pair of vertices is `VxConnected`. -/
 @[mk_iff]
@@ -139,6 +148,7 @@ lemma Graph.IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
   | cons u e W ih =>
     simp only [cons_isWalk_iff] at h
     exact union_le (by simpa using h.1) (ih h.2)
+
 
 
 

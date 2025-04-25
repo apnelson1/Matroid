@@ -5,14 +5,14 @@ import Matroid.ForMathlib.Graph.Subgraph
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
 -/
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {G : Graph α β}
+variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ : WList α β} {S T : Set α}
 
 namespace Graph
 
 open WList List Set
 
-/-- `G.IsWalk w` means that the abstract walk `w` is a walk of the graph `G`. -/
+/-- `G.IsWalk w` means that `w : WList α β` is a walk of `G : Graph α β`. -/
 inductive IsWalk (G : Graph α β) : WList α β → Prop
   | nil (x) (hx : x ∈ G.V) : G.IsWalk (nil x)
   | cons' (x) (e) (w : WList α β) (h : G.Inc₂ e x w.first) (hw : G.IsWalk w) : G.IsWalk (cons x e w)
@@ -69,7 +69,7 @@ lemma IsWalk.mem_of_mem_edge_of_inc (hw : G.IsWalk w) (he : e ∈ w.edge) (h : G
     · obtain rfl | rfl := h.eq_or_eq_of_inc₂ hw.1 <;> simp
     exact .inr (ih he)
 
-lemma IsWalk.subwalk (hw₂ : G.IsWalk w₂) (h : w₁.IsSublist w₂) : G.IsWalk w₁ := by
+lemma IsWalk.sublist (hw₂ : G.IsWalk w₂) (h : w₁.IsSublist w₂) : G.IsWalk w₁ := by
   induction h with
   | nil x w h => simp [hw₂.vx_mem_of_mem h]
   | cons x e w₁ w₂ h ih => exact ih hw₂.of_cons
@@ -79,21 +79,17 @@ lemma IsWalk.subwalk (hw₂ : G.IsWalk w₂) (h : w₁.IsSublist w₂) : G.IsWal
     exact ⟨hw₂.1, ih hw₂.2⟩
 
 lemma IsWalk.prefix (hw : G.IsWalk w) (h : w₁.IsPrefix w) : G.IsWalk w₁ :=
-  hw.subwalk h.isSublist
+  hw.sublist h.isSublist
 
 lemma IsWalk.suffix (hw : G.IsWalk w) (h : w₁.IsSuffix w) : G.IsWalk w₁ :=
-  hw.subwalk h.isSublist
+  hw.sublist h.isSublist
 
 lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : w₁.last = w₂.first) :
   G.IsWalk (w₁ ++ w₂) := by
   induction h₁ with simp_all
 
 lemma IsWalk.concat (h : G.IsWalk w) (he : G.Inc₂ e w.last x) : G.IsWalk (w.concat e x) := by
-  induction h with
-  | nil y hy =>
-    simp only [nil_last] at he
-    simp [he, he.vx_mem_right]
-  | cons' => simp_all
+  induction h with | nil y hy => simp_all [he.vx_mem_right] | cons' => simp_all
 
 lemma IsWalk.of_append_left (h : G.IsWalk (w₁ ++ w₂)) (h_eq : w₁.last = w₂.first) :
     G.IsWalk w₁ :=
@@ -122,6 +118,45 @@ lemma IsWalk.reverse (hw : G.IsWalk w) : G.IsWalk w.reverse := by
 @[simp]
 lemma isWalk_reverse_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
+
+lemma IsWalk.of_le (h : H.IsWalk w) (hle : H ≤ G) : G.IsWalk w := by
+  induction h with
+  | nil _ hx => simp [vxSet_subset_of_le hle hx]
+  | cons' _ _ _ h _ ih => simp [ih, h.of_le hle]
+
+lemma IsWalk.inc₂_of_inc₂ (h : G.IsWalk w) (hexy : w.Inc₂ e x y) : G.Inc₂ e x y := by
+  induction hexy with
+  | cons_left => simp_all
+  | cons_right => exact Inc₂.symm <| by simp_all
+  | cons => simp_all
+
+lemma IsWalk.wellFormed (h : G.IsWalk w) : w.WellFormed := by
+  intro e x y₁ y₂ h₁ h₂
+  induction h with
+  | nil => simp at h₁
+  | cons' u f w h hw ih =>
+    simp only [WList.inc₂_cons_iff] at h₁ h₂
+    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₁) := h₁
+    · obtain (⟨-, ⟨-, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₂) := h₂
+      · rfl
+      · rfl
+      exact h.eq_of_inc₂ (hw.inc₂_of_inc₂ h₂)
+    · simp only [true_and] at h₂
+      obtain (⟨rfl, rfl⟩ | rfl) | h₂ := h₂
+      · rfl
+      · rfl
+      exact h.symm.eq_of_inc₂ (hw.inc₂_of_inc₂ h₂)
+    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₂) := h₂
+    · exact (hw.inc₂_of_inc₂ h₁).eq_of_inc₂ h
+    · exact (hw.inc₂_of_inc₂ h₁).eq_of_inc₂ h.symm
+    exact ih h₁ h₂
+
+
+
+
+
+
+/-! ### Trails -/
 
 /-- `G.IsTrail w` means that `w` is a walk of `G` with no repeated edges. -/
 @[mk_iff]
@@ -392,7 +427,7 @@ lemma reverse_isPath_iff : G.IsPath (reverse w) ↔ G.IsPath w :=
   ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
 
 lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
-  h.subwalk w.dedup_isSublist
+  h.sublist w.dedup_isSublist
 
 lemma IsWalk.dropLast (h : G.IsWalk w) : G.IsWalk w.dropLast :=
   h.prefix <| dropLast_isPrefix w

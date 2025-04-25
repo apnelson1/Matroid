@@ -105,9 +105,9 @@ lemma IsSublist.reverse (h : w₁.IsSublist w₂) : w₁.reverse.IsSublist w₂.
 lemma IsSublist.of_reverse (h : w₁.reverse.IsSublist w₂.reverse) : w₁.IsSublist w₂ := by
   simpa using h.reverse
 
-/-- ## Prefixes -/
+/-! ## Prefixes -/
 
--- /-- `IsPrefix w₁ w₂` means that `w₁` is a prefix of `w₂`. -/
+/-- `IsPrefix w₁ w₂` means that `w₁` is a prefix of `w₂`. -/
 inductive IsPrefix : WList α β → WList α β → Prop
   | nil (w : WList α β) : IsPrefix (nil w.first) w
   | cons (x) (e) (w₁ w₂ : WList α β) (h : IsPrefix w₁ w₂) : IsPrefix (cons x e w₁) (cons x e w₂)

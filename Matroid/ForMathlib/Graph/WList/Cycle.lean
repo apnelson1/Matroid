@@ -83,16 +83,24 @@ lemma rotate_vx_tail (w : WList α β) (n : ℕ) : (w.rotate n).tail.vx = w.tail
     | zero => simp | succ n IH => rw [← rotate_rotate, aux, ← List.rotate_rotate, IH]
   rintro (w | ⟨x, e, (w | ⟨y, f, w⟩)⟩) <;> simp
 
--- @[simp]
--- lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).vxSet = w.vxSet := by
---   induction n generalizing w with
---   | zero => simp
---   | succ n IH =>
---     rw [Nat.add_comm, ← rotate_rotate, IH]
---     cases w with
---     | nil u => simp
---     | cons u e w =>
---       simp
+lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).vxSet = w.vxSet := by
+  simp_rw [← (hw.rotate _).vxSet_tail, vxSet, ← mem_vx, rotate_vx_tail, List.mem_rotate, mem_vx]
+  rw [← vxSet, hw.vxSet_tail, vxSet]
+
+@[simp]
+lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).edgeSet = w.edgeSet := by
+  simp [edgeSet, rotate_edge]
+
+-- lemma exists_eq_rotate (hx : x ∈ w) : ∃ n < w.length, (w.rotate n).first = x := by
+--   induction w with
+--   | nil => simpa [eq_comm] using hx
+--   | cons u e w ih =>
+--     obtain rfl | hxw := by simpa using hx
+--     · exact ⟨0, by simp⟩
+--     obtain ⟨m, rfl⟩ := ih hxw
+--     use m + 1
+--     rw [Nat.add_comm, ← rotate_rotate, cons_rotate_one]
+
 
 end WList
 

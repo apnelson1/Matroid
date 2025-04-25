@@ -1,5 +1,6 @@
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.Finset.Dedup
+import Mathlib.Data.Sym.Sym2
 
 open Set Function List Nat
 
@@ -238,9 +239,8 @@ lemma last_eq_vx_getLast {w : WList α β} : w.last = w.vx.getLast vx_ne_nil := 
     simp only [cons_last, cons_vx, ne_eq, vx_ne_nil, not_false_eq_true, getLast_cons]
     apply last_eq_vx_getLast
 
-end WList
 
-/-- The first edge of a nonempty wList -/
+/-- The first edge of a nonempty `WList` -/
 def firstEdge : (w : WList α β) → (hw : w.Nonempty) → β
   | .nil x, hw => by simp at hw
   | .cons x e w, hw => e
@@ -256,6 +256,67 @@ lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Se
   | cons u e W ih =>
     ext
     simp [← ih]
+
+/-- `w.Inc₂ e x y` means that `w` contains `[x,e,y]` as a contiguous sublist. -/
+protected inductive Inc₂ : WList α β → β → α → α → Prop
+  | cons_left (x e w) : (cons x e w).Inc₂ e x w.first
+  | cons_right (x e w) : (cons x e w).Inc₂ e w.first x
+  | cons (u f) {w e x y} (hw : w.Inc₂ e x y) : (cons u f w).Inc₂ e x y
+
+@[simp]
+protected lemma Inc₂.not_nil : ¬ (nil u (β := β)).Inc₂ e x y := by
+  rintro (_ | _ | _)
+
+protected lemma Inc₂.symm (h : w.Inc₂ e x y) : w.Inc₂ e y x := by
+  induction h with
+  | cons_left => apply cons_right
+  | cons_right => apply cons_left
+  | cons _ _ _ ih => apply ih.cons
+
+protected lemma Inc₂.of_cons (hw : (WList.cons u f w).Inc₂ e x y) (hef : e ≠ f) : w.Inc₂ e x y := by
+  cases hw with | cons_left => contradiction | cons_right => contradiction | cons => assumption
+
+protected lemma inc₂_cons_iff : (cons u f w).Inc₂ e x y ↔
+    (f = e ∧ (x = u ∧ y = w.first ∨ x = w.first ∧ y = u)) ∨ w.Inc₂ e x y := by
+  refine ⟨fun h ↦ by cases h with simp_all, ?_⟩
+  rintro (⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩ | h)
+  · apply Inc₂.cons_left
+  · apply Inc₂.cons_right
+  apply h.cons
+
+/-- A `WList` is well-formed if each edge appears only with the same ends.  -/
+def WellFormed (w : WList α β) : Prop := ∀ ⦃e x y₁ y₂⦄, w.Inc₂ e x y₁ → w.Inc₂ e x y₂ → y₁ = y₂
+
+/-- The set of ends of -/
+def endsOf (w : WList α β) (e : β) : Set α := {x | ∃ y, w.Inc₂ e x y}
+
+-- /-- `w.AllIncIn e x y` means that whenever `e` appears in `w`, its ends are `x` and `y`. -/
+-- inductive AllIncIn : WList α β → β → α → α → Prop
+--   | nil (u e x y) : AllIncIn (nil u) e x y
+--   | cons_ne (u f) {w e x y} (hef : e ≠ f) (hw : w.AllIncIn e x y) : AllIncIn (cons u f w) e x y
+--   | cons_left {x e w} (hw : w.AllIncIn e x w.first) : AllIncIn (cons x e w) e x w.first
+--   | cons_right {x e w} (hw : w.AllIncIn e w.first x) : AllIncIn (cons x e w) e w.first x
+
+-- @[simp]
+-- lemma allIncIn_nil (e : β) {x y u : α} :
+--   AllIncIn (WList.nil u) e x y := AllIncIn.nil u e x y
+
+-- lemma allIncIn_cons_iff : AllIncIn (cons u f w) e x y ↔
+--     AllIncIn w e x y ∧ (e = f → ((x = u ∧ y = w.first) ∨ (x = w.first ∧ y = u))) := by
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · cases h with
+--     | cons_ne u f hef hw => simp [hw, hef]
+--     | cons_left hw => simpa
+--     | cons_right hw => simpa
+--   obtain rfl | hne := eq_or_ne e f
+--   · obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.2 rfl
+--     · exact AllIncIn.cons_left h.1
+--     exact AllIncIn.cons_right h.1
+--   exact AllIncIn.cons_ne _ _ hne h.1
+
+
+end WList
+
 
 /- Properties between the basic properties of a wList -/
 
