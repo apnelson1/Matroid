@@ -24,8 +24,6 @@ def append : Walk α β → Walk α β → Walk α β
 instance instAppend : Append (Walk α β) where
   append := append
 
-
-
 /-- Properties of concat operation -/
 @[simp]
 lemma nil_concat : (nil x).concat e y = cons x e (nil y) := rfl
@@ -63,14 +61,6 @@ lemma concat_length : (w.concat e v).length = w.length + 1 := by
   | nil x => simp [concat]
   | cons x e w ih => simp [concat, ih]
 
-lemma ValidIn.concat (hVd : w.ValidIn G) (h₂ : G.Inc₂ e w.last v) : (w.concat e v).ValidIn G := by
-  induction w with
-  | nil x =>
-    simp only [nil_validIn, nil_last] at hVd h₂
-    simp [concat, hVd, h₂, h₂.vx_mem_right]
-  | cons x e' w' ih =>
-    simp only [cons_validIn, cons_last, cons_concat, concat_first] at hVd h₂ ⊢
-    exact ⟨hVd.1, ih hVd.2 h₂⟩
 
 @[simp]
 lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
@@ -184,124 +174,53 @@ lemma append_right_eq_self : w ++ w₁ = w ↔ w₁ = nil w.last := by
   | cons x e w ih => simpa only [cons_append, cons.injEq, true_and, cons_last]
 
 @[simp]
-lemma append_left_eq_self : w₁ ++ w = w ↔ ¬ w₁.Nonempty := by
-  refine ⟨fun h hne ↦ ?_, fun h ↦ ?_⟩
-  · exact (length_ne_zero_iff.2 hne) <| by simpa using congr_arg length h
-  obtain ⟨x, rfl⟩ := by simpa using h
-  simp
+lemma append_left_eq_self : w₁ ++ w = w ↔ w₁.Nil :=
+  ⟨fun h ↦ by simpa using congr_arg length h, fun h ↦ by rw [h.eq_nil_first, nil_append]⟩
 
 @[simp]
 lemma append_eq_nil_iff : w₁ ++ w₂ = nil x ↔ w₁.Nil ∧ w₂ = nil x := by
   induction w₁ with simp
 
-lemma append_validIn (h : w₁.last = w₂.first) (h₁ : w₁.ValidIn G) (h₂ : w₂.ValidIn G) :
-  (w₁ ++ w₂).ValidIn G := by
-  induction w₁ with
-  | nil x => simpa
-  | cons x e w₁ ih =>
-    simp only [cons_last] at h
-    refine ⟨?_, by simp [ih h h₁.2]⟩
-    convert h₁.1 using 1
-    exact append_first_of_eq h
-
-lemma ValidIn.append_left_validIn {w₁ w₂ : Walk α β} (h : w₁.last = w₂.first)
-    (hVd : (w₁ ++ w₂).ValidIn G) : w₁.ValidIn G := by
-  match w₁ with
-  | .nil x =>
-    simp only [nil_last, nil_append, nil_validIn] at h hVd ⊢
-    subst x
-    exact hVd.vx_mem_of_mem first_mem
-  | .cons x e w =>
-    simp only [cons_last] at h
-    simp only [cons_append, cons_validIn] at hVd
-    refine ⟨?_, ValidIn.append_left_validIn h hVd.2⟩
-    convert hVd.1 using 1
-    exact (append_first_of_eq h).symm
-
-lemma ValidIn.append_right_validIn (hVd : (w₁ ++ w₂).ValidIn G) : w₂.ValidIn G := by
-  induction w₁ with
-  | nil x => simpa only [nil_append] using hVd
-  | cons x e w ih =>
-    simp only [cons_append, cons_validIn] at hVd
-    exact ih hVd.2
-
-lemma ValidIn.last_eq_first (hw₁ : w₁.Nonempty) (hVd₁ : w₁.ValidIn G) (hVd : (w₁ ++ w₂).ValidIn G) :
-  w₁.last = w₂.first := by
-  induction w₁ with
-  | nil x => simp only [Nonempty.not_nil] at hw₁
-  | cons x e w ih =>
-    simp_all only [Nonempty.cons_true, cons_append, cons_validIn, cons_last, forall_const]
-    by_cases hNonempty : w.Nonempty
-    · simp_all only [forall_const, append_first_of_eq, true_and]
-    · simp only [Nonempty.not_iff] at hNonempty
-      obtain ⟨y, rfl⟩ := hNonempty
-      simp_all only [Nonempty.not_nil, nil_last, IsEmpty.forall_iff, nil_first, nil_validIn,
-        nil_append]
-      exact hVd₁.1.eq_of_inc₂ hVd.1
-
-lemma append_isWalkFrom (h : w₁.last = w₂.first) (h₁ : G.IsWalkFrom S T w₁)
-    (h₂ : G.IsWalkFrom T U w₂) : G.IsWalkFrom S U (w₁ ++ w₂) := by
-  obtain ⟨hw₁Vd, hw₁first, hw₁last⟩ := h₁
-  obtain ⟨hw₂Vd, hw₂first, hw₂last⟩ := h₂
-  refine ⟨?_, ?_, ?_⟩
-  · exact Walk.append_validIn h hw₁Vd hw₂Vd
-  · simpa [h]
-  · simpa
-
-lemma append_isPath (h : w₁.last = w₂.first) (h₁ : G.IsPath w₁) (h₂ : G.IsPath w₂)
-    (hvxSet : w₁.vxSet ∩ w₂.vxSet ⊆ {w₁.last}) : G.IsPath (w₁ ++ w₂) where
-  validIn := append_validIn h h₁.validIn h₂.validIn
-  nodup := by
-    simp only [Set.subset_singleton_iff, Set.mem_inter_iff, mem_vxSet_iff, and_imp, append_vx,
-      nodup_append, h₁.nodup.sublist w₁.vx.dropLast_sublist, h₂.nodup, true_and] at hvxSet ⊢
-    rintro x hx₁ hx₂
-    obtain rfl := hvxSet x (List.mem_of_mem_dropLast hx₁) hx₂
-    /- This should be its own lemma -/
-    have aux {l : List α} (hl : l ≠ []) (hl' : l.Nodup) : l.getLast hl ∉ l.dropLast := by
-      rw [← dropLast_append_getLast hl, nodup_append] at hl'
-      obtain ⟨-, h'⟩ := by simpa using hl'
-      assumption
-    rw [last_eq_vx_getLast] at hx₁
-    apply aux (by simp) h₁.nodup hx₁
 
 
-lemma append_left_isPath (h : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₁ where
-  validIn := hP.validIn.append_left_validIn h
-  nodup := by
-    have := hP.nodup
-    rw [append_vx' h] at this
-    exact this.of_append_left
+-- lemma append_left_isPath (h : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₁ where
+--   validIn := hP.validIn.append_left_validIn h
+--   nodup := by
+--     have := hP.nodup
+--     rw [append_vx' h] at this
+--     exact this.of_append_left
 
-lemma append_right_isPath (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₂ where
-  validIn := hP.validIn.append_right_validIn
-  nodup := by
-    have := hP.nodup
-    rw [append_vx] at this
-    exact this.of_append_right
+-- lemma append_right_isPath (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₂ where
+--   validIn := hP.validIn.append_right_validIn
+--   nodup := by
+--     have := hP.nodup
+--     rw [append_vx] at this
+--     exact this.of_append_right
 
-lemma not_mem_prefix_of_mem_suffix_tail (heq : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂))
-    (hmem : u ∈ w₂.vx.tail) : u ∉ w₁.vx := by
-  have := hP.nodup
-  rw [append_vx' heq, nodup_append] at this
-  exact (this.2.2 · hmem)
+-- lemma not_mem_prefix_of_mem_suffix_tail (heq : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂))
+--     (hmem : u ∈ w₂.vx.tail) : u ∉ w₁.vx := by
+--   have := hP.nodup
+--   rw [append_vx' heq, nodup_append] at this
+--   exact (this.2.2 · hmem)
 
-lemma not_mem_suffix_of_mem_prefix_dropLast (hP : G.IsPath (w₁ ++ w₂)) (hmem : u ∈ w₁.vx.dropLast) :
-    u ∉ w₂.vx := by
-  have := hP.nodup
-  rw [append_vx, nodup_append] at this
-  exact this.2.2 hmem
+-- lemma not_mem_suffix_of_mem_prefix_dropLast (hP : G.IsPath (w₁ ++ w₂))
+-- (hmem : u ∈ w₁.vx.dropLast) :
+--     u ∉ w₂.vx := by
+--   have := hP.nodup
+--   rw [append_vx, nodup_append] at this
+--   exact this.2.2 hmem
 
-lemma eq_first_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
-    (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₂.first := by
-  have := hP.nodup
-  rw [append_vx' heq, nodup_append] at this
-  have := this.2.2 hmem1
-  rw [← w₂.vx.head_cons_tail vx_ne_nil, mem_cons, ← first_eq_vx_head] at hmem2
-  simp_all only [imp_false, or_false]
+-- lemma eq_first_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
+--     (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₂.first := by
+--   have := hP.nodup
+--   rw [append_vx' heq, nodup_append] at this
+--   have := this.2.2 hmem1
+--   rw [← w₂.vx.head_cons_tail vx_ne_nil, mem_cons, ← first_eq_vx_head] at hmem2
+--   simp_all only [imp_false, or_false]
 
-lemma eq_last_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
-    (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₁.last :=
-  heq ▸ eq_first_of_mem_prefix_suffix hP heq hmem1 hmem2
+-- lemma eq_last_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
+--     (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₁.last :=
+--   heq ▸ eq_first_of_mem_prefix_suffix hP heq hmem1 hmem2
 
 lemma eq_append_of_vx_mem {w : Walk α β} {u : α} (hmem : u ∈ w) :
     ∃ w₁ w₂ : Walk α β, w = w₁ ++ w₂ ∧ w₁.last = u ∧ w₂.first = u := by
@@ -382,28 +301,6 @@ lemma reverse_length {w : Walk α β} : (reverse w).length = w.length := by
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
 
-lemma ValidIn.reverse (hVd : w.ValidIn G) : (reverse w).ValidIn G := by
-  induction w with
-  | nil x => simp [reverse, hVd]
-  | cons x e w ih =>
-    simp only [cons_validIn, reverse_cons] at hVd ⊢
-    refine ValidIn.concat (ih hVd.2) ?_
-    simp [hVd.1.symm]
-
-lemma _root_.Graph.IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse where
-  validIn := h.validIn.reverse
-  first_mem := by simp [h.last_mem]
-  last_mem := by simp [h.first_mem]
-
-lemma _root_.Graph.IsPath.reverse (hp : G.IsPath w) : G.IsPath w.reverse where
-  validIn := hp.validIn.reverse
-  nodup := by simp [hp.nodup]
-
-lemma _root_.Graph.IsPathFrom.reverse (p : G.IsPathFrom S T w) : G.IsPathFrom T S w.reverse where
-  validIn := p.validIn.reverse
-  nodup := by simp [p.nodup]
-  first_mem := by simp [p.last_mem]
-  last_mem := by simp [p.first_mem]
 
 lemma reverse_append {w₁ w₂ : Walk α β} (h_eq : w₁.last = w₂.first) :
     (w₁ ++ w₂).reverse = w₂.reverse ++ w₁.reverse := by
@@ -433,13 +330,6 @@ lemma reverse_inj_iff : w₁.reverse = w₂.reverse ↔ w₁ = w₂ :=
 lemma reverse_eq_comm : w₁.reverse = w₂ ↔ w₁ = w₂.reverse := by
   rw [← reverse_reverse w₂, reverse_inj_iff, reverse_reverse]
 
-@[simp]
-lemma reverse_validIn_iff : (reverse w).ValidIn G ↔ w.ValidIn G :=
-  ⟨fun h ↦ by simpa using h.reverse, ValidIn.reverse⟩
-
-@[simp]
-lemma reverse_isPath_iff : G.IsPath (reverse w) ↔ G.IsPath w :=
-  ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
 
 @[simp]
 lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
@@ -475,7 +365,8 @@ end Walk
 --   · rintro ⟨w, h1, rfl, rfl⟩
 --     exact h1.connected
 
--- lemma SetConnected.exist_walk (h : G.SetConnected S T) : ∃ w : Walk α β, G.IsWalkFrom S T w := by
+-- lemma SetConnected.exist_walk (h : G.SetConnected S T) :
+  --∃ w : Walk α β, G.IsWalkFrom S T w := by
 --   obtain ⟨x, hxS, y, hyT, h⟩ := h
 --   obtain ⟨w, hVd, rfl, rfl⟩ := h.exist_walk
 --   use w, hVd

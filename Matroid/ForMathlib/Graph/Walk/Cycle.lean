@@ -49,10 +49,9 @@ lemma rotate_rotate : ∀ (w : Walk α β) (m n : ℕ), (w.rotate m).rotate n = 
 lemma IsClosed.rotate (hw : w.IsClosed) (n : ℕ) : (w.rotate n).IsClosed := by
   suffices aux : ∀ {w : Walk α β} (h : w.IsClosed), (w.rotate 1).IsClosed by
     induction n with | zero => simpa | succ n IH => simpa using aux IH
-  intro w hw
-  cases w with
-  | nil => simpa
-  | cons u e w => simp [IsClosed]
+  rintro (x | ⟨u, e, w⟩) hw
+  · simpa
+  simp [IsClosed]
 
 @[simp]
 lemma rotate_edge (w : Walk α β) (n : ℕ) : (w.rotate n).edge = w.edge.rotate n := by

@@ -84,15 +84,6 @@ lemma IsSubwalk.concat (h : w₁.IsSubwalk w₂) (e : β) (x : α) : w₁.IsSubw
   | cons y f w₁ w₂ h ih => simpa using ih.cons ..
   | cons₂ y f w₁ w₂ h h_eq ih => exact ih.cons₂ _ _ _ _ (by simpa)
 
-lemma IsSubwalk.validIn (h : w₁.IsSubwalk w₂) (hw₂ : w₂.ValidIn G) : w₁.ValidIn G := by
-  induction h with
-  | nil x w h => simp [hw₂.vx_mem_of_mem h]
-  | cons x e w₁ w₂ h ih => exact ih (cons_validIn.1 hw₂).2
-  | cons₂ x e w₁ w₂ h h_eq ih =>
-    rw [cons_validIn] at hw₂ ⊢
-    rw [h_eq]
-    exact ⟨hw₂.1, ih hw₂.2⟩
-
 lemma IsSubwalk.concat₂ (h : w₁.IsSubwalk w₂) (hlast : w₁.last = w₂.last) (e : β) (x : α) :
     (w₁.concat e x).IsSubwalk (w₂.concat e x) := by
   induction h with
@@ -178,13 +169,6 @@ lemma IsPrefix.length_le (h : w₁.IsPrefix w₂) : w₁.length ≤ w₂.length 
 lemma IsPrefix.antisymm (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
-lemma ValidIn.IsPrefix (hVd : w.ValidIn G) (hPf : w₁.IsPrefix w) : w₁.ValidIn G := by
-  obtain ⟨w₂, heq, rfl⟩ := hPf.exists_eq_append
-  exact hVd.append_left_validIn heq
-
-lemma _root_.Graph.IsPath.IsPrefix (hPf : w₁.IsPrefix w) (hP : G.IsPath w) : G.IsPath w₁ := by
-  obtain ⟨w₂, heq, rfl⟩ := hPf.exists_eq_append
-  exact append_left_isPath heq hP
 
 lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.concat e x) := by
   induction h with | nil => simp | cons y f w₁ w₂ h ih => exact ih.cons y f
@@ -249,18 +233,16 @@ lemma IsSuffix.eq_of_length_ge (h : w₁.IsSuffix w₂) (hge : w₂.length ≤ w
 lemma IsSuffix.antisymm (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
-lemma ValidIn.isSuffix (hVd : w.ValidIn G) (hPf : w₁.IsSuffix w) : w₁.ValidIn G := by
-  simpa using hVd.reverse.IsPrefix hPf.reverse_isPrefix_reverse
-
-lemma _root_.Graph.IsPath.IsSuffix (hPf : w₁.IsSuffix w) (hP : G.IsPath w) : G.IsPath w₁ := by
-  simpa using hP.reverse.IsPrefix <| reverse_isPrefix_reverse_iff.2 hPf
-
 lemma IsSuffix.cons (h : w₁.IsSuffix w₂) (x e) : w₁.IsSuffix (cons x e w₂) := by
   simpa using (h.reverse_isPrefix_reverse.concat e x).reverse_isSuffix_reverse
 
 @[simp]
 lemma isSuffix_cons_self (w : Walk α β) (e) (x) : w.IsSuffix (cons x e w) :=
   isSuffix_refl.cons ..
+
+@[simp]
+lemma isSuffix_append_left (w₁ w₂ : Walk α β) : w₂.IsSuffix (w₁ ++ w₂) := by
+  induction w₁ with | nil => simp | cons u e w ih => simpa using ih.cons ..
 
 /-! # Cutting walks Off -/
 
@@ -427,10 +409,6 @@ lemma mem_iff_eq_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail :=
 lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.tail.concat e x := by
   induction w with simp_all
 
-lemma eq_cons_of_nonempty (hw : w.Nonempty) :
-    w = cons w.first (w.firstEdge hw) w.tail := by
-  induction w with | nil => simp at hw | cons => simp [firstEdge]
-
 /-- Remove the last edge and vertex from a walk. This is the reverse of the reversed tail. -/
 def dropLast : Walk α β → Walk α β
 | nil x => nil x
@@ -485,10 +463,6 @@ lemma dropLast_edge (w : Walk α β) : (w.dropLast).edge = w.edge.dropLast := by
   rw [← reverse_tail_reverse, reverse_edge, tail_edge, reverse_edge, ← dropLast_reverse,
     List.reverse_reverse]
 
-lemma dropLast_validIn {w : Walk α β} (hVd : w.ValidIn G) : (w.dropLast).ValidIn G := by
-  rw [← reverse_validIn_iff, ← reverse_tail]
-  exact hVd.reverse.isSuffix w.reverse.tail_isSuffix
-
 lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = w.last := by
   rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,
     reverse_first]
@@ -498,6 +472,10 @@ lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
     (w.dropLast).vxSet = w.vxSet \ {w.last} := by
   rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
   simp
+
+lemma dropLast_isPrefix (w : Walk α β) : w.dropLast.IsPrefix w := by
+  rw [← reverse_isSuffix_reverse_iff, ← reverse_tail]
+  apply tail_isSuffix
 
 end drop
 
@@ -586,9 +564,6 @@ lemma dedup_eq_self (hw : w.vx.Nodup) : w.dedup = w := by
 
 lemma dedup_eq_self_iff : w.dedup = w ↔ w.vx.Nodup :=
   ⟨fun h ↦ by rw [← h]; exact dedup_vx_nodup w, dedup_eq_self⟩
-
-lemma ValidIn.dedup (h : w.ValidIn G) : w.dedup.ValidIn G :=
-  w.dedup_isSubwalk.validIn h
 
 end dedup
 

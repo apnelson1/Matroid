@@ -224,9 +224,9 @@ lemma ext_vx_edge {w₁ w₂ : Walk α β} (h_vx : w₁.vx = w₂.vx) (h_edge : 
   exact ext_vx_edge h_vx.2 h_edge.2
 
 lemma last_eq_vx_getLast {w : Walk α β} : w.last = w.vx.getLast vx_ne_nil := by
-  match w with
-  | nil x => rfl
-  | cons x e w =>
+  cases w with
+  | nil => rfl
+  | cons =>
     simp only [cons_last, cons_vx, ne_eq, vx_ne_nil, not_false_eq_true, getLast_cons]
     apply last_eq_vx_getLast
 
