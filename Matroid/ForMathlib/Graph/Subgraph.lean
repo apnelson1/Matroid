@@ -1,4 +1,5 @@
-import Matroid.ForMathlib.Graph.Walk.Defs
+import Matroid.ForMathlib.Graph.Basic
+import Mathlib.Data.Set.Insert
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
@@ -193,37 +194,3 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
     H₁ ∪ H₂ ≤ G ↔ H₁ ≤ G ∧ H₂ ≤ G :=
   ⟨fun h ↦ ⟨(left_le_union ..).trans h, (h_compat.right_le_union ..).trans h⟩,
     fun h ↦ union_le h.1 h.2⟩
-
-variable {w : Walk α β}
-
-/-- Turn `w : Walk α β` into a `Graph α β`. If the walk is not well-formed
-(i.e. it contains an edge appearing twice with different ends),
-then the first occurence of the edge determines its ends in `w.toGraph`. -/
-def Walk.toGraph : Walk α β → Graph α β
-  | nil u => noEdgeGraph {u} β
-  | cons u e w => (Graph.singleEdge u w.first e) ∪ w.toGraph
-
-@[simp]
-lemma toGraph_nil : (Walk.nil u (β := β)).toGraph = noEdgeGraph {u} β := rfl
-
-@[simp]
-lemma toGraph_cons : (w.cons u e).toGraph = (Graph.singleEdge u w.first e) ∪ w.toGraph := rfl
-
-@[simp]
-lemma Walk.toGraph_vxSet (w : Walk α β) : w.toGraph.V = w.vxSet := by
-  induction w with
-  | nil u => simp
-  | cons u e W ih =>
-  simp only [toGraph_cons, union_vxSet, singleEdge_V, ih, cons_vxSet]
-  rw [← singleton_union, union_assoc, singleton_union (s := W.vxSet), insert_eq_of_mem (by simp)]
-
-@[simp]
-lemma Walk.toGraph_edgeSet (w : Walk α β) : w.toGraph.E = w.edgeSet := by
-  induction w with simp_all
-
-lemma ValidIn.toGraph_le {w : Walk α β} (h : w.ValidIn G) : w.toGraph ≤ G := by
-  induction w with
-  | nil u => simpa [Walk.toGraph] using h
-  | cons u e W ih =>
-  simp only [Walk.cons_validIn] at h
-  exact union_le (by simpa using h.1) (ih h.2)

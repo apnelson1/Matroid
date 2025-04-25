@@ -1,16 +1,18 @@
-import Matroid.ForMathlib.Graph.Walk.Dedup
+import Matroid.ForMathlib.Graph.Walk.Basic
 import Matroid.ForMathlib.Graph.Subgraph
 import Mathlib.Data.Set.Insert
 
 open Set Function List Nat
 
 variable {α β : Type*} {G H : Graph α β} {u v x y z : α} {e e' f g : β} {S S' T T' U V : Set α}
-  {F F' R R': Set β}
+  {F F' R R': Set β} {w : WList α β}
+
+open WList Graph
 
 namespace Graph
 
 
-/-- Connectedness of vertices-/
+/-- `G.VxConnected v w` means that `G` contains a walk from `v` to `w`. -/
 def VxConnected (G : Graph α β) : α → α → Prop :=
     Relation.TransGen (fun x y ↦ G.Adj x y ∨ (x = y ∧ x ∈ G.V))
 
@@ -47,43 +49,43 @@ lemma Adj.vxConnected (h : G.Adj x y) : G.VxConnected x y := by
 lemma Inc₂.vxConnected (h : G.Inc₂ e x y) : G.VxConnected x y :=
   h.adj.vxConnected
 
-lemma Walk.ValidIn.vxConnected {w : Walk α β} (hw : w.ValidIn G) :
+lemma IsWalk.vxConnected (hw : G.IsWalk w) :
     G.VxConnected w.first w.last := by
   induction w with
   | nil u =>
-  apply VxConnected.refl
-  simpa using hw
+    apply VxConnected.refl
+    simpa using hw
   | cons u e W ih =>
-  simp only [cons_first, cons_last]
-  simp only [cons_validIn] at hw
-  exact hw.1.vxConnected.trans <| ih hw.2
+    simp_all only [cons_isWalk_iff, cons_first, cons_last, forall_const]
+    exact hw.1.vxConnected.trans ih
 
-lemma VxConnected.exists_walk_validIn (h : G.VxConnected x y) :
-    ∃ (w : Walk α β), w.ValidIn G ∧ w.first = x ∧ w.last = y := by
+lemma VxConnected.exists_isWalk (h : G.VxConnected x y) :
+    ∃ w, G.IsWalk w ∧ w.first = x ∧ w.last = y := by
   rw [VxConnected] at h
   induction h using Relation.TransGen.head_induction_on with
   | @base a h =>
     obtain ⟨e, he⟩ | ⟨rfl, h⟩ := h
     · exact ⟨he.walk, by simp⟩
-    exact ⟨Walk.nil a, by simp [h]⟩
+    exact ⟨.nil a, by simp [h]⟩
   | @ih u v h₁ h₂ h₃ =>
-  obtain ⟨w, hw, rfl, rfl⟩ := h₃
-  obtain ⟨e, he⟩ | ⟨rfl, h⟩ := h₁
-  · exact ⟨Walk.cons u e w, by simp [he, hw]⟩
-  exact ⟨w, hw, rfl, rfl⟩
+    obtain ⟨w, hw, rfl, rfl⟩ := h₃
+    obtain ⟨e, he⟩ | ⟨rfl, h⟩ := h₁
+    · exact ⟨.cons u e w, by simp [he, hw]⟩
+    exact ⟨w, hw, rfl, rfl⟩
 
 lemma vxConnected_iff_exists_walk :
-    G.VxConnected x y ↔ ∃ (w : Walk α β), w.ValidIn G ∧ w.first = x ∧ w.last = y := by
-  refine ⟨VxConnected.exists_walk_validIn, ?_⟩
+    G.VxConnected x y ↔ ∃ w, G.IsWalk w ∧ w.first = x ∧ w.last = y := by
+  refine ⟨VxConnected.exists_isWalk, ?_⟩
   rintro ⟨w, hw, rfl, rfl⟩
   exact hw.vxConnected
 
 lemma VxConnected.exists_isPath (h : G.VxConnected x y) :
     ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y := by
   classical
-  obtain ⟨w, hw, rfl, rfl⟩ := h.exists_walk_validIn
+  obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isWalk
   exact ⟨w.dedup, by simp [hw.dedup_isPath]⟩
 
+/-- A graph is `Connected` if it is nonempty, and every pair of vertices is `VxConnected`. -/
 @[mk_iff]
 structure Connected (G : Graph α β) : Prop where
   nonempty : G.V.Nonempty
@@ -98,6 +100,46 @@ lemma exists_of_not_connected (h : ¬ G.Connected) (hne : G.V.Nonempty) :
   · exact HasSubset.Subset.ssubset_of_mem_not_mem
       (fun z hz ↦ VxConnected.mem_right hz) hy (by simpa)
   exact h.trans huv.vxConnected
+
+end Graph
+
+namespace WList
+
+variable {w : WList α β}
+
+/-- Turn `w : WList α β` into a `Graph α β`. If the list is not well-formed
+(i.e. it contains an edge appearing twice with different ends),
+then the first occurence of the edge determines its ends in `w.toGraph`. -/
+def toGraph : WList α β → Graph α β
+  | .nil u => noEdgeGraph {u} β
+  | .cons u e w => (Graph.singleEdge u w.first e) ∪ w.toGraph
+
+@[simp]
+lemma toGraph_nil : (WList.nil u (β := β)).toGraph = noEdgeGraph {u} β := rfl
+
+@[simp]
+lemma toGraph_cons : (w.cons u e).toGraph = (Graph.singleEdge u w.first e) ∪ w.toGraph := rfl
+
+@[simp]
+lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.vxSet := by
+  induction w with
+  | nil u => simp
+  | cons u e W ih => rw [toGraph_cons, union_vxSet, singleEdge_V, cons_vxSet, ← singleton_union, ih,
+      union_assoc, singleton_union (s := W.vxSet), insert_eq_of_mem (by simp), singleton_union]
+
+@[simp]
+lemma toGraph_edgeSet (w : WList α β) : w.toGraph.E = w.edgeSet := by
+  induction w with simp_all
+
+end WList
+
+lemma Graph.IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
+  induction w with
+  | nil u => simpa [toGraph] using h
+  | cons u e W ih =>
+    simp only [cons_isWalk_iff] at h
+    exact union_le (by simpa using h.1) (ih h.2)
+
 
 
 

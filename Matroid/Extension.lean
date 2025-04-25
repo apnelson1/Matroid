@@ -809,12 +809,15 @@ lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
   obtain ⟨I, hI⟩ := (M.extendBy e U).exists_isBasis' X
   have hI' : M.IsBasis' I X
   · rwa [← U.extendBy_deleteElem he, delete_isBasis'_iff, diff_singleton_eq_self heX]
-
   have heI := not_mem_subset hI'.subset heX
   rw [← hI.closure_eq_closure, ← hI'.closure_eq_closure, or_iff_right heX,
     ← not_iff_not, hI.indep.not_mem_closure_iff_of_not_mem heI, extendBy_Indep,
     U.extIndep_iff_of_mem (.inl rfl)]
   simp [heI, hI'.indep]
+
+lemma ModularCut.closure_mem_iff_mem_closure_extendBy (U : M.ModularCut) (he : e ∉ M.E)
+    (heX : e ∉ X) : M.closure X ∈ U ↔ e ∈ (M.extendBy e U).closure X := by
+  rw [U.mem_closure_extendBy_iff he, or_iff_right heX]
 
 lemma ModularCut.extendBy_closure_eq_self (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXU : M.closure X ∉ U) : (M.extendBy e U).closure X = M.closure X := by
@@ -830,6 +833,42 @@ lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) 
   rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
   exact .inr hXSU
 
+lemma ModularCut.insert_isFlat_extendBy_of_mem (U : M.ModularCut) (hFU : F ∈ U) (he : e ∉ M.E) :
+    (M.extendBy e U).IsFlat (insert e F) := by
+  have heF : e ∉ F := not_mem_subset (U.isFlat_of_mem hFU).subset_ground he
+  have hmem : e ∈ (M.extendBy e U).closure F := by
+    rw [U.extendBy_closure_eq_insert he heF (closure_mem_of_mem hFU)]
+    apply mem_insert
+  rw [isFlat_iff_closure_eq, closure_insert_eq_of_mem_closure hmem,
+    U.extendBy_closure_eq_insert he heF (U.closure_mem_of_mem hFU),
+    (U.isFlat_of_mem hFU).closure]
+
+lemma ModularCut.isFlat_extendBy_of_isFlat_of_not_mem (U : M.ModularCut) (he : e ∉ M.E)
+    (hF : M.IsFlat F) (hFU : F ∉ U) : (M.extendBy e U).IsFlat F := by
+  have heF := not_mem_subset hF.subset_ground he
+  rw [isFlat_iff_closure_eq, extendBy_closure_eq_self _ he heF, hF.closure]
+  rwa [hF.closure]
+
+lemma ModularCut.insert_isFlat_extendBy_of_not_covBy (U : M.ModularCut) (he : e ∉ M.E)
+    (hF : M.IsFlat F) (h_not_covBy : ¬ ∃ F' ∈ U, F ⋖[M] F') :
+    (M.extendBy e U).IsFlat (insert e F) := by
+  have heF := not_mem_subset hF.subset_ground he
+  by_cases hFU : F ∈ U
+  · obtain rfl | hne := eq_or_ne F M.E
+    · simpa using (M.extendBy e U).ground_isFlat
+    obtain ⟨F', hF'⟩ := hF.exists_covby_of_ne_ground hne
+    exact False.elim <| h_not_covBy ⟨F', U.superset_mem hFU hF'.isFlat_right hF'.subset, hF'⟩
+  contrapose! h_not_covBy
+  obtain ⟨f, hfmem⟩ := exists_mem_closure_not_mem_of_not_isFlat h_not_covBy
+    (insert_subset_insert hF.subset_ground)
+  simp only [mem_diff, mem_insert_iff, not_or] at hfmem
+  refine ⟨M.closure (insert f F), ?_, ?_⟩
+  · rw [U.closure_mem_iff_mem_closure_extendBy he (by simp [Ne.symm hfmem.2.1, heF])]
+    refine mem_closure_insert (fun h ↦ hfmem.2.2 ?_) hfmem.1
+    rwa [extendBy_closure_eq_self _ he heF, hF.closure] at h
+    rwa [hF.closure]
+  refine IsFlat.covBy_closure_insert hF hfmem.2.2 ?_
+  simpa [hfmem.2.1] using mem_ground_of_mem_closure hfmem.1
 
 /-- Move to `closure` -/
 lemma Spanning.rankFinite_of_finite {S : Set α} (hS : M.Spanning S) (hSfin : S.Finite) :
