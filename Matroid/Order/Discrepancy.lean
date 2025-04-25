@@ -295,25 +295,24 @@ lemma nDiscrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy
   simp [nDiscrepancy]
 
 
-
-lemma nDiscrepancy_covers {F : Set α} (hF : M₁.IsFlat F) (hQ : M₂ ≤q M₁)
-(hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E) : ∃ F₁, (F ⋖[M₁] F₁) := by
-  have he : ∃ e, e ∈ M₁.E \ F := by
-    by_contra! hnot
-    have hFE : F ⊆ M₁.E := hF.subset_ground
-    --I'm pretty sure the following proof can be shorten, no idea how
-    have hEF : M₁.E = F := by
-      refine ext ?_
-      intro c
-      refine⟨ ?_ , (fun a ↦ hFE a)⟩
-      intro hs
-      by_contra hcg
-      exact hnot c (mem_diff_of_mem hs hcg)
-    rw [hEF ] at hdis
-    exact (lt_self_iff_false (hQ.nDiscrepancy F)).mp hdis
-  obtain ⟨e, he ⟩ := he
-  use M₁.closure (insert e F)
-  exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
+-- lemma nDiscrepancy_covers {F : Set α} (hF : M₁.IsFlat F) (hQ : M₂ ≤q M₁)
+-- (hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E) : ∃ F₁, (F ⋖[M₁] F₁) := by
+--   have he : ∃ e, e ∈ M₁.E \ F := by
+--     by_contra! hnot
+--     have hFE : F ⊆ M₁.E := hF.subset_ground
+--     --I'm pretty sure the following proof can be shorten, no idea how
+--     have hEF : M₁.E = F := by
+--       refine ext ?_
+--       intro c
+--       refine⟨ ?_ , (fun a ↦ hFE a)⟩
+--       intro hs
+--       by_contra hcg
+--       exact hnot c (mem_diff_of_mem hs hcg)
+--     rw [hEF ] at hdis
+--     exact (lt_self_iff_false (hQ.nDiscrepancy F)).mp hdis
+--   obtain ⟨e, he ⟩ := he
+--   use M₁.closure (insert e F)
+--   exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
 
 
 

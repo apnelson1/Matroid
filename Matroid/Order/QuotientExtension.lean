@@ -1,4 +1,5 @@
-import Matroid.Order.Discrepancy
+--import Matroid.Order.Discrepancy
+import Matroid.Rank.Quotient
 
 universe u
 
@@ -200,7 +201,7 @@ theorem Quotient.forall_superset_isFlat [RankFinite M₁] {k : ℤ} {F F' : Set 
 --       exact ⟨hX2, hS⟩
 --     · sorry
 
-example {a b c : ℤ} (h : a ≤ b) (h2 : b ≤ c) : a ≤ c := by exact Int.le_trans h h2
+--example {a b c : ℤ} (h : a ≤ b) (h2 : b ≤ c) : a ≤ c := by exact Int.le_trans h h2
 
   --Int.le_sub_right_of_add_le h
 -- eq_sub_of_add_eq h
@@ -317,26 +318,148 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
   rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
   refine ⟨ ?_, ?_ ⟩
   · by_contra! hcon
-    obtain ⟨F₀, hF₀, hF₀bad⟩ := hcon
-    let s := {F : Set α | M₁.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
+    obtain ⟨F₀, hF₀2, hF₀bad⟩ := hcon
+    have hF₀U : F₀ ∉ (Quotient.modularCut_of_k hQ) := by
+      by_contra! hcon0
+      have hF₀1 : M₁.IsFlat F₀ := hQ.modularCut_of_k.forall_isFlat F₀ hcon0
+      have hFex: F₀ ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by
+        rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+        exact hF₀1.subset_ground
+      have hF₀b : (M₁.projectBy hQ.modularCut_of_k).IsFlat F₀ := by
+        rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+        apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
+        intro e heN
+        have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F₀ ⊆
+            (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F₀) :=
+          Matroid.closure_subset_closure (M₁.extendBy f hQ.modularCut_of_k ／ {f})
+          (subset_insert e F₀)
+        by_contra hcontra
+        have hcontra1 :(M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F₀
+        = (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F₀):= by
+          by_contra hc
+          exact hcontra (ssubset_iff_subset_ne.2 (And.symm ⟨hc, hsub⟩))
+        have hrnk : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk  F₀ =
+            (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F₀) := by
+          rw [←rk_closure_eq]
+          nth_rewrite 2 [←rk_closure_eq]
+          exact congrArg (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk hcontra1
+        have hcon1 : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk F₀
+            < (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F₀) := by
+          zify
+          have : (M₁.extendBy f hQ.modularCut_of_k).RankFinite :=
+            instRankFiniteExtendBy hQ.modularCut_of_k f
+          rw [contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k),
+            contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k) ]
+          simp only [union_singleton, sub_lt_sub_iff_right, Nat.cast_lt, gt_iff_lt]
+          have hfF : f ∉ F₀ := fun a ↦ hf1 (hF₀1.subset_ground a)
+          have hfFe : f ∉ insert e F₀ := by
+            have hef : f ≠ e := by aesop
+            aesop
+          have hXSU : M₁.closure F₀ ∈ hQ.modularCut_of_k := by
+            rwa [isFlat_iff_closure_eq.mp hF₀1]
+          rw [(hQ.modularCut_of_k).extendBy_rk_insert_eq hf1 hfF hXSU]
+          have h1 : M₁.rk (insert e F₀)
+              ≤ (M₁.extendBy f (hQ.modularCut_of_k)).rk (insert f (insert e F₀)) :=
+            (hQ.modularCut_of_k).rank_ge
+          have h2 : M₁.rk F₀ < M₁.rk (insert e F₀) := by
+            have heFE : e ∈ M₁.E \ F₀ := by
+              rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+              at heN
+              exact heN
+            rw [hF₀1.rk_insert_eq_add_one (isRkFinite_set M₁ F₀) heFE  ]
+            exact lt_add_one (M₁.rk F₀)
+          linarith
+        rw [hrnk] at hcon1
+        simp only [lt_self_iff_false] at hcon1
+      exact hF₀bad hF₀b
+    --Case 1 ends
+    have hF₀1 : M₁.IsFlat F₀ := isFlat_of_isFlat hQ hF₀2
+    have hF₀dis : hQ.nDiscrepancy F₀ ≠ hQ.nDiscrepancy M₁.E := by
+      by_contra hcond
+      have hF₀iU : F₀ ∈ hQ.modularCut_of_k := by
+        change _ ∧ _
+        refine⟨ hF₀1, hF₀2, hcond ⟩
+      exact hF₀U hF₀iU
+    --let s := {F : Set α | M₂.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
+    let s := {F : Set α | M₁.IsFlat F ∧ (hQ.nDiscrepancy F ≠ hQ.nDiscrepancy M₁.E)
+        ∧ (hQ.nDiscrepancy F = hQ.nDiscrepancy F₀)}
+    --let s := {F : Set α | M₂.IsFlat F ∧ F ∉ (Quotient.modularCut_of_k hQ)}
     have hsfin : (M₁.rk '' s).Finite := M₁.range_rk_finite.subset <| image_subset_range ..
-    have hsne : s.Nonempty := ⟨F₀, hQ.isFlat_of_isFlat hF₀, hF₀bad⟩
+    --have hF₀1 : M₁.IsFlat F₀ := by exact isFlat_of_isFlat hQ hF₀2
+    have hsne : s.Nonempty := ⟨F₀, hF₀1, hF₀dis, rfl⟩
+    --have hsne : s.Nonempty := ⟨F₀, hF₀2, hF₀U⟩
+    --have hsne : s.Nonempty := sorry
     obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
     simp only [mem_setOf_eq, and_imp, s] at hmax hFs
+    --have hF2 : M₂.IsFlat F := hFs.1
     have hF1 : M₁.IsFlat F := hFs.1
-    have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
-      have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-        by_contra! hcontra
-        have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E := by
-          have hFE : F ⊂ M₁.E := by
-            refine hF1.subset_ground.ssubset_of_ne ?_
-            rintro rfl
-            contradiction
+    --have hF1 : M₁.IsFlat F := by exact isFlat_of_isFlat hQ hF2
+    --have hbadU : ∀ F, (M₁.projectBy hQ.modularCut_of_k).IsFlat F →
+    have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+      by_contra! hcontra
+      have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E := by
+        have h1 : hQ.nDiscrepancy F ≤ hQ.nDiscrepancy M₁.E := by
+          exact nDiscrepancy_le_of_subset hQ hF1.subset_ground
+        exact lt_of_le_of_ne h1 hcontra
+      have hFE : F ⊂ M₁.E := by
+        refine hF1.subset_ground.ssubset_of_ne ?_
+        rintro rfl
+        contradiction
+      have hFE1 : F ≠ M₁.E := by exact (ssubset_iff_subset_ne.1 hFE).2
+      have hhe : ∃ F', F ⋖[M₁] F':=
+        hF1.exists_covby_of_ne_ground ((ssubset_iff_subset_ne.1 hFE).2 )
+      obtain ⟨ F', hFF' ⟩ := hhe
+      have hFF'dis : hQ.nDiscrepancy F = hQ.nDiscrepancy F' := by
+        zify
+        rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F']
+        have h0 := nDiscrepancy_le_of_subset hQ (hFF'.subset)
+        zify at h0
+        rw [←intCast_rk_sub_rk_eq_nDiscrepancy hQ F, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F'] at h0
+        have h1 : ( M₁.rk F' : ℤ ) - (M₁.rk F : ℤ ) = 1 := by
+          rw [(((hFs.1).covBy_iff_rk_eq_add_one (hFF'.2.1)).1 hFF').2  ]
+          simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_left, s]
+        have h2 : 1 ≤ (M₂.rk F' : ℤ) - (M₂.rk F : ℤ) := by
+          by_contra! hc
+          have hhelpp: (M₂.rk F' : ℤ ) = M₂.rk F  := by
+            have hhelp : (M₂.rk F : ℤ ) ≤ M₂.rk F' := by
+              simp only [Nat.cast_le, s]
+              exact rk_le_of_subset M₂ (hFF'.subset)
+            linarith
+          have hFF'eq : F = F' := by sorry
           sorry
-        sorry
-      sorry
-    sorry
-  sorry
+        linarith
+        --By choice of F'
+      have hdisF₀F'1 : hQ.nDiscrepancy F' = hQ.nDiscrepancy F₀ := by
+        rw [←hFF'dis]
+        exact hFs.2.2
+      have hF'dis : hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := by
+        by_contra hcondis
+        have hshort1 : M₁.rk F ≤ M₁.rk F' := rk_le_of_subset M₁ (hFF'.subset)
+        have hmax := hmax F' ((covBy_iff_eRelRk_eq_one.1 hFF').2.1) hcondis hdisF₀F'1 hshort1
+        --have hF'U : F' ∉ hQ.modularCut_of_k := by
+          --by_contra! hconF'U
+          --have hdis : hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := by sorry
+          --exact hcondis hdis
+        --have : M₁.IsFlat F' := (covBy_iff_eRelRk_eq_one.1 hFF').2.1
+        have hshort : M₁.rk F' = M₁.rk F + 1 := by
+            exact ((IsFlat.covBy_iff_rk_eq_add_one ((covBy_iff_eRelRk_eq_one.1 hFF').1)
+            ((covBy_iff_eRelRk_eq_one.1 hFF').2.1)).1 hFF').2
+        rw [hmax] at hshort
+        simp only [left_eq_add, one_ne_zero, s] at hshort
+        --IsFlat.covBy_iff_rk_eq_add_one
+        --have hshort1 : M₁.rk F ≤ M₁.rk F' := by aesop
+        --have heq := hmax F' hF'2 hF'U hshort1
+        --have heq := hmax F' ((covBy_iff_eRelRk_eq_one.1 hFF').2.1) hF'U hshort1
+        --rw [heq] at hshort
+        --
+      have hFdis : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
+        rwa [hFF'dis ]
+      rw [hFdis] at hles
+      simp only [lt_self_iff_false, s] at hles
+    exact (hFs.2).1 hnotmod
+  rw [hQ.ground_eq]
+  exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
+
     -- · by_contra! hcon
 
     --   have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
@@ -475,7 +598,8 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 --   · rw [henl.contract_rank_add_one_eq, M.delete_elem_rank_eq hecl]
 
 --   obtain ⟨N, hNss, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
---   obtain ⟨P, rfl, rfl⟩ := exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
+--   obtain ⟨P, rfl, rfl⟩ :=
+--exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
 --   use P
 --   simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
 --     delete_delete, deleteElem, true_and]
@@ -485,10 +609,10 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 --   exact ⟨hNss.1, mem_of_mem_of_subset henl.mem_ground diff_subset⟩
 
 
-theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂] (h : M₁ ≤q M₂) :
-  ∃ (β : Type u) (N : Matroid (α ⊕ β)),
-      M₁ = (N ／ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl ∧
-      M₂ = (N ＼ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl := sorry
+-- theorem Quotient.of_foo {α : Type u} {M₁ M₂ : Matroid α} [RankFinite M₂] (h : M₁ ≤q M₂) :
+--   ∃ (β : Type u) (N : Matroid (α ⊕ β)),
+--       M₁ = (N ／ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl ∧
+--       M₂ = (N ＼ (Sum.inr '' univ : Set (α ⊕ β))).comap Sum.inl := sorry
 
 -- `Sum.inr '' univ : Set (α ⊕ β)` means the set of all the stuff in `α ⊕ β` coming from `β`.
 
