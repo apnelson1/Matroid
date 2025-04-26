@@ -206,6 +206,11 @@ theorem Quotient.forall_superset_isFlat [RankFinite M₁] {k : ℤ} {F F' : Set 
   --Int.le_sub_right_of_add_le h
 -- eq_sub_of_add_eq h
 
+-- lemma foo {M : Matroid α} {X : Set α} {f : α} (hfX : f ∉ X) (hFlat : M.IsFlat (insert f X)) :
+--     (M／ {f}).IsFlat X := by
+
+--   sorry
+
 theorem Quotient.FiniteRank {M₁ M₂ : Matroid α} {X : Set α} [RankFinite M₁] (hQ : M₂ ≤q M₁) :
     M₂.rk X ≤ M₁.rk X := by
   have h1 := hQ.intCast_rank_sub_mono (empty_subset X)
@@ -257,8 +262,8 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
   obtain ⟨k, hkpos, hrank⟩ := exists_pos_add_of_lt hr
   use extendBy M₁ f (Quotient.modularCut_of_k hQ)
   have hf1 : f ∉ M₁.E := by rwa [hQ.ground_eq] at hf
-  refine ⟨?_, ?_, ModularCut.extendBy_deleteElem (Quotient.modularCut_of_k hQ) hf1, ?_ ⟩
-  · by_contra! hcon
+  have hfNL : (M₁.extendBy f hQ.modularCut_of_k ).IsNonloop f := by
+    by_contra! hcon
     rw[ (M₁.extendBy f (Quotient.modularCut_of_k hQ)).not_isNonloop_iff] at hcon
     have hfcl : f ∈ (M₁.extendBy f (Quotient.modularCut_of_k hQ)).closure (∅) := hcon.mem_closure ∅
     rw [ModularCut.mem_closure_extendBy_iff ] at hfcl
@@ -278,6 +283,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         have h1 := eq_of_discrepancy_le_zero hQ ?_
         rw[ congrArg rank h1 ] at hr
         exact (lt_self_iff_false M₁.rank).mp hr
+        --exact fun
         sorry
       by_contra! hcontra
       have hdis : hQ.nDiscrepancy (M₁.closure ∅) = hQ.nDiscrepancy ∅ := by
@@ -299,6 +305,8 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     have hbds: M₁.E = M₂.E := Eq.symm hQ.ground_eq
     rw [Eq.symm hQ.ground_eq]
     exact hf
+  refine ⟨hfNL, ?_, ModularCut.extendBy_deleteElem (Quotient.modularCut_of_k hQ) hf1, ?_ ⟩
+  --· exact hfNL
   · by_contra! hcontra
     have hEU : M₁.E ∈ (Quotient.modularCut_of_k hQ) := by
       have hFM1 : M₁.IsFlat M₁.E := ground_isFlat M₁
@@ -380,186 +388,64 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         change _ ∧ _
         refine⟨ hF₀1, hF₀2, hcond ⟩
       exact hF₀U hF₀iU
-    --let s := {F : Set α | M₂.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
-    let s := {F : Set α | M₁.IsFlat F ∧ (hQ.nDiscrepancy F ≠ hQ.nDiscrepancy M₁.E)
-        ∧ (hQ.nDiscrepancy F = hQ.nDiscrepancy F₀)}
-    --let s := {F : Set α | M₂.IsFlat F ∧ F ∉ (Quotient.modularCut_of_k hQ)}
-    have hsfin : (M₁.rk '' s).Finite := M₁.range_rk_finite.subset <| image_subset_range ..
-    --have hF₀1 : M₁.IsFlat F₀ := by exact isFlat_of_isFlat hQ hF₀2
-    have hsne : s.Nonempty := ⟨F₀, hF₀1, hF₀dis, rfl⟩
-    --have hsne : s.Nonempty := ⟨F₀, hF₀2, hF₀U⟩
-    --have hsne : s.Nonempty := sorry
-    obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
-    simp only [mem_setOf_eq, and_imp, s] at hmax hFs
-    --have hF2 : M₂.IsFlat F := hFs.1
-    have hF1 : M₁.IsFlat F := hFs.1
-    --have hF1 : M₁.IsFlat F := by exact isFlat_of_isFlat hQ hF2
-    --have hbadU : ∀ F, (M₁.projectBy hQ.modularCut_of_k).IsFlat F →
-    have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-      by_contra! hcontra
-      have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E := by
-        have h1 : hQ.nDiscrepancy F ≤ hQ.nDiscrepancy M₁.E := by
-          exact nDiscrepancy_le_of_subset hQ hF1.subset_ground
-        exact lt_of_le_of_ne h1 hcontra
-      have hFE : F ⊂ M₁.E := by
-        refine hF1.subset_ground.ssubset_of_ne ?_
-        rintro rfl
-        contradiction
-      have hFE1 : F ≠ M₁.E := by exact (ssubset_iff_subset_ne.1 hFE).2
-      have hhe : ∃ F', F ⋖[M₁] F':=
-        hF1.exists_covby_of_ne_ground ((ssubset_iff_subset_ne.1 hFE).2 )
-      obtain ⟨ F', hFF' ⟩ := hhe
-      have hFF'dis : hQ.nDiscrepancy F = hQ.nDiscrepancy F' := by
+    have h_covBy : ∃ F' ∈ hQ.modularCut_of_k, F₀ ⋖[M₁] F' := by
+      by_contra! hexist
+      have hc: (M₁.extendBy f (hQ.modularCut_of_k)).IsFlat (insert f F₀) := by
+        apply hQ.modularCut_of_k.insert_isFlat_extendBy_of_not_covBy hf1 hF₀1
+        simp only [not_exists, not_and]
+        exact hexist
+      have hflatpro : ((M₁.extendBy f (hQ.modularCut_of_k)) ／ {f}).IsFlat F₀ := by
+        apply (hfNL.contractElem_isFlat_iff).2
+        refine ⟨ hc, fun a ↦ hf ((hF₀2.subset_ground) a) ⟩
+      rw [extendBy_contract_eq (hQ.modularCut_of_k) hf1 ] at hflatpro
+      exact hF₀bad hflatpro
+    obtain ⟨ F', hF'U, hF₀F' ⟩ := h_covBy
+    have hF'1 := hF₀F'.2.1
+    have hnotmod : hQ.nDiscrepancy F₀ = hQ.nDiscrepancy M₁.E := by
+      --by_contra! hcontra
+      have hFF'dis : hQ.nDiscrepancy F₀ = hQ.nDiscrepancy F' := by
         zify
-        rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F']
-        have h0 := nDiscrepancy_le_of_subset hQ (hFF'.subset)
+        rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F₀, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F']
+        have h0 := nDiscrepancy_le_of_subset hQ (hF₀F'.subset)
         zify at h0
-        rw [←intCast_rk_sub_rk_eq_nDiscrepancy hQ F, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F'] at h0
-        have h1 : ( M₁.rk F' : ℤ ) - (M₁.rk F : ℤ ) = 1 := by
-          rw [(((hFs.1).covBy_iff_rk_eq_add_one (hFF'.2.1)).1 hFF').2  ]
-          simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_left, s]
-        have h2 : 1 ≤ (M₂.rk F' : ℤ) - (M₂.rk F : ℤ) := by
+        rw [←intCast_rk_sub_rk_eq_nDiscrepancy hQ F₀,
+        ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F'] at h0
+        have h1 : ( M₁.rk F' : ℤ ) - (M₁.rk F₀ : ℤ ) = 1 := by
+          rw [(((hF₀1).covBy_iff_rk_eq_add_one (hF'1)).1 hF₀F').2  ]
+          simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_left]
+        have h2 : 1 ≤ (M₂.rk F' : ℤ) - (M₂.rk F₀ : ℤ) := by
           by_contra! hc
-          have hhelpp: (M₂.rk F' : ℤ ) = M₂.rk F  := by
-            have hhelp : (M₂.rk F : ℤ ) ≤ M₂.rk F' := by
-              simp only [Nat.cast_le, s]
-              exact rk_le_of_subset M₂ (hFF'.subset)
+          have hhelpp: (M₂.rk F' : ℤ ) = M₂.rk F₀  := by
+            have hhelp : (M₂.rk F₀ : ℤ ) ≤ M₂.rk F' := by
+              simp only [Nat.cast_le]
+              exact rk_le_of_subset M₂ (hF₀F'.subset)
             linarith
-          have hFF'eq : F = F' := by sorry
-          sorry
+          have hFF'eq : F₀ = F' := by
+            have hle : M₂.rk F' ≤ M₂.rk F₀ := by
+              zify
+              rw [hhelpp]
+            have heee := (hF₀F'.subset_ground_right)
+            rw [←hQ.ground_eq] at heee
+            exact (hF₀2).eq_of_subset_of_rk_ge (hF₀F'.subset) hle heee
+          exact (hF₀F'.ne) hFF'eq
         linarith
-        --By choice of F'
-      have hdisF₀F'1 : hQ.nDiscrepancy F' = hQ.nDiscrepancy F₀ := by
-        rw [←hFF'dis]
-        exact hFs.2.2
-      have hF'dis : hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := by
-        by_contra hcondis
-        have hshort1 : M₁.rk F ≤ M₁.rk F' := rk_le_of_subset M₁ (hFF'.subset)
-        have hmax := hmax F' ((covBy_iff_eRelRk_eq_one.1 hFF').2.1) hcondis hdisF₀F'1 hshort1
-        --have hF'U : F' ∉ hQ.modularCut_of_k := by
-          --by_contra! hconF'U
-          --have hdis : hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := by sorry
-          --exact hcondis hdis
-        --have : M₁.IsFlat F' := (covBy_iff_eRelRk_eq_one.1 hFF').2.1
-        have hshort : M₁.rk F' = M₁.rk F + 1 := by
-            exact ((IsFlat.covBy_iff_rk_eq_add_one ((covBy_iff_eRelRk_eq_one.1 hFF').1)
-            ((covBy_iff_eRelRk_eq_one.1 hFF').2.1)).1 hFF').2
-        rw [hmax] at hshort
-        simp only [left_eq_add, one_ne_zero, s] at hshort
-        --IsFlat.covBy_iff_rk_eq_add_one
-        --have hshort1 : M₁.rk F ≤ M₁.rk F' := by aesop
-        --have heq := hmax F' hF'2 hF'U hshort1
-        --have heq := hmax F' ((covBy_iff_eRelRk_eq_one.1 hFF').2.1) hF'U hshort1
-        --rw [heq] at hshort
-        --
-      have hFdis : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-        rwa [hFF'dis ]
-      rw [hFdis] at hles
-      simp only [lt_self_iff_false, s] at hles
-    exact (hFs.2).1 hnotmod
+      have hF'Edis: hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := hF'U.2.2
+      rwa [hF'Edis ] at hFF'dis
+    exact hF₀dis hnotmod
   rw [hQ.ground_eq]
   exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
 
-    -- · by_contra! hcon
+    --let s := {F : Set α | M₂.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
+    --let s := {F : Set α | M₁.IsFlat F ∧ (hQ.nDiscrepancy F ≠ hQ.nDiscrepancy M₁.E)
+      --  ∧ (hQ.nDiscrepancy F = hQ.nDiscrepancy F₀)}
+    --let s := {F : Set α | M₂.IsFlat F ∧ F ∉ (Quotient.modularCut_of_k hQ)}
+    --have hsfin : (M₁.rk '' s).Finite := M₁.range_rk_finite.subset <| image_subset_range ..
+    --have hF₀1 : M₁.IsFlat F₀ := by exact isFlat_of_isFlat hQ hF₀2
+    --have hsne : s.Nonempty := ⟨F₀, hF₀1, hF₀dis, rfl⟩
+    --have hsne : s.Nonempty := ⟨F₀, hF₀2, hF₀U⟩
+    --have hsne : s.Nonempty := sorry
+    --obtain ⟨F, hFs, hmax⟩ := hsfin.exists_maximal_wrt' _ _ hsne
 
-    --   have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
-    --     have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-    --       by_contra! hcontra
-    --       have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
-    --         have hFE : F ⊆ M₁.E := hF1.subset_ground
-    --         have he : ∃ e, e ∈ M₁.E \ F := by
-    --             --sorry
-    --           by_contra! hnot
-    --           have hEF : M₁.E = F := by
-    --             refine ext ?_
-    --             intro c
-    --             refine⟨ ?_ , (fun a ↦ hFE a)⟩
-    --             intro hs
-    --             by_contra hcg
-    --             exact (hnot c) (mem_diff_of_mem hs hcg)
-    --           rw [hEF] at hcontra
-    --           exact hcontra rfl
-
-
-    --         sorry
-    --       sorry
-    --     sorry
-    -- sorry
-
-            --   aesop
-            -- obtain ⟨e, he ⟩ := he
-            -- use M₁.closure (insert e F)
-            -- exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
-              --rw [hEF ] at hdis
-            --  lt_of_le_of_ne (nDiscrepancy_le_of_subset hQ (((M₁.isFlat_iff F).1 hF1).2 ))
-
-
-
-      -- intro F hF2
-      -- have hF1 : M₁.IsFlat F := isFlat_of_isFlat hQ hF2
-      -- have hin : F ∈ (Quotient.modularCut_of_k hQ) := by
-      --   have hnotmod : hQ.nDiscrepancy F = hQ.nDiscrepancy M₁.E := by
-      --     by_contra! hcontra
-      --     have hles : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E :=
-      --         lt_of_le_of_ne (nDiscrepancy_le_of_subset hQ (((M₁.isFlat_iff F).1 hF1).2 ))
-      -- hcontra
-      --     have hF₁ := nDiscrepancy_covers hF1 hQ hles
-      --     obtain ⟨ F₁, hcovby ⟩ := hF₁
-      --     sorry
-      --   change _ ∧ _
-      --   refine⟨ hF1, hF2, hnotmod ⟩
-
-
-
-    --have hFex: F ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by sorry
-      --rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
-      --exact hF1.subset_ground
-    --apply (isFlat_iff_subset_closure_self (hFex)).2
-    -- rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
-    -- apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
-    -- intro e heN
-    -- have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F ⊆
-    --     (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F) :=
-    --   Matroid.closure_subset_closure (M₁.extendBy f hQ.modularCut_of_k ／ {f}) (subset_insert e F)
-    -- by_contra hcontra
-    -- --simp only [contract_closure_eq, union_singleton] at hcontra
-    -- --simp only [contract_closure_eq, union_singleton] at hsub
-    -- have hcontra1 :(M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F
-    --     = (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure (insert e F):= by
-    --   by_contra hc
-    --   exact hcontra (ssubset_iff_subset_ne.2 (And.symm ⟨hc, hsub⟩))
-    -- have hrnk : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk  F =
-    --     (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
-    --   rw [←rk_closure_eq] --, hcontra1 ]
-    --   nth_rewrite 2 [←rk_closure_eq]
-    --   exact congrArg (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk hcontra1
-    -- have hcon1 : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk F
-    --     < (M₁.extendBy f hQ.modularCut_of_k ／ {f}).rk (insert e F) := by
-    --     zify
-    --     have : (M₁.extendBy f hQ.modularCut_of_k).RankFinite := by sorry
-    --     rw [contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k),
-    --     contract_rk_cast_int_eq (M₁.extendBy f hQ.modularCut_of_k) ]
-    --     simp only [union_singleton, sub_lt_sub_iff_right, Nat.cast_lt, gt_iff_lt]
-    --     have hfF : f ∉ F := fun a ↦ hf1 (hF1.subset_ground a)
-    --     have hfFe : f ∉ insert e F := by
-    --       have hef : f ≠ e := by aesop
-    --       aesop
-    --     have hXSU : M₁.closure F ∈ hQ.modularCut_of_k := by
-    --       rwa [isFlat_iff_closure_eq.mp hF1]
-    --     rw[(hQ.modularCut_of_k).extendBy_rk_eq hf1 (fun a ↦ hf1 (hF1.subset_ground a)) hXSU]
-    --     have h1 := (hQ.modularCut_of_k).rank_ge hf1 hfFe
-    --     have h2 : M₁.rk F < M₁.rk (insert e F) := by
-    --       have heFE : e ∈ M₁.E \ F := by
-    --         rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
-    --         at heN
-    --         exact heN
-    --       rw [hF1.rk_insert_eq_add_one (isRkFinite_set M₁ F) heFE  ]
-    --       exact lt_add_one (M₁.rk F)
-    --     linarith
-    -- rw [hrnk] at hcon1
-    -- simp only [lt_self_iff_false] at hcon1
-    -- rw [hQ.ground_eq]
-    -- exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
 
 
 
