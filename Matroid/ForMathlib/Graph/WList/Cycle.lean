@@ -64,6 +64,25 @@ lemma rotate_rotate : ∀ (w : WList α β) (m n : ℕ), (w.rotate m).rotate n =
   | cons x e w, m+1, n => by
     rw [rotate_cons_succ, rotate_rotate, Nat.add_right_comm, ← rotate_cons_succ]
 
+lemma rotate_succ (w : WList α β) (n : ℕ) : w.rotate (n+1) = (w.rotate 1).rotate n := by
+  rw [rotate_rotate, Nat.add_comm]
+
+@[simp] lemma rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
+  induction n generalizing w with
+  | zero => simp
+  | succ n IH =>
+    rw [rotate_succ, IH]
+    cases w with simp
+
+lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
+  induction n generalizing w with
+  | zero => simp
+  | succ n IH => cases w with
+    | nil => simp
+    | cons u e w =>
+      simp only [cons_length, Nat.add_le_add_iff_right] at hn
+      rwa [rotate_cons_succ, get_cons_add, IH _ (hn.trans (by simp)), get_concat]
+
 lemma rotate_induction {motive : WList α β → Prop} (h0 : motive w)
     (rotate : ∀ ⦃w⦄, motive w → motive (w.rotate 1)) (n : ℕ) : motive (w.rotate n) := by
   induction n with | zero => simpa | succ n IH => rw [← rotate_rotate]; exact rotate IH
@@ -90,6 +109,29 @@ lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).vxSet = w.vxSet
 @[simp]
 lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).edgeSet = w.edgeSet := by
   simp [edgeSet, rotate_edge]
+
+lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
+  refine ext_vx_edge ?_ (by rw [rotate_edge, ← length_edge, List.rotate_length])
+  cases w with
+  | nil => simp
+  | cons u e w =>
+    rw [cons_length, rotate_cons_succ, cons_vx,
+      ← ((w.concat e w.first).rotate w.length).vx.head_cons_tail (by simp),
+      ← tail_vx (by simp), rotate_vx_tail, vx_head, rotate_first _ _ (by simp),
+      get_concat _ _ _ rfl.le, get_length, eq_comm, show u = w.last from hw]
+    convert rfl
+    cases w with
+    | nil => simp
+    | cons y f w =>
+      rw [first_cons, cons_concat, tail_cons, concat_vx, cons_length, cons_vx,
+        ← w.length_vx, List.rotate_append_length_eq]
+      simp
+
+lemma exists_rotate_first_eq (hx : x ∈ w) : ∃ n ≤ w.length, (w.rotate n).first = x := by
+  classical
+  exact ⟨w.idxOf x, by simpa, by rw [rotate_first _ _ (by simpa), get_idxOf _ hx]⟩
+
+
 
 -- lemma exists_eq_rotate (hx : x ∈ w) : ∃ n < w.length, (w.rotate n).first = x := by
 --   induction w with

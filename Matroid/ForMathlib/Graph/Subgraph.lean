@@ -1,9 +1,12 @@
 import Matroid.ForMathlib.Graph.Basic
 import Mathlib.Data.Set.Insert
+import Mathlib.Data.Sym.Sym2
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
 open Set
+
+open scoped Sym2
 
 namespace Graph
 
@@ -84,7 +87,7 @@ Edges between identified vertices become loops. -/
     exact Set.mem_image_of_mem _ h.vx_mem_left
 
 /-- The graph with vertex set `V` and no edges -/
-@[simps] def noEdgeGraph (V : Set α) (β : Type*) : Graph α β where
+@[simps] protected def noEdge (V : Set α) (β : Type*) : Graph α β where
   V := V
   E := ∅
   Inc₂ _ _ _ := False
@@ -94,11 +97,11 @@ Edges between identified vertices become loops. -/
   vx_mem_left_of_inc₂ := by simp
 
 @[simp]
-lemma noEdgeGraph_le_iff {V : Set α} : noEdgeGraph V β ≤ G ↔ V ⊆ G.V := by
+lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ G.V := by
   simp [le_iff]
 
 /-- A graph with a single edge `e` from `u` to `v` -/
-@[simps] def singleEdge (u v : α) (e : β) : Graph α β where
+@[simps] protected def singleEdge (u v : α) (e : β) : Graph α β where
   V := {u,v}
   E := {e}
   Inc₂ e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
@@ -107,8 +110,11 @@ lemma noEdgeGraph_le_iff {V : Set α} : noEdgeGraph V β ≤ G ↔ V ⊆ G.V := 
   edge_mem_iff_exists_inc₂ := by tauto
   vx_mem_left_of_inc₂ := by tauto
 
-@[simp] lemma singleEdge_le_iff : singleEdge u v e ≤ G ↔ G.Inc₂ e u v := by
-  simp only [le_iff, singleEdge_V, Set.pair_subset_iff, singleEdge_Inc₂, and_imp]
+lemma singleEdge_inc₂_iff : (Graph.singleEdge u v e).Inc₂ f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
+  simp [Graph.singleEdge]
+
+@[simp] lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.Inc₂ e u v := by
+  simp only [le_iff, singleEdge_V, Set.pair_subset_iff, singleEdge_inc₂_iff, and_imp, Sym2.eq_iff]
   refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨⟨h.vx_mem_left, h.vx_mem_right⟩, ?_⟩⟩
   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
   · assumption
@@ -130,8 +136,7 @@ lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : 
 /-- The union of two graphs `G` and `H`. If there is an edge `e` whose `G`-ends differ from
 its `H`-ends, then `G` is favoured, so this is not commutative in general.
 
-(If `G` and `H` are `Compatible`, this doesn't occur.)
-Since this definition is mainly useful when `G` and `H` are `Compatible`, we  -/
+(If `G` and `H` are `Compatible`, this doesn't occur.)  -/
 protected def union (G H : Graph α β) : Graph α β where
   V := G.V ∪ H.V
   E := G.E ∪ H.E
@@ -194,3 +199,14 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
     H₁ ∪ H₂ ≤ G ↔ H₁ ≤ G ∧ H₂ ≤ G :=
   ⟨fun h ↦ ⟨(left_le_union ..).trans h, (h_compat.right_le_union ..).trans h⟩,
     fun h ↦ union_le h.1 h.2⟩
+
+@[simp]
+lemma singleEdge_compatible_iff :
+    (Graph.singleEdge x y e).Compatible G ↔ (e ∈ G.E → G.Inc₂ e x y) := by
+  refine ⟨fun h he ↦ by simp [← h (by simp) he, singleEdge_inc₂_iff] , fun h f hf hfE ↦ ?_⟩
+  obtain rfl : f = e := by simpa using hf
+  ext u v
+  rw [(h hfE).inc₂_iff, Graph.singleEdge_inc₂_iff, and_iff_right rfl, Sym2.eq_iff]
+  tauto
+
+  -- simp +contextual [Graph.singleEdge_Inc₂, iff_def, or_imp]

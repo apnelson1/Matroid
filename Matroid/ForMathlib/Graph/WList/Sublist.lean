@@ -13,19 +13,19 @@ namespace WList
 in the same order that they appear in `w₂`.
 Examples include prefixes, suffixes and wLists obtained from `w₂` by shortcuts.  -/
 inductive IsSublist : WList α β → WList α β → Prop
-  | nil x w (h : x ∈ w) : IsSublist (nil x) w
-  | cons x e w₁ w₂ (h : IsSublist w₁ w₂) : IsSublist w₁ (cons x e w₂)
-  | cons₂ x e w₁ w₂ (h : IsSublist w₁ w₂) (h_eq : w₁.first = w₂.first) :
+  | nil {x w} (h : x ∈ w) : IsSublist (nil x) w
+  | cons x e {w₁ w₂} (h : IsSublist w₁ w₂) : IsSublist w₁ (cons x e w₂)
+  | cons₂ x e {w₁ w₂} (h : IsSublist w₁ w₂) (h_eq : w₁.first = w₂.first) :
       IsSublist (cons x e w₁) (cons x e w₂)
 
 @[simp]
 lemma nil_isSublist_iff : (WList.nil x (β := β)).IsSublist w ↔ x ∈ w := by
-  refine ⟨fun h ↦ ?_, IsSublist.nil _ _⟩
+  refine ⟨fun h ↦ ?_, IsSublist.nil⟩
   induction w with
   | nil => cases h with | nil _ => assumption
   | cons u e W ih => cases h with
     | nil => assumption
-    | cons x e _ _ h => simp [ih h]
+    | cons x e h => simp [ih h]
 
 @[simp]
 lemma isSublist_nil_iff : w.IsSublist (nil x) ↔ w = nil x :=
@@ -35,13 +35,13 @@ lemma isSublist_nil_iff : w.IsSublist (nil x) ↔ w = nil x :=
 lemma isSublist_refl (w : WList α β) : w.IsSublist w := by
   induction w with
   | nil => simp
-  | cons u e w ih => exact ih.cons₂ _ _ _ _ rfl
+  | cons u e w ih => exact ih.cons₂ _ _ rfl
 
 lemma IsSublist.vx_sublist (h : w₁.IsSublist w₂) : w₁.vx <+ w₂.vx := by
   induction h with
   | nil => simpa
-  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
-  | cons₂ x e w₁ w₂ h ih => simpa
+  | cons x e h ih => exact ih.trans <| by simp
+  | cons₂ x e h ih => simpa
 
 lemma IsSublist.mem (h : w₁.IsSublist w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
   h.vx_sublist.mem hx
@@ -49,8 +49,8 @@ lemma IsSublist.mem (h : w₁.IsSublist w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
 lemma IsSublist.edge_sublist {w₁ w₂ : WList α β} (h : w₁.IsSublist w₂) : w₁.edge <+ w₂.edge := by
   induction h with
   | nil => simp
-  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
-  | cons₂ x e w₁ w₂ h ih => simpa
+  | cons x e h ih => exact ih.trans <| by simp
+  | cons₂ x e h ih => simpa
 
 lemma IsSublist.length_le (h : w₁.IsSublist w₂) : w₁.length ≤ w₂.length := by
   rw [← length_edge, ← length_edge]
@@ -61,14 +61,14 @@ lemma IsSublist.eq_of_length_ge (h : w₁.IsSublist w₂) (hge : w₂.length ≤
 
 lemma IsSublist.trans (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₃) : w₁.IsSublist w₃ := by
   induction h' generalizing w₁ with
-  | nil x w h' => simp_all
-  | cons x e w₂ w₃ h' ih => exact cons x e w₁ w₃ (ih h)
-  | cons₂ x e w₂ w₃ h' h_eq ih => cases h with
-    | nil y w₁ h =>
+  | nil => simp_all
+  | @cons x e w₂ w₃ h' ih => exact cons x e (ih h)
+  | @cons₂ x e w₂ w₃ h' h_eq ih => cases h with
+    | @nil y w₁ h =>
       simp only [nil_isSublist_iff, mem_cons_iff] at h ⊢
       exact h.elim .inl <| .inr ∘ h'.vx_sublist.mem
-    | cons x e w₁ w₂ h => apply (ih h).cons
-    | cons₂ x e w₁ w₂ h h_eq' => exact (ih h).cons₂ _ _ _ _ (h_eq'.trans h_eq)
+    | @cons x e w₁ w₂ h => apply (ih h).cons
+    | @cons₂ x e w₁ w₂ h h_eq' => exact (ih h).cons₂ _ _ (h_eq'.trans h_eq)
 
 lemma IsSublist.antisymm (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
@@ -79,18 +79,18 @@ lemma isSublist_cons_self (w : WList α β) (x : α) (e : β) : w.IsSublist (con
 
 lemma IsSublist.concat (h : w₁.IsSublist w₂) (e : β) (x : α) : w₁.IsSublist (w₂.concat e x) := by
   induction h with
-  | nil x w h => simp [h]
-  | cons y f w₁ w₂ h ih => simpa using ih.cons ..
-  | cons₂ y f w₁ w₂ h h_eq ih => exact ih.cons₂ _ _ _ _ (by simpa)
+  | nil h => simp [h]
+  | cons y f h ih => simpa using ih.cons ..
+  | cons₂ y f h h_eq ih => exact ih.cons₂ _ _ (by simpa)
 
 lemma IsSublist.concat₂ (h : w₁.IsSublist w₂) (hlast : w₁.last = w₂.last) (e : β) (x : α) :
     (w₁.concat e x).IsSublist (w₂.concat e x) := by
   induction h with
-  | nil y w h => induction w with
+  | @nil y w h => induction w with
     | nil u => simp [show y = u by simpa using h]
-    | cons u f w ih => exact IsSublist.cons _ _ _ _ (by simpa [show y = w.last from hlast] using ih)
-  | cons y f w₁ w₂ h ih => exact (ih (by simpa using hlast)).cons y f
-  | cons₂ y f w₁ w₂ h h_eq ih => exact (ih (by simpa using hlast)).cons₂ y f _ _ (by simpa)
+    | cons u f w ih => exact IsSublist.cons _ _ (by simpa [show y = w.last from hlast] using ih)
+  | cons y f h ih => exact (ih (by simpa using hlast)).cons y f
+  | cons₂ y f h h_eq ih => exact (ih (by simpa using hlast)).cons₂ y f (by simpa)
 
 @[simp]
 lemma isSublist_concat_self (w : WList α β) (e : β) (x : α) : w.IsSublist (w.concat e x) :=
@@ -99,11 +99,44 @@ lemma isSublist_concat_self (w : WList α β) (e : β) (x : α) : w.IsSublist (w
 lemma IsSublist.reverse (h : w₁.IsSublist w₂) : w₁.reverse.IsSublist w₂.reverse := by
   induction h with
   | nil => simpa
-  | cons x e w₁ w₂ h ih => exact ih.trans <| by simp
-  | cons₂ x e w₁ w₂ h h_eq ih => apply ih.concat₂ <| by simpa
+  | cons x e h ih => exact ih.trans <| by simp
+  | cons₂ x e h h_eq ih => apply ih.concat₂ <| by simpa
 
 lemma IsSublist.of_reverse (h : w₁.reverse.IsSublist w₂.reverse) : w₁.IsSublist w₂ := by
   simpa using h.reverse
+
+lemma DInc.of_isSublist (h : w₁.DInc e x y) (hle : w₁.IsSublist w₂) : w₂.DInc e x y := by
+  induction hle with
+  | nil => simp at h
+  | cons _ _ h ih => simp [ih h]
+  | cons₂ u f h h_eq ih => cases h with
+    | cons_left x e w => exact h_eq ▸ (DInc.cons_left ..)
+    | cons u f hw => exact DInc.cons _ _ (ih hw)
+
+lemma Inc₂.of_isSublist (h : w₁.Inc₂ e x y) (hle : w₁.IsSublist w₂) : w₂.Inc₂ e x y :=
+  (inc₂_iff_dInc.1 h).elim (fun h ↦ (h.of_isSublist hle).inc₂)
+    fun h ↦ (h.of_isSublist hle).inc₂.symm
+
+lemma WellFormed.sublist (h : w₂.WellFormed) (hle : w₁.IsSublist w₂) : w₁.WellFormed :=
+  fun _ _ _ _ _ h₁ h₂ ↦ h (h₁.of_isSublist hle) (h₂.of_isSublist hle)
+
+lemma cons_wellFormed_iff : (cons x e w).WellFormed ↔
+    w.WellFormed ∧ ∀ y₁ y₂, w.Inc₂ e y₁ y₂ → s(y₁, y₂) = s(x, w.first) := by
+  refine ⟨fun h' ↦ ⟨h'.sublist (by simp), fun y₁ y₂ h ↦ ?_⟩, fun h ↦ ?_⟩
+  · exact h' (h.cons ..) (Inc₂.cons_left ..)
+  intro f x₁ x₂ y₁ y₂ h₁ h₂
+  cases h₁ with
+  | cons_left u f w =>
+    rw [inc₂_cons_iff, and_iff_right rfl] at h₂
+    exact h₂.elim Eq.symm fun h' ↦ (h.2 _ _ h').symm
+  | cons_right u f w =>
+    rw [Sym2.eq_swap]
+    rw [inc₂_cons_iff, and_iff_right rfl] at h₂
+    refine h₂.elim Eq.symm fun h' ↦ (h.2 _ _ h').symm
+  | cons u f hw =>
+    obtain ⟨rfl, h₂'⟩ | h₂ := inc₂_cons_iff.1 h₂
+    · rw [h₂', h.2 _ _ hw]
+    exact h.1 hw h₂
 
 /-! ## Prefixes -/
 
@@ -125,7 +158,7 @@ lemma isPrefix_append_right (hw : w₁.last = w₂.first) : w₁.IsPrefix (w₁ 
   | cons u e w₁ ih => simpa using (ih hw).cons ..
 
 lemma IsPrefix.isSublist (h : w₁.IsPrefix w₂) : w₁.IsSublist w₂ := by
-  induction h with | nil => simp | cons _ _ _ _ h ih => exact ih.cons₂ _ _ _ _ h.first_eq
+  induction h with | nil => simp | cons _ _ _ _ h ih => exact ih.cons₂ _ _ h.first_eq
 
 lemma IsPrefix.mem (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
   h.isSublist.mem hx
@@ -167,7 +200,6 @@ lemma IsPrefix.length_le (h : w₁.IsPrefix w₂) : w₁.length ≤ w₂.length 
 
 lemma IsPrefix.antisymm (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
-
 
 lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.concat e x) := by
   induction h with | nil => simp | cons y f w₁ w₂ h ih => exact ih.cons y f
@@ -301,6 +333,20 @@ lemma prefixUntil_isPrefix (w : WList α β) (P : α → Prop) [DecidablePred P]
     · simp [hP]
     simpa [hP] using ih.cons u e
 
+/-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
+def prefixUntilVx [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
+
+lemma prefixUntilVx_isPrefix [DecidableEq α] (w : WList α β) (x : α) :
+    (w.prefixUntilVx x).IsPrefix w := prefixUntil_isPrefix ..
+
+lemma prefixUntilVx_last [DecidableEq α] (hxw : x ∈ w) : (w.prefixUntilVx x).last = x :=
+  prefixUntil_prop_last (P := (· = x)) ⟨_, hxw, rfl⟩
+
+@[simp]
+lemma prefixUntilVx_first (w : WList α β) (x) [DecidableEq α] :
+    (w.prefixUntilVx x).first = w.first :=
+  prefixUntil_first ..
+
 /-- Take the suffix starting at the first vertex satisfying a predicate `P`,
 (or the `Nil` wList on the last vertex if nothing satisfies `P`) -/
 def suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
@@ -318,7 +364,7 @@ lemma suffixFrom_cons (w) :
 lemma suffixFrom_last (w : WList α β) : (w.suffixFrom P).last = w.last := by
   induction w with simp_all [apply_ite]
 
-lemma suffixFrom_first_prop {w : WList α β} (h : ∃ u ∈ w, P u) : P (w.suffixFrom P).first := by
+lemma suffixFrom_prop_first {w : WList α β} (h : ∃ u ∈ w, P u) : P (w.suffixFrom P).first := by
   induction w with
   | nil => simpa using h
   | cons u e W ih =>
@@ -336,6 +382,36 @@ lemma suffixFrom_isSuffix (w : WList α β) (P : α → Prop) [DecidablePred P] 
     · simp
     exact ih.trans (by simp)
 
+/-- The suffix of `w` starting at the first occurence of a vertex `x`.
+Equal to `[w.last]` if `x ∉ w`. -/
+def suffixFromVx [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.suffixFrom (· = x)
+
+lemma suffixFromVx_first [DecidableEq α] (hxw : x ∈ w) : (w.suffixFromVx x).first = x :=
+  suffixFrom_prop_first (P := (· = x)) ⟨_, hxw, rfl⟩
+
+lemma suffixFromVx_isSuffix [DecidableEq α] (w : WList α β) (x : α) :
+    (w.suffixFromVx x).IsSuffix w := suffixFrom_isSuffix ..
+
+@[simp]
+lemma suffixFromVx_last (w : WList α β) (x) [DecidableEq α] : (w.suffixFromVx x).last = w.last :=
+  suffixFrom_last ..
+
+@[simp]
+lemma prefixUntil_append_suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.prefixUntil P ++ w.suffixFrom P = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [prefixUntil_cons, suffixFrom_cons]
+    split_ifs with hu
+    · simp
+    simpa
+
+@[simp]
+lemma prefixUntilVx_append_suffixFromVx [DecidableEq α] (w : WList α β) (x : α) :
+    w.prefixUntilVx x ++ w.suffixFromVx x = w :=
+  prefixUntil_append_suffixFrom ..
+
 /-- Take the suffix of `w` starting at the last occurence of `P` in `w`.
 If `P` never occurs, this is all of `w`. -/
 def suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
@@ -350,9 +426,6 @@ lemma suffixFromLast_isSuffix (w : WList α β) (P : α → Prop) [DecidablePred
 lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).first := by
   rw [suffixFromLast, reverse_first]
   exact prefixUntil_prop_last (by simpa)
-
-/-- Given an element `u` of a wList `w`, take the wList starting from the first occurence of `u`. -/
-def firstAt [DecidableEq α] (w : WList α β) (u : α) : WList α β := w.suffixFrom (· = u)
 
 section drop
 
@@ -476,12 +549,12 @@ section dedup
 
 variable [DecidableEq α]
 
-/-- Remove duplicate vertices from a wList. -/
+/-- Remove duplicate vertices from a `WList` to give a duplicate-free sublist. -/
 def dedup : WList α β → WList α β
   | nil x => nil x
   | cons x e w =>
-    have := (w.suffixFrom_isSuffix (· = x)).length_le
-    if x ∈ w then dedup (w.suffixFrom (· = x)) else cons x e (dedup w)
+    have := (w.suffixFromVx_isSuffix x).length_le
+    if x ∈ w then dedup (w.suffixFromVx x) else cons x e (dedup w)
   termination_by w => w.length
 
 @[simp]
@@ -489,10 +562,10 @@ lemma dedup_nil (x : α) : (nil x (β := β)).dedup = nil x := by
   simp [dedup]
 
 lemma dedup_cons_eq_ite (x : α) (e : β) (w : WList α β) :
-    (cons x e w).dedup = if x ∈ w then dedup (w.suffixFrom (· = x)) else cons x e w.dedup := by
+    (cons x e w).dedup = if x ∈ w then dedup (w.suffixFromVx x) else cons x e w.dedup := by
   simp [dedup]
 
-lemma dedup_cons_of_mem (hxw : x ∈ w) (e) : (cons x e w).dedup = dedup (w.suffixFrom (· = x)) := by
+lemma dedup_cons_of_mem (hxw : x ∈ w) (e) : (cons x e w).dedup = dedup (w.suffixFromVx x) := by
   simp [dedup, hxw]
 
 lemma dedup_cons_of_not_mem (hxw : x ∉ w) (e) :
@@ -504,48 +577,48 @@ lemma dedup_first (w : WList α β) : w.dedup.first = w.first := by
   cases w with
   | nil => simp
   | cons u e w =>
-    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
-    simp only [dedup, apply_ite, cons_first, ite_eq_right_iff]
+    have hle := (w.suffixFromVx_isSuffix u).length_le
+    simp only [dedup, apply_ite, first_cons, ite_eq_right_iff]
     rw [dedup_first]
-    exact fun huw ↦ suffixFrom_first_prop (P := (· = u)) ⟨_, huw, rfl⟩
-  termination_by w.length
+    exact fun huw ↦ suffixFrom_prop_first (P := (· = u)) ⟨_, huw, rfl⟩
+termination_by w.length
 
 @[simp]
 lemma dedup_last (w : WList α β) : w.dedup.last = w.last := by
   cases w with
   | nil => simp
   | cons u e w =>
-    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
-    simp only [cons_last]
+    have hle := (w.suffixFromVx_isSuffix u).length_le
+    simp only [last_cons]
     by_cases huw : u ∈ w
-    · rw [dedup_cons_of_mem huw, dedup_last, suffixFrom_last]
-    rw [dedup_cons_of_not_mem huw, cons_last, dedup_last]
-  termination_by w.length
+    · rw [dedup_cons_of_mem huw, dedup_last, suffixFromVx_last]
+    rw [dedup_cons_of_not_mem huw, last_cons, dedup_last]
+termination_by w.length
 
 lemma dedup_isSublist (w : WList α β) : w.dedup.IsSublist w := by
   cases w with
   | nil => simp
   | cons u e w =>
-    have hle := (w.suffixFrom_isSuffix (· = u)).length_le
+    have hle := (w.suffixFromVx_isSuffix u).length_le
     by_cases huw : u ∈ w
     · rw [dedup_cons_of_mem huw]
-      refine (w.suffixFrom _).dedup_isSublist.trans ?_
-      exact (w.suffixFrom_isSuffix _).isSublist.trans <| by simp
+      refine (w.suffixFromVx _).dedup_isSublist.trans ?_
+      exact (w.suffixFromVx_isSuffix _).isSublist.trans <| by simp
     rw [dedup_cons_of_not_mem huw]
-    exact (dedup_isSublist w).cons₂ _ _ _ _ (by simp)
-  termination_by w.length
+    exact (dedup_isSublist w).cons₂ _ _ (by simp)
+termination_by w.length
 
 lemma dedup_vx_nodup (w : WList α β) : w.dedup.vx.Nodup := by
   cases w with
   | nil => simp
   | cons u e w =>
-    have hle := (w.suffixFrom_isSuffix (· = u)).length_le.eq_or_lt
+    have hle := (w.suffixFromVx_isSuffix u).length_le.eq_or_lt
     by_cases huw : u ∈ w
     · rw [dedup_cons_of_mem huw]
       apply dedup_vx_nodup
     simp only [dedup_cons_of_not_mem huw, cons_vx, nodup_cons, mem_vx]
     exact ⟨mt w.dedup_isSublist.vx_sublist.mem huw, w.dedup_vx_nodup⟩
-  termination_by w.length
+termination_by w.length
 
 lemma dedup_eq_self (hw : w.vx.Nodup) : w.dedup = w := by
   induction w with
@@ -558,6 +631,26 @@ lemma dedup_eq_self_iff : w.dedup = w ↔ w.vx.Nodup :=
   ⟨fun h ↦ by rw [← h]; exact dedup_vx_nodup w, dedup_eq_self⟩
 
 end dedup
+
+
+
+/-- If a proposition `P` holds at the first vertex of `w` but not the last,
+then `w` has a directed edge `e` from `x` to `y` such that `x` satisfies `P` but `y` doesn't. -/
+lemma exists_dInc_prop_not_prop {P : α → Prop} (hfirst : P w.first) (hlast : ¬ P w.last) :
+    ∃ e x y, w.DInc e x y ∧ P x ∧ ¬ P y := by
+  induction w with
+  | nil => simp_all
+  | cons u e w ih =>
+    by_cases hP : P w.first
+    · obtain ⟨f, x, y, h, hx, hy⟩ := ih hP (by simpa using hlast)
+      exact ⟨f, x, y, h.cons .., hx, hy⟩
+    exact ⟨e, u, w.first, DInc.cons_left .., hfirst, hP⟩
+
+lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast : P w.last) :
+    ∃ e x y, w.DInc e x y ∧ ¬ P x ∧ P y := by
+  obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop (P := fun x ↦ ¬ P x) hfirst (by simpa)
+  exact ⟨e, x, y, h, hx, by simpa using hy⟩
+
 
 -- end WList
 -- open WList
@@ -630,7 +723,7 @@ end dedup
 --     rw [endIf_cons]
 --     split_ifs with hPx
 --     · simp_all only [endIf_cons, dite_true, mem_nil_iff, not_true_eq_false, nil_last, or_true]
---     · simp_all only [endIf_cons, dite_false, mem_cons_iff, cons_last]
+--     · simp_all only [endIf_cons, dite_false, mem_cons_iff, last_cons]
 --       obtain rfl | hvmem := hv
 --       · exact Or.inl hPx
 --       · simp only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] at h
@@ -647,23 +740,23 @@ end dedup
 --     · simp_all only [cons_vx, nil_vx, mem_cons, not_mem_nil, or_false, exists_eq_or_imp,
 --       exists_eq_left, true_or, ite_true, Nonempty.not_nil]
 --     · simp_all only [mem_cons_iff, mem_nil_iff, exists_eq_or_imp, exists_eq_left, false_or,
---       ite_false, Nonempty.cons_true, cons_last, nil_last, not_false_eq_true, true_and,
+--       ite_false, Nonempty.cons_true, last_cons, nil_last, not_false_eq_true, true_and,
 --       not_true_eq_false, false_and, or_false]
 --       use e
 --       exact hVd.1
 --   | .cons x e (cons y e' w) =>
 --     unfold endIf
 --     split_ifs with hPx
---     · simp_all only [cons_validIn, cons_first, endIf_cons, dite_true, Nonempty.not_nil]
+--     · simp_all only [cons_validIn, first_cons, endIf_cons, dite_true, Nonempty.not_nil]
 --     · by_cases hPy : P y
---       · simp_all only [cons_validIn, cons_first, endIf_cons, dite_true, dite_eq_ite, ite_false,
---         Nonempty.cons_true, mem_cons_iff, mem_nil_iff, cons_last, nil_last,
+--       · simp_all only [cons_validIn, first_cons, endIf_cons, dite_true, dite_eq_ite, ite_false,
+--         Nonempty.cons_true, mem_cons_iff, mem_nil_iff, last_cons, nil_last,
 --      exists_eq_or_imp, not_false_eq_true, true_and, exists_eq_left, not_true_eq_false, false_and,
 --         or_false]
 --         use e
 --         exact hVd.1
 --       · let w' := cons y e' w
---         rw [cons_last]
+--         rw [last_cons]
 --         have h' : ∃ u ∈ w', P u := by
 --           change ∃ u ∈ cons x e w', P u at h
 --           simpa only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] using h

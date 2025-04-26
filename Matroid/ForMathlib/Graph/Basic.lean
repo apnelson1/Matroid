@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson, Jun Kwon
 -/
 import Mathlib.Data.Set.Basic
+import Mathlib.Data.Sym.Sym2
 
 /-!
 # Multigraphs
@@ -130,6 +131,17 @@ lemma Inc₂.eq_and_eq_or_eq_and_eq_of_inc₂ {x' y' : α} (h : G.Inc₂ e x y) 
   obtain rfl | rfl := h.symm.left_eq_or_eq_of_inc₂ h'
   · simp
   obtain rfl | rfl := h'.left_eq_or_eq_of_inc₂ h <;> simp
+
+lemma Inc₂.inc₂_iff (h : G.Inc₂ e x y) {x' y' : α} :
+    G.Inc₂ e x' y' ↔ (x = x' ∧ y = y') ∨ (x = y' ∧ y = x') := by
+  refine ⟨h.eq_and_eq_or_eq_and_eq_of_inc₂, ?_⟩
+  rintro (⟨rfl, rfl⟩ | ⟨rfl,rfl⟩)
+  · assumption
+  exact h.symm
+
+lemma Inc₂.inc₂_iff_sym2_eq (h : G.Inc₂ e x y) {x' y' : α} :
+    G.Inc₂ e x' y' ↔ s(x,y) = s(x',y') := by
+  rw [h.inc₂_iff, Sym2.eq_iff]
 
 /-! ### Edge-vertex incidence -/
 

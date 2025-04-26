@@ -25,10 +25,10 @@ lemma nil_first (x : α) : (Walk.nil (β := β) x).first = x := rfl
 lemma nil_last (x : α) : (Walk.nil (β := β) x).last = x := rfl
 
 @[simp]
-lemma cons_first (x) (e) (W : Walk α β) : (W.cons x e).first = x := rfl
+lemma first_cons (x) (e) (W : Walk α β) : (W.cons x e).first = x := rfl
 
 @[simp]
-lemma cons_last (x) (e) (W : Walk α β) : (W.cons x e).last = W.last := rfl
+lemma last_cons (x) (e) (W : Walk α β) : (W.cons x e).last = W.last := rfl
 
 def ValidIn (W : Walk α β) (G : Graph α β) : Prop :=
   match W with
@@ -142,7 +142,7 @@ lemma mem_dropLast_or_eq_last (hu : x ∈ W) : x ∈ W.dropLast ∨ x = W.last :
   cases W with
   | nil z => simpa [dropLast] using hu
   | cons z f W =>
-  simp only [dropLast, mem_cons, cons_last, or_assoc]
+  simp only [dropLast, mem_cons, last_cons, or_assoc]
   obtain rfl | rfl | h := by simpa using hu
   · simp
   · exact .inr <| ih <| by simp
