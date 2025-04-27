@@ -8,7 +8,7 @@ This file defined predicates stating that an abstract walk `w` is a walk/trail/p
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ : WList α β} {S T : Set α}
 
-open Graph WList List Set
+open Graph WList Set
 
 namespace Graph
 
@@ -36,14 +36,14 @@ lemma IsWalk.vx_mem_of_mem (h : G.IsWalk w) (hmem : x ∈ w) : x ∈ G.V := by
 
 lemma IsWalk.edge_mem_of_mem (h : G.IsWalk w) (hmem : e ∈ w.edge) : e ∈ G.E := by
   induction h with | nil => simp_all | @cons x f w hw h ih =>
-    simp_all only [cons_edge, mem_cons]
+    simp_all only [cons_edge, List.mem_cons]
     exact hmem.elim (fun h' ↦ h' ▸ h.edge_mem) ih
 
 lemma IsWalk.vx_mem_of_edge_mem (h : G.IsWalk w) (he : e ∈ w.edge) (heu : G.Inc e u) : u ∈ w := by
   induction h with
   | nil => simp at he
   | @cons x f w hw h ih =>
-    simp_all only [cons_edge, mem_cons, mem_cons_iff]
+    simp_all only [cons_edge, List.mem_cons, mem_cons_iff]
     refine he.elim ?_ fun h' ↦ .inr <| ih h'
     rintro rfl
     obtain rfl | rfl := heu.eq_or_eq_of_inc₂ h <;> simp
@@ -58,7 +58,7 @@ lemma IsWalk.mem_of_mem_edge_of_inc (hw : G.IsWalk w) (he : e ∈ w.edge) (h : G
   induction w with
   | nil x => simp at he
   | cons x e' w ih =>
-    simp_all only [forall_const, cons_edge, mem_cons, mem_cons_iff, cons_isWalk_iff]
+    simp_all only [forall_const, cons_edge, List.mem_cons, mem_cons_iff, cons_isWalk_iff]
     obtain rfl | he := he
     · obtain rfl | rfl := h.eq_or_eq_of_inc₂ hw.1 <;> simp
     exact .inr (ih he)
@@ -147,10 +147,6 @@ lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse w
   first_mem := by simp [h.last_mem]
   last_mem := by simp [h.first_mem]
 
-
-
-
-
 /-- The walk corresponding to an incidence `G.Inc₂ e u v`. -/
 def Inc₂.walk (_h : G.Inc₂ e u v) : WList α β := cons u e (nil v)
 
@@ -186,10 +182,33 @@ lemma walk_length (h : G.Inc₂ e u v): h.walk.length = 1 := rfl
 lemma walk_isWalk (h : G.Inc₂ e u v) : G.IsWalk h.walk := by
   simp [walk, h, h.vx_mem_right]
 
-
 end Inc₂
 
+section Subgraph
 
+variable {X : Set α}
+
+lemma IsWalk.vxRestrict (hw : G.IsWalk w) (hX : w.vxSet ⊆ X) : (G.vxRestrict X).IsWalk w := by
+  induction hw with
+  | nil => simp_all
+  | @cons x e w hw h ih =>
+    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, vxRestrict_Inc₂, true_and,
+      and_true, forall_const]
+    refine hX.2 <| by simp
+
+/-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
+`w` is a nil walk on a vertex in `X \ G.V`. -/
+lemma isWalk_vxRestrict_iff (hXV : X ⊆ G.V) :
+    (G.vxRestrict X).IsWalk w ↔ G.IsWalk w ∧ w.vxSet ⊆ X :=
+  ⟨fun h ↦ ⟨h.of_le (G.vxRestrict_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.vxRestrict h.2⟩
+
+@[simp]
+lemma isWalk_vxDelete_iff : (G.vxDelete X).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.vxSet X := by
+  rw [Graph.vxDelete, isWalk_vxRestrict_iff diff_subset, subset_diff, and_congr_right_iff,
+    and_iff_right_iff_imp]
+  exact fun h _ ↦ h.vxSet_subset
+
+end Subgraph
 
 
 -- lemma IsPath.prefix (hP : G.IsPath w) (hPf : w₁.IsPrefix w) : G.IsPath w₁ := by

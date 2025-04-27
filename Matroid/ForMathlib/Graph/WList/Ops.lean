@@ -245,6 +245,10 @@ lemma reverse_nonempty (w : WList α β) : w.reverse.Nonempty ↔ w.Nonempty := 
   induction w with simp_all
 
 @[simp]
+lemma reverse_nil_iff (w : WList α β) : w.reverse.Nil ↔ w.Nil := by
+  induction w with simp_all
+
+@[simp]
 lemma reverse_first : (reverse w).first = w.last := by
   induction w with
   | nil x => simp [reverse]
@@ -273,7 +277,6 @@ lemma reverse_length {w : WList α β} : (reverse w).length = w.length := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
-
 
 lemma reverse_append {w₁ w₂ : WList α β} (h_eq : w₁.last = w₂.first) :
     (w₁ ++ w₂).reverse = w₂.reverse ++ w₁.reverse := by

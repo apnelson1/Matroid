@@ -1,4 +1,5 @@
 import Matroid.ForMathlib.Graph.WList.Sublist
+import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Data.List.Rotate
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {w : WList α β} (m n : ℕ)
@@ -33,6 +34,18 @@ lemma IsClosed.reverse (h : w.IsClosed) : w.reverse.IsClosed := by
 lemma reverse_isClosed_iff : w.reverse.IsClosed ↔ w.IsClosed := by
   simp [IsClosed, eq_comm]
 
+lemma IsClosed.tail_dropLast (hw : w.IsClosed) : w.tail.dropLast = w.dropLast.tail := by
+  refine (eq_or_ne w.length 1).elim (fun h1 ↦ ?_) WList.tail_dropLast
+  cases w with
+  | nil => simp
+  | cons u e w => cases w with | nil => simpa [eq_comm, IsClosed] using hw | cons => simp at h1
+
+lemma IsClosed.length_eq_one_iff (hw : w.IsClosed) :
+    w.length = 1 ↔ ∃ x e, w = cons x e (nil x) := by
+  cases w with
+  | nil => simp
+  | cons u e w => cases w with simp_all
+
 /-- Rotate a WList `n` vertices to the left.
 This behaves badly (forgets the first vertex) if the list isn't closed. -/
 protected def rotate : WList α β → ℕ → WList α β
@@ -66,6 +79,14 @@ lemma rotate_rotate : ∀ (w : WList α β) (m n : ℕ), (w.rotate m).rotate n =
 
 lemma rotate_succ (w : WList α β) (n : ℕ) : w.rotate (n+1) = (w.rotate 1).rotate n := by
   rw [rotate_rotate, Nat.add_comm]
+
+@[simp]
+lemma length_rotate (w : WList α β) (n : ℕ) : (w.rotate n).length = w.length := by
+  induction n generalizing w with
+  | zero => simp
+  | succ n IH =>
+    rw [rotate_succ, IH]
+    cases w with simp
 
 @[simp] lemma rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
   induction n generalizing w with
@@ -106,6 +127,9 @@ lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).vxSet = w.vxSet
   simp_rw [← (hw.rotate _).vxSet_tail, vxSet, ← mem_vx, rotate_vx_tail, List.mem_rotate, mem_vx]
   rw [← vxSet, hw.vxSet_tail, vxSet]
 
+lemma IsClosed.mem_rotate (hw : w.IsClosed) {n} : x ∈ w.rotate n ↔ x ∈ w := by
+  rw [← mem_vxSet_iff, hw.rotate_vxSet, mem_vxSet_iff]
+
 @[simp]
 lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).edgeSet = w.edgeSet := by
   simp [edgeSet, rotate_edge]
@@ -127,41 +151,60 @@ lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
         ← w.length_vx, List.rotate_append_length_eq]
       simp
 
+lemma IsClosed.rotate_eq_mod (hw : w.IsClosed) (n) : w.rotate n = w.rotate (n % w.length) := by
+  obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · simp
+  obtain hlt | hle := lt_or_le n w.length
+  · rw [Nat.mod_eq_of_lt hlt]
+  obtain ⟨c, hc⟩ := exists_add_of_le hle
+  have hc' : c < n := by
+    have := hne.length_pos
+    omega
+  rw [hc, Nat.add_mod_left, ← rotate_rotate, hw.rotate_length, hw.rotate_eq_mod]
+
 lemma exists_rotate_first_eq (hx : x ∈ w) : ∃ n ≤ w.length, (w.rotate n).first = x := by
   classical
   exact ⟨w.idxOf x, by simpa, by rw [rotate_first _ _ (by simpa), get_idxOf _ hx]⟩
 
+lemma IsClosed.rotate_one_dropLast (hw : w.IsClosed) : (w.rotate 1).dropLast = w.tail := by
+  cases w with simp
+
+/-- Rotate by an integer amount. -/
+def intRotate (w : WList α β) (n : ℤ) : WList α β :=
+  w.rotate (n.natMod w.length)
+
+@[simp]
+lemma length_intRotate (w : WList α β) (m : ℤ) : (w.intRotate m).length = w.length :=
+  length_rotate ..
+
+@[simp]
+lemma intRotate_zero : w.intRotate 0 = w := by
+  cases w with simp [intRotate, Int.natMod]
+
+@[simp]
+lemma nil_intRotate (x : α) (n) : (nil x : WList α β).intRotate n = nil x := by
+  simp [intRotate]
+
+lemma IsClosed.intRotate_eq_rotate (hw : w.IsClosed) (n : ℕ) : w.intRotate n = w.rotate n := by
+  obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · simp [intRotate]
+  rw [intRotate, hw.rotate_eq_mod, Int.natMod, eq_comm, hw.rotate_eq_mod, Int.ofNat_mod_ofNat,
+    Int.toNat_natCast, Nat.mod_mod]
+
+/-- Nasty proof. -/
+lemma IsClosed.intRotate_intRotate (hw : w.IsClosed) (m n : ℤ) :
+    (w.intRotate m).intRotate n = w.intRotate (m + n) := by
+  obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · simp [intRotate]
+  simp only [intRotate, length_rotate, rotate_rotate, Int.natMod]
+  rw [hw.rotate_eq_mod, Int.add_emod]
+  generalize hm' : m % w.length = m'
+  generalize hn' : n % w.length = n'
+  lift m' to ℕ using by simpa [← hm'] using Int.emod_nonneg _ (by simpa)
+  lift n' to ℕ using by simpa [← hn'] using Int.emod_nonneg _ (by simpa)
+  norm_cast
 
 
--- lemma exists_eq_rotate (hx : x ∈ w) : ∃ n < w.length, (w.rotate n).first = x := by
---   induction w with
---   | nil => simpa [eq_comm] using hx
---   | cons u e w ih =>
---     obtain rfl | hxw := by simpa using hx
---     · exact ⟨0, by simp⟩
---     obtain ⟨m, rfl⟩ := ih hxw
---     use m + 1
---     rw [Nat.add_comm, ← rotate_rotate, cons_rotate_one]
 
 
 end WList
-
--- @[mk_iff]
--- structure IsCycleIn (G : Graph α β) (W : Walk α β) : Prop where
---   validIn : W.ValidIn G
---   nodup' : W.vx.dropLast.Nodup
---   closed : W.first = W.last
-
--- lemma IsPath.not_isCycle (hP : G.IsPath w) (hnonempty : w.Nonempty) : ¬ w.IsCycleIn G := by
---   suffices heq : w.first ≠ w.last by
---     rintro ⟨hVd, hnodup, hclosed⟩
---     exact heq hclosed
---   rwa [first_ne_last_iff hP.nodup]
-
--- lemma ValidIn.isCycleIn (hVd : w.ValidIn G) (hvx : w.vx.dropLast.Nodup)
---     (hclosed : w.first = w.last) : w.IsCycleIn G := ⟨hVd, hvx, hclosed⟩
-
--- lemma IsCycle.exist_paths_of_mem_of_mem {C : Walk α β} (hC : C.IsCycleIn G)
---     (hx : x ∈ C.vx) (hy : y ∈ C.vx) (hne : x ≠ y) :
---     ∃ P Q, G.IsPath P ∧ G.IsPath Q ∧ P.first = x ∧ Q.first = x ∧ P.first = y ∧ Q.first = y ∧
---     P.toGraph ∪ Q.toGraph = C.toGraph := sorry

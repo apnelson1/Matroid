@@ -263,7 +263,7 @@ lemma nonempty_iff_exists_cons : w.Nonempty ↔ ∃ x e w', w = cons x e w' := b
 lemma first_ne_last_iff (hnodup : w.vx.Nodup) : w.first ≠ w.last ↔ w.Nonempty := by
   simp [first_eq_last_iff hnodup]
 
-lemma nonempty_or_exists_eq_nil (w : WList α β) : w.Nonempty ∨ ∃ x, w = nil x := by
+lemma exists_eq_nil_or_nonempty (w : WList α β) : (∃ x, w = nil x) ∨ w.Nonempty := by
   induction w with simp
 
 /-- The first edge of a nonempty `WList` -/
@@ -300,6 +300,9 @@ lemma length_ne_zero_iff : w.length ≠ 0 ↔ w.Nonempty := by
 @[simp]
 lemma length_pos_iff : 0 < w.length ↔ w.Nonempty := by
   simp [Nat.pos_iff_ne_zero]
+
+lemma Nonempty.length_pos (hw : w.Nonempty) : 0 < w.length :=
+  length_pos_iff.2 hw
 
 /-- `w.DInc e x y` means that `w` contains `[x,e,y]` as a contiguous sublist.
 (`DInc` stands for 'directed incidence')` -/

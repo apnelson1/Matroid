@@ -1,11 +1,11 @@
-import Matroid.ForMathlib.Graph.Walk.Path
+import Matroid.ForMathlib.Graph.Walk.Cycle
 import Matroid.ForMathlib.Graph.Subgraph
 import Mathlib.Data.Set.Insert
 
 open Set Function List Nat
 
-variable {α β : Type*} {G H : Graph α β} {u v x y z : α} {e e' f g : β} {S S' T T' U V : Set α}
-  {F F' R R': Set β} {w : WList α β}
+variable {α β : Type*} {G H : Graph α β} {u v x y y₁ y₂ z : α} {e e' f g : β} {U V : Set α}
+  {F F' R R': Set β} {C w : WList α β}
 
 open WList Graph
 
@@ -99,6 +99,7 @@ structure Connected (G : Graph α β) : Prop where
   nonempty : G.V.Nonempty
   vxConnected : ∀ ⦃x y⦄, x ∈ G.V → y ∈ G.V → G.VxConnected x y
 
+/-- If `G` has one vertex connected to all others, then `G` is connected. -/
 lemma connected_of_vx (hu : u ∈ G.V) (h : ∀ y ∈ G.V, G.VxConnected y u) : G.Connected :=
   ⟨⟨u, hu⟩, fun x y hx hy ↦ (h x hx).trans (h y hy).symm⟩
 
@@ -130,6 +131,56 @@ lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.
   rintro y (hy | hy)
   · exact (hG.vxConnected hy huG).of_le <| left_le_union ..
   exact (hH.vxConnected hy huH).of_le <| h.right_le_union
+
+lemma IsWalk.exists_mem_mem_of_union (h : (G ∪ H).IsWalk w) (hG : w.first ∈ G.V)
+    (hH : w.last ∈ H.V) : ∃ x ∈ w, x ∈ G.V ∧ x ∈ H.V := by
+  by_cases hH' : w.last ∈ G.V
+  · exact ⟨w.last, by simp, hH', hH⟩
+  obtain ⟨e, x, y, hxy, hx, hy⟩ := w.exists_dInc_prop_not_prop hG hH'
+  obtain hxy' | hxy' := inc₂_or_inc₂_of_union <| h.inc₂_of_dInc hxy
+  · exact False.elim <| hy <| hxy'.vx_mem_right
+  exact ⟨x, hxy.vx_mem_left, hx, hxy'.vx_mem_left⟩
+
+lemma union_not_connected_of_disjoint_vxSet (hV : Disjoint G.V H.V) (hG : G.V.Nonempty)
+    (hH : H.V.Nonempty) : ¬ (G ∪ H).Connected := by
+  obtain ⟨x, hx⟩ := hG
+  obtain ⟨y, hy⟩ := hH
+  intro h
+  obtain ⟨w, hw, rfl, rfl⟩ :=
+    (h.vxConnected (x := x) (y := y) (by simp [hx]) (by simp [hy])).exists_isWalk
+  obtain ⟨u, -, huG, huH⟩ := hw.exists_mem_mem_of_union hx hy
+  exact hV.not_mem_of_mem_left huG huH
+
+/-- If `x` is a vertex of a cycle `C` of `G`, and `y₁, y₂` are vertices of `C` other than `x`,
+then `y₁` and `y₂` are connected in `G - x`. -/
+lemma IsCycle.vxConnected_delete_of_mem_of_mem (hC : G.IsCycle C) (hx : x ∈ C) (hy₁ : y₁ ∈ C)
+    (hy₂ : y₂ ∈ C) (hne₁ : y₁ ≠ x) (hne₂ : y₂ ≠ x) : (G.vxDelete {x}).VxConnected y₁ y₂ := by
+  classical
+  -- We can assume `x` is the first vertex of the cycle by rotation.
+  wlog hxC : x = C.first generalizing C with aux
+  · have hrw := @hC.isClosed.mem_rotate
+    apply aux (C := C.rotate (C.idxOf x)) (hC.rotate _) (by simp_all) (by simp_all) (by simp_all)
+    rw [rotate_first _ _ (by simpa), get_idxOf C hx]
+  obtain rfl := hxC
+  -- The result is easy if `C` has length at most one.
+  by_cases hC1 : C.length ≤ 1
+  · rw [le_one_iff_eq_zero_or_eq_one, WList.length_eq_zero, or_iff_right
+      (by simpa using hC.nonempty), hC.isClosed.length_eq_one_iff] at hC1
+    obtain ⟨u, e, rfl⟩ := hC1
+    simp_all
+  -- Both `y₁` and `y₂` are in the path `C.tail.dropLast` of `G-x`, so they are connected.
+  apply IsWalk.vxConnected_of_mem_of_mem (w := C.tail.dropLast)
+    _ (hC.mem_tail_dropLast_of_ne_first hy₁ hne₁) (hC.mem_tail_dropLast_of_ne_first hy₂ hne₂)
+  simp only [isWalk_vxDelete_iff, disjoint_singleton_right, mem_vxSet_iff]
+  refine ⟨(hC.tail_isPath.prefix (dropLast_isPrefix _)).isWalk, ?_⟩
+  suffices aux2 : ∀ (l : List α) (hl : l ≠ []), l.Nodup → l.head hl ∉ l.tail  by
+    specialize aux2 C.dropLast.vx vx_ne_nil hC.dropLast_isPath.nodup
+    rwa [vx_head, dropLast_first, ← tail_vx, mem_vx, ← hC.isClosed.tail_dropLast] at aux2
+    rwa [dropLast_nonempty_iff, lt_iff_not_le]
+  rintro (l | ⟨a, l⟩) <;> simp +contextual
+
+
+
 
 end Graph
 

@@ -100,8 +100,32 @@ Edges between identified vertices become loops. -/
 lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ G.V := by
   simp [le_iff]
 
+/-- The subgraph of `G` induced by a set `X` of vertices.
+The edges are the edges of `G` with both ends in `X`.
+(`X` is not required to be a subset of `G.V` for this definition to work,
+even though this is the standard use case) -/
+@[simps!]
+protected def vxRestrict (G : Graph α β) (X : Set α) : Graph α β := Graph.mk'
+  (V := X)
+  (Inc₂ := fun e x y ↦ G.Inc₂ e x y ∧ x ∈ X ∧ y ∈ X)
+  (inc₂_symm := fun e x y ↦ by simp [G.inc₂_comm, and_comm (a := (x ∈ X))])
+  (eq_or_eq_of_inc₂_of_inc₂ := fun e x y u v ⟨h, _⟩ ⟨h', _⟩ ↦ G.eq_or_eq_of_inc₂_of_inc₂ h h')
+  (vx_mem_left_of_inc₂ := fun _ _ _ ⟨_, h⟩ ↦ h.1)
+
+lemma vxRestrict_le (G : Graph α β) {X : Set α} (hX : X ⊆ G.V) : G.vxRestrict X ≤ G :=
+  ⟨hX, fun _ _ _ h ↦ h.1⟩
+
+/-- The graph obtained from `G` by deleting a set of vertices. -/
+@[simps!]
+protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G.vxRestrict (G.V \ X)
+
+@[simp]
+lemma vxDelete_le (G : Graph α β) (X : Set α) : G.vxDelete X ≤ G :=
+  G.vxRestrict_le diff_subset
+
 /-- A graph with a single edge `e` from `u` to `v` -/
-@[simps] protected def singleEdge (u v : α) (e : β) : Graph α β where
+@[simps]
+protected def singleEdge (u v : α) (e : β) : Graph α β where
   V := {u,v}
   E := {e}
   Inc₂ e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
@@ -177,6 +201,10 @@ lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G)
   rintro e x y (h | ⟨-, h⟩) <;>
   exact h.of_le <| by assumption
 
+lemma inc₂_or_inc₂_of_union (h : (G ∪ H).Inc₂ e x y) : G.Inc₂ e x y ∨ H.Inc₂ e x y := by
+  rw [union_inc₂_iff] at h
+  tauto
+
 @[simp]
 lemma left_le_union (G H : Graph α β) : G ≤ G ∪ H := by
   simp_rw [le_iff, union_inc₂_iff]
@@ -199,6 +227,9 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
     H₁ ∪ H₂ ≤ G ↔ H₁ ≤ G ∧ H₂ ≤ G :=
   ⟨fun h ↦ ⟨(left_le_union ..).trans h, (h_compat.right_le_union ..).trans h⟩,
     fun h ↦ union_le h.1 h.2⟩
+
+lemma Compatible.of_disjoint_edgeSet (h : Disjoint G.E H.E) : Compatible G H :=
+  fun _ heG heH ↦ False.elim <| h.not_mem_of_mem_left heG heH
 
 @[simp]
 lemma singleEdge_compatible_iff :

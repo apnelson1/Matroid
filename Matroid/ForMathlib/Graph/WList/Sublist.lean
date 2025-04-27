@@ -264,6 +264,9 @@ lemma IsSuffix.eq_of_length_ge (h : w₁.IsSuffix w₂) (hge : w₂.length ≤ w
 lemma IsSuffix.antisymm (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
+lemma IsSuffix.vx_isSuffix (h : w₁.IsSuffix w₂) : w₁.vx.IsSuffix w₂.vx := by
+  simpa using h.reverse_isPrefix_reverse.vx_isPrefix
+
 lemma IsSuffix.cons (h : w₁.IsSuffix w₂) (x e) : w₁.IsSuffix (cons x e w₂) := by
   simpa using (h.reverse_isPrefix_reverse.concat e x).reverse_isSuffix_reverse
 
@@ -533,15 +536,35 @@ lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = 
   rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,
     reverse_first]
 
-@[simp]
 lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
     (w.dropLast).vxSet = w.vxSet \ {w.last} := by
   rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
   simp
 
+lemma mem_dropLast_iff_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
+    x ∈ w.dropLast ↔ x ∈ w ∧ x ≠ w.last := by
+  rw [← reverse_tail_reverse, mem_reverse, mem_tail_iff_of_nodup (by simpa) (by simpa),
+    mem_reverse, reverse_first]
+
 lemma dropLast_isPrefix (w : WList α β) : w.dropLast.IsPrefix w := by
   rw [← reverse_isSuffix_reverse_iff, ← reverse_tail]
   apply tail_isSuffix
+
+lemma tail_dropLast (hw : w.length ≠ 1) : w.tail.dropLast = w.dropLast.tail := by
+  induction w with | nil => simp | cons u e w ih => cases w with simp_all
+
+@[simp]
+lemma tail_nil_iff : w.tail.Nil ↔ w.length ≤ 1 := by
+  cases w with simp
+
+@[simp]
+lemma tail_nonempty_iff : w.tail.Nonempty ↔ 1 < w.length := by
+  cases w with simp
+
+@[simp]
+lemma dropLast_nonempty_iff : w.dropLast.Nonempty ↔ 1 < w.length := by
+  rw [← reverse_tail_reverse, reverse_nonempty, tail_nonempty_iff, reverse_length]
+
 
 end drop
 
