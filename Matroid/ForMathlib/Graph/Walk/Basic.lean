@@ -5,7 +5,7 @@ import Matroid.ForMathlib.Graph.Subgraph
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
 -/
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {F : Set β}
   {w w₁ w₂ : WList α β} {S T : Set α}
 
 open Graph WList Set
@@ -77,6 +77,12 @@ lemma IsWalk.prefix (hw : G.IsWalk w) (h : w₁.IsPrefix w) : G.IsWalk w₁ :=
 
 lemma IsWalk.suffix (hw : G.IsWalk w) (h : w₁.IsSuffix w) : G.IsWalk w₁ :=
   hw.sublist h.isSublist
+
+lemma IsWalk.tail (hw : G.IsWalk w) : G.IsWalk w.tail :=
+  hw.suffix w.tail_isSuffix
+
+lemma IsWalk.dropLast (hw : G.IsWalk w) : G.IsWalk w.dropLast :=
+  hw.prefix w.dropLast_isPrefix
 
 lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : w₁.last = w₂.first) :
   G.IsWalk (w₁ ++ w₂) := by
@@ -215,6 +221,16 @@ lemma IsWalk.induce (hw : G.IsWalk w) (hX : w.V ⊆ X) : G[X].IsWalk w := by
       and_true, forall_const]
     refine hX.2 <| by simp
 
+lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ w.V ⊆ X := by
+  refine ⟨fun h ↦ ⟨?_, h.vxSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+  induction w with
+  | nil => simp at hw
+  | cons u e w ih => cases w with
+    | nil v =>
+      simp only [cons_isWalk_iff, nil_first, induce_inc₂_iff, nil_isWalk_iff, induce_vxSet] at h ⊢
+      exact ⟨h.1.1, h.1.1.vx_mem_right⟩
+    | cons v f w => simp_all
+
 /-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ G.V`. -/
 lemma isWalk_induce_iff (hXV : X ⊆ G.V) : G[X].IsWalk w ↔ G.IsWalk w ∧ w.V ⊆ X :=
@@ -225,6 +241,20 @@ lemma isWalk_vxDelete_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.V X :
   rw [vxDelete_def, isWalk_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vxSet_subset
+
+lemma IsWalk.edgeRestrict (hw : G.IsWalk w) (hE : w.E ⊆ F) : (G ↾ F).IsWalk w := by
+  induction hw with simp_all [insert_subset_iff]
+
+@[simp]
+lemma isWalk_edgeRestrict_iff {F : Set β} : (G ↾ F).IsWalk w ↔ G.IsWalk w ∧ w.E ⊆ F :=
+  ⟨fun h ↦ ⟨h.of_le (by simp), h.edgeSet_subset.trans inter_subset_left⟩,
+    fun h ↦ h.1.edgeRestrict h.2⟩
+
+@[simp]
+lemma isWalk_edgeDelete_iff {F : Set β} : (G ＼ F).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.E F := by
+  simp only [edgeDelete_eq_edgeRestrict, isWalk_edgeRestrict_iff, subset_diff, and_congr_right_iff,
+    and_iff_right_iff_imp]
+  exact fun h _ ↦ h.edgeSet_subset
 
 lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hE : w.E ⊆ G.E)
     (h1 : w.first ∈ G.V) : G.IsWalk w := by
@@ -315,8 +345,6 @@ lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
 lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
   h.sublist w.dedup_isSublist
 
-lemma IsWalk.dropLast (h : G.IsWalk w) : G.IsWalk w.dropLast :=
-  h.prefix <| w.dropLast_isPrefix
 
 
 -- lemma _root_.Graph.IsPath.IsSuffix (hPf : w₁.IsSuffix w) (hP : G.IsPath w) : G.IsPath w₁ := by

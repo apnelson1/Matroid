@@ -57,6 +57,10 @@ lemma isTrail_induce_iff (hXV : X ⊆ G.V) :
     (G.induce X).IsTrail w ↔ G.IsTrail w ∧ w.V ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.induce h.2⟩
 
+lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧ w.V ⊆ X := by
+  rw [isTrail_iff, isWalk_induce_iff' hw, and_assoc, isTrail_iff]
+  tauto
+
 @[simp]
 lemma isTrail_vxDelete_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint w.V X := by
   rw [vxDelete_def, isTrail_induce_iff diff_subset, subset_diff, and_congr_right_iff,
@@ -144,6 +148,10 @@ lemma IsPath.suffix (hP : G.IsPath P) (hP₀ : P₀.IsSuffix P) : G.IsPath P₀ 
 `w` is a nil walk on a vertex in `X \ G.V`. -/
 lemma isPath_induce_iff (hXV : X ⊆ G.V) : G[X].IsPath P ↔ G.IsPath P ∧ P.V ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+
+lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ P.V ⊆ X := by
+  rw [isPath_iff, isWalk_induce_iff' hP, and_assoc, isPath_iff]
+  tauto
 
 @[simp]
 lemma isPath_vxDelete_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint P.V X := by

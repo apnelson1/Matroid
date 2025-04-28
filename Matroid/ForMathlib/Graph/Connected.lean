@@ -4,7 +4,7 @@ import Mathlib.Data.Set.Insert
 
 open Set Function Nat
 
-variable {α β : Type*} {G H : Graph α β} {u v x y y₁ y₂ z : α} {e e' f g : β} {U V : Set α}
+variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β} {U V : Set α}
   {F F' R R': Set β} {C w : WList α β}
 
 open WList Graph
@@ -98,6 +98,25 @@ lemma VxConnected.of_le (h : H.VxConnected x y) (hle : H ≤ G) : G.VxConnected 
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isWalk
   exact (hw.of_le hle).vxConnected_first_last
 
+lemma vxConnected_induce_iff {X : Set α} (hx : x ∈ G.V) :
+    G[X].VxConnected x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.V ⊆ X := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
+    refine ⟨P, ?_, rfl, rfl, hP.vxSet_subset⟩
+    cases P with
+    | nil => simpa
+    | cons u e w =>
+      rw [isPath_induce_iff' (by simp)] at hP
+      exact hP.1
+  rintro ⟨P, h, rfl, rfl, hPX⟩
+  cases P with
+  | nil => simpa using hPX
+  | cons u e w =>
+    apply IsWalk.vxConnected_first_last
+    rw [isWalk_induce_iff' (by simp)]
+    simp_all only [cons_isPath_iff, first_cons, cons_vxSet, cons_isWalk_iff, true_and, and_true]
+    exact h.1.isWalk
+
 /-- A graph is `Connected` if it is nonempty, and every pair of vertices is `VxConnected`. -/
 @[mk_iff]
 structure Connected (G : Graph α β) : Prop where
@@ -146,9 +165,6 @@ lemma Separation.left_subset (S : G.Separation) : S.left ⊆ G.V := by
 
 lemma Separation.right_subset (S : G.Separation) : S.right ⊆ G.V := by
   simp [← S.union_eq]
-
-
-
 
 @[simps]
 def Separation.symm (S : G.Separation) : G.Separation where
@@ -284,19 +300,18 @@ lemma union_not_connected_of_disjoint_vxSet (hV : Disjoint G.V H.V) (hG : G.V.No
   obtain ⟨u, -, huG, huH⟩ := hw.exists_mem_mem_of_union hx hy
   exact hV.not_mem_of_mem_left huG huH
 
-
 /-- If `x` is a vertex of `G`, and `y₁, y₂` are vertices of a cycle `C` other than `x`,
 then `y₁` and `y₂` are connected in `G - x`. -/
-lemma IsCycle.vxConnected_delete_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy₁ : y₁ ∈ C)
+lemma IsCycle.vxConnected_deleteVx_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy₁ : y₁ ∈ C)
     (hy₂ : y₂ ∈ C) (hne₁ : y₁ ≠ x) (hne₂ : y₂ ≠ x) : (G - ({x} : Set α)).VxConnected y₁ y₂ := by
   classical
   -- We can assume `x` is the first vertex of the cycle by rotation.
   wlog hxC : x = C.first generalizing C with aux
   · by_cases hxC : x ∈ C
-    · have hrw := @hC.isClosed.mem_rotate
-      apply aux (C := C.rotate (C.idxOf x)) (hC.rotate _) (by simp_all) (by simp_all)
-      rw [rotate_first _ _ (by simpa), get_idxOf C hxC]
-    refine IsWalk.vxConnected_of_mem_of_mem (by simp [hC.isWalk, hxC]) hy₁ hy₂
+    · obtain ⟨n, hn, rfl⟩ := exists_rotate_first_eq hxC
+      exact aux (hC.rotate n) (by rwa [hC.isClosed.mem_rotate])
+        (by rwa [hC.isClosed.mem_rotate]) rfl
+    exact IsWalk.vxConnected_of_mem_of_mem (by simp [hC.isWalk, hxC]) hy₁ hy₂
   obtain rfl := hxC
   -- The result is easy if `C` has length at most one.
   obtain ⟨x, e, rfl⟩ | hnt := hC.loop_or_nontrivial
@@ -308,6 +323,58 @@ lemma IsCycle.vxConnected_delete_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy�
   refine ⟨(hC.tail_isPath.prefix (dropLast_isPrefix _)).isWalk, ?_⟩
   rw [hC.isClosed, mem_dropLast_iff_of_nodup hC.tail_isPath.nodup hnt.tail_nonempty]
   simp
+
+lemma IsCycle.vxConnected_deleteEdge_of_mem_of_mem (hC : G.IsCycle C) (e : β)
+    (hx₁ : x₁ ∈ C) (hx₂ : x₂ ∈ C) : (G ＼ {e}).VxConnected x₁ x₂ := by
+  obtain heC | heC := em' <| e ∈ C.edge
+  · exact IsWalk.vxConnected_of_mem_of_mem (by simp [hC.isWalk, heC]) hx₁ hx₂
+  obtain ⟨w₁, w₂, rfl, hew₁⟩ := eq_append_cons_of_edge_mem heC
+  have hCnd := hC.edge_nodup
+  obtain ⟨-, ⟨hew₂, -⟩, hew₁, -⟩ := by
+    simpa only [append_edge, cons_edge, List.nodup_append, List.nodup_cons,
+      List.disjoint_cons_right] using hCnd
+
+  have hw₁ : (G ＼ {e}).IsWalk w₁ := by simp [hC.isWalk.of_append_left (by simp), hew₁]
+  have hw₂ : (G ＼ {e}).IsWalk w₂ := by simp [hC.isWalk.of_append_right.of_cons, hew₂]
+  have hx₁ : (G ＼ {e}).VxConnected x₁ w₁.first := by
+    sorry
+
+  simp only [← mem_vx, append_vx, cons_vx, List.mem_append, List.mem_cons] at hx₁
+
+  -- by_cases he₂ : e ∈ w₂.edge
+  -- · have := hC.edge_nodup
+  --   simp only [append_edge, cons_edge, List.nodup_append, List.nodup_cons,
+  --     List.disjoint_cons_right] at this
+
+  -- lemma eq_append_cons_of_edge_mem {w : WList α β} {e : β} (he : e ∈ w.edge) :
+  --   ∃ w₁ w₂ : WList α β, w = w₁ ++ cons w₁.last e w₂ ∧ e ∉ w₁.edge
+  -- classical
+  -- obtain heC | heC := em' <| e ∈ C.edge
+  -- · exact IsWalk.vxConnected_of_mem_of_mem (by simp [hC.isWalk, heC]) hx₁ hx₂
+  -- obtain ⟨u, v, heuv⟩ := exists_dInc_of_mem_edge heC
+  -- wlog hxC : u = C.first generalizing C with aux
+  -- · have hrw := @hC.isClosed.mem_rotate
+  --   apply aux (C := C.rotate (C.idxOf u)) (hC.rotate _) (by simp_all) (by simp_all)
+  --     (by simpa) (hC.isClosed.dInc_rotate heuv _)
+  --   rw [rotate_first _ _ (by simpa using heuv.vx_mem_left), get_idxOf C heuv.vx_mem_left]
+  -- obtain rfl := hxC
+  -- refine IsWalk.vxConnected_of_mem_of_mem (w := C.tail) ?_
+  --   (by rwa [hC.isClosed.mem_tail_iff]) (by rwa [hC.isClosed.mem_tail_iff])
+  -- simp only [isWalk_edgeDelete_iff, hC.isWalk.tail, disjoint_singleton_right, mem_edgeSet_iff,
+  --   true_and]
+  -- sorry
+
+
+  -- classical
+  -- -- We can assume `x` is the first vertex of the cycle by rotation.
+
+  -- obtain rfl := hxC
+
+  -- obtain heC | heC := em' <| e ∈ C.edge
+  -- · exact IsWalk.vxConnected_of_mem_of_mem (by simp [hC.isWalk, heC]) hx₁ hx₂
+
+
+
 
 /-- If two graphs intersect in at most one vertex,
 then any cycle of their union is a cycle of one of the graphs. -/
@@ -353,7 +420,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   -- Now take an `xy`-path in `C` that doesn't use `a`. This must intersect `G.V ∩ H.V`
   -- in another vertex `b`, contradicting the fact that the intersection is a subsingleton.
   obtain ⟨w', hw', h1', h2'⟩ :=
-    (hC.vxConnected_delete_of_mem_of_mem a hxC hyC hxa hya).exists_isWalk
+    (hC.vxConnected_deleteVx_of_mem_of_mem a hxC hyC hxa hya).exists_isWalk
   rw [hcompat.vxDelete_union] at hw'
   obtain ⟨b, -, hbG, hbH⟩ :=
     hw'.exists_mem_mem_of_union (by simp [h1', hxG, hxa]) (by simp [h2', hyH, hya])

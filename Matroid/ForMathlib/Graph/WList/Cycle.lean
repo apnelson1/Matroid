@@ -34,6 +34,15 @@ lemma IsClosed.reverse (h : w.IsClosed) : w.reverse.IsClosed := by
 lemma reverse_isClosed_iff : w.reverse.IsClosed ↔ w.IsClosed := by
   simp [IsClosed, eq_comm]
 
+lemma IsClosed.vxSet_dropLast (h : w.IsClosed) : w.dropLast.V = w.V := by
+  rw [← reverse_tail_reverse, reverse_vxSet, h.reverse.vxSet_tail, reverse_vxSet]
+
+lemma IsClosed.mem_tail_iff (h : w.IsClosed) : x ∈ w.tail ↔ x ∈ w := by
+  rw [← mem_vxSet_iff, h.vxSet_tail, mem_vxSet_iff]
+
+lemma IsClosed.mem_dropLast (h : w.IsClosed) : x ∈ w.dropLast ↔ x ∈ w := by
+   rw [← mem_vxSet_iff, h.vxSet_dropLast, mem_vxSet_iff]
+
 lemma IsClosed.tail_dropLast (hw : w.IsClosed) : w.tail.dropLast = w.dropLast.tail := by
   refine (eq_or_ne w.length 1).elim (fun h1 ↦ ?_) WList.tail_dropLast
   cases w with
@@ -90,12 +99,16 @@ lemma length_rotate (w : WList α β) (n : ℕ) : (w.rotate n).length = w.length
     rw [rotate_succ, IH]
     cases w with simp
 
-@[simp] lemma rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
+@[simp] lemma
+rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
   induction n generalizing w with
   | zero => simp
   | succ n IH =>
     rw [rotate_succ, IH]
     cases w with simp
+
+lemma Nonempty.rotate (hw : w.Nonempty) (n : ℕ) : (w.rotate n).Nonempty := by
+  simpa
 
 lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
   induction n generalizing w with
@@ -132,6 +145,25 @@ lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).V = w.V := by
 lemma IsClosed.mem_rotate (hw : w.IsClosed) {n} : x ∈ w.rotate n ↔ x ∈ w := by
   rw [← mem_vxSet_iff, hw.rotate_vxSet, mem_vxSet_iff]
 
+lemma IsClosed.dInc_rotate (hw : w.IsClosed) (h : w.DInc e x y) (n) : (w.rotate n).DInc e x y := by
+  induction n generalizing w with
+  | zero => simpa
+  | succ n IH =>
+    rw [rotate_succ]
+    apply IH (hw.rotate _)
+    cases w with
+    | nil => simp at h
+    | cons u f w =>
+      simp_all only [cons_isClosed_iff, dInc_cons_iff, rotate_cons_succ, rotate_zero]
+      obtain rfl := hw
+      obtain ⟨rfl, rfl, rfl⟩ | h := h
+      · exact dInc_concat w f w.first
+      exact h.concat ..
+
+lemma IsClosed.inc₂_rotate (hw : w.IsClosed) (h : w.Inc₂ e x y) (n) : (w.rotate n).Inc₂ e x y := by
+  rw [inc₂_iff_dInc] at ⊢ h
+  exact h.elim (fun h' ↦ .inl (hw.dInc_rotate h' n)) (fun h' ↦ .inr (hw.dInc_rotate h' n))
+
 @[simp]
 lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).E = w.E := by
   simp [WList.E, rotate_edge]
@@ -167,6 +199,72 @@ lemma IsClosed.rotate_eq_mod (hw : w.IsClosed) (n) : w.rotate n = w.rotate (n % 
 lemma exists_rotate_first_eq (hx : x ∈ w) : ∃ n ≤ w.length, (w.rotate n).first = x := by
   classical
   exact ⟨w.idxOf x, by simpa, by rw [rotate_first _ _ (by simpa), get_idxOf _ hx]⟩
+
+lemma firstEdge_rotate_one (hw : w.Nontrivial) :
+    (hw.nonempty.rotate 1).firstEdge = (hw.tail_nonempty).firstEdge := by
+  cases hw with simp
+
+
+
+-- lemma aux1 (w : WList α β) (f : β) (z : α) (h : w.Nonempty) (h_mem : h.) :
+--     Nonempty.firstEdge ((w.concat f z).rotate 1) (by simp) = (h.rotate 1).firstEdge := by
+--   cases h with
+--   | cons x e w =>
+--     simp
+--     rw [Nonempty.firstEdge_concat (by simp)]
+--     cases w with
+--     | nil u =>
+--       simp
+--     | cons u e w => sorry
+
+-- lemma IsClosed.exists_rotate_firstEdge_eq (he : e ∈ w.edge) :
+--     ∃ n ≤ w.length, Nonempty.firstEdge (w.rotate n) (by cases w <;> simp_all) = e := by
+--   -- have hnt : w.Nontrivial := sorry
+  -- induction w with
+  -- | nil => simp at he
+  -- | cons u f w ih =>
+  --   obtain (rfl | hew) : e = f ∨ e ∈ w.edge := by simpa using he
+  --   · exact ⟨0, by simp⟩
+  --   obtain ⟨n, hle, he_eq⟩ := ih hew
+
+  --   refine ⟨n + 1, ?_⟩
+  --   obtain ⟨x, f, rfl⟩ | hw := w.exists_eq_nil_or_nonempty
+  --   · simp at hew
+
+  --   simp only [cons_length, add_le_add_iff_right, hle, rotate_cons_succ, true_and]
+  --   obtain rfl : n = 1 := sorry
+  --   cases w with
+  --   | nil u =>
+  --     simp at hw
+  --   | cons u f' w =>
+  --     simp at he_eq
+  --     simp
+  --   convert he_eq using 1
+
+    -- suffices aux : ∀ (w : WList α β) (f : β) (z : α) (n : ℕ) (h : w.Nonempty), n ≤ w.length →
+    --     Nonempty.firstEdge ((w.concat f z).rotate n) (by simp) = (h.rotate n).firstEdge by
+    --   apply aux _ _ _ _ hw hle
+    -- clear! w n f u e
+    -- intro w f z n hw hle
+
+    -- induction n generalizing w with
+    -- | zero => simp [hw.firstEdge_concat]
+    -- | succ n IH =>
+    --   simp_rw [Nat.add_comm (m := 1), ← rotate_rotate]
+    --   rw [← IH (w.rotate 1) sorry sorry]
+    --   simp
+
+
+    -- generalize_proofs
+    -- generalize w.first = z
+
+
+    -- simp only [cons_edge, List.mem_cons] at he
+  -- obtain ⟨x, y, h⟩ := exists_dInc_of_mem_edge he
+  -- obtain ⟨n, hle, rfl⟩ := exists_rotate_first_eq h.vx_mem_left
+  -- refine ⟨n, hle, ?_⟩
+
+
 
 lemma IsClosed.rotate_one_dropLast (hw : w.IsClosed) : (w.rotate 1).dropLast = w.tail := by
   cases w with simp
@@ -206,7 +304,20 @@ lemma IsClosed.intRotate_intRotate (hw : w.IsClosed) (m n : ℤ) :
   lift n' to ℕ using by simpa [← hn'] using Int.emod_nonneg _ (by simpa)
   norm_cast
 
+lemma IsClosed.rotate_intRotate_neg (hw : w.IsClosed) (n) : (w.rotate n).intRotate (-n) = w := by
+  simp [← hw.intRotate_eq_rotate, hw.intRotate_intRotate]
 
+lemma IsClosed.dInc_intRotate (hw : w.IsClosed) (n : ℤ) (h : w.DInc e x y) :
+    (w.intRotate n).DInc e x y :=
+  hw.dInc_rotate h ..
+
+lemma IsClosed.dInc_rotate_iff (hw : w.IsClosed) : (w.rotate n).DInc e x y ↔ w.DInc e x y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ hw.dInc_rotate h _⟩
+  rw [← hw.rotate_intRotate_neg n]
+  exact (hw.rotate n).dInc_intRotate (-n) h
+
+lemma IsClosed.inc₂_rotate_iff (hw : w.IsClosed) : (w.rotate n).Inc₂ e x y ↔ w.Inc₂ e x y := by
+  rw [inc₂_iff_dInc, inc₂_iff_dInc, hw.dInc_rotate_iff, hw.dInc_rotate_iff]
 
 
 end WList

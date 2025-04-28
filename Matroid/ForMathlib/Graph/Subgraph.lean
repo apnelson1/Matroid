@@ -266,6 +266,11 @@ lemma left_le_union (G H : Graph α β) : G ≤ G ∪ H := by
   simp_rw [le_iff, union_inc₂_iff]
   tauto
 
+protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪ G₃ = G₁ ∪ (G₂ ∪ G₃) := by
+  refine Graph.ext (Set.union_assoc ..) fun e x y ↦ ?_
+  simp [union_inc₂_iff]
+  tauto
+
 lemma Compatible.union_inc₂_iff (h : Compatible G H) :
     (G ∪ H).Inc₂ e x y ↔ G.Inc₂ e x y ∨ H.Inc₂ e x y := by
   by_cases heG : e ∈ G.E
@@ -287,7 +292,7 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
 lemma Compatible.of_disjoint_edgeSet (h : Disjoint G.E H.E) : Compatible G H :=
   fun _ heG heH ↦ False.elim <| h.not_mem_of_mem_left heG heH
 
-lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H.edgeDelete G.E) :=
+lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H ＼ G.E) :=
   Graph.ext rfl fun e x y ↦ by rw [union_inc₂_iff,
     (Compatible.of_disjoint_edgeSet disjoint_sdiff_right).union_inc₂_iff, edgeDelete_inc₂, and_comm]
 

@@ -39,29 +39,38 @@ lemma edgeRestrict_acyclic_iff : (G ↾ F).Acyclic ↔ ∀ (C : WList α β), C.
   · exact hC.isCycle_of_le (by simp) <| by simp [hCF, hC.isWalk.edgeSet_subset]
   exact hC.isWalk.edgeSet_subset.trans inter_subset_left
 
-
-
-
-
-
+/-- If `G` is connected, then a maximally acylic subgraph of `G` is connected. -/
 lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F : Set β}
     (hF : Maximal (fun F ↦ F ⊆ G.E ∧ (G ↾ F).Acyclic) F) : (G ↾ F).Connected := by
   by_contra hcon
   obtain ⟨S, e, x, y, heF, hx, hy, hxy⟩ := hG.exists_of_edgeRestrict_not_connected hcon
   have hne : x ≠ y := S.disjoint.ne_of_mem hx hy
+  have hx' : x ∉ S.right := S.disjoint.not_mem_of_mem_left hx
+  have hy' : y ∉ S.left := S.disjoint.not_mem_of_mem_right hy
   have hFac : (G ↾ F).Acyclic := hF.prop.2
   have h_left : (G ↾ F)[S.left].Acyclic := hFac.mono (induce_le _ S.left_subset)
   have h_right : (G ↾ F)[S.right].Acyclic := hFac.mono (induce_le _ S.right_subset)
-  have h_left' := h_left.union_acyclic_of_subsingleton_inter (singleEdge_acyclic hne e) sorry
-  have h' := h_left'.union_acyclic_of_subsingleton_inter h_right sorry
-  refine heF <| hF.mem_of_prop_insert (x := e) ⟨insert_subset hxy.edge_mem hF.prop.1, ?_⟩
-  refine h'.mono <| le_of_le_le_subset_subset (G := G) (by simp) ?_ ?_ ?_
-  · refine union_le (union_le ?_ (by simpa)) ((induce_le _ S.right_subset).trans (by simp))
-    · exact (induce_le _ S.left_subset).trans (by simp)
-  · simp only [edgeRestrict_vxSet, union_vxSet, induce_vxSet, singleEdge_vxSet, union_insert,
-      union_singleton]
-    sorry
+  have h_left' := h_left.union_acyclic_of_subsingleton_inter (singleEdge_acyclic hne e) ?_; swap
+  · rw [induce_vxSet, singleEdge_vxSet, pair_comm, inter_insert_of_not_mem hy']
+    exact Subsingleton.inter_singleton
+  have h' := h_left'.union_acyclic_of_subsingleton_inter h_right ?_; swap
+  · simp only [union_vxSet, induce_vxSet, singleEdge_vxSet, union_insert, union_singleton]
+    rw [insert_inter_of_not_mem hx', insert_inter_of_mem hy, S.disjoint.inter_eq]
+    simp
+  have hins : insert e F ⊆ G.E := insert_subset hxy.edge_mem hF.prop.1
+  refine heF <| hF.mem_of_prop_insert ⟨hins, h'.mono ?_⟩
+  rw [(Compatible.of_disjoint_edgeSet (by simp [heF])).union_comm (G := (G ↾ F)[S.left]),
+    Graph.union_assoc, ← S.eq_union]
+  refine le_of_le_le_subset_subset (G := G) (by simp) (union_le (by simpa) (by simp)) (by simp) ?_
+  simp [inter_eq_self_of_subset_left hins, inter_eq_self_of_subset_left hF.prop.1]
+
+lemma acyclic_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected) F) :
+    (G ↾ F).Acyclic := by
   sorry
+
+
+
+
 
 
 
