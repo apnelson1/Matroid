@@ -90,6 +90,13 @@ lemma IsCycle.reverse (hC : G.IsCycle C) : G.IsCycle C.reverse where
   isClosed := by simp [hC.isClosed]
   nodup := by simp [hC.dropLast_isPath.nodup]
 
+lemma IsCycle.isCycle_of_ge (h : H.IsCycle w) (hle : H ≤ G) : G.IsCycle w where
+  isWalk := h.isWalk.of_le hle
+  edge_nodup := h.edge_nodup
+  nonempty := h.nonempty
+  isClosed := h.isClosed
+  nodup := h.nodup
+
 lemma IsCycle.isCycle_of_le (h : G.IsCycle w) (hle : H ≤ G) (hE : w.E ⊆ H.E) :
     H.IsCycle w where
   isWalk := h.isWalk.isWalk_le_of_nonempty hle hE h.nonempty
@@ -171,7 +178,7 @@ lemma IsCycle.toGraph_vxDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) 
     refine Graph.ext (by simpa) fun g x y ↦ ?_
     have h1 : P.Inc₂ g x y → x ∈ P := fun h ↦ h.vx_mem_left
     have h2 : P.Inc₂ g x y → y ∈ P := fun h ↦ h.vx_mem_right
-    simp only [vxDelete_Inc₂, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
+    simp only [vxDelete_inc₂, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
       concat_first, inc₂_concat_iff, tail_cons, dropLast_concat, hP.isWalk.wellFormed.toGraph_inc₂]
     aesop
 

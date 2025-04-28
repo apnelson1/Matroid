@@ -13,6 +13,7 @@ lemma Set.Subsingleton.elim {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (
     x = y := by
   obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all
 
+
 namespace Graph
 
 /-- `G.VxConnected v w` means that `G` contains a walk from `v` to `w`. -/
@@ -180,23 +181,27 @@ lemma IsCycle.vxConnected_delete_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy�
   rw [hC.isClosed, mem_dropLast_iff_of_nodup hC.tail_isPath.nodup hnt.tail_nonempty]
   simp
 
-/-- If two edge-disjoint graphs intersect in at most one vertex,
+/-- If two graphs intersect in at most one vertex,
 then any cycle of their union is a cycle of one of the graphs. -/
-lemma IsCycle.isCycle_or_isCycle_of_union (hC : (G ∪ H).IsCycle C) (hdj : Disjoint G.E H.E)
+lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).IsCycle C)
     (hi : (G.V ∩ H.V).Subsingleton) : G.IsCycle C ∨ H.IsCycle C := by
-  have hcompat := Compatible.of_disjoint_edgeSet hdj
+  wlog hcompat : Compatible G H generalizing H with aux
+  · obtain (hG | hH) := aux (union_eq_union_edgeDelete .. ▸ hC) (hi.anti (by simp))
+      (Compatible.of_disjoint_edgeSet disjoint_sdiff_right)
+    · exact .inl hG
+    exact .inr <| hH.isCycle_of_ge <| by simp
   -- If the cycle is a loop, this is easy.
   obtain ⟨x, e, rfl⟩ | hnt := hC.loop_or_nontrivial
   · obtain heG | heH := hC.isWalk.edge_mem_of_mem (e := e) (by simp)
     · exact .inl <| hC.isCycle_of_le (left_le_union ..) (by simpa)
     exact .inr <| hC.isCycle_of_le hcompat.right_le_union (by simpa)
-  -- Every edge of the cycle has distinct ends in G or in H.
+  -- Every edge of `C` has distinct ends in `G` or in `H`.
   have aux1 (e) (he : e ∈ C.E) :
       ∃ x y, x ≠ y ∧ x ∈ C.V ∧ y ∈ C.V ∧ (G.Inc₂ e x y ∨ H.Inc₂ e x y) := by
     obtain ⟨x, y, hxy⟩ := C.exists_inc₂_of_mem_edge he
     exact ⟨x, y, hC.ne_of_inc₂ hnt hxy, hxy.vx_mem_left, hxy.vx_mem_right,
       by simpa [hcompat.union_inc₂_iff] using hC.isWalk.inc₂_of_inc₂ hxy ⟩
-  -- If the vertices of C are contained in G or H, then C is contained in G or H.
+  -- If the vertices of `C` are contained in `G` or `H`, then `C` is contained in `G` or `H`.
   by_cases hCG : C.V ⊆ G.V
   · refine .inl <| hC.isCycle_of_le (left_le_union ..) fun e heC ↦ ?_
     obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
@@ -224,7 +229,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union (hC : (G ∪ H).IsCycle C) (hdj : Disj
   rw [hcompat.vxDelete_union] at hw'
   obtain ⟨b, -, hbG, hbH⟩ :=
     hw'.exists_mem_mem_of_union (by simp [h1', hxG, hxa]) (by simp [h2', hyH, hya])
-  rw [vxDelete_V, mem_diff, mem_singleton_iff] at hbG hbH
+  rw [vxDelete_vxSet, mem_diff, mem_singleton_iff] at hbG hbH
   refine False.elim <| hbG.2 (hi.elim ?_ ?_) <;> simp_all
 
 end Graph

@@ -211,7 +211,7 @@ lemma IsWalk.vxRestrict (hw : G.IsWalk w) (hX : w.V ⊆ X) : (G.vxRestrict X).Is
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, vxRestrict_Inc₂, true_and,
+    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, vxRestrict_inc₂, true_and,
       and_true, forall_const]
     refine hX.2 <| by simp
 
