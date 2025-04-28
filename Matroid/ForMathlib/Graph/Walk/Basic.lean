@@ -8,72 +8,66 @@ This file defined predicates stating that an abstract walk `w` is a walk/trail/p
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ : WList α β} {S T : Set α}
 
-namespace Graph
+open Graph WList Set
 
-open WList List Set
+namespace Graph
 
 /-- `G.IsWalk w` means that `w : WList α β` is a walk of `G : Graph α β`. -/
 inductive IsWalk (G : Graph α β) : WList α β → Prop
-  | nil (x) (hx : x ∈ G.V) : G.IsWalk (nil x)
-  | cons' (x) (e) (w : WList α β) (h : G.Inc₂ e x w.first) (hw : G.IsWalk w) : G.IsWalk (cons x e w)
-
-lemma nil_isWalk (hx : x ∈ G.V) : G.IsWalk (nil x) :=
-  IsWalk.nil x hx
+  | nil {x} (hx : x ∈ G.V) : G.IsWalk (nil x)
+  | cons {x e w} (hw : G.IsWalk w) (h : G.Inc₂ e x w.first) : G.IsWalk (cons x e w)
 
 @[simp]
 lemma nil_isWalk_iff : G.IsWalk (nil x) ↔ x ∈ G.V :=
-  ⟨fun h ↦ by cases h with | _ => simp_all, nil_isWalk⟩
+  ⟨fun h ↦ by cases h with | _ => simp_all, IsWalk.nil⟩
 
 @[simp]
 lemma cons_isWalk_iff : G.IsWalk (cons x e w) ↔ G.Inc₂ e x w.first ∧ G.IsWalk w :=
-  ⟨fun h ↦ by cases h with | _ => simp_all, fun h ↦ h.2.cons' _ _ _ h.1⟩
-
-lemma IsWalk.cons (h : G.IsWalk w) (hex : G.Inc₂ e x w.first) : G.IsWalk (cons x e w) :=
-  cons' x e w hex h
+  ⟨fun h ↦ by cases h with | _ => simp_all, fun h ↦ h.2.cons h.1⟩
 
 @[simp]
 lemma IsWalk.of_cons (hw : G.IsWalk (.cons x e w)) : G.IsWalk w := by
   simp_all
 
 lemma IsWalk.vx_mem_of_mem (h : G.IsWalk w) (hmem : x ∈ w) : x ∈ G.V := by
-  induction h with | nil => simp_all | cons' y e w h hw ih =>
+  induction h with | nil => simp_all | @cons y f w hw h ih =>
     simp_all only [mem_cons_iff]
     exact hmem.elim (fun h' ↦ h' ▸ h.vx_mem_left) ih
 
 lemma IsWalk.edge_mem_of_mem (h : G.IsWalk w) (hmem : e ∈ w.edge) : e ∈ G.E := by
-  induction h with | nil => simp_all | cons' x f w h hw ih =>
-    simp_all only [cons_edge, mem_cons]
+  induction h with | nil => simp_all | @cons x f w hw h ih =>
+    simp_all only [cons_edge, List.mem_cons]
     exact hmem.elim (fun h' ↦ h' ▸ h.edge_mem) ih
 
 lemma IsWalk.vx_mem_of_edge_mem (h : G.IsWalk w) (he : e ∈ w.edge) (heu : G.Inc e u) : u ∈ w := by
   induction h with
   | nil => simp at he
-  | cons' x f w h hw ih =>
-    simp_all only [cons_edge, mem_cons, mem_cons_iff]
+  | @cons x f w hw h ih =>
+    simp_all only [cons_edge, List.mem_cons, mem_cons_iff]
     refine he.elim ?_ fun h' ↦ .inr <| ih h'
     rintro rfl
     obtain rfl | rfl := heu.eq_or_eq_of_inc₂ h <;> simp
 
-lemma IsWalk.vxSet_subset (hVd : G.IsWalk w) : w.vxSet ⊆ G.V :=
+lemma IsWalk.vxSet_subset (hVd : G.IsWalk w) : w.V ⊆ G.V :=
   fun _ ↦ hVd.vx_mem_of_mem
 
-lemma IsWalk.edgeSet_subset (h : G.IsWalk w) : w.edgeSet ⊆ G.E := fun _ ↦ h.edge_mem_of_mem
+lemma IsWalk.edgeSet_subset (h : G.IsWalk w) : w.E ⊆ G.E := fun _ ↦ h.edge_mem_of_mem
 
 lemma IsWalk.mem_of_mem_edge_of_inc (hw : G.IsWalk w) (he : e ∈ w.edge) (h : G.Inc e u) :
     u ∈ w := by
   induction w with
   | nil x => simp at he
   | cons x e' w ih =>
-    simp_all only [forall_const, cons_edge, mem_cons, mem_cons_iff, cons_isWalk_iff]
+    simp_all only [forall_const, cons_edge, List.mem_cons, mem_cons_iff, cons_isWalk_iff]
     obtain rfl | he := he
     · obtain rfl | rfl := h.eq_or_eq_of_inc₂ hw.1 <;> simp
     exact .inr (ih he)
 
 lemma IsWalk.sublist (hw₂ : G.IsWalk w₂) (h : w₁.IsSublist w₂) : G.IsWalk w₁ := by
   induction h with
-  | nil x w h => simp [hw₂.vx_mem_of_mem h]
-  | cons x e w₁ w₂ h ih => exact ih hw₂.of_cons
-  | cons₂ x e w₁ w₂ h h_eq ih =>
+  | nil h => simp [hw₂.vx_mem_of_mem h]
+  | cons x e h ih => exact ih hw₂.of_cons
+  | cons₂ x e h h_eq ih =>
     rw [cons_isWalk_iff] at hw₂ ⊢
     rw [h_eq]
     exact ⟨hw₂.1, ih hw₂.2⟩
@@ -89,7 +83,7 @@ lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : w₁.last
   induction h₁ with simp_all
 
 lemma IsWalk.concat (h : G.IsWalk w) (he : G.Inc₂ e w.last x) : G.IsWalk (w.concat e x) := by
-  induction h with | nil y hy => simp_all [he.vx_mem_right] | cons' => simp_all
+  induction h with simp_all [he.vx_mem_right]
 
 lemma IsWalk.of_append_left (h : G.IsWalk (w₁ ++ w₂)) (h_eq : w₁.last = w₂.first) :
     G.IsWalk w₁ :=
@@ -102,7 +96,7 @@ lemma IsWalk.last_eq_first (h : G.IsWalk (w₁ ++ w₂)) (hw₁ : G.IsWalk w₁)
     w₁.last = w₂.first := by
   induction hw₁ with
   | nil => simp_all
-  | cons' x e w h' hw IH => cases w with
+  | @cons x e w hw h' IH => cases w with
     | nil u =>
       simp only [nil_first, WList.cons_append, WList.nil_append, cons_isWalk_iff] at h' h
       exact h'.eq_of_inc₂ h.1
@@ -111,7 +105,7 @@ lemma IsWalk.last_eq_first (h : G.IsWalk (w₁ ++ w₂)) (hw₁ : G.IsWalk w₁)
 lemma IsWalk.reverse (hw : G.IsWalk w) : G.IsWalk w.reverse := by
   induction hw with
   | nil => simp_all
-  | cons' x e w h hw ih =>
+  | cons hw h ih =>
     simp_all only [WList.reverse_cons]
     apply ih.concat <| by simpa using h.symm
 
@@ -121,8 +115,27 @@ lemma isWalk_reverse_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
 
 lemma IsWalk.of_le (h : H.IsWalk w) (hle : H ≤ G) : G.IsWalk w := by
   induction h with
-  | nil _ hx => simp [vxSet_subset_of_le hle hx]
-  | cons' _ _ _ h _ ih => simp [ih, h.of_le hle]
+  | nil hx => simp [vxSet_subset_of_le hle hx]
+  | cons _ h ih => simp [ih, h.of_le hle]
+
+lemma IsWalk.isWalk_le (h : G.IsWalk w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hfirst : w.first ∈ H.V) : H.IsWalk w := by
+  induction h with
+  | nil => simp_all
+  | @cons x e w hw h ih =>
+    simp_all only [cons_edgeSet, singleton_union, insert_subset_iff, cons_isWalk_iff, forall_const]
+    exact ⟨h.of_le_of_mem hle hE.1, ih (h.of_le_of_mem hle hE.1).vx_mem_right⟩
+
+lemma IsWalk.isWalk_le_of_nonempty (h : G.IsWalk w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hne : w.Nonempty) : H.IsWalk w := by
+  by_cases hfirst : w.first ∈ H.V
+  · exact h.isWalk_le hle hE hfirst
+  cases w with
+  | nil => simp at hne
+  | cons u e w =>
+    simp only [cons_edgeSet, singleton_union, insert_subset_iff] at hE
+    rw [cons_isWalk_iff] at h
+    simp_all [(h.1.of_le_of_mem hle hE.1).vx_mem_left]
 
 lemma IsWalk.inc₂_of_inc₂ (h : G.IsWalk w) (hexy : w.Inc₂ e x y) : G.Inc₂ e x y := by
   induction hexy with
@@ -130,187 +143,30 @@ lemma IsWalk.inc₂_of_inc₂ (h : G.IsWalk w) (hexy : w.Inc₂ e x y) : G.Inc�
   | cons_right => exact Inc₂.symm <| by simp_all
   | cons => simp_all
 
+lemma IsWalk.inc₂_of_dInc (h : G.IsWalk w) (hexy : w.DInc e x y) : G.Inc₂ e x y :=
+  h.inc₂_of_inc₂ hexy.inc₂
+
 lemma IsWalk.wellFormed (h : G.IsWalk w) : w.WellFormed := by
-  intro e x y₁ y₂ h₁ h₂
-  induction h with
-  | nil => simp at h₁
-  | cons' u f w h hw ih =>
-    simp only [WList.inc₂_cons_iff] at h₁ h₂
-    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₁) := h₁
-    · obtain (⟨-, ⟨-, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₂) := h₂
-      · rfl
-      · rfl
-      exact h.eq_of_inc₂ (hw.inc₂_of_inc₂ h₂)
-    · simp only [true_and] at h₂
-      obtain (⟨rfl, rfl⟩ | rfl) | h₂ := h₂
-      · rfl
-      · rfl
-      exact h.symm.eq_of_inc₂ (hw.inc₂_of_inc₂ h₂)
-    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | h₂) := h₂
-    · exact (hw.inc₂_of_inc₂ h₁).eq_of_inc₂ h
-    · exact (hw.inc₂_of_inc₂ h₁).eq_of_inc₂ h.symm
-    exact ih h₁ h₂
+  induction w with
+  | nil u => simp [WellFormed]
+  | cons u e w ih =>
+    simp only [cons_isWalk_iff] at h
+    rw [cons_wellFormed_iff, and_iff_right (ih h.2)]
+    exact fun y₁ y₂ h' ↦ (h.2.inc₂_of_inc₂ h').inc₂_iff_sym2_eq.1 h.1
 
-
-
-
-
-
-/-! ### Trails -/
-
-/-- `G.IsTrail w` means that `w` is a walk of `G` with no repeated edges. -/
-@[mk_iff]
-structure IsTrail (G : Graph α β) (W : WList α β) : Prop where
-  isWalk : G.IsWalk W
-  edge_nodup : W.edge.Nodup
-
-@[simp] lemma IsTrail.isWalk_simp (h : G.IsTrail w) : G.IsWalk w := h.isWalk
-@[simp] lemma IsTrail.edge_nodup_simp (h : G.IsTrail w) : w.edge.Nodup := h.edge_nodup
-@[simp] lemma isTrail_simp (hVd : G.IsWalk w) (hed : w.edge.Nodup) :
-    G.IsTrail w := IsTrail.mk hVd hed
-
-/-- `G.IsPath w` means that `w` is a path of `G` with no repeated vertices. -/
-@[mk_iff]
-structure IsPath (G : Graph α β) (w : WList α β) : Prop where
-  isWalk : G.IsWalk w
-  nodup : w.vx.Nodup
-
--- @[simp] lemma IsPath.isWalk_simp (h : G.IsPath w) : G.IsWalk w := h.isWalk
--- @[simp] lemma IsPath.nodup_simp (h : G.IsPath w) : w.vx.Nodup := h.nodup
--- @[simp] lemma isPath_simp (hVd : G.IsWalk w) (hnodup : w.vx.Nodup) :
---     G.IsPath w := IsPath.mk hVd hnodup
-
+/-- `G.IsWalkFrom S T w` means that `w` is a walk of `G` with one end in `S` and the other in `T`.-/
 @[mk_iff]
 structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop where
   isWalk : G.IsWalk w
   first_mem : w.first ∈ S
   last_mem : w.last ∈ T
 
--- @[simp] lemma IsWalkFrom.isWalk_simp (h : G.IsWalkFrom S T w) : G.IsWalk w := h.isWalk
--- @[simp] lemma IsWalkFrom.first_mem_simp (h : G.IsWalkFrom S T w) : w.first ∈ S := h.first_mem
--- @[simp] lemma IsWalkFrom.last_mem_simp (h : G.IsWalkFrom S T w) : w.last ∈ T := h.last_mem
--- @[simp] lemma isWalkFrom_simp (hVd : G.IsWalk w) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
---     G.IsWalkFrom S T w := IsWalkFrom.mk hVd hfirst hlast
+lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse where
+  isWalk := h.isWalk.reverse
+  first_mem := by simp [h.last_mem]
+  last_mem := by simp [h.first_mem]
 
-@[mk_iff]
-structure IsTrailFrom (G : Graph α β) (S T : Set α) (W : WList α β) : Prop extends
-  G.IsTrail W, G.IsWalkFrom S T W
-
-@[mk_iff]
-structure IsPathFrom (G : Graph α β) (S T : Set α) (W : WList α β) : Prop extends
-  G.IsPath W, G.IsWalkFrom S T W
-
-lemma IsTrailFrom.isTrail (h : G.IsTrailFrom S T w) : G.IsTrail w where
-  isWalk := h.isWalk
-  edge_nodup := h.edge_nodup
-
-lemma IsTrailFrom.isWalkFrom (h : G.IsTrailFrom S T w) : G.IsWalkFrom S T w where
-  isWalk := h.isWalk
-  first_mem := h.first_mem
-  last_mem := h.last_mem
-
-lemma IsPathFrom.isPath (h : G.IsPathFrom S T w) : G.IsPath w where
-  isWalk := h.isWalk
-  nodup := h.nodup
-
-lemma IsPathFrom.isWalkFrom (h : G.IsPathFrom S T w) : G.IsWalkFrom S T w where
-  isWalk := h.isWalk
-  first_mem := h.first_mem
-  last_mem := h.last_mem
-
--- lemma IsPathFrom.isTrailFrom (h : G.IsPathFrom S T w) : G.IsTrailFrom S T w where
---   isWalk := h.isWalk
---   edge_nodup := h.isPath.isTrail.edge_nodup
---   first_mem := h.first_mem
---   last_mem := h.last_mem
-
-lemma IsWalk.isTrail (hVd : G.IsWalk w) (hedge : w.edge.Nodup) : G.IsTrail w := ⟨hVd, hedge⟩
-
-lemma IsWalk.isPath (hVd : G.IsWalk w) (hvx : w.vx.Nodup) : G.IsPath w := ⟨hVd, hvx⟩
-
-lemma IsWalk.isWalkFrom (hVd : G.IsWalk w) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
-    G.IsWalkFrom S T w := ⟨hVd, hfirst, hlast⟩
-
-lemma IsWalk.isTrailFrom (hVd : G.IsWalk w) (hedge : w.edge.Nodup) (hfirst : w.first ∈ S)
-    (hlast : w.last ∈ T) : G.IsTrailFrom S T w := ⟨⟨hVd, hedge⟩, hfirst, hlast⟩
-
-lemma IsWalk.isPathFrom (hVd : G.IsWalk w) (hvx : w.vx.Nodup) (hfirst : w.first ∈ S)
-    (hlast : w.last ∈ T) : G.IsPathFrom S T w := ⟨⟨hVd, hvx⟩, hfirst, hlast⟩
-
-lemma IsTrail.isPath (hT : G.IsTrail w) (hvx : w.vx.Nodup) : G.IsPath w := ⟨hT.isWalk, hvx⟩
-
-lemma IsTrail.isTrailFrom (hT : G.IsTrail w) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
-    G.IsTrailFrom S T w := ⟨hT, hfirst, hlast⟩
-
-lemma IsTrail.isPathFrom (hT : G.IsTrail w) (hvx : w.vx.Nodup) (hfirst : w.first ∈ S)
-    (hlast : w.last ∈ T) : G.IsPathFrom S T w := ⟨⟨hT.isWalk, hvx⟩, hfirst, hlast⟩
-
-lemma IsPath.isPathFrom (hP : G.IsPath w) (hfirst : w.first ∈ S) (hlast : w.last ∈ T) :
-    G.IsPathFrom S T w := ⟨hP, hfirst, hlast⟩
-
-lemma nil_isTrail (hx : x ∈ G.V) : G.IsTrail (nil x) :=
-  ⟨nil_isWalk hx, by simp⟩
-
-lemma nil_isPath (hx : x ∈ G.V) : G.IsPath (nil x) :=
-  ⟨nil_isWalk hx, by simp⟩
-
-lemma nil_isWalkFrom (hx : x ∈ G.V) (hxS : x ∈ S) (hxT : x ∈ T) : G.IsWalkFrom S T (nil x) :=
-  ⟨nil_isWalk hx, hxS, hxT⟩
-
-@[simp] lemma nil_isWalkFrom_iff : G.IsWalkFrom S T (nil x) ↔ x ∈ G.V ∧ x ∈ S ∧ x ∈ T := by
-  simp [isWalkFrom_iff]
-
-@[simp] lemma nil_isTrail_iff : G.IsTrail (nil x) ↔ x ∈ G.V := by
-  simp [isTrail_iff]
-
-@[simp] lemma nil_isPath_iff : G.IsPath (nil x) ↔ x ∈ G.V := by
-  simp [isPath_iff]
-
-@[simp] lemma cons_isTrail : G.IsTrail (cons x e w) ↔
-    G.IsTrail w ∧ G.Inc₂ e x w.first ∧ e ∉ w.edge := by
-  simp only [isTrail_iff, cons_isWalk_iff, cons_edge, List.nodup_cons]
-  tauto
-
-@[simp] lemma cons_isPath : G.IsPath (cons x e w) ↔ G.IsPath w ∧ G.Inc₂ e x w.first ∧ x ∉ w := by
-  simp only [isPath_iff, cons_isWalk_iff, cons_vx, nodup_cons, mem_vx]
-  tauto
-
-@[simp]
-lemma cons_isTrailFrom : G.IsTrailFrom S T (cons x e w) ↔
-    G.IsTrail w ∧ G.Inc₂ e x w.first ∧ e ∉ w.edge ∧ x ∈ S ∧ w.last ∈ T := by
-  simp [isTrailFrom_iff, and_assoc]
-
-@[simp]
-lemma cons_isPathFrom : G.IsPathFrom S T (cons x e w) ↔
-    G.IsPath w ∧ G.Inc₂ e x w.first ∧ x ∉ w ∧ x ∈ S ∧ w.last ∈ T := by
-  simp [isPathFrom_iff, and_assoc]
-
-@[simp]
-lemma IsTrail.of_cons (h : G.IsTrail (cons x e w)) : G.IsTrail w := by
-  rw [cons_isTrail] at h
-  exact h.1
-
-@[simp]
-lemma IsPath.of_cons (h : G.IsPath (cons x e w)) : G.IsPath w := by
-  rw [cons_isPath] at h
-  exact h.1
-
-@[simp]
-lemma nil_isTrailFrom : G.IsTrailFrom S T (nil x) ↔ x ∈ G.V ∧ x ∈ S ∧ x ∈ T := by
-  simp [isTrailFrom_iff]
-
-@[simp] lemma nil_isPathFrom : G.IsPathFrom S T (nil x) ↔ x ∈ G.V ∧ x ∈ S ∧ x ∈ T := by
-  simp [isPathFrom_iff]
-
-lemma IsPath.isTrail (h : G.IsPath w) : G.IsTrail w where
-  isWalk := h.1
-  edge_nodup := by
-    induction w with
-    | nil u => simp
-    | cons u e w ih =>
-      simp_all only [cons_isPath, cons_edge, nodup_cons, and_true, forall_const]
-      exact fun he ↦ h.2.2 <| h.1.isWalk.vx_mem_of_edge_mem he h.2.1.inc_left
-
+/-- The walk corresponding to an incidence `G.Inc₂ e u v`. -/
 def Inc₂.walk (_h : G.Inc₂ e u v) : WList α β := cons u e (nil v)
 
 namespace Inc₂
@@ -328,15 +184,15 @@ lemma mem_walk_iff (h : G.Inc₂ e u v) (x : α) : x ∈ h.walk ↔ x = u ∨ x 
   simp [walk]
 
 @[simp]
-lemma walk_vxSet (h : G.Inc₂ e u v): h.walk.vxSet = {u, v} := by
+lemma walk_vxSet (h : G.Inc₂ e u v): h.walk.V = {u, v} := by
   simp [mem_walk_iff, Set.ext_iff]
 
 @[simp]
 lemma walk_edge (h : G.Inc₂ e u v): h.walk.edge = [e] := rfl
 
 @[simp]
-lemma walk_edgeSet (h : G.Inc₂ e u v): h.walk.edgeSet = {e} := by
-  simp [edgeSet]
+lemma walk_edgeSet (h : G.Inc₂ e u v): h.walk.E = {e} := by
+  simp [WList.E]
 
 @[simp]
 lemma walk_length (h : G.Inc₂ e u v): h.walk.length = 1 := rfl
@@ -345,14 +201,61 @@ lemma walk_length (h : G.Inc₂ e u v): h.walk.length = 1 := rfl
 lemma walk_isWalk (h : G.Inc₂ e u v) : G.IsWalk h.walk := by
   simp [walk, h, h.vx_mem_right]
 
-lemma walk_isPath (h : G.Inc₂ e u v) (hne : u ≠ v) : G.IsPath h.walk :=
-  ⟨h.walk_isWalk, by simp [hne]⟩
-
 end Inc₂
 
+section Subgraph
+
+variable {X : Set α}
+
+lemma IsWalk.vxRestrict (hw : G.IsWalk w) (hX : w.V ⊆ X) : (G.vxRestrict X).IsWalk w := by
+  induction hw with
+  | nil => simp_all
+  | @cons x e w hw h ih =>
+    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, vxRestrict_inc₂, true_and,
+      and_true, forall_const]
+    refine hX.2 <| by simp
+
+/-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
+`w` is a nil walk on a vertex in `X \ G.V`. -/
+lemma isWalk_vxRestrict_iff (hXV : X ⊆ G.V) :
+    (G.vxRestrict X).IsWalk w ↔ G.IsWalk w ∧ w.V ⊆ X :=
+  ⟨fun h ↦ ⟨h.of_le (G.vxRestrict_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.vxRestrict h.2⟩
+
+@[simp]
+lemma isWalk_vxDelete_iff : (G.vxDelete X).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.V X := by
+  rw [Graph.vxDelete, isWalk_vxRestrict_iff diff_subset, subset_diff, and_congr_right_iff,
+    and_iff_right_iff_imp]
+  exact fun h _ ↦ h.vxSet_subset
+
+lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hE : w.E ⊆ G.E)
+    (h1 : w.first ∈ G.V) : G.IsWalk w := by
+  induction hw with
+  | nil => simp_all
+  | @cons x e w hw h ih =>
+    simp_all only [union_inc₂_iff, cons_edgeSet, singleton_union, insert_subset_iff, first_cons,
+      cons_isWalk_iff, not_true_eq_false, false_and, or_false, forall_const, true_and]
+    exact ih h.vx_mem_right
+
+lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hE : w.E ⊆ G.E)
+    (hne : w.Nonempty) : G.IsWalk w := by
+  by_cases h1 : w.first ∈ G.V
+  · exact hw.isWalk_left_of_subset hE h1
+  cases w with
+  | nil => simp_all
+  | cons u e w =>
+  simp only [cons_edgeSet, singleton_union, insert_subset_iff] at hE
+  simp only [cons_isWalk_iff, union_inc₂_iff, hE.1, not_true_eq_false, false_and, or_false] at hw
+  rw [first_cons] at h1
+  exact (h1 hw.1.vx_mem_left).elim
 
 
-variable {w₁ w₂ : WList α β}
+  -- cases w with
+  -- | nil => simp at hne
+  -- | cons u e w =>
+  --   simp
+
+
+end Subgraph
 
 
 -- lemma IsPath.prefix (hP : G.IsPath w) (hPf : w₁.IsPrefix w) : G.IsPath w₁ := by
@@ -393,7 +296,7 @@ variable {w₁ w₂ : WList α β}
 -- @[simp] lemma cons_isWalkFrom : G.IsWalkFrom S T (cons x e w) ↔
 --     G.IsWalk w ∧ G.Inc₂ e x w.first ∧ x ∈ S ∧ w.last ∈ T := by
 --   refine ⟨fun ⟨h, hS, hT⟩ ↦ ⟨?_, ?_, ?_, ?_⟩, fun ⟨hV, hS, hVd, hT⟩ ↦ ⟨?_, ?_, ?_⟩⟩
---   <;> simp_all only [cons_isWalk, cons_first, cons_last, and_self]
+--   <;> simp_all only [cons_isWalk, first_cons, last_cons, and_self]
 
 
   -- induction w with
@@ -403,39 +306,89 @@ variable {w₁ w₂ : WList α β}
   --   refine ValidIn.concat (ih hVd.2) ?_
   --   simp [hVd.1.symm]
 
-lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse where
-  isWalk := h.isWalk.reverse
-  first_mem := by simp [h.last_mem]
-  last_mem := by simp [h.first_mem]
 
-lemma IsPath.reverse (hp : G.IsPath w) : G.IsPath w.reverse where
-  isWalk := hp.isWalk.reverse
-  nodup := by simp [hp.nodup]
-
-lemma IsPathFrom.reverse (p : G.IsPathFrom S T w) : G.IsPathFrom T S w.reverse where
-  isWalk := p.isWalk.reverse
-  nodup := by simp [p.nodup]
-  first_mem := by simp [p.last_mem]
-  last_mem := by simp [p.first_mem]
 
 @[simp]
 lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
 
-@[simp]
-lemma reverse_isPath_iff : G.IsPath (reverse w) ↔ G.IsPath w :=
-  ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
 
 lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
   h.sublist w.dedup_isSublist
 
 lemma IsWalk.dropLast (h : G.IsWalk w) : G.IsWalk w.dropLast :=
-  h.prefix <| dropLast_isPrefix w
+  h.prefix <| w.dropLast_isPrefix
 
-lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk w) : G.IsPath w.dedup :=
-  ⟨h.dedup, w.dedup_vx_nodup⟩
 
 -- lemma _root_.Graph.IsPath.IsSuffix (hPf : w₁.IsSuffix w) (hP : G.IsPath w) : G.IsPath w₁ := by
 --   simpa using hP.reverse.IsPrefix <| reverse_isPrefix_reverse_iff.2 hPf
 
 end Graph
+
+namespace WList
+
+/-- Turn `w : WList α β` into a `Graph α β`. If the list is not well-formed
+(i.e. it contains an edge appearing twice with different ends),
+then the first occurence of the edge determines its ends in `w.toGraph`. -/
+protected def toGraph : WList α β → Graph α β
+  | nil u => Graph.noEdge {u} β
+  | cons u e w => w.toGraph ∪ (Graph.singleEdge u w.first e)
+
+@[simp]
+lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl
+
+
+lemma toGraph_cons : (w.cons u e).toGraph = w.toGraph ∪ (Graph.singleEdge u w.first e) := rfl
+
+@[simp]
+lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.V := by
+  induction w with simp_all [toGraph_cons]
+
+@[simp]
+lemma toGraph_edgeSet (w : WList α β) : w.toGraph.E = w.E := by
+  induction w with simp_all [toGraph_cons]
+
+lemma toGraph_vxSet_nonempty (w : WList α β) : w.toGraph.V.Nonempty := by
+  simp
+
+lemma WellFormed.toGraph_inc₂ (h : w.WellFormed) : w.toGraph.Inc₂ = w.Inc₂ := by
+  ext e x y
+  induction w with
+  | nil => simp
+  | cons u f w ih =>
+    rw [cons_wellFormed_iff] at h
+    rw [toGraph_cons, union_inc₂_iff, inc₂_cons_iff, ih h.1, toGraph_edgeSet, mem_edgeSet_iff,
+      singleEdge_inc₂_iff, eq_comm (a := e), iff_def, or_imp, and_iff_right (by tauto), or_imp,
+      and_iff_left (by tauto)]
+    rintro ⟨rfl, h_eq⟩
+    rw [and_iff_right rfl, and_iff_left h_eq, ← imp_iff_or_not]
+    intro hf
+    obtain ⟨y₁, y₂, hinc⟩ := exists_inc₂_of_mem_edge hf
+    rw [← h.2 y₁ y₂ hinc] at h_eq
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := Sym2.eq_iff.1 h_eq
+    · assumption
+    exact hinc.symm
+
+lemma Graph.IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
+  induction w with
+  | nil u => simpa [WList.toGraph] using h
+  | cons u e W ih =>
+    simp only [cons_isWalk_iff] at h
+    exact union_le (ih h.2) (by simpa using h.1)
+
+lemma WellFormed.isWalk_toGraph (hw : w.WellFormed) : w.toGraph.IsWalk w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    rw [cons_wellFormed_iff] at hw
+    refine ((ih hw.1).of_le (by simp [toGraph_cons])).cons ?_
+    suffices w.toGraph.Inc₂ e u w.first ∨ e ∉ w.edge by simpa [toGraph_cons, union_inc₂_iff]
+    rw [← imp_iff_or_not]
+    intro he
+    obtain ⟨y₁, y₂, h⟩ := exists_inc₂_of_mem_edge he
+    rw [((ih hw.1).inc₂_of_inc₂ h).inc₂_iff_sym2_eq, hw.2 _ _ h]
+
+
+
+
+end WList

@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson, Jun Kwon
 -/
 import Mathlib.Data.Set.Basic
+import Mathlib.Data.Sym.Sym2
 
 /-!
 # Multigraphs
@@ -77,6 +78,8 @@ structure Graph (α β : Type*) where
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
   vx_mem_left_of_inc₂ : ∀ ⦃e x y⦄, Inc₂ e x y → x ∈ V
 
+initialize_simps_projections Graph (V → vxSet, E → edgeSet, Inc₂ → inc₂)
+
 namespace Graph
 
 variable {G H : Graph α β}
@@ -130,6 +133,17 @@ lemma Inc₂.eq_and_eq_or_eq_and_eq_of_inc₂ {x' y' : α} (h : G.Inc₂ e x y) 
   obtain rfl | rfl := h.symm.left_eq_or_eq_of_inc₂ h'
   · simp
   obtain rfl | rfl := h'.left_eq_or_eq_of_inc₂ h <;> simp
+
+lemma Inc₂.inc₂_iff (h : G.Inc₂ e x y) {x' y' : α} :
+    G.Inc₂ e x' y' ↔ (x = x' ∧ y = y') ∨ (x = y' ∧ y = x') := by
+  refine ⟨h.eq_and_eq_or_eq_and_eq_of_inc₂, ?_⟩
+  rintro (⟨rfl, rfl⟩ | ⟨rfl,rfl⟩)
+  · assumption
+  exact h.symm
+
+lemma Inc₂.inc₂_iff_sym2_eq (h : G.Inc₂ e x y) {x' y' : α} :
+    G.Inc₂ e x' y' ↔ s(x,y) = s(x',y') := by
+  rw [h.inc₂_iff, Sym2.eq_iff]
 
 /-! ### Edge-vertex incidence -/
 
@@ -328,5 +342,29 @@ protected lemma ext {G₁ G₂ : Graph α β} (hV : G₁.V = G₂.V)
 lemma ext_inc {G₁ G₂ : Graph α β} (hV : G₁.V = G₂.V) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
     G₁ = G₂ :=
   Graph.ext hV fun _ _ _ ↦ by simp_rw [inc₂_iff_inc, h]
+
+@[simps]
+def copy (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α → Prop} (hV : G.V = V)
+    (hE : G.E = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) : Graph α β where
+  V := V
+  E := E
+  Inc₂ := Inc₂
+  inc₂_symm := by
+    simp_rw [← h_inc₂]
+    exact G.inc₂_symm
+  eq_or_eq_of_inc₂_of_inc₂ := by
+    simp_rw [← h_inc₂]
+    exact G.eq_or_eq_of_inc₂_of_inc₂
+  edge_mem_iff_exists_inc₂ := by
+    simp_rw [← h_inc₂, ← hE]
+    exact G.edge_mem_iff_exists_inc₂
+  vx_mem_left_of_inc₂ := by
+    simp_rw [← h_inc₂, ← hV]
+    exact G.vx_mem_left_of_inc₂
+
+lemma copy_eq_self (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α → Prop}
+    (hV : G.V = V) (hE : G.E = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) :
+    G.copy hV hE h_inc₂ = G := by
+  ext <;> simp_all
 
 end Graph
