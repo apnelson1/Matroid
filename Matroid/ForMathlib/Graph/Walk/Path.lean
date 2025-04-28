@@ -45,23 +45,33 @@ lemma reverse_isTrail_iff : G.IsTrail (reverse w) ↔ G.IsTrail w :=
 lemma IsTrail.of_le (hw : G.IsTrail w) (hle : G ≤ H) : H.IsTrail w :=
   ⟨hw.isWalk.of_le hle, hw.edge_nodup⟩
 
-lemma IsTrail.vxSet_subset (hw : G.IsTrail w) : w.vxSet ⊆ G.V :=
+lemma IsTrail.vxSet_subset (hw : G.IsTrail w) : w.V ⊆ G.V :=
   hw.isWalk.vxSet_subset
 
-lemma IsTrail.vxRestrict (hw : G.IsTrail w) (hX : w.vxSet ⊆ X) : (G.vxRestrict X).IsTrail w :=
+lemma IsTrail.vxRestrict (hw : G.IsTrail w) (hX : w.V ⊆ X) : (G.vxRestrict X).IsTrail w :=
   ⟨hw.isWalk.vxRestrict hX, hw.edge_nodup⟩
 
 /-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ G.V`. -/
 lemma isTrail_vxRestrict_iff (hXV : X ⊆ G.V) :
-    (G.vxRestrict X).IsTrail w ↔ G.IsTrail w ∧ w.vxSet ⊆ X :=
+    (G.vxRestrict X).IsTrail w ↔ G.IsTrail w ∧ w.V ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.vxRestrict_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.vxRestrict h.2⟩
 
 @[simp]
-lemma isTrail_vxDelete_iff : (G.vxDelete X).IsTrail w ↔ G.IsTrail w ∧ Disjoint w.vxSet X := by
+lemma isTrail_vxDelete_iff : (G.vxDelete X).IsTrail w ↔ G.IsTrail w ∧ Disjoint w.V X := by
   rw [Graph.vxDelete, isTrail_vxRestrict_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vxSet_subset
+
+lemma IsTrail.isTrail_le (h : G.IsTrail w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hfirst : w.first ∈ H.V) : H.IsTrail w where
+  isWalk := h.isWalk.isWalk_le hle hE hfirst
+  edge_nodup := h.edge_nodup
+
+lemma IsTrail.isTrail_le_of_nonempty (h : G.IsTrail w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hne : w.Nonempty) : H.IsTrail w where
+  isWalk := h.isWalk.isWalk_le_of_nonempty hle hE hne
+  edge_nodup := h.edge_nodup
 
 /-! ### Paths -/
 
@@ -116,10 +126,10 @@ lemma IsPath.edge_nodup (h : G.IsPath P) : P.edge.Nodup :=
 lemma IsPath.of_le (hP : G.IsPath P) (hle : G ≤ H) : H.IsPath P :=
   ⟨hP.isWalk.of_le hle, hP.nodup⟩
 
-lemma IsPath.vxSet_subset (hP : G.IsPath P) : P.vxSet ⊆ G.V :=
+lemma IsPath.vxSet_subset (hP : G.IsPath P) : P.V ⊆ G.V :=
   hP.isWalk.vxSet_subset
 
-lemma IsPath.vxRestrict (hP : G.IsPath P) (hX : P.vxSet ⊆ X) : (G.vxRestrict X).IsPath P :=
+lemma IsPath.vxRestrict (hP : G.IsPath P) (hX : P.V ⊆ X) : (G.vxRestrict X).IsPath P :=
   ⟨hP.isWalk.vxRestrict hX, hP.nodup⟩
 
 lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ where
@@ -133,14 +143,24 @@ lemma IsPath.suffix (hP : G.IsPath P) (hP₀ : P₀.IsSuffix P) : G.IsPath P₀ 
 /-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ G.V`. -/
 lemma isPath_vxRestrict_iff (hXV : X ⊆ G.V) :
-    (G.vxRestrict X).IsPath P ↔ G.IsPath P ∧ P.vxSet ⊆ X :=
+    (G.vxRestrict X).IsPath P ↔ G.IsPath P ∧ P.V ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.vxRestrict_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.vxRestrict h.2⟩
 
 @[simp]
-lemma isPath_vxDelete_iff : (G.vxDelete X).IsPath P ↔ G.IsPath P ∧ Disjoint P.vxSet X := by
+lemma isPath_vxDelete_iff : (G.vxDelete X).IsPath P ↔ G.IsPath P ∧ Disjoint P.V X := by
   rw [Graph.vxDelete, isPath_vxRestrict_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vxSet_subset
+
+lemma IsPath.isPath_le (h : G.IsPath w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hfirst : w.first ∈ H.V) : H.IsPath w where
+  isWalk := h.isWalk.isWalk_le hle hE hfirst
+  nodup := h.nodup
+
+lemma IsPath.isPath_le_of_nonempty (h : G.IsPath w) (hle : H ≤ G) (hE : w.E ⊆ H.E)
+    (hne : w.Nonempty) : H.IsPath w where
+  isWalk := h.isWalk.isWalk_le_of_nonempty hle hE hne
+  nodup := h.nodup
 
 /-! ### Fixed ends. (To be cleaned up) -/
 

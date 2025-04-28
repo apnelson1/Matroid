@@ -24,7 +24,7 @@ lemma cons_isClosed_iff : (cons x e w).IsClosed ↔ x = w.last := by
 lemma concat_isClosed_iff : (w.concat e x).IsClosed ↔ x = w.first := by
   simp [IsClosed, eq_comm]
 
-lemma IsClosed.vxSet_tail (h : w.IsClosed) : w.tail.vxSet = w.vxSet := by
+lemma IsClosed.vxSet_tail (h : w.IsClosed) : w.tail.V = w.V := by
   induction w with simp_all
 
 lemma IsClosed.reverse (h : w.IsClosed) : w.reverse.IsClosed := by
@@ -45,6 +45,8 @@ lemma IsClosed.length_eq_one_iff (hw : w.IsClosed) :
   cases w with
   | nil => simp
   | cons u e w => cases w with simp_all
+
+/-! ### Rotations -/
 
 /-- Rotate a WList `n` vertices to the left.
 This behaves badly (forgets the first vertex) if the list isn't closed. -/
@@ -123,16 +125,16 @@ lemma rotate_vx_tail (w : WList α β) (n : ℕ) : (w.rotate n).tail.vx = w.tail
     | zero => simp | succ n IH => rw [← rotate_rotate, aux, ← List.rotate_rotate, IH]
   rintro (w | ⟨x, e, (w | ⟨y, f, w⟩)⟩) <;> simp
 
-lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).vxSet = w.vxSet := by
-  simp_rw [← (hw.rotate _).vxSet_tail, vxSet, ← mem_vx, rotate_vx_tail, List.mem_rotate, mem_vx]
-  rw [← vxSet, hw.vxSet_tail, vxSet]
+lemma IsClosed.rotate_vxSet (hw : w.IsClosed) (n) : (w.rotate n).V = w.V := by
+  simp_rw [← (hw.rotate _).vxSet_tail, WList.V, ← mem_vx, rotate_vx_tail, List.mem_rotate, mem_vx]
+  rw [← WList.V, hw.vxSet_tail, WList.V]
 
 lemma IsClosed.mem_rotate (hw : w.IsClosed) {n} : x ∈ w.rotate n ↔ x ∈ w := by
   rw [← mem_vxSet_iff, hw.rotate_vxSet, mem_vxSet_iff]
 
 @[simp]
-lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).edgeSet = w.edgeSet := by
-  simp [edgeSet, rotate_edge]
+lemma rotate_edgeSet (w : WList α β) (n) : (w.rotate n).E = w.E := by
+  simp [WList.E, rotate_edge]
 
 lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
   refine ext_vx_edge ?_ (by rw [rotate_edge, ← length_edge, List.rotate_length])

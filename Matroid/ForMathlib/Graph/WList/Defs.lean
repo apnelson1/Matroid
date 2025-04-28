@@ -159,37 +159,37 @@ protected inductive UniqueMem : WList α β → α → Prop
 
 /-! ### Vertex/Edge Sets -/
 
-def vxSet (w : WList α β) : Set α := {x | x ∈ w}
+protected def V (w : WList α β) : Set α := {x | x ∈ w}
 
-def edgeSet (w : WList α β) : Set β := {e | e ∈ w.edge}
-
-@[simp]
-lemma mem_vxSet_iff : x ∈ w.vxSet ↔ x ∈ w := Iff.rfl
+protected def E (w : WList α β) : Set β := {e | e ∈ w.edge}
 
 @[simp]
-lemma mem_edgeSet_iff : e ∈ w.edgeSet ↔ e ∈ w.edge := Iff.rfl
+lemma mem_vxSet_iff : x ∈ w.V ↔ x ∈ w := Iff.rfl
 
 @[simp]
-lemma nil_vxSet : (nil x : WList α β).vxSet = {x} := by
-  simp [vxSet]
+lemma mem_edgeSet_iff : e ∈ w.E ↔ e ∈ w.edge := Iff.rfl
 
 @[simp]
-lemma nil_edgeSet : (nil x : WList α β).edgeSet = ∅ := by
-  simp [edgeSet]
+lemma nil_vxSet : (nil x : WList α β).V = {x} := by
+  simp [WList.V]
 
-@[simp] lemma cons_vxSet : (cons x e w).vxSet = insert x w.vxSet := by
-  simp [vxSet, mem_cons_iff, Set.ext_iff]
+@[simp]
+lemma nil_edgeSet : (nil x : WList α β).E = ∅ := by
+  simp [WList.E]
 
-@[simp] lemma cons_edgeSet : (cons x e w).edgeSet = {e} ∪ w.edgeSet := by
-  simp only [edgeSet, cons_edge, mem_cons, singleton_union]
+@[simp] lemma cons_vxSet : (cons x e w).V = insert x w.V := by
+  simp [WList.V, mem_cons_iff, Set.ext_iff]
+
+@[simp] lemma cons_edgeSet : (cons x e w).E = insert e w.E := by
+  simp only [WList.E, cons_edge, mem_cons, singleton_union]
   rfl
 
 @[simp]
-lemma vxSet_nonempty (w : WList α β) : w.vxSet.Nonempty := by
+lemma vxSet_nonempty (w : WList α β) : w.V.Nonempty := by
   cases w with simp
 
 @[simp]
-lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Set α) = w.vxSet := by
+lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Set α) = w.V := by
   induction w with
   | nil u => simp
   | cons u e W ih =>
@@ -233,7 +233,7 @@ inductive Nonempty : WList α β → Prop
   | cons (x e) (w : WList α β) : Nonempty (cons x e w)
 
 @[simp]
-lemma cons_nonempty : (cons x e w).Nonempty := by
+lemma cons_nonempty (x e) (w : WList α β) : (cons x e w).Nonempty := by
   apply Nonempty.cons
 
 @[simp]
@@ -267,9 +267,39 @@ lemma exists_eq_nil_or_nonempty (w : WList α β) : (∃ x, w = nil x) ∨ w.Non
   induction w with simp
 
 /-- The first edge of a nonempty `WList` -/
-def firstEdge : (w : WList α β) → (hw : w.Nonempty) → β
-  | .nil x, hw => by simp at hw
+def Nonempty.firstEdge : (w : WList α β) → (hw : w.Nonempty) → β
+  | nil x, hw => by simp at hw
   | .cons x e w, hw => e
+
+@[simp]
+lemma Nonempty.firstEdge_cons (x e) (w : WList α β) : (cons_nonempty x e w).firstEdge = e := rfl
+
+@[simp]
+lemma Nonempty.firstEdge_mem (hw : w.Nonempty) : hw.firstEdge w ∈ w.edge := by
+  induction w with | nil => simp at hw | cons => simp
+
+/-! ### Nontriviality -/
+
+/-- a `WList` is nontrivial if it has at least two edges. -/
+inductive Nontrivial : WList α β → Prop
+  | cons_cons (u e v f) (w : WList α β) : Nontrivial (cons u e (cons v f w))
+
+attribute [simp] Nontrivial.cons_cons
+
+lemma Nontrivial.nonempty (hw : w.Nontrivial) : w.Nonempty := by
+  cases hw with | cons_cons  => exact Nonempty.cons ..
+
+@[simp]
+lemma not_nontrivial_nil : ¬ (nil x : WList α β).Nontrivial := by
+  rintro ⟨_⟩
+
+@[simp]
+lemma not_nontrivial_cons_nil : ¬ (cons x e (nil y)).Nontrivial := by
+  rintro ⟨_⟩
+
+@[simp]
+lemma cons_nontrivial_iff : (cons u e w).Nontrivial ↔ w.Nonempty := by
+  induction w with simp_all
 
 /-! ### Length -/
 
@@ -301,8 +331,23 @@ lemma length_ne_zero_iff : w.length ≠ 0 ↔ w.Nonempty := by
 lemma length_pos_iff : 0 < w.length ↔ w.Nonempty := by
   simp [Nat.pos_iff_ne_zero]
 
+@[simp]
+lemma one_le_length_iff : 1 ≤ w.length ↔ w.Nonempty := by
+  rw [Nat.one_le_iff_ne_zero, Nat.ne_zero_iff_zero_lt, length_pos_iff]
+
 lemma Nonempty.length_pos (hw : w.Nonempty) : 0 < w.length :=
   length_pos_iff.2 hw
+
+@[simp]
+lemma one_lt_length_iff : 1 < w.length ↔ w.Nontrivial := by
+  cases w with | nil => simp | cons _ _ w => cases w with simp
+
+@[simp]
+lemma two_le_length_iff : 2 ≤ w.length ↔ w.Nontrivial := by
+  cases w with | nil => simp | cons _ _ w => cases w with simp
+
+lemma Nontrivial.one_lt_length (hw : w.Nontrivial) : 1 < w.length := by
+  simpa
 
 /-- `w.DInc e x y` means that `w` contains `[x,e,y]` as a contiguous sublist.
 (`DInc` stands for 'directed incidence')` -/
@@ -338,6 +383,9 @@ lemma exists_dInc_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.DInc e x y := by
     · exact ⟨u, w.first, DInc.cons_left ..⟩
     obtain ⟨x, y, h⟩ := ih hew
     exact ⟨x, y, h.cons ..⟩
+
+lemma DInc.sublist (h : w.DInc e x y) : [x,y] <+ w.vx := by
+  induction h with simp_all
 
 /-- `w.Inc₂ e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive Inc₂ : WList α β → β → α → α → Prop
@@ -382,10 +430,10 @@ lemma inc₂_cons_iff : (cons u f w).Inc₂ e x y ↔
     (f = e ∧ (s(x,y) = s(u,w.first))) ∨ w.Inc₂ e x y := by
   rw [inc₂_cons_iff', Sym2.eq_iff]
 
-lemma Inc₂.vx_mem_left (h : w.Inc₂ e x y) : x ∈ w.vx := by
+lemma Inc₂.vx_mem_left (h : w.Inc₂ e x y) : x ∈ w := by
   induction h with simp_all
 
-lemma Inc₂.vx_mem_right (h : w.Inc₂ e x y) : y ∈ w.vx :=
+lemma Inc₂.vx_mem_right (h : w.Inc₂ e x y) : y ∈ w :=
   h.symm.vx_mem_left
 
 lemma Inc₂.edge_mem (h : w.Inc₂ e x y) : e ∈ w.edge := by

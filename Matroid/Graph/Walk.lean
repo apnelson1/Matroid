@@ -37,11 +37,11 @@ def ValidIn (W : Walk α β) (G : Graph α β) : Prop :=
 
 def vxSet : Walk α β → Set α
   | nil x => {x}
-  | cons x _ W => insert x W.vxSet
+  | cons x _ W => insert x w.V
 
 def edgeSet : Walk α β → Set β
   | nil _ => ∅
-  | cons _ e W => insert e W.edgeSet
+  | cons _ e W => insert e w.E
 
 def vxList : Walk α β → List α
   | nil x => [x]

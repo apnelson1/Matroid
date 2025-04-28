@@ -457,10 +457,17 @@ lemma mem_tail_iff_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
     x ∈ w.tail ↔ x ∈ w ∧ x ≠ w.first := by
   induction w with aesop
 
+lemma first_not_mem_tail_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
+    w.first ∉ w.tail := by
+  simp [mem_tail_iff_of_nodup hw hne]
+
 lemma tail_vxSet_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
-    w.tail.vxSet = w.vxSet \ {w.first} := by
-  simp_rw [vxSet, mem_tail_iff_of_nodup hw hne]
+    w.tail.V = w.V \ {w.first} := by
+  simp_rw [WList.V, mem_tail_iff_of_nodup hw hne]
   aesop
+
+lemma Nonempty.cons_tail (hw : w.Nonempty) : w.tail.cons w.first (hw.firstEdge w) = w := by
+  cases hw with simp
 
 @[simp]
 lemma tail_isSuffix (w : WList α β) : w.tail.IsSuffix w := by
@@ -518,6 +525,9 @@ lemma reverse_tail_reverse (w : WList α β) : w.reverse.tail.reverse = w.dropLa
 lemma dropLast_concat (w : WList α β) (e x) : (w.concat e x).dropLast = w := by
   rw [← reverse_tail_reverse, concat_reverse, tail_cons, reverse_reverse]
 
+lemma Nonempty.concat_dropLast (hw : w.Nonempty) : w.dropLast.concat hw.lastEdge w.last = w := by
+  simpa [hw.firstEdge_reverse] using congr_arg WList.reverse hw.reverse.cons_tail
+
 @[simp]
 lemma dropLast_first (w : WList α β) : (w.dropLast).first = w.first := by
   rw [← reverse_last, ← reverse_tail, tail_last, reverse_last]
@@ -537,7 +547,7 @@ lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = 
     reverse_first]
 
 lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
-    (w.dropLast).vxSet = w.vxSet \ {w.last} := by
+    (w.dropLast).V = w.V \ {w.last} := by
   rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
   simp
 
@@ -553,17 +563,51 @@ lemma dropLast_isPrefix (w : WList α β) : w.dropLast.IsPrefix w := by
 lemma tail_dropLast (hw : w.length ≠ 1) : w.tail.dropLast = w.dropLast.tail := by
   induction w with | nil => simp | cons u e w ih => cases w with simp_all
 
+lemma Nontrivial.tail_dropLast (hw : w.Nontrivial) : w.tail.dropLast = w.dropLast.tail :=
+  WList.tail_dropLast hw.one_lt_length.ne.symm
+
 @[simp]
 lemma tail_nil_iff : w.tail.Nil ↔ w.length ≤ 1 := by
   cases w with simp
 
 @[simp]
-lemma tail_nonempty_iff : w.tail.Nonempty ↔ 1 < w.length := by
+lemma tail_nonempty_iff : w.tail.Nonempty ↔ w.Nontrivial := by
   cases w with simp
 
+alias ⟨_, Nontrivial.tail_nonempty⟩ := tail_nonempty_iff
+
 @[simp]
-lemma dropLast_nonempty_iff : w.dropLast.Nonempty ↔ 1 < w.length := by
-  rw [← reverse_tail_reverse, reverse_nonempty, tail_nonempty_iff, reverse_length]
+lemma dropLast_nonempty_iff : w.dropLast.Nonempty ↔ w.Nontrivial := by
+  rw [← reverse_tail_reverse, reverse_nonempty, tail_nonempty_iff, reverse_nontrivial_iff]
+
+alias ⟨_, Nontrivial.dropLast_nonempty⟩ := dropLast_nonempty_iff
+
+lemma Nontrivial.dropLast_firstEdge (hw : w.Nontrivial) :
+    hw.dropLast_nonempty.firstEdge = hw.nonempty.firstEdge := by
+  cases hw with simp
+
+lemma Nonempty.firstEdge_not_mem_tail (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+    hw.firstEdge w ∉ w.tail.edge := by
+  cases hw with simp_all
+
+lemma Nonempty.lastEdge_not_mem_dropLast (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+    hw.lastEdge w ∉ w.dropLast.edge := by
+  have := hw.reverse.firstEdge_not_mem_tail <| by simpa
+  rw [hw.firstEdge_reverse] at this
+  simp_all
+
+lemma Nontrivial.tail_lastEdge (hw : w.Nontrivial) :
+    hw.tail_nonempty.lastEdge = hw.nonempty.lastEdge := by
+  convert hw.reverse.dropLast_firstEdge using 1
+  simp [hw.tail_nonempty.firstEdge_reverse]
+
+-- lemma Nontrivial.lastEdge_mem_tail (hw : w.Nontrivial) : hw.nonempty.lastEdge ∈ w.tail.edge := by
+--   rw [tail_lastE]
+  -- cases hw with
+  -- | cons_cons u e v f w =>
+  --   simp
+
+    -- Nonempty.lastEdge w (show w.Nonempty by rw [WList.nonempty_iff_]) ∈ w.tail.edge := sorry
 
 
 end drop

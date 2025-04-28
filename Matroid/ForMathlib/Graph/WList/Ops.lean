@@ -58,6 +58,10 @@ lemma mem_concat : x ∈ w.concat e y ↔ x ∈ w ∨ x = y := by
 lemma concat_nonempty (w : WList α β) (e x) : (w.concat e x).Nonempty := by
   induction w with simp_all
 
+@[simp]
+lemma concat_vxSet_eq (w : WList α β) (e x) : (w.concat e x).V = insert x w.V := by
+  induction w with | nil => simp [pair_comm] | cons _ _ _ ih => simp [ih, insert_comm]
+
 lemma get_concat (w : WList α β) (e x) {n} (hn : n ≤ w.length) :
     (w.concat e x).get n = w.get n := by
   induction n generalizing w with
@@ -71,6 +75,21 @@ lemma dInc_concat (w : WList α β) (e x) : (w.concat e x).DInc e w.last x := by
 
 lemma DInc.concat (h : w.DInc e x y) (f) (v) : (w.concat f v).DInc e x y := by
   induction h with simp_all
+
+lemma dInc_concat_iff :
+    (w.concat f u).DInc e x y ↔ w.DInc e x y ∨ (f = e ∧ x = w.last ∧ y = u) := by
+  induction w with
+  | nil v =>
+    simp only [nil_concat, dInc_cons_iff, nil_first, not_nil_dInc, or_false, nil_last, false_or]
+    tauto
+  | cons v g w ih =>
+    simp only [cons_concat, dInc_cons_iff, concat_first, ih, last_cons]
+    tauto
+
+lemma inc₂_concat_iff : (w.concat f u).Inc₂ e x y ↔
+    w.Inc₂ e x y ∨ (f = e ∧ (x = w.last ∧ y = u ∨ x = u ∧ y = w.last)) := by
+  rw [inc₂_iff_dInc, dInc_concat_iff, dInc_concat_iff, inc₂_iff_dInc]
+  tauto
 
 /- Properties of append operation -/
 @[simp]
@@ -152,48 +171,6 @@ lemma append_eq_nil_iff : w₁ ++ w₂ = nil x ↔ w₁.Nil ∧ w₂ = nil x := 
 lemma nil_append_iff : (w₁ ++ w₂).Nil ↔ w₁.Nil ∧ w₂.Nil := by
   simp [← length_eq_zero]
 
-
-
--- lemma append_left_isPath (h : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₁ where
---   validIn := hP.validIn.append_left_validIn h
---   nodup := by
---     have := hP.nodup
---     rw [append_vx' h] at this
---     exact this.of_append_left
-
--- lemma append_right_isPath (hP : G.IsPath (w₁ ++ w₂)) : G.IsPath w₂ where
---   validIn := hP.validIn.append_right_validIn
---   nodup := by
---     have := hP.nodup
---     rw [append_vx] at this
---     exact this.of_append_right
-
--- lemma not_mem_prefix_of_mem_suffix_tail (heq : w₁.last = w₂.first) (hP : G.IsPath (w₁ ++ w₂))
---     (hmem : u ∈ w₂.vx.tail) : u ∉ w₁.vx := by
---   have := hP.nodup
---   rw [append_vx' heq, nodup_append] at this
---   exact (this.2.2 · hmem)
-
--- lemma not_mem_suffix_of_mem_prefix_dropLast (hP : G.IsPath (w₁ ++ w₂))
--- (hmem : u ∈ w₁.vx.dropLast) :
---     u ∉ w₂.vx := by
---   have := hP.nodup
---   rw [append_vx, nodup_append] at this
---   exact this.2.2 hmem
-
--- lemma eq_first_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
---     (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₂.first := by
---   have := hP.nodup
---   rw [append_vx' heq, nodup_append] at this
---   have := this.2.2 hmem1
---   rw [← w₂.vx.head_cons_tail vx_ne_nil, mem_cons, ← first_eq_vx_head] at hmem2
---   simp_all only [imp_false, or_false]
-
--- lemma eq_last_of_mem_prefix_suffix (hP : G.IsPath (w₁ ++ w₂)) (heq : w₁.last = w₂.first)
---     (hmem1 : u ∈ w₁.vx) (hmem2 : u ∈ w₂.vx) : u = w₁.last :=
---   heq ▸ eq_first_of_mem_prefix_suffix hP heq hmem1 hmem2
-
-
 /-- See `prefixUntilVx_append_suffixFromVx`. The `u ∈ w` assumption isn't needed. -/
 lemma eq_append_of_vx_mem {w : WList α β} {u : α} (hmem : u ∈ w) :
     ∃ w₁ w₂ : WList α β, w = w₁ ++ w₂ ∧ w₁.last = u ∧ w₂.first = u := by
@@ -232,7 +209,6 @@ def reverse : WList α β → WList α β
 | nil x => nil x
 | cons x e w => w.reverse.concat e x
 
-
 /-- Properties of reverse operation -/
 @[simp]
 lemma reverse_nil : (nil x : WList α β).reverse = nil x := rfl
@@ -241,8 +217,11 @@ lemma reverse_nil : (nil x : WList α β).reverse = nil x := rfl
 lemma reverse_cons : (cons x e w).reverse = (w.reverse).concat e x := rfl
 
 @[simp]
-lemma reverse_nonempty (w : WList α β) : w.reverse.Nonempty ↔ w.Nonempty := by
+lemma reverse_nonempty : w.reverse.Nonempty ↔ w.Nonempty := by
   induction w with simp_all
+
+lemma Nonempty.reverse (hw : w.Nonempty) : w.reverse.Nonempty :=
+  reverse_nonempty.2 hw
 
 @[simp]
 lemma reverse_nil_iff (w : WList α β) : w.reverse.Nil ↔ w.Nil := by
@@ -292,6 +271,10 @@ lemma concat_reverse (w : WList α β) (e) (x) : (w.concat e x).reverse = cons x
   rw [WList.concat_eq_append, reverse_append (by simp)]
   simp
 
+lemma Nonempty.firstEdge_concat (hw : w.Nonempty) :
+    (concat_nonempty w e x).firstEdge = hw.firstEdge := by
+  induction w with | nil u => simp at hw | cons => simp
+
 @[simp]
 lemma reverse_reverse (w : WList α β) : w.reverse.reverse = w := by
   induction w with | nil => simp | cons => simpa
@@ -307,14 +290,20 @@ lemma reverse_eq_comm : w₁.reverse = w₂ ↔ w₁ = w₂.reverse := by
   rw [← reverse_reverse w₂, reverse_inj_iff, reverse_reverse]
 
 @[simp]
+lemma reverse_nontrivial_iff : w.reverse.Nontrivial ↔ w.Nontrivial := by
+  rw [← one_lt_length_iff, reverse_length, one_lt_length_iff]
+
+alias ⟨_, Nontrivial.reverse⟩ := reverse_nontrivial_iff
+
+@[simp]
 lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
   induction w with
   | nil => simp
   | cons u e w ih => simp [ih, or_comm]
 
 @[simp]
-lemma reverse_vxSet (w : WList α β) : w.reverse.vxSet = w.vxSet := by
-  simp [vxSet]
+lemma reverse_vxSet (w : WList α β) : w.reverse.V = w.V := by
+  simp [WList.V]
 
 lemma DInc.reverse (h : w.DInc e x y) : w.reverse.DInc e y x := by
   induction h with
@@ -331,38 +320,32 @@ lemma dInc_reverse_iff : w.reverse.DInc e x y ↔ w.DInc e y x :=
 lemma inc₂_reverse_iff : w.reverse.Inc₂ e x y ↔ w.Inc₂ e x y := by
   simp [inc₂_iff_dInc, or_comm]
 
+lemma concat_induction {motive : WList α β → Prop} (nil : ∀ u, motive (nil u))
+    (concat : ∀ {w} e x, motive w → motive (w.concat e x)) (w : WList α β) : motive w := by
+  suffices h : ∀ (w' : WList α β), motive w'.reverse by simpa using (h w.reverse)
+  intro w'
+  induction w' with
+  | nil u => exact nil u
+  | cons u e w ih => exact concat _ _ ih
+
+
+/-- The last edge of a nonempty `WList` -/
+def Nonempty.lastEdge (w : WList α β) (hw : w.Nonempty) : β := hw.reverse.firstEdge
+
+@[simp]
+lemma Nonempty.firstEdge_reverse (hw : w.Nonempty) :
+    hw.reverse.firstEdge w.reverse = hw.lastEdge := rfl
+
+lemma Nonempty.lastEdge_cons (hw : w.Nonempty) : (cons_nonempty x e w).lastEdge = hw.lastEdge := by
+  simp only [lastEdge, reverse_cons]
+  rw [Nonempty.firstEdge_concat]
+
+@[simp]
+lemma lastEdge_concat (w : WList α β) (e : β) (x : α) : (concat_nonempty w e x).lastEdge = e := by
+  simp [Nonempty.lastEdge]
+
+@[simp]
+lemma Nonempty.lastEdge_mem (hw : w.Nonempty) : hw.lastEdge w ∈ w.edge := by
+  simpa [firstEdge_reverse hw] using hw.reverse.firstEdge_mem
+
 end WList
-
-
--- lemma Connected.exist_wList (h : G.Connected u v) : ∃ (W : WList α β), W.ValidIn G ∧
---     W.first = u ∧ W.last = v := by
---   induction h with
---   | single hradj =>
---     obtain ⟨W, hW, hlength, hfirst, hlast⟩ := hradj.exist_wList
---     use W
---   | tail hconn hradj ih =>
---     expose_names
---     obtain ⟨W, hW, hfirst, hlast⟩ := ih
---     obtain ⟨W', hW', hlength, hfirst', hlast'⟩ := hradj.exist_wList
---     subst b c u
---     use W ++ W', append_validIn hfirst'.symm hW hW'
---     simp only [hfirst', append_first_of_eq, append_last, and_self]
-
--- theorem Connected.iff_wList : G.Connected u v ↔ ∃ w : WList α β, w.ValidIn G
---  ∧ w.first = u ∧ w.last = v := by
---   constructor
---   · exact fun a ↦ exist_wList a
---   · rintro ⟨w, h1, rfl, rfl⟩
---     exact h1.connected
-
--- lemma SetConnected.exist_wList (h : G.SetConnected S T) :
-  --∃ w : WList α β, G.IsWListFrom S T w := by
---   obtain ⟨x, hxS, y, hyT, h⟩ := h
---   obtain ⟨w, hVd, rfl, rfl⟩ := h.exist_wList
---   use w, hVd
-
--- theorem SetConnected.iff_wList : G.SetConnected S T ↔ ∃ w : WList α β, G.IsWListFrom S T w := by
---   constructor
---   · exact SetConnected.exist_wList
---   · rintro ⟨w, h⟩
---     exact h.setConnected

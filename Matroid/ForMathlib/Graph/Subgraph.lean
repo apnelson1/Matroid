@@ -231,6 +231,52 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
 lemma Compatible.of_disjoint_edgeSet (h : Disjoint G.E H.E) : Compatible G H :=
   fun _ heG heH ↦ False.elim <| h.not_mem_of_mem_left heG heH
 
+lemma Compatible.le_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G₀ ≤ G) :
+    Compatible G₀ H := by
+  intro e heG heH
+  ext x y
+  rw [← inc₂_iff_inc₂_of_le_of_mem hG₀ heG, h (edgeSet_subset_of_le hG₀ heG) heH]
+
+lemma Compatible.le_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H₀ ≤ H) :
+    Compatible G H₀ :=
+  (h.symm.le_left hH₀).symm
+
+lemma Compatible.vxRestrict_left (h : Compatible G H) (X : Set α) :
+    (G.vxRestrict X).Compatible H := by
+  intro e heG heH
+  ext x y
+  obtain ⟨u, v, heuv : G.Inc₂ e u v, hu, hv⟩ := heG
+  simp only [vxRestrict_Inc₂, ← h heuv.edge_mem heH, and_iff_left_iff_imp]
+  intro h
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq_of_inc₂ heuv <;> simp_all
+
+lemma Compatible.vxRestrict_right (h : Compatible G H) (X : Set α) :
+    G.Compatible (H.vxRestrict X) :=
+  (h.symm.vxRestrict_left X).symm
+
+lemma Compatible.vxRestrict (h : Compatible G H) {X : Set α} :
+    (G.vxRestrict X).Compatible (H.vxRestrict X) :=
+  (h.vxRestrict_left X).vxRestrict_right X
+
+lemma Compatible.vxRestrict_union (h : G.Compatible H) (X : Set α) :
+    (G ∪ H).vxRestrict X = (G.vxRestrict X) ∪ (H.vxRestrict X) := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [vxRestrict_Inc₂, h.union_inc₂_iff, h.vxRestrict.union_inc₂_iff]
+  tauto
+
+lemma Compatible.vxDelete_union (h : G.Compatible H) (X : Set α) :
+    (G ∪ H).vxDelete X = (G.vxDelete X) ∪ (H.vxDelete X) := by
+  refine Graph.ext union_diff_distrib fun e x y ↦ ?_
+  simp only [vxDelete_Inc₂, union_vxSet, mem_union]
+  rw [Graph.vxDelete, Graph.vxDelete, ((h.vxRestrict_left _).vxRestrict_right _).union_inc₂_iff,
+    h.union_inc₂_iff]
+  simp only [vxRestrict_Inc₂, mem_diff]
+  by_cases hG : G.Inc₂ e x y
+  · simp +contextual [hG, hG.vx_mem_left, hG.vx_mem_right]
+  by_cases hH : H.Inc₂ e x y
+  · simp +contextual [hH, hH.vx_mem_left, hH.vx_mem_right]
+  simp [hG, hH]
+
 @[simp]
 lemma singleEdge_compatible_iff :
     (Graph.singleEdge x y e).Compatible G ↔ (e ∈ G.E → G.Inc₂ e x y) := by
@@ -240,4 +286,10 @@ lemma singleEdge_compatible_iff :
   rw [(h hfE).inc₂_iff, Graph.singleEdge_inc₂_iff, and_iff_right rfl, Sym2.eq_iff]
   tauto
 
-  -- simp +contextual [Graph.singleEdge_Inc₂, iff_def, or_imp]
+/-! ### Induced Subgraphs -/
+
+structure IsInducedSubgraph (H G : Graph α β) : Prop where
+  le : H ≤ G
+  inc₂_of_mem : ∀ ⦃e x y⦄, G.Inc₂ e x y → x ∈ H.V → y ∈ H.V → H.Inc₂ e x y
+
+infixl:50 " ≤i " => Graph.IsInducedSubgraph
