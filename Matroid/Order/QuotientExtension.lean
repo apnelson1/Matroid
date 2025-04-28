@@ -270,26 +270,21 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
     simp only [mem_empty_iff_false, false_or] at hfcl
     have hcln : M₁.closure ∅ ∉ (Quotient.modularCut_of_k hQ) := by
       have hdef : hQ.nDiscrepancy ∅ < hQ.nDiscrepancy M₁.E := by
-        have hdiem : hQ.nDiscrepancy ∅ = 0 := by
-          zify
-          rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ ∅ ]
-          simp only [rk_empty, CharP.cast_eq_zero, sub_self]
-        rw [hdiem]
+        rw [nDiscrepancy_empty hQ]
         by_contra! hzero
         -- have hdisc : hQ.nDiscrepancy M₁.E = hQ.discrepancy M₁.E := by
         --   refine ENat.coe_toNat ?_
         --   exact discrepancy_ne_top hQ M₁.E
         --rw [ hdisc ] at hzero
-        have h1 := eq_of_discrepancy_le_zero hQ ?_
-        rw[ congrArg rank h1 ] at hr
+        --have h1 := eq_of_discrepancy_le_zero hQ ?_
+        rw[ congrArg rank (eq_of_discrepancy_le_zero hQ ?_) ] at hr
         exact (lt_self_iff_false M₁.rank).mp hr
         --exact fun
         sorry
       by_contra! hcontra
       have hdis : hQ.nDiscrepancy (M₁.closure ∅) = hQ.nDiscrepancy ∅ := by
         zify
-        rw [←intCast_rk_sub_rk_eq_nDiscrepancy]
-        rw [←intCast_rk_sub_rk_eq_nDiscrepancy]
+        rw [←intCast_rk_sub_rk_eq_nDiscrepancy, ←intCast_rk_sub_rk_eq_nDiscrepancy]
         simp only [rk_closure_eq, rk_empty, CharP.cast_eq_zero, zero_sub, sub_self, neg_eq_zero,
           Int.natCast_eq_zero]
         have hempty12 : M₂.rk (M₁.closure ∅) ≤ M₁.rk (M₁.closure ∅) := FiniteRank hQ
@@ -302,7 +297,6 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       rw[hco1] at hdef
       exact (lt_self_iff_false (hQ.nDiscrepancy M₁.E)).mp hdef
     exact hcln hfcl
-    have hbds: M₁.E = M₂.E := Eq.symm hQ.ground_eq
     rw [Eq.symm hQ.ground_eq]
     exact hf
   refine ⟨hfNL, ?_, ModularCut.extendBy_deleteElem (Quotient.modularCut_of_k hQ) hf1, ?_ ⟩
@@ -320,9 +314,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       right
       simp only [closure_ground]
       exact hEU
-    have hcol := hcontra.mem_of_mem_closure hmodE
-    exact hf1 hcol
-
+    exact hf1 (hcontra.mem_of_mem_closure hmodE)
   rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
   refine ⟨ ?_, ?_ ⟩
   · by_contra! hcon
@@ -371,9 +363,8 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
             (hQ.modularCut_of_k).rank_ge
           have h2 : M₁.rk F₀ < M₁.rk (insert e F₀) := by
             have heFE : e ∈ M₁.E \ F₀ := by
-              rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+              rwa [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
               at heN
-              exact heN
             rw [hF₀1.rk_insert_eq_add_one (isRkFinite_set M₁ F₀) heFE  ]
             exact lt_add_one (M₁.rk F₀)
           linarith
@@ -400,9 +391,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       rw [extendBy_contract_eq (hQ.modularCut_of_k) hf1 ] at hflatpro
       exact hF₀bad hflatpro
     obtain ⟨ F', hF'U, hF₀F' ⟩ := h_covBy
-    have hF'1 := hF₀F'.2.1
     have hnotmod : hQ.nDiscrepancy F₀ = hQ.nDiscrepancy M₁.E := by
-      --by_contra! hcontra
       have hFF'dis : hQ.nDiscrepancy F₀ = hQ.nDiscrepancy F' := by
         zify
         rw [ ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F₀, ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F']
@@ -411,26 +400,25 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         rw [←intCast_rk_sub_rk_eq_nDiscrepancy hQ F₀,
         ←intCast_rk_sub_rk_eq_nDiscrepancy hQ F'] at h0
         have h1 : ( M₁.rk F' : ℤ ) - (M₁.rk F₀ : ℤ ) = 1 := by
-          rw [(((hF₀1).covBy_iff_rk_eq_add_one (hF'1)).1 hF₀F').2  ]
+          rw [(((hF₀1).covBy_iff_rk_eq_add_one (hF₀F'.2.1)).1 hF₀F').2  ]
           simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_left]
         have h2 : 1 ≤ (M₂.rk F' : ℤ) - (M₂.rk F₀ : ℤ) := by
           by_contra! hc
-          have hhelpp: (M₂.rk F' : ℤ ) = M₂.rk F₀  := by
-            have hhelp : (M₂.rk F₀ : ℤ ) ≤ M₂.rk F' := by
+          have h3: (M₂.rk F' : ℤ ) = M₂.rk F₀  := by
+            have h4 : (M₂.rk F₀ : ℤ ) ≤ M₂.rk F' := by
               simp only [Nat.cast_le]
               exact rk_le_of_subset M₂ (hF₀F'.subset)
             linarith
           have hFF'eq : F₀ = F' := by
             have hle : M₂.rk F' ≤ M₂.rk F₀ := by
               zify
-              rw [hhelpp]
+              rw [h3]
             have heee := (hF₀F'.subset_ground_right)
             rw [←hQ.ground_eq] at heee
             exact (hF₀2).eq_of_subset_of_rk_ge (hF₀F'.subset) hle heee
           exact (hF₀F'.ne) hFF'eq
         linarith
-      have hF'Edis: hQ.nDiscrepancy F' = hQ.nDiscrepancy M₁.E := hF'U.2.2
-      rwa [hF'Edis ] at hFF'dis
+      rwa [hF'U.2.2] at hFF'dis
     exact hF₀dis hnotmod
   rw [hQ.ground_eq]
   exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
