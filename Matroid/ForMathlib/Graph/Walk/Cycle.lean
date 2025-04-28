@@ -144,8 +144,6 @@ lemma IsCycle.length_eq_two_iff (h : G.IsCycle C) :
         simpa [he, show u = w.last from h.isClosed, show w.last ≠ v by rintro rfl; simp_all]
       exact ⟨Nil.eq_nil_last, fun h ↦ by rw [h]; simp⟩
 
-
-
 lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e f,
     G.IsPath P ∧ u ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ e ≠ f ∧ C = cons u e (P.concat f u) := by
   refine ⟨C.tail.dropLast, C.first, hC.nonempty.firstEdge, hC.nonempty.lastEdge,
@@ -173,7 +171,7 @@ lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
   | cons x e w => cases w with | nil u => simp [show x = u from hC.isClosed] | cons => simp
 
 lemma IsCycle.toGraph_vxDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
-      C.toGraph.vxDelete {C.first} = C.tail.dropLast.toGraph := by
+      C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
     obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
     refine Graph.ext (by simpa) fun g x y ↦ ?_
     have h1 : P.Inc₂ g x y → x ∈ P := fun h ↦ h.vx_mem_left

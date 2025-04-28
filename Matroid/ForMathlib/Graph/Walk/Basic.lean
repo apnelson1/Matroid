@@ -207,23 +207,22 @@ section Subgraph
 
 variable {X : Set α}
 
-lemma IsWalk.vxRestrict (hw : G.IsWalk w) (hX : w.V ⊆ X) : (G.vxRestrict X).IsWalk w := by
+lemma IsWalk.induce (hw : G.IsWalk w) (hX : w.V ⊆ X) : G[X].IsWalk w := by
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, vxRestrict_inc₂, true_and,
+    simp_all only [cons_vxSet, insert_subset_iff, cons_isWalk_iff, induce_inc₂_iff, true_and,
       and_true, forall_const]
     refine hX.2 <| by simp
 
 /-- This is almost true without the `X ⊆ G.V` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ G.V`. -/
-lemma isWalk_vxRestrict_iff (hXV : X ⊆ G.V) :
-    (G.vxRestrict X).IsWalk w ↔ G.IsWalk w ∧ w.V ⊆ X :=
-  ⟨fun h ↦ ⟨h.of_le (G.vxRestrict_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.vxRestrict h.2⟩
+lemma isWalk_induce_iff (hXV : X ⊆ G.V) : G[X].IsWalk w ↔ G.IsWalk w ∧ w.V ⊆ X :=
+  ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vxSet_subset⟩, fun h ↦ h.1.induce h.2⟩
 
 @[simp]
-lemma isWalk_vxDelete_iff : (G.vxDelete X).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.V X := by
-  rw [Graph.vxDelete, isWalk_vxRestrict_iff diff_subset, subset_diff, and_congr_right_iff,
+lemma isWalk_vxDelete_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint w.V X := by
+  rw [vxDelete_def, isWalk_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vxSet_subset
 

@@ -52,6 +52,13 @@ lemma inc₂_iff_inc₂_of_le_of_mem (hle : H ≤ G) (he : e ∈ H.E) :
     G.Inc₂ e x y ↔ H.Inc₂ e x y :=
   ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
 
+lemma le_of_le_le_subset_subset {H₁ H₂ : Graph α β} (hH₁G : H₁ ≤ G) (hH₂G : H₂ ≤ G)
+    (hV : H₁.V ⊆ H₂.V) (hE : H₁.E ⊆ H₂.E) : H₁ ≤ H₂ where
+  vx_subset := hV
+  inc₂_of_inc₂ e x y h := by
+    rw [← G.inc₂_iff_inc₂_of_le_of_mem hH₂G (hE h.edge_mem)]
+    exact h.of_le hH₁G
+
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
 @[simps]
 def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
@@ -64,8 +71,10 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
     fun ⟨x, y, h⟩ ↦ ⟨h.1, h.2.edge_mem⟩⟩
   vx_mem_left_of_inc₂ _ _ _ h := h.2.vx_mem_left
 
+scoped infixl:65 " ↾ "  => Graph.edgeRestrict
+
 @[simp]
-lemma edgeRestrict_le (G : Graph α β) (E₀ : Set β) : G.edgeRestrict E₀ ≤ G where
+lemma edgeRestrict_le (G : Graph α β) (E₀ : Set β) : G ↾ E₀ ≤ G where
   vx_subset := rfl.le
   inc₂_of_inc₂ := by simp
 
@@ -79,11 +88,13 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
       simp only [edgeRestrict_inc₂, mem_diff, and_comm, and_congr_left_iff, and_iff_left_iff_imp]
       exact fun h _ ↦ h.edge_mem)
 
+scoped infixl:65 " ＼ "  => Graph.edgeDelete
+
 lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
-    G.edgeDelete F = G.edgeRestrict (G.E \ F) := copy_eq_self ..
+    G ＼ F = G ↾ (G.E \ F) := copy_eq_self ..
 
 @[simp]
-lemma edgeDelete_le (G : Graph α β) (F : Set β) : G.edgeDelete F ≤ G := by
+lemma edgeDelete_le (G : Graph α β) (F : Set β) : G ＼ F ≤ G := by
   simp [edgeDelete_eq_edgeRestrict]
 
 /-- Map `G : Graph α β` to a `Graph α' β` with the same edge set
@@ -128,24 +139,45 @@ lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ G.V := by
 The edges are the edges of `G` with both ends in `X`.
 (`X` is not required to be a subset of `G.V` for this definition to work,
 even though this is the standard use case) -/
-@[simps!]
-protected def vxRestrict (G : Graph α β) (X : Set α) : Graph α β := Graph.mk'
+@[simps! vxSet edgeSet]
+protected def induce (G : Graph α β) (X : Set α) : Graph α β := Graph.mk'
   (V := X)
   (Inc₂ := fun e x y ↦ G.Inc₂ e x y ∧ x ∈ X ∧ y ∈ X)
   (inc₂_symm := fun e x y ↦ by simp [G.inc₂_comm, and_comm (a := (x ∈ X))])
   (eq_or_eq_of_inc₂_of_inc₂ := fun e x y u v ⟨h, _⟩ ⟨h', _⟩ ↦ G.eq_or_eq_of_inc₂_of_inc₂ h h')
   (vx_mem_left_of_inc₂ := fun _ _ _ ⟨_, h⟩ ↦ h.1)
 
-lemma vxRestrict_le (G : Graph α β) {X : Set α} (hX : X ⊆ G.V) : G.vxRestrict X ≤ G :=
+notation:max G:1000 "[" S "]" => Graph.induce G S
+
+lemma induce_le (G : Graph α β) {X : Set α} (hX : X ⊆ G.V) : G[X] ≤ G :=
   ⟨hX, fun _ _ _ h ↦ h.1⟩
 
+@[simp]
+lemma induce_inc₂_iff {X : Set α} : G[X].Inc₂ e x y ↔ G.Inc₂ e x y ∧ x ∈ X ∧ y ∈ X := Iff.rfl
+
+
 /-- The graph obtained from `G` by deleting a set of vertices. -/
-@[simps!]
-protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G.vxRestrict (G.V \ X)
+protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G [G.V \ X]
+
+instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
+  hSub := Graph.vxDelete
+
+lemma vxDelete_def (G : Graph α β) (X : Set α) : G - X = G [G.V \ X] := rfl
 
 @[simp]
-lemma vxDelete_le (G : Graph α β) (X : Set α) : G.vxDelete X ≤ G :=
-  G.vxRestrict_le diff_subset
+lemma vxDelete_vxSet (G : Graph α β) (X : Set α) : (G - X).V = G.V \ X := rfl
+
+@[simp]
+lemma vxDelete_edgeSet (G : Graph α β) (X : Set α) :
+  (G - X).E = {e | ∃ x y, G.Inc₂ e x y ∧ (x ∈ G.V ∧ x ∉ X) ∧ y ∈ G.V ∧ y ∉ X}  := rfl
+
+@[simp]
+lemma vxDelete_inc₂ (G : Graph α β) (X : Set α) :
+    (G - X).Inc₂ e x y ↔ (G.Inc₂ e x y ∧ (x ∈ G.V ∧ x ∉ X) ∧ y ∈ G.V ∧ y ∉ X) := Iff.rfl
+
+@[simp]
+lemma vxDelete_le (G : Graph α β) (X : Set α) : G - X ≤ G :=
+  G.induce_le diff_subset
 
 /-- A graph with a single edge `e` from `u` to `v` -/
 @[simps]
@@ -176,8 +208,7 @@ lemma Compatible.symm (h : G.Compatible H) : H.Compatible G :=
   fun _ hH hG ↦ (h hG hH).symm
 
 /-- Two subgraphs of the same graph are compatible. -/
-lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
-    H₁.Compatible H₂ := by
+lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Compatible H₂ := by
   intro e he₁ he₂
   ext x y
   rw [← inc₂_iff_inc₂_of_le_of_mem h₁ he₁, ← inc₂_iff_inc₂_of_le_of_mem h₂ he₂]
@@ -270,36 +301,35 @@ lemma Compatible.le_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H�
     Compatible G H₀ :=
   (h.symm.le_left hH₀).symm
 
-lemma Compatible.vxRestrict_left (h : Compatible G H) (X : Set α) :
-    (G.vxRestrict X).Compatible H := by
+lemma Compatible.induce_left (h : Compatible G H) (X : Set α) :
+    G[X].Compatible H := by
   intro e heG heH
   ext x y
   obtain ⟨u, v, heuv : G.Inc₂ e u v, hu, hv⟩ := heG
-  simp only [vxRestrict_inc₂, ← h heuv.edge_mem heH, and_iff_left_iff_imp]
+  simp only [induce_inc₂_iff, ← h heuv.edge_mem heH, and_iff_left_iff_imp]
   intro h
   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq_of_inc₂ heuv <;> simp_all
 
-lemma Compatible.vxRestrict_right (h : Compatible G H) (X : Set α) :
-    G.Compatible (H.vxRestrict X) :=
-  (h.symm.vxRestrict_left X).symm
+lemma Compatible.induce_right (h : Compatible G H) (X : Set α) :
+    G.Compatible H[X] :=
+  (h.symm.induce_left X).symm
 
-lemma Compatible.vxRestrict (h : Compatible G H) {X : Set α} :
-    (G.vxRestrict X).Compatible (H.vxRestrict X) :=
-  (h.vxRestrict_left X).vxRestrict_right X
+lemma Compatible.induce (h : Compatible G H) {X : Set α} :
+    G[X].Compatible H[X] :=
+  (h.induce_left X).induce_right X
 
-lemma Compatible.vxRestrict_union (h : G.Compatible H) (X : Set α) :
-    (G ∪ H).vxRestrict X = (G.vxRestrict X) ∪ (H.vxRestrict X) := by
+lemma Compatible.induce_union (h : G.Compatible H) (X : Set α) : (G ∪ H)[X] = G[X] ∪ H[X] := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
-  simp only [vxRestrict_inc₂, h.union_inc₂_iff, h.vxRestrict.union_inc₂_iff]
+  simp only [induce_inc₂_iff, h.union_inc₂_iff, h.induce.union_inc₂_iff]
   tauto
 
 lemma Compatible.vxDelete_union (h : G.Compatible H) (X : Set α) :
-    (G ∪ H).vxDelete X = (G.vxDelete X) ∪ (H.vxDelete X) := by
+    (G ∪ H) - X = (G - X) ∪ (H - X) := by
   refine Graph.ext union_diff_distrib fun e x y ↦ ?_
   simp only [vxDelete_inc₂, union_vxSet, mem_union]
-  rw [Graph.vxDelete, Graph.vxDelete, ((h.vxRestrict_left _).vxRestrict_right _).union_inc₂_iff,
+  rw [vxDelete_def, vxDelete_def, ((h.induce_left _).induce_right _).union_inc₂_iff,
     h.union_inc₂_iff]
-  simp only [vxRestrict_inc₂, mem_diff]
+  simp only [induce_inc₂_iff, mem_diff]
   by_cases hG : G.Inc₂ e x y
   · simp +contextual [hG, hG.vx_mem_left, hG.vx_mem_right]
   by_cases hH : H.Inc₂ e x y

@@ -255,6 +255,10 @@ lemma rk_left_add_nDiscrepancy_eq [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : S
   rw [rk, rk, ← hdis, ENat.toNat_add (by simp only [ne_eq, eRk_ne_top_iff, M₂.isRkFinite_set X])
     (hQ.discrepancy_ne_top _)]
 
+lemma cast_nDiscrepancy_eq [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) :
+    (hQ.nDiscrepancy X : ℕ∞) = hQ.discrepancy X := by
+  simp [nDiscrepancy, hQ.discrepancy_ne_top]
+
 lemma nDiscrepancy_mono [M₁.RankFinite] (hQ : M₂ ≤q M₁) : Monotone hQ.nDiscrepancy :=
   have := hQ.rankFinite
   fun X Y (hXY : X ⊆ Y) ↦ ENat.toNat_le_toNat (hQ.discrepancy_mono hXY) (hQ.discrepancy_ne_top _)

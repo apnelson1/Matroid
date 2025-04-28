@@ -601,9 +601,17 @@ lemma Nontrivial.tail_lastEdge (hw : w.Nontrivial) :
   convert hw.reverse.dropLast_firstEdge using 1
   simp [hw.tail_nonempty.firstEdge_reverse]
 
+lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) :
+    hw.nonempty.firstEdge ≠ hw.nonempty.lastEdge := by
+  refine fun h_eq ↦ hw.nonempty.firstEdge_not_mem_tail hnd ?_
+  rw [h_eq, ← hw.tail_lastEdge]
+  exact Nonempty.lastEdge_mem (tail_nonempty hw)
+
+
+
 -- lemma Nontrivial.lastEdge_mem_tail (hw : w.Nontrivial) : hw.nonempty.lastEdge ∈ w.tail.edge := by
 --   rw [tail_lastE]
-  -- cases hw with
+  -- cases hw withhC.isWalk.edgeSet_subset
   -- | cons_cons u e v f w =>
   --   simp
 
