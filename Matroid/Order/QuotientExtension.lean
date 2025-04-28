@@ -280,8 +280,10 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
         rw[ congrArg rank (eq_of_discrepancy_le_zero hQ ?_) ] at hr
         exact (lt_self_iff_false M₁.rank).mp hr
         --exact fun
+        rw [Nat.le_zero] at hzero
+        rw [← cast_nDiscrepancy_eq, hzero]
+        simp
 
-        sorry
       by_contra! hcontra
       have hdis : hQ.nDiscrepancy (M₁.closure ∅) = hQ.nDiscrepancy ∅ := by
         zify
