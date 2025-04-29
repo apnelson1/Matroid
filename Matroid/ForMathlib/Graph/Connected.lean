@@ -156,13 +156,23 @@ lemma Connected.exists_vxConnected_deleteEdge_set {X Y : Set α} (hG : G.Connect
   obtain ⟨y', hy'Y, hy'⟩ := hY
   obtain ⟨w, hw, rfl, rfl⟩ := (hG.vxConnected hx' hy').exists_isWalk
 
-  let w' := (w.suffixFromLast (· ∈ X)).prefixUntil (· ∈ Y)
+  set w' := (w.suffixFromLast (· ∈ X)).prefixUntil (· ∈ Y) with hw'
   refine ⟨w'.first, ?_, w'.last, ?_, ?_⟩
   · simp only [prefixUntil_first, w']
     exact suffixFromLast_prop_first ⟨w.first, by simp, hx'X⟩
   · simp only [w']
     apply prefixUntil_prop_last ⟨w.last, ?_, hy'Y⟩
     simp [← (w.suffixFromLast_isSuffix (· ∈ X)).last_eq]
+  apply IsWalk.vxConnected_first_last
+  rw [isWalk_edgeDelete_iff, hw']
+  have hw'_walk : G.IsWalk w' :=
+    hw.sublist <| (prefixUntil_isPrefix ..).isSublist.trans (suffixFromLast_isSuffix ..).isSublist
+  refine ⟨hw'_walk, ?_⟩
+  simp only [induce_edgeSet, disjoint_left, mem_edgeSet_iff, mem_union, mem_setOf_eq, not_or,
+    not_exists, not_and, w']
+  -- refine fun e he ↦ ⟨fun x y hxy hx hy ↦ ?_, ?_⟩
+
+
 
 
 
