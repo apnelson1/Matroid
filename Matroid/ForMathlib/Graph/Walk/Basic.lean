@@ -364,8 +364,27 @@ protected def toGraph : WList α β → Graph α β
 @[simp]
 lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl
 
-
 lemma toGraph_cons : (w.cons u e).toGraph = w.toGraph ∪ (Graph.singleEdge u w.first e) := rfl
+
+lemma toGraph_concat (w : WList α β) (e u) :
+    (w.concat e u).toGraph = (Graph.singleEdge u w.last e) ∪ w.toGraph := by
+  induction w with
+  | nil v =>
+    refine Graph.ext (by simp [toGraph_cons, pair_comm]) fun f x y ↦ ?_
+    simp only [nil_concat, toGraph_cons, toGraph_nil, nil_first, union_inc₂_iff, noEdge_inc₂,
+      noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, singleEdge_inc₂, true_and, false_or,
+      singleEdge_edgeSet, mem_singleton_iff, and_false, or_false, and_congr_right_iff]
+    tauto
+  | cons v f w ih =>
+    ext a x y
+    · simp only [cons_concat, toGraph_cons, ih, concat_first, union_vxSet, singleEdge_vxSet,
+      union_insert, union_singleton, mem_union, mem_insert_iff, mem_singleton_iff, or_true, true_or,
+      insert_eq_of_mem, first_cons]
+      tauto
+    simp only [cons_concat, toGraph_cons, ih, concat_first, union_inc₂_iff, singleEdge_inc₂,
+      singleEdge_edgeSet, mem_singleton_iff, union_edgeSet, singleton_union, mem_insert_iff, not_or,
+      first_cons]
+    tauto
 
 @[simp]
 lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.V := by
@@ -374,6 +393,10 @@ lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.V := by
 @[simp]
 lemma toGraph_edgeSet (w : WList α β) : w.toGraph.E = w.E := by
   induction w with simp_all [toGraph_cons]
+
+-- lemma WellFormed.toGraph_append (hwf : (w₁ ++ w₂).WellFormed) (h : w₁.last = w₂.first) :
+--     (w₁ ++ w₂).toGraph = w₁.toGraph ∪ w₂.toGraph := by
+--   _
 
 lemma toGraph_vxSet_nonempty (w : WList α β) : w.toGraph.V.Nonempty := by
   simp
@@ -395,6 +418,9 @@ lemma WellFormed.toGraph_inc₂ (h : w.WellFormed) : w.toGraph.Inc₂ = w.Inc₂
     obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := Sym2.eq_iff.1 h_eq
     · assumption
     exact hinc.symm
+
+lemma WellFormed.reverse_toGraph (h : w.WellFormed) : w.reverse.toGraph = w.toGraph :=
+  Graph.ext (by simp) fun e x y ↦ by rw [h.toGraph_inc₂, h.reverse.toGraph_inc₂, inc₂_reverse_iff]
 
 lemma Graph.IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
   induction w with

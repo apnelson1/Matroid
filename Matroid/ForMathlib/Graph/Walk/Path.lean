@@ -133,7 +133,7 @@ lemma IsPath.of_le (hP : G.IsPath P) (hle : G ≤ H) : H.IsPath P :=
 lemma IsPath.vxSet_subset (hP : G.IsPath P) : P.V ⊆ G.V :=
   hP.isWalk.vxSet_subset
 
-lemma IsPath.induce (hP : G.IsPath P) (hX : P.V ⊆ X) : (G.induce X).IsPath P :=
+lemma IsPath.induce (hP : G.IsPath P) (hX : P.V ⊆ X) : (G[X]).IsPath P :=
   ⟨hP.isWalk.induce hX, hP.nodup⟩
 
 lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ where
@@ -168,6 +168,19 @@ lemma IsPath.isPath_le_of_nonempty (h : G.IsPath w) (hle : H ≤ G) (hE : w.E �
     (hne : w.Nonempty) : H.IsPath w where
   isWalk := h.isWalk.isWalk_le_of_nonempty hle hE hne
   nodup := h.nodup
+
+lemma IsPath.append {P Q : WList α β} (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P.last = Q.first)
+    (h_inter : ∀ x, x ∈ P → x ∈ Q → x = P.last) : G.IsPath (P ++ Q) := by
+  induction P with
+  | nil u => simpa
+  | cons u e w ih =>
+    simp_all only [mem_cons_iff, true_or, last_mem, or_true, implies_true, nonempty_prop,
+      forall_const, cons_isPath_iff, first_mem, or_false, last_cons, forall_eq_or_imp, cons_append,
+      append_first_of_eq, true_and]
+    rw [← mem_vxSet_iff, append_vxSet hPQ, mem_union, not_or, mem_vxSet_iff, mem_vxSet_iff]
+    refine ⟨hP.2.2, fun huQ ↦ ?_⟩
+    rw [← h_inter.1 huQ] at hPQ
+    exact hP.2.2 (by simp [← hPQ])
 
 /-! ### Fixed ends. (To be cleaned up) -/
 

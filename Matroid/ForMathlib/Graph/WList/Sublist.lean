@@ -208,6 +208,7 @@ lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.conca
 lemma isPrefix_concat_self (w : WList α β) (e) (x) : w.IsPrefix (w.concat e x) :=
   isPrefix_refl.concat e x
 
+
 /- ## Suffixes -/
 
 inductive IsSuffix : WList α β → WList α β → Prop
@@ -486,6 +487,17 @@ lemma mem_iff_eq_first_or_mem_tail : x ∈ w ↔ x = w.first ∨ x ∈ w.tail :=
 lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.tail.concat e x := by
   induction w with simp_all
 
+lemma tail_append (hw₁ : w₁.Nonempty) (w₂ : WList α β) : (w₁ ++ w₂).tail = w₁.tail ++ w₂ := by
+  induction w₁ with simp_all
+
+lemma Nonempty.tail_inc₂_iff (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+    w.tail.Inc₂ f x y ↔ w.Inc₂ f x y ∧ ¬f = hw.firstEdge := by
+  cases hw with | cons u e w =>
+  simp only [tail_cons, Nonempty.firstEdge_cons]
+  have ⟨hew, hnd⟩  : e ∉ w.edge ∧ w.edge.Nodup := by simpa using hnd
+  exact ⟨fun h ↦ ⟨h.cons .., fun hfe ↦ hew <| by simpa [hfe.symm] using h.edge_mem⟩,
+    fun ⟨h, hne⟩ ↦ by cases h with simp_all⟩
+
 /-- Remove the last edge and vertex from a wList. This is the reverse of the reversed tail. -/
 def dropLast : WList α β → WList α β
 | nil x => nil x
@@ -501,6 +513,10 @@ lemma dropLast_cons_nil : (cons x e (nil y) : WList α β).dropLast = nil x := r
 @[simp]
 lemma dropLast_cons_cons :
   (cons x e (cons y e' w) : WList α β).dropLast = cons x e ((cons y e' w).dropLast) := rfl
+
+lemma Nonempty.dropLast_cons (hw : w.Nonempty) (x : α) (e : β) :
+    (WList.cons x e w).dropLast = WList.cons x e w.dropLast := by
+  cases hw with simp
 
 @[simp]
 lemma reverse_tail (w : WList α β) : w.reverse.tail = w.dropLast.reverse := by
@@ -541,6 +557,12 @@ lemma dropLast_vx (h : w.Nonempty) : (w.dropLast).vx = w.vx.dropLast := by
 lemma dropLast_edge (w : WList α β) : (w.dropLast).edge = w.edge.dropLast := by
   rw [← reverse_tail_reverse, reverse_edge, tail_edge, reverse_edge, ← dropLast_reverse,
     List.reverse_reverse]
+
+lemma append_dropLast (w₁ : WList α β) (hw₂ : w₂.Nonempty) :
+    (w₁ ++ w₂).dropLast = w₁ ++ w₂.dropLast := by
+  induction w₁ with
+  | nil u => simp
+  | cons u e w ih => rw [cons_append, cons_append, Nonempty.dropLast_cons (by simp [hw₂]), ih]
 
 lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = w.last := by
   rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,

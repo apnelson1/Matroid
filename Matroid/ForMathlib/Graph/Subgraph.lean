@@ -190,6 +190,9 @@ protected def singleEdge (u v : α) (e : β) : Graph α β where
   edge_mem_iff_exists_inc₂ := by tauto
   vx_mem_left_of_inc₂ := by tauto
 
+lemma singleEdge_comm (u v : α) (e : β) : Graph.singleEdge u v e = Graph.singleEdge v u e := by
+  ext <;> simp [or_comm]
+
 lemma singleEdge_inc₂_iff : (Graph.singleEdge u v e).Inc₂ f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
   simp [Graph.singleEdge]
 

@@ -91,6 +91,7 @@ lemma inc₂_concat_iff : (w.concat f u).Inc₂ e x y ↔
   rw [inc₂_iff_dInc, dInc_concat_iff, dInc_concat_iff, inc₂_iff_dInc]
   tauto
 
+
 /- Properties of append operation -/
 @[simp]
 lemma append_notation : append w₁ w₂ = w₁ ++ w₂ := rfl
@@ -151,6 +152,17 @@ lemma append_last : (w₁ ++ w₂).last = w₂.last := by
 lemma append_right_injective : Injective (w ++ ·) :=
   fun w₁ w₂ h ↦ by induction w with simp_all
 
+lemma append_vxSet (h : w₁.last = w₂.first) : (w₁ ++ w₂).V = w₁.V ∪ w₂.V := by
+  induction w₁ with
+  | nil u => simp [insert_eq_of_mem, show u = w₂.first from h]
+  | cons u e w ih =>
+    simp only [last_cons] at h
+    simp [ih h, insert_union]
+
+@[simp]
+lemma append_nonempty : (w₁ ++ w₂).Nonempty ↔ w₁.Nonempty ∨ w₂.Nonempty := by
+  cases w₁ with simp
+
 @[simp]
 lemma append_right_inj_iff : w ++ w₁ = w ++ w₂ ↔ w₁ = w₂ :=
   ⟨fun h ↦ append_right_injective h, fun h ↦ by rw [h]⟩
@@ -202,7 +214,19 @@ lemma eq_append_cons_of_edge_mem {w : WList α β} {e : β} (he : e ∈ w.edge) 
         use cons x e' w₁, w₂, by simp only [last_cons, cons_append]
         simp only [cons_edge, mem_cons, h, hnin, or_self, not_false_eq_true]
 
+lemma append_dInc_iff (h : w₁.last = w₂.first) :
+    (w₁ ++ w₂).DInc e x y ↔ w₁.DInc e x y ∨ w₂.DInc e x y := by
+  induction w₁ with
+  | nil => simp
+  | cons u f w₁ ih =>
+    simp
+    rw [append_first_of_eq (by simpa using h), ih (by simpa using h)]
+    tauto
 
+lemma append_inc₂_iff (h : w₁.last = w₂.first) :
+    (w₁ ++ w₂).Inc₂ e x y ↔ w₁.Inc₂ e x y ∨ w₂.Inc₂ e x y := by
+  simp_rw [inc₂_iff_dInc, append_dInc_iff h]
+  tauto
 
 /-- Reverse the order of the vertices and edges of a wList. -/
 def reverse : WList α β → WList α β
@@ -328,6 +352,10 @@ lemma concat_induction {motive : WList α β → Prop} (nil : ∀ u, motive (nil
   | nil u => exact nil u
   | cons u e w ih => exact concat _ _ ih
 
+lemma wellFormed_reverse_iff : w.reverse.WellFormed ↔ w.WellFormed := by
+  simp [WellFormed]
+
+alias ⟨_, WellFormed.reverse⟩ := wellFormed_reverse_iff
 
 /-- The last edge of a nonempty `WList` -/
 def Nonempty.lastEdge (w : WList α β) (hw : w.Nonempty) : β := hw.reverse.firstEdge

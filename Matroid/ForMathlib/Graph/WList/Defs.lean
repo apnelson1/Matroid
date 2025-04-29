@@ -278,6 +278,13 @@ lemma Nonempty.firstEdge_cons (x e) (w : WList α β) : (cons_nonempty x e w).fi
 lemma Nonempty.firstEdge_mem (hw : w.Nonempty) : hw.firstEdge w ∈ w.edge := by
   induction w with | nil => simp at hw | cons => simp
 
+lemma Nonempty.edge_ne_nil (hw : w.Nonempty) : w.edge ≠ [] := by
+  cases hw with simp
+
+lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
+    hw.firstEdge = w.edge.head hw.edge_ne_nil := by
+  cases hw with simp
+
 /-! ### Nontriviality -/
 
 /-- a `WList` is nontrivial if it has at least two edges. -/

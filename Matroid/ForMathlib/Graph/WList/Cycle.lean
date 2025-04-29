@@ -13,6 +13,9 @@ namespace WList
 /-- A `WList` is closed if its first and last entries are equal. -/
 def IsClosed (w : WList α β) : Prop := w.first = w.last
 
+lemma IsClosed.eq (h : w.IsClosed) : w.first = w.last :=
+  h
+
 @[simp]
 lemma nil_isClosed (x : α) : (nil x (β := β)).IsClosed := rfl
 
@@ -99,8 +102,8 @@ lemma length_rotate (w : WList α β) (n : ℕ) : (w.rotate n).length = w.length
     rw [rotate_succ, IH]
     cases w with simp
 
-@[simp] lemma
-rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
+@[simp]
+lemma rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
   induction n generalizing w with
   | zero => simp
   | succ n IH =>
@@ -109,6 +112,29 @@ rotate_nonempty_iff : (w.rotate n).Nonempty ↔ w.Nonempty := by
 
 lemma Nonempty.rotate (hw : w.Nonempty) (n : ℕ) : (w.rotate n).Nonempty := by
   simpa
+
+@[simp]
+lemma rotate_nontrivial_iff : (w.rotate n).Nontrivial ↔ w.Nontrivial := by
+  rw [← one_lt_length_iff, length_rotate, one_lt_length_iff]
+
+lemma Nontrivial.rotate (hw : w.Nontrivial) (n : ℕ) : (w.rotate n).Nontrivial := by
+  exact (rotate_nontrivial_iff n).mpr hw
+
+lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
+    have hne : w.Nonempty := length_pos_iff.1 <| (zero_le _).trans_lt hn
+    have hn : n < w.edge.length := by simpa
+    (hne.rotate n).firstEdge = w.edge[n] := by
+  induction n generalizing w with
+  | zero => cases w with | nil => simp at hn | cons => simp
+  | succ n IH =>
+    simp
+    cases w with
+    | nil => simp at hn
+    | cons u e w =>
+      simp_rw [add_comm (b := 1), ← rotate_rotate]
+      simp only [cons_length, add_lt_add_iff_right] at hn
+      rw [IH (hn.trans (by simp))]
+      simp [cons_rotate_one, concat_edge, add_comm (a := 1), hn]
 
 lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
   induction n generalizing w with
@@ -200,69 +226,19 @@ lemma exists_rotate_first_eq (hx : x ∈ w) : ∃ n ≤ w.length, (w.rotate n).f
   classical
   exact ⟨w.idxOf x, by simpa, by rw [rotate_first _ _ (by simpa), get_idxOf _ hx]⟩
 
+lemma exists_rotate_firstEdge_eq (hx : e ∈ w.edge) :
+    ∃ n < w.length, ∃ (hw : w.Nonempty), (hw.rotate n).firstEdge = e := by
+  classical
+  have hne : w.Nonempty := by cases w with simp_all
+  have hi : List.idxOf e w.edge < w.length := by rwa [← length_edge, List.idxOf_lt_length_iff]
+  exact ⟨w.edge.idxOf e, hi, hne, by rw [rotate_firstEdge _ hi, List.getElem_idxOf]⟩
+
 lemma firstEdge_rotate_one (hw : w.Nontrivial) :
-    (hw.nonempty.rotate 1).firstEdge = (hw.tail_nonempty).firstEdge := by
+    (hw.nonempty.rotate 1).firstEdge = hw.tail_nonempty.firstEdge := by
   cases hw with simp
 
 
 
--- lemma aux1 (w : WList α β) (f : β) (z : α) (h : w.Nonempty) (h_mem : h.) :
---     Nonempty.firstEdge ((w.concat f z).rotate 1) (by simp) = (h.rotate 1).firstEdge := by
---   cases h with
---   | cons x e w =>
---     simp
---     rw [Nonempty.firstEdge_concat (by simp)]
---     cases w with
---     | nil u =>
---       simp
---     | cons u e w => sorry
-
--- lemma IsClosed.exists_rotate_firstEdge_eq (he : e ∈ w.edge) :
---     ∃ n ≤ w.length, Nonempty.firstEdge (w.rotate n) (by cases w <;> simp_all) = e := by
---   -- have hnt : w.Nontrivial := sorry
-  -- induction w with
-  -- | nil => simp at he
-  -- | cons u f w ih =>
-  --   obtain (rfl | hew) : e = f ∨ e ∈ w.edge := by simpa using he
-  --   · exact ⟨0, by simp⟩
-  --   obtain ⟨n, hle, he_eq⟩ := ih hew
-
-  --   refine ⟨n + 1, ?_⟩
-  --   obtain ⟨x, f, rfl⟩ | hw := w.exists_eq_nil_or_nonempty
-  --   · simp at hew
-
-  --   simp only [cons_length, add_le_add_iff_right, hle, rotate_cons_succ, true_and]
-  --   obtain rfl : n = 1 := sorry
-  --   cases w with
-  --   | nil u =>
-  --     simp at hw
-  --   | cons u f' w =>
-  --     simp at he_eq
-  --     simp
-  --   convert he_eq using 1
-
-    -- suffices aux : ∀ (w : WList α β) (f : β) (z : α) (n : ℕ) (h : w.Nonempty), n ≤ w.length →
-    --     Nonempty.firstEdge ((w.concat f z).rotate n) (by simp) = (h.rotate n).firstEdge by
-    --   apply aux _ _ _ _ hw hle
-    -- clear! w n f u e
-    -- intro w f z n hw hle
-
-    -- induction n generalizing w with
-    -- | zero => simp [hw.firstEdge_concat]
-    -- | succ n IH =>
-    --   simp_rw [Nat.add_comm (m := 1), ← rotate_rotate]
-    --   rw [← IH (w.rotate 1) sorry sorry]
-    --   simp
-
-
-    -- generalize_proofs
-    -- generalize w.first = z
-
-
-    -- simp only [cons_edge, List.mem_cons] at he
-  -- obtain ⟨x, y, h⟩ := exists_dInc_of_mem_edge he
-  -- obtain ⟨n, hle, rfl⟩ := exists_rotate_first_eq h.vx_mem_left
-  -- refine ⟨n, hle, ?_⟩
 
 
 
@@ -318,6 +294,16 @@ lemma IsClosed.dInc_rotate_iff (hw : w.IsClosed) : (w.rotate n).DInc e x y ↔ w
 
 lemma IsClosed.inc₂_rotate_iff (hw : w.IsClosed) : (w.rotate n).Inc₂ e x y ↔ w.Inc₂ e x y := by
   rw [inc₂_iff_dInc, inc₂_iff_dInc, hw.dInc_rotate_iff, hw.dInc_rotate_iff]
+
+lemma WellFormed.rotate (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
+    (w.rotate n).WellFormed := by
+  simpa [WellFormed, h_closed.inc₂_rotate_iff] using hw
+
+lemma IsClosed.wellFormed_rotate_iff (h_closed : w.IsClosed) :
+    (w.rotate n).WellFormed ↔ w.WellFormed := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.rotate h_closed _⟩
+  rw [← h_closed.rotate_intRotate_neg n]
+  apply h.rotate (h_closed.rotate _) ..
 
 
 end WList

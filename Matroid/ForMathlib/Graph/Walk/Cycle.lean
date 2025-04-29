@@ -7,6 +7,11 @@ variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
 
 open WList
 
+lemma WList.WellFormed.rotate_toGraph (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
+    (w.rotate n).toGraph = w.toGraph := by
+  refine Graph.ext (by simp [h_closed.rotate_vxSet]) fun e x y ↦ ?_
+  rw [(hw.rotate h_closed n).toGraph_inc₂, h_closed.inc₂_rotate_iff, hw.toGraph_inc₂]
+
 namespace Graph
 
 
@@ -171,36 +176,32 @@ lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
   | cons x e w => cases w with | nil u => simp [show x = u from hC.isClosed] | cons => simp
 
 lemma IsCycle.toGraph_vxDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
-      C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
-    obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
-    refine Graph.ext (by simpa) fun g x y ↦ ?_
-    have h1 : P.Inc₂ g x y → x ∈ P := fun h ↦ h.vx_mem_left
-    have h2 : P.Inc₂ g x y → y ∈ P := fun h ↦ h.vx_mem_right
-    simp only [vxDelete_inc₂, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
-      concat_first, inc₂_concat_iff, tail_cons, dropLast_concat, hP.isWalk.wellFormed.toGraph_inc₂]
-    aesop
+    C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
+  obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
+  refine Graph.ext (by simpa) fun g x y ↦ ?_
+  have h1 : P.Inc₂ g x y → x ∈ P := fun h ↦ h.vx_mem_left
+  have h2 : P.Inc₂ g x y → y ∈ P := fun h ↦ h.vx_mem_right
+  simp only [vxDelete_inc₂, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
+    concat_first, inc₂_concat_iff, tail_cons, dropLast_concat, hP.isWalk.wellFormed.toGraph_inc₂]
+  aesop
 
+/-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_vx (hC : G.IsCycle C) (hnt : C.Nontrivial)
+    (hx : x ∈ C) : ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph - ({x} : Set α) := by
+  wlog hxC : x = C.first generalizing C with aux
+  · obtain ⟨n, -, rfl⟩ := exists_rotate_first_eq hx
+    obtain ⟨P, hP, hP'⟩ := aux (C := C.rotate n) (hC.rotate n) (hnt.rotate n) (by simp) rfl
+    exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
+  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vxDelete_first_eq hnt]⟩
 
-
-
-
-
-  -- refine ⟨fun h ↦ ?_, ?_⟩
-  -- · sorry
-  -- rintro ⟨x, e, ?_⟩
-
-
-
--- lemma IsCycle.rotate (hC : G.IsCycle C) (n : ℕ) : G.IsCycle (C.rotate n) where
---   isClosed := hC.isClosed.rotate n
---   isTrail := {
---     isWalk := hC.isTrail.isWalk.rotate
---     edge_nodup := _
---   }
---   nodup := _
-
-
-
-
+/-- Deleting an edge from the graph of a cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e ∈ C.edge) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} := by
+  wlog hxC : e = hC.nonempty.firstEdge generalizing C with aux
+  · obtain ⟨n, -, _, rfl⟩ := exists_rotate_firstEdge_eq heC
+    simpa [hC.isWalk.wellFormed.rotate_toGraph hC.isClosed] using aux (hC.rotate n) (by simpa) rfl
+  refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vxSet_tail]) fun f z z' ↦ ?_⟩
+  rw [hC.tail_isPath.isWalk.wellFormed.toGraph_inc₂, edgeDelete_inc₂, Set.mem_singleton_iff,
+    hC.isWalk.wellFormed.toGraph_inc₂, hC.nonempty.tail_inc₂_iff hC.edge_nodup, ← hxC]
 
 end Graph
