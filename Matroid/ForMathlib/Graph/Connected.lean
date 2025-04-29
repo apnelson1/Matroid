@@ -148,6 +148,25 @@ lemma connected_iff_forall_exists_adj (hne : G.V.Nonempty) :
   obtain ⟨x, hX, y, hy, hxy⟩ := h X hXV hXne
   exact hy.2 <| h' hX hxy
 
+lemma Connected.exists_vxConnected_deleteEdge_set {X Y : Set α} (hG : G.Connected)
+    (hX : (X ∩ G.V).Nonempty) (hY : (Y ∩ G.V).Nonempty) :
+    ∃ x ∈ X, ∃ y ∈ Y, (G ＼ (G[X].E ∪ G[Y].E)).VxConnected x y := by
+  classical
+  obtain ⟨x', hx'X, hx'⟩ := hX
+  obtain ⟨y', hy'Y, hy'⟩ := hY
+  obtain ⟨w, hw, rfl, rfl⟩ := (hG.vxConnected hx' hy').exists_isWalk
+
+  let w' := (w.suffixFromLast (· ∈ X)).prefixUntil (· ∈ Y)
+  refine ⟨w'.first, ?_, w'.last, ?_, ?_⟩
+  · simp only [prefixUntil_first, w']
+    exact suffixFromLast_prop_first ⟨w.first, by simp, hx'X⟩
+  · simp only [w']
+    apply prefixUntil_prop_last ⟨w.last, ?_, hy'Y⟩
+    simp [← (w.suffixFromLast_isSuffix (· ∈ X)).last_eq]
+
+
+
+
 /- ### Separations -/
 
 /-- A partition of `G.V` into two parts with no edge between them. -/
@@ -272,14 +291,19 @@ lemma Separation.eq_union (S : G.Separation) : G = G [S.left] ∪ G [S.right] :=
 
 /- ### Unions -/
 
-lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.Connected)
-    (hH : H.Connected) (hne : (G.V ∩ H.V).Nonempty) : (G ∪ H).Connected := by
-  obtain ⟨u, huG, huH⟩ := hne
-  refine connected_of_vx (u := u) (by simp [huH]) ?_
+lemma Compatible.union_connected_of_forall (h : G.Compatible H) (hG : G.Connected)
+    (hH : ∀ x ∈ H.V, ∃ y ∈ G.V, H.VxConnected x y) : (G ∪ H).Connected := by
+  obtain ⟨v, hv⟩ := hG.nonempty
+  refine connected_of_vx (u := v) (by simp [hv]) ?_
   rintro y (hy | hy)
-  · exact (hG.vxConnected hy huG).of_le <| left_le_union ..
-  exact (hH.vxConnected hy huH).of_le <| h.right_le_union
+  · exact (hG.vxConnected hy hv).of_le <| left_le_union ..
+  obtain ⟨z, hzG, hyz⟩ := hH _ hy
+  exact (hyz.of_le h.right_le_union).trans <| (hG.vxConnected hzG hv).of_le <| left_le_union ..
 
+lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.Connected)
+    (hH : H.Connected) (hne : (G.V ∩ H.V).Nonempty) : (G ∪ H).Connected :=
+  let ⟨z, hzG, hzH⟩ := hne
+  h.union_connected_of_forall hG fun _ hx ↦ ⟨z, hzG, hH.vxConnected hx hzH⟩
 
 lemma IsWalk.exists_mem_mem_of_union (h : (G ∪ H).IsWalk w) (hG : w.first ∈ G.V)
     (hH : w.last ∈ H.V) : ∃ x ∈ w, x ∈ G.V ∧ x ∈ H.V := by
