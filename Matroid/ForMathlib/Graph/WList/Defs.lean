@@ -391,8 +391,13 @@ lemma exists_dInc_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.DInc e x y := by
     obtain ⟨x, y, h⟩ := ih hew
     exact ⟨x, y, h.cons ..⟩
 
+lemma mem_edge_iff_exists_dInc : e ∈ w.edge ↔ ∃ x y, w.DInc e x y :=
+  ⟨exists_dInc_of_mem_edge, fun ⟨_, _, h⟩ ↦ h.edge_mem⟩
+
 lemma DInc.sublist (h : w.DInc e x y) : [x,y] <+ w.vx := by
   induction h with simp_all
+
+
 
 /-- `w.Inc₂ e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive Inc₂ : WList α β → β → α → α → Prop

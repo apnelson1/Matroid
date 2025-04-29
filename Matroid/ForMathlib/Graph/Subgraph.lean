@@ -155,6 +155,10 @@ lemma induce_le (G : Graph α β) {X : Set α} (hX : X ⊆ G.V) : G[X] ≤ G :=
 @[simp]
 lemma induce_inc₂_iff {X : Set α} : G[X].Inc₂ e x y ↔ G.Inc₂ e x y ∧ x ∈ X ∧ y ∈ X := Iff.rfl
 
+lemma Inc₂.mem_edgeRestrict_iff {X : Set α} (hG : G.Inc₂ e x y) : e ∈ G[X].E ↔ x ∈ X ∧ y ∈ X := by
+  simp only [induce_edgeSet, mem_setOf_eq]
+  refine ⟨fun ⟨x', y', he, hx', hy'⟩ ↦ ?_, fun h ↦ ⟨x, y, hG, h⟩⟩
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq_of_inc₂ he <;> simp [hx', hy']
 
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G [G.V \ X]

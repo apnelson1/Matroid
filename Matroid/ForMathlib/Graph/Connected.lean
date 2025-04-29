@@ -148,6 +148,25 @@ lemma connected_iff_forall_exists_adj (hne : G.V.Nonempty) :
   obtain ⟨x, hX, y, hy, hxy⟩ := h X hXV hXne
   exact hy.2 <| h' hX hxy
 
+
+lemma Connected.exists_vxConnected_deleteEdge_set {X Y : Set α} (hG : G.Connected)
+    (hX : (X ∩ G.V).Nonempty) (hu : u ∈ G.V) : ∃ x ∈ X, (G ＼ G[X].E).VxConnected u x := by
+  obtain ⟨x', hx'X, hx'V⟩ := hX
+  obtain ⟨w, hw, hu, rfl⟩ := (hG.vxConnected hu hx'V).exists_isWalk
+  induction hw generalizing u with
+  | nil => exact ⟨_, hx'X, by simp_all⟩
+  | @cons x e w hw h ih =>
+    obtain ⟨x', hx', hwx'⟩ :=
+      ih (u := w.first) (hw.vx_mem_of_mem (by simp)) rfl (by simpa using hx'X) (by simpa using hx'V)
+    by_cases he : e ∈ G[X].E
+    · refine ⟨u, ?_, by simpa⟩
+      sorry
+
+    refine ⟨x', hx', ?_⟩
+    have :=
+
+
+
 lemma Connected.exists_vxConnected_deleteEdge_set {X Y : Set α} (hG : G.Connected)
     (hX : (X ∩ G.V).Nonempty) (hY : (Y ∩ G.V).Nonempty) :
     ∃ x ∈ X, ∃ y ∈ Y, (G ＼ (G[X].E ∪ G[Y].E)).VxConnected x y := by
@@ -164,12 +183,20 @@ lemma Connected.exists_vxConnected_deleteEdge_set {X Y : Set α} (hG : G.Connect
     apply prefixUntil_prop_last ⟨w.last, ?_, hy'Y⟩
     simp [← (w.suffixFromLast_isSuffix (· ∈ X)).last_eq]
   apply IsWalk.vxConnected_first_last
-  rw [isWalk_edgeDelete_iff, hw']
+  rw [isWalk_edgeDelete_iff]
   have hw'_walk : G.IsWalk w' :=
     hw.sublist <| (prefixUntil_isPrefix ..).isSublist.trans (suffixFromLast_isSuffix ..).isSublist
   refine ⟨hw'_walk, ?_⟩
-  simp only [induce_edgeSet, disjoint_left, mem_edgeSet_iff, mem_union, mem_setOf_eq, not_or,
-    not_exists, not_and, w']
+  simp_rw [WList.E, w'.mem_edge_iff_exists_dInc, disjoint_left, mem_setOf]
+  rintro e ⟨x, y, he⟩ (heX | heY)
+  · simp [hw'] at he
+    simp at heX
+
+  simp only [induce_edgeSet, disjoint_left, mem_setOf_eq, mem_union, not_or, not_exists, not_and,
+    forall_exists_index, w']
+
+  -- simp only [induce_edgeSet, disjoint_left, mem_edgeSet_iff, mem_union, mem_setOf_eq, not_or,
+  --   not_exists, not_and]
   -- refine fun e he ↦ ⟨fun x y hxy hx hy ↦ ?_, ?_⟩
 
 
