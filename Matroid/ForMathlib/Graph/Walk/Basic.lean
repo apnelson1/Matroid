@@ -17,6 +17,8 @@ inductive IsWalk (G : Graph α β) : WList α β → Prop
   | nil {x} (hx : x ∈ G.V) : G.IsWalk (nil x)
   | cons {x e w} (hw : G.IsWalk w) (h : G.Inc₂ e x w.first) : G.IsWalk (cons x e w)
 
+
+
 @[simp]
 lemma nil_isWalk_iff : G.IsWalk (nil x) ↔ x ∈ G.V :=
   ⟨fun h ↦ by cases h with | _ => simp_all, IsWalk.nil⟩
@@ -47,6 +49,12 @@ lemma IsWalk.vx_mem_of_edge_mem (h : G.IsWalk w) (he : e ∈ w.edge) (heu : G.In
     refine he.elim ?_ fun h' ↦ .inr <| ih h'
     rintro rfl
     obtain rfl | rfl := heu.eq_or_eq_of_inc₂ h <;> simp
+
+lemma IsWalk.first_mem (h : G.IsWalk w) : w.first ∈ G.V :=
+  h.vx_mem_of_mem (by simp)
+
+lemma IsWalk.last_mem (h : G.IsWalk w) : w.last ∈ G.V :=
+  h.vx_mem_of_mem (by simp)
 
 lemma IsWalk.vxSet_subset (hVd : G.IsWalk w) : w.V ⊆ G.V :=
   fun _ ↦ hVd.vx_mem_of_mem
@@ -90,6 +98,19 @@ lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : w₁.last
 
 lemma IsWalk.concat (h : G.IsWalk w) (he : G.Inc₂ e w.last x) : G.IsWalk (w.concat e x) := by
   induction h with simp_all [he.vx_mem_right]
+
+lemma IsWalk.of_concat (h : G.IsWalk (w.concat e x)) : G.IsWalk w := by
+  induction w with
+  | nil u =>
+    simp_all only [nil_concat, cons_isWalk_iff, nil_first, nil_isWalk_iff]
+    exact h.1.vx_mem_left
+  | cons u f w ih =>
+    rw [cons_concat, cons_isWalk_iff] at h
+    exact (ih h.2).cons (by simpa using h.1)
+
+@[simp]
+lemma isWalk_concat_iff : G.IsWalk (w.concat e x) ↔ G.IsWalk w ∧ G.Inc₂ e w.last x :=
+  ⟨fun h ↦ ⟨h.of_concat, by induction w with simp_all⟩, fun h ↦ h.1.concat h.2⟩
 
 lemma IsWalk.of_append_left (h : G.IsWalk (w₁ ++ w₂)) (h_eq : w₁.last = w₂.first) :
     G.IsWalk w₁ :=
@@ -159,6 +180,14 @@ lemma IsWalk.wellFormed (h : G.IsWalk w) : w.WellFormed := by
     simp only [cons_isWalk_iff] at h
     rw [cons_wellFormed_iff, and_iff_right (ih h.2)]
     exact fun y₁ y₂ h' ↦ (h.2.inc₂_of_inc₂ h').inc₂_iff_sym2_eq.1 h.1
+
+lemma IsWalk.inc₂_iff_inc₂_of_mem (h : G.IsWalk w) (hew : e ∈ w.edge) :
+    w.Inc₂ e x y ↔ G.Inc₂ e x y := by
+  refine ⟨h.inc₂_of_inc₂, fun h' ↦ ?_⟩
+  obtain ⟨x', y', hx'y'⟩ := exists_inc₂_of_mem_edge hew
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h'.eq_and_eq_or_eq_and_eq_of_inc₂ (h.inc₂_of_inc₂ hx'y')
+  · assumption
+  exact hx'y'.symm
 
 /-- `G.IsWalkFrom S T w` means that `w` is a walk of `G` with one end in `S` and the other in `T`.-/
 @[mk_iff]
@@ -394,6 +423,7 @@ lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.V := by
 lemma toGraph_edgeSet (w : WList α β) : w.toGraph.E = w.E := by
   induction w with simp_all [toGraph_cons]
 
+
 -- lemma WellFormed.toGraph_append (hwf : (w₁ ++ w₂).WellFormed) (h : w₁.last = w₂.first) :
 --     (w₁ ++ w₂).toGraph = w₁.toGraph ∪ w₂.toGraph := by
 --   _
@@ -419,15 +449,10 @@ lemma WellFormed.toGraph_inc₂ (h : w.WellFormed) : w.toGraph.Inc₂ = w.Inc₂
     · assumption
     exact hinc.symm
 
+-- lemma WellFormed.toGraph_eq_
+
 lemma WellFormed.reverse_toGraph (h : w.WellFormed) : w.reverse.toGraph = w.toGraph :=
   Graph.ext (by simp) fun e x y ↦ by rw [h.toGraph_inc₂, h.reverse.toGraph_inc₂, inc₂_reverse_iff]
-
-lemma Graph.IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
-  induction w with
-  | nil u => simpa [WList.toGraph] using h
-  | cons u e W ih =>
-    simp only [cons_isWalk_iff] at h
-    exact union_le (ih h.2) (by simpa using h.1)
 
 lemma WellFormed.isWalk_toGraph (hw : w.WellFormed) : w.toGraph.IsWalk w := by
   induction w with
@@ -442,6 +467,39 @@ lemma WellFormed.isWalk_toGraph (hw : w.WellFormed) : w.toGraph.IsWalk w := by
     rw [((ih hw.1).inc₂_of_inc₂ h).inc₂_iff_sym2_eq, hw.2 _ _ h]
 
 
-
-
 end WList
+
+namespace Graph
+
+
+lemma IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
+  induction w with
+  | nil u => simpa [WList.toGraph] using h
+  | cons u e W ih =>
+    simp only [cons_isWalk_iff] at h
+    exact union_le (ih h.2) (by simpa using h.1)
+
+lemma IsWalk.edgeSet_subset_induce_edgeSet (hw : G.IsWalk w) : w.E ⊆ G[w.V].E := by
+  intro e hew
+  obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edge hew
+  rw [(hw.inc₂_of_inc₂ h).mem_induce_iff]
+  exact ⟨h.vx_mem_left, h.vx_mem_right⟩
+
+lemma IsWalk.toGraph_eq_induce_restrict (h : G.IsWalk w) : w.toGraph = G[w.V] ↾ w.E := by
+  induction w with
+  | nil => ext <;> simp
+  | cons u e w ih =>
+    have hss' := h.edgeSet_subset_induce_edgeSet
+    simp_all only [cons_isWalk_iff, cons_vxSet, cons_edgeSet, forall_const]
+    rw [toGraph_cons, ih]
+    refine G.ext_of_le_le (union_le ?_ ?_) ?_ (by simp) ?_
+    · exact (edgeRestrict_le ..).trans (induce_le _ h.2.vxSet_subset)
+    · simpa using h.1
+    · refine (edgeRestrict_le ..).trans (induce_le _ ?_)
+      simp [insert_subset_iff, h.1.vx_mem_left, h.2.vxSet_subset]
+    simp only [union_edgeSet, edgeRestrict_edgeSet, singleEdge_edgeSet, union_singleton]
+    rw [inter_eq_self_of_subset_left h.2.edgeSet_subset_induce_edgeSet,
+      inter_eq_self_of_subset_left hss']
+
+
+end Graph

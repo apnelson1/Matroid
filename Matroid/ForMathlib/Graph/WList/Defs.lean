@@ -285,6 +285,9 @@ lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
     hw.firstEdge = w.edge.head hw.edge_ne_nil := by
   cases hw with simp
 
+lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : w.E.Nonempty := by
+  cases h with simp
+
 /-! ### Nontriviality -/
 
 /-- a `WList` is nontrivial if it has at least two edges. -/
@@ -397,7 +400,26 @@ lemma mem_edge_iff_exists_dInc : e ∈ w.edge ↔ ∃ x y, w.DInc e x y :=
 lemma DInc.sublist (h : w.DInc e x y) : [x,y] <+ w.vx := by
   induction h with simp_all
 
+lemma DInc.ne_first (h : w.DInc e x y) (hnd : w.vx.Nodup) : y ≠ w.first := by
+  cases h with
+  | cons_left x e w =>
+    rintro rfl
+    simp at hnd
+  | @cons u f w e x y hw =>
+    rintro rfl
+    simp only [cons_vx, nodup_cons, mem_vx] at hnd
+    exact hnd.1 hw.vx_mem_right
 
+lemma DInc.ne_last (h : w.DInc e x y) (hnd : w.vx.Nodup) : x ≠ w.last := by
+  induction h with
+  | cons_left x e w =>
+    simp_all only [cons_vx, nodup_cons, mem_vx, last_cons, ne_eq]
+    rintro rfl
+    simp at hnd
+  | cons => rintro rfl; simp_all
+
+lemma DInc.nonempty (h : w.DInc e x y) : w.Nonempty := by
+  cases h with simp
 
 /-- `w.Inc₂ e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
 protected inductive Inc₂ : WList α β → β → α → α → Prop
@@ -451,9 +473,26 @@ lemma Inc₂.vx_mem_right (h : w.Inc₂ e x y) : y ∈ w :=
 lemma Inc₂.edge_mem (h : w.Inc₂ e x y) : e ∈ w.edge := by
   induction h with simp_all
 
+lemma Inc₂.nonempty (h : w.Inc₂ e x y) : w.Nonempty := by
+  cases h with simp
+
 lemma exists_inc₂_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.Inc₂ e x y := by
   obtain ⟨x, y, h⟩ := exists_dInc_of_mem_edge he
   exact ⟨x, y, h.inc₂⟩
+
+lemma Inc₂.eq_firstEdge_of_inc₂_first (he : w.Inc₂ e w.first x) (hnd : w.vx.Nodup) :
+    e = he.nonempty.firstEdge := by
+  cases w with
+  | nil u => simp at he
+  | cons u f w =>
+    simp only [Nonempty.firstEdge_cons]
+    simp only [cons_vx, nodup_cons, mem_vx] at hnd
+    cases he with
+    | cons_left => rfl
+    | cons_right => rfl
+    | cons u f hw =>
+      simp only [first_cons] at hw
+      exact (hnd.1 hw.vx_mem_left).elim
 
 /-- A `WList` is `WellFormed` if each edge appears only with the same ends. -/
 def WellFormed (w : WList α β) : Prop :=

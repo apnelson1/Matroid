@@ -47,6 +47,10 @@ lemma concat_edge : (w.concat e v).edge = w.edge ++ [e] := by
   induction w with | nil => rfl | cons => simpa [concat]
 
 @[simp]
+lemma concat_edgeSet : (w.concat e v).E = insert e w.E  := by
+  simp [Set.ext_iff, or_comm]
+
+@[simp]
 lemma concat_length : (w.concat e v).length = w.length + 1 := by
   induction w with | nil => rfl | cons => simpa [concat]
 
@@ -126,6 +130,10 @@ protected lemma concat_eq_append (w : WList α β) (e) (x) :
 @[simp]
 lemma append_edge {w₁ w₂ : WList α β} : (w₁ ++ w₂).edge = w₁.edge ++ w₂.edge := by
   induction w₁ with simp_all
+
+@[simp]
+lemma append_edgeSet (w₁ w₂ : WList α β) : (w₁ ++ w₂).E = w₁.E ∪ w₂.E := by
+  ext; simp
 
 @[simp]
 lemma append_length : (w₁ ++ w₂).length = w₁.length + w₂.length := by
@@ -274,6 +282,10 @@ lemma reverse_edge {w : WList α β} : (reverse w).edge = w.edge.reverse := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]
+
+@[simp]
+lemma reverse_edgeSet : (reverse w).E = w.E := by
+  ext; simp
 
 @[simp]
 lemma reverse_length {w : WList α β} : (reverse w).length = w.length := by

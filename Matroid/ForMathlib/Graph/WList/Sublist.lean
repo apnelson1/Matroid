@@ -52,6 +52,9 @@ lemma IsSublist.edge_sublist {w₁ w₂ : WList α β} (h : w₁.IsSublist w₂)
   | cons x e h ih => exact ih.trans <| by simp
   | cons₂ x e h ih => simpa
 
+lemma IsSublist.edgeSet_subset (h : w₁.IsSublist w₂) : w₁.E ⊆ w₂.E :=
+  fun _ hx ↦ (h.edge_sublist.subset hx)
+
 lemma IsSublist.length_le (h : w₁.IsSublist w₂) : w₁.length ≤ w₂.length := by
   rw [← length_edge, ← length_edge]
   exact h.edge_sublist.length_le

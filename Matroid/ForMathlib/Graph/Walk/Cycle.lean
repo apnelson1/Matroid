@@ -181,7 +181,7 @@ lemma IsCycle.toGraph_vxDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) 
   refine Graph.ext (by simpa) fun g x y ↦ ?_
   have h1 : P.Inc₂ g x y → x ∈ P := fun h ↦ h.vx_mem_left
   have h2 : P.Inc₂ g x y → y ∈ P := fun h ↦ h.vx_mem_right
-  simp only [vxDelete_inc₂, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
+  simp only [vxDelete_inc₂_iff, hC.isWalk.wellFormed.toGraph_inc₂, inc₂_cons_iff',
     concat_first, inc₂_concat_iff, tail_cons, dropLast_concat, hP.isWalk.wellFormed.toGraph_inc₂]
   aesop
 
@@ -203,5 +203,19 @@ lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e �
   refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vxSet_tail]) fun f z z' ↦ ?_⟩
   rw [hC.tail_isPath.isWalk.wellFormed.toGraph_inc₂, edgeDelete_inc₂, Set.mem_singleton_iff,
     hC.isWalk.wellFormed.toGraph_inc₂, hC.nonempty.tail_inc₂_iff hC.edge_nodup, ← hxC]
+
+lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.Inc₂ e P.first P.last)
+    (heP : e ∉ P.edge) : G.IsCycle (cons P.last e P) where
+  isWalk := by simp [he.symm, hP.isWalk]
+  edge_nodup := by simp [heP, hP.edge_nodup]
+  nonempty := by simp
+  isClosed := by simp
+  nodup := by simp [hP.nodup]
+
+lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.Inc₂ e P.last P.first)
+    (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
+  simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
+
+
 
 end Graph

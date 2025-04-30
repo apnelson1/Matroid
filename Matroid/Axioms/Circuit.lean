@@ -121,6 +121,31 @@ lemma Indep.aug [DecidableEq α] (hI : M.Indep I) (hJ : M.Indep J) (hIJ : I.card
   exact hK_indep.not_isCircuit_of_subset
     (hC_subset.trans <| union_subset (h_subset hCf_subset) (h_subset hCg_subset)) hC
 
+@[simps!]
+protected def ofFinite (E : Set α) (IsCircuit : Set α → Prop)
+    (empty_not_isCircuit : ¬IsCircuit ∅)
+    (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsCircuit C})
+    (circuit_elimination : ∀ ⦃C₁ C₂ e⦄, IsCircuit C₁ → IsCircuit C₂ → C₁ ≠ C₂ → e ∈ C₁ → e ∈ C₂ →
+      ∃ C, IsCircuit C ∧ e ∉ C ∧ ∀ x ∈ C, x ∈ C₁ ∨ x ∈ C₂)
+    (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → C ⊆ E)
+    (hfin : ∀ ⦃C⦄, IsCircuit C → C.Finite)
+    (Indep : Set α → Prop)
+    (indep_iff : ∀ ⦃I⦄, Indep I ↔ I ⊆ E ∧ ∀ ⦃C⦄, C ⊆ I → ¬IsCircuit C) :
+    FinsetCircuitMatroid α where
+  E := E
+  IsCircuit C := IsCircuit C
+  empty_not_isCircuit := by simpa
+  circuit_antichain C hC C' hC' hne hle := circuit_antichain hC hC' (by simpa) (by simpa)
+  circuit_elimination C₁ C₂ e hC₁ hC₂ hne heC₁ heC₂ := by
+    obtain ⟨C, hC, heC, h⟩ := circuit_elimination hC₁ hC₂ (by simpa) heC₁ heC₂
+    exact ⟨(hfin hC).toFinset, by simpa, by simpa, by simpa⟩
+  circuit_subset_ground C hC := circuit_subset_ground hC
+  Indep I := Indep I
+  indep_iff I := by
+    simp only [indep_iff, and_congr_right_iff]
+    exact fun hIE ↦ ⟨fun h C hCI hC ↦ h (by simpa) hC,
+      fun h C hCE hC ↦ h (C := (hfin hC).toFinset) (by simpa) (by simpa)⟩
+
 /-- A `FinsetCircuitMatroid` gives rise to a finitary `Matroid` with the same circuits. -/
 @[simps!] protected def matroid [DecidableEq α] (M : FinsetCircuitMatroid α) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.ofFinset

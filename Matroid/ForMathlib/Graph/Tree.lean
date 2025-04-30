@@ -66,7 +66,13 @@ lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F 
 
 lemma acyclic_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected) F) :
     (G ↾ F).Acyclic := by
-  sorry
+  intro C hC
+  obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
+  refine hF.not_mem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).1
+  simpa using hF.prop.deleteEdge_connected_of_mem_cycle hC he
+
+
+
 
 
 
