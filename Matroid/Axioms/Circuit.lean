@@ -4,8 +4,12 @@ import Matroid.Circuit
 
 open Finset
 
+/-
+TODO : Give better API for `Set`-valued predicates.
+-/
+
 /-- A matroid described using a `IsCircuit` predicate on `Finset`s. Can be converted to a matroid
-using `FinsertCircuitMatroid.matroid`. -/
+using `FinsetCircuitMatroid.matroid`. -/
 structure FinsetCircuitMatroid (α : Type*) where
   (E : Set α)
   (IsCircuit : Finset α → Prop)
@@ -185,5 +189,14 @@ lemma matroid_isCircuit_iff' [DecidableEq α] {C : Set α} :
   simp only [matroid_E, matroid_isCircuit_iff', not_exists, and_congr_right_iff]
   exact fun _ ↦ ⟨fun h C hCI hC ↦ h C (by simpa) (by simp) (by simpa),
     fun h C hCI hfin hC ↦ h (by simpa) hC⟩
+
+lemma matroid_indep_iff' (I : Set α) [DecidableEq α] :
+    M.matroid.Indep I ↔ I ⊆ M.E ∧ ∀ C, M.IsCircuit C → ¬ ((C : Set α) ⊆ I) := by
+  simp only [FinsetCircuitMatroid.matroid, IndepMatroid.matroid_Indep, IndepMatroid.ofFinset_indep']
+  refine ⟨fun h ↦ ⟨fun e heI ↦ ?_, fun C hC hCI ↦ ?_⟩ , fun h J hJI ↦ ?_⟩
+  · simpa using (h {e} (by simpa)).subset_ground
+  · exact (M.indep_iff.1 <| h C hCI).2 rfl.subset hC
+  rw [M.indep_iff, and_iff_right (hJI.trans h.1)]
+  exact fun C hCJ hC ↦ h.2 C hC <| subset_trans (by simpa) hJI
 
 end FinsetCircuitMatroid

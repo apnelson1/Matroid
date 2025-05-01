@@ -123,6 +123,9 @@ lemma IsCycle.eq_loop_of_inc₂_self (h : G.IsCycle C) (hC : C.Inc₂ e x x) :
     rw [List.nodup_iff_sublist] at hnd
     exact False.elim <| hnd x h'.sublist
 
+lemma IsCycle.isCycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycle C :=
+  hC.isCycle_of_le hC.isWalk.toGraph_le <| by simp
+
 lemma IsCycle.ne_of_inc₂ (hC : G.IsCycle C) (hnt : C.Nontrivial) (hinc : C.Inc₂ e x y) : x ≠ y := by
   rintro rfl
   obtain ⟨x, e, rfl⟩ := hC.eq_loop_of_inc₂_self hinc
@@ -194,15 +197,31 @@ lemma IsCycle.exists_isPath_toGraph_eq_delete_vx (hC : G.IsCycle C) (hnt : C.Non
     exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
   exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vxDelete_first_eq hnt]⟩
 
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge_of_inc₂ (hC : G.IsCycle C) (he : C.Inc₂ e x y) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} ∧ P.first = x ∧ P.last = y := by
+  wlog he' : C.DInc e y x with aux
+  · obtain hxy | hxy := inc₂_iff_dInc.1 he.symm
+    · exact aux hC he hxy
+    obtain ⟨P, hP, hPC, rfl, rfl⟩ := aux hC he.symm hxy
+    exact ⟨P.reverse, hP.reverse, by rwa [hP.isWalk.wellFormed.reverse_toGraph], by simp⟩
+  clear he
+  wlog hxC : e = hC.nonempty.firstEdge generalizing C with aux
+  · obtain ⟨n, -, _, rfl⟩ := exists_rotate_firstEdge_eq he'.edge_mem
+    simpa [hC.isWalk.wellFormed.rotate_toGraph hC.isClosed] using
+      aux (hC.rotate n) (hC.isClosed.dInc_rotate he' n) rfl
+  refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vxSet_tail]) fun f z z' ↦ ?_, ?_⟩
+  · rw [hC.tail_isPath.isWalk.wellFormed.toGraph_inc₂, edgeDelete_inc₂, Set.mem_singleton_iff,
+      hC.isWalk.wellFormed.toGraph_inc₂, hC.nonempty.tail_inc₂_iff hC.edge_nodup, ← hxC]
+  rw [tail_last, ← hC.isClosed.eq, and_comm, ← hC.toIsTrail.dInc_iff_eq_of_dInc he', hxC]
+  cases C with | _ => simp_all
+
 /-- Deleting an edge from the graph of a cycle gives the graph of a path. -/
 lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e ∈ C.edge) :
     ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} := by
-  wlog hxC : e = hC.nonempty.firstEdge generalizing C with aux
-  · obtain ⟨n, -, _, rfl⟩ := exists_rotate_firstEdge_eq heC
-    simpa [hC.isWalk.wellFormed.rotate_toGraph hC.isClosed] using aux (hC.rotate n) (by simpa) rfl
-  refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vxSet_tail]) fun f z z' ↦ ?_⟩
-  rw [hC.tail_isPath.isWalk.wellFormed.toGraph_inc₂, edgeDelete_inc₂, Set.mem_singleton_iff,
-    hC.isWalk.wellFormed.toGraph_inc₂, hC.nonempty.tail_inc₂_iff hC.edge_nodup, ← hxC]
+  obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edge heC
+  obtain ⟨P, hP, hPC, -, -⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_inc₂ h
+  exact ⟨P, hP, hPC⟩
+
 
 lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.Inc₂ e P.first P.last)
     (heP : e ∉ P.edge) : G.IsCycle (cons P.last e P) where
@@ -215,6 +234,7 @@ lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.Inc₂ e P
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.Inc₂ e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
+
 
 
 

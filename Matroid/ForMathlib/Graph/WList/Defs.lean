@@ -1,4 +1,4 @@
-import Mathlib.Data.Set.Insert
+import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Finset.Dedup
 import Mathlib.Data.Sym.Sym2
 
@@ -185,8 +185,22 @@ lemma nil_edgeSet : (nil x : WList α β).E = ∅ := by
   rfl
 
 @[simp]
+lemma edgeSet_finite (w : WList α β) : w.E.Finite := by
+  induction w with simp_all
+
+@[simp]
 lemma vxSet_nonempty (w : WList α β) : w.V.Nonempty := by
   cases w with simp
+
+@[simp]
+lemma vxSet_finite (w : WList α β) : w.V.Finite := by
+  induction w with simp_all
+
+lemma vxSet_disjoint_iff : _root_.Disjoint w₁.V w₂.V ↔ w₁.vx.Disjoint w₂.vx := by
+  simp [Set.disjoint_left, List.disjoint_left]
+
+lemma edgeSet_disjoint_iff : _root_.Disjoint w₁.E w₂.E ↔ w₁.edge.Disjoint w₂.edge := by
+  simp [Set.disjoint_left, List.disjoint_left]
 
 @[simp]
 lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Set α) = w.V := by
@@ -493,6 +507,22 @@ lemma Inc₂.eq_firstEdge_of_inc₂_first (he : w.Inc₂ e w.first x) (hnd : w.v
     | cons u f hw =>
       simp only [first_cons] at hw
       exact (hnd.1 hw.vx_mem_left).elim
+
+lemma Nonempty.mem_iff_exists_inc₂ (hw : w.Nonempty) : x ∈ w ↔ ∃ y e, w.Inc₂ e x y := by
+  refine ⟨fun h ↦ ?_, fun ⟨y, e, h⟩ ↦ h.vx_mem_left⟩
+  induction w with
+  | nil => simp at hw
+  | cons u e w ih =>
+    obtain (rfl : x = u) | (hxw : x ∈ w) := by simpa using h
+    · exact ⟨w.first, e, Inc₂.cons_left x e w⟩
+    cases w with
+    | nil v =>
+      refine ⟨u, e, ?_⟩
+      obtain rfl : x = v := by simpa using hxw
+      apply Inc₂.cons_right
+    | cons v f w =>
+      obtain ⟨y, e', h⟩ := ih (by simp) hxw
+      exact ⟨y, e', Inc₂.cons _ _ h⟩
 
 /-- A `WList` is `WellFormed` if each edge appears only with the same ends. -/
 def WellFormed (w : WList α β) : Prop :=

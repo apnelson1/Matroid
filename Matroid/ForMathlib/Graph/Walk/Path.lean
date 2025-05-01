@@ -1,7 +1,7 @@
 import Matroid.ForMathlib.Graph.Walk.Basic
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
-  {w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
+  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
 
 open WList Set
 
@@ -76,6 +76,31 @@ lemma IsTrail.isTrail_le_of_nonempty (h : G.IsTrail w) (hle : H ≤ G) (hE : w.E
     (hne : w.Nonempty) : H.IsTrail w where
   isWalk := h.isWalk.isWalk_le_of_nonempty hle hE hne
   edge_nodup := h.edge_nodup
+
+lemma IsTrail.eq_append_cons_of_edge_mem (hW : G.IsTrail W) (heW : e ∈ W.edge) :
+    ∃ W₁ W₂, G.IsTrail W₁ ∧ G.IsTrail W₂ ∧ e ∉ W₁.edge ∧ e ∉ W₂.edge ∧ W₁.edge.Disjoint W₂.edge ∧
+    W = W₁ ++ WList.cons W₁.last e W₂ := by
+  obtain ⟨W₁, W₂, hW₁, hW₂, heW₁, rfl⟩ := hW.isWalk.eq_append_cons_of_edge_mem heW
+  have hnd := hW.edge_nodup
+  simp only [append_edge, cons_edge, List.nodup_append, List.nodup_cons,
+    List.disjoint_cons_right] at hnd
+  use W₁, W₂
+  simp_all [isTrail_iff]
+
+lemma IsTrail.dInc_iff_eq_of_dInc (hW : G.IsTrail W) (he : W.DInc e u v) :
+    W.DInc e x y ↔ (x = u) ∧ (y = v) := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction W with
+  | nil u => simp at he
+  | cons z f W IH =>
+    rw [dInc_cons_iff] at h he
+    obtain ⟨rfl, rfl, rfl⟩ | h := h
+    · obtain ⟨rfl, he, rfl⟩ | he := he
+      · simp
+      simpa [he.edge_mem] using hW.edge_nodup
+    obtain ⟨rfl, rfl, rfl⟩ | he := he
+    · simpa [h.edge_mem] using hW.edge_nodup
+    exact IH hW.of_cons he h
 
 /-! ### Paths -/
 
@@ -189,6 +214,16 @@ lemma IsPath.append {P Q : WList α β} (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ
     refine ⟨hP.2.2, fun huQ ↦ ?_⟩
     rw [← h_inter.1 huQ] at hPQ
     exact hP.2.2 (by simp [← hPQ])
+
+lemma IsPath.eq_append_cons_of_edge_mem (hP : G.IsPath P) (heP : e ∈ P.edge) :
+    ∃ P₁ P₂, G.IsPath P₁ ∧ G.IsPath P₂ ∧ e ∉ P₁.edge ∧ e ∉ P₂.edge ∧
+      P₁.vx.Disjoint P₂.vx ∧ P₁.edge.Disjoint P₂.edge ∧ P = P₁ ++ cons P₁.last e P₂ := by
+  obtain ⟨P₁, P₂, hP₁, hP₂, heP₁, heP₂, hdj, rfl⟩ := hP.isTrail.eq_append_cons_of_edge_mem heP
+  have hnd := hP.nodup
+  rw [append_vx' rfl, List.nodup_append] at hnd
+  simp only [cons_vx, List.tail_cons] at hnd
+  use P₁, P₂
+  simp_all [hdj, isPath_iff, hP₁.isWalk, hP₂.isWalk]
 
 /-- An edge of a path `P` incident to the first vertex is the first edge.  -/
 lemma IsPath.eq_firstEdge_of_inc₂_first (hP : G.IsPath P) (heP : e ∈ P.edge)

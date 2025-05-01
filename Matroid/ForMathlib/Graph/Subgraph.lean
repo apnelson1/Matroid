@@ -79,7 +79,7 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
 scoped infixl:65 " ↾ "  => Graph.edgeRestrict
 
 @[simp]
-lemma edgeRestrict_le (G : Graph α β) (E₀ : Set β) : G ↾ E₀ ≤ G where
+lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   vx_subset := rfl.le
   inc₂_of_inc₂ := by simp
 
@@ -88,7 +88,7 @@ lemma edgeRestrict_mono_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ �
   inc₂_of_inc₂ _ _ _ := fun h ↦ ⟨hss h.1, h.2⟩
 
 lemma edgeRestrict_mono_left (h : H ≤ G) (F : Set β) : H ↾ F ≤ G ↾ F := by
-  refine G.le_of_le_le_subset_subset ((H.edgeRestrict_le F).trans h) (by simp)
+  refine G.le_of_le_le_subset_subset (edgeRestrict_le.trans h) (by simp)
     (by simpa using vxSet_subset_of_le h) ?_
   simp [inter_subset_right.trans (edgeSet_subset_of_le h)]
 
@@ -110,7 +110,7 @@ lemma edgeRestrict_of_superset (G : Graph α β) (hF : G.E ⊆ F) : G ↾ F = G 
 @[simp]
 lemma edgeRestrict_edgeRestrict (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ F₁) ↾ F₂ = G ↾ F₁ ∩ F₂ := by
   refine G.ext_of_le_le ?_ (by simp) (by simp) ?_
-  · exact ((G ↾ F₁).edgeRestrict_le F₂).trans (by simp)
+  · exact edgeRestrict_le.trans (by simp)
   simp only [edgeRestrict_edgeSet]
   rw [← inter_assoc, inter_comm F₂]
 
@@ -155,6 +155,9 @@ lemma edgeRestrict_edgeDelete (G : Graph α β) (F₁ F₂ : Set β) : G ↾ F�
     ← inter_assoc, ← inter_assoc, inter_self, inter_comm F₁, inter_assoc,
     edgeRestrict_edgeSet_inter, diff_eq]
 
+lemma edgeDelete_eq_self (G : Graph α β) (hF : Disjoint G.E F) : G ＼ F = G := by
+  simp [edgeDelete_eq_edgeRestrict, hF.sdiff_eq_left]
+
 /-- Map `G : Graph α β` to a `Graph α' β` with the same edge set
 by applying a function `f : α → α'` to each vertex.
 Edges between identified vertices become loops. -/
@@ -193,6 +196,11 @@ def vxMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β where
 lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ G.V := by
   simp [le_iff]
 
+lemma edgeDelete_eq_noEdge (G : Graph α β) (hF : G.E ⊆ F) : G ＼ F = Graph.noEdge G.V β := by
+  refine Graph.ext rfl fun e x y ↦ ?_
+  simp only [edgeDelete_inc₂, noEdge_inc₂, iff_false, not_and, not_not]
+  exact fun h ↦ hF h.edge_mem
+
 /-- The subgraph of `G` induced by a set `X` of vertices.
 The edges are the edges of `G` with both ends in `X`.
 (`X` is not required to be a subset of `G.V` for this definition to work,
@@ -207,7 +215,7 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β := Graph.mk'
 
 notation:max G:1000 "[" S "]" => Graph.induce G S
 
-lemma induce_le (G : Graph α β) {X : Set α} (hX : X ⊆ G.V) : G[X] ≤ G :=
+lemma induce_le (hX : X ⊆ G.V) : G[X] ≤ G :=
   ⟨hX, fun _ _ _ h ↦ h.1⟩
 
 @[simp]
@@ -227,6 +235,18 @@ lemma Inc₂.mem_induce_iff {X : Set α} (hG : G.Inc₂ e x y) : e ∈ G[X].E �
   simp only [induce_edgeSet, mem_setOf_eq]
   refine ⟨fun ⟨x', y', he, hx', hy'⟩ ↦ ?_, fun h ↦ ⟨x, y, hG, h⟩⟩
   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq_of_inc₂ he <;> simp [hx', hy']
+
+lemma induce_induce (G : Graph α β) (X Y : Set α) : G[X][Y] = G[Y] ↾ G[X].E := by
+  refine Graph.ext rfl fun e x y ↦ ?_
+  simp only [induce_inc₂_iff, edgeRestrict_inc₂]
+  obtain he | he := em' (G.Inc₂ e x y)
+  · simp [he]
+  rw [he.mem_induce_iff]
+  tauto
+
+lemma induce_mono (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
+  vx_subset := hXY
+  inc₂_of_inc₂ _ _ _ := fun ⟨h, h1, h2⟩ ↦ ⟨h, hXY h1, hXY h2⟩
 
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G [G.V \ X]
@@ -248,7 +268,7 @@ lemma vxDelete_inc₂_iff (G : Graph α β) (X : Set α) :
     (G - X).Inc₂ e x y ↔ (G.Inc₂ e x y ∧ (x ∈ G.V ∧ x ∉ X) ∧ y ∈ G.V ∧ y ∉ X) := Iff.rfl
 
 @[simp]
-lemma vxDelete_le (G : Graph α β) (X : Set α) : G - X ≤ G :=
+lemma vxDelete_le : G - X ≤ G :=
   G.induce_le diff_subset
 
 lemma Inc₂.mem_vxDelete_iff {X : Set α} (hG : G.Inc₂ e x y) : e ∈ (G - X).E ↔ x ∉ X ∧ y ∉ X := by
@@ -261,11 +281,20 @@ lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F
   simp only [induce_inc₂_iff, edgeRestrict_inc₂]
   tauto
 
+lemma edgeRestrict_vxDelete (G : Graph α β) (F : Set β) (D : Set α) :
+    (G ↾ F) - D = (G - D) ↾ F := by
+  refine Graph.ext rfl fun e x y ↦ ?_
+  simp only [vxDelete_inc₂_iff, edgeRestrict_inc₂, edgeRestrict_vxSet]
+  tauto
+
 @[simp]
 lemma edgeDelete_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ＼ F)[X] = G[X] ＼ F := by
   rw [edgeDelete_eq_edgeRestrict, edgeRestrict_induce, ← edgeRestrict_edgeSet_inter,
     ← inter_diff_assoc, inter_eq_self_of_subset_left (by simp), ← edgeDelete_eq_edgeRestrict]
 
+@[simp]
+lemma induce_vxDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
+  Graph.ext rfl <| by simp +contextual
 
 /-- A graph with a single edge `e` from `u` to `v` -/
 @[simps]
@@ -426,10 +455,26 @@ lemma Compatible.induce (h : Compatible G H) {X : Set α} :
     G[X].Compatible H[X] :=
   (h.induce_left X).induce_right X
 
+@[simp]
+lemma Compatible.induce_induce : G[X].Compatible G[Y] :=
+  Compatible.induce_left (Compatible.induce_right G.compatible_self _) _
+
 lemma Compatible.induce_union (h : G.Compatible H) (X : Set α) : (G ∪ H)[X] = G[X] ∪ H[X] := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
   simp only [induce_inc₂_iff, h.union_inc₂_iff, h.induce.union_inc₂_iff]
   tauto
+
+lemma induce_union (G : Graph α β) (X Y : Set α) (hX : ∀ x ∈ X, ∀ y ∈ Y, ¬ G.Adj x y) :
+    G [X ∪ Y] = G [X] ∪ G [Y] := by
+  refine Graph.ext rfl fun e x y ↦ ?_
+  simp only [induce_inc₂_iff, mem_union, Compatible.induce_induce.union_inc₂_iff]
+  by_cases hxy : G.Inc₂ e x y
+  · by_cases hx : x ∈ X
+    · simp [hx, show y ∉ Y from fun hy ↦ hX x hx y hy hxy.adj]
+    by_cases hy : y ∈ X
+    · simp [hy, show x ∉ Y from fun hx ↦ hX _ hy _ hx hxy.symm.adj, hxy]
+    simp [hx, hy]
+  simp [hxy]
 
 lemma Compatible.vxDelete_union (h : G.Compatible H) (X : Set α) :
     (G ∪ H) - X = (G - X) ∪ (H - X) := by
@@ -444,7 +489,6 @@ lemma Compatible.vxDelete_union (h : G.Compatible H) (X : Set α) :
   · simp +contextual [hH, hH.vx_mem_left, hH.vx_mem_right]
   simp [hG, hH]
 
-@[simp]
 lemma edgeRestrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ ∪ F₂)) = G ↾ F₁ ∪ (G ↾ F₂) := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
   rw [(G.compatible_self.mono (by simp) (by simp)).union_inc₂_iff]
@@ -462,7 +506,7 @@ lemma edgeDelete_union_edgeRestrict (G : Graph α β) (F : Set β) : (G ＼ F) �
   apply G.compatible_of_le_le (by simp) (by simp)
 
 lemma induce_union_edgeDelete (G : Graph α β) (hX : X ⊆ G.V) : G[X] ∪ (G ＼ G[X].E) = G := by
-  rw [← union_eq_union_edgeDelete, union_eq_self_of_le_left (induce_le G hX)]
+  rw [← union_eq_union_edgeDelete, union_eq_self_of_le_left (induce_le hX)]
 
 lemma edgeDelete_union_incude (G : Graph α β) (hX : X ⊆ G.V) : (G ＼ G[X].E) ∪ G[X] = G := by
   rw [(Compatible.of_disjoint_edgeSet _).union_comm, induce_union_edgeDelete _ hX]

@@ -6,7 +6,7 @@ This file defined predicates stating that an abstract walk `w` is a walk/trail/p
 -/
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {F : Set β}
-  {w w₁ w₂ : WList α β} {S T : Set α}
+  {W w w₁ w₂ : WList α β} {S T : Set α}
 
 open Graph WList Set
 
@@ -306,12 +306,11 @@ lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hE : w
   rw [first_cons] at h1
   exact (h1 hw.1.vx_mem_left).elim
 
-
-  -- cases w with
-  -- | nil => simp at hne
-  -- | cons u e w =>
-  --   simp
-
+lemma IsWalk.eq_append_cons_of_edge_mem (hW : G.IsWalk W) (heW : e ∈ W.edge) :
+    ∃ W₁ W₂, G.IsWalk W₁ ∧ G.IsWalk W₂ ∧ e ∉ W₁.edge ∧ W = W₁ ++ WList.cons W₁.last e W₂ := by
+  obtain ⟨W₁, W₂, rfl, heW₁⟩ := WList.eq_append_cons_of_edge_mem heW
+  refine ⟨W₁, W₂, hW.prefix (isPrefix_append_right rfl), hW.suffix ?_, heW₁, rfl⟩
+  exact IsSuffix.trans (isSuffix_cons_self W₂ e W₁.last) <| isSuffix_append_left ..
 
 end Subgraph
 
@@ -423,11 +422,6 @@ lemma toGraph_vxSet (w : WList α β) : w.toGraph.V = w.V := by
 lemma toGraph_edgeSet (w : WList α β) : w.toGraph.E = w.E := by
   induction w with simp_all [toGraph_cons]
 
-
--- lemma WellFormed.toGraph_append (hwf : (w₁ ++ w₂).WellFormed) (h : w₁.last = w₂.first) :
---     (w₁ ++ w₂).toGraph = w₁.toGraph ∪ w₂.toGraph := by
---   _
-
 lemma toGraph_vxSet_nonempty (w : WList α β) : w.toGraph.V.Nonempty := by
   simp
 
@@ -449,7 +443,16 @@ lemma WellFormed.toGraph_inc₂ (h : w.WellFormed) : w.toGraph.Inc₂ = w.Inc₂
     · assumption
     exact hinc.symm
 
--- lemma WellFormed.toGraph_eq_
+lemma IsSublist.toGraph_le (h : w₁.IsSublist w₂) (hw₂ : w₂.WellFormed) :
+    w₁.toGraph ≤ w₂.toGraph where
+  vx_subset := by
+    refine fun x hx ↦ ?_
+    simp only [toGraph_vxSet, mem_vxSet_iff] at hx ⊢
+    exact h.mem hx
+  inc₂_of_inc₂ e x y h' := by
+    rw [hw₂.toGraph_inc₂]
+    rw [(hw₂.sublist h).toGraph_inc₂] at h'
+    exact h'.of_isSublist h
 
 lemma WellFormed.reverse_toGraph (h : w.WellFormed) : w.reverse.toGraph = w.toGraph :=
   Graph.ext (by simp) fun e x y ↦ by rw [h.toGraph_inc₂, h.reverse.toGraph_inc₂, inc₂_reverse_iff]
@@ -493,13 +496,23 @@ lemma IsWalk.toGraph_eq_induce_restrict (h : G.IsWalk w) : w.toGraph = G[w.V] �
     simp_all only [cons_isWalk_iff, cons_vxSet, cons_edgeSet, forall_const]
     rw [toGraph_cons, ih]
     refine G.ext_of_le_le (union_le ?_ ?_) ?_ (by simp) ?_
-    · exact (edgeRestrict_le ..).trans (induce_le _ h.2.vxSet_subset)
+    · exact (edgeRestrict_le ..).trans (induce_le h.2.vxSet_subset)
     · simpa using h.1
-    · refine (edgeRestrict_le ..).trans (induce_le _ ?_)
+    · refine (edgeRestrict_le ..).trans (induce_le ?_)
       simp [insert_subset_iff, h.1.vx_mem_left, h.2.vxSet_subset]
     simp only [union_edgeSet, edgeRestrict_edgeSet, singleEdge_edgeSet, union_singleton]
     rw [inter_eq_self_of_subset_left h.2.edgeSet_subset_induce_edgeSet,
       inter_eq_self_of_subset_left hss']
 
+lemma IsWalk.le_of_edgeSet_subset (hw₁ : G.IsWalk w₁) (hne : w₁.Nonempty) (hw₂ : G.IsWalk w₂)
+    (hss : w₁.E ⊆ w₂.E) : w₁.toGraph ≤ w₂.toGraph := by
+  have h₁ := hw₁.toGraph_le
+  have h₂ := hw₂.toGraph_le
+  refine G.le_of_le_le_subset_subset h₁ h₂ (fun x hxV ↦ ?_) (by simpa using hss)
+  rw [toGraph_vxSet, mem_vxSet_iff, hne.mem_iff_exists_inc₂] at hxV
+  obtain ⟨y, e, h⟩ := hxV
+  have hew₂ := hss h.edge_mem
+  rw [hw₁.inc₂_iff_inc₂_of_mem h.edge_mem, ← hw₂.inc₂_iff_inc₂_of_mem hew₂] at h
+  simpa using h.vx_mem_left
 
 end Graph
