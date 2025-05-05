@@ -21,19 +21,6 @@ variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : �
 
 section Basic
 
-@[simp] lemma eRk_eq_top_iff : M.eRk X = ⊤ ↔ ¬ M.IsRkFinite X := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  rw [hI.eRk_eq_encard, encard_eq_top_iff, ← hI.finite_iff_isRkFinite, Set.Infinite]
-
-@[simp] lemma eRk_ne_top_iff : M.eRk X ≠ ⊤ ↔ M.IsRkFinite X := by
-  rw [ne_eq, eRk_eq_top_iff, not_not]
-
-@[simp] lemma eRk_lt_top_iff : M.eRk X < ⊤ ↔ M.IsRkFinite X := by
-  rw [lt_top_iff_ne_top, eRk_ne_top_iff]
-
-lemma IsRkFinite.eRk_lt_top (h : M.IsRkFinite X) : M.eRk X < ⊤ :=
-  eRk_lt_top_iff.2 h
-
 lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
   h.eRk_lt_top.ne
 
@@ -57,22 +44,6 @@ lemma eRk_submod_insert_compl (M : Matroid α) (X Y : Set α) :
 
 lemma eRk_eq_eRk_of_subset_le (hXY : X ⊆ Y) (hYX : M.eRk Y ≤ M.eRk X) : M.eRk X = M.eRk Y :=
   (M.eRk_mono hXY).antisymm hYX
-
-lemma eRk_union_le_eRk_add_eRk (M : Matroid α) (X Y : Set α) : M.eRk (X ∪ Y) ≤ M.eRk X + M.eRk Y :=
-  le_add_self.trans (M.eRk_submod X Y)
-
-lemma eRk_eq_eRk_union_eRk_le_zero (X : Set α) (hY : M.eRk Y ≤ 0) : M.eRk (X ∪ Y) = M.eRk X :=
-  (((M.eRk_union_le_eRk_add_eRk X Y).trans (add_le_add_left hY _)).trans_eq (add_zero _)).antisymm
-    (M.eRk_mono subset_union_left)
-
-lemma eRk_eq_eRk_diff_eRk_le_zero (X : Set α) (hY : M.eRk Y ≤ 0) : M.eRk (X \ Y) = M.eRk X := by
-  rw [← eRk_eq_eRk_union_eRk_le_zero (X \ Y) hY, diff_union_self, eRk_eq_eRk_union_eRk_le_zero _ hY]
-
-lemma eRk_le_eRk_inter_add_eRk_diff (X Y : Set α) : M.eRk X ≤ M.eRk (X ∩ Y) + M.eRk (X \ Y) := by
-  nth_rw 1 [← inter_union_diff X Y]; apply eRk_union_le_eRk_add_eRk
-
-lemma eRk_le_eRk_add_eRk_diff (h : Y ⊆ X) : M.eRk X ≤ M.eRk Y + M.eRk (X \ Y) := by
-  nth_rw 1 [← union_diff_cancel h]; apply eRk_union_le_eRk_add_eRk
 
 lemma indep_iff_eRk_eq_encard_of_finite (hI : I.Finite) : M.Indep I ↔ M.eRk I = I.encard := by
   refine ⟨fun h ↦ by rw [h.eRk_eq_encard], fun h ↦ ?_⟩
@@ -139,19 +110,6 @@ lemma eRk_insert_le_add_one (M : Matroid α) (e : α) (X : Set α) :
     M.eRk (insert e X) ≤ M.eRk X + 1 := by
   rw [← union_singleton]
   exact (M.eRk_union_le_eRk_add_eRk _ _).trans <| add_le_add_left (eRk_singleton_le _ _) _
-
-lemma eRk_union_le_encard_add_eRk (M : Matroid α) (X Y : Set α) :
-    M.eRk (X ∪ Y) ≤ X.encard + M.eRk Y :=
-  (M.eRk_union_le_eRk_add_eRk X Y).trans <| add_le_add_right (M.eRk_le_encard _) _
-
-lemma eRk_union_le_eRk_add_encard (M : Matroid α) (X Y : Set α) :
-    M.eRk (X ∪ Y) ≤ M.eRk X + Y.encard :=
-  (M.eRk_union_le_eRk_add_eRk X Y).trans <| add_le_add_left (M.eRk_le_encard _) _
-
-lemma eRank_le_encard_add_eRk_compl (M : Matroid α) (X : Set α) :
-    M.eRank ≤ X.encard + M.eRk (M.E \ X) :=
-  le_trans (by rw [← eRk_inter_ground, eRank_def, union_diff_self,
-    union_inter_cancel_right]) (M.eRk_union_le_encard_add_eRk X (M.E \ X))
 
 lemma eRk_insert_eq_add_one (he : e ∈ M.E \ M.closure X) : M.eRk (insert e X) = M.eRk X + 1 := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
@@ -298,20 +256,8 @@ variable {E : Set α}
 -- @[simp] lemma loopyOn_rk_eq (E X : Set α) : (loopyOn E).r X = 0 := by
 --   rw [← eRk_toNat_eq_rk, loopyOn_eRk_eq]; rfl
 
-@[simp] lemma eRank_eq_zero_iff : M.eRank = 0 ↔ M = loopyOn M.E := by
-  refine ⟨fun h ↦ closure_empty_eq_ground_iff.1 ?_, fun h ↦ by rw [h, loopyOn_eRank_eq]⟩
-  obtain ⟨B, hB⟩ := M.exists_isBase
-  rw [← hB.encard_eq_eRank, encard_eq_zero] at h
-  rw [← h, hB.closure_eq]
-
-lemma exists_of_eRank_eq_zero (h : M.eRank = 0) : ∃ E, M = loopyOn E :=
-  ⟨M.E, by simpa using h⟩
-
 @[simp] lemma eRank_loopyOn_eq_zero (α : Type*) : (emptyOn α).eRank = 0 := by
   rw [eRank_eq_zero_iff, emptyOn_ground, loopyOn_empty]
-
-lemma eq_loopyOn_iff_eRank : M = loopyOn E ↔ M.eRank = 0 ∧ M.E = E :=
-  ⟨fun h ↦ by rw [h]; simp, fun ⟨h,h'⟩ ↦ by rw [← h', ← eRank_eq_zero_iff, h]⟩
 
 @[simp] lemma freeOn_eRank_eq (E : Set α) : (freeOn E).eRank = E.encard := by
   rw [eRank_def, freeOn_ground, (freeOn_indep_iff.2 rfl.subset).eRk_eq_encard]

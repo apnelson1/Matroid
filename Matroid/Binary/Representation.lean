@@ -51,7 +51,7 @@ variable [Finitary M] {C : Set α}
 
 /-- The Binary matroid that should be `M`, with representation given by the fundamental matrix
 of a base `B`. If `M` is binary, this is equal to `M`. -/
-def IsBase.BinaryProxy (hB : M.IsBase B) :=
+noncomputable def IsBase.BinaryProxy (hB : M.IsBase B) :=
   (Matroid.ofFun (ZMod 2) M.E (hB.fundCoord (ZMod 2)))
 
 noncomputable def IsBase.binaryProxyRep (hB : M.IsBase B) :

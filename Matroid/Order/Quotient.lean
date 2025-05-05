@@ -210,7 +210,7 @@ theorem TFAE_quotient (hE : M₁.E = M₂.E) : List.TFAE [
 --Begin finite case
 lemma Quotient.rankFinite {M₁ M₂ : Matroid α} [hM₁ : RankFinite M₁] (hQ : M₂ ≤q M₁) :
     RankFinite M₂ := by
-  rw [rankFinite_iff_eRank_ne_top, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
+  rw [← eRank_ne_top_iff, eRank_def, ← lt_top_iff_ne_top, ← eRelRk_empty_left] at hM₁ ⊢
   rw [← hQ.ground_eq] at hM₁
   exact (hQ.eRelRk_le _ _).trans_lt hM₁
 

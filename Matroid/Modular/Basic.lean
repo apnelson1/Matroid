@@ -631,7 +631,7 @@ lemma IsModularFamily.isModularPair_singleton_compl_biInter [Nontrivial η] {Xs 
     (h : M.IsModularFamily Xs) (i₀ : η) :
     M.IsModularPair (Xs i₀) (⋂ i ∈ ({i₀} : Set η)ᶜ, Xs i) := by
   convert h.isModularPair_compl_biInter {i₀} (by simp)
-    (by simpa [ne_univ_iff_exists_not_mem, mem_singleton_iff] using exists_ne i₀); simp
+    (by simp [ne_univ_iff_exists_not_mem, mem_singleton_iff]); simp
 
 lemma isModularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     M.IsModularPair (M.closure (insert e X)) (M.closure (insert f X)) := by

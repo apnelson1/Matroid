@@ -47,7 +47,9 @@ lemma Rep.support_subset_ground_of_mem_cycleSpace (v : M.Rep 𝔽 W) (hc : c ∈
     support c ⊆ M.E :=
   (v.mem_cycleSpace_iff.1 hc).2
 
-@[simps] def Rep.cycleSpaceEquiv (v : M.Rep 𝔽 W) : v.cycleSpace ≃ₗ[𝔽] v.supportedCycleSpace where
+@[simps]
+noncomputable def Rep.cycleSpaceEquiv (v : M.Rep 𝔽 W) :
+    v.cycleSpace ≃ₗ[𝔽] v.supportedCycleSpace where
   toFun x := ⟨⟨x.1,x.2.2⟩, v.mem_supportedCycleSpace_iff.2 (v.mem_cycleSpace_iff.1 x.2).1⟩
   map_add' := by simp
   map_smul' := by simp

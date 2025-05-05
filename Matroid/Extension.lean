@@ -879,7 +879,7 @@ lemma Spanning.rankFinite_of_finite {S : Set α} (hS : M.Spanning S) (hSfin : S.
 /-- Move to `minor`-/
 lemma RankFinite.ofDelete {D : Set α} (hD : M.IsRkFinite D) (hfin : (M ＼ D).RankFinite) :
     M.RankFinite := by
-  rw [rankFinite_iff_eRank_ne_top, ← lt_top_iff_ne_top]
+  rw [← eRank_ne_top_iff, ← lt_top_iff_ne_top]
   refine (M.delete_eRank_add_eRk_ge_eRank D).trans_lt ?_
   simp [ENat.add_lt_top, eRk_lt_top_iff, hD, eRank_lt_top]
 
