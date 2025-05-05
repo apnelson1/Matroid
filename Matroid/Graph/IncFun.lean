@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.Graph.Basic
+import Matroid.Graph.Basic
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Card

@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.Graph.WList.Defs
+import Matroid.Graph.WList.Defs
 import Mathlib.Data.List.Nodup
 import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 import Mathlib.Data.Finset.Disjoint

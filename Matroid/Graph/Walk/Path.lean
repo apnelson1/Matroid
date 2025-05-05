@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.Graph.Walk.Basic
+import Matroid.Graph.Walk.Basic
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}

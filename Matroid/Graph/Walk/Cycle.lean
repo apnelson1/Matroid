@@ -1,6 +1,6 @@
-import Matroid.ForMathlib.Graph.Walk.Path
--- import Matroid.ForMathlib.Graph.Connected
-import Matroid.ForMathlib.Graph.WList.Cycle
+import Matroid.Graph.Walk.Path
+-- import Matroid.Graph.Connected
+import Matroid.Graph.WList.Cycle
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}

@@ -1,5 +1,5 @@
-import Matroid.ForMathlib.Graph.Connected
-import Matroid.ForMathlib.Graph.Subgraph
+import Matroid.Graph.Connected
+import Matroid.Graph.Subgraph
 import Mathlib.Data.Set.Subsingleton
 import Mathlib.Order.Minimal
 

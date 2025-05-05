@@ -1,5 +1,5 @@
-import Matroid.ForMathlib.Graph.Walk.Cycle
-import Matroid.ForMathlib.Graph.Subgraph
+import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Subgraph
 import Mathlib.Data.Set.Insert
 
 open Set Function Nat

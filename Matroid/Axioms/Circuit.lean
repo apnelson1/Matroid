@@ -2,11 +2,82 @@ import Mathlib.Data.Matroid.IndepAxioms
 import Matroid.ForMathlib.Finset
 import Matroid.Circuit
 
+variable {α : Type*} {X I C Y : Set α}
+
+universe u
+
+section Set
+
+open Set Function
+
+-- (elimination : ∀ (ι : Type u) (x : ι → α) (C : ι → Set α) (C₀ : Set α) (z : α),
+--     (∀ i, IsCircuit (C i)) → (∀ i, x i ∈ C i) → (∀ ⦃i i'⦄, x i ∈ C i' → i = i') →
+--     IsCircuit C₀ → (z ∈ C₀) → (∀ i, z ∉ C i) → ∃ C' ⊆ (C₀ ∪ ⋃ i, C i) \
+--     )
+
+/-- A general infinite matroid as described by its circuits.
+Showing this definition actually corresponds to a matroid is TODO. -/
+structure CircuitMatroid (α : Type u) where
+  (E : Set α)
+  (IsCircuit : Set α → Prop)
+  (empty_not_isCircuit : ¬IsCircuit ∅)
+  (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsCircuit C})
+  (elimination : ∀ (ι : Type u) (x : ι → α) (I : ι → Set α) (J : Set α) (z : α),
+    (∀ i, IsCircuit (insert (x i) (I i))) → Injective x → (∀ i, x i ∉ I i) →
+    (IsCircuit (J ∪ range x)) → (∀ i, z ∉ I i) →
+    ∃ C ⊆ (J ∪ ⋃ i, I i), IsCircuit C ∧ z ∈ C )
+  (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → C ⊆ E)
+
+/-- A finitary matroid as described by its circuits. -/
+structure FiniteCircuitMatroid (α : Type u) where
+  (E : Set α)
+  (IsCircuit : Set α → Prop)
+  (empty_not_isCircuit : ¬IsCircuit ∅)
+  (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsCircuit C})
+  (circuit_elimination : ∀ ⦃C₁ C₂ e⦄, IsCircuit C₁ → IsCircuit C₂ → C₁ ≠ C₂ → e ∈ C₁ → e ∈ C₂ →
+    ∃ C, IsCircuit C ∧ e ∉ C ∧ C ⊆ (C₁ ∪ C₂))
+  (circuit_finite : ∀ ⦃C⦄, IsCircuit C → C.Finite)
+  (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → C ⊆ E)
+
+
+
+-- namespace FiniteCircuitMatroid
+
+-- protected def matroid (M : FiniteCircuitMatroid α) : Matroid α :=
+--   IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
+--   (E := M.E)
+--   (Indep := fun I ↦ I ⊆ M.E ∧ ∀ C, M.IsCircuit C → ¬ (C ⊆ I))
+--   ⟨by simp, fun C hC hss ↦ M.empty_not_isCircuit (subset_empty_iff.1 hss ▸ hC)⟩
+
+
+
+--   (fun I J ⟨hJE, hJ⟩ hIJ ↦ ⟨hIJ.trans hJE, fun C hC hCI ↦ hJ C hC (hCI.trans hIJ)⟩)
+--   -- (fun I J hI hJ C hC hCI ↦ sorry)
+--   -- hI C hC (hCI.trans hJ))
+--   (by
+--     rintro I B ⟨hIE, hI⟩ hInotmax hBmax hBfin hcard
+--     have hchoose : ∀
+--     sorry
+--   )
+--   (by
+--     refine fun I hI ↦ ⟨fun e heI ↦ ?_, fun C hC hCI ↦ ?_⟩
+--     · simpa using (hI {e} (by simpa) (by simp)).1
+--     exact (hI C hCI (M.circuit_finite hC)).2 C hC rfl.subset )
+--   (fun I hI ↦ hI.1)
+
+-- end FiniteCircuitMatroid
+
+
+end Set
+
+section Finset
+
 open Finset
 
 /-
 TODO : Give better API for `Set`-valued predicates.
 -/
+
 
 /-- A matroid described using a `IsCircuit` predicate on `Finset`s. Can be converted to a matroid
 using `FinsetCircuitMatroid.matroid`. -/
@@ -199,4 +270,8 @@ lemma matroid_indep_iff' (I : Set α) [DecidableEq α] :
   rw [M.indep_iff, and_iff_right (hJI.trans h.1)]
   exact fun C hCJ hC ↦ h.2 C hC <| subset_trans (by simpa) hJI
 
+
+
 end FinsetCircuitMatroid
+
+end Finset

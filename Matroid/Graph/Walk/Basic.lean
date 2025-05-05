@@ -1,5 +1,5 @@
-import Matroid.ForMathlib.Graph.WList.Sublist
-import Matroid.ForMathlib.Graph.Subgraph
+import Matroid.Graph.WList.Sublist
+import Matroid.Graph.Subgraph
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.

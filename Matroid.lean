@@ -46,3 +46,4 @@ import Matroid.Representation.Projective
 import Matroid.Representation.StandardRep
 import Matroid.Simple
 import Matroid.Uniform
+import Matroid.Graph.Matroid
