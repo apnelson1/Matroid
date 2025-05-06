@@ -12,9 +12,12 @@ def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀
 
 def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ G.E ∧ ∀ C₀, G.IsCycle C₀ → ¬ (C₀.E ⊆ I)
 
-/-! The cycle matroid of a graph `G`. -/
-def cycleMatroid [DecidableEq β] (G : Graph α β) : Matroid β :=
-  FinsetCircuitMatroid.matroid <| FinsetCircuitMatroid.ofFinite G.E G.IsCycleSet
+/-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
+and its independent sets are the edge sets of forests. -/
+def cycleMatroid (G : Graph α β) : Matroid β :=
+  FiniteCircuitMatroid.matroid <| FiniteCircuitMatroid.mk
+    (E := G.E)
+    (IsCircuit := G.IsCycleSet)
     (by
       simp only [IsCycleSet, not_exists, not_and]
       exact fun C hC hCe ↦ by simpa [hCe] using hC.nonempty.edgeSet_nonempty )
@@ -43,21 +46,16 @@ def cycleMatroid [DecidableEq β] (G : Graph α β) : Matroid β :=
       simpa using (hss.trans diff_subset) hx )
     (by
       rintro _ ⟨C, hC, rfl⟩
-      simpa using edgeSet_subset_of_le hC.isWalk.toGraph_le )
+      exact C.edgeSet_finite )
     (by
       rintro _ ⟨C, hC, rfl⟩
-      exact C.edgeSet_finite )
-    G.IsAyclicSet
-    (by
-      simp only [IsAyclicSet, IsCycleSet, not_exists, not_and, and_congr_right_iff]
-      refine fun I hI ↦ ⟨?_, fun h C hC hCI ↦ h hCI C hC rfl⟩
-      rintro h _ hss C hC rfl
-      exact h C hC hss )
+      simpa using edgeSet_subset_of_le hC.isWalk.toGraph_le )
 
--- @[simp]
--- protected lemma matroid_indep_iff [DecidableEq β] {I : Set β} :
---     G.matroid.Indep I ↔ G.IsAyclicSet I := by
---   rw [Graph.matroid, FinsetCircuitMatroid.matroid_indep_iff',
---     FinsetCircuitMatroid.ofFinite_E]
---   simp only [FinsetCircuitMatroid.ofFinite_IsCircuit, IsCycleSet, forall_exists_index, and_imp,
---     IsAyclicSet, and_congr_right_iff]
+@[simp]
+lemma cycleMatroid_isCircuit_iff {C : Set β} : G.cycleMatroid.IsCircuit C ↔ G.IsCycleSet C := by
+  simp [cycleMatroid]
+
+@[simp]
+lemma cycleMatroid_indep_iff {I : Set β} : G.cycleMatroid.Indep I ↔ G.IsAyclicSet I := by
+  simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAyclicSet]
+  aesop

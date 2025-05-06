@@ -2,18 +2,13 @@ import Mathlib.Data.Matroid.IndepAxioms
 import Matroid.ForMathlib.Finset
 import Matroid.Circuit
 
-variable {α : Type*} {X I C Y : Set α}
+variable {α : Type*} {X I J C Y : Set α}
 
 universe u
 
 section Set
 
 open Set Function
-
--- (elimination : ∀ (ι : Type u) (x : ι → α) (C : ι → Set α) (C₀ : Set α) (z : α),
---     (∀ i, IsCircuit (C i)) → (∀ i, x i ∈ C i) → (∀ ⦃i i'⦄, x i ∈ C i' → i = i') →
---     IsCircuit C₀ → (z ∈ C₀) → (∀ i, z ∉ C i) → ∃ C' ⊆ (C₀ ∪ ⋃ i, C i) \
---     )
 
 /-- A general infinite matroid as described by its circuits.
 Showing this definition actually corresponds to a matroid is TODO. -/
@@ -29,7 +24,7 @@ structure CircuitMatroid (α : Type u) where
   (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → C ⊆ E)
 
 /-- A finitary matroid as described by its circuits. -/
-structure FiniteCircuitMatroid (α : Type u) where
+structure FiniteCircuitMatroid (α : Type*) where
   (E : Set α)
   (IsCircuit : Set α → Prop)
   (empty_not_isCircuit : ¬IsCircuit ∅)
@@ -39,31 +34,104 @@ structure FiniteCircuitMatroid (α : Type u) where
   (circuit_finite : ∀ ⦃C⦄, IsCircuit C → C.Finite)
   (circuit_subset_ground : ∀ ⦃C⦄, IsCircuit C → C ⊆ E)
 
+namespace FiniteCircuitMatroid
 
+variable {M : FiniteCircuitMatroid α}
 
+@[mk_iff]
+protected structure Indep (M : FiniteCircuitMatroid α) (I : Set α) : Prop where
+  subset_ground : I ⊆ M.E
+  not_isCircuit_of_subset : ∀ ⦃C⦄, C ⊆ I → ¬ M.IsCircuit C
+
+protected lemma Indep.subset (hJ : M.Indep J) (hIJ : I ⊆ J) : M.Indep I :=
+  ⟨hIJ.trans hJ.subset_ground, fun _ hCI hC ↦ hJ.not_isCircuit_of_subset (hCI.trans hIJ) hC⟩
+
+protected lemma Indep.augment {J : Set α} (hI : M.Indep I) (hIfin : I.Finite) (hJ : M.Indep J)
+    (hJfin : J.Finite) (hIJ : I.ncard < J.ncard) : ∃ e ∈ J, e ∉ I ∧ M.Indep (insert e I) := by
+  by_cases hss : I ⊆ J
+  · obtain ⟨e, he⟩ := exists_of_ssubset <| hss.ssubset_of_ne <| by rintro rfl; simp at hIJ
+    exact ⟨e, he.1, he.2, hJ.subset <| insert_subset he.1 hss⟩
+  obtain ⟨x, hxI, hxJ⟩ := not_subset.1 hss
+  by_contra! hcon
+  -- For each `y ∈ J \ I`, we can find a circuit in `J ∪ {e}` that avoids `y`,
+  -- as otherwise we can replace `J` wth the set `insert x (J \ {y})`,
+  -- which is closer to `I` than `J` is, and therefore satisfies the inductive hypothesis.
+  have h_ex : ∀ y ∈ J \ I, ∃ C, M.IsCircuit C ∧ x ∈ C ∧ y ∉ C ∧ C \ {x} ⊆ J := by
+    intro y hy
+    by_cases hJ' : M.Indep (insert x (J \ {y}))
+    · have hlt : ((insert x (J \ {y})) \ I).ncard < (J \ I).ncard := by
+        rw [insert_diff_of_mem _ hxI, diff_diff_comm]
+        exact ncard_diff_singleton_lt_of_mem hy hJfin.diff
+      have hcard : I.ncard < (insert x (J \ {y})).ncard :=
+        hIJ.trans_eq <| (ncard_exchange hxJ hy.1).symm
+      obtain ⟨e, rfl | heJ, heI, hi⟩ := Indep.augment hI hIfin hJ' (hJfin.diff.insert _) hcard
+      · exact (heI hxI).elim
+      exact False.elim <| hcon e heJ.1 heI hi
+    obtain ⟨C, hCss, hC⟩ : ∃ C ⊆ insert x (J \ {y}), M.IsCircuit C := by
+      simpa [indep_iff, insert_subset (hI.subset_ground hxI) (diff_subset.trans hJ.subset_ground)]
+      using hJ'
+    rw [subset_insert_iff,
+      or_iff_right (fun h ↦ (hJ.subset diff_subset).not_isCircuit_of_subset h hC)] at hCss
+    refine ⟨C, hC, hCss.1, fun hyC ↦ (hCss.2 ⟨hyC, ?_⟩).2 rfl, hCss.2.trans diff_subset⟩
+    rintro rfl
+    exact hy.2 hxI
+  -- Take such a circuit `Ca` for some arbitrary `a ∈ J \ I`, and then choose `b ∈ Ca \ {x}`
+  -- and take a circuit `Cb` for `b`. Now by circuit elimination, the set `Ca ∪ Cb \ {x}`
+  -- contains a circuit but is contained in `J`, a contradiction.
+  obtain ⟨a, haJ, haI⟩ : ∃ a ∈ J, a ∉ I :=
+    not_subset.1 <| fun h ↦ hIJ.not_le (ncard_le_ncard h hIfin)
+  obtain ⟨Ca, hCa, hxCa, haCa, hCaJ⟩ := h_ex a ⟨haJ, haI⟩
+  obtain ⟨b, hbCa, hbI⟩ : ∃ b ∈ Ca, b ∉ I := not_subset.1 fun h ↦ hI.not_isCircuit_of_subset h hCa
+  obtain ⟨Cb, hCb, hxCb, hbCb, hCbJ⟩ :=
+    h_ex b ⟨hCaJ (mem_diff_singleton.2 ⟨hbCa, fun hbx ↦ hbI <| hbx ▸ hxI⟩), hbI⟩
+  obtain ⟨C, hC, hxC, hC'⟩ := M.circuit_elimination hCa hCb (by rintro rfl; contradiction) hxCa hxCb
+  refine hJ.not_isCircuit_of_subset ?_ hC
+  rw [← diff_singleton_eq_self hxC]
+  refine (diff_subset_diff_left hC').trans ?_
+  rw [union_diff_distrib]
+  exact union_subset hCaJ hCbJ
+termination_by (J \ I).ncard
+
+/-- The matroid of a `FiniteCircuitMatroid`. -/
+@[simps! E]
+protected def matroid (M : FiniteCircuitMatroid α) : Matroid α :=
+  IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
+  (E := M.E)
+  (Indep := M.Indep)
+  (⟨by simp, fun C hC hss ↦ M.empty_not_isCircuit (by rwa [← subset_empty_iff.1 hC])⟩)
+  (fun _ _ ↦ Indep.subset)
+  (fun _ _ ↦ Indep.augment)
+  (fun I h ↦
+      ⟨fun e heI ↦ by simpa using (h {e} (by simpa) (by simp)).subset_ground,
+      fun C hCI hC ↦ (h C hCI (M.circuit_finite hC)).not_isCircuit_of_subset rfl.subset hC⟩)
+  (fun _ ↦ Indep.subset_ground)
+
+@[simp]
+protected lemma matroid_indep_iff :
+    M.matroid.Indep I ↔ I ⊆ M.E ∧ ∀ ⦃C⦄, C ⊆ I → ¬ M.IsCircuit C := by
+  simp [FiniteCircuitMatroid.matroid, M.indep_iff]
+
+@[simp]
+protected lemma matroid_isCircuit : M.matroid.IsCircuit = M.IsCircuit := by
+  ext C
+  obtain hCE | hCE := em' <| C ⊆ M.E
+  · refine iff_of_false (mt Matroid.IsCircuit.subset_ground hCE)
+      (mt (fun h ↦ M.circuit_subset_ground h) hCE)
+  simp only [Matroid.isCircuit_iff_forall_ssubset, M.matroid_indep_iff,  hCE, true_and,
+    ← Matroid.not_indep_iff (show C ⊆ M.matroid.E from hCE), not_forall, Classical.not_imp,
+    not_not, exists_prop]
+  refine ⟨fun ⟨⟨C', hC', hC'ss⟩, hmin⟩ ↦ ?_, fun h ↦ ⟨⟨C, rfl.subset, h⟩, fun I hIC ↦ ?_⟩⟩
+  · obtain rfl | hssu := hC'.eq_or_ssubset
+    · exact hC'ss
+    exact False.elim <| (hmin hssu).2 rfl.subset hC'ss
+  refine ⟨hIC.subset.trans hCE, fun C' hC'I hC' ↦ ?_⟩
+  exact M.circuit_antichain hC' h (hC'I.trans_ssubset hIC).ne (hC'I.trans hIC.subset)
+
+end FiniteCircuitMatroid
+    -- ∃ e ∈ J, e ∉ I ∧ M.Indep (insert e I) := by
 -- namespace FiniteCircuitMatroid
 
--- protected def matroid (M : FiniteCircuitMatroid α) : Matroid α :=
---   IndepMatroid.matroid <| IndepMatroid.ofFinitaryCardAugment
---   (E := M.E)
---   (Indep := fun I ↦ I ⊆ M.E ∧ ∀ C, M.IsCircuit C → ¬ (C ⊆ I))
---   ⟨by simp, fun C hC hss ↦ M.empty_not_isCircuit (subset_empty_iff.1 hss ▸ hC)⟩
 
-
-
---   (fun I J ⟨hJE, hJ⟩ hIJ ↦ ⟨hIJ.trans hJE, fun C hC hCI ↦ hJ C hC (hCI.trans hIJ)⟩)
---   -- (fun I J hI hJ C hC hCI ↦ sorry)
---   -- hI C hC (hCI.trans hJ))
---   (by
---     rintro I B ⟨hIE, hI⟩ hInotmax hBmax hBfin hcard
---     have hchoose : ∀
---     sorry
---   )
---   (by
---     refine fun I hI ↦ ⟨fun e heI ↦ ?_, fun C hC hCI ↦ ?_⟩
---     · simpa using (hI {e} (by simpa) (by simp)).1
---     exact (hI C hCI (M.circuit_finite hC)).2 C hC rfl.subset )
---   (fun I hI ↦ hI.1)
 
 -- end FiniteCircuitMatroid
 
