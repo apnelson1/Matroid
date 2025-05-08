@@ -433,7 +433,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
     · exact False.elim <| hne <| hi.elim ⟨hxy.vx_mem_left, hCH hxC⟩ ⟨hxy.vx_mem_right, hCH hyC⟩
     exact hxy.edge_mem
   -- Take a path from a vertex `x` of `C ∩ (G \ H)` to a vertex `y` of `C ∩ (H \ G)`.
-  -- This path must intersect `V(G) ∩ H.V` in a vertex `a`.
+  -- This path must intersect `V(G) ∩ V(H)` in a vertex `a`.
   obtain ⟨x, hxC, hxH⟩ := not_subset.1 hCH
   obtain ⟨y, hyC, hyG⟩ := not_subset.1 hCG
   have hxG : x ∈ V(G) := by simpa [hxH] using hC.vxSet_subset hxC
@@ -442,7 +442,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   obtain ⟨a, -, haG, haH⟩ := hw.exists_mem_mem_of_union hxG hyH
   have hxa : w.first ≠ a := by rintro rfl; contradiction
   have hya : w.last ≠ a := by rintro rfl; contradiction
-  -- Now take an `xy`-path in `C` that doesn't use `a`. This must intersect `V(G) ∩ H.V`
+  -- Now take an `xy`-path in `C` that doesn't use `a`. This must intersect `V(G) ∩ V(H)`
   -- in another vertex `b`, contradicting the fact that the intersection is a subsingleton.
   obtain ⟨w', hw', h1', h2'⟩ :=
     (hC.vxConnected_deleteVx_of_mem_of_mem a hxC hyC hxa hya).exists_isWalk
