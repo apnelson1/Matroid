@@ -52,7 +52,7 @@ lemma IsSublist.edge_sublist {w₁ w₂ : WList α β} (h : w₁.IsSublist w₂)
   | cons x e h ih => exact ih.trans <| by simp
   | cons₂ x e h ih => simpa
 
-lemma IsSublist.edgeSet_subset (h : w₁.IsSublist w₂) : w₁.E ⊆ w₂.E :=
+lemma IsSublist.edgeSet_subset (h : w₁.IsSublist w₂) : E(w₁) ⊆ E(w₂) :=
   fun _ hx ↦ (h.edge_sublist.subset hx)
 
 lemma IsSublist.length_le (h : w₁.IsSublist w₂) : w₁.length ≤ w₂.length := by
@@ -466,8 +466,8 @@ lemma first_not_mem_tail_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
   simp [mem_tail_iff_of_nodup hw hne]
 
 lemma tail_vxSet_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
-    w.tail.V = w.V \ {w.first} := by
-  simp_rw [WList.V, mem_tail_iff_of_nodup hw hne]
+    V(w.tail) = V(w) \ {w.first} := by
+  simp_rw [WList.vxSet, mem_tail_iff_of_nodup hw hne]
   aesop
 
 lemma Nonempty.cons_tail (hw : w.Nonempty) : w.tail.cons w.first (hw.firstEdge w) = w := by
@@ -572,7 +572,7 @@ lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = 
     reverse_first]
 
 lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
-    (w.dropLast).V = w.V \ {w.last} := by
+    V(w.dropLast) = V(w) \ {w.last} := by
   rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
   simp
 

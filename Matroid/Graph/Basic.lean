@@ -24,8 +24,8 @@ and gives basic API for incidence and adjacency.
 
 For `G : Graph α β`, ...
 
-* `G.V` denotes the vertex set of `G` as a term in `Set α`.
-* `G.E` denotes the edge set of `G` as a term in `Set β`.
+* `V(G)` denotes the vertex set of `G` as a term in `Set α`.
+* `E(G)` denotes the edge set of `G` as a term in `Set β`.
 * `G.Inc₂ e x y` means that the edge `e : β` has vertices `x : α` and `y : α` as its ends.
 * `G.Inc e x` means that the edge `e : β` has `x` as one of its ends.
 * `G.Adj x y` means that there is an edge `e` having `x` and `y` as its ends.
@@ -35,7 +35,7 @@ For `G : Graph α β`, ...
 ## Implementation notes
 
 Unlike the design of `SimpleGraph`, the vertex and edge sets of `G` are modelled as sets
-`G.V : Set α` and `G.E : Set β`, within ambient types, rather than being types themselves.
+`V(G) : Set α` and `E(G) : Set β`, within ambient types, rather than being types themselves.
 This mimics the 'embedded set' design used in `Matroid`, which seems to be more amenable to
 formalizing real-world proofs in combinatorics.
 
@@ -50,7 +50,7 @@ the vertex or edge set. This is an issue, but is likely quite amenable to automa
 
 ## Notation
 
-Relecting written mathematics, we use the compact notations `G.V` and `G.E` to describe
+Relecting written mathematics, we use the compact notations `V(G)` and `E(G)` to describe
 vertex and edge sets formally, but use the longer terms `vxSet` and `edgeSet` within
 lemma names to refer to the same objects.
 
@@ -64,9 +64,9 @@ open Set
 as described by a predicate describing whether an edge `e : β` has ends `x` and `y`. -/
 structure Graph (α β : Type*) where
   /-- The vertex set. -/
-  V : Set α
+  vxSet : Set α
   /-- The edge set. -/
-  E : Set β
+  edgeSet : Set β
   /-- The predicate that an edge `e` goes from `x` to `y`. -/
   Inc₂ : β → α → α → Prop
   /-- If `e` goes from `x` to `y`, it goes from `y` to `x`. -/
@@ -74,13 +74,17 @@ structure Graph (α β : Type*) where
   /-- An edge is incident with at most one pair of vertices. -/
   eq_or_eq_of_inc₂_of_inc₂ : ∀ ⦃e x y v w⦄, Inc₂ e x y → Inc₂ e v w → x = v ∨ x = w
   /-- If `e` is incident to something, then `e` is in the edge set -/
-  edge_mem_iff_exists_inc₂ : ∀ e, e ∈ E ↔ ∃ x y, Inc₂ e x y
+  edge_mem_iff_exists_inc₂ : ∀ e, e ∈ edgeSet ↔ ∃ x y, Inc₂ e x y
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
-  vx_mem_left_of_inc₂ : ∀ ⦃e x y⦄, Inc₂ e x y → x ∈ V
+  vx_mem_left_of_inc₂ : ∀ ⦃e x y⦄, Inc₂ e x y → x ∈ vxSet
 
-initialize_simps_projections Graph (V → vxSet, E → edgeSet, Inc₂ → inc₂)
+initialize_simps_projections Graph (Inc₂ → inc₂)
 
 namespace Graph
+
+scoped notation "V(" G ")" => Graph.vxSet G
+
+scoped notation "E(" G ")" => Graph.edgeSet G
 
 variable {G H : Graph α β}
 
@@ -92,16 +96,16 @@ lemma Inc₂.symm (h : G.Inc₂ e x y) : G.Inc₂ e y x :=
 lemma inc₂_comm : G.Inc₂ e x y ↔ G.Inc₂ e y x :=
   ⟨Inc₂.symm, Inc₂.symm⟩
 
-lemma Inc₂.edge_mem (h : G.Inc₂ e x y) : e ∈ G.E :=
+lemma Inc₂.edge_mem (h : G.Inc₂ e x y) : e ∈ E(G) :=
   (edge_mem_iff_exists_inc₂ ..).2 ⟨x, y, h⟩
 
-lemma Inc₂.vx_mem_left (h : G.Inc₂ e x y) : x ∈ G.V :=
+lemma Inc₂.vx_mem_left (h : G.Inc₂ e x y) : x ∈ V(G) :=
   G.vx_mem_left_of_inc₂ h
 
-lemma Inc₂.vx_mem_right (h : G.Inc₂ e x y) : y ∈ G.V :=
+lemma Inc₂.vx_mem_right (h : G.Inc₂ e x y) : y ∈ V(G) :=
   h.symm.vx_mem_left
 
-lemma exists_inc₂_of_mem_edgeSet (h : e ∈ G.E) : ∃ x y, G.Inc₂ e x y :=
+lemma exists_inc₂_of_mem_edgeSet (h : e ∈ E(G)) : ∃ x y, G.Inc₂ e x y :=
   (edge_mem_iff_exists_inc₂ ..).1 h
 
 lemma Inc₂.left_eq_or_eq_of_inc₂ (h : G.Inc₂ e x y) (h' : G.Inc₂ e z w) : x = z ∨ x = w :=
@@ -117,10 +121,10 @@ lemma Inc₂.eq_of_inc₂ (h : G.Inc₂ e x y) (h' : G.Inc₂ e x z) : y = z := 
 lemma Inc₂.inc₂_iff_eq (h : G.Inc₂ e x y) : G.Inc₂ e x z ↔ z = y :=
   ⟨fun h' ↦ h'.eq_of_inc₂ h, fun h' ↦ h' ▸ h⟩
 
-lemma edgeSet_eq_setOf_exists_inc₂ : G.E = {e | ∃ x y, G.Inc₂ e x y} :=
+lemma edgeSet_eq_setOf_exists_inc₂ : E(G) = {e | ∃ x y, G.Inc₂ e x y} :=
   Set.ext fun e ↦ G.edge_mem_iff_exists_inc₂ e
 
-lemma not_inc₂_of_not_mem_edgeSet (he : e ∉ G.E) (x y : α) : ¬ G.Inc₂ e x y := by
+lemma not_inc₂_of_not_mem_edgeSet (he : e ∉ E(G)) (x y : α) : ¬ G.Inc₂ e x y := by
   contrapose! he
   exact he.edge_mem
 
@@ -151,11 +155,11 @@ lemma Inc₂.inc₂_iff_sym2_eq (h : G.Inc₂ e x y) {x' y' : α} :
 def Inc (G : Graph α β) (e : β) (x : α) : Prop := ∃ y, G.Inc₂ e x y
 
 @[simp]
-lemma Inc.edge_mem (h : G.Inc e x) : e ∈ G.E :=
+lemma Inc.edge_mem (h : G.Inc e x) : e ∈ E(G) :=
   h.choose_spec.edge_mem
 
 @[simp]
-lemma Inc.vx_mem (h : G.Inc e x) : x ∈ G.V :=
+lemma Inc.vx_mem (h : G.Inc e x) : x ∈ V(G) :=
   h.choose_spec.vx_mem_left
 
 @[simp]
@@ -220,11 +224,11 @@ lemma IsLoopAt.inc₂_iff_eq (h : G.IsLoopAt e x) : G.Inc₂ e x y ↔ x = y :=
   ⟨h.eq_of_inc₂, fun h' ↦ by rwa [← h']⟩
 
 @[simp]
-lemma IsLoopAt.edge_mem (h : G.IsLoopAt e x) : e ∈ G.E :=
+lemma IsLoopAt.edge_mem (h : G.IsLoopAt e x) : e ∈ E(G) :=
   h.inc.edge_mem
 
 @[simp]
-lemma IsLoopAt.vx_mem (h : G.IsLoopAt e x) : x ∈ G.V :=
+lemma IsLoopAt.vx_mem (h : G.IsLoopAt e x) : x ∈ V(G) :=
   h.inc.vx_mem
 
 /-- `G.IsNonloopAt e x` means that `e` is an edge from `x` to some `y ≠ x`. -/
@@ -234,11 +238,11 @@ structure IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop where
   exists_inc₂_ne : ∃ y ≠ x, G.Inc₂ e x y
 
 @[simp]
-lemma IsNonloopAt.edge_mem (h : G.IsNonloopAt e x) : e ∈ G.E :=
+lemma IsNonloopAt.edge_mem (h : G.IsNonloopAt e x) : e ∈ E(G) :=
   h.inc.edge_mem
 
 @[simp]
-lemma IsNonloopAt.vx_mem (h : G.IsNonloopAt e x) : x ∈ G.V :=
+lemma IsNonloopAt.vx_mem (h : G.IsNonloopAt e x) : x ∈ V(G) :=
   h.inc.vx_mem
 
 lemma IsLoopAt.not_isNonloop_at (h : G.IsLoopAt e x) (y : α) : ¬ G.IsNonloopAt e y := by
@@ -274,7 +278,7 @@ lemma Inc₂.isNonloopAt_of_ne (h : G.Inc₂ e x y) (hxy : x ≠ y) : G.IsNonloo
 lemma Inc₂.isNonloopAt_right_of_ne (h : G.Inc₂ e x y) (hxy : x ≠ y) : G.IsNonloopAt e y :=
   h.symm.isNonloopAt_iff_ne.2 hxy.symm
 
-lemma exists_isLoopAt_or_inc₂_of_mem_edgeSet (h : e ∈ G.E) :
+lemma exists_isLoopAt_or_inc₂_of_mem_edgeSet (h : e ∈ E(G)) :
     (∃ x, G.IsLoopAt e x) ∨ ∃ x y, G.Inc₂ e x y ∧ x ≠ y := by
   obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edgeSet h
   obtain rfl | hne := eq_or_ne x y
@@ -293,11 +297,11 @@ lemma adj_comm : G.Adj x y ↔ G.Adj y x :=
   ⟨Adj.symm, Adj.symm⟩
 
 @[simp]
-lemma Adj.mem_left (h : G.Adj x y) : x ∈ G.V :=
+lemma Adj.mem_left (h : G.Adj x y) : x ∈ V(G) :=
   h.choose_spec.vx_mem_left
 
 @[simp]
-lemma Adj.mem_right (h : G.Adj x y) : y ∈ G.V :=
+lemma Adj.mem_right (h : G.Adj x y) : y ∈ V(G) :=
   h.symm.mem_left
 
 lemma Inc₂.adj (h : G.Inc₂ e x y) : G.Adj x y :=
@@ -314,8 +318,8 @@ protected def mk' (V : Set α) (Inc₂ : β → α → α → Prop)
     (inc₂_symm : ∀ ⦃e x y⦄, Inc₂ e x y → Inc₂ e y x)
     (eq_or_eq_of_inc₂_of_inc₂ : ∀ ⦃e x y v w⦄, Inc₂ e x y → Inc₂ e v w → x = v ∨ x = w)
     (vx_mem_left_of_inc₂ : ∀ ⦃e x y⦄, Inc₂ e x y → x ∈ V) : Graph α β where
-  V := V
-  E := {e | ∃ x y, Inc₂ e x y}
+  vxSet := V
+  edgeSet := {e | ∃ x y, Inc₂ e x y}
   Inc₂ := Inc₂
   inc₂_symm := inc₂_symm
   eq_or_eq_of_inc₂_of_inc₂ := eq_or_eq_of_inc₂_of_inc₂
@@ -323,14 +327,14 @@ protected def mk' (V : Set α) (Inc₂ : β → α → α → Prop)
   vx_mem_left_of_inc₂ := vx_mem_left_of_inc₂
 
 @[simp]
-lemma mk'_eq_self (G : Graph α β) : Graph.mk' G.V G.Inc₂ (fun _ _ _ ↦ Inc₂.symm)
+lemma mk'_eq_self (G : Graph α β) : Graph.mk' V(G) G.Inc₂ (fun _ _ _ ↦ Inc₂.symm)
   (fun _ _ _ _ _ h h' ↦ h.left_eq_or_eq_of_inc₂ h') (fun _ _ _ ↦ Inc₂.vx_mem_left) = G := by
   have h := G.edgeSet_eq_setOf_exists_inc₂
   cases G with | mk V E Inc₂ _ _ _ => simpa [Graph.mk'] using h.symm
 
 /-- Two graphs with the same vertex set and binary incidences are equal. -/
 @[ext]
-protected lemma ext {G₁ G₂ : Graph α β} (hV : G₁.V = G₂.V)
+protected lemma ext {G₁ G₂ : Graph α β} (hV : V(G₁) = V(G₂))
     (h : ∀ e x y, G₁.Inc₂ e x y ↔ G₂.Inc₂ e x y) : G₁ = G₂ := by
   rw [← G₁.mk'_eq_self, ← G₂.mk'_eq_self]
   simp_rw [hV]
@@ -339,15 +343,15 @@ protected lemma ext {G₁ G₂ : Graph α β} (hV : G₁.V = G₂.V)
   rw [h]
 
 /-- Two graphs with the same vertex set and unary incidences are equal. -/
-lemma ext_inc {G₁ G₂ : Graph α β} (hV : G₁.V = G₂.V) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
+lemma ext_inc {G₁ G₂ : Graph α β} (hV : V(G₁) = V(G₂)) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
     G₁ = G₂ :=
   Graph.ext hV fun _ _ _ ↦ by simp_rw [inc₂_iff_inc, h]
 
 @[simps]
-def copy (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α → Prop} (hV : G.V = V)
-    (hE : G.E = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) : Graph α β where
-  V := V
-  E := E
+def copy (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α → Prop} (hV : V(G) = V)
+    (hE : E(G) = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) : Graph α β where
+  vxSet := V
+  edgeSet := E
   Inc₂ := Inc₂
   inc₂_symm := by
     simp_rw [← h_inc₂]
@@ -363,7 +367,7 @@ def copy (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α 
     exact G.vx_mem_left_of_inc₂
 
 lemma copy_eq_self (G : Graph α β) {V : Set α} {E : Set β} {Inc₂ : β → α → α → Prop}
-    (hV : G.V = V) (hE : G.E = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) :
+    (hV : V(G) = V) (hE : E(G) = E) (h_inc₂ : ∀ e x y, G.Inc₂ e x y ↔ Inc₂ e x y) :
     G.copy hV hE h_inc₂ = G := by
   ext <;> simp_all
 

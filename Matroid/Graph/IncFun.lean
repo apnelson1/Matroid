@@ -26,12 +26,12 @@ lemma Inc₂.endSet_eq (h : G.Inc₂ e x y) : G.endSet e = {x,y} := by
 lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : G.endSet e = {x} := by
   rw [Inc₂.endSet_eq h, pair_eq_singleton]
 
-lemma endSet_eq_of_not_mem_edgeSet (he : e ∉ G.E) : G.endSet e = ∅ := by
+lemma endSet_eq_of_not_mem_edgeSet (he : e ∉ E(G)) : G.endSet e = ∅ := by
   simp only [endSet, eq_empty_iff_forall_not_mem, mem_setOf_eq]
   exact fun x hx ↦ he hx.edge_mem
 
 lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 := by
-  by_cases heE : e ∈ G.E
+  by_cases heE : e ∈ E(G)
   · obtain ⟨x, y, h⟩ := exists_inc₂_of_mem_edgeSet heE
     rw [h.endSet_eq]
     exact encard_pair_le x y
@@ -50,7 +50,7 @@ lemma endSet_finite (G : Graph α β) (e : β) : (G.endSet e).Finite :=
 /-- The 'incidence function' of a graph `G`. If `e : β` and `x : α`,
 then `G.incFun e x` is equal to `0` if `e` is not incident to `x`,
 `1` if `e` is a nonloop edge at `x` and `2` if `e` is a loop edge at `x`.
-It is defined this way so that `G.incFun e` sums to two for each `e ∈ G.E`,
+It is defined this way so that `G.incFun e` sums to two for each `e ∈ E(G)`,
 which is natural for the handshake theorem and linear algebra on graphs.
 
 The definition is contrivedly written in terms of `ncard` so it
@@ -78,7 +78,7 @@ lemma Inc₂.incFun_support_eq [DecidableEq α] (h : G.Inc₂ e x y) :
 -- noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ :=
 --   (G.eIncFun e).mapRange ENat.toNat (by simp)
 
-lemma incFun_eq_zero_of_not_mem (he : e ∉ G.E) : G.incFun e = 0 := by
+lemma incFun_eq_zero_of_not_mem (he : e ∉ E(G)) : G.incFun e = 0 := by
   simp [DFunLike.ext_iff, incFun, not_inc₂_of_not_mem_edgeSet he]
 
 lemma incFun_le_two (G : Graph α β) (e : β) (x : α) : G.incFun e x ≤ 2 := by
@@ -114,7 +114,7 @@ lemma IsLoopAt.incFun_eq_two (h : G.IsLoopAt e x) : G.incFun e x = 2 :=
   incFun_eq_two_iff.2 h
 
 @[simp]
-lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ G.E := by
+lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ E(G) := by
   refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_not_mem⟩
   obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet he
   obtain hx | hx := hxy.inc_left.isLoopAt_or_isNonloopAt
@@ -123,7 +123,7 @@ lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ G.E := by
   have := h ▸ hx.incFun_eq_one
   simp at this
 
-lemma sum_incFun_eq_two (he : e ∈ G.E) : (G.incFun e).sum (fun _ x ↦ x) = 2 := by
+lemma sum_incFun_eq_two (he : e ∈ E(G)) : (G.incFun e).sum (fun _ x ↦ x) = 2 := by
   classical
   obtain ⟨x, y, hxy⟩ := exists_inc₂_of_mem_edgeSet he
   obtain rfl | hne := eq_or_ne x y

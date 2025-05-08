@@ -80,7 +80,7 @@ lemma IsCycle.mem_tail_dropLast_of_ne_first (hC : G.IsCycle C) (hxC : x ∈ C) (
     tail_last, ← hC.isClosed, or_iff_left hx] at hxC
 
 lemma IsCycle.tail_dropLast_vxSet (hC : G.IsCycle C) (hnt : C.Nontrivial) :
-    C.tail.dropLast.V = C.V \ {C.first} := by
+    V(C.tail.dropLast) = V(C) \ {C.first} := by
   cases C with
   | nil => simp at hC
   | cons u e w =>
@@ -102,7 +102,7 @@ lemma IsCycle.isCycle_of_ge (h : H.IsCycle w) (hle : H ≤ G) : G.IsCycle w wher
   isClosed := h.isClosed
   nodup := h.nodup
 
-lemma IsCycle.isCycle_of_le (h : G.IsCycle w) (hle : H ≤ G) (hE : w.E ⊆ H.E) :
+lemma IsCycle.isCycle_of_le (h : G.IsCycle w) (hle : H ≤ G) (hE : E(w) ⊆ E(H)) :
     H.IsCycle w where
   isWalk := h.isWalk.isWalk_le_of_nonempty hle hE h.nonempty
   edge_nodup := h.edge_nodup

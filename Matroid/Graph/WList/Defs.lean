@@ -159,51 +159,57 @@ protected inductive UniqueMem : WList α β → α → Prop
 
 /-! ### Vertex/Edge Sets -/
 
-protected def V (w : WList α β) : Set α := {x | x ∈ w}
 
-protected def E (w : WList α β) : Set β := {e | e ∈ w.edge}
 
-@[simp]
-lemma mem_vxSet_iff : x ∈ w.V ↔ x ∈ w := Iff.rfl
+protected def vxSet (w : WList α β) : Set α := {x | x ∈ w}
 
-@[simp]
-lemma mem_edgeSet_iff : e ∈ w.E ↔ e ∈ w.edge := Iff.rfl
+scoped notation "V(" w ")" => WList.vxSet w
 
-@[simp]
-lemma nil_vxSet : (nil x : WList α β).V = {x} := by
-  simp [WList.V]
+protected def edgeSet (w : WList α β) : Set β := {e | e ∈ w.edge}
+
+scoped notation "E(" w ")" => WList.edgeSet w
 
 @[simp]
-lemma nil_edgeSet : (nil x : WList α β).E = ∅ := by
-  simp [WList.E]
+lemma mem_vxSet_iff : x ∈ V(w) ↔ x ∈ w := Iff.rfl
 
-@[simp] lemma cons_vxSet : (cons x e w).V = insert x w.V := by
-  simp [WList.V, mem_cons_iff, Set.ext_iff]
+@[simp]
+lemma mem_edgeSet_iff : e ∈ E(w) ↔ e ∈ w.edge := Iff.rfl
 
-@[simp] lemma cons_edgeSet : (cons x e w).E = insert e w.E := by
-  simp only [WList.E, cons_edge, mem_cons, singleton_union]
+@[simp]
+lemma nil_vxSet : V((nil x : WList α β)) = {x} := by
+  simp [WList.vxSet]
+
+@[simp]
+lemma nil_edgeSet : E((nil x : WList α β)) = ∅ := by
+  simp [WList.edgeSet]
+
+@[simp] lemma cons_vxSet : V(cons x e w) = insert x V(w) := by
+  simp [WList.vxSet, mem_cons_iff, Set.ext_iff]
+
+@[simp] lemma cons_edgeSet : E(cons x e w) = insert e E(w) := by
+  simp only [WList.edgeSet, cons_edge, mem_cons, singleton_union]
   rfl
 
 @[simp]
-lemma edgeSet_finite (w : WList α β) : w.E.Finite := by
+lemma edgeSet_finite (w : WList α β) : E(w).Finite := by
   induction w with simp_all
 
 @[simp]
-lemma vxSet_nonempty (w : WList α β) : w.V.Nonempty := by
+lemma vxSet_nonempty (w : WList α β) : V(w).Nonempty := by
   cases w with simp
 
 @[simp]
-lemma vxSet_finite (w : WList α β) : w.V.Finite := by
+lemma vxSet_finite (w : WList α β) : V(w).Finite := by
   induction w with simp_all
 
-lemma vxSet_disjoint_iff : _root_.Disjoint w₁.V w₂.V ↔ w₁.vx.Disjoint w₂.vx := by
+lemma vxSet_disjoint_iff : _root_.Disjoint V(w₁) V(w₂) ↔ w₁.vx.Disjoint w₂.vx := by
   simp [Set.disjoint_left, List.disjoint_left]
 
-lemma edgeSet_disjoint_iff : _root_.Disjoint w₁.E w₂.E ↔ w₁.edge.Disjoint w₂.edge := by
+lemma edgeSet_disjoint_iff : _root_.Disjoint E(w₁) E(w₂) ↔ w₁.edge.Disjoint w₂.edge := by
   simp [Set.disjoint_left, List.disjoint_left]
 
 @[simp]
-lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Set α) = w.V := by
+lemma vx_toFinset_toSet [DecidableEq α] (w : WList α β) : (w.vx.toFinset : Set α) = V(w) := by
   induction w with
   | nil u => simp
   | cons u e W ih =>
@@ -299,7 +305,7 @@ lemma Nonempty.firstEdge_eq_head (hw : w.Nonempty) :
     hw.firstEdge = w.edge.head hw.edge_ne_nil := by
   cases hw with simp
 
-lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : w.E.Nonempty := by
+lemma Nonempty.edgeSet_nonempty (h : w.Nonempty) : E(w).Nonempty := by
   cases h with simp
 
 /-! ### Nontriviality -/
@@ -750,7 +756,7 @@ end WList
 --   use w.first, hfirst, w.last, hlast, hVd.connected
 
 -- lemma left_subset (hWF : G.IsWListFrom S T w)
-  -- (hsubset : S ∩ G.V ⊆ S') : G.IsWListFrom S' T w where
+  -- (hsubset : S ∩ V(G) ⊆ S') : G.IsWListFrom S' T w where
 --   isWList := hWF.isWList
 --   first_mem := hsubset ⟨hWF.first_mem, hWF.isWList.vx_mem_of_mem WList.first_mem⟩
 --   last_mem := hWF.last_mem
@@ -760,7 +766,7 @@ end WList
 --   first_mem := hsubset hWF.first_mem
 --   last_mem := hWF.last_mem
 
--- lemma right_subset (hWF : G.IsWListFrom S T w) (hsubset : T ∩ G.V ⊆ T') :
+-- lemma right_subset (hWF : G.IsWListFrom S T w) (hsubset : T ∩ V(G) ⊆ T') :
     -- G.IsWListFrom S T' w where
 --   isWList := hWF.isWList
 --   first_mem := hWF.first_mem
@@ -771,7 +777,7 @@ end WList
 --   first_mem := hWF.first_mem
 --   last_mem := hsubset hWF.last_mem
 
--- lemma left_right_subset (hWF : G.IsWListFrom S T w) (hS : S ∩ G.V ⊆ S') (hT : T ∩ G.V ⊆ T') :
+-- lemma left_right_subset (hWF : G.IsWListFrom S T w) (hS : S ∩ V(G) ⊆ S') (hT : T ∩ V(G) ⊆ T') :
 --     G.IsWListFrom S' T' w := hWF.left_subset hS |>.right_subset hT
 
 -- lemma left_right_subset' (hWF : G.IsWListFrom S T w) (hS : S ⊆ S') (hT : T ⊆ T') :
