@@ -5,7 +5,7 @@ import Mathlib.Order.Minimal
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
 {P C : WList α β}
-open Set
+open Set WList
 
 namespace Graph
 
@@ -46,7 +46,7 @@ lemma singleEdge_acyclic (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Acy
   simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
   rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
 
-lemma edgeRestrict_acyclic_iff : (G ↾ F).Acyclic ↔ ∀ (C : WList α β), C.E ⊆ F → ¬ G.IsCycle C := by
+lemma edgeRestrict_acyclic_iff : (G ↾ F).Acyclic ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCycle C := by
   refine ⟨fun h C hCF hC ↦ h C ?_, fun h C hC ↦ h C ?_ (hC.isCycle_of_ge <| by simp)⟩
   · exact hC.isCycle_of_le (by simp) <| by simp [hCF, hC.isWalk.edgeSet_subset]
   exact hC.isWalk.edgeSet_subset.trans inter_subset_left
@@ -80,8 +80,8 @@ lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F 
 
 lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ : G.IsCycle C₀)
     (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
-  have hCE : C₀.E ⊆ C.E := by simpa using edgeSet_subset_of_le hle
-  have hCV : C₀.V ⊆ C.V := by simpa using vxSet_subset_of_le hle
+  have hCE : E(C₀) ⊆ E(C) := by simpa using edgeSet_subset_of_le hle
+  have hCV : V(C₀) ⊆ V(C) := by simpa using vxSet_subset_of_le hle
   refine hle.antisymm <| G.le_of_le_le_subset_subset hC.isWalk.toGraph_le
     hC₀.isWalk.toGraph_le (fun x hxC ↦ by_contra fun hxC₀ ↦ ?_)
       (fun e heC ↦ by_contra fun heC₀ ↦ ?_)
@@ -100,7 +100,7 @@ lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ 
   refine hC₀.toGraph_not_acyclic <| hP.toGraph_acyclic.mono ?_
   rw [hPC, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
     edgeRestrict_edgeDelete]
-  have hss : C₀.E ⊆ C.E \ {e} := subset_diff_singleton hCE (by simpa using heC₀)
+  have hss : E(C₀) ⊆ E(C) \ {e} := subset_diff_singleton hCE (by simpa using heC₀)
   refine (edgeRestrict_mono_right _ hss).trans ?_
   rw [← edgeRestrict_induce, ← edgeRestrict_induce]
   exact induce_mono _ hCV

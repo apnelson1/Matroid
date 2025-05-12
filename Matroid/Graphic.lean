@@ -4,13 +4,13 @@ import Matroid.Graph.Tree
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
 
-open Set
+open Set WList
 
 namespace Graph
 
-def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ C₀.E = C
+def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
 
-def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (C₀.E ⊆ I)
+def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
@@ -22,7 +22,7 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       simp only [IsCycleSet, not_exists, not_and]
       exact fun C hC hCe ↦ by simpa [hCe] using hC.nonempty.edgeSet_nonempty )
     (by
-      rintro _ ⟨C₁, hC₁, rfl⟩ _ ⟨C₂, hC₂, rfl⟩ hne (hss : C₁.E ⊆ C₂.E)
+      rintro _ ⟨C₁, hC₁, rfl⟩ _ ⟨C₂, hC₂, rfl⟩ hne (hss : E(C₁) ⊆ E(C₂))
       have h_eq := hC₂.toGraph_eq_of_le hC₁ <|
         hC₁.isWalk.le_of_edgeSet_subset hC₁.nonempty hC₂.isWalk hss
       exact hne <| by simpa using congrArg Graph.edgeSet h_eq )
@@ -34,15 +34,15 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       obtain ⟨P₁, hP₁, hP₁C₁, hx₁, hy₁⟩ := hC₁.exists_isPath_toGraph_eq_delete_edge_of_inc₂ hxy₁
       obtain ⟨P₂, hP₂, hP₂C₂, hx₂, hy₂⟩ := hC₂.exists_isPath_toGraph_eq_delete_edge_of_inc₂ hxy₂
       by_cases h_eq : P₁ = P₂
-      · apply_fun (fun P ↦ insert e P.E) at h_eq
+      · apply_fun (fun P : WList α β ↦ insert e E(P)) at h_eq
         simp [← P₁.toGraph_edgeSet, ← P₂.toGraph_edgeSet, hP₁C₁, hP₂C₂, edgeDelete_edgeSet,
           WList.toGraph_edgeSet, Set.insert_eq_of_mem he₁, Set.insert_eq_of_mem he₂, hne] at h_eq
       obtain ⟨C, hC, hCE⟩ := twoPaths hP₁ hP₂ h_eq (by rw [hx₁, hx₂]) (by rw [hy₁, hy₂])
-      have hss : C.E ⊆ (C₁.E ∪ C₂.E) \ {e} := by
+      have hss : E(C) ⊆ (E(C₁) ∪ E(C₂)) \ {e} := by
         apply_fun Graph.edgeSet at hP₁C₁ hP₂C₂
         simp only [WList.toGraph_edgeSet, edgeDelete_edgeSet] at hP₁C₁ hP₂C₂
         rwa [union_diff_distrib, ← hP₁C₁, ← hP₂C₂]
-      refine ⟨C.E, ⟨C, hC, rfl⟩, not_mem_subset hss (by simp), fun x hx ↦ ?_⟩
+      refine ⟨E(C), ⟨C, hC, rfl⟩, not_mem_subset hss (by simp), fun x hx ↦ ?_⟩
       simpa using (hss.trans diff_subset) hx )
     (by
       rintro _ ⟨C, hC, rfl⟩
