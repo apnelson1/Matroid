@@ -15,6 +15,7 @@ lemma restrict_indep_eq_freeOn (hI : M.Indep I) : M ↾ I = freeOn I := by
   exact hI.subset
 
 lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
+
   refine ⟨restrict_indep_eq_freeOn, fun h ↦ ?_⟩
   have h' := restrict_indep_iff (M := M) (I := I) (R := I)
   rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'

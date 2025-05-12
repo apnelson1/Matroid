@@ -24,26 +24,9 @@ section Basic
 lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
   h.eRk_lt_top.ne
 
--- The next three lemmas are convenient for the calculations that show up in connectivity arguments.
-lemma eRk_submod_insert (M : Matroid α) (X Y : Set α) :
-    M.eRk (insert e (X ∩ Y)) + M.eRk (insert e (X ∪ Y))
-      ≤ M.eRk (insert e X) + M.eRk (insert e Y) := by
-  rw [insert_inter_distrib, insert_union_distrib]
-  apply M.eRk_submod
+lemma RankFinite.eRk_lt_top [M.RankFinite] : M.eRank < ⊤ := by
+  sorry
 
-lemma eRk_submod_compl (M : Matroid α) (X Y : Set α) :
-    M.eRk (M.E \ (X ∪ Y)) + M.eRk (M.E \ (X ∩ Y)) ≤ M.eRk (M.E \ X) + M.eRk (M.E \ Y) := by
-  rw [← diff_inter_diff, diff_inter]
-  apply M.eRk_submod
-
-lemma eRk_submod_insert_compl (M : Matroid α) (X Y : Set α) :
-    M.eRk (M.E \ insert e (X ∪ Y)) + M.eRk (M.E \ insert e (X ∩ Y)) ≤
-      M.eRk (M.E \ insert e X) + M.eRk (M.E \ insert e Y) := by
-  rw [insert_union_distrib, insert_inter_distrib]
-  exact M.eRk_submod_compl (insert e X) (insert e Y)
-
-lemma eRk_eq_eRk_of_subset_le (hXY : X ⊆ Y) (hYX : M.eRk Y ≤ M.eRk X) : M.eRk X = M.eRk Y :=
-  (M.eRk_mono hXY).antisymm hYX
 
 lemma indep_iff_eRk_eq_encard_of_finite (hI : I.Finite) : M.Indep I ↔ M.eRk I = I.encard := by
   refine ⟨fun h ↦ by rw [h.eRk_eq_encard], fun h ↦ ?_⟩
@@ -487,9 +470,6 @@ lemma not_isRkFinite_of_eRk_ge (h : ¬M.IsRkFinite X) (hXY : M.eRk X ≤ M.eRk Y
     ¬M.IsRkFinite Y := by
   contrapose! h
   exact eRk_lt_top_iff.1 <| hXY.trans_lt h.eRk_lt_top
-
-lemma eRank_lt_top (M : Matroid α) [RankFinite M] : M.eRank < ⊤ := by
-  rwa [eRank_def, eRk_lt_top_iff, isRkFinite_ground_iff_rankFinite]
 
 lemma IsRkFinite.indep_of_encard_le_eRk (hX : M.IsRkFinite I) (h : encard I ≤ M.eRk I) :
     M.Indep I := by
