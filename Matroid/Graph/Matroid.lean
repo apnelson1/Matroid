@@ -10,13 +10,13 @@ namespace Graph
 
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ C₀.E = C
 
-def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ G.E ∧ ∀ C₀, G.IsCycle C₀ → ¬ (C₀.E ⊆ I)
+def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (C₀.E ⊆ I)
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
 def cycleMatroid (G : Graph α β) : Matroid β :=
   FiniteCircuitMatroid.matroid <| FiniteCircuitMatroid.mk
-    (E := G.E)
+    (E := E(G))
     (IsCircuit := G.IsCycleSet)
     (by
       simp only [IsCycleSet, not_exists, not_and]
@@ -25,7 +25,7 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       rintro _ ⟨C₁, hC₁, rfl⟩ _ ⟨C₂, hC₂, rfl⟩ hne (hss : C₁.E ⊆ C₂.E)
       have h_eq := hC₂.toGraph_eq_of_le hC₁ <|
         hC₁.isWalk.le_of_edgeSet_subset hC₁.nonempty hC₂.isWalk hss
-      exact hne <| by simpa using congrArg Graph.E h_eq )
+      exact hne <| by simpa using congrArg Graph.edgeSet h_eq )
     (by
       rintro _ _ e ⟨C₁, hC₁, rfl⟩ ⟨C₂, hC₂, rfl⟩ hne he₁ he₂
       obtain ⟨x, y, hxy₁⟩ := C₁.exists_inc₂_of_mem_edge he₁
@@ -39,7 +39,7 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
           WList.toGraph_edgeSet, Set.insert_eq_of_mem he₁, Set.insert_eq_of_mem he₂, hne] at h_eq
       obtain ⟨C, hC, hCE⟩ := twoPaths hP₁ hP₂ h_eq (by rw [hx₁, hx₂]) (by rw [hy₁, hy₂])
       have hss : C.E ⊆ (C₁.E ∪ C₂.E) \ {e} := by
-        apply_fun Graph.E at hP₁C₁ hP₂C₂
+        apply_fun Graph.edgeSet at hP₁C₁ hP₂C₂
         simp only [WList.toGraph_edgeSet, edgeDelete_edgeSet] at hP₁C₁ hP₂C₂
         rwa [union_diff_distrib, ← hP₁C₁, ← hP₂C₂]
       refine ⟨C.E, ⟨C, hC, rfl⟩, not_mem_subset hss (by simp), fun x hx ↦ ?_⟩

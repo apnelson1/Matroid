@@ -47,7 +47,7 @@ lemma concat_edge : (w.concat e v).edge = w.edge ++ [e] := by
   induction w with | nil => rfl | cons => simpa [concat]
 
 @[simp]
-lemma concat_edgeSet : (w.concat e v).E = insert e w.E  := by
+lemma concat_edgeSet : E(w.concat e v) = insert e E(w)  := by
   simp [Set.ext_iff, or_comm]
 
 @[simp]
@@ -63,7 +63,7 @@ lemma concat_nonempty (w : WList α β) (e x) : (w.concat e x).Nonempty := by
   induction w with simp_all
 
 @[simp]
-lemma concat_vxSet_eq (w : WList α β) (e x) : (w.concat e x).V = insert x w.V := by
+lemma concat_vxSet_eq (w : WList α β) (e x) : V(w.concat e x) = insert x V(w) := by
   induction w with | nil => simp [pair_comm] | cons _ _ _ ih => simp [ih, insert_comm]
 
 lemma get_concat (w : WList α β) (e x) {n} (hn : n ≤ w.length) :
@@ -132,7 +132,7 @@ lemma append_edge {w₁ w₂ : WList α β} : (w₁ ++ w₂).edge = w₁.edge ++
   induction w₁ with simp_all
 
 @[simp]
-lemma append_edgeSet (w₁ w₂ : WList α β) : (w₁ ++ w₂).E = w₁.E ∪ w₂.E := by
+lemma append_edgeSet (w₁ w₂ : WList α β) : E(w₁ ++ w₂) = E(w₁) ∪ E(w₂) := by
   ext; simp
 
 @[simp]
@@ -160,7 +160,7 @@ lemma append_last : (w₁ ++ w₂).last = w₂.last := by
 lemma append_right_injective : Injective (w ++ ·) :=
   fun w₁ w₂ h ↦ by induction w with simp_all
 
-lemma append_vxSet (h : w₁.last = w₂.first) : (w₁ ++ w₂).V = w₁.V ∪ w₂.V := by
+lemma append_vxSet (h : w₁.last = w₂.first) : V(w₁ ++ w₂) = V(w₁) ∪ V(w₂) := by
   induction w₁ with
   | nil u => simp [insert_eq_of_mem, show u = w₂.first from h]
   | cons u e w ih =>
@@ -284,7 +284,7 @@ lemma reverse_edge {w : WList α β} : (reverse w).edge = w.edge.reverse := by
   | cons x e w ih => simp [reverse, ih]
 
 @[simp]
-lemma reverse_edgeSet : (reverse w).E = w.E := by
+lemma reverse_edgeSet : E(reverse w) = E(w) := by
   ext; simp
 
 @[simp]
@@ -338,8 +338,8 @@ lemma mem_reverse : x ∈ w.reverse ↔ x ∈ w := by
   | cons u e w ih => simp [ih, or_comm]
 
 @[simp]
-lemma reverse_vxSet (w : WList α β) : w.reverse.V = w.V := by
-  simp [WList.V]
+lemma reverse_vxSet (w : WList α β) : V(w.reverse) = V(w) := by
+  simp [WList.vxSet]
 
 lemma DInc.reverse (h : w.DInc e x y) : w.reverse.DInc e y x := by
   induction h with

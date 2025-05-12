@@ -11,7 +11,7 @@ namespace Graph
 
 def Acyclic (G : Graph α β) : Prop := ∀ C, ¬ G.IsCycle C
 
-lemma acyclic_iff_forall_isBridge : G.Acyclic ↔ ∀ e ∈ G.E, G.IsBridge e := by
+lemma acyclic_iff_forall_isBridge : G.Acyclic ↔ ∀ e ∈ E(G), G.IsBridge e := by
   simp only [Acyclic, isBridge_iff, forall_and, imp_self, true_and]
   refine ⟨fun h _ _ C hC _ ↦ h C hC, fun h C hC ↦ ?_⟩
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
@@ -22,7 +22,7 @@ lemma Acyclic.mono (hG : G.Acyclic) (hHG : H ≤ G) : H.Acyclic :=
 
 /-- The union of two acyclic graphs that intersect in at most one vertex is acyclic.  -/
 lemma Acyclic.union_acyclic_of_subsingleton_inter (hG : G.Acyclic) (hH : H.Acyclic)
-    (hi : (G.V ∩ H.V).Subsingleton) : (G ∪ H).Acyclic := by
+    (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).Acyclic := by
   intro C hC
   obtain hC | hC := hC.isCycle_or_isCycle_of_union_of_subsingleton_inter hi
   · exact hG C hC
@@ -55,7 +55,7 @@ lemma edgeRestrict_acyclic_iff : (G ↾ F).Acyclic ↔ ∀ (C : WList α β), C.
 The correct statement is that any two vertices connected in the big graph are
 connected in the small one-/
 lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F : Set β}
-    (hF : Maximal (fun F ↦ F ⊆ G.E ∧ (G ↾ F).Acyclic) F) : (G ↾ F).Connected := by
+    (hF : Maximal (fun F ↦ F ⊆ E(G) ∧ (G ↾ F).Acyclic) F) : (G ↾ F).Connected := by
   by_contra hcon
   obtain ⟨S, e, x, y, heF, hx, hy, hxy⟩ := hG.exists_of_edgeRestrict_not_connected hcon
   have hne : x ≠ y := S.disjoint.ne_of_mem hx hy
@@ -71,7 +71,7 @@ lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F 
   · simp only [union_vxSet, induce_vxSet, singleEdge_vxSet, union_insert, union_singleton]
     rw [insert_inter_of_not_mem hx', insert_inter_of_mem hy, S.disjoint.inter_eq]
     simp
-  have hins : insert e F ⊆ G.E := insert_subset hxy.edge_mem hF.prop.1
+  have hins : insert e F ⊆ E(G) := insert_subset hxy.edge_mem hF.prop.1
   refine heF <| hF.mem_of_prop_insert ⟨hins, h'.mono ?_⟩
   rw [(Compatible.of_disjoint_edgeSet (by simp [heF])).union_comm (G := (G ↾ F)[S.left]),
     Graph.union_assoc, ← S.eq_union]
@@ -135,6 +135,6 @@ lemma acyclic_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected)
 -- lemma Connected.isTree_of_maximal_acyclic_le (hG : G.Connected)
 --     (h : Maximal (fun H ↦ H.Acyclic ∧ H ≤ G) T) : T.IsTree := by
 --   refine ⟨h.prop.1, by_contra fun hnc ↦ ?_⟩
---   have hV : T.V = G.V := by
+--   have hV : T.V = V(G) := by
 --     refine (vxSet_subset_of_le h.prop.2).
 --   have := exists_of_not_connected hnc
