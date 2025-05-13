@@ -263,8 +263,7 @@ protected def ofNonSpanningCircuit
 
             ·
               rw [union_singleton, ncard_exchange hf.2 heC]
-              -- deconstruct `hS` before this.
-              sorry
+              exact hS.2.1
             · apply union_subset
               · have : C \ {e} ⊆ C := by
                   simp only [diff_singleton_subset_iff, subset_insert]

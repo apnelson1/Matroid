@@ -881,7 +881,8 @@ lemma RankFinite.ofDelete {D : Set α} (hD : M.IsRkFinite D) (hfin : (M ＼ D).R
     M.RankFinite := by
   rw [← eRank_ne_top_iff, ← lt_top_iff_ne_top]
   refine (M.delete_eRank_add_eRk_ge_eRank D).trans_lt ?_
-  simp [ENat.add_lt_top, eRk_lt_top_iff, hD, eRank_lt_top]
+  simp [ENat.add_lt_top, eRk_lt_top_iff, hD]
+  -- rw [eRank_lt_top_]
 
 instance (U : M.ModularCut) (e : α) [M.RankFinite] : (M.extendBy e U).RankFinite := by
   refine RankFinite.ofDelete (D := {e}) isRkFinite_singleton ?_
