@@ -116,28 +116,28 @@ lemma DInc.of_isSublist (h : w₁.DInc e x y) (hle : w₁.IsSublist w₂) : w₂
     | cons_left x e w => exact h_eq ▸ (DInc.cons_left ..)
     | cons u f hw => exact DInc.cons _ _ (ih hw)
 
-lemma Inc₂.of_isSublist (h : w₁.Inc₂ e x y) (hle : w₁.IsSublist w₂) : w₂.Inc₂ e x y :=
-  (inc₂_iff_dInc.1 h).elim (fun h ↦ (h.of_isSublist hle).inc₂)
-    fun h ↦ (h.of_isSublist hle).inc₂.symm
+lemma IsLink.of_isSublist (h : w₁.IsLink e x y) (hle : w₁.IsSublist w₂) : w₂.IsLink e x y :=
+  (isLink_iff_dInc.1 h).elim (fun h ↦ (h.of_isSublist hle).isLink)
+    fun h ↦ (h.of_isSublist hle).isLink.symm
 
 lemma WellFormed.sublist (h : w₂.WellFormed) (hle : w₁.IsSublist w₂) : w₁.WellFormed :=
   fun _ _ _ _ _ h₁ h₂ ↦ h (h₁.of_isSublist hle) (h₂.of_isSublist hle)
 
 lemma cons_wellFormed_iff : (cons x e w).WellFormed ↔
-    w.WellFormed ∧ ∀ y₁ y₂, w.Inc₂ e y₁ y₂ → s(y₁, y₂) = s(x, w.first) := by
+    w.WellFormed ∧ ∀ y₁ y₂, w.IsLink e y₁ y₂ → s(y₁, y₂) = s(x, w.first) := by
   refine ⟨fun h' ↦ ⟨h'.sublist (by simp), fun y₁ y₂ h ↦ ?_⟩, fun h ↦ ?_⟩
-  · exact h' (h.cons ..) (Inc₂.cons_left ..)
+  · exact h' (h.cons ..) (IsLink.cons_left ..)
   intro f x₁ x₂ y₁ y₂ h₁ h₂
   cases h₁ with
   | cons_left u f w =>
-    rw [inc₂_cons_iff, and_iff_right rfl] at h₂
+    rw [isLink_cons_iff, and_iff_right rfl] at h₂
     exact h₂.elim Eq.symm fun h' ↦ (h.2 _ _ h').symm
   | cons_right u f w =>
     rw [Sym2.eq_swap]
-    rw [inc₂_cons_iff, and_iff_right rfl] at h₂
+    rw [isLink_cons_iff, and_iff_right rfl] at h₂
     refine h₂.elim Eq.symm fun h' ↦ (h.2 _ _ h').symm
   | cons u f hw =>
-    obtain ⟨rfl, h₂'⟩ | h₂ := inc₂_cons_iff.1 h₂
+    obtain ⟨rfl, h₂'⟩ | h₂ := isLink_cons_iff.1 h₂
     · rw [h₂', h.2 _ _ hw]
     exact h.1 hw h₂
 
@@ -465,9 +465,9 @@ lemma first_not_mem_tail_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
     w.first ∉ w.tail := by
   simp [mem_tail_iff_of_nodup hw hne]
 
-lemma tail_vxSet_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
+lemma tail_vertexSet_of_nodup (hw : Nodup w.vx) (hne : w.Nonempty) :
     V(w.tail) = V(w) \ {w.first} := by
-  simp_rw [WList.vxSet, mem_tail_iff_of_nodup hw hne]
+  simp_rw [WList.vertexSet, mem_tail_iff_of_nodup hw hne]
   aesop
 
 lemma Nonempty.cons_tail (hw : w.Nonempty) : w.tail.cons w.first (hw.firstEdge w) = w := by
@@ -493,8 +493,8 @@ lemma tail_concat (hw : w.Nonempty) (e : β) (x : α) : (w.concat e x).tail = w.
 lemma tail_append (hw₁ : w₁.Nonempty) (w₂ : WList α β) : (w₁ ++ w₂).tail = w₁.tail ++ w₂ := by
   induction w₁ with simp_all
 
-lemma Nonempty.tail_inc₂_iff (hw : w.Nonempty) (hnd : w.edge.Nodup) :
-    w.tail.Inc₂ f x y ↔ w.Inc₂ f x y ∧ ¬f = hw.firstEdge := by
+lemma Nonempty.tail_isLink_iff (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+    w.tail.IsLink f x y ↔ w.IsLink f x y ∧ ¬f = hw.firstEdge := by
   cases hw with | cons u e w =>
   simp only [tail_cons, Nonempty.firstEdge_cons]
   have ⟨hew, hnd⟩  : e ∉ w.edge ∧ w.edge.Nodup := by simpa using hnd
@@ -571,9 +571,9 @@ lemma mem_iff_eq_mem_dropLast_or_eq_last : u ∈ w ↔ u ∈ w.dropLast ∨ u = 
   rw [← mem_reverse, mem_iff_eq_first_or_mem_tail, or_comm, reverse_tail, mem_reverse,
     reverse_first]
 
-lemma dropLast_vxSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
+lemma dropLast_vertexSet_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
     V(w.dropLast) = V(w) \ {w.last} := by
-  rw [← reverse_vxSet, ← reverse_tail, tail_vxSet_of_nodup (by simpa) (by simpa)]
+  rw [← reverse_vertexSet, ← reverse_tail, tail_vertexSet_of_nodup (by simpa) (by simpa)]
   simp
 
 lemma mem_dropLast_iff_of_nodup (hw : w.vx.Nodup) (hne : w.Nonempty) :
@@ -795,7 +795,7 @@ lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast
 --     split_ifs with hPx
 --     · rw [nil_validIn]
 --       simp only [cons_validIn] at hVd
---       exact hVd.1.vx_mem_left
+--       exact hVd.1.left_mem
 --     · rw [cons_validIn] at hVd ⊢
 --       refine ⟨?_, hVd.2.endIf _ ⟩
 --       convert hVd.1 using 1
@@ -829,9 +829,9 @@ lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast
 --       · simp only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] at h
 --         exact endIf_mem_vx h hvmem
 
--- lemma endIf_exists_inc₂_last {w : WList α β} (h : ∃ u ∈ w, P u) (hVd : w.ValidIn G)
+-- lemma endIf_exists_isLink_last {w : WList α β} (h : ∃ u ∈ w, P u) (hVd : w.ValidIn G)
 --     (hNonempty : (w.endIf h).Nonempty) :
---     ∃ v ∈ (w.endIf h), ¬ P v ∧ ∃ e, G.Inc₂ e v (w.endIf h).last := by
+--     ∃ v ∈ (w.endIf h), ¬ P v ∧ ∃ e, G.IsLink e v (w.endIf h).last := by
 --   match w with
 --   | .nil x => simp_all only [endIf_nil, Nonempty.not_nil]
 --   | .cons x e (nil y) =>
@@ -862,7 +862,7 @@ lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast
 --           simpa only [mem_cons_iff, exists_eq_or_imp, hPx, false_or] using h
 --         have hNonempty' : (w'.endIf h').Nonempty := by
 --           simp only [endIf_cons, hPy, ↓reduceDIte, Nonempty.cons_true, w']
---         obtain ⟨a, ha, hh⟩ := endIf_exists_inc₂_last (w := w') h' hVd.2 hNonempty'
+--         obtain ⟨a, ha, hh⟩ := endIf_exists_isLink_last (w := w') h' hVd.2 hNonempty'
 --         refine ⟨a, ?_, hh⟩
 --         rw [mem_cons_iff]
 --         right

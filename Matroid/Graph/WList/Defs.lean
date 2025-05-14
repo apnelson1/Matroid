@@ -161,30 +161,30 @@ protected inductive UniqueMem : WList α β → α → Prop
 
 
 
-protected def vxSet (w : WList α β) : Set α := {x | x ∈ w}
+protected def vertexSet (w : WList α β) : Set α := {x | x ∈ w}
 
-scoped notation "V(" w ")" => WList.vxSet w
+scoped notation "V(" w ")" => WList.vertexSet w
 
 protected def edgeSet (w : WList α β) : Set β := {e | e ∈ w.edge}
 
 scoped notation "E(" w ")" => WList.edgeSet w
 
 @[simp]
-lemma mem_vxSet_iff : x ∈ V(w) ↔ x ∈ w := Iff.rfl
+lemma mem_vertexSet_iff : x ∈ V(w) ↔ x ∈ w := Iff.rfl
 
 @[simp]
 lemma mem_edgeSet_iff : e ∈ E(w) ↔ e ∈ w.edge := Iff.rfl
 
 @[simp]
-lemma nil_vxSet : V((nil x : WList α β)) = {x} := by
-  simp [WList.vxSet]
+lemma nil_vertexSet : V((nil x : WList α β)) = {x} := by
+  simp [WList.vertexSet]
 
 @[simp]
 lemma nil_edgeSet : E((nil x : WList α β)) = ∅ := by
   simp [WList.edgeSet]
 
-@[simp] lemma cons_vxSet : V(cons x e w) = insert x V(w) := by
-  simp [WList.vxSet, mem_cons_iff, Set.ext_iff]
+@[simp] lemma cons_vertexSet : V(cons x e w) = insert x V(w) := by
+  simp [WList.vertexSet, mem_cons_iff, Set.ext_iff]
 
 @[simp] lemma cons_edgeSet : E(cons x e w) = insert e E(w) := by
   simp only [WList.edgeSet, cons_edge, mem_cons, singleton_union]
@@ -195,14 +195,14 @@ lemma edgeSet_finite (w : WList α β) : E(w).Finite := by
   induction w with simp_all
 
 @[simp]
-lemma vxSet_nonempty (w : WList α β) : V(w).Nonempty := by
+lemma vertexSet_nonempty (w : WList α β) : V(w).Nonempty := by
   cases w with simp
 
 @[simp]
-lemma vxSet_finite (w : WList α β) : V(w).Finite := by
+lemma vertexSet_finite (w : WList α β) : V(w).Finite := by
   induction w with simp_all
 
-lemma vxSet_disjoint_iff : _root_.Disjoint V(w₁) V(w₂) ↔ w₁.vx.Disjoint w₂.vx := by
+lemma vertexSet_disjoint_iff : _root_.Disjoint V(w₁) V(w₂) ↔ w₁.vx.Disjoint w₂.vx := by
   simp [Set.disjoint_left, List.disjoint_left]
 
 lemma edgeSet_disjoint_iff : _root_.Disjoint E(w₁) E(w₂) ↔ w₁.edge.Disjoint w₂.edge := by
@@ -396,10 +396,10 @@ lemma dInc_cons_iff : (cons u f w).DInc e x y ↔ (u = x ∧ f = e ∧ w.first =
   · apply DInc.cons_left
   apply h.cons
 
-lemma DInc.vx_mem_left (h : w.DInc e x y) : x ∈ w.vx := by
+lemma DInc.left_mem (h : w.DInc e x y) : x ∈ w.vx := by
   induction h with simp_all
 
-lemma DInc.vx_mem_right (h : w.DInc e x y) : y ∈ w.vx := by
+lemma DInc.right_mem (h : w.DInc e x y) : y ∈ w.vx := by
   induction h with simp_all
 
 lemma DInc.edge_mem (h : w.DInc e x y) : e ∈ w.edge := by
@@ -428,7 +428,7 @@ lemma DInc.ne_first (h : w.DInc e x y) (hnd : w.vx.Nodup) : y ≠ w.first := by
   | @cons u f w e x y hw =>
     rintro rfl
     simp only [cons_vx, nodup_cons, mem_vx] at hnd
-    exact hnd.1 hw.vx_mem_right
+    exact hnd.1 hw.right_mem
 
 lemma DInc.ne_last (h : w.DInc e x y) (hnd : w.vx.Nodup) : x ≠ w.last := by
   induction h with
@@ -441,66 +441,67 @@ lemma DInc.ne_last (h : w.DInc e x y) (hnd : w.vx.Nodup) : x ≠ w.last := by
 lemma DInc.nonempty (h : w.DInc e x y) : w.Nonempty := by
   cases h with simp
 
-/-- `w.Inc₂ e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
-protected inductive Inc₂ : WList α β → β → α → α → Prop
-  | cons_left (x e w) : (cons x e w).Inc₂ e x w.first
-  | cons_right (x e w) : (cons x e w).Inc₂ e w.first x
-  | cons (u f) {w e x y} (hw : w.Inc₂ e x y) : (cons u f w).Inc₂ e x y
+/-- `w.IsLink e x y` means that `w` contains `[x,e,y]` or `[y,e,x]` as a contiguous sublist. -/
+protected inductive IsLink : WList α β → β → α → α → Prop
+  | cons_left (x e w) : (cons x e w).IsLink e x w.first
+  | cons_right (x e w) : (cons x e w).IsLink e w.first x
+  | cons (u f) {w e x y} (hw : w.IsLink e x y) : (cons u f w).IsLink e x y
 
 @[simp]
-protected lemma Inc₂.not_nil : ¬ (nil u (β := β)).Inc₂ e x y := by
+protected lemma IsLink.not_nil : ¬ (nil u (β := β)).IsLink e x y := by
   rintro (_ | _ | _)
 
-lemma DInc.inc₂ (h : w.DInc e x y) : w.Inc₂ e x y := by
+lemma DInc.isLink (h : w.DInc e x y) : w.IsLink e x y := by
   induction h with
-  | cons_left x e w => exact Inc₂.cons_left x e w
-  | cons u f hw ih => exact Inc₂.cons u f ih
+  | cons_left x e w => exact IsLink.cons_left x e w
+  | cons u f hw ih => exact IsLink.cons u f ih
 
-protected lemma Inc₂.symm (h : w.Inc₂ e x y) : w.Inc₂ e y x := by
+protected lemma IsLink.symm (h : w.IsLink e x y) : w.IsLink e y x := by
   induction h with
   | cons_left => apply cons_right
   | cons_right => apply cons_left
   | cons _ _ _ ih => apply ih.cons
 
-lemma inc₂_iff_dInc : w.Inc₂ e x y ↔ w.DInc e x y ∨ w.DInc e y x := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.elim DInc.inc₂ fun h' ↦ h'.inc₂.symm⟩
+lemma isLink_iff_dInc : w.IsLink e x y ↔ w.DInc e x y ∨ w.DInc e y x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim DInc.isLink fun h' ↦ h'.isLink.symm⟩
   induction h with
   | cons_left x e w => exact .inl <| DInc.cons_left ..
   | cons_right x e w => exact .inr <| DInc.cons_left ..
   | cons u f hw ih => exact ih.elim (.inl ∘ DInc.cons _ _) (.inr ∘ DInc.cons _ _)
 
-protected lemma Inc₂.of_cons (hw : (WList.cons u f w).Inc₂ e x y) (hef : e ≠ f) : w.Inc₂ e x y := by
+protected lemma IsLink.of_cons (hw : (WList.cons u f w).IsLink e x y) (hef : e ≠ f) :
+    w.IsLink e x y := by
   cases hw with | cons_left => contradiction | cons_right => contradiction | cons => assumption
 
-lemma inc₂_cons_iff' : (cons u f w).Inc₂ e x y ↔
-    (f = e ∧ (x = u ∧ y = w.first ∨ x = w.first ∧ y = u)) ∨ w.Inc₂ e x y := by
+lemma isLink_cons_iff' : (cons u f w).IsLink e x y ↔
+    (f = e ∧ (x = u ∧ y = w.first ∨ x = w.first ∧ y = u)) ∨ w.IsLink e x y := by
   refine ⟨fun h ↦ by cases h with simp_all, ?_⟩
   rintro (⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩ | h)
-  · apply Inc₂.cons_left
-  · apply Inc₂.cons_right
+  · apply IsLink.cons_left
+  · apply IsLink.cons_right
   apply h.cons
 
-lemma inc₂_cons_iff : (cons u f w).Inc₂ e x y ↔
-    (f = e ∧ (s(x,y) = s(u,w.first))) ∨ w.Inc₂ e x y := by
-  rw [inc₂_cons_iff', Sym2.eq_iff]
+lemma isLink_cons_iff : (cons u f w).IsLink e x y ↔
+    (f = e ∧ (s(x,y) = s(u,w.first))) ∨ w.IsLink e x y := by
+  rw [isLink_cons_iff', Sym2.eq_iff]
 
-lemma Inc₂.vx_mem_left (h : w.Inc₂ e x y) : x ∈ w := by
+lemma IsLink.left_mem (h : w.IsLink e x y) : x ∈ w := by
   induction h with simp_all
 
-lemma Inc₂.vx_mem_right (h : w.Inc₂ e x y) : y ∈ w :=
-  h.symm.vx_mem_left
+lemma IsLink.right_mem (h : w.IsLink e x y) : y ∈ w :=
+  h.symm.left_mem
 
-lemma Inc₂.edge_mem (h : w.Inc₂ e x y) : e ∈ w.edge := by
+lemma IsLink.edge_mem (h : w.IsLink e x y) : e ∈ w.edge := by
   induction h with simp_all
 
-lemma Inc₂.nonempty (h : w.Inc₂ e x y) : w.Nonempty := by
+lemma IsLink.nonempty (h : w.IsLink e x y) : w.Nonempty := by
   cases h with simp
 
-lemma exists_inc₂_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.Inc₂ e x y := by
+lemma exists_isLink_of_mem_edge (he : e ∈ w.edge) : ∃ x y, w.IsLink e x y := by
   obtain ⟨x, y, h⟩ := exists_dInc_of_mem_edge he
-  exact ⟨x, y, h.inc₂⟩
+  exact ⟨x, y, h.isLink⟩
 
-lemma Inc₂.eq_firstEdge_of_inc₂_first (he : w.Inc₂ e w.first x) (hnd : w.vx.Nodup) :
+lemma IsLink.eq_firstEdge_of_isLink_first (he : w.IsLink e w.first x) (hnd : w.vx.Nodup) :
     e = he.nonempty.firstEdge := by
   cases w with
   | nil u => simp at he
@@ -512,30 +513,30 @@ lemma Inc₂.eq_firstEdge_of_inc₂_first (he : w.Inc₂ e w.first x) (hnd : w.v
     | cons_right => rfl
     | cons u f hw =>
       simp only [first_cons] at hw
-      exact (hnd.1 hw.vx_mem_left).elim
+      exact (hnd.1 hw.left_mem).elim
 
-lemma Nonempty.mem_iff_exists_inc₂ (hw : w.Nonempty) : x ∈ w ↔ ∃ y e, w.Inc₂ e x y := by
-  refine ⟨fun h ↦ ?_, fun ⟨y, e, h⟩ ↦ h.vx_mem_left⟩
+lemma Nonempty.mem_iff_exists_isLink (hw : w.Nonempty) : x ∈ w ↔ ∃ y e, w.IsLink e x y := by
+  refine ⟨fun h ↦ ?_, fun ⟨y, e, h⟩ ↦ h.left_mem⟩
   induction w with
   | nil => simp at hw
   | cons u e w ih =>
     obtain (rfl : x = u) | (hxw : x ∈ w) := by simpa using h
-    · exact ⟨w.first, e, Inc₂.cons_left x e w⟩
+    · exact ⟨w.first, e, IsLink.cons_left x e w⟩
     cases w with
     | nil v =>
       refine ⟨u, e, ?_⟩
       obtain rfl : x = v := by simpa using hxw
-      apply Inc₂.cons_right
+      apply IsLink.cons_right
     | cons v f w =>
       obtain ⟨y, e', h⟩ := ih (by simp) hxw
-      exact ⟨y, e', Inc₂.cons _ _ h⟩
+      exact ⟨y, e', IsLink.cons _ _ h⟩
 
 /-- A `WList` is `WellFormed` if each edge appears only with the same ends. -/
 def WellFormed (w : WList α β) : Prop :=
-  ∀ ⦃e x₁ x₂ y₁ y₂⦄, w.Inc₂ e x₁ x₂ → w.Inc₂ e y₁ y₂ → s(x₁, x₂) = s(y₁, y₂)
+  ∀ ⦃e x₁ x₂ y₁ y₂⦄, w.IsLink e x₁ x₂ → w.IsLink e y₁ y₂ → s(x₁, x₂) = s(y₁, y₂)
 
 /-- The set of ends of `e` in `w` -/
-def endsOf (w : WList α β) (e : β) : Set α := {x | ∃ y, w.Inc₂ e x y}
+def endsOf (w : WList α β) (e : β) : Set α := {x | ∃ y, w.IsLink e x y}
 
 section indices
 
@@ -686,7 +687,7 @@ end WList
 --     W.last = v := by
 --   obtain ⟨e, he⟩ := h
 --   use he.wList, he.wList_isWList
---   simp only [Inc₂.wList_length, Inc₂.wList_first, Inc₂.wList_last, and_self]
+--   simp only [IsLink.wList_length, IsLink.wList_first, IsLink.wList_last, and_self]
 
 -- /-- Given a reflexive adjacency, we can create a wList of length at most 1 -/
 -- lemma reflAdj.exist_wList (h : G.reflAdj u v) : ∃ (W : WList α β), G.IsWList w ∧ W.length ≤ 1 ∧

@@ -28,11 +28,11 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       exact hne <| by simpa using congrArg Graph.edgeSet h_eq )
     (by
       rintro _ _ e ⟨C₁, hC₁, rfl⟩ ⟨C₂, hC₂, rfl⟩ hne he₁ he₂
-      obtain ⟨x, y, hxy₁⟩ := C₁.exists_inc₂_of_mem_edge he₁
-      have hxy₂ := (hC₁.isWalk.inc₂_iff_inc₂_of_mem he₁).1 hxy₁
-      rw [← hC₂.isWalk.inc₂_iff_inc₂_of_mem he₂] at hxy₂
-      obtain ⟨P₁, hP₁, hP₁C₁, hx₁, hy₁⟩ := hC₁.exists_isPath_toGraph_eq_delete_edge_of_inc₂ hxy₁
-      obtain ⟨P₂, hP₂, hP₂C₂, hx₂, hy₂⟩ := hC₂.exists_isPath_toGraph_eq_delete_edge_of_inc₂ hxy₂
+      obtain ⟨x, y, hxy₁⟩ := C₁.exists_isLink_of_mem_edge he₁
+      have hxy₂ := (hC₁.isWalk.isLink_iff_isLink_of_mem he₁).1 hxy₁
+      rw [← hC₂.isWalk.isLink_iff_isLink_of_mem he₂] at hxy₂
+      obtain ⟨P₁, hP₁, hP₁C₁, hx₁, hy₁⟩ := hC₁.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy₁
+      obtain ⟨P₂, hP₂, hP₂C₂, hx₂, hy₂⟩ := hC₂.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy₂
       by_cases h_eq : P₁ = P₂
       · apply_fun (fun P : WList α β ↦ insert e E(P)) at h_eq
         simp [← P₁.toGraph_edgeSet, ← P₂.toGraph_edgeSet, hP₁C₁, hP₂C₂, edgeDelete_edgeSet,

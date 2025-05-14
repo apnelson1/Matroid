@@ -129,171 +129,171 @@ protected lemma matroid_isCircuit : M.matroid.IsCircuit = M.IsCircuit := by
 
 --lemma foo {A B : Set α} : A ⊂ B ∨ B ⊂ A ∨ A = B
 
-protected def ofNonSpanningCircuit
-  (E : Set α)
-  (IsNonspanningCircuit : Set α → Prop)
-  (r : ℕ)
-  -- (... ) axioms here
-  (ground_set : ∀ C, IsNonspanningCircuit C → C ⊆ E)
-  (rank_not_spanning : ∀ C, IsNonspanningCircuit C → C.Finite ∧ C.ncard ≤ r )
-  (empty_not_isCircuit : ¬IsNonspanningCircuit ∅)
-  (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsNonspanningCircuit C})
-  (circuit_elimination :
-    ∀ ⦃C₁ C₂ e⦄, IsNonspanningCircuit C₁ → IsNonspanningCircuit C₂ → C₁ ≠ C₂ → e ∈ C₁ → e ∈ C₂ →
-    ∃ C, IsNonspanningCircuit C ∧ e ∉ C ∧ C ⊆ C₁ ∪ C₂)
-  : FiniteCircuitMatroid α where
-    E := E
-    IsCircuit C := IsNonspanningCircuit C ∨
-      (C.Finite ∧ C.ncard = r + 1 ∧ C ⊆ E ∧ (∀ C₀ ⊆ C, ¬ IsNonspanningCircuit C₀))
-    empty_not_isCircuit := by
-      simp only [finite_empty, ncard_empty, Nat.right_eq_add, Nat.add_eq_zero, one_ne_zero,
-        and_false, subset_empty_iff, forall_eq, false_and, or_false]
-      exact empty_not_isCircuit
-    circuit_antichain := by
-      intro C hC C₁ hC₁ hCC₁
-      simp only [Pi.compl_apply, compl_iff_not]
-      obtain ( hSC | hS ) := hC
-      · obtain ( hSC1 | hS1 ) := hC₁
-        · exact circuit_antichain hSC hSC1 hCC₁
-        · by_contra hc
-          exact (hS1.2.2.2 C hc ) hSC
-      · obtain ( hSC1 | hS1 ) := hC₁
-        · have h1 := rank_not_spanning C₁ hSC1
-          by_contra hcon
-          have hcard : r + 1 ≤ C₁.ncard := by
-            rw [←hS.2.1]
-            exact ncard_le_ncard hcon (h1.1)
-          linarith
-          --sorry
-        · by_contra! hcon
-          -- have ht : C₁.Finite := by sorry
-          have hcard : C₁.ncard ≤ C.ncard := by linarith
-          refine hCC₁ (eq_of_subset_of_ncard_le hcon hcard hS1.1)
-      --by_contra! hc
+-- protected def ofNonSpanningCircuit
+--   (E : Set α)
+--   (IsNonspanningCircuit : Set α → Prop)
+--   (r : ℕ)
+--   -- (... ) axioms here
+--   (ground_set : ∀ C, IsNonspanningCircuit C → C ⊆ E)
+--   (rank_not_spanning : ∀ C, IsNonspanningCircuit C → C.Finite ∧ C.ncard ≤ r )
+--   (empty_not_isCircuit : ¬IsNonspanningCircuit ∅)
+--   (circuit_antichain : IsAntichain (· ⊆ ·) {C | IsNonspanningCircuit C})
+--   (circuit_elimination :
+--     ∀ ⦃C₁ C₂ e⦄, IsNonspanningCircuit C₁ → IsNonspanningCircuit C₂ → C₁ ≠ C₂ → e ∈ C₁ → e ∈ C₂ →
+--     ∃ C, IsNonspanningCircuit C ∧ e ∉ C ∧ C ⊆ C₁ ∪ C₂)
+--   : FiniteCircuitMatroid α where
+--     E := E
+--     IsCircuit C := IsNonspanningCircuit C ∨
+--       (C.Finite ∧ C.ncard = r + 1 ∧ C ⊆ E ∧ (∀ C₀ ⊆ C, ¬ IsNonspanningCircuit C₀))
+--     empty_not_isCircuit := by
+--       simp only [finite_empty, ncard_empty, Nat.right_eq_add, Nat.add_eq_zero, one_ne_zero,
+--         and_false, subset_empty_iff, forall_eq, false_and, or_false]
+--       exact empty_not_isCircuit
+--     circuit_antichain := by
+--       intro C hC C₁ hC₁ hCC₁
+--       simp only [Pi.compl_apply, compl_iff_not]
+--       obtain ( hSC | hS ) := hC
+--       · obtain ( hSC1 | hS1 ) := hC₁
+--         · exact circuit_antichain hSC hSC1 hCC₁
+--         · by_contra hc
+--           exact (hS1.2.2.2 C hc ) hSC
+--       · obtain ( hSC1 | hS1 ) := hC₁
+--         · have h1 := rank_not_spanning C₁ hSC1
+--           by_contra hcon
+--           have hcard : r + 1 ≤ C₁.ncard := by
+--             rw [←hS.2.1]
+--             exact ncard_le_ncard hcon (h1.1)
+--           linarith
+--           --sorry
+--         · by_contra! hcon
+--           -- have ht : C₁.Finite := by sorry
+--           have hcard : C₁.ncard ≤ C.ncard := by linarith
+--           refine hCC₁ (eq_of_subset_of_ncard_le hcon hcard hS1.1)
+--       --by_contra! hc
 
-    circuit_elimination := by
-      intro C C₁ e hC hC1 hCC1 heC heC1
-      obtain ( hNSC | hS ) := hC
-      · obtain ( hSC1 | ⟨hC₁fin, hC₁card, hC₁⟩ ) := hC1
-        · obtain⟨ C₃, hC₃ ⟩ := circuit_elimination hNSC hSC1 hCC1 heC heC1
-          use C₃
-          constructor
-          · left
-            exact hC₃.1
-          · refine⟨hC₃.2.1, hC₃.2.2⟩
-        · obtain ⟨f, hfC, hfC₁⟩ : (C \ C₁).Nonempty := by
-            rw [diff_nonempty]
-            exact fun hss ↦ hC₁.2 _ hss hNSC
+--     circuit_elimination := by
+--       intro C C₁ e hC hC1 hCC1 heC heC1
+--       obtain ( hNSC | hS ) := hC
+--       · obtain ( hSC1 | ⟨hC₁fin, hC₁card, hC₁⟩ ) := hC1
+--         · obtain⟨ C₃, hC₃ ⟩ := circuit_elimination hNSC hSC1 hCC1 heC heC1
+--           use C₃
+--           constructor
+--           · left
+--             exact hC₃.1
+--           · refine⟨hC₃.2.1, hC₃.2.2⟩
+--         · obtain ⟨f, hfC, hfC₁⟩ : (C \ C₁).Nonempty := by
+--             rw [diff_nonempty]
+--             exact fun hss ↦ hC₁.2 _ hss hNSC
 
-          have hef : f ≠ e := by rintro rfl; contradiction
-          by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C₁\{e}) ∪ {f} )
-          · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
-            use C₃
-            constructor
-            · left
-              exact hC3ns
-            · constructor
-              · by_contra hcon
-                have hc1 : e ∉ C₁ \ {e} ∪ {f} := by simp [hef.symm]
-                exact hc1 (mem_of_mem_of_subset hcon hC2)
-              · have he1 : C₁ \ {e} ⊆ C₁ := diff_subset
-                have he2 : {f} ⊆ C := by simpa
-                rw [union_comm C C₁]
-                exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
-          · use (C₁\{e}) ∪ {f}
-            constructor
-            · right
-              refine ⟨ ?_, ?_, ?_, ?_ ⟩
-              · simpa using hC₁fin.diff.insert _
-              · simp only [union_singleton]
-                rwa [ncard_exchange hfC₁ heC1]
-              · apply union_subset
-                · --have h1 : C₁ ⊆ E := by exact hS1.2.2.1
-                  have h2 : C₁ \ {e} ⊆ C₁ := by
-                    simp only [diff_singleton_subset_iff, subset_insert]
-                  exact diff_subset.trans hC₁.1
-                  -- exact?
-                  -- exact fun ⦃a⦄ a_1 ↦ (hC₁) (h2 a_1)
-                simp only [singleton_subset_iff]
-                exact mem_of_subset_of_mem (ground_set C hNSC) hfC
+--           have hef : f ≠ e := by rintro rfl; contradiction
+--           by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C₁\{e}) ∪ {f} )
+--           · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
+--             use C₃
+--             constructor
+--             · left
+--               exact hC3ns
+--             · constructor
+--               · by_contra hcon
+--                 have hc1 : e ∉ C₁ \ {e} ∪ {f} := by simp [hef.symm]
+--                 exact hc1 (mem_of_mem_of_subset hcon hC2)
+--               · have he1 : C₁ \ {e} ⊆ C₁ := diff_subset
+--                 have he2 : {f} ⊆ C := by simpa
+--                 rw [union_comm C C₁]
+--                 exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
+--           · use (C₁\{e}) ∪ {f}
+--             constructor
+--             · right
+--               refine ⟨ ?_, ?_, ?_, ?_ ⟩
+--               · simpa using hC₁fin.diff.insert _
+--               · simp only [union_singleton]
+--                 rwa [ncard_exchange hfC₁ heC1]
+--               · apply union_subset
+--                 · --have h1 : C₁ ⊆ E := by exact hS1.2.2.1
+--                   have h2 : C₁ \ {e} ⊆ C₁ := by
+--                     simp only [diff_singleton_subset_iff, subset_insert]
+--                   exact diff_subset.trans hC₁.1
+--                   -- exact?
+--                   -- exact fun ⦃a⦄ a_1 ↦ (hC₁) (h2 a_1)
+--                 simp only [singleton_subset_iff]
+--                 exact mem_of_subset_of_mem (ground_set C hNSC) hfC
 
 
-              · intro C₃ hC3
-                · by_contra hcon
-                  have hC3c : ∃ C, IsNonspanningCircuit C ∧ C ⊆ C₁ \ {e} ∪ {f} := by
-                    use C₃
-                  exact hsub hC3c
-            · refine ⟨ ?_, ?_ ⟩
-              · simp [hef.symm]
-              · rw [union_comm C C₁]
-                apply union_subset_union diff_subset
-                simpa only [singleton_subset_iff]
-      · have hex : ∃ f, f ∈ C₁ \ C := by
-          by_contra! hc
-          simp only [mem_diff, not_and, not_not] at hc
-          obtain ( hSC1 | hS1 ) := hC1
-          · exact (hS.2.2.2 C₁ hc) hSC1
-          -- have ht : Finite ↑C := by sorry
-          have hcontra : C₁ = C := by
-            apply eq_of_subset_of_ncard_le hc _ hS.1
-            rw [hS.2.1, hS1.2.1]
-          exact hCC1 (id (Eq.symm hcontra))
-        obtain ⟨f, hf⟩ := hex
-        have hef : f ≠ e := by sorry
-        by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C\{e}) ∪ {f} )
-        · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
-          use C₃
-          constructor
-          · left
-            exact hC3ns
-          · constructor
-            · by_contra hcon
-              have hc1 : e ∉ C \ {e} ∪ {f} := by
-                simp [hef.symm]
-              exact hc1 (mem_of_mem_of_subset hcon hC2)
-            · have he1 : C \ {e} ⊆ C := diff_subset
-              have he2 : {f} ⊆ C₁ := by simpa using hf.1
-              have := union_subset_union he1 he2
-              exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
-        · use (C\{e}) ∪ {f}
-          constructor
-          · right
-            refine ⟨ ?_, ?_, ?_, ?_ ⟩
-            · simpa using hS.1.diff.insert f
+--               · intro C₃ hC3
+--                 · by_contra hcon
+--                   have hC3c : ∃ C, IsNonspanningCircuit C ∧ C ⊆ C₁ \ {e} ∪ {f} := by
+--                     use C₃
+--                   exact hsub hC3c
+--             · refine ⟨ ?_, ?_ ⟩
+--               · simp [hef.symm]
+--               · rw [union_comm C C₁]
+--                 apply union_subset_union diff_subset
+--                 simpa only [singleton_subset_iff]
+--       · have hex : ∃ f, f ∈ C₁ \ C := by
+--           by_contra! hc
+--           simp only [mem_diff, not_and, not_not] at hc
+--           obtain ( hSC1 | hS1 ) := hC1
+--           · exact (hS.2.2.2 C₁ hc) hSC1
+--           -- have ht : Finite ↑C := by sorry
+--           have hcontra : C₁ = C := by
+--             apply eq_of_subset_of_ncard_le hc _ hS.1
+--             rw [hS.2.1, hS1.2.1]
+--           exact hCC1 (id (Eq.symm hcontra))
+--         obtain ⟨f, hf⟩ := hex
+--         have hef : f ≠ e := by sorry
+--         by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C\{e}) ∪ {f} )
+--         · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
+--           use C₃
+--           constructor
+--           · left
+--             exact hC3ns
+--           · constructor
+--             · by_contra hcon
+--               have hc1 : e ∉ C \ {e} ∪ {f} := by
+--                 simp [hef.symm]
+--               exact hc1 (mem_of_mem_of_subset hcon hC2)
+--             · have he1 : C \ {e} ⊆ C := diff_subset
+--               have he2 : {f} ⊆ C₁ := by simpa using hf.1
+--               have := union_subset_union he1 he2
+--               exact fun ⦃a⦄ a_1 ↦ (union_subset_union he1 he2) (hC2 a_1)
+--         · use (C\{e}) ∪ {f}
+--           constructor
+--           · right
+--             refine ⟨ ?_, ?_, ?_, ?_ ⟩
+--             · simpa using hS.1.diff.insert f
 
-            ·
-              rw [union_singleton, ncard_exchange hf.2 heC]
-              exact hS.2.1
-            · apply union_subset
-              · have : C \ {e} ⊆ C := by
-                  simp only [diff_singleton_subset_iff, subset_insert]
-                exact fun ⦃a⦄ a_1 ↦ (hS.2.2.1 ) (this a_1)
-              · have h1 : C₁ ⊆ E := by
-                  obtain ( hSC1 | hS1 ) := hC1
-                  · exact ground_set C₁ hSC1
-                  · exact hS1.2.2.1
-                simp only [singleton_subset_iff]
-                exact mem_of_mem_of_subset (mem_of_mem_diff hf) h1
-            · intro C₂ hC2
-              by_contra! hcon
-              have hC2c : ∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ C \ {e} ∪ {f} := by
-                use C₂
-              exact hsub hC2c
-          refine ⟨ ?_,
-          union_subset_union diff_subset (singleton_subset_iff.mpr (mem_of_mem_diff hf))⟩
-          · simp [hef.symm]
+--             ·
+--               rw [union_singleton, ncard_exchange hf.2 heC]
+--               exact hS.2.1
+--             · apply union_subset
+--               · have : C \ {e} ⊆ C := by
+--                   simp only [diff_singleton_subset_iff, subset_insert]
+--                 exact fun ⦃a⦄ a_1 ↦ (hS.2.2.1 ) (this a_1)
+--               · have h1 : C₁ ⊆ E := by
+--                   obtain ( hSC1 | hS1 ) := hC1
+--                   · exact ground_set C₁ hSC1
+--                   · exact hS1.2.2.1
+--                 simp only [singleton_subset_iff]
+--                 exact mem_of_mem_of_subset (mem_of_mem_diff hf) h1
+--             · intro C₂ hC2
+--               by_contra! hcon
+--               have hC2c : ∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ C \ {e} ∪ {f} := by
+--                 use C₂
+--               exact hsub hC2c
+--           refine ⟨ ?_,
+--           union_subset_union diff_subset (singleton_subset_iff.mpr (mem_of_mem_diff hf))⟩
+--           · simp [hef.symm]
 
-    circuit_subset_ground := by
-      intro C hNS
-      obtain ( hSC1 | hS1 ) := hNS
-      · exact ground_set C hSC1
-      · exact hS1.2.2.1
+--     circuit_subset_ground := by
+--       intro C hNS
+--       obtain ( hSC1 | hS1 ) := hNS
+--       · exact ground_set C hSC1
+--       · exact hS1.2.2.1
 
-    circuit_finite := by
-      intro C hNS
-      obtain ( hSC1 | hS1 ) := hNS
-      · exact (rank_not_spanning C hSC1).1
-      · exact hS1.1
+--     circuit_finite := by
+--       intro C hNS
+--       obtain ( hSC1 | hS1 ) := hNS
+--       · exact (rank_not_spanning C hSC1).1
+--       · exact hS1.1
 
 -- example : Matroid α :=
 --   FiniteCircuitMatroid.matroid <| (ofNonSpanningCircuit E sorry sorry sorry sorry)

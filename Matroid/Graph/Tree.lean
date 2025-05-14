@@ -39,7 +39,7 @@ lemma singleEdge_acyclic (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Acy
   intro C hC
   obtain ⟨u, f, rfl⟩ | hnt := hC.loop_or_nontrivial
   · obtain ⟨z,z', h⟩ := WList.exists_dInc_of_mem_edge (e := f) (w := .cons u f (.nil u)) (by simp)
-    have h' := hC.isWalk.inc₂_of_dInc h
+    have h' := hC.isWalk.isLink_of_dInc h
     aesop
   refine hnt.firstEdge_ne_lastEdge hC.edge_nodup ?_
   have h_const := hC.isWalk.edgeSet_subset
@@ -65,10 +65,11 @@ lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F 
   have h_left : (G ↾ F)[S.left].Acyclic := hFac.mono (induce_le S.left_subset)
   have h_right : (G ↾ F)[S.right].Acyclic := hFac.mono (induce_le S.right_subset)
   have h_left' := h_left.union_acyclic_of_subsingleton_inter (singleEdge_acyclic hne e) ?_; swap
-  · rw [induce_vxSet, singleEdge_vxSet, pair_comm, inter_insert_of_not_mem hy']
+  · rw [induce_vertexSet, singleEdge_vertexSet, pair_comm, inter_insert_of_not_mem hy']
     exact Subsingleton.inter_singleton
   have h' := h_left'.union_acyclic_of_subsingleton_inter h_right ?_; swap
-  · simp only [union_vxSet, induce_vxSet, singleEdge_vxSet, union_insert, union_singleton]
+  · simp only [union_vertexSet, induce_vertexSet, singleEdge_vertexSet, union_insert,
+      union_singleton]
     rw [insert_inter_of_not_mem hx', insert_inter_of_mem hy, S.disjoint.inter_eq]
     simp
   have hins : insert e F ⊆ E(G) := insert_subset hxy.edge_mem hF.prop.1
@@ -81,13 +82,13 @@ lemma Connected.connected_of_maximal_acyclic_edgeRestrict (hG : G.Connected) {F 
 lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ : G.IsCycle C₀)
     (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
   have hCE : E(C₀) ⊆ E(C) := by simpa using edgeSet_subset_of_le hle
-  have hCV : V(C₀) ⊆ V(C) := by simpa using vxSet_subset_of_le hle
+  have hCV : V(C₀) ⊆ V(C) := by simpa using vertexSet_subset_of_le hle
   refine hle.antisymm <| G.le_of_le_le_subset_subset hC.isWalk.toGraph_le
     hC₀.isWalk.toGraph_le (fun x hxC ↦ by_contra fun hxC₀ ↦ ?_)
       (fun e heC ↦ by_contra fun heC₀ ↦ ?_)
   · obtain ⟨y, e, rfl⟩ | hnt := hC.loop_or_nontrivial
     · obtain rfl : x = y := by simpa using hxC
-      have hfa : ∀ y ∈ C₀, y = x := by simpa using vxSet_subset_of_le hle
+      have hfa : ∀ y ∈ C₀, y = x := by simpa using vertexSet_subset_of_le hle
       obtain rfl : C₀.first = x := by simpa using hfa C₀.first
       simp at hxC₀
     obtain ⟨P, hP, hP_eq⟩ := hC.exists_isPath_toGraph_eq_delete_vx (x := x) hnt (by simpa using hxC)
@@ -136,5 +137,5 @@ lemma acyclic_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected)
 --     (h : Maximal (fun H ↦ H.Acyclic ∧ H ≤ G) T) : T.IsTree := by
 --   refine ⟨h.prop.1, by_contra fun hnc ↦ ?_⟩
 --   have hV : T.V = V(G) := by
---     refine (vxSet_subset_of_le h.prop.2).
+--     refine (vertexSet_subset_of_le h.prop.2).
 --   have := exists_of_not_connected hnc
