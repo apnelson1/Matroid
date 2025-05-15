@@ -367,9 +367,9 @@ lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set �
     (h_fin : ∃ i, M.IsRkFinite (F i)) : ∃ i₀, F i₀ = ⋂ i, F i := by
   obtain ⟨j, hj⟩ := h_fin
   have _ : Nonempty ι := ⟨j⟩
-  have hmin := Finite.exists_minimal_wrt' (fun i ↦ M.rk (F j ∩ F i)) univ
-  simp only [image_univ, univ_nonempty, mem_univ, forall_const, true_and, finite_iff_bddAbove]
-    at hmin
+  have hmin := Finite.exists_minimalFor' (fun i ↦ M.rk (F j ∩ F i)) univ
+  simp only [image_univ, univ_nonempty, mem_univ, forall_const, true_and, finite_iff_bddAbove,
+    MinimalFor] at hmin
   have hub : M.rk (F j) ∈ upperBounds (range fun i ↦ M.rk (F j ∩ F i))
   · rintro _ ⟨X, rfl⟩
     exact hj.rk_le_of_subset inter_subset_left
@@ -387,8 +387,7 @@ lemma IsFlat.iInter_mem_of_directed_of_isRkFinite {ι : Type*} {F : ι → Set �
 
   have hlt := (((hF j).inter (hF i')).rk_lt_of_superset hss hj.inter_right
     (inter_subset_left.trans (hF j).subset_ground))
-
-  exact hlt.ne <| (hk₁ _ hlt.le).symm
+  exact hlt.ne <| (@hk₁ i' hlt.le).antisymm' hlt.le
 
 end Directed
 

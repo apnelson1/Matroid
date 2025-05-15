@@ -8,9 +8,11 @@ open Set WList
 
 namespace Graph
 
+/-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
 
-def IsAyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
+/-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
+def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
@@ -56,6 +58,6 @@ lemma cycleMatroid_isCircuit_iff {C : Set β} : G.cycleMatroid.IsCircuit C ↔ G
   simp [cycleMatroid]
 
 @[simp]
-lemma cycleMatroid_indep_iff {I : Set β} : G.cycleMatroid.Indep I ↔ G.IsAyclicSet I := by
-  simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAyclicSet]
+lemma cycleMatroid_indep_iff {I : Set β} : G.cycleMatroid.Indep I ↔ G.IsAcyclicSet I := by
+  simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop

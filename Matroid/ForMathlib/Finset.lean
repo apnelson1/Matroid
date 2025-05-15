@@ -54,20 +54,20 @@ lemma inter_ssubset_of_not_subset_left {s t : Finset α} (h : ¬s ⊆ t) : s ∩
 lemma inter_ssubset_of_not_subset_right {s t : Finset α} (h : ¬t ⊆ s) : s ∩ t ⊂ t := by
   rw [inter_comm]; exact inter_ssubset_of_not_subset_left h
 
-lemma exists_minimal_satisfying_subset (P : Finset α → Prop) {s : Finset α}
-    {e : Finset α} (he : e ⊆ s) (hP : P e) : ∃ a ⊆ s, P a ∧ ∀ ⦃a'⦄, P a' → a' ⊆ a → a ⊆ a' := by
-  set S := {a | a ⊆ s ∧ P a}
-  have h_fin : Set.Finite S := s.powerset.finite_toSet.subset (by
-    intro a ha; simp only [mem_coe, mem_powerset]; exact ha.1)
-  have : Set.Nonempty S := by use e; exact ⟨he, hP⟩
-  obtain ⟨a, h₁, h₂⟩ := h_fin.toFinset.exists_minimal (h_fin.toFinset_nonempty.mpr this)
-  simp only [Set.Finite.mem_toFinset, lt_eq_subset, S, Set.mem_setOf_eq, and_imp] at h₁ h₂
-  use a
-  refine ⟨h₁.1, h₁.2, fun a' h ha' ↦ ?_⟩
-  specialize h₂ a' (ha'.trans h₁.1) h
-  rw [Finset.ssubset_def] at h₂
-  push_neg at h₂
-  exact h₂ ha'
+-- lemma exists_minimal_satisfying_subset (P : Finset α → Prop) {s : Finset α}
+--     {e : Finset α} (he : e ⊆ s) (hP : P e) : ∃ a ⊆ s, P a ∧ ∀ ⦃a'⦄, P a' → a' ⊆ a → a ⊆ a' := by
+--   set S := {a | a ⊆ s ∧ P a}
+--   have h_fin : Set.Finite S := s.powerset.finite_toSet.subset (by
+--     intro a ha; simp only [mem_coe, mem_powerset]; exact ha.1)
+--   have : Set.Nonempty S := by use e; exact ⟨he, hP⟩
+--   obtain ⟨a, h₁, h₂⟩ := h_fin.toFinset.exists_minimal (h_fin.toFinset_nonempty.mpr this)
+--   simp only [Set.Finite.mem_toFinset, lt_eq_subset, S, Set.mem_setOf_eq, and_imp] at h₁ h₂
+--   use a
+--   refine ⟨h₁.1, h₁.2, fun a' h ha' ↦ ?_⟩
+--   specialize h₂ a' (ha'.trans h₁.1) h
+--   rw [Finset.ssubset_def] at h₂
+--   push_neg at h₂
+--   exact h₂ ha'
 
 lemma finset_biUnion_union (s t : Finset α) (u : α → Finset β) [DecidableEq β]:
     (s ∪ t).biUnion u = s.biUnion u ∪ t.biUnion u := by
