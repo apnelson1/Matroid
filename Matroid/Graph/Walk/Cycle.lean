@@ -43,14 +43,14 @@ structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C
   /-- The start and end vertex are the same -/
   isClosed : C.IsClosed
   /-- There are no repeated vertices except for the first and last. -/
-  nodup : C.tail.vx.Nodup
+  nodup : C.tail.vertex.Nodup
 
 lemma IsCycle.rotate (hC : G.IsCycle C) (n : ℕ) : G.IsCycle (C.rotate n) where
   nonempty := by simpa using hC.nonempty
   isWalk := hC.isWalk.rotate hC.isClosed n
   edge_nodup := by simpa using hC.edge_nodup
   isClosed := hC.isClosed.rotate n
-  nodup := by simpa [rotate_vx_tail, List.nodup_rotate] using hC.nodup
+  nodup := by simpa [rotate_vertex_tail, List.nodup_rotate] using hC.nodup
 
 @[simp]
 lemma not_isCycle_nil (x : α) : ¬ G.IsCycle (nil x : WList α β) :=
@@ -115,7 +115,7 @@ lemma IsCycle.eq_loop_of_isLink_self (h : G.IsCycle C) (hC : C.IsLink e x x) :
   cases C with
   | nil u => simp at hC
   | cons u f w =>
-    have hnd : w.vx.Nodup := by simpa using h.tail_isPath.nodup
+    have hnd : w.vertex.Nodup := by simpa using h.tail_isPath.nodup
     rw [isLink_iff_dInc, or_self, dInc_cons_iff] at hC
     obtain rfl : u = w.last := by simpa using h.isClosed
     obtain ⟨rfl, rfl, hu⟩ | h' := hC
@@ -179,25 +179,25 @@ lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
   cases hC.nonempty with
   | cons x e w => cases w with | nil u => simp [show x = u from hC.isClosed] | cons => simp
 
-lemma IsCycle.toGraph_vxDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
+lemma IsCycle.toGraph_vertexDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
     C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
   obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
   refine Graph.ext (by simpa) fun g x y ↦ ?_
   have h1 : P.IsLink g x y → x ∈ P := fun h ↦ h.left_mem
   have h2 : P.IsLink g x y → y ∈ P := fun h ↦ h.right_mem
-  simp only [vxDelete_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
+  simp only [vertexDelete_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
     concat_first, isLink_concat_iff, tail_cons, dropLast_concat,
     hP.isWalk.wellFormed.toGraph_isLink]
   aesop
 
 /-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
-lemma IsCycle.exists_isPath_toGraph_eq_delete_vx (hC : G.IsCycle C) (hnt : C.Nontrivial)
+lemma IsCycle.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCycle C) (hnt : C.Nontrivial)
     (hx : x ∈ C) : ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph - ({x} : Set α) := by
   wlog hxC : x = C.first generalizing C with aux
   · obtain ⟨n, -, rfl⟩ := exists_rotate_first_eq hx
     obtain ⟨P, hP, hP'⟩ := aux (C := C.rotate n) (hC.rotate n) (hnt.rotate n) (by simp) rfl
     exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
-  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vxDelete_first_eq hnt]⟩
+  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vertexDelete_first_eq hnt]⟩
 
 lemma IsCycle.exists_isPath_toGraph_eq_delete_edge_of_isLink (hC : G.IsCycle C)
     (he : C.IsLink e x y) :

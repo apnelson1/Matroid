@@ -120,8 +120,8 @@ lemma rk_mono (M : Matroid α) [RankFinite M] : Monotone M.rk := by
   exact M.eRk_mono hXY
 
 lemma IsRkFinite.rk_le_of_subset (hY : M.IsRkFinite Y) (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y := by
-  rw [rk, rk, ← Nat.cast_le (α := ℕ∞), coe_toNat (hY.subset hXY).eRk_ne_top,
-    coe_toNat hY.eRk_ne_top]
+  rw [rk, rk, ← Nat.cast_le (α := ℕ∞), coe_toNat (hY.subset hXY).eRk_lt_top.ne,
+    coe_toNat hY.eRk_lt_top.ne]
   exact M.eRk_mono hXY
 
 lemma rk_le_of_subset (M : Matroid α) [RankFinite M] (hXY : X ⊆ Y) : M.rk X ≤ M.rk Y :=
@@ -205,7 +205,8 @@ lemma IsBasis.rk_eq_rk (h : M.IsBasis I X) : M.rk I = M.rk X :=
 lemma rk_eq_zero_iff [RankFinite M] (hX : X ⊆ M.E) : M.rk X = 0 ↔ X ⊆ M.loops := by
   rw [← eRk_eq_coe_iff, coe_zero, eRk_eq_zero_iff]
 
-@[simp] lemma rk_loops (M : Matroid α) : M.rk (M.loops) = 0 := by
+@[simp]
+lemma rk_loops (M : Matroid α) : M.rk M.loops = 0 := by
   simp [rk]
 
 lemma IsNonloop.rk_eq (he : M.IsNonloop e) : M.rk {e} = 1 := by

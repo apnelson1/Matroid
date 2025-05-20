@@ -39,7 +39,7 @@ lemma concat_last : (w.concat e v).last = v := by
   induction w with | nil => rfl | cons => simpa [concat]
 
 @[simp]
-lemma concat_vx : (w.concat e v).vx = w.vx ++ [v] := by
+lemma concat_vertex : (w.concat e v).vertex = w.vertex ++ [v] := by
   induction w with | nil => rfl | cons => simpa [concat]
 
 @[simp]
@@ -110,18 +110,19 @@ lemma append_assoc (w₁ w₂ w₃ : WList α β) : (w₁ ++ w₂) ++ w₃ = w�
   induction w₁ with simp_all
 
 @[simp]
-lemma append_vx : (w₁ ++ w₂).vx = w₁.vx.dropLast ++ w₂.vx := by
+lemma append_vertex : (w₁ ++ w₂).vertex = w₁.vertex.dropLast ++ w₂.vertex := by
   induction w₁ with
   | nil => simp
   | cons x e w ih =>
-      rw [cons_append, cons_vx, cons_vx, List.dropLast_cons_of_ne_nil vx_ne_nil, List.cons_append]
+      rw [cons_append, cons_vertex, cons_vertex, List.dropLast_cons_of_ne_nil vertex_ne_nil,
+        List.cons_append]
       simpa
 
-lemma append_vx' {w₁ w₂ : WList α β} (heq : w₁.last = w₂.first) :
-    (w₁ ++ w₂).vx = w₁.vx ++ w₂.vx.tail := by
-  rw [append_vx, ← w₁.vx.dropLast_concat_getLast (by simp), List.append_assoc,
-    vx_getLast, dropLast_concat, heq, ← vx_head]
-  simp [- vx_head]
+lemma append_vertex' {w₁ w₂ : WList α β} (heq : w₁.last = w₂.first) :
+    (w₁ ++ w₂).vertex = w₁.vertex ++ w₂.vertex.tail := by
+  rw [append_vertex, ← w₁.vertex.dropLast_concat_getLast (by simp), List.append_assoc,
+    vertex_getLast, dropLast_concat, heq, ← vertex_head]
+  simp [- vertex_head]
 
 protected lemma concat_eq_append (w : WList α β) (e) (x) :
     w.concat e x = w ++ (cons w.last e (nil x)) := by
@@ -191,8 +192,8 @@ lemma append_eq_nil_iff : w₁ ++ w₂ = nil x ↔ w₁.Nil ∧ w₂ = nil x := 
 lemma nil_append_iff : (w₁ ++ w₂).Nil ↔ w₁.Nil ∧ w₂.Nil := by
   simp [← length_eq_zero]
 
-/-- See `prefixUntilVx_append_suffixFromVx`. The `u ∈ w` assumption isn't needed. -/
-lemma eq_append_of_vx_mem {w : WList α β} {u : α} (hmem : u ∈ w) :
+/-- See `prefixUntilVertex_append_suffixFromVertex`. The `u ∈ w` assumption isn't needed. -/
+lemma eq_append_of_vertex_mem {w : WList α β} {u : α} (hmem : u ∈ w) :
     ∃ w₁ w₂ : WList α β, w = w₁ ++ w₂ ∧ w₁.last = u ∧ w₂.first = u := by
   induction w with
   | nil x =>
@@ -272,7 +273,7 @@ lemma reverse_last : (reverse w).last = w.first := by
   | cons x e w ih => simp [reverse, ih]
 
 @[simp]
-lemma reverse_vx : (reverse w).vx = w.vx.reverse := by
+lemma reverse_vertex : (reverse w).vertex = w.vertex.reverse := by
   induction w with
   | nil x => simp [reverse]
   | cons x e w ih => simp [reverse, ih]

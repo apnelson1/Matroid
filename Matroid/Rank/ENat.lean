@@ -21,8 +21,8 @@ variable {α ι : Type*} {M N : Matroid α} {I B X X' Y Y' Z R : Set α} {n : �
 
 section Basic
 
-lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
-  h.eRk_lt_top.ne
+-- lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
+--   h.eRk_lt_top.ne
 
 lemma Spanning.eRk_eq (hX : M.Spanning X) : M.eRk X = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBasis X
@@ -45,25 +45,15 @@ lemma Spanning.eRank_restrict (hX : M.Spanning X) : (M ↾ X).eRank = M.eRank :=
 lemma IsLoopEquiv.eRk_eq_eRk (h : M.IsLoopEquiv X Y) : M.eRk X = M.eRk Y := by
   rw [← M.eRk_closure_eq, h.closure_eq_closure, M.eRk_closure_eq]
 
-lemma eRk_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
-    M.eRk X = 0 ↔ X ⊆ M.loops := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis X
-  rw [← hI.encard_eq_eRk, encard_eq_zero]
-  exact ⟨by rintro rfl; exact hI.subset_closure, fun h ↦ eq_empty_of_forall_not_mem
-    fun x hx ↦ (hI.indep.isNonloop_of_mem hx).not_isLoop (h (hI.subset hx))⟩
-
-lemma eRk_eq_zero_iff' : M.eRk X = 0 ↔ X ∩ M.E ⊆ M.loops := by
-  rw [← eRk_inter_ground, eRk_eq_zero_iff]
-
-@[simp] lemma eRk_loops (M : Matroid α) : M.eRk M.loops = 0 := by
-  rw [eRk_eq_zero_iff]
-
 @[simp]
 lemma eRank_lt_top [M.RankFinite] : M.eRank < ⊤ := by
   obtain ⟨B, hB⟩ := M.exists_isBase
   rw [← hB.encard_eq_eRank, encard_lt_top_iff]
   exact hB.finite
 
+@[simp]
+lemma eRk_loops : M.eRk M.loops = 0 := by
+  simp [eRk_eq_zero_iff']
 
 -- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
   --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
@@ -91,28 +81,6 @@ section Constructions
 
 variable {E : Set α}
 
-@[simp] lemma loopyOn_eRk_eq (E X : Set α) : (loopyOn E).eRk X = 0 := by
-  obtain ⟨I, hI⟩ := (loopyOn E).exists_isBasis' X
-  rw [hI.eRk_eq_encard, loopyOn_indep_iff.1 hI.indep, encard_empty]
-
-@[simp] lemma loopyOn_eRank_eq (E : Set α) : (loopyOn E).eRank = 0 := by
-  rw [eRank_def, loopyOn_eRk_eq]
-
--- @[simp] lemma loopyOn_rk_eq (E X : Set α) : (loopyOn E).r X = 0 := by
---   rw [← eRk_toNat_eq_rk, loopyOn_eRk_eq]; rfl
-
-@[simp] lemma eRank_loopyOn_eq_zero (α : Type*) : (emptyOn α).eRank = 0 := by
-  rw [eRank_eq_zero_iff, emptyOn_ground, loopyOn_empty]
-
-@[simp] lemma freeOn_eRank_eq (E : Set α) : (freeOn E).eRank = E.encard := by
-  rw [eRank_def, freeOn_ground, (freeOn_indep_iff.2 rfl.subset).eRk_eq_encard]
-
-lemma freeOn_eRk_eq (hXE : X ⊆ E) : (freeOn E).eRk X = X.encard := by
-  obtain ⟨I, hI⟩ := (freeOn E).exists_isBasis X
-  rw [hI.eRk_eq_encard, (freeOn_indep hXE).eq_of_isBasis hI]
-
--- lemma freeOn_rk_eq (hXE : X ⊆ E) : (freeOn E).r X = X.ncard := by
---   rw [← eRk_toNat_eq_rk, freeOn_eRk_eq hXE, ncard_def]
 
 @[simp] lemma disjointSum_eRk_eq (M N : Matroid α) (hMN : Disjoint M.E N.E) (X : Set α) :
     (M.disjointSum N hMN).eRk X = M.eRk (X ∩ M.E) + N.eRk (X ∩ N.E) := by

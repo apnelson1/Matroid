@@ -389,7 +389,7 @@ lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X)
       (inter_subset_inter hIX.subset hIY.subset)
 
   rw [hIX.eLocalConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
-    zero_add, WithTop.add_left_inj hX.inter_right.eRk_ne_top, nullity_eq_zero] at h
+    zero_add, WithTop.add_left_inj hX.inter_right.eRk_lt_top.ne, nullity_eq_zero] at h
 
   exact h.isModularPair_of_union.of_isBasis_of_isBasis hIX hIY
 
@@ -421,10 +421,9 @@ lemma eLocalConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
 
   rw [hIX.eRk_eq_encard, hIX.eLocalConn_eq hIY,
     hIY.eRelRk_eq_encard_diff_of_subset_isBasis hK' hIYK, hK.nullity_eq, union_diff_distrib,
-    diff_eq_empty.2 hIYK, union_empty, add_assoc,
-    ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
-    diff_union_diff_cancel' _ hK.subset, add_comm,
-    encard_diff_add_encard_inter]
+    diff_eq_empty.2 hIYK,
+    union_empty, add_assoc, ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
+    diff_union_diff_cancel' _ hK.subset, add_comm, encard_diff_add_encard_inter]
   exact (inter_subset_right.trans hIYK)
 
 lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) (hXH : ¬ (X ⊆ H))
@@ -490,7 +489,7 @@ lemma IsRkFinite.localConn_eq_rk_add_rk_sub (hX : M.IsRkFinite X) (hY : M.IsRkFi
 
 /-- The formula for local connectivity of two finite-rank sets written with `Int` subtraction,
 for use with `ring` and `linarith`. -/
-lemma IsRkFinite.localConn_cast_int_eq (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
+lemma IsRkFinite.localConn_intCast_eq (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) := by
   rw [hX.localConn_eq_rk_add_rk_sub hY, ← Nat.cast_add]
   exact Int.natCast_sub (rk_union_le_rk_add_rk _ _ _)
@@ -503,9 +502,10 @@ lemma localConn_eq_rk_add_rk_sub (M : Matroid α) [RankFinite M] (X Y : Set α) 
 
 /-- The formula for local connectivity written in terms of `Int` subtraction,
 for use with `ring` and `linarith`. -/
-lemma localConn_cast_int_eq (M : Matroid α) [RankFinite M] (X Y : Set α) :
+@[simp]
+lemma localConn_intCast_eq (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.localConn X Y : ℤ) = M.rk X + M.rk Y - M.rk (X ∪ Y) :=
-  (M.isRkFinite_set X).localConn_cast_int_eq (M.isRkFinite_set Y)
+  (M.isRkFinite_set X).localConn_intCast_eq (M.isRkFinite_set Y)
 
 lemma IsModularPair.localConn_eq_rk_inter (h : M.IsModularPair X Y) :
     M.localConn X Y = M.rk (X ∩ Y) := by
@@ -621,7 +621,8 @@ lemma eConn_compl' (M : Matroid α) (X : Set α) : M.eConn Xᶜ = M.eConn X := b
     eq_comm, ← eConn_compl, restrict_ground_eq]
 
 /-- Connectivity is self-dual. -/
-@[simp] lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X := by
+@[simp]
+lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X := by
   wlog h : OnUniv M with aux
   · rw [← eConn_corestrict_univ_eq, dual_dual, eq_comm, ← eConn_restrict_univ_eq, aux _ _ ⟨rfl⟩]
   obtain ⟨I, hI⟩ := M.exists_isBasis X
@@ -732,13 +733,14 @@ lemma rk_add_rk_compl_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     rank_def, cast_rk_eq, eRk_add_eRk_compl_eq, cast_conn_eq, eRank_def]
 
 /-- A formula for the connectivity of a set in terms of the rank function.
-The `ℕ` subtraction will never overflow.  -/
+`Matroid.rk_add_rk_compl_eq` implies that the `ℕ` subtraction will never overflow.  -/
 lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [RankFinite M] (X : Set α) :
     M.conn X = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_localConn, localConn_eq_rk_add_rk_sub, union_diff_self, rk_eq_rank subset_union_right]
 
 /-- A version of `Matroid.conn_eq_rk_add_rk_sub_rank` with `Int` subtraction,
 for use with `ring, linarith`, etc. -/
+@[simp]
 lemma intCast_conn_eq (M : Matroid α) [RankFinite M] (X : Set α) :
     (M.conn X : ℤ) = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_rk_add_rk_sub_rank, ← Nat.cast_add, rank_def]

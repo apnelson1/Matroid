@@ -586,7 +586,7 @@ noncomputable def relRk (X Y : Set α) : ℕ := (M.eRelRk X Y).toNat
 lemma relRk_intCast_eq_sub (M : Matroid α) [RankFinite M] (X Y : Set α) :
     (M.relRk X Y : ℤ) = M.rk (X ∪ Y) - M.rk X := by
   rw [relRk, eRelRk_eq_union_right, (M.isRkFinite_set X).eRelRk_eq_sub subset_union_right,
-    ENat.toNat_sub (M.isRkFinite_set X).eRk_ne_top, ← rk, ← rk, Nat.cast_sub , union_comm]
+    ENat.toNat_sub (M.isRkFinite_set X).eRk_lt_top.ne, ← rk, ← rk, Nat.cast_sub , union_comm]
   exact (M.rk_mono (subset_union_right))
 
 lemma relRk_intCast_eq_sub_of_subset (M : Matroid α) [RankFinite M] (hXY : X ⊆ Y) :

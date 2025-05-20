@@ -37,7 +37,7 @@ lemma copy_eq_self (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → 
 
 /-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
 structure IsSubgraph (H G : Graph α β) : Prop where
-  vx_subset : V(H) ⊆ V(G)
+  vertex_subset : V(H) ⊆ V(G)
   isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 /-- The subgraph order is a partial order on graphs. -/
@@ -80,7 +80,7 @@ lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
 
 lemma le_of_le_le_subset_subset {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hV : V(H₁) ⊆ V(H₂))
     (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤ H₂ where
-  vx_subset := hV
+  vertex_subset := hV
   isLink_of_isLink e x y h := by
     rw [← G.isLink_iff_isLink_of_le_of_mem h₂ (hE h.edge_mem)]
     exact h.of_le h₁
@@ -113,12 +113,12 @@ lemma edgeRestrict_vertexSet (G : Graph α β) (E₀ : Set β) : V(G ↾ E₀) =
 
 @[simp]
 lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
-  vx_subset := rfl.le
+  vertex_subset := rfl.le
   isLink_of_isLink := by
     simp
 
 lemma edgeRestrict_mono_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ ⊆ F) : G ↾ F₀ ≤ G ↾ F where
-  vx_subset := rfl.subset
+  vertex_subset := rfl.subset
   isLink_of_isLink _ _ _ := fun h ↦ ⟨hss h.1, h.2⟩
 
 lemma edgeRestrict_mono_left (h : H ≤ G) (F : Set β) : H ↾ F ≤ G ↾ F := by
@@ -211,6 +211,10 @@ lemma induce_le (hX : X ⊆ V(G)) : G[X] ≤ G :=
   ⟨hX, fun _ _ _ h ↦ h.1⟩
 
 @[simp]
+lemma induce_le_iff : G[X] ≤ G ↔ X ⊆ V(G) :=
+  ⟨vertexSet_subset_of_le, induce_le⟩
+
+@[simp]
 lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X := Iff.rfl
 
 /-- This is too annoying to be a simp lemma. -/
@@ -236,34 +240,42 @@ lemma induce_induce (G : Graph α β) (X Y : Set α) : G[X][Y] = G[Y] ↾ E(G[X]
   tauto
 
 lemma induce_mono (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
-  vx_subset := hXY
+  vertex_subset := hXY
   isLink_of_isLink _ _ _ := fun ⟨h, h1, h2⟩ ↦ ⟨h, hXY h1, hXY h2⟩
 
+@[simp]
+lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
+  refine G.ext_of_le_le (by simp) (by simp) rfl <| Set.ext fun e ↦
+    ⟨fun ⟨_, _, h⟩ ↦ h.1.edge_mem, fun h ↦ ?_⟩
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
+  exact ⟨x, y, h, h.left_mem, h.right_mem⟩
+
 /-- The graph obtained from `G` by deleting a set of vertices. -/
-protected def vxDelete (G : Graph α β) (X : Set α) : Graph α β := G [V(G) \ X]
+protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G [V(G) \ X]
 
 instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
-  hSub := Graph.vxDelete
+  hSub := Graph.vertexDelete
 
-lemma vxDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
-
-@[simp]
-lemma vxDelete_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := rfl
+lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
 
 @[simp]
-lemma vxDelete_edgeSet (G : Graph α β) (X : Set α) :
+lemma vertexDelete_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := rfl
+
+@[simp]
+lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
   E(G - X) = {e | ∃ x y, G.IsLink e x y ∧ (x ∈ V(G) ∧ x ∉ X) ∧ y ∈ V(G) ∧ y ∉ X}  := rfl
 
 @[simp]
-lemma vxDelete_isLink_iff (G : Graph α β) (X : Set α) :
+lemma vertexDelete_isLink_iff (G : Graph α β) (X : Set α) :
     (G - X).IsLink e x y ↔ (G.IsLink e x y ∧ (x ∈ V(G) ∧ x ∉ X) ∧ y ∈ V(G) ∧ y ∉ X) := Iff.rfl
 
 @[simp]
-lemma vxDelete_le : G - X ≤ G :=
+lemma vertexDelete_le : G - X ≤ G :=
   G.induce_le diff_subset
 
-lemma IsLink.mem_vxDelete_iff {X : Set α} (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
-  rw [vxDelete_def, hG.mem_induce_iff, mem_diff, mem_diff, and_iff_right hG.left_mem,
+lemma IsLink.mem_vertexDelete_iff {X : Set α} (hG : G.IsLink e x y) :
+    e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
+  rw [vertexDelete_def, hG.mem_induce_iff, mem_diff, mem_diff, and_iff_right hG.left_mem,
     and_iff_right hG.right_mem]
 
 @[simp]
@@ -272,10 +284,10 @@ lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F
   simp only [induce_isLink_iff, edgeRestrict_isLink]
   tauto
 
-lemma edgeRestrict_vxDelete (G : Graph α β) (F : Set β) (D : Set α) :
+lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
     (G ↾ F) - D = (G - D) ↾ F := by
   refine Graph.ext rfl fun e x y ↦ ?_
-  simp only [vxDelete_isLink_iff, edgeRestrict_isLink, edgeRestrict_vertexSet]
+  simp only [vertexDelete_isLink_iff, edgeRestrict_isLink, edgeRestrict_vertexSet]
   tauto
 
 @[simp]
@@ -284,15 +296,73 @@ lemma edgeDelete_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ＼ F)[
     ← inter_diff_assoc, inter_eq_self_of_subset_left (by simp), ← edgeDelete_eq_edgeRestrict]
 
 @[simp]
-lemma induce_vxDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
+lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
   Graph.ext rfl <| by simp +contextual
 
+lemma le_induce_of_le_of_subset (h : H ≤ G) (hV : V(H) ⊆ X) : H ≤ G[X] :=
+  ⟨hV, fun _ _ _ h' ↦ ⟨h'.of_le h, hV h'.left_mem, hV h'.right_mem⟩⟩
 
+lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
+  le_induce_of_le_of_subset h rfl.subset
+
+/-! ### Spanning Subgraphs -/
+
+/-- A spanning subgraph of `G` is a subgraph of `G` with the same vertex set. -/
+structure IsSpanningSubgraph (H G : Graph α β) : Prop where
+  le : H ≤ G
+  vertexSet_eq : V(H) = V(G)
+
+infixl:50 " ≤s " => Graph.IsSpanningSubgraph
+
+@[simp]
+lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
+  ⟨by simp, rfl⟩
 
 /-! ### Induced Subgraphs -/
 
+/-- An induced subgraph of `G` is a subgraph `H` of `G` such that every link of `G`
+involving two vertices of `H` is also a link of `H`. -/
 structure IsInducedSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
-  isLink_of_mem : ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y
+  isLink_of_mem_mem : ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y
 
 infixl:50 " ≤i " => Graph.IsInducedSubgraph
+
+lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤i G₂) (h₂₃ : G₂ ≤i G₃) :
+    G₁ ≤i G₃ :=
+  ⟨h₁₂.le.trans h₂₃.le, fun _ _ _ h hx hy ↦ h₁₂.isLink_of_mem_mem
+    (h₂₃.isLink_of_mem_mem h (vertexSet_subset_of_le h₁₂.le hx) (vertexSet_subset_of_le h₁₂.le hy))
+    hx hy⟩
+
+lemma isInducedSubgraph_iff :
+    H ≤i G ↔ H ≤ G ∧ ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y :=
+  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+lemma induce_isInducedSubgraph (hX : X ⊆ V(G)) : G[X] ≤i G :=
+  ⟨by simpa, fun e x y h (hx : x ∈ X) (hy : y ∈ X) ↦ by simp_all⟩
+
+@[simp]
+lemma induce_isInducedSubgraph_iff : G[X] ≤i G ↔ X ⊆ V(G) := by
+  simp +contextual [isInducedSubgraph_iff]
+
+lemma IsInducedSubgraph.induce_vertexSet_eq (h : H ≤i G) : G[V(H)] = H := by
+  have hle : G[V(H)] ≤ G := by simp [vertexSet_subset_of_le h.le]
+  refine G.ext_of_le_le hle h.le rfl <| Set.ext fun e ↦ ?_
+  simp only [induce_edgeSet, mem_setOf_eq]
+  refine ⟨fun ⟨x, y, h', hx, hy⟩ ↦ (h.isLink_of_mem_mem h' hx hy).edge_mem, fun h' ↦ ?_⟩
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h'
+  exact ⟨x, y, hxy.of_le h.le, hxy.left_mem, hxy.right_mem⟩
+
+/-- An induced subgraph is precisely a subgraph of the form `G[X]` for some `X ⊆ V(G)`.
+This version of the lemma can be used with `subst` or `obtain rfl` to replace `H` with `G[X]`. -/
+lemma IsInducedSubgraph.exists_eq_induce (h : H ≤i G) : ∃ X ⊆ V(G), H = G[X] :=
+  ⟨V(H), vertexSet_subset_of_le h.le, h.induce_vertexSet_eq.symm⟩
+
+lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
+    H.Adj x y := by
+  obtain ⟨e, hxy⟩ := hxy
+  exact (h.isLink_of_mem_mem hxy hx hy).adj
+
+lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G) : H = G := by
+  obtain ⟨X, hX, rfl⟩ := hi.exists_eq_induce
+  simp [show X = V(G) by simpa using hs.vertexSet_eq]

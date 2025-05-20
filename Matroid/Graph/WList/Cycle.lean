@@ -159,14 +159,17 @@ lemma rotate_edge (w : WList α β) (n : ℕ) : (w.rotate n).edge = w.edge.rotat
   rintro (w | ⟨x, e, w⟩) <;> simp
 
 @[simp]
-lemma rotate_vx_tail (w : WList α β) (n : ℕ) : (w.rotate n).tail.vx = w.tail.vx.rotate n := by
-  suffices aux : ∀ (w : WList α β), (w.rotate 1).tail.vx = w.tail.vx.rotate 1 by induction n with
-    | zero => simp | succ n IH => rw [← rotate_rotate, aux, ← List.rotate_rotate, IH]
+lemma rotate_vertex_tail (w : WList α β) (n : ℕ) :
+    (w.rotate n).tail.vertex = w.tail.vertex.rotate n := by
+  suffices aux : ∀ (w : WList α β), (w.rotate 1).tail.vertex = w.tail.vertex.rotate 1 by
+    induction n with
+      | zero => simp
+      | succ n IH => rw [← rotate_rotate, aux, ← List.rotate_rotate, IH]
   rintro (w | ⟨x, e, (w | ⟨y, f, w⟩)⟩) <;> simp
 
 lemma IsClosed.rotate_vertexSet (hw : w.IsClosed) (n) : V(w.rotate n) = V(w) := by
-  simp_rw [← (hw.rotate _).vertexSet_tail, WList.vertexSet, ← mem_vx, rotate_vx_tail,
-    List.mem_rotate, mem_vx]
+  simp_rw [← (hw.rotate _).vertexSet_tail, WList.vertexSet, ← mem_vertex, rotate_vertex_tail,
+    List.mem_rotate, mem_vertex]
   rw [← WList.vertexSet, hw.vertexSet_tail, WList.vertexSet]
 
 lemma IsClosed.mem_rotate (hw : w.IsClosed) {n} : x ∈ w.rotate n ↔ x ∈ w := by
@@ -197,20 +200,20 @@ lemma rotate_edgeSet (w : WList α β) (n) : E(w.rotate n) = E(w) := by
   simp [WList.edgeSet, rotate_edge]
 
 lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
-  refine ext_vx_edge ?_ (by rw [rotate_edge, ← length_edge, List.rotate_length])
+  refine ext_vertex_edge ?_ (by rw [rotate_edge, ← length_edge, List.rotate_length])
   cases w with
   | nil => simp
   | cons u e w =>
-    rw [cons_length, rotate_cons_succ, cons_vx,
-      ← ((w.concat e w.first).rotate w.length).vx.head_cons_tail (by simp),
-      ← tail_vx (by simp), rotate_vx_tail, vx_head, rotate_first _ _ (by simp),
+    rw [cons_length, rotate_cons_succ, cons_vertex,
+      ← ((w.concat e w.first).rotate w.length).vertex.head_cons_tail (by simp),
+      ← tail_vertex (by simp), rotate_vertex_tail, vertex_head, rotate_first _ _ (by simp),
       get_concat _ _ _ rfl.le, get_length, eq_comm, show u = w.last from hw]
     convert rfl
     cases w with
     | nil => simp
     | cons y f w =>
-      rw [first_cons, cons_concat, tail_cons, concat_vx, cons_length, cons_vx,
-        ← w.length_vx, List.rotate_append_length_eq]
+      rw [first_cons, cons_concat, tail_cons, concat_vertex, cons_length, cons_vertex,
+        ← w.length_vertex, List.rotate_append_length_eq]
       simp
 
 lemma IsClosed.rotate_eq_mod (hw : w.IsClosed) (n) : w.rotate n = w.rotate (n % w.length) := by

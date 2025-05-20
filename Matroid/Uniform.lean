@@ -37,14 +37,15 @@ def unifOn {α : Type*} (E : Set α) (k : ℕ) : Matroid α := (freeOn E).trunca
   simp [unifOn]
 
 theorem unifOn_eq_of_le (h : E.encard ≤ k) : unifOn E k = freeOn E := by
-  rw [unifOn, truncate_eq_self_of_rank_le (by rwa [freeOn_eRank_eq])]
+  rw [unifOn, truncate_eq_self_of_rank_le (by rwa [eRank_freeOn])]
 
 theorem unifOn_isBase_iff (hk : k ≤ E.encard) (hBE : B ⊆ E) :
     (unifOn E k).IsBase B ↔ B.encard = k := by
-  rw [unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right hBE]; rwa [freeOn_eRank_eq]
+  rw [unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right hBE]
+  rwa [eRank_freeOn]
 
 theorem unifOn_eRk_eq (E : Set α) (k : ℕ) (hX : X ⊆ E) : (unifOn E k).eRk X = min X.encard k := by
-  rw [unifOn, truncateTo_eRk_eq, freeOn_eRk_eq hX]
+  rw [unifOn, truncateTo_eRk_eq, eRk_freeOn hX]
 
 theorem unifOn_eRk_eq' (E : Set α) (k : ℕ) : (unifOn E k).eRk X = min (X ∩ E).encard k := by
   rw [← eRk_inter_ground, unifOn_eRk_eq _ _ (by rw [unifOn_ground_eq]; apply inter_subset_right),
@@ -199,7 +200,7 @@ theorem unif_eRank_eq_of_le (hab : a ≤ b) : (unif a b).eRank = a := by
 
 theorem unif_isBase_iff (hab : a ≤ b) {B : Set (Fin b)} : (unif a b).IsBase B ↔ B.encard = a := by
   rw [unif, unifOn, truncateTo_isBase_iff, freeOn_indep_iff, and_iff_right (subset_univ _)]
-  rwa [freeOn_eRank_eq, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
+  rwa [eRank_freeOn, encard_univ, ENat.card_eq_coe_fintype_card, Fintype.card_fin, Nat.cast_le]
 
 @[simp] theorem unif_isBase_iff' {B : Set (Fin _)} : (unif a (a + b)).IsBase B ↔ B.encard = a := by
   rw [unif_isBase_iff (Nat.le_add_right _ _)]

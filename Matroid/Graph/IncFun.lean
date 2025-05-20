@@ -1,4 +1,4 @@
-import Matroid.Graph.Basic
+import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.Card
@@ -7,7 +7,22 @@ open Set
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
+
 namespace Graph
+
+
+/-
+For mathlib
+-/
+
+@[simp]
+lemma not_isLink_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
+  mt IsLink.edge_mem he
+
+@[simp]
+lemma not_inc_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.Inc e x :=
+  mt Inc.edge_mem he
+
 
 /-- The set of ends of an edge `e`. -/
 def endSet (G : Graph α β) (e : β) : Set α := {x | G.Inc e x}
@@ -41,7 +56,7 @@ lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 :=
 lemma subsingleton_setOf_isLink (G : Graph α β) (e : β) (x : α) :
     {y | G.IsLink e x y}.Subsingleton := by
   simp only [Set.Subsingleton, mem_setOf_eq]
-  exact fun y hy z hz ↦ hy.eq_of_isLink hz
+  exact fun y hy z hz ↦ hy.right_unique hz
 
 @[simp]
 lemma endSet_finite (G : Graph α β) (e : β) : (G.endSet e).Finite :=
@@ -89,13 +104,13 @@ lemma incFun_le_two (G : Graph α β) (e : β) (x : α) : G.incFun e x ≤ 2 := 
   simp [incFun, isLink_iff_inc, hx]
 
 lemma IsNonloopAt.eIncFun_eq_one (h : G.IsNonloopAt e x) : G.incFun e x = 1 := by
-  obtain ⟨y, hne, hxy⟩ := h.exists_isLink_ne
+  obtain ⟨y, hne, hxy⟩ := h
   simp [incFun, hxy.isLink_iff_eq, (show Disjoint {y} {x} by simpa).inter_eq]
 
 @[simp]
 lemma incFun_eq_one_iff : G.incFun e x = 1 ↔ G.IsNonloopAt e x := by
   obtain (⟨y, hxy⟩ | hex) := em <| G.Inc e x
-  · simp [incFun, hxy.isLink_iff_eq, isNonloopAt_iff, toFinite ({y} ∩ {x}), eq_comm (a := x)]
+  · simp [incFun, hxy.isLink_iff_eq, IsNonloopAt, toFinite ({y} ∩ {x}), eq_comm (a := x)]
   simp [incFun, mt IsLink.inc_left hex, mt IsNonloopAt.inc hex]
 
 lemma IsNonloopAt.incFun_eq_one (h : G.IsNonloopAt e x) : G.incFun e x = 1 :=
@@ -128,8 +143,10 @@ lemma sum_incFun_eq_two (he : e ∈ E(G)) : (G.incFun e).sum (fun _ x ↦ x) = 2
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
   obtain rfl | hne := eq_or_ne x y
   · simp [Finsupp.sum, hxy.incFun_support_eq, hxy.isLink_iff_eq, show G.IsLoopAt e x from hxy]
-  simp [Finsupp.sum, hxy.incFun_support_eq, Finset.sum_pair hne,
-    (hxy.isNonloopAt_of_ne hne).incFun_eq_one, (hxy.isNonloopAt_right_of_ne hne).incFun_eq_one]
+  simp only [Finsupp.sum, hxy.incFun_support_eq, Finset.sum_pair hne]
+  rw [incFun_eq_one_iff.2 ⟨x, hne, hxy.symm⟩, incFun_eq_one_iff.2 ⟨y, hne.symm, hxy⟩]
+
+
 
 
 end Graph

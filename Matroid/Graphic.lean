@@ -1,5 +1,5 @@
 import Matroid.Axioms.Circuit
-import Matroid.Graph.Tree
+import Matroid.Graph.Forest
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C w P Q : WList α β}
@@ -7,12 +7,6 @@ variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α
 open Set WList
 
 namespace Graph
-
-/-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
-def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
-
-/-- `G.IsAcyclicSet X` means that the subgraph `G ↾ X` is a forest. -/
-def IsAcyclicSet (G : Graph α β) (I : Set β) : Prop := I ⊆ E(G) ∧ ∀ C₀, G.IsCycle C₀ → ¬ (E(C₀) ⊆ I)
 
 /-- The cycle matroid of a graph `G`. Its circuits are the edge sets of cycles of `G`,
 and its independent sets are the edge sets of forests. -/
@@ -54,10 +48,11 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       simpa using edgeSet_subset_of_le hC.isWalk.toGraph_le )
 
 @[simp]
-lemma cycleMatroid_isCircuit_iff {C : Set β} : G.cycleMatroid.IsCircuit C ↔ G.IsCycleSet C := by
+lemma cycleMatroid_isCircuit : G.cycleMatroid.IsCircuit = G.IsCycleSet := by
   simp [cycleMatroid]
 
 @[simp]
-lemma cycleMatroid_indep_iff {I : Set β} : G.cycleMatroid.Indep I ↔ G.IsAcyclicSet I := by
+lemma cycleMatroid_indep : G.cycleMatroid.Indep = G.IsAcyclicSet := by
+  ext I
   simp only [cycleMatroid, FiniteCircuitMatroid.matroid_indep_iff, IsCycleSet, IsAcyclicSet]
   aesop
