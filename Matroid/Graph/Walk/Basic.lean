@@ -17,8 +17,6 @@ inductive IsWalk (G : Graph α β) : WList α β → Prop
   | nil {x} (hx : x ∈ V(G)) : G.IsWalk (nil x)
   | cons {x e w} (hw : G.IsWalk w) (h : G.IsLink e x w.first) : G.IsWalk (cons x e w)
 
-
-
 @[simp]
 lemma nil_isWalk_iff : G.IsWalk (nil x) ↔ x ∈ V(G) :=
   ⟨fun h ↦ by cases h with | _ => simp_all, IsWalk.nil⟩
@@ -474,7 +472,6 @@ lemma WellFormed.isWalk_toGraph (hw : w.WellFormed) : w.toGraph.IsWalk w := by
     obtain ⟨y₁, y₂, h⟩ := exists_isLink_of_mem_edge he
     rw [((ih hw.1).isLink_of_isLink h).isLink_iff_sym2_eq, hw.2 _ _ h]
 
-
 end WList
 
 namespace Graph
@@ -505,7 +502,6 @@ lemma _root_.WList.WellFormed.toGraph_le_iff (hW : W.WellFormed) : W.toGraph ≤
     · rwa [hW.1.toGraph_isLink]
     rw [hW.1.toGraph_isLink]
     exact hexy.symm
-
 
 lemma IsWalk.edgeSet_subset_induce_edgeSet (hw : G.IsWalk w) : E(w) ⊆ E(G[V(w)]) := by
   intro e hew

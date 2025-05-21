@@ -63,6 +63,9 @@ lemma IsSublist.eq_of_length_ge (h : w₁.IsSublist w₂) (hge : w₂.length ≤
   ext_vertex_edge (h.vertex_sublist.eq_of_length_le (by simpa)) <|
     h.edge_sublist.eq_of_length_le (by simpa)
 
+lemma IsSublist.length_lt (h : w₁.IsSublist w₂) (hne : w₁ ≠ w₂) : w₁.length < w₂.length :=
+  h.length_le.lt_of_ne fun h_eq ↦ hne <| h.eq_of_length_ge h_eq.symm.le
+
 lemma IsSublist.trans (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₃) : w₁.IsSublist w₃ := by
   induction h' generalizing w₁ with
   | nil => simp_all
@@ -211,7 +214,6 @@ lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.conca
 @[simp]
 lemma isPrefix_concat_self (w : WList α β) (e) (x) : w.IsPrefix (w.concat e x) :=
   isPrefix_refl.concat e x
-
 
 /- ## Suffixes -/
 
@@ -435,6 +437,39 @@ lemma suffixFromLast_isSuffix (w : WList α β) (P : α → Prop) [DecidablePred
 lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).first := by
   rw [suffixFromLast, reverse_first]
   exact prefixUntil_prop_last (by simpa)
+
+
+
+lemma IsSublist.exists_append_append {w₀ : WList α β} (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
+    ∃ w₁ w₂, w₁.last = w₀.first ∧ w₀.last = w₂.first ∧ w = w₁ ++ w₀ ++ w₂ := by
+  classical
+  induction hw₀ with
+  | @nil x w h =>
+  · refine ⟨w.prefixUntilVertex x, w.suffixFromVertex x, ?_⟩
+    rw [nil_first, nil_last, prefixUntilVertex_last h, suffixFromVertex_first h,
+      append_assoc, nil_append, prefixUntilVertex_append_suffixFromVertex]
+    simp
+  | @cons x e w₁ w₂ h ih =>
+  · simp only [cons_vertex, nodup_cons, mem_vertex] at hw
+    obtain ⟨w₁', w₂', h_eq, h_eq', rfl⟩ := ih hw.2
+    exact ⟨WList.cons x e w₁', w₂', by simp [h_eq', h_eq]⟩
+  | @cons₂ x e w₁ w₂ h h_eq ih =>
+  · simp only [cons_vertex, nodup_cons, mem_vertex] at hw
+    obtain ⟨w₁', w₂', h1, h2, rfl⟩ := ih hw.2
+    cases w₁' with
+    | nil u => exact ⟨WList.nil x, w₂', by simpa⟩
+    | cons u e w₁' =>
+    exfalso
+    obtain rfl : w₁.first = u := by simpa using h_eq
+    rw [cons_append, append_vertex' (by simpa)] at hw
+    simp at hw
+
+/-- If `w₀` is a sublist `w` and `w` has no vertex repetitions,
+then `w₀` is a suffix of a prefix of `w`. -/
+lemma IsSublist.exists_isPrefix_isSuffix {w₀ : WList α β} (hw₀ : w₀.IsSublist w)
+    (hw : w.vertex.Nodup) : ∃ w', w'.IsPrefix w ∧ w₀.IsSuffix w' := by
+  obtain ⟨w₁, w₂, h1, h2, rfl⟩ := hw₀.exists_append_append hw
+  exact ⟨w₁ ++ w₀, isPrefix_append_right (by simpa), isSuffix_append_left ..⟩
 
 section drop
 

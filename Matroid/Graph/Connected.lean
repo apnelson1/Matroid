@@ -2,6 +2,7 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Subgraph
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.ENat.Lattice
+import Mathlib.Data.Real.Basic
 
 open Set Function Nat
 
@@ -654,74 +655,5 @@ lemma eq_sUnion_components (G : Graph α β) :
   refine subset_antisymm (fun e he ↦ ?_) ?_
   · simpa using exists_isComponent_edge_mem he
   simpa using fun _ h ↦ (edgeSet_subset_of_le h.le)
-
-/-! ### Distance -/
-
-/-- The number of edges of the shortest walk between two vertices `x,y` of `G`, as an `ℕ∞`.
-Equal to `⊤` if `x` and `y` are not `VertexConnected` in `G`, in particular if `x = y ∉ V(G)`. -/
-protected noncomputable def dist (G : Graph α β) (x y : α) : ℕ∞ :=
-  ⨅ (W : {W // G.IsWalk W ∧ W.first = x ∧ W.last = y}), (W.1.length : ℕ∞)
-
-lemma VertexConnected.dist_lt_top (h : G.VertexConnected x y) : G.dist x y < ⊤ := by
-  obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isWalk
-  exact (iInf_le _ ⟨P, by simpa⟩).trans_lt (by simp)
-
-/-- The distance from `x` to `y` is realized by a *path* from `x` to `y`. -/
-lemma VertexConnected.exists_isPath_length_eq_dist (h : G.VertexConnected x y) :
-    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.dist x y := by
-  classical
-  have hd := h.dist_lt_top
-  have hne : Nonempty {W // G.IsWalk W ∧ W.first = x ∧ W.last = y} := by
-    obtain ⟨W, hW, rfl, rfl⟩ := h.exists_isWalk
-    exact ⟨W, by simp [hW]⟩
-  obtain ⟨⟨W,hWp, rfl, rfl⟩, hW : W.length = G.dist _ _⟩ :=
-    ENat.exists_eq_iInf (ι := {W // G.IsWalk W ∧ W.first = x ∧ W.last = y})
-    (fun W ↦ (W.1.length : ℕ∞))
-  let W' : {W' // G.IsWalk W' ∧ W'.first = W.first ∧ W'.last = W.last} :=
-    ⟨W.dedup, hWp.sublist W.dedup_isSublist, by simp, by simp⟩
-  refine ⟨W'.1, hWp.dedup_isPath, by simp [W'], by simp [W'], le_antisymm ?_ (iInf_le ..)⟩
-  simp only [← hW, cast_le, W']
-  exact W.dedup_isSublist.length_le
-
-lemma IsWalk.dist_le_length {W : WList α β} (hW : G.IsWalk W) :
-    G.dist W.first W.last ≤ W.length := by
-  let W' : {W' // G.IsWalk W' ∧ W'.first = W.first ∧ W'.last = W.last} := ⟨W, hW, rfl, rfl⟩
-  apply iInf_le (i := W')
-
-@[simp]
-lemma dist_lt_top_iff : G.dist x y < ⊤ ↔ G.VertexConnected x y := by
-  refine ⟨fun h ↦ ?_, VertexConnected.dist_lt_top⟩
-  obtain ⟨⟨P,hP', rfl, rfl⟩, hP⟩ := iInf_lt_top.1 h
-  exact hP'.vertexConnected_first_last
-
-@[simp]
-lemma dist_eq_top_iff : G.dist x y = ⊤ ↔ ¬ G.VertexConnected x y := by
-  rw [← dist_lt_top_iff, lt_top_iff_ne_top, not_not]
-
-lemma dist_comm (x y) : G.dist x y = G.dist y x := by
-  suffices aux : ∀ x y, G.dist x y ≤ G.dist y x from (aux x y).antisymm (aux y x)
-  intro x y
-  simp only [Graph.dist, le_iInf_iff, Subtype.forall, and_imp]
-  rintro W hW rfl rfl
-  exact iInf_le_of_le ⟨W.reverse, by simpa⟩ <| by simp
-
-lemma dist_self (G : Graph α β) (hx : x ∈ V(G)) : G.dist x x = 0 := by
-  rw [Graph.dist, ENat.iInf_eq_zero]
-  exact ⟨⟨WList.nil x, by simpa⟩, by simp⟩
-
-@[simp]
-lemma dist_eq_zero_iff : G.dist x x = 0 ↔ x ∈ V(G) :=
-  ⟨fun h ↦ by simpa using (G.dist_lt_top_iff (x := x) (y := x)).1 (by simp [h]), G.dist_self⟩
-
-lemma dist_triangle (G : Graph α β) (x y z : α) : G.dist x z ≤ G.dist x y + G.dist y z := by
-  wlog hxy : G.VertexConnected x y
-  · simp [dist_eq_top_iff.2 hxy]
-  wlog hyz : G.VertexConnected y z
-  · simp [dist_eq_top_iff.2 hyz]
-  obtain ⟨P, hP, rfl, rfl, hPl⟩ := hxy.exists_isPath_length_eq_dist
-  obtain ⟨Q, hQ, hQ1, rfl, hQl⟩ := hyz.exists_isPath_length_eq_dist
-  have hle := (hP.isWalk.append hQ.isWalk hQ1.symm).dist_le_length
-  rwa [append_first_of_eq hQ1.symm, append_last, append_length, Nat.cast_add,
-    hPl, hQl] at hle
 
 end Graph

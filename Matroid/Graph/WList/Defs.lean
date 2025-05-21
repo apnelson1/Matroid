@@ -577,6 +577,21 @@ lemma get_eq_getD_vertex (w : WList α β) (n) : w.get n = w.vertex.getD n w.las
   | zero => simp
   | succ n IH => cases w with simp [IH]
 
+lemma DInc_get_get_succ {n : ℕ} (hn : n < w.length) :
+    have hw : n < w.edge.length := by simpa using hn
+    w.DInc (w.edge[n]) (w.get n) (w.get (n+1)) := by
+  simp only
+  induction w generalizing n with
+  | nil => simp at hn
+  | cons u e w ih =>
+  · cases n with
+  | zero => simp
+  | succ n => apply (@ih n (by simpa using hn)).cons
+
+lemma exists_dInc_get_get_succ {n : ℕ} (hn : n < w.length) :
+    ∃ e, w.DInc e (w.get n) (w.get (n+1)) :=
+  ⟨_, DInc_get_get_succ hn⟩
+
 variable [DecidableEq α]
 
 /-- The index of a vertex in a `WList`. Equal to `w.length + 1` if the vertex doesn't appear. -/

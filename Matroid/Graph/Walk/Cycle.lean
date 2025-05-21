@@ -95,6 +95,13 @@ lemma IsCycle.reverse (hC : G.IsCycle C) : G.IsCycle C.reverse where
   isClosed := by simp [hC.isClosed]
   nodup := by simp [hC.dropLast_isPath.nodup]
 
+lemma IsCycle.of_le (hC : H.IsCycle C) (hle : H ≤ G) : G.IsCycle C where
+  isWalk := hC.isWalk.of_le hle
+  edge_nodup := hC.edge_nodup
+  nonempty := hC.nonempty
+  isClosed := hC.isClosed
+  nodup := hC.nodup
+
 lemma IsCycle.isCycle_of_ge (h : H.IsCycle w) (hle : H ≤ G) : G.IsCycle w where
   isWalk := h.isWalk.of_le hle
   edge_nodup := h.edge_nodup

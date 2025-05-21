@@ -1,5 +1,4 @@
-import Matroid.Graph.Connected
-import Matroid.Graph.Subgraph
+import Matroid.Graph.Distance
 import Mathlib.Data.Set.Subsingleton
 import Mathlib.Order.Minimal
 
@@ -91,9 +90,11 @@ lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Is
   simp only [singleEdge_edgeSet, subset_singleton_iff, WList.mem_edgeSet_iff] at h_const
   rw [h_const hnt.nonempty.firstEdge (by simp), h_const hnt.nonempty.lastEdge (by simp)]
 
-
-
-
+lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.IsPath Q)
+    (hfirst : P.first = Q.first) (hlast : P.last = Q.last) : P = Q := by
+  by_contra hne
+  obtain ⟨C, hC, -⟩ := twoPaths hP hQ hne hfirst hlast
+  exact hG C hC
 
 lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ : G.IsCycle C₀)
     (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
@@ -130,6 +131,16 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
   refine hF.not_mem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).1
   rw [← edgeRestrict_edgeDelete]
   exact hF.prop.edgeDelete_singleton_connected <| hC.not_isBridge_of_mem he
+
+lemma IsForest.isShortestPath_of_isPath (hG : G.IsForest) (hP : G.IsPath P) :
+    G.IsShortestPath P := by
+  obtain ⟨Q, hQ, h1, h2⟩ := hP.isWalk.vertexConnected_first_last.exists_isShortestPath
+  rwa [hG.eq_of_isPath_eq_eq hP hQ.isPath h1.symm h2.symm]
+
+lemma IsForest.ne_of_adj (hG : G.IsForest) (hxy : G.Adj x y) : x ≠ y := by
+  rintro rfl
+  obtain ⟨e, he⟩ := hxy
+  exact hG (WList.cons x e (nil x)) <| by simp [isCycle_iff, he.left_mem, isLink_self_iff.1 he]
 
 /-! ### Edge Sets -/
 
