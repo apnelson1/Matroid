@@ -12,6 +12,9 @@ structure IsTree (T : Graph α β) : Prop where
   isForest : T.IsForest
   connected : T.Connected
 
+lemma IsForest.isTree_of_isComponent (hG : G.IsForest) (hT : T.IsComponent G) : T.IsTree :=
+  ⟨hG.mono hT.le, hT.connected⟩
+
 /-- If `G` is connected, then a maximally acylic subgraph of `G` is connected.
 The correct statement is that any two vertices connected in the big graph are
 connected in the small one.
@@ -50,3 +53,44 @@ lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsT
   refine ⟨G ↾ B, ?_, by simp⟩
   rw [Matroid.isBase_iff_maximal_indep, cycleMatroid_indep] at hB
   exact hG.isTree_of_maximal_isAcyclicSet hB
+
+lemma IsTree.exists_delete_vertex_isTree [T.Finite] (hT : T.IsTree)
+    (hnt : V(T).Nontrivial) : ∃ v ∈ V(T), (T - {v}).IsTree := by
+  obtain ⟨x, hxT, hconn⟩ := hT.connected.exists_delete_vertex_connected hnt
+  exact ⟨x, hxT, hT.isForest.mono vertexDelete_le, hconn⟩
+
+lemma IsLeaf.delete_isTree (hT : T.IsTree) (hx : T.IsLeaf x) : (T - {x}).IsTree :=
+  ⟨hT.isForest.mono vertexDelete_le, hx.delete_connected hT.connected⟩
+
+lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E(T).encard + 1 := by
+  have hsimp := h.isForest.simple
+  obtain (rfl | ⟨x, rfl⟩ | hnt) := T.eq_noEdge_or_vertexSet_nontrivial
+  · simpa using h.connected.nonempty
+  · simp
+  obtain hinf | hfin := em' T.Finite
+  · rw [encard_eq_top_iff.2, encard_eq_top_iff.2, top_add]
+    · rwa [Set.Infinite, (h.connected.minDegreePos hnt).edgeSet_finite_iff]
+    rwa [Set.Infinite, vertexSet_finite_iff]
+  obtain ⟨e, x, he⟩ := h.isForest.exists_isPendant (h.connected.edgeSet_nonempty hnt)
+  have hxV := he.isNonloopAt.vertex_mem
+  have hlt := encard_delete_vertex_lt hxV
+  have := he.isLeaf.delete_isTree h
+  rw [← encard_diff_singleton_add_one hxV, ← vertexDelete_vertexSet,
+    (he.isLeaf.delete_isTree h).encard_vertexSet, he.edgeSet_delete_vertex_eq,
+    encard_diff_singleton_add_one he.isNonloopAt.edge_mem]
+termination_by V(T).encard
+
+lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard + 1 := by
+  rw [← Nat.cast_inj (R := ℕ∞), T.vertexSet_finite.cast_ncard_eq, h.encard_vertexSet,
+    Nat.cast_add, T.edgeSet_finite.cast_ncard_eq, Nat.cast_one]
+
+lemma IsForest.encard_vertexSet (hG : G.IsForest) :
+    V(G).encard = E(G).encard + {C : Graph α β | C.IsComponent G}.encard := by
+  rw [G.eq_sUnion_components, sUnion_vertexSet, ← ENat.tsum_encard_eq_encard_biUnion,
+    tsum_congr (β := {C : Graph α β | C.IsComponent G}) (f := fun C ↦ V(C.1).encard)
+      (g := fun C ↦ E(C.1).encard + 1), sUnion_edgeSet, ← ENat.tsum_encard_eq_encard_biUnion,
+    ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components]
+  · exact G.pairwiseDisjoint_components.mono' <| by simp [Pi.le_def, Graph.disjoint_iff]
+  · simp only [coe_setOf, mem_setOf_eq, Subtype.forall]
+    exact fun H hle ↦ (hG.isTree_of_isComponent hle).encard_vertexSet
+  exact G.pairwiseDisjoint_components.mono' <| by simp +contextual [Pi.le_def, Graph.disjoint_iff]

@@ -65,7 +65,7 @@ lemma isForest_iff_forall_isBridge : G.IsForest ↔ ∀ e ∈ E(G), G.IsBridge e
 lemma IsForest.mono (hG : G.IsForest) (hHG : H ≤ G) : H.IsForest :=
   fun C hC ↦ hG C (hC.isCycle_of_ge hHG)
 
-/-- The union of two isForest graphs that intersect in at most one vertex is isForest.  -/
+/-- The union of two forests that intersect in at most one vertex is a forest.  -/
 lemma IsForest.union_isForest_of_subsingleton_inter (hG : G.IsForest) (hH : H.IsForest)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsForest := by
   intro C hC
@@ -175,9 +175,9 @@ lemma isAcyclicSet_iff : G.IsAcyclicSet F ↔ F ⊆ E(G) ∧ (G ↾ F).IsForest 
 
 /-! ### Leaves -/
 
-/-- Every forest with at least one edge has a leaf vertex. -/
-lemma IsForest.exists_isLeafVertex [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
-    ∃ x, G.IsLeafVertex x := by
+/-- Every forest with at least one edge has a pendant. -/
+lemma IsForest.exists_isPendant [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
+    ∃ e x, G.IsPendant e x := by
   classical
   have := hG.simple
   obtain ⟨e₀, he₀⟩ := hne
@@ -186,7 +186,7 @@ lemma IsForest.exists_isLeafVertex [G.Finite] (hG : G.IsForest) (hne : E(G).None
   simp only [IsLink.walk, le_iff_isSublist] at heP
   cases P with | nil => simp at heP | cons u f P =>
   have ⟨hP, hfuP, huP⟩ : G.IsPath P ∧ G.IsLink f u P.first ∧ u ∉ P := by simpa using hmax.prop
-  refine ⟨u, isLeafVertex_iff_exists.2 ⟨f, hfuP.inc_left.isNonloopAt, fun e ⟨w, he⟩ ↦ ?_⟩⟩
+  refine ⟨f, u, hfuP.inc_left.isNonloopAt, fun e ⟨w, he⟩ ↦ ?_⟩
   have hwP := mem_of_adj_first_of_maximal_isPath hmax he.symm.adj
   have h_app := prefixUntilVertex_append_suffixFromVertex P w
   obtain rfl | hne := eq_or_ne w P.first
@@ -200,14 +200,7 @@ lemma IsForest.exists_isLeafVertex [G.Finite] (hG : G.IsForest) (hne : E(G).None
   rwa [prefixUntilVertex_last, eq_comm, prefixUntilVertex_first] at hne
   rwa [mem_cons_iff, or_iff_right he.adj.ne.symm] at hwP
 
-
-
-
-
-
--- lemma Connected.isTree_of_maximal_isForest_le (hG : G.Connected)
---     (h : Maximal (fun H ↦ H.IsForest ∧ H ≤ G) T) : T.IsTree := by
---   refine ⟨h.prop.1, by_contra fun hnc ↦ ?_⟩
---   have hV : T.V = V(G) := by
---     refine (vertexSet_subset_of_le h.prop.2).
---   have := exists_of_not_connected hnc
+lemma IsForest.exists_isLeaf [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
+    ∃ x, G.IsLeaf x := by
+  obtain ⟨e, x, h⟩ := hG.exists_isPendant hne
+  exact ⟨x, h.isLeaf⟩

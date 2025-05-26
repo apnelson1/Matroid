@@ -227,18 +227,28 @@ lemma Connected.exists_vertexConnected_deleteEdge_set_set (hG : G.Connected)
     hxy'.mem_induce_iff, and_iff_right hxy'.edge_mem]
   simp [hP.not_mem_left_of_dInc hxy, hP.not_mem_right_of_dInc hxy]
 
-lemma Connected.exists_adj_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
-    ∃ y ≠ x, G.Adj x y := by
+lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
+    ∃ e y, G.IsLink e x y ∧ y ≠ x := by
   obtain ⟨z, hz, hne⟩ := hV.exists_ne x
   obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hx hz).exists_isPath
   rw [ne_comm, first_ne_last_iff hP.nodup] at hne
-  cases hne with | cons x e P =>
+  obtain ⟨x, e, P⟩ := hne
   simp only [cons_isPath_iff] at hP
-  exact ⟨P.first, mt (by simp +contextual [eq_comm]) hP.2.2, hP.2.1.adj⟩
+  exact ⟨e, P.first, hP.2.1, mt (by simp +contextual [eq_comm]) hP.2.2⟩
 
 lemma Connected.of_isSpanningSubgraph (h : H ≤s G) (hH : H.Connected) : G.Connected :=
   ⟨h.vertexSet_eq ▸ hH.nonempty,
     fun _ _ hx hy ↦ (hH.vertexConnected (h.vertexSet_eq ▸ hx) (h.vertexSet_eq ▸ hy)).of_le h.le ⟩
+
+lemma Connected.minDegreePos (h : G.Connected) (hnt : V(G).Nontrivial) : G.MinDegreePos := by
+  intro x hx
+  obtain ⟨e, y, h, -⟩ := h.exists_isLink_of_mem hnt hx
+  exact ⟨e, h.inc_left⟩
+
+lemma Connected.edgeSet_nonempty (h : G.Connected) (hnt : V(G).Nontrivial) : E(G).Nonempty := by
+  obtain ⟨x, hx⟩ := hnt.nonempty
+  obtain ⟨e, y, he, -⟩ := h.exists_isLink_of_mem hnt hx
+  exact ⟨e, he.edge_mem⟩
 
 /- ### Separations -/
 
@@ -701,7 +711,7 @@ lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected)
 /-! ### Staying Connected -/
 
 /-- A leaf vertex in a trail is either the first or last vertex of the trail-/
-lemma IsLeafVertex.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.IsLeafVertex x)
+lemma IsLeaf.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.IsLeaf x)
     (hP : G.IsTrail P) (hxP : x ∈ P) : x = P.first ∨ x = P.last := by
   induction P with
   | nil => simpa using hxP
@@ -717,12 +727,11 @@ lemma IsLeafVertex.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.Is
       simp only [cons_isTrail_iff, first_cons, cons_edge, List.mem_cons, not_or] at hP
       simp [hx.eq_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
 
-lemma IsLeafVertex.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeafVertex x)
+lemma IsLeaf.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeaf x)
     (hP : G.IsPath P) (hxP : x ∈ P) : x = P.first ∨ x = P.last :=
   hx.eq_first_or_eq_last_of_mem_trail hP.isTrail hxP
 
-lemma IsLeafVertex.delete_connected (hx : G.IsLeafVertex x) (hG : G.Connected) :
-    (G - {x}).Connected := by
+lemma IsLeaf.delete_connected (hx : G.IsLeaf x) (hG : G.Connected) : (G - {x}).Connected := by
   obtain ⟨y, hy : G.Adj x y, hu⟩ := hx.exists_unique_adj
   refine connected_of_vertex ⟨hy.right_mem, fun h : y = x ↦ hx.not_adj_self (h ▸ hy)⟩ fun z hz ↦ ?_
   obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hz.1 hy.right_mem).exists_isPath
@@ -738,7 +747,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
     (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - {P.first}).Connected := by
   cases P with
   | nil u =>
-    obtain ⟨y, hne, ⟨e, huy⟩⟩ := hG.exists_adj_of_mem (x := u) hnt (by simpa using hP.prop)
+    obtain ⟨e, y, huy, hne⟩ := hG.exists_isLink_of_mem hnt (x := u) (by simpa using hP.prop)
     exact False.elim <| hne.symm <| by
       simpa [huy, huy.right_mem] using hP.eq_of_ge (y := cons u e (nil y))
   | cons u e P =>

@@ -2,10 +2,12 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Constructions
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
+import Mathlib.Data.Set.Card
 
 variable {α β : Type*} {G H T F : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
 {P C Q : WList α β}
-open Set WList
+
+open Set
 
 lemma finite_list_nodup (α : Type*) [Finite α] : {L : List α | L.Nodup}.Finite := by
   classical
@@ -22,17 +24,31 @@ namespace Graph
 
 /-! ### Finiteness -/
 
+/-- A graph is finite if it has finitely many vertices and edges -/
 @[mk_iff]
 protected class Finite (G : Graph α β) : Prop where
   vertexSet_finite : V(G).Finite
   edgeSet_finite : E(G).Finite
 
-lemma Finite.le (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
+lemma Finite.mono (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
   vertexSet_finite := hG.vertexSet_finite.subset <| vertexSet_subset_of_le hHG
   edgeSet_finite := hG.edgeSet_finite.subset <| edgeSet_subset_of_le hHG
 
 lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite :=
-  ‹G.Finite›.le hHG
+  ‹G.Finite›.mono hHG
+
+instance [G.Finite] (X : Set α) : (G - X).Finite :=
+  ‹G.Finite›.mono vertexDelete_le
+
+instance [G.Finite] (F : Set β) : (G ↾ F).Finite :=
+  ‹G.Finite›.mono edgeRestrict_le
+
+instance [G.Finite] (F : Set β) : (G ＼ F).Finite :=
+  ‹G.Finite›.mono edgeDelete_le
+
+lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
+  vertexSet_finite := hG.vertexSet_finite.subset hX
+  edgeSet_finite := hG.edgeSet_finite.subset (by simp)
 
 @[simp]
 lemma vertexSet_finite [G.Finite] : G.vertexSet.Finite :=
@@ -62,13 +78,82 @@ lemma isPath_finite (G : Graph α β) [G.Finite] : {P | G.IsPath P}.Finite :=
 lemma isCycle_finite (G : Graph α β) [G.Finite] : {C | G.IsCycle C}.Finite :=
   G.isTrail_finite.subset fun _ ↦ IsCycle.isTrail
 
+/-- A finite graph has finitely many subgraphs. -/
+lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
+  refine Finite.of_finite_image (f := fun H ↦ (⟨V(H), E(H)⟩ : Set α × Set β)) ?_
+    fun H₁ h₁ H₂ h₂ h_eq ↦ ?_
+  · refine (G.vertexSet_finite.finite_subsets.prod G.edgeSet_finite.finite_subsets).subset ?_
+    rintro _ ⟨H, hle : H ≤ G, rfl⟩
+    simp [vertexSet_subset_of_le hle, edgeSet_subset_of_le hle]
+  simp only [Prod.mk.injEq] at h_eq
+  exact G.ext_of_le_le h₁ h₂ h_eq.1 h_eq.2
+
+instance [G.Finite] [H.Finite] : (G ∪ H).Finite where
+  vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
+  edgeSet_finite := G.edgeSet_finite.union H.edgeSet_finite
+
+instance : (Graph.singleEdge x y e).Finite where
+  vertexSet_finite := by simp
+  edgeSet_finite := by simp
+
+/-- Used for well-founded induction on finite graphs by number of vertices -/
+lemma encard_delete_vertex_lt {G : Graph α β} [G.Finite] (hx : x ∈ V(G)) :
+    V(G - {x}).encard < V(G).encard := by
+  rw [vertexDelete_vertexSet]
+  exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+
+/-- Used for well-founded induction on finite graphs by number of edges -/
+lemma encard_delete_edge_lt {G : Graph α β} [G.Finite] (he : e ∈ E(G)) :
+    E(G ＼ {e}).encard < E(G).encard := by
+  rw [edgeDelete_edgeSet]
+  exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 /-! ### Local Finiteness -/
 
-class LocallyFinite (G : Graph α β) where
-  setOf_inc_finite : ∀ x, {e | G.Inc e x}.Finite
+/-- A graph is `LocallyFinite` if each of its vertices is incident with finitely many edges. -/
+protected class LocallyFinite (G : Graph α β) where
+  finite : ∀ x, {e | G.Inc e x}.Finite
 
+lemma finite_setOf_inc (G : Graph α β) [G.LocallyFinite] (x : α) : {e | G.Inc e x}.Finite :=
+  LocallyFinite.finite x
 
+lemma finite_setOf_adj (G : Graph α β) [G.LocallyFinite] (x : α) : {y | G.Adj x y}.Finite := by
+  change Finite {y // G.Adj x y}
+  have : Finite {e // G.Inc e x} := G.finite_setOf_inc x
+  refine Finite.of_injective (β := {e // G.Inc e x})
+    (fun y ↦ ⟨y.2.choose, y.2.choose_spec.inc_left⟩) fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
+  simp only [Subtype.mk.injEq]
+  generalize_proofs h₁ h₂
+  refine fun h ↦  h₁.choose_spec.right_unique ?_
+  rw [h]
+  exact h₂.choose_spec
+
+instance [Finite β] (G : Graph α β) : G.LocallyFinite where
+  finite _ := toFinite ..
+
+lemma LocallyFinite.mono (hG : G.LocallyFinite) (hle : H ≤ G) : H.LocallyFinite where
+  finite x := (G.finite_setOf_inc x).subset fun _ he ↦ he.of_le hle
+
+instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
+  finite x := (G.finite_setOf_inc x).subset fun _ ⟨_, he⟩ ↦ (induce_isLink_iff.1 he).1.inc_left
+
+instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
+  ‹G.LocallyFinite›.mono vertexDelete_le
+
+instance [G.LocallyFinite] (F : Set β) : (G ↾ F).LocallyFinite :=
+  ‹G.LocallyFinite›.mono edgeRestrict_le
+
+instance [G.LocallyFinite] (F : Set β) : (G ＼ F).LocallyFinite :=
+  ‹G.LocallyFinite›.mono edgeDelete_le
+
+instance [G.Finite] : G.LocallyFinite where
+  finite _ := G.edgeSet_finite.subset fun _ ↦ Inc.edge_mem
+
+instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
+  finite x := by
+    refine ((G.finite_setOf_inc x).union (H.finite_setOf_inc x)).subset ?_
+    simp_rw [union_inc_iff, subset_def]
+    aesop
 
 end Graph
 

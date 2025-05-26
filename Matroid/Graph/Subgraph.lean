@@ -54,6 +54,13 @@ lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
 lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
   (h.choose_spec.of_le hle).inc_left
 
+lemma IsLoopAt.of_le (h : H.IsLoopAt e x) (hle : H ≤ G) : G.IsLoopAt e x :=
+  IsLink.of_le h hle
+
+lemma IsNonloopAt.of_le (h : H.IsNonloopAt e x) (hle : H ≤ G) : G.IsNonloopAt e x := by
+  obtain ⟨y, hxy, he⟩ := h
+  exact ⟨y, hxy, he.of_le hle⟩
+
 lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
   (h.choose_spec.of_le hle).adj
 
@@ -264,14 +271,15 @@ lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := 
 lemma vertexDelete_vertexSet (G : Graph α β) (X : Set α) : V(G - X) = V(G) \ X := rfl
 
 @[simp]
-lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
-  E(G - X) = {e | ∃ x y, G.IsLink e x y ∧ (x ∈ V(G) ∧ x ∉ X) ∧ y ∈ V(G) ∧ y ∉ X}  := rfl
-
-@[simp]
 lemma vertexDelete_isLink_iff (G : Graph α β) (X : Set α) :
     (G - X).IsLink e x y ↔ (G.IsLink e x y ∧ x ∉ X ∧ y ∉ X) := by
   simp only [vertexDelete_def, induce_isLink_iff, mem_diff, and_congr_right_iff]
   exact fun h ↦ by simp [h.left_mem, h.right_mem]
+
+@[simp]
+lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
+    E(G - X) = {e | ∃ x y, G.IsLink e x y ∧ x ∉ X ∧ y ∉ X} := by
+  simp [edgeSet_eq_setOf_exists_isLink]
 
 @[simp]
 lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :

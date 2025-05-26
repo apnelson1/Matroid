@@ -35,7 +35,8 @@ def vertexMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β wh
     exact Set.mem_image_of_mem _ h.left_mem
 
 /-- The graph with vertex set `V` and no edges -/
-@[simps] protected def noEdge (V : Set α) (β : Type*) : Graph α β where
+@[simps]
+protected def noEdge (V : Set α) (β : Type*) : Graph α β where
   vertexSet := V
   edgeSet := ∅
   IsLink _ _ _ := False
@@ -44,16 +45,26 @@ def vertexMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β wh
   edge_mem_iff_exists_isLink := by simp
   left_mem_of_isLink := by simp
 
+lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ∅ β ∨ V(G).Nonempty := by
+  refine V(G).eq_empty_or_nonempty.elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) Or.inr
+  simp only [noEdge_isLink, iff_false]
+  exact fun h ↦ by simpa [he] using h.left_mem
+
 @[simp]
 lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ V(G) := by
   simp [le_iff]
-
 
 lemma edgeDelete_eq_noEdge (G : Graph α β) (hF : E(G) ⊆ F) : G ＼ F = Graph.noEdge V(G) β := by
   refine Graph.ext rfl fun e x y ↦ ?_
   simp only [edgeDelete_isLink, noEdge_isLink, iff_false, not_and, not_not]
   exact fun h ↦ hF h.edge_mem
 
+lemma edgeSet_eq_empty_iff : E(G) = ∅ ↔ G = Graph.noEdge V(G) β := by
+  refine ⟨fun h ↦ Graph.ext rfl ?_, fun h ↦ by rw [h, noEdge_edgeSet]⟩
+  simp only [noEdge_isLink, iff_false]
+  refine fun e x y he ↦ ?_
+  have := h ▸ he.edge_mem
+  simp at this
 
 
 /-- A graph with a single edge `e` from `u` to `v` -/
@@ -73,6 +84,17 @@ lemma singleEdge_comm (u v : α) (e : β) : Graph.singleEdge u v e = Graph.singl
 lemma singleEdge_isLink_iff :
     (Graph.singleEdge u v e).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
   simp [Graph.singleEdge]
+
+@[simp]
+lemma singleEdge_inc_iff :
+    (Graph.singleEdge u v e).Inc f x ↔ f = e ∧ (x = u ∨ x = v) := by
+  simp only [Inc, singleEdge_isLink, exists_and_left, and_congr_right_iff]
+  aesop
+
+@[simp]
+lemma singleEdge_adj_iff :
+    (Graph.singleEdge u v e).Adj x y ↔ (x = u ∧ y = v) ∨ (x = v ∧ y = u) := by
+  simp [Adj]
 
 @[simp] lemma singleEdge_le_iff : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
   simp only [le_iff, singleEdge_vertexSet, Set.pair_subset_iff, singleEdge_isLink_iff, and_imp,
@@ -121,6 +143,10 @@ lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 lemma union_isLink_iff :
   (G ∪ H).IsLink e x y ↔ G.IsLink e x y ∨ (e ∉ E(G) ∧ H.IsLink e x y) := Iff.rfl
 
+lemma union_inc_iff : (G ∪ H).Inc e x ↔ G.Inc e x ∨ (e ∉ E(G) ∧ H.Inc e x) := by
+  simp_rw [Inc, union_isLink_iff]
+  aesop
+
 lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
   suffices ∀ ⦃e : β⦄ ⦃x y : α⦄, H₁.IsLink e x y ∨ e ∉ E(H₁) ∧ H₂.IsLink e x y → G.IsLink e x y by
     simpa [le_iff, vertexSet_subset_of_le h₁, vertexSet_subset_of_le h₂, union_isLink_iff]
@@ -161,14 +187,12 @@ lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : 
 lemma compatible_self (G : Graph α β) : G.Compatible G := by
   simp [Compatible]
 
-
 lemma Compatible.union_isLink_iff (h : Compatible G H) :
     (G ∪ H).IsLink e x y ↔ G.IsLink e x y ∨ H.IsLink e x y := by
   by_cases heG : e ∈ E(G)
   · simp only [Graph.union_isLink_iff, heG, not_true_eq_false, false_and, or_false, iff_self_or]
     exact fun heH ↦ by rwa [h heG heH.edge_mem]
   simp [Graph.union_isLink_iff, heG]
-
 
 @[simp]
 lemma singleEdge_compatible_iff :
@@ -291,6 +315,44 @@ lemma induce_union_edgeDelete (G : Graph α β) (hX : X ⊆ V(G)) : G[X] ∪ (G 
 lemma edgeDelete_union_induce (G : Graph α β) (hX : X ⊆ V(G)) : (G ＼ E(G[X])) ∪ G[X] = G := by
   rw [(Compatible.of_disjoint_edgeSet _).union_comm, induce_union_edgeDelete _ hX]
   simp [disjoint_sdiff_left]
+
+/-! ### Adding one edge -/
+
+/-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
+its ends change to `a` and `b`. -/
+@[simps! edgeSet vertexSet]
+protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
+  Graph.singleEdge a b e ∪ G
+
+lemma addEdge_isLink (G : Graph α β) (e : β) (a b : α) : (G.addEdge e a b).IsLink e a b := by
+  simp [Graph.addEdge, union_isLink_iff]
+
+lemma addEdge_isLink_of_ne (hf : G.IsLink f x y) (hne : f ≠ e) (a b : α) :
+    (G.addEdge e a b).IsLink f x y := by
+  simpa [Graph.addEdge, union_isLink_iff, hne]
+
+lemma addEdge_isLink_iff {a b : α} (he : e ∉ E(G)) :
+    (G.addEdge e a b).IsLink f x y ↔ (f = e ∧ s(a,b) = s(x,y)) ∨ G.IsLink f x y := by
+  have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
+  simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,
+    mem_singleton_iff, edgeDelete_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk]
+  obtain rfl | hne := eq_or_ne e f
+  · have hl : ¬ G.IsLink e x y := fun h ↦ he h.edge_mem
+    simp only [true_and, not_true_eq_false, hl, and_self, or_false]
+    tauto
+  simp [hne.symm]
+
+lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    (G.addEdge e x y) ＼ {e} = G := by
+  have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
+  simp only [Graph.addEdge, Graph.ext_iff, edgeDelete_vertexSet, union_vertexSet,
+    singleEdge_vertexSet, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
+    edgeDelete_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
+  intro f p q
+  obtain rfl | hne := eq_or_ne f e
+  · suffices ¬ G.IsLink f p q by simpa
+    exact fun hf ↦ he hf.edge_mem
+  simp [hne]
 
 /-! ### Disjointness -/
 

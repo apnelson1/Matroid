@@ -267,9 +267,11 @@ lemma bipartite_of_forall_parity_adj_swap {r : α}
 
 lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
   classical
+
   wlog hFt : F.IsTree with aux
-  · rw [bipartite_iff_forall_component]
-    exact fun H hH ↦ aux (hF.mono hH.le) ⟨hF.mono hH.le, hH.connected⟩
+  · exact bipartite_iff_forall_component.2 fun H hH ↦
+      aux (hF.mono hH.le) ⟨hF.mono hH.le, hH.connected⟩
+  have hlp := hF.loopless
   obtain ⟨r, hr⟩ := hFt.connected.nonempty
   apply bipartite_of_forall_parity_adj_swap (r := r)
   rintro x y ⟨e, hxy⟩
@@ -286,7 +288,7 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
     have hle' := (hP.isPath.suffix <| P.suffixFromVertex_isSuffix y).isWalk.dist_le_length
     rw [suffixFromVertex_first hyP, suffixFromVertex_last, dist_comm] at hle'
     have hne : P.suffixFromVertex y ≠ P := by
-      refine fun heq ↦ hF.ne_of_adj hxy.symm.adj ?_
+      refine fun heq ↦ hxy.symm.adj.ne ?_
       rw [← heq, suffixFromVertex_first hyP]
     have hlt := (P.suffixFromVertex_isSuffix y).isSublist.length_lt hne
     rw [dist_comm] at hle
