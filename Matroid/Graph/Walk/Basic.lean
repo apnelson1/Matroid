@@ -188,6 +188,20 @@ lemma IsWalk.isLink_iff_isLink_of_mem (h : G.IsWalk w) (hew : e ∈ w.edge) :
   · assumption
   exact hx'y'.symm
 
+lemma IsWalk.eq_of_edge_eq_first_eq (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂)
+    (h_first : w₁.first = w₂.first) (h_edge : w₁.edge = w₂.edge) : w₁ = w₂ := by
+  induction h₁ generalizing w₂ with
+  | @nil x h => cases w₂ with
+    | nil u => simpa using h_first
+    | cons u e w => simp at h_edge
+  | @cons x e w₁ hw h ih =>
+    cases w₂ with
+    | nil u => simp at h_edge
+    | cons u f w₂ =>
+    · simp only [cons_edge, List.cons.injEq, first_cons, cons_isWalk_iff] at h_edge h_first h₂
+      rw [← h_edge.1, ← h_first, h.isLink_iff_eq] at h₂
+      rw [h_edge.1, h_first, ih h₂.2 h₂.1.symm h_edge.2]
+
 /-- `G.IsWalkFrom S T w` means that `w` is a walk of `G` with one end in `S` and the other in `T`.-/
 @[mk_iff]
 structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop where

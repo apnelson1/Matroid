@@ -14,8 +14,8 @@ structure Quotient (M N : Matroid α) : Prop where
 
 infixl:50 " ≤q " => Matroid.Quotient
 
-lemma Quotient.isFlat_of_isFlat (h : M ≤q N) (hF : M.IsFlat F) : N.IsFlat F :=
-  h.forall_isFlat_of_isFlat _ hF
+lemma Quotient.isFlat_of_isFlat (h : M ≤q N) (hF : M.IsFlat F) : N.IsFlat F := by
+  exact h.forall_isFlat_of_isFlat _ hF
 
 lemma Quotient.trans {M₁ M₂ M₃ : Matroid α} (h : M₁ ≤q M₂) (h' : M₂ ≤q M₃) : M₁ ≤q M₃ where
   forall_isFlat_of_isFlat _ := h'.isFlat_of_isFlat ∘ h.isFlat_of_isFlat

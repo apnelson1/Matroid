@@ -1,4 +1,5 @@
 import Matroid.Graph.Distance
+import Matroid.Graph.Simple
 import Mathlib.Data.Set.Subsingleton
 import Mathlib.Order.Minimal
 
@@ -137,22 +138,19 @@ lemma IsForest.isShortestPath_of_isPath (hG : G.IsForest) (hP : G.IsPath P) :
   obtain ⟨Q, hQ, h1, h2⟩ := hP.isWalk.vertexConnected_first_last.exists_isShortestPath
   rwa [hG.eq_of_isPath_eq_eq hP hQ.isPath h1.symm h2.symm]
 
-lemma IsForest.ne_of_adj (hG : G.IsForest) (hxy : G.Adj x y) : x ≠ y := by
-  rintro rfl
-  obtain ⟨e, he⟩ := hxy
+lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := by
+  rw [loopless_iff_forall_ne_of_adj]
+  rintro x _ ⟨e, he⟩ rfl
   exact hG (WList.cons x e (nil x)) <| by simp [isCycle_iff, he.left_mem, isLink_self_iff.1 he]
 
+lemma IsForest.simple (hG : G.IsForest) : G.Simple where
+  not_isLoopAt := hG.loopless.not_isLoopAt
+  eq_of_isLink e f x y he hf := by
+    have := hG.loopless
+    simpa [isCycle_iff, he.left_mem, hf.symm, he, he.adj.ne.symm] using
+      hG (cons x e (cons y f (nil x)))
+
 /-! ### Edge Sets -/
-
-
-
-
-
-
-
-
-
-
 
 /-- `G.IsCycleSet C` means that `C` is the edge set of a cycle of `G`. -/
 def IsCycleSet (G : Graph α β) (C : Set β) : Prop := ∃ C₀, G.IsCycle C₀ ∧ E(C₀) = C
@@ -174,6 +172,34 @@ lemma isAcyclicSet_iff : G.IsAcyclicSet F ↔ F ⊆ E(G) ∧ (G ↾ F).IsForest 
   by_cases hF : F ⊆ E(G)
   · rw [edgeRestrict_isForest_iff hF, and_iff_right hF]
   exact iff_of_false (mt (fun h ↦ h.1) hF) (by simp [hF])
+
+/-! ### Leaves -/
+
+/-- Every forest with at least one edge has a leaf vertex. -/
+lemma IsForest.exists_isLeafVertex [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempty) :
+    ∃ x, G.IsLeafVertex x := by
+  classical
+  have := hG.simple
+  obtain ⟨e₀, he₀⟩ := hne
+  obtain ⟨x₀, y₀, he₀⟩ := exists_isLink_of_mem_edgeSet he₀
+  obtain ⟨P, heP, hmax⟩ := G.isPath_finite.exists_le_maximal (he₀.walk_isPath he₀.adj.ne)
+  simp only [IsLink.walk, le_iff_isSublist] at heP
+  cases P with | nil => simp at heP | cons u f P =>
+  have ⟨hP, hfuP, huP⟩ : G.IsPath P ∧ G.IsLink f u P.first ∧ u ∉ P := by simpa using hmax.prop
+  refine ⟨u, isLeafVertex_iff_exists.2 ⟨f, hfuP.inc_left.isNonloopAt, fun e ⟨w, he⟩ ↦ ?_⟩⟩
+  have hwP := mem_of_adj_first_of_maximal_isPath hmax he.symm.adj
+  have h_app := prefixUntilVertex_append_suffixFromVertex P w
+  obtain rfl | hne := eq_or_ne w P.first
+  · exact Simple.eq_of_isLink he hfuP
+  have hP' := IsPath.prefix hmax.prop ((cons u f P).prefixUntilVertex_isPrefix w)
+  refine False.elim <| hG _ <| (hP'.cons_isCycle_of_nontrivial (e := e) ?_ ?_)
+  · simpa [prefixUntilVertex_last hwP]
+  rw [prefixUntilVertex_cons_of_ne _ he.adj.ne, cons_nontrivial_iff, ← not_nil_iff]
+  contrapose! hne
+  replace hne := hne.first_eq_last
+  rwa [prefixUntilVertex_last, eq_comm, prefixUntilVertex_first] at hne
+  rwa [mem_cons_iff, or_iff_right he.adj.ne.symm] at hwP
+
 
 
 

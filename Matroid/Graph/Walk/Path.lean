@@ -1,4 +1,5 @@
 import Matroid.Graph.Walk.Basic
+import Mathlib.Order.Minimal
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
@@ -371,6 +372,24 @@ lemma cons_isTrailFrom : G.IsTrailFrom S T (cons x e w) ↔
 @[simp]
 lemma nil_isTrailFrom : G.IsTrailFrom S T (nil x) ↔ x ∈ V(G) ∧ x ∈ S ∧ x ∈ T := by
   simp [isTrailFrom_iff]
+
+
+-- /-! ### The type of paths -/
+
+-- protected def Path (G : Graph α β) : Type _ := {P // G.IsPath P}
+
+
+/-! ### Longest Paths -/
+
+lemma mem_of_adj_first_of_maximal_isPath (hP : Maximal (fun P ↦ G.IsPath P) P)
+    (hx : G.Adj x P.first) : x ∈ P := by
+  obtain ⟨e, he⟩ := hx
+  refine by_contra fun hcon ↦ hcon ?_
+  rw [show P = cons x e P by simpa [hP.prop, he, hcon] using hP.eq_of_le (y := cons x e P)]
+  simp
+
+
+
 
 
 end Graph

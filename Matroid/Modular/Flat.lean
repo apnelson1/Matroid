@@ -765,7 +765,7 @@ lemma IsCircuit.chord_split_of_modular_subset {C I : Set α} (hC : M.IsCircuit C
   refine henl.not_isLoop <| hsk.closure_skew.inter_subset_loops ⟨heclf, ?_⟩
   simpa using hb.subset.trans inter_subset_right
 
-/- If `x,y, e1, e2, ...` is a countable circuit in a simple matroid, then there exist
+/- If `x,y, e1, e2, ...` is a countable circuit in a simple line-modular matroid, then there exist
 `y = f0, f1, f2, ...` so that for each `i`, both `ei, fi, f(i+1)` and `x,fi, ei, ...` are circuits.
 This is used to show that matroids with modular lines are finitary. -/
 private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 → M.IsModularFlat F)

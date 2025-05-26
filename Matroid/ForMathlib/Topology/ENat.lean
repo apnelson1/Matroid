@@ -33,28 +33,28 @@ protected theorem tsum_eq_iSup_sum : ∑' x, f x = (⨆ s : Finset α, ∑ a ∈
   ENat.hasSum.tsum_eq
 
 protected theorem tsum_comm {f : α → β → ℕ∞} : ∑' (a) (b), f a b = ∑' (b) (a), f a b :=
-  tsum_comm' ENat.summable (fun _ ↦ ENat.summable) fun _ ↦ ENat.summable
+  ENat.summable.tsum_comm' (fun _ ↦ ENat.summable) fun _ ↦ ENat.summable
 
 protected theorem tsum_prod {f : α → β → ℕ∞} : ∑' p : α × β, f p.1 p.2 = ∑' (a) (b), f a b :=
-  tsum_prod' ENat.summable fun _ ↦ ENat.summable
+  ENat.summable.tsum_prod' fun _ ↦ ENat.summable
 
 protected theorem tsum_add : ∑' a, (f a + g a) = ∑' a, f a + ∑' a, g a :=
-  tsum_add ENat.summable ENat.summable
+  ENat.summable.tsum_add ENat.summable
 
 protected theorem tsum_le_tsum (h : f ≤ g) : ∑' a, f a ≤ ∑' a, g a :=
-  tsum_le_tsum h ENat.summable ENat.summable
+  ENat.summable.tsum_le_tsum h ENat.summable
 
 protected theorem sum_le_tsum {f : α → ℕ∞} (s : Finset α) : ∑ x ∈ s, f x ≤ ∑' x, f x :=
-  sum_le_tsum s (fun _ _ ↦ zero_le _) ENat.summable
+  ENat.summable.sum_le_tsum s (fun _ _ ↦ zero_le _)
 
 protected theorem le_tsum (a : α) : f a ≤ ∑' a, f a :=
-  le_tsum' ENat.summable a
+  ENat.summable.le_tsum' a
 
 protected theorem le_tsum_of_mem {s : Set α} {a : α} (ha : a ∈ s) : f a ≤ ∑' x : s, f x :=
   ENat.le_tsum (⟨a,ha⟩ : s)
 
 @[simp] protected theorem tsum_eq_zero : ∑' i, f i = 0 ↔ ∀ i, f i = 0 :=
-  tsum_eq_zero_iff ENat.summable
+  ENat.summable.tsum_eq_zero_iff
 
 protected theorem tsum_eq_top_of_eq_top : (∃ a, f a = ⊤) → ∑' a, f a = ⊤
   | ⟨a, ha⟩ => top_unique <| ha ▸ ENat.le_tsum a
@@ -66,7 +66,7 @@ protected theorem tsum_subtype_eq_top_of_eq_top {s : Set α} (h : ∃ a ∈ s, f
 
 protected theorem tsum_union_disjoint {s t : Set α} (hd : Disjoint s t) :
     ∑' (x : ↑(s ∪ t)), f x = ∑' (x : s), f x + ∑' (x : t), f x :=
-  tsum_union_disjoint hd ENat.summable ENat.summable
+  ENat.summable.tsum_union_disjoint hd ENat.summable
 
 protected theorem tsum_le_of_subset {s t : Set α} (h : s ⊆ t) :
     ∑' (x : s), f x ≤ ∑' (x : t), f x := by
@@ -142,7 +142,7 @@ protected theorem tsum_subtype_const_eq_top_of_ne_zero {s : Set α} (hs : s.Infi
 
 protected theorem tsum_comp_le_tsum_of_injective {f : α → β} (hf : Injective f) (g : β → ℕ∞) :
     ∑' x, g (f x) ≤ ∑' y, g y :=
-  tsum_le_tsum_of_inj f hf (fun _ _ ↦ zero_le _) (fun _ ↦ le_rfl) ENat.summable ENat.summable
+  ENat.summable.tsum_le_tsum_of_inj f hf (fun _ _ ↦ zero_le _) (fun _ ↦ le_rfl) ENat.summable
 
 protected theorem tsum_le_tsum_comp_of_surjective {f : α → β} (hf : Surjective f) (g : β → ℕ∞) :
     ∑' y, g y ≤ ∑' x, g (f x) :=
@@ -164,11 +164,11 @@ protected theorem tsum_mono_subtype (f : α → ℕ∞) {s t : Set α} (h : s �
 
 protected theorem tsum_sigma {β : α → Type*} (f : ∀ a, β a → ℕ∞) :
     ∑' p : Σa, β a, f p.1 p.2 = ∑' (a) (b), f a b :=
-  tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
+  ENat.summable.tsum_sigma' (fun _ ↦ ENat.summable)
 
 protected theorem tsum_sigma' {β : α → Type*} (f : (Σ a, β a) → ℕ∞) :
     ∑' p : Σ a, β a, f p = ∑' (a) (b), f ⟨a, b⟩ :=
-  tsum_sigma' (fun _ ↦ ENat.summable) ENat.summable
+  ENat.summable.tsum_sigma' (fun _ ↦ ENat.summable)
 
 variable {ι : Type*}
 

@@ -8,7 +8,7 @@ open Set WList Function
 namespace Graph
 
 /-- A bipartion of `G` is a partition of the vertex set into two parts such that every edge
-goes from one to the other. -/
+crosses the partition. -/
 structure Bipartition (G : Graph α β) where
   left : Set α
   right : Set α
@@ -49,6 +49,9 @@ lemma Bipartition.not_mem_left_iff {B : G.Bipartition} (hxV : x ∈ V(G)) :
     x ∉ B.left ↔ x ∈ B.right := by
   simpa using B.symm.not_mem_right_iff hxV
 
+/-- `B.Same x y` means that `x` and `y` are on the same side of `B`.
+If `G` is connected, this is equivalent to `x` and `y` having even distance; see
+ `Bipartiton.same_iff_dist_even`. -/
 @[mk_iff]
 protected structure Bipartition.Same (B : G.Bipartition) (x y : α) : Prop where
   left_mem : x ∈ V(G)
@@ -78,7 +81,9 @@ lemma Bipartition.symm_same : B.symm.Same = B.Same := by
   intro hx hy
   rw [← B.not_mem_right_iff hx, ← B.not_mem_right_iff hy, not_iff_not]
 
-/-- Two vertices are `opp`osite in the bipartition if they are vertices of `G` on different sides.-/
+/-- `B.Opp x y` means that `x` and `y` are on opposite sides of `B`.
+If `G` is connected, this is equivalent to `x` and `y` having odd distance; see
+ `Bipartiton.opp_iff_dist_odd`. -/
 @[mk_iff]
 protected structure Bipartition.Opp (B : G.Bipartition) (x y : α) : Prop where
   left_mem : x ∈ V(G)
@@ -162,6 +167,9 @@ def Bipartition.of_isSpanningSubgraph (B : H.Bipartition) (hHG : H ≤s G)
 /-- A graph with a bipartition is bipartite. -/
 def Bipartite (G : Graph α β) : Prop := Nonempty G.Bipartition
 
+lemma Bipartition.bipartite (B : G.Bipartition) : G.Bipartite :=
+  ⟨B⟩
+
 /-- A subgraph of a bipartite graph is bipartite -/
 lemma Bipartite.of_le (hG : G.Bipartite) (hle : H ≤ G) : H.Bipartite := by
   obtain ⟨B⟩ := hG
@@ -220,14 +228,14 @@ lemma Bipartition.opp_first_get_iff (B : G.Bipartition) (hW : G.IsWalk W) (hn : 
   rw [← B.not_same_iff hW.first_mem (hW.vertexSet_subset <| W.get_mem n),
     B.same_first_get_iff hW hn, Nat.not_even_iff_odd]
 
-lemma Bipartition.same_iff_even_ndist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
-    (hy : y ∈ V(G)) : B.Same x y ↔ Even (G.ndist x y) := by
+lemma Bipartition.same_iff_even_dist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
+    (hy : y ∈ V(G)) : B.Same x y ↔ Even (G.dist x y) := by
   obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hx hy).exists_isShortestPath
-  simp [← hP.length_eq_ndist, ← B.same_first_get_iff hP.isPath.isWalk le_rfl]
+  simp [← hP.length_eq_dist, ← B.same_first_get_iff hP.isPath.isWalk le_rfl]
 
-lemma Bipartition.opp_iff_odd_ndist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
-    (hy : y ∈ V(G)) : B.Opp x y ↔ Odd (G.ndist x y) := by
-  rw [← Nat.not_even_iff_odd, ← B.same_iff_even_ndist hG hx hy, B.not_same_iff hx hy]
+lemma Bipartition.opp_iff_odd_dist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
+    (hy : y ∈ V(G)) : B.Opp x y ↔ Odd (G.dist x y) := by
+  rw [← Nat.not_even_iff_odd, ← B.same_iff_even_dist hG hx hy, B.not_same_iff hx hy]
 
 /-- Every closed walk in a bipartite graph has an even number of edges. -/
 lemma Bipartite.length_even_of_isWalk_isClosed (hG : G.Bipartite) (hC : G.IsWalk C)
@@ -246,14 +254,14 @@ lemma Bipartite.length_even_of_isWalk_isClosed (hG : G.Bipartite) (hC : G.IsWalk
 /-- If there is vertex `r` such that adjacent vertices always have opposite-parity distance
 to `r`, then `G` is bipartite. -/
 lemma bipartite_of_forall_parity_adj_swap {r : α}
-    (h : ∀ ⦃x y⦄, G.Adj x y → (Odd (G.ndist r x) ↔ Even (G.ndist r y))) : G.Bipartite := by
-  refine ⟨⟨{x ∈ V(G) | Even (G.ndist r x)}, {x ∈ V(G) | Odd (G.ndist r x)}, ?_, ?_, ?_⟩⟩
+    (h : ∀ ⦃x y⦄, G.Adj x y → (Odd (G.dist r x) ↔ Even (G.dist r y))) : G.Bipartite := by
+  refine ⟨⟨{x ∈ V(G) | Even (G.dist r x)}, {x ∈ V(G) | Odd (G.dist r x)}, ?_, ?_, ?_⟩⟩
   · exact subset_antisymm (by simp +contextual)
       fun _ _ ↦ by simpa [← and_or_left, Nat.even_or_odd]
   · simp +contextual [disjoint_left]
   rintro e he
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
-  obtain hrx | hrx := Nat.even_or_odd <| (G.ndist r x)
+  obtain hrx | hrx := Nat.even_or_odd <| (G.dist r x)
   · exact ⟨x, ⟨hxy.left_mem, hrx⟩, y, ⟨hxy.right_mem, by rwa [h hxy.adj.symm]⟩, hxy⟩
   refine ⟨y, ⟨hxy.right_mem, by rwa [← h hxy.adj]⟩, x, ⟨hxy.left_mem, hrx⟩, hxy.symm⟩
 
@@ -266,7 +274,7 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
   apply bipartite_of_forall_parity_adj_swap (r := r)
   rintro x y ⟨e, hxy⟩
   rw [← Nat.odd_add]
-  wlog hle : F.ndist r x ≤ F.ndist r y generalizing x y with aux
+  wlog hle : F.dist r x ≤ F.dist r y generalizing x y with aux
   · rw [add_comm]
     exact aux hxy.symm (not_le.1 hle).le
   obtain ⟨P, hP, hPfirst, hPlast⟩ :=
@@ -275,17 +283,17 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
   · suffices y ∉ P by simpa [cons_isPath_iff, hP.isPath, hPfirst, hxy.symm]
     intro hyP
     subst hPfirst hPlast
-    have hle' := (hP.isPath.suffix <| P.suffixFromVertex_isSuffix y).isWalk.ndist_le_length
-    rw [suffixFromVertex_first hyP, suffixFromVertex_last, ndist_comm] at hle'
+    have hle' := (hP.isPath.suffix <| P.suffixFromVertex_isSuffix y).isWalk.dist_le_length
+    rw [suffixFromVertex_first hyP, suffixFromVertex_last, dist_comm] at hle'
     have hne : P.suffixFromVertex y ≠ P := by
       refine fun heq ↦ hF.ne_of_adj hxy.symm.adj ?_
       rw [← heq, suffixFromVertex_first hyP]
     have hlt := (P.suffixFromVertex_isSuffix y).isSublist.length_lt hne
-    rw [ndist_comm] at hle
-    linarith [hP.length_eq_ndist]
-  have hPl : P.length + 1 = F.ndist y P.last := by simpa using
-    (hF.isShortestPath_of_isPath hPy).length_eq_ndist
-  rw [← hPlast, ← hPfirst, ndist_comm, ← hP.length_eq_ndist, ndist_comm, ← hPl]
+    rw [dist_comm] at hle
+    linarith [hP.length_eq_dist]
+  have hPl : P.length + 1 = F.dist y P.last := by simpa using
+    (hF.isShortestPath_of_isPath hPy).length_eq_dist
+  rw [← hPlast, ← hPfirst, dist_comm, ← hP.length_eq_dist, dist_comm, ← hPl]
   simp
 
 /-- A graph is bipartite if and only if all its cycles are even -/
@@ -299,8 +307,8 @@ lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCycle C → E
   refine ⟨B.of_isSpanningSubgraph hTG fun x y e he hexy ↦ ?_⟩
   have hxT : x ∈ V(T) := (hTG.vertexSet_eq ▸ hexy.left_mem)
   have hyT : y ∈ V(T) := (hTG.vertexSet_eq ▸ hexy.right_mem)
-  rw [B.opp_iff_odd_ndist hT.connected hxT hyT]
+  rw [B.opp_iff_odd_dist hT.connected hxT hyT]
   obtain ⟨P, hP, rfl, rfl⟩ := (hT.connected.vertexConnected hxT hyT).exists_isShortestPath
   specialize h (cons P.last e P) ?_
-  · exact (hP.isPath.of_le hTG.le).cons_isCycle hexy (mt hP.isPath.isWalk.edge_mem_of_mem he)
-  rwa [cons_length, Nat.even_add_one, Nat.not_even_iff_odd, hP.length_eq_ndist] at h
+  · exact (hP.isPath.of_le hTG.le).cons_isCycle hexy <| mt hP.isPath.isWalk.edge_mem_of_mem he
+  rwa [cons_length, Nat.even_add_one, Nat.not_even_iff_odd, hP.length_eq_dist] at h

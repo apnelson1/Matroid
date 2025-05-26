@@ -14,7 +14,6 @@ lemma WList.WellFormed.rotate_toGraph (hw : w.WellFormed) (h_closed : w.IsClosed
 
 namespace Graph
 
-
 lemma IsWalk.rotate (hw : G.IsWalk w) (hc : w.IsClosed) (n) : G.IsWalk (w.rotate n) := by
   have aux {w'} (hw' : G.IsWalk w') (hc' : w'.IsClosed) : G.IsWalk (w'.rotate 1) := by
     induction hw' with
@@ -44,6 +43,33 @@ structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C
   isClosed : C.IsClosed
   /-- There are no repeated vertices except for the first and last. -/
   nodup : C.tail.vertex.Nodup
+
+/-- If `C` has at least three edges, then the assumption that `C` has distinct edges follows
+from its distinct vertices, so is not needed. -/
+lemma IsWalk.isCycle_of_closed_nodup {C : WList α β} (hC : G.IsWalk C) (hlen : 2 < C.length)
+    (h_closed : C.IsClosed) (nodup : C.tail.vertex.Nodup) : G.IsCycle C where
+  isWalk := hC
+  edge_nodup := by
+    cases C with | nil  => simp | cons u e W =>
+    simp only [cons_edge, List.nodup_cons]
+    simp only [cons_isWalk_iff] at hC
+    simp only [tail_cons] at nodup
+    obtain rfl : u = W.last := h_closed
+    refine ⟨fun heW ↦ ?_, IsTrail.edge_nodup (G := G) (IsPath.isTrail ⟨hC.2, nodup⟩)⟩
+    cases W with | nil => simp at hlen | cons v f W =>
+    simp only [cons_vertex, List.nodup_cons, mem_vertex] at nodup
+    have hne : W.first ≠ W.last := by simpa [← first_ne_last_iff nodup.2] using hlen
+    simp only [last_cons, first_cons, cons_isWalk_iff] at hC
+    obtain (rfl : e = f) | (heW : e ∈ W.edge) := by simpa using heW
+    · exact hne <| hC.2.1.right_unique hC.1.symm
+    exact nodup.1 <| hC.2.2.vertex_mem_of_edge_mem heW hC.1.inc_right
+  nonempty := by cases C with simp_all
+  isClosed := h_closed
+  nodup := nodup
+
+lemma IsCycle.isTrail (hC : G.IsCycle C) : G.IsTrail C where
+  isWalk := hC.isWalk
+  edge_nodup := hC.edge_nodup
 
 lemma IsCycle.rotate (hC : G.IsCycle C) (n : ℕ) : G.IsCycle (C.rotate n) where
   nonempty := by simpa using hC.nonempty
@@ -233,7 +259,6 @@ lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e �
   obtain ⟨P, hP, hPC, -, -⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink h
   exact ⟨P, hP, hPC⟩
 
-
 lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.first P.last)
     (heP : e ∉ P.edge) : G.IsCycle (cons P.last e P) where
   isWalk := by simp [he.symm, hP.isWalk]
@@ -241,6 +266,15 @@ lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P
   nonempty := by simp
   isClosed := by simp
   nodup := by simp [hP.nodup]
+
+/-- If `P` is nontrivial, then the edge assumption from `IsPath.cons_isCycle` isn't needed. -/
+lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
+    (he : G.IsLink e P.first P.last) (hPnt : P.Nontrivial) : G.IsCycle (cons P.last e P) := by
+  refine IsWalk.isCycle_of_closed_nodup (by simp [he.symm, hP.isWalk]) ?_ (by simp)
+    (by simp [hP.nodup])
+  have := hPnt.one_lt_length
+  rw [cons_length]
+  omega
 
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by

@@ -357,6 +357,10 @@ lemma prefixUntilVertex_first (w : WList α β) (x) [DecidableEq α] :
     (w.prefixUntilVertex x).first = w.first :=
   prefixUntil_first ..
 
+lemma prefixUntilVertex_cons_of_ne [DecidableEq α] (w : WList α β) (hne : x ≠ y) (e : β) :
+    (cons x e w).prefixUntilVertex y = cons x e (w.prefixUntilVertex y) := by
+  simpa [prefixUntilVertex]
+
 /-- Take the suffix starting at the first vertex satisfying a predicate `P`,
 (or the `Nil` wList on the last vertex if nothing satisfies `P`) -/
 def suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
@@ -438,8 +442,6 @@ lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).
   rw [suffixFromLast, reverse_first]
   exact prefixUntil_prop_last (by simpa)
 
-
-
 lemma IsSublist.exists_append_append {w₀ : WList α β} (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
     ∃ w₁ w₂, w₁.last = w₀.first ∧ w₀.last = w₂.first ∧ w = w₁ ++ w₀ ++ w₂ := by
   classical
@@ -470,6 +472,16 @@ lemma IsSublist.exists_isPrefix_isSuffix {w₀ : WList α β} (hw₀ : w₀.IsSu
     (hw : w.vertex.Nodup) : ∃ w', w'.IsPrefix w ∧ w₀.IsSuffix w' := by
   obtain ⟨w₁, w₂, h1, h2, rfl⟩ := hw₀.exists_append_append hw
   exact ⟨w₁ ++ w₀, isPrefix_append_right (by simpa), isSuffix_append_left ..⟩
+
+/-- The sublist order as a partial order on `WList α β`, for access to order API.  -/
+instance : PartialOrder (WList α β) where
+  le := IsSublist
+  le_refl := isSublist_refl
+  le_trans _ _ _ := IsSublist.trans
+  le_antisymm _ _ := IsSublist.antisymm
+
+@[simp]
+lemma le_iff_isSublist : w₁ ≤ w₂ ↔ w₁.IsSublist w₂ := Iff.rfl
 
 section drop
 

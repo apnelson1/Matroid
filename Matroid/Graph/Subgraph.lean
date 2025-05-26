@@ -165,7 +165,7 @@ lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
     G ＼ F = G ↾ (E(G) \ F) := copy_eq_self ..
 
 @[simp]
-lemma edgeDelete_le (G : Graph α β) (F : Set β) : G ＼ F ≤ G := by
+lemma edgeDelete_le : G ＼ F ≤ G := by
   simp [edgeDelete_eq_edgeRestrict]
 
 lemma edgeDelete_anti_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ ⊆ F) : G ＼ F ≤ G ＼ F₀ := by
@@ -253,8 +253,10 @@ lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G [V(G) \ X]
 
-instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
-  hSub := Graph.vertexDelete
+notation:max G:1000 " - " S:1000 => Graph.vertexDelete G S
+
+-- instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
+--   hSub := Graph.vertexDelete
 
 lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
 
@@ -267,7 +269,14 @@ lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
 
 @[simp]
 lemma vertexDelete_isLink_iff (G : Graph α β) (X : Set α) :
-    (G - X).IsLink e x y ↔ (G.IsLink e x y ∧ (x ∈ V(G) ∧ x ∉ X) ∧ y ∈ V(G) ∧ y ∉ X) := Iff.rfl
+    (G - X).IsLink e x y ↔ (G.IsLink e x y ∧ x ∉ X ∧ y ∉ X) := by
+  simp only [vertexDelete_def, induce_isLink_iff, mem_diff, and_congr_right_iff]
+  exact fun h ↦ by simp [h.left_mem, h.right_mem]
+
+@[simp]
+lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
+    (G - X).Adj x y ↔ G.Adj x y ∧ x ∉ X ∧ y ∉ X := by
+  simp [Adj]
 
 @[simp]
 lemma vertexDelete_le : G - X ≤ G :=
@@ -297,7 +306,9 @@ lemma edgeDelete_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ＼ F)[
 
 @[simp]
 lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
-  Graph.ext rfl <| by simp +contextual
+  Graph.ext rfl <| by
+  simp only [vertexDelete_isLink_iff, induce_isLink_iff, mem_diff]
+  tauto
 
 lemma le_induce_of_le_of_subset (h : H ≤ G) (hV : V(H) ⊆ X) : H ≤ G[X] :=
   ⟨hV, fun _ _ _ h' ↦ ⟨h'.of_le h, hV h'.left_mem, hV h'.right_mem⟩⟩

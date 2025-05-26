@@ -13,158 +13,158 @@ namespace Graph
 
 /-- The number of edges of the shortest walk between two vertices `x,y` of `G`, as an `ℕ∞`.
 Equal to `⊤` if `x` and `y` are not `VertexConnected` in `G`, in particular if `x = y ∉ V(G)`. -/
-protected noncomputable def dist (G : Graph α β) (x y : α) : ℕ∞ :=
+protected noncomputable def eDist (G : Graph α β) (x y : α) : ℕ∞ :=
   ⨅ (W : {W // G.IsWalk W ∧ W.first = x ∧ W.last = y}), (W.1.length : ℕ∞)
 
-lemma VertexConnected.dist_lt_top (h : G.VertexConnected x y) : G.dist x y < ⊤ := by
+lemma VertexConnected.eDist_lt_top (h : G.VertexConnected x y) : G.eDist x y < ⊤ := by
   obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isWalk
   exact (iInf_le _ ⟨P, by simpa⟩).trans_lt (by simp)
 
-lemma IsWalk.dist_le_length (hW : G.IsWalk W) : G.dist W.first W.last ≤ W.length := by
+lemma IsWalk.eDist_le_length (hW : G.IsWalk W) : G.eDist W.first W.last ≤ W.length := by
   let W' : {W' // G.IsWalk W' ∧ W'.first = W.first ∧ W'.last = W.last} := ⟨W, hW, rfl, rfl⟩
   apply iInf_le (i := W')
 
-lemma IsWalk.isPath_of_length_eq_dist (hP : G.IsWalk P) (hlen : P.length = G.dist P.first P.last) :
-    G.IsPath P := by
+lemma IsWalk.isPath_of_length_eq_eDist (hP : G.IsWalk P)
+    (hlen : P.length = G.eDist P.first P.last) : G.IsPath P := by
   classical
   rw [isPath_iff, and_iff_right hP, ← dedup_eq_self_iff]
   refine P.dedup_isSublist.eq_of_length_ge <| (Nat.cast_le (α := ℕ∞)).1 ?_
   rw [hlen, ← dedup_first, ← dedup_last]
-  apply (hP.sublist P.dedup_isSublist).dist_le_length
+  apply (hP.sublist P.dedup_isSublist).eDist_le_length
 
-/-- The distance from `x` to `y` is realized by a *path* from `x` to `y`. -/
-lemma VertexConnected.exists_isPath_length_eq_dist (h : G.VertexConnected x y) :
-    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.dist x y := by
-  have hd := h.dist_lt_top
+/-- The eDistance from `x` to `y` is realized by a *path* from `x` to `y`. -/
+lemma VertexConnected.exists_isPath_length_eq_eDist (h : G.VertexConnected x y) :
+    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.eDist x y := by
+  have hd := h.eDist_lt_top
   have hne : Nonempty {W // G.IsWalk W ∧ W.first = x ∧ W.last = y} := by
     obtain ⟨W, hW, rfl, rfl⟩ := h.exists_isWalk
     exact ⟨W, by simp [hW]⟩
-  obtain ⟨⟨W,hWp, rfl, rfl⟩, hW : W.length = G.dist _ _⟩ :=
+  obtain ⟨⟨W,hWp, rfl, rfl⟩, hW : W.length = G.eDist _ _⟩ :=
     ENat.exists_eq_iInf (ι := {W // G.IsWalk W ∧ W.first = x ∧ W.last = y})
     (fun W ↦ (W.1.length : ℕ∞))
-  exact ⟨W, hWp.isPath_of_length_eq_dist hW, rfl, rfl, hW⟩
+  exact ⟨W, hWp.isPath_of_length_eq_eDist hW, rfl, rfl, hW⟩
 
 @[simp]
-lemma dist_lt_top_iff : G.dist x y < ⊤ ↔ G.VertexConnected x y := by
-  refine ⟨fun h ↦ ?_, VertexConnected.dist_lt_top⟩
+lemma eDist_lt_top_iff : G.eDist x y < ⊤ ↔ G.VertexConnected x y := by
+  refine ⟨fun h ↦ ?_, VertexConnected.eDist_lt_top⟩
   obtain ⟨⟨P,hP', rfl, rfl⟩, hP⟩ := iInf_lt_top.1 h
   exact hP'.vertexConnected_first_last
 
 @[simp]
-lemma dist_eq_top_iff : G.dist x y = ⊤ ↔ ¬ G.VertexConnected x y := by
-  rw [← dist_lt_top_iff, lt_top_iff_ne_top, not_not]
+lemma eDist_eq_top_iff : G.eDist x y = ⊤ ↔ ¬ G.VertexConnected x y := by
+  rw [← eDist_lt_top_iff, lt_top_iff_ne_top, not_not]
 
-lemma dist_comm (x y) : G.dist x y = G.dist y x := by
-  suffices aux : ∀ x y, G.dist x y ≤ G.dist y x from (aux x y).antisymm (aux y x)
+lemma eDist_comm (x y) : G.eDist x y = G.eDist y x := by
+  suffices aux : ∀ x y, G.eDist x y ≤ G.eDist y x from (aux x y).antisymm (aux y x)
   intro x y
-  simp only [Graph.dist, le_iInf_iff, Subtype.forall, and_imp]
+  simp only [Graph.eDist, le_iInf_iff, Subtype.forall, and_imp]
   rintro W hW rfl rfl
   exact iInf_le_of_le ⟨W.reverse, by simpa⟩ <| by simp
 
-lemma dist_self (G : Graph α β) (hx : x ∈ V(G)) : G.dist x x = 0 := by
-  rw [Graph.dist, ENat.iInf_eq_zero]
+lemma eDist_self (G : Graph α β) (hx : x ∈ V(G)) : G.eDist x x = 0 := by
+  rw [Graph.eDist, ENat.iInf_eq_zero]
   exact ⟨⟨WList.nil x, by simpa⟩, by simp⟩
 
-lemma dist_self_eq_zero_iff : G.dist x x = 0 ↔ x ∈ V(G) :=
-  ⟨fun h ↦ by simpa using (G.dist_lt_top_iff (x := x) (y := x)).1 (by simp [h]), G.dist_self⟩
+lemma eDist_self_eq_zero_iff : G.eDist x x = 0 ↔ x ∈ V(G) :=
+  ⟨fun h ↦ by simpa using (G.eDist_lt_top_iff (x := x) (y := x)).1 (by simp [h]), G.eDist_self⟩
 
 @[simp]
-lemma dist_eq_zero_iff : G.dist x y = 0 ↔ x = y ∧ x ∈ V(G) := by
+lemma eDist_eq_zero_iff : G.eDist x y = 0 ↔ x = y ∧ x ∈ V(G) := by
   wlog h : G.VertexConnected x y
-  · rw [← dist_eq_top_iff] at h
+  · rw [← eDist_eq_top_iff] at h
     simp only [h, ENat.top_ne_zero, false_iff, not_and]
     rintro rfl hx
     simp [hx] at h
-  obtain ⟨P, hP, rfl, rfl, hl⟩ := h.exists_isPath_length_eq_dist
+  obtain ⟨P, hP, rfl, rfl, hl⟩ := h.exists_isPath_length_eq_eDist
   simp [← hl, hP.isWalk.first_mem, first_eq_last_iff hP.nodup]
 
-lemma Adj.dist_le_one (hxy : G.Adj x y) : G.dist x y ≤ 1 := by
+lemma Adj.eDist_le_one (hxy : G.Adj x y) : G.eDist x y ≤ 1 := by
   obtain ⟨e, he⟩ := hxy
-  simpa using he.walk_isWalk.dist_le_length
+  simpa using he.walk_isWalk.eDist_le_length
 
-lemma Adj.dist_eq_one_of_ne (hxy : G.Adj x y) (hne : x ≠ y) : G.dist x y = 1 :=
-  hxy.dist_le_one.antisymm <| by simp [ENat.one_le_iff_ne_zero, hne]
+lemma Adj.eDist_eq_one_of_ne (hxy : G.Adj x y) (hne : x ≠ y) : G.eDist x y = 1 :=
+  hxy.eDist_le_one.antisymm <| by simp [ENat.one_le_iff_ne_zero, hne]
 
-lemma dist_triangle (G : Graph α β) (x y z : α) : G.dist x z ≤ G.dist x y + G.dist y z := by
+lemma eDist_triangle (G : Graph α β) (x y z : α) : G.eDist x z ≤ G.eDist x y + G.eDist y z := by
   wlog hxy : G.VertexConnected x y
-  · simp [dist_eq_top_iff.2 hxy]
+  · simp [eDist_eq_top_iff.2 hxy]
   wlog hyz : G.VertexConnected y z
-  · simp [dist_eq_top_iff.2 hyz]
-  obtain ⟨P, hP, rfl, rfl, hPl⟩ := hxy.exists_isPath_length_eq_dist
-  obtain ⟨Q, hQ, hQ1, rfl, hQl⟩ := hyz.exists_isPath_length_eq_dist
-  have hle := (hP.isWalk.append hQ.isWalk hQ1.symm).dist_le_length
+  · simp [eDist_eq_top_iff.2 hyz]
+  obtain ⟨P, hP, rfl, rfl, hPl⟩ := hxy.exists_isPath_length_eq_eDist
+  obtain ⟨Q, hQ, hQ1, rfl, hQl⟩ := hyz.exists_isPath_length_eq_eDist
+  have hle := (hP.isWalk.append hQ.isWalk hQ1.symm).eDist_le_length
   rwa [append_first_of_eq hQ1.symm, append_last, append_length, Nat.cast_add,
     hPl, hQl] at hle
 
-lemma Adj.dist_le_add_one (hxy : G.Adj x y) (z : α) : G.dist x z ≤ G.dist y z + 1 := by
+lemma Adj.eDist_le_add_one (hxy : G.Adj x y) (z : α) : G.eDist x z ≤ G.eDist y z + 1 := by
   by_cases hyz : G.VertexConnected y z
-  · obtain ⟨P, hP, rfl, rfl, hl⟩ := hyz.exists_isPath_length_eq_dist
-    refine (G.dist_triangle x P.first P.last).trans ?_
-    rw [add_comm, dist_comm]
-    exact add_le_add_left hxy.dist_le_one _
-  simp [dist_eq_top_iff.2 hyz]
+  · obtain ⟨P, hP, rfl, rfl, hl⟩ := hyz.exists_isPath_length_eq_eDist
+    refine (G.eDist_triangle x P.first P.last).trans ?_
+    rw [add_comm, eDist_comm]
+    exact add_le_add_left hxy.eDist_le_one _
+  simp [eDist_eq_top_iff.2 hyz]
 
-/-- If `x` and `y` are distinct vertices that are connected in `G`,
-then `y` has a neighbour `y'` whose distance to `x` is one less than that of `y`. -/
-lemma VertexConnected.exists_adj_dist_eq_add_one (hconn : G.VertexConnected x y) (hne : x ≠ y) :
-    ∃ y', G.Adj y' y ∧ G.dist x y = G.dist x y' + 1 := by
-  obtain ⟨P, hP, rfl, rfl, hl⟩ := hconn.symm.exists_isPath_length_eq_dist
+/-- If `x` and `y` are eDistinct vertices that are connected in `G`,
+then `y` has a neighbour `y'` whose eDistance to `x` is one less than that of `y`. -/
+lemma VertexConnected.exists_adj_eDist_eq_add_one (hconn : G.VertexConnected x y) (hne : x ≠ y) :
+    ∃ y', G.Adj y' y ∧ G.eDist x y = G.eDist x y' + 1 := by
+  obtain ⟨P, hP, rfl, rfl, hl⟩ := hconn.symm.exists_isPath_length_eq_eDist
   cases P with
   | nil u => simp at hne
   | cons u e P =>
-  · rw [cons_length, cast_add, cast_one, first_cons, last_cons, dist_comm, eq_comm] at hl
+  · rw [cons_length, cast_add, cast_one, first_cons, last_cons, eDist_comm, eq_comm] at hl
     simp only [first_cons, last_cons, hl]
     rw [cons_isPath_iff] at hP
     refine ⟨P.first, hP.2.1.adj.symm, ?_⟩
-    rw [WithTop.add_right_inj (by simp), dist_comm, le_antisymm_iff,
-      and_iff_left hP.1.isWalk.dist_le_length]
-    have ht := G.dist_triangle u P.first P.last
-    rw [dist_comm, hl] at ht
-    replace ht := ht.trans (add_le_add_right hP.2.1.adj.dist_le_one _)
+    rw [WithTop.add_right_inj (by simp), eDist_comm, le_antisymm_iff,
+      and_iff_left hP.1.isWalk.eDist_le_length]
+    have ht := G.eDist_triangle u P.first P.last
+    rw [eDist_comm, hl] at ht
+    replace ht := ht.trans (add_le_add_right hP.2.1.adj.eDist_le_one _)
     rwa [add_comm, WithTop.add_le_add_iff_left (by simp)] at ht
 
-lemma exists_adj_of_dist_eq_add_one {n : ℕ} (hxy : G.dist x y = n + 1) :
-    ∃ y', G.Adj y' y ∧ G.dist x y' = n := by
+lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :
+    ∃ y', G.Adj y' y ∧ G.eDist x y' = n := by
   have hconn : G.VertexConnected x y := by
-    simp [← dist_lt_top_iff, hxy, show (1 : ℕ∞) < ⊤ from compareOfLessAndEq_eq_lt.mp rfl]
+    simp [← eDist_lt_top_iff, hxy, show (1 : ℕ∞) < ⊤ from compareOfLessAndEq_eq_lt.mp rfl]
   have hne : x ≠ y := by
     rintro rfl
-    rw [dist_eq_zero_iff.2 (by simp [hconn.left_mem]), eq_comm] at hxy
+    rw [eDist_eq_zero_iff.2 (by simp [hconn.left_mem]), eq_comm] at hxy
     simp at hxy
-  obtain ⟨y', hyy', hdist⟩ := hconn.exists_adj_dist_eq_add_one hne
-  exact ⟨y', hyy', by rwa [← WithTop.add_right_inj (z := 1) (by simp), ← hdist]⟩
+  obtain ⟨y', hyy', heDist⟩ := hconn.exists_adj_eDist_eq_add_one hne
+  exact ⟨y', hyy', by rwa [← WithTop.add_right_inj (z := 1) (by simp), ← heDist]⟩
 
-/-! ### `ℕ` - valued distance -/
+/-! ### `ℕ` - valued eDistance -/
 
-protected noncomputable def ndist (G : Graph α β) (x y : α) : ℕ := (G.dist x y).toNat
+protected noncomputable def dist (G : Graph α β) (x y : α) : ℕ := (G.eDist x y).toNat
 
-lemma ndist_comm (G : Graph α β) (x y : α) : G.ndist x y = G.ndist y x := by
-  rw [Graph.ndist, dist_comm, ← Graph.ndist]
+lemma dist_comm (G : Graph α β) (x y : α) : G.dist x y = G.dist y x := by
+  rw [Graph.dist, eDist_comm, ← Graph.dist]
 
-lemma VertexConnected.cast_ndist (hG : G.VertexConnected x y) : G.ndist x y = G.dist x y := by
-  obtain ⟨P, hP, rfl, rfl, hl⟩ := hG.exists_isPath_length_eq_dist
-  simpa [Graph.ndist]
+lemma VertexConnected.cast_dist (hG : G.VertexConnected x y) : G.dist x y = G.eDist x y := by
+  obtain ⟨P, hP, rfl, rfl, hl⟩ := hG.exists_isPath_length_eq_eDist
+  simpa [Graph.dist]
 
-lemma Connected.cast_ndist (hG : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    G.ndist x y = G.dist x y :=
-  (hG.vertexConnected hx hy).cast_ndist
+lemma Connected.cast_dist (hG : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    G.dist x y = G.eDist x y :=
+  (hG.vertexConnected hx hy).cast_dist
 
-lemma VertexConnected.exists_isPath_length_eq_ndist (hG : G.VertexConnected x y) :
-    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.ndist x y := by
-  obtain ⟨P, hP, rfl, rfl, h⟩ := hG.exists_isPath_length_eq_dist
-  exact ⟨P, hP, rfl, rfl, by simp [Graph.ndist, ← h]⟩
+lemma VertexConnected.exists_isPath_length_eq_dist (hG : G.VertexConnected x y) :
+    ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.dist x y := by
+  obtain ⟨P, hP, rfl, rfl, h⟩ := hG.exists_isPath_length_eq_eDist
+  exact ⟨P, hP, rfl, rfl, by simp [Graph.dist, ← h]⟩
 
-lemma IsWalk.ndist_le_length (hW : G.IsWalk W) : G.ndist W.first W.last ≤ W.length := by
-  simpa [← hW.vertexConnected_first_last.cast_ndist, Nat.cast_le] using hW.dist_le_length
+lemma IsWalk.dist_le_length (hW : G.IsWalk W) : G.dist W.first W.last ≤ W.length := by
+  simpa [← hW.vertexConnected_first_last.cast_dist, Nat.cast_le] using hW.eDist_le_length
 
-lemma ndist_triangle (hxy : G.VertexConnected x y) (z) :
-    G.ndist x z ≤ G.ndist x y + G.ndist y z := by
+lemma dist_triangle (hxy : G.VertexConnected x y) (z) :
+    G.dist x z ≤ G.dist x y + G.dist y z := by
   by_cases hxz : G.VertexConnected x z
   · have hyz : G.VertexConnected y z := hxy.symm.trans hxz
-    rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, hxy.cast_ndist, hyz.cast_ndist,
-      (hxy.trans hyz).cast_ndist]
-    exact dist_triangle G x y z
-  simp [Graph.ndist, dist_eq_top_iff.2 hxz]
+    rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, hxy.cast_dist, hyz.cast_dist,
+      (hxy.trans hyz).cast_dist]
+    exact eDist_triangle G x y z
+  simp [Graph.dist, eDist_eq_top_iff.2 hxz]
 
 /-! ### Shortest Paths -/
 
@@ -172,30 +172,30 @@ lemma ndist_triangle (hxy : G.VertexConnected x y) (z) :
 edges than `P` itself. -/
 structure IsShortestPath (G : Graph α β) (P : WList α β) : Prop where
   isPath : G.IsPath P
-  length_eq_dist : P.length = G.dist P.first P.last
+  length_eq_eDist : P.length = G.eDist P.first P.last
 
-lemma IsShortestPath.length_eq_ndist (hP : G.IsShortestPath P) :
-    P.length = G.ndist P.first P.last := by
-  rw [← Nat.cast_inj (R := ℕ∞), hP.length_eq_dist,
-    hP.isPath.isWalk.vertexConnected_first_last.cast_ndist]
+lemma IsShortestPath.length_eq_dist (hP : G.IsShortestPath P) :
+    P.length = G.dist P.first P.last := by
+  rw [← Nat.cast_inj (R := ℕ∞), hP.length_eq_eDist,
+    hP.isPath.isWalk.vertexConnected_first_last.cast_dist]
 
 lemma IsWalk.isShortestPath_of_length_le (hP : G.IsWalk P)
-    (hdist : P.length ≤ G.ndist P.first P.last) : G.IsShortestPath P := by
-  have hlen : P.length = G.dist P.first P.last := by
-    rw [← hP.vertexConnected_first_last.cast_ndist, Nat.cast_inj]
-    exact hdist.antisymm <| hP.ndist_le_length
-  exact ⟨hP.isPath_of_length_eq_dist hlen, hlen⟩
+    (heDist : P.length ≤ G.dist P.first P.last) : G.IsShortestPath P := by
+  have hlen : P.length = G.eDist P.first P.last := by
+    rw [← hP.vertexConnected_first_last.cast_dist, Nat.cast_inj]
+    exact heDist.antisymm <| hP.dist_le_length
+  exact ⟨hP.isPath_of_length_eq_eDist hlen, hlen⟩
 
 lemma isShortestPath_nil (hx : x ∈ V(G)) : G.IsShortestPath (nil x) :=
-  ⟨by simpa, by simp [dist_self _ hx]⟩
+  ⟨by simpa, by simp [eDist_self _ hx]⟩
 
 lemma VertexConnected.exists_isShortestPath (hxy : G.VertexConnected x y) :
     ∃ P, G.IsShortestPath P ∧ P.first = x ∧ P.last = y := by
-  obtain ⟨P, hP, rfl, rfl, hlen⟩ := hxy.exists_isPath_length_eq_ndist
+  obtain ⟨P, hP, rfl, rfl, hlen⟩ := hxy.exists_isPath_length_eq_dist
   exact ⟨P, hP.isWalk.isShortestPath_of_length_le hlen.le, rfl, rfl⟩
 
 lemma IsShortestPath.reverse (hP : G.IsShortestPath P) : G.IsShortestPath P.reverse :=
-  hP.isPath.isWalk.reverse.isShortestPath_of_length_le <| by simp [hP.length_eq_ndist, ndist_comm]
+  hP.isPath.isWalk.reverse.isShortestPath_of_length_le <| by simp [hP.length_eq_dist, dist_comm]
 
 @[simp]
 lemma isShortestPath_reverse_iff : G.IsShortestPath P.reverse ↔ G.IsShortestPath P :=
@@ -210,14 +210,14 @@ lemma IsShortestPath.prefix (hP : G.IsShortestPath P) (hQ : Q.IsPrefix P) : G.Is
   obtain ⟨Q', hQ', rfl⟩ := hQ.exists_eq_append
   have hQpath := hP.isPath.prefix hQ
   refine hQpath.isWalk.isShortestPath_of_length_le ?_
-  have hdist := hP.length_eq_ndist
-  rw [append_length, append_last, append_first_of_eq hQ'] at hdist
+  have heDist := hP.length_eq_dist
+  rw [append_length, append_last, append_first_of_eq hQ'] at heDist
   obtain ⟨Q₀, hQ₀, h1, h2⟩ := hQpath.isWalk.vertexConnected_first_last.exists_isShortestPath
-  rw [← add_le_add_iff_right (a := Q'.length), hdist, ← h1, ← h2, ← hQ₀.length_eq_ndist,
+  rw [← add_le_add_iff_right (a := Q'.length), heDist, ← h1, ← h2, ← hQ₀.length_eq_dist,
     ← append_length]
   have hQ₀Q' := hQ₀.isPath.isWalk.append (hP.isPath.isWalk.suffix (isSuffix_append_left ..))
     (by rw [h2, hQ'])
-  convert hQ₀Q'.ndist_le_length using 2
+  convert hQ₀Q'.dist_le_length using 2
   · rw [append_first_of_eq (by rwa [h2])]
   simp
 

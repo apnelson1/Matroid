@@ -1,5 +1,6 @@
-import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Subgraph
+import Matroid.Graph.Finite
+import Matroid.Graph.Degree
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.ENat.Lattice
 import Mathlib.Data.Real.Basic
@@ -181,7 +182,7 @@ lemma Connected.exists_vertexConnected_deleteEdge_set {X : Set α} (hG : G.Conne
     by_cases hmem : e ∈ E(G ＼ E(G[X]))
     · obtain ⟨x', hx', hWx'⟩ := ih (u := W.first) (hW.vertex_mem_of_mem (by simp)) rfl
         (by simpa using hx'X) (by simpa using hx'V)
-      have hconn := ((h.of_le_of_mem (edgeDelete_le _ E(G[X]))) hmem).vertexConnected
+      have hconn := (h.of_le_of_mem edgeDelete_le hmem).vertexConnected
       exact ⟨x', hx', hconn.trans hWx'⟩
     rw [edgeDelete_edgeSet, mem_diff, and_iff_right h.edge_mem, h.mem_induce_iff, not_not] at hmem
     exact ⟨x, hmem.1, by simpa⟩
@@ -318,6 +319,7 @@ lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Conn
   simp only [connected_iff, hne, true_and, not_forall, Classical.not_imp, exists_and_left] at hG
   obtain ⟨x, y, hx, hy, hxy⟩ := hG
   exact ⟨(exists_separation_of_not_vertexConnected hx hy hxy).choose⟩
+
 
 /-- If `G` is connected but its restriction to some set `F` of edges is not,
 then there is an edge of `G` joining two vertices that are not connected in the restriction. -/
@@ -511,7 +513,7 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   obtain ⟨C, hC, heC⟩ := (not_isBridge heE).1 he
   rw [← (G ＼ {e}).induce_union_edgeDelete (X := V(C)) (by simp [hC.vertexSet_subset])]
   refine Compatible.union_connected_of_forall (G.compatible_of_le_le ?_ (by simp)) ?_ ?_
-  · exact le_trans (induce_le (by simp [hC.vertexSet_subset])) (G.edgeDelete_le {e})
+  · exact le_trans (induce_le (by simp [hC.vertexSet_subset])) edgeDelete_le
   · obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
     refine (hP.isWalk.toGraph_connected.of_subgraph ?_ ?_)
     · rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
@@ -556,7 +558,6 @@ lemma IsPath.isBridge_of_mem (hP : G.IsPath P) (heP : e ∈ P.edge) : P.toGraph.
     exact List.disjoint_right.1 hdj hy hfxy.right_mem
   rw [← hP₂.isWalk.isLink_iff_isLink_of_mem hf] at hfxy
   exact List.disjoint_left.1 hdj hx hfxy.left_mem
-
 
 
 /-! ### Components -/
@@ -655,5 +656,132 @@ lemma eq_sUnion_components (G : Graph α β) :
   refine subset_antisymm (fun e he ↦ ?_) ?_
   · simpa using exists_isComponent_edge_mem he
   simpa using fun _ h ↦ (edgeSet_subset_of_le h.le)
+
+lemma IsComponent.isLink_of_isLink_of_mem (h : H.IsComponent G) (hx : x ∈ V(H))
+    (hxy : G.IsLink e x y) : H.IsLink e x y := by
+  obtain ⟨H', hH'G, heH'⟩ := hxy.walk_isWalk.exists_isComponent_isWalk
+  simp only [IsLink.walk, cons_isWalk_iff, nil_first, nil_isWalk_iff] at heH'
+  obtain rfl | hne := eq_or_ne H H'
+  · exact heH'.1
+  exact False.elim <| (hH'G.disjoint_of_ne h hne.symm).vertex.not_mem_of_mem_left heH'.1.left_mem hx
+
+lemma IsComponent.adj_of_adj_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
+    H.Adj x y := by
+  obtain ⟨e, hexy⟩ := hxy
+  exact (h.isLink_of_isLink_of_mem hx hexy).adj
+
+lemma IsComponent.inc_of_inc_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)) (hxe : G.Inc e x) :
+    H.Inc e x := by
+  obtain ⟨y, hexy⟩ := hxe
+  exact (h.isLink_of_isLink_of_mem hx hexy).inc_left
+
+/-- For a proper component `H`, the separation with parts `V(H)` and `V(G) \ V(H)`. -/
+@[simps]
+def IsComponent.separation_of_ne (h : H.IsComponent G) (hne : H ≠ G) : G.Separation where
+  left := V(H)
+  right := V(G) \ V(H)
+  nonempty_left := h.connected.nonempty
+  nonempty_right := diff_nonempty.2 fun hss ↦ hne <|
+    h.isInducedSubgraph.eq_of_isSpanningSubgraph ⟨h.le, hss.antisymm' (vertexSet_subset_of_le h.le)⟩
+  disjoint := disjoint_sdiff_right
+  union_eq := by simp [vertexSet_subset_of_le h.le]
+  not_adj x y hx hy hxy := hy.2 <| (h.adj_of_adj_of_mem hx hxy).right_mem
+
+/-- If `H` is a connected subgraph of a disconnected graph `G`,
+then there is a separation of `G` with `H` on the left. -/
+lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected) (hle : H ≤ G) :
+    ∃ S : G.Separation, H ≤ G[S.left] := by
+  obtain ⟨H', hH'H, hle'⟩ := hH.exists_component_ge hle
+  refine ⟨hH'H.separation_of_ne ?_, ?_⟩
+  · rintro rfl
+    exact hG hH'H.connected
+  simp only [IsComponent.separation_of_ne_left]
+  exact hle'.trans <| le_induce_self hH'H.le
+
+/-! ### Staying Connected -/
+
+/-- A leaf vertex in a trail is either the first or last vertex of the trail-/
+lemma IsLeafVertex.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.IsLeafVertex x)
+    (hP : G.IsTrail P) (hxP : x ∈ P) : x = P.first ∨ x = P.last := by
+  induction P with
+  | nil => simpa using hxP
+  | cons u e P ih =>
+    simp only [cons_isTrail_iff] at hP
+    obtain (rfl : x = u) | (hxP : x ∈ P) := by simpa using hxP
+    · simp
+    obtain rfl | rfl := (ih hP.1 hxP).symm
+    · simp
+    cases P with
+    | nil => simp
+    | cons v f P =>
+      simp only [cons_isTrail_iff, first_cons, cons_edge, List.mem_cons, not_or] at hP
+      simp [hx.eq_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
+
+lemma IsLeafVertex.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeafVertex x)
+    (hP : G.IsPath P) (hxP : x ∈ P) : x = P.first ∨ x = P.last :=
+  hx.eq_first_or_eq_last_of_mem_trail hP.isTrail hxP
+
+lemma IsLeafVertex.delete_connected (hx : G.IsLeafVertex x) (hG : G.Connected) :
+    (G - {x}).Connected := by
+  obtain ⟨y, hy : G.Adj x y, hu⟩ := hx.exists_unique_adj
+  refine connected_of_vertex ⟨hy.right_mem, fun h : y = x ↦ hx.not_adj_self (h ▸ hy)⟩ fun z hz ↦ ?_
+  obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hz.1 hy.right_mem).exists_isPath
+  refine IsWalk.vertexConnected_first_last <| isWalk_vertexDelete_iff.2 ⟨hP.isWalk, ?_⟩
+  simp only [disjoint_singleton_right, mem_vertexSet_iff]
+  intro hxP
+  obtain rfl | rfl := hx.eq_first_or_eq_last_of_mem_path hP hxP
+  · simp at hz
+  exact hx.not_adj_self hy
+
+/-- Deleting the first vertex of a maximal path of a connected graph gives a connected graph. -/
+lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt : V(G).Nontrivial)
+    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - {P.first}).Connected := by
+  cases P with
+  | nil u =>
+    obtain ⟨y, hne, ⟨e, huy⟩⟩ := hG.exists_adj_of_mem (x := u) hnt (by simpa using hP.prop)
+    exact False.elim <| hne.symm <| by
+      simpa [huy, huy.right_mem] using hP.eq_of_ge (y := cons u e (nil y))
+  | cons u e P =>
+    have ⟨hP', he, huP⟩ : G.IsPath P ∧ G.IsLink e u P.first ∧ u ∉ P := by simpa using hP.prop
+    by_contra hcon
+    simp only [first_cons] at hcon
+    have hP'' : (G - {u}).IsPath P := by simp [isPath_vertexDelete_iff, huP, hP']
+    obtain ⟨S, hS⟩ :=
+      hP''.isWalk.toGraph_connected.exists_separation_of_le hcon hP''.isWalk.toGraph_le
+    have hPS : V(P) ⊆ S.left := by simpa using vertexSet_subset_of_le hS
+    have huleft : u ∉ S.left := fun huS ↦ by simpa using S.left_subset huS
+    have huright : u ∉ S.right := fun huS ↦ by simpa using S.right_subset huS
+    suffices hu : ∀ x ∈ S.right, ¬ G.Adj u x by
+      refine Separation.not_connected
+        ⟨insert u S.left, S.right, by simp, S.nonempty_right, ?_, ?_, ?_⟩ hG
+      · simp [S.disjoint, huright]
+      · simpa [insert_union, S.union_eq] using he.left_mem
+      rintro x y (rfl | hxS) hyS ⟨e, hxy⟩
+      · exact hu y hyS hxy.adj
+      refine S.not_adj hxS hyS ⟨e, ?_⟩
+      simp only [vertexDelete_isLink_iff, hxy, mem_singleton_iff, true_and]
+      constructor <;> (rintro rfl; contradiction)
+    rintro x hx ⟨f, hux⟩
+    have hne : u ≠ x := by rintro rfl; contradiction
+    refine S.disjoint.not_mem_of_mem_left (hPS ?_) hx
+    simpa [hne.symm] using mem_of_adj_first_of_maximal_isPath hP hux.symm.adj
+
+/-- Deleting the last vertex of a maximal path of a connected graph gives a connected graph. -/
+lemma Connected.delete_last_connected_of_maximal_isPath (hG : G.Connected) (hnt : V(G).Nontrivial)
+    (hP : Maximal (fun P ↦ G.IsPath P) P) : (G - {P.last}).Connected := by
+  suffices aux : Maximal (fun P ↦ G.IsPath P) P.reverse by
+    simpa using hG.delete_first_connected_of_maximal_isPath hnt aux
+  refine ⟨by simpa using hP.prop, fun Q hQ hPQ ↦ ?_⟩
+  simp [hP.eq_of_le (y := Q.reverse) (by simpa) (by simpa using IsSublist.reverse hPQ)]
+
+/-- Every finite connected graph on at least two vertices has a vertex whose deletion
+preserves its connectedness.
+(This requires a finite graph, since otherwise an infinite path is a counterexample.) -/
+lemma Connected.exists_delete_vertex_connected [G.Finite] (hG : G.Connected)
+    (hnt : V(G).Nontrivial) : ∃ x ∈ V(G), (G - {x}).Connected := by
+  obtain ⟨x, hx⟩ := hG.nonempty
+  obtain ⟨P, hP⟩ := Finite.exists_maximal G.isPath_finite ⟨nil x, by simpa⟩
+  exact ⟨_, hP.prop.isWalk.first_mem, hG.delete_first_connected_of_maximal_isPath hnt hP⟩
+
 
 end Graph

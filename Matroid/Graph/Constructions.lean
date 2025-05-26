@@ -1,5 +1,6 @@
 import Matroid.Graph.Subgraph
 import Mathlib.Data.Set.Lattice
+import Mathlib.Data.Set.Finite.Basic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α}
 

@@ -33,6 +33,23 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
   | coe b => simp only [coe_ne_top, ne_eq, Nat.cast_eq_zero, false_and, and_false, or_self,
     iff_false, ← coe_mul]
 
+@[simp]
+theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by
+  cases a with
+  | top => simp
+  | coe a => cases b with | top => simp | coe b => norm_cast; simp
+
+@[simp]
+theorem add_eq_right_iff {a b : ℕ∞} : a + b = b ↔ a = 0 ∨ b = ⊤ := by
+  rw [add_comm, add_eq_left_iff, or_comm]
+
+@[simp]
+theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
+  rw [← add_eq_left_iff, le_antisymm_iff, and_iff_left (by simp)]
+
+@[simp]
+theorem add_le_right_iff {a b : ℕ∞} : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
+  rw [add_comm, add_le_left_iff, or_comm]
 
 section Parity
 
