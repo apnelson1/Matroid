@@ -99,14 +99,14 @@ lemma IsForest.eq_of_isPath_eq_eq (hG : G.IsForest) (hP : G.IsPath P) (hQ : G.Is
 
 lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ : G.IsCycle C₀)
     (hle : C₀.toGraph ≤ C.toGraph) : C₀.toGraph = C.toGraph := by
-  have hCE : E(C₀) ⊆ E(C) := by simpa using edgeSet_subset_of_le hle
-  have hCV : V(C₀) ⊆ V(C) := by simpa using vertexSet_subset_of_le hle
+  have hCE : E(C₀) ⊆ E(C) := by simpa using edgeSet_mono hle
+  have hCV : V(C₀) ⊆ V(C) := by simpa using vertexSet_mono hle
   refine hle.antisymm <| G.le_of_le_le_subset_subset hC.isWalk.toGraph_le
     hC₀.isWalk.toGraph_le (fun x hxC ↦ by_contra fun hxC₀ ↦ ?_)
       (fun e heC ↦ by_contra fun heC₀ ↦ ?_)
   · obtain ⟨y, e, rfl⟩ | hnt := hC.loop_or_nontrivial
     · obtain rfl : x = y := by simpa using hxC
-      have hfa : ∀ y ∈ C₀, y = x := by simpa using vertexSet_subset_of_le hle
+      have hfa : ∀ y ∈ C₀, y = x := by simpa using vertexSet_mono hle
       obtain rfl : C₀.first = x := by simpa using hfa C₀.first
       simp at hxC₀
     obtain ⟨P, hP, hP_eq⟩ := hC.exists_isPath_toGraph_eq_delete_vertex (x := x) hnt

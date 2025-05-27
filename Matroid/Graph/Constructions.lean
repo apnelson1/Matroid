@@ -149,7 +149,7 @@ lemma union_inc_iff : (G ∪ H).Inc e x ↔ G.Inc e x ∨ (e ∉ E(G) ∧ H.Inc 
 
 lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
   suffices ∀ ⦃e : β⦄ ⦃x y : α⦄, H₁.IsLink e x y ∨ e ∉ E(H₁) ∧ H₂.IsLink e x y → G.IsLink e x y by
-    simpa [le_iff, vertexSet_subset_of_le h₁, vertexSet_subset_of_le h₂, union_isLink_iff]
+    simpa [le_iff, vertexSet_mono h₁, vertexSet_mono h₂, union_isLink_iff]
   rintro e x y (h | ⟨-, h⟩) <;>
   exact h.of_le <| by assumption
 
@@ -227,7 +227,7 @@ lemma Compatible.mono_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G�
     Compatible G₀ H := by
   intro e heG heH
   ext x y
-  rw [← isLink_iff_isLink_of_le_of_mem hG₀ heG, h (edgeSet_subset_of_le hG₀ heG) heH]
+  rw [← isLink_iff_isLink_of_le_of_mem hG₀ heG, h (edgeSet_mono hG₀ heG) heH]
 
 lemma Compatible.mono_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H₀ ≤ H) :
     Compatible G H₀ :=
@@ -354,6 +354,21 @@ lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     exact fun hf ↦ he hf.edge_mem
   simp [hne]
 
+lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G where
+  vertex_subset := union_subset (by simp [pair_subset_iff, he.left_mem, he.right_mem])
+    (vertexSet_mono hle)
+  isLink_of_isLink f z w hH := by
+    simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,
+      mem_singleton_iff] at hH
+    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩) | ⟨-, hzw⟩ := hH
+    · exact he
+    · exact he.symm
+    exact hzw.of_le hle
+
+lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
+  ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
+    <| by simp [h.edge_mem]
+
 /-! ### Disjointness -/
 
 /-- Two graphs are disjoint if their edge sets and vertex sets are disjoint -/
@@ -446,7 +461,7 @@ lemma UCompatible.le_iUnion (hH : UCompatible H) (i : ι) : H i ≤ hH.iUnion H 
 @[simp]
 lemma UCompatible.iUnion_le_iff (hH : UCompatible H) : hH.iUnion H ≤ G ↔ ∀ i, H i ≤ G := by
   refine ⟨fun h i ↦ (hH.le_iUnion i).trans h, fun h ↦ ⟨?_, fun e x y ⟨i, hexy⟩ ↦ hexy.of_le (h i)⟩⟩
-  simpa using fun i ↦ vertexSet_subset_of_le (h i)
+  simpa using fun i ↦ vertexSet_mono (h i)
 
 lemma Compatible.union_eq_iUnion {H : Graph α β} (h : G.Compatible H) :
     G ∪ H = h.UCompatible_cond.iUnion _ := by

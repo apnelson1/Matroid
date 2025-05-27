@@ -141,7 +141,7 @@ lemma isWalk_reverse_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
 
 lemma IsWalk.of_le (h : H.IsWalk w) (hle : H ≤ G) : G.IsWalk w := by
   induction h with
-  | nil hx => simp [vertexSet_subset_of_le hle hx]
+  | nil hx => simp [vertexSet_mono hle hx]
   | cons _ h ih => simp [ih, h.of_le hle]
 
 lemma IsWalk.isWalk_le (h : G.IsWalk w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))

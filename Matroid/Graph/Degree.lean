@@ -109,6 +109,10 @@ lemma Inc.incFun_ne_zero (h : G.Inc e x) : G.incFun e x ≠ 0 := by
   · simp [h.incFun_eq_two]
   simp [h.incFun_eq_one]
 
+lemma Inc.one_le_incFun (h : G.Inc e x) : 1 ≤ G.incFun e x := by
+  rw [Nat.one_le_iff_ne_zero]
+  exact h.incFun_ne_zero
+
 @[simp]
 lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ E(G) := by
   refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_not_mem⟩
@@ -159,7 +163,7 @@ lemma natCast_degree_eq (G : Graph α β) [G.LocallyFinite] (v : α) :
     (G.degree v : ℕ∞) = G.eDegree v := by
   rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
   refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans_lt ?_
-  simp [lt_top_iff_ne_top, Ne, ENat.mul_eq_top_iff, (G.finite_setOf_inc v)]
+  simp [lt_top_iff_ne_top, Ne, ENat.mul_eq_top_iff, G.finite_setOf_inc]
 
 @[simp]
 lemma eDegree_lt_top [G.LocallyFinite] : G.eDegree x < ⊤ := by
@@ -247,7 +251,7 @@ lemma handshake [Finite α] [Finite β] (G : Graph α β) : ∑ᶠ v, G.degree v
   simp [natCast_degree_eq, ← tsum_eq_sum (s := Finset.univ) (by simp), handshake_eDegree,
     E(G).toFinite.cast_ncard_eq]
 
-lemma eDegree_eq_card_add_card (G : Graph α β) (x : α) : G.eDegree x =
+lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
     2 * {e | G.IsLoopAt e x}.encard + {e | G.IsNonloopAt e x}.encard := by
   have hrw : {e | G.Inc e x} = {e | G.IsLoopAt e x} ∪ {e | G.IsNonloopAt e x} := by
     simp +contextual [iff_def, Set.ext_iff, Inc.isLoopAt_or_isNonloopAt, or_imp,
@@ -264,6 +268,16 @@ lemma eDegree_eq_card_add_card (G : Graph α β) (x : α) : G.eDegree x =
   have hrw1 : ∀ e : {e | G.IsNonloopAt e x}, (G.incFun e x : ℕ∞) = 1 :=
     fun ⟨e, he⟩ ↦ by simp [he.incFun_eq_one]
   simp_rw [hrw2, hrw1, ENat.tsum_subtype_const, one_mul]
+
+lemma encard_setOf_inc_le_eDegree (G : Graph α β) (x : α) :
+    {e | G.Inc e x}.encard ≤ G.eDegree x := by
+  rw [← ENat.tsum_one, eDegree_eq_tsum_mem]
+  exact ENat.tsum_le_tsum fun ⟨e, (he : G.Inc e x)⟩ ↦ by simpa using he.one_le_incFun
+
+lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
+    G.degree x = 2 * {e | G.IsLoopAt e x}.ncard + {e | G.IsNonloopAt e x}.ncard := by
+  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
+  simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
 /-! ### Degree-zero vertices -/
 
@@ -325,7 +339,7 @@ lemma IsPendant.eDegree (h : G.IsPendant e x) : G.eDegree x = 1 := by
     simp +contextual only [Set.ext_iff, mem_setOf_eq, mem_singleton_iff, iff_def, h.isNonloopAt,
       implies_true, and_true]
     exact fun f hf ↦ h.edge_unique hf.inc
-  simp [eDegree_eq_card_add_card, h.not_isLoopAt, hrw]
+  simp [eDegree_eq_encard_add_encard, h.not_isLoopAt, hrw]
 
 lemma Inc.isPendant_of_eDegree_le_one (h : G.Inc e x) (hdeg : G.eDegree x ≤ 1) :
     G.IsPendant e x := by
@@ -333,7 +347,7 @@ lemma Inc.isPendant_of_eDegree_le_one (h : G.Inc e x) (hdeg : G.eDegree x ≤ 1)
   have hnl : ∀ f, ¬ G.IsLoopAt f x := fun f hf ↦ by simpa using hf.two_le_eDegree.trans_eq hdeg
   refine ⟨h.isLoopAt_or_isNonloopAt.elim (fun h ↦ (hnl _ h).elim) id, fun f hf ↦ ?_⟩
   rw [inc_iff_isLoopAt_or_isNonloopAt, or_iff_right (hnl _)] at h hf
-  rw [eDegree_eq_card_add_card] at hdeg
+  rw [eDegree_eq_encard_add_encard] at hdeg
   have hss := encard_le_one_iff_subsingleton.1 <| le_add_self.trans hdeg.le
   exact hss hf h
 
@@ -443,7 +457,7 @@ lemma noEdge_eDegree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).eD
 
 lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) :
     (Graph.singleEdge x y e).eDegree x = 1 := by
-  rw [eDegree_eq_card_add_card, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
+  rw [eDegree_eq_encard_add_encard, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
   · convert rfl
     suffices ∃ z, ¬z = x ∧ (z = y ∨ x = y ∧ z = x) by
       simpa +contextual [iff_def, IsNonloopAt, Set.ext_iff]
@@ -537,5 +551,42 @@ lemma degree_addEdge_right [G.LocallyFinite] {a b : α} (he : e ∉ E(G)) (hab :
 lemma degree_addEdge_of_ne {a b : α} (he : e ∉ E(G)) (hxa : x ≠ a) (hxb : x ≠ b) :
     (G.addEdge e a b).degree x = G.degree x := by
   rw [degree, eDegree_addEdge_of_ne he hxa hxb, degree]
+
+lemma IsNonloopAt.eDegree_delete_add_one (he : G.IsNonloopAt e x) :
+    (G ＼ {e}).eDegree x + 1 = G.eDegree x := by
+  obtain ⟨y, hxy, hy⟩ := he
+  nth_rewrite 1 [eq_comm, ← hy.deleteEdge_addEdge, eDegree_addEdge_left (by simp) hxy.symm]
+  rfl
+
+lemma IsNonloopAt.degree_delete_add_one [G.LocallyFinite] (he : G.IsNonloopAt e x) :
+    (G ＼ {e}).degree x + 1 = G.degree x := by
+  obtain ⟨y, hxy, hy⟩ := he
+  nth_rewrite 1 [eq_comm, ← hy.deleteEdge_addEdge, degree_addEdge_left (by simp) hxy.symm]
+  rfl
+
+lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
+    (G ＼ {e}).eDegree x + 2 = G.eDegree x := by
+  have hrw : {f | G.IsLoopAt f x} = insert e {f | (G ＼ {e}).IsLoopAt f x} := by
+    simp only [edgeDelete_isLoopAt_iff, mem_singleton_iff]
+    ext f
+    have := eq_or_ne f e
+    aesop
+  rw [eDegree_eq_encard_add_encard, eDegree_eq_encard_add_encard, h.isNonloopAt_delete,
+    add_right_comm, hrw, encard_insert_of_not_mem, mul_add, mul_one]
+  simp only [mem_setOf_eq]
+  exact fun (h : IsLoopAt _ _ _) ↦ h.edge_mem.2 rfl
+
+lemma IsLoopAt.degree_delete_add_two [G.LocallyFinite] (h : G.IsLoopAt e x) :
+    (G ＼ {e}).degree x + 2 = G.degree x := by
+  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, ← h.eDegree_delete_add_two]
+  simp
+
+lemma Inc.degree_delete_lt [G.LocallyFinite] (he : G.Inc e x) :
+    (G ＼ {e}).degree x < G.degree x := by
+  obtain he | he := he.isLoopAt_or_isNonloopAt
+  · rw [← he.degree_delete_add_two]
+    simp
+  rw [← he.degree_delete_add_one]
+  simp
 
 end Graph

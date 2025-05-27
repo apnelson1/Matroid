@@ -14,6 +14,9 @@ namespace Graph
 protected class Loopless (G : Graph α β) : Prop where
   not_isLoopAt : ∀ e x, ¬ G.IsLoopAt e x
 
+lemma not_isLoopAt (G : Graph α β) [G.Loopless] (e : β) (x : α) : ¬ G.IsLoopAt e x :=
+  Loopless.not_isLoopAt e x
+
 lemma not_adj_self (G : Graph α β) [G.Loopless] (x : α) : ¬ G.Adj x x :=
   fun ⟨e, he⟩ ↦ Loopless.not_isLoopAt e x he
 

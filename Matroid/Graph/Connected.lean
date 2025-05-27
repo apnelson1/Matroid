@@ -351,7 +351,7 @@ lemma Connected.exists_of_edgeRestrict_not_connected (hG : G.Connected)
 
 lemma Connected.of_subgraph (hH : H.Connected) (hle : H ≤ G) (hV : V(H) = V(G)) : G.Connected := by
   obtain ⟨x, hx⟩ := hH.nonempty
-  refine connected_of_vertex (vertexSet_subset_of_le hle hx) fun y hy ↦ ?_
+  refine connected_of_vertex (vertexSet_mono hle hx) fun y hy ↦ ?_
   exact (hH.vertexConnected (y := x) (by rwa [hV]) hx).of_le hle
 
 lemma Separation.edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.right]) := by
@@ -582,7 +582,7 @@ lemma IsComponent.connected (h : H.IsComponent G) : H.Connected :=
   h.prop.1
 
 lemma IsComponent.isInducedSubgraph (h : H.IsComponent G) : H ≤i G := by
-  have hss := vertexSet_subset_of_le h.le
+  have hss := vertexSet_mono h.le
   rw [← h.eq_of_ge (y := G[V(H)])]
   · simpa
   · simpa [h.connected.of_isSpanningSubgraph ⟨le_induce_self h.le, by simp⟩]
@@ -598,13 +598,13 @@ lemma induce_setOf_vertexConnected_isComponent (hx : x ∈ V(G)) :
     exact h.trans <| hW.vertexConnected_of_mem_of_mem (by simp) hy
   · exact induce_le_iff.2 fun y hy ↦ VertexConnected.right_mem hy
   refine le_induce_of_le_of_subset hH'le fun z hz ↦ ?_
-  exact (hc.vertexConnected (x := x) (vertexSet_subset_of_le hle (by simpa)) hz).of_le hH'le
+  exact (hc.vertexConnected (x := x) (vertexSet_mono hle (by simpa)) hz).of_le hH'le
 
 /-- Every connected subgraph of `G` is a subgraph of a component of `G`. -/
 lemma Connected.exists_component_ge (hH : H.Connected) (hle : H ≤ G) :
     ∃ G₁, G₁.IsComponent G ∧ H ≤ G₁ := by
   obtain ⟨x, hx⟩ := hH.nonempty
-  refine ⟨_, induce_setOf_vertexConnected_isComponent (vertexSet_subset_of_le hle hx), ?_⟩
+  refine ⟨_, induce_setOf_vertexConnected_isComponent (vertexSet_mono hle hx), ?_⟩
   exact le_induce_of_le_of_subset hle fun y hy ↦ (hH.vertexConnected hx hy).of_le hle
 
 lemma exists_isComponent_vertex_mem (hx : x ∈ V(G)) :
@@ -651,10 +651,10 @@ lemma isComponent_self_iff : G.IsComponent G ↔ G.Connected :=
 --   · simp +contextual [IsComponent.le]
 --   · refine subset_antisymm (fun x hxV ↦ ?_) ?_
 --     · simpa using exists_isComponent_vertex_mem hxV
---     simpa using fun _ h ↦ (vertexSet_subset_of_le h.le)
+--     simpa using fun _ h ↦ (vertexSet_mono h.le)
 --   refine subset_antisymm (fun e he ↦ ?_) ?_
 --   · simpa using exists_isComponent_edge_mem he
---   simpa using fun _ h ↦ (edgeSet_subset_of_le h.le)
+--   simpa using fun _ h ↦ (edgeSet_mono h.le)
 
 lemma eq_sUnion_components (G : Graph α β) :
     G = Graph.sUnion {C | C.IsComponent G} (G.pairwiseDisjoint_components.mono' (by simp)) := by
@@ -662,10 +662,10 @@ lemma eq_sUnion_components (G : Graph α β) :
   · simp +contextual [IsComponent.le]
   · refine subset_antisymm (fun v hv ↦ ?_) ?_
     · simpa using exists_isComponent_vertex_mem hv
-    simpa using fun _ h ↦ (vertexSet_subset_of_le h.le)
+    simpa using fun _ h ↦ (vertexSet_mono h.le)
   refine subset_antisymm (fun e he ↦ ?_) ?_
   · simpa using exists_isComponent_edge_mem he
-  simpa using fun _ h ↦ (edgeSet_subset_of_le h.le)
+  simpa using fun _ h ↦ (edgeSet_mono h.le)
 
 lemma IsComponent.isLink_of_isLink_of_mem (h : H.IsComponent G) (hx : x ∈ V(H))
     (hxy : G.IsLink e x y) : H.IsLink e x y := by
@@ -692,9 +692,9 @@ def IsComponent.separation_of_ne (h : H.IsComponent G) (hne : H ≠ G) : G.Separ
   right := V(G) \ V(H)
   nonempty_left := h.connected.nonempty
   nonempty_right := diff_nonempty.2 fun hss ↦ hne <|
-    h.isInducedSubgraph.eq_of_isSpanningSubgraph ⟨h.le, hss.antisymm' (vertexSet_subset_of_le h.le)⟩
+    h.isInducedSubgraph.eq_of_isSpanningSubgraph ⟨h.le, hss.antisymm' (vertexSet_mono h.le)⟩
   disjoint := disjoint_sdiff_right
-  union_eq := by simp [vertexSet_subset_of_le h.le]
+  union_eq := by simp [vertexSet_mono h.le]
   not_adj x y hx hy hxy := hy.2 <| (h.adj_of_adj_of_mem hx hxy).right_mem
 
 /-- If `H` is a connected subgraph of a disconnected graph `G`,
@@ -707,6 +707,35 @@ lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected)
     exact hG hH'H.connected
   simp only [IsComponent.separation_of_ne_left]
   exact hle'.trans <| le_induce_self hH'H.le
+
+-- lemma Connected.foo [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G) (hne : V(H).Nonempty)
+--     (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H = G := by
+
+--   refine hle.antisymm ⟨fun v hv ↦ by_contra fun hv' ↦ ?_, fun e x y hexy ↦ ?_⟩
+--   · obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v})
+--       (by rwa [inter_eq_self_of_subset_left (vertexSet_mono hle)]) (by simpa)
+--     have hfirst := hP.first_mem
+--     cases P with
+--     | nil => simp_all
+--     | cons u e P =>
+--     · have hPfirst : P.first ∉ V(H) :=
+--         hP.not_mem_left_of_dInc (e := e) (x := u) (y := P.first) (by simp)
+--       obtain ⟨-, heP : G.IsLink e u P.first, -⟩ := by simpa using hP.isPath
+--       have heH : e ∉ E(H) := fun he ↦ hPfirst (heP.of_le_of_mem hle he).right_mem
+--       have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
+--       have hle'' := (hdeg u hfirst).trans (degree_mono hle' u)
+--       exact heP.inc_left.degree_delete_lt.not_le hle''
+--   refine hexy.of_le_of_mem hle <| by_contra fun heH ↦ ?_
+--   have := hexy.inc_left.degree_delete_lt
+
+
+
+
+
+
+-- lemma isComponent_of_le_of_degree [G.LocallyFinite] (hle : H ≤ G) (hH : H.Connected)
+--     (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H.IsComponent G := by
+--   sorry
 
 /-! ### Staying Connected -/
 
@@ -757,7 +786,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
     have hP'' : (G - {u}).IsPath P := by simp [isPath_vertexDelete_iff, huP, hP']
     obtain ⟨S, hS⟩ :=
       hP''.isWalk.toGraph_connected.exists_separation_of_le hcon hP''.isWalk.toGraph_le
-    have hPS : V(P) ⊆ S.left := by simpa using vertexSet_subset_of_le hS
+    have hPS : V(P) ⊆ S.left := by simpa using vertexSet_mono hS
     have huleft : u ∉ S.left := fun huS ↦ by simpa using S.left_subset huS
     have huright : u ∉ S.right := fun huS ↦ by simpa using S.right_subset huS
     suffices hu : ∀ x ∈ S.right, ¬ G.Adj u x by

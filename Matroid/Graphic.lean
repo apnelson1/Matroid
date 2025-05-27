@@ -45,7 +45,7 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
       exact C.edgeSet_finite )
     (by
       rintro _ ⟨C, hC, rfl⟩
-      simpa using edgeSet_subset_of_le hC.isWalk.toGraph_le )
+      simpa using edgeSet_mono hC.isWalk.toGraph_le )
 
 @[simp]
 lemma cycleMatroid_isCircuit : G.cycleMatroid.IsCircuit = G.IsCycleSet := by

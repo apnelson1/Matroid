@@ -175,9 +175,9 @@ lemma Bipartite.of_le (hG : G.Bipartite) (hle : H ≤ G) : H.Bipartite := by
   obtain ⟨B⟩ := hG
   refine ⟨⟨B.left ∩ V(H), B.right ∩ V(H), ?_, ?_, fun e he ↦ ?_⟩⟩
   · rw [← union_inter_distrib_right, B.union_eq,
-      inter_eq_self_of_subset_right (vertexSet_subset_of_le hle)]
+      inter_eq_self_of_subset_right (vertexSet_mono hle)]
   · exact B.disjoint.mono inter_subset_left inter_subset_left
-  obtain ⟨x, hx, y, hy, hxy⟩ := B.forall_edge e (edgeSet_subset_of_le hle he)
+  obtain ⟨x, hx, y, hy, hxy⟩ := B.forall_edge e (edgeSet_mono hle he)
   replace hxy := hxy.of_le_of_mem hle he
   exact ⟨x, ⟨hx, hxy.left_mem⟩, y, ⟨hy, hxy.right_mem⟩, hxy⟩
 

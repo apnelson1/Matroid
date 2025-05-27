@@ -31,8 +31,8 @@ protected class Finite (G : Graph α β) : Prop where
   edgeSet_finite : E(G).Finite
 
 lemma Finite.mono (hG : G.Finite) (hHG : H ≤ G) : H.Finite where
-  vertexSet_finite := hG.vertexSet_finite.subset <| vertexSet_subset_of_le hHG
-  edgeSet_finite := hG.edgeSet_finite.subset <| edgeSet_subset_of_le hHG
+  vertexSet_finite := hG.vertexSet_finite.subset <| vertexSet_mono hHG
+  edgeSet_finite := hG.edgeSet_finite.subset <| edgeSet_mono hHG
 
 lemma finite_of_le [G.Finite] (hHG : H ≤ G) : H.Finite :=
   ‹G.Finite›.mono hHG
@@ -84,7 +84,7 @@ lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
     fun H₁ h₁ H₂ h₂ h_eq ↦ ?_
   · refine (G.vertexSet_finite.finite_subsets.prod G.edgeSet_finite.finite_subsets).subset ?_
     rintro _ ⟨H, hle : H ≤ G, rfl⟩
-    simp [vertexSet_subset_of_le hle, edgeSet_subset_of_le hle]
+    simp [vertexSet_mono hle, edgeSet_mono hle]
   simp only [Prod.mk.injEq] at h_eq
   exact G.ext_of_le_le h₁ h₂ h_eq.1 h_eq.2
 
@@ -114,12 +114,12 @@ lemma encard_delete_edge_lt {G : Graph α β} [G.Finite] (he : e ∈ E(G)) :
 protected class LocallyFinite (G : Graph α β) where
   finite : ∀ x, {e | G.Inc e x}.Finite
 
-lemma finite_setOf_inc (G : Graph α β) [G.LocallyFinite] (x : α) : {e | G.Inc e x}.Finite :=
+lemma finite_setOf_inc (G : Graph α β) [G.LocallyFinite] : {e | G.Inc e x}.Finite :=
   LocallyFinite.finite x
 
-lemma finite_setOf_adj (G : Graph α β) [G.LocallyFinite] (x : α) : {y | G.Adj x y}.Finite := by
+lemma finite_setOf_adj (G : Graph α β) [G.LocallyFinite] : {y | G.Adj x y}.Finite := by
   change Finite {y // G.Adj x y}
-  have : Finite {e // G.Inc e x} := G.finite_setOf_inc x
+  have : Finite {e // G.Inc e x} := G.finite_setOf_inc
   refine Finite.of_injective (β := {e // G.Inc e x})
     (fun y ↦ ⟨y.2.choose, y.2.choose_spec.inc_left⟩) fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
   simp only [Subtype.mk.injEq]
@@ -128,14 +128,20 @@ lemma finite_setOf_adj (G : Graph α β) [G.LocallyFinite] (x : α) : {y | G.Adj
   rw [h]
   exact h₂.choose_spec
 
+lemma finite_setOf_isNonloopAt (G : Graph α β) [G.LocallyFinite] :
+  {e | G.IsNonloopAt e x}.Finite := G.finite_setOf_inc.subset fun _ he ↦ he.inc
+
+lemma finite_setOf_isLoopAt (G : Graph α β) [G.LocallyFinite] :
+  {e | G.IsLoopAt e x}.Finite := G.finite_setOf_inc.subset fun _ he ↦ he.inc
+
 instance [Finite β] (G : Graph α β) : G.LocallyFinite where
   finite _ := toFinite ..
 
 lemma LocallyFinite.mono (hG : G.LocallyFinite) (hle : H ≤ G) : H.LocallyFinite where
-  finite x := (G.finite_setOf_inc x).subset fun _ he ↦ he.of_le hle
+  finite _ := G.finite_setOf_inc.subset fun _ he ↦ he.of_le hle
 
 instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
-  finite x := (G.finite_setOf_inc x).subset fun _ ⟨_, he⟩ ↦ (induce_isLink_iff.1 he).1.inc_left
+  finite _ := G.finite_setOf_inc.subset fun _ ⟨_, he⟩ ↦ (induce_isLink_iff.1 he).1.inc_left
 
 instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
   ‹G.LocallyFinite›.mono vertexDelete_le
@@ -151,7 +157,7 @@ instance [G.Finite] : G.LocallyFinite where
 
 instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
   finite x := by
-    refine ((G.finite_setOf_inc x).union (H.finite_setOf_inc x)).subset ?_
+    refine ((G.finite_setOf_inc (x := x)).union (H.finite_setOf_inc (x := x))).subset ?_
     simp_rw [union_inc_iff, subset_def]
     aesop
 
