@@ -236,6 +236,9 @@ lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (
   simp only [cons_isPath_iff] at hP
   exact ⟨e, P.first, hP.2.1, mt (by simp +contextual [eq_comm]) hP.2.2⟩
 
+lemma Isolated.not_connected (hx : G.Isolated x) (hnt : V(G).Nontrivial) : ¬ G.Connected :=
+  fun h ↦ by simpa [hx.not_isLink] using h.exists_isLink_of_mem hnt hx.mem
+
 lemma Connected.of_isSpanningSubgraph (h : H ≤s G) (hH : H.Connected) : G.Connected :=
   ⟨h.vertexSet_eq ▸ hH.nonempty,
     fun _ _ hx hy ↦ (hH.vertexConnected (h.vertexSet_eq ▸ hx) (h.vertexSet_eq ▸ hy)).of_le h.le ⟩
@@ -708,10 +711,15 @@ lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected)
   simp only [IsComponent.separation_of_ne_left]
   exact hle'.trans <| le_induce_self hH'H.le
 
--- lemma Connected.foo [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G) (hne : V(H).Nonempty)
---     (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H = G := by
+-- lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
+--     (hne : V(H).Nonempty) (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H = G := by
+--   refine eq_of_le_of_edgeSet_subset_of_isolated hle (fun e he ↦ by_contra fun heH ↦ ?_)
+--     fun x hx ↦ ?_
+--   · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he
+--     have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
+--     sorry
+--   sorry
 
---   refine hle.antisymm ⟨fun v hv ↦ by_contra fun hv' ↦ ?_, fun e x y hexy ↦ ?_⟩
 --   · obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v})
 --       (by rwa [inter_eq_self_of_subset_left (vertexSet_mono hle)]) (by simpa)
 --     have hfirst := hP.first_mem

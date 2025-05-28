@@ -322,6 +322,42 @@ lemma MinDegreePos.finite_of_edgeSet_finite (hG : G.MinDegreePos) (hE : E(G).Fin
 lemma MinDegreePos.edgeSet_finite_iff (hG : G.MinDegreePos) : E(G).Finite ↔ G.Finite :=
   ⟨hG.finite_of_edgeSet_finite, fun h ↦ h.edgeSet_finite⟩
 
+/-! ### Isolated vertices -/
+
+/-- An `Isolated` vertex is one that is incident with no edge. -/
+@[mk_iff]
+structure Isolated (G : Graph α β) (x : α) : Prop where
+  not_inc : ∀ ⦃e⦄, ¬ G.Inc e x
+  mem : x ∈ V(G)
+
+lemma Isolated.eDegree (h : G.Isolated x) : G.eDegree x = 0 := by
+  simp [eDegree_eq_tsum_mem, h.not_inc]
+
+lemma isolated_iff_eDegree (hx : x ∈ V(G)) : G.Isolated x ↔ G.eDegree x = 0 := by
+  simp [isolated_iff, hx, eDegree_eq_tsum_mem]
+
+lemma Isolated.degree (h : G.Isolated x) : G.degree x = 0 := by
+  rw [Graph.degree, h.eDegree, ENat.toNat_zero]
+
+lemma isolated_iff_degree [G.LocallyFinite] (hx : x ∈ V(G)) : G.Isolated x ↔ G.degree x = 0 := by
+  rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, isolated_iff_eDegree hx, Nat.cast_zero]
+
+lemma Isolated.not_adj (h : G.Isolated x) : ¬ G.Adj x y :=
+  fun ⟨_, he⟩ ↦ h.not_inc he.inc_left
+
+lemma Isolated.not_isLink (h : G.Isolated x) : ¬ G.IsLink e x y :=
+  fun he ↦ h.not_inc he.inc_left
+
+lemma isolated_or_exists_isLink (hx : x ∈ V(G)) : G.Isolated x ∨ ∃ e y, G.IsLink e x y := by
+  simp [isolated_iff, Inc, ← not_exists, hx, em']
+
+/-- If `H` is a subgraph of `G` containing all edges and isolated vertices of `G`, then `H = G`-/
+lemma eq_of_le_of_edgeSet_subset_of_isolated (hle : H ≤ G) (hE : E(G) ⊆ E(H))
+    (hV : ∀ ⦃v⦄, G.Isolated v → v ∈ V(H)) : H = G := by
+  refine ext_of_le_le hle le_rfl ((vertexSet_mono hle).antisymm ?_) ((edgeSet_mono hle).antisymm hE)
+  exact fun v hv ↦ (isolated_or_exists_isLink hv).elim (fun h ↦ hV h)
+    fun ⟨e, y, h⟩ ↦ (h.of_le_of_mem hle  (hE h.edge_mem)).left_mem
+
 /-! ### Leaves -/
 
 /-- `G.IsPendant e x` means that `e` is a nonloop edge at `x`, and is also the only edge at `x`. -/
