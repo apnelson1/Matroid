@@ -1,6 +1,7 @@
 import Matroid.Graph.Subgraph
 import Matroid.Graph.Finite
-import Matroid.Graph.Degree
+import Matroid.Graph.Degree.Min
+import Matroid.Graph.Degree.Constructions
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.ENat.Lattice
 import Mathlib.Data.Real.Basic
@@ -231,9 +232,6 @@ lemma Connected.exists_vertexConnected_deleteEdge_set_set (hG : G.Connected)
 then there is an edge of `G` that is not in `H` but has an end in `H`. -/
 lemma Connected.exists_inc_not_mem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
     ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
-
-  obtain ⟨v, hv⟩ := hne
-  -- obtain ⟨hV, hE⟩ := hlt.le
   obtain hV | hssu := (vertexSet_mono hlt.le).eq_or_ssubset
   · obtain hE | hssu' := (edgeSet_mono hlt.le).eq_or_ssubset
     · simp [ext_of_le_le hlt.le le_rfl hV hE] at hlt
@@ -241,20 +239,14 @@ lemma Connected.exists_inc_not_mem_of_lt (hG : G.Connected) (hlt : H < G) (hne :
     obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
     exact ⟨e, x, hxy.inc_left, heH, hV ▸ hxy.left_mem⟩
   obtain ⟨v, hvH, hvG⟩ := exists_of_ssubset hssu
-
-  obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v}) sorry sorry
---       (by rwa [inter_eq_self_of_subset_left (vertexSet_mono hle)]) (by simpa)
---     have hfirst := hP.first_mem
---     cases P with
---     | nil => simp_all
---     | cons u e P =>
---     · have hPfirst : P.first ∉ V(H) :=
---         hP.not_mem_left_of_dInc (e := e) (x := u) (y := P.first) (by simp)
---       obtain ⟨-, heP : G.IsLink e u P.first, -⟩ := by simpa using hP.isPath
---       have heH : e ∉ E(H) := fun he ↦ hPfirst (heP.of_le_of_mem hle he).right_mem
---       have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
---       have hle'' := (hdeg u hfirst).trans (degree_mono hle' u)
---       exact heP.inc_left.degree_delete_lt.not_le hle''
+  obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v})
+    (by rwa [inter_eq_self_of_subset_left hssu.subset]) (by simpa)
+  obtain (⟨u⟩ | ⟨u, e, P⟩) := P
+  · obtain ⟨-, huG, rfl⟩ := by simpa using hP
+    contradiction
+  rw [isPathFrom_cons_subgraph hlt.le] at hP
+  obtain ⟨huH, hne : u ≠ v, heuP, heH, hHP, hP⟩ := hP
+  exact ⟨e, u, heuP.inc_left, heH, huH⟩
 
 lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
     ∃ e y, G.IsLink e x y ∧ y ≠ x := by
@@ -632,6 +624,9 @@ lemma induce_setOf_vertexConnected_isComponent (hx : x ∈ V(G)) :
   refine le_induce_of_le_of_subset hH'le fun z hz ↦ ?_
   exact (hc.vertexConnected (x := x) (vertexSet_mono hle (by simpa)) hz).of_le hH'le
 
+lemma exists_isComponent (hG : V(G).Nonempty) : ∃ (H : Graph α β), H.IsComponent G :=
+  ⟨_, induce_setOf_vertexConnected_isComponent hG.choose_spec⟩
+
 /-- Every connected subgraph of `G` is a subgraph of a component of `G`. -/
 lemma Connected.exists_component_ge (hH : H.Connected) (hle : H ≤ G) :
     ∃ G₁, G₁.IsComponent G ∧ H ≤ G₁ := by
@@ -740,39 +735,14 @@ lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected)
   simp only [IsComponent.separation_of_ne_left]
   exact hle'.trans <| le_induce_self hH'H.le
 
--- lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
---     (hne : V(H).Nonempty) (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H = G := by
---   refine eq_of_le_of_edgeSet_subset_of_isolated hle (fun e he ↦ by_contra fun heH ↦ ?_)
---     fun x hx ↦ ?_
---   · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he
---     have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
---     sorry
---   sorry
-
---   · obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v})
---       (by rwa [inter_eq_self_of_subset_left (vertexSet_mono hle)]) (by simpa)
---     have hfirst := hP.first_mem
---     cases P with
---     | nil => simp_all
---     | cons u e P =>
---     · have hPfirst : P.first ∉ V(H) :=
---         hP.not_mem_left_of_dInc (e := e) (x := u) (y := P.first) (by simp)
---       obtain ⟨-, heP : G.IsLink e u P.first, -⟩ := by simpa using hP.isPath
---       have heH : e ∉ E(H) := fun he ↦ hPfirst (heP.of_le_of_mem hle he).right_mem
---       have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
---       have hle'' := (hdeg u hfirst).trans (degree_mono hle' u)
---       exact heP.inc_left.degree_delete_lt.not_le hle''
---   refine hexy.of_le_of_mem hle <| by_contra fun heH ↦ ?_
---   have := hexy.inc_left.degree_delete_lt
-
-
-
-
-
-
--- lemma isComponent_of_le_of_degree [G.LocallyFinite] (hle : H ≤ G) (hH : H.Connected)
---     (hdeg : ∀ x ∈ V(H), G.degree x ≤ H.degree x) : H.IsComponent G := by
---   sorry
+/-- If `H` is a nonempty subgraph of a connected graph `G`, and each vertex degree in `H`
+is at least the corresponding degree in `G`, then `H = G`. -/
+lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
+    (hne : V(H).Nonempty) (hdeg : ∀ ⦃x⦄, x ∈ V(H) → G.degree x ≤ H.degree x) : H = G := by
+  refine hle.eq_of_not_lt fun hlt ↦ ?_
+  obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_not_mem_of_lt hlt hne
+  have hle : H ≤ G ＼ {e} := by simp [heH, hle]
+  exact hex.degree_delete_lt.not_le <| (hdeg hxH).trans (degree_mono hle x)
 
 /-! ### Staying Connected -/
 

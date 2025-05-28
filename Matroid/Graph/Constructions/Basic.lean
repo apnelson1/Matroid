@@ -54,6 +54,22 @@ lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ∅ β
 lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ V ⊆ V(G) := by
   simp [le_iff]
 
+@[simp]
+lemma noEdge_not_inc {V : Set α} : ¬ (Graph.noEdge V β).Inc e x := by
+  simp [Inc]
+
+@[simp]
+lemma noEdge_not_isLoopAt {V : Set α} : ¬ (Graph.noEdge V β).IsLoopAt e x := by
+  simp [← isLink_self_iff]
+
+@[simp]
+lemma noEdge_not_isNonloopAt {V : Set α} : ¬ (Graph.noEdge V β).IsNonloopAt e x := by
+  simp [IsNonloopAt]
+
+@[simp]
+lemma noEdge_not_adj {V : Set α} : ¬ (Graph.noEdge V β).Adj x y := by
+  simp [Adj]
+
 lemma edgeDelete_eq_noEdge (G : Graph α β) (hF : E(G) ⊆ F) : G ＼ F = Graph.noEdge V(G) β := by
   refine Graph.ext rfl fun e x y ↦ ?_
   simp only [edgeDelete_isLink, noEdge_isLink, iff_false, not_and, not_not]
@@ -147,6 +163,14 @@ lemma union_inc_iff : (G ∪ H).Inc e x ↔ G.Inc e x ∨ (e ∉ E(G) ∧ H.Inc 
   simp_rw [Inc, union_isLink_iff]
   aesop
 
+lemma union_isLoopAt_iff : (G ∪ H).IsLoopAt e x ↔ G.IsLoopAt e x ∨ (e ∉ E(G) ∧ H.IsLoopAt e x) := by
+  simp_rw [← isLink_self_iff, union_isLink_iff]
+
+lemma union_isNonloopAt_iff :
+    (G ∪ H).IsNonloopAt e x ↔ G.IsNonloopAt e x ∨ (e ∉ E(G) ∧ H.IsNonloopAt e x) := by
+  simp_rw [IsNonloopAt, union_isLink_iff]
+  aesop
+
 lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
   suffices ∀ ⦃e : β⦄ ⦃x y : α⦄, H₁.IsLink e x y ∨ e ∉ E(H₁) ∧ H₂.IsLink e x y → G.IsLink e x y by
     simpa [le_iff, vertexSet_mono h₁, vertexSet_mono h₂, union_isLink_iff]
@@ -203,6 +227,22 @@ lemma singleEdge_compatible_iff :
   rw [(h hfE).isLink_iff, Graph.singleEdge_isLink_iff, and_iff_right rfl, Sym2.eq_iff]
   tauto
 
+lemma Compatible.union_inc_iff (h : G.Compatible H) : (G ∪ H).Inc e x ↔ G.Inc e x ∨ H.Inc e x := by
+  simp_rw [Inc, h.union_isLink_iff]
+  aesop
+
+lemma Compatible.union_isLoopAt_iff (h : G.Compatible H) :
+    (G ∪ H).IsLoopAt e x ↔ G.IsLoopAt e x ∨ H.IsLoopAt e x := by
+  simp_rw [← isLink_self_iff, h.union_isLink_iff]
+
+lemma Compatible.union_isNonloopAt_iff (h : G.Compatible H) :
+    (G ∪ H).IsNonloopAt e x ↔ G.IsNonloopAt e x ∨ H.IsNonloopAt e x := by
+  simp_rw [IsNonloopAt, h.union_isLink_iff]
+  aesop
+
+lemma Compatible.union_adj_iff (h : G.Compatible H) : (G ∪ H).Adj x y ↔ G.Adj x y ∨ H.Adj x y := by
+  simp [Adj, h.union_isLink_iff, exists_or]
+
 lemma Compatible.union_comm (h : Compatible G H) : G ∪ H = H ∪ G :=
   Graph.ext (Set.union_comm ..)
     fun _ _ _ ↦ by rw [h.union_isLink_iff, h.symm.union_isLink_iff, or_comm]
@@ -217,6 +257,10 @@ lemma Compatible.union_le_iff {H₁ H₂ : Graph α β} (h_compat : H₁.Compati
 
 lemma Compatible.of_disjoint_edgeSet (h : Disjoint E(G) E(H)) : Compatible G H :=
   fun _ heG heH ↦ False.elim <| h.not_mem_of_mem_left heG heH
+
+@[simp]
+lemma compatible_edgeDelete_right : G.Compatible (H ＼ E(G)) :=
+  Compatible.of_disjoint_edgeSet disjoint_sdiff_right
 
 lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H ＼ E(G)) :=
   Graph.ext rfl fun e x y ↦ by rw [union_isLink_iff,

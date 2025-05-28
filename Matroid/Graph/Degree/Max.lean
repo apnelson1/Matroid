@@ -1,4 +1,4 @@
-import Matroid.Graph.Simple
+import Matroid.Graph.Degree.Leaf
 import Matroid.Graph.Connected
 import Matroid.Graph.Small
 
@@ -8,6 +8,7 @@ variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F�
 open Set WList
 
 namespace Graph
+
 
 
 /-! ### Maximum degree -/
@@ -80,10 +81,6 @@ lemma MaxDegreeLE.eq_path_aux {G : Graph α β} {v : α} [G.Finite] (hG : G.MaxD
     obtain ⟨z, w, hzw⟩ := exists_isLink_of_mem_edgeSet h
     obtain rfl | hne := eq_or_ne z v
     · exact hzw.inc_left
-
-
-
-
 
 lemma Connected.isPathGraph_of_degree {G : Graph α β} {v : α} [G.Finite] (hG : G.Connected)
     (hvG : v ∈ V(G)) (hv : G.degree v ≤ 1) (hdeg : ∀ x ∈ V(G), G.degree x ≤ 2) : G.IsPathGraph := by

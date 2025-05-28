@@ -207,6 +207,19 @@ lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e 
     have hw : w.Nonempty := hnt.tail_nonempty
     simpa [show u = w.last from hC.isClosed, hw.lastEdge_cons] using hw.concat_dropLast.symm
 
+/-- An alternative version of `IsCycle.exists_isPath` where the tail and the head
+of the cycle are explictly given as paths. -/
+lemma IsCycle.exists_isPath' (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e f,
+    G.IsPath (cons u e P) ∧ G.IsPath (P.concat f u) ∧ e ≠ f ∧ C = cons u e (P.concat f u) := by
+  obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
+  use P, u, e, f
+  have ht := hC.tail_isPath
+  simp only [tail_cons, concat_isPath_iff] at ht
+  have ht' := hC.reverse.tail_isPath
+  simp only [reverse_cons, concat_reverse, cons_concat, tail_cons, concat_isPath_iff,
+    reverse_isPath_iff, reverse_last, mem_reverse] at ht'
+  simp [cons_isPath_iff, hP, huP, ht'.2.1.symm, ht.2.1, hef]
+
 lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
     (∃ x e, C = cons x e (nil x)) ∨ C.Nontrivial := by
   cases hC.nonempty with
@@ -222,6 +235,11 @@ lemma IsCycle.toGraph_vertexDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivi
     concat_first, isLink_concat_iff, tail_cons, dropLast_concat,
     hP.isWalk.wellFormed.toGraph_isLink]
   aesop
+
+lemma IsCycle.vertexSet_nontrivial (hC : G.IsCycle C) (hnt : C.Nontrivial) : V(C).Nontrivial := by
+  obtain ⟨P, u, -, -, -, huP, -, -, -, rfl⟩ := hC.exists_isPath hnt
+  refine Set.nontrivial_of_exists_ne (x := u) (by simp) ⟨P.first, ?_⟩
+  simp [show P.first ≠ u by rintro rfl; simp at huP]
 
 /-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
 lemma IsCycle.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCycle C) (hnt : C.Nontrivial)

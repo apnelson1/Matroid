@@ -144,6 +144,11 @@ lemma IsPath.reverse (hp : G.IsPath P) : G.IsPath P.reverse where
 lemma reverse_isPath_iff : G.IsPath (reverse P) ↔ G.IsPath P :=
   ⟨fun h ↦ by simpa using h.reverse, IsPath.reverse⟩
 
+@[simp]
+lemma concat_isPath_iff : G.IsPath (P.concat e x) ↔ G.IsPath P ∧ G.IsLink e P.last x ∧ x ∉ P := by
+  rw [← reverse_isPath_iff, concat_reverse, cons_isPath_iff]
+  simp +contextual [iff_def, IsLink.symm]
+
 lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
   ⟨h.dedup, P.dedup_vertex_nodup⟩
 
@@ -234,7 +239,16 @@ lemma IsPath.eq_firstEdge_of_isLink_first (hP : G.IsPath P) (heP : e ∈ P.edge)
   rw [← hP.isWalk.isLink_iff_isLink_of_mem heP] at hex
   exact hex.eq_firstEdge_of_isLink_first hP.nodup
 
+lemma IsPath.vertexSet_nontrivial_iff (hP : G.IsPath P) : V(P).Nontrivial ↔ P.Nonempty := by
+  obtain u | ⟨u, e, P⟩ := P
+  · simp
+  simp only [cons_vertexSet, cons_nonempty, iff_true]
+  simp only [cons_isPath_iff] at hP
+  exact nontrivial_of_exists_ne (mem_insert ..) ⟨P.first, by simp, fun h ↦ hP.2.2 (by simp [← h])⟩
+
+
 /-! ### Fixed ends. (To be cleaned up) -/
+
 
 @[mk_iff]
 structure IsTrailFrom (G : Graph α β) (S T : Set α) (W : WList α β) : Prop extends
@@ -309,6 +323,15 @@ lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
   · simp only [mem_cons_iff, first_cons, forall_eq_or_imp, implies_true, true_and]
     exact fun a haP haS ↦ (hdj.not_mem_of_mem_left haS haP).elim
   simpa [hxT] using h.eq_last_of_mem
+
+/-- A version of `isPathFrom_cons` where the source set is a subgraph `H`,
+and we get the additional condition that the first edge is not an edge of `H`. -/
+lemma isPathFrom_cons_subgraph (hle : H ≤ G) : G.IsPathFrom V(H) T (cons x e P) ↔
+    x ∈ V(H) ∧ x ∉ T ∧ G.IsLink e x P.first ∧ e ∉ E(H) ∧ Disjoint V(H) V(P) ∧
+      G.IsPathFrom {P.first} T P := by
+  simp only [and_congr_right_iff, iff_and_self, and_imp, isPathFrom_cons]
+  exact fun _ _ he hdj _ heH ↦ hdj.not_mem_of_mem_right (a := P.first) (by simp)
+    ((he.of_le_of_mem hle heH).right_mem)
 
 lemma IsPathFrom.not_mem_left_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : y ∉ S :=
   fun hyS ↦ hP.ne_first h.nodup (h.eq_first_of_mem hP.right_mem hyS)

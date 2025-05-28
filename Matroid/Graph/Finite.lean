@@ -1,5 +1,5 @@
 import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Constructions
+import Matroid.Graph.Constructions.Basic
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
 import Mathlib.Data.Set.Card
@@ -96,6 +96,10 @@ instance : (Graph.singleEdge x y e).Finite where
   vertexSet_finite := by simp
   edgeSet_finite := by simp
 
+instance (W : WList α β) : W.toGraph.Finite where
+  vertexSet_finite := by simp
+  edgeSet_finite := by simp
+
 /-- Used for well-founded induction on finite graphs by number of vertices -/
 lemma encard_delete_vertex_lt {G : Graph α β} [G.Finite] (hx : x ∈ V(G)) :
     V(G - {x}).encard < V(G).encard := by
@@ -160,6 +164,10 @@ instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
     refine ((G.finite_setOf_inc (x := x)).union (H.finite_setOf_inc (x := x))).subset ?_
     simp_rw [union_inc_iff, subset_def]
     aesop
+
+instance (V : Set α) : (Graph.noEdge V β).LocallyFinite where
+  finite := by simp
+
 
 end Graph
 
