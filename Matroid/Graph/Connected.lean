@@ -227,6 +227,35 @@ lemma Connected.exists_vertexConnected_deleteEdge_set_set (hG : G.Connected)
     hxy'.mem_induce_iff, and_iff_right hxy'.edge_mem]
   simp [hP.not_mem_left_of_dInc hxy, hP.not_mem_right_of_dInc hxy]
 
+/-- If `H` is a nonempty proper subgraph of a connected graph `G`,
+then there is an edge of `G` that is not in `H` but has an end in `H`. -/
+lemma Connected.exists_inc_not_mem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
+    ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
+
+  obtain ⟨v, hv⟩ := hne
+  -- obtain ⟨hV, hE⟩ := hlt.le
+  obtain hV | hssu := (vertexSet_mono hlt.le).eq_or_ssubset
+  · obtain hE | hssu' := (edgeSet_mono hlt.le).eq_or_ssubset
+    · simp [ext_of_le_le hlt.le le_rfl hV hE] at hlt
+    obtain ⟨e, he, heH⟩ := exists_of_ssubset hssu'
+    obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
+    exact ⟨e, x, hxy.inc_left, heH, hV ▸ hxy.left_mem⟩
+  obtain ⟨v, hvH, hvG⟩ := exists_of_ssubset hssu
+
+  obtain ⟨P, hP⟩ := hG.exists_isPathFrom (S := V(H)) (T := {v}) sorry sorry
+--       (by rwa [inter_eq_self_of_subset_left (vertexSet_mono hle)]) (by simpa)
+--     have hfirst := hP.first_mem
+--     cases P with
+--     | nil => simp_all
+--     | cons u e P =>
+--     · have hPfirst : P.first ∉ V(H) :=
+--         hP.not_mem_left_of_dInc (e := e) (x := u) (y := P.first) (by simp)
+--       obtain ⟨-, heP : G.IsLink e u P.first, -⟩ := by simpa using hP.isPath
+--       have heH : e ∉ E(H) := fun he ↦ hPfirst (heP.of_le_of_mem hle he).right_mem
+--       have hle' : H ≤ G ＼ {e} := by simp [hle, heH]
+--       have hle'' := (hdeg u hfirst).trans (degree_mono hle' u)
+--       exact heP.inc_left.degree_delete_lt.not_le hle''
+
 lemma Connected.exists_isLink_of_mem (hG : G.Connected) (hV : V(G).Nontrivial) (hx : x ∈ V(G)) :
     ∃ e y, G.IsLink e x y ∧ y ≠ x := by
   obtain ⟨z, hz, hne⟩ := hV.exists_ne x
