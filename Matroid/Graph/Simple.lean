@@ -95,7 +95,8 @@ lemma finite_of_vertexSet_finite (h : V(G).Finite) : G.Finite where
     change Finite _ at *
     exact Finite.of_injective _ G.ends_injective
 
-lemma vertexSet_finite_iff : V(G).Finite ↔ G.Finite :=
+@[simp]
+lemma Simple.vertexSet_finite_iff : V(G).Finite ↔ G.Finite :=
   ⟨finite_of_vertexSet_finite, fun _ ↦ Finite.vertexSet_finite⟩
 
 omit [G.Simple] in

@@ -69,8 +69,8 @@ lemma IsTree.encard_vertexSet {T : Graph α β} (h : T.IsTree) : V(T).encard = E
   · simp
   obtain hinf | hfin := em' T.Finite
   · rw [encard_eq_top_iff.2, encard_eq_top_iff.2, top_add]
-    · rwa [Set.Infinite, (h.connected.minDegreePos hnt).edgeSet_finite_iff]
-    rwa [Set.Infinite, vertexSet_finite_iff]
+    · rwa [Set.Infinite, (h.connected.degreePos hnt).edgeSet_finite_iff]
+    simpa [Set.Infinite]
   obtain ⟨e, x, he⟩ := h.isForest.exists_isPendant (h.connected.edgeSet_nonempty hnt)
   have hxV := he.isNonloopAt.vertex_mem
   have hlt := encard_delete_vertex_lt hxV

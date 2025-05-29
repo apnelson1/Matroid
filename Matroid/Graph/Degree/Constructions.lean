@@ -1,3 +1,4 @@
+import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
@@ -45,6 +46,11 @@ lemma singleEdge_degree_right (hxy : x ≠ y) (e : β) :
 lemma singleEdge_degree_of_ne (e : β) (hx : z ≠ x) (hy : z ≠ y) :
     (Graph.singleEdge x y e).degree z = 0 := by
   simp [degree, singleEdge_eDegree_of_ne _ hx hy]
+
+lemma singleEdge_regular (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Regular 1 := by
+  rintro z (rfl | rfl)
+  · rw [singleEdge_eDegree_left hxy, Nat.cast_one]
+  rw [singleEdge_eDegree_right hxy, Nat.cast_one]
 
 @[simp]
 lemma singleEdge_self_eDegree (x : α) (e : β) : (Graph.singleEdge x x e).eDegree x = 2 := by
@@ -184,8 +190,8 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
 /-! ### Cycles -/
 
 /-- Cycles are two-regular. -/
-lemma IsCycle.degree_toGraph_eq_two (hC : G.IsCycle C) (hvC : v ∈ C) :
-    C.toGraph.degree v = 2 := by
+lemma IsCycle.toGraph_regular (hC : G.IsCycle C) : C.toGraph.Regular 2 := by
+  refine regular_iff.2 fun v hvC ↦ ?_
   obtain ⟨x, e, rfl⟩ | hCnt := hC.loop_or_nontrivial
   · rw [toGraph_cons, union_degree_eq (by simp), show v = x by simpa using hvC]
     simp

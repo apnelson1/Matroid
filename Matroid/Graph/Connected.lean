@@ -1,6 +1,6 @@
 import Matroid.Graph.Subgraph
 import Matroid.Graph.Finite
-import Matroid.Graph.Degree.Min
+import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Constructions
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.ENat.Lattice
@@ -264,7 +264,7 @@ lemma Connected.of_isSpanningSubgraph (h : H ≤s G) (hH : H.Connected) : G.Conn
   ⟨h.vertexSet_eq ▸ hH.nonempty,
     fun _ _ hx hy ↦ (hH.vertexConnected (h.vertexSet_eq ▸ hx) (h.vertexSet_eq ▸ hy)).of_le h.le ⟩
 
-lemma Connected.minDegreePos (h : G.Connected) (hnt : V(G).Nontrivial) : G.MinDegreePos := by
+lemma Connected.degreePos (h : G.Connected) (hnt : V(G).Nontrivial) : G.DegreePos := by
   intro x hx
   obtain ⟨e, y, h, -⟩ := h.exists_isLink_of_mem hnt hx
   exact ⟨e, h.inc_left⟩

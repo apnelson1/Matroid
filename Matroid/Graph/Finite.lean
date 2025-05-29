@@ -168,6 +168,14 @@ instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
 instance (V : Set α) : (Graph.noEdge V β).LocallyFinite where
   finite := by simp
 
+@[simp]
+lemma vertexSet_finite_iff [G.LocallyFinite] : V(G).Finite ↔ G.Finite := by
+  refine ⟨fun h ↦ ⟨h, ?_⟩, fun h ↦ Finite.vertexSet_finite⟩
+  refine (h.biUnion (t := fun v ↦ {e | G.Inc e v}) (fun i a ↦ LocallyFinite.finite i )).subset ?_
+  simp only [subset_def, mem_iUnion, mem_setOf_eq, exists_prop]
+  intro e he
+  obtain ⟨x, y, hx⟩ := exists_isLink_of_mem_edgeSet he
+  exact ⟨_, hx.left_mem, hx.inc_left⟩
 
 end Graph
 
