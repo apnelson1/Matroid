@@ -94,3 +94,33 @@ lemma IsForest.encard_vertexSet (hG : G.IsForest) :
   · simp only [coe_setOf, mem_setOf_eq, Subtype.forall]
     exact fun H hle ↦ (hG.isTree_of_isComponent hle).encard_vertexSet
   exact G.pairwiseDisjoint_components.mono' <| by simp +contextual [Pi.le_def, Graph.disjoint_iff]
+
+lemma IsForest.ncard_vertexSet [G.Finite] (hG : G.IsForest) :
+    V(G).ncard = E(G).ncard + {C : Graph α β | C.IsComponent G}.ncard := by
+  rw [← @Nat.cast_inj ℕ∞, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
+    G.edgeSet_finite.cast_ncard_eq, Finite.cast_ncard_eq]
+  exact G.finite_setOf_le.subset fun C hC ↦ hC.le
+
+lemma IsForest.encard_edgeSet_add_one_le (hG : G.IsForest) (hne : V(G).Nonempty) :
+    E(G).encard + 1 ≤ V(G).encard := by
+  rw [hG.encard_vertexSet]
+  gcongr
+  simp only [one_le_encard_iff_nonempty]
+  exact ⟨_, (G.exists_isComponent hne).choose_spec⟩
+
+lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempty) :
+    E(G).ncard < V(G).ncard := by
+  rw [Nat.lt_iff_add_one_le, ← @Nat.cast_le ℕ∞, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
+    G.edgeSet_finite.cast_ncard_eq]
+  exact hG.encard_edgeSet_add_one_le hne
+
+lemma Connected.encard_vertexSet_le (hG : G.Connected) : V(G).encard ≤ E(G).encard + 1 := by
+  obtain ⟨T, hT, hTG⟩ := hG.exists_isTree_spanningSubgraph
+  rw [← hTG.vertexSet_eq, hT.encard_vertexSet]
+  gcongr
+  exact encard_le_encard <| edgeSet_mono hTG.le
+
+lemma Connected.ncard_vertexSet_le [G.Finite] (hG : G.Connected) : V(G).ncard ≤ E(G).ncard + 1 := by
+  rw [← @Nat.cast_le ℕ∞, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
+    G.edgeSet_finite.cast_ncard_eq]
+  exact hG.encard_vertexSet_le

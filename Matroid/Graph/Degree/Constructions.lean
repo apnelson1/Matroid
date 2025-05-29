@@ -183,36 +183,35 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
 
 /-! ### Cycles -/
 
--- lemma IsCycle.degree_toGraph_eq_two (hC : G.IsCycle C) (hvC : v ∈ C) :
---     C.toGraph.degree v = 2 := by
-
---   obtain ⟨x, e, rfl⟩ | hCnt := hC.loop_or_nontrivial
---   · obtain rfl : v = x := by simpa using hvC
---     rw [toGraph_cons, union_degree_eq (by simp)]
---     simp
---   obtain ⟨P, u, e, f, huP, hPf, hef, rfl⟩ := hC.exists_isPath' hCnt
---   obtain rfl | hvu := eq_or_ne v u
---   · rw [toGraph]
-  -- obtain ⟨P, u, e, f, hP, huP, heP, hfP, hne, rfl⟩ := hC.exists_isPath hCnt
-  -- have hPconc : G.IsPath (P.concat f u) := by
-  --   rw [← reverse_isPath_iff, concat_reverse]
-
-  -- obtain rfl | hvu := eq_or_ne v u
-  -- ·
-  --   rw [toGraph_cons, union_degree_eq, singleEdge_degree_left]
-  --   · nth_rw 2 [show v = (P.concat f v).last by simp]
-  --     rw [(IsPath.last_isLeaf_toGraph _ _).degree]
-  -- obtain ⟨e, heC⟩ := hC.nonempty.edgeSet_nonempty
-  -- obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edge heC
-  -- obtain ⟨P, hP, hPC, rfl, rfl⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink hxy
-
-  -- obtain rfl | hne_first := eq_or_ne v P.first
-  -- · rw [← IsNonloopAt.degree_delete_add_one (e := e), ← hPC, (hP.first_isLeaf_toGraph _).degree]
-  --   · rw [← hP.vertexSet_nontrivial_iff, ← toGraph_vertexSet, hPC]
-  --     simp [hC.vertexSet_nontrivial hCnt]
-
-
-
-  -- ·
-  -- obtain ⟨P, hP, hPG⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
-  -- rw [← IsNonloopAt.degree_delete_add_one (e := e), ← hPG]
+/-- Cycles are two-regular. -/
+lemma IsCycle.degree_toGraph_eq_two (hC : G.IsCycle C) (hvC : v ∈ C) :
+    C.toGraph.degree v = 2 := by
+  obtain ⟨x, e, rfl⟩ | hCnt := hC.loop_or_nontrivial
+  · rw [toGraph_cons, union_degree_eq (by simp), show v = x by simpa using hvC]
+    simp
+  obtain ⟨P, u, e, f, huP, hPf, hef, rfl⟩ := hC.exists_isPath' hCnt
+  have huP' := cons_isPath_iff.1 huP
+  have hPu' := concat_isPath_iff.1 hPf
+  obtain ⟨heP : e ∉ P.edge, -⟩ := by simpa using huP.edge_nodup
+  obtain ⟨hfP : f ∉ P.edge, -⟩ := by simpa using hPf.reverse.edge_nodup
+  have hnde : e ∉ P.edge ∧ P.edge.Nodup := by simpa using huP.edge_nodup
+  rw [toGraph_cons, union_degree_eq, toGraph_concat, union_degree_eq, concat_first]
+  rotate_left; simpa; simpa [hef]
+  obtain rfl | hvu := eq_or_ne v u
+  · rw [singleEdge_degree_left (by rintro rfl; simp at huP),
+      singleEdge_degree_left (by rintro rfl; simp at huP),
+      degree_eq_zero_of_not_mem (by simp [huP'.2.2])]
+  have hvP : v ∈ P := by simpa [hvu] using hvC
+  obtain ⟨z, rfl⟩ | hne := P.exists_eq_nil_or_nonempty
+  · obtain rfl : v = z := by simpa [hvu] using hvC
+    simp [singleEdge_degree_right hvu.symm]
+  have h_ends : P.first ≠ P.last := by
+    rwa [Ne, first_eq_last_iff huP'.1.nodup, not_nil_iff]
+  obtain rfl | hvlast := eq_or_ne v P.last
+  · rw [singleEdge_degree_right hvu.symm, (huP'.1.last_isLeaf_toGraph hne).degree,
+      singleEdge_degree_of_ne _ hvu h_ends.symm]
+  obtain rfl | hvfirst := eq_or_ne v P.first
+  · rw [singleEdge_degree_right hvu.symm, singleEdge_degree_of_ne _ hvu h_ends,
+      (huP'.1.first_isLeaf_toGraph hne).degree]
+  rw [singleEdge_degree_of_ne _ hvu hvlast, singleEdge_degree_of_ne _ hvu hvfirst,
+    huP'.1.degree_toGraph_eq_two hvP hvfirst hvlast]

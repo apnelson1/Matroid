@@ -129,7 +129,9 @@ lemma banana_degree_right (hab : a ≠ b) (F : Set α) : (banana a b F).degree b
 
 /-! ### Path Graphs -/
 
-def IsPathGraph (G : Graph α β) : Prop := ∃ P, G.IsPath P ∧ G = P.toGraph
+-- def IsPathGraph (G : Graph α β) : Prop := ∃ P, G.IsPath P ∧ G = P.toGraph
+
+
   -- ∃ P : WList α β, P.WellFormed ∧ P.vertex.Nodup ∧ G = P.toGraph
 
 -- lemma IsPathGraph.exists_eq_toGraph (hG : G.IsPathGraph) : ∃ P, G.IsPath P ∧ G = P.toGraph := by

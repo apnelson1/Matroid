@@ -2,6 +2,7 @@ import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.WithTop
+import Mathlib.Algebra.BigOperators.Finprod
 
 open Set BigOperators Function
 
@@ -162,3 +163,19 @@ theorem Set.Finite.encard_le_iff_nonempty_embedding' {s : Set α} {t : Set β} (
   have hle := e.encard_le
   rw [hs.encard_eq, top_le_iff, encard_eq_top_iff] at hle
   exact hle ht
+
+@[simp]
+lemma finsum_mem_const {M : Type*} [AddCommMonoid M] (s : Set α) (a : M) :
+    ∑ᶠ x ∈ s, a = s.ncard • a := by
+  obtain hs | hs := s.finite_or_infinite
+  · rw [finsum_mem_eq_finite_toFinset_sum _ hs, Finset.sum_const, ncard_eq_toFinset_card _ hs]
+  obtain rfl | hne := eq_or_ne a 0
+  · simp
+  rw [hs.ncard, finsum_mem_eq_zero_of_infinite (by simpa [Function.support, hne]), zero_smul]
+
+lemma finsum_one (s : Set α) : ∑ᶠ x ∈ s, 1 = s.ncard := by
+  simp
+  -- obtain hs | hs := s.finite_or_infinite
+  -- · rw [finsum_mem_eq_finite_toFinset_sum _ hs, ncard_eq_toFinset_card _ hs]
+  --   simp
+  -- rw [hs.ncard, finsum_mem_eq_zero_of_infinite (by simpa [Function.support])]
