@@ -299,8 +299,7 @@ lemma Compatible.induce_right (h : Compatible G H) (X : Set α) :
     G.Compatible H[X] :=
   (h.symm.induce_left X).symm
 
-lemma Compatible.induce (h : Compatible G H) {X : Set α} :
-    G[X].Compatible H[X] :=
+lemma Compatible.induce (h : Compatible G H) {X : Set α} : G[X].Compatible H[X] :=
   (h.induce_left X).induce_right X
 
 @[simp]
@@ -435,7 +434,7 @@ lemma Disjoint.compatible (h : G.Disjoint H) : G.Compatible H :=
 
 /-- useful with `Pairwise` and `Set.Pairwise`.-/
 @[simp]
-lemma disjoint_le_compatible : Graph.Disjoint (α := α) (β := β) ≤ Graph.Compatible := by
+lemma disjoint_le_compatible : @Graph.Disjoint α β ≤ Graph.Compatible := by
   refine fun _ _ ↦ Disjoint.compatible
 
 /-! ### Families of Graphs -/
@@ -462,13 +461,8 @@ lemma UCompatible.of_forall_subgraph (h : ∀ i, H i ≤ G) : UCompatible H :=
 
 lemma Compatible.UCompatible_cond {H : Graph α β} (h : G.Compatible H) :
     UCompatible (fun b : Bool ↦ bif b then G else H) := by
-  rintro (rfl | rfl) (rfl | rfl) e x y
-  · simp +contextual
-  · simp only [cond_false, cond_true]
-    exact fun he heG ↦ by rwa [h heG he.edge_mem]
-  · simp only [cond_false, cond_true]
-    exact fun he heH ↦ by rwa [h.symm heH he.edge_mem]
-  simp +contextual
+  rwa [uCompatible_iff_pairwise_compatible, pairwise_on_bool]
+  exact fun _ _ h ↦ h.symm
 
 lemma UCompatible.of_disjoint_edgeSet (h : Pairwise (Disjoint on (fun i ↦ E(H i)))) :
     UCompatible H := by

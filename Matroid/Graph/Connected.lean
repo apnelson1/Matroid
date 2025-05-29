@@ -593,7 +593,6 @@ lemma IsPath.isBridge_of_mem (hP : G.IsPath P) (heP : e ∈ P.edge) : P.toGraph.
   rw [← hP₂.isWalk.isLink_iff_isLink_of_mem hf] at hfxy
   exact List.disjoint_left.1 hdj hx hfxy.left_mem
 
-
 /-! ### Components -/
 
 /-- `H.IsComponent G` if `H` is a maximal connected subgraph of `G`. -/
@@ -662,26 +661,26 @@ lemma IsComponent.disjoint_of_ne {H₁ H₂ : Graph α β}
     hH₂.eq_of_ge ⟨(hc.symm.union_connected_of_nonempty_inter hH₂.connected hH₁.connected
       (by rwa [inter_comm])), (union_le hH₂.le hH₁.le)⟩ (left_le_union ..)]
 
+lemma IsComponent.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsComponent G)
+    (hH₂ : H₂.IsComponent G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
+  by_contra fun hne ↦ (hH₁.disjoint_of_ne hH₂ hne).vertex.not_mem_of_mem_left hx₁ hx₂
+
 lemma pairwiseDisjoint_components (G : Graph α β) :
     {H : Graph α β | H.IsComponent G}.Pairwise Graph.Disjoint :=
   fun _ hC _ hC' ↦ hC.disjoint_of_ne hC'
+
+lemma Connected.isComponent_of_le_of_inc (hconn : H.Connected) (hle : H ≤ G)
+    (hV : ∀ e x, x ∈ V(H) → G.Inc e x → e ∈ E(H)) : H.IsComponent G := by
+  obtain ⟨H', hH', hHH'⟩ := hconn.exists_component_ge hle
+  obtain rfl | hlt := hHH'.eq_or_lt
+  · assumption
+  obtain ⟨e, x, hex, heH, hxH⟩ := hH'.connected.exists_inc_not_mem_of_lt hlt hconn.nonempty
+  exact False.elim <| heH <| hV e x hxH (hex.of_le hH'.le)
 
 /-- A graph is connected if and only if it is a component of itself. -/
 @[simp]
 lemma isComponent_self_iff : G.IsComponent G ↔ G.Connected :=
   ⟨IsComponent.connected, fun h ↦ ⟨⟨h, le_rfl⟩, fun _ h _ ↦ h.2⟩⟩
-
-/-- A graph is the union of its components -/
--- lemma eq_iUnion_components (G : Graph α β) :
---     ∃ (h : UCompatible (fun C : {H // H.IsComponent G} ↦ C.1)), G = h.iUnion _ := by
---   refine ⟨UCompatible.of_forall_subgraph (G := G) fun C ↦ C.2.le, G.ext_of_le_le le_rfl ?_ ?_ ?_⟩
---   · simp +contextual [IsComponent.le]
---   · refine subset_antisymm (fun x hxV ↦ ?_) ?_
---     · simpa using exists_isComponent_vertex_mem hxV
---     simpa using fun _ h ↦ (vertexSet_mono h.le)
---   refine subset_antisymm (fun e he ↦ ?_) ?_
---   · simpa using exists_isComponent_edge_mem he
---   simpa using fun _ h ↦ (edgeSet_mono h.le)
 
 lemma eq_sUnion_components (G : Graph α β) :
     G = Graph.sUnion {C | C.IsComponent G} (G.pairwiseDisjoint_components.mono' (by simp)) := by
@@ -702,6 +701,10 @@ lemma IsComponent.isLink_of_isLink_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)
   · exact heH'.1
   exact False.elim <| (hH'G.disjoint_of_ne h hne.symm).vertex.not_mem_of_mem_left heH'.1.left_mem hx
 
+lemma IsComponent.isLink_iff_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)) :
+    H.IsLink e x y ↔ G.IsLink e x y :=
+  ⟨fun he ↦ he.of_le h.le, fun he ↦ h.isLink_of_isLink_of_mem hx he⟩
+
 lemma IsComponent.adj_of_adj_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
@@ -711,6 +714,12 @@ lemma IsComponent.inc_of_inc_of_mem (h : H.IsComponent G) (hx : x ∈ V(H)) (hxe
     H.Inc e x := by
   obtain ⟨y, hexy⟩ := hxe
   exact (h.isLink_of_isLink_of_mem hx hexy).inc_left
+
+lemma IsComponent.eDegree_eq (h : H.IsComponent G) (hx : x ∈ V(H)) : H.eDegree x = G.eDegree x := by
+  simp_rw [eDegree_eq_encard_add_encard, ← isLink_self_iff, IsNonloopAt, h.isLink_iff_of_mem hx]
+
+lemma IsComponent.degree_eq (h : H.IsComponent G) (hx : x ∈ V(H)) : H.degree x = G.degree x := by
+  rw [Graph.degree, h.eDegree_eq hx, Graph.degree]
 
 /-- For a proper component `H`, the separation with parts `V(H)` and `V(G) \ V(H)`. -/
 @[simps]
@@ -735,6 +744,23 @@ lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected)
   simp only [IsComponent.separation_of_ne_left]
   exact hle'.trans <| le_induce_self hH'H.le
 
+/-- The components of the union of a set of disjoint connected graphs are the graphs themselves. -/
+lemma isComponent_sUnion_iff {s : Set (Graph α β)} (h : s.Pairwise Graph.Disjoint)
+    (hs : ∀ G ∈ s, G.Connected) :
+    H.IsComponent (Graph.sUnion s (h.mono' (by simp))) ↔ H ∈ s := by
+  suffices aux : ∀ ⦃H⦄, H ∈ s → H.IsComponent (Graph.sUnion s (h.mono' (by simp))) by
+    refine ⟨fun hH ↦ ?_, fun hH ↦ aux hH⟩
+    obtain ⟨x, hx⟩ := hH.connected.nonempty
+    have hex : ∃ H ∈ s, x ∈ V(H) := by simpa using vertexSet_mono hH.le hx
+    obtain ⟨H', hH', hxH'⟩ := hex
+    rwa [← (aux hH').eq_of_mem_mem hH hxH' hx]
+  refine fun H hHs ↦ (hs H hHs).isComponent_of_le_of_inc (Graph.le_sUnion _ hHs) fun e x hx h ↦ ?_
+  simp only [Inc, sUnion_isLink] at h
+  obtain ⟨y, H', hH's, hlink⟩ := h
+  obtain rfl | hne := eq_or_ne H H'
+  · exact hlink.edge_mem
+  exact False.elim <| (h hHs hH's hne).vertex.not_mem_of_mem_left hx hlink.left_mem
+
 /-- If `H` is a nonempty subgraph of a connected graph `G`, and each vertex degree in `H`
 is at least the corresponding degree in `G`, then `H = G`. -/
 lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
@@ -743,6 +769,16 @@ lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected
   obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_not_mem_of_lt hlt hne
   have hle : H ≤ G ＼ {e} := by simp [heH, hle]
   exact hex.degree_delete_lt.not_le <| (hdeg hxH).trans (degree_mono hle x)
+
+-- lemma regular_sUnion_iff {s : Set (Graph α β)} (hdj : s.Pairwise Graph.Disjoint) {d : ℕ} :
+--     (Graph.sUnion s (hdj.mono' (by simp))).Regular d ↔ ∀ G ∈ s, G.Regular d := by
+--   refine ⟨fun h G hGs v hv ↦ ?_, fun h ↦ ?_⟩
+--   · rw [← h (v := v) (by simpa using ⟨G, hGs, hv⟩)]
+--     sorry
+--     apply IsComponent.eDegree_eq _ hv
+--     rw [isComponent_sUnion_iff hdj]
+--   sorry
+
 
 /-! ### Staying Connected -/
 

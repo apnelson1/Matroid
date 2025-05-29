@@ -97,6 +97,22 @@ lemma ext_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ �
   (le_of_le_le_subset_subset h₁ h₂ hV.subset hE.subset).antisymm <|
     (le_of_le_le_subset_subset h₂ h₁ hV.symm.subset hE.symm.subset)
 
+lemma isLink_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e = G.IsLink e := by
+  ext x y
+  exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle he⟩
+
+lemma inc_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.Inc e = G.Inc e := by
+  unfold Graph.Inc
+  rw [isLink_eq_of_le hle he]
+
+lemma isLoopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLoopAt e = G.IsLoopAt e := by
+  unfold Graph.IsLoopAt
+  rw [isLink_eq_of_le hle he]
+
+lemma isNonloopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsNonloopAt e = G.IsNonloopAt e := by
+  unfold Graph.IsNonloopAt
+  rw [isLink_eq_of_le hle he]
+
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
 @[simps isLink]
 def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where

@@ -190,6 +190,9 @@ lemma eDegree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
 lemma degree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.degree v = 0 := by
   simp [degree, eDegree_eq_zero_of_not_mem hv]
 
+lemma eDegree_congr (h : ∀ e, G.Inc e x ↔ H.Inc e x) : G.eDegree x = H.eDegree x := by
+  sorry
+
 lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
   rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
@@ -327,7 +330,6 @@ lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
   rw [degree, eDegree_eq_encard_adj, ncard]
 
 /-! ### Subgraphs -/
-
 
 lemma incFun_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.incFun e x = G.incFun e x := by
   by_cases hex : H.Inc e x
