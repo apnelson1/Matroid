@@ -304,8 +304,8 @@ lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hE : E(w) ⊆ E(G)
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [union_isLink_iff, cons_edgeSet, singleton_union, insert_subset_iff, first_cons,
-      cons_isWalk_iff, not_true_eq_false, false_and, or_false, forall_const, true_and]
+    simp_all only [union_isLink_iff, cons_edgeSet, insert_subset_iff, first_cons, cons_isWalk_iff,
+      not_true_eq_false, and_false, or_false, forall_const, true_and]
     exact ih h.right_mem
 
 lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hE : E(w) ⊆ E(G))
@@ -316,7 +316,7 @@ lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hE : E
   | nil => simp_all
   | cons u e w =>
   simp only [cons_edgeSet, singleton_union, insert_subset_iff] at hE
-  simp only [cons_isWalk_iff, union_isLink_iff, hE.1, not_true_eq_false, false_and, or_false] at hw
+  simp only [cons_isWalk_iff, union_isLink_iff, hE.1, not_true_eq_false, and_false, or_false] at hw
   rw [first_cons] at h1
   exact (h1 hw.1.left_mem).elim
 
@@ -451,7 +451,7 @@ lemma WellFormed.toGraph_isLink (h : w.WellFormed) : w.toGraph.IsLink = w.IsLink
       singleEdge_isLink_iff, eq_comm (a := e), iff_def, or_imp, and_iff_right (by tauto), or_imp,
       and_iff_left (by tauto)]
     rintro ⟨rfl, h_eq⟩
-    rw [and_iff_right rfl, and_iff_left h_eq, ← imp_iff_or_not]
+    rw [and_iff_right rfl, and_iff_right h_eq, ← imp_iff_or_not]
     intro hf
     obtain ⟨y₁, y₂, hinc⟩ := exists_isLink_of_mem_edge hf
     rw [← h.2 y₁ y₂ hinc] at h_eq
@@ -495,7 +495,7 @@ lemma IsWalk.toGraph_le (h : G.IsWalk w) : w.toGraph ≤ G := by
   | nil u => simpa [WList.toGraph] using h
   | cons u e W ih =>
     simp only [cons_isWalk_iff] at h
-    exact union_le (ih h.2) (by simpa using h.1)
+    exact Graph.union_le (ih h.2) (by simpa using h.1)
 
 lemma _root_.WList.WellFormed.toGraph_le_iff (hW : W.WellFormed) : W.toGraph ≤ G ↔ G.IsWalk W := by
   refine ⟨fun hle ↦ ?_, IsWalk.toGraph_le⟩
@@ -530,7 +530,7 @@ lemma IsWalk.toGraph_eq_induce_restrict (h : G.IsWalk w) : w.toGraph = G[V(w)] �
     have hss' := h.edgeSet_subset_induce_edgeSet
     simp_all only [cons_isWalk_iff, cons_vertexSet, cons_edgeSet, forall_const]
     rw [toGraph_cons, ih]
-    refine G.ext_of_le_le (union_le ?_ ?_) ?_ (by simp) ?_
+    refine G.ext_of_le_le (Graph.union_le ?_ ?_) ?_ (by simp) ?_
     · exact (edgeRestrict_le ..).trans (induce_le h.2.vertexSet_subset)
     · simpa using h.1
     · refine (edgeRestrict_le ..).trans (induce_le ?_)

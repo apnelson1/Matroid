@@ -504,6 +504,11 @@ lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G�
   le := h₁.le.trans h₂.le
   closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (vertexSet_mono h₁.le hx))) hx
 
+@[simp]
+lemma isClosedSubgraph_self : G ≤c G where
+  le := le_rfl
+  closed _ _ he _ := he.edge_mem
+
 lemma Inc.of_isClosedSubgraph_of_mem (h : G.Inc e x) (hle : H ≤c G) (hx : x ∈ V(H)) : H.Inc e x :=
   h.of_le_of_mem hle.le (hle.closed h hx)
 
@@ -519,3 +524,28 @@ lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
   exact (hexy.of_isClosedSubgraph_of_mem h hx).adj
+
+lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hG₁ : G₁ ≤ G) (hHG₁ : H ≤ G₁) :
+    H ≤c G₁ where
+  le := hHG₁
+  closed _ _ he hx := ((he.of_le hG₁).of_isClosedSubgraph_of_mem hHG hx).edge_mem
+
+lemma IsClosedSubgraph.compl (hHG : H ≤c G) : G - V(H) ≤c G where
+  le := vertexDelete_le
+  closed e x he hx := by
+    simp only [vertexDelete_edgeSet, mem_setOf_eq]
+    simp only [vertexDelete_vertexSet, mem_diff] at hx
+    obtain ⟨y, hexy⟩ := he
+    refine ⟨x, y, hexy, hx.2, fun hy ↦ hx.2 ?_⟩
+    exact (hexy.symm.of_isClosedSubgraph_of_mem hHG hy).right_mem
+
+/-! ### Components -/
+
+/-- A definition of components that doesn't mention connectedness. Can this replace `IsComponent`?-/
+def IsCompOf (H G : Graph α β) : Prop := Minimal (fun H ↦ H ≤c G ∧ V(H).Nonempty) H
+
+lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
+  h.prop.1
+
+lemma IsCompOf.le (h : H.IsCompOf G) : H ≤ G :=
+  h.isClosedSubgraph.le

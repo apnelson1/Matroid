@@ -169,16 +169,8 @@ lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     exact fun hf ↦ he hf.edge_mem
   simp [hne]
 
-lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G where
-  vertex_subset := union_subset (by simp [pair_subset_iff, he.left_mem, he.right_mem])
-    (vertexSet_mono hle)
-  isLink_of_isLink f z w hH := by
-    simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,
-      mem_singleton_iff] at hH
-    obtain (⟨rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩) | ⟨-, hzw⟩ := hH
-    · exact he
-    · exact he.symm
-    exact hzw.of_le hle
+lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :=
+  Graph.union_le (by simpa) hle
 
 lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
   Compatible.right_le_union <| by simp [he]
@@ -186,100 +178,3 @@ lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
 lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
     <| by simp [h.edge_mem]
-
-
-
-/-! ### Families of Graphs -/
-
-variable {ι : Type*} {H : ι → Graph α β} {s : Set (Graph α β)}
-
-/-- An indexed family of graphs is `UCompatible` if no two of them disagree on incidences,
-or equivalently if there is a common supergraph of all the graphs in the family.
-TODO : Change this to `Pairwise (Compatible on H)`.
-  -/
-def UCompatible (H : ι → Graph α β) : Prop :=
-  ∀ ⦃i j e x y⦄, (H i).IsLink e x y → e ∈ E(H j) → (H j).IsLink e x y
-
-lemma uCompatible_iff_pairwise_compatible : UCompatible H ↔ Pairwise (Compatible on H) := by
-  refine ⟨fun h i j hne e ⟨hei, hej⟩ ↦ ?_, fun h i j e x y hei hej ↦ ?_⟩
-  · ext x y
-    exact ⟨fun h' ↦ h h' hej, fun h' ↦ h h' hei⟩
-  obtain rfl | hne := eq_or_ne i j
-  · assumption
-  rwa [(h hne).symm hej hei.edge_mem]
-
-lemma UCompatible.of_forall_subgraph (h : ∀ i, H i ≤ G) : UCompatible H :=
-  fun i j _ _ _ hi hj ↦ (hi.of_le (h i)).of_le_of_mem (h j) hj
-
-lemma Compatible.UCompatible_cond {H : Graph α β} (h : G.Compatible H) :
-    UCompatible (fun b : Bool ↦ bif b then G else H) := by
-  rwa [uCompatible_iff_pairwise_compatible, pairwise_on_bool]
-  exact fun _ _ h ↦ h.symm
-
-lemma UCompatible.of_disjoint_edgeSet (h : Pairwise (Disjoint on (fun i ↦ E(H i)))) :
-    UCompatible H := by
-  refine fun i j e x y hi hj ↦ ?_
-  obtain rfl | hne := eq_or_ne i j
-  · assumption
-  exact False.elim <| (disjoint_left.1 <| h hne) hi.edge_mem hj
-
-lemma UCompatible.of_disjoint (h : Pairwise (Graph.Disjoint on H)) : UCompatible H :=
-  UCompatible.of_disjoint_edgeSet <| h.mono fun _ _ ↦ Graph.Disjoint.edge
-
-/-- The union of a `UCompatible` collection of graphs. -/
-@[simps]
-protected def UCompatible.iUnion (H : ι → Graph α β) (hH : UCompatible H) : Graph α β where
-  vertexSet := ⋃ i, V(H i)
-  edgeSet := ⋃ i, E(H i)
-  IsLink e x y := ∃ i, (H i).IsLink e x y
-  isLink_symm := by
-    simp only [mem_iUnion, Symmetric, forall_exists_index]
-    rintro e i hei x y j hi
-    exact ⟨j, hi.symm⟩
-  eq_or_eq_of_isLink_of_isLink :=
-    fun e x y v w ⟨i, hexy⟩ ⟨j, hevw⟩ ↦ (hH hexy hevw.edge_mem).left_eq_or_eq hevw
-  edge_mem_iff_exists_isLink := by
-    simp_rw [mem_iUnion]
-    refine fun e ↦ ⟨fun ⟨i, hei⟩ ↦ ?_, fun ⟨x, y, i, h⟩ ↦ ⟨i, h.edge_mem⟩⟩
-    obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet hei
-    exact ⟨_, _, _, h⟩
-  left_mem_of_isLink := fun e x y ⟨i, h⟩ ↦ mem_iUnion.2 ⟨i, h.left_mem⟩
-
-lemma UCompatible.le_iUnion (hH : UCompatible H) (i : ι) : H i ≤ hH.iUnion H :=
-  ⟨subset_iUnion (fun i ↦ V(H i)) i , by aesop⟩
-
-@[simp]
-lemma UCompatible.iUnion_le_iff (hH : UCompatible H) : hH.iUnion H ≤ G ↔ ∀ i, H i ≤ G := by
-  refine ⟨fun h i ↦ (hH.le_iUnion i).trans h, fun h ↦ ⟨?_, fun e x y ⟨i, hexy⟩ ↦ hexy.of_le (h i)⟩⟩
-  simpa using fun i ↦ vertexSet_mono (h i)
-
-lemma Compatible.union_eq_iUnion {H : Graph α β} (h : G.Compatible H) :
-    G ∪ H = h.UCompatible_cond.iUnion _ := by
-  refine Graph.ext ?_ fun e x y ↦ ?_
-  · simp only [union_vertexSet, UCompatible.iUnion_vertexSet, Bool.apply_cond]
-    rw [← Set.union_eq_iUnion]
-  simp [h.union_isLink_iff, or_comm]
-
-@[simps!]
-protected def sUnion (s : Set (Graph α β)) (hs : s.Pairwise Compatible) : Graph α β :=
-  UCompatible.iUnion (fun G : s ↦ G.1) <|
-    uCompatible_iff_pairwise_compatible.2 <| (pairwise_subtype_iff_pairwise_set s Compatible).2 hs
-
-protected lemma le_sUnion (hs : s.Pairwise Compatible) (hG : G ∈ s) : G ≤ Graph.sUnion s hs :=
-  UCompatible.le_iUnion (H := Subtype.val) (i := ⟨G, hG⟩) _
-
-@[simp]
-protected lemma sUnion_le_iff (hs : s.Pairwise Compatible) :
-    Graph.sUnion s hs ≤ G ↔ ∀ H ∈ s, H ≤ G := by
-  convert UCompatible.iUnion_le_iff (H := fun i : s ↦ i.1) (G := G) _
-  simp
-
-lemma isClosedSubgraph_sUnion_of_disjoint (s : Set (Graph α β)) (hs : s.Pairwise Graph.Disjoint)
-    (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) where
-  le :=  Graph.le_sUnion _ hG
-  closed e x he hx := by
-    simp only [Inc, Graph.sUnion, UCompatible.iUnion_isLink, Subtype.exists, exists_prop] at he
-    obtain ⟨y, G', hGs, hexy⟩ := he
-    obtain rfl | hne := eq_or_ne G' G
-    · exact hexy.edge_mem
-    exact False.elim <| (hs hG hGs hne.symm).vertex.not_mem_of_mem_left hx hexy.left_mem

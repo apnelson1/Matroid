@@ -168,10 +168,10 @@ lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLin
     obtain hf | hf := hf
     · obtain he | he := he
       · exact he.unique_edge hf
-      rw [h hf he.2]
+      rw [h hf he.1]
     obtain he | he := he
-    · exact h he hf.2
-    exact he.2.unique_edge hf.2
+    · exact h he hf.1
+    exact he.1.unique_edge hf.1
 
 omit [G.Simple] in
 lemma IsPath.toGraph_simple {P : WList α β} (hP : G.IsPath P) : P.toGraph.Simple where

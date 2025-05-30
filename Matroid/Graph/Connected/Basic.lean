@@ -399,9 +399,10 @@ lemma Compatible.union_connected_of_forall (h : G.Compatible H) (hG : G.Connecte
   obtain ⟨v, hv⟩ := hG.nonempty
   refine connected_of_vertex (u := v) (by simp [hv]) ?_
   rintro y (hy | hy)
-  · exact (hG.vertexConnected hy hv).of_le <| left_le_union ..
+  · exact (hG.vertexConnected hy hv).of_le <| Graph.left_le_union ..
   obtain ⟨z, hzG, hyz⟩ := hH _ hy
-  exact (hyz.of_le h.right_le_union).trans <| (hG.vertexConnected hzG hv).of_le <| left_le_union ..
+  exact (hyz.of_le h.right_le_union).trans <| (hG.vertexConnected hzG hv).of_le <|
+    Graph.left_le_union ..
 
 lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.Connected)
     (hH : H.Connected) (hne : (V(G) ∩ V(H)).Nonempty) : (G ∪ H).Connected :=
@@ -471,7 +472,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   -- If the cycle is a loop, this is easy.
   obtain ⟨x, e, rfl⟩ | hnt := hC.loop_or_nontrivial
   · obtain heG | heH := hC.isWalk.edge_mem_of_mem (e := e) (by simp)
-    · exact .inl <| hC.isCycle_of_le (left_le_union ..) (by simpa)
+    · exact .inl <| hC.isCycle_of_le (Graph.left_le_union ..) (by simpa)
     exact .inr <| hC.isCycle_of_le hcompat.right_le_union (by simpa)
   -- Every edge of `C` has distinct ends in `G` or in `H`.
   have aux1 (e) (he : e ∈ E(C)) :
@@ -481,7 +482,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
       by simpa [hcompat.union_isLink_iff] using hC.isWalk.isLink_of_isLink hxy ⟩
   -- If the vertices of `C` are contained in `G` or `H`, then `C` is contained in `G` or `H`.
   by_cases hCG : V(C) ⊆ V(G)
-  · refine .inl <| hC.isCycle_of_le (left_le_union ..) fun e heC ↦ ?_
+  · refine .inl <| hC.isCycle_of_le (Graph.left_le_union ..) fun e heC ↦ ?_
     obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
     · exact hxy.edge_mem
     exact False.elim <| hne <| hi.elim ⟨hCG hxC, hxy.left_mem⟩ ⟨hCG hyC, hxy.right_mem⟩
@@ -513,7 +514,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
 lemma Compatible.isCycle_union_iff_of_subsingleton_inter (hcompat : G.Compatible H)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsCycle C ↔ G.IsCycle C ∨ H.IsCycle C :=
   ⟨fun h ↦ h.isCycle_or_isCycle_of_union_of_subsingleton_inter hi,
-    fun h ↦ h.elim (fun h' ↦ h'.isCycle_of_ge (left_le_union ..))
+    fun h ↦ h.elim (fun h' ↦ h'.isCycle_of_ge (Graph.left_le_union ..))
     (fun h' ↦ h'.isCycle_of_ge hcompat.right_le_union)⟩
 
 

@@ -91,9 +91,9 @@ lemma IsComponent.disjoint_of_ne {H₁ H₂ : Graph α β}
   contrapose! hne
   have hc : Compatible H₁ H₂ := compatible_of_le_le hH₁.le hH₂.le
   rw [← hH₁.eq_of_ge ⟨(hc.union_connected_of_nonempty_inter hH₁.connected hH₂.connected hne),
-      (union_le hH₁.le hH₂.le)⟩ (left_le_union ..), hc.union_comm,
+      (Graph.union_le hH₁.le hH₂.le)⟩ (Graph.left_le_union ..), hc.union_comm,
     hH₂.eq_of_ge ⟨(hc.symm.union_connected_of_nonempty_inter hH₂.connected hH₁.connected
-      (by rwa [inter_comm])), (union_le hH₂.le hH₁.le)⟩ (left_le_union ..)]
+      (by rwa [inter_comm])), (Graph.union_le hH₂.le hH₁.le)⟩ (Graph.left_le_union ..)]
 
 lemma IsComponent.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsComponent G)
     (hH₂ : H₂.IsComponent G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
