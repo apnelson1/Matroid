@@ -1,4 +1,3 @@
-import Matroid.Graph.Connected
 import Matroid.Graph.Tree
 import Matroid.Graph.Degree.Constructions
 import Matroid.Graph.Degree.Defs

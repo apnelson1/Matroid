@@ -408,6 +408,9 @@ lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G w
     · exact he.symm
     exact hzw.of_le hle
 
+lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
+  Compatible.right_le_union <| by simp [he]
+
 lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
     <| by simp [h.edge_mem]
@@ -521,3 +524,13 @@ protected lemma sUnion_le_iff (hs : s.Pairwise Compatible) :
     Graph.sUnion s hs ≤ G ↔ ∀ H ∈ s, H ≤ G := by
   convert UCompatible.iUnion_le_iff (H := fun i : s ↦ i.1) (G := G) _
   simp
+
+lemma isClosedSubgraph_sUnion_of_disjoint (s : Set (Graph α β)) (hs : s.Pairwise Graph.Disjoint)
+    (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) where
+  le :=  Graph.le_sUnion _ hG
+  closed e x he hx := by
+    simp only [Inc, Graph.sUnion, UCompatible.iUnion_isLink, Subtype.exists, exists_prop] at he
+    obtain ⟨y, G', hGs, hexy⟩ := he
+    obtain rfl | hne := eq_or_ne G' G
+    · exact hexy.edge_mem
+    exact False.elim <| (hs hG hGs hne.symm).vertex.not_mem_of_mem_left hx hexy.left_mem

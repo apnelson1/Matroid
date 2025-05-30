@@ -1,5 +1,6 @@
 import Matroid.Graph.Distance
 import Matroid.Graph.Simple
+import Matroid.Graph.Connected.Subgraph
 import Mathlib.Data.Set.Subsingleton
 import Mathlib.Order.Minimal
 

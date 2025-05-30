@@ -51,8 +51,18 @@ instance : PartialOrder (Graph α β) where
 lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
   hle.2 h
 
+lemma IsLink.of_le_of_mem (h : G.IsLink e x y) (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e x y := by
+  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
+  obtain ⟨rfl, rfl⟩ | ⟨rfl,rfl⟩ := (huv.of_le hle).eq_and_eq_or_eq_and_eq h
+  · assumption
+  exact huv.symm
+
 lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
   (h.choose_spec.of_le hle).inc_left
+
+lemma Inc.of_le_of_mem (h : G.Inc e x) (hle : H ≤ G) (he : e ∈ E(H)) : H.Inc e x := by
+  obtain ⟨y, hy⟩ := h
+  exact (hy.of_le_of_mem hle he).inc_left
 
 lemma IsLoopAt.of_le (h : H.IsLoopAt e x) (hle : H ≤ G) : G.IsLoopAt e x :=
   IsLink.of_le h hle
@@ -75,11 +85,6 @@ lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
 lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
-lemma IsLink.of_le_of_mem (h : G.IsLink e x y) (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e x y := by
-  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
-  obtain ⟨rfl, rfl⟩ | ⟨rfl,rfl⟩ := (huv.of_le hle).eq_and_eq_or_eq_and_eq h
-  · assumption
-  exact huv.symm
 
 lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
@@ -427,7 +432,7 @@ structure IsInducedSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   isLink_of_mem_mem : ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y
 
-infixl:50 " ≤i " => Graph.IsInducedSubgraph
+scoped infixl:50 " ≤i " => Graph.IsInducedSubgraph
 
 lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤i G₂) (h₂₃ : G₂ ≤i G₃) :
     G₁ ≤i G₃ :=
@@ -467,3 +472,36 @@ lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ 
 lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G) : H = G := by
   obtain ⟨X, hX, rfl⟩ := hi.exists_eq_induce
   simp [show X = V(G) by simpa using hs.vertexSet_eq]
+
+/-! ### Closed Subgraphs -/
+
+/-- A closed subgraph of `G` is a union of components of `G`.  -/
+structure IsClosedSubgraph (H G : Graph α β) : Prop where
+  le : H ≤ G
+  closed : ∀ ⦃e x⦄, G.Inc e x → x ∈ V(H) → e ∈ E(H)
+
+scoped infixl:50 " ≤c " => Graph.IsClosedSubgraph
+
+lemma IsClosedSubgraph.isInducedSubgraph (h : H ≤c G) : H ≤i G where
+  le := h.le
+  isLink_of_mem_mem _ _ _ he hx _ := he.of_le_of_mem h.le (h.closed he.inc_left hx)
+
+lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G₂) (h₂ : G₂ ≤c G₃) : G₁ ≤c G₃ where
+  le := h₁.le.trans h₂.le
+  closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (vertexSet_mono h₁.le hx))) hx
+
+lemma Inc.of_isClosedSubgraph_of_mem (h : G.Inc e x) (hle : H ≤c G) (hx : x ∈ V(H)) : H.Inc e x :=
+  h.of_le_of_mem hle.le (hle.closed h hx)
+
+lemma IsLink.of_isClosedSubgraph_of_mem (h : G.IsLink e x y) (hle : H ≤c G) (hx : x ∈ V(H)) :
+    H.IsLink e x y :=
+  h.of_le_of_mem hle.le (h.inc_left.of_isClosedSubgraph_of_mem hle hx).edge_mem
+
+lemma IsClosedSubgraph.isLink_iff_of_mem (h : H ≤c G) (hx : x ∈ V(H)) :
+    H.IsLink e x y ↔ G.IsLink e x y :=
+  ⟨fun he ↦ he.of_le h.le, fun he ↦ he.of_isClosedSubgraph_of_mem h hx⟩
+
+lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
+    H.Adj x y := by
+  obtain ⟨e, hexy⟩ := hxy
+  exact (hexy.of_isClosedSubgraph_of_mem h hx).adj

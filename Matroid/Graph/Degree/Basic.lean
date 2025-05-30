@@ -190,9 +190,6 @@ lemma eDegree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
 lemma degree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.degree v = 0 := by
   simp [degree, eDegree_eq_zero_of_not_mem hv]
 
-lemma eDegree_congr (h : ∀ e, G.Inc e x ↔ H.Inc e x) : G.eDegree x = H.eDegree x := by
-  sorry
-
 lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
   rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
@@ -354,7 +351,10 @@ lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : α) : H.degree x �
   rw [← Nat.cast_le (α := ℕ∞), natCast_degree_eq, natCast_degree_eq]
   exact eDegree_mono hle x
 
+lemma IsClosedSubgraph.eDegree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.eDegree x = G.eDegree x := by
+  simp_rw [eDegree_eq_encard_add_encard, ← isLink_self_iff, IsNonloopAt, h.isLink_iff_of_mem hx]
 
-
+lemma IsClosedSubgraph.degree_eq (h : H ≤c G) (hx : x ∈ V(H)) : H.degree x = G.degree x := by
+  rw [Graph.degree, h.eDegree_eq hx, Graph.degree]
 
 end Graph

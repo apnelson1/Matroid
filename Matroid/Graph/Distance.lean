@@ -1,4 +1,4 @@
-import Matroid.Graph.Connected
+import Matroid.Graph.Connected.Basic
 
 open Set Function Nat
 

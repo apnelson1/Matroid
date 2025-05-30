@@ -123,6 +123,5 @@ lemma Regular.ncard_edgeSet (hG : G.Regular d) : 2 * E(G).ncard = d * V(G).ncard
   · rwa [Set.Infinite, vertexSet_finite_iff]
   rwa [Set.Infinite, hG.edgeSet_finite_iff (by simp)]
 
-
-
--- lemma Regular.edgeSet_nonempty (hG : G.Regular d) (hpos : 0 < d)
+lemma Regular.of_isClosedSubgraph (hG : G.Regular d) (hH : H ≤c G) : H.Regular d :=
+  fun _ h ↦ by rw [hH.eDegree_eq h, hG (vertexSet_mono hH.le h)]

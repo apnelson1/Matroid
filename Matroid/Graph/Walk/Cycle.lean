@@ -1,5 +1,5 @@
 import Matroid.Graph.Walk.Path
--- import Matroid.Graph.Connected
+-- import Matroid.Graph.Connected.Basic
 import Matroid.Graph.WList.Cycle
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
