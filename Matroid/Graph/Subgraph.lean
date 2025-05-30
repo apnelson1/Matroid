@@ -85,7 +85,6 @@ lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
 lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
-
 lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
   ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
@@ -106,17 +105,32 @@ lemma isLink_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e = G.IsLink 
   ext x y
   exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle he⟩
 
+lemma isLink_eqOn_of_le (hle : H ≤ G) : EqOn H.IsLink G.IsLink E(H) :=
+  fun _ ↦ isLink_eq_of_le hle
+
 lemma inc_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.Inc e = G.Inc e := by
   unfold Graph.Inc
   rw [isLink_eq_of_le hle he]
+
+lemma inc_eqOn_of_le (hle : H ≤ G) : EqOn H.Inc G.Inc E(H) :=
+  fun _ ↦ inc_eq_of_le hle
 
 lemma isLoopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLoopAt e = G.IsLoopAt e := by
   unfold Graph.IsLoopAt
   rw [isLink_eq_of_le hle he]
 
+lemma isLoopAt_eqOn_of_le (hle : H ≤ G) : EqOn H.IsLoopAt G.IsLoopAt E(H) :=
+  fun _ ↦ isLoopAt_eq_of_le hle
+
 lemma isNonloopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsNonloopAt e = G.IsNonloopAt e := by
   unfold Graph.IsNonloopAt
   rw [isLink_eq_of_le hle he]
+
+lemma isNonloopAt_eqOn_of_le (hle : H ≤ G) : EqOn H.IsNonloopAt G.IsNonloopAt E(H) :=
+  fun _ ↦ isNonloopAt_eq_of_le hle
+
+/- TODO : Is is reasonable to only keep the `EqOn` versions of the above?
+Also, what about functional `≤` versions? -/
 
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
 @[simps isLink]

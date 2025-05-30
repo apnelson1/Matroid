@@ -20,7 +20,6 @@ lemma not_isLink_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
 lemma not_inc_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.Inc e x :=
   mt Inc.edge_mem he
 
-
 /-- The set of ends of an edge `e`. -/
 def endSet (G : Graph α β) (e : β) : Set α := {x | G.Inc e x}
 
