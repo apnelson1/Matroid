@@ -184,7 +184,7 @@ lemma Bipartite.of_le (hG : G.Bipartite) (hle : H ≤ G) : H.Bipartite := by
 /-- A disjoint union of bipartite graphs is bipartite. -/
 lemma iUnion_disjoint_bipartite {ι : Type*} {H : ι → Graph α β}
     (hdj : Pairwise (Graph.Disjoint on H)) (hbp : ∀ i, Bipartite (H i)) :
-    Bipartite <| (UCompatible.of_disjoint hdj).iUnion _ := by
+    Bipartite <| Graph.iUnion H (hdj.mono fun _ _ h ↦ h.compatible) := by
   set B : ∀ i, (H i).Bipartition := fun i ↦ (hbp i).some
   refine ⟨⟨⋃ i, (B i).left, ⋃ i, (B i).right, ?_, ?_, ?_⟩⟩
   · simp +contextual [Bipartition.union_eq, ← iUnion_union_distrib]
@@ -193,7 +193,7 @@ lemma iUnion_disjoint_bipartite {ι : Type*} {H : ι → Graph α β}
     obtain rfl | hne := eq_or_ne i j
     · exact (B i).disjoint
     exact (hdj hne.symm).vertex.mono (B j).left_subset (B i).right_subset
-  simp_rw [UCompatible.iUnion_edgeSet, mem_iUnion, UCompatible.iUnion_isLink, forall_exists_index]
+  simp_rw [iUnion_edgeSet, mem_iUnion, iUnion_isLink, forall_exists_index]
   intro e i he
   obtain ⟨x, hx, y, hy, hxy⟩ := (B i).forall_edge _ he
   exact ⟨x, ⟨i, hx⟩, y, ⟨i, hy⟩, ⟨i, hxy⟩⟩
