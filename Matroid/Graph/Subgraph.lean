@@ -317,6 +317,9 @@ lemma induce_le_iff : G[X] ≤ G ↔ X ⊆ V(G) :=
 @[simp]
 lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X := Iff.rfl
 
+lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
+  ⟨h, hx, hy⟩
+
 /-- This is too annoying to be a simp lemma. -/
 lemma induce_edgeSet (G : Graph α β) (X : Set α) :
     E(G.induce X) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
