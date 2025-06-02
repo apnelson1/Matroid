@@ -409,10 +409,7 @@ lemma Compatible.union_connected_of_nonempty_inter (h : Compatible G H) (hG : G.
   let ⟨z, hzG, hzH⟩ := hne
   h.union_connected_of_forall hG fun _ hx ↦ ⟨z, hzG, hH.vertexConnected hx hzH⟩
 
-lemma Connected.addEdge_connected (hG : G.Connected) (hx : x ∈ V(G)) (he : e ∉ E(G)) (y : α) :
-    (G.addEdge e x y).Connected :=
-  Compatible.union_connected_of_nonempty_inter (by simp [he]) (by simp) hG <|
-    by simp [hx, insert_inter_of_mem hx]
+
 
 lemma IsWalk.exists_mem_mem_of_union (h : (G ∪ H).IsWalk W) (hG : W.first ∈ V(G))
     (hH : W.last ∈ V(H)) : ∃ x ∈ W, x ∈ V(G) ∧ x ∈ V(H) := by
@@ -423,15 +420,6 @@ lemma IsWalk.exists_mem_mem_of_union (h : (G ∪ H).IsWalk W) (hG : W.first ∈ 
   · exact False.elim <| hy <| hxy'.right_mem
   exact ⟨x, hxy.left_mem, hx, hxy'.left_mem⟩
 
-lemma union_not_connected_of_disjoint_vertexSet (hV : Disjoint V(G) V(H)) (hG : V(G).Nonempty)
-    (hH : V(H).Nonempty) : ¬ (G ∪ H).Connected := by
-  obtain ⟨x, hx⟩ := hG
-  obtain ⟨y, hy⟩ := hH
-  intro h
-  obtain ⟨W, hW, rfl, rfl⟩ :=
-    (h.vertexConnected (x := x) (y := y) (by simp [hx]) (by simp [hy])).exists_isWalk
-  obtain ⟨u, -, huG, huH⟩ := hW.exists_mem_mem_of_union hx hy
-  exact hV.not_mem_of_mem_left huG huH
 
 /-! ### Cycles -/
 

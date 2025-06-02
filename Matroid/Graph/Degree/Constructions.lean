@@ -1,7 +1,8 @@
 import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
+import Matroid.Graph.Constructions.Basic
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
+variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
 
 open Set WList
 
@@ -60,6 +61,21 @@ lemma singleEdge_self_eDegree (x : α) (e : β) : (Graph.singleEdge x x e).eDegr
 @[simp]
 lemma singleEdge_self_degree (x : α) (e : β) : (Graph.singleEdge x x e).degree x = 2 := by
   simp [degree]
+
+
+lemma banana_eDegree_left (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree a = F.encard := by
+  have := banana_loopless hab F
+  simp [eDegree_eq_encard_inc]
+
+lemma banana_eDegree_right (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree b = F.encard := by
+  rw [banana_comm, banana_eDegree_left hab.symm]
+
+lemma banana_degree_left (hab : a ≠ b) (F : Set α) : (banana a b F).degree a = F.ncard := by
+  simp [degree, banana_eDegree_left hab, ncard]
+
+lemma banana_degree_right (hab : a ≠ b) (F : Set α) : (banana a b F).degree b = F.ncard := by
+  simp [degree, banana_eDegree_right hab, ncard]
+
 
 lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) : (G ∪ H).incFun = G.incFun + H.incFun := by
   ext e x

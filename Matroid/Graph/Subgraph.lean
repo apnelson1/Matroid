@@ -1,7 +1,8 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Mathlib.Data.Set.Insert
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
+    {X Y : Set α}
 
 initialize_simps_projections Graph (IsLink → isLink)
 
@@ -428,6 +429,7 @@ lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
 /-! ### Spanning Subgraphs -/
 
 /-- A spanning subgraph of `G` is a subgraph of `G` with the same vertex set. -/
+@[mk_iff]
 structure IsSpanningSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   vertexSet_eq : V(H) = V(G)
@@ -437,6 +439,17 @@ infixl:50 " ≤s " => Graph.IsSpanningSubgraph
 @[simp]
 lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
   ⟨by simp, rfl⟩
+
+lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
+    H ≤s K where
+  le := hHK
+  vertexSet_eq := (vertexSet_mono hHK).antisymm ((vertexSet_mono hKG).trans_eq h.vertexSet_eq.symm)
+
+lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
+    K ≤s G where
+  le := hKG
+  vertexSet_eq := (vertexSet_mono hKG).antisymm <|
+    h.vertexSet_eq.symm.le.trans <| vertexSet_mono hHK
 
 /-! ### Induced Subgraphs -/
 
@@ -490,6 +503,7 @@ lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G)
 /-! ### Closed Subgraphs -/
 
 /-- A closed subgraph of `G` is a union of components of `G`.  -/
+@[mk_iff]
 structure IsClosedSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   closed : ∀ ⦃e x⦄, G.Inc e x → x ∈ V(H) → e ∈ E(H)
@@ -525,19 +539,23 @@ lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy :
   obtain ⟨e, hexy⟩ := hxy
   exact (hexy.of_isClosedSubgraph_of_mem h hx).adj
 
-lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hG₁ : G₁ ≤ G) (hHG₁ : H ≤ G₁) :
+lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
     H ≤c G₁ where
   le := hHG₁
   closed _ _ he hx := ((he.of_le hG₁).of_isClosedSubgraph_of_mem hHG hx).edge_mem
 
-lemma IsClosedSubgraph.compl (hHG : H ≤c G) : G - V(H) ≤c G where
-  le := vertexDelete_le
+lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) :
+    H₁ - V(H₂) ≤c G where
+  le := vertexDelete_le.trans h₁.le
   closed e x he hx := by
     simp only [vertexDelete_edgeSet, mem_setOf_eq]
     simp only [vertexDelete_vertexSet, mem_diff] at hx
     obtain ⟨y, hexy⟩ := he
-    refine ⟨x, y, hexy, hx.2, fun hy ↦ hx.2 ?_⟩
-    exact (hexy.symm.of_isClosedSubgraph_of_mem hHG hy).right_mem
+    refine ⟨x, y, hexy.of_isClosedSubgraph_of_mem h₁ hx.1, hx.2, fun hy ↦ hx.2 ?_⟩
+    refine (hexy.symm.of_isClosedSubgraph_of_mem h₂ hy).right_mem
+
+lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
+  G.isClosedSubgraph_self.diff h
 
 /-! ### Components -/
 
@@ -546,6 +564,9 @@ def IsCompOf (H G : Graph α β) : Prop := Minimal (fun H ↦ H ≤c G ∧ V(H).
 
 lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
   h.prop.1
+
+lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
+  h.prop.2
 
 lemma IsCompOf.le (h : H.IsCompOf G) : H ≤ G :=
   h.isClosedSubgraph.le
