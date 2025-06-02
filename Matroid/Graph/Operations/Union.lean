@@ -37,6 +37,12 @@ protected lemma disjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
 
 /-! ### Compatibility -/
 
+def CompatibleAt (e : β) (G H : Graph α β) : Prop := e ∈ E(G) → e ∈ E(H) → H.IsLink e = G.IsLink e
+
+lemma CompatibleAt.symm (h : CompatibleAt e G H) : CompatibleAt e H G := sorry
+
+instance {e : β} : IsRefl (Graph α β) (CompatibleAt e) := sorry
+
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
 def Compatible (G H : Graph α β) : Prop := EqOn G.IsLink H.IsLink (E(G) ∩ E(H))
 
@@ -143,6 +149,16 @@ lemma disjoint_le_compatible : @Graph.Disjoint α β ≤ Graph.Compatible := by
 /-! ### Indexed unions -/
 
 variable {ι : Type*} {s : Set (Graph α β)}
+
+protected def iUnion' (G : ι → Graph α β) : Graph α β where
+  vertexSet := ⋃ i, V(G i)
+  IsLink e x y := (∃ i, (G i).IsLink e x y) ∧ Pairwise ((CompatibleAt e) on G)
+  isLink_symm := fun e he x y ⟨⟨i, hi⟩, h'⟩ ↦ ⟨⟨i, hi.symm⟩, h'⟩
+  eq_or_eq_of_isLink_of_isLink := by
+    refine fun e x y v w ⟨⟨i, hi⟩, h⟩ ⟨⟨j, hj⟩, _⟩ ↦ ?_
+    rw [h.of_refl i j hi.edge_mem hj.edge_mem] at hj
+    exact hi.left_eq_or_eq hj
+  left_mem_of_isLink := fun e x y ⟨⟨i, hi⟩,h⟩ ↦ mem_iUnion.2 ⟨i, hi.left_mem⟩
 
 /-- The union of an indexed family of pairwise compatible graphs. -/
 @[simps]
