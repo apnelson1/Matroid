@@ -26,7 +26,6 @@ import Matroid.Graph.Basic
 import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Constructions.Basic
-import Matroid.Graph.Constructions.Path
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Degree.Constructions
 import Matroid.Graph.Degree.Leaf

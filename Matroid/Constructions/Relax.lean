@@ -137,6 +137,26 @@ lemma relax_indep_iff (hH : M.IsHyperplane X) (hC : M.IsCircuit X) :
     (M.relax X).Indep I ↔ (M.Indep I ∨ I = X) := by
   rw [relax, relaxSet_indep_iff, mem_singleton_iff]; simp [hH, hC]
 
-
-
 end Relax
+
+
+section Tighten
+
+structure IsFreeBase (M : Matroid α) (B : Set α) : Prop where
+  isBase : M.IsBase B
+  fundCircuit_eq_insert : ∀ ⦃e⦄, e ∈ M.E → e ∉ B → M.fundCircuit e B = insert e B
+
+structure IsTightenSet (M : Matroid α) (Bs : Set (Set α)) : Prop where
+  isFreeBase_of_mem : ∀ ⦃B⦄, B ∈ Bs → M.IsFreeBase B
+  eq_of_eq_exchange : ∀ ⦃B⦄ ⦃e f : α⦄, B ∈ Bs → insert e (B \ {f}) ∈ Bs → e = f
+
+-- def IsTightenSet.matroid (M : Matroid α) {Bs : Set (Set α)} (hBs : M.IsTightenSet Bs) :
+--     Matroid α := Matroid.ofBase
+--     (E := M.E)
+--     (IsBase := fun B ↦ M.IsBase B ∧ B ∉ Bs)
+--     (exists_isBase := sorry)
+--     (isBase_exchange := sorry)
+--     (maximality := sorry)
+--     (subset_ground := sorry)
+
+end Tighten
