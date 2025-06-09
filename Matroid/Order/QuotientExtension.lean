@@ -217,7 +217,7 @@ theorem Quotient.FiniteRank {M₁ M₂ : Matroid α} {X : Set α} [RankFinite M�
   simp only [rk_empty, CharP.cast_eq_zero, sub_zero, Nat.cast_le] at h1
   exact h1
 
-theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤ c := by linarith
+--theorem Numberstuff {a b c d: ℤ} (h1 : d ≤ b) (h2 : a - d ≤ c) : a - b ≤ c := by linarith
   --exact  Nat.eq_sub_of_add_eq' rfl
 
 
