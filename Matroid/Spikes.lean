@@ -6,10 +6,15 @@ variable {α : Type*} {X I J C Y : Set α}
 universe u
 
 
+namespace Matroid
 
 open Set Function
 
-def freeSpike (ι : Type*) : Matroid (ι × Bool) := (circuitOn ι)
+/-- A free spike with legs indexed by a type `ι` - the ground set is `univ : Set (ι × Bool)`
+and the legs are the pairs `{⟨i,true⟩, ⟨i, false⟩}` for `i : ι`.
+The bases are precisely the sets that differ from a transversal of the legs by a single exchange. -/
+def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
+  ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
 -- def TLSpike {ι : Type*} [Finite ι] (F : Set (ι → Bool) )
 --     (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
