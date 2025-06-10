@@ -16,6 +16,43 @@ The bases are precisely the sets that differ from a transversal of the legs by a
 def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
   ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
+lemma freeSpike.Legs (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).Indep I) :
+    ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j := by
+  intro i j hit hif hjt hjf
+  by_contra! hij
+  obtain ⟨ B, hBB, hIB ⟩ :=
+    ((((circuitOn (univ : Set ι)).comap Prod.fst).dual_indep_iff_exists').1
+    ((truncate_indep_iff'.1) hI).1 ).2
+  have hM1 := (((circuitOn (univ : Set ι)).comap_isBase_iff).1 hBB).1
+  simp only [circuitOn_ground, preimage_univ, image_univ, Prod.range_fst] at hM1
+  have hC : (univ : Set ι).Nonempty := by sorry
+  have h2 := (circuitOn_isBase_iff hC).1 (isBasis_ground_iff.mp hM1)
+  simp only [mem_image, Prod.exists, exists_and_right, Bool.exists_bool, exists_eq_right,
+    not_or] at h2
+  obtain ⟨e, ⟨hef, het⟩, hu ⟩ := h2
+  by_cases he : e = i
+  · rw [←he] at hij
+    have hun: j ∉ insert e (Prod.fst '' B) := by
+      simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
+      exists_eq_right, not_or]
+      refine ⟨ fun a ↦ hij (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hjf,
+      Disjoint.not_mem_of_mem_left hIB hjt ⟩
+    exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+  have hun: i ∉ insert e (Prod.fst '' B) := by
+    simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
+      exists_eq_right, not_or]
+    refine ⟨ fun a ↦ he (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hif,
+      Disjoint.not_mem_of_mem_left hIB hit ⟩
+  exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+
+
+
+
+
+
+
+
+
 -- def TLSpike {ι : Type*} [Finite ι] (F : Set (ι → Bool) )
 --     (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
 --     : Matroid (ι × Bool) :=
@@ -34,71 +71,71 @@ def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
   -- sorry)
 
   --Nat.card Set.Subsingleton
-@[mk_iff] structure SpikeIndep {ι : Type*} (I : Set (ι × Bool)) (F : Set (ι → Bool) )
-    --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-    where
-  (for_all_leg_im_eq :
-    ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j)
-  (not_indep_trans :
-    ∀ f ∈ F, range (fun i ↦ ⟨i, f i⟩ ) ≠ I )
-  --I think it should be subset
+-- @[mk_iff] structure SpikeIndep {ι : Type*} (I : Set (ι × Bool)) (F : Set (ι → Bool) )
+--     --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--     where
+--   (for_all_leg_im_eq :
+--     ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j)
+--   (not_indep_trans :
+--     ∀ f ∈ F, range (fun i ↦ ⟨i, f i⟩ ) ≠ I )
+--   --I think it should be subset
 
-lemma SpikeIndep.empty {ι : Type*} (hcard : 2 ≤ Nat.card ι )
-    (F : Set (ι → Bool))
-    --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-    : SpikeIndep ∅ F := by
-    constructor
-    exact fun i j a a_1 a_2 a_3 ↦ False.elim a
-    intro f hf
-    by_contra hce
-    simp_all only [range_eq_empty_iff, Nat.card_of_isEmpty, nonpos_iff_eq_zero, OfNat.ofNat_ne_zero]
+-- lemma SpikeIndep.empty {ι : Type*} (hcard : 2 ≤ Nat.card ι )
+--     (F : Set (ι → Bool))
+--     --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--     : SpikeIndep ∅ F := by
+--     constructor
+--     exact fun i j a a_1 a_2 a_3 ↦ False.elim a
+--     intro f hf
+--     by_contra hce
+--     simp_all only [range_eq_empty_iff, Nat.card_of_isEmpty, nonpos_iff_eq_zero, OfNat.ofNat_ne_zero]
 
-lemma SpikeIndep.subset {ι : Type*} (I : Set (ι × Bool) ) (J : Set (ι × Bool) ) (hJI : J ⊆ I)
-    (F : Set (ι → Bool))
-    --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-    (hI : SpikeIndep I F )
-    : SpikeIndep J F := by
-  constructor
-  exact fun i j hit hif hjt hjf ↦
-  (hI.for_all_leg_im_eq i j (hJI hit ) (hJI hif ) (hJI hjt ) (hJI hjf ))
-  intro f hf
-  by_contra hrJ
-  rw [←hrJ] at hJI
-  --have hIR : Nat.card I ≤ Nat.card (range fun i ↦ (i, f i) ) := by sorry
-  have : I ⊆ (range fun i ↦ (i, f i)) := by
-    intro (i,bo) hiI
-    have heq : (i, bo) = (i, f i) := by
-      --simp only [Prod.mk.injEq, true_and]
-      sorry
-    --simp only [mem_range]
+-- lemma SpikeIndep.subset {ι : Type*} (I : Set (ι × Bool) ) (J : Set (ι × Bool) ) (hJI : J ⊆ I)
+--     (F : Set (ι → Bool))
+--     --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--     (hI : SpikeIndep I F )
+--     : SpikeIndep J F := by
+--   constructor
+--   exact fun i j hit hif hjt hjf ↦
+--   (hI.for_all_leg_im_eq i j (hJI hit ) (hJI hif ) (hJI hjt ) (hJI hjf ))
+--   intro f hf
+--   by_contra hrJ
+--   rw [←hrJ] at hJI
+--   --have hIR : Nat.card I ≤ Nat.card (range fun i ↦ (i, f i) ) := by sorry
+--   have : I ⊆ (range fun i ↦ (i, f i)) := by
+--     intro (i,bo) hiI
+--     have heq : (i, bo) = (i, f i) := by
+--       --simp only [Prod.mk.injEq, true_and]
+--       sorry
+--     --simp only [mem_range]
 
-    sorry
-  sorry
+--     sorry
+--   sorry
 
-lemma SpikeIndep.aug {ι : Type*} (I : Set (ι × Bool) ) (B : Set (ι × Bool) )
-    (F : Set (ι → Bool))
-    --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-    (hI : SpikeIndep I F ) (hmaxI : ¬Maximal (fun (K : Set (ι × Bool)) ↦ (SpikeIndep K F) ) I)
-    (hmaxB : Maximal (fun (K : Set (ι × Bool)) ↦ (SpikeIndep K F) ) B)
-    : ∃ b ∈ B \ I, SpikeIndep (insert b I) F := by
-  sorry
+-- lemma SpikeIndep.aug {ι : Type*} (I : Set (ι × Bool) ) (B : Set (ι × Bool) )
+--     (F : Set (ι → Bool))
+--     --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--     (hI : SpikeIndep I F ) (hmaxI : ¬Maximal (fun (K : Set (ι × Bool)) ↦ (SpikeIndep K F) ) I)
+--     (hmaxB : Maximal (fun (K : Set (ι × Bool)) ↦ (SpikeIndep K F) ) B)
+--     : ∃ b ∈ B \ I, SpikeIndep (insert b I) F := by
+--   sorry
 
-lemma SpikeIndep.max {ι : Type*} (I : Set (ι × Bool) ) (X : Set (ι × Bool) ) (hIX : I ⊆ X)
-    (F : Set (ι → Bool))
-    --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-    (hI : SpikeIndep I F )
-    : ∃ J : Set (ι × Bool), I ⊆ J ∧ J ⊆ X ∧
-    Maximal (fun (K : Set (ι × Bool)) ↦ SpikeIndep K F ∧ K ⊆ X) J
-    := by
-  sorry
+-- lemma SpikeIndep.max {ι : Type*} (I : Set (ι × Bool) ) (X : Set (ι × Bool) ) (hIX : I ⊆ X)
+--     (F : Set (ι → Bool))
+--     --(hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--     (hI : SpikeIndep I F )
+--     : ∃ J : Set (ι × Bool), I ⊆ J ∧ J ⊆ X ∧
+--     Maximal (fun (K : Set (ι × Bool)) ↦ SpikeIndep K F ∧ K ⊆ X) J
+--     := by
+--   sorry
 
-def TiplessSpikeIndepMatroid {ι : Type*} (F : Set (ι → Bool) )
-    (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
-  : IndepMatroid (ι × Bool) where
-  E := univ
-  Indep := sorry --{I : SpikeIndep I F}
-  indep_empty := sorry
-  indep_subset := sorry
-  indep_aug := sorry
-  indep_maximal := sorry
-  subset_ground := sorry
+-- def TiplessSpikeIndepMatroid {ι : Type*} (F : Set (ι → Bool) )
+--     (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
+--   : IndepMatroid (ι × Bool) where
+--   E := univ
+--   Indep := sorry --{I : SpikeIndep I F}
+--   indep_empty := sorry
+--   indep_subset := sorry
+--   indep_aug := sorry
+--   indep_maximal := sorry
+--   subset_ground := sorry
