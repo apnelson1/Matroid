@@ -1,4 +1,5 @@
 import Matroid.Axioms.Circuit
+import Matroid.Uniform
 
 variable {α : Type*} {X I J C Y : Set α}
 
@@ -7,6 +8,8 @@ universe u
 
 
 open Set Function
+
+def freeSpike (ι : Type*) : Matroid (ι × Bool) := (circuitOn ι)
 
 -- def TLSpike {ι : Type*} [Finite ι] (F : Set (ι → Bool) )
 --     (hF : ∀ ⦃C C' ⦄, C ∈ F → C' ∈ F → ∀ i : ι, (∀ j : ι, i ≠ j ∧ (C j = C' j)) → C i = C' i )
