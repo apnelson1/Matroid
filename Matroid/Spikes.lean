@@ -16,7 +16,10 @@ The bases are precisely the sets that differ from a transversal of the legs by a
 def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
   ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
-lemma freeSpike.Legs (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).Indep I) :
+--May be useless
+lemma freeSpike_ground_set (ι : Type*) : (freeSpike ι).E = univ := rfl
+
+lemma freeSpike_leg_im_eq (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).Indep I) :
     ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j := by
   intro i j hit hif hjt hjf
   by_contra! hij
@@ -44,6 +47,28 @@ lemma freeSpike.Legs (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).I
     refine ⟨ fun a ↦ he (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hif,
       Disjoint.not_mem_of_mem_left hIB hit ⟩
   exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+
+lemma freeSpike_leg_circ (ι : Type*) (i j : ι) (hij : i ≠ j) (C : Set (ι × Bool) )
+    (hC : C = {(i, true), (i,false), (j,true), (j,false) }): (freeSpike ι).IsCircuit C := by
+  apply ((freeSpike ι).isCircuit_iff).2
+  refine ⟨?_, fun D hDd hDC ↦ ?_ ⟩
+  · by_contra hc
+    have hC1 : C ⊆ (freeSpike ι).E := fun ⦃a⦄ a ↦ trivial
+    --have ht: (freeSpike ι).Indep C := by exact ((freeSpike ι).not_dep_iff).1 hc
+    have hit: (i, true) ∈ C := by
+      simp_all only [ne_eq, not_dep_iff, mem_insert_iff, Prod.mk.injEq, Bool.true_eq_false,
+      and_false, and_true, mem_singleton_iff, and_self, or_self, or_false]
+    have hif: (i, false) ∈ C := by
+      simp_all only [ne_eq, not_dep_iff, mem_insert_iff, Prod.mk.injEq, Bool.true_eq_false,
+      and_false, and_true,
+      mem_singleton_iff, and_self, or_self, or_false, Bool.false_eq_true, or_true]
+    have hjt: (j ,true) ∈ C := by sorry
+    have hjf : (j ,false) ∈ C := by sorry
+    exact hij (freeSpike_leg_im_eq ι C (((freeSpike ι).not_dep_iff).1 hc) i j hit hif hjt hjf)
+  by_contra hc
+
+  sorry
+
 
 
 
@@ -88,7 +113,8 @@ lemma freeSpike.Legs (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).I
 --     exact fun i j a a_1 a_2 a_3 ↦ False.elim a
 --     intro f hf
 --     by_contra hce
---     simp_all only [range_eq_empty_iff, Nat.card_of_isEmpty, nonpos_iff_eq_zero, OfNat.ofNat_ne_zero]
+--     simp_all only [range_eq_empty_iff, Nat.card_of_isEmpty,
+--nonpos_iff_eq_zero, OfNat.ofNat_ne_zero]
 
 -- lemma SpikeIndep.subset {ι : Type*} (I : Set (ι × Bool) ) (J : Set (ι × Bool) ) (hJI : J ⊆ I)
 --     (F : Set (ι → Bool))
