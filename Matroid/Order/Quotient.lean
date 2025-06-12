@@ -28,10 +28,6 @@ lemma Quotient.refl (M : Matroid α) : M ≤q M where
 lemma Quotient.antisymm (h : M₁ ≤q M₂) (h' : M₂ ≤q M₁) : M₁ = M₂ :=
   ext_isFlat fun _ ↦ ⟨h.isFlat_of_isFlat, h'.isFlat_of_isFlat⟩
 
-lemma top_thingy {a b : ℕ∞} (hab : a + b ≤ a) (ht : a ≠ ⊤) : b = 0 := by
-  have haa : a + b ≤ a + 0 := le_add_right hab
-  rwa [WithTop.add_le_add_iff_left ht, nonpos_iff_eq_zero] at haa
-
 lemma Quotient.closure_subset_closure (h : M ≤q N) (X : Set α) : N.closure X ⊆ M.closure X := by
   rw [← closure_inter_ground, ← closure_inter_ground (M := M), ← h.ground_eq]
   rw [← (h.isFlat_of_isFlat (M.closure_isFlat _)).closure]
@@ -68,10 +64,8 @@ private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY :
       refine ⟨⟨hyY, hyX⟩, ?_⟩
       rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_le]
       · intro hle
-        have h' := (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin
-        have h'' := top_thingy hle
-        simp only [ne_eq, one_ne_zero, imp_false, Decidable.not_not] at h''
-        exact h'.ne h''
+        simp only [ENat.add_le_left_iff, one_ne_zero, or_false] at hle
+        simpa [hle] using (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin
       exact ⟨hYE hyY, hyX⟩
 
     obtain ⟨hy', hycard⟩ := hy
@@ -337,3 +331,26 @@ theorem Quotient.wcovBy_of_covBy {F F' : Set α} (hQ : M₂ ≤q M₁) (hco : F 
   · exact M₂.closure_subset_closure <| (M₁.subset_closure F hco.subset_ground_left).trans
       <| M₁.closure_subset_closure (subset_insert _ _)
   exact (M₂.closure_subset_closure (hQ.closure_subset_closure _)).trans <| by simp
+
+/-- If there exist `P` and `X` so that `M = P ＼ X` and `N = P ／ X`,
+then we can choose such a `P` and `X` so that `X` is independent and coindependent in `P`.-/
+lemma exists_project_indep_coindep (P : Matroid α) (X : Set α) :
+    ∃ (Q : Matroid α) (Y : Set α), Q.Indep Y ∧ Q.Coindep Y ∧ Q ／ Y = P ／ X ∧ Q ＼ Y = P ＼ X := by
+  wlog hXE : X ⊆ P.E generalizing X with aux
+  · obtain ⟨Q, Y, hYi, hYc, hc, hd⟩ := aux (X ∩ P.E) inter_subset_right
+    exact ⟨Q, Y, hYi, hYc, by simpa using hc, by simpa [delete_inter_ground_eq] using hd⟩
+  obtain ⟨I, hI⟩ := P.exists_isBasis X
+  obtain ⟨J, hJ⟩ := (P ＼ (X \ I))✶.exists_isBasis I
+    (by simp [subset_diff, hI.indep.subset_ground, disjoint_sdiff_right])
+  refine ⟨P ＼ (X \ I) ／ (I \ J), J, ?_, ?_, ?_, ?_⟩
+  · have hi : (P ＼ (X \ I)).Indep I := hI.indep.indep_delete_of_disjoint disjoint_sdiff_right
+    rwa [Indep.contract_indep_iff, and_iff_right disjoint_sdiff_right, union_diff_cancel hJ.subset]
+    exact hi.subset diff_subset
+  · have hwin := hJ.indep.indep_delete_of_disjoint (D := I \ J) disjoint_sdiff_right
+    rwa [← dual_coindep_iff, dual_delete_dual] at hwin
+  · rw [contract_contract, diff_union_of_subset hJ.subset,
+      ← contract_delete_comm _ disjoint_sdiff_right, hI.contract_eq_contract_delete]
+  have hrw := congr_arg Matroid.dual <| hJ.contract_eq_contract_delete
+  rwa [dual_contract_dual, delete_delete, diff_union_of_subset hI.subset,
+    dual_delete, dual_contract, dual_dual, eq_comm,
+    ← contract_delete_comm _ disjoint_sdiff_left] at hrw
