@@ -241,18 +241,71 @@ lemma freeSpike_basis (ι : Type*) (B : Set (ι × Bool) ) :
             | inl h4 => exact h4.2
             | inr h4 =>
             by_contra h
-            --Contradiction is that both x and (x.1, false) are not in univ \ B
-            sorry
+
+            have hc1 := hij x.1 hx1
+            rw [double_circuitOn_ground_set ι] at hc1
+            have hg1 : (x.1, false) ∉ univ \ insert e B := by
+              refine not_mem_diff_of_mem (mem_insert_of_mem e h)
+            have hg2 : ((x.1, true) ∉ univ \ insert e B) := by
+              refine not_mem_diff_of_mem ?_
+              rw [←h2 ]
+              exact mem_insert_of_mem e hxB
+            have hcon1:= (xor_iff_or_and_not_and
+                ((x.1, false) ∈ univ \ insert e B) ((x.1, true) ∈ univ \ insert e B)).1 hc1
+            have hcon2 : ¬ (((x.1, false) ∈ univ \ insert e B ∨ (x.1, true) ∈ univ \ insert e B) ∧
+                ¬((x.1, false) ∈ univ \ insert e B ∧ (x.1, true) ∈ univ \ insert e B)) := by
+              apply not_and_or.2
+              --right
+              simp only [ not_or, true_and, not_and, not_not,
+                and_imp, Classical.not_imp]
+              left
+              exact Classical.not_imp.mp fun a ↦ hg2 (a hg1)
+              --apply not_and_or.1
+            exact hcon2 hcon1
           simp_all only [subset_univ, dual_isBase_iff, ne_eq, mem_diff, mem_univ,
             mem_insert_iff, not_or, true_and,
             not_and, not_not, mem_singleton_iff, false_and, not_false_eq_true]
         | inr h2 =>
+          rw [←h2]
+          refine ⟨ ?_, not_mem_diff_of_mem rfl⟩
+
           sorry
       intro j hj1
+      have huse := hij j
+      apply (xor_iff_or_and_not_and ((j, false) ∈ B \ {x}) ((j, true) ∈ B \ {x})).2
+      by_cases hji : j = i
+      · rw [double_circuitOn_ground_set ι] at hi
+        rw [double_circuitOn_ground_set ι] at hii
+        have he1 : e.1 = i := by sorry
+        have hiu : (i, true ) ∈ insert e B := by
+          by_contra hcon
+          exact hi (mem_diff_of_mem trivial hcon)
+        have hiuf : (i, false ) ∈ insert e B := by
+          by_contra hcon
+          exact hii (mem_diff_of_mem trivial hcon)
+        have hcases : e.2 = true ∨ e.2 = false := Bool.eq_false_or_eq_true e.2
+        cases hcases with
+        | inl h2 =>
+
+          constructor
+          · rw [hji]
+            left
+            have hc : (i, false) ≠ e := by sorry
+
+
+
+            sorry
+          sorry
+        | inr h2 =>
+
+        sorry
+
+      --have hcas : hij j
 
       sorry
 
-    · sorry
+    ·
+      sorry
 
   --Goodcase
   intro hB
@@ -260,7 +313,8 @@ lemma freeSpike_basis (ι : Type*) (B : Set (ι × Bool) ) :
   sorry
 
 
-
+-- lemma foo (a : α) (X : Set α) (Y : Set α ) (haX : a ∈ X ) (hXY : a ∉ X \ Y) : a ∈ Y
+--   := by apply?
 
 
 
