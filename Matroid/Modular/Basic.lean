@@ -108,6 +108,13 @@ lemma IsModularBase.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.IsMod
     exact M.closure_subset_closure (iInter_subset _ i)
   exact hB.isBase.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
 
+lemma IsBase.isModularBase_powerset (hB : M.IsBase B) :
+    M.IsModularBase B (fun (I : 𝒫 B) ↦ I.1) where
+  isBase := hB
+  forall_isBasis I := by
+    rw [inter_eq_self_of_subset_left I.2]
+    exact (hB.indep.subset I.2).isBasis_self
+
 /-- Given a modular base `B` for `Xs`, we can switch out the intersection of `B` with the
 intersection of the `Xs` with any other base for the intersection of the `Xs`
 and still have a modular base. -/
@@ -149,6 +156,10 @@ lemma IsModularBase.switch (hB : M.IsModularBase B Xs) (hIX : M.IsBasis I (⋂ i
   rw [hJB.closure_eq_closure]
   exact hIX.isBasis_closure_right
 
+lemma IsModularBase.comp {ζ : Sort*} {Xs : ι → Set α} (h : M.IsModularBase B Xs) (t : ζ → ι) :
+    M.IsModularBase B (Xs ∘ t) where
+  isBase := h.isBase
+  forall_isBasis i := h.forall_isBasis (t i)
 
 end IsModularBase
 section IsModularFamily
@@ -163,6 +174,8 @@ lemma Indep.isModularFamily (hI : M.Indep I) (hXs : ∀ i, M.IsBasis ((Xs i) ∩
   refine ⟨B, hB, ?_⟩
   simp_rw [hB.indep.inter_isBasis_closure_iff_subset_closure_inter]
   exact fun i ↦ (hXs i).trans (M.closure_subset_closure (inter_subset_inter_right _ hIB))
+
+lemma IsModularBase.isModularFamily (hB : M.IsModularBase B Xs) : M.IsModularFamily Xs := ⟨B, hB⟩
 
 lemma IsModularFamily.subset_ground_of_mem (h : M.IsModularFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   let ⟨_, h⟩ := h
@@ -356,6 +369,7 @@ lemma IsModularFamily.finite_of_forall_isFlat [M.RankFinite] (h : M.IsModularFam
   intro i j h_eq
   rw [← (h_isFlat i).closure, ← (hB.isBasis_inter i).closure_eq_closure,
     ← (h_isFlat j).closure, ← (hB.isBasis_inter j).closure_eq_closure, h_eq]
+
 
 
   -- have := (subset_range_iff_exists_image_eq (α := ι) (s := C) (f := Xs)).1
