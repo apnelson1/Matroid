@@ -13,6 +13,155 @@ open Set Function
 /-- A free spike with legs indexed by a type `ι` - the ground set is `univ : Set (ι × Bool)`
 and the legs are the pairs `{⟨i,true⟩, ⟨i, false⟩}` for `i : ι`.
 The bases are precisely the sets that differ from a transversal of the legs by a single exchange. -/
+
+def freeLift (M : Matroid α ) : Matroid α := (M✶.truncate)✶
+
+lemma freeLift_def (M : Matroid α ) :(M✶.truncate)✶ = (M.freeLift ) := rfl
+
+lemma ground_freeLift (M : Matroid α ) : (M.freeLift ).E = M.E := rfl
+
+lemma basis_freeLift_iff (M : Matroid α) (B : Set α) (hB' : B ⊆ M.E) :
+    M.freeLift.IsBase B ↔ ∃ e ∈ B, M.IsBase (B \ {e}) := by
+  have : M✶.RankPos := by
+      apply M✶.rankPos_iff.2
+      simp only [empty_subset, dual_isBase_iff, diff_empty]
+      by_contra h
+      sorry
+  constructor
+  · intro hB
+    -- have hB' : B ⊆ (M✶.truncate).E := by
+    --   rw [←M✶.truncate.dual_ground, freeLift_def]
+    --   exact IsBase.subset_ground hB
+    --have h1 := (M✶.truncate).dual_isBase_iff.1 hB
+    --have h2 := truncate_isBase_iff.1 ((M✶.truncate).dual_isBase_iff.1 hB )
+    obtain ⟨e, hen, heB ⟩ := truncate_isBase_iff.1 ((M✶.truncate).dual_isBase_iff.1 hB )
+    have hrw : M✶.truncate.E = M.E := rfl
+    rw [hrw] at hen heB
+    have hein : e ∈ M.E := by
+      exact (insert_subset_iff.1 (heB.subset_ground)).1
+    refine ⟨ e, ?_, ?_ ⟩
+    · simp at hen
+      exact hen hein
+    have : (insert e (M.E \ B)) ⊆ M.E := by
+      refine insert_subset hein diff_subset
+    have h1 := M.dual_isBase_iff.1 heB
+    have hf : (M.E \ insert e (M.E \ B)) = (B \ {e}) := by
+      simp_all only [truncate_ground_eq, dual_ground, mem_diff, not_and, not_not, dual_isBase_iff]
+      ext x : 1
+      simp_all only [mem_diff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
+      apply Iff.intro
+      · intro a
+        simp_all only [not_false_eq_true, and_self]
+      · intro a
+        simp_all only [not_false_eq_true, implies_true, and_self, and_true]
+        obtain ⟨left, right⟩ := a
+        apply hB'
+        simp_all only
+    rw [hf] at h1
+    exact h1
+  intro h
+  obtain ⟨ e, heB, hB ⟩ := h
+  have : B ⊆ M✶.truncate.E := by
+    have hrw : M✶.truncate.E = M.E := by exact rfl
+    rwa [hrw]
+    -- rw[ ←insert_diff_self_of_mem heB ]
+    -- apply insert_subset
+    -- sorry
+  apply (M✶.truncate).dual_isBase_iff.2
+  apply truncate_isBase_iff.2
+  refine ⟨ e, not_mem_diff_of_mem heB, ?_ ⟩
+  apply M.dual_isBase_iff.2
+  have hrw : M✶.truncate.E = M.E := by exact rfl
+  rw [hrw]
+  have hrw : M.E \ insert e (M.E \ B) = B \ {e}  := by
+    ext x : 1
+    simp_all only [mem_diff, mem_insert_iff, not_or, not_and, not_not, mem_singleton_iff]
+    apply Iff.intro
+    · intro a
+      simp_all only [not_false_eq_true, and_self]
+    · intro a
+      simp_all only [not_false_eq_true, implies_true, and_self, and_true]
+      obtain ⟨left, right⟩ := a
+      apply hB'
+      simp_all only
+  rw [hrw ]
+  exact hB
+
+lemma com_truncation_freeLift (M : Matroid α) :
+    M.freeLift.truncate = M.truncate.freeLift := by
+  have hg : M.freeLift.truncate.E = M.truncate.freeLift.E := rfl
+  apply ext_isBase hg
+  have : M.RankPos := by sorry
+  intro B hBE
+  refine ⟨ ?_, ?_ ⟩
+  rw[truncate_ground_eq, ground_freeLift] at hBE
+  · intro hft
+    apply ((M.truncate).basis_freeLift_iff B hBE).2
+    have : M.freeLift.RankPos := by sorry
+    have h1 := truncate_isBase_iff.1 hft
+    obtain ⟨ x, hxB, hBB ⟩ := h1
+    have hn : insert x B ⊆ M.E := insert_subset_iff.2
+        (And.symm ⟨hBE, ((IsBase.subset_ground hBB) (mem_insert x B))⟩)
+    have h2 := (M.basis_freeLift_iff (insert x B) hn).1 hBB
+    obtain ⟨ e, heB, hBe ⟩ := h2
+    by_cases hex : x = e
+    · rw [hex] at hBe
+      have hhe: (insert e B) \ {e} = B := by
+        simp
+        rwa [hex] at hxB
+      rw [hhe] at hBe
+      have hf: ∃ f, f ∈ B := by
+        sorry
+      obtain ⟨f, hf⟩ := hf
+      refine ⟨ f, hf, ?_ ⟩
+      apply M.truncate_isBase_iff.2
+      refine ⟨ f, not_mem_diff_of_mem rfl, ?_ ⟩
+      simp
+      rwa [insert_eq_of_mem hf ]
+    refine ⟨ e, mem_of_mem_insert_of_ne heB (fun a ↦ hex (id (Eq.symm a))), ?_ ⟩
+    apply truncate_isBase_iff.2
+    refine ⟨x, ?_, ?_ ⟩
+    · simp_all only [truncate_ground_eq, truncate_isBase_iff,
+      mem_insert_iff, mem_diff, mem_singleton_iff, not_false_eq_true, and_true]
+    have hrw : (insert x B \ {e}) = insert x (B \ {e}) := insert_diff_of_not_mem B hex
+    rwa[ ←hrw ]
+  intro hTL
+  have : M.freeLift.RankPos := by sorry
+  apply truncate_isBase_iff.2
+  obtain ⟨x, hxB, htB⟩ := ((M.truncate).basis_freeLift_iff B hBE).1 hTL
+  obtain ⟨e, heB, hBe⟩ := M.truncate_isBase_iff.1 htB
+  by_cases hex : x = e
+  · rw [hex] at hBe
+    have hhe: insert e (B \ {e} ) = B := by
+      simp
+      rwa [hex] at hxB
+    rw [hhe] at hBe
+    have hf: ∃ f ∈ M.E, f ∉ B := by
+      sorry
+    obtain ⟨f, hfE, hf⟩ := hf
+    refine ⟨ f, hf, ?_ ⟩
+    have hE :  insert f B ⊆ M.E := by
+      apply insert_subset hfE hBE
+    apply (M.basis_freeLift_iff (insert f B) hE).2
+    refine ⟨ f , mem_insert f B, ?_ ⟩
+    have hrw : (insert f B \ {f}) = B := by
+      simp only [mem_singleton_iff, insert_diff_of_mem, sdiff_eq_left, disjoint_singleton_right]
+      exact hf
+    rwa [hrw]
+  refine ⟨ e, ?_, ?_ ⟩
+  · simp at heB
+    by_contra hcon
+    exact Ne.elim (fun a ↦ hex (id (Eq.symm a))) (heB hcon)
+  have hE : (insert e B) ⊆ M.E := by
+    apply insert_subset_iff.2
+    refine ⟨ (IsBase.subset_ground hBe) (mem_insert e (B \ {x})), hBE ⟩
+  apply (M.basis_freeLift_iff (insert e B) hE).2
+  refine ⟨x, mem_insert_of_mem e hxB, ?_ ⟩
+  have hrw : insert e B \ {x} = insert e (B \ {x}) := by
+    aesop
+  rwa [hrw]
+
+
 def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
   ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
