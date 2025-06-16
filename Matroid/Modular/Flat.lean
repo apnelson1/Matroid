@@ -201,7 +201,7 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
   exact M.subset_closure_of_subset' subset_union_left
 
 /-- A hyperplane is a modular flat iff it meets every line. -/
-lemma IsHyperplane.isModularFlat_iff_forall_isLIne {H : Set α} (hH : M.IsHyperplane H) :
+lemma IsHyperplane.isModularFlat_iff_forall_isLine {H : Set α} (hH : M.IsHyperplane H) :
     M.IsModularFlat H ↔ ∀ L, M.IsLine L → ¬ (L ∩ H ⊆ M.loops) := by
   simp_rw [inter_comm _ H]
   rw [hH.isFlat.isModularFlat_iff_forall_skew_of_inter]
@@ -346,7 +346,7 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
     ← hF.eq_closure_of_isBasis hI] at hef
   exact hef.1
 
-/-- If `X` is a modular isFlat, then any isNonloop `e` spanned by `X` in a minor `N` is parallel
+/-- If `X` is a modular flat, then any nonloop `e` spanned by `X` in a minor `N` is parallel
 in `N` to an element of `X`. -/
 lemma IsModularFlat.exists_parallel_mem_of_isMinor (hX : M.IsModularFlat X) {N : Matroid α}
     (hNM : N ≤m M) (hXE : X ⊆ N.E) (he : N.IsNonloop e) (heX : e ∈ N.closure X) :
@@ -919,7 +919,7 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
     by rwa [← hX'] at hne, hrange, rfl, htri, hcirc⟩
 
 /-- Every matroid whose lines are modular is finitary. -/
-lemma finitary_of_forall_isLIne_modular (hM : ∀ L, M.IsLine L → M.IsModularFlat L) :
+lemma finitary_of_forall_isLine_modular (hM : ∀ L, M.IsLine L → M.IsModularFlat L) :
     M.Finitary := by
   by_contra hnotfin
   obtain ⟨N, e, f, x, y, hxy, he, hxe, hye, hdj, hxf, rfl, htri, hcirc⟩ :=
@@ -997,27 +997,27 @@ lemma finitary_of_forall_isLIne_modular (hM : ∀ L, M.IsLine L → M.IsModularF
   simp [he.eq_iff] at h3
 
 /-- A matroid is modular iff every line meets every hyperplane in a point. -/
-lemma modular_iff_forall_isLIne_isHyperplane :
+lemma modular_iff_forall_isLine_isHyperplane :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → ¬ (L ∩ H ⊆ M.loops) := by
   refine ⟨fun h L H hL hH ↦ ?_, fun h F hF ↦ ?_⟩
-  · exact hH.isModularFlat_iff_forall_isLIne.1 (h hH.isFlat) L hL
+  · exact hH.isModularFlat_iff_forall_isLine.1 (h hH.isFlat) L hL
   obtain rfl | hssu := hF.subset_ground.eq_or_ssubset
   · simp
   obtain ⟨Hs, hne, hHs, rfl⟩ := hF.eq_sInter_isHyperplanes_of_ne_ground hssu.ne
   have hfin : M.Finitary
-  · refine finitary_of_forall_isLIne_modular fun L hL ↦ ?_
+  · refine finitary_of_forall_isLine_modular fun L hL ↦ ?_
     exact hL.isModularFlat_of_forall_isHyperplane <| fun H hH ↦ h hL hH
   refine IsModularFlat.sInter hne fun H hH ↦ ?_
-  rw [(hHs _ hH).isModularFlat_iff_forall_isLIne]
+  rw [(hHs _ hH).isModularFlat_iff_forall_isLine]
   exact fun L hL ↦ h hL (hHs _ hH)
 
-lemma modular_iff_forall_isLIne_isHyperplane_nonempty_inter [Loopless M] :
+lemma modular_iff_forall_isLine_isHyperplane_nonempty_inter [Loopless M] :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → (L ∩ H).Nonempty := by
-  rw [modular_iff_forall_isLIne_isHyperplane]
+  rw [modular_iff_forall_isLine_isHyperplane]
   exact ⟨fun h L H hL hH ↦ nonempty_iff_ne_empty.2 fun h_eq ↦ by simpa [h_eq] using h hL hH,
     fun h L H hL hH hss ↦ (h hL hH).ne_empty <| by simpa using hss⟩
 
 lemma Modular.finitary (hM : M.Modular) : M.Finitary :=
-  finitary_of_forall_isLIne_modular fun _ hL ↦ hM hL.isFlat
+  finitary_of_forall_isLine_modular fun _ hL ↦ hM hL.isFlat
 
 end Modular

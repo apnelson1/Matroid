@@ -77,7 +77,7 @@ lemma pair_indep [Simple M] (he : e ∈ M.E := by aesop_mat) (hf : f ∈ M.E := 
   rwa [← not_dep_iff, ← (isNonloop_of_loopless he).parallel_iff_dep (isNonloop_of_loopless hf) hne,
     parallel_iff_eq he]
 
-lemma pair_closure_isLIne [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
+lemma pair_closure_isLine [Simple M] (hne : e ≠ f) (he : e ∈ M.E := by aesop_mat)
     (hf : f ∈ M.E := by aesop_mat) : M.IsLine (M.closure {e,f}) := by
   rwa [IsLine, and_iff_right (M.closure_isFlat _), eRk_closure_eq, (pair_indep he hf).eRk_eq_encard,
     encard_pair]

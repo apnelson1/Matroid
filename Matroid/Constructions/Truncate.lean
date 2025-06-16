@@ -253,7 +253,14 @@ lemma truncate_contract (M : Matroid α) (C : Set α) : (M ／ C).truncate = M.t
     exact ⟨f, ⟨hf'.1, hf'.2⟩, he.2.superset (subset_insert _ _), hf'.2⟩
   exact ⟨e, ⟨he.1, heC⟩, he.2, heC⟩
 
-
+instance (M : Matroid α) [M.Nonempty] : M.truncate✶.RankPos := by
+  have hE := M.ground_nonempty
+  obtain ⟨E, rfl⟩ | hpos := M.eq_loopyOn_or_rankPos'
+  · simpa [rankPos_iff, eq_comm] using hE.ne_empty
+  rw [rankPos_iff]
+  simp only [truncate_ground_eq, empty_subset, dual_isBase_iff, diff_empty, truncate_isBase_iff,
+    not_exists, not_and]
+  exact fun x hx hB ↦ hx <| hB.subset_ground (mem_insert ..)
 
 end truncate
 
