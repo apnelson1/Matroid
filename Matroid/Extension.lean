@@ -400,22 +400,52 @@ modular pairs rather than families. -/
       iInter_iInter_eq_or_left, not_true_eq_false, iInter_of_empty, univ_inter]
     exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩
 
-
--- @[simps] def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
---     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
---     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
---     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U)
---     (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.IsModularFamily (fun x : Cs ↦ x)
---       → IsChain (· ⊆ ·) Cs → ⋂₀ Cs ∈ U) : M.ModularCut where
---   carrier := U
---   forall_isFlat := h_isFlat
---   forall_superset := h_superset
---   forall_inter := by
---     intro Fs hFs hne hmod
---     have := zorn_superset_nonempty (S := Fs) fun D hD hDchain hDne ↦ ⟨⋂₀ D, ?_, ?_⟩
---     · sorry
---     have := h_chain D (hD.trans hFs) hDne ?_ hDchain
-
+/-- The modular family condition can be replaced by a condition about modular pairs and chains. -/
+@[simps] def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
+    (h_isFlat : ∀ F ∈ U, M.IsFlat F)
+    (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
+    (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U)
+    (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.IsModularFamily (fun x : Cs ↦ x)
+      → IsChain (· ⊆ ·) Cs → ⋂₀ Cs ∈ U) : M.ModularCut where
+  carrier := U
+  forall_isFlat := h_isFlat
+  forall_superset := h_superset
+  forall_inter := by
+    rintro Fs hFs ⟨F₀, hF₀⟩ h
+    obtain ⟨B, hB⟩ := h
+    have hmodcl := hB.isBase.isModularBase_powerset.isModularBase_cls
+    have aux : Fs ⊆ M.closure '' 𝒫 B :=
+      fun F hF ↦ ⟨F ∩ B, by simp [hB.closure_inter_eq ⟨F, hF⟩, (h_isFlat F (hFs hF)).closure]⟩
+    have aux2 : ∀ F ∈ M.closure '' 𝒫 B, F = M.closure (F ∩ B) := by
+      simp only [mem_image, mem_powerset_iff, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂]
+      intro I hI
+      rw [hB.indep.closure_inter_eq_self_of_subset hI]
+    have hzorn := zorn_superset_nonempty (S := U ∩ M.closure '' B.powerset)
+      fun D hD hDchain hDne ↦ ⟨⋂₀ D, ⟨?_, ?_⟩, ?_⟩
+    · obtain ⟨F₁, -, hmin⟩ := hzorn F₀ ⟨hFs hF₀, aux hF₀⟩
+      apply h_superset hmin.prop.1 (IsFlat.sInter ⟨F₀, hF₀⟩ fun F hF ↦ h_isFlat F (hFs hF))
+      refine subset_sInter fun F hF ↦ inter_eq_right.1 ?_
+      apply hmin.eq_of_subset ⟨h_pair (hFs hF) hmin.prop.1 ?_, ?_⟩ inter_subset_right
+      · refine isModularPair_iff.2 ⟨B, hB.isBase.indep, hB.isBasis_inter ⟨_, hF⟩, ?_⟩
+        nth_rewrite 2 [aux2 F₁ hmin.prop.2]
+        exact (hB.indep.inter_left _).isBasis_closure
+      rw [aux2 F (aux hF), aux2 F₁ hmin.prop.2, ← Indep.closure_inter_eq_inter_closure,
+        ← inter_inter_distrib_right]
+      · exact ⟨_, inter_subset_right, rfl⟩
+      exact hB.indep.subset (by simp)
+    · apply h_chain _ (hD.trans inter_subset_left) hDne ⟨B, ?_⟩ hDchain
+      convert hmodcl.comp (fun F : D ↦ ⟨F ∩ B, by simp⟩) using 2 with ⟨F, hF⟩
+      simp [comp_apply, ← aux2 _ (hD hF).2]
+    · refine ⟨⋂₀ D ∩ B, by simp, ?_⟩
+      have := hDne.to_subtype
+      have hrw : ⋂₀ D = ⋂ i ∈ D, M.closure (i ∩ B) := by
+        rw [← iInter₂_congr (fun i hi ↦ aux2 i (hD hi).2), sInter_eq_biInter]
+      convert (hmodcl.comp (fun F : D ↦ ⟨F ∩ B, by simp⟩)).isBasis_iInter.closure_eq_closure
+      · simpa
+      simp only [comp_apply, iInter_coe_set, ← hrw]
+      rw [(IsFlat.sInter hDne fun F hF ↦ (h_isFlat F (hD hF).1)).closure]
+    exact fun F hF ↦ sInter_subset_of_mem hF
 
 end finite
 
@@ -461,8 +491,6 @@ This corresponds to the freeest extension of `M` that contracts to the extension
       convert h'.comp φ
       ext ⟨A, ⟨B, hB, rfl⟩⟩ e
       simp [hφ']
-
-
     simp_rw [diff_eq]
     rw [← biInter_distrib_inter _ hne, sInter_eq_biInter, ← diff_eq, diff_union_of_subset]
     simp only [subset_iInter_iff]
