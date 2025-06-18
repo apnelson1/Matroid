@@ -105,23 +105,22 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
     · exact (iUnion_plift_down Is).symm
     convert h
     simp [isSkewFamily_iff, IsModularFamily, isModularBase_iff, PLift.forall]
-
   clear! Is Xs
   intro η Is Xs h hIX hIs
+  -- extend each `I i` to a basis `J i` of `X i`, and let `J` be a basis for the union of the `J i`.
   choose Js hJs using fun i ↦ (hIs i).subset_isBasis_of_subset (hIX i)
   refine Indep.subset ?_ <| iUnion_mono (fun i ↦ (hJs i).2)
-
   obtain ⟨J, hJ⟩ := M.exists_isBasis _ (iUnion_subset (fun i ↦ (hJs i).1.indep.subset_ground))
-
+  -- We may assume that `J` is a strict subset of the union, so there is some `e ∈ (J i₀) \ J`
+  -- for some `i₀`.
   by_contra hcon
   have ex_i : ∃ i e, e ∈ (Js i) \ J := by
     by_contra! h'
     rw [← hJ.subset.antisymm (iUnion_subset fun i e he ↦ by_contra fun heJ ↦ h' i e ⟨he, heJ⟩)]
       at hcon
     exact hcon hJ.indep
-
   obtain ⟨i₀, e, hei₀, heJ⟩ := ex_i
-
+  -- Let `K i` be a modular collection of bases.
   obtain ⟨Ks, hdj, hKs, huKs⟩ := isSkewFamily_iff_exist_isBases.1 h
 
   have hssE : Js i₀ ∪ (⋃ i ∈ ({i₀}ᶜ : Set η), Ks i) ⊆ M.E := by
