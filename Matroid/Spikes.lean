@@ -25,11 +25,6 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
     M.freeLift.IsBase B ↔ ∃ e ∈ B, M.IsBase (B \ {e}) := by
   constructor
   · intro hB
-    -- have hB' : B ⊆ (M✶.truncate).E := by
-    --   rw [←M✶.truncate.dual_ground, freeLift_def]
-    --   exact IsBase.subset_ground hB
-    --have h1 := (M✶.truncate).dual_isBase_iff.1 hB
-    --have h2 := truncate_isBase_iff.1 ((M✶.truncate).dual_isBase_iff.1 hB )
     obtain ⟨e, hen, heB ⟩ := truncate_isBase_iff.1 ((M✶.truncate).dual_isBase_iff.1 hB )
     have hrw : M✶.truncate.E = M.E := rfl
     rw [hrw] at hen heB
@@ -60,9 +55,6 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
   have : B ⊆ M✶.truncate.E := by
     have hrw : M✶.truncate.E = M.E := by exact rfl
     rwa [hrw]
-    -- rw[ ←insert_diff_self_of_mem heB ]
-    -- apply insert_subset
-    -- sorry
   apply (M✶.truncate).dual_isBase_iff.2
   apply truncate_isBase_iff.2
   refine ⟨ e, not_mem_diff_of_mem heB, ?_ ⟩
@@ -137,6 +129,46 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
   apply (M.basis_freeLift_iff hE).2
   refine ⟨x, mem_insert_of_mem e hxB, ?_ ⟩
   rwa [← insert_diff_singleton_comm hne]
+
+def pre_free_spike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
+    (freeOn (univ : Set ι)).comap Prod.fst
+
+lemma pre_free_spike_ground (ι : Type*) (α : Type*) :
+    (pre_free_spike ι α).E = (univ : Set (ι × α) ):= by exact rfl
+
+lemma pre_free_Bool_self_dual (ι : Type*) :
+    pre_free_spike ι Bool = (pre_free_spike ι Bool )✶ := by
+  have hg : (pre_free_spike ι Bool).E = (pre_free_spike ι Bool )✶.E := rfl
+  apply ext_isBase hg
+  intro B hB
+  constructor
+  · intro hSB
+    apply (pre_free_spike ι Bool).dual_isBase_iff.2
+    apply comap_isBase_iff.2
+    simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ, and_true]
+    obtain ⟨ hcom, hcoo ⟩ := comap_isBase_iff.1 hSB
+    simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ,
+        and_true] at hcom
+    simp only [freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
+    refine ⟨ ?_, ?_ ⟩
+    · rw[←hcom, pre_free_spike_ground]
+      --have : range Prod.fst = (univ : Set ι ) := by sorry
+      sorry
+    rw [pre_free_spike_ground]
+    intro x hx y hy
+    intro hxy
+
+    sorry
+  sorry
+
+lemma freeSpike_self_dual (ι : Type*) :
+    (pre_free_spike ι Bool).freeLift.truncate = ((pre_free_spike ι Bool).freeLift.truncate)✶ := by
+  have : ((pre_free_spike ι Bool).freeLift.truncate)✶ =
+      ((pre_free_spike ι Bool).freeLift✶.freeLift)✶ := by
+    simp only [dual_inj]
+    sorry
+  sorry
+
 
 def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
   ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
