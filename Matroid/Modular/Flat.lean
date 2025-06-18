@@ -128,16 +128,19 @@ lemma IsFlat.isModularFlat_iff_forall_skew_of_inter (hX : M.IsFlat X) :
       ← diff_inter_self_eq_diff (t := X), inter_comm F] at h
     rw [skew_iff_diff_loops_skew]
     exact h.of_delete.mono (diff_subset_diff_right hr) (diff_subset_diff_right hr)
-
+  -- Let `W` be a flat so that `W` and `cl (X ∪ Y)` are a modular pair with intersection
+  -- `Y` and spanning union.
   obtain ⟨W, hW⟩ := hY.exists_modularCompl M.ground_isFlat (M.closure_isFlat (X ∪ Y))
     (M.subset_closure_of_subset' subset_union_right) (M.closure_subset_ground _)
-
+  -- Let `Z` be a flat so that `(X ∩ Y)` and `Z` are a modular pair
+  -- with trivial intersection and union spanning `Y`
   obtain ⟨Z, hZ⟩ := (M.closure_isFlat ∅).exists_modularCompl hY (hX.inter hY)
     (subset_inter hX.loops_subset hY.loops_subset) inter_subset_right
-
+  -- Let `X'` be a flat so that `X'` and `Y` are a modular pair
+  -- with intersection `Z` and union spanning `W`.
   obtain ⟨X', hX'⟩ :=
     hZ.isFlat_right.exists_modularCompl hW.isFlat_right hY hZ.right_subset hW.subset_right
-
+  --
   specialize h hX'.isFlat_right ?_ ?_
   · simp [← hZ.inter_eq, ← hX'.inter_eq, subset_inter_iff, inter_subset_left, true_and,
       inter_subset_right, and_true, and_self, loops]
@@ -567,7 +570,6 @@ lemma IsModularFlat.biInter_finite {ι : Type*} {Xs : ι → Set α} {A : Set ι
   obtain rfl | hBne := B.eq_empty_or_nonempty
   · simp [hXs i]
   exact (hXs i).inter (h hBne)
-
 
 /-- This might be true without `Finitary`. The proof follows Sachs 1960  -/
 lemma IsModularFlat.iInter {ι : Type*} [Nonempty ι] [Finitary M] {X : ι → Set α}
