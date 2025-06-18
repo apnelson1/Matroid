@@ -150,8 +150,12 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
     simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ,
         and_true] at hcom
     simp only [freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
+    have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := sorry
     refine ⟨ ?_, ?_ ⟩
     · rw[←hcom, pre_free_spike_ground]
+      ext x
+      simp
+
       --have : range Prod.fst = (univ : Set ι ) := by sorry
       sorry
     rw [pre_free_spike_ground]
