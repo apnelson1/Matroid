@@ -133,8 +133,13 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
 def pre_free_spike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
     (freeOn (univ : Set ι)).comap Prod.fst
 
+lemma pre_free_spike_def (ι : Type*) (α : Type*) :
+    pre_free_spike ι α = (freeOn (univ : Set ι)).comap Prod.fst := by rfl
+
 lemma pre_free_spike_ground (ι : Type*) (α : Type*) :
     (pre_free_spike ι α).E = (univ : Set (ι × α) ):= by exact rfl
+
+--lemma pre_free_Bool_basis (ι : Type*) (hB' : B ⊆ M.E := by aesop_mat) :
 
 lemma pre_free_Bool_self_dual (ι : Type*) :
     pre_free_spike ι Bool = (pre_free_spike ι Bool )✶ := by
@@ -150,20 +155,112 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
     simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ,
         and_true] at hcom
     simp only [freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
-    have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := sorry
+    have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := by
+      intro i b
+      refine ⟨ ?_, ?_⟩
+      · intro hb
+        by_contra hc
+        have hin := hcoo hb hc rfl
+        apply (Bool.eq_not_self b).1
+        simp only [Prod.mk.injEq, Bool.eq_not_self, and_false] at hin
+      intro hb
+      simp only [Prod.range_fst] at hcom
+      have hii : i ∈ Prod.fst '' B := by
+        rw [hcom ]
+        exact trivial
+      simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
+      obtain ⟨ x, hx ⟩ := hii
+      have heq : x = b := by
+        by_contra hcon
+        rw [Bool.eq_not.mpr hcon] at hx
+        exact hb hx
+      rwa [heq] at hx
     refine ⟨ ?_, ?_ ⟩
     · rw[←hcom, pre_free_spike_ground]
       ext x
-      simp
-
-      --have : range Prod.fst = (univ : Set ι ) := by sorry
-      sorry
+      simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
+      exists_eq_right]
+      constructor
+      · intro h
+        obtain ⟨ b, hb ⟩ := h
+        use !b
+        have hh := (aux x !b).2
+        simp only [Bool.not_not] at hh
+        exact hh hb
+      intro h
+      obtain ⟨b, hb ⟩ := h
+      use !b
+      exact (aux x b).1 hb
     rw [pre_free_spike_ground]
-    intro x hx y hy
-    intro hxy
-
-    sorry
-  sorry
+    intro x hx y hy hxy
+    have h1: x.2 = y.2 := by
+      simp only [mem_diff, mem_univ, true_and] at hx
+      simp only [mem_diff, mem_univ, true_and] at hy
+      by_contra hxny
+      have hx:  (x.1, x.2) ∉ B := hx
+      have hy:  (y.1, y.2) ∉ B := hy
+      rw [Bool.eq_not.mpr fun a ↦ hxny (id (Eq.symm a)), ←hxy] at hy
+      exact hx ((aux x.1 x.2).2 hy )
+    exact Prod.ext hxy h1
+  intro hD
+  have h1 := (pre_free_spike ι Bool).dual_isBase_iff.1 hD
+  rw [pre_free_spike_def] at h1
+  apply comap_isBase_iff.2
+  simp only [freeOn_ground, preimage_univ, image_univ, Prod.range_fst, freeOn_isBasis_iff,
+    subset_refl, and_true, subset_univ]
+  obtain ⟨ hcom, hcoo ⟩ := comap_isBase_iff.1 h1
+  simp only [comap_ground_eq, freeOn_ground, preimage_univ, image_univ, Prod.range_fst,
+    freeOn_isBasis_iff, subset_refl, and_true] at hcom
+  simp only [comap_ground_eq, freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
+  have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := by
+      intro i b
+      refine ⟨ ?_, ?_⟩
+      · intro hb
+        have hii : i ∈ Prod.fst '' (univ \ B) := by
+          rw [hcom ]
+          trivial
+        simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
+        obtain ⟨ x, hx ⟩ := hii
+        have heq : x = !b := by
+          by_contra hcon
+          rw [Bool.eq_not.mpr hcon] at hx
+          simp only [Bool.not_not,mem_diff, mem_univ, true_and] at hx
+          exact hx hb
+        rw [heq] at hx
+        simp at hx
+        exact hx
+      intro hb
+      by_contra hc
+      have hc : (i,b) ∈ univ \ B := by exact mem_diff_of_mem trivial hc
+      have hb : (i,!b) ∈ univ \ B := by exact mem_diff_of_mem trivial hb
+      have hin := hcoo hb hc rfl
+      simp only [Prod.mk.injEq, Bool.not_eq_eq_eq_not, Bool.eq_not_self, and_false] at hin
+  constructor
+  · rw[←hcom]
+    ext x
+    simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
+    exists_eq_right]
+    constructor
+    · intro h
+      obtain ⟨ b, hb ⟩ := h
+      use !b
+      exact (aux x b).1 hb
+    intro h
+    obtain ⟨ b, hb ⟩ := h
+    use !b
+    have hh := (aux x !b).2
+    simp only [Bool.not_not] at hh
+    exact hh hb
+  intro x hx y hy hxy
+  have h1: x.2 = y.2 := by
+    by_contra hxny
+    have hx:  (x.1, x.2) ∈ B := hx
+    have hy:  (y.1, y.2) ∈ B := hy
+    rw [Bool.eq_not.mpr fun a ↦ hxny (id (Eq.symm a)), ←hxy] at hy
+    have h1 := (aux x.1 !x.2).1 hy
+    simp only [Bool.not_not] at h1
+    exact h1 hx
+  exact Prod.ext hxy h1
 
 lemma freeSpike_self_dual (ι : Type*) :
     (pre_free_spike ι Bool).freeLift.truncate = ((pre_free_spike ι Bool).freeLift.truncate)✶ := by
