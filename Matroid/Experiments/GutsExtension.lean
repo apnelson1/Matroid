@@ -44,8 +44,11 @@ def gutsCut (M : Matroid α) (X : ι → Set α) (dj : Pairwise (Disjoint on X))
         rw [project_closure, hB.isBase.spanning.closure_eq_of_superset subset_union_left, ← Xu]
         apply subset_iUnion
       refine h'.trans <| closure_subset_closure _ ?_
-
       nth_rw 1 [← inter_eq_left.2 (hB.isBase.subset_ground.trans_eq Xu.symm), inter_iUnion]
+      grw [← biUnion_mono (s := {i}ᶜ) rfl.subset (fun j hj ↦ inter_subset_right (s := B))]
+      rw [← biUnion_insert (t := fun i ↦ B ∩ X i), ← union_singleton, compl_union_self,
+        biUnion_univ]
+
 
 
 

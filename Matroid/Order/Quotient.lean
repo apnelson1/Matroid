@@ -62,7 +62,7 @@ private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY :
     have hrw := fun M ↦ eRelRk_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
     have hy : y ∈ Y \ M₁.closure X ∧ M₁.eRelRk (insert y X) Y < M₁.eRelRk X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
-      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_gt]
+      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_ge]
       · intro hle
         simp only [ENat.add_le_left_iff, one_ne_zero, or_false] at hle
         simpa [hle] using (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin

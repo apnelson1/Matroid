@@ -261,7 +261,7 @@ lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
 
 lemma eRelRk_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
     M.eRelRk X Y ≤ 1 ↔ ∃ e ∈ Y, Y ⊆ M.closure (insert e X) := by
-  rw [le_iff_eq_or_lt, lt_iff_not_gt, ENat.one_le_iff_ne_zero, not_not, eRelRk_eq_one_iff,
+  rw [le_iff_eq_or_lt, lt_iff_not_ge, ENat.one_le_iff_ne_zero, not_not, eRelRk_eq_one_iff,
     eRelRk_eq_zero_iff]
   refine ⟨?_, fun ⟨e, hY'⟩ ↦ ?_⟩
   · rintro (⟨e, he, hY'⟩ | hY')

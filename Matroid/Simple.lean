@@ -102,7 +102,7 @@ lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
 
 lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   rw [iff_comm, le_girth_iff]
-  refine ⟨fun h C hC ↦ le_of_not_lt fun hlt ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun h C hC ↦ le_of_not_gt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
   simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
     ← one_lt_encard_iff_nontrivial]

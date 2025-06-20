@@ -452,7 +452,7 @@ lemma localConn_comm (M : Matroid α) (X Y : Set α) : M.localConn X Y = M.local
 
 lemma IsRkFinite.cast_localConn_right_eq (hX : M.IsRkFinite X) (Y : Set α) :
     (M.localConn X Y : ℕ∞) = M.eLocalConn X Y :=
-  ENat.coe_toNat fun htop ↦ hX.eRk_lt_top.not_le
+  ENat.coe_toNat fun htop ↦ hX.eRk_lt_top.not_ge
     <| htop.symm.le.trans <| M.eLocalConn_le_eRk_left X Y
 
 lemma IsRkFinite.cast_localConn_left_eq (hY : M.IsRkFinite Y) :

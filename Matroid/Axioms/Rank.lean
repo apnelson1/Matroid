@@ -291,7 +291,7 @@ lemma indep_aug' (hI : M.r I = I.card) (hlt : M.r I < M.r X) :
     exact le_antisymm (by linarith) <|
       M.rk_mono <| Finset.subset_union_left.trans (Finset.subset_insert _ _)
   have h' : M.r (X ∪ I) = M.r I := by simpa [X.union_comm] using haux _ Finset.Subset.rfl
-  exact hlt.not_le <| le_trans (M.rk_mono Finset.subset_union_left) h'.le
+  exact hlt.not_ge <| le_trans (M.rk_mono Finset.subset_union_left) h'.le
 
 lemma indep_aug (hI : M.r I = I.card) (hJ : M.r J = J.card) (hlt : I.card < J.card) :
     ∃ e ∈ J, e ∉ I ∧ M.r (insert e I) = (insert e I).card :=
@@ -325,7 +325,7 @@ protected lemma matroid_indep_iff' {I : Set α} :
   obtain ⟨I, hI⟩ := M.matroid.exists_isBasis' X
   obtain ⟨I, rfl⟩ := (X.finite_toSet.subset hI.subset).exists_finset_coe
   rw [← hI.card, ncard_coe_Finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
-  refine (M.rk_mono (by simpa using hI.subset)).antisymm <| le_of_not_lt fun hlt ↦ ?_
+  refine (M.rk_mono (by simpa using hI.subset)).antisymm <| le_of_not_gt fun hlt ↦ ?_
   obtain ⟨e, heX, heI, hr⟩ := M.indep_aug' (by simpa using hI.indep) hlt
   have hi : M.matroid.Indep (insert e I) := by
     rwa [← Finset.coe_insert, FinsetRankMatroid.matroid_indep_iff]

@@ -249,11 +249,11 @@ lemma IsCircuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
     (hM : 2*k ≤ M.E.encard + 2) (hconn : M.TutteConnected k) : k ≤ C.encard := by
   obtain hinf | hfin := C.finite_or_infinite.symm
   · simp [hinf.encard_eq]
-  refine le_of_not_lt fun hlt ↦ ?_
+  refine le_of_not_gt fun hlt ↦ ?_
   have hle : C.encard + 1 ≤ k := by rwa [ENat.add_one_le_iff (by rwa [encard_ne_top_iff])]
   have hle' := (mul_le_mul_left' hle 2).trans hM
   rw [mul_add, mul_one, WithTop.add_le_add_iff_right (by norm_num)] at hle'
-  exact hlt.not_le <| hconn (hC.isTutteSep hfin hle')
+  exact hlt.not_ge <| hconn (hC.isTutteSep hfin hle')
 
 lemma TutteConnected.le_girth (h : M.TutteConnected k) (hk : 2*k ≤ M.E.encard + 2) :
     k ≤ M.girth := by

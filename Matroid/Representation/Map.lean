@@ -141,7 +141,7 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
     intro I J hI hIfin hJ hJfin hIJ
     have hssu : ¬ (J ⊆ span 𝔽 I) := by
       rw [← span_le]
-      refine fun hss ↦ hIJ.not_le ?_
+      refine fun hss ↦ hIJ.not_ge ?_
       have _ := hIfin.fintype
       have _ := hJfin.fintype
       have _ : Module.Finite 𝔽 (span 𝔽 I) := FiniteDimensional.span_of_finite _ hIfin

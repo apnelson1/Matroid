@@ -417,11 +417,11 @@ lemma girth_lt_iff : M.girth < k ↔ ∃ C, M.IsCircuit C ∧ C.encard < k := by
   simp_rw [girth, iInf_lt_iff, mem_setOf_eq, bex_def]
 
 lemma lt_girth_iff [RankPos M✶] : k < M.girth ↔ ∀ C, M.IsCircuit C → k < C.encard := by
-  rw [lt_iff_not_gt, girth_le_iff]
+  rw [lt_iff_not_ge, girth_le_iff]
   simp
 
 lemma lt_girth_iff' {k : ℕ} : k < M.girth ↔ ∀ C : Finset α, M.IsCircuit C → k < C.card := by
-  rw [lt_iff_not_gt, girth_le_iff']
+  rw [lt_iff_not_ge, girth_le_iff']
   simp
 
 lemma indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by aesop_mat) :

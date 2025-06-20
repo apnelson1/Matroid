@@ -175,7 +175,7 @@ instance : OrderedCommMonoid ℕ∞ := CanonicallyOrderedAdd.toOrderedCommMonoid
 -- protected lemma ENat.pow_eq_zero : a ^ b = 0 ↔ a = 0 ∧ b ≠ 0 := by
 --   cases b using ENat.recTopCoe with
 --   | top =>
---     obtain hle | hlt := le_or_lt a 1
+--     obtain hle | hlt := le_or_gt a 1
 --     · obtain rfl | rfl := ENat.le_one_iff.1 hle <;> simp [ENat.zero_pow_eq]
 --     simp [ENat.pow_top hlt, show a ≠ 0 by rintro rfl; simp at hlt]
 --   | coe b => simp [pow_natCast]
@@ -197,7 +197,7 @@ instance : OrderedCommMonoid ℕ∞ := CanonicallyOrderedAdd.toOrderedCommMonoid
 --   · rw [mul_comm, aux _ _ (not_le.1 hle).le, add_comm]
 --   cases b' using ENat.recTopCoe with
 --   | top =>
---     obtain ha | ha := le_or_lt a 1
+--     obtain ha | ha := le_or_gt a 1
 --     · obtain rfl | rfl := ENat.le_one_iff.1 ha <;> simp [ENat.zero_pow_eq]
 --     simp [ENat.pow_top ha, mul_top, show a ≠ 0 by rintro rfl; simp at ha]
 --   | coe b' =>

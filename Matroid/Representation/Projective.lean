@@ -207,7 +207,7 @@ lemma exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Representable 𝔽) (
 lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
     M.E.encard ≤ ∑ i ∈ Finset.range M.rank, (ENat.card 𝔽)^i := by
   classical
-  obtain hle | hlt := le_or_lt M.eRank 1
+  obtain hle | hlt := le_or_gt M.eRank 1
   · obtain ⟨E, rfl⟩ := M.eq_unifOn_of_eRank_le_one hle
     have hE := unifOn_simple_iff.1 (by assumption)
     replace hE := show E.Subsingleton by simpa using hE

@@ -79,7 +79,7 @@ protected lemma Indep.augment {J : Set α} (hI : M.Indep I) (hIfin : I.Finite) (
   -- and take a circuit `Cb` for `b`. Now by circuit elimination, the set `Ca ∪ Cb \ {x}`
   -- contains a circuit but is contained in `J`, a contradiction.
   obtain ⟨a, haJ, haI⟩ : ∃ a ∈ J, a ∉ I :=
-    not_subset.1 <| fun h ↦ hIJ.not_le (ncard_le_ncard h hIfin)
+    not_subset.1 <| fun h ↦ hIJ.not_ge (ncard_le_ncard h hIfin)
   obtain ⟨Ca, hCa, hxCa, haCa, hCaJ⟩ := h_ex a ⟨haJ, haI⟩
   obtain ⟨b, hbCa, hbI⟩ : ∃ b ∈ Ca, b ∉ I := not_subset.1 fun h ↦ hI.not_isCircuit_of_subset h hCa
   obtain ⟨Cb, hCb, hxCb, hbCb, hCbJ⟩ :=

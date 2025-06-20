@@ -81,7 +81,7 @@ instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) 
 
 instance truncateTo.rankFinite {k : ℕ} : RankFinite (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_isBase
-  refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
+  refine ⟨B, hB, (le_or_gt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rank_le h] at hB
     rw [← encard_lt_top_iff, hB.encard_eq_eRank]
     exact h.trans_lt (WithTop.coe_lt_top _)

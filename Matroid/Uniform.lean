@@ -66,7 +66,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
     (unifOn E k)✶ = unifOn E (hE.toFinset.card - k) := by
   classical
   obtain ⟨E, rfl⟩ := hE.exists_finset_coe
-  obtain (hle | hlt) := le_or_lt E.card k
+  obtain (hle | hlt) := le_or_gt E.card k
   · rw [unifOn_eq_of_le (by simpa), freeOn_dual_eq, tsub_eq_zero_of_le (by simpa), unifOn_zero]
 
   refine ext_isBase (by simp) (fun B hBE ↦ ?_)
@@ -166,7 +166,7 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
 
   simp_rw [unifOn_indep_iff]
 
-  refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_lt ?_).symm,
+  refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_gt ?_).symm,
     fun h ↦ ⟨h.symm.le, fun e heC ↦ ⟨Eq.le ?_, diff_subset.trans hCE⟩⟩⟩
   · rwa [← encard_diff_singleton_add_one heC, WithTop.add_lt_add_iff_right (by simp)] at hlt
   rwa [← encard_diff_singleton_add_one heC, WithTop.add_right_inj (by simp)] at h
@@ -244,7 +244,7 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
 /-- The expression for dual of a uniform matroid.
   The junk case where `b < a` still works because the subtraction truncates. -/
 theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
-  obtain (hab | hba) := le_or_lt a b
+  obtain (hab | hba) := le_or_gt a b
   · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 

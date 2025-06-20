@@ -233,7 +233,7 @@ variable {s t u : Set α} {P : Partition s} {x : α}
   P.sSup_eq
 
 lemma nonempty_of_mem (ht : t ∈ P) : t.Nonempty :=
-  nmem_singleton_empty.1 <| P.ne_bot_of_mem ht
+  notMem_singleton_empty.1 <| P.ne_bot_of_mem ht
 
 lemma subset_of_mem (ht : t ∈ P) : t ⊆ s :=
   P.le_of_mem ht

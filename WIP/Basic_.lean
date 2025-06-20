@@ -693,7 +693,7 @@ lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
   apply span_mono (union_subset (subset_insert _ _) _)
   rintro _ ⟨e, he, rfl⟩
   left
-  rw [← nmem_support]
+  rw [← notMem_support]
   exact notMem_subset v.support_subset_ground he.2
 
 @[simp] lemma Rep.span_eq_span_closure (v : M.Rep 𝔽 W) (X : Set α) :
