@@ -5,6 +5,7 @@ variable {α : Type*} {B X I J C Y : Set α}
 
 universe u
 
+set_option linter.style.longLine false
 
 namespace Matroid
 
@@ -130,53 +131,62 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
   refine ⟨x, mem_insert_of_mem e hxB, ?_ ⟩
   rwa [← insert_diff_singleton_comm hne]
 
-def pre_free_spike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
+def preFreeSpike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
     (freeOn (univ : Set ι)).comap Prod.fst
 
-lemma pre_free_spike_def (ι : Type*) (α : Type*) :
-    pre_free_spike ι α = (freeOn (univ : Set ι)).comap Prod.fst := by rfl
+lemma preFreeSpike_def (ι : Type*) (α : Type*) :
+    preFreeSpike ι α = (freeOn (univ : Set ι)).comap Prod.fst := by rfl
 
-lemma pre_free_spike_ground (ι : Type*) (α : Type*) :
-    (pre_free_spike ι α).E = (univ : Set (ι × α) ):= by exact rfl
+lemma preFreeSpike_ground (ι : Type*) (α : Type*) :
+    (preFreeSpike ι α).E = (univ : Set (ι × α) ):= by exact rfl
 
 --lemma pre_free_Bool_basis (ι : Type*) (hB' : B ⊆ M.E := by aesop_mat) :
 
-lemma pre_free_Bool_self_dual (ι : Type*) :
-    pre_free_spike ι Bool = (pre_free_spike ι Bool )✶ := by
-  have hg : (pre_free_spike ι Bool).E = (pre_free_spike ι Bool )✶.E := rfl
-  apply ext_isBase hg
+lemma preFreeSpikeBool_base_iff {ι : Type} {B} :
+  (preFreeSpike ι Bool).IsBase B ↔ ∀ i b, (i, b) ∈ B ↔ (i, !b) ∉ B := sorry
+
+lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpike ι Bool)✶ := by
+  refine ext_isBase rfl ?_
+
+  have aux' (B i b) : (preFreeSpike ι Bool).IsBase B → ((i, b) ∈ B ↔ (i, !b) ∉ B) := by
+
+      -- exact aux' _ _ _ hSB
+      -- intro i b
+      -- refine ⟨ ?_, ?_⟩
+      -- · intro hb
+      --   by_contra hc
+      --   have hin := hcoo hb hc rfl
+      --   apply (Bool.eq_not_self b).1
+      --   simp only [Prod.mk.injEq, Bool.eq_not_self, and_false] at hin
+      -- intro hb
+      -- simp only [Prod.range_fst] at hcom
+      -- have hii : i ∈ Prod.fst '' B := by
+      --   rw [hcom ]
+      --   exact trivial
+      -- simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
+      -- obtain ⟨ x, hx ⟩ := hii
+      -- have heq : x = b := by
+      --   by_contra hcon
+      --   rw [Bool.eq_not.mpr hcon] at hx
+      --   exact hb hx
+      -- rwa [heq] at hx
+    sorry
+
+
   intro B hB
   constructor
   · intro hSB
-    apply (pre_free_spike ι Bool).dual_isBase_iff.2
+    apply (preFreeSpike ι Bool).dual_isBase_iff.2
     apply comap_isBase_iff.2
     simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ, and_true]
     obtain ⟨ hcom, hcoo ⟩ := comap_isBase_iff.1 hSB
     simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ,
         and_true] at hcom
     simp only [freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
-    have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := by
-      intro i b
-      refine ⟨ ?_, ?_⟩
-      · intro hb
-        by_contra hc
-        have hin := hcoo hb hc rfl
-        apply (Bool.eq_not_self b).1
-        simp only [Prod.mk.injEq, Bool.eq_not_self, and_false] at hin
-      intro hb
-      simp only [Prod.range_fst] at hcom
-      have hii : i ∈ Prod.fst '' B := by
-        rw [hcom ]
-        exact trivial
-      simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
-      obtain ⟨ x, hx ⟩ := hii
-      have heq : x = b := by
-        by_contra hcon
-        rw [Bool.eq_not.mpr hcon] at hx
-        exact hb hx
-      rwa [heq] at hx
+    have aux (i : ι) (b : Bool) : (i, b) ∈ B ↔ (i, !b) ∉ B := aux' B i b hSB
+
     refine ⟨ ?_, ?_ ⟩
-    · rw[←hcom, pre_free_spike_ground]
+    · rw[←hcom, preFreeSpike_ground]
       ext x
       simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
       exists_eq_right]
@@ -187,11 +197,8 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
         have hh := (aux x !b).2
         simp only [Bool.not_not] at hh
         exact hh hb
-      intro h
-      obtain ⟨b, hb ⟩ := h
-      use !b
-      exact (aux x b).1 hb
-    rw [pre_free_spike_ground]
+      exact fun ⟨b, hb⟩ ↦ ⟨!b, (aux x b).1 hb⟩
+    rw [preFreeSpike_ground]
     intro x hx y hy hxy
     have h1: x.2 = y.2 := by
       simp only [mem_diff, mem_univ, true_and] at hx
@@ -203,8 +210,8 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
       exact hx ((aux x.1 x.2).2 hy )
     exact Prod.ext hxy h1
   intro hD
-  have h1 := (pre_free_spike ι Bool).dual_isBase_iff.1 hD
-  rw [pre_free_spike_def] at h1
+  have h1 := (preFreeSpike ι Bool).dual_isBase_iff.1 hD
+  rw [preFreeSpike_def] at h1
   apply comap_isBase_iff.2
   simp only [freeOn_ground, preimage_univ, image_univ, Prod.range_fst, freeOn_isBasis_iff,
     subset_refl, and_true, subset_univ]
@@ -212,31 +219,11 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
   simp only [comap_ground_eq, freeOn_ground, preimage_univ, image_univ, Prod.range_fst,
     freeOn_isBasis_iff, subset_refl, and_true] at hcom
   simp only [comap_ground_eq, freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
-  have aux : ∀ (i : ι) (b : Bool), (i, b) ∈ B ↔ (i, !b) ∉ B := by
-      intro i b
-      refine ⟨ ?_, ?_⟩
-      · intro hb
-        have hii : i ∈ Prod.fst '' (univ \ B) := by
-          rw [hcom ]
-          trivial
-        simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
-        obtain ⟨ x, hx ⟩ := hii
-        have heq : x = !b := by
-          by_contra hcon
-          rw [Bool.eq_not.mpr hcon] at hx
-          simp only [Bool.not_not,mem_diff, mem_univ, true_and] at hx
-          exact hx hb
-        rw [heq] at hx
-        simp at hx
-        exact hx
-      intro hb
-      by_contra hc
-      have hc : (i,b) ∈ univ \ B := by exact mem_diff_of_mem trivial hc
-      have hb : (i,!b) ∈ univ \ B := by exact mem_diff_of_mem trivial hb
-      have hin := hcoo hb hc rfl
-      simp only [Prod.mk.injEq, Bool.not_eq_eq_eq_not, Bool.eq_not_self, and_false] at hin
+  have aux (i : ι) (b : Bool) : (i, b) ∈ B ↔ (i, !b) ∉ B := by
+      specialize aux' (univ \ B) i (!b) sorry
+      simpa using aux'.symm
   constructor
-  · rw[←hcom]
+  · rw [← hcom]
     ext x
     simp only [mem_image, mem_diff, mem_univ, true_and, Prod.exists, exists_and_right,
     exists_eq_right]
@@ -262,13 +249,14 @@ lemma pre_free_Bool_self_dual (ι : Type*) :
     exact h1 hx
   exact Prod.ext hxy h1
 
-lemma freeSpike_self_dual (ι : Type*) :
-    (pre_free_spike ι Bool).freeLift.truncate = ((pre_free_spike ι Bool).freeLift.truncate)✶ := by
-  have : ((pre_free_spike ι Bool).freeLift.truncate)✶ =
-      ((pre_free_spike ι Bool).freeLift✶.freeLift)✶ := by
-    simp only [dual_inj]
-    sorry
-  sorry
+-- lemma freeSpike_self_dual (ι : Type*) :
+--     (preFreeSpike ι Bool).freeLift.truncate = ((preFreeSpike ι Bool).freeLift.truncate)✶ :=
+--by
+--   have : ((preFreeSpike ι Bool).freeLift.truncate)✶ =
+--       ((preFreeSpike ι Bool).freeLift✶.freeLift)✶ := by
+--     simp only [dual_inj]
+--     sorry
+--   sorry
 
 
 def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
@@ -287,288 +275,289 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
     := by
   exact rfl
 
-lemma double_circuitOn_isBase_iff (ι : Type*) (B : Set (ι × Bool)) :
-    (double_circuitOn ι).IsBase B ↔
-    (∃ i : ι, ((i, true) ∉ B ∧ (i, false) ∉ B) ∧
-    (∀ j : ι, j ≠ i → (Xor' ((j,false) ∈ B) ((j, true) ∈ B)) ) )
-    := by
-    constructor
-    · intro hB
-      have hC : (univ : Set ι).Nonempty := by sorry
-      have h1 := ((circuitOn (univ : Set ι)).comap_isBase_iff.1 hB).2.1
-      have h2: (circuitOn (univ : Set ι)).E = univ := by exact rfl
-      obtain h3 := ((circuitOn (univ : Set ι)).comap_isBase_iff.1 hB  ).1
-      simp at h3
-      nth_rewrite 2 [ ←h2 ] at h3
-      rw [isBasis_ground_iff ] at h3
-      obtain ⟨ i, hi1, hi2 ⟩ := (circuitOn_isBase_iff hC).1 h3
-      refine ⟨ i, ⟨ ?_, ?_ ⟩, ?_ ⟩
-      · by_contra hitB
-        have hhe: i ∈ Prod.fst '' B := by
-          refine (mem_image Prod.fst B i).mpr ?_
-          use (i, true)
-        exact hi1 hhe
-      · by_contra hitB
-        have hhe: i ∈ Prod.fst '' B := by
-          refine (mem_image Prod.fst B i).mpr ?_
-          use (i, false)
-        exact hi1 hhe
-      intro j hij
-      unfold Xor'
-      have hjin : j ∈ insert i (Prod.fst '' B) := by
-        rw [hi2]
-        exact trivial
-      obtain ⟨x, hxB, hxB1 ⟩ := (mem_image Prod.fst B j).1 (mem_of_mem_insert_of_ne hjin hij )
-      have hcases : x.2 = true ∨ x.2 = false := by exact Bool.eq_false_or_eq_true x.2
-      cases hcases with
-      | inl h =>
-        right
-        rw[ ←hxB1]
-        rw [←h]
-        refine ⟨hxB, ?_ ⟩
-        by_contra hfB
-        exact Std.Tactic.BVDecide.Reflect.Bool.false_of_eq_true_of_eq_false
-          h (Prod.snd_eq_iff.mpr (h1 hxB hfB rfl) )
-      | inr h =>
-        left
-        rw[ ←hxB1]
-        rw [←h]
-        refine ⟨hxB, ?_ ⟩
-        by_contra hfB
-        exact Std.Tactic.BVDecide.Reflect.Bool.false_of_eq_true_of_eq_false
-          (Prod.snd_eq_iff.mpr (h1 hxB hfB rfl) ) h
-    intro h
-    obtain ⟨ i, ⟨hit, hif⟩, hj ⟩ := h
-    apply (circuitOn (univ : Set ι)).comap_isBase_iff.2
-    simp
-    constructor
-    · have h1: (circuitOn (univ : Set ι)).E = univ := by exact rfl
-      nth_rewrite 2 [ ←h1 ]
-      apply isBasis_ground_iff.2
-      have hC : (univ : Set ι).Nonempty := by sorry
-      apply (circuitOn_isBase_iff hC).2
-      simp
-      refine ⟨i,⟨ hif, hit ⟩ , ?_  ⟩
-      refine eq_univ_iff_forall.mpr ?_
-      intro j
-      by_cases hij : j = i
-      · rw [hij]
-        exact mem_insert i (Prod.fst '' B)
-      have ht:= (hj j hij).or
-      apply mem_insert_iff.2
-      simp_all only [ne_eq, circuitOn_ground, mem_insert_iff, mem_image,
-      Prod.exists, exists_and_right, Bool.exists_bool, exists_eq_right, or_true]
-    intro e heB f hf hef
-    have h1: e.2 = f.2 := by
-      have hei : e.1 ≠ i := by
-        by_contra h2
-        have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
-        cases hcases with
-        | inl h =>
-          have h3: (i, true) ∈ B := by
-            rw[ ←h2, ←h]
-            exact heB
-          exact hit h3
-        | inr h =>
-          have h3: (i, false) ∈ B := by
-            rw[ ←h2, ←h]
-            exact heB
-          exact hif h3
-      by_contra h
-      have h1 : (e.1, false) ∈ B ∧ (e.1, true) ∈ B := by
-        refine ⟨ ?_, ?_ ⟩
-        · have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
-          cases hcases with
-        | inl h2 =>
-          rw [h2] at h
-          simp only [Bool.true_eq, ne_eq, Bool.not_eq_true] at h
-          rwa [hef, ←h]
-        | inr h2 =>
-          rwa [←h2 ]
-        have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
-        cases hcases with
-        | inl h2 =>
-          rwa [←h2 ]
-        | inr h2 =>
-          rw [h2] at h
-          simp at h
-          rwa [hef, ←h]
-      exact ((xor_iff_or_and_not_and ((e.1, false) ∈ B) ((e.1, true) ∈ B)).1 (hj e.1 hei )).2 h1
-    exact Prod.ext hef h1
+-- lemma double_circuitOn_isBase_iff (ι : Type*) (B : Set (ι × Bool)) :
+--     (double_circuitOn ι).IsBase B ↔
+--     (∃ i : ι, ((i, true) ∉ B ∧ (i, false) ∉ B) ∧
+--     (∀ j : ι, j ≠ i → (Xor' ((j,false) ∈ B) ((j, true) ∈ B)) ) )
+--     := by
+--     constructor
+--     · intro hB
+--       have hC : (univ : Set ι).Nonempty := by sorry
+--       have h1 := ((circuitOn (univ : Set ι)).comap_isBase_iff.1 hB).2.1
+--       have h2: (circuitOn (univ : Set ι)).E = univ := by exact rfl
+--       obtain h3 := ((circuitOn (univ : Set ι)).comap_isBase_iff.1 hB  ).1
+--       simp at h3
+--       nth_rewrite 2 [ ←h2 ] at h3
+--       rw [isBasis_ground_iff ] at h3
+--       obtain ⟨ i, hi1, hi2 ⟩ := (circuitOn_isBase_iff hC).1 h3
+--       refine ⟨ i, ⟨ ?_, ?_ ⟩, ?_ ⟩
+--       · by_contra hitB
+--         have hhe: i ∈ Prod.fst '' B := by
+--           refine (mem_image Prod.fst B i).mpr ?_
+--           use (i, true)
+--         exact hi1 hhe
+--       · by_contra hitB
+--         have hhe: i ∈ Prod.fst '' B := by
+--           refine (mem_image Prod.fst B i).mpr ?_
+--           use (i, false)
+--         exact hi1 hhe
+--       intro j hij
+--       unfold Xor'
+--       have hjin : j ∈ insert i (Prod.fst '' B) := by
+--         rw [hi2]
+--         exact trivial
+--       obtain ⟨x, hxB, hxB1 ⟩ := (mem_image Prod.fst B j).1 (mem_of_mem_insert_of_ne hjin hij )
+--       have hcases : x.2 = true ∨ x.2 = false := by exact Bool.eq_false_or_eq_true x.2
+--       cases hcases with
+--       | inl h =>
+--         right
+--         rw[ ←hxB1]
+--         rw [←h]
+--         refine ⟨hxB, ?_ ⟩
+--         by_contra hfB
+--         exact Std.Tactic.BVDecide.Reflect.Bool.false_of_eq_true_of_eq_false
+--           h (Prod.snd_eq_iff.mpr (h1 hxB hfB rfl) )
+--       | inr h =>
+--         left
+--         rw[ ←hxB1]
+--         rw [←h]
+--         refine ⟨hxB, ?_ ⟩
+--         by_contra hfB
+--         exact Std.Tactic.BVDecide.Reflect.Bool.false_of_eq_true_of_eq_false
+--           (Prod.snd_eq_iff.mpr (h1 hxB hfB rfl) ) h
+--     intro h
+--     obtain ⟨ i, ⟨hit, hif⟩, hj ⟩ := h
+--     apply (circuitOn (univ : Set ι)).comap_isBase_iff.2
+--     simp
+--     constructor
+--     · have h1: (circuitOn (univ : Set ι)).E = univ := by exact rfl
+--       nth_rewrite 2 [ ←h1 ]
+--       apply isBasis_ground_iff.2
+--       have hC : (univ : Set ι).Nonempty := by sorry
+--       apply (circuitOn_isBase_iff hC).2
+--       simp
+--       refine ⟨i,⟨ hif, hit ⟩ , ?_  ⟩
+--       refine eq_univ_iff_forall.mpr ?_
+--       intro j
+--       by_cases hij : j = i
+--       · rw [hij]
+--         exact mem_insert i (Prod.fst '' B)
+--       have ht:= (hj j hij).or
+--       apply mem_insert_iff.2
+--       simp_all only [ne_eq, circuitOn_ground, mem_insert_iff, mem_image,
+--       Prod.exists, exists_and_right, Bool.exists_bool, exists_eq_right, or_true]
+--     intro e heB f hf hef
+--     have h1: e.2 = f.2 := by
+--       have hei : e.1 ≠ i := by
+--         by_contra h2
+--         have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
+--         cases hcases with
+--         | inl h =>
+--           have h3: (i, true) ∈ B := by
+--             rw[ ←h2, ←h]
+--             exact heB
+--           exact hit h3
+--         | inr h =>
+--           have h3: (i, false) ∈ B := by
+--             rw[ ←h2, ←h]
+--             exact heB
+--           exact hif h3
+--       by_contra h
+--       have h1 : (e.1, false) ∈ B ∧ (e.1, true) ∈ B := by
+--         refine ⟨ ?_, ?_ ⟩
+--         · have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
+--           cases hcases with
+--         | inl h2 =>
+--           rw [h2] at h
+--           simp only [Bool.true_eq, ne_eq, Bool.not_eq_true] at h
+--           rwa [hef, ←h]
+--         | inr h2 =>
+--           rwa [←h2 ]
+--         have hcases : e.2 = true ∨ e.2 = false := by exact Bool.eq_false_or_eq_true e.2
+--         cases hcases with
+--         | inl h2 =>
+--           rwa [←h2 ]
+--         | inr h2 =>
+--           rw [h2] at h
+--           simp at h
+--           rwa [hef, ←h]
+--       exact ((xor_iff_or_and_not_and ((e.1, false) ∈ B) ((e.1, true) ∈ B)).1 (hj e.1 hei )).2 h1 --
+--     exact Prod.ext hef h1
 
 --May be useless
 
-lemma freeSpike_leg_im_eq (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).Indep I) :
-    ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j := by
-  intro i j hit hif hjt hjf
-  by_contra! hij
-  obtain ⟨ B, hBB, hIB ⟩ :=
-    ((((circuitOn (univ : Set ι)).comap Prod.fst).dual_indep_iff_exists').1
-    ((truncate_indep_iff'.1) hI).1 ).2
-  have hM1 := (((circuitOn (univ : Set ι)).comap_isBase_iff).1 hBB).1
-  simp only [circuitOn_ground, preimage_univ, image_univ, Prod.range_fst] at hM1
-  have hC : (univ : Set ι).Nonempty := ⟨i, trivial ⟩
-  have h2 := (circuitOn_isBase_iff hC).1 (isBasis_ground_iff.mp hM1)
-  simp only [mem_image, Prod.exists, exists_and_right, Bool.exists_bool, exists_eq_right,
-    not_or] at h2
-  obtain ⟨e, ⟨hef, het⟩, hu ⟩ := h2
-  obtain he | hei := eq_or_ne e i
-  --by_cases he : e = i
-  · rw [←he] at hij
-    have hun: j ∉ insert e (Prod.fst '' B) := by
-      simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
-      exists_eq_right, not_or]
-      refine ⟨ fun a ↦ hij (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hjf,
-      Disjoint.not_mem_of_mem_left hIB hjt ⟩
-    exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
-  have hun: i ∉ insert e (Prod.fst '' B) := by
-    simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
-      exists_eq_right, not_or]
-    refine ⟨ fun a ↦ hei (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hif,
-      Disjoint.not_mem_of_mem_left hIB hit ⟩
-  exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+-- lemma freeSpike_leg_im_eq (ι : Type*) (I : Set (ι × Bool) ) (hI : (freeSpike ι).Indep I) :
+--     ∀ i j : ι, (i,true) ∈ I → (i,false) ∈ I → (j, true) ∈ I → (j, false) ∈ I → i = j := by
+--   intro i j hit hif hjt hjf
+--   by_contra! hij
+--   obtain ⟨ B, hBB, hIB ⟩ :=
+--     ((((circuitOn (univ : Set ι)).comap Prod.fst).dual_indep_iff_exists').1
+--     ((truncate_indep_iff'.1) hI).1 ).2
+--   have hM1 := (((circuitOn (univ : Set ι)).comap_isBase_iff).1 hBB).1
+--   simp only [circuitOn_ground, preimage_univ, image_univ, Prod.range_fst] at hM1
+--   have hC : (univ : Set ι).Nonempty := ⟨i, trivial ⟩
+--   have h2 := (circuitOn_isBase_iff hC).1 (isBasis_ground_iff.mp hM1)
+--   simp only [mem_image, Prod.exists, exists_and_right, Bool.exists_bool, exists_eq_right,
+--     not_or] at h2
+--   obtain ⟨e, ⟨hef, het⟩, hu ⟩ := h2
+--   obtain he | hei := eq_or_ne e i
+--   --by_cases he : e = i
+--   · rw [←he] at hij
+--     have hun: j ∉ insert e (Prod.fst '' B) := by
+--       simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
+--       exists_eq_right, not_or]
+--       refine ⟨ fun a ↦ hij (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hjf,
+--       Disjoint.not_mem_of_mem_left hIB hjt ⟩
+--     exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+--   have hun: i ∉ insert e (Prod.fst '' B) := by
+--     simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
+--       exists_eq_right, not_or]
+--     refine ⟨ fun a ↦ hei (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hif,
+--       Disjoint.not_mem_of_mem_left hIB hit ⟩
+--   exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
 
---lemma foo (a : α) (X : Set α ) : a ∈ X ∨ a ∉ X := by exact Classical.em (a ∈ X)
+-- --lemma foo (a : α) (X : Set α ) : a ∈ X ∨ a ∉ X := by exact Classical.em (a ∈ X)
 
-lemma freeSpike_leg_dep (ι : Type*) (i j : ι) (hij : i ≠ j) (C : Set (ι × Bool) )
-    (hC : {(i, true), (i,false), (j,true), (j,false) } ⊆ C ): (freeSpike ι).Dep C := by
-  by_contra hc
-  have hC1 : C ⊆ (freeSpike ι).E := fun ⦃a⦄ a ↦ trivial
-  have hit: (i ,true) ∈ C := by
-    apply hC
-    exact mem_insert (i, true) {(i, false), (j, true), (j, false)}
-  have hif : (i ,false) ∈ C := by
-    apply hC
-    simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
-  have hjt: (j ,true) ∈ C := by
-    apply hC
-    simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
-  have hjf : (j ,false) ∈ C := by
-    apply hC
-    simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
-  exact hij (freeSpike_leg_im_eq ι C (((freeSpike ι).not_dep_iff).1 hc) i j hit hif hjt hjf)
+-- lemma freeSpike_leg_dep (ι : Type*) (i j : ι) (hij : i ≠ j) (C : Set (ι × Bool) )
+--     (hC : {(i, true), (i,false), (j,true), (j,false) } ⊆ C ): (freeSpike ι).Dep C := by
+--   by_contra hc
+--   have hC1 : C ⊆ (freeSpike ι).E := fun ⦃a⦄ a ↦ trivial
+--   have hit: (i ,true) ∈ C := by
+--     apply hC
+--     exact mem_insert (i, true) {(i, false), (j, true), (j, false)}
+--   have hif : (i ,false) ∈ C := by
+--     apply hC
+--     simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
+--   have hjt: (j ,true) ∈ C := by
+--     apply hC
+--     simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
+--   have hjf : (j ,false) ∈ C := by
+--     apply hC
+--     simp only [mem_insert_iff, mem_singleton_iff, and_true, false_or, true_or, or_true]
+--   exact hij (freeSpike_leg_im_eq ι C (((freeSpike ι).not_dep_iff).1 hc) i j hit hif hjt hjf)
 
-lemma freeSpike_basis (ι : Type*) (B : Set (ι × Bool) ) :
-    (freeSpike ι).IsBase B ↔ (freeSpike ι)✶.IsBase B := by
-  have ha : (double_circuitOn ι)✶.RankPos := by sorry
-  unfold double_circuitOn at ha
-  refine ⟨ ?_, ?_ ⟩
-  · intro hB
-    obtain ⟨e, heB, heb⟩ := truncate_isBase_iff.1 hB
-    rw [←freeSpike_to_double ]
-    have hhelp : (circuitOn univ).comap Prod.fst = double_circuitOn ι := by exact rfl
-    rw [hhelp] at heb
-    have hhB : ( insert e B) ⊆ (double_circuitOn ι).E := by
-      rw [double_circuitOn_ground_set]
-      exact fun ⦃a⦄ a ↦ trivial
-    obtain ⟨i, ⟨ hi, hii ⟩, hij ⟩ :=
-      (double_circuitOn_isBase_iff ι ((double_circuitOn ι).E \ insert e B)).1
-      (((double_circuitOn ι ).dual_isBase_iff hhB).1 heb )
+-- lemma freeSpike_basis (ι : Type*) (B : Set (ι × Bool) ) :
+--     (freeSpike ι).IsBase B ↔ (freeSpike ι)✶.IsBase B := by
+--   have ha : (double_circuitOn ι)✶.RankPos := by sorry
+--   unfold double_circuitOn at ha
+--   refine ⟨ ?_, ?_ ⟩
+--   · intro hB
+--     obtain ⟨e, heB, heb⟩ := truncate_isBase_iff.1 hB
+--     rw [←freeSpike_to_double ]
+--     have hhelp : (circuitOn univ).comap Prod.fst = double_circuitOn ι := by exact rfl
+--     rw [hhelp] at heb
+--     have hhB : ( insert e B) ⊆ (double_circuitOn ι).E := by
+--       rw [double_circuitOn_ground_set]
+--       exact fun ⦃a⦄ a ↦ trivial
+--     obtain ⟨i, ⟨ hi, hii ⟩, hij ⟩ :=
+--       (double_circuitOn_isBase_iff ι ((double_circuitOn ι).E \ insert e B)).1
+--       (((double_circuitOn ι ).dual_isBase_iff hhB).1 heb )
 
-    apply (freeSpike ι).dual_isBase_iff.2
-    apply truncate_isBase_iff.2
-    have hg  := double_circuitOn_ground_set ι
+--     apply (freeSpike ι).dual_isBase_iff.2
+--     apply truncate_isBase_iff.2
+--     have hg  := double_circuitOn_ground_set ι
 
-    by_cases he : (e ∈ ({(i, true), (i, false)} : Set (ι × Bool)))
-    · have hnx : ∃ x ∈ B, x.1 ≠ i := by sorry
-      --have hnx : ∃ x ∈ B, x ∉ ({(i, true), (i, false)} : Set (ι × Bool)) := by sorry
-      obtain ⟨x, hxB, hx1 ⟩ := hnx
-      use x
-      refine ⟨?_, ?_ ⟩
-      · refine not_mem_diff_of_mem hxB
-      apply ((circuitOn univ).comap Prod.fst).dual_isBase_iff.2
-      rw [←freeSpike_def ι]
-      rw [double_circuitOn_ground_set ι, freeSpike_ground_set ι]
-      have hannoying : (univ \ insert x (univ \ B)) = B \ {x} := by sorry
-      rw [hannoying]
-      apply (double_circuitOn_isBase_iff ι (B \ {x}) ).2
-      refine ⟨ x.1, ⟨ ?_ , ?_ ⟩ ⟩
-      · have hcases : x.2 = true ∨ x.2 = false := Bool.eq_false_or_eq_true x.2
-        cases hcases with
-        | inl h2 =>
-          rw [←h2]
-          refine ⟨ not_mem_diff_of_mem rfl, ?_ ⟩
-          have h3 : (x.1, false) ∉ B := by
-            have huse := hij x.1 hx1
-            rw [ double_circuitOn_ground_set ι] at huse
-            simp at huse
-            rw [ ←h2 ] at huse
-            have hhelp := ((xor_iff_or_and_not_and (¬(x.1, false) = e ∧ (x.1, false) ∉ B)
-                (¬(x.1, x.2) = e ∧ (x.1, x.2) ∉ B)).1 huse).1
-            cases hhelp with
-            | inl h4 => exact h4.2
-            | inr h4 =>
-            by_contra h
+--     by_cases he : (e ∈ ({(i, true), (i, false)} : Set (ι × Bool)))
+--     · have hnx : ∃ x ∈ B, x.1 ≠ i := by sorry
+--       --have hnx : ∃ x ∈ B, x ∉ ({(i, true), (i, false)} : Set (ι × Bool)) := by sorry
+--       obtain ⟨x, hxB, hx1 ⟩ := hnx
+--       use x
+--       refine ⟨?_, ?_ ⟩
+--       · refine not_mem_diff_of_mem hxB
+--       apply ((circuitOn univ).comap Prod.fst).dual_isBase_iff.2
+--       rw [←freeSpike_def ι]
+--       rw [double_circuitOn_ground_set ι, freeSpike_ground_set ι]
+--       have hannoying : (univ \ insert x (univ \ B)) = B \ {x} := by sorry
+--       rw [hannoying]
+--       apply (double_circuitOn_isBase_iff ι (B \ {x}) ).2
+--       refine ⟨ x.1, ⟨ ?_ , ?_ ⟩ ⟩
+--       · have hcases : x.2 = true ∨ x.2 = false := Bool.eq_false_or_eq_true x.2
+--         cases hcases with
+--         | inl h2 =>
+--           rw [←h2]
+--           refine ⟨ not_mem_diff_of_mem rfl, ?_ ⟩
+--           have h3 : (x.1, false) ∉ B := by
+--             have huse := hij x.1 hx1
+--             rw [ double_circuitOn_ground_set ι] at huse
+--             simp at huse
+--             rw [ ←h2 ] at huse
+--             have hhelp := ((xor_iff_or_and_not_and (¬(x.1, false) = e ∧ (x.1, false) ∉ B)
+--                 (¬(x.1, x.2) = e ∧ (x.1, x.2) ∉ B)).1 huse).1
+--             cases hhelp with
+--             | inl h4 => exact h4.2
+--             | inr h4 =>
+--             by_contra h
 
-            have hc1 := hij x.1 hx1
-            rw [double_circuitOn_ground_set ι] at hc1
-            have hg1 : (x.1, false) ∉ univ \ insert e B := by
-              refine not_mem_diff_of_mem (mem_insert_of_mem e h)
-            have hg2 : ((x.1, true) ∉ univ \ insert e B) := by
-              refine not_mem_diff_of_mem ?_
-              rw [←h2 ]
-              exact mem_insert_of_mem e hxB
-            have hcon1:= (xor_iff_or_and_not_and
-                ((x.1, false) ∈ univ \ insert e B) ((x.1, true) ∈ univ \ insert e B)).1 hc1
-            have hcon2 : ¬ (((x.1, false) ∈ univ \ insert e B ∨ (x.1, true) ∈ univ \ insert e B) ∧
-                ¬((x.1, false) ∈ univ \ insert e B ∧ (x.1, true) ∈ univ \ insert e B)) := by
-              apply not_and_or.2
-              --right
-              simp only [ not_or, true_and, not_and, not_not,
-                and_imp, Classical.not_imp]
-              left
-              exact Classical.not_imp.mp fun a ↦ hg2 (a hg1)
-              --apply not_and_or.1
-            exact hcon2 hcon1
-          simp_all only [subset_univ, dual_isBase_iff, ne_eq, mem_diff, mem_univ,
-            mem_insert_iff, not_or, true_and,
-            not_and, not_not, mem_singleton_iff, false_and, not_false_eq_true]
-        | inr h2 =>
-          rw [←h2]
-          refine ⟨ ?_, not_mem_diff_of_mem rfl⟩
+--             have hc1 := hij x.1 hx1
+--             rw [double_circuitOn_ground_set ι] at hc1
+--             have hg1 : (x.1, false) ∉ univ \ insert e B := by
+--               refine not_mem_diff_of_mem (mem_insert_of_mem e h)
+--             have hg2 : ((x.1, true) ∉ univ \ insert e B) := by
+--               refine not_mem_diff_of_mem ?_
+--               rw [←h2 ]
+--               exact mem_insert_of_mem e hxB
+--             have hcon1:= (xor_iff_or_and_not_and
+--                 ((x.1, false) ∈ univ \ insert e B) ((x.1, true) ∈ univ \ insert e B)).1 hc1
+--             have hcon2 : ¬ (((x.1, false) ∈ univ \ insert e B ∨ (x.1, true) ∈
+-- nuniv \ insert e B) ∧
+--                 ¬((x.1, false) ∈ univ \ insert e B ∧ (x.1, true) ∈ univ \ insert e B)) := by
+--               apply not_and_or.2
+--               --right
+--               simp only [ not_or, true_and, not_and, not_not,
+--                 and_imp, Classical.not_imp]
+--               left
+--               exact Classical.not_imp.mp fun a ↦ hg2 (a hg1)
+--               --apply not_and_or.1
+--             exact hcon2 hcon1
+--           simp_all only [subset_univ, dual_isBase_iff, ne_eq, mem_diff, mem_univ,
+--             mem_insert_iff, not_or, true_and,
+--             not_and, not_not, mem_singleton_iff, false_and, not_false_eq_true]
+--         | inr h2 =>
+--           rw [←h2]
+--           refine ⟨ ?_, not_mem_diff_of_mem rfl⟩
 
-          sorry
-      intro j hj1
-      have huse := hij j
-      apply (xor_iff_or_and_not_and ((j, false) ∈ B \ {x}) ((j, true) ∈ B \ {x})).2
-      by_cases hji : j = i
-      · rw [double_circuitOn_ground_set ι] at hi
-        rw [double_circuitOn_ground_set ι] at hii
-        have he1 : e.1 = i := by sorry
-        have hiu : (i, true ) ∈ insert e B := by
-          by_contra hcon
-          exact hi (mem_diff_of_mem trivial hcon)
-        have hiuf : (i, false ) ∈ insert e B := by
-          by_contra hcon
-          exact hii (mem_diff_of_mem trivial hcon)
-        have hcases : e.2 = true ∨ e.2 = false := Bool.eq_false_or_eq_true e.2
-        cases hcases with
-        | inl h2 =>
+--           sorry
+--       intro j hj1
+--       have huse := hij j
+--       apply (xor_iff_or_and_not_and ((j, false) ∈ B \ {x}) ((j, true) ∈ B \ {x})).2
+--       by_cases hji : j = i
+--       · rw [double_circuitOn_ground_set ι] at hi
+--         rw [double_circuitOn_ground_set ι] at hii
+--         have he1 : e.1 = i := by sorry
+--         have hiu : (i, true ) ∈ insert e B := by
+--           by_contra hcon
+--           exact hi (mem_diff_of_mem trivial hcon)
+--         have hiuf : (i, false ) ∈ insert e B := by
+--           by_contra hcon
+--           exact hii (mem_diff_of_mem trivial hcon)
+--         have hcases : e.2 = true ∨ e.2 = false := Bool.eq_false_or_eq_true e.2
+--         cases hcases with
+--         | inl h2 =>
 
-          constructor
-          · rw [hji]
-            left
-            have hc : (i, false) ≠ e := by sorry
+--           constructor
+--           · rw [hji]
+--             left
+--             have hc : (i, false) ≠ e := by sorry
 
 
 
-            sorry
-          sorry
-        | inr h2 =>
+--             sorry
+--           sorry
+--         | inr h2 =>
 
-        sorry
+--         sorry
 
-      --have hcas : hij j
+--       --have hcas : hij j
 
-      sorry
+--       sorry
 
-    ·
-      sorry
+--     ·
+--       sorry
 
-  --Goodcase
-  intro hB
+--   --Goodcase
+--   intro hB
 
-  sorry
+--   sorry
 
 
 -- lemma foo (a : α) (X : Set α) (Y : Set α ) (haX : a ∈ X ) (hXY : a ∉ X \ Y) : a ∈ Y

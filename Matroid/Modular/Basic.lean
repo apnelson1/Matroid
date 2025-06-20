@@ -1,4 +1,4 @@
-import Matroid.Flat.Lattice
+ import Matroid.Flat.Lattice
 import Matroid.Simple
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.Matroid.Basic

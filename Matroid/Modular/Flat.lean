@@ -447,7 +447,7 @@ lemma IsModularPair.distrib_of_subset_left (hFX : M.IsModularPair F X) (hF : M.I
 
 lemma isModularPair_iff_forall_distrib_of_subset_left (hF : M.IsFlat F) (hXE : X ⊆ M.E) :
     M.IsModularPair F X
-    ↔ ∀ Y ⊆ F, M.IsFlat Y → F ∩ M.closure (X ∪ Y) ⊆ M.closure ((F ∩ X) ∪ Y) := by
+    ↔ ∀ Y ⊆ F, M.IsFlat Y → F ∩ M.closure (X ∪ Y) ⊆ M.closure (F ∩ X ∪ Y) := by
   refine ⟨fun h Y hYF hY ↦ (h.distrib_of_subset_left hF hYF).subset, fun h ↦ ?_⟩
   have hFXE : F ∩ X ⊆ M.E := (inter_subset_left.trans hF.subset_ground)
   rw [isModularPair_iff_skew_contract_inter hFXE]
@@ -495,24 +495,10 @@ lemma IsFlat.isModularFlat_iff_forall_distrib_of_subset_self (hF : M.IsFlat F) :
       F ∩ M.closure (X ∪ Y) ⊆ M.closure ((F ∩ X) ∪ Y) := by
   refine ⟨fun h X Y hX hY hYF ↦ ?_, fun h ↦ ?_⟩
   · exact ((h.isModularPair hX).distrib_of_subset_left h.isFlat hYF).subset
-  rw [hF.isModularFlat_iff_forall_skew_of_inter]
-  rintro X hX hFX -
-  obtain ⟨I, hI⟩ := M.exists_isBasis F
-  obtain ⟨J, hJ⟩ := M.exists_isBasis X
-  rw [← skew_iff_isBases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
-    disjoint_iff_inter_eq_empty, (hI.indep.inter_right J).eq_empty_of_subset_loops
-    ((inter_subset_inter hI.subset hJ.subset).trans hFX), and_iff_right rfl]
-  rw [union_comm, hJ.indep.union_indep_iff_forall_not_mem_closure_right hI.indep]
-  intro e ⟨heI, heJ⟩ hecl
-  specialize h _ _ hX (M.closure_isFlat (I \ {e}))
-    (hF.closure_subset_of_subset (diff_subset.trans hI.subset))
-
-  replace h := h.subset ⟨hI.subset heI, ?_⟩
-  · rw [hFX.antisymm (hF.inter hX).loops_subset, loops,
-      closure_closure_union_closure_eq_closure_union, empty_union] at h
-    exact hI.indep.not_mem_closure_diff_of_mem heI h
-
-  rwa [← closure_union_congr_left hJ.closure_eq_closure, closure_union_closure_right_eq]
+  rw [isModularFlat_iff, and_iff_right hF]
+  intro G hG
+  rw [isModularPair_iff_forall_distrib_of_subset_left hF hG.subset_ground]
+  exact fun Y hYF hY ↦ h _ _ hG hY hYF
 
 /-- If `F` gives a modular pair with every set in some directed collection, then it gives
 a modular pair with the span of their union. -/
