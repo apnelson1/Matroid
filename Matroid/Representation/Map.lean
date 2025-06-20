@@ -149,9 +149,9 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
         ← finrank_span_set_eq_card hI]
       exact Submodule.finrank_mono hss
     obtain ⟨a, haJ, ha⟩ := not_subset.1 hssu
-    refine ⟨a, haJ, not_mem_subset subset_span ha, ?_⟩
+    refine ⟨a, haJ, notMem_subset subset_span ha, ?_⟩
     simp only [SetLike.mem_coe] at ha
-    simpa [linearIndepOn_insert (not_mem_subset subset_span ha), ha])
+    simpa [linearIndepOn_insert (notMem_subset subset_span ha), ha])
   (indep_compact := linearIndepOn_of_finite)
   (subset_ground := by simp)
 

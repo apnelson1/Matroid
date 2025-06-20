@@ -133,7 +133,7 @@ lemma IsModularBase.switch (hB : M.IsModularBase B Xs) (hIX : M.IsBasis I (⋂ i
   have hdj : Disjoint (B \ J) I
   · rw [disjoint_iff_forall_ne]
     rintro e heBJ _ heI rfl
-    apply hB.indep.not_mem_closure_diff_of_mem heBJ.1
+    apply hB.indep.notMem_closure_diff_of_mem heBJ.1
     refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure
       (show J ⊆ B \ {e} from subset_diff_singleton inter_subset_right heBJ.2)
     rw [hJB.closure_eq_closure, ← hIX.closure_eq_closure]
@@ -645,7 +645,7 @@ lemma IsModularFamily.isModularPair_singleton_compl_biInter [Nontrivial η] {Xs 
     (h : M.IsModularFamily Xs) (i₀ : η) :
     M.IsModularPair (Xs i₀) (⋂ i ∈ ({i₀} : Set η)ᶜ, Xs i) := by
   convert h.isModularPair_compl_biInter {i₀} (by simp)
-    (by simp [ne_univ_iff_exists_not_mem, mem_singleton_iff]); simp
+    (by simp [ne_univ_iff_exists_notMem, mem_singleton_iff]); simp
 
 lemma isModularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     M.IsModularPair (M.closure (insert e X)) (M.closure (insert f X)) := by
@@ -654,11 +654,11 @@ lemma isModularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
   rw [← closure_insert_closure_eq_closure_insert,
     ← closure_insert_closure_eq_closure_insert (e := f), ← hI.closure_eq_closure]
   obtain (he | he) := em' (e ∈ M.E)
-  · rw [← closure_inter_ground, insert_inter_of_not_mem he, closure_inter_ground]
+  · rw [← closure_inter_ground, insert_inter_of_notMem he, closure_inter_ground]
     exact isModularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
       (M.closure_subset_ground _)
   obtain (hf | hf) := em' (f ∈ M.E)
-  · rw [isModularPair_comm, ← closure_inter_ground, insert_inter_of_not_mem hf,
+  · rw [isModularPair_comm, ← closure_inter_ground, insert_inter_of_notMem hf,
       closure_inter_ground]
     exact isModularPair_of_subset (M.closure_subset_closure (subset_insert _ _))
       (M.closure_subset_ground _)

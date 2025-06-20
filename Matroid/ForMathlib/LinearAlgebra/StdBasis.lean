@@ -61,7 +61,7 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
     (y : s) : LinearMap.extendSubtype R s f y = f y := by
   rw [extendSubtype, Function.ExtendByZero.linearMap_apply, Subtype.coe_injective.extend_apply]
 
-theorem LinearMap.extendSubtype_apply_not_mem {R : Type*} [Semiring R] {s : Set α} (f : s → R)
+theorem LinearMap.extendSubtype_apply_notMem {R : Type*} [Semiring R] {s : Set α} (f : s → R)
     {i : α} (hi : i ∉ s) : LinearMap.extendSubtype R s f i = 0 := by
   rw [extendSubtype, ExtendByZero.linearMap_apply, extend_apply', Pi.zero_apply]
   rintro ⟨a, rfl⟩
@@ -73,7 +73,7 @@ theorem LinearMap.extendSubtype_eq_ite {R : Type*} [Semiring R] (s : Set η) (x 
   ext i
   split_ifs with h
   · exact extendSubtype_apply x ⟨i,h⟩
-  exact extendSubtype_apply_not_mem _ h
+  exact extendSubtype_apply_notMem _ h
 
 @[simp] theorem LinearMap.extendSubtype_restrict (x : s → R) :
     s.restrict (LinearMap.extendSubtype R s x) = x := by
@@ -435,7 +435,7 @@ theorem Set.relOrthSpace_subtypeFunEquiv (s : Set ι) (U : Submodule K (s → K)
     · convert Finsupp.mapDomain_apply Subtype.val_injective l ⟨i,his⟩
       simp [hlrs]
     rw [Finsupp.mapDomain_notin_range, eq_comm]
-    · simpa using not_mem_subset hsupp his
+    · simpa using notMem_subset hsupp his
     simpa
   simp only [Finsupp.total_mapDomain, and_imp]
   exact fun _ _ hyU ↦ hl _ hyU

@@ -414,7 +414,7 @@ lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ 
 
   have hIe : M.Indep (insert e I) :=
     (hM.indep_or_spanning _ (by aesop_mat)).elim id fun h ↦ (hIs h).elim
-  rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_not_mem heI] at he
+  rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 
 lemma Uniform.isBase_of_isBase_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.IsBase B)
@@ -569,7 +569,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     rw [hI] at hss
     obtain rfl | ⟨e, rfl⟩ := hss.eq_empty_or_singleton
     · exact M.empty_indep
-    rwa [indep_singleton, isNonloop_iff_not_mem_loops, ← disjoint_singleton_left]
+    rwa [indep_singleton, isNonloop_iff_notMem_loops, ← disjoint_singleton_left]
   rintro ⟨E₀, E₁, hdj, rfl⟩
   simp [unifOn_eRank_eq]
 
@@ -694,7 +694,7 @@ end IsoMinor
 
       theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
           ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
-        refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+        refine ⟨fun h L hL hLr ↦ lt_of_not_ge fun hle ↦
           h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
         obtain ⟨N, hNM, hN⟩ := hR
         obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
@@ -735,7 +735,7 @@ theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L
 
 theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
     ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
-  refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+  refine ⟨fun h L hL hLr ↦ lt_of_not_ge fun hle ↦
     h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
   obtain ⟨N, hNM, hN⟩ := hR
   obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict

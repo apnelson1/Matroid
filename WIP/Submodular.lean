@@ -201,7 +201,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
     by_cases he : ↑e ∈ C.toFinset; swap
     · exfalso
       simp only [Set.mem_toFinset] at he
-      have := ((Set.subset_insert_iff_of_not_mem he).mp hC_subset)
+      have := ((Set.subset_insert_iff_of_notMem he).mp hC_subset)
       rw [← Set.coe_toFinset B] at this
       exact hC.dep.1 <| hB.indep.subset this
     rw [insert_erase he]
@@ -219,9 +219,9 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
       replace ha : ↑a ∉ I a := by
         specialize h_subset a
         contrapose! ha
-        exact not_mem_sdiff_of_mem_right <| h_subset ha
+        exact notMem_sdiff_of_mem_right <| h_subset ha
       simp only [singleton_biUnion, Ie]
-      rw [← Int.lt_add_one_iff, ← Nat.cast_one, ← Nat.cast_add, ← card_insert_of_not_mem ha]
+      rw [← Int.lt_add_one_iff, ← Nat.cast_one, ← Nat.cast_add, ← card_insert_of_notMem ha]
       exact h_lt a
     case h₁ Y hY IH =>
       obtain ⟨T, a, ha, b, hb, hab, h⟩ := Nontrivial.exists_cons_eq hY
@@ -303,7 +303,7 @@ theorem polymatroid_rank_eq [DecidableEq α] (hf : PolymatroidFn f) (X : Finset 
       and_self, or_false, exists_prop, exists_eq_right', not_true_eq_false, and_false, M, Ie]
   rw [h_eq, cast_card_sdiff, add_sub]
   · obtain (rfl | hXB) := eq_or_ne X B.toFinset
-    · simp only [sdiff_self, bot_eq_empty, not_mem_empty, isEmpty_subtype, not_false_eq_true,
+    · simp only [sdiff_self, bot_eq_empty, notMem_empty, isEmpty_subtype, not_false_eq_true,
       implies_true, univ_eq_empty, biUnion_empty, Set.toFinset_card, card_empty, Nat.cast_zero,
       sub_zero, add_le_iff_nonpos_left, ge_iff_le]
       rw [← bot_eq_empty, hf.zero_at_bot]
@@ -365,14 +365,14 @@ theorem generalized_halls_marriage {ι : Type*} [DecidableEq ι] [Fintype ι] [D
       specialize h K₁
       suffices K₁.biUnion A = K₁.biUnion (Function.update A i ((A i).erase x₁)) by rwa [← this]
       refine biUnion_congr rfl (fun j hj ↦ ?_)
-      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₁)
+      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_notMem hj hiK₁)
       exact Eq.symm (Function.update_of_ne (id (Ne.symm this)) ((A i).erase x₁) A)
     by_cases hiK₂ : i ∈ K₂; swap
     · absurd hK₂; push_neg
       specialize h K₂
       suffices K₂.biUnion A = K₂.biUnion (Function.update A i ((A i).erase x₂)) by rwa [← this]
       refine biUnion_congr rfl (fun j hj ↦ ?_)
-      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_not_mem hj hiK₂)
+      have : i ≠ j := by exact Ne.symm (ne_of_mem_of_notMem hj hiK₂)
       exact Eq.symm (Function.update_of_ne (id (Ne.symm this)) ((A i).erase x₂) A)
     suffices h_bad : (K₁.card : ℤ) + K₂.card - 1 ≤ K₁.card + K₂.card - 2 by linarith
     set A'₁ := (Function.update A i ((A i).erase x₁))
@@ -749,7 +749,7 @@ theorem rado_v2 (M : Matroid α) (A : ι → Finset α) :
     <;> push_neg
     · intro e he; exfalso
       obtain ⟨x, hx⟩ := he i
-      exact not_mem_empty x <| hAi ▸ e.mem hx
+      exact notMem_empty x <| hAi ▸ e.mem hx
     use {i}
     simp only [hAi, singleton_biUnion, card_singleton, Nat.lt_one_iff, coe_empty, rk_empty]
   set f : Finset α → ℕ := fun S ↦ M.r (S : Set α)
@@ -784,7 +784,7 @@ theorem rado_v2 (M : Matroid α) (A : ι → Finset α) :
     contrapose! he_card
     use {i, j}
     simp only [image_insert, image_singleton, coe_insert, coe_singleton, hij, Set.mem_singleton_iff,
-      Set.insert_eq_of_mem, card_insert_of_not_mem <| not_mem_singleton.mpr he_card,
+      Set.insert_eq_of_mem, card_insert_of_notMem <| notMem_singleton.mpr he_card,
       Nat.lt_add_one_iff, ← @Nat.cast_le ℕ∞, cast_rk_eq, card_singleton, Nat.cast_one]
     refine (M.eRk_le_encard {e j}).trans (by simp only [Set.encard_singleton, le_refl])
   have he'_inj : e'.Injective := fun i j hij ↦ SetCoe.ext (he_inj (by simpa only [e'] using hij))
@@ -820,7 +820,7 @@ lemma transverses_of_empty (A : ι → Finset α) : Transverses ∅ A := by
 
 lemma transverses'_of_empty [Nonempty ι] (A : ι → Finset α) : Transverses' ∅ A := by
   unfold Transverses'
-  simp only [coe_empty, Set.injOn_empty, not_mem_empty, false_implies, implies_true, and_self]
+  simp only [coe_empty, Set.injOn_empty, notMem_empty, false_implies, implies_true, and_self]
   exact (exists_const (α → ι)).mpr trivial
 
 lemma transverses_mono {T : Finset α} {T' : Finset α} {A : ι → Finset α}
@@ -898,7 +898,7 @@ theorem rado [DecidableEq ι] [DecidableEq α] (M : Matroid α) (A : ι → Fins
     <;> push_neg
     · intro e he; exfalso
       replace he := hAi ▸ he.2 i
-      simp only [not_mem_empty] at he
+      simp only [notMem_empty] at he
     use {i}
     simp only [hAi, singleton_biUnion, card_singleton, Nat.lt_one_iff, coe_empty, rk_empty]
   set f : Finset α → ℕ := fun S ↦ M.r (S : Set α)
@@ -1087,7 +1087,7 @@ theorem rado' {ι : Type*} [DecidableEq ι] [Fintype ι] [DecidableEq α]
           specialize hf_mem x
           contrapose! hf_mem
           rw [hf_mem, hi]
-          exact not_mem_empty _
+          exact notMem_empty _
         use fun x ↦ ⟨f x, hf x⟩
         refine ⟨?_, ?_⟩
         · intro x x' hx

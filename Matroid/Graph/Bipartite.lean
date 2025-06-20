@@ -34,20 +34,20 @@ lemma Bipartition.left_subset (B : G.Bipartition) : B.left ⊆ V(G) := by
 lemma Bipartition.right_subset (B : G.Bipartition) : B.right ⊆ V(G) := by
   simp [← B.union_eq]
 
-lemma Bipartition.not_mem_right {B : G.Bipartition} (hx : x ∈ B.left) : x ∉ B.right :=
-  B.disjoint.not_mem_of_mem_left hx
+lemma Bipartition.notMem_right {B : G.Bipartition} (hx : x ∈ B.left) : x ∉ B.right :=
+  B.disjoint.notMem_of_mem_left hx
 
-lemma Bipartition.not_mem_left {B : G.Bipartition} (hx : x ∈ B.right) : x ∉ B.left :=
-  B.disjoint.not_mem_of_mem_right hx
+lemma Bipartition.notMem_left {B : G.Bipartition} (hx : x ∈ B.right) : x ∉ B.left :=
+  B.disjoint.notMem_of_mem_right hx
 
-lemma Bipartition.not_mem_right_iff {B : G.Bipartition} (hxV : x ∈ V(G)) :
+lemma Bipartition.notMem_right_iff {B : G.Bipartition} (hxV : x ∈ V(G)) :
     x ∉ B.right ↔ x ∈ B.left := by
-  refine ⟨fun h ↦ ?_, B.not_mem_right⟩
+  refine ⟨fun h ↦ ?_, B.notMem_right⟩
   rwa [← B.union_eq, mem_union, or_iff_left h] at hxV
 
-lemma Bipartition.not_mem_left_iff {B : G.Bipartition} (hxV : x ∈ V(G)) :
+lemma Bipartition.notMem_left_iff {B : G.Bipartition} (hxV : x ∈ V(G)) :
     x ∉ B.left ↔ x ∈ B.right := by
-  simpa using B.symm.not_mem_right_iff hxV
+  simpa using B.symm.notMem_right_iff hxV
 
 /-- `B.Same x y` means that `x` and `y` are on the same side of `B`.
 If `G` is connected, this is equivalent to `x` and `y` having even distance; see
@@ -60,7 +60,7 @@ protected structure Bipartition.Same (B : G.Bipartition) (x y : α) : Prop where
 
 lemma Bipartition.Same.mem_right_iff {B : G.Bipartition} (h : B.Same x y) :
     x ∈ B.right ↔ y ∈ B.right := by
-  rw [← B.not_mem_left_iff h.left_mem, h.mem_left_iff, B.not_mem_left_iff h.right_mem]
+  rw [← B.notMem_left_iff h.left_mem, h.mem_left_iff, B.notMem_left_iff h.right_mem]
 
 lemma Bipartition.Same.symm (h : B.Same x y) : B.Same y x where
   left_mem := h.right_mem
@@ -79,7 +79,7 @@ lemma Bipartition.symm_same : B.symm.Same = B.Same := by
   ext x y
   simp only [same_iff, symm_left, and_congr_right_iff]
   intro hx hy
-  rw [← B.not_mem_right_iff hx, ← B.not_mem_right_iff hy, not_iff_not]
+  rw [← B.notMem_right_iff hx, ← B.notMem_right_iff hy, not_iff_not]
 
 /-- `B.Opp x y` means that `x` and `y` are on opposite sides of `B`.
 If `G` is connected, this is equivalent to `x` and `y` having odd distance; see
@@ -94,7 +94,7 @@ lemma Bipartition.Opp.symm (h : B.Opp x y) : B.Opp y x where
   left_mem := h.right_mem
   right_mem := h.left_mem
   mem_left_iff := by
-    rw [← B.not_mem_right_iff h.right_mem, ← h.mem_left_iff, B.not_mem_left_iff h.left_mem]
+    rw [← B.notMem_right_iff h.right_mem, ← h.mem_left_iff, B.notMem_left_iff h.left_mem]
 
 lemma Bipartition.opp_comm : B.Opp x y ↔ B.Opp y x :=
   ⟨.symm, .symm⟩
@@ -106,9 +106,9 @@ lemma Bipartition.not_opp_iff {B : G.Bipartition} (hx : x ∈ V(G)) (hy : y ∈ 
     ¬ B.Opp x y ↔ B.Same x y := by
   refine ⟨fun h ↦ ⟨hx, hy, ?_⟩, fun h h' ↦ ?_⟩
   · rwa [B.opp_iff, and_iff_right hx, and_iff_right hy, not_iff, not_iff_comm,
-      B.not_mem_right_iff hy, iff_comm] at h
+      B.notMem_right_iff hy, iff_comm] at h
   simp [B.same_iff, and_iff_right hx, and_iff_right hy, h'.mem_left_iff,
-    ← B.not_mem_left_iff hy] at h
+    ← B.notMem_left_iff hy] at h
 
 lemma Bipartition.not_same_iff {B : G.Bipartition} (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     ¬ B.Same x y ↔ B.Opp x y := by
@@ -126,15 +126,15 @@ lemma Bipartition.opp_of_adj (B : G.Bipartition) (hxy : G.Adj x y) : B.Opp x y :
   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq h'
   · exact ⟨h.left_mem, h.right_mem, iff_of_true hx' hy'⟩
   refine ⟨h.left_mem, h.right_mem, iff_of_false ?_ ?_⟩
-  · rwa [B.not_mem_left_iff h.left_mem]
-  rwa [B.not_mem_right_iff h.right_mem]
+  · rwa [B.notMem_left_iff h.left_mem]
+  rwa [B.notMem_right_iff h.right_mem]
 
 @[simp]
 lemma Bipartition.symm_opp : B.symm.Opp = B.Opp := by
   ext x y
   simp only [opp_iff, symm_left, symm_right, and_congr_right_iff]
   intro hx hy
-  rw [← B.not_mem_right_iff hx, ← B.not_mem_right_iff hy]
+  rw [← B.notMem_right_iff hx, ← B.notMem_right_iff hy]
   tauto
 
 lemma Bipartition.Opp.trans (hxy : B.Opp x y) (hyz : B.Opp y z) : B.Same x z := by
@@ -147,7 +147,7 @@ lemma Bipartition.Same.trans (hxy : B.Same x y) (hyz : B.Same y z) : B.Same x z 
 
 @[simp]
 lemma not_opp_self (B : G.Bipartition) (x : α) : ¬ B.Opp x x :=
-  fun ⟨hx, _, h⟩ ↦ by simp [← B.not_mem_left_iff hx] at h
+  fun ⟨hx, _, h⟩ ↦ by simp [← B.notMem_left_iff hx] at h
 
 def Bipartition.of_isSpanningSubgraph (B : H.Bipartition) (hHG : H ≤s G)
     (h_isLink : ∀ ⦃x y e⦄, e ∉ E(H) → G.IsLink e x y → B.Opp x y) : G.Bipartition where

@@ -1,4 +1,5 @@
 import Matroid.Modular.Basic
+import Matroid.Order.Quotient
 
 universe u
 
@@ -133,7 +134,7 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
   have hK'' : ∀ i, i ≠ i₀ → Ks i ⊆ K' := by
     intro i hne f hf
     by_contra hfK'
-    apply hKs.indep.not_mem_closure_diff_of_mem (mem_iUnion.2 ⟨i,hf⟩)
+    apply hKs.indep.notMem_closure_diff_of_mem (mem_iUnion.2 ⟨i,hf⟩)
     have hclosure : f ∈ M.closure K' := by
       exact hK'.subset_closure (Or.inr <| mem_biUnion hne hf)
 
@@ -168,7 +169,7 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
       (huKs i).subset heK⟩
     exact (hK'.indep.subset hss).isNonloop_of_mem hei₀
 
-  exact hK'.indep.not_mem_closure_diff_of_mem (hss hei₀) he'
+  exact hK'.indep.notMem_closure_diff_of_mem (hss hei₀) he'
 
 lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamily Xs)
     (hYX : ∀ i, Ys i ⊆ Xs i) : M.IsSkewFamily Ys := by
@@ -263,7 +264,7 @@ lemma IsSkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.IsSkew
     obtain ⟨i, h⟩ := hYs C hC (by rwa [← iUnion_inter, subset_inter_iff, and_iff_left rfl.subset])
     exact ⟨i, h.trans inter_subset_left⟩
   simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, Classical.not_imp,
-    exists_prop, eq_empty_iff_forall_not_mem, not_not] at hdj
+    exists_prop, eq_empty_iff_forall_notMem, not_not] at hdj
   obtain ⟨i, j, hne, e, he⟩ := hdj
   have hel := hYs.isLoop_of_mem_inter hne he
   obtain rfl : C = {e} := hel.eq_of_isCircuit_mem hC
@@ -492,7 +493,7 @@ lemma skew_insert_iff (he : e ∈ M.E) :
   have heIJ : M.Indep (insert e (I ∪ J))
   · rw [hIJ.indep.insert_indep_iff, hIJ.closure_eq_closure]
     exact .inl ⟨he, h⟩
-  exact ⟨not_mem_subset (hJ.subset.trans (M.subset_closure_of_subset' subset_union_right)) h,
+  exact ⟨notMem_subset (hJ.subset.trans (M.subset_closure_of_subset' subset_union_right)) h,
     hIJ.insert_isBasis_insert heIJ,
     hI.insert_isBasis_insert (heIJ.subset (insert_subset_insert subset_union_left))⟩
 
@@ -596,7 +597,7 @@ lemma IsNonloop.skew_right_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   rw [← skew_iff_isBases_skew hI he.indep.isBasis_self, ← hI.closure_eq_closure,
     Indep.skew_iff_disjoint_union_indep hI.indep he.indep, disjoint_singleton_right,
-    hI.indep.not_mem_closure_iff, union_singleton, and_comm]
+    hI.indep.notMem_closure_iff, union_singleton, and_comm]
 
 lemma IsNonloop.skew_left_iff (he : M.IsNonloop e) (hX : X ⊆ M.E := by aesop_mat) :
     M.Skew {e} X ↔ e ∉ M.closure X := by

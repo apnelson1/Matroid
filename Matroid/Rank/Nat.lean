@@ -95,8 +95,8 @@ lemma rk_union_ground (M : Matroid α) (X : Set α) : M.rk (X ∪ M.E) = M.rank 
 lemma rk_ground_union (M : Matroid α) (X : Set α) : M.rk (M.E ∪ X) = M.rank := by
   rw [rk, eRk_ground_union]
 
-lemma rk_insert_of_not_mem_ground (X : Set α) (he : e ∉ M.E) : M.rk (insert e X) = M.rk X := by
-  rw [← rk_inter_ground, insert_inter_of_not_mem he, rk_inter_ground]
+lemma rk_insert_of_notMem_ground (X : Set α) (he : e ∉ M.E) : M.rk (insert e X) = M.rk X := by
+  rw [← rk_inter_ground, insert_inter_of_notMem he, rk_inter_ground]
 
 lemma rk_compl_union_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
     M.rk (M.E \ X ∪ Y) = M.rk (M.E \ X) := by

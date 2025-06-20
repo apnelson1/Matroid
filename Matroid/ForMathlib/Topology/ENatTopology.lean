@@ -93,7 +93,7 @@ theorem isOpen_singleton {x : ℕ∞} (hx : x ≠ ⊤) : IsOpen {x} := by
 @[simp] theorem isOpen_coe_singleton (n : ℕ) : IsOpen {(n : ℕ∞)} :=
   isOpen_singleton (coe_ne_top n)
 
-theorem isOpen_of_top_not_mem {s : Set ℕ∞} (h : ⊤ ∉ s) : IsOpen s := by
+theorem isOpen_of_top_notMem {s : Set ℕ∞} (h : ⊤ ∉ s) : IsOpen s := by
   convert isOpen_image_coe ((↑) ⁻¹' s)
   simp_rw [eq_comm (a := s), image_preimage_eq_iff, range_coe', Iio, lt_top_iff_ne_top,
     ← compl_singleton_eq, subset_compl_singleton_iff]

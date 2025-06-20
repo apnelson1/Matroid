@@ -21,3 +21,40 @@ lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
 
 @[simp] lemma contract_ground_self (M : Matroid α) : M ／ M.E = emptyOn α := by
   simp [← ground_eq_empty_iff]
+
+section project
+
+/-- Contract a set `C`, then put the removed elements back in as loops. -/
+def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
+
+@[simp]
+lemma project_ground (M : Matroid α) (C : Set α) : (M.project C).E = M.E := rfl
+
+@[simp]
+lemma project_inter_ground (M : Matroid α) (C : Set α) : M.project (C ∩ M.E) = M.project C := by
+  simp [project]
+
+@[simp]
+lemma project_closure (M : Matroid α) (C X : Set α) :
+    (M.project C).closure X = M.closure (X ∪ C) := by
+  wlog h : C ⊆ M.E ∧ X ⊆ M.E  with aux
+  · rw [← project_inter_ground, ← closure_inter_ground, project_ground, aux _ _ _ (by simp),
+      ← union_inter_distrib_right, closure_inter_ground]
+  rw [project, restrict_closure_eq', inter_eq_self_of_subset_left h.2, contract_closure_eq,
+    contract_ground, diff_diff_cancel_left h.1,
+    inter_eq_self_of_subset_left (diff_subset.trans (M.closure_subset_ground _)),
+    diff_union_self, union_eq_left]
+  apply M.subset_closure_of_subset' subset_union_right h.1
+
+@[simp]
+lemma project_indep_iff {C I : Set α} : (M.project C).Indep I ↔ (M ／ C).Indep I := by
+  simp only [project, restrict_indep_iff, and_iff_left_iff_imp]
+  exact fun h ↦ h.of_contract.subset_ground
+
+@[simp]
+lemma project_delete_self (M : Matroid α) (C : Set α) : (M.project C) ＼ C = M ／ C :=
+  ext_indep rfl <| by simp +contextual [subset_diff]
+
+@[simp]
+lemma project_loops (M : Matroid α) (C : Set α) : (M.project C).loops = M.closure C := by
+  simp [loops]

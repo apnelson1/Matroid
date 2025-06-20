@@ -78,7 +78,7 @@ lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
   · rw [Parallel, parallelClasses, Partition.rel_congr, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
       closure_insert_closure_eq_closure_insert, insert_empty_eq]
-  rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_not_mem]
+  rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_notMem]
   exact fun f hf ↦ he (Parallel.isNonloop_left hf)
 
 lemma closure_eq_parallel_class_union_loops (M : Matroid α) (e : α) :
@@ -106,7 +106,7 @@ lemma Loopless.parallel_class_eq_closure (h : M.Loopless) (e : α) :
   rw [setOf_parallel_eq_closure_diff_loops, h.loops_eq_empty, diff_empty]
 
 lemma Parallel.dep_of_ne (h : M.Parallel e f) (hne : e ≠ f) : M.Dep {e,f} := by
-  rw [pair_comm, ← h.isNonloop_left.indep.mem_closure_iff_of_not_mem hne.symm]
+  rw [pair_comm, ← h.isNonloop_left.indep.mem_closure_iff_of_notMem hne.symm]
   exact h.symm.mem_closure
 
 lemma parallel_iff_isCircuit (hef : e ≠ f) : M.Parallel e f ↔ M.IsCircuit {e,f} := by
@@ -125,7 +125,7 @@ lemma Parallel.isCircuit_of_ne (hef : M.Parallel e f) (hne : e ≠ f) : M.IsCirc
 
 lemma IsNonloop.parallel_iff_dep (he : M.IsNonloop e) (hf : M.IsNonloop f) (hef : e ≠ f) :
     M.Parallel e f ↔ M.Dep {e,f} := by
-  rw [← hf.indep.mem_closure_iff_of_not_mem hef, he.parallel_iff_mem_closure]
+  rw [← hf.indep.mem_closure_iff_of_notMem hef, he.parallel_iff_mem_closure]
 
 lemma Parallel.eq_of_indep (h : M.Parallel e f) (hi : M.Indep {e,f}) : e = f := by
   by_contra hef

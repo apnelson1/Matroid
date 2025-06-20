@@ -141,7 +141,7 @@ variable {M : ClosureMatroid α}
   refine subset_antisymm ?_ fun e he ↦ ?_
   · simp only [subset_def, hI.indep.mem_closure_iff', matroid_E, matroid_Indep, and_imp]
     refine fun e he h ↦ by_contra fun heX ↦ ?_
-    have heI : e ∉ I := not_mem_subset (hI.subset.trans (M.subset_closure_self hX)) heX
+    have heI : e ∉ I := notMem_subset (hI.subset.trans (M.subset_closure_self hX)) heX
     rw [← not_imp_not, ← hi.mem_closure_iff he heI, imp_iff_right heI] at h
     exact heX (M.closure_subset_closure hI.subset h)
   have heE : e ∈ M.E := M.closure_subset_ground X he

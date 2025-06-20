@@ -318,10 +318,10 @@ lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
     exact hnd.1 hv
   · refine IsPathFrom.mk (h.isPath.suffix (by simp)) rfl (by simpa using h.last_mem) (by simp) ?_
     exact fun y hyP hyT ↦ h.eq_last_of_mem (by simp [hyP]) hyT
-  have hxP : x ∉ P := hdj.not_mem_of_mem_left hxS
+  have hxP : x ∉ P := hdj.notMem_of_mem_left hxS
   refine IsPathFrom.mk (cons_isPath_iff.2 ⟨h.isPath, hinc, hxP⟩) (by simpa) h.last_mem ?_ ?_
   · simp only [mem_cons_iff, first_cons, forall_eq_or_imp, implies_true, true_and]
-    exact fun a haP haS ↦ (hdj.not_mem_of_mem_left haS haP).elim
+    exact fun a haP haS ↦ (hdj.notMem_of_mem_left haS haP).elim
   simpa [hxT] using h.eq_last_of_mem
 
 /-- A version of `isPathFrom_cons` where the source set is a subgraph `H`,
@@ -330,13 +330,13 @@ lemma isPathFrom_cons_subgraph (hle : H ≤ G) : G.IsPathFrom V(H) T (cons x e P
     x ∈ V(H) ∧ x ∉ T ∧ G.IsLink e x P.first ∧ e ∉ E(H) ∧ Disjoint V(H) V(P) ∧
       G.IsPathFrom {P.first} T P := by
   simp only [and_congr_right_iff, iff_and_self, and_imp, isPathFrom_cons]
-  exact fun _ _ he hdj _ heH ↦ hdj.not_mem_of_mem_right (a := P.first) (by simp)
+  exact fun _ _ he hdj _ heH ↦ hdj.notMem_of_mem_right (a := P.first) (by simp)
     ((he.of_le_of_mem hle heH).right_mem)
 
-lemma IsPathFrom.not_mem_left_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : y ∉ S :=
+lemma IsPathFrom.notMem_left_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : y ∉ S :=
   fun hyS ↦ hP.ne_first h.nodup (h.eq_first_of_mem hP.right_mem hyS)
 
-lemma IsPathFrom.not_mem_right_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : x ∉ T :=
+lemma IsPathFrom.notMem_right_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : x ∉ T :=
   fun hyT ↦ hP.ne_last h.nodup (h.eq_last_of_mem hP.left_mem hyT)
 
 lemma IsTrailFrom.isTrail (h : G.IsTrailFrom S T w) : G.IsTrail w where

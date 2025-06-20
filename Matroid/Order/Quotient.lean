@@ -38,7 +38,7 @@ lemma Quotient.weakLE (h : N ≤q M) : N ≤w M := by
   rw [weakLE_iff, and_iff_left h.ground_eq]
   intro I hI
   have hIE : I ⊆ M.E := hI.subset_ground.trans h.ground_eq.subset
-  rw [indep_iff_forall_not_mem_closure_diff] at hI ⊢
+  rw [indep_iff_forall_notMem_closure_diff] at hI ⊢
   exact fun e heI hecl ↦ hI heI <| h.closure_subset_closure (I \ {e}) hecl
 
 /-- Relative rank is monotone with respect to the quotient order for sets `X,Y` with `X ⊆ Y ⊆ E`.
@@ -47,7 +47,7 @@ See `Quotient.eRelRk_le` for the stronger version applying to all `X` and `Y`.
 Note : including `X` as an implicit parameter is needed for well-founded induction to work. -/
 private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY : X ⊆ Y) (hYE: Y ⊆ M₁.E) :
     M₂.eRelRk X Y ≤ M₁.eRelRk X Y := by
-  have hcas := lt_or_le (M₁.eRelRk X Y) ⊤
+  have hcas := lt_or_ge (M₁.eRelRk X Y) ⊤
   --Divide into cases finite and infinite
   obtain hfin | hinf := hcas
 
@@ -62,7 +62,7 @@ private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY :
     have hrw := fun M ↦ eRelRk_add_cancel M (subset_insert y X) (insert_subset hyY hXY)
     have hy : y ∈ Y \ M₁.closure X ∧ M₁.eRelRk (insert y X) Y < M₁.eRelRk X Y := by
       refine ⟨⟨hyY, hyX⟩, ?_⟩
-      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_le]
+      rw [← hrw, eRelRk_insert_eq_one, add_comm, lt_iff_not_gt]
       · intro hle
         simp only [ENat.add_le_left_iff, one_ne_zero, or_false] at hle
         simpa [hle] using (M₁.eRelRk_mono_left Y (subset_insert y X)).trans_lt hfin
@@ -106,7 +106,7 @@ theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
   refine IsFlat.closure_subset_of_subset ?_ hXin
 
   by_contra! hc
-  obtain ⟨e, he, he'⟩ := exists_mem_closure_not_mem_of_not_isFlat hc
+  obtain ⟨e, he, he'⟩ := exists_mem_closure_notMem_of_not_isFlat hc
     ((M₂.closure_subset_ground X).trans hE.symm.subset)
   have heE := mem_of_mem_of_subset he <| M₁.closure_subset_ground _
   have hrr := hYZ (M₂.closure X) (insert e (M₂.closure X)) (subset_insert _ _)
@@ -354,22 +354,3 @@ lemma exists_project_indep_coindep (P : Matroid α) (X : Set α) :
   rwa [dual_contract_dual, delete_delete, diff_union_of_subset hI.subset,
     dual_delete, dual_contract, dual_dual, eq_comm,
     ← contract_delete_comm _ disjoint_sdiff_left] at hrw
-
-section project
-
-/-- Contract a set `C`, then put the removed elements back in as loops. -/
-def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
-
-@[simp]
-lemma project_ground (M : Matroid α) (C : Set α) : (M.project C).E = M.E := rfl
-
-@[simp]
-lemma project_inter_ground (M : Matroid α) (C : Set α) : M.project (C ∩ M.E) = M.project C := by
-  simp [project]
-
--- @[simp]
--- lemma project_closure (M : Matroid α) (C X : Set α) :
---     (M.project C).closure X = M.closure (X ∪ C) := by
---   simp only [project, restrict_closure_eq', contract_closure_eq, contract_ground,
---     sdiff_sdiff_right_self, inf_eq_inter]
---   rw [inter_comm, ← inter_union_distrib_left, diff_union_self]

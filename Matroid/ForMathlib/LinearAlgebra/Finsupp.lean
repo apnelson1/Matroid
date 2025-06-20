@@ -54,7 +54,7 @@ lemma Function.supportedEquivFun_symm_apply_mem {i : α} (hi : i ∈ s) (x : s �
   simp only [supportedEquivFun, LinearEquiv.coe_symm_mk]
   exact Subtype.val_injective.extend_apply (g := fun (i : s) ↦ x i) 0 ⟨i, hi⟩
 
-lemma Function.supportedEquivFun_symm_apply_not_mem {i : α} (hi : i ∉ s) (x : s → M) :
+lemma Function.supportedEquivFun_symm_apply_notMem {i : α} (hi : i ∉ s) (x : s → M) :
     ((Function.supportedEquivFun M R s).symm x).1 i = 0 := by
   simp only [supportedEquivFun, LinearEquiv.coe_symm_mk]
   rw [extend_apply' _ _ _ (by simpa), Pi.zero_apply]
@@ -86,7 +86,7 @@ noncomputable def Finsupp.supportedEquivFunSupported (M R : Type*) [Semiring R] 
   simp_rw [Finsupp.supportedEquivFunSupported, LinearEquiv.trans_apply]
   by_cases hi : i ∈ s
   · simp [supportedEquivFun_symm_apply_mem hi]
-  simp only [supportedEquivFun_symm_apply_not_mem hi]
+  simp only [supportedEquivFun_symm_apply_notMem hi]
   exact (Finsupp.mem_supported' ..).1 x.2 _ hi |>.symm
 
 @[simp] lemma Finsupp.supportedEquivFunSupported_apply_symm {hs : s.Finite}

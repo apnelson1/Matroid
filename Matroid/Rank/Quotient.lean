@@ -22,7 +22,7 @@ lemma ModularCut.extendBy_rk_insert_eq (U : M.ModularCut) (he : e ∉ M.E) (heX 
   rw [rk, U.extendBy_eRk_insert_eq he heX hXSU, rk]
 
 /-- This might be true without the `e ∈ M.E` and `e ∉ X` assumptions -/
-lemma ModularCut.extendBy_eRk_insert_eq_of_not_mem (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+lemma ModularCut.extendBy_eRk_insert_eq_of_notMem (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXSU : M.closure X ∉ U) (hecl : e ∉ M.closure X) :
     (M.extendBy e U).eRk (insert e X) = M.eRk X + 1 := by
   rw [eRk_insert_eq_add_one, U.extendBy_eRk_eq_eRk heX]
@@ -30,10 +30,10 @@ lemma ModularCut.extendBy_eRk_insert_eq_of_not_mem (U : M.ModularCut) (he : e �
   rwa [extendBy_closure_eq_self _ he heX hXSU]
 
 /-- This might be true without the `e ∈ M.E` and `e ∉ X` assumptions -/
-lemma ModularCut.extendBy_rk_insert_eq_of_not_mem [RankFinite M] (U : M.ModularCut) (he : e ∉ M.E)
+lemma ModularCut.extendBy_rk_insert_eq_of_notMem [RankFinite M] (U : M.ModularCut) (he : e ∉ M.E)
     (heX : e ∉ X) (hXSU : M.closure X ∉ U) (hecl : e ∉ M.closure X) :
     (M.extendBy e U).rk (insert e X) = M.rk X + 1 := by
-  rw [rk, U.extendBy_eRk_insert_eq_of_not_mem he heX hXSU hecl]
+  rw [rk, U.extendBy_eRk_insert_eq_of_notMem he heX hXSU hecl]
   simp
 
 lemma ModularCut.eRk_insert_le_eRk_add_one (U : M.ModularCut) :

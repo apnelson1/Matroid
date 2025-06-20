@@ -16,7 +16,7 @@ lemma IsHyperplane.exchange_isBase_of_isCircuit (hH : M.IsHyperplane H) (hHc : M
     closure_insert_closure_eq_closure_insert,
     ← spanning_iff_closure_eq (insert_subset hf.1 (diff_subset.trans hH.subset_ground))] at hclosure
   apply hclosure.isBase_of_indep
-  rw [← (hHc.diff_singleton_indep he).not_mem_closure_iff_of_not_mem (fun hf' ↦ hf.2 hf'.1),
+  rw [← (hHc.diff_singleton_indep he).notMem_closure_iff_of_notMem (fun hf' ↦ hf.2 hf'.1),
     hHc.closure_diff_singleton_eq e, hH.isFlat.closure]
   exact hf.2
 
@@ -31,7 +31,7 @@ lemma IsBase.exists_exchange_of_isCircuit_of_isHyperplane (hB : M.IsBase B) (hH 
       exact fun hxB' ↦ hclosure (M.mem_closure_of_mem' ⟨hxB', hx.2⟩ (hH.subset_ground hx.1))
 
     refine (h x ⟨hx.1, hxB⟩).1 (hB.exchange_isBase_of_indep hxB ?_)
-    rwa [← (hB.indep.diff {e}).not_mem_closure_iff_of_not_mem (not_mem_subset diff_subset hxB)
+    rwa [← (hB.indep.diff {e}).notMem_closure_iff_of_notMem (notMem_subset diff_subset hxB)
       (hH.subset_ground hx.1)]
 
   rw [← closure_subset_closure_iff_subset_closure (diff_subset.trans hH.subset_ground),
@@ -43,7 +43,7 @@ lemma IsBase.exists_exchange_of_isCircuit_of_isHyperplane (hB : M.IsBase B) (hH 
       ((M.subset_closure (B \ {e}) (diff_subset.trans hB.subset_ground)).trans hBH.symm.subset) h1
   obtain ⟨f, ⟨hfH, hfBe⟩, hfB⟩ := hHc.isBasis_iff_insert_eq.1 hb
   refine (h _ ⟨hfH, fun hfB ↦ hfBe ⟨hfB, fun (hfe : f = e) ↦ ?_⟩⟩).2 hfB.symm
-  apply hB.indep.not_mem_closure_diff_of_mem he
+  apply hB.indep.notMem_closure_diff_of_mem he
   rwa [← hBH, ← hfe]
 
 lemma antichain_of_isCircuit_isHyperplane (M : Matroid α) :
@@ -75,7 +75,7 @@ def relaxSet (M : Matroid α) (Hs : Set (Set α)) : Matroid α :=
             obtain (hB' | hB') := hB'
             · exact hBcc.not_spanning (hB'.spanning.superset hB'B)
             rw [hB'.2.1.eq_of_subset_isCircuit hBc hB'B, diff_self] at he
-            exact not_mem_empty e he
+            exact notMem_empty e he
           obtain ⟨f, hf⟩ := hB'B
           refine ⟨f, hf, Or.inl (hBcc.exchange_isBase_of_isCircuit hBc he.1 ⟨?_, hf.2⟩)⟩
           exact hB'.elim (fun h ↦ h.subset_ground hf.1) (fun h ↦ h.2.1.subset_ground hf.1) )

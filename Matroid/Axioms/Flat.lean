@@ -113,7 +113,7 @@ protected def closureMatroid (M : FlatMatroid α) : ClosureMatroid α where
       rw [← M.closure_closure X]
       exact M.closure_subset_closure (insert_subset heXcl (M.subset_closure hX))
 
-    have heX : e ∉ X := not_mem_subset (M.subset_closure hX) heXcl
+    have heX : e ∉ X := notMem_subset (M.subset_closure hX) heXcl
     refine ⟨by_contra fun hcon ↦ ?_, heX⟩
 
     suffices hcl : M.closure (insert e X) = M.closure (insert f X) by

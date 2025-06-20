@@ -316,7 +316,7 @@ lemma nDiscrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy
 --     exact (lt_self_iff_false (hQ.nDiscrepancy F)).mp hdis
 --   obtain ⟨e, he ⟩ := he
 --   use M₁.closure (insert e F)
---   exact hF.covBy_closure_insert (not_mem_of_mem_diff he)
+--   exact hF.covBy_closure_insert (notMem_of_mem_diff he)
 
 
 

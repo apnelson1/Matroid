@@ -51,7 +51,7 @@ def Paving.exists_insert_of_dep_of_ssubset (hM : M.Paving) (hD : M.Dep D) (hDE :
     exact ⟨f, hf, heD.superset (subset_insert _ _)⟩
   exact ⟨e, ⟨he, he'⟩, heD⟩
 
-lemma Paving.insert_spanning_of_dep_of_not_mem_closure (hM : M.Paving) (hD : M.Dep D)
+lemma Paving.insert_spanning_of_dep_of_notMem_closure (hM : M.Paving) (hD : M.Dep D)
     (he : e ∈ M.E \ M.closure D) : M.Spanning (insert e D) := by
   obtain ⟨f, -, hf⟩ := hM.exists_insert_of_dep hD
   rw [spanning_iff_closure_eq]
@@ -67,7 +67,7 @@ lemma Paving.closure_isHyperplane_of_dep_of_not_spanning (hM : M.Paving) (hD : M
     and_iff_right (M.closure_subset_ground D)]
   · refine fun e he' h ↦ h.1 ?_
     rw [spanning_iff_closure_eq, closure_insert_closure_eq_closure_insert,
-      (hM.insert_spanning_of_dep_of_not_mem_closure hD ⟨?_, he'⟩).closure_eq]
+      (hM.insert_spanning_of_dep_of_notMem_closure hD ⟨?_, he'⟩).closure_eq]
     exact h.2 <| .inl rfl
   exact fun S T ⟨hT, hTE⟩ hST ↦ ⟨fun hS ↦ hT <| hS.superset hST, hST.trans hTE⟩
 
@@ -83,12 +83,12 @@ lemma Paving.isBase_exchange_isCircuit_of_not_isBase (hM : M.Paving) (hB : M.IsB
   obtain ⟨C, hCB', hC⟩ := hB'.exists_isCircuit_subset
   have hcl : f ∉ M.closure C := by
     rw [← hC.closure_diff_singleton_eq e]
-    exact not_mem_subset (M.closure_subset_closure (by simpa)) <|
-      hB.indep.not_mem_closure_diff_of_mem hfB
+    exact notMem_subset (M.closure_subset_closure (by simpa)) <|
+      hB.indep.notMem_closure_diff_of_mem hfB
 
-  have hfC : f ∉ C := not_mem_subset (M.subset_closure C) hcl
+  have hfC : f ∉ C := notMem_subset (M.subset_closure C) hcl
 
-  have hCsp := hM.insert_spanning_of_dep_of_not_mem_closure hC.dep ⟨hB.subset_ground hfB, hcl⟩
+  have hCsp := hM.insert_spanning_of_dep_of_notMem_closure hC.dep ⟨hB.subset_ground hfB, hcl⟩
 
   have hss : insert f (C \ {e}) ⊆ B
   · refine insert_subset hfB ?_

@@ -51,7 +51,7 @@ def M_K₄ : Matroid (Fin 6) := by
 
     -- only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
     --   Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-    --   not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+    --   not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
     --   le_refl, forall_eq, and_self])
 
 lemma isHyperplane_stuff : 1= 1 := by sorry
@@ -94,10 +94,10 @@ def W3 :  Matroid (Fin 6) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+      not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])
 
 
@@ -142,10 +142,10 @@ def Q₆ :  Matroid (Fin 6) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+      not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])
 
 -- lemma relax W3 = Q₆
@@ -180,9 +180,9 @@ def P₆ :  Matroid (Fin 6) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, forall_eq, Finset.mem_insert, Fin.reduceEq,
-      Finset.mem_singleton, or_self, not_false_eq_true, Finset.card_insert_of_not_mem,
+      Finset.mem_singleton, or_self, not_false_eq_true, Finset.card_insert_of_notMem,
       Finset.card_singleton, Nat.reduceAdd, le_refl])
 
 
@@ -221,10 +221,10 @@ def R₆ :  Matroid (Fin 6) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+      not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])
 
 
@@ -289,10 +289,10 @@ def F₇ :  Matroid (Fin 7) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+      not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])
 
 
@@ -339,8 +339,8 @@ def nonF₇ :  Matroid (Fin 7) := by
       subset_univ, implies_true])
     (exists_NonspanningIsCircuitless_rank_set := by exact ⟨{0, 1, 3}, by simp only [Fin.isValue,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self, not_false_eq_true,
-      Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
+      Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd], by simp; tauto⟩)
     (non_spanning := by simp only [Fin.isValue, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
       Finset.mem_insert, zero_ne_one, Finset.mem_singleton, Fin.reduceEq, or_self,
-      not_false_eq_true, Finset.card_insert_of_not_mem, Finset.card_singleton, Nat.reduceAdd,
+      not_false_eq_true, Finset.card_insert_of_notMem, Finset.card_singleton, Nat.reduceAdd,
       le_refl, forall_eq, and_self])

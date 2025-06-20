@@ -191,14 +191,14 @@ lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e 
   refine ⟨C.tail.dropLast, C.first, hC.nonempty.firstEdge, hC.nonempty.lastEdge,
     hC.tail_dropLast_isPath, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← dropLast_first, hnt.tail_dropLast]
-    exact first_not_mem_tail_of_nodup hC.dropLast_isPath.nodup hnt.dropLast_nonempty
-  · refine mt (fun h ↦ ?_) (hC.nonempty.firstEdge_not_mem_tail hC.edge_nodup)
+    exact first_notMem_tail_of_nodup hC.dropLast_isPath.nodup hnt.dropLast_nonempty
+  · refine mt (fun h ↦ ?_) (hC.nonempty.firstEdge_notMem_tail hC.edge_nodup)
     exact List.IsPrefix.mem h <| by simpa using List.dropLast_prefix C.tail.edge
-  · refine mt (fun h ↦ ?_) (hC.nonempty.lastEdge_not_mem_dropLast hC.edge_nodup)
+  · refine mt (fun h ↦ ?_) (hC.nonempty.lastEdge_notMem_dropLast hC.edge_nodup)
     refine List.IsSuffix.mem h ?_
     simp only [dropLast_edge, tail_edge, ← List.tail_dropLast]
     exact List.tail_suffix C.edge.dropLast
-  · refine mt (fun h_eq ↦ ?_) <| hC.nonempty.firstEdge_not_mem_tail hC.edge_nodup
+  · refine mt (fun h_eq ↦ ?_) <| hC.nonempty.firstEdge_notMem_tail hC.edge_nodup
     rw [h_eq, ← hnt.tail_lastEdge]
     exact (Nontrivial.tail_nonempty hnt).lastEdge_mem
   cases C with

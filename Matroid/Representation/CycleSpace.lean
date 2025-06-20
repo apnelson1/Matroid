@@ -170,7 +170,7 @@ noncomputable def Finsupp.dualSupportedFunMap {α : Type*} (R : Type*) [CommSemi
 --     (hs : s.)
 --     [DecidablePred (· ∈ s)]
 
-lemma Finsupp.dualSupportedFunMap_apply_not_mem {α R : Type*} [CommSemiring R] {s : Set α}
+lemma Finsupp.dualSupportedFunMap_apply_notMem {α R : Type*} [CommSemiring R] {s : Set α}
     [DecidablePred (· ∈ s)] (φ) {a} (ha : a ∉ s) : Finsupp.dualSupportedFunMap R s φ a = 0 := by
   simp only [Finsupp.dualSupportedFunMap, LinearMap.coe_mk, AddHom.coe_mk]
   convert φ.map_zero
@@ -189,7 +189,7 @@ lemma Finsupp.dualSupportedFunMap_apply {α : Type*} (R : Type*) [CommSemiring R
     if has : a ∈ s then φ ⟨Finsupp.single a 1, Finsupp.single_mem_supported R 1 has⟩ else 0 := by
   split_ifs with h
   · rwa [Finsupp.dualSupportedFunMap_apply_mem]
-  rwa [Finsupp.dualSupportedFunMap_apply_not_mem]
+  rwa [Finsupp.dualSupportedFunMap_apply_notMem]
 
 @[simp]
 lemma mem_mySupported_iff {s : Set α} {x : α → 𝔽} :
@@ -202,7 +202,7 @@ lemma coe_restrictDom {α M R : Type*} [Semiring R] [AddCommMonoid M] [Module R 
     (Finsupp.restrictDom M R s f : α →₀ M) = f.1 := by
   ext i
   simp only [Finsupp.restrictDom_apply, Finsupp.filter_apply, ite_eq_left_iff]
-  exact fun hi ↦ by rw [show f.1 i = 0 by simpa using not_mem_subset f.2 hi]
+  exact fun hi ↦ by rw [show f.1 i = 0 by simpa using notMem_subset f.2 hi]
 
 -- noncomputable def thing (v : M.Rep 𝔽 W) :=
 --   (dualAnnihilator v.supportedCycleSpace)
@@ -230,7 +230,7 @@ lemma Rep.cocycleSpace_eq' (v : M.Rep 𝔽 W) [DecidablePred (· ∈ M.E)] :
   rintro ⟨c, hc, rfl⟩
   refine ⟨⟨c.comp (Finsupp.restrictDom 𝔽 𝔽 M.E),
     fun w h hsupp ↦ hc (Finsupp.restrictDom 𝔽 𝔽 M.E w) ?_, by simp [Finsupp.dualSupportedFunMap]⟩,
-    fun x ↦ Finsupp.dualSupportedFunMap_apply_not_mem _⟩
+    fun x ↦ Finsupp.dualSupportedFunMap_apply_notMem _⟩
   convert h
   exact coe_restrictDom (R := 𝔽) (M := 𝔽) (s := M.E) ⟨w, hsupp⟩
 

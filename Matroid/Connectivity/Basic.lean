@@ -103,12 +103,12 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
     M.ConnectedTo e f := by
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
-    · rwa [hI.insert_indep_iff_of_not_mem heI.2, hI'.isFlat.closure]
-  simp only [hB.isColoop_iff_forall_not_mem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
+    · rwa [hI.insert_indep_iff_of_notMem heI.2, hI'.isFlat.closure]
+  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
     not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
-    rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_not_mem hxI,
+    rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_notMem hxI,
       hI'.isFlat.closure]
     exact ⟨hx, hxI⟩
   have hC := IsBase.fundCircuit_isCircuit hB hx (by simp [hxe, hxI])
@@ -143,7 +143,7 @@ lemma ConnectedTo.trans {e₁ e₂ : α} (h₁ : M.ConnectedTo e₁ f) (h₂ : M
     (hH.isBasis_isHyperplane_delete hJ) ?_ ?_ ?_).of_delete
   · simp [disjoint_sdiff_right, hJ.indep]
   · simpa [h₁.mem_ground_left, he₁K₁] using
-      not_mem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])
+      notMem_subset hJ.subset (by simp [he₁K₁, h₁.mem_ground_left])
   · exact he₂J ⟨he₂C₂, he₂K₁⟩
 
   refine IsCircuit.not_isColoop_of_mem ?_ he₂C₂
@@ -172,7 +172,7 @@ lemma IsColoop.not_connected (he : M.IsColoop e) (hE : M.E.Nontrivial) : ¬ M.Co
   obtain ⟨f, hfE, hfe⟩ := hE.exists_ne e
   rintro ⟨-, hconn⟩
   obtain ⟨K, hK, heK, -⟩ := (hconn he.mem_ground hfE).exists_isCircuit_of_ne hfe.symm
-  exact he.not_mem_isCircuit hK heK
+  exact he.notMem_isCircuit hK heK
 
 lemma IsLoop.not_connected (he : M.IsLoop e) (hE : M.E.Nontrivial) : ¬ M.Connected := by
   rw [← connected_dual_iff]
@@ -250,7 +250,7 @@ lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 �
       insert_eq_of_mem (mem_inter heC <| mem_image_of_mem _ (by simp))]
   simp only [cSet, h', ↓reduceIte, mem_diff, mem_setOf_eq, not_and] at hC
   rw [Finset.range_add_one, Finset.coe_insert, image_insert_eq, inter_comm,
-    insert_inter_of_not_mem (hC.2 hC.1), inter_comm]
+    insert_inter_of_notMem (hC.2 hC.1), inter_comm]
 
 /-- Every connected, finitary, cofinitary matroid is finite -/
 theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α} (hM : M.Connected)

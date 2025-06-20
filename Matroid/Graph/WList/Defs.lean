@@ -613,7 +613,7 @@ lemma idxOf_cons_ne (hne : u ≠ x) (e) (w : WList α β) :
     (cons u e w).idxOf x = w.idxOf x + 1 := by
   simp [idxOf_cons, hne]
 
-lemma idxOf_not_mem (hx : x ∉ w) : w.idxOf x = w.length + 1 := by
+lemma idxOf_notMem (hx : x ∉ w) : w.idxOf x = w.length + 1 := by
   induction w with
   | nil => simp_all [Ne.symm]
   | cons u e w ih =>
@@ -632,7 +632,7 @@ lemma idxOf_mem_le (hx : x ∈ w) : w.idxOf x ≤ w.length := by
 @[simp]
 lemma idxOf_le_length_iff_mem : w.idxOf x ≤ w.length ↔ x ∈ w := by
   refine ⟨fun h ↦ by_contra fun hxw ↦ ?_, idxOf_mem_le⟩
-  rw [idxOf_not_mem hxw] at h
+  rw [idxOf_notMem hxw] at h
   omega
 
 @[simp]

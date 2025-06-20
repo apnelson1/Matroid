@@ -21,7 +21,7 @@ lemma closure1 (heE : e ∈ M.E) (he : ¬ M.IsColoop e)
     obtain ⟨B, hB⟩ := M.exists_isBase
     obtain rfl | rfl := subset_singleton_iff_eq.1 <| hB.subset_ground.trans h_eq.symm.subset
     · rwa [hB.closure_eq]
-    rwa [isColoop_iff_not_mem_closure_compl, not_not, h_eq, diff_self] at he
+    rwa [isColoop_iff_notMem_closure_compl, not_not, h_eq, diff_self] at he
   -- otherwise, let `a ∈ M.E \ {e}`, and let `Xa` and `Ya` be sets given by the hypothesis for `a`.
   obtain ⟨a, haE, hae : a ≠ e⟩ := exists_of_ssubset hssu
   obtain ⟨Xa, Ya, hdj, haX, haY, heX, heY, hclXY, hecl⟩ := h a haE

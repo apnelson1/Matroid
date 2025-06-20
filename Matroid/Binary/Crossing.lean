@@ -160,7 +160,7 @@ lemma crossingBinary_unif_iff {a b : ℕ} : (unif a b).CrossingBinary ↔ a ≤ 
     have h_even := h.isoMinor hm.some (X := {0,1,2}) ⟨{0,1,2}, {0,1,2}, ?_⟩
     · simp [Nat.even_iff] at h_even
     simp [unif_isCircuit_iff, isCocircuit_def, unif_dual]
-    rw [encard_insert_of_not_mem (by simp), encard_pair (by simp)]
+    rw [encard_insert_of_notMem (by simp), encard_pair (by simp)]
   obtain h | h := h
   · refine crossingBinary_of_eRank_le_one (by simp [h])
   refine (crossingBinary_of_eRank_le_one ?_).of_dual
@@ -261,7 +261,7 @@ lemma exists_smaller_of_odd_isCircuit_isCocircuit (hfin : C.Finite) (hCc : M.IsC
   -- Since the hyperplane was independent, the remaining element is a flat.
   have hfP : N.IsPoint {f}
   · rw [IsPoint, isFlat_iff_closure_self, hN, contract_closure_eq, union_diff_cancel (by simpa)]
-    simp [hCh.isFlat.closure, hf.1, hf.2, hCi.not_mem_closure_diff_of_mem hf]
+    simp [hCh.isFlat.closure, hf.1, hf.2, hCi.notMem_closure_diff_of_mem hf]
   -- Therefore `C = (N ＼ f).E` is the union of two disjoint cocircuits.
   obtain ⟨C₁, C₂, hC₁, hC₂, hdj, hu⟩ := exist_isCocircuits_of_rank_two hNr hfl hfP (h_bin.minor hNM)
   -- We may assume that both are even, which contradicts oddness of `C`.

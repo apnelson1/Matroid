@@ -217,7 +217,7 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
 @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
   simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›,
     true_and, show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
-  refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_le fun hle ↦ ?_⟩
+  refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_ge fun hle ↦ ?_⟩
   · contrapose! h
     use 1
     simp only [Nat.cast_one, ENat.lt_one_iff, Partition.eConn_eq_zero_iff,

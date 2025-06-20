@@ -38,7 +38,7 @@ def cycleMatroid (G : Graph α β) : Matroid β :=
         apply_fun Graph.edgeSet at hP₁C₁ hP₂C₂
         simp only [WList.toGraph_edgeSet, edgeDelete_edgeSet] at hP₁C₁ hP₂C₂
         rwa [union_diff_distrib, ← hP₁C₁, ← hP₂C₂]
-      refine ⟨E(C), ⟨C, hC, rfl⟩, not_mem_subset hss (by simp), fun x hx ↦ ?_⟩
+      refine ⟨E(C), ⟨C, hC, rfl⟩, notMem_subset hss (by simp), fun x hx ↦ ?_⟩
       simpa using (hss.trans diff_subset) hx )
     (by
       rintro _ ⟨C, hC, rfl⟩

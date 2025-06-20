@@ -71,7 +71,7 @@ def dual (M : Matroid α) : Matroid α :=
       --   · rw [diff_diff_right,
       --         inter_eq_self_of_subset_right (singleton_subset_iff.mpr (hB₁.1 hx.1)), union_comm,
       --         ← insert_eq]
-      --     exact ssubset_insert (not_mem_diff_of_mem hx.1)
+      --     exact ssubset_insert (notMem_diff_of_mem hx.1)
       --   exact g.not_isBase_of_ssubset this hB₁.2
 
       -- have hssu : B₁ \ {x} ⊂ B''ᶜ ∩ M.E :=

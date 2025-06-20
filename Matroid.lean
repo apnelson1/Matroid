@@ -13,7 +13,6 @@ import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 import Matroid.Constructions.Matching
 import Matroid.Constructions.ParallelExtension
-import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv

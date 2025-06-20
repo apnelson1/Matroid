@@ -366,12 +366,12 @@ lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     exact .inl ⟨heE, heX⟩
 
   rw [hI.isBasis'.eLocalConn_eq hJ, hIe.isBasis'.eLocalConn_eq hJ, insert_union]
-  have heI : e ∉ I := not_mem_subset (hI.subset.trans (M.subset_closure X)) heX
+  have heI : e ∉ I := notMem_subset (hI.subset.trans (M.subset_closure X)) heX
   by_cases heJ : e ∈ J
   · rw [insert_inter_of_mem heJ, insert_eq_of_mem (mem_union_right _ heJ),
-      encard_insert_of_not_mem (by simp [heI]), add_right_comm]
+      encard_insert_of_notMem (by simp [heI]), add_right_comm]
 
-  rw [insert_inter_of_not_mem heJ, nullity_insert_eq_add_one
+  rw [insert_inter_of_notMem heJ, nullity_insert_eq_add_one
     (by rwa [closure_union_congr_left hI.closure_eq_closure,
       closure_union_congr_right hJ.closure_eq_closure]) (by simp [heI, heJ]), add_assoc]
 

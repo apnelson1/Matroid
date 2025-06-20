@@ -330,7 +330,7 @@ lemma IsFlat.wCovBy_closure_insert (hF : M.IsFlat F) (e : α) : F ⩿[M] M.closu
   · simp [heF, hF.closure, hF.wCovBy_self]
   by_cases heE : e ∈ M.E
   · exact (hF.covBy_closure_insert heF heE).wCovby
-  rw [← closure_inter_ground, insert_inter_of_not_mem heE, closure_inter_ground, hF.closure]
+  rw [← closure_inter_ground, insert_inter_of_notMem heE, closure_inter_ground, hF.closure]
   exact hF.wCovBy_self
 
 lemma IsFlat.wCovby_of_subset_closure_insert (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F₁) (hss : F₀ ⊆ F₁)
@@ -340,12 +340,12 @@ lemma IsFlat.wCovby_of_subset_closure_insert (hF₀ : M.IsFlat F₀) (hF₁ : M.
 lemma Indep.closure_diff_covBy (hI : M.Indep I) (he : e ∈ I) :
     M.closure (I \ {e}) ⋖[M] M.closure I := by
   simpa [closure_insert_closure_eq_closure_insert, he] using
-    (M.closure_isFlat _).covBy_closure_insert (not_mem_closure_diff_of_mem hI he)
+    (M.closure_isFlat _).covBy_closure_insert (notMem_closure_diff_of_mem hI he)
       (hI.subset_ground he)
 
 lemma Indep.covBy_closure_insert (hI : M.Indep I) (he : e ∈ M.E \ M.closure I) :
     M.closure I ⋖[M] M.closure (insert e I) := by
-  simpa [not_mem_of_mem_diff_closure he] using
+  simpa [notMem_of_mem_diff_closure he] using
     (hI.insert_indep_iff.2 <| .inl he).closure_diff_covBy (.inl rfl)
 
 lemma CovBy.eq_closure_insert_of_mem_diff (h : F ⋖[M] F') (he : e ∈ F' \ F) :
@@ -383,7 +383,7 @@ lemma covBy_iff_eRelRk_eq_one :
   ⟨fun h ↦ ⟨h.isFlat_left, h.isFlat_right, h.subset, h.eRelRk_eq_one⟩,
     fun ⟨hF₀, hF₁, hss, hr⟩ ↦ (hF₀.covBy_iff_eRelRk_eq_one hF₁).2 ⟨hss, hr⟩⟩
 
-lemma IsFlat.exists_unique_isFlat_of_not_mem (hF₀ : M.IsFlat F₀) (he : e ∈ M.E \ F₀) :
+lemma IsFlat.exists_unique_isFlat_of_notMem (hF₀ : M.IsFlat F₀) (he : e ∈ M.E \ F₀) :
     ∃! F₁, e ∈ F₁ ∧ (F₀ ⋖[M] F₁) := by
   simp_rw [hF₀.covBy_iff_eq_closure_insert]
   use M.closure (insert e F₀)
@@ -427,7 +427,7 @@ lemma IsFlat.exists_covBy_right_of_ssubset (hF₀ : M.IsFlat F₀) (hF₁ : M.Is
   convert (M.closure_isFlat (J \ {e})).covBy_closure_insert ?_ (hJ.indep.subset_ground heJ)
   · rw [closure_insert_closure_eq_closure_insert, insert_diff_singleton, insert_eq_of_mem heJ,
       hF₁.eq_closure_of_isBasis hJ]
-  exact hJ.indep.not_mem_closure_diff_of_mem heJ
+  exact hJ.indep.notMem_closure_diff_of_mem heJ
 
 lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀) (h₁ : F₀ ∩ F₁ ⋖[M] F₁) :
     F₀ ⋖[M] M.closure (F₀ ∪ F₁) := by
@@ -533,7 +533,7 @@ lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
     hF.covByPartition.Rel e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
   rw [hF.rel_covByPartition_iff, and_iff_right he, and_iff_right_iff_imp]
   refine fun hclosure ↦ ⟨by_contra fun hf ↦ ?_, fun hfF ↦ ?_⟩
-  · rw [← M.closure_inter_ground (insert f F), insert_inter_of_not_mem hf,
+  · rw [← M.closure_inter_ground (insert f F), insert_inter_of_notMem hf,
       inter_eq_self_of_subset_left hF.subset_ground, hF.closure] at hclosure
     exact he.2 <| hclosure.subset (M.mem_closure_of_mem (mem_insert e F))
   rw [insert_eq_of_mem hfF, hF.closure] at hclosure

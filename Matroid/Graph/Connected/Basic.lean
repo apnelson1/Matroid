@@ -136,7 +136,7 @@ lemma exists_of_not_connected (h : ¬ G.Connected) (hne : V(G).Nonempty) :
   obtain ⟨x, hx, y, hy, hxy⟩ := h
   refine ⟨{z | G.VertexConnected x z}, ?_, ⟨x, by simpa⟩,
     fun u v (h : G.VertexConnected x u) huv ↦ ?_⟩
-  · exact HasSubset.Subset.ssubset_of_mem_not_mem
+  · exact HasSubset.Subset.ssubset_of_mem_notMem
       (fun z hz ↦ VertexConnected.right_mem hz) hy (by simpa)
   exact h.trans huv.vertexConnected
 
@@ -223,11 +223,11 @@ lemma Connected.exists_vertexConnected_deleteEdge_set_set (hG : G.Connected)
   have hxy' := hP.isWalk.isLink_of_dInc hxy
   rw [edgeDelete_edgeSet, mem_diff, mem_union, hxy'.mem_induce_iff,
     hxy'.mem_induce_iff, and_iff_right hxy'.edge_mem]
-  simp [hP.not_mem_left_of_dInc hxy, hP.not_mem_right_of_dInc hxy]
+  simp [hP.notMem_left_of_dInc hxy, hP.notMem_right_of_dInc hxy]
 
 /-- If `H` is a nonempty proper subgraph of a connected graph `G`,
 then there is an edge of `G` that is not in `H` but has an end in `H`. -/
-lemma Connected.exists_inc_not_mem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
+lemma Connected.exists_inc_notMem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
     ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
   obtain hV | hssu := (vertexSet_mono hlt.le).eq_or_ssubset
   · obtain hE | hssu' := (edgeSet_mono hlt.le).eq_or_ssubset
@@ -302,7 +302,7 @@ def Separation.symm (S : G.Separation) : G.Separation where
 lemma Separation.not_left_mem_iff (S : G.Separation) (hxV : x ∈ V(G)) :
     x ∉ S.left ↔ x ∈ S.right := by
   rw [← S.union_eq, mem_union] at hxV
-  have := S.disjoint.not_mem_of_mem_left (a := x)
+  have := S.disjoint.notMem_of_mem_left (a := x)
   tauto
 
 lemma Separation.not_right_mem_iff (S : G.Separation) (hxV : x ∈ V(G)) :
@@ -381,8 +381,8 @@ lemma Separation.edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left])
   obtain ⟨x, y, hexy, hx, hy⟩ := he
   obtain ⟨x', y', hexy', hx', hy'⟩ := he'
   obtain rfl | rfl := hexy.left_eq_or_eq hexy'
-  · exact S.disjoint.not_mem_of_mem_left hx hx'
-  exact S.disjoint.not_mem_of_mem_left hx hy'
+  · exact S.disjoint.notMem_of_mem_left hx hx'
+  exact S.disjoint.notMem_of_mem_left hx hy'
 
 lemma Separation.eq_union (S : G.Separation) : G = G [S.left] ∪ G [S.right] := by
   refine Graph.ext (by simp [S.union_eq]) fun e x y ↦ ?_

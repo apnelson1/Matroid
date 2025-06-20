@@ -243,7 +243,7 @@ lemma eRelRk_insert_eq_zero_iff (he : e ∈ M.E := by aesop_mat) :
 lemma eRelRk_insert_eq_zero_iff' : M.eRelRk X (insert e X) = 0 ↔ (e ∈ M.E → e ∈ M.closure X) := by
   by_cases he : e ∈ M.E
   · rw [eRelRk_insert_eq_zero_iff, imp_iff_right he]
-  rw [← M.eRelRk_inter_ground_right, insert_inter_of_not_mem he, eRelRk_inter_ground_right]
+  rw [← M.eRelRk_inter_ground_right, insert_inter_of_notMem he, eRelRk_inter_ground_right]
   simp [he]
 
 lemma eRelRk_ground_eq_zero_iff (hX : X ⊆ M.E := by aesop_mat) :
@@ -261,7 +261,7 @@ lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
 
 lemma eRelRk_le_one_iff (hYne : Y.Nonempty) (hY : Y ⊆ M.E := by aesop_mat) :
     M.eRelRk X Y ≤ 1 ↔ ∃ e ∈ Y, Y ⊆ M.closure (insert e X) := by
-  rw [le_iff_eq_or_lt, lt_iff_not_le, ENat.one_le_iff_ne_zero, not_not, eRelRk_eq_one_iff,
+  rw [le_iff_eq_or_lt, lt_iff_not_gt, ENat.one_le_iff_ne_zero, not_not, eRelRk_eq_one_iff,
     eRelRk_eq_zero_iff]
   refine ⟨?_, fun ⟨e, hY'⟩ ↦ ?_⟩
   · rintro (⟨e, he, hY'⟩ | hY')

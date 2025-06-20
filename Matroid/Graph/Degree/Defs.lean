@@ -22,7 +22,7 @@ lemma DegreePos.one_le_degree [G.LocallyFinite] (hG : G.DegreePos) (hx : x ∈ V
 lemma degreePos_iff' : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.eDegree x ≠ 0 := by
   simp_rw [← ENat.one_le_iff_ne_zero]
   refine ⟨fun h _ ↦ h.one_le_eDegree, fun h x hx ↦ ?_⟩
-  suffices hcard : {e | G.Inc e x}.encard ≠ 0 by simpa [eq_empty_iff_forall_not_mem] using hcard
+  suffices hcard : {e | G.Inc e x}.encard ≠ 0 by simpa [eq_empty_iff_forall_notMem] using hcard
   exact fun h0 ↦ by simpa [h0] using (h hx).trans <| G.eDegree_le_two_mul_encard_setOf_inc x
 
 lemma degreePos_iff [G.LocallyFinite] : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.degree x ≠ 0 := by
@@ -61,7 +61,7 @@ lemma MaxDegreeLE.locallyFinite (h : G.MaxDegreeLE d) : G.LocallyFinite where
 
 /-- A version of `maxDegreeLE_iff` for infinite graphs. -/
 lemma maxDegreeLE_iff' : G.MaxDegreeLE d ↔ ∀ v ∈ V(G), G.eDegree v ≤ d :=
-  ⟨fun h v _ ↦ h v, fun h v ↦ (em _).elim (h v) fun h ↦ by simp [eDegree_eq_zero_of_not_mem h]⟩
+  ⟨fun h v _ ↦ h v, fun h v ↦ (em _).elim (h v) fun h ↦ by simp [eDegree_eq_zero_of_notMem h]⟩
 
 lemma maxDegreeLE_iff [G.LocallyFinite] : G.MaxDegreeLE d ↔ ∀ v ∈ V(G), G.degree v ≤ d := by
   simp_rw [maxDegreeLE_iff', ← @Nat.cast_le ℕ∞, natCast_degree_eq]

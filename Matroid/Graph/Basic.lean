@@ -13,11 +13,11 @@ For mathlib
 -/
 
 @[simp]
-lemma not_isLink_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
+lemma not_isLink_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
   mt IsLink.edge_mem he
 
 @[simp]
-lemma not_inc_of_not_mem_edgeSet (he : e ∉ E(G)) : ¬ G.Inc e x :=
+lemma not_inc_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.Inc e x :=
   mt Inc.edge_mem he
 
 /-- The set of ends of an edge `e`. -/
@@ -37,8 +37,8 @@ lemma IsLink.endSet_eq (h : G.IsLink e x y) : G.endSet e = {x,y} := by
 lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : G.endSet e = {x} := by
   rw [IsLink.endSet_eq h, pair_eq_singleton]
 
-lemma endSet_eq_of_not_mem_edgeSet (he : e ∉ E(G)) : G.endSet e = ∅ := by
-  simp only [endSet, eq_empty_iff_forall_not_mem, mem_setOf_eq]
+lemma endSet_eq_of_notMem_edgeSet (he : e ∉ E(G)) : G.endSet e = ∅ := by
+  simp only [endSet, eq_empty_iff_forall_notMem, mem_setOf_eq]
   exact fun x hx ↦ he hx.edge_mem
 
 lemma inc_iff_isLoopAt_or_isNonloopAt : G.Inc e x ↔ G.IsLoopAt e x ∨ G.IsNonloopAt e x :=
