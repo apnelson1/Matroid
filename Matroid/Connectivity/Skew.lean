@@ -505,6 +505,17 @@ lemma empty_skew (hX : X ⊆ M.E) : M.Skew ∅ X := by
 lemma skew_empty (hX : X ⊆ M.E) : M.Skew X ∅ :=
   (empty_skew hX).symm
 
+lemma Skew.closure_union_right_inter_left {S : Set α} (h : M.Skew X Y) (hS : S ⊆ X) :
+    M.closure (S ∪ Y) ∩ X = M.closure S ∩ X := by
+  refine subset_antisymm ?_ <| inter_subset_inter_left _ <| M.closure_mono subset_union_left
+  rw [← M.restrict_closure_eq hS, ← h.symm.contract_restrict_eq, restrict_closure_eq',
+    contract_closure_eq, inter_eq_self_of_subset_left hS, contract_ground]
+  tauto_set
+
+lemma Skew.closure_union_left_inter_right {S : Set α} (h : M.Skew X Y) (hS : S ⊆ Y) :
+    M.closure (S ∪ X) ∩ Y = M.closure S ∩ Y :=
+  h.symm.closure_union_right_inter_left hS
+
 lemma exists_contract_indep_to_spanning (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
     ∃ I, M.Indep I ∧ Disjoint I X ∧ (M ／ I) ↾ X = M ↾ X ∧ (M ／ I).Spanning X := by
   obtain ⟨J, hJ⟩ := M.exists_isBasis X

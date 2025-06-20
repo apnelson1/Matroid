@@ -354,3 +354,22 @@ lemma exists_project_indep_coindep (P : Matroid α) (X : Set α) :
   rwa [dual_contract_dual, delete_delete, diff_union_of_subset hI.subset,
     dual_delete, dual_contract, dual_dual, eq_comm,
     ← contract_delete_comm _ disjoint_sdiff_left] at hrw
+
+section project
+
+/-- Contract a set `C`, then put the removed elements back in as loops. -/
+def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
+
+@[simp]
+lemma project_ground (M : Matroid α) (C : Set α) : (M.project C).E = M.E := rfl
+
+@[simp]
+lemma project_inter_ground (M : Matroid α) (C : Set α) : M.project (C ∩ M.E) = M.project C := by
+  simp [project]
+
+-- @[simp]
+-- lemma project_closure (M : Matroid α) (C X : Set α) :
+--     (M.project C).closure X = M.closure (X ∪ C) := by
+--   simp only [project, restrict_closure_eq', contract_closure_eq, contract_ground,
+--     sdiff_sdiff_right_self, inf_eq_inter]
+--   rw [inter_comm, ← inter_union_distrib_left, diff_union_self]
