@@ -58,3 +58,9 @@ lemma project_delete_self (M : Matroid α) (C : Set α) : (M.project C) ＼ C = 
 @[simp]
 lemma project_loops (M : Matroid α) (C : Set α) : (M.project C).loops = M.closure C := by
   simp [loops]
+
+@[simp]
+lemma project_spanning_iff {C : Set α} (hC : C ⊆ M.E := by aesop_mat) :
+    (M.project C).Spanning X ↔ M.Spanning (X ∪ C) := by
+  rw [spanning_iff, project_closure, spanning_iff, project_ground, union_subset_iff,
+    and_iff_left hC]

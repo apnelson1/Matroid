@@ -187,6 +187,13 @@ lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamil
   exact h.pairwise_disjoint_of_indep_subsets
     (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
 
+
+
+
+
+
+
+
 lemma IsSkewFamily.iUnion_isBasis_iUnion (h : M.IsSkewFamily Xs)
     (hIs : ∀ i, M.IsBasis (Is i) (Xs i)) : M.IsBasis (⋃ i, Is i) (⋃ i, Xs i) := by
   have hi := h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset) (fun i ↦ (hIs i).indep)
