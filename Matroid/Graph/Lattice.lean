@@ -1,4 +1,4 @@
-import Matroid.Graph.Operations.Union
+import Matroid.Graph.Operations.Union'
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 
@@ -25,6 +25,7 @@ protected def iInterAux (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) : Graph
 @[simp]
 lemma iInterAux_eq_iInter [Nonempty ι] (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) :
     Graph.iInterAux H hf = Graph.iInter H (G.pairwise_compatible_of_subgraph hf) := by
+  unfold Graph.iInterAux
   sorry
 
 lemma iInterAux_empty [IsEmpty ι] (H : ι → Graph α β) :
@@ -101,10 +102,9 @@ def Subgraph.minAx' : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
     (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ⟨H, hHs⟩
 
   sSup_le s H h := by
-    sorry
-    -- simp only [Subgraph.mk_le_iff, Graph.sUnion_le_iff, mem_image, Subtype.exists, exists_and_right,
-    --   exists_eq_right, forall_exists_index]
-    -- aesop
+    change Graph.iUnion _ (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ≤ H.1
+    rw [Graph.iUnion_le_iff]
+    exact fun ⟨H', hH'⟩ ↦ h H' hH'
   sInf s := ⟨G.iInterAux (fun H : s ↦ H.1.1) (fun H ↦ H.1.2), Graph.iInterAux_le ..⟩
   sInf_le s H h := G.iInterAux_le_mem (H := (fun H : s ↦ H.1.1)) (fun H ↦ H.1.2) ⟨H, h⟩
   le_sInf s H h := G.le_iInterAux (fun H ↦ H.1.2) (fun H ↦ h _ H.2)
