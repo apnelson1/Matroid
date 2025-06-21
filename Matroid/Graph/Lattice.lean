@@ -1,4 +1,4 @@
-import Matroid.Graph.Operations.Union'
+import Matroid.Graph.Operations.PrefUnion
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 
