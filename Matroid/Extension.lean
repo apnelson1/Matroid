@@ -413,7 +413,7 @@ modular pairs rather than families. -/
   forall_inter := by
     rintro Fs hFs ⟨F₀, hF₀⟩ h
     obtain ⟨B, hB⟩ := h
-    have hmodcl := hB.isBase.isModularBase_powerset.isModularBase_cls
+    have hmodcl := hB.indep.isMutualBasis_powerset.isMutualBasis_cls
     have aux : Fs ⊆ M.closure '' 𝒫 B :=
       fun F hF ↦ ⟨F ∩ B, by simp [hB.closure_inter_eq ⟨F, hF⟩, (h_isFlat F (hFs hF)).closure]⟩
     have aux2 : ∀ F ∈ M.closure '' 𝒫 B, F = M.closure (F ∩ B) := by
@@ -427,7 +427,7 @@ modular pairs rather than families. -/
       apply h_superset hmin.prop.1 (IsFlat.sInter ⟨F₀, hF₀⟩ fun F hF ↦ h_isFlat F (hFs hF))
       refine subset_sInter fun F hF ↦ inter_eq_right.1 ?_
       apply hmin.eq_of_subset ⟨h_pair (hFs hF) hmin.prop.1 ?_, ?_⟩ inter_subset_right
-      · refine isModularPair_iff.2 ⟨B, hB.isBase.indep, hB.isBasis_inter ⟨_, hF⟩, ?_⟩
+      · refine isModularPair_iff.2 ⟨B, hB.indep, hB.isBasis_inter ⟨_, hF⟩, ?_⟩
         nth_rewrite 2 [aux2 F₁ hmin.prop.2]
         exact (hB.indep.inter_left _).isBasis_closure
       rw [aux2 F (aux hF), aux2 F₁ hmin.prop.2, ← Indep.closure_inter_eq_inter_closure,

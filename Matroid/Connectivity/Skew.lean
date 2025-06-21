@@ -1,5 +1,6 @@
 import Matroid.Modular.Basic
 import Matroid.Order.Quotient
+import Matroid.Constructions.Project
 
 universe u
 
@@ -105,7 +106,7 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
       (by simpa [PLift.forall]) (by simpa [PLift.forall])
     · exact (iUnion_plift_down Is).symm
     convert h
-    simp [isSkewFamily_iff, IsModularFamily, isModularBase_iff, PLift.forall]
+    simp [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall]
   clear! Is Xs
   intro η Is Xs h hIX hIs
   -- extend each `I i` to a basis `J i` of `X i`, and let `J` be a basis for the union of the `J i`.
@@ -177,8 +178,8 @@ lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamil
   suffices aux : ∀ (η : Type u) (Xs Ys : η → Set α), M.IsSkewFamily Xs → (∀ i, Ys i ⊆ Xs i) →
       M.IsSkewFamily Ys by
     convert aux (PLift ι) (fun i ↦ Xs i.down) (fun i ↦ Ys i.down) ?_ (by simpa [PLift.forall])
-    · simp [isSkewFamily_iff, IsModularFamily, isModularBase_iff, PLift.forall]
-    simpa [isSkewFamily_iff, IsModularFamily, isModularBase_iff, PLift.forall] using h
+    · simp [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall]
+    simpa [isSkewFamily_iff, IsModularFamily, isMutualBasis_iff, PLift.forall] using h
   clear! Xs Ys
   intro η Xs Ys h hYX
   choose Is hIs using fun i ↦ M.exists_isBasis (Ys i) ((hYX i).trans (h.subset_ground_of_mem i))
@@ -186,13 +187,6 @@ lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamil
   · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
   exact h.pairwise_disjoint_of_indep_subsets
     (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
-
-
-
-
-
-
-
 
 lemma IsSkewFamily.iUnion_isBasis_iUnion (h : M.IsSkewFamily Xs)
     (hIs : ∀ i, M.IsBasis (Is i) (Xs i)) : M.IsBasis (⋃ i, Is i) (⋃ i, Xs i) := by
@@ -278,6 +272,7 @@ lemma IsSkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.IsSkew
     (mem_of_mem_of_subset he (inter_subset_left.trans inter_subset_right))
   exact ⟨i, singleton_subset_iff.2 <| mem_of_mem_of_subset he
     (inter_subset_left.trans inter_subset_left)⟩
+
 
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.IsSkewFamily (fun i ↦ bif i then X else Y)
@@ -565,6 +560,37 @@ lemma IsSkewFamily.skew_compl {Xs : η → Set α} (h : M.IsSkewFamily Xs) (A : 
 lemma IsSkewFamily.skew_compl_singleton {Xs : η → Set α} (h : M.IsSkewFamily Xs) (i : η) :
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
   convert h.skew_compl {i}; simp
+
+/-- Can this be moved up? -/
+lemma IsSkewFamily.isMutualBasis_of_indep {Xs : η → Set α} (h : M.IsSkewFamily Xs) (hB : M.Indep B)
+    (hBX : B ⊆ ⋃ i, Xs i) (hX : ∀ i, Xs i ⊆ M.closure B) : M.IsMutualBasis B Xs := by
+  refine hB.isMutualBasis_of_forall_subset_closure fun i ↦ ?_
+  rw [← inter_eq_right,
+    ← (h.skew_compl_singleton i).closure_union_right_inter_left (S := Xs i ∩ B) inter_subset_left,
+    inter_eq_right, inter_comm]
+  grw [← biUnion_mono rfl.subset (fun j hj ↦ inter_subset_right (s := B))]
+  rw [← biUnion_insert (t := fun i ↦ B ∩ Xs i), ← union_singleton, compl_union_self,
+    ← inter_iUnion₂, biUnion_univ, inter_eq_self_of_subset_left hBX]
+  apply hX
+
+lemma IsSkewFamily.project {Xs : η → Set α} {C : Set α} (h : M.IsSkewFamily Xs)
+    (hC : C ⊆ ⋃ i, Xs i) : (M.project C).IsSkewFamily Xs := by
+  wlog hCi : M.Indep C generalizing C with aux
+  · obtain ⟨I, hI⟩ := M.exists_isBasis' C
+    rw [hI.project_eq_project]
+    exact aux (hI.subset.trans hC) hI.indep
+  have huss : ⋃ i, Xs i ⊆ (M.project C).E := by simp [h.subset_ground_of_mem]
+  obtain ⟨I, hI⟩ := (M.project C).exists_isBasis _ huss
+  have hIC : M.Indep (I ∪ C) := by
+    have hi := hI.indep
+    simp only [project_indep_iff, hCi.contract_indep_iff] at hi
+    exact hi.2
+  have hmut := h.isMutualBasis_of_indep hIC (union_subset hI.subset hC) fun i ↦ ?_
+  · refine ⟨⟨_, hI.indep.isMutualBasis_of_forall_subset_closure (fun i ↦ ?_)⟩, ?_⟩
+    · rw [project_closure, ← closure_subset_closure_iff_subset_closure, ← hmut.closure_inter_eq]
+      refine M.closure_subset_closure <| by tauto_set
+    exact fun i j hij ↦ (h.2 hij).trans (by simp [loops])
+  exact (subset_iUnion ..).trans (hI.subset_closure.trans (by simp))
 
 lemma skew_iff_forall_isCircuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) :

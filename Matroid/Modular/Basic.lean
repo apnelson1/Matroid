@@ -1,4 +1,4 @@
- import Matroid.Flat.Lattice
+import Matroid.Flat.Lattice
 import Matroid.Simple
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.Matroid.Basic
@@ -12,124 +12,119 @@ namespace Matroid
 variable {α : Type*} {ι : Sort*} {η : Type*} {A : Set η} {M : Matroid α} {B I J X X' Y Y' F : Set α}
     {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
-section IsModularBase
+section IsMutualBasis
 
 /-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
 in the family. -/
 @[mk_iff]
-structure IsModularBase (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
-  isBase : M.IsBase B
+structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
+  indep : M.Indep B
   forall_isBasis : ∀ i, M.IsBasis ((Xs i) ∩ B) (Xs i)
 
-lemma IsModularBase.indep (h : M.IsModularBase B Xs) : M.Indep B :=
-  h.isBase.indep
-
-lemma IsModularBase.isBasis_inter (h : M.IsModularBase B Xs) (i : ι) :
+lemma IsMutualBasis.isBasis_inter (h : M.IsMutualBasis B Xs) (i : ι) :
     M.IsBasis ((Xs i) ∩ B) (Xs i) :=
   h.2 i
 
-lemma IsModularBase.subset_closure_inter (h : M.IsModularBase B Xs) (i : ι) :
+lemma IsMutualBasis.subset_closure_inter (h : M.IsMutualBasis B Xs) (i : ι) :
     Xs i ⊆ M.closure ((Xs i) ∩ B) :=
   (h.isBasis_inter i).subset_closure
 
-lemma IsModularBase.closure_inter_eq (h : M.IsModularBase B Xs) (i : ι) :
+lemma IsMutualBasis.closure_inter_eq (h : M.IsMutualBasis B Xs) (i : ι) :
     M.closure (Xs i ∩ B) = M.closure (Xs i) :=
   (h.isBasis_inter i).closure_eq_closure
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-lemma IsModularBase.subset_ground (h : M.IsModularBase B Xs) (i : ι) : Xs i ⊆ M.E :=
+lemma IsMutualBasis.subset_ground (h : M.IsMutualBasis B Xs) (i : ι) : Xs i ⊆ M.E :=
   (h.isBasis_inter i).subset_ground
 
-lemma IsModularBase.subtype {Xs : η → Set α} (h : M.IsModularBase B Xs) (A : Set η) :
-    M.IsModularBase B (fun i : A ↦ Xs i) :=
+lemma IsMutualBasis.subtype {Xs : η → Set α} (h : M.IsMutualBasis B Xs) (A : Set η) :
+    M.IsMutualBasis B (fun i : A ↦ Xs i) :=
   ⟨h.1, fun ⟨i,_⟩ ↦ h.2 i⟩
 
-@[simp] lemma isModularBase_pair_iff {B X Y : Set α} :
-    M.IsModularBase B (fun i : ({X,Y} : Set (Set α)) ↦ i) ↔
-      M.IsBase B ∧ M.IsBasis (X ∩ B) X ∧ M.IsBasis (Y ∩ B) Y := by
-  simp [isModularBase_iff]
+@[simp] lemma isMutualBasis_pair_iff {B X Y : Set α} :
+    M.IsMutualBasis B (fun i : ({X,Y} : Set (Set α)) ↦ i) ↔
+      M.Indep B ∧ M.IsBasis (X ∩ B) X ∧ M.IsBasis (Y ∩ B) Y := by
+  simp [isMutualBasis_iff]
 
-lemma IsModularBase.isBasis_iInter [Nonempty ι] (h : M.IsModularBase B Xs) :
+lemma IsMutualBasis.isBasis_iInter [Nonempty ι] (h : M.IsMutualBasis B Xs) :
     M.IsBasis ((⋂ i, Xs i) ∩ B) (⋂ i, Xs i) :=
-  h.1.indep.inter_isBasis_iInter (fun _ ↦ h.2 _)
+  h.1.inter_isBasis_iInter (fun _ ↦ h.2 _)
 
-lemma IsModularBase.isBasis_iUnion (h : M.IsModularBase B Xs) :
+lemma IsMutualBasis.isBasis_iUnion (h : M.IsMutualBasis B Xs) :
     M.IsBasis ((⋃ i, Xs i) ∩ B) (⋃ i, Xs i) := by
-  simp_rw [h.1.indep.inter_isBasis_closure_iff_subset_closure_inter, iUnion_subset_iff]
+  simp_rw [h.1.inter_isBasis_closure_iff_subset_closure_inter, iUnion_subset_iff]
   exact fun i ↦ (h.subset_closure_inter i).trans
     (M.closure_subset_closure (inter_subset_inter_left _ (subset_iUnion _ i)))
 
-lemma exists_isModularBase_of_iUnion_indep (h : M.Indep (⋃ i, Xs i)) :
-    ∃ B, M.IsModularBase B Xs := by
-  obtain ⟨B, hB, hIB⟩ := h.exists_isBase_superset
-  refine ⟨B, hB, fun i ↦ ?_⟩
-  rw [inter_eq_self_of_subset_left <| iUnion_subset_iff.1 hIB i]
-  exact (h.subset (subset_iUnion _ i)).isBasis_self
+lemma Indep.isMutualBasis_self (h : M.Indep (⋃ i, Xs i)) :
+    M.IsMutualBasis (⋃ i, Xs i) Xs := by
+  refine ⟨h, fun i ↦ ?_⟩
+  rw [inter_eq_self_of_subset_left (subset_iUnion ..)]
+  exact (h.subset (subset_iUnion ..)).isBasis_self
 
-lemma IsBase.isModularBase_of_forall_subset_closure (hB : M.IsBase B)
-    (h : ∀ i, Xs i ⊆ M.closure ((Xs i) ∩ B)) : M.IsModularBase B Xs := by
-  exact ⟨hB, fun i ↦ hB.indep.inter_isBasis_closure_iff_subset_closure_inter.2 (h i)⟩
+lemma Indep.isMutualBasis_of_forall_subset_closure (hB : M.Indep B)
+    (h : ∀ i, Xs i ⊆ M.closure ((Xs i) ∩ B)) : M.IsMutualBasis B Xs := by
+  exact ⟨hB, fun i ↦ hB.inter_isBasis_closure_iff_subset_closure_inter.2 (h i)⟩
 
-lemma IsModularBase.isBasis_biInter {Xs : η → Set α} (h : M.IsModularBase B Xs) (hA : A.Nonempty) :
+lemma IsMutualBasis.isBasis_biInter {Xs : η → Set α} (h : M.IsMutualBasis B Xs) (hA : A.Nonempty) :
     M.IsBasis ((⋂ i ∈ A, Xs i) ∩ B) (⋂ i ∈ A, Xs i) :=
-  h.1.indep.inter_isBasis_biInter hA (fun _ _ ↦ h.2 _)
+  h.1.inter_isBasis_biInter hA (fun _ _ ↦ h.2 _)
 
 @[aesop unsafe 5% (rule_sets := [Matroid])]
-lemma IsModularBase.iInter_subset_ground [Nonempty ι] (h : M.IsModularBase B Xs) :
+lemma IsMutualBasis.iInter_subset_ground [Nonempty ι] (h : M.IsMutualBasis B Xs) :
     ⋂ i, Xs i ⊆ M.E :=
   h.isBasis_iInter.subset_ground
 
-lemma IsModularBase.biInter_subset_ground {Xs : η → Set α} (h : M.IsModularBase B Xs)
+lemma IsMutualBasis.biInter_subset_ground {Xs : η → Set α} (h : M.IsMutualBasis B Xs)
     (hA : A.Nonempty) : ⋂ i ∈ A, Xs i ⊆ M.E :=
   (h.isBasis_biInter hA).subset_ground
 
-lemma IsModularBase.isBasis_biUnion {Xs : η → Set α} (h : M.IsModularBase B Xs) (A : Set η) :
+lemma IsMutualBasis.isBasis_biUnion {Xs : η → Set α} (h : M.IsMutualBasis B Xs) (A : Set η) :
     M.IsBasis ((⋃ i ∈ A, Xs i) ∩ B) (⋃ i ∈ A, Xs i) := by
   convert (h.subtype A).isBasis_iUnion <;> simp
 
-lemma IsModularBase.isModularBase_of_forall_subset_subset_closure (hB : M.IsModularBase B Xs)
-    (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.closure (Xs i)) : M.IsModularBase B Ys := by
-  refine ⟨hB.isBase, fun i ↦ hB.indep.inter_isBasis_closure_iff_subset_closure_inter.2 ?_⟩
+lemma IsMutualBasis.isMutualBasis_of_forall_subset_subset_closure (hB : M.IsMutualBasis B Xs)
+    (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.closure (Xs i)) : M.IsMutualBasis B Ys := by
+  refine ⟨hB.indep, fun i ↦ hB.indep.inter_isBasis_closure_iff_subset_closure_inter.2 ?_⟩
   refine (hYX i).trans (M.closure_subset_closure_of_subset_closure ?_)
   exact (hB.2 i).subset_closure.trans
     (M.closure_subset_closure (inter_subset_inter_left B (hXY i)))
 
-lemma IsModularBase.isModularBase_cls (hB : M.IsModularBase B Xs) :
-    M.IsModularBase B (fun i ↦ M.closure (Xs i)) :=
-  hB.isModularBase_of_forall_subset_subset_closure (fun i ↦ M.subset_closure (Xs i))
+lemma IsMutualBasis.isMutualBasis_cls (hB : M.IsMutualBasis B Xs) :
+    M.IsMutualBasis B (fun i ↦ M.closure (Xs i)) :=
+  hB.isMutualBasis_of_forall_subset_subset_closure (fun i ↦ M.subset_closure (Xs i))
     (fun _ ↦ Subset.rfl)
 
-lemma IsModularBase.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.IsModularBase B Xs) :
+lemma IsMutualBasis.iInter_closure_eq_closure_iInter [Nonempty ι] (hB : M.IsMutualBasis B Xs) :
     (⋂ i : ι, M.closure (Xs i)) = M.closure (⋂ i : ι, Xs i) := by
   simp_rw [subset_antisymm_iff, subset_iInter_iff, ← hB.closure_inter_eq]
   rw [← closure_iInter_eq_iInter_closure_of_iUnion_indep, ← iInter_inter B Xs]
   · refine ⟨M.closure_subset_closure inter_subset_left, fun i ↦ ?_⟩
     rw [hB.closure_inter_eq]
     exact M.closure_subset_closure (iInter_subset _ i)
-  exact hB.isBase.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
+  exact hB.indep.subset (iUnion_subset (fun _ ↦ inter_subset_right))
 
-lemma IsBase.isModularBase_powerset (hB : M.IsBase B) :
-    M.IsModularBase B (fun (I : 𝒫 B) ↦ I.1) where
-  isBase := hB
+lemma Indep.isMutualBasis_powerset (hB : M.Indep B) : M.IsMutualBasis B (fun (I : 𝒫 B) ↦ I.1) where
+  indep := hB
   forall_isBasis I := by
     rw [inter_eq_self_of_subset_left I.2]
-    exact (hB.indep.subset I.2).isBasis_self
+    exact (hB.subset I.2).isBasis_self
 
-/-- Given a modular base `B` for `Xs`, we can switch out the intersection of `B` with the
+/-- Given a mutual basis `B` for `Xs`, we can switch out the intersection of `B` with the
 intersection of the `Xs` with any other base for the intersection of the `Xs`
-and still have a modular base. -/
-lemma IsModularBase.switch (hB : M.IsModularBase B Xs) (hIX : M.IsBasis I (⋂ i, Xs i)) :
-    M.IsModularBase ((B \ ⋂ i, Xs i) ∪ I) Xs := by
+and still have a mutual basis. -/
+lemma IsMutualBasis.switch (hB : M.IsMutualBasis B Xs) (hIX : M.IsBasis I (⋂ i, Xs i)) :
+    M.IsMutualBasis ((B \ ⋂ i, Xs i) ∪ I) Xs := by
   obtain hι | hι := isEmpty_or_nonempty ι
   · refine ⟨?_, by simp⟩
-    rw [iInter_of_empty, diff_univ, empty_union, ← isBasis_ground_iff]
-    exact hIX.isBasis_subset hIX.indep.subset_ground <| by simp
+    rw [iInter_of_empty, diff_univ, empty_union]
+    exact hIX.indep
   set J := (⋂ i, Xs i) ∩ B with hJ
 
   have hJB : M.IsBasis J _ := hB.isBasis_iInter
   set B' := B \ J ∪ I with hB'
   have hB'E : B' ⊆ M.E :=
-    union_subset (diff_subset.trans hB.isBase.subset_ground) hIX.indep.subset_ground
+    union_subset (diff_subset.trans hB.indep.subset_ground) hIX.indep.subset_ground
   have hdj : Disjoint (B \ J) I
   · rw [disjoint_iff_forall_ne]
     rintro e heBJ _ heI rfl
@@ -139,12 +134,12 @@ lemma IsModularBase.switch (hB : M.IsModularBase B Xs) (hIX : M.IsBasis I (⋂ i
     rw [hJB.closure_eq_closure, ← hIX.closure_eq_closure]
     exact (M.subset_closure I) heI
 
-  simp_rw [isModularBase_iff, show B \ ⋂ i, Xs i = B \ J by rw [hJ, diff_inter_self_eq_diff]]
+  simp_rw [isMutualBasis_iff, show B \ ⋂ i, Xs i = B \ J by rw [hJ, diff_inter_self_eq_diff]]
   refine ⟨?_, fun i ↦ ?_⟩
-  · rw [← isBasis_ground_iff]
-    refine hB.isBase.isBasis_ground.switch_subset_of_isBasis_closure inter_subset_right
-      hIX.indep.subset_ground ?_
-    rw [hJB.closure_eq_closure]
+  · refine (hB.indep.isBasis_closure.switch_subset_of_isBasis_closure (I₀ := J) (J₀ := I)
+      inter_subset_right (hIX.subset.trans ?_) ?_).indep
+    · exact hB.isBasis_iInter.subset_closure.trans <| M.closure_mono inter_subset_right
+    rw [hJ, hB.isBasis_iInter.closure_eq_closure]
     exact hIX.isBasis_closure_right
   have hiX : I ⊆ Xs i := hIX.subset.trans (iInter_subset Xs i)
   have hJX : J ⊆ Xs i := inter_subset_left.trans (iInter_subset Xs i)
@@ -156,26 +151,34 @@ lemma IsModularBase.switch (hB : M.IsModularBase B Xs) (hIX : M.IsBasis I (⋂ i
   rw [hJB.closure_eq_closure]
   exact hIX.isBasis_closure_right
 
-lemma IsModularBase.comp {ζ : Sort*} {Xs : ι → Set α} (h : M.IsModularBase B Xs) (t : ζ → ι) :
-    M.IsModularBase B (Xs ∘ t) where
-  isBase := h.isBase
+lemma IsMutualBasis.comp {ζ : Sort*} {Xs : ι → Set α} (h : M.IsMutualBasis B Xs) (t : ζ → ι) :
+    M.IsMutualBasis B (Xs ∘ t) where
+  indep := h.indep
   forall_isBasis i := h.forall_isBasis (t i)
 
-end IsModularBase
+lemma IsMutualBasis.mono (hI : M.IsMutualBasis I Xs) (hIB : I ⊆ B) (hB : M.Indep B) :
+    M.IsMutualBasis B Xs :=
+  hB.isMutualBasis_of_forall_subset_closure fun i ↦ (hI.subset_closure_inter i).trans
+    <| M.closure_subset_closure <| inter_subset_inter_right _ hIB
+
+end IsMutualBasis
 section IsModularFamily
 
 /-- A set family is a `IsModularFamily` if it has a modular base. -/
-def IsModularFamily (M : Matroid α) (Xs : ι → Set α) := ∃ B, M.IsModularBase B Xs
+def IsModularFamily (M : Matroid α) (Xs : ι → Set α) := ∃ B, M.IsMutualBasis B Xs
 
 lemma Indep.isModularFamily (hI : M.Indep I) (hXs : ∀ i, M.IsBasis ((Xs i) ∩ I) (Xs i)) :
     M.IsModularFamily Xs := by
   simp_rw [hI.inter_isBasis_closure_iff_subset_closure_inter] at hXs
-  obtain ⟨B, hB, hIB⟩ := hI.exists_isBase_superset
-  refine ⟨B, hB, ?_⟩
-  simp_rw [hB.indep.inter_isBasis_closure_iff_subset_closure_inter]
-  exact fun i ↦ (hXs i).trans (M.closure_subset_closure (inter_subset_inter_right _ hIB))
+  refine ⟨I, hI, by simpa [hI.inter_isBasis_closure_iff_subset_closure_inter]⟩
 
-lemma IsModularBase.isModularFamily (hB : M.IsModularBase B Xs) : M.IsModularFamily Xs := ⟨B, hB⟩
+lemma IsModularFamily.exists_isMutualBasis_isBase (h : M.IsModularFamily Xs) :
+    ∃ B, M.IsBase B ∧ M.IsMutualBasis B Xs := by
+  obtain ⟨I, hI⟩ := h
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_isBase_superset
+  exact ⟨B, hB, hI.mono hIB hB.indep⟩
+
+lemma IsMutualBasis.isModularFamily (hB : M.IsMutualBasis B Xs) : M.IsModularFamily Xs := ⟨B, hB⟩
 
 lemma IsModularFamily.subset_ground_of_mem (h : M.IsModularFamily Xs) (i : ι) : Xs i ⊆ M.E :=
   let ⟨_, h⟩ := h
@@ -196,12 +199,12 @@ lemma Indep.isModularFamily_of_subsets (hI : M.Indep I) (hJs : ⋃ i, Js i ⊆ I
 lemma IsModularFamily.isModularFamily_of_forall_subset_closure (h : M.IsModularFamily Xs)
     (hXY : ∀ i, Xs i ⊆ Ys i) (hYX : ∀ i, Ys i ⊆ M.closure (Xs i)) : M.IsModularFamily Ys :=
   let ⟨B, hB⟩ := h
-  ⟨B, hB.isModularBase_of_forall_subset_subset_closure hXY hYX⟩
+  ⟨B, hB.isMutualBasis_of_forall_subset_subset_closure hXY hYX⟩
 
 lemma IsModularFamily.cls_isModularFamily (h : M.IsModularFamily Xs) :
     M.IsModularFamily (fun i ↦ M.closure (Xs i)) :=
   let ⟨B, hB⟩ := h
-  ⟨B, hB.isModularBase_cls⟩
+  ⟨B, hB.isMutualBasis_cls⟩
 
 @[simp] lemma isModularFamily_of_isEmpty [IsEmpty ι] : M.IsModularFamily Xs :=
   M.empty_indep.isModularFamily_of_subsets (by simp)
@@ -211,14 +214,14 @@ lemma IsModularFamily.cls_isModularFamily (h : M.IsModularFamily Xs) :
   obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; simp
   refine ⟨fun h ↦ h.subset_ground_of_mem, fun h ↦ ?_⟩
   obtain ⟨I, hI⟩ := M.exists_isBasis (Xs i)
-  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_isBase_superset
-  refine ⟨B, hB, fun j ↦ ?_⟩
-  rwa [Subsingleton.elim j i, inter_comm, hI.inter_eq_of_subset_indep hIB hB.indep]
+  exact ⟨I, hI.indep,
+    fun j ↦ by rwa [Subsingleton.elim j i, inter_eq_self_of_subset_right hI.subset] ⟩
+
 
 lemma isModularFamily_of_isLoopEquiv (h : M.IsModularFamily Xs)
     (he : ∀ i, M.IsLoopEquiv (Xs i) (Ys i)) : M.IsModularFamily Ys := by
   obtain ⟨B, hB⟩ := h
-  refine ⟨B, hB.isBase, fun i ↦ ?_⟩
+  refine ⟨B, hB.indep, fun i ↦ ?_⟩
   rw [← (he i).isBasis_iff, ← (he i).inter_eq_of_indep hB.indep]
   exact hB.isBasis_inter i
 
@@ -237,19 +240,11 @@ lemma IsModularFamily.delete {D : Set α} (h : M.IsModularFamily Xs) (hXD : ∀ 
 lemma IsModularFamily.ofRestrict' {R : Set α}
     (h : (M ↾ R).IsModularFamily Xs) : M.IsModularFamily (fun i ↦ (Xs i) ∩ M.E) := by
   obtain ⟨B, hBb, hB⟩ := h
-  obtain ⟨B', hB'⟩ := hBb.indep.of_restrict.exists_isBase_superset
-  refine ⟨B', hB'.1, fun i ↦ ?_⟩
+  -- obtain ⟨B', hB'⟩ := hBb.indep.of_restrict
+  refine ⟨B, hBb.1, fun i ↦ ?_⟩
   obtain IsBasis := hB i
-  have R_B'_inter_eq : R ∩ B' = B := by
-    refine Set.ext <| fun x ↦ ⟨fun x_mem ↦ ?_, fun x_mem ↦ ⟨hBb.subset_ground x_mem, hB'.2 x_mem⟩⟩
-    by_contra x_nB
-    apply (hB'.1.indep.subset (insert_subset x_mem.2 hB'.2)).not_dep
-    rw [Dep, and_iff_left ((insert_subset x_mem.2 hB'.2).trans hB'.1.subset_ground)]
-    exact (restrict_dep_iff.1 (hBb.insert_dep ⟨x_mem.1, x_nB⟩)).1
   rw [isBasis_restrict_iff'] at IsBasis
-  rw [ ← inter_eq_self_of_subset_left IsBasis.2, inter_right_comm _ R, inter_assoc, R_B'_inter_eq,
-    inter_assoc, inter_eq_self_of_subset_right (hB'.2.trans hB'.1.subset_ground),
-    inter_right_comm, inter_eq_self_of_subset_left IsBasis.2]
+  rw [inter_assoc, inter_eq_self_of_subset_right hBb.of_restrict.subset_ground]
   exact IsBasis.1
 
 lemma IsModularFamily.ofRestrict {M : Matroid α} {R : Set α} (hR : R ⊆ M.E)
@@ -266,12 +261,12 @@ lemma IsModularFamily.comp {ζ : Sort*} (h : M.IsModularFamily Xs) (t : ζ → �
 lemma IsModularFamily.set_biInter_comp {Xs : η → Set α} (h : M.IsModularFamily Xs) (t : ι → Set η)
     (ht : ∀ j, (t j).Nonempty) : M.IsModularFamily (fun j ↦ ⋂ i ∈ t j, (Xs i)) := by
   obtain ⟨B, hB⟩ := h
-  exact ⟨B, hB.isBase, fun j ↦ hB.isBasis_biInter (ht j)⟩
+  exact ⟨B, hB.indep, fun j ↦ hB.isBasis_biInter (ht j)⟩
 
 lemma IsModularFamily.map {β : Type*} (f : α → β) (hf : InjOn f M.E) (h : M.IsModularFamily Xs) :
     (M.map f hf).IsModularFamily (fun i ↦ f '' (Xs i)) := by
   obtain ⟨B, hB, hBX⟩ := h
-  refine ⟨f '' B, hB.map hf, fun i ↦ ?_⟩
+  refine ⟨f '' B, hB.map _ hf , fun i ↦ ?_⟩
   convert (hBX i).map hf
   rw [hf.image_inter (hBX i).subset_ground hB.subset_ground]
 
@@ -280,7 +275,7 @@ lemma isModularFamily_map_iff (f : α → η) (hf : InjOn f M.E) {Xs : ι → Se
   refine ⟨fun h ↦ ?_, fun ⟨Ys, hYs, h_eq⟩ ↦ ?_⟩
   · obtain ⟨B, hB, h⟩ := h
     simp_rw [map_isBasis_iff'] at h
-    rw [map_isBase_iff] at hB
+    rw [map_indep_iff] at hB
     obtain ⟨B, hB, rfl⟩ := hB
     choose Is hIs using h
     choose Ys hYs using hIs
@@ -304,23 +299,21 @@ lemma IsModularFamily.mapEmbedding {β : Type*} (f : α ↪ β) (h : M.IsModular
 lemma IsModularFamily.of_contract_indep (h : (M ／ I).IsModularFamily Xs) (hI : M.Indep I) :
     M.IsModularFamily (fun i ↦ Xs i ∪ I) := by
   obtain ⟨B, hB, h⟩ := h
-  rw [hI.contract_isBase_iff] at hB
-  refine ⟨B ∪ I, hB.1, fun i ↦ Indep.isBasis_of_subset_of_subset_closure ?_ ?_ ?_⟩
-  · exact hB.1.indep.inter_left _
+  rw [hI.contract_indep_iff] at hB
+  refine ⟨B ∪ I, hB.2, fun i ↦ Indep.isBasis_of_subset_of_subset_closure ?_ ?_ ?_⟩
+  · exact hB.2.inter_left _
   · exact inter_subset_left
   rw [← inter_union_distrib_right]
   refine union_subset ((h i).subset_closure.trans ?_)
     (M.subset_closure_of_subset' subset_union_right)
   simp [contract_closure_eq, diff_subset]
 
-/-- A modular base can be chosen to contain a prescribed independent subset of the intersection. -/
-lemma IsModularFamily.exists_isModularBase_superset_of_indep_of_subset_inter
+/-- A mutual basis can be chosen to contain a prescribed independent subset of the intersection. -/
+lemma IsModularFamily.exists_isMutualBasis_superset_of_indep_of_subset_inter
     (h : M.IsModularFamily Xs) (hI : M.Indep I) (hIX : I ⊆ ⋂ i, Xs i) :
-    ∃ B, M.IsModularBase B Xs ∧ I ⊆ B := by
+    ∃ B, M.IsMutualBasis B Xs ∧ I ⊆ B := by
   obtain he | hne := isEmpty_or_nonempty ι
-  · obtain ⟨B, hB⟩ := hI.exists_isBase_superset
-    refine ⟨B, ⟨hB.1, by simp⟩, hB.2⟩
-
+  · exact ⟨I, ⟨hI, by simp⟩, rfl.subset⟩
   obtain ⟨B, hB⟩ := h
   obtain ⟨J, hJ, hIJ⟩ := hI.subset_isBasis_of_subset hIX
   exact ⟨_,  hB.switch hJ, hIJ.trans subset_union_right⟩
@@ -339,7 +332,7 @@ lemma IsModularFamily.contract (h : M.IsModularFamily Xs) {C : Set α}
     (fun _ ↦ subset_union_left)
     (fun i ↦ union_subset (M.subset_closure _ (h.subset_ground_of_mem i)) (hC i))
 
-  obtain ⟨B, hB, hIB⟩ := hu.exists_isModularBase_superset_of_indep_of_subset_inter hI.indep
+  obtain ⟨B, hB, hIB⟩ := hu.exists_isMutualBasis_superset_of_indep_of_subset_inter hI.indep
     (by simp [(hI.subset.trans subset_union_right)])
 
   have hi : (M ／ I).Indep (B \ I) := by simp [hI.indep.contract_indep_iff,
@@ -364,7 +357,7 @@ lemma IsModularFamily.finite_of_forall_isFlat [M.RankFinite] (h : M.IsModularFam
     (h_isFlat : ∀ i, M.IsFlat (Xs i)) : (range Xs).Finite := by
   obtain ⟨B, hB⟩ := h
   refine Finite.of_finite_image (f := fun X ↦ X ∩ B)
-    (hB.isBase.indep.finite.finite_subsets.subset (by simp)) ?_
+    (hB.indep.finite.finite_subsets.subset (by simp)) ?_
   simp only [InjOn, mem_range, forall_exists_index, forall_apply_eq_imp_iff]
   intro i j h_eq
   rw [← (h_isFlat i).closure, ← (hB.isBasis_inter i).closure_eq_closure,
@@ -449,7 +442,7 @@ def IsModularPair (M : Matroid α) (X Y : Set α) :=
 
 lemma IsModularPair.symm (h : M.IsModularPair X Y) : M.IsModularPair Y X := by
    obtain ⟨B, hB⟩ := h
-   exact ⟨B, hB.isBase, fun i ↦ by simpa using hB.2 !i⟩
+   exact ⟨B, hB.indep, fun i ↦ by simpa using hB.2 !i⟩
 
 lemma isModularPair_comm : M.IsModularPair X Y ↔ M.IsModularPair Y X :=
   ⟨IsModularPair.symm, IsModularPair.symm⟩
@@ -464,9 +457,9 @@ lemma IsModularPair.subset_ground_right (h : M.IsModularPair X Y) : Y ⊆ M.E :=
 
 lemma isModularPair_iff {M : Matroid α} {X Y : Set α} :
     M.IsModularPair X Y ↔ ∃ I, M.Indep I ∧ M.IsBasis (X ∩ I) X ∧ M.IsBasis (Y ∩ I) Y := by
-  simp only [IsModularPair, IsModularFamily, mem_singleton_iff, isModularBase_pair_iff, indep_iff]
-  refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB.indep, ?_⟩,
-    fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB, ?_⟩ ⟩
+  simp only [IsModularPair, IsModularFamily, mem_singleton_iff, isMutualBasis_pair_iff, indep_iff]
+  refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB, ?_⟩,
+    fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB.indep, ?_⟩ ⟩
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
   simp only [Bool.forall_bool, cond_false, cond_true]
   rw [← hIX.eq_of_subset_indep (hB.indep.inter_left X) (inter_subset_inter_right _ hIB)
