@@ -79,7 +79,7 @@ protected lemma Indep.augment {J : Set α} (hI : M.Indep I) (hIfin : I.Finite) (
   -- and take a circuit `Cb` for `b`. Now by circuit elimination, the set `Ca ∪ Cb \ {x}`
   -- contains a circuit but is contained in `J`, a contradiction.
   obtain ⟨a, haJ, haI⟩ : ∃ a ∈ J, a ∉ I :=
-    not_subset.1 <| fun h ↦ hIJ.not_le (ncard_le_ncard h hIfin)
+    not_subset.1 <| fun h ↦ hIJ.not_ge (ncard_le_ncard h hIfin)
   obtain ⟨Ca, hCa, hxCa, haCa, hCaJ⟩ := h_ex a ⟨haJ, haI⟩
   obtain ⟨b, hbCa, hbI⟩ : ∃ b ∈ Ca, b ∉ I := not_subset.1 fun h ↦ hI.not_isCircuit_of_subset h hCa
   obtain ⟨Cb, hCb, hxCb, hbCb, hCbJ⟩ :=
@@ -236,7 +236,7 @@ protected def ofNonSpanningCircuit
         have hef : f ≠ e := by
           by_contra hs
           rw [←hs] at heC
-          exact (not_mem_of_mem_diff hf) heC
+          exact (notMem_of_mem_diff hf) heC
         by_cases hsub : (∃ C₃, IsNonspanningCircuit C₃ ∧ C₃ ⊆ (C\{e}) ∪ {f} )
         · obtain ⟨C₃, hC3ns, hC2 ⟩ := hsub
           use C₃
@@ -398,14 +398,14 @@ TODO : Give better API for `Set`-valued predicates.
 --     have hKfe_card : ((insert e K).erase f).card = K.card := by
 --       calc ((insert e K).erase f).card
 --         _ = (insert e K).card - 1 := card_erase_of_mem <| mem_insert_of_mem hfK
---         _ = K.card := by rw [card_insert_of_not_mem heK, add_tsub_cancel_right]
+--         _ = K.card := by rw [card_insert_of_notMem heK, add_tsub_cancel_right]
 --     use ((insert e K).erase f)
 --     refine ⟨⟨hKfe_subset, M.indep_iff.mpr ⟨?_, hK_indep'⟩, (by rwa [hKfe_card])⟩, ?_⟩
 --     · simp only [coe_erase, coe_insert]
 --       exact Set.diff_subset.trans <| Set.insert_subset (hI.subset_ground heI)
 -- hK_indep.subset_ground
 --     have hssu : (I \ (insert e K).erase f) ⊂ I \ K := by
---       rw [sdiff_erase_not_mem hfI, Finset.ssubset_iff_subset_ne, Ne, Finset.ext_iff, not_forall]
+--       rw [sdiff_erase_notMem hfI, Finset.ssubset_iff_subset_ne, Ne, Finset.ext_iff, not_forall]
 --       exact ⟨(sdiff_subset_sdiff Subset.rfl (subset_insert _ _)), ⟨e, by simp [heI, heK]⟩⟩
 --     exact ⟨card_le_card hssu.subset, (card_lt_card hssu).ne.symm⟩
 --   obtain ⟨f, hfK, hfI⟩ : ∃ f ∈ K, f ∉ I :=
@@ -425,7 +425,7 @@ TODO : Give better API for `Set`-valued predicates.
 --   have he_mem : ∀ ⦃C x⦄, C ⊆ (insert e K).erase x → M.IsCircuit C → e ∈ C := by
 --     intro C x hC_subset hC; by_contra! heC
 --     replace hC_subset := hC_subset.trans <| erase_subset _ _
---     rw [subset_insert_iff_of_not_mem heC] at hC_subset
+--     rw [subset_insert_iff_of_notMem heC] at hC_subset
 --     rw [M.indep_iff] at hK_indep
 --     exact hK_indep.2 hC_subset hC
 --   have h_subset : ∀ ⦃C x⦄, C ⊆ (insert e K).erase x → C \ {e} ⊆ K := by

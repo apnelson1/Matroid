@@ -138,7 +138,7 @@ lemma FinDiff.trans {X Y Z : Set α} (hXY : FinDiff X Y) (hYZ : FinDiff Y Z) : F
   have hne : e ≠ f := by rintro rfl; contradiction
   convert hd.exchange_right (e := f) (f := e) (by simp) (by simp [heZ, hne])
   simp only [mem_singleton_iff, insert_diff_of_mem]
-  rw [← insert_diff_of_not_mem _ (by simpa), insert_diff_singleton, insert_eq_of_mem heZ,
+  rw [← insert_diff_of_notMem _ (by simpa), insert_diff_singleton, insert_eq_of_mem heZ,
     diff_singleton_eq_self hfZ]
 termination_by (Z \ Y).encard
 

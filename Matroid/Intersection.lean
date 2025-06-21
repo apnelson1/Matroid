@@ -72,15 +72,15 @@ private lemma exists_common_ind_aux (M₁ M₂ : Matroid α) [M₁.Finite] (hE :
 
   replace hcon := hcon (insert e Ic) (insert e (Xc ∪ Xd))
     (insert_subset he₁.mem_ground (union_subset hXc.1 hXd.1)) hIc₁.2 hIc₂.2
-  rw [ncard_insert_of_not_mem hIc₁.1 (hIc₁.2.subset (subset_insert _ _)).finite,
+  rw [ncard_insert_of_notMem hIc₁.1 (hIc₁.2.subset (subset_insert _ _)).finite,
     ← insert_union] at hcon
 
   have hsm := M₁.rk_submod (insert e Xc) Xd
-  rw [insert_inter_of_not_mem hXd.2] at hsm
+  rw [insert_inter_of_notMem hXd.2] at hsm
 
   have hsm2 := M₂.rk_submod (M₂.E \ Xc) ((M₂.E \ insert e Xd))
   simp_rw [diff_eq, ← inter_inter_distrib_left, ← inter_union_distrib_left, ← compl_inter,
-    ← compl_union, union_insert, ← insert_union, inter_comm Xc, insert_inter_of_not_mem hXc.2,
+    ← compl_union, union_insert, ← insert_union, inter_comm Xc, insert_inter_of_notMem hXc.2,
     inter_comm Xd, ← diff_eq] at hsm2
 
   zify at hcon hcond hId hIc hsm hsm2

@@ -88,7 +88,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
   have hclXf : X = M₂.closure X := Eq.symm (IsFlat.closure hX2)
   have hy' : y ∈ M₂.E \ M₂.closure X := by
     rw [← hclXf]
-    refine ⟨?_ , not_mem_of_mem_diff hy ⟩
+    refine ⟨?_ , notMem_of_mem_diff hy ⟩
     rw [← hE]
     exact hYE (mem_of_mem_diff hy)
   have hX2E: X ⊆ M₂.E := hX2.subset_ground
@@ -123,7 +123,7 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
       have hhel : M₁.rk (insert y X) = M₁.rk (M₁.closure (insert y X)) := Eq.symm (rk_closure_eq M₁)
       have hyEe : y ∈ M₁.E :=  hYE (mem_of_mem_diff hy)
       have hcovy : X ⋖[M₁] M₁.closure (insert y X) := hF1X.covBy_closure_insert
-        (not_mem_of_mem_diff hy) (hyEe)
+        (notMem_of_mem_diff hy) (hyEe)
       rw [hhel]
       exact (CovBy.rk_eq_of_isRkFinite hcovy (M₁.isRkFinite_set X)).symm
     exact Nat.le_antisymm h9 (le_of_eq_of_le hhm2 (rk_le_of_subset M₁ hsubcl))
@@ -132,12 +132,12 @@ theorem Quotient.covBy_of_covBy [RankFinite M₁] (hQ : M₂ ≤q M₁) (hco : X
     have hX2 : M₁.IsFlat X := Quotient.isFlat_of_isFlat hQ hX2
     have hcls : X ⊂ M₂.closure (insert y X) := by
       rw [ssubset_iff_of_subset hXsub]
-      exact ⟨ y, hsubcl (mem_insert y X) , not_mem_of_mem_diff hy ⟩
+      exact ⟨ y, hsubcl (mem_insert y X) , notMem_of_mem_diff hy ⟩
     sorry
   sorry
   --   exact CovBy_rank_one hX2 hXy1 hf hcls
   -- apply CovBy_equal_cont hco hcovcl
-  -- exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), not_mem_of_mem_diff hy ⟩
+  -- exact ⟨y,mem_inter (mem_of_mem_diff hy) (hsubcl (mem_insert y X)), notMem_of_mem_diff hy ⟩
 
 theorem Quotient.forall_superset_k [RankFinite M₁] {k : ℤ} {F F' : Set α} (hQ : M₂ ≤q M₁)
     (hrank : (M₁.rank : ℤ) - M₂.rank = k) (hFF' : F ⊆ F') (hFk : (M₁.rk F : ℤ) - M₂.rk F = k) :
@@ -459,7 +459,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 --       using (hQ.weakLE.indep_of_indep hB.indep).isBase_of_card
 --     simp [hQ.eq_of_isBase_indep hB₁ hB.indep]
 
---   rw [Finset.card_insert_of_not_mem heY] at hr
+--   rw [Finset.card_insert_of_notMem heY] at hr
 --   obtain ⟨-, heM₂⟩ : Disjoint (↑Y) M₂.E ∧ e ∉ M₂.E := by
 --     simpa only [Finset.coe_insert, ← union_singleton, ← hQ.ground_eq, disjoint_union_left,
 --       disjoint_singleton_left] using hX₁

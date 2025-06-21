@@ -84,7 +84,7 @@ lemma maximal_foo (I : Set α) (hI : U.Indep I) (hIX : I ⊆ X) (hX : X ⊆ U.E)
     · rw [← closure_closure] at heIcl
       exact mem_of_mem_of_subset heIcl <| closure_subset_closure _ <|
         subset_iUnion (fun j ↦ (U.M j).closure I) i
-    rw [← closure_inter_ground, (hI.forall_indep i).not_mem_closure_iff_of_not_mem (by simp [heI]),
+    rw [← closure_inter_ground, (hI.forall_indep i).notMem_closure_iff_of_notMem (by simp [heI]),
       ← insert_inter_of_mem hei] at heIcl
 
     by_cases heF : e ∈ U.F
@@ -94,7 +94,7 @@ lemma maximal_foo (I : Set α) (hI : U.Indep I) (hIX : I ⊆ X) (hX : X ⊆ U.E)
     -- specialize hni (fun j ↦ ?_)
     -- · obtain rfl | hne := eq_or_ne i j
     --   · assumption
-    --   rw [insert_inter_of_not_mem]
+    --   rw [insert_inter_of_notMem]
 
 
 lemma Indep.exists_augment_of_not_maximal (hI : U.Indep I) (hnotmax : ¬ Maximal U.Indep I)

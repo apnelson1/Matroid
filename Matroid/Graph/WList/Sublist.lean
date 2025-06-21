@@ -510,7 +510,7 @@ lemma mem_tail_iff_of_nodup (hw : Nodup w.vertex) (hne : w.Nonempty) :
     x ∈ w.tail ↔ x ∈ w ∧ x ≠ w.first := by
   induction w with aesop
 
-lemma first_not_mem_tail_of_nodup (hw : Nodup w.vertex) (hne : w.Nonempty) :
+lemma first_notMem_tail_of_nodup (hw : Nodup w.vertex) (hne : w.Nonempty) :
     w.first ∉ w.tail := by
   simp [mem_tail_iff_of_nodup hw hne]
 
@@ -660,13 +660,13 @@ lemma Nontrivial.dropLast_firstEdge (hw : w.Nontrivial) :
     hw.dropLast_nonempty.firstEdge = hw.nonempty.firstEdge := by
   cases hw with simp
 
-lemma Nonempty.firstEdge_not_mem_tail (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+lemma Nonempty.firstEdge_notMem_tail (hw : w.Nonempty) (hnd : w.edge.Nodup) :
     hw.firstEdge w ∉ w.tail.edge := by
   cases hw with simp_all
 
-lemma Nonempty.lastEdge_not_mem_dropLast (hw : w.Nonempty) (hnd : w.edge.Nodup) :
+lemma Nonempty.lastEdge_notMem_dropLast (hw : w.Nonempty) (hnd : w.edge.Nodup) :
     hw.lastEdge w ∉ w.dropLast.edge := by
-  have := hw.reverse.firstEdge_not_mem_tail <| by simpa
+  have := hw.reverse.firstEdge_notMem_tail <| by simpa
   rw [hw.firstEdge_reverse] at this
   simp_all
 
@@ -677,7 +677,7 @@ lemma Nontrivial.tail_lastEdge (hw : w.Nontrivial) :
 
 lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) :
     hw.nonempty.firstEdge ≠ hw.nonempty.lastEdge := by
-  refine fun h_eq ↦ hw.nonempty.firstEdge_not_mem_tail hnd ?_
+  refine fun h_eq ↦ hw.nonempty.firstEdge_notMem_tail hnd ?_
   rw [h_eq, ← hw.tail_lastEdge]
   exact Nonempty.lastEdge_mem (tail_nonempty hw)
 
@@ -717,7 +717,7 @@ lemma dedup_cons_eq_ite (x : α) (e : β) (w : WList α β) :
 lemma dedup_cons_of_mem (hxw : x ∈ w) (e) : (cons x e w).dedup = dedup (w.suffixFromVertex x) := by
   simp [dedup, hxw]
 
-lemma dedup_cons_of_not_mem (hxw : x ∉ w) (e) :
+lemma dedup_cons_of_notMem (hxw : x ∉ w) (e) :
     (cons x e w).dedup = cons x e (dedup w) := by
   simp [dedup, hxw]
 
@@ -741,7 +741,7 @@ lemma dedup_last (w : WList α β) : w.dedup.last = w.last := by
     simp only [last_cons]
     by_cases huw : u ∈ w
     · rw [dedup_cons_of_mem huw, dedup_last, suffixFromVertex_last]
-    rw [dedup_cons_of_not_mem huw, last_cons, dedup_last]
+    rw [dedup_cons_of_notMem huw, last_cons, dedup_last]
 termination_by w.length
 
 lemma dedup_isSublist (w : WList α β) : w.dedup.IsSublist w := by
@@ -753,7 +753,7 @@ lemma dedup_isSublist (w : WList α β) : w.dedup.IsSublist w := by
     · rw [dedup_cons_of_mem huw]
       refine (w.suffixFromVertex _).dedup_isSublist.trans ?_
       exact (w.suffixFromVertex_isSuffix _).isSublist.trans <| by simp
-    rw [dedup_cons_of_not_mem huw]
+    rw [dedup_cons_of_notMem huw]
     exact (dedup_isSublist w).cons₂ _ _ (by simp)
 termination_by w.length
 
@@ -765,7 +765,7 @@ lemma dedup_vertex_nodup (w : WList α β) : w.dedup.vertex.Nodup := by
     by_cases huw : u ∈ w
     · rw [dedup_cons_of_mem huw]
       apply dedup_vertex_nodup
-    simp only [dedup_cons_of_not_mem huw, cons_vertex, nodup_cons, mem_vertex]
+    simp only [dedup_cons_of_notMem huw, cons_vertex, nodup_cons, mem_vertex]
     exact ⟨mt w.dedup_isSublist.vertex_sublist.mem huw, w.dedup_vertex_nodup⟩
 termination_by w.length
 
@@ -774,7 +774,7 @@ lemma dedup_eq_self (hw : w.vertex.Nodup) : w.dedup = w := by
   | nil => simp
   | cons u e w ih =>
     simp only [cons_vertex, nodup_cons, mem_vertex] at hw
-    rw [dedup_cons_of_not_mem hw.1, ih hw.2]
+    rw [dedup_cons_of_notMem hw.1, ih hw.2]
 
 lemma dedup_eq_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
   ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, dedup_eq_self⟩
@@ -886,7 +886,7 @@ lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast
 --   | .cons x e (nil y) =>
 --     simp_all only [cons_validIn, nil_first, nil_validIn, endIf_cons, endIf_nil, dite_eq_ite]
 --     split_ifs with hPx
---     · simp_all only [cons_vertex, nil_vertex, mem_cons, not_mem_nil, or_false, exists_eq_or_imp,
+--     · simp_all only [cons_vertex, nil_vertex, mem_cons, notMem_nil, or_false, exists_eq_or_imp,
 --       exists_eq_left, true_or, ite_true, Nonempty.not_nil]
 --     · simp_all only [mem_cons_iff, mem_nil_iff, exists_eq_or_imp, exists_eq_left, false_or,
 --       ite_false, Nonempty.cons_true, last_cons, nil_last, not_false_eq_true, true_and,

@@ -67,14 +67,14 @@ lemma IsFlat.closure_subset_of_subset (hF : M.IsFlat F) (h : X ⊆ F) : M.closur
     M.closure X ⊆ F ↔ X ⊆ F :=
   ⟨(M.subset_closure X).trans, hF.closure_subset_of_subset⟩
 
-lemma exists_mem_closure_not_mem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M.E := by aesop_mat) :
+lemma exists_mem_closure_notMem_of_not_isFlat (h : ¬ M.IsFlat F) (hF : F ⊆ M.E := by aesop_mat) :
     ∃ e, e ∈ M.closure F \ F := by
   rw [isFlat_iff_closure_eq, subset_antisymm_iff, and_iff_left (M.subset_closure F)] at h
   exact not_subset.1 h
 
 lemma IsFlat.ssubset_closure_insert (hF : M.IsFlat F) (heF : e ∉ F) (he : e ∈ M.E := by aesop_mat) :
     F ⊂ M.closure (insert e F) :=
-  (M.subset_closure_of_subset (subset_insert _ _)).ssubset_of_mem_not_mem
+  (M.subset_closure_of_subset (subset_insert _ _)).ssubset_of_mem_notMem
     (M.mem_closure_of_mem' (mem_insert _ _) he) heF
 
 lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) :
@@ -82,7 +82,7 @@ lemma isFlat_iff_ssubset_closure_insert_forall (hF : F ⊆ M.E := by aesop_mat) 
   refine ⟨fun h e he ↦ ?_, fun h ↦ by_contra fun hcon ↦ ?_⟩
   · rw [h.closure]
     exact h.ssubset_closure_insert he.2 he.1
-  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_not_mem_of_not_isFlat hcon hF
+  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_notMem_of_not_isFlat hcon hF
   refine (h e ⟨mem_ground_of_mem_closure hecl, heF⟩).ne ?_
   rw [← closure_insert_closure_eq_closure_insert, insert_eq_of_mem hecl, closure_closure]
 
@@ -110,8 +110,8 @@ lemma IsFlat.closure_insert_eq_closure_insert_of_mem (hF : M.IsFlat F)
 
 lemma IsFlat.insert_indep_of_isBasis (hF : M.IsFlat F) (hIF : M.IsBasis I F) (heI : e ∈ M.E \ F) :
     M.Indep (insert e I) := by
-  rwa [hIF.indep.insert_indep_iff_of_not_mem, hIF.closure_eq_closure, hF.closure]
-  exact not_mem_subset hIF.subset heI.2
+  rwa [hIF.indep.insert_indep_iff_of_notMem, hIF.closure_eq_closure, hF.closure]
+  exact notMem_subset hIF.subset heI.2
 
 lemma IsFlat.closure_eq_iff_isBasis_of_indep (hF : M.IsFlat F) (hI : M.Indep I) :
     M.closure I = F ↔ M.IsBasis I F :=
@@ -146,7 +146,7 @@ lemma IsFlat.one_le_eRelRk_of_ssubset (hF : M.IsFlat F) (hss : F ⊂ X)
 
 lemma exists_insert_rk_eq_of_not_isFlat (hFE : F ⊆ M.E) (hnF : ¬ M.IsFlat F) :
     ∃ e ∈ M.E \ F, M.rk (insert e F) = M.rk F := by
-  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_not_mem_of_not_isFlat hnF
+  obtain ⟨e, hecl, heF⟩ := exists_mem_closure_notMem_of_not_isFlat hnF
   refine ⟨e, ⟨mem_ground_of_mem_closure hecl, heF⟩, ?_⟩
   rw [← rk_closure_eq, ← closure_insert_closure_eq_closure_insert]
   simp [hecl]

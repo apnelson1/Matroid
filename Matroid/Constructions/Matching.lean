@@ -109,7 +109,7 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
   refine ⟨y, hyJ, hyI, .inr ⟨insert (g y) I₀, update f y (g y), by simpa, ?_, ?_⟩⟩
   · nth_rw 2 [show g y = update f y (g y) y by simp]
     simp only [Finset.coe_insert]
-    apply BijOn.insert_not_mem ?_ (by simpa) (by simpa)
+    apply BijOn.insert_notMem ?_ (by simpa) (by simpa)
     exact hf.bijOn.congr fun a haI ↦ by rw [update_of_ne (by rintro rfl; contradiction)]
 
   simp only [Finset.coe_insert, mem_insert_iff, Finset.mem_coe, forall_eq_or_imp, update_self,

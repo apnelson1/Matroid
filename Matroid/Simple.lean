@@ -98,11 +98,11 @@ lemma eRk_pair_eq [Simple M] (hef : e ≠ f) (he : e ∈ M.E := by aesop_mat)
   rw [(pair_indep he).eRk_eq_encard, encard_pair hef]
 
 lemma Dep.two_lt_encard [Simple M] (hD : M.Dep D) : 2 < D.encard :=
-  lt_of_not_le fun hle ↦ hD.not_indep (indep_of_encard_le_two hle)
+  lt_of_not_ge fun hle ↦ hD.not_indep (indep_of_encard_le_two hle)
 
 lemma three_le_girth_iff : 3 ≤ M.girth ↔ M.Simple := by
   rw [iff_comm, le_girth_iff]
-  refine ⟨fun h C hC ↦ le_of_not_lt fun hlt ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun h C hC ↦ le_of_not_gt fun hlt ↦ ?_, fun h ↦ ?_⟩
   · exact hC.dep.not_indep <| indep_of_encard_le_two (Order.le_of_lt_add_one hlt)
   simp_rw [simple_iff_isLoopless_eq_of_parallel_forall, loopless_iff_forall_isCircuit,
     ← one_lt_encard_iff_nontrivial]
@@ -506,7 +506,7 @@ def simplification (M : Matroid α) : Matroid α :=
 
 lemma simplification_isSimplification (M : Matroid α) : M.simplification.IsSimplification M := by
   let f := M.removeLoops.parallelClasses.nonempty_repFun.some
-  refine ⟨Partition.RepFun.mk f (fun a ha ↦ f.apply_of_not_mem (by simpa))
+  refine ⟨Partition.RepFun.mk f (fun a ha ↦ f.apply_of_notMem (by simpa))
     (fun a ha ↦ by simpa [mem_setOf_eq, parallelClasses_rel_eq] using f.rel_apply (by simpa))
     (fun a b hab ↦ f.apply_eq_apply (by simpa)), ?_⟩
   simp only [simplification, removeLoops_isNonloop_iff, Partition.RepFun.mk_apply]

@@ -13,7 +13,7 @@ namespace Graph
 @[mk_iff]
 structure IsBridge (G : Graph α β) (e : β) : Prop where
   mem_edgeSet : e ∈ E(G)
-  not_mem_cycle : ∀ ⦃C⦄, G.IsCycle C → e ∉ C.edge
+  notMem_cycle : ∀ ⦃C⦄, G.IsCycle C → e ∉ C.edge
 
 lemma not_isBridge (he : e ∈ E(G)) : ¬ G.IsBridge e ↔ ∃ C, G.IsCycle C ∧ e ∈ C.edge := by
   simp [isBridge_iff, he]
@@ -63,7 +63,7 @@ lemma Connected.edgeDelete_singleton_connected_iff (hG : G.Connected) :
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heE
   obtain ⟨P, hP, rfl, rfl⟩ := (h.vertexConnected hxy.left_mem hxy.right_mem).exists_isPath
   simp only [isPath_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
-  simpa using hbr.not_mem_cycle <| hP.1.cons_isCycle hxy hP.2
+  simpa using hbr.notMem_cycle <| hP.1.cons_isCycle hxy hP.2
 
 lemma Connected.isBridge_iff (hG : G.Connected) : G.IsBridge e ↔ ¬ (G ＼ {e}).Connected := by
   rw [hG.edgeDelete_singleton_connected_iff, not_not]
@@ -150,7 +150,7 @@ lemma Connected.delete_first_connected_of_maximal_isPath (hG : G.Connected) (hnt
       constructor <;> (rintro rfl; contradiction)
     rintro x hx ⟨f, hux⟩
     have hne : u ≠ x := by rintro rfl; contradiction
-    refine S.disjoint.not_mem_of_mem_left (hPS ?_) hx
+    refine S.disjoint.notMem_of_mem_left (hPS ?_) hx
     simpa [hne.symm] using mem_of_adj_first_of_maximal_isPath hP hux.symm.adj
 
 /-- Deleting the last vertex of a maximal path of a connected graph gives a connected graph. -/

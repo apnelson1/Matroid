@@ -23,7 +23,7 @@ lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 :=
   · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet heE
     rw [h.endSet_eq]
     exact encard_pair_le x y
-  simp [endSet_eq_of_not_mem_edgeSet heE]
+  simp [endSet_eq_of_notMem_edgeSet heE]
 
 @[simp]
 lemma subsingleton_setOf_isLink (G : Graph α β) (e : β) (x : α) :
@@ -66,8 +66,8 @@ lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
 -- noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ :=
 --   (G.eIncFun e).mapRange ENat.toNat (by simp)
 
-lemma incFun_eq_zero_of_not_mem (he : e ∉ E(G)) : G.incFun e = 0 := by
-  simp [DFunLike.ext_iff, incFun, not_isLink_of_not_mem_edgeSet he]
+lemma incFun_eq_zero_of_notMem (he : e ∉ E(G)) : G.incFun e = 0 := by
+  simp [DFunLike.ext_iff, incFun, not_isLink_of_notMem_edgeSet he]
 
 lemma incFun_le_two (G : Graph α β) (e : β) (x : α) : G.incFun e x ≤ 2 := by
   obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
@@ -112,7 +112,7 @@ lemma Inc.one_le_incFun (h : G.Inc e x) : 1 ≤ G.incFun e x := by
 
 @[simp]
 lemma incFun_eq_zero_iff : G.incFun e = 0 ↔ e ∉ E(G) := by
-  refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_not_mem⟩
+  refine ⟨fun h he ↦ ?_, incFun_eq_zero_of_notMem⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
   obtain hx | hx := hxy.inc_left.isLoopAt_or_isNonloopAt
   · have := h ▸ hx.incFun_eq_two
@@ -184,11 +184,11 @@ lemma degree_eq_zero_iff_inc [G.LocallyFinite] : G.degree v = 0 ↔ ∀ e, ¬ G.
 lemma degree_eq_zero_iff_adj [G.LocallyFinite] : G.degree v = 0 ↔ ∀ x, ¬ G.Adj v x := by
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, Nat.cast_zero, eDegree_eq_zero_iff_adj]
 
-lemma eDegree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
+lemma eDegree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
   simp [eDegree_eq_tsum_mem, show ∀ e, ¬ G.Inc e v from fun e h ↦ hv h.vertex_mem]
 
-lemma degree_eq_zero_of_not_mem (hv : v ∉ V(G)) : G.degree v = 0 := by
-  simp [degree, eDegree_eq_zero_of_not_mem hv]
+lemma degree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.degree v = 0 := by
+  simp [degree, eDegree_eq_zero_of_notMem hv]
 
 lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
     G.degree v = ∑ e, G.incFun e v := by
@@ -249,11 +249,11 @@ lemma IsNonloopAt.one_le_degree [G.LocallyFinite] (h : G.IsNonloopAt e x) : 1 �
 
 @[simp]
 lemma support_degree_subset (G : Graph α β) : Function.support G.degree ⊆ V(G) :=
-  fun _ hx ↦ by_contra fun hxv ↦ hx <| degree_eq_zero_of_not_mem hxv
+  fun _ hx ↦ by_contra fun hxv ↦ hx <| degree_eq_zero_of_notMem hxv
 
 @[simp]
 lemma support_eDegree_subset (G : Graph α β) : Function.support G.eDegree ⊆ V(G) :=
-  fun _ hx ↦ by_contra fun hxv ↦ hx <| eDegree_eq_zero_of_not_mem hxv
+  fun _ hx ↦ by_contra fun hxv ↦ hx <| eDegree_eq_zero_of_notMem hxv
 
 theorem handshake_eDegree (G : Graph α β) : ∑' v, G.eDegree v = 2 * E(G).encard := by
   simp_rw [eDegree]
@@ -273,7 +273,7 @@ lemma handshake_degree_subtype (G : Graph α β) [G.Finite] :
   rw [finsum_mem_eq_finite_toFinset_sum _ G.vertexSet_finite, ← Nat.cast_inj (R := ℕ∞),
     Nat.cast_sum, ← tsum_eq_sum]
   · simp [G.edgeSet_finite.cast_ncard_eq, handshake_eDegree]
-  simp +contextual [eDegree_eq_zero_of_not_mem]
+  simp +contextual [eDegree_eq_zero_of_notMem]
 
 lemma handshake_degree_finset (G : Graph α β) [G.Finite] :
     ∑ v ∈ G.vertexSet_finite.toFinset, G.degree v = 2 * G.edgeSet_finite.toFinset.card := by
@@ -341,7 +341,7 @@ lemma incFun_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.incFun e x = G.incFu
 lemma incFun_mono (hle : H ≤ G) (e : β) (x : α) : H.incFun e x ≤ G.incFun e x := by
   by_cases he : e ∈ E(H)
   · rw [incFun_eq_of_le hle he]
-  simp [incFun_eq_zero_of_not_mem he]
+  simp [incFun_eq_zero_of_notMem he]
 
 lemma eDegree_mono (hle : H ≤ G) (x : α) : H.eDegree x ≤ G.eDegree x :=
   ENat.tsum_le_tsum fun e ↦ by simp [incFun_mono hle]

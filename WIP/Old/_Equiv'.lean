@@ -328,7 +328,7 @@ theorem iso_loopyOn_iff {M : Matroid α} {β : Type*} {E : Set β} :
   · simp only [emptyOn_iso_iff, emptyOn_ground, loopyOn_empty, true_and]
     rw [← ground_eq_empty_iff, loopyOn_ground]
     exact ⟨by rintro rfl; exact ⟨Equiv.equivOfIsEmpty _ _⟩,
-      fun ⟨e⟩ ↦ eq_empty_of_forall_not_mem fun x hx ↦ by simpa using (e.symm ⟨x,hx⟩).2⟩
+      fun ⟨e⟩ ↦ eq_empty_of_forall_notMem fun x hx ↦ by simpa using (e.symm ⟨x,hx⟩).2⟩
 
   simp only [hM.iso_iff_exists_isIso, eq_loopyOn_iff, true_and]
   refine ⟨fun ⟨e, he⟩ ↦ ⟨fun I _ hI ↦ by simpa using he.image_indep hI, ?_⟩, fun ⟨h,⟨e⟩⟩ ↦ ?_⟩

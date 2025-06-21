@@ -308,7 +308,7 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
     (h : ∀ X : Set M.E, N.closure ↑(e '' X) = e '' (M.E ↓∩ M.closure ↑X)) : M ≂ N where
   toEquiv := e
   indep_image_iff' I := by
-    rw [indep_iff_forall_not_mem_closure_diff, indep_iff_forall_not_mem_closure_diff]
+    rw [indep_iff_forall_notMem_closure_diff, indep_iff_forall_notMem_closure_diff]
     simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
       mem_image_equiv]
     refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' hy hyI ?_,

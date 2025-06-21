@@ -33,13 +33,13 @@ variable {α β : Type*} [DecidableEq α] {f : α → β} {a : α} {b : β}
   · rw [update_of_ne]; rintro rfl; exact h hxs
   rw [update_of_ne]; rintro rfl; exact h hxs
 
-lemma preimage_update_of_not_mem_not_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∉ s) :
+lemma preimage_update_of_notMem_notMem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∉ s) :
     update f a b ⁻¹' s = f ⁻¹' s := by
   ext x
   simp only [mem_preimage, update_apply]
   split_ifs with h; simp [hbs, h.symm ▸ has]; rfl
 
-lemma preimage_update_of_not_mem_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∈ s) :
+lemma preimage_update_of_notMem_mem (f : α → β) {s : Set β} (hbs : b ∉ s) (has : f a ∈ s) :
     update f a b ⁻¹' s = f ⁻¹' s \ {a} := by
   ext x
   obtain (rfl | hxa) := eq_or_ne x a
@@ -55,8 +55,8 @@ lemma preimage_update_eq_ite (f : α → β) (a : α) (b : β) (s : Set β) [Dec
       if b ∈ s then (insert a (f ⁻¹' s)) else (if f a ∈ s then (f ⁻¹' s) \ {a} else f ⁻¹' s) := by
   split_ifs with hb ha
   · rw [preimage_update_of_mem _ hb]
-  · rw [preimage_update_of_not_mem_mem _ hb ha]
-  rw [preimage_update_of_not_mem_not_mem _ hb ha]
+  · rw [preimage_update_of_notMem_mem _ hb ha]
+  rw [preimage_update_of_notMem_notMem _ hb ha]
 
 lemma image_update_id_apply (x y : α) (s : Set α) [Decidable (x ∈ s)] :
   (update id x y) '' s = if x ∉ s then s else insert y (s \ {x}) := by simp
@@ -114,7 +114,7 @@ lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
   simp only [hne.symm, hne]
   tauto
 
-lemma BijOn.insert_not_mem (h : BijOn f s t) (hx : x ∉ s) (hx' : f x ∉ t) :
+lemma BijOn.insert_notMem (h : BijOn f s t) (hx : x ∉ s) (hx' : f x ∉ t) :
     BijOn f (Insert.insert x s) (Insert.insert (f x) t) := by
   simpa [h.bijOn_insert_iff hx]
 

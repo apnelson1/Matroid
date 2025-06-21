@@ -1,4 +1,5 @@
 import Mathlib.Combinatorics.Graph.Basic
+import Matroid.Graph.Basic
 import Mathlib.Data.Set.Insert
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}

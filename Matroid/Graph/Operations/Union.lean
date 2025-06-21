@@ -33,7 +33,7 @@ protected lemma disjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
     Graph.Disjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
   refine ⟨Disjoint.vertex, fun h ↦ ⟨h, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
   obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
-  exact h.not_mem_of_mem_left he₁.left_mem ((he₁.of_le h₁).of_le_of_mem h₂ he₂).left_mem
+  exact h.notMem_of_mem_left he₁.left_mem ((he₁.of_le h₁).of_le_of_mem h₂ he₂).left_mem
 
 /-! ### Compatibility -/
 
@@ -51,10 +51,10 @@ lemma CompatibleAt.isLink_iff (h : CompatibleAt e G H) (heG : e ∈ E(G)) (heH :
     G.IsLink e x y ↔ H.IsLink e x y := by
   rw [h heG heH]
 
-lemma compatibleAt_of_not_mem_left (he : e ∉ E(G)) : CompatibleAt e G H := by
+lemma compatibleAt_of_notMem_left (he : e ∉ E(G)) : CompatibleAt e G H := by
   simp [CompatibleAt, he]
 
-lemma compatibleAt_of_not_mem_right (he : e ∉ E(H)) : CompatibleAt e G H := by
+lemma compatibleAt_of_notMem_right (he : e ∉ E(H)) : CompatibleAt e G H := by
   simp [CompatibleAt, he]
 
 lemma IsLink.compatibleAt_iff_left (h : G.IsLink e x y) :
@@ -204,7 +204,7 @@ lemma Compatible.disjoint_of_vertexSet_disjoint (h : G.Compatible H) (hV : Disjo
     G.Disjoint H := by
   refine ⟨hV, disjoint_left.2 fun e he he' ↦ ?_⟩
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet he
-  exact hV.not_mem_of_mem_left hexy.left_mem (h ⟨he, he'⟩ ▸ hexy).left_mem
+  exact hV.notMem_of_mem_left hexy.left_mem (h ⟨he, he'⟩ ▸ hexy).left_mem
 
 lemma Disjoint.compatible (h : G.Disjoint H) : G.Compatible H :=
   Compatible.of_disjoint_edgeSet h.edge
@@ -848,7 +848,7 @@ protected lemma Compatible.union_assoc {G₁ G₂ G₃ : Graph α β} (h₁ : G�
 --     obtain ⟨j, hj : (H j).Inc e x⟩ := (iUnion_inc_iff ..).1 he
 --     obtain rfl | hne := eq_or_ne i j
 --     · exact hj.edge_mem
---     exact False.elim <| (h hne).vertex.not_mem_of_mem_left hx hj.vertex_mem
+--     exact False.elim <| (h hne).vertex.notMem_of_mem_left hx hj.vertex_mem
 
 -- lemma isClosedSubgraph_sUnion_of_disjoint (s : Set (Graph α β)) (hs : s.Pairwise Graph.Disjoint)
 --     (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=

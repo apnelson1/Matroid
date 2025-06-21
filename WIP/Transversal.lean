@@ -195,7 +195,7 @@ lemma hall_union_card_eq [DecidableEq α] [DecidableEq ι] [Inhabited ι] [Finty
   · obtain ⟨a, a_mem⟩ := Finset.Nonempty.bex h
     set T:= witness_set.erase a with T_def
     have w_eq := Finset.insert_erase a_mem
-    have T_card := Finset.card_insert_of_not_mem (not_mem_erase a witness_set)
+    have T_card := Finset.card_insert_of_notMem (notMem_erase a witness_set)
     rw [← T_def] at w_eq T_card
     apply le_antisymm
     · rw [← w_eq, biUnion_insert]
@@ -249,8 +249,8 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
   matroid_of_indep_finset E
   (fun S ↦ S.toSet ⊆ E ∧ Transverses S f)
   (by
-    refine' ⟨_, ⟨fun a ↦ absurd a.2 (not_mem_empty a.1), fun a ↦ absurd a.2 (not_mem_empty a.1),
-    fun a ↦ absurd a.2 (not_mem_empty a.1)⟩⟩
+    refine' ⟨_, ⟨fun a ↦ absurd a.2 (notMem_empty a.1), fun a ↦ absurd a.2 (notMem_empty a.1),
+    fun a ↦ absurd a.2 (notMem_empty a.1)⟩⟩
     rw [coe_empty]
     exact Set.empty_subset _
     )
@@ -260,7 +260,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
     · rintro I J _ ⟨_, ⟨J_map, _⟩⟩ I_lt_J
       have J_empty : J = ∅
       · have:= J_map.isEmpty
-        rw [eq_empty_iff_forall_not_mem]
+        rw [eq_empty_iff_forall_notMem]
         intro x x_J
         apply this.elim' ⟨x, x_J⟩
       rw [J_empty, card_empty] at I_lt_J
@@ -291,7 +291,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
         refine' ⟨S, S_sub, h_S, _⟩
         have e_in_S : e ∈ S
         · by_contra e_nS
-          rw [Finset.subset_insert_iff_of_not_mem e_nS] at S_sub
+          rw [Finset.subset_insert_iff_of_notMem e_nS] at S_sub
           --w [transversal_exists_iff _ _] at I_trans
           apply (not_le_of_lt h_S) (((transversal_exists_iff _ _).1 I_trans.2) S S_sub)
         have card_eq_plus_one : card S = card (S \ {e}) + 1
@@ -303,7 +303,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
         have card_eq' : (S \ {e}).card = ((S \ {e}).biUnion (neighbors f)).card
         · have card_le : card (S \ {e}) ≤ card (Finset.biUnion (S \ {e}) (neighbors f)) :=
           ((transversal_exists_iff _ _).1 I_trans.2) (S \ {e}) (fun s s_mem ↦ mem_of_mem_insert_of_ne
-          (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.not_mem_singleton.1
+          (S_sub (Finset.mem_sdiff.1 s_mem).1) (Finset.notMem_singleton.1
           (Finset.mem_sdiff.1 s_mem).2))
           apply le_antisymm card_le _
           apply le_trans (Finset.card_le_of_subset (Finset.biUnion_subset_biUnion_of_subset_left
@@ -337,7 +337,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
           obtain ⟨⟨a, a_JI, h_a⟩, w_mem⟩ := w_mem
           refine' ⟨a, a_JI, _⟩
           rw [mem_sdiff, mem_singleton]
-          exact ⟨h_a, (ne_of_mem_of_not_mem a_JI w_mem).symm⟩
+          exact ⟨h_a, (ne_of_mem_of_notMem a_JI w_mem).symm⟩
         · intro w w_mem
           rw [mem_biUnion] at w_mem
           rw [mem_sdiff, W_def, mem_biUnion]
@@ -346,7 +346,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
           intro w_JI
           apply (mem_sdiff.1 w_JI).2
           exact mem_of_mem_insert_of_ne ((h_witness a a_JI).1 (mem_sdiff.1 h_a).1) (
-            not_mem_singleton.1 (mem_sdiff.1 h_a).2)
+            notMem_singleton.1 (mem_sdiff.1 h_a).2)
       have W_diff_card : (W \ (J \ I)).card = ((W \ (J \ I)).biUnion (neighbors f)).card
       · rw [W_eq]
         symm
@@ -393,7 +393,7 @@ def matroid_of_transversals_finite [DecidableEq α] [DecidableEq ι] [Fintype ι
           rw [mem_sdiff]
           refine' ⟨W_diff_sub_I _, w_in_J⟩
           rw [mem_sdiff]
-          exact ⟨w_W, not_mem_sdiff_of_not_mem_left w_in_J⟩
+          exact ⟨w_W, notMem_sdiff_of_notMem_left w_in_J⟩
   )
 
   (

@@ -120,7 +120,7 @@ lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : G.Compati
   rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hne)] at hHle
   exact hK.le.antisymm (Graph.union_le hGle hHle)
 
-lemma Connected.exists_inc_not_mem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
+lemma Connected.exists_inc_notMem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
     ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
   refine by_contra fun hcon ↦ hlt.ne <| hG.eq_of_isClosedSubgraph ⟨hlt.le, fun e x hex hx ↦ ?_⟩ hne
   simp only [not_exists, not_and, not_imp_not] at hcon
@@ -199,7 +199,7 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
   -- obtain ⟨W, hW, rfl, rfl⟩ :=
   --   (h.vertexConnected (x := x) (y := y) (by simp [hx]) (by simp [hy])).exists_isWalk
   -- obtain ⟨u, -, huG, huH⟩ := hW.exists_mem_mem_of_union hx hy
-  -- exact hV.not_mem_of_mem_left huG huH
+  -- exact hV.notMem_of_mem_left huG huH
 
 
   -- have := hG.eq_of_isClosedSubgraph

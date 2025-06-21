@@ -15,7 +15,7 @@ lemma WithTop.eq_top_iff_forall_le {α : Type*} [Preorder α] [NoMaxOrder α] {x
   refine ⟨by rintro rfl; simp, fun h ↦ by_contra fun hne ↦ ?_⟩
   lift x to α using hne
   obtain ⟨y, hy⟩ := exists_gt x
-  exact hy.not_le <| by simpa using h y
+  exact hy.not_ge <| by simpa using h y
 
 lemma WithBot.eq_bot_iff_forall_ge {α : Type*} [Preorder α] [NoMinOrder α] {x : WithBot α} :
     x = ⊥ ↔ ∀ (a : α), x ≤ a :=

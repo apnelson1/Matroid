@@ -58,7 +58,7 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
     rwa [hrw]
   apply (M✶.truncate).dual_isBase_iff.2
   apply truncate_isBase_iff.2
-  refine ⟨ e, not_mem_diff_of_mem heB, ?_ ⟩
+  refine ⟨ e, notMem_diff_of_mem heB, ?_ ⟩
   apply M.dual_isBase_iff.2
   have hrw : M✶.truncate.E = M.E := by exact rfl
   rw [hrw]
@@ -101,7 +101,7 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
       obtain ⟨f, hf⟩ := hBe.nonempty
       refine ⟨ f, hf, ?_ ⟩
       apply M.truncate_isBase_iff.2
-      refine ⟨ f, not_mem_diff_of_mem rfl, ?_ ⟩
+      refine ⟨ f, notMem_diff_of_mem rfl, ?_ ⟩
       simp
       rwa [insert_eq_of_mem hf ]
     refine ⟨ e, mem_of_mem_insert_of_ne heB hxe, ?_ ⟩
@@ -429,15 +429,15 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
 --     have hun: j ∉ insert e (Prod.fst '' B) := by
 --       simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
 --       exists_eq_right, not_or]
---       refine ⟨ fun a ↦ hij (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hjf,
---       Disjoint.not_mem_of_mem_left hIB hjt ⟩
---     exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+--       refine ⟨ fun a ↦ hij (id (Eq.symm a)), Disjoint.notMem_of_mem_left hIB hjf,
+--       Disjoint.notMem_of_mem_left hIB hjt ⟩
+--     exact (Ne.symm (ne_of_mem_of_notMem' trivial hun)) hu
 --   have hun: i ∉ insert e (Prod.fst '' B) := by
 --     simp only [mem_insert_iff, mem_image, Prod.exists, exists_and_right, Bool.exists_bool,
 --       exists_eq_right, not_or]
---     refine ⟨ fun a ↦ hei (id (Eq.symm a)), Disjoint.not_mem_of_mem_left hIB hif,
---       Disjoint.not_mem_of_mem_left hIB hit ⟩
---   exact (Ne.symm (ne_of_mem_of_not_mem' trivial hun)) hu
+--     refine ⟨ fun a ↦ hei (id (Eq.symm a)), Disjoint.notMem_of_mem_left hIB hif,
+--       Disjoint.notMem_of_mem_left hIB hit ⟩
+--   exact (Ne.symm (ne_of_mem_of_notMem' trivial hun)) hu
 
 -- --lemma foo (a : α) (X : Set α ) : a ∈ X ∨ a ∉ X := by exact Classical.em (a ∈ X)
 
@@ -486,7 +486,7 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
 --       obtain ⟨x, hxB, hx1 ⟩ := hnx
 --       use x
 --       refine ⟨?_, ?_ ⟩
---       · refine not_mem_diff_of_mem hxB
+--       · refine notMem_diff_of_mem hxB
 --       apply ((circuitOn univ).comap Prod.fst).dual_isBase_iff.2
 --       rw [←freeSpike_def ι]
 --       rw [double_circuitOn_ground_set ι, freeSpike_ground_set ι]
@@ -498,7 +498,7 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
 --         cases hcases with
 --         | inl h2 =>
 --           rw [←h2]
---           refine ⟨ not_mem_diff_of_mem rfl, ?_ ⟩
+--           refine ⟨ notMem_diff_of_mem rfl, ?_ ⟩
 --           have h3 : (x.1, false) ∉ B := by
 --             have huse := hij x.1 hx1
 --             rw [ double_circuitOn_ground_set ι] at huse
@@ -514,9 +514,9 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
 --             have hc1 := hij x.1 hx1
 --             rw [double_circuitOn_ground_set ι] at hc1
 --             have hg1 : (x.1, false) ∉ univ \ insert e B := by
---               refine not_mem_diff_of_mem (mem_insert_of_mem e h)
+--               refine notMem_diff_of_mem (mem_insert_of_mem e h)
 --             have hg2 : ((x.1, true) ∉ univ \ insert e B) := by
---               refine not_mem_diff_of_mem ?_
+--               refine notMem_diff_of_mem ?_
 --               rw [←h2 ]
 --               exact mem_insert_of_mem e hxB
 --             have hcon1:= (xor_iff_or_and_not_and
@@ -537,7 +537,7 @@ lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set 
 --             not_and, not_not, mem_singleton_iff, false_and, not_false_eq_true]
 --         | inr h2 =>
 --           rw [←h2]
---           refine ⟨ ?_, not_mem_diff_of_mem rfl⟩
+--           refine ⟨ ?_, notMem_diff_of_mem rfl⟩
 
 --           sorry
 --       intro j hj1

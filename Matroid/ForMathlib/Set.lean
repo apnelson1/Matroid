@@ -67,7 +67,7 @@ lemma insert_union_insert_eq {A : Set α} {b c : α} :
   rw [insert_eq, insert_eq, ← union_union_distrib_right, @union_comm _ {b} _,
     union_assoc, ← insert_eq, ← insert_eq]
 
-lemma not_mem_or_exists_eq_insert_not_mem (s : Set α) (x : α) :
+lemma notMem_or_exists_eq_insert_notMem (s : Set α) (x : α) :
     x ∉ s ∨ ∃ s₀, x ∉ s₀ ∧ s = insert x s₀ :=
   imp_iff_not_or.1 <| fun h ↦ ⟨s \ {x}, by simp, by simp [insert_eq_of_mem h]⟩
 

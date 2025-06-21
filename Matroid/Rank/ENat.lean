@@ -24,11 +24,6 @@ section Basic
 -- lemma IsRkFinite.eRk_ne_top (h : M.IsRkFinite X) : M.eRk X ≠ ⊤ :=
 --   h.eRk_lt_top.ne
 
-lemma Spanning.eRk_eq (hX : M.Spanning X) : M.eRk X = M.eRank := by
-  obtain ⟨B, hB⟩ := M.exists_isBasis X
-  exact (M.eRk_le_eRank X).antisymm <| by
-    rw [← hB.encard_eq_eRk, ← (hB.isBase_of_spanning hX).encard_eq_eRank]
-
 lemma spanning_iff_eRk' [RankFinite M] : M.Spanning X ↔ M.eRank ≤ M.eRk X ∧ X ⊆ M.E := by
   refine ⟨fun h ↦ ⟨h.eRk_eq.symm.le, h.subset_ground⟩, fun ⟨h, hX⟩ ↦ ?_⟩
   obtain ⟨I, hI⟩ := M.exists_isBasis X
@@ -39,9 +34,6 @@ lemma spanning_iff_eRk [RankFinite M] (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning X ↔ M.eRank ≤ M.eRk X := by
   rw [spanning_iff_eRk', and_iff_left hX]
 
-lemma Spanning.eRank_restrict (hX : M.Spanning X) : (M ↾ X).eRank = M.eRank := by
-  rw [eRank_def, restrict_ground_eq, restrict_eRk_eq _ rfl.subset, hX.eRk_eq]
-
 lemma IsLoopEquiv.eRk_eq_eRk (h : M.IsLoopEquiv X Y) : M.eRk X = M.eRk Y := by
   rw [← M.eRk_closure_eq, h.closure_eq_closure, M.eRk_closure_eq]
 
@@ -51,9 +43,6 @@ lemma eRank_lt_top [M.RankFinite] : M.eRank < ⊤ := by
   rw [← hB.encard_eq_eRank, encard_lt_top_iff]
   exact hB.finite
 
-@[simp]
-lemma eRk_loops : M.eRk M.loops = 0 := by
-  simp [eRk_eq_zero_iff']
 
 -- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
   --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
@@ -78,6 +67,7 @@ lemma eRk_loops : M.eRk M.loops = 0 := by
 end Basic
 
 section Constructions
+
 
 variable {E : Set α}
 
@@ -183,8 +173,8 @@ lemma nullity_insert_eq_add_one (hecl : e ∈ M.closure X) (heX : e ∉ X) :
   have hI' : M.IsBasis' I (insert e X) := by
     rw [isBasis'_iff_isBasis_closure, closure_insert_eq_of_mem_closure hecl]
     exact ⟨hI.isBasis_closure_right, hI.subset.trans <| subset_insert ..⟩
-  rw [hI.nullity_eq, hI'.nullity_eq, insert_diff_of_not_mem _ (not_mem_subset hI.subset heX),
-    encard_insert_of_not_mem (not_mem_subset diff_subset heX)]
+  rw [hI.nullity_eq, hI'.nullity_eq, insert_diff_of_notMem _ (notMem_subset hI.subset heX),
+    encard_insert_of_notMem (notMem_subset diff_subset heX)]
 
 lemma nullity_eq_nullity_inter_ground_add_encard_diff (M : Matroid α) (X : Set α) :
     M.nullity X = M.nullity (X ∩ M.E) + (X \ M.E).encard := by
@@ -213,10 +203,10 @@ lemma nullity_insert (heX : e ∉ M.closure X) (heE : e ∈ M.E := by aesop_mat)
       insert_inter_of_mem heE, insert_diff_of_mem _ heE, aux (by simpa) (by simp),
       ← nullity_eq_nullity_inter_ground_add_encard_diff]
   obtain ⟨I, hI⟩ := M.exists_isBasis X
-  rw [(hI.insert_isBasis_insert_of_not_mem_closure (by rwa [hI.closure_eq_closure])).nullity_eq,
+  rw [(hI.insert_isBasis_insert_of_notMem_closure (by rwa [hI.closure_eq_closure])).nullity_eq,
     hI.nullity_eq]
   simp only [mem_insert_iff, true_or, insert_diff_of_mem]
-  rw [diff_insert_of_not_mem (not_mem_subset (subset_closure ..) heX)]
+  rw [diff_insert_of_notMem (notMem_subset (subset_closure ..) heX)]
 
 lemma nullity_union_eq_nullity_add_encard_diff (hYX : Y ⊆ M.closure X) :
     M.nullity (X ∪ Y) = M.nullity X + (Y \ X).encard := by

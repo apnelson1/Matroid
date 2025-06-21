@@ -217,7 +217,7 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
 @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
   simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›,
     true_and, show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
-  refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_le fun hle ↦ ?_⟩
+  refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_ge fun hle ↦ ?_⟩
   · contrapose! h
     use 1
     simp only [Nat.cast_one, ENat.lt_one_iff, Partition.eConn_eq_zero_iff,
@@ -249,11 +249,11 @@ lemma IsCircuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
     (hM : 2*k ≤ M.E.encard + 2) (hconn : M.TutteConnected k) : k ≤ C.encard := by
   obtain hinf | hfin := C.finite_or_infinite.symm
   · simp [hinf.encard_eq]
-  refine le_of_not_lt fun hlt ↦ ?_
+  refine le_of_not_gt fun hlt ↦ ?_
   have hle : C.encard + 1 ≤ k := by rwa [ENat.add_one_le_iff (by rwa [encard_ne_top_iff])]
   have hle' := (mul_le_mul_left' hle 2).trans hM
   rw [mul_add, mul_one, WithTop.add_le_add_iff_right (by norm_num)] at hle'
-  exact hlt.not_le <| hconn (hC.isTutteSep hfin hle')
+  exact hlt.not_ge <| hconn (hC.isTutteSep hfin hle')
 
 lemma TutteConnected.le_girth (h : M.TutteConnected k) (hk : 2*k ≤ M.E.encard + 2) :
     k ≤ M.girth := by

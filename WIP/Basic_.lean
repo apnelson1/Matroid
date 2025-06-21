@@ -69,12 +69,12 @@ lemma Rep.indep_iff_image (v : M.Rep 𝔽 W) :
 lemma Rep.eq_zero_iff_not_indep {v : M.Rep 𝔽 W} : v e = 0 ↔ ¬ M.Indep {e} := by
   simp [v.indep_iff, linearIndependent_unique_iff, -indep_singleton]
 
-lemma Rep.eq_zero_of_not_mem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) : v e = 0 := by
+lemma Rep.eq_zero_of_notMem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) : v e = 0 := by
   rw [v.eq_zero_iff_not_indep, indep_singleton]
   exact fun hl ↦ he hl.mem_ground
 
 lemma Rep.support_subset_ground (v : M.Rep 𝔽 W) : support v ⊆ M.E :=
-  fun _ he ↦ by_contra <| fun h' ↦ he (v.eq_zero_of_not_mem_ground h')
+  fun _ he ↦ by_contra <| fun h' ↦ he (v.eq_zero_of_notMem_ground h')
 
 lemma Rep.mem_ground_of_apply_ne_zero {v : M.Rep 𝔽 W} (hv : v e ≠ 0) : e ∈ M.E :=
   v.support_subset_ground hv
@@ -98,7 +98,7 @@ lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : 
     obtain ⟨e, heI, heE⟩ := not_subset.1 hI
     have h0 := h_ind.ne_zero ⟨e, heI⟩
     simp only [Function.comp_apply, ne_eq] at h0
-    apply not_mem_subset h_support heE
+    apply notMem_subset h_support heE
     exact h0 )
 
 @[simp] lemma Rep.ofGround_apply (f : α → W) (hs : support f ⊆ M.E)
@@ -131,7 +131,7 @@ lemma Indep.rep_apply_ne_zero_of_mem {v : M.Rep 𝔽 W} (hI : M.Indep I) (heI : 
 --     {e : α} (he : e ∈ M.E) : repOfSubtypeFun f hf e = f ⟨e,he⟩ := by
 --   simp [repOfSubtypeFun, rep_of_ground, dif_pos he]
 
--- lemma repOfSubtypeFun_apply_not_mem (f : M.E → W) [DecidablePred (· ∈ M.E)]
+-- lemma repOfSubtypeFun_apply_notMem (f : M.E → W) [DecidablePred (· ∈ M.E)]
 --     (hf : ∀ {I : Set M.E}, M.Indep (Subtype.val '' I) ↔ LinearIndependent 𝔽 (I.restrict f))
 --     {e : α} (he : e ∉ M.E) : repOfSubtypeFun f hf e = 0 := by
 --   simp [repOfSubtypeFun, rep_of_ground, dif_neg he]
@@ -190,7 +190,7 @@ def Rep.comap {M : Matroid β} (f : α → β) (v : M.Rep 𝔽 W) : (M.comap f).
   Rep.ofGround (v ∘ f)
   ( by
     simp only [comap_ground_eq, support_subset_iff, comp_apply, ne_eq, mem_preimage]
-    exact fun x ↦ Not.imp_symm <| Rep.eq_zero_of_not_mem_ground _ )
+    exact fun x ↦ Not.imp_symm <| Rep.eq_zero_of_notMem_ground _ )
   ( by
     intro I _
     rw [comap_indep_iff, v.indep_iff, restrict_eq, restrict_eq, comp.assoc]
@@ -280,9 +280,9 @@ protected def onModule (𝔽 W : Type*) [AddCommGroup W] [Field 𝔽] [Module �
         ← finrank_span_set_eq_card hI]
       exact finrank_le_finrank_of_le hss
     obtain ⟨a, haJ, ha⟩ := not_subset.1 hssu
-    refine ⟨a, haJ, not_mem_subset subset_span ha, ?_⟩
+    refine ⟨a, haJ, notMem_subset subset_span ha, ?_⟩
     simp only [SetLike.mem_coe] at ha
-    simpa [linearIndependent_insert (not_mem_subset subset_span ha), ha])
+    simpa [linearIndependent_insert (notMem_subset subset_span ha), ha])
   (indep_compact := fun I hI ↦ linearIndependent_of_finite_index _ fun t ht ↦ by
       simpa [← linearIndependent_image Subtype.val_injective.injOn] using
         hI ((↑) '' t) (by simp) (ht.image _) )
@@ -573,7 +573,7 @@ def loopyRep (E : Set α) (𝔽 : Type*) [Field 𝔽] : (loopyOn E).Rep 𝔽 �
     refine fun I ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · obtain rfl := loopyOn_indep_iff.1 h
       apply linearIndependent_empty_type
-    rw [loopyOn_indep_iff, eq_empty_iff_forall_not_mem]
+    rw [loopyOn_indep_iff, eq_empty_iff_forall_notMem]
     exact fun x hxI ↦ h.ne_zero ⟨x, hxI⟩ rfl
 
 -- The empty matroid is trivially representable over every field.
@@ -693,8 +693,8 @@ lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
   apply span_mono (union_subset (subset_insert _ _) _)
   rintro _ ⟨e, he, rfl⟩
   left
-  rw [← nmem_support]
-  exact not_mem_subset v.support_subset_ground he.2
+  rw [← notMem_support]
+  exact notMem_subset v.support_subset_ground he.2
 
 @[simp] lemma Rep.span_eq_span_closure (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' M.closure X) = span 𝔽 (v '' X) := by
@@ -750,7 +750,7 @@ lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = M.E ∩ v �
   rw [hI.indep.mem_closure_iff, or_iff_not_imp_right, dep_iff,
     and_iff_left <| insert_subset hxE hI.indep.subset_ground]
   refine fun hxI hi ↦ ?_
-  apply (v.onIndep hi).not_mem_span_image (s := Subtype.val ⁻¹' I)
+  apply (v.onIndep hi).notMem_span_image (s := Subtype.val ⁻¹' I)
     (x := ⟨x, mem_insert _ _⟩) (by simpa)
 
   have hsp := span_mono (v.subset_span_of_isBasis' hI) hx
@@ -785,7 +785,7 @@ lemma Rep.parallelExtend_apply (v : M.Rep 𝔽 W) (e f : α) {x : α} (hx : x �
   rw [Rep.parallelExtend, Rep.restrict_apply, indicator, Rep.comap_apply]
   split_ifs with h
   · rw [update_noteq hx, id]
-  rw [v.eq_zero_of_not_mem_ground (not_mem_subset (subset_insert _ _) h)]
+  rw [v.eq_zero_of_notMem_ground (notMem_subset (subset_insert _ _) h)]
 
 @[simp] lemma Rep.parallelExtend_apply_same (v : M.Rep 𝔽 W) (e f : α) :
     v.parallelExtend e f f = v e := by

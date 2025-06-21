@@ -66,7 +66,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
     (unifOn E k)✶ = unifOn E (hE.toFinset.card - k) := by
   classical
   obtain ⟨E, rfl⟩ := hE.exists_finset_coe
-  obtain (hle | hlt) := le_or_lt E.card k
+  obtain (hle | hlt) := le_or_gt E.card k
   · rw [unifOn_eq_of_le (by simpa), freeOn_dual_eq, tsub_eq_zero_of_le (by simpa), unifOn_zero]
 
   refine ext_isBase (by simp) (fun B hBE ↦ ?_)
@@ -166,7 +166,7 @@ instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
 
   simp_rw [unifOn_indep_iff]
 
-  refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_lt ?_).symm,
+  refine ⟨fun h ↦ (h.1.eq_of_not_lt fun hlt ↦ (h.2 e heC).1.not_gt ?_).symm,
     fun h ↦ ⟨h.symm.le, fun e heC ↦ ⟨Eq.le ?_, diff_subset.trans hCE⟩⟩⟩
   · rwa [← encard_diff_singleton_add_one heC, WithTop.add_lt_add_iff_right (by simp)] at hlt
   rwa [← encard_diff_singleton_add_one heC, WithTop.add_right_inj (by simp)] at h
@@ -244,7 +244,7 @@ theorem unif_eq_freeOn (h : b ≤ a) : unif a b = freeOn univ := by
 /-- The expression for dual of a uniform matroid.
   The junk case where `b < a` still works because the subtraction truncates. -/
 theorem unif_dual (a b : ℕ) : (unif a b)✶ = unif (b - a) b := by
-  obtain (hab | hba) := le_or_lt a b
+  obtain (hab | hba) := le_or_gt a b
   · exact unif_dual' (Nat.add_sub_of_le hab)
   simp [unif_eq_freeOn hba.le, Nat.sub_eq_zero_of_le hba.le]
 
@@ -414,7 +414,7 @@ lemma Uniform.closure_not_spanning (hM : M.Uniform) (hIE : I ⊆ M.E) (hIs : ¬ 
 
   have hIe : M.Indep (insert e I) :=
     (hM.indep_or_spanning _ (by aesop_mat)).elim id fun h ↦ (hIs h).elim
-  rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_not_mem heI] at he
+  rw [(hIe.subset (subset_insert _ _)).mem_closure_iff_of_notMem heI] at he
   exact he.not_indep hIe
 
 lemma Uniform.isBase_of_isBase_of_finDiff {B B' : Set α} (hM : M.Uniform) (hB : M.IsBase B)
@@ -569,7 +569,7 @@ lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoin
     rw [hI] at hss
     obtain rfl | ⟨e, rfl⟩ := hss.eq_empty_or_singleton
     · exact M.empty_indep
-    rwa [indep_singleton, isNonloop_iff_not_mem_loops, ← disjoint_singleton_left]
+    rwa [indep_singleton, isNonloop_iff_notMem_loops, ← disjoint_singleton_left]
   rintro ⟨E₀, E₁, hdj, rfl⟩
   simp [unifOn_eRank_eq]
 
@@ -694,7 +694,7 @@ end IsoMinor
 
       theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
           ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
-        refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+        refine ⟨fun h L hL hLr ↦ lt_of_not_ge fun hle ↦
           h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
         obtain ⟨N, hNM, hN⟩ := hR
         obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict
@@ -735,7 +735,7 @@ theorem line_isoRestr_of_simple_eRk_le_two {n : ℕ} {L : Set α} (hL : (M ↾ L
 
 theorem no_line_isoRestr_iff {n : ℕ} {M : Matroid α} :
     ¬ (unif 2 n ≤ir M) ↔ ∀ L, (M ↾ L).Simple → M.eRk L ≤ 2 → L.encard < n := by
-  refine ⟨fun h L hL hLr ↦ lt_of_not_le fun hle ↦
+  refine ⟨fun h L hL hLr ↦ lt_of_not_ge fun hle ↦
     h <| line_isoRestr_of_simple_eRk_le_two hL hle hLr, fun h hR ↦ ?_⟩
   obtain ⟨N, hNM, hN⟩ := hR
   obtain ⟨L, -, rfl⟩ := hNM.exists_eq_restrict

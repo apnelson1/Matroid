@@ -219,7 +219,7 @@ lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
 lemma IsClosed.rotate_eq_mod (hw : w.IsClosed) (n) : w.rotate n = w.rotate (n % w.length) := by
   obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
   · simp
-  obtain hlt | hle := lt_or_le n w.length
+  obtain hlt | hle := lt_or_ge n w.length
   · rw [Nat.mod_eq_of_lt hlt]
   obtain ⟨c, hc⟩ := exists_add_of_le hle
   have hc' : c < n := by

@@ -81,7 +81,7 @@ theorem finprod_mem_const_eq [CommMonoid N] (s : Set α) (c : N) :
   obtain (hs | hs) := s.finite_or_infinite
   · apply @Finite.induction_on _ _ _ hs (by simp)
     rintro a s has hs' IH
-    rw [ncard_insert_of_not_mem has hs', finprod_mem_insert _ has hs', mul_comm, IH, pow_succ']
+    rw [ncard_insert_of_notMem has hs', finprod_mem_insert _ has hs', mul_comm, IH, pow_succ']
   rw [hs.ncard, pow_zero, finprod_mem_eq_one_of_infinite]
   rwa [mulSupport_const hc, inter_univ]
 
@@ -180,7 +180,7 @@ theorem finsum_encard (c : Set (Set α)) (hfin : c.Finite) (hc : c.PairwiseDisjo
 --     have' := le_of_mul_le_mul_right' h_ge
 
 
---   have' := finprod_mem_insert f (not_mem_diff_ of_mem rfl : a ∉ s \ {a}) (hs.diff {a})
+--   have' := finprod_mem_insert f (notMem_diff_ of_mem rfl : a ∉ s \ {a}) (hs.diff {a})
 --   simp_rw [insert_diff_singleton, insert_eq_of_mem ha] at this
 --   revert h_le h_ge ha a
 --   apply @Finite.induction_on _ _ _ hs

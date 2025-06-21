@@ -340,8 +340,8 @@ lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (
 lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∉ B) :
     ((v e).support : Set B) = (M.fundCircuit e B) ∩ B := by
   obtain heE | heE := em' (e ∈ M.E)
-  · rw [v.eq_zero_of_not_mem_ground heE, ← fundCircuit_diff_eq_inter _ he,
-      fundCircuit_eq_of_not_mem_ground heE]
+  · rw [v.eq_zero_of_notMem_ground heE, ← fundCircuit_diff_eq_inter _ he,
+      fundCircuit_eq_of_notMem_ground heE]
     simp
   suffices hrw : insert e ((↑) '' ((v e).support : Set B)) = M.fundCircuit e B
   · rw [← fundCircuit_diff_eq_inter _ he, ← hrw, insert_diff_of_mem _ (by simp),
@@ -358,7 +358,7 @@ lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)}
   ext x
   simp only [mem_support, ne_eq, mem_diff]
   obtain hxE | hxE := em' (x ∈ M.E)
-  · simp [hxE, v.eq_zero_of_not_mem_ground hxE]
+  · simp [hxE, v.eq_zero_of_notMem_ground hxE]
   rw [hv.mem_closure_iff diff_subset hxE]
   simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
 

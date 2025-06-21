@@ -82,11 +82,11 @@ lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) : (G ∪ H).incFun = G.incFun +
   rw [Pi.add_apply, Finsupp.add_apply]
   by_cases heG : e ∈ E(G)
   · rw [incFun_eq_of_le (Graph.left_le_union G H) heG, Nat.left_eq_add, incFun_vertex_eq_zero_iff]
-    exact fun h ↦ hdj.not_mem_of_mem_right h.edge_mem heG
-  rw [incFun_eq_zero_of_not_mem heG, Finsupp.coe_zero, Pi.zero_apply, zero_add]
+    exact fun h ↦ hdj.notMem_of_mem_right h.edge_mem heG
+  rw [incFun_eq_zero_of_notMem heG, Finsupp.coe_zero, Pi.zero_apply, zero_add]
   by_cases heH : e ∈ E(H)
   · rw [incFun_eq_of_le (Compatible.of_disjoint_edgeSet hdj).right_le_union heH]
-  rw [incFun_eq_zero_of_not_mem (by simp [heH, heG]), incFun_eq_zero_of_not_mem heH]
+  rw [incFun_eq_zero_of_notMem (by simp [heH, heG]), incFun_eq_zero_of_notMem heH]
 
 lemma union_eDegree_eq (hdj : Disjoint E(G) E(H)) (x : α) :
     (G ∪ H).eDegree x = G.eDegree x + H.eDegree x := by
@@ -141,7 +141,7 @@ lemma IsLoopAt.eDegree_delete_add_two (h : G.IsLoopAt e x) :
     have := eq_or_ne f e
     aesop
   rw [eDegree_eq_encard_add_encard, eDegree_eq_encard_add_encard, h.isNonloopAt_delete,
-    add_right_comm, hrw, encard_insert_of_not_mem, mul_add, mul_one]
+    add_right_comm, hrw, encard_insert_of_notMem, mul_add, mul_one]
   simp only [mem_setOf_eq]
   exact fun (h : IsLoopAt _ _ _) ↦ h.edge_mem.2 rfl
 
@@ -222,7 +222,7 @@ lemma IsCycle.toGraph_regular (hC : G.IsCycle C) : C.toGraph.Regular 2 := by
   obtain rfl | hvu := eq_or_ne v u
   · rw [singleEdge_degree_left (by rintro rfl; simp at huP),
       singleEdge_degree_left (by rintro rfl; simp at huP),
-      degree_eq_zero_of_not_mem (by simp [huP'.2.2])]
+      degree_eq_zero_of_notMem (by simp [huP'.2.2])]
   have hvP : v ∈ P := by simpa [hvu] using hvC
   obtain ⟨z, rfl⟩ | hne := P.exists_eq_nil_or_nonempty
   · obtain rfl : v = z := by simpa [hvu] using hvC

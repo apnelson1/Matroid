@@ -58,7 +58,7 @@ lemma Rep.eq_zero_iff (v : M.Rep 𝔽 W) (e : α) (he : e ∈ M.E := by aesop_ma
     v e = 0 ↔ M.IsLoop e := by
   rw [v.eq_zero_iff_not_indep, singleton_not_indep]
 
-lemma Rep.eq_zero_of_not_mem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) : v e = 0 := by
+lemma Rep.eq_zero_of_notMem_ground (v : M.Rep 𝔽 W) (he : e ∉ M.E) : v e = 0 := by
   rw [v.eq_zero_iff_not_indep, indep_singleton]
   exact fun hl ↦ he hl.mem_ground
 
@@ -72,10 +72,10 @@ lemma Rep.ne_zero_iff_isNonloop (v : M.Rep 𝔽 W) (e : α) : v e ≠ 0 ↔ M.Is
   refine ⟨fun hne ↦ ?_, v.ne_zero_of_isNonloop⟩
   by_cases he : e ∈ M.E
   · rwa [← not_isLoop_iff, ← v.eq_zero_iff e]
-  simp [v.eq_zero_of_not_mem_ground he] at hne
+  simp [v.eq_zero_of_notMem_ground he] at hne
 
 lemma Rep.support_subset_ground (v : M.Rep 𝔽 W) : support v ⊆ M.E :=
-  fun _ he ↦ by_contra <| fun h' ↦ he (v.eq_zero_of_not_mem_ground h')
+  fun _ he ↦ by_contra <| fun h' ↦ he (v.eq_zero_of_notMem_ground h')
 
 lemma Rep.mem_ground_of_apply_ne_zero {v : M.Rep 𝔽 W} (hv : v e ≠ 0) : e ∈ M.E :=
   v.support_subset_ground hv
@@ -101,14 +101,14 @@ lemma Rep.mem_closure_iff (v : M.Rep 𝔽 W) (heE : e ∈ M.E := by aesop_mat) :
   obtain ⟨I, hIX⟩ := M.exists_isBasis' X
   have aux : span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
     (span_mono (image_mono hIX.subset)).antisymm <| span_le.2 (v.isBasis'_iff.1 hIX).2.2
-  rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).not_mem_span_iff,
-    hIX.indep.not_mem_closure_iff, v.indep_iff]
+  rw [← hIX.closure_eq_closure, ← aux, ← not_iff_not, (v.onIndep hIX.indep).notMem_span_iff,
+    hIX.indep.notMem_closure_iff, v.indep_iff]
 
 lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = (v ⁻¹' span 𝔽 (v '' X)) ∩ M.E := by
   ext e
   by_cases he : e ∈ M.E
   · rw [v.mem_closure_iff, mem_inter_iff, and_iff_left he, mem_preimage, SetLike.mem_coe]
-  simp [he, not_mem_subset (M.closure_subset_ground X) he]
+  simp [he, notMem_subset (M.closure_subset_ground X) he]
 
 lemma Rep.mem_closure_iff' (v : M.Rep 𝔽 W) :
     e ∈ M.closure X ↔ v e ∈ span 𝔽 (v '' X) ∧ e ∈ M.E := by
@@ -119,7 +119,7 @@ lemma Rep.span_le_of_closure_subset (v : M.Rep 𝔽 W) (hXY : M.closure X ⊆ M.
   rw [span_le]
   rintro _ ⟨e, he, rfl⟩
   obtain heE | heE := em' (e ∈ M.E)
-  · simp [v.eq_zero_of_not_mem_ground heE]
+  · simp [v.eq_zero_of_notMem_ground heE]
   rw [v.closure_eq Y] at hXY
   exact (hXY (M.mem_closure_of_mem' he heE)).1
 

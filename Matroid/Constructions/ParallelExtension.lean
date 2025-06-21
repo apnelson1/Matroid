@@ -195,7 +195,7 @@ lemma parallelExtend_closure_eq_of_mem (he : M.IsNonloop e) (hf : f ∉ M.E) (X 
   rw [closure_diff_singleton_eq_closure heX.1, eq_comm, insert_eq_self]
   exact mem_of_mem_of_subset heX.1 (closure_subset_closure _ diff_subset)
 
-lemma parallelExtend_closure_eq_of_not_mem_not_mem (he : M.IsNonloop e) (hf : f ∉ M.E) {X : Set α}
+lemma parallelExtend_closure_eq_of_notMem_notMem (he : M.IsNonloop e) (hf : f ∉ M.E) {X : Set α}
     (heX : e ∉ M.closure X) (hfX : f ∉ X) : (M.parallelExtend e f).closure X = M.closure X := by
   nth_rw 2 [← M.parallelExtend_delete_eq e hf]
   have hfX' : f ∉ (M.parallelExtend e f).closure (X \ {f}) := by
@@ -312,7 +312,7 @@ lemma seriesExtend_isColoop (he : M.IsColoop e) (f : α) :
   rw [seriesExtend, parallelExtend_not_isNonloop, addColoop, dual_contract]
   simp [isNonloop_iff, dual_isLoop_iff_isColoop, he]
 
-lemma seriesExtend_not_mem_ground (he : e ∉ M.E) (f : α) :
+lemma seriesExtend_notMem_ground (he : e ∉ M.E) (f : α) :
     M.seriesExtend e f = (M ／ {f}).addColoop f := by
   rw [seriesExtend, parallelExtend_not_isNonloop, addColoop, dual_contract]
   simp [isNonloop_iff, he]

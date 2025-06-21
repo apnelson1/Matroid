@@ -138,7 +138,7 @@ lemma IsBase.isHyperplane_of_closure_diff_singleton (hB : M.IsBase B) (heB : e �
     M.IsHyperplane (M.closure (B \ {e})) := by
   rw [isHyperplane_iff_covBy, IsFlat.covBy_iff_eq_closure_insert (M.closure_isFlat _)]
   refine ⟨e, ⟨hB.subset_ground heB, ?_⟩, ?_⟩
-  · rw [(hB.indep.diff {e}).not_mem_closure_iff (hB.subset_ground heB)]
+  · rw [(hB.indep.diff {e}).notMem_closure_iff (hB.subset_ground heB)]
     simpa [insert_eq_of_mem heB] using hB.indep
   simpa [insert_eq_of_mem heB] using hB.closure_eq.symm
 
@@ -153,15 +153,15 @@ lemma IsHyperplane.closure_insert_eq_univ (hH : M.IsHyperplane H) (he : e ∈ M.
   rw [insert_eq, union_subset_iff, singleton_subset_iff]
   exact ⟨he.1, hH.subset_ground⟩
 
-lemma exists_isHyperplane_sep_of_not_mem_closure (h : e ∈ M.E \ M.closure X)
+lemma exists_isHyperplane_sep_of_notMem_closure (h : e ∈ M.E \ M.closure X)
     (hX : X ⊆ M.E := by aesop_mat) : ∃ H, M.IsHyperplane H ∧ X ⊆ H ∧ e ∉ H := by
   obtain ⟨I, hI⟩ := M.exists_isBasis X
-  rw [← hI.closure_eq_closure, mem_diff, hI.indep.not_mem_closure_iff] at h
+  rw [← hI.closure_eq_closure, mem_diff, hI.indep.notMem_closure_iff] at h
   obtain ⟨B, hB, heIB⟩ := h.2.1.exists_isBase_superset
   rw [insert_subset_iff] at heIB
   refine ⟨_, hB.isHyperplane_of_closure_diff_singleton heIB.1, ?_, ?_⟩
   · exact hI.subset_closure.trans (M.closure_subset_closure (subset_diff_singleton heIB.2 h.2.2))
-  exact hB.indep.not_mem_closure_diff_of_mem heIB.1
+  exact hB.indep.notMem_closure_diff_of_mem heIB.1
 
 lemma closure_eq_sInter_isHyperplane (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.closure X = ⋂₀ {H | M.IsHyperplane H ∧ X ⊆ H} ∩ M.E := by
@@ -171,7 +171,7 @@ lemma closure_eq_sInter_isHyperplane (M : Matroid α) (X : Set α) (hX : X ⊆ M
     exact hH.isFlat.closure_subset_of_subset hXH
   rintro e ⟨heH, heE⟩
   refine by_contra fun hx ↦ ?_
-  obtain ⟨H, hH, hXH, heH'⟩ := exists_isHyperplane_sep_of_not_mem_closure ⟨heE, hx⟩
+  obtain ⟨H, hH, hXH, heH'⟩ := exists_isHyperplane_sep_of_notMem_closure ⟨heE, hx⟩
   exact heH' (heH H ⟨hH, hXH⟩)
 
 lemma isFlat_iff_eq_sInter_isHyperplanes : M.IsFlat F ↔
@@ -212,7 +212,7 @@ lemma IsFlat.subset_isHyperplane_of_ne_ground (hF : M.IsFlat F) (h : F ≠ M.E) 
     ∃ H, M.IsHyperplane H ∧ F ⊆ H := by
   obtain ⟨e, heE, heF⟩ := exists_of_ssubset (hF.subset_ground.ssubset_of_ne h)
   rw [← hF.closure] at heF
-  obtain ⟨H, hH, hFH, -⟩ := exists_isHyperplane_sep_of_not_mem_closure ⟨heE, heF⟩
+  obtain ⟨H, hH, hFH, -⟩ := exists_isHyperplane_sep_of_notMem_closure ⟨heE, heF⟩
   exact ⟨H, hH, hFH⟩
 
 lemma subset_isHyperplane_iff_closure_ne_ground (hY : Y ⊆ M.E := by aesop_mat) :
@@ -239,12 +239,12 @@ lemma IsHyperplane.isBasis_isHyperplane_delete (hH : M.IsHyperplane H) (hI : M.I
   obtain ⟨e, he, heH⟩ := exists_of_ssubset hH.ssubset_ground
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ ?_
-    · rwa [hI.indep.insert_indep_iff_of_not_mem (not_mem_subset hI.subset heH),
+    · rwa [hI.indep.insert_indep_iff_of_notMem (notMem_subset hI.subset heH),
         hI.closure_eq_closure, hH.isFlat.closure, mem_diff, and_iff_left heH]
     rw [spanning_iff_closure_eq, closure_insert_congr_right hI.closure_eq_closure,
       hH.closure_insert_eq heH he]
   convert IsBase.isHyperplane_of_closure_diff_singleton (B := insert e I) (e := e) ?_ (.inl rfl)
-  · simp only [mem_singleton_iff, insert_diff_of_mem, not_mem_subset hI.subset heH,
+  · simp only [mem_singleton_iff, insert_diff_of_mem, notMem_subset hI.subset heH,
     not_false_eq_true, diff_singleton_eq_self, delete_closure_eq]
     rw [disjoint_sdiff_right.sdiff_eq_left, hI.closure_eq_closure, hH.isFlat.closure,
       diff_diff_cancel_left]
@@ -253,7 +253,7 @@ lemma IsHyperplane.isBasis_isHyperplane_delete (hH : M.IsHyperplane H) (hI : M.I
   refine hB.indep.isBasis_of_forall_insert ?_ fun x ⟨⟨hxE, _⟩, hx⟩ ↦ hB.insert_dep ⟨hxE, hx⟩
   suffices insert e I ∩ (H \ I) = ∅ by simpa [insert_subset_iff, he, heH, subset_diff,
     hI.indep.subset_ground, disjoint_iff_inter_eq_empty]
-  rw [insert_inter_of_not_mem (by simp [heH])]
+  rw [insert_inter_of_notMem (by simp [heH])]
   simp
 
 lemma IsHyperplane.isBasis_isHyperplane_restrict (hH : M.IsHyperplane H) (hI : M.IsBasis I H) :
@@ -286,7 +286,7 @@ lemma IsHyperplane.inter_isHyperplane_spanning_restrict {S : Set α} (hH : M.IsH
   · rw [nonempty_iff_ne_empty, Ne, diff_eq_empty]
     exact fun hSH ↦ hH.not_spanning <| hS.superset hSH
 
-  have heI : e ∉ I := not_mem_subset hIH.subset he.2
+  have heI : e ∉ I := notMem_subset hIH.subset he.2
 
   have heB : (M ↾ S).IsBase (insert e I)
   · rw [hS.isBase_restrict_iff, and_iff_left (insert_subset he.1 hIS)]
@@ -302,7 +302,7 @@ lemma Spanning.isHyperplane_restrict_iff {S : Set α} (hS : M.Spanning S) :
   refine ⟨fun h ↦ ?_, fun ⟨hh, hcl⟩ ↦ ?_⟩
   · obtain ⟨I, hI⟩ := (M ↾ S).exists_isBasis H h.subset_ground
     obtain ⟨e, he : e ∈ S \ H, heB⟩ := h.exists_insert_isBase_of_isBasis hI
-    have heI : e ∉ I := not_mem_subset hI.subset he.2
+    have heI : e ∉ I := notMem_subset hI.subset he.2
     rw [hS.isBase_restrict_iff, insert_subset_iff] at heB
 
     rw [isBasis_restrict_iff] at hI

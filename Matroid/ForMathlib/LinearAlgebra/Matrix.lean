@@ -72,10 +72,10 @@ lemma eq_fromBlocks_block_reindex (A : Matrix m n α) (s : Set m) (t : Set n)
   by_cases hi : i ∈ s
   · by_cases hj : j ∈ t
     · simp [Equiv.Set.sumCompl_symm_apply_of_mem hj, Equiv.Set.sumCompl_symm_apply_of_mem hi]
-    simp [Equiv.Set.sumCompl_symm_apply_of_not_mem hj, Equiv.Set.sumCompl_symm_apply_of_mem hi]
+    simp [Equiv.Set.sumCompl_symm_apply_of_notMem hj, Equiv.Set.sumCompl_symm_apply_of_mem hi]
   by_cases hj : j ∈ t
-  · simp [Equiv.Set.sumCompl_symm_apply_of_not_mem hi, Equiv.Set.sumCompl_symm_apply_of_mem hj]
-  simp [Equiv.Set.sumCompl_symm_apply_of_not_mem hi, Equiv.Set.sumCompl_symm_apply_of_not_mem hj]
+  · simp [Equiv.Set.sumCompl_symm_apply_of_notMem hi, Equiv.Set.sumCompl_symm_apply_of_mem hj]
+  simp [Equiv.Set.sumCompl_symm_apply_of_notMem hi, Equiv.Set.sumCompl_symm_apply_of_notMem hj]
 
 @[simp]
 lemma range_submatrix_left {α l : Type*} (A : Matrix m n α) (r_reindex : l → m) :
@@ -143,7 +143,7 @@ lemma eRank_mono_col {n₀ : Type*} [Semiring R] (A : Matrix m n R) (c : n₀ �
 
 lemma eRank_mono_row {m₀ : Type*} [Semiring R] (A : Matrix m n R) (r : m₀ → m) :
     (A.submatrix r id).eRank ≤ A.eRank := by
-  obtain hlt | hle := lt_or_le A.cRank Cardinal.aleph0
+  obtain hlt | hle := lt_or_ge A.cRank Cardinal.aleph0
   · simpa using (toENat_le_iff_of_lt_aleph0 (by simpa)).2 <| A.cRank_lift_mono_row r
   simp [eRank, toENat_eq_top.2 hle]
 

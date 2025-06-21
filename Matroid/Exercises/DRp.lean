@@ -15,9 +15,9 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
     M.conn (X ∩ Y) + M.conn (insert e (X ∪ Y)) ≤  1 + (M ＼ {e}).conn X + (M ／ {e}).conn Y := by
   -- Apply submodularity fo the pairs `(X, insert e Y)` and `(M.E \ insert e X, Y)`, and simplify.
   have hsm := M.rk_submod X (insert e Y)
-  rw [union_insert, inter_insert_of_not_mem heX] at hsm
+  rw [union_insert, inter_insert_of_notMem heX] at hsm
   have hsm' := M.rk_submod_compl (insert e X) Y
-  rw [insert_union, insert_inter_of_not_mem heY] at hsm'
+  rw [insert_union, insert_inter_of_notMem heY] at hsm'
   -- Now `zify` and simplify.
   zify
   --deleteElem,contractElem,
@@ -29,7 +29,7 @@ lemma Exercise_for_DRP' (M : Matroid α) [RankFinite M] (X Y : Set α) (e : α) 
   have hrw : M.rk (insert e (M.E \ Y)) = M.rk (M.E \ Y) := by
     by_cases he : e ∈ M.E
     · rw [insert_eq_of_mem (by simp [he, heY])]
-    rw [rk_insert_of_not_mem_ground _ he]
+    rw [rk_insert_of_notMem_ground _ he]
 
   have hle : (M ＼ ({e} : Set α)).rank ≤ M.rank := delete_rank_le M {e}
   have hle' : M.rk {e} ≤ 1 := rk_singleton_le M e
@@ -262,7 +262,7 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
       have h_ePdel : Pdel.left ⊆ M.E \ {e} := Partition.left_subset_ground Pdel
       contrapose! h_ePdel
       refine not_subset.mpr ?_
-      have h_e : e ∉ M.E \ {e} := not_mem_diff_of_mem rfl
+      have h_e : e ∉ M.E \ {e} := notMem_diff_of_mem rfl
 
       exact ⟨e, h_ePdel , h_e⟩
       exact Partition.SepOf.disjoint_left hPdel
@@ -294,7 +294,7 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
       have h_ePcon : Pcon.left ⊆ M.E \ {e} := Partition.left_subset_ground Pcon
       contrapose! h_ePcon
       refine not_subset.mpr ?_
-      have h_e : e ∉ M.E \ {e} := not_mem_diff_of_mem rfl
+      have h_e : e ∉ M.E \ {e} := notMem_diff_of_mem rfl
       exact ⟨e, h_ePcon , h_e⟩
       exact Partition.SepOf.disjoint_left hPcon
 
@@ -423,12 +423,12 @@ theorem TLT (M : Matroid α) [M.Finite] (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (
     have Y_in_right : Y ⊆ M.E \ insert e (S ∪ T) := by
       intro y hy
       have hym: y ∈ M.E := hYE hy
-      have hy_not_in_S: y ∉ S := Disjoint.not_mem_of_mem_left (id (Disjoint.symm hdisj_YS)) hy
-      have hy_not_in_T: y ∉ T := Disjoint.not_mem_of_mem_left (id (Disjoint.symm hdisj_YT)) hy
+      have hy_not_in_S: y ∉ S := Disjoint.notMem_of_mem_left (id (Disjoint.symm hdisj_YS)) hy
+      have hy_not_in_T: y ∉ T := Disjoint.notMem_of_mem_left (id (Disjoint.symm hdisj_YT)) hy
       have hy_not_in_union: y ∉ insert e (S ∪ T) := by
         simp only [mem_insert_iff, mem_union, not_or]
         apply And.intro
-        exact ne_of_mem_of_not_mem hy he_not_in_Y
+        exact ne_of_mem_of_notMem hy he_not_in_Y
         exact Classical.not_imp.mp fun a ↦ hy_not_in_T (a hy_not_in_S)
       exact mem_diff_of_mem (hYE hy) hy_not_in_union
 

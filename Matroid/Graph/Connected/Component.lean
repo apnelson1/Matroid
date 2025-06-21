@@ -34,7 +34,7 @@ lemma IsComponent.isInducedSubgraph (h : H.IsComponent G) : H ≤i G :=
 lemma isComponent_iff_isClosedSubgraph_connected : H.IsComponent G ↔ H ≤c G ∧ H.Connected := by
   refine ⟨fun h ↦ ⟨h.isClosedSubgraph, h.connected⟩, fun ⟨hHG, hH⟩ ↦ ⟨⟨hH, hHG.le⟩, ?_⟩⟩
   refine fun K ⟨hK, hKG⟩ hHK ↦ hHK.eq_or_lt.elim (fun h ↦ h ▸ le_rfl) fun hlt ↦ False.elim ?_
-  obtain ⟨e, x, hex, heH, hxH⟩ := hK.exists_inc_not_mem_of_lt hlt hH.nonempty
+  obtain ⟨e, x, hex, heH, hxH⟩ := hK.exists_inc_notMem_of_lt hlt hH.nonempty
   exact heH <| ((hex.of_le hKG).of_isClosedSubgraph_of_mem hHG hxH).edge_mem
 
 lemma IsClosedSubgraph.isComponent_of_connected (h : H ≤c G) (hH : H.Connected) :
@@ -97,7 +97,7 @@ lemma IsComponent.disjoint_of_ne {H₁ H₂ : Graph α β}
 
 lemma IsComponent.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsComponent G)
     (hH₂ : H₂.IsComponent G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
-  by_contra fun hne ↦ (hH₁.disjoint_of_ne hH₂ hne).vertex.not_mem_of_mem_left hx₁ hx₂
+  by_contra fun hne ↦ (hH₁.disjoint_of_ne hH₂ hne).vertex.notMem_of_mem_left hx₁ hx₂
 
 lemma pairwiseDisjoint_components (G : Graph α β) :
     {H : Graph α β | H.IsComponent G}.Pairwise Graph.Disjoint :=
@@ -159,7 +159,7 @@ is at least the corresponding degree in `G`, then `H = G`. -/
 lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
     (hne : V(H).Nonempty) (hdeg : ∀ ⦃x⦄, x ∈ V(H) → G.degree x ≤ H.degree x) : H = G := by
   refine hle.eq_of_not_lt fun hlt ↦ ?_
-  obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_not_mem_of_lt hlt hne
+  obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_notMem_of_lt hlt hne
   have hle : H ≤ G ＼ {e} := by simp [heH, hle]
   exact hex.degree_delete_lt.not_le <| (hdeg hxH).trans (degree_mono hle x)
 

@@ -20,7 +20,7 @@ def truncateToNat (M : Matroid α) (k : ℕ) : Matroid α :=
     rintro I J ⟨hI, _⟩ ⟨hJ, hJc⟩ hIJ
     obtain ⟨e, he, hi⟩ := hI.augment hJ hIJ
     exact ⟨e, he.1, he.2, hi,
-      (encard_insert_of_not_mem he.2).trans_le ((Order.add_one_le_of_lt hIJ).trans hJc)⟩)
+      (encard_insert_of_notMem he.2).trans_le ((Order.add_one_le_of_lt hIJ).trans hJc)⟩)
   (indep_bdd := ⟨k, fun _ ↦ And.right⟩)
   (subset_ground := fun _ h ↦ h.1.subset_ground)
 
@@ -81,7 +81,7 @@ instance truncateTo.finite [Matroid.Finite M] : Matroid.Finite (M.truncateTo k) 
 
 instance truncateTo.rankFinite {k : ℕ} : RankFinite (M.truncateTo k) := by
   obtain ⟨B, hB⟩ := (M.truncateTo k).exists_isBase
-  refine ⟨B, hB, (le_or_lt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
+  refine ⟨B, hB, (le_or_gt M.eRank k).elim (fun h ↦ ?_) (fun h ↦ ?_)⟩
   · rw [truncate_eq_self_of_rank_le h] at hB
     rw [← encard_lt_top_iff, hB.encard_eq_eRank]
     exact h.trans_lt (WithTop.coe_lt_top _)
@@ -522,8 +522,8 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.IsBase := by
       exact hItb <| (heB.toTruncate_of_closure he.2 hf hfI hcon).isBase_of_insert hf
     simp only [subset_def, not_forall, Classical.not_imp, exists_prop] at hcon
     obtain ⟨e, heB, he⟩ := hcon
-    have heI : e ∉ I := not_mem_subset (M.subset_closure _) he
-    rw [hI.not_mem_closure_iff_of_not_mem heI (hB.indep.indep.subset_ground heB)] at he
+    have heI : e ∉ I := notMem_subset (M.subset_closure _) he
+    rw [hI.notMem_closure_iff_of_notMem heI (hB.indep.indep.subset_ground heB)] at he
     exact ⟨e, ⟨heB, heI⟩, he, fun hT ↦ hItb (hT.isBase_of_insert heI)⟩ )
 
   (indep_maximal := by

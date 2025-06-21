@@ -43,7 +43,7 @@ theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.fir
       refine ⟨(Q ++ P.reverse).dedup, ?_, ?_, ?_, by simp, ?_⟩
       · exact IsWalk.dedup_isPath (hQ.isWalk.append hP.1.isWalk.reverse (by simpa using h1.symm))
       · rw [← mem_edgeSet_iff]
-        refine not_mem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edgeSet_subset) ?_
+        refine notMem_subset (t := E(Q ++ P.reverse)) ((dedup_isSublist _).edgeSet_subset) ?_
         simp [heQ, heP]
       · simp [append_first_of_nonempty hne]
       exact (dedup_isSublist _).edgeSet_subset.trans <| by simp
@@ -130,7 +130,7 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
     (G ↾ F).IsForest := by
   intro C hC
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
-  refine hF.not_mem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).1
+  refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).1
   rw [← edgeRestrict_edgeDelete]
   exact hF.prop.edgeDelete_singleton_connected <| hC.not_isBridge_of_mem he
 

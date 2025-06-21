@@ -152,7 +152,7 @@ lemma LinearIndepOn.span_eq_top_of_maximal (hmax : Maximal (LinearIndepOn R v ·
 --     refine span_eq_span ?_ ((image_mono (hmax.prop.2.1)).trans <| subset_span ..)
 --     rintro _ ⟨x, hx, rfl⟩
 --     by_contra hxm
---     rw [SetLike.mem_coe, hmax.prop.2.2.not_mem_span_iff] at hxm
+--     rw [SetLike.mem_coe, hmax.prop.2.2.notMem_span_iff] at hxm
 --     exact hxm.1 <| hmax.mem_of_prop_insert
 --       ⟨hs₀m.trans <| subset_insert .., insert_subset hx hmax.prop.2.1, hxm.2⟩
 --   refine fun c hcss hchain ⟨r, hr⟩ ↦ ⟨⋃₀ c, ⟨(hcss hr).1.trans <| subset_sUnion_of_mem hr,

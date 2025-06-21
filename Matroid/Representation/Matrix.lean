@@ -103,7 +103,7 @@ lemma aux' {B : Set α} [Fintype B] [DecidableEq B] (P : Matrix B α 𝔽) (X : 
     · simp only [submatrix_apply, id_eq, Q]
       rw [← P.colFun_apply, hB ⟨j, h'⟩, Pi.single_apply]
       simp_rw [← Subtype.val_inj]
-    exact hdj.not_mem_of_mem_left (a := j) (by simpa [h'] using hjX) hj |>.elim
+    exact hdj.notMem_of_mem_left (a := j) (by simpa [h'] using hjX) hj |>.elim
 
 
 

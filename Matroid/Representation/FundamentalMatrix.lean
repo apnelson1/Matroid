@@ -19,7 +19,7 @@ noncomputable def IsBase.coords (hB : M.IsBase B) (e : α) : Finset B :=
       simp
     by_cases heE : e ∈ M.E
     · exact (hB.fundCircuit_isCircuit heE heB).finite
-    rw [fundCircuit_eq_of_not_mem_ground heE]
+    rw [fundCircuit_eq_of_notMem_ground heE]
     simp )
 
 lemma IsBase.coords_of_mem (hB : M.IsBase B) (he : e ∈ B) :
@@ -27,9 +27,9 @@ lemma IsBase.coords_of_mem (hB : M.IsBase B) (he : e ∈ B) :
   ext ⟨x, hx⟩
   simp [coords, hB.subset_ground he, fundCircuit_eq_of_mem he]
 
-lemma IsBase.coords_of_not_mem_ground (hB : M.IsBase B) (heE : e ∉ M.E) : hB.coords e = ∅ := by
+lemma IsBase.coords_of_notMem_ground (hB : M.IsBase B) (heE : e ∉ M.E) : hB.coords e = ∅ := by
   suffices ∀ a ∈ B, a ≠ e by
-    simpa [coords, fundCircuit_eq_of_not_mem_ground heE, eq_empty_iff_forall_not_mem]
+    simpa [coords, fundCircuit_eq_of_notMem_ground heE, eq_empty_iff_forall_notMem]
   rintro x hxB rfl
   exact heE <| hB.subset_ground hxB
 
@@ -58,13 +58,13 @@ lemma IsBase.fundCoord_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.fundCoord R e = Finsupp.single e 1 :=
   hB.fundCoord_of_mem e.2
 
-lemma IsBase.fundCoord_of_not_mem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
+lemma IsBase.fundCoord_of_notMem_ground (hB : M.IsBase B) (he : e ∉ M.E) :
     hB.fundCoord R e = 0 := by
-  rw [fundCoord, coords_of_not_mem_ground hB he]
+  rw [fundCoord, coords_of_notMem_ground hB he]
   rfl
 
 lemma IsBase.support_fundCoord_subset (hB : M.IsBase B) : support (hB.fundCoord R) ⊆ M.E :=
-  support_subset_iff'.2 fun _ ↦ hB.fundCoord_of_not_mem_ground
+  support_subset_iff'.2 fun _ ↦ hB.fundCoord_of_notMem_ground
 
 lemma IsBase.fundCoord_support (hB : M.IsBase B) :
     (↑) '' ((hB.fundCoord R e).support : Set B) = (M.fundCircuit e B) ∩ B := by

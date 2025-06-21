@@ -117,7 +117,7 @@ theorem Finset.pairwiseDisjoint_of_sum_encard_le_encard_biUnion {ι : Type*} {I 
     exact WithTop.le_of_add_le_add_left
       (WithTop.sum_ne_top.2 <| fun i hi ↦ (hfin i (Finset.mem_sdiff.1 hi).1).encard_lt_top.ne) hsum
   rw [PairwiseDisjoint, Finset.coe_insert,
-    pairwise_insert_of_symmetric_of_not_mem (Symmetric.comap Disjoint.symm s) (by simpa),
+    pairwise_insert_of_symmetric_of_notMem (Symmetric.comap Disjoint.symm s) (by simpa),
     ← PairwiseDisjoint, and_iff_right (IH _ (hmono _ (by simp)))]
   · simp_rw [Function.onFun, Finset.mem_coe]
     refine fun b hbJ ↦ Finite.disjoint_of_sum_encard_le ?_ <|

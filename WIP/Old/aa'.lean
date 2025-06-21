@@ -116,7 +116,7 @@ def dual' (M : Matroid α) : Matroid α :=
           -- have : M.Indep (insert x ((M.E \ B₁) \ {e})) := sorry
           -- -- by subset of B''
           -- have : M.IsBase  (insert x ((M.E \ B₁) \ {e})) :=
-          --   IsBase.exchange_isBase_of_indep hB₁.2 (not_mem_diff_of_mem hx.1) this
+          --   IsBase.exchange_isBase_of_indep hB₁.2 (notMem_diff_of_mem hx.1) this
           -- exact this
 
 

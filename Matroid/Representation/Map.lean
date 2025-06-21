@@ -141,7 +141,7 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
     intro I J hI hIfin hJ hJfin hIJ
     have hssu : ¬ (J ⊆ span 𝔽 I) := by
       rw [← span_le]
-      refine fun hss ↦ hIJ.not_le ?_
+      refine fun hss ↦ hIJ.not_ge ?_
       have _ := hIfin.fintype
       have _ := hJfin.fintype
       have _ : Module.Finite 𝔽 (span 𝔽 I) := FiniteDimensional.span_of_finite _ hIfin
@@ -149,9 +149,9 @@ protected def _root_.Module.matroid (𝔽 W : Type*) [AddCommGroup W] [DivisionR
         ← finrank_span_set_eq_card hI]
       exact Submodule.finrank_mono hss
     obtain ⟨a, haJ, ha⟩ := not_subset.1 hssu
-    refine ⟨a, haJ, not_mem_subset subset_span ha, ?_⟩
+    refine ⟨a, haJ, notMem_subset subset_span ha, ?_⟩
     simp only [SetLike.mem_coe] at ha
-    simpa [linearIndepOn_insert (not_mem_subset subset_span ha), ha])
+    simpa [linearIndepOn_insert (notMem_subset subset_span ha), ha])
   (indep_compact := linearIndepOn_of_finite)
   (subset_ground := by simp)
 

@@ -11,7 +11,7 @@ namespace Matroid
 namespace Representable
 
 lemma encard_le_of_unifOn_two (h : (unifOn E 2).Representable 𝔽) : E.encard ≤ ENat.card 𝔽 + 1 := by
-  obtain hlt | hle := lt_or_le E.encard (2 : ℕ)
+  obtain hlt | hle := lt_or_ge E.encard (2 : ℕ)
   · exact (show E.encard ≤ 1 from Order.le_of_lt_add_one hlt).trans (by simp)
   convert h.encard_le_of_simple
   simp [unifOn_rank_eq hle]

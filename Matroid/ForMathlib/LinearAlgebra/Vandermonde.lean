@@ -62,8 +62,8 @@ lemma rectVandermonde_linearIndepOn_iff {v w : α → R} {s : Set α} (hn : n �
       LinearIndepOn R (rectVandermonde v w n) s ↔ s.encard ≤ n ∧
       (∀ i ∈ s, v i = 0 → w i ≠ 0) ∧ (∀ ⦃i j⦄, i ∈ s → j ∈ s → v j * w i = v i * w j → i = j) := by
   classical
-  obtain hlt | hle := lt_or_le (n : ℕ∞) s.encard
-  · refine iff_of_false (fun hli ↦ hlt.not_le ?_) (by simp [hlt])
+  obtain hlt | hle := lt_or_ge (n : ℕ∞) s.encard
+  · refine iff_of_false (fun hli ↦ hlt.not_ge ?_) (by simp [hlt])
     simpa using hli.encard_le_toENat_rank'
   refine ⟨fun h ↦ ⟨hle, ?_⟩, fun h ↦ ?_⟩
   · obtain rfl | n := n
