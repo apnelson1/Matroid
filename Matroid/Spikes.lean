@@ -142,37 +142,59 @@ lemma preFreeSpike_ground (ι : Type*) (α : Type*) :
 
 --lemma pre_free_Bool_basis (ι : Type*) (hB' : B ⊆ M.E := by aesop_mat) :
 
-lemma preFreeSpikeBool_base_iff {ι : Type} {B} :
-  (preFreeSpike ι Bool).IsBase B ↔ ∀ i b, (i, b) ∈ B ↔ (i, !b) ∉ B := sorry
+lemma preFreeSpikeBool_base_iff {ι : Type*} {B} :
+    (preFreeSpike ι Bool).IsBase B ↔ ∀ i b, (i, b) ∈ B ↔ (i, !b) ∉ B := by
+  constructor
+  · intro hSB i b
+    obtain ⟨ hcom, hcoo ⟩ := comap_isBase_iff.1 hSB
+    simp only [freeOn_ground, preimage_univ, image_univ, freeOn_isBasis_iff, subset_univ,
+        and_true] at hcom
+    simp only [freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
+    refine ⟨ ?_, ?_⟩
+    · intro hb
+      by_contra hc
+      have hin := hcoo hb hc rfl
+      apply (Bool.eq_not_self b).1
+      simp only [Prod.mk.injEq, Bool.eq_not_self, and_false] at hin
+    intro hb
+    simp only [Prod.range_fst] at hcom
+    have hii : i ∈ Prod.fst '' B := by
+        rw [hcom ]
+        exact trivial
+    simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
+    obtain ⟨ x, hx ⟩ := hii
+    have heq : x = b := by
+      by_contra hcon
+      rw [Bool.eq_not.mpr hcon] at hx
+      exact hb hx
+    rwa [heq] at hx
+  intro hib
+  apply comap_isBase_iff.2
+  simp only [freeOn_ground, preimage_univ, image_univ, Prod.range_fst, freeOn_isBasis_iff,
+    subset_refl, and_true, subset_univ]
+  refine ⟨ ?_, ?_ ⟩
+  · ext x
+    refine ⟨ fun a  ↦ trivial , ?_ ⟩
+    intro h
+    simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right]
+    by_contra hcon
+    simp only [Bool.exists_bool, not_or] at hcon
+    exact hcon.2 ((hib x true).2 hcon.1 )
+  intro (x,b) hx (y,b') hy hxy
+  simp only at hxy
+  rw[←hxy] at hy
+  rw[hxy]
+  simp only [Prod.mk.injEq, true_and]
+  have h1 := (hib x b).1 hx
+  by_contra hc
+  rw [Bool.eq_not.mpr fun a ↦ hc (id (Eq.symm a))] at hy
+  exact ( (hib x b).1 hx ) hy
 
 lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpike ι Bool)✶ := by
   refine ext_isBase rfl ?_
 
-  have aux' (B i b) : (preFreeSpike ι Bool).IsBase B → ((i, b) ∈ B ↔ (i, !b) ∉ B) := by
-
-      -- exact aux' _ _ _ hSB
-      -- intro i b
-      -- refine ⟨ ?_, ?_⟩
-      -- · intro hb
-      --   by_contra hc
-      --   have hin := hcoo hb hc rfl
-      --   apply (Bool.eq_not_self b).1
-      --   simp only [Prod.mk.injEq, Bool.eq_not_self, and_false] at hin
-      -- intro hb
-      -- simp only [Prod.range_fst] at hcom
-      -- have hii : i ∈ Prod.fst '' B := by
-      --   rw [hcom ]
-      --   exact trivial
-      -- simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
-      -- obtain ⟨ x, hx ⟩ := hii
-      -- have heq : x = b := by
-      --   by_contra hcon
-      --   rw [Bool.eq_not.mpr hcon] at hx
-      --   exact hb hx
-      -- rwa [heq] at hx
-    sorry
-
-
+  have aux' (B i b) : (preFreeSpike ι Bool).IsBase B → ((i, b) ∈ B ↔ (i, !b) ∉ B) :=
+    fun hb ↦ (preFreeSpikeBool_base_iff.1 hb) i b
   intro B hB
   constructor
   · intro hSB
@@ -211,6 +233,9 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
     exact Prod.ext hxy h1
   intro hD
   have h1 := (preFreeSpike ι Bool).dual_isBase_iff.1 hD
+  have aux (i : ι) (b : Bool) : (i, b) ∈ B ↔ (i, !b) ∉ B := by
+      specialize aux' (univ \ B) i (!b) h1
+      simpa using aux'.symm
   rw [preFreeSpike_def] at h1
   apply comap_isBase_iff.2
   simp only [freeOn_ground, preimage_univ, image_univ, Prod.range_fst, freeOn_isBasis_iff,
@@ -219,9 +244,7 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
   simp only [comap_ground_eq, freeOn_ground, preimage_univ, image_univ, Prod.range_fst,
     freeOn_isBasis_iff, subset_refl, and_true] at hcom
   simp only [comap_ground_eq, freeOn_ground, preimage_univ, subset_univ, and_true] at hcoo
-  have aux (i : ι) (b : Bool) : (i, b) ∈ B ↔ (i, !b) ∉ B := by
-      specialize aux' (univ \ B) i (!b) sorry
-      simpa using aux'.symm
+
   constructor
   · rw [← hcom]
     ext x
