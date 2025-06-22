@@ -211,14 +211,14 @@ lemma eq_append_of_vertex_mem {w : WList α β} {u : α} (hmem : u ∈ w) :
 lemma eq_append_cons_of_edge_mem {w : WList α β} {e : β} (he : e ∈ w.edge) :
     ∃ w₁ w₂ : WList α β, w = w₁ ++ cons w₁.last e w₂ ∧ e ∉ w₁.edge := by
   induction w with
-  | nil x => simp only [nil_edge, notMem_nil] at he
+  | nil x => simp only [nil_edge, not_mem_nil] at he
   | cons x e' w ih =>
     simp only [cons_edge, mem_cons] at he
     obtain rfl | he' := he
-    · use nil x, w, rfl, by simp only [nil_edge, notMem_nil, not_false_eq_true]
+    · use nil x, w, rfl, by simp only [nil_edge, not_mem_nil, not_false_eq_true]
     · by_cases h : e = e'
       · subst e'
-        use nil x, w, rfl, by simp only [nil_edge, notMem_nil, not_false_eq_true]
+        use nil x, w, rfl, by simp only [nil_edge, not_mem_nil, not_false_eq_true]
       · obtain ⟨w₁, w₂, rfl, hnin⟩ := ih he'
         use cons x e' w₁, w₂, by simp only [last_cons, cons_append]
         simp only [cons_edge, mem_cons, h, hnin, or_self, not_false_eq_true]

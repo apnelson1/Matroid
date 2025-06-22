@@ -49,6 +49,7 @@ noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
   mem_support_toFun x := by
     obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
     · simp [hy.isLink_iff_eq]
+      exact hy.inc_left
     simp [hx, isLink_iff_inc]
 
 lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
@@ -56,7 +57,7 @@ lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
   simp [incFun, h.endSet_eq]
 
 @[simp] lemma _root_.Set.singleton_inter_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
-     {x} ∩ s = if x ∈ s then {x} else ∅ := by
+    {x} ∩ s = if x ∈ s then {x} else ∅ := by
   split_ifs <;> simpa
 
 @[simp] lemma _root_.Set.inter_singleton_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :

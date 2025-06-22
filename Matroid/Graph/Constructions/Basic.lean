@@ -1,6 +1,7 @@
 import Matroid.Graph.Subgraph
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Data.PFun
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α}
@@ -225,3 +226,82 @@ lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
   le := ⟨by simp, by simp +contextual [subset_def ▸ hXY]⟩
   vertexSet_eq := rfl
+
+/-! ### Complete graphs -/
+
+/-- The complete graph on `n` vertices. -/
+@[simps]
+def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
+  vertexSet := Set.Iio n
+  edgeSet := {s | (∀ i ∈ s, i < n) ∧ ¬ s.IsDiag}
+  IsLink e x y := x < n ∧ y < n ∧ x ≠ y ∧ e = s(x, y)
+  isLink_symm e he x y := by beta_reduce; rw [Sym2.eq_swap]; tauto
+  eq_or_eq_of_isLink_of_isLink e x y z w h := by
+    simp only [h, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk]
+    tauto
+  edge_mem_iff_exists_isLink e := by
+    induction' e with x y
+    simp +contextual only [mem_setOf_eq, Sym2.mem_iff, forall_eq_or_imp, forall_eq,
+      Sym2.isDiag_iff_proj_eq, ne_eq, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
+      exists_and_left, iff_def, and_imp, forall_exists_index]
+    refine ⟨fun hx hy hne ↦ ?_, fun a ha b hb hne heq ↦ ?_⟩
+    · use x, hx, y, hy, hne, by simp
+    · simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
+      obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := heq <;> tauto
+  left_mem_of_isLink e x y h := h.1
+
+@[simp]
+lemma CompleteGraph_adj (n : ℕ) (x y : ℕ) (hx : x < n) (hy : y < n) :
+    (CompleteGraph n).Adj x y ↔ x ≠ y := by
+  unfold Adj
+  simp [hx, hy]
+
+/-- The star graph with `n` leaves with center `v` -/
+@[simps]
+def StarGraph (v : α) (f : β →. α) : Graph α β where
+  vertexSet := {v} ∪ f.ran
+  edgeSet := f.Dom
+  IsLink e x y := ∃ (he : e ∈ f.Dom), s(v, f.fn e he) = s(x, y)
+  edge_mem_iff_exists_isLink e := ⟨fun h ↦ ⟨v, f.fn e h, h, rfl⟩, fun ⟨x, y, he, h⟩ ↦ he⟩
+  isLink_symm e he x y h := by beta_reduce; rwa [Sym2.eq_swap]
+  eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
+    obtain ⟨he, h⟩ := h1
+    obtain ⟨_, h'⟩ := h2
+    have := h.symm.trans h'
+    simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at this
+    tauto
+  left_mem_of_isLink e x y h := by
+    simp only [PFun.fn_apply, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
+      singleton_union, mem_insert_iff] at h ⊢
+    obtain ⟨he, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := h <;> tauto
+
+
+/-! ### Graph constructor from a list of pairs of vertices -/
+
+/-- The graph with vertex set `S` and edges over `ℕ` between pairs of vertices according to the list
+  `l`.-/
+@[simps]
+def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
+  vertexSet := S ∪ {x | ∃ p ∈ l, x = p.1 ∨ x = p.2}
+  edgeSet := Finset.range l.length
+  IsLink e x y := ∃ p, l[e]? = some p ∧ s(x,y) = s(p.1, p.2)
+  isLink_symm e x y h1 h2 := by beta_reduce; rwa [Sym2.eq_swap]
+  eq_or_eq_of_isLink_of_isLink e x y z w h₁ h₂ := by aesop
+  edge_mem_iff_exists_isLink e := by
+    simp [Set.mem_image, Finset.mem_range, Sym2.exists, and_comm]
+    refine ⟨fun h ↦ ?_, fun ⟨x, y, a, b, hor, h⟩ ↦ ?_⟩
+    · use l[e].fst, l[e].snd, l[e].fst, l[e].snd
+      simp
+    · rw [← isSome_getElem? l e, h]
+      tauto
+  left_mem_of_isLink e x y h := by
+    obtain ⟨p, hep, hs⟩ := h
+    right
+    simp only [Prod.mk.eta, Sym2.eq, Sym2.rel_iff', Prod.exists, mem_setOf_eq] at hs ⊢
+    obtain rfl | hp := hs
+    · use x, y, List.mem_of_getElem? hep, by tauto
+    · use y, x, ?_, by tauto
+      rw [← Prod.swap_eq_iff_eq_swap] at hp
+      exact List.mem_of_getElem? <| hp ▸ hep
+
+

@@ -320,13 +320,13 @@ lemma iUnion_map_le_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compat
   rw [Graph.iUnion_le_iff]
   exact fun i ↦ Graph.le_iUnion hG (f i)
 
-lemma iUnion_left_le_iUnion_sum {ι ι' : Type*} {G : ι → Graph α β} {H : ι' → Graph α β}
+lemma iUnion_left_le_iUnion_sum {G : ι → Graph α β} {H : ι' → Graph α β}
     (hGH : Pairwise (Graph.Compatible on Sum.elim G H)) :
     Graph.iUnion G hGH.sum_left ≤ Graph.iUnion (Sum.elim G H) hGH := by
   rw [Graph.iUnion_le_iff]
   exact fun i ↦ le_trans (by simp) (Graph.le_iUnion hGH (Sum.inl i))
 
-lemma iUnion_right_le_iUnion_sum {ι ι' : Type*} {G : ι → Graph α β} {H : ι' → Graph α β}
+lemma iUnion_right_le_iUnion_sum {G : ι → Graph α β} {H : ι' → Graph α β}
     (hGH : Pairwise (Graph.Compatible on Sum.elim G H)) :
     Graph.iUnion H hGH.sum_right ≤ Graph.iUnion (Sum.elim G H) hGH := by
   rw [Graph.iUnion_le_iff]
@@ -440,6 +440,15 @@ protected lemma left_le_union (G H : Graph α β) : G ≤ G ∪ H := by
 protected lemma union_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
   simp [union_eq_sUnion, h₁, edgeDelete_le.trans h₂]
 
+lemma union_le_iff {H₁ H₂ : Graph α β} : H₁ ∪ H₂ ≤ G ↔ H₁ ≤ G ∧ H₂ ＼ E(H₁) ≤ G := by
+  simp [union_eq_sUnion]
+
+lemma union_mono_right (h : H₁ ≤ H₂) : G ∪ H₁ ≤ G ∪ H₂ := by
+  simp only [union_eq_sUnion, Graph.sUnion_le_iff, mem_insert_iff, mem_singleton_iff,
+    forall_eq_or_imp, forall_eq]
+  exact ⟨Graph.le_sUnion _ (by simp), le_trans (edgeDelete_mono_left h) <|
+    Graph.le_sUnion _ (by simp : H₂ ＼ E(G) ∈ _)⟩
+
 @[simp]
 protected lemma union_self (G : Graph α β) : G ∪ G = G :=
   (Graph.union_le le_rfl le_rfl).antisymm <| Graph.left_le_union ..
@@ -501,6 +510,13 @@ lemma union_eq_self_of_le_left (hle : G ≤ H) : G ∪ H = H :=
 
 lemma union_eq_self_of_le_right (hle : G ≤ H) : H ∪ G = H :=
   (Graph.union_le rfl.le hle).antisymm <| Graph.left_le_union ..
+
+lemma Compatible.union_mono_left (h : H₂.Compatible G) (hle : H₁ ≤ H₂) : H₁ ∪ G ≤ H₂ ∪ G := by
+  rw [h.union_comm, (h.mono_left hle).union_comm]
+  exact union_mono_right hle
+
+lemma Compatible.union_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) (h : G₂.Compatible H₁) :
+    G₁ ∪ H₁ ≤ G₂ ∪ H₂ := le_trans (h.union_mono_left hleG) (union_mono_right hleH)
 
 lemma edgeRestrict_union_edgeDelete (G : Graph α β) (F : Set β) : (G ↾ F) ∪ (G ＼ F) = G := by
   rw [edgeDelete_eq_edgeRestrict, ← edgeRestrict_union, ← edgeRestrict_inter_edgeSet]
@@ -582,12 +598,12 @@ lemma iInter_le_iUnion [Nonempty ι] {G : ι → Graph α β} (hG : Pairwise (Co
     Graph.iInter G ≤ Graph.iUnion G hG :=
   (Graph.iInter_le (Classical.arbitrary ι)).trans <| Graph.le_iUnion ..
 
-protected lemma iInter_comp_le {ι' : Type _} [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
+protected lemma iInter_comp_le [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
     {G : ι → Graph α β} : Graph.iInter G ≤ Graph.iInter (fun i ↦ G (f i)) := by
   rw [Graph.le_iInter_iff]
   exact fun i ↦ Graph.iInter_le (f i)
 
-protected lemma iInter_comp_eq_of_surj {ι' : Type _} [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
+protected lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
     {G : ι → Graph α β} (hf : Function.Surjective f) :
     Graph.iInter G = Graph.iInter (fun i ↦ G (f i)) := by
   refine le_antisymm (Graph.iInter_comp_le) ?_
@@ -746,22 +762,20 @@ lemma sUnion_union_sUnion {s t : Set (Graph α β)} (hst : (s ∪ t).Pairwise Co
     Graph.sUnion (s ∪ t) hst := by
   have hs : s.Pairwise Compatible := hst.mono subset_union_left
   have ht : t.Pairwise Compatible := hst.mono subset_union_right
-  have h_compat : (Graph.sUnion s hs).Compatible (Graph.sUnion t ht) :=
-    Pairwise.union_compatible hst
   refine Graph.ext (by aesop) fun e x y ↦ ?_
-  rw [h_compat.union_isLink_iff]
+  rw [(Pairwise.union_compatible hst).union_isLink_iff]
   aesop
 
 protected lemma sInter_inter_sInter {s t : Set (Graph α β)} (hs : s.Nonempty) (ht : t.Nonempty) :
     Graph.sInter s hs ∩ .sInter t ht = .sInter (s ∪ t) (by simp [hs]) := by
   ext <;> aesop
 
-lemma Compatible.sum_compatible {ι ι' : Type*} {G : ι → Graph α β} {H : ι' → Graph α β}
+lemma Compatible.sum_compatible {G : ι → Graph α β} {H : ι' → Graph α β}
     (hGH : Pairwise (Compatible on (Sum.elim G H))) :
     (Graph.iUnion G (hGH.sum_left)).Compatible (Graph.iUnion H (hGH.sum_right)) :=
   compatible_of_le_le (iUnion_left_le_iUnion_sum hGH) <| iUnion_right_le_iUnion_sum hGH
 
-protected lemma iUnion_sum {ι ι' : Type*} [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
+protected lemma iUnion_sum [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
     {H : ι' → Graph α β} (hGH : Pairwise (Compatible on (Sum.elim G H))) :
     Graph.iUnion (Sum.elim G H) hGH = (.iUnion G hGH.sum_left) ∪ (.iUnion H hGH.sum_right) := by
   refine le_antisymm ?_ <| Graph.union_le (iUnion_left_le_iUnion_sum hGH)
@@ -772,13 +786,13 @@ protected lemma iUnion_sum {ι ι' : Type*} [Nonempty ι] [Nonempty ι'] {G : ι
   · exact le_trans (Graph.le_iUnion hGH.sum_right i)
       (Compatible.right_le_union (Compatible.sum_compatible hGH))
 
-protected lemma iInter_sum {ι ι' : Type*} [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
+protected lemma iInter_sum [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
     {H : ι' → Graph α β} : Graph.iInter (Sum.elim G H) = .iInter G ∩ .iInter H := by
   ext <;> aesop
 
-protected lemma iInter_option {ι : Type*} [Nonempty ι] {G₁ : Graph α β} {G : ι → Graph α β} :
-    Graph.iInter (fun o => Option.elim o G₁ G) = G₁ ∩ Graph.iInter G := by
-  refine Graph.ext (by simp [Set.iInter_option]) (by simp [Option.forall])
+protected lemma iInter_option [Nonempty ι] {G₁ : Graph α β} {G : ι → Graph α β} :
+    Graph.iInter (Option.elim · G₁ G) = G₁ ∩ Graph.iInter G :=
+  Graph.ext (by simp [Set.iInter_option]) (by simp [Option.forall])
 
 protected lemma sInter_insert {s : Set (Graph α β)} (G : Graph α β) (hne : s.Nonempty) :
     Graph.sInter (insert G s) (by simp) = G ∩ Graph.sInter s hne := by
@@ -847,6 +861,19 @@ lemma iUnion_isSpanningSubgraph [Nonempty ι] (h : ∀ i, H i ≤s G) :
   le := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
   vertexSet_eq := by simp [(h _).vertexSet_eq, iUnion_const]
 
+-- A weakening of the previous lemma.
+lemma iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le [Nonempty ι]
+    (h : ∀ i, H i ≤ G) (hH : ∃ i, H i ≤s G) :
+    Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤s G where
+  le := Graph.iUnion_le_of_forall_le h
+  vertexSet_eq := by
+    apply le_antisymm
+    · simp only [iUnion_vertexSet, le_eq_subset, iUnion_subset_iff]
+      exact fun i ↦ (h i).vertex_subset
+    obtain ⟨i, hi⟩ := hH
+    rw [← hi.vertexSet_eq]
+    exact subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
+
 /-- A nonempty intersection of induced subgraphs `G` is an induced subgraph of `G`-/
 lemma iInter_isInducedSubgraph [Nonempty ι] (h : ∀ i, H i ≤i G) :
     Graph.iInter H ≤i G where
@@ -904,6 +931,16 @@ lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ �
 lemma IsSpanningSubgraph.union (h₁ : H₁ ≤s G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]
   exact iUnion_isSpanningSubgraph <| by simp [h₁,h₂]
+
+lemma IsSpanningSubgraph.union_left (h₁ : H₁ ≤s G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤s G := by
+  rw [(compatible_of_le_le h₁.le h₂).union_eq_iUnion]
+  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁.le, h₂])
+    ⟨True, h₁⟩
+
+lemma IsSpanningSubgraph.union_right (h₁ : H₁ ≤ G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
+  rw [(compatible_of_le_le h₁ h₂.le).union_eq_iUnion]
+  exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁, h₂.le])
+    ⟨False, h₂⟩
 
 lemma IsInducedSubgraph.inter (h₁ : H₁ ≤i G) (h₂ : H₂ ≤i G) : H₁ ∩ H₂ ≤i G := by
   rw [inter_eq_iInter]
@@ -976,6 +1013,32 @@ lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :
 
 lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
   Compatible.right_le_union <| by simp [he]
+
+lemma addEdge_mono (hle : H ≤ G) : H.addEdge e x y ≤ G.addEdge e x y :=
+  union_mono_right hle
+
+lemma deleteEdge_le_addEdge : G ＼ {e} ≤ G.addEdge e x y := by
+  rw [Graph.addEdge, union_eq_union_edgeDelete]
+  simp only [singleEdge_edgeSet]
+  exact Compatible.right_le_union <| by simp
+
+lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
+  refine le_antisymm (addEdge_mono edgeDelete_le) ?_
+  unfold Graph.addEdge
+  rw [union_le_iff]
+  refine ⟨Graph.left_le_union (Graph.singleEdge x y e) (G ＼ {e}), Compatible.right_le_union ?_⟩
+  simp
+
+lemma addEdge_eq_self (hbtw : G.IsLink e x y) : G.addEdge e x y = G :=
+  le_antisymm (addEdge_le (by simp) hbtw) <| Compatible.right_le_union <| by simp [hbtw]
+
+lemma addEdge_idem : (G.addEdge e x y).addEdge e x y = G.addEdge e x y :=
+  addEdge_eq_self <| addEdge_isLink G e x y
+
+lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    G ≤s G.addEdge e x y := by
+  nth_rw 1 [← addEdge_deleteEdge he hx hy]
+  exact edgeDelete_isSpanningSubgraph
 
 lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])

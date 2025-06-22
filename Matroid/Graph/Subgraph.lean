@@ -444,6 +444,10 @@ infixl:50 " ≤s " => Graph.IsSpanningSubgraph
 lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
   ⟨by simp, rfl⟩
 
+@[simp]
+lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
+  ⟨by simp, rfl⟩
+
 lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
     H ≤s K where
   le := hHK
