@@ -1,9 +1,9 @@
-import Matroid.Graph.Operations.PrefUnion
+import Matroid.Graph.Operations.CommInter
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 
-variable {α β ι : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β}
-  {X Y : Set α}
+variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set α}
 
 open Set Function
 
@@ -18,41 +18,41 @@ section Lattice
 
 variable {H : ι → Graph α β} {H₀ : Graph α β}
 
-protected def iInterAux (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) : Graph α β :=
-  Graph.iInter (Option.elim · G H) (G.pairwise_compatible_of_subgraph
-    (by rintro (rfl | i) <;> simp [hf]))
+-- protected def iInterAux (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) : Graph α β :=
+--   Graph.iInter (Option.elim · G H) (G.pairwise_compatible_of_subgraph
+--     (by rintro (rfl | i) <;> simp [hf]))
 
-@[simp]
-lemma iInterAux_eq_iInter [Nonempty ι] (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) :
-    Graph.iInterAux H hf = Graph.iInter H (G.pairwise_compatible_of_subgraph hf) := by
-  unfold Graph.iInterAux
-  sorry
+-- @[simp]
+-- lemma iInterAux_eq_iInter [Nonempty ι] (H : ι → Graph α β) (hf : ∀ i, H i ≤ G) :
+--     Graph.iInterAux H hf = Graph.iInter H (G.pairwise_compatible_of_subgraph hf) := by
+--   unfold Graph.iInterAux
+--   sorry
 
-lemma iInterAux_empty [IsEmpty ι] (H : ι → Graph α β) :
-    G.iInterAux H (by simp) = G := sorry
+-- lemma iInterAux_empty [IsEmpty ι] (H : ι → Graph α β) :
+--     G.iInterAux H (by simp) = G := sorry
 
-lemma iInterAux_le (hf : ∀ i, H i ≤ G) : Graph.iInterAux H hf ≤ G := sorry
-
-@[simp]
-lemma le_iInterAux_iff (hf : ∀ i, H i ≤ G) : H₀ ≤ G.iInterAux H hf ↔ ∀ i, H₀ ≤ H i := by
-  sorry
-
-lemma le_iInterAux (hf : ∀ i, H i ≤ G) (h₀ : ∀ i, H₀ ≤ H i) : H₀ ≤ Graph.iInterAux H hf := sorry
-
-lemma iInterAux_le_mem (hf : ∀ i, H i ≤ G) (i : ι) :
-    Graph.iInterAux H hf ≤ H i := sorry
-
--- lemma iInterAux_le_mem (hf : ∀ i, H i ≤ G) (i : ι) :
+-- lemma iInterAux_le (hf : ∀ i, H i ≤ G) : Graph.iInterAux H hf ≤ G := sorry
 
 -- @[simp]
 -- lemma le_iInterAux_iff (hf : ∀ i, H i ≤ G) : H₀ ≤ G.iInterAux H hf ↔ ∀ i, H₀ ≤ H i := by
 --   sorry
 
--- @[simp]
--- lemma iInterAux_eq_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
---     Graph.sInter s (G.set_pairwise_compatible_of_subgraph h) =
---     -- Graph.iInterAux H hf = Graph.iInter H (G.pairwise_compatible_of_subgraph hf) := by
---   sorry
+-- lemma le_iInterAux (hf : ∀ i, H i ≤ G) (h₀ : ∀ i, H₀ ≤ H i) : H₀ ≤ Graph.iInterAux H hf := sorry
+
+-- lemma iInterAux_le_mem (hf : ∀ i, H i ≤ G) (i : ι) :
+--     Graph.iInterAux H hf ≤ H i := sorry
+
+-- -- lemma iInterAux_le_mem (hf : ∀ i, H i ≤ G) (i : ι) :
+
+-- -- @[simp]
+-- -- lemma le_iInterAux_iff (hf : ∀ i, H i ≤ G) : H₀ ≤ G.iInterAux H hf ↔ ∀ i, H₀ ≤ H i := by
+-- --   sorry
+
+-- -- @[simp]
+-- -- lemma iInterAux_eq_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
+-- --     Graph.sInter s (G.set_pairwise_compatible_of_subgraph h) =
+-- --     -- Graph.iInterAux H hf = Graph.iInter H (G.pairwise_compatible_of_subgraph hf) := by
+-- --   sorry
 
 @[reducible] def Subgraph (G : Graph α β) := {H // H ≤ G}
 
@@ -85,80 +85,80 @@ lemma Subgraph.set_pairwise_compatible (s : Set G.Subgraph) :
 
 
 
-/-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
-def Subgraph.minAx' : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
-  sup H₁ H₂ := ⟨H₁ ∪ H₂, Graph.union_le H₁.2 H₂.2⟩
-  le_sup_left _ _ := Graph.left_le_union ..
-  le_sup_right H H' := (compatible_of_le_le H.2 H'.2).right_le_union
-  sup_le _ _ _ := Graph.union_le
-  inf H₁ H₂ := ⟨H₁ ∩ H₂, Graph.inter_le_left.trans H₁.2⟩
-  inf_le_left _ _ := Graph.inter_le_left
-  inf_le_right _ _ := Graph.inter_le_right
-  le_inf _ _ _ := Graph.le_inter
-  sSup s := ⟨Graph.iUnion (fun H : s ↦ H.1.1) (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)),
-    by simp⟩
+-- /-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
+-- def Subgraph.minAx' : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
+--   sup H₁ H₂ := ⟨H₁ ∪ H₂, Graph.union_le H₁.2 H₂.2⟩
+--   le_sup_left _ _ := Graph.left_le_union ..
+--   le_sup_right H H' := (compatible_of_le_le H.2 H'.2).right_le_union
+--   sup_le _ _ _ := Graph.union_le
+--   inf H₁ H₂ := ⟨H₁ ∩ H₂, Graph.inter_le_left.trans H₁.2⟩
+--   inf_le_left _ _ := Graph.inter_le_left
+--   inf_le_right _ _ := Graph.inter_le_right
+--   le_inf _ _ _ := Graph.le_inter
+--   sSup s := ⟨Graph.iUnion (fun H : s ↦ H.1.1) (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)),
+--     by simp⟩
 
-  le_sSup s H hHs := Graph.le_iUnion (ι := s) (G := fun H ↦ H.1.1)
-    (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ⟨H, hHs⟩
+--   le_sSup s H hHs := Graph.le_iUnion (ι := s) (G := fun H ↦ H.1.1)
+--     (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ⟨H, hHs⟩
 
-  sSup_le s H h := by
-    change Graph.iUnion _ (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ≤ H.1
-    rw [Graph.iUnion_le_iff]
-    exact fun ⟨H', hH'⟩ ↦ h H' hH'
-  sInf s := ⟨G.iInterAux (fun H : s ↦ H.1.1) (fun H ↦ H.1.2), Graph.iInterAux_le ..⟩
-  sInf_le s H h := G.iInterAux_le_mem (H := (fun H : s ↦ H.1.1)) (fun H ↦ H.1.2) ⟨H, h⟩
-  le_sInf s H h := G.le_iInterAux (fun H ↦ H.1.2) (fun H ↦ h _ H.2)
-  top := ⟨G, le_rfl⟩
-  bot := ⟨Graph.noEdge ∅ β, by simp⟩
-  le_top H := H.2
-  bot_le := by simp
-  iInf_iSup_eq := by
-    intro ι κ f
-    -- rw [← @iSup_range', ← @sSup_image', ← @sInf_range, sInf, Subtype.mk_eq_mk]
-    obtain hι | hι := isEmpty_or_nonempty ι
-    · simp [iInf, iSup]
-      rw [@Graph.iInterAux_empty _ _ _ _ (by simpa)]
-      simp
-      sorry
-
-
+--   sSup_le s H h := by
+--     change Graph.iUnion _ (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ≤ H.1
+--     rw [Graph.iUnion_le_iff]
+--     exact fun ⟨H', hH'⟩ ↦ h H' hH'
+--   sInf s := ⟨G.iInterAux (fun H : s ↦ H.1.1) (fun H ↦ H.1.2), Graph.iInterAux_le ..⟩
+--   sInf_le s H h := G.iInterAux_le_mem (H := (fun H : s ↦ H.1.1)) (fun H ↦ H.1.2) ⟨H, h⟩
+--   le_sInf s H h := G.le_iInterAux (fun H ↦ H.1.2) (fun H ↦ h _ H.2)
+--   top := ⟨G, le_rfl⟩
+--   bot := ⟨Graph.noEdge ∅ β, by simp⟩
+--   le_top H := H.2
+--   bot_le := by simp
+--   iInf_iSup_eq := by
+--     intro ι κ f
+--     -- rw [← @iSup_range', ← @sSup_image', ← @sInf_range, sInf, Subtype.mk_eq_mk]
+--     obtain hι | hι := isEmpty_or_nonempty ι
+--     · simp [iInf, iSup]
+--       rw [@Graph.iInterAux_empty _ _ _ _ (by simpa)]
+--       simp
+--       sorry
 
 
-    simp_rw [iInf, iSup, Subtype.mk_eq_mk]
-    rw [le_antisymm_iff]
-    simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
-      forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
-    refine ⟨?_, fun h ↦ ?_⟩
-    · obtain hι | hι := isEmpty_or_nonempty ι
-      · simp_rw [range_eq_empty (ι := ι)]
 
 
-    -- obtain hι | hι := isEmpty_or_nonempty ι
-    -- ·
-    -- simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
-    --   forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
-    -- obtain hι | hι := isEmpty_or_nonempty ι
-    -- · simp
+--     simp_rw [iInf, iSup, Subtype.mk_eq_mk]
+--     rw [le_antisymm_iff]
+--     simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
+--       forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
+--     refine ⟨?_, fun h ↦ ?_⟩
+--     · obtain hι | hι := isEmpty_or_nonempty ι
+--       · simp_rw [range_eq_empty (ι := ι)]
 
 
-    -- refine ⟨?_, fun h ↦ ?_⟩
+--     -- obtain hι | hι := isEmpty_or_nonempty ι
+--     -- ·
+--     -- simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
+--     --   forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
+--     -- obtain hι | hι := isEmpty_or_nonempty ι
+--     -- · simp
 
-    -- ; swap; simp
-    -- refine le_antisymm ?_ ?_
-    -- · refine ⟨fun x hx ↦ ?_, fun e x y ↦ ?_⟩
-    --   · suffices x ∈ V(G) ∧ ∃ (g : (a : ι) → κ a), ∀ (i : ι), x ∈ V((f i (g i)).1) by simpa
-    --     have hx' : x ∈ V(G) ∧ ∀ (i : ι), ∃ (j : κ i), x ∈ V((f i j).1) := by simpa using hx
-    --     choose g hg using hx'.2
-    --     exact ⟨hx'.1, g, hg⟩
-    --   suffices G.IsLink e x y → (∀ (i : ι), ∃ (j : κ i), ((f i j).1.IsLink e x y)) →
-    --     ∃ (g : (i : ι) → κ i), ∀ (i : ι), (f i (g i)).1.IsLink e x y by simpa +contextual
-    --   intro hexy h
-    --   choose g hg using h
-    --   exact ⟨_, hg⟩
-    -- simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
-    --   Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
-    -- refine ⟨fun _ ↦ Graph.sInter_le _ (by simp), fun i g ↦ ?_⟩
-    -- exact (Graph.sInter_le (G := (f i (g i)).1) _ (by simp)).trans (Graph.le_sUnion _ (by simp))
+
+--     -- refine ⟨?_, fun h ↦ ?_⟩
+
+--     -- ; swap; simp
+--     -- refine le_antisymm ?_ ?_
+--     -- · refine ⟨fun x hx ↦ ?_, fun e x y ↦ ?_⟩
+--     --   · suffices x ∈ V(G) ∧ ∃ (g : (a : ι) → κ a), ∀ (i : ι), x ∈ V((f i (g i)).1) by simpa
+--     --     have hx' : x ∈ V(G) ∧ ∀ (i : ι), ∃ (j : κ i), x ∈ V((f i j).1) := by simpa using hx
+--     --     choose g hg using hx'.2
+--     --     exact ⟨hx'.1, g, hg⟩
+--     --   suffices G.IsLink e x y → (∀ (i : ι), ∃ (j : κ i), ((f i j).1.IsLink e x y)) →
+--     --     ∃ (g : (i : ι) → κ i), ∀ (i : ι), (f i (g i)).1.IsLink e x y by simpa +contextual
+--     --   intro hexy h
+--     --   choose g hg using h
+--     --   exact ⟨_, hg⟩
+--     -- simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
+--     --   Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
+--     -- refine ⟨fun _ ↦ Graph.sInter_le _ (by simp), fun i g ↦ ?_⟩
+--     -- exact (Graph.sInter_le (G := (f i (g i)).1) _ (by simp)).trans (Graph.le_sUnion _ (by simp))
 
 /-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
 def Subgraph.minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
@@ -179,18 +179,17 @@ def Subgraph.minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
     simp only [Subgraph.mk_le_iff, Graph.sUnion_le_iff, mem_image, Subtype.exists, exists_and_right,
       exists_eq_right, forall_exists_index]
     aesop
-  sInf s := ⟨Graph.sInter (insert G (((↑) : G.Subgraph → Graph α β) '' s))
-    (G.set_pairwise_compatible_of_subgraph (by simp +contextual)) (by simp), Graph.sInter_le ..⟩
+  sInf s := ⟨Graph.sInter (insert G (((↑) : G.Subgraph → Graph α β) '' s)) (by simp),
+    Graph.sInter_le ..⟩
   sInf_le s H h := by
     generalize_proofs h₁
-    exact Graph.sInter_le h₁ <| by simp [h]
+    exact Graph.sInter_le <| by simp [h]
   le_sInf s H h := by simpa using fun K h' hK ↦ h _ hK
   top := ⟨G, le_rfl⟩
   bot := ⟨Graph.noEdge ∅ β, by simp⟩
   le_top H := H.2
   bot_le := by simp
-  iInf_iSup_eq := by
-    intro ι κ f
+  iInf_iSup_eq {ι κ} f := by
     simp_rw [iInf, iSup]
     rw [Subtype.mk_eq_mk]; swap; simp
     refine le_antisymm ?_ ?_
@@ -206,8 +205,8 @@ def Subgraph.minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
       exact ⟨_, hg⟩
     simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
       Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
-    refine ⟨fun _ ↦ Graph.sInter_le _ (by simp), fun i g ↦ ?_⟩
-    exact (Graph.sInter_le (G := (f i (g i)).1) _ (by simp)).trans (Graph.le_sUnion _ (by simp))
+    refine ⟨fun _ ↦ Graph.sInter_le (by simp), fun i g ↦ ?_⟩
+    exact (Graph.sInter_le (G := (f i (g i)).1) (by simp)).trans (Graph.le_sUnion _ (by simp))
 
 /-- The subgraphs of a graph `G` form a completely distributive lattice.-/
 instance : CompletelyDistribLattice G.Subgraph :=
@@ -221,34 +220,39 @@ lemma Subgraph.coe_bot : ((⊥ : G.Subgraph) : Graph α β) = Graph.noEdge ∅ �
 
 @[simp]
 lemma Subgraph.iInf_of_isEmpty [IsEmpty ι] (H : ι → G.Subgraph) :
-    ((⨅ i, H i : G.Subgraph) : Graph α β) = G := by
+    (⨅ i, H i : G.Subgraph) = G := by
   simp [_root_.iInf_of_isEmpty ..]
 
 @[simp]
-lemma Subgraph.coe_iInf [Nonempty ι] (H : ι → G.Subgraph) :
-    ((⨅ i, H i : G.Subgraph) : Graph α β) = Graph.iInter (fun i ↦ (H i : Graph α β)) (by simp) := by
+lemma Subgraph.coe_iInf_of_nonempty [Nonempty ι] (H : ι → G.Subgraph) :
+    (⨅ i, H i : G.Subgraph) = Graph.iInter (fun i ↦ (H i : Graph α β)) := by
   simp only [le_antisymm_iff, le_iInter_iff, Subtype.coe_le_coe, iInf_le, implies_true, true_and]
-  refine (Graph.le_sInter_iff (G.set_pairwise_compatible_of_subgraph (by simp)) (by simp)).2 ?_
+  refine (Graph.le_sInter_iff (by simp)).2 ?_
   simp only [mem_insert_iff, mem_image, mem_range, exists_exists_eq_and, forall_eq_or_imp,
     forall_exists_index, forall_apply_eq_imp_iff]
-  exact ⟨(Graph.iInter_le _ (Classical.arbitrary ι)).trans (by simp), fun i ↦ Graph.iInter_le _ i⟩
+  exact ⟨(Graph.iInter_le (Classical.arbitrary ι)).trans (by simp), fun i ↦ Graph.iInter_le i⟩
 
-lemma Subgraph.coe_sInf (s : Set G.Subgraph) (hs : s.Nonempty) :
-    ((sInf s : G.Subgraph) : Graph α β) = Graph.sInter ((↑) '' s) (by simp) (by simpa) := by
+lemma Subgraph.coe_sInf (s : Set G.Subgraph) :
+    ((sInf s : G.Subgraph) : Graph α β) = Graph.sInter (insert G <| (↑) '' s) (by simp) := rfl
+
+lemma Subgraph.coe_sInf_of_nonempty (s : Set G.Subgraph) (hs : s.Nonempty) :
+    ((sInf s : G.Subgraph) : Graph α β) = Graph.sInter ((↑) '' s) (by simpa) := by
   have hc : (insert G ((↑) '' s)).Pairwise Compatible :=
     G.set_pairwise_compatible_of_subgraph (by simp +contextual)
-  change Graph.sInter _ hc (by simp) = _
+  change Graph.sInter _ (by simp) = _
   rw [le_antisymm_iff]
   simp only [Graph.le_sInter_iff, mem_image, Subtype.exists, exists_and_right, exists_eq_right,
     forall_exists_index, mem_insert_iff, forall_eq_or_imp]
   obtain ⟨⟨K, hKG⟩, hK⟩ := hs
-  exact ⟨fun H hHG hHs ↦ Graph.sInter_le hc (by simp [hHG, hHs]),
-    (Graph.sInter_le _ (by simp [hKG, hK])).trans hKG,
-    fun H hHG hHs ↦ Graph.sInter_le _ (by simp [hHs, hHG])⟩
+  exact ⟨fun H hHG hHs ↦ Graph.sInter_le (by simp [hHG, hHs]),
+    (Graph.sInter_le (by simp [hKG, hK])).trans hKG,
+    fun H hHG hHs ↦ Graph.sInter_le (by simp [hHs, hHG])⟩
+
+lemma Subgraph.coe_sInf_of_empty : ((sInf ∅ : G.Subgraph) : Graph α β) = G := by simp
 
 @[simp]
 lemma Subgraph.coe_iSup (H : ι → G.Subgraph) :
-    ((⨆ i, H i : G.Subgraph) : Graph α β) = Graph.iUnion (fun i ↦ (H i : Graph α β)) (by simp) := by
+    (⨆ i, H i : G.Subgraph) = Graph.iUnion (fun i ↦ (H i : Graph α β)) (by simp) := by
   change Graph.sUnion _ (by simp) = _
   rw [le_antisymm_iff]
   simp only [Graph.sUnion_le_iff, mem_image, mem_range, exists_exists_eq_and, forall_exists_index,
@@ -267,6 +271,22 @@ lemma Subgraph.coe_sup (H₁ H₂ : G.Subgraph) : ((H₁ ⊔ H₂ : G.Subgraph) 
 @[simp]
 lemma Subgraph.coe_inf (H₁ H₂ : G.Subgraph) : ((H₁ ⊓ H₂ : G.Subgraph) : Graph α β) = H₁.1 ∩ H₂.1 :=
   rfl
+
+@[simp]
+lemma Subgraph.range_iSup (f : ι' → ι) (H : ι → G.Subgraph) :
+    (⨆ (i : Set.range f), H i : G.Subgraph) = ⨆ i, H (f i) := by
+  apply_fun Subtype.val using Subtype.val_injective
+  simp only [coe_iSup]
+  exact Graph.iUnion_range _
+
+@[simp]
+lemma Subgraph.range_iInf (f : ι' → ι) (H : ι → G.Subgraph) :
+    (⨅ (i : Set.range f), H i : G.Subgraph) = ⨅ i, H (f i) := by
+  apply_fun Subtype.val using Subtype.val_injective
+  obtain hι | hι := isEmpty_or_nonempty ι'
+  · have : IsEmpty ↑(range f) := by simpa
+    simp
+  · simp [Graph.iInter_range]
 
 @[reducible] def ClosedSubgraph (G : Graph α β) := {H // H ≤c G}
 
@@ -308,11 +328,20 @@ lemma ClosedSubgraph.coe_inf (H₁ H₂ : G.ClosedSubgraph) :
     ((H₁ ⊓ H₂ : G.ClosedSubgraph) : Graph α β) = H₁.1 ∩ H₂.1 :=
   rfl
 
+@[simp]
+lemma ClosedSubgraph.pairwise_compatible (H : ι → G.ClosedSubgraph) :
+    Pairwise (Compatible on (fun i ↦ (H i : Graph α β))) :=
+  G.pairwise_compatible_of_subgraph (fun i ↦ (H i).2.le)
+
+@[simp]
+lemma ClosedSubgraph.set_pairwise_compatible (s : Set G.ClosedSubgraph) :
+    ((((↑) : _ → Graph α β) '' s).Pairwise Compatible) :=
+  G.set_pairwise_compatible_of_subgraph (by rintro _ ⟨H, -, rfl⟩; exact H.2.le)
 
 @[simp]
 lemma ClosedSubgraph.coe_toSubgraph (H : G.ClosedSubgraph) : (H.toSubgraph : Graph α β) = H := rfl
 
-instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
+instance : CompleteBooleanAlgebra G.ClosedSubgraph where
   sSup s := ⟨((⨆ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β),
     by simpa only [Subgraph.coe_iSup] using iUnion_isClosedSubgraph fun H ↦ H.1.2⟩
   le_sSup s H hHs := by
@@ -322,13 +351,12 @@ instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
   sSup_le := by simp
   sInf s := ⟨((⨅ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β), by
     obtain hs | hs := isEmpty_or_nonempty s; simp
-    simp only [Subgraph.coe_iInf, ClosedSubgraph.coe_toSubgraph]
+    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
     exact iInter_isClosedSubgraph (by simp +contextual [IsClosedSubgraph.le])⟩
   sInf_le s H hHs := by
     have hne : Nonempty s := ⟨H, hHs⟩
-    simp only [Subgraph.coe_iInf, ClosedSubgraph.coe_toSubgraph]
-    exact Graph.iInter_le (G := fun i : s ↦ (i.1.toSubgraph : Graph α β))
-      (G.pairwise_compatible_of_subgraph (by simp +contextual [IsClosedSubgraph.le])) ⟨H, hHs⟩
+    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
+    exact Graph.iInter_le (G := fun i : s ↦ (i.1.toSubgraph : Graph α β)) ⟨H, hHs⟩
   le_sInf s := by
     obtain rfl | hne := s.eq_empty_or_nonempty
     · simp +contextual [IsClosedSubgraph.le]
@@ -356,33 +384,157 @@ instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
     by_cases hx : x ∈ V(H)
     · exact .inl <| he.of_isClosedSubgraph_of_mem hc hx
     exact .inr <| he.of_isClosedSubgraph_of_mem hc.compl (by simp [hx, he.left_mem])
-
-
   sdiff_eq _ _ := rfl
-
-
   himp_eq _ _ := rfl
-  iInf_iSup_eq  := by
+  -- iInf_iSup_eq {ι κ} f := by
+  --   obtain hι | hι := isEmpty_or_nonempty ι
+  --   · sorry
+  --   simp_rw [iInf, iSup]
+  --   rw [Subtype.mk_eq_mk]
+  --   change Graph.sInter (insert G (((↑) : G.Subgraph → Graph α β) '' _)) (by simp) = _
+  --   simp only [Subgraph.coe_sSup, ClosedSubgraph.coe_toSubgraph, id_eq, eq_mpr_eq_cast]
+  --   simp_rw [← Set.range_comp', ClosedSubgraph.coe_toSubgraph]
+  --   rw [Graph.sUnion_range, Graph.sInter_insert, @Graph.sInter_range _ _ _ ?_, iUnion_range,
+  --     iInter_range]
+  --   simp_rw [rangeFactorization_coe]
 
-    intro ι κ f
-    simp_rw [iInf, iSup]
-    rw [Subtype.mk_eq_mk]
-    simp only [Subgraph.coe_sSup, ClosedSubgraph.coe_toSubgraph, id_eq, eq_mpr_eq_cast]
+  --   refine le_antisymm ?_ ?_
+  --   · refine ⟨fun x hx ↦ ?_, fun e x y ↦ ?_⟩
+  --     · suffices x ∈ V(G) ∧ ∃ (g : (a : ι) → κ a), ∀ (i : ι), x ∈ V((f i (g i)).1) by simpa
+  --       have hx' : x ∈ V(G) ∧ ∀ (i : ι), ∃ (j : κ i), x ∈ V((f i j).1) := by simpa using hx
+  --       choose g hg using hx'.2
+  --       exact ⟨hx'.1, g, hg⟩
+  --     suffices G.IsLink e x y → (∀ (i : ι), ∃ (j : κ i), ((f i j).1.IsLink e x y)) →
+  --       ∃ (g : (i : ι) → κ i), ∀ (i : ι), (f i (g i)).1.IsLink e x y by simpa +contextual
+  --     intro hexy h
+  --     choose g hg using h
+  --     exact ⟨_, hg⟩
+  --   simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
+  --     Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
+  --   refine ⟨fun _ ↦ Graph.sInter_le (by simp), fun i g ↦ ?_⟩
+  --   exact (Graph.sInter_le (G := (f i (g i)).1) (by simp)).trans (Graph.le_sUnion _ (by simp))
 
-    --  swap; simp
-    refine le_antisymm ?_ ?_
-    · refine ⟨fun x hx ↦ ?_, fun e x y ↦ ?_⟩
-      · suffices x ∈ V(G) ∧ ∃ (g : (a : ι) → κ a), ∀ (i : ι), x ∈ V((f i (g i)).1) by simpa
-        have hx' : x ∈ V(G) ∧ ∀ (i : ι), ∃ (j : κ i), x ∈ V((f i j).1) := by simpa using hx
-        choose g hg using hx'.2
-        exact ⟨hx'.1, g, hg⟩
-      suffices G.IsLink e x y → (∀ (i : ι), ∃ (j : κ i), ((f i j).1.IsLink e x y)) →
-        ∃ (g : (i : ι) → κ i), ∀ (i : ι), (f i (g i)).1.IsLink e x y by simpa +contextual
-      intro hexy h
-      choose g hg using h
-      exact ⟨_, hg⟩
-    simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
-      Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
-    simp
-    refine ⟨fun _ ↦ Graph.sInter_le _ (by simp), fun i g ↦ ?_⟩
-    exact (Graph.sInter_le (G := (f i (g i)).1) _ (by simp)).trans (Graph.le_sUnion _ (by simp))
+@[simp]
+lemma ClosedSubgraph.coe_top : ((⊤ : G.ClosedSubgraph) : Graph α β) = G := rfl
+
+@[simp]
+lemma ClosedSubgraph.coe_bot : ((⊥ : G.ClosedSubgraph) : Graph α β) = Graph.noEdge ∅ β := rfl
+
+@[simp]
+lemma ClosedSubgraph.toSubgraph_sSup (s : Set G.ClosedSubgraph) :
+    toSubgraph (sSup s) = ⨆ (H : s), toSubgraph H.1 := rfl
+
+@[simp]
+lemma ClosedSubgraph.coe_sSup (s : Set G.ClosedSubgraph) :
+    ((sSup s : G.ClosedSubgraph) : Graph α β) =
+    Graph.sUnion (Subtype.val '' s) (by simp) := by
+  change Graph.sUnion _ (by simp) = _
+  congr
+  simp_rw [← range_comp', coe_toSubgraph]
+  exact (image_eq_range Subtype.val s).symm
+
+@[simp]
+lemma ClosedSubgraph.toSubgraph_iSup (f : ι → G.ClosedSubgraph) :
+    toSubgraph (⨆ i, f i) = ⨆ i, toSubgraph (f i) :=
+  Subgraph.range_iSup (fun i ↦ f i) ⇑toSubgraph
+
+@[simp]
+lemma ClosedSubgraph.coe_iSup (f : ι → G.ClosedSubgraph)
+    (hf : Pairwise (Compatible on fun i ↦ (f i : Graph α β))) :
+    (⨆ i, f i : G.ClosedSubgraph) = Graph.iUnion (fun i ↦ (f i : Graph α β)) hf := by
+  simp only [iSup, coe_sSup, ← range_comp']
+  rw [Graph.sUnion_range]
+
+/-
+@[simp]
+lemma Subgraph.iInf_of_isEmpty [IsEmpty ι] (H : ι → G.Subgraph) :
+    (⨅ i, H i : G.Subgraph) = G := by
+  simp [_root_.iInf_of_isEmpty ..]
+
+@[simp]
+lemma Subgraph.coe_iInf_of_nonempty [Nonempty ι] (H : ι → G.Subgraph) :
+    (⨅ i, H i : G.Subgraph) = Graph.iInter (fun i ↦ (H i : Graph α β)) := by
+  simp only [le_antisymm_iff, le_iInter_iff, Subtype.coe_le_coe, iInf_le, implies_true, true_and]
+  refine (Graph.le_sInter_iff (by simp)).2 ?_
+  simp only [mem_insert_iff, mem_image, mem_range, exists_exists_eq_and, forall_eq_or_imp,
+    forall_exists_index, forall_apply_eq_imp_iff]
+  exact ⟨(Graph.iInter_le (Classical.arbitrary ι)).trans (by simp), fun i ↦ Graph.iInter_le i⟩
+
+lemma Subgraph.coe_sInf_of_nonempty (s : Set G.Subgraph) (hs : s.Nonempty) :
+    ((sInf s : G.Subgraph) : Graph α β) = Graph.sInter ((↑) '' s) (by simpa) := by
+  have hc : (insert G ((↑) '' s)).Pairwise Compatible :=
+    G.set_pairwise_compatible_of_subgraph (by simp +contextual)
+  change Graph.sInter _ (by simp) = _
+  rw [le_antisymm_iff]
+  simp only [Graph.le_sInter_iff, mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+    forall_exists_index, mem_insert_iff, forall_eq_or_imp]
+  obtain ⟨⟨K, hKG⟩, hK⟩ := hs
+  exact ⟨fun H hHG hHs ↦ Graph.sInter_le (by simp [hHG, hHs]),
+    (Graph.sInter_le (by simp [hKG, hK])).trans hKG,
+    fun H hHG hHs ↦ Graph.sInter_le (by simp [hHs, hHG])⟩
+
+lemma Subgraph.coe_sInf_of_empty : ((sInf ∅ : G.Subgraph) : Graph α β) = G := by simp
+-/
+
+@[simp]
+lemma ClosedSubgraph.toSubgraph_iInf (f : ι → G.ClosedSubgraph) :
+    toSubgraph (⨅ i, f i) = ⨅ i, toSubgraph (f i) :=
+  Subgraph.range_iInf (fun i ↦ f i) ⇑toSubgraph
+
+@[simp]
+lemma ClosedSubgraph.coe_iInf_of_nonempty [Nonempty ι] (f : ι → G.ClosedSubgraph) :
+    (⨅ i, f i : G.ClosedSubgraph) = Graph.iInter (fun i ↦ (f i : Graph α β)) := by
+  simp only [le_antisymm_iff, le_iInter_iff, Subtype.coe_le_coe, iInf_le, implies_true, true_and]
+  refine (Graph.le_sInter_iff (by simp)).2 ?_
+  simp only [mem_insert_iff, mem_image, mem_range, exists_exists_eq_and, forall_eq_or_imp,
+    forall_exists_index, forall_apply_eq_imp_iff]
+  refine ⟨(Graph.iInter_le (Classical.arbitrary ι)).trans ((f _).prop.le), fun i ↦ ?_⟩
+  obtain ⟨_, i, rfl⟩ := i
+  exact Graph.iInter_le i
+
+@[simp]
+lemma ClosedSubgraph.coe_iInf_of_empty [IsEmpty ι] (f : ι → G.ClosedSubgraph) :
+    ((⨅ i, f i : G.ClosedSubgraph) : Graph α β) = G := by
+  simp [_root_.iInf_of_isEmpty ..]
+
+@[simp]
+lemma ClosedSubgraph.toSubgraph_sInf (s : Set G.ClosedSubgraph) :
+    toSubgraph (sInf s) = ⨅ (H : s), toSubgraph H.1 := rfl
+
+@[simp]
+lemma ClosedSubgraph.coe_sInf (s : Set G.ClosedSubgraph) :
+    ((sInf s : G.ClosedSubgraph) : Graph α β) =
+    Graph.sInter (insert G (Subtype.val '' s)) (by simp) := by
+  change Graph.sInter _ (by simp) = _
+  congr
+  simp_rw [← range_comp', coe_toSubgraph]
+  exact (image_eq_range Subtype.val s).symm
+
+@[simp]
+lemma ClosedSubgraph.coe_sInf_of_nonempty (s : Set G.ClosedSubgraph) (hs : s.Nonempty) :
+    ((sInf s : G.ClosedSubgraph) : Graph α β) = Graph.sInter (Subtype.val '' s) (by simpa) := by
+  have hc : (insert G ((↑) '' s)).Pairwise Compatible :=
+    G.set_pairwise_compatible_of_subgraph (by simp +contextual)
+  change Graph.sInter _ (by simp) = _
+  rw [le_antisymm_iff]
+  simp only [Graph.le_sInter_iff, mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+    forall_exists_index, mem_insert_iff, forall_eq_or_imp]
+  obtain ⟨⟨K, hKG⟩, hK⟩ := hs
+  exact ⟨fun H hHG hHs ↦ Graph.sInter_le (by simp [hHG, hHs]),
+    (Graph.sInter_le (by simp [hKG, hK])).trans hKG,
+    fun H hHG hHs ↦ Graph.sInter_le (by simp [hHs, hHG])⟩
+
+@[simp]
+lemma ClosedSubgraph.coe_sInf_of_empty : ((sInf ∅ : G.ClosedSubgraph) : Graph α β) = G := by simp
+
+instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
+  iInf_iSup_eq {ι κ} f := by
+    obtain hι | hι := isEmpty_or_nonempty ι
+    · sorry
+    rw [← Subtype.val_inj]
+    simp only [iInf, iSup, ClosedSubgraph.coe_sInf, ← range_comp', ClosedSubgraph.coe_sSup]
+    have := CompletelyDistribLattice.iInf_iSup_eq (α := G.Subgraph) (κ := κ)
+      (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))
+    rw [← Subtype.val_inj] at this
+    simp only [Subgraph.coe_iInf_of_nonempty, Subgraph.coe_iSup,
+      ClosedSubgraph.coe_toSubgraph] at this

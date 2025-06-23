@@ -44,6 +44,17 @@ lemma Pairwise.onFun_of_refl {ι α : Type*} {r : α → α → Prop} [IsRefl α
   subst r
   trivial
 
+lemma Set.Pairwise.range_of_injective {ι α : Type*} {r : α → α → Prop} {f : ι → α}
+    (hf : Function.Injective f) : Pairwise (r on f) ↔ (range f).Pairwise r := by
+  refine ⟨fun h ↦ ?_, fun h i j hne ↦ @h (f i) ⟨i, rfl⟩ (f j) ⟨j, rfl⟩ <| fun a ↦ hne (hf a)⟩
+  rintro _ ⟨i, _, rfl⟩ _ ⟨j, _, rfl⟩ hne
+  exact h fun a ↦ hne (congrArg f a)
+
+lemma Pairwise.restrict {ι α : Type*} {r : α → α → Prop} {f : ι → α} {s : Set ι} :
+    Pairwise (r on (f · : s → α)) ↔ s.Pairwise (r on f) :=
+  ⟨fun h i his j hjs hne ↦ @h ⟨i, his⟩ ⟨j, hjs⟩ (by simpa),
+  fun h i j hne ↦ h i.prop j.prop (by rwa [Subtype.coe_ne_coe])⟩
+
 lemma Pairwise.sum_left {ι ι' γ : Type*} {G : ι → γ} {H : ι' → γ} {r : γ → γ → Prop}
     (h : Pairwise (r on Sum.elim G H)) : Pairwise (r on G) := by
   rw [← Sum.elim_comp_inl G H, onFun_comp]
@@ -356,6 +367,26 @@ lemma Compatible.edgeRestrict_iUnion {G : ι → Graph α β} (hG : Pairwise (Gr
     .iUnion (fun i ↦ (G i) ↾ F) (fun _ _ hij ↦ (hG hij).edgeRestrict) := by
   ext <;> simp
 
+protected lemma iUnion_comp_le {f : ι' → ι} {G : ι → Graph α β} (hG : Pairwise (Compatible on G)) :
+    Graph.iUnion (fun i ↦ G (f i)) (Compatible.comp hG f) ≤ Graph.iUnion G hG := by
+  rw [Graph.iUnion_le_iff]
+  exact fun i ↦ Graph.le_iUnion hG (f i)
+
+lemma iUnion_comp_eq_of_surj {f : ι' → ι} {G : ι → Graph α β} (hG : Pairwise (Compatible on G))
+    (hf : Function.Surjective f) :
+    Graph.iUnion G hG = Graph.iUnion (fun i ↦ G (f i)) (Compatible.comp hG f) := by
+  refine le_antisymm ?_ (Graph.iUnion_comp_le hG)
+  rw [Graph.iUnion_le_iff]
+  rintro i
+  obtain ⟨i', rfl⟩ := hf i
+  exact Graph.le_iUnion (Compatible.comp hG f) i'
+
+lemma iUnion_range {f : ι' → ι} {G : (Set.range f) → Graph α β}
+    (hG : Pairwise (Graph.Compatible on G)) :
+    Graph.iUnion G hG = Graph.iUnion (G <| Set.rangeFactorization f ·)
+    (Compatible.comp hG <| rangeFactorization f) :=
+  iUnion_comp_eq_of_surj hG surjective_onto_range
+
 /-! ### Set unions -/
 
 /-- The union of a set of pairwise compatible graphs. -/
@@ -391,6 +422,18 @@ lemma sUnion_isNonloopAt_iff (hs : s.Pairwise Graph.Compatible) :
 @[simp]
 protected lemma sUnion_singleton (G : Graph α β) : Graph.sUnion {G} (by simp) = G := by
   ext <;> simp
+
+protected lemma sUnion_image {s : Set ι} {f : ι → Graph α β}
+    (hs : s.Pairwise (Graph.Compatible on f)) :
+    Graph.sUnion (f '' s) hs.image = .iUnion (f · : s → _) (Pairwise.restrict.mpr hs) := by
+  rw [Graph.sUnion]
+  let f' : s → ↑(f '' s) := fun i ↦ ⟨f i, ⟨i, i.2, rfl⟩⟩
+  exact Graph.iUnion_comp_eq_of_surj (f := f') _ (fun ⟨_, i, hGs, rfl⟩ ↦ ⟨⟨i, hGs⟩, rfl⟩)
+
+protected lemma sUnion_range {f : ι → Graph α β} (h : Pairwise (Graph.Compatible on f)) :
+    Graph.sUnion (Set.range f) h.range_pairwise = .iUnion f h := by
+  unfold Graph.sUnion
+  exact Graph.iUnion_comp_eq_of_surj (f := Set.rangeFactorization f) _ surjective_onto_range
 
 /-! ### Unions of pairs -/
 
@@ -603,7 +646,7 @@ protected lemma iInter_comp_le [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
   rw [Graph.le_iInter_iff]
   exact fun i ↦ Graph.iInter_le (f i)
 
-protected lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
+lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
     {G : ι → Graph α β} (hf : Function.Surjective f) :
     Graph.iInter G = Graph.iInter (fun i ↦ G (f i)) := by
   refine le_antisymm (Graph.iInter_comp_le) ?_
@@ -612,6 +655,9 @@ protected lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' →
   obtain ⟨i', rfl⟩ := hf i
   exact Graph.iInter_le i'
 
+lemma iInter_range [Nonempty ι'] {f : ι' → ι} {G : (Set.range f) → Graph α β} :
+    Graph.iInter G = Graph.iInter (fun i ↦ G (Set.rangeFactorization f i)) :=
+  iInter_comp_eq_of_surj surjective_onto_range
 
 /-! ### Set Intersections -/
 
@@ -652,6 +698,11 @@ protected lemma sInter_image {s : Set ι} (hne : s.Nonempty) (f : ι → Graph �
   let f' : s → ↑(f '' s) := fun i ↦ ⟨f i, ⟨i, i.2, rfl⟩⟩
   have := hne.to_subtype
   exact Graph.iInter_comp_eq_of_surj (f := f') fun ⟨_, i, hGs, rfl⟩ ↦ ⟨⟨i, hGs⟩, rfl⟩
+
+protected lemma sInter_range [Nonempty ι] {f : ι → Graph α β} :
+    Graph.sInter (Set.range f) (range_nonempty f) = .iInter f := by
+  rw [Graph.sInter]
+  exact Graph.iInter_comp_eq_of_surj (f := Set.rangeFactorization f) surjective_onto_range
 
 /-! ### Intersections -/
 
