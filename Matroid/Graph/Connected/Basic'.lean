@@ -41,12 +41,12 @@ lemma IsClosedSubgraph.disjoint_or_subset_of_isCompOf (h : H ≤c G) (hK : K.IsC
   rw [or_iff_not_imp_right, Graph.disjoint_iff_of_le_le hK.le h.le,
     not_disjoint_iff_nonempty_inter, inter_comm]
   intro hne
-  have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ inter_le_right
+  have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ Graph.inter_le_right
   rw [← h_eq] at hK ⊢
-  refine ⟨⟨hK.isClosedSubgraph.of_le_of_le inter_le_left h.le, by simpa⟩, ?_⟩
+  refine ⟨⟨hK.isClosedSubgraph.of_le_of_le Graph.inter_le_left h.le, by simpa⟩, ?_⟩
   intro P ⟨hPH, hP⟩ hle
   rw [hK.eq_of_le ⟨?_, hP⟩ hle]
-  exact (hPH.of_le_of_le hle inter_le_left).trans hK.isClosedSubgraph
+  exact (hPH.of_le_of_le hle Graph.inter_le_left).trans hK.isClosedSubgraph
 
 lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.IsCompOf H := by
   refine ⟨⟨h.isClosedSubgraph.of_le_of_le hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
@@ -64,20 +64,18 @@ lemma Connected.exists_isCompOf_ge (h : H.Connected) (hle : H ≤ G) :
     ∃ G₁, H ≤ G₁ ∧ G₁.IsCompOf G := by
   set s := {G' | G' ≤c G ∧ H ≤ G'} with hs_def
   have hne : s.Nonempty := ⟨G, by simpa [s]⟩
-  have hcompat : s.Pairwise Compatible :=
-    G.set_pairwise_compatible_of_subgraph fun H ⟨h1, h2⟩ ↦ h1.le
-  let G₁ := Graph.sInter s hcompat hne
+  let G₁ := Graph.sInter s hne
   have hHG₁ : H ≤ G₁ := (Graph.le_sInter_iff ..).2 fun K hK ↦ hK.2
   have hG₁G : G₁ ≤c G := sInter_isClosedSubgraph (fun _ hK ↦ hK.1) _
   refine ⟨G₁, hHG₁, ⟨hG₁G, h.nonempty.mono (vertexSet_mono hHG₁)⟩, fun K ⟨hKG, hKne⟩ hKG₁ ↦ ?_⟩
-  refine (Graph.sInter_le _ _) ?_
+  refine Graph.sInter_le ?_
   simp only [mem_setOf_eq, hKG, true_and, s]
   obtain hdj | hne := disjoint_or_nonempty_inter V(K) V(H)
   · have hKG₁' : K ≤c G₁ := hKG.of_le_of_le hKG₁ hG₁G.le
     simp only [Graph.le_sInter_iff, mem_setOf_eq, and_imp, G₁, s] at hKG₁
     simpa [hHG₁, hdj.symm, hKne.ne_empty] using hKG₁ _ (hKG₁'.compl.trans hG₁G)
   rw [← h.eq_of_isClosedSubgraph (hKG.inter_le hle) (by simpa)]
-  exact inter_le_left
+  exact Graph.inter_le_left
 
 lemma Connected.le_or_le_compl (h : H.Connected) (hle : H ≤ G) (hK : K ≤c G) :
     H ≤ K ∨ H ≤ G - V(K) := by
@@ -161,17 +159,6 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
   obtain ⟨hef, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := he
   · exact hl e hef
   exact (hl e hef).symm
-
-
-
-
-
-  -- refine ⟨?_, ?_⟩
-  -- · simp [pair_subset_iff, hx]
-
-
-
-
 
 
 

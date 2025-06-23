@@ -9,6 +9,37 @@ open Set Function
 
 /- For Mathlib -/
 
+@[simp]
+lemma Option.elim_eq_const_of_isEmpty {α : Type*} [hα : IsEmpty α] (f : α → β) (b : β) :
+    (Option.elim · b f) = fun _ ↦ b :=
+  funext fun a ↦ match a with
+  | none => rfl
+  | some a => hα.elim a
+
+@[simp]
+lemma Set.iInter_diff_distrib {ι α : Type*} [Nonempty ι] {G : ι → Set α} {X : Set α} :
+    (⋂ i, G i) \ X = ⋂ i, (G i) \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun a ↦ notMem_of_mem_diff (a <| Classical.arbitrary ι)
+
+@[simp]
+lemma Set.biInter_diff_distrib {ι α : Type*} {s : Set ι} (hs : s.Nonempty) {G : ι → Set α}
+    {X : Set α} : (⋂ i ∈ s, G i) \ X = ⋂ i ∈ s, G i \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
+@[simp]
+lemma Set.sInter_diff_distrib {α : Type*} {s : Set (Set α)} (hs : s.Nonempty) {X : Set α} :
+    ⋂₀ s \ X = ⋂₀ ((· \ X) '' s) := by
+  ext x
+  simp +contextual only [mem_diff, mem_sInter, sInter_image, mem_iInter, iff_def, not_false_eq_true,
+    and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
 lemma Pairwise.of_refl {ι α : Type*} {r : α → α → Prop} [IsRefl α r] {f : ι → α}
     (h : Pairwise (r on f)) (i j : ι) : r (f i) (f j) :=
   (eq_or_ne i j).elim (fun hij ↦ hij ▸ refl (f i)) fun hne ↦ h hne
@@ -663,8 +694,8 @@ protected lemma iInter_comp_le [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
 
 lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
     {G : ι → Graph α β} (hf : Function.Surjective f) :
-    Graph.iInter G = Graph.iInter (fun i ↦ G (f i)) := by
-  refine le_antisymm (Graph.iInter_comp_le) ?_
+    Graph.iInter G = Graph.iInter (fun i ↦ G (f i)) :=
+  le_antisymm (Graph.iInter_comp_le) <| by
   rw [Graph.le_iInter_iff]
   rintro i
   obtain ⟨i', rfl⟩ := hf i
@@ -673,6 +704,51 @@ lemma iInter_comp_eq_of_surj [Nonempty ι] [Nonempty ι'] {f : ι' → ι}
 lemma iInter_range [Nonempty ι'] {f : ι' → ι} {G : (Set.range f) → Graph α β} :
     Graph.iInter G = Graph.iInter (fun i ↦ G (Set.rangeFactorization f i)) :=
   iInter_comp_eq_of_surj surjective_onto_range
+
+@[simp]
+lemma iInter_inc_iff [Nonempty ι] {G : ι → Graph α β} :
+    (Graph.iInter G).Inc e x ↔ ∃ y, ∀ i, (G i).IsLink e x y := by
+  simp only [Inc, iInter_isLink]
+
+@[simp]
+lemma iInter_isLoopAt_iff [Nonempty ι] {G : ι → Graph α β} :
+    (Graph.iInter G).IsLoopAt e x ↔ ∀ i, (G i).IsLoopAt e x := by
+  simp only [IsLoopAt, iInter_isLink]
+
+@[simp]
+lemma iInter_isNonloopAt_iff [Nonempty ι] {G : ι → Graph α β} :
+    (Graph.iInter G).IsNonloopAt e x ↔ ∃ y ≠ x, ∀ i, (G i).IsLink e x y := by
+  simp only [IsNonloopAt, iInter_isLink]
+
+@[simp]
+lemma induce_iInter [Nonempty ι] {G : ι → Graph α β} (X : Set α) :
+    (Graph.iInter G)[X] = .iInter (fun i ↦ (G i)[X]) :=
+  Graph.ext (iInter_const X).symm fun e x y ↦ by
+  simp [forall_and_right]
+
+@[simp]
+lemma vertexDelete_iInter [Nonempty ι] {G : ι → Graph α β} (X : Set α) :
+    (Graph.iInter G) - X = .iInter (fun i ↦ (G i) - X) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [vertexDelete_isLink_iff, iInter_isLink, iff_def, not_false_eq_true,
+    and_self, implies_true, true_and]
+  exact fun h ↦ (h <| Classical.arbitrary ι).right
+
+@[simp]
+lemma edgeDelete_iInter [Nonempty ι] {G : ι → Graph α β} (F : Set β) :
+    (Graph.iInter G) ＼ F = .iInter (fun i ↦ (G i) ＼ F) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [edgeDelete_isLink, iInter_isLink, iff_def, not_false_eq_true, and_self,
+    implies_true, true_and]
+  exact fun h ↦ (h <| Classical.arbitrary ι).right
+
+@[simp]
+lemma edgeRestrict_iInter [Nonempty ι] {G : ι → Graph α β} (F : Set β) :
+    (Graph.iInter G) ↾ F = .iInter (fun i ↦ (G i) ↾ F) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [edgeRestrict_isLink, iInter_isLink, iff_def, and_self, implies_true,
+    and_true, true_and]
+  exact fun h ↦ (h <| Classical.arbitrary ι).left
 
 /-! ### Set Intersections -/
 
@@ -718,6 +794,59 @@ protected lemma sInter_range [Nonempty ι] {f : ι → Graph α β} :
     Graph.sInter (Set.range f) (range_nonempty f) = .iInter f := by
   rw [Graph.sInter]
   exact Graph.iInter_comp_eq_of_surj (f := Set.rangeFactorization f) surjective_onto_range
+
+@[simp]
+protected lemma sInter_singleton (G : Graph α β) : Graph.sInter {G} (by simp) = G := by
+  apply le_antisymm (Graph.sInter_le (by simp))
+  rw [Graph.le_sInter_iff (by simp)]
+  exact fun G_2 a ↦ Eq.ge a
+
+@[simp]
+lemma sInter_inc_iff {s : Set (Graph α β)} (hs : s.Nonempty) :
+    (Graph.sInter s hs).Inc e x ↔ ∃ y, ∀ G ∈ s, G.IsLink e x y := by
+  simp only [Inc, sInter_isLink]
+
+@[simp]
+lemma sInter_isLoopAt_iff {s : Set (Graph α β)} (hs : s.Nonempty) :
+    (Graph.sInter s hs).IsLoopAt e x ↔ ∀ G ∈ s, G.IsLoopAt e x := by
+  simp only [IsLoopAt, sInter_isLink]
+
+@[simp]
+lemma sInter_isNonloopAt_iff {s : Set (Graph α β)} (hs : s.Nonempty) :
+    (Graph.sInter s hs).IsNonloopAt e x ↔ ∃ y ≠ x, ∀ G ∈ s, G.IsLink e x y := by
+  simp only [IsNonloopAt, sInter_isLink]
+
+@[simp]
+lemma induce_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (X : Set α) :
+    (Graph.sInter s hs)[X] = .sInter ((·[X]) '' s) (by simpa) := by
+  refine Graph.ext (by simp; exact (biInter_const hs X).symm) fun e x y ↦ ?_
+  simp +contextual only [induce_isLink_iff, sInter_isLink, mem_image, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, iff_def, and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).right
+
+@[simp]
+lemma vertexDelete_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (X : Set α) :
+    (Graph.sInter s hs) - X = .sInter ((· - X) '' s) (by simpa) := by
+  refine Graph.ext (by simp [biInter_diff_distrib hs]) fun e x y ↦ ?_
+  simp +contextual only [vertexDelete_isLink_iff, sInter_isLink, mem_image, forall_exists_index,
+    and_imp, forall_apply_eq_imp_iff₂, iff_def, not_false_eq_true, and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).right
+
+@[simp]
+lemma edgeDelete_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (F : Set β) :
+    (Graph.sInter s hs) ＼ F = .sInter ((· ＼ F) '' s) (by simpa) :=
+  Graph.ext (by simp [biInter_diff_distrib hs]) fun e x y ↦ by
+  simp +contextual only [edgeDelete_isLink, sInter_isLink, mem_image, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, iff_def, not_false_eq_true, and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).right
+
+@[simp]
+lemma edgeRestrict_sInter {s : Set (Graph α β)} (hs : s.Nonempty) (F : Set β) :
+    (Graph.sInter s hs) ↾ F = .sInter ((· ↾ F) '' s) (by simpa) :=
+  Graph.ext (by simp [biInter_diff_distrib hs]) fun e x y ↦ by
+  simp +contextual only [edgeRestrict_isLink, sInter_isLink, mem_image, forall_exists_index,
+    and_imp, forall_apply_eq_imp_iff₂, iff_def, and_self, implies_true, and_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).left
 
 /-! ### Intersections -/
 
@@ -792,6 +921,62 @@ lemma inter_eq_iInter : G ∩ H = Graph.iInter (fun b ↦ bif b then G else H) :
 lemma le_inter_iff : H ≤ G₁ ∩ G₂ ↔ H ≤ G₁ ∧ H ≤ G₂ := by
   simp [inter_eq_iInter, and_comm]
 
+lemma inter_eq_self_of_le (hle : G ≤ H) : G ∩ H = G :=
+  le_antisymm Graph.inter_le_left <| by simpa [le_inter_iff]
+
+lemma le_of_inter_eq_self (h : G ∩ H = G) : G ≤ H := by
+  rw [← h]
+  exact Graph.inter_le_right
+
+lemma inter_mono_left (hle : G₁ ≤ G₂) : G₁ ∩ H ≤ G₂ ∩ H := by
+  rw [le_inter_iff]
+  exact ⟨Graph.inter_le_left.trans hle, Graph.inter_le_right⟩
+
+lemma inter_mono_right (hle : H₁ ≤ H₂) : G ∩ H₁ ≤ G ∩ H₂ := by
+  rw [le_inter_iff]
+  exact ⟨Graph.inter_le_left, Graph.inter_le_right.trans hle⟩
+
+lemma inter_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) : G₁ ∩ H₁ ≤ G₂ ∩ H₂ :=
+  (inter_mono_right hleH).trans (inter_mono_left hleG)
+
+lemma induce_inter (X Y : Set α) : G[X ∩ Y] = G[X] ∩ G[Y] :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [induce_isLink_iff, mem_inter_iff, inter_isLink_iff, iff_def, and_self,
+    implies_true]
+
+lemma induce_inter_distrib (X : Set α) : (G ∩ H)[X] = G[X] ∩ H[X] :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [induce_isLink_iff, inter_isLink_iff, iff_def, and_self, implies_true]
+
+lemma vertexDelete_union (X Y : Set α) : G - (X ∪ Y) = (G - X) ∩ (G - Y) :=
+  Graph.ext (by simp [diff_inter_diff]) fun e x y ↦ by
+  simp +contextual only [vertexDelete_isLink_iff, mem_union, not_or, inter_isLink_iff, iff_def,
+    not_false_eq_true, and_self, implies_true]
+
+lemma vertexDelete_inter_distrib (X : Set α) : (G ∩ H) - X = (G - X) ∩ (H - X) :=
+  Graph.ext (by simp [diff_inter_distrib_right]) fun e x y ↦ by
+  simp +contextual only [vertexDelete_isLink_iff, inter_isLink_iff, iff_def, not_false_eq_true,
+    and_self, implies_true]
+
+lemma edgeDelete_union (F₁ F₂ : Set β) : G ＼ (F₁ ∪ F₂) = (G ＼ F₁) ∩ (G ＼ F₂) :=
+  Graph.ext (by simp [diff_inter_diff]) fun e x y ↦ by
+  simp +contextual only [edgeDelete_isLink, mem_union, not_or, inter_isLink_iff, iff_def,
+    not_false_eq_true, and_self, implies_true]
+
+lemma edgeDelete_inter_distrib (F : Set β) : (G ∩ H) ＼ F = (G ＼ F) ∩ (H ＼ F) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [edgeDelete_isLink, inter_isLink_iff, iff_def, not_false_eq_true, and_self,
+    implies_true]
+
+lemma edgeRestrict_inter (F₁ F₂ : Set β) : (G ↾ (F₁ ∩ F₂)) = (G ↾ F₁) ∩ (G ↾ F₂) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [edgeRestrict_isLink, mem_inter_iff, inter_isLink_iff, iff_def, and_self,
+    implies_true]
+
+lemma edgeRestrict_inter_distrib (F : Set β) : (G ∩ H) ↾ F = (G ↾ F) ∩ (H ↾ F) :=
+  Graph.ext (by simp) fun e x y ↦ by
+  simp +contextual only [edgeRestrict_isLink, inter_isLink_iff, iff_def, and_self, implies_true]
+
 protected lemma inter_distrib_iInter [Nonempty ι] {H : ι → Graph α β} :
     G ∩ (Graph.iInter H) = Graph.iInter (fun i ↦ G ∩ (H i)) :=
   Graph.ext (by simp [inter_iInter]) (by
@@ -863,6 +1048,12 @@ protected lemma iInter_option [Nonempty ι] {G₁ : Graph α β} {G : ι → Gra
 protected lemma sInter_insert {s : Set (Graph α β)} (G : Graph α β) (hne : s.Nonempty) :
     Graph.sInter (insert G s) (by simp) = G ∩ Graph.sInter s hne := by
   ext v <;> simp
+
+lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α β} :
+    Graph.iInter (Option.elim · G₁ G) = Graph.sInter (insert G₁ (range G)) (by simp) := by
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · simp [range_eq_empty G]
+  rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
 
 -- protected lemma union_iInter [Nonempty ι] {H : ι → Graph α β} (hc : ∀ i, G.Compatible (H i))
 --     (hH : Pairwise (Compatible on H)) :
@@ -947,6 +1138,12 @@ lemma iInter_isInducedSubgraph [Nonempty ι] (h : ∀ i, H i ≤i G) :
   isLink_of_mem_mem := by
     simp only [iInter_vertexSet, mem_iInter, iInter_isLink]
     exact fun e x y he hx hy i ↦ (h i).isLink_of_mem_mem he (hx i) (hy i)
+
+/-- A nonempty intersection of spanning subgraphs of `G` is a spanning subgraph of `G`.-/
+lemma iInter_isSpanningSubgraph [Nonempty ι] (h : ∀ i, H i ≤s G) :
+    Graph.iInter H ≤s G where
+  le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
+  vertexSet_eq := iInter_eq_const fun i ↦ (h i).vertexSet_eq
 
 /-- A nonempty intersection of closed subgraphs `G` is an induced subgraph of `G`-/
 lemma iInter_isClosedSubgraph [Nonempty ι] (h : ∀ i, H i ≤c G) :
