@@ -341,6 +341,9 @@ lemma ClosedSubgraph.set_pairwise_compatible (s : Set G.ClosedSubgraph) :
 @[simp]
 lemma ClosedSubgraph.coe_toSubgraph (H : G.ClosedSubgraph) : (H.toSubgraph : Graph α β) = H := rfl
 
+lemma ClosedSubgraph.coe_comp_toSubgraph : (Subtype.val ∘ toSubgraph : G.ClosedSubgraph → _) =
+    (↑) := rfl
+
 instance : CompleteBooleanAlgebra G.ClosedSubgraph where
   sSup s := ⟨((⨆ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β),
     by simpa only [Subgraph.coe_iSup] using iUnion_isClosedSubgraph fun H ↦ H.1.2⟩
@@ -499,7 +502,10 @@ lemma ClosedSubgraph.coe_iInf_of_empty [IsEmpty ι] (f : ι → G.ClosedSubgraph
 
 @[simp]
 lemma ClosedSubgraph.toSubgraph_sInf (s : Set G.ClosedSubgraph) :
-    toSubgraph (sInf s) = ⨅ (H : s), toSubgraph H.1 := rfl
+    toSubgraph (sInf s) = sInf (toSubgraph '' s) := by
+  change iInf _ = _
+  rw [sInf_image]
+  exact iInf_subtype'' s ⇑toSubgraph
 
 @[simp]
 lemma ClosedSubgraph.coe_sInf (s : Set G.ClosedSubgraph) :
@@ -511,30 +517,17 @@ lemma ClosedSubgraph.coe_sInf (s : Set G.ClosedSubgraph) :
   exact (image_eq_range Subtype.val s).symm
 
 @[simp]
-lemma ClosedSubgraph.coe_sInf_of_nonempty (s : Set G.ClosedSubgraph) (hs : s.Nonempty) :
+lemma ClosedSubgraph.coe_sInf_of_nonempty (s : Set G.ClosedSubgraph) (hs : s.Nonempty):
     ((sInf s : G.ClosedSubgraph) : Graph α β) = Graph.sInter (Subtype.val '' s) (by simpa) := by
-  have hc : (insert G ((↑) '' s)).Pairwise Compatible :=
-    G.set_pairwise_compatible_of_subgraph (by simp +contextual)
-  change Graph.sInter _ (by simp) = _
-  rw [le_antisymm_iff]
-  simp only [Graph.le_sInter_iff, mem_image, Subtype.exists, exists_and_right, exists_eq_right,
-    forall_exists_index, mem_insert_iff, forall_eq_or_imp]
-  obtain ⟨⟨K, hKG⟩, hK⟩ := hs
-  exact ⟨fun H hHG hHs ↦ Graph.sInter_le (by simp [hHG, hHs]),
-    (Graph.sInter_le (by simp [hKG, hK])).trans hKG,
-    fun H hHG hHs ↦ Graph.sInter_le (by simp [hHs, hHG])⟩
+  rw [← coe_toSubgraph, toSubgraph_sInf, Subgraph.coe_sInf_of_nonempty _ (by simpa)]
+  congr
+  rw [← image_comp, coe_comp_toSubgraph]
 
 @[simp]
 lemma ClosedSubgraph.coe_sInf_of_empty : ((sInf ∅ : G.ClosedSubgraph) : Graph α β) = G := by simp
 
 instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
   iInf_iSup_eq {ι κ} f := by
-    obtain hι | hι := isEmpty_or_nonempty ι
-    · sorry
-    rw [← Subtype.val_inj]
-    simp only [iInf, iSup, ClosedSubgraph.coe_sInf, ← range_comp', ClosedSubgraph.coe_sSup]
-    have := CompletelyDistribLattice.iInf_iSup_eq (α := G.Subgraph) (κ := κ)
-      (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))
-    rw [← Subtype.val_inj] at this
-    simp only [Subgraph.coe_iInf_of_nonempty, Subgraph.coe_iSup,
-      ClosedSubgraph.coe_toSubgraph] at this
+    apply_fun ClosedSubgraph.toSubgraph using ClosedSubgraph.toSubgraph.injective
+    simp only [ClosedSubgraph.toSubgraph_iInf, ClosedSubgraph.toSubgraph_iSup]
+    exact CompletelyDistribLattice.iInf_iSup_eq (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))

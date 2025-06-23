@@ -2,8 +2,8 @@ import Matroid.Graph.Constructions.Basic
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β}
-  {X Y : Set α}
+variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
 
 open Set Function
 
@@ -261,7 +261,10 @@ lemma Compatible.disjoint_of_vertexSet_disjoint (h : G.Compatible H) (hV : Disjo
 lemma Disjoint.compatible (h : G.Disjoint H) : G.Compatible H :=
   Compatible.of_disjoint_edgeSet h.edge
 
-lemma Compatible.comp {ι ι' : Type*} {G : ι → Graph α β} (hG : Pairwise (Compatible on G))
+lemma pairwise_compatible_const (G : Graph α β) : Pairwise (Compatible on fun (_ : ι) ↦ G) := by
+  simp [Pairwise]
+
+lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : Pairwise (Compatible on G))
     (f : ι' → ι): Pairwise (Compatible on (G ∘ f)) := by
   rw [onFun_comp]
   exact Pairwise.onFun_of_refl hG
@@ -272,8 +275,6 @@ lemma disjoint_le_compatible : @Graph.Disjoint α β ≤ Graph.Compatible := by
   refine fun _ _ ↦ Disjoint.compatible
 
 /-! ### Indexed unions -/
-
-variable {ι ι': Type*} {s : Set (Graph α β)}
 
 protected def iUnion' (G : ι → Graph α β) : Graph α β where
   vertexSet := ⋃ i, V(G i)
@@ -311,6 +312,13 @@ protected lemma iUnion_le_iff {G : ι → Graph α β} (hG : Pairwise (Graph.Com
     fun h' ↦ ⟨by simp [fun i ↦ vertexSet_mono (h' i)], fun e x y ⟨i, h⟩ ↦ h.of_le (h' i)⟩⟩
 
 @[simp]
+protected lemma iUnion_const [Nonempty ι] (G : Graph α β) :
+    Graph.iUnion (fun (_ : ι) ↦ G) (pairwise_compatible_const G) = G := by
+  apply le_antisymm ?_ (Graph.le_iUnion (pairwise_compatible_const G) (Classical.arbitrary ι))
+  rw [Graph.iUnion_le_iff]
+  exact fun i ↦ le_refl G
+
+@[simp]
 lemma iUnion_inc_iff {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G)) :
     (Graph.iUnion G hG).Inc e x ↔ ∃ i, (G i).Inc e x := by
   simpa [Inc] using exists_comm
@@ -327,7 +335,7 @@ lemma iUnion_isNonloopAt_iff {G : ι → Graph α β} (hG : Pairwise (Graph.Comp
   aesop
 
 lemma iUnion_map_le_iUnion {G : ι → Graph α β} (hG : Pairwise (Graph.Compatible on G)) (f : ι' → ι):
-    (Graph.iUnion (G ∘ f) (Compatible.comp hG f)) ≤ Graph.iUnion G hG := by
+    (Graph.iUnion (G ∘ f) (pairwise_compatible_comp hG f)) ≤ Graph.iUnion G hG := by
   rw [Graph.iUnion_le_iff]
   exact fun i ↦ Graph.le_iUnion hG (f i)
 
@@ -368,23 +376,23 @@ lemma Compatible.edgeRestrict_iUnion {G : ι → Graph α β} (hG : Pairwise (Gr
   ext <;> simp
 
 protected lemma iUnion_comp_le {f : ι' → ι} {G : ι → Graph α β} (hG : Pairwise (Compatible on G)) :
-    Graph.iUnion (fun i ↦ G (f i)) (Compatible.comp hG f) ≤ Graph.iUnion G hG := by
+    Graph.iUnion (fun i ↦ G (f i)) (pairwise_compatible_comp hG f) ≤ Graph.iUnion G hG := by
   rw [Graph.iUnion_le_iff]
   exact fun i ↦ Graph.le_iUnion hG (f i)
 
 lemma iUnion_comp_eq_of_surj {f : ι' → ι} {G : ι → Graph α β} (hG : Pairwise (Compatible on G))
     (hf : Function.Surjective f) :
-    Graph.iUnion G hG = Graph.iUnion (fun i ↦ G (f i)) (Compatible.comp hG f) := by
+    Graph.iUnion G hG = Graph.iUnion (fun i ↦ G (f i)) (pairwise_compatible_comp hG f) := by
   refine le_antisymm ?_ (Graph.iUnion_comp_le hG)
   rw [Graph.iUnion_le_iff]
   rintro i
   obtain ⟨i', rfl⟩ := hf i
-  exact Graph.le_iUnion (Compatible.comp hG f) i'
+  exact Graph.le_iUnion (pairwise_compatible_comp hG f) i'
 
 lemma iUnion_range {f : ι' → ι} {G : (Set.range f) → Graph α β}
     (hG : Pairwise (Graph.Compatible on G)) :
     Graph.iUnion G hG = Graph.iUnion (G <| Set.rangeFactorization f ·)
-    (Compatible.comp hG <| rangeFactorization f) :=
+    (pairwise_compatible_comp hG <| rangeFactorization f) :=
   iUnion_comp_eq_of_surj hG surjective_onto_range
 
 /-! ### Set unions -/
@@ -636,6 +644,13 @@ lemma le_iInter_iff [Nonempty ι] {G : ι → Graph α β} :
   simp only [iInter_edgeSet, mem_setOf_eq]
   obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet he
   use x, y, fun i ↦ hbtw.of_le (h i)
+
+@[simp]
+protected lemma iInter_const [Nonempty ι] (G : Graph α β) :
+    Graph.iInter (fun (_ : ι) ↦ G) = G := by
+  apply le_antisymm (Graph.iInter_le (Classical.arbitrary ι))
+  rw [le_iInter_iff]
+  exact fun i ↦ le_refl G
 
 lemma iInter_le_iUnion [Nonempty ι] {G : ι → Graph α β} (hG : Pairwise (Compatible on G)) :
     Graph.iInter G ≤ Graph.iUnion G hG :=
