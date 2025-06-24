@@ -1225,7 +1225,6 @@ end Subgraph
 
 /-! ### Adding one edge -/
 
-
 @[simp]
 lemma singleEdge_compatible_iff :
     Compatible (Graph.singleEdge u v e) G ↔ (e ∈ E(G) → G.IsLink e u v) := by

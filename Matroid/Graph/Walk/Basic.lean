@@ -381,7 +381,6 @@ end Subgraph
   --   simp [hVd.1.symm]
 
 
-
 @[simp]
 lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
