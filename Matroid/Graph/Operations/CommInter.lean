@@ -289,8 +289,23 @@ lemma Compatible.disjoint_of_vertexSet_disjoint (h : G.Compatible H) (hV : Disjo
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet he
   exact hV.notMem_of_mem_left hexy.left_mem (h ⟨he, he'⟩ ▸ hexy).left_mem
 
+lemma Compatible.disjoint_iff_vertexSet_disjoint (h : G.Compatible H) :
+    G.Disjoint H ↔ Disjoint V(G) V(H) := ⟨(·.vertex), h.disjoint_of_vertexSet_disjoint⟩
+
 lemma Disjoint.compatible (h : G.Disjoint H) : G.Compatible H :=
   Compatible.of_disjoint_edgeSet h.edge
+
+lemma Compatible.edgeSet_disjoint_of_vertexSet_disjoint (h : G.Compatible H)
+    (hV : Disjoint V(G) V(H)) : Disjoint E(G) E(H) := by
+  by_contra he
+  obtain ⟨e, heG, heH⟩ := not_disjoint_iff.mp he
+  obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heG
+  exact hV.notMem_of_mem_left hexy.left_mem <| hexy.of_compatible h heH |>.left_mem
+
+lemma disjoint_iff_vertexSet_disjoint_compatible :
+    G.Disjoint H ↔ Disjoint V(G) V(H) ∧ G.Compatible H :=
+  ⟨fun h => ⟨h.vertex, h.compatible⟩,
+    fun ⟨hdisj, hco⟩ => ⟨hdisj, hco.edgeSet_disjoint_of_vertexSet_disjoint hdisj⟩⟩
 
 lemma pairwise_compatible_const (G : Graph α β) : Pairwise (Compatible on fun (_ : ι) ↦ G) := by
   simp [Pairwise]
@@ -938,6 +953,12 @@ lemma inter_mono_right (hle : H₁ ≤ H₂) : G ∩ H₁ ≤ G ∩ H₂ := by
 
 lemma inter_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) : G₁ ∩ H₁ ≤ G₂ ∩ H₂ :=
   (inter_mono_right hleH).trans (inter_mono_left hleG)
+
+lemma disjoint_iff_inter_eq_bot_of_compatible (h : H₁.Compatible H₂) :
+    Graph.Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
+  rw [Graph.disjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
+    ← vertexSet_eq_empty_iff]
+  simp [h]
 
 lemma induce_inter (X Y : Set α) : G[X ∩ Y] = G[X] ∩ G[Y] :=
   Graph.ext (by simp) fun e x y ↦ by

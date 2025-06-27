@@ -291,6 +291,15 @@ lemma Subgraph.range_iInf (f : ι' → ι) (H : ι → G.Subgraph) :
     simp
   · simp [Graph.iInter_range]
 
+@[simp]
+lemma Subgraph.compatible (H₁ H₂ : G.Subgraph) : H₁.val.Compatible H₂.val :=
+  compatible_of_le_le H₁.prop H₂.prop
+
+lemma Subgraph.disjoint_iff (H₁ H₂ : G.Subgraph) : Disjoint H₁ H₂ ↔ H₁.val.Disjoint H₂.val := by
+  rw [disjoint_iff_inf_le, le_bot_iff, ← Subtype.coe_inj,
+    disjoint_iff_inter_eq_bot_of_compatible (H₁.compatible H₂)]
+  rfl
+
 @[reducible] def ClosedSubgraph (G : Graph α β) := {H // H ≤c G}
 
 instance : PartialOrder G.ClosedSubgraph := inferInstanceAs (PartialOrder {H // H ≤c G})
@@ -507,9 +516,14 @@ lemma ClosedSubgraph.compl_isLink (H : G.ClosedSubgraph) :
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
   tauto
 
+lemma ClosedSubgraph.compatible (H₁ H₂ : G.ClosedSubgraph) : H₁.val.Compatible H₂.val :=
+  compatible_of_le_le H₁.prop.le H₂.prop.le
+
 lemma ClosedSubgraph.disjoint_iff (H₁ H₂ : G.ClosedSubgraph) :
     Disjoint H₁ H₂ ↔ H₁.val.Disjoint H₂.val := by
-  sorry
+  rw [disjoint_iff_inf_le, le_bot_iff, ← Subtype.coe_inj,
+    disjoint_iff_inter_eq_bot_of_compatible (H₁.compatible H₂)]
+  rfl
 
 lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
     IsAtom H ↔ H.val.IsCompOf G := by
@@ -559,7 +573,7 @@ lemma components_isCompOf_iff (H : G.ClosedSubgraph) : H ∈ G.Components ↔ H.
   H.isAtom_iff_isCompOf
 
 -- Any set of atoms is pairwise disjoint
-lemma components_pairwise_disjoint : G.Components.Pairwise Disjoint := by
+lemma components_pairwise_disjoint (G : Graph α β) : G.Components.Pairwise Disjoint := by
   rintro H₁ hH₁ H₂ hH₂ hne H hHle₁ hHle₂
   rw [le_bot_iff]
   by_contra! hbot
@@ -567,10 +581,15 @@ lemma components_pairwise_disjoint : G.Components.Pairwise Disjoint := by
   obtain rfl := hH₂.le_iff.mp hHle₂ |>.resolve_left hbot
   simp at hne
 
+lemma components_pairwiseDisjoint_id (G : Graph α β) : G.Components.PairwiseDisjoint id :=
+  G.components_pairwise_disjoint
+
+@[simp] lemma components_sSup (G : Graph α β) : sSup G.Components = ⊤ := sSup_atoms_eq_top
+
 -- Graph is the union of its components
 @[simp]
-lemma components_sUnion : sSup G.Components = G := by
-  have h : sSup G.Components = ⊤ := sSup_atoms_eq_top
+lemma components_sUnion (G : Graph α β) : sSup G.Components = G := by
+  have h := G.components_sSup
   apply_fun Subtype.val at h
   exact h
 
@@ -580,7 +599,11 @@ lemma ClosedSubgraph.foo_mem_components {x} (hx : x ∈ V(G)) : foo G x ∈ G.Co
 
 lemma mem_unique_component {x} (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x ∈ V(H.val) := by
   refine ⟨ClosedSubgraph.foo G x, ⟨ClosedSubgraph.foo_mem_components hx, ClosedSubgraph.mem_foo hx⟩,
-  fun H ⟨hHc, hxH⟩ => components_pairwise_disjoint.eq hHc (ClosedSubgraph.foo_mem_components hx) ?_⟩
+    fun H ⟨hHc, hxH⟩ =>
+    G.components_pairwise_disjoint.eq hHc (ClosedSubgraph.foo_mem_components hx) ?_⟩
   rw [ClosedSubgraph.disjoint_iff]
   exact (·.vertex.notMem_of_mem_left hxH <| ClosedSubgraph.mem_foo hx)
 
+def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
+  Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
+    sSup_atoms_eq_top.symm
