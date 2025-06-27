@@ -493,10 +493,11 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
       rintro e (he₁ : e ∈ F₁ \ F) _ (he₂ : _ ∈ F₂ \ F) rfl
       rw [← hF₁.closure_insert_eq he₁, ← hF₂.closure_insert_eq he₂] at hne
       exact hne rfl )
-    (forall_nonempty := by rintro _ ⟨_, hF₁, rfl⟩; exact exists_of_ssubset hF₁.ssubset )
+    (forall_nonempty := by
+      rintro _ ⟨_, hF₁, rfl⟩; exact nonempty_iff_ne_empty.mp <| exists_of_ssubset hF₁.ssubset)
     (eq_sUnion := by
-      simp only [sUnion_image, mem_setOf_eq, Set.ext_iff, mem_diff, mem_iUnion, exists_and_left,
-        exists_prop]
+      simp only [sSup_eq_sUnion, sUnion_image, mem_setOf_eq, Set.ext_iff, mem_diff, mem_iUnion,
+        exists_and_left, exists_prop]
       exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
         hF.covBy_closure_insert heF, heF⟩,
         fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩⟩ )

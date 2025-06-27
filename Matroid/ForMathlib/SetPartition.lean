@@ -241,6 +241,33 @@ noncomputable instance {s : α} : OrderBot (Partition s) where
 
 end Discrete
 
+section PairwiseDisjoint
+
+variable {α : Type*} [Order.Frame α] {s : α}
+
+@[simps] def ofPairwiseDisjoint {p : Set α} (h : p.PairwiseDisjoint id) (h_empty : ⊥ ∉ p):
+    Partition (sSup p) where
+  parts := p
+  indep := sSupIndep_iff_pairwiseDisjoint.mpr h
+  bot_notMem := h_empty
+  sSup_eq' := rfl
+
+@[simps] def ofPairwiseDisjoint' {s : α} {parts : Set α}
+  (pairwiseDisjoint : parts.PairwiseDisjoint id)
+  (forall_nonempty : ∀ s ∈ parts, s ≠ ⊥) (eq_sUnion : s = sSup parts) :
+    Partition s where
+  parts := parts
+  indep := pairwiseDisjoint.sSupIndep
+  bot_notMem := fun h ↦ by simpa using forall_nonempty _ h
+  sSup_eq' := eq_sUnion.symm
+
+@[simp] lemma mem_ofPairwiseDisjoint' {s : α} {parts : Set α} (pairwiseDisjoint)
+    (forall_nonempty) (eq_sUnion) {x : α} :
+  x ∈ ofPairwiseDisjoint' (s := s) (parts := parts) pairwiseDisjoint forall_nonempty eq_sUnion ↔
+    x ∈ parts := Iff.rfl
+
+end PairwiseDisjoint
+
 section Bind
 
 variable {α : Type*} [CompleteDistribLattice α] {s : α}
@@ -350,27 +377,6 @@ noncomputable def rep (P : Partition s) (ht : t ∈ P) : α := (P.nonempty_of_me
 
 lemma finite_of_finite (P : Partition s) (hs : s.Finite) : (P : Set (Set α)).Finite :=
   hs.finite_subsets.subset fun _ ↦ subset_of_mem
-
-@[simps] def ofPairwiseDisjoint {p : Set (Set α)} (h : p.PairwiseDisjoint id) (h_empty : ∅ ∉ p):
-    Partition (⋃₀ p) where
-  parts := p
-  indep := PairwiseDisjoint.sSupIndep h
-  bot_notMem := h_empty
-  sSup_eq' := rfl
-
-@[simps] def ofPairwiseDisjoint' {s : Set α} {parts : Set (Set α)}
-  (pairwiseDisjoint : parts.PairwiseDisjoint id)
-  (forall_nonempty : ∀ s ∈ parts, s.Nonempty) (eq_sUnion : s = ⋃₀ parts) :
-    Partition s where
-  parts := parts
-  indep := pairwiseDisjoint.sSupIndep
-  bot_notMem := fun h ↦ by simpa using forall_nonempty _ h
-  sSup_eq' := eq_sUnion.symm
-
-@[simp] lemma mem_ofPairwiseDisjoint' {s : Set α} {parts : Set (Set α)} (pairwiseDisjoint)
-    (forall_nonempty) (eq_sUnion) {x : Set α} :
-  x ∈ ofPairwiseDisjoint' (s := s) (parts := parts) pairwiseDisjoint forall_nonempty eq_sUnion ↔
-    x ∈ parts := Iff.rfl
 
 end Set
 
