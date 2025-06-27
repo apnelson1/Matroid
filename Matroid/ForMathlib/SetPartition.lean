@@ -1,11 +1,12 @@
 import Mathlib.Data.Setoid.Partition
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Data.Set.Finite.Powerset
--- import Matroid.ForMathlib.Lattice
+import Mathlib.Data.PFun
+import Matroid.ForMathlib.Lattice
 
 open Set
 
-variable {α : Type*} {s x y z : α}
+variable {α β : Type*} {s x y z : α}
 
 structure Partition [CompleteLattice α] (s : α) where
   parts : Set α
@@ -133,6 +134,37 @@ instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
 @[simp] lemma mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) {a : α} :
     a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
 
+noncomputable def indiscrete' (s : α) : Partition s :=
+  let _ : Decidable (s = ⊥) := Classical.dec _
+  if hs : s = ⊥ then (Partition.empty α).congr hs.symm else indiscrete s hs
+
+@[simp]
+lemma indiscrete'_eq_empty : indiscrete' ⊥ = (Partition.empty α) := by
+  simp only [indiscrete', ↓reduceDIte]
+  rfl
+
+@[simp]
+lemma indiscrete'_eq_of_ne_bot {s : α} (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
+  simp only [indiscrete', hs, ↓reduceDIte]
+
+@[simp]
+lemma mem_indiscrete'_iff {s : α} {a : α} : a ∈ indiscrete' s ↔ a = s ∧ a ≠ ⊥ := by
+  simp only [indiscrete', ne_eq]
+  split_ifs with hs
+  · subst s
+    simp
+  · simp only [mem_indiscrete_iff, iff_self_and]
+    rintro rfl
+    exact hs
+
+lemma eq_of_mem_indiscrete' {s : α} {a : α} (has : a ∈ indiscrete' s) : a = s := by
+  rw [mem_indiscrete'_iff] at has
+  exact has.1
+
+lemma ne_bot_of_mem_indiscrete' {s : α} {a : α} (has : a ∈ indiscrete' s) : a ≠ ⊥ := by
+  rw [mem_indiscrete'_iff] at has
+  exact has.2
+
 end indep
 
 section Order
@@ -184,8 +216,31 @@ lemma top_eq_indiscrete (hs : s ≠ ⊥) : (⊤ : Partition s) = indiscrete s hs
 lemma parts_top_subset (s : α) : ((⊤ : Partition s) : Set α) ⊆ {s} := by
   simp
 
-
 end Order
+
+section Discrete
+
+variable {α : Type*} [CompleteAtomicBooleanAlgebra α]
+
+/-- The discrete partition -/
+protected noncomputable def discrete (a : α) : Partition a :=
+  let S := {b : α | IsAtom b ∧ b ≤ a}
+  have hSatom : ∀ b ∈ S, IsAtom b := by
+    simp only [mem_setOf_eq, and_imp, S]
+    tauto
+  { parts := S
+    indep := sSupIndep_atoms hSatom
+    bot_notMem h := by simpa using (hSatom ⊥ h).1
+    sSup_eq' := sSup_atoms_le_eq a}
+
+@[simp] lemma mem_discrete_iff {a b : α} : b ∈ Partition.discrete a ↔ IsAtom b ∧ b ≤ a := by rfl
+
+noncomputable instance {s : α} : OrderBot (Partition s) where
+  bot := Partition.discrete s
+  bot_le P _ hx := exists_mem_le_of_le_sSup_of_isAtom hx.1 hx.2 P.sSup_eq.ge
+
+end Discrete
+
 section Bind
 
 variable {α : Type*} [CompleteDistribLattice α] {s : α}
@@ -505,26 +560,16 @@ lemma ofRel_rel_eq (P : Partition s) : ofRel' P.Rel P.setOf_rel_self_eq.symm = P
     P = P' := by
   rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']; congr; ext; exact h _ _
 
-end Rel
-
-section Discrete
-
-variable {s : Set α} {a b : α}
-
-/-- The discrete partition -/
-protected def discrete (s : Set α) : Partition s :=
-  let r : α → α → Prop := fun x y ↦ x = y ∧ x ∈ s
-  have : IsTrans α r := ⟨by rintro _ _ _ ⟨rfl, h⟩ ⟨rfl,-⟩; exact ⟨rfl, h⟩⟩
-  have : IsSymm α r := ⟨by rintro _ _ ⟨rfl, h⟩; exact ⟨rfl,h⟩⟩
-  ofRel' r (by simp [r])
-
 @[simp] lemma discrete.rel_iff_eq : (Partition.discrete s).Rel a b ↔ a = b ∧ a ∈ s := by
-  simp only [Partition.discrete, ofRel', rel_congr, rel_ofRel_eq]
+  simp only [Partition.discrete, le_eq_subset, Set.isAtom_iff]
+  refine ⟨fun ⟨_, ⟨⟨x, rfl⟩, hxs⟩, hax, hbx⟩ ↦ by simp_all, ?_⟩
+  rintro ⟨rfl, has⟩
+  exact (rel_iff_partOf_eq_partOf _ has has).mpr rfl
 
 lemma discrete.rel_iff_eq_of_mem (ha : a ∈ s) : (Partition.discrete s).Rel a b ↔ a = b := by
   rw [discrete.rel_iff_eq, and_iff_left ha]
 
-end Discrete
+end Rel
 
 section RepFun
 
@@ -674,3 +719,27 @@ lemma RepFun.coeFun_eq_id_of_eq_discrete  (f : P.RepFun) (hP : P = Partition.dis
 
 
 end RepFun
+
+
+end Partition
+section Fiber
+open Function
+
+instance {r : α → α → Prop} [IsRefl α r] {f : β → α} : IsRefl β (r on f) where
+  refl a := refl (f a)
+
+instance {r : α → α → Prop} [IsSymm α r] {f : β → α} : IsSymm β (r on f) where
+  symm a _ := symm (a := f a)
+
+instance {r : α → α → Prop} [IsTrans α r] {f : β → α} : IsTrans β (r on f) where
+  trans a _ _ := _root_.trans (a := f a)
+
+namespace Partition
+
+-- def Fiber (f : α → β) : Partition (univ : Set α) := Partition.ofRel' (Eq on f) <| by ext a; simp
+
+
+-- lemma Fiber.mem_of_mem (h : x ∈ s) : x ∈ P.Fiber x := by
+--   exact P.mem_partOf h
+
+-- end Fiber

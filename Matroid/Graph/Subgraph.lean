@@ -1,6 +1,7 @@
 import Mathlib.Combinatorics.Graph.Basic
 import Matroid.Graph.Basic
 import Mathlib.Data.Set.Insert
+import Mathlib.Tactic.TFAE
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}
@@ -542,10 +543,28 @@ lemma IsClosedSubgraph.isLink_iff_of_mem (h : H ≤c G) (hx : x ∈ V(H)) :
     H.IsLink e x y ↔ G.IsLink e x y :=
   ⟨fun he ↦ he.of_le h.le, fun he ↦ he.of_isClosedSubgraph_of_mem h hx⟩
 
+lemma IsClosedSubgraph.mem_iff_mem_of_isLink (h : H ≤c G) (he : G.IsLink e x y) :
+    x ∈ V(H) ↔ y ∈ V(H) := by
+  refine ⟨fun hin ↦ ?_, fun hin ↦ ?_⟩
+  on_goal 2 => rw [isLink_comm] at he
+  all_goals rw [← h.isLink_iff_of_mem hin] at he; exact he.right_mem
+
+lemma IsClosedSubgraph.mem_tfae_of_isLink (h : H ≤c G) (he : G.IsLink e x y) :
+    List.TFAE [x ∈ V(H), y ∈ V(H), e ∈ E(H)] := by
+  tfae_have 1 → 2 := (h.mem_iff_mem_of_isLink he).mp
+  tfae_have 2 → 3 := (he.symm.of_isClosedSubgraph_of_mem h · |>.edge_mem)
+  tfae_have 3 → 1 := (he.of_le_of_mem h.le · |>.left_mem)
+  tfae_finish
+
 lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
   exact (hexy.of_isClosedSubgraph_of_mem h hx).adj
+
+lemma IsClosedSubgraph.mem_iff_mem_of_adj (h : H ≤c G) (hxy : G.Adj x y) :
+    x ∈ V(H) ↔ y ∈ V(H) := by
+  obtain ⟨e, hexy⟩ := hxy
+  exact mem_iff_mem_of_isLink h hexy
 
 lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
     H ≤c G₁ where
