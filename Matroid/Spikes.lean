@@ -19,6 +19,10 @@ def freeLift (M : Matroid α ) : Matroid α := M✶.truncate✶
 
 lemma freeLift_def (M : Matroid α ) : M✶.truncate✶ = M.freeLift := rfl
 
+lemma freeLift_def_dual (M : Matroid α ) : M.truncate✶ = M✶.freeLift := by
+  have h1 : M = M✶✶ := eq_dual_comm.mp rfl
+  nth_rw 1 [h1, freeLift_def M✶]
+
 @[simp]
 lemma freeLift_ground (M : Matroid α ) : M.freeLift.E = M.E := rfl
 
@@ -58,7 +62,7 @@ lemma basis_freeLift_iff (M : Matroid α) [M✶.RankPos] (hB' : B ⊆ M.E := by 
     rwa [hrw]
   apply (M✶.truncate).dual_isBase_iff.2
   apply truncate_isBase_iff.2
-  refine ⟨ e, notMem_diff_of_mem heB, ?_ ⟩
+  refine ⟨ e, Set.notMem_diff_of_mem heB , ?_ ⟩
   apply M.dual_isBase_iff.2
   have hrw : M✶.truncate.E = M.E := by exact rfl
   rw [hrw]
@@ -101,7 +105,7 @@ lemma truncate_freeLift_comm (M : Matroid α) [M.RankPos] [M✶.RankPos] :
       obtain ⟨f, hf⟩ := hBe.nonempty
       refine ⟨ f, hf, ?_ ⟩
       apply M.truncate_isBase_iff.2
-      refine ⟨ f, notMem_diff_of_mem rfl, ?_ ⟩
+      refine ⟨ f, Set.notMem_diff_of_mem rfl, ?_ ⟩
       simp
       rwa [insert_eq_of_mem hf ]
     refine ⟨ e, mem_of_mem_insert_of_ne heB hxe, ?_ ⟩
@@ -272,31 +276,40 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
     exact h1 hx
   exact Prod.ext hxy h1
 
--- lemma freeSpike_self_dual (ι : Type*) :
---     (preFreeSpike ι Bool).freeLift.truncate = ((preFreeSpike ι Bool).freeLift.truncate)✶ :=
---by
---   have : ((preFreeSpike ι Bool).freeLift.truncate)✶ =
---       ((preFreeSpike ι Bool).freeLift✶.freeLift)✶ := by
---     simp only [dual_inj]
---     sorry
---   sorry
+lemma freeSpike_self_dual (ι : Type*) :
+    (preFreeSpike ι Bool).freeLift.truncate = ((preFreeSpike ι Bool).freeLift.truncate)✶ := by
+  --unfold preFreeSpike
+  have : (preFreeSpike ι Bool).RankPos := by
+    refine { empty_not_isBase := ?_ }
+    by_contra h
+    have hco := preFreeSpikeBool_base_iff.1 h
+    --simp_all only [mem_empty_iff_false, not_false_eq_true, iff_true, forall_const]
+    sorry
+  have : (preFreeSpike ι Bool)✶.RankPos := by sorry
+  have h1 : (preFreeSpike ι Bool)✶.truncate✶✶ = (preFreeSpike ι Bool).freeLift✶ := by rfl
+  rw [freeLift_def_dual ((preFreeSpike ι Bool).freeLift), ←h1 ]
+  nth_rewrite 2 [pre_free_Bool_self_dual]
+  simp only [dual_dual]
+  rw[←truncate_freeLift_comm ]
 
 
-def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
-  ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
-def double_circuitOn (ι : Type*) : Matroid (ι × Bool) :=
-  (circuitOn (univ : Set ι)).comap Prod.fst
 
-lemma freeSpike_ground_set (ι : Type*) : (freeSpike ι).E = univ := rfl
+-- def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
+--   ((circuitOn (univ : Set ι)).comap Prod.fst)✶.truncate
 
-lemma double_circuitOn_ground_set (ι : Type*) : (double_circuitOn ι).E = univ := rfl
+-- def double_circuitOn (ι : Type*) : Matroid (ι × Bool) :=
+--   (circuitOn (univ : Set ι)).comap Prod.fst
 
-lemma freeSpike_to_double (ι : Type*) : (double_circuitOn ι)✶.truncate = freeSpike ι := by
-  exact rfl
-lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set ι)).comap Prod.fst
-    := by
-  exact rfl
+-- lemma freeSpike_ground_set (ι : Type*) : (freeSpike ι).E = univ := rfl
+
+-- lemma double_circuitOn_ground_set (ι : Type*) : (double_circuitOn ι).E = univ := rfl
+
+-- lemma freeSpike_to_double (ι : Type*) : (double_circuitOn ι)✶.truncate = freeSpike ι := by
+--   exact rfl
+-- lemma freeSpike_def (ι : Type*) : double_circuitOn ι = (circuitOn (univ : Set ι)).comap Prod.fst
+--     := by
+--   exact rfl
 
 -- lemma double_circuitOn_isBase_iff (ι : Type*) (B : Set (ι × Bool)) :
 --     (double_circuitOn ι).IsBase B ↔
