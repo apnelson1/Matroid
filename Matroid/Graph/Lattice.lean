@@ -477,3 +477,32 @@ instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
     apply_fun ClosedSubgraph.toSubgraph using ClosedSubgraph.toSubgraph.injective
     simp only [ClosedSubgraph.toSubgraph_iInf, ClosedSubgraph.toSubgraph_iSup]
     exact CompletelyDistribLattice.iInf_iSup_eq (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))
+
+@[simp]
+lemma ClosedSubgraph.compl_vertexSet (H : G.ClosedSubgraph) :
+    V((Hᶜ : G.ClosedSubgraph).val) = V(G) \ V(H.val) :=
+  vertexDelete_vertexSet G V(H.val)
+
+@[simp]
+lemma ClosedSubgraph.compl_edgeSet (H : G.ClosedSubgraph) :
+    E((Hᶜ : G.ClosedSubgraph).val) = E(G) \ E(H.val) := by
+  change E(G - V(H.val)) = E(G) \ E(H.val)
+  ext e
+  simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, iff_def, forall_exists_index, and_imp]
+  refine ⟨fun u v huv hunin hvnin => ⟨huv.edge_mem, ?_⟩, fun he heH => ?_⟩
+  · exact fun he => hunin <| huv.of_le_of_mem H.prop.le he |>.left_mem
+  · obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
+    use x, y, hxy
+    have hx := H.prop.mem_tfae_of_isLink hxy |>.not.out 0 2
+    have hy := H.prop.mem_tfae_of_isLink hxy |>.not.out 1 2
+    tauto
+
+@[simp]
+lemma ClosedSubgraph.compl_isLink (H : G.ClosedSubgraph) :
+    Hᶜ.val.IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
+  change (G - V(H.val)).IsLink e x y ↔ _
+  simp only [vertexDelete_isLink_iff, and_congr_right_iff]
+  rintro he
+  have hx := H.prop.mem_tfae_of_isLink he |>.not.out 0 2
+  have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
+  tauto

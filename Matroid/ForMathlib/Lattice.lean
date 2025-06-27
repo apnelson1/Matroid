@@ -1,6 +1,6 @@
 import Mathlib.Order.SupIndep
 import Mathlib.Order.Atoms
-import Mathlib.Tactic
+import Mathlib.Tactic.ApplyFun
 
 open Set
 
