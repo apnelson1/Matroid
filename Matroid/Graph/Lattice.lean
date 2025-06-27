@@ -506,3 +506,81 @@ lemma ClosedSubgraph.compl_isLink (H : G.ClosedSubgraph) :
   have hx := H.prop.mem_tfae_of_isLink he |>.not.out 0 2
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
   tauto
+
+lemma ClosedSubgraph.disjoint_iff (H₁ H₂ : G.ClosedSubgraph) :
+    Disjoint H₁ H₂ ↔ H₁.val.Disjoint H₂.val := by
+  sorry
+
+lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
+    IsAtom H ↔ H.val.IsCompOf G := by
+  simp only [IsAtom, ne_eq, Subtype.forall, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, IsCompOf,
+    Minimal, vertexSet_nonempty_iff, Subtype.coe_eq_bot_iff, ge_iff_le, and_imp]
+  apply and_congr (not_iff_not.mp ?_) <| forall₂_congr fun H' hH'cl => ?_
+  · simp [not_nonempty_iff_eq_empty, H.prop]
+  rw [lt_iff_le_and_ne, ← and_imp, and_comm (a := ¬H' = ⊥), and_imp, and_imp]
+  refine imp_congr_right fun hle => ?_
+  convert not_imp_not
+  · tauto
+  simp [le_antisymm_iff, hle]
+
+def ClosedSubgraph.foo (G : Graph α β) (x : α) := sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}
+
+@[simp]
+lemma ClosedSubgraph.mem_foo {x} (hx : x ∈ V(G)) : x ∈ V((foo G x).val) := by
+  simp only [foo, coe_sInf, mem_image, mem_setOf_eq, Subtype.exists, exists_and_left, exists_prop,
+    exists_eq_right_right, hx, isClosedSubgraph_self, and_self, insert_eq_of_mem, sInter_vertexSet,
+    mem_iInter, and_imp]
+  tauto
+
+lemma ClosedSubgraph.foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
+  refine ⟨⟨(sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}).prop, ⟨x, mem_foo hx⟩⟩, ?_⟩
+  simp only [vertexSet_nonempty_iff, ne_eq, ge_iff_le, and_imp]
+  by_contra! h
+  obtain ⟨H, hHcl, hHnebot, hle, hnle⟩ := h
+  by_cases hxH : x ∈ V(H)
+  · have hHin : ⟨H, hHcl⟩ ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := hxH
+    exact hnle <| sInf_le hHin
+  have hHcin : ⟨H, hHcl⟩ᶜ ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := by simp [hx, hxH]
+  simpa [hHnebot] using (le_compl_iff_disjoint_left.mp <| sInf_le hHcin) le_rfl hle
+
+lemma ClosedSubgraph.foo_le_iff {x} (hx : x ∈ V(G)) (H : G.ClosedSubgraph) :
+    (foo G x) ≤ H ↔ x ∈ V(H.val) := by
+  refine ⟨(vertexSet_mono · <| mem_foo hx), fun h => ?_⟩
+  have hHin : H ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := h
+  exact sInf_le hHin
+
+
+
+def Components (G : Graph α β) : Set G.ClosedSubgraph := {H | IsAtom H}
+
+lemma components_isAtom_iff (H : G.ClosedSubgraph) : H ∈ G.Components ↔ IsAtom H := Iff.rfl
+
+lemma components_isCompOf_iff (H : G.ClosedSubgraph) : H ∈ G.Components ↔ H.val.IsCompOf G :=
+  H.isAtom_iff_isCompOf
+
+-- Any set of atoms is pairwise disjoint
+lemma components_pairwise_disjoint : G.Components.Pairwise Disjoint := by
+  rintro H₁ hH₁ H₂ hH₂ hne H hHle₁ hHle₂
+  rw [le_bot_iff]
+  by_contra! hbot
+  obtain rfl := hH₁.le_iff.mp hHle₁ |>.resolve_left hbot
+  obtain rfl := hH₂.le_iff.mp hHle₂ |>.resolve_left hbot
+  simp at hne
+
+-- Graph is the union of its components
+@[simp]
+lemma components_sUnion : sSup G.Components = G := by
+  have h : sSup G.Components = ⊤ := sSup_atoms_eq_top
+  apply_fun Subtype.val at h
+  exact h
+
+lemma ClosedSubgraph.foo_mem_components {x} (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
+  rw [components_isCompOf_iff]
+  exact ClosedSubgraph.foo_isCompOf hx
+
+lemma mem_unique_component {x} (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x ∈ V(H.val) := by
+  refine ⟨ClosedSubgraph.foo G x, ⟨ClosedSubgraph.foo_mem_components hx, ClosedSubgraph.mem_foo hx⟩,
+  fun H ⟨hHc, hxH⟩ => components_pairwise_disjoint.eq hHc (ClosedSubgraph.foo_mem_components hx) ?_⟩
+  rw [ClosedSubgraph.disjoint_iff]
+  exact (·.vertex.notMem_of_mem_left hxH <| ClosedSubgraph.mem_foo hx)
+

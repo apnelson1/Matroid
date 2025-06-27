@@ -96,6 +96,9 @@ lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
   refine ⟨fun h ↦ bot_le.antisymm' ⟨by simp [h], fun e x y he ↦ False.elim ?_⟩, fun h ↦ by simp [h]⟩
   simpa [h] using he.left_mem
 
+@[simp]
+lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ := not_iff_not.mp <| by
+  simp [not_nonempty_iff_eq_empty]
 
 /-- A graph with a single edge `e` from `u` to `v` -/
 @[simps]
@@ -303,5 +306,3 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
     · use y, x, ?_, by tauto
       rw [← Prod.swap_eq_iff_eq_swap] at hp
       exact List.mem_of_getElem? <| hp ▸ hep
-
-
