@@ -40,7 +40,7 @@ import Matroid.Graph.Subgraph
 -- import Matroid.Graph.WList.Defs
 -- import Matroid.Graph.WList.Ops
 -- import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Operations.CommInter
+import Matroid.Graph.Operations.Union
 import Matroid.Graph.Lattice
 import Matroid.Intersection
 import Matroid.Loop

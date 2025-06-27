@@ -1,4 +1,4 @@
-import Matroid.Graph.Operations.CommInter
+import Matroid.Graph.Operations.Union
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 
@@ -82,83 +82,6 @@ lemma Subgraph.pairwise_compatible (H : ι → G.Subgraph) :
 lemma Subgraph.set_pairwise_compatible (s : Set G.Subgraph) :
     ((((↑) : _ → Graph α β) '' s).Pairwise Compatible) :=
   G.set_pairwise_compatible_of_subgraph (by rintro _ ⟨H, -, rfl⟩; exact H.2)
-
-
-
--- /-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
--- def Subgraph.minAx' : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
---   sup H₁ H₂ := ⟨H₁ ∪ H₂, Graph.union_le H₁.2 H₂.2⟩
---   le_sup_left _ _ := Graph.left_le_union ..
---   le_sup_right H H' := (compatible_of_le_le H.2 H'.2).right_le_union
---   sup_le _ _ _ := Graph.union_le
---   inf H₁ H₂ := ⟨H₁ ∩ H₂, Graph.inter_le_left.trans H₁.2⟩
---   inf_le_left _ _ := Graph.inter_le_left
---   inf_le_right _ _ := Graph.inter_le_right
---   le_inf _ _ _ := Graph.le_inter
---   sSup s := ⟨Graph.iUnion (fun H : s ↦ H.1.1) (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)),
---     by simp⟩
-
---   le_sSup s H hHs := Graph.le_iUnion (ι := s) (G := fun H ↦ H.1.1)
---     (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ⟨H, hHs⟩
-
---   sSup_le s H h := by
---     change Graph.iUnion _ (G.pairwise_compatible_of_subgraph (fun H ↦ H.1.2)) ≤ H.1
---     rw [Graph.iUnion_le_iff]
---     exact fun ⟨H', hH'⟩ ↦ h H' hH'
---   sInf s := ⟨G.iInterAux (fun H : s ↦ H.1.1) (fun H ↦ H.1.2), Graph.iInterAux_le ..⟩
---   sInf_le s H h := G.iInterAux_le_mem (H := (fun H : s ↦ H.1.1)) (fun H ↦ H.1.2) ⟨H, h⟩
---   le_sInf s H h := G.le_iInterAux (fun H ↦ H.1.2) (fun H ↦ h _ H.2)
---   top := ⟨G, le_rfl⟩
---   bot := ⟨Graph.noEdge ∅ β, by simp⟩
---   le_top H := H.2
---   bot_le := by simp
---   iInf_iSup_eq := by
---     intro ι κ f
---     -- rw [← @iSup_range', ← @sSup_image', ← @sInf_range, sInf, Subtype.mk_eq_mk]
---     obtain hι | hι := isEmpty_or_nonempty ι
---     · simp [iInf, iSup]
---       rw [@Graph.iInterAux_empty _ _ _ _ (by simpa)]
---       simp
---       sorry
-
-
-
-
---     simp_rw [iInf, iSup, Subtype.mk_eq_mk]
---     rw [le_antisymm_iff]
---     simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
---       forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
---     refine ⟨?_, fun h ↦ ?_⟩
---     · obtain hι | hι := isEmpty_or_nonempty ι
---       · simp_rw [range_eq_empty (ι := ι)]
-
-
---     -- obtain hι | hι := isEmpty_or_nonempty ι
---     -- ·
---     -- simp only [le_iInterAux_iff, Graph.iUnion_le_iff, Subtype.coe_le_coe, Subtype.forall, mem_range,
---     --   forall_exists_index, forall_apply_eq_imp_iff, mk_le_iff]
---     -- obtain hι | hι := isEmpty_or_nonempty ι
---     -- · simp
-
-
---     -- refine ⟨?_, fun h ↦ ?_⟩
-
---     -- ; swap; simp
---     -- refine le_antisymm ?_ ?_
---     -- · refine ⟨fun x hx ↦ ?_, fun e x y ↦ ?_⟩
---     --   · suffices x ∈ V(G) ∧ ∃ (g : (a : ι) → κ a), ∀ (i : ι), x ∈ V((f i (g i)).1) by simpa
---     --     have hx' : x ∈ V(G) ∧ ∀ (i : ι), ∃ (j : κ i), x ∈ V((f i j).1) := by simpa using hx
---     --     choose g hg using hx'.2
---     --     exact ⟨hx'.1, g, hg⟩
---     --   suffices G.IsLink e x y → (∀ (i : ι), ∃ (j : κ i), ((f i j).1.IsLink e x y)) →
---     --     ∃ (g : (i : ι) → κ i), ∀ (i : ι), (f i (g i)).1.IsLink e x y by simpa +contextual
---     --   intro hexy h
---     --   choose g hg using h
---     --   exact ⟨_, hg⟩
---     -- simp only [Graph.le_sInter_iff, mem_insert_iff, mem_image, mem_range, exists_exists_eq_and,
---     --   Graph.sUnion_le_iff, forall_exists_index, forall_apply_eq_imp_iff, forall_eq_or_imp]
---     -- refine ⟨fun _ ↦ Graph.sInter_le _ (by simp), fun i g ↦ ?_⟩
---     -- exact (Graph.sInter_le (G := (f i (g i)).1) _ (by simp)).trans (Graph.le_sUnion _ (by simp))
 
 /-- The proof that the subgraphs of a graph `G` form a completely distributive lattice. -/
 def Subgraph.minAx : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
