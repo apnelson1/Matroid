@@ -10,11 +10,10 @@ namespace Matroid
 variable {α : Type*} {ι : Type*} {η : Type*} {A : Set η} {M : Matroid α} {B I J X X' Y Y' F : Set α}
     {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
-/-- For any partition `X` of the ground set of a matroid `M`, the modular cut
+/-- For any collection of sets with union `M.E`, the modular cut
 comprising all flats whose projections make `X` a skew family in `M`. -/
 @[simps]
-def partitionGutsModularCut (M : Matroid α) (X : ι → Set α) (dj : Pairwise (Disjoint on X))
-  (Xu : ⋃ i, X i = M.E) : M.ModularCut where
+def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) : M.ModularCut where
   carrier := {F | M.IsFlat F ∧ (M.project F).IsSkewFamily X}
   forall_isFlat _ h := h.1
   forall_superset := by
@@ -39,7 +38,7 @@ def partitionGutsModularCut (M : Matroid α) (X : ι → Set α) (dj : Pairwise 
       grw [← biUnion_mono rfl.subset (fun j hj ↦ inter_subset_right (s := B))]
       rw [← biUnion_insert (t := fun i ↦ B ∩ X i), ← union_singleton, compl_union_self,
         biUnion_univ]
-    set G₀ := ⋂₀ Gs
+    set G₀ := ⋂₀ Gs with G₀_def
     have h₂ : M.IsBasis (B ∩ G₀) G₀ := by
       have := hne.to_subtype
       simpa [iInter_coe_set, inter_comm _ B, ← sInter_eq_biInter] using hBmut.isBasis_iInter
@@ -51,7 +50,15 @@ def partitionGutsModularCut (M : Matroid α) (X : ι → Set α) (dj : Pairwise 
       exact M.closure_subset_closure (by tauto_set)
     refine IsSkewFamily.mono (IsSkewFamily.cls_isSkewFamily ?_) h₃
     rw [Indep.isSkewFamily_iff_pairwise_disjoint]
-    · exact dj.mono fun i j h ↦ h.mono inter_subset_right inter_subset_right
+    · refine fun i j hne ↦ disjoint_left.2 fun x ⟨⟨hxB, hxG⟩, hxi⟩ ⟨_, hxj⟩ ↦ ?_
+      obtain ⟨G₁, hG₁, hxG₁⟩ : ∃ G₁ ∈ Gs, x ∉ G₁ := by simpa [G₀_def] using hxG
+      have hG₁B : M.IsBasis (G₁ ∩ B) G₁ := hBmut.isBasis_inter ⟨G₁, hG₁⟩
+      refine ((hGs hG₁).2.disjoint_of_indep_subset (I := (B \ G₁) ∩ (X i))
+        ?_ inter_subset_right hne).notMem_of_mem_left (a := x) ⟨⟨hxB, hxG₁⟩, hxi⟩ hxj
+      refine Indep.inter_right ?_ _
+      rw [project_indep_iff, hG₁B.contract_indep_iff_of_disjoint disjoint_sdiff_right,
+        inter_comm, diff_union_inter]
+      exact hB.indep
     rw [project_indep_iff, h₂.contract_indep_iff_of_disjoint]
     · exact hB.indep.subset <| by simpa using fun i ↦ inter_subset_left.trans diff_subset
     simpa using fun i ↦ disjoint_sdiff_right.mono_right inter_subset_left

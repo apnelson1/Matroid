@@ -139,14 +139,15 @@ def preFreeSpike (ι : Type*) (α : Type*) : Matroid (ι × α ) :=
     (freeOn (univ : Set ι)).comap Prod.fst
 
 lemma preFreeSpike_def (ι : Type*) (α : Type*) :
-    preFreeSpike ι α = (freeOn (univ : Set ι)).comap Prod.fst := by rfl
+    preFreeSpike ι α = (freeOn (univ : Set ι)).comap Prod.fst := rfl
 
+@[simp]
 lemma preFreeSpike_ground (ι : Type*) (α : Type*) :
-    (preFreeSpike ι α).E = (univ : Set (ι × α) ):= by exact rfl
+    (preFreeSpike ι α).E = (univ : Set (ι × α) ):= rfl
 
 --lemma pre_free_Bool_basis (ι : Type*) (hB' : B ⊆ M.E := by aesop_mat) :
 
-lemma preFreeSpikeBool_base_iff {ι : Type*} {B} :
+lemma preFreeSpikeBool_isBase_iff {ι : Type*} {B} :
     (preFreeSpike ι Bool).IsBase B ↔ ∀ i b, (i, b) ∈ B ↔ (i, !b) ∉ B := by
   constructor
   · intro hSB i b
@@ -163,8 +164,8 @@ lemma preFreeSpikeBool_base_iff {ι : Type*} {B} :
     intro hb
     simp only [Prod.range_fst] at hcom
     have hii : i ∈ Prod.fst '' B := by
-        rw [hcom ]
-        exact trivial
+      rw [hcom ]
+      exact trivial
     simp only [mem_image, Prod.exists, exists_and_right, exists_eq_right] at hii
     obtain ⟨ x, hx ⟩ := hii
     have heq : x = b := by
@@ -198,7 +199,7 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
   refine ext_isBase rfl ?_
 
   have aux' (B i b) : (preFreeSpike ι Bool).IsBase B → ((i, b) ∈ B ↔ (i, !b) ∉ B) :=
-    fun hb ↦ (preFreeSpikeBool_base_iff.1 hb) i b
+    fun hb ↦ (preFreeSpikeBool_isBase_iff.1 hb) i b
   intro B hB
   constructor
   · intro hSB
@@ -278,14 +279,15 @@ lemma pre_free_Bool_self_dual (ι : Type*) : preFreeSpike ι Bool = (preFreeSpik
 
 lemma freeSpike_self_dual (ι : Type*) :
     (preFreeSpike ι Bool).freeLift.truncate = ((preFreeSpike ι Bool).freeLift.truncate)✶ := by
-  --unfold preFreeSpike
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · rw [eq_emptyOn (M := (preFreeSpike ι Bool).freeLift.truncate)]
+    simp
   have : (preFreeSpike ι Bool).RankPos := by
     refine { empty_not_isBase := ?_ }
     by_contra h
-    have hco := preFreeSpikeBool_base_iff.1 h
-    --simp_all only [mem_empty_iff_false, not_false_eq_true, iff_true, forall_const]
-    sorry
-  have : (preFreeSpike ι Bool)✶.RankPos := by sorry
+    simpa using preFreeSpikeBool_isBase_iff.1 h
+  have : (preFreeSpike ι Bool)✶.RankPos := by
+    simp [rankPos_iff, preFreeSpikeBool_isBase_iff]
   have h1 : (preFreeSpike ι Bool)✶.truncate✶✶ = (preFreeSpike ι Bool).freeLift✶ := by rfl
   rw [freeLift_def_dual ((preFreeSpike ι Bool).freeLift), ←h1 ]
   nth_rewrite 2 [pre_free_Bool_self_dual]

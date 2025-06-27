@@ -12,12 +12,12 @@ variable {α : Type*} {M : Matroid α} {B B' I I' J J' K X Y : Set α}
 
 section eLocalConn
 
-lemma Indep.encard_inter_add_nullity_eq (hI : M.Indep I) (hJ : M.Indep J) (hK : M.IsBasis K (I ∪ J))
+lemma Indep.encard_inter_add_nullity_eq (hI : M.Indep I) (hJ : J ⊆ M.E) (hK : M.IsBasis K (I ∪ J))
     (hIK : I ⊆ K) (hI' : M.Indep I') (hcl : M.closure I = M.closure I') :
     (I' ∩ J).encard + M.nullity (I' ∪ J) = (J \ (K \ I)).encard := by
-  have hsk := (hK.indep.subset_skew_diff hIK)
+  have hsk := hK.indep.subset_skew_diff hIK
   rw [skew_iff_closure_skew_left, hcl, ← skew_iff_closure_skew_left] at hsk
-  have' hdj := hsk.disjoint_of_indep_subset_right (hK.indep.diff _) Subset.rfl
+  have hdj := hsk.disjoint_of_indep_subset_right (hK.indep.diff _) Subset.rfl
 
   set J₀ := (K \ I) with hJ₀
   set J₁ := J \ (K \ I) with hJ₁
@@ -50,8 +50,8 @@ lemma IsBasis'.encard_dual_congr (hI : M.IsBasis' I X) (hI' : M.IsBasis' I' X) (
   obtain ⟨K, hK, hIK⟩ := hI.indep.subset_isBasis_of_subset (show I ⊆ I ∪ J from subset_union_left)
     (union_subset hI.indep.subset_ground hJ.indep.subset_ground)
   have hcl : M.closure I = M.closure I' := by rw [hI.closure_eq_closure, hI'.closure_eq_closure]
-  rw [hI.indep.encard_inter_add_nullity_eq hJ.indep hK hIK hI'.indep hcl,
-    hI.indep.encard_inter_add_nullity_eq hJ.indep hK hIK hI.indep rfl]
+  rw [hI.indep.encard_inter_add_nullity_eq hJ.indep.subset_ground hK hIK hI'.indep hcl,
+    hI.indep.encard_inter_add_nullity_eq hJ.indep.subset_ground hK hIK hI.indep rfl]
 
 /-- If `X` and `Y` are sets, then `|I ∩ J| + M.nullity (I ∪ J)` has the same value for
 every isBasis `I` of `X` and `J` of `Y`. -/
