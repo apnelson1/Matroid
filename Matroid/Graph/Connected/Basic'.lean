@@ -22,7 +22,8 @@ lemma Connected.nonempty (hG : G.Connected) : V(G).Nonempty := by
 
 lemma connected_iff_forall_closed (hG : V(G).Nonempty) :
     G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → H = G := by
-  refine ⟨fun h H hHG hHne ↦ ?_, fun h ↦ ⟨by simpa, fun H ⟨hle, hH⟩ _ ↦ (h hle hH).symm.le⟩⟩
+  refine ⟨fun h H hHG hHne ↦ ?_, fun h ↦ ⟨by simpa [-vertexSet_nonempty_iff],
+    fun H ⟨hle, hH⟩ _ ↦ (h hle hH).symm.le⟩⟩
   rw [Graph.Connected, IsCompOf] at h
   exact h.eq_of_le ⟨hHG, hHne⟩ hHG.le
 

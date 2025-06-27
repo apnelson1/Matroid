@@ -1,4 +1,4 @@
-import Matroid.Graph.Connected.Component
+import Matroid.Graph.Connected.Basic'
 
 open Set Function Nat WList
 
