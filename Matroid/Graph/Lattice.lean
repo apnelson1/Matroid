@@ -358,6 +358,16 @@ lemma ClosedSubgraph.coe_iSup (f : ι → G.ClosedSubgraph)
   rw [Graph.sUnion_range]
 
 @[simp]
+lemma ClosedSubgraph.vertexSet_sSup (s : Set G.ClosedSubgraph) :
+    V((sSup s).val) = ⋃ a ∈ s, V(a.val) := by
+  simp only [coe_sSup, sUnion_vertexSet, mem_insert_iff, iUnion_iUnion_eq_or_left, biUnion_image]
+
+@[simp]
+lemma ClosedSubgraph.edgeSet_sSup (s : Set G.ClosedSubgraph) :
+    E((sSup s).val) = ⋃ a ∈ s, E(a.val) := by
+  simp only [coe_sSup, sUnion_edgeSet, mem_insert_iff, iUnion_iUnion_eq_or_left, biUnion_image]
+
+@[simp]
 lemma ClosedSubgraph.toSubgraph_iInf (f : ι → G.ClosedSubgraph) :
     toSubgraph (⨅ i, f i) = ⨅ i, toSubgraph (f i) :=
   Subgraph.range_iInf (fun i ↦ f i) ⇑toSubgraph
@@ -395,7 +405,7 @@ lemma ClosedSubgraph.coe_sInf (s : Set G.ClosedSubgraph) :
   exact (image_eq_range Subtype.val s).symm
 
 @[simp]
-lemma ClosedSubgraph.coe_sInf_of_nonempty (s : Set G.ClosedSubgraph) (hs : s.Nonempty):
+lemma ClosedSubgraph.coe_sInf_of_nonempty {s : Set G.ClosedSubgraph} (hs : s.Nonempty):
     ((sInf s : G.ClosedSubgraph) : Graph α β) = Graph.sInter (Subtype.val '' s) (by simpa) := by
   rw [← coe_toSubgraph, toSubgraph_sInf, Subgraph.coe_sInf_of_nonempty _ (by simpa)]
   congr
@@ -404,11 +414,32 @@ lemma ClosedSubgraph.coe_sInf_of_nonempty (s : Set G.ClosedSubgraph) (hs : s.Non
 @[simp]
 lemma ClosedSubgraph.coe_sInf_of_empty : ((sInf ∅ : G.ClosedSubgraph) : Graph α β) = G := by simp
 
+lemma ClosedSubgraph.vertexSet_sInf_comm (s : Set G.ClosedSubgraph) :
+    V((sInf s).val) = V(G) ∩ ⋂ a ∈ s, V(a.val) := by
+  simp only [coe_sInf, sInter_vertexSet, mem_insert_iff, iInter_iInter_eq_or_left, biInter_image]
+
+@[simp]
+lemma ClosedSubgraph.vertexSet_sInf_comm_of_nonempty {s : Set G.ClosedSubgraph} (hs : s.Nonempty) :
+    V((sInf s).val) = ⋂ a ∈ s, V(a.val) := by
+  simp only [coe_sInf_of_nonempty hs, sInter_vertexSet, biInter_image]
+
 instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
   iInf_iSup_eq {ι κ} f := by
     apply_fun ClosedSubgraph.toSubgraph using ClosedSubgraph.toSubgraph.injective
     simp only [ClosedSubgraph.toSubgraph_iInf, ClosedSubgraph.toSubgraph_iSup]
     exact CompletelyDistribLattice.iInf_iSup_eq (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))
+
+@[simp]
+lemma ClosedSubgraph.coe_eq_induce (H : G.ClosedSubgraph) :
+    G[V(H.val)] = H.val := Graph.ext rfl fun e x y =>
+  ⟨fun ⟨hl, hx, hy⟩ => by rwa [H.prop.isLink_iff_of_mem hx],
+  fun h => ⟨h.of_le H.prop.le, h.left_mem, h.right_mem⟩⟩
+
+instance : SetLike G.ClosedSubgraph α where
+  coe H := V(H.val)
+  coe_injective' H₁ H₂ h := by
+    beta_reduce at h
+    rw [← Subtype.coe_inj, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce, h]
 
 @[simp]
 lemma ClosedSubgraph.compl_vertexSet (H : G.ClosedSubgraph) :
@@ -447,6 +478,16 @@ lemma ClosedSubgraph.disjoint_iff (H₁ H₂ : G.ClosedSubgraph) :
   rw [disjoint_iff_inf_le, le_bot_iff, ← Subtype.coe_inj,
     disjoint_iff_inter_eq_bot_of_compatible (H₁.compatible H₂)]
   rfl
+
+lemma ClosedSubgraph.ext_vertexSet {H₁ H₂ : G.ClosedSubgraph} (h : V(H₁.val) = V(H₂.val)) :
+    H₁ = H₂ := by rw [← Subtype.coe_inj, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce, h]
+
+lemma ClosedSubgraph.ext_vertexSet_iff {H₁ H₂ : G.ClosedSubgraph} :
+    H₁ = H₂ ↔ V(H₁.val) = V(H₂.val) := ⟨(· ▸ rfl), ClosedSubgraph.ext_vertexSet⟩
+
+lemma ClosedSubgraph.disjoint_iff_vertexSet_disjoint {H₁ H₂ : G.ClosedSubgraph} :
+    Disjoint H₁ H₂ ↔ Disjoint V(H₁.val) V(H₂.val) := by
+  rw [ClosedSubgraph.disjoint_iff, (H₁.compatible H₂).disjoint_iff_vertexSet_disjoint]
 
 lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
     IsAtom H ↔ H.val.IsCompOf G := by
@@ -495,6 +536,9 @@ lemma components_isAtom_iff (H : G.ClosedSubgraph) : H ∈ G.Components ↔ IsAt
 lemma components_isCompOf_iff (H : G.ClosedSubgraph) : H ∈ G.Components ↔ H.val.IsCompOf G :=
   H.isAtom_iff_isCompOf
 
+@[simp]
+lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := (·.out.1 rfl)
+
 -- Any set of atoms is pairwise disjoint
 lemma components_pairwise_disjoint (G : Graph α β) : G.Components.Pairwise Disjoint := by
   rintro H₁ hH₁ H₂ hH₂ hne H hHle₁ hHle₂
@@ -527,6 +571,39 @@ lemma mem_unique_component {x} (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x �
   rw [ClosedSubgraph.disjoint_iff]
   exact (·.vertex.notMem_of_mem_left hxH <| ClosedSubgraph.mem_foo hx)
 
+lemma ClosedSubgraph.disjoint_of_mem_component_of_ne {H₁ H₂ : G.ClosedSubgraph}
+    (hH₁ : H₁ ∈ G.Components) (hH₂ : H₂ ∈ G.Components) (hne : H₁ ≠ H₂) : Disjoint H₁ H₂ :=
+  G.components_pairwise_disjoint hH₁ hH₂ hne
+
+lemma ClosedSubgraph.eq_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgraph}
+    (hH₁ : H₁ ∈ G.Components) (hH₂ : H₂ ∈ G.Components) (hx₁ : x ∈ V(H₁.val))
+    (hx₂ : x ∈ V(H₂.val)) : H₁ = H₂ := by
+  have := disjoint_of_mem_component_of_ne hH₁ hH₂
+  rw [← not_imp_not, ne_eq, not_not, ClosedSubgraph.disjoint_iff_vertexSet_disjoint,
+    not_disjoint_iff_nonempty_inter] at this
+  exact this ⟨x, hx₁, hx₂⟩
+
+lemma ClosedSubgraph.le_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgraph}
+    (hH₁ : H₁ ∈ G.Components) (hx₁ : x ∈ V(H₁.val)) (hx₂ : x ∈ V(H₂.val)) : H₁ ≤ H₂ :=
+  have hx : x ∈ V(G) := vertexSet_mono H₁.prop.le hx₁
+  (eq_of_mem_component_of_mem_mem hH₁ (ClosedSubgraph.foo_mem_components hx) hx₁ <|
+    ClosedSubgraph.mem_foo hx) ▸ (ClosedSubgraph.foo_le_iff hx _).mpr hx₂
+
 def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
     sSup_atoms_eq_top.symm
+
+def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
+  parts := {V(H.val) | H ∈ G.Components}
+  indep := by
+    rintro V ⟨H, hH, rfl⟩
+    simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_diff, mem_setOf_eq, mem_singleton_iff,
+      and_imp, forall_exists_index]
+    rintro W H₀ hH₀co rfl
+    have := not_imp_comm.mp <| G.components_pairwiseDisjoint_id.elim hH hH₀co
+    rwa [H.ext_vertexSet_iff, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
+  bot_notMem := by simp
+  sSup_eq' := by
+    simp only [sSup_eq_sUnion, sUnion_eq_biUnion, mem_setOf_eq, iUnion_exists, biUnion_and',
+      iUnion_iUnion_eq_right]
+    rw [← ClosedSubgraph.vertexSet_sSup, components_sUnion]

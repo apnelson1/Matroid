@@ -191,3 +191,35 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
 
 
   -- have := hG.eq_of_isClosedSubgraph
+
+
+def vertexConnected (G : Graph α β) (x y : α) : Prop :=
+  ∃ H ∈ G.Components, x ∈ V(H.val) ∧ y ∈ V(H.val)
+
+lemma vertexConnected.refl_of_mem_vertexSet (hx : x ∈ V(G)) : G.vertexConnected x x :=
+  ⟨ClosedSubgraph.foo G x, ClosedSubgraph.foo_mem_components hx,
+    ClosedSubgraph.mem_foo hx, ClosedSubgraph.mem_foo hx⟩
+
+lemma vertexConnected.symm (h : G.vertexConnected x y) : G.vertexConnected y x := by
+  obtain ⟨H, hH, hx, hy⟩ := h
+  exact ⟨H, hH, hy, hx⟩
+
+instance : IsSymm _ G.vertexConnected where
+  symm _ _ := vertexConnected.symm
+
+lemma vertexConnected_comm : G.vertexConnected x y ↔ G.vertexConnected y x :=
+  ⟨vertexConnected.symm, vertexConnected.symm⟩
+
+lemma vertexConnected.trans (hxy : G.vertexConnected x y) (hyz : G.vertexConnected y z) :
+    G.vertexConnected x z := by
+  obtain ⟨H₁, hH₁, hx, hy₁⟩ := hxy
+  obtain ⟨H₂, hH₂, hy₂, hz⟩ := hyz
+  obtain rfl := H₁.eq_of_mem_component_of_mem_mem hH₁ hH₂ hy₁ hy₂
+  exact ⟨H₁, hH₁, hx, hz⟩
+
+lemma vertexConnected.mem_vertexSet_iff (H : G.ClosedSubgraph) :
+    ∀ {x y : α}, G.vertexConnected x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
+  suffices ∀ x y, G.vertexConnected x y → x ∈ V(H.val) → y ∈ V(H.val) by
+    exact fun x y h => ⟨fun hx => this x y h hx, fun hy => this y x h.symm hy⟩
+  exact fun x y ⟨H', hH', hx', hy'⟩ hx ↦
+    vertexSet_mono (H'.le_of_mem_component_of_mem_mem hH' hx' hx) hy'

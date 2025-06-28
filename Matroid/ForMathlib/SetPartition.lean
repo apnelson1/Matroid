@@ -575,6 +575,12 @@ lemma ofRel_rel_eq (P : Partition s) : ofRel' P.Rel P.setOf_rel_self_eq.symm = P
 lemma discrete.rel_iff_eq_of_mem (ha : a ∈ s) : (Partition.discrete s).Rel a b ↔ a = b := by
   rw [discrete.rel_iff_eq, and_iff_left ha]
 
+-- noncomputable instance : CompleteLattice (Partition s) where
+--   sup P Q := ofRel' (Relation.TransGen <| P.Rel ⊔ Q.Rel) sorry
+--   inf P Q := ofRel' (P.Rel ⊓ Q.Rel) sorry
+--   sSup A := ofRel' (Relation.TransGen <| sSup <| (·.Rel) '' A) sorry
+--   sInf A := ofRel' (sInf <| (·.Rel) '' A) sorry
+
 end Rel
 
 section RepFun
