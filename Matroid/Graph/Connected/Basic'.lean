@@ -193,33 +193,125 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
   -- have := hG.eq_of_isClosedSubgraph
 
 
-def vertexConnected (G : Graph α β) (x y : α) : Prop :=
+def VertexConnected (G : Graph α β) (x y : α) : Prop :=
   ∃ H ∈ G.Components, x ∈ V(H.val) ∧ y ∈ V(H.val)
 
-lemma vertexConnected.refl_of_mem_vertexSet (hx : x ∈ V(G)) : G.vertexConnected x x :=
-  ⟨ClosedSubgraph.foo G x, ClosedSubgraph.foo_mem_components hx,
-    ClosedSubgraph.mem_foo hx, ClosedSubgraph.mem_foo hx⟩
+lemma VertexConnected.refl (hx : x ∈ V(G)) : G.VertexConnected x x :=
+  ⟨foo G x, foo_mem_components hx, mem_foo hx, mem_foo hx⟩
 
-lemma vertexConnected.symm (h : G.vertexConnected x y) : G.vertexConnected y x := by
+lemma VertexConnected.symm (h : G.VertexConnected x y) : G.VertexConnected y x := by
   obtain ⟨H, hH, hx, hy⟩ := h
   exact ⟨H, hH, hy, hx⟩
 
-instance : IsSymm _ G.vertexConnected where
-  symm _ _ := vertexConnected.symm
+instance : IsSymm _ G.VertexConnected where
+  symm _ _ := VertexConnected.symm
 
-lemma vertexConnected_comm : G.vertexConnected x y ↔ G.vertexConnected y x :=
-  ⟨vertexConnected.symm, vertexConnected.symm⟩
+lemma VertexConnected_comm : G.VertexConnected x y ↔ G.VertexConnected y x :=
+  ⟨VertexConnected.symm, VertexConnected.symm⟩
 
-lemma vertexConnected.trans (hxy : G.vertexConnected x y) (hyz : G.vertexConnected y z) :
-    G.vertexConnected x z := by
+lemma VertexConnected.left_mem (hxy : G.VertexConnected x y) : x ∈ V(G) :=
+  let ⟨H, _, hx, _⟩ := hxy
+  vertexSet_mono H.prop.le hx
+
+lemma VertexConnected.right_mem (hxy : G.VertexConnected x y) : y ∈ V(G) :=
+  hxy.symm.left_mem
+
+lemma VertexConnected.trans (hxy : G.VertexConnected x y) (hyz : G.VertexConnected y z) :
+    G.VertexConnected x z := by
   obtain ⟨H₁, hH₁, hx, hy₁⟩ := hxy
   obtain ⟨H₂, hH₂, hy₂, hz⟩ := hyz
   obtain rfl := H₁.eq_of_mem_component_of_mem_mem hH₁ hH₂ hy₁ hy₂
   exact ⟨H₁, hH₁, hx, hz⟩
 
-lemma vertexConnected.mem_vertexSet_iff (H : G.ClosedSubgraph) :
-    ∀ {x y : α}, G.vertexConnected x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
-  suffices ∀ x y, G.vertexConnected x y → x ∈ V(H.val) → y ∈ V(H.val) by
+instance : IsTrans _ G.VertexConnected where
+  trans _ _ _ := VertexConnected.trans
+
+lemma VertexConnected.mem_vertexSet_iff (H : G.ClosedSubgraph) :
+    ∀ {x y : α}, G.VertexConnected x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
+  suffices ∀ x y, G.VertexConnected x y → x ∈ V(H.val) → y ∈ V(H.val) by
     exact fun x y h => ⟨fun hx => this x y h hx, fun hy => this y x h.symm hy⟩
   exact fun x y ⟨H', hH', hx', hy'⟩ hx ↦
     vertexSet_mono (H'.le_of_mem_component_of_mem_mem hH' hx' hx) hy'
+
+@[simp]
+lemma vertexConnected_self : G.VertexConnected x x ↔ x ∈ V(G) :=
+  ⟨VertexConnected.left_mem, VertexConnected.refl⟩
+
+lemma VertexConnected.mem_foo (h : G.VertexConnected x y) : y ∈ V((foo G x).val) :=
+  let ⟨H, hH, hx, hy⟩ := h
+  vertexSet_mono (H.le_of_mem_component_of_mem_mem hH hx (Graph.mem_foo h.left_mem)) hy
+
+lemma vertexConnected_iff_mem_foo_of_mem (hx : x ∈ V(G)) :
+    G.VertexConnected x y ↔ y ∈ V((foo G x).val) :=
+  ⟨fun h => h.mem_foo, fun hy ↦ ⟨foo G x, foo_mem_components hx, mem_foo hx, hy⟩⟩
+
+lemma Adj.vertexConnected (h : G.Adj x y) : G.VertexConnected x y :=
+  ⟨foo G x, foo_mem_components h.left_mem, Graph.mem_foo h.left_mem, h.mem_foo⟩
+
+lemma IsLink.vertexConnected (h : G.IsLink e x y) : G.VertexConnected x y :=
+  h.adj.vertexConnected
+
+lemma IsWalk.vertexConnected_of_mem_of_mem (hW : G.IsWalk W) (hx : x ∈ W) (hy : y ∈ W) :
+    G.VertexConnected x y := by
+  suffices aux : ∀ ⦃z⦄, z ∈ W → G.VertexConnected z W.last from (aux hx).trans (aux hy).symm
+  clear hx hy
+  intro z hz
+  induction hW generalizing z with
+  | nil => simp_all
+  | cons hW h ih =>
+    obtain rfl | hz := by simpa using hz
+    · exact h.vertexConnected.trans <| by simpa only [last_cons] using ih <| by simp
+    simpa using ih hz
+
+lemma IsWalk.vertexConnected_first_last (hW : G.IsWalk W) : G.VertexConnected W.first W.last :=
+  hW.vertexConnected_of_mem_of_mem (by simp) <| by simp
+
+lemma VertexConnected.of_le (h : H.VertexConnected x y) (hle : H ≤ G) : G.VertexConnected x y := by
+  rw [vertexConnected_iff_mem_foo_of_mem <| vertexSet_mono hle h.left_mem]
+  exact vertexSet_mono (foo_le_foo_of_le h.left_mem hle) h.mem_foo
+
+-- Not true anymore because of infinite graphs
+-- lemma VertexConnected.exists_isWalk (h : G.VertexConnected x y) :
+--     ∃ W, G.IsWalk W ∧ W.first = x ∧ W.last = y := by
+--   rw [VertexConnected] at h
+--   induction h using Relation.TransGen.head_induction_on with
+--   | @base a h =>
+--     obtain ⟨e, he⟩ | ⟨rfl, h⟩ := h
+--     · exact ⟨he.walk, by simp⟩
+--     exact ⟨.nil a, by simp [h]⟩
+--   | @ih u v h₁ h₂ h₃ =>
+--     obtain ⟨W, hW, rfl, rfl⟩ := h₃
+--     obtain ⟨e, he⟩ | ⟨rfl, h⟩ := h₁
+--     · exact ⟨.cons u e W, by simp [he, hW]⟩
+--     exact ⟨W, hW, rfl, rfl⟩
+
+-- lemma vertexConnected_iff_exists_walk :
+--     G.VertexConnected x y ↔ ∃ W, G.IsWalk W ∧ W.first = x ∧ W.last = y := by
+--   refine ⟨VertexConnected.exists_isWalk, ?_⟩
+--   rintro ⟨W, hW, rfl, rfl⟩
+--   exact hW.vertexConnected_first_last
+
+-- lemma VertexConnected.exists_isPath (h : G.VertexConnected x y) :
+--     ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y := by
+--   classical
+--   obtain ⟨W, hW, rfl, rfl⟩ := h.exists_isWalk
+--   exact ⟨W.dedup, by simp [hW.dedup_isPath]⟩
+
+-- lemma vertexConnected_induce_iff {X : Set α} (hx : x ∈ V(G)) :
+--     G[X].VertexConnected x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ V(P) ⊆ X := by
+--   refine ⟨fun h ↦ ?_, ?_⟩
+--   · obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
+--     refine ⟨P, ?_, rfl, rfl, hP.vertexSet_subset⟩
+--     cases P with
+--     | nil => simpa
+--     | cons u e W =>
+--       rw [isPath_induce_iff' (by simp)] at hP
+--       exact hP.1
+--   rintro ⟨P, h, rfl, rfl, hPX⟩
+--   cases P with
+--   | nil => simpa using hPX
+--   | cons u e W =>
+--     apply IsWalk.vertexConnected_first_last
+--     rw [isWalk_induce_iff' (by simp)]
+--     simp_all only [cons_isPath_iff, first_cons, cons_vertexSet, cons_isWalk_iff, true_and, and_true]
+--     exact h.1.isWalk

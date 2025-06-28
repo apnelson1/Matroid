@@ -72,6 +72,8 @@ noncomputable def edgePreimg {β' : Type*} (G : Graph α β) (σ : β' → β) :
     rintro e a b ⟨-, rfl, hbtw⟩
     exact G.left_mem_of_isLink hbtw
 
+scoped infix:50 " ∘ " => fun σ G ↦ Graph.edgePreimg G σ
+
 variable {β' : Type*} {e' : β'} {σ : β' → β}
 
 @[simp]

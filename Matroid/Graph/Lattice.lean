@@ -14,6 +14,105 @@ namespace Graph
 
 
 
+namespace WithTop
+
+lemma eq_top_or_eq_some {α : Type*} (a' : WithTop α) : a' = ⊤ ∨ ∃ a : α, a' = WithTop.some a :=
+  Option.eq_none_or_eq_some a'
+
+noncomputable def sInter (s : Set (WithTop <| Graph α β)) : WithTop <| Graph α β := by
+  by_cases hs : ∃ G : Graph α β, WithTop.some G ∈ s
+  · exact WithTop.some (Graph.sInter (WithTop.some ⁻¹' s) (by tauto))
+  · exact ⊤
+
+noncomputable instance : CompleteSemilatticeInf (WithTop <| Graph α β) where
+  sInf := sInter
+  sInf_le s G hG := by
+    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
+    · exact le_top
+    have : ∃ G : Graph α β, WithTop.some G ∈ s := by use G
+    simp only [sInter, this, ↓reduceDIte, ge_iff_le]
+    exact WithTop.coe_le_coe.mpr <| Graph.sInter_le hG
+  le_sInf s G hG := by
+    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
+    · suffices ∀ G : Graph α β, WithTop.some G ∉ s by simp [this, sInter]
+      exact fun _ hHs => Option.some_ne_none _ (top_le_iff.mp <| hG _ hHs)
+    unfold sInter
+    split_ifs with h
+    · exact WithTop.coe_le_coe.mpr <|
+        (Graph.le_sInter_iff h).mpr fun _ hHs => WithTop.coe_le_coe.mp (hG _ hHs)
+    · exact le_top
+
+noncomputable instance : CompleteLattice (WithTop <| Graph α β) where
+  sup G H := by
+    classical
+    exact G.bind (fun G ↦ H.bind (fun H ↦ if Compatible G H then WithTop.some <| G ∪ H else none))
+  le_sup_left G H := by
+    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
+    · simp
+    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
+    · simp only [Option.bind_none, Option.bind_fun_none]
+      exact le_top
+    simp only [Option.bind_some]
+    split_ifs with h
+    · exact WithTop.coe_le_coe.mpr <| Graph.left_le_union G H
+    · exact le_top
+  le_sup_right G H := by
+    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
+    · exact le_top
+    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
+    · simp
+    simp only [Option.bind_some]
+    split_ifs with h
+    · exact WithTop.coe_le_coe.mpr <| Compatible.right_le_union h
+    · exact le_top
+  sup_le G H K hGK hHK := by
+    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
+    · simpa
+    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
+    · simpa
+    obtain rfl | ⟨K, rfl⟩ := Option.eq_none_or_eq_some K
+    · exact le_top
+    have hGK : G ≤ K := WithTop.coe_le_coe.mp hGK
+    have hHK : H ≤ K := WithTop.coe_le_coe.mp hHK
+    simp only [Option.bind_some, compatible_of_le_le hGK hHK, ↓reduceIte, ge_iff_le]
+    exact WithTop.coe_le_coe.mpr <| Graph.union_le hGK hHK
+  sSup s := by
+    classical
+    exact if h : (WithTop.some ⁻¹' s).Pairwise Compatible ∧ ⊤ ∉ s
+      then WithTop.some (Graph.sUnion (WithTop.some ⁻¹' s) h.1) else ⊤
+  le_sSup s G hG := by
+    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
+    · simp [hG]
+    split_ifs with h
+    · exact WithTop.coe_le_coe.mpr <| G.le_sUnion h.1 hG
+    · exact le_top
+  sSup_le s G hG := by
+    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
+    · simp [hG]
+    have hG' : ∀ H ∈ WithTop.some ⁻¹' s, H ≤ G := fun _ hH => WithTop.coe_le_coe.mp (hG _ hH)
+    split_ifs with h
+    · exact WithTop.coe_le_coe.mpr <| by rwa [Graph.sUnion_le_iff]
+    · simp only [set_pairwise_compatible_of_subgraph hG', true_and, not_not] at h
+      exact hG ⊤ h
+  __ := completeLatticeOfCompleteSemilatticeInf _
+
+-- lemma disjoint_iff_disjoint : Disjoint (WithTop.some G) (WithTop.some H) ↔ G.Disjoint H := by
+--   rw [disjoint_iff_inf_le, le_bot_iff]
+--   sorry
+
+-- lemma IsClosedSubgraph_of_mem_partition {G H : Graph α β} (P : Partition (WithTop.some G))
+--     (hH : WithTop.some H ∈ P) : H ≤c G where
+--   le := by simpa using P.le_of_mem hH
+--   closed {e x} hxy hx := by
+--     have := P.indep hH
+--     sorry
+
+
+
+
+
+end WithTop
+
 section Lattice
 
 variable {H : ι → Graph α β} {H₀ : Graph α β}
@@ -501,16 +600,23 @@ lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
   · tauto
   simp [le_antisymm_iff, hle]
 
-def ClosedSubgraph.foo (G : Graph α β) (x : α) := sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}
+
+
+def foo (G : Graph α β) (x : α) := sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}
 
 @[simp]
-lemma ClosedSubgraph.mem_foo {x} (hx : x ∈ V(G)) : x ∈ V((foo G x).val) := by
-  simp only [foo, coe_sInf, mem_image, mem_setOf_eq, Subtype.exists, exists_and_left, exists_prop,
-    exists_eq_right_right, hx, isClosedSubgraph_self, and_self, insert_eq_of_mem, sInter_vertexSet,
-    mem_iInter, and_imp]
+lemma mem_foo {x} (hx : x ∈ V(G)) : x ∈ V((foo G x).val) := by
+  simp only [foo, ClosedSubgraph.coe_sInf, mem_image, mem_setOf_eq, Subtype.exists, exists_and_left,
+    exists_prop, exists_eq_right_right, hx, isClosedSubgraph_self, and_self, insert_eq_of_mem,
+    sInter_vertexSet, mem_iInter, and_imp]
   tauto
 
-lemma ClosedSubgraph.foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
+@[simp]
+lemma foo_eq_top {x} (hxG : x ∉ V(G)) : foo G x = ⊤ := by
+  simp only [foo, sInf_eq_top, mem_setOf_eq]
+  exact fun H hxH => (hxG <| vertexSet_mono H.prop.le hxH).elim
+
+lemma foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
   refine ⟨⟨(sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}).prop, ⟨x, mem_foo hx⟩⟩, ?_⟩
   simp only [vertexSet_nonempty_iff, ne_eq, ge_iff_le, and_imp]
   by_contra! h
@@ -521,12 +627,23 @@ lemma ClosedSubgraph.foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf
   have hHcin : ⟨H, hHcl⟩ᶜ ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := by simp [hx, hxH]
   simpa [hHnebot] using (le_compl_iff_disjoint_left.mp <| sInf_le hHcin) le_rfl hle
 
-lemma ClosedSubgraph.foo_le_iff {x} (hx : x ∈ V(G)) (H : G.ClosedSubgraph) :
-    (foo G x) ≤ H ↔ x ∈ V(H.val) := by
-  refine ⟨(vertexSet_mono · <| mem_foo hx), fun h => ?_⟩
-  have hHin : H ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := h
-  exact sInf_le hHin
+lemma foo_le_iff {x} (hx : x ∈ V(G)) (H : G.ClosedSubgraph) : (foo G x) ≤ H ↔ x ∈ V(H.val) :=
+  ⟨(vertexSet_mono · <| mem_foo hx), fun h => sInf_le (by exact h)⟩
 
+lemma IsLink.mem_foo {x y} (h : G.IsLink e x y) : y ∈ V((foo G x).val) :=
+  (h.of_le_of_mem (foo G x).prop.le <| (foo G x).prop.closed h.inc_left <|
+    Graph.mem_foo h.left_mem).right_mem
+
+lemma Adj.mem_foo {x y} (h : G.Adj x y) : y ∈ V((foo G x).val) :=
+  h.choose_spec.mem_foo
+
+lemma foo_le_foo_of_le {G H : Graph α β} {x} (hxH : x ∈ V(H)) (hle : H ≤ G) :
+    (foo H x).val ≤ (foo G x).val := by
+  let G' : H.ClosedSubgraph := ⟨↑(G.foo x) ∩ H, (foo G x).prop.inter_le hle⟩
+  refine le_trans ?_ <| (G.foo x).val.inter_le_left (H := H)
+  suffices H.foo x ≤ G' by rwa [← Subtype.coe_le_coe] at this
+  rw [foo_le_iff hxH]
+  simp [G', hxH, mem_foo <| vertexSet_mono hle hxH]
 
 
 def Components (G : Graph α β) : Set G.ClosedSubgraph := {H | IsAtom H}
@@ -560,16 +677,16 @@ lemma components_sUnion (G : Graph α β) : sSup G.Components = G := by
   apply_fun Subtype.val at h
   exact h
 
-lemma ClosedSubgraph.foo_mem_components {x} (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
+lemma foo_mem_components {x} (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
   rw [components_isCompOf_iff]
-  exact ClosedSubgraph.foo_isCompOf hx
+  exact foo_isCompOf hx
 
 lemma mem_unique_component {x} (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x ∈ V(H.val) := by
-  refine ⟨ClosedSubgraph.foo G x, ⟨ClosedSubgraph.foo_mem_components hx, ClosedSubgraph.mem_foo hx⟩,
+  refine ⟨foo G x, ⟨foo_mem_components hx, mem_foo hx⟩,
     fun H ⟨hHc, hxH⟩ =>
-    G.components_pairwise_disjoint.eq hHc (ClosedSubgraph.foo_mem_components hx) ?_⟩
+    G.components_pairwise_disjoint.eq hHc (foo_mem_components hx) ?_⟩
   rw [ClosedSubgraph.disjoint_iff]
-  exact (·.vertex.notMem_of_mem_left hxH <| ClosedSubgraph.mem_foo hx)
+  exact (·.vertex.notMem_of_mem_left hxH <| mem_foo hx)
 
 lemma ClosedSubgraph.disjoint_of_mem_component_of_ne {H₁ H₂ : G.ClosedSubgraph}
     (hH₁ : H₁ ∈ G.Components) (hH₂ : H₂ ∈ G.Components) (hne : H₁ ≠ H₂) : Disjoint H₁ H₂ :=
@@ -583,15 +700,32 @@ lemma ClosedSubgraph.eq_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgrap
     not_disjoint_iff_nonempty_inter] at this
   exact this ⟨x, hx₁, hx₂⟩
 
+lemma foo_eq_foo {x y} (hx : x ∈ V(G)) (hy : y ∈ V(G)) (h : y ∈ V((foo G x).val)) :
+    foo G x = foo G y :=
+  ClosedSubgraph.eq_of_mem_component_of_mem_mem (foo_mem_components hx) (foo_mem_components hy) h <|
+    mem_foo hy
+
+lemma mem_foo_iff : ∀ {x y}, x ∈ V(G) → y ∈ V(G) →
+    (y ∈ V((foo G x).val) ↔ x ∈ V((foo G y).val)) := by
+  suffices ∀ {x y}, x ∈ V(G) → y ∈ V(G) → y ∈ V((foo G x).val) → x ∈ V((foo G y).val) by
+    exact fun {x y} hx hy => ⟨@this x y hx hy, @this y x hy hx⟩
+  intro x y hx hy h
+  rw [← foo_eq_foo hx hy h]
+  exact mem_foo hx
+
 lemma ClosedSubgraph.le_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgraph}
     (hH₁ : H₁ ∈ G.Components) (hx₁ : x ∈ V(H₁.val)) (hx₂ : x ∈ V(H₂.val)) : H₁ ≤ H₂ :=
   have hx : x ∈ V(G) := vertexSet_mono H₁.prop.le hx₁
-  (eq_of_mem_component_of_mem_mem hH₁ (ClosedSubgraph.foo_mem_components hx) hx₁ <|
-    ClosedSubgraph.mem_foo hx) ▸ (ClosedSubgraph.foo_le_iff hx _).mpr hx₂
+  (eq_of_mem_component_of_mem_mem hH₁ (foo_mem_components hx) hx₁ <| mem_foo hx) ▸
+    (foo_le_iff hx _).mpr hx₂
 
 def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
     sSup_atoms_eq_top.symm
+
+def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
+    G.ClosedSubgraph ≃o Set G.Components :=
+  CompleteAtomicBooleanAlgebra.orderIsoSetOfAtoms
 
 def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
   parts := {V(H.val) | H ∈ G.Components}
