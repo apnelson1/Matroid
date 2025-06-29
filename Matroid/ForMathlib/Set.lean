@@ -115,3 +115,7 @@ variable {s t r : Set α}
 
 lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (insert x t) := by
   rw [diff_diff, singleton_union]
+
+lemma Subsingleton.elim {x y} {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (hys : y ∈ s) :
+    x = y := by
+  obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all

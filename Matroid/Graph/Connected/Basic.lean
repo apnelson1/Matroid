@@ -5,15 +5,12 @@ import Matroid.Graph.Degree.Constructions
 import Mathlib.Data.Set.Insert
 import Mathlib.Data.ENat.Lattice
 import Mathlib.Data.Real.Basic
+import Matroid.ForMathlib.Set
 
 open Set Function Nat WList
 
 variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
-
-lemma Set.Subsingleton.elim {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (hys : y ∈ s) :
-    x = y := by
-  obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all
 
 namespace Graph
 

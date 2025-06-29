@@ -324,6 +324,8 @@ lemma Subgraph.disjoint_iff (H₁ H₂ : G.Subgraph) : Disjoint H₁ H₂ ↔ H�
 
 @[reducible] def ClosedSubgraph (G : Graph α β) := {H // H ≤c G}
 
+variable {G : Graph α β} {H H₁ H₂ : G.ClosedSubgraph} {s : Set G.ClosedSubgraph}
+
 instance : PartialOrder G.ClosedSubgraph := inferInstanceAs (PartialOrder {H // H ≤c G})
 
 /-- The order embedding from closed subgraphs to subgraphs -/
@@ -504,7 +506,7 @@ lemma ClosedSubgraph.coe_sInf (s : Set G.ClosedSubgraph) :
   exact (image_eq_range Subtype.val s).symm
 
 @[simp]
-lemma ClosedSubgraph.coe_sInf_of_nonempty {s : Set G.ClosedSubgraph} (hs : s.Nonempty):
+lemma ClosedSubgraph.coe_sInf_of_nonempty (hs : s.Nonempty):
     ((sInf s : G.ClosedSubgraph) : Graph α β) = Graph.sInter (Subtype.val '' s) (by simpa) := by
   rw [← coe_toSubgraph, toSubgraph_sInf, Subgraph.coe_sInf_of_nonempty _ (by simpa)]
   congr
@@ -518,7 +520,7 @@ lemma ClosedSubgraph.vertexSet_sInf_comm (s : Set G.ClosedSubgraph) :
   simp only [coe_sInf, sInter_vertexSet, mem_insert_iff, iInter_iInter_eq_or_left, biInter_image]
 
 @[simp]
-lemma ClosedSubgraph.vertexSet_sInf_comm_of_nonempty {s : Set G.ClosedSubgraph} (hs : s.Nonempty) :
+lemma ClosedSubgraph.vertexSet_sInf_comm_of_nonempty (hs : s.Nonempty) :
     V((sInf s).val) = ⋂ a ∈ s, V(a.val) := by
   simp only [coe_sInf_of_nonempty hs, sInter_vertexSet, biInter_image]
 
@@ -528,17 +530,53 @@ instance : CompleteAtomicBooleanAlgebra G.ClosedSubgraph where
     simp only [ClosedSubgraph.toSubgraph_iInf, ClosedSubgraph.toSubgraph_iSup]
     exact CompletelyDistribLattice.iInf_iSup_eq (fun a b ↦ ClosedSubgraph.toSubgraph (f a b))
 
+lemma ClosedSubgraph.compatible (H₁ H₂ : G.ClosedSubgraph) : H₁.val.Compatible H₂.val :=
+  compatible_of_le_le H₁.prop.le H₂.prop.le
+
 @[simp]
 lemma ClosedSubgraph.coe_eq_induce (H : G.ClosedSubgraph) :
     G[V(H.val)] = H.val := Graph.ext rfl fun e x y =>
   ⟨fun ⟨hl, hx, hy⟩ => by rwa [H.prop.isLink_iff_of_mem hx],
   fun h => ⟨h.of_le H.prop.le, h.left_mem, h.right_mem⟩⟩
 
-instance : SetLike G.ClosedSubgraph α where
-  coe H := V(H.val)
-  coe_injective' H₁ H₂ h := by
-    beta_reduce at h
-    rw [← Subtype.coe_inj, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce, h]
+lemma ClosedSubgraph.ext_vertexSet (h : V(H₁.val) = V(H₂.val)) : H₁ = H₂ := by
+  rw [← Subtype.coe_inj, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce, h]
+
+lemma ClosedSubgraph.vertexSet_inj : H₁ = H₂ ↔ V(H₁.val) = V(H₂.val) :=
+  ⟨(· ▸ rfl), ClosedSubgraph.ext_vertexSet⟩
+
+lemma ClosedSubgraph.vertexSet_injective : Injective (V(·.val) : G.ClosedSubgraph → Set α) :=
+  fun _ _ => vertexSet_inj.mpr
+
+lemma ClosedSubgraph.vertexSet_strictMono (G : Graph α β) :
+    StrictMono (V(·.val) : G.ClosedSubgraph → Set α) := fun H₁ H₂ hlt => by
+  rw [lt_iff_le_and_ne, ← vertexSet_inj.ne]
+  exact ⟨vertexSet_mono hlt.le, hlt.ne⟩
+
+lemma ClosedSubgraph.disjoint_iff (H₁ H₂ : G.ClosedSubgraph) :
+    Disjoint H₁ H₂ ↔ H₁.val.Disjoint H₂.val := by
+  rw [disjoint_iff_inf_le, le_bot_iff, ← Subtype.coe_inj,
+    disjoint_iff_inter_eq_bot_of_compatible (H₁.compatible H₂)]
+  rfl
+
+lemma ClosedSubgraph.disjoint_iff_vertexSet_disjoint :
+    Disjoint H₁ H₂ ↔ Disjoint V(H₁.val) V(H₂.val) := by
+  rw [ClosedSubgraph.disjoint_iff, (H₁.compatible H₂).disjoint_iff_vertexSet_disjoint]
+
+@[simp]
+lemma ClosedSubgraph.eq_ambient_of_subset_vertexSet (h : V(G) ⊆ V(H.val)) : H = ⊤ := by
+  have hV : V(G) = V(H.val) := subset_antisymm h (vertexSet_mono H.prop.le)
+  refine le_antisymm le_top ?_
+  rw [← Subtype.coe_le_coe, ← H.coe_eq_induce, ← hV, induce_vertexSet_self]
+  rfl
+
+lemma ClosedSubgraph.le_iff_vertexSet_subset : H₁ ≤ H₂ ↔ V(H₁.val) ⊆ V(H₂.val) := by
+  rw [← Subtype.coe_le_coe, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce]
+  exact induce_mono_iff G
+
+lemma ClosedSubgraph.lt_iff_vertexSet_ssubset : H₁ < H₂ ↔ V(H₁.val) ⊂ V(H₂.val) := by
+  refine ⟨(vertexSet_strictMono G ·), fun h => ?_⟩
+  simp [lt_iff_le_and_ne, le_iff_vertexSet_subset.mpr h.subset, vertexSet_inj, h.ne]
 
 @[simp]
 lemma ClosedSubgraph.compl_vertexSet (H : G.ClosedSubgraph) :
@@ -569,25 +607,6 @@ lemma ClosedSubgraph.compl_isLink (H : G.ClosedSubgraph) :
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
   tauto
 
-lemma ClosedSubgraph.compatible (H₁ H₂ : G.ClosedSubgraph) : H₁.val.Compatible H₂.val :=
-  compatible_of_le_le H₁.prop.le H₂.prop.le
-
-lemma ClosedSubgraph.disjoint_iff (H₁ H₂ : G.ClosedSubgraph) :
-    Disjoint H₁ H₂ ↔ H₁.val.Disjoint H₂.val := by
-  rw [disjoint_iff_inf_le, le_bot_iff, ← Subtype.coe_inj,
-    disjoint_iff_inter_eq_bot_of_compatible (H₁.compatible H₂)]
-  rfl
-
-lemma ClosedSubgraph.ext_vertexSet {H₁ H₂ : G.ClosedSubgraph} (h : V(H₁.val) = V(H₂.val)) :
-    H₁ = H₂ := by rw [← Subtype.coe_inj, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce, h]
-
-lemma ClosedSubgraph.ext_vertexSet_iff {H₁ H₂ : G.ClosedSubgraph} :
-    H₁ = H₂ ↔ V(H₁.val) = V(H₂.val) := ⟨(· ▸ rfl), ClosedSubgraph.ext_vertexSet⟩
-
-lemma ClosedSubgraph.disjoint_iff_vertexSet_disjoint {H₁ H₂ : G.ClosedSubgraph} :
-    Disjoint H₁ H₂ ↔ Disjoint V(H₁.val) V(H₂.val) := by
-  rw [ClosedSubgraph.disjoint_iff, (H₁.compatible H₂).disjoint_iff_vertexSet_disjoint]
-
 lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
     IsAtom H ↔ H.val.IsCompOf G := by
   simp only [IsAtom, ne_eq, Subtype.forall, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, IsCompOf,
@@ -602,21 +621,22 @@ lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
 
 
 
+
 def foo (G : Graph α β) (x : α) := sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}
 
 @[simp]
-lemma mem_foo {x} (hx : x ∈ V(G)) : x ∈ V((foo G x).val) := by
+lemma mem_foo (hx : x ∈ V(G)) : x ∈ V((foo G x).val) := by
   simp only [foo, ClosedSubgraph.coe_sInf, mem_image, mem_setOf_eq, Subtype.exists, exists_and_left,
     exists_prop, exists_eq_right_right, hx, isClosedSubgraph_self, and_self, insert_eq_of_mem,
     sInter_vertexSet, mem_iInter, and_imp]
   tauto
 
 @[simp]
-lemma foo_eq_top {x} (hxG : x ∉ V(G)) : foo G x = ⊤ := by
+lemma foo_eq_top (hxG : x ∉ V(G)) : foo G x = ⊤ := by
   simp only [foo, sInf_eq_top, mem_setOf_eq]
   exact fun H hxH => (hxG <| vertexSet_mono H.prop.le hxH).elim
 
-lemma foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
+lemma foo_isCompOf (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
   refine ⟨⟨(sInf {H : G.ClosedSubgraph | x ∈ V(H.val)}).prop, ⟨x, mem_foo hx⟩⟩, ?_⟩
   simp only [vertexSet_nonempty_iff, ne_eq, ge_iff_le, and_imp]
   by_contra! h
@@ -627,17 +647,17 @@ lemma foo_isCompOf {x} (hx : x ∈ V(G)) : (foo G x).val.IsCompOf G := by
   have hHcin : ⟨H, hHcl⟩ᶜ ∈ {H : G.ClosedSubgraph | x ∈ V(H.val)} := by simp [hx, hxH]
   simpa [hHnebot] using (le_compl_iff_disjoint_left.mp <| sInf_le hHcin) le_rfl hle
 
-lemma foo_le_iff {x} (hx : x ∈ V(G)) (H : G.ClosedSubgraph) : (foo G x) ≤ H ↔ x ∈ V(H.val) :=
+lemma foo_le_iff (hx : x ∈ V(G)) (H : G.ClosedSubgraph) : (foo G x) ≤ H ↔ x ∈ V(H.val) :=
   ⟨(vertexSet_mono · <| mem_foo hx), fun h => sInf_le (by exact h)⟩
 
-lemma IsLink.mem_foo {x y} (h : G.IsLink e x y) : y ∈ V((foo G x).val) :=
+lemma IsLink.mem_foo (h : G.IsLink e x y) : y ∈ V((foo G x).val) :=
   (h.of_le_of_mem (foo G x).prop.le <| (foo G x).prop.closed h.inc_left <|
     Graph.mem_foo h.left_mem).right_mem
 
-lemma Adj.mem_foo {x y} (h : G.Adj x y) : y ∈ V((foo G x).val) :=
+lemma Adj.mem_foo (h : G.Adj x y) : y ∈ V((foo G x).val) :=
   h.choose_spec.mem_foo
 
-lemma foo_le_foo_of_le {G H : Graph α β} {x} (hxH : x ∈ V(H)) (hle : H ≤ G) :
+lemma foo_le_foo_of_le {G H : Graph α β} (hxH : x ∈ V(H)) (hle : H ≤ G) :
     (foo H x).val ≤ (foo G x).val := by
   let G' : H.ClosedSubgraph := ⟨↑(G.foo x) ∩ H, (foo G x).prop.inter_le hle⟩
   refine le_trans ?_ <| (G.foo x).val.inter_le_left (H := H)
@@ -677,22 +697,22 @@ lemma components_sUnion (G : Graph α β) : sSup G.Components = G := by
   apply_fun Subtype.val at h
   exact h
 
-lemma foo_mem_components {x} (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
+lemma foo_mem_components (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
   rw [components_isCompOf_iff]
   exact foo_isCompOf hx
 
-lemma mem_unique_component {x} (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x ∈ V(H.val) := by
+lemma mem_unique_component (hx : x ∈ V(G)) : ∃! H ∈ G.Components, x ∈ V(H.val) := by
   refine ⟨foo G x, ⟨foo_mem_components hx, mem_foo hx⟩,
     fun H ⟨hHc, hxH⟩ =>
     G.components_pairwise_disjoint.eq hHc (foo_mem_components hx) ?_⟩
   rw [ClosedSubgraph.disjoint_iff]
   exact (·.vertex.notMem_of_mem_left hxH <| mem_foo hx)
 
-lemma ClosedSubgraph.disjoint_of_mem_component_of_ne {H₁ H₂ : G.ClosedSubgraph}
+lemma ClosedSubgraph.disjoint_of_mem_component_of_ne
     (hH₁ : H₁ ∈ G.Components) (hH₂ : H₂ ∈ G.Components) (hne : H₁ ≠ H₂) : Disjoint H₁ H₂ :=
   G.components_pairwise_disjoint hH₁ hH₂ hne
 
-lemma ClosedSubgraph.eq_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgraph}
+lemma ClosedSubgraph.eq_of_mem_component_of_mem_mem
     (hH₁ : H₁ ∈ G.Components) (hH₂ : H₂ ∈ G.Components) (hx₁ : x ∈ V(H₁.val))
     (hx₂ : x ∈ V(H₂.val)) : H₁ = H₂ := by
   have := disjoint_of_mem_component_of_ne hH₁ hH₂
@@ -700,8 +720,7 @@ lemma ClosedSubgraph.eq_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgrap
     not_disjoint_iff_nonempty_inter] at this
   exact this ⟨x, hx₁, hx₂⟩
 
-lemma foo_eq_foo {x y} (hx : x ∈ V(G)) (hy : y ∈ V(G)) (h : y ∈ V((foo G x).val)) :
-    foo G x = foo G y :=
+lemma foo_eq_foo (hx : x ∈ V(G)) (hy : y ∈ V(G)) (h : y ∈ V((foo G x).val)) : foo G x = foo G y :=
   ClosedSubgraph.eq_of_mem_component_of_mem_mem (foo_mem_components hx) (foo_mem_components hy) h <|
     mem_foo hy
 
@@ -713,8 +732,8 @@ lemma mem_foo_iff : ∀ {x y}, x ∈ V(G) → y ∈ V(G) →
   rw [← foo_eq_foo hx hy h]
   exact mem_foo hx
 
-lemma ClosedSubgraph.le_of_mem_component_of_mem_mem {H₁ H₂ : G.ClosedSubgraph}
-    (hH₁ : H₁ ∈ G.Components) (hx₁ : x ∈ V(H₁.val)) (hx₂ : x ∈ V(H₂.val)) : H₁ ≤ H₂ :=
+lemma ClosedSubgraph.le_of_mem_component_of_mem_mem (hH₁ : H₁ ∈ G.Components) (hx₁ : x ∈ V(H₁.val))
+    (hx₂ : x ∈ V(H₂.val)) : H₁ ≤ H₂ :=
   have hx : x ∈ V(G) := vertexSet_mono H₁.prop.le hx₁
   (eq_of_mem_component_of_mem_mem hH₁ (foo_mem_components hx) hx₁ <| mem_foo hx) ▸
     (foo_le_iff hx _).mpr hx₂
@@ -723,8 +742,7 @@ def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :
   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
     sSup_atoms_eq_top.symm
 
-def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
-    G.ClosedSubgraph ≃o Set G.Components :=
+def ClosedSubgraph.orderIso_set_components (G : Graph α β) : G.ClosedSubgraph ≃o Set G.Components :=
   CompleteAtomicBooleanAlgebra.orderIsoSetOfAtoms
 
 def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
@@ -735,7 +753,7 @@ def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
       and_imp, forall_exists_index]
     rintro W H₀ hH₀co rfl
     have := not_imp_comm.mp <| G.components_pairwiseDisjoint_id.elim hH hH₀co
-    rwa [H.ext_vertexSet_iff, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
+    rwa [H.vertexSet_inj, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
   bot_notMem := by simp
   sSup_eq' := by
     simp only [sSup_eq_sUnion, sUnion_eq_biUnion, mem_setOf_eq, iUnion_exists, biUnion_and',

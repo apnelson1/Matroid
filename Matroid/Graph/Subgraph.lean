@@ -349,6 +349,9 @@ lemma induce_mono (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
   isLink_of_isLink _ _ _ := fun ⟨h, h1, h2⟩ ↦ ⟨h, hXY h1, hXY h2⟩
 
 @[simp]
+lemma induce_mono_iff (G : Graph α β) : G[X] ≤ G[Y] ↔ X ⊆ Y := ⟨vertexSet_mono, induce_mono G⟩
+
+@[simp]
 lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
   refine G.ext_of_le_le (by simp) (by simp) rfl <| Set.ext fun e ↦
     ⟨fun ⟨_, _, h⟩ ↦ h.1.edge_mem, fun h ↦ ?_⟩
