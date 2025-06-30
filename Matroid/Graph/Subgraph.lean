@@ -2,6 +2,7 @@ import Mathlib.Combinatorics.Graph.Basic
 import Matroid.Graph.Basic
 import Mathlib.Data.Set.Insert
 import Mathlib.Tactic.TFAE
+import Mathlib.Data.Set.Card
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}
@@ -131,6 +132,27 @@ lemma isNonloopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsNonloopAt e =
 
 lemma isNonloopAt_eqOn_of_le (hle : H ≤ G) : EqOn H.IsNonloopAt G.IsNonloopAt E(H) :=
   fun _ ↦ isNonloopAt_eq_of_le hle
+
+lemma vertexSet_ssubset_or_edgeSet_ssubset_of_lt (h : G < H) : V(G) ⊂ V(H) ∨ E(G) ⊂ E(H) := by
+  rw [lt_iff_le_and_ne] at h
+  simp only [ssubset_iff_subset_ne, vertexSet_mono h.1, ne_eq, true_and, edgeSet_mono h.1]
+  by_contra! heq
+  exact h.2 <| ext_of_le_le h.1 le_rfl heq.1 heq.2
+
+lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
+    V(G).ncard + E(G).ncard < V(H).ncard + E(H).ncard := by
+  obtain hV | hE := vertexSet_ssubset_or_edgeSet_ssubset_of_lt h
+  · have hE' : E(G) ⊆ E(H) := edgeSet_mono h.1
+    have hVncard : V(G).ncard < V(H).ncard := ncard_lt_ncard hV
+    have hEncard : E(G).ncard ≤ E(H).ncard := ncard_le_ncard hE'
+    omega
+  · have hV' : V(G) ⊆ V(H) := vertexSet_mono h.1
+    have hVncard : V(G).ncard ≤ V(H).ncard := ncard_le_ncard hV'
+    have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE
+    omega
+
+instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
+  ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
 
 /- TODO : Is is reasonable to only keep the `EqOn` versions of the above?
 Also, what about functional `≤` versions? -/
@@ -586,6 +608,29 @@ lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂
 
 lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
   G.isClosedSubgraph_self.diff h
+
+lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
+    x ∈ V(H) ∧ y ∉ V(H) := by
+  rw [not_iff_comm]
+  push_neg
+  exact ⟨fun hncl ↦ ⟨hle.le, fun e x ⟨y, hexy⟩ hxH =>
+    hle.isLink_of_mem_mem hexy hxH (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem⟩,
+    fun hcl x y hexy hx ↦ (hcl.mem_iff_mem_of_adj hexy).mp hx⟩
+
+lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
+  rw [vertexDelete_edgeSet]
+  refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, fun e x he hxH => ?_⟩⟩
+  · by_contra! hfH
+    simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
+    refine (edgeSet_mono hclF.le ?_).2 hf.2
+    obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1
+    obtain hx | hy := or_iff_not_imp_left.mpr <| hfH x y hxy
+    · exact hcl.closed ⟨_, hxy⟩ hx
+    · exact hcl.closed ⟨_, hxy.symm⟩ hy
+  · have heF : e ∉ F := fun heF => by
+      obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
+      obtain rfl | rfl := he.eq_or_eq_of_isLink heuv <;> exact (‹x ∉ V(H)› hxH).elim
+    exact hclF.closed (by simp [he, heF]) hxH
 
 /-! ### Components -/
 

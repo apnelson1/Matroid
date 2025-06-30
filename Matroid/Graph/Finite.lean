@@ -1,5 +1,6 @@
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Constructions.Basic
+import Matroid.Graph.Lattice
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
 import Mathlib.Data.Set.Card
@@ -88,6 +89,11 @@ lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
   simp only [Prod.mk.injEq] at h_eq
   exact G.ext_of_le_le h₁ h₂ h_eq.1 h_eq.2
 
+instance (G : Graph α β) [G.Finite] : Finite G.Subgraph := finite_setOf_le G
+
+instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
+  G.finite_setOf_le.subset fun _ hH ↦ hH.le
+
 instance [G.Finite] [H.Finite] : (G ∪ H).Finite where
   vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
   edgeSet_finite := G.edgeSet_finite.union H.edgeSet_finite
@@ -111,6 +117,10 @@ lemma encard_delete_edge_lt {G : Graph α β} [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
   rw [edgeDelete_edgeSet]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+
+-- instance [G.Finite] : WellFoundedLT G.Subgraph := inferInstance
+
+-- instance [G.Finite] : WellFoundedLT G.ClosedSubgraph := inferInstance
 
 /-! ### Local Finiteness -/
 

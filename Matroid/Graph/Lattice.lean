@@ -355,6 +355,14 @@ lemma ClosedSubgraph.le_mk_iff {H₀ : Graph α β} {hH₀ : H₀ ≤c G} {H : G
 
 lemma ClosedSubgraph.coe_le_coe {H₀ H : G.ClosedSubgraph} : H₀.1 ≤ H.1 ↔ H₀ ≤ H := Iff.rfl
 
+lemma ClosedSubgraph.coe_lt_coe {H₀ H : G.ClosedSubgraph} : H₀.1 < H.1 ↔ H₀ < H := Iff.rfl
+
+lemma ClosedSubgraph.toSubgraph_le_toSubgraph {H₁ H₂ : G.ClosedSubgraph} :
+    H₁.toSubgraph ≤ H₂.toSubgraph ↔ H₁ ≤ H₂ := Iff.rfl
+
+lemma ClosedSubgraph.toSubgraph_lt_toSubgraph {H₁ H₂ : G.ClosedSubgraph} :
+    H₁.toSubgraph < H₂.toSubgraph ↔ H₁ < H₂ := Iff.rfl
+
 @[simp]
 lemma ClosedSubgraph.coe_sup (H₁ H₂ : G.ClosedSubgraph) :
     ((H₁ ⊔ H₂ : G.ClosedSubgraph) : Graph α β) = H₁.1 ∪ H₂.1 := rfl

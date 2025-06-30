@@ -351,40 +351,49 @@ lemma exists_of_not_connected (h : ¬ G.Connected) (hne : V(G).Nonempty) :
 --     simp_all only [cons_isPath_iff, first_cons, cons_vertexSet, cons_isWalk_iff, true_and, and_true]
 --     exact h.1.isWalk
 
--- lemma connected_iff_forall_exists_adj (hne : V(G).Nonempty) :
---     G.Connected ↔ ∀ X ⊂ V(G), X.Nonempty → ∃ x ∈ X, ∃ y ∈ V(G) \ X, G.Adj x y := by
---   refine ⟨fun h X hXV ⟨x, hxV⟩ ↦ ?_, fun h ↦ by_contra fun hnc ↦ ?_⟩
---   · obtain ⟨y', hy'V, hy'X⟩ := exists_of_ssubset hXV
---     obtain ⟨W, hW, rfl, rfl⟩ := (h.vertexConnected (hXV.subset hxV) hy'V).exists_isWalk
---     obtain ⟨e, x₁, y₁, h, hx₁, hy₁⟩ := exists_dInc_prop_not_prop hxV hy'X
---     exact ⟨x₁, hx₁, y₁, ⟨hW.vertex_mem_of_mem h.right_mem, hy₁⟩, (hW.isLink_of_dInc h).adj⟩
---   obtain ⟨X, hXV, hXne, h'⟩ := exists_of_not_connected hnc hne
---   obtain ⟨x, hX, y, hy, hxy⟩ := h X hXV hXne
---   exact hy.2 <| h' hX hxy
+lemma connected_iff_forall_exists_adj (hne : V(G).Nonempty) :
+    G.Connected ↔ ∀ X ⊂ V(G), X.Nonempty → ∃ x ∈ X, ∃ y ∈ V(G) \ X, G.Adj x y := by
+  refine ⟨fun h X hXV hXnem ↦ ?_, fun h ↦ by_contra fun hnc ↦ ?_⟩
+  · by_contra! hnadj
+    have hGXcl : G[X] ≤c G := ⟨induce_le hXV.subset, fun e x ⟨y, hexy⟩ hxX =>
+      ⟨x, y, hexy, hxX, by_contra fun hyX => hnadj x hxX y ⟨hexy.right_mem, hyX⟩ ⟨e, hexy⟩⟩⟩
+    rw [← le_antisymm hGXcl.le <| h.2 ⟨hGXcl, hXnem⟩ hGXcl.le, induce_vertexSet] at hXV
+    exact (and_not_self_iff (X ⊆ X)).mp hXV
+  obtain ⟨X, hXV, hXne, h'⟩ := exists_of_not_connected hnc hne
+  obtain ⟨x, hX, y, hy, hxy⟩ := h X hXV hXne
+  exact hy.2 <| h' hX hxy
 
--- /-- A `WList` that is `WellFormed` produces a connected graph. -/
--- lemma _root_.WList.WellFormed.toGraph_connected (hW : W.WellFormed) : W.toGraph.Connected :=
---   ⟨by simp, fun x y hx hy ↦
---     hW.isWalk_toGraph.vertexConnected_of_mem_of_mem (by simpa using hx) (by simpa using hy)⟩
+/-- A `WList` that is `WellFormed` produces a connected graph. -/
+lemma _root_.WList.WellFormed.toGraph_connected (hW : W.WellFormed) : W.toGraph.Connected :=
+  connected_iff.mpr ⟨by simp, fun x y hx hy ↦
+    hW.isWalk_toGraph.vertexConnected_of_mem_of_mem (by simpa using hx) (by simpa using hy)⟩
 
--- lemma IsWalk.toGraph_connected (hW : G.IsWalk W) : W.toGraph.Connected :=
---   hW.wellFormed.toGraph_connected
+lemma IsWalk.toGraph_connected (hW : G.IsWalk W) : W.toGraph.Connected :=
+  hW.wellFormed.toGraph_connected
 
 -- lemma Connected.exists_vertexConnected_deleteEdge_set {X : Set α} (hG : G.Connected)
 --     (hX : (X ∩ V(G)).Nonempty) (hu : u ∈ V(G)) : ∃ x ∈ X, (G ＼ E(G[X])).VertexConnected u x := by
---   obtain ⟨x', hx'X, hx'V⟩ := hX
---   obtain ⟨W, hW, hu, rfl⟩ := (hG.vertexConnected hu hx'V).exists_isWalk
---   induction hW generalizing u with
---   | nil => exact ⟨_, hx'X, by simp_all⟩
---   | @cons x e W hW h ih =>
---     obtain rfl : x = u := hu
---     by_cases hmem : e ∈ E(G ＼ E(G[X]))
---     · obtain ⟨x', hx', hWx'⟩ := ih (u := W.first) (hW.vertex_mem_of_mem (by simp)) rfl
---         (by simpa using hx'X) (by simpa using hx'V)
---       have hconn := (h.of_le_of_mem edgeDelete_le hmem).vertexConnected
---       exact ⟨x', hx', hconn.trans hWx'⟩
---     rw [edgeDelete_edgeSet, mem_diff, and_iff_right h.edge_mem, h.mem_induce_iff, not_not] at hmem
---     exact ⟨x, hmem.1, by simpa⟩
+--   by_contra! h
+--   obtain ⟨H, hHu, hHX⟩ : ∃ H : (G ＼ E(G[X])).ClosedSubgraph, u ∈ V(H.val) ∧
+--     Disjoint V(H.val) X := by sorry
+--   clear h
+
+--   sorry
+
+
+  -- obtain ⟨x', hx'X, hx'V⟩ := hX
+  -- obtain ⟨W, hW, hu, rfl⟩ := (hG.vertexConnected hu hx'V).exists_isWalk
+  -- induction hW generalizing u with
+  -- | nil => exact ⟨_, hx'X, by simp_all⟩
+  -- | @cons x e W hW h ih =>
+  --   obtain rfl : x = u := hu
+  --   by_cases hmem : e ∈ E(G ＼ E(G[X]))
+  --   · obtain ⟨x', hx', hWx'⟩ := ih (u := W.first) (hW.vertex_mem_of_mem (by simp)) rfl
+  --       (by simpa using hx'X) (by simpa using hx'V)
+  --     have hconn := (h.of_le_of_mem edgeDelete_le hmem).vertexConnected
+  --     exact ⟨x', hx', hconn.trans hWx'⟩
+  --   rw [edgeDelete_edgeSet, mem_diff, and_iff_right h.edge_mem, h.mem_induce_iff, not_not] at hmem
+  --   exact ⟨x, hmem.1, by simpa⟩
 
 -- lemma Connected.exists_isPathFrom (hG : G.Connected) (hS : (S ∩ V(G)).Nonempty)
 --     (hT : (T ∩ V(G)).Nonempty) : ∃ P, G.IsPathFrom S T P := by
