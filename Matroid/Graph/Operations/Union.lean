@@ -219,6 +219,8 @@ lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : 
   ((isLink_eqOn_of_le h₁).mono inter_subset_left).trans <|
     (isLink_eqOn_of_le h₂).symm.mono inter_subset_right
 
+lemma compatible_of_le (h : H ≤ G) : H.Compatible G := compatible_of_le_le h le_rfl
+
 lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
     H.IsLink e x y := by
   rwa [← hGH ⟨h.edge_mem, heH⟩]
@@ -959,6 +961,10 @@ lemma disjoint_iff_inter_eq_bot_of_compatible (h : H₁.Compatible H₂) :
   rw [Graph.disjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
     ← vertexSet_eq_empty_iff]
   simp [h]
+
+lemma edgeSet_induce_inter_eq_edgeSet_induce_of_le (h : G ≤ H) : E(G) ∩ E(H[X]) = E(G[X]) :=
+  Set.ext fun _ ↦ ⟨fun ⟨he, x, y, hl, hx, hy⟩ => ⟨x, y, hl.of_le_of_mem h he, hx, hy⟩,
+    fun ⟨x, y, hl, hx, hy⟩ => ⟨hl.edge_mem, x, y, hl.of_le h, hx, hy⟩⟩
 
 lemma induce_inter (X Y : Set α) : G[X ∩ Y] = G[X] ∩ G[Y] :=
   Graph.ext (by simp) fun e x y ↦ by

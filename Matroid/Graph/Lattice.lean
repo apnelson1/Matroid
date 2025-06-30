@@ -705,6 +705,24 @@ lemma components_sUnion (G : Graph α β) : sSup G.Components = G := by
   apply_fun Subtype.val at h
   exact h
 
+@[simp]
+lemma bot_components : G.Components = ∅ ↔ G = ⊥ := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rw [← vertexSet_eq_empty_iff]
+    have := h ▸ G.components_sSup
+    apply_fun Subtype.val at this
+    simp_all
+  rintro rfl
+  ext H
+  simp only [mem_empty_iff_false, iff_false]
+  have hH : H = ⊥ := by
+    rw [← Subtype.coe_inj, ClosedSubgraph.coe_bot]
+    change _ = ⊥
+    rw [← le_bot_iff]
+    exact H.prop.le
+  subst H
+  exact (·.bot_lt.ne' rfl)
+
 lemma foo_mem_components (hx : x ∈ V(G)) : foo G x ∈ G.Components := by
   rw [components_isCompOf_iff]
   exact foo_isCompOf hx
