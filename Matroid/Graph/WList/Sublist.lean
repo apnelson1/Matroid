@@ -473,6 +473,29 @@ lemma IsSublist.exists_isPrefix_isSuffix {w₀ : WList α β} (hw₀ : w₀.IsSu
   obtain ⟨w₁, w₂, h1, h2, rfl⟩ := hw₀.exists_append_append hw
   exact ⟨w₁ ++ w₀, isPrefix_append_right (by simpa), isSuffix_append_left ..⟩
 
+lemma exists_sublist_of_mem_mem (hx : x ∈ w) (hy : y ∈ w) : ∃ w₀ : WList α β,
+    w₀.IsSublist w ∧ (x = w₀.first ∧ y = w₀.last ∨ x = w₀.last ∧ y = w₀.first) := by
+  classical
+  let w₁ := w.prefixUntilVertex x
+  let w₂ := w.suffixFromVertex x
+  have h : w₁ ++ w₂ = w := w.prefixUntilVertex_append_suffixFromVertex x
+  by_cases hyw₁ : y ∈ w₁
+  · use w₁.suffixFromVertex y, (w₁.suffixFromVertex_isSuffix y).isSublist.trans
+      (w.prefixUntilVertex_isPrefix x).isSublist, .inr ⟨?_, ?_⟩
+    · simp only [suffixFromVertex_last, w₁]
+      exact (prefixUntilVertex_last hx).symm
+    · simp only [prefixUntilVertex_first, w₁]
+      exact (suffixFromVertex_first hyw₁).symm
+  have hyw₂ : y ∈ w₂ := by
+    rw [← h, ← mem_vertex, append_vertex] at hy
+    have hw₁dl : y ∉ w₁.vertex.dropLast := (hyw₁ <| w₁.vertex.dropLast_sublist.mem ·)
+    simpa [mem_append, hw₁dl, mem_vertex, false_or] using hy
+  use w₂.prefixUntilVertex y, (w₂.prefixUntilVertex_isPrefix y).isSublist.trans
+    (w.suffixFromVertex_isSuffix x).isSublist, .inl ⟨?_, ?_⟩
+  · simp only [prefixUntilVertex_first, w₂]
+    exact (suffixFromVertex_first hx).symm
+  · exact (prefixUntilVertex_last hyw₂).symm
+
 /-- The sublist order as a partial order on `WList α β`, for access to order API.  -/
 instance : PartialOrder (WList α β) where
   le := IsSublist
@@ -800,6 +823,18 @@ lemma exists_dInc_not_prop_prop {P : α → Prop} (hfirst : ¬ P w.first) (hlast
   obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop (P := fun x ↦ ¬ P x) hfirst (by simpa)
   exact ⟨e, x, y, h, hx, by simpa using hy⟩
 
+lemma exists_isLink_prop_not_prop {P : α → Prop} (hxw : x ∈ V(w)) (hT : P x) (hyw : y ∈ V(w))
+    (hF : ¬ P y) : ∃ e x y, w.IsLink e x y ∧ P x ∧ ¬ P y := by
+  obtain ⟨w₀, hsub, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := exists_sublist_of_mem_mem hxw hyw
+  · obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop hT hF
+    exact ⟨e, x, y, (h.of_isSublist hsub).isLink, hx, hy⟩
+  · rw [← w₀.reverse_reverse] at hF hT
+    rw [reverse_first] at hF
+    rw [reverse_last] at hT
+    obtain ⟨e, x, y, h, hx, hy⟩ := exists_dInc_prop_not_prop hT hF
+    refine ⟨e, x, y, ?_, hx, hy⟩
+    rw [dInc_reverse_iff] at h
+    exact (h.of_isSublist hsub).isLink.symm
 
 -- end WList
 -- open WList

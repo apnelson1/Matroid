@@ -1214,6 +1214,14 @@ lemma isClosedSubgraph_sUnion_of_disjoint (s : Set (Graph α β)) (hs : s.Pairwi
     (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=
   isClosedSubgraph_iUnion_of_disjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
 
+lemma Disjoint.isClosedSubgraph_union_left (h : Graph.Disjoint H₁ H₂) : H₁ ≤c H₁ ∪ H₂ := by
+  rw [(disjoint_le_compatible _ _ h).union_eq_sUnion]
+  exact isClosedSubgraph_sUnion_of_disjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+
+lemma Disjoint.isClosedSubgraph_union_right (h : Graph.Disjoint H₁ H₂) : H₂ ≤c H₁ ∪ H₂ := by
+  rw [(disjoint_le_compatible _ _ h).union_eq_sUnion]
+  exact isClosedSubgraph_sUnion_of_disjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+
 lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ ∪ H₂ ≤c G := by
   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]
   exact iUnion_isClosedSubgraph <| by simp [h₁,h₂]

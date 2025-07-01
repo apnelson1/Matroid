@@ -615,6 +615,13 @@ lemma ClosedSubgraph.compl_isLink (H : G.ClosedSubgraph) :
   have hy := H.prop.mem_tfae_of_isLink he |>.not.out 1 2
   tauto
 
+lemma ClosedSubgraph.compl_eq_of_disjoint_union {H₁ H₂ : Graph α β} (hdisj : H₁.Disjoint H₂) :
+    (⟨H₁, hdisj.isClosedSubgraph_union_left⟩ : (H₁ ∪ H₂).ClosedSubgraph)ᶜ =
+    ⟨H₂, hdisj.isClosedSubgraph_union_right⟩ := by
+  rw [vertexSet_inj]
+  simp only [compl_vertexSet, union_vertexSet, union_diff_left, sdiff_eq_left]
+  exact hdisj.vertex.symm
+
 lemma ClosedSubgraph.isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
     IsAtom H ↔ H.val.IsCompOf G := by
   simp only [IsAtom, ne_eq, Subtype.forall, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, IsCompOf,

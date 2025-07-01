@@ -153,6 +153,25 @@ lemma IsWalk.isWalk_le (h : G.IsWalk w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
     simp_all only [cons_edgeSet, singleton_union, insert_subset_iff, cons_isWalk_iff, forall_const]
     exact ⟨h.of_le_of_mem hle hE.1, ih (h.of_le_of_mem hle hE.1).right_mem⟩
 
+lemma IsWalk.isWalk_isInducedSubgraph (h : G.IsWalk w) (hind : H ≤i G) (hX : V(w) ⊆ V(H)) :
+    H.IsWalk w := by
+  induction h with
+  | nil => simp_all
+  | @cons x e w hw h ih =>
+    simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, and_true, forall_const]
+    exact hind.isLink_of_mem_mem h hX.1 <| ih.first_mem
+
+lemma IsWalk.isWalk_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G) (hfirst : w.first ∈ V(H)) :
+    H.IsWalk w := by
+  refine h.isWalk_isInducedSubgraph hcl.isInducedSubgraph fun x hx => ?_
+  induction h with
+  | nil hx => simp_all
+  | cons hw h ih =>
+    simp_all only [mem_vertexSet_iff, first_cons, cons_vertexSet, mem_insert_iff]
+    obtain rfl | hx := hx
+    · exact hfirst
+    exact ih ((IsClosedSubgraph.mem_iff_mem_of_isLink hcl h).mp hfirst) hx
+
 lemma IsWalk.isWalk_le_of_nonempty (h : G.IsWalk w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
     (hne : w.Nonempty) : H.IsWalk w := by
   by_cases hfirst : w.first ∈ V(H)
