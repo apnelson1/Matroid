@@ -347,6 +347,12 @@ lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ 
 lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
   ⟨h, hx, hy⟩
 
+@[simp]
+lemma induce_adj_iff {X : Set α} : G[X].Adj x y ↔ G.Adj x y ∧ x ∈ X ∧ y ∈ X := by simp [Adj]
+
+lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
+  induce_adj_iff.mpr ⟨h, hx, hy⟩
+
 /-- This is too annoying to be a simp lemma. -/
 lemma induce_edgeSet (G : Graph α β) (X : Set α) :
     E(G.induce X) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
@@ -369,12 +375,22 @@ lemma induce_induce (G : Graph α β) (X Y : Set α) : G[X][Y] = G[Y] ↾ E(G[X]
   rw [he.mem_induce_iff]
   tauto
 
-lemma induce_mono (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
+lemma induce_mono_right (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
   vertex_subset := hXY
   isLink_of_isLink _ _ _ := fun ⟨h, h1, h2⟩ ↦ ⟨h, hXY h1, hXY h2⟩
 
 @[simp]
-lemma induce_mono_iff (G : Graph α β) : G[X] ≤ G[Y] ↔ X ⊆ Y := ⟨vertexSet_mono, induce_mono G⟩
+lemma induce_mono_right_iff (G : Graph α β) : G[X] ≤ G[Y] ↔ X ⊆ Y :=
+  ⟨vertexSet_mono, induce_mono_right G⟩
+
+lemma induce_mono_left (h : H ≤ G) (X : Set α) : H[X] ≤ G[X] where
+  vertex_subset := le_rfl
+  isLink_of_isLink e x y := by
+    simp only [induce_isLink_iff, and_imp]
+    exact fun hl hx hy => ⟨hl.of_le h, hx, hy⟩
+
+lemma induce_mono (h : H ≤ G) (hXY : X ⊆ Y) : H[X] ≤ G[Y] :=
+  (induce_mono_left h X).trans (G.induce_mono_right hXY)
 
 @[simp]
 lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
@@ -417,6 +433,10 @@ lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
   simp [edgeSet_eq_setOf_exists_isLink]
 
 @[simp]
+lemma vertexDelete_empty (G : Graph α β) : G - ∅ = G := by
+  simp [vertexDelete_def]
+
+@[simp]
 lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
     (G - X).Adj x y ↔ G.Adj x y ∧ x ∉ X ∧ y ∉ X := by
   simp [Adj]
@@ -429,6 +449,12 @@ lemma IsLink.mem_vertexDelete_iff {X : Set α} (hG : G.IsLink e x y) :
     e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
   rw [vertexDelete_def, hG.mem_induce_iff, mem_diff, mem_diff, and_iff_right hG.left_mem,
     and_iff_right hG.right_mem]
+
+lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X :=
+  induce_mono h <| diff_subset_diff_left <| vertexSet_mono h
+
+lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤ G - X :=
+  induce_mono_right _ <| diff_subset_diff_right hXY
 
 @[simp]
 lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X] = G[X] ↾ F := by

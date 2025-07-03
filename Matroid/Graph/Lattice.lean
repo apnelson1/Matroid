@@ -583,7 +583,7 @@ lemma ClosedSubgraph.eq_ambient_of_subset_vertexSet (h : V(G) ⊆ V(H.val)) : H 
 
 lemma ClosedSubgraph.le_iff_vertexSet_subset : H₁ ≤ H₂ ↔ V(H₁.val) ⊆ V(H₂.val) := by
   rw [← Subtype.coe_le_coe, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce]
-  exact induce_mono_iff G
+  exact induce_mono_right_iff G
 
 lemma ClosedSubgraph.lt_iff_vertexSet_ssubset : H₁ < H₂ ↔ V(H₁.val) ⊂ V(H₂.val) := by
   refine ⟨(vertexSet_strictMono G ·), fun h => ?_⟩
@@ -726,7 +726,7 @@ lemma IsLink.mem_compWith (h : G.IsLink e x y) : y ∈ V((G.CompWith x).val) :=
   (h.of_le_of_mem (G.CompWith x).prop.le <| (G.CompWith x).prop.closed h.inc_left <|
     Graph.mem_compWith h.left_mem).right_mem
 
-lemma Adj.mem_CompWith (h : G.Adj x y) : y ∈ V((G.CompWith x).val) :=
+lemma Adj.mem_compWith (h : G.Adj x y) : y ∈ V((G.CompWith x).val) :=
   h.choose_spec.mem_compWith
 
 lemma compWith_le_compWith_of_le {G H : Graph α β} (hxH : x ∈ V(H)) (hle : H ≤ G) :
