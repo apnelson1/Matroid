@@ -912,14 +912,14 @@ lemma finitary_of_forall_isLine_modular (hM : ∀ L, M.IsLine L → M.IsModularF
   by_contra hnotfin
   obtain ⟨N, e, f, x, y, hxy, he, hxe, hye, hdj, hxf, rfl, htri, hcirc⟩ :=
     exists_of_modular_not_finitary hM hnotfin
-
+  -- Each `e i` is spanned by two `f i`, so the `e` are spanned by the `f`.
   have hef : N.closure (range e) ⊆ N.closure (range f)
   · refine N.closure_subset_closure_of_subset_closure ?_
     rintro _ ⟨i, rfl⟩
     refine mem_of_mem_of_subset
       ((htri i).mem_closure_diff_singleton_of_mem (e := e i) (by simp)) ?_
     exact N.closure_mono <| by simp [insert_subset_iff]
-
+  -- `x` is spanned by `y = b 0` and the `e`, so `x` is spanned by the `f`.
   have hcl1 : x ∈ N.closure (range f)
   · rw [← closure_closure, ← union_eq_self_of_subset_left hef,
       closure_closure_union_closure_eq_closure_union]
