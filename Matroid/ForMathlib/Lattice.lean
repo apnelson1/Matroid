@@ -15,6 +15,9 @@ section Lattice
 --     CompleteLattice.SetIndependent {s} := by
 --   simp [CompleteLattice.SetIndependent]
 
+@[simp]
+lemma bot_not_isAtom {α : Type*} [CompleteAtomicBooleanAlgebra α] : ¬ IsAtom (⊥ : α) := (·.1 rfl)
+
 theorem exists_mem_le_of_le_sSup_of_isAtom {α : Type*} [CompleteAtomicBooleanAlgebra α] {a A : α}
     (ha : IsAtom a) (h : a ≤ A) {s : Set α} (hs : A ≤ sSup s) : ∃ b ∈ s, a ≤ b := by
   by_contra! hnle
@@ -44,7 +47,7 @@ lemma unique_decomposition_into_atoms {α : Type*} [CompleteAtomicBooleanAlgebra
   · simpa using hatom.1
   assumption
 
-def CompleteAtomicBooleanAlgebra.orderIsoSetOfAtoms {α : Type*} [CompleteAtomicBooleanAlgebra α] :
+def orderIsoSetOfAtoms {α : Type*} [CompleteAtomicBooleanAlgebra α] :
     α ≃o (Set {a : α | IsAtom a}) where
   toFun A := {a | a ≤ A}
   invFun S := sSup (Subtype.val '' S)
@@ -63,5 +66,9 @@ def CompleteAtomicBooleanAlgebra.orderIsoSetOfAtoms {α : Type*} [CompleteAtomic
     simp +contextual only [coe_setOf, mem_setOf_eq, Equiv.coe_fn_mk, le_eq_subset,
       setOf_subset_setOf, true_and, and_imp, Subtype.forall, forall_const]
     exact le_iff_atom_le_imp.symm
+
+@[simp]
+lemma orderIsoSetOfAtoms_sSup {α : Type*} [CompleteAtomicBooleanAlgebra α] (a : α) :
+    sSup (Subtype.val '' (orderIsoSetOfAtoms a)) = a := orderIsoSetOfAtoms.left_inv a
 
 end Lattice

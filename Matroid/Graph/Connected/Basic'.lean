@@ -21,6 +21,11 @@ lemma Connected.nonempty (hG : G.Connected) : V(G).Nonempty := by
   rw [Graph.Connected, IsCompOf] at hG
   exact hG.prop.2
 
+@[simp]
+lemma bot_not_connected : ¬ (⊥ : Graph α β).Connected := by
+  unfold Graph.Connected
+  simp
+
 lemma connected_iff_forall_closed (hG : V(G).Nonempty) :
     G.Connected ↔ ∀ ⦃H⦄, H ≤c G → V(H).Nonempty → H = G := by
   refine ⟨fun h H hHG hHne ↦ ?_, fun h ↦ ⟨by simpa [-vertexSet_nonempty_iff],
@@ -50,8 +55,8 @@ lemma Connected.isSimpleOrder (hG : G.Connected) (hnonempty : G ≠ ⊥) :
     exact Iff.symm (StrictMono.apply_eq_top_iff fun ⦃a b⦄ a ↦ a)
 
 lemma IsClosedSubgraph.disjoint_or_subset_of_isCompOf (h : H ≤c G) (hK : K.IsCompOf G) :
-    K.IsCompOf H ∨ K.Disjoint H := by
-  rw [or_iff_not_imp_right, Graph.disjoint_iff_of_le_le hK.le h.le,
+    K.IsCompOf H ∨ K.StronglyDisjoint H := by
+  rw [or_iff_not_imp_right, StronglyDisjoint_iff_of_le_le hK.le h.le,
     not_disjoint_iff_nonempty_inter, inter_comm]
   intro hne
   have h_eq := hK.eq_of_le ⟨h.inter hK.isClosedSubgraph, by simpa⟩ Graph.inter_le_right
@@ -68,17 +73,23 @@ lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.I
 lemma IsCompOf.connected (h : H.IsCompOf G) : H.Connected :=
   h.of_le_le le_rfl h.le
 
-lemma foo_connected (hx : x ∈ V(G)) : (foo G x).val.Connected := (foo_isCompOf hx).connected
+lemma CompWith_connected (hx : x ∈ V(G)) : (CompWith G x).val.Connected :=
+  (compWith_isCompOf hx).connected
 
 lemma Connected.components_subsingleton (hG : G.Connected) : G.Components.Subsingleton := by
   rintro H₁ hH₁ H₂ hH₂
-  have hH₁bot := hH₁.out.bot_lt.ne'
-  have hH₂bot := hH₂.out.bot_lt.ne'
+  rw [components_isCompOf_iff] at hH₁ hH₂
+  have hH₁bot := hH₁.ne_bot
+  have hH₂bot := hH₂.ne_bot
   by_cases hGbot : G = ⊥
   · subst G
-    rw [← Subtype.coe_inj, le_bot_iff.mp H₁.prop.le, le_bot_iff.mp H₂.prop.le]
+    simp at hG
   have := hG.isSimpleOrder hGbot
-  rw [eq_bot_or_eq_top H₁ |>.resolve_left hH₁bot, eq_bot_or_eq_top H₂ |>.resolve_left hH₂bot]
+  let H₁' : G.ClosedSubgraph := ⟨H₁, hH₁.isClosedSubgraph⟩
+  let H₂' : G.ClosedSubgraph := ⟨H₂, hH₂.isClosedSubgraph⟩
+  change H₁'.val = H₂'.val
+  rw [eq_bot_or_eq_top H₁' |>.resolve_left ?_, eq_bot_or_eq_top H₂' |>.resolve_left ?_] <;>
+    rwa [← Subtype.coe_inj]
 
 lemma IsClosedSubgraph.isCompOf_of_isCompOf_compl (h : H ≤c G) (hK : K.IsCompOf G) :
     K.IsCompOf H ∨ K.IsCompOf (G - V(H)) := by
@@ -215,10 +226,10 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
 
 
 def VertexConnected (G : Graph α β) (x y : α) : Prop :=
-  ∃ H ∈ G.Components, x ∈ V(H.val) ∧ y ∈ V(H.val)
+  ∃ H : Graph α β, H.IsCompOf G ∧ x ∈ V(H) ∧ y ∈ V(H)
 
 lemma VertexConnected.refl (hx : x ∈ V(G)) : G.VertexConnected x x :=
-  ⟨foo G x, foo_mem_components hx, mem_foo hx, mem_foo hx⟩
+  ⟨CompWith G x, compWith_isCompOf hx, mem_compWith hx, mem_compWith hx⟩
 
 lemma VertexConnected.symm (h : G.VertexConnected x y) : G.VertexConnected y x := by
   obtain ⟨H, hH, hx, hy⟩ := h
@@ -231,8 +242,8 @@ lemma VertexConnected_comm : G.VertexConnected x y ↔ G.VertexConnected y x :=
   ⟨VertexConnected.symm, VertexConnected.symm⟩
 
 lemma VertexConnected.left_mem (hxy : G.VertexConnected x y) : x ∈ V(G) :=
-  let ⟨H, _, hx, _⟩ := hxy
-  vertexSet_mono H.prop.le hx
+  let ⟨_, hHco, hx, _⟩ := hxy
+  vertexSet_mono hHco.le hx
 
 lemma VertexConnected.right_mem (hxy : G.VertexConnected x y) : y ∈ V(G) :=
   hxy.symm.left_mem
@@ -241,7 +252,7 @@ lemma VertexConnected.trans (hxy : G.VertexConnected x y) (hyz : G.VertexConnect
     G.VertexConnected x z := by
   obtain ⟨H₁, hH₁, hx, hy₁⟩ := hxy
   obtain ⟨H₂, hH₂, hy₂, hz⟩ := hyz
-  obtain rfl := H₁.eq_of_mem_component_of_mem_mem hH₁ hH₂ hy₁ hy₂
+  obtain rfl := G.eq_of_mem_component_of_mem_mem hH₁ hH₂ hy₁ hy₂
   exact ⟨H₁, hH₁, hx, hz⟩
 
 instance : IsTrans _ G.VertexConnected where
@@ -252,22 +263,23 @@ lemma VertexConnected.mem_vertexSet_iff (H : G.ClosedSubgraph) :
   suffices ∀ x y, G.VertexConnected x y → x ∈ V(H.val) → y ∈ V(H.val) by
     exact fun x y h => ⟨fun hx => this x y h hx, fun hy => this y x h.symm hy⟩
   exact fun x y ⟨H', hH', hx', hy'⟩ hx ↦
-    vertexSet_mono (H'.le_of_mem_component_of_mem_mem hH' hx' hx) hy'
+    vertexSet_mono (hH'.le_of_mem_mem H.prop hx' hx) hy'
 
 @[simp]
 lemma vertexConnected_self : G.VertexConnected x x ↔ x ∈ V(G) :=
   ⟨VertexConnected.left_mem, VertexConnected.refl⟩
 
-lemma VertexConnected.mem_foo (h : G.VertexConnected x y) : y ∈ V((foo G x).val) :=
-  let ⟨H, hH, hx, hy⟩ := h
-  vertexSet_mono (H.le_of_mem_component_of_mem_mem hH hx (Graph.mem_foo h.left_mem)) hy
+lemma VertexConnected.mem_CompWith (h : G.VertexConnected x y) : y ∈ V((CompWith G x).val) :=
+  let ⟨_, hH, hx, hy⟩ := h
+  vertexSet_mono (hH.le_of_mem_mem (G.CompWith x).prop hx <|
+    mem_compWith <| vertexSet_mono hH.le hx) hy
 
-lemma vertexConnected_iff_mem_foo_of_mem (hx : x ∈ V(G)) :
-    G.VertexConnected x y ↔ y ∈ V((foo G x).val) :=
-  ⟨fun h => h.mem_foo, fun hy ↦ ⟨foo G x, foo_mem_components hx, mem_foo hx, hy⟩⟩
+lemma vertexConnected_iff_mem_CompWith_of_mem (hx : x ∈ V(G)) :
+    G.VertexConnected x y ↔ y ∈ V((CompWith G x).val) :=
+  ⟨fun h => h.mem_CompWith, fun hy ↦ ⟨CompWith G x, compWith_isCompOf hx, mem_compWith hx, hy⟩⟩
 
 lemma Adj.vertexConnected (h : G.Adj x y) : G.VertexConnected x y :=
-  ⟨foo G x, foo_mem_components h.left_mem, Graph.mem_foo h.left_mem, h.mem_foo⟩
+  ⟨CompWith G x, compWith_isCompOf h.left_mem, mem_compWith h.left_mem, h.mem_CompWith⟩
 
 lemma IsLink.vertexConnected (h : G.IsLink e x y) : G.VertexConnected x y :=
   h.adj.vertexConnected
@@ -290,30 +302,29 @@ lemma IsWalk.isWalk_or_isWalk_compl_of_closedSubgraph (H : G.ClosedSubgraph) (hW
   · exact .inl <| hW.isWalk_isClosedSubgraph H.prop hx
   exact .inr <| hW.isWalk_isClosedSubgraph Hᶜ.prop <| by simp [hx, hW.first_mem]
 
-lemma IsWalk.isWalk_or_isWalk_of_union_of_disjoint (h : G.Disjoint H) (hW : (G ∪ H).IsWalk W) :
-    G.IsWalk W ∨ H.IsWalk W := by
+lemma IsWalk.isWalk_or_isWalk_of_union_of_disjoint (h : G.StronglyDisjoint H)
+    (hW : (G ∪ H).IsWalk W) : G.IsWalk W ∨ H.IsWalk W := by
   obtain hCG | hCH := hW.isWalk_or_isWalk_compl_of_closedSubgraph ⟨G, h.isClosedSubgraph_union_left⟩
   · exact .inl hCG
-  rw [ClosedSubgraph.compl_eq_of_disjoint_union h] at hCH
+  rw [ClosedSubgraph.compl_eq_of_stronglyDisjoint_union h] at hCH
   exact .inr hCH
 
 lemma IsWalk.vertexConnected_first_last (hW : G.IsWalk W) : G.VertexConnected W.first W.last :=
   hW.vertexConnected_of_mem_of_mem (by simp) <| by simp
 
 lemma VertexConnected.of_le (h : H.VertexConnected x y) (hle : H ≤ G) : G.VertexConnected x y := by
-  rw [vertexConnected_iff_mem_foo_of_mem <| vertexSet_mono hle h.left_mem]
-  exact vertexSet_mono (foo_le_foo_of_le h.left_mem hle) h.mem_foo
+  rw [vertexConnected_iff_mem_CompWith_of_mem <| vertexSet_mono hle h.left_mem]
+  exact vertexSet_mono (compWith_le_compWith_of_le h.left_mem hle) h.mem_CompWith
 
 
 /-- If `G` has one vertex connected to all others, then `G` is connected. -/
 lemma connected_of_vertex (hu : u ∈ V(G)) (h : ∀ y ∈ V(G), G.VertexConnected y u) :
     G.Connected := by
-  have hco := foo_mem_components hu
-  rwa [(foo G u).eq_ambient_of_subset_vertexSet (h · · |>.symm.mem_foo),
-    components_isCompOf_iff ⊤] at hco
+  have hco := compWith_isCompOf hu
+  rwa [(CompWith G u).eq_ambient_of_subset_vertexSet (h · · |>.symm.mem_CompWith)] at hco
 
 lemma Connected.vertexConnected (h : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    G.VertexConnected x y := ⟨⊤, (components_isCompOf_iff ⊤).mpr h, hx, hy⟩
+    G.VertexConnected x y := ⟨G, h, hx, hy⟩
 
 lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ ∀ x y, x ∈ V(G) → y ∈ V(G) →
     G.VertexConnected x y :=
@@ -364,8 +375,8 @@ lemma IsWalk.toGraph_connected (hW : G.IsWalk W) : W.toGraph.Connected :=
 lemma Connected.exists_vertexConnected_deleteEdge_set {X : Set α} (hG : G.Connected)
     (hX : (X ∩ V(G)).Nonempty) (hu : u ∈ V(G)) : ∃ x ∈ X, (G ＼ E(G[X])).VertexConnected u x := by
   by_contra! h
-  simp_rw [(G ＼ E(G[X])).vertexConnected_iff_mem_foo_of_mem hu] at h
-  let H := foo (G ＼ E(G[X])) u
+  simp_rw [(G ＼ E(G[X])).vertexConnected_iff_mem_CompWith_of_mem hu] at h
+  let H := CompWith (G ＼ E(G[X])) u
   have hHX : Disjoint V(H.val) X := by
     rw [Set.disjoint_left]
     exact fun ⦃a⦄ a_1 a_2 ↦ h a a_2 a_1
@@ -374,7 +385,7 @@ lemma Connected.exists_vertexConnected_deleteEdge_set {X : Set α} (hG : G.Conne
   have hHssub : V(H.val) ⊂ V(G) := Set.ssubset_iff_subset_ne.mpr ⟨vertexSet_mono hHleG,
     ne_comm.mp <| ne_of_mem_of_not_mem' hX.some_mem.2 <| hHX.notMem_of_mem_right hX.some_mem.1⟩
   obtain ⟨x, hxH, y, hy, e, hadj⟩ := connected_iff_forall_exists_adj hG.nonempty
-    |>.mp hG V(H.val) hHssub (nonempty_of_mem <| mem_foo hu)
+    |>.mp hG V(H.val) hHssub (nonempty_of_mem <| mem_compWith hu)
   have hxnX : x ∉ X := hHX.notMem_of_mem_left hxH
   have hedel : e ∈ E(G ＼ E(G[X])) := by simp [hadj.edge_mem, hadj.symm.mem_induce_iff,hxnX]
   have heH := H.prop.closed (Inc.of_le_of_mem (⟨y, hadj⟩ : G.Inc e x) edgeDelete_le hedel) hxH
@@ -384,13 +395,13 @@ lemma Connected.exists_vertexConnected_deleteEdge_set_set (hG : G.Connected)
     (hS : (S ∩ V(G)).Nonempty) (hT : (T ∩ V(G)).Nonempty) :
     ∃ x ∈ S, ∃ y ∈ T, (G ＼ (E(G[S]) ∪ E(G[T]))).VertexConnected x y := by
   obtain ⟨s, hs, hsconn⟩ := hG.exists_vertexConnected_deleteEdge_set hS hT.some_mem.2
-  let G₁ := foo (G ＼ E(G[S])) s
+  let G₁ := CompWith (G ＼ E(G[S])) s
   have hG₁leG : G₁.val ≤ G := G₁.prop.le.trans edgeDelete_le
-  have hG₁ : G₁.val.Connected := foo_connected hsconn.right_mem
+  have hG₁ : G₁.val.Connected := CompWith_connected hsconn.right_mem
   have hT₁ : (T ∩ V(G₁.val)).Nonempty := by
     refine ⟨hT.some, hT.some_mem.1, ?_⟩
-    rwa [← vertexConnected_iff_mem_foo_of_mem hsconn.right_mem, VertexConnected_comm]
-  have hs₁ : s ∈ V(G₁.val) := mem_foo hsconn.right_mem
+    rwa [← vertexConnected_iff_mem_CompWith_of_mem hsconn.right_mem, VertexConnected_comm]
+  have hs₁ : s ∈ V(G₁.val) := mem_compWith hsconn.right_mem
   obtain ⟨t, ht, htconn⟩ := hG₁.exists_vertexConnected_deleteEdge_set hT₁ hs₁
   refine ⟨s, hs, t, ht, htconn.of_le ?_⟩
   have hh : G₁.val ＼ E((G₁.val)[T]) = G₁.val ＼ E(G[T]) := by
@@ -492,8 +503,8 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
     exact .inr <| hC.isCycle_of_le hcompat.right_le_union (by simpa)
   -- Suppose `G` and `H` are disjoint. Then any walk in `G ∪ H` has a walk in `G` or `H`.
   obtain hempty | ⟨v, hv⟩ := hi.eq_empty_or_singleton
-  · have hdisj : Graph.Disjoint G H := by
-      rw [Graph.disjoint_iff_vertexSet_disjoint_compatible]
+  · have hdisj : Graph.StronglyDisjoint G H := by
+      rw [Graph.stronglyDisjoint_iff_vertexSet_disjoint_compatible]
       use disjoint_iff_inter_eq_empty.mpr hempty
     clear hempty
     obtain hCG | hCH := hC.isWalk.isWalk_or_isWalk_of_union_of_disjoint hdisj
@@ -530,8 +541,8 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   -- A walk `C - v` is a walk in `G - v` or `H - v` yet it has vertices `x` and `y` in `G` and `H`.
   have hGHv : (G ∪ H) - {v} = G - {v} ∪ H - {v} := hcompat.vertexDelete_union {v}
   have hcompatv : (G - {v}).Compatible H - {v} := hcompat.mono vertexDelete_le vertexDelete_le
-  have hdisjv : Graph.Disjoint (G - {v}) (H - {v}) := by
-    rw [Graph.disjoint_iff_vertexSet_disjoint_compatible, disjoint_iff_inter_eq_empty]
+  have hdisjv : Graph.StronglyDisjoint (G - {v}) (H - {v}) := by
+    rw [Graph.stronglyDisjoint_iff_vertexSet_disjoint_compatible, disjoint_iff_inter_eq_empty]
     simp [hv, hcompatv]
   obtain ⟨P, hP, hPeq⟩ := hC.exists_isPath_toGraph_eq_delete_vertex hnt hvC
   apply_fun Graph.vertexSet at hPeq

@@ -103,23 +103,30 @@ open scoped Sym2
 
 namespace Graph
 
+/-! ### Strongly disjointness -/
 
-/-! ### Disjointness -/
-
-/-- Two graphs are disjoint if their edge sets and vertex sets are disjoint -/
+/-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.
+    This is a stronger notion of disjointness than `Disjoint`,
+    see `disjoint_iff_vertexSet_disjoint`. -/
 @[mk_iff]
-protected structure Disjoint (G H : Graph α β) : Prop where
+structure StronglyDisjoint (G H : Graph α β) : Prop where
   vertex : Disjoint V(G) V(H)
   edge : Disjoint E(G) E(H)
 
-lemma Disjoint.symm (h : G.Disjoint H) : H.Disjoint G :=
+lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
   ⟨h.1.symm, h.2.symm⟩
 
-protected lemma disjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
-    Graph.Disjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
-  refine ⟨Disjoint.vertex, fun h ↦ ⟨h, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
+lemma StronglyDisjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
+    StronglyDisjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
+  refine ⟨StronglyDisjoint.vertex, fun h ↦ ⟨h, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
   obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
   exact h.notMem_of_mem_left he₁.left_mem ((he₁.of_le h₁).of_le_of_mem h₂ he₂).left_mem
+
+lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H := by
+  rintro H' hH'G hH'H
+  rw [le_bot_iff, ← vertexSet_eq_empty_iff]
+  have := le_inf (vertexSet_mono hH'G) <| vertexSet_mono hH'H
+  rwa [h.vertex.eq_bot, le_bot_iff] at this
 
 /-! ### Compatibility -/
 
@@ -285,16 +292,17 @@ lemma Compatible.edgeRestrict (h : Compatible G H) {F : Set β} : (G ↾ F).Comp
 lemma Compatible.induce_induce : G[X].Compatible G[Y] :=
   Compatible.induce_left (Compatible.induce_right G.compatible_self _) _
 
-lemma Compatible.disjoint_of_vertexSet_disjoint (h : G.Compatible H) (hV : Disjoint V(G) V(H)) :
-    G.Disjoint H := by
+lemma Compatible.StronglyDisjoint_of_vertexSet_disjoint (h : G.Compatible H)
+    (hV : Disjoint V(G) V(H)) : G.StronglyDisjoint H := by
   refine ⟨hV, disjoint_left.2 fun e he he' ↦ ?_⟩
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet he
   exact hV.notMem_of_mem_left hexy.left_mem (h ⟨he, he'⟩ ▸ hexy).left_mem
 
 lemma Compatible.disjoint_iff_vertexSet_disjoint (h : G.Compatible H) :
-    G.Disjoint H ↔ Disjoint V(G) V(H) := ⟨(·.vertex), h.disjoint_of_vertexSet_disjoint⟩
+    G.StronglyDisjoint H ↔ Disjoint V(G) V(H) :=
+  ⟨(·.vertex), h.StronglyDisjoint_of_vertexSet_disjoint⟩
 
-lemma Disjoint.compatible (h : G.Disjoint H) : G.Compatible H :=
+lemma StronglyDisjoint.compatible (h : G.StronglyDisjoint H) : G.Compatible H :=
   Compatible.of_disjoint_edgeSet h.edge
 
 lemma Compatible.edgeSet_disjoint_of_vertexSet_disjoint (h : G.Compatible H)
@@ -304,8 +312,8 @@ lemma Compatible.edgeSet_disjoint_of_vertexSet_disjoint (h : G.Compatible H)
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heG
   exact hV.notMem_of_mem_left hexy.left_mem <| hexy.of_compatible h heH |>.left_mem
 
-lemma disjoint_iff_vertexSet_disjoint_compatible :
-    G.Disjoint H ↔ Disjoint V(G) V(H) ∧ G.Compatible H :=
+lemma stronglyDisjoint_iff_vertexSet_disjoint_compatible :
+    G.StronglyDisjoint H ↔ Disjoint V(G) V(H) ∧ G.Compatible H :=
   ⟨fun h => ⟨h.vertex, h.compatible⟩,
     fun ⟨hdisj, hco⟩ => ⟨hdisj, hco.edgeSet_disjoint_of_vertexSet_disjoint hdisj⟩⟩
 
@@ -319,8 +327,8 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 
 /-- useful with `Pairwise` and `Set.Pairwise`.-/
 @[simp]
-lemma disjoint_le_compatible : @Graph.Disjoint α β ≤ Graph.Compatible := by
-  refine fun _ _ ↦ Disjoint.compatible
+lemma stronglyDisjoint_le_compatible : @StronglyDisjoint α β ≤ Compatible :=
+  fun _ _ ↦ StronglyDisjoint.compatible
 
 /-! ### Indexed unions -/
 
@@ -928,6 +936,31 @@ protected lemma le_inter (h₁ : H ≤ G₁) (h₂ : H ≤ G₂) : H ≤ G₁ �
   vertex_subset := subset_inter (vertexSet_mono h₁) (vertexSet_mono h₂)
   isLink_of_isLink e x y h := by simp [h.of_le h₁, h.of_le h₂]
 
+instance : SemilatticeInf (Graph α β) where
+  inf := Graph.inter
+  inf_le_left _ _ := Graph.inter_le_left
+  inf_le_right _ _ := Graph.inter_le_right
+  le_inf _ _ _ := Graph.le_inter
+
+@[simp]
+lemma inf_eq_inter : H₁ ⊓ H₂ = H₁ ∩ H₂ := rfl
+
+@[simp]
+lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ V(H₁) ∩ V(H₂) = ∅ := by
+  rw [← vertexSet_eq_empty_iff, inter_vertexSet]
+
+lemma disjoint_iff_inter_eq_bot : Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
+  rw [disjoint_iff, inf_eq_inter]
+
+@[simp]
+lemma disjoint_iff_vertexSet_inter_eq_empty : Disjoint H₁ H₂ ↔ V(H₁) ∩ V(H₂) = ∅ := by
+  rw [disjoint_iff_inter_eq_bot, inter_eq_bot_iff]
+
+lemma disjoint_iff_vertexSet_disjoint : Disjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
+  rw [disjoint_iff_inter_eq_bot, inter_eq_bot_iff, Set.disjoint_iff_inter_eq_empty]
+
+alias ⟨Disjoint.vertex_disjoint, _⟩ := disjoint_iff_vertexSet_disjoint
+
 lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
   rw [Graph.inter_edgeSet]
   exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h he⟩
@@ -956,10 +989,10 @@ lemma inter_mono_right (hle : H₁ ≤ H₂) : G ∩ H₁ ≤ G ∩ H₂ := by
 lemma inter_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) : G₁ ∩ H₁ ≤ G₂ ∩ H₂ :=
   (inter_mono_right hleH).trans (inter_mono_left hleG)
 
-lemma disjoint_iff_inter_eq_bot_of_compatible (h : H₁.Compatible H₂) :
-    Graph.Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
-  rw [Graph.disjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
-    ← vertexSet_eq_empty_iff]
+lemma stronglyDisjoint_iff_disjoint_of_compatible (h : H₁.Compatible H₂) :
+    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
+  rw [stronglyDisjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
+    disjoint_iff, ← vertexSet_eq_empty_iff]
   simp [h]
 
 lemma edgeSet_induce_inter_eq_edgeSet_induce_of_le (h : G ≤ H) : E(G) ∩ E(H[X]) = E(G[X]) :=
@@ -1201,8 +1234,8 @@ lemma sInter_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤c G) (hne : s.
   have := hne.to_subtype
   iInter_isClosedSubgraph <| by simpa
 
-lemma isClosedSubgraph_iUnion_of_disjoint (h : Pairwise (Graph.Disjoint on H)) (i : ι) :
-    H i ≤c Graph.iUnion H (h.mono fun _ _ ↦ Disjoint.compatible) where
+lemma isClosedSubgraph_iUnion_of_stronglydisjoint (h : Pairwise (StronglyDisjoint on H)) (i : ι) :
+    H i ≤c Graph.iUnion H (h.mono fun _ _ ↦ StronglyDisjoint.compatible) where
   le := Graph.le_iUnion ..
   closed e x he hx := by
     obtain ⟨j, hj : (H j).Inc e x⟩ := (iUnion_inc_iff ..).1 he
@@ -1210,17 +1243,29 @@ lemma isClosedSubgraph_iUnion_of_disjoint (h : Pairwise (Graph.Disjoint on H)) (
     · exact hj.edge_mem
     exact False.elim <| (h hne).vertex.notMem_of_mem_left hx hj.vertex_mem
 
-lemma isClosedSubgraph_sUnion_of_disjoint (s : Set (Graph α β)) (hs : s.Pairwise Graph.Disjoint)
-    (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=
-  isClosedSubgraph_iUnion_of_disjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
+lemma isClosedSubgraph_sUnion_of_stronglydisjoint (s : Set (Graph α β))
+    (hs : s.Pairwise StronglyDisjoint) (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=
+  isClosedSubgraph_iUnion_of_stronglydisjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
 
-lemma Disjoint.isClosedSubgraph_union_left (h : Graph.Disjoint H₁ H₂) : H₁ ≤c H₁ ∪ H₂ := by
-  rw [(disjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_disjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+lemma isClosedSubgraph_union_left_of_vertexSet_disjoint (h : Disjoint V(H₁) V(H₂)) :
+    H₁ ≤c H₁ ∪ H₂ := by
+  refine ⟨Graph.left_le_union H₁ H₂, fun e x hinc hx₁ => ?_⟩
+  have hninc : ¬ H₂.Inc e x := fun hinc ↦ h.notMem_of_mem_left hx₁ hinc.vertex_mem
+  simp only [union_inc_iff, hninc, false_and, or_false] at hinc
+  exact hinc.edge_mem
 
-lemma Disjoint.isClosedSubgraph_union_right (h : Graph.Disjoint H₁ H₂) : H₂ ≤c H₁ ∪ H₂ := by
-  rw [(disjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_disjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+lemma Disjoint.isClosedSubgraph_union_left (h : Disjoint H₁ H₂) : H₁ ≤c H₁ ∪ H₂ :=
+  isClosedSubgraph_union_left_of_vertexSet_disjoint <| Disjoint.vertex_disjoint h
+
+lemma StronglyDisjoint.isClosedSubgraph_union_left (h : StronglyDisjoint H₁ H₂) :
+    H₁ ≤c H₁ ∪ H₂ := by
+  rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
+  exact isClosedSubgraph_sUnion_of_stronglydisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+
+lemma StronglyDisjoint.isClosedSubgraph_union_right (h : StronglyDisjoint H₁ H₂) :
+    H₂ ≤c H₁ ∪ H₂ := by
+  rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
+  exact isClosedSubgraph_sUnion_of_stronglydisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
 
 lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ ∪ H₂ ≤c G := by
   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]

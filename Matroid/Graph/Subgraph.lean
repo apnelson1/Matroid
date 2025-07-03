@@ -259,7 +259,6 @@ lemma edgeDelete_isLoopAt_iff : (G ＼ F).IsLoopAt e x ↔ G.IsLoopAt e x ∧ e 
   simp only [edgeDelete_eq_edgeRestrict, edgeRestrict_isLoopAt_iff, mem_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.edge_mem
-
 lemma edgeDelete_isNonloopAt_iff : (G ＼ F).IsNonloopAt e x ↔ G.IsNonloopAt e x ∧ e ∉ F := by
   simp only [edgeDelete_eq_edgeRestrict, edgeRestrict_isNonloopAt_iff, mem_diff,
     and_congr_right_iff, and_iff_right_iff_imp]
@@ -548,13 +547,17 @@ structure IsClosedSubgraph (H G : Graph α β) : Prop where
 
 scoped infixl:50 " ≤c " => Graph.IsClosedSubgraph
 
+lemma IsClosedSubgraph.vertexSet_mono (h : H ≤c G) : V(H) ⊆ V(G) := Graph.vertexSet_mono h.le
+
+lemma IsClosedSubgraph.edgeSet_mono (h : H ≤c G) : E(H) ⊆ E(G) := Graph.edgeSet_mono h.le
+
 lemma IsClosedSubgraph.isInducedSubgraph (h : H ≤c G) : H ≤i G where
   le := h.le
   isLink_of_mem_mem _ _ _ he hx _ := he.of_le_of_mem h.le (h.closed he.inc_left hx)
 
 lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G₂) (h₂ : G₂ ≤c G₃) : G₁ ≤c G₃ where
   le := h₁.le.trans h₂.le
-  closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (vertexSet_mono h₁.le hx))) hx
+  closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (h₁.vertexSet_mono hx))) hx
 
 @[simp]
 lemma isClosedSubgraph_self : G ≤c G where
@@ -626,7 +629,7 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
   refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, fun e x he hxH => ?_⟩⟩
   · by_contra! hfH
     simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
-    refine (edgeSet_mono hclF.le ?_).2 hf.2
+    refine (hclF.edgeSet_mono ?_).2 hf.2
     obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1
     obtain hx | hy := or_iff_not_imp_left.mpr <| hfH x y hxy
     · exact hcl.closed ⟨_, hxy⟩ hx
