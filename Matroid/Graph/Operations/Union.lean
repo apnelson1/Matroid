@@ -292,7 +292,7 @@ lemma Compatible.edgeRestrict (h : Compatible G H) {F : Set β} : (G ↾ F).Comp
 lemma Compatible.induce_induce : G[X].Compatible G[Y] :=
   Compatible.induce_left (Compatible.induce_right G.compatible_self _) _
 
-lemma Compatible.StronglyDisjoint_of_vertexSet_disjoint (h : G.Compatible H)
+lemma Compatible.stronglyDisjoint_of_vertexSet_disjoint (h : G.Compatible H)
     (hV : Disjoint V(G) V(H)) : G.StronglyDisjoint H := by
   refine ⟨hV, disjoint_left.2 fun e he he' ↦ ?_⟩
   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet he
@@ -300,7 +300,7 @@ lemma Compatible.StronglyDisjoint_of_vertexSet_disjoint (h : G.Compatible H)
 
 lemma Compatible.disjoint_iff_vertexSet_disjoint (h : G.Compatible H) :
     G.StronglyDisjoint H ↔ Disjoint V(G) V(H) :=
-  ⟨(·.vertex), h.StronglyDisjoint_of_vertexSet_disjoint⟩
+  ⟨(·.vertex), h.stronglyDisjoint_of_vertexSet_disjoint⟩
 
 lemma StronglyDisjoint.compatible (h : G.StronglyDisjoint H) : G.Compatible H :=
   Compatible.of_disjoint_edgeSet h.edge
@@ -1234,7 +1234,7 @@ lemma sInter_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤c G) (hne : s.
   have := hne.to_subtype
   iInter_isClosedSubgraph <| by simpa
 
-lemma isClosedSubgraph_iUnion_of_stronglydisjoint (h : Pairwise (StronglyDisjoint on H)) (i : ι) :
+lemma isClosedSubgraph_iUnion_of_stronglyDisjoint (h : Pairwise (StronglyDisjoint on H)) (i : ι) :
     H i ≤c Graph.iUnion H (h.mono fun _ _ ↦ StronglyDisjoint.compatible) where
   le := Graph.le_iUnion ..
   closed e x he hx := by
@@ -1243,9 +1243,9 @@ lemma isClosedSubgraph_iUnion_of_stronglydisjoint (h : Pairwise (StronglyDisjoin
     · exact hj.edge_mem
     exact False.elim <| (h hne).vertex.notMem_of_mem_left hx hj.vertex_mem
 
-lemma isClosedSubgraph_sUnion_of_stronglydisjoint (s : Set (Graph α β))
+lemma isClosedSubgraph_sUnion_of_stronglyDisjoint (s : Set (Graph α β))
     (hs : s.Pairwise StronglyDisjoint) (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=
-  isClosedSubgraph_iUnion_of_stronglydisjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
+  isClosedSubgraph_iUnion_of_stronglyDisjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
 
 lemma isClosedSubgraph_union_left_of_vertexSet_disjoint (h : Disjoint V(H₁) V(H₂)) :
     H₁ ≤c H₁ ∪ H₂ := by
@@ -1260,12 +1260,12 @@ lemma Disjoint.isClosedSubgraph_union_left (h : Disjoint H₁ H₂) : H₁ ≤c 
 lemma StronglyDisjoint.isClosedSubgraph_union_left (h : StronglyDisjoint H₁ H₂) :
     H₁ ≤c H₁ ∪ H₂ := by
   rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_stronglydisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+  exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
 
 lemma StronglyDisjoint.isClosedSubgraph_union_right (h : StronglyDisjoint H₁ H₂) :
     H₂ ≤c H₁ ∪ H₂ := by
   rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_stronglydisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+  exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
 
 lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ ∪ H₂ ≤c G := by
   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]
@@ -1300,6 +1300,25 @@ lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H 
     have heK := ((hex.of_le hle).of_isClosedSubgraph_of_mem hKG hx.1).edge_mem
     rw [(compatible_of_le_le hKG.le hle).inter_edgeSet]
     exact ⟨heK, hex.edge_mem⟩
+
+@[simp]
+lemma le_bot_iff : G ≤ ⊥ ↔ G = ⊥ := _root_.le_bot_iff
+
+@[simp]
+lemma isClosedSubgraph_bot_iff : G ≤c ⊥ ↔ G = ⊥ :=
+  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isClosedSubgraph ⊥⟩
+
+@[simp]
+lemma isSpanningSubgraph_bot_iff : G ≤s ⊥ ↔ G = ⊥ :=
+  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ ⟨le_rfl, rfl⟩⟩
+
+@[simp]
+lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=
+  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isInducedSubgraph ⊥⟩
+
+@[simp]
+lemma induce_empty : G[∅] = ⊥ := by
+  rw [← vertexSet_eq_empty_iff, induce_vertexSet]
 
 end Subgraph
 

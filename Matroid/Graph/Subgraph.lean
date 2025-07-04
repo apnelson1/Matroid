@@ -667,11 +667,14 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
 
 /-! ### Components -/
 
-/-- A definition of components that doesn't mention connectedness. Can this replace `IsComponent`?-/
+/-- A definition of components that doesn't mention connectedness. Can this replace `IsCompOf`?-/
 def IsCompOf (H G : Graph α β) : Prop := Minimal (fun H ↦ H ≤c G ∧ V(H).Nonempty) H
 
 lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
   h.prop.1
+
+lemma IsCompOf.isInducedSubgraph (hHco : H.IsCompOf G) : H ≤i G :=
+  hHco.isClosedSubgraph.isInducedSubgraph
 
 lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
   h.prop.2

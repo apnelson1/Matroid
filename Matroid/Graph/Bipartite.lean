@@ -182,8 +182,8 @@ lemma Bipartite.of_le (hG : G.Bipartite) (hle : H ≤ G) : H.Bipartite := by
   exact ⟨x, ⟨hx, hxy.left_mem⟩, y, ⟨hy, hxy.right_mem⟩, hxy⟩
 
 /-- A disjoint union of bipartite graphs is bipartite. -/
-lemma iUnion_disjoint_bipartite {ι : Type*} {H : ι → Graph α β}
-    (hdj : Pairwise (Graph.Disjoint on H)) (hbp : ∀ i, Bipartite (H i)) :
+lemma iUnion_stronglyDisjoint_bipartite {ι : Type*} {H : ι → Graph α β}
+    (hdj : Pairwise (StronglyDisjoint on H)) (hbp : ∀ i, Bipartite (H i)) :
     Bipartite <| Graph.iUnion H (hdj.mono fun _ _ h ↦ h.compatible) := by
   set B : ∀ i, (H i).Bipartition := fun i ↦ (hbp i).some
   refine ⟨⟨⋃ i, (B i).left, ⋃ i, (B i).right, ?_, ?_, ?_⟩⟩
@@ -198,17 +198,17 @@ lemma iUnion_disjoint_bipartite {ι : Type*} {H : ι → Graph α β}
   obtain ⟨x, hx, y, hy, hxy⟩ := (B i).forall_edge _ he
   exact ⟨x, ⟨i, hx⟩, y, ⟨i, hy⟩, ⟨i, hxy⟩⟩
 
-lemma sUnion_disjoint_bipartite {s : Set (Graph α β)} (hdj : s.Pairwise Graph.Disjoint)
+lemma sUnion_stronglyDisjoint_bipartite {s : Set (Graph α β)} (hdj : s.Pairwise StronglyDisjoint)
     (hbp : ∀ G ∈ s, G.Bipartite) : Bipartite <| (Graph.sUnion s (hdj.mono' (by simp))) := by
-  apply iUnion_disjoint_bipartite
-  · exact (pairwise_subtype_iff_pairwise_set s Graph.Disjoint).2 hdj
+  apply iUnion_stronglyDisjoint_bipartite
+  · exact (pairwise_subtype_iff_pairwise_set s StronglyDisjoint).2 hdj
   simpa
 
 lemma bipartite_iff_forall_component :
-    G.Bipartite ↔ ∀ (H : Graph α β), H.IsComponent G → H.Bipartite := by
+    G.Bipartite ↔ ∀ (H : Graph α β), H.IsCompOf G → H.Bipartite := by
   refine ⟨fun h H hH ↦ h.of_le hH.le, fun h ↦ ?_⟩
   rw [G.eq_sUnion_components]
-  exact sUnion_disjoint_bipartite G.pairwiseDisjoint_components <| by simpa
+  exact sUnion_stronglyDisjoint_bipartite G.components_pairwise_stronglyDisjoint <| by simpa
 
 lemma Bipartition.same_first_get_iff (B : G.Bipartition) {W : WList α β} (hW : G.IsWalk W) {n : ℕ}
     (hn : n ≤ W.length) : B.Same W.first (W.get n) ↔ Even n := by
