@@ -807,7 +807,7 @@ lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected
   refine hle.eq_of_not_lt fun hlt ↦ ?_
   obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_notMem_of_lt hlt hne
   have hle : H ≤ G ＼ {e} := by simp [heH, hle]
-  exact hex.degree_delete_lt.not_le <| (hdeg hxH).trans (degree_mono hle x)
+  exact hex.degree_delete_lt.not_ge <| (hdeg hxH).trans (degree_mono hle x)
 
 lemma regular_sUnion_iff {s : Set (Graph α β)} (hdj : s.Pairwise Graph.StronglyDisjoint) {d : ℕ} :
     (Graph.sUnion s (hdj.mono' (by simp))).Regular d ↔ ∀ G ∈ s, G.Regular d := by
@@ -833,4 +833,3 @@ lemma maxDegreeLE_iff_forall_component {d : ℕ} :
   intro v H hH hvH
   rw [← G.eq_sUnion_components, ← hH.isClosedSubgraph.eDegree_eq hvH]
   exact h H hH v
-

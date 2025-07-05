@@ -15,6 +15,8 @@ open scoped Sym2
 
 namespace Graph
 
+/-- `Copy` creates an identical graph with different definitions for its vertex set and edge set.
+  This is mainly used to create graphs with improved definitional properties. -/
 @[simps]
 def copy (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → α → α → Prop} (hV : V(G) = V)
     (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) : Graph α β where
@@ -170,6 +172,7 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
     fun ⟨x, y, h⟩ ↦ ⟨h.1, h.2.edge_mem⟩⟩
   left_mem_of_isLink _ _ _ h := h.2.left_mem
 
+/-- `G ↾ F` is the subgraph of `G` restricted to the edges in `F`. Vertices are not changed. -/
 scoped infixl:65 " ↾ "  => Graph.edgeRestrict
 
 @[simp]
@@ -245,6 +248,7 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
     simp only [edgeRestrict_isLink, mem_diff, and_comm, and_congr_left_iff, and_iff_left_iff_imp]
     exact fun h _ ↦ h.edge_mem)
 
+/-- `G ＼ F` is the subgraph of `G` with the edges in `F` deleted. Vertices are not changed. -/
 scoped infixl:65 " ＼ "  => Graph.edgeDelete
 
 lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
@@ -332,6 +336,7 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β where
   eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
   left_mem_of_isLink := by simp +contextual
 
+/-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
 notation:max G:1000 "[" S "]" => Graph.induce G S
 
 lemma induce_le (hX : X ⊆ V(G)) : G[X] ≤ G :=
@@ -411,6 +416,7 @@ lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G [V(G) \ X]
 
+/-- `G - X` is the graph obtained from `G` by deleting the set `X` of vertices. -/
 notation:max G:1000 " - " S:1000 => Graph.vertexDelete G S
 
 -- instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
@@ -493,6 +499,7 @@ structure IsSpanningSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   vertexSet_eq : V(H) = V(G)
 
+/-- `H ≤s G` means that `H` is a spanning subgraph of `G`. -/
 infixl:50 " ≤s " => Graph.IsSpanningSubgraph
 
 @[simp]
@@ -522,6 +529,7 @@ structure IsInducedSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   isLink_of_mem_mem : ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y
 
+/-- `H ≤i G` means that `H` is an induced subgraph of `G`. -/
 scoped infixl:50 " ≤i " => Graph.IsInducedSubgraph
 
 lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤i G₂) (h₂₃ : G₂ ≤i G₃) :
@@ -571,6 +579,7 @@ structure IsClosedSubgraph (H G : Graph α β) : Prop where
   le : H ≤ G
   closed : ∀ ⦃e x⦄, G.Inc e x → x ∈ V(H) → e ∈ E(H)
 
+/-- `H ≤c G` means that `H` is a closed subgraph of `G`. i.e. a union of components of `G`. -/
 scoped infixl:50 " ≤c " => Graph.IsClosedSubgraph
 
 lemma IsClosedSubgraph.vertexSet_mono (h : H ≤c G) : V(H) ⊆ V(G) := Graph.vertexSet_mono h.le
@@ -667,7 +676,7 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
 
 /-! ### Components -/
 
-/-- A definition of components that doesn't mention connectedness. Can this replace `IsCompOf`?-/
+/-- A component of `G` is a minimal nonempty closed subgraph of `G`. -/
 def IsCompOf (H G : Graph α β) : Prop := Minimal (fun H ↦ H ≤c G ∧ V(H).Nonempty) H
 
 lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
@@ -676,8 +685,8 @@ lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
 lemma IsCompOf.isInducedSubgraph (hHco : H.IsCompOf G) : H ≤i G :=
   hHco.isClosedSubgraph.isInducedSubgraph
 
-lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
-  h.prop.2
-
 lemma IsCompOf.le (h : H.IsCompOf G) : H ≤ G :=
   h.isClosedSubgraph.le
+
+lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
+  h.prop.2
