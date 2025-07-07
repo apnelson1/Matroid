@@ -254,6 +254,32 @@ theorem encard_biUnion_le_tsum_encard {ι} {s : ι → Set α} {I : Set ι} :
   rw [biUnion_eq_iUnion]
   apply encard_iUnion_le_tsum_encard
 
+theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
+    (hfin : (⋃ i ∈ t, s i).Finite) :
+    ∑' i : t, (s i).encard = (⋃ i ∈ t, s i).encard ↔ t.PairwiseDisjoint s := by
+  refine ⟨fun h ↦ ?_, tsum_encard_eq_encard_biUnion⟩
+  by_contra hndj
+  simp only [PairwiseDisjoint, Set.Pairwise, ne_eq, onFun, disjoint_left, not_forall,
+    Classical.not_imp, not_not, exists_prop, exists_and_left] at hndj
+  obtain ⟨a, ha, b, hb, hab, x, hxa, hxb⟩ := hndj
+  have h1 := ENat.tsum_insert (a := a) (s := t \ {a}) (f := fun (i : ι) ↦ (s i).encard) (by simp)
+  rw [tsum_congr_set_coe (insert_diff_self_of_mem ha) (f := fun (i : ι) ↦ (s i).encard), h] at h1
+  have h2 := biUnion_insert a (t \ {a}) s
+  rw [insert_diff_self_of_mem ha] at h2
+  simp only at h1
+  have hle := add_le_add_left (encard_biUnion_le_tsum_encard (s := s) (I := t \ {a}))  (s a).encard
+  rw [← h1, ← encard_union_add_encard_inter, h2, add_le_left_iff, encard_eq_top_iff,
+    encard_eq_zero, ← disjoint_iff_inter_eq_empty, disjoint_left, ← h2,
+    or_iff_right hfin.not_infinite] at hle
+  simp only [mem_diff, mem_singleton_iff, mem_iUnion, exists_prop, not_exists, not_and,
+    and_imp, not_imp_not] at hle
+  exact hab (hle hxa b hb hxb).symm
+
+theorem tsum_encard_eq_encard_iUnion_iff {ι} {s : ι → Set α} (hfin : (⋃ i, s i).Finite) :
+    ∑' i, (s i).encard = (⋃ i, s i).encard ↔ Pairwise (Disjoint on s) := by
+  rw [← tsum_univ, ← biUnion_univ, tsum_encard_eq_encard_biUnion_iff (by simpa)]
+  rw [PairwiseDisjoint, pairwise_univ]
+
 protected theorem tsum_encard_eq_encard_sUnion {c : Set (Set α)} (hc : c.PairwiseDisjoint id) :
     ∑' (t : c), (t : Set α).encard = (⋃₀ c).encard := by
   rw [sUnion_eq_iUnion, ← ENat.tsum_encard_eq_encard_iUnion]

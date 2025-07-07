@@ -36,6 +36,10 @@ lemma IsSkewFamily.disjoint_inter_indep (h : M.IsSkewFamily Xs) (hI : M.Indep I)
   rintro e ⟨hei, heI⟩ _ hej rfl
   exact (hI.isNonloop_of_mem heI).not_isLoop <| h.isLoop_of_mem_inter hij ⟨hei,hej⟩
 
+lemma IsSkewFamily.diff_loops_pairwise_disjoint {Xs : η → Set α} (h : M.IsSkewFamily Xs) :
+    Pairwise (Disjoint on (fun i ↦ (Xs i \ M.loops))) :=
+  fun _ _ hij ↦ disjoint_left.2 fun _ hai haj ↦ hai.2 <| (h.disj hij) ⟨hai.1, haj.1⟩
+
 lemma IsSkewFamily.disjoint_of_indep_subset (h : M.IsSkewFamily Xs) (hI : M.Indep I)
     (hIX : I ⊆ Xs i) (hij : i ≠ j) : Disjoint I (Xs j) := by
   have hdj := h.disjoint_inter_indep hI hij
@@ -84,6 +88,12 @@ lemma isSkewFamily_iff_exist_isBases {Xs : η → Set α} : M.IsSkewFamily Xs �
   rw [← iUnion_inter]
   exact hB.isBasis_iUnion
 
+lemma IsSkewFamily.restrict {Xs : η → Set α} {R : Set α} (hXs : M.IsSkewFamily Xs)
+    (h : ∀ i, Xs i ⊆ R) : (M ↾ R).IsSkewFamily Xs := by
+  simp_rw [isSkewFamily_iff, ← closure_empty, restrict_closure_eq', empty_inter]
+  exact ⟨hXs.isModularFamily.restrict h, fun i j hij ↦
+    subset_trans (subset_inter (hXs.2 hij) (inter_subset_left.trans (h i))) subset_union_left⟩
+
 lemma Indep.isSkewFamily_iff_pairwise_disjoint {Is : η → Set α} (hI : M.Indep (⋃ i, Is i)) :
     M.IsSkewFamily Is ↔ Pairwise (Disjoint on Is) := by
   refine ⟨fun h ↦ h.pairwise_disjoint_of_indep_subsets
@@ -92,7 +102,17 @@ lemma Indep.isSkewFamily_iff_pairwise_disjoint {Is : η → Set α} (hI : M.Inde
       (fun i ↦ (hI.subset (subset_iUnion _ _)).isBasis_self)⟩
   exact h
 
-/--
+lemma Indep.isSkewFamily_iff_pairwise_disjoint_union_indep {Is : η → Set α}
+    (hI : ∀ i, M.Indep (Is i)) :
+    M.IsSkewFamily Is ↔ Pairwise (Disjoint on Is) ∧ M.Indep (⋃ i, Is i) := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.2.isSkewFamily_iff_pairwise_disjoint.2 h.1⟩
+  · exact h.pairwise_disjoint_of_indep_subsets (fun _ ↦ rfl.subset) hI
+  obtain ⟨B, hB, hBI⟩ := h.isModularFamily.exists_isMutualBasis_isBase
+  refine hB.indep.subset <| iUnion_subset fun i ↦ ?_
+  grw [← (hBI.isBasis_inter i).eq_of_subset_indep (hI i) inter_subset_left rfl.subset,
+    inter_subset_right]
+
+  /--
   For a skew family `Xs`, the union of some independent subsets of the `Xs` is independent.
   Quite a nasty proof. Probably the right proof involves relating modularity to the
   lattice of Flats. -/
@@ -188,6 +208,17 @@ lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamil
   exact h.pairwise_disjoint_of_indep_subsets
     (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
 
+lemma isSkewFamily_iff_cls_isSkewFamily (hX : ∀ i, Xs i ⊆ M.E) :
+    M.IsSkewFamily Xs ↔ M.IsSkewFamily (fun i ↦ M.closure (Xs i)) :=
+  ⟨fun h ↦ h.cls_isSkewFamily, fun h ↦ h.mono fun i ↦ M.subset_closure _⟩
+
+lemma isSkewFamily_iff_diff_loops_isSkewFamily :
+    M.IsSkewFamily Xs ↔ M.IsSkewFamily (fun i ↦ (Xs i) \ M.loops) := by
+  refine ⟨fun h ↦ h.mono fun _ ↦ diff_subset, fun h ↦ h.cls_isSkewFamily.mono fun i ↦ ?_⟩
+  nth_rw 1 [← diff_union_inter (Xs i) M.loops, union_subset_iff]
+  refine ⟨M.subset_closure _ (h.subset_ground_of_mem i), inter_subset_right.trans ?_⟩
+  exact M.closure_subset_closure (empty_subset _)
+
 lemma IsSkewFamily.iUnion_isBasis_iUnion (h : M.IsSkewFamily Xs)
     (hIs : ∀ i, M.IsBasis (Is i) (Xs i)) : M.IsBasis (⋃ i, Is i) (⋃ i, Xs i) := by
   have hi := h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset) (fun i ↦ (hIs i).indep)
@@ -272,7 +303,6 @@ lemma IsSkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.IsSkew
     (mem_of_mem_of_subset he (inter_subset_left.trans inter_subset_right))
   exact ⟨i, singleton_subset_iff.2 <| mem_of_mem_of_subset he
     (inter_subset_left.trans inter_subset_left)⟩
-
 
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.IsSkewFamily (fun i ↦ bif i then X else Y)
@@ -561,6 +591,7 @@ lemma IsSkewFamily.skew_compl_singleton {Xs : η → Set α} (h : M.IsSkewFamily
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
   convert h.skew_compl {i}; simp
 
+
 /-- Can this be moved up? -/
 lemma IsSkewFamily.isMutualBasis_of_indep {Xs : η → Set α} (h : M.IsSkewFamily Xs) (hB : M.Indep B)
     (hBX : B ⊆ ⋃ i, Xs i) (hX : ∀ i, Xs i ⊆ M.closure B) : M.IsMutualBasis B Xs := by
@@ -608,6 +639,26 @@ lemma Skew.subset_or_subset_of_isCircuit (h : M.Skew X Y) {C : Set α} (hC : M.I
     simpa using hi
   left
   simpa using hi
+
+lemma isSkewFamily_iff_forall_skew_compl_singleton {Xs : η → Set α} :
+    M.IsSkewFamily Xs ↔ ∀ i, M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
+  refine ⟨IsSkewFamily.skew_compl_singleton, fun h ↦ ?_⟩
+  rw [isSkewFamily_iff_diff_loops_isSkewFamily, isSkewFamily_iff_forall_isCircuit]
+  · refine fun C hC hCss ↦ ?_
+    obtain ⟨e, he⟩ := hC.nonempty
+    obtain ⟨i, hi, hel⟩ := mem_iUnion.1 <| hCss he
+    replace h := (h i).mono (diff_subset (t := M.loops)) (diff_subset (t := M.loops))
+    have h_or := h.subset_or_subset_of_isCircuit hC ?_; swap
+    · rw [← union_diff_distrib]
+      simp_rw [← biUnion_insert, ← union_singleton, compl_union_self, biUnion_univ, iUnion_diff]
+      assumption
+    refine h_or.elim (fun h ↦ ⟨i,h⟩) fun h' ↦ ?_
+    simpa [hi, hel] using h.diff_loops_disjoint_left.notMem_of_mem_right (h' he)
+  · exact fun i ↦ diff_subset.trans (h i).subset_ground_left
+  refine fun i j hij ↦ disjoint_left.2 fun a hai haj ↦ ?_
+  apply (h i).diff_loops_disjoint_left.notMem_of_mem_left hai
+  simp only [mem_compl_iff, mem_singleton_iff, mem_iUnion, exists_prop]
+  exact ⟨j, hij.symm, haj.1⟩
 
 lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : M.Skew L X := by
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]

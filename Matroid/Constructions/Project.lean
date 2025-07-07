@@ -1,6 +1,6 @@
-import Matroid.Order.Quotient
+import Mathlib.Data.Matroid.Minor.Contract
 
-variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K S : Set α}
+variable {α : Type*} {M M' N : Matroid α} {e f : α} {I C J R B X Y Z K S : Set α}
 
 open Set
 
@@ -31,9 +31,12 @@ lemma project_closure (M : Matroid α) (C X : Set α) :
   apply M.subset_closure_of_subset' subset_union_right h.1
 
 @[simp]
-lemma project_indep_iff {C I : Set α} : (M.project C).Indep I ↔ (M ／ C).Indep I := by
+lemma project_indep_iff : (M.project C).Indep I ↔ (M ／ C).Indep I := by
   simp only [project, restrict_indep_iff, and_iff_left_iff_imp]
   exact fun h ↦ h.of_contract.subset_ground
+
+lemma Indep.of_project (hI : (M.project C).Indep I) : M.Indep I :=
+  (project_indep_iff.1 hI).of_contract
 
 @[simp]
 lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
@@ -67,6 +70,17 @@ lemma IsBasis'.project_eq_project (hI : M.IsBasis' I X) : M.project X = M.projec
 
 lemma IsBasis.project_eq_project (hI : M.IsBasis I X) : M.project X = M.project I :=
   hI.isBasis'.project_eq_project
+
+@[simp]
+lemma project_closure_eq (M : Matroid α) (X : Set α) : M.project (M.closure X) = M.project X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [hI.project_eq_project, hI.isBasis_closure_right.project_eq_project]
+
+lemma project_restrict_comm (M : Matroid α) (hXR : X ⊆ R) : (M ↾ R).project X = (M.project X) ↾ R :=
+  ext_closure fun Y ↦ by simp [union_inter_distrib_right, inter_eq_self_of_subset_left hXR]
+
+lemma project_restrict_univ (M : Matroid α) : (M ↾ univ).project X = (M.project X) ↾ univ :=
+  M.project_restrict_comm <| subset_univ X
 
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
