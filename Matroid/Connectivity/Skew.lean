@@ -660,6 +660,14 @@ lemma isSkewFamily_iff_forall_skew_compl_singleton {Xs : η → Set α} :
   simp only [mem_compl_iff, mem_singleton_iff, mem_iUnion, exists_prop]
   exact ⟨j, hij.symm, haj.1⟩
 
+lemma isSkewFamily_set_coe_iff_forall_skew_compl_singleton {I : Set η} (Xs : η → Set α) :
+    M.IsSkewFamily (fun i : I ↦ Xs i) ↔ ∀ j ∈ I, M.Skew (Xs j) (⋃ i ∈ I \ {j}, Xs i) := by
+  simp only [isSkewFamily_iff_forall_skew_compl_singleton, mem_compl_iff, mem_singleton_iff,
+    iUnion_coe_set, Subtype.forall, Subtype.mk.injEq, mem_diff]
+  convert Iff.rfl using 4 with i hi
+  ext e
+  aesop
+
 lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : M.Skew L X := by
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]
   apply empty_skew hX

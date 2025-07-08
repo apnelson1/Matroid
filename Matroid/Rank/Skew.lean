@@ -138,10 +138,8 @@ lemma not_skew_iff_nullity_union_gt (hfin : M.nullity (X ∪ Y) ≠ ⊤) (hdj : 
   rw [← nullity_union_eq_iff hdj hfin, lt_iff_le_and_ne, eq_comm, and_iff_right]
   apply M.nullity_add_nullity_le_nullity_union hdj
 
-
-lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α} {I : Set ι}
-    (hX : I.PairwiseDisjoint X) (hY : I.PairwiseDisjoint Y)
-    (hn : ∀ i ∈ I, M.nullity (X i) ≤ M.nullity (Y i))
+lemma nullity_biUnion_mono {X Y : ι → Set α} {I : Set ι} (hX : I.PairwiseDisjoint X)
+    (hY : I.PairwiseDisjoint Y) (hn : ∀ i ∈ I, M.nullity (X i) ≤ M.nullity (Y i))
     (hcl : ∀ i ∈ I, M.closure (X i) ⊆ M.closure (Y i)) :
     M.nullity (⋃ i ∈ I, X i) ≤ M.nullity (⋃ i ∈ I, Y i) := by
   wlog hE : M.E = univ generalizing M with aux
@@ -150,11 +148,14 @@ lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α
     simp only [restrict_closure_eq', inter_univ, union_subset_iff, subset_union_right, and_true]
     exact fun i hi ↦ (hcl i hi).trans subset_union_left
   generalize h_eq : M.nullity (⋃ i ∈ I, Y i) = k
+  -- induct on the nullity of `⋃ i ∈ I, Y i`.
   induction k using ENat.strong_induction_on generalizing I with
   | h n IH =>
   · obtain rfl | hlt := eq_top_or_lt_top n
     · simp
     obtain rfl := h_eq
+    -- If `Y` is a skew family, then the closure hypothesis gives that `X` is too,
+    -- so nullity is additive for both families, and the result is easy.
     by_cases hsk : M.IsSkewFamily (fun i : I ↦ Y i)
     · have hsk' : M.IsSkewFamily (fun i : I ↦ X i) :=
       (hsk.cls_isSkewFamily.mono (fun i : I ↦ hcl i.1 i.2)).mono fun i ↦ M.subset_closure ..
@@ -162,34 +163,32 @@ lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α
         ENat.tsum_le_tsum (fun i : I ↦ hn i.1 i.2)]
       · rwa [PairwiseDisjoint, ← pairwise_subtype_iff_pairwise_set] at hX
       rwa [PairwiseDisjoint, ← pairwise_subtype_iff_pairwise_set] at hY
-
-    have aux : ∃ j J, I = insert j J ∧ j ∉ J ∧ ¬ M.Skew (Y j) (⋃ i ∈ J, Y i) := by
-      rw [isSkewFamily_iff_forall_skew_compl_singleton, not_forall] at hsk
-      obtain ⟨⟨j,hjI⟩, hj⟩ := hsk
-      refine ⟨j, I \ {j}, by simp [hjI], by simp, ?_⟩
-      convert hj
-      ext x
-      simp only [mem_diff, mem_singleton_iff, mem_iUnion, exists_prop, mem_compl_iff,
-        iUnion_coe_set, Subtype.mk.injEq, exists_and_left]
-      tauto
-    obtain ⟨j, J, hIJ, hjJ, hj⟩ := aux
+    -- Otherwise, there exists `Y j` that is not skew to the union of the other `Y i`.
+    obtain ⟨j, J, hIJ, hjJ, hj⟩ :
+      ∃ j J, I = insert j J ∧ j ∉ J ∧ ¬ M.Skew (Y j) (⋃ i ∈ J, Y i) := by
+      simp_rw [isSkewFamily_set_coe_iff_forall_skew_compl_singleton, not_forall, exists_prop] at hsk
+      obtain ⟨j, hj, hsk⟩ := hsk
+      exact ⟨j, I \ {j}, by simp [hj], by simp, hsk⟩
+    -- Let `J = I \ {j}`.
     simp only [hIJ, mem_insert_iff, forall_eq_or_imp] at hn hcl
     rw [hIJ, PairwiseDisjoint, pairwise_insert_of_symmetric_of_notMem (fun _ _ h ↦ h.symm) hjJ]
       at hX hY
     simp_rw [Function.onFun, ← disjoint_iUnion_right] at hX hY
-
+    -- by the choice of `J`, the union of `Y i` over `J` has lower nullity than the union over `I`
     have hlt : M.nullity (⋃ i ∈ J, Y i) < M.nullity (⋃ i ∈ I, Y i) := by
       rw [not_skew_iff_nullity_union_gt _ hY.2 (by simp [hE]) (by simp [hE]),
         ← biUnion_insert, ← hIJ] at hj
       · exact (le_add_self ..).trans_lt hj
       simpa [← biUnion_insert, ← hIJ] using hlt.ne
-
-
+    -- We can now apply the inductive hypothesis to `J`
     have hle := IH _ hlt hX.1 hY.1 hn.2 hcl.2 rfl
     have hcl' : M.closure (⋃ j ∈ J, X j) ⊆ M.closure (⋃ j ∈ J, Y j) := by
       refine M.closure_subset_closure_of_subset_closure ?_
       simp_rw [iUnion_subset_iff]
-      refine fun
+      intro i hiJ
+      grw [M.subset_closure (X i) (by simp [hE]), hcl.2 i hiJ]
+      exact M.closure_subset_closure (subset_biUnion_of_mem hiJ)
+    -- the result follows by calculations.
     replace hle := nullity_project_le_of_le hle (C := Y j) hcl'
     simp_rw [hIJ, biUnion_insert, nullity_union_eq_nullity_contract_add_nullity,
       ← nullity_project_eq_nullity_contract, hX.2.sdiff_eq_right, hY.2.sdiff_eq_right]
@@ -197,101 +196,17 @@ lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α
       ← closure_closure_union_closure_eq_closure_union,
       union_eq_self_of_subset_left (hcl.1), closure_closure, project_closure_eq, hle, hn.1]
 
+lemma nullity_iUnion_mono {X Y : ι → Set α} (hX : Pairwise (Disjoint on X))
+    (hY : Pairwise (Disjoint on Y)) (hn : ∀ i, M.nullity (X i) ≤ M.nullity (Y i))
+    (hcl : ∀ i, M.closure (X i) ⊆ M.closure (Y i)) :
+    M.nullity (⋃ i, X i) ≤ M.nullity (⋃ i, Y i) := by
+  rw [← biUnion_univ, ← biUnion_univ (s := Y)]
+  exact nullity_biUnion_mono (by simpa [PairwiseDisjoint, pairwise_univ])
+    (by simpa [PairwiseDisjoint, pairwise_univ]) (by simpa) (by simpa)
 
-
-
-
-  -- induction (M.nullity (⋃ i ∈ I, Y i)) using ENat.strong_induction_on generalizing I with
-  --   | h n IH =>
-  -- · _
-
-
-
-
---   -- have hE : M.E = univ := sorry
---   have hE : M.E = univ := sorry
-
-
-
-
---   simp only [isSkewFamily_iff_forall_skew_compl_singleton, Subtype.forall, not_forall,
---     ← biUnion_eq_iUnion] at hsk
---   obtain ⟨j, hjI, hj⟩ := hsk
---   obtain ⟨J, hIJ, hjJ⟩ : ∃ J, insert j J = I ∧ j ∉ J := ⟨I \ {j}, by simp [hjI]⟩
---   let f : Set ι → ℕ∞ := fun J ↦ M.nullity (⋃ i ∈ J, Y i)
---   simp only [mem_compl_iff, mem_singleton_iff, iUnion_coe_set, mem_insert_iff, Subtype.mk.injEq,
---     iUnion_iUnion_eq_or_left, not_true_eq_false, iUnion_of_empty, empty_union] at hj
---   replace hj : ¬ M.Skew (Y j) (⋃ i ∈ J, Y i) := by
---     convert hj using 4 with p
---     aesop
---   rw [PairwiseDisjoint, ← hIJ,
---     pairwise_insert_of_symmetric_of_notMem (fun _ _ h ↦ h.symm ) hjJ] at hX hY
---   simp_rw [Function.onFun, ← disjoint_iUnion₂_right] at hX hY
---   simp only [← hIJ, mem_insert_iff, forall_eq_or_imp] at hcl hn
---   -- rw [← nullity_union_eq_iff hY.2 sorry ] at hj
---   have hlt : M.nullity (⋃ i ∈ J, Y i) < M.nullity (⋃ i ∈ I, Y i) := sorry
---   -- replace hj := lt_of_le_of_ne' (nullity_add_nullity_le_nullity_union _ hY.2) hj
---   -- replace hj := le_add_self.trans_lt hj
---   -- simp_rw [← biUnion_insert, hIJ] at hj
---   -- exact hj
---   have := nullity_biUnion_mono hX.1 hY.1 hn.2 hcl.2
-
---   sorry
-
--- termination_by M.nullity (⋃ i ∈ I, Y i)
--- -- decreasing_by
--- --   sorry
-
-
-
-
-
-
-
--- lemma nullity_iUnion_mono {ι : Type*} {M : Matroid α} {X Y : ι → Set α}
---     (hX : Pairwise (Disjoint on X)) (hY : Pairwise (Disjoint on Y))
---     (hn : ∀ i, M.nullity (X i) ≤ M.nullity (Y i)) (hcl : ∀ i, M.closure (X i) ⊆ M.closure (Y i)) :
---     M.nullity (⋃ i, X i) ≤ M.nullity (⋃ i, Y i) := by
---   wlog hE : M.E = univ generalizing M with aux
---   · simp_rw [← M.nullity_restrict_univ] at *
---     grw [aux hn _ rfl]
---     simp only [restrict_closure_eq', inter_univ, union_subset_iff, subset_union_right, and_true]
---     exact fun i ↦ (hcl i).trans subset_union_left
---   -- If `Y` is skew, then so is `X`, and nullity is additive for both, so the result is easy.
---   by_cases hsk : M.IsSkewFamily Y
---   · have hsk' : M.IsSkewFamily X :=
---       (hsk.cls_isSkewFamily.mono hcl).mono (fun i ↦ M.subset_closure (X i))
---     grw [hsk.nullity_iUnion_eq hY, hsk'.nullity_iUnion_eq hX, ENat.tsum_le_tsum hn ]
---   -- Otherwise, there is some `Y j` that is not skew to the union of the others. Apply induction.
---   rw [isSkewFamily_iff_forall_skew_compl_singleton, not_forall] at hsk
---   obtain ⟨j, hj⟩ := hsk
---   let I : Set ι := {j}ᶜ
---   have hdj {Z : ι → Set α} (hdj : Pairwise (Disjoint on Z)) : Disjoint (Z j) (⋃ i ∈ I, Z i) := by
---     simp only [mem_compl_iff, mem_singleton_iff, disjoint_iUnion_right]
---     exact fun i hij ↦ hdj <| Ne.symm hij
---   have hu {Z : ι → Set α} : Z j ∪ (⋃ i ∈ I, Z i) = ⋃ i, Z i := sorry
---   have hlt : M.nullity (⋃ i, Y i) < ⊤ := sorry
---   have hproj : (M.project (X j)).project (Y j) = M.project (Y j) := sorry
---   have hcl' : M.closure (⋃ i ∈ I, X i) ⊆ M.closure (⋃ i ∈ I, Y i) := sorry
---   rw [← nullity_union_eq_iff (hdj hY)] at hj
---   ·
---     replace hj := (nullity_add_nullity_le_nullity_union _ (hdj hY)).lt_of_ne' hj
---     replace hj := (le_add_self ..).trans_lt hj
---     rw [hu, biUnion_eq_iUnion] at hj
-
-
---     have IH := nullity_iUnion_mono (M := M) (X := fun i : I ↦ X i) (Y := fun i : I ↦ Y i)
---       (hX.comp_of_injective Subtype.val_injective) (hY.comp_of_injective Subtype.val_injective)
---       (fun _ ↦ hn _) (fun _ ↦ hcl _)
---     simp only [iUnion_coe_set] at IH
---     replace IH := nullity_project_le_of_le IH hcl' (C := X j)
---     grw [← hu, ← hu (Z := Y), nullity_union_eq_nullity_contract_add_nullity,
---       nullity_union_eq_nullity_contract_add_nullity, hn, (hdj hX).sdiff_eq_right,
---         (hdj hY).sdiff_eq_right, ← nullity_project_eq_nullity_contract,
---         ← nullity_project_eq_nullity_contract, ← hproj, IH, nullity_project_ge]
-
-
-
-
---   simp_rw [← biUnion_insert, ← union_singleton, I, compl_union_self, biUnion_univ]
--- termination_by _ => M.nullity (⋃ i, Y i)
+lemma nullity_iUnion_congr {X Y : ι → Set α} (hX : Pairwise (Disjoint on X))
+    (hY : Pairwise (Disjoint on Y)) (hn : ∀ i, M.nullity (X i) = M.nullity (Y i))
+    (hcl : ∀ i, M.closure (X i) = M.closure (Y i)) :
+    M.nullity (⋃ i, X i) = M.nullity (⋃ i, Y i) :=
+  (nullity_iUnion_mono hX hY (fun i ↦ (hn i).le) (fun i ↦ (hcl i).subset)).antisymm
+  (nullity_iUnion_mono hY hX (fun i ↦ (hn i).symm.le) (fun i ↦ (hcl i).symm.subset))

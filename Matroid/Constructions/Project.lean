@@ -43,6 +43,11 @@ lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
     (M.project C₁).project C₂ = M.project (C₁ ∪ C₂) :=
   ext_closure <| by simp [union_assoc, union_comm C₂]
 
+lemma Indep.of_project_subset {C' : Set α} (hI : (M.project C).Indep I) (hC' : C' ⊆ C) :
+    (M.project C').Indep I := by
+  rw [← union_eq_self_of_subset_left hC', ← project_project] at hI
+  exact hI.of_project
+
 @[simp]
 lemma project_delete_self (M : Matroid α) (C : Set α) : (M.project C) ＼ C = M ／ C :=
   ext_indep rfl <| by simp +contextual [subset_diff]
@@ -75,6 +80,12 @@ lemma IsBasis.project_eq_project (hI : M.IsBasis I X) : M.project X = M.project 
 lemma project_closure_eq (M : Matroid α) (X : Set α) : M.project (M.closure X) = M.project X := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.project_eq_project, hI.isBasis_closure_right.project_eq_project]
+
+lemma project_project_eq_project (hXY : M.closure X ⊆ M.closure Y) :
+    (M.project X).project Y = M.project Y := by
+  rw [← project_closure_eq, project_closure, ← closure_closure_union_closure_eq_closure_union,
+    union_eq_self_of_subset_right hXY, closure_closure, ← M.project_closure_eq, project_project,
+    union_eq_self_of_subset_left hXY, project_closure_eq]
 
 lemma project_restrict_comm (M : Matroid α) (hXR : X ⊆ R) : (M ↾ R).project X = (M.project X) ↾ R :=
   ext_closure fun Y ↦ by simp [union_inter_distrib_right, inter_eq_self_of_subset_left hXR]

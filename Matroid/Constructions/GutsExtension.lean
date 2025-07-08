@@ -2,7 +2,6 @@ import Matroid.Modular.Flat
 import Matroid.Connectivity.Separation
 import Matroid.Constructions.Project
 
-
 open Set BigOperators Set.Notation Function
 
 namespace Matroid
