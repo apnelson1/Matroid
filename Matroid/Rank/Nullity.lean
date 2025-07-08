@@ -50,6 +50,10 @@ lemma Indep.nullity_eq (hI : M.Indep I) : M.nullity I = 0 := by
   rw [hI.isBasis_self.nullity_eq, diff_self, encard_empty]
 
 @[simp]
+lemma nullity_empty (M : Matroid α) : M.nullity ∅ = 0 :=
+  M.empty_indep.nullity_eq
+
+@[simp]
 lemma nullity_eq_zero : M.nullity I = 0 ↔ M.Indep I := by
   rw [iff_def, and_iff_left Indep.nullity_eq]
   obtain ⟨J, hJI⟩ := M.exists_isBasis' I
@@ -188,6 +192,10 @@ lemma nullity_supermodular (M : Matroid α) (X Y : Set α) :
     inter_assoc (a := X), inter_assoc X Y, inter_comm _ Y]
   exact inter_subset_left
 
+lemma nullity_add_nullity_le_nullity_union (M : Matroid α) (hdj : Disjoint X Y) :
+    M.nullity X + M.nullity Y ≤ M.nullity (X ∪ Y) := by
+  grw [M.nullity_supermodular, hdj.inter_eq, nullity_empty, add_zero]
+
 lemma nullity_delete_of_disjoint (M : Matroid α) (hXY : Disjoint X Y) :
     (M ＼ Y).nullity X = M.nullity X := by
   wlog hX : X ⊆ M.E generalizing X with aux
@@ -221,6 +229,10 @@ lemma nullity_project_add_nullity_comm (M : Matroid α) (X Y : Set α) :
     (M.project X).nullity Y + M.nullity X = (M.project Y).nullity X + M.nullity Y := by
   rw [nullity_project_add_nullity_eq, nullity_project_add_nullity_eq, union_comm, inter_comm]
 
+lemma nullity_project_eq_nullity_contract (M : Matroid α) {C : Set α} :
+    (M.project C).nullity X = (M ／ C).nullity X := by
+  rw [← nullity_restrict_univ, ← contract_restrict_univ, nullity_restrict_univ]
+
 lemma nullity_project_le_of_le {C : Set α} (hn : M.nullity X ≤ M.nullity Y)
     (hcl : M.closure X ⊆ M.closure Y) : (M.project C).nullity X ≤ (M.project C).nullity Y := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' C
@@ -234,6 +246,16 @@ lemma nullity_project_congr {C : Set α} (hn : M.nullity X = M.nullity Y)
     (hcl : M.closure X = M.closure Y) : (M.project C).nullity X = (M.project C).nullity Y :=
   (nullity_project_le_of_le hn.le hcl.subset).antisymm <|
     nullity_project_le_of_le hn.symm.le hcl.symm.subset
+
+-- lemma nullity_contract_le_of_le {C : Set α} (hn : M.nullity X ≤ M.nullity Y)
+--     (hcl : M.closure X ≤ M.closure Y) : (M ／ C).nullity X ≤ (M ／ C).nullity Y := by
+--   grw [← nullity_restrict_univ, contract_restrict_univ, nullity_restrict_univ,
+--     nullity_project_le_of_le hn hcl]
+
+-- lemma nullity_contract_congr {C : Set α} (hn : M.nullity X = M.nullity Y)
+--     (hcl : M.closure X = M.closure Y) : (M ／ C).nullity X = (M ／ C).nullity Y := by
+--   rw [← nullity_restrict_univ, contract_restrict_univ, nullity_restrict_univ,
+--     nullity_project_congr hn hcl]
 
 lemma IsBasis'.nullity_project {C J : Set α} (hI : M.IsBasis' I X) (hJ : M.IsBasis' J X) :
     (M.project C).nullity I = (M.project C).nullity J := by

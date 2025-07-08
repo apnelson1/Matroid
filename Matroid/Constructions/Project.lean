@@ -82,6 +82,9 @@ lemma project_restrict_comm (M : Matroid α) (hXR : X ⊆ R) : (M ↾ R).project
 lemma project_restrict_univ (M : Matroid α) : (M ↾ univ).project X = (M.project X) ↾ univ :=
   M.project_restrict_comm <| subset_univ X
 
+lemma contract_restrict_univ (M : Matroid α) : (M ／ X) ↾ univ = (M.project X) ↾ univ :=
+  ext_indep rfl fun _ ↦ by simp
+
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
 
