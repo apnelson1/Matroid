@@ -106,38 +106,37 @@ lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ 
   · simp [hXE, hYE]
   simpa [lt_top_iff_ne_top]
 
-lemma not_skew_iff_nullity (hfin : M.nullity Y ≠ ⊤) (hX : X ⊆ M.E := by aesop_mat)
-    (hY : Y ⊆ M.E := by aesop_mat) : ¬ M.Skew X Y ↔ M.nullity Y < (M.project X).nullity Y := by
+lemma not_skew_iff_nullity_lt_nullity_project (hfin : M.nullity Y ≠ ⊤) (hdj : Disjoint X Y)
+    (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    ¬ M.Skew X Y ↔ M.nullity Y < (M.project X).nullity Y := by
+  refine Iff.symm ⟨fun h hi ↦ h.ne ?_, fun h ↦ ?_⟩
+  · rw [nullity_project_eq_nullity_contract, ← (M ／ X).nullity_restrict_self,
+      hi.contract_restrict_eq, nullity_restrict_self]
   obtain ⟨I, hI⟩ := M.exists_isBasis X
   obtain ⟨J, hJ⟩ := M.exists_isBasis Y
-  rw [← skew_iff_isBases_skew hI hJ, hJ.nullity_eq]
+  have hfin : (Y \ J).Finite := by rwa [← encard_ne_top_iff, ← hJ.nullity_eq]
+  obtain ⟨J', hJ'⟩ := (M.project I).exists_isBasis J
+  have hJ'Y : (M.project I).IsBasis J' Y := by
+    refine hJ'.isBasis_of_closure_eq_closure (hJ'.subset.trans hJ.subset) ?_
+    rw [project_closure, project_closure, closure_union_congr_left hJ.closure_eq_closure]
+  rw [← skew_iff_isBases_skew hI hJ, hI.indep.skew_iff_disjoint_union_indep hJ.indep,
+    and_iff_right (hdj.mono hI.subset hJ.subset)] at h
+  rw [hI.project_eq_project, hJ'Y.nullity_eq, hJ.nullity_eq]
+  apply hfin.encard_lt_encard
+  rw [← diff_union_diff_cancel hJ.subset hJ'.subset, ssubset_union_left_iff,
+    subset_diff, and_iff_right (diff_subset.trans hJ.subset), disjoint_iff_inter_eq_empty,
+    ← inter_diff_right_comm, inter_self, diff_eq_empty]
+  intro hss
+  obtain rfl : J = J' := hss.antisymm hJ'.subset
+  replace hJ' := hJ'.indep
+  rw [project_indep_iff, hI.indep.contract_indep_iff, union_comm] at hJ'
+  exact h hJ'.2
 
-
-
--- lemma nullity_biUnion_mono {α : Type*} {M : Matroid α} {X Y : ι → Set α} {I : Set ι} :
---     -- (hX : I.PairwiseDisjoint X) (hY : I.PairwiseDisjoint Y)
-
---     M.nullity (⋃ i ∈ I, X i) ≤ M.nullity (⋃ i ∈ I, Y i) := by
-
---   -- have aux : ∃ (j : ι) (J : Set ι), j ∉ J ∧ I =
---insert j J ∧ ¬ M.Skew (Y j) (⋃ i ∈ J, Y i) := sorry
-
---   obtain J : Set ι := ∅
-
---   have aux3 : J.encard < I.encard := by
---     sorry
-
---   -- simp [h_eq] at hn hcl
---   have := nullity_biUnion_mono (M := M) (X := X) (Y := Y) (I := J)
---   have aux4 : M.nullity (⋃ i ∈ I, X i) = M.nullity (⋃ i ∈ (∅ : Set ι), X i) + 0 := sorry
---   have aux5 : M.nullity (⋃ i ∈ I, Y i) = M.nullity (⋃ i ∈ (∅ : Set ι), Y i) + 0 := sorry
---   grw [aux4, aux5, add_zero, add_zero]
---   simp
---   -- exact this
-
-
--- termination_by I.encard
--- decreasing_by exact aux3
+lemma not_skew_iff_nullity_union_gt (hfin : M.nullity (X ∪ Y) ≠ ⊤) (hdj : Disjoint X Y)
+    (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    ¬ M.Skew X Y ↔ M.nullity X + M.nullity Y < M.nullity (X ∪ Y) := by
+  rw [← nullity_union_eq_iff hdj hfin, lt_iff_le_and_ne, eq_comm, and_iff_right]
+  apply M.nullity_add_nullity_le_nullity_union hdj
 
 
 lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α} {I : Set ι}
@@ -150,7 +149,6 @@ lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α
     grw [aux hn _ rfl]
     simp only [restrict_closure_eq', inter_univ, union_subset_iff, subset_union_right, and_true]
     exact fun i hi ↦ (hcl i hi).trans subset_union_left
-
   generalize h_eq : M.nullity (⋃ i ∈ I, Y i) = k
   induction k using ENat.strong_induction_on generalizing I with
   | h n IH =>
@@ -181,22 +179,23 @@ lemma nullity_biUnion_mono {α ι : Type*} {M : Matroid α} {X Y : ι → Set α
     simp_rw [Function.onFun, ← disjoint_iUnion_right] at hX hY
 
     have hlt : M.nullity (⋃ i ∈ J, Y i) < M.nullity (⋃ i ∈ I, Y i) := by
-      -- rw [lt_iff_le_and_ne, and_iff_right
-      --   (M.nullity_le_of_subset (biUnion_subset_biUnion_left (by simp [hIJ])))]
-      rw [← nullity_union_eq_iff hY.2 _ (by simp [hE]) (by simp [hE]), ← biUnion_insert, ← hIJ] at hj
-      -- have :=
-      rw [hIJ, biUnion_insert]
-      -- refine (M.nullity_le_of_subset (biUnion_subset_biUnion_left (by simp [hIJ]))).lt_of_ne' ?_
-      -- simp_rw [hIJ, biUnion_insert, Ne]
-      -- rwa [← nullity_union_eq_iff hY.2 _ _ _] at hj
+      rw [not_skew_iff_nullity_union_gt _ hY.2 (by simp [hE]) (by simp [hE]),
+        ← biUnion_insert, ← hIJ] at hj
+      · exact (le_add_self ..).trans_lt hj
+      simpa [← biUnion_insert, ← hIJ] using hlt.ne
 
 
-
-
-      -- refine subset_antisymm ?_ ?_
-
-
-
+    have hle := IH _ hlt hX.1 hY.1 hn.2 hcl.2 rfl
+    have hcl' : M.closure (⋃ j ∈ J, X j) ⊆ M.closure (⋃ j ∈ J, Y j) := by
+      refine M.closure_subset_closure_of_subset_closure ?_
+      simp_rw [iUnion_subset_iff]
+      refine fun
+    replace hle := nullity_project_le_of_le hle (C := Y j) hcl'
+    simp_rw [hIJ, biUnion_insert, nullity_union_eq_nullity_contract_add_nullity,
+      ← nullity_project_eq_nullity_contract, hX.2.sdiff_eq_right, hY.2.sdiff_eq_right]
+    grw [nullity_project_ge _ (Y j), project_project, ← project_closure_eq,
+      ← closure_closure_union_closure_eq_closure_union,
+      union_eq_self_of_subset_left (hcl.1), closure_closure, project_closure_eq, hle, hn.1]
 
 
 
