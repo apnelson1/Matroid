@@ -495,6 +495,15 @@ lemma isModularPair_iff_exists_isBasis_isBasis :
   exact hJ.subset_closure.trans
     (M.closure_subset_closure (subset_inter hJ.subset subset_union_right))
 
+lemma IsModularPair.exists_isMutualBasis_isBase (h : M.IsModularPair X Y) : ∃ B,
+    M.IsBase B ∧ M.IsBasis ((X ∪ Y) ∩ B) (X ∪ Y) ∧ M.IsBasis (X ∩ B) X ∧
+    M.IsBasis (Y ∩ B) Y ∧ M.IsBasis (X ∩ Y ∩ B) (X ∩ Y) := by
+  rw [IsModularPair] at h
+  obtain ⟨B, hB, hB'⟩ := h.exists_isMutualBasis_isBase
+  exact ⟨B, hB, by simpa using hB'.isBasis_iUnion,
+    by simpa using hB'.isBasis_inter true, by simpa using hB'.isBasis_inter false,
+    by simpa using hB'.isBasis_iInter⟩
+
 lemma IsModularPair.exists_common_isBasis (h : M.IsModularPair X Y) : ∃ I,
     M.IsBasis I (X ∪ Y) ∧ M.IsBasis (I ∩ X) X ∧
     M.IsBasis (I ∩ Y) Y ∧ M.IsBasis (I ∩ X ∩ Y) (X ∩ Y) := by

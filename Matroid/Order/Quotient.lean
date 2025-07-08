@@ -309,6 +309,16 @@ lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]
   rw [ModularCut.extendBy_deleteElem _ (by simp)]
 
+lemma project_quotient (M : Matroid α) (X : Set α) : M.project X ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun Y _ ↦ ?_
+  rw [project_closure]
+  exact M.closure_subset_closure <| subset_union_left
+
+lemma Quotient.project_quotient_project (h : M₂ ≤q M₁) (X : Set α) :
+    M₂.project X ≤q M₁.project X :=
+  quotient_of_forall_closure_subset_closure (by simpa using h.ground_eq.symm) fun Y _ ↦
+    by simpa using h.closure_subset_closure ..
+
 end Constructions
 
 lemma Quotient.intCast_rank_sub_mono [RankFinite M₁] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :

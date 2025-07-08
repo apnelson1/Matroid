@@ -11,7 +11,7 @@ namespace Matroid
 /-- Contract a set `C`, then put the removed elements back in as loops. -/
 def project (M : Matroid α) (C : Set α) : Matroid α := (M ／ C) ↾ M.E
 
-@[simp]
+@[simp, aesop unsafe 20% (rule_sets := [Matroid])]
 lemma project_ground (M : Matroid α) (C : Set α) : (M.project C).E = M.E := rfl
 
 @[simp]
@@ -95,6 +95,10 @@ lemma project_restrict_univ (M : Matroid α) : (M ↾ univ).project X = (M.proje
 
 lemma contract_restrict_univ (M : Matroid α) : (M ／ X) ↾ univ = (M.project X) ↾ univ :=
   ext_indep rfl fun _ ↦ by simp
+
+instance project_finitary [M.Finitary] : (M.project X).Finitary := by
+  rw [project]
+  infer_instance
 
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
