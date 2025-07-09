@@ -14,7 +14,7 @@ variable {α : Type*} {ι : Sort*} {η : Type*} {A : Set η} {M : Matroid α} {B
 
 section IsMutualBasis
 
-/-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
+/-- A base `B` is a mutual base for an indexed set family if it contains a basis for each set
 in the family. -/
 @[mk_iff]
 structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where

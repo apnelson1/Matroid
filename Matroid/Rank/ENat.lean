@@ -128,3 +128,11 @@ lemma not_isRkFinite_of_eRk_ge (h : ¬M.IsRkFinite X) (hXY : M.eRk X ≤ M.eRk Y
     ¬M.IsRkFinite Y := by
   contrapose! h
   exact eRk_lt_top_iff.1 <| hXY.trans_lt h.eRk_lt_top
+
+lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X ∩ R) := by
+  rw [← eRk_inter_ground, restrict_ground_eq, inter_comm, ← eRank_restrict,
+    restrict_restrict_eq _ inter_subset_left, eRank_restrict]
+
+@[simp]
+lemma eRk_restrict_univ (M : Matroid α) (X : Set α) : (M ↾ univ).eRk X = M.eRk (X) := by
+  rw [eRk_restrict, inter_univ]

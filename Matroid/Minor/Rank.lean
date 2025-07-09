@@ -57,6 +57,11 @@ lemma Indep.contract_eRk_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eR
 
 end Delete
 
+lemma eRk_project_eq_eRk_contract (M : Matroid α) (C X : Set α) :
+    (M.project C).eRk X = (M ／ C).eRk X := by
+  rw [project, eRk_restrict, ← eRk_inter_ground, inter_assoc, contract_ground,
+    inter_eq_self_of_subset_right diff_subset, ← contract_ground, eRk_inter_ground]
+
 /-- The relative `ℕ∞`-rank of sets `X` and `Y`, defined to be the `ℕ∞`-rank of `Y` in `M ／ X`,
 and equal to the minimum number of elements that need to be added to `X` to span `Y`.
 The definition suggests that `X` and `Y` should be disjoint, but it is also a natural
@@ -64,6 +69,9 @@ expression when `X ⊆ Y`, and sometimes more generally. -/
 noncomputable def eRelRk (M : Matroid α) (X Y : Set α) : ℕ∞ := (M ／ X).eRk Y
 
 lemma eRelRk_eq_eRk_contract (M : Matroid α) (X Y : Set α) : M.eRelRk X Y = (M ／ X).eRk Y := rfl
+
+lemma eRelRk_eq_eRk_project (M : Matroid α) (X Y : Set α) : M.eRelRk X Y = (M.project X).eRk Y := by
+  rw [eRk_project_eq_eRk_contract, eRelRk_eq_eRk_contract]
 
 @[simp] lemma eRelRk_inter_ground_left (M : Matroid α) (X Y : Set α) :
     M.eRelRk (X ∩ M.E) Y = M.eRelRk X Y := by

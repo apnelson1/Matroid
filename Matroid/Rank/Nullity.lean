@@ -214,6 +214,11 @@ lemma nullity_project_ge (M : Matroid α) (C X : Set α) : M.nullity X ≤ (M.pr
   obtain ⟨I, hI⟩ := (M.project C).exists_isBasis X
   grw [hI.indep.of_project.nullity_le_encard_diff_of_subset hI.subset, hI.nullity_eq]
 
+lemma nullity_project_mono {C C' : Set α} (M : Matroid α) (hCC' : C ⊆ C') (X : Set α) :
+    (M.project C).nullity X ≤ (M.project C').nullity X := by
+  rw [← union_eq_self_of_subset_left hCC', ← project_project]
+  apply nullity_project_ge
+
 lemma nullity_project_add_nullity_eq (M : Matroid α) (C X : Set α) :
     (M.project C).nullity X + M.nullity C = M.nullity (X ∪ C) + (X ∩ C).encard := by
   wlog hX : X ⊆ M.E generalizing M with aux
@@ -246,6 +251,8 @@ lemma nullity_project_congr {C : Set α} (hn : M.nullity X = M.nullity Y)
     (hcl : M.closure X = M.closure Y) : (M.project C).nullity X = (M.project C).nullity Y :=
   (nullity_project_le_of_le hn.le hcl.subset).antisymm <|
     nullity_project_le_of_le hn.symm.le hcl.symm.subset
+
+
 
 -- lemma nullity_contract_le_of_le {C : Set α} (hn : M.nullity X ≤ M.nullity Y)
 --     (hcl : M.closure X ≤ M.closure Y) : (M ／ C).nullity X ≤ (M ／ C).nullity Y := by

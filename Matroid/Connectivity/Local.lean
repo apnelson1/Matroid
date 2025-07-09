@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Skew
+import Matroid.Rank.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
@@ -12,53 +12,14 @@ variable {α : Type*} {M : Matroid α} {B B' I I' J J' K X Y : Set α}
 
 section eLocalConn
 
-lemma Indep.encard_inter_add_nullity_eq (hI : M.Indep I) (hJ : J ⊆ M.E) (hK : M.IsBasis K (I ∪ J))
-    (hIK : I ⊆ K) (hI' : M.Indep I') (hcl : M.closure I = M.closure I') :
-    (I' ∩ J).encard + M.nullity (I' ∪ J) = (J \ (K \ I)).encard := by
-  have hsk := hK.indep.subset_skew_diff hIK
-  rw [skew_iff_closure_skew_left, hcl, ← skew_iff_closure_skew_left] at hsk
-  have hdj := hsk.disjoint_of_indep_subset_right (hK.indep.diff _) Subset.rfl
-
-  set J₀ := (K \ I) with hJ₀
-  set J₁ := J \ (K \ I) with hJ₁
-  have hJ₀i : M.Indep J₀ := hK.indep.diff I
-  have hss : J₀ ⊆ I' ∪ J := (diff_subset_iff.2 hK.subset).trans subset_union_right
-
-  have hc1 : (M ／ J₀).IsBasis I' (I' ∪ J₁) := by
-    refine Indep.isBasis_of_subset_of_subset_closure ?_ ?_ ?_
-    · rw [(hK.indep.diff _).contract_indep_iff]
-      refine ⟨hdj, hsk.union_indep_of_indep_subsets hI' rfl.subset (hK.indep.diff _) Subset.rfl⟩
-    · exact subset_union_left
-    · rw [contract_closure_eq, subset_diff, disjoint_union_left, and_iff_left disjoint_sdiff_left,
-        and_iff_left hdj, ← closure_union_congr_left hcl, union_diff_cancel hIK,
-        hK.closure_eq_closure, closure_union_congr_left hcl]
-      exact subset_closure_of_subset _ (union_subset_union_right _ diff_subset)
-
-  rw [← hJ₀i.nullity_contract_of_superset hss, union_diff_distrib, sdiff_eq_left.2 hdj,
-    hc1.nullity_eq, union_diff_left,
-    ← encard_union_eq (disjoint_sdiff_right.mono_left inter_subset_left),
-    ← inter_union_diff J (K \ I), ← hJ₁, inter_union_distrib_left, union_assoc,
-    inter_comm _ J₁, inter_union_diff, ← hJ₀, inter_comm J, ← inter_assoc,
-    hdj.inter_eq, empty_inter, empty_union]
-
-lemma IsBasis'.encard_dual_congr (hI : M.IsBasis' I X) (hI' : M.IsBasis' I' X) (hJ : M.IsBasis' J Y)
-    (hJ' : M.IsBasis' J' Y) :
+/- If `X` and `Y` are sets, then `|I ∩ J| + M.nullity (I ∪ J)` has the same value for
+every isBasis `I` of `X` and `J` of `Y`. --/
+lemma IsBasis'.encard_add_nullity_congr (hI : M.IsBasis' I X) (hI' : M.IsBasis' I' X)
+    (hJ : M.IsBasis' J Y) (hJ' : M.IsBasis' J' Y) :
     (I ∩ J).encard + M.nullity (I ∪ J) = (I' ∩ J').encard + M.nullity (I' ∪ J') := by
-  wlog hJJ' : J = J' generalizing I I' J J' X Y with h
-  · rw [h hI hI' hJ hJ rfl, inter_comm, union_comm, h hJ hJ' hI' hI' rfl, inter_comm, union_comm]
-  subst hJJ'
-  obtain ⟨K, hK, hIK⟩ := hI.indep.subset_isBasis_of_subset (show I ⊆ I ∪ J from subset_union_left)
-    (union_subset hI.indep.subset_ground hJ.indep.subset_ground)
-  have hcl : M.closure I = M.closure I' := by rw [hI.closure_eq_closure, hI'.closure_eq_closure]
-  rw [hI.indep.encard_inter_add_nullity_eq hJ.indep.subset_ground hK hIK hI'.indep hcl,
-    hI.indep.encard_inter_add_nullity_eq hJ.indep.subset_ground hK hIK hI.indep rfl]
-
-/-- If `X` and `Y` are sets, then `|I ∩ J| + M.nullity (I ∪ J)` has the same value for
-every isBasis `I` of `X` and `J` of `Y`. -/
-lemma IsBasis.encard_dual_congr₂ (hI : M.IsBasis I X) (hI' : M.IsBasis I' X)
-    (hJ : M.IsBasis J Y) (hJ' : M.IsBasis J' Y) :
-    (I ∩ J).encard + M.nullity (I ∪ J) = (I' ∩ J').encard + M.nullity (I' ∪ J') :=
-  hI.isBasis'.encard_dual_congr hI'.isBasis' hJ.isBasis' hJ'.isBasis'
+  rw [add_comm, ← nullity_project_add_nullity_eq, add_comm (encard _),
+    ← nullity_project_add_nullity_eq, hJ.indep.nullity_eq, hJ'.indep.nullity_eq,
+    ← hJ.project_eq_project, ← hJ'.project_eq_project, hI.nullity_project hI']
 
 /-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
 Defined to correctly describe the connectivity even when one or both sets has infinite rank.
@@ -73,12 +34,31 @@ lemma eLocalConn_comm (M : Matroid α) (X Y : Set α) : M.eLocalConn X Y = M.eLo
 
 lemma IsBasis'.eLocalConn_eq (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y) :
     M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) := by
-  simp_rw [eLocalConn, hI.encard_dual_congr (M.exists_isBasis' X).choose_spec hJ
-    (M.exists_isBasis' Y).choose_spec]
+  rw [eLocalConn]
+  generalize_proofs h1 h2
+  exact IsBasis'.encard_add_nullity_congr h1.choose_spec hI h2.choose_spec hJ
 
 lemma IsBasis.eLocalConn_eq (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) :
     M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) :=
   hI.isBasis'.eLocalConn_eq hJ.isBasis'
+
+lemma IsBasis'.eLocalConn_eq_nullity_project_right (hI : M.IsBasis' I X) (Y : Set α) :
+    M.eLocalConn X Y = (M.project Y).nullity I := by
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, add_comm, ← nullity_project_add_nullity_eq,
+    ← hJ.project_eq_project, hJ.indep.nullity_eq, add_zero]
+
+lemma IsBasis.eLocalConn_eq_nullity_project_right (hI : M.IsBasis I X) (Y : Set α) :
+    M.eLocalConn X Y = (M.project Y).nullity I :=
+  hI.isBasis'.eLocalConn_eq_nullity_project_right Y
+
+lemma IsBasis'.eLocalConn_eq_nullity_project_left (hI : M.IsBasis' I Y) (X : Set α) :
+    M.eLocalConn X Y = (M.project X).nullity I := by
+  rw [eLocalConn_comm, hI.eLocalConn_eq_nullity_project_right]
+
+lemma IsBasis.eLocalConn_eq_nullity_project_left (hI : M.IsBasis I Y) (X : Set α) :
+    M.eLocalConn X Y = (M.project X).nullity I := by
+  rw [eLocalConn_comm, hI.eLocalConn_eq_nullity_project_right]
 
 lemma Indep.eLocalConn_eq (hI : M.Indep I) (hJ : M.Indep J) :
     M.eLocalConn I J = (I ∩ J).encard + M.nullity (I ∪ J) :=
@@ -109,85 +89,19 @@ lemma eLocalConn_eq_encard_of_diff' {F : Set α} (hXY : Disjoint X Y) (hI : M.Is
   rwa [union_diff_distrib, (sdiff_eq_left (x := J)).2 ]
   exact (hXY.symm.mono hJ.subset (hFI.trans hI.subset))
 
-lemma eRk_add_eRk_eq_eRk_union_add_eLocalConn (M : Matroid α) (X Y : Set α) :
-    M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eLocalConn X Y := by
+@[simp] lemma eLocalConn_closure_right (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn X (M.closure Y) = M.eLocalConn X Y := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
-  obtain ⟨B, hB⟩ := M.exists_isBasis' (I ∪ J)
-  have hB' : M.IsBasis' B (X ∪ Y) := by
-    rw [isBasis'_iff_isBasis_closure, ← closure_closure_union_closure_eq_closure_union,
-      ← hI.closure_eq_closure, ← hJ.closure_eq_closure,
-      closure_closure_union_closure_eq_closure_union, ← hB.closure_eq_closure]
-    exact ⟨hB.indep.isBasis_closure, hB.subset.trans (union_subset_union hI.subset hJ.subset)⟩
-  rw [hI.eLocalConn_eq hJ, ← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← encard_union_add_encard_inter,
-    ← hB'.encard_eq_eRk, hB.nullity_eq, ← add_assoc, add_right_comm, add_comm B.encard,
-    encard_diff_add_encard_of_subset hB.subset]
-
-lemma eRk_inter_le_eLocalConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) ≤ M.eLocalConn X Y := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' (X ∩ Y)
-  obtain ⟨IX, hIX⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_left)
-  obtain ⟨IY, hIY⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_right)
-  rw [← hI.encard_eq_eRk, hIX.1.eLocalConn_eq hIY.1]
-  exact (encard_le_encard (subset_inter hIX.2 hIY.2)).trans le_self_add
+  rw [hI.eLocalConn_eq_nullity_project_right, project_closure_eq,
+    ← hI.eLocalConn_eq_nullity_project_right]
 
 @[simp] lemma eLocalConn_closure_left (M : Matroid α) (X Y : Set α) :
     M.eLocalConn (M.closure X) Y = M.eLocalConn X Y := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
-  rw [hI.eLocalConn_eq hJ, hI.isBasis_closure_right.isBasis'.eLocalConn_eq hJ]
-
-@[simp] lemma eLocalConn_closure_right (M : Matroid α) (X Y : Set α) :
-    M.eLocalConn X (M.closure Y) = M.eLocalConn X Y := by
-  rw [eLocalConn_comm, eLocalConn_closure_left, eLocalConn_comm]
+  rw [eLocalConn_comm, eLocalConn_closure_right, eLocalConn_comm]
 
 @[simp] lemma eLocalConn_closure_closure (M : Matroid α) (X Y : Set α) :
     M.eLocalConn (M.closure X) (M.closure Y) = M.eLocalConn X Y := by
   rw [eLocalConn_closure_left, eLocalConn_closure_right]
-
-lemma eLocalConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : Set α) :
-    M.eLocalConn X' Y ≤ M.eLocalConn X Y := by
-  obtain ⟨I', hI'⟩ := M.exists_isBasis' X'
-  obtain ⟨I, hI, hII'⟩ := hI'.indep.subset_isBasis'_of_subset (hI'.subset.trans hX)
-  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
-  rw [hI'.eLocalConn_eq hJ, hI.eLocalConn_eq hJ]
-  refine add_le_add (encard_le_encard (inter_subset_inter_left _ hII')) (IsMinor.eRank_le ?_)
-  rw [dual_isMinor_iff]
-  exact (IsRestriction.of_subset M (union_subset_union_left _ hII')).isMinor
-
-lemma eLocalConn_mono_right {Y' : Set α} (M : Matroid α) (X : Set α) (hY : Y' ⊆ Y) :
-    M.eLocalConn X Y' ≤ M.eLocalConn X Y := by
-  rw [eLocalConn_comm, eLocalConn_comm _ X]
-  exact M.eLocalConn_mono_left hY _
-
-lemma eLocalConn_mono {X' Y' : Set α} (M : Matroid α) (hX : X' ⊆ X) (hY : Y' ⊆ Y) :
-    M.eLocalConn X' Y' ≤ M.eLocalConn X Y :=
-  ((M.eLocalConn_mono_left hX Y').trans (M.eLocalConn_mono_right _ hY))
-
-@[simp] lemma empty_eLocalConn (M : Matroid α) (X : Set α) : M.eLocalConn ∅ X = 0 := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  rw [(M.empty_indep.isBasis_self.isBasis').eLocalConn_eq hI]
-  simp [hI.indep]
-
-@[simp] lemma eLocalConn_empty (M : Matroid α) (X : Set α) : M.eLocalConn X ∅ = 0 := by
-  rw [eLocalConn_comm, empty_eLocalConn]
-
-lemma eLocalConn_subset (M : Matroid α) (hXY : X ⊆ Y) : M.eLocalConn X Y = M.eRk X := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis' X
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans hXY)
-  rw [hI.eLocalConn_eq hJ, inter_eq_self_of_subset_left hIJ, union_eq_self_of_subset_left hIJ,
-    hJ.indep.nullity_eq, ← hI.encard_eq_eRk, add_zero]
-
-lemma eLocalConn_eq_zero (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
-    M.eLocalConn X Y = 0 ↔ M.Skew X Y := by
-  obtain ⟨I, hI⟩ := M.exists_isBasis X
-  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
-  rw [skew_iff_closure_skew, ← eLocalConn_closure_closure, ← hI.closure_eq_closure,
-    ← hJ.closure_eq_closure, ← skew_iff_closure_skew, eLocalConn_closure_closure,
-    hI.indep.eLocalConn_eq hJ.indep]
-  simp [hI.indep.skew_iff_disjoint_union_indep hJ.indep, disjoint_iff_inter_eq_empty]
-
-lemma Skew.eLocalConn (hXY : M.Skew X Y) : M.eLocalConn X Y = 0 := by
-  rwa [eLocalConn_eq_zero]
 
 lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
     M.eLocalConn (X ∩ M.E) (Y ∩ M.E) = M.eLocalConn X Y := by
@@ -211,9 +125,65 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
   rw [hI.eLocalConn_eq hJ, hI'.eLocalConn_eq hJ',
     nullity_restrict_of_subset _ (union_subset hI'R hJ'R)]
 
-lemma eLocalConn_restrict_univ_eq (M : Matroid α) (X Y : Set α) :
+lemma eLocalConn_restrict_univ (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).eLocalConn X Y = M.eLocalConn X Y := by
   simp
+
+lemma eRk_add_eRk_eq_eRk_union_add_eLocalConn (M : Matroid α) (X Y : Set α) :
+    M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eLocalConn X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, ← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← eRk_closure_eq,
+    ← closure_union_congr_left hI.closure_eq_closure,
+    ← closure_union_congr_right hJ.closure_eq_closure, eRk_closure_eq, add_comm (I ∩ J).encard,
+    ← add_assoc, eRk_add_nullity_eq_encard, encard_union_add_encard_inter]
+
+lemma eRk_inter_le_eLocalConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) ≤ M.eLocalConn X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' (X ∩ Y)
+  obtain ⟨IX, hIX⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_left)
+  obtain ⟨IY, hIY⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_right)
+  rw [← hI.encard_eq_eRk, hIX.1.eLocalConn_eq hIY.1]
+  exact (encard_le_encard (subset_inter hIX.2 hIY.2)).trans le_self_add
+
+lemma eLocalConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : Set α) :
+    M.eLocalConn X' Y ≤ M.eLocalConn X Y := by
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hJ.eLocalConn_eq_nullity_project_left, hJ.eLocalConn_eq_nullity_project_left]
+  apply nullity_project_mono _ hX
+
+lemma eLocalConn_mono_right {Y' : Set α} (M : Matroid α) (X : Set α) (hY : Y' ⊆ Y) :
+    M.eLocalConn X Y' ≤ M.eLocalConn X Y := by
+  grw [eLocalConn_comm, eLocalConn_mono_left M hY, eLocalConn_comm]
+
+lemma eLocalConn_mono {X' Y' : Set α} (M : Matroid α) (hX : X' ⊆ X) (hY : Y' ⊆ Y) :
+    M.eLocalConn X' Y' ≤ M.eLocalConn X Y :=
+  ((M.eLocalConn_mono_left hX Y').trans (M.eLocalConn_mono_right _ hY))
+
+@[simp] lemma empty_eLocalConn (M : Matroid α) (X : Set α) : M.eLocalConn ∅ X = 0 := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [(M.empty_indep.isBasis_self.isBasis').eLocalConn_eq hI]
+  simp [hI.indep]
+
+@[simp] lemma eLocalConn_empty (M : Matroid α) (X : Set α) : M.eLocalConn X ∅ = 0 := by
+  rw [eLocalConn_comm, empty_eLocalConn]
+
+lemma eLocalConn_subset (M : Matroid α) (hXY : X ⊆ Y) : M.eLocalConn X Y = M.eRk X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [hI.eLocalConn_eq_nullity_project_right, hI.eRk_eq_encard, nullity_eq_encard]
+  grw [hI.isBasis_closure_right.subset, project_loops]
+  exact M.closure_mono hXY
+
+lemma eLocalConn_eq_zero (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.eLocalConn X Y = 0 ↔ M.Skew X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
+  rw [skew_iff_closure_skew, ← eLocalConn_closure_closure, ← hI.closure_eq_closure,
+    ← hJ.closure_eq_closure, ← skew_iff_closure_skew, eLocalConn_closure_closure,
+    hI.indep.eLocalConn_eq hJ.indep]
+  simp [hI.indep.skew_iff_disjoint_union_indep hJ.indep, disjoint_iff_inter_eq_empty]
+
+lemma Skew.eLocalConn (hXY : M.Skew X Y) : M.eLocalConn X Y = 0 := by
+  rwa [eLocalConn_eq_zero]
 
 lemma eLocalConn_restrict_of_subset (M : Matroid α) {R : Set α} (hXR : X ⊆ R) (hYR : Y ⊆ R) :
     (M ↾ R).eLocalConn X Y = M.eLocalConn X Y := by
@@ -243,10 +213,11 @@ lemma eLocalConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disj
 
 @[simp] lemma eLocalConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :
     (M.comap f).eLocalConn X Y = M.eLocalConn (f '' X) (f '' Y) := by
+  -- TODO : Golf
   suffices aux : ∀ (N : Matroid β) X Y,
       (N.comap f).eLocalConn (f ⁻¹' (f '' X)) (f ⁻¹' (f '' Y)) = N.eLocalConn (f '' X) (f '' Y) by
     specialize aux (M ↾ univ) X Y
-    rw [← eLocalConn_restrict_univ_eq, ← M.eLocalConn_restrict_univ_eq, ← aux,
+    rw [← eLocalConn_restrict_univ, ← M.eLocalConn_restrict_univ, ← aux,
       comap_restrict, preimage_univ, le_antisymm_iff]
     refine ⟨(eLocalConn_mono _ (subset_preimage_image _ _) (subset_preimage_image _ _)), ?_⟩
     rw [← eLocalConn_closure_closure _ X, ← comap_restrict_univ]
@@ -320,35 +291,14 @@ lemma IsModularPair.eLocalConn_eq_eRk_inter (h : M.IsModularPair X Y) :
 between `X` and `Y`. -/
 lemma eLocalConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hCY : C ⊆ Y) :
     (M ／ C).eLocalConn X (Y \ C) = M.eLocalConn X Y := by
-  wlog hYE : Y ⊆ M.E generalizing Y with aux
-  · rw [← eLocalConn_inter_ground_right, contract_ground, diff_inter_diff_right,
-      aux (subset_inter hCY hXC.subset_ground_right) inter_subset_right,
-      eLocalConn_inter_ground_right]
-  wlog hC : M.Indep C generalizing C with aux
-  · obtain ⟨I, hI⟩ := M.exists_isBasis C
-    have hcl : (M ／ I).closure (Y \ C) = (M ／ I).closure (Y \ I) := by
-      simp [closure_union_congr_right hI.closure_eq_closure]
-    have ss : C \ I ⊆ (M ／ I).loops := by
-      simp only [contract_closure_eq, empty_union, hI.closure_eq_closure, loops]
-      exact diff_subset_diff_left (subset_closure _ _)
-    rw [hI.contract_eq_contract_delete, eLocalConn_delete_eq,
-      ← eLocalConn_closure_closure, closure_diff_eq_closure_of_subset_loops _ _ ss,
-      sdiff_eq_left.2 (disjoint_sdiff_left.mono_right diff_subset), hcl,
-      eLocalConn_closure_closure, ← aux (hXC.mono_right hI.subset) (hI.subset.trans hCY) hI.indep]
-
-  obtain ⟨J, hJ, hCJ⟩ := hC.subset_isBasis_of_subset hCY
-  have hdj := hXC.disjoint_of_indep_right hC
-  have hbY : (M ／ C).IsBasis (J \ C) (Y \ C) :=
-    hJ.contract_isBasis_of_indep (J := C) (hJ.indep.subset (by simpa))
-  obtain ⟨K, hK⟩ := M.exists_isBasis X
-  have hbX : (M ／ C).IsBasis K X :=
-    hK.contract_isBasis_of_disjoint_indep hdj.symm <|
-      (hXC.mono_left hK.subset).union_indep hK.indep hC
-  have hrw : K ∪ J \ C = (K ∪ J) \ C := by
-    rw [union_diff_distrib, (hdj.mono_left hK.subset).sdiff_eq_left]
-  rw [hK.eLocalConn_eq hJ, hbX.eLocalConn_eq hbY, hrw,
-    hC.nullity_contract_of_superset (hCJ.trans subset_union_right),
-    inter_diff_distrib_left, (hdj.mono_left hK.subset).inter_eq, diff_empty]
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  have hI' : (M ／ C).IsBasis' I X := by
+    have hI' := hI.isBase_restrict.isBasis_ground.isBasis'
+    rwa [← hXC.symm.contract_restrict_eq, restrict_ground_eq, isBasis'_restrict_iff, inter_self,
+      and_iff_left hI.subset] at hI'
+  rw [hI.eLocalConn_eq_nullity_project_right, hI'.eLocalConn_eq_nullity_project_right,
+    nullity_project_eq_nullity_contract, contract_contract, union_diff_cancel hCY,
+    nullity_project_eq_nullity_contract]
 
 lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     (heXY : e ∈ M.closure (X ∪ Y)) : M.eLocalConn (insert e X) Y = M.eLocalConn X Y + 1 := by
@@ -403,28 +353,12 @@ lemma eLocalConn_insert_right_eq_add_one {e : α} (heY : e ∉ M.closure Y)
 For infinite matroids it needs a separate proof. -/
 lemma eLocalConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
     M.eLocalConn X Y + M.eRelRk Y (X ∪ Y) = M.eRk X := by
-  wlog hE : X ⊆ M.E ∧ Y ⊆ M.E generalizing X Y with aux
-  · rw [← eLocalConn_inter_ground, ← eRelRk_inter_ground_right, ← eRelRk_inter_ground_left,
-      union_inter_distrib_right, aux _ _ ⟨inter_subset_right, inter_subset_right⟩, eRk_inter_ground]
-  obtain ⟨hXE, hYE⟩ := hE
-  obtain ⟨I, hI⟩ := M.exists_isBasis (X ∩ Y)
-  obtain ⟨IX, hIX, hIXi⟩ := hI.exists_isBasis_inter_eq_of_superset inter_subset_left
-  obtain ⟨IY, hIY, hIYi⟩ := hI.exists_isBasis_inter_eq_of_superset inter_subset_right
-  obtain ⟨K, hK, hIYK⟩ := hIY.indep.subset_isBasis_of_subset (X := IX ∪ IY) subset_union_right
-
-  have hK' : M.IsBasis K (X ∪ Y)
-  · refine hK.isBasis_closure_right.isBasis_subset
-      (hK.subset.trans (union_subset_union hIX.subset hIY.subset)) ?_
-    rw [closure_union_congr_left hIX.closure_eq_closure,
-      closure_union_congr_right hIY.closure_eq_closure]
-    exact M.subset_closure _ (union_subset hXE hYE)
-
-  rw [hIX.eRk_eq_encard, hIX.eLocalConn_eq hIY,
-    hIY.eRelRk_eq_encard_diff_of_subset_isBasis hK' hIYK, hK.nullity_eq, union_diff_distrib,
-    diff_eq_empty.2 hIYK,
-    union_empty, add_assoc, ← encard_union_eq (disjoint_sdiff_left.mono_right diff_subset),
-    diff_union_diff_cancel' _ hK.subset, add_comm, encard_diff_add_encard_inter]
-  exact (inter_subset_right.trans hIYK)
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  have hcl : (M.project Y).closure X = (M.project Y).closure I := by
+    simp [closure_union_congr_left hI.closure_eq_closure]
+  rw [hI.eLocalConn_eq_nullity_project_right, hI.eRk_eq_encard, ← eRelRk_eq_union_right,
+    eRelRk_eq_eRk_project, ← eRk_closure_eq, hcl, eRk_closure_eq, add_comm,
+    eRk_add_nullity_eq_encard]
 
 lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) (hXH : ¬ (X ⊆ H))
     (hXE : X ⊆ M.E := by aesop_mat) : M.eLocalConn X H + 1 = M.eRk X := by
