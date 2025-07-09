@@ -861,6 +861,11 @@ lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) 
   rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
   exact .inr hXSU
 
+lemma ModularCut.extendBy_closure_insert_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+    (hXSU : M.closure X ∈ U) : (M.extendBy e U).closure (insert e X) = insert e (M.closure X) := by
+  rw [← U.extendBy_closure_eq_insert he heX hXSU, closure_insert_eq_of_mem_closure]
+  simp [U.extendBy_closure_eq_insert he heX hXSU]
+
 lemma ModularCut.insert_isFlat_extendBy_of_mem (U : M.ModularCut) (hFU : F ∈ U) (he : e ∉ M.E) :
     (M.extendBy e U).IsFlat (insert e F) := by
   have heF : e ∉ F := notMem_subset (U.isFlat_of_mem hFU).subset_ground he
@@ -987,6 +992,32 @@ lemma projectBy_top : M.projectBy ⊤ = M := by
   rw [hnl.indep.contract_indep_iff, union_singleton, extendBy_Indep,
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]
+
+-- lemma mem_closure_projectBy_iff (U : M.ModularCut) (hU : U ≠ ⊤) (hf : f ∈ M.E := by aesop_mat) :
+--     f ∈ (M.projectBy U).closure X ↔ f ∈ M.closure X ∨ M.closure (insert f X) ∈ U := by
+--   -- rw [projectBy_eq_map_comap]
+--   -- simp only [map_ground, mem_image, reduceCtorEq, and_false, exists_false, not_false_eq_true,
+--   --   extendBy_contract_eq, comap_closure_eq, mem_preimage]
+--   -- rw [← extendBy_contract_eq (e := none) _ (by simp), contract_closure_eq, mem_diff,
+--   --   and_iff_left (by simp), union_singleton, ModularCut.extendBy_closure_insert_eq_insert]
+
+--   -- obtain rfl | hU := eq_or_ne U ⊤
+--   -- · simp [projectBy_top]
+--   obtain ⟨I, hI⟩ := (M.projectBy U).exists_isBasis' X
+--   have ⟨hI', hIcl⟩ : M.Indep I ∧ M.closure I ∉ U := (projectBy_indep_iff_of_ne_top hU).1
+--  hI.indep
+--   obtain ⟨J, hJX, hIJ⟩ := hI'.subset_isBasis'_of_subset hI.subset
+
+--   rw [← hI.closure_eq_closure, hI.indep.mem_closure_iff', projectBy_ground_eq, and_iff_right hf,
+--     projectBy_indep_iff_of_ne_top hU, ← hJX.closure_eq_closure, hI'.insert_indep_iff,
+--     mem_diff, and_iff_right hf, ← imp_iff_not_or,
+--     ← closure_insert_congr_right hJX.closure_eq_closure]
+--   by_cases hfI : f ∈ M.closure I
+--   · simp +contextual [hI'.insert_indep_iff, hfI, M.closure_subset_closure hIJ hfI]
+--   simp [hfI, show f ∉ I from notMem_subset (M.subset_closure I) hfI,
+--     imp_self, true_and, imp_false, not_not]
+--   refine ⟨fun h ↦ .inr sorry, fun h ↦ h.elim (fun hfJ ↦ ?_) (fun hfJ ↦ ?_)⟩
+
 
 end projection
 

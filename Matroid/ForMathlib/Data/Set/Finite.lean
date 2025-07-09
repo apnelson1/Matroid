@@ -1,5 +1,5 @@
 import Mathlib.Data.Set.Finite.Lattice
-
+import Mathlib.Data.Set.Notation
 
 open Set
 
@@ -55,3 +55,51 @@ lemma Set.Finite.subset_iUnion_mono_iff {ι : Type*} [LE ι] [IsDirected ι (· 
   contrapose! h
   rw [not_infinite] at h ⊢
   exact h.insert x
+
+/-- Every directed family of sets containing a finite set contains its intersection. -/
+lemma Directed.iInter_mem_of_finite_mem {ι : Type*} {s : ι → Set α}
+    (hdir : Directed (fun x y ↦ y ⊆ x) s) (i₀ : ι) (hi : (s i₀).Finite) : ∃ j, s j = ⋂ i, s i := by
+  by_contra! hcon
+  have hne := hcon i₀
+  obtain ⟨j, hj⟩ : ∃ j, ¬ (s i₀ ⊆ s j) := by
+    contrapose! hne
+    exact subset_antisymm (by simpa) <| iInter_subset ..
+  obtain ⟨j₀, hj₀i, hj₀j⟩ := hdir i₀ j
+  have hssu : s j₀ ⊂ s i₀ := ssubset_of_subset_not_subset hj₀i (fun h' ↦ hj (h'.trans hj₀j))
+  obtain ⟨k, hk⟩ := hdir.iInter_mem_of_finite_mem j₀ (hi.subset hj₀i)
+  exact hcon k hk
+termination_by hi.toFinset.card
+decreasing_by exact Finset.card_lt_card <| by simpa
+
+lemma DirectedOn.sInter_mem_of_finite_mem (s : Set (Set α)) (hdir : DirectedOn (fun x y ↦ y ⊆ x) s)
+    {x : Set α} (hx : x ∈ s) (hfin : x.Finite) : ⋂₀ s ∈ s := by
+  obtain ⟨⟨t, ht⟩, rfl⟩ := hdir.directed_val.iInter_mem_of_finite_mem ⟨x, hx⟩ hfin
+  rwa [sInter_eq_iInter]
+
+lemma Directed.exists_forall_ge {α ι : Type*} [Preorder α] [Nonempty ι] {f : ι → α}
+    (hdir : Directed (· ≤ ·) f) {I : Set ι} (hI : I.Finite) : ∃ k, ∀ i ∈ I, f i ≤ f k := by
+  induction I, hI using Set.Finite.induction_on with
+  | empty => exact ⟨Classical.arbitrary ι, by simp⟩
+  | @insert a s has hfin IH =>
+  · obtain ⟨k', hk'⟩ := IH
+    obtain ⟨k, hk'k, hak⟩ := hdir k' a
+    exact ⟨k, by simpa [hak] using fun i his ↦ (hk' i his).trans hk'k⟩
+
+lemma DirectedOn.exists_forall_ge {α : Type*} [Preorder α] {s t : Set α}
+    (hdir : DirectedOn (· ≤ ·) s) (hne : s.Nonempty) (hts : t ⊆ s) (hfin : t.Finite) :
+    ∃ x ∈ s, ∀ y ∈ t, y ≤ x := by
+  have := hne.to_subtype
+  have := hfin.to_subtype
+  obtain ⟨⟨k,hks⟩, hk⟩ := hdir.directed_val.exists_forall_ge (I := range (inclusion hts))
+    (finite_range ..)
+  exact ⟨k, hks, fun y hyt ↦ by simpa [hyt] using hk ⟨y, hts hyt⟩⟩
+
+lemma DirectedOn.exists_forall_le {α : Type*} [Preorder α] {s t : Set α}
+    (hdir : DirectedOn (fun a b ↦ b ≤ a) s) (hne : s.Nonempty) (hts : t ⊆ s) (hfin : t.Finite) :
+    ∃ x ∈ s, ∀ y ∈ t, x ≤ y :=
+  hdir.exists_forall_ge (α := αᵒᵈ) hne hts hfin
+
+lemma Directed.iSup_mem_range {α ι : Type*} [CompleteLattice α] [Finite ι] [Nonempty ι] {f : ι → α}
+    (hdir : Directed (· ≤ ·) f) : ∃ k, f k = ⨆ i, f i := by
+  obtain ⟨k, h⟩ := hdir.exists_forall_ge finite_univ
+  exact ⟨k, le_antisymm (le_iSup ..) (by simpa using h)⟩

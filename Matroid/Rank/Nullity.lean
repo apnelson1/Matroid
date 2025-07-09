@@ -230,6 +230,14 @@ lemma nullity_project_add_nullity_eq (M : Matroid α) (C X : Set α) :
   simp only [project_closure, diff_union_self]
   refine M.subset_closure_of_subset' subset_union_left hX
 
+lemma Indep.nullity_project (hI : M.Indep I) (X : Set α) :
+    (M.project I).nullity X = M.nullity (X ∪ I) + (X ∩ I).encard := by
+  rw [← nullity_project_add_nullity_eq, hI.nullity_eq, add_zero]
+
+lemma Indep.nullity_project_of_disjoint (hI : M.Indep I) (hdj : Disjoint I X) :
+    (M.project I).nullity X = M.nullity (I ∪ X) := by
+  simp [hI.nullity_project, union_comm, hdj.symm.inter_eq]
+
 lemma nullity_project_add_nullity_comm (M : Matroid α) (X Y : Set α) :
     (M.project X).nullity Y + M.nullity X = (M.project Y).nullity X + M.nullity Y := by
   rw [nullity_project_add_nullity_eq, nullity_project_add_nullity_eq, union_comm, inter_comm]
@@ -237,6 +245,11 @@ lemma nullity_project_add_nullity_comm (M : Matroid α) (X Y : Set α) :
 lemma nullity_project_eq_nullity_contract (M : Matroid α) {C : Set α} :
     (M.project C).nullity X = (M ／ C).nullity X := by
   rw [← nullity_restrict_univ, ← contract_restrict_univ, nullity_restrict_univ]
+
+lemma nullity_union_eq_nullity_project_add_nullity (M : Matroid α) (hXY : Disjoint X Y) :
+    M.nullity (X ∪ Y) = (M.project X).nullity (Y) + M.nullity X := by
+  rw [nullity_union_eq_nullity_contract_add_nullity, hXY.sdiff_eq_right,
+    nullity_project_eq_nullity_contract]
 
 lemma nullity_project_le_of_le {C : Set α} (hn : M.nullity X ≤ M.nullity Y)
     (hcl : M.closure X ⊆ M.closure Y) : (M.project C).nullity X ≤ (M.project C).nullity Y := by
@@ -252,7 +265,9 @@ lemma nullity_project_congr {C : Set α} (hn : M.nullity X = M.nullity Y)
   (nullity_project_le_of_le hn.le hcl.subset).antisymm <|
     nullity_project_le_of_le hn.symm.le hcl.symm.subset
 
-
+-- lemma foo :
+--     M.nullity X + M.nullity Y = M.nullity (X ∪ Y) + (X ∩ Y).encard := by
+--   rw [← nullity_project_add_nullity_eq]
 
 -- lemma nullity_contract_le_of_le {C : Set α} (hn : M.nullity X ≤ M.nullity Y)
 --     (hcl : M.closure X ≤ M.closure Y) : (M ／ C).nullity X ≤ (M ／ C).nullity Y := by
@@ -273,5 +288,12 @@ lemma IsBasis'.nullity_project {C J : Set α} (hI : M.IsBasis' I X) (hJ : M.IsBa
 lemma IsBasis.nullity_project {C J : Set α} (hI : M.IsBasis I X) (hJ : M.IsBasis J X) :
     (M.project C).nullity I = (M.project C).nullity J :=
   hI.isBasis'.nullity_project hJ.isBasis'
+
+lemma nullity_comap {α β : Type*} {f : α → β} (M : Matroid β) (X : Set α) (hX : InjOn f X) :
+    (M.comap f).nullity X = M.nullity (f '' X) := by
+  obtain ⟨I, hI⟩ := (M.comap f).exists_isBasis' X
+  rw [hI.nullity_eq]
+  rw [comap_isBasis'_iff] at hI
+  rw [hI.1.nullity_eq, ← image_diff_of_injOn hX hI.2.2, (hX.mono diff_subset).encard_image]
 
 end Matroid
