@@ -255,6 +255,17 @@ lemma Quotient.eq_of_isBase_indep [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set
   rw [ENat.add_one_le_iff hfin] at hcard
   exact hcard.ne rfl
 
+lemma Quotient.eq_of_spanning_indep [Finitary M₂] (h : M₂ ≤q M₁) (hs : M₁.Spanning X)
+    (hi : M₂.Indep X) : M₂ = M₁ :=
+  h.eq_of_isBase_indep ((h.weakLE.indep_of_indep hi).isBase_of_spanning hs) hi
+
+lemma Quotient.eq_of_closure_indep [Finitary M₂] (h : M₂ ≤q M₁) (hcl : M₁.E ⊆ M₁.closure X)
+    (hi : M₂.Indep X) : M₂ = M₁ := by
+  refine h.eq_of_spanning_indep ?_ hi
+  rw [spanning_iff, subset_antisymm_iff, and_iff_left hcl,
+    and_iff_right (closure_subset_ground ..), ← h.ground_eq]
+  exact hi.subset_ground
+
 lemma Quotient.map {β : Type*} {f : α → β} (hQ : M₂ ≤q M₁) (hf : InjOn f M₂.E) :
     (M₂.map f hf) ≤q (M₁.map f (by rwa [← hQ.ground_eq])) := by
   simp only [quotient_iff, map_ground, hQ.ground_eq, and_true]
