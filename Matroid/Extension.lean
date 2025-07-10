@@ -1116,6 +1116,45 @@ lemma exists_common_major_of_contract_eq_delete {D : Finset α} (hCD : Disjoint 
   obtain ⟨Q, hQ, rfl, hQN⟩ := exists_common_major_of_contract_eq_deleteElem heC hCE' hP'N
   exact ⟨Q, by rwa [← hQ] at hP'M, rfl⟩
 
+/-- If `M 0, M 1, ..., M n` is a sequence of matroids
+where each is a single projection of the previous one,
+then there is a matroid `P` with an `n`-element set `X`
+such that `P ＼ X = M 0` and `P ／ X = M n`. -/
+lemma exists_eq_delete_eq_contract_of_projectBy_seq {n : ℕ} (M : Fin (n+1) → Matroid α)
+    (U : (i : Fin n) → (M i.castSucc).ModularCut)
+    (h_eq : ∀ i, M i.succ = (M i.castSucc).projectBy (U i)) {X : Finset α} (hD : X.card = n)
+    (hdj : Disjoint (M 0).E X) :
+    ∃ (P : Matroid α), (X : Set α) ⊆ P.E ∧ P ＼ X = M 0 ∧ P ／ X = M (Fin.last n) := by
+  induction n generalizing X with
+  | zero => exact ⟨M 0, by simp [show X = ∅ by simpa using hD]⟩
+  | succ n IH =>
+  have hE (i) : (M i).E = (M 0).E := by
+    induction i using Fin.induction with | zero => rfl | succ i IH => rwa [h_eq, projectBy_ground]
+  obtain ⟨D, a, ha, rfl⟩ :=
+    Finset.Nonempty.exists_cons_eq (s := X) <| by simp [← X.card_ne_zero, hD]
+  simp only [Finset.card_cons, Nat.add_right_cancel_iff] at hD
+  obtain ⟨haE : a ∉ (M 0).E, hdj : Disjoint (M 0).E D⟩ := by simpa using hdj
+  obtain ⟨P₀, hDE, hd, hc⟩ := IH (M ∘ Fin.castSucc) (fun i ↦ (U i.castSucc).copy (by simp))
+    (fun i ↦ h_eq i.castSucc) hD (by simpa)
+  simp only [comp_apply, Fin.castSucc_zero] at hc hd
+  simp_rw [← Fin.succ_last,  h_eq, Finset.coe_cons, ← union_singleton, ← delete_delete,
+    ← contract_contract, union_singleton, insert_subset_iff]
+  set Q := extendBy _ a (U (Fin.last n)) with hQ
+  have hQP₀ : P₀ ／ D = Q ＼ {a} := by rw [hc, hQ, ModularCut.extendBy_deleteElem _ (by rwa [hE])]
+  obtain ⟨P, hPP₀, hPQ⟩ := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) hQP₀
+  refine ⟨P, ⟨?_, ?_⟩, ?_, ?_⟩
+  · grw [← diff_subset (s := P.E) (t := D), ← contract_ground, hPQ, hQ]
+    simp
+  · grw [hDE, ← hPP₀]
+    simp
+  · rwa [delete_comm, hPP₀]
+  rw [hPQ, hQ, extendBy_contract_eq _ (by rwa [hE])]
+
+
+
+
+
+
 end ExtendContract
 
 section LinearClass
