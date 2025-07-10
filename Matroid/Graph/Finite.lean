@@ -112,9 +112,19 @@ lemma encard_delete_vertex_lt {G : Graph α β} [G.Finite] (hx : x ∈ V(G)) :
   rw [vertexDelete_vertexSet]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
+lemma encard_delete_vertexSet_lt {G : Graph α β} [G.Finite] {X : Set α} (hX : (V(G) ∩ X).Nonempty) :
+    V(G - X).encard < V(G).encard := by
+  rw [vertexDelete_vertexSet]
+  exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+
 /-- Used for well-founded induction on finite graphs by number of edges -/
 lemma encard_delete_edge_lt {G : Graph α β} [G.Finite] (he : e ∈ E(G)) :
     E(G ＼ {e}).encard < E(G).encard := by
+  rw [edgeDelete_edgeSet]
+  exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
+
+lemma encard_delete_edgeSet_lt {G : Graph α β} [G.Finite] {F : Set β} (hF : (E(G) ∩ F).Nonempty) :
+    E(G ＼ F).encard < E(G).encard := by
   rw [edgeDelete_edgeSet]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
