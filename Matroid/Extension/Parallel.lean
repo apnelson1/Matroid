@@ -1,5 +1,5 @@
 import Matroid.Simple
-import Matroid.Extension
+import Matroid.Extension.ModularCut
 import Matroid.ForMathlib.Function
 
 open Set Function Set.Notation

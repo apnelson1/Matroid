@@ -1,6 +1,6 @@
 -- import Matroid.Minor.Iso
 -- import Matroid.Simple
-import Matroid.Constructions.ParallelExtension
+import Matroid.Extension.Parallel
 -- import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace

@@ -12,11 +12,14 @@ import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 import Matroid.Constructions.Matching
-import Matroid.Constructions.ParallelExtension
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
-import Matroid.Extension
+import Matroid.Extension.ModularCut
+import Matroid.Extension.Parallel
+import Matroid.Extension.Guts
+import Matroid.Extension.Quotient
+import Matroid.Extension.Minor
 import Matroid.Flat.Basic
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice

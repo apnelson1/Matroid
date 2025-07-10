@@ -1,6 +1,6 @@
 import Matroid.Rank.Skew
 import Matroid.Order.Quotient
-import Matroid.Extension
+import Matroid.Extension.ModularCut
 import Matroid.ForMathlib.Data.Set.Finite
 
 open Set BigOperators Set.Notation Function

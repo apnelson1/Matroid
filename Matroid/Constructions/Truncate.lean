@@ -1,4 +1,4 @@
-import Matroid.Extension
+import Matroid.Extension.ModularCut
 import Matroid.ForMathlib.FinDiff
 
 variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
