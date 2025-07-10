@@ -77,15 +77,15 @@ definitional equality reasons.
 -/
 structure Graph (α β : Type*) where
   /-- The vertex relation showing which vertex labels represents a same vertex. -/
-  vertexRel : α → α → Prop
+  dup : α → α → Prop
   /-- The vertex set. -/
-  vertexSet : Set α := {x | vertexRel x x}
-  /-- The vertex relation is reflexive for all vertices in the vertex set. -/
-  vertexRel_refl_iff : ∀ x, vertexRel x x ↔ x ∈ vertexSet := by exact fun x ↦ Iff.rfl
+  vertexSet : Set α := {x | dup x x}
+  -- /-- The vertex relation is reflexive for all vertices in the vertex set. -/
+  dup_refl_iff : ∀ x, x ∈ vertexSet ↔ dup x x := by exact fun x ↦ Iff.rfl
   /-- The vertex relation is symmetric. -/
-  vertexRel_symm x y : vertexRel x y → vertexRel y x
+  dup_symm x y : dup x y → dup y x
   /-- The vertex relation is transitive. -/
-  vertexRel_trans x y z : vertexRel x y → vertexRel y z → vertexRel x z
+  dup_trans x y z : dup x y → dup y z → dup x z
   /-- The binary incidence predicate, stating that `x` and `y` are the ends of an edge `e`.
   If `G.IsLink e x y` then we refer to `e` as `edge` and `x` and `y` as `left` and `right`. -/
   IsLink : β → α → α → Prop
@@ -95,13 +95,13 @@ structure Graph (α β : Type*) where
   isLink_symm : ∀ ⦃e⦄, e ∈ edgeSet → (Symmetric <| IsLink e)
   /-- An edge is incident with at most one pair of vertices. -/
   rel_or_rel_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w →
-    vertexRel x v ∨ vertexRel x w
+    dup x v ∨ dup x w
   /-- An edge `e` is incident to something if and only if `e` is in the edge set. -/
   edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y := by exact fun _ ↦ Iff.rfl
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
   left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ vertexSet
   /-- If `x` and `y` represent the same vertex, it has the same incidence relation. -/
-  isLink_of_vertexRel : ∀ ⦃e x y z⦄, vertexRel x y → IsLink e x z → IsLink e y z
+  isLink_of_dup : ∀ ⦃e x y z⦄, dup x y → IsLink e x z → IsLink e y z
 
 namespace Graph
 
@@ -115,37 +115,41 @@ scoped notation "E(" G ")" => Graph.edgeSet G
 
 /-! ### Vertex relation -/
 
-lemma mem_vertexSet_of_vertexRel_self (hx : x ∈ V(G)) : G.vertexRel x x :=
-  G.vertexRel_refl_iff x |>.mpr hx
+lemma mem_vertexSet_of_dup_self (hx : x ∈ V(G)) : G.dup x x :=
+  G.dup_refl_iff x |>.mp hx
 
-protected lemma vertexRel.symm (h : G.vertexRel x y) : G.vertexRel y x := G.vertexRel_symm _ _ h
+protected lemma dup.symm (h : G.dup x y) : G.dup y x := G.dup_symm _ _ h
 
-instance : IsSymm α (G.vertexRel) where
-  symm := G.vertexRel_symm
+instance : IsSymm α (G.dup) where
+  symm := G.dup_symm
 
-lemma vertexRel_comm : G.vertexRel x y ↔ G.vertexRel y x := ⟨.symm, .symm⟩
+lemma dup_comm : G.dup x y ↔ G.dup y x := ⟨.symm, .symm⟩
 
-protected lemma vertexRel.trans (h : G.vertexRel x y) (h' : G.vertexRel y z) : G.vertexRel x z :=
-  G.vertexRel_trans _ _ _ h h'
+protected lemma dup.trans (h : G.dup x y) (h' : G.dup y z) : G.dup x z :=
+  G.dup_trans _ _ _ h h'
 
-instance : IsTrans α (G.vertexRel) where
-  trans := G.vertexRel_trans
+instance : IsTrans α (G.dup) where
+  trans := G.dup_trans
 
 @[simp]
-lemma vertexRel.vertexRel_rw_left (h : G.vertexRel x y) : G.vertexRel x z ↔ G.vertexRel y z :=
+lemma dup.dup_left {x y z : α} (h : G.dup x y) : G.dup x z ↔ G.dup y z :=
   ⟨h.symm.trans, h.trans⟩
 
 @[simp]
-lemma vertexRel.vertexRel_rw_right (h : G.vertexRel x y) : G.vertexRel z x ↔ G.vertexRel z y :=
+lemma dup.dup_right {x y z : α} (h : G.dup x y) : G.dup z x ↔ G.dup z y :=
   ⟨(·.trans h), (·.trans h.symm)⟩
 
-lemma vertexRel.left_mem (hx : G.vertexRel x y) : x ∈ V(G) := by
-  rw [← G.vertexRel_refl_iff]
+lemma dup.left_mem (hx : G.dup x y) : x ∈ V(G) := by
+  rw [G.dup_refl_iff]
   exact hx.trans hx.symm
 
-lemma vertexRel.right_mem (hy : G.vertexRel x y) : y ∈ V(G) := by
-  rw [← G.vertexRel_refl_iff]
+lemma dup.right_mem (hy : G.dup x y) : y ∈ V(G) := by
+  rw [G.dup_refl_iff]
   exact hy.symm.trans hy
+
+lemma not_dup_symm (h : ¬ G.dup x y) : ¬ G.dup y x := fun hyx ↦ h hyx.symm
+
+lemma not_dup_comm : ¬ G.dup x y ↔ ¬ G.dup y x := ⟨not_dup_symm, not_dup_symm⟩
 
 /-! ### Edge-vertex-vertex incidence -/
 
@@ -155,19 +159,19 @@ lemma IsLink.edge_mem (h : G.IsLink e x y) : e ∈ E(G) :=
 protected lemma IsLink.symm (h : G.IsLink e x y) : G.IsLink e y x :=
   G.isLink_symm h.edge_mem h
 
-lemma IsLink.vertexRel_left (h : G.IsLink e x y) (hrel : G.vertexRel x z) : G.IsLink e z y :=
-  G.isLink_of_vertexRel hrel h
+lemma IsLink.dup_left (h : G.IsLink e x y) (hrel : G.dup x z) : G.IsLink e z y :=
+  G.isLink_of_dup hrel h
 
-lemma IsLink.vertexRel_right (h : G.IsLink e x y) (hrel : G.vertexRel y z) : G.IsLink e x z :=
-  h.symm.vertexRel_left hrel |>.symm
+lemma IsLink.dup_right (h : G.IsLink e x y) (hrel : G.dup y z) : G.IsLink e x z :=
+  h.symm.dup_left hrel |>.symm
 
-@[simp]
-lemma vertexRel.isLink_rw_left (h : G.vertexRel x y) : G.IsLink e x z ↔ G.IsLink e y z :=
-  ⟨(·.vertexRel_left h), (·.vertexRel_left h.symm)⟩
+@[simp high]
+lemma dup.isLink_left {x y z : α} (h : G.dup x y) : G.IsLink e x z ↔ G.IsLink e y z :=
+  ⟨(·.dup_left h), (·.dup_left h.symm)⟩
 
-@[simp]
-lemma vertexRel.isLink_rw_right (h : G.vertexRel x y) : G.IsLink e z x ↔ G.IsLink e z y :=
-  ⟨(·.vertexRel_right h), (·.vertexRel_right h.symm)⟩
+@[simp high]
+lemma dup.isLink_right {x y z : α} (h : G.dup x y) : G.IsLink e z x ↔ G.IsLink e z y :=
+  ⟨(·.dup_right h), (·.dup_right h.symm)⟩
 
 lemma IsLink.left_mem (h : G.IsLink e x y) : x ∈ V(G) :=
   G.left_mem_of_isLink h
@@ -184,42 +188,42 @@ lemma exists_isLink_of_mem_edgeSet (h : e ∈ E(G)) : ∃ x y, G.IsLink e x y :=
 lemma edgeSet_eq_setOf_exists_isLink : E(G) = {e | ∃ x y, G.IsLink e x y} :=
   Set.ext G.edge_mem_iff_exists_isLink
 
-lemma IsLink.left_rel_or_rel (h : G.IsLink e x y) (h' : G.IsLink e z w) :
-    G.vertexRel x z ∨ G.vertexRel x w := G.rel_or_rel_of_isLink_of_isLink h h'
+lemma IsLink.left_dup_or_dup (h : G.IsLink e x y) (h' : G.IsLink e z w) :
+    G.dup x z ∨ G.dup x w := G.rel_or_rel_of_isLink_of_isLink h h'
 
-lemma IsLink.right_rel_or_rel (h : G.IsLink e x y) (h' : G.IsLink e z w) :
-    G.vertexRel y z ∨ G.vertexRel y w := h.symm.left_rel_or_rel h'
+lemma IsLink.right_dup_or_dup (h : G.IsLink e x y) (h' : G.IsLink e z w) :
+    G.dup y z ∨ G.dup y w := h.symm.left_dup_or_dup h'
 
-lemma IsLink.left_rel_of_right_nrel (h : G.IsLink e x y) (h' : G.IsLink e z w)
-    (hzx : ¬ G.vertexRel x z) : G.vertexRel x w :=
-  (h.left_rel_or_rel h').elim (False.elim ∘ hzx) id
+lemma IsLink.left_dup_of_right_ndup (h : G.IsLink e x y) (h' : G.IsLink e z w)
+    (hzx : ¬ G.dup x z) : G.dup x w :=
+  (h.left_dup_or_dup h').elim (False.elim ∘ hzx) id
 
-lemma IsLink.right_unique (h : G.IsLink e x y) (h' : G.IsLink e x z) : G.vertexRel y z := by
-  obtain hyz | hyx := h.right_rel_or_rel h'.symm
+lemma IsLink.right_unique (h : G.IsLink e x y) (h' : G.IsLink e x z) : G.dup y z := by
+  obtain hyz | hyx := h.right_dup_or_dup h'.symm
   · exact hyz
-  obtain hzy | hzx := h'.right_rel_or_rel h.symm
+  obtain hzy | hzx := h'.right_dup_or_dup h.symm
   · exact hzy.symm
   exact hyx.trans hzx.symm
 
-lemma IsLink.left_unique (h : G.IsLink e x z) (h' : G.IsLink e y z) : G.vertexRel x y :=
+lemma IsLink.left_unique (h : G.IsLink e x z) (h' : G.IsLink e y z) : G.dup x y :=
   h.symm.right_unique h'.symm
 
-lemma IsLink.eq_and_eq_or_eq_and_eq {x' y' : α} (h : G.IsLink e x y) (h' : G.IsLink e x' y') :
-    G.vertexRel x x' ∧ G.vertexRel y y' ∨ G.vertexRel x y' ∧ G.vertexRel y x' := by
-  obtain hx | hx := h.left_rel_or_rel h'
-  · simp [h.right_unique <| h'.vertexRel_left hx.symm, hx]
-  simp [(h'.symm.right_unique <| h.vertexRel_left hx).symm, hx]
+lemma IsLink.dup_and_dup_or_dup_and_dup {x' y' : α} (h : G.IsLink e x y) (h' : G.IsLink e x' y') :
+    G.dup x x' ∧ G.dup y y' ∨ G.dup x y' ∧ G.dup y x' := by
+  obtain hx | hx := h.left_dup_or_dup h'
+  · simp [h.right_unique <| h'.dup_left hx.symm, hx]
+  simp [(h'.symm.right_unique <| h.dup_left hx).symm, hx]
 
 lemma IsLink.isLink_iff (h : G.IsLink e x y) {x' y' : α} :
-    G.IsLink e x' y' ↔ (x = x' ∧ y = y') ∨ (x = y' ∧ y = x') := by
-  refine ⟨h.eq_and_eq_or_eq_and_eq, ?_⟩
-  rintro (⟨rfl, rfl⟩ | ⟨rfl,rfl⟩)
-  · assumption
-  exact h.symm
+    G.IsLink e x' y' ↔ G.dup x x' ∧ G.dup y y' ∨ G.dup x y' ∧ G.dup y x' := by
+  refine ⟨h.dup_and_dup_or_dup_and_dup, ?_⟩
+  rintro (⟨hx, hy⟩ | ⟨hx, hy⟩)
+  · rwa [hx.isLink_left, hy.isLink_right] at h
+  rwa [isLink_comm, hy.isLink_left, hx.isLink_right] at h
 
-lemma IsLink.isLink_iff_sym2_eq (h : G.IsLink e x y) {x' y' : α} :
-    G.IsLink e x' y' ↔ s(x,y) = s(x',y') := by
-  rw [h.isLink_iff, Sym2.eq_iff]
+-- lemma IsLink.isLink_iff_sym2_eq (h : G.IsLink e x y) {x' y' : α} :
+--     G.IsLink e x' y' ↔ s(x,y) = s(x',y') := by
+--   rw [h.isLink_iff, Sym2.eq_iff]
 
 /-! ### Edge-vertex incidence -/
 
@@ -244,24 +248,34 @@ lemma IsLink.inc_left (h : G.IsLink e x y) : G.Inc e x :=
 lemma IsLink.inc_right (h : G.IsLink e x y) : G.Inc e y :=
   ⟨x, h.symm⟩
 
-lemma Inc.eq_or_eq_of_isLink (h : G.Inc e x) (h' : G.IsLink e y z) : x = y ∨ x = z :=
-  h.choose_spec.left_rel_or_rel h'
+@[simp]
+lemma dup.inc (h : G.dup x y) : G.Inc e x ↔ G.Inc e y := by
+  unfold Inc
+  simp_rw [h.isLink_left]
 
-lemma Inc.eq_of_isLink_of_ne_left (h : G.Inc e x) (h' : G.IsLink e y z) (hxy : x ≠ y) : x = z :=
-  (h.eq_or_eq_of_isLink h').elim (False.elim ∘ hxy) id
+lemma Inc.dup (hi : G.Inc e x) (h : G.dup x y) : G.Inc e y := by
+  obtain ⟨z, hz⟩ := hi
+  use z, hz.dup_left h
 
-lemma IsLink.isLink_iff_eq (h : G.IsLink e x y) : G.IsLink e x z ↔ z = y :=
-  ⟨fun h' ↦ h'.right_unique h, fun h' ↦ h' ▸ h⟩
+lemma Inc.dup_or_dup_of_isLink (h : G.Inc e x) (h' : G.IsLink e y z) : G.dup x y ∨ G.dup x z :=
+  h.choose_spec.left_dup_or_dup h'
+
+lemma Inc.dup_of_isLink_of_ndup_left (h : G.Inc e x) (h' : G.IsLink e y z) (hxy : ¬ G.dup x y) :
+    G.dup x z := (h.dup_or_dup_of_isLink h').elim (False.elim ∘ hxy) id
+
+lemma IsLink.isLink_iff_dup (h : G.IsLink e x y) : G.IsLink e x z ↔ G.dup z y :=
+  ⟨fun h' ↦ h'.right_unique h, fun h' ↦ h'.isLink_right.mpr h⟩
 
 /-- The binary incidence predicate can be expressed in terms of the unary one. -/
-lemma isLink_iff_inc : G.IsLink e x y ↔ G.Inc e x ∧ G.Inc e y ∧ ∀ z, G.Inc e z → z = x ∨ z = y := by
-  refine ⟨fun h ↦ ⟨h.inc_left, h.inc_right, fun z h' ↦ h'.eq_or_eq_of_isLink h⟩, ?_⟩
+lemma isLink_iff_inc :
+    G.IsLink e x y ↔ G.Inc e x ∧ G.Inc e y ∧ ∀ z, G.Inc e z → G.dup z x ∨ G.dup z y := by
+  refine ⟨fun h ↦ ⟨h.inc_left, h.inc_right, fun z h' ↦ h'.dup_or_dup_of_isLink h⟩, ?_⟩
   rintro ⟨⟨x', hx'⟩, ⟨y', hy'⟩, h⟩
-  obtain rfl | rfl := h _ hx'.inc_right
-  · obtain rfl | rfl := hx'.left_rel_or_rel hy'
-    · assumption
-    exact hy'.symm
-  assumption
+  obtain hx | hy := h _ hx'.inc_right
+  · obtain hy | hxy' := hx'.left_dup_or_dup hy'
+    · rwa [hy.symm.isLink_right, ← hx.isLink_right]
+    rwa [isLink_comm, hxy'.isLink_right]
+  rwa [← hy.isLink_right]
 
 /-- Given a proof that the edge `e` is incident with the vertex `x` in `G`,
 noncomputably find the other end of `e`. (If `e` is a loop, this is equal to `x` itself). -/
@@ -275,13 +289,13 @@ lemma Inc.isLink_other (h : G.Inc e x) : G.IsLink e x h.other :=
 lemma Inc.inc_other (h : G.Inc e x) : G.Inc e h.other :=
   h.isLink_other.inc_right
 
-lemma Inc.eq_or_eq_or_eq (hx : G.Inc e x) (hy : G.Inc e y) (hz : G.Inc e z) :
-    x = y ∨ x = z ∨ y = z := by
+lemma Inc.dup_or_dup_or_dup (hx : G.Inc e x) (hy : G.Inc e y) (hz : G.Inc e z) :
+    G.dup x y ∨ G.dup x z ∨ G.dup y z := by
   by_contra! hcon
   obtain ⟨x', hx'⟩ := hx
-  obtain rfl := hy.eq_of_isLink_of_ne_left hx' hcon.1.symm
-  obtain rfl := hz.eq_of_isLink_of_ne_left hx' hcon.2.1.symm
-  exact hcon.2.2 rfl
+  obtain hy := hy.dup_of_isLink_of_ndup_left hx' <| not_dup_symm hcon.1
+  obtain hz := hz.dup_of_isLink_of_ndup_left hx' <| not_dup_symm hcon.2.1
+  exact hcon.2.2 <| hy.trans hz.symm
 
 /-- `G.IsLoopAt e x` means that both ends of the edge `e` are equal to the vertex `x`. -/
 def IsLoopAt (G : Graph α β) (e : β) (x : α) : Prop := G.IsLink e x x
@@ -292,8 +306,14 @@ lemma isLink_self_iff : G.IsLink e x x ↔ G.IsLoopAt e x := Iff.rfl
 lemma IsLoopAt.inc (h : G.IsLoopAt e x) : G.Inc e x :=
   IsLink.inc_left h
 
-lemma IsLoopAt.eq_of_inc (h : G.IsLoopAt e x) (h' : G.Inc e y) : x = y := by
-  obtain rfl | rfl := h'.eq_or_eq_of_isLink h <;> rfl
+lemma IsLoopAt.dup_of_inc (h : G.IsLoopAt e x) (h' : G.Inc e y) : G.dup x y := by
+  obtain hy | hy := h'.dup_or_dup_of_isLink h <;> exact hy.symm
+
+lemma IsLoopAt.dup (h : G.IsLoopAt e x) (h' : G.dup x y) : G.IsLoopAt e y :=
+  h.dup_left h' |>.dup_right h'
+
+lemma dup.isLoopAt (h : G.dup x y) : G.IsLoopAt e x ↔ G.IsLoopAt e y :=
+  ⟨fun h' ↦ h'.dup h, fun h' ↦ h'.dup h.symm⟩
 
 -- Cannot be @[simp] because `x` can not be inferred by `simp`.
 lemma IsLoopAt.edge_mem (h : G.IsLoopAt e x) : e ∈ E(G) :=
@@ -306,7 +326,7 @@ lemma IsLoopAt.vertex_mem (h : G.IsLoopAt e x) : x ∈ V(G) :=
 /-- `G.IsNonloopAt e x` means that the vertex `x` is one but not both of the ends of the edge =`e`,
 or equivalently that `e` is incident with `x` but not a loop at `x` -
 see `Graph.isNonloopAt_iff_inc_not_isLoopAt`. -/
-def IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := ∃ y ≠ x, G.IsLink e x y
+def IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := ∃ y, ¬ G.dup x y ∧ G.IsLink e x y
 
 lemma IsNonloopAt.inc (h : G.IsNonloopAt e x) : G.Inc e x :=
   h.choose_spec.2.inc_left
@@ -319,16 +339,25 @@ lemma IsNonloopAt.edge_mem (h : G.IsNonloopAt e x) : e ∈ E(G) :=
 lemma IsNonloopAt.vertex_mem (h : G.IsNonloopAt e x) : x ∈ V(G) :=
   h.inc.vertex_mem
 
+lemma IsNonloopAt.dup (h : G.IsNonloopAt e x) (h' : G.dup x y) : G.IsNonloopAt e y := by
+  obtain ⟨z, hxz, hy⟩ := h
+  use z, fun hyz => hxz <| h'.trans hyz, hy.dup_left h'
+
+lemma dup.isNonloopAt (h : G.dup x y) : G.IsNonloopAt e x ↔ G.IsNonloopAt e y :=
+  ⟨(·.dup h), (·.dup h.symm)⟩
+
 lemma IsLoopAt.not_isNonloopAt (h : G.IsLoopAt e x) (y : α) : ¬ G.IsNonloopAt e y := by
   rintro ⟨z, hyz, hy⟩
-  rw [← h.eq_of_inc hy.inc_left, ← h.eq_of_inc hy.inc_right] at hyz
-  exact hyz rfl
+  refine hyz ?_
+  rw [← (h.dup_of_inc hy.inc_left).dup_left]
+  exact h.dup_of_inc hy.inc_right
 
 lemma IsNonloopAt.not_isLoopAt (h : G.IsNonloopAt e x) (y : α) : ¬ G.IsLoopAt e y :=
   fun h' ↦ h'.not_isNonloopAt x h
 
 lemma isNonloopAt_iff_inc_not_isLoopAt : G.IsNonloopAt e x ↔ G.Inc e x ∧ ¬ G.IsLoopAt e x :=
-  ⟨fun h ↦ ⟨h.inc, h.not_isLoopAt _⟩, fun ⟨⟨y, hy⟩, hn⟩ ↦ ⟨y, mt (fun h ↦ h ▸ hy) hn, hy⟩⟩
+  ⟨fun h ↦ ⟨h.inc, h.not_isLoopAt _⟩,
+    fun ⟨⟨y, hy⟩, hn⟩ ↦ ⟨y, mt (fun h ↦ hy.dup_right h.symm) hn, hy⟩⟩
 
 lemma isLoopAt_iff_inc_not_isNonloopAt : G.IsLoopAt e x ↔ G.Inc e x ∧ ¬ G.IsNonloopAt e x := by
   simp +contextual [isNonloopAt_iff_inc_not_isLoopAt, iff_def, IsLoopAt.inc]
@@ -358,17 +387,75 @@ lemma Adj.right_mem (h : G.Adj x y) : y ∈ V(G) :=
 lemma IsLink.adj (h : G.IsLink e x y) : G.Adj x y :=
   ⟨e, h⟩
 
+lemma Adj.dup (h : G.Adj x y) (h' : G.dup x z) : G.Adj z y := by
+  obtain ⟨e, he⟩ := h
+  use e, he.dup_left h'
+
+lemma dup.adj (h : G.dup x y) : G.Adj x z ↔ G.Adj y z :=
+  ⟨(·.dup h), (·.dup h.symm)⟩
+
 /-! ### Extensionality -/
+
+def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
+(isLink_symm : ∀ ⦃e : β⦄, e ∈ edgeSet → Symmetric (IsLink e))
+(eq_or_eq_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
+(edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y)
+(left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) : Graph α β where
+  vertexSet := V
+  edgeSet := edgeSet
+  edge_mem_iff_exists_isLink := edge_mem_iff_exists_isLink
+  dup x y := x = y ∧ x ∈ V
+  dup_refl_iff x := by simp
+  dup_symm x y := by
+    rintro ⟨rfl, hx⟩
+    exact ⟨rfl, hx⟩
+  dup_trans x y z := by
+    rintro ⟨rfl, hx⟩ ⟨rfl, -⟩
+    exact ⟨rfl, hx⟩
+  IsLink := IsLink
+  isLink_symm := isLink_symm
+  rel_or_rel_of_isLink_of_isLink e x y v w hl hl' := by
+    obtain rfl | rfl := eq_or_eq_of_isLink_of_isLink hl hl'
+    · exact Or.inl ⟨rfl, left_mem_of_isLink hl⟩
+    exact Or.inr ⟨rfl, left_mem_of_isLink hl⟩
+  left_mem_of_isLink e x y hl := left_mem_of_isLink hl
+  isLink_of_dup e x y z hxy hl := by
+    obtain ⟨rfl, hx⟩ := hxy
+    exact hl
+
+def mk_of_unique' (V : Set α) (IsLink : β → α → α → Prop)
+(isLink_symm : ∀ ⦃e x y⦄, IsLink e x y → IsLink e y x)
+(eq_or_eq_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
+(left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) : Graph α β where
+  vertexSet := V
+  dup x y := x = y ∧ x ∈ V
+  dup_refl_iff x := by simp
+  dup_symm x y := by
+    rintro ⟨rfl, hx⟩
+    exact ⟨rfl, hx⟩
+  dup_trans x y z := by
+    rintro ⟨rfl, hx⟩ ⟨rfl, -⟩
+    exact ⟨rfl, hx⟩
+  IsLink := IsLink
+  isLink_symm e he x y hl := isLink_symm hl
+  rel_or_rel_of_isLink_of_isLink e x y v w hl hl' := by
+    obtain rfl | rfl := eq_or_eq_of_isLink_of_isLink hl hl'
+    · exact Or.inl ⟨rfl, left_mem_of_isLink hl⟩
+    exact Or.inr ⟨rfl, left_mem_of_isLink hl⟩
+  left_mem_of_isLink e x y hl := left_mem_of_isLink hl
+  isLink_of_dup e x y z hxy hl := by
+    obtain ⟨rfl, hx⟩ := hxy
+    exact hl
 
 /-- `edgeSet` can be determined using `IsLink`, so the graph constructed from `G.vertexSet` and
 `G.IsLink` using any value for `edgeSet` is equal to `G` itself. -/
 @[simp]
 lemma mk_eq_self (G : Graph α β) {E : Set β} (hE : ∀ e, e ∈ E ↔ ∃ x y, G.IsLink e x y) :
-    Graph.mk V(G) G.IsLink E
+    Graph.mk G.dup V(G) G.dup_refl_iff G.dup_symm G.dup_trans G.IsLink E
     (by simpa [show E = E(G) by simp [Set.ext_iff, hE, G.edge_mem_iff_exists_isLink]]
       using G.isLink_symm)
-    (fun _ _ _ _ _ h h' ↦ h.left_rel_or_rel h') hE
-    (fun _ _ _ ↦ IsLink.left_mem) = G := by
+    (fun _ _ _ _ _ h h' ↦ h.left_dup_or_dup h') hE
+    (fun _ _ _ ↦ IsLink.left_mem) G.isLink_of_dup = G := by
   obtain rfl : E = E(G) := by simp [Set.ext_iff, hE, G.edge_mem_iff_exists_isLink]
   cases G with | _ _ _ _ _ _ h _ => simp
 
@@ -376,17 +463,19 @@ lemma mk_eq_self (G : Graph α β) {E : Set β} (hE : ∀ e, e ∈ E ↔ ∃ x y
 (We use this as the default extensionality lemma rather than adding `@[ext]`
 to the definition of `Graph`, so it doesn't require equality of the edge sets.) -/
 @[ext]
-protected lemma ext {G₁ G₂ : Graph α β} (hV : V(G₁) = V(G₂))
+protected lemma ext {G₁ G₂ : Graph α β} (hV : G₁.dup = G₂.dup)
     (h : ∀ e x y, G₁.IsLink e x y ↔ G₂.IsLink e x y) : G₁ = G₂ := by
   rw [← G₁.mk_eq_self G₁.edge_mem_iff_exists_isLink, ← G₂.mk_eq_self G₂.edge_mem_iff_exists_isLink]
   convert rfl using 2
   · exact hV.symm
+  · ext x
+    simp [dup_refl_iff, hV]
   · simp [funext_iff, h]
   simp [edgeSet_eq_setOf_exists_isLink, h]
 
 /-- Two graphs with the same vertex set and unary incidences are equal. -/
-lemma ext_inc {G₁ G₂ : Graph α β} (hV : V(G₁) = V(G₂)) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
+lemma ext_inc {G₁ G₂ : Graph α β} (hV : G₁.dup = G₂.dup) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
     G₁ = G₂ :=
-  Graph.ext hV fun _ _ _ ↦ by simp_rw [isLink_iff_inc, h]
+  Graph.ext hV fun _ _ _ ↦ by simp_rw [isLink_iff_inc, h, hV]
 
 end Graph
