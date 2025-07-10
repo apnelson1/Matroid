@@ -413,6 +413,12 @@ lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
 lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
   ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
 
+@[simp]
+lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X] = G[X] ↾ F := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [induce_isLink_iff, edgeRestrict_isLink]
+  tauto
+
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G [V(G) \ X]
 
@@ -462,12 +468,6 @@ lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X :=
 lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤ G - X :=
   induce_mono_right _ <| diff_subset_diff_right hXY
 
-@[simp]
-lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X] = G[X] ↾ F := by
-  refine Graph.ext (by simp) fun e x y ↦ ?_
-  simp only [induce_isLink_iff, edgeRestrict_isLink]
-  tauto
-
 lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
     (G ↾ F) - D = (G - D) ↾ F := by
   refine Graph.ext rfl fun e x y ↦ ?_
@@ -484,6 +484,12 @@ lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D]
   Graph.ext rfl <| by
   simp only [vertexDelete_isLink_iff, induce_isLink_iff, mem_diff]
   tauto
+
+lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) := by
+  rw [G.vertexDelete_def, induce_vertexDelete, diff_diff, ← vertexDelete_def]
+
+lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
+  rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
 
 @[simp]
 lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by

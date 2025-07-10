@@ -229,6 +229,9 @@ structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop w
   first_mem : w.first ∈ S
   last_mem : w.last ∈ T
 
+lemma IsWalkFrom.of_le (h : G.IsWalkFrom S T w) (hle : G ≤ H) : H.IsWalkFrom S T w :=
+  ⟨h.isWalk.of_le hle, h.first_mem, h.last_mem⟩
+
 lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse where
   isWalk := h.isWalk.reverse
   first_mem := by simp [h.last_mem]
@@ -299,11 +302,20 @@ lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(
 lemma isWalk_induce_iff (hXV : X ⊆ V(G)) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X :=
   ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
 
+lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X :=
+  fun _ hxw => hw.vertex_mem_of_mem hxw
+
 @[simp]
 lemma isWalk_vertexDelete_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint V(w) X := by
   rw [vertexDelete_def, isWalk_induce_iff diff_subset, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
+
+lemma IsWalk.vertexDelete (hw : G.IsWalk w) (hdisj : Disjoint V(w) X) : (G - X).IsWalk w := by
+  simp [hw, hdisj]
+
+lemma IsWalk.disjoint_of_vertexDelete (hw : (G - X).IsWalk w) : Disjoint V(w) X :=
+  (isWalk_vertexDelete_iff.mp hw).2
 
 lemma IsWalk.edgeRestrict (hw : G.IsWalk w) (hE : E(w) ⊆ F) : (G ↾ F).IsWalk w := by
   induction hw with simp_all [insert_subset_iff]
@@ -313,11 +325,17 @@ lemma isWalk_edgeRestrict_iff {F : Set β} : (G ↾ F).IsWalk w ↔ G.IsWalk w �
   ⟨fun h ↦ ⟨h.of_le (by simp), h.edgeSet_subset.trans inter_subset_left⟩,
     fun h ↦ h.1.edgeRestrict h.2⟩
 
+lemma IsWalk.edgeSet_subset_of_edgeRestrict (hw : (G ↾ F).IsWalk w) : E(w) ⊆ F :=
+  (isWalk_edgeRestrict_iff.mp hw).2
+
 @[simp]
 lemma isWalk_edgeDelete_iff {F : Set β} : (G ＼ F).IsWalk w ↔ G.IsWalk w ∧ Disjoint E(w) F := by
   simp only [edgeDelete_eq_edgeRestrict, isWalk_edgeRestrict_iff, subset_diff, and_congr_right_iff,
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.edgeSet_subset
+
+lemma IsWalk.disjoint_of_edgeDelete (hw : (G ＼ F).IsWalk w) : Disjoint E(w) F :=
+  (isWalk_edgeDelete_iff.mp hw).2
 
 lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hE : E(w) ⊆ E(G))
     (h1 : w.first ∈ V(G)) : G.IsWalk w := by
