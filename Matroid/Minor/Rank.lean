@@ -534,6 +534,14 @@ lemma IsNonloop.contractElem_rk_intCast_eq (M : Matroid α) [RankFinite M] (he :
   rw [← he.contractElem_rk_add_one_eq]
   exact eq_sub_of_add_eq rfl
 
+/-- Move to `minor`-/
+lemma RankFinite.ofDelete {D : Set α} (hD : M.IsRkFinite D) (hfin : (M ＼ D).RankFinite) :
+    M.RankFinite := by
+  rw [← eRank_ne_top_iff, ← lt_top_iff_ne_top]
+  refine (M.delete_eRank_add_eRk_ge_eRank D).trans_lt ?_
+  simpa [ENat.add_lt_top, eRk_lt_top_iff, hD]
+
+
 end Rank
 
 section Nullity

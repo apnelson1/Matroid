@@ -117,6 +117,23 @@ theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
     eRelRk_closure_right, eRelRk_insert_eq_zero_iff] at hrr
   contradiction
 
+lemma quotient_of_forall_closure_subset_closure_indep (hE : M₁.E = M₂.E)
+    (hQ : ∀ I, M₁.Indep I → M₁.closure I ⊆ M₂.closure I) : M₂ ≤q M₁ := by
+  refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
+  obtain ⟨I, hI⟩ := M₁.exists_isBasis X
+  grw [← hI.closure_eq_closure, hQ _ hI.indep, M₂.closure_subset_closure hI.subset]
+
+lemma Quotient.closure_closure_eq_closure_right (h : M₂ ≤q M₁) (X : Set α) :
+    M₂.closure (M₁.closure X) = M₂.closure X := by
+  rw [← closure_inter_ground (X := X), ← closure_inter_ground (X := X), h.ground_eq]
+  refine subset_antisymm ?_ (M₂.closure_subset_closure (M₁.subset_closure _))
+  grw [h.closure_subset_closure, closure_closure]
+
+lemma Quotient.closure_closure_eq_closure_left (h : M₂ ≤q M₁) (X : Set α) :
+    M₁.closure (M₂.closure X) = M₂.closure X := by
+  rw [IsFlat.closure]
+  apply h.isFlat_of_isFlat (M₂.closure_isFlat _)
+
 /-- If `M₂ ≤q M₁`, then every circuit of `M₁` is cyclic (a union of circuits) in `M₂`. -/
 lemma Quotient.cyclic_of_isCircuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.IsCircuit C) :
     M₂.Cyclic C := by

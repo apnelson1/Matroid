@@ -326,7 +326,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       by_contra! hcon0
       have hF₀1 : M₁.IsFlat F₀ := hQ.modularCut_of_k.forall_isFlat F₀ hcon0
       have hFex: F₀ ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by
-        rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+        rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
         exact hF₀1.subset_ground
       have hF₀b : (M₁.projectBy hQ.modularCut_of_k).IsFlat F₀ := by
         rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
@@ -366,7 +366,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
             (hQ.modularCut_of_k).rank_ge
           have h2 : M₁.rk F₀ < M₁.rk (insert e F₀) := by
             have heFE : e ∈ M₁.E \ F₀ := by
-              rwa [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground_eq ]
+              rwa [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
               at heN
             rw [hF₀1.rk_insert_eq_add_one (isRkFinite_set M₁ F₀) heFE  ]
             exact lt_add_one (M₁.rk F₀)
@@ -424,7 +424,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       rwa [hF'U.2.2] at hFF'dis
     exact hF₀dis hnotmod
   rw [hQ.ground_eq]
-  exact projectBy_ground_eq (Quotient.modularCut_of_k hQ)
+  exact projectBy_ground (Quotient.modularCut_of_k hQ)
 
     --let s := {F : Set α | M₂.IsFlat F ∧ ¬(M₁.projectBy hQ.modularCut_of_k).IsFlat F}
     --let s := {F : Set α | M₁.IsFlat F ∧ (hQ.nDiscrepancy F ≠ hQ.nDiscrepancy M₁.E)

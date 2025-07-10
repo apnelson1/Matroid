@@ -30,13 +30,20 @@ lemma project_closure (M : Matroid α) (C X : Set α) :
     diff_union_self, union_eq_left]
   apply M.subset_closure_of_subset' subset_union_right h.1
 
-@[simp]
 lemma project_indep_iff : (M.project C).Indep I ↔ (M ／ C).Indep I := by
   simp only [project, restrict_indep_iff, and_iff_left_iff_imp]
   exact fun h ↦ h.of_contract.subset_ground
 
+lemma Indep.project_indep_iff (hI : M.Indep I) :
+    (M.project I).Indep J ↔ Disjoint J I ∧ M.Indep (J ∪ I)  := by
+  rw [Matroid.project_indep_iff, hI.contract_indep_iff]
+
+@[simp]
+lemma project_empty (M : Matroid α) : M.project ∅ = M := by
+  simp [project]
+
 lemma Indep.of_project (hI : (M.project C).Indep I) : M.Indep I :=
-  (project_indep_iff.1 hI).of_contract
+  (Matroid.project_indep_iff.1 hI).of_contract
 
 @[simp]
 lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
@@ -50,7 +57,7 @@ lemma Indep.of_project_subset {C' : Set α} (hI : (M.project C).Indep I) (hC' : 
 
 @[simp]
 lemma project_delete_self (M : Matroid α) (C : Set α) : (M.project C) ＼ C = M ／ C :=
-  ext_indep rfl <| by simp +contextual [subset_diff]
+  ext_indep rfl <| by simp +contextual [project_indep_iff, subset_diff]
 
 @[simp]
 lemma project_loops (M : Matroid α) (C : Set α) : (M.project C).loops = M.closure C := by
@@ -81,6 +88,13 @@ lemma project_closure_eq (M : Matroid α) (X : Set α) : M.project (M.closure X)
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   rw [hI.project_eq_project, hI.isBasis_closure_right.project_eq_project]
 
+@[simp]
+lemma project_loops_eq (M : Matroid α) : M.project M.loops = M := by
+  simp [← closure_empty]
+
+lemma project_eq_self (hX : X ⊆ M.loops) : M.project X = M := by
+  rw [← project_closure_eq, closure_eq_loops_of_subset hX, project_loops_eq]
+
 lemma project_project_eq_project (hXY : M.closure X ⊆ M.closure Y) :
     (M.project X).project Y = M.project Y := by
   rw [← project_closure_eq, project_closure, ← closure_closure_union_closure_eq_closure_union,
@@ -94,7 +108,7 @@ lemma project_restrict_univ (M : Matroid α) : (M ↾ univ).project X = (M.proje
   M.project_restrict_comm <| subset_univ X
 
 lemma contract_restrict_univ (M : Matroid α) : (M ／ X) ↾ univ = (M.project X) ↾ univ :=
-  ext_indep rfl fun _ ↦ by simp
+  ext_indep rfl fun _ ↦ by simp [project_indep_iff]
 
 instance project_finitary [M.Finitary] : (M.project X).Finitary := by
   rw [project]

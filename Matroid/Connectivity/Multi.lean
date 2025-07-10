@@ -9,10 +9,10 @@ variable {α : Type*} {M : Matroid α} {B B' I I' J J' K X Y : Set α} {ι : Typ
 
 /-- An auxiliary version of multi-connectivity used in the real definition.
 If the sets are disjoint, then this is equal to `multiConn`, but otherwise it is badly behaved.-/
-noncomputable def multiConnAux (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
+private noncomputable def multiConnAux (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
   ⨅ (I : {I : ι → Set α // ∀ i, M.IsBasis' (I i) (X i)}), M.nullity (⋃ i, I.1 i)
 
-lemma multiConnAux_eq_nullity_iUnion (M : Matroid α) {I X : ι → Set α}
+private lemma multiConnAux_eq_nullity_iUnion (M : Matroid α) {I X : ι → Set α}
     (hI : ∀ i, M.IsBasis' (I i) (X i)) (hdj : Pairwise (Disjoint on X)) :
     M.multiConnAux X = M.nullity (⋃ i, I i) := by
   have aux (J : ι → Set α) (hJ : ∀ i, M.IsBasis' (J i) (X i)) :
@@ -31,7 +31,7 @@ see `multiConn_eq_nullity_iUnion`.
 If the `X i` are not disjoint, then there is no simple formula in general, but for pairs,
 an expression using cardinality is given in `multiConn_cond`. -/
 noncomputable def multiConn (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
-  (M.comap (Prod.fst : α × ι → α)).multiConnAux fun i ↦ ((· , i) '' (X i))
+  (M.comap Prod.fst).multiConnAux fun i ↦ ((· , i) '' (X i))
 
 lemma multiConn_eq_nullity_iUnion (M : Matroid α) (X I : ι → Set α) (hdj : Pairwise (Disjoint on X))
     (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) := by
@@ -53,9 +53,9 @@ lemma multiConn_eq_nullity_iUnion (M : Matroid α) (X I : ι → Set α) (hdj : 
 cardinality of `I ∩ J`, for any respective bases `I` and `J` for `X` and `Y`. -/
 lemma multiConn_cond (M : Matroid α) (hIX : M.IsBasis' I X) (hJY : M.IsBasis' J Y) :
     M.multiConn (fun b ↦ bif b then X else Y) = M.nullity (I ∪ J) + (I ∩ J).encard := by
-  have aux_dj (A B : Set α) : Disjoint
+  have aux_dj {A B : Set α} : Disjoint
     ((·, true) '' A) ((·, false) '' B) := by simp [disjoint_left]
-  have aux {i : Bool} {Y : Set α}  : Prod.fst '' ((· , i) '' Y) = Y := by simp [Set.ext_iff]
+  have aux {i : Bool} {Y : Set α} : Prod.fst '' ((· , i) '' Y) = Y := by simp [Set.ext_iff]
   have hb (b : Bool) : (M.comap Prod.fst).IsBasis' ((· , b) '' (bif b then I else J))
       ((· , b) '' (bif b then X else Y)) := by
     refine comap_isBasis'_iff.2 ⟨?_, by simp [InjOn], image_subset _ ?_ ⟩
@@ -71,12 +71,11 @@ lemma multiConn_cond (M : Matroid α) (hIX : M.IsBasis' I X) (hJY : M.IsBasis' J
     tauto
   rw [multiConn, multiConnAux_eq_nullity_iUnion _ hb]
   · simp only [iUnion_bool, cond_true, cond_false]
-    rw [← hi.nullity_project_of_disjoint (aux_dj ..),
+    rw [← hi.nullity_project_of_disjoint aux_dj,
       nullity_eq_nullity_add_encard_diff (X := (·, false) '' (J \ I))
         (image_subset _ (diff_subset)),
-      hi.nullity_project_of_disjoint (aux_dj ..),
-      nullity_comap, ← image_diff (by simp [Injective]), ← hrw,
-      (Prod.mk_left_injective _).encard_image]
+      hi.nullity_project_of_disjoint aux_dj, nullity_comap, ← image_diff (by simp [Injective]),
+      ← hrw, (Prod.mk_left_injective _).encard_image]
     · simp [inter_comm]
     · suffices ∀ a, (a ∈ J → a ∉ I → ∀ b ∈ I, ¬a = b) ∧ (a ∈ I → ∀ b ∈ J, b ∉ I → ¬a = b)
         by simpa [InjOn]
@@ -85,4 +84,4 @@ lemma multiConn_cond (M : Matroid α) (hIX : M.IsBasis' I X) (hJY : M.IsBasis' J
       rw [← union_comm, ← hrw]
       simp only [subset_def, mem_preimage]
       exact fun x hx ↦ M.subset_closure_of_subset' subset_union_right hJY.indep.subset_ground hx
-  simp [Pairwise, pairwise_on_bool, Function.onFun, aux_dj, (aux_dj X Y).symm]
+  simp [Pairwise, pairwise_on_bool, Function.onFun, aux_dj, aux_dj.symm]
