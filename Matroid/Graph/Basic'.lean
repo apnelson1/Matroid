@@ -94,8 +94,7 @@ structure Graph (α β : Type*) where
   /-- If `e` goes from `x` to `y`, it goes from `y` to `x`. -/
   isLink_symm : ∀ ⦃e⦄, e ∈ edgeSet → (Symmetric <| IsLink e)
   /-- An edge is incident with at most one pair of vertices. -/
-  rel_or_rel_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w →
-    dup x v ∨ dup x w
+  dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → dup x v ∨ dup x w
   /-- An edge `e` is incident to something if and only if `e` is in the edge set. -/
   edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y := by exact fun _ ↦ Iff.rfl
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
@@ -115,7 +114,7 @@ scoped notation "E(" G ")" => Graph.edgeSet G
 
 /-! ### Vertex relation -/
 
-lemma mem_vertexSet_of_dup_self (hx : x ∈ V(G)) : G.dup x x :=
+lemma dup_of_mem_vertexSet (hx : x ∈ V(G)) : G.dup x x :=
   G.dup_refl_iff x |>.mp hx
 
 protected lemma dup.symm (h : G.dup x y) : G.dup y x := G.dup_symm _ _ h
@@ -150,6 +149,9 @@ lemma dup.right_mem (hy : G.dup x y) : y ∈ V(G) := by
 lemma not_dup_symm (h : ¬ G.dup x y) : ¬ G.dup y x := fun hyx ↦ h hyx.symm
 
 lemma not_dup_comm : ¬ G.dup x y ↔ ¬ G.dup y x := ⟨not_dup_symm, not_dup_symm⟩
+
+@[simp] lemma not_dup_of_not_mem_left (h : ¬ x ∈ V(G)) : ¬ G.dup x y := fun h' ↦ h h'.left_mem
+@[simp] lemma not_dup_of_not_mem_right (h : ¬ y ∈ V(G)) : ¬ G.dup x y := fun h' ↦ h h'.right_mem
 
 /-! ### Edge-vertex-vertex incidence -/
 
@@ -189,7 +191,7 @@ lemma edgeSet_eq_setOf_exists_isLink : E(G) = {e | ∃ x y, G.IsLink e x y} :=
   Set.ext G.edge_mem_iff_exists_isLink
 
 lemma IsLink.left_dup_or_dup (h : G.IsLink e x y) (h' : G.IsLink e z w) :
-    G.dup x z ∨ G.dup x w := G.rel_or_rel_of_isLink_of_isLink h h'
+    G.dup x z ∨ G.dup x w := G.dup_or_dup_of_isLink_of_isLink h h'
 
 lemma IsLink.right_dup_or_dup (h : G.IsLink e x y) (h' : G.IsLink e z w) :
     G.dup y z ∨ G.dup y w := h.symm.left_dup_or_dup h'
@@ -398,7 +400,7 @@ lemma dup.adj (h : G.dup x y) : G.Adj x z ↔ G.Adj y z :=
 
 def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
 (isLink_symm : ∀ ⦃e : β⦄, e ∈ edgeSet → Symmetric (IsLink e))
-(eq_or_eq_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
+(dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
 (edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y)
 (left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) : Graph α β where
   vertexSet := V
@@ -414,8 +416,8 @@ def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Se
     exact ⟨rfl, hx⟩
   IsLink := IsLink
   isLink_symm := isLink_symm
-  rel_or_rel_of_isLink_of_isLink e x y v w hl hl' := by
-    obtain rfl | rfl := eq_or_eq_of_isLink_of_isLink hl hl'
+  dup_or_dup_of_isLink_of_isLink e x y v w hl hl' := by
+    obtain rfl | rfl := dup_or_dup_of_isLink_of_isLink hl hl'
     · exact Or.inl ⟨rfl, left_mem_of_isLink hl⟩
     exact Or.inr ⟨rfl, left_mem_of_isLink hl⟩
   left_mem_of_isLink e x y hl := left_mem_of_isLink hl
@@ -425,7 +427,7 @@ def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Se
 
 def mk_of_unique' (V : Set α) (IsLink : β → α → α → Prop)
 (isLink_symm : ∀ ⦃e x y⦄, IsLink e x y → IsLink e y x)
-(eq_or_eq_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
+(dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
 (left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) : Graph α β where
   vertexSet := V
   dup x y := x = y ∧ x ∈ V
@@ -438,8 +440,8 @@ def mk_of_unique' (V : Set α) (IsLink : β → α → α → Prop)
     exact ⟨rfl, hx⟩
   IsLink := IsLink
   isLink_symm e he x y hl := isLink_symm hl
-  rel_or_rel_of_isLink_of_isLink e x y v w hl hl' := by
-    obtain rfl | rfl := eq_or_eq_of_isLink_of_isLink hl hl'
+  dup_or_dup_of_isLink_of_isLink e x y v w hl hl' := by
+    obtain rfl | rfl := dup_or_dup_of_isLink_of_isLink hl hl'
     · exact Or.inl ⟨rfl, left_mem_of_isLink hl⟩
     exact Or.inr ⟨rfl, left_mem_of_isLink hl⟩
   left_mem_of_isLink e x y hl := left_mem_of_isLink hl

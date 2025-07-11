@@ -204,7 +204,7 @@ lemma IsWalk.isLink_iff_isLink_of_mem (h : G.IsWalk w) (hew : e ∈ w.edge) :
     w.IsLink e x y ↔ G.IsLink e x y := by
   refine ⟨h.isLink_of_isLink, fun h' ↦ ?_⟩
   obtain ⟨x', y', hx'y'⟩ := exists_isLink_of_mem_edge hew
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h'.eq_and_eq_or_eq_and_eq (h.isLink_of_isLink hx'y')
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h'.dup_and_dup_or_dup_and_dup (h.isLink_of_isLink hx'y')
   · assumption
   exact hx'y'.symm
 

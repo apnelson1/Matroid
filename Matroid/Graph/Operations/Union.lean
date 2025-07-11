@@ -270,7 +270,7 @@ lemma Compatible.induce_left (h : Compatible G H) (X : Set α) : G[X].Compatible
   obtain ⟨u, v, heuv : G.IsLink e u v, hu, hv⟩ := heG
   simp only [induce_isLink_iff, ← h ⟨heuv.edge_mem, heX⟩, and_iff_left_iff_imp]
   intro h
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq heuv <;> simp_all
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.dup_and_dup_or_dup_and_dup heuv <;> simp_all
 
 lemma Compatible.induce_right (h : Compatible G H) (X : Set α) :
     G.Compatible H[X] :=
@@ -336,7 +336,7 @@ protected def iUnion' (G : ι → Graph α β) : Graph α β where
   vertexSet := ⋃ i, V(G i)
   IsLink e x y := (∃ i, (G i).IsLink e x y) ∧ Pairwise ((CompatibleAt e) on G)
   isLink_symm := fun e he x y ⟨⟨i, hi⟩, h'⟩ ↦ ⟨⟨i, hi.symm⟩, h'⟩
-  eq_or_eq_of_isLink_of_isLink := by
+  dup_or_dup_of_isLink_of_isLink := by
     refine fun e x y v w ⟨⟨i, hi⟩, h⟩ ⟨⟨j, hj⟩, _⟩ ↦ ?_
     rw [← h.of_refl i j hi.edge_mem hj.edge_mem] at hj
     exact hi.left_eq_or_eq hj
@@ -349,7 +349,7 @@ protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible o
   edgeSet := ⋃ i, E(G i)
   IsLink e x y := ∃ i, (G i).IsLink e x y
   isLink_symm := by simp +contextual [Symmetric, isLink_comm]
-  eq_or_eq_of_isLink_of_isLink :=
+  dup_or_dup_of_isLink_of_isLink :=
     fun e x y v w ⟨i, hi⟩ ⟨j, hj⟩ ↦ (hi.of_compatible (hG.of_refl i j) hj.edge_mem).left_eq_or_eq hj
   edge_mem_iff_exists_isLink := by
     simp only [mem_iUnion, edge_mem_iff_exists_isLink]
@@ -681,7 +681,7 @@ protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
   edgeSet := {e | ∃ x y, ∀ i, (G i).IsLink e x y}
   IsLink e x y := ∀ i, (G i).IsLink e x y
   isLink_symm e he x y := by simp [isLink_comm]
-  eq_or_eq_of_isLink_of_isLink e _ _ _ _ h h' :=
+  dup_or_dup_of_isLink_of_isLink e _ _ _ _ h h' :=
     (h (Classical.arbitrary ι)).left_eq_or_eq (h' (Classical.arbitrary ι))
   edge_mem_iff_exists_isLink e := by simp
   left_mem_of_isLink e x y h := mem_iInter.2 fun i ↦ (h i).left_mem
@@ -884,7 +884,7 @@ protected def inter (G H : Graph α β) : Graph α β where
   vertexSet := V(G) ∩ V(H)
   IsLink e x y := G.IsLink e x y ∧ H.IsLink e x y
   isLink_symm _ _ _ _ h := ⟨h.1.symm, h.2.symm⟩
-  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
+  dup_or_dup_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
   edge_mem_iff_exists_isLink e := by simp
   left_mem_of_isLink e x y h := ⟨h.1.left_mem, h.2.left_mem⟩
 

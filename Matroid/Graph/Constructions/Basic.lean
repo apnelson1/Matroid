@@ -19,7 +19,7 @@ protected def noEdge (V : Set α) (β : Type*) : Graph α β where
   edgeSet := ∅
   IsLink _ _ _ := False
   isLink_symm := by simp
-  eq_or_eq_of_isLink_of_isLink := by simp
+  dup_or_dup_of_isLink_of_isLink := by simp
   edge_mem_iff_exists_isLink := by simp
   left_mem_of_isLink := by simp
 
@@ -107,7 +107,7 @@ protected def singleEdge (u v : α) (e : β) : Graph α β where
   edgeSet := {e}
   IsLink e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
   isLink_symm := by tauto
-  eq_or_eq_of_isLink_of_isLink := by aesop
+  dup_or_dup_of_isLink_of_isLink := by aesop
   edge_mem_iff_exists_isLink := by tauto
   left_mem_of_isLink := by tauto
 
@@ -149,7 +149,7 @@ def bouquet (v : α) (F : Set β) : Graph α β where
   edgeSet := F
   IsLink e x y := e ∈ F ∧ x = v ∧ y = v
   isLink_symm e := by simp +contextual [Symmetric]
-  eq_or_eq_of_isLink_of_isLink := by aesop
+  dup_or_dup_of_isLink_of_isLink := by aesop
   edge_mem_iff_exists_isLink := by aesop
   left_mem_of_isLink := by aesop
 
@@ -198,7 +198,7 @@ def banana (a b : α) (F : Set β) : Graph α β where
   edgeSet := F
   IsLink e x y := e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))
   isLink_symm _ _ _ := by aesop
-  eq_or_eq_of_isLink_of_isLink := by aesop
+  dup_or_dup_of_isLink_of_isLink := by aesop
   edge_mem_iff_exists_isLink := by aesop
   left_mem_of_isLink := by aesop
 
@@ -239,7 +239,7 @@ def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
   edgeSet := {s | (∀ i ∈ s, i < n) ∧ ¬ s.IsDiag}
   IsLink e x y := x < n ∧ y < n ∧ x ≠ y ∧ e = s(x, y)
   isLink_symm e he x y := by beta_reduce; rw [Sym2.eq_swap]; tauto
-  eq_or_eq_of_isLink_of_isLink e x y z w h := by
+  dup_or_dup_of_isLink_of_isLink e x y z w h := by
     simp only [h, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk]
     tauto
   edge_mem_iff_exists_isLink e := by
@@ -267,7 +267,7 @@ def StarGraph (v : α) (f : β →. α) : Graph α β where
   IsLink e x y := ∃ (he : e ∈ f.Dom), s(v, f.fn e he) = s(x, y)
   edge_mem_iff_exists_isLink e := ⟨fun h ↦ ⟨v, f.fn e h, h, rfl⟩, fun ⟨x, y, he, h⟩ ↦ he⟩
   isLink_symm e he x y h := by beta_reduce; rwa [Sym2.eq_swap]
-  eq_or_eq_of_isLink_of_isLink e x y z w h1 h2 := by
+  dup_or_dup_of_isLink_of_isLink e x y z w h1 h2 := by
     obtain ⟨he, h⟩ := h1
     obtain ⟨_, h'⟩ := h2
     have := h.symm.trans h'
@@ -289,7 +289,7 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
   edgeSet := Finset.range l.length
   IsLink e x y := ∃ p, l[e]? = some p ∧ s(x,y) = s(p.1, p.2)
   isLink_symm e x y h1 h2 := by beta_reduce; rwa [Sym2.eq_swap]
-  eq_or_eq_of_isLink_of_isLink e x y z w h₁ h₂ := by aesop
+  dup_or_dup_of_isLink_of_isLink e x y z w h₁ h₂ := by aesop
   edge_mem_iff_exists_isLink e := by
     simp [Set.mem_image, Finset.mem_range, Sym2.exists, and_comm]
     refine ⟨fun h ↦ ?_, fun ⟨x, y, a, b, hor, h⟩ ↦ ?_⟩

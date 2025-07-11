@@ -1,4 +1,3 @@
-import Mathlib.Combinatorics.Graph.Basic
 import Matroid.Graph.Basic
 import Mathlib.Data.Set.Insert
 import Mathlib.Tactic.TFAE
@@ -18,50 +17,82 @@ namespace Graph
 /-- `Copy` creates an identical graph with different definitions for its vertex set and edge set.
   This is mainly used to create graphs with improved definitional properties. -/
 @[simps]
-def copy (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → α → α → Prop} (hV : V(G) = V)
-    (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) : Graph α β where
-  vertexSet := V
+def copy (G : Graph α β) {dup : α → α → Prop} {E : Set β} {IsLink : β → α → α → Prop}
+    (hdup : G.dup = dup) (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
+    Graph α β where
+  dup := dup
+  dup_symm := hdup ▸ G.dup_symm
+  dup_trans := hdup ▸ G.dup_trans
   edgeSet := E
   IsLink := IsLink
   isLink_symm e he x y := by
     simp_rw [← h_isLink]
     apply G.isLink_symm (hE ▸ he)
-  eq_or_eq_of_isLink_of_isLink := by
-    simp_rw [← h_isLink]
-    exact G.eq_or_eq_of_isLink_of_isLink
+  dup_or_dup_of_isLink_of_isLink := by
+    simp_rw [← h_isLink, ← hdup]
+    exact G.dup_or_dup_of_isLink_of_isLink
   edge_mem_iff_exists_isLink := by
     simp_rw [← h_isLink, ← hE]
     exact G.edge_mem_iff_exists_isLink
   left_mem_of_isLink := by
-    simp_rw [← h_isLink, ← hV]
+    simp_rw [← h_isLink, ← hdup, ← G.dup_refl_iff]
     exact G.left_mem_of_isLink
+  isLink_of_dup := by
+    simp_rw [← h_isLink, ← hdup]
+    exact G.isLink_of_dup
 
-lemma copy_eq_self (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → α → α → Prop}
-    (hV : V(G) = V) (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
-    G.copy hV hE h_isLink = G := by
+lemma copy_eq_self (G : Graph α β) {dup : α → α → Prop} {E : Set β} {IsLink : β → α → α → Prop}
+    (hdup : G.dup = dup) (hE : E(G) = E) (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
+    G.copy hdup hE h_isLink = G := by
   ext <;> simp_all
 
 /-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
 structure IsSubgraph (H G : Graph α β) : Prop where
-  vertex_subset : V(H) ⊆ V(G)
+  dup_eq : ∀ ⦃x y⦄, y ∈ V(H) → (H.dup x y ↔ G.dup x y)
   isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 /-- The subgraph order is a partial order on graphs. -/
 instance : PartialOrder (Graph α β) where
   le := IsSubgraph
-  le_refl _ := ⟨rfl.le, by simp⟩
-  le_trans _ _ _ h₁ h₂ := ⟨h₁.1.trans h₂.1, fun _ _ _ h ↦ h₂.2 (h₁.2 h)⟩
-  le_antisymm G H h₁ h₂ := Graph.ext (h₁.1.antisymm h₂.1)
-    fun e x y ↦ ⟨fun a ↦ h₁.isLink_of_isLink a, fun a ↦ h₂.isLink_of_isLink a⟩
+  le_refl _ := ⟨by simp, by simp⟩
+  le_trans _ _ _ h₁ h₂ :=
+    ⟨fun x y hyH => (by rw [h₁.dup_eq hyH, h₂.dup_eq (by
+      rwa [dup_refl_iff, ← h₁.dup_eq hyH, ← dup_refl_iff])]), fun _ _ _ h ↦ h₂.2 (h₁.2 h)⟩
+  le_antisymm G H h₁ h₂ := by
+    refine Graph.ext ?_
+      fun e x y ↦ ⟨fun a ↦ h₁.isLink_of_isLink a, fun a ↦ h₂.isLink_of_isLink a⟩
+    ext x y
+    by_cases hy : y ∈ V(G)
+    · exact h₁.dup_eq hy
+    simp only [not_dup_of_not_mem_right hy, false_iff]
+    contrapose! hy
+    rw [h₂.dup_eq hy.right_mem] at hy
+    exact hy.right_mem
 
 lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
   hle.2 h
 
+lemma dup.of_le (h : H.dup x y) (hle : H ≤ G) : G.dup x y := by
+  rwa [← hle.dup_eq h.right_mem]
+
+lemma dup.of_le_of_mem_right (h : G.dup x y) (hle : H ≤ G) (hy : y ∈ V(H)) : H.dup x y := by
+  rwa [hle.dup_eq hy]
+
+lemma dup.of_le_of_mem_left (h : G.dup x y) (hle : H ≤ G) (hx : x ∈ V(H)) : H.dup x y :=
+  h.symm.of_le_of_mem_right hle hx |>.symm
+
+lemma not_dup_of_le (h : ¬ G.dup x y) (hle : H ≤ G) : ¬ H.dup x y :=
+  fun h' ↦ h (h'.of_le hle)
+
 lemma IsLink.of_le_of_mem (h : G.IsLink e x y) (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e x y := by
   obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
-  obtain ⟨rfl, rfl⟩ | ⟨rfl,rfl⟩ := (huv.of_le hle).eq_and_eq_or_eq_and_eq h
-  · assumption
-  exact huv.symm
+  obtain ⟨hx, hy⟩ | ⟨hx, hy⟩ := (huv.of_le hle).dup_and_dup_or_dup_and_dup h
+  · have hx' := hx.of_le_of_mem_left hle huv.left_mem
+    have hy' := hy.of_le_of_mem_left hle huv.right_mem
+    rwa [← hx'.isLink_left, ← hy'.isLink_right]
+  · have hx' := hx.of_le_of_mem_left hle huv.left_mem
+    have hy' := hy.of_le_of_mem_left hle huv.right_mem
+    rwa [hx'.symm.isLink_right, hy'.symm.isLink_left, isLink_comm]
 
 lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
   (h.choose_spec.of_le hle).inc_left
@@ -75,7 +106,7 @@ lemma IsLoopAt.of_le (h : H.IsLoopAt e x) (hle : H ≤ G) : G.IsLoopAt e x :=
 
 lemma IsNonloopAt.of_le (h : H.IsNonloopAt e x) (hle : H ≤ G) : G.IsNonloopAt e x := by
   obtain ⟨y, hxy, he⟩ := h
-  exact ⟨y, hxy, he.of_le hle⟩
+  exact ⟨y, not_dup_of_le hxy hle, he.of_le hle⟩
 
 lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
   (h.choose_spec.of_le hle).adj
@@ -88,8 +119,9 @@ lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
   exact (h'.of_le h).edge_mem
 
-lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ (∀ ⦃x y⦄, G.dup x y → H.dup x y) ∧
+    ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
+  ⟨fun h ↦ ⟨h.1, h.2, h.3⟩, fun h ↦ ⟨h.1, h.2.1, h.2.2⟩⟩
 
 lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
@@ -167,7 +199,7 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
   IsLink e x y := e ∈ E₀ ∧ G.IsLink e x y
   isLink_symm e he x y h := ⟨h.1, h.2.symm⟩
 
-  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.2.left_eq_or_eq h'.2
+  dup_or_dup_of_isLink_of_isLink _ _ _ _ _ h h' := h.2.left_eq_or_eq h'.2
   edge_mem_iff_exists_isLink e := ⟨fun h ↦ by simp [h, G.exists_isLink_of_mem_edgeSet h.2, h.1],
     fun ⟨x, y, h⟩ ↦ ⟨h.1, h.2.edge_mem⟩⟩
   left_mem_of_isLink _ _ _ h := h.2.left_mem
@@ -333,7 +365,7 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β where
   vertexSet := X
   IsLink e x y := G.IsLink e x y ∧ x ∈ X ∧ y ∈ X
   isLink_symm _ _ x := by simp +contextual [G.isLink_comm (x := x)]
-  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
+  dup_or_dup_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
   left_mem_of_isLink := by simp +contextual
 
 /-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
@@ -370,7 +402,7 @@ lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E
 lemma IsLink.mem_induce_iff {X : Set α} (hG : G.IsLink e x y) : e ∈ E(G[X]) ↔ x ∈ X ∧ y ∈ X := by
   simp only [induce_edgeSet, mem_setOf_eq]
   refine ⟨fun ⟨x', y', he, hx', hy'⟩ ↦ ?_, fun h ↦ ⟨x, y, hG, h⟩⟩
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq he <;> simp [hx', hy']
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.dup_and_dup_or_dup_and_dup he <;> simp [hx', hy']
 
 lemma induce_induce (G : Graph α β) (X Y : Set α) : G[X][Y] = G[Y] ↾ E(G[X]) := by
   refine Graph.ext rfl fun e x y ↦ ?_

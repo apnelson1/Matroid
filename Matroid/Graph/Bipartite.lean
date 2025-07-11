@@ -123,7 +123,7 @@ lemma Bipartition.Opp.not_same (hB : B.Opp x y) : ¬ B.Same x y := by
 lemma Bipartition.opp_of_adj (B : G.Bipartition) (hxy : G.Adj x y) : B.Opp x y := by
   obtain ⟨e, h⟩ := hxy
   obtain ⟨x', hx', y', hy', h'⟩ := B.forall_edge e h.edge_mem
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.eq_and_eq_or_eq_and_eq h'
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h.dup_and_dup_or_dup_and_dup h'
   · exact ⟨h.left_mem, h.right_mem, iff_of_true hx' hy'⟩
   refine ⟨h.left_mem, h.right_mem, iff_of_false ?_ ?_⟩
   · rwa [B.notMem_left_iff h.left_mem]
