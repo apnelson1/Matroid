@@ -84,7 +84,7 @@ namespace Matroid
 under intersections of modular families. These parametrize the extensions of `M` by a single
 element outside `M` and hence also the projections of `M`; see `Matroid.extendBy` and
 `Matroid.projectBy`.  -/
-@[ext] structure ModularCut (M : Matroid α) where
+structure ModularCut (M : Matroid α) where
   (carrier : Set (Set α))
   (forall_isFlat : ∀ F ∈ carrier, M.IsFlat F)
   (forall_superset : ∀ F F', F ∈ carrier → M.IsFlat F' → F ⊆ F' → F' ∈ carrier)
@@ -96,6 +96,21 @@ variable {U : M.ModularCut}
 instance (M : Matroid α) : SetLike (ModularCut M) (Set α) where
   coe := ModularCut.carrier
   coe_injective' U U' := by cases U; cases U'; simp
+
+@[simp]
+lemma ModularCut.mem_carrier_iff {U : M.ModularCut} : F ∈ U.carrier ↔ F ∈ U := Iff.rfl
+
+@[ext]
+lemma ModularCut.ext {U U' : M.ModularCut} (h : ∀ F, M.IsFlat F → (F ∈ U ↔ F ∈ U')) : U = U' := by
+  suffices h_eq : U.carrier = U'.carrier by
+    cases U with | mk carrier forall_isFlat forall_superset forall_inter =>
+    · simp only at h_eq
+      simp [h_eq]
+  ext F
+  by_cases hFlat : M.IsFlat F
+  · exact h F hFlat
+  exact iff_of_false (fun hF ↦ hFlat (U.forall_isFlat F hF))
+    (fun hF ↦ hFlat (U'.forall_isFlat F hF))
 
 /-- Transfer a `ModularCut` across a matroid equality. -/
 def ModularCut.copy {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
@@ -430,6 +445,12 @@ def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α
       rw [(IsFlat.sInter hDne fun F hF ↦ (h_isFlat F (hD hF).1)).closure]
     exact fun F hF ↦ sInter_subset_of_mem hF
 
+@[simp]
+lemma ModularCut.mem_ofForallIsModularPairChainInter_iff (M : Matroid α) (U : Set (Set α))
+    (h_isFlat) (h_superset) (h_pair) (h_chain) {F : Set α} :
+    F ∈ ModularCut.ofForallIsModularPairChainInter M U h_isFlat h_superset h_pair h_chain ↔ F ∈ U :=
+  Iff.rfl
+
 /-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
 modular pairs rather than families. -/
 @[simps!]
@@ -440,6 +461,12 @@ def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : S
   ofForallIsModularPairChainInter M U h_isFlat h_superset h_pair <|
     fun _ h hinf _ hCs ↦ False.elim <| hinf <|
     finite_of_isChain_of_forall_isFlat (fun _ hF ↦ h_isFlat _ (h hF)) hCs
+
+@[simp]
+lemma ModularCut.mem_ofForallIsModularPairInter_iff (M : Matroid α) [M.RankFinite] (U : Set (Set α))
+    (h_isFlat) (h_superset) (h_pair) {F : Set α} :
+    F ∈ ModularCut.ofForallIsModularPairInter M U h_isFlat h_superset h_pair ↔ F ∈ U :=
+  Iff.rfl
 
 end finite
 
@@ -742,6 +769,18 @@ lemma ModularCut.isRestriction_extendBy (U : M.ModularCut) (he : e ∉ M.E) :
     M ≤r (M.extendBy e U) := by
   nth_rw 1 [← U.extendBy_deleteElem he]
   apply delete_isRestriction
+
+lemma ModularCut.eq_extendBy_of_forall_flat (𝓕 : (M ＼ {e}).ModularCut) (he : e ∈ M.E)
+    (h_flat : ∀ ⦃F⦄, (M ＼ {e}).IsFlat F → (e ∈ M.closure F ↔ F ∈ 𝓕)) :
+    (M ＼ {e}).extendBy e 𝓕 = M := by
+  have h : 𝓕 = ModularCut.ofDeleteElem M e := by
+    ext F hF
+    rw [← h_flat hF]
+    rw [deleteElem_isFlat_iff] at hF
+    obtain hFf | hins := hF.2
+    · simp [hFf.closure, hF.1]
+    simp [hins, hF.1]
+  rwa [h, ModularCut.deleteElem_extendBy]
 
 /-- Different modular cuts give different extensions. -/
 lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extendBy e) := by

@@ -76,4 +76,23 @@ lemma contract_weakLE_delete (M : Matroid α) (X : Set α) : M ／ X ≤w M ＼ 
   refine fun J hJI hi hJ'  ↦ ⟨hi.subset subset_union_left, ?_⟩
   simpa only [diff_union_self, disjoint_union_right, and_iff_left hJI] using hJ'.union_right hJI
 
+lemma WeakLE.exists_isBasis'_subset_isBasis' (h : N ≤w M) (X : Set α) :
+    ∃ I J, N.IsBasis' I X ∧ M.IsBasis' J X ∧ I ⊆ J := by
+  obtain ⟨I, hI⟩ := N.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := (h.indep_of_indep hI.indep).subset_isBasis'_of_subset hI.subset
+  exact ⟨I, J, hI, hJ⟩
+
+lemma WeakLE.exists_isBasis_subset_isBasis (h : N ≤w M) (X : Set α) (hX : X ⊆ M.E) :
+    ∃ I J, N.IsBasis I X ∧ M.IsBasis J X ∧ I ⊆ J := by
+  obtain ⟨I, hI⟩ := N.exists_isBasis X
+  obtain ⟨J, hJ⟩ := (h.indep_of_indep hI.indep).subset_isBasis_of_subset hI.subset
+  exact ⟨I, J, hI, hJ⟩
+
+lemma WeakLE.exists_isBase_subset_isBase (h : N ≤w M) :
+    ∃ I J, N.IsBase I ∧ M.IsBase J ∧ I ⊆ J := by
+  obtain ⟨I, J, hI, hJ, hIJ⟩ := h.exists_isBasis_subset_isBasis M.E rfl.subset
+  rw [isBasis_ground_iff] at hJ
+  rw [← h.ground_eq, isBasis_ground_iff] at hI
+  exact ⟨I, J, hI, hJ, hIJ⟩
+
 end Weak

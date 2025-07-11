@@ -9,6 +9,7 @@ import Matroid.Clone
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor
+import Matroid.Connectivity.Multi
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 import Matroid.Constructions.Matching
@@ -69,4 +70,4 @@ import Matroid.Representation.Projective
 import Matroid.Representation.StandardRep
 import Matroid.Simple
 import Matroid.Uniform
-import Matroid.Graphic
+-- import Matroid.Graphic

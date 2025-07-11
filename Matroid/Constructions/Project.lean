@@ -46,6 +46,12 @@ lemma Indep.of_project (hI : (M.project C).Indep I) : M.Indep I :=
   (Matroid.project_indep_iff.1 hI).of_contract
 
 @[simp]
+lemma project_ground_self (M : Matroid α) : M.project M.E = loopyOn M.E := by
+  refine ext_closure fun X ↦ ?_
+  simp only [project_closure, loopyOn_closure_eq]
+  rw [← closure_inter_ground, inter_eq_self_of_subset_right subset_union_right, closure_ground]
+
+@[simp]
 lemma project_project (M : Matroid α) (C₁ C₂ : Set α) :
     (M.project C₁).project C₂ = M.project (C₁ ∪ C₂) :=
   ext_closure <| by simp [union_assoc, union_comm C₂]
