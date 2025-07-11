@@ -80,7 +80,7 @@ structure Graph (α β : Type*) where
   dup : α → α → Prop
   /-- The vertex set. -/
   vertexSet : Set α := {x | dup x x}
-  -- /-- The vertex relation is reflexive for all vertices in the vertex set. -/
+  /-- The vertex relation is reflexive for all vertices in the vertex set. -/
   dup_refl_iff : ∀ x, x ∈ vertexSet ↔ dup x x := by exact fun x ↦ Iff.rfl
   /-- The vertex relation is symmetric. -/
   dup_symm x y : dup x y → dup y x

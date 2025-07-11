@@ -158,7 +158,7 @@ lemma IsLeaf.eq_of_adj_adj (h : G.IsLeaf x) (hu : G.Adj x u) (hv : G.Adj x v) :
   obtain ⟨y, hy, hun⟩ := h.exists_unique_adj
   rw [hun u hu, hun v hv]
 
-lemma IsLeaf.eq_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
+lemma IsLeaf.dup_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
     e = f := by
   obtain ⟨g, hg, hun⟩ := h.exists_unique_inc
   rw [hun e he, hun f hf]

@@ -103,7 +103,7 @@ lemma IsLeaf.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.IsLeaf x
     obtain v | ⟨v, f, P⟩ := P
     · simp
     simp only [cons_isTrail_iff, first_cons, cons_edge, List.mem_cons, not_or] at hP
-    simp [hx.eq_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
+    simp [hx.dup_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
 
 lemma IsLeaf.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeaf x)
     (hP : G.IsPath P) (hxP : x ∈ P) : x = P.first ∨ x = P.last :=
@@ -169,4 +169,3 @@ lemma Connected.exists_delete_vertex_connected [G.Finite] (hG : G.Connected)
   obtain ⟨x, hx⟩ := hG.nonempty
   obtain ⟨P, hP⟩ := Finite.exists_maximal G.isPath_finite ⟨nil x, by simpa⟩
   exact ⟨_, hP.prop.isWalk.first_mem, hG.delete_first_connected_of_maximal_isPath hnt hP⟩
-
