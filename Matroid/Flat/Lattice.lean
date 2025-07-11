@@ -552,7 +552,6 @@ lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
   left_inv := by rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩; simp
   right_inv := by rintro ⟨F, hF⟩; simp [hF.subset]
 
-
 /-- This lemma is stating that the lattice of flats of a finitary matroid is meet-continuous.
 This needs `Finitary`, even if the directed set is known to be a chain.
 A counterexample would be the matroid on `[0,1]` whose ground set is a circuit,
@@ -584,3 +583,13 @@ lemma IsFlat.inter_iUnion_closure_of_directed [Finitary M] {ι : Type*} {Xs : ι
     exact ⟨i, M.closure_subset_closure (hIA.trans hi) heI⟩
 
   exact M.mem_closure_of_mem' (mem_iUnion.2 ⟨i, heF, by rwa [← (hXs i).closure]⟩)
+
+/-- Every chain of flats in a finite-rank matroid is finite. -/
+lemma finite_of_isChain_of_forall_isFlat [RankFinite M] {Fs : Set (Set α)}
+    (hFs : ∀ F ∈ Fs, M.IsFlat F) (hchain : IsChain (· ⊆ ·) Fs) : Fs.Finite := by
+  refine Finite.of_finite_image (f := M.rk) ?_ fun F hF F' hF' hFF' ↦ ?_
+  · exact BddBelow.finite_of_bddAbove (by simp)
+      ⟨_, by simpa [upperBounds] using fun _ _ ↦ M.rk_le_rank ..⟩
+  obtain hle | hle := hchain.total hF hF'
+  · exact (hFs F hF).eq_of_subset_of_rk_ge hle hFF'.symm.le
+  exact Eq.symm <| (hFs F' hF').eq_of_subset_of_rk_ge hle hFF'.le

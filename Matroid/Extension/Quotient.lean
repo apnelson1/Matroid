@@ -44,7 +44,7 @@ def Quotient.modularCut [N.Finitary] (h : N ≤q M) : M.ModularCut :=
       ← M.closure_subset_closure (show B ⊆ _ by tauto_set), hB.closure_eq, project_ground])
   (h_chain := by
     refine fun Fs hFs hCne hmod hchain ↦ ⟨?_, ?_⟩
-    · exact IsFlat.sInter hCne fun F hF ↦ (hFs hF).1
+    · exact IsFlat.sInter hCne.nonempty fun F hF ↦ (hFs hF).1
     simp only [subset_def, mem_setOf_eq] at hFs
     obtain ⟨B, hB, hBmut⟩ := hmod.exists_isMutualBasis_isBase
     simp only [isMutualBasis_iff, Subtype.forall] at hBmut
@@ -60,7 +60,7 @@ def Quotient.modularCut [N.Finitary] (h : N ≤q M) : M.ModularCut :=
       rw [image_subset_iff, subset_def]
       exact fun e heC ↦ (hF' e heC).1
     obtain ⟨F₀, hF₀, hF₀le : ∀ F ∈ F' '' C, F₀ ⊆ F⟩ :=
-      hchain.directedOn.exists_forall_le hCne hss' (hC.finite.image F')
+      hchain.directedOn.exists_forall_le hCne.nonempty hss' (hC.finite.image F')
     have hCi : (N.project F₀).Indep C := by
       rw [← (hFs _ hF₀).2, (hBmut.2 F₀ hF₀).project_eq_project, project_indep_iff,
         (hBmut.1.inter_left F₀).contract_indep_iff, inter_comm, disjoint_left]

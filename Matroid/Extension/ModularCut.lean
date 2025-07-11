@@ -1,6 +1,7 @@
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Closure
 import Matroid.Modular.Basic
+import Matroid.ForMathlib.Data.Set.Finite
 
 /-
 
@@ -48,6 +49,10 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
 * `ModularCut.ofDeleteElem` : the modular cut of `M ＼ e` corresponding to the extension `M`
     of `M ＼ e`.
 
+* `ModularCut.ofForallIsModularPairChainInter` : to define a modular cut, it suffices to
+  verify that the collection is closed under intersections of modular pairs
+  and infinite modular chains, rather than general modular families.
+
 * `ModularCut.ofForallIsModularPairInter` : in the finite-rank case,
   a modular cut in the classical sense gives a modular cut in the more general sense.
 
@@ -60,6 +65,10 @@ matroid obtained from `M` by extending using `U`, then contracting the new eleme
   using a modular cut `U`.
 
 * `Matroid.truncate` : add a new element freely spanned by `M.E`, then contract it.
+
+# TODO
+
+The modular cuts of a matroid form a lattice.
 
 -/
 
@@ -370,49 +379,13 @@ end restrict
 
 section finite
 
-/-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
-modular pairs rather than families. -/
-@[simps] def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
-    (h_isFlat : ∀ F ∈ U, M.IsFlat F)
-    (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
-    (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U) :
-    M.ModularCut where
-  carrier := U
-  forall_isFlat := h_isFlat
-  forall_superset := h_superset
-  forall_inter := by
-    suffices h : ∀ (S : Finset (Set α)),
-        S.Nonempty → ↑S ⊆ U → M.IsModularFamily (fun (F : S) ↦ F) → ⋂₀ S ∈ U by
-      intro Fs hFU hne hmod
-      have hFs : Fs.Finite :=
-        by simpa using hmod.finite_of_forall_isFlat fun F ↦ h_isFlat _ (hFU F.2)
-      obtain ⟨S, rfl⟩ := hFs.exists_finset_coe
-      exact h S (by simpa using hne) (by simpa) hmod
-    apply Finset.Nonempty.cons_induction
-    · simp +contextual
-    simp only [Finset.coe_cons, insert_subset_iff, sInter_insert, and_imp]
-    intro F S hFS hne IH hFU hSU hmod
-
-    set incl : S → S.cons F hFS := fun X ↦ ⟨X, by simp⟩
-    refine h_pair hFU (IH hSU (hmod.comp incl)) ?_
-    have : Nontrivial (S.cons F hFS) := by
-      obtain ⟨F', hF'⟩ := hne
-      refine ⟨⟨F, by simp⟩, ⟨F', by simp [hF']⟩, ?_⟩
-      simp only [ne_eq, Subtype.mk.injEq]
-      rintro rfl; contradiction
-    convert hmod.isModularPair_singleton_compl_biInter ⟨F, by simp⟩
-    simp only [mem_compl_iff, mem_singleton_iff, iInter_subtype, sInter_eq_iInter]
-    ext x
-    simp only [Finset.mem_coe, mem_iInter, Finset.mem_cons, Subtype.mk.injEq,
-      iInter_iInter_eq_or_left, not_true_eq_false, iInter_of_empty, univ_inter]
-    exact ⟨fun h i his _ ↦ h i his, fun h i his ↦ h i his (by rintro rfl; contradiction)⟩
-
-/-- The modular family condition can be replaced by a condition about modular pairs and chains. -/
-@[simps] def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
+/-- The modular family condition can be replaced by a condition about modular pairs and
+infinite chains. -/
+def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U)
-    (h_chain : ∀ Cs ⊆ U, Cs.Nonempty → M.IsModularFamily (fun x : Cs ↦ x)
+    (h_chain : ∀ Cs ⊆ U, Cs.Infinite → M.IsModularFamily (fun x : Cs ↦ x)
       → IsChain (· ⊆ ·) Cs → ⋂₀ Cs ∈ U) : M.ModularCut where
   carrier := U
   forall_isFlat := h_isFlat
@@ -441,7 +414,10 @@ modular pairs rather than families. -/
         ← inter_inter_distrib_right]
       · exact ⟨_, inter_subset_right, rfl⟩
       exact hB.indep.subset (by simp)
-    · apply h_chain _ (hD.trans inter_subset_left) hDne ⟨B, ?_⟩ hDchain
+    · obtain hfin | hinf := D.finite_or_infinite
+      · replace hDchain : IsChain (fun a b ↦ b ⊆ a) D := hDchain.symm
+        exact (hD.trans inter_subset_left) <| hDchain.directedOn.iInf_mem hDne hfin
+      apply h_chain _ (hD.trans inter_subset_left) hinf ⟨B, ?_⟩ hDchain
       convert hmodcl.comp (fun F : D ↦ ⟨F ∩ B, by simp⟩) using 2 with ⟨F, hF⟩
       simp [comp_apply, ← aux2 _ (hD hF).2]
     · refine ⟨⋂₀ D ∩ B, by simp, ?_⟩
@@ -453,6 +429,17 @@ modular pairs rather than families. -/
       simp only [comp_apply, iInter_coe_set, ← hrw]
       rw [(IsFlat.sInter hDne fun F hF ↦ (h_isFlat F (hD hF).1)).closure]
     exact fun F hF ↦ sInter_subset_of_mem hF
+
+/-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
+modular pairs rather than families. -/
+@[simps!]
+def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
+    (h_isFlat : ∀ F ∈ U, M.IsFlat F)
+    (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
+    (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U) : M.ModularCut :=
+  ofForallIsModularPairChainInter M U h_isFlat h_superset h_pair <|
+    fun _ h hinf _ hCs ↦ False.elim <| hinf <|
+    finite_of_isChain_of_forall_isFlat (fun _ hF ↦ h_isFlat _ (h hF)) hCs
 
 end finite
 
@@ -572,11 +559,16 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
   rw [extIndep_iff_of_notMem (by simp [heI, hne]), hI.insert_indep_iff_of_notMem hxI, h.1] at hind
   refine notMem_of_mem_diff_closure hind ⟨hi, hne.symm⟩
 
-/-- This lemma is true even when `e` *is* a coloop of `M`, but it is easier to prove this first and
-then reduce the stronger version to this one; see `ModularCut.extIndep_aug`. -/
-private lemma ModularCut.extIndep_aug_of_not_isColoop (U : ModularCut M) (he : ¬ M.IsColoop e)
-    (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
-    ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
+lemma ModularCut.extIndep_aug (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I)
+    (hBmax : Maximal (U.ExtIndep e) B) : ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
+  -- TODO : comments to describe the steps of this proof.
+  wlog he : ¬ M.IsColoop e with aux
+  · rw [not_not] at he
+    have hrw : (U.delete {e}).ExtIndep e = U.ExtIndep e := by
+      ext I
+      simp [ExtIndep, he.mem_closure_iff_mem, ModularCut.mem_delete_elem_iff]
+    simp_rw [← hrw] at hInmax hBmax hI ⊢
+    refine aux hI hInmax hBmax fun hcl ↦ hcl.mem_ground.2 rfl
   rw [isColoop_iff_diff_closure, not_not] at he
   by_contra! hcon
 
@@ -646,16 +638,6 @@ private lemma ModularCut.extIndep_aug_of_not_isColoop (U : ModularCut M) (he : �
   replace hInmax := show ¬M.IsHyperplane (M.closure (I \ {e})) by simpa [hImax.2] using hInmax
   exact hInmax <| (hImax.1.symm ▸ hBhp)
 
-private lemma ModularCut.extIndep_aug (U : ModularCut M) (hI : U.ExtIndep e I)
-    (hInmax : ¬ Maximal (U.ExtIndep e) I) (hBmax : Maximal (U.ExtIndep e) B) :
-    ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
-  obtain (he | he) := em' (M.IsColoop e)
-  · exact U.extIndep_aug_of_not_isColoop he hI hInmax hBmax
-  have hrw : (U.delete {e}).ExtIndep e = U.ExtIndep e := by
-    ext; simp [ExtIndep, he.mem_closure_iff_mem, ModularCut.mem_delete_elem_iff]
-  simp_rw [← hrw] at hInmax hBmax hI ⊢
-  exact (U.delete {e}).extIndep_aug_of_not_isColoop (fun h ↦ h.mem_ground.2 rfl) hI hInmax hBmax
-
 private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
   ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
   intro I hI hIX
@@ -714,7 +696,7 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X
   exact hconJ'.2 <| hJ.indep.closure_diff_covBy hxJI.1
 
 /-- Extend a matroid `M` by a new element `e` using a modular cut `U`.
-(If `e` already belongs to `M`, then this gives the extension of `M ＼ e` by `e` using `U`.) -/
+(If `e` already belongs to `M`, then this deletes the existing element `e` first.) -/
 @[simps!] def extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
     (E := insert e M.E)
@@ -761,6 +743,7 @@ lemma ModularCut.isRestriction_extendBy (U : M.ModularCut) (he : e ∉ M.E) :
   nth_rw 1 [← U.extendBy_deleteElem he]
   apply delete_isRestriction
 
+/-- Different modular cuts give different extensions. -/
 lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extendBy e) := by
   refine fun U U' h_eq ↦ SetLike.coe_set_eq.1 (Set.ext fun F ↦ ?_)
   obtain (hF | hF) := em' (M.IsFlat F)
@@ -860,6 +843,7 @@ lemma ModularCut.insert_isFlat_extendBy_of_not_covBy (U : M.ModularCut) (he : e 
   refine IsFlat.covBy_closure_insert hF hfmem.2.2 ?_
   simpa [hfmem.2.1] using mem_ground_of_mem_closure hfmem.1
 
+/-- An extension of a finite-rank matroid is finite. -/
 instance (U : M.ModularCut) (e : α) [M.RankFinite] : (M.extendBy e U).RankFinite := by
   refine RankFinite.ofDelete (D := {e}) isRkFinite_singleton ?_
   rw [ModularCut.extendBy_deleteElem']
@@ -867,7 +851,7 @@ instance (U : M.ModularCut) (e : α) [M.RankFinite] : (M.extendBy e U).RankFinit
 
 end extensions
 
-section projection
+section projectBy
 
 private lemma projectBy_aux (U : M.ModularCut) :
     ((((M.map _ (some_injective _).injOn).extendBy none
@@ -980,13 +964,14 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
   · simp [show f ∈ N.closure (insert e X) from N.closure_subset_closure (subset_insert ..) hfX, hfX]
   simpa [hfX, heX'] using N.closure_exchange_iff (X := X) (e := f) (f := e)
 
-end projection
+end projectBy
 
 
 section LinearClass
 
 /-
-TODO. I think linear classes only work for finite matroids; if `B` and `B'` are disjoint infinite
+TODO. I think linear classes only work for finite-rank matroids;
+if `B` and `B'` are disjoint infinite
 bases of `M`, the class of hyperplanes `H` with `B\H` finite ought not to be a linear class,
 but I don't know what reasonable definition would forbid that.
 -/

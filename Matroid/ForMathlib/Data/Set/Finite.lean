@@ -99,7 +99,22 @@ lemma DirectedOn.exists_forall_le {α : Type*} [Preorder α] {s t : Set α}
     ∃ x ∈ s, ∀ y ∈ t, x ≤ y :=
   hdir.exists_forall_ge (α := αᵒᵈ) hne hts hfin
 
-lemma Directed.iSup_mem_range {α ι : Type*} [CompleteLattice α] [Finite ι] [Nonempty ι] {f : ι → α}
+lemma Directed.exists_eq_iSup {α ι : Type*} [CompleteLattice α] [Finite ι] [Nonempty ι] {f : ι → α}
     (hdir : Directed (· ≤ ·) f) : ∃ k, f k = ⨆ i, f i := by
   obtain ⟨k, h⟩ := hdir.exists_forall_ge finite_univ
   exact ⟨k, le_antisymm (le_iSup ..) (by simpa using h)⟩
+
+lemma DirectedOn.iSup_mem {α : Type*} [CompleteLattice α] {s : Set α}
+    (hdir : DirectedOn (· ≤ ·) s) (hs : s.Nonempty) (hfin : s.Finite) : sSup s ∈ s := by
+  have := hs.to_subtype
+  have := hfin.to_subtype
+  obtain ⟨⟨x, hxs⟩, rfl⟩ := hdir.directed_val.exists_eq_iSup (ι := s)
+  rwa [sSup_eq_iSup']
+
+lemma Directed.exists_eq_iInf {α ι : Type*} [CompleteLattice α] [Finite ι] [Nonempty ι] {f : ι → α}
+    (hdir : Directed (fun a b ↦ b ≤ a) f) : ∃ k, f k = ⨅ i, f i :=
+  Directed.exists_eq_iSup (α := αᵒᵈ) hdir
+
+lemma DirectedOn.iInf_mem {α : Type*} [CompleteLattice α] {s : Set α}
+    (hdir : DirectedOn (fun a b ↦ b ≤ a) s) (hs : s.Nonempty) (hfin : s.Finite) : sInf s ∈ s :=
+  DirectedOn.iSup_mem (α := αᵒᵈ) hdir hs hfin
