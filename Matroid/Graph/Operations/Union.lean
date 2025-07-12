@@ -99,14 +99,28 @@ lemma Pairwise.sum_right {ι ι' γ : Type*} {G : ι → γ} {H : ι' → γ} {r
 instance {ι α : Type*} {r : α → α → Prop} [IsRefl α r] {f : ι → α} : IsRefl ι (r on f) where
   refl i := refl (f i)
 
-open scoped Sym2
+open scoped Sym2 Graph
+
+@[simp]
+lemma Graph.disjoint_iff_vertexSet_disjoint : Disjoint V(H) V(G) ↔ Disjoint H G := by
+  refine ⟨fun h G' hleH hleG => ?_, fun h => ?_⟩
+  · rw [le_bot_iff, ← vertexSet_eq_empty_iff, ← subset_empty_iff]
+    exact h (vertexSet_mono hleH) (vertexSet_mono hleG)
+  by_contra! hV
+  obtain ⟨x, hxH, hxG⟩ := not_disjoint_iff.mp hV
+  have hleH : Graph.noEdge {x} β ≤ H := by simpa [noEdge_le_iff, ← H.dup_refl_iff]
+  have hleG : Graph.noEdge {x} β ≤ G := by simpa [noEdge_le_iff, ← G.dup_refl_iff]
+  simpa [← vertexSet_eq_empty_iff] using h hleH hleG
+
+lemma Disjoint.vertexSet_disjoint (h : Disjoint H G) : Disjoint V(H) V(G) :=
+  Graph.disjoint_iff_vertexSet_disjoint.mpr h
 
 namespace Graph
 
 /-! ### Strongly disjointness -/
 
 /-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.
-    This is a stronger notion of disjointness than `Disjoint`,
+    This is a stronger notion of disjointness than `Disjoint` derived from `≤` relation,
     see `disjoint_iff_vertexSet_disjoint`. -/
 @[mk_iff]
 structure StronglyDisjoint (G H : Graph α β) : Prop where
@@ -116,17 +130,24 @@ structure StronglyDisjoint (G H : Graph α β) : Prop where
 lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
   ⟨h.1.symm, h.2.symm⟩
 
-lemma StronglyDisjoint_iff_of_le_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) :
-    StronglyDisjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
-  refine ⟨StronglyDisjoint.vertex, fun h ↦ ⟨h, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
-  obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
-  exact h.notMem_of_mem_left he₁.left_mem ((he₁.of_le h₁).of_le_of_mem h₂ he₂).left_mem
+lemma stronglyDisjoint_comm : G.StronglyDisjoint H ↔ H.StronglyDisjoint G :=
+  ⟨StronglyDisjoint.symm, StronglyDisjoint.symm⟩
 
-lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H := by
-  rintro H' hH'G hH'H
-  rw [le_bot_iff, ← vertexSet_eq_empty_iff]
-  have := le_inf (vertexSet_mono hH'G) <| vertexSet_mono hH'H
-  rwa [h.vertex.eq_bot, le_bot_iff] at this
+lemma stronglyDisjoint_iff_of_le_isLabelSubgraph (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G) :
+    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
+  refine ⟨(disjoint_iff_vertexSet_disjoint.mp <| StronglyDisjoint.vertex ·),
+    fun h ↦ ⟨h.vertexSet_disjoint, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
+  obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
+  exact h.vertexSet_disjoint.notMem_of_mem_left he₁.left_mem <|
+    (he₁.of_le h₁).of_isLabelSubgraph_of_mem h₂ he₂ |>.left_mem
+
+lemma stronglyDisjoint_iff_of_isLabelSubgraph_le (h₁ : H₁ ≤l G) (h₂ : H₂ ≤ G) :
+    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ :=
+  stronglyDisjoint_comm.trans <|
+    (stronglyDisjoint_iff_of_le_isLabelSubgraph h₂ h₁).trans disjoint_comm
+
+lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H :=
+  disjoint_iff_vertexSet_disjoint.mp h.vertex
 
 /-! ### Compatibility -/
 

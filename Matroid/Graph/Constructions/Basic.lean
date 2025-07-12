@@ -101,8 +101,7 @@ lemma bot_isInducedSubgraph (G : Graph α β) : ⊥ ≤i G :=
 lemma noEdge_empty : Graph.noEdge (∅ : Set α) β = ⊥ := rfl
 
 @[simp]
-lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y :=
-  id
+lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y := id
 
 @[simp]
 lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
