@@ -633,6 +633,9 @@ lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
 lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
   ⟨by simp, by simp [vertexSet_eq_setOf_dup]⟩
 
+lemma dup.of_isSpanningSubgraph (hdup : G.dup x y) (h : H ≤s G) : H.dup x y :=
+  hdup.of_le_of_mem h.le (h.vertexSet_eq ▸ hdup.left_mem) (h.vertexSet_eq ▸ hdup.right_mem)
+
 lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
     H ≤s K where
   le := hHK
@@ -805,18 +808,20 @@ lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂
 lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
   G.isClosedSubgraph_self.diff h
 
-lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
-    x ∈ V(H) ∧ y ∉ V(H) := by
-  rw [not_iff_comm]
-  push_neg
-  refine ⟨fun hncl ↦ ⟨hle.le, fun e x ⟨y, hexy⟩ hxH => hle.isLink_of_mem_mem hexy hxH
-    (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem, fun x y hdup hx =>?_⟩, fun hcl x y hexy hx ↦ ?_⟩
-  ·
+-- lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
+--     x ∈ V(H) ∧ y ∉ V(H) := by
+--   rw [not_iff_comm]
+--   push_neg
+--   refine ⟨fun hncl ↦ ⟨hle.le, fun e x ⟨y, hexy⟩ hxH => hle.isLink_of_mem_mem hexy hxH
+--     (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem, fun x y hdup hx =>?_⟩, fun hcl x y hexy hx ↦ ?_⟩
+--   ·
     -- ⟨hle.le, fun e x ⟨y, hexy⟩ hxH => hle.isLink_of_mem hexy hxH (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem⟩
   -- (hcl.mem_iff_mem_of_adj hexy).mp hx
+
 lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [vertexDelete_edgeSet]
-  refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, fun e x he hxH => ?_⟩⟩
+  refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, fun e x he hxH => ?_,
+    fun x y hxy hx => hclF.dup_closed (hxy.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph) hx⟩⟩
   · by_contra! hfH
     simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
     refine (hclF.edgeSet_mono ?_).2 hf.2
@@ -826,7 +831,11 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
     · exact hcl.closed ⟨_, hxy.symm⟩ hy
   · have heF : e ∉ F := fun heF => by
       obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
-      obtain rfl | rfl := he.eq_or_eq_of_isLink heuv <;> exact (‹x ∉ V(H)› hxH).elim
+      obtain hxu | hxv := he.dup_or_dup_of_isLink heuv
+      · exact hunH (hxu.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph
+          |>.of_isClosedSubgraph_of_left_mem hclF hxH |>.right_mem)
+      · exact hvnH (hxv.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph
+          |>.of_isClosedSubgraph_of_left_mem hclF hxH |>.right_mem)
     exact hclF.closed (by simp [he, heF]) hxH
 
 /-! ### Components -/

@@ -48,7 +48,7 @@ lemma IsWalk.vertex_mem_of_edge_mem (h : G.IsWalk w) (he : e ∈ w.edge) (heu : 
     simp_all only [cons_edge, List.mem_cons, mem_cons_iff]
     refine he.elim ?_ fun h' ↦ .inr <| ih h'
     rintro rfl
-    obtain rfl | rfl := heu.eq_or_eq_of_isLink h <;> simp
+    obtain rfl | rfl := heu.dup_or_dup_of_isLink h <;> simp
 
 lemma IsWalk.first_mem (h : G.IsWalk w) : w.first ∈ V(G) :=
   h.vertex_mem_of_mem (by simp)
@@ -68,7 +68,7 @@ lemma IsWalk.mem_of_mem_edge_of_inc (hw : G.IsWalk w) (he : e ∈ w.edge) (h : G
   | cons x e' w ih =>
     simp_all only [forall_const, cons_edge, List.mem_cons, mem_cons_iff, cons_isWalk_iff]
     obtain rfl | he := he
-    · obtain rfl | rfl := h.eq_or_eq_of_isLink hw.1 <;> simp
+    · obtain rfl | rfl := h.dup_or_dup_of_isLink hw.1 <;> simp
     exact .inr (ih he)
 
 lemma IsWalk.sublist (hw₂ : G.IsWalk w₂) (h : w₁.IsSublist w₂) : G.IsWalk w₁ := by

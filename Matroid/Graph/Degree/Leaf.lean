@@ -87,7 +87,7 @@ lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(
   simp only [vertexDelete_edgeSet, mem_singleton_iff, mem_setOf_eq, mem_diff]
   refine ⟨fun ⟨z, y, h'⟩ ↦ ⟨h'.1.edge_mem, ?_⟩, fun ⟨hfE, hfe⟩ ↦ ?_⟩
   · rintro rfl
-    cases h.isNonloopAt.inc.eq_or_eq_of_isLink h'.1 <;> simp_all
+    cases h.isNonloopAt.inc.dup_or_dup_of_isLink h'.1 <;> simp_all
   obtain ⟨y, hyx, hy⟩ := h.isNonloopAt
   obtain ⟨z, w, hzw⟩ := exists_isLink_of_mem_edgeSet hfE
   refine ⟨z, w, hzw, fun h_eq ↦ hfe ?_, fun h_eq ↦ hfe ?_⟩
