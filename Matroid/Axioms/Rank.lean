@@ -324,7 +324,7 @@ protected lemma matroid_indep_iff' {I : Set α} :
 @[simp] protected lemma matroid_rk_eq (X : Finset α) : M.matroid.rk X = M.r X := by
   obtain ⟨I, hI⟩ := M.matroid.exists_isBasis' X
   obtain ⟨I, rfl⟩ := (X.finite_toSet.subset hI.subset).exists_finset_coe
-  rw [← hI.card, ncard_coe_Finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
+  rw [← hI.card, ncard_coe_finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
   refine (M.rk_mono (by simpa using hI.subset)).antisymm <| le_of_not_gt fun hlt ↦ ?_
   obtain ⟨e, heX, heI, hr⟩ := M.indep_aug' (by simpa using hI.indep) hlt
   have hi : M.matroid.Indep (insert e I) := by

@@ -53,6 +53,91 @@ lemma multiConn_eq_comap_nullity {I X : ι → Set α} (h : ∀ i, M.IsBasis' (I
     (fun i ↦ (h' i).comap _) disjoint_map_prod_right]
   exact fun i ↦ RightInverse.rightInvOn (congr_fun rfl) _
 
+
+lemma foo {I X : ι → Set α} (hI : ∀ i, M.IsBasis' (I i) (X i)) :
+    M.multiConn X = M.nullity (⋃ i, I i) + ∑' (e : ⋃ i, I i), ({i | e.1 ∈ I i}.encard - 1) := by
+  rw [multiConn_eq_comap_nullity hI]
+
+  have : Nonempty ι := sorry
+  have h_ex (e) : ∃ i, e ∈ ⋃ i, I i → e ∈ I i := sorry
+  choose φ hφ using h_ex
+  have hφ' := hφ
+  simp only [mem_iUnion, forall_exists_index] at hφ
+
+  rw [nullity_eq_nullity_add_encard_diff (X := ⋃ i, (fun e ↦ (e, φ e)) '' I i), nullity_comap]
+  · simp_rw [image_iUnion, image_image, image_id']
+    congr
+    have hrw (e : ⋃ i, I i) :
+        {i | e.1 ∈ I i}.encard - 1 = ((e.1, ·) '' {i | e.1 ∈ I i ∧ i ≠ φ e}).encard := by
+      have hmem : φ e ∈ {i | e.1 ∈ I i} := hφ' _ e.2
+      rw [(Prod.mk_right_injective e.1).encard_image, ← encard_diff_singleton_of_mem hmem]
+      rfl
+    rw [tsum_congr hrw, ENat.tsum_encard_eq_encard_iUnion]
+    · congr
+      simp_rw [subset_antisymm_iff, diff_subset_iff]
+      sorry
+      -- simp [diff_subs]
+    simp_rw [Pairwise, disjoint_left]
+    aesop
+  · simp_rw [InjOn]
+    aesop
+  · suffices ∀ (a : α) (b x : ι), ∀ y ∈ I x, y = a → φ y = b → a ∈ I b by
+      simpa +contextual [subset_def]
+    rintro a i j y hy rfl rfl
+    apply hφ _ _ hy
+  sorry
+
+    -- exact fun i e hei ↦ hφ e i hei
+
+
+  -- choose ψ hψ using h_ex
+  -- simp at hψ
+  -- rw [nullity_eq_nullity_add_encard_diff (X := range (fun e ↦ (e.1, ψ e))), nullity_comap]
+  -- · convert rfl
+  --   · aesop
+  --   set s' : ⋃ i, I i → Set (α × ι) := fun e ↦ (e, ·) '' {i | e.1 ∈ I i ∧ i ≠ ψ e}
+  --   -- have hins (e : ⋃ i, I i) : insert (e.1, ψ e) (s' e) = ()
+  --   -- have hsI (i : ⋃ i, I i) : insert (i.1, ψ i) (s' i) = (·, ψ i) '' (I (ψ i)) := sorry
+  --     -- fun e ↦ (e.1, ·) '' {i | e.1 ∈ I i ∧ ψ e ≠ i}
+  --   have hrw (e : ⋃ i, I i) : {i | e.1 ∈ I i}.encard - 1 = (s' e).encard := by
+  --     sorry
+  --   simp_rw [hrw]
+  --   rw [ENat.tsum_encard_eq_encard_iUnion]
+  --   · congr
+
+  --     rw [subset_antisymm_iff, subset_diff, disjoint_iUnion_left, diff_subset_iff,
+  --       iUnion_subset_iff, iUnion_subset_iff]
+  --       -- ← iUnion_singleton_eq_range, ← iUnion_union_distrib, iUnion_subset_iff,
+  -- iUnion_subset_iff]
+  --     refine ⟨⟨fun e ↦ ?_, fun e ↦ ?_⟩, fun i ↦ ?_⟩
+  --     · rintro f ⟨i, ⟨hmem, hne⟩, rfl⟩
+  --       exact mem_iUnion.2 ⟨i, e.1, hmem, rfl⟩
+  --     · simp only [disjoint_left, s']
+  --       aesop
+  --     rintro f ⟨a,hai, rfl⟩
+  --     have :=
+  --     -- rw [← iUnion_singleton_eq_range, ← iUnion_union_distrib]
+
+
+
+
+
+
+
+
+  --   -- rw [← encard_iUnion (s := fun e : )]
+
+
+  -- · rintro ⟨_, _⟩ ⟨⟨a, ha⟩, ha', rfl⟩ ⟨_, _⟩ ⟨⟨b, hb⟩, hb', rfl⟩ (rfl : a = b)
+  --   rfl
+
+
+  --   -- refine Set.ext fun x ↦ ?_
+
+
+
+
+
 lemma multiConn_eq_nullity_iUnion {M : Matroid α} {X I : ι → Set α} (hdj : Pairwise (Disjoint on X))
     (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) := by
   rw [multiConn_eq_comap_nullity hIX, nullity_comap, image_iUnion]
