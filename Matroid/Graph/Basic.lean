@@ -65,11 +65,12 @@ lemma IsNonloopAt.vertexSet_nontrivial (h : G.IsNonloopAt e x) : G.vertexSet.Non
   rintro rfl
   exact hne <| dup_of_mem_vertexSet h.left_mem
 
--- lemma inc_eq_inc_iff {G₁ G₂ : Graph α β} : G₁.Inc e = G₂.Inc f ↔ G₁.IsLink e = G₂.IsLink f := by
---   constructor <;> rintro h
---   · ext x y
---     rw [isLink_iff_inc, isLink_iff_inc, h]
---   · simp [funext_iff, Inc, eq_iff_iff, h]
+lemma inc_eq_inc_iff {G₁ G₂ : Graph α β} [G₁.LabelUnique] [G₂.LabelUnique] :
+    G₁.Inc e = G₂.Inc f ↔ G₁.IsLink e = G₂.IsLink f := by
+  constructor <;> rintro h
+  · ext x y
+    rw [isLink_iff_inc, isLink_iff_inc, h]
+  · simp [funext_iff, Inc, eq_iff_iff, h]
 
 section parallel
 
@@ -122,7 +123,6 @@ instance : IsTrans _ G.parallel where
 
 def parallelClasses (G : Graph α β) : Partition E(G) :=
   Partition.ofRel' G.parallel <| by simp
-
 
 
 end parallel
