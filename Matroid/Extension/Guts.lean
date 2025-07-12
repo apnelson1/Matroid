@@ -11,7 +11,6 @@ variable {α : Type*} {ι : Type*} {η : Type*} {A : Set η} {M : Matroid α} {B
 
 /-- For any collection of sets with union `M.E`, the modular cut
 comprising all flats whose projections make `X` a skew family in `M`. -/
-@[simps]
 def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) : M.ModularCut where
   carrier := {F | M.IsFlat F ∧ (M.project F).IsSkewFamily X}
   forall_isFlat _ h := h.1
@@ -61,3 +60,7 @@ def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) 
     rw [project_indep_iff, h₂.contract_indep_iff_of_disjoint]
     · exact hB.indep.subset <| by simpa using fun i ↦ inter_subset_left.trans diff_subset
     simpa using fun i ↦ disjoint_sdiff_right.mono_right inter_subset_left
+
+@[simp]
+lemma mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) {F : Set α} :
+    F ∈ M.gutsModularCut X Xu ↔ M.IsFlat F ∧ (M.project F).IsSkewFamily X := Iff.rfl

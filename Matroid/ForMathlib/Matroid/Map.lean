@@ -1,5 +1,6 @@
 import Mathlib.Data.Matroid.Map
 import Matroid.ForMathlib.Matroid.Basic
+import Matroid.ForMathlib.Function
 
 open Set
 
@@ -47,5 +48,21 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
     exact ⟨hind, image_subset f hss⟩
   obtain ⟨I₀, hI₀R, hbij⟩ := SurjOn.exists_bijOn_subset hIR
   exact ⟨I₀, ⟨by rwa [hbij.image_eq], hbij.injOn, hI₀R⟩, hbij.image_eq.symm⟩
+
+lemma IsBasis'.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis' I X)
+    (hinv : RightInvOn g f X) : (M.comap f).IsBasis' (g '' I) (g '' X) := by
+  rwa [comap_isBasis'_iff, and_iff_left (image_subset _ h.subset),
+    and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
+    (hinv.mono h.subset).image_image]
+
+lemma IsBasis.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis I X)
+    (hinv : RightInvOn g f X) : (M.comap f).IsBasis (g '' I) (g '' X) := by
+  rwa [comap_isBasis_iff, and_iff_left (image_subset _ h.subset),
+    and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
+    (hinv.mono h.subset).image_image]
+
+lemma Indep.comap {f : β → α} {g : α → β} {I : Set α} (hI : M.Indep I) (hinv : RightInvOn g f I) :
+    (M.comap f).Indep (g '' I) := by
+  rwa [comap_indep_iff, and_iff_left hinv.injOn_image, hinv.image_image]
 
 end Matroid

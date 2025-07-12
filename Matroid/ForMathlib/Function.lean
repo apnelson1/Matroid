@@ -155,3 +155,19 @@ variable {f : α → β} {x : α} {y : β}
     {f : α → β} {x : ↥(s ∪ t)} : Sum.elim (s.restrict f) (t.restrict f)
       ((Equiv.sumSet h).symm x) = f x := by
   by_cases h : x.1 ∈ s <;> simp [h]
+
+lemma RightInvOn.injOn {f : α → β} {g : β → α} {s : Set α} (hinv : RightInvOn f g s) :
+    InjOn f s := by
+  rintro a ha b hb h_eq
+  replace h_eq := congr_arg g h_eq
+  rwa [hinv.eq ha, hinv.eq hb] at h_eq
+
+lemma RightInvOn.injOn_image {f : α → β} {g : β → α} {s : Set α} (hinv : RightInvOn f g s) :
+    InjOn g (f '' s) := by
+  rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ h_eq
+  rw [hinv.eq ha, hinv.eq hb] at h_eq
+  rw [h_eq]
+
+lemma LeftInvOn.injOn_image {f : α → β} {g : β → α} {t : Set β} (hinv : LeftInvOn f g t) :
+    InjOn f (g '' t) :=
+  RightInvOn.injOn_image hinv
