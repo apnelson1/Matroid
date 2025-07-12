@@ -117,6 +117,10 @@ scoped notation "E(" G ")" => Graph.edgeSet G
 lemma dup_of_mem_vertexSet (hx : x ∈ V(G)) : G.dup x x :=
   G.dup_refl_iff x |>.mp hx
 
+lemma vertexSet_eq_setOf_dup : V(G) = {x | G.dup x x} := by
+  ext x
+  simp [G.dup_refl_iff]
+
 protected lemma dup.symm (h : G.dup x y) : G.dup y x := G.dup_symm _ _ h
 
 instance : IsSymm α (G.dup) where
