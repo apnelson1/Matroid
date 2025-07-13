@@ -94,6 +94,11 @@ structure IsLabelSubgraph (H G : Graph α β) : Prop where
 /-- `H ≤l G` means that `H` is a label subgraph of `G`. -/
 scoped infixl:50 " ≤l " => Graph.IsLabelSubgraph
 
+lemma isLabelSubgraph_refl (G : Graph α β) : G ≤l G := ⟨le_rfl, fun _ _ hxy _ ↦ hxy.right_mem⟩
+
+instance : IsRefl (Graph α β) IsLabelSubgraph where
+  refl G := isLabelSubgraph_refl G
+
 lemma isLabelSubgraph_of_le [G.LabelUnique] (h : H ≤ G) : H ≤l G where
   le := h
   dup_closed _ _ hxy hx := hxy.eq ▸ hx
@@ -146,6 +151,14 @@ lemma IsLabelSubgraph.vertexSet_mono (h : H ≤l G) : V(H) ⊆ V(G) := Graph.ver
 
 lemma IsLabelSubgraph.edgeSet_mono (h : H ≤l G) : E(H) ⊆ E(G) := Graph.edgeSet_mono h.le
 
+lemma IsLabelSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤l G₂) (h₂ : G₂ ≤l G₃) : G₁ ≤l G₃ where
+  le := h₁.le.trans h₂.le
+  dup_closed _ _ hxy hx :=
+    h₁.dup_closed (hxy.of_isLabelSubgraph_of_mem h₂ <| h₁.vertexSet_mono hx) hx
+
+instance : IsTrans (Graph α β) IsLabelSubgraph where
+  trans _ _ _ := IsLabelSubgraph.trans
+
 lemma exists_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     ∃ u v, G.IsLink e u v ∧ H.IsLink e u v := by
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
@@ -191,7 +204,11 @@ lemma le_iff [G.LabelUnique] [H.LabelUnique] :
     H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨vertexSet_mono h, h.2⟩, fun h ↦ ⟨fun _ _ hxH _ => by simp [hxH, h.1 hxH], h.2⟩⟩
 
-lemma isLink_iff_isLink_of_le_of_mem (hlle : H ≤l G) (he : e ∈ E(H)) :
+lemma isLink_iff_isLink_of_le_of_mem_mem (hle : H ≤ G) (he : e ∈ E(H)) (hx : x ∈ V(H))
+    (hy : y ∈ V(H)) : G.IsLink e x y ↔ H.IsLink e x y :=
+  ⟨(·.of_le_of_mem_mem hle he hx hy), (hle.isLink_of_isLink ·)⟩
+
+lemma isLink_iff_isLink_of_isLabelSubgraph_of_mem (hlle : H ≤l G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
   ⟨(·.of_isLabelSubgraph_of_mem hlle he), (·.of_le hlle.le)⟩
 
