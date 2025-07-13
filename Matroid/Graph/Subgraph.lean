@@ -44,232 +44,295 @@ lemma copy_eq_self (G : Graph α β) {dup : α → α → Prop} {E : Set β} {Is
     G.copy hdup hE h_isLink = G := by
   ext <;> simp_all
 
-/-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
-structure IsSubgraph (H G : Graph α β) : Prop where
-  dup_iff : ∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(H) → (H.dup x y ↔ G.dup x y)
-  isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
-
-/-- The subgraph order is a partial order on graphs. -/
-instance : PartialOrder (Graph α β) where
-  le := IsSubgraph
-  le_refl _ := ⟨by simp, by simp⟩
-  le_trans _ _ _ h₁ h₂ :=
-    ⟨fun x y hxH hyH => (by rw [h₁.dup_iff hxH hyH, h₂.dup_iff
-      (by rwa [dup_refl_iff, ← h₁.dup_iff hxH hxH, ← dup_refl_iff])
-      (by rwa [dup_refl_iff, ← h₁.dup_iff hyH hyH, ← dup_refl_iff])]), fun _ _ _ h ↦ h₂.2 (h₁.2 h)⟩
-  le_antisymm G H h₁ h₂ := by
-    refine Graph.ext ?_
-      fun e x y ↦ ⟨fun a ↦ h₁.isLink_of_isLink a, fun a ↦ h₂.isLink_of_isLink a⟩
-    ext x y
-    by_cases hx : x ∈ V(G)
-    · by_cases hy : y ∈ V(G)
-      · exact h₁.dup_iff hx hy
-      simp only [not_dup_of_not_mem_right hy, false_iff]
-      contrapose! hy
-      rw [h₂.dup_iff hy.left_mem hy.right_mem] at hy
-      exact hy.symm.left_mem
-    simp only [not_dup_of_not_mem_left hx, false_iff]
-    contrapose! hx
-    rw [h₂.dup_iff hx.left_mem hx.right_mem] at hx
-    exact hx.left_mem
-
-lemma dup.of_le (h : H.dup x y) (hle : H ≤ G) : G.dup x y := by
-  rwa [← hle.dup_iff h.left_mem h.right_mem]
-
-lemma dup.of_le_of_mem (h : G.dup x y) (hle : H ≤ G) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
-    H.dup x y := by rwa [hle.dup_iff hx hy]
-
-lemma not_dup_of_le (h : ¬ G.dup x y) (hle : H ≤ G) : ¬ H.dup x y :=
-  fun h' ↦ h (h'.of_le hle)
-
-lemma not_dup_of_le_of_mem (h : ¬ H.dup x y) (hle : H ≤ G) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
-    ¬ G.dup x y := fun h' ↦ h (h'.of_le_of_mem hle hx hy)
-
-/-- A label subgraph of `G` is a subgraph where each vertex retains all of its labels. -/
-@[mk_iff]
+/-- `foo H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
 structure IsLabelSubgraph (H G : Graph α β) : Prop where
-  le : H ≤ G
-  dup_closed : ∀ ⦃x y⦄, G.dup x y → x ∈ V(H) → y ∈ V(H)
+  dup_iff : ∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(H) → (G.dup x y ↔ H.dup x y)
+  isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 /-- `H ≤l G` means that `H` is a label subgraph of `G`. -/
 scoped infixl:50 " ≤l " => Graph.IsLabelSubgraph
 
-lemma isLabelSubgraph_refl (G : Graph α β) : G ≤l G := ⟨le_rfl, fun _ _ hxy _ ↦ hxy.right_mem⟩
+lemma isLabelSubgraph_rfl {G : Graph α β} : G ≤l G := ⟨by simp, by simp⟩
 
 instance : IsRefl (Graph α β) IsLabelSubgraph where
-  refl G := isLabelSubgraph_refl G
+  refl _ := isLabelSubgraph_rfl
 
-lemma isLabelSubgraph_of_le [G.LabelUnique] (h : H ≤ G) : H ≤l G where
-  le := h
-  dup_closed _ _ hxy hx := hxy.eq ▸ hx
-
-lemma dup.of_isLabelSubgraph_of_mem (hdup : G.dup x y) (hlle : H ≤l G) (hx : x ∈ V(H)) :
-    H.dup x y := (hlle.le.dup_iff hx (hlle.dup_closed hdup hx)).mpr hdup
-
-lemma IsLabelSubgraph.dup_iff_dup_of_mem (hlle : H ≤l G) (hx : x ∈ V(H)) :
-    G.dup x y ↔ H.dup x y :=
-  ⟨fun h => h.of_isLabelSubgraph_of_mem hlle hx, (·.of_le hlle.le)⟩
-
-lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
-  hle.2 h
-
-lemma LabelUnique.of_le (hle : H ≤ G) [G.LabelUnique] : H.LabelUnique where
-  labelUniqueAt _ _ hdup := (hdup.of_le hle).eq
-
-lemma IsLink.of_le_of_mem_mem (h : G.IsLink e x y) (hle : H ≤ G) (he : e ∈ E(H)) (hx : x ∈ V(H))
-    (hy : y ∈ V(H)) : H.IsLink e x y := by
-  obtain ⟨u, v, hl⟩ := exists_isLink_of_mem_edgeSet he
-  obtain ⟨hxu, hyv⟩ | ⟨hxv, hyu⟩ := h.dup_and_dup_or_dup_and_dup <| hle.isLink_of_isLink hl
-  · have hxu' := hxu.of_le_of_mem hle hx hl.left_mem
-    have hyv' := hyv.of_le_of_mem hle hy hl.right_mem
-    rwa [hxu'.isLink_left, hyv'.isLink_right]
-  · have hxv' := hxv.of_le_of_mem hle hx hl.right_mem
-    have hyu' := hyu.of_le_of_mem hle hy hl.left_mem
-    rwa [hxv'.isLink_left, hyu'.isLink_right, isLink_comm]
-
-lemma IsLink.of_isLabelSubgraph_of_mem (h : G.IsLink e x y) (hlle : H ≤l G) (he : e ∈ E(H)) :
-    H.IsLink e x y := by
-  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
-  obtain ⟨hux, hvy⟩ | ⟨huy, hvx⟩ := (huv.of_le hlle.le).dup_and_dup_or_dup_and_dup h
-  · rw [hlle.dup_iff_dup_of_mem huv.left_mem] at hux
-    rw [hlle.dup_iff_dup_of_mem huv.right_mem] at hvy
-    rwa [hux.symm.isLink_left, hvy.symm.isLink_right]
-  · rw [hlle.dup_iff_dup_of_mem huv.left_mem] at huy
-    rw [hlle.dup_iff_dup_of_mem huv.right_mem] at hvx
-    rwa [huy.symm.isLink_right, hvx.symm.isLink_left, isLink_comm]
-
-lemma vertexSet_mono (h : H ≤ G) : V(H) ⊆ V(G) := by
-  rintro x hxH
-  rwa [G.dup_refl_iff, ← h.dup_iff hxH hxH, ← H.dup_refl_iff]
-
-lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
-  refine fun e he ↦ ?_
-  obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
-  exact (h'.of_le h).edge_mem
-
-lemma IsLabelSubgraph.vertexSet_mono (h : H ≤l G) : V(H) ⊆ V(G) := Graph.vertexSet_mono h.le
-
-lemma IsLabelSubgraph.edgeSet_mono (h : H ≤l G) : E(H) ⊆ E(G) := Graph.edgeSet_mono h.le
-
-lemma IsLabelSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤l G₂) (h₂ : G₂ ≤l G₃) : G₁ ≤l G₃ where
-  le := h₁.le.trans h₂.le
-  dup_closed _ _ hxy hx :=
-    h₁.dup_closed (hxy.of_isLabelSubgraph_of_mem h₂ <| h₁.vertexSet_mono hx) hx
+lemma IsLabelSubgraph.trans (h₁ : H ≤l G) (h₂ : G ≤l K) : H ≤l K where
+  dup_iff x y hxH hyH := by rw [← h₁.dup_iff hxH hyH, h₂.dup_iff
+    (by rwa [dup_refl_iff, h₁.dup_iff hxH hxH, ← dup_refl_iff])
+    (by rwa [dup_refl_iff, h₁.dup_iff hyH hyH, ← dup_refl_iff])]
+  isLink_of_isLink _ _ _ h := h₂.2 (h₁.2 h)
 
 instance : IsTrans (Graph α β) IsLabelSubgraph where
   trans _ _ _ := IsLabelSubgraph.trans
 
-lemma exists_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
+lemma IsLabelSubgraph.antisymm (h₁ : G ≤l H) (h₂ : H ≤l G) : G = H := by
+  refine Graph.ext ?_ fun e x y ↦ ⟨fun a ↦ h₁.isLink_of_isLink a, fun a ↦ h₂.isLink_of_isLink a⟩
+  ext x y
+  by_cases hx : x ∈ V(G)
+  · by_cases hy : y ∈ V(G)
+    · exact (h₁.dup_iff hx hy).symm
+    simp only [not_dup_of_not_mem_right hy, false_iff]
+    contrapose! hy
+    rw [← h₂.dup_iff hy.left_mem hy.right_mem] at hy
+    exact hy.symm.left_mem
+  simp only [not_dup_of_not_mem_left hx, false_iff]
+  contrapose! hx
+  rw [← h₂.dup_iff hx.left_mem hx.right_mem] at hx
+  exact hx.left_mem
+
+instance : IsAntisymm (Graph α β) IsLabelSubgraph where
+  antisymm _ _ := IsLabelSubgraph.antisymm
+
+lemma dup.of_isLabelSubgraph (h : H.dup x y) (hlle : H ≤l G) : G.dup x y := by
+  rwa [hlle.dup_iff h.left_mem h.right_mem]
+alias IsLabelSubgraph.dup := dup.of_isLabelSubgraph
+
+lemma dup.of_isLabelSubgraph_of_mem (h : G.dup x y) (hlle : H ≤l G) (hx : x ∈ V(H))
+    (hy : y ∈ V(H)) : H.dup x y := by rwa [← hlle.dup_iff hx hy]
+alias IsLabelSubgraph.dup_of_mem := dup.of_isLabelSubgraph_of_mem
+
+lemma IsLabelSubgraph.not_dup (h : ¬ G.dup x y) (hlle : H ≤l G) : ¬ H.dup x y :=
+  fun h' ↦ h (h'.of_isLabelSubgraph hlle)
+
+lemma IsLabelSubgraph.not_dup_of_mem (h : ¬ H.dup x y) (hlle : H ≤l G)
+    (hx : x ∈ V(H)) (hy : y ∈ V(H)) : ¬ G.dup x y :=
+  fun h' ↦ h (h'.of_isLabelSubgraph_of_mem hlle hx hy)
+
+lemma IsLabelSubgraph.dup_iff_dup_of_mem (hlle : H ≤l G) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
+    G.dup x y ↔ H.dup x y :=
+  ⟨(·.of_isLabelSubgraph_of_mem hlle hx hy), (·.of_isLabelSubgraph hlle)⟩
+
+lemma IsLink.of_isLabelSubgraph (h : H.IsLink e x y) (hlle : H ≤l G) : G.IsLink e x y :=
+  hlle.isLink_of_isLink h
+alias IsLabelSubgraph.isLink := IsLink.of_isLabelSubgraph
+
+lemma LabelUnique.of_isLabelSubgraph (hlle : H ≤l G) [G.LabelUnique] : H.LabelUnique where
+  labelUniqueAt _ _ hdup := (hdup.of_isLabelSubgraph hlle).eq
+
+lemma IsLink.of_isLabelSubgraph_of_mem_mem (h : G.IsLink e x y) (hlle : H ≤l G) (he : e ∈ E(H))
+    (hx : x ∈ V(H)) (hy : y ∈ V(H)) : H.IsLink e x y := by
+  obtain ⟨u, v, hl⟩ := exists_isLink_of_mem_edgeSet he
+  obtain ⟨hxu, hyv⟩ | ⟨hxv, hyu⟩ := h.dup_and_dup_or_dup_and_dup <| hlle.isLink_of_isLink hl
+  · have hxu' := hxu.of_isLabelSubgraph_of_mem hlle hx hl.left_mem
+    have hyv' := hyv.of_isLabelSubgraph_of_mem hlle hy hl.right_mem
+    rwa [hxu'.isLink_left, hyv'.isLink_right]
+  · have hxv' := hxv.of_isLabelSubgraph_of_mem hlle hx hl.right_mem
+    have hyu' := hyu.of_isLabelSubgraph_of_mem hlle hy hl.left_mem
+    rwa [hxv'.isLink_left, hyu'.isLink_right, isLink_comm]
+alias IsLabelSubgraph.isLink_of_mem_mem := IsLink.of_isLabelSubgraph_of_mem_mem
+
+lemma IsLabelSubgraph.isLink_iff_isLink_of_mem_mem (hlle : H ≤l G) (he : e ∈ E(H)) (hx : x ∈ V(H))
+    (hy : y ∈ V(H)) : G.IsLink e x y ↔ H.IsLink e x y :=
+  ⟨(·.of_isLabelSubgraph_of_mem_mem hlle he hx hy), (hlle.isLink_of_isLink ·)⟩
+
+lemma IsLabelSubgraph.vertexSet (hlle : H ≤l G) : V(H) ⊆ V(G) := by
+  rintro x hxH
+  rwa [G.dup_refl_iff, hlle.dup_iff hxH hxH, ← H.dup_refl_iff]
+
+lemma IsLabelSubgraph.edgeSet (hlle : H ≤l G) : E(H) ⊆ E(G) := by
+  rintro e he
+  obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
+  exact (h'.of_isLabelSubgraph hlle).edge_mem
+
+lemma exists_isLink_of_isLabelSubgraph_of_mem_edgeSet (hlle : H ≤l G) (he : e ∈ E(H)) :
     ∃ u v, G.IsLink e u v ∧ H.IsLink e u v := by
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
-  exact ⟨x, y, hle.isLink_of_isLink h', h'⟩
+  exact ⟨x, y, hlle.isLink_of_isLink h', h'⟩
 
-lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
-  (h.choose_spec.of_le hle).inc_left
+lemma isLabelSubgraph_iff : H ≤l G ↔ (∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(H) → (G.dup x y ↔ H.dup x y)) ∧
+    ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
+  ⟨fun h ↦ ⟨h.dup_iff, h.isLink_of_isLink⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
-lemma Inc.of_le_of_mem_mem (h : G.Inc e x) (hle : H ≤ G) (he : e ∈ E(H)) (hx : x ∈ V(H)) :
-    H.Inc e x := by
+lemma isLabelSubgraph_iff_of_LabelUnique [G.LabelUnique] [H.LabelUnique] :
+    H ≤l G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
+  ⟨fun h ↦ ⟨h.vertexSet, h.isLink_of_isLink⟩,
+    fun h ↦ ⟨fun _ _ hxH _ => by simp [hxH, h.1 hxH], h.2⟩⟩
+
+lemma Inc.of_isLabelSubgraph (h : H.Inc e x) (hlle : H ≤l G) : G.Inc e x :=
+  (h.choose_spec.of_isLabelSubgraph hlle).inc_left
+
+lemma Inc.of_isLabelSubgraph_of_mem_mem (h : G.Inc e x) (hlle : H ≤l G) (he : e ∈ E(H))
+    (hx : x ∈ V(H)) : H.Inc e x := by
   obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
-  obtain hxu | hxv := h.dup_or_dup_of_isLink (huv.of_le hle)
-  · rw [← hle.dup_iff hx huv.left_mem] at hxu
+  obtain hxu | hxv := h.dup_or_dup_of_isLink (huv.of_isLabelSubgraph hlle)
+  · rw [hlle.dup_iff hx huv.left_mem] at hxu
     exact ⟨v, huv.dup_left hxu.symm⟩
-  rw [← hle.dup_iff hx huv.right_mem] at hxv
+  rw [hlle.dup_iff hx huv.right_mem] at hxv
   exact ⟨u, huv.symm.dup_left hxv.symm⟩
 
-lemma Inc.of_isLabelSubgraph_of_mem (h : G.Inc e x) (hlle : H ≤l G) (he : e ∈ E(H)) :
-    H.Inc e x := by
-  obtain ⟨y, hy⟩ := h
-  exact (hy.of_isLabelSubgraph_of_mem hlle he).inc_left
-
-lemma exists_inc_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
+lemma exists_inc_of_isLabelSubgraph_of_mem (hlle : H ≤l G) (he : e ∈ E(H)) :
     ∃ u, G.Inc e u ∧ H.Inc e u := by
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
-  exact ⟨x, ⟨y, hle.isLink_of_isLink h'⟩, ⟨y, h'⟩⟩
+  exact ⟨x, ⟨y, hlle.isLink_of_isLink h'⟩, ⟨y, h'⟩⟩
+
+lemma IsLoopAt.of_isLabelSubgraph (h : H.IsLoopAt e x) (hlle : H ≤l G) : G.IsLoopAt e x :=
+  IsLink.of_isLabelSubgraph h hlle
+alias IsLabelSubgraph.isLoopAt := IsLoopAt.of_isLabelSubgraph
+
+lemma IsNonloopAt.of_isLabelSubgraph (h : H.IsNonloopAt e x) (hlle : H ≤l G) :
+    G.IsNonloopAt e x := by
+  obtain ⟨y, hxy, he⟩ := h
+  exact ⟨y, hlle.not_dup_of_mem hxy he.left_mem he.right_mem, he.of_isLabelSubgraph hlle⟩
+alias IsLabelSubgraph.isNonloopAt := IsNonloopAt.of_isLabelSubgraph
+
+lemma Adj.of_isLabelSubgraph (h : H.Adj x y) (hlle : H ≤l G) : G.Adj x y :=
+  (h.choose_spec.of_isLabelSubgraph hlle).adj
+alias IsLabelSubgraph.adj := Adj.of_isLabelSubgraph
+
+lemma IsLabelSubgraph.of_isLabelSubgraph_isLabelSubgraph_subset_subset {H₁ H₂ : Graph α β}
+    (h₁ : H₁ ≤l G) (h₂ : H₂ ≤l G) (hV : V(H₁) ⊆ V(H₂)) (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤l H₂ where
+  dup_iff x y hxH hyH := by rw [← h₁.dup_iff hxH hyH, h₂.dup_iff (hV hxH) (hV hyH)]
+  isLink_of_isLink e x y h :=
+    (h.of_isLabelSubgraph h₁).of_isLabelSubgraph_of_mem_mem h₂
+    (hE h.edge_mem) (hV h.left_mem) (hV h.right_mem)
+
+lemma ext_of_isLabelSubgraph_eq_Set {H₁ H₂ : Graph α β} (h₁ : H₁ ≤l G) (h₂ : H₂ ≤l G)
+    (hV : V(H₁) = V(H₂)) (hE : E(H₁) = E(H₂)) : H₁ = H₂ :=
+  (h₁.of_isLabelSubgraph_isLabelSubgraph_subset_subset h₂ hV.subset hE.subset).antisymm <|
+    (h₂.of_isLabelSubgraph_isLabelSubgraph_subset_subset h₁ hV.symm.subset hE.symm.subset)
+
+/-- A label subgraph of `G` is a subgraph where each vertex retains all of its labels. -/
+@[mk_iff]
+structure IsSubgraph (H G : Graph α β) : Prop extends IsLabelSubgraph H G where
+  dup_closed : ∀ ⦃x y⦄, G.dup x y → x ∈ V(H) → y ∈ V(H)
+
+instance : LE (Graph α β) where
+  le := IsSubgraph
+
+@[simp]
+def isLabelSubgraph_of_le (h : H ≤ G) := h.toIsLabelSubgraph
+
+lemma le_of_isLabelSubgraph [G.LabelUnique] (h : H ≤l G) : H ≤ G where
+  toIsLabelSubgraph := h
+  dup_closed _ _ hxy hx := hxy.eq ▸ hx
+
+lemma dup.of_le (hdup : H.dup x y) (hle : H ≤ G) : G.dup x y :=
+  hdup.of_isLabelSubgraph hle.toIsLabelSubgraph
+
+lemma dup.of_le_of_mem (hdup : G.dup x y) (hle : H ≤ G) (hx : x ∈ V(H)) : H.dup x y :=
+  (hle.toIsLabelSubgraph.dup_iff hx (hle.dup_closed hdup hx)).mp hdup
+
+lemma not_dup_of_le (h : ¬ G.dup x y) (hle : H ≤ G) : ¬ H.dup x y :=
+  fun h' ↦ h (h'.of_le hle)
+
+lemma not_dup_of_le_of_mem (h : ¬ H.dup x y) (hle : H ≤ G) (hx : x ∈ V(H)) : ¬ G.dup x y :=
+  fun h' ↦ h (h'.of_le_of_mem hle hx)
+
+lemma dup_iff_dup_of_le_of_mem (hle : H ≤ G) (hx : x ∈ V(H)) : G.dup x y ↔ H.dup x y :=
+  ⟨(·.of_le_of_mem hle hx), (·.of_le hle)⟩
+
+lemma le_iff : H ≤ G ↔ (∀ ⦃x y⦄, x ∈ V(H) → (G.dup x y ↔ H.dup x y)) ∧
+    ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
+  ⟨fun h ↦ ⟨fun _ _ => dup_iff_dup_of_le_of_mem h, h.isLink_of_isLink⟩,
+    fun h ↦ ⟨⟨fun _ _ hx _ => h.1 hx, fun _ _ _ hl => h.2 hl⟩,
+    fun _ _ hxy hx => (h.1 hx |>.mp hxy).right_mem⟩⟩
+
+lemma dup.mem_iff_mem_of_le (hdup : G.dup x y) (hle : H ≤ G) : x ∈ V(H) ↔ y ∈ V(H) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  on_goal 2 => rw [dup_comm] at hdup
+  all_goals rw [dup_iff_dup_of_le_of_mem hle h] at hdup; exact hdup.right_mem
+
+lemma LabelUnique.of_le (hle : H ≤ G) [G.LabelUnique] : H.LabelUnique where
+  labelUniqueAt _ _ hdup := (hdup.of_le hle).eq
+
+lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
+  hle.isLink_of_isLink h
+
+lemma IsLink.of_le_of_mem (h : G.IsLink e x y) (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e x y := by
+  obtain ⟨u, v, huv⟩ := exists_isLink_of_mem_edgeSet he
+  obtain ⟨hux, hvy⟩ | ⟨huy, hvx⟩ := (huv.of_le hle).dup_and_dup_or_dup_and_dup h
+  · rw [dup_iff_dup_of_le_of_mem hle huv.left_mem] at hux
+    rw [dup_iff_dup_of_le_of_mem hle huv.right_mem] at hvy
+    rwa [hux.symm.isLink_left, hvy.symm.isLink_right]
+  · rw [dup_iff_dup_of_le_of_mem hle huv.left_mem] at huy
+    rw [dup_iff_dup_of_le_of_mem hle huv.right_mem] at hvx
+    rwa [huy.symm.isLink_right, hvx.symm.isLink_left, isLink_comm]
+
+lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
+    G.IsLink e x y ↔ H.IsLink e x y := ⟨(·.of_le_of_mem hle he), (·.of_le hle)⟩
+
+lemma vertexSet_mono (h : H ≤ G) : V(H) ⊆ V(G) := h.toIsLabelSubgraph.vertexSet
+
+lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := h.toIsLabelSubgraph.edgeSet
+
+/-- The subgraph order is a partial order on graphs. -/
+instance : PartialOrder (Graph α β) where
+  le_refl _ := ⟨isLabelSubgraph_rfl, fun _ _ hxy _ ↦ hxy.right_mem⟩
+  le_trans G₁ G₂ G₃ h₁ h₂ :=
+    ⟨h₁.toIsLabelSubgraph.trans h₂.toIsLabelSubgraph,
+    fun x y hdup hx => h₁.dup_closed (hdup.of_le_of_mem h₂ <| vertexSet_mono h₁ hx) hx⟩
+  le_antisymm G H h₁ h₂ := h₁.toIsLabelSubgraph.antisymm h₂.toIsLabelSubgraph
+
+lemma Inc.of_le (h : H.Inc e x) (hle : H ≤ G) : G.Inc e x :=
+  h.of_isLabelSubgraph hle.toIsLabelSubgraph
+
+lemma Inc.of_le_of_mem (h : G.Inc e x) (hle : H ≤ G) (he : e ∈ E(H)) : H.Inc e x :=
+  h.of_isLabelSubgraph_of_mem_mem hle.toIsLabelSubgraph he
+  <| h.choose_spec.of_le_of_mem hle he |>.left_mem
 
 lemma IsLoopAt.of_le (h : H.IsLoopAt e x) (hle : H ≤ G) : G.IsLoopAt e x :=
   IsLink.of_le h hle
 
 lemma IsNonloopAt.of_le (h : H.IsNonloopAt e x) (hle : H ≤ G) : G.IsNonloopAt e x := by
   obtain ⟨y, hxy, he⟩ := h
-  exact ⟨y, not_dup_of_le_of_mem hxy hle he.left_mem he.right_mem, he.of_le hle⟩
+  exact ⟨y, not_dup_of_le_of_mem hxy hle he.left_mem, he.of_le hle⟩
 
 lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
   (h.choose_spec.of_le hle).adj
 
-lemma le_iff_dup : H ≤ G ↔ (∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(H) → (H.dup x y ↔ G.dup x y)) ∧
-    ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
-  ⟨fun h ↦ ⟨h.dup_iff, h.isLink_of_isLink⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+lemma le_of_le_isLabelSubgraph_subset_subset {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G)
+    (hV : V(H₁) ⊆ V(H₂)) (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤ H₂ where
+  toIsLabelSubgraph :=
+    h₁.toIsLabelSubgraph.of_isLabelSubgraph_isLabelSubgraph_subset_subset h₂ hV hE
+  dup_closed _ _ hxy hx := hxy.of_isLabelSubgraph h₂ |>.mem_iff_mem_of_le h₁ |>.mp hx
 
-lemma le_iff [G.LabelUnique] [H.LabelUnique] :
-    H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
-  ⟨fun h ↦ ⟨vertexSet_mono h, h.2⟩, fun h ↦ ⟨fun _ _ hxH _ => by simp [hxH, h.1 hxH], h.2⟩⟩
+lemma le_of_isLabelSubgraph_of_isLabelSubgraph {G₁ : Graph α β} (hHG : H ≤ G) (hHG₁ : H ≤l G₁)
+    (hG₁ : G₁ ≤l G): H ≤ G₁ where
+  toIsLabelSubgraph := hHG₁
+  dup_closed _ _ hxy hx := hHG.dup_closed (hxy.of_isLabelSubgraph hG₁) hx
 
-lemma isLink_iff_isLink_of_le_of_mem_mem (hle : H ≤ G) (he : e ∈ E(H)) (hx : x ∈ V(H))
-    (hy : y ∈ V(H)) : G.IsLink e x y ↔ H.IsLink e x y :=
-  ⟨(·.of_le_of_mem_mem hle he hx hy), (hle.isLink_of_isLink ·)⟩
-
-lemma isLink_iff_isLink_of_isLabelSubgraph_of_mem (hlle : H ≤l G) (he : e ∈ E(H)) :
-    G.IsLink e x y ↔ H.IsLink e x y :=
-  ⟨(·.of_isLabelSubgraph_of_mem hlle he), (·.of_le hlle.le)⟩
-
-lemma le_of_le_le_subset_subset {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hV : V(H₁) ⊆ V(H₂))
-    (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤ H₂ where
-  dup_iff x y hxH hyH := by rw [h₁.dup_iff hxH hyH, h₂.dup_iff (hV hxH) (hV hyH)]
-  isLink_of_isLink e x y h :=
-    (h.of_le h₁).of_le_of_mem_mem h₂ (hE h.edge_mem) (hV h.left_mem) (hV h.right_mem)
-
-lemma ext_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hV : V(H₁) = V(H₂))
-    (hE : E(H₁) = E(H₂)) : H₁ = H₂ :=
-  (le_of_le_le_subset_subset h₁ h₂ hV.subset hE.subset).antisymm <|
-    (le_of_le_le_subset_subset h₂ h₁ hV.symm.subset hE.symm.subset)
-
-lemma IsLabelSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤l G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
-    H ≤l G₁ where
-  le := hHG₁
-  dup_closed _ _ hxy hx := hHG.dup_closed (hxy.of_le hG₁) hx
-
-lemma isLink_eq_of_isLabelSubgraph (hlle : H ≤l G) (he : e ∈ E(H)) : H.IsLink e = G.IsLink e := by
+lemma isLink_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLink e = G.IsLink e := by
   ext x y
-  exact ⟨fun h ↦ h.of_le hlle.le, fun h ↦ h.of_isLabelSubgraph_of_mem hlle he⟩
+  exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle he⟩
 
-lemma isLink_eqOn_of_isLabelSubgraph (hlle : H ≤l G) : EqOn H.IsLink G.IsLink E(H) :=
-  fun _ ↦ isLink_eq_of_isLabelSubgraph hlle
+lemma isLink_eqOn_of_le (hle : H ≤ G) : EqOn H.IsLink G.IsLink E(H) :=
+  fun _ ↦ isLink_eq_of_le hle
 
-lemma inc_eq_of_isLabelSubgraph (hlle : H ≤l G) (he : e ∈ E(H)) : H.Inc e = G.Inc e := by
+lemma inc_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.Inc e = G.Inc e := by
   unfold Graph.Inc
-  rw [isLink_eq_of_isLabelSubgraph hlle he]
+  rw [isLink_eq_of_le hle he]
 
-lemma inc_eqOn_of_isLabelSubgraph (hlle : H ≤l G) : EqOn H.Inc G.Inc E(H) :=
-  fun _ ↦ inc_eq_of_isLabelSubgraph hlle
+lemma inc_eqOn_of_le (hle : H ≤ G) : EqOn H.Inc G.Inc E(H) :=
+  fun _ ↦ inc_eq_of_le hle
 
-lemma isLoopAt_eq_of_isLabelSubgraph (hlle : H ≤l G) (he : e ∈ E(H)) :
-    H.IsLoopAt e = G.IsLoopAt e := by
+lemma isLoopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.IsLoopAt e = G.IsLoopAt e := by
   unfold Graph.IsLoopAt
-  rw [isLink_eq_of_isLabelSubgraph hlle he]
+  rw [isLink_eq_of_le hle he]
 
-lemma isLoopAt_eqOn_of_isLabelSubgraph (hlle : H ≤l G) : EqOn H.IsLoopAt G.IsLoopAt E(H) :=
-  fun _ ↦ isLoopAt_eq_of_isLabelSubgraph hlle
+lemma isLoopAt_eqOn_of_le (hle : H ≤ G) : EqOn H.IsLoopAt G.IsLoopAt E(H) :=
+  fun _ ↦ isLoopAt_eq_of_le hle
 
-lemma isNonloopAt_eq_of_isLabelSubgraph (hlle : H ≤l G) (he : e ∈ E(H)) :
+lemma isNonloopAt_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) :
     H.IsNonloopAt e = G.IsNonloopAt e := by
   ext x
   refine exists_congr fun y ↦ ?_
-  simp only [isLink_eq_of_isLabelSubgraph hlle he, and_congr_left_iff, not_iff_not]
-  exact fun hl => hlle.le.dup_iff (hl.of_isLabelSubgraph_of_mem hlle he).left_mem
-    (hl.of_isLabelSubgraph_of_mem hlle he).right_mem
+  simp only [isLink_eq_of_le hle he, and_congr_left_iff, not_iff_not]
+  exact fun hl => hle.dup_iff (hl.of_le_of_mem hle he).left_mem
+    (hl.of_le_of_mem hle he).right_mem |>.symm
 
-lemma isNonloopAt_eqOn_of_isLabelSubgraph (hlle : H ≤l G) :
-    EqOn H.IsNonloopAt G.IsNonloopAt E(H) :=
-  fun _ ↦ isNonloopAt_eq_of_isLabelSubgraph hlle
+lemma isNonloopAt_eqOn_of_le (hle : H ≤ G) : EqOn H.IsNonloopAt G.IsNonloopAt E(H) :=
+  fun _ ↦ isNonloopAt_eq_of_le hle
 
 /- TODO : Is is reasonable to only keep the `EqOn` versions of the above?
 Also, what about functional `≤` versions? -/
 
 lemma vertexSet_ssubset_or_edgeSet_ssubset_of_lt (h : G < H) : V(G) ⊂ V(H) ∨ E(G) ⊂ E(H) := by
   rw [lt_iff_le_and_ne] at h
-  simp only [ssubset_iff_subset_ne, vertexSet_mono h.1, ne_eq, true_and, edgeSet_mono h.1]
-  by_contra! heq
-  exact h.2 <| ext_of_le_le h.1 le_rfl heq.1 heq.2
+  obtain ⟨hle, hne⟩ := h
+  simp only [ssubset_iff_subset_ne, vertexSet_mono hle, ne_eq, true_and, edgeSet_mono hle]
+  contrapose! hne
+  exact ext_of_isLabelSubgraph_eq_Set hle.toIsLabelSubgraph isLabelSubgraph_rfl hne.1 hne.2
 
 lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     V(G).ncard + E(G).ncard < V(H).ncard + E(H).ncard := by
@@ -285,8 +348,6 @@ lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
 
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
   ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
-
-
 
 
 /-- Restrict `G : Graph α β` to the edges in a set `E₀` without removing vertices -/
@@ -324,6 +385,7 @@ lemma edgeRestrict_dup (G : Graph α β) (E₀ : Set β) (x y : α) : (G ↾ E�
 lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   dup_iff x y hx := by simp [edgeRestrict]
   isLink_of_isLink := by simp
+  dup_closed x y hxy hx := hxy.right_mem
 
 instance [G.LabelUnique] : LabelUnique (G ↾ F) := LabelUnique.of_le (edgeRestrict_le)
 
@@ -343,15 +405,16 @@ lemma edgeRestrict_isNonloopAt_iff : (G ↾ F).IsNonloopAt e x ↔ G.IsNonloopAt
 lemma edgeRestrict_mono_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ ⊆ F) : G ↾ F₀ ≤ G ↾ F where
   dup_iff x y hx := by simp [edgeRestrict]
   isLink_of_isLink _ _ _ := fun h ↦ ⟨hss h.1, h.2⟩
+  dup_closed x y hxy hx := hxy.right_mem
 
-lemma edgeRestrict_mono_left (h : H ≤ G) (F : Set β) : H ↾ F ≤ G ↾ F := by
-  refine G.le_of_le_le_subset_subset (edgeRestrict_le.trans h) (by simp)
-    (by simpa using vertexSet_mono h) ?_
-  simp [inter_subset_right.trans (edgeSet_mono h)]
+lemma edgeRestrict_mono_left (h : H ≤ G) (F : Set β) : H ↾ F ≤ G ↾ F :=
+  le_of_le_isLabelSubgraph_subset_subset (edgeRestrict_le.trans h)
+    (edgeRestrict_le).toIsLabelSubgraph (by simpa using vertexSet_mono h)
+    <| by simp [inter_subset_right.trans (edgeSet_mono h)]
 
 @[simp]
 lemma edgeRestrict_inter_edgeSet (G : Graph α β) (F : Set β) : G ↾ (F ∩ E(G)) = G ↾ F :=
-  ext_of_le_le (G := G) (by simp) (by simp) (by simp) (by simp)
+  ext_of_isLabelSubgraph_eq_Set (G := G) (by simp) (by simp) (by simp) (by simp)
 
 @[simp]
 lemma edgeRestrict_edgeSet_inter (G : Graph α β) (F : Set β) : G ↾ (E(G) ∩ F) = G ↾ F := by
@@ -359,22 +422,22 @@ lemma edgeRestrict_edgeSet_inter (G : Graph α β) (F : Set β) : G ↾ (E(G) �
 
 @[simp]
 lemma edgeRestrict_self (G : Graph α β) : G ↾ E(G) = G :=
-  ext_of_le_le (G := G) (by simp) (by simp) rfl (by simp)
+  ext_of_isLabelSubgraph_eq_Set (G := G) (by simp) (by simp) rfl (by simp)
 
 lemma edgeRestrict_of_superset (G : Graph α β) (hF : E(G) ⊆ F) : G ↾ F = G := by
   rw [← edgeRestrict_inter_edgeSet, inter_eq_self_of_subset_right hF, edgeRestrict_self]
 
 @[simp]
 lemma edgeRestrict_edgeRestrict (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ F₁) ↾ F₂ = G ↾ F₁ ∩ F₂ := by
-  refine G.ext_of_le_le ?_ (by simp) (by simp) ?_
-  · exact edgeRestrict_le.trans (by simp)
+  refine G.ext_of_isLabelSubgraph_eq_Set ?_ (by simp) (by simp) ?_
+  · exact (edgeRestrict_le).toIsLabelSubgraph.trans (by simp)
   simp only [edgeRestrict_edgeSet]
   rw [← inter_assoc, inter_comm F₂]
 
 @[simp]
 lemma le_edgeRestrict_iff : H ≤ (G ↾ F) ↔ H ≤ G ∧ E(H) ⊆ F :=
   ⟨fun h ↦ ⟨h.trans (by simp), (edgeSet_mono h).trans (by simp)⟩,
-    fun h ↦ le_of_le_le_subset_subset h.1 (by simp) (by simpa using vertexSet_mono h.1)
+    fun h ↦ le_of_le_isLabelSubgraph_subset_subset h.1 (by simp) (by simpa using vertexSet_mono h.1)
     <| subset_inter h.2 (edgeSet_mono h.1)⟩
 
 /-- Delete a set `F` of edges from `G`. This is a special case of `edgeRestrict`,
@@ -497,23 +560,6 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β where
 /-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
 notation:max G:1000 "[" S "]" => Graph.induce G S
 
-lemma induce_le (hX : X ⊆ V(G)) : G[X] ≤ G := by
-  refine ⟨fun x y hxX hyX => ⟨fun ⟨hxX, hyX, hor⟩ => ?_, fun h => ⟨hxX, hyX, Or.inl h⟩⟩,
-    fun _ _ _ h ↦ h.1⟩
-  apply hor.elim id
-  rintro rfl
-  rw [← G.dup_refl_iff]
-  exact hX hxX
-
-instance [G.LabelUnique] : LabelUnique (G[X]) where
-  labelUniqueAt x y hdup := by
-    rw [induce_dup, dup_iff_eq] at hdup
-    obtain ⟨-, -, (⟨rfl, -⟩ | rfl)⟩ := hdup <;> rfl
-
-@[simp]
-lemma induce_le_iff : G[X] ≤ G ↔ X ⊆ V(G) :=
-  ⟨vertexSet_mono, induce_le⟩
-
 @[simp]
 lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X := Iff.rfl
 
@@ -552,46 +598,63 @@ lemma induce_induce (G : Graph α β) [G.LabelUnique] (X Y : Set α) : G[X][Y] =
   rw [he.mem_induce_iff]
   tauto
 
-lemma induce_mono_right (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤ G[Y] where
+lemma induce_isLabelSubgraph (hX : X ⊆ V(G)) : G[X] ≤l G where
+  dup_iff x y hx hy := by
+    simp_all only [induce_vertexSet, induce_dup, true_and, iff_self_or]
+    rintro rfl
+    exact (G.dup_refl_iff x).mp <| hX hx
+  isLink_of_isLink e x y h := h.1
+
+instance [G.LabelUnique] : LabelUnique (G[X]) where
+  labelUniqueAt x y hdup := by
+    rw [induce_dup, dup_iff_eq] at hdup
+    obtain ⟨-, -, (⟨rfl, -⟩ | rfl)⟩ := hdup <;> rfl
+
+@[simp]
+lemma induce_isLabelSubgraph_iff : G[X] ≤l G ↔ X ⊆ V(G) :=
+  ⟨IsLabelSubgraph.vertexSet, induce_isLabelSubgraph⟩
+
+lemma induce_mono_right (G : Graph α β) (hXY : X ⊆ Y) : G[X] ≤l G[Y] where
   dup_iff x y hx hy := by
     simp only [induce_vertexSet] at hx hy
     simp [hx, hy, hXY hx, hXY hy]
   isLink_of_isLink _ _ _ := fun ⟨h, h1, h2⟩ ↦ ⟨h, hXY h1, hXY h2⟩
 
 @[simp]
-lemma induce_mono_right_iff (G : Graph α β) : G[X] ≤ G[Y] ↔ X ⊆ Y :=
-  ⟨vertexSet_mono, induce_mono_right G⟩
+lemma induce_mono_right_iff (G : Graph α β) : G[X] ≤l G[Y] ↔ X ⊆ Y :=
+  ⟨IsLabelSubgraph.vertexSet, induce_mono_right G⟩
 
-lemma induce_mono_left [G.LabelUnique] (h : H ≤ G) (X : Set α) : H[X] ≤ G[X] := by
-  have := LabelUnique.of_le h
-  rw [le_iff]
-  refine ⟨le_rfl, fun e x y ↦ ?_⟩
-  simp only [induce_isLink_iff, and_imp]
-  exact fun hl hx hy => ⟨hl.of_le h, hx, hy⟩
+lemma induce_mono_left [G.LabelUnique] (h : H ≤l G) (X : Set α) : H[X] ≤l G[X] := by
+  have := LabelUnique.of_isLabelSubgraph h
+  rw [isLabelSubgraph_iff]
+  exact ⟨by simp, fun e x y ⟨hl, hx, hy⟩ => ⟨hl.of_isLabelSubgraph h, hx, hy⟩⟩
 
-lemma induce_mono [G.LabelUnique] (h : H ≤ G) (hXY : X ⊆ Y) : H[X] ≤ G[Y] :=
+lemma induce_mono [G.LabelUnique] (h : H ≤l G) (hXY : X ⊆ Y) : H[X] ≤l G[Y] :=
   (induce_mono_left h X).trans (G.induce_mono_right hXY)
 
 @[simp]
 lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
-  refine G.ext_of_le_le (by simp) (by simp) rfl <| Set.ext fun e ↦
+  refine G.ext_of_isLabelSubgraph_eq_Set (by simp) (by simp) rfl <| Set.ext fun e ↦
     ⟨fun ⟨_, _, h⟩ ↦ h.1.edge_mem, fun h ↦ ?_⟩
   obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
   exact ⟨x, y, h, h.left_mem, h.right_mem⟩
 
 lemma le_induce_of_le_of_subset (h : H ≤ G) (hV : V(H) ⊆ X) : H ≤ G[X] where
   dup_iff x y hx hy := by
-    simp only [h.dup_iff hx hy, induce_dup, hV hx, hV hy, true_and, iff_self_or]
+    simp only [induce_dup, hV hx, hV hy, h.dup_iff hx hy, true_and, or_iff_left_iff_imp]
     rintro rfl
-    rw [← G.dup_refl_iff]
-    exact vertexSet_mono h hx
+    rwa [← H.dup_refl_iff]
   isLink_of_isLink _ _ _ h' := ⟨h'.of_le h, hV h'.left_mem, hV h'.right_mem⟩
+  dup_closed x y hxy hx := by
+    obtain ⟨hxX, hyX, hdup | rfl⟩ := hxy
+    · exact h.dup_closed hdup hx
+    exact hx
 
 lemma le_induce_self (h : H ≤ G) : H ≤ G[V(H)] :=
   le_induce_of_le_of_subset h rfl.subset
 
-lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
-  ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
+-- lemma le_induce_iff (hX : X ⊆ V(G)) : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X :=
+--   ⟨fun h ↦ ⟨h.trans (by simpa), vertexSet_mono h⟩, fun h ↦ le_induce_of_le_of_subset h.1 h.2⟩
 
 @[simp]
 lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ↾ F)[X] = G[X] ↾ F := by
@@ -644,10 +707,10 @@ lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
   simp [Adj]
 
 @[simp]
-lemma vertexDelete_le : G - X ≤ G :=
-  G.induce_le diff_subset
+lemma vertexDelete_isLabelSubgraph : G - X ≤l G := G.induce_isLabelSubgraph diff_subset
 
-instance [G.LabelUnique] : LabelUnique (G - X) := LabelUnique.of_le (vertexDelete_le)
+instance [G.LabelUnique] : LabelUnique (G - X) :=
+  LabelUnique.of_isLabelSubgraph (vertexDelete_isLabelSubgraph)
 
 lemma IsLink.mem_vertexDelete_iff [G.LabelUnique] {X : Set α} (hG : G.IsLink e x y) :
     e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
@@ -657,8 +720,10 @@ lemma IsLink.mem_vertexDelete_iff [G.LabelUnique] {X : Set α} (hG : G.IsLink e 
 lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X where
   dup_iff x y hx hy := by simp [h.dup_iff hx.1 hy.1]
   isLink_of_isLink _ _ _ h' := by simp_all [h.isLink_of_isLink h'.1]
+  dup_closed x y hxy hx :=
+    ⟨h.dup_closed (vertexDelete_isLabelSubgraph.dup hxy) hx.1, hxy.right_mem.2⟩
 
-lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤ G - X :=
+lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤l G - X :=
   induce_mono_right _ <| diff_subset_diff_right hXY
 
 lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
@@ -684,18 +749,17 @@ lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y =
 lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
   rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
 
-@[simp]
-lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
-  simp only [vertexDelete_def, le_induce_iff diff_subset, subset_diff, and_congr_right_iff,
-    and_iff_right_iff_imp]
-  exact fun h _ ↦ vertexSet_mono h
+-- @[simp]
+-- lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
+--   simp only [vertexDelete_def]
+--   exact fun h _ ↦ vertexSet_mono h
 
 /-! ### Spanning Subgraphs -/
 
 /-- A spanning subgraph of `G` is a subgraph of `G` with the same vertex set. -/
 @[mk_iff]
 structure IsSpanningSubgraph (H G : Graph α β) : Prop where
-  le : H ≤ G
+  isLabelSubgraph : H ≤l G
   vertexSet_eq : V(H) = V(G)
 
 /-- `H ≤s G` means that `H` is a spanning subgraph of `G`. -/
@@ -709,26 +773,25 @@ lemma edgeRestrict_isSpanningSubgraph : G ↾ F ≤s G :=
 lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
   ⟨by simp, by simp [vertexSet_eq_setOf_dup]⟩
 
-lemma IsSpanningSubgraph.isLabelSubgraph (hsle : H ≤s G) : H ≤l G where
-  le := hsle.le
+lemma IsSpanningSubgraph.le (hsle : H ≤s G) : H ≤ G where
+  toIsLabelSubgraph := hsle.isLabelSubgraph
   dup_closed _ _ hxy _ := hsle.vertexSet_eq ▸ hxy.right_mem
 
 lemma dup.of_isSpanningSubgraph (hdup : G.dup x y) (hsle : H ≤s G) : H.dup x y :=
-  hdup.of_isLabelSubgraph_of_mem hsle.isLabelSubgraph (hsle.vertexSet_eq ▸ hdup.left_mem)
+  hdup.of_le_of_mem hsle.le (hsle.vertexSet_eq ▸ hdup.left_mem)
 
 lemma IsSpanningSubgraph.dup_iff_dup (hsle : H ≤s G) : G.dup x y ↔ H.dup x y :=
   ⟨(·.of_isSpanningSubgraph hsle), (·.of_le hsle.le)⟩
 
-lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
+lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤l K) (hKG : K ≤l G) :
     H ≤s K where
-  le := hHK
-  vertexSet_eq := (vertexSet_mono hHK).antisymm ((vertexSet_mono hKG).trans_eq h.vertexSet_eq.symm)
+  isLabelSubgraph := hHK
+  vertexSet_eq := hHK.vertexSet.antisymm (hKG.vertexSet.trans_eq h.vertexSet_eq.symm)
 
-lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (hsle : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
+lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (hsle : H ≤s G) (hHK : H ≤l K) (hKG : K ≤l G) :
     K ≤s G where
-  le := hKG
-  vertexSet_eq := (vertexSet_mono hKG).antisymm <|
-    hsle.vertexSet_eq.symm.le.trans <| vertexSet_mono hHK
+  isLabelSubgraph := hKG
+  vertexSet_eq := hKG.vertexSet.antisymm <| hsle.vertexSet_eq.symm.le.trans hHK.vertexSet
 
 lemma IsSpanningSubgraph.labelUnique [H.LabelUnique] (hsle : H ≤s G) : G.LabelUnique where
   labelUniqueAt x y hdup := by
@@ -740,7 +803,7 @@ lemma IsSpanningSubgraph.labelUnique [H.LabelUnique] (hsle : H ≤s G) : G.Label
 /-- An induced subgraph of `G` is a subgraph `H` of `G` such that every link of `G`
 involving two vertices of `H` is also a link of `H`. -/
 structure IsInducedSubgraph (H G : Graph α β) : Prop where
-  le : H ≤ G
+  isLabelSubgraph : H ≤l G
   isLink_of_mem_mem : ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y
 
 /-- `H ≤i G` means that `H` is an induced subgraph of `G`. -/
@@ -748,12 +811,12 @@ scoped infixl:50 " ≤i " => Graph.IsInducedSubgraph
 
 lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤i G₂) (h₂₃ : G₂ ≤i G₃) :
     G₁ ≤i G₃ :=
-  ⟨h₁₂.le.trans h₂₃.le, fun _ _ _ h hx hy ↦ h₁₂.isLink_of_mem_mem
-    (h₂₃.isLink_of_mem_mem h (vertexSet_mono h₁₂.le hx) (vertexSet_mono h₁₂.le hy))
+  ⟨h₁₂.isLabelSubgraph.trans h₂₃.isLabelSubgraph, fun _ _ _ h hx hy ↦ h₁₂.isLink_of_mem_mem
+    (h₂₃.isLink_of_mem_mem h (h₁₂.isLabelSubgraph.vertexSet hx) (h₁₂.isLabelSubgraph.vertexSet hy))
     hx hy⟩
 
 lemma isInducedSubgraph_iff :
-    H ≤i G ↔ H ≤ G ∧ ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y :=
+    H ≤i G ↔ H ≤l G ∧ ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 lemma induce_isInducedSubgraph (hX : X ⊆ V(G)) : G[X] ≤i G :=
@@ -764,17 +827,17 @@ lemma induce_isInducedSubgraph_iff : G[X] ≤i G ↔ X ⊆ V(G) := by
   simp +contextual [isInducedSubgraph_iff]
 
 lemma IsInducedSubgraph.induce_vertexSet_eq (h : H ≤i G) : G[V(H)] = H := by
-  have hle : G[V(H)] ≤ G := by simp [vertexSet_mono h.le]
-  refine G.ext_of_le_le hle h.le rfl <| Set.ext fun e ↦ ?_
+  have hle : G[V(H)] ≤l G := by simp [h.isLabelSubgraph.vertexSet]
+  refine G.ext_of_isLabelSubgraph_eq_Set hle h.isLabelSubgraph rfl <| Set.ext fun e ↦ ?_
   simp only [induce_edgeSet, mem_setOf_eq]
   refine ⟨fun ⟨x, y, h', hx, hy⟩ ↦ (h.isLink_of_mem_mem h' hx hy).edge_mem, fun h' ↦ ?_⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h'
-  exact ⟨x, y, hxy.of_le h.le, hxy.left_mem, hxy.right_mem⟩
+  exact ⟨x, y, hxy.of_isLabelSubgraph h.isLabelSubgraph, hxy.left_mem, hxy.right_mem⟩
 
 /-- An induced subgraph is precisely a subgraph of the form `G[X]` for some `X ⊆ V(G)`.
 This version of the lemma can be used with `subst` or `obtain rfl` to replace `H` with `G[X]`. -/
 lemma IsInducedSubgraph.exists_eq_induce (h : H ≤i G) : ∃ X ⊆ V(G), H = G[X] :=
-  ⟨V(H), vertexSet_mono h.le, h.induce_vertexSet_eq.symm⟩
+  ⟨V(H), h.isLabelSubgraph.vertexSet, h.induce_vertexSet_eq.symm⟩
 
 lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
     H.Adj x y := by
@@ -789,39 +852,39 @@ lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G)
 
 /-- A closed subgraph of `G` is a union of components of `G`.  -/
 @[mk_iff]
-structure IsClosedSubgraph (H G : Graph α β) : Prop extends H ≤l G where
+structure IsClosedSubgraph (H G : Graph α β) : Prop extends H ≤ G where
   closed : ∀ ⦃e x⦄, G.Inc e x → x ∈ V(H) → e ∈ E(H)
 
 /-- `H ≤c G` means that `H` is a closed subgraph of `G`. i.e. a union of components of `G`. -/
 scoped infixl:50 " ≤c " => Graph.IsClosedSubgraph
 
-lemma IsClosedSubgraph.vertexSet_mono (h : H ≤c G) : V(H) ⊆ V(G) := Graph.vertexSet_mono h.le
+lemma IsClosedSubgraph.vertexSet (h : H ≤c G) : V(H) ⊆ V(G) := h.toIsLabelSubgraph.vertexSet
 
-lemma IsClosedSubgraph.edgeSet_mono (h : H ≤c G) : E(H) ⊆ E(G) := Graph.edgeSet_mono h.le
+lemma IsClosedSubgraph.edgeSet (h : H ≤c G) : E(H) ⊆ E(G) := h.toIsLabelSubgraph.edgeSet
+
+lemma IsClosedSubgraph.le (h : H ≤c G) : H ≤ G := h.toIsSubgraph
 
 lemma IsClosedSubgraph.isInducedSubgraph (h : H ≤c G) : H ≤i G where
-  le := h.le
-  isLink_of_mem_mem _ _ _ he hx hy := he.of_le_of_mem_mem h.le (h.closed he.inc_left hx) hx hy
+  isLabelSubgraph := h.toIsLabelSubgraph
+  isLink_of_mem_mem _ _ _ he hx _ := he.of_le_of_mem h.le (h.closed he.inc_left hx)
 
 lemma IsClosedSubgraph.isLabelSubgraph (h : H ≤c G) : H ≤l G := h.toIsLabelSubgraph
 
 lemma dup.of_isClosedSubgraph (h : H ≤c G) (hdup : H.dup x y) : G.dup x y := hdup.of_le h.le
+alias IsClosedSubgraph.dup := dup.of_isClosedSubgraph
 
 lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G₂) (h₂ : G₂ ≤c G₃) : G₁ ≤c G₃ where
-  le := h₁.le.trans h₂.le
-  closed _ _ hi hy := h₁.closed
-    (hi.of_le_of_mem_mem h₂.le (h₂.closed hi (h₁.vertexSet_mono hy)) <| vertexSet_mono h₁ hy) hy
-  dup_closed _ _ hxy hx :=
-    h₁.dup_closed (hxy.of_isLabelSubgraph_of_mem h₂.isLabelSubgraph <| h₁.vertexSet_mono hx) hx
+  toIsSubgraph := le_trans h₁.le h₂.le
+  closed _ _ hi hy := h₁.closed (hi.of_le_of_mem h₂.le <| h₂.closed hi <| h₁.vertexSet hy) hy
 
 @[simp]
 lemma isClosedSubgraph_self : G ≤c G where
-  le := le_rfl
+  toIsSubgraph := le_refl G
   closed _ _ he _ := he.edge_mem
-  dup_closed _ _ hxy _ := hxy.right_mem
 
 lemma Inc.of_isClosedSubgraph_of_mem (h : G.Inc e x) (hle : H ≤c G) (hx : x ∈ V(H)) : H.Inc e x :=
-  h.of_le_of_mem_mem hle.le (hle.closed h hx) hx
+  h.of_le_of_mem hle.le (hle.closed h hx)
+alias IsClosedSubgraph.inc_of_mem := Inc.of_isClosedSubgraph_of_mem
 
 lemma Adj.right_mem_of_isClosedSubgraph_of_left_mem (hle : H ≤c G) (hxy : G.Adj x y)
     (hx : x ∈ V(H)) : y ∈ V(H) := by
@@ -830,17 +893,19 @@ lemma Adj.right_mem_of_isClosedSubgraph_of_left_mem (hle : H ≤c G) (hxy : G.Ad
   obtain ⟨hxu, hyv⟩ | ⟨hxv, hyu⟩ := h.dup_and_dup_or_dup_and_dup <| huv.of_le hle.le
   · exact hle.dup_closed hyv.symm huv.right_mem
   exact hle.dup_closed hyu.symm huv.left_mem
+alias IsClosedSubgraph.right_mem_of_adj_of_left_mem := Adj.right_mem_of_isClosedSubgraph_of_left_mem
 
 lemma Adj.left_mem_of_isClosedSubgraph_of_right_mem (hle : H ≤c G) (hxy : G.Adj x y)
     (hy : y ∈ V(H)) : x ∈ V(H) :=
   hxy.symm.right_mem_of_isClosedSubgraph_of_left_mem hle hy
+alias IsClosedSubgraph.left_mem_of_adj_of_right_mem := Adj.left_mem_of_isClosedSubgraph_of_right_mem
 
 lemma IsLink.of_isClosedSubgraph_of_mem_vertexSet
     (h : G.IsLink e x y) (hle : H ≤c G) (hx : x ∈ V(H)) : H.IsLink e x y :=
-  h.of_le_of_mem_mem hle.le (h.inc_left.of_isClosedSubgraph_of_mem hle hx).edge_mem hx <|
-    Adj.right_mem_of_isClosedSubgraph_of_left_mem hle ⟨e, h⟩ hx
+  h.of_le_of_mem hle.le (h.inc_left.of_isClosedSubgraph_of_mem hle hx).edge_mem
+alias IsClosedSubgraph.isLink_of_mem := IsLink.of_isClosedSubgraph_of_mem_vertexSet
 
-lemma IsClosedSubgraph.isLink_iff_of_mem (h : H ≤c G) (hx : x ∈ V(H)) :
+lemma IsClosedSubgraph.isLink_iff_isLink_of_mem (h : H ≤c G) (hx : x ∈ V(H)) :
     H.IsLink e x y ↔ G.IsLink e x y :=
   ⟨fun he ↦ he.of_le h.le, fun he ↦ he.of_isClosedSubgraph_of_mem_vertexSet h hx⟩
 
@@ -848,34 +913,37 @@ lemma IsClosedSubgraph.mem_iff_mem_of_isLink (h : H ≤c G) (he : G.IsLink e x y
     x ∈ V(H) ↔ y ∈ V(H) := by
   refine ⟨fun hin ↦ ?_, fun hin ↦ ?_⟩
   on_goal 2 => rw [isLink_comm] at he
-  all_goals rw [← h.isLink_iff_of_mem hin] at he; exact he.right_mem
+  all_goals rw [← h.isLink_iff_isLink_of_mem hin] at he; exact he.right_mem
+alias IsLink.mem_iff_mem_of_isClosedSubgraph := IsClosedSubgraph.mem_iff_mem_of_isLink
 
 lemma IsClosedSubgraph.mem_tfae_of_isLink (h : H ≤c G) (hl : G.IsLink e x y) :
     List.TFAE [x ∈ V(H), y ∈ V(H), e ∈ E(H)] := by
   tfae_have 1 → 2 := (h.mem_iff_mem_of_isLink hl).mp
   tfae_have 2 → 3 := (hl.symm.of_isClosedSubgraph_of_mem_vertexSet h · |>.edge_mem)
-  tfae_have 3 → 1 := (hl.of_isLabelSubgraph_of_mem h.isLabelSubgraph · |>.left_mem)
+  tfae_have 3 → 1 := (hl.of_le_of_mem h.le · |>.left_mem)
   tfae_finish
+alias IsLink.mem_tfae_of_isClosedSubgraph := IsClosedSubgraph.mem_tfae_of_isLink
 
-lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
+lemma IsClosedSubgraph.adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
   exact (hexy.of_isClosedSubgraph_of_mem_vertexSet h hx).adj
+alias Adj.of_isClosedSubgraph_of_mem := IsClosedSubgraph.adj_of_mem
 
 lemma IsClosedSubgraph.mem_iff_mem_of_adj (h : H ≤c G) (hxy : G.Adj x y) :
     x ∈ V(H) ↔ y ∈ V(H) := by
   obtain ⟨e, hexy⟩ := hxy
   exact mem_iff_mem_of_isLink h hexy
+alias Adj.mem_iff_mem_of_isClosedSubgraph := IsClosedSubgraph.mem_iff_mem_of_adj
 
-lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
-    H ≤c G₁ where
-  le := hHG₁
-  closed _ _ he hx := ((he.of_le hG₁).of_isClosedSubgraph_of_mem hHG hx).edge_mem
-  dup_closed _ _ hxy hx := hHG.dup_closed (hxy.of_le hG₁) hx
+lemma IsClosedSubgraph.of_le_of_isLabelSubgraph {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁)
+    (hG₁ : G₁ ≤l G) : H ≤c G₁ where
+  toIsSubgraph := hHG₁
+  closed _ _ he hx := ((he.of_isLabelSubgraph hG₁).of_isClosedSubgraph_of_mem hHG hx).edge_mem
 
 lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) :
     H₁ - V(H₂) ≤c G where
-  le := vertexDelete_le.trans h₁.le
+  toIsLabelSubgraph := vertexDelete_isLabelSubgraph.trans h₁.toIsLabelSubgraph
   closed e x he hx := by
     simp only [vertexDelete_edgeSet, mem_setOf_eq]
     simp only [vertexDelete_vertexSet, mem_diff] at hx
@@ -890,24 +958,23 @@ lemma IsClosedSubgraph.diff {H₁ H₂ : Graph α β} (h₁ : H₁ ≤c G) (h₂
 lemma IsClosedSubgraph.compl (h : H ≤c G) : G - V(H) ≤c G :=
   G.isClosedSubgraph_self.diff h
 
--- lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
---     x ∈ V(H) ∧ y ∉ V(H) := by
+-- lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hile : H ≤i G) :
+--     ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧ x ∈ V(H) ∧ y ∉ V(H) := by
 --   rw [not_iff_comm]
 --   push_neg
---   refine ⟨fun hncl ↦ ⟨hle.le, fun e x ⟨y, hexy⟩ hxH => hle.isLink_of_mem_mem hexy hxH
---     (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem, fun x y hdup hx =>?_⟩, fun hcl x y hexy hx ↦ ?_⟩
---   ·
---     ⟨hle.le, fun e x ⟨y, hexy⟩ hxH => hle.isLink_of_mem hexy hxH (hncl x y ⟨e, hexy⟩ hxH) |>.edge_mem⟩
---   (hcl.mem_iff_mem_of_adj hexy).mp hx
+--   exact ⟨fun hncl => ⟨⟨hile.isLabelSubgraph, sorry⟩, fun e x ⟨y, hl⟩ hx =>
+--     hile.isLink_of_mem_mem hl hx (hncl x y ⟨e, hl⟩ hx) |>.edge_mem⟩, fun hcl _ _ hxy =>
+--     (hcl.mem_iff_mem_of_adj hxy).mp⟩
 
 lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
   rw [vertexDelete_edgeSet]
-  refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨⟨hclF.le.trans edgeDelete_le,
+  refine ⟨fun hcl f hf ↦ ?_,
+    fun hF ↦ ⟨⟨hclF.toIsLabelSubgraph.trans edgeDelete_le.toIsLabelSubgraph,
     fun x y hxy hx => hclF.dup_closed (hxy.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph) hx⟩,
     fun e x he hxH => ?_⟩⟩
   · by_contra! hfH
     simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
-    refine (hclF.edgeSet_mono ?_).2 hf.2
+    refine (hclF.edgeSet ?_).2 hf.2
     obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1
     obtain hx | hy := or_iff_not_imp_left.mpr <| hfH x y hxy
     · exact hcl.closed ⟨_, hxy⟩ hx
@@ -916,9 +983,9 @@ lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ 
       obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
       obtain hxu | hxv := he.dup_or_dup_of_isLink heuv
       · exact hunH (hxu.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph
-          |>.of_isLabelSubgraph_of_mem hclF.isLabelSubgraph hxH |>.right_mem)
+          |>.of_le_of_mem hclF.le hxH |>.right_mem)
       · exact hvnH (hxv.of_isSpanningSubgraph edgeDelete_isSpanningSubgraph
-          |>.of_isLabelSubgraph_of_mem hclF.isLabelSubgraph hxH |>.right_mem)
+          |>.of_le_of_mem hclF.le hxH |>.right_mem)
     exact hclF.closed (by simp [he, heF]) hxH
 
 /-! ### Components -/

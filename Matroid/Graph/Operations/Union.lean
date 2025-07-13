@@ -101,69 +101,54 @@ instance {ι α : Type*} {r : α → α → Prop} [IsRefl α r] {f : ι → α} 
 
 open scoped Sym2 Graph
 
-@[simp]
-lemma Graph.disjoint_iff_vertexSet_disjoint : Disjoint V(H) V(G) ↔ Disjoint H G := by
-  refine ⟨fun h G' hleH hleG => ?_, fun h => ?_⟩
-  · rw [le_bot_iff, ← vertexSet_eq_empty_iff, ← subset_empty_iff]
-    exact h (vertexSet_mono hleH) (vertexSet_mono hleG)
-  by_contra! hV
-  obtain ⟨x, hxH, hxG⟩ := not_disjoint_iff.mp hV
-  have hleH : Graph.noEdge {x} β ≤ H := by simpa [noEdge_le_iff, ← H.dup_refl_iff]
-  have hleG : Graph.noEdge {x} β ≤ G := by simpa [noEdge_le_iff, ← G.dup_refl_iff]
-  simpa [← vertexSet_eq_empty_iff] using h hleH hleG
-
-lemma Disjoint.vertexSet_disjoint (h : Disjoint H G) : Disjoint V(H) V(G) :=
-  Graph.disjoint_iff_vertexSet_disjoint.mpr h
-
 namespace Graph
 
-/-! ### Strongly disjointness -/
+-- /-! ### Strongly disjointness -/
 
-/-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.
-    This is a stronger notion of disjointness than `Disjoint` derived from `≤` relation,
-    see `disjoint_iff_vertexSet_disjoint`. -/
-@[mk_iff]
-structure StronglyDisjoint (G H : Graph α β) : Prop where
-  vertex : Disjoint V(G) V(H)
-  edge : Disjoint E(G) E(H)
+-- /-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.
+--     This is a stronger notion of disjointness than `Disjoint` derived from `≤` relation,
+--     see `disjoint_iff_vertexSet_disjoint`. -/
+-- @[mk_iff]
+-- structure StronglyDisjoint (G H : Graph α β) : Prop where
+--   vertex : Disjoint V(G) V(H)
+--   edge : Disjoint E(G) E(H)
 
-lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
-  ⟨h.1.symm, h.2.symm⟩
+-- lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
+--   ⟨h.1.symm, h.2.symm⟩
 
-lemma stronglyDisjoint_comm : G.StronglyDisjoint H ↔ H.StronglyDisjoint G :=
-  ⟨StronglyDisjoint.symm, StronglyDisjoint.symm⟩
+-- lemma stronglyDisjoint_comm : G.StronglyDisjoint H ↔ H.StronglyDisjoint G :=
+--   ⟨StronglyDisjoint.symm, StronglyDisjoint.symm⟩
 
-lemma stronglyDisjoint_iff_of_le_isLabelSubgraph (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G) :
-    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
-  refine ⟨(disjoint_iff_vertexSet_disjoint.mp <| StronglyDisjoint.vertex ·),
-    fun h ↦ ⟨h.vertexSet_disjoint, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
-  obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
-  exact h.vertexSet_disjoint.notMem_of_mem_left he₁.left_mem <|
-    (he₁.of_le h₁).of_isLabelSubgraph_of_mem h₂ he₂ |>.left_mem
+-- lemma stronglyDisjoint_iff_of_le_isLabelSubgraph (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G) :
+--     StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
+--   refine ⟨(disjoint_iff_vertexSet_disjoint.mp <| StronglyDisjoint.vertex ·),
+--     fun h ↦ ⟨h.vertexSet_disjoint, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
+--   obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
+--   exact h.vertexSet_disjoint.notMem_of_mem_left he₁.left_mem <|
+--     (he₁.of_le h₁).of_isLabelSubgraph_of_mem h₂ he₂ |>.left_mem
 
-lemma stronglyDisjoint_iff_of_isLabelSubgraph_le (h₁ : H₁ ≤l G) (h₂ : H₂ ≤ G) :
-    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ :=
-  stronglyDisjoint_comm.trans <|
-    (stronglyDisjoint_iff_of_le_isLabelSubgraph h₂ h₁).trans disjoint_comm
+-- lemma stronglyDisjoint_iff_of_isLabelSubgraph_le (h₁ : H₁ ≤l G) (h₂ : H₂ ≤ G) :
+--     StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ :=
+--   stronglyDisjoint_comm.trans <|
+--     (stronglyDisjoint_iff_of_le_isLabelSubgraph h₂ h₁).trans disjoint_comm
 
-lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H :=
-  disjoint_iff_vertexSet_disjoint.mp h.vertex
+-- lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H :=
+--   disjoint_iff_vertexSet_disjoint.mp h.vertex
 
 /-! ### Compatibility -/
 
 def CompatibleAt (e : β) (G H : Graph α β) : Prop :=
-  e ∈ E(G) → e ∈ E(H) → ∀ ⦃x y⦄, x ∈ V(G) → x ∈ V(H) → y ∈ V(G) → y ∈ V(H) →
-    (G.IsLink e x y ↔ H.IsLink e x y)
+  e ∈ E(G) → e ∈ E(H) → ∀ ⦃x y⦄, G.IsLink e x y ↔ H.IsLink e x y
 
 lemma CompatibleAt.symm (h : CompatibleAt e G H) : CompatibleAt e H G :=
-  fun he1 he2 _ _ hx1 hx2 hy1 hy2 ↦ (h he2 he1 hx2 hx1 hy2 hy1).symm
+  fun he1 he2 _ _ ↦ (@h he2 he1 _ _).symm
 
 lemma CompatibleAt.comm : CompatibleAt e G H ↔ CompatibleAt e H G :=
   ⟨CompatibleAt.symm, CompatibleAt.symm⟩
 
-lemma compatibleAt_self : CompatibleAt e G G := fun _ _ _ _ _ _ _ _ ↦ Iff.rfl
+lemma compatibleAt_self : CompatibleAt e G G := fun _ _ _ _ ↦ Iff.rfl
 
-instance {e : β} : IsRefl (Graph α β) (CompatibleAt e) := ⟨fun _ _ _ _ _ _ _ _ _ ↦ Iff.rfl⟩
+instance {e : β} : IsRefl (Graph α β) (CompatibleAt e) := ⟨fun _ _ _ _ _ ↦ Iff.rfl⟩
 
 instance {e : β} : IsSymm (Graph α β) (CompatibleAt e) := ⟨fun _ _ ↦ CompatibleAt.symm⟩
 
@@ -171,9 +156,9 @@ instance {e : β} : IsSymm (Graph α β) (CompatibleAt e) := ⟨fun _ _ ↦ Comp
 
 lemma compatibleAt_symmetric : Symmetric (CompatibleAt e (α := α)) := fun _ _ ↦ CompatibleAt.symm
 
--- lemma CompatibleAt.isLink_iff (h : CompatibleAt e G H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
---     G.IsLink e x y ↔ H.IsLink e x y := by
---   rw [h heG heH]
+lemma CompatibleAt.isLink_iff (h : CompatibleAt e G H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
+    G.IsLink e x y ↔ H.IsLink e x y := by
+  rw [h heG heH]
 
 lemma compatibleAt_of_notMem_left (he : e ∉ E(G)) : CompatibleAt e G H := by
   simp [CompatibleAt, he]
@@ -191,22 +176,19 @@ lemma compatibleAt_of_notMem_right (he : e ∉ E(H)) : CompatibleAt e G H := by
 --   rw [CompatibleAt.comm]
 --   exact compatibleAt_iff_left h
 
--- lemma IsLink.of_compatibleAt (he : G.IsLink e x y) (h : CompatibleAt e G H) (heH : e ∈ E(H)) :
---     H.IsLink e x y := (he.compatibleAt_iff_left).mp h heH
+lemma IsLink.of_compatibleAt (he : G.IsLink e x y) (h : CompatibleAt e G H) (heH : e ∈ E(H)) :
+    H.IsLink e x y := (h he.edge_mem heH).mp he
 
 lemma CompatibleAt.mono_left {G₀ : Graph α β} (h : CompatibleAt e G H) (hle : G₀ ≤ G) :
     CompatibleAt e G₀ H := by
-  rintro heG₀ heH x y hxG₀ hxH hyG₀ hyH
-  rw [← h (edgeSet_mono hle heG₀) heH (vertexSet_mono hle hxG₀) hxH (vertexSet_mono hle hyG₀) hyH,
-    isLink_iff_isLink_of_le_of_mem_mem hle heG₀ hxG₀ hyG₀]
+  rintro heG₀ heH - -
+  rw [← h (edgeSet_mono hle heG₀) heH, isLink_iff_isLink_of_le_of_mem hle heG₀]
 
 lemma CompatibleAt.mono_right {H₀ : Graph α β} (h : CompatibleAt e G H) (hH₀ : H₀ ≤ H) :
-    CompatibleAt e G H₀ :=
-  (h.symm.mono_left hH₀).symm
+    CompatibleAt e G H₀ := (h.symm.mono_left hH₀).symm
 
 lemma CompatibleAt.mono {G₀ H₀ : Graph α β} (h : CompatibleAt e G H) (hG : G₀ ≤ G) (hH : H₀ ≤ H) :
-    CompatibleAt e G₀ H₀ :=
-  (h.mono_left hG).mono_right hH
+    CompatibleAt e G₀ H₀ := (h.mono_left hG).mono_right hH
 
 -- lemma CompatibleAt.induce_left (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H := by
 --   rintro ⟨x, y, ⟨hl, hxX, hyX⟩⟩ heH u v huX huH hvX hvH
@@ -222,12 +204,10 @@ lemma CompatibleAt.mono {G₀ H₀ : Graph α β} (h : CompatibleAt e G H) (hG :
 
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
 def Compatible (G H : Graph α β) : Prop :=
-  ∀ ⦃e x y⦄, e ∈ E(G) ∩ E(H) → x ∈ V(G) ∩ V(H) → y ∈ V(G) ∩ V(H) →
-    (G.IsLink e x y ↔ H.IsLink e x y)
+  ∀ ⦃e x y⦄, e ∈ E(G) ∩ E(H) → (G.IsLink e x y ↔ H.IsLink e x y)
 
-lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) (hxG : x ∈ V(G))
-    (hxH : x ∈ V(H)) (hyG : y ∈ V(G)) (hyH : y ∈ V(H)) : G.IsLink e x y ↔ H.IsLink e x y :=
-  h ⟨heG, heH⟩ ⟨hxG, hxH⟩ ⟨hyG, hyH⟩
+lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
+    G.IsLink e x y ↔ H.IsLink e x y := h ⟨heG, heH⟩
 
 lemma Compatible.symm (h : G.Compatible H) : H.Compatible G := by
   simp_rw [Compatible, inter_comm, iff_comm]
@@ -245,19 +225,17 @@ lemma compatible_comm : G.Compatible H ↔ H.Compatible G :=
 
 /-- Two subgraphs of the same graph are compatible. -/
 lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Compatible H₂ := by
-  rintro e x y ⟨he₁, he₂⟩ ⟨hx₁, hx₂⟩ ⟨hy₁, hy₂⟩
-  rw [← isLink_iff_isLink_of_le_of_mem_mem h₁ he₁ hx₁ hy₁,
-    ← isLink_iff_isLink_of_le_of_mem_mem h₂ he₂ hx₂ hy₂]
+  rintro e x y ⟨he₁, he₂⟩
+  rw [← isLink_iff_isLink_of_le_of_mem h₁ he₁, ← isLink_iff_isLink_of_le_of_mem h₂ he₂]
 
 lemma compatible_of_le (h : H ≤ G) : H.Compatible G := compatible_of_le_le h le_rfl
 
-lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H))
-    (hxH : x ∈ V(H)) (hyH : y ∈ V(H)) : H.IsLink e x y := by
-  rwa [← hGH ⟨h.edge_mem, heH⟩ ⟨h.left_mem, hxH⟩ ⟨h.right_mem, hyH⟩]
+lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
+    H.IsLink e x y := by rwa [← hGH ⟨h.edge_mem, heH⟩]
 
 @[simp]
 lemma compatible_self (G : Graph α β) : G.Compatible G :=
-  fun _ _ _ _ _ _ ↦ Iff.rfl
+  fun _ _ _ _ ↦ Iff.rfl
 
 instance : IsRefl (Graph α β) Compatible where
   refl G := G.compatible_self
@@ -276,9 +254,8 @@ lemma pairwise_compatible_edgeDelete : ({G, H ＼ E(G)} : Set (Graph α β)).Pai
 
 lemma Compatible.mono_left {G₀ : Graph α β} (h : Compatible G H) (hG₀ : G₀ ≤ G) :
     Compatible G₀ H := by
-  rintro e x y ⟨he₁, he₂⟩ ⟨hx₁, hx₂⟩ ⟨hy₁, hy₂⟩
-  rw [← h ⟨edgeSet_mono hG₀ he₁, he₂⟩ ⟨vertexSet_mono hG₀ hx₁, hx₂⟩ ⟨vertexSet_mono hG₀ hy₁, hy₂⟩,
-    isLink_iff_isLink_of_le_of_mem_mem hG₀ he₁ hx₁ hy₁]
+  rintro e x y ⟨he₁, he₂⟩
+  rw [← h ⟨edgeSet_mono hG₀ he₁, he₂⟩, isLink_iff_isLink_of_le_of_mem hG₀ he₁]
 
 lemma Compatible.mono_right {H₀ : Graph α β} (h : Compatible G H) (hH₀ : H₀ ≤ H) :
     Compatible G H₀ :=
@@ -302,8 +279,12 @@ lemma Compatible.mono {G₀ H₀ : Graph α β} (h : G.Compatible H) (hG : G₀ 
 -- lemma Compatible.induce (h : Compatible G H) {X : Set α} : G[X].Compatible H[X] :=
 --   (h.induce_left X).induce_right X
 
-lemma Compatible.vertexDelete (h : Compatible G H) {X : Set α} : (G - X).Compatible (H - X) :=
-  h.mono vertexDelete_le vertexDelete_le
+lemma Compatible.vertexDelete (h : Compatible G H) {X : Set α} : (G - X).Compatible (H - X) := by
+  rintro e x y ⟨heG, heH⟩
+  simp only [vertexDelete_vertexSet, mem_diff, vertexDelete_isLink_iff, and_congr_left_iff,
+    and_imp]
+  exact fun _ _ => h ⟨vertexDelete_isLabelSubgraph.edgeSet heG,
+    vertexDelete_isLabelSubgraph.edgeSet heH⟩
 
 lemma Compatible.edgeDelete (h : Compatible G H) {F : Set β} : (G ＼ F).Compatible (H ＼ F) :=
   h.mono edgeDelete_le edgeDelete_le
@@ -325,15 +306,15 @@ lemma Compatible.edgeRestrict (h : Compatible G H) {F : Set β} : (G ↾ F).Comp
 --     G.StronglyDisjoint H ↔ Disjoint V(G) V(H) :=
 --   ⟨(·.vertex), h.stronglyDisjoint_of_vertexSet_disjoint⟩
 
-lemma StronglyDisjoint.compatible (h : G.StronglyDisjoint H) : G.Compatible H :=
-  Compatible.of_disjoint_edgeSet h.edge
+-- lemma StronglyDisjoint.compatible (h : G.StronglyDisjoint H) : G.Compatible H :=
+--   Compatible.of_disjoint_edgeSet h.edge
 
--- lemma Compatible.edgeSet_disjoint_of_vertexSet_disjoint (h : G.Compatible H)
---     (hV : Disjoint V(G) V(H)) : Disjoint E(G) E(H) := by
---   by_contra he
---   obtain ⟨e, heG, heH⟩ := not_disjoint_iff.mp he
---   obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heG
---   exact hV.notMem_of_mem_left hexy.left_mem <| hexy.of_compatible h heH |>.left_mem
+lemma Compatible.edgeSet_disjoint_of_vertexSet_disjoint (h : G.Compatible H)
+    (hV : Disjoint V(G) V(H)) : Disjoint E(G) E(H) := by
+  by_contra he
+  obtain ⟨e, heG, heH⟩ := not_disjoint_iff.mp he
+  obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edgeSet heG
+  exact hV.notMem_of_mem_left hexy.left_mem <| hexy.of_compatible h heH |>.left_mem
 
 -- lemma stronglyDisjoint_iff_vertexSet_disjoint_compatible :
 --     G.StronglyDisjoint H ↔ Disjoint V(G) V(H) ∧ G.Compatible H :=
@@ -348,10 +329,10 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
   rw [onFun_comp]
   exact Pairwise.onFun_of_refl hG
 
-/-- useful with `Pairwise` and `Set.Pairwise`.-/
-@[simp]
-lemma stronglyDisjoint_le_compatible : @StronglyDisjoint α β ≤ Compatible :=
-  fun _ _ ↦ StronglyDisjoint.compatible
+-- /-- useful with `Pairwise` and `Set.Pairwise`.-/
+-- @[simp]
+-- lemma stronglyDisjoint_le_compatible : @StronglyDisjoint α β ≤ Compatible :=
+--   fun _ _ ↦ StronglyDisjoint.compatible
 
 /-! ### Indexed unions -/
 
