@@ -156,7 +156,7 @@ which is the content of *Corollary 5.7*  -/
 example (M : Matroid α) (X I : ι → Set α) (disjoint : Pairwise (Disjoint on X))
     (basis : ∀ i, M.IsBasis (I i) (X i)) :
     M.multiConn X = M.nullity (⋃ i, I i) :=
-  multiConn_eq_nullity_iUnion _ _ _ disjoint (fun i ↦ (basis i).isBasis')
+  multiConn_eq_nullity_iUnion disjoint (fun i ↦ (basis i).isBasis')
 
 /- ### Definition 11 : Local connectivity
 If `X` and `Y` are sets in a matroid `M`, then `⊓ (X,Y)`, written `M.eLocalConn X Y`,

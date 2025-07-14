@@ -120,6 +120,20 @@ instance project_finitary [M.Finitary] : (M.project X).Finitary := by
   rw [project]
   infer_instance
 
+lemma project_comap_image {β : Type*} (M : Matroid β) (f : α → β) (C : Set α) :
+    (M.project (f '' C)).comap f = (M.comap f).project C :=
+  ext_closure fun X ↦ by simp [image_union]
+
+lemma project_comap {β : Type*} (M : Matroid β) (f : α → β) (C : Set β) (hC : C ⊆ range f) :
+    (M.project C).comap f = (M.comap f).project (f ⁻¹' C) := by
+  refine ext_closure fun X ↦ ?_
+  obtain ⟨C, hC, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
+  have h' : M.closure (f '' C) = M.closure (f '' (f ⁻¹' (f '' C))) := by
+    refine (M.closure_subset_closure (image_subset _ (subset_preimage_image ..))).antisymm ?_
+    rw [image_preimage_eq_inter_range, inter_eq_self_of_subset_left hC]
+  simp only [comap_closure_eq, project_closure, image_union, closure_union_congr_right h']
+
+
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
 

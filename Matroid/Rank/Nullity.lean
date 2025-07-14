@@ -46,6 +46,10 @@ lemma eRk_add_nullity_eq_encard (M : Matroid α) (X : Set α) :
   simp only [dual_dual, eRank_restrict, dual_ground, restrict_ground_eq] at h
   rw [← h, add_comm, nullity_eq_eRank_restrict_dual]
 
+lemma nullity_le_encard (M : Matroid α) (X : Set α) : M.nullity X ≤ X.encard := by
+  grw [← M.eRk_add_nullity_eq_encard]
+  exact le_add_self
+
 lemma Indep.nullity_eq (hI : M.Indep I) : M.nullity I = 0 := by
   rw [hI.isBasis_self.nullity_eq, diff_self, encard_empty]
 
@@ -151,6 +155,16 @@ lemma nullity_union_eq_nullity_add_encard_diff (hYX : Y ⊆ M.closure X) :
     M.nullity (X ∪ Y) = M.nullity X + (Y \ X).encard := by
   rw [nullity_union_eq_nullity_contract_add_nullity, add_comm, nullity_eq_encard (X := Y \ X)]
   simpa using diff_subset_diff_left hYX
+
+lemma nullity_union_le_nullity_add_encard_diff (M : Matroid α) (X Y : Set α) :
+    M.nullity (X ∪ Y) ≤ M.nullity X + (Y \ X).encard := by
+  grw [nullity_union_eq_nullity_contract_add_nullity, add_comm, ← nullity_le_encard,
+    add_le_add_left]
+  rfl
+
+lemma nullity_union_le_nullity_add_encard (M : Matroid α) (X Y : Set α) :
+    M.nullity (X ∪ Y) ≤ M.nullity X + Y.encard := by
+  grw [nullity_union_le_nullity_add_encard_diff, encard_le_encard diff_subset]
 
 lemma nullity_eq_nullity_add_encard_diff (hXY : X ⊆ Y) (hYX : Y ⊆ M.closure X) :
     M.nullity Y = M.nullity X + (Y \ X).encard := by

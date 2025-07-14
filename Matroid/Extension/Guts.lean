@@ -1,5 +1,5 @@
 import Matroid.Modular.Flat
-import Matroid.Connectivity.Separation
+import Matroid.Connectivity.Multi
 import Matroid.Constructions.Project
 
 open Set BigOperators Set.Notation Function
@@ -64,3 +64,6 @@ def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) 
 @[simp]
 lemma mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) {F : Set α} :
     F ∈ M.gutsModularCut X Xu ↔ M.IsFlat F ∧ (M.project F).IsSkewFamily X := Iff.rfl
+
+-- lemma foo (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) :
+--     M.multiConn X ≤ (M.projectBy )
