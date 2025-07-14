@@ -92,6 +92,14 @@ lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
   by_contra hne
   exact (hdj hne).notMem_of_mem_left ((hIX i).subset ha) ((hIX j).subset ha')
 
+lemma multiconn_eq_comap_prod_multiConn (X : ι → Set α) :
+    M.multiConn X = (M.comap Prod.fst).multiConn (fun i ↦ (· , i) '' X i) := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rwa [multiConn_eq_nullity_iUnion (M := M.comap Prod.fst)
+    (I := fun i ↦ (·, i) '' I i) disjoint_map_prod_right,
+    multiConn_eq_comap_nullity (I := I)]
+  exact fun i ↦ (hI i).comap <| RightInverse.rightInvOn (congr_fun rfl) _
+
 lemma multiConn_mono (M : Matroid α) (hXY : ∀ i, X i ⊆ Y i) :
     M.multiConn X ≤ M.multiConn Y := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
