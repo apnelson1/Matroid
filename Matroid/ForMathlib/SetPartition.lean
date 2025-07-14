@@ -2,11 +2,162 @@ import Mathlib.Data.Setoid.Partition
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Data.Set.Finite.Powerset
 import Mathlib.Data.PFun
+import Mathlib.Order.Closure
 import Matroid.ForMathlib.Lattice
 
-open Set
+open Set Function
 
-variable {α β : Type*} {s x y z : α}
+variable {α β : Type*} {s t x y z : α}
+
+namespace Relation
+
+variable {ι : Type*} {r s : α → α → Prop} {f : ι → α}
+
+instance [IsRefl α r] : IsRefl ι (r on f) where
+  refl i := refl (f i)
+
+instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
+  refine ⟨fun a b h ↦ ?_⟩
+  obtain (h | h) := h <;> simp [symm_of _ h]
+
+instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊓ s) :=
+  ⟨fun a b ⟨hr, hs⟩ ↦ by simp [symm_of _ hr, symm_of _ hs]⟩
+
+lemma sSup_symm {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : IsSymm α (sSup s) where
+  symm a b h := by
+    induction h with
+    | intro w h =>
+      simp only [mem_range, eq_iff_iff, Subtype.exists, exists_prop, exists_exists_and_eq_and,
+        binary_relation_sSup_iff s] at h ⊢
+      obtain ⟨⟨r, hrs, hrw⟩, hw⟩ := h
+      have := hs r hrs
+      exact ⟨r, hrs, symm_of _ <| hrw.mpr hw⟩
+
+lemma sInf_symm {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : IsSymm α (sInf s) where
+  symm a b := by
+    simp_rw [binary_relation_sInf_iff s]
+    exact fun h r hrs => let := hs r hrs; symm_of _ (h r hrs)
+
+lemma sInf_trans {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsTrans α r) : IsTrans α (sInf s) where
+  trans a b c := by
+    simp_rw [binary_relation_sInf_iff s]
+    exact fun hab hbc r hrs => let := hs r hrs; trans_of _ (hab r hrs) (hbc r hrs)
+
+instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
+  ⟨fun _ _ _ ⟨hr, hs⟩ ⟨hr', hs'⟩ ↦ ⟨trans_of r hr hr', trans_of s hs hs'⟩⟩
+
+def TransClosure : ClosureOperator (α → α → Prop) where
+  toFun := TransGen
+  monotone' _ _ h _ _ h' := TransGen.mono h h'
+  le_closure' _ _ _ := TransGen.single
+  idempotent' _ := by
+    ext a b
+    constructor <;> intro h
+    · induction h with
+      | single h => exact h
+      | tail _ h' ih => exact TransGen.trans ih h'
+    · exact TransGen.single h
+  IsClosed := Transitive
+  isClosed_iff := ⟨transGen_eq_self, fun hr => hr ▸ transitive_transGen⟩
+
+instance : IsTrans α (TransClosure r) := by
+  change IsTrans α (TransGen r)
+  infer_instance
+
+instance [IsSymm α r] : IsSymm α (TransClosure r) := by
+  refine ⟨fun a b h ↦ ?_⟩
+  induction h with
+  | single hr => exact TransGen.single (symm_of r hr)
+  | tail _ hr ih => exact TransGen.head (symm_of r hr) ih
+
+/-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
+class foo (r : α → α → Prop) where
+  isfoo : ∀ ⦃x y⦄, r x y → r y y
+
+instance [IsSymm α r] [IsTrans α r] : foo r where
+  isfoo _ _ hr := _root_.trans (symm_of r hr) hr
+
+instance [foo r] [foo s] : foo (r ⊔ s) where
+  isfoo _ _ hr := by obtain (hr | hr) := hr <;> simp [foo.isfoo hr]
+
+instance [foo r] [foo s] : foo (r ⊓ s) where
+  isfoo _ _ h := ⟨foo.isfoo h.1, foo.isfoo h.2⟩
+
+lemma transClosure_self_iff [foo r] : TransClosure r x x ↔ r x x := by
+  refine ⟨fun h => ?_, TransGen.single⟩
+  obtain (h | ⟨_, _, h⟩) := (transGen_iff r _ _).mp h
+  · exact h
+  exact foo.isfoo h
+
+instance : IsRefl α ⊤ where
+  refl := by simp
+
+instance : IsSymm α ⊤ where
+  symm := by simp
+
+instance : IsTrans α ⊤ where
+  trans := by simp
+
+instance : IsSymm α ⊥ where
+  symm := by simp
+
+instance : IsTrans α ⊥ where
+  trans := by simp
+
+def PER (α : Type*) := {r : α → α → Prop // IsSymm α r ∧ IsTrans α r}
+
+variable {r' s' : PER α}
+
+instance : IsSymm α r'.val := r'.property.1
+instance : IsTrans α r'.val := r'.property.2
+instance : PartialOrder (PER α) := Subtype.partialOrder _
+instance : OrderTop (PER α) := Subtype.orderTop ⟨inferInstance, inferInstance⟩
+instance : OrderBot (PER α) := Subtype.orderBot ⟨inferInstance, inferInstance⟩
+instance : CompleteLattice (PER α) where
+  sup r s := ⟨TransClosure (r.val ⊔ s.val), inferInstance, inferInstance⟩
+  le_sup_left r s := by
+    change r.val ≤ TransClosure (r.val ⊔ s.val)
+    exact le_trans le_sup_left (TransClosure.le_closure _)
+  le_sup_right r s := by
+    change s.val ≤ TransGen (r.val ⊔ s.val)
+    exact le_trans le_sup_right (TransClosure.le_closure _)
+  sup_le r s t hrt hst := by
+    change TransClosure (r.val ⊔ s.val) ≤ t.val
+    exact ClosureOperator.closure_min (sup_le hrt hst) t.prop.2.trans
+  inf r s := ⟨r.val ⊓ s.val, inferInstance, inferInstance⟩
+  inf_le_left r s := by
+    change r.val ⊓ s.val ≤ r.val
+    exact inf_le_left
+  inf_le_right r s := by
+    change r.val ⊓ s.val ≤ s.val
+    exact inf_le_right
+  le_inf r s t hrt hst := by
+    change r.val ≤ s.val ⊓ t.val
+    exact le_inf hrt hst
+  sSup s := ⟨TransGen (sSup <| Subtype.val '' s),
+    @instIsSymmCoeClosureOperatorForallForallPropTransClosure _ _
+    <| sSup_symm (s := Subtype.val '' s) (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.1), inferInstance⟩
+  le_sSup S r hrS := by
+    change r.val ≤ TransGen (sSup <| Subtype.val '' S)
+    exact le_trans (le_sSup <| mem_image_of_mem Subtype.val hrS) (TransClosure.le_closure _)
+  sSup_le S r hrS := by
+    refine TransClosure.closure_min (sSup_le ?_) r.prop.2.trans
+    rintro s ⟨s', hs', rfl⟩
+    exact hrS s' hs'
+  sInf S := ⟨sInf <| Subtype.val '' S, sInf_symm (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.1),
+    sInf_trans (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.2)⟩
+  le_sInf S r hrS := by
+    change r.val ≤ sInf (Subtype.val '' S)
+    refine le_sInf <| ?_
+    rintro s ⟨s', hs', rfl⟩
+    exact hrS s' hs'
+  sInf_le S r hrS := sInf_le <| mem_image_of_mem Subtype.val hrS
+  le_top r := by simp
+  bot_le r := by simp
+
+end Relation
+
+
 
 structure Partition [CompleteLattice α] (s : α) where
   parts : Set α
@@ -18,15 +169,15 @@ namespace Partition
 
 section Basic
 
-variable [CompleteLattice α] {P : Partition s}
+variable [CompleteLattice α] {P Q : Partition s}
 
-instance {α : Type*} [CompleteLattice α] {s : α} : SetLike (Partition s) α where
+instance : SetLike (Partition s) α where
   coe := Partition.parts
   coe_injective' p p' h := by cases p; cases p'; simpa using h
 
-@[simp] lemma mem_parts {x : α} : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
+@[simp] lemma mem_parts : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
 
-@[ext] lemma ext {P Q : Partition s} (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
+@[ext] lemma ext (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
   cases P
   cases Q
   simp only [mk.injEq]
@@ -59,43 +210,68 @@ lemma le_of_mem (P : Partition s) (hx : x ∈ P) : x ≤ s :=
 lemma parts_nonempty (P : Partition s) (hs : s ≠ ⊥) : (P : Set α).Nonempty :=
   nonempty_iff_ne_empty.2 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
 
-@[simps] protected def congr {t : α} (P : Partition s) (hst : s = t) : Partition t where
+@[simps] protected def congr (P : Partition s) (hst : s = t) : Partition t where
   parts := P.parts
   indep := P.indep
   bot_notMem := P.bot_notMem
   sSup_eq' := hst ▸ P.sSup_eq'
 
-@[simp] lemma coe_congr_eq {t : α} {P : Partition s} (hst : s = t) :
+@[simp] lemma coe_congr_eq (hst : s = t) :
     (P.congr hst : Set α) = P := rfl
 
-@[simp] lemma mem_congr_iff {t x : α} {P : Partition s} (hst : s = t) :
+@[simp] lemma mem_congr_iff (hst : s = t) :
     x ∈ P.congr hst ↔ x ∈ P := Iff.rfl
 
-@[simps!] def partsCongrEquiv {t : α} (P : Partition s) (hst : s = t) :
+@[simps!] def partsCongrEquiv (P : Partition s) (hst : s = t) :
     (P : Set α) ≃ (P.congr hst : Set α) := Equiv.setCongr rfl
 
 end Basic
 
+section PairwiseDisjoint
+
+variable {α : Type*} [Order.Frame α] {s t x y z : α} {parts : Set α}
+
+@[simps] def ofPairwiseDisjoint (h : parts.PairwiseDisjoint id) (h_empty : ⊥ ∉ parts):
+    Partition (sSup parts) where
+  parts := parts
+  indep := sSupIndep_iff_pairwiseDisjoint.mpr h
+  bot_notMem := h_empty
+  sSup_eq' := rfl
+
+@[simps] def ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
+  (forall_nonempty : ∀ s ∈ parts, s ≠ ⊥) (eq_sUnion : s = sSup parts) :
+    Partition s where
+  parts := parts
+  indep := pairwiseDisjoint.sSupIndep
+  bot_notMem := fun h ↦ by simpa using forall_nonempty _ h
+  sSup_eq' := eq_sUnion.symm
+
+@[simp] lemma mem_ofPairwiseDisjoint' (pairwiseDisjoint) (forall_nonempty) (eq_sUnion) {x : α} :
+  x ∈ ofPairwiseDisjoint' (s := s) (parts := parts) pairwiseDisjoint forall_nonempty eq_sUnion ↔
+    x ∈ parts := Iff.rfl
+
+end PairwiseDisjoint
+
 section indep
 
-variable [CompleteLattice α]
+variable [CompleteLattice α] {u : Set α} {a : α}
 
 /-- A `sSupIndep` collection not containing `⊥` gives a partition of its supremum. -/
-@[simps] def ofIndependent {u : Set α} (hs : sSupIndep u) (hbot : ⊥ ∉ u) :
+@[simps] def ofIndependent (hs : sSupIndep u) (hbot : ⊥ ∉ u) :
     Partition (sSup u) where
   parts := u
   indep := hs
   bot_notMem := hbot
   sSup_eq' := rfl
 
-@[simp] lemma mem_ofIndependent_iff {u : Set α} (hu : sSupIndep u)
-    (h : ⊥ ∉ u) {a : α} : a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
+@[simp] lemma mem_ofIndependent_iff (hu : sSupIndep u) (h : ⊥ ∉ u) :
+    a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
 
 /-- A `sSupIndep` collection gives a partition of its supremum by removing `⊥`. -/
-def ofIndependent' {u : Set α} (hs : sSupIndep u) : Partition (sSup u) :=
+def ofIndependent' (hs : sSupIndep u) : Partition (sSup u) :=
   (ofIndependent (hs.mono (diff_subset (t := {⊥}))) (fun h ↦ h.2 rfl)).congr (by simp)
 
-@[simp] lemma mem_ofIndependent'_iff {u : Set α} (hu : sSupIndep u) {a : α} :
+@[simp] lemma mem_ofIndependent'_iff (hu : sSupIndep u) :
   a ∈ ofIndependent' hu ↔ a ∈ u ∧ a ≠ ⊥ := Iff.rfl
 
 /-- The partition with no parts. -/
@@ -120,7 +296,7 @@ lemma eq_empty (P : Partition (⊥ : α)) : P = Partition.empty α := by
   simp only [notMem_empty, iff_false]
   exact fun hx ↦ P.ne_bot_of_mem hx <| hsup x hx
 
-instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
+instance : Unique (Partition (⊥ : α)) where
   default := Partition.empty α
   uniq := by simp [eq_empty]
 
@@ -131,7 +307,7 @@ instance {α : Type*} [CompleteLattice α] : Unique (Partition (⊥ : α)) where
   bot_notMem := by simpa using hs.symm
   sSup_eq' := sSup_singleton
 
-@[simp] lemma mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) {a : α} :
+@[simp] lemma mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) :
     a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
 
 noncomputable def indiscrete' (s : α) : Partition s :=
@@ -144,11 +320,11 @@ lemma indiscrete'_eq_empty : indiscrete' ⊥ = (Partition.empty α) := by
   rfl
 
 @[simp]
-lemma indiscrete'_eq_of_ne_bot {s : α} (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
+lemma indiscrete'_eq_of_ne_bot (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
   simp only [indiscrete', hs, ↓reduceDIte]
 
 @[simp]
-lemma mem_indiscrete'_iff {s : α} {a : α} : a ∈ indiscrete' s ↔ a = s ∧ a ≠ ⊥ := by
+lemma mem_indiscrete'_iff : a ∈ indiscrete' s ↔ a = s ∧ a ≠ ⊥ := by
   simp only [indiscrete', ne_eq]
   split_ifs with hs
   · subst s
@@ -157,11 +333,11 @@ lemma mem_indiscrete'_iff {s : α} {a : α} : a ∈ indiscrete' s ↔ a = s ∧ 
     rintro rfl
     exact hs
 
-lemma eq_of_mem_indiscrete' {s : α} {a : α} (has : a ∈ indiscrete' s) : a = s := by
+lemma eq_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a = s := by
   rw [mem_indiscrete'_iff] at has
   exact has.1
 
-lemma ne_bot_of_mem_indiscrete' {s : α} {a : α} (has : a ∈ indiscrete' s) : a ≠ ⊥ := by
+lemma ne_bot_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a ≠ ⊥ := by
   rw [mem_indiscrete'_iff] at has
   exact has.2
 
@@ -169,9 +345,9 @@ end indep
 
 section Order
 
-variable {α : Type*} [CompleteLattice α] {s : α}
+variable {α : Type*} [CompleteLattice α] {s t a : α}
 
-instance {s : α} : PartialOrder (Partition s) where
+instance : PartialOrder (Partition s) where
   le P Q := ∀ x ∈ P, ∃ y ∈ Q, x ≤ y
   lt := _
   le_refl P x hx := by
@@ -193,7 +369,7 @@ instance {s : α} : PartialOrder (Partition s) where
       (hxy.trans hyx')
     rwa [hxy.antisymm hyx']
 
-instance {s : α} : OrderTop (Partition s) where
+instance : OrderTop (Partition s) where
   top := (ofIndependent' (sSupIndep_singleton s)).congr sSup_singleton
   le_top := by
     obtain (rfl | hs) := eq_or_ne s ⊥
@@ -204,7 +380,7 @@ instance {s : α} : OrderTop (Partition s) where
     rw [mem_congr_iff, mem_ofIndependent'_iff]
     exact ⟨rfl, hs⟩
 
-@[simp] lemma mem_top_iff {a s : α} : a ∈ (⊤ : Partition s) ↔ a = s ∧ a ≠ ⊥ := by
+@[simp] lemma mem_top_iff : a ∈ (⊤ : Partition s) ↔ a = s ∧ a ≠ ⊥ := by
   change a ∈ Partition.congr _ _ ↔ _
   rw [mem_congr_iff, mem_ofIndependent'_iff, mem_singleton_iff]
 
@@ -240,33 +416,6 @@ noncomputable instance {s : α} : OrderBot (Partition s) where
   bot_le P _ hx := exists_mem_le_of_le_sSup_of_isAtom hx.1 hx.2 P.sSup_eq.ge
 
 end Discrete
-
-section PairwiseDisjoint
-
-variable {α : Type*} [Order.Frame α] {s : α}
-
-@[simps] def ofPairwiseDisjoint {p : Set α} (h : p.PairwiseDisjoint id) (h_empty : ⊥ ∉ p):
-    Partition (sSup p) where
-  parts := p
-  indep := sSupIndep_iff_pairwiseDisjoint.mpr h
-  bot_notMem := h_empty
-  sSup_eq' := rfl
-
-@[simps] def ofPairwiseDisjoint' {s : α} {parts : Set α}
-  (pairwiseDisjoint : parts.PairwiseDisjoint id)
-  (forall_nonempty : ∀ s ∈ parts, s ≠ ⊥) (eq_sUnion : s = sSup parts) :
-    Partition s where
-  parts := parts
-  indep := pairwiseDisjoint.sSupIndep
-  bot_notMem := fun h ↦ by simpa using forall_nonempty _ h
-  sSup_eq' := eq_sUnion.symm
-
-@[simp] lemma mem_ofPairwiseDisjoint' {s : α} {parts : Set α} (pairwiseDisjoint)
-    (forall_nonempty) (eq_sUnion) {x : α} :
-  x ∈ ofPairwiseDisjoint' (s := s) (parts := parts) pairwiseDisjoint forall_nonempty eq_sUnion ↔
-    x ∈ parts := Iff.rfl
-
-end PairwiseDisjoint
 
 section Bind
 

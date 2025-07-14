@@ -96,45 +96,6 @@ lemma Pairwise.sum_right {ι ι' γ : Type*} {G : ι → γ} {H : ι' → γ} {r
   rw [← Sum.elim_comp_inr G H, onFun_comp]
   exact h.comp_of_injective Sum.inr_injective
 
-instance {ι α : Type*} {r : α → α → Prop} [IsRefl α r] {f : ι → α} : IsRefl ι (r on f) where
-  refl i := refl (f i)
-
-instance {r s : α → α → Prop} [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
-  refine ⟨fun a b h ↦ ?_⟩
-  obtain (h | h) := h <;> simp [symm_of _ h]
-
-instance {r s : α → α → Prop} [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊓ s) :=
-  ⟨fun a b ⟨hr, hs⟩ ↦ by simp [symm_of _ hr, symm_of _ hs]⟩
-
-instance {r s : α → α → Prop} [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
-  ⟨fun _ _ _ ⟨hr, hs⟩ ⟨hr', hs'⟩ ↦ ⟨trans_of r hr hr', trans_of s hs hs'⟩⟩
-
-instance {r : α → α → Prop} [IsSymm α r] : IsSymm α (Relation.TransGen r) := by
-  refine ⟨fun a b h ↦ ?_⟩
-  induction h with
-  | single hr => exact Relation.TransGen.single (symm_of r hr)
-  | tail _ hr ih => exact Relation.TransGen.head (symm_of r hr) ih
-
-/-- Minimal assumption (that I can think of) for `Relation.transGen_self_iff`. -/
-class Relation.foo (r : α → α → Prop) where
-  isfoo : ∀ ⦃x y⦄, r x y → r y y
-
-instance {r : α → α → Prop} [IsSymm α r] [IsTrans α r] : Relation.foo r where
-  isfoo _ _ hr := _root_.trans (symm_of r hr) hr
-
-instance {r s : α → α → Prop} [Relation.foo r] [Relation.foo s] : Relation.foo (r ⊔ s) where
-  isfoo _ _ hr := by obtain (hr | hr) := hr <;> simp [Relation.foo.isfoo hr]
-
-instance {r s : α → α → Prop} [Relation.foo r] [Relation.foo s] : Relation.foo (r ⊓ s) where
-  isfoo _ _ h := ⟨Relation.foo.isfoo h.1, Relation.foo.isfoo h.2⟩
-
-lemma Relation.transGen_self_iff {r : α → α → Prop} [Relation.foo r] {x : α} :
-    Relation.TransGen r x x ↔ r x x := by
-  refine ⟨fun h => ?_, Relation.TransGen.single⟩
-  obtain (h | ⟨_, _, h⟩) := (Relation.transGen_iff r _ _).mp h
-  · exact h
-  exact Relation.foo.isfoo h
-
 instance {G : Graph α β} : Relation.foo (G.dup) where
   isfoo _ _ hr := G.dup_refl_iff.mp hr.right_mem
 
@@ -583,10 +544,10 @@ protected lemma sUnion_range {f : ι → Graph α β} (h : Pairwise (Graph.Compa
 
 /-! ### Unions of pairs -/
 
-private lemma union_dup_refl_iff : x ∈ V(G) ∪ V(H) ↔ Relation.TransGen (G.dup ⊔ H.dup) x x := by
+private lemma union_dup_refl_iff : x ∈ V(G) ∪ V(H) ↔ Relation.TransClosure (G.dup ⊔ H.dup) x x := by
   refine ⟨?_, fun h => ?_⟩
   · rintro (hx | hx) <;> rw [dup_refl_iff] at hx <;> refine Relation.TransGen.single <| by aesop
-  obtain (h | h) := Relation.transGen_self_iff.mp h <;> simp [h.right_mem]
+  obtain (h | h) := Relation.transClosure_self_iff.mp h <;> simp [h.right_mem]
 
 /-- The union of two graphs `G` and `H`. If there is an edge `e` whose `G`-ends differ from
 its `H`-ends, then `G` is favoured, so this is not commutative in general.
@@ -596,12 +557,12 @@ definitionally unions. -/
 protected def union (G H : Graph α β) : Graph α β where
   vertexSet := V(G) ∪ V(H)
   edgeSet := E(G) ∪ E(H)
-  dup x y := Relation.TransGen (G.dup ⊔ H.dup) x y
+  dup x y := Relation.TransClosure (G.dup ⊔ H.dup) x y
   dup_refl_iff x := union_dup_refl_iff
   dup_symm _ _ := symm_of _
   dup_trans _ _ _ := trans_of _
   IsLink e x y := ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
-    Relation.TransGen (G.dup ⊔ H.dup) x u ∧ Relation.TransGen (G.dup ⊔ H.dup) y v
+    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v
   isLink_symm e he x y hl :=
     let ⟨u, v, huv, hxu, hyv⟩ := hl
     ⟨v, u, by rwa [G.isLink_comm, H.isLink_comm], hyv, hxu⟩
@@ -643,16 +604,16 @@ lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := rfl
 lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 @[simp]
-lemma union_dup : (G ∪ H).dup x y ↔ Relation.TransGen (G.dup ⊔ H.dup) x y := Iff.rfl
+lemma union_dup : (G ∪ H).dup x y ↔ Relation.TransClosure (G.dup ⊔ H.dup) x y := Iff.rfl
 
 @[simp]
 lemma union_isLink : (G ∪ H).IsLink e x y ↔
     ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
-    Relation.TransGen (G.dup ⊔ H.dup) x u ∧ Relation.TransGen (G.dup ⊔ H.dup) y v := Iff.rfl
+    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v := Iff.rfl
 
 @[simp]
 lemma union_inc_iff : (G ∪ H).Inc e x ↔ ∃ u, (G.Inc e u ∨ (H.Inc e u ∧ e ∉ E(G))) ∧
-    Relation.TransGen (G.dup ⊔ H.dup) x u := by
+    Relation.TransClosure (G.dup ⊔ H.dup) x u := by
   simp [Inc]
   refine ⟨fun ⟨y, u, v, h, hxu, hyv⟩ => ⟨u, h.imp (⟨v, ·⟩) fun ⟨h, he⟩ => ⟨⟨v, h⟩, he⟩, hxu⟩, ?_⟩
   rintro ⟨u, (⟨v, h⟩ | ⟨⟨v, h⟩, he⟩), hxu⟩
