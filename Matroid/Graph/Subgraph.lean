@@ -144,6 +144,10 @@ lemma isLabelSubgraph_iff : H ≤l G ↔ (∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(
     ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.dup_iff, h.isLink_of_isLink⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
+lemma isLabelSubgraph_of (hdup : ∀ ⦃x y⦄, x ∈ V(H) → y ∈ V(H) → (G.dup x y ↔ H.dup x y))
+    (hlink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y) : H ≤l G :=
+  ⟨hdup, hlink⟩
+
 lemma isLabelSubgraph_iff_of_LabelUnique [G.LabelUnique] [H.LabelUnique] :
     H ≤l G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.vertexSet, h.isLink_of_isLink⟩,
@@ -227,6 +231,11 @@ lemma le_iff : H ≤ G ↔ (∀ ⦃x y⦄, x ∈ V(H) → (G.dup x y ↔ H.dup x
   ⟨fun h ↦ ⟨fun _ _ => dup_iff_dup_of_le_of_mem h, h.isLink_of_isLink⟩,
     fun h ↦ ⟨⟨fun _ _ hx _ => h.1 hx, fun _ _ _ hl => h.2 hl⟩,
     fun _ _ hxy hx => (h.1 hx |>.mp hxy).right_mem⟩⟩
+
+lemma le_of (hdupIff : ∀ ⦃x y⦄, x ∈ V(H) → (G.dup x y ↔ H.dup x y))
+    (hlink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y) : H ≤ G := by
+  rw [le_iff]
+  exact ⟨hdupIff, hlink⟩
 
 lemma dup.mem_iff_mem_of_le (hdup : G.dup x y) (hle : H ≤ G) : x ∈ V(H) ↔ y ∈ V(H) := by
   refine ⟨fun h => ?_, fun h => ?_⟩
@@ -540,7 +549,7 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β where
   dup_refl_iff := by simp
   dup_symm x y := by
     rintro ⟨hx, hy, h | rfl⟩
-    on_goal 1 => simp only [G.dup_symm _ _ h, true_or, and_true]
+    on_goal 1 => simp only [G.dup_symm h, true_or, and_true]
     all_goals simp [hx, hy]
   dup_trans x y z := by
     rintro ⟨hx, hy, h | rfl⟩ ⟨hy', hz, h' | rfl⟩ <;> simp [hx, hy, hy', hz] <;> left <;> try tauto
@@ -602,7 +611,7 @@ lemma induce_isLabelSubgraph (hX : X ⊆ V(G)) : G[X] ≤l G where
   dup_iff x y hx hy := by
     simp_all only [induce_vertexSet, induce_dup, true_and, iff_self_or]
     rintro rfl
-    exact (G.dup_refl_iff x).mp <| hX hx
+    exact G.dup_refl_iff.mp <| hX hx
   isLink_of_isLink e x y h := h.1
 
 instance [G.LabelUnique] : LabelUnique (G[X]) where

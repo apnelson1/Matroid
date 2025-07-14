@@ -85,7 +85,7 @@ lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ ∧ 
   simp +contextual only [le_iff, dup_iff_eq, noEdge_vertexSet, iff_def, and_imp, noEdge_edgeSet,
     mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet, imp_false,
     eq_empty_iff_forall_notMem, true_and, and_true, implies_true]
-  refine ⟨fun hsu hL => ⟨fun x hx => @hsu x x hx |>.2 (G.dup_refl_iff x |>.mp hx) |>.2,
+  refine ⟨fun hsu hL => ⟨fun x hx => @hsu x x hx |>.2 (G.dup_refl_iff |>.mp hx) |>.2,
     fun e he => ?_, ⟨fun _ _ hdup => hsu hdup.left_mem |>.2 hdup |>.1⟩⟩,
     fun hsu hE _ x y hx => ⟨fun heq hxX => heq ▸ hx, fun heq => heq ▸ hsu hx⟩⟩
   obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet he
@@ -166,7 +166,7 @@ lemma singleEdge_isLabelSubgraph_iff :
     and_self]
   refine ⟨fun h _ => @h u v (Or.inl rfl) (Or.inr rfl) |>.1, fun hdup hl => ⟨?_, ?_⟩⟩
   · rintro x y (rfl | rfl) (rfl | rfl)
-    <;> try simp [(G.dup_refl_iff _).mp hl.left_mem, (G.dup_refl_iff _).mp hl.right_mem]
+    <;> try simp [G.dup_refl_iff.mp hl.left_mem, G.dup_refl_iff.mp hl.right_mem]
     · exact hdup
     exact fun a => (hdup a.symm).symm
   · rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
@@ -220,7 +220,7 @@ lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G
     simp only [dup_iff_eq, bouquet_vertexSet, mem_singleton_iff]
     refine ⟨fun h => by simp [hss h.left_mem h.right_mem, hss h.right_mem hv], ?_⟩
     rintro ⟨rfl, rfl⟩
-    exact (G.dup_refl_iff x).mp hv
+    exact G.dup_refl_iff.mp hv
   · simp [bouquet_inc_iff, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
   simp only [bouquet_inc_iff] at h
   obtain ⟨z,w, hzw⟩ := exists_isLink_of_mem_edgeSet h.1

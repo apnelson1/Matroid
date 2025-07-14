@@ -81,11 +81,11 @@ structure Graph (α β : Type*) where
   /-- The vertex set. -/
   vertexSet : Set α := {x | dup x x}
   /-- The vertex relation is reflexive for all vertices in the vertex set. -/
-  dup_refl_iff : ∀ x, x ∈ vertexSet ↔ dup x x := by exact fun x ↦ Iff.rfl
+  dup_refl_iff : ∀ ⦃x⦄, x ∈ vertexSet ↔ dup x x := by exact fun x ↦ Iff.rfl
   /-- The vertex relation is symmetric. -/
-  dup_symm x y : dup x y → dup y x
+  dup_symm : ∀ ⦃x y⦄, dup x y → dup y x
   /-- The vertex relation is transitive. -/
-  dup_trans x y z : dup x y → dup y z → dup x z
+  dup_trans : ∀ ⦃x y z⦄, dup x y → dup y z → dup x z
   /-- The binary incidence predicate, stating that `x` and `y` are the ends of an edge `e`.
   If `G.IsLink e x y` then we refer to `e` as `edge` and `x` and `y` as `left` and `right`. -/
   IsLink : β → α → α → Prop
@@ -96,7 +96,7 @@ structure Graph (α β : Type*) where
   /-- An edge is incident with at most one pair of vertices. -/
   dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → dup x v ∨ dup x w
   /-- An edge `e` is incident to something if and only if `e` is in the edge set. -/
-  edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y := by exact fun _ ↦ Iff.rfl
+  edge_mem_iff_exists_isLink : ∀ ⦃e⦄, e ∈ edgeSet ↔ ∃ x y, IsLink e x y := by exact fun _ ↦ Iff.rfl
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
   left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ vertexSet
   /-- If `x` and `y` represent the same vertex, it has the same incidence relation. -/
@@ -117,13 +117,13 @@ scoped notation "E(" G ")" => Graph.edgeSet G
 /-! ### Vertex relation -/
 
 lemma dup_of_mem_vertexSet (hx : x ∈ V(G)) : G.dup x x :=
-  G.dup_refl_iff x |>.mp hx
+  G.dup_refl_iff |>.mp hx
 
 lemma vertexSet_eq_setOf_dup : V(G) = {x | G.dup x x} := by
   ext x
   simp [G.dup_refl_iff]
 
-protected lemma dup.symm (h : G.dup x y) : G.dup y x := G.dup_symm _ _ h
+protected lemma dup.symm (h : G.dup x y) : G.dup y x := G.dup_symm h
 
 instance : IsSymm α (G.dup) where
   symm := G.dup_symm
@@ -131,7 +131,7 @@ instance : IsSymm α (G.dup) where
 lemma dup_comm : G.dup x y ↔ G.dup y x := ⟨.symm, .symm⟩
 
 protected lemma dup.trans (h : G.dup x y) (h' : G.dup y z) : G.dup x z :=
-  G.dup_trans _ _ _ h h'
+  G.dup_trans h h'
 
 instance : IsTrans α (G.dup) where
   trans := G.dup_trans
@@ -164,7 +164,7 @@ def labelUniqueAt (G : Graph α β) (x : α) : Prop := ∀ ⦃y⦄, G.dup x y �
 lemma labelUniqueAt.dup_iff (h : G.labelUniqueAt x) : G.dup x y ↔ x = y ∧ x ∈ V(G) := by
   refine ⟨fun hdup ↦ ⟨h hdup, hdup.left_mem⟩, ?_⟩
   rintro ⟨rfl, hx⟩
-  exact (G.dup_refl_iff x).mp hx
+  exact G.dup_refl_iff.mp hx
 
 lemma dup.of_labelUniqueAt (hdup : G.dup x y) (h : G.labelUniqueAt x) : x = y := h hdup
 
