@@ -156,26 +156,45 @@ lemma multiConn_delete (M : Matroid α) (X : ι → Set α) (D : Set α) :
   convert rfl using 3 with i
   tauto_set
 
--- lemma multiConn_project_le (M : Matroid α) (X : ι → Set α) (C : Set α) :
---     (M.project C).multiConn X ≤ M.multiConn X := by
---   wlog hC : M.Indep C generalizing C with aux
---   · obtain ⟨I, hI⟩ := M.exists_isBasis' C
---     grw [hI.project_eq_project, aux _ hI.indep]
---   choose I hI using fun i ↦ (M.project C).exists_isBasis' (X i)
---   choose J hJ using fun i ↦ (hI i).indep.of_project.subset_isBasis'_of_subset (hI i).subset
-
---   -- have hCcl : M.closure
---   rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity (fun i ↦ (hJ i).1),
---     project_comap]
---   sorry
-
-
-
 lemma multiConn_closure (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ M.closure (X i)) = M.multiConn X := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
   rw [multiConn_eq_comap_nullity (I := I), multiConn_eq_comap_nullity (I := I) hI]
   exact fun i ↦ (hI i).isBasis_closure_right.isBasis'
+
+lemma multiConn_closure_congr {X Y : ι → Set α} (hXY : ∀ i, M.closure (X i) = M.closure (Y i)) :
+    M.multiConn X = M.multiConn Y := by
+  rw [← M.multiConn_closure X, ← M.multiConn_closure Y]
+  simp [hXY]
+
+/-- A strictly weaker version of `multiConn_delete_ge` with a disjointness hypothesis,
+for use in the proof of the stronger version. This is hard to inline for universe reasons. -/
+private lemma multiConn_delete_ge_aux [Nonempty ι] (M : Matroid α) (X : ι → Set α) (D : Set α)
+    (hdj : Pairwise (Disjoint on X)) :
+    M.multiConn X ≤ ((M ＼ D).multiConn fun i ↦ (X i \ D)) + (ENat.card ι - 1) * (M.eRk D) := by
+  wlog hX : ∀ i, M.Indep (X i) generalizing X with aux
+  · choose I hI using fun i ↦ M.exists_isBasis' (X i)
+    simp_rw [← multiConn_closure_congr fun i ↦ (hI i).closure_eq_closure]
+    grw [aux I (hdj.mono fun i j ↦ Disjoint.mono (hI i).subset (hI j).subset)
+      (fun i ↦ (hI i).indep), (M ＼ D).multiConn_mono fun i ↦ diff_subset_diff_left (hI i).subset]
+
+  sorry
+
+lemma foo [Nonempty ι] (M : Matroid α) (X : ι → Set α) (D : Set α) :
+    M.multiConn X ≤ ((M ＼ D).multiConn fun i ↦ (X i \ D)) + (ENat.card ι - 1) * (M.eRk D) := by
+  wlog hD : D ⊆ ⋃ i, X i generalizing D with aux
+  · grw [aux (D ∩ (⋃ i, X i)) inter_subset_right, multiConn_delete, M.eRk_mono inter_subset_left,
+      multiConn_delete]
+    simp_rw [sdiff_idem]
+    convert rfl.le using 4 with i
+    rw [diff_inter, diff_eq_empty.2 (subset_iUnion ..), union_empty]
+  grw [multiconn_eq_comap_prod_multiConn, (M ＼ D).multiconn_eq_comap_prod_multiConn,
+    multiConn_delete_ge_aux _ _ (Prod.fst ⁻¹' D) disjoint_map_prod_right, delete_comap, eRk_comap,
+    image_preimage_eq _ Prod.fst_surjective]
+  convert rfl.le with i
+  ext ⟨e, j⟩
+  simp only [mem_image, mem_diff, Prod.mk.injEq, existsAndEq, true_and, mem_preimage]
+  tauto
 
 lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
     (hdj : Pairwise (Disjoint on X)) (D : Set α) :

@@ -43,6 +43,16 @@ lemma delete_restrict_eq_restrict (M : Matroid α) {D R : Set α} (hDR : Disjoin
   suffices ∀ ⦃I : Set α⦄, I ⊆ R → M.Indep I → Disjoint I D from ext_indep rfl <| by simpa
   exact fun I hIR _ ↦ hDR.symm.mono_left hIR
 
+lemma restrict_comap {β : Type*} (M : Matroid β) (f : α → β) (R : Set β) :
+    (M ↾ R).comap f = M.comap f ↾ (f ⁻¹' R) := by
+  simp only [ext_iff_indep, comap_ground_eq, restrict_ground_eq, comap_indep_iff,
+    restrict_indep_iff, image_subset_iff, true_and]
+  tauto
+
+lemma delete_comap {β : Type*} (M : Matroid β) (f : α → β) (D : Set β) :
+    (M ＼ D).comap f = M.comap f ＼ (f ⁻¹' D) := by
+  rw [delete_eq_restrict, restrict_comap, preimage_diff, ← comap_ground_eq, delete_eq_restrict]
+
 -- This belongs in `Constructions`.
 lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   refine ⟨Indep.restrict_eq_freeOn, fun h ↦ ?_⟩
