@@ -1,6 +1,7 @@
 import Matroid.Modular.Flat
 import Matroid.Connectivity.Multi
 import Matroid.Constructions.Project
+import Matroid.ForMathlib.Matroid.Closure
 
 open Set BigOperators Set.Notation Function
 
@@ -65,5 +66,81 @@ def gutsModularCut (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) 
 lemma mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) {F : Set α} :
     F ∈ M.gutsModularCut X Xu ↔ M.IsFlat F ∧ (M.project F).IsSkewFamily X := Iff.rfl
 
--- lemma foo (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) :
---     M.multiConn X ≤ (M.projectBy )
+lemma closure_mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E)
+    {Y : Set α} : M.closure Y ∈ M.gutsModularCut X Xu ↔ (M.project Y).IsSkewFamily X := by
+  rw [mem_gutsModularCut_iff, and_iff_right (M.closure_isFlat _), project_closure_eq]
+
+lemma foo (M : Matroid α) (X : ι → Set α) (Xu : ⋃ i, X i = M.E) (hXsk : ¬ M.IsSkewFamily X) :
+    M.multiConn X = (M.projectBy (M.gutsModularCut X Xu)).multiConn X + 1 := by
+
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · simp at hXsk
+  classical
+  have hXE : ∀ i, X i ⊆ M.E := fun i ↦ (subset_iUnion ..).trans_eq Xu
+  choose J hJ using fun i ↦ (M.project (⋃ j ∈ ({i} : Set ι)ᶜ, X j)).exists_isBasis (X i)
+  have hJi := fun i ↦ (hJ i).indep.of_project
+  choose I hI using fun i ↦ (hJi i).subset_isBasis_of_subset (hJ i).subset
+  obtain ⟨hI, hJI⟩ := forall_and.1 hI
+  -- by_cases hIsk : M.IsSkewFamily I
+  -- · simp [(hIsk.cls_isSkewFamily.mono (fun i ↦ (hI i).subset_closure)).multiConn]
+  have hul {i} {j} : J j ⊆ update J i (I i) j := sorry
+  have huu {i} {j} : update J i (I i) j ⊆ I j := sorry
+  /- The union of one `I i` and all the `J` is independent -/
+  have h1 (i) : M.Indep ((I i) ∪ ⋃ j, J j)
+  · suffices hsk : M.IsSkewFamily (update J i (I i))
+    · rw [Indep.isSkewFamily_iff_pairwise_disjoint_union_indep] at hsk
+      · refine hsk.2.subset ?_
+        simp only [ne_eq, union_subset_iff, iUnion_subset_iff]
+        exact ⟨subset_iUnion_of_subset i (by simp), fun j ↦ subset_iUnion_of_subset j hul⟩
+      exact fun j ↦ (hI j).indep.subset huu
+    rw [isSkewFamily_iff_nearly_forall_skew_compl_singleton (hJi i₀).subset_ground]
+    intro j hji
+    rw [update_of_ne hji, (hJi j).skew_iff_contract_indep, ← project_indep_iff]
+    · exact (hJ j).indep.of_project_subset <| iUnion₂_mono fun k _ ↦ huu.trans <| (hI _).subset
+    exact iUnion₂_subset fun i _ ↦ huu.trans (hI i).indep.subset_ground
+  have hdj {i j : ι} (hij : i ≠ j) : Disjoint (J i) (I j) := by
+    refine ((subset_diff.1 <| (project_indep_iff.1 (hJ i).indep).subset_ground).2).mono_right ?_
+    grw [le_iff_subset, (hI j).subset, ← subset_biUnion_of_mem hij.symm]
+  have hJi : M.Indep (⋃ j, J j) :=
+    (h1 (Classical.arbitrary ι)).subset subset_union_right
+  /- The union of all the `J i` does not belong to the guts cut -/
+  have h2 : M.closure (⋃ i, J i) ∉ M.gutsModularCut X Xu
+  · refine fun hcl ↦ hXsk ?_
+    rw [closure_mem_gutsModularCut_iff] at hcl
+    replace hcl : (M.project (⋃ i, J i)).IsSkewFamily fun i ↦ I i \ J i :=
+      (hcl.mono fun i ↦ (diff_subset (t := J i)).trans (hI i).subset)
+    rw [Indep.isSkewFamily_iff_pairwise_disjoint_union_indep, hJi.project_indep_iff,
+      ← iUnion_union_distrib, iUnion_congr (fun i ↦ diff_union_of_subset (hJI i))] at hcl
+    · simp_rw [isSkewFamily_iff_cls_isSkewFamily hXE, ← (hI _).closure_eq_closure,
+        ← isSkewFamily_iff_cls_isSkewFamily (fun i ↦ (hI i).indep.subset_ground)]
+      rw [Indep.isSkewFamily_iff_pairwise_disjoint_union_indep (fun i ↦ (hI i).indep),
+        and_iff_left hcl.2.2]
+      intro i j hij
+      rw [Function.onFun, ← diff_union_of_subset (hJI i), disjoint_union_left,
+        and_iff_left (hdj hij), ← diff_union_of_subset (hJI j), disjoint_union_right,
+        and_iff_left ((hdj hij.symm).symm.mono_left diff_subset)]
+      exact hcl.1 hij
+    simp_rw [hJi.project_indep_iff, disjoint_iUnion_right]
+    refine fun i ↦ ⟨fun j ↦ ?_, (h1 i).subset (union_subset_union_left _ diff_subset)⟩
+    obtain rfl | hij := eq_or_ne i j
+    · exact disjoint_sdiff_left
+    exact (hdj hij.symm).symm.mono_left diff_subset
+
+  have h3 (s : ι) : M.project (⋃ i ∈ ({s} : Set ι)ᶜ, X i)
+      = (M.projectBy (M.gutsModularCut X Xu)).project (⋃ i ∈ ({s} : Set ι)ᶜ, X i) := by
+    rw [ModularCut.projectby_eq_project_of_closure_mem]
+    rw [closure_mem_gutsModularCut_iff]
+    sorry
+
+
+
+
+
+
+
+    -- refine (h1.subset)
+
+
+
+
+        -- refine fun i j hij ↦ disjoint_left.2 fun e hei hej ↦ ?_

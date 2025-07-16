@@ -1003,6 +1003,26 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
   · simp [show f ∈ N.closure (insert e X) from N.closure_subset_closure (subset_insert ..) hfX, hfX]
   simpa [hfX, heX'] using N.closure_exchange_iff (X := X) (e := f) (f := e)
 
+/-- Projecting out by a flat in a modular cut cancels the projection by the modular cut. -/
+lemma ModularCut.projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :
+    (M.projectBy U).project F = M.project F := by
+  refine ext_closure fun X ↦ Set.ext fun e ↦ ?_
+  have hcl : M.closure (X ∪ F) ∈ U := by
+    refine U.superset_mem hF (M.closure_isFlat _) ?_
+    exact (M.subset_closure_of_subset' subset_union_right (U.isFlat_of_mem hF).subset_ground)
+  simp [mem_closure_projectBy_iff, hcl]
+
+lemma ModularCut.projectby_eq_project_of_closure_mem (U : M.ModularCut) (hX : M.closure X ∈ U) :
+    (M.projectBy U).project X = M.project X := by
+  rw [← M.project_closure_eq, ← U.projectBy_project_eq_project_of_mem hX, ← project_closure_eq,
+    eq_comm, ← project_closure_eq]
+  convert rfl using 2
+  refine subset_antisymm ?_ ?_
+  · rw [← closure_inter_ground, projectBy_ground]
+    exact closure_subset_closure _ <| M.inter_ground_subset_closure X
+  rw [← (M.projectBy U).closure_closure (X := X)]
+  exact closure_subset_closure _ <| closure_subset_closure_projectBy U X
+
 end projectBy
 
 

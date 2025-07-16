@@ -30,6 +30,13 @@ lemma IsSkewFamily.subset_loops_of_ne (h : M.IsSkewFamily Xs) (hij : i ≠ j) :
     Xs i ∩ Xs j ⊆ M.loops :=
   h.2 hij
 
+@[simp]
+lemma isSkewFamily_iff_of_subsingleton [Subsingleton ι] : M.IsSkewFamily Xs ↔ ∀ i, Xs i ⊆ M.E := by
+  rw [isSkewFamily_iff]
+  simp only [isModularFamily_iff_of_subsingleton, ne_eq, and_iff_left_iff_imp]
+  refine fun _ i j hne ↦ ?_
+  simp [Subsingleton.elim i j] at hne
+
 lemma IsSkewFamily.disjoint_inter_indep (h : M.IsSkewFamily Xs) (hI : M.Indep I) (hij : i ≠ j) :
     Disjoint (Xs i ∩ I) (Xs j) := by
   rw [disjoint_iff_forall_ne]
@@ -304,6 +311,15 @@ lemma IsSkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.IsSkew
   exact ⟨i, singleton_subset_iff.2 <| mem_of_mem_of_subset he
     (inter_subset_left.trans inter_subset_left)⟩
 
+lemma IsSkewFamily.subset_of_isCircuit_of_mem {Xs : η → Set α} (h : M.IsSkewFamily Xs) {C : Set α}
+    {i : η} (hC : M.IsCircuit C) (hCss : C ⊆ ⋃ i, Xs i) (he : e ∈ C) (hei : e ∈ Xs i) :
+    C ⊆ Xs i := by
+  obtain ⟨j, hj⟩ := h.exists_subset_of_isCircuit hC hCss
+  obtain rfl | hne := eq_or_ne i j
+  · assumption
+  obtain rfl := (h.isLoop_of_mem_inter hne ⟨hei, hj he⟩).eq_of_isCircuit_mem hC he
+  simpa
+
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.IsSkewFamily (fun i ↦ bif i then X else Y)
 
@@ -366,6 +382,12 @@ lemma Skew.disjoint_of_indep_right (h : M.Skew X I) (hI : M.Indep I) : Disjoint 
 lemma Skew.diff_loops_disjoint_left (h : M.Skew X Y) : Disjoint (X \ M.loops) Y := by
   rw [disjoint_iff_inter_eq_empty, ← inter_diff_right_comm, diff_eq_empty]
   exact h.inter_subset_loops
+
+lemma Skew.diff_loops_disjoint_right (h : M.Skew X Y) : Disjoint X (Y \ M.loops) :=
+  h.symm.diff_loops_disjoint_left.symm
+
+lemma Skew.diff_loops_disjoint (h : M.Skew X Y) : Disjoint (X \ M.loops) (Y \ M.loops) :=
+  h.diff_loops_disjoint_left.mono_right diff_subset
 
 lemma Skew.mono (h : M.Skew X Y) (hX : X' ⊆ X) (hY : Y' ⊆ Y) : M.Skew X' Y' :=
   IsSkewFamily.mono h (Ys := fun i ↦ bif i then X' else Y') (Bool.rec (by simpa) (by simpa))
@@ -481,6 +503,11 @@ lemma skew_iff_contract_restrict_eq_restrict (hX : X ⊆ M.E := by aesop_mat)
     ← hI.indep.skew_iff_disjoint_union_indep hJ.indep] at hi
 
   exact hi.1.1.closure_skew.mono hI.subset_closure hJ.subset_closure
+
+lemma Indep.skew_iff_contract_indep (hI : M.Indep I) (hX : X ⊆ M.E) :
+    M.Skew I X ↔ (M ／ X).Indep I := by
+  rw [skew_comm, skew_iff_contract_restrict_eq_restrict, hI.restrict_eq_freeOn,
+    ← restrict_eq_freeOn_iff]
 
 lemma skew_insert_iff (he : e ∈ M.E) :
     M.Skew (insert e X) Y ↔ M.Skew X Y ∧ (e ∈ M.closure (X ∪ Y) → e ∈ M.closure X) := by
@@ -640,6 +667,10 @@ lemma Skew.subset_or_subset_of_isCircuit (h : M.Skew X Y) {C : Set α} (hC : M.I
   left
   simpa using hi
 
+lemma Skew.subset_of_isCircuit_of_mem_left (h : M.Skew X Y) {C : Set α} (hC : M.IsCircuit C)
+    (hCXY : C ⊆ X ∪ Y) (he : e ∈ C) (heX : e ∈ X) : C ⊆ X := by
+  simpa using h.subset_of_isCircuit_of_mem hC (i := true) (e := e) (by simpa) he (by simpa)
+
 lemma isSkewFamily_iff_forall_skew_compl_singleton {Xs : η → Set α} :
     M.IsSkewFamily Xs ↔ ∀ i, M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
   refine ⟨IsSkewFamily.skew_compl_singleton, fun h ↦ ?_⟩
@@ -667,6 +698,43 @@ lemma isSkewFamily_set_coe_iff_forall_skew_compl_singleton {I : Set η} (Xs : η
   convert Iff.rfl using 4 with i hi
   ext e
   aesop
+
+/-- If `X i` is skew to the union of the other `X j` for all but one `i`,
+then the `X i` are skew. -/
+lemma isSkewFamily_iff_nearly_forall_skew_compl_singleton
+    {Xs : η → Set α} {i₀ : η} (hi₀ : Xs i₀ ⊆ M.E) :
+    M.IsSkewFamily Xs ↔ ∀ i ≠ i₀, M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
+  obtain hss | hnt := subsingleton_or_nontrivial η
+  · simp [Subsingleton.elim _ i₀, hi₀]
+  classical
+  rw [isSkewFamily_iff_forall_skew_compl_singleton]
+  refine ⟨fun h i _ ↦ h i, fun h i ↦ ?_⟩
+  obtain hne | rfl := (eq_or_ne i i₀).symm
+  · apply h _ hne
+  wlog hdj : Pairwise (Disjoint on Xs) generalizing Xs with aux
+  · simp_rw [skew_iff_diff_loops_skew (X := Xs i), iUnion_diff]
+    apply aux (diff_subset.trans hi₀)
+    · intro i₁ i₂ hne
+      obtain rfl | hne' := eq_or_ne i₁ i
+      · refine (h _ hne.symm).symm.diff_loops_disjoint.mono_left ?_
+        exact diff_subset_diff_left (subset_biUnion_of_mem hne)
+      refine (h _ hne').diff_loops_disjoint.mono_right <| diff_subset_diff_left ?_
+      exact subset_biUnion_of_mem hne.symm
+    exact fun j hne ↦ (h j hne).mono diff_subset <| iUnion₂_mono fun i h ↦ diff_subset
+  obtain ⟨j₀, hj₀i⟩ := exists_ne i
+  rw [skew_iff_forall_isCircuit _ ?_ ?_]
+  · intro C hC hCss
+    by_contra! hnot
+    obtain ⟨e, he⟩ := not_subset.1 hnot.1
+    apply hnot.2
+    obtain ⟨j, hji : j ≠ i, hej⟩ := mem_iUnion₂.1 <| (diff_subset_iff.2 hCss) ⟨he.1, he.2⟩
+    grw [(h j hji).subset_of_isCircuit_of_mem_left hC  ?_ he.1 hej, ← subset_biUnion_of_mem hji]
+    rwa [← biUnion_insert, ← union_singleton, compl_union_self] at hCss ⊢
+  · simpa using fun j hne ↦ hdj (Ne.symm hne)
+  · grw [← (h j₀ hj₀i).subset_ground_right]
+    apply subset_biUnion_of_mem hj₀i.symm
+  simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
+  exact fun j hji ↦ (h j hji).subset_ground_left
 
 lemma skew_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) (hX : X ⊆ M.E) : M.Skew L X := by
   rw [skew_iff_diff_loops_skew_left, diff_eq_empty.2 hL]
@@ -840,8 +908,6 @@ lemma IsModularPair.contract_subset_left {C : Set α} (hXY : M.IsModularPair X Y
 lemma IsModularPair.skew_contract_inter (hXY : M.IsModularPair X Y) :
     (M ／ (X ∩ Y)).Skew (X \ Y) (Y \ X) := by
   rwa [← isModularPair_iff_skew_contract_inter (inter_subset_left.trans hXY.subset_ground_left)]
-
-
 
 section ModularCompl
 

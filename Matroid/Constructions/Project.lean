@@ -133,6 +133,19 @@ lemma project_comap {β : Type*} (M : Matroid β) (f : α → β) (C : Set β) (
     rw [image_preimage_eq_inter_range, inter_eq_self_of_subset_left hC]
   simp only [comap_closure_eq, project_closure, image_union, closure_union_congr_right h']
 
+lemma Dep.project {D : Set α} (hD : M.Dep D) (C : Set α) : (M.project C).Dep D := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' C
+  rw [dep_iff, project_ground, and_iff_left hD.subset_ground, hI.project_eq_project,
+    hI.indep.project_indep_iff]
+  exact fun h ↦ (h.2.subset subset_union_left).not_dep hD
+
+-- lemma IsCircuit.project_subset_dep {C : Set α} (hC : M.IsCircuit C) (X : Set α) :
+--     (M.project C).Dep D := by
+--   obtain ⟨I, hI⟩ := M.exists_isBasis' C
+--   rw [dep_iff, project_ground, and_iff_left hD.subset_ground, hI.project_eq_project,
+--     hI.indep.project_indep_iff]
+--   exact fun h ↦ (h.2.subset subset_union_left).not_dep hD
+
 
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
@@ -151,6 +164,7 @@ lemma loopify_closure' (M : Matroid α) (D : Set α) :
   rw [inter_comm, ← inter_union_distrib_left, inter_comm, diff_union_self, inter_diff_right_comm,
     closure_inter_ground, union_inter_distrib_right,
     inter_eq_self_of_subset_left (closure_subset_ground ..)]
+
 
 -- lemma IsBasis.project_eq (h : M.IsBasis I X) : M.project X = (M.project I).loopify X := by
 --   _

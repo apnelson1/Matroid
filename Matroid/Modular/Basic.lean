@@ -209,14 +209,14 @@ lemma IsModularFamily.cls_isModularFamily (h : M.IsModularFamily Xs) :
 @[simp] lemma isModularFamily_of_isEmpty [IsEmpty ι] : M.IsModularFamily Xs :=
   M.empty_indep.isModularFamily_of_subsets (by simp)
 
-@[simp] lemma isModularFamily_iff_of_subsingleton [Subsingleton ι] :
+@[simp]
+lemma isModularFamily_iff_of_subsingleton [Subsingleton ι] :
     M.IsModularFamily Xs ↔ ∀ i, Xs i ⊆ M.E := by
   obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; simp
   refine ⟨fun h ↦ h.subset_ground_of_mem, fun h ↦ ?_⟩
   obtain ⟨I, hI⟩ := M.exists_isBasis (Xs i)
   exact ⟨I, hI.indep,
     fun j ↦ by rwa [Subsingleton.elim j i, inter_eq_self_of_subset_right hI.subset] ⟩
-
 
 lemma isModularFamily_of_isLoopEquiv (h : M.IsModularFamily Xs)
     (he : ∀ i, M.IsLoopEquiv (Xs i) (Ys i)) : M.IsModularFamily Ys := by

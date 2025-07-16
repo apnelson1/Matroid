@@ -82,7 +82,7 @@ lemma multiConn_eq_nullity_iUnion_add_tsum (hI : ∀ i, M.IsBasis' (I i) (X i)) 
     simpa [preimage_preimage, image_iUnion, image_image]
   exact fun i ↦ M.subset_closure_of_subset' (subset_iUnion ..) (hI i).indep.subset_ground
 
-lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
+lemma multiConn_eq_nullity_iUnion' (hdj : Pairwise (Disjoint on I))
     (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) := by
   rw [multiConn_eq_comap_nullity hIX, nullity_comap, image_iUnion]
   · simp [image_image]
@@ -90,7 +90,20 @@ lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
     Prod.mk.injEq, true_and]
   rintro _ _ i a ha rfl rfl _ _ j _ ha' rfl rfl rfl
   by_contra hne
-  exact (hdj hne).notMem_of_mem_left ((hIX i).subset ha) ((hIX j).subset ha')
+  exact (hdj hne).notMem_of_mem_left ha ha'
+
+lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
+    (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) :=
+  multiConn_eq_nullity_iUnion' (hdj.mono fun i j ↦ Disjoint.mono (hIX i).subset (hIX j).subset) hIX
+
+@[simp]
+lemma multiConn_subsingleton [Subsingleton ι] (M : Matroid α) (X : ι → Set α) :
+    M.multiConn X = 0 := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rw [multiConn_eq_nullity_iUnion Subsingleton.pairwise hI, nullity_eq_zero]
+  obtain hι | ⟨⟨i⟩⟩ := isEmpty_or_nonempty ι
+  · simp
+  exact (hI i).indep.subset <| iUnion_subset_iff.2 fun j ↦ by rw [Subsingleton.elim i j]
 
 lemma multiconn_eq_comap_prod_multiConn (X : ι → Set α) :
     M.multiConn X = (M.comap Prod.fst).multiConn (fun i ↦ (· , i) '' X i) := by
@@ -167,35 +180,6 @@ lemma multiConn_closure_congr {X Y : ι → Set α} (hXY : ∀ i, M.closure (X i
   rw [← M.multiConn_closure X, ← M.multiConn_closure Y]
   simp [hXY]
 
-/-- A strictly weaker version of `multiConn_delete_ge` with a disjointness hypothesis,
-for use in the proof of the stronger version. This is hard to inline for universe reasons. -/
-private lemma multiConn_delete_ge_aux [Nonempty ι] (M : Matroid α) (X : ι → Set α) (D : Set α)
-    (hdj : Pairwise (Disjoint on X)) :
-    M.multiConn X ≤ ((M ＼ D).multiConn fun i ↦ (X i \ D)) + (ENat.card ι - 1) * (M.eRk D) := by
-  wlog hX : ∀ i, M.Indep (X i) generalizing X with aux
-  · choose I hI using fun i ↦ M.exists_isBasis' (X i)
-    simp_rw [← multiConn_closure_congr fun i ↦ (hI i).closure_eq_closure]
-    grw [aux I (hdj.mono fun i j ↦ Disjoint.mono (hI i).subset (hI j).subset)
-      (fun i ↦ (hI i).indep), (M ＼ D).multiConn_mono fun i ↦ diff_subset_diff_left (hI i).subset]
-
-  sorry
-
-lemma foo [Nonempty ι] (M : Matroid α) (X : ι → Set α) (D : Set α) :
-    M.multiConn X ≤ ((M ＼ D).multiConn fun i ↦ (X i \ D)) + (ENat.card ι - 1) * (M.eRk D) := by
-  wlog hD : D ⊆ ⋃ i, X i generalizing D with aux
-  · grw [aux (D ∩ (⋃ i, X i)) inter_subset_right, multiConn_delete, M.eRk_mono inter_subset_left,
-      multiConn_delete]
-    simp_rw [sdiff_idem]
-    convert rfl.le using 4 with i
-    rw [diff_inter, diff_eq_empty.2 (subset_iUnion ..), union_empty]
-  grw [multiconn_eq_comap_prod_multiConn, (M ＼ D).multiconn_eq_comap_prod_multiConn,
-    multiConn_delete_ge_aux _ _ (Prod.fst ⁻¹' D) disjoint_map_prod_right, delete_comap, eRk_comap,
-    image_preimage_eq _ Prod.fst_surjective]
-  convert rfl.le with i
-  ext ⟨e, j⟩
-  simp only [mem_image, mem_diff, Prod.mk.injEq, existsAndEq, true_and, mem_preimage]
-  tauto
-
 lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
     (hdj : Pairwise (Disjoint on X)) (D : Set α) :
     M.multiConn X ≤ (M ＼ D).multiConn X + D.encard := by
@@ -220,6 +204,15 @@ lemma multiConn_project_eq_multiconn_contract (M : Matroid α) (C : Set α) :
       ← multiConn_inter_ground]
     simp [inter_assoc, inter_eq_self_of_subset_right diff_subset]
   rwa [eq_comm, ← (M ／ C).multiConn_restrict_of_subset (R := M.E), project]
+
+lemma IsSkewFamily.multiConn (h : M.IsSkewFamily X) : M.multiConn X = 0 := by
+  obtain ⟨B, hB, hBX⟩ := h.isModularFamily.exists_isMutualBasis_isBase
+  rw [multiConn_eq_nullity_iUnion' (h.pairwise_disjoint_of_isBases hBX.isBasis_inter)
+    (fun i ↦ (hBX.isBasis_inter i).isBasis'), nullity_eq_zero]
+  exact hB.indep.subset <| by simp
+
+
+  -- rw [multiConn_eq_]
 
 -- lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
 --     M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
