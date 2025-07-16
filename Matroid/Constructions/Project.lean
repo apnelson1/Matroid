@@ -34,6 +34,10 @@ lemma project_indep_iff : (M.project C).Indep I ↔ (M ／ C).Indep I := by
   simp only [project, restrict_indep_iff, and_iff_left_iff_imp]
   exact fun h ↦ h.of_contract.subset_ground
 
+lemma project_indep_eq : (M.project C).Indep = (M ／ C).Indep := by
+  ext I
+  rw [project_indep_iff]
+
 lemma Indep.project_indep_iff (hI : M.Indep I) :
     (M.project I).Indep J ↔ Disjoint J I ∧ M.Indep (J ∪ I)  := by
   rw [Matroid.project_indep_iff, hI.contract_indep_iff]
@@ -88,6 +92,21 @@ lemma IsBasis'.project_eq_project (hI : M.IsBasis' I X) : M.project X = M.projec
 
 lemma IsBasis.project_eq_project (hI : M.IsBasis I X) : M.project X = M.project I :=
   hI.isBasis'.project_eq_project
+
+lemma project_isBasis'_eq : (M.project C).IsBasis' = (M ／ C).IsBasis' := by
+  ext I C
+  simp_rw [IsBasis', project_indep_eq]
+
+lemma project_isBasis_iff (hdj : Disjoint X C) :
+    (M.project C).IsBasis I X ↔ (M ／ C).IsBasis I X := by
+  rw [isBasis_iff_isBasis'_subset_ground, isBasis_iff_isBasis'_subset_ground, project_isBasis'_eq,
+    project_ground, contract_ground, subset_diff, and_iff_left hdj]
+
+lemma project_isBase_eq : (M.project C).IsBase = (M ／ C).IsBase := by
+  ext B
+  rw [← isBasis_ground_iff, project_ground, ← isBasis'_iff_isBasis, project_isBasis'_eq,
+    isBasis'_iff_isBasis_inter_ground, contract_ground, inter_eq_self_of_subset_right diff_subset,
+    ← contract_ground, isBasis_ground_iff]
 
 @[simp]
 lemma project_closure_eq (M : Matroid α) (X : Set α) : M.project (M.closure X) = M.project X := by

@@ -262,6 +262,21 @@ lemma isSkewFamily_iff_sum_eRk_eq_eRk_iUnion [Fintype η] [RankFinite M] {Xs : �
   simp_rw [IsRkFinite.isSkewFamily_iff_sum_eRk_eq_eRk_iUnion (fun i ↦ M.isRkFinite_set (Xs i)) hXs,
     ← M.cast_rk_eq, ← Nat.cast_sum, Nat.cast_inj]
 
+/-- If a family of sets contains at most one set without loops, then the family is skew. -/
+lemma isSkewFamily_of_nearly_all_loops {i₀ : η} {Xs : η → Set α} (hi₀ : Xs i₀ ⊆ M.E)
+    (hX : ∀ i ≠ i₀, Xs i ⊆ M.loops) : M.IsSkewFamily Xs := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis (Xs i₀)
+  rw [isSkewFamily_iff, IsModularFamily]
+  refine ⟨⟨I, hI.indep, fun i ↦ ?_⟩, ?_⟩
+  · obtain rfl | hne := eq_or_ne i i₀
+    · rwa [inter_eq_self_of_subset_right hI.subset]
+    rw [(hI.indep.inter_left _).eq_empty_of_subset_loops (inter_subset_left.trans (hX _ hne))]
+    simpa using hX _ hne
+  intro i j hne
+  obtain rfl | hne := eq_or_ne i i₀
+  · grw [inter_subset_right, hX j hne.symm]
+  grw [inter_subset_left, hX _ hne]
+
 lemma isSkewFamily_iff_forall_isCircuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ M.E)
     (hdj : Pairwise (Disjoint on Xs)) :
     M.IsSkewFamily Xs ↔ ∀ C, M.IsCircuit C → C ⊆ ⋃ i, Xs i → ∃ i, C ⊆ Xs i := by

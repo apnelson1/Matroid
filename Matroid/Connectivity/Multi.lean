@@ -211,7 +211,35 @@ lemma IsSkewFamily.multiConn (h : M.IsSkewFamily X) : M.multiConn X = 0 := by
     (fun i ↦ (hBX.isBasis_inter i).isBasis'), nullity_eq_zero]
   exact hB.indep.subset <| by simp
 
+lemma multiConn_dual_eq_eRank_project (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
+    (hI : ∀ i, (M.project (M.E \ X i)).IsBasis (I i) (X i)) :
+    M✶.multiConn X = (M.project (⋃ i, I i)).eRank := by
+  have hXE (i) : X i ⊆ M.E := by grw [← hu, ← subset_iUnion]
+  have hI' (i) : M✶.IsBasis (X i \ I i) (X i) := by
+    rw [← isBase_restrict_iff, ← delete_compl, ← dual_contract, dual_ground,
+      dual_isBase_iff _, ← isBasis_ground_iff, contract_ground, diff_diff_cancel_left (hXE i),
+      diff_diff_cancel_left (hI i).subset, ← project_isBasis_iff disjoint_sdiff_right]
+    · exact hI i
+    grw [contract_ground, diff_diff_cancel_left (hXE i), diff_subset]
+  rw [multiConn_eq_nullity_iUnion hdj (fun i ↦ (hI' i).isBasis'), nullity_eq_eRank_restrict_dual,
+    ← delete_compl, dual_delete_dual, dual_ground, eRank_project]
+  congr
+  grw [subset_antisymm_iff, diff_subset_iff, ← iUnion_union_distrib, subset_diff,
+    iUnion_congr (fun i ↦ diff_union_of_subset (hI i).subset), hu, and_iff_right rfl.subset,
+    ← hu, and_iff_right (iUnion_mono (fun i ↦ (hI i).subset)), disjoint_iUnion_right]
+  simp_rw [disjoint_iUnion_left]
+  intro i j
+  obtain rfl | hne := eq_or_ne i j
+  · exact disjoint_sdiff_right
+  exact (hdj hne).symm.mono (hI j).subset diff_subset
 
+lemma multiConn_dual_eq_eRank_contract (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
+    (hI : ∀ i, (M ／ (M.E \ X i)).IsBasis (I i) (X i)) :
+    M✶.multiConn X = (M ／ (⋃ i, I i)).eRank := by
+  rw [multiConn_dual_eq_eRank_project hdj hu, eRank_project]
+  intro i
+  rw [project_isBasis_iff disjoint_sdiff_right]
+  exact hI i
   -- rw [multiConn_eq_]
 
 -- lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :

@@ -57,10 +57,18 @@ lemma Indep.contract_eRk_dual_eq (hI : M.Indep I) : (M ／ I)✶.eRank = M✶.eR
 
 end Delete
 
+lemma eRank_project (M : Matroid α) (C : Set α) : (M.project C).eRank = (M ／ C).eRank := by
+  obtain ⟨B, hB⟩ := (M.project C).exists_isBase
+  rw [← hB.encard_eq_eRank, IsBase.encard_eq_eRank (B := B)]
+  rwa [← project_isBase_eq]
+
 lemma eRk_project_eq_eRk_contract (M : Matroid α) (C X : Set α) :
     (M.project C).eRk X = (M ／ C).eRk X := by
   rw [project, eRk_restrict, ← eRk_inter_ground, inter_assoc, contract_ground,
     inter_eq_self_of_subset_right diff_subset, ← contract_ground, eRk_inter_ground]
+
+lemma eRk_project_eq (M : Matroid α) (C : Set α) : (M.project C).eRk = (M ／ C).eRk := by
+  ext; apply eRk_project_eq_eRk_contract
 
 /-- The relative `ℕ∞`-rank of sets `X` and `Y`, defined to be the `ℕ∞`-rank of `Y` in `M ／ X`,
 and equal to the minimum number of elements that need to be added to `X` to span `Y`.

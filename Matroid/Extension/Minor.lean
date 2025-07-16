@@ -63,6 +63,78 @@ This corresponds to the freeest extension of `M` that contracts to the extension
   rintro ⟨F, hF, rfl⟩
   simpa [(subset_diff.1 (U.isFlat_of_mem hF).subset_ground).2.sdiff_eq_left]
 
+/-- Given a modular cut `U` of `M`, the corresponding modular cut in some projection of `M`. -/
+def ModularCut.project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCut where
+  carrier := {F | (M.project C).IsFlat F ∧ M.closure (F ∪ C) ∈ U}
+  forall_isFlat F := fun h ↦ h.1
+  forall_superset F F' := fun h h' hFF' ↦ ⟨h', U.superset_mem h.2 (M.closure_isFlat _)
+    (M.closure_subset_closure (union_subset_union_left _ hFF'))⟩
+  forall_inter := by
+    refine fun Fs hFs hne hmod ↦ ⟨IsFlat.sInter hne fun F hF ↦ (hFs hF).1, ?_⟩
+    obtain ⟨I, hI⟩ := M.exists_isBasis' C
+    have := hne.to_subtype
+    have hmem_U := U.sInter_mem (Fs := (fun X ↦ M.closure (X ∪ C)) '' Fs) (by simpa) ?_ ?_
+    · simp only [sInter_image] at hmem_U
+      have hrw := hmod.iInter_closure_eq_closure_iInter
+      simp only [project_closure, iInter_coe_set, ← sInter_eq_biInter] at hrw
+      rwa [← hrw]
+    · simp only [subset_def, mem_image, SetLike.mem_coe, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂]
+      exact fun F hF ↦ (hFs hF).2
+    obtain ⟨B, hB⟩ := hmod
+    have hi : M.Indep (B ∪ I) := by
+      have hi := hB.indep
+      rw [hI.project_eq_project, hI.indep.project_indep_iff] at hi
+      exact hi.2
+    refine ⟨B ∪ I, hi, ?_⟩
+    simp only [Subtype.forall, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+      ← closure_union_congr_right hI.closure_eq_closure]
+    refine fun F hF ↦ (hi.inter_left _).isBasis_of_subset_of_subset_closure inter_subset_left ?_
+    have hcl := hB.closure_inter_eq ⟨F, hF⟩
+    simp only [project_closure, ← closure_union_congr_right hI.closure_eq_closure] at hcl
+    nth_grw 1 [← hcl, closure_subset_closure]
+    grw [inter_union_distrib_right, ← M.subset_closure (X := (F ∪ I)) _]
+    exact union_subset (hFs hF).1.subset_ground hI.indep.subset_ground
+
+@[simp]
+lemma ModularCut.mem_project_iff (U : M.ModularCut) (C : Set α) :
+    F ∈ U.project C ↔ (M.project C).IsFlat F ∧ M.closure (F ∪ C) ∈ U := Iff.rfl
+
+/-- Given a modular cut `U` of `M`, the corresponding modular cut in some projection of `M`. -/
+def ModularCut.contract (U : M.ModularCut) (C : Set α) : (M ／ C).ModularCut :=
+  ((U.project C).delete C).copy <| project_delete_self ..
+
+@[simp]
+lemma ModularCut.mem_contract_iff (U : M.ModularCut) (C : Set α) :
+    F ∈ U.contract C ↔ (M ／ C).IsFlat F ∧ M.closure (F ∪ C) ∈ U := by
+  simp [ModularCut.contract, isFlat_iff_closure_eq, union_assoc]
+
+lemma ModularCut.projectBy_project (U : M.ModularCut) (C : Set α) :
+    (M.projectBy U).project C = (M.project C).projectBy (U.project C) := by
+  refine ext_closure fun X ↦ ?_
+  simp [Set.ext_iff, mem_closure_projectBy_iff, isFlat_iff_closure_eq, union_assoc, insert_union]
+
+lemma ModularCut.projectBy_contract (U : M.ModularCut) (C : Set α) :
+    (M.projectBy U).contract C = (M ／ C).projectBy (U.contract C) := by
+  rw [← project_delete_self, U.projectBy_project, ModularCut.contract]
+  refine ext_closure fun X ↦ ?_
+  simp only [delete_closure_eq, Set.ext_iff, mem_diff, mem_closure_projectBy_iff, project_closure,
+    diff_union_self, insert_union, mem_project_iff, isFlat_iff_closure_eq,
+    closure_union_closure_left_eq, union_assoc, union_self, true_and, contract_closure_eq,
+    mem_copy_iff, mem_delete_iff, project_delete_self]
+  aesop
+
+-- TODO : versions of the above for `extendBy`.
+
+lemma ModularCut.project_eq_top_iff (U : M.ModularCut) : U.project X = ⊤ ↔ M.closure X ∈ U := by
+  rw [ModularCut.eq_top_iff, project_loops, mem_project_iff, isFlat_iff_closure_eq,
+    project_closure, ← closure_union_closure_right_eq, union_self, closure_closure,
+    and_iff_right rfl]
+
+lemma ModularCut.contract_eq_top_iff (U : M.ModularCut) : U.contract X = ⊤ ↔ M.closure X ∈ U := by
+  rw [ModularCut.eq_top_iff, contract_loops_eq, mem_contract_iff, isFlat_iff_closure_eq,
+    contract_closure_eq, diff_union_self, ← closure_union_closure_right_eq, union_self,
+    closure_closure, and_iff_right rfl]
 
 section ExtendContract
 

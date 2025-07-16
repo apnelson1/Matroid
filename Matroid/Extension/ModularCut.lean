@@ -236,6 +236,14 @@ lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U
   · exact .inl <| SetLike.ext'_iff.2 <| by simp [hU]
   exact .inr <| U.superset_mem hF M.ground_isFlat (U.isFlat_of_mem hF).subset_ground
 
+lemma ModularCut.eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
+  refine ⟨fun h hE ↦ ?_, fun h ↦ ?_⟩
+  · obtain rfl := h
+    simp [ModularCut.empty] at hE
+  obtain hU | hU := U.eq_bot_or_ground_mem
+  · assumption
+  contradiction
+
 protected lemma ModularCut.mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
 
@@ -309,20 +317,33 @@ lemma ModularCut.covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
 section restrict
 
 /-- A `ModularCut` in `M` gives a `ModularCut` in `M ↾ R` for any `R ⊆ M.E`. -/
-def ModularCut.restrict (U : M.ModularCut) {R : Set α} (hR : R ⊆ M.E) : (M ↾ R).ModularCut where
+def ModularCut.restrict (U : M.ModularCut) (R : Set α) : (M ↾ R).ModularCut where
   carrier := {F | (M ↾ R).IsFlat F ∧ M.closure F ∈ U}
   forall_isFlat F h := h.1
   forall_superset F F' h hF' hFF' := ⟨hF', (U.closure_superset_mem' h.2 hFF')⟩
   forall_inter Xs hXs hne hmod := by
     refine ⟨IsFlat.sInter hne (fun F hF ↦ (hXs hF).1), ?_⟩
-    replace hmod := hmod.ofRestrict hR
-    have _ := hne.coe_sort
-    rw [sInter_eq_iInter, ← hmod.iInter_closure_eq_closure_iInter]
-    exact U.iInter_mem _ (fun i ↦ (hXs i.2).2) hmod.cls_isModularFamily
+    have hmod' := hmod.ofRestrict'
+    have := hne.coe_sort
+    rw [← closure_inter_ground, sInter_distrib_inter hne]
+    have hcl := hmod'.iInter_closure_eq_closure_iInter
+    have hcl' := hmod'.cls_isModularFamily
+    simp only [closure_inter_ground] at hcl'
+    simp only [nonempty_subtype, closure_inter_ground, iInter_coe_set] at hcl
+    rw [← hcl]
+    simpa using U.iInter_mem (fun i : Xs ↦ M.closure i) (fun i ↦ (hXs i.2).2) hcl'
+
+@[simp]
+lemma ModularCut.mem_restrict_iff (U : M.ModularCut) {R : Set α}  :
+    F ∈ (U.restrict R) ↔ (M ↾ R).IsFlat F ∧ M.closure F ∈ U := Iff.rfl
 
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
 def ModularCut.delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
-  U.restrict diff_subset
+  U.restrict (M.E \ D)
+
+@[simp]
+lemma ModularCut.mem_delete_iff (U : M.ModularCut) {D : Set α}  :
+    F ∈ (U.delete D) ↔ (M ＼ D).IsFlat F ∧ M.closure F ∈ U := Iff.rfl
 
 lemma ModularCut.mem_delete_elem_iff :
     F ∈ U.delete {e} ↔ (e ∉ F) ∧ (F ∈ U ∨ (insert e F ∈ U ∧ e ∈ M.closure F)) := by
@@ -888,6 +909,20 @@ instance (U : M.ModularCut) (e : α) [M.RankFinite] : (M.extendBy e U).RankFinit
   rw [ModularCut.extendBy_deleteElem']
   exact delete_rankFinite
 
+lemma extendBy_isColoop_iff (U : M.ModularCut) (he : e ∉ M.E) :
+    (M.extendBy e U).IsColoop e ↔ U = ⊥ := by
+  simp_rw [isColoop_iff_forall_mem_closure_iff_mem, ModularCut.mem_closure_extendBy_iff _ he,
+    or_iff_left_iff_imp, ModularCut.eq_bot_iff]
+  rw [← M.closure_ground]
+  refine ⟨fun h hEU ↦ he (h _ hEU), fun h X hX ↦ False.elim <| h ?_⟩
+  exact U.superset_mem hX (M.closure_isFlat _) <| by simp [closure_subset_ground]
+
+lemma extendBy_eRank_eq (U : M.ModularCut) (hU : U ≠ ⊥) (he : e ∉ M.E) :
+    (M.extendBy e U).eRank = M.eRank := by
+  nth_rw 2 [← U.extendBy_deleteElem he]
+  rw [deleteElem_eRank_eq]
+  rwa [extendBy_isColoop_iff _ he]
+
 end extensions
 
 section projectBy
@@ -940,6 +975,14 @@ lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
 
 lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [ext_iff_indep]
+
+-- lemma projectBy_eq_self_iff : M.projectBy U = M ↔ U = ⊥ := by
+--   refine ⟨fun h ↦ by_contra fun hne ↦ ?_, fun h ↦ ?_⟩
+--   · obtain ⟨B, hB⟩ := M.exists_isBase
+--     have hi := hB.indep
+--     rw [← h, projectBy_indep_iff_of_ne_top hne, hB.closure_eq] at hi
+--     rw [ModularCut.eq_top_iff] at hne
+--     -- have := projectBy_indep_iff_of_ne_top hne (B := B)
 
 @[simp] lemma extendBy_contract_eq (U : M.ModularCut) (he : e ∉ M.E) :
     (M.extendBy e U) ／ {e} = M.projectBy U := by
@@ -1012,8 +1055,8 @@ lemma ModularCut.projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F 
     exact (M.subset_closure_of_subset' subset_union_right (U.isFlat_of_mem hF).subset_ground)
   simp [mem_closure_projectBy_iff, hcl]
 
-lemma ModularCut.projectby_eq_project_of_closure_mem (U : M.ModularCut) (hX : M.closure X ∈ U) :
-    (M.projectBy U).project X = M.project X := by
+lemma ModularCut.projectBy_project_eq_project_of_closure_mem (U : M.ModularCut)
+    (hX : M.closure X ∈ U) : (M.projectBy U).project X = M.project X := by
   rw [← M.project_closure_eq, ← U.projectBy_project_eq_project_of_mem hX, ← project_closure_eq,
     eq_comm, ← project_closure_eq]
   convert rfl using 2
@@ -1022,6 +1065,44 @@ lemma ModularCut.projectby_eq_project_of_closure_mem (U : M.ModularCut) (hX : M.
     exact closure_subset_closure _ <| M.inter_ground_subset_closure X
   rw [← (M.projectBy U).closure_closure (X := X)]
   exact closure_subset_closure _ <| closure_subset_closure_projectBy U X
+
+lemma ModularCut.projectBy_contract_eq_contract_of_closure_mem
+    (U : M.ModularCut) (hX : M.closure X ∈ U) : (M.projectBy U) ／ X = M ／ X := by
+  rw [← project_delete_self, U.projectBy_project_eq_project_of_closure_mem hX,
+    project_delete_self]
+
+/- This should be a lemma saying that if `B` is a base of `M`, then `B-f`
+is a base of `M.projectBy U` iff `M.closure (B - f) ∉ U`.
+for some `f`. Essentially the same proof should work,
+and a statement about rank is a consequence.  -/
+lemma ModularCut.projectBy_eRank_add_one_eq (U : M.ModularCut) (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥) :
+    (M.projectBy U).eRank + 1 = M.eRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  obtain ⟨I, hI⟩ := (M.projectBy U).exists_isBasis B
+  have hIb := hI.isBase_of_spanning
+  grw [spanning_iff_ground_subset_closure, projectBy_ground,
+    ← closure_subset_closure_projectBy, hB.closure_eq, imp_iff_right rfl.subset] at hIb
+  rw [← hB.encard_eq_eRank, ← hIb.encard_eq_eRank]
+  have h1 := (projectBy_indep_iff_of_ne_top hU_top).1 hI.indep
+  obtain rfl | hssu := hI.subset.eq_or_ssubset
+  · rw [hB.closure_eq, ← ModularCut.eq_bot_iff, and_iff_right hB.indep] at h1
+    contradiction
+  have aux {f} (hfB : f ∈ B) (hfI : f ∉ I) : M.closure (insert f I) ∈ U
+  · rw [← hB.indep.closure_inter_eq_self_of_subset hssu.subset, mem_inter_iff,
+      and_iff_left hfB] at hfI
+    grw [(M.projectBy U).subset_closure B, ← hI.closure_eq_closure,
+      mem_closure_projectBy_iff, and_iff_left h1.2, or_iff_right hfI] at hfB
+    assumption
+  obtain ⟨f, hfB, hfI⟩ := exists_of_ssubset hssu
+  obtain rfl | hssu' := (insert_subset hfB hssu.subset).eq_or_ssubset
+  · rw [encard_insert_of_notMem hfI]
+  obtain ⟨g, hg⟩ := exists_of_ssubset hssu'
+  have hcl := U.inter_mem (aux hfB hfI) (aux hg.1 (notMem_subset (subset_insert ..) hg.2))
+    (M.isModularPair_insert_closure I f g)
+  rw [← Indep.closure_inter_eq_inter_closure, inter_comm, insert_inter_of_notMem hg.2,
+    inter_eq_self_of_subset_left (subset_insert ..)] at hcl
+  · exact (h1.2 hcl).elim
+  exact hB.indep.subset <| union_subset hssu'.subset (insert_subset hg.1 hssu.subset)
 
 end projectBy
 
