@@ -3,6 +3,7 @@ import Matroid.Connectivity.Multi
 import Matroid.Extension.Minor
 import Matroid.Constructions.Project
 import Matroid.ForMathlib.Matroid.Closure
+import Matroid.ForMathlib.Data.ENat.Iterate
 
 open Set BigOperators Set.Notation Function
 
@@ -84,13 +85,10 @@ lemma multiConn_projectBy_gutsModularCut_add_one (M : Matroid α) {X : ι → Se
   · simp at hXsk
   classical
   have hXE : ∀ i, X i ⊆ M.E := fun i ↦ (subset_iUnion ..).trans_eq Xu
-  -- have hrw {i} : M.E \ X i = ⋃ j ∈ ({i} : Set ι)ᶜ, X j := sorry
   choose J hJ using fun i ↦ (M.project (M.E \ X i)).exists_isBasis (X i)
   have hJi := fun i ↦ (hJ i).indep.of_project
   choose I hI using fun i ↦ (hJi i).subset_isBasis_of_subset (hJ i).subset
   obtain ⟨hI, hJI⟩ := forall_and.1 hI
-  -- by_cases hIsk : M.IsSkewFamily I
-  -- · simp [(hIsk.cls_isSkewFamily.mono (fun i ↦ (hI i).subset_closure)).multiConn]
   have hul {i} {j} : J j ⊆ update J i (I i) j := by
     obtain rfl | hne := eq_or_ne i j
     · simp [hJI]
@@ -170,50 +168,32 @@ lemma multiConn_projectBy_gutsModularCut_eq_sub_one (M : Matroid α) {X : ι →
   rw [← M.multiConn_projectBy_gutsModularCut_add_one hdj Xu hX,
     show ∀ a : ℕ∞, a + 1 - 1 = a from fun a ↦ by cases a <;> norm_cast]
 
-/-- Project by the guts of `X` in `M`, `n` times in succession. -/
-def repeatGutsProject (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E) : ℕ → Matroid α
-  | 0 => M
-  | n+1 => (M.projectBy (M.gutsModularCut X hX)).repeatGutsProject X hX n
-
--- lemma repeatGutsProject_multiConn_dual (M : Matroid α) (X : ι → Set α)
---     (hdj : Pairwise (Disjoint on X)) (hX : ⋃ i, X i = M.E) {n : ℕ}:
---     (M.repeatGutsProject X hX n)✶.multiConn X + n = M✶.multiConn X
-
-/-- The minimum number of guts projections required to make a set `X` skew.
+/-- The minimum number of guts projections required to make a set `X` skew in the dual matroid.
 Equal to `⊤` if no finite number suffices. -/
 noncomputable def gutsProjectDepth (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E) : ℕ∞ :=
-  sInf ((↑) '' {i : ℕ | (M.repeatGutsProject X hX i).IsSkewFamily X})
+  ENat.iterateDepth
+    (α := {N : Matroid α // N.E = M.E})
+    (f := fun N ↦
+      ⟨N.1.projectBy (N.1.gutsModularCut X (by simp_rw [hX, ← N.2])), by simpa using N.2⟩)
+    (P := fun N ↦ N.1✶.multiConn X = 0)
+    (a := ⟨M, rfl⟩)
 
+lemma gutsProjectDepth_eq_zero' {M : Matroid α} {X : ι → Set α} {hX} :
+    M.gutsProjectDepth X hX = 0 ↔ M✶.IsSkewFamily X := by
+  simp only [gutsProjectDepth, ENat.iterateDepth_eq_zero]
+  rw [← multiConn_eq_zero_iff (by simp [← hX, subset_iUnion])]
 
--- lemma foo {X : ι → Set α} (hdj : Pairwise (Disjoint on X)) (Xu : ⋃ i, X i = M.E) :
---     M✶.multiConn X = M.gutsProjectDepth X Xu := by
---   -- generalize h : M.gutsProjectDepth X Xu = k
---   -- induction k
+lemma gutsProjectDepth_eq_zero {M : Matroid α} {X : ι → Set α} {hX}
+    (hdj : Pairwise (Disjoint on X)) : M.gutsProjectDepth X hX = 0 ↔ M.IsSkewFamily X := by
+  rw [gutsProjectDepth_eq_zero', dual_isSkewFamily_iff hdj hX]
 
---   refine le_antisymm (le_sInf ?_) ?_
---   · simp only [mem_image, mem_setOf_eq, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
---     intro n
---     induction n generalizing M with
---     | zero =>
---     · sorry
---     | succ n IH =>
---     · intro hsk
---       rw [repeatGutsProject] at hsk
---       have := IH (by simpa) hsk
---       rwa [← multiConn_projectBy_gutsModularCut_add_one _ hdj Xu, Nat.cast_add, Nat.cast_one,
---         WithTop.add_le_add_iff_right (by simp)]
---       sorry
---   generalize h : M✶.multiConn X = k
---   induction k using ENat.nat_induction generalizing M with
---   | htop _ => simp
---   | h0 =>
---   · refine sInf_le (a := 0) ?_
---     rw [multiConn_eq_zero_iff (fun i ↦ by grw [dual_ground, ← Xu, ← subset_iUnion]),
---       dual_isSkewFamily_iff hdj Xu] at h
---     simpa [repeatGutsProject]
---   | hsuc n IH =>
---   · simp only [Nat.succ_eq_add_one, Nat.cast_add, Nat.cast_one] at ⊢ h
---     rw [← multiConn_projectBy_gutsModularCut_add_one _ hdj Xu,
--- WithTop.add_right_inj (by simp)] at h
-
---     · have := IH (by simpa) h
+/-- The dual connectivity of a partition is equal to the minimum of guts projections
+required to squash the partition into a skew family. -/
+theorem gutsProjectDepth_eq_multiConn (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E)
+    (hdj : Pairwise (Disjoint on X)) : M.gutsProjectDepth X hX = M✶.multiConn X := by
+  rw [gutsProjectDepth, ENat.iterateDepth_eq_self_of_forall_apply_eq_add_one]
+  simp only [ne_eq, Subtype.forall]
+  rintro N hN hmc
+  rw [multiConn_projectBy_gutsModularCut_add_one _ hdj]
+  rwa [multiConn_eq_zero_iff (by simp [hN, ← hX, subset_iUnion]),
+    dual_isSkewFamily_iff hdj (by rwa [hN])] at hmc

@@ -8,13 +8,48 @@ namespace Matroid
 variable {α β : Type*} {ι : Type*} {η : Type*} {A : Set η} {M N : Matroid α}
     {B I J X X' Y Y' F : Set α} {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
+structure Projector (N M : Matroid α) (β : Type*) where
+  carrier : Matroid (α ⊕ β)
+  contract_eq' : carrier ／ range Sum.inr = N.mapEmbedding Embedding.inl
+  delete_eq' : carrier ＼ range Sum.inr = M.mapEmbedding Embedding.inl
+
+instance {N M : Matroid α} {β : Type*} : CoeOut (Projector N M β) (Matroid (α ⊕ β)) where
+  coe P := P.carrier
+
+lemma Projector.contract_eq (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)) ／ range Sum.inr = N.mapEmbedding Embedding.inl := P.contract_eq'
+
+lemma Projector.delete_eq (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)) ＼ range Sum.inr = M.mapEmbedding Embedding.inl := P.delete_eq'
+
+def Projector.pivot (P : N.Projector M β) : Set β :=
+    Sum.inr ⁻¹' (P : Matroid (α ⊕ β)).E
+
+lemma Projector.contract_image_pivot (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)) ／ (.inr '' P.pivot) = N.mapEmbedding Embedding.inl := by
+  rw [← P.contract_eq, eq_comm, ← contract_inter_ground_eq, pivot]
+  sorry
+
+/-- `N.IsProjectionBy M Y` means that `N` is obtained from `M` by projecting
+some set with labels `Y`. -/
 def IsProjectionBy (N M : Matroid α) (Y : Set β) : Prop :=
     ∃ P : Matroid (α ⊕ β), (
       P ／ (Sum.inr '' Y) = N.mapEmbedding Embedding.inl ∧
       P ＼ (Sum.inr '' Y) = M.mapEmbedding Embedding.inl )
 
+def IsProjectionBy' (N M : Matroid α) (β : Type*) : Prop :=
+    ∃ P : Matroid (α ⊕ β), (
+      P ／ (range Sum.inr) = N.mapEmbedding Embedding.inl ∧
+      P ＼ (range Sum.inr) = M.mapEmbedding Embedding.inl )
+
 def IsProjection.{u} {α : Type u} (N M : Matroid α) : Prop :=
     ∃ (β : Type u) (Y : Set β), N.IsProjectionBy M Y
+
+-- lemma IsProjectionBy'.comp {β γ : Type*} (h : N.IsProjectionBy' M β) (e : β ↪ γ) :
+--     N.IsProjectionBy' M γ := by
+--   obtain ⟨P, hPc, hPd⟩ := h
+--   refine ⟨P.map (Sum.map id e) (by simp [InjOn]), ?_, ?_⟩
+--   · rw [map_contra]
 
 lemma exists_indep_coindep_of_delete_contract (M : Matroid α) (X : Set α) :
     ∃ (N : Matroid α) (I : Set α),

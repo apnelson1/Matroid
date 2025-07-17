@@ -51,6 +51,22 @@ theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
 theorem add_le_right_iff {a b : ℕ∞} : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
   rw [add_comm, add_le_left_iff, or_comm]
 
+@[simp]
+lemma add_one_le_add_one_iff {a b : ℕ∞} : a + 1 ≤ b + 1 ↔ a ≤ b :=
+  WithTop.add_le_add_iff_right (by simp)
+
+@[simp]
+lemma one_add_le_one_add_iff {a b : ℕ∞} : 1 + a ≤ 1 + b ↔ a ≤ b :=
+  WithTop.add_le_add_iff_left (by simp)
+
+@[simp]
+lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
+  WithTop.add_right_inj (by simp)
+
+@[simp]
+lemma one_add_inj {a b : ℕ∞} : 1 + a = 1 + b ↔ a = b :=
+  WithTop.add_left_inj (by simp)
+
 section Parity
 
 @[simp]
