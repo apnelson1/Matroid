@@ -244,6 +244,9 @@ lemma ModularCut.eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
   · assumption
   contradiction
 
+lemma ModularCut.ne_bot_iff (U : M.ModularCut) : U ≠ ⊥ ↔ M.E ∈ U := by
+  rw [Ne, U.eq_bot_iff, not_not]
+
 protected lemma ModularCut.mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
 
@@ -973,8 +976,14 @@ lemma projectBy_indep_iff_of_ne_top {I : Set α} (hU : U ≠ ⊤) :
     (M.projectBy U).Indep I ↔ M.Indep I ∧ M.closure I ∉ U := by
   simp [hU]
 
+@[simp]
 lemma projectBy_top : M.projectBy ⊤ = M := by
   simp [ext_iff_indep]
+
+@[simp]
+lemma projectBy_bot : M.projectBy ⊥ = M := by
+  simp [ext_iff_indep, projectBy_indep_iff]
+
 
 -- lemma projectBy_eq_self_iff : M.projectBy U = M ↔ U = ⊥ := by
 --   refine ⟨fun h ↦ by_contra fun hne ↦ ?_, fun h ↦ ?_⟩
@@ -1071,38 +1080,43 @@ lemma ModularCut.projectBy_contract_eq_contract_of_closure_mem
   rw [← project_delete_self, U.projectBy_project_eq_project_of_closure_mem hX,
     project_delete_self]
 
-/- This should be a lemma saying that if `B` is a base of `M`, then `B-f`
-is a base of `M.projectBy U` iff `M.closure (B - f) ∉ U`.
-for some `f`. Essentially the same proof should work,
-and a statement about rank is a consequence.  -/
+lemma ModularCut.projectBy_base_diff_singleton_iff (hU : U ≠ ⊥) (hB : M.IsBase B) (he : e ∈ B) :
+    (M.projectBy U).IsBase (B \ {e}) ↔ M.closure (B \ {e}) ∉ U := by
+  obtain rfl | hne := eq_or_ne U ⊤
+  · simp only [projectBy_top, mem_top_iff, isFlat_closure, not_true_eq_false, iff_false]
+    exact fun h' ↦ by simpa [he] using h'.eq_of_subset_isBase hB
+  refine ⟨fun h ↦ ((projectBy_indep_iff_of_ne_top hne).1 h.indep).2, fun h ↦ ?_⟩
+  refine Indep.isBase_of_ground_subset_closure ?_ fun x (hx : x ∈ M.E) ↦ ?_
+  · rw [projectBy_indep_iff_of_ne_top hne, and_iff_left h]
+    exact hB.indep.diff _
+  rw [mem_closure_projectBy_iff, and_iff_left h, or_iff_not_imp_left]
+  intro hx
+  rwa [(hB.exchange_base_of_notMem_closure he hx).closure_eq, ← not_not (a := M.E ∈ U),
+    ← ModularCut.eq_bot_iff]
+
+lemma ModularCut.exists_diff_singleton_isBase_projectBy (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥)
+    (hB : M.IsBase B) : ∃ e ∈ B, (M.projectBy U).IsBase (B \ {e}) := by
+  by_contra! hcon
+  have aux {e} (he : e ∈ B) : M.closure (B \ {e}) ∈ U := by
+    specialize hcon e he
+    rwa [U.projectBy_base_diff_singleton_iff hU_bot hB he, not_not] at hcon
+  rw [U.ne_bot_iff] at hU_bot
+  rw [Ne, U.eq_top_iff] at hU_top
+  apply hU_top
+  obtain rfl | hne := B.eq_empty_or_nonempty
+  · rwa [loops, hB.closure_eq]
+  have _ := hne.to_subtype
+  have hmod := (hB.indep.isModularFamily_of_subsets
+    (Js := fun (e : B) ↦ B \ {e.1}) (iUnion_subset (by simp)))
+  have h_inter := U.iInter_mem _ (by simpa) hmod.cls_isModularFamily
+  rwa [hmod.iInter_closure_eq_closure_iInter, iInter_coe_set,
+    biInter_diff_singleton_eq_diff _ hne, diff_self] at h_inter
+
 lemma ModularCut.projectBy_eRank_add_one_eq (U : M.ModularCut) (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥) :
     (M.projectBy U).eRank + 1 = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBase
-  obtain ⟨I, hI⟩ := (M.projectBy U).exists_isBasis B
-  have hIb := hI.isBase_of_spanning
-  grw [spanning_iff_ground_subset_closure, projectBy_ground,
-    ← closure_subset_closure_projectBy, hB.closure_eq, imp_iff_right rfl.subset] at hIb
-  rw [← hB.encard_eq_eRank, ← hIb.encard_eq_eRank]
-  have h1 := (projectBy_indep_iff_of_ne_top hU_top).1 hI.indep
-  obtain rfl | hssu := hI.subset.eq_or_ssubset
-  · rw [hB.closure_eq, ← ModularCut.eq_bot_iff, and_iff_right hB.indep] at h1
-    contradiction
-  have aux {f} (hfB : f ∈ B) (hfI : f ∉ I) : M.closure (insert f I) ∈ U
-  · rw [← hB.indep.closure_inter_eq_self_of_subset hssu.subset, mem_inter_iff,
-      and_iff_left hfB] at hfI
-    grw [(M.projectBy U).subset_closure B, ← hI.closure_eq_closure,
-      mem_closure_projectBy_iff, and_iff_left h1.2, or_iff_right hfI] at hfB
-    assumption
-  obtain ⟨f, hfB, hfI⟩ := exists_of_ssubset hssu
-  obtain rfl | hssu' := (insert_subset hfB hssu.subset).eq_or_ssubset
-  · rw [encard_insert_of_notMem hfI]
-  obtain ⟨g, hg⟩ := exists_of_ssubset hssu'
-  have hcl := U.inter_mem (aux hfB hfI) (aux hg.1 (notMem_subset (subset_insert ..) hg.2))
-    (M.isModularPair_insert_closure I f g)
-  rw [← Indep.closure_inter_eq_inter_closure, inter_comm, insert_inter_of_notMem hg.2,
-    inter_eq_self_of_subset_left (subset_insert ..)] at hcl
-  · exact (h1.2 hcl).elim
-  exact hB.indep.subset <| union_subset hssu'.subset (insert_subset hg.1 hssu.subset)
+  obtain ⟨e, heB, hB'⟩ := U.exists_diff_singleton_isBase_projectBy hU_top hU_bot hB
+  rw [← hB'.encard_eq_eRank, ← hB.encard_eq_eRank, encard_diff_singleton_add_one heB]
 
 end projectBy
 

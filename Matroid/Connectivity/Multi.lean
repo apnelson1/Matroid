@@ -11,6 +11,16 @@ lemma disjoint_map_prod_left {α ι : Type*} {f : ι → Set α} :
     Pairwise (Disjoint on fun i ↦ (i, ·) '' f i) := by
   simp +contextual [Pairwise, disjoint_right]
 
+-- generalize this more to remove some of the `aesop`s, and do the right version too.
+lemma injOn_prod_fst_mk_left_iff_pairwise_disjoint {α ι : Type*} (f : ι → Set α) :
+    InjOn Prod.fst (⋃ i, (·, i) '' f i) ↔ Pairwise (Disjoint on f) := by
+  refine ⟨fun h i j hij ↦ disjoint_left.2 fun x hxi hxj ↦ hij ?_, fun h i hi j hj hij ↦ ?_⟩
+  · simpa using @h (x,i) (by simpa) (x,j) (by simpa) rfl
+  obtain ⟨i, x, hx, rfl⟩ := by simpa using hi
+  obtain ⟨j, y, hy, rfl⟩ := by simpa using hj
+  obtain rfl : x = y := hij
+  obtain rfl | hne := eq_or_ne i j; simp
+  exact ((h hne).notMem_of_mem_left hx hy).elim
 
 namespace Matroid
 
@@ -74,7 +84,8 @@ lemma multiConn_eq_nullity_iUnion_add_tsum (hI : ∀ i, M.IsBasis' (I i) (X i)) 
       aesop
     simp_rw [Pairwise, disjoint_left]
     aesop
-  · simp_rw [InjOn]
+  ·
+    simp_rw [InjOn]
     aesop
   · simp only [iUnion_subset_iff, image_subset_iff, preimage_iUnion]
     exact fun i e heI ↦ mem_iUnion.2 ⟨φ e, by simp [hφ _ _ heI]⟩
@@ -211,6 +222,16 @@ lemma IsSkewFamily.multiConn (h : M.IsSkewFamily X) : M.multiConn X = 0 := by
     (fun i ↦ (hBX.isBasis_inter i).isBasis'), nullity_eq_zero]
   exact hB.indep.subset <| by simp
 
+lemma multiConn_eq_zero_iff (hX : ∀ i, X i ⊆ M.E) :
+    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rw [multiConn_eq_comap_nullity hI, nullity_eq_zero, comap_indep_iff, image_iUnion,
+    isSkewFamily_iff_cls_isSkewFamily hX]
+  simp only [image_image, image_id', ← (hI _).closure_eq_closure]
+  rw [← isSkewFamily_iff_cls_isSkewFamily (fun i ↦ (hI i).indep.subset_ground),
+    Indep.isSkewFamily_iff_pairwise_disjoint_union_indep (fun i ↦ (hI i).indep), and_comm,
+    injOn_prod_fst_mk_left_iff_pairwise_disjoint]
+
 lemma multiConn_dual_eq_eRank_project (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
     (hI : ∀ i, (M.project (M.E \ X i)).IsBasis (I i) (X i)) :
     M✶.multiConn X = (M.project (⋃ i, I i)).eRank := by
@@ -240,6 +261,7 @@ lemma multiConn_dual_eq_eRank_contract (hdj : Pairwise (Disjoint on X)) (hu : �
   intro i
   rw [project_isBasis_iff disjoint_sdiff_right]
   exact hI i
+
   -- rw [multiConn_eq_]
 
 -- lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :

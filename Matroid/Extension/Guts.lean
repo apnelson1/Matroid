@@ -1,5 +1,6 @@
 import Matroid.Modular.Flat
 import Matroid.Connectivity.Multi
+import Matroid.Extension.Minor
 import Matroid.Constructions.Project
 import Matroid.ForMathlib.Matroid.Closure
 
@@ -70,23 +71,35 @@ lemma closure_mem_gutsModularCut_iff (M : Matroid α) (X : ι → Set α) (Xu : 
     {Y : Set α} : M.closure Y ∈ M.gutsModularCut X Xu ↔ (M.project Y).IsSkewFamily X := by
   rw [mem_gutsModularCut_iff, and_iff_right (M.closure_isFlat _), project_closure_eq]
 
-lemma foo (M : Matroid α) (X : ι → Set α) (hdj : Pairwise (Disjoint on X))
-    (Xu : ⋃ i, X i = M.E) (hXsk : ¬ M.IsSkewFamily X) :
-    M✶.multiConn X = (M.projectBy (M.gutsModularCut X Xu))✶.multiConn X + 1 := by
+@[simp]
+lemma gutsModularCut_eq_top_iff {X : ι → Set α} (Xu : ⋃ i, X i = M.E) :
+    M.gutsModularCut X Xu = ⊤ ↔ M.IsSkewFamily X := by
+  rw [ModularCut.eq_top_iff, loops, closure_mem_gutsModularCut_iff, project_empty]
 
+/-- Projecting through the guts modular cut of a partition drops its dual connectivity by `1` -/
+lemma multiConn_projectBy_gutsModularCut_add_one (M : Matroid α) {X : ι → Set α}
+    (hdj : Pairwise (Disjoint on X)) (Xu : ⋃ i, X i = M.E) (hXsk : ¬ M.IsSkewFamily X) :
+    (M.projectBy (M.gutsModularCut X Xu))✶.multiConn X + 1 = M✶.multiConn X := by
   obtain hι | hι := isEmpty_or_nonempty ι
   · simp at hXsk
   classical
   have hXE : ∀ i, X i ⊆ M.E := fun i ↦ (subset_iUnion ..).trans_eq Xu
-  have hrw {i} : M.E \ X i = ⋃ j ∈ ({i} : Set ι)ᶜ, X j := sorry
+  -- have hrw {i} : M.E \ X i = ⋃ j ∈ ({i} : Set ι)ᶜ, X j := sorry
   choose J hJ using fun i ↦ (M.project (M.E \ X i)).exists_isBasis (X i)
   have hJi := fun i ↦ (hJ i).indep.of_project
   choose I hI using fun i ↦ (hJi i).subset_isBasis_of_subset (hJ i).subset
   obtain ⟨hI, hJI⟩ := forall_and.1 hI
   -- by_cases hIsk : M.IsSkewFamily I
   -- · simp [(hIsk.cls_isSkewFamily.mono (fun i ↦ (hI i).subset_closure)).multiConn]
-  have hul {i} {j} : J j ⊆ update J i (I i) j := sorry
-  have huu {i} {j} : update J i (I i) j ⊆ I j := sorry
+  have hul {i} {j} : J j ⊆ update J i (I i) j := by
+    obtain rfl | hne := eq_or_ne i j
+    · simp [hJI]
+    rw [update_of_ne hne.symm]
+  have huu {i} {j} : update J i (I i) j ⊆ I j := by
+    obtain rfl | hne := eq_or_ne i j
+    · simp
+    rw [update_of_ne hne.symm]
+    exact hJI j
   /- The union of one `I i` and all the `J` is independent -/
   have h1 (i) : M.Indep ((I i) ∪ ⋃ j, J j)
   · suffices hsk : M.IsSkewFamily (update J i (I i))
@@ -100,12 +113,12 @@ lemma foo (M : Matroid α) (X : ι → Set α) (hdj : Pairwise (Disjoint on X))
     intro j hji
     rw [update_of_ne hji, (hJi j).skew_iff_contract_indep, ← project_indep_iff]
     · refine (hJ j).indep.of_project_subset <| ?_
-      rw [hrw]
-      exact iUnion₂_mono fun k _ ↦ huu.trans <| (hI _).subset
+      simp only [mem_compl_iff, mem_singleton_iff, iUnion_subset_iff]
+      refine fun k hkj ↦ ?_
+      grw [huu, subset_diff, and_iff_right (hI k).indep.subset_ground]
+      exact (hdj hkj).mono_left (hI k).subset
     exact iUnion₂_subset fun i _ ↦ huu.trans (hI i).indep.subset_ground
-  -- have hdj {i j : ι} (hij : i ≠ j) : Disjoint (J i) (I j) := by
-  --   refine ((subset_diff.1 <| (project_indep_iff.1 (hJ i).indep).subset_ground).2).mono_right ?_
-  --   grw [le_iff_subset, (hI j).subset, hrw, ← subset_biUnion_of_mem hij.symm]
+
   have hJi : M.Indep (⋃ j, J j) :=
     (h1 (Classical.arbitrary ι)).subset subset_union_right
   /- The union of all the `J i` does not belong to the guts cut -/
@@ -127,35 +140,80 @@ lemma foo (M : Matroid α) (X : ι → Set α) (hdj : Pairwise (Disjoint on X))
     · exact disjoint_sdiff_left
     exact (hdj hij.symm).symm.mono (diff_subset.trans (hI i).subset) (hJ j).subset
 
-  have h3 (s : ι) : M ／ (M.E \ X s) = (M.projectBy (M.gutsModularCut X Xu)) ／ (M.E \ X s) := by
-    rw [ModularCut.projectBy_contract_eq_contract_of_closure_mem]
-    rw [closure_mem_gutsModularCut_iff]
-    apply isSkewFamily_of_nearly_all_loops (i₀ := s) (by simpa using hXE s)
-    refine fun i hne ↦ ?_
-    grw [project_loops, ← subset_closure _ _ diff_subset, subset_diff, and_iff_right (hXE i)]
-    exact hdj hne
+  rw [multiConn_dual_eq_eRank_project hdj (I := J) Xu hJ,
+    multiConn_dual_eq_eRank_project hdj (I := J) (by simpa), ModularCut.projectBy_project,
+    ModularCut.projectBy_eRank_add_one_eq]
+  · rw [Ne, ModularCut.eq_top_iff, project_loops, ModularCut.mem_project_iff,
+      closure_union_closure_left_eq, union_self]
+    simp [h2]
+  · rw [ModularCut.ne_bot_iff,  ModularCut.mem_project_iff, and_iff_right (ground_isFlat _)]
+    simpa
+  intro i
+  rw [ModularCut.projectBy_project, projectBy_ground, (ModularCut.project_eq_top_iff _).2,
+    projectBy_top]
+  · exact hJ i
+  rw [closure_mem_gutsModularCut_iff]
+  apply isSkewFamily_of_nearly_all_loops (i₀ := i) (by simpa using hXE i)
+  refine fun j hne ↦ ?_
+  grw [project_loops, ← subset_closure _ _ diff_subset, subset_diff, and_iff_right (hXE j)]
+  exact hdj hne
 
-  have h4 {N : Matroid α} (hN : N = M ∨ N = M.projectBy (M.gutsModularCut X Xu)) :
-      N✶.multiConn X = (N ／ ⋃ i, J i).eRank := by
-    have hNE : ⋃ i, X i = N.E := by obtain rfl | rfl := hN <;> assumption
-    rw [← multiConn_dual_eq_eRank_contract hdj hNE]
-    obtain rfl | rfl := hN
-    · simp_rw [← project_isBasis_iff disjoint_sdiff_right]
-      assumption
-    simp_rw [projectBy_ground, ← h3, ← project_isBasis_iff disjoint_sdiff_right]
-    assumption
+/-- Projecting through the guts modular cut of a partition drops its dual connectivity by `1`.
+The truncated subtraction is really the right thing here, though there is no good API for it. -/
+lemma multiConn_projectBy_gutsModularCut_eq_sub_one (M : Matroid α) {X : ι → Set α}
+    (hdj : Pairwise (Disjoint on X)) (Xu : ⋃ i, X i = M.E) :
+    (M.projectBy (M.gutsModularCut X Xu))✶.multiConn X = M✶.multiConn X - 1 := by
+  by_cases hX : M.IsSkewFamily X
+  · rw [(gutsModularCut_eq_top_iff Xu).2 hX, projectBy_top]
+    rw [← dual_isSkewFamily_iff hdj Xu] at hX
+    simp [hX.multiConn]
+  rw [← M.multiConn_projectBy_gutsModularCut_add_one hdj Xu hX,
+    show ∀ a : ℕ∞, a + 1 - 1 = a from fun a ↦ by cases a <;> norm_cast]
 
-  rw [h4 (.inl rfl), h4 (.inr rfl)]
+/-- Project by the guts of `X` in `M`, `n` times in succession. -/
+def repeatGutsProject (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E) : ℕ → Matroid α
+  | 0 => M
+  | n+1 => (M.projectBy (M.gutsModularCut X hX)).repeatGutsProject X hX n
+
+-- lemma repeatGutsProject_multiConn_dual (M : Matroid α) (X : ι → Set α)
+--     (hdj : Pairwise (Disjoint on X)) (hX : ⋃ i, X i = M.E) {n : ℕ}:
+--     (M.repeatGutsProject X hX n)✶.multiConn X + n = M✶.multiConn X
+
+/-- The minimum number of guts projections required to make a set `X` skew.
+Equal to `⊤` if no finite number suffices. -/
+noncomputable def gutsProjectDepth (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E) : ℕ∞ :=
+  sInf ((↑) '' {i : ℕ | (M.repeatGutsProject X hX i).IsSkewFamily X})
 
 
+-- lemma foo {X : ι → Set α} (hdj : Pairwise (Disjoint on X)) (Xu : ⋃ i, X i = M.E) :
+--     M✶.multiConn X = M.gutsProjectDepth X Xu := by
+--   -- generalize h : M.gutsProjectDepth X Xu = k
+--   -- induction k
 
+--   refine le_antisymm (le_sInf ?_) ?_
+--   · simp only [mem_image, mem_setOf_eq, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+--     intro n
+--     induction n generalizing M with
+--     | zero =>
+--     · sorry
+--     | succ n IH =>
+--     · intro hsk
+--       rw [repeatGutsProject] at hsk
+--       have := IH (by simpa) hsk
+--       rwa [← multiConn_projectBy_gutsModularCut_add_one _ hdj Xu, Nat.cast_add, Nat.cast_one,
+--         WithTop.add_le_add_iff_right (by simp)]
+--       sorry
+--   generalize h : M✶.multiConn X = k
+--   induction k using ENat.nat_induction generalizing M with
+--   | htop _ => simp
+--   | h0 =>
+--   · refine sInf_le (a := 0) ?_
+--     rw [multiConn_eq_zero_iff (fun i ↦ by grw [dual_ground, ← Xu, ← subset_iUnion]),
+--       dual_isSkewFamily_iff hdj Xu] at h
+--     simpa [repeatGutsProject]
+--   | hsuc n IH =>
+--   · simp only [Nat.succ_eq_add_one, Nat.cast_add, Nat.cast_one] at ⊢ h
+--     rw [← multiConn_projectBy_gutsModularCut_add_one _ hdj Xu,
+-- WithTop.add_right_inj (by simp)] at h
 
-
-
-
-    -- refine (h1.subset)
-
-
-
-
-        -- refine fun i j hij ↦ disjoint_left.2 fun e hei hej ↦ ?_
+--     · have := IH (by simpa) h

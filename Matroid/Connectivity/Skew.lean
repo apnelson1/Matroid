@@ -277,6 +277,14 @@ lemma isSkewFamily_of_nearly_all_loops {i₀ : η} {Xs : η → Set α} (hi₀ :
   · grw [inter_subset_right, hX j hne.symm]
   grw [inter_subset_left, hX _ hne]
 
+@[simp]
+lemma isSkewFamily_loopyOn_iff {E : Set α} {Xs : η → Set α} :
+    (loopyOn E).IsSkewFamily Xs ↔ ∀ i, Xs i ⊆ E := by
+  obtain hη | ⟨⟨i⟩⟩ := isEmpty_or_nonempty η
+  · simp
+  refine ⟨fun h i ↦ h.subset_ground_of_mem i, fun h ↦ ?_⟩
+  apply isSkewFamily_of_nearly_all_loops (h i) <| by simp +contextual [loops, h]
+
 lemma isSkewFamily_iff_forall_isCircuit {Xs : η → Set α} (hXs : ∀ i, Xs i ⊆ M.E)
     (hdj : Pairwise (Disjoint on Xs)) :
     M.IsSkewFamily Xs ↔ ∀ C, M.IsCircuit C → C ⊆ ⋃ i, Xs i → ∃ i, C ⊆ Xs i := by
@@ -633,7 +641,6 @@ lemma IsSkewFamily.skew_compl_singleton {Xs : η → Set α} (h : M.IsSkewFamily
     M.Skew (Xs i) (⋃ j ∈ ({i} : Set η)ᶜ, Xs j) := by
   convert h.skew_compl {i}; simp
 
-
 /-- Can this be moved up? -/
 lemma IsSkewFamily.isMutualBasis_of_indep {Xs : η → Set α} (h : M.IsSkewFamily Xs) (hB : M.Indep B)
     (hBX : B ⊆ ⋃ i, Xs i) (hX : ∀ i, Xs i ⊆ M.closure B) : M.IsMutualBasis B Xs := by
@@ -664,6 +671,25 @@ lemma IsSkewFamily.project {Xs : η → Set α} {C : Set α} (h : M.IsSkewFamily
       refine M.closure_subset_closure <| by tauto_set
     exact fun i j hij ↦ (h.2 hij).trans (by simp [loops])
   exact (subset_iUnion ..).trans (hI.subset_closure.trans (by simp))
+
+lemma dual_isSkewFamily_iff {X : η → Set α} (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E) :
+    M✶.IsSkewFamily X ↔ M.IsSkewFamily X := by
+  wlog h : M.IsSkewFamily X generalizing M with aux
+  · refine ⟨fun h' ↦ ?_, fun h' ↦ by contradiction⟩
+    rwa [← M.dual_dual, aux (by simpa) h']
+  simp only [h, iff_true]
+  obtain ⟨B, hB, hBmod⟩ := h.isModularFamily.exists_isMutualBasis_isBase
+  refine ⟨⟨M.E \ B, hB.compl_isBase_dual.indep, ?_⟩, fun _ _ hne ↦ by simp [(hdj hne).inter_eq]⟩
+  intro i
+  rw [inter_comm, hB.compl_isBase_dual.inter_isBasis_iff_compl_inter_isBasis_dual,
+    dual_ground, diff_diff_cancel_left hB.subset_ground, dual_dual, inter_comm]
+  have hrw : ⋃ j ∈ ({i}ᶜ : Set η), X j = M.E \ X i := by
+    ext e
+    simp only [mem_compl_iff, mem_singleton_iff, mem_iUnion, exists_prop, mem_diff, ← hu]
+    exact ⟨fun ⟨j, hji, hej⟩ ↦ ⟨⟨_, hej⟩, (hdj hji).notMem_of_mem_left hej⟩,
+      fun ⟨⟨j, hej⟩, hei⟩ ↦ ⟨j, by rintro rfl; contradiction, hej⟩⟩
+  have := hBmod.isBasis_biUnion ({i}ᶜ : Set η)
+  rwa [hrw] at this
 
 lemma skew_iff_forall_isCircuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop_mat)
     (hY : Y ⊆ M.E := by aesop_mat) :
