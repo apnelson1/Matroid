@@ -53,6 +53,20 @@ lemma delete_comap {β : Type*} (M : Matroid β) (f : α → β) (D : Set β) :
     (M ＼ D).comap f = M.comap f ＼ (f ⁻¹' D) := by
   rw [delete_eq_restrict, restrict_comap, preimage_diff, ← comap_ground_eq, delete_eq_restrict]
 
+lemma restrict_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hR : R ⊆ M.E) :
+    (M ↾ R).map f (hf.mono hR) = M.map f hf ↾ (f '' R) := by
+  refine ext_indep (by simp) fun I hI ↦ ?_
+  obtain ⟨I, hIR : I ⊆ R, rfl⟩ := subset_image_iff.1 hI
+  simp only [map_indep_iff, restrict_indep_iff, image_subset_iff]
+  rw [and_iff_left (hIR.trans (subset_preimage_image ..))]
+  refine ⟨fun ⟨I₀, hI₀⟩ ↦ ⟨I₀, hI₀.1.1, hI₀.2⟩, fun ⟨I₀, hI₀, heq⟩ ↦ ⟨I₀, ⟨⟨hI₀, ?_⟩, heq⟩⟩⟩
+  rw [hf.image_eq_image_iff (hIR.trans hR) hI₀.subset_ground] at heq
+  rwa [← heq]
+
+lemma delete_map {β : Type*} (M : Matroid α) (f : α → β) (hf : InjOn f M.E) (hD : D ⊆ M.E) :
+    (M ＼ D).map f (hf.mono diff_subset) = M.map f hf ＼ (f '' D) := by
+  simp_rw [delete_eq_restrict, restrict_map hf diff_subset, image_diff_of_injOn hf hD, map_ground]
+
 -- This belongs in `Constructions`.
 lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   refine ⟨Indep.restrict_eq_freeOn, fun h ↦ ?_⟩

@@ -94,4 +94,7 @@ lemma isBasis_mapEmbedding_image_iff {I : Set α} {f : α ↪ β} :
   simp [f.injective.preimage_image]
   exact IsBasis.subset
 
+-- lemma comap_map_of_injOn {f : α → β} (hf : InjOn f M.E) : (M.map f hf).comap f = M := by
+--   refine ext_indep ?_ ?_
+
 end Matroid
