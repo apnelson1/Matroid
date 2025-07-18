@@ -198,8 +198,9 @@ lemma ext_of_isLabelSubgraph_eq_Set {H₁ H₂ : Graph α β} (h₁ : H₁ ≤l 
 
 /-- A label subgraph of `G` is a subgraph where each vertex retains all of its labels. -/
 @[mk_iff]
-structure IsSubgraph (H G : Graph α β) : Prop extends IsLabelSubgraph H G where
-  dup_closed : ∀ ⦃x y⦄, G.dup x y → x ∈ V(H) → y ∈ V(H)
+structure IsSubgraph (H G : Graph α β) : Prop where
+  dupPER_subset : G.DupPER ⊆ H.DupPER
+  isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 instance : LE (Graph α β) where
   le := IsSubgraph

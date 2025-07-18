@@ -349,33 +349,92 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 
 /-- The union of an indexed family of pairwise compatible graphs. -/
 @[simps]
-protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β where
-  vertexSet := ⋃ i, V(G i)
-  dup x y := ∃ i, (G i).dup x y
-  dup_refl_iff x := by simp [dup_refl_iff]
-  dup_symm := by
-    simp_rw [dup_comm]
-    exact fun _ _ a ↦ a
-  dup_trans x y z := by
-    rintro ⟨i, hxy⟩ ⟨j, hyz⟩
-    rw [dup_comm, hG.of_refl i j |>.dup_iff ⟨hxy.left_mem, hyz.left_mem⟩] at hxy
-    exact ⟨j, hxy.symm.trans hyz⟩
-  edgeSet := ⋃ i, E(G i)
-  IsLink e x y := ∃ i, (G i).IsLink e x y
-  isLink_symm := by simp +contextual [Symmetric, isLink_comm]
-  dup_or_dup_of_isLink_of_isLink e x y v w := by
-    rintro ⟨i, hi⟩ ⟨j, hj⟩
-    refine (hi.of_compatible (hG.of_refl i j) hj.edge_mem
-    |>.isLink_iff_dup_and_dup_or_dup_and_dup.mp hj).imp ?_ ?_
-    <;> exact fun ⟨_, _⟩ => by use j
-  isLink_of_dup e x y z := by
-    rintro ⟨i, hidup⟩ ⟨j, hjl⟩
-    rw [hG.of_refl i j |>.dup_iff ⟨hidup.left_mem, hjl.left_mem⟩] at hidup
-    exact ⟨j, hidup.isLink_left.mp hjl⟩
-  edge_mem_iff_exists_isLink := by
-    simp only [mem_iUnion, edge_mem_iff_exists_isLink]
-    aesop
-  left_mem_of_isLink := fun e x y ⟨i, hi⟩ ↦ mem_iUnion.2 ⟨i, hi.left_mem⟩
+protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β :=
+  mk_of_PER (⨆ i, DupPER (G i))
+  (fun e x y => ∃ u v, ((⨆ i, (G i).IsLink) e u v) ∧ (⨆ i, DupPER (G i)) x u ∧ (⨆ i, DupPER (G i)) y v)
+  (⋃ i, E(G i))
+  (fun e he x y ⟨u, v, hl, hxu, hyv⟩ => by
+    simp only [iSup_apply, iSup_Prop_eq] at hl ⊢
+    obtain ⟨i, hl⟩ := hl
+    use v, u, ⟨i, hl.symm⟩)
+  (fun e a b c d ⟨u, v, hl, hxu, hyv⟩ ⟨u', v', hl', hxu', hyv'⟩ => by
+    simp only [iSup_apply, iSup_Prop_eq] at hl hl' ⊢
+    obtain ⟨i, hl⟩ := hl
+    obtain ⟨j, hl'⟩ := hl'
+    have := hl.of_compatible (hG.of_refl i j) hl'.edge_mem
+    
+    simp? [dup_refl_iff])
+  (fun e x y z ⟨u, v, ⟨i, hi⟩, hxu, hzv⟩ => by
+    simp? at hxu hzv ⊢)
+-- @[simps]
+-- protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β where
+--   vertexSet := ⋃ i, V(G i)
+--   dup x y := ∃ i, (G i).dup x y
+--   dup_refl_iff x := by simp [dup_refl_iff]
+--   dup_symm := by
+--     simp_rw [dup_comm]
+--     exact fun _ _ a ↦ a
+--   dup_trans x y z := by
+--     rintro ⟨i, hxy⟩ ⟨j, hyz⟩
+--     rw [dup_comm, hG.of_refl i j |>.dup_iff ⟨hxy.left_mem, hyz.left_mem⟩] at hxy
+--     exact ⟨j, hxy.symm.trans hyz⟩
+--   edgeSet := ⋃ i, E(G i)
+--   IsLink e x y := ∃ i, (G i).IsLink e x y
+--   isLink_symm := by simp +contextual [Symmetric, isLink_comm]
+--   dup_or_dup_of_isLink_of_isLink e x y v w := by
+--     rintro ⟨i, hi⟩ ⟨j, hj⟩
+--     refine (hi.of_compatible (hG.of_refl i j) hj.edge_mem
+--     |>.isLink_iff_dup_and_dup_or_dup_and_dup.mp hj).imp ?_ ?_
+--     <;> exact fun ⟨_, _⟩ => by use j
+--   isLink_of_dup e x y z := by
+--     rintro ⟨i, hidup⟩ ⟨j, hjl⟩
+--     rw [hG.of_refl i j |>.dup_iff ⟨hidup.left_mem, hjl.left_mem⟩] at hidup
+--     exact ⟨j, hidup.isLink_left.mp hjl⟩
+--   edge_mem_iff_exists_isLink := by
+--     simp only [mem_iUnion, edge_mem_iff_exists_isLink]
+--     aesop
+--   left_mem_of_isLink := fun e x y ⟨i, hi⟩ ↦ mem_iUnion.2 ⟨i, hi.left_mem⟩
+
+protected def union (G H : Graph α β) : Graph α β where
+  vertexSet := V(G) ∪ V(H)
+  edgeSet := E(G) ∪ E(H)
+  dup := Relation.TransClosure (G.dup ⊔ H.dup)
+  dup_refl_iff x := union_dup_refl_iff
+  dup_symm _ _ := symm_of _
+  dup_trans _ _ _ := trans_of _
+  IsLink e x y := ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
+    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v
+  isLink_symm e he x y hl :=
+    let ⟨u, v, huv, hxu, hyv⟩ := hl
+    ⟨v, u, by rwa [G.isLink_comm, H.isLink_comm], hyv, hxu⟩
+  dup_or_dup_of_isLink_of_isLink e a b c d hl hl' := by
+    obtain ⟨u, v, (hGuv | ⟨hHuv, hGuv⟩), hau, hbv⟩ := hl <;>
+    obtain ⟨u', v', (hGuv' | ⟨hHuv', hGuv'⟩), hcu', hdv'⟩ := hl'
+    · apply (G.dup_or_dup_of_isLink_of_isLink hGuv hGuv').imp <;> exact fun h =>
+        trans_of _ (trans_of _ hau <| Relation.TransGen.single (Or.inl h))
+        (symm_of _ <| by assumption)
+    · exact hGuv' hGuv.edge_mem |>.elim
+    · exact hGuv hGuv'.edge_mem |>.elim
+    apply (H.dup_or_dup_of_isLink_of_isLink hHuv hHuv').imp <;> exact fun h =>
+      trans_of _ (trans_of _ hau <| Relation.TransGen.single (Or.inr h))
+      (symm_of _ <| by assumption)
+  left_mem_of_isLink e x y hl := by
+    obtain ⟨u, v, (hGuv | ⟨hHuv, hGuv⟩), hau, hbv⟩ := hl <;>
+    exact union_dup_refl_iff.mpr <| Relation.foo.isfoo <| symm_of _ hau
+  isLink_of_dup e x y z hxy hl' :=
+    let ⟨u, v, h, hxu, hzv⟩ := hl'
+    ⟨u, v, h, trans_of _ (symm_of _ hxy) hxu, hzv⟩
+  edge_mem_iff_exists_isLink e := by
+    refine ⟨fun he => ?_, by rintro ⟨x, y, u, v, (hl | ⟨hl, -⟩), hxu, hyv⟩ <;> simp [hl.edge_mem]⟩
+    by_cases heG : e ∈ E(G)
+    · obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet heG
+      use x, y, x, y, Or.inl hl, ?_ <;> rw [← union_dup_refl_iff] <;> left
+      · exact hl.right_mem
+      exact hl.left_mem
+    · obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet <| he.resolve_left heG
+      use x, y, x, y, Or.inr ⟨hl, heG⟩, ?_ <;> rw [← union_dup_refl_iff] <;> right
+      · exact hl.right_mem
+      exact hl.left_mem
 
 variable {G : ι → Graph α β} {i j : ι}
 

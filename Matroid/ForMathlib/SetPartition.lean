@@ -9,156 +9,6 @@ open Set Function
 
 variable {α β : Type*} {s t x y z : α}
 
-namespace Relation
-
-variable {ι : Type*} {r s : α → α → Prop} {f : ι → α}
-
-instance [IsRefl α r] : IsRefl ι (r on f) where
-  refl i := refl (f i)
-
-instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
-  refine ⟨fun a b h ↦ ?_⟩
-  obtain (h | h) := h <;> simp [symm_of _ h]
-
-instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊓ s) :=
-  ⟨fun a b ⟨hr, hs⟩ ↦ by simp [symm_of _ hr, symm_of _ hs]⟩
-
-lemma sSup_symm {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : IsSymm α (sSup s) where
-  symm a b h := by
-    induction h with
-    | intro w h =>
-      simp only [mem_range, eq_iff_iff, Subtype.exists, exists_prop, exists_exists_and_eq_and,
-        binary_relation_sSup_iff s] at h ⊢
-      obtain ⟨⟨r, hrs, hrw⟩, hw⟩ := h
-      have := hs r hrs
-      exact ⟨r, hrs, symm_of _ <| hrw.mpr hw⟩
-
-lemma sInf_symm {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : IsSymm α (sInf s) where
-  symm a b := by
-    simp_rw [binary_relation_sInf_iff s]
-    exact fun h r hrs => let := hs r hrs; symm_of _ (h r hrs)
-
-lemma sInf_trans {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsTrans α r) : IsTrans α (sInf s) where
-  trans a b c := by
-    simp_rw [binary_relation_sInf_iff s]
-    exact fun hab hbc r hrs => let := hs r hrs; trans_of _ (hab r hrs) (hbc r hrs)
-
-instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
-  ⟨fun _ _ _ ⟨hr, hs⟩ ⟨hr', hs'⟩ ↦ ⟨trans_of r hr hr', trans_of s hs hs'⟩⟩
-
-def TransClosure : ClosureOperator (α → α → Prop) where
-  toFun := TransGen
-  monotone' _ _ h _ _ h' := TransGen.mono h h'
-  le_closure' _ _ _ := TransGen.single
-  idempotent' _ := by
-    ext a b
-    constructor <;> intro h
-    · induction h with
-      | single h => exact h
-      | tail _ h' ih => exact TransGen.trans ih h'
-    · exact TransGen.single h
-  IsClosed := Transitive
-  isClosed_iff := ⟨transGen_eq_self, fun hr => hr ▸ transitive_transGen⟩
-
-instance : IsTrans α (TransClosure r) := by
-  change IsTrans α (TransGen r)
-  infer_instance
-
-instance [IsSymm α r] : IsSymm α (TransClosure r) := by
-  refine ⟨fun a b h ↦ ?_⟩
-  induction h with
-  | single hr => exact TransGen.single (symm_of r hr)
-  | tail _ hr ih => exact TransGen.head (symm_of r hr) ih
-
-/-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
-class foo (r : α → α → Prop) where
-  isfoo : ∀ ⦃x y⦄, r x y → r y y
-
-instance [IsSymm α r] [IsTrans α r] : foo r where
-  isfoo _ _ hr := _root_.trans (symm_of r hr) hr
-
-instance [foo r] [foo s] : foo (r ⊔ s) where
-  isfoo _ _ hr := by obtain (hr | hr) := hr <;> simp [foo.isfoo hr]
-
-instance [foo r] [foo s] : foo (r ⊓ s) where
-  isfoo _ _ h := ⟨foo.isfoo h.1, foo.isfoo h.2⟩
-
-lemma transClosure_self_iff [foo r] : TransClosure r x x ↔ r x x := by
-  refine ⟨fun h => ?_, TransGen.single⟩
-  obtain (h | ⟨_, _, h⟩) := (transGen_iff r _ _).mp h
-  · exact h
-  exact foo.isfoo h
-
-instance : IsRefl α ⊤ where
-  refl := by simp
-
-instance : IsSymm α ⊤ where
-  symm := by simp
-
-instance : IsTrans α ⊤ where
-  trans := by simp
-
-instance : IsSymm α ⊥ where
-  symm := by simp
-
-instance : IsTrans α ⊥ where
-  trans := by simp
-
-def PER (α : Type*) := {r : α → α → Prop // IsSymm α r ∧ IsTrans α r}
-
-variable {r' s' : PER α}
-
-instance : IsSymm α r'.val := r'.property.1
-instance : IsTrans α r'.val := r'.property.2
-instance : PartialOrder (PER α) := Subtype.partialOrder _
-instance : OrderTop (PER α) := Subtype.orderTop ⟨inferInstance, inferInstance⟩
-instance : OrderBot (PER α) := Subtype.orderBot ⟨inferInstance, inferInstance⟩
-instance : CompleteLattice (PER α) where
-  sup r s := ⟨TransClosure (r.val ⊔ s.val), inferInstance, inferInstance⟩
-  le_sup_left r s := by
-    change r.val ≤ TransClosure (r.val ⊔ s.val)
-    exact le_trans le_sup_left (TransClosure.le_closure _)
-  le_sup_right r s := by
-    change s.val ≤ TransGen (r.val ⊔ s.val)
-    exact le_trans le_sup_right (TransClosure.le_closure _)
-  sup_le r s t hrt hst := by
-    change TransClosure (r.val ⊔ s.val) ≤ t.val
-    exact ClosureOperator.closure_min (sup_le hrt hst) t.prop.2.trans
-  inf r s := ⟨r.val ⊓ s.val, inferInstance, inferInstance⟩
-  inf_le_left r s := by
-    change r.val ⊓ s.val ≤ r.val
-    exact inf_le_left
-  inf_le_right r s := by
-    change r.val ⊓ s.val ≤ s.val
-    exact inf_le_right
-  le_inf r s t hrt hst := by
-    change r.val ≤ s.val ⊓ t.val
-    exact le_inf hrt hst
-  sSup s := ⟨TransGen (sSup <| Subtype.val '' s),
-    @instIsSymmCoeClosureOperatorForallForallPropTransClosure _ _
-    <| sSup_symm (s := Subtype.val '' s) (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.1), inferInstance⟩
-  le_sSup S r hrS := by
-    change r.val ≤ TransGen (sSup <| Subtype.val '' S)
-    exact le_trans (le_sSup <| mem_image_of_mem Subtype.val hrS) (TransClosure.le_closure _)
-  sSup_le S r hrS := by
-    refine TransClosure.closure_min (sSup_le ?_) r.prop.2.trans
-    rintro s ⟨s', hs', rfl⟩
-    exact hrS s' hs'
-  sInf S := ⟨sInf <| Subtype.val '' S, sInf_symm (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.1),
-    sInf_trans (fun r ⟨r', hr', heq⟩ => heq ▸ r'.prop.2)⟩
-  le_sInf S r hrS := by
-    change r.val ≤ sInf (Subtype.val '' S)
-    refine le_sInf <| ?_
-    rintro s ⟨s', hs', rfl⟩
-    exact hrS s' hs'
-  sInf_le S r hrS := sInf_le <| mem_image_of_mem Subtype.val hrS
-  le_top r := by simp
-  bot_le r := by simp
-
-end Relation
-
-
-
 structure Partition [CompleteLattice α] (s : α) where
   parts : Set α
   indep : sSupIndep parts
@@ -175,6 +25,9 @@ instance : SetLike (Partition s) α where
   coe := Partition.parts
   coe_injective' p p' h := by cases p; cases p'; simpa using h
 
+instance : HasSubset (Partition s) where
+  Subset P Q := P.parts ⊆ Q.parts
+
 @[simp] lemma mem_parts : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
 
 @[ext] lemma ext (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
@@ -184,8 +37,7 @@ instance : SetLike (Partition s) α where
   ext x
   simpa using hP x
 
-lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) :
-    Disjoint x y :=
+lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) : Disjoint x y :=
   P.indep.pairwiseDisjoint hx hy hxy
 
 lemma pairwiseDisjoint : Set.PairwiseDisjoint (P : Set α) id :=
