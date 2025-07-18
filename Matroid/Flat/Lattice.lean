@@ -65,7 +65,7 @@ instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   sSup_le Fs F h := by
     simp only [FlatOf.le_iff, coe_flatClosure] at h ⊢
     refine F.coe_isFlat.closure_subset_of_subset ?_
-    simp only [iUnion_subset_iff, F.coe_isFlat.closure]
+    simp only [iUnion_subset_iff]
     assumption
   sInf Fs := ⟨(⋂ F ∈ Fs, F) ∩ M.E, IsFlat.biInter_inter_ground (by simp)⟩
   sInf_le Fs F h := inter_subset_left.trans (biInter_subset_of_mem (by simpa))
@@ -181,7 +181,7 @@ lemma IsFlat.wCovby_iff_covBy_or_eq (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F�
     F₀ ⩿[M] F₁ ↔ (F₀ ⋖[M] F₁) ∨ F₀ = F₁ := by
   obtain (rfl | hne) := eq_or_ne F₀ F₁
   · simp [hF₀]
-  simp [hF₀, hF₀.covBy_iff_wcovBy_and_ne hF₁, or_iff_not_imp_right, hne]
+  simp [hF₀.covBy_iff_wcovBy_and_ne hF₁, or_iff_not_imp_right, hne]
 
 
 --TODO : More `WCovby` API.
@@ -388,7 +388,7 @@ lemma IsFlat.exists_unique_isFlat_of_notMem (hF₀ : M.IsFlat F₀) (he : e ∈ 
   simp_rw [hF₀.covBy_iff_eq_closure_insert]
   use M.closure (insert e F₀)
   refine ⟨⟨(M.inter_ground_subset_closure (insert e F₀)) ⟨mem_insert _ _, he.1⟩, ⟨e, he, rfl⟩⟩, ?_⟩
-  simp only [exists_prop, and_imp, forall_exists_index]
+  simp only [and_imp, forall_exists_index]
   rintro X heX f _ rfl
   rw [hF₀.closure_insert_eq_closure_insert_of_mem ⟨heX, he.2⟩]
 
@@ -443,7 +443,7 @@ lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀
 instance {M : Matroid α} : IsWeakUpperModularLattice M.FlatOf where
   covBy_sup_of_inf_covBy_covBy := by
     rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
-    simp only [ge_iff_le, FlatOf.le_iff, FlatOf.covBy_iff, FlatOf.coe_inf, FlatOf.coe_sup]
+    simp only [FlatOf.covBy_iff, FlatOf.coe_inf, FlatOf.coe_sup]
     exact CovBy.covBy_closure_union_of_inter_covBy
 
 /-- If `M.eRelRk F₀ F₁ = 2` for flats `F₀, F₁`, then every flat strictly between
@@ -524,7 +524,7 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
     hF.covByPartition.Rel e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
   simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
-    exists_prop, exists_and_left, and_congr_right_iff]
+    exists_prop, and_congr_right_iff]
   refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert e F)),
     ← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert f F)), hF.closure,

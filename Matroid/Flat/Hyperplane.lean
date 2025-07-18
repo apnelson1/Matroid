@@ -96,7 +96,7 @@ lemma isHyperplane_iff_maximal_nonspanning :
   · simp only [mem_image, mem_setOf_eq, and_imp]
     exact fun X hX hXE ↦ ⟨M.E \ X, ⟨hX, diff_subset⟩, by simp [inter_eq_self_of_subset_right hXE]⟩
 
-  simp only [le_eq_subset, mem_image, mem_setOf_eq, and_imp]
+  simp only [le_eq_subset, mem_image, mem_setOf_eq]
   rintro _ ⟨Y, ⟨hYsp, hYE⟩, rfl⟩
   refine ⟨_, rfl.subset, ?_, diff_subset⟩
   simpa [inter_eq_self_of_subset_right hYE]

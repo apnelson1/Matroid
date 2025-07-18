@@ -282,8 +282,8 @@ variable {α : Type*} [CompleteDistribLattice α] {s : α}
     have hdj1 := (Qs a haP).indep hba
     have hdj2 := (P.indep haP).mono_left <| (Qs a haP).le_of_mem hba
     refine (hdj1.sup_right hdj2).mono_right ?_
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists, mem_parts, ge_iff_le,
-      sSup_le_iff, mem_diff, mem_singleton_iff, and_imp, forall_exists_index]
+    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, sSup_le_iff, mem_diff,
+      mem_singleton_iff, and_imp, forall_exists_index]
 
     rintro t' x hx (ht' : t' ∈ Qs x hx) hne
     obtain (rfl | hne) := eq_or_ne x a
@@ -649,7 +649,7 @@ lemma exists_extend_partial_repFun (P : Partition s) {t : Set α} (f₀ : t → 
   set f : α → α := fun a ↦ if ha : a ∈ s then
     (if hb : ∃ b : t, P.Rel a b then f₀ hb.choose else P.rep (P.partOf_mem ha)) else a with hf
   refine ⟨RepFun.mk f (fun a ha ↦ by simp [hf, ha]) (fun a ha ↦ ?_) (fun a b hab ↦ ?_), fun a ↦ ?_⟩
-  · simp only [hf, exists_prop, ha, ↓reduceDIte]
+  · simp only [hf, ha, ↓reduceDIte]
     split_ifs with h
     · exact h.choose_spec.trans <| h_mem h.choose h.choose_spec.mem_right
     push_neg at h
@@ -663,7 +663,7 @@ lemma exists_extend_partial_repFun (P : Partition s) {t : Set α} (f₀ : t → 
     rwa [← rel_iff_partOf_eq_partOf _ hab.mem_left hab.mem_right]
   change f a = f₀ a
   obtain (ha | ha) := em (a.1 ∈ s)
-  · simp only [hf, exists_prop, ha, ↓reduceDIte]
+  · simp only [hf, ha, ↓reduceDIte]
     split_ifs with h
     · exact Eq.symm <| h_eq _ _ h.choose_spec
     exact False.elim <| h ⟨a, rel_self_iff_mem.2 ha⟩

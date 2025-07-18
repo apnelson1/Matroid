@@ -1,4 +1,4 @@
-import Matroid.Extension.ModularCut
+import Matroid.Extension.ProjectBy
 import Matroid.ForMathlib.FinDiff
 
 variable {α : Type*} {M : Matroid α} {E I B : Set α} {k : ℕ∞}
@@ -117,10 +117,10 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
   (hM := by
     refine ⟨M.projectBy (ModularCut.principal M M.E), rfl, fun I ↦ ?_⟩
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
-    · rw [hM]; simp [ModularCut.eq_top_iff, Subset.rfl, loops]
+    · rw [hM]; simp [ModularCut.eq_top_iff, loops]
     suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
       simpa [M.principal_ground_ne_top]
-    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq, Subset.rfl] at h, fun h hss ↦ ?_⟩
+    refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq] at h, fun h hss ↦ ?_⟩
     have hIb := hI.isBase_of_ground_subset_closure hss
     exact hIb.nonempty.ne_empty (h hIb))
 
@@ -133,8 +133,7 @@ lemma truncate_indep_iff' : M.truncate.Indep I ↔ M.Indep I ∧ (M.IsBase I →
   exact fun _ ↦ ⟨fun h hB ↦ hB.nonempty.ne_empty (h hB), fun h hB ↦ by contradiction⟩
 
 @[simp] lemma truncate_loopyOn_eq {E : Set α} : (loopyOn E).truncate = loopyOn E := by
-  simp +contextual
-    [truncate, ModularCut.principal, eq_loopyOn_iff, Matroid.ofExistsMatroid]
+  simp +contextual [truncate, eq_loopyOn_iff, Matroid.ofExistsMatroid]
 
 @[simp] lemma truncate_emptyOn_eq (α : Type*) : (emptyOn α).truncate = emptyOn α := by
   rw [← ground_eq_empty_iff]
@@ -166,7 +165,7 @@ lemma IsBase.diff_singleton_truncate_isBase {e : α} (hB : M.IsBase B) (heB : e 
 @[simp] lemma truncate_spanning_iff [M.RankPos] {S : Set α} :
     M.truncate.Spanning S ↔ ∃ e ∈ M.E, M.Spanning (insert e S) := by
   simp only [spanning_iff_exists_isBase_subset', truncate_isBase_iff, truncate_ground_eq,
-    exists_and_left, insert_subset_iff, ← and_assoc, exists_and_right, and_congr_left_iff]
+    insert_subset_iff, ← and_assoc, exists_and_right, and_congr_left_iff]
   refine fun hSE ↦ ⟨fun ⟨B, ⟨e, he, heB⟩, hBS⟩ ↦ ?_, fun ⟨e, ⟨h, B, hB, hBS⟩, _⟩ ↦ ?_⟩
   · have heE : e ∈ M.E := heB.subset_ground (mem_insert _ _)
     exact ⟨e, ⟨heE, _, heB, insert_subset_insert hBS⟩, heE⟩
@@ -283,7 +282,7 @@ lemma circuitOn_indep_iff (hC : C.Nonempty) : (circuitOn C).Indep I ↔ I ⊂ C 
 lemma circuitOn_dep_iff (hC : C.Nonempty) {D : Set α} : (circuitOn C).Dep D ↔ D = C := by
   simp only [Dep, circuitOn_indep_iff hC, ssubset_iff_subset_ne, ne_eq, not_and, not_not,
     circuitOn_ground]
-  exact ⟨fun h ↦ h.1 h.2, by rintro rfl; simp [Subset.rfl]⟩
+  exact ⟨fun h ↦ h.1 h.2, by rintro rfl; simp⟩
 
 lemma circuitOn_isBase_iff (hC : C.Nonempty) :
     (circuitOn C).IsBase B ↔ ∃ e ∉ B, insert e B = C := by
@@ -520,7 +519,7 @@ lemma maximal_indep_eq : Maximal (T.Indep) = T.IsBase := by
       obtain ⟨B₀, hB₀⟩ := M.exists_isBase
       obtain ⟨f, ⟨-, hf⟩, hfI⟩ := hI.exists_insert_of_not_isBase hInotbase hB₀
       exact hItb <| (heB.toTruncate_of_closure he.2 hf hfI hcon).isBase_of_insert hf
-    simp only [subset_def, not_forall, Classical.not_imp, exists_prop] at hcon
+    simp only [subset_def, not_forall, exists_prop] at hcon
     obtain ⟨e, heB, he⟩ := hcon
     have heI : e ∉ I := notMem_subset (M.subset_closure _) he
     rw [hI.notMem_closure_iff_of_notMem heI (hB.indep.indep.subset_ground heB)] at he
@@ -592,7 +591,7 @@ Empty if `M` has rank zero for technical reasons. -/
   refine ext_isBase rfl ?_
   obtain h | h := M.eq_loopyOn_or_rankPos
   · rw [h]
-    simp [(top _).isBase_eq', top_ToTruncate, truncate_isBase_iff, nonempty_iff_ne_empty]
+    simp [(top _).isBase_eq', top_ToTruncate, nonempty_iff_ne_empty]
 
   suffices ∀ ⦃B : Set α⦄, B ⊆ M.E → M.IsBase B → ¬B.Nonempty → ∃ e ∉ B, M.IsBase (insert e B) by
     simpa +contextual [(top M).isBase_eq', top_ToTruncate, truncate_isBase_iff]

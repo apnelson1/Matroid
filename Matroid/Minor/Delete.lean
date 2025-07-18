@@ -24,7 +24,7 @@ instance [h : M.Loopless] {D : Set α} : (M ＼ D).Loopless :=
 lemma removeLoops_eq_delete (M : Matroid α) : M.removeLoops = M ＼ M.loops := by
   rw [← restrict_compl, removeLoops]
   convert rfl using 2
-  simp [Set.ext_iff, mem_setOf, isNonloop_iff, isLoop_iff, mem_diff, and_comm]
+  simp [Set.ext_iff, isNonloop_iff, isLoop_iff, mem_diff, and_comm]
 
 lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
     (M ＼ X).removeLoops = M.removeLoops := by

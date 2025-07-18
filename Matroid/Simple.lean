@@ -127,7 +127,7 @@ lemma simple_iff_forall_pair_indep : M.Simple ↔ ∀ ⦃e f⦄, e ∈ M.E → f
   exact ⟨fun h e heE ↦ (h heE heE).1.1, by tauto⟩
 
 instance simple_freeOn {E : Set α} : Simple (freeOn E) := by
-  simp [← uniqueBaseOn_self, Subset.rfl]
+  simp [← uniqueBaseOn_self]
 
 instance simple_emptyOn {α : Type*} : Simple (emptyOn α) := by
   simp [simple_iff_forall_pair_indep]
@@ -150,7 +150,7 @@ lemma simple_iff_forall_parallel_class [Loopless M] :
   simp only [mem_parallelClasses_iff, forall_exists_index, and_imp, encard_eq_one]
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro h P x hx rfl
-    exact ⟨x, by simp [Set.ext_iff, parallel_iff_eq hx.mem_ground]⟩
+    exact ⟨x, by simp [parallel_iff_eq hx.mem_ground]⟩
   rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right (by assumption)]
   refine fun e f hef ↦ ?_
   obtain ⟨x, hx⟩ := h _ e hef.isNonloop_left rfl
@@ -187,8 +187,7 @@ lemma exists_isLoop_or_para_of_not_simple (hM : ¬ M.Simple) :
   exact hne <| h.2 e f hef
 
 lemma Indep.restr_simple (hI : M.Indep I) : (M ↾ I).Simple := by
-  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
-    restrict_indep_iff, pair_subset_iff]
+  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, restrict_indep_iff, pair_subset_iff]
   rintro e f he hf
   exact ⟨hI.subset (pair_subset he hf), he, hf⟩
 
@@ -203,8 +202,8 @@ lemma Simple.subset_ground {X : Set α} (h : (M ↾ X).Simple) : X ⊆ M.E :=
   h.subset_isNonloops.trans (fun _ ↦ IsNonloop.mem_ground)
 
 lemma Simple.subset {X Y : Set α} (hY : (M ↾ Y).Simple) (hXY : X ⊆ Y) : (M ↾ X).Simple := by
-  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, mem_singleton_iff,
-    restrict_indep_iff, pair_subset_iff] at *
+  simp only [simple_iff_forall_pair_indep, restrict_ground_eq, restrict_indep_iff,
+    pair_subset_iff] at *
   aesop
 
 lemma Loopless.of_restrict_contract {C : Set α} (hC : (M ↾ C).Loopless) (h : (M ／ C).Loopless) :
@@ -467,8 +466,7 @@ lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.Is
 
 lemma IsSimplification.ground_eq_biUnion_closure [M.RankPos] (hNM : N.IsSimplification M) :
     M.E = ⋃ e ∈ N.E, M.closure {e} := by
-  simp only [subset_antisymm_iff, subset_def, mem_iUnion, mem_setOf_eq, exists_prop,
-    forall_exists_index, and_imp]
+  simp only [subset_antisymm_iff, subset_def, mem_iUnion, exists_prop, forall_exists_index, and_imp]
   refine ⟨fun x hx ↦ ?_, fun _ _ _ h ↦ mem_ground_of_mem_closure h⟩
   obtain hx' | hx' := M.isLoop_or_isNonloop x hx
   · have hN : N.RankPos :=

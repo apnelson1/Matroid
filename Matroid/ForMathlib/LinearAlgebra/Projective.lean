@@ -124,7 +124,7 @@ lemma Projectivization.mapEquiv_indep_iff {W K : Type*} [Field K] [Module K V] [
   rw [independent_iff, ← f.symm.linearIndependent_iff_of_injOn f.symm.injective.injOn,
     ← independent_comp_mk_iff _ (by simp [rep_nonzero])]
   convert Iff.rfl with i
-  simp only [LinearEquiv.coe_coe, Equiv.coe_fn_mk, comp_apply]
+  simp only [LinearEquiv.coe_coe, comp_apply]
   have h := mk_apply_rep (V := W) (W := V) (σ := RingHom.id K) (τ := RingHom.id K)
     (f.symm : W →ₗ[K] V) f.symm.injective (map (f : V →ₗ[K] W) f.injective (v i))
   convert h.symm

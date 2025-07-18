@@ -373,14 +373,14 @@ lemma IsCircuit.girth_le_card (hC : M.IsCircuit C) : M.girth ≤ C.encard := by
   exact fun b hb ↦ hb C hC
 
 lemma girth_eq_top_iff : M.girth = ⊤ ↔ ∀ C, M.IsCircuit C → C.Infinite := by
-  simp [girth, sInf_eq_top]
+  simp [girth]
 
 @[simp] lemma girth_eq_top_iff_ground_indep [Finitary M] : M.girth = ⊤ ↔ M = freeOn M.E := by
   rw [girth_eq_top_iff, eq_freeOn_iff, indep_iff_forall_subset_not_isCircuit, and_iff_right rfl]
   exact ⟨fun h C _ hC ↦ h C hC hC.finite, fun h C hC _ ↦ h C hC.subset_ground hC⟩
 
 lemma le_girth_iff : k ≤ M.girth ↔ ∀ C, M.IsCircuit C → k ≤ C.encard := by
-  simp [girth, le_sInf_iff]
+  simp [girth]
 
 lemma exists_isCircuit_girth (M : Matroid α) [RankPos M✶] :
     ∃ C, M.IsCircuit C ∧ C.encard = M.girth := by
@@ -393,7 +393,7 @@ lemma exists_isCircuit_girth (M : Matroid α) [RankPos M✶] :
   simp [girth]
 
 @[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
-  simp [Subset.rfl]
+  simp
 
 lemma girth_le_iff [RankPos M✶] : M.girth ≤ k ↔ ∃ C, M.IsCircuit C ∧ C.encard ≤ k :=
   let ⟨C, hC⟩ := M.exists_isCircuit_girth
@@ -478,7 +478,7 @@ lemma IsBase.rev_exchange (hB₁ : M.IsBase B₁) (hB₂ : M.IsBase B₂) (he : 
 lemma IsBasis.rev_exchange (hI₁ : M.IsBasis I₁ X) (hI₂ : M.IsBasis I₂ X) (he : e ∈ I₁ \ I₂) :
     ∃ f ∈ I₂ \ I₁, M.IsBasis (insert e I₂ \ {f}) X :=
   (hI₁.strong_exchange hI₂ he).imp
-    (by simp only [mem_diff, mem_insert_iff, mem_singleton_iff]; tauto)
+    (by simp only [mem_diff]; tauto)
 
 end IsBasisExchange
 

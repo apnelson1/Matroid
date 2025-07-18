@@ -1,5 +1,6 @@
-import Matroid.Extension.ModularCut
+import Matroid.Extension.Minor
 import Matroid.ForMathlib.Matroid.Map
+import Matroid.Order.Quotient
 
 open Set BigOperators Set.Notation Function
 
@@ -7,22 +8,16 @@ namespace Matroid
 
 universe u
 
-variable {α β : Type u} {ι : Type*} {η : Type*} {A : Set η} {M N : Matroid α}
+variable {α β : Type*} {ι : Type*} {η : Type*} {A : Set η} {M N : Matroid α}
     {B I J X X' Y Y' F : Set α} {e : α} {i j : ι} {Xs Ys Is Js : ι → Set α}
 
-/-- A matroid encoding the fact that `N` is a projection of `M`.
-Note : we require the type of the projected elements to have the same universe as `M`,
-so that `Projector.isProjection` can be proved easily. This is probably not really necessary,
-but hopefully a benign constraint in practice.
-TODO (maybe) - allow `N` and `M` to have different ground types.
--/
-structure Projector {α : Type u} (N M : Matroid α) (β : Type u) where
+/-- A matroid encoding the fact that `N` is a projection of `M`. -/
+structure Projector (N M : Matroid α) (β : Type*) where
   carrier : Matroid (α ⊕ β)
   contract_eq' : carrier ／ range Sum.inr = N.map Sum.inl Sum.inl_injective.injOn
   delete_eq' : carrier ＼ range Sum.inr = M.map Sum.inl Sum.inl_injective.injOn
 
-instance {N M : Matroid α} {β : Type u} :
-    CoeHead (Projector N M β) (Matroid (α ⊕ β)) where
+instance {α β : Type*} {N M : Matroid α} : CoeSort (Projector N M β) (Matroid (α ⊕ β)) where
   coe P := P.1
 
 attribute [coe] Projector.carrier
@@ -33,8 +28,9 @@ to perform the projection within the type. -/
 def IsProjection {α : Type u} (N M : Matroid α) : Prop :=
   ∃ (β : Type u), Nonempty (N.Projector M β)
 
-lemma Projector.isProjection (P : N.Projector M β) : N.IsProjection M :=
-  ⟨_, ⟨P⟩⟩
+lemma Projector.isProjection {α β : Type u} {M N : Matroid α} (P : N.Projector M β) :
+    N.IsProjection M :=
+  ⟨β, ⟨P⟩⟩
 
 lemma Projector.contract_eq_mapEmbedding (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ／ range Sum.inr = N.mapEmbedding Embedding.inl := P.contract_eq'
@@ -47,6 +43,12 @@ lemma Projector.delete_eq_eq_mapEmbedding (P : N.Projector M β) :
 
 lemma Projector.delete_eq (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ＼ range Sum.inr = M.map Sum.inl Sum.inl_injective.injOn := P.delete_eq'
+
+lemma Projector.inl_mem_ground_iff {P : N.Projector M β} {e : α} :
+    Sum.inl e ∈ (P : Matroid (α ⊕ β)).E ↔ e ∈ M.E := by
+  revert e
+  have h := congr_arg Matroid.E P.delete_eq
+  simpa [Set.ext_iff] using h
 
 lemma Projector.contract_comap_eq (P : N.Projector M β) :
     ((P : Matroid (α ⊕ β)) ／ range Sum.inr).comap .inl = N := by
@@ -69,15 +71,17 @@ lemma Projector.delete_image_pivot (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ＼ (.inr '' P.pivot) = M.map _ Sum.inl_injective.injOn := by
   rw [← P.delete_eq, eq_comm, ← delete_inter_ground_eq, pivot, image_preimage_eq_range_inter]
 
-lemma Projector.ground_left_eq (P : N.Projector M β) : N.E = .inl ⁻¹' (P : Matroid (α ⊕ β)).E := by
+lemma Projector.preimage_inl_eq_left (P : N.Projector M β) :
+    .inl ⁻¹' (P : Matroid (α ⊕ β)).E = N.E := by
   simp [← P.contract_comap_eq]
 
-lemma Projector.ground_right_eq (P : N.Projector M β) : M.E = .inl ⁻¹' (P : Matroid (α ⊕ β)).E := by
+@[simp]
+lemma Projector.preimage_inl_eq_right (P : N.Projector M β) :
+    .inl ⁻¹' (P : Matroid (α ⊕ β)).E = M.E := by
   simp [← P.delete_comap_eq]
 
-lemma IsProjection.ground_eq (h : N.IsProjection M) : N.E = M.E := by
-  obtain ⟨β, ⟨P⟩⟩ := h
-  rw [P.ground_left_eq, P.ground_right_eq]
+lemma Projector.ground_eq (P : N.Projector M β) : N.E = M.E := by
+  rw [← P.preimage_inl_eq_left, ← P.preimage_inl_eq_right]
 
 def Projector.dual (P : N.Projector M β) : M✶.Projector N✶ β where
   carrier := P✶
@@ -139,11 +143,11 @@ def Projector.delete_contract' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
   contract_eq' := by
     apply Matroid.map_inj (Sum.elim id Subtype.val) (by simp [InjOn])
     rw [contract_map _ (by simp), map_comapOn (Projector.bijOn_aux hX)]
-    simp [mapEmbedding, Embedding.inl, map_map, ← range_comp]
+    simp [map_map, ← range_comp]
   delete_eq' := by
     apply Matroid.map_inj (Sum.elim id Subtype.val) (by simp [InjOn])
     rw [delete_map _ (by simp), map_comapOn (Projector.bijOn_aux hX)]
-    simp [mapEmbedding, Embedding.inl, map_map, ← range_comp]
+    simp [map_map, ← range_comp]
 
 def Projector.copy {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N') (hM : M = M') :
     N'.Projector M' β where
@@ -184,7 +188,7 @@ lemma exists_indep_coindep_of_delete_contract (M : Matroid α) (X : Set α) :
 
 /-- We can always choose a projector so that the pivot set is independent and coindepent,
 and consists of the entire type of projected elements. -/
-lemma IsProjection.exists_good_projector {M N : Matroid α} (h : N.IsProjection M) :
+lemma IsProjection.exists_good_projector {α : Type u} {M N : Matroid α} (h : N.IsProjection M) :
     ∃ (β : Type u) (P : N.Projector M β),
       (P : Matroid (α ⊕ β)).E = .inl '' M.E ∪ range .inr ∧
       (P : Matroid (α ⊕ β)).Indep (range .inr) ∧
@@ -194,7 +198,7 @@ lemma IsProjection.exists_good_projector {M N : Matroid α} (h : N.IsProjection 
     exists_indep_coindep_of_delete_contract (P : Matroid (α ⊕ β)) (range .inr)
   obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.1 hJ
   have hbij : BijOn (Sum.map id (Subtype.val : J → β)) (Sum.inl '' M.E ∪ range Sum.inr) M'.E := by
-    rw [P.ground_right_eq]
+    rw [← P.preimage_inl_eq_right]
     refine ⟨?_, by simp [InjOn], ?_⟩
     · rintro (x | ⟨x, hx⟩)
       simp only [mem_union, mem_image, mem_preimage, Sum.inl.injEq, exists_eq_right, mem_range,
@@ -230,19 +234,68 @@ lemma IsProjection.exists_good_projector {M N : Matroid α} (h : N.IsProjection 
 lemma delete_isProjection_contract (M : Matroid α) (X : Set α) : (M ／ X).IsProjection (M ＼ X) :=
   ⟨_, ⟨Projector.delete_contract M X⟩⟩
 
-def ModularCut.Projector (U : M.ModularCut) : (M.projectBy U).Projector M PUnit where
+/-- Given a modular cut `U` in `M`,
+the projector certifying that `M.projectBy U` is a single-element projection of `M`. -/
+def ModularCut.Projector (U : M.ModularCut) : (M.projectBy U).Projector M Unit where
   carrier := (M.map Sum.inl Sum.inl_injective.injOn).extendBy
-    (.inr (PUnit.unit)) (U.map Sum.inl Sum.inl_injective.injOn)
+    (.inr ()) (U.map Sum.inl Sum.inl_injective.injOn)
   contract_eq' := by
-    rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {PUnit.unit}) (by simp),
-      image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (by simp)]
+    rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {()}) (by simp),
+      image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (by simp),
+      ModularCut.projectBy_map]
+  delete_eq' := by
+    rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {()}) (by simp),
+      image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_deleteElem (by simp)]
 
-    -- refine Matroid.comap_inj (f := Sum.inl) ?_ (by simp) ?_
-    -- · simpa using diff_subset.trans (image_subset_range ..)
-    -- rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {PUnit.unit}) (by simp),
-    --   image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (by simp)]
-    -- have := (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (e := .inr PUnit.unit)
-    --   (by simp)
+lemma IsProjection.Quotient (h : N.IsProjection M) : N ≤q M := by
+  obtain ⟨β, ⟨P⟩⟩ := h
+  simp_rw [← P.contract_comap_eq, ← P.delete_comap_eq]
+  exact ((P : Matroid (α ⊕ β)).contract_quotient_delete (range .inr)).comap Sum.inl
 
-    -- rw [ModularCut.extendBy_map]
-  delete_eq' := _
+/-- The projector for `M` and itself. -/
+def Projector.refl (M : Matroid α) : M.Projector M (Fin 0) where
+  carrier := M.map Sum.inl Sum.inl_injective.injOn
+  contract_eq' := by simp
+  delete_eq' := by simp
+
+-- def Projector.comp_projectBy_modularCut {M N : Matroid α} (P : N.Projector M β)
+-- (U : N.ModularCut) :
+--     (N.projectBy U).Projector M (Option β) where
+--   carrier :=
+--     have hinj : InjOn (Sum.map id some) (P : Matroid (α ⊕ β)).E := by simp [InjOn]
+--     ((P : Matroid (α ⊕ β)).map _ hinj).extendBy (.inr none)
+--       <| ((U.map Sum.inl Sum.inl_injective.injOn).copy P.contract_eq.symm).ofContract'.map _ hinj
+--   contract_eq' := by
+--     simp only
+--     have hrw1 : range (Sum.inr : Option β → α ⊕ Option β)
+--       = {.inr none} ∪ (.inr '' (range some)) := by ext (a | rfl | b) <;> simp
+--     obtain rfl | hne := eq_or_ne U ⊤
+--     simp
+--     rw [hrw1, ← contract_contract]
+--     rw [← ModularCut.projectBy_map]
+--   delete_eq' := _
+
+
+/-- If `P` is a projector for `N` and `M` using a type `β` that is small enough to map into
+the complement of `M.E`, then in fact `N` and `M` have a common major within their own type. -/
+lemma Projector.exists_contract_delete_of_embedding (P : N.Projector M β) (φ : β ↪ α)
+    (hφ : Disjoint (range φ) M.E) : ∃ (Q : Matroid α), Q ／ (range φ) = N ∧ Q ＼ range φ = M := by
+  have hss : Sum.inr '' P.pivot ⊆ (P : Matroid (α ⊕ β)).E := by simp [Projector.pivot]
+  have hinj :  InjOn (Sum.elim id φ) (P : Matroid (α ⊕ β)).E := by
+    have aux : (∀ a ∈ M.E, ∀ (b : β), Sum.inr b ∈ (P : Matroid (α ⊕ β)).E → ¬a = φ b) := by
+      rintro _ hE b hmem rfl
+      simpa using hφ.notMem_of_mem_right hE
+    simp only [InjOn, Sum.forall, P.inl_mem_ground_iff, Sum.elim_inl, id_eq, Sum.elim_inr,
+      Sum.inl.injEq, reduceCtorEq, EmbeddingLike.apply_eq_iff_eq, Sum.inr.injEq, ]
+    tauto
+  refine ⟨(P : Matroid (α ⊕ β)).map (Sum.elim id φ) hinj, ?_, ?_⟩
+  · rw [← contract_inter_ground_eq, map_ground]
+    convert ((P : Matroid (α ⊕ β)).contract_map hinj hss).symm
+    · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq,
+        inter_eq_self_of_subset_right (image_subset_range ..), pivot, image_image]
+    simp [P.contract_image_pivot, map_map]
+  rw [← delete_inter_ground_eq, map_ground]
+  convert ((P : Matroid (α ⊕ β)).delete_map hinj hss).symm
+  · simp [image_sumElim, inter_union_distrib_left, hφ.inter_eq,
+      inter_eq_self_of_subset_right (image_subset_range ..), pivot, image_image]
+  simp [P.delete_image_pivot, map_map]

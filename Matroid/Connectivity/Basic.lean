@@ -104,8 +104,8 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_notMem heI.2, hI'.isFlat.closure]
-  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
-    not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
+  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
+    and_imp, not_forall, not_not, exists_prop] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_notMem hxI,
@@ -239,7 +239,7 @@ lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 �
     C ∩ e '' Iic i = X Cs e i := by
   induction' i with i IH
   · simpa [X, Set.Iic]
-  simp only [X, Finset.range_add_one (n := i+1)]
+  simp only [X]
   specialize IH (cSet_antitone (by simp) hC)
   have aux : ∀ n, Iic n = Finset.range (n+1) := by simp [Set.ext_iff, Nat.lt_add_one_iff]
   rw [aux] at IH ⊢

@@ -88,7 +88,7 @@ lemma tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily {X : ι → Set α}
     grw [← diff_self_inter (t := I), (hIs i).2]
   rw [tsum_congr (fun i ↦ (hIs i).1.nullity_eq), tsum_congr hrw, ENat.tsum_add,
     add_eq_left_iff, ENat.tsum_eq_zero, or_iff_right hfin'.ne]
-  simp only [encard_eq_zero, diff_eq_empty, ← fun i ↦ (hIs i).1.closure_eq_closure]
+  simp only [encard_eq_zero, diff_eq_empty]
   refine ⟨fun h ↦ ?_, fun h i ↦ ?_⟩
   · exact Indep.isSkewFamily_of_disjoint_isBases (hI.indep.subset (iUnion_subset h))
       (hX.mono fun i j h ↦ h.mono (hIs i).1.subset (hIs j).1.subset) (fun i ↦ (hIs i).1)

@@ -480,7 +480,7 @@ lemma IsModularPair.subset_ground_right (h : M.IsModularPair X Y) : Y ⊆ M.E :=
 
 lemma isModularPair_iff {M : Matroid α} {X Y : Set α} :
     M.IsModularPair X Y ↔ ∃ I, M.Indep I ∧ M.IsBasis (X ∩ I) X ∧ M.IsBasis (Y ∩ I) Y := by
-  simp only [IsModularPair, IsModularFamily, mem_singleton_iff, isMutualBasis_pair_iff, indep_iff]
+  simp only [IsModularPair, IsModularFamily, indep_iff]
   refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB, ?_⟩,
     fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB.indep, ?_⟩ ⟩
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
@@ -670,7 +670,7 @@ lemma IsModularFamily.isModularPair_singleton_compl_biInter [Nontrivial η] {Xs 
     (h : M.IsModularFamily Xs) (i₀ : η) :
     M.IsModularPair (Xs i₀) (⋂ i ∈ ({i₀} : Set η)ᶜ, Xs i) := by
   convert h.isModularPair_compl_biInter {i₀} (by simp)
-    (by simp [ne_univ_iff_exists_notMem, mem_singleton_iff]); simp
+    (by simp); simp
 
 lemma isModularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     M.IsModularPair (M.closure (insert e X)) (M.closure (insert f X)) := by

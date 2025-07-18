@@ -259,8 +259,8 @@ theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
     ∑' i : t, (s i).encard = (⋃ i ∈ t, s i).encard ↔ t.PairwiseDisjoint s := by
   refine ⟨fun h ↦ ?_, tsum_encard_eq_encard_biUnion⟩
   by_contra hndj
-  simp only [PairwiseDisjoint, Set.Pairwise, ne_eq, onFun, disjoint_left, not_forall,
-    Classical.not_imp, not_not, exists_prop, exists_and_left] at hndj
+  simp only [PairwiseDisjoint, Set.Pairwise, ne_eq, onFun, disjoint_left, not_forall, not_not,
+    exists_prop] at hndj
   obtain ⟨a, ha, b, hb, hab, x, hxa, hxb⟩ := hndj
   have h1 := ENat.tsum_insert (a := a) (s := t \ {a}) (f := fun (i : ι) ↦ (s i).encard) (by simp)
   rw [tsum_congr_set_coe (insert_diff_self_of_mem ha) (f := fun (i : ι) ↦ (s i).encard), h] at h1

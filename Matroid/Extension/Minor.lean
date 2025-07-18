@@ -1,4 +1,4 @@
-import Matroid.Extension.ModularCut
+import Matroid.Extension.ProjectBy
 
 open Set Function Set.Notation Option
 
@@ -9,7 +9,7 @@ variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α}
 
 /-- A modular cut `U` in a contraction `M ／ C` gives rise to a modular cut in `M`.
 This corresponds to the freeest extension of `M` that contracts to the extension given by `U`. -/
-@[simps] def ModularCut.ofContract {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E) :
+def ModularCut.ofContract {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E) :
     M.ModularCut where
   carrier := (· ∪ C) '' U
   forall_isFlat := by
@@ -56,12 +56,22 @@ This corresponds to the freeest extension of `M` that contracts to the extension
     obtain ⟨F, -, rfl⟩ := hFs F hF
     exact subset_union_right
 
-@[simp] lemma mem_ofContract_iff {C : Set α} (U : (M ／ C).ModularCut) {hC : C ⊆ M.E} :
+@[simp]
+lemma mem_ofContract_iff {C : Set α} (U : (M ／ C).ModularCut) {hC : C ⊆ M.E} :
     F ∈ U.ofContract hC ↔ C ⊆ F ∧ F \ C ∈ U := by
   simp only [ModularCut.ofContract, ModularCut.mem_mk_iff, mem_image, SetLike.mem_coe]
   refine ⟨?_, fun h ↦ ⟨_, h.2, diff_union_of_subset h.1⟩⟩
   rintro ⟨F, hF, rfl⟩
   simpa [(subset_diff.1 (U.isFlat_of_mem hF).subset_ground).2.sdiff_eq_left]
+
+/-- A version of `ModularCut.ofContract` without a supportedness hypothesis. -/
+def ModularCut.ofContract' {C : Set α} (U : (M ／ C).ModularCut) : M.ModularCut :=
+  (U.copy (M.contract_inter_ground_eq C).symm).ofContract inter_subset_right
+
+@[simp]
+lemma mem_ofContract'_iff {C : Set α} (U : (M ／ C).ModularCut) :
+    F ∈ U.ofContract' ↔ C ∩ M.E ⊆ F ∧ F \ (C ∩ M.E) ∈ U := by
+  simp [ModularCut.ofContract']
 
 /-- Given a modular cut `U` of `M`, the corresponding modular cut in some projection of `M`. -/
 def ModularCut.project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCut where

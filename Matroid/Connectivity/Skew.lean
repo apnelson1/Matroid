@@ -169,8 +169,8 @@ lemma IsSkewFamily.iUnion_indep_subset_indep {ι : Sort u} {Is Xs : ι → Set �
     refine mem_of_mem_of_subset
       (M.closure_subset_closure (subset_diff_singleton hK'.subset hfK') hclosure)
       (M.closure_subset_closure_of_subset_closure ?_)
-    simp only [mem_compl_iff, mem_singleton_iff, mem_union, mem_iUnion, exists_prop, not_exists,
-      diff_singleton_subset_iff, union_subset_iff, iUnion_subset_iff]
+    simp only [mem_compl_iff, mem_singleton_iff, diff_singleton_subset_iff, union_subset_iff,
+      iUnion_subset_iff]
     refine ⟨(hJs i₀).1.subset.trans ?_, fun i _ ↦ ?_⟩
     · refine (huKs i₀).subset_closure.trans (subset_trans (M.closure_subset_closure ?_)
         (subset_insert _ _))
@@ -293,7 +293,7 @@ lemma isSkewFamily_iff_forall_isCircuit {Xs : η → Set α} (hXs : ∀ i, Xs i 
       by_contra! hcon
       refine hC.dep.not_indep ?_
       refine (h.iUnion_indep_subset_indep (fun i ↦ inter_subset_right) hcon).subset ?_
-      simp [← inter_iUnion, hCU, Subset.rfl]
+      simp [← inter_iUnion, hCU]
     obtain ⟨i, hi⟩ := h
     rw [← hC.eq_of_not_indep_subset hi inter_subset_left]
     exact ⟨i, inter_subset_right⟩
@@ -325,8 +325,8 @@ lemma IsSkewFamily.exists_subset_of_isCircuit {Xs : η → Set α} (h : M.IsSkew
       at hYs
     obtain ⟨i, h⟩ := hYs C hC (by rwa [← iUnion_inter, subset_inter_iff, and_iff_left rfl.subset])
     exact ⟨i, h.trans inter_subset_left⟩
-  simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, Classical.not_imp,
-    exists_prop, eq_empty_iff_forall_notMem, not_not] at hdj
+  simp only [Pairwise, ne_eq, disjoint_iff_inter_eq_empty, not_forall, exists_prop,
+    eq_empty_iff_forall_notMem, not_not] at hdj
   obtain ⟨i, j, hne, e, he⟩ := hdj
   have hel := hYs.isLoop_of_mem_inter hne he
   obtain rfl : C = {e} := hel.eq_of_isCircuit_mem hC
@@ -430,9 +430,9 @@ lemma skew_iff_exist_isBases {X Y : Set α} :
   · refine ⟨Is true, Is false, ?_, ?_, h3.symm⟩
     · convert h1 with b
       cases b <;> rfl
-    convert h2 <;> simp [Set.ext_iff, or_comm]
+    convert h2 <;> simp
   refine ⟨fun i ↦ bif i then I else J, h1, ?_, by simpa, by simpa⟩
-  convert h2 <;> simp [Set.ext_iff, or_comm]
+  convert h2 <;> simp
 
 lemma Skew.closure_skew (h : M.Skew X Y) : M.Skew (M.closure X) (M.closure Y) := by
   have h' := IsSkewFamily.cls_isSkewFamily h
@@ -695,7 +695,7 @@ lemma skew_iff_forall_isCircuit (hdj : Disjoint X Y) (hX : X ⊆ M.E := by aesop
     (hY : Y ⊆ M.E := by aesop_mat) :
     M.Skew X Y ↔ ∀ C, M.IsCircuit C → C ⊆ X ∪ Y → C ⊆ X ∨ C ⊆ Y := by
   rw [Skew, isSkewFamily_iff_forall_isCircuit]
-  · simp [← union_eq_iUnion, or_comm]
+  · simp [or_comm]
   · simp [hX, hY]
   rwa [pairwise_disjoint_on_bool]
 

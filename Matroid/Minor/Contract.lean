@@ -26,3 +26,8 @@ lemma contract_map {β : Type*} {M : Matroid α} {f : α → β} (hf : InjOn f M
     (hC : C ⊆ M.E) : (M ／ C).map f (hf.mono diff_subset) = (M.map f hf) ／ (f '' C) := by
   simp_rw [← M.dual_delete_dual C]
   rw [← map_dual, delete_map (by simpa) (by simpa), ← map_dual, ← dual_contract, dual_dual]
+
+lemma contract_comap {β : Type*} (M : Matroid β) (f : α → β) {C : Set β} (hC : C ⊆ range f) :
+    (M ／ C).comap f = M.comap f ／ (f ⁻¹' C) := by
+  obtain ⟨C, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
+  exact ext_closure fun X ↦ by simp [image_union, image_preimage_image]

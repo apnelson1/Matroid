@@ -1,6 +1,7 @@
 import Matroid.Modular.Flat
 import Matroid.Connectivity.Multi
 import Matroid.Extension.Minor
+import Matroid.Extension.ProjectionBy
 import Matroid.Constructions.Project
 import Matroid.ForMathlib.Matroid.Closure
 import Matroid.ForMathlib.Data.ENat.Iterate
@@ -103,7 +104,7 @@ lemma multiConn_projectBy_gutsModularCut_add_one (M : Matroid α) {X : ι → Se
   · suffices hsk : M.IsSkewFamily (update J i (I i))
     · rw [Indep.isSkewFamily_iff_pairwise_disjoint_union_indep] at hsk
       · refine hsk.2.subset ?_
-        simp only [ne_eq, union_subset_iff, iUnion_subset_iff]
+        simp only [union_subset_iff, iUnion_subset_iff]
         exact ⟨subset_iUnion_of_subset i (by simp), fun j ↦ subset_iUnion_of_subset j hul⟩
       exact fun j ↦ (hI j).indep.subset huu
     rw [isSkewFamily_iff_nearly_forall_skew_compl_singleton (i₀ := i)
@@ -197,3 +198,11 @@ theorem gutsProjectDepth_eq_multiConn (M : Matroid α) (X : ι → Set α) (hX :
   rw [multiConn_projectBy_gutsModularCut_add_one _ hdj]
   rwa [multiConn_eq_zero_iff (by simp [hN, ← hX, subset_iUnion]),
     dual_isSkewFamily_iff hdj (by rwa [hN])] at hmc
+
+-- lemma foo {α : Type*} (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E)
+--     (hdj : Pairwise (Disjoint on X)) (n : ℕ) (hMX : M✶.multiConn X = n) :
+--     ∃ (N : Matroid α) (P : N.Projector M (Fin n)), N.IsSkewFamily X := by
+--   induction n with
+--   | zero =>
+--   ·
+--   | succ n _ => sorry

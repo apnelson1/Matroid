@@ -109,8 +109,7 @@ lemma parallelExtend_not_isNonloop (he : ¬M.IsNonloop e) (f : α) :
     M.parallelExtend e f = (M ＼ {f}).addLoop f := by
   classical
   simp only [parallelExtend, ext_iff_indep, restrict_ground_eq, addLoop_ground, delete_ground,
-    mem_diff, mem_singleton_iff, not_true_eq_false, and_false, insert_diff_singleton,
-    restrict_indep_iff, comap_indep_iff, ne_eq, image_update, id_eq, image_id',
+    insert_diff_singleton, restrict_indep_iff, comap_indep_iff, image_update, id_eq, image_id',
     update_id_injOn_iff, addLoop_indep_iff, delete_indep_iff, disjoint_singleton_right, true_and]
 
   rintro I hI
@@ -123,9 +122,9 @@ lemma parallelExtend_eq_parallelExtend_delete (M : Matroid α) {e f : α} (hef :
     M.parallelExtend e f = (M ＼ {f}).parallelExtend e f := by
   classical
   rw [parallelExtend, parallelExtend, delete_ground, insert_diff_singleton, ext_iff_indep]
-  simp only [restrict_ground_eq, restrict_indep_iff, comap_indep_iff, ne_eq, image_update, id_eq,
-    image_id', mem_diff, mem_singleton_iff, update_id_injOn_iff, delete_indep_iff,
-    disjoint_singleton_right, and_congr_left_iff, iff_self_and, true_and]
+  simp only [restrict_ground_eq, restrict_indep_iff, comap_indep_iff, image_update, id_eq,
+    image_id', update_id_injOn_iff, delete_indep_iff, disjoint_singleton_right, and_congr_left_iff,
+    iff_self_and, true_and]
   aesop
 
 /-- Deleting `f` in a parallel extension of `M` by `f` is the same as deleting `f` from `M`.
@@ -218,8 +217,7 @@ lemma parallelExtend_indep_iff (he : M.IsNonloop e) (hf : f ∉ M.E) :
   obtain (hfI | hfI) := em (f ∈ I)
   · rw [iff_true_intro hfI, not_true, false_and, false_or, true_and]
     obtain (heI | heI) := em (e ∈ I)
-    · simp only [heI, not_true_eq_false, mem_diff, mem_singleton_iff, true_and, false_and,
-        iff_false, parallelExtend_ground]
+    · simp only [heI, not_true_eq_false, false_and, iff_false]
       exact fun hi ↦ ((parallelExtend_parallel he f).dep_of_ne hef).not_indep
         (hi.subset (pair_subset heI hfI))
     rw [and_iff_right heI,

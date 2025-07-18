@@ -335,10 +335,10 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
     exact (inter_subset_inter_right _ (diff_subset.trans hI.subset)).trans hXFcl
 
   specialize h hdj.symm (e := e)
-  simp only [contract_ground, subset_diff, hJ.subset_ground, true_and, contract_closure_eq, ←
-    closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl, mem_singleton_iff,
-    not_true_eq_false, and_false, not_false_eq_true, and_self, contract_isNonloop_iff, hdj,
-    hI.indep.subset_ground heIJ.1, hI.indep.notMem_closure_diff_of_mem heIJ.1, forall_const] at h
+  simp only [contract_closure_eq, ← closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl,
+    mem_singleton_iff, not_true_eq_false, and_false, not_false_eq_true, and_self,
+    contract_isNonloop_iff, hI.indep.subset_ground heIJ.1,
+    hI.indep.notMem_closure_diff_of_mem heIJ.1, forall_const] at h
 
   obtain ⟨f, hfX, hef⟩ := h
 

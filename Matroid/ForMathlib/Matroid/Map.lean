@@ -49,6 +49,18 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
   obtain ⟨I₀, hI₀R, hbij⟩ := SurjOn.exists_bijOn_subset hIR
   exact ⟨I₀, ⟨by rwa [hbij.image_eq], hbij.injOn, hI₀R⟩, hbij.image_eq.symm⟩
 
+-- lemma map_eq_comap (M : Matroid α) {f : α → β} {g : β → α} (hfg :  g f M.E)
+--     (hEg : range g ⊆ M.E) : M.map f hfg.injOn = M.comap g := by
+--   refine ext_indep ?_ fun I hIi ↦ ?_
+--   · sorry
+--     -- rw [map_ground, comap_ground_eq]
+--     -- nth_rw 2 [← hfg.image_image]
+--     -- rw [InjOn.preimage_image_inter]
+--   simp
+--   refine ⟨?_, fun h ↦ ?_⟩
+--   · rintro ⟨I, hI, rfl⟩
+--     rw [hfg.image_image]
+
 lemma IsBasis'.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis' I X)
     (hinv : LeftInvOn f g X) : (M.comap f).IsBasis' (g '' I) (g '' X) := by
   rwa [comap_isBasis'_iff, and_iff_left (image_subset _ h.subset),
@@ -101,7 +113,7 @@ lemma map_map {α β γ : Type*} (M : Matroid α) {f : α → β} {g : β → γ
 lemma comap_comap {α β γ : Type*} (M : Matroid γ) (f : α → β) (g : β → γ) :
     (M.comap g).comap f = M.comap (g ∘ f) := by
   refine ext_indep rfl fun I hI ↦ ?_
-  simp only [comap_ground_eq, preimage_preimage, comap_indep_iff, image_image, comp_apply]
+  simp only [comap_indep_iff, image_image, comp_apply]
   exact ⟨fun ⟨⟨h,h'⟩,h''⟩ ↦ ⟨h, by rwa [h''.comp_iff]⟩,
     fun h ↦ ⟨⟨h.1, h.2.image_of_comp⟩, h.2.of_comp⟩⟩
 

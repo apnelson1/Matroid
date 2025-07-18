@@ -115,8 +115,7 @@ lemma rectVandermonde_one_linearIndepOn_iff {v : α → K} {s : Set α} :
     obtain rfl | ⟨x, rfl⟩ := h.1.eq_empty_or_singleton <;>
     simp [rectVandermonde, funext_iff]
   rw [rectVandermonde_linearIndepOn_iff (by simp)]
-  simp only [Pi.one_apply, one_ne_zero, ne_eq, IsEmpty.forall_iff, implies_true, mul_one, true_and,
-    Set.InjOn, and_congr_right_iff]
+  simp only [Pi.one_apply, one_ne_zero, ne_eq, mul_one, Set.InjOn, and_congr_right_iff]
   aesop
 
 end Rect

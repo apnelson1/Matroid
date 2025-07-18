@@ -153,7 +153,7 @@ lemma exists_insert_rk_eq_of_not_isFlat (hFE : F ⊆ M.E) (hnF : ¬ M.IsFlat F) 
 
 lemma IsFlat.insert_rk_eq [M.RankFinite] (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
     M.rk (insert e F) = M.rk F + 1 := by
-  rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp [M.isRkFinite_set]) (by simp), rk,
+  rw [rk, hF.eRk_insert_eq_add_one he, ENat.toNat_add (by simp) (by simp), rk,
     ENat.toNat_one]
 
 lemma IsFlat.eq_of_subset_of_rk_ge [RankFinite M] (hF : M.IsFlat F) (hFF' : F ⊆ F')
@@ -277,7 +277,7 @@ lemma isFlat_restrict_iff {R : Set α} (hR : R ⊆ M.E := by aesop_mat) :
   refine ⟨fun h ↦ ⟨M.closure F, M.closure_isFlat F, ?_⟩, ?_⟩
   · nth_rw 1 [← h.closure]
     have hFR : F ⊆ R := h.subset_ground
-    simp [inter_eq_self_of_subset_left hFR, diff_subset, diff_eq_empty.2 hR]
+    simp [inter_eq_self_of_subset_left hFR, diff_eq_empty.2 hR]
   rintro ⟨F, hF, rfl⟩
   rw [isFlat_iff_subset_closure_self]
   suffices M.closure (F ∩ R) ∩ R ⊆ F by simpa [inter_assoc, diff_eq_empty.2 hR]

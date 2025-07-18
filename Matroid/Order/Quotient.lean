@@ -190,7 +190,7 @@ lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ 
   rw [← quotient_dual_iff, dual_delete, dual_delete]
   exact hQ.dual.contract D
 
-theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
+theorem contract_quotient_delete (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
   simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, isFlat_contract_iff',
     isFlat_delete_iff, and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
   exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
@@ -333,7 +333,7 @@ lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate 
 lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
   nth_rewrite 1 [projectBy_eq_map_comap]
   convert ((((M.map some _)).extendBy none
-      (U.map some ((Option.some_injective _).injOn))).con_quotient_del {none}).comap some
+      (U.map some ((Option.some_injective _).injOn))).contract_quotient_delete {none}).comap some
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]
   rw [ModularCut.extendBy_deleteElem _ (by simp)]
 

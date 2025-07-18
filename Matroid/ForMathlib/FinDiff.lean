@@ -84,7 +84,7 @@ lemma FinDiff.finDiff_union_union_iff {P Q : Set α} (hPQ : FinDiff P Q) (hPX : 
   · simp only [hinf.encard_eq, top_add]
     rw [WithTop.add_eq_top, WithTop.add_eq_top, encard_eq_top_iff, encard_eq_top_iff,
       encard_eq_top_iff]
-    simp [Infinite, hfin1, hfin2, hfin4]
+    simp [hfin2, hfin4]
   intro hfin6
 
   have h' := hPQ.encard_diff_eq
@@ -113,8 +113,7 @@ lemma FinDiff.exchange_right (hXY : FinDiff X Y) {e f : α} (heY : e ∈ Y) (hfY
   by_cases heX : e ∈ X
   · have hrw := finDiff_insert_insert_iff (X := X \ {e}) (Y := Y \ {e}) (e := e) (f := e)
       (by simp) (by simp)
-    simp only [union_singleton, insert_diff_singleton, insert_eq_of_mem heX, insert_eq_of_mem heY]
-      at hrw
+    simp only [insert_diff_singleton, insert_eq_of_mem heX, insert_eq_of_mem heY] at hrw
     rw [← hrw] at hXY
     convert hXY.insert_insert (e := e) (f := f) (by simp) (by simp [hfY])
     simp [heX]

@@ -271,7 +271,7 @@ lemma eRelRk_eq_one_iff (hY : Y ⊆ M.E := by aesop_mat) :
     M.eRelRk X Y = 1 ↔ ∃ e ∈ Y \ M.closure X, Y ⊆ M.closure (insert e X) := by
   rw [← eRelRk_closure_left, eRelRk_eq_eRk_diff_contract, eRk_eq_one_iff
     (show Y \ (M.closure X) ⊆ (M ／ (M.closure X)).E from diff_subset_diff_left hY)]
-  simp only [contract_closure_eq, singleton_union, diff_subset_iff, diff_union_self,
+  simp only [contract_closure_eq, singleton_union, diff_subset_iff,
     closure_insert_closure_eq_closure_insert, union_diff_self, contract_isNonloop_iff,
     closure_closure, union_eq_self_of_subset_left (M.closure_subset_closure (subset_insert _ X))]
   exact ⟨fun ⟨e,he,_,hY'⟩ ↦ ⟨e,he,hY'⟩, fun ⟨e, he, hY'⟩ ↦ ⟨e, he, ⟨hY he.1, he.2⟩, hY'⟩⟩
@@ -509,7 +509,7 @@ lemma delete_rank_add_rk_ge_rank (M : Matroid α) (D : Set α) : M.rank ≤ (M �
   obtain h | h := M.rankFinite_or_rankInfinite
   · rw [rank_def, rank_def, delete_rk_eq', delete_ground, diff_diff, union_self]
     refine le_trans ?_ (M.rk_union_le_rk_add_rk (M.E \ D) D)
-    simp [M.rk_mono subset_union_left]
+    simp
   obtain ⟨B, hB⟩ := M.exists_isBase
   rw [rank_def, rk, ← eRank_def, ← hB.encard_eq_eRank, hB.infinite.encard_eq]
   simp

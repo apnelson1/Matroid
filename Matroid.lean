@@ -21,6 +21,9 @@ import Matroid.Extension.Parallel
 import Matroid.Extension.Guts
 import Matroid.Extension.Quotient
 import Matroid.Extension.Minor
+import Matroid.Extension.ProjectBy
+import Matroid.Extension.ExtendBy
+import Matroid.Extension.ProjectionBy
 import Matroid.Flat.Basic
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
