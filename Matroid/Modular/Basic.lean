@@ -270,6 +270,29 @@ lemma IsModularFamily.map {β : Type*} (f : α → β) (hf : InjOn f M.E) (h : M
   convert (hBX i).map hf
   rw [hf.image_inter (hBX i).subset_ground hB.subset_ground]
 
+lemma IsModularFamily.of_comap {β : Type*} {f : α → β} {M : Matroid β}
+    (hX : (M.comap f).IsModularFamily Xs) : M.IsModularFamily (fun i ↦ f '' (Xs i)) := by
+  obtain ⟨B, hB⟩ := hX
+  refine ⟨f '' B, hB.indep.1, fun i ↦ ?_⟩
+  obtain ⟨hBi, hBinj⟩ := comap_indep_iff.1 hB.indep
+  have hB_inter := comap_isBasis_iff.1 <| hB.isBasis_inter i
+  refine (hBi.inter_left _).isBasis_of_subset_of_subset_closure inter_subset_left ?_
+  grw [← image_inter_subset, hB_inter.1.closure_eq_closure,
+    ← subset_closure _ _ hB_inter.1.subset_ground]
+
+lemma IsModularFamily.comap_iff {β : Type*} {f : α → β} {M : Matroid β} (hf : f.Injective):
+    (M.comap f).IsModularFamily Xs ↔ M.IsModularFamily (fun i ↦ f '' (Xs i)) := by
+  refine ⟨IsModularFamily.of_comap, fun ⟨B, hB⟩ ↦ ?_⟩
+  have hss := hB.isBasis_iUnion.subset
+  rw [← image_iUnion] at hss
+  obtain ⟨B', hB', hinj⟩ :=
+    exists_image_eq_injOn_of_subset_range (hss.trans (image_subset_range ..))
+  refine ⟨B', ⟨hB.indep.subset (by simp [hB']), hinj⟩, fun i ↦ ?_⟩
+  have hBi := hB.isBasis_inter i
+  simp only [comap_isBasis_iff, inter_subset_left, and_true, image_inter hf]
+  rwa [and_iff_left hf.injOn, hB', ← inter_assoc,
+    inter_eq_self_of_subset_left (image_subset _ (subset_iUnion _ _))]
+
 lemma isModularFamily_map_iff (f : α → η) (hf : InjOn f M.E) {Xs : ι → Set η} :
     (M.map f hf).IsModularFamily Xs ↔ ∃ Ys, M.IsModularFamily Ys ∧ ∀ i, Xs i = f '' (Ys i) := by
   refine ⟨fun h ↦ ?_, fun ⟨Ys, hYs, h_eq⟩ ↦ ?_⟩

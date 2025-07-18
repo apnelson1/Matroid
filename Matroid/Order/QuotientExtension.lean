@@ -318,7 +318,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       simp only [closure_ground]
       exact hEU
     exact hf1 (hcontra.mem_of_mem_closure hmodE)
-  rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+  rw [ModularCut.extendBy_contractElem (Quotient.modularCut_of_k hQ) hf1 ]
   refine ⟨ ?_, ?_ ⟩
   · by_contra! hcon
     obtain ⟨F₀, hF₀2, hF₀bad⟩ := hcon
@@ -326,10 +326,10 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       by_contra! hcon0
       have hF₀1 : M₁.IsFlat F₀ := hQ.modularCut_of_k.forall_isFlat F₀ hcon0
       have hFex: F₀ ⊆ (M₁.extendBy f hQ.modularCut_of_k ／ {f}).E := by
-        rw [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
+        rw [ModularCut.extendBy_contractElem (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
         exact hF₀1.subset_ground
       have hF₀b : (M₁.projectBy hQ.modularCut_of_k).IsFlat F₀ := by
-        rw [←extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1 ]
+        rw [←ModularCut.extendBy_contractElem (Quotient.modularCut_of_k hQ) hf1 ]
         apply (isFlat_iff_ssubset_closure_insert_forall hFex).2
         intro e heN
         have hsub : (M₁.extendBy f hQ.modularCut_of_k ／ {f}).closure F₀ ⊆
@@ -366,7 +366,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
             (hQ.modularCut_of_k).rank_ge
           have h2 : M₁.rk F₀ < M₁.rk (insert e F₀) := by
             have heFE : e ∈ M₁.E \ F₀ := by
-              rwa [extendBy_contract_eq (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
+              rwa [ModularCut.extendBy_contractElem (Quotient.modularCut_of_k hQ) hf1, projectBy_ground ]
               at heN
             rw [hF₀1.rk_insert_eq_add_one (isRkFinite_set M₁ F₀) heFE  ]
             exact lt_add_one (M₁.rk F₀)
@@ -391,7 +391,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
       have hflatpro : ((M₁.extendBy f (hQ.modularCut_of_k)) ／ {f}).IsFlat F₀ := by
         apply (hfNL.contractElem_isFlat_iff).2
         refine ⟨ hc, fun a ↦ hf ((hF₀2.subset_ground) a) ⟩
-      rw [extendBy_contract_eq (hQ.modularCut_of_k) hf1 ] at hflatpro
+      rw [ModularCut.extendBy_contractElem (hQ.modularCut_of_k) hf1 ] at hflatpro
       exact hF₀bad hflatpro
     obtain ⟨ F', hF'U, hF₀F' ⟩ := h_covBy
     have hnotmod : hQ.nDiscrepancy F₀ = hQ.nDiscrepancy M₁.E := by

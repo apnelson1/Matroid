@@ -151,6 +151,10 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     rw [hf.image_eq_image_iff (hFsE F hF) hYs.subset_ground] at h_eq
     rwa [← h_eq] at hYs
 
+-- lemma ModularCut.comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
+--     (M.comap f).ModularCut := by
+--   _
+
 -- lemma ModularCut.mem_map_iff {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f)
 --     {F : Set β} : F ∈ (U.map f hf) ↔ False := by
 --   simp [ModularCut.map]
@@ -993,7 +997,7 @@ lemma projectBy_bot : M.projectBy ⊥ = M := by
 --     rw [ModularCut.eq_top_iff] at hne
 --     -- have := projectBy_indep_iff_of_ne_top hne (B := B)
 
-@[simp] lemma extendBy_contract_eq (U : M.ModularCut) (he : e ∉ M.E) :
+@[simp] lemma ModularCut.extendBy_contractElem (U : M.ModularCut) (he : e ∉ M.E) :
     (M.extendBy e U) ／ {e} = M.projectBy U := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   have ⟨hIE, heI⟩ : I ⊆ M.E ∧ e ∉ I := by simpa [subset_diff] using hI
@@ -1038,7 +1042,7 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
     have hinj := hinj'.injOn (s := M.E)
     rw [projectBy_eq_map_comap]
     simp only [map_ground, mem_image, reduceCtorEq, and_false, exists_false, not_false_eq_true,
-      extendBy_contract_eq, comap_closure_eq, mem_preimage]
+      ModularCut.extendBy_contractElem, comap_closure_eq, mem_preimage]
     convert aux ((M.map some hinj).extendBy none (U.map some hinj)) none (by simp) (some f)
       (by simpa) (by simp) (some '' X) (by simp) using 1
     · simp
@@ -1054,6 +1058,14 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
   by_cases hfX : f ∈ N.closure X
   · simp [show f ∈ N.closure (insert e X) from N.closure_subset_closure (subset_insert ..) hfX, hfX]
   simpa [hfX, heX'] using N.closure_exchange_iff (X := X) (e := f) (f := e)
+
+-- lemma ModularCut.projectBy_map {β : Type*} (U : M.ModularCut) {f : α → β} (hf : InjOn f M.E) :
+--     ((M.map f hf).projectBy (U.map f hf)) = (M.projectBy U).map f hf := by
+--   refine ext_closure fun X ↦ ?_
+--   ext s
+--   simp [mem_closure_projectBy_iff, ModularCut.map]
+  -- refine ext_indep rfl fun I hI ↦ ?_
+  -- simp [ModularCut.eq_top_iff, ModularCut.map]
 
 /-- Projecting out by a flat in a modular cut cancels the projection by the modular cut. -/
 lemma ModularCut.projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :

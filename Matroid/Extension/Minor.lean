@@ -254,6 +254,6 @@ lemma exists_eq_delete_eq_contract_of_projectBy_seq {n : ℕ} (M : Fin (n+1) →
   · grw [hDE, ← hPP₀]
     simp
   · rwa [delete_comm, hPP₀]
-  rw [hPQ, hQ, extendBy_contract_eq _ (by rwa [hE])]
+  rw [hPQ, hQ, ModularCut.extendBy_contractElem _ (by rwa [hE])]
 
 end ExtendContract

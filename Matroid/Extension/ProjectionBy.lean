@@ -18,8 +18,8 @@ TODO (maybe) - allow `N` and `M` to have different ground types.
 -/
 structure Projector {α : Type u} (N M : Matroid α) (β : Type u) where
   carrier : Matroid (α ⊕ β)
-  contract_eq' : carrier ／ range Sum.inr = N.mapEmbedding Embedding.inl
-  delete_eq' : carrier ＼ range Sum.inr = M.mapEmbedding Embedding.inl
+  contract_eq' : carrier ／ range Sum.inr = N.map Sum.inl Sum.inl_injective.injOn
+  delete_eq' : carrier ＼ range Sum.inr = M.map Sum.inl Sum.inl_injective.injOn
 
 instance {N M : Matroid α} {β : Type u} :
     CoeHead (Projector N M β) (Matroid (α ⊕ β)) where
@@ -36,31 +36,37 @@ def IsProjection {α : Type u} (N M : Matroid α) : Prop :=
 lemma Projector.isProjection (P : N.Projector M β) : N.IsProjection M :=
   ⟨_, ⟨P⟩⟩
 
-lemma Projector.contract_eq (P : N.Projector M β) :
+lemma Projector.contract_eq_mapEmbedding (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ／ range Sum.inr = N.mapEmbedding Embedding.inl := P.contract_eq'
 
-lemma Projector.delete_eq (P : N.Projector M β) :
+lemma Projector.contract_eq (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)) ／ range Sum.inr = N.map Sum.inl Sum.inl_injective.injOn := P.contract_eq'
+
+lemma Projector.delete_eq_eq_mapEmbedding (P : N.Projector M β) :
     (P : Matroid (α ⊕ β)) ＼ range Sum.inr = M.mapEmbedding Embedding.inl := P.delete_eq'
+
+lemma Projector.delete_eq (P : N.Projector M β) :
+    (P : Matroid (α ⊕ β)) ＼ range Sum.inr = M.map Sum.inl Sum.inl_injective.injOn := P.delete_eq'
 
 lemma Projector.contract_comap_eq (P : N.Projector M β) :
     ((P : Matroid (α ⊕ β)) ／ range Sum.inr).comap .inl = N := by
-  rw [P.contract_eq, mapEmbedding]
+  rw [P.contract_eq]
   exact comap_map Embedding.inl.injective
 
 lemma Projector.delete_comap_eq (P : N.Projector M β) :
     ((P : Matroid (α ⊕ β)) ＼ range Sum.inr).comap .inl = M := by
-  rw [P.delete_eq, mapEmbedding]
+  rw [P.delete_eq]
   exact comap_map Embedding.inl.injective
 
 def Projector.pivot (P : N.Projector M β) : Set β :=
     Sum.inr ⁻¹' (P : Matroid (α ⊕ β)).E
 
 lemma Projector.contract_image_pivot (P : N.Projector M β) :
-    (P : Matroid (α ⊕ β)) ／ (.inr '' P.pivot) = N.mapEmbedding Embedding.inl := by
+    (P : Matroid (α ⊕ β)) ／ (.inr '' P.pivot) = N.map _ Sum.inl_injective.injOn := by
   rw [← P.contract_eq, eq_comm, ← contract_inter_ground_eq, pivot, image_preimage_eq_range_inter]
 
 lemma Projector.delete_image_pivot (P : N.Projector M β) :
-    (P : Matroid (α ⊕ β)) ＼ (.inr '' P.pivot) = M.mapEmbedding Embedding.inl := by
+    (P : Matroid (α ⊕ β)) ＼ (.inr '' P.pivot) = M.map _ Sum.inl_injective.injOn := by
   rw [← P.delete_eq, eq_comm, ← delete_inter_ground_eq, pivot, image_preimage_eq_range_inter]
 
 lemma Projector.ground_left_eq (P : N.Projector M β) : N.E = .inl ⁻¹' (P : Matroid (α ⊕ β)).E := by
@@ -75,8 +81,8 @@ lemma IsProjection.ground_eq (h : N.IsProjection M) : N.E = M.E := by
 
 def Projector.dual (P : N.Projector M β) : M✶.Projector N✶ β where
   carrier := P✶
-  contract_eq' := by rw [← dual_delete, P.delete_eq, mapEmbedding, map_dual, mapEmbedding]
-  delete_eq' := by rw [← dual_contract, P.contract_eq, mapEmbedding, map_dual, mapEmbedding]
+  contract_eq' := by rw [← dual_delete, P.delete_eq, map_dual]
+  delete_eq' := by rw [← dual_contract, P.contract_eq, map_dual]
 
 lemma Projector.map_aux {γ : Type*} (P : N.Projector M β) (f : β → γ) (hf : InjOn f P.pivot) :
     (P : Matroid (α ⊕ β)).map (Sum.map id f) (by simp_rw [InjOn]; aesop) ／ range Sum.inr
@@ -87,9 +93,9 @@ lemma Projector.map_aux {γ : Type*} (P : N.Projector M β) (f : β → γ) (hf 
     rw [InjOn]
     aesop
   have heq : ((P : Matroid (α ⊕ β)) ／ Sum.inr '' P.pivot).map (Sum.map id f) hinj =
-      (N.mapEmbedding Embedding.inl).map (Sum.map id f) (by rwa [← heq]) := by
+      (N.map Sum.inl Sum.inl_injective.injOn).map (Sum.map id f) (by rwa [← heq]) := by
     simp_rw [heq]
-  simp_rw [mapEmbedding, map_map] at heq
+  simp_rw [map_map] at heq
   rw [contract_map] at heq
   convert heq
   · aesop
@@ -100,7 +106,7 @@ def Projector.map {γ : Type u} (P : N.Projector M β) (f : β → γ) (hf : Inj
   carrier := Matroid.map (P : Matroid (α ⊕ β)) (Sum.map id f) (by simp_rw [InjOn]; aesop)
   contract_eq' := P.map_aux _ hf
   delete_eq' := by
-    rw [← dual_inj, dual_delete, map_dual, mapEmbedding, map_dual]
+    rw [← dual_inj, dual_delete, map_dual, map_dual]
     exact P.dual.map_aux f hf
 
 @[simp]
@@ -208,17 +214,13 @@ lemma IsProjection.exists_good_projector {M N : Matroid α} (h : N.IsProjection 
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
     rw [contract_map (by simp) (by simp), map_comapOn hbij]
     simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr]
-    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, mapEmbedding, Embedding.inl,
-      Embedding.coeFn_mk, map_map, Sum.elim_comp_inl]
+    simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, map_map, Sum.elim_comp_inl]
     rw [hc, P.contract_eq]
-    rfl
+
   · refine Matroid.map_inj (Sum.map id Subtype.val) (by simp [InjOn]) ?_
-    simp_rw [mapEmbedding]
     rw [delete_map (by simp) (by simp), map_comapOn hbij, map_map]
-    simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr, Embedding.inl,
-      Embedding.coeFn_mk, Sum.elim_comp_inl]
+    simp only [Sum.map, CompTriple.comp_eq, ← range_comp, Sum.elim_comp_inr, Sum.elim_comp_inl]
     simp only [range_comp, Subtype.range_coe_subtype, setOf_mem_eq, hd, P.delete_eq]
-    rfl
   · suffices M'.Indep (range (Sum.inr ∘ Subtype.val)) by simpa [Sum.map, ← range_comp]
     simpa [range_comp]
   suffices M'.Coindep (range (Sum.inr ∘ Subtype.val)) by
@@ -227,3 +229,20 @@ lemma IsProjection.exists_good_projector {M N : Matroid α} (h : N.IsProjection 
 
 lemma delete_isProjection_contract (M : Matroid α) (X : Set α) : (M ／ X).IsProjection (M ＼ X) :=
   ⟨_, ⟨Projector.delete_contract M X⟩⟩
+
+def ModularCut.Projector (U : M.ModularCut) : (M.projectBy U).Projector M PUnit where
+  carrier := (M.map Sum.inl Sum.inl_injective.injOn).extendBy
+    (.inr (PUnit.unit)) (U.map Sum.inl Sum.inl_injective.injOn)
+  contract_eq' := by
+    rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {PUnit.unit}) (by simp),
+      image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (by simp)]
+
+    -- refine Matroid.comap_inj (f := Sum.inl) ?_ (by simp) ?_
+    -- · simpa using diff_subset.trans (image_subset_range ..)
+    -- rw [← image_univ, ← Subsingleton.eq_univ_of_nonempty (s := {PUnit.unit}) (by simp),
+    --   image_singleton, (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (by simp)]
+    -- have := (U.map Sum.inl Sum.inl_injective.injOn).extendBy_contractElem (e := .inr PUnit.unit)
+    --   (by simp)
+
+    -- rw [ModularCut.extendBy_map]
+  delete_eq' := _

@@ -268,7 +268,7 @@ lemma multiConn_dual_eq_eRank_contract (hdj : Pairwise (Disjoint on X)) (hu : �
 --     M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
 --   obtain ⟨e, he⟩ : ∃ e, e ∉ M.E := sorry
 --   nth_rw 1 [← ModularCut.extendBy_deleteElem U he, dual_delete,
---     ← extendBy_contract_eq _ he, dual_contract]
+--     ← ModularCut.extendBy_contractElem _ he, dual_contract]
 --   grw [multiConn_delete]
 
 -- lemma multiConn_mapEmbedding {β : Type*} (M : Matroid α) (f : α ↪ β) :

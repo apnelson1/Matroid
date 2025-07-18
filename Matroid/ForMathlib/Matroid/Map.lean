@@ -50,18 +50,18 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
   exact ⟨I₀, ⟨by rwa [hbij.image_eq], hbij.injOn, hI₀R⟩, hbij.image_eq.symm⟩
 
 lemma IsBasis'.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis' I X)
-    (hinv : RightInvOn g f X) : (M.comap f).IsBasis' (g '' I) (g '' X) := by
+    (hinv : LeftInvOn f g X) : (M.comap f).IsBasis' (g '' I) (g '' X) := by
   rwa [comap_isBasis'_iff, and_iff_left (image_subset _ h.subset),
     and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
     (hinv.mono h.subset).image_image]
 
 lemma IsBasis.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis I X)
-    (hinv : RightInvOn g f X) : (M.comap f).IsBasis (g '' I) (g '' X) := by
+    (hinv : LeftInvOn f g X) : (M.comap f).IsBasis (g '' I) (g '' X) := by
   rwa [comap_isBasis_iff, and_iff_left (image_subset _ h.subset),
     and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
     (hinv.mono h.subset).image_image]
 
-lemma Indep.comap {f : β → α} {g : α → β} {I : Set α} (hI : M.Indep I) (hinv : RightInvOn g f I) :
+lemma Indep.comap {f : β → α} {g : α → β} {I : Set α} (hI : M.Indep I) (hinv : LeftInvOn f g I) :
     (M.comap f).Indep (g '' I) := by
   rwa [comap_indep_iff, and_iff_left hinv.injOn_image, hinv.image_image]
 
@@ -118,6 +118,17 @@ protected lemma map_inj {M N : Matroid α} (f : α → β) (hf : InjOn f (M.E �
   rwa [(hf.image_eq_image_iff ?_ ?_).1 hIJ]
   · exact hIE.trans subset_union_left
   exact hJ.subset_ground.trans subset_union_left
+
+protected lemma comap_inj {M N : Matroid β} {f : α → β} (hfM : M.E ⊆ range f) (hfN : N.E ⊆ range f)
+    (hMN : M.comap f = N.comap f) : M = N := by
+  refine ext_indep ?_ fun I hI ↦ ?_
+  · apply_fun Matroid.E at hMN
+    rwa [comap_ground_eq, comap_ground_eq, preimage_eq_preimage' hfM hfN] at hMN
+  obtain ⟨I, rfl, hinj⟩ := exists_image_eq_injOn_of_subset_range (hI.trans hfM)
+  have hMI := M.comap_indep_iff (f := f) (I := I)
+  have hNI := N.comap_indep_iff (f := f) (I := I)
+  rw [and_iff_left hinj] at hNI hMI
+  rw [← hNI, ← hMI, hMN]
 
 theorem map_comapOn {N : Matroid β} {f : α → β} {X : Set α}
     (h_bij : BijOn f X N.E) : (N.comapOn X f).map f h_bij.injOn = N := by

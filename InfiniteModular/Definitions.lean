@@ -118,7 +118,7 @@ example (M : Matroid α) (e : α) (e_not_mem : e ∉ M.E) (𝓕 : M.ModularCut) 
 `M.projectBy 𝓕` is obtained from `M.extendBy e 𝓕` by contracting `e`. -/
 example (M : Matroid α) (e : α) (e_not_mem : e ∉ M.E) (𝓕 : M.ModularCut) :
     (M.extendBy e 𝓕) ／ {e} = M.projectBy 𝓕 :=
-  extendBy_contract_eq _ e_not_mem
+  ModularCut.extendBy_contractElem _ e_not_mem
 
 /- ### Definition 5 : Projection
 For technical reasons, we do not make this a definition,
