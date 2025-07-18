@@ -13,7 +13,9 @@ variable {α β : Type u} {ι : Type*} {η : Type*} {A : Set η} {M N : Matroid 
 /-- A matroid encoding the fact that `N` is a projection of `M`.
 Note : we require the type of the projected elements to have the same universe as `M`,
 so that `Projector.isProjection` can be proved easily. This is probably not really necessary,
-but hopefully a benign constraint in practice. -/
+but hopefully a benign constraint in practice.
+TODO (maybe) - allow `N` and `M` to have different ground types.
+-/
 structure Projector {α : Type u} (N M : Matroid α) (β : Type u) where
   carrier : Matroid (α ⊕ β)
   contract_eq' : carrier ／ range Sum.inr = N.mapEmbedding Embedding.inl
