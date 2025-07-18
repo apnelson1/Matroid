@@ -21,3 +21,8 @@ lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
 
 @[simp] lemma contract_ground_self (M : Matroid α) : M ／ M.E = emptyOn α := by
   simp [← ground_eq_empty_iff]
+
+lemma contract_map {β : Type*} {M : Matroid α} {f : α → β} (hf : InjOn f M.E) {C : Set α}
+    (hC : C ⊆ M.E) : (M ／ C).map f (hf.mono diff_subset) = (M.map f hf) ／ (f '' C) := by
+  simp_rw [← M.dual_delete_dual C]
+  rw [← map_dual, delete_map (by simpa) (by simpa), ← map_dual, ← dual_contract, dual_dual]

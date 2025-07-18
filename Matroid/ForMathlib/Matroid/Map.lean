@@ -94,7 +94,50 @@ lemma isBasis_mapEmbedding_image_iff {I : Set α} {f : α ↪ β} :
   simp [f.injective.preimage_image]
   exact IsBasis.subset
 
--- lemma comap_map_of_injOn {f : α → β} (hf : InjOn f M.E) : (M.map f hf).comap f = M := by
---   refine ext_indep ?_ ?_
+lemma map_map {α β γ : Type*} (M : Matroid α) {f : α → β} {g : β → γ} (hf) (hg) :
+    (M.map f hf).map g hg = M.map (g ∘ f) (by rwa [hf.comp_iff]) :=
+  ext_indep (by simp [image_image]) fun I hI ↦ by aesop
+
+lemma comap_comap {α β γ : Type*} (M : Matroid γ) (f : α → β) (g : β → γ) :
+    (M.comap g).comap f = M.comap (g ∘ f) := by
+  refine ext_indep rfl fun I hI ↦ ?_
+  simp only [comap_ground_eq, preimage_preimage, comap_indep_iff, image_image, comp_apply]
+  exact ⟨fun ⟨⟨h,h'⟩,h''⟩ ↦ ⟨h, by rwa [h''.comp_iff]⟩,
+    fun h ↦ ⟨⟨h.1, h.2.image_of_comp⟩, h.2.of_comp⟩⟩
+
+protected lemma map_inj {M N : Matroid α} (f : α → β) (hf : InjOn f (M.E ∪ N.E))
+    (hMN : M.map f (hf.mono subset_union_left) = N.map f (hf.mono subset_union_right)) : M = N := by
+  simp only [ext_iff_indep, map_ground, map_indep_iff, forall_subset_image_iff] at hMN
+  rw [hf.image_eq_image_iff subset_union_left subset_union_right] at hMN
+  refine ext_indep hMN.1 fun I hIE ↦ ⟨fun hI ↦ ?_, fun hI ↦ ?_⟩
+  · obtain ⟨J, hJ, hIJ⟩ := (hMN.2 I hIE).1 ⟨I, hI, rfl⟩
+    rwa [(hf.image_eq_image_iff ?_ ?_).1 hIJ]
+    · exact hIE.trans subset_union_left
+    exact hJ.subset_ground.trans subset_union_right
+  obtain ⟨J, hJ, hIJ⟩ := (hMN.2 _ hIE).2 ⟨I, hI, rfl⟩
+  rwa [(hf.image_eq_image_iff ?_ ?_).1 hIJ]
+  · exact hIE.trans subset_union_left
+  exact hJ.subset_ground.trans subset_union_left
+
+theorem map_comapOn {N : Matroid β} {f : α → β} {X : Set α}
+    (h_bij : BijOn f X N.E) : (N.comapOn X f).map f h_bij.injOn = N := by
+  refine ext_indep h_bij.image_eq fun I hI ↦ ?_
+  simp only [comapOn_map, restrict_indep_iff, and_iff_left_iff_imp]
+  rw [h_bij.image_eq]
+  exact Indep.subset_ground
+
+lemma comapOn_dual {f : α → β} {X : Set α} {N : Matroid β} (h_bij : BijOn f X N.E) :
+    (N.comapOn X f)✶ = N✶.comapOn X f := by
+  refine ext_isBase rfl fun B (hB : B ⊆ X) ↦ ?_
+  rw [dual_isBase_iff, comapOn_isBase_iff_of_bijOn (by simpa), comapOn_ground_eq,
+    comapOn_isBase_iff_of_bijOn (by simpa), and_iff_left diff_subset, and_iff_left hB,
+    dual_isBase_iff', ← h_bij.image_eq, image_diff_of_injOn h_bij.injOn hB,
+    and_iff_left (image_subset _ hB)]
+
+lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E) N.E) :
+    (N.comap f)✶ = N✶.comap f := by
+  convert comapOn_dual h_bij using 1
+  · rw [← (N.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq]
+  rw [← (N✶.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq, dual_ground]
 
 end Matroid

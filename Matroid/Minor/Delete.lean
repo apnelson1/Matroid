@@ -63,7 +63,7 @@ lemma restrict_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hR : R ⊆ M
   rw [hf.image_eq_image_iff (hIR.trans hR) hI₀.subset_ground] at heq
   rwa [← heq]
 
-lemma delete_map {β : Type*} (M : Matroid α) (f : α → β) (hf : InjOn f M.E) (hD : D ⊆ M.E) :
+lemma delete_map {β : Type*} {f : α → β} (hf : InjOn f M.E) (hD : D ⊆ M.E) :
     (M ＼ D).map f (hf.mono diff_subset) = M.map f hf ＼ (f '' D) := by
   simp_rw [delete_eq_restrict, restrict_map hf diff_subset, image_diff_of_injOn hf hD, map_ground]
 
