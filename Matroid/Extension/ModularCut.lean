@@ -151,9 +151,6 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     rw [hf.image_eq_image_iff (hFsE F hF) hYs.subset_ground] at h_eq
     rwa [← h_eq] at hYs
 
--- lemma ModularCut.comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
---     (M.comap f).ModularCut := by
---   _
 
 -- lemma ModularCut.mem_map_iff {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f)
 --     {F : Set β} : F ∈ (U.map f hf) ↔ False := by
@@ -168,6 +165,33 @@ lemma ModularCut.isFlat_of_mem (U : M.ModularCut) (hF : F ∈ U) : M.IsFlat F :=
 lemma ModularCut.superset_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : M.IsFlat F') (hFF' : F ⊆ F') :
     F' ∈ U :=
   U.forall_superset F F' hF hF' hFF'
+
+
+-- lemma ModularCut.comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
+--     (M.comap f).ModularCut where
+--   carrier := (preimage f) '' U
+--   forall_isFlat := by
+--     simp only [mem_image, SetLike.mem_coe, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+--       isFlat_comap_iff_exists]
+--     exact fun F hF ↦ ⟨F, U.isFlat_of_mem hF, rfl⟩
+--   forall_superset := by
+--     simp only [mem_image, SetLike.mem_coe, isFlat_comap_iff_exists, forall_exists_index, and_imp]
+--     rintro _ _ F hF rfl F' hF' rfl hss
+--     -- rintro F₁ F₂ F₁ hF₁ rfl F₃ hss
+--     have hssF : F ⊆ M.closure (F ∪ F') :=
+--       (subset_closure_of_subset' _ subset_union_left (U.isFlat_of_mem hF).subset_ground)
+--     have hssF' : F' ⊆ M.closure (F ∪ F') :=
+--       (subset_closure_of_subset' _ subset_union_right hF'.subset_ground)
+--     have hF₁ := U.superset_mem hF (M.closure_isFlat (F ∪ F')) hssF
+--     refine ⟨_, hF₁, subset_antisymm ?_ (preimage_mono hssF')⟩
+
+
+--     have := image_subset f hss
+
+--     simp at this
+
+--     have := U.superset_mem hFU (F' := f '' F')
+--   forall_inter := _
 
 lemma ModularCut.closure_superset_mem (U : M.ModularCut) (hF : F ∈ U) (hFX : F ⊆ M.closure X) :
     M.closure X ∈ U :=
