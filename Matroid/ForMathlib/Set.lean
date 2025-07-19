@@ -1,6 +1,8 @@
-import Mathlib.Data.Set.Lattice
+import Mathlib.Data.Set.Lattice.Image
 
 variable {α ι : Type*}
+
+open Function
 namespace Set
 
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
@@ -119,3 +121,14 @@ lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (inse
 lemma Subsingleton.elim {x y} {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (hys : y ∈ s) :
     x = y := by
   obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all
+
+lemma exists_partition_of_subset_iUnion {s : Set α} {t : ι → Set α} (hst : s ⊆ ⋃ i, t i) :
+    ∃ (r : ι → Set α), Pairwise (Disjoint on r) ∧ ⋃ i, r i = s ∧ (∀ i, r i ⊆ t i) := by
+  obtain hι | hι := isEmpty_or_nonempty ι; simp_all
+  have h (a) (ha : a ∈ s) : ∃ i, a ∈ t i := by simpa using hst ha
+  choose! f hf using h
+  refine ⟨fun i ↦ f ⁻¹' {i} ∩ s, by simp +contextual [Pairwise, disjoint_left], ?_, ?_⟩
+  · rw [← iUnion_inter, inter_eq_right, ← preimage_iUnion, iUnion_singleton_eq_range]
+    simp
+  rintro i e ⟨rfl, h⟩
+  exact hf _ h

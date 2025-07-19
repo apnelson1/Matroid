@@ -649,7 +649,8 @@ lemma restrict_subset (r : α → α → Prop) {S T : Set α} (h : S ⊆ T) :
 --     comply r (restrict s (reflSet r)) = comply r s := by
 --   ext x y
 --   exact ⟨fun ⟨u, ⟨v, hxv, hsvu, hv, hu⟩, huy⟩ => ⟨u, ⟨v, hxv, hsvu⟩, huy⟩,
---     fun ⟨u, ⟨v, hxv, hsvu⟩, huy⟩ => ⟨u, ⟨v, hxv, hsvu, refl_of_right hxv, refl_of_left huy⟩, huy⟩⟩
+--     fun ⟨u, ⟨v, hxv, hsvu⟩, huy⟩ => ⟨u, ⟨v, hxv, hsvu, refl_of_right hxv, refl_of_left huy⟩,
+-- huy⟩⟩
 
 -- lemma comply_le {s t : α → α → Prop} (h1 : restrict s (reflSet r) ≤ t)
 --     (h2 : comply r t ≤ t) : comply r s ≤ t :=

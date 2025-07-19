@@ -484,7 +484,7 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
   rw [← hFF'.closure_insert_eq he, closure_insert_congr_right hI.closure_eq_closure]
 
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
-@[simps!] def IsFlat.covByPartition (hF : M.IsFlat F) : Partition (Set α) :=
+@[simps!] def IsFlat.covByPartition (_ : M.IsFlat F) : Partition (Set α) :=
   Partition.ofPairwiseDisjoint'
     (parts := (· \ F) '' {F' | F ⋖[M] F'})
     (pairwiseDisjoint := by

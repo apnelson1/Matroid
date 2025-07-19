@@ -232,6 +232,12 @@ lemma multiConn_eq_zero_iff (hX : ∀ i, X i ⊆ M.E) :
     Indep.isSkewFamily_iff_pairwise_disjoint_union_indep (fun i ↦ (hI i).indep), and_comm,
     injOn_prod_fst_mk_left_iff_pairwise_disjoint]
 
+/-- A version of `multiConn_eq_zero_iff` where the union is `M.E`,
+since this is a common application -/
+lemma multiConn_eq_zero_iff' (hX : ⋃ i, X i = M.E) :
+    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
+  rw [multiConn_eq_zero_iff (fun i ↦ by grw [← hX, ← subset_iUnion])]
+
 lemma multiConn_dual_eq_eRank_project (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
     (hI : ∀ i, (M.project (M.E \ X i)).IsBasis (I i) (X i)) :
     M✶.multiConn X = (M.project (⋃ i, I i)).eRank := by
@@ -262,7 +268,39 @@ lemma multiConn_dual_eq_eRank_contract (hdj : Pairwise (Disjoint on X)) (hu : �
   rw [project_isBasis_iff disjoint_sdiff_right]
   exact hI i
 
-  -- rw [multiConn_eq_]
+private lemma multiConn_project_le_aux (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
+    (hdj : Pairwise (Disjoint on X)) (hC : M.Indep C) :
+    (M.project C).multiConn X ≤ M.multiConn X := by
+  choose I hI using fun i ↦ (hC.inter_left (X i)).subset_isBasis'_of_subset inter_subset_left
+  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
+  have hJ' (i) : (M.project C).IsBasis' (J i) (X i) := by
+    rw [isBasis'_iff_isBasis_closure, project_closure,
+      ← closure_union_congr_left (hI i).1.closure_eq_closure, ← project_closure]
+    exact ⟨(hJ i).isBasis_closure_right, (hJ i).subset.trans (hI i).1.subset⟩
+  grw [multiConn_eq_nullity_iUnion hdj hJ', multiConn_eq_nullity_iUnion hdj (fun i ↦ (hI i).1),
+    hC.nullity_project_of_disjoint, nullity_le_of_subset]
+  · refine union_subset ?_ (iUnion_mono (fun i ↦ (hJ i).subset))
+    rw [← inter_eq_self_of_subset_right hCX, iUnion_inter]
+    exact iUnion_mono fun i ↦ (hI i).2
+  exact disjoint_iUnion_right.2 fun i ↦ (hC.project_indep_iff.1 (hJ i).indep).1.symm
+
+lemma multiConn_project_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i) :
+    (M.project C).multiConn X ≤ M.multiConn X := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  obtain ⟨IC, hIC⟩ := M.exists_isBasis' C
+  obtain ⟨K, hKdj, rfl, hKX⟩ := exists_partition_of_subset_iUnion (hIC.subset.trans hC)
+  have hwin := multiConn_project_le_aux (M.comap Prod.fst) (X := fun i ↦ (·, i) '' (X i))
+    (C := ⋃ (i : ι), (·, i) '' (K i)) ?_ ?_ ?_; rotate_left
+  · exact iUnion_mono fun i ↦ image_mono (hKX i)
+  · exact disjoint_map_prod_right
+  · simp [image_iUnion, image_image, injOn_prod_fst_mk_left_iff_pairwise_disjoint, hKdj, hIC.indep]
+  simp only [← project_comap_image, image_iUnion, image_image, image_id'] at hwin
+  grw [hIC.project_eq_project, multiconn_eq_comap_prod_multiConn, hwin,
+    M.multiconn_eq_comap_prod_multiConn]
+
+lemma multiConn_contract_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i) :
+    (M ／ C).multiConn X ≤ M.multiConn X := by
+  grw [← multiConn_project_eq_multiconn_contract, multiConn_project_le _ hC]
 
 -- lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
 --     M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by

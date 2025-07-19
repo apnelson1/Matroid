@@ -510,7 +510,7 @@ lemma simplification_isSimplification (M : Matroid α) : M.simplification.IsSimp
     (fun a ha ↦ f.apply_of_notMem (by simpa))
     (fun a ha ↦ by simpa [mem_setOf_eq, parallelClasses_rel_eq] using f.rel_apply (by simpa))
     (fun a b hab ↦ f.apply_eq_apply (by simpa)), ?_⟩
-  simp only [simplification, removeLoops_isNonloop_iff, Partition.RepFun.mk_apply]
+  simp only [simplification, removeLoops_isNonloop_iff]
   rw [removeLoops_restrict_eq_restrict]
   rfl
   simpa [M.removeLoops_isNonloop_iff] using f.image_subset_self

@@ -199,10 +199,46 @@ theorem gutsProjectDepth_eq_multiConn (M : Matroid α) (X : ι → Set α) (hX :
   rwa [multiConn_eq_zero_iff (by simp [hN, ← hX, subset_iUnion]),
     dual_isSkewFamily_iff hdj (by rwa [hN])] at hmc
 
--- lemma foo {α : Type*} (M : Matroid α) (X : ι → Set α) (hX : ⋃ i, X i = M.E)
---     (hdj : Pairwise (Disjoint on X)) (n : ℕ) (hMX : M✶.multiConn X = n) :
---     ∃ (N : Matroid α) (P : N.Projector M (Fin n)), N.IsSkewFamily X := by
---   induction n with
---   | zero =>
---   ·
---   | succ n _ => sorry
+/-- If `A` is a `Finset` with size equal to the dual `multiConn` of a partition `X`,
+and `A` is disjoint from the ground set, then there is a major `P` of `M` so that `P ＼ A = M`
+and `X` is skew in `P ／ A`. -/
+theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α) (X : ι → Set α)
+    (hX : ⋃ i, X i = M.E) (hdj : Pairwise (Disjoint on X)) {A : Finset α}
+    (hA : A.card = M✶.multiConn X) (hA_dj : Disjoint (A : Set α) M.E) :
+    ∃ (P : Matroid α), (A : Set α) ⊆ P.E ∧ P ＼ A = M ∧ (P ／ A).IsSkewFamily X := by
+  induction A using Finset.cons_induction generalizing M with
+  | empty =>
+  · rw [Finset.card_empty, Nat.cast_zero, eq_comm, M✶.multiConn_eq_zero_iff' hX,
+      dual_isSkewFamily_iff hdj hX] at hA
+    exact ⟨M, by simpa⟩
+  | cons a A has IH =>
+  · obtain ⟨haE : a ∉ M.E, hA_dj : Disjoint (A : Set α) M.E⟩ := by simpa using hA_dj
+    have hnsk : ¬ M.IsSkewFamily X := by
+      rw [← dual_isSkewFamily_iff hdj hX, ← multiConn_eq_zero_iff' (by simpa using hX), ← hA]
+      simp
+    specialize IH (M.projectBy (M.gutsModularCut X hX)) (by simpa) ?_ (by simpa)
+    · rwa [← multiConn_projectBy_gutsModularCut_add_one _ hdj hX hnsk, Finset.card_cons,
+        Nat.cast_add, Nat.cast_one, WithTop.add_right_inj (by simp)] at hA
+    obtain ⟨Q, hAQ, hQd, hQc⟩ := IH
+    rw [← ModularCut.extendBy_contractElem (e := a) _ haE] at hQd
+    obtain ⟨P, haP, rfl, hPd⟩ :=
+      exists_common_major_of_delete_eq_contractElem (by simpa) hAQ hQd
+    refine ⟨P, ?_, ?_, ?_⟩
+    · simp [insert_subset_iff, haP (by simp),
+        show (A : Set α) ⊆ P.E from hAQ.trans diff_subset]
+    · rw [Finset.coe_cons, ← union_singleton, ← delete_delete, hPd,
+        ModularCut.extendBy_deleteElem _ haE]
+    rwa [Finset.coe_cons, ← singleton_union, ← contract_contract]
+
+-- theorem foo {M P : Matroid α} (X : ι → Set α) (hX : ⋃ i, X i = M.E)
+--(hdj : Pairwise (Disjoint on X))
+--     {A : Set α} (h_del : P ＼ A = M) (h_con : (P ／ A).IsSkewFamily X) :
+--     M✶.multiConn X ≤ A.encard := by
+--   -- wlog hAE : A ⊆ P.E generalizing A with aux
+--   -- · grw [aux (A := A ∩ P.E) (by rwa [delete_inter_ground_eq]) (by simpa) inter_subset_right,
+--   --     encard_le_encard inter_subset_left]
+--   -- grw [← h_del, dual_delete, multiConn_contract_le]
+--   have := P✶.multiConn_le_multiConn_delete_add_encard hdj A
+--   -- grw [M✶.multiConn_le_multiConn_delete_add_encard hdj A]
+--   -- generalize hk : A.encard = k
+  -- ·
