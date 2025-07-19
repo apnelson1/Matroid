@@ -236,7 +236,7 @@ termination_by (Y \ X).card
 
 lemma rk_insert_le : M.r (insert e X) ≤ M.r X + M.r {e} := by
   induction' X using Finset.induction with f X _ hX
-  · simp [rk_empty, M.rk_singleton e]
+  · simp [rk_empty]
   linarith [M.rk_insert_insert X e f]
 
 lemma rk_insert_le_add_one : M.r (insert e X) ≤ M.r X + 1 := by

@@ -108,7 +108,7 @@ lemma IsTutteSep.dual {k : ℕ∞} (h : P.IsTutteSep k) : P.dual.IsTutteSep k :=
   simpa [isTutteSep_iff] using h
 
 @[simp] lemma isTutteSep_dual_iff {k : ℕ∞} : P.dual.IsTutteSep k ↔ P.IsTutteSep k := by
-  simp [isTutteSep_iff, eConn_dual]
+  simp [isTutteSep_iff]
 
 @[simp] lemma isTutteSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} :
     P.ofDual.IsTutteSep k ↔ P.IsTutteSep k := by
@@ -170,8 +170,8 @@ lemma partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).du
 
 lemma IsCircuit.isTutteSep {C : Set α} (hC : M.IsCircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
-  simp only [Partition.isTutteSep_iff, eConn_partition, partition_left,
-    partition_right, inter_eq_self_of_subset_left hC.subset_ground, and_iff_right rfl.le]
+  simp only [Partition.isTutteSep_iff, eConn_partition, partition_left, partition_right,
+    and_iff_right rfl.le]
   refine ⟨(M.eConn_le_eRk C).trans_lt ?_, ?_⟩
   · rw [← hC.eRk_add_one_eq, ENat.lt_add_one_iff]
     rw [eRk_ne_top_iff]
@@ -220,8 +220,8 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
   refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_ge fun hle ↦ ?_⟩
   · contrapose! h
     use 1
-    simp only [Nat.cast_one, ENat.lt_one_iff, Partition.eConn_eq_zero_iff,
-      one_le_encard_iff_nonempty, le_refl, and_true]
+    simp only [ENat.lt_one_iff, Partition.eConn_eq_zero_iff, one_le_encard_iff_nonempty, le_refl,
+      and_true]
     set P := M.partition {z | M.ConnectedTo e z} (fun _ ↦ ConnectedTo.mem_ground_right)
     refine ⟨P, ?_, ⟨e, by simpa [P]⟩, ⟨f, by simp [P, h, hf]⟩⟩
     simp_rw [skew_iff_forall_isCircuit P.disjoint P.left_subset_ground, or_iff_not_imp_right,
@@ -233,8 +233,8 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
   obtain rfl | rfl := hle
   · simp at hPk
 
-  simp only [Nat.cast_one, ENat.lt_one_iff, Partition.eConn_eq_zero_iff, Partition.union_eq] at hPk
-  simp only [Nat.cast_one, one_le_encard_iff_nonempty] at hkr hkl
+  simp only [ENat.lt_one_iff, Partition.eConn_eq_zero_iff] at hPk
+  simp only [one_le_encard_iff_nonempty] at hkr hkl
   obtain ⟨e, he⟩ := hkl
   obtain ⟨f, hf⟩ := hkr
   obtain ⟨rfl, -⟩ | ⟨C, hC, heC, hfC⟩ := h (P.left_subset_ground he) (P.right_subset_ground hf)
@@ -483,8 +483,7 @@ lemma eConnBetween_removeLoops_eq (M : Matroid α) :
       simp only [removeLoops_core, partition_left, subset_inter_iff, hP.1, true_and]
       rw [← removeLoops_core, and_iff_right (core_subset_ground ..)]
       exact P.disjoint.mono inter_subset_left hP.2
-    simp only [eConn_partition, eLocalConn_inter_ground_left, diff_inter_self_eq_diff,
-      removeLoops_eLocalConn, removeLoops_eConn, ← hP_eq, P.eConn_eq_left]
+    simp only [eConn_partition, removeLoops_eConn, ← hP_eq, P.eConn_eq_left]
     rw [← removeLoops_eConn, eConn_inter_ground]
   obtain ⟨P, hP, hP_eq⟩ := M.removeLoops.exists_partition_eConn_eq_eConnBetween_core (by simpa)
   refine iInf_le_of_le ⟨M.partition P.left ?_, ?_⟩ ?_

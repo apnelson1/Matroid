@@ -31,7 +31,7 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
   cases b with
   | top => simp +contextual [ENat.mul_top_eq_ite]
   | coe b => simp only [coe_ne_top, ne_eq, Nat.cast_eq_zero, false_and, and_false, or_self,
-    iff_false, ← coe_mul]
+    ← coe_mul]
 
 @[simp]
 theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by

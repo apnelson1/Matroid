@@ -12,7 +12,7 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
   intro x x' h
   ext i
   replace h := _root_.congr_fun h (s i)
-  simp only [ExtendByZero.linearMap_apply, exists_apply_eq_apply, not_true] at h
+  simp only [ExtendByZero.linearMap_apply] at h
   rwa [hs.extend_apply, hs.extend_apply] at h
 
 namespace Matroid
@@ -304,7 +304,7 @@ lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
 lemma Rep.IsStandard.image_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (I : Set B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
-  simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
+  simp only [mem_image, coe_basisSingleOne]
   constructor
   · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
     exact ⟨y, hy, (hv.apply_finsupp y).symm⟩
@@ -332,8 +332,7 @@ lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (
     simp
   intro f hf hecl
   rw [hv.mem_closure_iff (diff_subset.trans (by simp)) heE] at hecl
-  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq, subset_diff_singleton_iff]
-    at hecl
+  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq] at hecl
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
@@ -360,7 +359,7 @@ lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)}
   obtain hxE | hxE := em' (x ∈ M.E)
   · simp [hxE, v.eq_zero_of_notMem_ground hxE]
   rw [hv.mem_closure_iff diff_subset hxE]
-  simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
+  simp [subset_diff, hxE, disjoint_iff_forall_ne]
 
 
 end IsStandard

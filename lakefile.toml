@@ -8,15 +8,11 @@ autoImplicit = false
 pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
-linter.unusedSimpArgs = false
+linter.unusedSimpArgs = true
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-
-[[require]]
-name = "Canonical"
-scope = "chasenorman"
 
 [[lean_lib]]
 name = "Matroid"

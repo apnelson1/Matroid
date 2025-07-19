@@ -295,7 +295,7 @@ lemma discrepancy_ne_top [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) : 
   intro htop
   have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [htop] at hdis
-  simp [eq_comm, eRk_eq_top_iff, M₁.isRkFinite_set X] at hdis
+  simp [eq_comm, eRk_eq_top_iff] at hdis
 
 @[simp]
 lemma discrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.discrepancy ∅ = 0 := by

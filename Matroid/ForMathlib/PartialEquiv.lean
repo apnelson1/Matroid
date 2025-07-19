@@ -120,7 +120,7 @@ theorem PartialEquiv.insert_apply_symm_mem (e : PartialEquiv α β) (ha : a ∉ 
   they agree on their common domain.  -/
 instance {α β : Type*} : Preorder (PartialEquiv α β) where
   le φ φ' := φ.source ⊆ φ'.source ∧ ∀ {i}, i ∈ φ.source → φ' i = φ i
-  le_refl φ := by simp [Subset.rfl]
+  le_refl φ := by simp
   le_trans φ₁ φ₂ φ₃ h₁₂ h₂₃ := ⟨h₁₂.1.trans h₂₃.1, fun hi ↦ by rw [h₂₃.2 (h₁₂.1 hi), h₁₂.2 hi]⟩
 
 -- theorem PartialEquiv.eq_of_mem_source (h : φ ≤ φ') (ha : a ∈ φ.source) : φ' a = φ a :=

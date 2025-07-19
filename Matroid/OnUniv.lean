@@ -22,7 +22,7 @@ lemma ground_eq_univ (M : Matroid α) [OnUniv M] : M.E = univ :=
 
 @[simp, aesop safe (rule_sets := [Matroid])]
 lemma OnUniv.subset_ground (M : Matroid α) [M.OnUniv] (X : Set α) : X ⊆ M.E := by
-  simp [OnUniv.ground_eq]
+  simp
 
 lemma OnUniv.ground_diff_eq (M : Matroid α) [M.OnUniv] (X : Set α) : M.E \ X = Xᶜ := by
   rw [ground_eq_univ, compl_eq_univ_diff]
@@ -33,8 +33,8 @@ lemma corestrict_univ_eq_disjointSum (M : Matroid α) :
   simp only [freeOn_dual_eq]
   refine ext_indep (by simp) ?_
   simp only [restrict_ground_eq, subset_univ, restrict_indep_iff, and_true, disjointSum_indep_iff,
-    dual_ground, inter_subset_right,  loopyOn_ground, loopyOn_indep_iff,
-    union_compl_self, forall_const, ← disjoint_iff_inter_eq_empty, disjoint_compl_right_iff_subset]
+    dual_ground, loopyOn_ground, loopyOn_indep_iff, union_compl_self, forall_const, ←
+    disjoint_iff_inter_eq_empty, disjoint_compl_right_iff_subset]
   refine fun I ↦ ⟨fun h ↦
     ⟨by rwa [← dual_ground, inter_eq_self_of_subset_left h.subset_ground], h.subset_ground⟩,
     fun ⟨h1, h2⟩ ↦ by rwa [inter_eq_self_of_subset_left h2] at h1⟩

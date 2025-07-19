@@ -408,7 +408,7 @@ lemma indep_iff_range_indep_of_paraMap {φ : I → α} (hφ : φ.Injective)
   set ψ := Equiv.ofInjective _ hφ
   convert Iso.indep_image_iff (I := univ) <|
     (isoOfMapParallelRestr ψ (by simpa only [Equiv.ofInjective_apply, ψ] using h_para)) using 1
-  · simp [Subset.rfl]
+  · simp
   simp only [restrict_ground_eq, image_univ, restrict_indep_iff, image_subset_iff,
     Subtype.coe_preimage_self, subset_univ, and_true]
   simp_rw [← image_univ, image_image, image_univ]

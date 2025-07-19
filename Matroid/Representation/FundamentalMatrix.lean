@@ -25,7 +25,7 @@ noncomputable def IsBase.coords (hB : M.IsBase B) (e : α) : Finset B :=
 lemma IsBase.coords_of_mem (hB : M.IsBase B) (he : e ∈ B) :
     hB.coords e = {⟨e, he⟩} := by
   ext ⟨x, hx⟩
-  simp [coords, hB.subset_ground he, fundCircuit_eq_of_mem he]
+  simp [coords, fundCircuit_eq_of_mem he]
 
 lemma IsBase.coords_of_notMem_ground (hB : M.IsBase B) (heE : e ∉ M.E) : hB.coords e = ∅ := by
   suffices ∀ a ∈ B, a ≠ e by
