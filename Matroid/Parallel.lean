@@ -13,8 +13,17 @@ variable {α : Type*} {M N : Matroid α} {e f g : α} {I X P D : Set α}
 section Parallel
 
 /-- The partition of the nonloops of `M` into parallel classes. -/
-def parallelClasses (M : Matroid α) : Partition {e | M.IsNonloop e} :=
-  (M.closure_isFlat ∅).covByPartition.congr M.setOf_isNonloop_eq.symm
+def parallelClasses (M : Matroid α) : Partition (Set α) :=
+  (M.closure_isFlat ∅).covByPartition
+
+@[simp]
+lemma parallelClasses_supp (M : Matroid α) : M.parallelClasses.supp = {e | M.IsNonloop e} := by
+  rw [parallelClasses, IsFlat.covByPartition_supp]
+  exact M.setOf_isNonloop_eq.symm
+
+@[simp]
+lemma mem_parallelClasses_supp_iff : e ∈ M.parallelClasses.supp ↔ M.IsNonloop e := by
+  simp [parallelClasses_supp]
 
 def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
 
@@ -58,7 +67,7 @@ lemma Parallel.mem_ground_right (h : M.Parallel e f) : f ∈ M.E :=
 
 lemma IsNonloop.parallel_iff_closure_eq_closure (he : M.IsNonloop e) :
     M.Parallel e f ↔ M.closure {e} = M.closure {f} := by
-  rw [Parallel, parallelClasses, Partition.rel_congr,
+  rw [Parallel, parallelClasses,
     (M.closure_isFlat ∅).rel_covByPartition_iff' ⟨he.mem_ground, he.not_isLoop⟩]; simp
 
 lemma Parallel.mem_closure (h : M.Parallel e f) : e ∈ M.closure {f} := by
@@ -75,7 +84,7 @@ lemma Parallel.parallel_iff_right (h : M.Parallel e f) {x : α} :
 lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
     {f | M.Parallel e f} = M.closure {e} \ M.loops := by
   by_cases he : M.IsNonloop e
-  · rw [Parallel, parallelClasses, Partition.rel_congr, loops,
+  · rw [Parallel, parallelClasses, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
       closure_insert_closure_eq_closure_insert, insert_empty_eq]
   rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_notMem]
@@ -448,7 +457,7 @@ section ParallelClass
 
 lemma mem_parallelClasses_iff_eq_closure_diff_loops {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.IsNonloop e ∧ P = M.closure {e} \ M.loops := by
-  simp only [parallelClasses, Partition.mem_congr_iff, IsFlat.mem_covByPartition_iff,
+  simp only [parallelClasses, IsFlat.mem_covByPartition_iff,
     loops_covBy_iff, isPoint_iff_exists_eq_closure_isNonloop, closure_empty]
   constructor
   · rintro ⟨_, ⟨e, he, rfl⟩, rfl⟩

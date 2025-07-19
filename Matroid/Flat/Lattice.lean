@@ -484,7 +484,7 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
   rw [← hFF'.closure_insert_eq he, closure_insert_congr_right hI.closure_eq_closure]
 
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
-@[simps!] def IsFlat.covByPartition (hF : M.IsFlat F) : Partition (M.E \ F) :=
+@[simps!] def IsFlat.covByPartition (hF : M.IsFlat F) : Partition (Set α) :=
   Partition.ofPairwiseDisjoint'
     (parts := (· \ F) '' {F' | F ⋖[M] F'})
     (pairwiseDisjoint := by
@@ -495,12 +495,14 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
       exact hne rfl )
     (forall_nonempty := by
       rintro _ ⟨_, hF₁, rfl⟩; exact nonempty_iff_ne_empty.mp <| exists_of_ssubset hF₁.ssubset)
-    (eq_sUnion := by
-      simp only [sSup_eq_sUnion, sUnion_image, mem_setOf_eq, Set.ext_iff, mem_diff, mem_iUnion,
-        exists_and_left, exists_prop]
-      exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
-        hF.covBy_closure_insert heF, heF⟩,
-        fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩⟩ )
+
+@[simp]
+lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.E \ F := by
+  simp only [covByPartition, Partition.supp_ofPairwiseDisjoint', sSup_eq_sUnion, sUnion_image,
+    mem_setOf_eq, Set.ext_iff, mem_iUnion, mem_diff, exists_and_left, exists_prop]
+  exact fun e ↦ ⟨fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩,
+    fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
+    hF.covBy_closure_insert heF, heF⟩⟩
 
 @[simp] lemma IsFlat.mem_covByPartition_iff {X : Set α} (hF : M.IsFlat F) :
     X ∈ hF.covByPartition ↔ ∃ F', ((F ⋖[M] F') ∧ F' \ F = X) := by
@@ -508,23 +510,23 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
 
 @[simp] lemma IsFlat.partOf_covByPartition_eq (hF : M.IsFlat F) (e : α) :
     hF.covByPartition.partOf e = M.closure (insert e F) \ F := by
-  by_cases he : e ∈ M.E \ F
-  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem he)
-    obtain rfl := hFF'.closure_insert_eq (hF'.symm.subset <| hF.covByPartition.mem_partOf he)
+  by_cases he : e ∈ hF.covByPartition.supp
+  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem <| he)
+    obtain rfl := hFF'.closure_insert_eq (hF'.symm.subset <| hF.covByPartition.mem_partOf <| he)
     exact hF'.symm
   have hrw : insert e F ∩ M.E = F := by
     refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
     rw [← singleton_union, union_inter_distrib_right, union_subset_iff,
-       (and_iff_left inter_subset_left)]
+      (and_iff_left inter_subset_left)]
     rintro f ⟨rfl, hf⟩
-    exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
+    exact by_contra fun hfF ↦ (hF.covByPartition_supp ▸ he) ⟨hf, hfF⟩
   rw [← closure_inter_ground, hrw, hF.closure, diff_self, hF.covByPartition.partOf_eq_empty he]
 
 @[simp] lemma IsFlat.rel_covByPartition_iff (hF : M.IsFlat F) {e f : α} :
     hF.covByPartition.Rel e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
   simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
-    exists_prop, and_congr_right_iff]
+    exists_prop, and_congr_right_iff, hF.covByPartition_supp]
   refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert e F)),
     ← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert f F)), hF.closure,
