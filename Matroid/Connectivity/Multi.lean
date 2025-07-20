@@ -55,6 +55,11 @@ lemma multiConn_inter_ground (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ (X i) ∩ M.E) = M.multiConn X := by
   simp_rw [multiConn, inter_assoc, inter_self]
 
+lemma multiConn_inter_ground_congr {X Y : ι → Set α} (hXY : ∀ i, X i ∩ M.E = Y i ∩ M.E) :
+    M.multiConn X = M.multiConn Y := by
+  rw [← multiConn_inter_ground, eq_comm, ← multiConn_inter_ground]
+  simp_rw [hXY]
+
 lemma multiConn_eq_comap_nullity (h : ∀ i, M.IsBasis' (I i) (X i)) :
     M.multiConn X = (M.comap Prod.fst).nullity (⋃ i, (·, i) '' I i) := by
   have h' (i) : M.IsBasis' (I i) (X i ∩ M.E) := (h i).isBasis_inter_ground.isBasis'
@@ -93,6 +98,15 @@ lemma multiConn_eq_nullity_iUnion_add_tsum (hI : ∀ i, M.IsBasis' (I i) (X i)) 
     simpa [preimage_preimage, image_iUnion, image_image]
   exact fun i ↦ M.subset_closure_of_subset' (subset_iUnion ..) (hI i).indep.subset_ground
 
+lemma multiConn_eq_nullity_iUnion_add_tsum' (hI : ∀ i, M.IsBasis' (I i) (X i)) :
+    M.multiConn X = M.nullity (⋃ i, I i) + ∑' e, ({i | e ∈ I i}.encard - 1) := by
+  rw [multiConn_eq_nullity_iUnion_add_tsum hI, eq_comm]
+  convert rfl using 2
+  rw [← tsum_subtype_eq_of_support_subset (s := ⋃ i, I i)]
+  simp only [support_subset_iff, ne_eq, mem_iUnion, not_imp_comm, not_exists]
+  intro e he
+  simp [show {i | e ∈ I i} = ∅ by simpa [eq_empty_iff_forall_notMem] ]
+
 lemma multiConn_eq_nullity_iUnion' (hdj : Pairwise (Disjoint on I))
     (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) := by
   rw [multiConn_eq_comap_nullity hIX, nullity_comap, image_iUnion]
@@ -130,6 +144,37 @@ lemma multiConn_mono (M : Matroid α) (hXY : ∀ i, X i ⊆ Y i) :
   choose J hJ using fun i ↦ (hI i).indep.subset_isBasis'_of_subset <| (hI i).subset.trans (hXY i)
   rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity (fun i ↦ (hJ i).1)]
   exact nullity_le_of_subset _ (iUnion_mono fun i ↦ image_subset _ (hJ i).2)
+
+lemma multiConn_map_image {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
+    (X : ι → Set α) (hXE : ∀ i, X i ⊆ M.E) :
+    (M.map f hf).multiConn (fun i ↦ f '' (X i)) = M.multiConn X := by
+  choose I hI using fun i ↦ M.exists_isBasis (X i) (hXE i)
+  grw [multiConn_eq_nullity_iUnion_add_tsum (fun i ↦ (hI i).isBasis'),
+    multiConn_eq_nullity_iUnion_add_tsum (fun i ↦ ((hI i).map hf).isBasis'), ← image_iUnion,
+    nullity_map_image _ (iUnion_subset fun i ↦ (hI i).subset.trans (hXE i))]
+  convert rfl
+  rw [eq_comm]
+  have hIE := iUnion_subset fun i ↦ (hI i).indep.subset_ground
+  convert tsum_image (α := ℕ∞) (s := (⋃ i, I i)) (g := f)
+    (f := fun (x : β) ↦ {i : ι | x ∈ f '' (I i)}.encard - 1) (hf.mono hIE) with e i
+  rw [hf.mem_image_iff (hI i).indep.subset_ground (hIE e.2)]
+
+lemma multiConn_map {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E) (X : ι → Set β) :
+    (M.map f hf).multiConn X = (M.multiConn fun i ↦ f ⁻¹' (X i)) := by
+  wlog hXss : ∀ i, X i ⊆ f '' M.E generalizing X with aux
+  · rw [← multiConn_inter_ground, ← M.multiConn_inter_ground, map_ground,
+      aux _ (fun i ↦ inter_subset_right), ← multiConn_inter_ground]
+    convert rfl using 3 with i
+    rw [preimage_inter, inter_assoc, inter_eq_self_of_subset_right (subset_preimage_image ..)]
+  choose Y hY using fun i ↦ subset_image_iff.1 (hXss i)
+  rw [forall_and] at hY
+  obtain rfl : X = fun i ↦ f '' (Y i) := funext fun i ↦ (hY.2 i).symm
+  rw [multiConn_map_image _ _ _ hY.1]
+  apply multiConn_inter_ground_congr
+  simp only
+  refine fun i ↦ subset_antisymm (inter_subset_inter_left _ (subset_preimage_image ..))
+    (subset_inter ?_ inter_subset_right)
+  rw [hf.preimage_image_inter (hY.1 i)]
 
 /-- The local connectivity of a pair of sets `X,Y` is the nullity of `I ∪ J` plus the
 cardinality of `I ∩ J`, for any respective bases `I` and `J` for `X` and `Y`. -/
@@ -190,6 +235,23 @@ lemma multiConn_closure_congr {X Y : ι → Set α} (hXY : ∀ i, M.closure (X i
     M.multiConn X = M.multiConn Y := by
   rw [← M.multiConn_closure X, ← M.multiConn_closure Y]
   simp [hXY]
+
+lemma multiConn_comap {β : Type*} (M : Matroid β) (X : ι → Set α) (f : α → β) :
+    (M.comap f).multiConn X = M.multiConn (fun i ↦ f '' (X i)) := by
+  choose I hI using fun i ↦ (M.comap f).exists_isBasis' (X i)
+  rw [multiConn_eq_comap_nullity hI]
+  simp_rw [comap_isBasis'_iff, forall_and] at hI
+  simp_rw [multiConn_eq_comap_nullity hI.1, image_image]
+  have := (M.comap Prod.fst : Matroid (β × ι)).nullity_comap (X := ⋃ i, (· , i) '' I i)
+      (f := fun x : (α × ι) ↦ (f x.1, x.2)) ?_
+  · convert this
+    · simp_rw [comap_comap]
+      rfl
+    aesop
+  simp only [InjOn, mem_iUnion, mem_image, Prod.mk.injEq, and_imp, forall_exists_index, Prod.forall]
+  rintro a i j x hx rfl rfl y k l z hz rfl rfl hf rfl
+  rw [(hI.2.1 j).eq_iff hx hz] at hf
+  exact ⟨hf, rfl⟩
 
 lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
     (hdj : Pairwise (Disjoint on X)) (D : Set α) :
@@ -302,21 +364,46 @@ lemma multiConn_contract_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i
     (M ／ C).multiConn X ≤ M.multiConn X := by
   grw [← multiConn_project_eq_multiconn_contract, multiConn_project_le _ hC]
 
--- lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
---     M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
---   obtain ⟨e, he⟩ : ∃ e, e ∉ M.E := sorry
---   nth_rw 1 [← ModularCut.extendBy_deleteElem U he, dual_delete,
---     ← ModularCut.extendBy_contractElem _ he, dual_contract]
---   grw [multiConn_delete]
+lemma multiConn_project_le_multiConn_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
+    (M.project C).multiConn X ≤ M.multiConn X + M.eRk C := by
+  wlog hC : M.Indep C generalizing C with aux
+  · obtain ⟨I, hI⟩ := M.exists_isBasis' C
+    grw [hI.project_eq_project, ← hI.eRk_eq_eRk, aux _ hI.indep]
+  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (X i)
+  choose I hI using fun i ↦ (hJ i).indep.of_project.subset_isBasis'_of_subset (hJ i).subset
+  obtain ⟨hI, hJI⟩ := forall_and.1 hI
+  obtain hι | hι := isEmpty_or_nonempty ι; simp
+  obtain ⟨i₀, hCrw⟩ : ∃ i₀, C = Prod.fst '' ((·, i₀) '' C) :=
+    ⟨Classical.arbitrary ι, by simp [Set.ext_iff]⟩
+  grw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity hJ, hCrw, project_comap_image,
+    Indep.nullity_project_of_disjoint, union_comm, nullity_union_le_nullity_add_encard,
+    Indep.eRk_eq_encard]
+  · grw [image_image, Injective.encard_image (by simp [Injective]), image_id',
+      nullity_le_of_subset _ (iUnion_mono fun i ↦ image_subset _ (hJI i))]
+  · simpa [image_image]
+  · simpa [comap_indep_iff, image_image, InjOn]
+  simp only [disjoint_left, mem_image, mem_iUnion, not_exists, not_and, ne_eq,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, Prod.mk.injEq]
+  rintro _ heC i e heJ rfl rfl
+  exact (hC.project_indep_iff.1 (hJ i).indep).1.notMem_of_mem_left heJ heC
 
--- lemma multiConn_mapEmbedding {β : Type*} (M : Matroid α) (f : α ↪ β) :
---     (M.mapEmbedding f).multiConn (fun i ↦ f '' (X i)) = M.multiConn X := by
---   choose I hI using fun i ↦ M.exists_isBasis' (X i)
---   -- have hJ := fun i ↦ (hI i).mapEmbedding
---   rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity fun i ↦ (hI i).mapEmbedding,
---     mapEmbedding]
-
-
--- lemma multiConn_dual_project_le_multiConn_dual_add_encard (M : Matroid α)
---     (hdj : Pairwise (Disjoint on X)) (C : Set α) :
---     M✶.multiConn X ≤ (M.project C)✶.multiConn X + C.encard := by
+lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
+    M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
+  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
+  · grw [← multiConn_inter_ground, dual_ground, ← (M.projectBy U)✶.multiConn_inter_ground, aux,
+      dual_ground, projectBy_ground]
+    exact fun i ↦ inter_subset_right
+  wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
+  · have ho := Option.some_injective α
+    convert aux (U.map _ ho.injOn) (fun i ↦ .some '' (X i)) ?_ ⟨none, by simp⟩
+    · rw [map_dual, multiConn_map_image _ _ _ (by simpa)]
+    · rw [ModularCut.projectBy_map, map_dual, multiConn_map_image _ _ _ (by simpa)]
+    · exact fun i ↦ by simpa [preimage_image_eq _ ho] using hXE i
+  obtain ⟨e, he⟩ : ∃ e, e ∉ M.E := h
+  have hwin := (M.extendBy e U)✶.multiConn_project_le_multiConn_add X {e}
+  grw [multiConn_project_eq_multiconn_contract, ← dual_delete, ModularCut.extendBy_deleteElem _ he,
+    eRk_singleton_le] at hwin
+  grw [← ModularCut.extendBy_contractElem _ he, dual_contract, multiConn_delete, hwin,
+    add_le_add_right]
+  convert rfl.le using 3 with i
+  simp [notMem_subset (hXE i) he]

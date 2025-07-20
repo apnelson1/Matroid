@@ -163,4 +163,5 @@ lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E
   · rw [← (N.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq]
   rw [← (N✶.comap f).restrict_ground_eq_self, comapOn, comap_ground_eq, dual_ground]
 
+
 end Matroid

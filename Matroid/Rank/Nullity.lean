@@ -1,7 +1,8 @@
 import Matroid.Rank.ENat
 import Matroid.Constructions.Project
+import Matroid.Minor.Contract
 
-open Set ENat
+open Set ENat Function
 
 namespace Matroid
 
@@ -309,5 +310,12 @@ lemma nullity_comap {α β : Type*} {f : α → β} (M : Matroid β) (X : Set α
   rw [hI.nullity_eq]
   rw [comap_isBasis'_iff] at hI
   rw [hI.1.nullity_eq, ← image_diff_of_injOn hX hI.2.2, (hX.mono diff_subset).encard_image]
+
+lemma nullity_map_image {β : Type*} {f : α → β} (hf : InjOn f M.E) {X : Set α} (hX : X ⊆ M.E) :
+    (M.map f hf).nullity (f '' X) = M.nullity X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  rw [hI.nullity_eq, (hI.map hf).nullity_eq,
+    ← image_diff_of_injOn (hf.mono hI.subset_ground) hI.subset,
+    (hf.mono (diff_subset.trans hI.subset_ground)).encard_image]
 
 end Matroid
