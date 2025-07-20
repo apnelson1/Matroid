@@ -59,6 +59,30 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
   simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
 
+@[simp]
+lemma iInter_diff_distrib {ι α : Type*} [Nonempty ι] {G : ι → Set α} {X : Set α} :
+    (⋂ i, G i) \ X = ⋂ i, (G i) \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun a ↦ notMem_of_mem_diff (a <| Classical.arbitrary ι)
+
+@[simp]
+lemma biInter_diff_distrib {ι α : Type*} {s : Set ι} (hs : s.Nonempty) {G : ι → Set α}
+    {X : Set α} : (⋂ i ∈ s, G i) \ X = ⋂ i ∈ s, G i \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
+@[simp]
+lemma sInter_diff_distrib {α : Type*} {s : Set (Set α)} (hs : s.Nonempty) {X : Set α} :
+    ⋂₀ s \ X = ⋂₀ ((· \ X) '' s) := by
+  ext x
+  simp +contextual only [mem_diff, mem_sInter, sInter_image, mem_iInter, iff_def, not_false_eq_true,
+    and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
 
 lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
