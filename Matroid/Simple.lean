@@ -159,9 +159,9 @@ lemma simple_iff_forall_parallel_class [Loopless M] :
 lemma simple_iff_parallelClasses_eq_discrete' :
     M.Simple ↔ M.Loopless ∧ M.parallelClasses = Partition.discrete {e | M.IsNonloop e} := by
   refine ⟨fun h ↦ ⟨by infer_instance, Partition.eq_of_rel_iff_rel ?_⟩, fun ⟨_,h⟩ ↦ ?_⟩
-  · simp only [Partition.discrete.rel_iff_eq, mem_setOf_eq,
-      show M.parallelClasses.Rel = M.Parallel from rfl]
-    exact fun x y ↦ ⟨fun h ↦ ⟨h.eq, h.isNonloop_left⟩, by rintro ⟨rfl, h⟩; exact h.parallel_self⟩
+  · simp only [Partition.rel_discrete_iff, mem_setOf_eq,
+      show M.parallelClasses = M.Parallel from rfl]
+    exact fun x y ↦ ⟨fun h ↦ ⟨h.isNonloop_right, h.eq⟩, by rintro ⟨h, rfl⟩; exact h.parallel_self⟩
   rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right (by assumption)]
   simp [Parallel, h]
 

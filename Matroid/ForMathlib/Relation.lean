@@ -6,6 +6,11 @@ open Set Function
 variable {α β γ ι : Type*} {a b c : α} {x y z : β} {u v w : γ} {f : β → α}
   {r r' : α → β → Prop} {s s' : β → γ → Prop} {t t' : α → γ → Prop}
 
+lemma not_symm_not {r : α → α → Prop} [IsSymm α r] : ¬ r a b → ¬ r b a := fun h ↦ h ∘ symm
+
+lemma not_comm_not {r : α → α → Prop} [IsSymm α r] : ¬ r a b ↔ ¬ r b a :=
+  ⟨not_symm_not, not_symm_not⟩
+
 lemma trans' [Trans r s t] (hr : r a x) (hs : s x u) : t a u :=
   Trans.trans hr hs
 
@@ -80,36 +85,29 @@ lemma codomain_domp (r s : α → β → Prop) : codomain (Domp r s) ⊆ codomai
 lemma le_domp_self (r : α → β → Prop) : r ≤ Domp r r :=
   fun a b hrab => ⟨a, ⟨b, hrab, hrab⟩, hrab⟩
 
-class Domple (r : α → β → Prop) : Prop where
-  domple : Domp r r ≤ r
+class Dompeq (r s : α → β → Prop) : Prop where
+  dompeq : Domp r s = s
 
-lemma domp_le (r : α → β → Prop) [Domple r] : Domp r r ≤ r := Domple.domple
+lemma domp_eq (r s : α → β → Prop) [Dompeq r s] : Domp r s = s := Dompeq.dompeq
 
-@[simp]
-lemma domp_eq (r : α → β → Prop) [Domple r] : Domp r r = r :=
-  antisymm (domp_le r) (le_domp_self r)
-
-instance [Domple r] : Trans r (Comp rᵀ r) r where
+instance [Dompeq r r'] : Trans r (Comp r'ᵀ r) r' where
   trans := by
-    rintro a x y hrax ⟨b, hrbx, hrby⟩
-    exact domp_le r a y ⟨b, ⟨x, hrax, hrbx⟩, hrby⟩
+    rintro a x y hrax ⟨b, hr'bx, hrby⟩
+    exact domp_eq r r' |>.le a y ⟨b, ⟨x, hrax, hr'bx⟩, hrby⟩
 
-instance [Domple r] : Trans (Comp r rᵀ) r r where
+instance [Dompeq r r'] : Trans (Comp r r'ᵀ) r r' where
   trans := by
-    rintro a b x ⟨y, hray, hrby⟩ hrbx
-    exact domp_le r a x ⟨b, ⟨y, hray, hrby⟩, hrbx⟩
+    rintro a b x ⟨y, hray, hr'by⟩ hrbx
+    exact domp_eq r r' |>.le a x ⟨b, ⟨y, hray, hr'by⟩, hrbx⟩
 
-lemma domple_left [Domple r] (hrax : r a x) (hrbx : r b x) (hray : r a y) : r b y :=
-  domp_le r b y ⟨a, ⟨x, hrbx, hrax⟩, hray⟩
+lemma dompeq_apply [Dompeq r r'] (hr'ax : r' a x) (hrbx : r b x) (hray : r a y) : r' b y :=
+  domp_eq r r' |>.le b y ⟨a, ⟨x, hrbx, hr'ax⟩, hray⟩
 
-lemma domple_left_iff [Domple r] (hrax : r a x) (hrbx : r b x) : r a y ↔ r b y :=
-  ⟨domple_left hrax hrbx, domple_left hrbx hrax⟩
+lemma dompeq_left_iff [Dompeq r r] (hrax : r a x) (hrbx : r b x) : r a y ↔ r b y :=
+  ⟨dompeq_apply hrax hrbx, dompeq_apply hrbx hrax⟩
 
-lemma domple_right [Domple r] (hrax : r a x) (hray : r a y) (hrbx : r b x) : r b y :=
-  domp_le r b y ⟨a, ⟨x, hrbx, hrax⟩, hray⟩
-
-lemma domple_right_iff [Domple r] (hrax : r a x) (hray : r a y) : r b x ↔ r b y :=
-  ⟨domple_right hrax hray, domple_right hray hrax⟩
+lemma dompeq_right_iff [Dompeq r r] (hrax : r a x) (hray : r a y) : r b x ↔ r b y :=
+  ⟨(dompeq_apply hrax · hray), (dompeq_apply hray · hrax)⟩
 
 
 def fiber (r : α → β → Prop) (x : β) : Set α := {a | r a x}
@@ -121,15 +119,15 @@ lemma mem_fiber_iff (r : α → β → Prop) : a ∈ fiber r x ↔ r a x := Iff.
 lemma fiber_empty : fiber r x = ∅ ↔ x ∉ codomain r := by
   simp [fiber, eq_empty_iff_forall_notMem]
 
-lemma fiber_eq_or_disjoint [Domple r] :
+lemma fiber_eq_or_disjoint [Dompeq r r] :
     fiber r x = fiber r y ∨ Disjoint (fiber r x) (fiber r y) := by
   rw [or_iff_not_imp_right, not_disjoint_iff_nonempty_inter]
   rintro ⟨a, hax, hay⟩
   ext b
   simp only [mem_fiber_iff] at hax hay ⊢
-  exact domple_right_iff hax hay
+  exact dompeq_right_iff hax hay
 
-lemma fiber_eq_of_mem [Domple r] (hrax : r a x) (hray : r a y) : fiber r x = fiber r y := by
+lemma fiber_eq_of_mem [Dompeq r r] (hrax : r a x) (hray : r a y) : fiber r x = fiber r y := by
   apply fiber_eq_or_disjoint.resolve_right
   rw [not_disjoint_iff_nonempty_inter]
   use a
@@ -250,7 +248,7 @@ lemma fibers_pairwiseDisjoint' [IsLeftUnique r] : (fibers r).PairwiseDisjoint id
   obtain rfl := left_unique r a b b' hrxb hrxb'
   exact hST rfl
 
-lemma fibers_pairwiseDisjoint [Domple r] :
+lemma fibers_pairwiseDisjoint [Dompeq r r] :
     (fibers r).PairwiseDisjoint id := by
   rintro S ⟨x, ⟨a, hrax⟩, rfl⟩ T ⟨y, ⟨b, hrby⟩, rfl⟩ hST
   change Disjoint (fiber r x) (fiber r y)
@@ -261,7 +259,7 @@ lemma fibers_pairwiseDisjoint [Domple r] :
   refine hST ?_
   ext c
   simp only [mem_fiber_iff]
-  exact domple_right_iff hrbx hrby
+  exact dompeq_right_iff hrbx hrby
 
 
 
@@ -407,6 +405,26 @@ instance [IsSymm α r] : IsSymm β (r on f) where
 instance [IsTrans α r] : IsTrans β (r on f) where
   trans a _ _ := trans' (a := f a)
 
+instance [IsTrans α r] [Dompeq r s] : Trans r s s where
+  trans := by
+    rintro a b c hr hs
+    rw [← domp_eq r s] at hs ⊢
+    obtain ⟨d, ⟨e, hrbe, hsde⟩, hrdc⟩ := hs
+    exact ⟨d, ⟨e, trans' hr hrbe, hsde⟩, hrdc⟩
+
+instance [IsTrans α r] [Dompeq r s] : Trans s r s where
+  trans := by
+    rintro a b c hs hrbc
+    rw [← domp_eq r s] at hs ⊢
+    obtain ⟨d, ⟨e, hrae, hsde⟩, hrdb⟩ := hs
+    exact ⟨d, ⟨e, hrae, hsde⟩, trans' hrdb hrbc⟩
+
+instance [IsSymm α r] [IsSymm α s] [Trans r s s]: Trans s r s where
+  trans hs hr := symm <| trans' (symm hr) (symm hs)
+
+instance [IsSymm α r] [IsSymm α s] [Trans s r s]: Trans r s s where
+  trans hs hr := symm <| trans' (symm hr) (symm hs)
+
 instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
   refine ⟨fun a b h ↦ ?_⟩
   obtain (h | h) := h <;> simp [symm h]
@@ -516,11 +534,11 @@ lemma transClosure_self_iff [foo r] : TransClosure r a a ↔ r a a := by
   · exact h
   exact refl_of_right h
 
-instance [IsSymm α r] [IsTrans α r] : Domple r where
-  domple := by
-    rintro a b ⟨c, ⟨d, had, hcd⟩, hcb⟩
-    exact trans' had (trans' (symm hcd) hcb)
-
+instance [IsSymm α r] [IsTrans α r] : Dompeq r r where
+  dompeq := by
+    ext a b
+    exact ⟨fun ⟨c, ⟨d, had, hcd⟩, hcb⟩ => trans' had (trans' (symm hcd) hcb),
+      fun h => ⟨a, ⟨b, h, h⟩, h⟩⟩
 
 -- def reflSet (r : α → α → Prop) : Set α := {x | r x x}
 

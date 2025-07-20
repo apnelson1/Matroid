@@ -25,19 +25,19 @@ lemma parallelClasses_supp (M : Matroid α) : M.parallelClasses.supp = {e | M.Is
 lemma mem_parallelClasses_supp_iff : e ∈ M.parallelClasses.supp ↔ M.IsNonloop e := by
   simp [parallelClasses_supp]
 
-def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
+def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses
 
-@[simp] lemma parallelClasses_rel_eq : M.parallelClasses.Rel = M.Parallel := rfl
+@[simp] lemma parallelClasses_rel_eq : M.parallelClasses = M.Parallel := rfl
 
 lemma parallel_iff :
     M.Parallel e f ↔ M.IsNonloop e ∧ M.IsNonloop f ∧ M.closure {e} = M.closure {f} := by
   simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), isNonloop_iff_mem_compl_loops, loops]
 
 instance {M : Matroid α} : IsSymm α M.Parallel :=
-  inferInstanceAs <| IsSymm α M.parallelClasses.Rel
+  inferInstanceAs <| IsSymm α M.parallelClasses
 
 instance {M : Matroid α} : IsTrans α M.Parallel :=
-  inferInstanceAs <| IsTrans α M.parallelClasses.Rel
+  inferInstanceAs <| IsTrans α M.parallelClasses
 
 lemma Parallel.symm (h : M.Parallel e f) : M.Parallel f e :=
   Partition.Rel.symm h

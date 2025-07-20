@@ -96,8 +96,8 @@ lemma Pairwise.sum_right {ι ι' γ : Type*} {G : ι → γ} {H : ι' → γ} {r
   rw [← Sum.elim_comp_inr G H, onFun_comp]
   exact h.comp_of_injective Sum.inr_injective
 
-instance {G : Graph α β} : Relation.foo (G.dup) where
-  isfoo _ _ hr := G.dup_refl_iff.mp hr.right_mem
+instance {G : Graph α β} : Relation.foo (G.Dup) where
+  isfoo _ _ hr := G.Dup_refl_iff.mp hr.right_mem
 
 open scoped Sym2 Graph
 
@@ -204,11 +204,11 @@ lemma CompatibleAt.mono {G₀ H₀ : Graph α β} (h : CompatibleAt e G H) (hG :
 
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
 structure Compatible (G H : Graph α β) : Prop where
-  dup_iff : ∀ ⦃x y⦄, x ∈ V(G) ∩ V(H) → (G.dup x y ↔ H.dup x y)
+  dup_iff : ∀ ⦃x y⦄, x ∈ V(G) ∩ V(H) → (G.Dup x y ↔ H.dup x y)
   isLink_iff : ∀ ⦃e x y⦄, e ∈ E(G) ∩ E(H) → (G.IsLink e x y ↔ H.IsLink e x y)
 
 lemma Compatible.dup (h : G.Compatible H) (hxG : x ∈ V(G)) (hxH : x ∈ V(H)) :
-    G.dup x y ↔ H.dup x y := h.dup_iff ⟨hxG, hxH⟩
+    G.Dup x y ↔ H.dup x y := h.dup_iff ⟨hxG, hxH⟩
 
 lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y := h.isLink_iff ⟨heG, heH⟩
@@ -239,7 +239,7 @@ lemma compatible_of_le (h : H ≤ G) : H.Compatible G := compatible_of_le_le h l
 lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
     H.IsLink e x y := by rwa [← hGH.isLink_iff ⟨h.edge_mem, heH⟩]
 
-lemma dup.of_compatible (hdup : G.dup x y) (hGH : G.Compatible H) (hxH : x ∈ V(H)) :
+lemma dup.of_compatible (hdup : G.Dup x y) (hGH : G.Compatible H) (hxH : x ∈ V(H)) :
     H.dup x y := by rwa [← hGH.dup_iff ⟨hdup.left_mem, hxH⟩]
 
 @[simp]
@@ -362,7 +362,7 @@ protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible o
     obtain ⟨i, hl⟩ := hl
     obtain ⟨j, hl'⟩ := hl'
     have := hl.of_compatible (hG.of_refl i j) hl'.edge_mem
-    
+
     simp? [dup_refl_iff])
   (fun e x y z ⟨u, v, ⟨i, hi⟩, hxu, hzv⟩ => by
     simp? at hxu hzv ⊢)
@@ -398,19 +398,19 @@ protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible o
 protected def union (G H : Graph α β) : Graph α β where
   vertexSet := V(G) ∪ V(H)
   edgeSet := E(G) ∪ E(H)
-  dup := Relation.TransClosure (G.dup ⊔ H.dup)
+  dup := Relation.TransClosure (G.Dup ⊔ H.dup)
   dup_refl_iff x := union_dup_refl_iff
   dup_symm _ _ := symm_of _
   dup_trans _ _ _ := trans_of _
   IsLink e x y := ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
-    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v
+    Relation.TransClosure (G.Dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.Dup ⊔ H.dup) y v
   isLink_symm e he x y hl :=
     let ⟨u, v, huv, hxu, hyv⟩ := hl
     ⟨v, u, by rwa [G.isLink_comm, H.isLink_comm], hyv, hxu⟩
   dup_or_dup_of_isLink_of_isLink e a b c d hl hl' := by
     obtain ⟨u, v, (hGuv | ⟨hHuv, hGuv⟩), hau, hbv⟩ := hl <;>
     obtain ⟨u', v', (hGuv' | ⟨hHuv', hGuv'⟩), hcu', hdv'⟩ := hl'
-    · apply (G.dup_or_dup_of_isLink_of_isLink hGuv hGuv').imp <;> exact fun h =>
+    · apply (G.Dup_or_dup_of_isLink_of_isLink hGuv hGuv').imp <;> exact fun h =>
         trans_of _ (trans_of _ hau <| Relation.TransGen.single (Or.inl h))
         (symm_of _ <| by assumption)
     · exact hGuv' hGuv.edge_mem |>.elim
@@ -603,7 +603,7 @@ protected lemma sUnion_range {f : ι → Graph α β} (h : Pairwise (Graph.Compa
 
 /-! ### Unions of pairs -/
 
-private lemma union_dup_refl_iff : x ∈ V(G) ∪ V(H) ↔ Relation.TransClosure (G.dup ⊔ H.dup) x x := by
+private lemma union_dup_refl_iff : x ∈ V(G) ∪ V(H) ↔ Relation.TransClosure (G.Dup ⊔ H.dup) x x := by
   refine ⟨?_, fun h => ?_⟩
   · rintro (hx | hx) <;> rw [dup_refl_iff] at hx <;> refine Relation.TransGen.single <| by aesop
   obtain (h | h) := Relation.transClosure_self_iff.mp h <;> simp [h.right_mem]
@@ -616,19 +616,19 @@ definitionally unions. -/
 protected def union (G H : Graph α β) : Graph α β where
   vertexSet := V(G) ∪ V(H)
   edgeSet := E(G) ∪ E(H)
-  dup x y := Relation.TransClosure (G.dup ⊔ H.dup) x y
+  dup x y := Relation.TransClosure (G.Dup ⊔ H.dup) x y
   dup_refl_iff x := union_dup_refl_iff
   dup_symm _ _ := symm_of _
   dup_trans _ _ _ := trans_of _
   IsLink e x y := ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
-    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v
+    Relation.TransClosure (G.Dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.Dup ⊔ H.dup) y v
   isLink_symm e he x y hl :=
     let ⟨u, v, huv, hxu, hyv⟩ := hl
     ⟨v, u, by rwa [G.isLink_comm, H.isLink_comm], hyv, hxu⟩
   dup_or_dup_of_isLink_of_isLink e a b c d hl hl' := by
     obtain ⟨u, v, (hGuv | ⟨hHuv, hGuv⟩), hau, hbv⟩ := hl <;>
     obtain ⟨u', v', (hGuv' | ⟨hHuv', hGuv'⟩), hcu', hdv'⟩ := hl'
-    · apply (G.dup_or_dup_of_isLink_of_isLink hGuv hGuv').imp <;> exact fun h =>
+    · apply (G.Dup_or_dup_of_isLink_of_isLink hGuv hGuv').imp <;> exact fun h =>
         trans_of _ (trans_of _ hau <| Relation.TransGen.single (Or.inl h))
         (symm_of _ <| by assumption)
     · exact hGuv' hGuv.edge_mem |>.elim
@@ -663,16 +663,16 @@ lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := rfl
 lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 @[simp]
-lemma union_dup : (G ∪ H).dup x y ↔ Relation.TransClosure (G.dup ⊔ H.dup) x y := Iff.rfl
+lemma union_dup : (G ∪ H).dup x y ↔ Relation.TransClosure (G.Dup ⊔ H.dup) x y := Iff.rfl
 
 @[simp]
 lemma union_isLink : (G ∪ H).IsLink e x y ↔
     ∃ u v, (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
-    Relation.TransClosure (G.dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.dup ⊔ H.dup) y v := Iff.rfl
+    Relation.TransClosure (G.Dup ⊔ H.dup) x u ∧ Relation.TransClosure (G.Dup ⊔ H.dup) y v := Iff.rfl
 
 @[simp]
 lemma union_inc_iff : (G ∪ H).Inc e x ↔ ∃ u, (G.Inc e u ∨ (H.Inc e u ∧ e ∉ E(G))) ∧
-    Relation.TransClosure (G.dup ⊔ H.dup) x u := by
+    Relation.TransClosure (G.Dup ⊔ H.dup) x u := by
   simp [Inc]
   refine ⟨fun ⟨y, u, v, h, hxu, hyv⟩ => ⟨u, h.imp (⟨v, ·⟩) fun ⟨h, he⟩ => ⟨⟨v, h⟩, he⟩, hxu⟩, ?_⟩
   rintro ⟨u, (⟨v, h⟩ | ⟨⟨v, h⟩, he⟩), hxu⟩

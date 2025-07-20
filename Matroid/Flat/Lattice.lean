@@ -523,7 +523,7 @@ lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.
   rw [← closure_inter_ground, hrw, hF.closure, diff_self, hF.covByPartition.partOf_eq_empty he]
 
 @[simp] lemma IsFlat.rel_covByPartition_iff (hF : M.IsFlat F) {e f : α} :
-    hF.covByPartition.Rel e f ↔
+    hF.covByPartition e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
   simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
     exists_prop, and_congr_right_iff, hF.covByPartition_supp]
@@ -533,7 +533,7 @@ lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.
     ← diff_union_self, h, diff_union_self]
 
 lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
-    hF.covByPartition.Rel e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
+    hF.covByPartition e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
   rw [hF.rel_covByPartition_iff, and_iff_right he, and_iff_right_iff_imp]
   refine fun hclosure ↦ ⟨by_contra fun hf ↦ ?_, fun hfF ↦ ?_⟩
   · rw [← M.closure_inter_ground (insert f F), insert_inter_of_notMem hf,
