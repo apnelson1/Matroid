@@ -586,6 +586,25 @@ lemma comp_self (r : α → α → Prop) [IsTrans α r] [foo r] : Comp r r = r :
   ext x y
   exact ⟨fun ⟨u, hxu, huy⟩ => trans_of r hxu huy, fun h => ⟨y, h, refl_of_right h⟩⟩
 
+lemma domp_symm (r s : α → α → Prop) [IsSymm α r] [IsSymm α s] : Symmetric (Domp r s) := by
+  rintro a b ⟨c, ⟨d, had, hcd⟩, hcb⟩
+  use d, ?_, symm had
+  use c, symm hcb, symm hcd
+
+instance [IsSymm α r] [IsSymm α s] : IsSymm α (Domp r s) where
+  symm := domp_symm r s
+
+lemma domp_transitive (r s : α → α → Prop) [IsSymm α r] [IsTrans α s] [H : Trans s r s] :
+    Transitive (Domp r s) := by
+  rintro a b c ⟨d, ⟨e, hae, hde⟩, hdb⟩ ⟨e', ⟨f, hbf, he'f⟩, he'c⟩
+  use e', ?_, he'c
+  use e, hae
+  have := trans' (H.trans (H.trans he'f (symm hbf)) (symm hdb)) hde
+  exact this
+
+instance [IsSymm α r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
+  trans := domp_transitive r s
+
 
 
 def restrict (r : α → α → Prop) (S : Set α) : α → α → Prop :=

@@ -17,28 +17,49 @@ namespace Graph
 protected def noEdge (V : Set α) (β : Type*) : Graph α β := by
   apply mk_of_unique V (fun _ _ _ => False) (∅ : Set β) <;> simp
 
+@[simp]
+lemma noEdge_dup (V : Set α) : (Graph.noEdge V β).Dup = Partition.discrete V := rfl
+
+@[simp]
+lemma noEdge_vertexSet (V : Set α) : V(Graph.noEdge V β) = V := by
+  simp [Graph.noEdge]
+
 lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ∅ β ∨ V(G).Nonempty := by
   refine V(G).eq_empty_or_nonempty.elim (fun he ↦ .inl (Graph.ext ?_ fun e x y ↦ ?_)) Or.inr
   · ext x y
     contrapose! he
-    simp only [noEdge_vertexSet, mem_empty_iff_false, not_false_eq_true, not_dup_of_not_mem_left,
+    simp only [noEdge_vertexSet, mem_empty_iff_false, not_false_eq_true, not_dup_of_not_left_mem,
       and_true, and_false, or_false] at he
     exact ⟨x, he.left_mem⟩
   simp only [noEdge_isLink, iff_false]
   exact fun h ↦ by simpa [he] using h.left_mem
 
-instance {V : Set α} : LabelUnique (Graph.noEdge V β) where
-  labelUniqueAt _ _ hdup := hdup.1
+instance {V : Set α} : Nodup (Graph.noEdge V β) := by
+  unfold Graph.noEdge
+  infer_instance
 
 @[simp]
 lemma noEdge_isLabelSubgraph_iff {V : Set α} :
     Graph.noEdge V β ≤l G ↔ (∀ u v, u ∈ V → v ∈ V → (G.Dup u v ↔ u = v)) := by
-  simp +contextual [isLabelSubgraph_iff, iff_def]
+  rw [isLabelSubgraph_iff, ← vertexSet_def, Partition.induce_eq_iff_rel]
+  simp only [dup_eq_discrete, noEdge_vertexSet, Partition.supp_discrete, Partition.rel_discrete_eq,
+    funext_iff, eq_iff_iff, and_congr_right_iff, noEdge_edgeSet, mem_empty_iff_false,
+    not_false_eq_true, not_isLink_of_notMem_edgeSet, IsEmpty.forall_iff, implies_true, and_true]
+  refine forall₃_congr fun u v hu => ⟨fun h hv => by simpa [hv] using h, fun h => ⟨by tauto, ?_⟩⟩
+  rintro rfl
+  tauto
 
 @[simp]
 lemma noEdge_le_iff {V : Set α} :
     Graph.noEdge V β ≤ G ↔ (∀ u v, u ∈ V → (G.Dup u v ↔ u = v)) := by
-  simp +contextual [iff_def, le_iff]
+  rw [le_iff, Partition.subset_iff_rel]
+  simp only [noEdge_dup, Partition.supp_discrete, Partition.rel_discrete_iff, noEdge_edgeSet,
+    mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet, IsEmpty.forall_iff,
+    implies_true, and_true]
+  apply forall₃_congr fun u v hu => ⟨fun h => ?_, fun h => ?_⟩
+  on_goal 1 => rw [← h, and_iff_right_iff_imp]
+  on_goal 2 => rw [h, and_iff_right_iff_imp]
+  all_goals rintro rfl; exact hu
 
 @[simp]
 lemma noEdge_not_inc {V : Set α} : ¬ (Graph.noEdge V β).Inc e x := by
@@ -56,12 +77,9 @@ lemma noEdge_not_isNonloopAt {V : Set α} : ¬ (Graph.noEdge V β).IsNonloopAt e
 lemma noEdge_not_adj {V : Set α} : ¬ (Graph.noEdge V β).Adj x y := by
   simp [Adj]
 
-lemma edgeDelete_eq_noEdge (G : Graph α β) [LabelUnique G] (hF : E(G) ⊆ F) :
+lemma edgeDelete_eq_noEdge (G : Graph α β) [Nodup G] (hF : E(G) ⊆ F) :
     G ＼ F = Graph.noEdge V(G) β := by
-  refine Graph.ext ?_ fun e x y ↦ ?_
-  · ext x y
-    have := LabelUnique.labelUniqueAt (G := G) x
-    simp
+  refine Graph.ext (by simp) fun e x y ↦ ?_
   simp only [edgeDelete_isLink, noEdge_isLink, iff_false, not_and, not_not]
   exact fun h ↦ hF h.edge_mem
 
@@ -82,24 +100,36 @@ lemma eq_noEdge_iff : G = Graph.noEdge V(G) β ↔ E(G) = ∅ ∧ G.Nodup := by
 
 @[simp]
 lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ ∧ G.Nodup := by
-  simp +contextual only [le_iff, dup_iff_eq, noEdge_vertexSet, iff_def, and_imp, noEdge_edgeSet,
-    mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet, imp_false,
-    eq_empty_iff_forall_notMem, true_and, and_true, implies_true]
-  refine ⟨fun hsu hL => ⟨fun x hx => @hsu x x hx |>.2 (G.Dup_refl_iff |>.mp hx) |>.2,
-    fun e he => ?_, ⟨fun _ _ hdup => hsu hdup.left_mem |>.2 hdup |>.1⟩⟩,
-    fun hsu hE _ x y hx => ⟨fun heq hxX => heq ▸ hx, fun heq => heq ▸ hsu hx⟩⟩
-  obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet he
-  exact hL hl
+  simp only [le_iff, dup_eq_discrete, noEdge_vertexSet, Partition.subset_iff_rel, vertexSet_def,
+    Partition.rel_discrete_iff, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
+    not_isLink_of_notMem_edgeSet, imp_false]
+  refine ⟨fun ⟨hD, hl⟩ => ⟨fun x hx => (hD x x hx).mp (G.dup_refl_iff |>.mpr hx) |>.1, ?_,
+    ⟨fun x y hxy => hD x y hxy.left_mem |>.mp hxy |>.2⟩⟩,
+    fun ⟨hV, hE, hN⟩ => ⟨fun x y hx => by simp [hV hx, hx], ?_⟩⟩
+  · contrapose! hl
+    exact ⟨hl.some, exists_isLink_of_mem_edgeSet hl.some_mem⟩
+  contrapose! hE
+  obtain ⟨e, x, y, hl⟩ := hE
+  use e, hl.edge_mem
 
 instance : OrderBot (Graph α β) where
   bot := Graph.noEdge ∅ β
   bot_le := by simp
 
 @[simp]
-lemma bot_vertexSet : V((⊥ : Graph α β)) = ∅ := rfl
+lemma bot_dup : (⊥ : Graph α β).Dup = ⊥ := by
+  change Partition.discrete ∅ = _
+  simp
 
 @[simp]
-lemma bot_edgeSet : V((⊥ : Graph α β)) = ∅ := rfl
+lemma bot_vertexSet : V((⊥ : Graph α β)) = ∅ := by
+  change V(Graph.noEdge ∅ β) = ∅
+  rw [noEdge_vertexSet]
+
+@[simp]
+lemma bot_edgeSet : E((⊥ : Graph α β)) = ∅ := by
+  change E(Graph.noEdge ∅ β) = ∅
+  rw [noEdge_edgeSet]
 
 @[simp]
 lemma bot_isClosedSubgraph (G : Graph α β) : ⊥ ≤c G where
@@ -123,7 +153,7 @@ lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y := id
 @[simp]
 lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ :=
   ⟨fun h => IsLabelSubgraph.antisymm
-    ⟨by simp [h], fun e x y he ↦ False.elim (by simpa [h] using he.left_mem)⟩
+    ⟨by simp [h, Partition.eq_bot h], fun e x y he ↦ False.elim (by simpa [h] using he.left_mem)⟩
     (isLabelSubgraph_of_le bot_le), fun h ↦ by simp [h]⟩
 
 @[simp]
@@ -131,17 +161,24 @@ lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ := not_iff_not.mp <| 
   simp [not_nonempty_iff_eq_empty]
 
 /-- A graph with a single edge `e` from `u` to `v` -/
-@[simps!]
+@[simps! dup edgeSet isLink]
 protected def singleEdge (u v : α) (e : β) : Graph α β := by
   apply mk_of_unique {u,v} (fun e' x y => e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))) {e}
   <;> try tauto
   aesop
 
-instance {u v : α} : LabelUnique (Graph.singleEdge u v e) where
-  labelUniqueAt _ _ hdup := hdup.1
+@[simp] lemma singleEdge_vertexSet : V(Graph.singleEdge u v e) = {u,v} := by
+  simp [Graph.singleEdge]
+
+instance {u v : α} : Nodup (Graph.singleEdge u v e) := by
+  unfold Graph.singleEdge
+  infer_instance
 
 lemma singleEdge_comm (u v : α) (e : β) : Graph.singleEdge u v e = Graph.singleEdge v u e := by
   ext <;> simp [or_comm]
+
+lemma isLink_singleEdge : (Graph.singleEdge u v e).IsLink e u v := by
+  simp [Graph.singleEdge]
 
 lemma singleEdge_isLink_iff :
     (Graph.singleEdge u v e).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
@@ -161,44 +198,58 @@ lemma singleEdge_adj_iff :
 @[simp]
 lemma singleEdge_isLabelSubgraph_iff :
     Graph.singleEdge u v e ≤l G ↔ (G.Dup u v → u = v) ∧ G.IsLink e u v := by
-  simp +contextual only [isLabelSubgraph_iff, singleEdge_vertexSet, mem_insert_iff,
-    mem_singleton_iff, dup_iff_eq, and_true, iff_def, singleEdge_isLink, and_imp, true_or, or_true,
-    and_self]
-  refine ⟨fun h _ => @h u v (Or.inl rfl) (Or.inr rfl) |>.1, fun hdup hl => ⟨?_, ?_⟩⟩
-  · rintro x y (rfl | rfl) (rfl | rfl)
-    <;> try simp [G.Dup_refl_iff.mp hl.left_mem, G.Dup_refl_iff.mp hl.right_mem]
-    · exact hdup
-    exact fun a => (hdup a.symm).symm
-  · rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-    · exact hl
-    exact hl.symm
-
-lemma singleEdge_le_iff_labelUniqueAt (hu : G.NodupAt u) (hv : G.NodupAt v) :
-    Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
-  simp only [le_iff, singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff, dup_iff_eq,
-    singleEdge_isLink, and_imp]
-  refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨fun x y => ?_, ?_⟩⟩
-  · rintro (rfl | rfl)
-    · simp [hu.dup_iff, h.left_mem]
-    simp [hv.dup_iff, h.right_mem]
+  refine ⟨fun h => ⟨fun hD => ?_, h.isLink_of_isLink isLink_singleEdge⟩, fun ⟨hD, hl⟩ => ⟨?_, ?_⟩⟩
+  · rw [h.dup_iff (by simp) (by simp)] at hD
+    exact eq_of_dup hD
+  · rw [← vertexSet_def, Partition.induce_eq_iff_rel]
+    ext x y
+    simp only [dup_eq_discrete, singleEdge_vertexSet, Partition.supp_discrete, mem_insert_iff,
+      mem_singleton_iff, Partition.rel_discrete_iff, and_congr_right_iff]
+    rintro (rfl | rfl) <;> constructor
+    · rintro ⟨(rfl | rfl), hD'⟩ <;> tauto
+    · rintro rfl
+      simp [G.refl_of_isLink hl]
+    · rintro ⟨(rfl | rfl), hD'⟩
+      · exact hD hD'.symm |>.symm
+      rfl
+    rintro rfl
+    simp [G.refl_of_isLink hl.symm]
+  simp only [singleEdge_isLink, and_imp]
   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-  · exact h
-  exact h.symm
+  · exact hl
+  exact hl.symm
 
-@[simp]
-lemma singleEdge_le_iff [G.Nodup] : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v :=
-  singleEdge_le_iff_labelUniqueAt (LabelUnique.labelUniqueAt u) (LabelUnique.labelUniqueAt v)
+-- lemma singleEdge_le_iff_NodupAt (hu : G.NodupAt u) (hv : G.NodupAt v) :
+--     Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v := by
+--   simp only [le_iff, singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff, dup_iff_eq,
+--     singleEdge_isLink, and_imp]
+--   refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨fun x y => ?_, ?_⟩⟩
+--   · rintro (rfl | rfl)
+--     · simp [hu.dup_iff, h.left_mem]
+--     simp [hv.dup_iff, h.right_mem]
+--   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+--   · exact h
+--   exact h.symm
+
+-- @[simp]
+-- lemma singleEdge_le_iff [G.Nodup] : Graph.singleEdge u v e ≤ G ↔ G.IsLink e u v :=
+--   singleEdge_le_iff_NodupAt (Nodup.NodupAt u) (Nodup.NodupAt v)
 
 /-! ### Graphs with one vertex  -/
 
 /-- A graph with one vertex and loops at that vertex -/
-@[simps!]
+@[simps! dup edgeSet isLink]
 def bouquet (v : α) (F : Set β) : Graph α β := by
   apply mk_of_unique {v} (fun e x y => e ∈ F ∧ x = v ∧ y = v) F <;> try tauto
   aesop
 
-instance {v : α} : LabelUnique (Graph.bouquet v F) where
-  labelUniqueAt _ _ hdup := hdup.1
+@[simp]
+lemma bouquet_vertexSet : V(Graph.bouquet v F) = {v} := by
+  simp [Graph.bouquet]
+
+instance {v : α} : Nodup (Graph.bouquet v F) := by
+  unfold Graph.bouquet
+  infer_instance
 
 @[simp]
 lemma bouquet_inc_iff : (bouquet v F).Inc e x ↔ e ∈ F ∧ x = v := by
@@ -220,7 +271,7 @@ lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G
     simp only [dup_iff_eq, bouquet_vertexSet, mem_singleton_iff]
     refine ⟨fun h => by simp [hss h.left_mem h.right_mem, hss h.right_mem hv], ?_⟩
     rintro ⟨rfl, rfl⟩
-    exact G.Dup_refl_iff.mp hv
+    exact G.dup_refl_iff.mpr hv
   · simp [bouquet_inc_iff, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
   simp only [bouquet_inc_iff] at h
   obtain ⟨z,w, hzw⟩ := exists_isLink_of_mem_edgeSet h.1
@@ -238,20 +289,25 @@ lemma bouquet_empty (v : α) : bouquet v ∅ = Graph.noEdge {v} β := by
   ext <;> simp
 
 lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bouquet v Y where
-  isLabelSubgraph := ⟨by simp, by simp +contextual [subset_def ▸ hss]⟩
-  vertexSet_eq := rfl
+  dup_eq := by ext x y; simp
+  isLink_of_isLink e x y := by simp +contextual [mem_of_subset_of_mem hss]
 
 /-! ### Two vertices -/
 
 /-- A graph with exactly two vertices and no loops. -/
-@[simps!]
+@[simps! dup edgeSet isLink]
 def banana (a b : α) (F : Set β) : Graph α β := by
   apply mk_of_unique {a,b} (fun e x y => e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))) F
   <;> try tauto
   aesop
 
-instance {a b : α} : LabelUnique (Graph.banana a b F) where
-  labelUniqueAt _ _ hdup := hdup.1
+instance {a b : α} : Nodup (Graph.banana a b F) := by
+  unfold Graph.banana
+  infer_instance
+
+@[simp]
+lemma banana_vertexSet : V(Graph.banana a b F) = {a,b} := by
+  simp [Graph.banana]
 
 @[simp]
 lemma banana_inc_iff : (banana a b F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
@@ -278,13 +334,13 @@ lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
   ext <;> rfl
 
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
-  isLabelSubgraph := ⟨by simp, by simp +contextual [subset_def ▸ hXY]⟩
-  vertexSet_eq := rfl
+  dup_eq := by ext x y; simp
+  isLink_of_isLink e x y := by simp +contextual [mem_of_subset_of_mem hXY]
 
 /-! ### Complete graphs -/
 
 /-- The complete graph on `n` vertices. -/
-@[simps!]
+@[simps! dup edgeSet isLink]
 def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) := by
   refine mk_of_unique (Set.Iio n) (fun e x y => x < n ∧ y < n ∧ x ≠ y ∧ e = s(x, y))
     {s | (∀ i ∈ s, i < n) ∧ ¬ s.IsDiag}
@@ -298,8 +354,13 @@ def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) := by
   contrapose! hdiag
   rwa [← Quot.out_eq e, Sym2.isDiag_iff_proj_eq]
 
-instance {n : ℕ} : LabelUnique (Graph.CompleteGraph n) where
-  labelUniqueAt _ _ hdup := hdup.1
+instance {n : ℕ} : Nodup (Graph.CompleteGraph n) := by
+  unfold Graph.CompleteGraph
+  infer_instance
+
+@[simp]
+lemma CompleteGraph_vertexSet (n : ℕ) : V(CompleteGraph n) = Set.Iio n := by
+  simp [CompleteGraph]
 
 @[simp]
 lemma CompleteGraph_adj (n : ℕ) (x y : ℕ) (hx : x < n) (hy : y < n) :

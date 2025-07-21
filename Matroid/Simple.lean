@@ -161,7 +161,7 @@ lemma simple_iff_parallelClasses_eq_discrete' :
   refine ⟨fun h ↦ ⟨by infer_instance, Partition.eq_of_rel_iff_rel ?_⟩, fun ⟨_,h⟩ ↦ ?_⟩
   · simp only [Partition.rel_discrete_iff, mem_setOf_eq,
       show M.parallelClasses = M.Parallel from rfl]
-    exact fun x y ↦ ⟨fun h ↦ ⟨h.isNonloop_right, h.eq⟩, by rintro ⟨h, rfl⟩; exact h.parallel_self⟩
+    exact fun x y ↦ ⟨fun h ↦ ⟨h.isNonloop_left, h.eq⟩, by rintro ⟨h, rfl⟩; exact h.parallel_self⟩
   rw [simple_iff_isLoopless_eq_of_parallel_forall, and_iff_right (by assumption)]
   simp [Parallel, h]
 

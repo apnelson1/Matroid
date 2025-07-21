@@ -164,12 +164,17 @@ lemma dup_of_NodupAt (hdup : G.Dup x y) (h : G.NodupAt x) : x = y := h hdup
 class Nodup (G : Graph α β) : Prop where
   le_eq : ⇑G.Dup ≤ Eq
 
-lemma dup_eq [G.Nodup] (hdup : G.Dup x y) : x = y :=
+lemma eq_of_dup [G.Nodup] (hdup : G.Dup x y) : x = y :=
   dup_of_NodupAt hdup (Nodup.le_eq x)
 
 @[simp]
 lemma dup_iff_eq [G.Nodup] : G.Dup x y ↔ x = y ∧ x ∈ V(G) :=
   NodupAt.dup_iff (Nodup.le_eq x)
+
+@[simp]
+lemma dup_eq_discrete [G.Nodup] : G.Dup = Partition.discrete V(G) := by
+  ext x y
+  rw [dup_iff_eq, rel_discrete_iff, and_comm]
 
 lemma eq_or_eq_of_isLink_of_isLink [G.Nodup] (huv : G.IsLink e u v) (hxy : G.IsLink e x y) :
     u = x ∨ u = y := by
@@ -244,7 +249,7 @@ lemma IsLink.left_eq_of_right_ne [G.Nodup] (h : G.IsLink e x y) (h' : G.IsLink e
   obtain hx | hx := h.left_dup_or_dup h' <;> rw [dup_iff_eq] at hx <;> tauto
 
 lemma IsLink.right_unique [G.Nodup] (h : G.IsLink e x y) (h' : G.IsLink e x z) : y = z :=
-  dup_eq <| h.right_unique_dup h'
+  eq_of_dup <| h.right_unique_dup h'
 
 lemma IsLink.left_unique [G.Nodup] (h : G.IsLink e x z) (h' : G.IsLink e y z) : x = y :=
   h.symm.right_unique h'.symm
@@ -576,22 +581,22 @@ instance (V : Set α) (IsLink : β → α → α → Prop)
     left_mem_of_isLink) where
   le_eq a b := by simp
 
-@[simps]
-def mk_of_partition (P : Partition (Set α)) (IsLink : β → α → α → Prop) (edgeSet : Set β)
-    (isLink_symm : ∀ ⦃e : β⦄, e ∈ edgeSet → Symmetric (IsLink e))
-    (dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → P x v ∨ P x w)
-    (edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y)
-    (refl_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → P x x)
-    (isLink_of_dup : ∀ ⦃e x y z⦄, P x y → IsLink e x z → IsLink e y z) :
-    Graph α β where
-  Dup := P
-  edgeSet := edgeSet
-  IsLink := IsLink
-  isLink_symm := isLink_symm
-  dup_or_dup_of_isLink_of_isLink := dup_or_dup_of_isLink_of_isLink
-  edge_mem_iff_exists_isLink := edge_mem_iff_exists_isLink
-  refl_of_isLink := refl_of_isLink
-  isLink_of_dup := isLink_of_dup
+-- @[simps]
+-- def mk_of_partition (P : Partition (Set α)) (IsLink : β → α → α → Prop) (edgeSet : Set β)
+--     (isLink_symm : ∀ ⦃e : β⦄, e ∈ edgeSet → Symmetric (IsLink e))
+--     (dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → P x v ∨ P x w)
+--     (edge_mem_iff_exists_isLink : ∀ e, e ∈ edgeSet ↔ ∃ x y, IsLink e x y)
+--     (refl_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → P x x)
+--     (isLink_of_dup : ∀ ⦃e x y z⦄, P x y → IsLink e x z → IsLink e y z) :
+--     Graph α β where
+--   Dup := P
+--   edgeSet := edgeSet
+--   IsLink := IsLink
+--   isLink_symm := isLink_symm
+--   dup_or_dup_of_isLink_of_isLink := dup_or_dup_of_isLink_of_isLink
+--   edge_mem_iff_exists_isLink := edge_mem_iff_exists_isLink
+--   refl_of_isLink := refl_of_isLink
+--   isLink_of_dup := isLink_of_dup
 
 /-- `edgeSet` can be determined using `IsLink`, so the graph constructed from `G.vertexSet` and
 `G.IsLink` using any value for `edgeSet` is equal to `G` itself. -/
