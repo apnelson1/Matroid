@@ -792,15 +792,15 @@ lemma dedup_vertex_nodup (w : WList α β) : w.dedup.vertex.Nodup := by
     exact ⟨mt w.dedup_isSublist.vertex_sublist.mem huw, w.dedup_vertex_nodup⟩
 termination_by w.length
 
-lemma dedup_eq_self (hw : w.vertex.Nodup) : w.dedup = w := by
+lemma deeq_of_dup_self (hw : w.vertex.Nodup) : w.dedup = w := by
   induction w with
   | nil => simp
   | cons u e w ih =>
     simp only [cons_vertex, nodup_cons, mem_vertex] at hw
     rw [dedup_cons_of_notMem hw.1, ih hw.2]
 
-lemma dedup_eq_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
-  ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, dedup_eq_self⟩
+lemma deeq_of_dup_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
+  ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, deeq_of_dup_self⟩
 
 end dedup
 

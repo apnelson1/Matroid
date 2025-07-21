@@ -132,20 +132,17 @@ section PairwiseDisjoint
 
 variable {α : Type*} [Order.Frame α] {s t x y z : α} {parts : Set α}
 
-@[simps] def ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id)
-    (forall_nonempty : ⊥ ∉ parts) : Partition α where
-  parts := parts
-  indep := sSupIndep_iff_pairwiseDisjoint.mpr pairwiseDisjoint
-  bot_notMem := forall_nonempty
+@[simps] def ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) : Partition α where
+  parts := parts \ {⊥}
+  indep := sSupIndep_iff_pairwiseDisjoint.mpr (pairwiseDisjoint.subset diff_subset)
+  bot_notMem := by simp
 
-@[simp] lemma mem_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id)
-    (forall_nonempty : ⊥ ∉ parts) :
-  x ∈ ofPairwiseDisjoint pairwiseDisjoint forall_nonempty ↔ x ∈ parts := Iff.rfl
+@[simp] lemma mem_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) :
+    x ∈ ofPairwiseDisjoint pairwiseDisjoint ↔ x ∈ parts \ {⊥} := Iff.rfl
 
 @[simp]
-lemma supp_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id)
-    (forall_nonempty : ⊥ ∉ parts) :
-  (ofPairwiseDisjoint pairwiseDisjoint forall_nonempty).supp = sSup parts := rfl
+lemma supp_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) :
+    (ofPairwiseDisjoint pairwiseDisjoint).supp = sSup parts := by simp [supp]
 
 @[simps] def ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
   (forall_nonempty : ∀ s ∈ parts, s ≠ ⊥) :
@@ -162,6 +159,13 @@ lemma supp_ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
 @[simp] lemma mem_ofPairwiseDisjoint' (pairwiseDisjoint) (forall_nonempty) {x : α} :
   x ∈ ofPairwiseDisjoint' (parts := parts) pairwiseDisjoint forall_nonempty ↔
     x ∈ parts := Iff.rfl
+
+
+lemma mem_of_mem_subset {P Q : Partition α} (hPQ : P ⊆ Q) (hx : x ∈ Q)
+    (hsupp : ¬ Disjoint P.supp x) : x ∈ P := by
+  contrapose! hsupp
+  rw [supp, sSup_disjoint_iff]
+  exact fun _ hyP ↦ Q.disjoint (hPQ hyP) hx fun h ↦ hsupp (h ▸ hyP)
 
 end PairwiseDisjoint
 
@@ -199,33 +203,32 @@ def ofIndependent' {u : Set α} (hs : sSupIndep u) : Partition α :=
   indep := by simp
   bot_notMem := by simp
 
-@[simp] lemma empty_coe_eq (α : Type*) [CompleteLattice α] :
-    (Partition.empty α : Set α) = ∅ := rfl
+instance : Bot (Partition α) where
+  bot := Partition.empty α
 
-@[simp] lemma notMem_empty (α : Type*) [CompleteLattice α] {a : α} :
-    a ∉ Partition.empty α := by
-  rw [← SetLike.mem_coe, empty_coe_eq]
-  simp
+@[simp] lemma notMem_bot {a : α} : a ∉ (⊥ : Partition α) := notMem_empty α
 
-@[simp] lemma supp_empty (α : Type*) [CompleteLattice α] : (Partition.empty α).supp = ⊥ := by
-  simp [Partition.empty, supp]
+@[simp] lemma supp_bot : (⊥ : Partition α).supp = ⊥ := sSup_empty
 
-lemma eq_empty {P : Partition α} (hP : P.supp = ⊥) : P = Partition.empty α := by
+@[simp] lemma bot_coe_eq (α : Type*) [CompleteLattice α] :
+    ((⊥ : Partition α) : Set α) = ∅ := rfl
+
+lemma eq_bot {P : Partition α} (hP : P.supp = ⊥) : P = ⊥ := by
   ext x
   have hsup := P.sSup_eq
   simp only [sSup_eq_bot, SetLike.mem_coe, hP] at hsup
-  simp only [notMem_empty, iff_false]
+  simp only [notMem_bot, iff_false]
   exact fun hx ↦ P.ne_bot_of_mem hx <| hsup x hx
 
 @[simp]
-lemma supp_eq_bot_iff {P : Partition α} : P.supp = ⊥ ↔ P = Partition.empty α := by
-  refine ⟨eq_empty, ?_⟩
+lemma supp_eq_bot_iff {P : Partition α} : P.supp = ⊥ ↔ P = ⊥ := by
+  refine ⟨eq_bot, ?_⟩
   rintro rfl
-  exact supp_empty α
+  exact supp_bot
 
 instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition α) where
-  default := Partition.empty α
-  uniq P := eq_empty (by
+  default := ⊥
+  uniq P := eq_bot (by
     simp only [← P.sSup_eq, sSup_eq_bot, SetLike.mem_coe]
     exact fun a b ↦ Subsingleton.elim _ _)
 
@@ -244,10 +247,10 @@ lemma supp_indiscrete (s : α) (hs : s ≠ ⊥) : (Partition.indiscrete s hs).su
 
 noncomputable def indiscrete' (s : α) : Partition α :=
   let _ : Decidable (s = ⊥) := Classical.dec _
-  if hs : s = ⊥ then Partition.empty α else indiscrete s hs
+  if hs : s = ⊥ then ⊥ else indiscrete s hs
 
 @[simp]
-lemma indiscrete'_eq_empty : indiscrete' ⊥ = Partition.empty α := by
+lemma indiscrete'_eq_empty : indiscrete' ⊥ = (⊥ : Partition α) := by
   simp [indiscrete']
 
 @[simp]
@@ -258,7 +261,7 @@ lemma indiscrete'_eq_of_ne_bot {s : α} (hs : s ≠ ⊥) : indiscrete' s = indis
 lemma supp_indiscrete' {s : α} : (indiscrete' s).supp = s := by
   simp [indiscrete']
   split_ifs with hs
-  · rw [supp_empty, hs]
+  · rw [supp_bot, hs]
   · rw [supp_indiscrete s hs]
 
 @[simp]
@@ -328,12 +331,7 @@ lemma parts_top_subset : ((⊤ : Partition α) : Set α) ⊆ {⊤} := by
   simp
 
 instance : OrderBot (Partition α) where
-  bot := Partition.empty α
-  bot_le a s hs := by simp only [notMem_empty] at hs
-
-@[simp] lemma notMem_bot {a : α} : a ∉ (⊥ : Partition α) := notMem_empty α
-
-@[simp] lemma supp_bot : (⊥ : Partition α).supp = ⊥ := sSup_empty
+  bot_le a s hs := by simp only [notMem_bot] at hs
 
 lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
   sSup_le_sSup_of_forall_exists_le h
@@ -422,7 +420,7 @@ end Restrict
 
 section Set
 
-variable {s t u : Set α} {P : Partition (Set α)} {x : α}
+variable {s t u : Set α} {S T : Set (Set α)} {P Q : Partition (Set α)} {x : α}
 
 @[simp] protected lemma sUnion_eq (P : Partition (Set α)) : ⋃₀ P = P.supp :=
   P.sSup_eq
@@ -452,7 +450,7 @@ lemma exists_unique_of_mem_supp (hx : x ∈ P.supp) : ∃! t, t ∈ P ∧ x ∈ 
 lemma mem_supp_iff_unique : x ∈ P.supp ↔ ∃! t, t ∈ P ∧ x ∈ t :=
   ⟨exists_unique_of_mem_supp, fun ⟨_, ⟨htP, hxt⟩, _⟩ ↦ subset_of_mem htP hxt⟩
 
-lemma subset_sUnion_and_mem_iff_mem {S : Set (Set α)} (hSP : S ⊆ P.parts) :
+lemma subset_sUnion_and_mem_iff_mem (hSP : S ⊆ P.parts) :
     t ⊆ ⋃₀ S ∧ t ∈ P ↔ t ∈ S := by
   refine ⟨fun ⟨htsu, htP⟩ ↦ ?_, fun htS ↦ ⟨subset_sUnion_of_mem htS, hSP htS⟩⟩
   obtain ⟨x, hxt⟩ := nonempty_of_mem htP
@@ -461,7 +459,7 @@ lemma subset_sUnion_and_mem_iff_mem {S : Set (Set α)} (hSP : S ⊆ P.parts) :
   exact hsS
 
 @[simp]
-lemma subset_sUnion_iff_mem {S : Set (Set α)} (ht : t ∈ P) (hSP : S ⊆ P.parts) :
+lemma subset_sUnion_iff_mem (ht : t ∈ P) (hSP : S ⊆ P.parts) :
     t ⊆ ⋃₀ S ↔ t ∈ S := by
   rw [← subset_sUnion_and_mem_iff_mem hSP]
   simp [ht]
@@ -478,11 +476,19 @@ lemma induce_supp (P : Partition (Set α)) (S : Set α) : (induce P S).supp = S 
 
 @[simp]
 lemma mem_induce_iff (P : Partition (Set α)) (S T : Set α) :
-    T ∈ P.induce S ↔ T ≠ ∅ ∧ ∃ t ∈ P, S ∩ t = T := by
-  simp [induce, and_comm]
+    T ∈ P.induce S ↔ T.Nonempty ∧ ∃ t ∈ P, S ∩ t = T := by
+  simp [induce, and_comm, nonempty_iff_ne_empty]
 
-lemma inter_mem_induce {P : Partition (Set α)} {S T : Set α} (hne : S ∩ T ≠ ∅) (hT : T ∈ P) :
-    S ∩ T ∈ P.induce S := (P.mem_induce_iff S _).mpr ⟨hne, T, hT, rfl⟩
+@[simp]
+lemma induce_empty (P : Partition (Set α)) : P.induce ∅ = ⊥ := by
+  ext x
+  simp only [mem_induce_iff, empty_inter, exists_and_right, notMem_bot, iff_false, not_and,
+    forall_exists_index]
+  rintro hx y hyP rfl
+  simp at hx
+
+lemma inter_mem_induce (hne : (s ∩ t).Nonempty) (ht : t ∈ P) :
+    s ∩ t ∈ P.induce s := (P.mem_induce_iff s _).mpr ⟨hne, t, ht, rfl⟩
 
 @[simp]
 lemma induce_induce (P : Partition (Set α)) (S T : Set α) :
@@ -501,27 +507,67 @@ lemma induce_induce (P : Partition (Set α)) (S T : Set α) :
   simp [hSTa]
 
 @[simp]
-lemma induce_eq_self_iff {P : Partition (Set α)} {S : Set α} : P.induce S = P ↔ P.supp ⊆ S := by
+lemma induce_eq_self_iff : P.induce s = P ↔ P.supp ⊆ s := by
   refine ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ ?_⟩
   ext x
-  have : ∀ t ∈ P, S ∩ t = t := fun t htP ↦ inter_eq_right.mpr <| subset_trans (P.le_of_mem htP) h
-  simp
+  have : ∀ t ∈ P, s ∩ t = t := fun t htP ↦ inter_eq_right.mpr <| subset_trans (P.le_of_mem htP) h
+  simp only [mem_induce_iff, nonempty_iff_ne_empty, ne_eq]
   exact ⟨fun ⟨hne, t, htP, heq⟩ ↦ (this t htP).symm.trans heq ▸ htP,
     fun hx ↦ ⟨P.ne_bot_of_mem hx, x, hx, this x hx⟩⟩
 
-lemma induce_le {P : Partition (Set α)} {S : Set α} : P.induce S ≤ P := by
+lemma induce_le : P.induce s ≤ P := by
   intro T hT
   obtain ⟨hne, t, htP, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using hT); clear hT
   exact ⟨t, htP, inter_subset_right⟩
 
-lemma induce_mono {P : Partition (Set α)} {S T : Set α} (hST : S ⊆ T) :
-    P.induce S ≤ P.induce T := by
+lemma induce_le_induce_iff : P.induce s ≤ P.induce t ↔ s ∩ P.supp ⊆ t ∩ P.supp := by
+  refine ⟨fun h ↦ ?_, fun h T hT ↦ ?_⟩
+  · rw [← induce_supp, ← induce_supp]
+    exact supp_le_of_le h
+  obtain ⟨hne, T, hTP, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using hT); clear hT
+  have hsu : s ∩ T ⊆ t ∩ T := fun x ⟨hxs, hxT⟩ => ⟨(h ⟨hxs, subset_of_mem hTP hxT⟩).1, hxT⟩
+  use t ∩ T, ?_, hsu
+  simp [hne.mono hsu]
+  use T
+
+lemma induce_mono (hST : s ⊆ t) : P.induce s ≤ P.induce t := by
+  rw [induce_le_induce_iff]
+  exact inter_subset_inter_left _ hST
+
+lemma induce_eq_induce_iff : P.induce s = P.induce t ↔ s ∩ P.supp = t ∩ P.supp :=
+  ⟨fun h ↦ by rw [← induce_supp, ← induce_supp, h],
+    fun h ↦ (induce_le_induce_iff.mpr h.le).antisymm (induce_le_induce_iff.mpr h.ge)⟩
+
+lemma induce_eq_of_subset (hPQ : P ⊆ Q) : Q.induce P.supp = P := by
+  ext S
+  rw [mem_induce_iff, nonempty_iff_ne_empty]
+  refine ⟨?_, fun hS ↦ ⟨bot_eq_empty ▸ P.ne_bot_of_mem hS, S, hPQ hS,
+    inter_eq_right.mpr <| P.le_of_mem hS⟩⟩
+  rintro ⟨hne, t, htQ, rfl⟩
+  rw [ne_eq, ← disjoint_iff_inter_eq_empty] at hne
+  have htP := mem_of_mem_subset hPQ htQ hne
+  rwa [inter_eq_right.mpr (subset_of_mem htP)]
+
+lemma induce_mono_left {S : Set α} (hPQ : P ≤ Q) : P.induce S ≤ Q.induce S := by
   intro t ht
-  obtain ⟨hne, t', ht'P, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using ht); clear ht
-  have := inter_subset_inter_left t' hST
-  use T ∩ t', inter_mem_induce ?_ ht'P, this
-  contrapose! hne
-  exact subset_eq_empty this hne
+  obtain ⟨hne, t', ht'Q, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using ht); clear ht
+  obtain ⟨s, hsQ, ht's⟩ := hPQ t' ht'Q
+  have hsu := inter_subset_inter_right S ht's
+  use S ∩ s, inter_mem_induce (hne.mono hsu) hsQ, hsu
+
+lemma le_induce_of_supp_le (hPQ : P ≤ Q) (hP : P.supp ⊆ s) :
+    P ≤ Q.induce s := by
+  rw [← induce_eq_self_iff.mpr hP]
+  exact induce_mono_left hPQ
+
+lemma induce_subset_induce_of_subset (hPQ : P ⊆ Q) : P.induce s ⊆ Q.induce s := by
+  rintro t ⟨⟨t', ht'P, rfl⟩, hne⟩
+  exact ⟨⟨t', hPQ ht'P, rfl⟩, hne⟩
+
+lemma subset_induce_of_supp_le (hPQ : P ⊆ Q) (hP : P.supp ⊆ s) :
+    P ⊆ Q.induce s := by
+  rw [← induce_eq_self_iff.mpr hP]
+  exact induce_subset_induce_of_subset hPQ
 
 end Set
 
@@ -656,13 +702,6 @@ lemma rel_inj_iff {P Q : Partition (Set α)} : ⇑P = ⇑Q ↔ P = Q :=
 lemma rel_le_of_subset {P Q : Partition (Set α)} (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
   rel_le_of_le <| le_of_subset h
 
--- lemma subset_of_rel {P Q : Partition (Set α)} (h : ∀ x y, x ∈ P.supp → (P x y ↔ Q x y)) :
---     P ⊆ Q := by
---   rintro S hS
-
---   obtain ⟨y, hy, hxy⟩ := h x hx
---   exact ⟨y, hy, hxy.le⟩
-
 /-- A transitive, symmetric Binary relation `r` induces a partition of the set of elements on
   which it is reflexive. -/
 @[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [IsSymm α r] : Partition (Set α) where
@@ -696,6 +735,10 @@ lemma restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S ⊆ P.par
   obtain rfl := eq_of_mem_of_mem htP (hS hsS) hxt hxs
   exact hsS
 
+@[simp]
+lemma restrict_apply (P : Partition (Set α)) {S : Set (Set α)} (hS : S ⊆ P.parts) :
+    P.restrict S hS x y ↔ x ∈ ⋃₀ S ∧ P x y := by rw [P.restrict_rel hS]
+
 lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S ⊆ P.parts)
     (hx : x ∈ ⋃₀ S) (hxy : P x y) : P.restrict S hS x y := by
   rw [restrict_rel]
@@ -706,16 +749,33 @@ lemma rel_of_subset_mem {P Q : Partition (Set α)} (hPQ : P ⊆ Q) (hx : x ∈ P
   obtain ⟨S, hS, rfl⟩ := subset_iff_restrict.mp hPQ
   exact Q.rel_of_restrict_rel hPQ hx hxy
 
+lemma subset_iff_rel {P Q : Partition (Set α)} : P ⊆ Q ↔ ∀ x y, x ∈ P.supp → (P x y ↔ Q x y) := by
+  refine ⟨fun h x y hx => ⟨rel_le_of_subset h x y, rel_of_subset_mem h hx⟩, fun h s hs => ?_⟩
+  rw [← fibers_rel_eq, mem_fibers_iff] at hs ⊢
+  obtain ⟨x, hx, rfl⟩ := hs
+  have hxsupp := codomain_rel ▸ hx
+  have ⟨y, hyx⟩ := hx
+  use x, ⟨y, symm <| (h x y hxsupp).mp hyx.symm⟩
+  ext z
+  simp [(rel_comm.trans <| h x z hxsupp).trans rel_comm]
+
 lemma induce_rel (P : Partition (Set α)) {S : Set α} :
     ⇑(P.induce S) = fun x y ↦ x ∈ S ∧ y ∈ S ∧ P x y := by
   ext x y
-  simp only [rel_iff_exists, mem_induce_iff, ne_eq]
+  simp only [rel_iff_exists, mem_induce_iff]
   refine ⟨fun ⟨t, ⟨htne, t', ht'P, heq⟩, hxt, hyt⟩ ↦ ?_,
     fun ⟨hxS, hyS, t, htP, hxt, hyt⟩ ↦ ⟨S ∩ t, ⟨?_, t, htP, rfl⟩, ⟨hxS, hxt⟩, ⟨hyS, hyt⟩⟩⟩
   · subst t
     exact ⟨hxt.1, hyt.1, t', ht'P, hxt.2, hyt.2⟩
-  rw [← disjoint_iff_inter_eq_empty, not_disjoint_iff]
-  use x
+  use x, hxS
+
+@[simp]
+lemma induce_apply (P : Partition (Set α)) {S : Set α} :
+    P.induce S x y ↔ x ∈ S ∧ y ∈ S ∧ P x y := by rw [induce_rel]
+
+lemma induce_eq_iff_rel (P Q : Partition (Set α)) :
+    P.induce Q.supp = Q ↔ (fun x y ↦ x ∈ Q.supp ∧ y ∈ Q.supp ∧ P x y) = ⇑Q := by
+  rw [← rel_inj_iff, induce_rel]
 
 instance {S : Set (Partition (Set α))} : IsSymm α (sSup <| (⇑) '' S) where
   symm := sSup_symmtric (fun _ ⟨_, _, heq⟩ => heq ▸ inferInstance)
@@ -770,6 +830,26 @@ instance : CompleteLattice (Partition (Set α)) where
   le_top r := by simp
   bot_le r := by simp
 
+@[simp]
+lemma sup_rel (P Q : Partition (Set α)) : ⇑(P ⊔ Q) = TransClosure (⇑P ⊔ ⇑Q) := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq]
+
+@[simp]
+lemma inf_rel (P Q : Partition (Set α)) : ⇑(P ⊓ Q) = ⇑P ⊓ ⇑Q := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq]
+
+@[simp]
+lemma sSup_rel (S : Set (Partition (Set α))) : ⇑(sSup S) = TransClosure (sSup <| (⇑) '' S) := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq]
+
+@[simp]
+lemma sInf_rel (S : Set (Partition (Set α))) : ⇑(sInf S) = sInf ((⇑) '' S) := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq]
+
 end Rel
 
 section Discrete
@@ -803,14 +883,20 @@ protected def discrete (S : Set α) : Partition (Set α) where
   rw [← SetLike.mem_coe, ← mem_parts]
   simp [Partition.discrete]
 
-@[simp]
-lemma rel_discrete_eq : Partition.discrete S = fun a b => b ∈ S ∧ a = b := by
+lemma rel_discrete_eq' : Partition.discrete S = fun a b => b ∈ S ∧ a = b := by
   ext a b
   simp [Partition.discrete, rel_iff_exists, ← SetLike.mem_coe, ← mem_parts]
 
 @[simp]
-lemma rel_discrete_iff : Partition.discrete S a b ↔ b ∈ S ∧ a = b := by
-  simp [Partition.discrete, rel_iff_exists, ← SetLike.mem_coe, ← mem_parts]
+lemma rel_discrete_eq : Partition.discrete S = fun a b => a ∈ S ∧ a = b := by
+  ext a b
+  rw [rel_discrete_eq', and_congr_left_iff]
+  rintro rfl
+  rfl
+
+@[simp]
+lemma rel_discrete_iff : Partition.discrete S a b ↔ a ∈ S ∧ a = b := by
+  rw [rel_discrete_eq]
 
 lemma discrete_le_of_supp_eq (P : Partition (Set α)) : Partition.discrete P.supp ≤ P := by
   refine le_of_rel_le fun a b => ?_
@@ -825,7 +911,7 @@ lemma discrete_iff_rel_le_eq (P : Partition (Set α)) :
     tauto
   ext x y
   rw [rel_discrete_iff]
-  refine ⟨?_, fun hxy ↦ ⟨codomain_rel ▸ ⟨x, hxy⟩, h x y hxy⟩⟩
+  refine ⟨?_, fun hxy ↦ ⟨codomain_rel ▸ ⟨y, symm hxy⟩, h x y hxy⟩⟩
   rintro ⟨h, rfl⟩
   exact rel_self_of_mem_supp h
 
@@ -833,6 +919,18 @@ lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.disc
   refine P.discrete_iff_rel_le_eq.mpr <| (rel_le_iff_le.mpr hS).trans ?_
   rw [← discrete_iff_rel_le_eq]
   simp
+
+@[simp]
+lemma discrete_empty : Partition.discrete (∅ : Set α) = ⊥ := by
+  ext x
+  simp
+
+instance : HasCompl (Partition (Set α)) where
+  compl P := ofPairwiseDisjoint (parts := insert P.suppᶜ (singleton '' P.supp)) (by
+    rw [pairwiseDisjoint_insert]
+    use (Partition.discrete P.supp).pairwiseDisjoint
+    rintro s ⟨a, ha, rfl⟩ hne
+    simpa)
 
 end Discrete
 
@@ -948,7 +1046,7 @@ lemma setOf_rel_mem (P : Partition (Set α)) (hx : x ∈ P.supp) : {y | P x y} �
     P = P' := by
   rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']; congr; ext; exact h _ _
 
-lemma discrete.rel_iff_eq_of_mem (ha : b ∈ P.supp) :
+lemma discrete.rel_iff_eq_of_mem (ha : a ∈ P.supp) :
     (Partition.discrete P.supp) a b ↔ a = b := by
   rw [rel_discrete_iff, and_iff_right ha]
 
