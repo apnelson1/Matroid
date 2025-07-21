@@ -2,7 +2,7 @@ import Mathlib.Data.Matroid.Closure
 
 namespace Matroid
 
-variable {α : Type*} {M : Set α}
+variable {α : Type*} {M : Matroid α} {X : Set α} {e : α}
 
 lemma closure_eq_ground (M : Matroid α) {X : Set α} (hX : M.E ⊆ X) : M.closure X = M.E := by
   rw [← closure_inter_ground, Set.inter_eq_self_of_subset_right hX, closure_ground]

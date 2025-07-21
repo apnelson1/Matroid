@@ -22,6 +22,7 @@ lemma injOn_prod_fst_mk_left_iff_pairwise_disjoint {α ι : Type*} (f : ι → S
   obtain rfl | hne := eq_or_ne i j; simp
   exact ((h hne).notMem_of_mem_left hx hy).elim
 
+
 namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {B B' I I' J J' K : Set α} {ι : Type*} {I X Y : ι → Set α}
@@ -364,28 +365,105 @@ lemma multiConn_contract_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i
     (M ／ C).multiConn X ≤ M.multiConn X := by
   grw [← multiConn_project_eq_multiconn_contract, multiConn_project_le _ hC]
 
+lemma multiConn_project_aux_indep (M : Matroid α) {C : Set α} (hC : M.Indep C) (X : ι → Set α) :
+    (M.project C).multiConn X + ∑' i, (M.project (X i)).nullity C
+    = M.multiConn X + (M.project (⋃ i, X i)).nullity C := by
+  -- We may assume that `ι` is nonempty and `C` is independent.
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · simp [hC.nullity_eq]
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
+
+  -- Choose `C'` to be an arbitrary injective preimage of `C`,
+  -- and prove that `C'` is a basis of the preimage of `C` in the comap.
+  set C' : Set (α × ι) := (· , Classical.arbitrary ι) '' C with hC'_def
+  have hC'bas : (M.comap Prod.fst).IsBasis' C' (Prod.fst ⁻¹' C) := by
+    suffices M.IsBasis' C (Prod.fst '' (Prod.fst ⁻¹' C)) by
+      simpa [hC'_def, image_image, InjOn, preimage_preimage]
+    rw [image_preimage_eq _ Prod.fst_surjective]
+    exact hC.isBasis_self.isBasis'
+  -- Each `J i` spans `X i` in `M.project C`, so is a basis.
+  have hJX (i) : (M.project C).IsBasis' (J i) (X i) := by
+    rw [isBasis'_iff_isBasis_closure, and_iff_left ((hJ i).subset.trans (hI i).subset)]
+    refine (hJ i).indep.isBasis_of_subset_of_subset_closure ?_ ?_
+    · grw [(hJ i).subset, ← closure_subset_closure _ (hI i).subset]
+      exact subset_closure _ _ (by simpa using (hI i).indep.subset_ground)
+    rw [(hJ i).closure_eq_closure, project_closure, project_closure,
+      ← closure_union_congr_left (hI i).closure_eq_closure]
+  -- the sum of cardinality term is equal to the cardinality of a union.
+  have hsrw (i) : (M.project (X i)).nullity C = (I i \ J i).encard := by
+    rw [(hI i).project_eq_project, ← add_zero (nullity ..), ← (hI i).indep.nullity_eq,
+      nullity_project_add_nullity_comm, hC.nullity_eq, add_zero, (hJ i).nullity_eq]
+  have hcard : ∑' i, (M.project (X i)).nullity C
+      = ((⋃ i, ((·, i) '' I i)) \ (⋃ i, ((·, i) '' J i))).encard := by
+    rw [tsum_congr hsrw, ← iUnion_diff_iUnion
+      (fun i ↦ (image_mono (hJ i).subset)) disjoint_map_prod_right,
+      ← ENat.tsum_encard_eq_encard_iUnion, tsum_congr]
+    · intro i
+      rw [← image_diff (Prod.mk_left_injective i), (Prod.mk_left_injective i).encard_image ]
+    exact (disjoint_map_prod_right (f := I)).mono fun _ _ ↦ Disjoint.mono diff_subset diff_subset
+  -- the union of the lifted `I`s is spanned by the union of the lifted `J`s in `M.project C`.
+  have hcl : ⋃ i, (·, i) '' I i ⊆ ((M.project C).comap Prod.fst).closure (⋃ i, (·, i) '' J i) := by
+    suffices ∀ (i : ι), I i ⊆ M.closure ((⋃ i, J i) ∪ C) by
+      simpa [preimage_preimage, image_iUnion, image_image]
+    intro i
+    rw [← project_closure, closure_iUnion_congr _ _ fun i ↦ (hJ i).closure_eq_closure]
+    exact subset_closure_of_subset' _ (subset_iUnion ..) (hI i).indep.subset_ground
+  -- We are now done by a calculation.
+  rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity hJX, hcard,
+    ← nullity_eq_nullity_add_encard_diff (iUnion_mono fun i ↦ image_mono (hJ i).subset) hcl,
+    ← add_zero (nullity ..), ← hC'bas.indep.nullity_eq, project_comap _ _ _ (by simp),
+    hC'bas.project_eq_project, nullity_project_add_nullity_comm, ← project_comap_image]
+  simp only [image_iUnion, image_image, image_id']
+  rw [← project_closure_eq, closure_iUnion_congr _ _ (fun i ↦ (hI i).closure_eq_closure),
+    project_closure_eq, add_comm (nullity ..),  nullity_comap (X := C')]
+  · simp only [hC'_def, image_image, image_id']
+  simp [hC'_def, InjOn]
+
+
+/-- An auxiliary lemma used to numerically relate the `multiConn` in a matroid its projection,
+in terms of chosen bases.  -/
+lemma multiConn_project_aux (M : Matroid α) {C : Set α} (hI : ∀ i, M.IsBasis' (I i) (X i)) :
+    (M.project C).multiConn X + (M.project (⋃ i, X i)).eRk C + ∑' i, (M.project C).nullity (I i)
+    = M.multiConn X + M.eRk C := by
+  wlog hC : M.Indep C generalizing C with aux
+  · obtain ⟨K, hK⟩ := M.exists_isBasis' C
+    simp_rw [hK.project_eq_project, ← hK.eRk_eq_eRk]
+    convert aux hK.indep using 3
+    rw [← eRk_closure_eq, project_closure, ← closure_union_congr_left hK.closure_eq_closure,
+      ← project_closure, eRk_closure_eq]
+  have hrw := M.multiConn_project_aux_indep hC X
+  apply_fun (· + (M.project (⋃ i, X i)).eRk C) at hrw
+  rw [add_right_comm, add_right_comm (a := M.multiConn X), add_assoc (a := M.multiConn X),
+    eRk_add_nullity_eq_encard, ← hC.eRk_eq_encard] at hrw
+  convert hrw using 4 with i
+  rw [hC.nullity_project, (hI i).project_eq_project, (hI i).indep.nullity_project,
+    union_comm, inter_comm]
+
+
 lemma multiConn_project_le_multiConn_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
     (M.project C).multiConn X ≤ M.multiConn X + M.eRk C := by
-  wlog hC : M.Indep C generalizing C with aux
-  · obtain ⟨I, hI⟩ := M.exists_isBasis' C
-    grw [hI.project_eq_project, ← hI.eRk_eq_eRk, aux _ hI.indep]
-  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (X i)
-  choose I hI using fun i ↦ (hJ i).indep.of_project.subset_isBasis'_of_subset (hJ i).subset
-  obtain ⟨hI, hJI⟩ := forall_and.1 hI
-  obtain hι | hι := isEmpty_or_nonempty ι; simp
-  obtain ⟨i₀, hCrw⟩ : ∃ i₀, C = Prod.fst '' ((·, i₀) '' C) :=
-    ⟨Classical.arbitrary ι, by simp [Set.ext_iff]⟩
-  grw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity hJ, hCrw, project_comap_image,
-    Indep.nullity_project_of_disjoint, union_comm, nullity_union_le_nullity_add_encard,
-    Indep.eRk_eq_encard]
-  · grw [image_image, Injective.encard_image (by simp [Injective]), image_id',
-      nullity_le_of_subset _ (iUnion_mono fun i ↦ image_subset _ (hJI i))]
-  · simpa [image_image]
-  · simpa [comap_indep_iff, image_image, InjOn]
-  simp only [disjoint_left, mem_image, mem_iUnion, not_exists, not_and, ne_eq,
-    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, Prod.mk.injEq]
-  rintro _ heC i e heJ rfl rfl
-  exact (hC.project_indep_iff.1 (hJ i).indep).1.notMem_of_mem_left heJ heC
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  -- choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
+  rw [← M.multiConn_project_aux hI, add_assoc]
+  exact le_self_add
+
+lemma multiConn_project_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α} {C : Set α}
+    (hXfin : M.multiConn X ≠ ⊤) (hXE : ∀ i, X i ⊆ M.E) (hCfin : M.eRk C ≠ ⊤) (hCE : C ⊆ M.E):
+    (M.project C).multiConn X = M.multiConn X + M.eRk C ↔
+      C ⊆ M.closure (⋃ i, X i) ∧ ∀ i, M.Skew (X i) C := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rw [← M.multiConn_project_aux hI, add_assoc, eq_comm]
+  simp only [ENat.add_eq_left_iff, add_eq_zero, ENat.tsum_eq_zero, nullity_eq_zero]
+  rw [or_iff_right, eRk_eq_zero_iff (by simpa using hCE), project_loops, and_congr_right_iff]
+  · have hrw (i) : M.Skew (X i) C ↔ (M.project C).Indep (I i) := by
+      rw [project_indep_eq, ← (hI i).indep.skew_iff_contract_indep hCE,
+        skew_iff_closure_skew_left (hXE i), skew_iff_closure_skew_left (hI i).indep.subset_ground,
+        (hI i).closure_eq_closure]
+    simp [hrw]
+  grw [← Ne, ← lt_top_iff_ne_top, multiConn_project_le_multiConn_add, lt_top_iff_ne_top,
+    Ne, ENat.add_eq_top, or_iff_right hXfin]
+  assumption
 
 lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
     M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by

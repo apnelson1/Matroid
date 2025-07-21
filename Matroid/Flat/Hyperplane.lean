@@ -197,16 +197,32 @@ lemma mem_closure_iff_forall_isHyperplane (hX : X ⊆ M.E := by aesop_mat)
   exact ⟨fun h H hH hXH ↦ h _ hH (inter_subset_left.trans hXH),
     fun h H hH hXH ↦ h H hH (by rwa [inter_eq_self_of_subset_left hX] at hXH )⟩
 
-lemma mem_dual_closure_iff_forall_isCircuit (hX : X ⊆ M.E := by aesop_mat)
-  (he : e ∈ M.E := by aesop_mat) :
+lemma mem_dual_closure_iff_forall_isCircuit (he : e ∈ M.E := by aesop_mat) :
     e ∈ M✶.closure X ↔ ∀ C, M.IsCircuit C → e ∈ C → (X ∩ C).Nonempty := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [← closure_inter_ground, dual_ground, aux inter_subset_right]
+    refine ⟨fun h C hC heC ↦ (h C hC heC).mono (by tauto_set), fun h C hC heC ↦ ?_⟩
+    rw [inter_assoc, inter_eq_self_of_subset_right hC.subset_ground]
+    exact h C hC heC
   rw [← dual_dual M]
-  simp_rw [← isCocircuit_def, dual_dual M, mem_closure_iff_forall_isHyperplane (M := M✶) hX he]
+  simp_rw [← isCocircuit_def, dual_dual M, mem_closure_iff_forall_isHyperplane (M := M✶) hXE he]
   refine ⟨fun h C hC heC ↦ by_contra fun hne ↦ ?_, fun h H hH hXE ↦ by_contra fun he' ↦ ?_⟩
   · rw [nonempty_iff_ne_empty, not_not, ← disjoint_iff_inter_eq_empty] at hne
-    exact (h _ hC.compl_isHyperplane (subset_diff.mpr ⟨hX, hne⟩)).2 heC
+    exact (h _ hC.compl_isHyperplane (subset_diff.mpr ⟨hXE, hne⟩)).2 heC
   obtain ⟨f, hf⟩ := h _ hH.compl_isCocircuit ⟨he, he'⟩
   exact hf.2.2 (hXE hf.1)
+
+lemma mem_dual_closure_iff_notMem_closure_compl (heX : e ∉ X) (heE : e ∈ M.E := by aesop_mat) :
+    e ∈ M✶.closure X ↔ e ∉ M.closure ((M.E \ X) \ {e}) := by
+  rw [mem_dual_closure_iff_forall_isCircuit]
+  refine ⟨fun h hecl ↦ ?_, fun h C hC heC ↦ by_contra fun he ↦ ?_⟩
+  · obtain ⟨C, hCX, hC, heC⟩ := exists_isCircuit_of_mem_closure hecl (by simp)
+    rw [insert_diff_singleton, ← insert_diff_of_notMem _ heX, subset_diff] at hCX
+    exact (h C hC heC).ne_empty hCX.2.symm.inter_eq
+  rw [not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty] at he
+  refine h <| mem_of_mem_of_subset (hC.mem_closure_diff_singleton_of_mem heC) ?_
+  exact M.closure_subset_closure <| diff_subset_diff_left <| subset_diff.2
+    ⟨hC.subset_ground, he.symm⟩
 
 lemma IsFlat.subset_isHyperplane_of_ne_ground (hF : M.IsFlat F) (h : F ≠ M.E) :
     ∃ H, M.IsHyperplane H ∧ F ⊆ H := by
