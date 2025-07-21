@@ -101,6 +101,26 @@ lemma IsSkewFamily.restrict {Xs : η → Set α} {R : Set α} (hXs : M.IsSkewFam
   exact ⟨hXs.isModularFamily.restrict h, fun i j hij ↦
     subset_trans (subset_inter (hXs.2 hij) (inter_subset_left.trans (h i))) subset_union_left⟩
 
+lemma isSkewFamily_restrict_iff' {Xs : η → Set α} {R : Set α} :
+    (M ↾ R).IsSkewFamily Xs ↔ M.IsSkewFamily (fun i ↦ Xs i ∩ M.E) ∧ ∀ i, Xs i ⊆ R := by
+  refine ⟨fun ⟨hmod, hdj⟩ ↦ ⟨⟨hmod.ofRestrict', fun i j hne ↦ ?_⟩, hmod.subset_ground_of_mem⟩,
+    fun ⟨⟨⟨B, hB, hBmod⟩, hss⟩, hXR⟩ ↦ ⟨⟨B ∩ R, ⟨?_, fun i ↦ ?_⟩⟩, fun i j hij ↦ ?_⟩⟩
+  · grw [← inter_inter_distrib_right, hdj hne, restrict_loops_eq', union_inter_distrib_right,
+      diff_inter_self, union_empty, inter_subset_left, inter_subset_left]
+  · simp [hB.inter_right]
+  · simp only [isBasis_restrict_iff', hXR, and_true]
+    rw [inter_comm B, ← inter_assoc, inter_eq_self_of_subset_left (hXR i),
+      ← inter_eq_self_of_subset_right hB.subset_ground, ← inter_assoc]
+    exact hBmod i
+  grw [restrict_loops_eq', diff_eq, inter_comm R, ← union_inter_distrib_right, subset_inter_iff,
+    and_iff_left (inter_subset_left.trans (hXR i)), union_comm, ← diff_subset_iff, diff_compl,
+    inter_inter_distrib_right]
+  exact hss hij
+
+lemma isSkewFamily_restrict_iff {Xs : η → Set α} {R : Set α} (hXs : ∀ i, Xs i ⊆ M.E) :
+    (M ↾ R).IsSkewFamily Xs ↔ M.IsSkewFamily Xs ∧ ∀ i, Xs i ⊆ R := by
+  simp_rw [isSkewFamily_restrict_iff', inter_eq_self_of_subset_left (hXs _)]
+
 lemma Indep.isSkewFamily_iff_pairwise_disjoint {Is : η → Set α} (hI : M.Indep (⋃ i, Is i)) :
     M.IsSkewFamily Is ↔ Pairwise (Disjoint on Is) := by
   refine ⟨fun h ↦ h.pairwise_disjoint_of_indep_subsets
@@ -214,6 +234,21 @@ lemma IsSkewFamily.mono {ι : Sort u} {Xs Ys : ι → Set α} (h : M.IsSkewFamil
   · exact h.iUnion_indep_subset_indep (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
   exact h.pairwise_disjoint_of_indep_subsets
     (fun i ↦ (hIs i).subset.trans (hYX i)) (fun i ↦ (hIs i).indep)
+
+lemma isSkewFamily_delete_iff {Xs : η → Set α} {D : Set α} :
+    (M ＼ D).IsSkewFamily Xs ↔ M.IsSkewFamily (fun i ↦ Xs i \ D) ∧ ∀ i, Disjoint (Xs i) D := by
+  simp only [← restrict_compl, isSkewFamily_restrict_iff', subset_diff,
+    forall_and, ← and_assoc, and_congr_left_iff]
+  intro hdj
+  simp_rw [(hdj _).sdiff_eq_left]
+  refine ⟨fun ⟨h, h'⟩ ↦ ?_, fun h ↦ ⟨h.mono fun _ ↦ inter_subset_left, h.subset_ground_of_mem⟩⟩
+  simp_rw [inter_eq_self_of_subset_left (h' _)] at h
+  exact h
+
+lemma isSkewFamily_delete_iff_of_disjoint {Xs : η → Set α} {D : Set α}
+    (hdj : ∀ i, Disjoint (Xs i) D) :
+    (M ＼  D).IsSkewFamily Xs ↔ M.IsSkewFamily Xs := by
+  simp_rw [isSkewFamily_delete_iff, and_iff_left hdj, (hdj _).sdiff_eq_left]
 
 lemma isSkewFamily_iff_cls_isSkewFamily (hX : ∀ i, Xs i ⊆ M.E) :
     M.IsSkewFamily Xs ↔ M.IsSkewFamily (fun i ↦ M.closure (Xs i)) :=

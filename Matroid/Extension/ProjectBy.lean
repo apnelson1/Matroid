@@ -6,11 +6,7 @@ open Set Function Set.Notation Option
 
 variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α} {U : M.ModularCut}
 
-namespace Matroid
-
-
-
-section projectBy
+namespace Matroid.ModularCut
 
 private lemma projectBy_aux (U : M.ModularCut) :
     ((((M.map _ (some_injective _).injOn).extendBy none
@@ -34,7 +30,8 @@ private lemma projectBy_aux (U : M.ModularCut) :
 /-- Extend `M` using the modular cut `U`, and contract the new element.
 Defining this in terms of `extendBy` would be difficult if `M.E = univ`,
 so we define it directly instead.   -/
-def projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α := Matroid.ofExistsMatroid
+def _root_.Matroid.projectBy (M : Matroid α) (U : M.ModularCut) : Matroid α :=
+    Matroid.ofExistsMatroid
   (E := M.E)
   (Indep := fun I ↦ M.Indep I ∧ (U ≠ ⊤ → M.closure I ∉ U))
   (hM := ⟨_, by simp [(Option.some_injective α).preimage_image], fun _ ↦ projectBy_aux U⟩)
@@ -75,7 +72,7 @@ lemma projectBy_bot : M.projectBy ⊥ = M := by
 --     rw [ModularCut.eq_top_iff] at hne
 --     -- have := projectBy_indep_iff_of_ne_top hne (B := B)
 
-@[simp] lemma ModularCut.extendBy_contractElem (U : M.ModularCut) (he : e ∉ M.E) :
+@[simp] lemma extendBy_contractElem (U : M.ModularCut) (he : e ∉ M.E) :
     (M.extendBy e U) ／ {e} = M.projectBy U := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   have ⟨hIE, heI⟩ : I ⊆ M.E ∧ e ∉ I := by simpa [subset_diff] using hI
@@ -94,7 +91,7 @@ lemma projectBy_bot : M.projectBy ⊥ = M := by
     ModularCut.extIndep_iff_of_mem (mem_insert _ _), projectBy_indep_iff]
   simp [hU, heI]
 
-lemma ModularCut.closure_subset_closure_projectBy (U : M.ModularCut) (X : Set α) :
+lemma closure_subset_closure_projectBy (U : M.ModularCut) (X : Set α) :
     M.closure X ⊆ (M.projectBy U).closure X := by
   rw [projectBy_eq_map_comap, comap_closure_eq, contract_closure_eq, ← image_subset_iff,
     subset_diff, and_iff_left (by simp)]
@@ -137,28 +134,22 @@ lemma mem_closure_projectBy_iff (U : M.ModularCut) :
   · simp [show f ∈ N.closure (insert e X) from N.closure_subset_closure (subset_insert ..) hfX, hfX]
   simpa [hfX, heX'] using N.closure_exchange_iff (X := X) (e := f) (f := e)
 
-lemma ModularCut.projectBy_map {β : Type*} (U : M.ModularCut) {f : α → β} (hf : InjOn f M.E) :
+lemma projectBy_map {β : Type*} (U : M.ModularCut) {f : α → β} (hf : InjOn f M.E) :
     ((M.map f hf).projectBy (U.map f hf)) = (M.projectBy U).map f hf := by
   refine ext_indep rfl fun I hI ↦ ?_
   obtain ⟨I, hIE, rfl⟩ := subset_image_iff.1 hI
-  simp only [projectBy_indep_iff, map_indep_iff, ne_eq, eq_top_iff, map_loops, mem_map_iff,
-    not_exists, not_and, map_closure_eq, not_imp_not]
-  refine ⟨fun ⟨⟨J, hJ, hJI⟩, h⟩ ↦ ?_, fun ⟨J, ⟨hJ, hJcl⟩, hJI⟩ ↦ ?_⟩
-  · obtain rfl : I = J := (hf.image_eq_image_iff hIE hJ.subset_ground).1 hJI
-    rw [← closure_inter_ground, hf.preimage_image_inter hIE, ← not_imp_not] at h
-    simp only [not_forall, not_not, forall_exists_index, and_imp, exists_prop] at h
-    refine ⟨I, ⟨hJ, fun hcl ↦ ?_⟩, rfl⟩
-    obtain ⟨L, hLU, hL⟩ := h _ hcl rfl
-    rw [hf.image_eq_image_iff (U.subset_ground hLU) (M.loops_subset_ground)] at hL
-    rwa [← hL]
-  obtain rfl : I = J := (hf.image_eq_image_iff hIE hJ.subset_ground).1 hJI
-  refine ⟨⟨I, hJ, rfl⟩, fun h F hFU hF_eq ↦ h M.loops (hJcl ?_) rfl⟩
-  rw [hf.image_eq_image_iff (U.subset_ground hFU) (M.closure_subset_ground _),
-    ← closure_inter_ground, hf.preimage_image_inter hIE] at hF_eq
-  rwa [← hF_eq]
+  obtain rfl | hne := eq_or_ne U ⊤
+  · simp
+  rw [projectBy_indep_iff_of_ne_top (by simpa), map_image_indep_iff hIE, U.mem_map_iff,
+    map_image_indep_iff (by simpa), map_closure_eq, projectBy_indep_iff_of_ne_top hne,
+    and_congr_right_iff, not_iff_not]
+  simp_rw [← M.closure_inter_ground (f ⁻¹' (f '' _)), hf.preimage_image_inter hIE]
+  refine fun hI ↦ ⟨fun ⟨F₀, hF₀U, h_eq⟩ ↦ ?_, fun h ↦ ⟨_, h, rfl⟩⟩
+  rw [hf.image_eq_image_iff (U.subset_ground hF₀U) (M.closure_subset_ground ..)] at h_eq
+  rwa [← h_eq]
 
 /-- Projecting out by a flat in a modular cut cancels the projection by the modular cut. -/
-lemma ModularCut.projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :
+lemma projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F ∈ U) :
     (M.projectBy U).project F = M.project F := by
   refine ext_closure fun X ↦ Set.ext fun e ↦ ?_
   have hcl : M.closure (X ∪ F) ∈ U := by
@@ -166,8 +157,8 @@ lemma ModularCut.projectBy_project_eq_project_of_mem (U : M.ModularCut) (hF : F 
     exact (M.subset_closure_of_subset' subset_union_right (U.isFlat_of_mem hF).subset_ground)
   simp [mem_closure_projectBy_iff, hcl]
 
-lemma ModularCut.projectBy_project_eq_project_of_closure_mem (U : M.ModularCut)
-    (hX : M.closure X ∈ U) : (M.projectBy U).project X = M.project X := by
+lemma projectBy_project_eq_project_of_closure_mem (U : M.ModularCut) (hX : M.closure X ∈ U) :
+    (M.projectBy U).project X = M.project X := by
   rw [← M.project_closure_eq, ← U.projectBy_project_eq_project_of_mem hX, ← project_closure_eq,
     eq_comm, ← project_closure_eq]
   convert rfl using 2
@@ -177,15 +168,15 @@ lemma ModularCut.projectBy_project_eq_project_of_closure_mem (U : M.ModularCut)
   rw [← (M.projectBy U).closure_closure (X := X)]
   exact closure_subset_closure _ <| closure_subset_closure_projectBy U X
 
-lemma ModularCut.projectBy_contract_eq_contract_of_closure_mem
-    (U : M.ModularCut) (hX : M.closure X ∈ U) : (M.projectBy U) ／ X = M ／ X := by
+lemma projectBy_contract_eq_contract_of_closure_mem (U : M.ModularCut) (hX : M.closure X ∈ U) :
+    (M.projectBy U) ／ X = M ／ X := by
   rw [← project_delete_self, U.projectBy_project_eq_project_of_closure_mem hX,
     project_delete_self]
 
-lemma ModularCut.projectBy_base_diff_singleton_iff (hU : U ≠ ⊥) (hB : M.IsBase B) (he : e ∈ B) :
+lemma projectBy_base_diff_singleton_iff (hU : U ≠ ⊥) (hB : M.IsBase B) (he : e ∈ B) :
     (M.projectBy U).IsBase (B \ {e}) ↔ M.closure (B \ {e}) ∉ U := by
   obtain rfl | hne := eq_or_ne U ⊤
-  · simp only [projectBy_top, mem_top_iff, isFlat_closure, not_true_eq_false, iff_false]
+  · simp only [projectBy_top, ModularCut.mem_top_iff, isFlat_closure, not_true_eq_false, iff_false]
     exact fun h' ↦ by simpa [he] using h'.eq_of_subset_isBase hB
   refine ⟨fun h ↦ ((projectBy_indep_iff_of_ne_top hne).1 h.indep).2, fun h ↦ ?_⟩
   refine Indep.isBase_of_ground_subset_closure ?_ fun x (hx : x ∈ M.E) ↦ ?_
@@ -196,8 +187,8 @@ lemma ModularCut.projectBy_base_diff_singleton_iff (hU : U ≠ ⊥) (hB : M.IsBa
   rwa [(hB.exchange_base_of_notMem_closure he hx).closure_eq, ← not_not (a := M.E ∈ U),
     ← ModularCut.eq_bot_iff]
 
-lemma ModularCut.exists_diff_singleton_isBase_projectBy (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥)
-    (hB : M.IsBase B) : ∃ e ∈ B, (M.projectBy U).IsBase (B \ {e}) := by
+lemma exists_diff_singleton_isBase_projectBy (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥) (hB : M.IsBase B) :
+    ∃ e ∈ B, (M.projectBy U).IsBase (B \ {e}) := by
   by_contra! hcon
   have aux {e} (he : e ∈ B) : M.closure (B \ {e}) ∈ U := by
     specialize hcon e he
@@ -214,13 +205,10 @@ lemma ModularCut.exists_diff_singleton_isBase_projectBy (hU_top : U ≠ ⊤) (hU
   rwa [hmod.iInter_closure_eq_closure_iInter, iInter_coe_set,
     biInter_diff_singleton_eq_diff _ hne, diff_self] at h_inter
 
-lemma ModularCut.projectBy_eRank_add_one_eq (U : M.ModularCut) (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥) :
+lemma projectBy_eRank_add_one_eq (U : M.ModularCut) (hU_top : U ≠ ⊤) (hU_bot : U ≠ ⊥) :
     (M.projectBy U).eRank + 1 = M.eRank := by
   obtain ⟨B, hB⟩ := M.exists_isBase
   obtain ⟨e, heB, hB'⟩ := U.exists_diff_singleton_isBase_projectBy hU_top hU_bot hB
   rw [← hB'.encard_eq_eRank, ← hB.encard_eq_eRank, encard_diff_singleton_add_one heB]
 
-end projectBy
-
-
-end Matroid
+end Matroid.ModularCut

@@ -331,7 +331,7 @@ lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate 
   exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
 
 lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
-  nth_rewrite 1 [projectBy_eq_map_comap]
+  nth_rewrite 1 [U.projectBy_eq_map_comap]
   convert ((((M.map some _)).extendBy none
       (U.map some ((Option.some_injective _).injOn))).contract_quotient_delete {none}).comap some
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]

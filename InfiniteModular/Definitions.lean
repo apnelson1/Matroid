@@ -98,7 +98,7 @@ example (M : Matroid α) (𝓕 : Set (Set α))
 (in fact, they are closed under arbitrary intersections of modular families.) -/
 example (M : Matroid α) (𝓕 : M.ModularCut) :
       (∀ F ∈ 𝓕, M.IsFlat F)
-    ∧ (∀ F F', F ∈ 𝓕 → M.IsFlat F' → F ⊆ F'→ F' ∈ 𝓕)
+    ∧ (∀ F F', F ∈ 𝓕 → M.IsFlat F' → F ⊆ F' → F' ∈ 𝓕)
     ∧ (∀ (F : ι → Set α), (∀ i, F i ∈ 𝓕) → M.IsModularFamily F → ⋂ i, F i ∈ 𝓕) :=
   ⟨𝓕.forall_isFlat, 𝓕.forall_superset, 𝓕.iInter_mem⟩
 

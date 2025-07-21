@@ -73,6 +73,33 @@ lemma IsCircuit.nullity_eq {C : Set α} (hC : M.IsCircuit C) : M.nullity C = 1 :
      (by simpa using hC.nonempty.some_mem)]
   simp
 
+lemma IsNonloop.nullity_eq (h : M.IsNonloop e) : M.nullity {e} = 0 :=
+  h.indep.nullity_eq
+
+lemma IsLoop.nullity_eq (h : M.IsLoop e) : M.nullity {e} = 1 :=
+  h.isCircuit.nullity_eq
+
+@[simp]
+lemma nullity_singleton_eq_one (he : e ∈ M.E := by aesop_mat) :
+    M.nullity {e} = 1 ↔ M.IsLoop e := by
+  obtain he' | he' := M.isLoop_or_isNonloop e
+  · simpa [he'.nullity_eq]
+  simp [he'.nullity_eq, he'.not_isLoop]
+
+lemma nullity_singleton_eq_ite [Decidable (M.IsLoop e)] (he : e ∈ M.E := by aesop_mat) :
+    M.nullity {e} = if M.IsLoop e then 1 else 0 := by
+  obtain h | h := M.isLoop_or_isNonloop e
+  · rw [if_pos h, h.nullity_eq]
+  rw [if_neg h.not_isLoop, h.nullity_eq]
+
+lemma nullity_singleton_eq_ite' [Decidable (M.IsNonloop e)] :
+    M.nullity {e} = if M.IsNonloop e then 0 else 1 := by
+  classical
+  by_cases he : e ∈ M.E
+  · rw [nullity_singleton_eq_ite, ← ite_not]
+    simp_rw [M.not_isLoop_iff he]
+  rw [← nullity_restrict_univ, IsLoop.nullity_eq (by simp [he]), if_neg (fun h ↦ he h.mem_ground)]
+
 lemma nullity_le_of_subset (M : Matroid α) (hXY : X ⊆ Y) : M.nullity X ≤ M.nullity Y := by
   rw [← M.nullity_restrict_of_subset hXY, ← M.nullity_restrict_self Y]
   obtain ⟨I, hI⟩ := (M ↾ Y).exists_isBasis X

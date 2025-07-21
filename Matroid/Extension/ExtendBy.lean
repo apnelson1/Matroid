@@ -6,31 +6,29 @@ open Set Function Set.Notation Option
 
 variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α} {U : M.ModularCut}
 
-namespace Matroid
-
-section extensions
+namespace Matroid.ModularCut
 
 /-- `U.ExtIndep e I` means that `I` is independent in the matroid obtained from `M`
 by adding an element `e` using `U`, so either `I` is independent not containing `e`,
 or `I = insert e J` for some `M`-independent set `J` whose closure isn't in `U`. -/
-def ModularCut.ExtIndep (U : M.ModularCut) (e : α) (I : Set α) : Prop :=
+def ExtIndep (U : M.ModularCut) (e : α) (I : Set α) : Prop :=
   (M.Indep I ∧ e ∉ I) ∨ (M.Indep (I \ {e}) ∧ M.closure (I \ {e}) ∉ U ∧ e ∈ I)
 
-lemma ModularCut.extIndep_iff_of_notMem (heI : e ∉ I) : U.ExtIndep e I ↔ M.Indep I := by
+lemma extIndep_iff_of_notMem (heI : e ∉ I) : U.ExtIndep e I ↔ M.Indep I := by
   simp [ExtIndep, heI]
 
-lemma Indep.extIndep (hI : M.Indep I) (he : e ∉ M.E) : U.ExtIndep e I :=
+lemma _root_.Matroid.Indep.extIndep (hI : M.Indep I) (he : e ∉ M.E) : U.ExtIndep e I :=
   .inl ⟨hI, notMem_subset hI.subset_ground he⟩
 
-lemma ModularCut.extIndep_iff_of_mem (heI : e ∈ I) :
+lemma extIndep_iff_of_mem (heI : e ∈ I) :
     U.ExtIndep e I ↔ M.Indep (I \ {e}) ∧ M.closure (I \ {e}) ∉ U := by
   simp [ExtIndep, heI]
 
-lemma ModularCut.ExtIndep.diff_singleton_indep {U : M.ModularCut} (h : U.ExtIndep e I) :
+lemma ExtIndep.diff_singleton_indep {U : M.ModularCut} (h : U.ExtIndep e I) :
     M.Indep (I \ {e}) := by
   obtain (h | h) := h; exact h.1.diff _; exact h.1
 
-lemma ModularCut.ExtIndep.subset (h : U.ExtIndep e I) (hJI : J ⊆ I) : U.ExtIndep e J := by
+lemma ExtIndep.subset (h : U.ExtIndep e I) (hJI : J ⊆ I) : U.ExtIndep e J := by
   by_cases heJ : e ∈ J
   · rw [extIndep_iff_of_mem (hJI heJ)] at h
     rw [extIndep_iff_of_mem heJ, and_iff_right (h.1.subset (diff_subset_diff_left hJI))]
@@ -38,7 +36,7 @@ lemma ModularCut.ExtIndep.subset (h : U.ExtIndep e I) (hJI : J ⊆ I) : U.ExtInd
   rw [extIndep_iff_of_notMem heJ]
   exact h.diff_singleton_indep.subset (subset_diff_singleton hJI heJ)
 
-lemma ModularCut.ExtIndep.subset_insert_ground (h : U.ExtIndep e I) : I ⊆ insert e M.E :=
+lemma ExtIndep.subset_insert_ground (h : U.ExtIndep e I) : I ⊆ insert e M.E :=
   diff_singleton_subset_iff.1 h.diff_singleton_indep.subset_ground
 
 /-- This lemma gives the conditions under which `I` is a maximal `ExtIndep` subset of `X`;
@@ -48,7 +46,7 @@ it is essentially characterizing when `I` is a basis of `X` in the matroid
 We need the lemma here because it is invoked several times when defining `M.extendBy e U`,
 but it should not be used elsewhere; good API versions should be stated in terms of
 `(M.extendBy e U).IsBasis`, and have less of a dense mess of logic on the RHS. -/
-private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e I)
+private lemma maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.ExtIndep e I)
     (hIX : I ⊆ X) : Maximal (fun J ↦ U.ExtIndep e J ∧ J ⊆ X) I ↔
         (M.closure (I \ {e}) = M.closure (X \ {e}) ∧ ((e ∈ I ↔ M.closure (X \ {e}) ∈ U) → e ∉ X))
       ∨ ((M.closure (I \ {e}) ⋖[M] M.closure (X \ {e})) ∧ e ∈ I ∧ M.closure (X \ {e}) ∈ U) := by
@@ -122,7 +120,7 @@ private lemma ModularCut.maximal_extIndep_iff (hX : X ⊆ insert e M.E) (hI : U.
   rw [extIndep_iff_of_notMem (by simp [heI, hne]), hI.insert_indep_iff_of_notMem hxI, h.1] at hind
   refine notMem_of_mem_diff_closure hind ⟨hi, hne.symm⟩
 
-lemma ModularCut.extIndep_aug (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I)
+lemma extIndep_aug (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtIndep e) I)
     (hBmax : Maximal (U.ExtIndep e) B) : ∃ x ∈ B \ I, U.ExtIndep e (insert x I) := by
   -- TODO : comments to describe the steps of this proof.
   wlog he : ¬ M.IsColoop e with aux
@@ -201,7 +199,7 @@ lemma ModularCut.extIndep_aug (hI : U.ExtIndep e I) (hInmax : ¬ Maximal (U.ExtI
   replace hInmax := show ¬M.IsHyperplane (M.closure (I \ {e})) by simpa [hImax.2] using hInmax
   exact hInmax <| (hImax.1.symm ▸ hBhp)
 
-private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
+private lemma existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X ⊆ insert e M.E) :
   ExistsMaximalSubsetProperty (U.ExtIndep e) X := by
   intro I hI hIX
   obtain ⟨J, hJ, hIJ⟩ :=
@@ -260,7 +258,8 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X
 
 /-- Extend a matroid `M` by a new element `e` using a modular cut `U`.
 (If `e` already belongs to `M`, then this deletes the existing element `e` first.) -/
-@[simps!] def extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matroid α :=
+@[simps!]
+def _root_.Matroid.extendBy (M : Matroid α) (e : α) (U : M.ModularCut) : Matroid α :=
   IndepMatroid.matroid <| IndepMatroid.mk
     (E := insert e M.E)
     (Indep := U.ExtIndep e)
@@ -270,43 +269,43 @@ private lemma ModularCut.existsMaximalSubsetProperty (U : M.ModularCut) (hXE : X
     (indep_maximal := fun _ ↦ U.existsMaximalSubsetProperty)
     (subset_ground := fun _ ↦ ModularCut.ExtIndep.subset_insert_ground)
 
-lemma ModularCut.deleteElem_extendBy (he : e ∈ M.E) :
+@[simp]
+lemma _root_.Matroid.extendBy_ground (M : Matroid α) (e : α) (U : M.ModularCut) :
+    (M.extendBy e U).E = insert e M.E := rfl
+
+lemma deleteElem_extendBy (he : e ∈ M.E) :
     (M ＼ {e}).extendBy e (ModularCut.ofDeleteElem M e) = M := by
   refine Eq.symm <| ext_indep (by simp [he]) fun I hI ↦ ?_
   obtain (heI | heI) := em' (e ∈ I); simp [extIndep_iff_of_notMem heI, heI]
   obtain ⟨I, rfl, heI'⟩ : ∃ J, I = insert e J ∧ e ∉ J := ⟨I \ {e}, by simp [heI], by simp⟩
-  suffices
-    M.Indep (insert e I) ↔ M.Indep I ∧ (e ∈ M.closure (M.closure I \ {e}) →
-      ¬M.IsFlat (insert e (M.closure I))) by
-    simpa [extIndep_iff_of_mem heI, heI']
+  suffices M.Indep I →
+    (e ∉ M.closure I ↔ ¬M.closure (M.closure I \ {e}) = insert e (M.closure I)) by
+    simpa [-mem_ofDeleteElem_iff', insert_indep_iff, heI', he, extIndep_iff_of_mem heI,
+      mem_ofDeleteElem_iff]
+  refine fun hI ↦ ⟨fun heI h_eq ↦ heI ?_, not_imp_not.2 fun heI ↦ ?_⟩
+  · rw [diff_singleton_eq_self heI, closure_closure] at h_eq
+    rw [h_eq]
+    apply mem_insert
+  grw [insert_eq_of_mem heI, closure_diff_singleton_eq_closure, closure_closure]
+  exact M.closure_subset_closure (subset_diff_singleton (M.subset_closure I) heI') heI
 
-  refine ⟨fun h ↦ ⟨h.subset (subset_insert _ _), fun he _ ↦ ?_⟩, fun ⟨hIi, h⟩ ↦ ?_⟩
-  · suffices e ∈ M.closure (M.closure I) from
-      h.notMem_closure_diff_of_mem (.inl rfl) <| by simpa [heI']
-    exact (M.closure_subset_closure diff_subset) he
-  rw [hIi.insert_indep_iff_of_notMem heI', mem_diff, and_iff_right (hI (.inl rfl))]
-  refine fun heclosure ↦ ?_
-  simp only [heclosure, insert_eq_of_mem, closure_isFlat, not_true_eq_false, imp_false] at h
-  exact h <| (M.closure_subset_closure <| subset_diff_singleton
-    (M.subset_closure I hIi.subset_ground) heI') heclosure
-
-lemma ModularCut.extendBy_deleteElem (U : M.ModularCut) (he : e ∉ M.E) :
+lemma extendBy_deleteElem (U : M.ModularCut) (he : e ∉ M.E) :
     (M.extendBy e U) ＼ {e} = M := by
   refine ext_indep (by simpa) fun I hI ↦ ?_
   obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
   simp [extIndep_iff_of_notMem heI, heI]
 
-lemma ModularCut.extendBy_deleteElem' (U : M.ModularCut) : (M.extendBy e U) ＼ {e} = M ＼ {e} := by
+lemma extendBy_deleteElem' (U : M.ModularCut) : (M.extendBy e U) ＼ {e} = M ＼ {e} := by
   refine ext_indep (by simp) fun I hI ↦ ?_
   obtain ⟨-, heI⟩ := show I ⊆ M.E ∧ e ∉ I by simpa [subset_diff] using hI
   simp [extIndep_iff_of_notMem heI, heI]
 
-lemma ModularCut.isRestriction_extendBy (U : M.ModularCut) (he : e ∉ M.E) :
+lemma isRestriction_extendBy (U : M.ModularCut) (he : e ∉ M.E) :
     M ≤r (M.extendBy e U) := by
   nth_rw 1 [← U.extendBy_deleteElem he]
   apply delete_isRestriction
 
-lemma ModularCut.eq_extendBy_of_forall_flat (𝓕 : (M ＼ {e}).ModularCut) (he : e ∈ M.E)
+lemma eq_extendBy_of_forall_flat (𝓕 : (M ＼ {e}).ModularCut) (he : e ∈ M.E)
     (h_flat : ∀ ⦃F⦄, (M ＼ {e}).IsFlat F → (e ∈ M.closure F ↔ F ∈ 𝓕)) :
     (M ＼ {e}).extendBy e 𝓕 = M := by
   have h : 𝓕 = ModularCut.ofDeleteElem M e := by
@@ -330,7 +329,7 @@ lemma extendBy_injective (M : Matroid α) (he : e ∉ M.E) : Injective (M.extend
     not_iff_not, ← hF.eq_closure_of_isBasis hI] using h_eq
 
 /-- Single-element extensions are equivalent to modular cuts. -/
-def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
+def equivExtension (M : Matroid α) (he : e ∉ M.E) :
     {N : Matroid α // (e ∈ N.E ∧ N ＼ {e} = M)} ≃ M.ModularCut where
   toFun N := (ModularCut.ofDeleteElem N e).copy N.2.2
   invFun U := ⟨M.extendBy e U, by simp, U.extendBy_deleteElem he⟩
@@ -345,7 +344,7 @@ def extensionEquivModularCut (M : Matroid α) (he : e ∉ M.E) :
     simp only [Subtype.mk.injEq]
     exact ModularCut.deleteElem_extendBy heN
 
-lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
+lemma mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
     e ∈ (M.extendBy e U).closure X ↔ e ∈ X ∨ M.closure X ∈ U := by
   by_cases heX : e ∈ X
   · simp [heX, mem_closure_of_mem']
@@ -358,30 +357,37 @@ lemma ModularCut.mem_closure_extendBy_iff (U : M.ModularCut) (he : e ∉ M.E) :
     U.extIndep_iff_of_mem (.inl rfl)]
   simp [heI, hI'.indep]
 
-lemma ModularCut.closure_mem_iff_mem_closure_extendBy (U : M.ModularCut) (he : e ∉ M.E)
+lemma mem_closure_extendBy_dual_iff (U : M.ModularCut) (he : e ∉ M.E)
+    (hXE : X ⊆ M.E := by aesop_mat) :
+    e ∈ (M.extendBy e U)✶.closure X ↔ M.closure (M.E \ X) ∉ U := by
+  rw [mem_dual_closure_iff_notMem_closure_compl (notMem_subset hXE he), extendBy_ground,
+    diff_diff_comm, insert_diff_self_of_notMem he, U.mem_closure_extendBy_iff he,
+    or_iff_right (by simp [he])]
+
+lemma closure_mem_iff_mem_closure_extendBy (U : M.ModularCut) (he : e ∉ M.E)
     (heX : e ∉ X) : M.closure X ∈ U ↔ e ∈ (M.extendBy e U).closure X := by
   rw [U.mem_closure_extendBy_iff he, or_iff_right heX]
 
-lemma ModularCut.extendBy_closure_eq_self (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+lemma extendBy_closure_eq_self (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXU : M.closure X ∉ U) : (M.extendBy e U).closure X = M.closure X := by
   nth_rewrite 2 [← U.extendBy_deleteElem he]
   rw [delete_closure_eq, diff_singleton_eq_self heX, sdiff_eq_left.2]
   rw [disjoint_singleton_right, mem_closure_extendBy_iff _ he]
   simp [heX, hXU]
 
-lemma ModularCut.extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+lemma extendBy_closure_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXSU : M.closure X ∈ U) : (M.extendBy e U).closure X = insert e (M.closure X) := by
   nth_rewrite 2 [← U.extendBy_deleteElem he]
   rw [delete_closure_eq, insert_diff_singleton]
   rw [diff_singleton_eq_self heX, eq_comm, insert_eq_self, U.mem_closure_extendBy_iff he]
   exact .inr hXSU
 
-lemma ModularCut.extendBy_closure_insert_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
+lemma extendBy_closure_insert_eq_insert (U : M.ModularCut) (he : e ∉ M.E) (heX : e ∉ X)
     (hXSU : M.closure X ∈ U) : (M.extendBy e U).closure (insert e X) = insert e (M.closure X) := by
   rw [← U.extendBy_closure_eq_insert he heX hXSU, closure_insert_eq_of_mem_closure]
   simp [U.extendBy_closure_eq_insert he heX hXSU]
 
-lemma ModularCut.insert_isFlat_extendBy_of_mem (U : M.ModularCut) (hFU : F ∈ U) (he : e ∉ M.E) :
+lemma insert_isFlat_extendBy_of_mem (U : M.ModularCut) (hFU : F ∈ U) (he : e ∉ M.E) :
     (M.extendBy e U).IsFlat (insert e F) := by
   have heF : e ∉ F := notMem_subset (U.isFlat_of_mem hFU).subset_ground he
   have hmem : e ∈ (M.extendBy e U).closure F := by
@@ -391,13 +397,13 @@ lemma ModularCut.insert_isFlat_extendBy_of_mem (U : M.ModularCut) (hFU : F ∈ U
     U.extendBy_closure_eq_insert he heF (U.closure_mem_of_mem hFU),
     (U.isFlat_of_mem hFU).closure]
 
-lemma ModularCut.isFlat_extendBy_of_isFlat_of_notMem (U : M.ModularCut) (he : e ∉ M.E)
+lemma isFlat_extendBy_of_isFlat_of_notMem (U : M.ModularCut) (he : e ∉ M.E)
     (hF : M.IsFlat F) (hFU : F ∉ U) : (M.extendBy e U).IsFlat F := by
   have heF := notMem_subset hF.subset_ground he
   rw [isFlat_iff_closure_eq, extendBy_closure_eq_self _ he heF, hF.closure]
   rwa [hF.closure]
 
-lemma ModularCut.insert_isFlat_extendBy_of_not_covBy (U : M.ModularCut) (he : e ∉ M.E)
+lemma insert_isFlat_extendBy_of_not_covBy (U : M.ModularCut) (he : e ∉ M.E)
     (hF : M.IsFlat F) (h_not_covBy : ¬ ∃ F' ∈ U, F ⋖[M] F') :
     (M.extendBy e U).IsFlat (insert e F) := by
   have heF := notMem_subset hF.subset_ground he
@@ -438,7 +444,16 @@ lemma extendBy_eRank_eq (U : M.ModularCut) (hU : U ≠ ⊥) (he : e ∉ M.E) :
   rw [deleteElem_eRank_eq]
   rwa [extendBy_isColoop_iff _ he]
 
-end extensions
+@[simp]
+lemma extendBy_isLoop_iff : (M.extendBy e U).IsLoop e ↔ U = ⊤ := by
+  rw [← not_isNonloop_iff, ← indep_singleton, extendBy_Indep]
+  simp [ExtIndep, U.eq_top_iff, closure_empty]
 
+@[simp]
+lemma extendBy_isNonloop_iff : (M.extendBy e U).IsNonloop e ↔ U ≠ ⊤ := by
+  simp [← not_isLoop_iff]
 
-end Matroid
+lemma extendBy_isNonloop_dual_iff (he : e ∉ M.E) : (M.extendBy e U)✶.IsNonloop e ↔ U ≠ ⊥ := by
+  rw [← not_isLoop_iff, dual_isLoop_iff_isColoop, extendBy_isColoop_iff _ he]
+
+end Matroid.ModularCut

@@ -226,6 +226,10 @@ lemma multiConn_delete (M : Matroid α) (X : ι → Set α) (D : Set α) :
   convert rfl using 3 with i
   tauto_set
 
+lemma multiConn_delete_of_disjoint (M : Matroid α) {D : Set α} (hXD : ∀ i, Disjoint (X i) D) :
+    (M ＼ D).multiConn X = M.multiConn X := by
+  simp_rw [multiConn_delete, (hXD _).sdiff_eq_left]
+
 lemma multiConn_closure (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ M.closure (X i)) = M.multiConn X := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
@@ -270,7 +274,7 @@ lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
     ← iUnion_diff, ← nullity_union_le_nullity_add_encard, diff_union_self]
   exact M.nullity_le_of_subset subset_union_left
 
-lemma multiConn_project_eq_multiconn_contract (M : Matroid α) (C : Set α) :
+lemma multiConn_project_eq_multiConn_contract (M : Matroid α) (C : Set α) :
     (M.project C).multiConn (ι := ι) = (M ／ C).multiConn := by
   ext X
   wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
@@ -363,7 +367,7 @@ lemma multiConn_project_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i)
 
 lemma multiConn_contract_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i) :
     (M ／ C).multiConn X ≤ M.multiConn X := by
-  grw [← multiConn_project_eq_multiconn_contract, multiConn_project_le _ hC]
+  grw [← multiConn_project_eq_multiConn_contract, multiConn_project_le _ hC]
 
 lemma multiConn_project_aux_indep (M : Matroid α) {C : Set α} (hC : M.Indep C) (X : ι → Set α) :
     (M.project C).multiConn X + ∑' i, (M.project (X i)).nullity C
@@ -465,23 +469,116 @@ lemma multiConn_project_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α
     Ne, ENat.add_eq_top, or_iff_right hXfin]
   assumption
 
-lemma multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut) (X : ι → Set α) :
-    M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
+lemma multiConn_projectElem_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α} {e : α}
+    (hXfin : M.multiConn X ≠ ⊤) (he : M.IsNonloop e) :
+    (M.project {e}).multiConn X = M.multiConn X + 1 ↔
+      e ∈ M.closure (⋃ i, X i) ∧ ∀ i, e ∉ M.closure (X i) := by
   wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
-  · grw [← multiConn_inter_ground, dual_ground, ← (M.projectBy U)✶.multiConn_inter_ground, aux,
-      dual_ground, projectBy_ground]
-    exact fun i ↦ inter_subset_right
+  · rw [← multiConn_inter_ground, ← M.multiConn_inter_ground, project_ground, aux
+      (by rwa [multiConn_inter_ground]) (fun i ↦ inter_subset_right), ← iUnion_inter]
+    simp
+  rw [← he.eRk_eq, multiConn_project_eq_multiConn_add_iff _ hXfin hXE (by simp [he.eRk_eq])
+    (by simpa using he.mem_ground), singleton_subset_iff]
+  simp_rw [he.skew_right_iff (hXE _)]
+
+lemma ModularCut.multiconn_add_eq_multiConn_projectBy_add (U : M.ModularCut)
+    (X : ι → Set α) [DecidablePred (· ∈ U)] (hU : U ≠ ⊤) :
+    M.multiConn X + (if M.closure (⋃ i, X i) ∈ U then 1 else 0) =
+        (M.projectBy U).multiConn X + {a | M.closure (X a) ∈ U}.encard := by
+  classical
+  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
+  · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
+    · rw [multiConn_inter_ground]
+    · simp [← iUnion_inter]
+    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
+    simp
   wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
   · have ho := Option.some_injective α
-    convert aux (U.map _ ho.injOn) (fun i ↦ .some '' (X i)) ?_ ⟨none, by simp⟩
-    · rw [map_dual, multiConn_map_image _ _ _ (by simpa)]
-    · rw [ModularCut.projectBy_map, map_dual, multiConn_map_image _ _ _ (by simpa)]
-    · exact fun i ↦ by simpa [preimage_image_eq _ ho] using hXE i
-  obtain ⟨e, he⟩ : ∃ e, e ∉ M.E := h
-  have hwin := (M.extendBy e U)✶.multiConn_project_le_multiConn_add X {e}
-  grw [multiConn_project_eq_multiconn_contract, ← dual_delete, ModularCut.extendBy_deleteElem _ he,
-    eRk_singleton_le] at hwin
-  grw [← ModularCut.extendBy_contractElem _ he, dual_contract, multiConn_delete, hwin,
-    add_le_add_right]
-  convert rfl.le using 3 with i
-  simp [notMem_subset (hXE i) he]
+    specialize aux (U.map _ ho.injOn) (by simpa) (fun i ↦ .some '' X i) (fun i ↦ image_mono (hXE i))
+      ⟨none, by simp⟩
+    rw [multiConn_map_image _ _ _ (by simpa), U.projectBy_map, multiConn_map_image _ _ _ (by simpa),
+      ← image_iUnion] at aux
+    simp_rw [map_closure_eq, preimage_image_eq _ ho,
+      U.image_mem_map_iff _ _ (closure_subset_ground ..)] at aux
+    assumption
+  obtain ⟨e, he⟩ := h
+  have heX : e ∉ ⋃ i, X i := by simpa using fun i ↦ notMem_subset (hXE i) he
+  nth_rw 1 [← U.extendBy_contractElem he,  ← U.extendBy_deleteElem he,
+    multiConn_delete_of_disjoint _ (fun i ↦ disjoint_singleton_right.2 (notMem_subset (hXE i) he)),
+    ← multiConn_project_eq_multiConn_contract, ENat.encard_eq_tsum_ite, eq_comm]
+  simp only [mem_setOf_eq]
+  convert (M.extendBy e U).multiConn_project_aux_indep (C := {e}) (X := X)
+    (by rwa [indep_singleton, extendBy_isNonloop_iff]) with i
+  · simp [nullity_singleton_eq_ite, IsLoop, mem_closure_extendBy_iff U he,
+      or_iff_right (notMem_subset (hXE i) he)]
+  rw [nullity_singleton_eq_ite, IsLoop, project_loops, mem_closure_extendBy_iff U he,
+    or_iff_right heX]
+  congr
+
+/-- The formula relating the dual connectivity and the dual connectivity for the projection
+by a modular cut. -/
+lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.ModularCut)
+    (X : ι → Set α) [DecidablePred (· ∈ U)] (hU : U ≠ ⊥) :
+    M✶.multiConn X + {a | M.closure (M.E \ X a) ∉ U}.encard =
+        (M.projectBy U)✶.multiConn X + (if M.closure (M.E \ (⋃ i, X i)) ∈ U then 0 else 1) := by
+  classical
+  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
+  · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
+    · rw [← M.dual_ground, multiConn_inter_ground]
+    · simp
+    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
+    simp [← iUnion_inter]
+  wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
+  · have ho := Option.some_injective α
+    specialize aux (U.map _ ho.injOn) (by simpa) (fun i ↦ .some '' X i) (fun i ↦ image_mono (hXE i))
+      ⟨none, by simp⟩
+    rw [map_dual, multiConn_map_image _ _ _ (by simpa), U.projectBy_map, map_ground,
+      map_dual, map_closure_eq, multiConn_map_image _ _ _ (by simpa)] at aux
+    simp_rw [← image_iUnion, ← image_diff ho, map_closure_eq, preimage_image_eq _ ho,
+      U.image_mem_map_iff _ _  (closure_subset_ground ..)] at aux
+    exact aux
+  obtain ⟨e, he⟩ := h
+  nth_rw 1 [← U.extendBy_deleteElem he, ← U.extendBy_contractElem he, dual_delete, dual_contract,
+    multiConn_delete_of_disjoint _ (fun i ↦ disjoint_singleton_right.2 (notMem_subset (hXE i) he)),
+    ← multiConn_project_eq_multiConn_contract, eq_comm, ← ite_not]
+  simp_rw [← U.mem_closure_extendBy_dual_iff he (hXE _),
+      ← U.mem_closure_extendBy_dual_iff he (iUnion_subset hXE), eq_comm (a := _ + ite ..),
+      ENat.encard_eq_tsum_ite, mem_setOf_eq]
+  have hni : (M.extendBy e U)✶.Indep {e} := by
+    rwa [indep_singleton, U.extendBy_isNonloop_dual_iff he]
+  convert (M.extendBy e U)✶.multiConn_project_aux_indep (C := {e}) (X := X) hni with i <;>
+  rw [nullity_singleton_eq_ite, isLoop_iff, project_loops]
+
+lemma ModularCut.multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut)
+    (X : ι → Set α) : M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
+  classical
+  obtain rfl | hne := eq_or_ne U ⊥
+  · simp
+  have h_le := (U.multiconn_dual_add_eq_multiConn_projectBy_dual_add X hne).le
+  grw [← le_self_add] at h_le
+  grw [h_le, add_le_add_left]
+  split_ifs <;> simp
+
+lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff [Nonempty ι]
+    (U : M.ModularCut) (X : ι → Set α) (hX : M✶.multiConn X ≠ ⊤) :
+    M✶.multiConn X = (M.projectBy U)✶.multiConn X + 1 ↔
+      M.closure (M.E \ ⋃ i, X i) ∉ U ∧ ∀ a, M.closure (M.E \ X a) ∈ U := by
+  classical
+  obtain rfl | hne := eq_or_ne U ⊥
+  · simpa [eq_comm (a := M✶.multiConn X)] using hX.symm
+  have h_eq := U.multiconn_dual_add_eq_multiConn_projectBy_dual_add X hne
+  split_ifs at h_eq with h
+  · simp only [add_zero] at h_eq
+    rw [← h_eq, add_assoc, eq_comm]
+    simpa [h]
+  rw [← h_eq, eq_comm]
+  simp [hX, h, eq_empty_iff_forall_notMem]
+
+lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff' [Nonempty ι]
+    (U : M.ModularCut) (X : ι → Set α) : M✶.multiConn X = (M.projectBy U)✶.multiConn X + 1 ↔
+      (M✶.multiConn X = ⊤) ∨ (M.closure (M.E \ ⋃ i, X i) ∉ U ∧ ∀ a, M.closure (M.E \ X a) ∈ U) := by
+  obtain htop | hnot := eq_or_ne (M✶.multiConn X) ⊤
+  · simp only [htop, true_or, iff_true]
+    grw [eq_comm, ← top_le_iff, ← htop]
+    apply U.multiConn_dual_le_multiConn_projectBy_dual_add_one
+  rw [U.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff _ hnot, or_iff_right hnot]

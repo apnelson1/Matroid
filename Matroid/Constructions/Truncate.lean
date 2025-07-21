@@ -119,7 +119,7 @@ def truncate (M : Matroid α) := Matroid.ofExistsMatroid
     obtain (hM | hM) := M.eq_loopyOn_or_rankPos
     · rw [hM]; simp [ModularCut.eq_top_iff, loops]
     suffices M.Indep I → (¬M.E ⊆ M.closure I ↔ M.IsBase I → I = ∅) by
-      simpa [M.principal_ground_ne_top]
+      simpa [ModularCut.principal_ground_ne_top]
     refine fun hI ↦ ⟨fun h hIb ↦ by simp [hIb.closure_eq] at h, fun h hss ↦ ?_⟩
     have hIb := hI.isBase_of_ground_subset_closure hss
     exact hIb.nonempty.ne_empty (h hIb))

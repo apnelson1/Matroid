@@ -254,6 +254,15 @@ theorem encard_biUnion_le_tsum_encard {ι} {s : ι → Set α} {I : Set ι} :
   rw [biUnion_eq_iUnion]
   apply encard_iUnion_le_tsum_encard
 
+protected theorem encard_eq_tsum_ite (s : Set α) [DecidablePred (· ∈ s)] :
+    s.encard = ∑' (x : α), if x ∈ s then 1 else 0 := by
+  nth_rw 1 [← inter_univ s, ← iUnion_of_singleton α, inter_iUnion,
+    ← ENat.tsum_encard_eq_encard_iUnion (by simp +contextual [Pairwise, disjoint_left]), tsum_congr]
+  intro b
+  split_ifs with hb
+  · rw [inter_eq_self_of_subset_right (by simpa), encard_singleton]
+  rw [inter_singleton_eq_empty.2 hb, encard_empty]
+
 theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
     (hfin : (⋃ i ∈ t, s i).Finite) :
     ∑' i : t, (s i).encard = (⋃ i ∈ t, s i).encard ↔ t.PairwiseDisjoint s := by

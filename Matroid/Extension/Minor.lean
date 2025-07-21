@@ -6,11 +6,11 @@ namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {I J B F₀ F F' X Y : Set α} {e f : α}
 
+namespace ModularCut
 
 /-- A modular cut `U` in a contraction `M ／ C` gives rise to a modular cut in `M`.
 This corresponds to the freeest extension of `M` that contracts to the extension given by `U`. -/
-def ModularCut.ofContract {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E) :
-    M.ModularCut where
+def ofContract {C : Set α} (U : (M ／ C).ModularCut) (hC : C ⊆ M.E) : M.ModularCut where
   carrier := (· ∪ C) '' U
   forall_isFlat := by
     simpa using fun F hF ↦ ((isFlat_contract_iff hC).1 (U.isFlat_of_mem hF)).1
@@ -65,7 +65,7 @@ lemma mem_ofContract_iff {C : Set α} (U : (M ／ C).ModularCut) {hC : C ⊆ M.E
   simpa [(subset_diff.1 (U.isFlat_of_mem hF).subset_ground).2.sdiff_eq_left]
 
 /-- A version of `ModularCut.ofContract` without a supportedness hypothesis. -/
-def ModularCut.ofContract' {C : Set α} (U : (M ／ C).ModularCut) : M.ModularCut :=
+def ofContract' {C : Set α} (U : (M ／ C).ModularCut) : M.ModularCut :=
   (U.copy (M.contract_inter_ground_eq C).symm).ofContract inter_subset_right
 
 @[simp]
@@ -74,7 +74,7 @@ lemma mem_ofContract'_iff {C : Set α} (U : (M ／ C).ModularCut) :
   simp [ModularCut.ofContract']
 
 /-- Given a modular cut `U` of `M`, the corresponding modular cut in some projection of `M`. -/
-def ModularCut.project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCut where
+protected def project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCut where
   carrier := {F | (M.project C).IsFlat F ∧ M.closure (F ∪ C) ∈ U}
   forall_isFlat F := fun h ↦ h.1
   forall_superset F F' := fun h h' hFF' ↦ ⟨h', U.superset_mem h.2 (M.closure_isFlat _)
@@ -107,44 +107,46 @@ def ModularCut.project (U : M.ModularCut) (C : Set α) : (M.project C).ModularCu
     exact union_subset (hFs hF).1.subset_ground hI.indep.subset_ground
 
 @[simp]
-lemma ModularCut.mem_project_iff (U : M.ModularCut) (C : Set α) :
+lemma mem_project_iff (U : M.ModularCut) (C : Set α) :
     F ∈ U.project C ↔ (M.project C).IsFlat F ∧ M.closure (F ∪ C) ∈ U := Iff.rfl
 
 /-- Given a modular cut `U` of `M`, the corresponding modular cut in some projection of `M`. -/
-def ModularCut.contract (U : M.ModularCut) (C : Set α) : (M ／ C).ModularCut :=
+protected def contract (U : M.ModularCut) (C : Set α) : (M ／ C).ModularCut :=
   ((U.project C).delete C).copy <| project_delete_self ..
 
 @[simp]
-lemma ModularCut.mem_contract_iff (U : M.ModularCut) (C : Set α) :
+lemma mem_contract_iff (U : M.ModularCut) (C : Set α) :
     F ∈ U.contract C ↔ (M ／ C).IsFlat F ∧ M.closure (F ∪ C) ∈ U := by
   simp [ModularCut.contract, isFlat_iff_closure_eq, union_assoc]
 
-lemma ModularCut.projectBy_project (U : M.ModularCut) (C : Set α) :
+lemma projectBy_project (U : M.ModularCut) (C : Set α) :
     (M.projectBy U).project C = (M.project C).projectBy (U.project C) := by
   refine ext_closure fun X ↦ ?_
   simp [Set.ext_iff, mem_closure_projectBy_iff, isFlat_iff_closure_eq, union_assoc, insert_union]
 
-lemma ModularCut.projectBy_contract (U : M.ModularCut) (C : Set α) :
+lemma projectBy_contract (U : M.ModularCut) (C : Set α) :
     (M.projectBy U).contract C = (M ／ C).projectBy (U.contract C) := by
   rw [← project_delete_self, U.projectBy_project, ModularCut.contract]
   refine ext_closure fun X ↦ ?_
   simp only [delete_closure_eq, Set.ext_iff, mem_diff, mem_closure_projectBy_iff, project_closure,
     diff_union_self, insert_union, mem_project_iff, isFlat_iff_closure_eq,
     closure_union_closure_left_eq, union_assoc, union_self, true_and, contract_closure_eq,
-    mem_copy_iff, mem_delete_iff, project_delete_self]
+    ModularCut.mem_copy_iff, mem_delete_iff, project_delete_self]
   aesop
 
 -- TODO : versions of the above for `extendBy`.
 
-lemma ModularCut.project_eq_top_iff (U : M.ModularCut) : U.project X = ⊤ ↔ M.closure X ∈ U := by
+lemma project_eq_top_iff (U : M.ModularCut) : U.project X = ⊤ ↔ M.closure X ∈ U := by
   rw [ModularCut.eq_top_iff, project_loops, mem_project_iff, isFlat_iff_closure_eq,
     project_closure, ← closure_union_closure_right_eq, union_self, closure_closure,
     and_iff_right rfl]
 
-lemma ModularCut.contract_eq_top_iff (U : M.ModularCut) : U.contract X = ⊤ ↔ M.closure X ∈ U := by
+lemma contract_eq_top_iff (U : M.ModularCut) : U.contract X = ⊤ ↔ M.closure X ∈ U := by
   rw [ModularCut.eq_top_iff, contract_loops_eq, mem_contract_iff, isFlat_iff_closure_eq,
     contract_closure_eq, diff_union_self, ← closure_union_closure_right_eq, union_self,
     closure_closure, and_iff_right rfl]
+
+end ModularCut
 
 section ExtendContract
 
@@ -244,7 +246,8 @@ lemma exists_eq_delete_eq_contract_of_projectBy_seq {n : ℕ} (M : Fin (n+1) →
   | zero => exact ⟨M 0, by simp [show X = ∅ by simpa using hD]⟩
   | succ n IH =>
   have hE (i) : (M i).E = (M 0).E := by
-    induction i using Fin.induction with | zero => rfl | succ i IH => rwa [h_eq, projectBy_ground]
+    induction i using Fin.induction with | zero => rfl | succ i IH =>
+      rwa [h_eq, ModularCut.projectBy_ground]
   obtain ⟨D, a, ha, rfl⟩ :=
     Finset.Nonempty.exists_cons_eq (s := X) <| by simp [← X.card_ne_zero, hD]
   simp only [Finset.card_cons, Nat.add_right_cancel_iff] at hD
@@ -267,3 +270,5 @@ lemma exists_eq_delete_eq_contract_of_projectBy_seq {n : ℕ} (M : Fin (n+1) →
   rw [hPQ, hQ, ModularCut.extendBy_contractElem _ (by rwa [hE])]
 
 end ExtendContract
+
+end Matroid

@@ -95,7 +95,7 @@ lemma Quotient.modularCut_ne_bot [N.Finitary] (h : N ≤q M) : h.modularCut ≠ 
 
 lemma Quotient.projectBy_modularCut_indep_iff [N.Finitary] (h : N ≤q M) (hne : N ≠ M) :
     (M.projectBy h.modularCut).Indep I ↔ M.Indep I ∧ ¬ N.project I = M.project I := by
-  simp only [projectBy_indep_iff, ne_eq, modularCut_eq_top_iff, hne, not_false_eq_true,
+  simp only [ModularCut.projectBy_indep_iff, ne_eq, modularCut_eq_top_iff, hne, not_false_eq_true,
     mem_modularCut_iff, isFlat_closure, project_closure_eq, true_and, forall_const,
     and_congr_right_iff]
   rw [← N.project_closure_eq, h.closure_closure_eq_closure_right, N.project_closure_eq, eq_comm]
@@ -107,12 +107,12 @@ lemma Quotient.quotient_projectBy_modularCut [N.Finitary] (h : N ≤q M) :
     N ≤q (M.projectBy h.modularCut) := by
   set U := h.modularCut with hU
   obtain h_eq | hne := eq_or_ne h.modularCut ⊤
-  · rwa [hU, h_eq, projectBy_top]
+  · rwa [hU, h_eq, ModularCut.projectBy_top]
   rw [Ne, h.modularCut_eq_top_iff] at hne
   refine quotient_of_forall_closure_subset_closure_indep h.ground_eq.symm fun I hI e heU ↦ ?_
   have heE : e ∈ M.E := (M.projectBy U).mem_ground_of_mem_closure heU
-  rw [mem_closure_projectBy_iff, hU, h.closure_mem_modularCut_iff, h.closure_mem_modularCut_iff]
-    at heU
+  rw [ModularCut.mem_closure_projectBy_iff, hU, h.closure_mem_modularCut_iff,
+    h.closure_mem_modularCut_iff] at heU
   obtain heI | ⟨h_eq, h_ne⟩ := heU
   · exact h.closure_subset_closure _ heI
   replace hI := (projectBy_quotient U).weakLE.indep_of_indep hI
@@ -157,7 +157,7 @@ lemma Quotient.exists_eq_contract_eq_delete_of_discrepancy_finite' (hQ : N ≤q 
       rw [← hQ'.encard_isBase_diff_eq_discrepancy_ground hI hJ hIJ]
       obtain ⟨K, hJK, hK⟩ : ∃ K, J ⊂ K ∧ M.IsBase K := by
         obtain ⟨hJM : M.Indep J, hJcl : M.closure J ∉ hQ.modularCut⟩ :=
-          (projectBy_indep_iff_of_ne_top htop).1 <| hM' ▸ hJ.indep
+          (ModularCut.projectBy_indep_iff_of_ne_top htop).1 <| hM' ▸ hJ.indep
         obtain ⟨K, hK, hJK⟩ := hJM.exists_isBase_superset
         refine ⟨K, hJK.ssubset_of_ne ?_, hK⟩
         rintro rfl

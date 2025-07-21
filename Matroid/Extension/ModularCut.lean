@@ -95,15 +95,28 @@ structure ModularCut (M : Matroid α) where
 
 variable {U : M.ModularCut}
 
+namespace ModularCut
+
 instance (M : Matroid α) : SetLike (ModularCut M) (Set α) where
   coe := ModularCut.carrier
   coe_injective' U U' := by cases U; cases U'; simp
 
 @[simp]
-lemma ModularCut.mem_carrier_iff {U : M.ModularCut} : F ∈ U.carrier ↔ F ∈ U := Iff.rfl
+lemma mem_carrier_iff {U : M.ModularCut} : F ∈ U.carrier ↔ F ∈ U := Iff.rfl
+
+lemma isFlat_of_mem (U : M.ModularCut) (hF : F ∈ U) : M.IsFlat F :=
+  U.forall_isFlat F hF
+
+-- Add aesop incantation
+lemma subset_ground (U : M.ModularCut) (hF : F ∈ U) : F ⊆ M.E :=
+    (U.isFlat_of_mem hF).subset_ground
+
+lemma superset_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : M.IsFlat F') (hFF' : F ⊆ F') :
+    F' ∈ U :=
+  U.forall_superset F F' hF hF' hFF'
 
 @[ext]
-lemma ModularCut.ext {U U' : M.ModularCut} (h : ∀ F, M.IsFlat F → (F ∈ U ↔ F ∈ U')) : U = U' := by
+protected lemma ext {U U' : M.ModularCut} (h : ∀ F, M.IsFlat F → (F ∈ U ↔ F ∈ U')) : U = U' := by
   suffices h_eq : U.carrier = U'.carrier by
     cases U with | mk carrier forall_isFlat forall_superset forall_inter =>
     · simp only at h_eq
@@ -115,17 +128,18 @@ lemma ModularCut.ext {U U' : M.ModularCut} (h : ∀ F, M.IsFlat F → (F ∈ U �
     (fun hF ↦ hFlat (U'.forall_isFlat F hF))
 
 /-- Transfer a `ModularCut` across a matroid equality. -/
-def ModularCut.copy {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
+protected def copy {N : Matroid α} (U : M.ModularCut) (hNM : M = N) : N.ModularCut where
   carrier := U
   forall_isFlat := by obtain rfl := hNM; exact U.forall_isFlat
   forall_superset := by obtain rfl := hNM; exact U.forall_superset
   forall_inter := by obtain rfl := hNM; exact U.forall_inter
 
-@[simp] lemma ModularCut.mem_copy_iff {N : Matroid α} (U : M.ModularCut) {hNM : M = N} :
+@[simp]
+protected lemma mem_copy_iff {N : Matroid α} (U : M.ModularCut) {hNM : M = N} :
     F ∈ U.copy hNM ↔ F ∈ U := Iff.rfl
 
 /-- Transfer a `ModularCut` along an injection -/
-def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f) :
+protected def map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f) :
     (M.map f hf).ModularCut where
   carrier := (image f) '' U
   forall_isFlat := by
@@ -154,35 +168,34 @@ def ModularCut.map {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.Inj
     rwa [← h_eq] at hYs
 
 @[simp]
-lemma ModularCut.mem_map_iff {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f)
+protected lemma mem_map_iff {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f)
     {F : Set β} : F ∈ (U.map f hf) ↔ ∃ F₀ ∈ U, f '' F₀ = F := Iff.rfl
 
-@[simp] lemma ModularCut.mem_mk_iff (S : Set (Set α)) (h₁) (h₂) (h₃) {X : Set α} :
+protected lemma image_mem_map_iff {β : Type*} (U : M.ModularCut) (f : α → β) (hf : M.E.InjOn f)
+    {F : Set α} (hF : F ⊆ M.E) : f '' F ∈ U.map f hf ↔ F ∈ U := by
+  rw [U.mem_map_iff]
+  refine ⟨fun ⟨F', hF', heq⟩ ↦ ?_, fun h ↦ ⟨F, h, rfl⟩⟩
+  rw [hf.image_eq_image_iff (U.subset_ground hF') hF] at heq
+  rwa [← heq]
+
+@[simp]
+protected
+lemma mem_mk_iff (S : Set (Set α)) (h₁) (h₂) (h₃) {X : Set α} :
   X ∈ ModularCut.mk (M := M) S h₁ h₂ h₃ ↔ X ∈ S := Iff.rfl
 
-lemma ModularCut.isFlat_of_mem (U : M.ModularCut) (hF : F ∈ U) : M.IsFlat F :=
-  U.forall_isFlat F hF
-
-lemma ModularCut.subset_ground (U : M.ModularCut) (hF : F ∈ U) : F ⊆ M.E :=
-    (U.isFlat_of_mem hF).subset_ground
-
-lemma ModularCut.superset_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : M.IsFlat F') (hFF' : F ⊆ F') :
-    F' ∈ U :=
-  U.forall_superset F F' hF hF' hFF'
-
-lemma ModularCut.closure_superset_mem (U : M.ModularCut) (hF : F ∈ U) (hFX : F ⊆ M.closure X) :
+lemma closure_superset_mem (U : M.ModularCut) (hF : F ∈ U) (hFX : F ⊆ M.closure X) :
     M.closure X ∈ U :=
   U.superset_mem hF (M.closure_isFlat _) hFX
 
-lemma ModularCut.closure_superset_mem' (U : M.ModularCut) (hX : M.closure X ∈ U) (hXY : X ⊆ Y) :
+lemma closure_superset_mem' (U : M.ModularCut) (hX : M.closure X ∈ U) (hXY : X ⊆ Y) :
     M.closure Y ∈ U :=
   U.closure_superset_mem hX (M.closure_subset_closure hXY)
 
-lemma ModularCut.sInter_mem (U : M.ModularCut) {Fs : Set (Set α)} (hne : Fs.Nonempty) (hFs : Fs ⊆ U)
+protected lemma sInter_mem (U : M.ModularCut) {Fs : Set (Set α)} (hne : Fs.Nonempty) (hFs : Fs ⊆ U)
     (hFs_mod : M.IsModularFamily (fun F : Fs ↦ F)) : ⋂₀ Fs ∈ U :=
   U.forall_inter Fs hFs hne hFs_mod
 
-lemma ModularCut.iInter_mem (U : M.ModularCut) {ι : Type*} [Nonempty ι] (Fs : ι → Set α)
+protected lemma iInter_mem (U : M.ModularCut) {ι : Type*} [Nonempty ι] (Fs : ι → Set α)
     (hFs : ∀ i, Fs i ∈ U) (hFs_mod : M.IsModularFamily Fs) : ⋂ i, Fs i ∈ U := by
   have hwin := U.sInter_mem (Fs := range Fs) (range_nonempty Fs) ?_ ?_
   · simpa using hwin
@@ -190,27 +203,30 @@ lemma ModularCut.iInter_mem (U : M.ModularCut) {ι : Type*} [Nonempty ι] (Fs : 
   obtain ⟨B, hB, hB'⟩ := hFs_mod
   exact ⟨B, hB, by simpa⟩
 
-lemma ModularCut.inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U)
+protected lemma inter_mem (U : M.ModularCut) (hF : F ∈ U) (hF' : F' ∈ U)
     (h : M.IsModularPair F F') : F ∩ F' ∈ U := by
   rw [inter_eq_iInter]
   apply U.iInter_mem _ _ h
   simp [hF, hF']
 
-lemma ModularCut.closure_mem_of_mem (hF : F ∈ U) : M.closure F ∈ U := by
+lemma closure_mem_of_mem (hF : F ∈ U) : M.closure F ∈ U := by
   rwa [(U.isFlat_of_mem hF).closure]
 
 /-- The `ModularCut` of all flats containing `X` -/
-@[simps] def ModularCut.principal (M : Matroid α) (X : Set α) : M.ModularCut where
+@[simps]
+def principal (M : Matroid α) (X : Set α) : M.ModularCut where
   carrier := {F | M.IsFlat F ∧ X ⊆ F}
-  forall_isFlat _ h := h.1
   forall_superset _ _ hF hF' hFF' := ⟨hF', hF.2.trans hFF'⟩
+  forall_isFlat _ h := h.1
   forall_inter _ hS hne _ := ⟨IsFlat.sInter hne fun _ h ↦ (hS h).1,
     subset_sInter fun _ h ↦ (hS h).2⟩
 
-@[simp] lemma ModularCut.mem_principal_iff : F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := Iff.rfl
+@[simp]
+lemma mem_principal_iff : F ∈ principal M X ↔ M.IsFlat F ∧ X ⊆ F := Iff.rfl
 
 /-- The empty modular cut -/
-@[simps] def ModularCut.empty (M : Matroid α) : M.ModularCut where
+@[simps]
+protected def empty (M : Matroid α) : M.ModularCut where
   carrier := ∅
   forall_isFlat := by simp
   forall_superset := by simp
@@ -222,7 +238,7 @@ instance (M : Matroid α) : PartialOrder M.ModularCut where
   le_trans _ _ _ := Subset.trans
   le_antisymm U U' h h' := by simpa using subset_antisymm h h'
 
-lemma ModularCut.le_iff_subset {U U' : M.ModularCut} :
+protected lemma le_iff_subset {U U' : M.ModularCut} :
   U ≤ U' ↔ (U : Set (Set α)) ⊆ U' := Iff.rfl
 
 instance (M : Matroid α) : BoundedOrder M.ModularCut where
@@ -231,17 +247,19 @@ instance (M : Matroid α) : BoundedOrder M.ModularCut where
   bot := ModularCut.empty M
   bot_le _ _ := by simp
 
-@[simp] protected lemma ModularCut.notMem_bot (X : Set α) : X ∉ (⊥ : M.ModularCut) :=
+@[simp]
+protected lemma notMem_bot (X : Set α) : X ∉ (⊥ : M.ModularCut) :=
   notMem_empty X
 
-@[simp] lemma ModularCut.coe_bot (M : Matroid α) : ((⊥ : M.ModularCut) : Set (Set α)) = ∅ := rfl
+@[simp]
+protected lemma coe_bot (M : Matroid α) : ((⊥ : M.ModularCut) : Set (Set α)) = ∅ := rfl
 
-lemma ModularCut.eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U := by
+lemma eq_bot_or_ground_mem (U : M.ModularCut) : U = ⊥ ∨ M.E ∈ U := by
   obtain (hU | ⟨F, hF⟩) := (U : Set (Set α)).eq_empty_or_nonempty
   · exact .inl <| SetLike.ext'_iff.2 <| by simp [hU]
   exact .inr <| U.superset_mem hF M.ground_isFlat (U.isFlat_of_mem hF).subset_ground
 
-lemma ModularCut.eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
+protected lemma eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
   refine ⟨fun h hE ↦ ?_, fun h ↦ ?_⟩
   · obtain rfl := h
     simp at hE
@@ -249,22 +267,57 @@ lemma ModularCut.eq_bot_iff (U : M.ModularCut) : U = ⊥ ↔ M.E ∉ U := by
   · assumption
   contradiction
 
-lemma ModularCut.ne_bot_iff (U : M.ModularCut) : U ≠ ⊥ ↔ M.E ∈ U := by
+protected lemma ne_bot_iff (U : M.ModularCut) : U ≠ ⊥ ↔ M.E ∈ U := by
   rw [Ne, U.eq_bot_iff, not_not]
 
-protected lemma ModularCut.mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
+lemma mem_top_of_isFlat (hF : M.IsFlat F) : F ∈ (⊤ : M.ModularCut) :=
   ⟨hF, empty_subset F⟩
 
-@[simp] lemma ModularCut.mem_top_iff : F ∈ (⊤ : M.ModularCut) ↔ M.IsFlat F :=
+@[simp]
+protected lemma mem_top_iff : F ∈ (⊤ : M.ModularCut) ↔ M.IsFlat F :=
   ⟨fun h ↦ h.1, ModularCut.mem_top_of_isFlat⟩
 
-lemma ModularCut.eq_top_iff : U = ⊤ ↔ M.loops ∈ U := by
+protected lemma eq_top_iff : U = ⊤ ↔ M.loops ∈ U := by
   refine ⟨by rintro rfl; exact ⟨M.closure_isFlat ∅, empty_subset _⟩, fun h ↦ ?_⟩
-  simp only [SetLike.ext_iff, mem_top_iff]
+  simp only [SetLike.ext_iff, ModularCut.mem_top_iff]
   exact fun F ↦ ⟨U.isFlat_of_mem, fun h' ↦ U.superset_mem h h' h'.loops_subset⟩
 
-lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut) := by
+protected lemma top_ne_bot (M : Matroid α) : (⊤ : M.ModularCut) ≠ (⊥ : M.ModularCut) := by
   rw [Ne, eq_comm, ModularCut.eq_top_iff]; simp
+
+@[simp]
+protected lemma map_top {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (⊤ : M.ModularCut).map f hf = ⊤ := by
+  ext F h
+  simp only [ModularCut.mem_map_iff, ModularCut.mem_top_iff, h, iff_true]
+  simp_rw [isFlat_map_iff, eq_comm (a := F)] at h
+  assumption
+
+@[simp]
+protected lemma map_eq_top {β : Type*} {f : α → β } (hf) {U : M.ModularCut} :
+    U.map f hf = ⊤ ↔ U = ⊤ := by
+  simp +contextual only [ModularCut.ext_iff, isFlat_map_iff, ModularCut.mem_map_iff,
+    ModularCut.mem_top_iff, iff_def, implies_true, forall_const, true_and, forall_exists_index,
+    and_imp]
+  refine ⟨fun h F hF ↦ ?_, ?_⟩
+  · obtain ⟨F₀, hF₀U, hF₀F⟩ := h (f '' F) _ hF rfl
+    rw [hf.image_eq_image_iff (U.subset_ground hF₀U) hF.subset_ground] at hF₀F
+    rwa [← hF₀F]
+  rintro h _ F hF rfl
+  exact ⟨F, h F hF, rfl⟩
+
+@[simp]
+protected lemma map_bot {β : Type*} {f : α → β} (hf : InjOn f M.E) :
+    (⊥ : M.ModularCut).map f hf = ⊥ := by
+  ext; simp
+
+@[simp]
+protected lemma map_eq_bot {β : Type*} {f : α → β} {U : M.ModularCut} (hf : InjOn f M.E) :
+    U.map f hf = ⊥ ↔ U = ⊥ := by
+  refine ⟨fun h_eq ↦ ?_, by rintro rfl; simp⟩
+  simp only [ModularCut.ext_iff, isFlat_map_iff, ModularCut.mem_map_iff, ModularCut.notMem_bot,
+    iff_false, not_exists, not_and] at h_eq ⊢
+  exact fun F hF hFU ↦ h_eq _ ⟨F, hF, rfl⟩ F hFU rfl
 
 lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principal M M.E ≠ ⊤ := by
   simp only [Ne, ModularCut.eq_top_iff, ModularCut.mem_principal_iff, closure_isFlat, true_and,
@@ -273,7 +326,7 @@ lemma principal_ground_ne_top (M : Matroid α) [RankPos M] : ModularCut.principa
   obtain ⟨e, heB⟩ := hB.nonempty
   exact fun h ↦ (hB.indep.isNonloop_of_mem heB).not_isLoop <| h (hB.subset_ground heB)
 
-lemma ModularCut.mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
+lemma mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.Indep I)
     (hJI : J ⊂ I) (h : ∀ e ∈ I \ J, M.closure (I \ {e}) ∈ U) : M.closure J ∈ U := by
   set Is : ↑(I \ J) → Set α := fun e ↦ I \ {e.1} with hIs
   have hmod : M.IsModularFamily Is := hI.isModularFamily_of_subsets (by simp [hIs])
@@ -287,7 +340,7 @@ lemma ModularCut.mem_of_ssubset_indep_of_forall_diff (U : M.ModularCut) (hI : M.
 
 /-- If `X` spans a flat outside `U`, but `X ∪ {y}` spans a flat in `U` for all
 `y ∈ Y \ M.closure X`, then `M.closure X` is covered by `M.closure Y`. -/
-lemma ModularCut.covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
+lemma covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
     (hXY : M.closure X ⊆ M.closure Y) (hYU : M.closure Y ∈ U) (hXU : M.closure X ∉ U)
     (hmax : ∀ x ∈ Y \ M.closure X, M.closure (insert x X) ∈ U) : M.closure X ⋖[M] M.closure Y := by
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
@@ -325,7 +378,7 @@ lemma ModularCut.covBy_of_maximal_closure (U : M.ModularCut) {X Y : Set α}
 section restrict
 
 /-- A `ModularCut` in `M` gives a `ModularCut` in `M ↾ R` for any `R ⊆ M.E`. -/
-def ModularCut.restrict (U : M.ModularCut) (R : Set α) : (M ↾ R).ModularCut where
+protected def restrict (U : M.ModularCut) (R : Set α) : (M ↾ R).ModularCut where
   carrier := {F | (M ↾ R).IsFlat F ∧ M.closure F ∈ U}
   forall_isFlat F h := h.1
   forall_superset F F' h hF' hFF' := ⟨hF', (U.closure_superset_mem' h.2 hFF')⟩
@@ -342,18 +395,18 @@ def ModularCut.restrict (U : M.ModularCut) (R : Set α) : (M ↾ R).ModularCut w
     simpa using U.iInter_mem (fun i : Xs ↦ M.closure i) (fun i ↦ (hXs i.2).2) hcl'
 
 @[simp]
-lemma ModularCut.mem_restrict_iff (U : M.ModularCut) {R : Set α}  :
+lemma mem_restrict_iff (U : M.ModularCut) {R : Set α}  :
     F ∈ (U.restrict R) ↔ (M ↾ R).IsFlat F ∧ M.closure F ∈ U := Iff.rfl
 
 /-- a `ModularCut` in `M` gives a `ModularCut` in `M ＼ D` for any `D`. -/
-def ModularCut.delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
+protected def delete (U : M.ModularCut) (D : Set α) : (M ＼ D).ModularCut :=
   U.restrict (M.E \ D)
 
 @[simp]
-lemma ModularCut.mem_delete_iff (U : M.ModularCut) {D : Set α}  :
+lemma mem_delete_iff (U : M.ModularCut) {D : Set α}  :
     F ∈ (U.delete D) ↔ (M ＼ D).IsFlat F ∧ M.closure F ∈ U := Iff.rfl
 
-lemma ModularCut.mem_delete_elem_iff :
+lemma mem_delete_elem_iff :
     F ∈ U.delete {e} ↔ (e ∉ F) ∧ (F ∈ U ∨ (insert e F ∈ U ∧ e ∈ M.closure F)) := by
   rw [ModularCut.delete, ModularCut.restrict, ModularCut.mem_mk_iff, mem_setOf_eq,
     ← delete_eq_restrict, deleteElem_isFlat_iff]
@@ -381,7 +434,7 @@ lemma ModularCut.mem_delete_elem_iff :
     closure_closure] at hFU
   exact ⟨⟨heF, .inr hfl⟩, hFU.1⟩
 
-def ModularCut.comapOfSubsetRange {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β)
+def comapOfSubsetRange {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β)
     (hf : M.E ⊆ range f) : (M.comap f).ModularCut where
   carrier := (preimage f) '' U
   forall_isFlat := by
@@ -412,19 +465,19 @@ def ModularCut.comapOfSubsetRange {β : Type*} {M : Matroid β} (U : M.ModularCu
     exact fun e he F hF ↦ ⟨e, he _ hF, rfl⟩
 
 @[simp]
-lemma ModularCut.mem_comapOfSubsetRange_iff {β : Type*} {M : Matroid β} (U : M.ModularCut)
+lemma mem_comapOfSubsetRange_iff {β : Type*} {M : Matroid β} (U : M.ModularCut)
     {f : α → β} {hf} : F ∈ U.comapOfSubsetRange f hf ↔ ∃ F₀ ∈ U, f ⁻¹' F₀ = F := Iff.rfl
 
-def ModularCut.comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
+protected def comap {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
     (M.comap f).ModularCut :=
   ((U.restrict (range f ∩ M.E)).comapOfSubsetRange f inter_subset_left).copy <|
     M.comap_restrict_range_inter f
 
 @[simp]
-lemma ModularCut.mem_comap_iff {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
+lemma mem_comap_iff {β : Type*} {M : Matroid β} (U : M.ModularCut) (f : α → β) :
     F ∈ U.comap f ↔ M.closure (f '' F) ∈ U ∧ F = f ⁻¹' (M.closure (f '' F)) := by
-  simp [comap, comapOfSubsetRange, mem_copy_iff, mem_mk_iff, mem_image, SetLike.mem_coe,
-    mem_restrict_iff, isFlat_restrict_iff', diff_eq_empty.2 inter_subset_right]
+  simp [ModularCut.comap, comapOfSubsetRange, ModularCut.mem_mk_iff, mem_image,
+    SetLike.mem_coe, mem_restrict_iff, isFlat_restrict_iff', diff_eq_empty.2 inter_subset_right]
   simp_rw [← inter_assoc, inter_right_comm,
     inter_eq_self_of_subset_left (M.closure_subset_ground _)]
   refine ⟨?_, fun ⟨h1, h2⟩ ↦ ?_⟩
@@ -438,7 +491,7 @@ lemma ModularCut.mem_comap_iff {β : Type*} {M : Matroid β} (U : M.ModularCut) 
 
 /-- Given an element `e` of a matroid `M`, the modular cut of `M ＼ e` corresponding to the
 extension `M` of `M ＼ e`. Intended to apply when `e ∈ M.E`. -/
-@[simps] def ModularCut.ofDeleteElem (M : Matroid α) (e : α) : (M ＼ {e}).ModularCut where
+def ofDeleteElem (M : Matroid α) (e : α) : (M ＼ {e}).ModularCut where
   carrier := {F | (M ＼ {e}).IsFlat F ∧ e ∈ M.closure F}
   forall_isFlat _ h := h.1
   forall_superset := by
@@ -465,7 +518,8 @@ lemma mem_ofDeleteElem_iff :
   rw [h, and_iff_left (.inl rfl), ← h]
   exact .inr (M.closure_isFlat F)
 
-@[simp] lemma mem_ofDeleteElem_iff' :
+@[simp]
+lemma mem_ofDeleteElem_iff' :
     F ∈ ModularCut.ofDeleteElem M e ↔ e ∈ M.closure F \ F ∧ M.IsFlat (insert e F) := by
   simp only [mem_ofDeleteElem_iff, mem_diff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨h.1.2, ?_⟩⟩
@@ -480,7 +534,7 @@ section finite
 
 /-- The modular family condition can be replaced by a condition about modular pairs and
 infinite chains. -/
-def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
+def ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α))
     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U)
@@ -530,7 +584,7 @@ def ModularCut.ofForallIsModularPairChainInter (M : Matroid α) (U : Set (Set α
     exact fun F hF ↦ sInter_subset_of_mem hF
 
 @[simp]
-lemma ModularCut.mem_ofForallIsModularPairChainInter_iff (M : Matroid α) (U : Set (Set α))
+lemma mem_ofForallIsModularPairChainInter_iff (M : Matroid α) (U : Set (Set α))
     (h_isFlat) (h_superset) (h_pair) (h_chain) {F : Set α} :
     F ∈ ModularCut.ofForallIsModularPairChainInter M U h_isFlat h_superset h_pair h_chain ↔ F ∈ U :=
   Iff.rfl
@@ -538,7 +592,7 @@ lemma ModularCut.mem_ofForallIsModularPairChainInter_iff (M : Matroid α) (U : S
 /-- For a finite-rank matroid, the intersection condition can be replaced with a condition about
 modular pairs rather than families. -/
 @[simps!]
-def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
+def ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : Set (Set α))
     (h_isFlat : ∀ F ∈ U, M.IsFlat F)
     (h_superset : ∀ ⦃F F'⦄, F ∈ U → M.IsFlat F' → F ⊆ F' → F' ∈ U)
     (h_pair : ∀ ⦃F F'⦄, F ∈ U → F' ∈ U → M.IsModularPair F F' → F ∩ F' ∈ U) : M.ModularCut :=
@@ -547,7 +601,7 @@ def ModularCut.ofForallIsModularPairInter (M : Matroid α) [M.RankFinite] (U : S
     finite_of_isChain_of_forall_isFlat (fun _ hF ↦ h_isFlat _ (h hF)) hCs
 
 @[simp]
-lemma ModularCut.mem_ofForallIsModularPairInter_iff (M : Matroid α) [M.RankFinite] (U : Set (Set α))
+lemma mem_ofForallIsModularPairInter_iff (M : Matroid α) [M.RankFinite] (U : Set (Set α))
     (h_isFlat) (h_superset) (h_pair) {F : Set α} :
     F ∈ ModularCut.ofForallIsModularPairInter M U h_isFlat h_superset h_pair ↔ F ∈ U :=
   Iff.rfl
