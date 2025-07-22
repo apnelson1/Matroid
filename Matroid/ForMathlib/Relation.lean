@@ -26,8 +26,9 @@ converse is `flip`
 
 scoped macro:1050 r:term "ᵀ" : term => `(flip $r)
 
-@[simp]
-lemma compl_apply : (r a x)ᶜ ↔ ¬r a x := Iff.rfl
+@[simp] lemma compl_apply : (r a x)ᶜ ↔ ¬r a x := Iff.rfl
+
+@[simp] lemma flip_apply (r : α → α → Prop) : rᵀ a b ↔ r b a := Iff.rfl
 
 def domain (r : α → β → Prop) : Set α := {x | ∃ y, r x y}
 
@@ -66,13 +67,13 @@ lemma codomain_mono (h : r ≤ r') : codomain r ⊆ codomain r' := by
   exact ⟨x, h _ _ hry⟩
 
 /-- Double composition of `r` of the converse of `s`-/
-def Domp (r s : α → β → Prop) : α → β → Prop := Comp (Comp r sᵀ) r
+def Domp (r s : α → β → Prop) : α → β → Prop := Comp r (Comp sᵀ r)
 
-lemma domp_def (r s : α → β → Prop) : Domp r s = Comp (Comp r sᵀ) r := rfl
-
-lemma domp_def' (r s : α → β → Prop) : Domp r s = Comp r (Comp sᵀ r) := by
-  rw [← comp_assoc]
+lemma domp_def (r s : α → β → Prop) : Domp r s = Comp (Comp r sᵀ) r := by
+  rw [comp_assoc]
   rfl
+
+lemma domp_def' (r s : α → β → Prop) : Domp r s = Comp r (Comp sᵀ r) := rfl
 
 lemma domain_domp (r s : α → β → Prop) : domain (Domp r s) ⊆ domain r := by
   rw [domp_def']
@@ -83,12 +84,12 @@ lemma codomain_domp (r s : α → β → Prop) : codomain (Domp r s) ⊆ codomai
   exact codomain_comp (Comp r sᵀ) r
 
 lemma le_domp_self (r : α → β → Prop) : r ≤ Domp r r :=
-  fun a b hrab => ⟨a, ⟨b, hrab, hrab⟩, hrab⟩
+  fun a b hrab => ⟨b, hrab, a, hrab, hrab⟩
 
 lemma domp_mono {r₁ r₂ s₁ s₂ : α → β → Prop} (hr : r₁ ≤ r₂) (hs : s₁ ≤ s₂) :
     Domp r₁ s₁ ≤ Domp r₂ s₂ := by
-  rintro a b ⟨c, ⟨d, had, hcd⟩, hcb⟩
-  exact ⟨c, ⟨d, hr a d had, hs c d hcd⟩, hr c b hcb⟩
+  rintro a b ⟨d, had, c, hcd, hcb⟩
+  exact ⟨d, hr a d had, c, hs c d hcd, hr c b hcb⟩
 
 @[simp] lemma domp_bot_right (r : α → β → Prop) : Domp r ⊥ = ⊥ := by
   ext a b
@@ -112,15 +113,15 @@ lemma domp_eq (r s : α → β → Prop) [Dompeq r s] : Domp r s = s := Dompeq.d
 instance [Dompeq r r'] : Trans r (Comp r'ᵀ r) r' where
   trans := by
     rintro a x y hrax ⟨b, hr'bx, hrby⟩
-    exact domp_eq r r' |>.le a y ⟨b, ⟨x, hrax, hr'bx⟩, hrby⟩
+    exact domp_eq r r' |>.le a y ⟨x, hrax, b, hr'bx, hrby⟩
 
 instance [Dompeq r r'] : Trans (Comp r r'ᵀ) r r' where
   trans := by
     rintro a b x ⟨y, hray, hr'by⟩ hrbx
-    exact domp_eq r r' |>.le a x ⟨b, ⟨y, hray, hr'by⟩, hrbx⟩
+    exact domp_eq r r' |>.le a x ⟨y, hray, b, hr'by, hrbx⟩
 
 lemma dompeq_apply [Dompeq r r'] (hr'ax : r' a x) (hrbx : r b x) (hray : r a y) : r' b y :=
-  domp_eq r r' |>.le b y ⟨a, ⟨x, hrbx, hr'ax⟩, hray⟩
+  domp_eq r r' |>.le b y ⟨x, hrbx, a, hr'ax, hray⟩
 
 lemma dompeq_left_iff [Dompeq r r] (hrax : r a x) (hrbx : r b x) : r a y ↔ r b y :=
   ⟨dompeq_apply hrax hrbx, dompeq_apply hrbx hrax⟩
@@ -430,15 +431,15 @@ instance [IsTrans α r] [Dompeq r s] : Trans r s s where
   trans := by
     rintro a b c hr hs
     rw [← domp_eq r s] at hs ⊢
-    obtain ⟨d, ⟨e, hrbe, hsde⟩, hrdc⟩ := hs
-    exact ⟨d, ⟨e, trans' hr hrbe, hsde⟩, hrdc⟩
+    obtain ⟨e, hrbe, d, hsde, hrdc⟩ := hs
+    exact ⟨e, trans' hr hrbe, d, hsde, hrdc⟩
 
 instance [IsTrans α r] [Dompeq r s] : Trans s r s where
   trans := by
     rintro a b c hs hrbc
     rw [← domp_eq r s] at hs ⊢
-    obtain ⟨d, ⟨e, hrae, hsde⟩, hrdb⟩ := hs
-    exact ⟨d, ⟨e, hrae, hsde⟩, trans' hrdb hrbc⟩
+    obtain ⟨d, hrae, e, hsde, hrdb⟩ := hs
+    exact ⟨d, hrae, e, hsde, trans' hrdb hrbc⟩
 
 instance [IsSymm α r] [IsSymm α s] [Trans r s s]: Trans s r s where
   trans hs hr := symm <| trans' (symm hr) (symm hs)
@@ -471,11 +472,27 @@ lemma sInf_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α 
   simp_rw [binary_relation_sInf_iff s]
   exact fun h r hrs => let := hs r hrs; symm (h r hrs)
 
+instance {s : ι → α → α → Prop} [∀ i, IsSymm α (s i)] : IsSymm α (⨆ i, s i) where
+  symm a b h := by
+    simp only [iSup_apply, iSup_Prop_eq] at h ⊢
+    obtain ⟨i, h⟩ := h
+    exact ⟨i, symm h⟩
+
+instance {s : ι → α → α → Prop} [∀ i, IsSymm α (s i)] : IsSymm α (⨅ i, s i) where
+  symm a b h := by
+    simp only [iInf_apply, iInf_Prop_eq] at h ⊢
+    exact fun i => symm (h i)
+
 lemma sInf_transitive {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsTrans α r) :
     Transitive (sInf s) := by
   rintro a b c
   simp_rw [binary_relation_sInf_iff s]
   exact fun hab hbc r hrs => let := hs r hrs; trans' (hab r hrs) (hbc r hrs)
+
+instance {s : ι → α → α → Prop} [∀ i, IsTrans α (s i)] : IsTrans α (⨅ i, s i) where
+  trans a b c hab hbc := by
+    simp only [iInf_apply, iInf_Prop_eq] at hab hbc ⊢
+    exact fun i => trans' (hab i) (hbc i)
 
 lemma domain_eq_codomain (r : α → α → Prop) [IsSymm α r] : domain r = codomain r := by
   ext a
@@ -558,8 +575,8 @@ lemma transClosure_self_iff [foo r] : TransClosure r a a ↔ r a a := by
 instance [IsSymm α r] [IsTrans α r] : Dompeq r r where
   dompeq := by
     ext a b
-    exact ⟨fun ⟨c, ⟨d, had, hcd⟩, hcb⟩ => trans' had (trans' (symm hcd) hcb),
-      fun h => ⟨a, ⟨b, h, h⟩, h⟩⟩
+    exact ⟨fun ⟨d, had, c, hcd, hcb⟩ => trans' had (trans' (symm hcd) hcb),
+      fun h => ⟨b, h, a, h, h⟩⟩
 
 -- def reflSet (r : α → α → Prop) : Set α := {x | r x x}
 
@@ -608,18 +625,16 @@ lemma comp_self (r : α → α → Prop) [IsTrans α r] [foo r] : Comp r r = r :
   exact ⟨fun ⟨u, hxu, huy⟩ => trans_of r hxu huy, fun h => ⟨y, h, refl_of_right h⟩⟩
 
 lemma domp_symm (r s : α → α → Prop) [IsSymm α r] [IsSymm α s] : Symmetric (Domp r s) := by
-  rintro a b ⟨c, ⟨d, had, hcd⟩, hcb⟩
-  use d, ?_, symm had
-  use c, symm hcb, symm hcd
+  rintro a b ⟨d, had, c, hcd, hcb⟩
+  exact ⟨c, symm hcb, d, symm hcd, symm had⟩
 
 instance [IsSymm α r] [IsSymm α s] : IsSymm α (Domp r s) where
   symm := domp_symm r s
 
 lemma domp_transitive (r s : α → α → Prop) [IsSymm α r] [IsTrans α s] [H : Trans s r s] :
     Transitive (Domp r s) := by
-  rintro a b c ⟨d, ⟨e, hae, hde⟩, hdb⟩ ⟨e', ⟨f, hbf, he'f⟩, he'c⟩
-  use e', ?_, he'c
-  use e, hae
+  rintro a b c ⟨e, hae, d, hde, hdb⟩ ⟨f, hbf, e', he'f, he'c⟩
+  use e, hae, e', ?_, he'c
   have := trans' (H.trans (H.trans he'f (symm hbf)) (symm hdb)) hde
   exact this
 
@@ -628,13 +643,13 @@ instance [IsSymm α r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) 
 
 instance [IsTrans α r]: Trans r (Domp r s) (Domp r s) where
   trans := by
-    rintro a b c hrab ⟨d, ⟨e, hrbe, hsde⟩, hrdc⟩
-    exact ⟨d, ⟨e, trans' hrab hrbe, hsde⟩, hrdc⟩
+    rintro a b c hrab ⟨e, hrbe, d, hsde, hrdc⟩
+    exact ⟨e, trans' hrab hrbe, d, hsde, hrdc⟩
 
 instance [IsTrans α r] : Trans (Domp r s) r (Domp r s) where
   trans := by
-    rintro a b c ⟨d, ⟨e, hrae, hsde⟩, hrdb⟩ hrbc
-    exact ⟨d, ⟨e, hrae, hsde⟩, trans' hrdb hrbc⟩
+    rintro a b c ⟨e, hrae, d, hsde, hrdb⟩ hrbc
+    exact ⟨e, hrae, d, hsde, trans' hrdb hrbc⟩
 
 
 def restrict (r : α → α → Prop) (S : Set α) : α → α → Prop :=

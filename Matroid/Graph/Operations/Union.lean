@@ -251,9 +251,6 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 
 /-! ### Indexed unions -/
 
-instance (G : ι → Graph α β) : IsSymm α (⨆ i, (G i).IsLink e) := by
-  sorry
-
 /-- The union of an indexed family of pairwise compatible graphs. -/
 @[simps! dup vertexSet edgeSet isLink]
 protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β :=
@@ -267,22 +264,58 @@ protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible o
 
 variable {G : ι → Graph α β} {i j : ι}
 
--- protected lemma le_iUnion (hG : Pairwise (Graph.Compatible on G)) (i : ι) :
---     G i ≤ Graph.iUnion G hG := by
---   apply le_of
---   · rw [iUnion_dup]
+lemma dup_le_iUnion (hG : Pairwise (Graph.Compatible on G)) (i : ι) :
+    (G i).Dup ≤ (Graph.iUnion G hG).Dup := by
+  rw [← Partition.rel_le_iff_le]
+  intro x y hxy
+  simp only [iUnion_dup, Partition.iSup_rel]
+  apply Relation.TransGen.single
+  simp
+  use i
 
--- @[simp]
--- protected lemma iUnion_le_iff (hG : Pairwise (Graph.Compatible on G)) :
---     Graph.iUnion G hG ≤ H ↔ ∀ i, G i ≤ H := by
---   refine ⟨fun h i ↦ (Graph.le_iUnion hG i).trans h,
---     fun h' ↦ ⟨isLabelSubgraph_of (fun x y hx hy => ?_) (fun e x y ⟨i, hil⟩ => hil.of_le (h' i)),
---     fun x y hdup ↦ ?_⟩⟩
---   · rw [iUnion_vertexSet, mem_iUnion] at hx
---     obtain ⟨i, hxi⟩ := hx
---     rw [iUnion_dup_of_mem hG hxi, dup_iff_dup_of_le (h' i) hxi]
---   simp only [iUnion_vertexSet, mem_iUnion, forall_exists_index]
---   exact fun i hxi => ⟨i, (hdup.of_le_of_mem (h' i) hxi).right_mem⟩
+lemma isLink_le_iUnion (hG : Pairwise (Graph.Compatible on G)) (i : ι) :
+    (G i).IsLink e x y ≤ (Graph.iUnion G hG).IsLink e x y := by
+  simp only [iUnion_isLink, Relation.domp_def']
+  intro hxy
+  refine ⟨x, Relation.TransGen.single ?_, y, ?_, Relation.TransGen.single ?_⟩ <;>
+    simp only [Relation.flip_apply, iSup_apply, iSup_Prop_eq] <;> use i
+  · exact hxy.left_refl
+  · exact symm hxy
+  · exact hxy.right_refl
+
+instance (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
+    Nodup (Graph.iUnion G hG) where
+  le_eq := by
+    simp only [iUnion_dup, dup_eq_discrete, Partition.iSup_rel, Partition.rel_discrete_eq]
+    rintro x y hxy
+    
+    sorry
+
+protected lemma le_iUnion (hG : Pairwise (Graph.Compatible on G)) (i : ι) [∀ i, Nodup (G i)] :
+    G i ≤ Graph.iUnion G hG := by
+  apply le_of
+  · rw [iUnion_dup]
+    sorry
+  intro e x y hixy
+  simp only [iUnion_isLink, dup_eq_discrete, Partition.rel_discrete_eq]
+  refine ⟨x, Relation.TransGen.single ?_, y, ?_, Relation.TransGen.single ?_⟩ <;>
+    simp only [Relation.flip_apply, iSup_apply, iSup_Prop_eq, and_true] <;> use i
+  · exact hixy.left_mem
+  · exact symm hixy
+  · exact hixy.right_mem
+
+@[simp]
+protected lemma iUnion_le_iff (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
+    Graph.iUnion G hG ≤ H ↔ ∀ i, G i ≤ H := by
+  refine ⟨fun h i ↦ (Graph.le_iUnion hG i).trans h,
+    fun h' ↦ ⟨?_, fun e x y hl ↦ ?_⟩⟩
+  · sorry
+  sorry
+  -- · rw [iUnion_vertexSet, mem_iUnion] at hx
+  --   obtain ⟨i, hxi⟩ := hx
+  --   rw [iUnion_dup_of_mem hG hxi, dup_iff_dup_of_le (h' i) hxi]
+  -- simp only [iUnion_vertexSet, mem_iUnion, forall_exists_index]
+  -- exact fun i hxi => ⟨i, (hdup.of_le_of_mem (h' i) hxi).right_mem⟩
 
 -- @[simp]
 -- protected lemma iUnion_const [Nonempty ι] (G : Graph α β) :

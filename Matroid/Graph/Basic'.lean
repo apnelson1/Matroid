@@ -205,6 +205,10 @@ lemma IsLink.left_mem (h : G.IsLink e x y) : x ∈ V(G) :=
 lemma IsLink.right_mem (h : G.IsLink e x y) : y ∈ V(G) :=
   h.symm.left_mem
 
+lemma IsLink.left_refl (h : G.IsLink e x y) : G.Dup x x := dup_of_mem_vertexSet h.left_mem
+
+lemma IsLink.right_refl (h : G.IsLink e x y) : G.Dup y y := h.symm.left_refl
+
 lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
   comm
 
@@ -572,7 +576,7 @@ def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, 
   IsLink e := Domp P (l e)
   isLink_symm e he := IsSymm.symm
   dup_or_dup_of_isLink_of_isLink := by
-    rintro e x y a b ⟨z, ⟨w, hPxw, hlzw⟩, hPzy⟩ ⟨c, ⟨d, hPad, hlcd⟩, hPcb⟩
+    rintro e x y a b ⟨w, hPxw, z, hlzw, hPzy⟩ ⟨d, hPad, c, hlcd, hPcb⟩
     obtain hPzc | hPzd := h (symm hlzw) (symm hlcd)
     · left
       rwa [left_rw P hPxw, left_rw P hPzc, comm_of P]
