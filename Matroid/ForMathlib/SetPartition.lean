@@ -1,6 +1,7 @@
 import Mathlib.Data.Setoid.Partition
 import Mathlib.Data.SetLike.Basic
 import Mathlib.Data.Set.Finite.Powerset
+import Mathlib.Order.CompactlyGenerated.Basic
 import Matroid.ForMathlib.Lattice
 import Matroid.ForMathlib.Relation
 import Matroid.ForMathlib.Function -- for Function.onFun_comp
@@ -291,8 +292,7 @@ variable {α : Type*} [CompleteLattice α] {s t a : α}
 instance : PartialOrder (Partition α) where
   le P Q := ∀ x ∈ P, ∃ y ∈ Q, x ≤ y
   lt := _
-  le_refl P x hx := by
-    refine ⟨x,hx,rfl.le⟩
+  le_refl P x hx := ⟨x,hx,rfl.le⟩
   le_trans P Q R hPQ hQR x hxP := by
     obtain ⟨y, hy, hxy⟩ := hPQ x hxP
     obtain ⟨z, hz, hyz⟩ := hQR y hy
@@ -417,6 +417,36 @@ lemma restrict_eq_self_iff {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) 
   ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ h ▸ (by rfl)⟩
 
 end Restrict
+
+section Atomic
+
+variable {α : Type*} [CompleteLattice α] {P Q : Partition α}
+
+def Atomic (P : Partition α) : Prop := ∀ x ∈ P, IsAtom x
+
+lemma Atomic.subset_iff_le (hQ : Q.Atomic) : P ⊆ Q ↔ P ≤ Q := by
+  refine ⟨le_of_subset, fun h x hxP ↦ ?_⟩
+  obtain ⟨y, hy, hxy⟩ := h x hxP
+  obtain rfl := hQ y hy |>.le_iff_eq (P.ne_bot_of_mem hxP) |>.mp hxy
+  exact hy
+
+lemma Atomic.atomic_of_subset (hPQ : P ⊆ Q) (hQ : Q.Atomic) : P.Atomic :=
+  fun x hxP ↦ hQ x (hPQ hxP)
+
+lemma Atomic.atomic_of_le (hPQ : P ≤ Q) (hQ : Q.Atomic) : P.Atomic :=
+  hQ.atomic_of_subset <| hQ.subset_iff_le.mpr hPQ
+
+@[simp]
+lemma bot_atomic : (⊥ : Partition α).Atomic := by simp [Atomic]
+
+lemma exists_atomic (s : α) [IsAtomistic α] [IsModularLattice α] [IsCompactlyGenerated α] :
+    ∃ P : Partition α, P.Atomic ∧ P.supp = s := by
+  -- needs `lake update`
+  -- obtain ⟨t, htindep, heq, hAtomic⟩ := exists_sSupIndep_of_sSup_atoms s (sSup_atoms_le_eq s)
+  -- use ofIndependent' htindep, hAtomic, heq
+  sorry
+
+end Atomic
 
 section Set
 
@@ -673,6 +703,17 @@ lemma rel_self_iff_mem_supp : P x x ↔ x ∈ P.supp :=
   ⟨fun h ↦ h.left_mem, fun h ↦ rel_self_of_mem_supp h⟩
 
 @[simp]
+lemma rel_bot : ⇑(⊥ : Partition (Set α)) = fun _ _ => False := by
+  ext x y
+  simp [rel_iff_exists]
+
+@[simp]
+lemma rel_top : ⇑(⊤ : Partition (Set α)) = fun _ _ => True := by
+  obtain h | h := isEmpty_or_nonempty α <;> ext x y
+  · exact h.elim x
+  simp [rel_iff_exists]
+
+@[simp]
 lemma domain_rel : domain P = P.supp := by
   ext x
   simp only [mem_domain_iff, mem_supp_iff]
@@ -864,8 +905,6 @@ lemma iInf_rel (ι : Type*) (G : ι → Partition (Set α)) :
   rw [rel_ofRel_eq, iInf, ← range_comp]
   rfl
 
-
-
 end Rel
 
 section Discrete
@@ -899,54 +938,68 @@ protected def discrete (S : Set α) : Partition (Set α) where
   rw [← SetLike.mem_coe, ← mem_parts]
   simp [Partition.discrete]
 
-lemma rel_discrete_eq' : Partition.discrete S = fun a b => b ∈ S ∧ a = b := by
+lemma rel_discrete_eq' : Partition.discrete S = fun a b => a = b ∧ b ∈ S := by
   ext a b
+  rw [and_comm]
   simp [Partition.discrete, rel_iff_exists, ← SetLike.mem_coe, ← mem_parts]
 
 @[simp]
-lemma rel_discrete_eq : Partition.discrete S = fun a b => a ∈ S ∧ a = b := by
+lemma rel_discrete_eq : Partition.discrete S = fun a b => a = b ∧ a ∈ S := by
   ext a b
-  rw [rel_discrete_eq', and_congr_left_iff]
+  rw [rel_discrete_eq', and_congr_right_iff]
   rintro rfl
   rfl
 
 @[simp]
-lemma rel_discrete_iff : Partition.discrete S a b ↔ a ∈ S ∧ a = b := by
+lemma rel_discrete_iff : Partition.discrete S a b ↔ a = b ∧ a ∈ S := by
   rw [rel_discrete_eq]
+
+lemma discrete_atomic (S : Set α) : (Partition.discrete S).Atomic := by
+  rintro _ ⟨a, -, rfl⟩
+  exact isAtom_singleton a
+
+lemma atomic_iff_eq_discrete (P : Partition (Set α)) :
+    P.Atomic ↔ P = Partition.discrete P.supp := by
+  refine ⟨fun h => ?_, fun h => h ▸ discrete_atomic P.supp⟩
+  ext x
+  simp_rw [Atomic, Set.isAtom_iff] at h
+  refine ⟨fun hx => ?_, ?_⟩
+  · obtain ⟨a, rfl⟩ := h x hx
+    simp only [mem_discrete_iff, singleton_eq_singleton_iff, exists_eq_right]
+    exact mem_supp_iff.mpr ⟨{a}, hx, rfl⟩
+  rintro ⟨a, ⟨t, htP, hat⟩, rfl⟩
+  obtain ⟨b, rfl⟩ := h t htP
+  obtain rfl := mem_singleton_iff.mp hat
+  exact htP
 
 lemma discrete_le_of_supp_eq (P : Partition (Set α)) : Partition.discrete P.supp ≤ P := by
   refine le_of_rel_le fun a b => ?_
   rw [rel_discrete_iff]
-  rintro ⟨hb, rfl⟩
+  rintro ⟨rfl, hb⟩
   exact rel_self_of_mem_supp hb
 
-lemma discrete_iff_rel_le_eq (P : Partition (Set α)) :
-    Partition.discrete P.supp = P ↔ ⇑P ≤ Eq := by
-  refine ⟨fun h ↦ ?_, fun h ↦ rel_inj ?_⟩
-  · rw [← h, rel_discrete_eq]
-    tauto
-  ext x y
-  rw [rel_discrete_iff]
-  refine ⟨?_, fun hxy ↦ ⟨codomain_rel ▸ ⟨y, symm hxy⟩, h x y hxy⟩⟩
-  rintro ⟨h, rfl⟩
-  exact rel_self_of_mem_supp h
+-- lemma atomic_iff_rel_le_eq (P : Partition (Set α)) :
+--     P.Atomic ↔ ⇑P ≤ Eq := by
+--   refine ⟨fun h ↦ ?_, fun h ↦ rel_inj ?_⟩
+--   · rw [← h, rel_discrete_eq]
+--     tauto
+--   ext x y
+--   rw [rel_discrete_iff]
+--   refine ⟨?_, fun hxy ↦ ⟨h x y hxy, codomain_rel ▸ ⟨y, symm hxy⟩⟩⟩
+--   rintro ⟨rfl, h⟩
+--   exact rel_self_of_mem_supp h
 
-lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.discrete P.supp = P := by
-  refine P.discrete_iff_rel_le_eq.mpr <| (rel_le_iff_le.mpr hS).trans ?_
-  rw [← discrete_iff_rel_le_eq]
-  simp
+-- lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.discrete P.supp = P := by
+--   refine P.discrete_iff_rel_le_eq.mpr <| (rel_le_iff_le.mpr hS).trans ?_
+--   rw [← discrete_iff_rel_le_eq]
+--   simp
 
 @[simp]
 lemma discrete_empty : Partition.discrete (∅ : Set α) = ⊥ := by
   ext x
   simp
 
-instance : HasCompl (Partition (Set α)) where
-  compl P := ofPairwiseDisjoint (parts := insert P.suppᶜ (singleton '' P.supp)) (by
-    rw [pairwiseDisjoint_insert]
-    use (Partition.discrete P.supp).pairwiseDisjoint
-    rintro s ⟨a, ha, rfl⟩ hne
-    simpa)
+-- Compl does not exist
 
 end Discrete
 
@@ -1064,7 +1117,7 @@ lemma setOf_rel_mem (P : Partition (Set α)) (hx : x ∈ P.supp) : {y | P x y} �
 
 lemma discrete.rel_iff_eq_of_mem (ha : a ∈ P.supp) :
     (Partition.discrete P.supp) a b ↔ a = b := by
-  rw [rel_discrete_iff, and_iff_right ha]
+  rw [rel_discrete_iff, and_iff_left ha]
 
 end point
 
@@ -1187,7 +1240,7 @@ lemma nonempty_repFun (P : Partition (Set α)) : Nonempty P.RepFun := by
   obtain (hx | hx) := em (x ∈ s)
   · have hx' := f.rel_apply (supp_discrete s ▸ hx)
     rw [rel_discrete_iff] at hx'
-    exact hx'.2.symm
+    exact hx'.1.symm
   rw [f.apply_of_notMem (supp_discrete s |>.symm ▸ hx), id]
 
 lemma RepFun.coeFun_eq_id_of_eq_discrete  (f : P.RepFun) (hP : P = Partition.discrete s) :
