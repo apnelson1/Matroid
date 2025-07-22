@@ -85,6 +85,25 @@ lemma codomain_domp (r s : α → β → Prop) : codomain (Domp r s) ⊆ codomai
 lemma le_domp_self (r : α → β → Prop) : r ≤ Domp r r :=
   fun a b hrab => ⟨a, ⟨b, hrab, hrab⟩, hrab⟩
 
+lemma domp_mono {r₁ r₂ s₁ s₂ : α → β → Prop} (hr : r₁ ≤ r₂) (hs : s₁ ≤ s₂) :
+    Domp r₁ s₁ ≤ Domp r₂ s₂ := by
+  rintro a b ⟨c, ⟨d, had, hcd⟩, hcb⟩
+  exact ⟨c, ⟨d, hr a d had, hs c d hcd⟩, hr c b hcb⟩
+
+@[simp] lemma domp_bot_right (r : α → β → Prop) : Domp r ⊥ = ⊥ := by
+  ext a b
+  simp [Domp, Comp, flip]
+
+@[simp] lemma domp_bot_left (s : α → β → Prop) : Domp ⊥ s = ⊥ := by
+  ext a b
+  simp [Domp, Comp, flip]
+
+lemma domp_sup_right (r : α → β → Prop) (s₁ s₂ : α → β → Prop) :
+    Domp r (s₁ ⊔ s₂) = Domp r s₁ ⊔ Domp r s₂ := by
+  ext a b
+  simp only [Domp, Comp, flip, Pi.sup_apply, sup_Prop_eq, and_or_left, exists_or, or_and_right]
+
+
 class Dompeq (r s : α → β → Prop) : Prop where
   dompeq : Domp r s = s
 
@@ -108,6 +127,8 @@ lemma dompeq_left_iff [Dompeq r r] (hrax : r a x) (hrbx : r b x) : r a y ↔ r b
 
 lemma dompeq_right_iff [Dompeq r r] (hrax : r a x) (hray : r a y) : r b x ↔ r b y :=
   ⟨(dompeq_apply hrax · hray), (dompeq_apply hray · hrax)⟩
+
+
 
 
 def fiber (r : α → β → Prop) (x : β) : Set α := {a | r a x}
@@ -297,7 +318,7 @@ notation r " |ᵣ " S => rightRestrict r S
 
 
 
-
+-- This is iff
 lemma comp_le (r : α → β → Prop) (s : β → γ → Prop) (t : α → γ → Prop) [Trans r s t] :
     Comp r s ≤ t := by
   rintro a c ⟨b, hrab, hsbc⟩
@@ -605,6 +626,15 @@ lemma domp_transitive (r s : α → α → Prop) [IsSymm α r] [IsTrans α s] [H
 instance [IsSymm α r] [IsTrans α s] [H : Trans s r s] : IsTrans α (Domp r s) where
   trans := domp_transitive r s
 
+instance [IsTrans α r]: Trans r (Domp r s) (Domp r s) where
+  trans := by
+    rintro a b c hrab ⟨d, ⟨e, hrbe, hsde⟩, hrdc⟩
+    exact ⟨d, ⟨e, trans' hrab hrbe, hsde⟩, hrdc⟩
+
+instance [IsTrans α r] : Trans (Domp r s) r (Domp r s) where
+  trans := by
+    rintro a b c ⟨d, ⟨e, hrae, hsde⟩, hrdb⟩ hrbc
+    exact ⟨d, ⟨e, hrae, hsde⟩, trans' hrdb hrbc⟩
 
 
 def restrict (r : α → α → Prop) (S : Set α) : α → α → Prop :=

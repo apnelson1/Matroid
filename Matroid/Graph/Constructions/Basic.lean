@@ -13,16 +13,9 @@ open scoped Sym2
 namespace Graph
 
 /-- The graph with vertex set `V` and no edges -/
-@[simps!]
+@[simps! dup vertexSet edgeSet isLink]
 protected def noEdge (V : Set α) (β : Type*) : Graph α β := by
-  apply mk_of_unique V (fun _ _ _ => False) (∅ : Set β) <;> simp
-
-@[simp]
-lemma noEdge_dup (V : Set α) : (Graph.noEdge V β).Dup = Partition.discrete V := rfl
-
-@[simp]
-lemma noEdge_vertexSet (V : Set α) : V(Graph.noEdge V β) = V := by
-  simp [Graph.noEdge]
+  apply mk_of_unique V (fun _ _ _ => False) (∅ : Set β) (edge_mem_iff_exists_isLink := ?_) <;> simp
 
 lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ∅ β ∨ V(G).Nonempty := by
   refine V(G).eq_empty_or_nonempty.elim (fun he ↦ .inl (Graph.ext ?_ fun e x y ↦ ?_)) Or.inr
@@ -30,7 +23,7 @@ lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ∅ β
     contrapose! he
     simp only [noEdge_vertexSet, mem_empty_iff_false, not_false_eq_true, not_dup_of_not_left_mem,
       and_true, and_false, or_false] at he
-    exact ⟨x, he.left_mem⟩
+    exact ⟨x, dup_left_mem he⟩
   simp only [noEdge_isLink, iff_false]
   exact fun h ↦ by simpa [he] using h.left_mem
 
@@ -104,7 +97,7 @@ lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ ∧ 
     Partition.rel_discrete_iff, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
     not_isLink_of_notMem_edgeSet, imp_false]
   refine ⟨fun ⟨hD, hl⟩ => ⟨fun x hx => (hD x x hx).mp (G.dup_refl_iff |>.mpr hx) |>.1, ?_,
-    ⟨fun x y hxy => hD x y hxy.left_mem |>.mp hxy |>.2⟩⟩,
+    ⟨fun x y hxy => hD x y (dup_left_mem hxy) |>.mp hxy |>.2⟩⟩,
     fun ⟨hV, hE, hN⟩ => ⟨fun x y hx => by simp [hV hx, hx], ?_⟩⟩
   · contrapose! hl
     exact ⟨hl.some, exists_isLink_of_mem_edgeSet hl.some_mem⟩
@@ -153,7 +146,8 @@ lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y := id
 @[simp]
 lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ :=
   ⟨fun h => IsLabelSubgraph.antisymm
-    ⟨by simp [h, Partition.eq_bot h], fun e x y he ↦ False.elim (by simpa [h] using he.left_mem)⟩
+    ⟨by simp [h, Partition.eq_bot (G.vertexSet_eq ▸ h)],
+      fun e x y he ↦ by simpa [h] using he.left_mem⟩
     (isLabelSubgraph_of_le bot_le), fun h ↦ by simp [h]⟩
 
 @[simp]
@@ -164,6 +158,7 @@ lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ := not_iff_not.mp <| 
 @[simps! dup edgeSet isLink]
 protected def singleEdge (u v : α) (e : β) : Graph α β := by
   apply mk_of_unique {u,v} (fun e' x y => e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))) {e}
+    (edge_mem_iff_exists_isLink := ?_)
   <;> try tauto
   aesop
 
@@ -208,12 +203,12 @@ lemma singleEdge_isLabelSubgraph_iff :
     rintro (rfl | rfl) <;> constructor
     · rintro ⟨(rfl | rfl), hD'⟩ <;> tauto
     · rintro rfl
-      simp [G.refl_of_isLink hl]
+      simp [dup_refl_iff.mpr hl.left_mem]
     · rintro ⟨(rfl | rfl), hD'⟩
       · exact hD hD'.symm |>.symm
       rfl
     rintro rfl
-    simp [G.refl_of_isLink hl.symm]
+    simp [dup_refl_iff.mpr hl.right_mem]
   simp only [singleEdge_isLink, and_imp]
   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
   · exact hl
@@ -240,7 +235,8 @@ lemma singleEdge_isLabelSubgraph_iff :
 /-- A graph with one vertex and loops at that vertex -/
 @[simps! dup edgeSet isLink]
 def bouquet (v : α) (F : Set β) : Graph α β := by
-  apply mk_of_unique {v} (fun e x y => e ∈ F ∧ x = v ∧ y = v) F <;> try tauto
+  apply mk_of_unique {v} (fun e x y => e ∈ F ∧ x = v ∧ y = v) F (edge_mem_iff_exists_isLink := ?_)
+  <;> try tauto
   aesop
 
 @[simp]
@@ -269,7 +265,7 @@ lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G
   refine Graph.ext_inc ?_ fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · ext x y
     simp only [dup_iff_eq, bouquet_vertexSet, mem_singleton_iff]
-    refine ⟨fun h => by simp [hss h.left_mem h.right_mem, hss h.right_mem hv], ?_⟩
+    refine ⟨fun h => by simp [hss (dup_left_mem h) (dup_right_mem h), hss (dup_right_mem h) hv], ?_⟩
     rintro ⟨rfl, rfl⟩
     exact G.dup_refl_iff.mpr hv
   · simp [bouquet_inc_iff, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
@@ -298,6 +294,7 @@ lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bo
 @[simps! dup edgeSet isLink]
 def banana (a b : α) (F : Set β) : Graph α β := by
   apply mk_of_unique {a,b} (fun e x y => e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))) F
+    (edge_mem_iff_exists_isLink := ?_)
   <;> try tauto
   aesop
 

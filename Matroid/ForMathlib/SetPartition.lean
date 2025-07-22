@@ -850,6 +850,22 @@ lemma sInf_rel (S : Set (Partition (Set α))) : ⇑(sInf S) = sInf ((⇑) '' S) 
   change ⇑(ofRel _) = _
   rw [rel_ofRel_eq]
 
+@[simp]
+lemma iSup_rel (ι : Type*) (G : ι → Partition (Set α)) :
+    ⇑(⨆ i, G i) = TransClosure (⨆ i, ⇑(G i)) := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq, iSup, ← range_comp]
+  rfl
+
+@[simp]
+lemma iInf_rel (ι : Type*) (G : ι → Partition (Set α)) :
+    ⇑(⨅ i, G i) = ⨅ i, ⇑(G i) := by
+  change ⇑(ofRel _) = _
+  rw [rel_ofRel_eq, iInf, ← range_comp]
+  rfl
+
+
+
 end Rel
 
 section Discrete

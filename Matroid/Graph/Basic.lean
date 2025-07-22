@@ -64,7 +64,7 @@ lemma IsNonloopAt.vertexSet_nontrivial (h : G.IsNonloopAt e x) : V(G).Nontrivial
   obtain ⟨y, hne, h⟩ := h
   refine nontrivial_of_mem_mem_ne h.left_mem h.right_mem ?_
   rintro rfl
-  exact hne <| rel_self_of_mem_supp h.left_mem
+  exact hne <| h.right_unique_dup h
 
 lemma inc_eq_inc_iff {G₁ G₂ : Graph α β} [G₁.Nodup] [G₂.Nodup] :
     G₁.Inc e = G₂.Inc f ↔ G₁.IsLink e = G₂.IsLink f := by
