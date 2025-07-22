@@ -439,12 +439,12 @@ lemma Atomic.atomic_of_le (hPQ : P ≤ Q) (hQ : Q.Atomic) : P.Atomic :=
 @[simp]
 lemma bot_atomic : (⊥ : Partition α).Atomic := by simp [Atomic]
 
-lemma exists_atomic (s : α) [IsAtomistic α] [IsModularLattice α] [IsCompactlyGenerated α] :
-    ∃ P : Partition α, P.Atomic ∧ P.supp = s := by
-  -- needs `lake update`
-  -- obtain ⟨t, htindep, heq, hAtomic⟩ := exists_sSupIndep_of_sSup_atoms s (sSup_atoms_le_eq s)
-  -- use ofIndependent' htindep, hAtomic, heq
-  sorry
+-- lemma exists_atomic (s : α) [IsAtomistic α] [IsModularLattice α] [IsCompactlyGenerated α] :
+--     ∃ P : Partition α, P.Atomic ∧ P.supp = s := by
+--   -- needs `lake update`
+--   -- obtain ⟨t, htindep, heq, hAtomic⟩ := exists_sSupIndep_of_sSup_atoms s (sSup_atoms_le_eq s)
+--   -- use ofIndependent' htindep, hAtomic, heq
+--   sorry
 
 end Atomic
 
@@ -989,7 +989,8 @@ lemma discrete_le_of_supp_eq (P : Partition (Set α)) : Partition.discrete P.sup
 --   rintro ⟨rfl, h⟩
 --   exact rel_self_of_mem_supp h
 
--- lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.discrete P.supp = P := by
+-- lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.discrete P.supp = P :=
+--by
 --   refine P.discrete_iff_rel_le_eq.mpr <| (rel_le_iff_le.mpr hS).trans ?_
 --   rw [← discrete_iff_rel_le_eq]
 --   simp

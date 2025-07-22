@@ -101,8 +101,26 @@ example (M : Matroid α) (hM : M.Loopless) :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → (L ∩ H).Nonempty :=
   modular_iff_forall_isLine_isHyperplane_nonempty_inter
 
-theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α) (X : ι → Set α)
-    (hX : ⋃ i, X i = M.E) (hdj : Pairwise (Disjoint on X)) {A : Finset α}
-    (hA : A.card = M✶.multiConn X) (hA_dj : Disjoint (A : Set α) M.E) :
-    ∃ (P : Matroid α), (A : Set α) ⊆ P.E ∧ P ＼ A = M ∧ (P ／ A).IsSkewFamily X := by
-  sorry
+/- ### Theorem 1.15(ii), Upper bound
+If `A` is a finite set, disjoint from the ground set of `M`,
+with size equal to the dual connectivity of a partition `X` of `M.E`,
+then `M` has a projection by `A` in which `X` is skew. -/
+example (M : Matroid α) (X : ι → Set α)
+    (union_eq_ground : ⋃ i, X i = M.E) (disjoint : Pairwise (Disjoint on X))
+    (A : Set α) (hAfin : A.Finite) (hA : A.encard = M✶.multiConn X)
+    (disjoint_ground : Disjoint A M.E) :
+    ∃ (P : Matroid α), A ⊆ P.E ∧ P ＼ A = M ∧ (P ／ A).IsSkewFamily X := by
+  obtain ⟨P, hAE, rfl, hsk⟩ :=
+     M.exists_contract_skew_delete_eq_of_card_eq_dual_multiConn X union_eq_ground
+    disjoint (A := hAfin.toFinset) (by rw [← hA, hAfin.encard_eq_coe_toFinset_card]) (by simpa)
+  exact ⟨P, by simpa using hAE, by simp, by simpa using hsk⟩
+
+/- ### Theorem 1.15(ii), Upper bound
+If `A` is a set in a matroid `P` with `P ＼ A = M`,
+and `X` is a partition of `M.E` that is skew in `P ／ A`,
+then `A` has cardinality at least the connectivity of `X` in `M`. -/
+example (P M : Matroid α) (X : ι → Set α)
+    (union_eq_ground : ⋃ i, X i = M.E) (disjoint : Pairwise (Disjoint on X))
+    (A : Set α) (delete_eq : P ＼ A = M) (contract_skew : (P ／ A).IsSkewFamily X) :
+    A.encard ≥ M✶.multiConn X :=
+  M.multiConn_dual_le_encard_of_delete_isSkewFamily union_eq_ground disjoint delete_eq contract_skew
