@@ -476,7 +476,7 @@ lemma Quotient.exists_extension_quotient_contract_of_rank_lt [RankFinite M₁] {
 
 --   obtain ⟨N, hNss, hN_eq, hNc, hNd⟩ := IH hQ' (by linarith) (hX₁.mono_left (by simp))
 --   obtain ⟨P, rfl, rfl⟩ :=
---exists_common_major_of_delete_eq_contractElem (by assumption) hNss hN_eq
+--exists_splice_of_delete_eq_contractElem (by assumption) hNss hN_eq
 --   use P
 --   simp only [Finset.coe_insert, ← union_singleton, union_subset_iff, singleton_subset_iff, ←
 --     delete_delete, deleteElem, true_and]

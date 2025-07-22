@@ -152,9 +152,14 @@ section ExtendContract
 
 variable {M N : Matroid α} {C D : Set α}
 
-lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ M.E)
-    (h_eq : M ／ C = N ＼ {e}) :
-      ∃ (P : Matroid α), (e ∈ N.E → e ∈ P.E) ∧ P ＼ {e} = M ∧ P ／ C = N := by
+lemma exists_splice_of_contract_eq_deleteElem (heC : e ∉ C) (h_eq : M ／ C = N ＼ {e}) :
+     ∃ (P : Matroid α), (e ∈ N.E → e ∈ P.E) ∧ P ＼ {e} = M ∧ P ／ C = N := by
+  wlog hCE : C ⊆ M.E generalizing C with aux
+  · obtain ⟨P, heP, rfl, rfl⟩ := aux (C := C ∩ M.E) (notMem_subset inter_subset_left heC)
+      (by rwa [contract_inter_ground_eq]) inter_subset_right
+    refine ⟨P, by simp, rfl, ?_⟩
+    rw [delete_ground, inter_comm, diff_inter_right_comm, inter_diff_assoc, inter_comm,
+      diff_singleton_eq_self heC, contract_inter_ground_eq]
   have heM : e ∉ M.E := fun heM ↦ by simpa [h_eq] using show e ∈ (M ／ C).E from ⟨heM, heC⟩
   obtain heN | heN := em' <| e ∈ N.E
   · use M
@@ -163,7 +168,7 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
     simp [heN]
 
   set UN := ModularCut.ofDeleteElem N e with hUN
-  set UM := (UN.copy h_eq.symm).ofContract hC
+  set UM := (UN.copy h_eq.symm).ofContract hCE
   use M.extendBy e UM
   rw [ModularCut.extendBy_deleteElem _ heM, and_iff_right rfl, imp_iff_right heN,
     and_iff_right (by simp)]
@@ -203,35 +208,37 @@ lemma exists_common_major_of_contract_eq_deleteElem (heC : e ∉ C) (hC : C ⊆ 
   rw [UM.extIndep_iff_of_mem (.inl heI)]
   simp [← h_eq, hrw1, hrw2, hrw3, hwin, hIC.contract_indep_iff, hdj.mono_right diff_subset, UM]
 
-lemma exists_common_major_of_delete_eq_contractElem (heD : e ∉ D) (hD : D ⊆ M.E)
-    (h_eq : M ＼ D = N ／ {e}) :
+lemma exists_splice_of_delete_eq_contractElem (heD : e ∉ D) (h_eq : M ＼ D = N ／ {e}) :
     ∃ (P : Matroid α), (e ∈ N.E → e ∈ P.E) ∧ P ／ {e} = M ∧ P ＼ D = N := by
   rw [← dual_inj, dual_delete, dual_contract] at h_eq
-  -- have := exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
+  -- have := exists_splice_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
   obtain ⟨P, himp, hPM, hPN⟩ :=
-    exists_common_major_of_contract_eq_deleteElem (by simpa) (by simpa) h_eq
+    exists_splice_of_contract_eq_deleteElem (by simpa) h_eq
   rw [eq_dual_iff_dual_eq] at hPM hPN
   refine ⟨P✶, himp, by simpa using hPM, by simpa using hPN⟩
 
-/-- If the contract-set is finite and disjoint from the delete-sets,
-then any two matroids with a common minor have a common major. -/
-lemma exists_common_major_of_contract_eq_delete {D : Finset α} (hCD : Disjoint C D) (hCE : C ⊆ M.E)
-    (h_eq : M ／ C = N ＼ (D : Set α)) : ∃ (P : Matroid α),
-      ((D : Set α) ⊆ N.E → (D : Set α) ⊆ P.E) ∧ P ＼ (D : Set α) = M ∧ P ／ C = N := by
-  classical
-  induction' D using Finset.induction with e D heD IH generalizing N
-  · exact ⟨M, by simp, by simpa using h_eq⟩
+/-- If the delete-set is finite and disjoint from the delete-set,
+then any two matroids with a common minor have a splice. -/
+lemma exists_splice_of_contract_eq_delete (hCD : Disjoint C D) (hDfin : D.Finite)
+    (h_eq : M ／ C = N ＼ D) : ∃ (P : Matroid α), (D ⊆ N.E → D ⊆ P.E) ∧ P ＼ D = M ∧ P ／ C = N := by
+  induction D, hDfin using Set.Finite.induction_on generalizing N with
+  | empty => simpa using h_eq
+  | @insert a D has hs IH =>
+  · rw [disjoint_insert_right] at hCD
+    rw [← singleton_union, ← delete_delete] at h_eq
+    obtain ⟨P, hss, hPM, hPN⟩ := IH hCD.2 h_eq
+    obtain ⟨Q, haQ, rfl, rfl⟩ := exists_splice_of_contract_eq_deleteElem hCD.1 hPN
+    exact ⟨Q, fun h ↦ h.trans diff_subset, by simpa using hPM, rfl⟩
 
-  obtain ⟨hCD, heC⟩ : Disjoint C ↑D ∧ e ∉ C := by simpa [← union_singleton] using hCD
-
-  simp_rw [Finset.coe_insert, ← singleton_union, ← delete_delete] at h_eq ⊢
-
-  obtain ⟨P', himp, hP'M, hP'N⟩ := IH hCD h_eq
-  have hCE' : C ⊆ P'.E
-  · rw [← hP'M] at hCE
-    exact hCE.trans diff_subset
-  obtain ⟨Q, hQ, rfl, rfl⟩ := exists_common_major_of_contract_eq_deleteElem heC hCE' hP'N
-  exact ⟨Q, by simp +contextual [subset_diff], hP'M, rfl⟩
+lemma exists_splice_of_contract_eq_delete' {C D : Set α} (hfin : C.Finite ∨ D.Finite)
+    (disjoint : Disjoint C D) (con_eq_del : M ／ C = N ＼ D) : ∃ P, P ＼ D = M ∧ P ／ C = N := by
+  wlog hDfin : D.Finite generalizing C D M N with aux
+  · rw [or_iff_left hDfin] at hfin
+    obtain ⟨P, hPN, hPM⟩ := aux (.inr hfin) disjoint.symm
+      (by rwa [← dual_inj, dual_delete_dual, dual_contract_dual, eq_comm]) hfin
+    exact ⟨P✶, by rwa [← dual_inj, dual_delete_dual], by rwa [← dual_inj, dual_contract_dual]⟩
+  obtain ⟨P, -, rfl, rfl⟩ := exists_splice_of_contract_eq_delete disjoint hDfin con_eq_del
+  exact ⟨P, rfl, rfl⟩
 
 /-- If `M 0, M 1, ..., M n` is a sequence of matroids
 where each is a single projection of the previous one,
@@ -259,8 +266,7 @@ lemma exists_eq_delete_eq_contract_of_projectBy_seq {n : ℕ} (M : Fin (n+1) →
     ← contract_contract, union_singleton, insert_subset_iff]
   set Q := extendBy _ a (U (Fin.last n)) with hQ
   have hQP₀ : P₀ ／ D = Q ＼ {a} := by rw [hc, hQ, ModularCut.extendBy_deleteElem _ (by rwa [hE])]
-  obtain ⟨P, -, hPP₀, hPQ⟩ := exists_common_major_of_contract_eq_deleteElem
-    (by simpa) (by simpa) hQP₀
+  obtain ⟨P, -, hPP₀, hPQ⟩ := exists_splice_of_contract_eq_deleteElem (by simpa) hQP₀
   refine ⟨P, ⟨?_, ?_⟩, ?_, ?_⟩
   · grw [← diff_subset (s := P.E) (t := D), ← contract_ground, hPQ, hQ]
     simp

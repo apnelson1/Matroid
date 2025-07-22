@@ -174,7 +174,7 @@ lemma Quotient.exists_eq_contract_eq_delete_of_discrepancy_finite' (hQ : N ≤q 
         (insert_subset ⟨hxK, notMem_subset hIJ hxJ⟩ (diff_subset_diff_left hJK.subset))
     obtain ⟨Q, hQE, rfl, hQdel⟩ := IH hQ' (by simpa) hd
     rw [hM', ← ModularCut.extendBy_contractElem _ haE] at hQdel
-    obtain ⟨P, himp, rfl, hPM⟩ := exists_common_major_of_delete_eq_contractElem haX hQE hQdel
+    obtain ⟨P, himp, rfl, hPM⟩ := exists_splice_of_delete_eq_contractElem haX hQdel
     refine ⟨P, insert_subset (himp (by simp)) (hQE.trans diff_subset), by simp, ?_⟩
     rw [← union_singleton, ← delete_delete, hPM, ModularCut.extendBy_deleteElem _ haE]
 

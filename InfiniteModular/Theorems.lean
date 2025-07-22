@@ -63,6 +63,14 @@ example {n : ℕ} (M : Fin (n+1) → Matroid α) (𝓕 : (i : Fin n) → (M i.ca
   exact exists_eq_delete_eq_contract_of_projectBy_seq M 𝓕 projection hX hdj
 
 /- ### Theorem 1.10
+If `C` and `D` are disjoint sets, not both infinite,
+and `M` and `N` are matroids with `M ／ C = N ＼ D`,
+then there is a matroid `P` with `P ＼ D = M` and `P ／ C = N`. -/
+example (M N : Matroid α) (C D : Set α) (hfin : C.Finite ∨ D.Finite) (disjoint : Disjoint C D)
+    (con_eq_del : M ／ C = N ＼ D) : ∃ P, P ＼ D = M ∧ P ／ C = N :=
+  exists_splice_of_contract_eq_delete' hfin disjoint con_eq_del
+
+/- ### Theorem 1.11
 One of the equivalent characterizations of skewness : an indexed collection `X i` of sets
 is skew in a matroid `M` if and only if each circuit contained in the union of the `X i`
 is contained in one of the `X i`. -/
@@ -71,7 +79,7 @@ example (M : Matroid α) (X : ι → Set α) (subset_ground : ∀ i, X i ⊆ M.E
     M.IsSkewFamily X ↔ ∀ C, M.IsCircuit C → C ⊆ ⋃ i, X i → ∃ i, C ⊆ X i :=
   isSkewFamily_iff_forall_isCircuit subset_ground disjoint
 
-/- ### Theorem 1.12
+/- ### Theorem 1.13
 Given a collection `X i` of sets with union `M.E`, a flat `F` belongs to the guts modular cut
 of `X` if and only if the sets in `X` are a skew family in `M.project F`.
 The mathematical content of the theorem is contained not in the equivalence below, but
@@ -82,13 +90,19 @@ example (M : Matroid α) (X : ι → Set α) (union : ⋃ i, X i = M.E) (F : Set
     F ∈ M.gutsModularCut X union ↔ (M.project F).IsSkewFamily X := by
   simp [gutsModularCut, flat]
 
-/- ### Theorem 1.15
+/- ### Theorem 1.18
 Every modular matroid is finitary. -/
 example (M : Matroid α) (h : M.Modular) : M.Finitary :=
   Modular.finitary h
 
-/- ### Theorem 1.16
+/- ### Theorem 1.19
 A loopless matroid is modular if and only if every line intersects every hyperplane. -/
 example (M : Matroid α) (hM : M.Loopless) :
     M.Modular ↔ ∀ ⦃L H⦄, M.IsLine L → M.IsHyperplane H → (L ∩ H).Nonempty :=
   modular_iff_forall_isLine_isHyperplane_nonempty_inter
+
+theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α) (X : ι → Set α)
+    (hX : ⋃ i, X i = M.E) (hdj : Pairwise (Disjoint on X)) {A : Finset α}
+    (hA : A.card = M✶.multiConn X) (hA_dj : Disjoint (A : Set α) M.E) :
+    ∃ (P : Matroid α), (A : Set α) ⊆ P.E ∧ P ＼ A = M ∧ (P ／ A).IsSkewFamily X := by
+  sorry
