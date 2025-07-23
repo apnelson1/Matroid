@@ -33,26 +33,13 @@ instance {V : Set α} : Nodup (Graph.noEdge V β) := by
 
 @[simp]
 lemma noEdge_isLabelSubgraph_iff {V : Set α} :
-    Graph.noEdge V β ≤l G ↔ (∀ u v, u ∈ V → v ∈ V → (G.Dup u v ↔ u = v)) := by
-  rw [isLabelSubgraph_iff, ← vertexSet_def, Partition.induce_eq_iff_rel]
-  simp only [dup_eq_discrete, noEdge_vertexSet, Partition.supp_discrete, Partition.rel_discrete_eq,
-    funext_iff, eq_iff_iff, and_congr_right_iff, noEdge_edgeSet, mem_empty_iff_false,
-    not_false_eq_true, not_isLink_of_notMem_edgeSet, IsEmpty.forall_iff, implies_true, and_true]
-  refine forall₃_congr fun u v hu => ⟨fun h hv => by simpa [hv] using h, fun h => ⟨by tauto, ?_⟩⟩
-  rintro rfl
-  tauto
+    Graph.noEdge V β ≤l G ↔ G.Dup.induce V = Partition.discrete V := by
+  refine ⟨fun h => ?_, fun h => ⟨by simp [h], fun _ _ _ hl => by simp at hl⟩⟩
+  simpa only [noEdge_vertexSet, dup_eq_discrete] using h.dup_induce
 
 @[simp]
-lemma noEdge_le_iff {V : Set α} :
-    Graph.noEdge V β ≤ G ↔ (∀ u v, u ∈ V → (G.Dup u v ↔ u = v)) := by
-  rw [le_iff, Partition.subset_iff_rel]
-  simp only [noEdge_dup, Partition.supp_discrete, Partition.rel_discrete_iff, noEdge_edgeSet,
-    mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet, IsEmpty.forall_iff,
-    implies_true, and_true]
-  apply forall₃_congr fun u v hu => ⟨fun h => ?_, fun h => ?_⟩
-  on_goal 1 => rw [← h, and_iff_right_iff_imp]
-  on_goal 2 => rw [h, and_iff_right_iff_imp]
-  all_goals rintro rfl; exact hu
+lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ Partition.discrete V ⊆ G.Dup :=
+  ⟨(·.dup_subset), fun h => ⟨h, fun e x y hl => by simp at hl⟩⟩
 
 @[simp]
 lemma noEdge_not_inc {V : Set α} : ¬ (Graph.noEdge V β).Inc e x := by
@@ -93,21 +80,14 @@ lemma eq_noEdge_iff : G = Graph.noEdge V(G) β ↔ E(G) = ∅ ∧ G.Nodup := by
 
 @[simp]
 lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ ∧ G.Nodup := by
-  simp only [le_iff, dup_eq_discrete, noEdge_vertexSet, Partition.subset_iff_rel, vertexSet_def,
-    Partition.rel_discrete_iff, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
-    not_isLink_of_notMem_edgeSet, imp_false]
-  refine ⟨fun ⟨hD, hl⟩ => ⟨fun x hx => (hD x x hx).mp (G.dup_refl_iff |>.mpr hx) |>.1, ?_,
-    ⟨fun x y hxy => hD x y (dup_left_mem hxy) |>.mp hxy |>.2⟩⟩,
-    fun ⟨hV, hE, hN⟩ => ⟨fun x y hx => by simp [hV hx, hx], ?_⟩⟩
-  · contrapose! hl
-    exact ⟨hl.some, exists_isLink_of_mem_edgeSet hl.some_mem⟩
-  contrapose! hE
-  obtain ⟨e, x, y, hl⟩ := hE
-  use e, hl.edge_mem
+  refine ⟨fun h => ⟨vertexSet_mono h, by simpa using edgeSet_mono h, Nodup.of_le h⟩,
+    fun ⟨hV, hE, hN⟩ => ⟨by simpa, fun e x y hl => ?_⟩⟩
+  have := hE ▸ hl.edge_mem
+  simp at this
 
 instance : OrderBot (Graph α β) where
   bot := Graph.noEdge ∅ β
-  bot_le := by simp
+  bot_le G := by simp
 
 @[simp]
 lemma bot_dup : (⊥ : Graph α β).Dup = ⊥ := by
@@ -196,21 +176,23 @@ lemma singleEdge_isLabelSubgraph_iff :
   refine ⟨fun h => ⟨fun hD => ?_, h.isLink_of_isLink isLink_singleEdge⟩, fun ⟨hD, hl⟩ => ⟨?_, ?_⟩⟩
   · rw [h.dup_iff (by simp) (by simp)] at hD
     exact eq_of_dup hD
-  · rw [← vertexSet_def, Partition.induce_eq_iff_rel]
-    ext x y
-    simp only [dup_eq_discrete, singleEdge_vertexSet, Partition.supp_discrete, mem_insert_iff,
-      mem_singleton_iff, Partition.rel_discrete_iff, and_congr_right_iff]
-    rintro (rfl | rfl) <;> constructor
-    · rintro ⟨(rfl | rfl), hD'⟩ <;> tauto
-    · rintro rfl
-      simp [dup_refl_iff.mpr hl.left_mem]
-    · rintro ⟨(rfl | rfl), hD'⟩
-      · exact hD hD'.symm |>.symm
-      rfl
-    rintro rfl
-    simp [dup_refl_iff.mpr hl.right_mem]
-  simp only [singleEdge_isLink, and_imp]
-  rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+  · simp only [singleEdge_vertexSet, dup_eq_discrete]
+    by_cases huv : u = v
+    · subst v
+      simp only [mem_singleton_iff, insert_eq_of_mem]
+      refine Partition.supp_singleton_iff ?_
+      simp [hl.left_mem]
+    convert (Partition.atomic_iff_eq_discrete (G.Dup.induce {u, v})).mp ?_
+    · simp only [Partition.induce_supp, vertexSet_def, left_eq_inter]
+      rintro x (rfl | rfl)
+      · exact hl.left_mem
+      exact hl.right_mem
+    rw [Partition.atomic_iff_rel_le_eq]
+    rintro a b hab
+    simp only [Partition.induce_apply, mem_insert_iff, mem_singleton_iff] at hab
+    obtain ⟨(rfl | rfl), (rfl | rfl), hdup⟩ := hab <;> aesop
+    exact (x <| symm hdup).elim
+  rintro e' x y ⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
   · exact hl
   exact hl.symm
 

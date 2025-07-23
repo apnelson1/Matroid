@@ -161,14 +161,16 @@ lemma NodupAt.dup_iff (h : G.NodupAt x) : G.Dup x y ↔ x = y ∧ x ∈ V(G) := 
 lemma dup_of_NodupAt (hdup : G.Dup x y) (h : G.NodupAt x) : x = y := h hdup
 
 class Nodup (G : Graph α β) : Prop where
-  le_eq : ⇑G.Dup ≤ Eq
+  atomic_dup : Atomic G.Dup
+
+lemma dup_atomic (G : Graph α β) [G.Nodup] : Atomic G.Dup := Nodup.atomic_dup
 
 lemma eq_of_dup [G.Nodup] (hdup : G.Dup x y) : x = y :=
-  dup_of_NodupAt hdup (Nodup.le_eq x)
+  G.dup_atomic.eq_of_rel hdup
 
 @[simp]
-lemma dup_iff_eq [G.Nodup] : G.Dup x y ↔ x = y ∧ x ∈ V(G) :=
-  NodupAt.dup_iff (Nodup.le_eq x)
+lemma dup_iff_eq [G.Nodup] : G.Dup x y ↔ x = y ∧ x ∈ V(G) := by
+  rw [G.dup_atomic.rel_eq, G.vertexSet_eq]
 
 @[simp]
 lemma dup_eq_discrete [G.Nodup] : G.Dup = Partition.discrete V(G) := by
@@ -286,6 +288,13 @@ lemma IsLink.isLink_iff [G.Nodup] (h : G.IsLink e x y) {x' y' : α} :
 lemma IsLink.isLink_iff_sym2_eq [G.Nodup] (h : G.IsLink e x y) {x' y' : α} :
     G.IsLink e x' y' ↔ s(x,y) = s(x',y') := by
   rw [h.isLink_iff, Sym2.eq_iff]
+
+instance : Dompeq G.Dup (G.IsLink e) where
+  dompeq := by
+    ext x y
+    simp only [Domp, Comp, flip_apply]
+    exact ⟨fun ⟨a, hxa, b, hlba, hby⟩ => trans' (trans' hxa hlba.symm) hby,
+      fun h => ⟨x, h.left_refl, y, h.symm, h.right_refl⟩⟩
 
 /-! ### Edge-vertex incidence -/
 
@@ -506,7 +515,7 @@ lemma adj_right_rw (h : G.Dup x y) : G.Adj z x ↔ G.Adj z y :=
 
 /-! ### Extensionality -/
 
-@[simps?]
+@[simps]
 def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop)
     (edgeSet : Set β := {e | ∃ x y, IsLink e x y})
     (isLink_symm : ∀ ⦃e : β⦄, e ∈ edgeSet → Symmetric (IsLink e))
@@ -524,11 +533,11 @@ def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop)
   dup_or_dup_of_isLink_of_isLink e x y v w hl hl' := by
     simp_rw [rel_discrete_iff]
     obtain rfl | rfl := dup_or_dup_of_isLink_of_isLink hl hl'
-    · exact Or.inl ⟨left_mem_of_isLink hl, rfl⟩
-    exact Or.inr ⟨left_mem_of_isLink hl, rfl⟩
+    · exact Or.inl ⟨rfl, left_mem_of_isLink hl⟩
+    exact Or.inr ⟨rfl, left_mem_of_isLink hl⟩
   mem_vertexSet_of_isLink e x y hl := (supp_discrete V).symm ▸ left_mem_of_isLink hl
   isLink_of_dup e x y z hxy hl := by
-    obtain ⟨hx, rfl⟩ := rel_discrete_iff.mp hxy
+    obtain ⟨rfl, hx⟩ := rel_discrete_iff.mp hxy
     exact hl
 
 instance (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
@@ -538,7 +547,7 @@ instance (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
     (left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) :
     Nodup (mk_of_unique V IsLink edgeSet isLink_symm dup_or_dup_of_isLink_of_isLink
     edge_mem_iff_exists_isLink left_mem_of_isLink) where
-  le_eq a b := by simp
+  atomic_dup := by simp
 
 -- @[simps]
 -- def mk_of_unique' (V : Set α) (IsLink : β → α → α → Prop)

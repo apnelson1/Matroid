@@ -84,10 +84,18 @@ instance : SetLike (Partition α) α where
 
 @[simp] lemma mem_parts : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
 
-@[ext] lemma ext (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
+lemma coe_eq (P : Partition α) : ↑P = P.parts := rfl
+
+lemma ext_parts (hP : P.parts = Q.parts) : P = Q := by
   cases P
   cases Q
-  simp only [mk.injEq]
+  simpa
+
+lemma ext_iff_parts : P = Q ↔ P.parts = Q.parts :=
+  ⟨fun h ↦ by rw [h], fun h ↦ ext_parts h⟩
+
+@[ext] lemma ext (hP : ∀ x, x ∈ P ↔ x ∈ Q) : P = Q := by
+  refine ext_parts ?_
   ext x
   simpa using hP x
 
@@ -126,6 +134,15 @@ lemma parts_nonempty (P : Partition α) (hs : P.supp ≠ ⊥) : (P : Set α).Non
 lemma supp_le_of_subset (h : P ⊆ Q) : P.supp ≤ Q.supp := by
   simp only [supp, sSup_le_iff, mem_parts, SetLike.mem_coe]
   exact fun a haP => le_sSup (h haP)
+
+lemma eq_of_subset_of_supp_eq (hsu : P ⊆ Q) (hsupp : P.supp = Q.supp) : P = Q := by
+  rw [ext_iff_parts]
+  by_contra! hne
+  obtain ⟨t, htQ, htP⟩ := exists_of_ssubset (ssubset_of_ne_of_subset hne hsu)
+  have hmono : P.supp ≤ _ := sSup_le_sSup <| subset_diff_singleton hsu htP
+  conv_lhs at hmono => rw [hsupp, supp, ← insert_diff_self_of_mem htQ, sSup_insert]
+  simp only [sup_le_iff, le_refl, and_true] at hmono
+  simpa [Q.ne_bot_of_mem htQ] using Q.indep htQ le_rfl hmono
 
 end Basic
 
@@ -204,8 +221,9 @@ def ofIndependent' {u : Set α} (hs : sSupIndep u) : Partition α :=
   indep := by simp
   bot_notMem := by simp
 
-instance : Bot (Partition α) where
+instance : OrderBot (Partition α) where
   bot := Partition.empty α
+  bot_le _ _ hs := hs.elim
 
 @[simp] lemma notMem_bot {a : α} : a ∉ (⊥ : Partition α) := notMem_empty α
 
@@ -226,6 +244,10 @@ lemma supp_eq_bot_iff {P : Partition α} : P.supp = ⊥ ↔ P = ⊥ := by
   refine ⟨eq_bot, ?_⟩
   rintro rfl
   exact supp_bot
+
+@[simp]
+lemma bot_subset (P : Partition α) : ⊥ ⊆ P :=
+  fun _ hsP => hsP.elim
 
 instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition α) where
   default := ⊥
@@ -699,6 +721,8 @@ lemma Rel.right_mem (h : P x y) : y ∈ P.supp :=
 
 lemma rel_iff_exists : P x y ↔ ∃ t ∈ P, x ∈ t ∧ y ∈ t := Iff.rfl
 
+lemma rel_eq_exists : ⇑P = fun x y => ∃ t ∈ P, x ∈ t ∧ y ∈ t := rfl
+
 lemma rel_self_iff_mem_supp : P x x ↔ x ∈ P.supp :=
   ⟨fun h ↦ h.left_mem, fun h ↦ rel_self_of_mem_supp h⟩
 
@@ -892,18 +916,64 @@ lemma sInf_rel (S : Set (Partition (Set α))) : ⇑(sInf S) = sInf ((⇑) '' S) 
   rw [rel_ofRel_eq]
 
 @[simp]
-lemma iSup_rel (ι : Type*) (G : ι → Partition (Set α)) :
+lemma iSup_rel {ι : Type*} (G : ι → Partition (Set α)) :
     ⇑(⨆ i, G i) = TransClosure (⨆ i, ⇑(G i)) := by
   change ⇑(ofRel _) = _
   rw [rel_ofRel_eq, iSup, ← range_comp]
   rfl
 
 @[simp]
-lemma iInf_rel (ι : Type*) (G : ι → Partition (Set α)) :
+lemma iInf_rel {ι : Type*} (G : ι → Partition (Set α)) :
     ⇑(⨅ i, G i) = ⨅ i, ⇑(G i) := by
   change ⇑(ofRel _) = _
   rw [rel_ofRel_eq, iInf, ← range_comp]
   rfl
+
+@[simp]
+lemma sSup_supp (S : Set (Partition (Set α))) : (sSup S).supp = ⋃ P ∈ S, P.supp := by
+  simp_rw [← domain_rel]
+  ext x
+  simp only [sSup_rel, mem_domain_iff, mem_iUnion, exists_prop]
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, ?_⟩
+  · induction hy with
+  | single h =>
+    simp only [sSup_apply, iSup_apply, iSup_Prop_eq, Subtype.exists, mem_image, exists_prop,
+      exists_exists_and_eq_and] at h
+    obtain ⟨r, hrS, hr⟩ := h
+    exact ⟨r, hrS, _, hr⟩
+  | tail _ _ IH => exact IH
+  · rintro ⟨P, hPS, y, hPxy⟩
+    refine ⟨y, Relation.TransGen.single ?_⟩
+    simp only [sSup_apply, iSup_apply, iSup_Prop_eq, Subtype.exists, mem_image, exists_prop,
+      exists_exists_and_eq_and]
+    exact ⟨P, hPS, hPxy⟩
+
+@[simp]
+lemma iSup_supp {ι : Type*} (G : ι → Partition (Set α)) : (⨆ i, G i).supp = ⋃ i, (G i).supp := by
+  simp [iSup]
+
+@[simp]
+lemma sup_supp (P Q : Partition (Set α)) : (P ⊔ Q).supp = P.supp ∪ Q.supp := by
+  rw [← sSup_pair, sSup_supp]
+  simp
+
+@[simp]
+lemma sInf_supp (S : Set (Partition (Set α))) : (sInf S).supp = ⋂ P ∈ S, P.supp := by
+  simp_rw [← domain_rel]
+  ext x
+  simp only [sInf_rel, mem_domain_iff, sInf_apply, iInf_apply, iInf_Prop_eq, Subtype.forall,
+    mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, domain_rel, mem_iInter]
+  exact ⟨fun ⟨y, hy⟩ P hPS ↦ (hy P hPS).left_mem,
+    fun h => ⟨x, fun P hPS => rel_self_of_mem_supp (h P hPS)⟩⟩
+
+@[simp]
+lemma iInf_supp {ι : Type*} (G : ι → Partition (Set α)) : (⨅ i, G i).supp = ⋂ i, (G i).supp := by
+  simp [iInf]
+
+@[simp]
+lemma inf_supp (P Q : Partition (Set α)) : (P ⊓ Q).supp = P.supp ∩ Q.supp := by
+  rw [← sInf_pair, sInf_supp]
+  simp
 
 end Rel
 
@@ -954,23 +1024,36 @@ lemma rel_discrete_eq : Partition.discrete S = fun a b => a = b ∧ a ∈ S := b
 lemma rel_discrete_iff : Partition.discrete S a b ↔ a = b ∧ a ∈ S := by
   rw [rel_discrete_eq]
 
+@[simp]
 lemma discrete_atomic (S : Set α) : (Partition.discrete S).Atomic := by
   rintro _ ⟨a, -, rfl⟩
   exact isAtom_singleton a
+
+lemma Atomic.exists_singleton_of_mem (hP : Atomic P) {t : Set α} (htP : t ∈ P) : ∃ a, t = {a} :=
+  Set.isAtom_iff.mp <| hP t htP
 
 lemma atomic_iff_eq_discrete (P : Partition (Set α)) :
     P.Atomic ↔ P = Partition.discrete P.supp := by
   refine ⟨fun h => ?_, fun h => h ▸ discrete_atomic P.supp⟩
   ext x
-  simp_rw [Atomic, Set.isAtom_iff] at h
   refine ⟨fun hx => ?_, ?_⟩
-  · obtain ⟨a, rfl⟩ := h x hx
+  · obtain ⟨a, rfl⟩ := h.exists_singleton_of_mem hx
     simp only [mem_discrete_iff, singleton_eq_singleton_iff, exists_eq_right]
     exact mem_supp_iff.mpr ⟨{a}, hx, rfl⟩
   rintro ⟨a, ⟨t, htP, hat⟩, rfl⟩
-  obtain ⟨b, rfl⟩ := h t htP
+  obtain ⟨b, rfl⟩ := h.exists_singleton_of_mem htP
   obtain rfl := mem_singleton_iff.mp hat
   exact htP
+
+lemma eq_discrete_iff : P = Partition.discrete S ↔ P.Atomic ∧ P.supp = S := by
+  constructor
+  · rintro rfl
+    exact ⟨discrete_atomic S, supp_discrete S⟩
+  rintro ⟨hP, rfl⟩
+  exact (atomic_iff_eq_discrete P).mp hP
+
+lemma eq_discrete_of (hP : Atomic P) (hS : P.supp = S) : P = Partition.discrete S :=
+  eq_discrete_iff.mpr ⟨hP, hS⟩
 
 lemma discrete_le_of_supp_eq (P : Partition (Set α)) : Partition.discrete P.supp ≤ P := by
   refine le_of_rel_le fun a b => ?_
@@ -978,27 +1061,98 @@ lemma discrete_le_of_supp_eq (P : Partition (Set α)) : Partition.discrete P.sup
   rintro ⟨rfl, hb⟩
   exact rel_self_of_mem_supp hb
 
--- lemma atomic_iff_rel_le_eq (P : Partition (Set α)) :
---     P.Atomic ↔ ⇑P ≤ Eq := by
---   refine ⟨fun h ↦ ?_, fun h ↦ rel_inj ?_⟩
---   · rw [← h, rel_discrete_eq]
---     tauto
---   ext x y
---   rw [rel_discrete_iff]
---   refine ⟨?_, fun hxy ↦ ⟨h x y hxy, codomain_rel ▸ ⟨y, symm hxy⟩⟩⟩
---   rintro ⟨rfl, h⟩
---   exact rel_self_of_mem_supp h
+lemma atomic_iff_rel_le_eq (P : Partition (Set α)) : P.Atomic ↔ ⇑P ≤ Eq := by
+  refine ⟨fun h x y ⟨t, htP, hxt, hyt⟩ ↦ ?_, fun h t htP ↦ ?_⟩
+  · obtain ⟨a, rfl⟩ := Set.isAtom_iff.mp <| h t htP
+    rw [mem_singleton_iff] at hxt hyt
+    exact hxt.trans (symm hyt)
+  rw [Set.isAtom_iff, Set.exists_eq_singleton_iff_nonempty_subsingleton]
+  exact ⟨P.nonempty_of_mem htP, fun x hxt y hyt => h x y ⟨t, htP, hxt, hyt⟩⟩
 
--- lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : Partition.discrete P.supp = P :=
---by
---   refine P.discrete_iff_rel_le_eq.mpr <| (rel_le_iff_le.mpr hS).trans ?_
---   rw [← discrete_iff_rel_le_eq]
---   simp
+lemma Atomic.eq_of_rel (hP : Atomic P) (hab : P a b) : a = b :=
+  P.atomic_iff_rel_le_eq.mp hP _ _ hab
+
+lemma Atomic.rel_eq (hP : Atomic P) : ⇑P = fun a b => a = b ∧ a ∈ P.supp := by
+  ext a b
+  refine ⟨fun hPab => ⟨hP.eq_of_rel hPab, hPab.left_mem⟩, ?_⟩
+  rintro ⟨rfl, ha⟩
+  exact rel_self_of_mem_supp ha
+
+lemma discrete_of_le_discrete (hS : P ≤ Partition.discrete S) : P = Partition.discrete P.supp := by
+  rw [← atomic_iff_eq_discrete]
+  exact (discrete_atomic S).atomic_of_le hS
+
+lemma discrete_subset_discrete_of_subset (hST : S ⊆ T) :
+    Partition.discrete S ⊆ Partition.discrete T := by
+  rintro s hsS
+  obtain ⟨x, hx, rfl⟩ := hsS
+  use x, hST hx
+
+@[simp]
+lemma discrete_subset_discrete_iff : Partition.discrete S ⊆ Partition.discrete T ↔ S ⊆ T :=
+  ⟨fun h x => by simpa using @h {x}, discrete_subset_discrete_of_subset⟩
+
+lemma discrete_mono (hST : S ⊆ T) : Partition.discrete S ≤ Partition.discrete T := by
+  rw [← (discrete_atomic T).subset_iff_le]
+  exact discrete_subset_discrete_of_subset hST
+
+lemma discrete_subset_iff_rel : Partition.discrete S ⊆ P ↔ ∀ x y, x ∈ S → (x = y ↔ P x y) := by
+  simp +contextual [subset_iff_rel]
 
 @[simp]
 lemma discrete_empty : Partition.discrete (∅ : Set α) = ⊥ := by
   ext x
   simp
+
+lemma supp_singleton_iff (hP : P.supp = {a}) : P = Partition.discrete {a} := by
+  simp only [← codomain_rel, Set.ext_iff, mem_codomain_iff, mem_singleton_iff] at hP
+  rw [← Partition.rel_inj_iff]
+  ext x y
+  simp only [rel_discrete_iff, mem_singleton_iff]
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain rfl := (hP y).mp ⟨x, h⟩
+    obtain rfl := (hP x).mp ⟨y, symm h⟩
+    simp
+  rintro ⟨rfl, rfl⟩
+  obtain ⟨a, ha⟩ := (hP x).mpr rfl
+  exact refl_of_right ha
+
+lemma atomic_of_supp_singleton (hP : P.supp = {a}) : P.Atomic := by
+  rw [supp_singleton_iff hP]
+  exact discrete_atomic {a}
+
+@[simp]
+lemma sSup_atomic {S : Set (Partition (Set α))} (hS : ∀ P ∈ S, P.Atomic) :
+    (sSup S).Atomic := by
+  simp_rw [atomic_iff_rel_le_eq] at hS ⊢
+  rw [sSup_rel, ← transClosure_eq]
+  exact TransClosure.monotone <| by simpa
+
+@[simp]
+lemma iSup_atomic {ι : Type*} {S : ι → Partition (Set α)} (hS : ∀ i, (S i).Atomic) :
+    (⨆ i, S i).Atomic :=
+  sSup_atomic <| fun _ ⟨i, heq⟩ => heq ▸ hS i
+
+@[simp]
+lemma sup_atomic (P Q : Partition (Set α)) (hP : P.Atomic) (hQ : Q.Atomic) :
+    (P ⊔ Q).Atomic := by
+  rw [← sSup_pair]
+  exact sSup_atomic <| by simp [hP, hQ]
+
+@[simp]
+lemma sSup_discrete (S : Set (Set α)) :
+    sSup (Partition.discrete '' S) = Partition.discrete (⋃₀ S) :=
+  eq_discrete_of (sSup_atomic <| by simp) <| by simp [sUnion_eq_biUnion]
+
+@[simp]
+lemma iSup_discrete {ι : Type*} (S : ι → (Set α)) :
+  (⨆ i, Partition.discrete (S i)) = Partition.discrete (⋃ i, S i) :=
+  eq_discrete_of (iSup_atomic <| by simp) <| by simp
+
+@[simp]
+lemma sup_discrete (s t : Set α) :
+    Partition.discrete s ⊔ Partition.discrete t = Partition.discrete (s ∪ t) := by
+  simp_rw [← sSup_pair, ← image_pair, sSup_discrete, sUnion_pair]
 
 -- Compl does not exist
 

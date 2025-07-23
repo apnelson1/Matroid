@@ -529,6 +529,16 @@ instance [IsSymm α r] : IsSymm α (TransClosure r) := by
   | single hr => exact TransGen.single (symm_of r hr)
   | tail _ hr ih => exact TransGen.head (symm_of r hr) ih
 
+@[simp]
+lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq := by
+  ext a b
+  refine ⟨fun h => ?_, ?_⟩
+  · induction h with
+    | single h => exact h
+    | tail _ h' ih => exact ih.trans h'
+  rintro rfl
+  exact TransGen.single rfl
+
 /-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
 class foo (r : α → α → Prop) where
   isfoo : ∀ ⦃a b⦄, r a b → r b b
@@ -556,6 +566,11 @@ lemma foo_sSup {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, foo r) : foo (s
     let := hs r hrs
     exact ⟨r, hrs, refl_of_right hrxy⟩
 
+instance {r : ι → α → α → Prop} [H : ∀ i, foo (r i)] : foo (⨆ i, r i) :=
+  foo_sSup <| by
+  rintro _ ⟨i, rfl⟩
+  exact H i
+
 instance [foo r] [foo s] : foo (r ⊓ s) where
   isfoo _ _ h := ⟨refl_of_right h.1, refl_of_right h.2⟩
 
@@ -566,6 +581,12 @@ lemma foo_sInf {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, foo r) : foo (s
     let := hs r hrs
     exact refl_of_right <| h r hrs
 
+instance {r : ι → α → α → Prop} [H : ∀ i, foo (r i)] : foo (⨅ i, r i) :=
+  foo_sInf <| by
+  rintro _ ⟨i, rfl⟩
+  exact H i
+
+@[simp]
 lemma transClosure_self_iff [foo r] : TransClosure r a a ↔ r a a := by
   refine ⟨fun h => ?_, TransGen.single⟩
   obtain (h | ⟨_, _, h⟩) := (transGen_iff r _ _).mp h
@@ -650,6 +671,19 @@ instance [IsTrans α r] : Trans (Domp r s) r (Domp r s) where
   trans := by
     rintro a b c ⟨e, hrae, d, hsde, hrdb⟩ hrbc
     exact ⟨e, hrae, d, hsde, trans' hrdb hrbc⟩
+
+instance [Dompeq r s] [IsTrans α r] : Trans r s s where
+  trans := by
+    rintro a b c hrab hsbc
+    obtain ⟨d, hrbd, e, hsed, hrec⟩ := (domp_eq r s) ▸ hsbc
+    exact (domp_eq r s) ▸ ⟨d, trans' hrab hrbd, e, hsed, hrec⟩
+
+instance [Dompeq r s] [IsTrans α r] : Trans s r s where
+  trans := by
+    rintro a b c hsab hrbc
+    obtain ⟨d, hrad, e, hsed, hrec⟩ := (domp_eq r s) ▸ hsab
+    exact (domp_eq r s) ▸ ⟨d, hrad, e, hsed, trans' hrec hrbc⟩
+
 
 
 def restrict (r : α → α → Prop) (S : Set α) : α → α → Prop :=

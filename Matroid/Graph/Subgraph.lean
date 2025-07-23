@@ -109,7 +109,9 @@ lemma IsLink.of_isLabelSubgraph (h : H.IsLink e x y) (hlle : H ≤l G) : G.IsLin
 alias IsLabelSubgraph.isLink := IsLink.of_isLabelSubgraph
 
 lemma Nodup.of_isLabelSubgraph (hlle : H ≤l G) [G.Nodup] : H.Nodup where
-  le_eq _ _ hdup := eq_of_dup <| hlle.dup hdup
+  atomic_dup := by
+    rw [← hlle.dup_induce]
+    exact G.dup_atomic.atomic_of_le induce_le
 alias IsLabelSubgraph.Nodup := Nodup.of_isLabelSubgraph
 
 lemma IsLink.of_isLabelSubgraph_of_mem_mem (h : G.IsLink e x y) (hlle : H ≤l G) (he : e ∈ E(H))
@@ -245,8 +247,8 @@ lemma mem_iff_mem_of_le_dup (hle : H ≤ G) (hdup : G.Dup x y) : x ∈ V(H) ↔ 
   on_goal 2 => rw [comm_of G.Dup] at hdup
   all_goals rw [dup_iff_dup_of_le hle h] at hdup; exact dup_right_mem hdup
 
-lemma Nodup.of_le (hle : H ≤ G) [G.Nodup] : H.Nodup where
-  le_eq _ _ hdup := eq_of_dup <| dup_of_le hle hdup
+lemma Nodup.of_le (hle : H ≤ G) [G.Nodup] : H.Nodup :=
+  Nodup.of_isLabelSubgraph <| isLabelSubgraph_of_le hle
 
 lemma IsLink.of_le (h : H.IsLink e x y) (hle : H ≤ G) : G.IsLink e x y :=
   hle.isLink_of_isLink h
@@ -827,9 +829,7 @@ lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (hsle : H ≤s G) (hHK : H 
   isLink_of_isLink := hKG.isLink_of_isLink
 
 lemma IsSpanningSubgraph.Nodup [H.Nodup] (hsle : H ≤s G) : G.Nodup where
-  le_eq x y hdup := by
-    rw [hsle.dup_iff_dup] at hdup
-    exact eq_of_dup hdup
+  atomic_dup := hsle.dup_eq ▸ dup_atomic H
 
 /-! ### Induced Subgraphs -/
 
