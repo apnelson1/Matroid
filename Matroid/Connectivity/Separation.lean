@@ -1,6 +1,7 @@
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 import Matroid.ForMathlib.Finset
+import Matroid.ForMathlib.Matroid.Sum
 
 open Set
 
@@ -10,6 +11,8 @@ section separation
 
 variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {a b : α} {A : Set α}
 
+/-- A partition of the ground set of a matroid into two parts.
+Used for reasoning about connectivity. -/
 protected structure Partition (M : Matroid α) where
   left : Set α
   right : Set α
@@ -95,27 +98,14 @@ lemma eConn_eq_right (P : M.Partition) : P.eConn = M.eConn P.2 := by
   rw [← P.dual_ofDual, ← dual_eConn]
   simp
 
-@[simp] lemma eConn_eq_zero_iff {P : M.Partition} : P.eConn = 0 ↔ M.Skew P.1 P.2 :=
+lemma eConn_eq_zero_iff_skew {P : M.Partition} : P.eConn = 0 ↔ M.Skew P.1 P.2 :=
   M.eLocalConn_eq_zero P.left_subset_ground P.right_subset_ground
 
-@[mk_iff]
-structure IsTutteSep (P : M.Partition) (k : ℕ∞) : Prop where
-  conn_lt : P.eConn < k
-  le_card_left : k ≤ P.1.encard
-  le_card_right : k ≤ P.2.encard
-
-lemma IsTutteSep.dual {k : ℕ∞} (h : P.IsTutteSep k) : P.dual.IsTutteSep k := by
-  simpa [isTutteSep_iff] using h
-
-@[simp] lemma isTutteSep_dual_iff {k : ℕ∞} : P.dual.IsTutteSep k ↔ P.IsTutteSep k := by
-  simp [isTutteSep_iff]
-
-@[simp] lemma isTutteSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} :
-    P.ofDual.IsTutteSep k ↔ P.IsTutteSep k := by
-  rw [← isTutteSep_dual_iff, ofDual_dual]
-
-lemma IsTutteSep.zero_lt (h : P.IsTutteSep k) : 0 < k :=
-  pos_iff_ne_zero.mpr <| by rintro rfl; simpa using h.conn_lt
+lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Partition} :
+    P.eConn = 0 ↔ M = (M ↾ P.1).disjointSum (M ↾ P.2) P.disjoint := by
+  rw [eConn_eq_zero_iff_skew,
+    skew_iff_restrict_union_eq P.left_subset_ground P.right_subset_ground P.disjoint,
+    P.union_eq, restrict_ground_eq_self]
 
 @[simps] protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Partition where
   left := X
@@ -153,20 +143,201 @@ lemma eConn_restrict_eq (P : M.Partition) (R : Set α) :
   obtain rfl := h_eq
   rfl
 
-end Partition
-
 /-- The partition of `M` given by a subset of `M.E` and its complement.  -/
-@[simps] protected def partition (M : Matroid α) (A : Set α) (hA : A ⊆ M.E := by aesop_mat) :
+@[simps]
+protected def _root_.Matroid.partition (M : Matroid α) (A : Set α) (hA : A ⊆ M.E := by aesop_mat) :
     M.Partition where
   left := A
   right := M.E \ A
   disjoint :=  disjoint_sdiff_right
   union_eq := by rwa [union_diff_cancel]
 
-@[simp] lemma eConn_partition (hA : A ⊆ M.E) : (M.partition A).eConn = M.eConn A := by
-  simp [eConn, Matroid.partition]
+@[simp]
+lemma _root_.Matroid.eConn_partition (hA : A ⊆ M.E) : (M.partition A).eConn = M.eConn A := by
+  simp [eConn, Matroid.eConn]
 
-lemma partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
+lemma _root_.Matroid.partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
+
+/-! ### Abstract Separations -/
+
+/-- `IsPredSep P k cond` means that `P` is a separation with connectivity less than `k` in `M`,
+and that both sides satisfy some nondegeneracy condition that can depend on `M` and `k`.
+This generalizes Tutte, vertical and internal connectivity. -/
+@[mk_iff]
+structure IsPredSep (P : M.Partition) (k : ℕ∞) (cond : Matroid α → ℕ∞ → ℕ∞ → Set α → Prop) where
+  conn_lt : P.eConn < k
+  cond_left : cond M k P.eConn P.left
+  cond_right : cond M k P.eConn P.right
+
+lemma IsPredSep.dual {cond} (hP : P.IsPredSep k cond)
+    (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) : P.dual.IsPredSep k cond := by
+  simp only [isPredSep_iff, dual_eConn, dual_left, dual_right] at hP ⊢
+  exact ⟨hP.1, h_cond hP.2.1, h_cond hP.2.2⟩
+
+lemma IsPredSep.ofDual {cond} {P : M✶.Partition}
+    (hP : P.IsPredSep k cond) (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
+    P.ofDual.IsPredSep k cond := by
+  simpa [isPredSep_iff] using hP.dual h_cond
+
+lemma isPredSep_dual_iff {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
+    P.dual.IsPredSep k cond ↔ P.IsPredSep k cond :=
+  ⟨fun h ↦ h.ofDual h_cond, fun h ↦ h.dual h_cond⟩
+
+lemma isPredSep_ofDual_iff {cond} {P : M✶.Partition}
+    (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
+    P.ofDual.IsPredSep k cond ↔ P.IsPredSep k cond := by
+  rw [← isPredSep_dual_iff h_cond, ofDual_dual]
+
+lemma IsPredSep.symm {cond} (hP : P.IsPredSep k cond) : P.symm.IsPredSep k cond :=
+  ⟨by simpa using hP.conn_lt, by simpa using hP.cond_right, by simpa using hP.cond_left⟩
+
+@[simp]
+lemma isPredSep_symm_iff {cond} : P.symm.IsPredSep k cond ↔ P.IsPredSep k cond := by
+  simp [isPredSep_iff, and_comm]
+
+lemma IsPredSep.zero_lt {cond} (h : P.IsPredSep k cond) : 0 < k :=
+  (zero_le _).trans_lt h.conn_lt
+
+lemma isPredSep_one_iff {cond} :
+    P.IsPredSep 1 cond ↔ P.eConn = 0 ∧ cond M 1 0 P.left ∧ cond M 1 0 P.right := by
+  simp +contextual [isPredSep_iff]
+
+lemma IsPredSep.imp {cond cond'} (h_imp : ∀ ⦃k j X⦄, cond M k j X → cond' M k j X)
+    (h : P.IsPredSep k cond) : P.IsPredSep k cond' :=
+  ⟨h.conn_lt, h_imp h.cond_left, h_imp h.cond_right⟩
+
+lemma IsPredSep.eConn_lt {cond} (h : P.IsPredSep k cond) : P.eConn < k := h.1
+
+lemma IsPredSep.eConn_lt_top {cond} (h : P.IsPredSep k cond) : P.eConn < ⊤ :=
+    h.1.trans_le (le_top)
+
+lemma IsPredSep.eConn_add_one_le {cond} (h : P.IsPredSep k cond) : P.eConn + 1 ≤ k := by
+  rw [ENat.add_one_le_iff h.eConn_lt_top.ne]
+  exact h.eConn_lt
+
+end Partition
+
+def PredConnected (M : Matroid α) (k : ℕ∞) (cond) :=
+    ∀ ⦃j⦄ ⦃P : M.Partition⦄, P.IsPredSep j cond → k ≤ j
+
+lemma PredConnected.dual {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j)
+    (h : M.PredConnected k cond) : M✶.PredConnected k cond :=
+  fun _ _ hP ↦ h <| hP.ofDual h_cond
+
+lemma PredConnected.ofDual {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j)
+    (h : M✶.PredConnected k cond) : M.PredConnected k cond :=
+  by simpa using h.dual h_cond
+
+lemma predConnected_dual_iff {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
+    M✶.PredConnected k cond ↔ M.PredConnected k cond :=
+  ⟨.ofDual h_cond, .dual h_cond⟩
+
+lemma not_predConnected_iff_exists {cond} : ¬ M.PredConnected k cond ↔
+    ∃ j < k, ∃ (P : M.Partition),
+      P.eConn < j ∧ cond M j P.eConn P.left ∧ cond M j P.eConn P.right := by
+  simp only [PredConnected, Partition.isPredSep_iff, and_imp, not_forall, exists_prop, not_le]
+  aesop
+
+lemma PredConnected.not_cond_or_not_cond {cond} (h : M.PredConnected k cond) {P : M.Partition}
+    (hjk : j < k) (hP : P.eConn < j) : ¬ cond M j P.eConn P.left ∨ ¬ cond M j P.eConn P.right := by
+  by_contra! hcon
+  exact hjk.not_ge <| h ⟨hP, hcon.1, hcon.2⟩
+
+lemma PredConnected.mono {cond} (h : M.PredConnected k cond) (hjk : j ≤ k) :
+    M.PredConnected j cond :=
+  fun _ _ hP ↦ hjk.trans <| h hP
+
+lemma PredConnected.not_predConnected_add_one_iff {k : ℕ} {cond} (h : M.PredConnected k cond) :
+    ¬ M.PredConnected (k+1) cond ↔ ∃ (P : M.Partition), P.IsPredSep k cond := by
+  simp only [PredConnected, not_forall, not_le, exists_prop, exists_and_right]
+  refine ⟨fun ⟨j, ⟨P, hP⟩, hlt⟩ ↦ ⟨P, ?_⟩, fun ⟨P, hP⟩ ↦ ⟨k, ⟨P, hP⟩, ?_⟩⟩
+  · have hkj : k ≤ j := h hP
+    enat_to_nat
+    rwa [hkj.antisymm (Nat.lt_add_one_iff.1 hlt)]
+  enat_to_nat
+  simp
+
+@[simp]
+lemma predConnected_zero {cond} : M.PredConnected 0 cond :=
+  fun _ _ _ ↦ zero_le _
+
+@[simp]
+lemma predConnected_one {cond} : M.PredConnected (1 : ℕ∞) cond := by
+  intro j P hP
+  rw [ENat.one_le_iff_ne_zero]
+  exact hP.zero_lt.ne.symm
+
+lemma predConnected_two_iff {cond} : M.PredConnected 2 cond ↔
+    ∀ (P : M.Partition), P.eConn = 0 → ¬ cond M 1 0 P.left ∨ ¬ cond M 1 0 P.right := by
+  rw [← not_iff_not, show (2 : ℕ∞) = (1 : ℕ) + 1 by rfl,
+    predConnected_one.not_predConnected_add_one_iff, Nat.cast_one]
+  simp [Partition.isPredSep_one_iff]
+
+lemma PredConnected.of_imp {cond cond'} (h : M.PredConnected k cond)
+    (h_imp : ∀ ⦃k j X⦄, cond' M k j X → cond M k j X) : M.PredConnected k cond' :=
+  fun _ _ hP ↦ h (hP.imp h_imp)
+
+/-! ### Separation Notions-/
+
+namespace Partition
+
+def IsTutteSep (P : M.Partition) (k : ℕ∞) : Prop := P.IsPredSep k (fun _ k _ X ↦ k ≤ X.encard)
+
+def IsInternalSep (P : M.Partition) (k : ℕ∞) : Prop := P.IsPredSep k
+    (fun _ k j X ↦ k ≤ X.encard ∧ (j = k → k + 1 ≤ X.encard))
+
+def IsVerticalSep (P : M.Partition) (k : ℕ∞) : Prop := P.IsPredSep k (fun _ _ j X ↦ j ≤ M.eRk X)
+
+lemma isTutteSep_iff :
+    P.IsTutteSep k ↔ P.eConn < k ∧ k ≤ P.left.encard ∧ k ≤ P.right.encard :=
+  isPredSep_iff ..
+
+lemma IsTutteSep.drop (h : P.IsTutteSep k) (hj : P.eConn < j) (hjk : j ≤ k) : P.IsTutteSep j :=
+  ⟨hj, hjk.trans h.cond_left, hjk.trans h.cond_right⟩
+
+lemma IsTutteSep.isTutteSep_eConn_add_one (h : P.IsTutteSep k) : P.IsTutteSep (P.eConn + 1) :=
+  h.drop ((ENat.lt_add_one_iff h.eConn_lt_top.ne).2 rfl.le) h.eConn_add_one_le
+
+
+
+
+
+-- lemma isInternalSep_iff :
+--     P.IsInternalSep k ↔ P.eConn < k ∧ k + 1 ≤ P.left.encard ∧ k + 1 ≤ P.right.encard :=
+--   isPredSep_iff ..
+
+-- lemma isVerticalSep_iff :
+--     P.IsVerticalSep k ↔ P.eConn < k ∧ k ≤ M.eRk P.left ∧ k ≤ M.eRk P.right :=
+--   isPredSep_iff ..
+
+lemma IsTutteSep.dual {k : ℕ∞} (h : P.IsTutteSep k) : P.dual.IsTutteSep k :=
+  IsPredSep.dual h <| by simp
+
+@[simp]
+lemma isTutteSep_dual_iff {k : ℕ∞} : P.dual.IsTutteSep k ↔ P.IsTutteSep k :=
+  isPredSep_dual_iff <| by simp
+
+@[simp]
+lemma isTutteSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} : P.ofDual.IsTutteSep k ↔ P.IsTutteSep k :=
+  isPredSep_ofDual_iff <| by simp
+
+def IsInternalSep.dual (h : P.IsInternalSep k) : P.dual.IsInternalSep k :=
+  IsPredSep.dual h <| by simp
+
+@[simp]
+lemma isInternalSep_dual_iff {k : ℕ∞} : P.dual.IsInternalSep k ↔ P.IsInternalSep k :=
+  isPredSep_dual_iff <| by simp
+
+@[simp]
+lemma isInternalSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} :
+    P.ofDual.IsInternalSep k ↔ P.IsInternalSep k :=
+  isPredSep_ofDual_iff <| by simp
+
+end Partition
+
+/-! ### Connectivity Notions -/
+
+def TutteConnected (M : Matroid α) (k : ℕ∞) : Prop := M.PredConnected k (fun _ k _ X ↦ k ≤ X.encard)
 
 lemma IsCircuit.isTutteSep {C : Set α} (hC : M.IsCircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
@@ -194,19 +365,21 @@ lemma IsCocircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCocircuit C)
   convert hC.isTutteSep (by simp) ?_ <;>
   simp [hcard]
 
-def TutteConnected (M : Matroid α) (k : ℕ∞) := ∀ ⦃j⦄ ⦃P : M.Partition⦄, P.IsTutteSep j → k ≤ j
+
+-- ∀ ⦃j⦄ ⦃P : M.Partition⦄, P.IsTutteSep j → k ≤ j
 
 lemma TutteConnected.le (h : M.TutteConnected k) {P : M.Partition} (hP : P.IsTutteSep j) : k ≤ j :=
   h hP
 
 lemma TutteConnected.mono {k : ℕ∞} (h : M.TutteConnected k) (hjk : j ≤ k) : M.TutteConnected j :=
-  fun _ _ hi ↦ hjk.trans <| h.le hi
+  PredConnected.mono h hjk
 
 lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConnected k :=
-  fun j P hP ↦ by simpa [hP] using h (j := j) (P := P.ofDual)
+  PredConnected.dual (by simp) h
 
 @[simp] lemma tutteConnected_dual_iff {k : ℕ∞} : M✶.TutteConnected k ↔ M.TutteConnected k :=
-  ⟨fun h ↦ by simpa using h.dual, TutteConnected.dual⟩
+  predConnected_dual_iff (by simp)
+  -- ⟨fun h ↦ by simpa using h.dual, TutteConnected.dual⟩
 
 @[simp] lemma tutteConnected_one (M : Matroid α) : M.TutteConnected 1 :=
   fun _ _ h ↦ Order.one_le_iff_pos.2 h.zero_lt
@@ -215,35 +388,15 @@ lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConn
   M.tutteConnected_one.mono <| zero_le _
 
 @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
-  simp only [TutteConnected, Partition.isTutteSep_iff, and_imp, connected_iff, ‹M.Nonempty›,
-    true_and, show (2 : ℕ∞) = 1 + 1 by norm_num, ENat.add_one_le_iff (show 1 ≠ ⊤ by norm_num)]
-  refine ⟨fun h e f he hf ↦ ?_, fun h k P hPk hkl hkr ↦ lt_of_not_ge fun hle ↦ ?_⟩
-  · contrapose! h
-    use 1
-    simp only [ENat.lt_one_iff, Partition.eConn_eq_zero_iff, one_le_encard_iff_nonempty, le_refl,
-      and_true]
-    set P := M.partition {z | M.ConnectedTo e z} (fun _ ↦ ConnectedTo.mem_ground_right)
-    refine ⟨P, ?_, ⟨e, by simpa [P]⟩, ⟨f, by simp [P, h, hf]⟩⟩
-    simp_rw [skew_iff_forall_isCircuit P.disjoint P.left_subset_ground, or_iff_not_imp_right,
-      not_subset, ← P.compl_left, mem_diff, union_diff_self, not_and, not_not, forall_exists_index,
-      and_imp]
-    exact fun C hC _ a haC h' b hbC ↦
-      ConnectedTo.trans (h' (hC.subset_ground haC)) (hC.mem_connectedTo_mem haC hbC)
-  rw [le_iff_eq_or_lt, ENat.lt_one_iff, or_comm] at hle
-  obtain rfl | rfl := hle
-  · simp at hPk
-
-  simp only [ENat.lt_one_iff, Partition.eConn_eq_zero_iff] at hPk
-  simp only [one_le_encard_iff_nonempty] at hkr hkl
-  obtain ⟨e, he⟩ := hkl
-  obtain ⟨f, hf⟩ := hkr
-  obtain ⟨rfl, -⟩ | ⟨C, hC, heC, hfC⟩ := h (P.left_subset_ground he) (P.right_subset_ground hf)
-  · simp [← P.compl_left, he] at hf
-  obtain hl | hr := hPk.subset_or_subset_of_isCircuit hC (by simpa using hC.subset_ground)
-  · rw [← P.compl_left] at hf
-    exact hf.2 (hl hfC)
-  rw [← P.compl_right] at he
-  exact he.2 (hr heC)
+  simp only [TutteConnected, predConnected_two_iff, Partition.eConn_eq_zero_iff_eq_disjointSum,
+    one_le_encard_iff_nonempty]
+  refine ⟨fun h ↦ by_contra fun hcon ↦ ?_, fun h P hP ↦ ?_⟩
+  · obtain ⟨M₁, M₂, hdj, hne₁, hne₂, rfl⟩ := eq_disjointSum_of_not_connected hcon
+    specialize h (Matroid.partition _ M₁.E)
+    simp [hne₁.ground_nonempty, hdj.sdiff_eq_right, hne₂.ground_nonempty] at h
+  rw [hP] at h
+  by_contra! hcon
+  exact disjointSum_not_connected ⟨hcon.1⟩ ⟨hcon.2⟩ _ h
 
 lemma IsCircuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
     (hM : 2*k ≤ M.E.encard + 2) (hconn : M.TutteConnected k) : k ≤ C.encard := by
@@ -267,6 +420,62 @@ lemma TutteConnected.loopless (h : M.TutteConnected 2) (hM : M.E.Nontrivial) : M
 lemma TutteConnected.simple (h : M.TutteConnected 3) (hM : 4 ≤ M.E.encard) : M.Simple := by
   simpa [← three_le_girth_iff, (show (2 : ℕ∞) * 3 = 4 + 2 by norm_num),
     WithTop.add_le_add_iff_right (show (2 : ℕ∞) ≠ ⊤ by norm_num), imp_iff_right hM] using h.le_girth
+
+def InternallyConnected (M : Matroid α) (k : ℕ∞) : Prop :=
+  M.PredConnected k (fun _ k j X ↦ k ≤ X.encard ∧ (j = k → k + 1 ≤ X.encard))
+
+lemma TutteConnected.internallyConnected (h : M.TutteConnected k) : M.InternallyConnected k :=
+  h.of_imp fun _ _ _ ↦ And.left
+
+lemma InternallyConnected.tutteConnected (h : M.InternallyConnected (k+1)) :
+    M.TutteConnected k := by
+  rintro j P ⟨hPconn, hP1, hP2⟩
+  specialize h (j := j) (P := P) ⟨hPconn, ⟨hP1, by simp [hPconn.ne]⟩, ⟨hP2, by simp [hPconn.ne]⟩⟩
+  enat_to_nat
+  linarith
+
+lemma InternallyConnected.le (h : M.InternallyConnected k) (hP : P.IsInternalSep j) : k ≤ j :=
+  h hP
+
+lemma InternallyConnected.le_of_isTutteSep (h : M.InternallyConnected (k+1)) (hP : P.IsTutteSep j) :
+    k ≤ j :=
+  h.tutteConnected.le hP
+
+lemma InternallyConnected.eq_of_isTutteSep (h : M.InternallyConnected (k+1)) (hP : P.IsTutteSep k)
+    (hlt : k < ⊤) : P.eConn + 1 = k ∧ (P.left.encard = k ∨ P.right.encard = k) := by
+  lift k to ℕ using hlt.ne
+  have h_eq := (h.tutteConnected.le hP.isTutteSep_eConn_add_one).antisymm hP.eConn_add_one_le
+  have h' : P.eConn + 1 ≤ P.left.encard → P.right.encard < P.eConn + 1 := by
+    simpa [Partition.isPredSep_iff, h_eq, ENat.lt_add_right_iff, hP.eConn_lt_top.ne] using
+      h (j := P.eConn + 1) (P := P)
+  rw [ENat.lt_add_one_iff hP.eConn_lt_top.ne, imp_iff_not_or, not_le,
+    ENat.lt_add_one_iff hP.eConn_lt_top.ne] at h'
+  rw [and_iff_right h_eq.symm, le_antisymm_iff, and_iff_left hP.cond_left, le_antisymm_iff,
+    and_iff_left hP.cond_right, h_eq]
+  exact h'.elim (fun h ↦ .inl (h.trans le_self_add)) (fun h ↦ .inr (h.trans le_self_add))
+
+
+-- lemma foo (hlt : k < ⊤) : M.InternallyConnected (k+1) ↔ M.TutteConnected k ∧
+--     ∀ (P : M.Partition), P.IsTutteSep k → P.left.encard = k ∨ P.right.encard = k := by
+
+--   refine ⟨fun h ↦ ⟨fun a P hP ↦ h.le_of_isTutteSep hP, fun P hP ↦ (h.eq_of_isTutteSep hP hlt).2⟩
+--     fun ⟨ht, h⟩ ↦ ?_⟩
+--   simp [InternallyConnected, PredConnected, Partition.isPredSep_iff]
+--   intro j P hlt' hjle
+--   simp [hlt'.ne]
+--   intro hjright
+
+--   rw [ENat.add_one_le_iff hlt.ne, lt_iff_not_ge]
+--   intro hjk
+--   have := h P ⟨(hlt'.trans_le hjk), ?_, ?_⟩
+
+    -- refine h.eq_of_isTutteSep (P := P) hlt ⟨?_, ?_, ?_⟩
+
+
+
+-- lemma InternallyConnected.not_tutteConnected_iff (h : M.InternallyConnected k) :
+--     ¬ M.TutteConnected k ↔ ∃ j < k, ∃ (P : M.Partition), P.eConn = j ∧ P.left.encard = j := by
+--   sorry
 
 section Global
 

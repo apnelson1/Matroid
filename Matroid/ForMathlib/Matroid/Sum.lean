@@ -27,6 +27,28 @@ lemma Indep.sigma (h : ∀ i, (M i).Indep (I i)) :
     (Matroid.sigma M).Indep (⋃ i, Sigma.mk i '' I i) := by
   simpa
 
+lemma sigma_dep_iff {X : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).Dep X ↔
+      ∃ i, (M i).Dep (Sigma.mk i ⁻¹' X) ∧ ∀ i, Sigma.mk i ⁻¹' X ⊆ (M i).E := by
+  simp only [Dep, sigma_indep_iff, not_forall, sigma_ground_eq, subset_def, mem_sigma_iff, mem_univ,
+    true_and, mem_preimage, exists_and_right]
+  exact ⟨fun ⟨⟨i, hii⟩, hiss⟩ ↦ ⟨⟨i, hii, fun e he ↦ hiss _ he⟩, fun i e he ↦ hiss _ he⟩,
+    fun ⟨⟨i, hi1, hi2⟩, h⟩ ↦ ⟨⟨i, hi1⟩, fun ⟨x,j⟩ hx ↦ h _ _ hx⟩⟩
+
+lemma sigma_image_indep_iff {i : ι} {I : Set (α i)} :
+    (Matroid.sigma M).Indep (Sigma.mk i '' I) ↔ (M i).Indep I := by
+  simp only [sigma_indep_iff]
+  refine ⟨fun h ↦ by simpa using h i, fun h ↦ ?_⟩
+  rintro j
+  obtain rfl | hne := eq_or_ne j i
+  · simpa
+  simp [preimage_image_sigmaMk_of_ne hne]
+
+lemma sigma_image_dep_iff {i : ι} {D : Set (α i)} :
+    (Matroid.sigma M).Dep (Sigma.mk i '' D) ↔ (M i).Dep D := by
+  rw [Dep, sigma_image_indep_iff, Dep]
+  simp
+
 lemma IsBase.sigma (h : ∀ i, (M i).IsBase (B i)) :
     (Matroid.sigma M).IsBase (⋃ i, Sigma.mk i '' B i) := by
   simpa
@@ -131,9 +153,17 @@ lemma IsBasis.disjointSigma_iUnion h (hI : ∀ i, (M i).IsBasis (I i) (X i)) :
   rw [aux _ (fun i ↦ (hI i).subset_ground), aux _ (fun i ↦ (hI i).indep.subset_ground)]
   apply hI
 
--- lemma disjointSigma_closure_eq (M : ι → Matroid α) {h} (X) :
---     (Matroid.disjointSigma M h).closure X = ⋃ i, (M i).closure (X ∩ (M i).E) := by
---   obtain ⟨I, hI⟩ := (Matroid.disjointSigma M h).exists_isBasis' X
+lemma isRestriction_disjointSigma h (i : ι) : (M i).IsRestriction (Matroid.disjointSigma M h) := by
+  refine ⟨(M i).E, ?_, ext_indep rfl fun I ↦ ?_⟩
+  · simp only [disjointSigma_ground_eq]
+    exact subset_iUnion (fun i ↦ (M i).E) i
+  simp only [restrict_indep_iff, disjointSigma_indep_iff]
+  refine fun hss ↦ ⟨fun hI ↦ ⟨⟨?_, subset_iUnion_of_subset _ hI.subset_ground⟩, hI.subset_ground⟩,
+    fun h ↦ (h.1.1 i).subset (by simpa)⟩
+  intro j
+  obtain rfl | hne := eq_or_ne i j
+  · apply hI.inter_right
+  simp [((h hne).mono_left hI.subset_ground).inter_eq]
 
 
 end disjointSigma
@@ -188,5 +218,26 @@ lemma disjointSum_dual (M N : Matroid α) (hMN : Disjoint M.E N.E) :
       and_iff_left (union_subset_union diff_subset diff_subset)]
   simp [hB]
 
+lemma disjointSum_eq_disjointSigma (M N : Matroid α) (hMN : Disjoint M.E N.E) :
+    M.disjointSum N hMN = Matroid.disjointSigma (fun b ↦ bif b then M else N)
+    (by simp [Function.onFun, Pairwise, hMN, hMN.symm]) := by
+  refine ext_indep (by simp [Set.ext_iff, or_comm]) fun I hI ↦ ?_
+  simp [union_eq_iUnion, Bool.apply_cond, and_comm, and_assoc]
+
+lemma isRestriction_disjointSum_left (hMN : Disjoint M.E N.E) : M ≤r (disjointSum M N hMN) := by
+  rw [disjointSum_eq_disjointSigma]
+  exact isRestriction_disjointSigma _ true
+
+lemma isRestriction_disjointSum_right (hMN : Disjoint M.E N.E) : N ≤r (disjointSum M N hMN) := by
+  rw [disjointSum_eq_disjointSigma]
+  exact isRestriction_disjointSigma _ false
+
+@[simp]
+lemma disjointSum_restrict_left (hMN : Disjoint M.E N.E) : (disjointSum M N hMN) ↾ M.E = M :=
+  (isRestriction_disjointSum_left hMN).eq_restrict
+
+@[simp]
+lemma disjointSum_restrict_right (hMN : Disjoint M.E N.E) : (disjointSum M N hMN) ↾ N.E = N :=
+  (isRestriction_disjointSum_right hMN).eq_restrict
 
 end disjointSum

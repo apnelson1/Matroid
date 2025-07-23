@@ -378,6 +378,19 @@ lemma IsSkewFamily.subset_of_isCircuit_of_mem {Xs : η → Set α} (h : M.IsSkew
   obtain rfl := (h.isLoop_of_mem_inter hne ⟨hei, hj he⟩).eq_of_isCircuit_mem hC he
   simpa
 
+lemma isSkewFamily_iff_restrict_iUnion_eq_disjointSigma {ι : Type*} {Xs : ι → Set α}
+    (hdj : Pairwise (Disjoint on Xs)) (hss : ∀ i, Xs i ⊆ M.E) :
+    M.IsSkewFamily Xs ↔ M ↾ ⋃ i, Xs i = Matroid.disjointSigma (fun i ↦ (M ↾ Xs i)) (by simpa) := by
+  have hrw {C} : (C ⊆ ⋃ i, Xs i ↔ ∃ i, C ⊆ Xs i) ↔ (C ⊆ ⋃ i, Xs i → ∃ i, C ⊆ Xs i) :=
+    ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun ⟨i, hi⟩ ↦ hi.trans <| subset_iUnion ..⟩⟩
+  simp [isSkewFamily_iff_forall_isCircuit hss hdj, ext_iff_isCircuit,
+    restrict_isCircuit_iff (iUnion_subset hss), restrict_isCircuit_iff (hss _), hrw]
+
+lemma IsSkewFamily.restrict_iUnion_eq_disjointSigma {ι : Type*} {Xs : ι → Set α}
+    (h : M.IsSkewFamily Xs) (hdj : Pairwise (Disjoint on Xs)) :
+    M ↾ ⋃ i, Xs i = Matroid.disjointSigma (fun (i : ι) ↦ (M ↾ Xs i)) (by simpa) := by
+  rwa [← isSkewFamily_iff_restrict_iUnion_eq_disjointSigma hdj h.subset_ground_of_mem]
+
 /-- Two sets are skew if they have disjoint bases with independent union. -/
 def Skew (M : Matroid α) (X Y : Set α) := M.IsSkewFamily (fun i ↦ bif i then X else Y)
 
@@ -984,6 +997,14 @@ lemma IsModularPair.contract_subset_left {C : Set α} (hXY : M.IsModularPair X Y
 lemma IsModularPair.skew_contract_inter (hXY : M.IsModularPair X Y) :
     (M ／ (X ∩ Y)).Skew (X \ Y) (Y \ X) := by
   rwa [← isModularPair_iff_skew_contract_inter (inter_subset_left.trans hXY.subset_ground_left)]
+
+lemma skew_iff_restrict_union_eq (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) (hdj : Disjoint X Y) :
+    M.Skew X Y ↔ M ↾ (X ∪ Y) = (M ↾ X).disjointSum (M ↾ Y) hdj := by
+  rw [disjointSum_eq_disjointSigma, union_eq_iUnion, Skew,
+    isSkewFamily_iff_restrict_iUnion_eq_disjointSigma]
+  · simp [Bool.apply_cond]
+  · simpa [pairwise_on_bool Disjoint.symm]
+  simp [hXE, hYE]
 
 section ModularCompl
 

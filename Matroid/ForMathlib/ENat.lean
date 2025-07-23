@@ -44,6 +44,14 @@ theorem add_eq_right_iff {a b : ℕ∞} : a + b = b ↔ a = 0 ∨ b = ⊤ := by
   rw [add_comm, add_eq_left_iff, or_comm]
 
 @[simp]
+theorem eq_add_right_iff {a b : ℕ∞} : b = a + b ↔ a = 0 ∨ b = ⊤ := by
+  rw [eq_comm, add_eq_right_iff]
+
+@[simp]
+theorem eq_add_left_iff {a b : ℕ∞} : a = a + b ↔ b = 0 ∨ a = ⊤ := by
+  rw [eq_comm, add_eq_left_iff, or_comm]
+
+@[simp]
 theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
   rw [← add_eq_left_iff, le_antisymm_iff, and_iff_left (by simp)]
 
@@ -66,6 +74,21 @@ lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
 @[simp]
 lemma one_add_inj {a b : ℕ∞} : 1 + a = 1 + b ↔ a = b :=
   WithTop.add_left_inj (by simp)
+
+lemma lt_add_right_iff {a b : ℕ∞} : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  obtain rfl | hne := eq_zero_or_pos b
+  · simp
+  cases a with
+  | top => simp
+  | coe a =>
+  · cases b with
+    | top => simp
+    | coe b =>
+    · norm_cast at *
+      simp [hne, hne.ne.symm]
+
+lemma lt_add_left_iff {a b : ℕ∞} : b < a + b ↔ b ≠ ⊤ ∧ a ≠ 0 := by
+  rw [add_comm, lt_add_right_iff]
 
 section Parity
 
