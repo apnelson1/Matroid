@@ -90,6 +90,14 @@ lemma lt_add_right_iff {a b : ℕ∞} : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := b
 lemma lt_add_left_iff {a b : ℕ∞} : b < a + b ↔ b ≠ ⊤ ∧ a ≠ 0 := by
   rw [add_comm, lt_add_right_iff]
 
+@[simp]
+lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
+  simp [lt_add_right_iff]
+
+@[simp]
+lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
+  simp [lt_add_left_iff]
+
 section Parity
 
 @[simp]
