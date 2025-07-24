@@ -778,6 +778,7 @@ lemma rel_le_of_subset {P Q : Partition (Set α)} (h : P ⊆ Q) : ⇑P ≤ ⇑Q 
 lemma ofRel_supp {r : α → α → Prop} [IsSymm α r] [IsTrans α r] : (ofRel r).supp = domain r :=
   sUnion_fibers r
 
+@[simp]
 lemma rel_ofRel_eq {r : α → α → Prop} [IsTrans α r] [IsSymm α r] : ofRel r = r := by
   ext a b
   exact ⟨fun ⟨S, ⟨c, ⟨d, hdc⟩, heq⟩, haS, hbS⟩ => trans' (heq ▸ haS) (symm (heq ▸ hbS)),
