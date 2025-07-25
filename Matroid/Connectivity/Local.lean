@@ -795,6 +795,11 @@ lemma core_contract_subset (M : Matroid α) (X C : Set α) : (M ／ C).core X �
 
 end core
 
+lemma foo (M : Matroid α) [OnUniv M] (X Y : Set α) :
+    M.eConn (X ∪ Y) + M.eConn (X ∩ Y) ≤ M.eConn X + M.eConn Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis (X ∩ Y)
+
+
 -- private lemma eConn_submod_aux' (M : Matroid α) [OnUniv M] (X : Bool × Bool → Set α)
 --     (hX : Pairwise (Disjoint on X)) (hu : ⋃ b, X b = univ) :
 --     M.eConn (X ⟨false, false⟩) + M.eConn (X ⟨true, true⟩) ≤
