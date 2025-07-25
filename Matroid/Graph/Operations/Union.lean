@@ -851,7 +851,7 @@ lemma edgeDelete_union_edgeRestrict (G : Graph α β) [Nodup G] (F : Set β) :
 
 /-- The intersection of a nonempty family of pairwise compatible graphs.
   Remove any disagreeing edges. -/
-@[simps]
+@[simps dup isLink edgeSet]
 protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
   Dup := ⨅ i, (G i).Dup
   IsLink e x y :=
@@ -877,20 +877,31 @@ protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
     ext d
     rw [(G i).dup_left_rw (hdab i), hc, (G j).dup_left_rw (hdab j)]
 
--- protected lemma iInter_le {G : ι → Graph α β} [Nonempty ι] (i : ι) : Graph.iInter G ≤ G i where
---   vertex_subset := iInter_subset (fun i ↦ V(G i)) i
---   isLink_of_isLink _ _ _ h := h i
+@[simp]
+lemma iInter_vertexSet [Nonempty ι] (G : ι → Graph α β) : V(Graph.iInter G) = ⋂ i, V(G i) := by
+  rw [vertexSet_eq]
+  simp
 
--- @[simp]
--- lemma le_iInter_iff [Nonempty ι] {G : ι → Graph α β} :
---     H ≤ Graph.iInter G ↔ ∀ i, H ≤ G i := by
---   let j := Classical.arbitrary ι
---   refine ⟨fun h i ↦ h.trans <| Graph.iInter_le .., fun h ↦ ?_⟩
---   apply le_of_le_le_subset_subset (h j) (Graph.iInter_le ..) ?_ fun e he ↦ ?_
---   · simp [fun i ↦ vertexSet_mono (h i)]
---   simp only [iInter_edgeSet, mem_setOf_eq]
---   obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet he
---   use x, y, fun i ↦ hbtw.of_le (h i)
+lemma iInter_dup_le [Nonempty ι] (G : ι → Graph α β) (i : ι) :
+    (Graph.iInter G).Dup ≤ (G i).Dup := iInf_le _ i
+
+protected lemma iInter_le {G : ι → Graph α β} [∀ i, Nodup (G i)] [Nonempty ι] (i : ι) :
+    Graph.iInter G ≤ G i where
+  dup_subset := by
+    rw [(dup_atomic (G i)).subset_iff_le]
+    exact iInter_dup_le G i
+  isLink_of_isLink _ _ _ h := (h i).2.2
+
+@[simp]
+lemma le_iInter_iff [Nonempty ι] {G : ι → Graph α β} [∀ i, Nodup (G i)] :
+    H ≤ Graph.iInter G ↔ ∀ i, H ≤ G i := by
+  let j := Classical.arbitrary ι
+  refine ⟨fun h i ↦ h.trans <| Graph.iInter_le .., fun h ↦ ?_⟩
+  apply le_of_le_le_subset_subset (h j) (Graph.iInter_le ..) ?_ fun e he ↦ ?_
+  · simp [fun i ↦ vertexSet_mono (h i)]
+  simp only [iInter_edgeSet, mem_setOf_eq]
+  obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet he
+  use x, y, fun i ↦ hbtw.of_le (h i)
 
 -- @[simp]
 -- protected lemma iInter_const [Nonempty ι] (G : Graph α β) :

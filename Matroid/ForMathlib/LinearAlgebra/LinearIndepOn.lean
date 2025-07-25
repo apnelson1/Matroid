@@ -8,7 +8,7 @@ variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} 
 
 variable [Semiring R] [AddCommMonoid M] [AddCommMonoid M'] [Module R M] [Module R M']
 
-open Function Set Submodule
+open Function Set Submodule Module
 
 
 noncomputable def Basis.spanImage {ι R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]

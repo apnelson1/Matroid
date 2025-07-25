@@ -359,7 +359,7 @@ instance : OrderBot (Partition α) where
   bot_le a s hs := by simp only [notMem_bot] at hs
 
 lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
-  sSup_le_sSup_of_forall_exists_le h
+  sSup_le_sSup_of_isCofinalFor h
 
 lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩

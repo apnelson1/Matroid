@@ -5,7 +5,7 @@ import Matroid.ForMathlib.LinearAlgebra.Submodule
 
 variable {ι K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
-open Set Function Projectivization
+open Set Function Projectivization Module
 
 
 section map
