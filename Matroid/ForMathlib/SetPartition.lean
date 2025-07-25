@@ -270,6 +270,7 @@ instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition
 lemma supp_indiscrete (s : α) (hs : s ≠ ⊥) : (Partition.indiscrete s hs).supp = s := by
   simp [Partition.indiscrete, supp]
 
+/-- Similar to `indiscrete`, but in the case `s = ⊥` it returns the empty partition. -/
 noncomputable def indiscrete' (s : α) : Partition α :=
   let _ : Decidable (s = ⊥) := Classical.dec _
   if hs : s = ⊥ then ⊥ else indiscrete s hs

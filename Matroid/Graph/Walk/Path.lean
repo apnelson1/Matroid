@@ -43,30 +43,37 @@ lemma IsTrail.reverse (h : G.IsTrail w) : G.IsTrail w.reverse :=
 lemma reverse_isTrail_iff : G.IsTrail (reverse w) ↔ G.IsTrail w :=
   ⟨fun h ↦ by simpa using h.reverse, IsTrail.reverse⟩
 
+lemma IsTrail.of_isLabelSubgraph (h : H.IsTrail w) (hlle : H ≤l G) : G.IsTrail w :=
+  ⟨h.isWalk.of_isLabelSubgraph hlle, h.edge_nodup⟩
+
 lemma IsTrail.of_le (hw : G.IsTrail w) (hle : G ≤ H) : H.IsTrail w :=
   ⟨hw.isWalk.of_le hle, hw.edge_nodup⟩
 
 lemma IsTrail.vertexSet_subset (hw : G.IsTrail w) : V(w) ⊆ V(G) :=
   hw.isWalk.vertexSet_subset
 
-lemma IsTrail.induce (hw : G.IsTrail w) (hX : V(w) ⊆ X) : G[X].IsTrail w :=
-  ⟨hw.isWalk.induce hX, hw.edge_nodup⟩
+-- lemma IsTrail.induce (hw : G.IsTrail w) (hX : V(w) ⊆ X) : G[X].IsTrail w :=
+--   ⟨hw.isWalk.induce hX, hw.edge_nodup⟩
 
-/-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
-`w` is a nil walk on a vertex in `X \ V(G)`. -/
-lemma isTrail_induce_iff (hXV : X ⊆ V(G)) :
-    (G.induce X).IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X :=
-  ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+-- /-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
+-- `w` is a nil walk on a vertex in `X \ V(G)`. -/
+-- lemma isTrail_induce_iff (hXV : X ⊆ V(G)) :
+--     (G.induce X).IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X :=
+--   ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
 
-lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
-  rw [isTrail_iff, isWalk_induce_iff' hw, and_assoc, isTrail_iff]
-  tauto
+-- lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
+--   rw [isTrail_iff, isWalk_induce_iff' hw, and_assoc, isTrail_iff]
+--   tauto
 
 @[simp]
 lemma isTrail_vertexDelete_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint V(w) X := by
-  rw [vertexDelete_def, isTrail_induce_iff diff_subset, subset_diff, and_congr_right_iff,
-    and_iff_right_iff_imp]
-  exact fun h _ ↦ h.vertexSet_subset
+  simp_rw [isTrail_iff, isWalk_vertexDelete_iff]
+  tauto
+
+lemma IsTrail.isTrail_isLabelSubgraph (h : G.IsTrail w) (hlle : H ≤l G) (hE : E(w) ⊆ E(H))
+    (hV : V(w) ⊆ V(H)) : H.IsTrail w where
+  isWalk := h.isWalk.isWalk_isLabelSubgraph hlle hE hV
+  edge_nodup := h.edge_nodup
 
 lemma IsTrail.isTrail_le (h : G.IsTrail w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
     (hfirst : w.first ∈ V(H)) : H.IsTrail w where
@@ -83,7 +90,7 @@ lemma IsTrail.eq_append_cons_of_edge_mem (hW : G.IsTrail W) (heW : e ∈ W.edge)
     W = W₁ ++ WList.cons W₁.last e W₂ := by
   obtain ⟨W₁, W₂, hW₁, hW₂, heW₁, rfl⟩ := hW.isWalk.eq_append_cons_of_edge_mem heW
   have hnd := hW.edge_nodup
-  simp only [append_edge, cons_edge, List.nodup_append, List.nodup_cons,
+  simp only [append_edge, cons_edge, List.nodup_append', List.nodup_cons,
     List.disjoint_cons_right] at hnd
   use W₁, W₂
   simp_all [isTrail_iff]

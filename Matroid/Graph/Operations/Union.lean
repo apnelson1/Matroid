@@ -851,20 +851,31 @@ lemma edgeDelete_union_edgeRestrict (G : Graph α β) [Nodup G] (F : Set β) :
 
 /-- The intersection of a nonempty family of pairwise compatible graphs.
   Remove any disagreeing edges. -/
--- @[simps]
--- protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
---   Dup := ⨅ i, (G i).Dup
---   IsLink e := ⨅ i, (G i).IsLink e
---   isLink_symm e he a b hl := symm hl
---   dup_or_dup_of_isLink_of_isLink e a b c d hlab hlcd := by
---     simp_all only [iInf_apply, iInf_Prop_eq, Partition.iInf_rel]
---     sorry
---   mem_vertexSet_of_isLink e a b hl := by
---     simp only [iInf_apply, iInf_Prop_eq, Partition.iInf_supp, vertexSet_def, mem_iInter] at hl ⊢
---     exact fun i ↦ (hl i).left_mem
---   isLink_of_dup e a b c hdab hlbc := by
---     simp only [Partition.iInf_rel, iInf_apply, iInf_Prop_eq] at hdab hlbc ⊢
---     exact fun i ↦ trans' (hdab i) (hlbc i)
+@[simps]
+protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
+  Dup := ⨅ i, (G i).Dup
+  IsLink e x y :=
+    let j := Classical.arbitrary ι
+    ∀ i, (G i).Dup x = (G j).Dup x ∧ (G i).Dup y = (G j).Dup y ∧ (G i).IsLink e x y
+  isLink_symm e he a b hl i := by
+    obtain ⟨ha, hb, h⟩ := hl i
+    exact ⟨hb, ha, h.symm⟩
+  dup_or_dup_of_isLink_of_isLink e a b c d hlab' hlcd' := by
+    let j := Classical.arbitrary ι
+    simp_all only [Partition.iInf_rel, iInf_apply, ciInf_const]
+    obtain ⟨ha, hb, hlab⟩ := hlab' j
+    obtain ⟨hc, hd, hlcd⟩ := hlcd' j
+    exact (G j).dup_or_dup_of_isLink_of_isLink hlab hlcd
+  mem_vertexSet_of_isLink e a b hl := by
+    simp only [Partition.iInf_supp, vertexSet_def, mem_iInter] at hl ⊢
+    exact fun i ↦ (hl i).2.2.left_mem
+  isLink_of_dup e a b c hdab hlbc i := by
+    let j := Classical.arbitrary ι
+    simp_all only [Partition.iInf_rel, iInf_apply, iInf_Prop_eq, true_and]
+    obtain ⟨hc, hd, h⟩ := hlbc i
+    use ?_, trans' (hdab i) h
+    ext d
+    rw [(G i).dup_left_rw (hdab i), hc, (G j).dup_left_rw (hdab j)]
 
 -- protected lemma iInter_le {G : ι → Graph α β} [Nonempty ι] (i : ι) : Graph.iInter G ≤ G i where
 --   vertex_subset := iInter_subset (fun i ↦ V(G i)) i
