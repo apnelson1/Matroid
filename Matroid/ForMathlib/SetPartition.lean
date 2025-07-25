@@ -99,10 +99,12 @@ lemma ext_iff_parts : P = Q ↔ P.parts = Q.parts :=
   ext x
   simpa using hP x
 
-instance : HasSubset (Partition α) where
-  Subset P Q := P.parts ⊆ Q.parts
+def subset (P Q : Partition α) : Prop := P.parts ⊆ Q.parts
 
-instance : IsPartialOrder (Partition (Set α)) (· ⊆ ·) where
+instance : HasSubset (Partition α) where
+  Subset := subset
+
+instance : IsPartialOrder (Partition α) (· ⊆ ·) where
   refl _ _ := id
   trans _ _ _ hPQ hQR _ h := hQR (hPQ h)
   antisymm _ _ hPQ hPQ' := by ext S; exact ⟨(hPQ ·), (hPQ' ·)⟩
@@ -268,6 +270,7 @@ instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition
 lemma supp_indiscrete (s : α) (hs : s ≠ ⊥) : (Partition.indiscrete s hs).supp = s := by
   simp [Partition.indiscrete, supp]
 
+/-- Similar to `indiscrete`, but in the case `s = ⊥` it returns the empty partition. -/
 noncomputable def indiscrete' (s : α) : Partition α :=
   let _ : Decidable (s = ⊥) := Classical.dec _
   if hs : s = ⊥ then ⊥ else indiscrete s hs
@@ -356,7 +359,7 @@ instance : OrderBot (Partition α) where
   bot_le a s hs := by simp only [notMem_bot] at hs
 
 lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
-  sSup_le_sSup_of_forall_exists_le h
+  sSup_le_sSup_of_isCofinalFor h
 
 lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩
@@ -407,7 +410,7 @@ end Bind
 
 section Restrict
 
-variable {α : Type*} [CompleteLattice α] {s : Set α}
+variable {α : Type*} [CompleteLattice α] {s : Set α} {P Q R : Partition α} {a b c : α}
 
 /-- The subpartition with over a subset of the parts. -/
 @[simps]
@@ -416,27 +419,43 @@ def restrict (P : Partition α) (s : Set α) (hs : s ⊆ P.parts) : Partition α
   indep := P.indep.mono hs
   bot_notMem h := P.bot_notMem (hs h)
 
-@[simp] lemma mem_restrict_iff {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) {a : α} :
+@[simp] lemma mem_restrict_iff (hs : s ⊆ P.parts) :
     a ∈ P.restrict s hs ↔ a ∈ s := Iff.rfl
 
-@[simp] lemma restrict_supp {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) :
-    (P.restrict s hs).supp = sSup s := by
+@[simp] lemma restrict_supp (hs : s ⊆ P.parts) : (P.restrict s hs).supp = sSup s := by
   simp [restrict, supp]
 
-lemma restrict_subset {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) :
-    (P.restrict s hs) ⊆ P := fun _ h ↦ hs h
+lemma restrict_subset (hs : s ⊆ P.parts) : (P.restrict s hs) ⊆ P := fun _ h ↦ hs h
 
-lemma restrict_le {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) :
-    P.restrict s hs ≤ P := le_of_subset <|restrict_subset hs
+lemma restrict_le (hs : s ⊆ P.parts) : P.restrict s hs ≤ P := le_of_subset <| restrict_subset hs
 
-lemma subset_iff_restrict {P Q : Partition α} :
-    P ⊆ Q ↔ ∃ S, ∃ hS : S ⊆ Q.parts, Q.restrict S hS = P :=
+lemma subset_iff_restrict : P ⊆ Q ↔ ∃ S, ∃ hS : S ⊆ Q.parts, Q.restrict S hS = P :=
   ⟨fun h ↦ ⟨P.parts, h, by ext; simp⟩, fun ⟨S, hS, heq⟩ ↦ heq ▸ restrict_subset hS⟩
 
 @[simp]
-lemma restrict_eq_self_iff {P : Partition α} {s : Set α} (hs : s ⊆ P.parts) :
-    P.restrict s hs = P ↔ s = P.parts :=
+lemma restrict_eq_self_iff (hs : s ⊆ P.parts) : P.restrict s hs = P ↔ s = P.parts :=
   ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ h ▸ (by rfl)⟩
+
+def agree (P Q : Partition α) : Prop := ∃ S : Partition α, P ⊆ S ∧ Q ⊆ S
+
+@[simps!]
+def union (P Q : Partition α) (hPQ : P.agree Q) : Partition α :=
+  hPQ.choose.restrict (P.parts ∪ Q.parts) (union_subset_iff.mpr hPQ.choose_spec)
+
+@[simp]
+lemma union_supp (hPQ : P.agree Q) : (P.union Q hPQ).supp = P.supp ⊔ Q.supp := by
+  simp only [supp, union, restrict_parts]
+  rw [sSup_union]
+
+protected lemma subset_union_left (hPQ : P.agree Q) : P ⊆ P.union Q hPQ := fun _ hx ↦ by simp [hx]
+
+protected lemma subset_union_right (hPQ : P.agree Q) : Q ⊆ P.union Q hPQ := fun _ hx ↦ by simp [hx]
+
+protected lemma union_subset_iff (hPQ : P.agree Q) : P.union Q hPQ ⊆ R ↔ P ⊆ R ∧ Q ⊆ R := by
+  refine ⟨fun h ↦ ⟨subset_trans (Partition.subset_union_left hPQ) h,
+    subset_trans (Partition.subset_union_right hPQ) h⟩, fun ⟨hP, hQ⟩ s ↦ ?_⟩
+  simp only [union_parts, mem_union, mem_parts, SetLike.mem_coe]
+  exact (Or.elim · (hP ·) (hQ ·))
 
 end Restrict
 

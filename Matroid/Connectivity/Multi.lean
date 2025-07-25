@@ -90,9 +90,10 @@ lemma multiConn_eq_nullity_iUnion_add_tsum (hI : ∀ i, M.IsBasis' (I i) (X i)) 
       aesop
     simp_rw [Pairwise, disjoint_left]
     aesop
-  ·
-    simp_rw [InjOn]
-    aesop
+  · simp only [InjOn, mem_iUnion, mem_image, forall_exists_index, and_imp, Prod.forall,
+    Prod.mk.injEq]
+    rintro _ _ _ _ _ rfl rfl _ _ _ _ _ rfl rfl rfl
+    exact ⟨rfl, rfl⟩
   · simp only [iUnion_subset_iff, image_subset_iff, preimage_iUnion]
     exact fun i e heI ↦ mem_iUnion.2 ⟨φ e, by simp [hφ _ _ heI]⟩
   suffices ∀ (i : ι), I i ⊆ M.closure (⋃ i, I i) by

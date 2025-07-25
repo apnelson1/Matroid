@@ -4,7 +4,7 @@ import Matroid.Flat.Hyperplane
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Set Function Submodule Finsupp Set.Notation
+open Set Function Submodule Finsupp Set.Notation Module
 
 theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
   {s : ι → η} (hs : Function.Injective s) :
@@ -78,7 +78,7 @@ lemma Rep.restrictSpan_fullRank (v : M.Rep 𝔽 W) : v.restrictSpan.FullRank := 
 
 /-- A base of `M` gives a linear basis in a full-rank representation -/
 noncomputable def Rep.FullRank.basis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.IsBase B) :
-    _root_.Basis B 𝔽 W :=
+    Module.Basis B 𝔽 W :=
   Basis.mkImage (v.onIndep hB.indep) (h.span_spanning hB.spanning).symm.le
 
 lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
@@ -88,7 +88,7 @@ lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
-    _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
+    Module.Basis B 𝔽 (span 𝔽 (range v)) :=
   (Basis.spanImage (v.onIndep hB.indep)).map <|
     LinearEquiv.ofEq _ _ <| v.span_spanning_eq hB.spanning
   --
