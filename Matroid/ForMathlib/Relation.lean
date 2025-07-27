@@ -505,6 +505,42 @@ instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
 instance [IsTrans α r] : IsTrans α rᵀ where
   trans _ _ _ h h' := trans_of r h' h
 
+def SymmClosure : ClosureOperator (α → α → Prop) where
+  toFun r := r ⊔ flip r
+  monotone' _ _ hle _ _ hab := hab.imp (hle _ _) (hle _ _)
+  le_closure' r a b hab := Or.inl hab
+  idempotent' r := by
+    ext a b
+    simp [or_comm]
+
+lemma symmClosure_symmetric (r : α → α → Prop) : Symmetric (SymmClosure r) :=
+  fun _ _ ↦ Or.symm
+
+instance : IsSymm α (SymmClosure r) where
+  symm := symmClosure_symmetric r
+
+lemma SymmClosure.symm (hr : SymmClosure r a b) : SymmClosure r b a :=
+  symmClosure_symmetric r hr
+
+@[simp]
+lemma symmClosure_domain (r : α → α → Prop) : domain (SymmClosure r) = domain r ∪ codomain r := by
+  ext x
+  simp only [mem_domain_iff, mem_union, mem_codomain_iff]
+  refine ⟨fun ⟨y, h⟩ => h.imp (⟨y, ·⟩) (⟨y, ·⟩), ?_⟩
+  rintro (⟨y, h⟩ | ⟨y, h⟩)
+  · exact ⟨y, Or.inl h⟩
+  · exact ⟨y, Or.inr h⟩
+
+@[simp]
+lemma symmClosure_codomain (r : α → α → Prop) :
+    codomain (SymmClosure r) = domain r ∪ codomain r := by
+  ext x
+  simp only [mem_codomain_iff, mem_union, mem_domain_iff]
+  refine ⟨fun ⟨y, h⟩ => h.symm.imp (⟨y, ·⟩) (⟨y, ·⟩), ?_⟩
+  rintro (⟨y, h⟩ | ⟨y, h⟩)
+  · exact ⟨y, Or.inr h⟩
+  · exact ⟨y, Or.inl h⟩
+
 def TransClosure : ClosureOperator (α → α → Prop) where
   toFun := TransGen
   monotone' _ _ h _ _ h' := TransGen.mono h h'
@@ -538,6 +574,24 @@ lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq := by
     | tail _ h' ih => exact ih.trans h'
   rintro rfl
   exact TransGen.single rfl
+
+@[simp]
+lemma transClosure_domain (r : α → α → Prop) : domain (TransClosure r) = domain r := by
+  ext x
+  simp_rw [mem_domain_iff]
+  refine ⟨fun ⟨y, h⟩ => ?_, fun ⟨y, h⟩ => ⟨y, TransGen.single h⟩⟩
+  induction h with
+  | single h => exact ⟨_, h⟩
+  | tail _ h' ih => exact ih
+
+@[simp]
+lemma transClosure_codomain (r : α → α → Prop) : codomain (TransClosure r) = codomain r := by
+  ext x
+  simp_rw [mem_codomain_iff]
+  refine ⟨fun ⟨y, h⟩ => ?_, fun ⟨y, h⟩ => ⟨y, TransGen.single h⟩⟩
+  induction h with
+  | single h => exact ⟨_, h⟩
+  | tail _ h ih => exact ⟨_, h⟩
 
 /-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
 class foo (r : α → α → Prop) where

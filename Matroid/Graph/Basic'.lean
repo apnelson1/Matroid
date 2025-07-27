@@ -5,7 +5,7 @@ Authors: Peter Nelson, Jun Kwon
 -/
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sym.Sym2
-import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.Partition.Rep
 
 /-!
 # Multigraphs
@@ -596,6 +596,12 @@ def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, 
     rintro ⟨z, hxz, hzy⟩
     exact hxz.left_mem
   isLink_of_dup e x y z := trans'
+
+lemma isLink_mk_of_domp_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
+    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) (hl : l e x y) (hx : x ∈ P.supp)
+    (hy : y ∈ P.supp) : (mk_of_domp P l h).IsLink e x y := by
+  rw [mk_of_domp_isLink]
+  exact ⟨x, Partition.rel_self_of_mem_supp hx, y, symm hl, Partition.rel_self_of_mem_supp hy⟩
 
 /-- `edgeSet` can be determined using `IsLink`, so the graph constructed from `G.vertexSet` and
 `G.IsLink` using any value for `edgeSet` is equal to `G` itself. -/

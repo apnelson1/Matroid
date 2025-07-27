@@ -312,8 +312,8 @@ variable {X : Set α}
 --   induction hw with
 --   | nil => simp_all
 --   | @cons x e w hw h ih =>
---     simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, induce_isLink_iff, true_and,
---       and_true, forall_const]
+--     simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, induce_isLink_iff,
+--       true_and, and_true, forall_const]
 --     refine hX.2 <| by simp
 
 -- lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X := by
