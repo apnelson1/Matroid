@@ -585,6 +585,18 @@ lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M.coloo
     M.eConn (X \ L) = M.eConn X := by
   rw [← eConn_dual, eConn_diff_of_subset_loops _ hL, eConn_dual]
 
+lemma eLocalConn_project_eq_eLocalConn_contract_diff (M : Matroid α) (X Y C : Set α) :
+    (M.project C).eLocalConn X Y = (M ／ C).eLocalConn (X \ C) (Y \ C) := by
+  rw [project, eLocalConn_restrict_eq, ← eLocalConn_inter_ground, eq_comm,
+    ← eLocalConn_inter_ground, contract_ground]
+  convert rfl using 2 <;> tauto_set
+
+lemma eLocalConn_project_eq_eLocalConn_contract (M : Matroid α) (X Y C : Set α) :
+    (M.project C).eLocalConn X Y = (M ／ C).eLocalConn X Y := by
+  rw [project, eLocalConn_restrict_eq, ← eLocalConn_inter_ground, eq_comm,
+    ← eLocalConn_inter_ground, contract_ground]
+  convert rfl using 2 <;> tauto_set
+
 lemma eConn_delete_eq {X D : Set α} (hDX : D ⊆ X) (hX : X ⊆ M.closure (X \ D)) :
     (M ＼ D).eConn (X \ D) = M.eConn X := by
   have hXE : X ⊆ M.E := hX.trans <| closure_subset_ground ..
