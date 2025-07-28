@@ -1,5 +1,5 @@
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Constructions.Basic
+import Matroid.Graph.Operations.Delete
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
@@ -8,7 +8,7 @@ This file defined predicates stating that an abstract walk `w` is a walk/trail/p
 variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {F : Set β}
   {W w w₁ w₂ : WList α β} {S T : Set α}
 
-open Graph WList Set
+open WList Set Relation
 
 namespace Graph
 
@@ -95,9 +95,16 @@ lemma IsWalk.tail (hw : G.IsWalk w) : G.IsWalk w.tail :=
 lemma IsWalk.dropLast (hw : G.IsWalk w) : G.IsWalk w.dropLast :=
   hw.prefix w.dropLast_isPrefix
 
-lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : w₁.last = w₂.first) :
+lemma IsWalk.append (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂) (h : G.Dup w₁.last w₂.first) :
   G.IsWalk (w₁ ++ w₂) := by
-  induction h₁ with simp_all
+  induction h₁ with
+  | nil hx => simp_all
+  | cons hw h ih =>
+    simp_all only [last_cons, cons_append, cons_isWalk_iff, and_true, forall_const]
+    expose_names
+    obtain ⟨y, rfl⟩ | h' := exists_eq_nil_or_nonempty w
+    · exact trans' h_1 h
+    simp_all
 
 lemma IsWalk.concat (h : G.IsWalk w) (he : G.IsLink e w.last x) : G.IsWalk (w.concat e x) := by
   induction h with simp_all [he.right_mem]
@@ -253,19 +260,67 @@ lemma IsWalk.eq_of_edge_eq_first_eq [Nodup G] (h₁ : G.IsWalk w₁) (h₂ : G.I
 @[mk_iff]
 structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop where
   isWalk : G.IsWalk w
-  first_mem : w.first ∈ S
-  last_mem : w.last ∈ T
+  first_mem : w.first ∈ preimage G.Dup S
+  last_mem : w.last ∈ preimage G.Dup T
 
 lemma IsWalkFrom.of_isLabelSubgraph (h : H.IsWalkFrom S T w) (hlle : H ≤l G) : G.IsWalkFrom S T w :=
-  ⟨h.isWalk.of_isLabelSubgraph hlle, h.first_mem, h.last_mem⟩
+  let H := (Partition.rel_le_of_le hlle.dup_le)
+  ⟨h.isWalk.of_isLabelSubgraph hlle, preimage_mono H S h.first_mem, preimage_mono H T h.last_mem⟩
 
 lemma IsWalkFrom.of_le (h : G.IsWalkFrom S T w) (hle : G ≤ H) : H.IsWalkFrom S T w :=
-  ⟨h.isWalk.of_le hle, h.first_mem, h.last_mem⟩
+  let H := (Partition.rel_le_of_le <| dup_le_of_le hle)
+  ⟨h.isWalk.of_le hle, preimage_mono H S h.first_mem, preimage_mono H T h.last_mem⟩
 
 lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse where
   isWalk := h.isWalk.reverse
   first_mem := by simp [h.last_mem]
   last_mem := by simp [h.first_mem]
+
+lemma IsWalkFrom.append_of_dup {U : Set α} (h₁ : G.IsWalkFrom S T w₁) (h₂ : G.IsWalkFrom T U w₂)
+    (h : G.Dup w₁.last w₂.first) : G.IsWalkFrom S U (w₁ ++ w₂) := by
+  use h₁.isWalk.append h₂.isWalk h, ?_
+  · convert h₂.last_mem using 1
+    simp
+  obtain ⟨x, rfl⟩ | h' := exists_eq_nil_or_nonempty w₁
+  · obtain ⟨s, hsS, hxs⟩ := h₁.first_mem
+    simp only [nil_first, nil_last, nil_append, mem_preimage_iff] at hxs h ⊢
+    exact ⟨s, hsS, (dup_left_rw h).mp hxs⟩
+  rw [append_first_of_nonempty h']
+  exact h₁.first_mem
+
+lemma IsWalkFrom.append (h₁ : G.IsWalkFrom S {z} w₁) (h₂ : G.IsWalkFrom {z} T w₂) :
+    G.IsWalkFrom S T (w₁ ++ w₂) := by
+  refine append_of_dup h₁ h₂ ?_
+  obtain ⟨_, rfl, hdup₁⟩ := h₁.last_mem
+  obtain ⟨_, rfl, hdup₂⟩ := h₂.first_mem
+  exact trans' hdup₁ <| symm hdup₂
+
+lemma IsWalkFrom.dup_left (h : G.IsWalkFrom {x} T w) (hdup : G.Dup x y) :
+    G.IsWalkFrom {y} T w := by
+  refine ⟨h.isWalk, ?_, h.last_mem⟩
+  obtain ⟨s, rfl, hfs⟩ := h.first_mem
+  exact ⟨y, rfl, trans' hfs hdup⟩
+
+lemma IsWalkFrom.dup_right (h : G.IsWalkFrom S {x} w) (hdup : G.Dup x y) :
+    G.IsWalkFrom S {y} w := by
+  refine ⟨h.isWalk, h.first_mem, ?_⟩
+  obtain ⟨s, rfl, hfs⟩ := h.last_mem
+  exact ⟨y, rfl, trans' hfs hdup⟩
+
+lemma isWalkFrom_iff_isWalkFrom_of_dup_left (hdup : G.Dup x y) :
+    G.IsWalkFrom {x} T w ↔ G.IsWalkFrom {y} T w :=
+  ⟨fun h ↦ h.dup_left hdup, fun h ↦ h.dup_left <| symm hdup⟩
+
+lemma isWalkFrom_iff_isWalkFrom_of_dup_right (hdup : G.Dup x y) :
+    G.IsWalkFrom S {x} w ↔ G.IsWalkFrom S {y} w :=
+  ⟨fun h ↦ h.dup_right hdup, fun h ↦ h.dup_right <| symm hdup⟩
+
+@[simp]
+lemma isWalkFrom_nil_iff :
+    G.IsWalkFrom S T (nil x) ↔ x ∈ preimage G.Dup S ∧ x ∈ preimage G.Dup T := by
+  refine ⟨fun h ↦ ⟨h.first_mem, h.last_mem⟩, fun h ↦ ⟨?_, h.1, h.2⟩⟩
+  simp only [mem_preimage_iff, nil_isWalk_iff] at h ⊢
+  exact dup_left_mem h.1.choose_spec.2
 
 /-- The walk corresponding to an incidence `G.IsLink e u v`. -/
 def IsLink.walk (_h : G.IsLink e u v) : WList α β := cons u e (nil v)
@@ -301,6 +356,15 @@ lemma walk_length (h : G.IsLink e u v): h.walk.length = 1 := rfl
 @[simp]
 lemma walk_isWalk (h : G.IsLink e u v) : G.IsWalk h.walk := by
   simp [walk, h, h.right_mem]
+
+@[simp]
+lemma walk_isWalkFrom (h : G.IsLink e u v) : G.IsWalkFrom {u} {v} h.walk := by
+  refine ⟨h.walk_isWalk, by simp [h.left_refl], by simp [h.right_refl]⟩
+
+@[simp]
+lemma walk_isWalkFrom_iff (h : G.IsLink e u v) :
+    G.IsWalkFrom S T h.walk ↔ u ∈ preimage G.Dup S ∧ v ∈ preimage G.Dup T :=
+  ⟨fun h' ↦ ⟨h'.first_mem, h'.last_mem⟩, fun h' ↦ ⟨h.walk_isWalk, h'.1, h'.2⟩⟩
 
 end IsLink
 

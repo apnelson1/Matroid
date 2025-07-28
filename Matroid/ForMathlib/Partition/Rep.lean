@@ -78,10 +78,6 @@ lemma setOf_rel_mem (P : Partition (Set α)) (hx : x ∈ P.supp) : {y | P x y} �
   obtain ⟨t, ⟨ht,hp⟩, -⟩ := P.exists_unique_of_mem_supp hx
   rwa [setOf_rel_eq ht hp]
 
-@[ext] theorem eq_of_rel_iff_rel {P P' : Partition (Set α)} (h : ∀ x y, P x y ↔ P' x y) :
-    P = P' := by
-  rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']; congr; ext; exact h _ _
-
 lemma discrete.rel_iff_eq_of_mem (ha : a ∈ P.supp) :
     (Partition.discrete P.supp) a b ↔ a = b := by
   rw [rel_discrete_iff, and_iff_left ha]

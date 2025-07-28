@@ -295,4 +295,6 @@ instance (h : G.hasSup H) : Trans G.Dup H.Dup G.Dup where
 instance (h : G.hasSup H) : Trans G.Dup H.Dup H.Dup where
   trans := h.trans_right
 
+
+
 end Graph

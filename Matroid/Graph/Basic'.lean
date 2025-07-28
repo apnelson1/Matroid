@@ -5,7 +5,7 @@ Authors: Peter Nelson, Jun Kwon
 -/
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sym.Sym2
-import Matroid.ForMathlib.Partition.Rep
+import Matroid.ForMathlib.Partition.Set
 
 /-!
 # Multigraphs
@@ -132,6 +132,12 @@ lemma dup_left_mem (hx : G.Dup x y) : x ∈ V(G) :=
 
 lemma dup_right_mem (hy : G.Dup x y) : y ∈ V(G) :=
   vertexSet_def ▸ hy.right_mem
+
+lemma dup_left_self (hx : G.Dup x y) : G.Dup x x :=
+  refl_of_left hx
+
+lemma dup_right_self (hy : G.Dup x y) : G.Dup y y :=
+  refl_of_right hy
 
 @[deprecated not_symm_not (since := "2025-07-19")]
 lemma not_dup_symm (h : ¬ G.Dup x y) : ¬ G.Dup y x := fun hyx ↦ h (symm hyx)

@@ -62,6 +62,9 @@ lemma IsLabelSubgraph.dup_iff (hlle : H ≤l G) :
 lemma IsLabelSubgraph.dup (h : H.Dup x y) (hlle : H ≤l G) : G.Dup x y := by
   rwa [hlle.dup_iff (H.vertexSet_eq ▸ h.left_mem) (H.vertexSet_eq ▸ h.right_mem)]
 
+lemma IsLabelSubgraph.dup_le (hlle : H ≤l G) : H.Dup ≤ G.Dup :=
+  le_of_rel_le fun _ _ ↦ hlle.dup
+
 lemma IsLabelSubgraph.dup_of_mem (h : G.Dup x y) (hlle : H ≤l G) (hx : x ∈ V(H))
     (hy : y ∈ V(H)) : H.Dup x y := by rwa [← hlle.dup_iff hx hy]
 
@@ -220,7 +223,10 @@ def isLabelSubgraph_of_le (h : H ≤ G) : H ≤l G where
 --   dup_closed _ _ hxy hx := hxy.eq ▸ hx
 
 lemma dup_of_le (hle : H ≤ G) (hdup : H.Dup x y) : G.Dup x y :=
-  Partition.rel_le_of_subset hle.dup_subset _ _ hdup
+  rel_le_of_subset hle.dup_subset _ _ hdup
+
+lemma dup_le_of_le (hle : H ≤ G) : H.Dup ≤ G.Dup :=
+  le_of_subset hle.dup_subset
 
 lemma dup_of_le_of_mem (hle : H ≤ G) (hx : x ∈ V(H)) (hdup : G.Dup x y) : H.Dup x y :=
   rel_of_subset_mem hle.dup_subset (H.vertexSet_eq ▸ hx) hdup

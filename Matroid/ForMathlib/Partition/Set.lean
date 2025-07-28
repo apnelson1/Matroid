@@ -302,6 +302,10 @@ lemma fibers_rel_eq : fibers P = P.parts := by
   rw [Set.ext_iff]
   exact (ofRel P).ext_iff.mp <| ofRel_rel_eq P
 
+@[ext] theorem eq_of_rel_iff_rel {P P' : Partition (Set α)} (h : ∀ x y, P x y ↔ P' x y) :
+    P = P' := by
+  rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']; congr; ext; exact h _ _
+
 @[simps!]
 def ofRel' (r : α → α → Prop) : Partition (Set α) :=
   ofRel (Relation.TransClosure <| Relation.SymmClosure r)
@@ -494,7 +498,7 @@ lemma Atomic.exists_singleton_of_mem (hP : Atomic P) {t : Set α} (htP : t ∈ P
 lemma atomic_iff_eq_discrete (P : Partition (Set α)) :
     P.Atomic ↔ P = Partition.discrete P.supp := by
   refine ⟨fun h => ?_, fun h => h ▸ discrete_atomic P.supp⟩
-  ext x
+  apply Partition.ext fun x ↦ ?_
   refine ⟨fun hx => ?_, ?_⟩
   · obtain ⟨a, rfl⟩ := h.exists_singleton_of_mem hx
     simp only [mem_discrete_iff, singleton_eq_singleton_iff, exists_eq_right]
@@ -581,3 +585,4 @@ lemma atomic_of_supp_singleton (hP : P.supp = {a}) : P.Atomic := by
   exact discrete_atomic {a}
 
 end Discrete
+end Partition
