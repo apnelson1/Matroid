@@ -192,7 +192,7 @@ lemma eq_or_eq_of_isLink_of_isLink [G.Nodup] (huv : G.IsLink e u v) (hxy : G.IsL
 lemma IsLink.edge_mem (h : G.IsLink e x y) : e ∈ E(G) :=
   (edge_mem_iff_exists_isLink ..).2 ⟨x, y, h⟩
 
-protected lemma IsLink.symm (h : G.IsLink e x y) : G.IsLink e y x :=
+@[simp] protected lemma IsLink.symm (h : G.IsLink e x y) : G.IsLink e y x :=
   G.isLink_symm h.edge_mem h
 
 lemma IsLink.dup_left (h : G.IsLink e x y) (hrel : G.Dup x z) : G.IsLink e z y :=
@@ -207,15 +207,13 @@ lemma isLink_left_rw (h : G.Dup x y) : G.IsLink e x z ↔ G.IsLink e y z :=
 lemma isLink_right_rw (h : G.Dup x y) : G.IsLink e z x ↔ G.IsLink e z y :=
   right_rw _ h
 
-lemma IsLink.left_mem (h : G.IsLink e x y) : x ∈ V(G) :=
-  G.mem_vertexSet_of_isLink h
+@[simp] lemma IsLink.left_mem (h : G.IsLink e x y) : x ∈ V(G) := G.mem_vertexSet_of_isLink h
 
-lemma IsLink.right_mem (h : G.IsLink e x y) : y ∈ V(G) :=
-  h.symm.left_mem
+@[simp] lemma IsLink.right_mem (h : G.IsLink e x y) : y ∈ V(G) := h.symm.left_mem
 
-lemma IsLink.left_refl (h : G.IsLink e x y) : G.Dup x x := dup_of_mem_vertexSet h.left_mem
+@[simp] lemma IsLink.left_refl (h : G.IsLink e x y) : G.Dup x x := dup_of_mem_vertexSet h.left_mem
 
-lemma IsLink.right_refl (h : G.IsLink e x y) : G.Dup y y := h.symm.left_refl
+@[simp] lemma IsLink.right_refl (h : G.IsLink e x y) : G.Dup y y := h.symm.left_refl
 
 lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
   comm

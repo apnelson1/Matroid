@@ -1,6 +1,5 @@
 import Matroid.Graph.Operations.Delete
-import Mathlib.Data.Set.Lattice
-import Mathlib.Data.Set.Finite.Basic
+import Matroid.ForMathlib.Partition.Lattice
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
@@ -261,39 +260,93 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 --     intro x y hx
 
 
-def hasSup (G H : Graph α β) : Prop :=
-  ∃ G' : Graph α β, G ≤ G' ∧ H ≤ G'
+-- def Unionable (G H : Graph α β) : Prop :=
+--   ∃ G' : Graph α β, G ≤ G' ∧ H ≤ G'
 
-lemma hasSup.dup_agree (h : G.hasSup H) : G.Dup.agree H.Dup := by
-  obtain ⟨G', hG, hH⟩ := h
-  exact ⟨G'.Dup, hG.dup_subset, hH.dup_subset⟩
+-- lemma Unionable.dup_agree (h : G.Unionable H) : G.Dup.Agree H.Dup := by
+--   obtain ⟨G', hG, hH⟩ := h
+--   exact ⟨G'.Dup, hG.dup_subset, hH.dup_subset⟩
 
-lemma hasSup_rfl : G.hasSup G := ⟨G, le_rfl, le_rfl⟩
+-- lemma unionable_rfl : G.Unionable G := ⟨G, le_rfl, le_rfl⟩
 
-instance : IsRefl (Graph α β) hasSup where
-  refl _ := hasSup_rfl
+-- instance : IsRefl (Graph α β) Unionable where
+--   refl _ := unionable_rfl
 
-lemma hasSup.symm (h : G.hasSup H) : H.hasSup G := by
-  obtain ⟨G', hG, hH⟩ := h
-  exact ⟨G', hH, hG⟩
+-- lemma Unionable.symm (h : G.Unionable H) : H.Unionable G := by
+--   obtain ⟨G', hG, hH⟩ := h
+--   exact ⟨G', hH, hG⟩
 
-lemma hasSup_comm : G.hasSup H ↔ H.hasSup G := ⟨hasSup.symm, hasSup.symm⟩
+-- lemma unionable_comm : G.Unionable H ↔ H.Unionable G := ⟨Unionable.symm, Unionable.symm⟩
 
-instance : IsSymm (Graph α β) hasSup := ⟨fun _ _ ↦ hasSup.symm⟩
+-- instance : IsSymm (Graph α β) Unionable := ⟨fun _ _ ↦ Unionable.symm⟩
 
-lemma hasSup.trans_left {a b c : α} (h : G.hasSup H) (hab : G.Dup a b) (hbc : H.Dup b c) :
-    G.Dup a c :=
-  trans' hab <| Partition.agree_iff_rel.mp h.dup_agree b c hab.right_mem hbc.left_mem |>.mpr hbc
+-- lemma Unionable.trans_left {a b c : α} (h : G.Unionable H) (hab : G.Dup a b) (hbc : H.Dup b c) :
+--     G.Dup a c :=
+--   trans' hab <| Partition.Agree_iff_rel.mp h.dup_agree b c hab.right_mem hbc.left_mem |>.mpr hbc
 
-lemma hasSup.trans_right {a b c : α} (h : G.hasSup H) (hab : G.Dup a b) (hbc : H.Dup b c) :
-    H.Dup a c := trans' (Partition.agree_iff_rel.mp h.dup_agree b a hab.right_mem hbc.left_mem
-    |>.mp hab.symm).symm hbc
+-- lemma Unionable.trans_right {a b c : α} (h : G.Unionable H) (hab : G.Dup a b) (hbc : H.Dup b c) :
+--     H.Dup a c := trans' (Partition.Agree_iff_rel.mp h.dup_agree b a hab.right_mem hbc.left_mem
+--     |>.mp hab.symm).symm hbc
 
-instance (h : G.hasSup H) : Trans G.Dup H.Dup G.Dup where
-  trans := h.trans_left
+-- instance (h : G.Unionable H) : Trans G.Dup H.Dup G.Dup where
+--   trans := h.trans_left
 
-instance (h : G.hasSup H) : Trans G.Dup H.Dup H.Dup where
-  trans := h.trans_right
+-- instance (h : G.Unionable H) : Trans G.Dup H.Dup H.Dup where
+--   trans := h.trans_right
+
+-- lemma compatible_of_unionable
+
+def Dup_agree (G H : Graph α β) : Prop := G.Dup.Agree H.Dup
+
+@[simp]
+lemma dup_agree_rfl : G.Dup_agree G := by
+  simp [Dup_agree]
+
+instance : IsRefl (Graph α β) Dup_agree where
+  refl _ := dup_agree_rfl
+
+lemma Dup_agree.symm (h : G.Dup_agree H) : H.Dup_agree G := by
+  unfold Dup_agree
+  exact _root_.symm h
+
+instance : IsSymm (Graph α β) Dup_agree where
+  symm _ _ := Dup_agree.symm
+
+lemma Dup_agree_comm : G.Dup_agree H ↔ H.Dup_agree G :=
+  ⟨Dup_agree.symm, Dup_agree.symm⟩
+
+-- lemma Dup_agree.trans_left {a b c : α} (h : G.Dup_agree H) (hab : G.Dup a b) (hbc : H.Dup b c) :
+--     G.Dup a c :=
+--   Partition.Agree.trans_left h hab hbc
+
+-- lemma Dup_agree.trans_right {a b c : α} (h : G.Dup_agree H) (hab : G.Dup a b) (hbc : H.Dup b c) :
+--     H.Dup a c :=
+--   trans' (Partition.agree_iff_rel.mp h _ _ hab.right_mem hbc.left_mem |>.mp hab.symm).symm hbc
+
+@[simp]
+lemma dup_agree_of_nodup [Nodup G] [Nodup H] : G.Dup_agree H := by
+  simp [Dup_agree]
+
+@[simp]
+lemma pairwise_dup_agree_of_nodup {G : ι → Graph α β} [∀ i, Nodup (G i)] :
+    Pairwise (Dup_agree on G) := by
+  simp [Pairwise, dup_agree_of_nodup]
+
+@[simp]
+lemma dup_of_pairwise_dup_agree_of_mem {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+    {i : ι} (hi : x ∈ V(G i)) : (⨆ j, (G j).Dup) x y ↔ (G i).Dup x y := by
+  rw [Partition.iSup_rel, iff_comm]
+  refine ⟨fun h => Relation.TransGen.single ?_, fun h => ?_⟩
+  · simp only [iSup_apply, iSup_Prop_eq]
+    use i
+  induction h with
+  | single hxy =>
+    simp only [iSup_apply, iSup_Prop_eq] at hxy
+    obtain ⟨j, hxy⟩ := hxy
+    exact (h.of_refl i j).trans_left (dup_refl_iff.mpr hi) hxy
+  | tail h1 h2 IH =>
+    obtain ⟨j, h2⟩ := by simpa using h2
+    exact (h.of_refl i j).trans_left IH h2
 
 
 

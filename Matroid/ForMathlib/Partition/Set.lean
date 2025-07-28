@@ -161,14 +161,14 @@ end Set
 
 section Rel
 
-variable {S T : Set α} {a b : α} {P : Partition (Set α)}
+variable {S T : Set α} {a b c : α} {P Q : Partition (Set α)}
 
 /-- Every partition of `s : Set α` induces a transitive, symmetric Binary relation on `α`
   whose equivalence classes are the parts of `P`. The relation is irreflexive outside `s`.  -/
 def Rel (P : Partition (Set α)) (a b : α) : Prop :=
   ∃ t ∈ P, a ∈ t ∧ b ∈ t
 
-private lemma le_of_rel_le' {P Q : Partition (Set α)} (h : P.Rel ≤ Q.Rel) : P ≤ Q := by
+private lemma le_of_rel_le' (h : P.Rel ≤ Q.Rel) : P ≤ Q := by
   intro S hS
   obtain ⟨x, hxS⟩ := nonempty_of_mem hS
   obtain ⟨T, hT, hxT, -⟩ := h x x ⟨S, hS, hxS, hxS⟩
@@ -257,24 +257,24 @@ lemma domain_rel : domain P = P.supp := by
 lemma codomain_rel : codomain P = P.supp := by
   rw [← domain_eq_codomain, domain_rel]
 
-lemma rel_le_of_le {P Q : Partition (Set α)} (h : P ≤ Q) : ⇑P ≤ ⇑Q := by
+lemma rel_le_of_le (h : P ≤ Q) : ⇑P ≤ ⇑Q := by
   intro x y ⟨S, hS, hxS, hyS⟩
   obtain ⟨T, hT, hST⟩ := h S hS
   exact ⟨T, hT, hST hxS, hST hyS⟩
 
-lemma le_of_rel_le {P Q : Partition (Set α)} (h : ⇑P ≤ ⇑Q) : P ≤ Q :=
+lemma le_of_rel_le (h : ⇑P ≤ ⇑Q) : P ≤ Q :=
   le_of_rel_le' h
 
-lemma rel_le_iff_le {P Q : Partition (Set α)} : ⇑P ≤ ⇑Q ↔ P ≤ Q :=
+lemma rel_le_iff_le : ⇑P ≤ ⇑Q ↔ P ≤ Q :=
   ⟨le_of_rel_le, rel_le_of_le⟩
 
-lemma rel_inj {P Q : Partition (Set α)} (h : ⇑P = ⇑Q) : P = Q :=
+lemma rel_inj (h : ⇑P = ⇑Q) : P = Q :=
   le_antisymm (le_of_rel_le h.le) (le_of_rel_le h.ge)
 
-lemma rel_inj_iff {P Q : Partition (Set α)} : ⇑P = ⇑Q ↔ P = Q :=
+lemma rel_inj_iff : ⇑P = ⇑Q ↔ P = Q :=
   ⟨fun h => rel_inj h, fun h => h ▸ rfl⟩
 
-lemma rel_le_of_subset {P Q : Partition (Set α)} (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
+lemma rel_le_of_subset (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
   rel_le_of_le <| le_of_subset h
 
 /-- A transitive, symmetric Binary relation `r` induces a partition of the set of elements on
@@ -349,6 +349,8 @@ lemma partOf_ne_bot_iff : P.partOf x ≠ ⊥ ↔ x ∈ P.supp := by
 lemma mem_partOf (hx : x ∈ P.supp) : x ∈ P.partOf x :=
   (mem_fiber_iff _).mpr <| rel_self_of_mem_supp hx
 
+@[simp] lemma mem_partOf_iff : y ∈ P.partOf x ↔ P y x := mem_fiber_iff _
+
 lemma eq_partOf_of_mem (ht : T ∈ P) (hxt : x ∈ T) : T = P.partOf x := by
   obtain ⟨y, hy, rfl⟩ := exists_partOf_iff_mem.mp ht
   exact fiber_eq_of_mem (by exact hxt) <| rel_of_mem_of_mem ht hxt hxt
@@ -393,12 +395,12 @@ lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S �
   rw [restrict_rel]
   exact ⟨hx, hxy⟩
 
-lemma rel_of_subset_mem {P Q : Partition (Set α)} (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) :
+lemma rel_of_subset_mem (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) :
     P x y := by
   obtain ⟨S, hS, rfl⟩ := subset_iff_restrict.mp hPQ
   exact Q.rel_of_restrict_rel hPQ hx hxy
 
-lemma subset_iff_rel {P Q : Partition (Set α)} : P ⊆ Q ↔ ∀ x y, x ∈ P.supp → (P x y ↔ Q x y) := by
+lemma subset_iff_rel : P ⊆ Q ↔ ∀ x y, x ∈ P.supp → (P x y ↔ Q x y) := by
   refine ⟨fun h x y hx => ⟨rel_le_of_subset h x y, rel_of_subset_mem h hx⟩, fun h s hs => ?_⟩
   rw [← fibers_rel_eq, mem_fibers_iff] at hs ⊢
   obtain ⟨x, hx, rfl⟩ := hs
@@ -408,8 +410,7 @@ lemma subset_iff_rel {P Q : Partition (Set α)} : P ⊆ Q ↔ ∀ x y, x ∈ P.s
   ext z
   simp [(rel_comm.trans <| h x z hxsupp).trans rel_comm]
 
-lemma agree_iff_rel {P Q : Partition (Set α)} : P.agree Q ↔ ∀ x y, x ∈ P.supp → x ∈ Q.supp →
-    (P x y ↔ Q x y) := by
+lemma agree_iff_rel : P.Agree Q ↔ ∀ x y, x ∈ P.supp → x ∈ Q.supp → (P x y ↔ Q x y) := by
   rw [agree_iff_mem_of_not_disjoint]
   refine ⟨fun h x y hxP hxQ => rel_iff_of_partOf_mem (h _ (partOf_mem hxP)
     <| Set.not_disjoint_iff.mpr ⟨x, hxQ, mem_partOf hxP⟩), fun h s hsP hndisj => ?_⟩
@@ -419,6 +420,35 @@ lemma agree_iff_rel {P Q : Partition (Set α)} : P.agree Q ↔ ∀ x y, x ∈ P.
   rw [partOf_mem_iff_rel_iff]
   have hxP : x ∈ P.supp := rel_self_iff_mem_supp.mp hndisj
   exact ⟨hxP, fun y ↦ h x y hxP hx⟩
+
+lemma Agree.rel_of_left_of_mem (h : P.Agree Q) (hx : x ∈ Q.supp) (hxy : P x y) : Q x y := by
+  rw [agree_iff_rel] at h
+  exact h x y hxy.left_mem hx |>.mp hxy
+
+lemma Agree.rel_of_right_of_mem (h : P.Agree Q) (hy : x ∈ P.supp) (hxy : Q x y) : P x y := by
+  rw [agree_iff_rel] at h
+  exact h x y hy hxy.left_mem |>.mpr hxy
+
+lemma Agree.trans_left (h : P.Agree Q) (hab : P a b) (hbc : Q b c) : P a c :=
+  trans' hab <| h.rel_of_right_of_mem hab.right_mem hbc
+
+lemma Agree.trans_right (h : P.Agree Q) (hab : P a b) (hbc : Q b c) : Q a c :=
+  trans' (h.rel_of_left_of_mem hbc.left_mem hab.symm).symm hbc
+
+lemma Agree.sup_rel_trans (h : P.Agree Q) (hab : (⇑P ⊔ ⇑Q) a b) (hbc : (⇑P ⊔ ⇑Q) b c) :
+    (⇑P ⊔ ⇑Q) a c := by
+  obtain (hP1 | hQ1) := hab <;> obtain (hP2 | hQ2) := hbc
+  · left
+    exact Rel.trans hP1 hP2
+  · left
+    exact h.trans_left hP1 hQ2
+  · right
+    exact h.symm.trans_left hQ1 hP2
+  · right
+    exact Rel.trans hQ1 hQ2
+
+lemma inf_rel_trans (hab : (⇑P ⊓ ⇑Q) a b) (hbc : (⇑P ⊓ ⇑Q) b c) : (⇑P ⊓ ⇑Q) a c :=
+  ⟨trans' hab.1 hbc.1, trans' hab.2 hbc.2⟩
 
 lemma induce_rel (P : Partition (Set α)) {S : Set α} :
     ⇑(P.induce S) = fun x y ↦ x ∈ S ∧ y ∈ S ∧ P x y := by
@@ -442,9 +472,10 @@ end Rel
 
 section Discrete
 
-variable {α : Type*} {S T : Set α} {a b : α} {P : Partition (Set α)}
+variable {α : Type*} {S T : Set α} {a b : α} {P Q : Partition (Set α)}
 
 /-- The discrete partition -/
+@[simps]
 protected def discrete (S : Set α) : Partition (Set α) where
   parts := singleton '' S
   indep := by
@@ -583,6 +614,22 @@ lemma supp_singleton_iff (hP : P.supp = {a}) : P = Partition.discrete {a} := by
 lemma atomic_of_supp_singleton (hP : P.supp = {a}) : P.Atomic := by
   rw [supp_singleton_iff hP]
   exact discrete_atomic {a}
+
+-- What is the full generality of this?
+@[simp]
+lemma agree_of_nodup (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
+  unfold Agree
+  rw [atomic_iff_eq_discrete] at hP hQ
+  have hsSup : sSupIndep (P.parts ∪ Q.parts) := by
+    rw [hP, hQ, discrete_parts, discrete_parts, ← Set.image_union]
+    rintro s ⟨a, (haP | haQ), rfl⟩ <;> simp only [sSup_eq_sUnion, disjoint_singleton_left,
+      mem_sUnion, mem_diff, mem_image, mem_union, mem_singleton_iff, not_exists, not_and, and_imp,
+      forall_exists_index, forall_apply_eq_imp_iff₂, singleton_eq_singleton_iff]
+    all_goals exact fun _ _ h1 h2 ↦ h1 h2.symm
+  use ofIndependent hsSup (by rw [mem_union, not_or]; exact ⟨P.bot_notMem, Q.bot_notMem⟩), ?_ <;>
+    rintro s hs <;> simp only [ofIndependent_parts, mem_union, mem_parts, SetLike.mem_coe]
+  · exact Or.inr hs
+  exact Or.inl hs
 
 end Discrete
 end Partition
