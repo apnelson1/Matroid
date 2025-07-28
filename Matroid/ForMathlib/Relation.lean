@@ -191,6 +191,17 @@ lemma preimage_codomain (r : α → β → Prop) : preimage r (codomain r) = dom
   simp only [mem_preimage_iff, mem_codomain_iff, mem_domain_iff]
   exact ⟨fun ⟨x, _, hrax⟩ => ⟨x, hrax⟩, fun ⟨x, hrax⟩ => ⟨x, ⟨a, hrax⟩, hrax⟩⟩
 
+@[simp]
+lemma image_mono {r r' : α → β → Prop} (h : r ≤ r') (S : Set α) :
+    image r S ⊆ image r' S := by
+  rintro x ⟨a, haS, hrax⟩
+  exact ⟨a, haS, h _ _ hrax⟩
+
+@[simp]
+lemma preimage_mono {r r' : α → β → Prop} (h : r ≤ r') (S : Set β) :
+    preimage r S ⊆ preimage r' S := by
+  rintro a ⟨x, hxS, hrax⟩
+  exact ⟨x, hxS, h _ _ hrax⟩
 
 
 class IsLeftTotal (r : α → β → Prop) : Prop where
@@ -505,6 +516,53 @@ instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
 instance [IsTrans α r] : IsTrans α rᵀ where
   trans _ _ _ h h' := trans_of r h' h
 
+
+def SymmClosure : ClosureOperator (α → α → Prop) where
+  toFun r := r ⊔ flip r
+  monotone' _ _ hle _ _ hab := hab.imp (hle _ _) (hle _ _)
+  le_closure' r a b hab := Or.inl hab
+  idempotent' r := by
+    ext a b
+    simp [or_comm]
+
+@[simp]
+lemma symmClosure_apply (r : α → α → Prop) (a b : α) :
+    SymmClosure r a b ↔ r a b ∨ r b a := Iff.rfl
+
+lemma symmClosure_symmetric (r : α → α → Prop) : Symmetric (SymmClosure r) :=
+  fun _ _ ↦ Or.symm
+
+instance : IsSymm α (SymmClosure r) where
+  symm := symmClosure_symmetric r
+
+lemma SymmClosure.symm (hr : SymmClosure r a b) : SymmClosure r b a :=
+  symmClosure_symmetric r hr
+
+@[simp]
+lemma symmClosure_domain (r : α → α → Prop) : domain (SymmClosure r) = domain r ∪ codomain r := by
+  ext x
+  simp only [mem_domain_iff, mem_union, mem_codomain_iff]
+  refine ⟨fun ⟨y, h⟩ => h.imp (⟨y, ·⟩) (⟨y, ·⟩), ?_⟩
+  rintro (⟨y, h⟩ | ⟨y, h⟩)
+  · exact ⟨y, Or.inl h⟩
+  · exact ⟨y, Or.inr h⟩
+
+@[simp]
+lemma symmClosure_codomain (r : α → α → Prop) :
+    codomain (SymmClosure r) = domain r ∪ codomain r := by
+  ext x
+  simp only [mem_codomain_iff, mem_union, mem_domain_iff]
+  refine ⟨fun ⟨y, h⟩ => h.symm.imp (⟨y, ·⟩) (⟨y, ·⟩), ?_⟩
+  rintro (⟨y, h⟩ | ⟨y, h⟩)
+  · exact ⟨y, Or.inr h⟩
+  · exact ⟨y, Or.inl h⟩
+
+@[simp]
+lemma symmClosure_eq_self (r : α → α → Prop) [IsSymm α r] : SymmClosure r = r := by
+  ext a b
+  simp only [symmClosure_apply, or_iff_left_iff_imp]
+  exact symm_of r
+
 def TransClosure : ClosureOperator (α → α → Prop) where
   toFun := TransGen
   monotone' _ _ h _ _ h' := TransGen.mono h h'
@@ -538,6 +596,32 @@ lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq := by
     | tail _ h' ih => exact ih.trans h'
   rintro rfl
   exact TransGen.single rfl
+
+@[simp]
+lemma transClosure_domain (r : α → α → Prop) : domain (TransClosure r) = domain r := by
+  ext x
+  simp_rw [mem_domain_iff]
+  refine ⟨fun ⟨y, h⟩ => ?_, fun ⟨y, h⟩ => ⟨y, TransGen.single h⟩⟩
+  induction h with
+  | single h => exact ⟨_, h⟩
+  | tail _ h' ih => exact ih
+
+@[simp]
+lemma transClosure_codomain (r : α → α → Prop) : codomain (TransClosure r) = codomain r := by
+  ext x
+  simp_rw [mem_codomain_iff]
+  refine ⟨fun ⟨y, h⟩ => ?_, fun ⟨y, h⟩ => ⟨y, TransGen.single h⟩⟩
+  induction h with
+  | single h => exact ⟨_, h⟩
+  | tail _ h ih => exact ⟨_, h⟩
+
+@[simp]
+lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosure r = r := by
+  ext a b
+  refine ⟨fun h => ?_, TransGen.single⟩
+  induction h with
+  | single h => exact h
+  | tail h1 h2 IH => exact trans' IH h2
 
 /-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
 class foo (r : α → α → Prop) where

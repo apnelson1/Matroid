@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat.LowRank
 import Matroid.Flat.Hyperplane

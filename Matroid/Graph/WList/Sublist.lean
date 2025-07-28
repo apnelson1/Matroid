@@ -484,7 +484,7 @@ lemma exists_sublist_of_mem_mem (hx : x ∈ w) (hy : y ∈ w) : ∃ w₀ : WList
       (w.prefixUntilVertex_isPrefix x).isSublist, .inr ⟨?_, ?_⟩
     · simp only [suffixFromVertex_last, w₁]
       exact (prefixUntilVertex_last hx).symm
-    · simp only [prefixUntilVertex_first, w₁]
+    · simp only [w₁]
       exact (suffixFromVertex_first hyw₁).symm
   have hyw₂ : y ∈ w₂ := by
     rw [← h, ← mem_vertex, append_vertex] at hy

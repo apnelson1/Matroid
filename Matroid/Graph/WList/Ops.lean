@@ -270,7 +270,7 @@ lemma reverse_first : (reverse w).first = w.last := by
 lemma reverse_last : (reverse w).last = w.first := by
   induction w with
   | nil x => simp [reverse]
-  | cons x e w ih => simp [reverse, ih]
+  | cons x e w ih => simp [reverse]
 
 @[simp]
 lemma reverse_vertex : (reverse w).vertex = w.vertex.reverse := by

@@ -1,4 +1,4 @@
-import Matroid.Graph.Subgraph
+import Matroid.Graph.Operations.Delete
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
@@ -190,8 +190,9 @@ lemma singleEdge_isLabelSubgraph_iff :
     rw [Partition.atomic_iff_rel_le_eq]
     rintro a b hab
     simp only [Partition.induce_apply, mem_insert_iff, mem_singleton_iff] at hab
-    obtain ⟨(rfl | rfl), (rfl | rfl), hdup⟩ := hab <;> aesop
-    exact (x <| symm hdup).elim
+    obtain ⟨(rfl | rfl), (rfl | rfl), hdup⟩ := hab <;> simp_all only [imp_false,
+      not_true_eq_false, and_true, implies_true]
+    exact (‹¬G.Dup b a› <| symm hdup).elim
   rintro e' x y ⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
   · exact hl
   exact hl.symm
@@ -369,8 +370,8 @@ lemma CompleteGraph_adj (n : ℕ) (x y : ℕ) (hx : x < n) (hy : y < n) :
 
 -- /-! ### Graph constructor from a list of pairs of vertices -/
 
--- /-- The graph with vertex set `S` and edges over `ℕ` between pairs of vertices according to the list
---   `l`.-/
+-- /-- The graph with vertex set `S` and edges over `ℕ` between pairs of vertices according to the
+--   list `l`.-/
 -- @[simps]
 -- def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
 --   vertexSet := S ∪ {x | ∃ p ∈ l, x = p.1 ∨ x = p.2}

@@ -134,7 +134,7 @@ lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
       simp_rw [add_comm (b := 1), ← rotate_rotate]
       simp only [cons_length, add_lt_add_iff_right] at hn
       rw [IH (hn.trans (by simp))]
-      simp [cons_rotate_one, concat_edge, add_comm (a := 1), hn]
+      simp [concat_edge, add_comm (a := 1), hn]
 
 lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
   induction n generalizing w with

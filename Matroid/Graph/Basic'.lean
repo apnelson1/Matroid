@@ -5,7 +5,7 @@ Authors: Peter Nelson, Jun Kwon
 -/
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Sym.Sym2
-import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.Partition.Set
 
 /-!
 # Multigraphs
@@ -132,6 +132,12 @@ lemma dup_left_mem (hx : G.Dup x y) : x ∈ V(G) :=
 
 lemma dup_right_mem (hy : G.Dup x y) : y ∈ V(G) :=
   vertexSet_def ▸ hy.right_mem
+
+lemma dup_left_self (hx : G.Dup x y) : G.Dup x x :=
+  refl_of_left hx
+
+lemma dup_right_self (hy : G.Dup x y) : G.Dup y y :=
+  refl_of_right hy
 
 @[deprecated not_symm_not (since := "2025-07-19")]
 lemma not_dup_symm (h : ¬ G.Dup x y) : ¬ G.Dup y x := fun hyx ↦ h (symm hyx)
@@ -596,6 +602,12 @@ def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, 
     rintro ⟨z, hxz, hzy⟩
     exact hxz.left_mem
   isLink_of_dup e x y z := trans'
+
+lemma isLink_mk_of_domp_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
+    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) (hl : l e x y) (hx : x ∈ P.supp)
+    (hy : y ∈ P.supp) : (mk_of_domp P l h).IsLink e x y := by
+  rw [mk_of_domp_isLink]
+  exact ⟨x, Partition.rel_self_of_mem_supp hx, y, symm hl, Partition.rel_self_of_mem_supp hy⟩
 
 /-- `edgeSet` can be determined using `IsLink`, so the graph constructed from `G.vertexSet` and
 `G.IsLink` using any value for `edgeSet` is equal to `G` itself. -/
