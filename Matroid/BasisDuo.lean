@@ -45,6 +45,8 @@ lemma isBasis_right (h : M.IsBasisDuo I J X Y) (hX : Y ⊆ M.E := by aesop_mat) 
   rw [← isBasis'_iff_isBasis]
   exact h.isBasis'_right
 
+-- lemma isBasis'_inter_of_subset (h : M.IsBasisDuo I J X Y) (hIJ : I ⊆ J) :
+
 protected lemma subset_left (h : M.IsBasisDuo I J X Y) : I ⊆ X :=
   h.isBasis'_left.subset
 
@@ -96,6 +98,26 @@ protected lemma diff_disjoint_right (h : M.IsBasisDuo I J X Y) : Disjoint (I \ J
 
 protected lemma diff_disjoint_left (h : M.IsBasisDuo I J X Y) : Disjoint (J \ I) X :=
   h.symm.diff_disjoint_right
+
+-- lemma IsBasis'.exists_isBasisDuo (hI : M.IsBasis' I X) (hXY : X ⊆ Y) :
+--     ∃ J, M.IsBasisDuo I J X Y ∧ J ⊆ I ∪ Y := by
+--   obtain ⟨I', J, h, hI', hJ⟩ := hI.indep.exists_isBasisDuo hI.subset (hI.subset.trans hXY)
+--   obtain rfl : I = I' := hI.eq_of_subset_indep h.isBasis'_left.indep hI' h.isBasis'_left.subset
+--   refine ⟨J, h, ?_⟩
+--   have := h.inter_leftd3m
+
+
+protected lemma trans_of_subset_subset (h : M.IsBasisDuo I J X Y) (h' : M.IsBasisDuo J K Y Z)
+    (hXZY : X ∩ Z ⊆ Y) (hYZ : Y ⊆ Z) : M.IsBasisDuo I K X Z where
+  isBasis'_left := h.isBasis'_left
+  isBasis'_right := h'.isBasis'_right
+  isBasis'_inter := by
+    rw [show X ∩ Z = X ∩ Y by simpa [subset_antisymm_iff, inter_subset_right.trans hYZ],
+      ← h.isBasis'_inter.eq_of_subset_indep (h.indep_left.inter_right K)
+        (by grw [h'.subset_of_subset hYZ])
+        (subset_inter (by grw [h.subset_left, inter_subset_left])
+          (by grw [← hXZY, h.subset_left, h'.subset_right]))]
+    exact h.isBasis'_inter
 
 lemma isBasis'_diff_project_left (h : M.IsBasisDuo I J X Y) :
     (M.project (X ∩ Y)).IsBasis' (I \ J) X := by

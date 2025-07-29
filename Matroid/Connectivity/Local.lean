@@ -3,6 +3,7 @@ import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
 import Mathlib.Tactic.TautoSet
+import Matroid.BasisDuo
 
 open Set Set.Notation Function
 
@@ -931,10 +932,15 @@ end core
 --   · grw [hss]
 --   grw [hI₁'.subset, union_diff_distrib]
 
--- lemma foo (M : Matroid α) (X Y : Set α) : M.eConn X + M.eConn Y = M.eConn (X ∪ Y) +
--- M.eConn (X ∩ Y)
+-- lemma foo (M : Matroid α) (X Y : Set α) : M.eConn X + M.eConn Y
+-- = M.eConn (X ∪ Y) + M.eConn (X ∩ Y)
 --       + (M.project (X ∩ Y)).eLocalConn X Y
 --       + (M.project ((M.E \ X) ∩ (M.E \ Y))).eLocalConn (M.E \ X) (M.E \ Y) := by
+--   obtain ⟨IX, IY, hI⟩ := M.exists_isBasisDuo X Y
+--   obtain ⟨JX, JY, hJ⟩ := M.exists_isBasisDuo (M.E \ X) (M.E \ Y)
+--   have := hI.isBasis'_left.exists_isBasisDuo (Y := X ∪ IY) subset_union_left
+  -- have := hI.indep_left.exists_isBasisDuo hI.subset_left (Y := X ∪ Y)
+  --   (by grw [hI.subset_left, ← subset_union_left])
 --   obtain ⟨P⟩ := M.nonempty_basisDuo X Y
 --   obtain ⟨Q⟩ := M.nonempty_basisDuo X Y
   -- obtain ⟨I, IX, IY, I₁, hI, hIX, hIY, hI₁, -, hIXY, hIYY, hIYX, hIXI₁, hI₁ss⟩ := M.bar1 X Y
