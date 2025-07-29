@@ -166,6 +166,38 @@ lemma Dep.project {D : Set α} (hD : M.Dep D) (C : Set α) : (M.project C).Dep D
 --   exact fun h ↦ (h.2.subset subset_union_left).not_dep hD
 
 
+lemma Indep.project_isBasis'_iff (hI : M.Indep I) :
+    (M.project I).IsBasis' J X ↔ M.IsBasis' (I ∪ J) (I ∪ X) ∧ Disjoint I J := by
+  have hss : I ⊆ M.closure (I ∪ X) := M.subset_closure_of_subset' subset_union_left
+  have hdj (h : Disjoint I J) : (J ⊆ I ∪ X ↔ J ⊆ X) := by rw [← diff_subset_iff, h.sdiff_eq_right]
+  simp only [isBasis'_iff_isBasis_closure, project_closure, isBasis_iff_indep_subset_closure,
+    hI.project_indep_iff, union_subset_iff, subset_union_left, disjoint_comm (a := J),
+    union_comm (b := I)]
+  tauto
+
+
+lemma Indep.project_isBasis_iff (hI : M.Indep I) :
+    (M.project I).IsBasis J X ↔ M.IsBasis (I ∪ J) (I ∪ X) ∧ Disjoint I J := by
+  rw [isBasis_iff_isBasis'_subset_ground, isBasis_iff_isBasis'_subset_ground,
+    hI.project_isBasis'_iff, union_subset_iff, project_ground, and_iff_right hI.subset_ground,
+    and_assoc, and_right_comm, and_assoc]
+
+lemma project_isBasis'_iff_contract_isBasis' :
+    (M.project C).IsBasis' I X ↔ (M ／ C).IsBasis' I (X \ C) := by
+  rw [project, isBasis'_restrict_iff, isBasis'_iff_isBasis_inter_ground, iff_comm,
+     isBasis'_iff_isBasis_inter_ground, contract_ground, ← diff_inter_distrib_right,
+     inter_assoc, inter_eq_self_of_subset_right diff_subset, inter_diff_assoc, iff_self_and]
+  exact fun h ↦ h.indep.subset_ground.trans diff_subset
+
+-- lemma project_isBasis_iff_contract_isBasis :
+--     (M.project C).IsBasis I X ↔ (M ／ C).IsBasis I (X \ C) := by
+--   -- wlog hXE : X ⊆ M.E
+--   -- · refune iff_
+--   -- convert M.project_isBasis'_iff_contract_isBasis' (I := I) (X := X ∩ M.E) (C := C) using 1
+--   -- · sorry
+
+
+
 /-- Turn the elements of `D` into loops. -/
 def loopify (M : Matroid α) (D : Set α) : Matroid α := (M ＼ D) ↾ M.E
 

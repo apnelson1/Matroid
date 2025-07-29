@@ -807,92 +807,79 @@ lemma core_contract_subset (M : Matroid α) (X C : Set α) : (M ／ C).core X �
 
 end core
 
-section BasisDuo
+-- section BasisDuo
 
-lemma Indep.project_isBasis'_iff (hI : M.Indep I) :
-    (M.project I).IsBasis' J X ↔ M.IsBasis' (I ∪ J) (I ∪ X) ∧ Disjoint I J := by
-  have hss : I ⊆ M.closure (I ∪ X) := M.subset_closure_of_subset' subset_union_left
-  have hdj (h : Disjoint I J) : (J ⊆ I ∪ X ↔ J ⊆ X) := by rw [← diff_subset_iff, h.sdiff_eq_right]
-  simp only [isBasis'_iff_isBasis_closure, project_closure, isBasis_iff_indep_subset_closure,
-    hI.project_indep_iff, union_subset_iff, subset_union_left, disjoint_comm (a := J),
-    union_comm (b := I)]
-  tauto
+-- --
 
-/-- Bases for `X` and `Y` that intersect in a basis for `X ∩ Y`. -/
-structure BasisDuo (M : Matroid α) (X Y : Set α) where
-  I : Set α
-  J : Set α
-  isBasis'_left : M.IsBasis' I X
-  isBasis'_right : M.IsBasis' J Y
-  isBasis'_inter : M.IsBasis' (I ∩ J) (X ∩ Y)
+-- /-- Bases for `X` and `Y` that intersect in a basis for `X ∩ Y`. -/
+-- structure BasisDuo (M : Matroid α) (X Y : Set α) where
+--   I : Set α
+--   J : Set α
+--   isBasis'_left : M.IsBasis' I X
+--   isBasis'_right : M.IsBasis' J Y
+--   isBasis'_inter : M.IsBasis' (I ∩ J) (X ∩ Y)
 
-lemma BasisDuo.subset_left (B : M.BasisDuo X Y) : B.I ⊆ X := B.isBasis'_left.subset
-lemma BasisDuo.subset_right (B : M.BasisDuo X Y) : B.J ⊆ Y := B.isBasis'_right.subset
-lemma BasisDuo.indep_left (B : M.BasisDuo X Y) : M.Indep B.I := B.isBasis'_left.indep
-lemma BasisDuo.indep_right (B : M.BasisDuo X Y) : M.Indep B.J := B.isBasis'_right.indep
+-- lemma BasisDuo.subset_left (B : M.BasisDuo X Y) : B.I ⊆ X := B.isBasis'_left.subset
+-- lemma BasisDuo.subset_right (B : M.BasisDuo X Y) : B.J ⊆ Y := B.isBasis'_right.subset
+-- lemma BasisDuo.indep_left (B : M.BasisDuo X Y) : M.Indep B.I := B.isBasis'_left.indep
+-- lemma BasisDuo.indep_right (B : M.BasisDuo X Y) : M.Indep B.J := B.isBasis'_right.indep
 
 
-lemma nonempty_basisDuo (M : Matroid α) (X Y : Set α) : Nonempty (M.BasisDuo X Y) := by
-  obtain ⟨K, hK⟩ := M.exists_isBasis' (X ∩ Y)
-  obtain ⟨I, hI, hIss⟩ := hK.indep.subset_isBasis'_of_subset (hK.subset.trans inter_subset_left)
-  obtain ⟨J, hJ, hJss⟩ := hK.indep.subset_isBasis'_of_subset (hK.subset.trans inter_subset_right)
-  refine ⟨I, J, hI, hJ, ?_⟩
-  rwa [← hK.eq_of_subset_indep (hI.indep.inter_right J) (subset_inter hIss hJss)
-    (by grw [hI.subset, hJ.subset])]
+-- lemma nonempty_basisDuo (M : Matroid α) (X Y : Set α) : Nonempty (M.BasisDuo X Y) := by
+--   obtain ⟨K, hK⟩ := M.exists_isBasis' (X ∩ Y)
+--   obtain ⟨I, hI, hIss⟩ := hK.indep.subset_isBasis'_of_subset (hK.subset.trans inter_subset_left)
+--   obtain ⟨J, hJ, hJss⟩ := hK.indep.subset_isBasis'_of_subset (hK.subset.trans inter_subset_right)
+--   refine ⟨I, J, hI, hJ, ?_⟩
+--   rwa [← hK.eq_of_subset_indep (hI.indep.inter_right J) (subset_inter hIss hJss)
+--     (by grw [hI.subset, hJ.subset])]
 
-lemma BasisDuo.inter_eq (B : M.BasisDuo X Y) : B.I ∩ Y = B.J ∩ X := by
-  rw [← B.isBasis'_inter.eq_of_subset_indep (B.indep_left.inter_right Y) (by grw [B.subset_right])
-    (by grw [B.subset_left]), B.isBasis'_inter.eq_of_subset_indep (B.indep_right.inter_left X)
-    (by grw [B.subset_left]) (by grw [B.subset_right]), inter_comm]
+-- lemma BasisDuo.inter_eq (B : M.BasisDuo X Y) : B.I ∩ Y = B.J ∩ X := by
+--   rw [← B.isBasis'_inter.eq_of_subset_indep (B.indep_left.inter_right Y) (by grw [B.subset_right]
+--     (by grw [B.subset_left]), B.isBasis'_inter.eq_of_subset_indep (B.indep_right.inter_left X)
+--     (by grw [B.subset_left]) (by grw [B.subset_right]), inter_comm]
 
-@[simps]
-def BasisDuo.symm (B : M.BasisDuo X Y) : M.BasisDuo Y X where
-  I := B.J
-  J := B.I
-  isBasis'_left := B.isBasis'_right
-  isBasis'_right := B.isBasis'_left
-  isBasis'_inter := by
-    rw [inter_comm, inter_comm (a := Y)]
-    exact B.isBasis'_inter
+-- @[simps]
+-- def BasisDuo.symm (B : M.BasisDuo X Y) : M.BasisDuo Y X where
+--   I := B.J
+--   J := B.I
+--   isBasis'_left := B.isBasis'_right
+--   isBasis'_right := B.isBasis'_left
+--   isBasis'_inter := by
+--     rw [inter_comm, inter_comm (a := Y)]
+--     exact B.isBasis'_inter
 
--- def BasisDuo.diff_left (B : M.BasisDuo X Y) : Set α := B.I \ B.J
+-- -- def BasisDuo.diff_left (B : M.BasisDuo X Y) : Set α := B.I \ B.J
 
--- def BasisDuo.diff_right (B : M.BasisDuo X Y) : Set α := B.J \ B.I
+-- -- def BasisDuo.diff_right (B : M.BasisDuo X Y) : Set α := B.J \ B.I
 
--- def BasisDuo.inter (B : M.BasisDuo X Y) : Set α := B.I \ B.J
-
-
-lemma BasisDuo.exists_isBasis'_union (B : M.BasisDuo X Y) :
-    ∃ K, M.IsBasis' K (X ∪ Y) ∧ B.I ⊆ K ∧ K ⊆ B.I ∪ B.J := by
-  obtain ⟨K, hK : M.IsBasis' K (B.I ∪ B.J), hKss⟩ :=
-    B.isBasis'_left.indep.subset_isBasis'_of_subset subset_union_left
-  refine ⟨K, isBasis'_iff_isBasis_closure.2 ⟨?_, ?_⟩, hKss, hK.subset⟩
-  · rw [← closure_union_congr_left B.isBasis'_left.closure_eq_closure,
-      ← closure_union_congr_right B.isBasis'_right.closure_eq_closure]
-    exact hK.isBasis_closure_right
-  grw [hK.subset, B.subset_left, B.subset_right]
-
-lemma BasisDuo.diff_isBasis'_project_right (B : M.BasisDuo X Y) :
-    (M.project (X ∩ Y)).IsBasis' (B.J \ B.I) Y := by
-  rw [B.isBasis'_inter.project_eq_project, (B.indep_left.inter_right _).project_isBasis'_iff,
-    union_comm, inter_comm, diff_union_inter, union_eq_self_of_subset_left,
-    and_iff_left (disjoint_sdiff_right.mono_left inter_subset_right)]
-  · exact B.isBasis'_right
-  grw [inter_subset_left, B.subset_right]
-
-lemma BasisDuo.diff_isBasis'_project_left (B : M.BasisDuo X Y) :
-    (M.project (X ∩ Y)).IsBasis' (B.I \ B.J) X := by
-  simpa [inter_comm X] using B.symm.diff_isBasis'_project_right
-
-end BasisDuo
+-- -- def BasisDuo.inter (B : M.BasisDuo X Y) : Set α := B.I \ B.J
 
 
+-- lemma BasisDuo.exists_isBasis'_union (B : M.BasisDuo X Y) :
+--     ∃ K, M.IsBasis' K (X ∪ Y) ∧ B.I ⊆ K ∧ K ⊆ B.I ∪ B.J := by
+--   obtain ⟨K, hK : M.IsBasis' K (B.I ∪ B.J), hKss⟩ :=
+--     B.isBasis'_left.indep.subset_isBasis'_of_subset subset_union_left
+--   refine ⟨K, isBasis'_iff_isBasis_closure.2 ⟨?_, ?_⟩, hKss, hK.subset⟩
+--   · rw [← closure_union_congr_left B.isBasis'_left.closure_eq_closure,
+--       ← closure_union_congr_right B.isBasis'_right.closure_eq_closure]
+--     exact hK.isBasis_closure_right
+--   grw [hK.subset, B.subset_left, B.subset_right]
 
-lemma Indep.project_isBasis_iff (hI : M.Indep I) :
-    (M.project I).IsBasis J X ↔ M.IsBasis (I ∪ J) (I ∪ X) ∧ Disjoint I J := by
-  rw [isBasis_iff_isBasis'_subset_ground, isBasis_iff_isBasis'_subset_ground,
-    hI.project_isBasis'_iff, union_subset_iff, project_ground, and_iff_right hI.subset_ground,
-    and_assoc, and_right_comm, and_assoc]
+-- lemma BasisDuo.diff_isBasis'_project_right (B : M.BasisDuo X Y) :
+--     (M.project (X ∩ Y)).IsBasis' (B.J \ B.I) Y := by
+--   rw [B.isBasis'_inter.project_eq_project, (B.indep_left.inter_right _).project_isBasis'_iff,
+--     union_comm, inter_comm, diff_union_inter, union_eq_self_of_subset_left,
+--     and_iff_left (disjoint_sdiff_right.mono_left inter_subset_right)]
+--   · exact B.isBasis'_right
+--   grw [inter_subset_left, B.subset_right]
+
+-- lemma BasisDuo.diff_isBasis'_project_left (B : M.BasisDuo X Y) :
+--     (M.project (X ∩ Y)).IsBasis' (B.I \ B.J) X := by
+--   simpa [inter_comm X] using B.symm.diff_isBasis'_project_right
+
+-- end BasisDuo
+
+
 
 
 
