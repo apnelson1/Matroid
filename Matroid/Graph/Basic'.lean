@@ -110,6 +110,8 @@ scoped notation "V(" G ")" => Graph.vertexSet G
 
 @[simp] lemma vertexSet_def : G.Dup.supp = V(G) := G.vertexSet_eq.symm
 
+lemma mem_supp (hx : x ∈ V(G)) : x ∈ G.Dup.supp := G.vertexSet_eq ▸ hx
+
 /-- `E(G)` denotes the `edgeSet` of a graph `G`. -/
 scoped notation "E(" G ")" => Graph.edgeSet G
 

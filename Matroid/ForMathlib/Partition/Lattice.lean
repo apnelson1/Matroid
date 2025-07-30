@@ -144,14 +144,13 @@ lemma iSup_rel_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pairw
   rfl
 
 lemma iSup_rel_of_agree_of_mem {ι : Type*} {S : ι → Partition (Set α)} (hS : Pairwise (Agree on S))
-    (i : ι) (hx : x ∈ (S i).supp) : ⇑(⨆ i, S i) x y ↔ ⇑(S i) x y := by
+    {i : ι} (hx : x ∈ (S i).supp) : ⇑(⨆ i, S i) x y ↔ ⇑(S i) x y := by
   rw [iSup_rel_of_agree hS]
   simp only [iSup_apply, iSup_Prop_eq]
   exact ⟨fun ⟨j, hj⟩ => (hS.of_refl i j).rel_of_right_of_mem hx hj, fun h => ⟨i, h⟩⟩
 
 @[simp]
-lemma iInf_rel {ι : Type*} (G : ι → Partition (Set α)) :
-    ⇑(⨅ i, G i) = ⨅ i, ⇑(G i) := by
+lemma iInf_rel {ι : Type*} (G : ι → Partition (Set α)) : ⇑(⨅ i, G i) = ⨅ i, ⇑(G i) := by
   change ⇑(ofRel _) = _
   rw [rel_ofRel_eq, iInf, ← range_comp]
   rfl
@@ -420,5 +419,42 @@ lemma iSup_discrete {ι : Type*} (S : ι → (Set α)) :
 lemma sup_discrete (s t : Set α) :
     Partition.discrete s ⊔ Partition.discrete t = Partition.discrete (s ∪ t) := by
   simp_rw [← sSup_pair, ← image_pair, sSup_discrete, sUnion_pair]
+
+@[simp↓]
+lemma sSup_induce_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) (s : Set α) :
+    induce (sSup S) s = sSup ((Partition.induce · s) '' S) := by
+  ext x y
+  simp only [sSup_rel, induce_apply, hS, ↓sSup_rel_of_agree, sSup_apply, iSup_apply, iSup_Prop_eq,
+    Subtype.exists, mem_image, exists_prop, exists_exists_and_eq_and]
+  refine ⟨fun h => TransGen.single (by aesop), fun h => ?_⟩
+  induction h with
+  | single hxy => aesop
+  | tail h1 h2 IH =>
+    expose_names
+    obtain ⟨hxs, hbs, P, hPS, hPxb⟩ := IH
+    obtain ⟨Q, hQS, hbs, hcs, hQbc⟩ := by simpa using h2
+    exact ⟨hxs, hcs, P, hPS, (hS.of_refl hPS hQS).trans_left hPxb hQbc⟩
+
+@[simp↓]
+lemma iSup_induce_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pairwise (Agree on S))
+    (s : Set α) : (⨆ i, S i).induce s = ⨆ i, (S i).induce s := by
+  convert sSup_induce_of_agree hS.range_pairwise s
+  rw [← range_comp]
+  rfl
+
+@[simp↓]
+lemma Agree.induce_sup (hPQ : P.Agree Q) (s : Set α) :
+    (P ⊔ Q).induce s = P.induce s ⊔ Q.induce s := by
+  ext x y
+  simp only [induce_apply, hPQ, ↓sup_rel, Pi.sup_apply, sup_Prop_eq, Partition.sup_rel]
+  refine ⟨fun h => TransGen.single (by aesop), fun h => ?_⟩
+  induction h with
+  | single hxy => aesop
+  | tail h1 h2 IH =>
+    expose_names
+    obtain ⟨hxs, hys, hxb⟩ := IH
+    obtain ⟨hbs, hcs, hPbc⟩ | ⟨hbs, hcs, hQbc⟩ := by simpa using h2
+    · exact ⟨hxs, hcs, hPQ.sup_rel_trans hxb (Or.inl hPbc)⟩
+    · exact ⟨hxs, hcs, hPQ.sup_rel_trans hxb (Or.inr hQbc)⟩
 
 -- Compl does not exist

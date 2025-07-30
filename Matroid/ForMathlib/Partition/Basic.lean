@@ -11,7 +11,7 @@ open Set Function Relation
 
 section Pairwise
 
-variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {x y : α}
+variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {g : ι' → ι} {x y : α}
 
 lemma Pairwise.of_refl [IsRefl α r] (h : Pairwise (r on f)) (i j : ι) : r (f i) (f j) :=
   (eq_or_ne i j).elim (fun hij ↦ hij ▸ refl (f i)) fun hne ↦ h hne
@@ -34,11 +34,18 @@ lemma Pairwise.iff_true_of_refl [IsRefl α r] : Pairwise r ↔ ∀ x y, r x y :=
   rw [iff_top_of_refl]
   aesop
 
-lemma Pairwise.onFun_of_refl [IsRefl α r] (hr : Pairwise r) : Pairwise (r on f) := by
+lemma Pairwise.onFun_of_refl [IsRefl α r] (hr : Pairwise r) (f : ι → α) : Pairwise (r on f) := by
   rintro i j hne
   rw [Pairwise.iff_top_of_refl] at hr
   subst r
   trivial
+
+lemma Pairwise.onFun_comp_of_refl [IsRefl α r] (hr : Pairwise (r on f)) (g : ι' → ι) :
+    Pairwise (r on (f ∘ g)) := Pairwise.onFun_of_refl hr g
+
+@[simp]
+lemma Pairwise.const_of_refl [IsRefl α r] (x : α) : Pairwise (r on fun (_ : ι) ↦ x) := by
+  simp [Pairwise, refl]
 
 lemma Set.Pairwise.range_of_injective (hf : Function.Injective f) :
     Pairwise (r on f) ↔ (range f).Pairwise r := by
@@ -455,6 +462,9 @@ lemma restrict_eq_self_iff (hs : s ⊆ P.parts) : P.restrict s hs = P ↔ s = P.
 
 def Agree (P Q : Partition α) : Prop := ∃ S : Partition α, P ⊆ S ∧ Q ⊆ S
 
+lemma agree_of_subset_subset {P₀ Q₀ : Partition α} (hP : P₀ ⊆ P) (hQ : Q₀ ⊆ P) :
+    P₀.Agree Q₀ := ⟨P, hP, hQ⟩
+
 @[simp]
 lemma Agree.rfl : P.Agree P := ⟨P, subset_rfl, subset_rfl⟩
 
@@ -477,6 +487,19 @@ lemma Agree.mem_of_mem (h : P.Agree Q) (hx : a ∈ P) (hndisj : ¬ Disjoint Q.su
     a ∈ Q := by
   obtain ⟨S, hPS, hQS⟩ := h
   exact mem_of_subset_of_not_disjoint hQS (hPS hx) hndisj
+
+lemma Agree.mono_left {P₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) : P₀.Agree Q := by
+  obtain ⟨S, hPS, hQS⟩ := h
+  exact ⟨S, hP.trans hPS, hQS⟩
+
+lemma Agree.mono_right {Q₀ : Partition α} (h : P.Agree Q) (hQ : Q₀ ⊆ Q) : P.Agree Q₀ := by
+  obtain ⟨S, hPS, hQS⟩ := h
+  exact ⟨S, hPS, hQ.trans hQS⟩
+
+lemma Agree.mono {P₀ Q₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) (hQ : Q₀ ⊆ Q) :
+    P₀.Agree Q₀ := by
+  obtain ⟨S, hPS, hQS⟩ := h
+  exact ⟨S, hP.trans hPS, hQ.trans hQS⟩
 
 
 @[simps!]
