@@ -272,6 +272,10 @@ lemma nullity_project_add_nullity_eq (M : Matroid α) (C X : Set α) :
   simp only [project_closure, diff_union_self]
   refine M.subset_closure_of_subset' subset_union_left hX
 
+lemma nullity_project_of_disjoint (M : Matroid α) {C : Set α} (hCX : Disjoint X C) :
+    (M.project C).nullity X + M.nullity C = M.nullity (X ∪ C) := by
+  simp [M.nullity_project_add_nullity_eq, hCX.inter_eq]
+
 lemma Indep.nullity_project (hI : M.Indep I) (X : Set α) :
     (M.project I).nullity X = M.nullity (X ∪ I) + (X ∩ I).encard := by
   rw [← nullity_project_add_nullity_eq, hI.nullity_eq, add_zero]
