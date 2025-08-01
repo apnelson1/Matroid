@@ -445,16 +445,31 @@ lemma iSup_induce_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pa
 @[simp↓]
 lemma Agree.induce_sup (hPQ : P.Agree Q) (s : Set α) :
     (P ⊔ Q).induce s = P.induce s ⊔ Q.induce s := by
+  rw [← sSup_pair, sSup_induce_of_agree, image_pair, sSup_pair]
+  exact pairwise_pair_of_symm hPQ
+
+@[simp↓]
+lemma sInf_induce_of_nonempty {S : Set (Partition (Set α))} (hS' : S.Nonempty) (s : Set α) :
+    induce (sInf S) s = sInf ((Partition.induce · s) '' S) := by
   ext x y
-  simp only [induce_apply, hPQ, ↓sup_rel, Pi.sup_apply, sup_Prop_eq, Partition.sup_rel]
-  refine ⟨fun h => TransGen.single (by aesop), fun h => ?_⟩
-  induction h with
-  | single hxy => aesop
-  | tail h1 h2 IH =>
-    expose_names
-    obtain ⟨hxs, hys, hxb⟩ := IH
-    obtain ⟨hbs, hcs, hPbc⟩ | ⟨hbs, hcs, hQbc⟩ := by simpa using h2
-    · exact ⟨hxs, hcs, hPQ.sup_rel_trans hxb (Or.inl hPbc)⟩
-    · exact ⟨hxs, hcs, hPQ.sup_rel_trans hxb (Or.inr hQbc)⟩
+  obtain ⟨P, hPS⟩ := hS'
+  simp +contextual only [induce_apply, sInf_rel, sInf_apply, iInf_apply, iInf_Prop_eq,
+    Subtype.forall, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+    exists_exists_and_eq_and, iff_def, and_self, implies_true, and_true, true_and]
+  intro h
+  specialize h P hPS
+  tauto
+
+@[simp↓]
+lemma iInf_induce_of_nonempty [Nonempty ι] {S : ι → Partition (Set α)} (s : Set α) :
+    (⨅ i, S i).induce s = ⨅ i, (S i).induce s := by
+  convert sInf_induce_of_nonempty (range_nonempty S) s
+  rw [← range_comp]
+  rfl
+
+@[simp↓]
+lemma induce_inf (P Q : Partition (Set α)) (s : Set α) :
+    (P ⊓ Q).induce s = P.induce s ⊓ Q.induce s := by
+  rw [← sInf_pair, sInf_induce_of_nonempty (by simp), image_pair, sInf_pair]
 
 -- Compl does not exist

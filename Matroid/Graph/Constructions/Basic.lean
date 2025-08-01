@@ -1,4 +1,4 @@
-import Matroid.Graph.Operations.Delete
+import Matroid.Graph.Subgraph.Basic
 import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
@@ -57,11 +57,11 @@ lemma noEdge_not_isNonloopAt {V : Set α} : ¬ (Graph.noEdge V β).IsNonloopAt e
 lemma noEdge_not_adj {V : Set α} : ¬ (Graph.noEdge V β).Adj x y := by
   simp [Adj]
 
-lemma edgeDelete_eq_noEdge (G : Graph α β) [Nodup G] (hF : E(G) ⊆ F) :
-    G ＼ F = Graph.noEdge V(G) β := by
-  refine Graph.ext (by simp) fun e x y ↦ ?_
-  simp only [edgeDelete_isLink, noEdge_isLink, iff_false, not_and, not_not]
-  exact fun h ↦ hF h.edge_mem
+-- lemma edgeDelete_eq_noEdge (G : Graph α β) [Nodup G] (hF : E(G) ⊆ F) :
+--     G ＼ F = Graph.noEdge V(G) β := by
+--   refine Graph.ext (by simp) fun e x y ↦ ?_
+--   simp only [edgeDelete_isLink, noEdge_isLink, iff_false, not_and, not_not]
+--   exact fun h ↦ hF h.edge_mem
 
 lemma edgeSet_eq_empty_iff [G.Nodup] : E(G) = ∅ ↔ G = Graph.noEdge V(G) β := by
   refine ⟨fun h ↦ Graph.ext (by ext; simp) ?_, fun h ↦ by rw [h, noEdge_edgeSet]⟩

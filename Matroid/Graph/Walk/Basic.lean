@@ -1,5 +1,5 @@
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Operations.Delete
+import Matroid.Graph.Subgraph.Delete
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.

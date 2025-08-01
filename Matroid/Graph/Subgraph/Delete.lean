@@ -1,4 +1,4 @@
-import Matroid.Graph.Subgraph
+import Matroid.Graph.Subgraph.Basic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}

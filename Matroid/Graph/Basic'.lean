@@ -213,6 +213,12 @@ lemma isLink_right_rw (h : G.Dup x y) : G.IsLink e z x ↔ G.IsLink e z y :=
 
 @[simp] lemma IsLink.right_mem (h : G.IsLink e x y) : y ∈ V(G) := h.symm.left_mem
 
+@[simp] lemma IsLink.left_mem_supp (h : G.IsLink e x y) : x ∈ G.Dup.supp :=
+  vertexSet_def ▸ h.left_mem
+
+@[simp] lemma IsLink.right_mem_supp (h : G.IsLink e x y) : y ∈ G.Dup.supp :=
+  vertexSet_def ▸ h.right_mem
+
 @[simp] lemma IsLink.left_refl (h : G.IsLink e x y) : G.Dup x x := dup_of_mem_vertexSet h.left_mem
 
 @[simp] lemma IsLink.right_refl (h : G.IsLink e x y) : G.Dup y y := h.symm.left_refl
@@ -585,8 +591,7 @@ instance (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
 
 @[simps]
 def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
-    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) :
-    Graph α β where
+    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) : Graph α β where
   Dup := P
   IsLink e := Domp P (l e)
   isLink_symm e he := IsSymm.symm

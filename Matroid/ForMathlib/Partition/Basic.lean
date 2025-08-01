@@ -47,6 +47,9 @@ lemma Pairwise.onFun_comp_of_refl [IsRefl α r] (hr : Pairwise (r on f)) (g : ι
 lemma Pairwise.const_of_refl [IsRefl α r] (x : α) : Pairwise (r on fun (_ : ι) ↦ x) := by
   simp [Pairwise, refl]
 
+lemma pairwise_pair_of_symm [IsSymm α r] (hxy : r x y) : ({x, y} : Set α).Pairwise r := by
+  rintro a (rfl | rfl) b (rfl | rfl) <;> simp [hxy, symm hxy]
+
 lemma Set.Pairwise.range_of_injective (hf : Function.Injective f) :
     Pairwise (r on f) ↔ (range f).Pairwise r := by
   refine ⟨fun h ↦ ?_, fun h i j hne ↦ @h (f i) ⟨i, rfl⟩ (f j) ⟨j, rfl⟩ <| fun a ↦ hne (hf a)⟩

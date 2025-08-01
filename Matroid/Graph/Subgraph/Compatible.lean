@@ -1,4 +1,4 @@
-import Matroid.Graph.Operations.Delete
+import Matroid.Graph.Subgraph.Delete
 import Matroid.ForMathlib.Partition.Lattice
 
 variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
@@ -18,38 +18,6 @@ lemma Option.elim_eq_const_of_isEmpty {α : Type*} [hα : IsEmpty α] (f : α �
 open scoped Sym2 Graph
 
 namespace Graph
-
--- /-! ### Strongly disjointness -/
-
--- /-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.
---     This is a stronger notion of disjointness than `Disjoint` derived from `≤` relation,
---     see `disjoint_iff_vertexSet_disjoint`. -/
--- @[mk_iff]
--- structure StronglyDisjoint (G H : Graph α β) : Prop where
---   vertex : Disjoint V(G) V(H)
---   edge : Disjoint E(G) E(H)
-
--- lemma StronglyDisjoint.symm (h : G.StronglyDisjoint H) : H.StronglyDisjoint G :=
---   ⟨h.1.symm, h.2.symm⟩
-
--- lemma stronglyDisjoint_comm : G.StronglyDisjoint H ↔ H.StronglyDisjoint G :=
---   ⟨StronglyDisjoint.symm, StronglyDisjoint.symm⟩
-
--- lemma stronglyDisjoint_iff_of_le_isLabelSubgraph (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G) :
---     StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
---   refine ⟨(disjoint_iff_vertexSet_disjoint.mp <| StronglyDisjoint.vertex ·),
---     fun h ↦ ⟨h.vertexSet_disjoint, disjoint_left.2 fun e he₁ he₂ ↦ ?_⟩⟩
---   obtain ⟨x, y, he₁⟩ := exists_isLink_of_mem_edgeSet he₁
---   exact h.vertexSet_disjoint.notMem_of_mem_left he₁.left_mem <|
---     (he₁.of_le h₁).of_isLabelSubgraph_of_mem h₂ he₂ |>.left_mem
-
--- lemma stronglyDisjoint_iff_of_isLabelSubgraph_le (h₁ : H₁ ≤l G) (h₂ : H₂ ≤ G) :
---     StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ :=
---   stronglyDisjoint_comm.trans <|
---     (stronglyDisjoint_iff_of_le_isLabelSubgraph h₂ h₁).trans disjoint_comm
-
--- lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H :=
---   disjoint_iff_vertexSet_disjoint.mp h.vertex
 
 /-! ### Compatibility -/
 
@@ -288,6 +256,15 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 
 def Dup_agree (G H : Graph α β) : Prop := G.Dup.Agree H.Dup
 
+lemma Dup_agree.iff_of_mem (h : G.Dup_agree H) (hxG : x ∈ V(G)) (hxH : x ∈ V(H)) :
+    G.Dup x y ↔ H.Dup x y :=
+  Partition.agree_iff_rel.mp h x y (vertexSet_def ▸ hxG) (vertexSet_def ▸ hxH)
+
+lemma Dup_agree.eq_of_mem (h : G.Dup_agree H) (hxG : x ∈ V(G)) (hxH : x ∈ V(H)) :
+    G.Dup x = H.Dup x := by
+  ext y
+  exact h.iff_of_mem hxG hxH
+
 @[simp]
 lemma dup_agree_rfl : G.Dup_agree G := by
   simp [Dup_agree]
@@ -352,31 +329,29 @@ lemma pairwise_dup_agree_edgeDelete (hG' : G.Dup_agree H) :
   rw [pairwise_pair]
   exact fun _ ↦ ⟨hG', hG'.symm⟩
 
-@[deprecated "Pairwise.mono" (since := "2025-07-30")]
-lemma pairwise_vertexDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+end Graph
+open Graph
+
+lemma Pairwise.vertexDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
     (X : Set α) : Pairwise (Dup_agree on fun i ↦ (G i) - X) :=
   h.mono (fun _ _ ↦ Dup_agree.vertexDelete X)
 
-@[deprecated "Pairwise.mono" (since := "2025-07-30")]
-lemma pairwise_edgeDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+lemma Pairwise.edgeDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
     (F : Set β) : Pairwise (Dup_agree on fun i ↦ (G i) ＼ F) :=
   h.mono (fun _ _ ↦ Dup_agree.edgeDelete F)
 
-@[deprecated "Pairwise.mono" (since := "2025-07-30")]
-lemma pairwise_edgeRestrict_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+lemma Pairwise.edgeRestrict_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
     (F : Set β) : Pairwise (Dup_agree on fun i ↦ (G i) ↾ F) :=
   h.mono (fun _ _ ↦ Dup_agree.edgeRestrict F)
 
-lemma Set.pairwise_vertexDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+lemma Set.Pairwise.vertexDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
     (X : Set α) : ((· - X) '' S).Pairwise Dup_agree :=
   fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).vertexDelete X
 
-lemma Set.pairwise_edgeDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+lemma Set.Pairwise.edgeDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
     (F : Set β) : ((· ＼ F) '' S).Pairwise Dup_agree :=
   fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeDelete F
 
-lemma Set.pairwise_edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+lemma Set.Pairwise.edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
     (F : Set β) : ((· ↾ F) '' S).Pairwise Dup_agree :=
   fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeRestrict F
-
-end Graph
