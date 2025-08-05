@@ -1,4 +1,4 @@
-import Matroid.ForMathlib.Partition.Basic
+import Matroid.ForMathlib.Partition.Induce
 
 open Set Function Relation
 
@@ -51,111 +51,6 @@ lemma subset_sUnion_iff_mem (ht : t ∈ P) (hSP : S ⊆ P.parts) :
     t ⊆ ⋃₀ S ↔ t ∈ S := by
   rw [← subset_sUnion_and_mem_iff_mem hSP]
   simp [ht]
-
-@[simps!]
-def induce (P : Partition (Set α)) (S : Set α) : Partition (Set α) :=
-  ofIndependent' (u := (S ∩ ·) '' P.parts) <|
-  sSupIndep_iff_pairwiseDisjoint.mpr <| P.pairwiseDisjoint.image_of_le (fun _ _ ↦ by simp)
-
-@[simp]
-lemma induce_supp (P : Partition (Set α)) (S : Set α) : (induce P S).supp = S ∩ P.supp := by
-  ext x
-  simp [induce, mem_supp_iff]
-
-@[simp]
-lemma mem_induce_iff (P : Partition (Set α)) (S T : Set α) :
-    T ∈ P.induce S ↔ T.Nonempty ∧ ∃ t ∈ P, S ∩ t = T := by
-  simp [induce, and_comm, nonempty_iff_ne_empty]
-
-@[simp]
-lemma induce_empty (P : Partition (Set α)) : P.induce ∅ = ⊥ := by
-  ext x
-  simp only [mem_induce_iff, empty_inter, exists_and_right, notMem_bot, iff_false, not_and,
-    forall_exists_index]
-  rintro hx y hyP rfl
-  simp at hx
-
-lemma inter_mem_induce (hne : (s ∩ t).Nonempty) (ht : t ∈ P) :
-    s ∩ t ∈ P.induce s := (P.mem_induce_iff s _).mpr ⟨hne, t, ht, rfl⟩
-
-@[simp]
-lemma induce_induce (P : Partition (Set α)) (S T : Set α) :
-    induce (induce P S) T = induce P (S ∩ T) := by
-  ext x
-  simp +contextual only [induce, mem_ofIndependent'_iff, mem_image, mem_parts, SetLike.mem_coe,
-    bot_eq_empty, ne_eq, iff_def, not_false_eq_true, and_true, and_imp, forall_exists_index,
-    forall_apply_eq_imp_iff₂]
-  constructor
-  · rintro a haP - rfl -
-    use a, haP, by ac_rfl
-  rintro a haP rfl hSTa
-  use (S ∩ a), ⟨⟨a, haP, rfl⟩, ?_⟩, by ac_rfl
-  contrapose! hSTa
-  ac_change T ∩ (S ∩ a) = _
-  simp [hSTa]
-
-@[simp]
-lemma induce_eq_self_iff : P.induce s = P ↔ P.supp ⊆ s := by
-  refine ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ ?_⟩
-  ext x
-  have : ∀ t ∈ P, s ∩ t = t := fun t htP ↦ inter_eq_right.mpr <| subset_trans (P.le_of_mem htP) h
-  simp only [mem_induce_iff, nonempty_iff_ne_empty, ne_eq]
-  exact ⟨fun ⟨hne, t, htP, heq⟩ ↦ (this t htP).symm.trans heq ▸ htP,
-    fun hx ↦ ⟨P.ne_bot_of_mem hx, x, hx, this x hx⟩⟩
-
-lemma induce_le : P.induce s ≤ P := by
-  intro T hT
-  obtain ⟨hne, t, htP, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using hT); clear hT
-  exact ⟨t, htP, inter_subset_right⟩
-
-lemma induce_le_induce_iff : P.induce s ≤ P.induce t ↔ s ∩ P.supp ⊆ t ∩ P.supp := by
-  refine ⟨fun h ↦ ?_, fun h T hT ↦ ?_⟩
-  · rw [← induce_supp, ← induce_supp]
-    exact supp_le_of_le h
-  obtain ⟨hne, T, hTP, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using hT); clear hT
-  have hsu : s ∩ T ⊆ t ∩ T := fun x ⟨hxs, hxT⟩ => ⟨(h ⟨hxs, subset_of_mem hTP hxT⟩).1, hxT⟩
-  use t ∩ T, ?_, hsu
-  simp [hne.mono hsu]
-  use T
-
-lemma induce_mono (hST : s ⊆ t) : P.induce s ≤ P.induce t := by
-  rw [induce_le_induce_iff]
-  exact inter_subset_inter_left _ hST
-
-lemma induce_eq_induce_iff : P.induce s = P.induce t ↔ s ∩ P.supp = t ∩ P.supp :=
-  ⟨fun h ↦ by rw [← induce_supp, ← induce_supp, h],
-    fun h ↦ (induce_le_induce_iff.mpr h.le).antisymm (induce_le_induce_iff.mpr h.ge)⟩
-
-lemma induce_eq_of_subset (hPQ : P ⊆ Q) : Q.induce P.supp = P := by
-  ext S
-  rw [mem_induce_iff, nonempty_iff_ne_empty]
-  refine ⟨?_, fun hS ↦ ⟨bot_eq_empty ▸ P.ne_bot_of_mem hS, S, hPQ hS,
-    inter_eq_right.mpr <| P.le_of_mem hS⟩⟩
-  rintro ⟨hne, t, htQ, rfl⟩
-  rw [ne_eq, ← disjoint_iff_inter_eq_empty] at hne
-  have htP := mem_of_mem_subset hPQ htQ hne
-  rwa [inter_eq_right.mpr (subset_of_mem htP)]
-
-lemma induce_mono_left {S : Set α} (hPQ : P ≤ Q) : P.induce S ≤ Q.induce S := by
-  intro t ht
-  obtain ⟨hne, t', ht'Q, rfl⟩ := (by simpa only [mem_induce_iff, ne_eq] using ht); clear ht
-  obtain ⟨s, hsQ, ht's⟩ := hPQ t' ht'Q
-  have hsu := inter_subset_inter_right S ht's
-  use S ∩ s, inter_mem_induce (hne.mono hsu) hsQ, hsu
-
-lemma le_induce_of_supp_le (hPQ : P ≤ Q) (hP : P.supp ⊆ s) :
-    P ≤ Q.induce s := by
-  rw [← induce_eq_self_iff.mpr hP]
-  exact induce_mono_left hPQ
-
-lemma induce_subset_induce_of_subset (hPQ : P ⊆ Q) : P.induce s ⊆ Q.induce s := by
-  rintro t ⟨⟨t', ht'P, rfl⟩, hne⟩
-  exact ⟨⟨t', hPQ ht'P, rfl⟩, hne⟩
-
-lemma subset_induce_of_supp_le (hPQ : P ⊆ Q) (hP : P.supp ⊆ s) :
-    P ⊆ Q.induce s := by
-  rw [← induce_eq_self_iff.mpr hP]
-  exact induce_subset_induce_of_subset hPQ
 
 end Set
 
@@ -450,6 +345,7 @@ lemma Agree.sup_rel_trans (h : P.Agree Q) (hab : (⇑P ⊔ ⇑Q) a b) (hbc : (�
 lemma inf_rel_trans (hab : (⇑P ⊓ ⇑Q) a b) (hbc : (⇑P ⊓ ⇑Q) b c) : (⇑P ⊓ ⇑Q) a c :=
   ⟨trans' hab.1 hbc.1, trans' hab.2 hbc.2⟩
 
+@[simp]
 lemma induce_rel (P : Partition (Set α)) {S : Set α} :
     ⇑(P.induce S) = fun x y ↦ x ∈ S ∧ y ∈ S ∧ P x y := by
   ext x y
@@ -458,7 +354,8 @@ lemma induce_rel (P : Partition (Set α)) {S : Set α} :
     fun ⟨hxS, hyS, t, htP, hxt, hyt⟩ ↦ ⟨S ∩ t, ⟨?_, t, htP, rfl⟩, ⟨hxS, hxt⟩, ⟨hyS, hyt⟩⟩⟩
   · subst t
     exact ⟨hxt.1, hyt.1, t', ht'P, hxt.2, hyt.2⟩
-  use x, hxS
+  rw [bot_eq_empty, ← nonempty_iff_ne_empty, inter_nonempty]
+  use x
 
 @[simp]
 lemma induce_apply (P : Partition (Set α)) {S : Set α} :
@@ -467,6 +364,19 @@ lemma induce_apply (P : Partition (Set α)) {S : Set α} :
 lemma induce_eq_iff_rel (P Q : Partition (Set α)) :
     P.induce Q.supp = Q ↔ (fun x y ↦ x ∈ Q.supp ∧ y ∈ Q.supp ∧ P x y) = ⇑Q := by
   rw [← rel_inj_iff, induce_rel]
+
+@[simp]
+lemma inter_rel (P Q : Partition (Set α)) : ⇑(P ∩ Q) = fun x y ↦ ∃ s ∈ P ∩ Q, x ∈ s ∧ y ∈ s := by
+  ext x y
+  rw [rel_iff_exists]
+
+@[simp]
+lemma infer_rel (P Q : Partition (Set α)) :
+    ⇑(P.infer Q) = fun x y ↦ ∃ t ∈ P, x ∈ t ∧ y ∈ t ∧ ∃ x ∈ Q, t ⊆ x := by
+  ext x y
+  rw [rel_iff_exists]
+  simp only [mem_infer_iff, le_eq_subset]
+  tauto
 
 end Rel
 

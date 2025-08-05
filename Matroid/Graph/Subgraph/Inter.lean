@@ -312,21 +312,29 @@ defined junk values so that this has the right edge and vertex set, so the
 edges are precisely those on which `G` and `H` agree, and the edge set is a subset
 of `E(G) ∩ E(H)`,
 with equality if `G` and `H` are compatible.   -/
-@[simps! vertexSet dup]
 protected def inter (G H : Graph α β) : Graph α β :=
   Graph.sInter {G, H} (by simp)
 
 instance : Inter (Graph α β) where inter := Graph.inter
 
 @[simp]
-lemma sInter_pair (G H : Graph α β) : Graph.sInter {G, H} (by simp) = G ∩ H := rfl
+protected lemma sInter_pair (G H : Graph α β) : Graph.sInter {G, H} (by simp) = G ∩ H := rfl
+
+@[simp]
+lemma inter_dup : (G ∩ H).Dup = G.Dup ⊓ H.Dup := by
+  ext x y
+  rw [← Graph.sInter_pair, sInter_dup (by simp), iInf_pair]
+
+@[simp]
+lemma inter_vertexSet : V(G ∩ H) = V(G) ∩ V(H) := by
+  rw [← Graph.sInter_pair, sInter_vertexSet, biInter_pair]
 
 @[simp]
 lemma inter_isLink : (G ∩ H).IsLink e x y ↔ G.Dup x = H.Dup x ∧ G.Dup y = H.Dup y ∧
     G.IsLink e x y ∧ H.IsLink e x y := by
   let G' := Classical.arbitrary (Set.Elem {G, H})
-  simp only [← sInter_pair, sInter_isLink, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
+  simp only [← Graph.sInter_pair, sInter_isLink, mem_insert_iff, mem_singleton_iff,
+    forall_eq_or_imp, forall_eq]
   change (_ = G'.val.Dup x ∧ _ = G'.val.Dup y ∧ _) ∧ _ = G'.val.Dup x ∧ _ = G'.val.Dup y ∧ _ ↔ _
   obtain hG' | hG' : G' = G ∨ G' = H := G'.prop <;>
   · simp_rw [hG']
@@ -339,18 +347,18 @@ lemma inter_edgeSet : E(G ∩ H) = {e | ∃ x y, (G ∩ H).IsLink e x y} := by
 @[simp↓]
 lemma inter_isLink_of_agree (hG : G.Dup_agree H) :
     (G ∩ H).IsLink e x y ↔ G.IsLink e x y ∧ H.IsLink e x y := by
-  rw [← sInter_pair, sInter_isLink_of_agree (by simp) (pairwise_pair_of_symm hG)]
+  rw [← Graph.sInter_pair, sInter_isLink_of_agree (by simp) (pairwise_pair_of_symm hG)]
   simp
 
 @[simp↓]
 lemma inter_edgeSet_of_agree (hG : G.Dup_agree H) (hG' : G.Compatible H) :
     E(G ∩ H) = E(G) ∩ E(H) := by
-  rw [← sInter_pair, sInter_edgeSet_of_agree (by simp) (pairwise_pair_of_symm hG)
+  rw [← Graph.sInter_pair, sInter_edgeSet_of_agree (by simp) (pairwise_pair_of_symm hG)
     (pairwise_pair_of_symm hG')]
   simp
 
 protected lemma inter_comm (G H : Graph α β) : G ∩ H = H ∩ G := by
-  rw [← sInter_pair, ← sInter_pair]
+  rw [← Graph.sInter_pair, ← Graph.sInter_pair]
   congr 1
   exact pair_comm G H
 
@@ -372,50 +380,50 @@ lemma Dup_agree.inter_inc (hG : G.Dup_agree H) :
 @[simp]
 lemma inter_isLoopAt_iff (hG : G.Dup_agree H) :
     (G ∩ H).IsLoopAt e x ↔ G.IsLoopAt e x ∧ H.IsLoopAt e x := by
-  rw [← sInter_pair, sInter_isLoopAt_iff (by simp) (pairwise_pair_of_symm hG)]
+  rw [← Graph.sInter_pair, sInter_isLoopAt_iff (by simp) (pairwise_pair_of_symm hG)]
   simp
 
 @[simp]
 lemma inter_isNonloopAt_iff (hG : G.Dup_agree H) :
     (G ∩ H).IsNonloopAt e x ↔ ∃ y, ¬ (G ∩ H).Dup x y ∧ G.IsLink e x y ∧ H.IsLink e x y := by
-  rw [← sInter_pair, sInter_isNonloopAt_iff (by simp) (pairwise_pair_of_symm hG)]
+  rw [← Graph.sInter_pair, sInter_isNonloopAt_iff (by simp) (pairwise_pair_of_symm hG)]
   simp
 
 @[simp]
 protected lemma inter_le_left (hG : G.Dup_agree H) : G ∩ H ≤ G := by
-  rw [← sInter_pair]
+  rw [← Graph.sInter_pair]
   exact Graph.sInter_le (pairwise_pair_of_symm hG) (by simp)
 
 @[simp]
 protected lemma inter_le_right (hG : G.Dup_agree H) : G ∩ H ≤ H := by
-  rw [← sInter_pair]
+  rw [← Graph.sInter_pair]
   exact Graph.sInter_le (pairwise_pair_of_symm hG) (by simp)
 
 protected lemma le_inter (hG : G₁.Dup_agree G₂) (h₁ : H ≤ G₁) (h₂ : H ≤ G₂) : H ≤ G₁ ∩ G₂ := by
-  rw [← sInter_pair, Graph.le_sInter_iff (by simp) (pairwise_pair_of_symm hG)]
+  rw [← Graph.sInter_pair, Graph.le_sInter_iff (by simp) (pairwise_pair_of_symm hG)]
   simp [h₁, h₂]
 
 lemma Compatible.inter_edgeSet (h : G.Compatible H) (hG : G.Dup_agree H) :
     E(G ∩ H) = E(G) ∩ E(H) := by
-  rw [← sInter_pair, sInter_edgeSet_of_agree (by simp) (pairwise_pair_of_symm hG)
+  rw [← Graph.sInter_pair, sInter_edgeSet_of_agree (by simp) (pairwise_pair_of_symm hG)
     (pairwise_pair_of_symm h)]
   simp
 
 @[simp↓]
 lemma Compatible.inter_inc (hG : G.Dup_agree H) (hG' : G.Compatible H) :
     (G ∩ H).Inc e x ↔ G.Inc e x ∧ H.Inc e x := by
-  simp [← sInter_pair, sInter_inc_of_compatible (by simp) (pairwise_pair_of_symm hG)
+  simp [← Graph.sInter_pair, sInter_inc_of_compatible (by simp) (pairwise_pair_of_symm hG)
     (pairwise_pair_of_symm hG')]
 
 lemma inter_eq_iInter (hG : G.Dup_agree H) : G ∩ H = Graph.iInter (fun b ↦ bif b then G else H) :=
   let h : Pairwise (Dup_agree on (fun b ↦ bif b then G else H)) :=
     (pairwise_on_bool IsSymm.symm).mpr hG
   Graph.ext (by
-    rw [← sInter_pair, ← Graph.sInter_range h]
+    rw [← Graph.sInter_pair, ← Graph.sInter_range h]
     simp [Graph.inter_comm]) (by simp [hG, h, and_comm])
 
 lemma le_inter_iff (hG : G₁.Dup_agree G₂) : H ≤ G₁ ∩ G₂ ↔ H ≤ G₁ ∧ H ≤ G₂ := by
-  simp [← sInter_pair, Graph.le_sInter_iff (by simp) (pairwise_pair_of_symm hG)]
+  simp [← Graph.sInter_pair, Graph.le_sInter_iff (by simp) (pairwise_pair_of_symm hG)]
 
 lemma inter_eq_self_of_le (hle : G ≤ H) : G ∩ H = G :=
   le_antisymm (Graph.inter_le_left (dup_agree_of_le hle)) <| by
@@ -451,10 +459,10 @@ lemma inter_mono (hG : G₂.Dup_agree H₂) (hleG : G₁ ≤ G₂) (hleH : H₁ 
 --   Graph.ext (by simp) fun e x y ↦ by
 --   simp +contextual only [induce_isLink_iff, inter_isLink_iff, iff_def, and_self, implies_true]
 
--- lemma vertexDelete_union (X Y : Set α) : G - (X ∪ Y) = (G - X) ∩ (G - Y) :=
---   Graph.ext (by simp [diff_inter_diff]) fun e x y ↦ by
---   simp +contextual only [vertexDelete_isLink_iff, mem_union, not_or, inter_isLink_iff, iff_def,
---     not_false_eq_true, and_self, implies_true]
+-- lemma vertexDelete_union (X Y : Set α) : G - (X ∪ Y) = (G - X) ∩ (G - Y) := by
+--   refine Graph.ext (by simp) fun e x y ↦ by
+--     rw [inter_isLink_of_agree sorry]
+--     simp +contextual [iff_def]
 
 -- lemma vertexDelete_inter_distrib (X : Set α) : (G ∩ H) - X = (G - X) ∩ (H - X) :=
 --   Graph.ext (by simp [diff_inter_distrib_right]) fun e x y ↦ by

@@ -12,6 +12,39 @@ open scoped Sym2
 
 namespace Graph
 
+/-- `Copy` creates an identical graph with different definitions for its vertex set and edge set.
+  This is mainly used to create graphs with improved definitional properties. -/
+@[simps]
+def copy (G : Graph α β) {V : Set α} {dup : Partition (Set α)} {E : Set β}
+    {IsLink : β → α → α → Prop} (hV : V(G) = V) (hdup : G.Dup = dup) (hE : E(G) = E)
+    (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) : Graph α β where
+  Dup := dup
+  vertexSet := V
+  vertexSet_eq := hdup ▸ (hV.symm.trans G.vertexSet_eq)
+  edgeSet := E
+  IsLink := IsLink
+  isLink_symm e he x y := by
+    simp_rw [← h_isLink]
+    apply G.isLink_symm (hE ▸ he)
+  dup_or_dup_of_isLink_of_isLink := by
+    simp_rw [← h_isLink, ← hdup]
+    exact G.dup_or_dup_of_isLink_of_isLink
+  edge_mem_iff_exists_isLink := by
+    simp_rw [← h_isLink, ← hE]
+    exact G.edge_mem_iff_exists_isLink
+  mem_vertexSet_of_isLink := by
+    simp_rw [← h_isLink, ← hV]
+    exact G.mem_vertexSet_of_isLink
+  isLink_of_dup := by
+    simp_rw [← h_isLink, ← hdup]
+    exact G.isLink_of_dup
+
+lemma copy_eq_self (G : Graph α β) {V : Set α} {dup : Partition (Set α)} {E : Set β}
+    {IsLink : β → α → α → Prop} (hV : V(G) = V) (hdup : G.Dup = dup) (hE : E(G) = E)
+    (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
+    G.copy hV hdup hE h_isLink = G := by
+  ext <;> simp_all
+
 /-- The graph with vertex set `V` and no edges -/
 @[simps! dup vertexSet edgeSet isLink]
 protected def noEdge (V : Set α) (β : Type*) : Graph α β := by
@@ -183,7 +216,7 @@ lemma singleEdge_isLabelSubgraph_iff :
       refine Partition.supp_singleton_iff ?_
       simp [hl.left_mem]
     convert (Partition.atomic_iff_eq_discrete (G.Dup.induce {u, v})).mp ?_
-    · simp only [Partition.induce_supp, vertexSet_def, left_eq_inter]
+    · simp only [↓Partition.induce_supp', vertexSet_def, inf_eq_inter, left_eq_inter]
       rintro x (rfl | rfl)
       · exact hl.left_mem
       exact hl.right_mem

@@ -9,9 +9,6 @@ open scoped Sym2
 
 namespace Graph
 
-
-
-
 namespace WithTop
 
 lemma eq_top_or_eq_some {α : Type*} (a' : WithTop α) : a' = ⊤ ∨ ∃ a : α, a' = WithTop.some a :=

@@ -1,4 +1,5 @@
 import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Constructions.Basic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}
@@ -326,6 +327,7 @@ lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
 --   rw [edgeDelete_eq_edgeRestrict, edgeRestrict_induce, ← edgeRestrict_edgeSet_inter,
 --     ← inter_diff_assoc, inter_eq_self_of_subset_left (by simp), ← edgeDelete_eq_edgeRestrict]
 
+
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 @[simps]
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β where
@@ -373,16 +375,14 @@ lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
   simp [Adj]
 
 lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X where
-  dup_subset := induce_subset_induce_of_subset h.dup_subset
+  dup_subset := induce_subset_induce_of_subset h.dup_subset _
   isLink_of_isLink _ _ _ h' := by simp_all [h.isLink_of_isLink h'.1]
 
 lemma vertexDelete_anti_right_iff : G - Y ≤l G - X ↔ V(G) \ Y ⊆ V(G) \ X := by
   refine ⟨fun h ↦ by simpa using h.vertexSet, fun h ↦ ⟨?_, fun e x y ⟨hl, hx, hy⟩ => ?_⟩⟩
-  · refine (G.Dup.induce_induce _ _).trans (induce_eq_induce_iff.mpr ?_)
-    ext x
-    simp +contextual only [vertexDelete_vertexSet, vertexSet_def, mem_inter_iff, mem_compl_iff,
-      mem_diff, and_congr_left_iff, true_and, and_iff_right_iff_imp]
-    exact fun hxG hxY => h ⟨hxG, hxY⟩ |>.2
+  · refine G.Dup.induce_induce.trans (induce_eq_induce_iff.mpr ?_)
+    simp only [vertexDelete_vertexSet, inf_eq_inter, vertexSet_def]
+    rw [inter_assoc, ← diff_eq_compl_inter, ← diff_eq_compl_inter, inter_eq_left.mpr h]
   simp [hl, (h ⟨hl.left_mem, hx⟩).2, (h ⟨hl.right_mem, hy⟩).2]
 
 lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤l G - X := by
@@ -394,7 +394,7 @@ lemma vertexDelete_eq_vertexDelete_iff (G : Graph α β) (X Y : Set α) :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [← vertexDelete_vertexSet, ← vertexDelete_vertexSet, h]
   apply Graph.ext
-  · exact induce_eq_induce_iff.mpr (by simp_rw [← diff_eq_compl_inter, G.vertexSet_def]; exact h)
+  · exact induce_eq_induce_iff.mpr (by simpa [← diff_eq_compl_inter, G.vertexSet_def])
   simp [Set.ext_iff] at h
   simp only [vertexDelete_isLink, and_congr_right_iff]
   exact fun e x y hl ↦ and_congr (h x hl.left_mem) (h y hl.right_mem)
@@ -426,7 +426,7 @@ lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
 --   tauto
 
 lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) :=
-  Graph.ext (by ext; simp +contextual) <| by simp +contextual [iff_def]
+  Graph.ext (by rw [union_comm]; ext; simp +contextual) <| by simp +contextual [iff_def]
 
 lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
   rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]

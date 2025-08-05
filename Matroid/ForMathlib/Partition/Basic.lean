@@ -1,13 +1,9 @@
-import Mathlib.Data.Setoid.Partition
-import Mathlib.Data.SetLike.Basic
-import Mathlib.Data.Set.Finite.Powerset
 import Mathlib.Order.CompactlyGenerated.Basic
 import Matroid.ForMathlib.Lattice
 import Matroid.ForMathlib.Relation
 import Matroid.ForMathlib.Function -- for Function.onFun_comp
-import Matroid.ForMathlib.Set
 
-open Set Function Relation
+open Set Function
 
 section Pairwise
 
@@ -72,6 +68,17 @@ lemma Pairwise.sum_right {γ : Type*} {G : ι → γ} {H : ι' → γ} {r : γ �
 
 end Pairwise
 
+lemma sSupIndep.image {α : Type*} [CompleteLattice α] {S : Set α} (hS : sSupIndep S) {f : α → α}
+    (hf : ∀ i, f i ≤ i) : sSupIndep (f '' S) := by
+  rintro t ⟨x, hxS, rfl⟩
+  refine hS hxS |>.mono (hf x) ?_
+  simp only [sSup_le_iff, mem_diff, mem_image, mem_singleton_iff, and_imp, forall_exists_index,
+    forall_apply_eq_imp_iff₂]
+  refine fun y hyS hne ↦ (hf y).trans <| le_sSup ?_
+  simp only [mem_diff, hyS, mem_singleton_iff, true_and]
+  rintro rfl
+  simp at hne
+
 -- lemma disjoint_sup [CompleteLattice α] {a : α} {s t : Set α} (hb : )
 
 
@@ -127,6 +134,10 @@ lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) : Disjoint x y :=
 lemma pairwiseDisjoint : Set.PairwiseDisjoint (P : Set α) id :=
   fun _ hx _ hy hxy ↦ P.disjoint hx hy hxy
 
+lemma eq_of_not_disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : ¬ Disjoint x y) : x = y := by
+  by_contra hne
+  exact hxy (P.disjoint hx hy hne)
+
 lemma ne_bot_of_mem (hx : x ∈ P) : x ≠ ⊥ :=
   fun h ↦ P.bot_notMem <| h ▸ hx
 
@@ -139,10 +150,10 @@ lemma iSup_eq (P : Partition α) : ⨆ x ∈ P, x = P.supp := by
   simp_rw [← P.sSup_eq, sSup_eq_iSup]
   rfl
 
-lemma le_of_mem (P : Partition α) (hx : x ∈ P) : x ≤ P.supp :=
+lemma le_of_mem (hx : x ∈ P) : x ≤ P.supp :=
   (le_sSup hx).trans_eq P.sSup_eq
 
-lemma parts_nonempty (P : Partition α) (hs : P.supp ≠ ⊥) : (P : Set α).Nonempty :=
+lemma parts_nonempty (hs : P.supp ≠ ⊥) : (P : Set α).Nonempty :=
   nonempty_iff_ne_empty.2 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
 
 lemma supp_le_of_subset (h : P ⊆ Q) : P.supp ≤ Q.supp := by
@@ -330,7 +341,7 @@ end indep
 
 section Order
 
-variable {α : Type*} [CompleteLattice α] {s t a : α}
+variable {α : Type*} [CompleteLattice α] {P Q R : Partition α} {s t a : α}
 
 instance : PartialOrder (Partition α) where
   le P Q := ∀ x ∈ P, ∃ y ∈ Q, x ≤ y
@@ -344,14 +355,22 @@ instance : PartialOrder (Partition α) where
     refine Partition.ext fun x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · obtain ⟨y, hy, hxy⟩ := hp x h
       obtain ⟨x', hx', hyx'⟩ := hq y hy
-      obtain rfl := PairwiseDisjoint.eq_of_le P.pairwiseDisjoint h hx' (P.ne_bot_of_mem h)
+      obtain rfl := P.pairwiseDisjoint.eq_of_le h hx' (P.ne_bot_of_mem h)
         (hxy.trans hyx')
       rwa [hxy.antisymm hyx']
     obtain ⟨y, hy, hxy⟩ := hq x h
     obtain ⟨x', hx', hyx'⟩ := hp y hy
-    obtain rfl := PairwiseDisjoint.eq_of_le Q.pairwiseDisjoint h hx' (Q.ne_bot_of_mem h)
+    obtain rfl := Q.pairwiseDisjoint.eq_of_le h hx' (Q.ne_bot_of_mem h)
       (hxy.trans hyx')
     rwa [hxy.antisymm hyx']
+
+lemma le_def : P ≤ Q ↔ ∀ x ∈ P, ∃ y ∈ Q, x ≤ y := Iff.rfl
+
+lemma exists_le_of_mem_le {x : α} {P Q : Partition α} (h : P ≤ Q) (hx : x ∈ P) :
+  ∃ y ∈ Q, x ≤ y := h x hx
+
+lemma le_of_supp_le_part (ha : a ∈ P) (hQa : Q.supp ≤ a) : Q ≤ P :=
+  fun _ hx ↦ ⟨a, ha, (Q.le_of_mem hx).trans hQa⟩
 
 instance : OrderTop (Partition α) where
   top := ofIndependent' (sSupIndep_singleton ⊤)
@@ -391,193 +410,6 @@ lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩
 
 end Order
-
-section Bind
-
-variable {α : Type*} [CompleteDistribLattice α] {s : α}
-
-@[simps] protected def bind (P : Partition α) (Qs : ∀ a ∈ P, Partition α)
-    (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp = a) : Partition α where
-  parts := ⋃ a : P, (Qs a a.prop)
-  indep := by
-    intro b hb
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists] at hb
-    obtain ⟨a, haP, hba : b ∈ Qs a haP⟩ := hb
-    obtain hasupp := hQs a haP
-    have hdj1 := (Qs a haP).indep hba
-    have hdj2 := (hasupp ▸ P.indep haP).mono_left <| (Qs a haP).le_of_mem hba
-    refine (hdj1.sup_right hdj2).mono_right ?_
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, sSup_le_iff, mem_diff,
-      mem_singleton_iff, and_imp, forall_exists_index]
-
-    rintro t' x hx (ht' : t' ∈ Qs x hx) hne
-    obtain hxsupp := hQs x hx
-    obtain (rfl | hne) := eq_or_ne x a
-    · exact (le_sSup_of_le (show t' ∈ _ \ {b} from ⟨ht', hne⟩) rfl.le).trans le_sup_left
-    refine le_trans (le_sSup_of_le ?_ ((Qs x hx).le_of_mem ht')) le_sup_right
-    simp [hasupp, hxsupp, hne, hx]
-  bot_notMem := by
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists]
-    exact fun x hx ↦ (Qs x hx).bot_notMem
-
-@[simp] lemma mem_bind_iff {P : Partition α} {Qs : ∀ a ∈ P, Partition α}
-    (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp = a) {a : α} :
-    a ∈ P.bind Qs hQs ↔ ∃ (b : α) (hb : b ∈ P), a ∈ Qs b hb := by
-  change _ ∈ ⋃ _, _ ↔ _; simp
-
-@[simp] lemma bind_le {α : Type*} [CompleteDistribLattice α] (P : Partition α)
-    (Qs : ∀ a ∈ P, Partition α) (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp = a) :
-    P.bind Qs hQs ≤ P := by
-  intro t ht
-  obtain ⟨b, hbp, h⟩ := (mem_bind_iff hQs).1 ht
-  exact ⟨b, hbp, (hQs b hbp) ▸ Partition.le_of_mem _ h⟩
-
-end Bind
-
-section Restrict
-
-variable {α : Type*} [CompleteLattice α] {s : Set α} {P Q R : Partition α} {a b c : α}
-
-/-- The subpartition with over a subset of the parts. -/
-@[simps]
-def restrict (P : Partition α) (s : Set α) (hs : s ⊆ P.parts) : Partition α where
-  parts := s
-  indep := P.indep.mono hs
-  bot_notMem h := P.bot_notMem (hs h)
-
-@[simp] lemma mem_restrict_iff (hs : s ⊆ P.parts) :
-    a ∈ P.restrict s hs ↔ a ∈ s := Iff.rfl
-
-@[simp] lemma restrict_supp (hs : s ⊆ P.parts) : (P.restrict s hs).supp = sSup s := by
-  simp [restrict, supp]
-
-lemma restrict_subset (hs : s ⊆ P.parts) : (P.restrict s hs) ⊆ P := fun _ h ↦ hs h
-
-lemma restrict_le (hs : s ⊆ P.parts) : P.restrict s hs ≤ P := le_of_subset <| restrict_subset hs
-
-lemma subset_iff_restrict : P ⊆ Q ↔ ∃ S, ∃ hS : S ⊆ Q.parts, Q.restrict S hS = P :=
-  ⟨fun h ↦ ⟨P.parts, h, by ext; simp⟩, fun ⟨S, hS, heq⟩ ↦ heq ▸ restrict_subset hS⟩
-
-@[simp]
-lemma restrict_eq_self_iff (hs : s ⊆ P.parts) : P.restrict s hs = P ↔ s = P.parts :=
-  ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ h ▸ (by rfl)⟩
-
-
-def Agree (P Q : Partition α) : Prop := ∃ S : Partition α, P ⊆ S ∧ Q ⊆ S
-
-lemma agree_of_subset_subset {P₀ Q₀ : Partition α} (hP : P₀ ⊆ P) (hQ : Q₀ ⊆ P) :
-    P₀.Agree Q₀ := ⟨P, hP, hQ⟩
-
-@[simp]
-lemma Agree.rfl : P.Agree P := ⟨P, subset_rfl, subset_rfl⟩
-
-instance : IsRefl (Partition α) Agree where
-  refl _ := Agree.rfl
-
-lemma Agree.symm (h : P.Agree Q) : Q.Agree P := by
-  obtain ⟨S, hPS, hQS⟩ := h
-  exact ⟨S, hQS, hPS⟩
-
-instance : IsSymm (Partition α) Agree where
-  symm _ _ := Agree.symm
-
-lemma agree_comm : P.Agree Q ↔ Q.Agree P := ⟨Agree.symm, Agree.symm⟩
-
--- not transitive
-
-@[simp]
-lemma Agree.mem_of_mem (h : P.Agree Q) (hx : a ∈ P) (hndisj : ¬ Disjoint Q.supp a) :
-    a ∈ Q := by
-  obtain ⟨S, hPS, hQS⟩ := h
-  exact mem_of_subset_of_not_disjoint hQS (hPS hx) hndisj
-
-lemma Agree.mono_left {P₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) : P₀.Agree Q := by
-  obtain ⟨S, hPS, hQS⟩ := h
-  exact ⟨S, hP.trans hPS, hQS⟩
-
-lemma Agree.mono_right {Q₀ : Partition α} (h : P.Agree Q) (hQ : Q₀ ⊆ Q) : P.Agree Q₀ := by
-  obtain ⟨S, hPS, hQS⟩ := h
-  exact ⟨S, hPS, hQ.trans hQS⟩
-
-lemma Agree.mono {P₀ Q₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) (hQ : Q₀ ⊆ Q) :
-    P₀.Agree Q₀ := by
-  obtain ⟨S, hPS, hQS⟩ := h
-  exact ⟨S, hP.trans hPS, hQ.trans hQS⟩
-
-
-@[simps!]
-def union (P Q : Partition α) (hPQ : P.Agree Q) : Partition α :=
-  hPQ.choose.restrict (P.parts ∪ Q.parts) (union_subset_iff.mpr hPQ.choose_spec)
-
-@[simp]
-lemma union_supp (hPQ : P.Agree Q) : (P.union Q hPQ).supp = P.supp ⊔ Q.supp := by
-  simp only [supp, union, restrict_parts]
-  rw [sSup_union]
-
-protected lemma subset_union_left (hPQ : P.Agree Q) : P ⊆ P.union Q hPQ := fun _ hx ↦ by simp [hx]
-
-protected lemma subset_union_right (hPQ : P.Agree Q) : Q ⊆ P.union Q hPQ := fun _ hx ↦ by simp [hx]
-
-protected lemma union_subset_iff (hPQ : P.Agree Q) : P.union Q hPQ ⊆ R ↔ P ⊆ R ∧ Q ⊆ R := by
-  refine ⟨fun h ↦ ⟨subset_trans (Partition.subset_union_left hPQ) h,
-    subset_trans (Partition.subset_union_right hPQ) h⟩, fun ⟨hP, hQ⟩ s ↦ ?_⟩
-  simp only [union_parts, mem_union, mem_parts, SetLike.mem_coe]
-  exact (Or.elim · (hP ·) (hQ ·))
-
-def inter (P Q : Partition α) : Partition α where
-  parts := P.parts ∩ Q.parts
-  indep x hx := by
-    refine P.indep hx.1 |>.mono_right (sSup_le_sSup ?_)
-    simp only [diff_singleton_subset_iff, insert_diff_singleton]
-    exact inter_subset_left.trans <| subset_insert x P.parts
-  bot_notMem h := P.bot_notMem h.1
-
-instance : Inter (Partition α) where
-  inter := inter
-
-@[simp] lemma inter_parts : (P ∩ Q).parts = P.parts ∩ Q.parts := rfl
-
-@[simp] lemma mem_inter_iff : a ∈ P ∩ Q ↔ a ∈ P ∧ a ∈ Q := Iff.rfl
-
-lemma inter_comm : P ∩ Q = Q ∩ P := by
-  ext x
-  simp [and_comm]
-
--- @[simp]
--- lemma inter_supp (hPQ : P.Agree Q) : (P ∩ Q).supp = P.supp ⊓ Q.supp := by
---   change sSup (P.parts ∩ Q.parts) = sSup P.parts ⊓ sSup Q.parts
---   apply le_antisymm sSup_inter_le
-
-
-
-end Restrict
-
--- stuff that needs `CompleteDistribLattice α`
-lemma sSupIndep_parts_union_of_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α}
-    (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : sSupIndep (P.parts ∪ Q.parts) := by
-  simp_rw [sSupIndep, union_diff_distrib, sSup_union, disjoint_sup_right]
-  rintro s (hsP | hsQ)
-  · use P.indep hsP, disjoint_sSup_iff.mpr ?_
-    rintro t ⟨htQ, hts⟩
-    by_cases hQsdisj : Disjoint Q.supp s
-    · exact hQsdisj.symm.mono_right (le_sSup htQ)
-    exact Q.disjoint (h s hsP hQsdisj) htQ (Ne.symm hts)
-  use disjoint_sSup_iff.mpr ?_, Q.indep hsQ
-  rintro t ⟨htP, hts⟩
-  by_cases hQtdisj : Disjoint Q.supp t
-  · exact hQtdisj.mono_left (le_sSup hsQ)
-  exact Q.disjoint (h t htP hQtdisj) hsQ hts |>.symm
-
-lemma agree_of_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α}
-    (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : P.Agree Q := by
-  have hindep : sSupIndep (P.parts ∪ Q.parts) := sSupIndep_parts_union_of_mem_of_not_disjoint h
-  let R : Partition α := ofIndependent hindep (by simp [P.bot_notMem, Q.bot_notMem])
-  use R, subset_union_left, subset_union_right
-
-lemma agree_iff_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α} :
-    P.Agree Q ↔ ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q :=
-  ⟨fun ⟨_, hPR, hQR⟩ _ hxP ↦ mem_of_subset_of_not_disjoint hQR (hPR hxP),
-    fun h ↦ agree_of_mem_of_not_disjoint h⟩
 
 section Atomic
 

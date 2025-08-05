@@ -130,8 +130,6 @@ lemma dompeq_right_iff [Dompeq r r] (hrax : r a x) (hray : r a y) : r b x ↔ r 
   ⟨(dompeq_apply hrax · hray), (dompeq_apply hray · hrax)⟩
 
 
-
-
 def fiber (r : α → β → Prop) (x : β) : Set α := {a | r a x}
 
 @[simp]
@@ -295,7 +293,6 @@ lemma fibers_pairwiseDisjoint [Dompeq r r] :
   exact dompeq_right_iff hrbx hrby
 
 
-
 instance : HasSubset (α → β → Prop) where
   Subset r s := fibers r ⊆ fibers s
 
@@ -304,31 +301,33 @@ instance : IsPreorder (α → β → Prop) (· ⊆ ·) where
   trans _ _ _ h₁ h₂ _ h := h₂ (h₁ h)
 
 
-
-
-
-
-
-
 def leftRestrict (r : α → β → Prop) (S : Set α) : α → β → Prop :=
   fun x y ↦ r x y ∧ x ∈ S
 
-notation r " |ₗ " S => leftRestrict r S
+-- notation r " |ₗ " S => leftRestrict r S
 
 def rightRestrict (r : α → β → Prop) (S : Set β) : α → β → Prop :=
   fun x y ↦ r x y ∧ y ∈ S
 
-notation r " |ᵣ " S => rightRestrict r S
+-- notation r " |ᵣ " S => rightRestrict r S
 
--- def leftResidual (r : α → β → Prop) (s : α → γ → Prop) : β → γ → Prop :=
---   (Comp rᵀ sᶜ)ᶜ
+def leftResidual (r : α → β → Prop) (s : α → γ → Prop) : β → γ → Prop :=
+  (Comp rᵀ sᶜ)ᶜ
 -- notation r " \\ " s => leftResidual r s
 
--- def rightResidual (r : α → β → Prop) (s : γ → β → Prop) : α → γ → Prop :=
---   (Comp rᶜ sᵀ)ᶜ
+def rightResidual (r : α → β → Prop) (s : γ → β → Prop) : α → γ → Prop :=
+  (Comp rᶜ sᵀ)ᶜ
 -- notation r " / " s => rightResidual r s
 
+@[simp]
+lemma leftResidual_apply {r : α → β → Prop} {t : α → γ → Prop} :
+    leftResidual r t x u ↔ ∀ a, r a x → t a u := by
+  simp [leftResidual, Comp, flip]
 
+@[simp]
+lemma rightResidual_apply {r : α → β → Prop} {s : γ → β → Prop} :
+    rightResidual r s a u ↔ ∀ x, s u x → r a x := by
+  simp [rightResidual, Comp, flip, not_imp_not]
 
 -- This is iff
 lemma comp_le (r : α → β → Prop) (s : β → γ → Prop) (t : α → γ → Prop) [Trans r s t] :
@@ -336,33 +335,33 @@ lemma comp_le (r : α → β → Prop) (s : β → γ → Prop) (t : α → γ �
   rintro a c ⟨b, hrab, hsbc⟩
   exact trans hrab hsbc
 
--- lemma Schroder_leftResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} :
---     Comp r s ≤ t ↔ s ≤ r \ t := by
---   refine ⟨fun hrs b c hsbc ⟨a, hrab, hntac⟩ => hntac <| hrs a c ⟨b, hrab, hsbc⟩,
---     fun hsle a c ⟨b, hrab, hsbc⟩ => ?_⟩
---   have := hsle b c hsbc
---   contrapose! this
---   simp only [leftResidual, Pi.compl_apply, compl_iff_not, not_not]
---   use a, hrab, this
+lemma Schroder_leftResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} :
+    Comp r s ≤ t ↔ s ≤ leftResidual r t := by
+  refine ⟨fun hrs b c hsbc ⟨a, hrab, hntac⟩ => hntac <| hrs a c ⟨b, hrab, hsbc⟩,
+    fun hsle a c ⟨b, hrab, hsbc⟩ => ?_⟩
+  have := hsle b c hsbc
+  contrapose! this
+  simp only [leftResidual, Pi.compl_apply, compl_iff_not, not_not]
+  use a, hrab, this
 
--- lemma le_leftResidual (r : α → β → Prop) (s : β → γ → Prop) (t : α → γ → Prop) [Schroder r s t] :
---     s ≤ r \ t := by
---   rw [← Schroder_leftResidual]
---   exact comp_le r s t
+lemma le_leftResidual (r : α → β → Prop) (s : β → γ → Prop) (t : α → γ → Prop) [Trans r s t] :
+    s ≤ leftResidual r t := by
+  rw [← Schroder_leftResidual]
+  exact comp_le r s t
 
--- lemma Schroder_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} :
---     Comp r s ≤ t ↔ r ≤ t / s := by
---   refine ⟨fun hrs a b hrac ⟨c, hntac, hsbc⟩ => hntac <| hrs a c ⟨b, hrac, hsbc⟩,
---     fun hrle a c ⟨b, hrab, hsbc⟩ => ?_⟩
---   have := hrle a b hrab
---   contrapose! this
---   simp only [rightResidual, Pi.compl_apply, compl_iff_not, not_not]
---   use c, this, hsbc
+lemma Schroder_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} :
+    Comp r s ≤ t ↔ r ≤ rightResidual t s := by
+  refine ⟨fun hrs a b hrac ⟨c, hntac, hsbc⟩ => hntac <| hrs a c ⟨b, hrac, hsbc⟩,
+    fun hrle a c ⟨b, hrab, hsbc⟩ => ?_⟩
+  have := hrle a b hrab
+  contrapose! this
+  simp only [rightResidual, Pi.compl_apply, compl_iff_not, not_not]
+  use c, this, hsbc
 
--- lemma le_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} [Schroder r s t]:
---     r ≤ t / s := by
---   rw [← Schroder_rightResidual]
---   exact comp_le
+lemma le_rightResidual {r : α → β → Prop} {s : β → γ → Prop} {t : α → γ → Prop} [Trans r s t]:
+    r ≤ rightResidual t s := by
+  rw [← Schroder_rightResidual]
+  exact comp_le r s t
 
 
 /-

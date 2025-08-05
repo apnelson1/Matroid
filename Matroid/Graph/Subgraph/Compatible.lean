@@ -313,7 +313,7 @@ lemma dup_agree_of_le (h : H ≤ G) : H.Dup_agree G := dup_agree_of_le_le h le_r
 
 lemma Dup_agree.vertexDelete (X : Set α) (h : G.Dup_agree H) : (G - X).Dup_agree (H - X) := by
   simp only [Dup_agree, Partition.agree_iff_rel, vertexSet_def, vertexDelete_dup,
-    Partition.induce_supp, mem_inter_iff, mem_compl_iff, Partition.induce_apply,
+    ↓Partition.induce_supp', inf_eq_inter, mem_inter_iff, mem_compl_iff, Partition.induce_apply,
     and_congr_right_iff, and_imp] at h ⊢
   exact fun x y hxX hxG _ hxH _ hyX ↦ h x y hxG hxH
 

@@ -561,34 +561,6 @@ instance (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
     edge_mem_iff_exists_isLink left_mem_of_isLink) where
   atomic_dup := by simp
 
--- @[simps]
--- def mk_of_unique' (V : Set α) (IsLink : β → α → α → Prop)
---     (isLink_symm : ∀ ⦃e x y⦄, IsLink e x y → IsLink e y x)
---     (dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
---     (left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) : Graph α β where
---   Dup := Partition.discrete V
---   vertexSet := V
---   vertexSet_eq := supp_discrete V |>.symm
---   IsLink := IsLink
---   isLink_symm e he x y hl := isLink_symm hl
---   dup_or_dup_of_isLink_of_isLink e x y v w hl hl' := by
---     simp_rw [rel_discrete_iff]
---     obtain rfl | rfl := dup_or_dup_of_isLink_of_isLink hl hl'
---     · exact Or.inl ⟨left_mem_of_isLink hl, rfl⟩
---     exact Or.inr ⟨left_mem_of_isLink hl, rfl⟩
---   mem_vertexSet_of_isLink e x y hl := (supp_discrete V).symm ▸ left_mem_of_isLink hl
---   isLink_of_dup e x y z hxy hl := by
---     obtain ⟨hx, rfl⟩ := rel_discrete_iff.mp hxy
---     exact hl
-
--- instance (V : Set α) (IsLink : β → α → α → Prop)
---     (isLink_symm : ∀ ⦃e x y⦄, IsLink e x y → IsLink e y x)
---     (dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → x = v ∨ x = w)
---     (left_mem_of_isLink : ∀ ⦃e x y⦄, IsLink e x y → x ∈ V) :
---     Nodup (mk_of_unique' V IsLink isLink_symm dup_or_dup_of_isLink_of_isLink
---     left_mem_of_isLink) where
---   le_eq a b := by simp
-
 @[simps]
 def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
     (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) : Graph α β where

@@ -12,12 +12,6 @@ namespace Graph
 
 /-! ## Vertex Identification -/
 
-/-- Repartition -/
-def Repartition (G : Graph α β) (P : Partition (Set α)) (hP : G.Dup ≤ P) : Graph α β :=
-  mk_of_domp P G.IsLink (fun hlab hlcd ↦ by
-    rw [← Partition.rel_le_iff_le] at hP
-    exact (G.dup_or_dup_of_isLink_of_isLink hlab hlcd).imp (hP _ _ ·) (hP _ _ ·))
-
 /-- Vertex identification -/
 def VertexIdentification (G : Graph α β) (S : Set α) : Graph α β :=
   Repartition G (G.Dup ⊔ (Partition.indiscrete' S)) le_sup_left

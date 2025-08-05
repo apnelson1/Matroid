@@ -32,17 +32,6 @@ instance : CompleteLattice (Partition (Set α)) where
     rw [← rel_le_iff_le] at hrt hst
     rw [← rel_le_iff_le, rel_ofRel_eq]
     exact ClosureOperator.closure_min (sup_le hrt hst) t.rel_transitive
-  inf P Q := ofRel <| P ⊓ Q
-  inf_le_left P Q := by
-    rw [← rel_le_iff_le, rel_ofRel_eq]
-    exact inf_le_left
-  inf_le_right P Q := by
-    rw [← rel_le_iff_le, rel_ofRel_eq]
-    exact inf_le_right
-  le_inf P Q R hPQR hPQR' := by
-    rw [← rel_le_iff_le] at hPQR hPQR'
-    rw [← rel_le_iff_le, rel_ofRel_eq]
-    exact le_inf hPQR hPQR'
   sSup s := ofRel (TransClosure (sSup <| (⇑) '' s))
   le_sSup S P hPS := by
     rw [← rel_le_iff_le, rel_ofRel_eq]
@@ -62,7 +51,6 @@ instance : CompleteLattice (Partition (Set α)) where
     rw [← rel_le_iff_le, rel_ofRel_eq]
     exact sInf_le <| mem_image_of_mem (⇑) hrS
   le_top r := by simp
-  bot_le r := by simp
 
 @[simp]
 lemma sup_rel (P Q : Partition (Set α)) : ⇑(P ⊔ Q) = TransClosure (⇑P ⊔ ⇑Q) := by
@@ -94,8 +82,17 @@ lemma Agree.sup_rel_right_of_mem (hPQ : P.Agree Q) (hx : x ∈ Q.supp) : ⇑(P �
 
 @[simp]
 lemma inf_rel (P Q : Partition (Set α)) : ⇑(P ⊓ Q) = ⇑P ⊓ ⇑Q := by
-  change ⇑(ofRel _) = _
-  rw [rel_ofRel_eq]
+  ext x y
+  simp only [Pi.inf_apply, inf_Prop_eq]
+  refine ⟨fun h => ?_, fun ⟨⟨p, hpP, hxp, hyp⟩, ⟨q, hqQ, hxq, hyq⟩⟩ => ?_⟩
+  · obtain ⟨a, haPQ, hxa, hya⟩ := h
+    obtain ⟨hne, p, hpP, q, hqQ, rfl⟩ := (by simpa using haPQ); clear haPQ
+    exact ⟨⟨p, hpP, hxa.1, hya.1⟩, ⟨q, hqQ, hxa.2, hya.2⟩⟩
+  use p ⊓ q, ?_, ?_, ?_ <;> simp_all only [inf_eq_inter, mem_inf_iff, bot_eq_empty, and_self,
+    mem_inter_iff]
+  use ?_, p, hpP, q, hqQ
+  rw [← nonempty_iff_ne_empty, inter_nonempty_iff_exists_left]
+  use x
 
 @[simp]
 lemma sSup_rel (S : Set (Partition (Set α))) : ⇑(sSup S) = TransClosure (sSup <| (⇑) '' S) := by
@@ -323,17 +320,14 @@ lemma mem_iSup_iff_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : P
 
 @[simp]
 lemma Agree.inf_parts (hPQ : P.Agree Q) : P ⊓ Q = P.parts ∩ Q.parts := by
-  refine subset_antisymm (subset_inter hPQ.inf_subset_left hPQ.inf_subset_right) ?_
-  rintro s ⟨hsP, hsQ⟩
-  simp only [mem_parts, SetLike.mem_coe] at hsP hsQ ⊢
-  obtain ⟨x, hxs, rfl⟩ := exists_partOf_iff_mem.mp hsP
-  obtain ⟨_, H⟩ := partOf_mem_iff_rel_iff.mp hsQ
-  simp_rw [rel_comm (x := x)] at H
-  use x, ?_
-  · ext y
-    simp [H]
-  simp only [mem_codomain_iff, Pi.inf_apply, ← H, min_self]
-  exact ⟨x, rel_self_of_mem_supp hxs⟩
+  ext x
+  simp only [Partition.inf_parts, bot_eq_empty, ne_eq, inf_eq_inter, mem_setOf_eq, mem_inter_iff,
+    mem_parts, SetLike.mem_coe]
+  refine ⟨fun ⟨hne, a, haP, b, hbQ, heq⟩ => ?_,
+    fun ⟨hP, hQ⟩ => ⟨P.ne_bot_of_mem hP, x, hP, x, hQ, by simp⟩⟩
+  subst heq
+  obtain rfl := hPQ.eq_of_not_disjoint haP hbQ (by rwa [disjoint_iff_inter_eq_empty])
+  simp [haP, hbQ]
 
 @[simp]
 lemma Agree.mem_inf_iff (hPQ : P.Agree Q) : s ∈ P ⊓ Q ↔ s ∈ P ∧ s ∈ Q := by
@@ -471,5 +465,25 @@ lemma iInf_induce_of_nonempty [Nonempty ι] {S : ι → Partition (Set α)} (s :
 lemma induce_inf (P Q : Partition (Set α)) (s : Set α) :
     (P ⊓ Q).induce s = P.induce s ⊓ Q.induce s := by
   rw [← sInf_pair, sInf_induce_of_nonempty (by simp), image_pair, sInf_pair]
+
+@[simp]
+lemma induce_sInter (P : Partition (Set α)) {S : Set (Set α)} (hS : S.Nonempty) :
+    P.induce (⋂₀ S) = sInf (P.induce '' S) := by
+  ext x y
+  simp +contextual only [induce_apply, mem_sInter, sInf_rel, sInf_apply, iInf_apply, iInf_Prop_eq,
+    Subtype.forall, mem_image, exists_exists_and_eq_and, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, iff_def, and_self, implies_true, true_and]
+  exact fun h => (h hS.some hS.some_mem).2.2
+
+@[simp]
+lemma induce_iInter (P : Partition (Set α)) [Nonempty ι] {S : ι → Set α} :
+    P.induce (⋂ i, S i) = ⨅ i, P.induce (S i) := by
+  change P.induce (⋂₀ range S) = _
+  rw [induce_sInter P (range_nonempty S), sInf_image, iInf_range]
+
+@[simp]
+lemma induce_inter (P : Partition (Set α)) (s t : Set α) :
+    P.induce (s ∩ t) = P.induce s ⊓ P.induce t := by
+  rw [← sInf_pair, ← sInter_pair, induce_sInter P (by simp), image_pair]
 
 -- Compl does not exist
