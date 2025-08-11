@@ -294,7 +294,13 @@ lemma freeSpike_self_dual (ι : Type*) :
   simp only [dual_dual]
   rw[←truncate_freeLift_comm ]
 
+def Twolegs {ι : Type*} (i j : ι) : Set (ι × Bool) := {(i, true),(i,false),(j,true),(j,false)}
 
+@[ext] structure Spike {ι : Type*} (M : Matroid (ι × Bool)) where
+  (forall_circ : ∀ i j : ι, M.IsCircuit (Twolegs i j) )
+  (forall_cocirc : ∀ i j : ι, M.IsCocircuit (Twolegs i j) )
+
+--lemma Spike_self_dual {ι : Type*} (M : Spike ) : M✶
 
 
 -- def freeSpike (ι : Type*) : Matroid (ι × Bool) :=
