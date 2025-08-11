@@ -291,7 +291,7 @@ lemma IsModularFamily.comap_iff {β : Type*} {f : α → β} {M : Matroid β} (h
   have hBi := hB.isBasis_inter i
   simp only [comap_isBasis_iff, inter_subset_left, and_true, image_inter hf]
   rwa [and_iff_left hf.injOn, hB', ← inter_assoc,
-    inter_eq_self_of_subset_left (image_subset _ (subset_iUnion _ _))]
+    inter_eq_self_of_subset_left (image_mono (subset_iUnion _ _))]
 
 lemma isModularFamily_map_iff (f : α → η) (hf : InjOn f M.E) {Xs : ι → Set η} :
     (M.map f hf).IsModularFamily Xs ↔ ∃ Ys, M.IsModularFamily Ys ∧ ∀ i, Xs i = f '' (Ys i) := by

@@ -236,7 +236,7 @@ noncomputable def PolymatroidFn_of_zero [DecidableEq α]: PolymatroidFn (fun _ :
           simp_all only [not_true_eq_false]
         simp only [preimage_union, this, union_empty, sum'_indep_iff.mp hI.1.1 j]
     obtain h'' := hI.2 (sum'_indep_iff.mpr this)
-      (union_subset hI.1.2 (subset_trans (image_mono h) (image_preimage_subset _ _)))
+      (union_subset hI.1.2 (subset_trans (image_mono h) (image_preimage_mono _)))
       subset_union_left
     exact subset_trans (subset_preimage_image _ _)
       (preimage_mono (union_subset_iff.mp h'').2)

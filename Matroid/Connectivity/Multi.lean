@@ -145,7 +145,7 @@ lemma multiConn_mono (M : Matroid α) (hXY : ∀ i, X i ⊆ Y i) :
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
   choose J hJ using fun i ↦ (hI i).indep.subset_isBasis'_of_subset <| (hI i).subset.trans (hXY i)
   rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity (fun i ↦ (hJ i).1)]
-  exact nullity_le_of_subset _ (iUnion_mono fun i ↦ image_subset _ (hJ i).2)
+  exact nullity_le_of_subset _ (iUnion_mono fun i ↦ image_mono (hJ i).2)
 
 lemma multiConn_map_image {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E)
     (X : ι → Set α) (hXE : ∀ i, X i ⊆ M.E) :
@@ -191,10 +191,10 @@ lemma multiConn_cond {I J X Y : Set α} (hIX : M.IsBasis' I X) (hJY : M.IsBasis'
   simp only [multiConn_eq_comap_nullity hb, iUnion_bool, cond_true, cond_false]
   have hI : (M.comap Prod.fst).Indep ((·, true) '' I) := hIX.indep.comap hinv
   rw [← hI.nullity_project_of_disjoint aux_dj, nullity_eq_nullity_add_encard_diff
-    (X := (·, false) '' (J \ I)) (image_subset _ diff_subset),
+    (X := (·, false) '' (J \ I)) (image_mono diff_subset),
     hI.nullity_project_of_disjoint aux_dj, nullity_comap, image_union,
     hinv.image_image, hinv.image_image, union_diff_self, InjOn.image_diff (by simp),
-    diff_diff_right_self, inter_eq_self_of_subset_right (image_subset _ inter_subset_left),
+    diff_diff_right_self, inter_eq_self_of_subset_right (image_mono inter_subset_left),
     Injective.encard_image (Prod.mk_left_injective false), inter_comm]
   · rw [injOn_union aux_dj, and_iff_right hinv.injOn_image, and_iff_right hinv.injOn_image]
     aesop

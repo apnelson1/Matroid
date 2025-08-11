@@ -112,7 +112,7 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
   simp [h_eq] at hs
 
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
-  subset_antisymm (by simp) (image_subset f (subset_preimage_image _ _))
+  subset_antisymm (by simp) (image_mono (subset_preimage_image _ _))
 
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by

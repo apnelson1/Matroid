@@ -53,7 +53,7 @@ theorem GroundEquiv.image_ground (h : GroundEquiv e M N) : e '' M.E = N.E := by
 
 theorem GroundEquiv.image_subset_ground (h : GroundEquiv e M N) (X : Set α)
     (hX : X ⊆ M.E := by aesop_mat) : e '' X ⊆ N.E := by
-  replace hX := image_subset e hX
+  replace hX := image_mono hX
   rwa [← h.source_eq, e.image_source_eq_target, h.target_eq] at hX
 
 theorem GroundEquiv.symm_image_subset_ground (h : GroundEquiv e M N) (X : Set β)
@@ -77,7 +77,7 @@ theorem GroundEquiv.subset_symm_image_of_image_subset (h : GroundEquiv e M N) {X
 
 theorem GroundEquiv.image_subset_of_subset_symm_image (h : GroundEquiv e M N) {X : Set α}
     {Y : Set β} (hY : Y ⊆ N.E := by aesop_mat) (hXY : X ⊆ e.symm '' Y) : e '' X ⊆ Y := by
-  replace hXY := image_subset e hXY
+  replace hXY := image_mono hXY
   rwa [h.image_symm_image Y] at hXY
 
 theorem GroundEquiv.image_subset_iff (h : GroundEquiv e M N) {X : Set α} {Y : Set β}
@@ -149,7 +149,7 @@ theorem GroundEquiv.isWeakMap_iff_symm_image_indep (h : GroundEquiv e M N) :
 theorem GroundEquiv.isWeakMap_of_symm_image_isBase (h : GroundEquiv e M N)
     (h_isBase : ∀ ⦃B⦄, N.IsBase B → M.IsBase (e.symm '' B)) : IsWeakMap e M N :=
   h.isWeakMap_iff_symm_image_indep.2 fun _ ⟨_, hB, hIB⟩ ↦
-    (h_isBase hB).indep.subset (image_subset _ hIB)
+    (h_isBase hB).indep.subset (image_mono hIB)
 
 theorem IsWeakMap.restrict (h : IsWeakMap e M N) {X : Set α} (hX : X ⊆ M.E) {Y : Set β}
     (hY : Y ⊆ N.E) (hXY : e.IsImage X Y) :
@@ -157,7 +157,7 @@ theorem IsWeakMap.restrict (h : IsWeakMap e M N) {X : Set α} (hX : X ⊆ M.E) {
   refine ⟨h.groundEquiv.restrict (M' := M ↾ X) (N' := N ↾ Y) hX hY hXY, ?_⟩
   simp only [restrict_dep_iff, PartialEquiv.IsImage.restr_apply, and_imp]
   refine fun D hD hDX ↦ ⟨fun hi ↦ hD (h.indep_of_image hi), ?_⟩
-  have := image_subset e hDX
+  have := image_mono hDX
   rwa [← inter_eq_self_of_subset_right hY, ← h.groundEquiv.target_eq, ← hXY.image_eq,
     h.groundEquiv.source_eq, inter_eq_self_of_subset_right hX]
 

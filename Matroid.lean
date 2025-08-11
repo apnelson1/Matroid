@@ -31,7 +31,7 @@ import Matroid.Flat.LowRank
 import Matroid.Graph.Basic
 -- import Matroid.Graph.Bipartite
 -- import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Constructions.Basic
+-- import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Degree.Basic
 -- import Matroid.Graph.Degree.Constructions
 -- import Matroid.Graph.Degree.Leaf
@@ -40,20 +40,20 @@ import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Lattice
 -- import Matroid.Graph.Minor.Basic
 -- import Matroid.Graph.Simple
-import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Subgraph.Union
-import Matroid.Graph.Subgraph.Inter
+-- import Matroid.Graph.Subgraph.Basic
+-- import Matroid.Graph.Subgraph.Delete
+-- import Matroid.Graph.Subgraph.Union
+-- import Matroid.Graph.Subgraph.Inter
 -- import Matroid.Graph.Subgraph.Add
 -- import Matroid.Graph.Tree
-import Matroid.Graph.Walk.Basic
+-- import Matroid.Graph.Walk.Basic
 -- import Matroid.Graph.Walk.Cycle
 -- import Matroid.Graph.Walk.Path
 -- import Matroid.Graph.Walk.toGraph
-import Matroid.Graph.WList.Cycle
-import Matroid.Graph.WList.Defs
-import Matroid.Graph.WList.Ops
-import Matroid.Graph.WList.Sublist
+-- import Matroid.Graph.WList.Cycle
+-- import Matroid.Graph.WList.Defs
+-- import Matroid.Graph.WList.Ops
+-- import Matroid.Graph.WList.Sublist
 import Matroid.Intersection
 import Matroid.Loop
 import Matroid.Minor.Order

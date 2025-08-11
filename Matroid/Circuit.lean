@@ -315,7 +315,7 @@ lemma map_isCircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjO
   · rintro ⟨⟨C, hC, rfl⟩, h⟩
     refine ⟨C, ⟨hC, fun D hD hDC ↦ ?_⟩, rfl⟩
     rw [← hf.image_eq_image_iff hD.subset_ground hC.subset_ground]
-    exact h _ hD rfl (image_subset f hDC)
+    exact h _ hD rfl (image_mono hDC)
   rintro ⟨C₀, ⟨h,h'⟩, rfl⟩
   refine ⟨⟨C₀, h, rfl⟩, ?_⟩
   rintro _ D hD rfl hss

@@ -148,7 +148,7 @@ lemma project_comap {β : Type*} (M : Matroid β) (f : α → β) (C : Set β) (
   refine ext_closure fun X ↦ ?_
   obtain ⟨C, hC, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
   have h' : M.closure (f '' C) = M.closure (f '' (f ⁻¹' (f '' C))) := by
-    refine (M.closure_subset_closure (image_subset _ (subset_preimage_image ..))).antisymm ?_
+    refine (M.closure_subset_closure (image_mono (subset_preimage_image ..))).antisymm ?_
     rw [image_preimage_eq_inter_range, inter_eq_self_of_subset_left hC]
   simp only [comap_closure_eq, project_closure, image_union, closure_union_congr_right h']
 

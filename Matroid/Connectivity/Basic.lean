@@ -360,7 +360,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
       rw [inter_comm]
       simp_rw [← hKX, subset_antisymm_iff, subset_inter_iff, inter_subset_left, true_and, hKX,
         singleton_subset_iff, and_iff_left <| (h0 hC).1, inter_comm]
-      refine (inter_subset_inter_right _ (image_subset _ hm)).trans ?_
+      refine (inter_subset_inter_right _ (image_mono hm)).trans ?_
       rw [cSet_inter_image_Iic (h0 hC).1 hC ]
       exact subset_iUnion _ m
 

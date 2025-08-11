@@ -12,12 +12,12 @@ theorem PartialEquiv.IsImage.restr_eq_restr_set (e : PartialEquiv α β) {s : Se
 theorem PartialEquiv.image_subset_target (e : PartialEquiv α β) {s : Set α} (hs : s ⊆ e.source) :
     e '' s ⊆ e.target := by
   rw [← e.image_source_eq_target]
-  exact image_subset _ hs
+  exact image_mono hs
 
 theorem PartialEquiv.symm_image_subset_source (e : PartialEquiv α β) {s : Set β}
     (hs : s ⊆ e.target) : e.symm '' s ⊆ e.source := by
   rw [← e.symm_image_target_eq_source]
-  exact image_subset _ hs
+  exact image_mono hs
 
 theorem PartialEquiv.image_isImage_of_subset_source (e : PartialEquiv α β) {s : Set α}
     (h : s ⊆ e.source) : e.IsImage s (e '' s) := by

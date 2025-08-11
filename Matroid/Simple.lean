@@ -307,7 +307,7 @@ lemma Simple.exists_subset_isSimplification (hX : (M ↾ X).Simple) :
     (fun _ _ ↦ hX.eq_of_parallel_of_mem)
   refine ⟨_, ⟨f,rfl⟩, ?_⟩
   rw [← image_id X, ← hf.image_eq]
-  exact image_subset f hX.subset_isNonloops
+  exact image_mono hX.subset_isNonloops
 
 lemma IsSimplification.restriction (h : N.IsSimplification M) : N ≤r M := by
   obtain ⟨f, rfl⟩ := h

@@ -111,7 +111,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     · obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
       refine ⟨↑(e '' B), (he B).1 hB, ?_⟩
       rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
-      exact image_subset e hIB
+      exact image_mono hIB
     obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
     refine ⟨↑(e.symm '' B), by rwa [he, e.image_symm_image] , ?_⟩
     rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢

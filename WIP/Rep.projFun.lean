@@ -145,7 +145,7 @@ lemma Representable.exists_isoRestr_projectiveGeometry [M.Simple] (h : M.Represe
   · intro I hIE
     rwa [projectiveGeometry_indep_iff, v.independent_image_projFun_iff]
   rw [spanning_iff_exists_isBase_subset]
-  refine ⟨v.projFun '' B, ?_, image_subset _ hB.subset_ground⟩
+  refine ⟨v.projFun '' B, ?_, image_mono hB.subset_ground⟩
   refine Indep.isBase_of_forall_insert ?_ fun e he ↦ ?_
   · rw [v.indep_image_projFun_iff hB.subset_ground]
     exact hB.indep

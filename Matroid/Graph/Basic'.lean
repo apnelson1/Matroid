@@ -64,6 +64,16 @@ variable {α β : Type*} {x y z u v w : α} {e f : β}
 
 open Set Relation Partition
 
+def btwVx (P : Partition (Set α)) (l : α → α → Prop) : Prop :=
+  ∀ ⦃a b c d⦄, l a b → l c d → P a c ∨ P a d
+
+lemma btwVx_mono_left {P Q : Partition (Set α)} (hP : P ≤ Q) {l : α → α → Prop} (h : btwVx P l) :
+    btwVx Q l := fun _ _ _ _ hab hcd ↦ (h hab hcd).imp (rel_le_of_le hP _ _) (rel_le_of_le hP _ _)
+
+lemma btwVx_anti_right {P : Partition (Set α)} {l l' : α → α → Prop} (hle : l ≤ l')
+    (h : btwVx P l') : btwVx P l := fun _ _ _ _ hab hcd ↦ h (hle _ _ hab) (hle _ _ hcd)
+
+
 /-- A multigraph with vertices of type `α` and edges of type `β`,
 as described by vertex and edge sets `vertexSet : Set α` and `edgeSet : Set β`,
 and a predicate `IsLink` describing whether an edge `e : β` has vertices `x y : α` as its ends.
@@ -91,7 +101,7 @@ structure Graph (α β : Type*) where
   /-- If `e` goes from `x` to `y`, it goes from `y` to `x`. -/
   isLink_symm : ∀ ⦃e⦄, e ∈ edgeSet → (Symmetric <| IsLink e)
   /-- An edge is incident with at most one pair of vertices. -/
-  dup_or_dup_of_isLink_of_isLink : ∀ ⦃e x y v w⦄, IsLink e x y → IsLink e v w → Dup x v ∨ Dup x w
+  dup_or_dup_of_isLink_of_isLink : ∀ ⦃e⦄, btwVx Dup (IsLink e)
   /-- An edge `e` is incident to something if and only if `e` is in the edge set. -/
   edge_mem_iff_exists_isLink : ∀ ⦃e⦄, e ∈ edgeSet ↔ ∃ x y, IsLink e x y := by exact fun _ ↦ Iff.rfl
   /-- If some edge `e` is incident to `x`, then `x ∈ V`. -/
@@ -562,8 +572,34 @@ instance (V : Set α) (IsLink : β → α → α → Prop) (edgeSet : Set β)
   atomic_dup := by simp
 
 @[simps]
+def mk' (P : Partition (Set α)) (l : β → α → α → Prop) : Graph α β where
+  Dup := P
+  IsLink e x y :=
+    let l' := SymmClosure (l e)
+    (btwVx P <| l') ∧ Domp P l' x y
+  isLink_symm e he x y := by
+    rintro ⟨h, hxy⟩
+    exact ⟨h, symm hxy⟩
+  dup_or_dup_of_isLink_of_isLink e x y v w := by
+    rintro ⟨h, x', hPxx', y', hy'x', hPy'y⟩ ⟨_, v', hPvv', w', hw'v', hPw'w⟩
+    obtain h | h := h (symm hy'x') (symm hw'v')
+    · exact Or.inl <| trans' (trans' hPxx' h) (symm hPvv')
+    · exact Or.inr <| trans' (trans' hPxx' h) hPw'w
+  mem_vertexSet_of_isLink e x y := by
+    rintro ⟨h, z, hxz, hzy⟩
+    exact hxz.left_mem
+  isLink_of_dup e x y z := by
+    rintro hxy ⟨h, hyz⟩
+    exact ⟨h, trans' hxy hyz⟩
+
+lemma isLink_mk'_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} (hl : l e x y)
+    (h : btwVx P <| SymmClosure (l e)) (hx : x ∈ P.supp) (hy : y ∈ P.supp) :
+    (mk' P l).IsLink e x y :=
+  ⟨h, x, rel_self_of_mem_supp hx, y, Or.inr hl, rel_self_of_mem_supp hy⟩
+
+@[simps]
 def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
-    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) : Graph α β where
+    (h : ∀ ⦃e⦄, btwVx P (l e)) : Graph α β where
   Dup := P
   IsLink e := Domp P (l e)
   isLink_symm e he := IsSymm.symm
@@ -581,8 +617,8 @@ def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, 
   isLink_of_dup e x y z := trans'
 
 lemma isLink_mk_of_domp_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
-    (h : ∀ {e a b c d}, l e a b → l e c d → P a c ∨ P a d) (hl : l e x y) (hx : x ∈ P.supp)
-    (hy : y ∈ P.supp) : (mk_of_domp P l h).IsLink e x y := by
+    (h : ∀ ⦃e⦄, btwVx P (l e)) (hl : l e x y) (hx : x ∈ P.supp) (hy : y ∈ P.supp) :
+    (mk_of_domp P l h).IsLink e x y := by
   rw [mk_of_domp_isLink]
   exact ⟨x, Partition.rel_self_of_mem_supp hx, y, symm hl, Partition.rel_self_of_mem_supp hy⟩
 
@@ -615,5 +651,10 @@ protected lemma ext {G₁ G₂ : Graph α β} (hD : G₁.Dup = G₂.Dup)
 lemma ext_inc {G₁ G₂ : Graph α β} (hV : G₁.Dup = G₂.Dup) (h : ∀ e x, G₁.Inc e x ↔ G₂.Inc e x) :
     G₁ = G₂ :=
   Graph.ext hV fun _ _ _ ↦ by simp_rw [isLink_iff_inc_dup, h, hV]
+
+@[simp↓]
+lemma mk'_eq_mk_of_domp {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
+    (h : ∀ ⦃e⦄, btwVx P (l e)) : mk' P l = mk_of_domp P l h :=
+  Graph.ext (by rfl) (by simp [h])
 
 end Graph

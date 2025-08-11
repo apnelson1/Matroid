@@ -56,11 +56,11 @@ lemma IsBase.sigma (h : ∀ i, (M i).IsBase (B i)) :
 lemma IsBasis.sigma (h : ∀ i, (M i).IsBasis (I i) (X i)) :
     (Matroid.sigma M).IsBasis (⋃ i, Sigma.mk i '' (I i)) (⋃ i, Sigma.mk i '' (X i)) := by
   refine Indep.isBasis_of_maximal_subset (Indep.sigma (fun i ↦ (h i).indep)) ?_ ?_
-  · exact iUnion_subset fun i ↦ (subset_iUnion_of_subset i (image_subset _ (h i).subset))
+  · exact iUnion_subset fun i ↦ (subset_iUnion_of_subset i (image_mono (h i).subset))
   simp only [sigma_indep_iff, iUnion_subset_iff, image_subset_iff]
   intro Js hJ hIJ hJX
   rw [← iUnion_image_preimage_sigma_mk_eq_self (s := Js), iUnion_subset_iff]
-  refine fun i ↦ subset_iUnion_of_subset i (image_subset _ ?_)
+  refine fun i ↦ subset_iUnion_of_subset i (image_mono ?_)
   rw [(h i).eq_of_subset_indep (hJ i) (hIJ i)]
   simpa using preimage_mono (f := Sigma.mk i) hJX
 

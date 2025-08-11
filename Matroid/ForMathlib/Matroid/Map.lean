@@ -45,7 +45,7 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
   simp only [map_indep_iff, comapOn_indep_iff, restrict_indep_iff]
   refine ⟨?_, fun ⟨hI, hIR⟩ ↦ ?_⟩
   · rintro ⟨I, ⟨hind,-,hss⟩, rfl⟩
-    exact ⟨hind, image_subset f hss⟩
+    exact ⟨hind, image_mono hss⟩
   obtain ⟨I₀, hI₀R, hbij⟩ := SurjOn.exists_bijOn_subset hIR
   exact ⟨I₀, ⟨by rwa [hbij.image_eq], hbij.injOn, hI₀R⟩, hbij.image_eq.symm⟩
 
@@ -63,13 +63,13 @@ lemma comap_restrict_range_inter (M : Matroid β) (f : α → β) :
 
 lemma IsBasis'.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis' I X)
     (hinv : LeftInvOn f g X) : (M.comap f).IsBasis' (g '' I) (g '' X) := by
-  rwa [comap_isBasis'_iff, and_iff_left (image_subset _ h.subset),
+  rwa [comap_isBasis'_iff, and_iff_left (image_mono h.subset),
     and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
     (hinv.mono h.subset).image_image]
 
 lemma IsBasis.comap {f : β → α} {g : α → β} {I X : Set α} (h : M.IsBasis I X)
     (hinv : LeftInvOn f g X) : (M.comap f).IsBasis (g '' I) (g '' X) := by
-  rwa [comap_isBasis_iff, and_iff_left (image_subset _ h.subset),
+  rwa [comap_isBasis_iff, and_iff_left (image_mono h.subset),
     and_iff_left (hinv.mono h.subset).injOn_image, hinv.image_image,
     (hinv.mono h.subset).image_image]
 
@@ -87,7 +87,7 @@ an element outside `M.E` that collides with something in `M.E`-/
 lemma IsBasis'.mapEmbedding {I : Set α} {f : α ↪ β} (h : M.IsBasis' I X)  :
     (M.mapEmbedding f).IsBasis' (f '' I) (f '' X) := by
   rw [isBasis'_iff_isBasis_closure, mapEmbedding_image_closure_eq,
-    and_iff_left (image_subset _ h.subset)]
+    and_iff_left (image_mono h.subset)]
   apply h.isBasis_closure_right.map
 
 @[simp]
@@ -155,7 +155,7 @@ lemma comapOn_dual {f : α → β} {X : Set α} {N : Matroid β} (h_bij : BijOn 
   rw [dual_isBase_iff, comapOn_isBase_iff_of_bijOn (by simpa), comapOn_ground_eq,
     comapOn_isBase_iff_of_bijOn (by simpa), and_iff_left diff_subset, and_iff_left hB,
     dual_isBase_iff', ← h_bij.image_eq, image_diff_of_injOn h_bij.injOn hB,
-    and_iff_left (image_subset _ hB)]
+    and_iff_left (image_mono hB)]
 
 lemma comap_dual {f : α → β} {N : Matroid β} (h_bij : BijOn f (f ⁻¹' N.E) N.E) :
     (N.comap f)✶ = N✶.comap f := by
