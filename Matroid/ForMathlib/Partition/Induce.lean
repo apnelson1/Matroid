@@ -12,16 +12,16 @@ section Induce
 variable [CompleteLattice α] {P Q R : Partition α}
 
 @[simps!]
-def induce (P : Partition α) (a : α) : Partition α :=
+protected def induce (P : Partition α) (a : α) : Partition α :=
   ofIndependent' (u := (a ⊓ ·) '' P.parts) <| P.indep.image (fun _ ↦ inf_le_right)
 
-@[simp]
+@[simp 80]
 lemma induce_supp : (P.induce a).supp = ⨆ t ∈ P, a ⊓ t := by
-  simp [induce, sSup_image]
+  simp [Partition.induce, sSup_image]
 
 @[simp]
 lemma mem_induce_iff : x ∈ P.induce a ↔ x ≠ ⊥ ∧ ∃ t ∈ P, a ⊓ t = x := by
-  simp [induce, and_comm]
+  simp [Partition.induce, and_comm]
 
 lemma inf_mem_induce (h : x ∈ P) (hne : a ⊓ x ≠ ⊥) : a ⊓ x ∈ P.induce a := by
   simp only [mem_induce_iff, ne_eq, hne, not_false_eq_true, true_and]
@@ -42,7 +42,7 @@ lemma induce_empty : P.induce ⊥ = ⊥ := by
   simp +contextual [eq_comm]
 
 @[simp]
-lemma induce_induce : induce (induce P a) b = induce P (b ⊓ a) := by
+lemma induce_induce : Partition.induce (Partition.induce P a) b = Partition.induce P (b ⊓ a) := by
   ext x
   simp only [mem_induce_iff, ne_eq, and_congr_right_iff]
   refine fun hne => ⟨fun h => ?_, fun h => ?_⟩
@@ -114,8 +114,8 @@ section InduceFrame
 variable [Order.Frame α] {P Q R : Partition α} {a b c x y : α}
 
 @[simp↓]
-lemma induce_supp' (P : Partition α) (a : α) : (induce P a).supp = a ⊓ P.supp := by
-  simp only [induce, supp_ofIndependent']
+lemma induce_supp' (P : Partition α) (a : α) : (Partition.induce P a).supp = a ⊓ P.supp := by
+  simp only [Partition.induce, supp_ofIndependent']
   rw [sSup_image, ← inf_sSup_eq]
   rfl
 
@@ -209,6 +209,21 @@ lemma Agree.mono {P₀ Q₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) (h
   exact ⟨S, hP.trans hPS, hQ.trans hQS⟩
 
 end Restrict
+
+lemma induce_sSup_eq_restrict [Order.Frame α] (P : Partition α) (a : α) :
+    P.induce (sSup {s | s ∈ P.parts ∧ ¬ Disjoint a s}) =
+    P.restrict {s | s ∈ P.parts ∧ ¬ Disjoint a s} (fun x ↦ by aesop) := by
+  ext x
+  simp only [mem_parts, SetLike.mem_coe, mem_induce_iff, ne_eq, mem_restrict_iff, mem_setOf_eq]
+  refine ⟨?_, fun ⟨hxP, hax⟩ => ⟨P.ne_bot_of_mem hxP, x, hxP, inf_eq_right.mpr <|
+    le_sSup_of_le (by use hxP) le_rfl⟩⟩
+  rintro ⟨hne, t, htP, rfl⟩
+  rw [← disjoint_iff, sSup_disjoint_iff] at hne
+  obtain ⟨s, hsP, hdisjas, hdisjst⟩ := (by simpa using hne); clear hne
+  obtain rfl := P.eq_of_not_disjoint hsP htP hdisjst
+  rw [inf_eq_right.mpr <| le_sSup_of_le (by use htP) le_rfl]
+  exact ⟨hsP, hdisjas⟩
+
 
 section RestrictDistrib
 
@@ -455,17 +470,6 @@ lemma inf_parts_eq_biUnion : (P ⊓ Q) = (⋃ a ∈ P, ⋃ b ∈ Q, {a ⊓ b}) \
 lemma mem_inf_iff : x ∈ P ⊓ Q ↔ x ≠ ⊥ ∧ ∃ a ∈ P, ∃ b ∈ Q, a ⊓ b = x := by
   change _ ∈ (P.bind _ _).parts ↔ _
   simp
-
--- @[simp]
--- lemma inf_supp : (P ⊓ Q).supp = P.supp ⊓ Q.supp := by
---   unfold supp
---   rw [inf_parts_eq_biUnion, sSup_diff_singleton_bot, sSup_inf_sSup, iSup_prod]
-
-  -- This lemma was added only a week ago???
-  -- rw [Set.biUnion_prod]
-
--- instance : CompleteSemilatticeInf (Partition α) where
---   sInf :=
 
 end Inf
 

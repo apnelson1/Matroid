@@ -1,4 +1,4 @@
-import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Label
 import Matroid.Graph.Constructions.Basic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
@@ -15,8 +15,6 @@ namespace Graph
 @[simps]
 def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
   vertexSet := V(G)
-  vertexSet_eq := G.vertexSet_eq
-  Dup := G.Dup
   edgeSet := E₀ ∩ E(G)
   IsLink e x y := e ∈ E₀ ∧ G.IsLink e x y
   isLink_symm _ _ _ _ h := ⟨h.1, h.2.symm⟩
@@ -32,7 +30,7 @@ scoped infixl:65 " ↾ "  => Graph.edgeRestrict
 
 @[simp]
 lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
-  dup_subset := by simp [edgeRestrict]
+  vertexSet_subset := by simp [edgeRestrict]
   isLink_of_isLink := by simp
 
 instance [G.Nodup] : Nodup (G ↾ F) := Nodup.of_le (edgeRestrict_le)
@@ -51,12 +49,12 @@ lemma edgeRestrict_isNonloopAt_iff : (G ↾ F).IsNonloopAt e x ↔ G.IsNonloopAt
   aesop
 
 lemma edgeRestrict_mono_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ ⊆ F) : G ↾ F₀ ≤ G ↾ F where
-  dup_subset := by simp [edgeRestrict]
+  vertexSet_subset := by simp [edgeRestrict]
   isLink_of_isLink _ _ _ := fun h ↦ ⟨hss h.1, h.2⟩
 
 lemma edgeRestrict_mono_left (h : H ≤ G) (F : Set β) : H ↾ F ≤ G ↾ F :=
   le_of_le_isLabelSubgraph_subset_subset (edgeRestrict_le.trans h)
-    (isLabelSubgraph_of_le edgeRestrict_le) (by simpa using vertexSet_mono h)
+    (isLabelSubgraph_of_le edgeRestrict_le) (by simpa using labelSet_mono h)
     <| by simp [inter_subset_right.trans (edgeSet_mono h)]
 
 @[simp]
@@ -84,7 +82,7 @@ lemma edgeRestrict_edgeRestrict (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ 
 @[simp]
 lemma le_edgeRestrict_iff : H ≤ (G ↾ F) ↔ H ≤ G ∧ E(H) ⊆ F :=
   ⟨fun h ↦ ⟨h.trans (by simp), (edgeSet_mono h).trans (by simp)⟩,
-    fun h ↦ le_of_le_isLabelSubgraph_subset_subset h.1 (by simp) (by simpa using vertexSet_mono h.1)
+    fun h ↦ le_of_le_isLabelSubgraph_subset_subset h.1 (by simp) (by simpa using labelSet_mono h.1)
     <| subset_inter h.2 (edgeSet_mono h.1)⟩
 
 @[simp]
@@ -97,7 +95,7 @@ but we define it with `copy` so that the edge set is definitionally equal to `E(
 @[simps!]
 def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
   (G.edgeRestrict (E(G) \ F)).copy (E := E(G) \ F)
-  (IsLink := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl rfl
+  (IsLink := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl
   (by simp [diff_subset])
   (fun e x y ↦ by
     simp only [edgeRestrict_isLink, mem_diff, and_comm, and_congr_left_iff, and_iff_left_iff_imp]
@@ -188,36 +186,28 @@ lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
   ⟨by simp, edgeDelete_le.isLink_of_isLink⟩
 
 
--- /-- The subgraph of `G` induced by a set `X` of vertices.
--- The edges are the edges of `G` with both ends in `X`.
--- (`X` is not required to be a subset of `V(G)` for this definition to work,
--- even though this is the standard use case) -/
--- @[simps! dup vertexSet]
--- protected def induce (G : Graph α β) (X : Set α) : Graph α β where
---   dup x y := x ∈ X ∧ y ∈ X ∧ (G.Dup x y ∨ x = y)
---   dup_refl_iff := by simp
---   dup_symm x y := by
---     rintro ⟨hx, hy, h | rfl⟩
---     on_goal 1 => simp only [G.Dup_symm h, true_or, and_true]
---     all_goals simp [hx, hy]
---   dup_trans x y z := by
---     rintro ⟨hx, hy, h | rfl⟩ ⟨hy', hz, h' | rfl⟩ <;> simp [hx, hy, hy', hz] <;> left <;>
---     try tauto
---     exact h.trans h'
---   IsLink e x y := G.IsLink e x y ∧ x ∈ X ∧ y ∈ X
---   isLink_symm _ _ x := by simp +contextual [G.isLink_comm (x := x)]
---   dup_or_dup_of_isLink_of_isLink e a b c d := by
---     rintro ⟨hl, ha, hb⟩ ⟨hl', hc, hd⟩
---     simp only [ha, hc, true_and, hd]
---     refine (G.Dup_or_dup_of_isLink_of_isLink hl hl').imp ?_ ?_ <;> tauto
---   left_mem_of_isLink := by simp +contextual
---   isLink_of_dup e x y z := by
---     rintro ⟨hx, hy, h | rfl⟩ <;> simp only [hx, true_and, hy, imp_self]
---     rw [h.isLink_left]
---     exact id
+/-- The subgraph of `G` induced by a set `X` of vertices.
+The edges are the edges of `G` with both ends in `X`.
+(`X` is not required to be a subset of `V(G)` for this definition to work,
+even though this is the standard use case) -/
+@[simps! vertexSet edgeSet isLink]
+protected def induce (G : Graph α β) (X : Set α) : Graph α β :=
+  G.labelInduce (⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s})
 
--- /-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
--- notation:max G:1000 "[" S "]" => Graph.induce G S
+/-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
+notation:max G:1000 "[" S "]" => Graph.induce G S
+
+@[simp]
+lemma induce_labelSet (G : Graph α β) (X : Set α) :
+    L(G[X]) = ⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s} := by
+  ext a
+  simp only [Graph.induce, labelInduce_vertexSet, induce_supp, inf_eq_inter, iSup_eq_iUnion,
+    mem_iUnion, mem_inter_iff, mem_sUnion, mem_setOf_eq, exists_and_left, exists_prop,
+    and_iff_left_iff_imp, forall_exists_index, and_imp]
+  tauto
+
+
+
 
 -- @[simp]
 -- lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X :=
