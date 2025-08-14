@@ -12,22 +12,23 @@ section Repartition
 /-- Repartition changes the labels of the graph. This can be used for adding new labels and
     vertices to a given graph but also identifying vertices. -/
 @[simps!]
-def Repartition (G : Graph α β) (P : Partition (Set α)) : Graph α β :=
+def repartition (G : Graph α β) (P : Partition (Set α)) : Graph α β :=
   mk' P G.IsLink
 
 @[simp]
-lemma repartition_self (G : Graph α β) : G.Repartition V(G) = G :=
+lemma repartition_self (G : Graph α β) : G.repartition V(G) = G :=
   Graph.ext (by simp) fun e x y => by
     simp [G.dup_or_dup_of_isLink_of_isLink, Relation.domp_eq]
 
+@[simp]
 lemma repartition_isLink_of_vertexSet_le (hP : V(G) ≤ P) :
-    (G.Repartition P).IsLink e = Relation.Domp P (G.IsLink e) := by
+    (G.repartition P).IsLink e = Relation.Domp P (G.IsLink e) := by
   ext x y
   simp [btwVx_mono_left hP (G.dup_or_dup_of_isLink_of_isLink (e := e))]
 
 @[simp]
 lemma repartition_inc_of_vertexSet_le (hP : V(G) ≤ P) :
-    (G.Repartition P).Inc = Relation.Comp G.Inc P := by
+    (G.repartition P).Inc = Relation.Comp G.Inc P := by
   ext e x
   unfold Inc
   simp only [repartition_isLink_of_vertexSet_le hP]
@@ -36,23 +37,36 @@ lemma repartition_inc_of_vertexSet_le (hP : V(G) ≤ P) :
 
 @[simp]
 lemma repartition_adj_of_vertexSet_le (hP : V(G) ≤ P) :
-    (G.Repartition P).Adj = Relation.Domp P G.Adj := by
+    (G.repartition P).Adj = Relation.Domp P G.Adj := by
   ext x y
   unfold Adj
   simp only [repartition_isLink_of_vertexSet_le hP]
   exact ⟨fun ⟨e, a, hxa, b, hlba, hby⟩ ↦ ⟨a, hxa, b, ⟨e, hlba⟩, hby⟩,
     fun ⟨a, hxa, b, ⟨e, hlba⟩, hby⟩ ↦ ⟨e, a, hxa, b, hlba, hby⟩⟩
 
+lemma repartition_isLink_of_vertexSet_isInducedSubpartition (hP : P ≤ip V(G)) :
+    (G.repartition P).IsLink e = fun x y ↦ G.IsLink e x y ∧ x ∈ P.supp ∧ y ∈ P.supp := by
+  ext x y
+  nth_rw 1 [← hP]
+  simp only [repartition_isLink, btwVx_induce_iff, G.dup_or_dup_of_isLink_of_isLink, true_and,
+    induce_rel]
+  refine ⟨fun ⟨h, x', hx', y', hy'x', hy'⟩ => ⟨trans' (trans' hx'.2.2 hy'x'.symm) hy'.2.2, hx'.1,
+    hy'.2.1⟩, fun ⟨hxy, hx, hy⟩ => ⟨?_, x, ?_, y, hxy.symm, ?_⟩⟩
+  · rintro a b hab
+    rw [← rel_self_iff_mem_supp, ← rel_self_iff_mem_supp]
+    obtain ha | ha := G.dup_or_dup_of_isLink_of_isLink hab hxy
+  exact repartition_isLink_of_vertexSet_le hP
+
 lemma repartition_le_repartition_of_subset {P Q : Partition (Set α)} (hPQ : P ⊆ Q) :
-    G.Repartition P ≤ G.Repartition Q where
+    G.repartition P ≤ G.repartition Q where
   vertexSet_subset := by simp [hPQ]
   isLink_of_isLink e x y := by
-    simp only [Repartition_isLink, and_imp]
+    simp only [repartition_isLink, and_imp]
     exact fun hbtw hPxy ↦ ⟨btwVx_mono_left (le_of_subset hPQ) hbtw,
       Relation.domp_mono (rel_le_of_le (le_of_subset hPQ)) le_rfl x y hPxy⟩
 
 lemma repartition_le_repartition_iff {P Q : Partition (Set α)} :
-    G.Repartition P ≤ G.Repartition Q ↔ P ⊆ Q :=
+    G.repartition P ≤ G.repartition Q ↔ P ⊆ Q :=
   ⟨fun h ↦ h.1, repartition_le_repartition_of_subset⟩
 
 end Repartition
@@ -60,13 +74,18 @@ end Repartition
 section LabelInduce
 
 /-- The graph obtained from `G` by inducing a set of labels. -/
-@[simps! vertexSet edgeSet isLink]
+@[simps! vertexSet edgeSet]
 def labelInduce (G : Graph α β) (X : Set α) : Graph α β :=
-  G.Repartition (V(G).induce X)
+  G.repartition (V(G).induce X)
 
 @[simp]
 lemma labelInduce_labelSet (G : Graph α β) (X : Set α) : L(G.labelInduce X) = L(G) ∩ X := by
   simp [labelInduce, inter_comm, induce_supp']
+
+@[simp]
+lemma labelInduce_isLink {X : Set α} :
+    (G.labelInduce X).IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X := by
+  simp? [labelInduce]
 
 end LabelInduce
 

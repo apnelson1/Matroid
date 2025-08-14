@@ -14,7 +14,7 @@ namespace Graph
 
 /-- `foo H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
 structure IsLabelSubgraph (H G : Graph α β) : Prop where
-  vertexSet_induce : V(G).induce L(H) = V(H)
+  vertexSet_isInducedSubpartition : V(H) ≤ip V(G)
   isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 /-- `H ≤l G` means that `H` is a label subgraph of `G`. -/
@@ -23,7 +23,7 @@ scoped infixl:50 " ≤l " => Graph.IsLabelSubgraph
 lemma IsLabelSubgraph.dup_iff (hlle : H ≤l G) :
     ∀ ⦃x y⦄, x ∈ L(H) → y ∈ L(H) → (V(G) x y ↔ V(H) x y) := by
   intro x y hx hy
-  rw [← hlle.vertexSet_induce]
+  rw [← hlle.vertexSet_isInducedSubpartition]
   simp [hx, hy]
 
 lemma IsLabelSubgraph.dup (h : V(H) x y) (hlle : H ≤l G) : V(G) x y := by
@@ -46,9 +46,8 @@ lemma IsLabelSubgraph.dup_iff_dup_of_mem (hlle : H ≤l G) (hx : x ∈ L(H)) (hy
     V(G) x y ↔ V(H) x y :=
   ⟨(hlle.dup_of_mem · hx hy), hlle.dup⟩
 
-lemma IsLabelSubgraph.vertexSet_le (hlle : H ≤l G) : V(H) ≤ V(G) := by
-  rw [← hlle.vertexSet_induce]
-  exact V(G).induce_le
+lemma IsLabelSubgraph.vertexSet_le (hlle : H ≤l G) : V(H) ≤ V(G) :=
+  hlle.vertexSet_isInducedSubpartition.le
 
 lemma IsLabelSubgraph.labelSet (hlle : H ≤l G) : L(H) ⊆ L(G) :=
   supp_le_of_le hlle.vertexSet_le
@@ -59,18 +58,16 @@ instance : IsRefl (Graph α β) IsLabelSubgraph where
   refl _ := isLabelSubgraph_rfl
 
 lemma IsLabelSubgraph.trans (h₁ : H ≤l G) (h₂ : G ≤l K) : H ≤l K where
-  vertexSet_induce := by
-    rw [← h₁.vertexSet_induce, ← h₂.vertexSet_induce, induce_induce, induce_eq_induce_iff]
-    simp
+  vertexSet_isInducedSubpartition :=
+    h₁.vertexSet_isInducedSubpartition.trans h₂.vertexSet_isInducedSubpartition
   isLink_of_isLink _ _ _ h := h₂.2 (h₁.2 h)
 
 instance : IsTrans (Graph α β) IsLabelSubgraph where
   trans _ _ _ := IsLabelSubgraph.trans
 
-lemma IsLabelSubgraph.antisymm (h₁ : G ≤l H) (h₂ : H ≤l G) : G = H := by
-  refine Graph.ext ?_ fun e x y ↦ ⟨fun a ↦ h₁.isLink_of_isLink a, fun a ↦ h₂.isLink_of_isLink a⟩
-  rw [← h₁.vertexSet_induce, induce_eq_self_iff]
-  exact h₂.labelSet
+lemma IsLabelSubgraph.antisymm (h₁ : G ≤l H) (h₂ : H ≤l G) : G = H :=
+  Graph.ext (h₁.vertexSet_isInducedSubpartition.eq_of_supp_le h₂.labelSet)
+    fun _ _ _ ↦ ⟨(h₁.isLink_of_isLink ·), (h₂.isLink_of_isLink ·)⟩
 
 instance : IsAntisymm (Graph α β) IsLabelSubgraph where
   antisymm _ _ := IsLabelSubgraph.antisymm
@@ -113,7 +110,7 @@ lemma exists_isLink_of_isLabelSubgraph_of_mem_edgeSet (hlle : H ≤l G) (he : e 
 
 lemma isLabelSubgraph_iff : H ≤l G ↔ (V(G).induce L(H) = V(H)) ∧
     ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
-  ⟨fun h ↦ ⟨h.vertexSet_induce, h.isLink_of_isLink⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.vertexSet_isInducedSubpartition, h.isLink_of_isLink⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 lemma isLabelSubgraph_of (hdup : V(G).induce L(H) = V(H))
     (hlink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y) : H ≤l G :=
@@ -159,16 +156,13 @@ lemma Adj.of_isLabelSubgraph (h : H.Adj x y) (hlle : H ≤l G) : G.Adj x y :=
 alias IsLabelSubgraph.adj := Adj.of_isLabelSubgraph
 
 lemma IsLabelSubgraph.of_isLabelSubgraph_isLabelSubgraph_subset_subset {H₁ H₂ : Graph α β}
-    (h₁ : H₁ ≤l G) (h₂ : H₂ ≤l G) (hV : L(H₁) ⊆ L(H₂)) (hE : E(H₁) ⊆ E(H₂)) :
+    (h₁ : H₁ ≤l G) (h₂ : H₂ ≤l G) (hL : L(H₁) ⊆ L(H₂)) (hE : E(H₁) ⊆ E(H₂)) :
     H₁ ≤l H₂ where
-  vertexSet_induce := by
-    rw [← h₁.vertexSet_induce, ← h₂.vertexSet_induce, induce_supp', induce_induce,
-      induce_eq_induce_iff]
-    ac_nf
-    rw [← inf_assoc, inf_eq_left.mpr hV]
-  isLink_of_isLink e x y h :=
+  vertexSet_isInducedSubpartition :=
+    h₁.vertexSet_isInducedSubpartition.of_supp_le hL h₂.vertexSet_isInducedSubpartition
+  isLink_of_isLink _ _ _ h :=
     (h.of_isLabelSubgraph h₁).of_isLabelSubgraph_of_mem_mem h₂
-    (hE h.edge_mem) (hV h.left_mem) (hV h.right_mem)
+    (hE h.edge_mem) (hL h.left_mem) (hL h.right_mem)
 
 lemma ext_of_isLabelSubgraph_eq_Set {H₁ H₂ : Graph α β} (h₁ : H₁ ≤l G) (h₂ : H₂ ≤l G)
     (hV : L(H₁) = L(H₂)) (hE : E(H₁) = E(H₂)) : H₁ = H₂ :=
@@ -186,7 +180,7 @@ instance : LE (Graph α β) where
 
 @[simp]
 def isLabelSubgraph_of_le (h : H ≤ G) : H ≤l G where
-  vertexSet_induce := induce_eq_of_subset h.vertexSet_subset
+  vertexSet_isInducedSubpartition := isInducedSubpartition_of_subset h.vertexSet_subset
   isLink_of_isLink := h.isLink_of_isLink
 
 -- lemma le_of_isLabelSubgraph [G.Nodup] (h : H ≤l G) : H ≤ G where
@@ -281,7 +275,7 @@ lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
 lemma le_of_le_isLabelSubgraph_subset_subset {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤l G)
     (hV : L(H₁) ⊆ L(H₂)) (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤ H₂ where
   vertexSet_subset := by
-    rw [← h₂.vertexSet_induce]
+    rw [← h₂.vertexSet_isInducedSubpartition]
     exact subset_induce_of_supp_le h₁.vertexSet_subset hV
   isLink_of_isLink e x y h := (h.of_le h₁).of_isLabelSubgraph_of_mem_mem h₂
     (hE h.edge_mem) (hV h.left_mem) (hV h.right_mem)
@@ -289,7 +283,7 @@ lemma le_of_le_isLabelSubgraph_subset_subset {H₁ H₂ : Graph α β} (h₁ : H
 lemma le_of_isLabelSubgraph_of_isLabelSubgraph {G₁ : Graph α β} (hHG : H ≤ G) (hHG₁ : H ≤l G₁)
     (hG₁ : G₁ ≤l G): H ≤ G₁ where
   vertexSet_subset := by
-    rw [← hG₁.vertexSet_induce]
+    rw [← hG₁.vertexSet_isInducedSubpartition]
     exact subset_induce_of_supp_le hHG.vertexSet_subset hHG₁.labelSet
   isLink_of_isLink := hHG₁.isLink_of_isLink
 
@@ -366,7 +360,7 @@ lemma IsSpanningSubgraph.labelSet (hsle : H ≤s G) : L(H) = L(G) := by
 lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (hsle : H ≤s G) (hHK : H ≤l K) (hKG : K ≤l G) :
     H ≤s K where
   vertexSet_eq := by
-    rw [← hHK.vertexSet_induce]
+    rw [← hHK.vertexSet_isInducedSubpartition]
     simp_rw [hsle.vertexSet, induce_eq_self_iff]
     exact hKG.labelSet
   isLink_of_isLink := hHK.isLink_of_isLink
@@ -374,7 +368,7 @@ lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (hsle : H ≤s G) (hHK : H �
 lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (hsle : H ≤s G) (hHK : H ≤l K) (hKG : K ≤l G) :
     K ≤s G where
   vertexSet_eq := by
-    rw [← hKG.vertexSet_induce, induce_eq_self_iff, ← hsle.vertexSet_eq]
+    rw [← hKG.vertexSet_isInducedSubpartition, induce_eq_self_iff, ← hsle.vertexSet_eq]
     exact hHK.labelSet
   isLink_of_isLink := hKG.isLink_of_isLink
 

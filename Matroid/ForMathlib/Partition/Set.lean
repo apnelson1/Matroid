@@ -169,6 +169,9 @@ lemma rel_inj (h : ⇑P = ⇑Q) : P = Q :=
 lemma rel_inj_iff : ⇑P = ⇑Q ↔ P = Q :=
   ⟨fun h => rel_inj h, fun h => h ▸ rfl⟩
 
+lemma rel_le_of_isInducedSubpartition (h : P ≤ip Q) : ⇑P ≤ ⇑Q :=
+  rel_le_of_le h.le
+
 lemma rel_le_of_subset (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
   rel_le_of_le <| le_of_subset h
 
@@ -272,6 +275,29 @@ lemma partOf_mem_iff_rel_iff {Q : Partition (Set α)} :
   simp only [partOf, mem_fiber_iff]
   rw [rel_comm, ← hrel y, rel_comm]
 
+@[simp]
+lemma induce_rel (P : Partition (Set α)) {S : Set α} :
+    ⇑(P.induce S) = fun x y ↦ x ∈ S ∧ y ∈ S ∧ P x y := by
+  ext x y
+  simp only [rel_iff_exists, mem_induce_iff]
+  refine ⟨fun ⟨t, ⟨htne, t', ht'P, heq⟩, hxt, hyt⟩ ↦ ?_,
+    fun ⟨hxS, hyS, t, htP, hxt, hyt⟩ ↦ ⟨S ∩ t, ⟨?_, t, htP, rfl⟩, ⟨hxS, hxt⟩, ⟨hyS, hyt⟩⟩⟩
+  · subst t
+    exact ⟨hxt.1, hyt.1, t', ht'P, hxt.2, hyt.2⟩
+  rw [bot_eq_empty, ← nonempty_iff_ne_empty, inter_nonempty]
+  use x
+
+@[simp]
+lemma induce_apply (P : Partition (Set α)) {S : Set α} :
+    P.induce S x y ↔ x ∈ S ∧ y ∈ S ∧ P x y := by rw [induce_rel]
+
+lemma isInducedSubpartition_iff_rel (P Q : Partition (Set α)) :
+    P ≤ip Q ↔ (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ Q x y) = ⇑P := by
+  rw [isInducedSubpartition_iff, ← rel_inj_iff, induce_rel]
+
+lemma isInducedSubpartition.rel (h : P ≤ip Q) : ⇑P = fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ Q x y :=
+  (P.isInducedSubpartition_iff_rel Q).mp h |>.symm
+
 lemma restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S ⊆ P.parts) :
     ⇑(P.restrict S hS) = fun x y ↦ x ∈ ⋃₀ S ∧ P x y := by
   ext x y
@@ -295,15 +321,15 @@ lemma rel_of_subset_mem (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) :
   obtain ⟨S, hS, rfl⟩ := subset_iff_restrict.mp hPQ
   exact Q.rel_of_restrict_rel hPQ hx hxy
 
-lemma subset_iff_rel : P ⊆ Q ↔ ∀ x y, x ∈ P.supp → (P x y ↔ Q x y) := by
+lemma subset_iff_rel : P ⊆ Q ↔ ∀ ⦃x y⦄, x ∈ P.supp → (P x y ↔ Q x y) := by
   refine ⟨fun h x y hx => ⟨rel_le_of_subset h x y, rel_of_subset_mem h hx⟩, fun h s hs => ?_⟩
   rw [← fibers_rel_eq, mem_fibers_iff] at hs ⊢
   obtain ⟨x, hx, rfl⟩ := hs
   have hxsupp := codomain_rel ▸ hx
   have ⟨y, hyx⟩ := hx
-  use x, ⟨y, symm <| (h x y hxsupp).mp hyx.symm⟩
+  use x, ⟨y, symm <| (h hxsupp).mp hyx.symm⟩
   ext z
-  simp [(rel_comm.trans <| h x z hxsupp).trans rel_comm]
+  simp [(rel_comm.trans <| h hxsupp).trans rel_comm]
 
 lemma agree_iff_rel : P.Agree Q ↔ ∀ x y, x ∈ P.supp → x ∈ Q.supp → (P x y ↔ Q x y) := by
   rw [agree_iff_mem_of_not_disjoint]
@@ -344,26 +370,6 @@ lemma Agree.sup_rel_trans (h : P.Agree Q) (hab : (⇑P ⊔ ⇑Q) a b) (hbc : (�
 
 lemma inf_rel_trans (hab : (⇑P ⊓ ⇑Q) a b) (hbc : (⇑P ⊓ ⇑Q) b c) : (⇑P ⊓ ⇑Q) a c :=
   ⟨trans' hab.1 hbc.1, trans' hab.2 hbc.2⟩
-
-@[simp]
-lemma induce_rel (P : Partition (Set α)) {S : Set α} :
-    ⇑(P.induce S) = fun x y ↦ x ∈ S ∧ y ∈ S ∧ P x y := by
-  ext x y
-  simp only [rel_iff_exists, mem_induce_iff]
-  refine ⟨fun ⟨t, ⟨htne, t', ht'P, heq⟩, hxt, hyt⟩ ↦ ?_,
-    fun ⟨hxS, hyS, t, htP, hxt, hyt⟩ ↦ ⟨S ∩ t, ⟨?_, t, htP, rfl⟩, ⟨hxS, hxt⟩, ⟨hyS, hyt⟩⟩⟩
-  · subst t
-    exact ⟨hxt.1, hyt.1, t', ht'P, hxt.2, hyt.2⟩
-  rw [bot_eq_empty, ← nonempty_iff_ne_empty, inter_nonempty]
-  use x
-
-@[simp]
-lemma induce_apply (P : Partition (Set α)) {S : Set α} :
-    P.induce S x y ↔ x ∈ S ∧ y ∈ S ∧ P x y := by rw [induce_rel]
-
-lemma induce_eq_iff_rel (P Q : Partition (Set α)) :
-    P.induce Q.supp = Q ↔ (fun x y ↦ x ∈ Q.supp ∧ y ∈ Q.supp ∧ P x y) = ⇑Q := by
-  rw [← rel_inj_iff, induce_rel]
 
 @[simp]
 lemma inter_rel (P Q : Partition (Set α)) : ⇑(P ∩ Q) = fun x y ↦ ∃ s ∈ P ∩ Q, x ∈ s ∧ y ∈ s := by
@@ -411,6 +417,9 @@ protected def discrete (S : Set α) : Partition (Set α) where
 @[simp] lemma mem_discrete_iff : T ∈ (Partition.discrete S) ↔ ∃ a ∈ S, {a} = T := by
   rw [← SetLike.mem_coe, ← mem_parts]
   simp [Partition.discrete]
+
+lemma mem_discrete_of_mem_supp {x : α} (h : x ∈ S) : {x} ∈ Partition.discrete S := by
+  use x
 
 lemma rel_discrete_eq' : Partition.discrete S = fun a b => a = b ∧ b ∈ S := by
   ext a b
@@ -524,6 +533,26 @@ lemma supp_singleton_iff (hP : P.supp = {a}) : P = Partition.discrete {a} := by
 lemma atomic_of_supp_singleton (hP : P.supp = {a}) : P.Atomic := by
   rw [supp_singleton_iff hP]
   exact discrete_atomic {a}
+
+@[simp]
+lemma discrete_le_iff : Partition.discrete S ≤ P ↔ S ⊆ P.supp := by
+  refine ⟨fun h x hx => ?_, fun h t ht => ?_⟩
+  · obtain ⟨t, htP, hxt⟩ := h {x} (mem_discrete_of_mem_supp hx)
+    simp only [le_eq_subset, singleton_subset_iff] at hxt
+    exact mem_supp_iff.mpr ⟨t, htP, hxt⟩
+  obtain ⟨a, haP, rfl⟩ := (by simpa using ht); clear ht
+  exact ⟨P.partOf a, partOf_mem (h haP), by simp [rel_self_iff_mem_supp, h haP]⟩
+
+@[simp]
+lemma discrete_isInducedSubpartition_iff :
+    Partition.discrete S ≤ip Q ↔ S ⊆ Q.supp ∧ Atomic (Q.induce S) := by
+  simp only [isInducedSubpartition_iff, supp_discrete, atomic_iff_eq_discrete, ↓induce_supp',
+    inf_eq_inter]
+  refine ⟨fun h => ?_, fun ⟨hsu, heq⟩ => by rw [heq, inter_eq_left.mpr hsu]⟩
+  have hsupp : S ⊆ Q.supp := by
+    rw [← supp_discrete S, ← h]
+    exact supp_le_of_le induce_le
+  simpa [hsupp, inter_eq_left.mpr]
 
 -- What is the full generality of this?
 @[simp]

@@ -190,7 +190,7 @@ lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
 The edges are the edges of `G` with both ends in `X`.
 (`X` is not required to be a subset of `V(G)` for this definition to work,
 even though this is the standard use case) -/
-@[simps! vertexSet edgeSet isLink]
+@[simps! vertexSet edgeSet]
 protected def induce (G : Graph α β) (X : Set α) : Graph α β :=
   G.labelInduce (⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s})
 
@@ -206,12 +206,10 @@ lemma induce_labelSet (G : Graph α β) (X : Set α) :
     and_iff_left_iff_imp, forall_exists_index, and_imp]
   tauto
 
-
-
-
--- @[simp]
--- lemma induce_isLink_iff {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X :=
---   Iff.rfl
+@[simp]
+lemma induce_isLink {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X :=
+  
+  Iff.rfl
 
 -- lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
 --   ⟨h, hx, hy⟩

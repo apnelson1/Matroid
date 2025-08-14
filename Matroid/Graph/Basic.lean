@@ -78,18 +78,28 @@ refer to the `vertexSet` and `edgeSet` of `G : Graph α β`.
 If `G.IsLink e x y` then we refer to `e` as `edge` and `x` and `y` as `left` and `right` in names.
 -/
 
-variable {α β : Type*} {x y z u v w : α} {e f : β}
+variable {α β : Type*} {a b c x y z u v w : α} {e f : β} {P Q : Partition (Set α)} {S : Set α}
 
 open Set Relation Partition
 
 def btwVx (P : Partition (Set α)) (l : α → α → Prop) : Prop :=
   ∀ ⦃a b c d⦄, l a b → l c d → P a c ∨ P a d
 
-lemma btwVx_mono_left {P Q : Partition (Set α)} (hP : P ≤ Q) {l : α → α → Prop} (h : btwVx P l) :
+lemma btwVx_mono_left (hP : P ≤ Q) {l : α → α → Prop} (h : btwVx P l) :
     btwVx Q l := fun _ _ _ _ hab hcd ↦ (h hab hcd).imp (rel_le_of_le hP _ _) (rel_le_of_le hP _ _)
 
-lemma btwVx_anti_right {P : Partition (Set α)} {l l' : α → α → Prop} (hle : l ≤ l')
+lemma btwVx_anti_right {l l' : α → α → Prop} (hle : l ≤ l')
     (h : btwVx P l') : btwVx P l := fun _ _ _ _ hab hcd ↦ h (hle _ _ hab) (hle _ _ hcd)
+
+@[simp]
+lemma btwVx_induce_iff {l : α → α → Prop} [IsSymm α l] :
+    btwVx (P.induce S) l ↔ btwVx P l ∧ ∀ ⦃a b⦄, l a b → a ∈ S ∧ b ∈ S := by
+  refine ⟨fun h => ⟨fun a b c d hab hcd ↦ (h hab hcd).imp (by simp) (by simp), fun a b hab ↦ ?_⟩,
+    fun ⟨h, h'⟩ a b c d hab hcd => ?_⟩
+  · obtain ha | ha := h hab hab <;> obtain hb | hb := h (symm hab) (symm hab) <;> simp_all
+  have ⟨ha, hb⟩ := h' hab
+  have ⟨hc, hd⟩ := h' hcd
+  apply (h hab hcd).imp <;> simp_all
 
 /-- A multigraph with vertices of type `α` and edges of type `β`,
 as described by vertex and edge sets `vertexSet : Partition (Set α)` and `edgeSet : Set β`,

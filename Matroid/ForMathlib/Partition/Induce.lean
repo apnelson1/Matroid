@@ -27,15 +27,6 @@ lemma inf_mem_induce (h : x ∈ P) (hne : a ⊓ x ≠ ⊥) : a ⊓ x ∈ P.induc
   simp only [mem_induce_iff, ne_eq, hne, not_false_eq_true, true_and]
   use x
 
-lemma induce_eq_of_subset (hPQ : P ⊆ Q) : Q.induce P.supp = P := by
-  ext S
-  rw [mem_induce_iff]
-  refine ⟨?_, fun hS ↦ ⟨P.ne_bot_of_mem hS, S, hPQ hS, inf_eq_right.mpr <| P.le_of_mem hS⟩⟩
-  rintro ⟨hne, t, htQ, rfl⟩
-  rw [ne_eq, ← disjoint_iff] at hne
-  have htP := mem_of_subset_of_not_disjoint hPQ htQ hne
-  rwa [inf_eq_right.mpr (P.le_of_mem htP)]
-
 @[simp]
 lemma induce_empty : P.induce ⊥ = ⊥ := by
   ext x
@@ -105,6 +96,46 @@ lemma subset_induce_of_supp_le (hPQ : P ⊆ Q) (hP : P.supp ≤ a) : P ⊆ Q.ind
 lemma induce_eq_induce_right (h : a ⊓ P.supp = b ⊓ P.supp) : P.induce a = P.induce b :=
   (induce_le_induce_right h.le).antisymm (induce_le_induce_right h.ge)
 
+
+def isInducedSubpartition (P Q : Partition α) : Prop :=
+  Q.induce P.supp = P
+
+scoped infixl:50 " ≤ip " => isInducedSubpartition
+
+lemma isInducedSubpartition_iff : P ≤ip Q ↔ Q.induce P.supp = P := Iff.rfl
+
+lemma isInducedSubpartition.le (h : P ≤ip Q) : P ≤ Q := by
+  rw [← h]
+  exact induce_le
+
+lemma isInducedSubpartition.supp_le (h : P ≤ip Q) : P.supp ≤ Q.supp :=
+  supp_le_of_le h.le
+
+lemma isInducedSubpartition_of_subset (hPQ : P ⊆ Q) : P ≤ip Q := by
+  ext S
+  rw [mem_induce_iff]
+  refine ⟨?_, fun hS ↦ ⟨P.ne_bot_of_mem hS, S, hPQ hS, inf_eq_right.mpr <| P.le_of_mem hS⟩⟩
+  rintro ⟨hne, t, htQ, rfl⟩
+  rw [ne_eq, ← disjoint_iff] at hne
+  have htP := mem_of_subset_of_not_disjoint hPQ htQ hne
+  rwa [inf_eq_right.mpr (P.le_of_mem htP)]
+
+lemma isInducedSubpartition.eq_of_supp_le (hPQ : P ≤ip Q) (hQP : Q.supp ≤ P.supp) : P = Q := by
+  rwa [← hPQ, induce_eq_self_iff]
+
+@[simp]
+lemma isInducedSubpartition_rfl : P ≤ip P := by
+  simp [isInducedSubpartition]
+
+instance : IsRefl (Partition α) isInducedSubpartition where
+  refl _ := isInducedSubpartition_rfl
+
+lemma isInducedSubpartition.antisymm (hPQ : P ≤ip Q) (hQP : Q ≤ip P) : P = Q :=
+  hPQ.eq_of_supp_le hQP.supp_le
+
+instance : IsAntisymm (Partition α) isInducedSubpartition where
+  antisymm _ _ := isInducedSubpartition.antisymm
+
 end Induce
 
 section InduceFrame
@@ -129,6 +160,17 @@ lemma induce_eq_induce_iff : P.induce a = P.induce b ↔ a ⊓ P.supp = b ⊓ P.
 
 lemma inter_mem_induce (hne : ¬ Disjoint a b) (ht : b ∈ P) : a ⊓ b ∈ P.induce a :=
   P.mem_induce_iff.mpr ⟨by rwa [disjoint_iff_inf_le, le_bot_iff] at hne, b, ht, rfl⟩
+
+lemma isInducedSubpartition.trans (hPQ : P ≤ip Q) (hQR : Q ≤ip R) : P ≤ip R := by
+  rw [← hPQ, ← hQR, induce_induce, inf_eq_left.mpr hPQ.supp_le, isInducedSubpartition, induce_supp',
+    inf_eq_left.mpr (hPQ.supp_le.trans hQR.supp_le)]
+
+lemma isInducedSubpartition.of_supp_le (hPQ : P.supp ≤ Q.supp) (hPR : P ≤ip R) (hQR : Q ≤ip R) :
+    P ≤ip Q := by
+  rw [← hPR, ← hQR, isInducedSubpartition_iff, induce_supp', induce_induce,
+    induce_eq_induce_iff]
+  ac_nf
+  rw [← inf_assoc, inf_eq_left.mpr hPQ]
 
 end InduceFrame
 

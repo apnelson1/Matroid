@@ -50,13 +50,14 @@ def mk' (P : Partition (Set α)) (l : β → α → α → Prop) : Graph α β w
   vertexSet := P
   IsLink e x y :=
     let l' := SymmClosure (l e)
-    (btwVx P <| l') ∧ Domp P l' x y
+    (btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ l' x y)) ∧ Domp P l' x y
   isLink_symm e he x y := by
     rintro ⟨h, hxy⟩
     exact ⟨h, symm hxy⟩
   dup_or_dup_of_isLink_of_isLink e x y v w := by
     rintro ⟨h, x', hPxx', y', hy'x', hPy'y⟩ ⟨_, v', hPvv', w', hw'v', hPw'w⟩
-    obtain h | h := h (symm hy'x') (symm hw'v')
+    obtain h | h := h (⟨hPxx'.right_mem, hPy'y.left_mem, symm hy'x'⟩)
+      (⟨hPvv'.right_mem, hPw'w.left_mem, symm hw'v'⟩)
     · exact Or.inl <| trans' (trans' hPxx' h) (symm hPvv')
     · exact Or.inr <| trans' (trans' hPxx' h) hPw'w
   mem_vertexSet_of_isLink e x y := by
@@ -66,9 +67,15 @@ def mk' (P : Partition (Set α)) (l : β → α → α → Prop) : Graph α β w
     rintro hxy ⟨h, hyz⟩
     exact ⟨h, trans' hxy hyz⟩
 
+@[simp]
+lemma mk'_btwVx_foo {P : Partition (Set α)} {l : β → α → α → Prop}
+    (h : btwVx P <| SymmClosure (l e)) :
+    btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ SymmClosure (l e) x y) :=
+  btwVx_anti_right (fun _ _ ⟨_, _, h⟩ ↦ h) h
+
 lemma isLink_mk'_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} (hl : l e x y)
-    (h : btwVx P <| SymmClosure (l e)) (hx : x ∈ P.supp) (hy : y ∈ P.supp) :
-    (mk' P l).IsLink e x y :=
+    (h : btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ SymmClosure (l e) x y)) (hx : x ∈ P.supp)
+    (hy : y ∈ P.supp) : (mk' P l).IsLink e x y :=
   ⟨h, x, rel_self_of_mem_supp hx, y, Or.inr hl, rel_self_of_mem_supp hy⟩
 
 @[simps]
@@ -99,7 +106,10 @@ lemma isLink_mk_of_domp_of_mem {P : Partition (Set α)} {l : β → α → α �
 @[simp↓]
 lemma mk'_eq_mk_of_domp {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
     (h : ∀ ⦃e⦄, btwVx P (l e)) : mk' P l = mk_of_domp P l h :=
-  Graph.ext (by rfl) (by simp [h])
+  Graph.ext (by rfl) (by
+    simp only [mk'_isLink, symmClosure_eq_self, mk_of_domp_isLink, and_iff_right_iff_imp]
+    rintro _ _ _ _ _ _ _ _ ⟨_, _, hab⟩ ⟨_, _, hcd⟩
+    exact h hab hcd)
 
 @[simps]
 def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop)
@@ -167,9 +177,12 @@ instance {V : Set α} : Nodup (Graph.noEdge V β) := by
 
 @[simp]
 lemma noEdge_isLabelSubgraph_iff {V : Set α} :
-    Graph.noEdge V β ≤l G ↔ V(G).induce V = Partition.discrete V := by
-  refine ⟨fun h => ?_, fun h => ⟨by simpa, fun _ _ _ hl => by simp at hl⟩⟩
-  simpa [noEdge_vertexSet] using h.vertexSet_induce
+    Graph.noEdge V β ≤l G ↔ V ⊆ L(G) ∧ Atomic (V(G).induce V) := by
+  refine ⟨fun h => ?_, fun h => ⟨by rwa [noEdge_vertexSet, discrete_isInducedSubpartition_iff],
+    fun _ _ _ hl => by simp at hl⟩⟩
+  have := inter_eq_left.mpr h.labelSet
+  have := h.vertexSet_isInducedSubpartition
+  simp_all
 
 @[simp]
 lemma noEdge_le_iff {V : Set α} : Graph.noEdge V β ≤ G ↔ Partition.discrete V ⊆ V(G) :=
@@ -315,23 +328,10 @@ lemma singleEdge_isLabelSubgraph_iff :
   refine ⟨fun h => ⟨fun hD => ?_, h.isLink_of_isLink isLink_singleEdge⟩, fun ⟨hD, hl⟩ => ⟨?_, ?_⟩⟩
   · rw [h.dup_iff (by simp) (by simp)] at hD
     exact eq_of_dup hD
-  · simp only [singleEdge_vertexSet, supp_discrete]
-    by_cases huv : u = v
-    · subst v
-      simp only [mem_singleton_iff, insert_eq_of_mem]
-      refine Partition.supp_singleton_iff ?_
-      simp [hl.left_mem]
-    convert (Partition.atomic_iff_eq_discrete (V(G).induce {u, v})).mp ?_
-    · simp only [↓Partition.induce_supp', inf_eq_inter, left_eq_inter]
-      rintro x (rfl | rfl)
-      · exact hl.left_mem
-      exact hl.right_mem
-    rw [Partition.atomic_iff_rel_le_eq]
+  · simp only [singleEdge_vertexSet, discrete_isInducedSubpartition_iff, pair_subset_iff,
+    hl.left_mem, hl.right_mem, and_self, true_and, atomic_iff_rel_le_eq]
     rintro a b hab
-    simp only [Partition.induce_apply, mem_insert_iff, mem_singleton_iff] at hab
-    obtain ⟨(rfl | rfl), (rfl | rfl), hdup⟩ := hab <;> simp_all only [imp_false,
-      not_true_eq_false, and_true, implies_true]
-    exact (‹¬V(G) b a› <| symm hdup).elim
+    obtain ⟨(rfl | rfl), (rfl | rfl), hdup⟩ := (by simpa using hab) <;> simp_all [Rel.symm]
   rintro e' x y ⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩
   · exact hl
   exact hl.symm
