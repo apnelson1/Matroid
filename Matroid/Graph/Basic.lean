@@ -101,6 +101,10 @@ lemma btwVx_induce_iff {l : α → α → Prop} [IsSymm α l] :
   have ⟨hc, hd⟩ := h' hcd
   apply (h hab hcd).imp <;> simp_all
 
+lemma btwVx_restrict {l : α → α → Prop} [IsSymm α l] (hbtw : btwVx P l) :
+    btwVx (P.induce S) (restrict l S) := fun a b c d ⟨hab, ha, hb⟩ ⟨hcd, hc, hd⟩ ↦
+  (hbtw hab hcd).imp (by simp [ha, hc]) (by simp [ha, hd])
+
 /-- A multigraph with vertices of type `α` and edges of type `β`,
 as described by vertex and edge sets `vertexSet : Partition (Set α)` and `edgeSet : Set β`,
 and a predicate `IsLink` describing whether an edge `e : β` has labels `x y : α` as its ends.

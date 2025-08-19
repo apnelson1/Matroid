@@ -5,7 +5,7 @@ import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
-  {X Y : Set α}
+  {X Y : Set α} {V : Partition (Set α)} {l : β → α → α → Prop}
 
 open Set Function Relation Partition
 
@@ -16,12 +16,11 @@ namespace Graph
 /-- `Copy` creates an identical graph with different definitions for its vertex set and edge set.
   This is mainly used to create graphs with improved definitional properties. -/
 @[simps]
-def copy (G : Graph α β) {V : Partition (Set α)} {E : Set β}
-    {IsLink : β → α → α → Prop} (hV : V(G) = V) (hE : E(G) = E)
-    (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) : Graph α β where
+def copy (G : Graph α β) {E : Set β} (hV : V(G) = V) (hE : E(G) = E)
+    (h_isLink : ∀ e x y, G.IsLink e x y ↔ l e x y) : Graph α β where
   vertexSet := V
   edgeSet := E
-  IsLink := IsLink
+  IsLink := l
   isLink_symm e he x y := by
     simp_rw [← h_isLink]
     apply G.isLink_symm (hE ▸ he)
@@ -38,28 +37,25 @@ def copy (G : Graph α β) {V : Partition (Set α)} {E : Set β}
     simp_rw [← h_isLink, ← hV]
     exact G.isLink_of_dup
 
-lemma copy_eq_self (G : Graph α β) {V : Partition (Set α)} {E : Set β}
-    {IsLink : β → α → α → Prop} (hV : V(G) = V)(hE : E(G) = E)
-    (h_isLink : ∀ e x y, G.IsLink e x y ↔ IsLink e x y) :
-    G.copy hV hE h_isLink = G := by
+lemma copy_eq_self (G : Graph α β) {E : Set β} (hV : V(G) = V)(hE : E(G) = E)
+    (h_isLink : ∀ e x y, G.IsLink e x y ↔ l e x y) : G.copy hV hE h_isLink = G := by
   ext <;> simp_all
 
-
 @[simps]
-def mk' (P : Partition (Set α)) (l : β → α → α → Prop) : Graph α β where
-  vertexSet := P
+def mk' (V : Partition (Set α)) (l : β → α → α → Prop) : Graph α β where
+  vertexSet := V
   IsLink e x y :=
     let l' := SymmClosure (l e)
-    (btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ l' x y)) ∧ Domp P l' x y
+    (btwVx V (restrict l' V.supp)) ∧ Domp V l' x y
   isLink_symm e he x y := by
     rintro ⟨h, hxy⟩
     exact ⟨h, symm hxy⟩
   dup_or_dup_of_isLink_of_isLink e x y v w := by
-    rintro ⟨h, x', hPxx', y', hy'x', hPy'y⟩ ⟨_, v', hPvv', w', hw'v', hPw'w⟩
-    obtain h | h := h (⟨hPxx'.right_mem, hPy'y.left_mem, symm hy'x'⟩)
-      (⟨hPvv'.right_mem, hPw'w.left_mem, symm hw'v'⟩)
-    · exact Or.inl <| trans' (trans' hPxx' h) (symm hPvv')
-    · exact Or.inr <| trans' (trans' hPxx' h) hPw'w
+    rintro ⟨h, x', hVxx', y', hy'x', hVy'y⟩ ⟨_, v', hVvv', w', hw'v', hVw'w⟩
+    obtain h | h := h (⟨symm hy'x', hVxx'.right_mem, hVy'y.left_mem⟩)
+      (⟨symm hw'v', hVvv'.right_mem, hVw'w.left_mem⟩)
+    · exact Or.inl <| trans' (trans' hVxx' h) (symm hVvv')
+    · exact Or.inr <| trans' (trans' hVxx' h) hVw'w
   mem_vertexSet_of_isLink e x y := by
     rintro ⟨h, z, hxz, hzy⟩
     exact hxz.left_mem
@@ -67,49 +63,48 @@ def mk' (P : Partition (Set α)) (l : β → α → α → Prop) : Graph α β w
     rintro hxy ⟨h, hyz⟩
     exact ⟨h, trans' hxy hyz⟩
 
-@[simp]
-lemma mk'_btwVx_foo {P : Partition (Set α)} {l : β → α → α → Prop}
-    (h : btwVx P <| SymmClosure (l e)) :
-    btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ SymmClosure (l e) x y) :=
-  btwVx_anti_right (fun _ _ ⟨_, _, h⟩ ↦ h) h
+@[simp↓]
+lemma mk'_btwVx_foo (h : btwVx V <| SymmClosure (l e)) :
+    btwVx V (restrict (SymmClosure (l e)) V.supp) :=
+  btwVx_anti_right (fun _ _ h ↦ h.1) h
 
-lemma isLink_mk'_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} (hl : l e x y)
-    (h : btwVx P (fun x y ↦ x ∈ P.supp ∧ y ∈ P.supp ∧ SymmClosure (l e) x y)) (hx : x ∈ P.supp)
-    (hy : y ∈ P.supp) : (mk' P l).IsLink e x y :=
+@[simp↓]
+lemma mk'_btwVx_bar [∀ e, IsSymm α (l e)] (h : btwVx V <| l e) :
+    btwVx V (restrict (l e) V.supp) :=
+  btwVx_anti_right (fun _ _ h ↦ h.1) h
+
+lemma isLink_mk'_of_mem (hl : l e x y) (h : btwVx V (restrict (SymmClosure (l e)) V.supp))
+    (hx : x ∈ V.supp) (hy : y ∈ V.supp) : (mk' V l).IsLink e x y :=
   ⟨h, x, rel_self_of_mem_supp hx, y, Or.inr hl, rel_self_of_mem_supp hy⟩
 
 @[simps]
-def mk_of_domp (P : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
-    (h : ∀ ⦃e⦄, btwVx P (l e)) : Graph α β where
-  vertexSet := P
-  IsLink e := Domp P (l e)
+def mk_of_domp (V : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
+    (h : ∀ ⦃e⦄, btwVx V (l e)) : Graph α β where
+  vertexSet := V
+  IsLink e := Domp V (l e)
   isLink_symm e he := IsSymm.symm
   dup_or_dup_of_isLink_of_isLink := by
-    rintro e x y a b ⟨w, hPxw, z, hlzw, hPzy⟩ ⟨d, hPad, c, hlcd, hPcb⟩
-    obtain hPzc | hPzd := h (symm hlzw) (symm hlcd)
+    rintro e x y a b ⟨w, hVxw, z, hlzw, hVzy⟩ ⟨d, hVad, c, hlcd, hVcb⟩
+    obtain hVzc | hVzd := h (symm hlzw) (symm hlcd)
     · left
-      rwa [left_rw P hPxw, left_rw P hPzc, comm_of P]
+      rwa [left_rw V hVxw, left_rw V hVzc, comm_of V]
     right
-    rwa [← right_rw P hPcb, ← right_rw P hPzd]
+    rwa [← right_rw V hVcb, ← right_rw V hVzd]
   mem_vertexSet_of_isLink e x y := by
     rw [domp_def']
     rintro ⟨z, hxz, hzy⟩
     exact hxz.left_mem
   isLink_of_dup e x y z := trans'
 
-lemma isLink_mk_of_domp_of_mem {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
-    (h : ∀ ⦃e⦄, btwVx P (l e)) (hl : l e x y) (hx : x ∈ P.supp) (hy : y ∈ P.supp) :
-    (mk_of_domp P l h).IsLink e x y := by
+lemma isLink_mk_of_domp_of_mem [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)) (hl : l e x y)
+    (hx : x ∈ V.supp) (hy : y ∈ V.supp) : (mk_of_domp V l h).IsLink e x y := by
   rw [mk_of_domp_isLink]
   exact ⟨x, Partition.rel_self_of_mem_supp hx, y, symm hl, Partition.rel_self_of_mem_supp hy⟩
 
 @[simp↓]
-lemma mk'_eq_mk_of_domp {P : Partition (Set α)} {l : β → α → α → Prop} [∀ e, IsSymm α (l e)]
-    (h : ∀ ⦃e⦄, btwVx P (l e)) : mk' P l = mk_of_domp P l h :=
-  Graph.ext (by rfl) (by
-    simp only [mk'_isLink, symmClosure_eq_self, mk_of_domp_isLink, and_iff_right_iff_imp]
-    rintro _ _ _ _ _ _ _ _ ⟨_, _, hab⟩ ⟨_, _, hcd⟩
-    exact h hab hcd)
+lemma mk'_eq_mk_of_domp [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)) :
+    mk' V l = mk_of_domp V l h :=
+  Graph.ext (by rfl) (fun e x y => by simp [h])
 
 @[simps]
 def mk_of_unique (V : Set α) (IsLink : β → α → α → Prop)

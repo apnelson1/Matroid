@@ -95,7 +95,7 @@ but we define it with `copy` so that the edge set is definitionally equal to `E(
 @[simps!]
 def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
   (G.edgeRestrict (E(G) \ F)).copy (E := E(G) \ F)
-  (IsLink := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl
+  (l := fun e x y ↦ G.IsLink e x y ∧ e ∉ F) rfl
   (by simp [diff_subset])
   (fun e x y ↦ by
     simp only [edgeRestrict_isLink, mem_diff, and_comm, and_congr_left_iff, and_iff_left_iff_imp]
@@ -198,8 +198,7 @@ protected def induce (G : Graph α β) (X : Set α) : Graph α β :=
 notation:max G:1000 "[" S "]" => Graph.induce G S
 
 @[simp]
-lemma induce_labelSet (G : Graph α β) (X : Set α) :
-    L(G[X]) = ⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s} := by
+lemma induce_labelSet : L(G[X]) = ⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s} := by
   ext a
   simp only [Graph.induce, labelInduce_vertexSet, induce_supp, inf_eq_inter, iSup_eq_iUnion,
     mem_iUnion, mem_inter_iff, mem_sUnion, mem_setOf_eq, exists_and_left, exists_prop,
@@ -207,9 +206,14 @@ lemma induce_labelSet (G : Graph α β) (X : Set α) :
   tauto
 
 @[simp]
-lemma induce_isLink {X : Set α} : G[X].IsLink e x y ↔ G.IsLink e x y ∧ x ∈ X ∧ y ∈ X :=
-  
-  Iff.rfl
+lemma induce_isLink : G[X].IsLink e = Relation.Domp V(G) (Relation.restrict (G.IsLink e) X) := by
+  ext x y
+  simp only [Graph.induce, labelInduce_isLink, Relation.restrict, mem_sUnion, mem_setOf_eq]
+  refine ⟨fun ⟨hl, hx, hy⟩ ↦ ?_, fun ⟨hx, hy⟩ ↦ ?_⟩
+  · obtain ⟨t, ⟨ht, hXt⟩, hxt⟩ := hx
+    obtain ⟨t', ⟨ht', hXt'⟩, hyt⟩ := hy
+    sorry
+  sorry
 
 -- lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
 --   ⟨h, hx, hy⟩

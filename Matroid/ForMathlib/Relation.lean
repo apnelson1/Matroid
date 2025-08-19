@@ -556,7 +556,7 @@ lemma symmClosure_codomain (r : α → α → Prop) :
   · exact ⟨y, Or.inr h⟩
   · exact ⟨y, Or.inl h⟩
 
-@[simp]
+@[simp↓]
 lemma symmClosure_eq_self (r : α → α → Prop) [IsSymm α r] : SymmClosure r = r := by
   ext a b
   simp only [symmClosure_apply, or_iff_left_iff_imp]
