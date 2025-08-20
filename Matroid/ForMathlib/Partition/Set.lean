@@ -202,7 +202,10 @@ lemma fibers_rel_eq : fibers P = P.parts := by
 
 @[ext] theorem eq_of_rel_iff_rel {P P' : Partition (Set α)} (h : ∀ x y, P x y ↔ P' x y) :
     P = P' := by
-  rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']; congr; ext; exact h _ _
+  rw [← ofRel_rel_eq P, ← ofRel_rel_eq P']
+  congr 1
+  ext
+  exact h _ _
 
 @[simps!]
 def ofRel' (r : α → α → Prop) : Partition (Set α) :=

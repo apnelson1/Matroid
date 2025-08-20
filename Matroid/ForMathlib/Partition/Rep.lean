@@ -171,7 +171,7 @@ lemma exists_extend_partial_repFun (P : Partition (Set α)) {t : Set α} (f₀ :
     · exact h_eq _ _ <| (hab.symm.trans h₁.choose_spec).symm.trans h₂.choose_spec
     · exact False.elim <| h₂ ⟨_, hab.symm.trans h₁.choose_spec⟩
     · exact False.elim <| h₁ ⟨_, hab.trans h₂.choose_spec⟩
-    congr
+    congr 1
     rwa [← rel_iff_partOf_eq_partOf _ hab.left_mem hab.right_mem]
   change f a = f₀ a
   obtain (ha | ha) := em (a.1 ∈ P.supp)
