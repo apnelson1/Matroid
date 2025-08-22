@@ -285,8 +285,7 @@ lemma labelSet_nonempty_iff : L(G).Nonempty ↔ G ≠ ⊥ := not_iff_not.mp <| b
 @[simps! vertexSet edgeSet isLink]
 protected def singleEdge (u v : α) (e : β) : Graph α β := by
   apply mk_of_unique {u,v} (fun e' x y => e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))) {e}
-    (edge_mem_iff_exists_isLink := ?_)
-  <;> try tauto
+    (edge_mem_iff_exists_isLink := ?_) <;> try tauto
   aesop
 
 @[simp] lemma singleEdge_labelSet : L(Graph.singleEdge u v e) = {u,v} := by
@@ -399,8 +398,7 @@ lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bo
 @[simps! vertexSet edgeSet isLink]
 def banana (a b : α) (F : Set β) : Graph α β := by
   apply mk_of_unique {a,b} (fun e x y => e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))) F
-    (edge_mem_iff_exists_isLink := ?_)
-  <;> try tauto
+    (edge_mem_iff_exists_isLink := ?_) <;> try tauto
   aesop
 
 instance {a b : α} : Nodup (Graph.banana a b F) := by

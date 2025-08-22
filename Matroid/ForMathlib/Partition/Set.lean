@@ -319,8 +319,33 @@ lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S �
   rw [restrict_rel]
   exact ⟨hx, hxy⟩
 
-lemma rel_of_subset_mem (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) :
-    P x y := by
+-- @[simp]
+-- lemma cover_rel (P : Partition (Set α)) (S : Set α) :
+--     ⇑(P.cover S) = Relation.Domp P (P.induce S) := by
+--   ext x y
+--   simp only [cover, mem_parts, SetLike.mem_coe, restrict_apply, mem_sUnion, mem_setOf_eq,
+--     induce_rel]
+
+@[simp]
+lemma cover_rel_of_left_mem (P : Partition (Set α)) (hx : x ∈ S) : P.cover S x y ↔ P x y := by
+  simp only [cover, mem_parts, SetLike.mem_coe, restrict_apply, mem_sUnion, mem_setOf_eq,
+    and_iff_right_iff_imp, and_assoc, not_disjoint_iff]
+  rintro ⟨t, ht, hxt, hyt⟩
+  use t, ht, by use x
+
+@[simp]
+lemma cover_rel_of_right_mem (P : Partition (Set α)) (hy : y ∈ S) : P.cover S x y ↔ P x y := by
+  rw [rel_comm, cover_rel_of_left_mem P hy, rel_comm]
+
+lemma subset_cover_supp (h : S ⊆ P.supp) : S ⊆ (P.cover S).supp := by
+  rintro x hxS
+  obtain ⟨t, ht, hxt⟩ := h hxS
+  simp only [cover_supp, mem_parts, SetLike.mem_coe, sSup_eq_sUnion, mem_sUnion, mem_setOf_eq,
+    and_assoc, not_disjoint_iff]
+  use t, ht, ?_
+  use x
+
+lemma rel_of_subset_mem (hPQ : P ⊆ Q) (hx : x ∈ P.supp) (hxy : Q x y) : P x y := by
   obtain ⟨S, hS, rfl⟩ := subset_iff_restrict.mp hPQ
   exact Q.rel_of_restrict_rel hPQ hx hxy
 

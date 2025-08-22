@@ -190,48 +190,77 @@ lemma edgeDelete_isSpanningSubgraph : G ＼ F ≤s G :=
 The edges are the edges of `G` with both ends in `X`.
 (`X` is not required to be a subset of `V(G)` for this definition to work,
 even though this is the standard use case) -/
-@[simps! vertexSet edgeSet]
+@[simps! vertexSet isLink]
 protected def induce (G : Graph α β) (X : Set α) : Graph α β :=
-  G.labelInduce (⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s})
+  Graph.mk_of_domp (V(G).cover X) (fun e ↦ Relation.restrict (G.IsLink e) X)
+    (fun e ↦ btwVx_cover (G.dup_or_dup_of_isLink_of_isLink (e := e)))
 
 /-- `G[X]` is the subgraph of `G` induced by the set `X` of vertices. -/
 notation:max G:1000 "[" S "]" => Graph.induce G S
 
-@[simp]
-lemma induce_labelSet : L(G[X]) = ⋃₀ {s | s ∈ V(G) ∧ ¬ Disjoint X s} := by
-  ext a
-  simp only [Graph.induce, labelInduce_vertexSet, induce_supp, inf_eq_inter, iSup_eq_iUnion,
-    mem_iUnion, mem_inter_iff, mem_sUnion, mem_setOf_eq, exists_and_left, exists_prop,
-    and_iff_left_iff_imp, forall_exists_index, and_imp]
+@[simp↓]
+lemma mem_induce_labelSet_iff_exists_mem : x ∈ L(G[X]) ↔ ∃ y ∈ X, V(G) x y := by
+  simp only [induce_vertexSet, cover_supp, mem_parts, SetLike.mem_coe, sSup_eq_sUnion, mem_sUnion,
+    mem_setOf_eq, and_assoc, rel_iff_exists, not_disjoint_iff]
+  simp_rw [← exists_and_right, ← exists_and_left]
+  rw [exists_comm]
+  apply exists₂_congr fun y t => ?_
   tauto
 
 @[simp]
-lemma induce_isLink : G[X].IsLink e = Relation.Domp V(G) (Relation.restrict (G.IsLink e) X) := by
-  ext x y
-  simp only [Graph.induce, labelInduce_isLink, Relation.restrict, mem_sUnion, mem_setOf_eq]
-  refine ⟨fun ⟨hl, hx, hy⟩ ↦ ?_, fun ⟨hx, hy⟩ ↦ ?_⟩
-  · obtain ⟨t, ⟨ht, hXt⟩, hxt⟩ := hx
-    obtain ⟨t', ⟨ht', hXt'⟩, hyt⟩ := hy
-    sorry
-  sorry
+lemma induce_labelSet : L(G[X]) = {x | ∃ y ∈ X, V(G) x y} := by
+  ext y
+  simp
 
--- lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y :=
---   ⟨h, hx, hy⟩
+lemma induce_isLink_le : G[X].IsLink ≤ G.IsLink := by
+  rintro e x y ⟨x', hx', y', hy'x', hy'⟩
+  have hle := rel_le_of_subset <| V(G).cover_subset X
+  rw [isLink_left_rw (hle _ _ hx'), isLink_right_rw (symm <| hle _ _ hy')]
+  exact (Relation.restrict_le _ _ _ _ hy'x').symm
 
--- @[simp]
--- lemma induce_adj_iff {X : Set α} : G[X].Adj x y ↔ G.Adj x y ∧ x ∈ X ∧ y ∈ X := by simp [Adj]
+lemma IsLink.induce (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].IsLink e x y := by
+  refine ⟨x, ?_, y, by simp [Relation.restrict, hx, hy, h], ?_⟩ <;>
+  · apply rel_le_of_le (V(G).induce_le_cover X)
+    simp [hx, h.left_refl, hy, h.right_refl]
 
--- lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
---   induce_adj_iff.mpr ⟨h, hx, hy⟩
+/-- If you need to use this lemma, you made a wrong choice of `X` or `x`/`y`.
+  Please consider revising them and using `IsLink.induce` instead. -/
+lemma IsLink.induce_of_mem_labelSet (h : G.IsLink e x y) (hx : x ∈ L(G[X])) (hy : y ∈ L(G[X])) :
+    G[X].IsLink e x y := by
+  obtain ⟨x', hx'X, hx⟩ := induce_labelSet ▸ hx
+  obtain ⟨y', hy'X, hy⟩ := induce_labelSet ▸ hy
+  rw [isLink_left_rw hx, isLink_right_rw hy] at h
+  refine ⟨x', ?_, y', by simp [Relation.restrict, hx'X, hy'X, h], ?_⟩ <;>
+  simp [hx'X, hy'X, hx, symm hy]
 
--- /-- This is too annoying to be a simp lemma. -/
--- lemma induce_edgeSet (G : Graph α β) (X : Set α) :
---     E(G.induce X) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
+@[simp↓]
+lemma induce_isLink_iff_of_mem (hxX : x ∈ X) (hyX : y ∈ X) :
+    G[X].IsLink e x y ↔ G.IsLink e x y :=
+  ⟨induce_isLink_le _ _ _, fun h ↦ h.induce hxX hyX⟩
 
--- @[simp]
--- lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E(G) := by
---   rintro e ⟨x,y,h, -, -⟩
---   exact h.edge_mem
+/-- If you need to use this lemma, you made a wrong choice of `X` or `x`/`y`.
+  Please consider revising them and using `induce_isLink_iff_of_mem` instead. -/
+@[simp↓]
+lemma induce_isLink_iff_of_mem_labelSet (hxX : x ∈ L(G[X])) (hyX : y ∈ L(G[X])) :
+    G[X].IsLink e x y ↔ G.IsLink e x y :=
+  ⟨induce_isLink_le _ _ _, fun h ↦ h.induce_of_mem_labelSet hxX hyX⟩
+
+@[simp↓]
+lemma induce_adj_iff_of_mem (hxX : x ∈ X) (hyX : y ∈ X) : G[X].Adj x y ↔ G.Adj x y := by
+  simp [Adj, hxX, hyX]
+
+lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
+  (induce_adj_iff_of_mem hx hy).mpr h
+
+/-- This is too annoying to be a simp lemma. -/
+lemma induce_edgeSet (G : Graph α β) (X : Set α) : E(G[X]) =
+    {e | ∃ x y, Relation.Domp (⇑(V(G).cover X)) (Relation.restrict (G.IsLink e) X) x y} := by
+  simp [edgeSet_eq_setOf_exists_isLink]
+
+@[simp]
+lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E(G) := by
+  rintro e ⟨x, y, x', hx', y', h, hy'⟩
+  exact (Relation.restrict_le _ _ _ _ h).edge_mem
 
 -- lemma IsLink.mem_induce_iff [G.Nodup] {X : Set α} (hG : G.IsLink e x y) :
 --     e ∈ E(G[X]) ↔ x ∈ X ∧ y ∈ X := by
@@ -250,12 +279,9 @@ lemma induce_isLink : G[X].IsLink e = Relation.Domp V(G) (Relation.restrict (G.I
 --   rw [he.mem_induce_iff]
 --   tauto
 
--- lemma induce_isLabelSubgraph (hX : X ⊆ V(G)) : G[X] ≤l G where
---   dup_iff x y hx hy := by
---     simp_all only [induce_vertexSet, induce_dup, true_and, iff_self_or]
---     rintro rfl
---     exact G.Dup_refl_iff.mp <| hX hx
---   isLink_of_isLink e x y h := h.1
+lemma induce_isLabelSubgraph : G[X] ≤l G where
+  vertexSet_isInducedSubpartition := isInducedSubpartition_of_subset (cover_subset _)
+  isLink_of_isLink := induce_isLink_le
 
 -- instance [G.Nodup] : Nodup (G[X]) where
 --   NodupAt x y hdup := by

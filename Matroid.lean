@@ -37,12 +37,12 @@ import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Degree.Leaf
 -- import Matroid.Graph.Distance
 -- import Matroid.Graph.Forest
--- import Matroid.Graph.Label
+import Matroid.Graph.Label
 -- import Matroid.Graph.Lattice
 -- import Matroid.Graph.Minor.Basic
 -- import Matroid.Graph.Nodup
 -- import Matroid.Graph.Simple
--- import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Subgraph.Basic
 -- import Matroid.Graph.Subgraph.Delete
 -- import Matroid.Graph.Subgraph.Union
 -- import Matroid.Graph.Subgraph.Inter

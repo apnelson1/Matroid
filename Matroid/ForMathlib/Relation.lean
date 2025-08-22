@@ -792,6 +792,12 @@ lemma restrict_le (r : α → α → Prop) (S : Set α) : restrict r S ≤ r :=
 lemma restrict_subset (r : α → α → Prop) {S T : Set α} (h : S ⊆ T) :
     restrict r S ≤ restrict r T := fun _ _ ⟨hr, hx, hy⟩ => ⟨hr, h hx, h hy⟩
 
+lemma restrict_symmetric (r : α → α → Prop) [IsSymm α r] (S : Set α) :
+    Symmetric (restrict r S) := fun _ _ ⟨hr, ha, hb⟩ => ⟨symm hr, hb, ha⟩
+
+instance [IsSymm α r] {S : Set α} : IsSymm α (restrict r S) where
+  symm := restrict_symmetric r S
+
 -- lemma restrict_eq_iff (r : α → α → Prop) [foo r] [foo <| flip r] (S : Set α) :
 --     restrict r S = r ↔ reflSet r ⊆ S := by
 --   refine ⟨fun hr x hx => ?_, fun h => ?_⟩

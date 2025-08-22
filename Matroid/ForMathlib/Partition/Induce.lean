@@ -203,6 +203,50 @@ lemma restrict_eq_self_iff (hs : s ⊆ P.parts) : P.restrict s hs = P ↔ s = P.
   ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ h ▸ (by rfl)⟩
 
 
+def cover (P : Partition α) (a : α) : Partition α :=
+  P.restrict {s | s ∈ P.parts ∧ ¬ Disjoint a s} (fun x ↦ by aesop)
+
+@[simp] lemma mem_cover_iff : x ∈ P.cover a ↔ x ∈ P ∧ ¬ Disjoint a x := Iff.rfl
+
+@[simp]
+lemma cover_supp : (P.cover a).supp = sSup {s | s ∈ P.parts ∧ ¬ Disjoint a s} := by
+  simp [cover, supp]
+
+lemma cover_supp_le : (P.cover a).supp ≤ P.supp := by
+  simp +contextual [cover, le_of_mem]
+
+lemma cover_supp_eq_self : P.cover P.supp = P := by
+  ext x
+  simp only [cover, mem_parts, SetLike.mem_coe, mem_restrict_iff, mem_setOf_eq,
+    and_iff_left_iff_imp]
+  rintro hxP hdisj
+  obtain rfl := hdisj.symm.eq_bot_of_le (le_of_mem hxP)
+  exact P.bot_notMem hxP
+
+lemma cover_subset (a : α) : P.cover a ⊆ P := restrict_subset _
+
+lemma cover_le_of_le (h : Q ≤ P) : Q.cover a ≤ P.cover a := by
+  rintro x ⟨hxQ, hdisj⟩
+  obtain ⟨y, hyP, hxy⟩ := h x hxQ
+  refine ⟨y, ⟨hyP, ?_⟩, hxy⟩
+  contrapose! hdisj
+  exact hdisj.mono_right hxy
+
+@[simp]
+lemma cover_eq_self_iff : P.cover a = P ↔ ∀ x ∈ P, ¬ Disjoint a x := by
+  refine ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ ?_⟩
+  ext x
+  simp only [mem_cover_iff, and_iff_left_iff_imp]
+  exact h x
+
+lemma induce_le_cover (P : Partition α) (a : α) : P.induce a ≤ P.cover a := by
+  rintro x ⟨hxP, hdisj⟩
+  obtain ⟨y, hyP, rfl⟩ := hxP
+  simp only [mem_parts, SetLike.mem_coe] at hyP
+  simp only [mem_singleton_iff, mem_cover_iff, and_assoc, disjoint_iff] at hdisj ⊢
+  use y, hyP, hdisj, inf_le_right
+
+
 def Agree (P Q : Partition α) : Prop := ∃ S : Partition α, P ⊆ S ∧ Q ⊆ S
 
 lemma agree_of_subset_subset {P₀ Q₀ : Partition α} (hP : P₀ ⊆ P) (hQ : Q₀ ⊆ P) :
@@ -271,8 +315,10 @@ section RestrictDistrib
 
 -- stuff that needs `CompleteDistribLattice α`
 
-lemma sSupIndep_parts_union_of_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α}
-    (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : sSupIndep (P.parts ∪ Q.parts) := by
+variable [CompleteDistribLattice α] {P Q : Partition α}
+
+lemma sSupIndep_parts_union_of_mem_of_not_disjoint (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) :
+    sSupIndep (P.parts ∪ Q.parts) := by
   simp_rw [sSupIndep, union_diff_distrib, sSup_union, disjoint_sup_right]
   rintro s (hsP | hsQ)
   · use P.indep hsP, disjoint_sSup_iff.mpr ?_
@@ -286,14 +332,12 @@ lemma sSupIndep_parts_union_of_mem_of_not_disjoint [CompleteDistribLattice α] {
   · exact hQtdisj.mono_left (le_sSup hsQ)
   exact Q.disjoint (h t htP hQtdisj) hsQ hts |>.symm
 
-lemma agree_of_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α}
-    (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : P.Agree Q := by
+lemma agree_of_mem_of_not_disjoint (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : P.Agree Q := by
   have hindep : sSupIndep (P.parts ∪ Q.parts) := sSupIndep_parts_union_of_mem_of_not_disjoint h
   let R : Partition α := ofIndependent hindep (by simp [P.bot_notMem, Q.bot_notMem])
   use R, subset_union_left, subset_union_right
 
-lemma agree_iff_mem_of_not_disjoint [CompleteDistribLattice α] {P Q : Partition α} :
-    P.Agree Q ↔ ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q :=
+lemma agree_iff_mem_of_not_disjoint: P.Agree Q ↔ ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q :=
   ⟨fun ⟨_, hPR, hQR⟩ _ hxP ↦ mem_of_subset_of_not_disjoint hQR (hPR hxP),
     fun h ↦ agree_of_mem_of_not_disjoint h⟩
 
