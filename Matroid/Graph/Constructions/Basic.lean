@@ -77,7 +77,7 @@ lemma isLink_mk'_of_mem (hl : l e x y) (h : btwVx V (restrict (SymmClosure (l e)
     (hx : x ∈ V.supp) (hy : y ∈ V.supp) : (mk' V l).IsLink e x y :=
   ⟨h, x, rel_self_of_mem_supp hx, y, Or.inr hl, rel_self_of_mem_supp hy⟩
 
-@[simps]
+@[simps vertexSet isLink]
 def mk_of_domp (V : Partition (Set α)) (l : β → α → α → Prop) [∀ e, IsSymm α (l e)]
     (h : ∀ ⦃e⦄, btwVx V (l e)) : Graph α β where
   vertexSet := V
@@ -96,10 +96,16 @@ def mk_of_domp (V : Partition (Set α)) (l : β → α → α → Prop) [∀ e, 
     exact hxz.left_mem
   isLink_of_dup e x y z := trans'
 
-lemma isLink_mk_of_domp_of_mem [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)) (hl : l e x y)
-    (hx : x ∈ V.supp) (hy : y ∈ V.supp) : (mk_of_domp V l h).IsLink e x y := by
-  rw [mk_of_domp_isLink]
-  exact ⟨x, Partition.rel_self_of_mem_supp hx, y, symm hl, Partition.rel_self_of_mem_supp hy⟩
+lemma le_isLink_mk_of_domp [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)):
+    l ≤ (mk_of_domp V l h).IsLink := fun _ x y hl ↦ ⟨x, h.left_rfl hl, y, symm hl, h.right_rfl hl⟩
+
+@[simp↓]
+lemma mk_of_domp_edgeSet [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)) :
+    E(mk_of_domp V l h) = {e | ∃ x y, l e x y} := by
+  ext e
+  simp only [edgeSet_eq_setOf_exists_isLink, mk_of_domp_isLink, mem_setOf_eq]
+  exact ⟨fun ⟨a, b, x, _, y, hyx, _⟩ => ⟨y, x, hyx⟩,
+    fun ⟨x, y, hxy⟩ => ⟨y, x, y, h.right_rfl hxy, x, hxy, h.left_rfl hxy⟩⟩
 
 @[simp↓]
 lemma mk'_eq_mk_of_domp [∀ e, IsSymm α (l e)] (h : ∀ ⦃e⦄, btwVx V (l e)) :

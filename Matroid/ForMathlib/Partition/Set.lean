@@ -338,12 +338,18 @@ lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S �
   rw [restrict_rel]
   exact ⟨hx, hxy⟩
 
--- @[simp]
--- lemma cover_rel (P : Partition (Set α)) (S : Set α) :
---     ⇑(P.cover S) = Relation.Domp P (P.induce S) := by
---   ext x y
---   simp only [cover, mem_parts, SetLike.mem_coe, restrict_apply, mem_sUnion, mem_setOf_eq,
---     induce_rel]
+-- I am not really happy with this simplification route.
+lemma cover_rel (P : Partition (Set α)) (S : Set α) :
+    ⇑(P.cover S) = Relation.Domp P (P.induce S) := by
+  ext x y
+  simp only [cover, mem_parts, SetLike.mem_coe, not_disjoint_iff, restrict_apply, mem_sUnion,
+    mem_setOf_eq, induce_rel]
+  refine ⟨fun ⟨⟨s, ⟨hsP, z, hzS, hzs⟩, hxs⟩, t, htP, hxt, hyt⟩ ↦ ?_,
+    fun ⟨a, hxa, b, ⟨hbS, haS, hba⟩, hby⟩ ↦ ⟨?_, (hxa.trans (hba.symm)).trans hby⟩⟩
+  · obtain rfl := P.eq_of_mem_of_mem hsP htP hxs hxt
+    use z, (by use s), z, ⟨hzS, hzS, (by use s)⟩, (by use s)
+  obtain ⟨t, htP, hxt, hat⟩ := hxa
+  exact ⟨t, ⟨htP, by use a⟩, hxt⟩
 
 @[simp]
 lemma cover_rel_of_left_mem (P : Partition (Set α)) (hx : x ∈ S) : P.cover S x y ↔ P x y := by

@@ -72,7 +72,7 @@ lemma Rep.restrictSpan_fullRank (v : M.Rep 𝔽 W) : v.restrictSpan.FullRank := 
   change _ ≤ span 𝔽 _
   rw [restrictSpan_eq_inclusion]
   change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
-  rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
+  rw [range_comp, rangeFactorization_surjective.range_eq, image_univ, Set.range_inclusion]
   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
   simp
 

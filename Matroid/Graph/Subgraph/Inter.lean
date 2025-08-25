@@ -11,12 +11,12 @@ namespace Graph
 
 /-- The intersection of a nonempty family of pairwise compatible graphs.
   Remove any disagreeing edges. -/
-@[simps dup isLink edgeSet]
+@[simps vertexSet isLink edgeSet]
 protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
-  Dup := ⨅ i, (G i).Dup
+  vertexSet := ⨅ i, V(G i)
   IsLink e x y :=
     let j := Classical.arbitrary ι
-    ∀ i, (G i).Dup x = (G j).Dup x ∧ (G i).Dup y = (G j).Dup y ∧ (G i).IsLink e x y
+    ∀ i, V(G i) x = V(G j) x ∧ V(G i) y = V(G j) y ∧ (G i).IsLink e x y
   isLink_symm e he a b hl i := by
     obtain ⟨ha, hb, h⟩ := hl i
     exact ⟨hb, ha, h.symm⟩
@@ -27,15 +27,19 @@ protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
     obtain ⟨hc, hd, hlcd⟩ := hlcd' j
     exact (G j).dup_or_dup_of_isLink_of_isLink hlab hlcd
   mem_vertexSet_of_isLink e a b hl := by
-    simp only [Partition.iInf_supp, vertexSet_def, mem_iInter] at hl ⊢
-    exact fun i ↦ (hl i).2.2.left_mem
+    let j := Classical.arbitrary ι
+    obtain ⟨ha, hb, h⟩ := hl j
+    refine ⟨(V(G j)).partOf a, V(G j).partOf_mem_iff_rel_iff.mpr ⟨h.left_mem, fun c ↦ ?_⟩,
+      h.left_refl⟩
+    simp only [Partition.iInf_rel, iInf_apply, iInf_Prop_eq]
+    exact ⟨fun h' i ↦ (by rwa [(hl i).1]), fun h' ↦ h' j⟩
   isLink_of_dup e a b c hdab hlbc i := by
     let j := Classical.arbitrary ι
     simp_all only [Partition.iInf_rel, iInf_apply, iInf_Prop_eq, true_and]
     obtain ⟨hc, hd, h⟩ := hlbc i
     use ?_, trans' (hdab i) h
     ext d
-    rw [(G i).dup_left_rw (hdab i), hc, (G j).dup_left_rw (hdab j)]
+    rw [Relation.left_rw V(G i) (hdab i), hc, Relation.left_rw V(G j) (hdab j)]
 
 variable {G : ι → Graph α β} [Nonempty ι]
 

@@ -108,6 +108,12 @@ lemma btwVx_restrict {l : α → α → Prop} [IsSymm α l] (hbtw : btwVx P l) :
 lemma btwVx_cover {l : α → α → Prop} [IsSymm α l] (hbtw : btwVx P l) :
     btwVx (P.cover S) (restrict l S) := btwVx_mono_left (P.induce_le_cover S) (btwVx_restrict hbtw)
 
+lemma btwVx.left_rfl {l : α → α → Prop} [IsSymm α l] (h : btwVx P l) (hl : l a b) :
+    P a a := (h hl hl).elim id (·.left_rfl)
+
+lemma btwVx.right_rfl {l : α → α → Prop} [IsSymm α l] (h : btwVx P l) (hl : l a b) :
+    P b b := h.left_rfl (symm hl)
+
 /-- A multigraph with vertices of type `α` and edges of type `β`,
 as described by vertex and edge sets `vertexSet : Partition (Set α)` and `edgeSet : Set β`,
 and a predicate `IsLink` describing whether an edge `e : β` has labels `x y : α` as its ends.

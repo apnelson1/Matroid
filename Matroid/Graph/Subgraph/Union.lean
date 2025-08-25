@@ -12,7 +12,7 @@ namespace Graph
 /-- The union of an indexed family of pairwise compatible graphs. -/
 @[simps! vertexSet]
 protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β :=
-  mk_of_domp (⨆ i, (G i).Dup) (fun e => (⨆ i, (G i).IsLink e)) <| fun hab hcd => by
+  mk_of_domp (⨆ i, V(G i)) (fun e => (⨆ i, (G i).IsLink e)) <| fun e a b c d hab hcd => by
     obtain ⟨i, hab⟩ := by simpa using hab
     obtain ⟨j, hcd⟩ := by simpa using hcd
     have := hab.of_compatible (hG.of_refl i j) hcd.edge_mem
@@ -24,20 +24,19 @@ variable {G H : ι → Graph α β} {i j : ι}
 
 instance (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
     Nodup (Graph.iUnion G hG) where
-  atomic_dup := by simp
+  vertexSet_atomic := by
+    rw [iUnion_vertexSet]
+    exact iSup_atomic fun i => (G i).vertexSet_atomic
 
 @[simp]
-lemma iUnion_vertexSet (hG : Pairwise (Graph.Compatible on G)) :
-    V(Graph.iUnion G hG) = ⋃ i, V(G i) := by
-  rw [vertexSet_eq, iUnion_dup]
-  ext x
-  simp [mem_iUnion]
+lemma iUnion_labelSet (hG : Pairwise (Graph.Compatible on G)) :
+    L(Graph.iUnion G hG) = ⋃ i, L(G i) := by
+  simp
 
 @[simp↓]
 lemma iUnion_dup_of_dup_agree (hG : Pairwise (Graph.Compatible on G))
-    (hG' : Pairwise (Dup_agree on G)) :
-    (Graph.iUnion G hG).Dup x y ↔ ∃ i, (G i).Dup x y := by
-  simp only [iUnion_dup, iSup_rel]
+    (hG' : Pairwise (Dup_agree on G)) : V(Graph.iUnion G hG) x y ↔ ∃ i, V(G i) x y := by
+  simp only [iUnion_vertexSet, iSup_rel]
   refine ⟨fun h => ?_, fun h =>  Relation.TransGen.single <| by simpa⟩
   induction h with
   | single hxb => simpa using hxb
@@ -48,18 +47,17 @@ lemma iUnion_dup_of_dup_agree (hG : Pairwise (Graph.Compatible on G))
     exact ⟨i, (hG'.of_refl j i).trans_right ih h2⟩
 
 lemma dup_le_iUnion (hG : Pairwise (Graph.Compatible on G)) (i : ι) :
-    (G i).Dup ≤ (Graph.iUnion G hG).Dup := by
+    V(G i) ≤ V(Graph.iUnion G hG) := by
   rw [← rel_le_iff_le]
   intro x y hxy
-  simp only [iUnion_dup, iSup_rel]
+  simp only [iUnion_vertexSet, iSup_rel]
   apply Relation.TransGen.single
   simp only [iSup_apply, iSup_Prop_eq]
   use i
 
 @[simp]
-lemma iUnion_isLink (hG : Pairwise (Graph.Compatible on G)) :
-    (Graph.iUnion G hG).IsLink e x y ↔
-    Relation.Domp ((Graph.iUnion G hG).Dup) (⨆ i, (G i).IsLink e) x y := by
+lemma iUnion_isLink (hG : Pairwise (Graph.Compatible on G)) : (Graph.iUnion G hG).IsLink e x y ↔
+    Relation.Domp V(Graph.iUnion G hG) (⨆ i, (G i).IsLink e) x y := by
   conv_lhs => rw [Graph.iUnion, mk_of_domp_isLink]
   rfl
 
@@ -77,23 +75,18 @@ lemma iUnion_isLink_of_dup_agree (hG : Pairwise (Graph.Compatible on G))
     (Graph.iUnion G hG).IsLink e x y ↔ ∃ i, (G i).IsLink e x y := by
   refine ⟨fun ⟨a, hxa, b, hlba, hby⟩ => ?_, fun ⟨i, hlxy⟩ => isLink_le_iUnion hG hlxy⟩
   obtain ⟨i, hlba⟩ := by simpa using hlba
-  rw [iSup_rel_of_agree_of_mem hG' (vertexSet_eq _ ▸ hlba.left_mem)] at hby
-  rw [comm_of ⇑(⨆ i, (G i).Dup),
-    iSup_rel_of_agree_of_mem hG' (vertexSet_eq _ ▸ hlba.right_mem)] at hxa
+  rw [iSup_rel_of_agree_of_mem hG' hlba.left_mem] at hby
+  rw [comm_of ⇑(⨆ i, V(G i)), iSup_rel_of_agree_of_mem hG' hlba.right_mem] at hxa
   exact ⟨i, trans' (trans' (symm hxa) hlba.symm) hby⟩
 
 @[simp]
 lemma iUnion_edgeSet (hG : Pairwise (Graph.Compatible on G)) :
     E(Graph.iUnion G hG) = ⋃ i, E(G i) := by
-  rw [Graph.iUnion, mk_of_domp_edgeSet]
   ext e
-  simp +contextual only [Relation.Domp, Relation.Comp, iSup_rel, Relation.flip_apply,
-    iSup_apply, iSup_Prop_eq, mem_setOf_eq, mem_iUnion, iff_def, forall_exists_index, and_imp]
-  refine ⟨fun a b c hac d i hldc hdb => ⟨i, hldc.edge_mem⟩, fun i hei => ?_⟩
-  obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet hei
-  use y, x, y, ?_, x, ⟨i, hl⟩ <;> simp [Relation.transClosure_self_iff]
-  · exact ⟨i, hl.left_refl⟩
-  · exact ⟨i, hl.right_refl⟩
+  rw [Graph.iUnion, mk_of_domp_edgeSet]
+  simp +contextual only [iSup_apply, iSup_Prop_eq, mem_setOf_eq, edgeSet_eq_setOf_exists_isLink,
+    mem_iUnion, iff_def, forall_exists_index]
+  tauto
 
 protected lemma le_iUnion (hG : Pairwise (Graph.Compatible on G))
     (hG' : Pairwise (Dup_agree on G)) (i : ι) : G i ≤ Graph.iUnion G hG :=
@@ -104,9 +97,9 @@ protected lemma iUnion_le_iff (hG : Pairwise (Graph.Compatible on G))
     (hG' : Pairwise (Dup_agree on G)) : Graph.iUnion G hG ≤ G₁ ↔ ∀ i, G i ≤ G₁ := by
   refine ⟨fun h i ↦ (Graph.le_iUnion hG hG' i).trans h,
     fun h' ↦ ⟨fun s hs ↦ ?_, fun e x y hl ↦ ?_⟩⟩
-  · simp only [iUnion_dup, mem_parts, SetLike.mem_coe] at hs
+  · simp only [iUnion_vertexSet, mem_parts, SetLike.mem_coe] at hs
     obtain ⟨i, hs⟩ := (mem_iSup_iff_of_agree hG').mp hs
-    exact h' i |>.dup_subset hs
+    exact h' i |>.vertexSet_subset hs
   obtain ⟨i, hl⟩ := (iUnion_isLink_of_dup_agree hG hG').mp hl
   exact hl.of_le (h' i)
 
@@ -114,12 +107,12 @@ protected lemma iUnion_le_iff (hG : Pairwise (Graph.Compatible on G))
 protected lemma iUnion_const [Nonempty ι] (G : Graph α β) :
     Graph.iUnion (fun (_ : ι) ↦ G) (Pairwise.const_of_refl G) = G := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
-  simp only [iUnion_isLink, iUnion_dup, ciSup_const]
-  rw [Relation.domp_eq G.Dup (G.IsLink e)]
+  simp only [iUnion_isLink, iUnion_vertexSet, ciSup_const]
+  rw [Relation.domp_eq V(G) (G.IsLink e)]
 
 @[simp]
 lemma iUnion_inc_iff (hG : Pairwise (Graph.Compatible on G)) :
-    (Graph.iUnion G hG).Inc e x ↔ ∃ i, (Relation.Comp (G i).Inc (Graph.iUnion G hG).Dup) e x := by
+    (Graph.iUnion G hG).Inc e x ↔ ∃ i, (Relation.Comp (G i).Inc V(Graph.iUnion G hG)) e x := by
   refine ⟨fun ⟨y, a, hxa, b, hl, hby⟩ => ?_, fun ⟨i, y, ⟨z, hlyz⟩, hyx⟩ => ?_⟩
   · simp only [Relation.flip_apply, iSup_apply, iSup_Prop_eq] at hl
     obtain ⟨i, hl⟩ := hl
@@ -178,37 +171,38 @@ lemma iUnion_right_le_iUnion_sum {H : ι' → Graph α β}
 
 -- @[simp]
 -- lemma induce_iUnion [Nonempty ι] (hG : Pairwise (Graph.Compatible on G)) (X : Set α) :
---     (Graph.iUnion G hG)[X] = .iUnion (fun i ↦ (G i)[X]) (fun _ _ hij ↦ (hG hij).induce ..) :=
---   Graph.ext (by ext; simp [iUnion_const]) (by simp)
+--     (Graph.iUnion G hG)[X] = .iUnion (fun i ↦ (G i)[X]) (fun _ _ hij ↦ (hG hij).induce ..) := by
+--   apply Graph.ext
+--   · ext x y
+--     simp only [induce_vertexSet, iUnion_vertexSet, -cover_rel, iSup_rel, induce_rel]
+
+-- @[simp]
+-- lemma Compatible.vertexDelete_iUnion (hG : Pairwise (Graph.Compatible on G))
+--     (hG' : Pairwise (Dup_agree on G)) (X : Set α) : (Graph.iUnion G hG) - X =
+--     .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).vertexDelete) := by
+--   refine Graph.ext ?_ ?_ <;> simp [iSup_induce_of_agree hG' Xᶜ, hG',
+--     hG'.mono (fun _ _ ↦ Dup_agree.vertexDelete X)]
 
 @[simp]
-lemma Compatible.vertexDelete_iUnion (hG : Pairwise (Graph.Compatible on G))
-    (hG' : Pairwise (Dup_agree on G)) (X : Set α) : (Graph.iUnion G hG) - X =
-    .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).vertexDelete) := by
-  refine Graph.ext ?_ ?_ <;> simp [iSup_induce_of_agree hG' Xᶜ, hG',
-    hG'.mono (fun _ _ ↦ Dup_agree.vertexDelete X)]
-
-@[simp]
-lemma Compatible.edgeDelete_iUnion (hG : Pairwise (Graph.Compatible on G))
-    (F : Set β) :
-    (Graph.iUnion G hG) ＼ F = .iUnion (fun i ↦ (G i) ＼ F) (fun _ _ hij ↦ (hG hij).edgeDelete) := by
-  ext <;> simp only [edgeDelete_isLink, iUnion_isLink, Relation.Domp, Relation.Comp, iUnion_dup,
-    iSup_rel, Relation.flip_apply, iSup_apply, iSup_Prop_eq, edgeDelete_dup,
+lemma Compatible.edgeDelete_iUnion (hG : Pairwise (Graph.Compatible on G)) (F : Set β) :
+    (Graph.iUnion G hG) ＼ F = .iUnion (fun i ↦ (G i) ＼ F) fun _ _ hij ↦ (hG hij).edgeDelete := by
+  ext <;> simp only [edgeDelete_isLink, iUnion_isLink, Relation.Domp, Relation.Comp,
+    iUnion_vertexSet, iSup_rel, Relation.flip_apply, iSup_apply, iSup_Prop_eq, edgeDelete_vertexSet,
     exists_and_right]
   tauto
 
 @[simp]
 lemma Compatible.edgeRestrict_iUnion (hG : Pairwise (Graph.Compatible on G))
     (F : Set β) : (Graph.iUnion G hG) ↾ F =
-    .iUnion (fun i ↦ (G i) ↾ F) (fun _ _ hij ↦ (hG hij).edgeRestrict) := by
-  ext <;> simp only [edgeRestrict_isLink, iUnion_isLink, Relation.Domp, Relation.Comp, iUnion_dup,
-    iSup_rel, Relation.flip_apply, iSup_apply, iSup_Prop_eq, edgeRestrict_dup,
-    exists_and_left]
+    .iUnion (fun i ↦ (G i) ↾ F) fun _ _ hij ↦ (hG hij).edgeRestrict := by
+  ext <;> simp only [edgeRestrict_isLink, iUnion_isLink, Relation.Domp, Relation.Comp,
+    iUnion_vertexSet, iSup_rel, Relation.flip_apply, iSup_apply, iSup_Prop_eq,
+    edgeRestrict_vertexSet, exists_and_left]
   tauto
 
 protected lemma iUnion_comp_le {f : ι' → ι} (hG : Pairwise (Compatible on G))
     (hG' : Pairwise (Dup_agree on G)) :
-    Graph.iUnion (fun i ↦ G (f i)) (hG.onFun_comp_of_refl f) ≤ Graph.iUnion G hG := by
+    Graph.iUnion (G <| f ·) (hG.onFun_comp_of_refl f) ≤ Graph.iUnion G hG := by
   rw [Graph.iUnion_le_iff]
   · exact fun i ↦ Graph.le_iUnion hG hG' (f i)
   exact hG'.onFun_comp_of_refl f
@@ -226,14 +220,14 @@ lemma iUnion_range {f : ι' → ι} {G : (Set.range f) → Graph α β}
     (hG : Pairwise (Graph.Compatible on G)) (hG' : Pairwise (Dup_agree on G)) :
     Graph.iUnion G hG = Graph.iUnion (G <| Set.rangeFactorization f ·)
     (hG.onFun_comp_of_refl <| rangeFactorization f) :=
-  iUnion_comp_eq_of_surj hG hG' surjective_onto_range
+  iUnion_comp_eq_of_surj hG hG' rangeFactorization_surjective
 
 -- nodup lemmas
 
-@[simp]
-lemma iUnion_dup_of_nodup (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
-    (Graph.iUnion G hG).Dup = Partition.discrete (⋃ i, V(G i)) := by
-  simp only [dup_eq_discrete, iUnion_vertexSet]
+-- @[simp]
+-- lemma iUnion_dup_of_nodup (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
+--     V(Graph.iUnion G hG) = Partition.discrete (⋃ i, L(G i)) := by
+--   simp only [dup_eq_discrete, iUnion_vertexSet]
 
 @[simp↓]
 lemma iUnion_isLink_of_nodup (hG : Pairwise (Graph.Compatible on G)) [∀ i, Nodup (G i)] :
@@ -273,11 +267,11 @@ lemma iUnion_right_le_iUnion_sum_of_nodup {H : ι' → Graph α β} [∀ i, Nodu
     refine @pairwise_dup_agree_of_nodup _ _ _ _ ?_
     rintro (i | i) <;> simp only [Sum.elim_inl, Sum.elim_inr] <;> infer_instance)
 
-@[simp]
-lemma Compatible.vertexDelete_iUnion_of_nodup (hG : Pairwise (Graph.Compatible on G))
-    (X : Set α) [hN : ∀ i, Nodup (G i)] :
-    (Graph.iUnion G hG) - X = .iUnion (fun i ↦ (G i) - X) (fun _ _ hij ↦ (hG hij).vertexDelete) :=
-  Compatible.vertexDelete_iUnion hG pairwise_dup_agree_of_nodup X
+-- @[simp]
+-- lemma Compatible.vertexDelete_iUnion_of_nodup (hG : Pairwise (Graph.Compatible on G))
+--     (X : Set α) [hN : ∀ i, Nodup (G i)] :
+--     (Graph.iUnion G hG) - X = .iUnion (fun i ↦ (G i) - X) fun _ _ hij ↦ (hG hij).vertexDelete :=
+--   Compatible.vertexDelete_iUnion hG pairwise_dup_agree_of_nodup X
 
 protected lemma iUnion_comp_le_of_nodup {f : ι' → ι} (hG : Pairwise (Compatible on G))
     [hN : ∀ i, Nodup (G i)] :
@@ -293,7 +287,7 @@ lemma iUnion_range_of_nodup {f : ι' → ι} {G : (Set.range f) → Graph α β}
     (hG : Pairwise (Graph.Compatible on G)) [hN : ∀ i, Nodup (G i)] :
     Graph.iUnion G hG = Graph.iUnion (G <| Set.rangeFactorization f ·)
     (hG.onFun_comp_of_refl <| rangeFactorization f) :=
-  iUnion_comp_eq_of_surj_of_nodup hG surjective_onto_range
+  iUnion_comp_eq_of_surj_of_nodup hG rangeFactorization_surjective
 
 /-! ### Set unions -/
 
@@ -304,30 +298,28 @@ variable {s : Set (Graph α β)} {G : Graph α β}
 protected def sUnion (s : Set (Graph α β)) (hs : s.Pairwise Compatible) : Graph α β :=
   .iUnion (fun G : s ↦ G.1) hs.subtype
 
-instance (hs : s.Pairwise Compatible) [hN : ∀ (i : s), Nodup i.val] :
-    Nodup (Graph.sUnion s hs) := by
+instance (hs : s.Pairwise Compatible) [hN : ∀ (i : s), Nodup i.val]: Nodup (Graph.sUnion s hs) := by
   unfold Graph.sUnion
   infer_instance
 
 @[simp]
-lemma sUnion_dup (hs : s.Pairwise Compatible) : (Graph.sUnion s hs).Dup = ⨆ i ∈ s, i.Dup := by
-  rw [Graph.sUnion, iUnion_dup, iSup_subtype]
+lemma sUnion_labelSet (hs : s.Pairwise Compatible) : L(Graph.sUnion s hs) = ⋃ i ∈ s, L(i) := by
+  simp
 
 @[simp↓]
 lemma sUnion_dup_of_dup_agree (hs : s.Pairwise Compatible) (hs' : s.Pairwise Dup_agree) :
-    (Graph.sUnion s hs).Dup x y ↔ ∃ G ∈ s, G.Dup x y := by
+    V(Graph.sUnion s hs) x y ↔ ∃ G ∈ s, V(G) x y := by
   rw [Graph.sUnion, iUnion_dup_of_dup_agree _ hs'.subtype]
   simp
 
-lemma dup_le_sUnion (hs : s.Pairwise Compatible) (hG : G ∈ s) :
-    G.Dup ≤ (Graph.sUnion s hs).Dup := by
+lemma dup_le_sUnion (hs : s.Pairwise Compatible) (hG : G ∈ s) : V(G) ≤ V(Graph.sUnion s hs) := by
   convert dup_le_iUnion _ (⟨G, hG⟩ : s)
   simp
 
 @[simp]
 lemma sUnion_isLink (hs : s.Pairwise Graph.Compatible) : (Graph.sUnion s hs).IsLink e x y ↔
-    Relation.Domp (Graph.sUnion s hs).Dup (⨆ i ∈ s, i.IsLink e) x y := by
-  change Relation.Domp (Graph.sUnion s hs).Dup (⨆ i : s, i.val.IsLink e) x y ↔ _
+    Relation.Domp V(Graph.sUnion s hs) (⨆ i ∈ s, i.IsLink e) x y := by
+  change Relation.Domp V(Graph.sUnion s hs) (⨆ i : s, i.val.IsLink e) x y ↔ _
   rw [iSup_subtype]
 
 lemma isLink_le_sUnion (hs : s.Pairwise Graph.Compatible) (hG : G ∈ s) (hxy : G.IsLink e x y) :
@@ -372,7 +364,7 @@ protected lemma sUnion_singleton (G : Graph α β) : Graph.sUnion {G} (by simp) 
 
 @[simp]
 lemma sUnion_inc_iff (hs : s.Pairwise Graph.Compatible) :
-    (Graph.sUnion s hs).Inc e x ↔ ∃ G ∈ s, (Relation.Comp G.Inc (Graph.sUnion s hs).Dup) e x := by
+    (Graph.sUnion s hs).Inc e x ↔ ∃ G ∈ s, (Relation.Comp G.Inc V(Graph.sUnion s hs)) e x := by
   simp [Graph.sUnion, iUnion_inc_iff]
 
 @[simp↓]
@@ -404,7 +396,8 @@ protected lemma sUnion_range {f : ι → Graph α β} (h : Pairwise (Graph.Compa
     (h' : Pairwise (Dup_agree on f)) :
     Graph.sUnion (Set.range f) h.range_pairwise = .iUnion f h := by
   unfold Graph.sUnion
-  convert Graph.iUnion_comp_eq_of_surj (f := Set.rangeFactorization f) _ _ surjective_onto_range
+  convert Graph.iUnion_comp_eq_of_surj (f := Set.rangeFactorization f) _ _
+    rangeFactorization_surjective
   rintro ⟨_, i, _, rfl⟩ ⟨_, j, _, rfl⟩ _
   exact h'.of_refl i j
 
@@ -436,31 +429,27 @@ lemma union_eq_sUnion (G H : Graph α β) :
     G ∪ H = Graph.sUnion {G, H ＼ E(G)} pairwise_compatible_edgeDelete := rfl
 
 @[simp]
-lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ∪ V(H) := by
-  simp [union_eq_sUnion]
+lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ⊔ V(H) := by
+  rw [← H.edgeDelete_vertexSet E(G), union_eq_sUnion, ← iSup_pair, sUnion_vertexSet, iSup_subtype]
 
-@[simp]
-lemma union_dup : (G ∪ H).Dup = G.Dup ⊔ H.Dup := by
-  rw [← H.edgeDelete_dup E(G), union_eq_sUnion, ← iSup_pair, sUnion_dup]
-
-@[simp] lemma left_le_union_dup : ⇑G.Dup ≤ (G ∪ H).Dup := by
+@[simp] lemma left_le_union_dup : ⇑V(G) ≤ V(G ∪ H) := by
   rw [rel_le_iff_le]
   simp
 
 @[simp]
-lemma right_edgeDelete_le_union_dup : ⇑(H ＼ E(G)).Dup ≤ (G ∪ H).Dup := by
+lemma right_edgeDelete_le_union_dup : ⇑V(H ＼ E(G)) ≤ V(G ∪ H) := by
   rw [rel_le_iff_le]
   simp
 
 @[simp]
 lemma Dup_agree.union_dup (hG' : G.Dup_agree H) :
-    (G ∪ H).Dup x y ↔ G.Dup x y ∨ H.Dup x y := by
+    V(G ∪ H) x y ↔ V(G) x y ∨ V(H) x y := by
   rw [union_eq_sUnion, sUnion_dup_of_dup_agree _ (by simp [hG'])]
   simp
 
 @[simp]
 lemma union_isLink : (G ∪ H).IsLink e x y ↔
-    Relation.Domp (G ∪ H).Dup (fun x y => G.IsLink e x y ∨ H.IsLink e x y ∧ e ∉ E(G)) x y := by
+    Relation.Domp V(G ∪ H) (fun x y => G.IsLink e x y ∨ H.IsLink e x y ∧ e ∉ E(G)) x y := by
   have : (⨆ i ∈ ({G, H ＼ E(G)} : Set (Graph α β)), i.IsLink e) =
       fun x y => G.IsLink e x y ∨ H.IsLink e x y ∧ e ∉ E(G) := by
     ext x y
@@ -502,8 +491,8 @@ lemma Dup_agree.right_edgeDelete_le_union (hG' : G.Dup_agree H) : H ＼ E(G) ≤
 
 @[simp]
 lemma union_inc_iff : (G ∪ H).Inc e x ↔ ∃ u, (G.Inc e u ∨ (H.Inc e u ∧ e ∉ E(G))) ∧
-    (G.Dup ⊔ H.Dup) x u := by
-  rw [union_eq_sUnion, sUnion_inc_iff, ← union_eq_sUnion, union_dup]
+    (V(G) ⊔ V(H)) x u := by
+  rw [union_eq_sUnion, sUnion_inc_iff, ← union_eq_sUnion, union_vertexSet]
   constructor
   · rintro ⟨G', (rfl | rfl), y, hiy, hyx⟩
     · exact ⟨y, Or.inl hiy, hyx.symm⟩
@@ -572,7 +561,7 @@ protected lemma union_self (G : Graph α β) : G ∪ G = G :=
 --   sorry
 
 lemma Compatible.union_isLink (h : G.Compatible H) :
-    (G ∪ H).IsLink e x y ↔ Relation.Domp (G ∪ H).Dup (G.IsLink e ⊔ H.IsLink e) x y := by
+    (G ∪ H).IsLink e x y ↔ Relation.Domp V(G ∪ H) (G.IsLink e ⊔ H.IsLink e) x y := by
   by_cases heG : e ∈ E(G)
   · have hl : G.IsLink e ⊔ H.IsLink e = G.IsLink e := by
       ext x y
@@ -587,7 +576,7 @@ lemma Compatible.union_isLink (h : G.Compatible H) :
 
 lemma Compatible.isLink_le_union_right (h : G.Compatible H) (hxy : H.IsLink e x y) :
     (G ∪ H).IsLink e x y := by
-  simp only [h.union_isLink, union_dup, sup_rel]
+  simp only [h.union_isLink, union_vertexSet, sup_rel]
   use x, Relation.TransGen.single ?_, y, ?_, Relation.TransGen.single ?_
   · simp [hxy.left_refl]
   swap
@@ -614,7 +603,8 @@ lemma Compatible.union_isLink_of_agree (hG : G.Compatible H) (hG' : G.Dup_agree 
 lemma edgeRestrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ ∪ F₂)) = G ↾ F₁ ∪ (G ↾ F₂) := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
   rw [(G.compatible_self.mono (by simp) (by simp)).union_isLink]
-  simp only [edgeRestrict_isLink, mem_union, union_dup, edgeRestrict_dup, le_refl, sup_of_le_left]
+  simp only [edgeRestrict_isLink, mem_union, union_vertexSet, edgeRestrict_vertexSet, le_refl,
+    sup_of_le_left]
   refine ⟨fun ⟨he, hl⟩ => ?_, fun ⟨a, hxa, b, hl, hby⟩ => ?_⟩
   · refine ⟨x, hl.left_refl, y, ?_, hl.right_refl⟩
     simpa [hl.symm]
@@ -626,14 +616,14 @@ lemma edgeRestrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ �
 @[simp↓]
 lemma Compatible.union_eq_sUnion (h : G.Compatible H) :
     G ∪ H = Graph.sUnion {G, H} (by simp [Set.pairwise_iff_of_refl, h, h.symm]) :=
-  have : (G ∪ H).Dup =
-    (Graph.sUnion {G, H} (by simp [Set.pairwise_iff_of_refl, h, h.symm])).Dup := by
-    rw [union_dup, sUnion_dup, ← iSup_pair]
+  have : V(G ∪ H) =
+    V(Graph.sUnion {G, H} (by simp [Set.pairwise_iff_of_refl, h, h.symm])) := by
+    rw [union_vertexSet, sUnion_vertexSet, ← iSup_pair, iSup_subtype]
   Graph.ext this fun e x y ↦ by rw [h.union_isLink, sUnion_isLink, this, iSup_pair]
 
 @[simp↓]
 lemma Compatible.union_inc_iff (h : G.Compatible H) :
-    (G ∪ H).Inc e x ↔ ∃ u, (G.Inc e u ∨ H.Inc e u) ∧ (G.Dup ⊔ H.Dup) x u := by
+    (G ∪ H).Inc e x ↔ ∃ u, (G.Inc e u ∨ H.Inc e u) ∧ (V(G) ⊔ V(H)) x u := by
   rw [Graph.union_inc_iff]
   refine exists_congr fun u ↦ and_congr_left fun _ ↦ ?_
   by_cases heG : e ∈ E(G)
@@ -667,15 +657,15 @@ lemma Compatible.union_isNonloopAt_iff (h : G.Compatible H) (hG' : G.Dup_agree H
   · simp only [heG, not_true_eq_false, and_false, or_false, iff_self_or]
     refine fun ⟨y, hxy, hl⟩ ↦ ⟨y, ?_, hl.of_compatible h.symm heG⟩
     contrapose! hxy
-    exact hG'.rel_of_left_of_mem (vertexSet_eq _ ▸ hl.left_mem) hxy
+    exact hG'.rel_of_left_of_mem hl.left_mem hxy
   simp [heG]
 
 @[simp↓]
 lemma Compatible.union_adj_iff (h : G.Compatible H) :
-    (G ∪ H).Adj = (Relation.Domp (G ∪ H).Dup G.Adj) ⊔ (Relation.Domp (G ∪ H).Dup H.Adj) := by
+    (G ∪ H).Adj = (Relation.Domp V(G ∪ H) G.Adj) ⊔ (Relation.Domp V(G ∪ H) H.Adj) := by
   unfold Adj
   ext x y
-  simp only [h.union_isLink, union_dup, Pi.sup_apply, sup_Prop_eq]
+  simp only [h.union_isLink, union_vertexSet, Pi.sup_apply, sup_Prop_eq]
   refine ⟨fun ⟨e, a, hxa, b, hl, hby⟩ =>
     hl.imp (⟨a, hxa, b, ⟨e, ·⟩, hby⟩) (⟨a, hxa, b, ⟨e, ·⟩, hby⟩), ?_⟩
   rintro (⟨a, hxa, b, ⟨e, hl⟩, hby⟩ | ⟨a, hxa, b, ⟨e, hl⟩, hby⟩)

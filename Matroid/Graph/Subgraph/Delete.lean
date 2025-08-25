@@ -212,6 +212,9 @@ lemma induce_labelSet : L(G[X]) = {x | ∃ y ∈ X, V(G) x y} := by
   ext y
   simp
 
+lemma restrict_le_induce_isLink : Relation.restrict (G.IsLink e) X ≤ G[X].IsLink e :=
+  le_isLink_mk_of_domp (fun e ↦ btwVx_cover (G.dup_or_dup_of_isLink_of_isLink (e := e))) e
+
 lemma induce_isLink_le : G[X].IsLink ≤ G.IsLink := by
   rintro e x y ⟨x', hx', y', hy'x', hy'⟩
   have hle := rel_le_of_subset <| V(G).cover_subset X
@@ -247,14 +250,10 @@ lemma induce_isLink_iff_of_mem_labelSet (hxX : x ∈ L(G[X])) (hyX : y ∈ L(G[X
 
 /-- This is too annoying to be a simp lemma. -/
 lemma induce_edgeSet : E(G[X]) = {e | ∃ x ∈ X, ∃ y ∈ X, G.IsLink e x y} := by
+  change E(Graph.mk_of_domp _ _ _) = _
   ext e
-  rw [edgeSet_eq_setOf_exists_isLink, mem_setOf_eq]
-  refine ⟨fun ⟨x, y, h⟩ ↦ ?_, fun ⟨x, hx, y, hy, h⟩ ↦ ⟨x, y, h.induce hx hy⟩⟩
-  obtain ⟨x', hx'X, hxx'⟩ := induce_labelSet ▸ h.left_mem
-  obtain ⟨y', hy'X, hy'y⟩ := induce_labelSet ▸ h.right_mem
-  use x', hx'X, y', hy'X
-  rwa [isLink_left_rw (symm hxx'), isLink_right_rw (symm hy'y),
-    ← induce_isLink_iff_of_mem_labelSet h.left_mem h.right_mem]
+  simp only [↓mk_of_domp_edgeSet, Relation.restrict, mem_setOf_eq]
+  tauto
 
 @[simp↓]
 lemma induce_isLink_iff_of_mem_edgeSet (he : e ∈ E(G[X])) :
@@ -371,7 +370,8 @@ lemma induce_isLabelSubgraph : G[X] ≤l G where
 -- @[simp]
 -- lemma vertexDelete_isLink : (G - X).IsLink e x y ↔ G.IsLink e x y ∧ x ∉ X ∧ y ∉ X := by
 --   change (Graph.mk' _ _).IsLink e x y ↔ ?_
---   simp only [mem_parts, SetLike.mem_coe, mk'_isLink, ↓Relation.symmClosure_eq_self, restrict_supp,
+--   simp only [mem_parts, SetLike.mem_coe, mk'_isLink, ↓Relation.symmClosure_eq_self,
+-- restrict_supp,
 --     sSup_eq_sUnion]
 --   tauto
 
@@ -384,7 +384,8 @@ lemma induce_isLabelSubgraph : G[X] ≤l G where
 -- lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) :=
 --   Graph.ext (by rw [union_comm]; ext; simp +contextual) <| by simp +contextual [iff_def]
 
--- lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
+-- lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) :
+-- (G - X) - Y = (G - Y) - X := by
 --   rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
 
 -- -- @[simp]
@@ -392,7 +393,8 @@ lemma induce_isLabelSubgraph : G[X] ≤l G where
 -- --   simp only [vertexDelete_def]
 -- --   exact fun h _ ↦ vertexSet_mono h
 
--- lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
+-- lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) :
+-- H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
 --   rw [vertexDelete_edgeSet]
 --   refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, ?_⟩⟩
 --   · by_contra! hfH
@@ -404,7 +406,8 @@ lemma induce_isLabelSubgraph : G[X] ≤l G where
 --     · exact hcl.closed ⟨_, hxy.symm⟩ hy
 --   · rintro e x he hxH
 --     have : ∀ y, G.Dup x y → y ∈ V(H) :=
---       fun y h ↦ dup_right_mem (dup_of_le_of_mem hclF.le hxH <| edgeDelete_isSpanningSubgraph.dup h)
+--       fun y h ↦ dup_right_mem (dup_of_le_of_mem hclF.le hxH
+-- <| edgeDelete_isSpanningSubgraph.dup h)
 --     have heF : e ∉ F := fun heF => by
 --       obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
 --       obtain hxu | hxv := he.dup_or_dup_of_isLink heuv
