@@ -246,6 +246,31 @@ lemma induce_le_cover (P : Partition α) (a : α) : P.induce a ≤ P.cover a := 
   simp only [mem_singleton_iff, mem_cover_iff, and_assoc, disjoint_iff] at hdisj ⊢
   use y, hyP, hdisj, inf_le_right
 
+def avoid (P : Partition α) (a : α) : Partition α :=
+  P.restrict {s | s ∈ P.parts ∧ Disjoint a s} (fun x ↦ by aesop)
+
+@[simp] lemma mem_avoid_iff : x ∈ P.avoid a ↔ x ∈ P ∧ Disjoint a x := Iff.rfl
+
+@[simp]
+lemma avoid_supp : (P.avoid a).supp = sSup {s | s ∈ P.parts ∧ Disjoint a s} := by
+  simp [avoid, supp]
+
+lemma avoid_supp_le : (P.avoid a).supp ≤ P.supp := by
+  simp +contextual [avoid, le_of_mem]
+
+lemma avoid_supp_eq_self : P.avoid ⊥ = P := by
+  ext x
+  simp
+
+lemma avoid_subset (a : α) : P.avoid a ⊆ P := restrict_subset _
+
+@[simp]
+lemma avoid_eq_self_iff : P.avoid a = P ↔ ∀ x ∈ P, Disjoint a x := by
+  refine ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ ?_⟩
+  ext x
+  simp only [mem_avoid_iff, and_iff_left_iff_imp]
+  exact h x
+
 
 def Agree (P Q : Partition α) : Prop := ∃ S : Partition α, P ⊆ S ∧ Q ⊆ S
 

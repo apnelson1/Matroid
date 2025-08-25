@@ -10,7 +10,7 @@ namespace Graph
 /-! ### Indexed unions -/
 
 /-- The union of an indexed family of pairwise compatible graphs. -/
-@[simps! dup]
+@[simps! vertexSet]
 protected def iUnion (G : ι → Graph α β) (hG : Pairwise (Graph.Compatible on G)) : Graph α β :=
   mk_of_domp (⨆ i, (G i).Dup) (fun e => (⨆ i, (G i).IsLink e)) <| fun hab hcd => by
     obtain ⟨i, hab⟩ := by simpa using hab

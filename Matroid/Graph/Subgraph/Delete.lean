@@ -245,6 +245,26 @@ lemma induce_isLink_iff_of_mem_labelSet (hxX : x ∈ L(G[X])) (hyX : y ∈ L(G[X
     G[X].IsLink e x y ↔ G.IsLink e x y :=
   ⟨induce_isLink_le _ _ _, fun h ↦ h.induce_of_mem_labelSet hxX hyX⟩
 
+/-- This is too annoying to be a simp lemma. -/
+lemma induce_edgeSet : E(G[X]) = {e | ∃ x ∈ X, ∃ y ∈ X, G.IsLink e x y} := by
+  ext e
+  rw [edgeSet_eq_setOf_exists_isLink, mem_setOf_eq]
+  refine ⟨fun ⟨x, y, h⟩ ↦ ?_, fun ⟨x, hx, y, hy, h⟩ ↦ ⟨x, y, h.induce hx hy⟩⟩
+  obtain ⟨x', hx'X, hxx'⟩ := induce_labelSet ▸ h.left_mem
+  obtain ⟨y', hy'X, hy'y⟩ := induce_labelSet ▸ h.right_mem
+  use x', hx'X, y', hy'X
+  rwa [isLink_left_rw (symm hxx'), isLink_right_rw (symm hy'y),
+    ← induce_isLink_iff_of_mem_labelSet h.left_mem h.right_mem]
+
+@[simp↓]
+lemma induce_isLink_iff_of_mem_edgeSet (he : e ∈ E(G[X])) :
+    G[X].IsLink e x y ↔ G.IsLink e x y := by
+  refine ⟨induce_isLink_le _ _ _, fun h ↦ ?_⟩
+  obtain ⟨x', hx'X, y', hy'X, hx'y'⟩ := induce_edgeSet ▸ he
+  obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := h.dup_and_dup_or_dup_and_dup hx'y' <;>
+  rwa [induce_isLink_iff_of_mem_labelSet] <;>
+  simp only [↓mem_induce_labelSet_iff_exists_mem] <;> aesop
+
 @[simp↓]
 lemma induce_adj_iff_of_mem (hxX : x ∈ X) (hyX : y ∈ X) : G[X].Adj x y ↔ G.Adj x y := by
   simp [Adj, hxX, hyX]
@@ -252,26 +272,15 @@ lemma induce_adj_iff_of_mem (hxX : x ∈ X) (hyX : y ∈ X) : G[X].Adj x y ↔ G
 lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
   (induce_adj_iff_of_mem hx hy).mpr h
 
-/-- This is too annoying to be a simp lemma. -/
-lemma induce_edgeSet (G : Graph α β) (X : Set α) : E(G[X]) =
-    {e | ∃ x y, Relation.Domp (⇑(V(G).cover X)) (Relation.restrict (G.IsLink e) X) x y} := by
-  simp [edgeSet_eq_setOf_exists_isLink]
-
 @[simp]
 lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E(G) := by
   rintro e ⟨x, y, x', hx', y', h, hy'⟩
   exact (Relation.restrict_le _ _ _ _ h).edge_mem
 
--- lemma IsLink.mem_induce_iff [G.Nodup] {X : Set α} (hG : G.IsLink e x y) :
---     e ∈ E(G[X]) ↔ x ∈ X ∧ y ∈ X := by
---   simp only [induce_edgeSet, mem_setOf_eq]
---   refine ⟨fun ⟨x', y', he, hx', hy'⟩ ↦ ?_, fun h ↦ ⟨x, y, hG, h⟩⟩
---   obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq he <;> simp [hx', hy']
-
--- lemma induce_induce (G : Graph α β) [G.Nodup] (X Y : Set α) : G[X][Y] = G[Y] ↾ E(G[X]) := by
+-- lemma induce_induce (G : Graph α β) [G.Nodup] (X Y : Set α) : G[X][Y] = G[X ∩ Y] ↾ E(G[X]) := by
 --   refine Graph.ext ?_ fun e x y ↦ ?_
 --   · ext x y
---     simp only [induce_dup, dup_iff_eq, edgeRestrict_dup]
+--     simp only [induce_vertexSet, edgeRestrict_vertexSet]
 --     tauto
 --   simp only [induce_isLink_iff, edgeRestrict_isLink]
 --   obtain he | he := em' (G.IsLink e x y)
@@ -346,132 +355,61 @@ lemma induce_isLabelSubgraph : G[X] ≤l G where
 --     ← inter_diff_assoc, inter_eq_self_of_subset_left (by simp), ← edgeDelete_eq_edgeRestrict]
 
 
-/-- The graph obtained from `G` by deleting a set of vertices. -/
-@[simps]
-protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β where
-  Dup := G.Dup.induce Xᶜ
-  vertexSet := V(G) \ X
-  vertexSet_eq := by aesop
-  IsLink e x y := G.IsLink e x y ∧ x ∉ X ∧ y ∉ X
-  isLink_symm e he a b := by
-    intro ⟨hlab, ha, hb⟩
-    exact ⟨hlab.symm, hb, ha⟩
-  dup_or_dup_of_isLink_of_isLink e a b c d := by
-    rintro ⟨hl, ha, hb⟩ ⟨hl', hc, hd⟩
-    simp only [induce_apply, mem_compl_iff, ha, not_false_eq_true, hc, true_and, hd]
-    exact (G.dup_or_dup_of_isLink_of_isLink hl hl').imp id id
-  isLink_of_dup e x y z := by
-    rintro ⟨S, hS, hxS, hyS⟩ ⟨hl, hxX, hzX⟩
-    obtain ⟨hx, hy, hdup⟩ := G.Dup.induce_apply.mp <| rel_of_mem_of_mem hS hxS hyS
-    use trans' hdup hl, hx
-  mem_vertexSet_of_isLink := by
-    rintro e x y ⟨hl, hx, hy⟩
-    simp [hx, G.mem_vertexSet_of_isLink hl]
+-- /-- The graph obtained from `G` by deleting a set of vertices. -/
+-- @[simps! vertexSet]
+-- protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β :=
+--   Graph.mk' (V(G).restrict {s | s ∈ V(G).parts ∧ Disjoint X s} (fun x ↦ by aesop)) G.IsLink
 
-/-- `G - X` is the graph obtained from `G` by deleting the set `X` of vertices. -/
-notation:max G:1000 " - " S:1000 => Graph.vertexDelete G S
+-- /-- `G - X` is the graph obtained from `G` by deleting the set `X` of vertices. -/
+-- notation:max G:1000 " - " S:1000 => Graph.vertexDelete G S
 
--- instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
---   hSub := Graph.vertexDelete
+-- -- instance instHSub : HSub (Graph α β) (Set α) (Graph α β) where
+-- --   hSub := Graph.vertexDelete
 
--- lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
-
-@[simp]
-lemma vertexDelete_dup_apply (G : Graph α β) (X : Set α) (x y : α) :
-    (G - X).Dup x y ↔ G.Dup x y ∧ x ∉ X ∧ y ∉ X := by
-  ac_change G.Dup.induce _ x y ↔ x ∉ X ∧ y ∉ X ∧ G.Dup x y
-  · exact and_rotate
-  simp
-
-@[simp]
-lemma vertexDelete_empty (G : Graph α β) : G - ∅ = G := by
-  ext a b c <;> simp
-
-@[simp]
-lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
-    (G - X).Adj x y ↔ G.Adj x y ∧ x ∉ X ∧ y ∉ X := by
-  simp [Adj]
-
-lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X where
-  dup_subset := induce_subset_induce_of_subset h.dup_subset _
-  isLink_of_isLink _ _ _ h' := by simp_all [h.isLink_of_isLink h'.1]
-
-lemma vertexDelete_anti_right_iff : G - Y ≤l G - X ↔ V(G) \ Y ⊆ V(G) \ X := by
-  refine ⟨fun h ↦ by simpa using h.vertexSet, fun h ↦ ⟨?_, fun e x y ⟨hl, hx, hy⟩ => ?_⟩⟩
-  · refine G.Dup.induce_induce.trans (induce_eq_induce_iff.mpr ?_)
-    simp only [vertexDelete_vertexSet, inf_eq_inter, vertexSet_def]
-    rw [inter_assoc, ← diff_eq_compl_inter, ← diff_eq_compl_inter, inter_eq_left.mpr h]
-  simp [hl, (h ⟨hl.left_mem, hx⟩).2, (h ⟨hl.right_mem, hy⟩).2]
-
-lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤l G - X := by
-  rw [vertexDelete_anti_right_iff]
-  exact diff_subset_diff_right hXY
-
-lemma vertexDelete_eq_vertexDelete_iff (G : Graph α β) (X Y : Set α) :
-    G - X = G - Y ↔ V(G) \ X = V(G) \ Y := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← vertexDelete_vertexSet, ← vertexDelete_vertexSet, h]
-  apply Graph.ext
-  · exact induce_eq_induce_iff.mpr (by simpa [← diff_eq_compl_inter, G.vertexSet_def])
-  simp [Set.ext_iff] at h
-  simp only [vertexDelete_isLink, and_congr_right_iff]
-  exact fun e x y hl ↦ and_congr (h x hl.left_mem) (h y hl.right_mem)
-
-@[simp]
-lemma vertexDelete_isLabelSubgraph : G - X ≤l G where
-  dup_induce := induce_eq_induce_iff.mpr <| by aesop
-  isLink_of_isLink _ _ _ h := h.1
-
-instance [G.Nodup] : Nodup (G - X) :=
-  Nodup.of_isLabelSubgraph (vertexDelete_isLabelSubgraph)
-
-lemma IsLink.mem_vertexDelete_iff [G.Nodup] {X : Set α} (hG : G.IsLink e x y) :
-    e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
-  rw [vertexDelete_edgeSet, mem_setOf_eq]
-  refine ⟨fun ⟨x, y, hl, hx, hy⟩ ↦ ?_, fun ⟨hx, hy⟩ ↦ ⟨x, y, hG, hx, hy⟩⟩
-  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq hl <;> simp [hx, hy]
-
-lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
-    (G ↾ F) - D = (G - D) ↾ F := by
-  refine Graph.ext rfl fun e x y ↦ ?_
-  simp only [vertexDelete_isLink, edgeRestrict_isLink]
-  tauto
+-- -- lemma vertexDelete_def (G : Graph α β) (X : Set α) : G - X = G [V(G) \ X] := rfl
 
 -- @[simp]
--- lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
---   Graph.ext (by ext; simp +contextual [iff_def]) <| by
---   simp only [vertexDelete_isLink_iff, induce_isLink_iff, mem_diff]
+-- lemma vertexDelete_isLink : (G - X).IsLink e x y ↔ G.IsLink e x y ∧ x ∉ X ∧ y ∉ X := by
+--   change (Graph.mk' _ _).IsLink e x y ↔ ?_
+--   simp only [mem_parts, SetLike.mem_coe, mk'_isLink, ↓Relation.symmClosure_eq_self, restrict_supp,
+--     sSup_eq_sUnion]
 --   tauto
 
-lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) :=
-  Graph.ext (by rw [union_comm]; ext; simp +contextual) <| by simp +contextual [iff_def]
+-- -- @[simp]
+-- -- lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
+-- --   Graph.ext (by ext; simp +contextual [iff_def]) <| by
+-- --   simp only [vertexDelete_isLink_iff, induce_isLink_iff, mem_diff]
+-- --   tauto
 
-lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
-  rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
+-- lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) :=
+--   Graph.ext (by rw [union_comm]; ext; simp +contextual) <| by simp +contextual [iff_def]
 
--- @[simp]
--- lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
---   simp only [vertexDelete_def]
---   exact fun h _ ↦ vertexSet_mono h
+-- lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
+--   rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
 
-lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
-  rw [vertexDelete_edgeSet]
-  refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, ?_⟩⟩
-  · by_contra! hfH
-    simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
-    refine (hclF.edgeSet ?_).2 hf.2
-    obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1
-    obtain hx | hy := or_iff_not_imp_left.mpr <| hfH x y hxy
-    · exact hcl.closed ⟨_, hxy⟩ hx
-    · exact hcl.closed ⟨_, hxy.symm⟩ hy
-  · rintro e x he hxH
-    have : ∀ y, G.Dup x y → y ∈ V(H) :=
-      fun y h ↦ dup_right_mem (dup_of_le_of_mem hclF.le hxH <| edgeDelete_isSpanningSubgraph.dup h)
-    have heF : e ∉ F := fun heF => by
-      obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
-      obtain hxu | hxv := he.dup_or_dup_of_isLink heuv
-      · exact hunH (this u hxu)
-      · exact hvnH (this v hxv)
-    exact hclF.closed (by simp [he, heF]) hxH
+-- -- @[simp]
+-- -- lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
+-- --   simp only [vertexDelete_def]
+-- --   exact fun h _ ↦ vertexSet_mono h
+
+-- lemma IsClosedSubgraph.of_edgeDelete_iff (hclF : H ≤c G ＼ F) : H ≤c G ↔ E(G) ∩ F ⊆ E(G - V(H)) := by
+--   rw [vertexDelete_edgeSet]
+--   refine ⟨fun hcl f hf ↦ ?_, fun hF ↦ ⟨hclF.le.trans edgeDelete_le, ?_⟩⟩
+--   · by_contra! hfH
+--     simp only [mem_setOf_eq, not_exists, not_and, not_not] at hfH
+--     refine (hclF.edgeSet ?_).2 hf.2
+--     obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet hf.1
+--     obtain hx | hy := or_iff_not_imp_left.mpr <| hfH x y hxy
+--     · exact hcl.closed ⟨_, hxy⟩ hx
+--     · exact hcl.closed ⟨_, hxy.symm⟩ hy
+--   · rintro e x he hxH
+--     have : ∀ y, G.Dup x y → y ∈ V(H) :=
+--       fun y h ↦ dup_right_mem (dup_of_le_of_mem hclF.le hxH <| edgeDelete_isSpanningSubgraph.dup h)
+--     have heF : e ∉ F := fun heF => by
+--       obtain ⟨u, v, heuv, hunH, hvnH⟩ := hF ⟨he.edge_mem, heF⟩
+--       obtain hxu | hxv := he.dup_or_dup_of_isLink heuv
+--       · exact hunH (this u hxu)
+--       · exact hvnH (this v hxv)
+--     exact hclF.closed (by simp [he, heF]) hxH
 
 end Graph

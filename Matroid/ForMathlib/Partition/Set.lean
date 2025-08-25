@@ -131,6 +131,12 @@ lemma rel_eq_exists : ⇑P = fun x y => ∃ t ∈ P, x ∈ t ∧ y ∈ t := rfl
 lemma rel_self_iff_mem_supp : P x x ↔ x ∈ P.supp :=
   ⟨fun h ↦ h.left_mem, fun h ↦ rel_self_of_mem_supp h⟩
 
+lemma Rel.left_rfl (h : P x y) : P x x :=
+  rel_self_iff_mem_supp.mpr h.left_mem
+
+lemma Rel.right_rfl (h : P x y) : P y y :=
+  h.symm.left_rfl
+
 @[simp]
 lemma rel_bot : ⇑(⊥ : Partition (Set α)) = fun _ _ => False := by
   ext x y
@@ -277,6 +283,19 @@ lemma partOf_mem_iff_rel_iff {Q : Partition (Set α)} :
   ext y
   simp only [partOf, mem_fiber_iff]
   rw [rel_comm, ← hrel y, rel_comm]
+
+@[simp]
+lemma indiscrete_rel (hS : S ≠ ∅) : ⇑(Partition.indiscrete S hS) = fun x y ↦ x ∈ S ∧ y ∈ S := by
+  ext x y
+  simp [rel_iff_exists]
+
+@[simp]
+lemma indiscrete'_rel : ⇑(Partition.indiscrete' S) = fun x y ↦ x ∈ S ∧ y ∈ S := by
+  ext x y
+  simp only [rel_iff_exists, mem_indiscrete'_iff, bot_eq_empty, ne_eq, ← nonempty_iff_ne_empty,
+    existsAndEq, true_and, and_iff_right_iff_imp, and_imp]
+  rintro hx hy
+  use x
 
 @[simp]
 lemma induce_rel (P : Partition (Set α)) {S : Set α} :
@@ -486,6 +505,14 @@ lemma atomic_iff_eq_discrete (P : Partition (Set α)) :
   obtain rfl := mem_singleton_iff.mp hat
   exact htP
 
+@[simp]
+lemma mem_atomic_iff (hP : P.Atomic) : S ∈ P ↔ ∃ a ∈ P.supp, {a} = S := by
+  rw [atomic_iff_eq_discrete] at hP
+  nth_rw 1 [hP]
+  refine ⟨fun h => by simpa using h, ?_⟩
+  rintro ⟨a, ha, rfl⟩
+  simpa
+
 lemma eq_discrete_iff : P = Partition.discrete S ↔ P.Atomic ∧ P.supp = S := by
   constructor
   · rintro rfl
@@ -584,7 +611,10 @@ lemma discrete_isInducedSubpartition_iff :
 
 -- What is the full generality of this?
 @[simp]
-lemma agree_of_nodup (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
+lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
+
+
+
   unfold Agree
   rw [atomic_iff_eq_discrete] at hP hQ
   have hsSup : sSupIndep (P.parts ∪ Q.parts) := by

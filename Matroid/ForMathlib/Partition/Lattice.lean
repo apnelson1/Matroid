@@ -416,7 +416,7 @@ lemma sup_discrete (s t : Set α) :
 
 @[simp↓]
 lemma sSup_induce_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) (s : Set α) :
-    induce (sSup S) s = sSup ((Partition.induce · s) '' S) := by
+    Partition.induce (sSup S) s = sSup ((Partition.induce · s) '' S) := by
   ext x y
   simp only [sSup_rel, induce_apply, hS, ↓sSup_rel_of_agree, sSup_apply, iSup_apply, iSup_Prop_eq,
     Subtype.exists, mem_image, exists_prop, exists_exists_and_eq_and]
@@ -444,7 +444,7 @@ lemma Agree.induce_sup (hPQ : P.Agree Q) (s : Set α) :
 
 @[simp↓]
 lemma sInf_induce_of_nonempty {S : Set (Partition (Set α))} (hS' : S.Nonempty) (s : Set α) :
-    induce (sInf S) s = sInf ((Partition.induce · s) '' S) := by
+    Partition.induce (sInf S) s = sInf ((Partition.induce · s) '' S) := by
   ext x y
   obtain ⟨P, hPS⟩ := hS'
   simp +contextual only [induce_apply, sInf_rel, sInf_apply, iInf_apply, iInf_Prop_eq,
@@ -487,3 +487,37 @@ lemma induce_inter (P : Partition (Set α)) (s t : Set α) :
   rw [← sInf_pair, ← sInter_pair, induce_sInter P (by simp), image_pair]
 
 -- Compl does not exist
+
+def relOrderEmb : Partition (Set α) ↪o (α → α → Prop) where
+  toFun := (⇑)
+  inj' _ _ := rel_inj_iff.mp
+  map_rel_iff' := rel_le_iff_le
+
+lemma supp_disjoint_of_disjoint (h : Disjoint P Q) : Disjoint P.supp Q.supp := by
+  rintro x hxP hxQ
+  by_contra! hx
+  obtain ⟨s, hsx⟩ := by simpa [← ne_eq, ← nonempty_iff_ne_empty] using hx
+  have := supp_le_of_le <| @h (Partition.indiscrete' {s}) ?_ ?_
+  simp at this
+  all_goals refine le_of_rel_le fun a b => ?_; simp only [bot_eq_empty, ne_eq, singleton_ne_empty,
+    not_false_eq_true, indiscrete'_eq_of_ne_bot, indiscrete_rel]; rintro ⟨rfl, rfl⟩
+  · obtain ⟨p, hpP, hbp⟩ := hxP hsx
+    use p, hpP
+  · obtain ⟨q, hqQ, hbq⟩ := hxQ hsx
+    use q, hqQ
+
+lemma disjoint_iff_rel_disjoint (P Q : Partition (Set α)) :
+    Disjoint P Q ↔ Disjoint (⇑P) (⇑Q) := by
+  refine ⟨fun h p hpP hpQ a b hpab => ?_, fun h p hpP hpQ S hSp => ?_⟩ <;>
+    simp only [Pi.bot_apply, «Prop».bot_eq_false, notMem_bot, le_eq_subset, false_and, exists_const]
+  · exact (supp_disjoint_of_disjoint h).notMem_of_mem_left (hpP a b hpab).left_mem
+      (hpQ a b hpab).left_mem
+  · obtain ⟨s, hsS⟩ := p.nonempty_of_mem hSp
+    rw [← rel_le_iff_le] at hpP hpQ
+    have hp : p s s := by use S
+    specialize @h (fun a b => a = b ∧ b = s) ?_ ?_ s s
+    · rintro x y ⟨rfl, rfl⟩
+      exact hpP x x hp
+    · rintro x y ⟨rfl, rfl⟩
+      exact hpQ x x hp
+    simp at h
