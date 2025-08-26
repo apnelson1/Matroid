@@ -432,6 +432,10 @@ lemma union_eq_sUnion (G H : Graph α β) :
 lemma union_vertexSet (G H : Graph α β) : V(G ∪ H) = V(G) ⊔ V(H) := by
   rw [← H.edgeDelete_vertexSet E(G), union_eq_sUnion, ← iSup_pair, sUnion_vertexSet, iSup_subtype]
 
+@[simp]
+lemma union_labelSet (G H : Graph α β) : L(G ∪ H) = L(G) ∪ L(H) := by
+  simp
+
 @[simp] lemma left_le_union_dup : ⇑V(G) ≤ V(G ∪ H) := by
   rw [rel_le_iff_le]
   simp
@@ -458,6 +462,11 @@ lemma union_isLink : (G ∪ H).IsLink e x y ↔
 
 lemma IsLink.le_union_left (hxy : G.IsLink e x y) : (G ∪ H).IsLink e x y :=
   G.isLink_le_sUnion pairwise_compatible_edgeDelete (mem_insert G {H ＼ E(G)}) hxy
+
+lemma IsLink.le_union_right_of_not_mem (hxy : H.IsLink e x y) (he : e ∉ E(G)) :
+    (G ∪ H).IsLink e x y :=
+  (H ＼ E(G)).isLink_le_sUnion pairwise_compatible_edgeDelete (mem_insert_of_mem G rfl) <| by
+    simp [hxy, he]
 
 @[simp↓]
 lemma Dup_agree.union_isLink (hG' : G.Dup_agree H) :

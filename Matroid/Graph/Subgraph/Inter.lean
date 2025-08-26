@@ -44,8 +44,7 @@ protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
 variable {G : ι → Graph α β} [Nonempty ι]
 
 @[simp]
-lemma iInter_vertexSet (G : ι → Graph α β) : V(Graph.iInter G) = ⋂ i, V(G i) := by
-  rw [vertexSet_eq]
+lemma iInter_labelSet (G : ι → Graph α β) : L(Graph.iInter G) = ⋂ i, L(G i) := by
   simp
 
 @[simp↓]
@@ -56,9 +55,9 @@ lemma iInter_isLink_of_agree (hG : Pairwise (Dup_agree on G)) :
     implies_true, and_true, true_and]
   refine fun h i ↦ ⟨?_, ?_⟩ <;> ext z
   · exact (Partition.agree_iff_rel.mp <| hG.of_refl i (Classical.arbitrary ι)) _ z
-      (h i).left_mem_supp (h _).left_mem_supp
+      (h i).left_mem (h _).left_mem
   · exact (Partition.agree_iff_rel.mp <| hG.of_refl i (Classical.arbitrary ι)) _ z
-      (h i).right_mem_supp (h _).right_mem_supp
+      (h i).right_mem (h _).right_mem
 
 @[simp↓]
 lemma iInter_edgeSet_of_agree (hG : Pairwise (Dup_agree on G)) (hG' : Pairwise (Compatible on G)) :
@@ -73,11 +72,11 @@ lemma iInter_edgeSet_of_agree (hG : Pairwise (Dup_agree on G)) (hG' : Pairwise (
   exact hG'.of_refl _ i |>.isLink_eq hj.edge_mem hi.edge_mem |>.mp hj
 
 lemma iInter_dup_le (G : ι → Graph α β) (i : ι) :
-    (Graph.iInter G).Dup ≤ (G i).Dup := iInf_le _ i
+    V(Graph.iInter G) ≤ V(G i) := iInf_le _ i
 
 protected lemma iInter_le (hG : Pairwise (Dup_agree on G)) (i : ι) : Graph.iInter G ≤ G i where
-  dup_subset := by
-    rw [iInter_dup]
+  vertexSet_subset := by
+    rw [iInter_vertexSet]
     exact Partition.iInf_subset_of_agree hG i
   isLink_of_isLink _ _ _ h := (h i).2.2
 
@@ -88,8 +87,9 @@ lemma le_iInter_iff (hG : Pairwise (Dup_agree on G)) :
   refine ⟨fun h i ↦ h.trans <| Graph.iInter_le hG i,
     fun h ↦ le_of_le_isLabelSubgraph_subset_subset (h j)
     (isLabelSubgraph_of_le (Graph.iInter_le hG j)) ?_ fun e he ↦ ?_⟩ <;>
-    simp only [iInter_vertexSet, subset_iInter_iff, iInter_edgeSet, mem_setOf_eq]
-  · exact fun i ↦ vertexSet_mono (h i)
+    simp only [iInter_vertexSet, Partition.iInf_supp, subset_iInter_iff, iInter_edgeSet,
+      mem_setOf_eq]
+  · exact fun i ↦ labelSet_mono (h i)
   obtain ⟨x, y, hHxy⟩ := exists_isLink_of_mem_edgeSet he
   use x, y, fun i ↦ ?_
   have hi := hHxy.of_le (h i)
@@ -124,7 +124,7 @@ omit [Nonempty ι] in
 lemma iInter_range [Nonempty ι'] {f : ι' → ι} {G : (Set.range f) → Graph α β}
     (hG : Pairwise (Dup_agree on G)) :
     Graph.iInter G = Graph.iInter (fun i ↦ G (Set.rangeFactorization f i)) :=
-  iInter_comp_eq_of_surj hG surjective_onto_range
+  iInter_comp_eq_of_surj hG rangeFactorization_surjective
 
 @[simp]
 lemma iInter_inc (hG : Pairwise (Dup_agree on G)) :
@@ -150,21 +150,23 @@ lemma iInter_isLoopAt_iff (hG : Pairwise (Dup_agree on G)) :
 @[simp]
 lemma iInter_isNonloopAt_iff (hG : Pairwise (Dup_agree on G)) :
     (Graph.iInter G).IsNonloopAt e x ↔
-    ∃ y, ¬ (Graph.iInter G).Dup x y ∧ ∀ i, (G i).IsLink e x y := by
-  simp_rw [IsNonloopAt, iInter_isLink_of_agree hG, iInter_dup]
+    ∃ y, ¬ V(Graph.iInter G) x y ∧ ∀ i, (G i).IsLink e x y := by
+  simp_rw [IsNonloopAt, iInter_isLink_of_agree hG, iInter_vertexSet]
   simp
 
 -- @[simp]
 -- lemma induce_iInter [Nonempty ι] {G : ι → Graph α β} (X : Set α) :
---     (Graph.iInter G)[X] = .iInter (fun i ↦ (G i)[X]) :=
---   Graph.ext (iInter_const X).symm fun e x y ↦ by
---   simp [forall_and_right]
+--     (Graph.iInter G)[X] = .iInter (fun i ↦ (G i)[X]) := by
+--   apply Graph.ext
+--   · ext x y
+--     sorry
+--   sorry
 
-@[simp]
-lemma vertexDelete_iInter (hG : Pairwise (Dup_agree on G)) (X : Set α) :
-    (Graph.iInter G) - X = .iInter (fun i ↦ (G i) - X) :=
-  Graph.ext (by simp) fun e x y ↦ by
-  simp [hG, hG.vertexDelete_dup_agree X, forall_and_right]
+-- @[simp]
+-- lemma vertexDelete_iInter (hG : Pairwise (Dup_agree on G)) (X : Set α) :
+--     (Graph.iInter G) - X = .iInter (fun i ↦ (G i) - X) :=
+--   Graph.ext (by simp) fun e x y ↦ by
+--   simp [hG, hG.vertexDelete_dup_agree X, forall_and_right]
 
 @[simp]
 lemma edgeDelete_iInter (hG : Pairwise (Dup_agree on G)) (F : Set β) :
@@ -188,9 +190,8 @@ protected def sInter (s : Set (Graph α β)) (hne : s.Nonempty) : Graph α β :=
 variable {s t : Set (Graph α β)} {G H : Graph α β}
 
 @[simp]
-lemma sInter_dup (hne : s.Nonempty) : (Graph.sInter s hne).Dup = ⨅ G ∈ s, G.Dup := by
-  let _ : Nonempty s := hne.to_subtype
-  rw [Graph.sInter, iInter_dup, iInf_subtype]
+lemma sInter_labelSet (hne : s.Nonempty) : L(Graph.sInter s hne) = ⨅ G ∈ s, L(G) := by
+  simp
 
 @[simp↓]
 lemma sInter_isLink_of_agree (hne : s.Nonempty) (hG : s.Pairwise Dup_agree) :
@@ -242,7 +243,7 @@ protected lemma sInter_image {s : Set ι} (hne : s.Nonempty) (f : ι → Graph �
 protected lemma sInter_range {f : ι → Graph α β} (hfs : Pairwise (Dup_agree on f)) :
     Graph.sInter (Set.range f) (range_nonempty f) = .iInter f :=
   Graph.iInter_comp_eq_of_surj (f := Set.rangeFactorization f) hfs.range_pairwise.subtype
-    surjective_onto_range
+    rangeFactorization_surjective
 
 @[simp]
 protected lemma sInter_singleton (G : Graph α β) : Graph.sInter {G} (by simp) = G := by
@@ -273,7 +274,7 @@ lemma sInter_isLoopAt_iff (hs : s.Nonempty) (hG : s.Pairwise Dup_agree) :
 @[simp]
 lemma sInter_isNonloopAt_iff (hs : s.Nonempty) (hG : s.Pairwise Dup_agree) :
     (Graph.sInter s hs).IsNonloopAt e x ↔
-    ∃ y, ¬ (Graph.sInter s hs).Dup x y ∧ ∀ G ∈ s, G.IsLink e x y := by
+    ∃ y, ¬ V(Graph.sInter s hs) x y ∧ ∀ G ∈ s, G.IsLink e x y := by
   rw [IsNonloopAt, sInter_isLink_of_agree hs hG]
   simp
 
@@ -325,21 +326,21 @@ instance : Inter (Graph α β) where inter := Graph.inter
 protected lemma sInter_pair (G H : Graph α β) : Graph.sInter {G, H} (by simp) = G ∩ H := rfl
 
 @[simp]
-lemma inter_dup : (G ∩ H).Dup = G.Dup ⊓ H.Dup := by
-  ext x y
-  rw [← Graph.sInter_pair, sInter_dup (by simp), iInf_pair]
+lemma inter_vertexSet : V(G ∩ H) = V(G) ⊓ V(H) := by
+  change V(Graph.sInter {G, H} (by simp)) = V(G) ⊓ V(H)
+  rw [sInter_vertexSet, iInf_subtype, ← iInf_pair]
 
 @[simp]
-lemma inter_vertexSet : V(G ∩ H) = V(G) ∩ V(H) := by
-  rw [← Graph.sInter_pair, sInter_vertexSet, biInter_pair]
+lemma inter_labelSet : L(G ∩ H) = L(G) ∩ L(H) := by
+  simp
 
 @[simp]
-lemma inter_isLink : (G ∩ H).IsLink e x y ↔ G.Dup x = H.Dup x ∧ G.Dup y = H.Dup y ∧
+lemma inter_isLink : (G ∩ H).IsLink e x y ↔ V(G) x = V(H) x ∧ V(G) y = V(H) y ∧
     G.IsLink e x y ∧ H.IsLink e x y := by
   let G' := Classical.arbitrary (Set.Elem {G, H})
   simp only [← Graph.sInter_pair, sInter_isLink, mem_insert_iff, mem_singleton_iff,
     forall_eq_or_imp, forall_eq]
-  change (_ = G'.val.Dup x ∧ _ = G'.val.Dup y ∧ _) ∧ _ = G'.val.Dup x ∧ _ = G'.val.Dup y ∧ _ ↔ _
+  change (_ = V(G'.val) x ∧ _ = V(G'.val) y ∧ _) ∧ _ = V(G'.val) x ∧ _ = V(G'.val) y ∧ _ ↔ _
   obtain hG' | hG' : G' = G ∨ G' = H := G'.prop <;>
   · simp_rw [hG']
     simp +contextual [iff_def]
@@ -372,8 +373,8 @@ lemma inter_edgeSet_subset : E(G ∩ H) ⊆ E(G) ∩ E(H) := by
   exact fun e x _ y _ hG hH ↦ ⟨hG.edge_mem, hH.edge_mem⟩
 
 @[simp]
-lemma inter_inc : (G ∩ H).Inc e x ↔ G.Dup x = H.Dup x ∧
-    ∃ x_1, G.Dup x_1 = H.Dup x_1 ∧ G.IsLink e x x_1 ∧ H.IsLink e x x_1 := by
+lemma inter_inc : (G ∩ H).Inc e x ↔ V(G) x = V(H) x ∧
+    ∃ x_1, V(G) x_1 = V(H) x_1 ∧ G.IsLink e x x_1 ∧ H.IsLink e x x_1 := by
   simp [Inc]
 
 @[simp↓]
@@ -389,7 +390,7 @@ lemma inter_isLoopAt_iff (hG : G.Dup_agree H) :
 
 @[simp]
 lemma inter_isNonloopAt_iff (hG : G.Dup_agree H) :
-    (G ∩ H).IsNonloopAt e x ↔ ∃ y, ¬ (G ∩ H).Dup x y ∧ G.IsLink e x y ∧ H.IsLink e x y := by
+    (G ∩ H).IsNonloopAt e x ↔ ∃ y, ¬ V(G ∩ H) x y ∧ G.IsLink e x y ∧ H.IsLink e x y := by
   rw [← Graph.sInter_pair, sInter_isNonloopAt_iff (by simp) (pairwise_pair_of_symm hG)]
   simp
 

@@ -1,7 +1,7 @@
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Constructions.Basic
 
-variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+variable {α β ι ι' : Type*} {a b c x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
 
 open Set Function
@@ -11,29 +11,53 @@ namespace Graph
 
 /-! ### Adding one edge -/
 
-@[simp]
-lemma singleEdge_compatible_iff :
-    Compatible (Graph.singleEdge u v e) G ↔ (e ∈ E(G) → G.IsLink e u v) := by
-  refine ⟨fun h he ↦ by simp [← h ⟨by simp, he⟩], fun h f ⟨hfe, hf⟩ ↦ ?_⟩
-  obtain rfl : f = e := by simpa using hfe
-  ext x y
-  simp only [singleEdge_isLink, (h hf).isLink_iff]
-  tauto
+-- @[simp]
+-- lemma singleEdge_compatible_iff : Compatible (Graph.singleEdge u v e) G ↔
+--     (e ∈ E(G) → G.IsLink e u v ∧ ({{u}, {v}} : Set (Set α)) ⊆ V(G)) := by
+--   rw [pair_subset_iff]
+--   refine ⟨fun h he ↦ ?_, fun h f a b ⟨hfe, hf⟩ ↦ ?_⟩
+--   · simp only [← h ⟨by simp, he⟩, singleEdge_isLink, and_self, true_or, IsLink.symm, true_and]
+
+--     sorry
+--   obtain rfl : f = e := by simpa using hfe
+--   obtain ⟨hfuv, hu, hv⟩ := h hf
+--   simp only [singleEdge_isLink, true_and]
+--   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+--   · obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h
+--     · exact hfuv
+--     · exact symm hfuv
+--   obtain ⟨ha, hb⟩ | ⟨ha, hb⟩ := h.isLink_iff_dup_and_dup_or_dup_and_dup.mp hfuv
+--   · obtain rfl : a = u := sorry
+--     obtain rfl : b = v := sorry
+--     simp
+--   · obtain rfl : a = v := sorry
+--     obtain rfl : b = u := sorry
+--     simp
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-@[simps! edgeSet vertexSet]
+@[simps! edgeSet isLink]
 protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
   Graph.singleEdge a b e ∪ G
 
-lemma addEdge_isLink (G : Graph α β) (e : β) (a b : α) : (G.addEdge e a b).IsLink e a b := by
-  simp [Graph.addEdge, union_isLink_iff]
+@[simp]
+lemma addEdge_labelSet : L(G.addEdge e a b) = {a, b} ∪ L(G) := by
+  simp [Graph.addEdge]
+
+@[simp]
+lemma addEdge_vertexSet : V(G.addEdge e a b) = V(Graph.singleEdge a b e) ⊔ V(G) := by
+  simp [Graph.addEdge]
+
+lemma addEdge_isLink' (G : Graph α β) (e : β) (a b : α) : (G.addEdge e a b).IsLink e a b := by
+  rw [Graph.addEdge]
+  exact IsLink.le_union_left isLink_singleEdge
 
 lemma addEdge_isLink_of_ne (hf : G.IsLink f x y) (hne : f ≠ e) (a b : α) :
     (G.addEdge e a b).IsLink f x y := by
-  simpa [Graph.addEdge, union_isLink_iff, hne]
+  rw [Graph.addEdge]
+  exact hf.le_union_right_of_not_mem hne
 
-lemma addEdge_isLink_iff {a b : α} (he : e ∉ E(G)) :
+lemma addEdge_isLink_iff (he : e ∉ E(G)) :
     (G.addEdge e a b).IsLink f x y ↔ (f = e ∧ s(a,b) = s(x,y)) ∨ G.IsLink f x y := by
   have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
   simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,

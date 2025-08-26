@@ -39,6 +39,8 @@ lemma mem_endSet_iff : x ∈ G.endSet e ↔ G.Inc e x := Iff.rfl
 -- lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : G.endSet e = {x} := by
 --   rw [IsLink.endSet_eq h, pair_eq_singleton]
 
+
+
 class Nodup (G : Graph α β) : Prop where
   vertexSet_atomic : Atomic V(G)
 
@@ -46,6 +48,12 @@ lemma vertexSet_atomic (G : Graph α β) [G.Nodup] : Atomic V(G) := Nodup.vertex
 
 lemma eq_of_dup [G.Nodup] (h : V(G) x y) : x = y :=
   G.vertexSet_atomic.eq_of_rel h
+
+lemma mem_labelSet_iff_singleton_vertex [G.Nodup] : x ∈ L(G) ↔ {x} ∈ V(G) := by
+  refine ⟨fun ⟨s, hs, hxs⟩ ↦ ?_, fun h ↦ ⟨{x}, h, rfl⟩⟩
+  obtain ⟨t, ht, hxt⟩ := G.vertexSet_atomic.exists_singleton_of_mem hs
+  subst x
+  exact hs
 
 @[simp]
 lemma dup_iff_eq [G.Nodup] : V(G) x y ↔ x = y ∧ ∃ v ∈ V(G), x ∈ v := by

@@ -490,6 +490,15 @@ lemma rel_discrete_eq : Partition.discrete S = fun a b => a = b ∧ a ∈ S := b
 lemma rel_discrete_iff : Partition.discrete S a b ↔ a = b ∧ a ∈ S := by
   rw [rel_discrete_eq]
 
+lemma eq_of_rel_of_left_singleton_mem (hab : P a b) (ha : {a} ∈ P) : a = b := by
+  obtain ⟨t, htP, hat, hbt⟩ := hab
+  obtain rfl := P.eq_of_mem_of_mem ha htP rfl hat
+  simp_all
+
+lemma eq_of_rel_of_right_singleton_mem (hab : P a b) (hb : {b} ∈ P) : a = b := by
+  rw [rel_comm] at hab
+  exact (eq_of_rel_of_left_singleton_mem hab hb).symm
+
 @[simp]
 lemma discrete_atomic (S : Set α) : (Partition.discrete S).Atomic := by
   rintro _ ⟨a, -, rfl⟩
