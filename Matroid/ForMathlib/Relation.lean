@@ -102,7 +102,12 @@ lemma domp_mono {r₁ r₂ s₁ s₂ : α → β → Prop} (hr : r₁ ≤ r₂) 
 lemma domp_sup_right (r : α → β → Prop) (s₁ s₂ : α → β → Prop) :
     Domp r (s₁ ⊔ s₂) = Domp r s₁ ⊔ Domp r s₂ := by
   ext a b
-  simp only [Domp, Comp, flip, Pi.sup_apply, sup_Prop_eq, and_or_left, exists_or, or_and_right]
+  simp [Domp, Comp, flip, and_or_left, exists_or, or_and_right]
+
+lemma domp_or (r s t : α → β → Prop) :
+    Domp r (fun x y ↦ s x y ∨ t x y) = fun x y ↦ Domp r s x y ∨ Domp r t x y := by
+  ext a b
+  simp [Domp, Comp, flip, and_or_left, exists_or, or_and_right]
 
 
 class Dompeq (r s : α → β → Prop) : Prop where

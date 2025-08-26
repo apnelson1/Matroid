@@ -36,7 +36,6 @@ namespace Graph
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-@[simps! edgeSet isLink]
 protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
   Graph.singleEdge a b e ∪ G
 
@@ -45,76 +44,173 @@ lemma addEdge_labelSet : L(G.addEdge e a b) = {a, b} ∪ L(G) := by
   simp [Graph.addEdge]
 
 @[simp]
+lemma left_mem_addEdge_labelSet : a ∈ L(G.addEdge e a b) := by
+  simp
+
+@[simp]
+lemma right_mem_addEdge_labelSet : b ∈ L(G.addEdge e a b) := by
+  simp
+
+@[simp]
 lemma addEdge_vertexSet : V(G.addEdge e a b) = V(Graph.singleEdge a b e) ⊔ V(G) := by
   simp [Graph.addEdge]
 
-lemma addEdge_isLink' (G : Graph α β) (e : β) (a b : α) : (G.addEdge e a b).IsLink e a b := by
+@[simp↓]
+lemma addEdge_vertexSet_of_mem (ha : a ∈ L(G)) (hb : b ∈ L(G)) : V(G.addEdge e a b) = V(G) := by
+  simp [addEdge_vertexSet, pair_subset_iff, ha, hb]
+
+@[simp]
+lemma addEdge_dup : V(G.addEdge e a b) x y ↔ (x = y ∧ (x = a ∨ x = b)) ∨ V(G) x y := by
+  simp only [Graph.addEdge, union_vertexSet, singleEdge_vertexSet, Partition.sup_rel,
+    Partition.rel_discrete_eq, mem_insert_iff, mem_singleton_iff]
+  have : IsTrans α ((fun a_1 b_1 ↦ a_1 = b_1 ∧ (a_1 = a ∨ a_1 = b)) ⊔ ⇑V(G)) := ⟨by
+    rintro a b c (⟨rfl, hor⟩ | h) (⟨rfl, hor⟩ | h')
+    on_goal 4 => simp [h.trans h']
+    all_goals simp_all⟩
+  rw [Relation.transClosure_eq_self]
+  rfl
+
+lemma subset_addEdge_vertexSet : V(G) ⊆ V(G.addEdge e a b) := by
+  rw [Partition.subset_iff_rel]
+  rintro x y hx
+  rw [addEdge_dup]
+  simp only [iff_or_self, and_imp]
+  rintro rfl (rfl | rfl) <;> exact Partition.rel_self_of_mem_supp hx
+
+lemma addEdge_isLink_of_edge (G : Graph α β) (e : β) (a b : α) :
+    (G.addEdge e a b).IsLink e a b := by
   rw [Graph.addEdge]
   exact IsLink.le_union_left isLink_singleEdge
 
-lemma addEdge_isLink_of_ne (hf : G.IsLink f x y) (hne : f ≠ e) (a b : α) :
+lemma IsLink.addEdge_of_ne (hf : G.IsLink f x y) (hne : f ≠ e) (a b : α) :
     (G.addEdge e a b).IsLink f x y := by
   rw [Graph.addEdge]
   exact hf.le_union_right_of_not_mem hne
 
-lemma addEdge_isLink_iff (he : e ∉ E(G)) :
-    (G.addEdge e a b).IsLink f x y ↔ (f = e ∧ s(a,b) = s(x,y)) ∨ G.IsLink f x y := by
-  have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
-  simp only [Graph.addEdge, union_isLink_iff, singleEdge_isLink, singleEdge_edgeSet,
-    mem_singleton_iff, edgeDelete_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk]
-  obtain rfl | hne := eq_or_ne e f
-  · have hl : ¬ G.IsLink e x y := fun h ↦ he h.edge_mem
-    simp only [true_and, not_true_eq_false, hl, and_self, or_false]
-    tauto
-  simp [hne.symm]
+-- You probably want addEdge_isLink_of_ne instead. So much so that it is not a simp lemma.
+lemma addEdge_isLink : (G.addEdge e a b).IsLink f x y ↔ Relation.Domp V(G.addEdge e a b)
+    ((Graph.singleEdge a b e).IsLink f) x y ∨ G.IsLink f x y ∧ f ≠ e := by
+  conv_lhs => rw [Graph.addEdge, union_isLink]
+  change Relation.Domp V(G.addEdge e a b) (fun x y ↦ (Graph.singleEdge a b e).IsLink f x y ∨
+    G.IsLink f x y ∧ f ≠ e) x y ↔ _
+  rw [Relation.domp_or, or_congr_right]
+  refine ⟨fun ⟨hl, hne⟩ => ?_, fun ⟨a, ha, b, ⟨hlba, hne⟩, hb⟩ => ⟨?_, hne⟩⟩
+  · refine ⟨x, Partition.rel_self_of_mem_supp ?_, y, ⟨hl.symm, hne⟩,
+      Partition.rel_self_of_mem_supp ?_⟩ <;> simp [hl.left_mem, hl.right_mem]
+  obtain ⟨rfl, hor⟩ | h1 := addEdge_dup.mp ha <;> obtain ⟨rfl, hor⟩ | h2 := addEdge_dup.mp hb
+  · exact hlba.symm
+  · exact trans' hlba.symm h2
+  · exact trans' h1 hlba.symm
+  · exact trans' (trans' h1 hlba.symm) h2
 
-lemma addEdge_deleteEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    (G.addEdge e x y) ＼ {e} = G := by
-  have hc : Compatible (Graph.singleEdge x y e) G := by simp [he]
-  simp only [Graph.addEdge, Graph.ext_iff, edgeDelete_vertexSet, union_vertexSet,
-    singleEdge_vertexSet, union_eq_right, insert_subset_iff, hx, singleton_subset_iff, hy, and_self,
-    edgeDelete_isLink, hc.union_isLink_iff, singleEdge_isLink, mem_singleton_iff, true_and]
-  intro f p q
-  obtain rfl | hne := eq_or_ne f e
-  · suffices ¬ G.IsLink f p q by simpa
-    exact fun hf ↦ he hf.edge_mem
-  simp [hne]
+lemma addEdge_isLink_of_not_mem (he : e ∉ E(G)) : (G.addEdge e a b).IsLink f x y ↔
+    Relation.Domp V(G.addEdge e a b) ((Graph.singleEdge a b e).IsLink f) x y ∨ G.IsLink f x y := by
+  rw [addEdge_isLink, or_congr_right]
+  rw [and_iff_left_iff_imp]
+  rintro hf rfl
+  exact he hf.edge_mem
 
-lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :=
-  Graph.union_le (by simpa) hle
+@[simp]
+lemma addEdge_isLink_of_ne (hne : f ≠ e) : (G.addEdge e a b).IsLink f x y ↔ G.IsLink f x y := by
+  simp +contextual only [addEdge_isLink, ne_eq, hne, not_false_eq_true, and_true, iff_def,
+    IsLink.symm, or_true, implies_true, or_imp]
+  rintro ⟨_, _, _, ⟨rfl, _⟩, _⟩
+  simp at hne
 
-lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
-  Compatible.right_le_union <| by simp [he]
+lemma addEdge_isLink_of_edge_iff : (G.addEdge e a b).IsLink e x y ↔
+    (a = x ∨ V(G) a x) ∧ (b = y ∨ V(G) b y) ∨ (a = y ∨ V(G) a y) ∧ (b = x ∨ V(G) b x) := by
+  simp only [addEdge_isLink, ne_eq, not_true_eq_false, and_false, or_false]
+  refine ⟨fun ⟨u, hxu, v, h, hvy⟩ => ?_, fun h => ?_⟩
+  · simp only [Relation.flip_apply, singleEdge_isLink, true_and] at h
+    rw [addEdge_dup] at hxu hvy
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h <;> obtain ⟨rfl, hor⟩ | h1 := hxu <;>
+      obtain ⟨rfl, hor⟩ | h2 := hvy <;> simp_all [symm_of V(G)]
+  · obtain ⟨(rfl | hax), (rfl | hby)⟩ | h := h; rotate_right
+    · obtain ⟨(rfl | hay), (rfl | hbx)⟩ := h <;> use b, ?_, a, isLink_singleEdge <;>
+      (try refine Partition.rel_self_of_mem_supp <| by simp) <;>
+      exact V(G).rel_le_of_subset subset_addEdge_vertexSet _ _ <| by simp_all only [symm_of V(G)]
+    all_goals use a, ?_, b, isLink_singleEdge.symm <;>
+      (try refine Partition.rel_self_of_mem_supp <| by simp) <;>
+      exact V(G).rel_le_of_subset subset_addEdge_vertexSet _ _ <| by simp_all only [symm_of V(G)]
 
-lemma addEdge_mono (hle : H ≤ G) : H.addEdge e x y ≤ G.addEdge e x y :=
-  union_mono_right hle
+@[simp]
+lemma addEdge_isLink_of_edge_iff_of_mem (ha : a ∈ L(G)) (hb : b ∈ L(G)) :
+    (G.addEdge e a b).IsLink e x y ↔ V(G) a x ∧ V(G) b y ∨ V(G) a y ∧ V(G) b x := by
+  rw [addEdge_isLink_of_edge_iff, or_congr] <;> rw [and_congr] <;> rw [or_iff_right_iff_imp] <;>
+    rintro rfl <;> exact V(G).rel_self_of_mem_supp (by assumption)
+
+-- This seems useful but not yet in mathlib?
+lemma assume_common_imp_of_iff {P1 P2 : Prop} (Q : Prop) (h1 : P1 → Q) (h2 : P2 → Q) :
+    (P1 ↔ P2) ↔ (Q → (P1 ↔ P2)) := by
+  tauto
+
+lemma addEdge_deleteEdge (he : e ∉ E(G)) (ha : a ∈ L(G)) (hb : b ∈ L(G)) :
+    (G.addEdge e a b) ＼ {e} = G :=
+  Graph.ext (by simp [ha, hb]) fun f x y => by
+  have h : G.IsLink f x y → f ≠ e := by
+    rintro hl rfl
+    exact he hl.edge_mem
+  rw [edgeDelete_isLink, assume_common_imp_of_iff (f ≠ e) (fun h ↦ h.2) h]
+  simp +contextual
+
+-- not true anymore
+-- lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :=
+--   Graph.union_le (by simp) hle
+
+lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e a b where
+  vertexSet_subset := subset_addEdge_vertexSet
+  isLink_of_isLink f x y hl := by
+    have hne : f ≠ e := by
+      rintro rfl
+      exact he hl.edge_mem
+    rw [addEdge_isLink_of_ne hne]
+    exact hl
+
+lemma addEdge_mono_of_mem (hle : H ≤ G) (ha : a ∈ L(H)) (hb : b ∈ L(H)) :
+    H.addEdge e a b ≤ G.addEdge e a b where
+  vertexSet_subset := by
+    rw [Partition.subset_iff_rel]
+    rintro x y hx
+    simp only [ha, hb, ↓addEdge_vertexSet_of_mem] at hx
+    simp only [addEdge_dup, dup_iff_dup_of_le hle hx]
+  isLink_of_isLink f x y hl := by
+    by_cases hne : f = e
+    · subst f
+      simp only [ha, hb, addEdge_isLink_of_edge_iff_of_mem] at hl
+      simp only [labelSet_mono hle ha, labelSet_mono hle hb, addEdge_isLink_of_edge_iff_of_mem]
+      apply hl.imp <;> refine fun ⟨h1, h2⟩ => ⟨?_, ?_⟩ <;> apply (dup_iff_dup_of_le hle _).mpr <;>
+        assumption
+    rw [addEdge_isLink_of_ne hne] at hl ⊢
+    exact hl.of_le hle
 
 lemma deleteEdge_le_addEdge : G ＼ {e} ≤ G.addEdge e x y := by
-  rw [Graph.addEdge, union_eq_union_edgeDelete]
-  simp only [singleEdge_edgeSet]
-  exact Compatible.right_le_union <| by simp
-
-lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
-  refine le_antisymm (addEdge_mono edgeDelete_le) ?_
-  unfold Graph.addEdge
-  rw [union_le_iff]
-  refine ⟨Graph.left_le_union (Graph.singleEdge x y e) (G ＼ {e}), Compatible.right_le_union ?_⟩
+  rw [Graph.addEdge, union_eq_union_edgeDelete, singleEdge_edgeSet]
+  apply le_addEdge
   simp
 
-lemma addEdge_eq_self (hbtw : G.IsLink e x y) : G.addEdge e x y = G :=
-  le_antisymm (addEdge_le (by simp) hbtw) <| Compatible.right_le_union <| by simp [hbtw]
+-- lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
+--   refine le_antisymm ?_ ?_
+--   · sorry
+--     -- (addEdge_mono edgeDelete_le)
+--   unfold Graph.addEdge
+--   rw [union_le_iff]
+--   refine ⟨Graph.left_le_union (Graph.singleEdge x y e) (G ＼ {e}), Compatible.right_le_union ?_⟩
+--   simp
 
-lemma addEdge_idem : (G.addEdge e x y).addEdge e x y = G.addEdge e x y :=
-  addEdge_eq_self <| addEdge_isLink G e x y
+-- lemma addEdge_eq_self (hbtw : G.IsLink e x y) : G.addEdge e x y = G :=
+--   le_antisymm (addEdge_le (by simp) hbtw) <| Compatible.right_le_union <| by simp [hbtw]
 
-lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    G ≤s G.addEdge e x y := by
-  nth_rw 1 [← addEdge_deleteEdge he hx hy]
-  exact edgeDelete_isSpanningSubgraph
+-- lemma addEdge_idem : (G.addEdge e x y).addEdge e x y = G.addEdge e x y :=
+--   addEdge_eq_self <| addEdge_isLink G e x y
 
-lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
-  ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
-    <| by simp [h.edge_mem]
+-- lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+--     G ≤s G.addEdge e x y := by
+--   nth_rw 1 [← addEdge_deleteEdge he hx hy]
+--   exact edgeDelete_isSpanningSubgraph
+
+-- lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
+--   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
+--     <| by simp [h.edge_mem]
 
 
 end Graph
