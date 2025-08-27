@@ -190,7 +190,7 @@ protected def sInter (s : Set (Graph α β)) (hne : s.Nonempty) : Graph α β :=
 variable {s t : Set (Graph α β)} {G H : Graph α β}
 
 @[simp]
-lemma sInter_labelSet (hne : s.Nonempty) : L(Graph.sInter s hne) = ⨅ G ∈ s, L(G) := by
+lemma sInter_labelSet (hne : s.Nonempty) : L(.sInter s hne) = ⨅ G ∈ s, L(G) := by
   simp
 
 @[simp↓]
@@ -205,19 +205,18 @@ lemma sInter_edgeSet_of_agree (hne : s.Nonempty) (hG : s.Pairwise Dup_agree)
   let _ : Nonempty s := hne.to_subtype
   rw [Graph.sInter, iInter_edgeSet_of_agree hG.subtype hG'.subtype, iInter_subtype]
 
-protected lemma sInter_le (hG : s.Pairwise Dup_agree) (hGs : G ∈ s) :
-    Graph.sInter s ⟨G, hGs⟩ ≤ G :=
+protected lemma sInter_le (hG : s.Pairwise Dup_agree) (hGs : G ∈ s) : .sInter s ⟨G, hGs⟩ ≤ G :=
   let _ : Nonempty s := by use G
   Graph.iInter_le hG.subtype ⟨G, hGs⟩
 
 @[simp]
 protected lemma le_sInter_iff (hne : s.Nonempty) (hG : s.Pairwise Dup_agree) :
-    H ≤ Graph.sInter s hne ↔ ∀ G ∈ s, H ≤ G := by
+    H ≤ .sInter s hne ↔ ∀ G ∈ s, H ≤ G := by
   let _ : Nonempty s := hne.to_subtype
   simp [Graph.sInter, hG.subtype]
 
 protected lemma sInter_anti (hnes : s.Nonempty) (hs : s.Pairwise Dup_agree) (hnet : t.Nonempty)
-    (ht : t.Pairwise Dup_agree) (hle : s ⊆ t) : Graph.sInter t hnet ≤ Graph.sInter s hnes := by
+    (ht : t.Pairwise Dup_agree) (hle : s ⊆ t) : Graph.sInter t hnet ≤ .sInter s hnes := by
   rw [Graph.le_sInter_iff hnes hs]
   exact fun G hGs ↦ Graph.sInter_le ht (hle hGs)
 
@@ -228,12 +227,12 @@ def Equiv.insert_option {s : Set α} [DecidablePred fun (x : α) => x ∈ s] {a 
 protected lemma sInter_insert_eq_iInter (hs : (insert G s).Pairwise Dup_agree) (hGs : G ∉ s)
     [DecidablePred (· ∈ s)] : Graph.sInter (insert G s) (by simp) = Graph.iInter
     ((fun G : (insert G s : Set _) ↦ G.1) ∘ (Equiv.insert_option hGs)) :=
-  Graph.iInter_comp_eq_of_surj hs.subtype <| Equiv.surjective (Equiv.insert_option hGs)
+  Graph.iInter_comp_eq_of_surj hs.subtype (Equiv.insert_option hGs).surjective
 
 omit [Nonempty ι] in
 protected lemma sInter_image {s : Set ι} (hne : s.Nonempty) (f : ι → Graph α β)
     (hfs : s.Pairwise (Dup_agree on f)) :
-    Graph.sInter (f '' s) (by simpa) = @Graph.iInter _ _ _ hne.to_subtype (f · : s → _) := by
+    .sInter (f '' s) (by simpa) = @Graph.iInter _ _ _ hne.to_subtype (f · : s → _) := by
   rw [Graph.sInter]
   let f' : s → ↑(f '' s) := fun i ↦ ⟨f i, ⟨i, i.2, rfl⟩⟩
   have := hne.to_subtype
@@ -242,11 +241,11 @@ protected lemma sInter_image {s : Set ι} (hne : s.Nonempty) (f : ι → Graph �
 
 protected lemma sInter_range {f : ι → Graph α β} (hfs : Pairwise (Dup_agree on f)) :
     Graph.sInter (Set.range f) (range_nonempty f) = .iInter f :=
-  Graph.iInter_comp_eq_of_surj (f := Set.rangeFactorization f) hfs.range_pairwise.subtype
+  iInter_comp_eq_of_surj (f := Set.rangeFactorization f) hfs.range_pairwise.subtype
     rangeFactorization_surjective
 
 @[simp]
-protected lemma sInter_singleton (G : Graph α β) : Graph.sInter {G} (by simp) = G := by
+protected lemma sInter_singleton (G : Graph α β) : .sInter {G} (by simp) = G := by
   apply le_antisymm (Graph.sInter_le (by simp) (by simp))
   rw [Graph.le_sInter_iff (by simp) (by simp)]
   exact fun G_2 a ↦ Eq.ge a
@@ -323,7 +322,7 @@ protected def inter (G H : Graph α β) : Graph α β :=
 instance : Inter (Graph α β) where inter := Graph.inter
 
 @[simp]
-protected lemma sInter_pair (G H : Graph α β) : Graph.sInter {G, H} (by simp) = G ∩ H := rfl
+protected lemma sInter_pair (G H : Graph α β) : .sInter {G, H} (by simp) = G ∩ H := rfl
 
 @[simp]
 lemma inter_vertexSet : V(G ∩ H) = V(G) ⊓ V(H) := by

@@ -9,9 +9,9 @@ open Set Function
 namespace Graph
 
 
--- @[simp]
--- lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ V(H₁) ∩ V(H₂) = ∅ := by
---   rw [← vertexSet_eq_empty_iff, inter_vertexSet]
+@[simp]
+lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ L(H₁) ∩ L(H₂) = ∅ := by
+  rw [← labelSet_eq_empty_iff, inter_vertexSet, Partition.inf_supp]
 
 -- lemma disjoint_iff_inter_eq_bot : Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
 --   rw [disjoint_iff, inf_eq_inter]
@@ -27,22 +27,22 @@ namespace Graph
 
 
 
--- section Subgraph
+section Subgraph
 
--- /-! ### Subgraphs -/
+/-! ### Subgraphs -/
 
--- variable {H : ι → Graph α β} {H₁ H₂ : Graph α β}
+variable {H : ι → Graph α β} {H₁ H₂ : Graph α β}
 
--- lemma pairwise_compatible_of_subgraph {H : ι → Graph α β} (h : ∀ i, H i ≤ G) :
---     Pairwise (Compatible on H) :=
---   fun i j _ ↦ compatible_of_le_le (h i) (h j)
+lemma pairwise_compatible_of_subgraph {H : ι → Graph α β} (h : ∀ i, H i ≤ G) :
+    Pairwise (Compatible on H) :=
+  fun i j _ ↦ compatible_of_le_le (h i) (h j)
 
--- lemma set_pairwise_compatible_of_subgraph (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
---     s.Pairwise Compatible :=
---   fun _ hi _ hj _ ↦ compatible_of_le_le (h hi) (h hj)
+lemma set_pairwise_compatible_of_subgraph (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
+    s.Pairwise Compatible :=
+  fun _ hi _ hj _ ↦ compatible_of_le_le (h hi) (h hj)
 
 -- protected lemma iUnion_le_of_forall_le (h : ∀ i, H i ≤ G) :
---     Graph.iUnion H (pairwise_compatible_of_subgraph h) ≤ G := by
+--     .iUnion H (pairwise_compatible_of_subgraph h) ≤ G := by
 --   simpa
 
 -- protected lemma sUnion_le_of_forall_le (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
@@ -210,10 +210,11 @@ namespace Graph
 -- lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=
 --   ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isInducedSubgraph ⊥⟩
 
--- @[simp]
--- lemma induce_empty : G[∅] = ⊥ := by
---   rw [← vertexSet_eq_empty_iff, induce_vertexSet]
+@[simp]
+lemma induce_empty : G[∅] = ⊥ := by
+  rw [← labelSet_eq_empty_iff]
+  simp
 
--- end Subgraph
+end Subgraph
 
 end Graph

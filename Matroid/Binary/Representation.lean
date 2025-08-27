@@ -30,7 +30,7 @@ lemma Rep.cyclic_of_forall_row_even {C : Finset α} (v : M.Rep (ZMod 2) (ι →�
   suffices ∑ x ∈ C.attach, v ↑x i = 0 by simpa [Finsupp.linearCombination]
   rw [C.sum_attach (f := fun x ↦ (v x) i), ← C.sum_filter_of_ne (p := fun x ↦ (v x) i = 1),
     Finset.sum_congr rfl (g := fun _ ↦ 1) (by simp)]
-  · simp [ZMod.eq_zero_iff_even.2 (h_even i)]
+  · simp [ZMod.natCast_eq_zero_iff_even.2 (h_even i)]
   simp
 
 /-- If `C` is a circuit, then every row of the corresponding submatrix has even support. -/
@@ -43,7 +43,7 @@ lemma Rep.row_even_of_isCircuit (v : M.Rep (ZMod 2) (ι →₀ ZMod 2)) {C : Fin
     simpa [Finsupp.linearCombination, Finsupp.sum] using hc
   rw [← Finset.sum_filter_of_ne (p := fun x ↦ (v x) i = 1),
     Finset.sum_congr rfl (g := 1)] at hc
-  · exact ZMod.eq_zero_iff_even.mp (by simpa using hc)
+  · exact ZMod.natCast_eq_zero_iff_even.mp (by simpa using hc)
   · simp
   simp
 
