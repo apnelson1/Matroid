@@ -153,9 +153,15 @@ lemma addEdge_deleteEdge (he : e ∉ E(G)) (ha : a ∈ L(G)) (hb : b ∈ L(G)) :
   rw [edgeDelete_isLink, assume_common_imp_of_iff (f ≠ e) (fun h ↦ h.2) h]
   simp +contextual
 
--- not true anymore
--- lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :=
---   Graph.union_le (by simp) hle
+-- still not true
+-- lemma addEdge_isLabelSubgraph (hle : H ≤l G) (he : G.IsLink e a b) : H.addEdge e a b ≤l G where
+--   vertexSet_isInducedSubpartition := by
+--     simp [Partition.isInducedSubpartition]
+--     ext x y
+
+--   isLink_of_isLink f x y hl := by
+--     rw [addEdge_isLink]
+--     simp [hle.isLink_of_isLink hl]
 
 lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e a b where
   vertexSet_subset := subset_addEdge_vertexSet
@@ -188,29 +194,29 @@ lemma deleteEdge_le_addEdge : G ＼ {e} ≤ G.addEdge e x y := by
   apply le_addEdge
   simp
 
--- lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e x y = G.addEdge e x y := by
---   refine le_antisymm ?_ ?_
---   · sorry
---     -- (addEdge_mono edgeDelete_le)
---   unfold Graph.addEdge
---   rw [union_le_iff]
---   refine ⟨Graph.left_le_union (Graph.singleEdge x y e) (G ＼ {e}), Compatible.right_le_union ?_⟩
---   simp
+lemma deleteEdge_addEdge : (G ＼ {e}).addEdge e a b = G.addEdge e a b :=
+  Graph.ext (by simp) fun f x y => by simp [addEdge_isLink]
 
--- lemma addEdge_eq_self (hbtw : G.IsLink e x y) : G.addEdge e x y = G :=
---   le_antisymm (addEdge_le (by simp) hbtw) <| Compatible.right_le_union <| by simp [hbtw]
+lemma addEdge_eq_self (hbtw : G.IsLink e a b) : G.addEdge e a b = G :=
+  Graph.ext (by simp [hbtw.left_mem, hbtw.right_mem]) fun f x y => by
+    by_cases hne : f = e
+    · subst f
+      simp [hbtw.left_mem, hbtw.right_mem, hbtw.isLink_iff_dup_and_dup_or_dup_and_dup]
+    simp [hne]
 
--- lemma addEdge_idem : (G.addEdge e x y).addEdge e x y = G.addEdge e x y :=
---   addEdge_eq_self <| addEdge_isLink G e x y
+lemma addEdge_idem : (G.addEdge e x y).addEdge e x y = G.addEdge e x y :=
+  addEdge_eq_self <| addEdge_isLink_of_edge G e x y
 
--- lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
---     G ≤s G.addEdge e x y := by
---   nth_rw 1 [← addEdge_deleteEdge he hx hy]
---   exact edgeDelete_isSpanningSubgraph
+lemma isSpanningSubgraph_addEdge (he : e ∉ E(G)) (ha : a ∈ L(G)) (hb : b ∈ L(G)) :
+    G ≤s G.addEdge e a b := by
+  nth_rw 1 [← addEdge_deleteEdge he ha hb]
+  exact edgeDelete_isSpanningSubgraph
 
--- lemma IsLink.deleteEdge_addEdge (h : G.IsLink e x y) : (G ＼ {e}).addEdge e x y = G :=
---   ext_of_le_le (addEdge_le (by simp) h) le_rfl (by simp [pair_subset_iff, h.left_mem, h.right_mem])
---     <| by simp [h.edge_mem]
-
+lemma IsLink.deleteEdge_addEdge (h : G.IsLink e a b) : (G ＼ {e}).addEdge e a b = G :=
+  Graph.ext (by simp [h.left_mem, h.right_mem]) fun f x y => by
+    by_cases hne : f = e
+    · subst f
+      simp [h.left_mem, h.right_mem, h.isLink_iff_dup_and_dup_or_dup_and_dup]
+    simp [hne]
 
 end Graph
