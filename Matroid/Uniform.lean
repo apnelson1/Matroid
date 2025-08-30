@@ -1,7 +1,7 @@
 import Matroid.Constructions.Truncate
 import Matroid.ForMathlib.FinDiff
 import Mathlib.Tactic.Linarith
-import Mathlib.Data.Matroid.Sum
+import Mathlib.Combinatorics.Matroid.Sum
 import Mathlib.Data.Finset.SDiff
 import Matroid.Simple
 import Matroid.Minor.Iso

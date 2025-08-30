@@ -1,5 +1,5 @@
 import Matroid.Minor.Rank
-import Mathlib.Data.Matroid.Constructions
+import Mathlib.Combinatorics.Matroid.Constructions
 import Matroid.Equiv
 import Matroid.ForMathlib.Other
 import Mathlib.Data.FunLike.Embedding

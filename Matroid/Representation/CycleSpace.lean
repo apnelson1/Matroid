@@ -115,7 +115,7 @@ lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽) (h
   intro x
   obtain rfl | hne := eq_or_ne x e
   · simp
-  simp +contextual [hne, Finsupp.single_apply_eq_zero]
+  simp +contextual [hne]
 
 lemma Rep.support_cyclic_of_mem_cycleSpace (v : M.Rep 𝔽 W) {c : α →₀ 𝔽} (hc : c ∈ v.cycleSpace) :
     M.Cyclic c.support := by
@@ -126,7 +126,7 @@ lemma Rep.support_cyclic_of_mem_cycleSpace (v : M.Rep 𝔽 W) {c : α →₀ �
     by simp [hc.1, inv_smul_smul₀ he]⟩, hc.2 (by simpa)⟩
   obtain rfl | hne := eq_or_ne x e
   · simp
-  simp [he, hne, Finsupp.single_eq_of_ne hne.symm]
+  simp [he, hne]
 
 lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
     ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by

@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Closure
 import Matroid.Constructions.Project
 
 open Set

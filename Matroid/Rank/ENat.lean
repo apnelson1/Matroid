@@ -1,5 +1,5 @@
-import Mathlib.Data.Matroid.Rank.ENat
-import Mathlib.Data.Matroid.Rank.Finite
+import Mathlib.Combinatorics.Matroid.Rank.ENat
+import Mathlib.Combinatorics.Matroid.Rank.Finite
 import Matroid.Loop
 import Matroid.OnUniv
 import Matroid.ForMathlib.Other

@@ -1,5 +1,5 @@
 
-import Mathlib.Data.Matroid.Minor.Restrict
+import Mathlib.Combinatorics.Matroid.Minor.Restrict
 import Mathlib.Data.Fintype.Basic
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Function

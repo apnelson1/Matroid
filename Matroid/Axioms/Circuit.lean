@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.IndepAxioms
+import Mathlib.Combinatorics.Matroid.IndepAxioms
 import Matroid.ForMathlib.Finset
 import Matroid.Circuit
 

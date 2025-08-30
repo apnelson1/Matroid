@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Constructions
+import Mathlib.Combinatorics.Matroid.Constructions
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Function
 

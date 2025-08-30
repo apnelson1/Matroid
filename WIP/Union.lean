@@ -1,5 +1,5 @@
 import Matroid.Constructions.Matching
-import Mathlib.Data.Matroid.Sum
+import Mathlib.Combinatorics.Matroid.Sum
 import Mathlib.Order.Disjointed
 import Matroid.Constructions.Submodular
 import Matroid.Rank.Nat

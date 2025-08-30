@@ -1,5 +1,5 @@
 import Matroid.Loop
-import Mathlib.Data.Matroid.Minor.Delete
+import Mathlib.Combinatorics.Matroid.Minor.Delete
 
 open Set
 

@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Circuit
+import Mathlib.Combinatorics.Matroid.Circuit
 import Matroid.ForMathlib.Matroid.Sum
 
 section OnUniv

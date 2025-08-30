@@ -107,7 +107,7 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (h
     (v.standardRep' hB) e f = 0 := by
   simp only [standardRep', FullRank.basis_of_isBase, Basis.mkImage, restrict_span_apply,
     compEquiv_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), Finsupp.single_eq_of_ne hef]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), single_eq_of_ne hef.symm]
 
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.IsBase B) : (v.standardRep' hB).FullRank :=
   v.restrictSpan_fullRank.compEquiv _
@@ -274,13 +274,13 @@ lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsSt
   ext i
   obtain rfl | hne := eq_or_ne e i
   · rw [single_eq_same, hv.apply_eq]
-  rw [single_eq_of_ne hne, hv.apply_ne hne]
+  rw [single_eq_of_ne hne.symm, hv.apply_ne hne]
 
 lemma isStandard_finsupp_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} :
     v.IsStandard ↔ ∀ e : B, v e = Finsupp.single e 1 := by
   refine ⟨fun h e ↦ h.apply_finsupp e, fun h ↦ ?_⟩
   simp only [Rep.isStandard_iff, h, single_eq_same, implies_true, ne_eq, true_and]
-  exact fun _ _ ↦ single_eq_of_ne
+  exact fun _ _ h ↦ single_eq_of_ne (Ne.symm h)
 
 lemma Rep.IsStandard.apply_finsupp_mem {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∈ B) :
     v e = Finsupp.single ⟨e,he⟩ 1 :=
@@ -298,7 +298,7 @@ lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
   refine ⟨fun e ↦ ?_, fun e f hne ↦ ?_⟩
   · rw [LinearIndependent.repr_eq_single, single_eq_same]
     rfl
-  rw [LinearIndependent.repr_eq_single, single_eq_of_ne hne]
+  rw [LinearIndependent.repr_eq_single, single_eq_of_ne (Ne.symm hne)]
   rfl
 
 lemma Rep.IsStandard.image_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (I : Set B) :

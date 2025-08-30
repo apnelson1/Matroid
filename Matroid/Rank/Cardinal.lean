@@ -3,9 +3,9 @@ Copyright (c) 2025 Peter Nelson and Junyan Xu. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson, Junyan Xu
 -/
-import Mathlib.Data.Matroid.Closure
-import Mathlib.Data.Matroid.Map
-import Mathlib.Data.Matroid.Rank.Cardinal
+import Mathlib.Combinatorics.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Map
+import Mathlib.Combinatorics.Matroid.Rank.Cardinal
 import Matroid.ForMathlib.Card
 import Matroid.Rank.Nat
 import Mathlib.SetTheory.Cardinal.Arithmetic
@@ -36,7 +36,7 @@ both for itself and all its minors.
 
 It is not the case that all matroids are `InvariantCardinalRank`,
 since the equicardinality of bases in general matroids is independent of ZFC
-(see the module docstring of `Mathlib.Data.Matroid.Basic`).
+(see the module docstring of `Mathlib.Combinatorics.Matroid.Basic`).
 Lemmas like `Matroid.IsBase.cardinalMk_diff_comm` become true for all matroids
 only if they are weakened by replacing `Cardinal.mk`
 with the cruder `ℕ∞`-valued `Set.encard`; see, for example, `Matroid.IsBase.encard_diff_comm`.

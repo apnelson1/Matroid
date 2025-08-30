@@ -1,5 +1,5 @@
-import Mathlib.Data.Matroid.Closure
-import Mathlib.Data.Matroid.Sum
+import Mathlib.Combinatorics.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Sum
 
 namespace Matroid
 

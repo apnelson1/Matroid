@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Closure
 import Mathlib.Tactic
 
 open Set

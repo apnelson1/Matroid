@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Closure
 
 variable {α : Type*} {X Y : Set α} {M : Matroid α}
 

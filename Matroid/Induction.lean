@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Circuit
+import Mathlib.Combinatorics.Matroid.Circuit
 import Mathlib.Data.Matrix.Rank
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α}

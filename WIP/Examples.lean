@@ -1,6 +1,6 @@
 import Matroid.Constructions.NonSpanningIsCircuits
-import Mathlib.Data.Matroid.Basic
-import Mathlib.Data.Matroid.Dual
+import Mathlib.Combinatorics.Matroid.Basic
+import Mathlib.Combinatorics.Matroid.Dual
 
 
 open Set

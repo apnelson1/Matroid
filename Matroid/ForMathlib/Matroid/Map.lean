@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Map
+import Mathlib.Combinatorics.Matroid.Map
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Function
 

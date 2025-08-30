@@ -1,5 +1,5 @@
 import Matroid.Minor.Delete
-import Mathlib.Data.Matroid.Minor.Contract
+import Mathlib.Combinatorics.Matroid.Minor.Contract
 
 variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K S : Set α}
 
