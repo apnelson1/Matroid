@@ -215,7 +215,7 @@ lemma encard_le_of_simple [RankFinite M] [Simple M] (h : M.Representable 𝔽) :
     simp [rank]
   have hr : 1 < M.rank := by rwa [← Nat.cast_lt (α := ℕ∞), cast_rank_eq]
   obtain hinf | hfin := (finite_or_infinite 𝔽).symm
-  · exact le_trans (by simp) (CanonicallyOrderedAddCommMonoid.single_le_sum (i := 1) (by simpa))
+  · exact le_trans (by simp) (Finset.single_le_sum_of_canonicallyOrdered (i := 1) (by simpa))
   have : Nonempty (Fin M.rank) := ⟨1, hr⟩
   obtain ⟨B, hB⟩ := M.exists_isBase_finset
   obtain ⟨i, hi⟩ := h.exists_isoRestr_projectiveGeometry hB
