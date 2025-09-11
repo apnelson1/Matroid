@@ -8,6 +8,7 @@ autoImplicit = false
 pp.proofs.withType = false
 linter.docPrime = false
 linter.style.longLine = true
+linter.unusedSimpArgs = true
 
 [[require]]
 name = "mathlib"

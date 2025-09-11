@@ -1,6 +1,6 @@
 import Matroid.Loop
 import Matroid.Minor.Contract
-import Mathlib.Data.Matroid.Minor.Order
+import Mathlib.Combinatorics.Matroid.Minor.Order
 
 
 open Set

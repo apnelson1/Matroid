@@ -1,7 +1,7 @@
 import Matroid.Constructions.Truncate
 import Matroid.ForMathlib.FinDiff
 import Mathlib.Tactic.Linarith
-import Mathlib.Data.Matroid.Sum
+import Mathlib.Combinatorics.Matroid.Sum
 import Mathlib.Data.Finset.SDiff
 import Matroid.Simple
 import Matroid.Minor.Iso
@@ -59,7 +59,7 @@ theorem unifOn_rank_eq (hk : (k : ℕ∞) ≤ E.encard) : (unifOn E k).rank = k 
 
 instance {k : ℕ} {E : Set α} : RankFinite (unifOn E k) := by
   rw [← isRkFinite_ground_iff_rankFinite, ← eRk_lt_top_iff,
-    unifOn_eRk_eq _ _ (by simp [rfl.subset])]
+    unifOn_eRk_eq _ _ (by simp)]
   exact (min_le_right _ _).trans_lt (WithTop.coe_lt_top _)
 
 theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
@@ -135,8 +135,7 @@ instance unifOn_isLoopless (E : Set α) : Loopless (unifOn E (k+1)) := by
   simp
 
 instance unifOn_simple (E : Set α) : Simple (unifOn E (k+2)) := by
-  simp only [simple_iff_forall_pair_indep, unifOn_indep_iff, unifOn_ground_eq,
-    mem_singleton_iff, pair_subset_iff]
+  simp only [simple_iff_forall_pair_indep, unifOn_indep_iff, unifOn_ground_eq, pair_subset_iff]
   exact fun {e f} he hf ↦ ⟨(encard_pair_le e f).trans (by simp), he, hf⟩
 
 @[simp] lemma circuitOn_dual (E : Set α) : (circuitOn E)✶ = unifOn E 1 := by
@@ -190,7 +189,7 @@ def unif (a b : ℕ) : Matroid (Fin b) := unifOn univ a
 
 @[simp] theorem unif_eRank_eq (a b : ℕ) : (unif a b).eRank = min a b := by
   rw [eRank_def, unif_eRk_eq]
-  simp only [unif_ground_eq, ge_iff_le, min_comm, encard_univ_fin]; rfl
+  simp only [unif_ground_eq, min_comm, encard_univ_fin]; rfl
 
 @[simp] theorem unif_rank_eq (a b : ℕ) : (unif a b).rank = min a b := by
   rw [rank, unif_eRank_eq, ENat.toNat_coe]
@@ -490,8 +489,7 @@ Matroid.ofBase E IsBase exists_isBase
     · set S := {A | I ⊆ A ∧ (∃ B, IsBase B ∧ A ⊆ B) ∧ A ⊆ X} with hS_def
       have hSfin : S.Finite := by
         refine Finite.of_finite_image (f := fun X ↦ X \ I) (hfin.finite_subsets.subset ?_) ?_
-        · simp only [hS_def, image_subset_iff, preimage_setOf_eq, setOf_subset_setOf,
-            forall_exists_index]
+        · simp only [hS_def, image_subset_iff, preimage_setOf_eq, setOf_subset_setOf]
           exact fun J hIJ ↦ diff_subset_diff_left hIJ.2.2
         rintro A ⟨hIA, -, -⟩ B ⟨hIB, -, -⟩ (hAB : A \ I = B \ I)
         rw [← diff_union_of_subset hIA, hAB, diff_union_of_subset hIB]
@@ -536,7 +534,7 @@ lemma eq_unifOn_of_eRank_le_one [M.Loopless] (hM : M.eRank ≤ 1) : ∃ E, M = u
     fun hI ↦ subsingleton_indep (encard_le_one_iff_subsingleton.1 hI) hIE⟩
 
 lemma eq_unifOn_of_eRank_le_two [M.Simple] (hM : M.eRank ≤ 2) : ∃ E, M = unifOn E 2 := by
-  simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff, true_and]
+  simp only [ext_iff_indep, unifOn_ground_eq, unifOn_indep_iff]
   exact ⟨_, rfl, fun I hIE ↦ ⟨fun hI ↦ ⟨hI.encard_le_eRank.trans hM, hIE⟩,
     fun ⟨hcard, _⟩ ↦ indep_of_encard_le_two hcard⟩⟩
 
@@ -552,7 +550,7 @@ lemma unifOn_one_dual (E : Set α) : (unifOn E 1)✶ = circuitOn E := by
 
 theorem nonempty_iso_line_iff {n : ℕ} :
     Nonempty (M ≂ unif 2 n) ↔ M.Simple ∧ M.eRank ≤ 2 ∧ M.E.encard = n := by
-  simp [nonempty_iso_unif_iff', ← and_assoc, and_congr_left_iff, eq_unifOn_two_iff, and_comm]
+  simp [nonempty_iso_unif_iff', ← and_assoc, eq_unifOn_two_iff, and_comm]
 
 lemma eRank_le_one_iff : M.eRank ≤ 1 ↔ ∃ (E₀ E₁ : Set α) (h : Disjoint E₀ E₁),
     M = (loopyOn E₀).disjointSum (unifOn E₁ 1) h := by

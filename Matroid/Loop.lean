@@ -1,5 +1,5 @@
 import Matroid.Circuit
-import Mathlib.Data.Matroid.Loop
+import Mathlib.Combinatorics.Matroid.Loop
 import Matroid.ForMathlib.Finset
 import Matroid.OnUniv
 

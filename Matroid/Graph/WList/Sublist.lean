@@ -484,7 +484,7 @@ lemma exists_sublist_of_mem_mem (hx : x ∈ w) (hy : y ∈ w) : ∃ w₀ : WList
       (w.prefixUntilVertex_isPrefix x).isSublist, .inr ⟨?_, ?_⟩
     · simp only [suffixFromVertex_last, w₁]
       exact (prefixUntilVertex_last hx).symm
-    · simp only [prefixUntilVertex_first, w₁]
+    · simp only [w₁]
       exact (suffixFromVertex_first hyw₁).symm
   have hyw₂ : y ∈ w₂ := by
     rw [← h, ← mem_vertex, append_vertex] at hy
@@ -792,15 +792,15 @@ lemma dedup_vertex_nodup (w : WList α β) : w.dedup.vertex.Nodup := by
     exact ⟨mt w.dedup_isSublist.vertex_sublist.mem huw, w.dedup_vertex_nodup⟩
 termination_by w.length
 
-lemma dedup_eq_self (hw : w.vertex.Nodup) : w.dedup = w := by
+lemma deeq_of_dup_self (hw : w.vertex.Nodup) : w.dedup = w := by
   induction w with
   | nil => simp
   | cons u e w ih =>
     simp only [cons_vertex, nodup_cons, mem_vertex] at hw
     rw [dedup_cons_of_notMem hw.1, ih hw.2]
 
-lemma dedup_eq_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
-  ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, dedup_eq_self⟩
+lemma deeq_of_dup_self_iff : w.dedup = w ↔ w.vertex.Nodup :=
+  ⟨fun h ↦ by rw [← h]; exact dedup_vertex_nodup w, deeq_of_dup_self⟩
 
 end dedup
 

@@ -75,7 +75,7 @@ lemma finset_biUnion_union (s t : Finset α) (u : α → Finset β) [DecidableEq
 
 lemma finset_biUnion_inter (s t : Finset α) (u : α → Finset β) [DecidableEq β]:
     (s ∩ t).biUnion u ⊆ s.biUnion u ∩ t.biUnion u := by
-  simp only [biUnion_subset_iff_forall_subset, mem_union]
+  simp only [biUnion_subset_iff_forall_subset]
   intro x h
   obtain ⟨hs, ht⟩ := mem_inter.mp h
   refine subset_inter ?_ ?_

@@ -14,7 +14,7 @@ variable {α : Type*} {ι : Sort*} {η : Type*} {A : Set η} {M : Matroid α} {B
 
 section IsMutualBasis
 
-/-- A base `B` is a modular base for an indexed set family if it contains a basis for each set
+/-- A base `B` is a mutual base for an indexed set family if it contains a basis for each set
 in the family. -/
 @[mk_iff]
 structure IsMutualBasis (M : Matroid α) (B : Set α) (Xs : ι → Set α) : Prop where
@@ -209,14 +209,14 @@ lemma IsModularFamily.cls_isModularFamily (h : M.IsModularFamily Xs) :
 @[simp] lemma isModularFamily_of_isEmpty [IsEmpty ι] : M.IsModularFamily Xs :=
   M.empty_indep.isModularFamily_of_subsets (by simp)
 
-@[simp] lemma isModularFamily_iff_of_subsingleton [Subsingleton ι] :
+@[simp]
+lemma isModularFamily_iff_of_subsingleton [Subsingleton ι] :
     M.IsModularFamily Xs ↔ ∀ i, Xs i ⊆ M.E := by
   obtain (h | ⟨⟨i⟩⟩) := isEmpty_or_nonempty ι; simp
   refine ⟨fun h ↦ h.subset_ground_of_mem, fun h ↦ ?_⟩
   obtain ⟨I, hI⟩ := M.exists_isBasis (Xs i)
   exact ⟨I, hI.indep,
     fun j ↦ by rwa [Subsingleton.elim j i, inter_eq_self_of_subset_right hI.subset] ⟩
-
 
 lemma isModularFamily_of_isLoopEquiv (h : M.IsModularFamily Xs)
     (he : ∀ i, M.IsLoopEquiv (Xs i) (Ys i)) : M.IsModularFamily Ys := by
@@ -269,6 +269,29 @@ lemma IsModularFamily.map {β : Type*} (f : α → β) (hf : InjOn f M.E) (h : M
   refine ⟨f '' B, hB.map _ hf , fun i ↦ ?_⟩
   convert (hBX i).map hf
   rw [hf.image_inter (hBX i).subset_ground hB.subset_ground]
+
+lemma IsModularFamily.of_comap {β : Type*} {f : α → β} {M : Matroid β}
+    (hX : (M.comap f).IsModularFamily Xs) : M.IsModularFamily (fun i ↦ f '' (Xs i)) := by
+  obtain ⟨B, hB⟩ := hX
+  refine ⟨f '' B, hB.indep.1, fun i ↦ ?_⟩
+  obtain ⟨hBi, hBinj⟩ := comap_indep_iff.1 hB.indep
+  have hB_inter := comap_isBasis_iff.1 <| hB.isBasis_inter i
+  refine (hBi.inter_left _).isBasis_of_subset_of_subset_closure inter_subset_left ?_
+  grw [← image_inter_subset, hB_inter.1.closure_eq_closure,
+    ← subset_closure _ _ hB_inter.1.subset_ground]
+
+lemma IsModularFamily.comap_iff {β : Type*} {f : α → β} {M : Matroid β} (hf : f.Injective):
+    (M.comap f).IsModularFamily Xs ↔ M.IsModularFamily (fun i ↦ f '' (Xs i)) := by
+  refine ⟨IsModularFamily.of_comap, fun ⟨B, hB⟩ ↦ ?_⟩
+  have hss := hB.isBasis_iUnion.subset
+  rw [← image_iUnion] at hss
+  obtain ⟨B', hB', hinj⟩ :=
+    exists_image_eq_injOn_of_subset_range (hss.trans (image_subset_range ..))
+  refine ⟨B', ⟨hB.indep.subset (by simp [hB']), hinj⟩, fun i ↦ ?_⟩
+  have hBi := hB.isBasis_inter i
+  simp only [comap_isBasis_iff, inter_subset_left, and_true, image_inter hf]
+  rwa [and_iff_left hf.injOn, hB', ← inter_assoc,
+    inter_eq_self_of_subset_left (image_mono (subset_iUnion _ _))]
 
 lemma isModularFamily_map_iff (f : α → η) (hf : InjOn f M.E) {Xs : ι → Set η} :
     (M.map f hf).IsModularFamily Xs ↔ ∃ Ys, M.IsModularFamily Ys ∧ ∀ i, Xs i = f '' (Ys i) := by
@@ -457,7 +480,7 @@ lemma IsModularPair.subset_ground_right (h : M.IsModularPair X Y) : Y ⊆ M.E :=
 
 lemma isModularPair_iff {M : Matroid α} {X Y : Set α} :
     M.IsModularPair X Y ↔ ∃ I, M.Indep I ∧ M.IsBasis (X ∩ I) X ∧ M.IsBasis (Y ∩ I) Y := by
-  simp only [IsModularPair, IsModularFamily, mem_singleton_iff, isMutualBasis_pair_iff, indep_iff]
+  simp only [IsModularPair, IsModularFamily, indep_iff]
   refine ⟨fun ⟨B, hB, hB'⟩ ↦ ⟨B, indep_iff.1 hB, ?_⟩,
     fun ⟨I, ⟨B, hB, hIB⟩, hIX, hIY⟩ ↦ ⟨B, hB.indep, ?_⟩ ⟩
   · exact ⟨by simpa using hB' true, by simpa using hB' false⟩
@@ -494,6 +517,15 @@ lemma isModularPair_iff_exists_isBasis_isBasis :
   use hI.subset_closure.trans (M.closure_subset_closure (subset_inter hI.subset subset_union_left))
   exact hJ.subset_closure.trans
     (M.closure_subset_closure (subset_inter hJ.subset subset_union_right))
+
+lemma IsModularPair.exists_isMutualBasis_isBase (h : M.IsModularPair X Y) : ∃ B,
+    M.IsBase B ∧ M.IsBasis ((X ∪ Y) ∩ B) (X ∪ Y) ∧ M.IsBasis (X ∩ B) X ∧
+    M.IsBasis (Y ∩ B) Y ∧ M.IsBasis (X ∩ Y ∩ B) (X ∩ Y) := by
+  rw [IsModularPair] at h
+  obtain ⟨B, hB, hB'⟩ := h.exists_isMutualBasis_isBase
+  exact ⟨B, hB, by simpa using hB'.isBasis_iUnion,
+    by simpa using hB'.isBasis_inter true, by simpa using hB'.isBasis_inter false,
+    by simpa using hB'.isBasis_iInter⟩
 
 lemma IsModularPair.exists_common_isBasis (h : M.IsModularPair X Y) : ∃ I,
     M.IsBasis I (X ∪ Y) ∧ M.IsBasis (I ∩ X) X ∧
@@ -638,7 +670,7 @@ lemma IsModularFamily.isModularPair_singleton_compl_biInter [Nontrivial η] {Xs 
     (h : M.IsModularFamily Xs) (i₀ : η) :
     M.IsModularPair (Xs i₀) (⋂ i ∈ ({i₀} : Set η)ᶜ, Xs i) := by
   convert h.isModularPair_compl_biInter {i₀} (by simp)
-    (by simp [ne_univ_iff_exists_notMem, mem_singleton_iff]); simp
+    (by simp); simp
 
 lemma isModularPair_insert_closure (M : Matroid α) (X : Set α) (e f : α) :
     M.IsModularPair (M.closure (insert e X)) (M.closure (insert f X)) := by

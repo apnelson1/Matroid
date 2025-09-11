@@ -1,5 +1,5 @@
 import Matroid.Flat.Basic
-import Matroid.ForMathlib.SetPartition
+import Matroid.ForMathlib.Partition.Rep
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -65,7 +65,7 @@ instance flatLattice (M : Matroid α) : CompleteLattice (FlatOf M) where
   sSup_le Fs F h := by
     simp only [FlatOf.le_iff, coe_flatClosure] at h ⊢
     refine F.coe_isFlat.closure_subset_of_subset ?_
-    simp only [iUnion_subset_iff, F.coe_isFlat.closure]
+    simp only [iUnion_subset_iff]
     assumption
   sInf Fs := ⟨(⋂ F ∈ Fs, F) ∩ M.E, IsFlat.biInter_inter_ground (by simp)⟩
   sInf_le Fs F h := inter_subset_left.trans (biInter_subset_of_mem (by simpa))
@@ -181,7 +181,7 @@ lemma IsFlat.wCovby_iff_covBy_or_eq (hF₀ : M.IsFlat F₀) (hF₁ : M.IsFlat F�
     F₀ ⩿[M] F₁ ↔ (F₀ ⋖[M] F₁) ∨ F₀ = F₁ := by
   obtain (rfl | hne) := eq_or_ne F₀ F₁
   · simp [hF₀]
-  simp [hF₀, hF₀.covBy_iff_wcovBy_and_ne hF₁, or_iff_not_imp_right, hne]
+  simp [hF₀.covBy_iff_wcovBy_and_ne hF₁, or_iff_not_imp_right, hne]
 
 
 --TODO : More `WCovby` API.
@@ -388,7 +388,7 @@ lemma IsFlat.exists_unique_isFlat_of_notMem (hF₀ : M.IsFlat F₀) (he : e ∈ 
   simp_rw [hF₀.covBy_iff_eq_closure_insert]
   use M.closure (insert e F₀)
   refine ⟨⟨(M.inter_ground_subset_closure (insert e F₀)) ⟨mem_insert _ _, he.1⟩, ⟨e, he, rfl⟩⟩, ?_⟩
-  simp only [exists_prop, and_imp, forall_exists_index]
+  simp only [and_imp, forall_exists_index]
   rintro X heX f _ rfl
   rw [hF₀.closure_insert_eq_closure_insert_of_mem ⟨heX, he.2⟩]
 
@@ -443,7 +443,7 @@ lemma CovBy.covBy_closure_union_of_inter_covBy (h₀ : F₀ ∩ F₁ ⋖[M] F₀
 instance {M : Matroid α} : IsWeakUpperModularLattice M.FlatOf where
   covBy_sup_of_inf_covBy_covBy := by
     rintro ⟨F₀, hF₀⟩ ⟨F₁, hF₁⟩
-    simp only [ge_iff_le, FlatOf.le_iff, FlatOf.covBy_iff, FlatOf.coe_inf, FlatOf.coe_sup]
+    simp only [FlatOf.covBy_iff, FlatOf.coe_inf, FlatOf.coe_sup]
     exact CovBy.covBy_closure_union_of_inter_covBy
 
 /-- If `M.eRelRk F₀ F₁ = 2` for flats `F₀, F₁`, then every flat strictly between
@@ -484,7 +484,7 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
   rw [← hFF'.closure_insert_eq he, closure_insert_congr_right hI.closure_eq_closure]
 
 /-- The flats covering a flat `F` induce a partition of `M.E \ F`. -/
-@[simps!] def IsFlat.covByPartition (hF : M.IsFlat F) : Partition (M.E \ F) :=
+@[simps!] def IsFlat.covByPartition (_ : M.IsFlat F) : Partition (Set α) :=
   Partition.ofPairwiseDisjoint'
     (parts := (· \ F) '' {F' | F ⋖[M] F'})
     (pairwiseDisjoint := by
@@ -495,12 +495,14 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
       exact hne rfl )
     (forall_nonempty := by
       rintro _ ⟨_, hF₁, rfl⟩; exact nonempty_iff_ne_empty.mp <| exists_of_ssubset hF₁.ssubset)
-    (eq_sUnion := by
-      simp only [sSup_eq_sUnion, sUnion_image, mem_setOf_eq, Set.ext_iff, mem_diff, mem_iUnion,
-        exists_and_left, exists_prop]
-      exact fun e ↦ ⟨fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
-        hF.covBy_closure_insert heF, heF⟩,
-        fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩⟩ )
+
+@[simp]
+lemma IsFlat.covByPartition_supp (hF : M.IsFlat F) : hF.covByPartition.supp = M.E \ F := by
+  simp only [covByPartition, Partition.supp_ofPairwiseDisjoint', sSup_eq_sUnion, sUnion_image,
+    mem_setOf_eq, Set.ext_iff, mem_iUnion, mem_diff, exists_and_left, exists_prop]
+  exact fun e ↦ ⟨fun ⟨F', heF', hlt, h⟩ ↦ ⟨hlt.isFlat_right.subset_ground heF', h⟩,
+    fun ⟨he,heF⟩ ↦ ⟨M.closure (insert e F), M.mem_closure_of_mem (mem_insert _ _),
+    hF.covBy_closure_insert heF, heF⟩⟩
 
 @[simp] lemma IsFlat.mem_covByPartition_iff {X : Set α} (hF : M.IsFlat F) :
     X ∈ hF.covByPartition ↔ ∃ F', ((F ⋖[M] F') ∧ F' \ F = X) := by
@@ -508,30 +510,30 @@ lemma CovBy.insert_isBasis (hFF' : F ⋖[M] F') (hI : M.IsBasis I F) (he : e ∈
 
 @[simp] lemma IsFlat.partOf_covByPartition_eq (hF : M.IsFlat F) (e : α) :
     hF.covByPartition.partOf e = M.closure (insert e F) \ F := by
-  by_cases he : e ∈ M.E \ F
-  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem he)
-    obtain rfl := hFF'.closure_insert_eq (hF'.symm.subset <| hF.covByPartition.mem_partOf he)
+  by_cases he : e ∈ hF.covByPartition.supp
+  · obtain ⟨F', hFF', hF'⟩ := hF.mem_covByPartition_iff.1 (hF.covByPartition.partOf_mem <| he)
+    obtain rfl := hFF'.closure_insert_eq (hF'.symm.subset <| hF.covByPartition.mem_partOf <| he)
     exact hF'.symm
   have hrw : insert e F ∩ M.E = F := by
     refine subset_antisymm ?_ (subset_inter (subset_insert _ _) hF.subset_ground)
     rw [← singleton_union, union_inter_distrib_right, union_subset_iff,
-       (and_iff_left inter_subset_left)]
+      (and_iff_left inter_subset_left)]
     rintro f ⟨rfl, hf⟩
-    exact by_contra fun hfF ↦ he ⟨hf, hfF⟩
+    exact by_contra fun hfF ↦ (hF.covByPartition_supp ▸ he) ⟨hf, hfF⟩
   rw [← closure_inter_ground, hrw, hF.closure, diff_self, hF.covByPartition.partOf_eq_empty he]
 
 @[simp] lemma IsFlat.rel_covByPartition_iff (hF : M.IsFlat F) {e f : α} :
-    hF.covByPartition.Rel e f ↔
+    hF.covByPartition e f ↔
       e ∈ M.E \ F ∧ f ∈ M.E \ F ∧ M.closure (insert e F) = M.closure (insert f F) := by
   simp only [hF.covByPartition.rel_iff_partOf_eq_partOf', partOf_covByPartition_eq, mem_diff,
-    exists_prop, exists_and_left, and_congr_right_iff]
+    exists_prop, and_congr_right_iff, hF.covByPartition_supp]
   refine fun _ _  ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert e F)),
     ← union_eq_self_of_subset_right (M.closure_subset_closure (subset_insert f F)), hF.closure,
     ← diff_union_self, h, diff_union_self]
 
 lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
-    hF.covByPartition.Rel e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
+    hF.covByPartition e f ↔ M.closure (insert e F) = M.closure (insert f F) := by
   rw [hF.rel_covByPartition_iff, and_iff_right he, and_iff_right_iff_imp]
   refine fun hclosure ↦ ⟨by_contra fun hf ↦ ?_, fun hfF ↦ ?_⟩
   · rw [← M.closure_inter_ground (insert f F), insert_inter_of_notMem hf,
@@ -551,7 +553,6 @@ lemma IsFlat.rel_covByPartition_iff' (hF : M.IsFlat F) (he : e ∈ M.E \ F) :
     exact ⟨_, F.prop, rfl⟩ ⟩
   left_inv := by rintro ⟨_, ⟨F, hF : F₀ ⋖[M] F, rfl⟩⟩; simp
   right_inv := by rintro ⟨F, hF⟩; simp [hF.subset]
-
 
 /-- This lemma is stating that the lattice of flats of a finitary matroid is meet-continuous.
 This needs `Finitary`, even if the directed set is known to be a chain.
@@ -584,3 +585,13 @@ lemma IsFlat.inter_iUnion_closure_of_directed [Finitary M] {ι : Type*} {Xs : ι
     exact ⟨i, M.closure_subset_closure (hIA.trans hi) heI⟩
 
   exact M.mem_closure_of_mem' (mem_iUnion.2 ⟨i, heF, by rwa [← (hXs i).closure]⟩)
+
+/-- Every chain of flats in a finite-rank matroid is finite. -/
+lemma finite_of_isChain_of_forall_isFlat [RankFinite M] {Fs : Set (Set α)}
+    (hFs : ∀ F ∈ Fs, M.IsFlat F) (hchain : IsChain (· ⊆ ·) Fs) : Fs.Finite := by
+  refine Finite.of_finite_image (f := M.rk) ?_ fun F hF F' hF' hFF' ↦ ?_
+  · exact BddBelow.finite_of_bddAbove (by simp)
+      ⟨_, by simpa [upperBounds] using fun _ _ ↦ M.rk_le_rank ..⟩
+  obtain hle | hle := hchain.total hF hF'
+  · exact (hFs F hF).eq_of_subset_of_rk_ge hle hFF'.symm.le
+  exact Eq.symm <| (hFs F' hF').eq_of_subset_of_rk_ge hle hFF'.le

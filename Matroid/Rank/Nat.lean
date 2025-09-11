@@ -144,7 +144,7 @@ lemma Indep.rk_eq_ncard (hI : M.Indep I) : M.rk I = I.ncard := by
   rw [← eRk_toNat_eq_rk, hI.eRk_eq_encard, ncard_def]
 
 lemma Indep.rk_eq_card {I : Finset α} (hI : M.Indep I) : M.rk I = I.card := by
-  rw [hI.rk_eq_ncard, ncard_coe_Finset]
+  rw [hI.rk_eq_ncard, ncard_coe_finset]
 
 lemma rk_le_card (M : Matroid α) [Matroid.Finite M] (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.rk X ≤ X.ncard :=

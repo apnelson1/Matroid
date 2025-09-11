@@ -9,39 +9,54 @@ import Matroid.Clone
 import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor
+import Matroid.Connectivity.Multi
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Skew
 import Matroid.Constructions.Matching
-import Matroid.Constructions.ParallelExtension
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
-import Matroid.Extension
+import Matroid.Extension.ModularCut
+import Matroid.Extension.Parallel
+import Matroid.Extension.Guts
+import Matroid.Extension.Quotient
+import Matroid.Extension.Minor
+import Matroid.Extension.ProjectBy
+import Matroid.Extension.ExtendBy
+import Matroid.Extension.ProjectionBy
 import Matroid.Flat.Basic
 import Matroid.Flat.Hyperplane
 import Matroid.Flat.Lattice
 import Matroid.Flat.LowRank
 import Matroid.Graph.Basic
 -- import Matroid.Graph.Bipartite
-import Matroid.Graph.Connected.Basic'
+-- import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Constructions.Basic
-import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Degree.Constructions
-import Matroid.Graph.Degree.Leaf
+-- import Matroid.Graph.Degree.Basic
+-- import Matroid.Graph.Degree.Constructions
+-- import Matroid.Graph.Degree.Leaf
 -- import Matroid.Graph.Distance
 -- import Matroid.Graph.Forest
-import Matroid.Graph.Simple
-import Matroid.Graph.Subgraph
+import Matroid.Graph.Label
+-- import Matroid.Graph.Lattice
+-- import Matroid.Graph.Minor.Basic
+import Matroid.Graph.Nodup
+-- import Matroid.Graph.Simple
+import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Subgraph.Compatible
+import Matroid.Graph.Subgraph.Delete
+import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Subgraph.Inter
+import Matroid.Graph.Subgraph.Add
 -- import Matroid.Graph.Tree
 import Matroid.Graph.Walk.Basic
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Walk.Path
+-- import Matroid.Graph.Walk.Cycle
+-- import Matroid.Graph.Walk.Path
+-- import Matroid.Graph.Walk.toGraph
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Operations.Union
-import Matroid.Graph.Lattice
 import Matroid.Intersection
 import Matroid.Loop
 import Matroid.Minor.Order

@@ -236,7 +236,7 @@ termination_by (Y \ X).card
 
 lemma rk_insert_le : M.r (insert e X) ≤ M.r X + M.r {e} := by
   induction' X using Finset.induction with f X _ hX
-  · simp [rk_empty, M.rk_singleton e]
+  · simp [rk_empty]
   linarith [M.rk_insert_insert X e f]
 
 lemma rk_insert_le_add_one : M.r (insert e X) ≤ M.r X + 1 := by
@@ -324,7 +324,7 @@ protected lemma matroid_indep_iff' {I : Set α} :
 @[simp] protected lemma matroid_rk_eq (X : Finset α) : M.matroid.rk X = M.r X := by
   obtain ⟨I, hI⟩ := M.matroid.exists_isBasis' X
   obtain ⟨I, rfl⟩ := (X.finite_toSet.subset hI.subset).exists_finset_coe
-  rw [← hI.card, ncard_coe_Finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
+  rw [← hI.card, ncard_coe_finset, ← FinsetRankMatroid.matroid_indep_iff.1 hI.indep]
   refine (M.rk_mono (by simpa using hI.subset)).antisymm <| le_of_not_gt fun hlt ↦ ?_
   obtain ⟨e, heX, heI, hr⟩ := M.indep_aug' (by simpa using hI.indep) hlt
   have hi : M.matroid.Indep (insert e I) := by

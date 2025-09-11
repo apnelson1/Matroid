@@ -4,7 +4,7 @@ import Matroid.Flat.Hyperplane
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Set Function Submodule Finsupp Set.Notation
+open Set Function Submodule Finsupp Set.Notation Module
 
 theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [Semiring R]
   {s : ι → η} (hs : Function.Injective s) :
@@ -12,7 +12,7 @@ theorem Function.ExtendByZero.linearMap_injective (R : Type*) {ι η : Type _} [
   intro x x' h
   ext i
   replace h := _root_.congr_fun h (s i)
-  simp only [ExtendByZero.linearMap_apply, exists_apply_eq_apply, not_true] at h
+  simp only [ExtendByZero.linearMap_apply] at h
   rwa [hs.extend_apply, hs.extend_apply] at h
 
 namespace Matroid
@@ -72,13 +72,13 @@ lemma Rep.restrictSpan_fullRank (v : M.Rep 𝔽 W) : v.restrictSpan.FullRank := 
   change _ ≤ span 𝔽 _
   rw [restrictSpan_eq_inclusion]
   change _ ≤ span 𝔽 (range (Set.inclusion subset_span ∘ _))
-  rw [range_comp, surjective_onto_range.range_eq, image_univ, Set.range_inclusion]
+  rw [range_comp, rangeFactorization_surjective.range_eq, image_univ, Set.range_inclusion]
   change _ ≤ span 𝔽 ((Submodule.subtype (span 𝔽 (range ↑v))) ⁻¹' _)
   simp
 
 /-- A base of `M` gives a linear basis in a full-rank representation -/
 noncomputable def Rep.FullRank.basis_of_isBase {v : M.Rep 𝔽 W} (h : v.FullRank) (hB : M.IsBase B) :
-    _root_.Basis B 𝔽 W :=
+    Module.Basis B 𝔽 W :=
   Basis.mkImage (v.onIndep hB.indep) (h.span_spanning hB.spanning).symm.le
 
 lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[𝔽] W') :
@@ -88,7 +88,7 @@ lemma Rep.FullRank.compEquiv {v : M.Rep 𝔽 W} (h : v.FullRank) (ψ : W ≃ₗ[
 
 /-- A base of `M` gives a (linear) basis for the span of the range of a representation -/
 noncomputable def Rep.isBasis_of_isBase (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
-    _root_.Basis B 𝔽 (span 𝔽 (range v)) :=
+    Module.Basis B 𝔽 (span 𝔽 (range v)) :=
   (Basis.spanImage (v.onIndep hB.indep)).map <|
     LinearEquiv.ofEq _ _ <| v.span_spanning_eq hB.spanning
   --
@@ -107,7 +107,7 @@ lemma Rep.standardRep_eq_zero' (v : M.Rep 𝔽 W) (hB : M.IsBase B) (e f : B) (h
     (v.standardRep' hB) e f = 0 := by
   simp only [standardRep', FullRank.basis_of_isBase, Basis.mkImage, restrict_span_apply,
     compEquiv_apply, Basis.mk_repr]
-  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), Finsupp.single_eq_of_ne hef]
+  rw [LinearIndependent.repr_eq_single (i := e) _ _ (by simp), single_eq_of_ne hef.symm]
 
 lemma Rep.standardRep_fullRank' (v : M.Rep 𝔽 W) (hB : M.IsBase B) : (v.standardRep' hB).FullRank :=
   v.restrictSpan_fullRank.compEquiv _
@@ -274,13 +274,13 @@ lemma Rep.IsStandard.apply_finsupp {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsSt
   ext i
   obtain rfl | hne := eq_or_ne e i
   · rw [single_eq_same, hv.apply_eq]
-  rw [single_eq_of_ne hne, hv.apply_ne hne]
+  rw [single_eq_of_ne hne.symm, hv.apply_ne hne]
 
 lemma isStandard_finsupp_iff {v : M.Rep 𝔽 (B →₀ 𝔽)} :
     v.IsStandard ↔ ∀ e : B, v e = Finsupp.single e 1 := by
   refine ⟨fun h e ↦ h.apply_finsupp e, fun h ↦ ?_⟩
   simp only [Rep.isStandard_iff, h, single_eq_same, implies_true, ne_eq, true_and]
-  exact fun _ _ ↦ single_eq_of_ne
+  exact fun _ _ h ↦ single_eq_of_ne (Ne.symm h)
 
 lemma Rep.IsStandard.apply_finsupp_mem {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (he : e ∈ B) :
     v e = Finsupp.single ⟨e,he⟩ 1 :=
@@ -298,13 +298,13 @@ lemma Rep.standardRep'_isStandard (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
   refine ⟨fun e ↦ ?_, fun e f hne ↦ ?_⟩
   · rw [LinearIndependent.repr_eq_single, single_eq_same]
     rfl
-  rw [LinearIndependent.repr_eq_single, single_eq_of_ne hne]
+  rw [LinearIndependent.repr_eq_single, single_eq_of_ne (Ne.symm hne)]
   rfl
 
 lemma Rep.IsStandard.image_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (I : Set B) :
     v '' I = Finsupp.basisSingleOne (ι := B) (R := 𝔽) '' I := by
   ext e
-  simp only [mem_image, exists_and_right, exists_eq_right, coe_basisSingleOne]
+  simp only [mem_image, coe_basisSingleOne]
   constructor
   · rintro ⟨x, ⟨y : B, hy, rfl⟩, rfl⟩
     exact ⟨y, hy, (hv.apply_finsupp y).symm⟩
@@ -332,8 +332,7 @@ lemma Rep.IsStandard.isCircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (
     simp
   intro f hf hecl
   rw [hv.mem_closure_iff (diff_subset.trans (by simp)) heE] at hecl
-  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq, subset_diff_singleton_iff]
-    at hecl
+  simp only [preimage_diff, Subtype.val_injective, preimage_image_eq] at hecl
   obtain ⟨f,h,rfl⟩ := ((image_mono hecl) hf)
   simp at h
 
@@ -360,7 +359,7 @@ lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)}
   obtain hxE | hxE := em' (x ∈ M.E)
   · simp [hxE, v.eq_zero_of_notMem_ground hxE]
   rw [hv.mem_closure_iff diff_subset hxE]
-  simp [subset_diff, hxE, not_iff_not, disjoint_iff_forall_ne]
+  simp [subset_diff, hxE, disjoint_iff_forall_ne]
 
 
 end IsStandard

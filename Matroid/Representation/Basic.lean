@@ -177,8 +177,7 @@ lemma Rep.skew_iff_span_disjoint (v : M.Rep 𝔽 W) (hXE : X ⊆ M.E) (hYE : Y �
   ·  rw [linearIndepOn_union_iff hdj, ← v.indep_iff, ← v.indep_iff, and_iff_right hdj,
       and_iff_right hI.indep, and_iff_right hJ.indep]
   obtain ⟨x, hxI, hxJ⟩ := not_disjoint_iff.1 hdj
-  simp only [hdj, false_and, disjoint_def, false_iff, not_forall, Classical.not_imp, exists_prop,
-    exists_and_left]
+  simp only [hdj, false_and, disjoint_def, false_iff, not_forall, exists_prop]
   refine ⟨v x, (subset_span (mem_image_of_mem v hxI)), (subset_span (mem_image_of_mem v hxJ)), ?_⟩
   rw [v.eq_zero_iff_not_indep, not_not]
   exact hI.indep.subset (by simpa)

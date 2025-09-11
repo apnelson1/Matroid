@@ -117,6 +117,23 @@ theorem quotient_of_forall_eRelRk_le (hE : M₁.E = M₂.E)
     eRelRk_closure_right, eRelRk_insert_eq_zero_iff] at hrr
   contradiction
 
+lemma quotient_of_forall_closure_subset_closure_indep (hE : M₁.E = M₂.E)
+    (hQ : ∀ I, M₁.Indep I → M₁.closure I ⊆ M₂.closure I) : M₂ ≤q M₁ := by
+  refine quotient_of_forall_closure_subset_closure hE fun X hX ↦ ?_
+  obtain ⟨I, hI⟩ := M₁.exists_isBasis X
+  grw [← hI.closure_eq_closure, hQ _ hI.indep, M₂.closure_subset_closure hI.subset]
+
+lemma Quotient.closure_closure_eq_closure_right (h : M₂ ≤q M₁) (X : Set α) :
+    M₂.closure (M₁.closure X) = M₂.closure X := by
+  rw [← closure_inter_ground (X := X), ← closure_inter_ground (X := X), h.ground_eq]
+  refine subset_antisymm ?_ (M₂.closure_subset_closure (M₁.subset_closure _))
+  grw [h.closure_subset_closure, closure_closure]
+
+lemma Quotient.closure_closure_eq_closure_left (h : M₂ ≤q M₁) (X : Set α) :
+    M₁.closure (M₂.closure X) = M₂.closure X := by
+  rw [IsFlat.closure]
+  apply h.isFlat_of_isFlat (M₂.closure_isFlat _)
+
 /-- If `M₂ ≤q M₁`, then every circuit of `M₁` is cyclic (a union of circuits) in `M₂`. -/
 lemma Quotient.cyclic_of_isCircuit (hQ : M₂ ≤q M₁) {C : Set α} (hC : M₁.IsCircuit C) :
     M₂.Cyclic C := by
@@ -173,7 +190,7 @@ lemma Quotient.delete (hQ : M₂ ≤q M₁) (D : Set α) : M₂ ＼ D ≤q M₁ 
   rw [← quotient_dual_iff, dual_delete, dual_delete]
   exact hQ.dual.contract D
 
-theorem con_quotient_del (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
+theorem contract_quotient_delete (N : Matroid α) (X : Set α) : N ／ X ≤q N ＼ X := by
   simp only [(N.delete_inter_ground_eq X).symm, quotient_iff, isFlat_contract_iff',
     isFlat_delete_iff, and_imp, contract_ground, delete_ground, diff_inter_self_eq_diff, and_true]
   exact fun _ hF hdj ↦ ⟨_, hF, by simp [hdj.sdiff_eq_left]⟩
@@ -255,6 +272,17 @@ lemma Quotient.eq_of_isBase_indep [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set
   rw [ENat.add_one_le_iff hfin] at hcard
   exact hcard.ne rfl
 
+lemma Quotient.eq_of_spanning_indep [Finitary M₂] (h : M₂ ≤q M₁) (hs : M₁.Spanning X)
+    (hi : M₂.Indep X) : M₂ = M₁ :=
+  h.eq_of_isBase_indep ((h.weakLE.indep_of_indep hi).isBase_of_spanning hs) hi
+
+lemma Quotient.eq_of_closure_indep [Finitary M₂] (h : M₂ ≤q M₁) (hcl : M₁.E ⊆ M₁.closure X)
+    (hi : M₂.Indep X) : M₂ = M₁ := by
+  refine h.eq_of_spanning_indep ?_ hi
+  rw [spanning_iff, subset_antisymm_iff, and_iff_left hcl,
+    and_iff_right (closure_subset_ground ..), ← h.ground_eq]
+  exact hi.subset_ground
+
 lemma Quotient.map {β : Type*} {f : α → β} (hQ : M₂ ≤q M₁) (hf : InjOn f M₂.E) :
     (M₂.map f hf) ≤q (M₁.map f (by rwa [← hQ.ground_eq])) := by
   simp only [quotient_iff, map_ground, hQ.ground_eq, and_true]
@@ -303,11 +331,21 @@ lemma Quotient.truncate (h : M₂ ≤q M₁) : M₂.truncate ≤q M₁.truncate 
   exact (h.closure_subset_closure X).trans <| M₂.truncate_quotient.closure_subset_closure X
 
 lemma projectBy_quotient (U : M.ModularCut) : M.projectBy U ≤q M := by
-  nth_rewrite 1 [projectBy_eq_map_comap]
+  nth_rewrite 1 [U.projectBy_eq_map_comap]
   convert ((((M.map some _)).extendBy none
-      (U.map some ((Option.some_injective _).injOn))).con_quotient_del {none}).comap some
+      (U.map some ((Option.some_injective _).injOn))).contract_quotient_delete {none}).comap some
   nth_rewrite 1 [← comap_map (Option.some_injective α) (M := M)]
   rw [ModularCut.extendBy_deleteElem _ (by simp)]
+
+lemma project_quotient (M : Matroid α) (X : Set α) : M.project X ≤q M := by
+  refine quotient_of_forall_closure_subset_closure rfl fun Y _ ↦ ?_
+  rw [project_closure]
+  exact M.closure_subset_closure <| subset_union_left
+
+lemma Quotient.project_quotient_project (h : M₂ ≤q M₁) (X : Set α) :
+    M₂.project X ≤q M₁.project X :=
+  quotient_of_forall_closure_subset_closure (by simpa using h.ground_eq.symm) fun Y _ ↦
+    by simpa using h.closure_subset_closure ..
 
 end Constructions
 

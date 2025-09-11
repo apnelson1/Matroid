@@ -1,5 +1,5 @@
 import Matroid.Minor.Delete
-import Mathlib.Data.Matroid.Minor.Contract
+import Mathlib.Combinatorics.Matroid.Minor.Contract
 
 variable {α : Type*} {M M' N : Matroid α} {e f : α} {I J R B X Y Z K S : Set α}
 
@@ -21,3 +21,13 @@ lemma contract_eq_loopyOn_of_spanning {C : Set α} (h : M.Spanning C) :
 
 @[simp] lemma contract_ground_self (M : Matroid α) : M ／ M.E = emptyOn α := by
   simp [← ground_eq_empty_iff]
+
+lemma contract_map {β : Type*} {M : Matroid α} {f : α → β} (hf : InjOn f M.E) {C : Set α}
+    (hC : C ⊆ M.E) : (M ／ C).map f (hf.mono diff_subset) = (M.map f hf) ／ (f '' C) := by
+  simp_rw [← M.dual_delete_dual C]
+  rw [← map_dual, delete_map (by simpa) (by simpa), ← map_dual, ← dual_contract, dual_dual]
+
+lemma contract_comap {β : Type*} (M : Matroid β) (f : α → β) {C : Set β} (hC : C ⊆ range f) :
+    (M ／ C).comap f = M.comap f ／ (f ⁻¹' C) := by
+  obtain ⟨C, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
+  exact ext_closure fun X ↦ by simp [image_union, image_preimage_image]

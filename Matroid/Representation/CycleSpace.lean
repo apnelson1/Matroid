@@ -115,7 +115,7 @@ lemma Rep.cyclic_of_linearCombination (v : M.Rep 𝔽 W) (c : α →₀ 𝔽) (h
   intro x
   obtain rfl | hne := eq_or_ne x e
   · simp
-  simp +contextual [hne, Finsupp.single_apply_eq_zero]
+  simp +contextual [hne]
 
 lemma Rep.support_cyclic_of_mem_cycleSpace (v : M.Rep 𝔽 W) {c : α →₀ 𝔽} (hc : c ∈ v.cycleSpace) :
     M.Cyclic c.support := by
@@ -126,7 +126,7 @@ lemma Rep.support_cyclic_of_mem_cycleSpace (v : M.Rep 𝔽 W) {c : α →₀ �
     by simp [hc.1, inv_smul_smul₀ he]⟩, hc.2 (by simpa)⟩
   obtain rfl | hne := eq_or_ne x e
   · simp
-  simp [he, hne, sub_eq_zero, Finsupp.single_eq_of_ne hne.symm]
+  simp [he, hne]
 
 lemma Rep.exists_finsupp_of_isCircuit (v : M.Rep 𝔽 W) (hC : M.IsCircuit C) :
     ∃ c : α →₀ 𝔽, c.support = C ∧ c.linearCombination 𝔽 v = 0 := by
@@ -267,8 +267,7 @@ lemma Rep.standardRep_cocycleSpace (v : M.Rep 𝔽 W) (hB : M.IsBase B) :
 lemma Rep.mem_cocycleSpace_iff_of_support (v : M.Rep 𝔽 W) {x : α → 𝔽} (hx : support x ⊆ M.E) :
     x ∈ v.cocycleSpace ↔ ∀ y ∈ v.cycleSpace, Finsupp.linearCombination 𝔽 x y = 0 := by
   simp only [Rep.cocycleSpace, Finsupp.dualFunMap, mem_inf, mem_map, mem_dualAnnihilator,
-    Rep.mem_cycleSpace_iff, and_imp, LinearMap.coe_mk, AddHom.coe_mk, mem_mySupported_iff,
-     ne_eq, not_imp_comm]
+    Rep.mem_cycleSpace_iff, and_imp, LinearMap.coe_mk, AddHom.coe_mk, mem_mySupported_iff]
   refine ⟨fun h y hy hyE ↦ ?_, fun h ↦ ⟨⟨_, h, by simp⟩, hx⟩⟩
   obtain ⟨⟨z,hz, rfl⟩, hsupp⟩ := h
   rw [← hz y hy hyE]
@@ -292,7 +291,7 @@ lemma Rep.mem_cycleSpace_iff_forall_of_support (v : M.Rep 𝔽 W) {y : α →₀
   obtain ⟨B, hB⟩ := M.exists_isBase
   rw [← v.standardRep_cycleSpace hB, ← v.standardRep_cocycleSpace hB]
   set v' := v.standardRep hB
-  simp +contextual only [mem_cocycleSpace_iff, ne_eq, and_imp]
+  simp +contextual only [mem_cocycleSpace_iff, and_imp]
   refine ⟨fun hy x h hx ↦ h y hy, fun h ↦ ?_⟩
   rw [mem_cycleSpace_iff, and_iff_left hy]
   ext i

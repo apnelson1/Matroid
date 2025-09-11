@@ -1,4 +1,4 @@
-import Matroid.Graph.Connected.Basic'
+import Matroid.Graph.Connected.Basic
 
 open Set Function Nat WList
 
@@ -42,7 +42,7 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   refine Compatible.union_connected_of_forall (G.compatible_of_le_le ?_ (by simp)) ?_ ?_
   · exact le_trans (induce_le (by simp [hC.vertexSet_subset])) edgeDelete_le
   · obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
-    refine (hP.isWalk.toGraph_connected.of_subgraph ?_ ?_)
+    refine (hP.isWalk.toGraph_connected.of_isSpanningSubgraph ⟨?_, ?_⟩)
     · rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
       exact edgeDelete_mono_left (by simp)
     rw [hPC]
@@ -103,7 +103,7 @@ lemma IsLeaf.eq_first_or_eq_last_of_mem_trail {P : WList α β} (hx : G.IsLeaf x
     obtain v | ⟨v, f, P⟩ := P
     · simp
     simp only [cons_isTrail_iff, first_cons, cons_edge, List.mem_cons, not_or] at hP
-    simp [hx.eq_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
+    simp [hx.dup_of_inc_inc hP.1.2.1.inc_left hP.2.1.inc_right] at hP
 
 lemma IsLeaf.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeaf x)
     (hP : G.IsPath P) (hxP : x ∈ P) : x = P.first ∨ x = P.last :=

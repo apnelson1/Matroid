@@ -11,7 +11,7 @@ structure IsTree (T : Graph α β) : Prop where
   isForest : T.IsForest
   connected : T.Connected
 
-lemma IsForest.isTree_of_isComponent (hG : G.IsForest) (hT : T.IsComponent G) : T.IsTree :=
+lemma IsForest.isTree_of_IsCompOf (hG : G.IsForest) (hT : T.IsCompOf G) : T.IsTree :=
   ⟨hG.mono hT.le, hT.connected⟩
 
 /-- If `G` is connected, then a maximally acylic subgraph of `G` is connected.
@@ -85,18 +85,19 @@ lemma IsTree.ncard_vertexSet [T.Finite] (h : T.IsTree) : V(T).ncard = E(T).ncard
     Nat.cast_add, T.edgeSet_finite.cast_ncard_eq, Nat.cast_one]
 
 lemma IsForest.encard_vertexSet (hG : G.IsForest) :
-    V(G).encard = E(G).encard + {C : Graph α β | C.IsComponent G}.encard := by
+    V(G).encard = E(G).encard + {C : Graph α β | C.IsCompOf G}.encard := by
   rw [G.eq_sUnion_components, sUnion_vertexSet, ← ENat.tsum_encard_eq_encard_biUnion,
-    tsum_congr (β := {C : Graph α β | C.IsComponent G}) (f := fun C ↦ V(C.1).encard)
+    tsum_congr (β := G.Components) (f := fun C ↦ V(C.1).encard)
       (g := fun C ↦ E(C.1).encard + 1), sUnion_edgeSet, ← ENat.tsum_encard_eq_encard_biUnion,
-    ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components]
-  · exact G.pairwiseDisjoint_components.mono' <| by simp [Pi.le_def, Graph.disjoint_iff]
-  · simp only [coe_setOf, mem_setOf_eq, Subtype.forall]
-    exact fun H hle ↦ (hG.isTree_of_isComponent hle).encard_vertexSet
-  exact G.pairwiseDisjoint_components.mono' <| by simp +contextual [Pi.le_def, Graph.disjoint_iff]
+    ← ENat.tsum_one, ENat.tsum_add, ← G.eq_sUnion_components, Components]
+  · exact G.components_pairwise_stronglyDisjoint.mono' <| by simp [Pi.le_def, stronglyDisjoint_iff]
+  · simp only [Subtype.forall, mem_components_iff_isCompOf]
+    exact fun H hle ↦ (hG.isTree_of_IsCompOf hle).encard_vertexSet
+  exact G.components_pairwise_stronglyDisjoint.mono' <| by
+    simp +contextual [Pi.le_def, stronglyDisjoint_iff]
 
 lemma IsForest.ncard_vertexSet [G.Finite] (hG : G.IsForest) :
-    V(G).ncard = E(G).ncard + {C : Graph α β | C.IsComponent G}.ncard := by
+    V(G).ncard = E(G).ncard + {C : Graph α β | C.IsCompOf G}.ncard := by
   rw [← @Nat.cast_inj ℕ∞, G.vertexSet_finite.cast_ncard_eq, hG.encard_vertexSet, Nat.cast_add,
     G.edgeSet_finite.cast_ncard_eq, Finite.cast_ncard_eq]
   exact G.finite_setOf_le.subset fun C hC ↦ hC.le
@@ -106,7 +107,7 @@ lemma IsForest.encard_edgeSet_add_one_le (hG : G.IsForest) (hne : V(G).Nonempty)
   rw [hG.encard_vertexSet]
   gcongr
   simp only [one_le_encard_iff_nonempty]
-  exact ⟨_, (G.exists_isComponent hne).choose_spec⟩
+  exact ⟨_, (G.exists_IsCompOf hne).choose_spec⟩
 
 lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempty) :
     E(G).ncard < V(G).ncard := by

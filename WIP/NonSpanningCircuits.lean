@@ -1,5 +1,5 @@
-import Mathlib.Data.Matroid.Basic
-import Mathlib.Data.Matroid.IndepAxioms
+import Mathlib.Combinatorics.Matroid.Basic
+import Mathlib.Combinatorics.Matroid.IndepAxioms
 import Matroid.Constructions.IsCircuitAxioms
 import Matroid.Rank
 import Matroid.Circuit

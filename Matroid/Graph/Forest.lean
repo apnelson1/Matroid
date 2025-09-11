@@ -115,7 +115,7 @@ lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ 
     refine hC₀.toGraph_not_isForest <| hP.toGraph_isForest.mono ?_
     rw [hP_eq, hC.isWalk.toGraph_eq_induce_restrict, hC₀.isWalk.toGraph_eq_induce_restrict,
       edgeRestrict_vertexDelete, induce_vertexDelete]
-    refine (edgeRestrict_mono_right _ hCE).trans (edgeRestrict_mono_left (induce_mono _ ?_) _)
+    refine (edgeRestrict_mono_right _ hCE).trans (edgeRestrict_mono_left (induce_mono_right _ ?_) _)
     simpa [subset_diff, hCV] using hxC₀
   obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge <| by simpa using heC
   refine hC₀.toGraph_not_isForest <| hP.toGraph_isForest.mono ?_
@@ -124,7 +124,7 @@ lemma IsCycle.toGraph_eq_of_le {C C₀ : WList α β} (hC : G.IsCycle C) (hC₀ 
   have hss : E(C₀) ⊆ E(C) \ {e} := subset_diff_singleton hCE (by simpa using heC₀)
   refine (edgeRestrict_mono_right _ hss).trans ?_
   rw [← edgeRestrict_induce, ← edgeRestrict_induce]
-  exact induce_mono _ hCV
+  exact induce_mono_right _ hCV
 
 lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected) F) :
     (G ↾ F).IsForest := by

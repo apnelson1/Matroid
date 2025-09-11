@@ -111,7 +111,7 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
     · obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
       refine ⟨↑(e '' B), (he B).1 hB, ?_⟩
       rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
-      exact image_subset e hIB
+      exact image_mono hIB
     obtain ⟨B, rfl⟩ := Subset.eq_image_val hB.subset_ground
     refine ⟨↑(e.symm '' B), by rwa [he, e.image_symm_image] , ?_⟩
     rw [image_subset_image_iff Subtype.val_injective] at hIB ⊢
@@ -125,7 +125,7 @@ lemma Iso.isBase_image (e : M ≂ N) {B : Set M.E} (hB : M.IsBase B) : N.IsBase 
   simp only [image_subset_iff, preimage_val_image_val_eq_self, image_val_inj,
     image_symm_eq_preimage] at hB
   simp only [image_subset_iff, preimage_val_image_val_eq_self] at h'
-  simp [hB h', image_image]
+  simp [hB h']
 
 lemma Iso.isBase_image_iff (e : M ≂ N) {B : Set M.E} : M.IsBase B ↔ N.IsBase (↑(e '' B)) :=
   ⟨e.isBase_image, fun h ↦ by simpa using e.symm.isBase_image h⟩
@@ -149,7 +149,7 @@ section map
 lemma Iso.isBasis_image_iff (e : M ≂ N) {I X : Set M.E} :
     M.IsBasis I X ↔ N.IsBasis ↑(e '' I) ↑(e '' X) := by
   simp only [image_subset_iff, Subtype.coe_preimage_self, subset_univ, isBasis_iff_maximal,
-    maximal_subset_iff, mem_setOf_eq, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
+    maximal_subset_iff, ← e.indep_image_iff, preimage_val_image_val_eq_self, and_imp,
     preimage_image, and_congr_right_iff]
   intro hI hIX
   refine ⟨fun h J hJ hJX hIJ ↦ ?_, fun h J hJ hJX hIJ ↦ ?_⟩
@@ -205,7 +205,7 @@ noncomputable def isoMapSetEmbedding (M : Matroid α) (f : M.E ↪ β) : M ≂ M
 noncomputable def isoMapSetEquiv (M : Matroid α) {E : Set β} (f : M.E ≃ E) :
     M ≂ M.mapSetEquiv f where
   toEquiv := f
-  indep_image_iff' := by simp [Set.preimage_val_image_val_eq_self]
+  indep_image_iff' := by simp
 
 /-- If `M` and `N` are isomorphic and `α → β` is nonempty, then `N` is a map of `M`.
 Useful for getting out of subtype hell. -/
@@ -309,12 +309,11 @@ def isoOfForallImageclosure {β : Type*} {N : Matroid β} (e : M.E ≃ N.E)
   toEquiv := e
   indep_image_iff' I := by
     rw [indep_iff_forall_notMem_closure_diff, indep_iff_forall_notMem_closure_diff]
-    simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index,
-      mem_image_equiv]
+    simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index]
     refine ⟨fun h' x hx y hy ⟨hyI, hyx⟩ hxI ↦ h' hy hyI ?_,
       fun h' x hx hxI h'' ↦ h' (e ⟨x,hx⟩).2 x hx ⟨hxI, rfl⟩ ?_⟩
     · have h_eq : (↑(e '' I) : Set β) \ {x} = ↑(e '' ((M.E ↓∩ I) \ {⟨y,hy⟩})) := by
-        simp [image_diff e.injective, hyx, Set.preimage_val_image_val_eq_self]
+        simp [image_diff e.injective, hyx]
       have h'' : ∃ hx', ↑(e.symm ⟨x, hx'⟩) ∈ M.closure (↑I \ {y}) := by simpa [h_eq, h] using hxI
       simpa [← hyx, Equiv.symm_apply_apply, exists_prop, and_iff_right hx] using h''
     have h_eq : ((↑(e '' I) : Set β) \ {↑(e ⟨x, hx⟩)}) = ↑(e '' (I \ {⟨x,hx⟩})) := by

@@ -26,9 +26,9 @@ theorem Connected.delete_or_contract (hM : M.Connected) (hnt : M.E.Nontrivial) (
     (M ＼ {e}).Connected ∨ (M ／ {e}).Connected := by
 
   simp only [connected_iff, ← ground_nonempty_iff, delete_ground, Set.mem_diff,
-    Set.mem_singleton_iff, and_imp, contract_ground, or_iff_not_imp_left, not_and,
-    not_forall, Classical.not_imp, exists_and_left, exists_prop, true_implies, true_and,
-    show (M.E \ {e}).Nonempty from hnt.exists_ne e, forall_exists_index, and_imp]
+    Set.mem_singleton_iff, and_imp, contract_ground, or_iff_not_imp_left, not_forall,
+    exists_and_left, exists_prop, true_and, show (M.E \ { e }).Nonempty from hnt.exists_ne e,
+    forall_exists_index, and_imp]
 
   intro f g hge hgE hfe hfE hnc x y hx hxe hy hye
 

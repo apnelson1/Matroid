@@ -70,36 +70,52 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶)
   refine add_le_add_right (encard_le_encard ?_) _
   exact inter_subset_inter_right _ (diff_subset_diff_left hIB')
 
+structure BasisPair (N M : Matroid α) (X : Set α) where
+  left : Set α
+  right : Set α
+  subset : left ⊆ right
+  left_isBasis' : N.IsBasis' left X
+  right_isBasis' : M.IsBasis' right X
+
+lemma WeakLE.nonempty_basisPair (h : N ≤w M) (X : Set α) :
+    Nonempty (BasisPair N M X) := by
+  obtain ⟨I, J, hI, hJ, hss⟩ := h.exists_isBasis'_subset_isBasis' X
+  exact ⟨⟨I, J, hss, hI, hJ⟩⟩
+
+lemma BasisPair.left_isBasis (B : BasisPair N M X) (hX : X ⊆ N.E := by aesop_mat) :
+  N.IsBasis B.left X := B.left_isBasis'.isBasis
+
+lemma BasisPair.right_isBasis (B : BasisPair N M X) (hX : X ⊆ M.E := by aesop_mat) :
+  M.IsBasis B.right X := B.right_isBasis'.isBasis
+
+lemma BasisPair.left_isBase (B : BasisPair N M M.E) (h_eq : N.E = M.E) : N.IsBase B.left := by
+  have h' := B.left_isBasis h_eq.symm.subset
+  simp_rw [← h_eq, isBasis_ground_iff] at h'
+  exact h'
+
+lemma BasisPair.right_isBase (B : BasisPair N M M.E) : M.IsBase B.right :=
+  isBasis_ground_iff.1 B.right_isBasis
+
+noncomputable def BasisPair.encard_diff (I : BasisPair M N X) : ℕ∞ := (I.right \ I.left).encard
+
+
 namespace Quotient
 
-lemma eq_of_isBase_indep' [Finitary M₂] (hQ : M₂ ≤q M₁) {B : Set α} (hB₁ : M₁.IsBase B)
-    (hB₂ : M₂.Indep B) : M₂ = M₁ := by
-  replace hB₂ := show M₂.IsBase B from
-    hB₂.isBase_of_maximal fun J hJ hBJ ↦ hB₁.eq_of_subset_indep (hQ.weakLE.indep_of_indep hJ) hBJ
-  refine ext_isCircuit_not_indep hQ.ground_eq (fun C hC hCi ↦ ?_)
-    (fun C hC ↦ ((hQ.cyclic_of_isCircuit hC).dep_of_nonempty hC.nonempty).not_indep)
-
-  obtain ⟨e, he⟩ := hC.nonempty
-  simpa [he] using encard_diff_le_encard_diff hQ.dual.weakLE hC.finite
-    (hC.diff_singleton_isBasis he) hCi hB₂ hB₁ rfl.subset
-
-def exists_isBasis_subset_pair (hQ : M₂ ≤q M₁) (X : Set α) :
-    ∃ Is : Set α × Set α, Is.2 ⊆ Is.1 ∧ M₁.IsBasis' Is.1 X ∧ M₂.IsBasis' Is.2 X := by
-  obtain ⟨I, hI⟩ := M₂.exists_isBasis' X
-  obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_isBasis'_of_subset hI.subset
-  exact ⟨⟨J,I⟩, hIJ, hJ, hI⟩
+-- def exists_isBasis_subset_pair (hQ : M₂ ≤q M₁) (X : Set α) :
+--     ∃ Is : Set α × Set α, Is.2 ⊆ Is.1 ∧ M₁.IsBasis' Is.1 X ∧ M₂.IsBasis' Is.2 X := by
+--   obtain ⟨I, hI⟩ := M₂.exists_isBasis' X
+--   obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_isBasis'_of_subset hI.subset
+--   exact ⟨⟨J,I⟩, hIJ, hJ, hI⟩
 
 /-- The `discrepancy` of a set `X` relative to a quotient `hQ : M₂ ≤q M₁` is (informally)
 the difference between the ranks of `X` in the two matroids, except it is also meaningful
 when both ranks are infinite.
-It is defined by noncomputably choosing a nested basis pair `I₂ ⊆ I₁` for `X` in the two matroids,
-and taking the cardinality of `I₁ \ I₂`.
+It is defined by taking the minimal cardinality of `I₁ \ I₂` over all basis pairs `I₁, I₂` for `X`.
 
-This quantity is only sensible if `M₂` is finitary (even when `X` is the ground set),
+This quantity is only sensible if `M₂` or `M₁✶` is finitary (even when `X` is the ground set),
 as otherwise it can depend on the choice of `I₁` and `I₂`; see `Matroid.TruncateFamily`. -/
-noncomputable def discrepancy {M₂ : Matroid α} (hQ : M₂ ≤q M₁) (X : Set α) :=
-  let h_ex := hQ.exists_isBasis_subset_pair X
-  (h_ex.choose.1 \ h_ex.choose.2).encard
+noncomputable def discrepancy {M₂ : Matroid α} (_hQ : M₂ ≤q M₁) (X : Set α) :=
+  ⨅ I : BasisPair M₂ M₁ X, I.encard_diff
 
 lemma exists_finite_witness {J₀ J : Set α} [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hJ₀X : M₂.IsBasis J₀ X) (hJX : M₁.IsBasis J X) (hss : J₀ ⊆ J) (hfin : (J \ J₀).Finite) :
@@ -174,12 +190,16 @@ lemma encard_diff_eq_encard_diff_of_isBase [M₂.Finitary] {B₁ B₂ B₁' B₂
     (hB₂'.isBasis_ground.isBasis') ?_ hss hss' <;>
   rwa [hQ.ground_eq, isBasis'_iff_isBasis, isBasis_ground_iff]
 
+lemma basisPair_encard_diff_eq_discrepancy [M₂.Finitary] (hQ : M₂ ≤q M₁)
+    (I : BasisPair M₂ M₁ X) : I.encard_diff = hQ.discrepancy X := by
+  refine (le_iInf fun J ↦ ?_).antisymm <| iInf_le ..
+  exact (encard_diff_eq_encard_diff_of_isBasis' hQ I.left_isBasis' I.right_isBasis'
+    J.left_isBasis' J.right_isBasis' I.subset J.subset).le
+
 lemma encard_isBasis'_diff_eq_discrepancy [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hI₂ : M₂.IsBasis' I₂ X) (hI₁ : M₁.IsBasis' I₁ X) (hss : I₂ ⊆ I₁) :
-    (I₁ \ I₂).encard = hQ.discrepancy X :=
-  have Ps := hQ.exists_isBasis_subset_pair X
-  hQ.encard_diff_eq_encard_diff_of_isBasis' hI₂ hI₁ Ps.choose_spec.2.2 Ps.choose_spec.2.1 hss
-    Ps.choose_spec.1
+    (I₁ \ I₂).encard = hQ.discrepancy X := by
+  apply hQ.basisPair_encard_diff_eq_discrepancy ⟨I₂, I₁, hss, hI₂, hI₁⟩
 
 lemma encard_isBasis_diff_eq_discrepancy [M₂.Finitary] (hQ : M₂ ≤q M₁)
     (hI₂ : M₂.IsBasis I₂ X) (hI₁ : M₁.IsBasis I₁ X) (hss : I₂ ⊆ I₁) :
@@ -197,6 +217,31 @@ lemma eRk_left_add_discrepancy_eq [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set
   obtain ⟨J, hJ, hIJ⟩ := (hQ.weakLE.indep_of_indep hI.indep).subset_isBasis'_of_subset hI.subset
   rw [← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← hQ.encard_isBasis'_diff_eq_discrepancy hI hJ hIJ,
     add_comm, encard_diff_add_encard_of_subset hIJ]
+
+@[simp]
+lemma discrepancy_ground_dual (hQ : M₂ ≤q M₁) :
+    hQ.dual.discrepancy M₂✶.E = hQ.discrepancy M₁.E := by
+  suffices aux {N₂ N₁ : Matroid α} (h : N₂ ≤q N₁) : h.dual.discrepancy N₂✶.E ≤ h.discrepancy N₁.E
+  · exact (aux hQ).antisymm <| by simpa using aux hQ.dual
+  clear! M₁ M₂
+  refine le_iInf fun B ↦ (iInf_le _ (i := ⟨N₁✶.E \ B.right, N₁✶.E \ B.left, ?_, ?_, ?_⟩)).trans ?_
+  · simp only [BasisPair.encard_diff, dual_ground]
+    convert rfl.le using 2
+    have : B.right ⊆ N₁.E := B.right_isBase.subset_ground
+    tauto_set
+  · exact diff_subset_diff_right B.subset
+  · rw [← h.dual.ground_eq, isBasis'_iff_isBasis, isBasis_ground_iff, ← dual_isBase_iff _,
+      dual_dual, ← isBasis_ground_iff, ← isBasis'_iff_isBasis]
+    · exact B.right_isBasis'
+    exact B.right_isBasis'.indep.subset_ground
+  simp_rw [N₁.dual_ground, ← h.ground_eq]
+  exact (B.left_isBase h.ground_eq).compl_isBase_dual.isBasis_ground.isBasis'
+
+@[simp]
+lemma discrepancy_rfl (M : Matroid α) (X : Set α) : (Quotient.refl M).discrepancy X = 0 := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  simp only [discrepancy, ENat.iInf_eq_zero]
+  exact ⟨⟨I,I, rfl.subset, hI, hI⟩, by simp [BasisPair.encard_diff]⟩
 
 lemma discrepancy_mono [M₂.Finitary] (hQ : M₂ ≤q M₁) (hXY : X ⊆ Y) :
     hQ.discrepancy X ≤ hQ.discrepancy Y := by
@@ -226,6 +271,16 @@ lemma eq_of_discrepancy_le_zero [M₂.Finitary] (hQ : M₂ ≤q M₁) (h : hQ.di
   rw [← M₁.restrict_ground_eq_self, ← M₂.restrict_ground_eq_self, hQ.ground_eq]
   exact hQ.restrict_eq_restrict_of_discrepancy_le_zero h
 
+/-- The canonical expression for the discrepancy of the ground set uses `M₁.E`. -/
+@[simp]
+lemma discrepancy_ground_left (hQ : M₂ ≤q M₁) : hQ.discrepancy M₂.E = hQ.discrepancy M₁.E := by
+  rw [hQ.ground_eq]
+
+@[simp]
+lemma discrepancy_eq_zero_iff [M₂.Finitary] (hQ : M₂ ≤q M₁) :
+    hQ.discrepancy M₁.E = 0 ↔ M₂ = M₁ :=
+  ⟨fun h ↦ eq_of_discrepancy_le_zero hQ h.le, by rintro rfl; simp⟩
+
 lemma discrepancy_inter_ground [M₂.Finitary] (hQ : M₂ ≤q M₁) (X : Set α) :
     hQ.discrepancy (X ∩ M₁.E) = hQ.discrepancy X := by
   obtain ⟨I, hI⟩ := M₂.exists_isBasis' X
@@ -240,7 +295,7 @@ lemma discrepancy_ne_top [M₁.RankFinite] (hQ : M₂ ≤q M₁) (X : Set α) : 
   intro htop
   have hdis := hQ.eRk_left_add_discrepancy_eq X
   rw [htop] at hdis
-  simp [eq_comm, eRk_eq_top_iff, M₁.isRkFinite_set X] at hdis
+  simp [eq_comm, eRk_eq_top_iff] at hdis
 
 @[simp]
 lemma discrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.discrepancy ∅ = 0 := by
@@ -297,33 +352,3 @@ def foo [M₁.RankFinite] (hQ : M₂ ≤q M₁) {X : Set α} :
 @[simp]
 lemma nDiscrepancy_empty [M₂.Finitary] (hQ : M₂ ≤q M₁) : hQ.nDiscrepancy ∅ = 0 := by
   simp [nDiscrepancy]
-
-
--- lemma nDiscrepancy_covers {F : Set α} (hF : M₁.IsFlat F) (hQ : M₂ ≤q M₁)
--- (hdis : hQ.nDiscrepancy F < hQ.nDiscrepancy M₁.E) : ∃ F₁, (F ⋖[M₁] F₁) := by
---   have he : ∃ e, e ∈ M₁.E \ F := by
---     by_contra! hnot
---     have hFE : F ⊆ M₁.E := hF.subset_ground
---     --I'm pretty sure the following proof can be shorten, no idea how
---     have hEF : M₁.E = F := by
---       refine ext ?_
---       intro c
---       refine⟨ ?_ , (fun a ↦ hFE a)⟩
---       intro hs
---       by_contra hcg
---       exact hnot c (mem_diff_of_mem hs hcg)
---     rw [hEF ] at hdis
---     exact (lt_self_iff_false (hQ.nDiscrepancy F)).mp hdis
---   obtain ⟨e, he ⟩ := he
---   use M₁.closure (insert e F)
---   exact hF.covBy_closure_insert (notMem_of_mem_diff he)
-
-
-
-
-  -- refine ⟨fun h ↦ ext_indep (by simp [hQ.ground_eq]) fun I hI ↦ ?_, fun h ↦ ?_⟩
-  -- · obtain ⟨J, D, h₂, h₁, hJD, hcard⟩ := hQ.exists_isBasis'_diff_isBasis' X
-  --   rw [h₁.contract_indep_iff, h₂.contract_indep_iff, and_congr_left_iff, ← union_assoc]
-  --   rw [nDiscrepancy, ← hcard] at h
-  --   refine fun hdj ↦ ⟨fun hi ↦ ?_, fun hi ↦ ?_⟩
-  -- sorry

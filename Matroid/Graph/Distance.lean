@@ -27,7 +27,7 @@ lemma IsWalk.eDist_le_length (hW : G.IsWalk W) : G.eDist W.first W.last ≤ W.le
 lemma IsWalk.isPath_of_length_eq_eDist (hP : G.IsWalk P)
     (hlen : P.length = G.eDist P.first P.last) : G.IsPath P := by
   classical
-  rw [isPath_iff, and_iff_right hP, ← dedup_eq_self_iff]
+  rw [isPath_iff, and_iff_right hP, ← deeq_of_dup_self_iff]
   refine P.dedup_isSublist.eq_of_length_ge <| (Nat.cast_le (α := ℕ∞)).1 ?_
   rw [hlen, ← dedup_first, ← dedup_last]
   apply (hP.sublist P.dedup_isSublist).eDist_le_length

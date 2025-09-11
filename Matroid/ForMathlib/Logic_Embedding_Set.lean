@@ -159,9 +159,9 @@ section EquivSubset
     (e : s ≃ t) (has) (hbt : b ⊆ t) (h_eq) (u : Set a) :
     Subtype.val '' (e.subsetEquivSubset has hbt h_eq '' u) = e '' ((inclusion has) '' u) := by
   ext x
-  simp only [mem_image, mem_image_equiv, Subtype.exists, exists_and_right, exists_eq_right,
-    inclusion_mk, Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_and_left,
-    subsetEquivSubset, coe_fn_mk, Subtype.mk.injEq, exists_prop]
+  simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, inclusion_mk,
+    Subtype.mk.injEq, exists_and_right, exists_eq_right, exists_and_left, subsetEquivSubset,
+    coe_fn_mk, Subtype.mk.injEq, exists_prop]
   constructor
   · rintro ⟨hxb, ⟨v, hva, hvu, rfl⟩⟩
     simp [has hva, hva, hvu]

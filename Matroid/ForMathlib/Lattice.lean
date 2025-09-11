@@ -22,7 +22,7 @@ theorem exists_mem_le_of_le_sSup_of_isAtom {α : Type*} [CompleteAtomicBooleanAl
     (ha : IsAtom a) (h : a ≤ A) {s : Set α} (hs : A ≤ sSup s) : ∃ b ∈ s, a ≤ b := by
   by_contra! hnle
   have : ⨆ s₀ ∈ s, a ⊓ s₀ = ⊥ := by
-    simp only [sSup_eq_bot, mem_range, forall_exists_index, forall_apply_eq_imp_iff, iSup_eq_bot]
+    simp only [iSup_eq_bot]
     intro s₀ hs₀
     simpa [hnle s₀ hs₀] using ha.le_iff.mp (inf_le_left (b := s₀))
   obtain rfl := (inf_eq_left.mpr (h.trans hs)).symm.trans <| inf_sSup_eq.trans this
@@ -64,7 +64,7 @@ def orderIsoSetOfAtoms {α : Type*} [CompleteAtomicBooleanAlgebra α] :
     rw [and_comm]
   map_rel_iff' {a b} := by
     simp +contextual only [coe_setOf, mem_setOf_eq, Equiv.coe_fn_mk, le_eq_subset,
-      setOf_subset_setOf, true_and, and_imp, Subtype.forall, forall_const]
+      setOf_subset_setOf, Subtype.forall]
     exact le_iff_atom_le_imp.symm
 
 @[simp]

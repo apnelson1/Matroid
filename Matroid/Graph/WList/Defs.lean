@@ -187,7 +187,7 @@ lemma nil_edgeSet : E((nil x : WList α β)) = ∅ := by
   simp [WList.vertexSet, mem_cons_iff, Set.ext_iff]
 
 @[simp] lemma cons_edgeSet : E(cons x e w) = insert e E(w) := by
-  simp only [WList.edgeSet, cons_edge, mem_cons, singleton_union]
+  simp only [WList.edgeSet, cons_edge, mem_cons]
   rfl
 
 @[simp]
@@ -637,7 +637,7 @@ lemma idxOf_le_length_iff_mem : w.idxOf x ≤ w.length ↔ x ∈ w := by
 
 @[simp]
 lemma idxOf_first (w : WList α β) : w.idxOf w.first = 0 := by
-  induction w with simp_all [idxOf_cons]
+  induction w with simp_all
 
 lemma idxOf_eq_idxOf_vertex (w : WList α β) (x : α) : w.idxOf x = w.vertex.idxOf x := by
   induction w with

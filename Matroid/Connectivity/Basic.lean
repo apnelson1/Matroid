@@ -43,6 +43,10 @@ lemma ConnectedTo.mem_ground_left (h : M.ConnectedTo e f) : e ∈ M.E := by
 lemma ConnectedTo.mem_ground_right (h : M.ConnectedTo e f) : f ∈ M.E :=
   h.symm.mem_ground_left
 
+@[simp, aesop unsafe 10% (rule_sets := [Matroid])]
+lemma setOf_connectedTo_right_subset_ground {e} : {x | M.ConnectedTo e x} ⊆ M.E :=
+  fun _ ↦ ConnectedTo.mem_ground_right
+
 @[simp] lemma connectedTo_self_iff : M.ConnectedTo e e ↔ e ∈ M.E :=
   ⟨fun h ↦ h.mem_ground_left, connectedTo_self⟩
 
@@ -104,8 +108,8 @@ private lemma connectedTo_of_indep_isHyperplane_of_not_isColoop {I : Set α} (hI
   have hB : M.IsBase (insert e I) := by
     refine Indep.isBase_of_spanning ?_ (hI'.spanning_of_ssuperset (ssubset_insert heI.2))
     · rwa [hI.insert_indep_iff_of_notMem heI.2, hI'.isFlat.closure]
-  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff,
-    not_or, and_imp, not_forall, Classical.not_imp, not_not, exists_prop, exists_and_left] at hf
+  simp only [hB.isColoop_iff_forall_notMem_fundCircuit (.inr hfI), mem_diff, mem_insert_iff, not_or,
+    and_imp, not_forall, not_not, exists_prop] at hf
   obtain ⟨x, hx, hxe, hxI, hfC⟩ := hf
   have hxi : M.Indep ((insert x I) \ {e}) := by
     rw [diff_singleton_eq_self (by simp [Ne.symm hxe, heI.2]), hI.insert_indep_iff_of_notMem hxI,
@@ -198,6 +202,39 @@ lemma Connected.exists_isCircuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
 
+lemma not_connected_iff_exists [hne : M.Nonempty] :
+    ¬ M.Connected ↔ ∃ e ∈ M.E, ∃ f ∈ M.E, e ≠ f ∧ ¬ M.ConnectedTo e f := by
+  simp only [connected_iff, hne, true_and, not_forall, exists_prop, ne_eq,
+    ConnectedTo]
+  aesop
+
+
+lemma eq_disjointSum_of_not_connected [hne : M.Nonempty] (h : ¬ M.Connected) :
+    ∃ (M₁ M₂ : Matroid α) (hdj : Disjoint M₁.E M₂.E),
+      M₁.Nonempty ∧ M₂.Nonempty ∧ M = M₁.disjointSum M₂ hdj := by
+  obtain ⟨e, he, f, hf, hne, hef⟩ := not_connected_iff_exists.1 h
+  refine ⟨M ↾ {x | M.ConnectedTo e x}, M ＼ {x | M.ConnectedTo e x}, disjoint_sdiff_right,
+    ⟨e, by simpa⟩, ⟨f, by simp [hf, hef]⟩, ext_isCircuit ?_ fun C hC ↦ ?_⟩
+  · simp only [disjointSum_ground_eq, restrict_ground_eq, delete_ground, union_diff_self]
+    rw [union_eq_self_of_subset_left setOf_connectedTo_right_subset_ground]
+  simp only [disjointSum_isCircuit_iff, restrict_isCircuit_iff (R := {x | M.ConnectedTo e x}),
+    subset_def, mem_setOf_eq, delete_isCircuit_iff, disjoint_left, or_iff_not_imp_right, not_and,
+    not_forall, not_not, exists_prop]
+  refine ⟨fun h hC₁ ↦ ⟨h, fun x hx ↦ ?_⟩, by tauto⟩
+  obtain ⟨y, hyC, hey⟩ := hC₁ h
+  exact hey.trans (h.mem_connectedTo_mem hyC hx)
+
+lemma disjointSum_not_connected {M₁ M₂ : Matroid α} (h₁ : M₁.Nonempty) (h₂ : M₂.Nonempty)
+    (hdj : Disjoint M₁.E M₂.E) : ¬ (M₁.disjointSum M₂ hdj).Connected := by
+  obtain ⟨e, he⟩ := M₁.ground_nonempty
+  obtain ⟨f, hf⟩ := M₂.ground_nonempty
+  intro hconn
+  obtain ⟨C, hC, heC, hfC⟩ :=
+    hconn.exists_isCircuit_of_ne (by simp [he]) (by simp [hf]) (hdj.ne_of_mem he hf)
+  simp only [disjointSum_isCircuit_iff] at hC
+  obtain hC | hC := hC
+  · exact hdj.notMem_of_mem_left (hC.subset_ground hfC) hf
+  exact hdj.notMem_of_mem_right (hC.subset_ground heC) he
 
 section FinitaryCofinitary
 
@@ -239,7 +276,7 @@ lemma cSet_inter_image_Iic {Cs : ℕ ↪ Set α} {e} {i : ℕ} {C} (heC : e 0 �
     C ∩ e '' Iic i = X Cs e i := by
   induction' i with i IH
   · simpa [X, Set.Iic]
-  simp only [X, Finset.range_add_one (n := i+1)]
+  simp only [X]
   specialize IH (cSet_antitone (by simp) hC)
   have aux : ∀ n, Iic n = Finset.range (n+1) := by simp [Set.ext_iff, Nat.lt_add_one_iff]
   rw [aux] at IH ⊢
@@ -323,7 +360,7 @@ theorem Connected.finite_of_finitary_of_cofinitary {α : Type*} {M : Matroid α}
       rw [inter_comm]
       simp_rw [← hKX, subset_antisymm_iff, subset_inter_iff, inter_subset_left, true_and, hKX,
         singleton_subset_iff, and_iff_left <| (h0 hC).1, inter_comm]
-      refine (inter_subset_inter_right _ (image_subset _ hm)).trans ?_
+      refine (inter_subset_inter_right _ (image_mono hm)).trans ?_
       rw [cSet_inter_image_Iic (h0 hC).1 hC ]
       exact subset_iUnion _ m
 

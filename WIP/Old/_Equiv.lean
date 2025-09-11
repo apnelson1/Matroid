@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.Constructions
+import Mathlib.Combinatorics.Matroid.Constructions
 import Matroid.ForMathlib.PartialEquiv
 import Matroid.ForMathlib.Function
 
@@ -41,7 +41,7 @@ theorem Iso.setOf_isBase_eq (e : Iso M N) : setOf N.IsBase = (image e) '' (setOf
 
 @[simp] theorem Iso.image_subset_target (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e '' X ⊆ e.toPartialEquiv.target := by
-  rw [← image_source_eq_target]; exact image_subset _ (e.subset_source X)
+  rw [← image_source_eq_target]; exact image_mono (e.subset_source X)
 
 @[simp] theorem Iso.image_ground (e : Iso M N) : e '' M.E = N.E := by
   rw [← e.source_eq, ← e.target_eq, image_source_eq_target]
@@ -55,7 +55,7 @@ theorem Iso.ground_subset_preimage_ground (e : Iso M N) : M.E ⊆ e ⁻¹' N.E :
 -- @[aesop unsafe 10% (rule_sets [Matroid])]
 theorem Iso.image_subset_ground (e : Iso M N) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     e '' X ⊆ N.E := by
-  convert image_subset _ hX
+  convert image_mono hX
   rw [← e.source_eq, image_source_eq_target, e.target_eq]
 
 theorem Iso.injOn_ground (e : Iso M N) : InjOn e M.E := by
@@ -161,7 +161,7 @@ def Iso.ofEq {M N : Matroid α} (h : M = N) : Iso M N where
 --     refine ⟨fun ⟨hB, hB'⟩ ↦ ⟨f.symm '' B, ⟨?_, fun I hI hBI ↦ ?_⟩, hN' hB.subset_ground⟩, ?_⟩
 --     · rwa [h_ind' _ hB.subset_ground]
 --     · rw [hB' _ <| (h_ind _ hI.subset_ground).1 hI, hM' hI.subset_ground]
---       replace hBI := image_subset f hBI
+--       replace hBI := image_mono hBI
 --       rwa [hN' hB.subset_ground] at hBI
 --     rintro ⟨I, ⟨hI, hImax⟩, rfl⟩
 --     rw [← h_ind _ hI.subset_ground, and_iff_right hI]
@@ -251,7 +251,7 @@ def iso_of_forall_indep' (e : PartialEquiv α β) (hM : e.source = M.E) (hN : e.
     (by
       intro I hI
       have h' : e.symm '' I ⊆ M.E := by
-        rw [← hM, ← symm_image_target_eq_source, hN]; exact image_subset _ hI.subset_ground
+        rw [← hM, ← symm_image_target_eq_source, hN]; exact image_mono hI.subset_ground
       rwa [on_indep _ h', image_symm_image_of_subset_target _
         (by rw [hN]; exact hI.subset_ground)] )
 
@@ -345,7 +345,7 @@ theorem Iso.on_isBasis (e : Iso M N) (hI : M.IsBasis I X) : N.IsBasis (e '' I) (
     rw [e.source_eq]
     exact hI.indep.subset_ground
   · simp only [restrict_ground_eq]
-    exact image_subset _ hI.subset
+    exact image_mono hI.subset
   exact e.image_subset_ground X hI.subset_ground
 
 section IsIso

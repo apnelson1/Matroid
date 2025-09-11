@@ -121,7 +121,7 @@ lemma Indep.le_maxCommonInd [M₁.Finite] (hI₁ : M₁.Indep I) (hI₂ : M₂.I
     I.ncard ≤ maxCommonInd M₁ M₂ := by
   classical
   rw [maxCommonInd, Nat.sSup_def, Nat.le_find_iff]
-  · simp only [mem_setOf_eq, forall_exists_index, and_imp, not_forall, Classical.not_imp, not_le]
+  · simp only [mem_setOf_eq, forall_exists_index, and_imp, not_forall, not_le]
     exact fun m hm ↦ ⟨_, I, hI₁, hI₂, rfl, hm⟩
   refine ⟨M₁.E.ncard, ?_⟩
   simp only [mem_setOf_eq, forall_exists_index, and_imp]

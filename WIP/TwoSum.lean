@@ -1,5 +1,5 @@
-import Mathlib.Data.Matroid.Sum
-import Matroid.Extension
+import Mathlib.Combinatorics.Matroid.Sum
+import Matroid.Extension.ModularCut
 
 namespace Matroid
 

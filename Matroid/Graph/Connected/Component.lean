@@ -1,4 +1,7 @@
-import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Lattice
+import Matroid.Graph.Finite
+import Matroid.Graph.Degree.Defs
+import Matroid.Graph.Degree.Constructions
 
 open Set Function Nat WList
 
@@ -11,179 +14,281 @@ namespace Graph
 
 /-! ### Components -/
 
-/-- `H.IsComponent G` if `H` is a maximal connected subgraph of `G`. -/
-def IsComponent (H G : Graph α β) := Maximal (fun H ↦ H.Connected ∧ H ≤ G) H
 
-lemma IsComponent.le (h : H.IsComponent G) : H ≤ G :=
-  h.prop.2
+variable {G H H' H₁ H₂ : Graph α β}
 
-lemma IsComponent.connected (h : H.IsComponent G) : H.Connected :=
-  h.prop.1
+lemma IsCompOf.ne_bot (hHco : H.IsCompOf G) : H ≠ ⊥ := by
+  let H' : G.ClosedSubgraph := ⟨H, hHco.isClosedSubgraph⟩
+  rw [← H'.isAtom_iff_isCompOf] at hHco
+  exact Subtype.coe_ne_coe.mpr hHco.1
 
-lemma IsComponent.isClosedSubgraph (h : H.IsComponent G) : H ≤c G where
-  le := h.le
-  closed := by
-    refine fun e x ⟨y, hy⟩ hx ↦ by_contra fun hcon ↦ ?_
-    rw [← h.eq_of_ge ⟨h.connected.addEdge_connected hx hcon y, addEdge_le h.le hy⟩
-      (le_addEdge hcon)] at hcon
-    simp at hcon
-
-lemma IsComponent.isInducedSubgraph (h : H.IsComponent G) : H ≤i G :=
-  h.isClosedSubgraph.isInducedSubgraph
-
-lemma isComponent_iff_isClosedSubgraph_connected : H.IsComponent G ↔ H ≤c G ∧ H.Connected := by
-  refine ⟨fun h ↦ ⟨h.isClosedSubgraph, h.connected⟩, fun ⟨hHG, hH⟩ ↦ ⟨⟨hH, hHG.le⟩, ?_⟩⟩
-  refine fun K ⟨hK, hKG⟩ hHK ↦ hHK.eq_or_lt.elim (fun h ↦ h ▸ le_rfl) fun hlt ↦ False.elim ?_
-  obtain ⟨e, x, hex, heH, hxH⟩ := hK.exists_inc_notMem_of_lt hlt hH.nonempty
-  exact heH <| ((hex.of_le hKG).of_isClosedSubgraph_of_mem hHG hxH).edge_mem
-
-lemma IsClosedSubgraph.isComponent_of_connected (h : H ≤c G) (hH : H.Connected) :
-    H.IsComponent G := by
-  refine isComponent_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
-
-lemma Connected.isComponent_of_isClosedSubgraph (hH : H.Connected) (h : H ≤c G) :
-    H.IsComponent G := by
-  refine isComponent_iff_isClosedSubgraph_connected.2 ⟨h, hH⟩
-
-/-- If `x` is a vertex of `G`, the set of vertices connected to `x` induces a component of `G`. -/
-lemma induce_setOf_vertexConnected_isComponent (hx : x ∈ V(G)) :
-    (G[{y | G.VertexConnected x y}]).IsComponent G := by
-  refine ⟨⟨⟨⟨x, by simpa⟩, fun y y' h h' ↦ ?_⟩, ?_⟩, fun H' ⟨hc, hH'le⟩ hle ↦ ?_⟩
-  · obtain ⟨W, hW, rfl, rfl⟩ := (VertexConnected.trans h.symm h').exists_isWalk
-    refine (hW.induce fun y hy ↦ ?_).vertexConnected_first_last
-    simp only [induce_vertexSet, mem_setOf_eq] at h h'
-    exact h.trans <| hW.vertexConnected_of_mem_of_mem (by simp) hy
-  · exact induce_le_iff.2 fun y hy ↦ VertexConnected.right_mem hy
-  refine le_induce_of_le_of_subset hH'le fun z hz ↦ ?_
-  exact (hc.vertexConnected (x := x) (vertexSet_mono hle (by simpa)) hz).of_le hH'le
-
-lemma exists_isComponent (hG : V(G).Nonempty) : ∃ (H : Graph α β), H.IsComponent G :=
-  ⟨_, induce_setOf_vertexConnected_isComponent hG.choose_spec⟩
-
-/-- Every connected subgraph of `G` is a subgraph of a component of `G`. -/
-lemma Connected.exists_component_ge (hH : H.Connected) (hle : H ≤ G) :
-    ∃ G₁, G₁.IsComponent G ∧ H ≤ G₁ := by
-  obtain ⟨x, hx⟩ := hH.nonempty
-  refine ⟨_, induce_setOf_vertexConnected_isComponent (vertexSet_mono hle hx), ?_⟩
-  exact le_induce_of_le_of_subset hle fun y hy ↦ (hH.vertexConnected hx hy).of_le hle
-
-lemma exists_isComponent_vertex_mem (hx : x ∈ V(G)) :
-    ∃ (H : Graph α β), H.IsComponent G ∧ x ∈ V(H) :=
-  ⟨_, induce_setOf_vertexConnected_isComponent hx, by simpa⟩
-
-lemma exists_isComponent_edge_mem (he : e ∈ E(G)) :
-    ∃ (H : Graph α β), H.IsComponent G ∧ e ∈ E(H) := by
-  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet he
-  obtain ⟨H, hH, hle⟩ := (singleEdge_connected e x y).exists_component_ge (G := G) (by simpa)
-  simp only [singleEdge_le_iff] at hle
-  exact ⟨H, hH, hle.edge_mem⟩
-
-lemma IsWalk.exists_isComponent_isWalk (hW : G.IsWalk W) :
-    ∃ (H : Graph α β), H.IsComponent G ∧ H.IsWalk W := by
-  obtain ⟨H, hle, hWH⟩ := hW.toGraph_connected.exists_component_ge hW.toGraph_le
-  exact ⟨H, hle, by rwa [← hW.wellFormed.toGraph_le_iff]⟩
-
-/-- Distinct components are vertex-disjoint. -/
-lemma IsComponent.disjoint_of_ne {H₁ H₂ : Graph α β}
-    (hH₁ : H₁.IsComponent G) (hH₂ : H₂.IsComponent G) (hne : H₁ ≠ H₂) : H₁.Disjoint H₂ := by
-  refine Compatible.disjoint_of_vertexSet_disjoint (G.compatible_of_le_le hH₁.le hH₂.le) ?_
-  rw [disjoint_iff_inter_eq_empty, ← not_nonempty_iff_eq_empty]
-  contrapose! hne
-  have hc : Compatible H₁ H₂ := compatible_of_le_le hH₁.le hH₂.le
-  rw [← hH₁.eq_of_ge ⟨(hc.union_connected_of_nonempty_inter hH₁.connected hH₂.connected hne),
-      (Graph.union_le hH₁.le hH₂.le)⟩ (Graph.left_le_union ..), hc.union_comm,
-    hH₂.eq_of_ge ⟨(hc.symm.union_connected_of_nonempty_inter hH₂.connected hH₁.connected
-      (by rwa [inter_comm])), (Graph.union_le hH₂.le hH₁.le)⟩ (Graph.left_le_union ..)]
-
-lemma IsComponent.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsComponent G)
-    (hH₂ : H₂.IsComponent G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
-  by_contra fun hne ↦ (hH₁.disjoint_of_ne hH₂ hne).vertex.notMem_of_mem_left hx₁ hx₂
-
-lemma pairwiseDisjoint_components (G : Graph α β) :
-    {H : Graph α β | H.IsComponent G}.Pairwise Graph.Disjoint :=
-  fun _ hC _ hC' ↦ hC.disjoint_of_ne hC'
-
-/-- A graph is connected if and only if it is a component of itself. -/
 @[simp]
-lemma isComponent_self_iff : G.IsComponent G ↔ G.Connected :=
-  ⟨IsComponent.connected, fun h ↦ ⟨⟨h, le_rfl⟩, fun _ h _ ↦ h.2⟩⟩
+lemma bot_not_isCompOf : ¬ (⊥ : Graph α β).IsCompOf G := (·.ne_bot rfl)
 
-lemma eq_sUnion_components (G : Graph α β) :
-    G = Graph.sUnion {C | C.IsComponent G} (G.pairwiseDisjoint_components.mono' (by simp)) := by
-  refine G.ext_of_le_le le_rfl ?_ ?_ ?_
-  · simp +contextual [IsComponent.le]
-  · refine subset_antisymm (fun v hv ↦ ?_) ?_
-    · simpa using exists_isComponent_vertex_mem hv
-    simpa using fun _ h ↦ (vertexSet_mono h.le)
-  refine subset_antisymm (fun e he ↦ ?_) ?_
-  · simpa using exists_isComponent_edge_mem he
-  simpa using fun _ h ↦ (edgeSet_mono h.le)
+@[simp]
+lemma not_isCompOf_bot : ¬ G.IsCompOf ⊥ := by
+  intro ⟨⟨hcl, hV⟩, _⟩
+  rw [isClosedSubgraph_bot_iff] at hcl
+  subst G
+  simp at hV
 
-/-- For a proper component `H`, the separation with parts `V(H)` and `V(G) \ V(H)`. -/
-@[simps]
-def IsComponent.separation_of_ne (h : H.IsComponent G) (hne : H ≠ G) : G.Separation where
-  left := V(H)
-  right := V(G) \ V(H)
-  nonempty_left := h.connected.nonempty
-  nonempty_right := diff_nonempty.2 fun hss ↦ hne <|
-    h.isInducedSubgraph.eq_of_isSpanningSubgraph ⟨h.le, hss.antisymm' (vertexSet_mono h.le)⟩
-  disjoint := disjoint_sdiff_right
-  union_eq := by simp [vertexSet_mono h.le]
-  not_adj x y hx hy hxy := hy.2 <| (h.isClosedSubgraph.adj_of_adj_of_mem hx hxy).right_mem
+lemma IsClosedSubgraph.le_isCompOf_iff (hH₁cl : H₁ ≤c G) (hH₂co : H₂.IsCompOf G) :
+    H₁ ≤ H₂ ↔ (H₁ = ⊥ ∨ H₁ = H₂) := by
+  let H₁' : G.ClosedSubgraph := ⟨H₁, hH₁cl⟩
+  let H₂' : G.ClosedSubgraph := ⟨H₂, hH₂co.isClosedSubgraph⟩
+  change H₁' ≤ H₂' ↔ H₁'.val = (⊥ : G.ClosedSubgraph).val ∨ H₁'.val = H₂'.val
+  rw [← H₂'.isAtom_iff_isCompOf] at hH₂co
+  rw [Subtype.coe_inj, Subtype.coe_inj]
+  exact hH₂co.le_iff
 
-/-- If `H` is a connected subgraph of a disconnected graph `G`,
-then there is a separation of `G` with `H` on the left. -/
-lemma Connected.exists_separation_of_le (hH : H.Connected) (hG : ¬ G.Connected) (hle : H ≤ G) :
-    ∃ S : G.Separation, H ≤ G[S.left] := by
-  obtain ⟨H', hH'H, hle'⟩ := hH.exists_component_ge hle
-  refine ⟨hH'H.separation_of_ne ?_, ?_⟩
-  · rintro rfl
-    exact hG hH'H.connected
-  simp only [IsComponent.separation_of_ne_left]
-  exact hle'.trans <| le_induce_self hH'H.le
+lemma IsClosedSubgraph.lt_isCompOf_iff (hH₁cl : H₁ ≤c G) (hH₂co : H₂.IsCompOf G) :
+    H₁ < H₂ ↔ H₁ = ⊥ := by
+  rw [lt_iff_le_and_ne, hH₁cl.le_isCompOf_iff hH₂co]
+  by_cases h : H₁ = H₂
+  · simp [h, hH₂co.ne_bot]
+  · simp [h]
 
-/-- The components of the union of a set of disjoint connected graphs are the graphs themselves. -/
-lemma isComponent_sUnion_iff {s : Set (Graph α β)} (h : s.Pairwise Graph.Disjoint)
-    (hs : ∀ G ∈ s, G.Connected) :
-    H.IsComponent (Graph.sUnion s (h.mono' (by simp))) ↔ H ∈ s := by
-  suffices aux : ∀ ⦃H⦄, H ∈ s → H.IsComponent (Graph.sUnion s (h.mono' (by simp))) by
-    refine ⟨fun hH ↦ ?_, fun hH ↦ aux hH⟩
-    obtain ⟨x, hx⟩ := hH.connected.nonempty
-    have hex : ∃ H ∈ s, x ∈ V(H) := by simpa using vertexSet_mono hH.le hx
-    obtain ⟨H', hH', hxH'⟩ := hex
-    rwa [← (aux hH').eq_of_mem_mem hH hxH' hx]
-  exact fun H h' ↦ (isClosedSubgraph_sUnion_of_disjoint s h h').isComponent_of_connected (hs H h')
+lemma IsClosedSubgraph.eq_of_le_isCompOf_of_vertexSet_not_disjoint (hH₁cl : H₁ ≤c G)
+    (hH₂co : H₂.IsCompOf G) (hle : H₁ ≤ H₂) (hV : ¬ Disjoint V(H₁) V(H₂)) : H₁ = H₂ := by
+  rw [hH₁cl.le_isCompOf_iff hH₂co] at hle
+  refine hle.resolve_left ?_
+  rintro rfl
+  simp at hV
 
-/-- If `H` is a nonempty subgraph of a connected graph `G`, and each vertex degree in `H`
-is at least the corresponding degree in `G`, then `H = G`. -/
-lemma Connected.eq_of_le_of_forall_degree_ge [G.LocallyFinite] (hG : G.Connected) (hle : H ≤ G)
-    (hne : V(H).Nonempty) (hdeg : ∀ ⦃x⦄, x ∈ V(H) → G.degree x ≤ H.degree x) : H = G := by
-  refine hle.eq_of_not_lt fun hlt ↦ ?_
-  obtain ⟨e, x, hex, heH, hxH⟩ := hG.exists_inc_notMem_of_lt hlt hne
-  have hle : H ≤ G ＼ {e} := by simp [heH, hle]
-  exact hex.degree_delete_lt.not_le <| (hdeg hxH).trans (degree_mono hle x)
+lemma IsCompOf.of_isClosedSubgraph (hHcl : H ≤c G) (hH'co : H'.IsCompOf H) :
+    H'.IsCompOf G := by
+  obtain ⟨⟨hH'co, hVH'⟩, hH'min⟩ := hH'co
+  exact ⟨⟨hH'co.trans hHcl, hVH'⟩, fun H₀ ⟨hH₀cl, hVH₀⟩ hH₀leH' =>
+    hH'min ⟨hH₀cl.of_le_of_le (hH₀leH'.trans hH'co.le) hHcl.le, hVH₀⟩ hH₀leH'⟩
 
-lemma regular_sUnion_iff {s : Set (Graph α β)} (hdj : s.Pairwise Graph.Disjoint) {d : ℕ} :
-    (Graph.sUnion s (hdj.mono' (by simp))).Regular d ↔ ∀ G ∈ s, G.Regular d := by
-  refine ⟨fun h G hGs v hv ↦ ?_, fun h v hv ↦ ?_⟩
-  · rw [← h (v := v) (by simpa using ⟨G, hGs, hv⟩)]
-    apply IsClosedSubgraph.eDegree_eq _ hv
-    exact isClosedSubgraph_sUnion_of_disjoint s hdj hGs
-  simp only [sUnion_vertexSet, mem_iUnion, exists_prop] at hv
-  obtain ⟨G, hGs, hvG⟩ := hv
-  rwa [← (isClosedSubgraph_sUnion_of_disjoint s hdj hGs).eDegree_eq hvG, h G hGs]
 
-lemma regular_iff_forall_component {d : ℕ} :
-    G.Regular d ↔ ∀ (H : Graph α β), H.IsComponent G → H.Regular d := by
-  refine ⟨fun h H hle ↦ h.of_isClosedSubgraph hle.isClosedSubgraph, fun h ↦ ?_⟩
-  rw [G.eq_sUnion_components, regular_sUnion_iff G.pairwiseDisjoint_components]
-  simpa
+def walkable (G : Graph α β) (u : α) : Graph α β :=
+  G[({x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x} : Set α)]
 
-lemma maxDegreeLE_iff_forall_component {d : ℕ} :
-    G.MaxDegreeLE d ↔ ∀ (H : Graph α β), H.IsComponent G → H.MaxDegreeLE d := by
-  refine ⟨fun h H hle ↦ h.mono hle.le, fun h ↦ ?_⟩
-  rw [G.eq_sUnion_components, maxDegreeLE_iff']
-  simp only [sUnion_vertexSet, mem_setOf_eq, mem_iUnion, exists_prop, forall_exists_index, and_imp]
-  intro v H hH hvH
-  rw [← G.eq_sUnion_components, ← hH.isClosedSubgraph.eDegree_eq hvH]
-  exact h H hH v
+lemma mem_walkable (hx : x ∈ V(G)) : x ∈ V(G.walkable x) :=
+  ⟨.nil x, by simpa, rfl, rfl⟩
+
+lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
+  refine ⟨induce_le fun x hx => ?_, ?_⟩
+  · obtain ⟨W, hW, rfl, rfl⟩ := hx
+    exact hW.last_mem
+  · rintro e x ⟨y, hl⟩ ⟨W, hW, rfl, rfl⟩
+    simp only [induce_edgeSet, mem_setOf_eq, walkable]
+    use W.last, y, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y, ?_, concat_first, concat_last
+    simp only [isWalk_concat_iff, hW, hl, and_self]
+
+lemma Adj.mem_walkable (h : G.Adj x y) : y ∈ V(G.walkable x) := by
+  obtain ⟨e, hl⟩ := h
+  exact ⟨hl.walk, hl.walk_isWalk, hl.walk_first, hl.walk_last⟩
+
+@[simp]
+lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
+  ⟨(walkable_isClosedSubgraph.vertexSet_mono ·), mem_walkable⟩
+
+@[simp]
+lemma walkable_eq_bot (hx : x ∉ V(G)) : G.walkable x = ⊥ := by
+  rw [walkable, ← vertexSet_eq_empty_iff, induce_vertexSet, Set.eq_empty_iff_forall_notMem]
+  simp only [mem_setOf_eq, not_exists, not_and]
+  rintro y W hW rfl rfl
+  exact hx hW.first_mem
+
+lemma exists_isWalk_of_mem_mem (hx : x ∈ V(G.walkable u)) (hy : y ∈ V(G.walkable u)) :
+    ∃ W, G.IsWalk W ∧ W.first = x ∧ W.last = y := by
+  obtain ⟨W₁, hW₁, rfl, rfl⟩ := hx
+  obtain ⟨W₂, hW₂, hf, rfl⟩ := hy
+  have hf' : W₁.reverse.last = W₂.first := by simp [hf]
+  exact ⟨W₁.reverse.append W₂, hW₁.reverse.append hW₂ hf', by simp [hf'], by simp⟩
+
+lemma mem_walkable_symm (hx : x ∈ V(G.walkable u)) : u ∈ V(G.walkable x) := by
+  obtain ⟨W, hW, rfl, rfl⟩ := hx
+  use W.reverse, hW.reverse, reverse_first, reverse_last
+
+lemma mem_walkable_comm : x ∈ V(G.walkable u) ↔ u ∈ V(G.walkable x) :=
+  ⟨mem_walkable_symm, mem_walkable_symm⟩
+
+lemma mem_walkable_trans (huv : u ∈ V(G.walkable v)) (hvx : v ∈ V(G.walkable x)) :
+    u ∈ V(G.walkable x) := by
+  obtain ⟨W₁, hW₁, rfl, rfl⟩ := huv
+  obtain ⟨W₂, hW₂, rfl, heq⟩ := hvx
+  use W₂.append W₁, hW₂.append hW₁ heq, append_first_of_eq heq, append_last
+
+lemma walkable_eq_walkable_of_mem (hx : x ∈ V(G.walkable u)) : G.walkable x = G.walkable u := by
+  rw [walkable_isClosedSubgraph.vertexSet_inj walkable_isClosedSubgraph]
+  ext y
+  exact ⟨fun h => mem_walkable_trans h hx, fun h => mem_walkable_trans h (mem_walkable_symm hx)⟩
+
+lemma IsClosedSubgraph.walkable_le_of_mem (hcl : H ≤c G) (hx : x ∈ V(H)) : G.walkable x ≤ H := by
+  rw [walkable_isClosedSubgraph.le_iff_vertexSet_subset hcl]
+  rintro y ⟨W, hW, rfl, rfl⟩
+  exact hW.isWalk_isClosedSubgraph hcl hx |>.last_mem
+
+lemma walkable_isCompOf (hx : x ∈ V(G)) : (G.walkable x).IsCompOf G := by
+  refine ⟨⟨walkable_isClosedSubgraph, ⟨x, mem_walkable hx⟩⟩, fun H' ⟨hH'cl, hxH'⟩ hH'leH => ?_⟩
+  obtain ⟨y, hy⟩ := hxH'
+  rw [← walkable_eq_walkable_of_mem <| vertexSet_mono hH'leH hy]
+  exact hH'cl.walkable_le_of_mem hy
+
+lemma exists_IsCompOf (hG : V(G).Nonempty) : ∃ (H : Graph α β), H.IsCompOf G :=
+  ⟨_, walkable_isCompOf hG.choose_spec⟩
+
+lemma IsCompOf.eq_walkable_of_mem_walkable (hHco : H.IsCompOf G) (hx : x ∈ V(H)) :
+    H = G.walkable x := by
+  rw [eq_comm]
+  refine walkable_isClosedSubgraph.eq_of_le_isCompOf_of_vertexSet_not_disjoint hHco
+    (hHco.isClosedSubgraph.walkable_le_of_mem hx) ?_
+  rw [not_disjoint_iff]
+  use x, mem_walkable <| vertexSet_mono hHco.le hx
+
+lemma isCompOf_iff_exists_walkable : H.IsCompOf G ↔ ∃ x ∈ V(H), G.walkable x = H := by
+  refine ⟨fun h => ?_, fun ⟨x, hx, h⟩ => ?_⟩
+  · obtain ⟨y, hy⟩ := h.nonempty
+    use y, hy
+    exact (IsCompOf.eq_walkable_of_mem_walkable h hy).symm
+  · subst H
+    exact walkable_isCompOf <| mem_walkable_self_iff.mp hx
+
+lemma exists_IsCompOf_vertex_mem (hx : x ∈ V(G)) : ∃ (H : Graph α β), H.IsCompOf G ∧ x ∈ V(H) :=
+  ⟨_, walkable_isCompOf hx, by simpa⟩
+
+lemma IsCompOf.le_of_mem_mem (hH₁ : H₁.IsCompOf G) (hH₂cl : H₂ ≤c G)
+    (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ ≤ H₂ := by
+  rw [hH₁.eq_walkable_of_mem_walkable hx₁]
+  exact hH₂cl.walkable_le_of_mem hx₂
+
+
+
+def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
+
+@[simp]
+lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
+  simp [Components]
+
+@[simp]
+lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by
+  simp [Components]
+
+lemma components_pairwise_stronglyDisjoint (G : Graph α β) :
+    G.Components.Pairwise StronglyDisjoint :=
+  fun _ hH₁ _ hH₂ hne => hH₁.stronglyDisjoint_of_ne hH₂ hne
+
+lemma components_pairwise_disjoint (G : Graph α β) :
+    G.Components.Pairwise Disjoint :=
+  fun _ hH₁ _ hH₂ hne => (hH₁.stronglyDisjoint_of_ne hH₂ hne).disjoint
+
+lemma components_pairwise_compatible (G : Graph α β) : G.Components.Pairwise Compatible :=
+  fun _ hH₁ _ hH₂ hne => (hH₁.stronglyDisjoint_of_ne hH₂ hne).compatible
+
+-- Graph is the union of its components
+-- eq_sUnion_components
+lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components
+    G.components_pairwise_compatible := by
+  have h := sSup_atoms_eq_top (α := G.ClosedSubgraph)
+  apply_fun Subtype.val at h
+  rw [ClosedSubgraph.coe_sSup, eq_comm] at h
+  convert h
+  ext H
+  simp only [mem_components_iff_isCompOf, ClosedSubgraph.isAtom_iff_isCompOf, mem_image,
+    mem_setOf_eq, Subtype.exists, exists_and_left, exists_prop, exists_eq_right_right, iff_self_and]
+  exact (·.isClosedSubgraph)
+
+@[simp]
+lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rw [← vertexSet_eq_empty_iff, G.eq_sUnion_components]
+    simp [h]
+  rintro rfl
+  ext H
+  simp
+
+lemma IsClosedSubgraph.components_subset_components (hcl : H ≤c G) :
+    H.Components ⊆ G.Components := by
+  rintro H' hH'
+  rw [mem_components_iff_isCompOf] at hH' ⊢
+  exact hH'.of_isClosedSubgraph hcl
+
+
+def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
+    G.ClosedSubgraph ≃o Set {a : G.ClosedSubgraph | IsAtom a} :=
+  orderIsoSetOfAtoms
+
+-- def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
+--   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
+--     sSup_atoms_eq_top.symm
+
+@[simp]
+lemma ClosedSubgraph.orderIso_set_components_sSup (H : G.ClosedSubgraph) :
+    sSup (Subtype.val '' (ClosedSubgraph.orderIso_set_components G H)) = H :=
+  orderIsoSetOfAtoms_sSup H
+
+-- lemma ClosedSubgraph.orderIso_set_components_subset (H : G.ClosedSubgraph) :
+--     Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) ⊆ G.Components :=
+--   fun _ ⟨H', _, h⟩ => h ▸ H'.prop
+
+lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph) :
+    H' ∈ Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) → H' ≤ H := by
+  rintro ⟨H', hH'cl, rfl⟩
+  rw [← orderIso_set_components_sSup H]
+  exact CompleteLattice.le_sSup _ H'.val <| mem_image_of_mem Subtype.val hH'cl
+
+-- lemma ClosedSubgraph.orderIso_set_components_apply (G : Graph α β) (H : G.ClosedSubgraph) :
+--     Subtype.val '' (Subtype.val '' (ClosedSubgraph.orderIso_set_components G H)) =
+--     Subtype.val '' H.val.Components := by
+--   ext H'
+--   simp only [le_eq_subset, mem_image, Subtype.exists, exists_and_right, exists_eq_right]
+--   refine ⟨fun ⟨hH'Gcl, hH'Gco, hH'iso⟩ => ⟨hH'Gcl.of_le_of_le hH'iso H.prop.le, ?_⟩,
+--     fun ⟨hH'Hcl, hH'Hco⟩ => ⟨hH'Hcl.trans H.prop, ?_, ?_⟩⟩
+--   · rw [components_isAtom_iff] at hH'Gco ⊢
+--     simp only [IsAtom, ne_eq, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, Subtype.forall,
+--       Subtype.mk_lt_mk] at hH'Gco ⊢
+--     exact ⟨hH'Gco.1, fun H₀ hH₀clH hH₀ltH' => hH'Gco.2 H₀ (hH₀clH.trans H.prop) hH₀ltH'⟩
+--   · rw [components_isAtom_iff] at hH'Hco ⊢
+--     simp only [IsAtom, ne_eq, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, Subtype.forall,
+--       Subtype.mk_lt_mk] at hH'Hco ⊢
+--     refine ⟨hH'Hco.1, fun H₀ hH₀clH hH₀ltH' => hH'Hco.2 H₀ ?_ hH₀ltH'⟩
+--     exact hH₀clH.of_le_of_le (hH₀ltH'.le.trans hH'Hcl.le) H.prop.le
+--   · simp?
+--   all_goals sorry
+
+-- lemma components_subset_components_iff (G H : Graph α β) :
+--     Subtype.val '' G.Components ⊆ Subtype.val '' H.Components ↔ G ≤c H := by
+--   refine ⟨fun h => ?_, fun h => ?_⟩
+--   · rw [← components_sUnion G, ← components_sUnion H]
+--     have : sSup G.Components ≤ sSup H.Components := by
+--       rw [h]
+
+--     have hle : H ≤c G := by
+--       rw [← orderIso_set_components_sSup H]
+--       exact CompleteLattice.le_sSup _ H' h
+--   · have hle : H ≤c G := by
+--       rw [← orderIso_set_components_sSup H]
+--       exact CompleteLattice.le_sSup _ H' h
+
+-- @[simp]
+-- lemma ClosedSubgraph.mem_orderIso_set_components_iff (H : G.ClosedSubgraph)
+-- {H' : G.ClosedSubgraph}:
+--     H' ∈ Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) ↔
+-- H'.val.IsCompOf H.val := by
+--   refine ⟨fun h => ?_, fun h => ?_⟩
+--   · have hle : H' ≤ H := by
+--       rw [← orderIso_set_components_sSup H]
+--       exact CompleteLattice.le_sSup _ H' h
+
+
+
+
+
+
+-- def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
+--   parts := {V(H.val) | H ∈ G.Components}
+--   indep := by
+--     rintro V ⟨H, hH, rfl⟩
+--     simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_diff, mem_setOf_eq, mem_singleton_iff,
+--       and_imp, forall_exists_index]
+--     rintro W H₀ hH₀co rfl
+--     have := not_imp_comm.mp <| G.components_pairwiseDisjoint_id.elim hH hH₀co
+--     rwa [H.vertexSet_inj, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
+--   bot_notMem := by simp
+--   sSup_eq' := by
+--     simp only [sSup_eq_sUnion, sUnion_eq_biUnion, mem_setOf_eq, iUnion_exists, biUnion_and',
+--       iUnion_iUnion_eq_right]
+--     rw [← ClosedSubgraph.vertexSet_sSup, components_sUnion]

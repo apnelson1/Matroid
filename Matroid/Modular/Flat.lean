@@ -335,10 +335,10 @@ lemma IsFlat.isModularFlat_iff_forall_contract_exists_parallel (hX : M.IsFlat X)
     exact (inter_subset_inter_right _ (diff_subset.trans hI.subset)).trans hXFcl
 
   specialize h hdj.symm (e := e)
-  simp only [contract_ground, subset_diff, hJ.subset_ground, true_and, contract_closure_eq, ←
-    closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl, mem_singleton_iff,
-    not_true_eq_false, and_false, not_false_eq_true, and_self, contract_isNonloop_iff, hdj,
-    hI.indep.subset_ground heIJ.1, hI.indep.notMem_closure_diff_of_mem heIJ.1, forall_const] at h
+  simp only [contract_closure_eq, ← closure_union_congr_left hJ.closure_eq_closure, mem_diff, hecl,
+    mem_singleton_iff, not_true_eq_false, and_false, not_false_eq_true, and_self,
+    contract_isNonloop_iff, hI.indep.subset_ground heIJ.1,
+    hI.indep.notMem_closure_diff_of_mem heIJ.1, forall_const] at h
 
   obtain ⟨f, hfX, hef⟩ := h
 
@@ -433,7 +433,7 @@ lemma IsModularPair.distrib_of_subset_left (hFX : M.IsModularPair F X) (hF : M.I
     (disjoint_sdiff_left.mono_right inter_subset_left).inter_eq, union_empty] at hsk
 
   have h := hsk.inter_closure_eq
-  simp only [contract_closure_eq, diff_inter_diff_right, empty_union] at h
+  simp only [contract_closure_eq, diff_inter_diff_right] at h
   rw [union_comm (F ∩ X), ← union_assoc, ← union_assoc, diff_union_self, union_right_comm,
     diff_union_inter, union_eq_self_of_subset_right hYF, diff_union_self, union_right_comm,
     inter_comm F, diff_union_inter, hF.closure, union_comm Y, inter_comm X, contract_loops_eq] at h
@@ -783,7 +783,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
     ∃ (g' : ↑(M.E \ range e)), (∀ j, g'.1 ≠ e j) ∧ M.IsCircuit {g.1,g'.1, e i} ∧
       M.IsCircuit (insert x (insert g'.1 (e '' Ici (i+1))))
   · rintro i ⟨g, hgE, hge⟩ hC
-    simp only [mem_diff, mem_range, not_exists, exists_and_left, exists_prop] at hC ⊢
+    simp only at hC ⊢
     have hxi : x ≠ e i := by rintro rfl; simp at hxe
     have hg : ∀ j, g ≠ e j := by rintro j rfl; simp at hge
     obtain ⟨hxg, hge⟩ := aux1 hC
@@ -822,7 +822,7 @@ private lemma modular_finitary_aux (hM : ∀ F, M.IsFlat F → M.eRk F ≤ 2 →
   set f : ℕ → ↑(M.E \ range e) := Nat.recAux y' φ with f_def
   have hf_succ : ∀ n, f (n+1) = φ n (f n) := fun _ ↦ rfl
 
-  rw [← image_univ, ← show Ici 0 = univ by simp [Set.ext_iff, Nat.zero_le]] at h_isCircuit
+  rw [← image_univ, ← show Ici 0 = univ by simp [Set.ext_iff]] at h_isCircuit
   have big : ∀ i, M.IsCircuit (insert x (insert ↑(f i) (e '' (Ici i))))
   · intro n
     induction' n with n IH
@@ -862,7 +862,7 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
     ∧ f 0 = y
     ∧ (∀ n, N.IsCircuit {f n, f (n+1), e n})
     ∧ ∀ n, N.IsCircuit (insert x ((insert (f n)) (e '' Ici n))) := by
-  simp only [finitary_iff_forall_isCircuit_finite, not_forall, Classical.not_imp] at hnotfin
+  simp only [finitary_iff_forall_isCircuit_finite, not_forall] at hnotfin
   obtain ⟨C, hC, hCinf : C.Infinite⟩ := hnotfin
   obtain ⟨x, hxC⟩ := hCinf.nonempty
   obtain ⟨y, hyC, hyx : y ≠ x⟩ := (hCinf.diff (finite_singleton x)).nonempty
@@ -894,14 +894,14 @@ private lemma exists_of_modular_not_finitary (hM : ∀ L, M.IsLine L → M.IsMod
     · rwa [contract_closure_eq, closure_union_closure_left_eq, ← contract_closure_eq,
         hI.closure_eq_closure, hF.closure] at hmod
     rwa [eRk_closure_eq, hI.indep.of_contract.eRk_eq_encard, ← hI.eRk_eq_encard]
-  simp only [hX', not_exists] at h_aux
+  simp only [hX'] at h_aux
 
   rw [← singleton_union, ← singleton_union, ← union_assoc, singleton_union,
     union_diff_cancel] at h_aux
   swap
   · simp [pair_subset_iff, X_def, hxC, hyC]
   specialize h_aux <| hC.contract_isCircuit (C := X) ?_
-  · exact (diff_subset.trans diff_subset).ssubset_of_mem_notMem hxC (by simp [X_def])
+  · exact (diff_subset.trans diff_subset).ssubset_of_mem_notMem hxC (by simp)
   obtain ⟨f, rfl, hrange, hne, htri, hcirc⟩ := h_aux
   exact ⟨N, e, f, x, f 0, hyx.symm, he_inj, hxe, hye,
     by rwa [← hX'] at hne, hrange, rfl, htri, hcirc⟩
@@ -912,14 +912,14 @@ lemma finitary_of_forall_isLine_modular (hM : ∀ L, M.IsLine L → M.IsModularF
   by_contra hnotfin
   obtain ⟨N, e, f, x, y, hxy, he, hxe, hye, hdj, hxf, rfl, htri, hcirc⟩ :=
     exists_of_modular_not_finitary hM hnotfin
-
+  -- Each `e i` is spanned by two `f i`, so the `e` are spanned by the `f`.
   have hef : N.closure (range e) ⊆ N.closure (range f)
   · refine N.closure_subset_closure_of_subset_closure ?_
     rintro _ ⟨i, rfl⟩
     refine mem_of_mem_of_subset
       ((htri i).mem_closure_diff_singleton_of_mem (e := e i) (by simp)) ?_
     exact N.closure_mono <| by simp [insert_subset_iff]
-
+  -- `x` is spanned by `y = b 0` and the `e`, so `x` is spanned by the `f`.
   have hcl1 : x ∈ N.closure (range f)
   · rw [← closure_closure, ← union_eq_self_of_subset_left hef,
       closure_closure_union_closure_eq_closure_union]

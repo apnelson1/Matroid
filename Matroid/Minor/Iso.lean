@@ -1,5 +1,5 @@
 import Matroid.Minor.Rank
-import Mathlib.Data.Matroid.Constructions
+import Mathlib.Combinatorics.Matroid.Constructions
 import Matroid.Equiv
 import Matroid.ForMathlib.Other
 import Mathlib.Data.FunLike.Embedding
@@ -133,7 +133,7 @@ lemma IsoRestr.Spanning.trans {α₁ α₂ α₃ : Type*} {M₁ : Matroid α₁}
 @[simps] def IsoRestr.ofSubtypeFun (f : M.E → β) (hf : Injective f) (hfN : range f ⊆ N.E)
     (hfI : ∀ I : Set M.E, M.Indep I ↔ N.Indep ↑(f '' I)) : M ≤ir N where
   toFun e := ⟨f e, hfN (mem_range_self _)⟩
-  inj' _ _ := by simp [hf.eq_iff, Subtype.coe_inj]
+  inj' _ _ := by simp [hf.eq_iff]
   indep_iff' I := by
     rw [hfI]
     convert Iff.rfl

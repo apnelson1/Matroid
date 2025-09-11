@@ -1,6 +1,7 @@
 import Matroid.ForMathlib.Card
-import Mathlib.Data.Matroid.Circuit
+import Mathlib.Combinatorics.Matroid.Circuit
 import Matroid.ForMathlib.Matroid.Basic
+import Matroid.ForMathlib.Matroid.Sum
 import Matroid.ForMathlib.Set
 import Mathlib.Tactic.TFAE
 
@@ -10,7 +11,7 @@ import Mathlib.Tactic.TFAE
 
 variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R E D : Set α} {e f x y : α}
 
-open Set Set.Notation
+open Set Set.Notation Function
 namespace Matroid
 
 
@@ -314,7 +315,7 @@ lemma map_isCircuit_iff {β : Type*} {C : Set β} (f : α → β) (hf : M.E.InjO
   · rintro ⟨⟨C, hC, rfl⟩, h⟩
     refine ⟨C, ⟨hC, fun D hD hDC ↦ ?_⟩, rfl⟩
     rw [← hf.image_eq_image_iff hD.subset_ground hC.subset_ground]
-    exact h _ hD rfl (image_subset f hDC)
+    exact h _ hD rfl (image_mono hDC)
   rintro ⟨C₀, ⟨h,h'⟩, rfl⟩
   refine ⟨⟨C₀, h, rfl⟩, ?_⟩
   rintro _ D hD rfl hss
@@ -324,6 +325,13 @@ lemma mapEquiv_isCircuit_iff {β : Type*} {C : Set β} (f : α ≃ β) :
     (M.mapEquiv f).IsCircuit C ↔ M.IsCircuit (f.symm '' C) := by
   rw [mapEquiv_eq_map, map_isCircuit_iff]
   exact ⟨by rintro ⟨C, hC, rfl⟩; simpa, fun h ↦ ⟨_, h, by simp⟩⟩
+
+@[simp]
+lemma restrictSubtype_ground_isCircuit_iff {C : Set M.E} :
+    (M.restrictSubtype M.E).IsCircuit C ↔ M.IsCircuit ((↑) '' C) := by
+  rw [show M.IsCircuit ((↑) '' C) ↔ (M ↾ M.E).IsCircuit ((↑) '' C) by simp,
+    ← M.map_val_restrictSubtype_eq M.E, map_isCircuit_iff]
+  simp
 
 @[simp] lemma uniqueBaseOn_dep_iff : (uniqueBaseOn I E).Dep D ↔ D.Nonempty ∧ ¬ (D ⊆ I) ∧ D ⊆ E := by
   by_cases hD : D ⊆ E
@@ -373,14 +381,14 @@ lemma IsCircuit.girth_le_card (hC : M.IsCircuit C) : M.girth ≤ C.encard := by
   exact fun b hb ↦ hb C hC
 
 lemma girth_eq_top_iff : M.girth = ⊤ ↔ ∀ C, M.IsCircuit C → C.Infinite := by
-  simp [girth, sInf_eq_top]
+  simp [girth]
 
 @[simp] lemma girth_eq_top_iff_ground_indep [Finitary M] : M.girth = ⊤ ↔ M = freeOn M.E := by
   rw [girth_eq_top_iff, eq_freeOn_iff, indep_iff_forall_subset_not_isCircuit, and_iff_right rfl]
   exact ⟨fun h C _ hC ↦ h C hC hC.finite, fun h C hC _ ↦ h C hC.subset_ground hC⟩
 
 lemma le_girth_iff : k ≤ M.girth ↔ ∀ C, M.IsCircuit C → k ≤ C.encard := by
-  simp [girth, le_sInf_iff]
+  simp [girth]
 
 lemma exists_isCircuit_girth (M : Matroid α) [RankPos M✶] :
     ∃ C, M.IsCircuit C ∧ C.encard = M.girth := by
@@ -393,7 +401,7 @@ lemma exists_isCircuit_girth (M : Matroid α) [RankPos M✶] :
   simp [girth]
 
 @[simp] lemma girth_freeOn : girth (freeOn E) = ⊤ := by
-  simp [Subset.rfl]
+  simp
 
 lemma girth_le_iff [RankPos M✶] : M.girth ≤ k ↔ ∃ C, M.IsCircuit C ∧ C.encard ≤ k :=
   let ⟨C, hC⟩ := M.exists_isCircuit_girth
@@ -478,9 +486,99 @@ lemma IsBase.rev_exchange (hB₁ : M.IsBase B₁) (hB₂ : M.IsBase B₂) (he : 
 lemma IsBasis.rev_exchange (hI₁ : M.IsBasis I₁ X) (hI₂ : M.IsBasis I₂ X) (he : e ∈ I₁ \ I₂) :
     ∃ f ∈ I₂ \ I₁, M.IsBasis (insert e I₂ \ {f}) X :=
   (hI₁.strong_exchange hI₂ he).imp
-    (by simp only [mem_diff, mem_insert_iff, mem_singleton_iff]; tauto)
+    (by simp only [mem_diff]; tauto)
 
 end IsBasisExchange
+
+section Sum
+
+variable {ι : Type*} {α : ι → Type*} (M : (i : ι) → Matroid (α i))
+
+lemma sigma_isCircuit_iff {C : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).IsCircuit C ↔ ∃ i C₀, (M i).IsCircuit C₀ ∧ C = Sigma.mk i '' C₀ := by
+  wlog hC : C ⊆ (Matroid.sigma M).E
+  · refine iff_of_false (fun h ↦ hC h.subset_ground) ?_
+    rintro ⟨i, C₀, hC₀, rfl⟩
+    simp [hC₀.subset_ground] at hC
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have aux : ∀ {e f}, e ∈ C → f ∈ C → e.1 = f.1 := by
+      rintro ⟨i,e⟩ ⟨j,f⟩ he hf
+      refine by_contra fun (hij : i ≠ j) ↦ h.not_indep ?_
+      simp only [sigma_indep_iff]
+      intro k
+      obtain rfl | hne := eq_or_ne i k
+      · refine ((sigma_indep_iff.1 (h.diff_singleton_indep hf)) i).subset ?_
+        rw [preimage_diff, preimage_singleton_eq_empty.2 (by simpa using hij.symm), diff_empty]
+      refine ((sigma_indep_iff.1 (h.diff_singleton_indep he)) k).subset ?_
+      rw [preimage_diff, preimage_singleton_eq_empty.2 (by simpa using hne), diff_empty]
+    obtain ⟨⟨i,e⟩, heC⟩ := h.nonempty
+    have hss : C ⊆ range (Sigma.mk i) := by
+      simp_rw [range_sigmaMk, subset_def, mem_preimage, mem_singleton_iff]
+      exact fun y hy ↦ aux hy heC
+    obtain ⟨C₀, rfl⟩ := subset_range_iff_exists_image_eq.1 hss
+    simp_rw [isCircuit_iff_dep_forall_diff_singleton_indep]
+    refine ⟨i, C₀, ⟨sigma_image_dep_iff.1 h.dep, fun e he ↦ ?_⟩, rfl⟩
+    have hi := h.diff_singleton_indep (mem_image_of_mem _ he)
+    rwa [← image_singleton, ← image_diff sigma_mk_injective, sigma_image_indep_iff] at hi
+  obtain ⟨i, C₀, hC₀, rfl⟩ := h
+  rw [isCircuit_iff_dep_forall_diff_singleton_indep, sigma_image_dep_iff, and_iff_right hC₀.dep]
+  rintro _ ⟨e, he, rfl⟩
+  rw [← image_singleton, ← image_diff sigma_mk_injective, sigma_image_indep_iff]
+  exact hC₀.diff_singleton_indep he
+
+lemma sigma_isCircuit_iff' {C : Set ((i : ι) × α i)} :
+    (Matroid.sigma M).IsCircuit C ↔
+    ∃ i, C ⊆ range (Sigma.mk i) ∧ (M i).IsCircuit ((Sigma.mk i) ⁻¹' C) := by
+  rw [sigma_isCircuit_iff]
+  refine ⟨?_, fun ⟨i, hCss, hC⟩ ↦ ⟨i, _, hC, by rwa [eq_comm, image_preimage_eq_iff]⟩⟩
+  rintro ⟨i, C, hC, rfl⟩
+  exact ⟨i, image_subset_range .., by simpa⟩
+
+@[simp]
+lemma disjointSigma_isCircuit_iff {α : Type*} {ι : Type*} {M : ι → Matroid α}
+    (hdj : Pairwise (Disjoint on fun i ↦ (M i).E)) {C : Set α} :
+    (Matroid.disjointSigma M hdj).IsCircuit C ↔ ∃ i, (M i).IsCircuit C := by
+  simp only [Matroid.disjointSigma, mapEmbedding, map_isCircuit_iff, sigma_isCircuit_iff',
+    range_sigmaMk, restrictSubtype_ground_isCircuit_iff, Embedding.sigmaSet_apply]
+  refine ⟨?_, fun ⟨i, hCi⟩ ↦ ⟨Sigma.mk i '' ((M i).E ↓∩ C), ⟨i, ?_⟩, ?_⟩⟩
+  · rintro ⟨C₀, ⟨i, hC₀i, hC₀⟩, rfl⟩
+    refine ⟨i, ?_⟩
+    convert hC₀
+    ext e
+    simp only [mem_image, Sigma.exists, Subtype.exists, exists_and_right, exists_eq_right,
+      mem_preimage]
+    refine ⟨fun ⟨a, haE, ha⟩ ↦ ?_, fun ⟨heE, heC⟩ ↦ ⟨_, heE, heC⟩ ⟩
+    obtain rfl : a = i := by simpa using hC₀i ha
+    exact ⟨haE, ha⟩
+  · simpa [preimage_preimage, inter_eq_self_of_subset_right hCi.subset_ground]
+  simp [image_image, hCi.subset_ground]
+
+lemma sum_isCircuit_iff {α β : Type*} (M : Matroid α) (N : Matroid β) {C : Set (α ⊕ β)} :
+    (M.sum N).IsCircuit C ↔
+    (C ⊆ range .inl ∧ M.IsCircuit (.inl ⁻¹' C)) ∨ (C ⊆ range .inr ∧ N.IsCircuit (.inr ⁻¹' C)) := by
+  simp only [Matroid.sum, cond_false, cond_true, Equiv.sumEquivSigmaBool, mapEquiv_isCircuit_iff,
+    Equiv.sumCongr_symm, Equiv.sumCongr_apply, Equiv.symm_symm, Equiv.coe_fn_mk,
+    sigma_isCircuit_iff', range_sigmaMk, image_subset_iff, Bool.exists_bool, Equiv.ulift_apply]
+  convert Iff.rfl <;> aesop
+
+@[simp]
+lemma disjointSum_isCircuit_iff {α : Type*} {M N : Matroid α} (hdj) {C : Set α} :
+    (M.disjointSum N hdj).IsCircuit C ↔ M.IsCircuit C ∨ N.IsCircuit C := by
+  simp only [disjointSum, mapEmbedding, map_isCircuit_iff, sum_isCircuit_iff,
+    subset_range_iff_exists_image_eq, restrictSubtype_ground_isCircuit_iff,
+    Function.Embedding.sumSet_apply]
+  refine ⟨?_, fun h ↦ h.elim (fun hC ↦ ⟨.inl '' (M.E ↓∩ C), ?_⟩) fun hC ↦ ⟨.inr '' (N.E ↓∩ C), ?_⟩⟩
+  · rintro ⟨_,(⟨⟨C, rfl⟩,hC⟩ | ⟨⟨C, rfl⟩,hC⟩),rfl⟩
+    · rw [preimage_image_eq _ Sum.inl_injective] at hC
+      simp [image_image, hC]
+    rw [preimage_image_eq _ Sum.inr_injective] at hC
+    simp [image_image, hC, image_image]
+  all_goals simp [preimage_image_eq _ Sum.inl_injective, preimage_image_eq _ Sum.inr_injective,
+    inter_eq_self_of_subset_right hC.subset_ground, hC, image_image]
+
+
+
+end Sum
 
 
 end Matroid

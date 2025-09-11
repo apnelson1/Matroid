@@ -1,6 +1,6 @@
 -- import Matroid.Minor.Iso
 -- import Matroid.Simple
-import Matroid.Constructions.ParallelExtension
+import Matroid.Extension.Parallel
 -- import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.Matrix.Rowspace
@@ -687,7 +687,7 @@ lemma Rep.subset_span_of_isBasis (v : M.Rep 𝔽 W) (h : M.IsBasis I X) : v '' X
 
 lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' X) = span 𝔽 (v '' (X ∩ M.E)) := by
-  apply (span_mono (image_subset v <| inter_subset_left)).antisymm'
+  apply (span_mono (image_mono <| inter_subset_left)).antisymm'
   rw [← span_insert_zero (s := v '' (X ∩ M.E)), ← inter_union_diff X M.E, image_union,
     inter_union_diff]
   apply span_mono (union_subset (subset_insert _ _) _)
@@ -699,15 +699,15 @@ lemma Rep.span_eq_span_inter_ground (v : M.Rep 𝔽 W) (X : Set α) :
 @[simp] lemma Rep.span_eq_span_closure (v : M.Rep 𝔽 W) (X : Set α) :
     span 𝔽 (v '' M.closure X) = span 𝔽 (v '' X) := by
   rw [v.span_eq_span_inter_ground X, ← closure_inter_ground, le_antisymm_iff,
-    and_iff_left (span_mono (image_subset _ (M.subset_closure _)))]
+    and_iff_left (span_mono (image_mono (M.subset_closure _)))]
   obtain ⟨I, hI⟩ := M.exists_isBasis (X ∩ M.E)
   rw [← hI.closure_eq_closure]
   exact (span_mono <| v.subset_span_of_isBasis hI.indep.isBasis_closure).trans <|
-    span_le.2 (span_mono (image_subset _ hI.subset))
+    span_le.2 (span_mono (image_mono hI.subset))
 
 lemma Rep.span_eq_span_of_isBasis' (v : M.Rep 𝔽 W) (h : M.IsBasis' I X) :
     span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
-  le_antisymm (span_mono (image_subset _ h.subset)) (span_le.2 (v.subset_span_of_isBasis' h))
+  le_antisymm (span_mono (image_mono h.subset)) (span_le.2 (v.subset_span_of_isBasis' h))
 
 lemma Rep.span_eq_span_of_isBasis (v : M.Rep 𝔽 W) (h : M.IsBasis I X) :
     span 𝔽 (v '' I) = span 𝔽 (v '' X) :=
@@ -718,7 +718,7 @@ lemma Rep.span_le_span_of_closure_subset_closure (v : M.Rep 𝔽 W) (h : M.closu
   obtain ⟨I, hI⟩ := M.exists_isBasis' X
   refine span_le.2 <| (v.subset_span_of_isBasis' hI).trans <| span_le.2 ?_
   rw [← v.span_eq_span_closure]
-  exact (image_subset _ (hI.isBasis_closure_right.subset.trans h)).trans subset_span
+  exact (image_mono (hI.isBasis_closure_right.subset.trans h)).trans subset_span
 
 lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
     v '' X ⊆ span 𝔽 (v '' Y) ↔ X ⊆ M.closure Y := by
@@ -735,7 +735,7 @@ lemma Rep.subset_span_iff (v : M.Rep 𝔽 W) (hX : X ⊆ M.E := by aesop_mat) :
     refine fun heI' ↦ heI ?_
     rwa [← (v.injOn_of_indep hi).mem_image_iff (subset_insert _ _) (mem_insert _ _)]
   rw [← v.span_eq_span_closure]
-  exact (image_subset v h).trans subset_span
+  exact (image_mono h).trans subset_span
 
 
 -- -- Ugly proof in the second part
@@ -743,7 +743,7 @@ lemma Rep.closure_eq (v : M.Rep 𝔽 W) (X : Set α) : M.closure X = M.E ∩ v �
   obtain ⟨I, hI⟩ := M.exists_isBasis' (X)
   rw [← hI.closure_eq_closure, subset_antisymm_iff, subset_inter_iff, and_iff_right (closure_subset_ground _ _),
     ← image_subset_iff, and_iff_left]
-  · exact (v.subset_span_of_isBasis hI.indep.isBasis_closure).trans (span_mono (image_subset _ hI.subset))
+  · exact (v.subset_span_of_isBasis hI.indep.isBasis_closure).trans (span_mono (image_mono hI.subset))
   rintro x ⟨hxE, hx⟩
   rw [mem_preimage] at hx
 

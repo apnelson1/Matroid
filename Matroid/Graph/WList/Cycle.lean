@@ -13,8 +13,7 @@ namespace WList
 /-- A `WList` is closed if its first and last entries are equal. -/
 def IsClosed (w : WList α β) : Prop := w.first = w.last
 
-lemma IsClosed.eq (h : w.IsClosed) : w.first = w.last :=
-  h
+lemma IsClosed.eq (h : w.IsClosed) : w.first = w.last := h
 
 @[simp]
 lemma nil_isClosed (x : α) : (nil x (β := β)).IsClosed := rfl
@@ -134,7 +133,7 @@ lemma rotate_firstEdge (n : ℕ) (hn : n < w.length) :
       simp_rw [add_comm (b := 1), ← rotate_rotate]
       simp only [cons_length, add_lt_add_iff_right] at hn
       rw [IH (hn.trans (by simp))]
-      simp [cons_rotate_one, concat_edge, add_comm (a := 1), hn]
+      simp [concat_edge, add_comm (a := 1), hn]
 
 lemma rotate_first (w : WList α β) (n : ℕ) (hn : n ≤ w.length) : (w.rotate n).first = w.get n := by
   induction n generalizing w with
@@ -205,7 +204,7 @@ lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
   | nil => simp
   | cons u e w =>
     rw [cons_length, rotate_cons_succ, cons_vertex,
-      ← ((w.concat e w.first).rotate w.length).vertex.head_cons_tail (by simp),
+      ← ((w.concat e w.first).rotate w.length).vertex.cons_head_tail (by simp),
       ← tail_vertex (by simp), rotate_vertex_tail, vertex_head, rotate_first _ _ (by simp),
       get_concat _ _ _ rfl.le, get_length, eq_comm, show u = w.last from hw]
     convert rfl

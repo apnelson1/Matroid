@@ -1,4 +1,4 @@
-import Mathlib.Data.Matroid.IndepAxioms
+import Mathlib.Combinatorics.Matroid.IndepAxioms
 import Matroid.ForMathlib.Finset
 import Matroid.Circuit
 
@@ -117,9 +117,8 @@ protected lemma matroid_isCircuit : M.matroid.IsCircuit = M.IsCircuit := by
   obtain hCE | hCE := em' <| C ⊆ M.E
   · refine iff_of_false (mt Matroid.IsCircuit.subset_ground hCE)
       (mt (fun h ↦ M.circuit_subset_ground h) hCE)
-  simp only [Matroid.isCircuit_iff_forall_ssubset, M.matroid_indep_iff,  hCE, true_and,
-    ← Matroid.not_indep_iff (show C ⊆ M.matroid.E from hCE), not_forall, Classical.not_imp,
-    not_not, exists_prop]
+  simp only [Matroid.isCircuit_iff_forall_ssubset, M.matroid_indep_iff, hCE, true_and, ←
+    Matroid.not_indep_iff (show C ⊆ M.matroid.E from hCE), not_forall, not_not, exists_prop]
   refine ⟨fun ⟨⟨C', hC', hC'ss⟩, hmin⟩ ↦ ?_, fun h ↦ ⟨⟨C, rfl.subset, h⟩, fun I hIC ↦ ?_⟩⟩
   · obtain rfl | hssu := hC'.eq_or_ssubset
     · exact hC'ss

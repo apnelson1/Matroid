@@ -1,5 +1,5 @@
 
-import Mathlib.Data.Matroid.Minor.Restrict
+import Mathlib.Combinatorics.Matroid.Minor.Restrict
 import Mathlib.Data.Fintype.Basic
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Function
@@ -97,12 +97,12 @@ lemma AdjIndep.augment [DecidableEq β] (hI : M.AdjIndep Adj I) (hJ : M.AdjIndep
       exact hf.adj hvs
 
     simp only [Finset.le_eq_subset, Finset.subset_iff, Finset.mem_filter, Finset.mem_inter, and_imp,
-      Finset.ext_iff, and_congr_right_iff, φ, f'] at hmax
+      φ, f'] at hmax
 
     specialize hmax (fun a haI haJ ha ↦ ⟨⟨haI, haJ⟩, ?_⟩) hyI hy
     · simp_rw [update_apply, ← ha, ite_eq_right_iff, ha, eq_comm]
       apply congr_arg
-    simp only [update_self, forall_const, S, f', φ, T] at hmax
+    simp only [update_self, forall_const] at hmax
     rw [← hmax.2] at hxI₀
     exact hxI₀ <| hf.bijOn.image_eq.subset (mem_image_of_mem _ hyI)
 

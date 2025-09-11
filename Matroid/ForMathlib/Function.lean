@@ -106,7 +106,7 @@ variable {f : α → β} {s : Set α} {t : Set β} {x : α} {y : β}
 lemma BijOn.bijOn_insert_iff (h : BijOn f s t) (hx : x ∉ s) :
     BijOn f (Insert.insert x s) (Insert.insert y t) ↔ y = f x ∧ y ∉ t := by
   simp [BijOn]
-  simp only [BijOn, MapsTo, mem_insert_iff, forall_eq_or_imp, injOn_insert hx, h.image_eq,
+  simp only [MapsTo, mem_insert_iff, forall_eq_or_imp, injOn_insert hx, h.image_eq,
     and_iff_right h.injOn, SurjOn, image_insert_eq, insert_subset_iff, subset_insert, and_true]
   obtain (rfl | hne) := eq_or_ne y (f x)
   · simp only [true_or, true_and, and_true, and_iff_right_iff_imp]
@@ -155,3 +155,23 @@ variable {f : α → β} {x : α} {y : β}
     {f : α → β} {x : ↥(s ∪ t)} : Sum.elim (s.restrict f) (t.restrict f)
       ((Equiv.sumSet h).symm x) = f x := by
   by_cases h : x.1 ∈ s <;> simp [h]
+
+lemma RightInvOn.injOn {f : α → β} {g : β → α} {s : Set α} (hinv : RightInvOn f g s) :
+    InjOn f s := by
+  rintro a ha b hb h_eq
+  replace h_eq := congr_arg g h_eq
+  rwa [hinv.eq ha, hinv.eq hb] at h_eq
+
+lemma RightInvOn.injOn_image {f : α → β} {g : β → α} {s : Set α} (hinv : RightInvOn f g s) :
+    InjOn g (f '' s) := by
+  rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ h_eq
+  rw [hinv.eq ha, hinv.eq hb] at h_eq
+  rw [h_eq]
+
+lemma LeftInvOn.injOn_image {f : α → β} {g : β → α} {t : Set β} (hinv : LeftInvOn f g t) :
+    InjOn f (g '' t) :=
+  RightInvOn.injOn_image hinv
+
+
+lemma Function.onFun_comp {α β γ : Type*} {r : α → α → Prop} {f : β → α} {g : γ → β} :
+    (r on f ∘ g) = ((r on f) on g) := rfl

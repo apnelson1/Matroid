@@ -1,6 +1,8 @@
-import Mathlib.Data.Set.Lattice
+import Mathlib.Data.Set.Lattice.Image
 
 variable {α ι : Type*}
+
+open Function
 namespace Set
 
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
@@ -57,6 +59,30 @@ lemma diff_eq_diff_iff_inter_eq_inter {s t r : Set α} : s \ t = s \ r ↔ (t �
 @[simp] lemma diff_inter_diff_right {s t r : Set α} : (t \ s) ∩ (r \ s) = (t ∩ r) \ s := by
   simp only [diff_eq, inter_assoc, inter_comm sᶜ, inter_self]
 
+@[simp]
+lemma iInter_diff_distrib {ι α : Type*} [Nonempty ι] {G : ι → Set α} {X : Set α} :
+    (⋂ i, G i) \ X = ⋂ i, (G i) \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun a ↦ notMem_of_mem_diff (a <| Classical.arbitrary ι)
+
+@[simp]
+lemma biInter_diff_distrib {ι α : Type*} {s : Set ι} (hs : s.Nonempty) {G : ι → Set α}
+    {X : Set α} : (⋂ i ∈ s, G i) \ X = ⋂ i ∈ s, G i \ X := by
+  ext x
+  simp +contextual only [mem_diff, mem_iInter, iff_def, not_false_eq_true, and_self, implies_true,
+    true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
+@[simp]
+lemma sInter_diff_distrib {α : Type*} {s : Set (Set α)} (hs : s.Nonempty) {X : Set α} :
+    ⋂₀ s \ X = ⋂₀ ((· \ X) '' s) := by
+  ext x
+  simp +contextual only [mem_diff, mem_sInter, sInter_image, mem_iInter, iff_def, not_false_eq_true,
+    and_self, implies_true, true_and]
+  exact fun h ↦ (h _ hs.some_mem).2
+
 
 lemma insert_inter_insert_eq {A : Set α} {b c : α} (hne : b ≠ c):
     (insert b A) ∩ (insert c A) = A := by
@@ -86,7 +112,7 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
   simp [h_eq] at hs
 
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
-  subset_antisymm (by simp) (image_subset f (subset_preimage_image _ _))
+  subset_antisymm (by simp) (image_mono (subset_preimage_image _ _))
 
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
@@ -119,3 +145,26 @@ lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (inse
 lemma Subsingleton.elim {x y} {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (hys : y ∈ s) :
     x = y := by
   obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all
+
+lemma exists_partition_of_subset_iUnion {s : Set α} {t : ι → Set α} (hst : s ⊆ ⋃ i, t i) :
+    ∃ (r : ι → Set α), Pairwise (Disjoint on r) ∧ ⋃ i, r i = s ∧ (∀ i, r i ⊆ t i) := by
+  obtain hι | hι := isEmpty_or_nonempty ι; simp_all
+  have h (a) (ha : a ∈ s) : ∃ i, a ∈ t i := by simpa using hst ha
+  choose! f hf using h
+  refine ⟨fun i ↦ f ⁻¹' {i} ∩ s, by simp +contextual [Pairwise, disjoint_left], ?_, ?_⟩
+  · rw [← iUnion_inter, inter_eq_right, ← preimage_iUnion, iUnion_singleton_eq_range]
+    simp
+  rintro i e ⟨rfl, h⟩
+  exact hf _ h
+
+
+lemma iUnion_diff_iUnion {ι α : Type*} {s t : ι → Set α} (hts : ∀ i, t i ⊆ s i)
+    (hdj : Pairwise (Disjoint on s)) : ⋃ i, s i \ t i = (⋃ i, s i) \ ⋃ i, t i := by
+  refine subset_antisymm (subset_diff.2 ⟨iUnion_mono fun i ↦ diff_subset, ?_⟩) ?_
+  · simp only [disjoint_iUnion_right, disjoint_iUnion_left]
+    intro i j
+    obtain rfl | hne := eq_or_ne i j
+    · exact disjoint_sdiff_left
+    exact (hdj hne.symm).mono diff_subset (hts i)
+  rw [iUnion_diff]
+  exact iUnion_mono fun i ↦ diff_subset_diff_right <| subset_iUnion ..

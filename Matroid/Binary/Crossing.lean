@@ -329,8 +329,7 @@ theorem crossingBinary_iff_no_U24_isMinor (M : Matroid α) :
     M.CrossingBinary ↔ M.NoUniformMinor 2 4 := by
   rw [← not_iff_not]
   refine ⟨fun h ↦ ?_, fun h hbin ↦ ?_⟩
-  · simp only [CrossingBinary, not_forall, Classical.not_imp, Nat.not_even_iff_odd,
-      exists_and_left] at h
+  · simp only [CrossingBinary, not_forall, Nat.not_even_iff_odd] at h
     obtain ⟨X, hX, hodd⟩ := h
     exact exists_uniformMinor_of_odd_isCrossing hX hodd
 

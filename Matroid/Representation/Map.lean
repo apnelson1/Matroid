@@ -4,7 +4,7 @@ import Matroid.Representation.Basic
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
   [AddCommGroup W] [Module 𝔽 W] [AddCommGroup W'] [Module 𝔽 W']
 
-open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation
+open Function Set Submodule FiniteDimensional BigOperators Matrix Set.Notation Module
 
 namespace Matroid
 
@@ -173,7 +173,7 @@ instance _root_.Module.matroid_finitary : Finitary (Module.matroid 𝔽 W) := by
 lemma Rep.eq_comap (v : M.Rep 𝔽 W) : M = (_root_.Module.matroid 𝔽 W).comapOn M.E v := by
   refine ext_indep rfl fun I hI ↦ ?_
   simp only [v.indep_iff, Module.matroid, comapOn_indep_iff, IndepMatroid.matroid_Indep,
-    IndepMatroid.ofFinitaryCardAugment_indep, hI, and_true, linearIndependent_subtype_iff]
+    IndepMatroid.ofFinitaryCardAugment_indep, hI, and_true]
   rw [LinearIndepOn_iff_linearIndepOn_image_injOn]
 
 lemma Rep.finitary (v : M.Rep 𝔽 W) : M.Finitary := by
@@ -232,7 +232,7 @@ lemma ofFun_finite (f : α → W) (E : Set α) (hfin : E.Finite) : (Matroid.ofFu
   rw [Matroid.ofFun, comapOn_indep_iff]
   by_cases hinj : InjOn v I
   · simp only [Module.matroid, IndepMatroid.matroid_Indep, and_iff_right hinj,
-    IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndepOn_iff_image hinj, and_congr_left_iff]
+    IndepMatroid.ofFinitaryCardAugment_indep, ← linearIndepOn_iff_image hinj]
   exact iff_of_false (by simp [hinj]) fun hli ↦ hinj <| injOn_iff_injective.2 hli.1.injective
 
 @[simp] lemma Rep.ofFun_self (v : M.Rep 𝔽 W) : Matroid.ofFun 𝔽 M.E v = M :=
@@ -249,7 +249,7 @@ lemma ofFun_closure_eq_of_subset_ground {v : α → W} {E : Set α} (hXE : X ⊆
     ((Set.eqOn_indicator (f := v)).mono hXE).image_eq]
   simp
 
-lemma _root_.Basis.ofFun_isBase {v : α → W} {E : Set α} {B : Set α} (b : _root_.Basis B 𝔽 W)
+lemma _root_.Module.Basis.ofFun_isBase {v : α → W} {E : Set α} {B : Set α} (b : Module.Basis B 𝔽 W)
     (hfb : ∀ x : B, v x = b x) (hBE : B ⊆ E) : (Matroid.ofFun 𝔽 E v).IsBase B := by
   have hrw : v '' B = range b := by simp_rw [Set.ext_iff, mem_range, ← hfb]; aesop
 

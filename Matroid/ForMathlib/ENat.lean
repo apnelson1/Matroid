@@ -31,7 +31,7 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
   cases b with
   | top => simp +contextual [ENat.mul_top_eq_ite]
   | coe b => simp only [coe_ne_top, ne_eq, Nat.cast_eq_zero, false_and, and_false, or_self,
-    iff_false, ← coe_mul]
+    ← coe_mul]
 
 @[simp]
 theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by
@@ -44,12 +44,59 @@ theorem add_eq_right_iff {a b : ℕ∞} : a + b = b ↔ a = 0 ∨ b = ⊤ := by
   rw [add_comm, add_eq_left_iff, or_comm]
 
 @[simp]
+theorem eq_add_right_iff {a b : ℕ∞} : b = a + b ↔ a = 0 ∨ b = ⊤ := by
+  rw [eq_comm, add_eq_right_iff]
+
+@[simp]
+theorem eq_add_left_iff {a b : ℕ∞} : a = a + b ↔ b = 0 ∨ a = ⊤ := by
+  rw [eq_comm, add_eq_left_iff, or_comm]
+
+@[simp]
 theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
   rw [← add_eq_left_iff, le_antisymm_iff, and_iff_left (by simp)]
 
 @[simp]
 theorem add_le_right_iff {a b : ℕ∞} : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
   rw [add_comm, add_le_left_iff, or_comm]
+
+@[simp]
+lemma add_one_le_add_one_iff {a b : ℕ∞} : a + 1 ≤ b + 1 ↔ a ≤ b :=
+  WithTop.add_le_add_iff_right (by simp)
+
+@[simp]
+lemma one_add_le_one_add_iff {a b : ℕ∞} : 1 + a ≤ 1 + b ↔ a ≤ b :=
+  WithTop.add_le_add_iff_left (by simp)
+
+@[simp]
+lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
+  WithTop.add_right_inj (by simp)
+
+@[simp]
+lemma one_add_inj {a b : ℕ∞} : 1 + a = 1 + b ↔ a = b :=
+  WithTop.add_left_inj (by simp)
+
+lemma lt_add_right_iff {a b : ℕ∞} : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  obtain rfl | hne := eq_zero_or_pos b
+  · simp
+  cases a with
+  | top => simp
+  | coe a =>
+  · cases b with
+    | top => simp
+    | coe b =>
+    · norm_cast at *
+      simp [hne, hne.ne.symm]
+
+lemma lt_add_left_iff {a b : ℕ∞} : b < a + b ↔ b ≠ ⊤ ∧ a ≠ 0 := by
+  rw [add_comm, lt_add_right_iff]
+
+@[simp]
+lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
+  simp [lt_add_right_iff]
+
+@[simp]
+lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
+  simp [lt_add_left_iff]
 
 section Parity
 

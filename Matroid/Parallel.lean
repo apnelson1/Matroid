@@ -1,4 +1,3 @@
-import Matroid.ForMathlib.SetPartition
 import Matroid.ForMathlib.Other
 import Matroid.Flat.LowRank
 import Matroid.Flat.Hyperplane
@@ -13,22 +12,31 @@ variable {α : Type*} {M N : Matroid α} {e f g : α} {I X P D : Set α}
 section Parallel
 
 /-- The partition of the nonloops of `M` into parallel classes. -/
-def parallelClasses (M : Matroid α) : Partition {e | M.IsNonloop e} :=
-  (M.closure_isFlat ∅).covByPartition.congr M.setOf_isNonloop_eq.symm
+def parallelClasses (M : Matroid α) : Partition (Set α) :=
+  (M.closure_isFlat ∅).covByPartition
 
-def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses.Rel
+@[simp]
+lemma parallelClasses_supp (M : Matroid α) : M.parallelClasses.supp = {e | M.IsNonloop e} := by
+  rw [parallelClasses, IsFlat.covByPartition_supp]
+  exact M.setOf_isNonloop_eq.symm
 
-@[simp] lemma parallelClasses_rel_eq : M.parallelClasses.Rel = M.Parallel := rfl
+@[simp]
+lemma mem_parallelClasses_supp_iff : e ∈ M.parallelClasses.supp ↔ M.IsNonloop e := by
+  simp [parallelClasses_supp]
+
+def Parallel (M : Matroid α) : α → α → Prop := M.parallelClasses
+
+@[simp] lemma parallelClasses_rel_eq : M.parallelClasses = M.Parallel := rfl
 
 lemma parallel_iff :
     M.Parallel e f ↔ M.IsNonloop e ∧ M.IsNonloop f ∧ M.closure {e} = M.closure {f} := by
   simp [Parallel, parallelClasses, and_comm (a := _ ∈ M.E), isNonloop_iff_mem_compl_loops, loops]
 
 instance {M : Matroid α} : IsSymm α M.Parallel :=
-  inferInstanceAs <| IsSymm α M.parallelClasses.Rel
+  inferInstanceAs <| IsSymm α M.parallelClasses
 
 instance {M : Matroid α} : IsTrans α M.Parallel :=
-  inferInstanceAs <| IsTrans α M.parallelClasses.Rel
+  inferInstanceAs <| IsTrans α M.parallelClasses
 
 lemma Parallel.symm (h : M.Parallel e f) : M.Parallel f e :=
   Partition.Rel.symm h
@@ -58,7 +66,7 @@ lemma Parallel.mem_ground_right (h : M.Parallel e f) : f ∈ M.E :=
 
 lemma IsNonloop.parallel_iff_closure_eq_closure (he : M.IsNonloop e) :
     M.Parallel e f ↔ M.closure {e} = M.closure {f} := by
-  rw [Parallel, parallelClasses, Partition.rel_congr,
+  rw [Parallel, parallelClasses,
     (M.closure_isFlat ∅).rel_covByPartition_iff' ⟨he.mem_ground, he.not_isLoop⟩]; simp
 
 lemma Parallel.mem_closure (h : M.Parallel e f) : e ∈ M.closure {f} := by
@@ -75,7 +83,7 @@ lemma Parallel.parallel_iff_right (h : M.Parallel e f) {x : α} :
 lemma setOf_parallel_eq_closure_diff_loops (M : Matroid α) (e : α) :
     {f | M.Parallel e f} = M.closure {e} \ M.loops := by
   by_cases he : M.IsNonloop e
-  · rw [Parallel, parallelClasses, Partition.rel_congr, loops,
+  · rw [Parallel, parallelClasses, loops,
       Partition.setOf_rel_eq_partOf, (M.closure_isFlat ∅).partOf_covByPartition_eq,
       closure_insert_closure_eq_closure_insert, insert_empty_eq]
   rw [not_isNonloop_iff_closure.1 he, diff_self, eq_empty_iff_forall_notMem]
@@ -408,7 +416,7 @@ lemma indep_iff_range_indep_of_paraMap {φ : I → α} (hφ : φ.Injective)
   set ψ := Equiv.ofInjective _ hφ
   convert Iso.indep_image_iff (I := univ) <|
     (isoOfMapParallelRestr ψ (by simpa only [Equiv.ofInjective_apply, ψ] using h_para)) using 1
-  · simp [Subset.rfl]
+  · simp
   simp only [restrict_ground_eq, image_univ, restrict_indep_iff, image_subset_iff,
     Subtype.coe_preimage_self, subset_univ, and_true]
   simp_rw [← image_univ, image_image, image_univ]
@@ -448,7 +456,7 @@ section ParallelClass
 
 lemma mem_parallelClasses_iff_eq_closure_diff_loops {P : Set α} :
     P ∈ M.parallelClasses ↔ ∃ e, M.IsNonloop e ∧ P = M.closure {e} \ M.loops := by
-  simp only [parallelClasses, Partition.mem_congr_iff, IsFlat.mem_covByPartition_iff,
+  simp only [parallelClasses, IsFlat.mem_covByPartition_iff,
     loops_covBy_iff, isPoint_iff_exists_eq_closure_isNonloop, closure_empty]
   constructor
   · rintro ⟨_, ⟨e, he, rfl⟩, rfl⟩
