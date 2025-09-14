@@ -11,14 +11,14 @@ section Repartition
 
 /-- Repartition changes the labels of the graph. This can be used for adding new labels and
     vertices to a given graph but also identifying vertices. -/
-@[simps!]
+@[simps!?]
 def repartition (G : Graph α β) (P : Partition (Set α)) : Graph α β :=
-  mk' P G.IsLink
+  mk_of_symm P G.IsLink
 
 @[simp]
 lemma repartition_self (G : Graph α β) : G.repartition V(G) = G :=
   Graph.ext (by simp) fun e x y => by
-    simp [G.dup_or_dup_of_isLink_of_isLink, Relation.domp_eq]
+    simp [G.eq_or_eq_of_isLink_of_isLink, Relation.domp_eq]
 
 @[simp]
 lemma repartition_isLink_of_vertexSet_le (hP : V(G) ≤ P) :

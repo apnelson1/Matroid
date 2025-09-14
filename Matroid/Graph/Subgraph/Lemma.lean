@@ -25,7 +25,70 @@ lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ L(H₁) ∩ L(H₂) = ∅ := by
 
 -- alias ⟨Disjoint.vertex_disjoint, _⟩ := disjoint_iff_vertexSet_disjoint
 
+lemma iInter_le_iUnion (hG : Pairwise (Compatible on G)) :
+    Graph.iInter G ≤ Graph.iUnion G hG :=
+  (Graph.iInter_le (Classical.arbitrary ι)).trans <| Graph.le_iUnion ..
 
+@[simp↓]
+lemma iInter_inc_of_compatible (hG : Pairwise (Dup_agree on G)) (hG' : Pairwise (Compatible on G)) :
+    (Graph.iInter G).Inc e x ↔ ∀ i, (G i).Inc e x := by
+  rw [iInter_inc hG]
+  let j := Classical.arbitrary ι
+  refine ⟨fun ⟨y, h⟩ i ↦ ⟨y, h i⟩, fun h ↦ ?_⟩
+  obtain ⟨y, hy⟩ := h j
+  use y, fun i ↦ hy.of_compatible (hG'.of_refl j i) (h i).edge_mem
+
+lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
+  rw [Graph.inter_edgeSet]
+  exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h he⟩
+
+lemma stronglyDisjoint_iff_disjoint_of_compatible (h : H₁.Compatible H₂) :
+    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
+  rw [stronglyDisjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
+    disjoint_iff, ← vertexSet_eq_empty_iff]
+  simp [h]
+
+protected lemma inter_distrib_iUnion {H : ι → Graph α β} (hH : Pairwise (Compatible on H)) :
+    G ∩ (Graph.iUnion H hH) = Graph.iUnion (fun i ↦ G ∩ (H i))
+      (fun _ _ hne ↦ (hH hne).mono Graph.inter_le_right Graph.inter_le_right) :=
+  Graph.ext (by simp [inter_iUnion]) (by simp)
+
+protected lemma inter_distrib_sUnion (hs : s.Pairwise Compatible) :
+    G ∩ (Graph.sUnion s hs) = Graph.sUnion ((fun K ↦ G ∩ K) '' s) (by
+      rintro _ ⟨K₁, hK₁, rfl⟩ _ ⟨K₂, hK₂, rfl⟩ -
+      exact (hs.of_refl hK₁ hK₂).mono Graph.inter_le_right Graph.inter_le_right) := by
+  ext <;> aesop
+
+lemma Pairwise.union_compatible {s t : Set (Graph α β)} (hst : (s ∪ t).Pairwise Compatible) :
+    (Graph.sUnion s (hst.mono subset_union_left)).Compatible
+    (Graph.sUnion t (hst.mono subset_union_right)) := by
+  refine compatible_of_le_le (G := Graph.sUnion (s ∪ t) hst) ?_ ?_ <;> rw [Graph.sUnion_le_iff]
+  <;> exact fun G hG ↦ Graph.le_sUnion hst (by simp [hG])
+
+lemma sUnion_union_sUnion {s t : Set (Graph α β)} (hst : (s ∪ t).Pairwise Compatible) :
+    Graph.sUnion s (hst.mono subset_union_left) ∪ Graph.sUnion t (hst.mono subset_union_right) =
+    Graph.sUnion (s ∪ t) hst := by
+  have hs : s.Pairwise Compatible := hst.mono subset_union_left
+  have ht : t.Pairwise Compatible := hst.mono subset_union_right
+  refine Graph.ext (by aesop) fun e x y ↦ ?_
+  rw [(Pairwise.union_compatible hst).union_isLink_iff]
+  aesop
+
+lemma Compatible.sum_compatible {G : ι → Graph α β} {H : ι' → Graph α β}
+    (hGH : Pairwise (Compatible on (Sum.elim G H))) :
+    (Graph.iUnion G (hGH.sum_left)).Compatible (Graph.iUnion H (hGH.sum_right)) :=
+  compatible_of_le_le (iUnion_left_le_iUnion_sum hGH) <| iUnion_right_le_iUnion_sum hGH
+
+protected lemma iUnion_sum [Nonempty ι] [Nonempty ι'] {G : ι → Graph α β}
+    {H : ι' → Graph α β} (hGH : Pairwise (Compatible on (Sum.elim G H))) :
+    Graph.iUnion (Sum.elim G H) hGH = (.iUnion G hGH.sum_left) ∪ (.iUnion H hGH.sum_right) := by
+  refine le_antisymm ?_ <| Graph.union_le (iUnion_left_le_iUnion_sum hGH)
+    (iUnion_right_le_iUnion_sum hGH)
+  rw [Graph.iUnion_le_iff]
+  rintro (i | i) <;> simp only [Sum.elim_inl, Sum.elim_inr]
+  · exact le_trans (Graph.le_iUnion hGH.sum_left i) (Graph.left_le_union _ _)
+  · exact le_trans (Graph.le_iUnion hGH.sum_right i)
+      (Compatible.right_le_union (Compatible.sum_compatible hGH))
 
 section Subgraph
 

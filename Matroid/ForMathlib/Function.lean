@@ -175,3 +175,5 @@ lemma LeftInvOn.injOn_image {f : α → β} {g : β → α} {t : Set β} (hinv :
 
 lemma Function.onFun_comp {α β γ : Type*} {r : α → α → Prop} {f : β → α} {g : γ → β} :
     (r on f ∘ g) = ((r on f) on g) := rfl
+
+@[simp] lemma Function.onFun_id {α : Type*} {r : α → α → Prop} : (r on id) = r := rfl

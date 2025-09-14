@@ -1,9 +1,10 @@
 import Matroid.Graph.Walk.Path
 -- import Matroid.Graph.Connected.Basic
 import Matroid.Graph.WList.Cycle
+import Matroid.Graph.Walk.toGraph
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
-  {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}
+variable {α β : Type*} {x y z u v : Set α} {e f : β} {G H : Graph α β}
+  {w w₁ w₂ C C₁ C₂ : WList (Set α) β} {S T : Set (Set α)}
 
 open WList
 

@@ -39,6 +39,13 @@ lemma Pairwise.onFun_of_refl [IsRefl α r] (hr : Pairwise r) (f : ι → α) : P
 lemma Pairwise.onFun_comp_of_refl [IsRefl α r] (hr : Pairwise (r on f)) (g : ι' → ι) :
     Pairwise (r on (f ∘ g)) := Pairwise.onFun_of_refl hr g
 
+instance [PartialOrder α] [OrderBot α] : IsSymm α Disjoint where
+  symm := Disjoint.symm
+
+lemma pairwiseDisjoint_pair {ι : Type*} {i j : ι} {f : ι → α} [PartialOrder α] [OrderBot α]
+    (hab : (Disjoint on f) i j) : PairwiseDisjoint {i, j} f := by
+  rintro a (rfl | rfl) b (rfl | rfl) <;> simp [hab, symm hab]
+
 @[simp]
 lemma Pairwise.const_of_refl [IsRefl α r] (x : α) : Pairwise (r on fun (_ : ι) ↦ x) := by
   simp [Pairwise, refl]
@@ -101,7 +108,7 @@ instance : SetLike (Partition α) α where
   coe := Partition.parts
   coe_injective' p p' h := by cases p; cases p'; simpa using h
 
-@[simp] lemma mem_parts : x ∈ P.parts ↔ x ∈ (P : Set α) := Iff.rfl
+@[simp] lemma mem_parts : x ∈ P.parts ↔ x ∈ P := Iff.rfl
 
 lemma coe_eq (P : Partition α) : ↑P = P.parts := rfl
 
@@ -127,6 +134,16 @@ instance : IsPartialOrder (Partition α) (· ⊆ ·) where
   refl _ _ := id
   trans _ _ _ hPQ hQR _ h := hQR (hPQ h)
   antisymm _ _ hPQ hPQ' := by ext S; exact ⟨(hPQ ·), (hPQ' ·)⟩
+
+instance : HasSSubset (Partition α) where
+  SSubset P Q := P.parts ⊂ Q.parts
+
+instance : IsStrictOrder (Partition α) (· ⊂ ·) where
+  irrefl _ := not_ssubset_of_subset (α := Set α) fun _ a ↦ a
+  trans _ _ _ := ssubset_trans (α := Set α)
+
+instance : IsNonstrictStrictOrder (Partition α) (· ⊆ ·) (· ⊂ ·) where
+  right_iff_left_not_left _ _ := Iff.rfl
 
 lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) : Disjoint x y :=
   P.indep.pairwiseDisjoint hx hy hxy
@@ -157,7 +174,7 @@ lemma parts_nonempty (hs : P.supp ≠ ⊥) : (P : Set α).Nonempty :=
   nonempty_iff_ne_empty.2 fun hP ↦ by simp [← P.sSup_eq, hP, sSup_empty] at hs
 
 lemma supp_le_of_subset (h : P ⊆ Q) : P.supp ≤ Q.supp := by
-  simp only [supp, sSup_le_iff, mem_parts, SetLike.mem_coe]
+  simp only [supp, sSup_le_iff, mem_parts]
   exact fun a haP => le_sSup (h haP)
 
 lemma eq_of_subset_of_supp_eq (hsu : P ⊆ Q) (hsupp : P.supp = Q.supp) : P = Q := by
@@ -256,6 +273,8 @@ instance : OrderBot (Partition α) where
   bot := Partition.empty α
   bot_le _ _ hs := hs.elim
 
+@[simp] lemma parts_bot (α : Type*) [CompleteLattice α] : (⊥ : Partition α).parts = ∅ := rfl
+
 @[simp] lemma notMem_bot {a : α} : a ∉ (⊥ : Partition α) := notMem_empty α
 
 @[simp] lemma supp_bot : (⊥ : Partition α).supp = ⊥ := sSup_empty
@@ -336,6 +355,29 @@ lemma eq_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a = s := by
 lemma ne_bot_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a ≠ ⊥ := by
   rw [mem_indiscrete'_iff] at has
   exact has.2
+
+def bipartition (a b : α) (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) : Partition α :=
+  ofIndependent (u := {a, b}) (by
+    rintro x (rfl | rfl)
+    · simpa [Set.diff_singleton_eq_self (show x ∉ {_} from hab.ne ha)]
+    · rw [disjoint_comm] at hab
+      simpa [Set.pair_comm, Set.diff_singleton_eq_self (show x ∉ {a} from hab.ne hb)])
+    (by simp [ha.symm, hb.symm])
+
+@[simp] lemma parts_bipartition {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+    (bipartition a b ha hb hab).parts = {a, b} := rfl
+
+@[simp] lemma mem_bipartition_iff {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+    x ∈ bipartition a b ha hb hab ↔ x = a ∨ x = b := by
+  simp [bipartition]
+
+@[simp] lemma supp_bipartition {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+    (bipartition a b ha hb hab).supp = a ⊔ b := by
+  simp [bipartition]
+
+lemma bipartition_comm {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+    bipartition a b ha hb hab = bipartition b a hb ha hab.symm :=
+  Partition.ext <| by simp [bipartition, pair_comm]
 
 end indep
 

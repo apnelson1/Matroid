@@ -126,7 +126,33 @@ lemma Rel.right_mem (h : P x y) : y ∈ P.supp :=
 
 lemma rel_iff_exists : P x y ↔ ∃ t ∈ P, x ∈ t ∧ y ∈ t := Iff.rfl
 
+lemma rel_iff_right_mem_of_mem (ht : T ∈ P) (hx : x ∈ T) : P x y ↔ y ∈ T := by
+  refine ⟨fun ⟨t, ht', hxt, hyt⟩ => ?_, fun hyt => ?_⟩
+  · obtain rfl := P.eq_of_mem_of_mem ht ht' hx hxt
+    exact hyt
+  · exact ⟨T, ht, hx, hyt⟩
+
+lemma rel_iff_left_mem_of_mem (ht : T ∈ P) (hy : y ∈ T) : P x y ↔ x ∈ T := by
+  rw [rel_comm]
+  exact rel_iff_right_mem_of_mem ht hy
+
 lemma rel_eq_exists : ⇑P = fun x y => ∃ t ∈ P, x ∈ t ∧ y ∈ t := rfl
+
+lemma mem_iff_forall_rel {t : Set α} : t ∈ P ↔ ∃ h : t.Nonempty, ∀ x, P h.some x ↔ x ∈ t := by
+  refine ⟨fun ht => ?_, fun ⟨h, hrel⟩ => ?_⟩
+  · have h := Set.nonempty_iff_ne_empty.mpr <| P.ne_bot_of_mem ht
+    refine ⟨h, fun x => ⟨fun ⟨s, hs, hhs, hxs⟩ => ?_, (⟨t, ht, h.some_mem, ·⟩)⟩⟩
+    obtain rfl := P.eq_of_mem_of_mem hs ht hhs h.some_mem
+    exact hxs
+  · obtain ⟨s, hs, hhs, _⟩ := (hrel h.some).mpr h.some_mem
+    suffices s = t by subst s; assumption
+    apply subset_antisymm
+    · exact fun x hx ↦ (hrel x).mp <| rel_of_mem_of_mem hs hhs hx
+    · intro x hx
+      have hrelx : P h.some x := (hrel x).mpr hx
+      obtain ⟨u, huP, hhu, hxu⟩ := hrelx
+      obtain rfl : s = u := P.eq_of_mem_of_mem hs huP hhs hhu
+      exact hxu
 
 lemma rel_self_iff_mem_supp : P x x ↔ x ∈ P.supp :=
   ⟨fun h ↦ h.left_mem, fun h ↦ rel_self_of_mem_supp h⟩
@@ -236,8 +262,12 @@ lemma le_ofRel' (r : α → α → Prop) : r ≤ ofRel' r := by
 def partOf (P : Partition (Set α)) (x : α) : Set α :=
   fiber P x
 
+lemma partOf_subset_supp : P.partOf x ⊆ P.supp := by
+  rintro y ⟨t, ht, hxt, hyt⟩
+  exact subset_of_mem ht hxt
+
 lemma exists_partOf_iff_mem : S ∈ P ↔ ∃ x ∈ P.supp, partOf P x = S := by
-  rw [← SetLike.mem_coe, ← mem_parts, ← fibers_rel_eq, mem_fibers_iff, codomain_rel]
+  rw [← mem_parts, ← fibers_rel_eq, mem_fibers_iff, codomain_rel]
   rfl
 
 lemma partOf_mem (hx : x ∈ P.supp) : P.partOf x ∈ P := by
@@ -342,8 +372,8 @@ lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S �
 lemma cover_rel (P : Partition (Set α)) (S : Set α) :
     ⇑(P.cover S) = Relation.Domp P (P.induce S) := by
   ext x y
-  simp only [cover, mem_parts, SetLike.mem_coe, not_disjoint_iff, restrict_apply, mem_sUnion,
-    mem_setOf_eq, induce_rel]
+  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_setOf_eq,
+    induce_rel]
   refine ⟨fun ⟨⟨s, ⟨hsP, z, hzS, hzs⟩, hxs⟩, t, htP, hxt, hyt⟩ ↦ ?_,
     fun ⟨a, hxa, b, ⟨hbS, haS, hba⟩, hby⟩ ↦ ⟨?_, (hxa.trans (hba.symm)).trans hby⟩⟩
   · obtain rfl := P.eq_of_mem_of_mem hsP htP hxs hxt
@@ -353,8 +383,8 @@ lemma cover_rel (P : Partition (Set α)) (S : Set α) :
 
 @[simp]
 lemma cover_rel_of_left_mem (P : Partition (Set α)) (hx : x ∈ S) : P.cover S x y ↔ P x y := by
-  simp only [cover, mem_parts, SetLike.mem_coe, restrict_apply, mem_sUnion, mem_setOf_eq,
-    and_iff_right_iff_imp, and_assoc, not_disjoint_iff]
+  simp only [cover, mem_parts, not_disjoint_iff, restrict_apply, mem_sUnion, mem_setOf_eq,
+    and_assoc, and_iff_right_iff_imp]
   rintro ⟨t, ht, hxt, hyt⟩
   use t, ht, by use x
 
@@ -365,7 +395,7 @@ lemma cover_rel_of_right_mem (P : Partition (Set α)) (hy : y ∈ S) : P.cover S
 lemma subset_cover_supp (h : S ⊆ P.supp) : S ⊆ (P.cover S).supp := by
   rintro x hxS
   obtain ⟨t, ht, hxt⟩ := h hxS
-  simp only [cover_supp, mem_parts, SetLike.mem_coe, sSup_eq_sUnion, mem_sUnion, mem_setOf_eq,
+  simp only [cover_supp, mem_parts, sSup_eq_sUnion, mem_sUnion, mem_setOf_eq,
     and_assoc, not_disjoint_iff]
   use t, ht, ?_
   use x
@@ -468,7 +498,7 @@ protected def discrete (S : Set α) : Partition (Set α) where
   simp [Partition.discrete, supp]
 
 @[simp] lemma mem_discrete_iff : T ∈ (Partition.discrete S) ↔ ∃ a ∈ S, {a} = T := by
-  rw [← SetLike.mem_coe, ← mem_parts]
+  rw [← mem_parts]
   simp [Partition.discrete]
 
 lemma mem_discrete_of_mem_supp {x : α} (h : x ∈ S) : {x} ∈ Partition.discrete S := by
@@ -477,7 +507,7 @@ lemma mem_discrete_of_mem_supp {x : α} (h : x ∈ S) : {x} ∈ Partition.discre
 lemma rel_discrete_eq' : Partition.discrete S = fun a b => a = b ∧ b ∈ S := by
   ext a b
   rw [and_comm]
-  simp [Partition.discrete, rel_iff_exists, ← SetLike.mem_coe, ← mem_parts]
+  simp [Partition.discrete, rel_iff_exists, ← mem_parts]
 
 @[simp]
 lemma rel_discrete_eq : Partition.discrete S = fun a b => a = b ∧ a ∈ S := by
@@ -627,9 +657,6 @@ lemma discrete_isInducedSubpartition_iff :
 -- What is the full generality of this?
 @[simp]
 lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
-
-
-
   unfold Agree
   rw [atomic_iff_eq_discrete] at hP hQ
   have hsSup : sSupIndep (P.parts ∪ Q.parts) := by
@@ -639,9 +666,40 @@ lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
       forall_exists_index, forall_apply_eq_imp_iff₂, singleton_eq_singleton_iff]
     all_goals exact fun _ _ h1 h2 ↦ h1 h2.symm
   use ofIndependent hsSup (by rw [mem_union, not_or]; exact ⟨P.bot_notMem, Q.bot_notMem⟩), ?_ <;>
-    rintro s hs <;> simp only [ofIndependent_parts, mem_union, mem_parts, SetLike.mem_coe]
+    rintro s hs <;> simp only [ofIndependent_parts, mem_union, mem_parts]
   · exact Or.inr hs
   exact Or.inl hs
 
 end Discrete
+
+section foo
+
+variable {P Q : Partition (Set α)} {S T : Set α}
+
+def foo (P : Partition (Set α)) (S : Set α) (hS : S ∈ Q) : Set α :=
+  P.partOf (Q.nonempty_of_mem hS).some
+
+lemma foo_mem (hS : S ∈ Q) (hSP : S ⊆ P.supp) : foo P S hS ∈ P :=
+  P.partOf_mem <| hSP (Q.nonempty_of_mem hS).some_mem
+
+lemma subset_foo (hS : S ∈ Q) (hSP : Q ≤ P) : S ⊆ foo P S hS := by
+  rintro x hxS
+  simp only [foo, mem_partOf_iff]
+  apply rel_le_of_le hSP
+  exact ⟨S, hS, hxS, (Q.nonempty_of_mem hS).some_mem⟩
+
+lemma foo_eq_iff (hS : S ∈ Q) : foo P S hS = S ↔ S ∈ P := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · apply h ▸ (foo_mem hS ?_)
+    rw [← h, foo]
+    exact partOf_subset_supp
+  ext a
+  simp only [foo, mem_partOf_iff]
+  apply rel_iff_left_mem_of_mem h
+  exact Nonempty.some_mem (nonempty_of_mem hS)
+
+-- lemma foo_eq_foo_iff (hS : S ∈ Q) (hT : T ∈ Q) : foo P S hS = foo P T hT ↔ S = T := by
+
+end foo
+
 end Partition

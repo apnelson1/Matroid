@@ -80,7 +80,7 @@ theorem Fin.nonempty_equiv_iff_encard_eq : Nonempty (s ≃ Fin n) ↔ s.encard =
 theorem Set.encard_biUnion {ι : Type*} {s : ι → Set α} {t : Finset ι}
     (ht : (t : Set ι).PairwiseDisjoint s) : encard (⋃ i ∈ t, s i) = ∑ i ∈ t, encard (s i) := by
   classical
-  induction' t using Finset.induction with x t₀ hx IH; simp
+  induction t using Finset.induction with | empty => simp | insert x t₀ hx IH
   rw [Finset.set_biUnion_insert, encard_union_eq, Finset.sum_insert hx, IH (ht.subset (by simp))]
   simp only [disjoint_iUnion_right]
   exact fun i hi ↦ ht (by simp) (by simp [hi]) (by rintro rfl; contradiction)
@@ -93,8 +93,7 @@ theorem Set.encard_iUnion {ι : Type*} [Fintype ι] (s : ι → Set α) (hs : Pa
 theorem Set.encard_biUnion_le {ι : Type*} (I : Finset ι) (s : ι → Set α) :
     encard (⋃ i ∈ I, s i) ≤ ∑ i ∈ I, encard (s i) := by
   classical
-  induction' I using Finset.induction_on with x J hx IH
-  · simp
+  induction I using Finset.induction_on with | empty => simp | insert x J hx IH
   rw [J.set_biUnion_insert, Finset.sum_insert hx]
   exact (encard_union_le _ _).trans <| add_le_add_left IH _
 

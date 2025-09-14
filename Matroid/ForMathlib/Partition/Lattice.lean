@@ -2,7 +2,7 @@ import Matroid.ForMathlib.Partition.Set
 
 open Set Function Relation
 
-variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {x y z : α}
+variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {x y z : α} {A B : Set α}
 
 namespace Partition
 
@@ -176,6 +176,12 @@ lemma iSup_supp {ι : Type*} (G : ι → Partition (Set α)) : (⨆ i, G i).supp
   simp [iSup]
 
 @[simp]
+lemma iSup_supp_prop (G : Partition (Set α)) {p : Prop} :
+    (⨆ _ : p, G).supp = ⋃ _ : p, G.supp := by
+  ext a
+  by_cases h : p <;> simp [h]
+
+@[simp]
 lemma sup_supp (P Q : Partition (Set α)) : (P ⊔ Q).supp = P.supp ∪ Q.supp := by
   rw [← sSup_pair, sSup_supp]
   simp
@@ -190,13 +196,107 @@ lemma sInf_supp (S : Set (Partition (Set α))) : (sInf S).supp = ⋂ P ∈ S, P.
     fun h => ⟨x, fun P hPS => rel_self_of_mem_supp (h P hPS)⟩⟩
 
 @[simp]
-lemma iInf_supp {ι : Type*} (G : ι → Partition (Set α)) : (⨅ i, G i).supp = ⋂ i, (G i).supp := by
+lemma iInf_supp (G : ι → Partition (Set α)) : (⨅ i, G i).supp = ⋂ i, (G i).supp := by
   simp [iInf]
 
 @[simp]
 lemma inf_supp (P Q : Partition (Set α)) : (P ⊓ Q).supp = P.supp ∩ Q.supp := by
   rw [← sInf_pair, sInf_supp]
   simp
+
+@[simp]
+lemma sSup_singleton (P : Partition (Set α)) : sSup {P} = P := by
+  ext x y
+  simp
+
+@[simp]
+protected lemma iSup_const [Nonempty ι] (P : Partition (Set α)) : (⨆ _ : ι, P) = P := by
+  ext x y
+  simp
+
+@[simp]
+lemma sup_self (P : Partition (Set α)) : P ⊔ P = P := by
+  ext x y
+  simp
+
+@[simp]
+lemma sInf_singleton (P : Partition (Set α)) : sInf {P} = P := by
+  ext x y
+  simp
+
+@[simp]
+protected lemma iInf_const [Nonempty ι] (P : Partition (Set α)) : (⨅ _ : ι, P) = P := by
+  ext x y
+  simp
+
+@[simp]
+lemma inf_self (P : Partition (Set α)) : P ⊓ P = P := by
+  ext x y
+  simp
+
+open Relation
+
+lemma mem_sSup_of_mem {S : Set (Partition (Set α))} (hS : S.Nonempty) (hA : ∀ P ∈ S, A ∈ P) :
+    A ∈ sSup S := by
+  rcases hS with ⟨P0, hP0S⟩
+  obtain ⟨x, hxA⟩ := Partition.nonempty_of_mem (hA P0 hP0S)
+  refine (Partition.exists_partOf_iff_mem).mpr ⟨x, ?_, ?_⟩
+  · simp only [sSup_supp, mem_iUnion, exists_prop]
+    use P0, hP0S
+    use A, hA P0 hP0S
+  ext y
+  simp only [mem_partOf_iff, sSup_rel]
+  refine ⟨fun hy => ?_, fun hyA => TransGen.single ?_⟩
+  · induction hy with
+  | single h =>
+    simp only [sSup_apply, iSup_apply, iSup_Prop_eq, Subtype.exists, mem_image, exists_prop,
+      exists_exists_and_eq_and] at h
+    obtain ⟨Q, hQS, B, hBQ, hyB, hbB⟩ := h
+    obtain rfl := Q.eq_of_mem_of_mem hBQ (hA Q hQS) hbB hxA
+    exact hyB
+  | tail h1 h2 IH =>
+    simp only [sSup_apply, iSup_apply, iSup_Prop_eq, Subtype.exists, mem_image, exists_prop,
+      exists_exists_and_eq_and] at h2
+    obtain ⟨Q, hQS, B, hBQ, hbB, hcB⟩ := h2
+    obtain rfl := Q.eq_of_mem_of_mem hBQ (hA Q hQS) hcB hxA
+    exact IH hbB
+  · simp only [sSup_apply, iSup_apply, iSup_Prop_eq, Subtype.exists, mem_image, exists_prop,
+      exists_exists_and_eq_and]
+    use P0, hP0S, A, (hA P0 hP0S)
+
+lemma mem_iSup_of_mem {P : ι → Partition (Set α)} [Nonempty ι] (hP : ∀ i, A ∈ P i) :
+    A ∈ (⨆ i, P i) := by
+  apply mem_sSup_of_mem (by use P (Classical.arbitrary ι), (Classical.arbitrary ι))
+  rintro P ⟨i, rfl⟩
+  exact hP i
+
+lemma mem_sup_of_mem {P Q : Partition (Set α)} (hP : A ∈ P) (hQ : A ∈ Q) : A ∈ P ⊔ Q := by
+  rw [← sSup_pair]
+  exact mem_sSup_of_mem (by use P, mem_insert P {Q}) (by simp [hP, hQ])
+
+lemma mem_sInf_of_mem {S : Set (Partition (Set α))} (hS : S.Nonempty) (hA : ∀ P ∈ S, A ∈ P) :
+    A ∈ sInf S := by
+  obtain ⟨P0, hP0S⟩ := hS
+  obtain ⟨x, hxA⟩ := Partition.nonempty_of_mem (hA P0 hP0S)
+  have hx_supp : x ∈ (sInf S).supp := by
+    simp only [sInf_supp, mem_iInter]
+    exact fun P hPS ↦ (Partition.subset_of_mem (hA P hPS)) hxA
+  refine (Partition.exists_partOf_iff_mem).mpr ⟨x, hx_supp, ?_⟩
+  ext y
+  simp only [mem_partOf_iff, sInf_rel, sInf_apply, iInf_apply, iInf_Prop_eq, Subtype.forall,
+    mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  refine ⟨fun hy => ?_, fun hyA P hPS => rel_of_mem_of_mem (hA P hPS) hyA hxA⟩
+  exact (Partition.Rel.forall (hy P0 hP0S).symm (hA P0 hP0S)).mp hxA
+
+lemma mem_iInf_of_mem {P : ι → Partition (Set α)} [Nonempty ι] (hP : ∀ i, A ∈ P i) :
+    A ∈ (⨅ i, P i) := by
+  apply mem_sInf_of_mem (by use P (Classical.arbitrary ι), (Classical.arbitrary ι))
+  rintro P₁ ⟨i, rfl⟩
+  exact hP i
+
+lemma mem_inf_of_mem {P Q : Partition (Set α)} (hP : A ∈ P) (hQ : A ∈ Q) : A ∈ P ⊓ Q := by
+  rw [← sInf_pair]
+  exact mem_sInf_of_mem (by use P, mem_insert P {Q}) (by simp [hP, hQ])
 
 @[simp]
 lemma Agree.subset_sup_left (hPQ : P.Agree Q) : P ⊆ P ⊔ Q := by
@@ -258,11 +358,11 @@ lemma iInf_subset_of_agree {ι : Type*} {P : ι → Partition (Set α)} (hP : Pa
   sInf_subset_of_agree hP.range_pairwise <| mem_range_self i
 
 @[simp]
-lemma Agree.sup_parts (hPQ : P.Agree Q) : (P ⊔ Q) = P.parts ∪ Q.parts := by
+lemma Agree.sup_parts (hPQ : P.Agree Q) : (P ⊔ Q).parts = P.parts ∪ Q.parts := by
   refine subset_antisymm ?_ <| union_subset hPQ.subset_sup_left hPQ.subset_sup_right
   rintro s ⟨x, hx, rfl⟩
   simp only [transClosure_codomain, mem_codomain_iff, Pi.sup_apply, sup_Prop_eq, mem_union,
-    mem_parts, SetLike.mem_coe] at hx ⊢
+    mem_parts] at hx ⊢
   obtain ⟨y, hPyx | hQyx⟩ := hx
   · left
     convert partOf_mem hPyx.right_mem using 1
@@ -278,19 +378,18 @@ lemma Agree.sup_parts (hPQ : P.Agree Q) : (P ⊔ Q) = P.parts ∪ Q.parts := by
 @[simp]
 lemma Agree.mem_sup_iff (hPQ : P.Agree Q) : s ∈ P ⊔ Q ↔ s ∈ P ∨ s ∈ Q := by
   change s ∈ (P ⊔ Q).parts ↔ _
-  rw [mem_parts, hPQ.sup_parts]
+  rw [hPQ.sup_parts]
   simp
 
 @[simp]
 lemma sSup_parts_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) :
-    sSup S = ⋃ P ∈ S, P.parts := by
+    (sSup S).parts = ⋃ P ∈ S, P.parts := by
   refine subset_antisymm ?_ ?_; swap
   · simp only [iUnion_subset_iff]
     exact fun _ => subset_sSup_of_agree hS
   rintro s ⟨x, hx, rfl⟩
   simp only [transClosure_codomain, mem_codomain_iff, sSup_apply, iSup_apply, iSup_Prop_eq,
-    Subtype.exists, mem_image, exists_prop, exists_exists_and_eq_and, mem_iUnion, mem_parts,
-    SetLike.mem_coe] at hx ⊢
+    Subtype.exists, mem_image, exists_prop, exists_exists_and_eq_and, mem_iUnion, mem_parts] at hx ⊢
   obtain ⟨y, P, hPS, hPyx⟩ := hx
   use P, hPS
   convert partOf_mem hPyx.right_mem using 1
@@ -302,12 +401,12 @@ lemma sSup_parts_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree)
 lemma mem_sSup_iff_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) :
     s ∈ sSup S ↔ ∃ P ∈ S, s ∈ P := by
   change s ∈ (sSup S).parts ↔ ∃ P ∈ S, s ∈ P
-  rw [mem_parts, sSup_parts_of_agree hS]
+  rw [sSup_parts_of_agree hS]
   simp
 
 @[simp]
 lemma iSup_parts_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pairwise (Agree on S)) :
-    ⨆ i, S i = ⋃ i, (S i).parts := by
+    (⨆ i, S i).parts = ⋃ i, (S i).parts := by
   rw [iSup, sSup_parts_of_agree hS.range_pairwise]
   simp
 
@@ -315,14 +414,13 @@ lemma iSup_parts_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pai
 lemma mem_iSup_iff_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : Pairwise (Agree on S)) :
     s ∈ ⨆ i, S i ↔ ∃ i, s ∈ (S i) := by
   change s ∈ (⨆ i, S i).parts ↔ ∃ i, s ∈ (S i)
-  rw [mem_parts, iSup_parts_of_agree hS]
+  rw [iSup_parts_of_agree hS]
   simp
 
 @[simp]
-lemma Agree.inf_parts (hPQ : P.Agree Q) : P ⊓ Q = P.parts ∩ Q.parts := by
+lemma Agree.inf_parts (hPQ : P.Agree Q) : (P ⊓ Q).parts = P.parts ∩ Q.parts := by
   ext x
-  simp only [Partition.inf_parts, bot_eq_empty, ne_eq, inf_eq_inter, mem_setOf_eq, mem_inter_iff,
-    mem_parts, SetLike.mem_coe]
+  simp only [mem_parts, mem_inf_iff, bot_eq_empty, ne_eq, inf_eq_inter, mem_inter_iff]
   refine ⟨fun ⟨hne, a, haP, b, hbQ, heq⟩ => ?_,
     fun ⟨hP, hQ⟩ => ⟨P.ne_bot_of_mem hP, x, hP, x, hQ, by simp⟩⟩
   subst heq
@@ -332,20 +430,19 @@ lemma Agree.inf_parts (hPQ : P.Agree Q) : P ⊓ Q = P.parts ∩ Q.parts := by
 @[simp]
 lemma Agree.mem_inf_iff (hPQ : P.Agree Q) : s ∈ P ⊓ Q ↔ s ∈ P ∧ s ∈ Q := by
   change s ∈ (P ⊓ Q).parts ↔ _
-  rw [mem_parts, hPQ.inf_parts]
+  rw [hPQ.inf_parts]
   simp
 
 @[simp]
 lemma sInf_parts_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) (hS' : S.Nonempty) :
-    sInf S = ⋂ P ∈ S, P.parts := by
+    (sInf S).parts = ⋂ P ∈ S, P.parts := by
   refine subset_antisymm ?_ ?_
   · simp only [subset_iInter_iff]
     exact fun _ => sInf_subset_of_agree hS
   rintro s hs
-  rw [SetLike.mem_coe, exists_partOf_iff_mem]
-  simp only [mem_iInter, mem_parts, SetLike.mem_coe, sInf, ofRel_supp, mem_domain_iff, iInf_apply,
-    iInf_Prop_eq, Subtype.forall, mem_image, forall_exists_index, and_imp,
-    forall_apply_eq_imp_iff₂] at hs ⊢
+  rw [mem_parts, exists_partOf_iff_mem]
+  simp only [mem_iInter, mem_parts, sInf, ofRel_supp, mem_domain_iff, iInf_apply, iInf_Prop_eq,
+    Subtype.forall, mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] at hs ⊢
   have hs' := hs hS'.some hS'.some_mem
   obtain ⟨x, hx⟩ := nonempty_of_mem hs'
   use x, ?_
@@ -365,12 +462,12 @@ lemma sInf_parts_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree)
 lemma mem_sInf_iff_of_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree)
     (hS' : S.Nonempty) : s ∈ sInf S ↔ ∀ P ∈ S, s ∈ P := by
   change s ∈ (sInf S).parts ↔ ∀ P ∈ S, s ∈ P
-  rw [mem_parts, sInf_parts_of_agree hS hS']
+  rw [sInf_parts_of_agree hS hS']
   simp
 
 @[simp]
 lemma iInf_parts_of_agree {ι : Type*} [Nonempty ι] {S : ι → Partition (Set α)}
-    (hS : Pairwise (Agree on S)) : ⨅ i, S i = ⋂ i, (S i).parts := by
+    (hS : Pairwise (Agree on S)) : (⨅ i, S i).parts = ⋂ i, (S i).parts := by
   rw [iInf, sInf_parts_of_agree hS.range_pairwise (range_nonempty S)]
   simp
 
@@ -378,7 +475,7 @@ lemma iInf_parts_of_agree {ι : Type*} [Nonempty ι] {S : ι → Partition (Set 
 lemma mem_iInf_iff_of_agree {ι : Type*} [Nonempty ι] {S : ι → Partition (Set α)}
     (hS : Pairwise (Agree on S)) : s ∈ ⨅ i, S i ↔ ∀ i, s ∈ (S i) := by
   change s ∈ (⨅ i, S i).parts ↔ ∀ i, s ∈ (S i)
-  rw [mem_parts, iInf_parts_of_agree hS]
+  rw [iInf_parts_of_agree hS]
   simp
 
 @[simp]

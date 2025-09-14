@@ -803,16 +803,40 @@ lemma restrict_symmetric (r : α → α → Prop) [IsSymm α r] (S : Set α) :
 instance [IsSymm α r] {S : Set α} : IsSymm α (restrict r S) where
   symm := restrict_symmetric r S
 
--- lemma restrict_eq_iff (r : α → α → Prop) [foo r] [foo <| flip r] (S : Set α) :
---     restrict r S = r ↔ reflSet r ⊆ S := by
---   refine ⟨fun hr x hx => ?_, fun h => ?_⟩
---   · rw [← hr, mem_reflSet_iff] at hx
---     exact hx.left_mem
---   · ext x y
---     simp only [restrict, and_iff_left_iff_imp]
---     exact fun hxy => ⟨h <| refl_of_left hxy, h <| refl_of_right hxy⟩
+lemma restrict_eq_self (r : α → α → Prop) [IsSymm α r] {S : Set α} (hS : domain r ⊆ S) :
+    restrict r S = r := by
+  ext x y
+  simp only [restrict, and_iff_left_iff_imp]
+  intro h
+  use hS (show x ∈ domain r by use y), hS (show y ∈ domain r by use x, symm h)
 
+lemma restrict_eq_iff (r : α → α → Prop) [IsSymm α r] (S : Set α) :
+    restrict r S = r ↔ domain r ⊆ S := by
+  refine ⟨fun hr x hx => ?_, restrict_eq_self r⟩
+  rw [← hr, mem_domain_iff] at hx
+  obtain ⟨y, hxy⟩ := hx
+  exact hxy.left_mem
 
+@[simp]
+lemma restrict_inter (r : α → α → Prop) (S T : Set α) :
+    restrict r (S ∩ T) = restrict r S ⊓ restrict r T := by
+  ext x y
+  simp only [restrict, mem_inter_iff, Pi.inf_apply, inf_Prop_eq]
+  tauto
+
+@[simp]
+lemma restrict_inf (r s : α → α → Prop) (S : Set α) :
+    restrict (r ⊓ s) S = restrict r S ⊓ restrict s S := by
+  ext x y
+  simp only [restrict, Pi.inf_apply, inf_Prop_eq]
+  tauto
+
+@[simp]
+lemma restrict_sup (r s : α → α → Prop) (S : Set α) :
+    restrict (r ⊔ s) S = restrict r S ⊔ restrict s S := by
+  ext x y
+  simp only [restrict, Pi.sup_apply, sup_Prop_eq]
+  tauto
 
 -- def comply (r : PER α) (s : α → α → Prop) : α → α → Prop :=
 --   Comp (Comp r s) r

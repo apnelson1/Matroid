@@ -37,7 +37,6 @@ import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Degree.Leaf
 -- import Matroid.Graph.Distance
 -- import Matroid.Graph.Forest
-import Matroid.Graph.Label
 -- import Matroid.Graph.Lattice
 -- import Matroid.Graph.Minor.Basic
 import Matroid.Graph.Nodup
@@ -45,13 +44,13 @@ import Matroid.Graph.Nodup
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Subgraph.Union
+-- import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Subgraph.Inter
-import Matroid.Graph.Subgraph.Add
+-- import Matroid.Graph.Subgraph.Add
 -- import Matroid.Graph.Tree
 import Matroid.Graph.Walk.Basic
 -- import Matroid.Graph.Walk.Cycle
--- import Matroid.Graph.Walk.Path
+import Matroid.Graph.Walk.Path
 -- import Matroid.Graph.Walk.toGraph
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Defs
