@@ -36,6 +36,11 @@ lemma Pairwise.onFun_of_refl [IsRefl α r] (hr : Pairwise r) (f : ι → α) : P
   subst r
   trivial
 
+lemma Set.pairwise_image_of_refl {s : Set ι} [IsRefl α r] :
+    (f '' s).Pairwise r ↔ s.Pairwise (r on f) :=
+  ⟨fun h i hi j hj _ => h.of_refl (by use i : f i ∈ f '' s) (by use j : f j ∈ f '' s),
+    Pairwise.image⟩
+
 lemma Pairwise.onFun_comp_of_refl [IsRefl α r] (hr : Pairwise (r on f)) (g : ι' → ι) :
     Pairwise (r on (f ∘ g)) := Pairwise.onFun_of_refl hr g
 

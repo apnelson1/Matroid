@@ -368,6 +368,10 @@ lemma rel_of_restrict_rel (P : Partition (Set α)) {S : Set (Set α)} (hS : S �
   rw [restrict_rel]
   exact ⟨hx, hxy⟩
 
+@[simp]
+lemma delete_rel (P : Partition (Set α)) (S : Set (Set α)) :
+    ⇑(P \ S) = fun x y ↦ ∃ t ∈ P \ S, x ∈ t ∧ y ∈ t := rfl
+
 -- I am not really happy with this simplification route.
 lemma cover_rel (P : Partition (Set α)) (S : Set α) :
     ⇑(P.cover S) = Relation.Domp P (P.induce S) := by

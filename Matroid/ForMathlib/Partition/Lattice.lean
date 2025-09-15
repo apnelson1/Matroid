@@ -73,12 +73,18 @@ lemma Agree.sup_rel_left_of_mem (hPQ : P.Agree Q) (hx : x ∈ P.supp) : ⇑(P �
   · exact hP
   exact hPQ.rel_of_right_of_mem hx hQ
 
+lemma Agree.partOf_left_mem (hPQ : P.Agree Q) (hx : x ∈ P.supp) : P.partOf x ∈ P ⊔ Q := by
+  simp [partOf_mem_iff_rel_iff, hx, hPQ.sup_rel_left_of_mem]
+
 lemma Agree.sup_rel_right_of_mem (hPQ : P.Agree Q) (hx : x ∈ Q.supp) : ⇑(P ⊔ Q) x y ↔ ⇑Q x y := by
   rw [hPQ.sup_rel]
   refine ⟨fun h => ?_, fun h => by aesop⟩
   obtain (hP | hQ) := h
   · exact hPQ.rel_of_left_of_mem hx hP
   exact hQ
+
+lemma Agree.partOf_right_mem (hPQ : P.Agree Q) (hx : x ∈ Q.supp) : Q.partOf x ∈ P ⊔ Q := by
+  simp [partOf_mem_iff_rel_iff, hx, hPQ.sup_rel_right_of_mem]
 
 @[simp]
 lemma inf_rel (P Q : Partition (Set α)) : ⇑(P ⊓ Q) = ⇑P ⊓ ⇑Q := by

@@ -366,6 +366,11 @@ lemma Agree.eq_of_not_disjoint (h : P.Agree Q) (ha : a ∈ P) (hb : b ∈ Q) (hn
   contrapose! hndisj
   exact hndisj.mono_left <| P.le_of_mem ha
 
+lemma Agree.mem_or_disjoint (h : P.Agree Q) (ha : a ∈ P) : a ∈ Q ∨ Disjoint Q.supp a := by
+  obtain ⟨S, hPS, hQS⟩ := h
+  rw [or_iff_not_imp_right]
+  exact mem_of_subset_of_not_disjoint hQS (hPS ha)
+
 lemma Agree.mono_left {P₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) : P₀.Agree Q := by
   obtain ⟨S, hPS, hQS⟩ := h
   exact ⟨S, hP.trans hPS, hQS⟩

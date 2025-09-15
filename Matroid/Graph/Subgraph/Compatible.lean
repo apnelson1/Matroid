@@ -45,7 +45,9 @@ lemma StronglyDisjoint.disjoint (h : G.StronglyDisjoint H) : Disjoint G H := by
   have := le_inf (vertexSet_mono hH'G) <| vertexSet_mono hH'H
   rwa [h.vertex.eq_bot, le_bot_iff] at this
 
+
 /-! ### Compatibility -/
+section CompatibleAt
 
 def CompatibleAt (e : β) (G H : Graph α β) : Prop := e ∈ E(G) → e ∈ E(H) → G.IsLink e = H.IsLink e
 
@@ -120,8 +122,15 @@ lemma CompatibleAt.induce (h : CompatibleAt e G H) {P : Partition (Set α)} :
     CompatibleAt e G[P] H[P] :=
   (h.induce_left P).induce_right P
 
+end CompatibleAt
+
+section Compatible
+
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
 def Compatible (G H : Graph α β) : Prop := EqOn G.IsLink H.IsLink (E(G) ∩ E(H))
+
+lemma Compatible.compatibleAt (h : G.Compatible H) (e : β) : CompatibleAt e G H :=
+  fun heG heH ↦ h ⟨heG, heH⟩
 
 lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
     G.IsLink e = H.IsLink e :=
@@ -151,10 +160,17 @@ lemma IsLink.of_compatible (h : G.IsLink e x y) (hGH : G.Compatible H) (heH : e 
     H.IsLink e x y := by
   rwa [← hGH ⟨h.edge_mem, heH⟩]
 
-lemma Inc.of_compatible (h : G.Inc e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
-    H.Inc e x := by
+lemma Inc.of_compatible (h : G.Inc e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) : H.Inc e x := by
   obtain ⟨y, hy⟩ := h
   exact ⟨y, hy.of_compatible hGH heH⟩
+
+lemma IsLoopAt.of_compatible (h : G.IsLoopAt e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
+    H.IsLoopAt e x := IsLink.of_compatible h hGH heH
+
+lemma IsNonloopAt.of_compatible (h : G.IsNonloopAt e x) (hGH : G.Compatible H) (heH : e ∈ E(H)) :
+    H.IsNonloopAt e x := by
+  obtain ⟨y, hne, hy⟩ := h
+  exact ⟨y, hne, hy.of_compatible hGH heH⟩
 
 @[simp]
 lemma compatible_self (G : Graph α β) : G.Compatible G :=
@@ -255,5 +271,122 @@ lemma pairwise_compatible_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : P
 @[simp]
 lemma stronglyDisjoint_le_compatible : @StronglyDisjoint α β ≤ Compatible :=
   fun _ _ ↦ StronglyDisjoint.compatible
+
+end Compatible
+
+section Dup_agree
+
+def Dup_agree (G H : Graph α β) : Prop := (Partition.Agree on Graph.vertexPartition) G H
+
+lemma Dup_agree.mem_iff_subset (h : G.Dup_agree H) (hxG : x ∈ V(G)) :
+    x ∈ V(H) ↔ ¬ Disjoint P(H).supp x := by
+  refine ⟨fun hxH h => ?_, fun hdisj => ?_⟩ <;> rw [← mem_vertexPartition_iff] at *
+  · exact P(H).ne_bot_of_mem hxH <| h.symm.eq_bot_of_le <| P(H).subset_of_mem hxH
+  · exact h.mem_of_mem hxG hdisj
+
+@[simp]
+lemma dup_agree_rfl : G.Dup_agree G := by
+  simp [Dup_agree]
+
+instance : IsRefl (Graph α β) Dup_agree where
+  refl _ := dup_agree_rfl
+
+lemma Dup_agree.symm (h : G.Dup_agree H) : H.Dup_agree G := by
+  unfold Dup_agree
+  exact _root_.symm h
+
+instance : IsSymm (Graph α β) Dup_agree where
+  symm _ _ := Dup_agree.symm
+
+lemma Dup_agree_comm : G.Dup_agree H ↔ H.Dup_agree G :=
+  ⟨Dup_agree.symm, Dup_agree.symm⟩
+
+@[deprecated "Pairwise.onFun_comp_of_refl" (since := "2025-07-30")]
+lemma pairwise_dup_agree_comp {ι ι' : Type*} {G : ι → Graph α β} (hG : Pairwise (Dup_agree on G))
+    (f : ι' → ι): Pairwise (Dup_agree on (G ∘ f)) := by
+  rw [onFun_comp]
+  exact Pairwise.onFun_of_refl hG f
+
+lemma Dup_agree.mono_left {G₀ : Graph α β} (h : G.Dup_agree H) (hG₀ : G₀ ≤ G) :
+    G₀.Dup_agree H := Partition.Agree.mono_left h (vertexPartition_mono hG₀)
+
+lemma Dup_agree.mono_right {H₀ : Graph α β} (h : G.Dup_agree H) (hH₀ : H₀ ≤ H) :
+    G.Dup_agree H₀ := Partition.Agree.mono_right h (vertexPartition_mono hH₀)
+
+lemma Dup_agree.mono {G₀ H₀ : Graph α β} (h : G.Dup_agree H) (hG : G₀ ≤ G) (hH : H₀ ≤ H) :
+    G₀.Dup_agree H₀ := Partition.Agree.mono h (vertexPartition_mono hG) (vertexPartition_mono hH)
+
+lemma dup_agree_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Dup_agree H₂ :=
+  Partition.agree_of_subset_subset (vertexPartition_mono h₁) (vertexPartition_mono h₂)
+
+lemma dup_agree_of_le (h : H ≤ G) : H.Dup_agree G := dup_agree_of_le_le h le_rfl
+
+lemma Dup_agree.pair (h : G.Dup_agree H) : ({G, H} : Set (Graph α β)).Pairwise Dup_agree := by
+  rw [pairwise_pair]
+  exact fun _ ↦ ⟨h, h.symm⟩
+
+/-- Used to simplify the definition of the union of a pair. -/
+lemma Dup_agree.pair_edgeDelete (h : G.Dup_agree H) :
+    ({G, H ＼ E(G)} : Set (Graph α β)).Pairwise Dup_agree := by
+  rw [pairwise_pair]
+  exact fun _ ↦ ⟨h, h.symm⟩
+
+@[simp]
+lemma Dup_agree.induce (P : Partition (Set α)) : G[P].Dup_agree H[P] := by
+  simp [Dup_agree, Function.onFun]
+
+lemma Dup_agree.vertexDelete (X : Set (Set α)) (h : G.Dup_agree H) : (G - X).Dup_agree (H - X) :=
+  Partition.Agree.mono h (P(G).delete_subset X) (P(H).delete_subset X)
+
+lemma Dup_agree.edgeDelete (F : Set β) (h : G.Dup_agree H) : (G ＼ F).Dup_agree (H ＼ F) := by
+  simpa only [Dup_agree, edgeDelete_vertexSet, Partition.agree_iff_rel] using h
+
+lemma Dup_agree.edgeRestrict (F : Set β) (h : G.Dup_agree H) : (G ↾ F).Dup_agree (H ↾ F) := by
+  simpa only [Dup_agree, edgeRestrict_vertexSet, Partition.agree_iff_rel] using h
+
+lemma pairwise_dup_agree_eq_pairwise_image {S : Set (Graph α β)} :
+    S.Pairwise Dup_agree ↔ (vertexPartition '' S).Pairwise Partition.Agree := by
+  rw [Set.pairwise_image_of_refl]
+  rfl
+
+@[simp]
+lemma pairwise_dup_agree_edgeDelete (hG' : G.Dup_agree H) :
+    ({G, H ＼ E(G)} : Set _).Pairwise Dup_agree := by
+  rw [pairwise_pair]
+  exact fun _ ↦ ⟨hG', hG'.symm⟩
+
+lemma Pairwise.induce_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+    (P : Partition (Set α)) : Pairwise (Dup_agree on fun i ↦ (G i)[P]) :=
+  h.mono (fun _ _ _ ↦ Dup_agree.induce P)
+
+lemma Pairwise.vertexDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+    (X : Set (Set α)) : Pairwise (Dup_agree on fun i ↦ (G i) - X) :=
+  h.mono (fun _ _ ↦ Dup_agree.vertexDelete X)
+
+lemma Pairwise.edgeDelete_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+    (F : Set β) : Pairwise (Dup_agree on fun i ↦ (G i) ＼ F) :=
+  h.mono (fun _ _ ↦ Dup_agree.edgeDelete F)
+
+lemma Pairwise.edgeRestrict_dup_agree {G : ι → Graph α β} (h : Pairwise (Dup_agree on G))
+    (F : Set β) : Pairwise (Dup_agree on fun i ↦ (G i) ↾ F) :=
+  h.mono (fun _ _ ↦ Dup_agree.edgeRestrict F)
+
+lemma Set.Pairwise.induce_dup_agree {S : Set (Graph α β)} (P : Partition (Set α)) :
+    ((·[P]) '' S).Pairwise Dup_agree :=
+  fun _ ⟨_, _, hi⟩ _ ⟨_, _, hj⟩ _ ↦ hi ▸ hj ▸ Dup_agree.induce P
+
+lemma Set.Pairwise.vertexDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+    (X : Set (Set α)) : ((· - X) '' S).Pairwise Dup_agree :=
+  fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).vertexDelete X
+
+lemma Set.Pairwise.edgeDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+    (F : Set β) : ((· ＼ F) '' S).Pairwise Dup_agree :=
+  fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeDelete F
+
+lemma Set.Pairwise.edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
+    (F : Set β) : ((· ↾ F) '' S).Pairwise Dup_agree :=
+  fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeRestrict F
+
+end Dup_agree
 
 end Graph
