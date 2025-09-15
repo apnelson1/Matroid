@@ -131,6 +131,9 @@ lemma vertexPartition_subset_iff {H : Graph α β} : P(G) ⊆ P(H) ↔ V(G) ⊆ 
 lemma vertexPartition_eq_iff {H : Graph α β} : P(G) = P(H) ↔ V(G) = V(H) := by
   rw [← G.vertexPartition_parts, ← H.vertexPartition_parts, ext_iff_parts]
 
+lemma not_emptySet_of_mem_vertexSet (h : x ∈ V(G)) : x ≠ ∅ :=
+  P(G).ne_bot_of_mem <| mem_vertexPartition_iff.mpr h
+
 /-! ### Edge-vertex-vertex incidence -/
 
 lemma IsLink.edge_mem (h : G.IsLink e x y) : e ∈ E(G) :=

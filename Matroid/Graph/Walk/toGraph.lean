@@ -1,31 +1,32 @@
 import Matroid.Graph.Walk.Basic
-import Matroid.Graph.Operations.Union
+import Matroid.Graph.Subgraph.Union
 
-variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
+variable {α β ι ι' : Type*} {x y z u v : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {W w : WList (Set α) β}
 
 open scoped Sym2 Graph
+open WList Set Function
 
 namespace Graph
 
-lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hE : E(w) ⊆ E(G))
+lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hG : G.Dup_agree H) (hE : E(w) ⊆ E(G))
     (h1 : w.first ∈ V(G)) : G.IsWalk w := by
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [union_isLink_iff, cons_edgeSet, insert_subset_iff, first_cons, cons_isWalk_iff,
+    simp_all only [union_isLink hG, cons_edgeSet, insert_subset_iff, first_cons, cons_isWalk_iff,
       not_true_eq_false, and_false, or_false, forall_const, true_and]
     exact ih h.right_mem
 
-lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hE : E(w) ⊆ E(G))
-    (hne : w.Nonempty) : G.IsWalk w := by
+lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hG : G.Dup_agree H)
+    (hE : E(w) ⊆ E(G)) (hne : w.Nonempty) : G.IsWalk w := by
   by_cases h1 : w.first ∈ V(G)
-  · exact hw.isWalk_left_of_subset hE h1
+  · exact hw.isWalk_left_of_subset hG hE h1
   cases w with
   | nil => simp_all
   | cons u e w =>
-  simp only [cons_edgeSet, singleton_union, insert_subset_iff] at hE
-  simp only [cons_isWalk_iff, union_isLink_iff, hE.1, not_true_eq_false, and_false, or_false] at hw
+  simp only [cons_edgeSet, insert_subset_iff] at hE
+  simp only [cons_isWalk_iff, union_isLink hG, hE.1, not_true_eq_false, and_false, or_false] at hw
   rw [first_cons] at h1
   exact (h1 hw.1.left_mem).elim
 
@@ -33,12 +34,13 @@ end Graph
 
 namespace WList
 
-/-- Turn `w : WList α β` into a `Graph α β`. If the list is not well-formed
+/-- Turn `w : WList (Set α) β` into a `Graph α β`. If the list is not well-formed
 (i.e. it contains an edge appearing twice with different ends),
 then the first occurence of the edge determines its ends in `w.toGraph`. -/
-protected def toGraph : WList α β → Graph α β
-  | nil u => Graph.noEdge {u} β
-  | cons u e w => w.toGraph ∪ (Graph.singleEdge u w.first e)
+protected def toGraph : ∀ (w : WList (Set α) β), ∅ ∉ V(w) → Graph α β
+  | nil u, h => Graph.noEdge (Partition.indiscrete u (by rintro rfl; simp at h)) β
+  | cons u e w, h => w.toGraph (by simp_all) ∪ (Graph.singleEdge e u w.first
+    (by rintro rfl; simp at h) sorry sorry)
 
 @[simp]
 lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl

@@ -1,8 +1,8 @@
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Constructions.Basic
 
-variable {α β ι ι' : Type*} {a b c x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
+variable {α β ι ι' : Type*} {a b c x y z u v w : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {P Q : Partition (Set α)}
 
 open Set Function
 
@@ -36,11 +36,12 @@ namespace Graph
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-protected def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
-  Graph.singleEdge a b e ∪ G
+protected def addEdge (G : Graph α β) (e : β) (a b : Set α) (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
+    Graph α β := Graph.singleEdge e a b () ∪ G
 
 @[simp]
-lemma addEdge_labelSet : L(G.addEdge e a b) = {a, b} ∪ L(G) := by
+lemma addEdge_labelSet (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b):
+    V(G.addEdge e a b ha hb hab) = {a, b} ∪ V(G) := by
   simp [Graph.addEdge]
 
 @[simp]

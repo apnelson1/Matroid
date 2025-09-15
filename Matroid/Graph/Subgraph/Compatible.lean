@@ -186,6 +186,10 @@ lemma Compatible.of_disjoint_edgeSet (h : Disjoint E(G) E(H)) : Compatible G H :
 lemma compatible_edgeDelete_right : G.Compatible (H ＼ E(G)) :=
   Compatible.of_disjoint_edgeSet disjoint_sdiff_right
 
+lemma Compatible.pair (h : G.Compatible H) : ({G, H} : Set (Graph α β)).Pairwise Compatible := by
+  rw [pairwise_pair]
+  exact fun _ ↦ ⟨h, h.symm⟩
+
 /-- Used to simplify the definition of the union of a pair. -/
 @[simp]
 lemma pairwise_compatible_edgeDelete : ({G, H ＼ E(G)} : Set (Graph α β)).Pairwise Compatible := by
@@ -297,6 +301,10 @@ lemma Dup_agree.symm (h : G.Dup_agree H) : H.Dup_agree G := by
 
 instance : IsSymm (Graph α β) Dup_agree where
   symm _ _ := Dup_agree.symm
+
+@[simp]
+lemma dup_agree_symmetric : Symmetric (@Dup_agree α β) :=
+  fun _ _ ↦ Dup_agree.symm
 
 lemma Dup_agree_comm : G.Dup_agree H ↔ H.Dup_agree G :=
   ⟨Dup_agree.symm, Dup_agree.symm⟩

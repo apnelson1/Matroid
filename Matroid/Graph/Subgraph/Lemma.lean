@@ -1,32 +1,16 @@
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Subgraph.Inter
 
-variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
+variable {α β ι ι' : Type*} {x y z u v w : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {P Q : Partition (Set α)}
+  [Nonempty ι]
 
 open Set Function
 
 namespace Graph
 
-
-@[simp]
-lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ L(H₁) ∩ L(H₂) = ∅ := by
-  rw [← labelSet_eq_empty_iff, inter_vertexSet, Partition.inf_supp]
-
--- lemma disjoint_iff_inter_eq_bot : Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
---   rw [disjoint_iff, inf_eq_inter]
-
--- @[simp]
--- lemma disjoint_iff_vertexSet_inter_eq_empty : Disjoint H₁ H₂ ↔ V(H₁) ∩ V(H₂) = ∅ := by
---   rw [disjoint_iff_inter_eq_bot, inter_eq_bot_iff]
-
--- lemma disjoint_iff_vertexSet_disjoint : Disjoint H₁ H₂ ↔ Disjoint V(H₁) V(H₂) := by
---   rw [disjoint_iff_inter_eq_bot, inter_eq_bot_iff, Set.disjoint_iff_inter_eq_empty]
-
--- alias ⟨Disjoint.vertex_disjoint, _⟩ := disjoint_iff_vertexSet_disjoint
-
-lemma iInter_le_iUnion (hG : Pairwise (Compatible on G)) :
-    Graph.iInter G ≤ Graph.iUnion G hG :=
+lemma iInter_le_iUnion {G : ι → Graph α β} (hG : Pairwise (Compatible on G)) :
+    Graph.iInter G ≤ Graph.iUnion G :=
   (Graph.iInter_le (Classical.arbitrary ι)).trans <| Graph.le_iUnion ..
 
 @[simp↓]
