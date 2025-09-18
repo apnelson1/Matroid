@@ -283,6 +283,11 @@ lemma partOf_ne_bot_iff : P.partOf x ≠ ⊥ ↔ x ∈ P.supp := by
   obtain ⟨y, hy⟩ := Set.nonempty_iff_ne_empty.mpr h
   exact Rel.right_mem hy
 
+@[simp]
+lemma partOf_eq_empty_iff : P.partOf x = ∅ ↔ x ∉ P.supp := by
+  rw [← partOf_ne_bot_iff]
+  tauto
+
 lemma mem_partOf (hx : x ∈ P.supp) : x ∈ P.partOf x :=
   (mem_fiber_iff _).mpr <| rel_self_of_mem_supp hx
 
@@ -680,29 +685,77 @@ section foo
 
 variable {P Q : Partition (Set α)} {S T : Set α}
 
-def foo (P : Partition (Set α)) (S : Set α) (hS : S ∈ Q) : Set α :=
-  P.partOf (Q.nonempty_of_mem hS).some
+def foo (P : Partition (Set α)) (S : Set α) : Set α :=
+  ⋃₀ (P.partOf '' S)
 
-lemma foo_mem (hS : S ∈ Q) (hSP : S ⊆ P.supp) : foo P S hS ∈ P :=
-  P.partOf_mem <| hSP (Q.nonempty_of_mem hS).some_mem
+@[simp]
+lemma foo_subset_supp : foo P S ⊆ P.supp := by
+  simp only [foo, sUnion_image, iUnion_subset_iff]
+  exact fun _ _ ↦ partOf_subset_supp
 
-lemma subset_foo (hS : S ∈ Q) (hSP : Q ≤ P) : S ⊆ foo P S hS := by
+@[simp]
+lemma foo_eq_empty_iff : foo P S = ∅ ↔ Disjoint S P.supp := by
+  simp [foo, disjoint_left]
+
+lemma foo_subset_of_subset (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) : foo P S ⊆ T := by
+  simp only [foo, sUnion_image, iUnion_subset_iff]
+  intro x hxS y hy
+  rw [mem_partOf_iff] at hy
+  exact (rel_iff_right_mem_of_mem hT (hST ⟨hxS, hy.right_mem⟩)).mp hy.symm
+
+lemma subset_foo (hT : T ∈ P) : T ⊆ foo P S ↔ ¬ Disjoint S T := by
+  simp only [foo, sUnion_image, not_disjoint_iff]
+  refine ⟨fun h => ?_, fun ⟨x, hxS, hxT⟩ y hyT => ?_⟩
+  · have := P.nonempty_of_mem hT
+    obtain ⟨y, hyP, A, hAP, hA, hyA⟩ := by simpa using h this.some_mem
+    obtain rfl := P.eq_of_mem_of_mem hAP hT hA this.some_mem
+    use y, hyP, hyA
+  simp only [mem_iUnion, mem_partOf_iff, exists_prop]
+  use x, hxS
+  rwa [rel_iff_right_mem_of_mem hT hyT]
+
+lemma foo_eq_of_subset (hS : (S ∩ P.supp).Nonempty) (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) :
+    foo P S = T := by
+  refine subset_antisymm (foo_subset_of_subset hST hT) <| (subset_foo hT).mpr ?_
+  rw [not_disjoint_iff]
+  use hS.some, hS.some_mem.1, hST hS.some_mem
+
+lemma inter_foo_eq_inter_supp : S ∩ foo P S = S ∩ P.supp := by
+  ext x
+  simp only [foo, sUnion_image, mem_inter_iff, mem_iUnion, mem_partOf_iff, exists_prop,
+    and_congr_right_iff]
+  exact fun hxS => ⟨fun ⟨y, hyS, hxy⟩ => hxy.left_mem, fun hx => ⟨x, hxS, rel_self_of_mem_supp hx⟩⟩
+
+lemma self_subset_foo_iff : S ⊆ foo P S ↔ S ⊆ P.supp := by
+  refine ⟨fun h x hxS => foo_subset_supp (h hxS), fun h => ?_⟩
+  have : S = S ∩ P.supp := left_eq_inter.mpr h
+  nth_rw 1 [this, ← inter_foo_eq_inter_supp]
+  exact inter_subset_right
+
+lemma foo_mem_iff : foo P S ∈ P ↔ (S ∩ P.supp).Nonempty ∧ ∃ T ∈ P, S ∩ P.supp ⊆ T := by
+  refine ⟨fun h => ⟨?_, P.foo S, h, ?_⟩, fun ⟨hS, T, hTP, hST⟩ => foo_eq_of_subset hS hST hTP ▸ hTP⟩
+  · by_contra! hS
+    rw [← disjoint_iff_inter_eq_empty, ← foo_eq_empty_iff] at hS
+    simpa [hS] using P.nonempty_of_mem h
+  rw [← inter_foo_eq_inter_supp]
+  exact inter_subset_right
+
+lemma subset_foo_of_le (hPQ : P ≤ Q) (hS : S ∈ P) : S ⊆ foo Q S := by
   rintro x hxS
-  simp only [foo, mem_partOf_iff]
-  apply rel_le_of_le hSP
-  exact ⟨S, hS, hxS, (Q.nonempty_of_mem hS).some_mem⟩
+  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop]
+  exact ⟨x, hxS, rel_le_of_le hPQ x x ⟨S, hS, hxS, hxS⟩⟩
 
-lemma foo_eq_iff (hS : S ∈ Q) : foo P S hS = S ↔ S ∈ P := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · apply h ▸ (foo_mem hS ?_)
-    rw [← h, foo]
-    exact partOf_subset_supp
-  ext a
-  simp only [foo, mem_partOf_iff]
-  apply rel_iff_left_mem_of_mem h
-  exact Nonempty.some_mem (nonempty_of_mem hS)
+lemma foo_mem_of_le (hPQ : P ≤ Q) (hS : S ∈ P) : foo Q S ∈ Q := by
+  rw [foo_mem_iff]
+  obtain ⟨T, hTQ, hST⟩ := hPQ S hS
+  have : S ∩ Q.supp = S := inter_eq_left.mpr <| subset_trans hST (subset_of_mem hTQ)
+  simp only [this, P.nonempty_of_mem hS, true_and]
+  exact hPQ S hS
 
--- lemma foo_eq_foo_iff (hS : S ∈ Q) (hT : T ∈ Q) : foo P S hS = foo P T hT ↔ S = T := by
+lemma foo_eq_of_le (hPQ : P ⊆ Q) (hS : S ∈ P) : foo Q S = S :=
+  Q.eq_of_mem_of_mem (foo_mem_of_le (le_of_subset hPQ) hS) (hPQ hS)
+    (self_subset_foo_iff.mpr ((P.subset_of_mem hS).trans <| supp_le_of_subset hPQ)
+      (P.nonempty_of_mem hS).some_mem) (P.nonempty_of_mem hS).some_mem
 
 end foo
 

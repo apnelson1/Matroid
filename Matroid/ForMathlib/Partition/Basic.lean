@@ -200,7 +200,7 @@ end Basic
 
 section PairwiseDisjoint
 
-variable {α : Type*} [Order.Frame α] {s t x y z : α} {parts : Set α}
+variable {α : Type*} [Order.Frame α] {s t x y z : α} {parts : Set α} {P Q : Partition α}
 
 @[simps] def ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) : Partition α where
   parts := parts \ {⊥}
@@ -226,13 +226,11 @@ lemma supp_ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
     (forall_nonempty : ∀ s ∈ parts, s ≠ ⊥) :
   (ofPairwiseDisjoint' pairwiseDisjoint forall_nonempty).supp = sSup parts := rfl
 
-@[simp] lemma mem_ofPairwiseDisjoint' (pairwiseDisjoint) (forall_nonempty) {x : α} :
+@[simp] lemma mem_ofPairwiseDisjoint' (pairwiseDisjoint) (forall_nonempty) :
   x ∈ ofPairwiseDisjoint' (parts := parts) pairwiseDisjoint forall_nonempty ↔
     x ∈ parts := Iff.rfl
 
-
-lemma mem_of_mem_subset {P Q : Partition α} (hPQ : P ⊆ Q) (hx : x ∈ Q)
-    (hsupp : ¬ Disjoint P.supp x) : x ∈ P := by
+lemma mem_of_mem_subset (hPQ : P ⊆ Q) (hx : x ∈ Q) (hsupp : ¬ Disjoint P.supp x) : x ∈ P := by
   contrapose! hsupp
   rw [supp, sSup_disjoint_iff]
   exact fun _ hyP ↦ Q.disjoint (hPQ hyP) hx fun h ↦ hsupp (h ▸ hyP)
@@ -241,30 +239,29 @@ end PairwiseDisjoint
 
 section indep
 
-variable [CompleteLattice α] {u : Set α} {a : α}
+variable [CompleteLattice α] {u : Set α} {a b : α} {P Q : Partition α}
 
 /-- A `sSupIndep` collection not containing `⊥` gives a partition of its supremum. -/
-@[simps] def ofIndependent {u : Set α} (hs : sSupIndep u) (hbot : ⊥ ∉ u) : Partition α where
+@[simps] def ofIndependent (hs : sSupIndep u) (hbot : ⊥ ∉ u) : Partition α where
   parts := u
   indep := hs
   bot_notMem := hbot
 
-@[simp] lemma mem_ofIndependent_iff {u : Set α} (hu : sSupIndep u)
-    (h : ⊥ ∉ u) {a : α} : a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
+@[simp] lemma mem_ofIndependent_iff (hu : sSupIndep u) (h : ⊥ ∉ u) :
+  a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
 
-@[simp] lemma supp_ofIndependent {u : Set α} (hu : sSupIndep u) (hbot : ⊥ ∉ u) :
+@[simp] lemma supp_ofIndependent (hu : sSupIndep u) (hbot : ⊥ ∉ u) :
     (ofIndependent hu hbot).supp = sSup u := rfl
 
 /-- A `sSupIndep` collection gives a partition of its supremum by removing `⊥`. -/
 @[simps!]
-def ofIndependent' {u : Set α} (hs : sSupIndep u) : Partition α :=
+def ofIndependent' (hs : sSupIndep u) : Partition α :=
   (ofIndependent (hs.mono (diff_subset (t := {⊥}))) (fun h ↦ h.2 rfl))
 
-@[simp] lemma mem_ofIndependent'_iff {u : Set α} (hu : sSupIndep u) {a : α} :
+@[simp] lemma mem_ofIndependent'_iff (hu : sSupIndep u) :
   a ∈ ofIndependent' hu ↔ a ∈ u ∧ a ≠ ⊥ := Iff.rfl
 
-@[simp] lemma supp_ofIndependent' {u : Set α} (hu : sSupIndep u) :
-    (ofIndependent' hu).supp = sSup u := by
+@[simp] lemma supp_ofIndependent' (hu : sSupIndep u) : (ofIndependent' hu).supp = sSup u := by
   show sSup (u \ {⊥}) = sSup u
   simp
 
@@ -280,14 +277,14 @@ instance : OrderBot (Partition α) where
 
 @[simp] lemma parts_bot (α : Type*) [CompleteLattice α] : (⊥ : Partition α).parts = ∅ := rfl
 
-@[simp] lemma notMem_bot {a : α} : a ∉ (⊥ : Partition α) := notMem_empty α
+@[simp] lemma notMem_bot : a ∉ (⊥ : Partition α) := notMem_empty α
 
 @[simp] lemma supp_bot : (⊥ : Partition α).supp = ⊥ := sSup_empty
 
 @[simp] lemma bot_coe_eq (α : Type*) [CompleteLattice α] :
     ((⊥ : Partition α) : Set α) = ∅ := rfl
 
-lemma eq_bot {P : Partition α} (hP : P.supp = ⊥) : P = ⊥ := by
+lemma eq_bot (hP : P.supp = ⊥) : P = ⊥ := by
   ext x
   have hsup := P.sSup_eq
   simp only [sSup_eq_bot, SetLike.mem_coe, hP] at hsup
@@ -295,7 +292,7 @@ lemma eq_bot {P : Partition α} (hP : P.supp = ⊥) : P = ⊥ := by
   exact fun hx ↦ P.ne_bot_of_mem hx <| hsup x hx
 
 @[simp]
-lemma supp_eq_bot_iff {P : Partition α} : P.supp = ⊥ ↔ P = ⊥ := by
+lemma supp_eq_bot_iff : P.supp = ⊥ ↔ P = ⊥ := by
   refine ⟨eq_bot, ?_⟩
   rintro rfl
   exact supp_bot
@@ -316,12 +313,20 @@ instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition
   indep := by simp [sSupIndep]
   bot_notMem := by simpa using hs.symm
 
-@[simp] lemma mem_indiscrete_iff (s : α) (hs : s ≠ ⊥) {a : α} :
+@[simp] lemma mem_indiscrete_iff (hs : s ≠ ⊥) :
     a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
 
 @[simp]
-lemma supp_indiscrete (s : α) (hs : s ≠ ⊥) : (Partition.indiscrete s hs).supp = s := by
+lemma supp_indiscrete (hs : s ≠ ⊥) : (Partition.indiscrete s hs).supp = s := by
   simp [Partition.indiscrete, supp]
+
+@[simp]
+lemma indiscrete_subset_iff (hs : s ≠ ⊥) : Partition.indiscrete s hs ⊆ P ↔ s ∈ P := by
+  change (indiscrete s hs).parts ⊆ P.parts ↔ s ∈ P.parts
+  simp
+
+lemma indiscrete_eq_iff (hs : s ≠ ⊥) : Partition.indiscrete s hs = P ↔ {s} = P.parts := by
+  rw [ext_iff_parts, indiscrete_parts]
 
 /-- Similar to `indiscrete`, but in the case `s = ⊥` it returns the empty partition. -/
 noncomputable def indiscrete' (s : α) : Partition α :=
@@ -333,15 +338,15 @@ lemma indiscrete'_eq_empty : indiscrete' ⊥ = (⊥ : Partition α) := by
   simp [indiscrete']
 
 @[simp]
-lemma indiscrete'_eq_of_ne_bot {s : α} (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
+lemma indiscrete'_eq_of_ne_bot (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
   simp only [indiscrete', hs, ↓reduceDIte]
 
 @[simp]
-lemma supp_indiscrete' {s : α} : (indiscrete' s).supp = s := by
+lemma supp_indiscrete' : (indiscrete' s).supp = s := by
   simp [indiscrete']
   split_ifs with hs
   · rw [supp_bot, hs]
-  · rw [supp_indiscrete s hs]
+  · rw [supp_indiscrete hs]
 
 @[simp]
 lemma mem_indiscrete'_iff : a ∈ indiscrete' s ↔ a = s ∧ a ≠ ⊥ := by
@@ -369,18 +374,18 @@ def bipartition (a b : α) (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b
       simpa [Set.pair_comm, Set.diff_singleton_eq_self (show x ∉ {a} from hab.ne hb)])
     (by simp [ha.symm, hb.symm])
 
-@[simp] lemma parts_bipartition {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+@[simp] lemma parts_bipartition (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
     (bipartition a b ha hb hab).parts = {a, b} := rfl
 
-@[simp] lemma mem_bipartition_iff {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+@[simp] lemma mem_bipartition_iff (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
     x ∈ bipartition a b ha hb hab ↔ x = a ∨ x = b := by
   simp [bipartition]
 
-@[simp] lemma supp_bipartition {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+@[simp] lemma supp_bipartition (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
     (bipartition a b ha hb hab).supp = a ⊔ b := by
   simp [bipartition]
 
-lemma bipartition_comm {a b : α} (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+lemma bipartition_comm (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
     bipartition a b ha hb hab = bipartition b a hb ha hab.symm :=
   Partition.ext <| by simp [bipartition, pair_comm]
 
@@ -455,6 +460,8 @@ lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
 
 lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩
+
+
 
 end Order
 

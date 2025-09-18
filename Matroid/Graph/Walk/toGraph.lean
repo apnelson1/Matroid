@@ -39,8 +39,7 @@ namespace WList
 then the first occurence of the edge determines its ends in `w.toGraph`. -/
 protected def toGraph : ∀ (w : WList (Set α) β), ∅ ∉ V(w) → Graph α β
   | nil u, h => Graph.noEdge (Partition.indiscrete u (by rintro rfl; simp at h)) β
-  | cons u e w, h => w.toGraph (by simp_all) ∪ (Graph.singleEdge e u w.first
-    (by rintro rfl; simp at h) sorry sorry)
+  | cons u e w, h => w.toGraph (by simp_all) ∪ (Graph.banana u w.first {e})
 
 @[simp]
 lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl

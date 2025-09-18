@@ -16,9 +16,8 @@ variable {s t : Set (Graph α β)} {G : Graph α β}
 @[simps! vertexPartition]
 protected def sUnion (s : Set (Graph α β)) : Graph α β where
   vertexPartition := ⨆ G ∈ s, P(G)
-  IsLink e x y := ∃ (u v : Set α) (h : ∃ G ∈ s, G.IsLink e u v), s.Pairwise (CompatibleAt e) ∧
-    Partition.foo (⨆ G ∈ s, P(G)) u h.choose_spec.2.left_mem_vertexPartition = x ∧
-    Partition.foo (⨆ G ∈ s, P(G)) v h.choose_spec.2.right_mem_vertexPartition = y
+  IsLink e x y := ∃ u v, (∃ G ∈ s, G.IsLink e u v) ∧ s.Pairwise (CompatibleAt e) ∧
+    Partition.foo (⨆ G ∈ s, P(G)) u = x ∧ Partition.foo (⨆ G ∈ s, P(G)) v = y
   isLink_symm e he u v := by
     rintro ⟨u, v, ⟨G, hG, huv⟩, hs, rfl, rfl⟩
     exact ⟨v, u, ⟨G, hG, huv.symm⟩, hs, rfl, rfl⟩
@@ -28,9 +27,8 @@ protected def sUnion (s : Set (Graph α β)) : Graph α β where
       hvw.of_compatibleAt (hs.of_refl hG' hG) huv.edge_mem <;> tauto
   left_mem_of_isLink e a b := by
     rintro ⟨u, v, ⟨G, hG, huv⟩, -, rfl, rfl⟩
-    refine Partition.foo_mem _ fun a ha ↦ ?_
-    simp only [iSup_supp, iSup_supp_prop, mem_iUnion, exists_prop]
-    exact ⟨G, hG, mem_supp_iff.mpr ⟨u, huv.left_mem_vertexPartition, ha⟩⟩
+    rw [mem_parts]
+    exact Partition.foo_mem_of_le (le_biSup vertexPartition hG) huv.left_mem_vertexPartition
 
 @[simp]
 lemma sUnion_vertexSet (hs' : s.Pairwise Dup_agree) : V(Graph.sUnion s) = ⋃ G ∈ s, V(G) := by
@@ -44,21 +42,18 @@ lemma sUnion_isLink (hs : s.Pairwise Graph.Compatible) (hs' : s.Pairwise Dup_agr
   refine ⟨fun ⟨u, v, ⟨G, hGs, huv⟩, hs, A, B⟩ => ⟨G, hGs, ?_⟩,
     fun h => ⟨x, y, h, hs.imp  fun _ _ hGH ↦ hGH.compatibleAt e, ?_⟩⟩
   · subst A B
-    convert huv <;> rw [foo_eq_iff, ← sSup_image,
-      mem_sSup_iff_of_agree (by rwa [← pairwise_dup_agree_eq_pairwise_image])]
-    · use P(G), (by use G), huv.left_mem_vertexPartition
-    · use P(G), (by use G), huv.right_mem_vertexPartition
+    convert huv <;> apply foo_eq_of_le (subset_biSup_of_agree hs' hGs)
+    · exact huv.left_mem_vertexPartition
+    · exact huv.right_mem_vertexPartition
   · obtain ⟨G, hGs, huv⟩ := h
-    constructor <;> rw [foo_eq_iff, ← sSup_image,
-      mem_sSup_iff_of_agree (by rwa [← pairwise_dup_agree_eq_pairwise_image])]
-    · use P(G), (by use G), huv.left_mem_vertexPartition
-    · use P(G), (by use G), huv.right_mem_vertexPartition
+    constructor <;> apply foo_eq_of_le (subset_biSup_of_agree hs' hGs)
+    · exact huv.left_mem_vertexPartition
+    · exact huv.right_mem_vertexPartition
 
 lemma sUnion_isLink_not_agree (hs : s.Pairwise Graph.Compatible) :
-    (Graph.sUnion s).IsLink e x y ↔ ∃ (u v : Set α) (h : ∃ G ∈ s, G.IsLink e u v),
-    Partition.foo (⨆ G ∈ s, P(G)) u h.choose_spec.2.left_mem_vertexPartition = x ∧
-    Partition.foo (⨆ G ∈ s, P(G)) v h.choose_spec.2.right_mem_vertexPartition = y := by
-  refine exists₃_congr (fun u v h => ?_)
+    (Graph.sUnion s).IsLink e x y ↔ ∃ u v, (∃ G ∈ s, G.IsLink e u v) ∧
+    Partition.foo (⨆ G ∈ s, P(G)) u = x ∧ Partition.foo (⨆ G ∈ s, P(G)) v = y := by
+  refine exists₂_congr (fun u v => and_congr_right fun h ↦ ?_)
   rw [and_iff_right]
   exact hs.imp  fun _ _ hGH ↦ hGH.compatibleAt e
 
@@ -291,12 +286,10 @@ lemma union_isLink (hG' : G.Dup_agree H) :
   rw [union_eq_sUnion, sUnion_isLink pairwise_compatible_edgeDelete hG'.pair_edgeDelete]
   simp
 
-lemma union_isLink_not_agree : (G ∪ H).IsLink e x y ↔ ∃ (u v : Set α)
-    (h : ∃ G_1 ∈ ({G, H ＼ E(G)} : Set _), G_1.IsLink e u v),
-    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) u
-      h.choose_spec.2.left_mem_vertexPartition = x ∧
-    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) v
-      h.choose_spec.2.right_mem_vertexPartition = y := by
+lemma union_isLink_not_agree : (G ∪ H).IsLink e x y ↔ ∃ u v,
+    (∃ G_1 ∈ ({G, H ＼ E(G)} : Set _), G_1.IsLink e u v) ∧
+    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) u = x ∧
+    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) v = y := by
   rw [union_eq_sUnion, sUnion_isLink_not_agree pairwise_compatible_edgeDelete]
 
 lemma union_inc_iff (hG' : G.Dup_agree H) :
@@ -473,7 +466,8 @@ lemma induce_union (G : Graph α β) (hPQ : P.Agree Q) (hX : ∀ x ∈ P, ∀ y 
     simp [hx, hy]
   simp [hxy]
 
--- lemma sUnion_insert (G : Graph α β) (s : Set (Graph α β)) (hG' : (insert G s).Pairwise Dup_agree) :
+-- lemma sUnion_insert (G : Graph α β) (s : Set (Graph α β))
+-- (hG' : (insert G s).Pairwise Dup_agree) :
 --     Graph.sUnion (insert G s) = G ∪ Graph.sUnion s := by
 --   refine Graph.ext ?_ fun e x y ↦ ?_
 --   · rw [union_vertexSet, Graph.sUnion_union]

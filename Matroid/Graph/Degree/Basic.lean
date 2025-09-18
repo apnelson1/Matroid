@@ -1,5 +1,6 @@
-import Mathlib.Combinatorics.Graph.Basic
-import Matroid.Graph.Simple
+-- import Mathlib.Combinatorics.Graph.Basic
+-- import Matroid.Graph.Simple
+import Matroid.Graph.Subgraph.Union
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Set.Card
 import Matroid.Graph.Finite

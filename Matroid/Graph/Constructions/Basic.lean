@@ -1,6 +1,6 @@
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Nodup
-import Mathlib.Data.Set.Lattice
+import Matroid.ForMathlib.Partition.Lattice
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
 
@@ -254,47 +254,79 @@ lemma bouquet_mono (hv : v ≠ ∅) (hss : X ⊆ Y) :
 
 /-! ### Two vertices -/
 
-/-- A graph with exactly two vertices and no loops. -/
+/-- A graph with two vertices and no loops.
+  If `a` or `b` is empty, the graph is empty.
+  If `a` and `b` are not disjoint, the graph is `bouquet (a ∪ b) F`.
+  Else, the graph has vertices `a` and `b` and edges `F` between them. -/
 @[simps]
-def banana (a b : Set α) (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) (F : Set β) :
-    Graph α β where
-  vertexPartition := Partition.bipartition a b ha hb hab
-  edgeSet := F
-  IsLink e x y := e ∈ F ∧ ((x = a ∧ y = b) ∨ (x = b ∧ y = a))
+def banana (a b : Set α) (F : Set β) : Graph α β where
+  vertexPartition := .mk' {a, b}
+  edgeSet := {e | e ∈ F ∧ a.Nonempty ∧ b.Nonempty}
+  IsLink e x y := (e ∈ F ∧ a.Nonempty ∧ b.Nonempty) ∧
+    s(x, y) = s((Partition.mk' {a, b}).foo a, (Partition.mk' {a, b}).foo b)
   isLink_symm _ _ _ := by aesop
   eq_or_eq_of_isLink_of_isLink := by aesop
   edge_mem_iff_exists_isLink := by aesop
-  left_mem_of_isLink := by aesop
+  left_mem_of_isLink e x y := by
+    rintro ⟨⟨he, ha, hb⟩, h⟩
+    simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at h
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h
+    · apply foo_mem_of_le (indiscrete'_le_mk' (by simp) : indiscrete' a ≤ Partition.mk' {a, b})
+      simp [ha.ne_empty]
+    · apply foo_mem_of_le (indiscrete'_le_mk' (by simp) : indiscrete' b ≤ Partition.mk' {a, b})
+      simp [hb.ne_empty]
+
+lemma banana_comm : banana a b F = banana b a F := by
+  apply Graph.ext
+  · rw [banana_vertexSet, banana_vertexSet, Set.pair_comm]
+  intro e x y
+  simp_rw [banana_isLink]
+  refine and_congr (and_congr_right fun _ ↦ and_comm) ?_
+  simp_rw [Set.pair_comm a b, Sym2.eq_swap]
+
+@[simp↓]
+lemma banana_isLink_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    (banana a b F).IsLink e x y ↔ e ∈ F ∧ s(x, y) = s(a, b) := by
+  have ha' : indiscrete' a ⊆ Partition.mk' ({a, b} : Set _) :=
+    subset_sSup_of_agree (mk'_agree (pairwiseDisjoint_pair hab).sSupIndep) (by simp [ha.ne_empty])
+  have hb' : indiscrete' b ⊆ Partition.mk' ({a, b} : Set _) :=
+    subset_sSup_of_agree (mk'_agree (pairwiseDisjoint_pair hab).sSupIndep) (by simp [hb.ne_empty])
+  simp only [banana_isLink, ha, hb, and_self, and_true, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    Prod.swap_prod_mk, and_congr_right_iff]
+  refine fun heF ↦ or_congr ?_ ?_ <;> apply and_congr
+  · revert x
+    rw [eq_iff_eq_cancel_left]
+    apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
+  · revert y
+    rw [eq_iff_eq_cancel_left]
+    apply (indiscrete' b).foo_eq_of_le hb' (by simp [hb.ne_empty])
+  · revert x
+    rw [eq_iff_eq_cancel_left]
+    apply (indiscrete' b).foo_eq_of_le hb' (by simp [hb.ne_empty])
+  · revert y
+    rw [eq_iff_eq_cancel_left]
+    apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
 
 @[simp]
-lemma banana_inc_iff (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) :
-    (banana a b ha hb hab F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
-  simp only [Inc, banana_isLink, exists_and_left, and_congr_right_iff]
+lemma banana_inc_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    (banana a b F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
+  simp_rw [Inc, banana_isLink_of_disjoint ha hb hab]
   aesop
 
-lemma banana_comm (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) (F : Set β) :
-    banana a b ha hb hab F = banana b a hb ha hab.symm F :=
-  Graph.ext_inc (by simp [Set.pair_comm]) <| by simp [or_comm]
-
 @[simp]
-lemma banana_isNonloopAt_iff (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) :
-    (banana a b ha hb hab F).IsNonloopAt e x ↔ e ∈ F ∧ (x = a ∨ x = b) ∧ a ≠ b := by
-  simp_rw [isNonloopAt_iff_inc_not_isLoopAt, ← isLink_self_iff, banana_isLink, banana_inc_iff]
+lemma banana_isNonloopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    (banana a b F).IsNonloopAt e x ↔ e ∈ F ∧ (x = a ∨ x = b) ∧ a ≠ b := by
+  simp_rw [isNonloopAt_iff_inc_not_isLoopAt, ← isLink_self_iff, banana_isLink_of_disjoint ha hb hab,
+    banana_inc_of_disjoint ha hb hab]
   aesop
 
 @[simp]
-lemma banana_isLoopAt_iff (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) :
-    (banana a b ha hb hab F).IsLoopAt e x ↔ e ∈ F ∧ x = a ∧ a = b := by
-  simp only [← isLink_self_iff, banana_isLink, and_congr_right_iff]
+lemma banana_isLoopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    (banana a b F).IsLoopAt e x ↔ e ∈ F ∧ x = a ∧ a = b := by
+  simp only [← isLink_self_iff, banana_isLink_of_disjoint ha hb hab, and_congr_right_iff]
   aesop
 
-@[simp]
-lemma banana_singleton (e : β) (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) :
-    banana a b ha hb hab {e} = Graph.singleEdge e a b ha hb hab := by
-  ext <;> rfl
-
-lemma banana_mono (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b) {X Y : Set β} (hXY : X ⊆ Y) :
-    banana a b ha hb hab X ≤s banana a b ha hb hab Y where
+lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
   vertexSet_eq := rfl
   isLink_of_isLink := by simp +contextual [subset_def ▸ hXY]
 

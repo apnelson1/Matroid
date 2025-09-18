@@ -384,6 +384,16 @@ lemma Agree.mono {P₀ Q₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) (h
   obtain ⟨S, hPS, hQS⟩ := h
   exact ⟨S, hP.trans hPS, hQ.trans hQS⟩
 
+@[simp]
+lemma indiscrete_agree_indiscrete_iff (ha : a ≠ ⊥) (hb : b ≠ ⊥) :
+    (Partition.indiscrete a ha).Agree (Partition.indiscrete b hb) ↔ (a = b ∨ Disjoint a b) := by
+  refine ⟨fun ⟨S, hPS, hQS⟩ => ?_, ?_⟩
+  · rw [indiscrete_subset_iff] at hPS hQS
+    exact or_iff_not_imp_right.mpr <| S.eq_of_not_disjoint hPS hQS
+  rintro (rfl | hdisj)
+  · simp
+  use Partition.bipartition a b ha hb hdisj, ?_ <;> simp
+
 end Restrict
 
 lemma induce_sSup_eq_restrict [Order.Frame α] (P : Partition α) (a : α) :
