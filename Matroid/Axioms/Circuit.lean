@@ -200,7 +200,7 @@ protected def ofNonSpanningCircuit
             constructor
             · right
               refine ⟨ ?_, ?_, ?_, ?_ ⟩
-              · simpa using hC₁fin.diff.insert _
+              · simpa using hC₁fin.diff
               · simp only [union_singleton]
                 rwa [ncard_exchange hfC₁ heC1]
               · apply union_subset

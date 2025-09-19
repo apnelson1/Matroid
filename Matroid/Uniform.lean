@@ -77,7 +77,7 @@ theorem unifOn_dual_eq {k : ℕ} (hE : E.Finite) :
   rw [dual_isBase_iff, unifOn_isBase_iff (by simpa) (by simpa using diff_subset),
     unifOn_ground_eq, unifOn_isBase_iff (by simp) hBE, ← Finset.coe_sdiff,
     encard_coe_eq_coe_finsetCard, Nat.cast_inj, encard_coe_eq_coe_finsetCard, Nat.cast_inj,
-    toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff (by simpa),
+    toFinite_toFinset, E.toFinset_coe, Finset.card_sdiff_of_subset (by simpa),
     tsub_eq_iff_eq_add_of_le (Finset.card_mono (by simpa)),
     eq_tsub_iff_add_eq_of_le (by simpa), add_comm, eq_comm]
 

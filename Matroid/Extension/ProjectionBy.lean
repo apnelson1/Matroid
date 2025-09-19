@@ -100,10 +100,10 @@ lemma Projector.map_aux {γ : Type*} (P : N.Projector M β) (f : β → γ) (hf 
       (N.map Sum.inl Sum.inl_injective.injOn).map (Sum.map id f) (by rwa [← heq]) := by
     simp_rw [heq]
   simp_rw [map_map] at heq
-  rw [contract_map] at heq
+  generalize_proofs h1
+  rw [contract_map h1 (by simp [Projector.pivot])] at heq
   convert heq
-  · aesop
-  simp [Projector.pivot]
+  ext (a | b) <;> simp [Projector.pivot]
 
 def Projector.map {γ : Type u} (P : N.Projector M β) (f : β → γ) (hf : InjOn f P.pivot) :
     N.Projector M γ where
@@ -144,10 +144,22 @@ def Projector.delete_contract' (M : Matroid α) (X : Set α) (hX : X ⊆ M.E) :
     apply Matroid.map_inj (Sum.elim id Subtype.val) (by simp [InjOn])
     rw [contract_map _ (by simp), map_comapOn (Projector.bijOn_aux hX)]
     simp [map_map, ← range_comp]
+    · intro a ha b hb hab
+      simp at ha hb hab ⊢
+      obtain ⟨a', ⟨ha'M, ha'X⟩, rfl⟩ | ⟨a', ha'X, rfl⟩ := ha <;>
+      obtain ⟨b', ⟨hb'M, hb'X⟩, rfl⟩ | ⟨b', hb'X, rfl⟩ := hb <;>
+      simp_all
+      exact hb'X (hab ▸ ha'X)
   delete_eq' := by
     apply Matroid.map_inj (Sum.elim id Subtype.val) (by simp [InjOn])
     rw [delete_map _ (by simp), map_comapOn (Projector.bijOn_aux hX)]
     simp [map_map, ← range_comp]
+    · intro a ha b hb hab
+      simp at ha hb hab ⊢
+      obtain ⟨a', ⟨ha'M, ha'X⟩, rfl⟩ | ⟨a', ha'X, rfl⟩ := ha <;>
+      obtain ⟨b', ⟨hb'M, hb'X⟩, rfl⟩ | ⟨b', hb'X, rfl⟩ := hb <;>
+      simp_all
+      exact hb'X (hab ▸ ha'X)
 
 def Projector.copy {M M' N N' : Matroid α} (P : N.Projector M β) (hN : N = N') (hM : M = M') :
     N'.Projector M' β where

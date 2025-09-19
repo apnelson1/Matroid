@@ -241,7 +241,7 @@ protected theorem tsum_encard_eq_encard_iUnion {ι} {s : ι → Set α} (hI : Pa
 theorem encard_iUnion_le_tsum_encard {ι} {s : ι → Set α} :
     (⋃ i, s i).encard ≤ ∑' i, (s i).encard := by
   rw [← ENat.tsum_one]
-  exact (ENat.tsum_iUnion_le_tsum 1 s).trans_eq <| by simp [encard]
+  exact (ENat.tsum_iUnion_le_tsum 1 s).trans_eq <| by simp
 
 theorem tsum_encard_eq_encard_biUnion {ι} {s : ι → Set α} {t : Set ι}
     (hI : t.PairwiseDisjoint s) : ∑' i : t, (s i).encard = (⋃ i ∈ t, s i).encard := by

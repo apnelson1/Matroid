@@ -36,12 +36,12 @@ namespace Graph
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-protected def addEdge (G : Graph α β) (e : β) (a b : Set α) (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
-    Graph α β := Graph.singleEdge e a b () ∪ G
+protected def addEdge (G : Graph α β) (e : β) (a b : Set α) :
+    Graph α β := Graph.banana a b {e} ∪ G
 
 @[simp]
 lemma addEdge_labelSet (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b):
-    V(G.addEdge e a b ha hb hab) = {a, b} ∪ V(G) := by
+    V(G.addEdge e a b) = {a, b} ∪ V(G) := by
   simp [Graph.addEdge]
 
 @[simp]
