@@ -316,7 +316,6 @@ lemma inf_eq_inter : H₁ ⊓ H₂ = H₁ ∩ H₂ := rfl
 @[simp]
 lemma inter_eq_bot_iff : H₁ ∩ H₂ = ⊥ ↔ V(H₁) ∩ V(H₂) = ∅ := by
   rw [← vertexSet_eq_empty_iff, inter_vertexSet]
-  rfl
 
 lemma disjoint_iff_inter_eq_bot : Disjoint H₁ H₂ ↔ H₁ ∩ H₂ = ⊥ := by
   rw [disjoint_iff, inf_eq_inter]

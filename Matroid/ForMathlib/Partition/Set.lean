@@ -328,7 +328,7 @@ lemma indiscrete_rel (hS : S ≠ ∅) : ⇑(Partition.indiscrete S hS) = fun x y
 lemma indiscrete'_rel : ⇑(Partition.indiscrete' S) = fun x y ↦ x ∈ S ∧ y ∈ S := by
   ext x y
   simp only [rel_iff_exists, mem_indiscrete'_iff, bot_eq_empty, ne_eq, ← nonempty_iff_ne_empty,
-    existsAndEq, true_and, and_iff_right_iff_imp, and_imp]
+    existsAndEq, and_true, and_iff_right_iff_imp, and_imp]
   rintro hx hy
   use x
 
@@ -719,6 +719,13 @@ lemma foo_eq_of_subset (hS : (S ∩ P.supp).Nonempty) (hST : S ∩ P.supp ⊆ T)
   refine subset_antisymm (foo_subset_of_subset hST hT) <| (subset_foo hT).mpr ?_
   rw [not_disjoint_iff]
   use hS.some, hS.some_mem.1, hST hS.some_mem
+
+@[simp]
+lemma foo_eq_of_indiscrete' : (Partition.indiscrete' S).foo S = S := by
+  obtain (h | h) := S.eq_empty_or_nonempty
+  · subst S
+    simp
+  exact foo_eq_of_subset (by simpa) (by simp) (by simp [h.ne_empty])
 
 lemma inter_foo_eq_inter_supp : S ∩ foo P S = S ∩ P.supp := by
   ext x

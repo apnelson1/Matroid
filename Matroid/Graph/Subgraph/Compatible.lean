@@ -288,6 +288,10 @@ lemma Dup_agree.mem_iff_subset (h : G.Dup_agree H) (hxG : x ∈ V(G)) :
   · exact P(H).ne_bot_of_mem hxH <| h.symm.eq_bot_of_le <| P(H).subset_of_mem hxH
   · exact h.mem_of_mem hxG hdisj
 
+lemma dup_agree_iff_union_pairwiseDisjoint : G.Dup_agree H ↔
+    (V(G) ∪ V(H)).PairwiseDisjoint id := by
+  simp [Dup_agree, Partition.agree_iff_union_pairwiseDisjoint]
+
 @[simp]
 lemma dup_agree_rfl : G.Dup_agree G := by
   simp [Dup_agree]
@@ -394,6 +398,22 @@ lemma Set.Pairwise.edgeDelete_dup_agree {S : Set (Graph α β)} (h : S.Pairwise 
 lemma Set.Pairwise.edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwise Dup_agree)
     (F : Set β) : ((· ↾ F) '' S).Pairwise Dup_agree :=
   fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeRestrict F
+
+@[simp]
+lemma bouquet_dup_agree_of_mem {v : Set α} (hv : v ∈ V(G)) : (bouquet v F).Dup_agree G := by
+  rw [dup_agree_iff_union_pairwiseDisjoint]
+  simp [G.nonempty_of_mem_vertexSet hv |>.ne_empty, hv, G.pairwiseDisjoint_vertexSet]
+
+@[simp]
+lemma banana_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
+    (banana u v F).Dup_agree G := by
+  by_cases huv : u = v
+  · subst v
+    simp [hu]
+  rw [dup_agree_iff_union_pairwiseDisjoint, banana_vertexSet_of_disjoint
+    (G.nonempty_of_mem_vertexSet hu) (G.nonempty_of_mem_vertexSet hv)
+    (G.disjoint_of_mem_vertexSet hu hv huv), insert_union]
+  simp [hu, hv, G.pairwiseDisjoint_vertexSet]
 
 end Dup_agree
 

@@ -36,13 +36,39 @@ namespace Graph
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
+@[simps! vertexSet vertexPartition edgeSet isLink]
 protected def addEdge (G : Graph α β) (e : β) (a b : Set α) :
     Graph α β := Graph.banana a b {e} ∪ G
 
 @[simp]
-lemma addEdge_labelSet (ha : a ≠ ∅) (hb : b ≠ ∅) (hab : Disjoint a b):
+lemma addEdge_vertexPartition_of_mem (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
+    P(G.addEdge e a b) = P(G) := by
+  simp only [Graph.addEdge, union_vertexPartition, banana_vertexPartition, Partition.mk'_insert,
+    Partition.mk'_singleton, sup_eq_right, sup_le_iff]
+  constructor <;>
+  · intro x h
+    obtain ⟨rfl, h⟩ := by simpa only [Partition.mem_indiscrete'_iff, bot_eq_empty, ne_eq] using h
+    use x, mem_vertexPartition_iff.mpr (by assumption)
+
+@[simp]
+lemma addEdge_vertexSet_of_mem (ha : a ∈ V(G)) (hb : b ∈ V(G)) : V(G.addEdge e a b) = V(G) := by
+  rw [← vertexSet_eq_parts, addEdge_vertexPartition_of_mem ha hb, vertexSet_eq_parts]
+
+@[simp]
+lemma addEdge_isLink_of_mem (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
+    (G.addEdge e a b).IsLink f x y ↔ (f = e ∧ s(x, y) = s(a, b)) ∨ G.IsLink f x y := by
+  have hagree : (banana a b {e}).Dup_agree G := by
+    
+  by_cases hab : a = b
+  · subst b
+    simp [Graph.addEdge, union_isLink ]
+  simp [Graph.addEdge, banana_isLink_of_disjoint (G.nonempty_of_mem_vertexSet ha)
+    (G.nonempty_of_mem_vertexSet hb) (by simp)]
+
+@[simp]
+lemma addEdge_vertexSet () :
     V(G.addEdge e a b) = {a, b} ∪ V(G) := by
-  simp [Graph.addEdge]
+  simp [Graph.addEdge, banana_vertexSet, union_vertexSet]
 
 @[simp]
 lemma left_mem_addEdge_labelSet : a ∈ L(G.addEdge e a b) := by

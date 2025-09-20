@@ -439,6 +439,20 @@ lemma mem_iSup_iff_of_agree {ι : Type*} {S : ι → Partition (Set α)} (hS : P
   simp
 
 @[simp]
+lemma biSup_parts_of_agree {ι : Type*} {S : Set ι} {P : ι → Partition (Set α)}
+    (hS : S.Pairwise (Agree on P)) : (⨆ i ∈ S, P i).parts = ⋃ i ∈ S, (P i).parts := by
+  rw [← sSup_image, sSup_parts_of_agree, biUnion_image]
+  rwa [pairwise_image_of_refl]
+
+@[simp]
+lemma mem_biSup_iff_of_agree {ι : Type*} {S : Set ι} {P : ι → Partition (Set α)}
+    (hS : S.Pairwise (Agree on P)) : s ∈ ⨆ i ∈ S, P i ↔ ∃ i ∈ S, s ∈ (P i) := by
+  change s ∈ (⨆ i ∈ S, P i).parts ↔ ∃ i ∈ S, s ∈ (P i)
+  rw [biSup_parts_of_agree hS]
+  simp
+
+
+@[simp]
 lemma Agree.inf_parts (hPQ : P.Agree Q) : (P ⊓ Q).parts = P.parts ∩ Q.parts := by
   ext x
   simp only [mem_parts, mem_inf_iff, bot_eq_empty, ne_eq, inf_eq_inter, mem_inter_iff]
@@ -640,83 +654,49 @@ lemma disjoint_iff_rel_disjoint (P Q : Partition (Set α)) :
       exact hpQ x x hp
     simp at h
 
--- noncomputable def mk' (S : Set (Set α)) : Partition (Set α) :=
---   ⨆ s ∈ S, Partition.indiscrete' s
+def mk' (S : Set (Set α)) : Partition (Set α) := ⨆ s ∈ S, Partition.indiscrete' s
 
-def mk' (S : Set (Set α)) : Partition (Set α) :=
-  sSup <| (fun s => Partition.indiscrete s.val s.prop) ''
-    (Subtype.val ⁻¹' S : Set ({s : Set α // s ≠ ⊥}))
-
-lemma mk'_eq (S : Set (Set α)) : mk' S = ⨆ s ∈ S, Partition.indiscrete' s := by
-  unfold mk'
-  rw [← sSup_image, ← sSup_diff_singleton_bot (indiscrete' '' S)]
-  congr 1
-  ext P
-  simp only [bot_eq_empty, ne_eq, mem_image, mem_preimage, Subtype.exists, exists_and_left,
-    mem_diff, mem_singleton_iff, ← exists_and_right, and_assoc]
-  refine exists_congr fun s => and_congr_right fun hs => ?_
-  by_cases hsempty : s = ∅
-  · subst s
-    simp only [not_true_eq_false, IsEmpty.exists_iff, false_iff, not_and, not_not]
-    rintro rfl
-    exact indiscrete'_eq_empty
-  · simp only [hsempty, not_false_eq_true, exists_true_left, bot_eq_empty, ne_eq,
-    indiscrete'_eq_of_ne_bot, iff_self_and]
-    rintro rfl
-    exact ne_of_mem_of_not_mem' rfl fun a ↦ a
-
-lemma mk'_agree (hS : sSupIndep S) : ((fun s => Partition.indiscrete s.val s.prop) ''
-    (Subtype.val ⁻¹' S : Set ({s : Set α // s ≠ ⊥}))).Pairwise Agree := by
+lemma mk'_agree (hS : S.PairwiseDisjoint id) : S.Pairwise (Agree on indiscrete') := by
   rintro x hx y hy hxy
-  simp only [bot_eq_empty, mem_image, mem_preimage, Subtype.exists, exists_and_left] at hx hy
-  obtain ⟨x, hx, hx', rfl⟩ := hx
-  obtain ⟨y, hy, hy', rfl⟩ := hy
-  rw [indiscrete_agree_indiscrete_iff]
-  exact or_iff_not_imp_left.mpr <| hS.pairwiseDisjoint hx hy
+  rw [agree_on_indiscrete'_iff]
+  right
+  exact hS hx hy hxy
 
 @[simp]
-lemma mk'_parts_bot_not_mem (hS : sSupIndep S) (hSbot : ⊥ ∉ S) : (mk' S).parts = S := by
-  rw [mk', sSup_parts_of_agree (mk'_agree hS)]
+lemma mk'_parts_bot_not_mem (hS : S.PairwiseDisjoint id) (hSbot : ⊥ ∉ S) : (mk' S).parts = S := by
+  rw [mk', biSup_parts_of_agree (mk'_agree hS)]
   ext s
   have : s ∈ S → s ≠ ∅ := (ne_of_mem_of_not_mem · hSbot)
   simpa
 
 @[simp]
-lemma mk'_parts (hS : sSupIndep S) : (mk' S).parts = S \ {⊥} := by
-  rw [mk', sSup_parts_of_agree (mk'_agree hS)]
+lemma mk'_parts (hS : S.PairwiseDisjoint id) : (mk' S).parts = S \ {⊥} := by
+  rw [mk', biSup_parts_of_agree (mk'_agree hS)]
   ext s
   simp [and_comm]
 
 @[simp↓]
-lemma mem_mk'_iff (hS : sSupIndep S) : s ∈ mk' S ↔ s ∈ S ∧ s ≠ ⊥ := by
+lemma mem_mk'_iff (hS : S.PairwiseDisjoint id) : s ∈ mk' S ↔ s ≠ ⊥ ∧ s ∈ S := by
   rw [← mem_parts, mk'_parts hS]
-  simp
+  simp [and_comm]
 
 @[simp]
 lemma mk'_supp : (mk' S).supp = ⋃₀ S := by
   ext x
-  simp only [mk', bot_eq_empty, ne_eq, sSup_supp, mem_image, mem_preimage, Subtype.exists,
-    exists_and_left, iUnion_exists, biUnion_and', iUnion_iUnion_eq', supp_indiscrete, mem_iUnion,
-    exists_prop, mem_sUnion]
-  refine exists_congr fun s => ?_
-  aesop
+  simp [mk']
 
 @[simp]
-lemma mk'_singleton (s : Set α) : mk' {s} = Partition.indiscrete' s := by
-  apply ext fun x => ?_
-  simp [sSupIndep_singleton]
+lemma mk'_singleton (s : Set α) : mk' {s} = Partition.indiscrete' s :=
+  ext fun x => by aesop
 
 @[simp]
 lemma mk'_insert (s : Set α) (S : Set (Set α)) :
     mk' (insert s S) = mk' S ⊔ Partition.indiscrete' s := by
   ext x y
-  simp_rw [mk'_eq]
-  rw [iSup_insert, sup_comm]
+  rw [mk', mk', iSup_insert, sup_comm]
 
-lemma indiscrete'_le_mk' (has : s ∈ S) : Partition.indiscrete' s ≤ mk' S := by
-  rw [mk'_eq]
-  exact le_biSup indiscrete' has
+lemma indiscrete'_le_mk' (has : s ∈ S) : Partition.indiscrete' s ≤ mk' S :=
+  le_biSup indiscrete' has
 
-lemma mk'_mono (hS : S ⊆ T) : mk' S ≤ mk' T := by
-  simp_rw [mk'_eq]
-  exact biSup_mono hS
+lemma mk'_mono (hS : S ⊆ T) : mk' S ≤ mk' T :=
+  biSup_mono hS

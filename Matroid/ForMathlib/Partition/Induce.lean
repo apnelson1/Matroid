@@ -386,13 +386,25 @@ lemma Agree.mono {P₀ Q₀ : Partition α} (h : P.Agree Q) (hP : P₀ ⊆ P) (h
 
 @[simp]
 lemma indiscrete_agree_indiscrete_iff (ha : a ≠ ⊥) (hb : b ≠ ⊥) :
-    (Partition.indiscrete a ha).Agree (Partition.indiscrete b hb) ↔ (a = b ∨ Disjoint a b) := by
+    (indiscrete a ha).Agree (indiscrete b hb) ↔ (a = b ∨ Disjoint a b) := by
   refine ⟨fun ⟨S, hPS, hQS⟩ => ?_, ?_⟩
   · rw [indiscrete_subset_iff] at hPS hQS
     exact or_iff_not_imp_right.mpr <| S.eq_of_not_disjoint hPS hQS
   rintro (rfl | hdisj)
   · simp
   use Partition.bipartition a b ha hb hdisj, ?_ <;> simp
+
+@[simp]
+lemma agree_on_indiscrete'_iff : (Agree on indiscrete') a b ↔ a = b ∨ Disjoint a b := by
+  obtain rfl | hnea := eq_or_ne a ⊥ <;> obtain rfl | hneb := eq_or_ne b ⊥
+  · simp
+  · simp only [disjoint_bot_left, or_true, iff_true]
+    use indiscrete' b
+    simp
+  · simp only [disjoint_bot_right, or_true, iff_true]
+    use indiscrete' a
+    simp
+  · convert indiscrete_agree_indiscrete_iff hnea hneb <;> simp [hnea, hneb]
 
 end Restrict
 
@@ -410,6 +422,12 @@ lemma induce_sSup_eq_restrict [Order.Frame α] (P : Partition α) (a : α) :
   rw [inf_eq_right.mpr <| le_sSup_of_le (by use htP) le_rfl]
   exact ⟨hsP, hdisjas⟩
 
+lemma agree_iff_union_pairwiseDisjoint [Order.Frame α] {P Q : Partition α} :
+    P.Agree Q ↔ (P.parts ∪ Q.parts).PairwiseDisjoint id :=
+  Iff.trans ⟨fun ⟨S, hPS, hQS⟩ => S.indep.mono (union_subset_iff.mpr ⟨hPS, hQS⟩),
+    fun h => ⟨ofIndependent h (·.elim P.bot_notMem Q.bot_notMem),
+    (fun x hx ↦ by simp [ofIndependent, hx]), (fun x hx ↦ by simp [ofIndependent, hx])⟩⟩
+    sSupIndep_iff_pairwiseDisjoint
 
 section RestrictDistrib
 

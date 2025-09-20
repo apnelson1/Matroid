@@ -91,6 +91,17 @@ lemma sSupIndep.image {α : Type*} [CompleteLattice α] {S : Set α} (hS : sSupI
   rintro rfl
   simp at hne
 
+lemma sSupIndep_subsingleton {α : Type*} [CompleteLattice α] {S : Set α} (hs : S.Subsingleton) :
+    sSupIndep S := by
+  obtain (rfl | ⟨a, rfl⟩) := hs.eq_empty_or_singleton
+  · exact sSupIndep_empty
+  exact sSupIndep_singleton a
+
+lemma Set.subsingleton_image {α β : Type*} {f : α → β} {S : Set α} (hS : S.Subsingleton) :
+    (f '' S).Subsingleton := by
+  rintro a ⟨x, hxS, rfl⟩ b ⟨y, hyS, rfl⟩
+  exact (hS hxS hyS) ▸ rfl
+
 -- lemma disjoint_sup [CompleteLattice α] {a : α} {s t : Set α} (hb : )
 
 
@@ -329,42 +340,38 @@ lemma indiscrete_eq_iff (hs : s ≠ ⊥) : Partition.indiscrete s hs = P ↔ {s}
   rw [ext_iff_parts, indiscrete_parts]
 
 /-- Similar to `indiscrete`, but in the case `s = ⊥` it returns the empty partition. -/
-noncomputable def indiscrete' (s : α) : Partition α :=
-  let _ : Decidable (s = ⊥) := Classical.dec _
-  if hs : s = ⊥ then ⊥ else indiscrete s hs
+@[simps]
+def indiscrete' (s : α) : Partition α where
+  parts := {T | s ≠ ⊥ ∧ T = s}
+  indep := sSupIndep_subsingleton <| by
+    rintro x ⟨hx, rfl⟩ y ⟨hy, rfl⟩
+    rfl
+  bot_notMem := by simp [ne_comm]
 
 @[simp]
-lemma indiscrete'_eq_empty : indiscrete' ⊥ = (⊥ : Partition α) := by
-  simp [indiscrete']
+lemma mem_indiscrete'_iff : x ∈ indiscrete' s ↔ s ≠ ⊥ ∧ x = s := Iff.rfl
 
 @[simp]
-lemma indiscrete'_eq_of_ne_bot (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
-  simp only [indiscrete', hs, ↓reduceDIte]
+lemma indiscrete'_eq_empty : indiscrete' ⊥ = (⊥ : Partition α) :=
+  eq_bot <| by simp [supp, indiscrete']
 
 @[simp]
 lemma supp_indiscrete' : (indiscrete' s).supp = s := by
-  simp [indiscrete']
-  split_ifs with hs
-  · rw [supp_bot, hs]
-  · rw [supp_indiscrete hs]
-
-@[simp]
-lemma mem_indiscrete'_iff : a ∈ indiscrete' s ↔ a = s ∧ a ≠ ⊥ := by
-  simp only [indiscrete', ne_eq]
-  split_ifs with hs
+  by_cases hs : s = ⊥
   · subst s
     simp
-  · simp only [mem_indiscrete_iff, iff_self_and]
-    rintro rfl
-    exact hs
+  simp [supp, indiscrete', hs]
 
-lemma eq_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a = s := by
-  rw [mem_indiscrete'_iff] at has
-  exact has.1
+@[simp]
+lemma indiscrete'_eq_of_ne_bot (hs : s ≠ ⊥) : indiscrete' s = indiscrete s hs := by
+  ext x
+  simp [hs]
 
-lemma ne_bot_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a ≠ ⊥ := by
-  rw [mem_indiscrete'_iff] at has
-  exact has.2
+lemma eq_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a = s :=
+  has.2
+
+lemma ne_bot_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a ≠ ⊥ :=
+  has.2 ▸ has.1
 
 def bipartition (a b : α) (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) : Partition α :=
   ofIndependent (u := {a, b}) (by
