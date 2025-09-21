@@ -1,11 +1,11 @@
-import Matroid.Graph.Walk.Basic
+import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Subgraph.Union
 
 variable {α β ι ι' : Type*} {x y z u v : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {W w : WList (Set α) β}
 
-open scoped Sym2 Graph
-open WList Set Function
+open scoped Sym2
+open WList Set Function Partition Graph
 
 namespace Graph
 
@@ -37,38 +37,36 @@ namespace WList
 /-- Turn `w : WList (Set α) β` into a `Graph α β`. If the list is not well-formed
 (i.e. it contains an edge appearing twice with different ends),
 then the first occurence of the edge determines its ends in `w.toGraph`. -/
-protected def toGraph : ∀ (w : WList (Set α) β), ∅ ∉ V(w) → Graph α β
-  | nil u, h => Graph.noEdge (Partition.indiscrete u (by rintro rfl; simp at h)) β
-  | cons u e w, h => w.toGraph (by simp_all) ∪ (Graph.banana u w.first {e})
+protected def toGraph : WList (Set α) β → Graph α β
+  | nil u => Graph.noEdge (indiscrete' u) β
+  | cons u e w => w.toGraph ∪ (banana u w.first {e})
 
 @[simp]
-lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge {u} β := rfl
+lemma toGraph_nil : (WList.nil u (β := β)).toGraph = Graph.noEdge (indiscrete' u) β := rfl
 
-lemma toGraph_cons : (w.cons u e).toGraph = w.toGraph ∪ (Graph.singleEdge u w.first e) := rfl
+lemma toGraph_cons : (w.cons u e).toGraph = w.toGraph ∪ (banana u w.first {e}) := rfl
 
-lemma toGraph_concat (w : WList α β) (e u) :
-    (w.concat e u).toGraph = (Graph.singleEdge u w.last e) ∪ w.toGraph := by
+lemma toGraph_concat (w : WList (Set α) β) (e u) :
+    (w.concat e u).toGraph = (banana u w.last {e}) ∪ w.toGraph := by
   induction w with
   | nil v =>
-    refine Graph.ext (by simp [toGraph_cons, pair_comm]) fun f x y ↦ ?_
-    simp only [nil_concat, toGraph_cons, toGraph_nil, nil_first, union_isLink_iff, noEdge_isLink,
-      noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, singleEdge_isLink, true_and, false_or,
-      singleEdge_edgeSet, mem_singleton_iff, and_false, or_false, and_congr_right_iff]
-    tauto
+    simp only [concat, toGraph_cons, toGraph_nil, nil_first, banana_comm, nil_last]
+    refine Graph.vertexPartition_ext ?_ fun f x y ↦ ?_
+    · rw [union_vertexPartition, union_vertexPartition, sup_eq_right.mpr, sup_eq_left.mpr] <;> simp
+    rw [noEdge_union_eq_self.mpr (by simp), union_noEdge_eq_self.mpr (by simp)]
   | cons v f w ih =>
-    ext a x y
-    · simp only [cons_concat, toGraph_cons, ih, concat_first, union_vertexSet, singleEdge_vertexSet,
-      union_insert, union_singleton, mem_union, mem_insert_iff, mem_singleton_iff, or_true, true_or,
-      insert_eq_of_mem, first_cons]
-      tauto
-    simp only [cons_concat, toGraph_cons, ih, concat_first, union_isLink_iff, singleEdge_isLink,
-      singleEdge_edgeSet, mem_singleton_iff, union_edgeSet, singleton_union, mem_insert_iff, not_or,
-      first_cons]
-    tauto
+    apply vertexPartition_ext ?_ fun f' x y ↦ ?_
+    · simp [concat, sup_assoc, toGraph_cons, ih]
+    simp [concat, toGraph_cons, ih, Graph.union_assoc]
 
 @[simp]
-lemma toGraph_vertexSet (w : WList α β) : V(w.toGraph) = V(w) := by
-  induction w with simp_all [toGraph_cons]
+lemma toGraph_vertexSet (w : WList (Set α) β) : V(w.toGraph) = V(w) \ {∅} := by
+  induction w with
+  | nil u =>
+    ext x
+    simp +contextual [and_comm]
+  | cons u e w ih =>
+    simp_all [toGraph_cons]
 
 @[simp]
 lemma toGraph_edgeSet (w : WList α β) : E(w.toGraph) = E(w) := by
@@ -185,5 +183,60 @@ lemma IsWalk.le_of_edgeSet_subset (hw₁ : G.IsWalk w₁) (hne : w₁.Nonempty) 
   have hew₂ := hss h.edge_mem
   rw [hw₁.isLink_iff_isLink_of_mem h.edge_mem, ← hw₂.isLink_iff_isLink_of_mem hew₂] at h
   simpa using h.left_mem
+
+lemma WList.WellFormed.rotate_toGraph (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
+    (w.rotate n).toGraph = w.toGraph := by
+  refine Graph.ext (by simp [h_closed.rotate_vertexSet]) fun e x y ↦ ?_
+  rw [(hw.rotate h_closed n).toGraph_isLink, h_closed.isLink_rotate_iff, hw.toGraph_isLink]
+
+lemma IsCycle.isCycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycle C :=
+  hC.isCycle_of_le hC.isWalk.toGraph_le <| by simp
+
+lemma IsCycle.toGraph_vertexDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
+    C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
+  obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
+  refine Graph.ext (by simpa) fun g x y ↦ ?_
+  have h1 : P.IsLink g x y → x ∈ P := fun h ↦ h.left_mem
+  have h2 : P.IsLink g x y → y ∈ P := fun h ↦ h.right_mem
+  simp only [vertexDelete_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
+    concat_first, isLink_concat_iff, tail_cons, dropLast_concat,
+    hP.isWalk.wellFormed.toGraph_isLink]
+  aesop
+
+/-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCycle C) (hnt : C.Nontrivial)
+    (hx : x ∈ C) : ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph - ({x} : Set α) := by
+  wlog hxC : x = C.first generalizing C with aux
+  · obtain ⟨n, -, rfl⟩ := exists_rotate_first_eq hx
+    obtain ⟨P, hP, hP'⟩ := aux (C := C.rotate n) (hC.rotate n) (hnt.rotate n) (by simp) rfl
+    exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
+  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vertexDelete_first_eq hnt]⟩
+
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge_of_isLink (hC : G.IsCycle C)
+    (he : C.IsLink e x y) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} ∧ P.first = x ∧ P.last = y := by
+  wlog he' : C.DInc e y x with aux
+  · obtain hxy | hxy := isLink_iff_dInc.1 he.symm
+    · exact aux hC he hxy
+    obtain ⟨P, hP, hPC, rfl, rfl⟩ := aux hC he.symm hxy
+    exact ⟨P.reverse, hP.reverse, by rwa [hP.isWalk.wellFormed.reverse_toGraph], by simp⟩
+  clear he
+  wlog hxC : e = hC.nonempty.firstEdge generalizing C with aux
+  · obtain ⟨n, -, _, rfl⟩ := exists_rotate_firstEdge_eq he'.edge_mem
+    simpa [hC.isWalk.wellFormed.rotate_toGraph hC.isClosed] using
+      aux (hC.rotate n) (hC.isClosed.dInc_rotate he' n) rfl
+  refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vertexSet_tail])
+    fun f z z' ↦ ?_, ?_⟩
+  · rw [hC.tail_isPath.isWalk.wellFormed.toGraph_isLink, edgeDelete_isLink, Set.mem_singleton_iff,
+      hC.isWalk.wellFormed.toGraph_isLink, hC.nonempty.tail_isLink_iff hC.edge_nodup, ← hxC]
+  rw [tail_last, ← hC.isClosed.eq, and_comm, ← hC.toIsTrail.dInc_iff_eq_of_dInc he', hxC]
+  cases C with | _ => simp_all
+
+/-- Deleting an edge from the graph of a cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e ∈ C.edge) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} := by
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edge heC
+  obtain ⟨P, hP, hPC, -, -⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink h
+  exact ⟨P, hP, hPC⟩
 
 end Graph

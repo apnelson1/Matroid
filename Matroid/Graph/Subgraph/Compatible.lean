@@ -402,7 +402,7 @@ lemma Set.Pairwise.edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwis
 @[simp]
 lemma bouquet_dup_agree_of_mem {v : Set α} (hv : v ∈ V(G)) : (bouquet v F).Dup_agree G := by
   rw [dup_agree_iff_union_pairwiseDisjoint]
-  simp [G.nonempty_of_mem_vertexSet hv |>.ne_empty, hv, G.pairwiseDisjoint_vertexSet]
+  simp [G.nonempty_of_mem hv |>.ne_empty, hv, G.pairwiseDisjoint_vertexSet]
 
 @[simp]
 lemma banana_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
@@ -411,8 +411,7 @@ lemma banana_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
   · subst v
     simp [hu]
   rw [dup_agree_iff_union_pairwiseDisjoint, banana_vertexSet_of_disjoint
-    (G.nonempty_of_mem_vertexSet hu) (G.nonempty_of_mem_vertexSet hv)
-    (G.disjoint_of_mem_vertexSet hu hv huv), insert_union]
+    (G.nonempty_of_mem hu) (G.nonempty_of_mem hv) (G.disjoint_of_mem hu hv huv), insert_union]
   simp [hu, hv, G.pairwiseDisjoint_vertexSet]
 
 end Dup_agree

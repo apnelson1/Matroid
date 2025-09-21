@@ -1,6 +1,7 @@
 import Matroid.Graph.Degree.Basic
+import Matroid.Graph.Subgraph.Add
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v w : Set α} {e f : β} {G H : Graph α β}
 
 open Set WList
 
@@ -12,7 +13,7 @@ namespace Graph
 
 /-- An `Isolated` vertex is one that is incident with no edge. -/
 @[mk_iff]
-structure Isolated (G : Graph α β) (x : α) : Prop where
+structure Isolated (G : Graph α β) (x : Set α) : Prop where
   not_inc : ∀ ⦃e⦄, ¬ G.Inc e x
   mem : x ∈ V(G)
 
@@ -48,7 +49,7 @@ lemma eq_of_le_of_edgeSet_subset_of_isolated (hle : H ≤ G) (hE : E(G) ⊆ E(H)
 
 /-- `G.IsPendant e x` means that `e` is a nonloop edge at `x`, and is also the only edge at `x`. -/
 @[mk_iff]
-structure IsPendant (G : Graph α β) (e : β) (x : α) : Prop where
+structure IsPendant (G : Graph α β) (e : β) (x : Set α) : Prop where
   isNonloopAt : G.IsNonloopAt e x
   edge_unique : ∀ ⦃f⦄, G.Inc f x → f = e
 
@@ -87,34 +88,34 @@ lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(
   simp only [vertexDelete_edgeSet, mem_singleton_iff, mem_setOf_eq, mem_diff]
   refine ⟨fun ⟨z, y, h'⟩ ↦ ⟨h'.1.edge_mem, ?_⟩, fun ⟨hfE, hfe⟩ ↦ ?_⟩
   · rintro rfl
-    cases h.isNonloopAt.inc.dup_or_dup_of_isLink h'.1 <;> simp_all
+    cases h.isNonloopAt.inc.eq_or_eq_of_isLink h'.1 <;> simp_all
   obtain ⟨y, hyx, hy⟩ := h.isNonloopAt
   obtain ⟨z, w, hzw⟩ := exists_isLink_of_mem_edgeSet hfE
   refine ⟨z, w, hzw, fun h_eq ↦ hfe ?_, fun h_eq ↦ hfe ?_⟩
   · exact h.edge_unique ((h_eq ▸ hzw).inc_left)
   exact h.edge_unique (h_eq ▸ hzw.inc_right)
 
-lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
-    ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G-{x}) ∧ G = (G - {x}).addEdge e x y := by
-  obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
-  refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
-  · rw [h.edgeSet_delete_vertex_eq]
-    simp
-  · exact Graph.union_le (by simpa) (by simp)
-  · rw [addEdge_vertexSet, vertexDelete_vertexSet, ← union_singleton, union_assoc]
-    simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
-  rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
-    insert_eq_of_mem hexy.edge_mem]
+-- lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
+--     ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G-{x}) ∧ G = (G - {x}).addEdge e x y := by
+--   obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
+--   refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
+--   · rw [h.edgeSet_delete_vertex_eq]
+--     simp
+--   · exact Graph.union_le (by simpa) (by simp)
+--   · rw [addEdge_vertexSet, vertexDelete_vertexSet, ← union_singleton, union_assoc]
+--     simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
+--   rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
+--     insert_eq_of_mem hexy.edge_mem]
 
-lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
-    ∃ (y : α) (H : Graph α β), x ∉ V(H) ∧ y ∈ V(H) ∧ e ∉ E(H) ∧ G = H.addEdge e x y := by
-  obtain ⟨y, hyV, -, hyx, -, h_eq⟩ := h.eq_addEdge
-  refine ⟨y, _, by simp, by simp [hyV, hyx], ?_, h_eq⟩
-  rw [h.edgeSet_delete_vertex_eq]
-  simp
+-- lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
+--     ∃ (y : α) (H : Graph α β), x ∉ V(H) ∧ y ∈ V(H) ∧ e ∉ E(H) ∧ G = H.addEdge e x y := by
+--   obtain ⟨y, hyV, -, hyx, -, h_eq⟩ := h.eq_addEdge
+--   refine ⟨y, _, by simp, by simp [hyV, hyx], ?_, h_eq⟩
+--   rw [h.edgeSet_delete_vertex_eq]
+--   simp
 
 /-- A leaf is a degree-one vertex. -/
-def IsLeaf (G : Graph α β) (v : α) : Prop := ∃ e, G.IsPendant e v
+def IsLeaf (G : Graph α β) (v : Set α) : Prop := ∃ e, G.IsPendant e v
 
 lemma IsPendant.isLeaf (h : G.IsPendant e x) : G.IsLeaf x :=
   ⟨e, h⟩

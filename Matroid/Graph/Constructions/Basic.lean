@@ -232,7 +232,7 @@ lemma bouquet_not_isNonloopAt : ¬ (bouquet v F).IsNonloopAt e x := by
 lemma eq_bouquet (hvV : v ∈ V(G)) (hss : V(G).Subsingleton) :
     G = bouquet v E(G) := by
   have hrw := hss.eq_singleton_of_mem hvV
-  have hv := G.nonempty_of_mem_vertexSet hvV
+  have hv := G.nonempty_of_mem hvV
   refine Graph.ext_inc (by rwa [bouquet_vertexSet_of_nonempty hv])
     fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simp [bouquet_inc_iff hv, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
@@ -323,6 +323,10 @@ lemma banana_isLink_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjo
   · revert y
     rw [eq_iff_eq_cancel_left]
     apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
+
+@[simp]
+lemma banana_edgeSet_of_nonempty (ha : a.Nonempty) (hb : b.Nonempty) : E(banana a b F) = F := by
+  simp [ha, hb]
 
 @[simp]
 lemma banana_inc_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :

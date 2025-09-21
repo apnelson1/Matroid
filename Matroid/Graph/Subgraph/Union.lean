@@ -269,6 +269,36 @@ variable {G H H₁ H₂ : Graph α β}
 
 @[simp] lemma union_vertexPartition (G H : Graph α β) : P(G ∪ H) = P(G) ⊔ P(H) := rfl
 
+private lemma union_vertexPartition_supp : P(G ∪ H).supp = P(G).supp ∪ P(H).supp := by
+  simp
+
+lemma foo_surjOn : SurjOn P(G ∪ H).foo (V(G) ∪ V(H)) V(G ∪ H) := by
+  intro v hv
+  obtain ⟨x, hx⟩ := (G ∪ H).nonempty_of_mem hv
+  have := mem_supp_iff.mpr ⟨v, hv, hx⟩
+  simp only [sup_supp, mem_union] at this
+  obtain (hxP | hxQ) := this
+  · use P(G).partOf x, ?_
+    · apply P(G ∪ H).eq_of_mem_of_mem ?_ hv ?_ hx
+      · exact foo_mem_of_le (by simp) <| partOf_mem hxP
+      simp [foo]
+      use x, (rel_self_of_mem_supp hxP)
+      apply Relation.TransGen.single
+      simp [rel_self_of_mem_supp hxP]
+    · left
+      rw [← mem_vertexPartition_iff]
+      exact partOf_mem hxP
+  · use P(H).partOf x, ?_
+    · apply P(G ∪ H).eq_of_mem_of_mem ?_ hv ?_ hx
+      · exact foo_mem_of_le (by simp) <| partOf_mem hxQ
+      simp [foo]
+      use x, (rel_self_of_mem_supp hxQ)
+      apply Relation.TransGen.single
+      simp [rel_self_of_mem_supp hxQ]
+    · right
+      rw [← mem_vertexPartition_iff]
+      exact partOf_mem hxQ
+
 @[simp] lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 lemma union_eq_sUnion (G H : Graph α β) : G ∪ H = Graph.sUnion {G, H ＼ E(G)} := by
@@ -287,10 +317,10 @@ lemma union_isLink (hG' : G.Dup_agree H) :
   simp
 
 lemma union_isLink_not_agree : (G ∪ H).IsLink e x y ↔ ∃ u v,
-    (∃ G_1 ∈ ({G, H ＼ E(G)} : Set _), G_1.IsLink e u v) ∧
-    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) u = x ∧
-    Partition.foo (⨆ G_1 ∈ ({G, H ＼ E(G)} : Set _), P(G_1)) v = y := by
+    (G.IsLink e u v ∨ (H.IsLink e u v ∧ e ∉ E(G))) ∧
+    foo P(G ∪ H) u = x ∧ foo P(G ∪ H) v = y := by
   rw [union_eq_sUnion, sUnion_isLink_not_agree pairwise_compatible_edgeDelete]
+  simp
 
 lemma union_inc_iff (hG' : G.Dup_agree H) :
     (G ∪ H).Inc e x ↔ G.Inc e x ∨ (H.Inc e x ∧ e ∉ E(G)) := by
@@ -305,8 +335,85 @@ lemma union_isNonloopAt_iff (hG' : G.Dup_agree H) :
   simp only [IsNonloopAt, ne_eq, union_isLink hG']
   aesop
 
+private lemma subset_union_supp_of_mem_left (h : u ∈ V(G)) : u ⊆ P(G ∪ H).supp :=
+  subset_trans (subset_of_mem <| mem_vertexPartition_iff.mpr h) (supp_le_of_le le_sup_left)
+
+private lemma subset_union_supp_of_mem_right (h : u ∈ V(H)) : u ⊆ P(G ∪ H).supp :=
+  subset_trans (subset_of_mem <| mem_vertexPartition_iff.mpr h) (supp_le_of_le le_sup_right)
+
+lemma union_union_isLink_not_agree {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ G₂ ∪ G₃).IsLink e x y ↔
+    ∃ u v, (G₁.IsLink e u v ∨ (G₂.IsLink e u v ∧ e ∉ E(G₁)) ∨
+    (G₃.IsLink e u v ∧ e ∉ E(G₁) ∧ e ∉ E(G₂))) ∧
+    foo P(G₁ ∪ G₂ ∪ G₃) u = x ∧ foo P(G₁ ∪ G₂ ∪ G₃) v = y := by
+  simp only [union_isLink_not_agree, union_vertexPartition, union_edgeSet, mem_union, not_or]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨u, v, (⟨a, b, h, rfl, rfl⟩ | ⟨h₃uv, he₁, he₂⟩), hx, hy⟩ := h
+    · rw [foo_foo_eq_foo le_sup_left] at hx hy; rotate_left
+      · exact h.elim (subset_union_supp_of_mem_left ·.right_mem)
+          (subset_union_supp_of_mem_right ·.1.right_mem)
+      · exact h.elim (subset_union_supp_of_mem_left ·.left_mem)
+          (subset_union_supp_of_mem_right ·.1.left_mem)
+      obtain (h₁ | ⟨h₂, he₁⟩) := h <;>
+      · use a, b
+        simp_all
+    · use u, v
+      simp_all
+  · obtain ⟨u, v, (h₁ | ⟨h₂, he₁⟩ | ⟨h₃uv, he₁, he₂⟩), hx, hy⟩ := h
+    · use (P(G₁) ⊔ P(G₂)).foo u, (P(G₁) ⊔ P(G₂)).foo v, Or.inl (by use u, v, Or.inl h₁), ?_, ?_ <;>
+      rwa [foo_foo_eq_foo le_sup_left]
+      exact subset_union_supp_of_mem_left h₁.left_mem
+      exact subset_union_supp_of_mem_left h₁.right_mem
+    · use (P(G₁) ⊔ P(G₂)).foo u, (P(G₁) ⊔ P(G₂)).foo v, Or.inl (by use u, v, Or.inr ⟨h₂, he₁⟩), ?_,
+        ?_ <;> rwa [foo_foo_eq_foo le_sup_left]
+      exact subset_union_supp_of_mem_right h₂.left_mem
+      exact subset_union_supp_of_mem_right h₂.right_mem
+    · use u, v, Or.inr ⟨h₃uv, he₁, he₂⟩, hx, hy
+
+lemma union_union_isLink_not_agree' {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ (G₂ ∪ G₃)).IsLink e x y ↔
+    ∃ u v, (G₁.IsLink e u v ∨ (G₂.IsLink e u v ∧ e ∉ E(G₁)) ∨
+    (G₃.IsLink e u v ∧ e ∉ E(G₁) ∧ e ∉ E(G₂))) ∧
+    foo P(G₁ ∪ G₂ ∪ G₃) u = x ∧ foo P(G₁ ∪ G₂ ∪ G₃) v = y := by
+  simp only [union_isLink_not_agree, union_vertexPartition]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨u, v, (h₁ | ⟨⟨a, b, h, rfl, rfl⟩, he₁⟩), hx, hy⟩ := h
+    · use u, v
+      simp_all [sup_assoc]
+    · rw [foo_foo_eq_foo le_sup_right] at hx hy; rotate_left
+      · exact h.elim (subset_union_supp_of_mem_left ·.right_mem)
+          (subset_union_supp_of_mem_right ·.1.right_mem)
+      · exact h.elim (subset_union_supp_of_mem_left ·.left_mem)
+          (subset_union_supp_of_mem_right ·.1.left_mem)
+      rw [← sup_assoc] at hx hy
+      obtain (h₂ | ⟨h₃, he₂⟩) := h
+      · exact ⟨a, b, Or.inr (Or.inl ⟨h₂, he₁⟩), hx, hy⟩
+      · exact ⟨a, b, Or.inr (Or.inr ⟨h₃, he₁, he₂⟩), hx, hy⟩
+  · obtain ⟨u, v, (h₁ | ⟨h₂, he₁⟩ | ⟨h₃, he₁, he₂⟩), hx, hy⟩ := h
+    · use u, v
+      simp_all [sup_assoc]
+    · use (P(G₂) ⊔ P(G₃)).foo u, (P(G₂) ⊔ P(G₃)).foo v, Or.inr ⟨(by use u, v, (by simp_all)), he₁⟩,
+        ?_, ?_ <;> rwa [foo_foo_eq_foo le_sup_right, ← sup_assoc]
+      exact subset_union_supp_of_mem_left h₂.left_mem
+      exact subset_union_supp_of_mem_left h₂.right_mem
+    · use (P(G₂) ⊔ P(G₃)).foo u, (P(G₂) ⊔ P(G₃)).foo v, Or.inr ⟨(by use u, v, (by simp_all)), he₁⟩,
+        ?_, ?_ <;> rwa [foo_foo_eq_foo le_sup_right, ← sup_assoc]
+      exact subset_union_supp_of_mem_right h₃.left_mem
+      exact subset_union_supp_of_mem_right h₃.right_mem
+
+protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪ G₃ = G₁ ∪ (G₂ ∪ G₃) := by
+  refine Graph.ext ?_ fun e x y ↦ ?_
+  · simp_rw [← vertexSet_eq_parts, union_vertexPartition, sup_assoc]
+  rw [union_union_isLink_not_agree, union_union_isLink_not_agree']
+
 lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H ＼ E(G)) := by
   simp [union_eq_sUnion]
+
+@[simp]
+lemma left_vertexPartition_le_union : P(G) ≤ P(G ∪ H) := by
+  simp [union_vertexPartition]
+
+@[simp]
+lemma right_vertexPartition_le_union : P(H) ≤ P(G ∪ H) := by
+  simp [union_vertexPartition]
 
 @[simp]
 protected lemma left_le_union (hG' : G.Dup_agree H) : G ≤ G ∪ H := by
@@ -484,9 +591,34 @@ lemma induce_union (G : Graph α β) (hPQ : P.Agree Q) (hX : ∀ x ∈ P, ∀ y 
 --   unfold Graph.sUnion
 --   exact Graph.iUnion_comp_eq_of_surj (f := Set.rangeFactorization f) _ surjective_onto_range
 
--- protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪ G₃ = G₁ ∪ (G₂ ∪ G₃) := by
---   refine Graph.ext ?_ fun e x y ↦ ?_
---   · simp_rw [← vertexSet_eq_parts, union_vertexPartition, sup_assoc]
+@[simp]
+lemma noEdge_union_eq_self : Graph.noEdge P β ∪ G = G ↔ P ≤ P(G) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [← h]
+    convert left_vertexPartition_le_union
+    rfl
+  refine vertexPartition_ext (by simpa) fun e x y ↦ ?_
+  simp only [union_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
+    not_isLink_of_notMem_edgeSet, and_true, false_or, union_vertexPartition, noEdge_vertexPartition,
+    h, sup_of_le_right]
+  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_of_mem h.left_mem_vertexPartition,
+    foo_eq_of_mem h.right_mem_vertexPartition⟩⟩
+  rintro ⟨u, v, h, rfl, rfl⟩
+  rwa [foo_eq_of_mem h.left_mem_vertexPartition, foo_eq_of_mem h.right_mem_vertexPartition]
 
+@[simp]
+lemma union_noEdge_eq_self : G ∪ Graph.noEdge P β = G ↔ P ≤ P(G) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [← h]
+    convert right_vertexPartition_le_union
+    rfl
+  refine vertexPartition_ext (by simpa) fun e x y ↦ ?_
+  simp only [union_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
+    not_isLink_of_notMem_edgeSet, false_and, or_false, union_vertexPartition,
+    noEdge_vertexPartition, h, sup_of_le_left]
+  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_of_mem h.left_mem_vertexPartition,
+    foo_eq_of_mem h.right_mem_vertexPartition⟩⟩
+  rintro ⟨u, v, h, rfl, rfl⟩
+  rwa [foo_eq_of_mem h.left_mem_vertexPartition, foo_eq_of_mem h.right_mem_vertexPartition]
 
 end Graph

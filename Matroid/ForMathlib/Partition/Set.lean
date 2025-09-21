@@ -17,7 +17,7 @@ lemma nonempty_of_mem (ht : t ∈ P) : t.Nonempty :=
   notMem_singleton_empty.1 <| P.ne_bot_of_mem ht
 
 lemma subset_of_mem (ht : t ∈ P) : t ⊆ P.supp :=
-  P.le_of_mem ht
+  P.le_supp_of_mem ht
 
 lemma mem_supp_iff : x ∈ P.supp ↔ ∃ t ∈ P, x ∈ t := by
   refine ⟨fun hx ↦ ?_, fun ⟨t, htP, hxt⟩ ↦ subset_of_mem htP hxt⟩
@@ -683,7 +683,7 @@ end Discrete
 
 section foo
 
-variable {P Q : Partition (Set α)} {S T : Set α}
+variable {P Q R : Partition (Set α)} {S T : Set α}
 
 def foo (P : Partition (Set α)) (S : Set α) : Set α :=
   ⋃₀ (P.partOf '' S)
@@ -763,6 +763,23 @@ lemma foo_eq_of_le (hPQ : P ⊆ Q) (hS : S ∈ P) : foo Q S = S :=
   Q.eq_of_mem_of_mem (foo_mem_of_le (le_of_subset hPQ) hS) (hPQ hS)
     (self_subset_foo_iff.mpr ((P.subset_of_mem hS).trans <| supp_le_of_subset hPQ)
       (P.nonempty_of_mem hS).some_mem) (P.nonempty_of_mem hS).some_mem
+
+@[simp]
+lemma foo_eq_of_mem (hS : S ∈ P) : foo P S = S :=
+  foo_eq_of_le (subset_refl P) hS
+
+lemma foo_subset_foo_foo (hPQ : P ≤ Q) : foo Q (foo P S) ⊆ foo Q S := by
+  intro a
+  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop, iUnion_exists,
+    biUnion_and', forall_exists_index, and_imp]
+  exact fun b hbS c hPcb hQac ↦ ⟨b, hbS, hQac.trans (rel_le_of_le hPQ _ _ hPcb)⟩
+
+lemma foo_foo_eq_foo (hPQ : P ≤ Q) (hS : S ⊆ P.supp) : foo Q (foo P S) = foo Q S := by
+  refine subset_antisymm (foo_subset_foo_foo hPQ) fun a ↦ ?_
+  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop, iUnion_exists,
+    biUnion_and', forall_exists_index, and_imp]
+  intro b hbS hQab
+  use b, hbS, b, rel_self_of_mem_supp (hS hbS)
 
 end foo
 

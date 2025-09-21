@@ -2,7 +2,7 @@ import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
 import Matroid.Graph.Constructions.Basic
 
-variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
+variable {α β : Type*} {x y z a b u v w : Set α} {e f : β} {G H : Graph α β} {P C : WList (Set α) β}
 
 open Set WList
 
@@ -11,11 +11,13 @@ namespace Graph
 /-! ### Constructions -/
 
 @[simp]
-lemma noEdge_eDegree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).eDegree x = 0 := by
+lemma noEdge_eDegree (V : Partition (Set α)) (β : Type*) (x : Set α) :
+    (Graph.noEdge V β).eDegree x = 0 := by
   simp [eDegree]
 
 @[simp]
-lemma noEdge_degree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).degree x = 0 := by
+lemma noEdge_degree (V : Partition (Set α)) (β : Type*) (x : Set α) :
+    (Graph.noEdge V β).degree x = 0 := by
   simp [degree]
 
 lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) :

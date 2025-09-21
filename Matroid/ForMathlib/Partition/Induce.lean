@@ -46,7 +46,7 @@ lemma induce_eq_self_iff : P.induce a = P ↔ P.supp ≤ a := by
   refine ⟨fun hP ↦ by rw [← hP]; simp, fun h ↦ ?_⟩
   ext x
   rw [mem_induce_iff]
-  have : ∀ t ∈ P, a ⊓ t = t := fun t htP ↦ inf_eq_right.mpr <| le_trans (P.le_of_mem htP) h
+  have : ∀ t ∈ P, a ⊓ t = t := fun t htP ↦ inf_eq_right.mpr <| le_trans (P.le_supp_of_mem htP) h
   exact ⟨fun ⟨hne, t, htP, heq⟩ ↦ (this t htP).symm.trans heq ▸ htP,
     fun hx ↦ ⟨P.ne_bot_of_mem hx, x, hx, this x hx⟩⟩
 
@@ -63,7 +63,7 @@ lemma induce_le_induce_right (h : a ⊓ P.supp ≤ b ⊓ P.supp) : P.induce a �
   rintro x hxa
   simp_rw [mem_induce_iff] at hxa ⊢
   obtain ⟨hne, x, hxP, rfl⟩ := hxa
-  have hsu : a ⊓ x ≤ b ⊓ x := le_inf (le_trans (inf_le_inf_left a <| P.le_of_mem hxP) <|
+  have hsu : a ⊓ x ≤ b ⊓ x := le_inf (le_trans (inf_le_inf_left a <| P.le_supp_of_mem hxP) <|
     h.trans inf_le_left) inf_le_right
   use b ⊓ x, ?_
   use ne_bot_of_le_ne_bot hne hsu, x
@@ -113,11 +113,11 @@ lemma isInducedSubpartition.supp_le (h : P ≤ip Q) : P.supp ≤ Q.supp :=
 lemma isInducedSubpartition_of_subset (hPQ : P ⊆ Q) : P ≤ip Q := by
   ext S
   rw [mem_induce_iff]
-  refine ⟨?_, fun hS ↦ ⟨P.ne_bot_of_mem hS, S, hPQ hS, inf_eq_right.mpr <| P.le_of_mem hS⟩⟩
+  refine ⟨?_, fun hS ↦ ⟨P.ne_bot_of_mem hS, S, hPQ hS, inf_eq_right.mpr <| P.le_supp_of_mem hS⟩⟩
   rintro ⟨hne, t, htQ, rfl⟩
   rw [ne_eq, ← disjoint_iff] at hne
   have htP := mem_of_subset_of_not_disjoint hPQ htQ hne
-  rwa [inf_eq_right.mpr (P.le_of_mem htP)]
+  rwa [inf_eq_right.mpr (P.le_supp_of_mem htP)]
 
 lemma isInducedSubpartition.eq_of_supp_le (hPQ : P ≤ip Q) (hQP : Q.supp ≤ P.supp) : P = Q := by
   rwa [← hPQ, induce_eq_self_iff]
@@ -274,13 +274,13 @@ lemma cover_supp : (P.cover a).supp = sSup {s | s ∈ P.parts ∧ ¬ Disjoint a 
   simp [cover, supp]
 
 lemma cover_supp_le : (P.cover a).supp ≤ P.supp := by
-  simp +contextual [cover, le_of_mem]
+  simp +contextual [cover, le_supp_of_mem]
 
 lemma cover_supp_eq_self : P.cover P.supp = P := by
   ext x
   simp only [cover, mem_parts, mem_restrict_iff, mem_setOf_eq, and_iff_left_iff_imp]
   rintro hxP hdisj
-  obtain rfl := hdisj.symm.eq_bot_of_le (le_of_mem hxP)
+  obtain rfl := hdisj.symm.eq_bot_of_le (le_supp_of_mem hxP)
   exact P.bot_notMem hxP
 
 lemma cover_subset (a : α) : P.cover a ⊆ P := restrict_subset _
@@ -316,7 +316,7 @@ lemma avoid_supp : (P.avoid a).supp = sSup {s | s ∈ P.parts ∧ Disjoint a s} 
   simp [avoid, supp]
 
 lemma avoid_supp_le : (P.avoid a).supp ≤ P.supp := by
-  simp +contextual [avoid, le_of_mem]
+  simp +contextual [avoid, le_supp_of_mem]
 
 lemma avoid_supp_eq_self : P.avoid ⊥ = P := by
   ext x
@@ -364,7 +364,7 @@ lemma Agree.eq_of_not_disjoint (h : P.Agree Q) (ha : a ∈ P) (hb : b ∈ Q) (hn
     a = b := by
   refine P.eq_of_not_disjoint ha (h.symm.mem_of_mem hb ?_) hndisj
   contrapose! hndisj
-  exact hndisj.mono_left <| P.le_of_mem ha
+  exact hndisj.mono_left <| P.le_supp_of_mem ha
 
 lemma Agree.mem_or_disjoint (h : P.Agree Q) (ha : a ∈ P) : a ∈ Q ∨ Disjoint Q.supp a := by
   obtain ⟨S, hPS, hQS⟩ := h
@@ -474,7 +474,7 @@ variable [CompleteDistribLattice α] {P Q R : Partition α} {Qs : ∀ a ∈ P, P
     obtain ⟨a, haP, hba : b ∈ Qs a haP⟩ := hb
     obtain hasupp := hQs a haP
     have hdj1 := (Qs a haP).indep hba
-    have hdj2 := (P.indep haP).mono_left <| ((Qs a haP).le_of_mem hba).trans hasupp
+    have hdj2 := (P.indep haP).mono_left <| ((Qs a haP).le_supp_of_mem hba).trans hasupp
     refine (hdj1.sup_right hdj2).mono_right ?_
     simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, sSup_le_iff, mem_diff,
       mem_singleton_iff, and_imp, forall_exists_index]
@@ -483,7 +483,7 @@ variable [CompleteDistribLattice α] {P Q R : Partition α} {Qs : ∀ a ∈ P, P
     obtain (rfl | hne) := eq_or_ne x a
     · exact (le_sSup_of_le (show t' ∈ _ \ {b} from ⟨ht', hne⟩) rfl.le).trans le_sup_left
     exact le_trans (le_sSup_of_le (mem_diff_of_mem hx hne) <|
-      (Qs x hx).le_of_mem ht' |>.trans hxsupp) le_sup_right
+      (Qs x hx).le_supp_of_mem ht' |>.trans hxsupp) le_sup_right
   bot_notMem := by
     simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists]
     exact fun x hx ↦ (Qs x hx).bot_notMem
@@ -517,7 +517,7 @@ lemma le_bind_iff (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp ≤ a) :
     obtain ⟨e, heP, hdQse⟩ := (by simpa using hd); clear hd
     have hne : ¬Disjoint a e := by
       contrapose! hcnea
-      have hce := hcd.trans <| (le_of_mem hdQse).trans <| hQs e heP
+      have hce := hcd.trans <| (le_supp_of_mem hdQse).trans <| hQs e heP
       exact disjoint_iff.mp (hcnea.mono_right hce)
     obtain rfl := (P.eq_of_not_disjoint haP heP hne)
     exact ⟨d, hdQse, inf_le_of_right_le hcd⟩
@@ -699,7 +699,7 @@ lemma infer_subset_induce : infer P Q ⊆ P.induce Q.supp := by
   rintro a ⟨haP, t, htQ, hta⟩
   simp only [induce_parts, mem_diff, mem_image, mem_parts, mem_singleton_iff, P.ne_bot_of_mem haP,
     not_false_eq_true, and_true]
-  exact ⟨a, haP, inf_eq_right.mpr <| le_trans hta <| le_of_mem htQ⟩
+  exact ⟨a, haP, inf_eq_right.mpr <| le_trans hta <| le_supp_of_mem htQ⟩
 
 @[simp]
 lemma inter_subset_infer : P ∩ Q ⊆ infer P Q := by

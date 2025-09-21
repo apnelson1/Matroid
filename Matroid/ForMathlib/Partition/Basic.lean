@@ -183,7 +183,7 @@ lemma iSup_eq (P : Partition α) : ⨆ x ∈ P, x = P.supp := by
   simp_rw [← P.sSup_eq, sSup_eq_iSup]
   rfl
 
-lemma le_of_mem (hx : x ∈ P) : x ≤ P.supp :=
+lemma le_supp_of_mem (hx : x ∈ P) : x ≤ P.supp :=
   (le_sSup hx).trans_eq P.sSup_eq
 
 lemma parts_nonempty (hs : P.supp ≠ ⊥) : (P : Set α).Nonempty :=
@@ -429,7 +429,7 @@ lemma exists_le_of_mem_le {x : α} {P Q : Partition α} (h : P ≤ Q) (hx : x �
   ∃ y ∈ Q, x ≤ y := h x hx
 
 lemma le_of_supp_le_part (ha : a ∈ P) (hQa : Q.supp ≤ a) : Q ≤ P :=
-  fun _ hx ↦ ⟨a, ha, (Q.le_of_mem hx).trans hQa⟩
+  fun _ hx ↦ ⟨a, ha, (Q.le_supp_of_mem hx).trans hQa⟩
 
 instance : OrderTop (Partition α) where
   top := ofIndependent' (sSupIndep_singleton ⊤)

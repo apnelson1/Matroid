@@ -1,4 +1,4 @@
-import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Subgraph.Add
 import Matroid.Graph.Subgraph.Inter
 
 variable {α β ι ι' : Type*} {x y z u v w : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}

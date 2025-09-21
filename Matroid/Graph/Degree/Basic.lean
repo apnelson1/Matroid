@@ -14,7 +14,7 @@ import Matroid.ForMathlib.Topology.ENat
 
 open Set
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v w : Set α} {e f : β} {G H : Graph α β}
 
 
 namespace Graph
@@ -27,7 +27,7 @@ lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 :=
   simp [endSet_eq_of_notMem_edgeSet heE]
 
 @[simp]
-lemma subsingleton_setOf_isLink (G : Graph α β) (e : β) (x : α) :
+lemma subsingleton_setOf_isLink (G : Graph α β) (e : β) (x : Set α) :
     {y | G.IsLink e x y}.Subsingleton := by
   simp only [Set.Subsingleton, mem_setOf_eq]
   exact fun y hy z hz ↦ hy.right_unique hz
@@ -44,7 +44,7 @@ which is natural for the handshake theorem and linear algebra on graphs.
 
 The definition is contrivedly written in terms of `ncard` so it
 does not require any explicit decidability assumptions. -/
-noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
+noncomputable def incFun (G : Graph α β) (e : β) : Set α →₀ ℕ where
   support := (G.endSet_finite e).toFinset
   toFun x := {y | G.IsLink e x y}.ncard + ({y | G.IsLink e x y} ∩ {x}).ncard
   mem_support_toFun x := by
@@ -53,7 +53,7 @@ noncomputable def incFun (G : Graph α β) (e : β) : α →₀ ℕ where
       exact hy.inc_left
     simp [hx, isLink_iff_inc]
 
-lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
+lemma IsLink.incFun_support_eq [DecidableEq (Set α)] (h : G.IsLink e x y) :
     (G.incFun e).support = {x,y} := by
   simp [incFun, h.endSet_eq]
 
@@ -71,7 +71,7 @@ lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
 lemma incFun_eq_zero_of_notMem (he : e ∉ E(G)) : G.incFun e = 0 := by
   simp [DFunLike.ext_iff, incFun, not_isLink_of_notMem_edgeSet he]
 
-lemma incFun_le_two (G : Graph α β) (e : β) (x : α) : G.incFun e x ≤ 2 := by
+lemma incFun_le_two (G : Graph α β) (e : β) (x : Set α) : G.incFun e x ≤ 2 := by
   obtain ⟨y, hy⟩ | hx := em <| G.Inc e x
   · suffices 1 + _ ≤ 2 by simpa [incFun, hy.isLink_iff_eq]
     have := ncard_singleton_inter y {x}
@@ -98,7 +98,7 @@ lemma incFun_eq_two_iff : G.incFun e x = 2 ↔ G.IsLoopAt e x := by
     obtain rfl | hne := eq_or_ne y x
     · simp
     simp [(show Disjoint {y} {x} by simpa).inter_eq, hne.symm]
-  simp [incFun, mt IsLink.inc_left hex, hex, mt IsLoopAt.inc hex]
+  simp [incFun, mt IsLink.inc_left hex, mt IsLoopAt.inc hex]
 
 lemma IsLoopAt.incFun_eq_two (h : G.IsLoopAt e x) : G.incFun e x = 2 :=
   incFun_eq_two_iff.2 h
@@ -126,7 +126,7 @@ lemma sum_incFun_eq_two (he : e ∈ E(G)) : (G.incFun e).sum (fun _ x ↦ x) = 2
   classical
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet he
   obtain rfl | hne := eq_or_ne x y
-  · simp [Finsupp.sum, hxy.incFun_support_eq, hxy.isLink_iff_eq, show G.IsLoopAt e x from hxy]
+  · simp [Finsupp.sum, hxy.incFun_support_eq, show G.IsLoopAt e x from hxy]
   simp only [Finsupp.sum, hxy.incFun_support_eq, Finset.sum_pair hne]
   rw [incFun_eq_one_iff.2 ⟨x, hne, hxy.symm⟩, incFun_eq_one_iff.2 ⟨y, hne.symm, hxy⟩]
 
@@ -140,25 +140,27 @@ lemma incFun_vertex_eq_zero_iff : G.incFun e x = 0 ↔ ¬ G.Inc e x := by
 /-! ### Vertex Degrees -/
 
 /-- The degree of a vertex as a term in `ℕ∞`. -/
-noncomputable def eDegree (G : Graph α β) (v : α) : ℕ∞ := ∑' e, G.incFun e v
+noncomputable def eDegree (G : Graph α β) (v : Set α) : ℕ∞ := ∑' e, G.incFun e v
 
 /-- The degree of a vertex as a term in `ℕ` (with value zero if the degree is infinite). -/
-noncomputable def degree (G : Graph α β) (v : α) : ℕ := (G.eDegree v).toNat
+noncomputable def degree (G : Graph α β) (v : Set α) : ℕ := (G.eDegree v).toNat
 
 lemma eDegree_eq_tsum_mem : G.eDegree x = ∑' e : {e | G.Inc e x}, (G.incFun e x : ℕ∞) :=
   Eq.symm <| tsum_subtype_eq_of_support_subset (f := fun e ↦ (G.incFun e x : ℕ∞)) <| by simp
 
-lemma eDegree_le_two_mul_encard_setOf_inc (G : Graph α β) (v : α) :
+lemma eDegree_le_two_mul_encard_setOf_inc (G : Graph α β) (v : Set α) :
     G.eDegree v ≤ 2 * {e | G.Inc e v}.encard := by
   rw [eDegree_eq_tsum_mem, ← ENat.tsum_one, ENat.mul_tsum]
   exact ENat.tsum_le_tsum <| by simp [Pi.le_def, G.incFun_le_two]
 
-lemma eDegree_le_two_mul_card_edgeSet (G : Graph α β) (v : α) : G.eDegree v ≤ 2 * E(G).encard :=
-  (G.eDegree_le_two_mul_encard_setOf_inc v).trans <| mul_left_mono <|
-    encard_le_encard fun _ he ↦ he.edge_mem
+lemma eDegree_le_two_mul_card_edgeSet (G : Graph α β) (v : Set α) :
+    G.eDegree v ≤ 2 * E(G).encard := by
+  refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans ?_
+  have : {e | G.Inc e v}.encard ≤ E(G).encard := encard_le_encard fun _ he ↦ he.edge_mem
+  simpa
 
 @[simp]
-lemma natCast_degree_eq (G : Graph α β) [G.LocallyFinite] (v : α) :
+lemma natCast_degree_eq (G : Graph α β) [G.LocallyFinite] (v : Set α) :
     (G.degree v : ℕ∞) = G.eDegree v := by
   rw [degree, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
   refine (G.eDegree_le_two_mul_encard_setOf_inc v).trans_lt ?_
@@ -192,13 +194,13 @@ lemma eDegree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.eDegree v = 0 := by
 lemma degree_eq_zero_of_notMem (hv : v ∉ V(G)) : G.degree v = 0 := by
   simp [degree, eDegree_eq_zero_of_notMem hv]
 
-lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : α) :
+lemma degree_eq_fintype_sum [Fintype β] (G : Graph α β) (v : Set α) :
     G.degree v = ∑ e, G.incFun e v := by
   rw [degree, eDegree, tsum_eq_sum (s := Finset.univ) (by simp), ← Nat.cast_inj (R := ℕ∞),
     Nat.cast_sum, ENat.coe_toNat]
   exact WithTop.sum_ne_top.2 fun i _ ↦ WithTop.coe_ne_top
 
-lemma degree_eq_finsum (G : Graph α β) (v : α) : G.degree v = ∑ᶠ e, G.incFun e v := by
+lemma degree_eq_finsum (G : Graph α β) (v : Set α) : G.degree v = ∑ᶠ e, G.incFun e v := by
   obtain hfin | hinf := {e | G.Inc e v}.finite_or_infinite
   · rw [degree, eDegree, tsum_eq_sum (s := hfin.toFinset) (by simp), ← Nat.cast_inj (R := ℕ∞),
       ENat.coe_toNat, finsum_eq_sum_of_support_subset (s := hfin.toFinset), Nat.cast_sum]
@@ -288,7 +290,7 @@ lemma handshake (G : Graph α β) [G.Finite] : ∑ᶠ v, G.degree v = 2 * E(G).n
   rw [univ_inter, eq_comm, inter_eq_right]
   exact G.support_degree_subset
 
-lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
+lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : Set α) : G.eDegree x =
     2 * {e | G.IsLoopAt e x}.encard + {e | G.IsNonloopAt e x}.encard := by
   have hrw : {e | G.Inc e x} = {e | G.IsLoopAt e x} ∪ {e | G.IsNonloopAt e x} := by
     simp +contextual [iff_def, Set.ext_iff, Inc.isLoopAt_or_isNonloopAt, or_imp,
@@ -306,27 +308,27 @@ lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
     fun ⟨e, he⟩ ↦ by simp [he.incFun_eq_one]
   simp_rw [hrw2, hrw1, ENat.tsum_subtype_const, one_mul]
 
-lemma encard_setOf_inc_le_eDegree (G : Graph α β) (x : α) :
+lemma encard_setOf_inc_le_eDegree (G : Graph α β) (x : Set α) :
     {e | G.Inc e x}.encard ≤ G.eDegree x := by
   rw [← ENat.tsum_one, eDegree_eq_tsum_mem]
   exact ENat.tsum_le_tsum fun ⟨e, (he : G.Inc e x)⟩ ↦ by simpa using he.one_le_incFun
 
-lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
+lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : Set α) :
     G.degree x = 2 * {e | G.IsLoopAt e x}.ncard + {e | G.IsNonloopAt e x}.ncard := by
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
   simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
-lemma eDegree_eq_encard_inc [G.Loopless] : G.eDegree x = {e | G.Inc e x}.encard := by
-  simp [eDegree_eq_encard_add_encard, not_isLoopAt, isNonloopAt_iff_inc_not_isLoopAt]
+-- lemma eDegree_eq_encard_inc [G.Loopless] : G.eDegree x = {e | G.Inc e x}.encard := by
+--   simp [eDegree_eq_encard_add_encard, not_isLoopAt, isNonloopAt_iff_inc_not_isLoopAt]
 
-lemma degree_eq_ncard_inc [G.Loopless] : G.degree x = {e | G.Inc e x}.ncard := by
-  simp [degree, eDegree_eq_encard_inc, ncard]
+-- lemma degree_eq_ncard_inc [G.Loopless] : G.degree x = {e | G.Inc e x}.ncard := by
+--   simp [degree, eDegree_eq_encard_inc, ncard]
 
-lemma eDegree_eq_encard_adj [G.Simple] : G.eDegree x = {y | G.Adj x y}.encard := by
-  simp only [encard, coe_setOf, ← ENat.card_congr (G.incAdjEquiv x), eDegree_eq_encard_inc]
+-- lemma eDegree_eq_encard_adj [G.Simple] : G.eDegree x = {y | G.Adj x y}.encard := by
+--   simp only [encard, coe_setOf, ← ENat.card_congr (G.incAdjEquiv x), eDegree_eq_encard_inc]
 
-lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
-  rw [degree, eDegree_eq_encard_adj, ncard]
+-- lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
+--   rw [degree, eDegree_eq_encard_adj, ncard]
 
 /-! ### Subgraphs -/
 
@@ -340,15 +342,15 @@ lemma incFun_eq_of_le (hle : H ≤ G) (he : e ∈ E(H)) : H.incFun e x = G.incFu
   obtain ⟨y, hey⟩ := hex
   exact (hey.of_le_of_mem hle he).inc_left
 
-lemma incFun_mono (hle : H ≤ G) (e : β) (x : α) : H.incFun e x ≤ G.incFun e x := by
+lemma incFun_mono (hle : H ≤ G) (e : β) (x : Set α) : H.incFun e x ≤ G.incFun e x := by
   by_cases he : e ∈ E(H)
   · rw [incFun_eq_of_le hle he]
   simp [incFun_eq_zero_of_notMem he]
 
-lemma eDegree_mono (hle : H ≤ G) (x : α) : H.eDegree x ≤ G.eDegree x :=
+lemma eDegree_mono (hle : H ≤ G) (x : Set α) : H.eDegree x ≤ G.eDegree x :=
   ENat.tsum_le_tsum fun e ↦ by simp [incFun_mono hle]
 
-lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : α) : H.degree x ≤ G.degree x := by
+lemma degree_mono [hG : G.LocallyFinite] (hle : H ≤ G) (x : Set α) : H.degree x ≤ G.degree x := by
   have := hG.mono hle
   rw [← Nat.cast_le (α := ℕ∞), natCast_degree_eq, natCast_degree_eq]
   exact eDegree_mono hle x
