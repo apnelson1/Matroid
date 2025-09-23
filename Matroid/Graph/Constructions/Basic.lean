@@ -1,5 +1,5 @@
 import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Nodup
+import Matroid.Graph.Minor.Repartition
 import Matroid.ForMathlib.Partition.Lattice
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
@@ -80,8 +80,9 @@ protected def noEdge (P : Partition (Set α)) (β : Type*) : Graph α β where
   edge_mem_iff_exists_isLink := by simp
   left_mem_of_isLink := by simp
 
-lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ⊥ β ∨ V(G) ≠ ⊥ := by
-  refine (em (V(G) = ⊥)).elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) Or.inr
+lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ⊥ β ∨ V(G).Nonempty := by
+  refine (em (V(G) = ∅)).elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) (Or.inr ∘
+    nonempty_iff_ne_empty.mpr)
   simp only [noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet,
     iff_false]
   exact fun h ↦ by simpa [he] using h.left_mem
@@ -153,51 +154,6 @@ lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
 @[simp]
 lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ :=
   nonempty_iff_ne_empty.trans <| not_iff_not.mpr vertexSet_eq_empty_iff
-
--- Just use banana with singleton edge set?
--- /-- A graph with a single edge `e` from `u` to `v` -/
--- @[simps]
--- protected def singleEdge (e : β) (u v : Set α) (hu : u ≠ ∅) (hv : v ≠ ∅) (huv : Disjoint u v) :
---     Graph α β where
---   vertexPartition := Partition.bipartition u v hu hv huv
---   edgeSet := {e}
---   IsLink e' x y := e' = e ∧ ((x = u ∧ y = v) ∨ (x = v ∧ y = u))
---   isLink_symm := by tauto
---   eq_or_eq_of_isLink_of_isLink e_2 x_1 y_1 v_2 w_1 := by
---     rintro ⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩ ⟨-, _⟩ <;>
---     tauto
---   edge_mem_iff_exists_isLink := by tauto
---   left_mem_of_isLink e x y := by
---     rintro ⟨rfl, (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)⟩ <;> rw [mem_parts, mem_bipartition_iff] <;> simp
-
--- lemma singleEdge_comm (e : β) (huv : Disjoint u v) (hu : u ≠ ∅) (hv : v ≠ ∅) :
---     Graph.singleEdge e u v hu hv huv = Graph.singleEdge e v u hv hu huv.symm := by
---   apply Graph.vertexPartition_ext <;> simp [or_comm, Partition.ext_iff]
-
--- lemma singleEdge_isLink_iff (huv : Disjoint u v) (hu : u ≠ ∅) (hv : v ≠ ∅) :
---     (Graph.singleEdge e u v hu hv huv).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
---   simp [Graph.singleEdge]
-
--- @[simp]
--- lemma singleEdge_inc_iff (huv : Disjoint u v) (hu : u ≠ ∅) (hv : v ≠ ∅) :
---     (Graph.singleEdge e u v hu hv huv).Inc f x ↔ f = e ∧ (x = u ∨ x = v) := by
---   simp only [Inc, singleEdge_isLink, exists_and_left, and_congr_right_iff]
---   aesop
-
--- @[simp]
--- lemma singleEdge_adj_iff (huv : Disjoint u v) (hu : u ≠ ∅) (hv : v ≠ ∅) :
---     (Graph.singleEdge e u v hu hv huv).Adj x y ↔ (x = u ∧ y = v) ∨ (x = v ∧ y = u) := by
---   simp [Adj]
-
--- @[simp]
--- lemma singleEdge_le_iff (huv : Disjoint u v) (hu : u ≠ ∅) (hv : v ≠ ∅) :
---     Graph.singleEdge e u v hu hv huv ≤ G ↔ G.IsLink e u v := by
---   simp only [le_iff, singleEdge_vertexSet, singleEdge_isLink, and_imp]
---   refine ⟨fun h ↦ h.2 rfl (.inl ⟨rfl, rfl⟩), fun h ↦ ⟨?_, ?_⟩⟩
---   · rintro a (rfl | rfl) <;> simp [h.left_mem, h.right_mem]
---   rintro e x y rfl (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
---   · assumption
---   exact h.symm
 
 /-! ### Graphs with one vertex  -/
 
@@ -325,6 +281,12 @@ lemma banana_isLink_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjo
     apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
 
 @[simp]
+lemma banana_isLink_of_mem (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) (heF : e ∈ F) :
+    (banana a b F).IsLink e a b := by
+  rw [banana_isLink_of_disjoint ha hb hab]
+  exact ⟨heF, rfl⟩
+
+@[simp]
 lemma banana_edgeSet_of_nonempty (ha : a.Nonempty) (hb : b.Nonempty) : E(banana a b F) = F := by
   simp [ha, hb]
 
@@ -333,6 +295,12 @@ lemma banana_inc_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint
     (banana a b F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
   simp_rw [Inc, banana_isLink_of_disjoint ha hb hab]
   aesop
+
+@[simp]
+lemma banana_adj_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    (banana a b F).Adj x y ↔ F.Nonempty ∧ s(x, y) = s(a, b) := by
+  simp_rw [Adj, banana_isLink_of_disjoint ha hb hab, exists_and_right]
+  rfl
 
 @[simp]
 lemma banana_isNonloopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
@@ -348,12 +316,78 @@ lemma banana_isLoopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Dis
   aesop
 
 @[simp]
-lemma banana_isloopAt (ha : a.Nonempty) : (banana a a F).IsLoopAt e x ↔ e ∈ F ∧ x = a := by
+lemma banana_isloopAt_of_eq (ha : a.Nonempty) : (banana a a F).IsLoopAt e x ↔ e ∈ F ∧ x = a := by
   simp [ha, ← isLink_self_iff]
+
+@[simp]
+lemma banana_not_isloopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+    ¬ (banana a b F).IsLoopAt e x := by
+  unfold IsLoopAt
+  rw [banana_isLink_of_disjoint ha hb hab]
+  aesop
 
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
   vertexSet_eq := rfl
   isLink_of_isLink := by simp +contextual [subset_def ▸ hXY]
+
+/-- A graph with a single edge `e` from `u` to `v` -/
+@[simps! vertexPartition vertexSet]
+protected def singleEdge (e : β) (u v : Set α) := banana u v {e}
+
+lemma singleEdge_comm (e : β) (u v : Set α) : Graph.singleEdge e u v = Graph.singleEdge e v u := by
+  unfold Graph.singleEdge
+  rw [banana_comm]
+
+@[simp]
+lemma singleEdge_vertexSet_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+    V(Graph.singleEdge e u v) = {u, v} :=
+  banana_vertexSet_of_disjoint hu hv huv
+
+@[simp]
+lemma singleEdge_isLink : (Graph.singleEdge e u v).IsLink f x y ↔ (f = e ∧ u.Nonempty ∧ v.Nonempty)∧
+    s(x, y) = s((Partition.mk' {u, v}).foo u, (Partition.mk' {u, v}).foo v) := by
+  simp [Graph.singleEdge, banana_isLink]
+
+@[simp↓]
+lemma singleEdge_isLink_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+    (Graph.singleEdge e u v).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
+  rw [Graph.singleEdge, banana_isLink_of_disjoint hu hv huv, mem_singleton_iff]
+
+@[simp]
+lemma singleEdge_edgeSet_of_nonempty (hu : u.Nonempty) (hv : v.Nonempty) :
+    E(Graph.singleEdge e u v) = {e} := by
+  simp only [Graph.singleEdge, banana_edgeSet_of_nonempty hu hv]
+
+@[simp]
+lemma singleEdge_inc_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+    (Graph.singleEdge e u v).Inc f x ↔ f = e ∧ (x = u ∨ x = v) := by
+  simp_rw [Graph.singleEdge, banana_inc_of_disjoint hu hv huv, mem_singleton_iff]
+
+@[simp]
+lemma singleEdge_adj_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+    (Graph.singleEdge e u v).Adj x y ↔ s(x, y) = s(u, v) := by
+  simp_rw [Graph.singleEdge, banana_adj_of_disjoint hu hv huv, singleton_nonempty, true_and]
+
+lemma singleEdge_le_of_isLink (h : G.IsLink e u v) : Graph.singleEdge e u v ≤ G where
+  vertexSet_subset := by
+    obtain (rfl | hne) := eq_or_ne u v
+    · simp [G.ne_empty_of_mem, h.left_mem]
+    rw [singleEdge_vertexSet_of_disjoint h.left_nonempty h.right_nonempty
+    (P(G).disjoint h.left_mem' h.right_mem' hne)]
+    exact pair_subset h.left_mem h.right_mem
+  isLink_of_isLink f x y hxy := by
+    simp_rw [singleEdge_isLink] at hxy
+    obtain ⟨⟨rfl, -⟩, heq⟩ := hxy
+    rw [foo_eq_of_mem, foo_eq_of_mem] at heq
+    rwa [h.isLink_iff_sym2_eq, eq_comm]
+    all_goals
+    · rw [mem_mk'_iff (pairwiseDisjoint_pair_iff.mpr h.eq_or_disjoint)]
+      simp [h.right_nonempty.ne_empty, h.left_nonempty.ne_empty]
+
+@[simp]
+lemma singleEdge_le_iff (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+    Graph.singleEdge e u v ≤ G ↔ G.IsLink e u v :=
+  ⟨fun h ↦ h.isLink_of_isLink <| banana_isLink_of_mem hu hv huv rfl, singleEdge_le_of_isLink⟩
 
 /-! ### Complete graphs -/
 

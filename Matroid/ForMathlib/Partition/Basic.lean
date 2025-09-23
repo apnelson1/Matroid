@@ -51,6 +51,13 @@ lemma pairwiseDisjoint_pair {ι : Type*} {i j : ι} {f : ι → α} [PartialOrde
     (hab : (Disjoint on f) i j) : PairwiseDisjoint {i, j} f := by
   rintro a (rfl | rfl) b (rfl | rfl) <;> simp [hab, symm hab]
 
+lemma pairwiseDisjoint_pair_iff {ι : Type*} {i j : ι} {f : ι → α} [PartialOrder α] [OrderBot α] :
+    PairwiseDisjoint {i, j} f ↔ i = j ∨ (Disjoint on f) i j := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.mpr <| h (by simp) (by simp), ?_⟩
+  rintro (rfl | h)
+  · simp
+  · exact pairwiseDisjoint_pair h
+
 @[simp]
 lemma Pairwise.const_of_refl [IsRefl α r] (x : α) : Pairwise (r on fun (_ : ι) ↦ x) := by
   simp [Pairwise, refl]
@@ -163,6 +170,9 @@ instance : IsNonstrictStrictOrder (Partition α) (· ⊆ ·) (· ⊂ ·) where
 
 lemma disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : x ≠ y) : Disjoint x y :=
   P.indep.pairwiseDisjoint hx hy hxy
+
+lemma eq_or_disjoint (hx : x ∈ P) (hy : y ∈ P) : x = y ∨ Disjoint x y :=
+  or_iff_not_imp_left.mpr (P.disjoint hx hy)
 
 lemma pairwiseDisjoint : Set.PairwiseDisjoint (P : Set α) id :=
   fun _ hx _ hy hxy ↦ P.disjoint hx hy hxy

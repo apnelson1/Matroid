@@ -131,14 +131,22 @@ lemma vertexPartition_subset_iff {H : Graph α β} : P(G) ⊆ P(H) ↔ V(G) ⊆ 
 lemma vertexPartition_eq_iff {H : Graph α β} : P(G) = P(H) ↔ V(G) = V(H) := by
   rw [← G.vertexPartition_parts, ← H.vertexPartition_parts, ext_iff_parts]
 
+@[simp]
+lemma ne_empty_of_mem (h : x ∈ V(G)) : x ≠ ∅ :=
+  P(G).ne_bot_of_mem <| mem_vertexPartition_iff.mpr h
+
+@[simp]
 lemma nonempty_of_mem (h : x ∈ V(G)) : x.Nonempty :=
-  nonempty_iff_ne_empty.mpr <| P(G).ne_bot_of_mem <| mem_vertexPartition_iff.mpr h
+  nonempty_iff_ne_empty.mpr <| ne_empty_of_mem h
 
 lemma pairwiseDisjoint_vertexSet : V(G).PairwiseDisjoint id :=
   G.vertexSet_eq_parts ▸ P(G).indep.pairwiseDisjoint
 
 lemma disjoint_of_mem (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y) : Disjoint x y :=
   G.pairwiseDisjoint_vertexSet hx hy hxy
+
+lemma eq_or_disjoint_of_mem (hx : x ∈ V(G)) (hy : y ∈ V(G)) : x = y ∨ Disjoint x y :=
+  or_iff_not_imp_left.mpr (disjoint_of_mem hx hy)
 
 /-! ### Edge-vertex-vertex incidence -/
 
@@ -159,7 +167,7 @@ lemma domain_IsLink_subset_vertexSet (G : Graph α β) (e : β) :
   rintro x ⟨y, hxy⟩
   exact hxy.left_mem
 
-lemma IsLink.left_mem_vertexPartition (h : G.IsLink e x y) : x ∈ P(G) :=
+lemma IsLink.left_mem' (h : G.IsLink e x y) : x ∈ P(G) :=
   G.mem_vertexPartition_iff.2 h.left_mem
 
 lemma IsLink.right_mem (h : G.IsLink e x y) : y ∈ V(G) :=
@@ -170,11 +178,26 @@ lemma codomain_IsLink_subset_vertexSet (G : Graph α β) (e : β) :
   rintro y ⟨x, hxy⟩
   exact hxy.right_mem
 
-lemma IsLink.right_mem_vertexPartition (h : G.IsLink e x y) : y ∈ P(G) :=
+lemma IsLink.right_mem' (h : G.IsLink e x y) : y ∈ P(G) :=
   G.mem_vertexPartition_iff.2 h.right_mem
 
 lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
   ⟨.symm, .symm⟩
+
+lemma IsLink.left_nonempty (h : G.IsLink e x y) : x.Nonempty :=
+  G.nonempty_of_mem h.left_mem
+
+lemma IsLink.right_nonempty (h : G.IsLink e x y) : y.Nonempty :=
+  h.symm.left_nonempty
+
+lemma IsLink.left_ne_empty (h : G.IsLink e x y) : x ≠ ∅ :=
+  G.ne_empty_of_mem h.left_mem
+
+lemma IsLink.right_ne_empty (h : G.IsLink e x y) : y ≠ ∅ :=
+  h.symm.left_ne_empty
+
+lemma IsLink.eq_or_disjoint (h : G.IsLink e x y) : x = y ∨ Disjoint x y :=
+  G.eq_or_disjoint_of_mem h.left_mem h.right_mem
 
 lemma exists_isLink_of_mem_edgeSet (h : e ∈ E(G)) : ∃ x y, G.IsLink e x y :=
   (edge_mem_iff_exists_isLink ..).1 h

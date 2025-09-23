@@ -331,7 +331,7 @@ lemma vertexDelete_le : G - X ≤ G :=
 lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) :
     e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
   rw [vertexDelete_def, hG.mem_induce_iff, mem_delete_iff, mem_delete_iff,
-    and_iff_right hG.left_mem_vertexPartition, and_iff_right hG.right_mem_vertexPartition]
+    and_iff_right hG.left_mem', and_iff_right hG.right_mem']
 
 lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X :=
   induce_mono h <| diff_subset_diff_left <| vertexPartition_mono h

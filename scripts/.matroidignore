@@ -1,0 +1,11 @@
+# Regex patterns to ignore module paths (Matroid.xxx) when updating Matroid.lean
+# Lines are Python regex; blank lines and lines starting with # are ignored.
+
+# Skip everything in experiments and WIP modules:
+^Matroid\.Experiments\.
+^Matroid\.Exercises\.
+^Matroid\.WIP\.
+^Matroid\.ForMathlib\.
+
+# Skip any module with "scratch" in its name/path:
+scratch
