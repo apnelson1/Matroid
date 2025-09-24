@@ -3,6 +3,7 @@ import Matroid.ForMathlib.Partition.Lattice
 
 variable {α β ι ι' : Type*} {x y z u v w : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
   {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {P Q : Partition (Set α)}
+  {Gι Hι : ι → Graph α β}
 
 open Set Function
 
@@ -153,6 +154,14 @@ lemma compatible_comm : G.Compatible H ↔ H.Compatible G :=
 lemma compatible_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Compatible H₂ :=
   ((isLink_eqOn_of_le h₁).mono inter_subset_left).trans <|
     (isLink_eqOn_of_le h₂).symm.mono inter_subset_right
+
+lemma compatible_of_forall_map_le (h : ∀ i, Gι i ≤ G) : Pairwise (Compatible on Gι) := by
+  rintro i j -
+  exact compatible_of_le_le (h i) (h j)
+
+lemma compatible_of_forall_mem_le (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) : s.Pairwise Compatible := by
+  rintro _ hi _ hj _
+  exact compatible_of_le_le (h hi) (h hj)
 
 lemma compatible_of_le (h : H ≤ G) : H.Compatible G := compatible_of_le_le h le_rfl
 
@@ -330,6 +339,14 @@ lemma Dup_agree.mono {G₀ H₀ : Graph α β} (h : G.Dup_agree H) (hG : G₀ �
 
 lemma dup_agree_of_le_le {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁.Dup_agree H₂ :=
   Partition.agree_of_subset_subset (vertexPartition_mono h₁) (vertexPartition_mono h₂)
+
+lemma dup_agree_of_forall_map_le (h : ∀ i, Gι i ≤ G) : Pairwise (Dup_agree on Gι) := by
+  rintro i j -
+  exact dup_agree_of_le_le (h i) (h j)
+
+lemma dup_agree_of_forall_mem_le (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) : s.Pairwise Dup_agree := by
+  rintro _ hi _ hj _
+  exact dup_agree_of_le_le (h hi) (h hj)
 
 lemma dup_agree_of_le (h : H ≤ G) : H.Dup_agree G := dup_agree_of_le_le h le_rfl
 

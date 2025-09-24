@@ -1,4 +1,4 @@
-import Matroid.Graph.Subgraph.Delete
+import Matroid.Graph.Subgraph.Compatible
 import Matroid.ForMathlib.Partition.Lattice
 
 variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : Set α} {e f : β}
@@ -13,18 +13,17 @@ namespace Graph
 
 /-- The intersection of a nonempty family of pairwise compatible graphs.
   Remove any disagreeing edges. -/
-@[simps]
+@[simps vertexPartition vertexSet isLink]
 protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
   vertexPartition := Partition.iInter fun i ↦ P(G i)
-  vertexSet := (Partition.iInter fun i ↦ P(G i)).parts
+  vertexSet := ⋂ i, V(G i)
   vertexSet_eq_parts := by simp
   IsLink e x y := ∀ i, (G i).IsLink e x y
   isLink_symm e he x y := by simp [isLink_comm]
   eq_or_eq_of_isLink_of_isLink e _ _ _ _ h h' :=
     (h (Classical.arbitrary ι)).left_eq_or_eq (h' (Classical.arbitrary ι))
-  edge_mem_iff_exists_isLink e := by simp
   left_mem_of_isLink e x y h := by
-    simp only [Partition.mem_parts, Partition.mem_iInter_iff, mem_vertexPartition_iff]
+    rw [mem_iInter]
     exact fun i ↦ (G i).left_mem_of_isLink (h i)
 
 variable {G : ι → Graph α β} [Nonempty ι]
@@ -34,11 +33,21 @@ lemma iInter_isLink_eq : (Graph.iInter G).IsLink e = fun x y ↦ ∀ i, (G i).Is
   ext x y
   simp
 
+@[simp]
+lemma iInter_edgeSet (hG : Pairwise (Compatible on G)) : E(Graph.iInter G) = ⋂ i, E(G i) := by
+  ext e
+  simp only [Graph.iInter, mem_setOf_eq, mem_iInter, edge_mem_iff_exists_isLink]
+  refine ⟨fun ⟨x, y, h⟩ i ↦ ⟨x, y, h i⟩, fun h ↦ ?_⟩
+  obtain ⟨x, y, h'⟩ := h (Classical.arbitrary ι)
+  use x, y, fun i ↦ h'.of_compatible (hG.of_refl (Classical.arbitrary ι) i)
+    (h i).choose_spec.choose_spec.edge_mem
+
+lemma iInter_edgeSet_not_compatible : E(Graph.iInter G) = {e | ∃ u v, ∀ i, (G i).IsLink e u v} := by
+  simp [Graph.iInter]
+
 protected lemma iInter_le (i : ι) : Graph.iInter G ≤ G i where
   vertexSet_subset := by
-    simp only [iInter_vertexSet]
-    rw [← (G i).vertexSet_eq_parts]
-    change _ ⊆ P(G i)
+    rw [← vertexSet_eq_parts, ← (G i).vertexSet_eq_parts]
     exact Partition.iInter_subset _ _
   isLink_of_isLink _ _ _ h := h i
 
@@ -50,7 +59,7 @@ lemma le_iInter_iff : H ≤ Graph.iInter G ↔ ∀ i, H ≤ G i := by
   · rw [← vertexPartition_subset_iff]
     apply Partition.subset_iInter_iff.mpr
     simp [fun i ↦ vertexSet_mono (h i)]
-  simp only [iInter_edgeSet, mem_setOf_eq]
+  simp only [iInter_edgeSet_not_compatible, mem_setOf_eq]
   obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet he
   use x, y, fun i ↦ hbtw.of_le (h i)
 
@@ -92,8 +101,7 @@ lemma iInter_isNonloopAt : (Graph.iInter G).IsNonloopAt e x ↔ ∃ y ≠ x, ∀
 
 @[simp]
 lemma induce_iInter (P : Partition (Set α)) : (Graph.iInter G)[P] = .iInter (fun i ↦ (G i)[P]) :=
-    Graph.ext (by simp) fun e x y ↦ by
-  simp [forall_and_right]
+    Graph.ext (by simp [iInter_const]) fun e x y ↦ by simp [forall_and_right]
 
 @[simp]
 lemma vertexDelete_iInter (X : Set (Set α)) : (Graph.iInter G) - X = .iInter (fun i ↦ (G i) - X) :=
@@ -435,7 +443,7 @@ namespace Graph
 lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α β} :
     Graph.iInter (Option.elim · G₁ G) = Graph.sInter (insert G₁ (range G)) (by simp) := by
   obtain hι | hι := isEmpty_or_nonempty ι
-  · suffices (fun x : Option ι ↦ x.elim G₁ G) = fun _ ↦ G₁ by simp [this, range_eq_empty G]
+  · suffices (fun x : Option ι ↦ x.elim G₁ G) = fun _ ↦ G₁ by simp [range_eq_empty G]
     refine funext fun x ↦ ?_
     cases x with | none => rfl | some val => exact (IsEmpty.false val).elim
   rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
