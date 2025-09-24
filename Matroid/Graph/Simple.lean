@@ -63,7 +63,7 @@ lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
     rw [show x = v by simpa [h] using he.left_mem, show y = v by simpa [h] using he.right_mem]
   simp [h]
 
-instance Loopless.union [G.Loopless] [H.Loopless] (hG' : G.Dup_agree H) : (G ∪ H).Loopless where
+lemma Loopless.union [G.Loopless] [H.Loopless] (hG' : G.Dup_agree H) : (G ∪ H).Loopless where
   not_isLoopAt := by simp [union_isLoopAt_iff hG']
 
 section Simple
@@ -117,9 +117,15 @@ instance (V : Partition (Set α)) : (Graph.noEdge V β).Simple where
   not_isLoopAt := by simp
   eq_of_isLink := by simp
 
-lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simple where
+lemma singleEdge_simple (e : β) (hxy : Disjoint x y) : (Graph.singleEdge e x y).Simple where
   not_isLoopAt f z := by
-    simp only [← isLink_self_iff, singleEdge_isLink, not_and, not_or]
+    obtain (rfl | hnep) := x.eq_empty_or_nonempty
+    · rw [IsLoopAt, singleEdge_isLink]
+      simp
+    obtain (rfl | hneq) := y.eq_empty_or_nonempty
+    · rw [IsLoopAt, singleEdge_isLink]
+      simp
+    rw [IsLoopAt, singleEdge_isLink_of_disjoint hnep hneq hxy]
     aesop
   eq_of_isLink := by aesop
 
@@ -161,10 +167,10 @@ lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).sym
 
 /-! ### Operations -/
 
-lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) :
-    (G ∪ H).Simple where
+lemma Simple.union [H.Simple] (hG' : G.Dup_agree H)
+    (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) : (G ∪ H).Simple where
   eq_of_isLink e f x y he hf := by
-    rw [union_isLink_iff] at he hf
+    rw [union_isLink hG'] at he hf
     obtain hf | hf := hf
     · obtain he | he := he
       · exact he.unique_edge hf
@@ -172,6 +178,7 @@ lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLin
     obtain he | he := he
     · exact h he hf.1
     exact he.1.unique_edge hf.1
+  not_isLoopAt := (Loopless.union hG').not_isLoopAt
 
 omit [G.Simple] in
 lemma IsPath.toGraph_simple {P : WList (Set α) β} (hP : G.IsPath P) : P.toGraph.Simple where
@@ -205,8 +212,10 @@ end Simple
 /-! ### Small Graphs -/
 
 lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
-  refine Graph.ext_inc (by simpa) fun e x ↦ ?_
-  simp only [banana_inc_iff]
+  refine Graph.ext_inc ?_ fun e x ↦ ?_
+  · sorry
+  rw [banana_inc_of_disjoint]
+  simp only [banana_inc]
   refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
   suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
     rintro ⟨he, rfl | rfl⟩

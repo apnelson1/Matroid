@@ -10,7 +10,7 @@ Behavior:
  - By default, ignore modules matching any regex in `.matroidignore` located next to this script; pass `--all` to include everything.
 
 Usage:
-    python scripts/update_matroid_imports.py [--root <repo_root>] [--dry-run] [--comment-new] [--all]
+    python scripts/update_matroid_imports.py [--root <repo_root>] [--dry-run] [--comment] [--all]
 
 Defaults assume this script is located at `<repo_root>/scripts/`.
 """
@@ -92,13 +92,13 @@ def parse_existing_imports(matroid_lean_path: Path) -> Tuple[List[str], Dict[str
     return all_lines, by_module
 
 
-def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], *, comment_new: bool = False) -> List[Tuple[str, str]]:
+def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], *, comment: bool = False) -> List[Tuple[str, str]]:
     out: List[Tuple[str, str]] = []
     for mod in discovered:
         if mod in existing:
             out.append((mod, existing[mod]))
         else:
-            if comment_new:
+            if comment:
                 out.append((mod, f"-- import {mod}"))
             else:
                 out.append((mod, f"import {mod}"))
@@ -124,8 +124,9 @@ def main() -> int:
     parser.add_argument('--matroid-dir', type=str, default=None, help='Path to Matroid/ directory (default: <root>/Matroid).')
     parser.add_argument('--matroid-file', type=str, default=None, help='Path to Matroid.lean (default: <root>/Matroid.lean).')
     parser.add_argument('--dry-run', action='store_true', help='Do not modify files; show summary and diff-like preview.')
-    parser.add_argument('--comment-new', action='store_true', help='Write newly added modules as commented imports (`-- import ...`).')
+    parser.add_argument('--comment', action='store_true', help='Write newly added modules as commented imports (`-- import ...`).')
     parser.add_argument('--all', action='store_true', help='Do not apply ignore rules from .matroidignore (in scripts/); include all modules discovered.')
+    parser.add_argument('--yes', '-y', action='store_true', help='Proceed without interactive confirmation (useful for CI).')
 
     args = parser.parse_args()
 
@@ -145,22 +146,22 @@ def main() -> int:
     discovered_filtered = filter_modules_with_ignore(discovered, ignore_patterns) if ignore_patterns else discovered
     _, existing_map = parse_existing_imports(matroid_file)
 
-    merged = merge_and_sort_imports(existing_map, discovered_filtered, comment_new=args.comment_new)
+    merged = merge_and_sort_imports(existing_map, discovered_filtered, comment=args.comment)
     new_content = build_new_file_content(merged)
 
     current_text = matroid_file.read_text(encoding='utf-8') if matroid_file.exists() else ''
 
-    if args.dry_run:
-        # Print a concise summary and minimal diff-like info
+    # Function to print the same summary as dry-run
+    def print_summary():
         existing_modules = set(existing_map.keys())
         missing = sorted(discovered_filtered - existing_modules)
         extra = sorted(existing_modules - discovered_filtered)
         print(f"Root: {root}")
-        print(f"Matroid dir: {matroid_dir}")
-        print(f"Matroid.lean: {matroid_file}")
+        # print(f"Matroid dir: {matroid_dir}")
+        # print(f"Matroid.lean: {matroid_file}")
         print(f"Discovered modules: {len(discovered)}")
         if not args.all:
-            print(f"Ignore file: {ignore_file}")
+            # print(f"Ignore file: {ignore_file}")
             if ignore_patterns:
                 ignored_count = len(discovered) - len(discovered_filtered)
                 print(f"Ignored by patterns: {ignored_count}")
@@ -168,7 +169,7 @@ def main() -> int:
         print(f"Existing entries: {len(existing_modules)}")
         print(f"Missing entries to add: {len(missing)}")
         for m in missing[:50]:
-            prefix = "-- import" if args.comment_new else "import"
+            prefix = "-- import" if args.comment else "import"
             print(f"+ {prefix} {m}")
         if len(missing) > 50:
             print(f"... and {len(missing) - 50} more")
@@ -179,15 +180,29 @@ def main() -> int:
             if len(extra) > 20:
                 print(f"  ... and {len(extra) - 20} more")
         changed = (current_text != new_content)
-        print("Would modify Matroid.lean:" , "yes" if changed else "no")
+        print("Would modify Matroid.lean:", "yes" if changed else "no")
+        return missing, changed
+
+    if args.dry_run:
+        print_summary()
         return 0
 
+    # Non-dry-run: show summary, prompt, and proceed if confirmed
+    missing, changed = print_summary()
+    if not changed:
+        # No changes to apply
+        return 0
+    if not args.yes:
+        try:
+            resp = input("Proceed with these changes? Type 'y' or 'yes' to continue: ").strip().lower()
+        except EOFError:
+            resp = ''
+        if resp not in {'y', 'yes'}:
+            print('Aborted by user.')
+            return 1
     # Write only if content actually changed
-    if current_text != new_content:
-        matroid_file.write_text(new_content, encoding='utf-8')
-        print(f"Updated {matroid_file} with {len(merged)} import lines.")
-    else:
-        print("No changes needed; Matroid.lean already up-to-date.")
+    matroid_file.write_text(new_content, encoding='utf-8')
+    print(f"Updated {matroid_file} with {len(merged)} import lines.")
 
     return 0
 

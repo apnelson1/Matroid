@@ -15,7 +15,7 @@ From the repo root:
 ```bash
 python3 scripts/update_matroid_imports.py --dry-run
 python3 scripts/update_matroid_imports.py
-python3 scripts/update_matroid_imports.py --comment-new
+python3 scripts/update_matroid_imports.py --comment
 python3 scripts/update_matroid_imports.py --all --dry-run
 ```
 
@@ -24,12 +24,12 @@ Options:
 - `--matroid-dir <path>`: path to the `Matroid/` directory (defaults to `<root>/Matroid`).
 - `--matroid-file <path>`: path to `Matroid.lean` (defaults to `<root>/Matroid.lean`).
 - `--dry-run`: show what would change without modifying files.
-- `--comment-new`: when adding missing modules, write them as commented imports (`-- import ...`).
+- `--comment`: when adding missing modules, write them as commented imports (`-- import ...`).
 - `--all`: include all discovered modules (opt-out of ignore rules).
 
 Notes:
 - Existing commented imports such as `-- import Matroid.Graph.Bipartite` are kept commented.
-- New entries are added as active `import ...` lines by default; you can use `--comment-new` to add them commented out instead.
+- New entries are added as active `import ...` lines by default; you can use `--comment` to add them commented out instead.
 - By default, modules matching any regex in `.matroidignore` (in the `scripts/` directory) are ignored; use `--all` to include them.
 
 ### Ignore rules (`.matroidignore`)
