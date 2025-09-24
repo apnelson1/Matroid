@@ -451,7 +451,6 @@ lemma mem_biSup_iff_of_agree {ι : Type*} {S : Set ι} {P : ι → Partition (Se
   rw [biSup_parts_of_agree hS]
   simp
 
-
 @[simp]
 lemma Agree.inf_parts (hPQ : P.Agree Q) : (P ⊓ Q).parts = P.parts ∩ Q.parts := by
   ext x
@@ -618,7 +617,17 @@ lemma induce_inter (P : Partition (Set α)) (s t : Set α) :
     P.induce (s ∩ t) = P.induce s ⊓ P.induce t := by
   rw [← sInf_pair, ← sInter_pair, induce_sInter P (by simp), image_pair]
 
--- Compl does not exist
+lemma powerset_sSup_pairwise_agree {S : Set (Partition (Set α))} (hS : S.Pairwise Agree) :
+    ((sSup) '' S.powerset).Pairwise Agree := by
+  rintro P ⟨p, hp, rfl⟩ Q ⟨q, hq, rfl⟩ hPQ
+  rw [mem_powerset_iff] at hp hq
+  use sSup S, ?_ <;> change Partition.parts _ ⊆ _
+  <;> rw [sSup_parts_of_agree hS, sSup_parts_of_agree (hS.mono <| by assumption)]
+  <;> exact biUnion_mono (by assumption) fun x a ⦃a⦄ a ↦ a
+
+lemma sSup_agree_sSup_of_subset {S S₁ S₂ : Set (Partition (Set α))} (hS : S.Pairwise Agree)
+    (hS₁ : S₁ ⊆ S) (hS₂ : S₂ ⊆ S) : (sSup S₁).Agree (sSup S₂) := by
+  apply (powerset_sSup_pairwise_agree hS).of_refl <;> exact mem_image_of_mem sSup (by assumption)
 
 def relOrderEmb : Partition (Set α) ↪o (α → α → Prop) where
   toFun := (⇑)
