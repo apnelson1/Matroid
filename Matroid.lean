@@ -53,8 +53,8 @@ import Matroid.Graph.Finite
 -- import Matroid.Graph.Lattice
 -- import Matroid.Graph.Map
 -- import Matroid.Graph.Minor.Basic
--- import Matroid.Graph.Minor.Repartition
--- import Matroid.Graph.Nodup
+import Matroid.Graph.Minor.Repartition
+import Matroid.Graph.Nodup
 -- import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Add
 import Matroid.Graph.Subgraph.Basic
@@ -74,7 +74,6 @@ import Matroid.Graph.Walk.Path
 -- import Matroid.Graph.Walk.toGraph
 -- import Matroid.Graphic
 -- import Matroid.Induction
--- import Matroid.Init
 import Matroid.Intersection
 import Matroid.Loop
 import Matroid.Minor.Contract
@@ -99,7 +98,7 @@ import Matroid.Rank.Nullity
 -- import Matroid.Rank.Quotient
 import Matroid.Rank.Skew
 import Matroid.Representation.Basic
--- import Matroid.Representation.CycleSpace
+import Matroid.Representation.CycleSpace
 -- import Matroid.Representation.CycleSpace'
 -- import Matroid.Representation.CycleSpace_
 -- import Matroid.Representation.Dual

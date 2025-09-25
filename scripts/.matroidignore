@@ -6,6 +6,8 @@
 ^Matroid\.Exercises\.
 ^Matroid\.WIP\.
 ^Matroid\.ForMathlib\.
+^Matroid\.Init$
+^Matroid\.Connectivity\.Separation_$
 
 # Skip any module with "scratch" in its name/path:
 scratch
