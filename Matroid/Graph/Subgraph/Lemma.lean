@@ -55,10 +55,6 @@ lemma iInter_inc_of_compatible (hG' : Pairwise (Compatible on Gι)) :
   obtain ⟨y, hy⟩ := h j
   use y, fun i ↦ hy.of_compatible (hG'.of_refl j i) (h i).edge_mem
 
-lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
-  rw [Graph.inter_edgeSet]
-  exact le_antisymm (fun e he ↦ he.1) fun e he ↦ ⟨he, h he⟩
-
 lemma stronglyDisjoint_iff_disjoint_of_compatible (h : H₁.Compatible H₂) :
     StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
   rw [stronglyDisjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
@@ -130,17 +126,20 @@ lemma Compatible.sum_compatible (hGH : Pairwise (Compatible on (Sum.elim Gι H'�
     (Graph.iUnion Gι).Compatible (Graph.iUnion H'ι) :=
   compatible_of_le_le (iUnion_left_le_iUnion_sum hGH hGH') <| iUnion_right_le_iUnion_sum hGH hGH'
 
+omit [Nonempty ι] in
 protected lemma iUnion_sum (hGH : Pairwise (Compatible on (Sum.elim Gι H'ι)))
     (hGH' : Pairwise (Dup_agree on (Sum.elim Gι H'ι))) :
     Graph.iUnion (Sum.elim Gι H'ι) = (.iUnion Gι) ∪ (.iUnion H'ι) := by
   refine le_antisymm ?_ <| Graph.union_le (iUnion_left_le_iUnion_sum hGH hGH')
     (iUnion_right_le_iUnion_sum hGH hGH')
   rw [Graph.iUnion_le_iff hGH hGH']
+  have H : (Graph.iUnion Gι).Dup_agree (Graph.iUnion H'ι) := by
+    refine sUnion_dup_agree_sUnion_of_subset (s := range Gι ∪ range H'ι) ?_ (by simp) (by simp)
+    simpa [← pairwise_image_of_refl, image_univ, Sum.elim_range] using hGH'.set_pairwise univ
   rintro (i | i) <;> simp only [Sum.elim_inl, Sum.elim_inr]
-  · refine le_trans (Graph.le_iUnion hGH.sum_left hGH'.sum_left i) (Graph.left_le_union ?_)
-    sorry
-  · exact le_trans (Graph.le_iUnion hGH.sum_right hGH'.sum_right i)
-      (Compatible.right_le_union (Compatible.sum_compatible hGH hGH') sorry)
+  · exact (Graph.le_iUnion hGH.sum_left hGH'.sum_left i).trans (Graph.left_le_union H)
+  · exact (Graph.le_iUnion hGH.sum_right hGH'.sum_right i).trans
+      (Compatible.sum_compatible hGH hGH' |>.right_le_union H)
 
 section Subgraph
 
@@ -149,13 +148,18 @@ section Subgraph
 variable {H₁ H₂ : Graph α β}
 
 omit [Nonempty ι] in
-lemma pairwise_compatible_of_subgraph (h : ∀ i, Hι i ≤ G) :
-    Pairwise (Compatible on Hι) :=
+lemma pairwise_compatible_of_subgraph (h : ∀ i, Hι i ≤ G) : Pairwise (Compatible on Hι) :=
   fun i j _ ↦ compatible_of_le_le (h i) (h j)
 
-lemma set_pairwise_compatible_of_subgraph (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) :
-    s.Pairwise Compatible :=
+lemma set_pairwise_compatible_of_subgraph (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) : s.Pairwise Compatible :=
   fun _ hi _ hj _ ↦ compatible_of_le_le (h hi) (h hj)
+
+omit [Nonempty ι] in
+lemma pairwise_dup_agree_of_subgraph (h : ∀ i, Hι i ≤ G) : Pairwise (Dup_agree on Hι) :=
+  fun i j _ ↦ dup_agree_of_le_le (h i) (h j)
+
+lemma set_pairwise_dup_agree_of_subgraph (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) : s.Pairwise Dup_agree :=
+  fun _ hi _ hj _ ↦ dup_agree_of_le_le (h hi) (h hj)
 
 omit [Nonempty ι] in
 protected lemma iUnion_le_of_forall_le (h : ∀ i, Hι i ≤ G) : .iUnion Hι ≤ G := by
@@ -179,7 +183,7 @@ protected lemma sInter_le_of_forall_le (h : ∀ ⦃H⦄, H ∈ s → H ≤ G) (h
 omit [Nonempty ι] in
 /-- A union of closed subgraphs of `G` is a closed subgraph of `G`. -/
 lemma iUnion_isClosedSubgraph (h : ∀ i, Hι i ≤c G) : .iUnion Hι ≤c G where
-  le := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
+  toIsSubgraph := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
   closed e x he := by
     rw [iUnion_vertexSet, iUnion_edgeSet]
     simp only [mem_iUnion, forall_exists_index]
@@ -222,25 +226,29 @@ lemma iInter_isSpanningSubgraph (h : ∀ i, Hι i ≤s G) : .iInter Hι ≤s G w
 
 /-- A nonempty intersection of closed subgraphs `G` is an induced subgraph of `G`-/
 lemma iInter_isClosedSubgraph (h : ∀ i, Hι i ≤c G) : .iInter Hι ≤c G where
-  le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
+  toIsSubgraph := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
   closed e x := by
     rw [iInter_vertexSet, mem_iInter]
     rintro ⟨y, hy⟩ hx
     use x, y, fun i ↦ by rwa [(h i).isLink_iff_of_mem (hx i)]
 
-lemma sUnion_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤c G) : .sUnion s ≤c G where
-  le := Graph.sUnion_le_of_forall_le fun i hi ↦ (hs hi).le
-  closed e x := by
-    rw [sUnion_vertexSet, sUnion_edgeSet]
-    simp only [mem_iUnion, exists_prop, forall_exists_index, and_imp]
-    rintro he H hHs hxH
-    
-    use x, y, fun i ↦ by rwa [(hs i).isLink_iff_of_mem (hx i)]
+lemma sUnion_isClosedSubgraph (hsc : ∀ ⦃H⦄, H ∈ s → H ≤c G) : .sUnion s ≤c G := by
+  let f : s → Graph α β := Subtype.val
+  have : .iUnion f ≤c G := iUnion_isClosedSubgraph <| by
+    rintro ⟨H, hHs⟩
+    simp [f, hsc hHs]
+  convert this
+  simp [f, Graph.iUnion]
 
-
-lemma sUnion_isSpanningSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤s G) (hne : s.Nonempty) : .sUnion s ≤s G :=
-  have := hne.to_subtype
-  iUnion_isSpanningSubgraph <| by simpa
+lemma sUnion_isSpanningSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤s G) (hne : s.Nonempty) :
+    .sUnion s ≤s G := by
+  let f : s → Graph α β := Subtype.val
+  have hne := hne.to_subtype
+  have : .iUnion f ≤s G := iUnion_isSpanningSubgraph <| by
+    rintro ⟨H, hHs⟩
+    simp [f, hs hHs]
+  convert this
+  simp [f, Graph.iUnion]
 
 lemma sInter_isInducedSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤i G) (hne : s.Nonempty) :
     Graph.sInter s hne ≤i G :=
@@ -252,54 +260,58 @@ lemma sInter_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ s → H ≤c G) (hne : s.
   have := hne.to_subtype
   iInter_isClosedSubgraph <| by simpa
 
-lemma isClosedSubgraph_iUnion_of_stronglyDisjoint (h : Pairwise (StronglyDisjoint on H)) (i : ι) :
-    H i ≤c Graph.iUnion H (h.mono fun _ _ ↦ StronglyDisjoint.compatible) where
-  le := Graph.le_iUnion ..
-  closed e x he hx := by
-    obtain ⟨j, hj : (H j).Inc e x⟩ := (iUnion_inc_iff ..).1 he
-    obtain rfl | hne := eq_or_ne i j
-    · exact hj.edge_mem
-    exact False.elim <| (h hne).vertex.notMem_of_mem_left hx hj.vertex_mem
+-- lemma isClosedSubgraph_iUnion_of_stronglyDisjoint (h : Pairwise (StronglyDisjoint on Hι))
+--(i : ι) :
+--     Hι i ≤c Graph.iUnion Hι where
+--   le := Graph.le_iUnion sorry sorry i
+--   closed e x he hx := by
+--     obtain ⟨j, hj : (Hι j).Inc e x⟩ := (iUnion_inc_iff ..).1 he
+--     obtain rfl | hne := eq_or_ne i j
+--     · exact hj.edge_mem
+--     exact False.elim <| (h hne).vertex.notMem_of_mem_left hx hj.vertex_mem
 
-lemma isClosedSubgraph_sUnion_of_stronglyDisjoint (s : Set (Graph α β))
-    (hs : s.Pairwise StronglyDisjoint) (hG : G ∈ s) : G ≤c Graph.sUnion s (hs.mono' (by simp)) :=
-  isClosedSubgraph_iUnion_of_stronglyDisjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs) ⟨G, hG⟩
+-- lemma isClosedSubgraph_sUnion_of_stronglyDisjoint (s : Set (Graph α β))
+--     (hs : s.Pairwise StronglyDisjoint) (hG : G ∈ s) : G ≤c Graph.sUnion s :=
+--   isClosedSubgraph_iUnion_of_stronglyDisjoint ((pairwise_subtype_iff_pairwise_set ..).2 hs)
+--⟨G, hG⟩
 
-lemma isClosedSubgraph_union_left_of_vertexSet_disjoint (h : Disjoint V(H₁) V(H₂)) :
-    H₁ ≤c H₁ ∪ H₂ := by
-  refine ⟨Graph.left_le_union H₁ H₂, fun e x hinc hx₁ => ?_⟩
-  have hninc : ¬ H₂.Inc e x := fun hinc ↦ h.notMem_of_mem_left hx₁ hinc.vertex_mem
-  simp only [union_inc_iff, hninc, false_and, or_false] at hinc
-  exact hinc.edge_mem
+-- lemma isClosedSubgraph_union_left_of_vertexSet_disjoint (h : Disjoint V(H₁) V(H₂)) :
+--     H₁ ≤c H₁ ∪ H₂ := by
+--   refine ⟨Graph.left_le_union H₁ H₂, fun e x hinc hx₁ => ?_⟩
+--   have hninc : ¬ H₂.Inc e x := fun hinc ↦ h.notMem_of_mem_left hx₁ hinc.vertex_mem
+--   simp only [union_inc_iff, hninc, false_and, or_false] at hinc
+--   exact hinc.edge_mem
 
-lemma Disjoint.isClosedSubgraph_union_left (h : Disjoint H₁ H₂) : H₁ ≤c H₁ ∪ H₂ :=
-  isClosedSubgraph_union_left_of_vertexSet_disjoint <| Disjoint.vertex_disjoint h
+-- lemma Disjoint.isClosedSubgraph_union_left (h : Disjoint H₁ H₂) : H₁ ≤c H₁ ∪ H₂ :=
+--   isClosedSubgraph_union_left_of_vertexSet_disjoint <| Disjoint.vertex_disjoint h
 
-lemma StronglyDisjoint.isClosedSubgraph_union_left (h : StronglyDisjoint H₁ H₂) :
-    H₁ ≤c H₁ ∪ H₂ := by
-  rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+-- lemma StronglyDisjoint.isClosedSubgraph_union_left (h : StronglyDisjoint H₁ H₂) :
+--     H₁ ≤c H₁ ∪ H₂ := by
+--   rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
+--   exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm])
+--(by simp)
 
-lemma StronglyDisjoint.isClosedSubgraph_union_right (h : StronglyDisjoint H₁ H₂) :
-    H₂ ≤c H₁ ∪ H₂ := by
-  rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
-  exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm]) (by simp)
+-- lemma StronglyDisjoint.isClosedSubgraph_union_right (h : StronglyDisjoint H₁ H₂) :
+--     H₂ ≤c H₁ ∪ H₂ := by
+--   rw [(stronglyDisjoint_le_compatible _ _ h).union_eq_sUnion]
+--   exact isClosedSubgraph_sUnion_of_stronglyDisjoint _ (by simp [Set.Pairwise, h, h.symm])
+--(by simp)
 
 lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ ∪ H₂ ≤c G := by
-  rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]
+  rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂.le)]
   exact iUnion_isClosedSubgraph <| by simp [h₁,h₂]
 
 lemma IsSpanningSubgraph.union (h₁ : H₁ ≤s G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
-  rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion]
+  rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂.le)]
   exact iUnion_isSpanningSubgraph <| by simp [h₁,h₂]
 
 lemma IsSpanningSubgraph.union_left (h₁ : H₁ ≤s G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤s G := by
-  rw [(compatible_of_le_le h₁.le h₂).union_eq_iUnion]
+  rw [(compatible_of_le_le h₁.le h₂).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂)]
   exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁.le, h₂])
     ⟨True, h₁⟩
 
 lemma IsSpanningSubgraph.union_right (h₁ : H₁ ≤ G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
-  rw [(compatible_of_le_le h₁ h₂.le).union_eq_iUnion]
+  rw [(compatible_of_le_le h₁ h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁ h₂.le)]
   exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁, h₂.le])
     ⟨False, h₂⟩
 
@@ -312,7 +324,7 @@ lemma IsClosedSubgraph.inter (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ �
   exact iInter_isClosedSubgraph <| by simp [h₁,h₂]
 
 lemma IsClosedSubgraph.inter_le {K G H : Graph α β} (hKG : K ≤c G) (hle : H ≤ G) : K ∩ H ≤c H where
-  le := Graph.inter_le_right
+  toIsSubgraph := Graph.inter_le_right
   closed e x hex hx := by
     rw [inter_vertexSet] at hx
     have heK := ((hex.of_le hle).of_isClosedSubgraph_of_mem hKG hx.1).edge_mem
@@ -327,8 +339,8 @@ lemma isClosedSubgraph_bot_iff : G ≤c ⊥ ↔ G = ⊥ :=
   ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isClosedSubgraph ⊥⟩
 
 @[simp]
-lemma isSpanningSubgraph_bot_iff : G ≤s ⊥ ↔ G = ⊥ :=
-  ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ ⟨le_rfl, rfl⟩⟩
+lemma isSpanningSubgraph_bot_iff : G ≤s ⊥ ↔ G = ⊥ := by
+  refine ⟨fun h => le_bot_iff.mp h.le, fun h => ⟨?_, ?_⟩⟩ <;> simp [h]
 
 @[simp]
 lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=

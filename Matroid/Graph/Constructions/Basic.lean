@@ -132,7 +132,7 @@ lemma bot_edgeSet : E((⊥ : Graph α β)) = ⊥ := rfl
 
 @[simp]
 lemma bot_isClosedSubgraph (G : Graph α β) : ⊥ ≤c G where
-  le := bot_le
+  toIsSubgraph := bot_le (a := G)
   closed := by simp
 
 @[simp]

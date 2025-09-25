@@ -283,6 +283,12 @@ lemma inter_edgeSet (G H : Graph α β) :
     fun z w ↦ by rw [hfG.isLink_iff_sym2_eq, hfH.isLink_iff_sym2_eq]⟩,
     fun ⟨⟨⟨x, y, hexy⟩, ⟨z, w, hezw⟩⟩, h⟩ ↦ ⟨x, y, hexy, by rwa [← h]⟩⟩
 
+@[simp]
+lemma Compatible.inter_edgeSet (h : G.Compatible H) : E(G ∩ H) = E(G) ∩ E(H) := by
+  ext e
+  simp only [Graph.inter_edgeSet, mem_inter_iff, mem_setOf_eq, and_iff_left_iff_imp]
+  exact (h ·)
+
 lemma inter_edgeSet_subset : E(G ∩ H) ⊆ E(G) ∩ E(H) := by
   simp +contextual [inter_edgeSet, subset_def]
 

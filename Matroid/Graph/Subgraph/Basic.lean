@@ -178,12 +178,13 @@ lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ 
 
 /-- A closed subgraph of `G` is a union of components of `G`.  -/
 @[mk_iff]
-structure IsClosedSubgraph (H G : Graph α β) : Prop where
-  le : H ≤ G
+structure IsClosedSubgraph (H G : Graph α β) : Prop extends H ≤ G where
   closed : ∀ ⦃e x⦄, G.Inc e x → x ∈ V(H) → e ∈ E(H)
 
 /-- `H ≤c G` means that `H` is a closed subgraph of `G`. i.e. a union of components of `G`. -/
 scoped infixl:50 " ≤c " => Graph.IsClosedSubgraph
+
+lemma IsClosedSubgraph.le (h : H ≤c G) : H ≤ G := h.1
 
 lemma IsClosedSubgraph.vertexSet_mono (h : H ≤c G) : V(H) ⊆ V(G) := Graph.vertexSet_mono h.le
 
@@ -194,12 +195,12 @@ lemma IsClosedSubgraph.isInducedSubgraph (h : H ≤c G) : H ≤i G where
   isLink_of_mem_mem _ _ _ he hx _ := he.of_le_of_mem h.le (h.closed he.inc_left hx)
 
 lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G₂) (h₂ : G₂ ≤c G₃) : G₁ ≤c G₃ where
-  le := h₁.le.trans h₂.le
+  toIsSubgraph := h₁.le.trans h₂.le
   closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (h₁.vertexSet_mono hx))) hx
 
 @[simp]
 lemma isClosedSubgraph_self : G ≤c G where
-  le := le_rfl
+  toIsSubgraph := le_refl G
   closed _ _ he _ := he.edge_mem
 
 lemma Inc.of_isClosedSubgraph_of_mem (h : G.Inc e x) (hle : H ≤c G) (hx : x ∈ V(H)) : H.Inc e x :=
@@ -226,6 +227,9 @@ lemma IsClosedSubgraph.mem_tfae_of_isLink (h : H ≤c G) (he : G.IsLink e x y) :
   tfae_have 3 → 1 := (he.of_le_of_mem h.le · |>.left_mem)
   tfae_finish
 
+lemma IsClosedSubgraph.edge_mem_iff_vertex_mem_of_inc (h : H ≤c G) (hex : G.Inc e x) :
+    e ∈ E(H) ↔ x ∈ V(H) := ⟨fun he ↦ hex.of_le_of_mem h.le he |>.vertex_mem, h.closed hex⟩
+
 lemma IsClosedSubgraph.adj_of_adj_of_mem (h : H ≤c G) (hx : x ∈ V(H)) (hxy : G.Adj x y) :
     H.Adj x y := by
   obtain ⟨e, hexy⟩ := hxy
@@ -238,7 +242,7 @@ lemma IsClosedSubgraph.mem_iff_mem_of_adj (h : H ≤c G) (hxy : G.Adj x y) :
 
 lemma IsClosedSubgraph.of_le_of_le {G₁ : Graph α β} (hHG : H ≤c G) (hHG₁ : H ≤ G₁) (hG₁ : G₁ ≤ G):
     H ≤c G₁ where
-  le := hHG₁
+  toIsSubgraph := hHG₁
   closed _ _ he hx := ((he.of_le hG₁).of_isClosedSubgraph_of_mem hHG hx).edge_mem
 
 lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c G ↔ ∃ x y, G.Adj x y ∧
