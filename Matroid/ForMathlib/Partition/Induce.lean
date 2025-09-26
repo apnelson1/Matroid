@@ -611,6 +611,12 @@ protected def iInter [Nonempty ι] (f : ι → Partition α) : Partition α :=
   Partition.sInter (range f) (range_nonempty _)
 
 @[simp]
+lemma iInter_parts [Nonempty ι] (f : ι → Partition α) :
+    (Partition.iInter f).parts = ⋂ i, (f i).parts := by
+  rw [← Partition.coe_eq]
+  simp [Partition.iInter]
+
+@[simp]
 lemma mem_iInter_iff [Nonempty ι] {f : ι → Partition α} :
     a ∈ Partition.iInter f ↔ ∀ i, a ∈ f i := by
   simp [Partition.iInter, mem_sInter_iff]

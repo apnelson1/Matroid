@@ -212,7 +212,7 @@ section Card
 /-- A version of `ENat.tsum_one` where the `1` is explicitly a function from the type rather than
   from the subtype. Useful for rewriting. -/
 protected theorem tsum_one' (s : Set α) : ∑' (i : s), (1 : α → ℕ∞) i = s.encard := by
-  exact?
+  simp
 
 @[simp] protected theorem tsum_one (s : Set α) : ∑' (_ : s), 1 = s.encard :=
   ENat.tsum_one' s
