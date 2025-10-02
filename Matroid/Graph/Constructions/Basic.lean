@@ -1,6 +1,6 @@
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Minor.Repartition
-import Matroid.ForMathlib.Partition.Lattice
+import Matroid.ForMathlib.Partition.Constructor
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.PFun
 
@@ -210,8 +210,8 @@ lemma bouquet_empty (hv : v.Nonempty) :
     bouquet v ∅ = Graph.noEdge (indiscrete v hv.ne_empty) β := by
   ext <;> simp [hv.ne_empty]
 
-lemma bouquet_mono (hv : v.Nonempty) (hss : X ⊆ Y) :
-    bouquet v X ≤s bouquet v Y where
+lemma bouquet_mono (hss : F₁ ⊆ F₂) :
+    bouquet v F₁ ≤s bouquet v F₂ where
   vertexSet_eq := rfl
   isLink_of_isLink := by aesop
 
@@ -240,79 +240,87 @@ def banana (a b : Set α) (F : Set β) : Graph α β where
       simp [hb.ne_empty]
 
 lemma banana_comm : banana a b F = banana b a F := by
-  apply Graph.ext
+  refine Graph.ext ?_ fun e x y ↦ ?_
   · rw [banana_vertexSet, banana_vertexSet, Set.pair_comm]
-  intro e x y
   simp_rw [banana_isLink]
   refine and_congr (and_congr_right fun _ ↦ and_comm) ?_
   simp_rw [Set.pair_comm a b, Sym2.eq_swap]
 
 @[simp]
-lemma banana_vertexSet_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
-    V(banana a b F) = {a, b} := by
-  rw [banana_vertexSet, mk'_parts (pairwiseDisjoint_pair hab)]
-  simp [ha.ne_empty, hb.ne_empty, ne_comm]
+lemma banana_vertexSet_of_isPartition (h : IsPartition {a, b}) : V(banana a b F) = {a, b} := by
+  rw [banana_vertexSet, h.mk'_parts]
 
 @[simp]
 lemma banana_eq_bouquet : banana a a F = bouquet a F :=
   Graph.ext (by simp) (by aesop)
 
 @[simp↓]
-lemma banana_isLink_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+lemma banana_isLink_of_isPartition (h : IsPartition {a, b}) :
     (banana a b F).IsLink e x y ↔ e ∈ F ∧ s(x, y) = s(a, b) := by
-  have ha' : indiscrete' a ⊆ Partition.mk' ({a, b} : Set _) :=
-    subset_biSup_of_agree (mk'_agree <| pairwiseDisjoint_pair hab) (by simp)
-  have hb' : indiscrete' b ⊆ Partition.mk' ({a, b} : Set _) :=
-    subset_biSup_of_agree (mk'_agree <| pairwiseDisjoint_pair hab) (by simp)
-  simp only [banana_isLink, ha, hb, and_self, and_true, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-    Prod.swap_prod_mk, and_congr_right_iff]
+  simp only [banana_isLink, h.nonempty_not_mem (show a ∈ ({ a, b } : Set _) from by simp),
+    h.nonempty_not_mem (show b ∈ ({ a, b } : Set _) from by simp), and_self, and_true, Sym2.eq,
+    Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk, and_congr_right_iff]
   refine fun heF ↦ or_congr ?_ ?_ <;> apply and_congr
   · revert x
     rw [eq_iff_eq_cancel_left]
-    apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
+    exact foo_eq_self_of_mem <| by simp [h]
   · revert y
     rw [eq_iff_eq_cancel_left]
-    apply (indiscrete' b).foo_eq_of_le hb' (by simp [hb.ne_empty])
+    exact foo_eq_self_of_mem <| by simp [h]
   · revert x
     rw [eq_iff_eq_cancel_left]
-    apply (indiscrete' b).foo_eq_of_le hb' (by simp [hb.ne_empty])
+    exact foo_eq_self_of_mem <| by simp [h]
   · revert y
     rw [eq_iff_eq_cancel_left]
-    apply (indiscrete' a).foo_eq_of_le ha' (by simp [ha.ne_empty])
+    exact foo_eq_self_of_mem <| by simp [h]
 
 @[simp]
-lemma banana_isLink_of_mem (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) (heF : e ∈ F) :
-    (banana a b F).IsLink e a b := by
-  rw [banana_isLink_of_disjoint ha hb hab]
-  exact ⟨heF, rfl⟩
+lemma banana_isLink_of_mem (heF : e ∈ F) : (banana a b F).IsLink e a b ↔ IsPartition {a, b} := by
+  refine ⟨fun hab ↦ exists_subset_iff_isPartition.mp ?_, fun h ↦ ?_⟩
+  · use P(banana a b F), pair_subset hab.left_mem hab.right_mem
+  · exact (banana_isLink_of_isPartition h).mpr ⟨heF, rfl⟩
 
 @[simp]
 lemma banana_edgeSet_of_nonempty (ha : a.Nonempty) (hb : b.Nonempty) : E(banana a b F) = F := by
   simp [ha, hb]
 
 @[simp]
-lemma banana_inc_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+lemma banana_inc_of_isPartition (h : IsPartition {a, b}) :
     (banana a b F).Inc e x ↔ e ∈ F ∧ (x = a ∨ x = b) := by
-  simp_rw [Inc, banana_isLink_of_disjoint ha hb hab]
+  simp_rw [Inc, banana_isLink_of_isPartition h]
   aesop
 
 @[simp]
-lemma banana_adj_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+lemma banana_adj_of_isPartition (h : IsPartition {a, b}) :
     (banana a b F).Adj x y ↔ F.Nonempty ∧ s(x, y) = s(a, b) := by
-  simp_rw [Adj, banana_isLink_of_disjoint ha hb hab, exists_and_right]
+  simp_rw [Adj, banana_isLink_of_isPartition h, exists_and_right]
   rfl
 
 @[simp]
-lemma banana_isNonloopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+lemma banana_isNonloopAt_of_isPartition (h : IsPartition {a, b}) :
     (banana a b F).IsNonloopAt e x ↔ e ∈ F ∧ (x = a ∨ x = b) ∧ a ≠ b := by
-  simp_rw [isNonloopAt_iff_inc_not_isLoopAt, ← isLink_self_iff, banana_isLink_of_disjoint ha hb hab,
-    banana_inc_of_disjoint ha hb hab]
+  simp_rw [isNonloopAt_iff_inc_not_isLoopAt, ← isLink_self_iff, banana_isLink_of_isPartition h,
+    banana_inc_of_isPartition h]
   aesop
 
 @[simp]
-lemma banana_isLoopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
+lemma banana_isNonloopAt_left_of_mem (heF : e ∈ F) :
+    (banana a b F).IsNonloopAt e a ↔ IsPartition {a, b} ∧ a ≠ b := by
+  refine ⟨fun ⟨x, hxa, hx⟩ ↦ ?_, fun ⟨h, hne⟩ ↦ ?_⟩
+  · rw [← mk'_parts_iff, ← mk'_pair_nontrivial_iff, ← banana_vertexPartition]
+    use x, hx.right_mem', a, hx.left_mem'
+  rw [banana_isNonloopAt_of_isPartition h]
+  simp [heF, hne]
+
+@[simp]
+lemma banana_isNonloopAt_right_of_mem (heF : e ∈ F) :
+    (banana a b F).IsNonloopAt e b ↔ IsPartition {a, b} ∧ a ≠ b := by
+  rw [banana_comm, banana_isNonloopAt_left_of_mem heF, ne_comm, pair_comm]
+
+@[simp]
+lemma banana_isLoopAt_of_isPartition (h : IsPartition {a, b}) :
     (banana a b F).IsLoopAt e x ↔ e ∈ F ∧ x = a ∧ a = b := by
-  simp only [← isLink_self_iff, banana_isLink_of_disjoint ha hb hab, and_congr_right_iff]
+  simp only [← isLink_self_iff, banana_isLink_of_isPartition h, and_congr_right_iff]
   aesop
 
 @[simp]
@@ -323,7 +331,8 @@ lemma banana_isloopAt_of_eq (ha : a.Nonempty) : (banana a a F).IsLoopAt e x ↔ 
 lemma banana_not_isloopAt_of_disjoint (ha : a.Nonempty) (hb : b.Nonempty) (hab : Disjoint a b) :
     ¬ (banana a b F).IsLoopAt e x := by
   unfold IsLoopAt
-  rw [banana_isLink_of_disjoint ha hb hab]
+  have h := isPartition_pair_of_disjoint ha.ne_empty hb.ne_empty hab
+  rw [banana_isLink_of_isPartition h]
   aesop
 
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
@@ -339,9 +348,9 @@ lemma singleEdge_comm (e : β) (u v : Set α) : Graph.singleEdge e u v = Graph.s
   rw [banana_comm]
 
 @[simp]
-lemma singleEdge_vertexSet_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+lemma singleEdge_vertexSet_of_isPartition (h : IsPartition {u, v}) :
     V(Graph.singleEdge e u v) = {u, v} :=
-  banana_vertexSet_of_disjoint hu hv huv
+  banana_vertexSet_of_isPartition h
 
 @[simp]
 lemma singleEdge_isLink : (Graph.singleEdge e u v).IsLink f x y ↔ (f = e ∧ u.Nonempty ∧ v.Nonempty)∧
@@ -349,9 +358,14 @@ lemma singleEdge_isLink : (Graph.singleEdge e u v).IsLink f x y ↔ (f = e ∧ u
   simp [Graph.singleEdge, banana_isLink]
 
 @[simp↓]
-lemma singleEdge_isLink_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+lemma singleEdge_isLink_of_isPartition (h : IsPartition {u, v}) :
     (Graph.singleEdge e u v).IsLink f x y ↔ (f = e) ∧ s(x,y) = s(u,v) := by
-  rw [Graph.singleEdge, banana_isLink_of_disjoint hu hv huv, mem_singleton_iff]
+  rw [Graph.singleEdge, banana_isLink_of_isPartition h, mem_singleton_iff]
+
+@[simp]
+lemma singleEdge_isLink_of_mem : (Graph.singleEdge e u v).IsLink e u v ↔ IsPartition {u, v} := by
+  rw [Graph.singleEdge, banana_isLink_of_mem]
+  rfl
 
 @[simp]
 lemma singleEdge_edgeSet_of_nonempty (hu : u.Nonempty) (hv : v.Nonempty) :
@@ -359,35 +373,64 @@ lemma singleEdge_edgeSet_of_nonempty (hu : u.Nonempty) (hv : v.Nonempty) :
   simp only [Graph.singleEdge, banana_edgeSet_of_nonempty hu hv]
 
 @[simp]
-lemma singleEdge_inc_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+lemma singleEdge_inc_of_isPartition (h : IsPartition {u, v}) :
     (Graph.singleEdge e u v).Inc f x ↔ f = e ∧ (x = u ∨ x = v) := by
-  simp_rw [Graph.singleEdge, banana_inc_of_disjoint hu hv huv, mem_singleton_iff]
+  simp_rw [Graph.singleEdge, banana_inc_of_isPartition h, mem_singleton_iff]
 
 @[simp]
-lemma singleEdge_adj_of_disjoint (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
+lemma singleEdge_adj_of_isPartition (h : IsPartition {u, v}) :
     (Graph.singleEdge e u v).Adj x y ↔ s(x, y) = s(u, v) := by
-  simp_rw [Graph.singleEdge, banana_adj_of_disjoint hu hv huv, singleton_nonempty, true_and]
+  simp_rw [Graph.singleEdge, banana_adj_of_isPartition h, singleton_nonempty, true_and]
 
 lemma singleEdge_le_of_isLink (h : G.IsLink e u v) : Graph.singleEdge e u v ≤ G where
   vertexSet_subset := by
     obtain (rfl | hne) := eq_or_ne u v
     · simp [G.ne_empty_of_mem, h.left_mem]
-    rw [singleEdge_vertexSet_of_disjoint h.left_nonempty h.right_nonempty
-    (P(G).disjoint h.left_mem' h.right_mem' hne)]
+    rw [singleEdge_vertexSet_of_isPartition (isPartition_of_subset (P := P(G))
+      (by simp [pair_subset, h.left_mem, h.right_mem]))]
     exact pair_subset h.left_mem h.right_mem
   isLink_of_isLink f x y hxy := by
     simp_rw [singleEdge_isLink] at hxy
     obtain ⟨⟨rfl, -⟩, heq⟩ := hxy
-    rw [foo_eq_of_mem, foo_eq_of_mem] at heq
+    rw [foo_eq_self_of_mem, foo_eq_self_of_mem] at heq
     rwa [h.isLink_iff_sym2_eq, eq_comm]
     all_goals
     · rw [mem_mk'_iff (pairwiseDisjoint_pair_iff.mpr h.eq_or_disjoint)]
       simp [h.right_nonempty.ne_empty, h.left_nonempty.ne_empty]
 
+lemma singleEdge_isNonloopAt_iff_isPartition :
+    (Graph.singleEdge e u v).IsNonloopAt e u ↔ IsPartition {u, v} ∧ u ≠ v := by
+  rw [Graph.singleEdge, banana_isNonloopAt_left_of_mem (by simp)]
+
+lemma singleEdge_isNonloopAt_left_of_isPartition (h : IsPartition {u, v}) :
+    (Graph.singleEdge e u v).IsNonloopAt f u ↔ e = f ∧ u ≠ v := by
+  rw [Graph.singleEdge, banana_isNonloopAt_of_isPartition h]
+  simp [eq_comm]
+
+lemma singleEdge_isNonloopAt_right_of_isPartition (h : IsPartition {u, v}) :
+    (Graph.singleEdge e u v).IsNonloopAt f v ↔ e = f ∧ u ≠ v := by
+  rw [Graph.singleEdge, banana_isNonloopAt_of_isPartition h]
+  simp [eq_comm]
+
+lemma singleEdge_isNonloopAt :
+    (Graph.singleEdge e u v).IsNonloopAt e u ↔ u.Nonempty ∧ v.Nonempty ∧ Disjoint u v := by
+  rw [singleEdge_isNonloopAt_iff_isPartition, isPartition_pair_iff]
+  simp_rw [nonempty_iff_ne_empty]
+  aesop
+
+lemma singleEdge_isLoopAt_left_of_isPartition (h : IsPartition {u, v}) :
+    (Graph.singleEdge e u v).IsLoopAt f u ↔ e = f ∧ u = v := by
+  rw [Graph.singleEdge, banana_isLoopAt_of_isPartition h]
+  simp [eq_comm]
+
+lemma singleEdge_isLoopAt_right_of_isPartition (h : IsPartition {u, v}) :
+    (Graph.singleEdge e u v).IsLoopAt f v ↔ e = f ∧ u = v := by
+  rw [Graph.singleEdge, banana_isLoopAt_of_isPartition h]
+  simp [eq_comm]
+
 @[simp]
-lemma singleEdge_le_iff (hu : u.Nonempty) (hv : v.Nonempty) (huv : Disjoint u v) :
-    Graph.singleEdge e u v ≤ G ↔ G.IsLink e u v :=
-  ⟨fun h ↦ h.isLink_of_isLink <| banana_isLink_of_mem hu hv huv rfl, singleEdge_le_of_isLink⟩
+lemma singleEdge_le_iff (huv : IsPartition {u, v}) : Graph.singleEdge e u v ≤ G ↔ G.IsLink e u v :=
+  ⟨fun h ↦ h.isLink_of_isLink <| singleEdge_isLink_of_mem.mpr huv, singleEdge_le_of_isLink⟩
 
 /-! ### Complete graphs -/
 

@@ -382,19 +382,17 @@ lemma iInf_subset_of_agree {ι : Type*} {P : ι → Partition (Set α)} (hP : Pa
 lemma Agree.sup_parts (hPQ : P.Agree Q) : (P ⊔ Q).parts = P.parts ∪ Q.parts := by
   refine subset_antisymm ?_ <| union_subset hPQ.subset_sup_left hPQ.subset_sup_right
   rintro s ⟨x, hx, rfl⟩
-  simp only [transClosure_codomain, mem_codomain_iff, Pi.sup_apply, sup_Prop_eq, mem_union,
-    mem_parts] at hx ⊢
-  obtain ⟨y, hPyx | hQyx⟩ := hx
-  · left
-    convert partOf_mem hPyx.right_mem using 1
-    ext z
-    rw [mem_fiber_iff, mem_partOf_iff, ← Partition.sup_rel, rel_comm, rel_comm (x := z)]
-    exact hPQ.sup_rel_left_of_mem hPyx.right_mem
-  right
-  convert partOf_mem hQyx.right_mem using 1
-  ext z
-  rw [mem_fiber_iff, mem_partOf_iff, ← Partition.sup_rel, rel_comm, rel_comm (x := z)]
-  exact hPQ.sup_rel_right_of_mem hQyx.right_mem
+  simp only [transClosure_codomain, mem_codomain_iff, Pi.sup_apply, sup_Prop_eq, mem_union] at hx ⊢
+  obtain ⟨y, h⟩ := hx
+  apply h.imp <;> rintro h <;> convert partOf_mem h.right_mem using 1 <;> ext z
+  <;> rw [mem_fiber_iff, mem_partOf_iff, ← Partition.sup_rel, rel_comm, rel_comm (x := z)]
+  · exact hPQ.sup_rel_left_of_mem h.right_mem
+  · exact hPQ.sup_rel_right_of_mem h.right_mem
+
+lemma sup_parts_eq_union_iff_agree (P Q : Partition (Set α)) :
+    (P ⊔ Q).parts = P.parts ∪ Q.parts ↔ P.Agree Q :=
+  ⟨fun h => ⟨P ⊔ Q, (show P.parts ⊆ (P ⊔ Q).parts from h ▸ subset_union_left),
+    (show Q.parts ⊆ (P ⊔ Q).parts from h ▸ subset_union_right)⟩, fun h => h.sup_parts⟩
 
 @[simp]
 lemma Agree.mem_sup_iff (hPQ : P.Agree Q) : s ∈ P ⊔ Q ↔ s ∈ P ∨ s ∈ Q := by
@@ -635,17 +633,11 @@ def relOrderEmb : Partition (Set α) ↪o (α → α → Prop) where
   map_rel_iff' := rel_le_iff_le
 
 lemma supp_disjoint_of_disjoint (h : Disjoint P Q) : Disjoint P.supp Q.supp := by
-  rintro x hxP hxQ
-  by_contra! hx
-  obtain ⟨s, hsx⟩ := by simpa [← ne_eq, ← nonempty_iff_ne_empty] using hx
-  have := supp_le_of_le <| @h (Partition.indiscrete' {s}) ?_ ?_
-  simp at this
-  all_goals refine le_of_rel_le fun a b => ?_; simp only [bot_eq_empty, ne_eq, singleton_ne_empty,
-    not_false_eq_true, indiscrete'_eq_of_ne_bot, indiscrete_rel]; rintro ⟨rfl, rfl⟩
-  · obtain ⟨p, hpP, hbp⟩ := hxP hsx
-    use p, hpP
-  · obtain ⟨q, hqQ, hbq⟩ := hxQ hsx
-    use q, hqQ
+  rw [disjoint_iff_forall_ne]
+  rintro a haP b hbQ rfl
+  rw [← rel_self_iff_mem_supp] at haP hbQ
+  have : (P ⊓ Q) a a := by simp [haP, hbQ]
+  simp [disjoint_iff.mp h] at this
 
 lemma disjoint_iff_rel_disjoint (P Q : Partition (Set α)) :
     Disjoint P Q ↔ Disjoint (⇑P) (⇑Q) := by
@@ -662,50 +654,3 @@ lemma disjoint_iff_rel_disjoint (P Q : Partition (Set α)) :
     · rintro x y ⟨rfl, rfl⟩
       exact hpQ x x hp
     simp at h
-
-def mk' (S : Set (Set α)) : Partition (Set α) := ⨆ s ∈ S, Partition.indiscrete' s
-
-lemma mk'_agree (hS : S.PairwiseDisjoint id) : S.Pairwise (Agree on indiscrete') := by
-  rintro x hx y hy hxy
-  rw [agree_on_indiscrete'_iff]
-  right
-  exact hS hx hy hxy
-
-@[simp]
-lemma mk'_parts_bot_not_mem (hS : S.PairwiseDisjoint id) (hSbot : ⊥ ∉ S) : (mk' S).parts = S := by
-  rw [mk', biSup_parts_of_agree (mk'_agree hS)]
-  ext s
-  have : s ∈ S → s ≠ ∅ := (ne_of_mem_of_not_mem · hSbot)
-  simpa
-
-@[simp]
-lemma mk'_parts (hS : S.PairwiseDisjoint id) : (mk' S).parts = S \ {⊥} := by
-  rw [mk', biSup_parts_of_agree (mk'_agree hS)]
-  ext s
-  simp [and_comm]
-
-@[simp↓]
-lemma mem_mk'_iff (hS : S.PairwiseDisjoint id) : s ∈ mk' S ↔ s ≠ ⊥ ∧ s ∈ S := by
-  rw [← mem_parts, mk'_parts hS]
-  simp [and_comm]
-
-@[simp]
-lemma mk'_supp : (mk' S).supp = ⋃₀ S := by
-  ext x
-  simp [mk']
-
-@[simp]
-lemma mk'_singleton (s : Set α) : mk' {s} = Partition.indiscrete' s :=
-  ext fun x => by aesop
-
-@[simp]
-lemma mk'_insert (s : Set α) (S : Set (Set α)) :
-    mk' (insert s S) = mk' S ⊔ Partition.indiscrete' s := by
-  ext x y
-  rw [mk', mk', iSup_insert, sup_comm]
-
-lemma indiscrete'_le_mk' (has : s ∈ S) : Partition.indiscrete' s ≤ mk' S :=
-  le_biSup indiscrete' has
-
-lemma mk'_mono (hS : S ⊆ T) : mk' S ≤ mk' T :=
-  biSup_mono hS

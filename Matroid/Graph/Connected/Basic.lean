@@ -6,8 +6,8 @@ import Matroid.ForMathlib.Set
 
 open Set Function Nat WList
 
-variable {α β : Type*} {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
+variable {α β : Type*} {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : Set α} {e e' f g : β}
+  {U V S T : Set (Set α)} {F F' R R': Set β} {C W P Q : WList (Set α) β}
 
 namespace Graph
 
@@ -165,17 +165,19 @@ lemma Connected.of_isSpanningSubgraph (hH : H.Connected) (hle : H ≤s G) : G.Co
     (by rwa [hle.vertexSet_eq, inter_eq_self_of_subset_right (vertexSet_mono hKG.le)])
 
 @[simp]
-lemma connected_bouquet (v : α) (F : Set β) : (bouquet v F).Connected := by
+lemma connected_bouquet (v : Set α) (hv : v.Nonempty) (F : Set β) : (bouquet v F).Connected := by
   suffices aux : (bouquet v (∅ : Set β)).Connected from
-    aux.of_isSpanningSubgraph <| bouquet_mono _ (by simp)
-  simp only [bouquet_vertexSet, singleton_nonempty, connected_iff_forall_closed_ge]
+    aux.of_isSpanningSubgraph <| bouquet_mono (empty_subset F)
+  rw [connected_iff_forall_closed_ge (by simp [hv.ne_empty])]
   refine fun H hle hne ↦ ⟨?_, by simp⟩
-  simp only [bouquet_vertexSet, singleton_subset_iff]
+  simp only [bouquet_vertexSet, bot_eq_empty, ne_eq, hv.ne_empty, not_false_eq_true,
+    Partition.indiscrete'_eq_of_ne_bot, Partition.indiscrete_parts, singleton_subset_iff]
   obtain ⟨x, hx⟩ := hne
-  rwa [← show x = v from vertexSet_mono hle.le hx]
+  obtain rfl := by simpa [hv.ne_empty] using vertexSet_mono hle.le hx
+  exact hx
 
 @[simp]
-lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected := by
+lemma connected_banana (x y : Set α) (hF : F.Nonempty) : (banana x y F).Connected := by
   simp only [banana_vertexSet, insert_nonempty, connected_iff_forall_closed_ge]
   refine fun H hle hne ↦ ?_
   have hmem : ∀ z ∈ V(H), z = x ∨ z = y := by simpa [subset_pair_iff] using vertexSet_mono hle.le
@@ -194,7 +196,7 @@ lemma connected_banana (x y : α) (hF : F.Nonempty) : (banana x y F).Connected :
   exact (hl e hef).symm
 
 @[simp]
-lemma connected_singleEdge (x y : α) (e : β) : (Graph.singleEdge x y e).Connected := by
+lemma connected_singleEdge (x y : Set α) (e : β) : (Graph.singleEdge e x y).Connected := by
   rw [← banana_singleton]
   exact connected_banana x y (by simp)
 
@@ -203,7 +205,7 @@ lemma connected_singleEdge (x y : α) (e : β) : (Graph.singleEdge x y e).Connec
 --   refine ⟨by simp, fun H ⟨_, hne⟩ hle ↦ ?_⟩
 --   simp at hle
 
-lemma Connected.addEdge_connected (hG : G.Connected) (hx : x ∈ V(G)) (he : e ∉ E(G)) (y : α) :
+lemma Connected.addEdge_connected (hG : G.Connected) (hx : x ∈ V(G)) (he : e ∉ E(G)) (y : Set α) :
     (G.addEdge e x y).Connected := by
   unfold Graph.addEdge
   refine (connected_singleEdge x y e).union hG (by simp [he]) ?_
@@ -212,7 +214,7 @@ lemma Connected.addEdge_connected (hG : G.Connected) (hx : x ∈ V(G)) (he : e �
 
 
 
-def VertexConnected (G : Graph α β) (x y : α) : Prop :=
+def VertexConnected (G : Graph α β) (x y : Set α) : Prop :=
   ∃ H : Graph α β, H.IsCompOf G ∧ x ∈ V(H) ∧ y ∈ V(H)
 
 lemma VertexConnected.refl (hx : x ∈ V(G)) : G.VertexConnected x x :=
@@ -246,7 +248,7 @@ instance : IsTrans _ G.VertexConnected where
   trans _ _ _ := VertexConnected.trans
 
 lemma VertexConnected.mem_vertexSet_iff (H : G.ClosedSubgraph) :
-    ∀ {x y : α}, G.VertexConnected x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
+    ∀ {x y : Set α}, G.VertexConnected x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
   suffices ∀ x y, G.VertexConnected x y → x ∈ V(H.val) → y ∈ V(H.val) by
     exact fun x y h => ⟨fun hx => this x y h hx, fun hy => this y x h.symm hy⟩
   exact fun x y ⟨H', hH', hx', hy'⟩ hx ↦
@@ -275,13 +277,15 @@ lemma not_vertexConnected_of_right_not_mem (hy : y ∉ V(G)) : ¬ G.VertexConnec
   rintro h
   exact hy h.right_mem
 
-lemma walkable_eq_induce_setOf_vertexConnected : G.walkable x = G[{y | G.VertexConnected x y}] := by
+lemma walkable_eq_induce_setOf_vertexConnected :
+    G.walkable x = G.induce' {y | G.VertexConnected x y} := by
   obtain hx | hx := em (x ∈ V(G)) |>.symm
   · simp [hx]
   rw [walkable_isClosedSubgraph.eq_induce]
   congr
   ext y
-  simp only [mem_setOf_eq]
+  simp only [induce_vertexSet, vertexPartition_parts, induce'_vertexSet, mem_inter_iff,
+    mem_setOf_eq]
   rw [vertexConnected_iff_mem_walkable_of_mem hx]
 
 lemma Adj.vertexConnected (h : G.Adj x y) : G.VertexConnected x y :=
@@ -378,7 +382,7 @@ lemma singleVertex_connected (hG : V(G) = {x}) : G.Connected := by
   simp [connected_iff, hG]
 
 @[simp]
-lemma singleEdge_connected (e : β) (x y : α) : (Graph.singleEdge x y e).Connected := by
+lemma singleEdge_connected (e : β) (x y : Set α) : (Graph.singleEdge e x y).Connected := by
   refine connected_of_vertex (u := x) (by simp) ?_
   simp only [singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
     vertexConnected_self, true_or, forall_eq, true_and]
@@ -437,7 +441,7 @@ lemma Connected.exists_isPathFrom (hG : G.Connected) (hS : (S ∩ V(G)).Nonempty
   induction hW generalizing S with
   | @nil x hx => exact ⟨nil x, by simp_all⟩
   | @cons x e P hP h ih =>
-    simp_all only [cons_vertex, List.nodup_cons, mem_vertex, first_cons, last_cons, forall_const]
+    simp_all only [first_cons, last_cons, forall_const]
     by_cases hPS : P.first ∈ S
     · apply ih hPS
     obtain ⟨P₀, hP₀⟩ := ih (mem_insert P.first S)

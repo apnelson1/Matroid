@@ -182,7 +182,7 @@ variable [CompleteLattice α] {P Q R : Partition α}
 def delete (P : Partition α) (s : Set α) : Partition α where
   parts := P.parts \ s
   indep := P.indep.mono diff_subset
-  bot_notMem h := P.bot_notMem h.1
+  bot_not_mem h := P.bot_not_mem h.1
 
 scoped infixl:65 " \\ " => Partition.delete
 
@@ -244,7 +244,7 @@ lemma delete_supp_le : (delete P s).supp ≤ P.supp := by
 def restrict (P : Partition α) (s : Set α) (hs : s ⊆ P.parts) : Partition α where
   parts := s
   indep := P.indep.mono hs
-  bot_notMem h := P.bot_notMem (hs h)
+  bot_not_mem h := P.bot_not_mem (hs h)
 
 @[simp] lemma mem_restrict_iff (hs : s ⊆ P.parts) :
     a ∈ P.restrict s hs ↔ a ∈ s := Iff.rfl
@@ -281,7 +281,7 @@ lemma cover_supp_eq_self : P.cover P.supp = P := by
   simp only [cover, mem_parts, mem_restrict_iff, mem_setOf_eq, and_iff_left_iff_imp]
   rintro hxP hdisj
   obtain rfl := hdisj.symm.eq_bot_of_le (le_supp_of_mem hxP)
-  exact P.bot_notMem hxP
+  exact P.bot_not_mem hxP
 
 lemma cover_subset (a : α) : P.cover a ⊆ P := restrict_subset _
 
@@ -392,7 +392,8 @@ lemma indiscrete_agree_indiscrete_iff (ha : a ≠ ⊥) (hb : b ≠ ⊥) :
     exact or_iff_not_imp_right.mpr <| S.eq_of_not_disjoint hPS hQS
   rintro (rfl | hdisj)
   · simp
-  use Partition.bipartition a b ha hb hdisj, ?_ <;> simp
+  obtain ⟨P, hP⟩ := isPartition_pair_of_disjoint ha hb hdisj
+  use P, ?_ <;> simp [mem_iff_mem_of_parts_eq hP]
 
 @[simp]
 lemma agree_on_indiscrete'_iff : (Agree on indiscrete') a b ↔ a = b ∨ Disjoint a b := by
@@ -425,7 +426,7 @@ lemma induce_sSup_eq_restrict [Order.Frame α] (P : Partition α) (a : α) :
 lemma agree_iff_union_pairwiseDisjoint [Order.Frame α] {P Q : Partition α} :
     P.Agree Q ↔ (P.parts ∪ Q.parts).PairwiseDisjoint id :=
   Iff.trans ⟨fun ⟨S, hPS, hQS⟩ => S.indep.mono (union_subset_iff.mpr ⟨hPS, hQS⟩),
-    fun h => ⟨ofIndependent h (·.elim P.bot_notMem Q.bot_notMem),
+    fun h => ⟨ofIndependent h (·.elim P.bot_not_mem Q.bot_not_mem),
     (fun x hx ↦ by simp [ofIndependent, hx]), (fun x hx ↦ by simp [ofIndependent, hx])⟩⟩
     sSupIndep_iff_pairwiseDisjoint
 
@@ -452,12 +453,17 @@ lemma sSupIndep_parts_union_of_mem_of_not_disjoint (h : ∀ x ∈ P, ¬ Disjoint
 
 lemma agree_of_mem_of_not_disjoint (h : ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q) : P.Agree Q := by
   have hindep : sSupIndep (P.parts ∪ Q.parts) := sSupIndep_parts_union_of_mem_of_not_disjoint h
-  let R : Partition α := ofIndependent hindep (by simp [P.bot_notMem, Q.bot_notMem])
+  let R : Partition α := ofIndependent hindep (by simp [P.bot_not_mem, Q.bot_not_mem])
   use R, subset_union_left, subset_union_right
 
 lemma agree_iff_mem_of_not_disjoint: P.Agree Q ↔ ∀ x ∈ P, ¬ Disjoint Q.supp x → x ∈ Q :=
   ⟨fun ⟨_, hPR, hQR⟩ _ hxP ↦ mem_of_subset_of_not_disjoint hQR (hPR hxP),
     fun h ↦ agree_of_mem_of_not_disjoint h⟩
+
+lemma agree_of_supp_disjoint (h : Disjoint P.supp Q.supp) : P.Agree Q := by
+  rw [agree_iff_mem_of_not_disjoint]
+  rintro x hxP hndisj
+  exact (hndisj <| h.symm.mono_right (P.le_supp_of_mem hxP)).elim
 
 end RestrictDistrib
 
@@ -484,9 +490,9 @@ variable [CompleteDistribLattice α] {P Q R : Partition α} {Qs : ∀ a ∈ P, P
     · exact (le_sSup_of_le (show t' ∈ _ \ {b} from ⟨ht', hne⟩) rfl.le).trans le_sup_left
     exact le_trans (le_sSup_of_le (mem_diff_of_mem hx hne) <|
       (Qs x hx).le_supp_of_mem ht' |>.trans hxsupp) le_sup_right
-  bot_notMem := by
+  bot_not_mem := by
     simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists]
-    exact fun x hx ↦ (Qs x hx).bot_notMem
+    exact fun x hx ↦ (Qs x hx).bot_not_mem
 
 @[simp] lemma mem_bind_iff (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp ≤ a) :
     a ∈ P.bind Qs hQs ↔ ∃ (b : α) (hb : b ∈ P), a ∈ Qs b hb := by
@@ -642,7 +648,7 @@ def inter (P Q : Partition α) : Partition α where
     refine P.indep hx.1 |>.mono_right (sSup_le_sSup ?_)
     simp only [diff_singleton_subset_iff, insert_diff_singleton]
     exact inter_subset_left.trans <| subset_insert x P.parts
-  bot_notMem h := P.bot_notMem h.1
+  bot_not_mem h := P.bot_not_mem h.1
 
 instance : Inter (Partition α) where
   inter := inter

@@ -180,69 +180,69 @@ lemma Simple.union [H.Simple] (hG' : G.Dup_agree H)
     exact he.1.unique_edge hf.1
   not_isLoopAt := (Loopless.union hG').not_isLoopAt
 
-omit [G.Simple] in
-lemma IsPath.toGraph_simple {P : WList (Set α) β} (hP : G.IsPath P) : P.toGraph.Simple where
-  not_isLoopAt e x h := by
-    rw [← isLink_self_iff, hP.isWalk.wellFormed.toGraph_isLink] at h
-    induction P with
-    | nil => simp at h
-    | cons u f P ih =>
-      simp only [cons_isPath_iff] at hP
-      simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
-        and_comm, or_self] at h
-      aesop
-  eq_of_isLink e f x y he hf := by
-    rw [hP.isWalk.wellFormed.toGraph_isLink] at he hf
-    induction P with
-    | nil => simp_all
-    | cons u g P ih =>
-    · simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-        Prod.swap_prod_mk] at he hf
-      simp only [cons_isPath_iff] at hP
-      have hrw (v' e') : ¬ P.IsLink e' u v' := fun h ↦ hP.2.2 h.left_mem
-      have hrw' (v' e') : ¬ P.IsLink e' v' u := fun h ↦ hP.2.2 h.right_mem
-      obtain rfl | hne := eq_or_ne x u
-      · simp_all
-      obtain rfl | hne' := eq_or_ne y u
-      · simp_all
-      exact ih hP.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
+-- omit [G.Simple] in
+-- lemma IsPath.toGraph_simple {P : WList (Set α) β} (hP : G.IsPath P) : P.toGraph.Simple where
+--   not_isLoopAt e x h := by
+--     rw [← isLink_self_iff, hP.isWalk.wellFormed.toGraph_isLink] at h
+--     induction P with
+--     | nil => simp at h
+--     | cons u f P ih =>
+--       simp only [cons_isPath_iff] at hP
+--       simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
+--         and_comm, or_self] at h
+--       aesop
+--   eq_of_isLink e f x y he hf := by
+--     rw [hP.isWalk.wellFormed.toGraph_isLink] at he hf
+--     induction P with
+--     | nil => simp_all
+--     | cons u g P ih =>
+--     · simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+--         Prod.swap_prod_mk] at he hf
+--       simp only [cons_isPath_iff] at hP
+--       have hrw (v' e') : ¬ P.IsLink e' u v' := fun h ↦ hP.2.2 h.left_mem
+--       have hrw' (v' e') : ¬ P.IsLink e' v' u := fun h ↦ hP.2.2 h.right_mem
+--       obtain rfl | hne := eq_or_ne x u
+--       · simp_all
+--       obtain rfl | hne' := eq_or_ne y u
+--       · simp_all
+--       exact ih hP.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
 
 end Simple
 
 /-! ### Small Graphs -/
 
-lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
-  refine Graph.ext_inc ?_ fun e x ↦ ?_
-  · sorry
-  rw [banana_inc_of_disjoint]
-  simp only [banana_inc]
-  refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
-  suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
-    rintro ⟨he, rfl | rfl⟩
-    · exact aux _ hV he
-    exact aux _ (pair_comm _ _ ▸ hV) he
-  intro c hC he
-  obtain ⟨z,w, hezw⟩ := exists_isLink_of_mem_edgeSet he
-  obtain rfl | hzx := eq_or_ne z x
-  · exact hezw.inc_left
-  obtain rfl | hwx := eq_or_ne w x
-  · exact hezw.inc_right
-  have h1 := hC ▸ hezw.left_mem
-  have h2 := hC ▸ hezw.right_mem
-  obtain rfl : z = c := by simpa [hzx] using h1
-  obtain rfl : w = z := by simpa [hwx] using h2
-  exact (hezw.adj.ne rfl).elim
+-- lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
+--   refine Graph.ext_inc ?_ fun e x ↦ ?_
+--   · sorry
+--   rw [banana_inc_of_disjoint]
+--   simp only [banana_inc]
+--   refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
+--   suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
+--     rintro ⟨he, rfl | rfl⟩
+--     · exact aux _ hV he
+--     exact aux _ (pair_comm _ _ ▸ hV) he
+--   intro c hC he
+--   obtain ⟨z,w, hezw⟩ := exists_isLink_of_mem_edgeSet he
+--   obtain rfl | hzx := eq_or_ne z x
+--   · exact hezw.inc_left
+--   obtain rfl | hwx := eq_or_ne w x
+--   · exact hezw.inc_right
+--   have h1 := hC ▸ hezw.left_mem
+--   have h2 := hC ▸ hezw.right_mem
+--   obtain rfl : z = c := by simpa [hzx] using h1
+--   obtain rfl : w = z := by simpa [hwx] using h2
+--   exact (hezw.adj.ne rfl).elim
 
-lemma exists_eq_banana [G.Loopless] (hV : V(G) = {a,b}) : ∃ F, G = banana a b F :=
-  ⟨_, eq_banana hV⟩
+-- lemma exists_eq_banana [G.Loopless] (hV : V(G) = {a,b}) : ∃ F, G = banana a b F :=
+--   ⟨_, eq_banana hV⟩
 
-lemma exists_eq_banana_of_encard [G.Loopless] (hV : V(G).encard = 2) :
-    ∃ a b F, a ≠ b ∧ G = banana a b F := by
-  obtain ⟨a, b, hab, hV⟩ := encard_eq_two.1 hV
-  exact ⟨a, b, E(G), hab, eq_banana hV⟩
+-- lemma exists_eq_banana_of_encard [G.Loopless] (hV : V(G).encard = 2) :
+--     ∃ a b F, a ≠ b ∧ G = banana a b F := by
+--   obtain ⟨a, b, hab, hV⟩ := encard_eq_two.1 hV
+--   exact ⟨a, b, E(G), hab, eq_banana hV⟩
 
-lemma banana_loopless (hab : a ≠ b) (F : Set β) : (banana a b F).Loopless where
-  not_isLoopAt e x := by
-    rintro h
-    rw [banana_isloopAt] at h
+-- lemma banana_loopless (hab : a ≠ b) (F : Set β) : (banana a b F).Loopless where
+--   not_isLoopAt e x := by
+--     rintro h
+--     rw [banana_isloopAt] at h
     -- simp [hab, banana_isloopAt sorry]

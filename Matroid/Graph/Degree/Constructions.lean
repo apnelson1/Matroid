@@ -4,7 +4,7 @@ import Matroid.Graph.Constructions.Basic
 
 variable {α β : Type*} {x y z a b u v w : Set α} {e f : β} {G H : Graph α β} {P C : WList (Set α) β}
 
-open Set WList
+open Set WList Partition
 
 namespace Graph
 
@@ -20,49 +20,50 @@ lemma noEdge_degree (V : Partition (Set α)) (β : Type*) (x : Set α) :
     (Graph.noEdge V β).degree x = 0 := by
   simp [degree]
 
-lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) :
-    (Graph.singleEdge x y e).eDegree x = 1 := by
+lemma singleEdge_eDegree_left (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
+    (Graph.singleEdge e x y).eDegree x = 1 := by
   rw [eDegree_eq_encard_add_encard, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
   · convert rfl
-    suffices ∃ z, ¬z = x ∧ (z = y ∨ x = y ∧ z = x) by
-      simpa +contextual [iff_def, IsNonloopAt, Set.ext_iff]
-    exact ⟨y, hxy.symm, by simp [hxy]⟩
-  simp_rw [IsLoopAt, singleEdge_isLink_iff]
-  simp [hxy]
+    simp [singleEdge_isNonloopAt_left_of_isPartition hxy, hne]
+  simp [singleEdge_isLoopAt_left_of_isPartition hxy, hne]
 
-lemma singleEdge_eDegree_right (hxy : x ≠ y) (e : β) :
-    (Graph.singleEdge x y e).eDegree y = 1 := by
-  rw [singleEdge_comm, singleEdge_eDegree_left hxy.symm]
+lemma singleEdge_eDegree_right (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
+    (Graph.singleEdge e x y).eDegree y = 1 := by
+  rw [singleEdge_comm, singleEdge_eDegree_left ?_ hne.symm]
+  rwa [pair_comm]
 
-lemma singleEdge_eDegree_of_ne (e : β) (hx : z ≠ x) (hy : z ≠ y) :
-    (Graph.singleEdge x y e).eDegree z = 0 := by
-  simpa [eDegree_eq_zero_iff_adj, hx]
+lemma singleEdge_eDegree_of_ne (e : β) (hxy : IsPartition {x, y}) (hx : z ≠ x) (hy : z ≠ y) :
+    (Graph.singleEdge e x y).eDegree z = 0 := by
+  simpa [eDegree_eq_zero_iff_adj, hx, singleEdge_adj_of_isPartition hxy]
 
-lemma singleEdge_degree_left (hxy : x ≠ y) (e : β) :
-    (Graph.singleEdge x y e).degree x = 1 := by
-  simp [degree, singleEdge_eDegree_left hxy]
+lemma singleEdge_degree_left (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
+    (Graph.singleEdge e x y).degree x = 1 := by
+  simp [degree, singleEdge_eDegree_left hxy hne]
 
-lemma singleEdge_degree_right (hxy : x ≠ y) (e : β) :
-    (Graph.singleEdge x y e).degree y = 1 := by
-  simp [degree, singleEdge_eDegree_right hxy]
+lemma singleEdge_degree_right (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
+    (Graph.singleEdge e x y).degree y = 1 := by
+  simp [degree, singleEdge_eDegree_right hxy hne]
 
-lemma singleEdge_degree_of_ne (e : β) (hx : z ≠ x) (hy : z ≠ y) :
-    (Graph.singleEdge x y e).degree z = 0 := by
-  simp [degree, singleEdge_eDegree_of_ne _ hx hy]
+lemma singleEdge_degree_of_ne (e : β) (hxy : IsPartition {x, y}) (hx : z ≠ x) (hy : z ≠ y) :
+    (Graph.singleEdge e x y).degree z = 0 := by
+  simp [degree, singleEdge_eDegree_of_ne _ hxy hx hy]
 
-lemma singleEdge_regular (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Regular 1 := by
-  rintro z (rfl | rfl)
-  · rw [singleEdge_eDegree_left hxy, Nat.cast_one]
-  rw [singleEdge_eDegree_right hxy, Nat.cast_one]
+lemma singleEdge_regular (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
+    (Graph.singleEdge e x y).Regular 1 := by
+  intro z hz
+  obtain rfl | rfl := singleEdge_vertexSet_of_isPartition hxy ▸ hz
+  · rw [singleEdge_eDegree_left hxy hne, Nat.cast_one]
+  rw [singleEdge_eDegree_right hxy hne, Nat.cast_one]
 
 @[simp]
-lemma singleEdge_self_eDegree (x : α) (e : β) : (Graph.singleEdge x x e).eDegree x = 2 := by
+lemma singleEdge_self_eDegree (hx : x.Nonempty) (e : β) :
+    (Graph.singleEdge e x x).eDegree x = 2 := by
   rw [eDegree_eq_encard_add_encard]
-  simp [← isLink_self_iff, IsNonloopAt]
+  simp [← isLink_self_iff, IsNonloopAt, hx]
 
 @[simp]
-lemma singleEdge_self_degree (x : α) (e : β) : (Graph.singleEdge x x e).degree x = 2 := by
-  simp [degree]
+lemma singleEdge_self_degree (hx : x.Nonempty) (e : β) : (Graph.singleEdge e x x).degree x = 2 := by
+  simp [degree, hx]
 
 
 lemma banana_eDegree_left (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree a = F.encard := by

@@ -109,15 +109,13 @@ lemma Set.subsingleton_image {α β : Type*} {f : α → β} {S : Set α} (hS : 
   rintro a ⟨x, hxS, rfl⟩ b ⟨y, hyS, rfl⟩
   exact (hS hxS hyS) ▸ rfl
 
--- lemma disjoint_sup [CompleteLattice α] {a : α} {s t : Set α} (hb : )
-
 
 variable {α β : Type*} {s t x y z : α}
 
 structure Partition (α : Type*) [CompleteLattice α] where
   parts : Set α
   indep : sSupIndep parts
-  bot_notMem : ⊥ ∉ parts
+  bot_not_mem : ⊥ ∉ parts
 
 namespace Partition
 
@@ -182,7 +180,7 @@ lemma eq_of_not_disjoint (hx : x ∈ P) (hy : y ∈ P) (hxy : ¬ Disjoint x y) :
   exact hxy (P.disjoint hx hy hne)
 
 lemma ne_bot_of_mem (hx : x ∈ P) : x ≠ ⊥ :=
-  fun h ↦ P.bot_notMem <| h ▸ hx
+  fun h ↦ P.bot_not_mem <| h ▸ hx
 
 lemma bot_lt_of_mem (hx : x ∈ P) : ⊥ < x :=
   bot_lt_iff_ne_bot.2 <| P.ne_bot_of_mem hx
@@ -217,6 +215,9 @@ lemma mem_of_subset_of_not_disjoint (hPQ : P ⊆ Q) (hxQ : x ∈ Q) (hndisj : ¬
   contrapose! hndisj
   exact Q.indep hxQ |>.symm.mono_left (sSup_le_sSup <| subset_diff_singleton hPQ hndisj)
 
+lemma mem_iff_mem_of_parts_eq {S : Set α} (hP : P.parts = S) : x ∈ P ↔ x ∈ S := by
+  rw [← mem_parts, hP]
+
 end Basic
 
 section PairwiseDisjoint
@@ -226,7 +227,7 @@ variable {α : Type*} [Order.Frame α] {s t x y z : α} {parts : Set α} {P Q : 
 @[simps] def ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) : Partition α where
   parts := parts \ {⊥}
   indep := sSupIndep_iff_pairwiseDisjoint.mpr (pairwiseDisjoint.subset diff_subset)
-  bot_notMem := by simp
+  bot_not_mem := by simp
 
 @[simp] lemma mem_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) :
     x ∈ ofPairwiseDisjoint pairwiseDisjoint ↔ x ∈ parts \ {⊥} := Iff.rfl
@@ -240,7 +241,7 @@ lemma supp_ofPairwiseDisjoint (pairwiseDisjoint : parts.PairwiseDisjoint id) :
     Partition α where
   parts := parts
   indep := pairwiseDisjoint.sSupIndep
-  bot_notMem := fun h ↦ by simpa using forall_nonempty _ h
+  bot_not_mem := fun h ↦ by simpa using forall_nonempty _ h
 
 @[simp]
 lemma supp_ofPairwiseDisjoint' (pairwiseDisjoint : parts.PairwiseDisjoint id)
@@ -266,7 +267,7 @@ variable [CompleteLattice α] {u : Set α} {a b : α} {P Q : Partition α}
 @[simps] def ofIndependent (hs : sSupIndep u) (hbot : ⊥ ∉ u) : Partition α where
   parts := u
   indep := hs
-  bot_notMem := hbot
+  bot_not_mem := hbot
 
 @[simp] lemma mem_ofIndependent_iff (hu : sSupIndep u) (h : ⊥ ∉ u) :
   a ∈ ofIndependent hu h ↔ a ∈ u := Iff.rfl
@@ -290,7 +291,7 @@ def ofIndependent' (hs : sSupIndep u) : Partition α :=
 @[simps] protected def empty (α : Type*) [CompleteLattice α] : Partition α where
   parts := ∅
   indep := by simp
-  bot_notMem := by simp
+  bot_not_mem := by simp
 
 instance : OrderBot (Partition α) where
   bot := Partition.empty α
@@ -332,7 +333,7 @@ instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition
 @[simps] def indiscrete (s : α) (hs : s ≠ ⊥) : Partition α where
   parts := {s}
   indep := by simp [sSupIndep]
-  bot_notMem := by simpa using hs.symm
+  bot_not_mem := by simpa using hs.symm
 
 @[simp] lemma mem_indiscrete_iff (hs : s ≠ ⊥) :
     a ∈ Partition.indiscrete s hs ↔ a = s := Iff.rfl
@@ -356,7 +357,7 @@ def indiscrete' (s : α) : Partition α where
   indep := sSupIndep_subsingleton <| by
     rintro x ⟨hx, rfl⟩ y ⟨hy, rfl⟩
     rfl
-  bot_notMem := by simp [ne_comm]
+  bot_not_mem := by simp [ne_comm]
 
 @[simp]
 lemma mem_indiscrete'_iff : x ∈ indiscrete' s ↔ s ≠ ⊥ ∧ x = s := Iff.rfl
@@ -383,30 +384,111 @@ lemma eq_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a = s :=
 lemma ne_bot_of_mem_indiscrete' (has : a ∈ indiscrete' s) : a ≠ ⊥ :=
   has.2 ▸ has.1
 
-def bipartition (a b : α) (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) : Partition α :=
-  ofIndependent (u := {a, b}) (by
-    rintro x (rfl | rfl)
-    · simpa [Set.diff_singleton_eq_self (show x ∉ {_} from hab.ne ha)]
-    · rw [disjoint_comm] at hab
-      simpa [Set.pair_comm, Set.diff_singleton_eq_self (show x ∉ {a} from hab.ne hb)])
-    (by simp [ha.symm, hb.symm])
-
-@[simp] lemma parts_bipartition (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
-    (bipartition a b ha hb hab).parts = {a, b} := rfl
-
-@[simp] lemma mem_bipartition_iff (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
-    x ∈ bipartition a b ha hb hab ↔ x = a ∨ x = b := by
-  simp [bipartition]
-
-@[simp] lemma supp_bipartition (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
-    (bipartition a b ha hb hab).supp = a ⊔ b := by
-  simp [bipartition]
-
-lemma bipartition_comm (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
-    bipartition a b ha hb hab = bipartition b a hb ha hab.symm :=
-  Partition.ext <| by simp [bipartition, pair_comm]
-
 end indep
+
+section IsPartition
+
+variable {α : Type*} [CompleteLattice α] {S T : Set α} {x y z : α} {P : Partition α}
+
+def IsPartition (S : Set α) : Prop := ∃ P : Partition α, P.parts = S
+
+namespace IsPartition
+
+@[simp]
+lemma indep (hS : IsPartition S) : sSupIndep S := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.indep
+
+@[simp]
+lemma bot_not_mem (hS : IsPartition S) : ⊥ ∉ S := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.bot_not_mem
+
+lemma disjoint (hS : IsPartition S) (hx : x ∈ S) (hy : y ∈ S) (hxy : x ≠ y) : Disjoint x y := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.disjoint hx hy hxy
+
+@[simp]
+lemma eq_or_disjoint (hS : IsPartition S) (hx : x ∈ S) (hy : y ∈ S) : x = y ∨ Disjoint x y := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.eq_or_disjoint hx hy
+
+@[simp]
+lemma pairwiseDisjoint (hS : IsPartition S) : Set.PairwiseDisjoint S id := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.pairwiseDisjoint
+
+lemma eq_of_not_disjoint (hS : IsPartition S) (hx : x ∈ S) (hy : y ∈ S) (hxy : ¬ Disjoint x y) :
+    x = y := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.eq_of_not_disjoint hx hy hxy
+
+@[simp]
+lemma ne_bot_of_mem (hS : IsPartition S) (hx : x ∈ S) : x ≠ ⊥ := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.ne_bot_of_mem hx
+
+lemma bot_lt_of_mem (hS : IsPartition S) (hx : x ∈ S) : ⊥ < x := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.bot_lt_of_mem hx
+
+lemma iff_exists : IsPartition S ↔ ∃ P : Partition α, P.parts = S := Iff.rfl
+
+end IsPartition
+
+@[simp]
+lemma exists_subset_iff_isPartition : (∃ P : Partition α, S ⊆ P.parts) ↔ IsPartition S := by
+  refine ⟨fun ⟨P, hP⟩ ↦ ?_, ?_⟩
+  · use ofIndependent' (P.indep.mono hP)
+    simp only [ofIndependent'_parts, sdiff_eq_left, disjoint_singleton_right]
+    exact fun h ↦ P.bot_not_mem (hP h)
+  · rintro ⟨P, rfl⟩
+    exact ⟨P, by simp⟩
+
+lemma IsPartition.subset (hS : IsPartition T) (hST : S ⊆ T) : IsPartition S := by
+  rw [← exists_subset_iff_isPartition] at hS ⊢
+  obtain ⟨P, hP⟩ := hS
+  exact ⟨P, hST.trans hP⟩
+
+lemma parts_isPartition (P : Partition α) : IsPartition P.parts := ⟨P, rfl⟩
+
+lemma isPartition_of_subset (hS : S ⊆ P.parts) : IsPartition S := by
+  rw [← exists_subset_iff_isPartition]
+  exact ⟨P, hS⟩
+
+lemma isPartition_of (h1 : sSupIndep S) (h2 : ⊥ ∉ S) : IsPartition S := by
+  use ofIndependent h1 h2
+  rfl
+
+lemma isPartition_iff : IsPartition S ↔ sSupIndep S ∧ ⊥ ∉ S := by
+  refine ⟨fun h ↦ ?_, fun ⟨h1, h2⟩ ↦ isPartition_of h1 h2⟩
+  obtain ⟨P, rfl⟩ := h
+  exact ⟨P.indep, P.bot_not_mem⟩
+
+@[simp]
+lemma isPartition_singleton_iff : IsPartition {x} ↔ x ≠ ⊥ := by
+  rw [isPartition_iff]
+  simp [eq_comm, sSupIndep_singleton]
+
+lemma isPartition_pair_of_disjoint (hx : x ≠ ⊥) (hy : y ≠ ⊥) (hxy : Disjoint x y) :
+    IsPartition {x, y} := by
+  rw [isPartition_iff]
+  simpa [hx.symm, hy.symm, sSupIndep_pair (hxy.ne hx)]
+
+end IsPartition
+
+lemma isPartition_iff_pairwiseDisjoint {S : Set α} [Order.Frame α] :
+    IsPartition S ↔ S.PairwiseDisjoint id ∧ ⊥ ∉ S := by
+  rw [isPartition_iff, sSupIndep_iff_pairwiseDisjoint]
+
+@[simp]
+lemma isPartition_pair_iff {x y : α} [Order.Frame α] :
+    IsPartition {x, y} ↔ (x = y ∨ Disjoint x y) ∧ x ≠ ⊥ ∧ y ≠ ⊥ := by
+  by_cases hxy : x = y
+  · subst x
+    simp
+  rw [isPartition_iff]
+  simp [eq_comm, sSupIndep_pair, hxy]
 
 section Order
 
@@ -477,8 +559,6 @@ lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
 
 lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩
-
-
 
 end Order
 

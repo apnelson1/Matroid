@@ -42,11 +42,11 @@ lemma sUnion_isLink (hs : s.Pairwise Graph.Compatible) (hs' : s.Pairwise Dup_agr
   refine ⟨fun ⟨u, v, ⟨G, hGs, huv⟩, hs, A, B⟩ => ⟨G, hGs, ?_⟩,
     fun h => ⟨x, y, h, hs.imp  fun _ _ hGH ↦ hGH.compatibleAt e, ?_⟩⟩
   · subst A B
-    convert huv <;> apply foo_eq_of_le (subset_biSup_of_agree hs' hGs)
+    convert huv <;> refine foo_eq_self_of_mem (subset_biSup_of_agree hs' hGs ?_)
     · exact huv.left_mem'
     · exact huv.right_mem'
   · obtain ⟨G, hGs, huv⟩ := h
-    constructor <;> apply foo_eq_of_le (subset_biSup_of_agree hs' hGs)
+    constructor <;> refine foo_eq_self_of_mem (subset_biSup_of_agree hs' hGs ?_)
     · exact huv.left_mem'
     · exact huv.right_mem'
 
@@ -601,10 +601,10 @@ lemma noEdge_union_eq_self : Graph.noEdge P β ∪ G = G ↔ P ≤ P(G) := by
   simp only [union_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
     not_isLink_of_notMem_edgeSet, and_true, false_or, union_vertexPartition, noEdge_vertexPartition,
     h, sup_of_le_right]
-  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_of_mem h.left_mem',
-    foo_eq_of_mem h.right_mem'⟩⟩
+  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_self_of_mem h.left_mem',
+    foo_eq_self_of_mem h.right_mem'⟩⟩
   rintro ⟨u, v, h, rfl, rfl⟩
-  rwa [foo_eq_of_mem h.left_mem', foo_eq_of_mem h.right_mem']
+  rwa [foo_eq_self_of_mem h.left_mem', foo_eq_self_of_mem h.right_mem']
 
 @[simp]
 lemma union_noEdge_eq_self : G ∪ Graph.noEdge P β = G ↔ P ≤ P(G) := by
@@ -616,9 +616,9 @@ lemma union_noEdge_eq_self : G ∪ Graph.noEdge P β = G ↔ P ≤ P(G) := by
   simp only [union_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true,
     not_isLink_of_notMem_edgeSet, false_and, or_false, union_vertexPartition,
     noEdge_vertexPartition, h, sup_of_le_left]
-  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_of_mem h.left_mem',
-    foo_eq_of_mem h.right_mem'⟩⟩
+  refine ⟨?_, fun h => ⟨x, y, h, foo_eq_self_of_mem h.left_mem',
+    foo_eq_self_of_mem h.right_mem'⟩⟩
   rintro ⟨u, v, h, rfl, rfl⟩
-  rwa [foo_eq_of_mem h.left_mem', foo_eq_of_mem h.right_mem']
+  rwa [foo_eq_self_of_mem h.left_mem', foo_eq_self_of_mem h.right_mem']
 
 end Graph

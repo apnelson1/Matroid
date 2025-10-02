@@ -26,8 +26,9 @@ lemma addEdge_vertexSet_of_mem (ha : a ∈ V(G)) (hb : b ∈ V(G)) : V(G.addEdge
   by_cases hab : a = b
   · subst b
     simp [ha, Graph.addEdge, (G.nonempty_of_mem ha).ne_empty]
-  rw [Graph.addEdge, union_vertexSet (banana_dup_agree_of_mem ha hb), banana_vertexSet_of_disjoint
-    (G.nonempty_of_mem ha) (G.nonempty_of_mem hb) (G.disjoint_of_mem ha hb hab), insert_union]
+  rw [Graph.addEdge, union_vertexSet (banana_dup_agree_of_mem ha hb),
+    banana_vertexSet_of_isPartition (Partition.isPartition_of_subset (P := P(G))
+    (by simp [pair_subset, ha, hb])), insert_union]
   simp [ha, hb]
 
 -- lemma subset_addEdge_vertexSet : V(G) ⊆ V(G.addEdge e a b) := by
@@ -45,8 +46,10 @@ lemma addEdge_isLink (ha : a ∈ V(G)) (hb : b ∈ V(G)) : (G.addEdge e a b).IsL
   · subst b
     simp [G.nonempty_of_mem ha]
     tauto
-  simp only [G.nonempty_of_mem ha, G.nonempty_of_mem hb, G.disjoint_of_mem ha hb hab,
-    banana_isLink_of_disjoint, mem_singleton_iff, banana_edgeSet, and_true, setOf_eq_eq_singleton]
+  simp only [G.nonempty_of_mem ha, G.nonempty_of_mem hb,
+    banana_isLink_of_isPartition (Partition.isPartition_of_subset (P := P(G))
+    (by simp [pair_subset, ha, hb] : {a, b} ⊆ _)), mem_singleton_iff, banana_edgeSet, and_true,
+    setOf_eq_eq_singleton]
   tauto
 
 @[simp]

@@ -189,7 +189,6 @@ even though this is the standard use case) -/
 @[simps! vertexSet vertexPartition]
 protected def induce (G : Graph α β) (P : Partition (Set α)) : Graph α β where
   vertexPartition := P
-  vertexSet_eq_parts := rfl
   IsLink e := Relation.restrict (G.IsLink e) P.parts
   isLink_symm e he x y hxy := symm hxy
   eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := G.eq_or_eq_of_isLink_of_isLink
@@ -370,5 +369,109 @@ lemma le_vertexDelete_iff : H ≤ G - X ↔ H ≤ G ∧ Disjoint V(H) X := by
   simp only [vertexDelete_def, le_induce_iff (delete_subset X), delete_parts, vertexPartition_parts,
     subset_diff, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ vertexSet_mono h
+
+@[simps vertexSet vertexPartition isLink]
+def induce' (G : Graph α β) (X : Set (Set α)) : Graph α β where
+  vertexPartition := P(G).restrict (V(G) ∩ X) <| G.vertexSet_eq_parts ▸ inter_subset_left
+  vertexSet := V(G) ∩ X
+  vertexSet_eq_parts := by simp
+  IsLink e x y := G.IsLink e x y ∧ x ∈ X ∧ y ∈ X
+  isLink_symm _ _ _ _ h := ⟨h.1.symm, h.2.symm⟩
+  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := G.eq_or_eq_of_isLink_of_isLink h.1 h'.1
+  left_mem_of_isLink _ _ _ h := ⟨G.left_mem_of_isLink h.1, h.2.1⟩
+
+@[simp]
+lemma induce'_le : G.induce' X ≤ G where
+  vertexSet_subset := by simp [induce']
+  isLink_of_isLink := by simp +contextual [induce']
+
+@[simp]
+lemma induce'_le_iff : G.induce' X ≤ G ↔ V(G) ∩ X ⊆ P(G) :=
+  ⟨vertexPartition_mono, fun _ => induce'_le⟩
+
+lemma IsLink.induce' (h : G.IsLink e x y) (hx : x ∈ X) (hy : y ∈ X) : (G.induce' X).IsLink e x y :=
+  ⟨h, hx, hy⟩
+
+@[simp]
+lemma induce'_adj_iff : (G.induce' X).Adj x y ↔ G.Adj x y ∧ x ∈ X ∧ y ∈ X := by
+  simp [Adj]
+
+lemma Adj.induce' (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : (G.induce' X).Adj x y :=
+  induce'_adj_iff.mpr ⟨h, hx, hy⟩
+
+/-- This is too annoying to be a simp lemma. -/
+lemma induce'_edgeSet (G : Graph α β) (X : Set (Set α)) :
+    E(G.induce' X) = {e | ∃ x y, G.IsLink e x y ∧ x ∈ X ∧ y ∈ X} := rfl
+
+@[simp]
+lemma induce'_edgeSet_subset (G : Graph α β) (X : Set (Set α)) : E(G.induce' X) ⊆ E(G) := by
+  rintro e ⟨x,y,h, -, -⟩
+  exact h.edge_mem
+
+lemma IsLink.mem_induce'_iff (hG : G.IsLink e x y) : e ∈ E(G.induce' X) ↔ x ∈ X ∧ y ∈ X := by
+  simp only [induce'_edgeSet, mem_setOf_eq]
+  refine ⟨fun ⟨x', y', he, hx', hy'⟩ ↦ ?_, fun h ↦ ⟨x, y, hG, h⟩⟩
+  obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hG.eq_and_eq_or_eq_and_eq he <;> simp [hx', hy']
+
+lemma induce'_isLink_iff_of_mem_edgeSet (h : e ∈ E(G.induce' X)) :
+    (G.induce' X).IsLink e x y ↔ G.IsLink e x y := by
+  obtain ⟨x', y', h', hx', hy'⟩ := h
+  have : (G.induce' X).IsLink e x' y' := by use h'
+  rw [h'.isLink_iff, this.isLink_iff]
+
+lemma induce'_induce' (G : Graph α β) (X Y : Set (Set α)) :
+    (G.induce' X).induce' Y = G.induce' (X ∩ Y) := by
+  refine Graph.ext (by simp [inter_assoc]) fun e x y ↦ ?_
+  simp only [induce'_isLink, mem_inter_iff]
+  tauto
+
+lemma induce'_mono_right (G : Graph α β) (hXY : X ⊆ Y) : G.induce' X ≤ G.induce' Y where
+  vertexSet_subset := by simp [inter_subset_right.trans hXY]
+  isLink_of_isLink _ _ _ := fun ⟨hl, hx, hy⟩ => ⟨hl, hXY hx, hXY hy⟩
+
+lemma induce'_vertexSet_inter (G : Graph α β) (X : Set (Set α)) :
+    G.induce' (V(G) ∩ X) = G.induce' X := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [induce'_isLink, mem_inter_iff, and_congr_right_iff]
+  exact fun h ↦ by simp [h.left_mem, h.right_mem]
+
+@[simp]
+lemma induce'_mono_right_iff (G : Graph α β) : G.induce' X ≤ G.induce' Y ↔ V(G) ∩ X ⊆ V(G) ∩ Y := by
+  refine ⟨vertexSet_mono, fun hsu => ?_⟩
+  rw [← G.induce'_vertexSet_inter X, ← G.induce'_vertexSet_inter Y]
+  exact G.induce'_mono_right hsu
+
+lemma induce'_mono_left (h : H ≤ G) (X : Set (Set α)) : H.induce' X ≤ G.induce' X where
+  vertexSet_subset := by simp [inter_subset_left.trans (vertexSet_mono h)]
+  isLink_of_isLink e x y := fun ⟨hl, hx, hy⟩ => ⟨hl.of_le h, hx, hy⟩
+
+lemma induce'_mono (h : H ≤ G) (hXY : X ⊆ Y) : H.induce' X ≤ G.induce' Y :=
+  (induce'_mono_left h X).trans (G.induce'_mono_right hXY)
+
+@[simp]
+lemma induce'_vertexSet_self (G : Graph α β) : G.induce' V(G) = G := by
+  refine G.ext_of_le_le (by simp) (by simp) (by simp) <| Set.ext fun e ↦
+    ⟨fun ⟨_, _, h⟩ ↦ h.1.edge_mem, fun h ↦ ?_⟩
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
+  exact ⟨x, y, h, G.vertexSet_eq_parts ▸ h.left_mem, G.vertexSet_eq_parts ▸ h.right_mem⟩
+
+lemma le_induce'_of_le_of_subset (h : H ≤ G) (hV : V(H) ⊆ X) : H ≤ G.induce' X where
+  vertexSet_subset := by simp [hV, vertexSet_mono h]
+  isLink_of_isLink e x y hl := ⟨hl.of_le h, hV hl.left_mem, hV hl.right_mem⟩
+
+lemma le_induce'_self (h : H ≤ G) : H ≤ G.induce' V(H) :=
+  le_induce'_of_le_of_subset h <| H.vertexPartition_parts ▸ rfl.subset
+
+lemma le_induce'_iff : H ≤ G.induce' X ↔ H ≤ G ∧ V(H) ⊆ X := by
+  refine ⟨fun h ↦ ⟨h.trans (by simp_all), ?_⟩, fun h ↦ le_induce'_of_le_of_subset h.1 h.2⟩
+  have := vertexSet_mono h
+  simp_all
+
+@[simp]
+lemma edgeRestrict_induce' (G : Graph α β) (X : Set (Set α)) (F : Set β) :
+    (G ↾ F).induce' X = G.induce' X ↾ F := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [induce'_isLink, edgeRestrict_isLink]
+  tauto
 
 end Graph
