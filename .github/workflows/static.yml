@@ -27,6 +27,6 @@ jobs:
       - name: Build project documentation.
         id: build-docgen
         uses: leanprover-community/docgen-action@main
-        with:
+        # with:
           # Uncomment the next line if you wish to build a blueprint alongside your repository.
-          blueprint: true
+          # blueprint: true
