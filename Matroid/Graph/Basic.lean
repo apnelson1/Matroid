@@ -28,7 +28,7 @@ The design broadly follows [Chou1994].
 
 For `G : Graph α β`, ...
 
-* `V(G)` denotes the vertex set of `G` as a term in `Partition (Set α)`.
+* `V(G)` denotes the vertex set of `G` as a term in `Partition α`.
 * `E(G)` denotes the edge set of `G` as a term in `Set β`.
 * `G.IsLink e x y` means that the edge `e : β` has vertices `x : α` and `y : α` as its ends.
 * `G.Inc e x` means that the edge `e : β` has `x` as one of its ends.
@@ -41,7 +41,7 @@ For `G : Graph α β`, ...
 ## Implementation notes
 
 Unlike the design of `SimpleGraph`, the vertex and edge sets of `G` are modelled as sets
-`V(G) : Partition (Set α)` and `E(G) : Set β`, within ambient types, rather than being types
+`V(G) : Partition α` and `E(G) : Set β`, within ambient types, rather than being types
 themselves. This mimics the 'embedded set' design used in `Matroid`, which seems to be more
 convenient for formalizing real-world proofs in combinatorics.
 
@@ -52,7 +52,7 @@ definitions and canonical coercion maps. The same will go for minors and the var
 partial orders on multigraphs.
 
 The main tradeoff is that parts of the API will need to care about whether a term
-`x : Set α` or `e : β` is a 'real' vertex or edge of the graph, rather than something outside
+`x : α` or `e : β` is a 'real' vertex or edge of the graph, rather than something outside
 the vertex or edge set. This is an issue, but is likely amenable to automation.
 
 ## Notation
@@ -62,12 +62,12 @@ refer to the `vertexSet` and `edgeSet` of `G : Graph α β`.
 If `G.IsLink e x y` then we refer to `e` as `edge` and `x` and `y` as `left` and `right` in names.
 -/
 
-variable {α β : Type*} {x x' y y' z u v w : Set α} {e f : β}
+variable {α β : Type*} {x x' y y' z u v w : α} {e f : β}
 
 open Set Partition
 
 /-- A multigraph with vertices of type `α` and edges of type `β`,
-as described by vertex and edge sets `vertexSet : Set α` and `edgeSet : Set β`,
+as described by vertex and edge sets `vertexSet : α` and `edgeSet : Set β`,
 and a predicate `IsLink` describing whether an edge `e : β` has vertices `x y : α` as its ends.
 
 The `edgeSet` structure field can be inferred from `IsLink`
@@ -78,15 +78,15 @@ immediately know what the edge set should be,
 and furthermore having `edgeSet` separate can be convenient for
 definitional equality reasons.
 -/
-structure Graph (α β : Type*) where
-  vertexPartition : Partition (Set α)
+structure Graph (α β : Type*) [CompleteLattice α] where
+  vertexPartition : Partition α
   /-- The vertex set. -/
-  vertexSet : Set (Set α) := vertexPartition.parts
+  vertexSet : Set α := vertexPartition.parts
   /-- The vertex set is equal to the parts of the vertex partition. -/
-  vertexSet_eq_parts : vertexPartition.parts = vertexSet := by exact rfl
+  vertexSet_eq_parts : vertexPartition.parts = vertexSet := by rfl
   /-- The binary incidence predicate, stating that `x` and `y` are the ends of an edge `e`.
   If `G.IsLink e x y` then we refer to `e` as `edge` and `x` and `y` as `left` and `right`. -/
-  IsLink : β → Set α → Set α → Prop
+  IsLink : β → α → α → Prop
   /-- The edge set. -/
   edgeSet : Set β := {e | ∃ x y, IsLink e x y}
   /-- If `e` goes from `x` to `y`, it goes from `y` to `x`. -/
@@ -102,7 +102,7 @@ initialize_simps_projections Graph (IsLink → isLink)
 
 namespace Graph
 
-variable {G : Graph α β}
+variable [CompleteLattice α] {G : Graph α β}
 
 /-- `P(G)` denotes the `vertexPartition` of a graph `G`. -/
 scoped notation "P(" G ")" => Graph.vertexPartition G
@@ -132,12 +132,12 @@ lemma vertexPartition_eq_iff {H : Graph α β} : P(G) = P(H) ↔ V(G) = V(H) := 
   rw [← G.vertexPartition_parts, ← H.vertexPartition_parts, ext_iff_parts]
 
 @[simp]
-lemma ne_empty_of_mem (h : x ∈ V(G)) : x ≠ ∅ :=
+lemma ne_empty_of_mem (h : x ∈ V(G)) : x ≠ ⊥ :=
   P(G).ne_bot_of_mem <| mem_vertexPartition_iff.mpr h
 
-@[simp]
-lemma nonempty_of_mem (h : x ∈ V(G)) : x.Nonempty :=
-  nonempty_iff_ne_empty.mpr <| ne_empty_of_mem h
+-- @[simp]
+-- lemma nonempty_of_mem (h : x ∈ V(G)) : x.Nonempty :=
+--   nonempty_iff_ne_empty.mpr <| ne_empty_of_mem h
 
 lemma pairwiseDisjoint_vertexSet : V(G).PairwiseDisjoint id :=
   G.vertexSet_eq_parts ▸ P(G).indep.pairwiseDisjoint
@@ -184,16 +184,16 @@ lemma IsLink.right_mem' (h : G.IsLink e x y) : y ∈ P(G) :=
 lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
   ⟨.symm, .symm⟩
 
-lemma IsLink.left_nonempty (h : G.IsLink e x y) : x.Nonempty :=
-  G.nonempty_of_mem h.left_mem
+-- lemma IsLink.left_nonempty (h : G.IsLink e x y) : x.Nonempty :=
+--   G.nonempty_of_mem h.left_mem
 
-lemma IsLink.right_nonempty (h : G.IsLink e x y) : y.Nonempty :=
-  h.symm.left_nonempty
+-- lemma IsLink.right_nonempty (h : G.IsLink e x y) : y.Nonempty :=
+--   h.symm.left_nonempty
 
-lemma IsLink.left_ne_empty (h : G.IsLink e x y) : x ≠ ∅ :=
+lemma IsLink.left_ne_empty (h : G.IsLink e x y) : x ≠ ⊥ :=
   G.ne_empty_of_mem h.left_mem
 
-lemma IsLink.right_ne_empty (h : G.IsLink e x y) : y ≠ ∅ :=
+lemma IsLink.right_ne_empty (h : G.IsLink e x y) : y ≠ ⊥ :=
   h.symm.left_ne_empty
 
 lemma IsLink.eq_or_disjoint (h : G.IsLink e x y) : x = y ∨ Disjoint x y :=
@@ -258,7 +258,7 @@ lemma isLink_eq_isLink_iff_exists_isLink_of_mem_edgeSet {H : Graph α β} (heG :
 /-- The unary incidence predicate of `G`. `G.Inc e x` means that the vertex `x`
 is one or both of the ends of the edge `e`.
 In the `Inc` namespace, we use `edge` and `vertex` to refer to `e` and `x`. -/
-def Inc (G : Graph α β) (e : β) (x : Set α) : Prop := ∃ y, G.IsLink e x y
+def Inc (G : Graph α β) (e : β) (x : α) : Prop := ∃ y, G.IsLink e x y
 
 -- Cannot be @[simp] because `x` cannot be inferred by `simp`.
 lemma Inc.edge_mem (h : G.Inc e x) : e ∈ E(G) :=
@@ -301,7 +301,7 @@ lemma isLink_iff_inc : G.IsLink e x y ↔ G.Inc e x ∧ G.Inc e y ∧ ∀ z, G.I
 
 /-- Given a proof that the edge `e` is incident with the vertex `x` in `G`,
 noncomputably find the other end of `e`. (If `e` is a loop, this is equal to `x` itself). -/
-protected noncomputable def Inc.other (h : G.Inc e x) : Set α := h.choose
+protected noncomputable def Inc.other (h : G.Inc e x) : α := h.choose
 
 @[simp]
 lemma Inc.isLink_other (h : G.Inc e x) : G.IsLink e x h.other :=
@@ -320,7 +320,7 @@ lemma Inc.eq_or_eq_or_eq (hx : G.Inc e x) (hy : G.Inc e y) (hz : G.Inc e z) :
   exact hcon.2.2 rfl
 
 /-- `G.IsLoopAt e x` means that both ends of the edge `e` are equal to the vertex `x`. -/
-def IsLoopAt (G : Graph α β) (e : β) (x : Set α) : Prop := G.IsLink e x x
+def IsLoopAt (G : Graph α β) (e : β) (x : α) : Prop := G.IsLink e x x
 
 @[simp]
 lemma isLink_self_iff : G.IsLink e x x ↔ G.IsLoopAt e x := Iff.rfl
@@ -342,7 +342,7 @@ lemma IsLoopAt.vertex_mem (h : G.IsLoopAt e x) : x ∈ V(G) :=
 /-- `G.IsNonloopAt e x` means that the vertex `x` is one but not both of the ends of the edge =`e`,
 or equivalently that `e` is incident with `x` but not a loop at `x` -
 see `Graph.isNonloopAt_iff_inc_not_isLoopAt`. -/
-def IsNonloopAt (G : Graph α β) (e : β) (x : Set α) : Prop := ∃ y ≠ x, G.IsLink e x y
+def IsNonloopAt (G : Graph α β) (e : β) (x : α) : Prop := ∃ y ≠ x, G.IsLink e x y
 
 lemma IsNonloopAt.inc (h : G.IsNonloopAt e x) : G.Inc e x :=
   h.choose_spec.2.inc_left
@@ -355,12 +355,12 @@ lemma IsNonloopAt.edge_mem (h : G.IsNonloopAt e x) : e ∈ E(G) :=
 lemma IsNonloopAt.vertex_mem (h : G.IsNonloopAt e x) : x ∈ V(G) :=
   h.inc.vertex_mem
 
-lemma IsLoopAt.not_isNonloopAt (h : G.IsLoopAt e x) (y : Set α) : ¬ G.IsNonloopAt e y := by
+lemma IsLoopAt.not_isNonloopAt (h : G.IsLoopAt e x) (y : α) : ¬ G.IsNonloopAt e y := by
   rintro ⟨z, hyz, hy⟩
   rw [← h.eq_of_inc hy.inc_left, ← h.eq_of_inc hy.inc_right] at hyz
   exact hyz rfl
 
-lemma IsNonloopAt.not_isLoopAt (h : G.IsNonloopAt e x) (y : Set α) : ¬ G.IsLoopAt e y :=
+lemma IsNonloopAt.not_isLoopAt (h : G.IsNonloopAt e x) (y : α) : ¬ G.IsLoopAt e y :=
   fun h' ↦ h'.not_isNonloopAt x h
 
 lemma isNonloopAt_iff_inc_not_isLoopAt : G.IsNonloopAt e x ↔ G.Inc e x ∧ ¬ G.IsLoopAt e x :=
@@ -375,7 +375,7 @@ lemma Inc.isLoopAt_or_isNonloopAt (h : G.Inc e x) : G.IsLoopAt e x ∨ G.IsNonlo
 /-! ### Adjacency -/
 
 /-- `G.Adj x y` means that `G` has an edge whose ends are the vertices `x` and `y`. -/
-def Adj (G : Graph α β) (x y : Set α) : Prop := ∃ e, G.IsLink e x y
+def Adj (G : Graph α β) (x y : α) : Prop := ∃ e, G.IsLink e x y
 
 protected lemma Adj.symm (h : G.Adj x y) : G.Adj y x :=
   ⟨_, h.choose_spec.symm⟩
@@ -434,28 +434,28 @@ lemma ext_inc {G₁ G₂ : Graph α β} (hV : V(G₁) = V(G₂)) (h : ∀ e x, G
 /-! ### Sets of edges or loops incident to a vertex -/
 
 /-- `G.incidenceSet x` is the set of edges incident to `x` in `G`. -/
-def incidenceSet (x : Set α) : Set β := {e | G.Inc e x}
+def incidenceSet (x : α) : Set β := {e | G.Inc e x}
 
 @[simp]
-theorem mem_incidenceSet (x : Set α) (e : β) : e ∈ G.incidenceSet x ↔ G.Inc e x :=
+theorem mem_incidenceSet (x : α) (e : β) : e ∈ G.incidenceSet x ↔ G.Inc e x :=
   Iff.rfl
 
-theorem incidenceSet_subset_edgeSet (x : Set α) : G.incidenceSet x ⊆ E(G) :=
+theorem incidenceSet_subset_edgeSet (x : α) : G.incidenceSet x ⊆ E(G) :=
   fun _ ⟨_, hy⟩ ↦ hy.edge_mem
 
 /-- `G.loopSet x` is the set of loops at `x` in `G`. -/
-def loopSet (x : Set α) : Set β := {e | G.IsLoopAt e x}
+def loopSet (x : α) : Set β := {e | G.IsLoopAt e x}
 
 @[simp]
-theorem mem_loopSet (x : Set α) (e : β) : e ∈ G.loopSet x ↔ G.IsLoopAt e x :=
+theorem mem_loopSet (x : α) (e : β) : e ∈ G.loopSet x ↔ G.IsLoopAt e x :=
   Iff.rfl
 
 /-- The loopSet is included in the incidenceSet. -/
-theorem loopSet_subset_incidenceSet (x : Set α) : G.loopSet x ⊆ G.incidenceSet x :=
+theorem loopSet_subset_incidenceSet (x : α) : G.loopSet x ⊆ G.incidenceSet x :=
   fun _ he ↦ ⟨x, he⟩
 
 /-- The set of ends of an edge `e`. -/
-def endSet (G : Graph α β) (e : β) : Set (Set α) := {x | G.Inc e x}
+def endSet (G : Graph α β) (e : β) : Set α := {x | G.Inc e x}
 
 @[simp]
 lemma mem_endSet_iff : x ∈ G.endSet e ↔ G.Inc e x := Iff.rfl
