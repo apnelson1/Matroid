@@ -427,8 +427,8 @@ lemma banana_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
   by_cases huv : u = v
   · subst v
     simp [hu]
-  rw [dup_agree_iff_union_pairwiseDisjoint, banana_vertexSet_of_disjoint
-    (G.nonempty_of_mem hu) (G.nonempty_of_mem hv) (G.disjoint_of_mem hu hv huv), insert_union]
+  rw [dup_agree_iff_union_pairwiseDisjoint, banana_vertexSet_of_isPartition
+    (Partition.isPartition_of_subset (P := P(G)) (by simp [pair_subset, hu, hv])), insert_union]
   simp [hu, hv, G.pairwiseDisjoint_vertexSet]
 
 end Dup_agree

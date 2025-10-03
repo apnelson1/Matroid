@@ -16,6 +16,8 @@ variable {s t u : Set α} {S T : Set (Set α)} {P Q : Partition (Set α)}
 lemma nonempty_of_mem (ht : t ∈ P) : t.Nonempty :=
   notMem_singleton_empty.1 <| P.ne_bot_of_mem ht
 
+lemma empty_not_mem : ∅ ∉ P := P.bot_not_mem
+
 lemma subset_of_mem (ht : t ∈ P) : t ⊆ P.supp :=
   P.le_supp_of_mem ht
 
@@ -51,6 +53,22 @@ lemma subset_sUnion_iff_mem (ht : t ∈ P) (hSP : S ⊆ P.parts) :
     t ⊆ ⋃₀ S ↔ t ∈ S := by
   rw [← subset_sUnion_and_mem_iff_mem hSP]
   simp [ht]
+
+lemma IsPartition.nonempty_not_mem (hS : IsPartition S) (hx : t ∈ S) : t.Nonempty := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.nonempty_of_mem hx
+
+lemma IsPartition.empty_not_mem (hS : IsPartition S) : ∅ ∉ S := hS.bot_not_mem
+
+lemma IsPartition.eq_of_mem_inter (hS : IsPartition S) (ht : t ∈ S) (hu : u ∈ S) (hx : x ∈ t ∩ u) :
+    t = u := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.eq_of_mem_inter ht hu hx
+
+lemma IsPartition.eq_of_mem_of_mem (hS : IsPartition S) (ht : t ∈ S) (hu : u ∈ S) (hxt : x ∈ t)
+    (hxu : x ∈ u) : t = u := by
+  obtain ⟨P, rfl⟩ := hS
+  exact P.eq_of_mem_of_mem ht hu hxt hxu
 
 end Set
 
@@ -212,7 +230,7 @@ lemma rel_le_of_subset (h : P ⊆ Q) : ⇑P ≤ ⇑Q :=
 @[simps] def ofRel (r : α → α → Prop) [IsTrans α r] [IsSymm α r] : Partition (Set α) where
   parts := fibers r
   indep := PairwiseDisjoint.sSupIndep fibers_pairwiseDisjoint
-  bot_notMem := emptySet_notMem_fibers r
+  bot_not_mem := emptySet_notMem_fibers r
 
 @[simp]
 lemma ofRel_supp {r : α → α → Prop} [IsSymm α r] [IsTrans α r] : (ofRel r).supp = domain r :=
@@ -499,7 +517,7 @@ protected def discrete (S : Set α) : Partition (Set α) where
     rw [hS] at hT
     suffices Disjoint (S \ {a}) {a} by exact this hT hTa
     simp
-  bot_notMem := by
+  bot_not_mem := by
     rintro ⟨a, ha, heq⟩
     simp at heq
 
@@ -674,7 +692,7 @@ lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
       mem_sUnion, mem_diff, mem_image, mem_union, mem_singleton_iff, not_exists, not_and, and_imp,
       forall_exists_index, forall_apply_eq_imp_iff₂, singleton_eq_singleton_iff]
     all_goals exact fun _ _ h1 h2 ↦ h1 h2.symm
-  use ofIndependent hsSup (by rw [mem_union, not_or]; exact ⟨P.bot_notMem, Q.bot_notMem⟩), ?_ <;>
+  use ofIndependent hsSup (by rw [mem_union, not_or]; exact ⟨P.bot_not_mem, Q.bot_not_mem⟩), ?_ <;>
     rintro s hs <;> simp only [ofIndependent_parts, mem_union, mem_parts]
   · exact Or.inr hs
   exact Or.inl hs
@@ -687,6 +705,10 @@ variable {P Q R : Partition (Set α)} {S T : Set α}
 
 def foo (P : Partition (Set α)) (S : Set α) : Set α :=
   ⋃₀ (P.partOf '' S)
+
+@[simp]
+lemma foo_empty : foo P ∅ = ∅ := by
+  simp [foo]
 
 @[simp]
 lemma foo_subset_supp : foo P S ⊆ P.supp := by
@@ -714,18 +736,18 @@ lemma subset_foo (hT : T ∈ P) : T ⊆ foo P S ↔ ¬ Disjoint S T := by
   use x, hxS
   rwa [rel_iff_right_mem_of_mem hT hyT]
 
-lemma foo_eq_of_subset (hS : (S ∩ P.supp).Nonempty) (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) :
+lemma foo_eq_of_inter_subset (hS : (S ∩ P.supp).Nonempty) (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) :
     foo P S = T := by
   refine subset_antisymm (foo_subset_of_subset hST hT) <| (subset_foo hT).mpr ?_
   rw [not_disjoint_iff]
   use hS.some, hS.some_mem.1, hST hS.some_mem
 
 @[simp]
-lemma foo_eq_of_indiscrete' : (Partition.indiscrete' S).foo S = S := by
+lemma foo_eq_of_indiscrete' : (indiscrete' S).foo S = S := by
   obtain (h | h) := S.eq_empty_or_nonempty
   · subst S
     simp
-  exact foo_eq_of_subset (by simpa) (by simp) (by simp [h.ne_empty])
+  exact foo_eq_of_inter_subset (by simpa) (by simp) (by simp [h.ne_empty])
 
 lemma inter_foo_eq_inter_supp : S ∩ foo P S = S ∩ P.supp := by
   ext x
@@ -740,7 +762,8 @@ lemma self_subset_foo_iff : S ⊆ foo P S ↔ S ⊆ P.supp := by
   exact inter_subset_right
 
 lemma foo_mem_iff : foo P S ∈ P ↔ (S ∩ P.supp).Nonempty ∧ ∃ T ∈ P, S ∩ P.supp ⊆ T := by
-  refine ⟨fun h => ⟨?_, P.foo S, h, ?_⟩, fun ⟨hS, T, hTP, hST⟩ => foo_eq_of_subset hS hST hTP ▸ hTP⟩
+  refine ⟨fun h => ⟨?_, P.foo S, h, ?_⟩,
+    fun ⟨hS, T, hTP, hST⟩ => foo_eq_of_inter_subset hS hST hTP ▸ hTP⟩
   · by_contra! hS
     rw [← disjoint_iff_inter_eq_empty, ← foo_eq_empty_iff] at hS
     simpa [hS] using P.nonempty_of_mem h
@@ -759,14 +782,20 @@ lemma foo_mem_of_le (hPQ : P ≤ Q) (hS : S ∈ P) : foo Q S ∈ Q := by
   simp only [this, P.nonempty_of_mem hS, true_and]
   exact hPQ S hS
 
-lemma foo_eq_of_le (hPQ : P ⊆ Q) (hS : S ∈ P) : foo Q S = S :=
+lemma foo_eq_self_of_le (hS : S ∈ Q) (hPQ : P ≤ Q) (hSP : S ⊆ P.supp) : foo P S = S := by
+  ext a
+  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop]
+  exact ⟨fun ⟨b, hbS, hab⟩ => (Rel.forall (rel_le_of_le hPQ a b hab) hS).mpr hbS,
+    fun haS => ⟨a, haS, rel_self_iff_mem_supp.mpr (hSP haS)⟩⟩
+
+lemma foo_eq_self_of_subset (hPQ : P ⊆ Q) (hS : S ∈ P) : foo Q S = S :=
   Q.eq_of_mem_of_mem (foo_mem_of_le (le_of_subset hPQ) hS) (hPQ hS)
     (self_subset_foo_iff.mpr ((P.subset_of_mem hS).trans <| supp_le_of_subset hPQ)
       (P.nonempty_of_mem hS).some_mem) (P.nonempty_of_mem hS).some_mem
 
 @[simp]
-lemma foo_eq_of_mem (hS : S ∈ P) : foo P S = S :=
-  foo_eq_of_le (subset_refl P) hS
+lemma foo_eq_self_of_mem (hS : S ∈ P) : foo P S = S :=
+  foo_eq_self_of_subset (subset_refl P) hS
 
 lemma foo_subset_foo_foo (hPQ : P ≤ Q) : foo Q (foo P S) ⊆ foo Q S := by
   intro a

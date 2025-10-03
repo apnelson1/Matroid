@@ -37,7 +37,7 @@ import Matroid.Flat.LowRank
 import Matroid.Graph.Basic
 -- import Matroid.Graph.Bipartite
 -- import Matroid.Graph.Connected.Basic
--- import Matroid.Graph.Connected.Component
+import Matroid.Graph.Connected.Component
 -- import Matroid.Graph.Connected.Connectivity
 -- import Matroid.Graph.Connected.Subgraph
 import Matroid.Graph.Constructions.Basic

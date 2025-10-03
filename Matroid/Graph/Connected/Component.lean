@@ -1,7 +1,7 @@
 import Matroid.Graph.Lattice
 import Matroid.Graph.Finite
 import Matroid.Graph.Degree.Defs
-import Matroid.Graph.Degree.Constructions
+-- import Matroid.Graph.Degree.Constructions
 
 open Set Function Nat WList
 
@@ -62,24 +62,23 @@ lemma IsCompOf.of_isClosedSubgraph (hHcl : H ≤c G) (hH'co : H'.IsCompOf H) :
     hH'min ⟨hH₀cl.of_le_of_le (hH₀leH'.trans hH'co.le) hHcl.le, hVH₀⟩ hH₀leH'⟩
 
 
-def walkable (G : Graph α β) (u : α) : Graph α β :=
-  G[({x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x} : Set α)]
+def walkable (G : Graph α β) (u : Set α) : Graph α β :=
+  G.induce' {x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x}
 
-lemma mem_walkable (hx : x ∈ V(G)) : x ∈ V(G.walkable x) :=
-  ⟨.nil x, by simpa, rfl, rfl⟩
+lemma mem_walkable (hx : x ∈ V(G)) : x ∈ V(G.walkable x) := by
+  simp only [walkable, induce'_vertexSet, mem_inter_iff, mem_setOf_eq]
+  exact ⟨hx, ⟨.nil x, by simpa, rfl, rfl⟩⟩
 
-lemma walkable_isClosedSubgraph : G.walkable u ≤c G := by
-  refine ⟨induce_le fun x hx => ?_, ?_⟩
-  · obtain ⟨W, hW, rfl, rfl⟩ := hx
-    exact hW.last_mem
-  · rintro e x ⟨y, hl⟩ ⟨W, hW, rfl, rfl⟩
-    simp only [induce_edgeSet, mem_setOf_eq, walkable]
-    use W.last, y, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y, ?_, concat_first, concat_last
-    simp only [isWalk_concat_iff, hW, hl, and_self]
+lemma walkable_isClosedSubgraph : G.walkable u ≤c G where
+  toIsSubgraph := induce'_le
+  closed := by
+    rintro e x ⟨y₁, hl⟩ ⟨hx, W, hW, rfl, rfl⟩
+    use W.last, y₁, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y₁, ?_, concat_first, concat_last
+    simp [hW, hl]
 
 lemma Adj.mem_walkable (h : G.Adj x y) : y ∈ V(G.walkable x) := by
   obtain ⟨e, hl⟩ := h
-  exact ⟨hl.walk, hl.walk_isWalk, hl.walk_first, hl.walk_last⟩
+  exact ⟨hl.right_mem, hl.walk, hl.walk_isWalk, hl.walk_first, hl.walk_last⟩
 
 @[simp]
 lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
@@ -87,30 +86,30 @@ lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
 
 @[simp]
 lemma walkable_eq_bot (hx : x ∉ V(G)) : G.walkable x = ⊥ := by
-  rw [walkable, ← vertexSet_eq_empty_iff, induce_vertexSet, Set.eq_empty_iff_forall_notMem]
-  simp only [mem_setOf_eq, not_exists, not_and]
-  rintro y W hW rfl rfl
+  rw [walkable, ← vertexSet_eq_empty_iff, induce'_vertexSet, Set.eq_empty_iff_forall_notMem]
+  simp only [mem_inter_iff, mem_setOf_eq, not_and, not_exists]
+  rintro y hy W hW rfl rfl
   exact hx hW.first_mem
 
 lemma exists_isWalk_of_mem_mem (hx : x ∈ V(G.walkable u)) (hy : y ∈ V(G.walkable u)) :
     ∃ W, G.IsWalk W ∧ W.first = x ∧ W.last = y := by
-  obtain ⟨W₁, hW₁, rfl, rfl⟩ := hx
-  obtain ⟨W₂, hW₂, hf, rfl⟩ := hy
+  obtain ⟨hx, W₁, hW₁, rfl, rfl⟩ := hx
+  obtain ⟨hy, W₂, hW₂, hf, rfl⟩ := hy
   have hf' : W₁.reverse.last = W₂.first := by simp [hf]
   exact ⟨W₁.reverse.append W₂, hW₁.reverse.append hW₂ hf', by simp [hf'], by simp⟩
 
 lemma mem_walkable_symm (hx : x ∈ V(G.walkable u)) : u ∈ V(G.walkable x) := by
-  obtain ⟨W, hW, rfl, rfl⟩ := hx
-  use W.reverse, hW.reverse, reverse_first, reverse_last
+  obtain ⟨hWl, W, hW, rfl, rfl⟩ := hx
+  use hW.first_mem, W.reverse, hW.reverse, reverse_first, reverse_last
 
 lemma mem_walkable_comm : x ∈ V(G.walkable u) ↔ u ∈ V(G.walkable x) :=
   ⟨mem_walkable_symm, mem_walkable_symm⟩
 
 lemma mem_walkable_trans (huv : u ∈ V(G.walkable v)) (hvx : v ∈ V(G.walkable x)) :
     u ∈ V(G.walkable x) := by
-  obtain ⟨W₁, hW₁, rfl, rfl⟩ := huv
-  obtain ⟨W₂, hW₂, rfl, heq⟩ := hvx
-  use W₂.append W₁, hW₂.append hW₁ heq, append_first_of_eq heq, append_last
+  obtain ⟨h₁Wl, W₁, hW₁, rfl, rfl⟩ := huv
+  obtain ⟨h₂Wf, W₂, hW₂, rfl, heq⟩ := hvx
+  use hW₁.last_mem, W₂.append W₁, hW₂.append hW₁ heq, append_first_of_eq heq, append_last
 
 lemma walkable_eq_walkable_of_mem (hx : x ∈ V(G.walkable u)) : G.walkable x = G.walkable u := by
   rw [walkable_isClosedSubgraph.vertexSet_inj walkable_isClosedSubgraph]
@@ -119,7 +118,7 @@ lemma walkable_eq_walkable_of_mem (hx : x ∈ V(G.walkable u)) : G.walkable x = 
 
 lemma IsClosedSubgraph.walkable_le_of_mem (hcl : H ≤c G) (hx : x ∈ V(H)) : G.walkable x ≤ H := by
   rw [walkable_isClosedSubgraph.le_iff_vertexSet_subset hcl]
-  rintro y ⟨W, hW, rfl, rfl⟩
+  rintro y ⟨hy, W, hW, rfl, rfl⟩
   exact hW.isWalk_isClosedSubgraph hcl hx |>.last_mem
 
 lemma walkable_isCompOf (hx : x ∈ V(G)) : (G.walkable x).IsCompOf G := by
@@ -164,7 +163,7 @@ lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
   simp [Components]
 
 @[simp]
-lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by
+lemma bot_not_mem_components (G : Graph α β) : ⊥ ∉ G.Components := by
   simp [Components]
 
 lemma components_pairwise_stronglyDisjoint (G : Graph α β) :
@@ -179,9 +178,7 @@ lemma components_pairwise_compatible (G : Graph α β) : G.Components.Pairwise C
   fun _ hH₁ _ hH₂ hne => (hH₁.stronglyDisjoint_of_ne hH₂ hne).compatible
 
 -- Graph is the union of its components
--- eq_sUnion_components
-lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components
-    G.components_pairwise_compatible := by
+lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components := by
   have h := sSup_atoms_eq_top (α := G.ClosedSubgraph)
   apply_fun Subtype.val at h
   rw [ClosedSubgraph.coe_sSup, eq_comm] at h
@@ -287,7 +284,7 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 --     rintro W H₀ hH₀co rfl
 --     have := not_imp_comm.mp <| G.components_pairwiseDisjoint_id.elim hH hH₀co
 --     rwa [H.vertexSet_inj, eq_comm, (id H).disjoint_iff_vertexSet_disjoint] at this
---   bot_notMem := by simp
+--   bot_not_mem := by simp
 --   sSup_eq' := by
 --     simp only [sSup_eq_sUnion, sUnion_eq_biUnion, mem_setOf_eq, iUnion_exists, biUnion_and',
 --       iUnion_iUnion_eq_right]
