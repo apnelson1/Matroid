@@ -2,6 +2,9 @@ This repo is aiming to formalize the bread and butter of matroid theory in lean4
 The goal is eventually to have is all included in the lean4 math library : 
 https://github.com/leanprover-community/mathlib4
 
+Experimental : the following link should give an auto-updating repo-specific documentation page: 
+https://apnelson1.github.io/Matroid/docs
+
 At the time of writing, the contents of this repo are being submitted to mathlib piece by piece.
 Currently already in mathlib are : 
 
