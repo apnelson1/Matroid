@@ -3,8 +3,8 @@ import Mathlib.Data.Set.Insert
 import Mathlib.Tactic.TFAE
 import Mathlib.Data.Set.Card
 
-variable {α β : Type*} {x y z u v w : Set α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
-    {X Y : Set (Set α)}
+variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H K : Graph α β}
+    {F F₁ F₂ : Set β} {X Y : Set α}
 
 open Set Partition
 

@@ -132,7 +132,7 @@ lemma vertexPartition_eq_iff {H : Graph α β} : P(G) = P(H) ↔ V(G) = V(H) := 
   rw [← G.vertexPartition_parts, ← H.vertexPartition_parts, ext_iff_parts]
 
 @[simp]
-lemma ne_empty_of_mem (h : x ∈ V(G)) : x ≠ ⊥ :=
+lemma ne_bot_of_mem (h : x ∈ V(G)) : x ≠ ⊥ :=
   P(G).ne_bot_of_mem <| mem_vertexPartition_iff.mpr h
 
 -- @[simp]
@@ -190,11 +190,11 @@ lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
 -- lemma IsLink.right_nonempty (h : G.IsLink e x y) : y.Nonempty :=
 --   h.symm.left_nonempty
 
-lemma IsLink.left_ne_empty (h : G.IsLink e x y) : x ≠ ⊥ :=
-  G.ne_empty_of_mem h.left_mem
+lemma IsLink.left_ne_bot (h : G.IsLink e x y) : x ≠ ⊥ :=
+  G.ne_bot_of_mem h.left_mem
 
-lemma IsLink.right_ne_empty (h : G.IsLink e x y) : y ≠ ⊥ :=
-  h.symm.left_ne_empty
+lemma IsLink.right_ne_bot (h : G.IsLink e x y) : y ≠ ⊥ :=
+  h.symm.left_ne_bot
 
 lemma IsLink.eq_or_disjoint (h : G.IsLink e x y) : x = y ∨ Disjoint x y :=
   G.eq_or_disjoint_of_mem h.left_mem h.right_mem

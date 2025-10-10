@@ -627,6 +627,22 @@ lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosur
   | single h => exact h
   | tail h1 h2 IH => exact trans' IH h2
 
+lemma transClosure_exists_single_head (r : α → α → Prop) (h : TransClosure r a b) :
+    ∃ c, r a c := by
+  induction h using TransGen.head_induction_on with
+  | single h => use b
+  | head h' h IH =>
+    rename_i c
+    use c
+
+lemma transClosure_exists_single_tail (r : α → α → Prop) (h : TransClosure r a b) :
+    ∃ c, r c b := by
+  induction h with
+  | single _ => use a
+  | tail _ _ _ =>
+    rename_i c _ _ _ _
+    use c
+
 /-- Minimal assumption (that I can think of) for `transGen_self_iff`. -/
 class foo (r : α → α → Prop) where
   isfoo : ∀ ⦃a b⦄, r a b → r b b
@@ -837,6 +853,22 @@ lemma restrict_sup (r s : α → α → Prop) (S : Set α) :
   ext x y
   simp only [restrict, Pi.sup_apply, sup_Prop_eq]
   tauto
+
+@[simp]
+lemma restrict_singleton_of_not (r : α → α → Prop) (a : α) (hra : ¬ r a a) :
+    restrict r {a} = fun _ _ ↦ False := by
+  ext x y
+  simp only [restrict, mem_singleton_iff, iff_false, not_and]
+  rintro hr rfl rfl
+  exact hra hr
+
+@[simp]
+lemma restrict_singleton_of_refl (r : α → α → Prop) [IsRefl α r] (a : α) :
+    restrict r {a} = fun x y ↦ x = a ∧ y = a := by
+  ext x y
+  simp only [restrict, mem_singleton_iff, and_iff_right_iff_imp, and_imp]
+  rintro rfl rfl
+  exact IsRefl.refl y
 
 -- def comply (r : PER α) (s : α → α → Prop) : α → α → Prop :=
 --   Comp (Comp r s) r

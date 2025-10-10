@@ -1,7 +1,7 @@
 import Matroid.Graph.Subgraph.Compatible
 
-variable {α β ι ι' : Type*} {x y z u v w : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {P Q : Partition (Set α)}
+variable {α β ι ι' : Type*} [CompleteLattice α] {x y z u v w : α} {G G₁ G₂ H H₁ H₂ : Graph α β}
+  {e f : β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)} {P Q : Partition α}
 
 open Set Function Partition
 

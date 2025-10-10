@@ -301,6 +301,13 @@ instance : OrderBot (Partition α) where
 
 @[simp] lemma notMem_bot : a ∉ (⊥ : Partition α) := notMem_empty α
 
+@[simp]
+lemma parts_eq_empty_iff (P : Partition α) : P.parts = ∅ ↔ P = ⊥ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext x
+  rw [← mem_parts, h]
+  simp
+
 @[simp] lemma supp_bot : (⊥ : Partition α).supp = ⊥ := sSup_empty
 
 @[simp] lemma bot_coe_eq (α : Type*) [CompleteLattice α] :
@@ -313,7 +320,7 @@ lemma eq_bot (hP : P.supp = ⊥) : P = ⊥ := by
   simp only [notMem_bot, iff_false]
   exact fun hx ↦ P.ne_bot_of_mem hx <| hsup x hx
 
-@[simp]
+@[simp↓]
 lemma supp_eq_bot_iff : P.supp = ⊥ ↔ P = ⊥ := by
   refine ⟨eq_bot, ?_⟩
   rintro rfl
@@ -322,6 +329,15 @@ lemma supp_eq_bot_iff : P.supp = ⊥ ↔ P = ⊥ := by
 @[simp]
 lemma bot_subset (P : Partition α) : ⊥ ⊆ P :=
   fun _ hsP => hsP.elim
+
+@[simp]
+lemma exists_mem_iff_ne_bot (P : Partition α) : (∃ x, x ∈ P) ↔ P ≠ ⊥ := by
+  refine ⟨?_, fun hP ↦ ?_⟩
+  · rintro ⟨x, hx⟩ rfl
+    exact notMem_bot hx
+  change P.parts.Nonempty
+  rw [nonempty_iff_ne_empty]
+  rwa [ne_eq, ← parts_eq_empty_iff] at hP
 
 instance {α : Type*} [CompleteLattice α] [Subsingleton α] : Unique (Partition α) where
   default := ⊥
@@ -364,7 +380,7 @@ lemma mem_indiscrete'_iff : x ∈ indiscrete' s ↔ s ≠ ⊥ ∧ x = s := Iff.r
 
 @[simp]
 lemma indiscrete'_eq_empty : indiscrete' ⊥ = (⊥ : Partition α) :=
-  eq_bot <| by simp [supp, indiscrete']
+  eq_bot <| by simp [-supp_eq_bot_iff, supp, indiscrete']
 
 @[simp]
 lemma supp_indiscrete' : (indiscrete' s).supp = s := by
@@ -518,7 +534,15 @@ instance : PartialOrder (Partition α) where
 lemma le_def : P ≤ Q ↔ ∀ x ∈ P, ∃ y ∈ Q, x ≤ y := Iff.rfl
 
 lemma exists_le_of_mem_le {x : α} {P Q : Partition α} (h : P ≤ Q) (hx : x ∈ P) :
-  ∃ y ∈ Q, x ≤ y := h x hx
+    ∃ y ∈ Q, x ≤ y := h x hx
+
+lemma exists_unique_of_mem_le {x : α} {P Q : Partition α} (h : P ≤ Q) (hx : x ∈ P) :
+    ∃! y ∈ Q, x ≤ y := by
+  obtain ⟨y, hy, hxy⟩ := h x hx
+  refine ⟨y, ⟨hy, hxy⟩, fun z ⟨hz, hxz⟩ => Q.eq_of_not_disjoint hz hy ?_⟩
+  have := P.ne_bot_of_mem hx
+  contrapose! this
+  exact le_bot_iff.mp (this hxz hxy)
 
 lemma le_of_supp_le_part (ha : a ∈ P) (hQa : Q.supp ≤ a) : Q ≤ P :=
   fun _ hx ↦ ⟨a, ha, (Q.le_supp_of_mem hx).trans hQa⟩
@@ -533,6 +557,11 @@ instance : OrderTop (Partition α) where
 
 @[simp] lemma supp_top : (⊤ : Partition α).supp = ⊤ := by
   change (ofIndependent' (sSupIndep_singleton ⊤)).supp = ⊤
+  simp
+
+@[simp] lemma parts_top [Nontrivial α] : (⊤ : Partition α).parts = {⊤} := by
+  change (ofIndependent' (sSupIndep_singleton ⊤)).parts = {⊤}
+  rw [ofIndependent'_parts]
   simp
 
 @[simp] lemma top_parts (hs : (⊤ : α) ≠ ⊥) : (⊤ : Partition α) = ({⊤} : Set α) := by
@@ -559,6 +588,13 @@ lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
 
 lemma le_of_subset {P Q : Partition α} (h : P ⊆ Q) : P ≤ Q :=
   fun x hx => ⟨x, h hx, le_rfl⟩
+
+instance [Nontrivial α] : Nontrivial (Partition α) := by
+  use ⊥, ⊤
+  apply_fun (·.parts)
+  simp only [parts_bot, parts_top, ne_eq]
+  rw [← eq_comm]
+  simp
 
 end Order
 

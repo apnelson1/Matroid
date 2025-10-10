@@ -189,8 +189,8 @@ protected theorem tsum_biUnion_le (f : α → ℕ∞) (s : Finset ι) (t : ι �
 
 protected theorem tsum_iUnion_le [Fintype ι] (f : α → ℕ∞) (t : ι → Set α) :
     ∑' x : ⋃ i, t i, f x ≤ ∑ i, ∑' x : t i, f x := by
-  rw [← tsum_fintype]
-  exact ENat.tsum_iUnion_le_tsum f t
+  convert ENat.tsum_iUnion_le_tsum f t
+  exact (tsum_fintype fun b ↦ ∑' (x : ↑(t b)), f ↑x).symm
 
 theorem tsum_iUnion_eq_tsum (f : α → ℕ∞) (t : ι → Set α) (ht : Pairwise (Disjoint on t)) :
     ∑' x : ⋃ i, t i, f x = ∑' i, ∑' x : t i, f x :=
