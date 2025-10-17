@@ -17,9 +17,9 @@ def VertexIdentification (G : Graph α β) (P : Partition (Set α)) (h : P.supp 
   IsLink e := (P.flatten (G.vertexSet_eq_parts ▸ h)).fuzzyRel (G.IsLink e)
   edgeSet := G.edgeSet
   edge_mem_iff_exists_isLink e := by
-    rw [G.edge_mem_iff_exists_isLink, ← fuzzyRel_stuff (le_flatten _ _)]
+    rw [G.edge_mem_iff_exists_isLink, ← fuzzyRel.stuff (le_flatten _ _)]
     exact fun a b h ↦ ⟨h.left_mem', h.right_mem'⟩
-  isLink_symm e he := fuzzyRel_symmetric <| G.isLink_symm he
+  isLink_symm e he := fuzzyRel.symmetric <| G.isLink_symm he
   eq_or_eq_of_isLink_of_isLink e a b c d := by
     rintro ⟨ha, hb, x, y, hxy, hxa, hyb⟩ ⟨hc, hd, u, v, huv, huc, hvd⟩
     apply (G.eq_or_eq_of_isLink_of_isLink hxy huv).imp <;> rintro rfl

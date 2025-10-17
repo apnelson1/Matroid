@@ -2,8 +2,8 @@ import Matroid.Graph.Finite
 import Matroid.Graph.Basic
 import Matroid.Graph.Constructions.Basic
 
-variable {α β : Type*} {x y z u v w a b : Set α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
-    {X Y : Set (Set α)} {G H : Graph α β} {P : WList (Set α) β}
+variable {α β : Type*} [CompleteLattice α] {x y z u v w a b : α} {e f : β} {G H : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set α} {P : WList α β}
 
 open Set Function WList
 
@@ -15,10 +15,10 @@ protected class Loopless (G : Graph α β) : Prop where
   not_isLoopAt : ∀ e x, ¬ G.IsLoopAt e x
 
 @[simp]
-lemma not_isLoopAt (G : Graph α β) [G.Loopless] (e : β) (x : Set α) : ¬ G.IsLoopAt e x :=
+lemma not_isLoopAt (G : Graph α β) [G.Loopless] (e : β) (x : α) : ¬ G.IsLoopAt e x :=
   Loopless.not_isLoopAt e x
 
-lemma not_adj_self (G : Graph α β) [G.Loopless] (x : Set α) : ¬ G.Adj x x :=
+lemma not_adj_self (G : Graph α β) [G.Loopless] (x : α) : ¬ G.Adj x x :=
   fun ⟨e, he⟩ ↦ Loopless.not_isLoopAt e x he
 
 lemma Adj.ne [G.Loopless] (hxy : G.Adj x y) : x ≠ y :=
@@ -40,10 +40,10 @@ lemma Loopless.mono (hG : G.Loopless) (hle : H ≤ G) : H.Loopless := by
 lemma Inc.isNonloopAt [G.Loopless] (h : G.Inc e x) : G.IsNonloopAt e x :=
   h.isLoopAt_or_isNonloopAt.elim (False.elim ∘ Loopless.not_isLoopAt _ _) id
 
-instance [G.Loopless] (X : Partition (Set α)) : G[X].Loopless where
+instance [G.Loopless] (X : Set α) : G[X].Loopless where
   not_isLoopAt e x (h : G[X].IsLink e x x) := h.1.adj.ne rfl
 
-instance [G.Loopless] (X : Set (Set α)) : (G - X).Loopless :=
+instance [G.Loopless] (X : Set α) : (G - X).Loopless :=
   ‹G.Loopless›.mono vertexDelete_le
 
 instance [G.Loopless] (F : Set β) : (G ↾ F).Loopless :=
@@ -57,13 +57,14 @@ lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
   obtain rfl | ⟨v, hv⟩ := G.eq_empty_or_vertexSet_nonempty
   · simp
   obtain h | h := eq_singleton_or_nontrivial hv
-  · refine .inr <| .inl ⟨v, Graph.ext (by simpa [G.ne_empty_of_mem hv]) fun e x y ↦ ?_⟩
+  · refine .inr <| .inl ⟨v, Graph.ext (by simpa [G.ne_bot_of_mem hv]) fun e x y ↦ ?_⟩
     simp only [noEdge_isLink, iff_false]
     refine fun he ↦ he.adj.ne ?_
     rw [show x = v by simpa [h] using he.left_mem, show y = v by simpa [h] using he.right_mem]
   simp [h]
 
-lemma Loopless.union [G.Loopless] [H.Loopless] (hG' : G.Dup_agree H) : (G ∪ H).Loopless where
+lemma Loopless.union {α : Type*} [Order.Frame α] {G H : Graph α β} [G.Loopless] [H.Loopless]
+    (hG' : G.Dup_agree H) : (G ∪ H).Loopless where
   not_isLoopAt := by simp [union_isLoopAt_iff hG']
 
 section Simple
@@ -108,29 +109,29 @@ instance : (G ↾ F).Simple := ‹G.Simple›.mono edgeRestrict_le
 instance : (G ＼ F).Simple := ‹G.Simple›.mono edgeDelete_le
 instance : (G - X).Simple := ‹G.Simple›.mono vertexDelete_le
 
-instance {X : Partition (Set α)} : G[X].Simple where
+instance : G[X].Simple where
   eq_of_isLink e f x y := by
-    simp only [induce_isLink_iff, and_imp]
+    simp only [induce_isLink, and_imp]
     exact fun h _ _ h' _ _ ↦ h.unique_edge h'
 
 instance (V : Partition (Set α)) : (Graph.noEdge V β).Simple where
   not_isLoopAt := by simp
   eq_of_isLink := by simp
 
-lemma singleEdge_simple (e : β) (hxy : Disjoint x y) : (Graph.singleEdge e x y).Simple where
-  not_isLoopAt f z := by
-    obtain (rfl | hnep) := x.eq_empty_or_nonempty
-    · rw [IsLoopAt, singleEdge_isLink]
-      simp
-    obtain (rfl | hneq) := y.eq_empty_or_nonempty
-    · rw [IsLoopAt, singleEdge_isLink]
-      simp
-    rw [IsLoopAt, singleEdge_isLink_of_disjoint hnep hneq hxy]
-    aesop
-  eq_of_isLink := by aesop
+-- lemma singleEdge_simple (e : β) (hxy : Disjoint x y) : (Graph.singleEdge e x y).Simple where
+--   not_isLoopAt f z := by
+--     obtain (rfl | hnep) := x.eq_empty_or_nonempty
+--     · rw [IsLoopAt, singleEdge_isLink]
+--       simp
+--     obtain (rfl | hneq) := y.eq_empty_or_nonempty
+--     · rw [IsLoopAt, singleEdge_isLink]
+--       simp
+--     rw [IsLoopAt, singleEdge_isLink_of_disjoint hnep hneq hxy]
+--     aesop
+--   eq_of_isLink := by aesop
 
 /-- In a simple graph, the bijection between edges at `x` and neighbours of `x`. -/
-noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : Set α) :
+noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :
     {e // G.Inc e x} ≃ {y // G.Adj x y} where
   toFun e := ⟨e.2.choose, _, e.2.choose_spec⟩
   invFun y := ⟨y.2.choose, _, y.2.choose_spec⟩
@@ -167,8 +168,9 @@ lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).sym
 
 /-! ### Operations -/
 
-lemma Simple.union [H.Simple] (hG' : G.Dup_agree H)
-    (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) : (G ∪ H).Simple where
+lemma Simple.union {α : Type*} [Order.Frame α] {G H : Graph α β} [G.Simple] [H.Simple]
+    (hG' : G.Dup_agree H) (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) :
+    (G ∪ H).Simple where
   eq_of_isLink e f x y he hf := by
     rw [union_isLink hG'] at he hf
     obtain hf | hf := hf

@@ -48,14 +48,14 @@ import Matroid.Graph.Constructions.Basic
 -- import Matroid.Graph.Degree.Leaf
 -- import Matroid.Graph.Degree.Max
 -- import Matroid.Graph.Distance
--- import Matroid.Graph.Finite
+import Matroid.Graph.Finite
 -- import Matroid.Graph.Forest
 -- import Matroid.Graph.Label
 -- import Matroid.Graph.Lattice
 -- import Matroid.Graph.Map
 -- import Matroid.Graph.Minor.Basic
 import Matroid.Graph.Minor.Repartition
--- import Matroid.Graph.Simple
+import Matroid.Graph.Simple
 -- import Matroid.Graph.Subgraph.Add
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible

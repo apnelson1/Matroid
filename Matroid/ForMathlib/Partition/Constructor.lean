@@ -30,6 +30,7 @@ section Pair
 
 variable [CompleteLattice α] {a b : α}
 
+@[simps]
 noncomputable def pair (a b : α) : Partition α where
   parts :=
     let : Decidable (¬ Disjoint a b) := Classical.dec _
@@ -62,6 +63,63 @@ lemma pair_parts_of_disjoint (h : Disjoint a b) : (pair a b).parts = {a, b} \ {�
 lemma pair_supp : (pair a b).supp = a ⊔ b := by
   simp only [supp, pair, Classical.ite_not]
   split_ifs with h <;> simp
+
+lemma pair_comm : pair a b = pair b a := by
+  ext x
+  simp only [← mem_parts, pair_parts, Classical.ite_not]
+  rw [Set.pair_comm, sup_comm, disjoint_comm]
+
+lemma indiscrete'_le_left (a b : α) : indiscrete' a ≤ pair a b := by
+  rintro x
+  simp only [mem_indiscrete'_iff, ne_eq, and_imp]
+  rintro habot rfl
+  by_cases hab : Disjoint x b
+  · use x
+    simpa [← mem_parts, hab]
+  simp [← mem_parts, hab]
+
+lemma indiscrete'_le_right (a b : α) : indiscrete' b ≤ pair a b := by
+  rintro x
+  simp only [mem_indiscrete'_iff, ne_eq, and_imp]
+  rintro habot rfl
+  by_cases hab : Disjoint a x
+  · use x
+    simpa [← mem_parts, hab]
+  simp [← mem_parts, hab]
+
+noncomputable def pairLeft (a b : α) : α :=
+  have : Decidable (a = ⊥) := Classical.dec _
+  if ha : a = ⊥ then ⊥ else (indiscrete'_le_left a b a <| by simpa).choose
+
+@[simp]
+lemma pairLeft_bot : pairLeft ⊥ b = ⊥ := by
+  simp only [pairLeft, ↓reduceDIte]
+
+@[simp]
+lemma pairLeft_mem_of_not_bot (ha : a ≠ ⊥) : pairLeft a b ∈ pair a b := by
+  simp only [pairLeft, ha, ↓reduceDIte]
+  exact (indiscrete'_le_left a b a <| by simpa).choose_spec.1
+
+@[simp]
+lemma left_le_pairLeft : a ≤ pairLeft a b := by
+  by_cases ha : a = ⊥
+  · subst a
+    simp only [bot_le]
+  simp only [pairLeft, ha, ↓reduceDIte]
+  exact (indiscrete'_le_left a b a <| by simpa).choose_spec.2
+
+noncomputable def pairRight (a b : α) : α := pairLeft b a
+
+@[simp]
+lemma pairRight_bot : pairRight a ⊥ = ⊥ := pairLeft_bot
+
+@[simp]
+lemma pairRight_mem_of_not_bot (hb : b ≠ ⊥) : pairRight a b ∈ pair a b := by
+  rw [pair_comm]
+  exact pairLeft_mem_of_not_bot hb
+
+@[simp]
+lemma right_le_pairRight : b ≤ pairRight a b := left_le_pairLeft
 
 end Pair
 

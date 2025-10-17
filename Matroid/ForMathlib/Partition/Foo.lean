@@ -40,23 +40,32 @@ lemma eq_leFun_iff (hPQ : P ≤ Q) {p : P.parts} {q : Q.parts} :
   rw [Subtype.ext_iff, eq_leFun_val_iff hPQ]
   simp
 
+lemma leFun_comp (hPQ : P ≤ Q) (hQR : Q ≤ R) : leFun hQR ∘ leFun hPQ = leFun (hPQ.trans hQR) := by
+  ext p
+  rw [Function.comp_apply]
+  apply R.eq_of_not_disjoint (Subtype.prop _) (Subtype.prop _) <| not_disjoint_of_le_le
+    ((le_leFun _ _).trans <| le_leFun _ _) (le_leFun _ _) (P.ne_bot_of_mem p.prop)
+
+
 
 def fuzzyRel (P : Partition α) (r : α → α → Prop) : α → α → Prop :=
   fun a b ↦ a ∈ P ∧ b ∈ P ∧ ∃ x y, r x y ∧ x ≤ a ∧ y ≤ b
 
+namespace fuzzyRel
+
 variable {r s : α → α → Prop}
 
-lemma left_mem_of_fuzzyRel (h : P.fuzzyRel r a b) : a ∈ P := h.1
-lemma right_mem_of_fuzzyRel (h : P.fuzzyRel r a b) : b ∈ P := h.2.1
-lemma exists_rel_of_fuzzyRel (h : P.fuzzyRel r a b) : ∃ x y, r x y ∧ x ≤ a ∧ y ≤ b := h.2.2
+lemma left_mem (h : P.fuzzyRel r a b) : a ∈ P := h.1
+lemma right_mem (h : P.fuzzyRel r a b) : b ∈ P := h.2.1
+lemma exists_rel (h : P.fuzzyRel r a b) : ∃ x y, r x y ∧ x ≤ a ∧ y ≤ b := h.2.2
 
-lemma fuzzyRel_symmetric (hr : Symmetric r) : Symmetric (P.fuzzyRel r) := by
+lemma symmetric (hr : Symmetric r) : Symmetric (P.fuzzyRel r) := by
   rintro a b ⟨haP, hbP, ⟨x, y, hrxy, hx, hy⟩⟩
   exact ⟨hbP, haP, ⟨y, x, hr hrxy, hy, hx⟩⟩
 instance [IsSymm α r] : IsSymm α (P.fuzzyRel r) where
-  symm := P.fuzzyRel_symmetric IsSymm.symm
+  symm := symmetric IsSymm.symm
 
-lemma fuzzyRel_eq_self (P : Partition α) : P.fuzzyRel r = r ↔ ∀ a b, r a b → a ∈ P ∧ b ∈ P := by
+lemma eq_self : P.fuzzyRel r = r ↔ ∀ a b, r a b → a ∈ P ∧ b ∈ P := by
   refine ⟨fun hr a b hab ↦ ?_, fun h => ?_⟩
   · obtain ⟨ha, hb, -⟩ := hr ▸ hab
     exact ⟨ha, hb⟩
@@ -68,10 +77,13 @@ lemma fuzzyRel_eq_self (P : Partition α) : P.fuzzyRel r = r ↔ ∀ a b, r a b 
   obtain rfl := P.eq_of_not_disjoint hv hb (not_disjoint_of_le hvb (P.ne_bot_of_mem hv))
   exact huv
 
-lemma fuzzyRel_mono_right (hrs : r ≤ s) : P.fuzzyRel r ≤ P.fuzzyRel s :=
+lemma idem : P.fuzzyRel (P.fuzzyRel r) = P.fuzzyRel r :=
+  eq_self.mpr fun _ _ h => ⟨h.1, h.2.1⟩
+
+lemma mono_right (hrs : r ≤ s) : P.fuzzyRel r ≤ P.fuzzyRel s :=
   fun _ _ ⟨haP, hbP, ⟨x, y, hrxy, hx, hy⟩⟩ ↦ ⟨haP, hbP, ⟨x, y, hrs _ _ hrxy, hx, hy⟩⟩
 
-lemma fuzzyRel_stuff (hPQ : P ≤ Q) (hrP : ∀ a b, r a b → a ∈ P ∧ b ∈ P) :
+lemma stuff (hPQ : P ≤ Q) (hrP : ∀ a b, r a b → a ∈ P ∧ b ∈ P) :
     (∃ a b, r a b) ↔ ∃ a b, Q.fuzzyRel r a b := by
   refine ⟨fun ⟨a, b, hr⟩ => ?_, fun ⟨a, b, ⟨haP, hbP, ⟨x, y, hrxy, hx, hy⟩⟩⟩ => by use x, y⟩
   obtain ⟨haP, hbP⟩ := hrP a b hr
@@ -80,13 +92,66 @@ lemma fuzzyRel_stuff (hPQ : P ≤ Q) (hrP : ∀ a b, r a b → a ∈ P ∧ b ∈
   use a', b', ha'Q, hb'Q, a, b
 
 @[simp]
-lemma fuzzyRel_bot_left : ¬ (⊥ : Partition α).fuzzyRel r a b := by
+lemma bot_left : (⊥ : Partition α).fuzzyRel r = ⊥ := by
+  ext x y
   simp [fuzzyRel]
 
 @[simp]
-lemma fuzzyRel_bot_right : ¬ P.fuzzyRel ⊥ a b := by
+lemma bot_right : P.fuzzyRel ⊥ = ⊥ := by
+  ext x y
   simp [fuzzyRel]
 
+lemma fuzzyRel₂_le : Q.fuzzyRel (P.fuzzyRel r) ≤ Q.fuzzyRel r := by
+  rintro xq yq
+  simp only [fuzzyRel, le_Prop_eq, and_imp, forall_exists_index]
+  exact fun hxQ hyQ xp yp hxP hyP x y hxy hxp hyp hxpq hypq =>
+    ⟨hxQ, hyQ, x, y, hxy, hxp.trans hxpq, hyp.trans hypq⟩
+
+lemma fuzzyRel₃_eq_fuzzyRel₂_of_le_le (hPQ : P ≤ Q) (hQR : Q ≤ R) :
+    R.fuzzyRel (Q.fuzzyRel (P.fuzzyRel r)) = R.fuzzyRel (P.fuzzyRel r) := by
+  ext xr yr
+  simp only [fuzzyRel, and_congr_right_iff]
+  refine fun hxR hyR => ⟨fun ⟨xq, yq, ⟨hxQ, hyQ, xp, yp, hxy, hxpq, hypq⟩, hxqr, hyqr⟩ =>
+    ⟨xp, yp, hxy, hxpq.trans hxqr, hypq.trans hyqr⟩,
+    fun ⟨xp, yp, ⟨hxP, hyP, hxy⟩, hxpr, hypr⟩ => ?_⟩
+  let f := P.leFun hPQ; let g := Q.leFun hQR
+  obtain hxr : xr = (g ∘ f) ⟨xp, hxP⟩  :=
+    leFun_comp hPQ hQR ▸ (eq_leFun_val_iff (p := ⟨xp, hxP⟩) (hPQ.trans hQR)).mpr ⟨hxR, hxpr⟩
+  obtain hyr : yr = (g ∘ f) ⟨yp, hyP⟩  :=
+    leFun_comp hPQ hQR ▸ (eq_leFun_val_iff (p := ⟨yp, hyP⟩) (hPQ.trans hQR)).mpr ⟨hyR, hypr⟩
+  exact ⟨f ⟨xp, hxP⟩, f ⟨yp, hyP⟩, ⟨Subtype.prop _, Subtype.prop _, xp, yp, ⟨hxP, hyP, hxy⟩,
+    le_leFun hPQ ⟨xp, hxP⟩, le_leFun hPQ ⟨yp, hyP⟩⟩, hxr ▸ le_leFun hQR _, hyr ▸ le_leFun hQR _⟩
+
+@[simp]
+lemma or :
+    P.fuzzyRel (fun x y => r x y ∨ s x y) a b ↔ P.fuzzyRel r a b ∨ P.fuzzyRel s a b := by
+  refine ⟨fun ⟨ha, hb, x, y, hxy, hxa, hyb⟩ => ?_, fun h => ?_⟩
+  · apply hxy.imp <;> exact (⟨ha, hb, x, y, ·, hxa, hyb⟩)
+  apply h.elim <;> exact fun ⟨ha, hb, x, y, h, hxa, hyb⟩ => ⟨ha, hb, x, y, by simp [h], hxa, hyb⟩
+
+lemma sup_right : P.fuzzyRel (r ⊔ s) = P.fuzzyRel r ⊔ P.fuzzyRel s := by
+  ext x y
+  exact or
+
+lemma and (h : P.fuzzyRel (fun x y => r x y ∧ s x y) a b) :
+    P.fuzzyRel r a b ∧ P.fuzzyRel s a b := by
+  obtain ⟨ha, hb, x, y, hxy, hxa, hyb⟩ := h
+  apply hxy.imp <;> exact (⟨ha, hb, x, y, ·, hxa, hyb⟩)
+
+lemma inf_right_le : P.fuzzyRel (r ⊓ s) ≤ P.fuzzyRel r ⊓ P.fuzzyRel s :=
+  fun _ _ => and
+
+@[simp]
+lemma and_const {p : Prop} : P.fuzzyRel (fun x y => r x y ∧ p) a b ↔ P.fuzzyRel r a b ∧ p := by
+  unfold fuzzyRel
+  tauto
+
+@[simp]
+lemma const_and {p : Prop} : P.fuzzyRel (fun x y => p ∧ r x y) a b ↔ p ∧ P.fuzzyRel r a b := by
+  rw [and_comm, ← and_const]
+  simp only [and_comm]
+
+end fuzzyRel
 
 def foo (P : Partition α) (a : α) : α := P.cover a |>.supp
 

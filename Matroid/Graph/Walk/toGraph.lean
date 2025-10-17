@@ -1,8 +1,9 @@
 import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Constructions.Small
 
-variable {α β ι ι' : Type*} {x y z u v : Set α} {e f : β} {G G₁ G₂ H H₁ H₂ : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set (Set α)} {s t : Set (Graph α β)} {W w : WList (Set α) β}
+variable {α β ι ι' : Type*} [Order.Frame α] {x y z u v : α} {e f : β} {W w : WList α β}
+  {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
 
 open scoped Sym2
 open WList Set Function Partition Graph
@@ -37,7 +38,7 @@ namespace WList
 /-- Turn `w : WList (Set α) β` into a `Graph α β`. If the list is not well-formed
 (i.e. it contains an edge appearing twice with different ends),
 then the first occurence of the edge determines its ends in `w.toGraph`. -/
-protected def toGraph : WList (Set α) β → Graph α β
+protected def toGraph : WList α β → Graph α β
   | nil u => Graph.noEdge (indiscrete' u) β
   | cons u e w => w.toGraph ∪ (banana u w.first {e})
 

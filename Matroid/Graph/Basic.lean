@@ -181,6 +181,9 @@ lemma codomain_IsLink_subset_vertexSet (G : Graph α β) (e : β) :
 lemma IsLink.right_mem' (h : G.IsLink e x y) : y ∈ P(G) :=
   G.mem_vertexPartition_iff.2 h.right_mem
 
+lemma forall_isLink_mem : ∀ u v, G.IsLink e u v → u ∈ P(G) ∧ v ∈ P(G) :=
+  fun _ _ h => ⟨h.left_mem', h.right_mem'⟩
+
 lemma isLink_comm : G.IsLink e x y ↔ G.IsLink e y x :=
   ⟨.symm, .symm⟩
 

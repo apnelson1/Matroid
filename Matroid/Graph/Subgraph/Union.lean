@@ -22,7 +22,7 @@ protected def sUnion (s : Set (Graph α β)) : Graph α β where
     simp only [edge_mem_iff_exists_isLink, mem_setOf_eq, exists_and_left, and_congr_right_iff]
     rintro he
     refine ⟨fun ⟨G, hGs, x, y, hGxy⟩ => ?_, fun ⟨x, y, hxy⟩ => ?_⟩
-    · rw [← fuzzyRel_stuff (le_biSup _ hGs) ?_]
+    · rw [← fuzzyRel.stuff (le_biSup _ hGs) ?_]
       simp only [iSup_apply, iSup_Prop_eq, exists_prop]
       use x, y, G, hGs
       · simp only [iSup_apply, iSup_Prop_eq, exists_prop, mem_vertexPartition_iff,
@@ -36,7 +36,7 @@ protected def sUnion (s : Set (Graph α β)) : Graph α β where
   isLink_symm e he u v := by
     rintro ⟨he, hxy⟩
     use he
-    apply fuzzyRel_symmetric _ hxy
+    apply hxy.symmetric _
     rw [← sSup_image]
     refine Relation.sSup_symmtric fun r ⟨G, hGs, hGr⟩ ↦ ?_
     subst r
@@ -66,7 +66,7 @@ lemma sUnion_isLink_of_not_compat (hs' : Gs.Pairwise Dup_agree) :
       biUnion_and', iUnion_iUnion_eq_right, vertexPartition_parts, mem_iUnion, forall_exists_index,
       and_imp]
     refine fun a b G hGs hab => ⟨?_, ?_⟩ <;> use G, hGs, by simp [hab.left_mem, hab.right_mem]
-  simp [Graph.sUnion, (fuzzyRel_eq_self _).mpr this]
+  simp [Graph.sUnion, fuzzyRel.eq_self.mpr this]
 
 @[simp]
 lemma sUnion_isLink (hs : Gs.Pairwise Graph.Compatible) (hs' : Gs.Pairwise Dup_agree) :
@@ -296,33 +296,6 @@ variable {G H H₁ H₂ : Graph α β}
 private lemma union_vertexPartition_supp : P(G ∪ H).supp = P(G).supp ⊔ P(H).supp := by
   simp
 
--- lemma foo_surjOn : SurjOn P(G ∪ H).foo (V(G) ∪ V(H)) V(G ∪ H) := by
---   intro v hv
---   obtain ⟨x, hx⟩ := (G ∪ H).nonempty_of_mem hv
---   have := mem_supp_iff.mpr ⟨v, hv, hx⟩
---   simp only [sup_supp, mem_union] at this
---   obtain (hxP | hxQ) := this
---   · use P(G).partOf x, ?_
---     · apply P(G ∪ H).eq_of_mem_of_mem ?_ hv ?_ hx
---       · exact foo_mem_of_le (by simp) <| partOf_mem hxP
---       simp [foo]
---       use x, (rel_self_of_mem_supp hxP)
---       apply Relation.TransGen.single
---       simp [rel_self_of_mem_supp hxP]
---     · left
---       rw [← mem_vertexPartition_iff]
---       exact partOf_mem hxP
---   · use P(H).partOf x, ?_
---     · apply P(G ∪ H).eq_of_mem_of_mem ?_ hv ?_ hx
---       · exact foo_mem_of_le (by simp) <| partOf_mem hxQ
---       simp [foo]
---       use x, (rel_self_of_mem_supp hxQ)
---       apply Relation.TransGen.single
---       simp [rel_self_of_mem_supp hxQ]
---     · right
---       rw [← mem_vertexPartition_iff]
---       exact partOf_mem hxQ
-
 @[simp] lemma union_edgeSet (G H : Graph α β) : E(G ∪ H) = E(G) ∪ E(H) := rfl
 
 lemma union_eq_sUnion (G H : Graph α β) : G ∪ H = Graph.sUnion {G, H ＼ E(G)} := by
@@ -340,8 +313,9 @@ lemma union_isLink (hG' : G.Dup_agree H) :
   rw [union_eq_sUnion, sUnion_isLink pairwise_compatible_edgeDelete hG'.pair_edgeDelete]
   simp
 
-lemma union_isLink_not_agree : (G ∪ H).IsLink e x y ↔
-    (P(G) ⊔ P(H ＼ E(G))).fuzzyRel (G.IsLink e ⊔ (H ＼ E(G)).IsLink e) x y := by
+lemma union_isLink_not_agree : (G ∪ H).IsLink e =
+    (P(G) ⊔ P(H ＼ E(G))).fuzzyRel (G.IsLink e ⊔ (H ＼ E(G)).IsLink e) := by
+  ext x y
   simp_rw [union_eq_sUnion, sUnion_isLink_not_agree pairwise_compatible_edgeDelete, ← sSup_image,
     image_pair, sSup_pair]
 
@@ -364,72 +338,33 @@ private lemma subset_union_supp_of_mem_left (h : u ∈ V(G)) : u ≤ P(G ∪ H).
 private lemma subset_union_supp_of_mem_right (h : u ∈ V(H)) : u ≤ P(G ∪ H).supp :=
   le_trans (le_supp_of_mem <| mem_vertexPartition_iff.mpr h) (supp_le_of_le le_sup_right)
 
--- lemma union_union_isLink_not_agree {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ G₂ ∪ G₃).IsLink e x y ↔
---     ∃ u v, (G₁.IsLink e u v ∨ (G₂.IsLink e u v ∧ e ∉ E(G₁)) ∨
---     (G₃.IsLink e u v ∧ e ∉ E(G₁) ∧ e ∉ E(G₂))) ∧
---     foo P(G₁ ∪ G₂ ∪ G₃) u = x ∧ foo P(G₁ ∪ G₂ ∪ G₃) v = y := by
---   simp only [union_isLink_not_agree, union_vertexPartition, union_edgeSet, mem_union, not_or]
---   refine ⟨fun h => ?_, fun h => ?_⟩
---   · obtain ⟨u, v, (⟨a, b, h, rfl, rfl⟩ | ⟨h₃uv, he₁, he₂⟩), hx, hy⟩ := h
---     · rw [foo_foo_eq_foo le_sup_left] at hx hy; rotate_left
---       · exact h.elim (subset_union_supp_of_mem_left ·.right_mem)
---           (subset_union_supp_of_mem_right ·.1.right_mem)
---       · exact h.elim (subset_union_supp_of_mem_left ·.left_mem)
---           (subset_union_supp_of_mem_right ·.1.left_mem)
---       obtain (h₁ | ⟨h₂, he₁⟩) := h <;>
---       · use a, b
---         simp_all
---     · use u, v
---       simp_all
---   · obtain ⟨u, v, (h₁ | ⟨h₂, he₁⟩ | ⟨h₃uv, he₁, he₂⟩), hx, hy⟩ := h
---     · use (P(G₁) ⊔ P(G₂)).foo u, (P(G₁) ⊔ P(G₂)).foo v, Or.inl (by use u, v, Or.inl h₁), ?_, ?_
---<;>
---       rwa [foo_foo_eq_foo le_sup_left]
---       exact subset_union_supp_of_mem_left h₁.left_mem
---       exact subset_union_supp_of_mem_left h₁.right_mem
---     · use (P(G₁) ⊔ P(G₂)).foo u, (P(G₁) ⊔ P(G₂)).foo v, Or.inl (by use u, v, Or.inr ⟨h₂, he₁⟩),
---?_,
---         ?_ <;> rwa [foo_foo_eq_foo le_sup_left]
---       exact subset_union_supp_of_mem_right h₂.left_mem
---       exact subset_union_supp_of_mem_right h₂.right_mem
---     · use u, v, Or.inr ⟨h₃uv, he₁, he₂⟩, hx, hy
+lemma union_union_isLink_not_agree {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ G₂ ∪ G₃).IsLink e =
+    P(G₁ ∪ G₂ ∪ G₃).fuzzyRel (G₁.IsLink e) ⊔ P(G₁ ∪ G₂ ∪ G₃).fuzzyRel ((G₂ ＼ E(G₁)).IsLink e) ⊔
+    P(G₁ ∪ G₂ ∪ G₃).fuzzyRel ((G₃ ＼ E(G₁ ∪ G₂)).IsLink e) := by
+  simp_rw [union_isLink_not_agree, fuzzyRel.sup_right]
+  congr 2 <;> rw [← fuzzyRel.eq_self.mpr Graph.forall_isLink_mem] <;>
+    exact fuzzyRel.fuzzyRel₃_eq_fuzzyRel₂_of_le_le (by simp) le_sup_left
 
--- lemma union_union_isLink_not_agree' {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ (G₂ ∪ G₃)).IsLink e x y ↔
---     ∃ u v, (G₁.IsLink e u v ∨ (G₂.IsLink e u v ∧ e ∉ E(G₁)) ∨
---     (G₃.IsLink e u v ∧ e ∉ E(G₁) ∧ e ∉ E(G₂))) ∧
---     foo P(G₁ ∪ G₂ ∪ G₃) u = x ∧ foo P(G₁ ∪ G₂ ∪ G₃) v = y := by
---   simp only [union_isLink_not_agree, union_vertexPartition]
---   refine ⟨fun h => ?_, fun h => ?_⟩
---   · obtain ⟨u, v, (h₁ | ⟨⟨a, b, h, rfl, rfl⟩, he₁⟩), hx, hy⟩ := h
---     · use u, v
---       simp_all [sup_assoc]
---     · rw [foo_foo_eq_foo le_sup_right] at hx hy; rotate_left
---       · exact h.elim (subset_union_supp_of_mem_left ·.right_mem)
---           (subset_union_supp_of_mem_right ·.1.right_mem)
---       · exact h.elim (subset_union_supp_of_mem_left ·.left_mem)
---           (subset_union_supp_of_mem_right ·.1.left_mem)
---       rw [← sup_assoc] at hx hy
---       obtain (h₂ | ⟨h₃, he₂⟩) := h
---       · exact ⟨a, b, Or.inr (Or.inl ⟨h₂, he₁⟩), hx, hy⟩
---       · exact ⟨a, b, Or.inr (Or.inr ⟨h₃, he₁, he₂⟩), hx, hy⟩
---   · obtain ⟨u, v, (h₁ | ⟨h₂, he₁⟩ | ⟨h₃, he₁, he₂⟩), hx, hy⟩ := h
---     · use u, v
---       simp_all [sup_assoc]
---     · use (P(G₂) ⊔ P(G₃)).foo u, (P(G₂) ⊔ P(G₃)).foo v, Or.inr ⟨(by use u, v, (by simp_all)),
---he₁⟩,
---         ?_, ?_ <;> rwa [foo_foo_eq_foo le_sup_right, ← sup_assoc]
---       exact subset_union_supp_of_mem_left h₂.left_mem
---       exact subset_union_supp_of_mem_left h₂.right_mem
---     · use (P(G₂) ⊔ P(G₃)).foo u, (P(G₂) ⊔ P(G₃)).foo v, Or.inr ⟨(by use u, v, (by simp_all)),
---he₁⟩,
---         ?_, ?_ <;> rwa [foo_foo_eq_foo le_sup_right, ← sup_assoc]
---       exact subset_union_supp_of_mem_right h₃.left_mem
---       exact subset_union_supp_of_mem_right h₃.right_mem
+lemma union_union_isLink_not_agree' {G₁ G₂ G₃ : Graph α β} : (G₁ ∪ (G₂ ∪ G₃)).IsLink e =
+    P(G₁ ∪ G₂ ∪ G₃).fuzzyRel (G₁.IsLink e) ⊔ (P(G₁ ∪ G₂ ∪ G₃).fuzzyRel ((G₂ ＼ E(G₁)).IsLink e) ⊔
+    P(G₁ ∪ G₂ ∪ G₃).fuzzyRel ((G₃ ＼ E(G₁ ∪ G₂)).IsLink e)) := by
+  have : (fun _ _ => False : α → α → Prop) = ⊥ := rfl
+  have hP : P(G₁ ∪ G₂ ∪ G₃) = P(G₁ ∪ (G₂ ∪ G₃)) := by simp [union_vertexPartition, sup_assoc]
+  simp_rw [union_isLink_not_agree, fuzzyRel.sup_right, edgeDelete_isLink_eq, hP]
+  by_cases he : e ∈ E(G₁)
+  · simp [← sup_assoc, this, he]
+  simp only [he, not_false_eq_true, and_true, union_edgeSet, mem_union, false_or]
+  congr 2
+  simp_rw [union_isLink_not_agree, fuzzyRel.sup_right, edgeDelete_isLink_eq]
+  congr 1 <;> rw [← fuzzyRel.eq_self.mpr Graph.forall_isLink_mem]
+  · exact fuzzyRel.fuzzyRel₃_eq_fuzzyRel₂_of_le_le le_sup_left le_sup_right
+  simp only [← fuzzyRel.and_const]
+  exact fuzzyRel.fuzzyRel₃_eq_fuzzyRel₂_of_le_le le_sup_right le_sup_right
 
--- protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪ G₃ = G₁ ∪ (G₂ ∪ G₃) := by
---   refine Graph.ext ?_ fun e x y ↦ ?_
---   · simp_rw [← vertexSet_eq_parts, union_vertexPartition, sup_assoc]
---   rw [union_union_isLink_not_agree, union_union_isLink_not_agree']
+protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪ G₃ = G₁ ∪ (G₂ ∪ G₃) := by
+  refine Graph.ext ?_ fun e x y ↦ ?_
+  · simp_rw [← vertexSet_eq_parts, union_vertexPartition, sup_assoc]
+  rw [union_union_isLink_not_agree, union_union_isLink_not_agree', sup_assoc]
 
 lemma union_eq_union_edgeDelete (G H : Graph α β) : G ∪ H = G ∪ (H ＼ E(G)) := by
   simp [union_eq_sUnion]
@@ -495,6 +430,11 @@ lemma edgeRestrict_union (G : Graph α β) (F₁ F₂ : Set β) : (G ↾ (F₁ �
   rw [(G.compatible_self.mono (by simp) (by simp)).union_isLink hG']
   simp only [edgeRestrict_isLink, mem_union]
   tauto
+
+lemma union_edgeRestrict_distrib (G H : Graph α β) (F : Set β) : (G ∪ H) ↾ F = G ↾ F ∪ (H ↾ F) :=
+  Graph.ext rfl fun e x y ↦ by
+  by_cases he : e ∈ F <;> simp [union_isLink_not_agree, edgeRestrict_isLink_eq, and_comm,
+    he, edgeDelete_isLink_eq]
 
 lemma Compatible.union_eq_sUnion (h : G.Compatible H) (hG' : G.Dup_agree H) :
     G ∪ H = Graph.sUnion {G, H} :=

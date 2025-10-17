@@ -27,6 +27,8 @@ def edgeRestrict (G : Graph α β) (E₀ : Set β) : Graph α β where
 /-- `G ↾ F` is the subgraph of `G` restricted to the edges in `F`. Vertices are not changed. -/
 scoped infixl:65 " ↾ "  => Graph.edgeRestrict
 
+lemma edgeRestrict_isLink_eq : (G ↾ F).IsLink e = (e ∈ F ∧ G.IsLink e · ·) := rfl
+
 @[simp]
 lemma edgeRestrict_le {E₀ : Set β} : G ↾ E₀ ≤ G where
   vertexSet_subset := by simp
@@ -100,6 +102,8 @@ def edgeDelete (G : Graph α β) (F : Set β) : Graph α β :=
 
 /-- `G ＼ F` is the subgraph of `G` with the edges in `F` deleted. Vertices are not changed. -/
 scoped infixl:65 " ＼ "  => Graph.edgeDelete
+
+lemma edgeDelete_isLink_eq : (G ＼ F).IsLink e = (G.IsLink e · · ∧ e ∉ F) := rfl
 
 lemma edgeDelete_eq_edgeRestrict (G : Graph α β) (F : Set β) :
     G ＼ F = G ↾ (E(G) \ F) := copy_eq_self ..
