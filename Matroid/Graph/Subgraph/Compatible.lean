@@ -127,8 +127,17 @@ section Compatible
 /-- Two graphs are `Compatible` if the edges in their intersection agree on their ends -/
 def Compatible (G H : Graph α β) : Prop := EqOn G.IsLink H.IsLink (E(G) ∩ E(H))
 
+@[simp]
 lemma Compatible.compatibleAt (h : G.Compatible H) (e : β) : CompatibleAt e G H :=
   fun heG heH ↦ h ⟨heG, heH⟩
+
+@[simp]
+lemma pairwise_compatibleAt_of_compatible (h : Pairwise (Compatible on Gι)) (e : β) :
+    Pairwise (CompatibleAt e on Gι) := fun _ _ hne ↦ (h hne).compatibleAt e
+
+@[simp]
+lemma set_pairwise_compatibleAt_of_compatible (h : s.Pairwise Compatible) (e : β) :
+    s.Pairwise (CompatibleAt e) := fun _ hi _ hj hne ↦ (h hi hj hne).compatibleAt e
 
 lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
     G.IsLink e = H.IsLink e :=

@@ -520,6 +520,11 @@ instance [IsTrans α r] [IsTrans α s] : IsTrans α (r ⊓ s) :=
 instance [IsTrans α r] : IsTrans α rᵀ where
   trans _ _ _ h h' := trans_of r h' h
 
+lemma transitive_of_le_eq (r : α → α → Prop) (hr : r ≤ (· = ·)) : Transitive r := by
+  rintro a b c hab hbc
+  obtain rfl := hr _ _ hab
+  obtain rfl := hr _ _ hbc
+  exact hab
 
 def SymmClosure : ClosureOperator (α → α → Prop) where
   toFun r := r ⊔ flip r
@@ -592,14 +597,28 @@ instance [IsSymm α r] : IsSymm α (TransClosure r) := by
   | tail _ hr ih => exact TransGen.head (symm_of r hr) ih
 
 @[simp]
-lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq := by
-  ext a b
-  refine ⟨fun h => ?_, ?_⟩
-  · induction h with
-    | single h => exact h
-    | tail _ h' ih => exact ih.trans h'
-  rintro rfl
-  exact TransGen.single rfl
+lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosure r = r :=
+  transGen_eq_self <| transitive_of_trans r
+
+lemma transClosure_eq_self_of_le_eq (hr : r ≤ (· = ·)) : TransClosure r = r :=
+  transGen_eq_self <| transitive_of_le_eq r hr
+
+@[simp]
+lemma transClosure_eq : TransClosure (Eq : α → α → Prop) = Eq :=
+  transClosure_eq_self_of_le_eq le_rfl
+
+lemma transClosure_le_of_le_trans (hr : r ≤ s) [IsTrans α s] : TransClosure r ≤ s :=
+  (ClosureOperator.IsClosed.closure_le_iff IsTrans.trans).mpr hr
+
+lemma transClosure_le_domp_of_le_trans (hr : r ≤ s) [IsTrans α s] : TransClosure r ≤ Domp s r := by
+  have hs : TransClosure.IsClosed s := IsTrans.trans
+  rintro a b hab
+  induction hab with
+  | single hab' => exact ⟨_, hr _ _ hab', a, hab', hr _ _ hab'⟩
+  | tail hab' hb'c' IH =>
+    refine ⟨_, ?_, _, hb'c', hr _ _ hb'c'⟩
+    rw [← ClosureOperator.IsClosed.closure_le_iff hs] at hr
+    exact hr _ _ <| hab'.tail hb'c'
 
 @[simp]
 lemma transClosure_domain (r : α → α → Prop) : domain (TransClosure r) = domain r := by
@@ -618,14 +637,6 @@ lemma transClosure_codomain (r : α → α → Prop) : codomain (TransClosure r)
   induction h with
   | single h => exact ⟨_, h⟩
   | tail _ h ih => exact ⟨_, h⟩
-
-@[simp]
-lemma transClosure_eq_self (r : α → α → Prop) [IsTrans α r] : TransClosure r = r := by
-  ext a b
-  refine ⟨fun h => ?_, TransGen.single⟩
-  induction h with
-  | single h => exact h
-  | tail h1 h2 IH => exact trans' IH h2
 
 lemma transClosure_exists_single_head (r : α → α → Prop) (h : TransClosure r a b) :
     ∃ c, r a c := by

@@ -583,6 +583,13 @@ lemma parts_top_subset : ((⊤ : Partition α) : Set α) ⊆ {⊤} := by
 instance : OrderBot (Partition α) where
   bot_le a s hs := by simp only [notMem_bot] at hs
 
+@[simp]
+lemma bot_parts : (⊥ : Partition α).parts = ∅ := rfl
+
+@[simp]
+lemma bot_supp : (⊥ : Partition α).supp = ⊥ := by
+  simp
+
 lemma supp_le_of_le {P Q : Partition α} (h : P ≤ Q) : P.supp ≤ Q.supp :=
   sSup_le_sSup_of_isCofinalFor h
 

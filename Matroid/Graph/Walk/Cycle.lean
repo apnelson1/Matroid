@@ -1,8 +1,8 @@
 import Matroid.Graph.Walk.Path
 import Matroid.Graph.WList.Cycle
 
-variable {α β : Type*} {x y z u v : Set α} {e f : β} {G H : Graph α β}
-  {w w₁ w₂ C C₁ C₂ : WList (Set α) β} {S T : Set (Set α)}
+variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β}
+  {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}
 
 open WList
 
@@ -31,7 +31,7 @@ lemma IsClosed.isWalk_rotate_iff (hc : w.IsClosed) {n} : G.IsWalk (w.rotate n) �
 
 /-- `G.IsCycle C` means that `C` is a nonempty closed walk with no repeated vertices or edges. -/
 @[mk_iff]
-structure IsCycle (G : Graph α β) (C : WList (Set α) β) : Prop extends G.IsTrail C where
+structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C where
   nonempty : C.Nonempty
   /-- The start and end vertex are the same -/
   isClosed : C.IsClosed
@@ -73,7 +73,7 @@ lemma IsCycle.rotate (hC : G.IsCycle C) (n : ℕ) : G.IsCycle (C.rotate n) where
   nodup := by simpa [rotate_vertex_tail, List.nodup_rotate] using hC.nodup
 
 @[simp]
-lemma not_isCycle_nil (x : Set α) : ¬ G.IsCycle (nil x : WList (Set α) β) :=
+lemma not_isCycle_nil (x : α) : ¬ G.IsCycle (nil x : WList α β) :=
   fun h ↦ by simpa using h.nonempty
 
 lemma IsCycle.intRotate (hC : G.IsCycle C) (n : ℤ) : G.IsCycle (C.intRotate n) :=
@@ -221,7 +221,7 @@ lemma IsCycle.vertexSet_nontrivial (hC : G.IsCycle C) (hnt : C.Nontrivial) : V(C
   refine Set.nontrivial_of_exists_ne (x := u) (by simp) ⟨P.first, ?_⟩
   simp [show P.first ≠ u by rintro rfl; simp at huP]
 
-lemma IsPath.cons_isCycle {P : WList (Set α) β} (hP : G.IsPath P) (he : G.IsLink e P.first P.last)
+lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.first P.last)
     (heP : e ∉ P.edge) : G.IsCycle (cons P.last e P) where
   isWalk := by simp [he.symm, hP.isWalk]
   edge_nodup := by simp [heP, hP.edge_nodup]
@@ -230,7 +230,7 @@ lemma IsPath.cons_isCycle {P : WList (Set α) β} (hP : G.IsPath P) (he : G.IsLi
   nodup := by simp [hP.nodup]
 
 /-- If `P` is nontrivial, then the edge assumption from `IsPath.cons_isCycle` isn't needed. -/
-lemma IsPath.cons_isCycle_of_nontrivial {P : WList (Set α) β} (hP : G.IsPath P)
+lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
     (he : G.IsLink e P.first P.last) (hPnt : P.Nontrivial) : G.IsCycle (cons P.last e P) := by
   refine IsWalk.isCycle_of_closed_nodup (by simp [he.symm, hP.isWalk]) ?_ (by simp)
     (by simp [hP.nodup])
@@ -238,7 +238,7 @@ lemma IsPath.cons_isCycle_of_nontrivial {P : WList (Set α) β} (hP : G.IsPath P
   rw [cons_length]
   omega
 
-lemma IsPath.concat_isCycle {P : WList (Set α) β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
+lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
 

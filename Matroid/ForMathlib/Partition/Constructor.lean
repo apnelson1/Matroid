@@ -71,16 +71,16 @@ variable [Order.Frame α] {P Q R : Partition α} {Qs : ∀ a ∈ P, Partition α
 
 @[simps] protected def bind (P : Partition α) (Qs : ∀ a ∈ P, Partition α)
     (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp ≤ a) : Partition α where
-  parts := ⋃ a : P, (Qs a a.prop)
+  parts := ⋃ a : P, (Qs a a.prop).parts
   indep := by
     intro b hb
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists] at hb
+    simp only [mem_iUnion, Subtype.exists] at hb
     obtain ⟨a, haP, hba : b ∈ Qs a haP⟩ := hb
     obtain hasupp := hQs a haP
     have hdj1 := (Qs a haP).indep hba
     have hdj2 := (P.indep haP).mono_left <| ((Qs a haP).le_supp_of_mem hba).trans hasupp
     refine (hdj1.sup_right hdj2).mono_right ?_
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, sSup_le_iff, mem_diff,
+    simp only [mem_iUnion, Subtype.exists, sSup_le_iff, mem_diff,
       mem_singleton_iff, and_imp, forall_exists_index]
     rintro t' x hx (ht' : t' ∈ Qs x hx) hne
     obtain hxsupp := hQs x hx
@@ -89,7 +89,7 @@ variable [Order.Frame α] {P Q R : Partition α} {Qs : ∀ a ∈ P, Partition α
     exact le_trans (le_sSup_of_le (mem_diff_of_mem hx hne) <|
       (Qs x hx).le_supp_of_mem ht' |>.trans hxsupp) le_sup_right
   bot_not_mem := by
-    simp only [mem_iUnion, SetLike.mem_coe, Subtype.exists, not_exists]
+    simp only [mem_iUnion, Subtype.exists, not_exists]
     exact fun x hx ↦ (Qs x hx).bot_not_mem
 
 @[simp] lemma mem_bind_iff (hQs : ∀ a, (h : a ∈ P) → (Qs a h).supp ≤ a) :
@@ -330,7 +330,7 @@ instance : SemilatticeInf (Partition α) where
     exact ⟨hPQ, fun a haQ ↦ induce_le_induce_left hPR⟩
 
 @[simp]
-lemma inf_parts : (P ⊓ Q) = {x | x ≠ ⊥ ∧ ∃ a ∈ P, ∃ b ∈ Q, a ⊓ b = x} := by
+lemma inf_parts : (P ⊓ Q) = {x | (∃ a ∈ P, ∃ b ∈ Q, a ⊓ b = x) ∧ x ≠ ⊥} := by
   change (P.bind _ _).parts = _
   ext x
   simp
@@ -341,55 +341,64 @@ lemma inf_parts_eq_biUnion : (P ⊓ Q) = (⋃ a ∈ P, ⋃ b ∈ Q, {a ⊓ b}) \
   simp [and_comm, eq_comm]
 
 @[simp]
-lemma mem_inf_iff : x ∈ P ⊓ Q ↔ x ≠ ⊥ ∧ ∃ a ∈ P, ∃ b ∈ Q, a ⊓ b = x := by
+lemma mem_inf_iff : x ∈ P ⊓ Q ↔ (∃ a ∈ P, ∃ b ∈ Q, a ⊓ b = x) ∧ x ≠ ⊥ := by
   change _ ∈ (P.bind _ _).parts ↔ _
   simp
 
--- def sInf (P : Set (Partition α)) : Partition α :=
---   ofIndependent (u := iInf '' (Set.pi univ (fun p : P => p.val.parts)) \ {⊥}) (by
---     rintro _ ⟨⟨f, hf, rfl⟩, hne⟩
---     simp only [mem_pi, mem_univ, mem_parts, forall_const, Subtype.forall,
---       mem_singleton_iff] at hf hne
---     rw [disjoint_sSup_iff]
---     rintro _ ⟨⟨⟨g, hg, rfl⟩, hng⟩, hgf⟩
---     simp only [mem_pi, mem_univ, mem_parts, forall_const, Subtype.forall,
---       mem_singleton_iff, ← ne_eq] at hg hng hgf
---     have hfg : f ≠ g := by
---       rintro rfl
---       simp at hgf
---     contrapose! hfg
---     ext P₁
---     specialize hf P₁ P₁.prop
---     specialize hg P₁ P₁.prop
---     refine P₁.val.eq_of_not_disjoint hf hg ?_
---     contrapose! hfg
---     exact hfg.mono (iInf_le_iff.mpr fun b a ↦ a P₁) (iInf_le_iff.mpr fun b a ↦ a P₁))
---     (notMem_diff_of_mem rfl)
+def sInf' (P : Set (Partition α)) : Partition α :=
+  ofIndependent (u := iInf '' (Set.pi univ (fun p : P => p.val.parts)) \ {⊥}) (by
+    rintro _ ⟨⟨f, hf, rfl⟩, hne⟩
+    simp only [mem_pi, mem_univ, mem_parts, forall_const, Subtype.forall,
+      mem_singleton_iff] at hf hne
+    rw [disjoint_sSup_iff]
+    rintro _ ⟨⟨⟨g, hg, rfl⟩, hng⟩, hgf⟩
+    simp only [mem_pi, mem_univ, mem_parts, forall_const, Subtype.forall,
+      mem_singleton_iff, ← ne_eq] at hg hng hgf
+    have hfg : f ≠ g := by
+      rintro rfl
+      simp at hgf
+    contrapose! hfg
+    ext P₁
+    specialize hf P₁ P₁.prop
+    specialize hg P₁ P₁.prop
+    refine P₁.val.eq_of_not_disjoint hf hg ?_
+    contrapose! hfg
+    exact hfg.mono (iInf_le_iff.mpr fun b a ↦ a P₁) (iInf_le_iff.mpr fun b a ↦ a P₁))
+    (notMem_diff_of_mem rfl)
 
--- @[simp]
--- lemma sInf_empty : sInf ∅ = (⊤ : Partition α) := by
---   apply Partition.ext fun a ↦ ?_
---   simp only [sInf, mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
---     forall_const, IsEmpty.forall_iff, true_and, mem_singleton_iff, mem_top_iff, ne_eq,
---     and_congr_left_iff]
---   intro ha
---   simp_rw [iInf_of_empty]
---   simp [eq_comm]
+lemma exists_mem_sInf'_iff {Ps : Set (Partition α)} {q : α → Prop} :
+    (∃ a ∈ sInf' Ps, q a) ↔ ∃ f, iInf f ≠ ⊥ ∧ (∀ p : Ps, f p ∈ p.val) ∧ q (iInf f) := by
+  simp only [sInf', mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
+    forall_const, Subtype.forall, mem_singleton_iff, and_assoc, exists_exists_and_eq_and, ne_eq]
+  tauto
 
--- lemma le_sInf {Ps : Set (Partition α)} (P : Partition α) (h : ∀ Q ∈ Ps, P ≤ Q) :
---     P ≤ sInf Ps := by
---   intro a haP
---   obtain (rfl | hPs) := Ps.eq_empty_or_nonempty
---   · simp only [sInf_empty, mem_top_iff, -ne_eq, existsAndEq, -true_and, le_top, -and_true]
---     obtain (A | A) := subsingleton_or_nontrivial α
---     · simp
---       sorry
---     simp
+@[simp]
+lemma sInf'_empty : sInf' ∅ = (⊤ : Partition α) := by
+  apply Partition.ext fun a ↦ ?_
+  simp only [sInf', mem_ofIndependent_iff, mem_diff, mem_image, mem_pi, mem_univ, mem_parts,
+    forall_const, IsEmpty.forall_iff, true_and, mem_singleton_iff, mem_top_iff, ne_eq,
+    and_congr_left_iff]
+  intro ha
+  simp_rw [iInf_of_empty]
+  simp [eq_comm]
+
+lemma le_sInf' {Ps : Set (Partition α)} (Q : Partition α) (h : ∀ P ∈ Ps, Q ≤ P) : Q ≤ sInf' Ps := by
+  intro a haQ
+  simp_rw [exists_mem_sInf'_iff, le_iInf_iff]
+  refine ⟨fun P ↦ (h P P.prop a haQ).choose, ne_bot_of_le_ne_bot (Q.ne_bot_of_mem haQ) ?_,
+    forall_and.mp <| fun P : Ps ↦ (h P P.prop a haQ).choose_spec⟩
+  simp [fun P hP ↦ (h P hP a haQ).choose_spec.2]
+
+lemma sInf'_le {Ps : Set (Partition α)} (P : Partition α) (hP : P ∈ Ps) : sInf' Ps ≤ P := by
+  intro a haPs
+  obtain ⟨⟨f, hf, rfl⟩, habot⟩ := by simpa only [sInf', mem_ofIndependent_iff, mem_diff, mem_pi,
+    mem_image, mem_univ, mem_parts, forall_const, Subtype.forall, mem_singleton_iff] using haPs
+  use f ⟨P, hP⟩, hf P hP, iInf_le_iff.mpr fun b a ↦ a ⟨P, hP⟩
 
 end Inf
 
 section disjParts
-variable [CompleteLattice α] {P Q R : Partition α} {S T s t : Set α}
+variable [CompleteLattice α] {P Q R : Partition α} {S T s t : Set α} {Ps : Set (Partition α)}
 
 theorem eq_of_le_not_disjoint {x r : α} (hx : x ∈ R) (hxs : b ≤ x) (hr : r ∈ R) (hrs : c ≤ r)
     (hndisj : ¬Disjoint b c) : r = x := by
@@ -404,6 +413,7 @@ def disjParts (S : Set α) : Partition (Set α) :=
     exact h.symm
   ofRel (Relation.TransClosure <| Relation.restrict ((¬ Disjoint · ·) : α → α → Prop) S)
 
+@[simp]
 lemma sUnion_disjParts : ⋃₀ (disjParts S).parts = S \ {⊥} := by
   ext a
   simp +contextual only [disjParts, ofRel_parts, sUnion_fibers, transClosure_domain, mem_domain_iff,
@@ -447,6 +457,90 @@ lemma disjParts_singleton (h : a ≠ ⊥) : disjParts {a} = Partition.indiscrete
 lemma disjParts_singleton_bot : disjParts {⊥} = (⊥ : Partition (Set α)) := by
   rw [← supp_eq_bot_iff, disjParts_supp]
   simp
+
+@[simp]
+lemma disjParts_insert_bot (S : Set α) : disjParts (insert ⊥ S) = disjParts S := by
+  suffices Relation.restrict (fun x1 x2 ↦ ¬Disjoint x1 x2) (insert ⊥ S) =
+    Relation.restrict (fun x1 x2 ↦ ¬Disjoint x1 x2) S by
+    refine eq_of_rel_iff_rel ?_
+    simp only [disjParts, this, rel_ofRel_eq, implies_true]
+  ext x y
+  simp only [Relation.restrict, mem_insert_iff, and_congr_right_iff]
+  intro h
+  simp [left_ne_bot_of_not_disjoint h, right_ne_bot_of_not_disjoint h]
+
+@[simp]
+lemma disjParts_diff_singleton_bot (S : Set α) : disjParts (S \ {⊥}) = disjParts S := by
+  rw [← disjParts_insert_bot, insert_diff_singleton, disjParts_insert_bot]
+
+lemma disjParts_indiscrete_of_top_mem [Nontrivial α] (h : ⊤ ∈ S) :
+    disjParts S = indiscrete (S \ {⊥}) (Nonempty.ne_empty ⟨⊤, h, by simp⟩) := by
+  ext x y
+  simp only [disjParts, rel_ofRel_eq, indiscrete_rel]
+  refine ⟨fun h => ?_, fun ⟨⟨hx, hxbot⟩, ⟨hy, hybot⟩⟩ => ?_⟩
+  · obtain ⟨_, hxd, hx, -⟩ := Relation.transClosure_exists_single_head _ h
+    obtain ⟨_, hyd, -, hy⟩ := Relation.transClosure_exists_single_tail _ h
+    exact ⟨⟨hx, left_ne_bot_of_not_disjoint hxd⟩, ⟨hy, right_ne_bot_of_not_disjoint hyd⟩⟩
+  apply Relation.TransGen.trans (b := ⊤) <;> apply Relation.TransGen.single
+  · use (by simpa), hx, h
+  · use (by simpa), h, hy
+
+@[simp]
+lemma disjParts_indiscrete'_of_top_mem  (h : ⊤ ∈ S) : disjParts S = indiscrete' (S \ {⊥}) := by
+  ext x y
+  simp only [disjParts, rel_ofRel_eq, indiscrete'_rel]
+  refine ⟨fun h => ?_, fun ⟨⟨hx, hxbot⟩, ⟨hy, hybot⟩⟩ => ?_⟩
+  · obtain ⟨_, hxd, hx, -⟩ := Relation.transClosure_exists_single_head _ h
+    obtain ⟨_, hyd, -, hy⟩ := Relation.transClosure_exists_single_tail _ h
+    exact ⟨⟨hx, left_ne_bot_of_not_disjoint hxd⟩, ⟨hy, right_ne_bot_of_not_disjoint hyd⟩⟩
+  apply Relation.TransGen.trans (b := ⊤) <;> apply Relation.TransGen.single
+  · use (by simpa), hx, h
+  · use (by simpa), h, hy
+
+lemma disjParts_eq_sUnion_of_agree (hPs : Ps.Pairwise Agree) :
+    (disjParts (⋃ a ∈ Ps, a.parts)).parts = Set.singleton '' ⋃ a ∈ Ps, a.parts := by
+  ext S
+  have hr : Relation.restrict (¬Disjoint · ·) (⋃ a ∈ Ps, a.parts) ≤ (· = ·) := by
+    rintro x y ⟨hxy, hx, hy⟩
+    simp only [mem_iUnion, mem_parts, exists_prop] at hx hy
+    obtain ⟨Px, hPx, hxPx⟩ := hx
+    obtain ⟨Py, hPy, hyPy⟩ := hy
+    exact (hPs.of_refl hPx hPy).eq_of_not_disjoint hxPx hyPy hxy
+  simp only [disjParts, transClosure_eq_self_of_le_eq hr, ofRel_parts, mem_fibers_iff,
+    mem_codomain_iff, Relation.restrict, mem_iUnion, mem_parts, exists_prop, fiber, Set.singleton,
+    setOf_eq_eq_singleton, mem_image]
+  refine exists_congr fun a => ?_
+  have h1 : (∃ a_1, ¬Disjoint a_1 a ∧ (∃ i ∈ Ps, a_1 ∈ i) ∧ ∃ i ∈ Ps, a ∈ i) ↔ ∃ i ∈ Ps, a ∈ i := by
+    refine ⟨fun ⟨b, hba, hb, ha⟩ => ha, fun h => ⟨a, ?_, h, h⟩⟩
+    simp [h.choose.ne_bot_of_mem h.choose_spec.2]
+  rw [h1]
+  refine and_congr_right fun ha ↦ Eq.congr ?_ rfl
+  simp only [ha, and_true, Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
+  obtain ⟨Pa, hPa, haPa⟩ := ha
+  refine fun b => ⟨fun ⟨hba, Pb, hPb, hbPb⟩ => (hPs.of_refl hPb hPa).eq_of_not_disjoint hbPb haPa
+    hba, ?_⟩
+  rintro rfl
+  simp only [disjoint_self, Pa.ne_bot_of_mem haPa, not_false_eq_true, true_and]
+  use Pa
+
+lemma singleton_mem_disjParts_iff :
+    {a} ∈ disjParts S ↔ ∀ b, (¬Disjoint b a ∧ b ∈ S ∧ a ∈ S ↔ b = a) := by
+  rw [← eq_partOf_iff_mem (show a ∈ {a} by rfl), eq_comm]
+  simp only [partOf, fiber, disjParts, rel_ofRel_eq, Set.ext_iff, mem_setOf_eq, mem_singleton_iff]
+  refine ⟨fun h b => ⟨fun hab => ?_, ?_⟩, fun h b => ⟨fun hba => ?_, ?_⟩⟩
+  · exact (h _).mp (Relation.TransGen.single hab)
+  · rintro rfl
+    obtain ⟨c, hbc, hb, -⟩ := transClosure_exists_single_head _ ((h b).mpr rfl)
+    simp [hb, left_ne_bot_of_not_disjoint hbc]
+  · induction hba with
+  | single hbb => exact (h _).mp hbb
+  | tail _ h2 IH =>
+    obtain rfl := (h _).mp h2
+    exact IH h
+  · rintro rfl
+    obtain ⟨hbb, hb, -⟩ := (h b).mpr rfl
+    apply Relation.TransGen.single
+    use hbb
 
 lemma sSup_le_of_mem_disjParts (h : ∀ s ∈ S, ∃ p ∈ P, s ≤ p) (hs : s ∈ disjParts S) (has : a ∈ s)
     (hbP : b ∈ P) (hab : a ≤ b) : sSup s ≤ b := by
@@ -515,35 +609,104 @@ def sSup' (Ps : Set (Partition α)) : Partition α where
     rw [sSup_eq_bot] at heq
     exact (ne_bot_of_mem_mem_disjParts haS hSne.some_mem) <| heq hSne.some hSne.some_mem
 
-instance : CompleteSemilatticeSup (Partition α) where
-  sSup := sSup'
-  le_sSup Ps P hP a haP := by
-    by_cases habot : a = ⊥
-    · exact (P.bot_not_mem <| habot ▸ haP).elim
-    have : a ∈ ⋃₀ (disjParts (⋃ a ∈ Ps, a.parts)).parts := by
-      rw [sUnion_disjParts]
-      simp only [mem_diff, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff, habot,
-        not_false_eq_true, and_true]
-      use P
-    obtain ⟨S, hS, haS⟩ := by simpa using this
-    use sSup S, (by use S, hS), le_sSup haS
-  sSup_le Ps P hP a haPs := by
-    by_cases habot : a = ⊥
-    · subst a
-      simp only [bot_le, and_true, exists_mem_iff_ne_bot]
-      rintro rfl
-      obtain (rfl | rfl) := subset_singleton_iff_eq.mp (show Ps ⊆ {⊥} by simpa using hP)
-      <;> simp [sSup', ← mem_parts] at haPs
-    rw [← mem_parts, sSup'_parts] at haPs
-    obtain ⟨S, hS, rfl⟩ := haPs
-    obtain ⟨x, hx⟩ := (disjParts (⋃ a ∈ Ps, a.parts)).nonempty_of_mem hS
-    obtain ⟨Q, hQ, hxQ⟩ := by simpa using mem_union_of_mem_mem_disjParts hS hx
-    obtain ⟨y, hyP, hxy⟩ := (hP Q hQ) x hxQ
-    refine ⟨y, hyP, sSup_le_of_mem_disjParts ?_ hS hx hyP hxy⟩
-    simp only [mem_iUnion, mem_parts, exists_prop, forall_exists_index, and_imp]
-    exact fun z R hR ↦ hP R hR z
+lemma le_sSup' {Ps : Set (Partition α)} (P : Partition α) (hP : P ∈ Ps) : P ≤ sSup' Ps := by
+  rintro a haP
+  by_cases habot : a = ⊥
+  · exact (P.bot_not_mem <| habot ▸ haP).elim
+  have : a ∈ ⋃₀ (disjParts (⋃ a ∈ Ps, a.parts)).parts := by
+    rw [sUnion_disjParts]
+    simp only [mem_diff, mem_iUnion, mem_parts, exists_prop, mem_singleton_iff, habot,
+      not_false_eq_true, and_true]
+    use P
+  obtain ⟨S, hS, haS⟩ := by simpa [← sUnion_disjParts] using this
+  use sSup S, (by use S, hS), le_sSup haS
 
-instance : CompleteLattice (Partition α) := completeLatticeOfCompleteSemilatticeSup _
+lemma sSup'_le {Ps : Set (Partition α)} (P : Partition α) (hP : ∀ b ∈ Ps, b ≤ P) :
+    sSup' Ps ≤ P := by
+  rintro a haPs
+  by_cases habot : a = ⊥
+  · subst a
+    simp only [bot_le, and_true, exists_mem_iff_ne_bot]
+    rintro rfl
+    obtain (rfl | rfl) := subset_singleton_iff_eq.mp (show Ps ⊆ {⊥} by simpa using hP)
+    <;> simp [sSup', ← mem_parts] at haPs
+  obtain ⟨S, hS, rfl⟩ := haPs
+  obtain ⟨x, hx⟩ := (disjParts (⋃ a ∈ Ps, a.parts)).nonempty_of_mem hS
+  obtain ⟨Q, hQ, hxQ⟩ := by simpa using mem_union_of_mem_mem_disjParts hS hx
+  obtain ⟨y, hyP, hxy⟩ := (hP Q hQ) x hxQ
+  refine ⟨y, hyP, sSup_le_of_mem_disjParts ?_ hS hx hyP hxy⟩
+  simp only [mem_iUnion, mem_parts, exists_prop, forall_exists_index, and_imp]
+  exact fun z R hR ↦ hP R hR z
+
+instance : CompleteLattice (Partition α) where
+  sInf := sInf'
+  sInf_le Ps := sInf'_le
+  le_sInf Ps := le_sInf'
+  sSup := sSup'
+  sSup_le Ps := sSup'_le
+  le_sSup Ps := le_sSup'
+  sup P Q := sSup' {P, Q}
+  le_sup_left P Q := le_sSup' P (by simp)
+  le_sup_right P Q := le_sSup' Q (by simp)
+  sup_le P Q R hPR hQR := sSup'_le R (by simp; tauto)
+  -- inf P Q := sInf' {P, Q}
+  -- inf_le_left P Q := sInf'_le P (by simp)
+  -- inf_le_right P Q := sInf'_le Q (by simp)
+  -- le_inf P Q R hPQ hPR := le_sInf' P (by simp; tauto)
+
+-- not a Frame nor a Coframe
+
+@[simp]
+lemma mem_sSup_iff (S : Set (Partition α)) :
+    a ∈ sSup S ↔ (∃ s ∈ disjParts (⋃ a ∈ S, a.parts), sSup s = a) := by
+  change a ∈ sSup' _ ↔ _
+  simp [sSup', ← mem_parts]
+
+@[simp]
+lemma mem_iSup_iff (P : ι → Partition α) :
+    a ∈ ⨆ i, P i ↔ (∃ s ∈ disjParts (⋃ i, (P i).parts), sSup s = a) := by
+  change a ∈ sSup' _ ↔ _
+  simp [sSup', ← mem_parts]
+
+@[simp]
+lemma mem_sup_iff (P Q : Partition α) :
+    a ∈ P ⊔ Q ↔ (∃ x ∈ disjParts (P.parts ∪ Q.parts), sSup x = a) := by
+  change a ∈ sSup' _ ↔ _
+  simp [sSup', ← mem_parts]
+
+@[simp]
+lemma mem_sInf_iff (Ps : Set (Partition α)) :
+    a ∈ sInf Ps ↔ (∃ f : Ps → α, (∀ (P : Ps), f P ∈ P.val) ∧ iInf f = a) ∧ a ≠ ⊥ := by
+  change a ∈ sInf' _ ↔ _
+  simp [sInf', ← mem_parts]
+
+@[simp]
+lemma mem_iInf_iff (P : ι → Partition α) :
+    a ∈ ⨅ i, P i ↔ (∃ f : ι → α, (∀ i, f i ∈ P i) ∧ iInf f = a) ∧ a ≠ ⊥ := by
+  change a ∈ sInf _ ↔ _
+  simp only [mem_sInf_iff, Subtype.forall, mem_range, forall_exists_index, ne_eq,
+    and_congr_left_iff]
+  refine fun habot => ⟨?_, ?_⟩ <;> rintro ⟨f, hf, rfl⟩
+  · use fun i => f ⟨P i, by use i⟩, fun i ↦ hf (P i) i rfl,
+      rangeFactorization_surjective.iInf_comp f
+  · use fun ⟨p, hp⟩ => f hp.choose, fun p i => ?_, ?_
+    · rintro rfl
+      generalize_proofs h
+      simpa [mem_parts, h.choose_spec] using hf h.choose
+    change sInf _ = sInf _
+    congr
+    ext a
+    simp only [mem_range, Subtype.exists]
+    constructor
+    · rintro ⟨_, ⟨j, rfl⟩, rfl⟩
+      generalize_proofs h
+      use h.choose
+    rintro ⟨j, rfl⟩
+    use P j, (by use j)
+    generalize_proofs h
+    refine (P j).eq_of_not_disjoint (by simpa [h.choose_spec] using hf h.choose) (hf j) ?_
+    rw [disjoint_iff]
+    exact ne_bot_of_le_ne_bot habot <| le_inf (iInf_le f _) (iInf_le f _)
 
 end Sup
 

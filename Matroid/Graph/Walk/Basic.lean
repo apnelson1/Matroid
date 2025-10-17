@@ -5,15 +5,15 @@ import Matroid.Graph.Subgraph.Delete
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
 -/
 
-variable {α β : Type*} {x y z u v : Set α} {e f : β} {G H : Graph α β} {F : Set β}
-  {W w w₁ w₂ : WList (Set α) β} {S T : Set (Set α)}
+variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β} {F : Set β}
+  {W w w₁ w₂ : WList α β} {S T : Set α}
 
 open Graph WList Set
 
 namespace Graph
 
 /-- `G.IsWalk w` means that `w : WList α β` is a walk of `G : Graph α β`. -/
-inductive IsWalk (G : Graph α β) : WList (Set α) β → Prop
+inductive IsWalk (G : Graph α β) : WList α β → Prop
   | nil {x} (hx : x ∈ V(G)) : G.IsWalk (nil x)
   | cons {x e w} (hw : G.IsWalk w) (h : G.IsLink e x w.first) : G.IsWalk (cons x e w)
 
@@ -223,7 +223,7 @@ lemma IsWalk.eq_of_edge_eq_first_eq (h₁ : G.IsWalk w₁) (h₂ : G.IsWalk w₂
 
 /-- `G.IsWalkFrom S T w` means that `w` is a walk of `G` with one end in `S` and the other in `T`.-/
 @[mk_iff]
-structure IsWalkFrom (G : Graph α β) (S T : Set (Set α)) (w : WList (Set α) β) : Prop where
+structure IsWalkFrom (G : Graph α β) (S T : Set α) (w : WList α β) : Prop where
   isWalk : G.IsWalk w
   first_mem : w.first ∈ S
   last_mem : w.last ∈ T
@@ -237,7 +237,7 @@ lemma IsWalkFrom.reverse (h : G.IsWalkFrom S T w) : G.IsWalkFrom T S w.reverse w
   last_mem := by simp [h.first_mem]
 
 /-- The walk corresponding to an incidence `G.IsLink e u v`. -/
-def IsLink.walk (_h : G.IsLink e u v) : WList (Set α) β := cons u e (nil v)
+def IsLink.walk (_h : G.IsLink e u v) : WList α β := cons u e (nil v)
 
 namespace IsLink
 
@@ -250,7 +250,7 @@ lemma walk_last (h : G.IsLink e u v): h.walk.last = v := rfl
 @[simp]
 lemma walk_vertex (h : G.IsLink e u v): h.walk.vertex = [u, v] := rfl
 
-lemma mem_walk_iff (h : G.IsLink e u v) (x : Set α) : x ∈ h.walk ↔ x = u ∨ x = v := by
+lemma mem_walk_iff (h : G.IsLink e u v) (x : α) : x ∈ h.walk ↔ x = u ∨ x = v := by
   simp [walk]
 
 @[simp]
@@ -275,40 +275,43 @@ end IsLink
 
 section Subgraph
 
-variable {X : Partition (Set α)}
+variable {X : Set α}
 
 lemma IsWalk.induce (hw : G.IsWalk w) (hX : V(w) ⊆ X) : G[X].IsWalk w := by
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [cons_vertexSet, insert_subset_iff, SetLike.mem_coe, cons_isWalk_iff,
-      induce_isLink_iff, true_and, and_true, forall_const]
+    simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, induce_isLink, true_and,
+      and_true, forall_const]
     refine hX.2 <| by simp
 
 lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X := by
-  refine ⟨fun h ↦ ⟨?_, h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
-  induction w with
-  | nil => simp at hw
-  | cons u e w ih => cases w with
-    | nil v =>
-      simp only [cons_isWalk_iff, nil_first, induce_isLink_iff, nil_isWalk_iff,
-        induce_vertexSet] at h ⊢
-      exact ⟨h.1.1, h.1.1.right_mem⟩
-    | cons v f w => simp_all
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.induce h.2⟩
+  · induction w with
+    | nil => simp at hw
+    | cons u e w ih => cases w with
+      | nil v =>
+        simp only [cons_isWalk_iff, nil_first, induce_isLink, nil_isWalk_iff,
+          induce_vertexSet] at h ⊢
+        exact ⟨h.1.1, h.1.1.right_mem⟩
+      | cons v f w => simp_all
+  have := h.vertexSet_subset
+  simp_all
 
 /-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ V(G)`. -/
-lemma isWalk_induce_iff (hXV : X ⊆ P(G)) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X.parts :=
-  ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+lemma isWalk_induce_iff : G[X].IsWalk w ↔ G.IsWalk w ∧ V(w) ⊆ X := by
+  refine ⟨fun h ↦ ⟨h.of_le G.induce_le, ?_⟩, fun h ↦ h.1.induce h.2⟩
+  have := h.vertexSet_subset
+  simp_all
 
-lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X :=
-  fun _ hxw => hw.vertex_mem_of_mem hxw
+lemma IsWalk.vertexSet_subset_of_induce (hw : G[X].IsWalk w) : V(w) ⊆ X := fun _ hxw => by
+  have := hw.vertex_mem_of_mem hxw
+  simp_all
 
 @[simp]
-lemma isWalk_vertexDelete_iff {X : Set (Set α)} :
-    (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint V(w) X := by
-  rw [vertexDelete_def, isWalk_induce_iff diff_subset, Partition.delete_parts, subset_diff,
-    and_congr_right_iff, and_iff_right_iff_imp, G.vertexSet_eq_parts]
+lemma isWalk_vertexDelete_iff : (G - X).IsWalk w ↔ G.IsWalk w ∧ Disjoint V(w) X := by
+  rw [vertexDelete_def, isWalk_induce_iff, subset_diff, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
 lemma IsWalk.vertexDelete (hw : G.IsWalk w) (hdisj : Disjoint V(w) X) : (G - X).IsWalk w := by
@@ -372,5 +375,5 @@ end Subgraph
 lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
   ⟨fun h ↦ by simpa using h.reverse, IsWalk.reverse⟩
 
-lemma IsWalk.dedup [DecidableEq (Set α)] (h : G.IsWalk w) : G.IsWalk w.dedup :=
+lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
   h.sublist w.dedup_isSublist

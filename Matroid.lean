@@ -62,15 +62,15 @@ import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 -- import Matroid.Graph.Subgraph.Lemma
--- import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Subgraph.Union
 -- import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
--- import Matroid.Graph.Walk.Basic
--- import Matroid.Graph.Walk.Cycle
--- import Matroid.Graph.Walk.Path
+import Matroid.Graph.Walk.Basic
+import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Walk.Path
 -- import Matroid.Graph.Walk.toGraph
 -- import Matroid.Graphic
 -- import Matroid.Induction

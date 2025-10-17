@@ -315,6 +315,13 @@ lemma eq_partOf_of_mem (ht : T ∈ P) (hxt : x ∈ T) : T = P.partOf x := by
   obtain ⟨y, hy, rfl⟩ := exists_partOf_iff_mem.mp ht
   exact fiber_eq_of_mem (by exact hxt) <| rel_of_mem_of_mem ht hxt hxt
 
+lemma eq_partOf_iff_mem (hxT : x ∈ T) : T = P.partOf x ↔ T ∈ P := by
+  refine ⟨?_, (eq_partOf_of_mem · hxT)⟩
+  rintro rfl
+  apply partOf_mem
+  rw [mem_partOf_iff] at hxT
+  exact rel_self_iff_mem_supp.mp hxT
+
 lemma rel_iff_of_partOf_mem {Q : Partition (Set α)} (h : P.partOf x ∈ Q) : P x y ↔ Q x y := by
   simp_rw [rel_iff_exists]
   refine ⟨fun ⟨t, htP, hxt, hyt⟩ => ⟨t, ?_, hxt, hyt⟩, fun ⟨t, htQ, hxt, hyt⟩ => ⟨t, ?_, hxt, hyt⟩⟩
@@ -685,5 +692,52 @@ lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
   exact Or.inl hs
 
 end Discrete
+
+section Flatten
+
+variable [Order.Frame α] {P : Partition (Set α)} {Q : Partition α} (h : P.supp = Q.parts) {p q : α}
+
+def flatten (P : Partition (Set α)) {Q : Partition α} (h : P.supp = Q.parts) : Partition α where
+  parts := sSup '' P.parts
+  indep := by
+    rintro a ⟨F, hF, rfl⟩
+    simp_rw [disjoint_sSup_iff, sSup_disjoint_iff]
+    rintro _ ⟨⟨S, hSP, rfl⟩, hSF⟩ f hf
+    rw [disjoint_sSup_iff]
+    rintro s hs
+    have hfs : f ≠ s := by
+      rintro rfl
+      obtain rfl := P.eq_of_mem_of_mem hSP hF hs hf
+      simp at hSF
+    refine Q.disjoint ?_ ?_ hfs <;> rw [← mem_parts, ← h, mem_supp_iff]
+    · use F, hF
+    · use S, hSP
+  bot_not_mem := by
+    rintro ⟨F, hF, hbot⟩
+    obtain ⟨a, ha⟩ := P.nonempty_of_mem hF
+    have hFa := Q.ne_bot_of_mem <| show a ∈ Q.parts from h ▸ ⟨F, hF, ha⟩
+    rw [← bot_lt_iff_ne_bot, ← hbot] at hFa
+    exact le_sSup ha |>.not_gt hFa
+
+@[simp]
+lemma flatten_parts (P : Partition (Set α)) (h : P.supp = Q.parts) :
+    (flatten P h).parts = sSup '' P.parts := rfl
+
+@[simp]
+lemma flatten_supp (P : Partition (Set α)) (h : P.supp = Q.parts) :
+    (flatten P h).supp = Q.supp := by
+  simp only [supp, flatten, ← h, sSup_eq_sUnion]
+  rw [sSup_image, sSup_sUnion]
+
+lemma le_flatten (P : Partition (Set α)) (h : P.supp = Q.parts) : Q ≤ P.flatten h := by
+  intro q hqQ
+  rw [← mem_parts, ← h, mem_supp_iff] at hqQ
+  obtain ⟨F, hF, hqF⟩ := hqQ
+  use sSup F, (by use F, hF), le_sSup hqF
+
+
+
+end Flatten
+
 
 end Partition
