@@ -204,8 +204,54 @@ lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hFinite : G.Finite)
   apply degree_lt_vertexCount
   tauto
 
+--The exercises start here
+--I added this lemma. Seems important. Do we need to prove it or already exists but is not working?
+lemma isCompOf_subset (G H : Graph α β) (hHG : H.IsCompOf G) : V(H) ⊆ V(G) := by
+  have hclo : H ≤c G := by
+      --Richard already has a lemma for this
+      sorry
+  sorry
+  -- Use IsClosedSubgraph.vertexSet_mono to finsih
+
+
 lemma minDegree_le_minDegree_of_isCompOf (G H : Graph α β) (hHG : H.IsCompOf G) :
-    G.minDegree ≤ H.minDegree := by sorry
+    G.minDegree ≤ H.minDegree := by
+    obtain ⟨v, hv, hveq⟩ := H.exists_minDegreeVx sorry sorry
+    rw [hveq]
+    have hvG : v ∈ V(G) := by
+      --I cheated and added the lemma above
+      have hcheat : V(H) ⊆ V(G) := isCompOf_subset G H hHG
+      -- Have should follow now
+      sorry
+    have hclo : H ≤c G := by
+      --Richard already has a lemma for this
+      sorry
+    have heq : H.degree v = G.degree v := by
+      --Use IsClosedSubgraph.degree_eq
+      sorry
+    rw [heq]
+    exact minDegree_le_degree G v sorry
+
+  --Somhow I did this exercise instead
+lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) (hHG : H.IsSubgraph G) :
+    H.minDegree ≤ G.minDegree := by
+    --The following two haves are used in the obtain.
+    --First one follows from H being a component of a finite graph
+  have Hfin: H.Finite:= by sorry
+  obtain (hne | hni) := Classical.em (H.NeBot)
+  · obtain ⟨v, hv, hveq⟩ := G.exists_minDegreeVx sorry sorry
+    rw [hveq]
+    have hvG: v ∈ V(H) := by sorry
+    have h1 : H.degree v ≤ G.degree v := by
+      sorry
+    have h2 := H.minDegree_le_degree v hvG
+    sorry
+    --Now use your most powerful weapon to conclude
+  --This is the case the graph is empty. Richard has a nice lemma that if the graph is
+  --empty or infinite then the min degree is 0. We just need to rw that
+  rw [H.minDegree_eq' sorry ]
+  exact Nat.zero_le G.minDegree
+
 
 lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h : ¬ G.Connected) :
     2 ≤ G.Components.encard := by
