@@ -56,8 +56,27 @@ lemma pair_parts_of_not_disjoint (h : ¬ Disjoint a b) : (pair a b).parts = {a �
   simp [pair, h]
 
 @[simp]
+lemma mem_pair_iff_of_not_disjoint (h : ¬ Disjoint a b) : c ∈ pair a b ↔ c = a ⊔ b := by
+  rw [← mem_parts, pair_parts_of_not_disjoint h, mem_singleton_iff]
+
+@[simp]
 lemma pair_parts_of_disjoint (h : Disjoint a b) : (pair a b).parts = {a, b} \ {⊥} := by
   simp [pair, h]
+
+@[simp]
+lemma mem_pair_iff_of_disjoint (h : Disjoint a b) : c ∈ pair a b ↔ (c = a ∨ c = b) ∧ c ≠ ⊥ := by
+  rw [← mem_parts, pair_parts_of_disjoint h]
+  simp
+
+@[simp]
+lemma pair_parts_eq_pair_iff_isPartition : IsPartition {a, b} ↔ (pair a b).parts = {a, b} := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ by use pair a b⟩
+  have habot := h.ne_bot_of_mem (by simp : a ∈ _)
+  have hbbot := h.ne_bot_of_mem (by simp : b ∈ _)
+  by_cases hab : a = b
+  · simp [hbbot, hab]
+  rw [pair_parts_of_disjoint <| h.disjoint (by simp) (by simp) hab]
+  simp [habot.symm, hbbot]
 
 @[simp]
 lemma pair_supp : (pair a b).supp = a ⊔ b := by
@@ -87,26 +106,64 @@ lemma indiscrete'_le_right (a b : α) : indiscrete' b ≤ pair a b := by
     simpa [← mem_parts, hab]
   simp [← mem_parts, hab]
 
+@[simp↓]
+lemma pair_self_eq_indiscrete' (a : α) : pair a a = indiscrete' a := by
+  apply le_antisymm ?_ (indiscrete'_le_left a a)
+  intro x
+  by_cases h : Disjoint a a
+  · rw [mem_pair_iff_of_disjoint h]
+    simp +contextual
+  rw [mem_pair_iff_of_not_disjoint h]
+  simp_all +contextual
+
+lemma pair_parts_nontrivial_iff :
+    (pair a b).parts.Nontrivial ↔ IsPartition {a, b} ∧ a ≠ b := by
+  rw [pair_parts_eq_pair_iff_isPartition]
+  refine ⟨fun ⟨x, hx, y, hy, hne⟩ ↦ ?_, fun ⟨h, hne⟩ ↦ ⟨a, h ▸ (by simp), b, h ▸ (by simp), hne⟩⟩
+  obtain (hab | hab) := (em <| Disjoint a b).symm
+  · simp_all
+  simp only [pair_parts, hab, not_true_eq_false, ↓reduceIte, mem_diff, mem_insert_iff,
+    mem_singleton_iff, sdiff_eq_left, disjoint_singleton_right, not_or, ← ne_eq] at hx hy ⊢
+  obtain ⟨(rfl | rfl), hx⟩ := hx <;> obtain ⟨(rfl | rfl), hy⟩ := hy <;>
+    simp [hx.symm, hy.symm, hne, hne.symm] <;> simp at hne
+
 noncomputable def pairLeft (a b : α) : α :=
-  have : Decidable (a = ⊥) := Classical.dec _
-  if ha : a = ⊥ then ⊥ else (indiscrete'_le_left a b a <| by simpa).choose
+  have : Decidable (Disjoint a b) := Classical.dec _
+  if Disjoint a b then a else a ⊔ b
 
 @[simp]
 lemma pairLeft_bot : pairLeft ⊥ b = ⊥ := by
-  simp only [pairLeft, ↓reduceDIte]
+  simp [pairLeft]
 
 @[simp]
 lemma pairLeft_mem_of_not_bot (ha : a ≠ ⊥) : pairLeft a b ∈ pair a b := by
-  simp only [pairLeft, ha, ↓reduceDIte]
-  exact (indiscrete'_le_left a b a <| by simpa).choose_spec.1
+  by_cases hab : Disjoint a b
+  · simpa [pairLeft, hab]
+  · simp [pairLeft, hab]
 
 @[simp]
 lemma left_le_pairLeft : a ≤ pairLeft a b := by
-  by_cases ha : a = ⊥
-  · subst a
-    simp only [bot_le]
-  simp only [pairLeft, ha, ↓reduceDIte]
-  exact (indiscrete'_le_left a b a <| by simpa).choose_spec.2
+  by_cases hab : Disjoint a b <;>simp [pairLeft, hab]
+
+@[simp]
+lemma pairLeft_eq_sup_of_not_disjoint (hab : ¬ Disjoint a b) : pairLeft a b = a ⊔ b := by
+  rw [← mem_singleton_iff, ← pair_parts_of_not_disjoint hab]
+  exact pairLeft_mem_of_not_bot (left_ne_bot_of_not_disjoint hab)
+
+@[simp]
+lemma pairLeft_eq_left_of_disjoint (hab : Disjoint a b) : pairLeft a b = a := by
+  simp [pairLeft, hab]
+
+@[simp]
+lemma IsPartition.pairLeft_eq_left (h : IsPartition {a, b}) : pairLeft a b = a := by
+  rw [isPartition_pair_iff] at h
+  obtain ⟨rfl | hxy, ha, hb⟩ := h
+  · simp [pairLeft]
+  exact pairLeft_eq_left_of_disjoint hxy
+
+@[simp]
+lemma pairLeft_self : pairLeft a a = a := by
+  simp [pairLeft]
 
 noncomputable def pairRight (a b : α) : α := pairLeft b a
 
@@ -120,6 +177,26 @@ lemma pairRight_mem_of_not_bot (hb : b ≠ ⊥) : pairRight a b ∈ pair a b := 
 
 @[simp]
 lemma right_le_pairRight : b ≤ pairRight a b := left_le_pairLeft
+
+@[simp]
+lemma pairRight_eq_sup_of_not_disjoint (hab : ¬ Disjoint a b) : pairRight a b = a ⊔ b := by
+  rw [← mem_singleton_iff, ← pair_parts_of_not_disjoint hab]
+  exact pairRight_mem_of_not_bot (right_ne_bot_of_not_disjoint hab)
+
+@[simp]
+lemma pairRight_eq_right_of_disjoint (hab : Disjoint a b) : pairRight a b = b := by
+  simp [pairRight, pairLeft, hab.symm]
+
+@[simp]
+lemma IsPartition.pairRight_eq_right (h : IsPartition {a, b}) : pairRight a b = b := by
+  rw [isPartition_pair_iff] at h
+  obtain ⟨rfl | hxy, ha, hb⟩ := h
+  · simp [pairRight, pairLeft]
+  exact pairRight_eq_right_of_disjoint hxy
+
+@[simp]
+lemma pairRight_self : pairRight a a = a := by
+  simp [pairRight]
 
 end Pair
 

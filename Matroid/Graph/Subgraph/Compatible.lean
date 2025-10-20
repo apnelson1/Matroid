@@ -302,10 +302,6 @@ lemma Dup_agree.mem_iff_subset (h : G.Dup_agree H) (hxG : x ∈ V(G)) :
   · exact P(H).ne_bot_of_mem hxH <| h.symm.eq_bot_of_le <| P(H).le_supp_of_mem hxH
   · exact h.mem_of_mem hxG hdisj
 
--- lemma dup_agree_iff_union_pairwiseDisjoint  : G.Dup_agree H ↔
---     (V(G) ∪ V(H)).PairwiseDisjoint id := by
---   simp [Dup_agree, Partition.agree_iff_union_pairwiseDisjoint]
-
 @[simp]
 lemma dup_agree_rfl : G.Dup_agree G := by
   simp [Dup_agree]
@@ -424,5 +420,10 @@ lemma Set.Pairwise.edgeRestrict_dup_agree {S : Set (Graph α β)} (h : S.Pairwis
   fun _ ⟨_, hGS, hi⟩ _ ⟨_, hHS, hj⟩ _ ↦ hi ▸ hj ▸ (h.of_refl hGS hHS).edgeRestrict F
 
 end Dup_agree
+
+--  This needs Order.Frame as supposed to the others.
+lemma dup_agree_iff_union_pairwiseDisjoint {α : Type*} [Order.Frame α] (G H : Graph α β) :
+    G.Dup_agree H ↔ (V(G) ∪ V(H)).PairwiseDisjoint id := by
+  simp [Dup_agree, onFun, Partition.agree_iff_union_pairwiseDisjoint]
 
 end Graph

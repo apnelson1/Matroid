@@ -491,20 +491,22 @@ lemma isPartition_pair_of_disjoint (hx : x ≠ ⊥) (hy : y ≠ ⊥) (hxy : Disj
   rw [isPartition_iff]
   simpa [hx.symm, hy.symm, sSupIndep_pair (hxy.ne hx)]
 
-end IsPartition
-
-lemma isPartition_iff_pairwiseDisjoint {S : Set α} [Order.Frame α] :
-    IsPartition S ↔ S.PairwiseDisjoint id ∧ ⊥ ∉ S := by
-  rw [isPartition_iff, sSupIndep_iff_pairwiseDisjoint]
+lemma isPartition_pair_of_mem (hx : x ∈ P) (hy : y ∈ P) : IsPartition {x, y} :=
+  isPartition_of_subset (P := P) (by simp [hx, hy, pair_subset])
 
 @[simp]
-lemma isPartition_pair_iff {x y : α} [Order.Frame α] :
-    IsPartition {x, y} ↔ (x = y ∨ Disjoint x y) ∧ x ≠ ⊥ ∧ y ≠ ⊥ := by
+lemma isPartition_pair_iff : IsPartition {x, y} ↔ (x = y ∨ Disjoint x y) ∧ x ≠ ⊥ ∧ y ≠ ⊥ := by
   by_cases hxy : x = y
   · subst x
     simp
   rw [isPartition_iff]
   simp [eq_comm, sSupIndep_pair, hxy]
+
+end IsPartition
+
+lemma isPartition_iff_pairwiseDisjoint {S : Set α} [Order.Frame α] :
+    IsPartition S ↔ S.PairwiseDisjoint id ∧ ⊥ ∉ S := by
+  rw [isPartition_iff, sSupIndep_iff_pairwiseDisjoint]
 
 section Order
 

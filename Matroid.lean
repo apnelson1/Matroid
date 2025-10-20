@@ -41,7 +41,7 @@ import Matroid.Graph.Basic
 -- import Matroid.Graph.Connected.Connectivity
 -- import Matroid.Graph.Connected.Subgraph
 import Matroid.Graph.Constructions.Basic
--- import Matroid.Graph.Constructions.Small
+import Matroid.Graph.Constructions.Small
 -- import Matroid.Graph.Degree.Basic
 -- import Matroid.Graph.Degree.Constructions
 -- import Matroid.Graph.Degree.Defs
@@ -56,12 +56,12 @@ import Matroid.Graph.Finite
 -- import Matroid.Graph.Minor.Basic
 import Matroid.Graph.Minor.Repartition
 import Matroid.Graph.Simple
--- import Matroid.Graph.Subgraph.Add
+import Matroid.Graph.Subgraph.Add
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
--- import Matroid.Graph.Subgraph.Lemma
+import Matroid.Graph.Subgraph.Lemma
 import Matroid.Graph.Subgraph.Union
 -- import Matroid.Graph.Tree
 import Matroid.Graph.WList.Cycle
