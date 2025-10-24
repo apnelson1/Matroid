@@ -241,8 +241,7 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
   have components_nonempty : G.Components.Nonempty := by
     apply nonempty_of_encard_ne_zero
     intro h; rw [h] at num_components_ge_2; clear h
-    have : (2 : ℕ) ≤ (0 : ℕ) := by exact ENat.coe_le_coe.mp num_components_ge_2
-    linarith
+    norm_num at num_components_ge_2
 
   -- Choose the smallest component.
   obtain ⟨min_comp, min_comp_spec⟩ :=
@@ -286,14 +285,10 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
     exact min_comp_spec.1
 
   have G_vertexSet_is_superset : V(min_comp) ∪ V(other_comp) ⊆ V(G) := by
-    -- !!! TODO
-    have pairwise_dup_agree : G.Components.Pairwise Dup_agree := by sorry
-    have h_sUnion := sUnion_vertexSet pairwise_dup_agree
-    rw [←G.eq_sUnion_components] at h_sUnion
-    rw [h_sUnion, union_subset_iff]
-    constructor <;> refine subset_biUnion_of_mem ?_
-    · exact min_comp_spec.1
-    · exact other_comp_spec.1
+    rw [union_subset_iff]; constructor <;> apply vertexSet_mono
+    -- This should honestly be more amenable to automation...
+    · exact min_comp_spec.1.le
+    · exact other_comp_spec.1.le
 
   have G_ncard_ge_sum : V(min_comp).ncard + V(other_comp).ncard ≤ V(G).ncard := by
     have : V(min_comp).ncard + V(other_comp).ncard = (V(min_comp) ∪ V(other_comp)).ncard := by
