@@ -204,11 +204,81 @@ lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hFinite : G.Finite)
   apply degree_lt_vertexCount
   tauto
 
+--The exercises start here
+--I added this lemma. Seems important. Do we need to prove it or already exists but is not working?
+lemma isCompOf_subset (G H : Graph α β) (hHG : H.IsCompOf G) : V(H) ⊆ V(G) := by
+  have hclo : H ≤c G := by
+      --Richard already has a lemma for this
+      sorry
+  sorry
+  -- Use IsClosedSubgraph.vertexSet_mono to finsih
+
+
 lemma minDegree_le_minDegree_of_isCompOf (G H : Graph α β) (hHG : H.IsCompOf G) :
-    G.minDegree ≤ H.minDegree := by sorry
+    G.minDegree ≤ H.minDegree := by
+    obtain ⟨v, hv, hveq⟩ := H.exists_minDegreeVx sorry sorry
+    rw [hveq]
+    have hvG : v ∈ V(G) := by
+      --I cheated and added the lemma above
+      have hcheat : V(H) ⊆ V(G) := isCompOf_subset G H hHG
+      -- Have should follow now
+      sorry
+    have hclo : H ≤c G := by
+      --Richard already has a lemma for this
+      sorry
+    have heq : H.degree v = G.degree v := by
+      --Use IsClosedSubgraph.degree_eq
+      sorry
+    rw [heq]
+    exact minDegree_le_degree G v sorry
+
+  --Somhow I did this exercise instead
+lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) (hHG : H.IsSubgraph G) :
+    H.minDegree ≤ G.minDegree := by
+    --The following two haves are used in the obtain.
+    --First one follows from H being a component of a finite graph
+  have Hfin: H.Finite:= by sorry
+  obtain (hne | hni) := Classical.em (H.NeBot)
+  · obtain ⟨v, hv, hveq⟩ := G.exists_minDegreeVx sorry sorry
+    rw [hveq]
+    have hvG: v ∈ V(H) := by sorry
+    have h1 : H.degree v ≤ G.degree v := by
+      sorry
+    have h2 := H.minDegree_le_degree v hvG
+    sorry
+    --Now use your most powerful weapon to conclude
+
+  --This is the case the graph is empty. Richard has a nice lemma that if the graph is
+  --empty or infinite then the min degree is 0. We just need to rw that
+  rw [H.minDegree_eq' sorry ]
+  exact Nat.zero_le G.minDegree
+
+lemma missing {G : Graph α β} (v : Set α) (hv : v ∈ V(G)) :
+    ∃ H : Graph α β, H.IsCompOf G ∧ v ∈ V(H) := by
+  sorry
 
 lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h : ¬ G.Connected) :
     2 ≤ G.Components.encard := by
+  -- G has a vertex
+  obtain ⟨ v, hv ⟩ := vertexSet_nonempty_of_NeBot hNeBot
+  -- I cheated here, but this lemma is missing and I'm guessing it should be in connected
+  obtain ⟨ H, hH, hvH ⟩ := missing v hv
+  have hbig : ∃ w ∈ V(G), w ∉ V(H) := by
+    by_contra! hw
+    --Our contradiction is that G is connected. The following have is the hardest.
+    have hcon : G = H := by
+    -- I think I went overboard on this refine, try refine ext_inc ?_ ?_ and see what happens
+      refine ext_inc (Subset.antisymm_iff.mpr ⟨hw, isCompOf_subset G H hH ⟩  ) ?_
+      intro e x
+      -- Here is a one line proof, try to write this in steps.
+      refine ⟨ fun hh ↦ (Inc.of_isClosedSubgraph_of_mem hh (IsCompOf.isClosedSubgraph hH)
+          (hw x (Inc.vertex_mem hh))), fun hh ↦ (Inc.of_le hh (IsCompOf.le hH)) ⟩
+    rw [ hcon ] at hH
+    -- Just state the contradiction
+    sorry
+  obtain ⟨ w, hw, hwH ⟩ := hbig
+  obtain ⟨ H₁, hH1, hvH1 ⟩ := missing w hw
+  have : H ≠ H₁ := by sorry
   sorry
 
 lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
