@@ -136,7 +136,7 @@ lemma edgeDelete_anti_right (G : Graph α β) {F₀ F : Set β} (hss : F₀ ⊆ 
   simp_rw [edgeDelete_eq_edgeRestrict]
   exact G.edgeRestrict_mono_right <| diff_subset_diff_right hss
 
-lemma edgeDelete_mono_left (h : H ≤ G) : H ＼ F ≤ G ＼ F := by
+lemma edgeDelete_mono_left (h : H ≤ G) (F : Set β) : H ＼ F ≤ G ＼ F := by
   simp_rw [edgeDelete_eq_edgeRestrict]
   refine (edgeRestrict_mono_left h (E(H) \ F)).trans (G.edgeRestrict_mono_right ?_)
   exact diff_subset_diff_left (edgeSet_mono h)
@@ -336,7 +336,7 @@ lemma vertexDelete_le : G - X ≤ G := induce_le
 lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
   simp [vertexDelete_def, hG.left_mem, hG.right_mem, hG.mem_induce_iff]
 
-lemma vertexDelete_mono_left (h : H ≤ G) : H - X ≤ G - X :=
+lemma vertexDelete_mono_left (h : H ≤ G) (X : Set α) : H - X ≤ G - X :=
   induce_mono h <| diff_subset_diff_left <| vertexSet_mono h
 
 lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤ G - X :=

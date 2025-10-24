@@ -472,4 +472,39 @@ lemma agree_of_supp_disjoint (h : Disjoint P.supp Q.supp) : P.Agree Q := by
   rintro x hxP hndisj
   exact (hndisj <| h.symm.mono_right (P.le_supp_of_mem hxP)).elim
 
+lemma set_pairwise_agree_iff_sUnion_pairwiseDisjoint {Ps : Set (Partition α)} :
+    Ps.Pairwise Agree ↔ (⋃ P ∈ Ps, P.parts).PairwiseDisjoint id := by
+  refine ⟨fun h a ha b hb hne => ?_, fun h P hP Q hQ hne => ?_⟩
+  · simp only [mem_iUnion, mem_parts, exists_prop] at ha hb
+    obtain ⟨Pa, hPa, haPa⟩ := ha
+    obtain ⟨Pb, hPb, hbPb⟩ := hb
+    contrapose! hne
+    exact (h.of_refl hPa hPb).eq_of_not_disjoint haPa hbPb hne
+  rw [agree_iff_union_pairwiseDisjoint]
+  apply h.subset
+  simp [hP, hQ, subset_biUnion_of_mem]
+
+def ofSetPairwiseAgree (Ps : Set (Partition α)) (h : Ps.Pairwise Agree) : Partition α :=
+  ofPairwiseDisjoint (set_pairwise_agree_iff_sUnion_pairwiseDisjoint.mp h)
+
+@[simp]
+lemma ofSetPairwiseAgree_parts {Ps : Set (Partition α)} (h : Ps.Pairwise Agree) :
+    (ofSetPairwiseAgree Ps h).parts = ⋃ P ∈ Ps, P.parts := by
+  simp only [ofSetPairwiseAgree, ofPairwiseDisjoint_parts, sdiff_eq_left, disjoint_singleton_right,
+    mem_iUnion, mem_parts, exists_prop, not_exists, not_and]
+  rintro P hP
+  exact P.bot_not_mem
+
+@[simp]
+lemma ofSetPairwiseAgree_supp {Ps : Set (Partition α)} (h : Ps.Pairwise Agree) :
+    (ofSetPairwiseAgree Ps h).supp = ⨆ P ∈ Ps, P.supp := by
+  simp only [supp, ofSetPairwiseAgree, ofPairwiseDisjoint_parts, sSup_diff_singleton_bot]
+  rw [← sUnion_image, sSup_sUnion, iSup_image]
+
+lemma ofSetPairwiseAgree_subset_of_mem {Ps : Set (Partition α)} (h : Ps.Pairwise Agree)
+    (hP : P ∈ Ps) : P ⊆ ofSetPairwiseAgree Ps h := by
+  change P.parts ⊆ (ofSetPairwiseAgree Ps h).parts
+  simp only [ofSetPairwiseAgree_parts]
+  exact subset_biUnion_of_mem hP
+
 end RestrictFrame

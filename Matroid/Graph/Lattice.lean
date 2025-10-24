@@ -1,6 +1,6 @@
 import Matroid.Graph.Subgraph.Lemma
 
-variable {α β ι ι' : Type*} {x y z u v w : Set α} {e f : β} {F F₁ F₂ : Set β} {X Y : Set α}
+variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {F F₁ F₂ : Set β} {X Y : Set α}
   [CompleteLattice α] {G G₁ G₂ G' H H₁ H₂ H' : Graph α β} {Gs Hs : Set (Graph α β)}
   {Gι Hι : ι → Graph α β}
 
@@ -202,6 +202,11 @@ lemma coe_iSup (H : ι → G.Subgraph) :
 lemma coe_sSup (s : Set G.Subgraph) : ((sSup s : G.Subgraph) : Graph α β) =
     sUnion' (Subtype.val '' s) G (by rintro _ ⟨G', _, rfl⟩; exact G'.prop) := rfl
 
+@[simp↓]
+lemma coe_biSup (s : Set ι) (H : ι → G.Subgraph) :
+    (⨆ i ∈ s, H i : G.Subgraph) = sUnion' (Subtype.val ∘ H '' s) G (by simp) := by
+  simp_rw [← sSup_image, coe_sSup, image_comp]
+
 @[simp]
 lemma coe_sup (H₁ H₂ : G.Subgraph) : ((H₁ ⊔ H₂ : G.Subgraph) : Graph α β) =
     sUnion' {H₁.val, H₂.val} G (by simp) := rfl
@@ -273,7 +278,14 @@ instance : PartialOrder G.ClosedSubgraph := inferInstanceAs (PartialOrder {H // 
 def toSubgraph : G.ClosedSubgraph ↪o G.Subgraph :=
   Subtype.orderEmbedding fun _ ↦ IsClosedSubgraph.le
 
-lemma toSubgraph_val_eq_val (H : G.ClosedSubgraph) : H.toSubgraph.val = H.val := rfl
+@[simp]
+lemma toSubgraph_val_eq_val : (·.toSubgraph.val : G.ClosedSubgraph → _) = (↑) := rfl
+
+@[simp]
+lemma coe_toSubgraph (H : G.ClosedSubgraph) : (H.toSubgraph : Graph α β) = H := rfl
+
+@[simp]
+lemma coe_comp_toSubgraph : (Subtype.val ∘ toSubgraph : G.ClosedSubgraph → _) = (↑) := rfl
 
 instance {G : Graph α β} : CoeOut G.ClosedSubgraph (Graph α β) where
   coe H := H.1
@@ -298,12 +310,60 @@ instance : Lattice G.ClosedSubgraph where
     rw [le_mk_iff, ← toSubgraph_val_eq_val, Subtype.coe_le_coe]
     exact le_sup_right
   sup_le a b c hac hbc := by
-    rw [mk_le_iff (H := c), ← c.toSubgraph_val_eq_val, Subtype.coe_le_coe]
+    rw [mk_le_iff (H := c), ← toSubgraph_val_eq_val, Subtype.coe_le_coe]
     exact sup_le hac hbc
   inf H₁ H₂ := ⟨H₁ ∩ H₂, H₁.2.inter H₂.2⟩
   inf_le_left _ _ := Graph.inter_le_left
   inf_le_right _ _ := Graph.inter_le_right
   le_inf _ _ _ := Graph.le_inter
+
+instance : OrderBot G.ClosedSubgraph where
+  bot := ⟨⊥, by simp⟩
+  bot_le := by simp
+
+instance : OrderTop G.ClosedSubgraph where
+  top := ⟨G, isClosedSubgraph_self⟩
+  le_top H := H.2.le
+
+@[simp]
+lemma coe_top : ((⊤ : G.ClosedSubgraph) : Graph α β) = G := rfl
+
+@[simp]
+lemma coe_bot : ((⊥ : G.ClosedSubgraph) : Graph α β) = ⊥ := rfl
+
+@[simp]
+lemma eq_bot_iff (H : G.ClosedSubgraph) : H = ⊥ ↔ H.val = ⊥ := by
+  simp only [Subtype.ext_iff, coe_bot]
+
+instance : CompleteLattice G.ClosedSubgraph where
+  sSup s := ⟨(⨆ H ∈ s, H.toSubgraph).val, (⨆ H ∈ s, H.toSubgraph).prop, by
+    simp only [Subgraph.coe_biSup, comp_apply, Subgraph.sUnion'_vertexSet, mem_image,
+      Subtype.exists, iUnion_exists, mem_iUnion, exists_prop, exists_and_right, ↓existsAndEq,
+      and_true, Subgraph.sUnion'_edgeSet, forall_exists_index, and_imp]
+    intro e u v H hHc hs hu
+    use H, hHc, hs, (hHc.edge_mem_iff_vertex_mem_of_inc v).mpr hu⟩
+  le_sSup s H hHs := by
+    simp only [↓Subgraph.coe_biSup, comp_apply, le_mk_iff]
+    apply Subgraph.le_sUnion'
+    rw [toSubgraph_val_eq_val]
+    use H
+  sSup_le s H hHs := by
+    simp only [↓Subgraph.coe_biSup, comp_apply, toSubgraph_val_eq_val, mk_le_iff]
+    apply Subgraph.sUnion'_le
+    rintro A ⟨a, has, rfl⟩
+    exact hHs a has
+  sInf s := ⟨((⨅ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β), by
+    obtain hs | hs := isEmpty_or_nonempty s; simp
+    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
+    exact iInter_isClosedSubgraph (by simp +contextual)⟩
+  sInf_le s H hHs := by
+    have hne : Nonempty s := ⟨H, hHs⟩
+    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
+    exact Graph.iInter_le (G := fun i : s ↦ (i.1.toSubgraph : Graph α β)) ⟨H, hHs⟩
+  le_sInf s := by
+    obtain rfl | hne := s.eq_empty_or_nonempty
+    · simp +contextual [IsClosedSubgraph.le]
+    simp [hne.to_subtype]
 
 lemma coe_le_coe {H₀ H : G.ClosedSubgraph} : H₀.1 ≤ H.1 ↔ H₀ ≤ H := Iff.rfl
 
@@ -316,7 +376,8 @@ lemma toSubgraph_lt_toSubgraph {H₁ H₂ : G.ClosedSubgraph} :
     H₁.toSubgraph < H₂.toSubgraph ↔ H₁ < H₂ := Iff.rfl
 
 @[simp]
-lemma coe_sup (H₁ H₂ : G.ClosedSubgraph) : (H₁ ⊔ H₂ : G.ClosedSubgraph).val = H₁.1 ∪ H₂.1 := rfl
+lemma coe_sup (H₁ H₂ : G.ClosedSubgraph) : (H₁ ⊔ H₂ : G.ClosedSubgraph).val =
+    Subgraph.sUnion' {H₁.1, H₂.1} G (by simp [H₁.2.le, H₂.2.le]) := rfl
 
 @[simp]
 lemma coe_inf (H₁ H₂ : G.ClosedSubgraph) : (H₁ ⊓ H₂ : G.ClosedSubgraph).val = H₁.1 ∩ H₂.1 :=
@@ -351,13 +412,6 @@ lemma set_pairwise_dup_agree (s : Set G.ClosedSubgraph) :
   G.set_pairwise_dup_agree_of_subgraph (by rintro _ ⟨H, -, rfl⟩; exact H.2.le)
 
 @[simp]
-lemma coe_toSubgraph (H : G.ClosedSubgraph) : (H.toSubgraph : Graph α β) = H := rfl
-
-@[simp]
-lemma coe_comp_toSubgraph : (Subtype.val ∘ toSubgraph : G.ClosedSubgraph → _) =
-    (↑) := rfl
-
-@[simp]
 lemma sup_vertexSet (H₁ H₂ : G.ClosedSubgraph) : V((H₁ ⊔ H₂).val) = V(H₁.val) ∪ V(H₂.val) := by
   simp
 
@@ -369,7 +423,7 @@ lemma sup_edgeSet (H₁ H₂ : G.ClosedSubgraph) : E((H₁ ⊔ H₂).val) = E(H�
 lemma sup_isLink (H₁ H₂ : G.ClosedSubgraph) :
     (H₁ ⊔ H₂).val.IsLink e = H₁.val.IsLink e ⊔ H₂.val.IsLink e := by
   ext u v
-  simp only [coe_sup, dup_agree, compatible, Compatible.union_isLink, Pi.sup_apply, sup_Prop_eq]
+  simp
 
 @[simp]
 lemma inf_vertexSet (H₁ H₂ : G.ClosedSubgraph) : V((H₁ ⊓ H₂).val) = V(H₁.val) ∩ V(H₂.val) := by
@@ -405,39 +459,10 @@ lemma compl'_isClosedSubgraph (H : G.ClosedSubgraph) : H.compl' ≤c G where
     simp_all [he.edge_mem, H.prop.edge_mem_iff_vertex_mem_of_inc he]
 
 instance : CompleteBooleanAlgebra G.ClosedSubgraph where
-  sSup s := ⟨((⨆ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β),
-    by simpa only [Subgraph.coe_iSup] using iUnion_isClosedSubgraph fun H ↦ H.1.2⟩
-  le_sSup s H hHs := by
-    simp only [Subgraph.coe_iSup, ClosedSubgraph.coe_toSubgraph]
-    exact Graph.le_iUnion (G := fun i : s ↦ (i.1.toSubgraph : Graph α β))
-      (G.pairwise_compatible_of_subgraph (by simp +contextual [IsClosedSubgraph.le]))
-      (G.pairwise_dup_agree_of_subgraph (by simp +contextual [IsClosedSubgraph.le])) ⟨H, hHs⟩
-  sSup_le := by simp
-  sInf s := ⟨((⨅ (H : s), ClosedSubgraph.toSubgraph H.1 : G.Subgraph) : Graph α β), by
-    obtain hs | hs := isEmpty_or_nonempty s; simp
-    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
-    exact iInter_isClosedSubgraph (by simp +contextual)⟩
-  sInf_le s H hHs := by
-    have hne : Nonempty s := ⟨H, hHs⟩
-    simp only [Subgraph.coe_iInf_of_nonempty, ClosedSubgraph.coe_toSubgraph]
-    exact Graph.iInter_le (G := fun i : s ↦ (i.1.toSubgraph : Graph α β)) ⟨H, hHs⟩
-  le_sInf s := by
-    obtain rfl | hne := s.eq_empty_or_nonempty
-    · simp +contextual [IsClosedSubgraph.le]
-    simp [hne.to_subtype]
-  bot := ⟨⊥, by simp⟩
-  top := ⟨G, isClosedSubgraph_self⟩
-  le_top := by simp +contextual [IsClosedSubgraph.le]
-  bot_le := by simp
   le_sup_inf H₁ H₂ H₃ := by
-    have hh : H₁.val.Dup_agree (↑H₂ ∩ ↑H₃) :=
-      dup_agree_of_le_le H₁.prop.le <| Graph.inter_le_left.trans H₂.prop.le
-    refine ClosedSubgraph.coe_le_coe.1 ?_
-    refine ⟨by simp [← union_inter_distrib_left, hh], fun e x y ↦ ?_⟩
-    simp only [ClosedSubgraph.coe_inf, ClosedSubgraph.coe_sup, inter_isLink, Pi.inf_apply,
-      ClosedSubgraph.dup_agree, (compatible_of_le_le H₁.prop.le H₂.prop.le).union_isLink,
-      (compatible_of_le_le H₁.prop.le H₃.prop.le).union_isLink, inf_Prop_eq,
-      (G.compatible_of_le_le H₁.prop.le <| Graph.inter_le_left.trans H₂.prop.le).union_isLink hh,
+    refine ClosedSubgraph.coe_le_coe.mp ⟨by simp [← union_inter_distrib_left], fun e x y ↦ ?_⟩
+    simp only [coe_inf, coe_sup, inter_isLink, Pi.inf_apply, Subgraph.sUnion'_isLink,
+      mem_insert_iff, mem_singleton_iff, exists_eq_or_imp, ↓existsAndEq, true_and, inf_Prop_eq,
       and_imp]
     tauto
   compl H := ⟨H.compl', H.compl'_isClosedSubgraph⟩
@@ -455,12 +480,6 @@ instance : CompleteBooleanAlgebra G.ClosedSubgraph where
     tauto
   sdiff_eq _ _ := rfl
   himp_eq _ _ := rfl
-
-@[simp]
-lemma coe_top : ((⊤ : G.ClosedSubgraph) : Graph α β) = G := rfl
-
-@[simp]
-lemma coe_bot : ((⊥ : G.ClosedSubgraph) : Graph α β) = ⊥ := rfl
 
 @[simp]
 lemma toSubgraph_sSup (s : Set G.ClosedSubgraph) :
@@ -584,11 +603,11 @@ lemma IsClosedSubgraph.vertexSet_inj {H₁ H₂ : Graph α β} (hcl₁ : H₁ �
   rw [Subtype.coe_inj]
   exact H₁'.vertexSet_inj
 
-lemma vertexSet_injective : Injective (V(·.val) : G.ClosedSubgraph → Set (Set α)) :=
+lemma vertexSet_injective : Injective (V(·.val) : G.ClosedSubgraph → Set α) :=
   fun _ _ => vertexSet_inj.mpr
 
 lemma vertexSet_strictMono (G : Graph α β) :
-    StrictMono (V(·.val) : G.ClosedSubgraph → Set (Set α)) := fun H₁ H₂ hlt => by
+    StrictMono (V(·.val) : G.ClosedSubgraph → Set α) := fun H₁ H₂ hlt => by
   rw [lt_iff_le_and_ne, ← vertexSet_inj.ne]
   exact ⟨vertexSet_mono hlt.le, hlt.ne⟩
 
@@ -696,103 +715,3 @@ lemma IsCompOf.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsCompOf G)
 end ClosedSubgraph
 
 end Lattice
-
-namespace WithTop
-
-lemma eq_top_or_eq_some {α : Type*} (a' : WithTop α) : a' = ⊤ ∨ ∃ a : α, a' = WithTop.some a :=
-  Option.eq_none_or_eq_some a'
-
-noncomputable def sInter (s : Set (WithTop <| Graph α β)) : WithTop <| Graph α β := by
-  by_cases hs : ∃ G : Graph α β, WithTop.some G ∈ s
-  · exact WithTop.some (Graph.sInter (WithTop.some ⁻¹' s) (by tauto))
-  · exact ⊤
-
-noncomputable instance : CompleteSemilatticeInf (WithTop <| Graph α β) where
-  sInf := sInter
-  sInf_le s G hG := by
-    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
-    · exact le_top
-    have : ∃ G : Graph α β, WithTop.some G ∈ s := by use G
-    simp only [sInter, this, ↓reduceDIte, ge_iff_le]
-    exact WithTop.coe_le_coe.mpr <| Graph.sInter_le hG
-  le_sInf s G hG := by
-    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
-    · suffices ∀ G : Graph α β, WithTop.some G ∉ s by simp [this, sInter]
-      exact fun _ hHs => Option.some_ne_none _ (top_le_iff.mp <| hG _ hHs)
-    unfold sInter
-    split_ifs with h
-    · exact WithTop.coe_le_coe.mpr <|
-        (Graph.le_sInter_iff h).mpr fun _ hHs => WithTop.coe_le_coe.mp (hG _ hHs)
-    · exact le_top
-
-noncomputable instance : CompleteLattice (WithTop <| Graph α β) where
-  sup G H := by
-    classical
-    exact G.bind (fun G ↦ H.bind (fun H ↦
-      if G.Compatible H ∧ G.Dup_agree H then WithTop.some <| G ∪ H else none))
-  le_sup_left G H := by
-    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
-    · simp
-    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
-    · simp only [Option.bind_none, Option.bind_fun_none]
-      exact le_top
-    simp only [Option.bind_some]
-    split_ifs with h
-    · exact WithTop.coe_le_coe.mpr <| Graph.left_le_union h.2
-    · exact le_top
-  le_sup_right G H := by
-    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
-    · exact le_top
-    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
-    · simp
-    simp only [Option.bind_some]
-    split_ifs with h
-    · exact WithTop.coe_le_coe.mpr <| Compatible.right_le_union h.1 h.2
-    · exact le_top
-  sup_le G H K hGK hHK := by
-    obtain rfl | ⟨G, rfl⟩ := Option.eq_none_or_eq_some G
-    · simpa
-    obtain rfl | ⟨H, rfl⟩ := Option.eq_none_or_eq_some H
-    · simpa
-    obtain rfl | ⟨K, rfl⟩ := Option.eq_none_or_eq_some K
-    · exact le_top
-    have hGK : G ≤ K := WithTop.coe_le_coe.mp hGK
-    have hHK : H ≤ K := WithTop.coe_le_coe.mp hHK
-    have hGH : G.Compatible H := compatible_of_le_le hGK hHK
-    have hGH' : G.Dup_agree H := dup_agree_of_le_le hGK hHK
-    simp only [Option.bind_some, compatible_of_le_le hGK hHK, hGH', and_self, ↓reduceIte, ge_iff_le]
-    exact WithTop.coe_le_coe.mpr <| Graph.union_le hGK hHK
-  sSup s := by
-    classical
-    exact if h : (WithTop.some ⁻¹' s).Pairwise Compatible ∧
-      (WithTop.some ⁻¹' s).Pairwise Dup_agree ∧ ⊤ ∉ s
-      then WithTop.some (.sUnion (WithTop.some ⁻¹' s)) else ⊤
-  le_sSup s G hG := by
-    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
-    · simp [hG]
-    split_ifs with h
-    · exact WithTop.coe_le_coe.mpr <| G.le_sUnion h.1 h.2.1 hG
-    · exact le_top
-  sSup_le s G hG := by
-    obtain rfl | ⟨G, rfl⟩ := eq_top_or_eq_some G
-    · simp
-    have hG' : ∀ H ∈ WithTop.some ⁻¹' s, H ≤ G := fun _ hH => WithTop.coe_le_coe.mp (hG _ hH)
-    split_ifs with h
-    · exact WithTop.coe_le_coe.mpr <| by rwa [Graph.sUnion_le_iff h.1 h.2.1]
-    · simp only [set_pairwise_compatible_of_subgraph hG', dup_agree_of_forall_mem_le hG', true_and,
-      not_not] at h
-      exact hG ⊤ h
-  __ := completeLatticeOfCompleteSemilatticeInf _
-
--- lemma disjoint_iff_disjoint : Disjoint (WithTop.some G) (WithTop.some H) ↔ G.Disjoint H := by
---   rw [disjoint_iff_inf_le, le_bot_iff]
---   sorry
-
--- lemma IsClosedSubgraph_of_mem_partition {G H : Graph α β} (P : Partition (WithTop.some G))
---     (hH : WithTop.some H ∈ P) : H ≤c G where
---   le := by simpa using P.le_of_mem hH
---   closed {e x} hxy hx := by
---     have := P.indep hH
---     sorry
-
-end WithTop

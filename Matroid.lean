@@ -59,6 +59,7 @@ import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Add
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
+import Matroid.Graph.Subgraph.ContractUnion
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma

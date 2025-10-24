@@ -2,6 +2,7 @@ import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Constructions.Small
 
 variable {α β ι ι' : Type*} {a b c x y z u v w : α} {e f : β} {F F₁ F₂ : Set β} {X Y : Set α}
+  [CompleteLattice α] {G G₁ G₂ H H₁ H₂ : Graph α β} {Gs Hs : Set (Graph α β)} {P Q : Partition α}
 
 open Set Function Partition
 
@@ -13,57 +14,67 @@ lemma assume_common_imp_of_iff {P1 P2 : Prop} (Q : Prop) (h1 : P1 → Q) (h2 : P
 namespace Graph
 
 @[simp]
-lemma isPartition_pair_of_mem_vertexSet [CompleteLattice α] {G : Graph α β} (ha : a ∈ V(G))
-    (hb : b ∈ V(G)) : IsPartition {a, b} := by
+lemma isPartition_pair_of_mem_vertexSet (ha : a ∈ V(G)) (hb : b ∈ V(G)) : IsPartition {a, b} := by
   apply isPartition_pair_of_mem <;> rwa [mem_vertexPartition_iff]
 
 @[simp]
-lemma bouquet_dup_agree_of_mem [CompleteLattice α] {G : Graph α β} (hv : v ∈ V(G)) :
-    (bouquet v F).Dup_agree G := by
+lemma bouquet_dup_agree_of_mem (hv : v ∈ V(G)) : (bouquet v F).Dup_agree G := by
   use P(G), ?_
   rintro x ⟨hxbot, rfl⟩
   exact G.vertexSet_eq_parts ▸ hv
 
 @[simp]
-lemma banana_dup_agree_of_mem [CompleteLattice α] {G : Graph α β} (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
-    (banana u v F).Dup_agree G := by
+lemma bouquet_agree_edgeDelete (hv : v ∈ V(G)) : Agree {bouquet v F, G ＼ F} := by
+  rw [agree_pair_iff]
+  refine ⟨Compatible.of_disjoint_edgeSet ?_, bouquet_dup_agree_of_mem hv⟩
+  by_cases hvbot : v = ⊥ <;> simp [hvbot, disjoint_sdiff_right]
+
+@[simp]
+lemma banana_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) : (banana u v F).Dup_agree G := by
   have hP : IsPartition {u, v} := isPartition_pair_of_mem_vertexSet hu hv
   refine agree_of_subset_subset (fun x => ?_) subset_rfl
   simp only [banana_vertexPartition, pair_parts_eq_pair_iff_isPartition.mp hP, vertexSet_eq_parts]
   rintro (rfl | rfl) <;> assumption
 
 @[simp]
-lemma singleEdge_dup_agree_of_mem [CompleteLattice α] {G : Graph α β} (hu : u ∈ V(G))
-    (hv : v ∈ V(G)) : (Graph.singleEdge e u v).Dup_agree G := banana_dup_agree_of_mem hu hv
+lemma banana_agree_edgeDelete (hu : u ∈ V(G)) (hv : v ∈ V(G)) : Agree {banana u v F, G ＼ F} := by
+  rw [agree_pair_iff]
+  refine ⟨Compatible.of_disjoint_edgeSet ?_, banana_dup_agree_of_mem hu hv⟩
+  by_cases huvbot : u = ⊥ <;> by_cases hvbot : v = ⊥ <;> simp [huvbot, hvbot, disjoint_sdiff_right]
+
+@[simp]
+lemma singleEdge_dup_agree_of_mem (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
+    (Graph.singleEdge e u v).Dup_agree G := banana_dup_agree_of_mem hu hv
+
+@[simp]
+lemma singleEdge_agree_edgeDelete (hu : u ∈ V(G)) (hv : v ∈ V(G)) :
+    Agree {Graph.singleEdge e u v, G ＼ {e}} := banana_agree_edgeDelete hu hv
 
 /-! ### Adding one edge -/
 section AddEdge
-variable [Order.Frame α] {G G₁ G₂ H H₁ H₂ : Graph α β} {Gs Hs : Set (Graph α β)}
 
 /-- Add a new edge `e` between vertices `a` and `b`. If `e` is already in the graph,
 its ends change to `a` and `b`. -/
-@[simps! vertexSet vertexPartition edgeSet]
 protected noncomputable def addEdge (G : Graph α β) (e : β) (a b : α) : Graph α β :=
-  .singleEdge e a b ∪ G
+  .singleEdge e a b ∪ (G ＼ {e})
 
 @[simp↓]
 lemma addEdge_vertexSet_of_mem (ha : a ∈ V(G)) (hb : b ∈ V(G)) : V(G.addEdge e a b) = V(G) := by
-  simp only [Graph.addEdge, ha, hb, singleEdge_dup_agree_of_mem, union_vertexSet, union_eq_right]
-  rw [singleEdge_vertexSet_of_isPartition <| isPartition_pair_of_mem_vertexSet ha hb]
-  simp only [ha, hb, pair_subset]
+  rw [Graph.addEdge, union_vertexSet <| singleEdge_agree_edgeDelete ha hb,
+    singleEdge_vertexSet_of_isPartition <| isPartition_pair_of_mem_vertexSet ha hb]
+  simp [pair_subset, ha, hb]
 
-lemma subset_addEdge_vertexSet_of_dup_agree (h : (Graph.singleEdge e a b).Dup_agree G) :
+lemma subset_addEdge_vertexSet_of_agree (h : Agree {Graph.singleEdge e a b, G ＼ {e}}) :
     V(G) ⊆ V(G.addEdge e a b) := by
-  unfold Graph.addEdge
-  rw [union_vertexSet h]
+  rw [Graph.addEdge, union_vertexSet h]
   exact subset_union_right
 
 @[simp]
 lemma addEdge_isLink (ha : a ∈ V(G)) (hb : b ∈ V(G)) : (G.addEdge e a b).IsLink f x y ↔
     f = e ∧ s(x, y) = s(a, b) ∨ f ≠ e ∧ G.IsLink f x y := by
-  rw [Graph.addEdge, union_isLink (singleEdge_dup_agree_of_mem ha hb),
+  rw [Graph.addEdge, union_isLink (singleEdge_agree_edgeDelete ha hb),
     singleEdge_isLink_of_isPartition (isPartition_pair_of_mem_vertexSet ha hb)]
-  simp [and_comm, G.ne_bot_of_mem ha, G.ne_bot_of_mem hb]
+  simp [and_comm]
 
 @[simp]
 lemma addEdge_isLink_of_edge (ha : a ∈ V(G)) (hb : b ∈ V(G)) : (G.addEdge e a b).IsLink e a b := by
@@ -113,13 +124,12 @@ lemma addEdge_mono_of_mem (hle : H ≤ G) (ha : a ∈ V(H)) (hb : b ∈ V(H)) :
     exact hl.imp id fun ⟨hne, h⟩ => ⟨hne, h.of_le hle⟩
 
 lemma deleteEdge_le_addEdge (ha : a ∈ V(G)) (hb : b ∈ V(G)) : G ＼ {e} ≤ G.addEdge e a b := by
-  rw [Graph.addEdge, union_eq_union_edgeDelete, singleEdge_edgeSet_of_ne_bot (G.ne_bot_of_mem ha)
-    (G.ne_bot_of_mem hb)]
-  exact le_addEdge (by simpa) (by simpa) (by simp)
+  rw [Graph.addEdge]
+  exact right_le_union <| singleEdge_agree_edgeDelete ha hb
 
 lemma deleteEdge_addEdge (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
     (G ＼ {e}).addEdge e a b = G.addEdge e a b :=
-  Graph.ext (by simp) fun f x y => by
+  Graph.ext (by simp [Graph.addEdge]) fun f x y => by
     simp only [addEdge_isLink (show a ∈ V(G ＼ {e}) from ha) (show b ∈ V(G ＼ {e}) from hb),
       edgeDelete_isLink, mem_singleton_iff, addEdge_isLink ha hb]
     tauto
@@ -149,7 +159,6 @@ lemma IsLink.deleteEdge_addEdge (h : G.IsLink e a b) : (G ＼ {e}).addEdge e a b
 end AddEdge
 
 section Extend
-variable [CompleteLattice α] {G H : Graph α β} {P Q : Partition α}
 
 @[simps! vertexSet vertexPartition]
 protected def extend (G : Graph α β) (P : Partition α) : Graph α β where

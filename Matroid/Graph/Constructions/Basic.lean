@@ -154,6 +154,9 @@ lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
 lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ :=
   nonempty_iff_ne_empty.trans <| not_iff_not.mpr vertexSet_eq_empty_iff
 
+instance : Inhabited (Graph α β) where
+  default := ⊥
+
 /-! ### Complete graphs -/
 
 /-- The complete graph on `n` vertices. -/

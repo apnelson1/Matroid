@@ -173,10 +173,10 @@ instance [G.Finite] : G.LocallyFinite where
 
 -- not true without Dup_agree
 instance {α : Type*} [Order.Frame α] {G H : Graph α β} [G.LocallyFinite] [H.LocallyFinite]
-    (hG' : G.Dup_agree H) : (G ∪ H).LocallyFinite where
+    (hGH : Agree {G, H}) : (G ∪ H).LocallyFinite where
   finite x := by
     refine ((G.finite_setOf_inc (x := x)).union (H.finite_setOf_inc (x := x))).subset ?_
-    simp_rw [union_inc_iff hG', subset_def]
+    simp_rw [union_inc hGH, subset_def]
     aesop
 
 instance (V : Partition (Set α)) : (Graph.noEdge V β).LocallyFinite where

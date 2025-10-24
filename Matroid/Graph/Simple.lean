@@ -63,9 +63,8 @@ lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
     rw [show x = v by simpa [h] using he.left_mem, show y = v by simpa [h] using he.right_mem]
   simp [h]
 
-lemma Loopless.union {α : Type*} [Order.Frame α] {G H : Graph α β} [G.Loopless] [H.Loopless]
-    (hG' : G.Dup_agree H) : (G ∪ H).Loopless where
-  not_isLoopAt := by simp [union_isLoopAt_iff hG']
+lemma Loopless.union [G.Loopless] [H.Loopless] (hG' : Agree {G, H}) : (G ∪ H).Loopless where
+  not_isLoopAt := by simp [union_isLoopAt hG']
 
 section Simple
 
@@ -168,18 +167,17 @@ lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).sym
 
 /-! ### Operations -/
 
-lemma Simple.union {α : Type*} [Order.Frame α] {G H : Graph α β} [G.Simple] [H.Simple]
-    (hG' : G.Dup_agree H) (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) :
-    (G ∪ H).Simple where
+lemma Simple.union [H.Simple] (hG' : Agree {G, H})
+    (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) : (G ∪ H).Simple where
   eq_of_isLink e f x y he hf := by
     rw [union_isLink hG'] at he hf
     obtain hf | hf := hf
     · obtain he | he := he
       · exact he.unique_edge hf
-      rw [h hf he.1]
+      rw [h hf he]
     obtain he | he := he
-    · exact h he hf.1
-    exact he.1.unique_edge hf.1
+    · exact h he hf
+    exact he.unique_edge hf
   not_isLoopAt := (Loopless.union hG').not_isLoopAt
 
 -- omit [G.Simple] in
