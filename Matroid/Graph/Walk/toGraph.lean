@@ -2,7 +2,7 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Subgraph.Union
 import Matroid.Graph.Constructions.Small
 
-variable {α β ι ι' : Type*} [Order.Frame α] {x y z u v : α} {e f : β} {W w : WList α β}
+variable {α β ι ι' : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {W w : WList α β}
   {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
 
 open scoped Sym2
@@ -10,26 +10,31 @@ open WList Set Function Partition Graph
 
 namespace Graph
 
-lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hG : G.Dup_agree H) (hE : E(w) ⊆ E(G))
+lemma IsWalk.isWalk_left_of_subset (hw : (G ∪ H).IsWalk w) (hG : Agree {G, H}) (hE : E(w) ⊆ E(G))
     (h1 : w.first ∈ V(G)) : G.IsWalk w := by
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [union_isLink hG, cons_edgeSet, insert_subset_iff, first_cons, cons_isWalk_iff,
-      not_true_eq_false, and_false, or_false, forall_const, true_and]
-    exact ih h.right_mem
+    simp_all only [union_eq_sUnion', mem_insert_iff, mem_singleton_iff, forall_eq_or_imp, forall_eq,
+      sUnion'_isLink, exists_eq_or_imp, ↓existsAndEq, true_and, cons_edgeSet, insert_subset_iff,
+      first_cons, cons_isWalk_iff, forall_const]
+    have hlink : G.IsLink e x w.first :=
+      h.elim id (fun hH ↦ hH.isLink_of_agree_of_edge_mem hG (by simp) (by simp) hE.1)
+    exact ⟨hlink, ih hlink.right_mem⟩
 
-lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hG : G.Dup_agree H)
+lemma IsWalk.isWalk_left_of_subset_of_nonempty (hw : (G ∪ H).IsWalk w) (hG : Agree {G, H})
     (hE : E(w) ⊆ E(G)) (hne : w.Nonempty) : G.IsWalk w := by
   by_cases h1 : w.first ∈ V(G)
   · exact hw.isWalk_left_of_subset hG hE h1
   cases w with
   | nil => simp_all
   | cons u e w =>
-  simp only [cons_edgeSet, insert_subset_iff] at hE
-  simp only [cons_isWalk_iff, union_isLink hG, hE.1, not_true_eq_false, and_false, or_false] at hw
-  rw [first_cons] at h1
-  exact (h1 hw.1.left_mem).elim
+  simp_all only [union_eq_sUnion', mem_insert_iff, mem_singleton_iff, forall_eq_or_imp, forall_eq,
+    cons_isWalk_iff, sUnion'_isLink, exists_eq_or_imp, ↓existsAndEq, true_and, cons_edgeSet,
+    cons_nonempty, first_cons, insert_subset_iff]
+  have hlink : G.IsLink e u w.first :=
+    hw.1.elim id (fun hH ↦ hH.isLink_of_agree_of_edge_mem hG (by simp) (by simp) hE.1)
+  exact ⟨hlink, (h1 hlink.left_mem).elim⟩
 
 end Graph
 
@@ -38,7 +43,7 @@ namespace WList
 /-- Turn `w : WList (Set α) β` into a `Graph α β`. If the list is not well-formed
 (i.e. it contains an edge appearing twice with different ends),
 then the first occurence of the edge determines its ends in `w.toGraph`. -/
-protected def toGraph : WList α β → Graph α β
+protected noncomputable def toGraph : WList α β → Graph α β
   | nil u => Graph.noEdge (indiscrete' u) β
   | cons u e w => w.toGraph ∪ (banana u w.first {e})
 
@@ -52,8 +57,8 @@ lemma toGraph_concat (w : WList (Set α) β) (e u) :
   induction w with
   | nil v =>
     simp only [concat, toGraph_cons, toGraph_nil, nil_first, banana_comm, nil_last]
-    refine Graph.vertexPartition_ext ?_ fun f x y ↦ ?_
-    · rw [union_vertexPartition, union_vertexPartition, sup_eq_right.mpr, sup_eq_left.mpr] <;> simp
+    refine Graph.ext ?_ fun f x y ↦ ?_
+    · rw [union_vertexSet, union_vertexSet, sup_eq_right.mpr, sup_eq_left.mpr] <;> simp
     rw [noEdge_union_eq_self.mpr (by simp), union_noEdge_eq_self.mpr (by simp)]
   | cons v f w ih =>
     apply vertexPartition_ext ?_ fun f' x y ↦ ?_
@@ -82,7 +87,7 @@ lemma WellFormed.toGraph_isLink (h : w.WellFormed) : w.toGraph.IsLink = w.IsLink
   | nil => simp
   | cons u f w ih =>
     rw [cons_wellFormed_iff] at h
-    rw [toGraph_cons, union_isLink_iff, isLink_cons_iff, ih h.1, toGraph_edgeSet, mem_edgeSet_iff,
+    rw [toGraph_cons, union_isLink, isLink_cons_iff, ih h.1, toGraph_edgeSet, mem_edgeSet_iff,
       singleEdge_isLink_iff, eq_comm (a := e), iff_def, or_imp, and_iff_right (by tauto), or_imp,
       and_iff_left (by tauto)]
     rintro ⟨rfl, h_eq⟩

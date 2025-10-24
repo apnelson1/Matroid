@@ -2,7 +2,8 @@ import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
 import Matroid.Graph.Constructions.Basic
 
-variable {α β : Type*} {x y z a b u v w : Set α} {e f : β} {G H : Graph α β} {P C : WList (Set α) β}
+variable {α β : Type*} [CompleteLattice α] {x y z a b u v w : α} {e f : β} {G H : Graph α β}
+  {P C : WList α β}
 
 open Set WList Partition
 
@@ -11,12 +12,12 @@ namespace Graph
 /-! ### Constructions -/
 
 @[simp]
-lemma noEdge_eDegree (V : Partition (Set α)) (β : Type*) (x : Set α) :
+lemma noEdge_eDegree (V : Partition α) (β : Type*) (x : α) :
     (Graph.noEdge V β).eDegree x = 0 := by
   simp [eDegree]
 
 @[simp]
-lemma noEdge_degree (V : Partition (Set α)) (β : Type*) (x : Set α) :
+lemma noEdge_degree (V : Partition α) (β : Type*) (x : α) :
     (Graph.noEdge V β).degree x = 0 := by
   simp [degree]
 
@@ -56,13 +57,13 @@ lemma singleEdge_regular (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
   rw [singleEdge_eDegree_right hxy hne, Nat.cast_one]
 
 @[simp]
-lemma singleEdge_self_eDegree (hx : x.Nonempty) (e : β) :
+lemma singleEdge_self_eDegree (hx : x ≠ ⊥) (e : β) :
     (Graph.singleEdge e x x).eDegree x = 2 := by
   rw [eDegree_eq_encard_add_encard]
   simp [← isLink_self_iff, IsNonloopAt, hx]
 
 @[simp]
-lemma singleEdge_self_degree (hx : x.Nonempty) (e : β) : (Graph.singleEdge e x x).degree x = 2 := by
+lemma singleEdge_self_degree (hx : x ≠ ⊥) (e : β) : (Graph.singleEdge e x x).degree x = 2 := by
   simp [degree, hx]
 
 

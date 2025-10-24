@@ -299,28 +299,28 @@ lemma inter_edgeSet_subset : E(G ∩ H) ⊆ E(G) ∩ E(H) := by
   simp +contextual [inter_edgeSet, subset_def]
 
 @[simp]
-lemma inter_inc_iff : (G ∩ H).Inc e x ↔ ∃ y, G.IsLink e x y ∧ H.IsLink e x y := by
+lemma inter_inc : (G ∩ H).Inc e x ↔ ∃ y, G.IsLink e x y ∧ H.IsLink e x y := by
   simp [Inc]
 
 @[simp]
-lemma inter_isLoopAt_iff : (G ∩ H).IsLoopAt e x ↔ G.IsLoopAt e x ∧ H.IsLoopAt e x := by
+lemma inter_isLoopAt : (G ∩ H).IsLoopAt e x ↔ G.IsLoopAt e x ∧ H.IsLoopAt e x := by
   simp [← isLink_self_iff]
 
 @[simp]
-lemma inter_isNonloopAt_iff :
+lemma inter_isNonloopAt :
     (G ∩ H).IsNonloopAt e x ↔ ∃ y ≠ x, G.IsLink e x y ∧ H.IsLink e x y := by
   simp [IsNonloopAt]
 
 @[simp]
-protected lemma inter_le_left : G ∩ H ≤ G where
+lemma inter_le_left : G ∩ H ≤ G where
   vertexSet_subset := (inter_vertexSet G H) ▸ inter_subset_left
   isLink_of_isLink := by simp +contextual
 
 @[simp]
-protected lemma inter_le_right : G ∩ H ≤ H :=
+lemma inter_le_right : G ∩ H ≤ H :=
   Graph.inter_comm G H ▸ Graph.inter_le_left
 
-protected lemma le_inter (h₁ : H ≤ G₁) (h₂ : H ≤ G₂) : H ≤ G₁ ∩ G₂ where
+lemma le_inter (h₁ : H ≤ G₁) (h₂ : H ≤ G₂) : H ≤ G₁ ∩ G₂ where
   vertexSet_subset := (inter_vertexSet G₁ G₂) ▸ subset_inter (vertexSet_mono h₁) (vertexSet_mono h₂)
   isLink_of_isLink e x y h := by simp [h.of_le h₁, h.of_le h₂]
 

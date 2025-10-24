@@ -5,10 +5,8 @@ import Matroid.Graph.Degree.Defs
 
 open Set Function Nat WList
 
-variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : Set α} {e e' f g : β}
-  {U V S T : Set (Set α)} {F F' R R': Set β} {C W P Q : WList (Set α) β}
-
-
+variable {α β : Type*} [CompleteLattice α] {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α}
+  {e e' f g : β} {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
 namespace Graph
 
@@ -62,15 +60,15 @@ lemma IsCompOf.of_isClosedSubgraph (hHcl : H ≤c G) (hH'co : H'.IsCompOf H) :
     hH'min ⟨hH₀cl.of_le_of_le (hH₀leH'.trans hH'co.le) hHcl.le, hVH₀⟩ hH₀leH'⟩
 
 
-def walkable (G : Graph α β) (u : Set α) : Graph α β :=
-  G.induce' {x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x}
+def walkable (G : Graph α β) (u : α) : Graph α β :=
+  G[{x | ∃ W, G.IsWalk W ∧ W.first = u ∧ W.last = x}]
 
 lemma mem_walkable (hx : x ∈ V(G)) : x ∈ V(G.walkable x) := by
-  simp only [walkable, induce'_vertexSet, mem_inter_iff, mem_setOf_eq]
+  simp only [walkable, induce_vertexSet, mem_inter_iff, mem_setOf_eq]
   exact ⟨hx, ⟨.nil x, by simpa, rfl, rfl⟩⟩
 
 lemma walkable_isClosedSubgraph : G.walkable u ≤c G where
-  toIsSubgraph := induce'_le
+  toIsSubgraph := induce_le
   closed := by
     rintro e x ⟨y₁, hl⟩ ⟨hx, W, hW, rfl, rfl⟩
     use W.last, y₁, hl, ⟨W, hW, rfl, rfl⟩, W.concat e y₁, ?_, concat_first, concat_last
@@ -86,7 +84,7 @@ lemma mem_walkable_self_iff : x ∈ V(G.walkable x) ↔ x ∈ V(G) :=
 
 @[simp]
 lemma walkable_eq_bot (hx : x ∉ V(G)) : G.walkable x = ⊥ := by
-  rw [walkable, ← vertexSet_eq_empty_iff, induce'_vertexSet, Set.eq_empty_iff_forall_notMem]
+  rw [walkable, ← vertexSet_eq_empty_iff, induce_vertexSet, Set.eq_empty_iff_forall_notMem]
   simp only [mem_inter_iff, mem_setOf_eq, not_and, not_exists]
   rintro y hy W hW rfl rfl
   exact hx hW.first_mem

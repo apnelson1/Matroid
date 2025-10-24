@@ -632,4 +632,162 @@ lemma Compatible.vertexDelete_contractunion (h : G.Compatible H) (hG' : G.Dup_ag
 --   rintro ⟨u, v, h, rfl, rfl⟩
 --   rwa [foo_eq_self_of_mem h.left_mem', foo_eq_self_of_mem h.right_mem']
 
+-- lemma sUnion_powerset_pairwise_dup_agree (hs : Gs.Pairwise Dup_agree) :
+--     (Graph.sUnion '' Gs.powerset).Pairwise Dup_agree := by
+--   have hs' : (vertexPartition '' Gs).Pairwise Partition.Agree := by rwa [pairwise_image_of_refl]
+--   rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ -
+--   rw [mem_powerset_iff] at hS hT
+--   unfold Dup_agree onFun
+--   apply (Partition.powerset_sSup_pairwise_agree hs').of_refl
+--   <;> rw [sUnion_vertexPartition, ← sSup_image]
+--   <;> exact mem_image_of_mem sSup <| mem_powerset <| image_mono (by assumption)
+
+-- lemma sUnion_dup_agree_sUnion_of_subset (hs : Gs.Pairwise Dup_agree)
+--     (hHs : Hs ⊆ Gs) (hH's : H's ⊆ Gs) : (Graph.sUnion Hs).Dup_agree (Graph.sUnion H's) := by
+--   apply (sUnion_powerset_pairwise_dup_agree hs).of_refl
+--   <;> exact mem_image_of_mem Graph.sUnion (by assumption)
+
+-- lemma sUnion_powerset_pairwise_compatible (hs : Gs.Pairwise Compatible)
+--     (hs' : Gs.Pairwise Dup_agree): (Graph.sUnion '' Gs.powerset).Pairwise Compatible := by
+--   rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ - e ⟨heS, heT⟩
+--   rw [mem_powerset_iff] at hS hT
+--   ext u v
+--   simp only [hs.mono hS, sUnion_edgeSet, mem_iUnion, exists_prop, hs.mono hT] at heS heT
+--   obtain ⟨G, hGS, heG⟩ := heS
+--   obtain ⟨H, hHT, heH⟩ := heT
+--   rw [sUnion_isLink (hs.mono hS) (hs'.mono hS), sUnion_isLink (hs.mono hT) (hs'.mono hT)]
+--   refine ⟨fun ⟨G, hGS, heG⟩ => ⟨H, hHT, ?_⟩, fun ⟨H, hHT, heH⟩ => ⟨G, hGS, ?_⟩⟩
+--   · rwa [hs.of_refl (hT hHT) (hS hGS) ⟨heH, heG.edge_mem⟩]
+--   · rwa [hs.of_refl (hS hGS) (hT hHT) ⟨heG, heH.edge_mem⟩]
+
+-- lemma sUnion_compatible_sUnion_of_subset (hs : Gs.Pairwise Compatible)
+-- (hs' : Gs.Pairwise Dup_agree)
+--     (hHs : Hs ⊆ Gs) (hH's : H's ⊆ Gs) : (Graph.sUnion Hs).Compatible (Graph.sUnion H's) := by
+--   apply (sUnion_powerset_pairwise_compatible hs hs').of_refl
+--   <;> exact mem_image_of_mem Graph.sUnion (by assumption)
+
+-- lemma Pairwise.union_compatible (hst : (Gs ∪ Hs).Pairwise Compatible)
+--     (hst' : (Gs ∪ Hs).Pairwise Dup_agree): (Graph.sUnion Gs).Compatible (Graph.sUnion Hs) := by
+--   have hs : Gs.Pairwise Compatible := hst.mono subset_union_left
+--   have ht : Hs.Pairwise Compatible := hst.mono subset_union_right
+--   have hs' : Gs.Pairwise Dup_agree := hst'.mono subset_union_left
+--   have ht' : Hs.Pairwise Dup_agree := hst'.mono subset_union_right
+--   refine compatible_of_le_le (G := Graph.sUnion (Gs ∪ Hs)) ?_ ?_
+--   <;> rw [Graph.sUnion_le_iff (by assumption) (by assumption)]
+--   <;> exact fun G hG ↦ Graph.le_sUnion (by assumption) (by assumption) (by simp [hG])
+
+-- lemma sUnion_union_sUnion (hst : (Gs ∪ Hs).Pairwise Compatible)
+--     (hst' : (Gs ∪ Hs).Pairwise Dup_agree) :
+--     Graph.sUnion Gs ∪ Graph.sUnion Hs = Graph.sUnion (Gs ∪ Hs) := by
+--   have hs : Gs.Pairwise Compatible := hst.mono subset_union_left
+--   have ht : Hs.Pairwise Compatible := hst.mono subset_union_right
+--   have hs' : Gs.Pairwise Dup_agree := hst'.mono subset_union_left
+--   have ht' : Hs.Pairwise Dup_agree := hst'.mono subset_union_right
+--   have hST : (Graph.sUnion Gs).Compatible (Graph.sUnion Hs) :=
+--     sUnion_compatible_sUnion_of_subset hst hst' subset_union_left subset_union_right
+--   have hST' : (Graph.sUnion Gs).Dup_agree (Graph.sUnion Hs) :=
+--     sUnion_dup_agree_sUnion_of_subset hst' subset_union_left subset_union_right
+--   refine Graph.ext ?_ fun e x y ↦ ?_
+--   · rw [sUnion_vertexSet hst', union_vertexSet hST', sUnion_vertexSet hs', sUnion_vertexSet ht']
+--     exact (biUnion_union Gs Hs vertexSet).symm
+--   rw [sUnion_isLink hst hst', hST.union_isLink hST', sUnion_isLink hs hs', sUnion_isLink ht ht']
+--   aesop
+
+-- lemma Compatible.sum_compatible (hGH : Pairwise (Compatible on (Sum.elim Gι Hι')))
+--     (hGH' : Pairwise (Dup_agree on (Sum.elim Gι Hι'))) :
+--     (Graph.iUnion Gι).Compatible (Graph.iUnion Hι') :=
+--   compatible_of_le_le (iUnion_left_le_iUnion_sum hGH hGH') <| iUnion_right_le_iUnion_sum hGH hGH'
+
+-- protected lemma iUnion_sum (hGH : Pairwise (Compatible on (Sum.elim Gι Hι')))
+--     (hGH' : Pairwise (Dup_agree on (Sum.elim Gι Hι'))) :
+--     Graph.iUnion (Sum.elim Gι Hι') = (.iUnion Gι) ∪ (.iUnion Hι') := by
+--   refine le_antisymm ?_ <| Graph.union_le (iUnion_left_le_iUnion_sum hGH hGH')
+--     (iUnion_right_le_iUnion_sum hGH hGH')
+--   rw [Graph.iUnion_le_iff hGH hGH']
+--   have H : (Graph.iUnion Gι).Dup_agree (Graph.iUnion Hι') := by
+--     refine sUnion_dup_agree_sUnion_of_subset (Gs := range Gι ∪ range Hι') ?_ (by simp) (by simp)
+--     simpa [← pairwise_image_of_refl, image_univ, Sum.elim_range] using hGH'.set_pairwise univ
+--   rintro (i | i) <;> simp only [Sum.elim_inl, Sum.elim_inr]
+--   · exact (Graph.le_iUnion hGH.sum_left hGH'.sum_left i).trans (Graph.left_le_union H)
+--   · exact (Graph.le_iUnion hGH.sum_right hGH'.sum_right i).trans
+--       (Compatible.sum_compatible hGH hGH' |>.right_le_union H)
+
+
+-- protected lemma iUnion_le_of_forall_le (h : ∀ i, Hι i ≤ G) : .iUnion Hι ≤ G := by
+--   rwa [Graph.iUnion_le_iff]
+--   · exact compatible_of_forall_map_le h
+--   · exact dup_agree_of_forall_map_le h
+
+-- protected lemma sUnion_le_of_forall_le (h : ∀ ⦃H⦄, H ∈ Gs → H ≤ G) : .sUnion Gs ≤ G := by
+--   rwa [Graph.sUnion_le_iff]
+--   · exact compatible_of_forall_mem_le h
+--   · exact dup_agree_of_forall_mem_le h
+
+-- /-- A union of closed subgraphs of `G` is a closed subgraph of `G`. -/
+-- lemma iUnion_isClosedSubgraph (h : ∀ i, Hι i ≤c G) : .iUnion Hι ≤c G where
+--   toIsSubgraph := Graph.iUnion_le_of_forall_le fun i ↦ (h i).le
+--   closed e x he := by
+--     rw [iUnion_vertexSet, iUnion_edgeSet]
+--     simp only [mem_iUnion, forall_exists_index]
+--     exact fun i hxi ↦ ⟨_, (he.of_isClosedSubgraph_of_mem (h i) hxi).edge_mem⟩
+--     · exact compatible_of_forall_map_le (fun a ↦ (h a).le)
+--     · exact dup_agree_of_forall_map_le (fun a ↦ (h a).le)
+
+-- /-- A nonempty union of spanning subgraphs of `G` is a spanning subgraph of `G`. -/
+-- lemma iUnion_isSpanningSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤s G) : .iUnion Hι ≤s G where
+--   vertexSet_eq := by
+--     rw [iUnion_vertexSet, iUnion_eq_const (fun i ↦ (h i).vertexSet_eq)]
+--     exact dup_agree_of_forall_map_le (fun a ↦ (h a).le)
+--   isLink_of_isLink := (Graph.iUnion_le_of_forall_le fun i ↦ (h i).le).isLink_of_isLink
+
+-- -- A weakening of the previous lemma.
+-- lemma iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le
+--     (h : ∀ i, Hι i ≤ G) (hH : ∃ i, Hι i ≤s G) : .iUnion Hι ≤s G where
+--   vertexSet_eq := by
+--     apply le_antisymm
+--     · simp only [iUnion_vertexSet (dup_agree_of_forall_map_le (fun a ↦ h a)), le_eq_subset,
+--         iUnion_subset_iff]
+--       exact fun i ↦ (h i).vertexSet_subset
+--     obtain ⟨i, hi⟩ := hH
+--     rw [← hi.vertexSet_eq, iUnion_vertexSet (dup_agree_of_forall_map_le (fun a ↦ h a))]
+--     exact subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
+--   isLink_of_isLink := (Graph.iUnion_le_of_forall_le h).isLink_of_isLink
+
+-- lemma sUnion_isClosedSubgraph (hsc : ∀ ⦃H⦄, H ∈ Gs → H ≤c G) : .sUnion Gs ≤c G := by
+--   let f : Gs → Graph α β := Subtype.val
+--   have : .iUnion f ≤c G := iUnion_isClosedSubgraph <| by
+--     rintro ⟨H, hHs⟩
+--     simp [f, hsc hHs]
+--   convert this
+--   simp [f, Graph.iUnion]
+
+-- lemma sUnion_isSpanningSubgraph (hs : ∀ ⦃H⦄, H ∈ Gs → H ≤s G) (hne : Gs.Nonempty) :
+--     .sUnion Gs ≤s G := by
+--   let f : Gs → Graph α β := Subtype.val
+--   have hne := hne.to_subtype
+--   have : .iUnion f ≤s G := iUnion_isSpanningSubgraph <| by
+--     rintro ⟨H, hHs⟩
+--     simp [f, hs hHs]
+--   convert this
+--   simp [f, Graph.iUnion]
+
+-- lemma IsClosedSubgraph.union (h₁ : H₁ ≤c G) (h₂ : H₂ ≤c G) : H₁ ∪ H₂ ≤c G := by
+--   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂.le)]
+--   exact iUnion_isClosedSubgraph <| by simp [h₁,h₂]
+
+-- lemma IsSpanningSubgraph.union (h₁ : H₁ ≤s G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
+--   rw [(compatible_of_le_le h₁.le h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂.le)]
+--   exact iUnion_isSpanningSubgraph <| by simp [h₁,h₂]
+
+-- lemma IsSpanningSubgraph.union_left (h₁ : H₁ ≤s G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤s G := by
+--   rw [(compatible_of_le_le h₁.le h₂).union_eq_iUnion (dup_agree_of_le_le h₁.le h₂)]
+--   exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁.le, h₂])
+--     ⟨True, h₁⟩
+
+-- lemma IsSpanningSubgraph.union_right (h₁ : H₁ ≤ G) (h₂ : H₂ ≤s G) : H₁ ∪ H₂ ≤s G := by
+--   rw [(compatible_of_le_le h₁ h₂.le).union_eq_iUnion (dup_agree_of_le_le h₁ h₂.le)]
+--   exact iUnion_isSpanningSubgraph_of_exists_isSpanningSubgraph_of_forall_le (by simp [h₁, h₂.le])
+--     ⟨False, h₂⟩
+
+
 end Graph
