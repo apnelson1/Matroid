@@ -185,7 +185,7 @@ protected theorem tsum_biUnion_le_tsum (f : α → ℕ∞) (s : Set ι) (t : ι 
 
 protected theorem tsum_biUnion_le (f : α → ℕ∞) (s : Finset ι) (t : ι → Set α) :
     ∑' x : ⋃ i ∈ s, t i, f x ≤ ∑ i ∈ s, ∑' x : t i, f x :=
-  (ENat.tsum_biUnion_le_tsum f s.toSet t).trans_eq (Finset.tsum_subtype s fun i ↦ ∑' x : t i, f x)
+  (ENat.tsum_biUnion_le_tsum f (↑s) t).trans_eq (Finset.tsum_subtype s fun i ↦ ∑' x : t i, f x)
 
 protected theorem tsum_iUnion_le [Fintype ι] (f : α → ℕ∞) (t : ι → Set α) :
     ∑' x : ⋃ i, t i, f x ≤ ∑ i, ∑' x : t i, f x := by

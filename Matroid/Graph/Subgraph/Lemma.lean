@@ -160,11 +160,6 @@ lemma isSpanningSubgraph_bot_iff : G ≤s ⊥ ↔ G = ⊥ := by
 lemma isInducedSubgraph_bot_iff : G ≤i ⊥ ↔ G = ⊥ :=
   ⟨fun h => le_bot_iff.mp h.le, fun h => h ▸ bot_isInducedSubgraph ⊥⟩
 
-@[simp]
-lemma induce_empty : G[⊥] = ⊥ := by
-  rw [← vertexSet_eq_empty_iff]
-  simp
-
 protected lemma iUnion_le_of_forall_le (h : ∀ i, Hι i ≤ G) : .iUnion Hι ≤ G := by
   rwa [Graph.iUnion_le_iff]
   exact ⟨G, fun H ⟨i, hi⟩ ↦ hi ▸ (h i)⟩

@@ -336,9 +336,17 @@ protected lemma left_le_union (hGH : Agree {G, H}) : G ≤ G ∪ H := by
   rw [union_eq_sUnion' hGH]
   exact le_sUnion' _ (by simp)
 
-lemma right_le_union (hGH : Agree {G, H}) : H ≤ G ∪ H := by
+protected lemma right_le_union (hGH : Agree {G, H}) : H ≤ G ∪ H := by
   rw [union_eq_sUnion' hGH]
   exact le_sUnion' _ (by simp)
+
+lemma union_ne_bot_iff (hGH : G ≠ ⊥ ∨ H ≠ ⊥) : G ∪ H ≠ ⊥ ↔ Agree {G, H} := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · contrapose! h
+    exact union_eq_bot_of_not_agree h
+  simp_rw [← bot_lt_iff_ne_bot] at hGH ⊢
+  exact hGH.elim (lt_of_lt_of_le · <| Graph.left_le_union h)
+    (lt_of_lt_of_le · <| Graph.right_le_union h)
 
 protected lemma union_le (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) : H₁ ∪ H₂ ≤ G := by
   have hGH : Agree {H₁, H₂} := by use G, (by simp [h₁, h₂])
@@ -388,7 +396,7 @@ lemma union_adj (hGH : Agree {G, H}) : (G ∪ H).Adj x y ↔ G.Adj x y ∨ H.Adj
   simp [Adj, hGH, exists_or]
 
 lemma union_eq_self_of_le_left (hle : G ≤ H) : G ∪ H = H :=
-  (Graph.union_le hle rfl.le).antisymm <| right_le_union <|
+  (Graph.union_le hle rfl.le).antisymm <| Graph.right_le_union <|
     agree_of_le hle
 
 lemma union_eq_self_of_le_right (hle : G ≤ H) : H ∪ G = H :=

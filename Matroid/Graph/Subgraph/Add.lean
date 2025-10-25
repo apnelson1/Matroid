@@ -125,7 +125,7 @@ lemma addEdge_mono_of_mem (hle : H ≤ G) (ha : a ∈ V(H)) (hb : b ∈ V(H)) :
 
 lemma deleteEdge_le_addEdge (ha : a ∈ V(G)) (hb : b ∈ V(G)) : G ＼ {e} ≤ G.addEdge e a b := by
   rw [Graph.addEdge]
-  exact right_le_union <| singleEdge_agree_edgeDelete ha hb
+  exact Graph.right_le_union <| singleEdge_agree_edgeDelete ha hb
 
 lemma deleteEdge_addEdge (ha : a ∈ V(G)) (hb : b ∈ V(G)) :
     (G ＼ {e}).addEdge e a b = G.addEdge e a b :=

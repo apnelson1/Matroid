@@ -79,13 +79,6 @@ protected def noEdge (P : Partition α) (β : Type*) : Graph α β where
   edge_mem_iff_exists_isLink := by simp
   left_mem_of_isLink := by simp
 
-lemma eq_empty_or_vertexSet_nonempty (G : Graph α β) : G = Graph.noEdge ⊥ β ∨ V(G).Nonempty := by
-  refine (em (V(G) = ∅)).elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) (Or.inr ∘
-    nonempty_iff_ne_empty.mpr)
-  simp only [noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet,
-    iff_false]
-  exact fun h ↦ by simpa [he] using h.left_mem
-
 @[simp]
 lemma noEdge_le_iff : Graph.noEdge P β ≤ G ↔ P.parts ⊆ V(G) := by
   simp [le_iff]
@@ -145,6 +138,13 @@ lemma noEdge_empty : Graph.noEdge (⊥ : Partition α) β = ⊥ := rfl
 lemma bot_not_isLink : ¬ (⊥ : Graph α β).IsLink e x y :=
   id
 
+lemma eq_bot_or_vertexSet_nonempty (G : Graph α β) : G = ⊥ ∨ V(G).Nonempty := by
+  refine (em (V(G) = ∅)).elim (fun he ↦ .inl (Graph.ext he fun e x y ↦ ?_)) (Or.inr ∘
+    nonempty_iff_ne_empty.mpr)
+  simp only [bot_edgeSet, bot_eq_empty, mem_empty_iff_false, not_false_eq_true,
+    not_isLink_of_notMem_edgeSet, iff_false]
+  exact fun h ↦ by simpa [he] using h.left_mem
+
 @[simp]
 lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
   refine ⟨fun h ↦ bot_le.antisymm' ⟨by simp [h], fun e x y he ↦ False.elim ?_⟩, fun h ↦ by simp [h]⟩
@@ -153,6 +153,9 @@ lemma vertexSet_eq_empty_iff : V(G) = ∅ ↔ G = ⊥ := by
 @[simp]
 lemma vertexSet_nonempty_iff : V(G).Nonempty ↔ G ≠ ⊥ :=
   nonempty_iff_ne_empty.trans <| not_iff_not.mpr vertexSet_eq_empty_iff
+
+lemma ne_bot_of_mem_vertexSet (h : x ∈ V(G)) : G ≠ ⊥ :=
+  vertexSet_nonempty_iff.mp ⟨x, h⟩
 
 instance : Inhabited (Graph α β) where
   default := ⊥
@@ -191,6 +194,13 @@ lemma CompleteGraph_adj (n : ℕ+) (x y : ℕ) (hx : x < n) (hy : y < n) :
     (CompleteGraph n).Adj {x} {y} ↔ x ≠ y := by
   unfold Adj
   simp [hx, hy]
+
+def IsComplete (G : Graph α β) : Prop := ∀ x ∈ V(G), ∀ y ∈ V(G), x ≠ y → G.Adj x y
+
+lemma completeGraph_isComplete (n : ℕ+) : (CompleteGraph n).IsComplete := by
+  rintro u ⟨i, hi, rfl⟩ v ⟨j, hj, rfl⟩ hne
+  use s(i, j), i, hi, j, hj, by simpa using hne
+
 
 -- /-- The star graph with `n` leaves with center `v` -/
 -- @[simps]

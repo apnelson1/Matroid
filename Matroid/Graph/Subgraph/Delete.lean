@@ -269,6 +269,12 @@ lemma induce_vertexSet_self (G : Graph α β) : G[V(G)] = G := by
   obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet h
   exact ⟨x, y, h, G.vertexSet_eq_parts ▸ h.left_mem, G.vertexSet_eq_parts ▸ h.right_mem⟩
 
+@[simp]
+lemma induce_eq_self_iff (G : Graph α β) (X : Set α) : G[X] = G ↔ V(G) ⊆ X := by
+  refine ⟨fun h ↦ h ▸ (by simp), fun h ↦ Graph.ext (by simpa) fun e x y ↦ ?_⟩
+  simp only [induce_isLink, and_iff_left_iff_imp]
+  exact fun he ↦ ⟨h he.left_mem, h he.right_mem⟩
+
 lemma le_induce_of_le_of_subset (h : H ≤ G) (hV : V(H) ⊆ X) : H ≤ G[X] where
   vertexSet_subset := by simp [hV, vertexSet_mono h]
   isLink_of_isLink e x y hl := ⟨hl.of_le h, hV hl.left_mem, hV hl.right_mem⟩
@@ -282,11 +288,35 @@ lemma le_induce_iff : H ≤ G[X] ↔ H ≤ G ∧ V(H) ⊆ X := by
   simp_all
 
 @[simp]
+lemma induce_empty (G : Graph α β) : G[∅] = ⊥ := by
+  apply Graph.ext <;> simp
+
+@[simp]
 lemma edgeRestrict_induce (G : Graph α β) (X : Set α) (F : Set β) :
     (G ↾ F)[X] = G[X] ↾ F := by
   refine Graph.ext (by simp) fun e x y ↦ ?_
   simp only [induce_isLink, edgeRestrict_isLink]
   tauto
+
+lemma induce_isInducedSubgraph : G[X] ≤i G := ⟨by simp, by simp_all⟩
+
+lemma IsInducedSubgraph.induce_vertexSet_eq (h : H ≤i G) : G[V(H)] = H := by
+  have hle : G[V(H)] ≤ G := by simp
+  refine G.ext_of_le_le hle h.le (by simp [vertexSet_mono h.le]) <| Set.ext fun e ↦ ?_
+  simp only [induce_edgeSet, mem_setOf_eq]
+  refine ⟨fun ⟨x, y, h', hx, hy⟩ ↦ (h.isLink_of_mem_mem h' hx hy).edge_mem, fun h' ↦ ?_⟩
+  obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet h'
+  exact ⟨x, y, hxy.of_le h.le, hxy.left_mem, hxy.right_mem⟩
+
+/-- An induced subgraph is precisely a subgraph of the form `G[X]` for some `X ⊆ V(G)`.
+This version of the lemma can be used with `subst` or `obtain rfl` to replace `H` with `G[X]`. -/
+lemma IsInducedSubgraph.exists_eq_induce (h : H ≤i G) : ∃ X ⊆ V(G), H = G[X] :=
+  ⟨V(H), vertexSet_mono h.le, h.induce_vertexSet_eq.symm⟩
+
+lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G) : H = G := by
+  obtain ⟨X, hX, rfl⟩ := hi.exists_eq_induce
+  have := hs.vertexSet_eq.symm.subset
+  simp_all
 
 /-- The graph obtained from `G` by deleting a set of vertices. -/
 protected def vertexDelete (G : Graph α β) (X : Set α) : Graph α β := G[V(G) \ X]
@@ -331,6 +361,10 @@ lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
   simp [Adj]
 
 @[simp]
+lemma vertexDelete_vertexSet_inter (G : Graph α β) (X : Set α) : G - (V(G) ∩ X) = G - X := by
+  simp [vertexDelete_def]
+
+@[simp]
 lemma vertexDelete_le : G - X ≤ G := induce_le
 
 lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
@@ -343,28 +377,25 @@ lemma vertexDelete_anti_right (hXY : X ⊆ Y) : G - Y ≤ G - X :=
   induce_mono_right _ <| diff_subset_diff_right hXY
 
 lemma edgeRestrict_vertexDelete (G : Graph α β) (F : Set β) (D : Set α) :
-    (G ↾ F) - D = (G - D) ↾ F := by
-  refine Graph.ext rfl fun e x y ↦ ?_
+    (G ↾ F) - D = (G - D) ↾ F := Graph.ext rfl fun e x y ↦ by
   simp only [vertexDelete_isLink_iff, edgeRestrict_isLink]
   tauto
 
 @[simp]
-lemma edgeDelete_induce (G : Graph α β) (X : Set α) (F : Set β) :
-    (G ＼ F)[X] = G[X] ＼ F := by
+lemma edgeDelete_induce (G : Graph α β) (X : Set α) (F : Set β) : (G ＼ F)[X] = G[X] ＼ F := by
   rw [edgeDelete_eq_edgeRestrict, edgeRestrict_induce, ← edgeRestrict_edgeSet_inter,
     ← inter_diff_assoc, inter_eq_self_of_subset_left (by simp), ← edgeDelete_eq_edgeRestrict]
 
 @[simp]
-lemma induce_vertexDelete (G : Graph α β) (X D : Set α) :
-    G[X] - D = G[X \ D] := Graph.ext (by simp [inter_diff_assoc]) <| by
+lemma induce_vertexDelete (G : Graph α β) (X D : Set α) : G[X] - D = G[X \ D] :=
+  Graph.ext (by simp [inter_diff_assoc]) <| by
   simp only [vertexDelete_isLink_iff, induce_isLink, mem_diff]
   tauto
 
 lemma vertexDelete_vertexDelete (G : Graph α β) (X Y : Set α) : (G - X) - Y = G - (X ∪ Y) :=by
   rw [G.vertexDelete_def, induce_vertexDelete, diff_diff, ← vertexDelete_def]
 
-lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) :
-    (G - X) - Y = (G - Y) - X := by
+lemma vertexDelete_vertexDelete_comm (G : Graph α β) (X Y : Set α) : (G - X) - Y = (G - Y) - X := by
   rw [vertexDelete_vertexDelete, vertexDelete_vertexDelete, union_comm]
 
 @[simp]

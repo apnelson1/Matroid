@@ -54,7 +54,7 @@ instance [G.Loopless] (F : Set β) : (G ＼ F).Loopless :=
 
 lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
     (G = ⊥) ∨ (∃ x, G = Graph.noEdge (Partition.indiscrete' x) β) ∨ V(G).Nontrivial := by
-  obtain rfl | ⟨v, hv⟩ := G.eq_empty_or_vertexSet_nonempty
+  obtain rfl | ⟨v, hv⟩ := G.eq_bot_or_vertexSet_nonempty
   · simp
   obtain h | h := eq_singleton_or_nontrivial hv
   · refine .inr <| .inl ⟨v, Graph.ext (by simpa [G.ne_bot_of_mem hv]) fun e x y ↦ ?_⟩

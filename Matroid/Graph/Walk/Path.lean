@@ -2,7 +2,7 @@ import Matroid.Graph.Walk.Basic
 import Mathlib.Order.Minimal
 
 variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β}
-  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α} {Q : Partition α}
+  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
 
 open WList Set
 
@@ -59,7 +59,7 @@ lemma isTrail_induce : (G[X]).IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
   have := h.vertexSet_subset
   simp_all
 
-lemma isTrail_induce_iff' (hw : w.Nonempty) : G[Q].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ Q.parts := by
+lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
   rw [isTrail_iff, isWalk_induce_iff' hw, and_assoc, isTrail_iff]
   tauto
 
@@ -182,7 +182,7 @@ lemma isPath_induce : G[X].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ X := by
   have := h.vertexSet_subset
   simp_all
 
-lemma isPath_induce_iff' (hP : P.Nonempty) : G[Q].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ Q.parts := by
+lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ X := by
   rw [isPath_iff, isWalk_induce_iff' hP, and_assoc, isPath_iff]
   tauto
 

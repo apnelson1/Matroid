@@ -399,30 +399,52 @@ lemma inf_vertexSet (H₁ H₂ : G.ClosedSubgraph) : V((H₁ ⊓ H₂).val) = V(
 lemma inf_edgeSet (H₁ H₂ : G.ClosedSubgraph) : E((H₁ ⊓ H₂).val) = E(H₁.val) ∩ E(H₂.val) := by
   simp
 
-@[simps]
-def compl' (H : G.ClosedSubgraph) : Graph α β where
-  vertexPartition := P(G).delete P(H.val).parts
-  vertexSet := V(G) \ V(H.val)
-  vertexSet_eq_parts := by simp
-  IsLink e x y := G.IsLink e x y ∧ e ∉ E(H.val)
-  isLink_symm e he x y h := by simp_all [IsLink.symm]
-  edgeSet := E(G) \ E(H.val)
-  edge_mem_iff_exists_isLink e := by simp [edge_mem_iff_exists_isLink]
-  eq_or_eq_of_isLink_of_isLink e x y z w := by
-    rintro ⟨he, hne⟩ ⟨he', -⟩
-    exact G.eq_or_eq_of_isLink_of_isLink he he'
-  left_mem_of_isLink e x y := by
-    rintro ⟨he, hne⟩
-    simp only [mem_diff, he.left_mem, true_and]
-    contrapose! hne
-    exact H.prop.closed ⟨y, he⟩ hne
+-- @[simps]
+-- def compl' (H : G.ClosedSubgraph) : Graph α β where
+--   vertexPartition := P(G).delete P(H.val).parts
+--   vertexSet := V(G) \ V(H.val)
+--   vertexSet_eq_parts := by simp
+--   IsLink e x y := G.IsLink e x y ∧ e ∉ E(H.val)
+--   isLink_symm e he x y h := by simp_all [IsLink.symm]
+--   edgeSet := E(G) \ E(H.val)
+--   edge_mem_iff_exists_isLink e := by simp [edge_mem_iff_exists_isLink]
+--   eq_or_eq_of_isLink_of_isLink e x y z w := by
+--     rintro ⟨he, hne⟩ ⟨he', -⟩
+--     exact G.eq_or_eq_of_isLink_of_isLink he he'
+--   left_mem_of_isLink e x y := by
+--     rintro ⟨he, hne⟩
+--     simp only [mem_diff, he.left_mem, true_and]
+--     contrapose! hne
+--     exact H.prop.closed ⟨y, he⟩ hne
 
-lemma compl'_isClosedSubgraph (H : G.ClosedSubgraph) : H.compl' ≤c G where
+@[simp]
+lemma compl'_vertexSet (H : G.ClosedSubgraph) : V(G - V(H.val)) = V(G) \ V(H.val) := by
+  simp
+
+@[simp↓]
+lemma compl'_isLink (H : G.ClosedSubgraph) :
+    (G - V(H.val)).IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
+  simp only [vertexDelete_isLink_iff, and_congr_right_iff, ← not_or, not_iff_not]
+  exact fun he ↦ ⟨fun h ↦ h.elim (H.prop.closed ⟨y, he⟩) (H.prop.closed ⟨x, he.symm⟩),
+    fun h ↦ Or.inl <| he.of_le_of_mem (H.prop.le) h |>.left_mem⟩
+
+@[simp]
+lemma compl'_edgeSet (H : G.ClosedSubgraph) : E(G - V(H.val)) = E(G) \ E(H.val) := by
+  rw [edgeSet_eq_setOf_exists_isLink, edgeSet_eq_setOf_exists_isLink]
+  simp only [↓compl'_isLink, exists_and_right]
+  rfl
+
+lemma compl'_isClosedSubgraph (H : G.ClosedSubgraph) : G - V(H.val) ≤c G where
   vertexSet_subset := by simp [diff_subset]
   isLink_of_isLink e u v h := h.1
   closed e u he := by
-    rintro ⟨huG, huH⟩
+    rintro ⟨huG, _, huH⟩
+    rw [compl'_edgeSet]
     simp_all [he.edge_mem, H.prop.edge_mem_iff_vertex_mem_of_inc he]
+
+lemma _root_.Graph.IsClosedSubgraph.compl {H : Graph α β} (hcl : H ≤c G) : G - V(H) ≤c G :=
+  let H' : G.ClosedSubgraph := ⟨H, hcl⟩
+  H'.compl'_isClosedSubgraph
 
 instance : CompleteBooleanAlgebra G.ClosedSubgraph where
   le_sup_inf H₁ H₂ H₃ := by
@@ -430,7 +452,7 @@ instance : CompleteBooleanAlgebra G.ClosedSubgraph where
     simp only [coe_inf, coe_sup, inter_isLink, Pi.inf_apply, sUnion'_isLink, mem_insert_iff,
       mem_singleton_iff, exists_eq_or_imp, ↓existsAndEq, true_and, inf_Prop_eq, and_imp]
     tauto
-  compl H := ⟨H.compl', H.compl'_isClosedSubgraph⟩
+  compl H := ⟨G - V(H.val), H.compl'_isClosedSubgraph⟩
   sdiff H₁ H₂ := _
   himp H₁ H₂ := _
   inf_compl_le_bot := by simp [← vertexSet_eq_empty_iff, eq_bot_iff]
@@ -630,22 +652,16 @@ lemma _root_.Graph.IsClosedSubgraph.lt_iff_vertexSet_ssubset {H₁ H₂ : Graph 
   exact H₁'.lt_iff_vertexSet_ssubset
 
 @[simp]
-lemma compl_vertexSet (H : G.ClosedSubgraph) :
-    V((Hᶜ : G.ClosedSubgraph).val) = V(G) \ V(H.val) := by
-  change V(compl' H) = _
-  rw [compl'_vertexSet]
+lemma compl_vertexSet (H : G.ClosedSubgraph) : V((Hᶜ : G.ClosedSubgraph).val) = V(G) \ V(H.val) :=
+  H.compl'_vertexSet
 
 @[simp]
-lemma compl_edgeSet (H : G.ClosedSubgraph) :
-    E((Hᶜ : G.ClosedSubgraph).val) = E(G) \ E(H.val) := by
-  change E(compl' H) = E(G) \ E(H.val)
-  rw [compl'_edgeSet]
+lemma compl_edgeSet (H : G.ClosedSubgraph) : E((Hᶜ : G.ClosedSubgraph).val) = E(G) \ E(H.val) :=
+  H.compl'_edgeSet
 
 @[simp]
-lemma compl_isLink (H : G.ClosedSubgraph) :
-    Hᶜ.val.IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) := by
-  change (compl' H).IsLink e x y ↔ _
-  rw [compl'_isLink]
+lemma compl_isLink (H : G.ClosedSubgraph) : Hᶜ.val.IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(H.val) :=
+  H.compl'_isLink
 
 -- lemma compl_eq_of_stronglyDisjoint_union {H₁ H₂ : Graph α β}
 --     (hdisj : H₁.StronglyDisjoint H₂) :
@@ -678,8 +694,8 @@ lemma IsCompOf.stronglyDisjoint_of_ne {H₁ H₂ : Graph α β} (hco₁ : H₁.I
   rw [← Subtype.coe_ne_coe, H₁'.disjoint_iff] at this
   exact this hne
 
--- lemma IsCompOf.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsCompOf G)
---     (hH₂ : H₂.IsCompOf G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
---   by_contra fun hne ↦ (hH₁.stronglyDisjoint_of_ne hH₂ hne).vertex.notMem_of_mem_left hx₁ hx₂
+lemma IsCompOf.eq_of_mem_mem {H₁ H₂ : Graph α β} (hH₁ : H₁.IsCompOf G)
+    (hH₂ : H₂.IsCompOf G) (hx₁ : x ∈ V(H₁)) (hx₂ : x ∈ V(H₂)) : H₁ = H₂ :=
+  by_contra fun hne ↦ (hH₁.stronglyDisjoint_of_ne hH₂ hne).vertex.notMem_of_mem_left hx₁ hx₂
 
 end Lattice

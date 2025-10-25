@@ -5,12 +5,17 @@ variable {α β : Type*} [CompleteLattice α] {x y z u v w a b : α} {e f : β} 
 
 open Set Function Relation Partition
 
+omit [CompleteLattice α] in
+@[simp]
+lemma Set.pair_nontrivial_iff : ({a, b} : Set α).Nontrivial ↔ a ≠ b := by
+  simp [Set.Nontrivial, ne_comm]
+
 open scoped Sym2
 
 namespace Graph
 
 
-/-! ### Graphs with one vertex  -/
+/-! ### Graphs with one (or no) vertex  -/
 
 /-- A graph with one vertex and loops at that vertex -/
 @[simps]
@@ -23,6 +28,11 @@ def bouquet (v : α) (F : Set β) : Graph α β where
   edge_mem_iff_exists_isLink := by aesop
   left_mem_of_isLink := by aesop
 
+@[simp]
+lemma bouquet_bot : bouquet (⊥ : α) F = ⊥ := by
+  rw [← vertexSet_eq_empty_iff, bouquet_vertexSet]
+  simp
+
 @[simp↓]
 lemma bouquet_vertexSet_of_ne_bot (hv : v ≠ ⊥) : V(bouquet v F) = {v} := by
   simp [hv]
@@ -32,7 +42,7 @@ lemma bouquet_edgeSet_of_ne_bot (hv : v ≠ ⊥) : E(bouquet v F) = F := by
   simp [hv]
 
 @[simp]
-lemma bouquet_inc_iff (hv : v ≠ ⊥) : (bouquet v F).Inc e x ↔ e ∈ F ∧ x = v := by
+lemma bouquet_inc (hv : v ≠ ⊥) : (bouquet v F).Inc e x ↔ e ∈ F ∧ x = v := by
   simp [Inc, hv]
 
 @[simp]
@@ -50,27 +60,35 @@ lemma eq_bouquet (hvV : v ∈ V(G)) (hss : V(G).Subsingleton) :
   have hv := G.ne_bot_of_mem hvV
   refine Graph.ext_inc (by rwa [bouquet_vertexSet_of_ne_bot hv])
     fun e x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simp [bouquet_inc_iff hv, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
-  simp only [bouquet_inc_iff hv] at h
+  · simp [bouquet_inc hv, ← mem_singleton_iff, ← hrw, h.edge_mem, h.vertex_mem]
+  simp only [bouquet_inc hv] at h
   obtain ⟨z, w, hzw⟩ := exists_isLink_of_mem_edgeSet h.1
   rw [h.2, ← show z = v from (show z ∈ {v} from hrw ▸ hzw.left_mem)]
   exact hzw.inc_left
 
 /-- Every graph on just one vertex is a bouquet on that vertex-/
-lemma exists_eq_bouquet_edge (hvV : v ∈ V(G)) (hss : V(G).Subsingleton) :
-    ∃ F, G = bouquet v F :=
+lemma exists_eq_bouquet_edge (hvV : v ∈ V(G)) (hss : V(G).Subsingleton) : ∃ F, G = bouquet v F :=
   ⟨E(G), eq_bouquet hvV hss⟩
 
-lemma exists_eq_bouquet (hne : V(G).Nonempty) (hss : V(G).Subsingleton) :
-    ∃ x F, G = bouquet x F :=
-  ⟨_, _, eq_bouquet hne.some_mem hss⟩
+lemma exists_eq_bouquet_iff : (∃ x F, G = bouquet x F) ↔ V(G).Subsingleton := by
+  classical
+  refine ⟨fun ⟨x, F, h⟩ ↦ ?_, fun hss ↦ ?_⟩
+  · by_cases hx : x = ⊥ <;> simp [h, hx]
+  by_cases hne : V(G).Nonempty
+  · exact ⟨_, _, eq_bouquet hne.some_mem hss⟩
+  exact ⟨⊥, ∅, by simp_all⟩
 
-lemma bouquet_empty (hv : v ≠ ⊥) :
-    bouquet v ∅ = Graph.noEdge (indiscrete v hv) β := by
+lemma eq_bouquet_iff (hx : x ≠ ⊥) : G = bouquet x F ↔ V(G) = {x} ∧ E(G) = F := by
+  refine ⟨?_, fun ⟨hV, hE⟩ ↦ ?_⟩
+  · rintro rfl
+    simp [hx]
+  subst F
+  apply eq_bouquet <;> simp_all
+
+lemma bouquet_empty (hv : v ≠ ⊥) : bouquet v ∅ = Graph.noEdge (indiscrete v hv) β := by
   ext <;> simp [hv]
 
-lemma bouquet_mono (hss : F₁ ⊆ F₂) :
-    bouquet v F₁ ≤s bouquet v F₂ where
+lemma bouquet_mono (hss : F₁ ⊆ F₂) : bouquet v F₁ ≤s bouquet v F₂ where
   vertexSet_eq := rfl
   isLink_of_isLink := by aesop
 
@@ -106,9 +124,26 @@ lemma banana_comm : banana a b F = banana b a F := by
 lemma banana_vertexSet_of_isPartition (h : IsPartition {a, b}) : V(banana a b F) = {a, b} := by
   rw [banana_vertexSet, pair_parts_eq_pair_iff_isPartition.mp h]
 
+lemma banana_vertexSet_of_disjoint (hxy : Disjoint a b) : V(banana a b F) = {a, b} \ {⊥} := by
+  rw [banana_vertexSet, pair_parts_of_disjoint hxy]
+
 @[simp]
-lemma banana_eq_bouquet : banana a a F = bouquet a F :=
+lemma banana_self_eq_bouquet : banana a a F = bouquet a F :=
   Graph.ext (by simp) (by aesop)
+
+lemma banana_eq_bouquet_of_not_disjoint (hxy : ¬ Disjoint a b) :
+    banana a b F = bouquet (a ⊔ b) F := by
+  have ha := left_ne_bot_of_not_disjoint hxy
+  have hb := right_ne_bot_of_not_disjoint hxy
+  rw [eq_bouquet_iff (by aesop)]
+  simp [ha, hb, hxy]
+
+lemma banana_vertexSet_nontrivial_iff :
+    V(banana a b F).Nontrivial ↔ a ≠ b ∧ IsPartition {a, b} := by
+  refine ⟨fun h => ?_, fun h => by use a, ?_, b, ?_, h.1 <;> simp [h.2]⟩
+  by_cases hdj : Disjoint a b
+  · by_cases ha : a = ⊥ <;> by_cases hb : b = ⊥ <;> simp_all
+  simp_all
 
 @[simp↓]
 lemma banana_isLink_of_isPartition (h : IsPartition {a, b}) :
@@ -182,6 +217,8 @@ lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b 
 /-- A graph with a single edge `e` from `u` to `v` -/
 @[simps! vertexPartition vertexSet]
 protected noncomputable def singleEdge (e : β) (u v : α) := banana u v {e}
+
+lemma banana_singleton (e : β) (u v : α) : banana u v {e} = Graph.singleEdge e u v := rfl
 
 lemma singleEdge_comm (e : β) (u v : α) : Graph.singleEdge e u v = Graph.singleEdge e v u := by
   unfold Graph.singleEdge

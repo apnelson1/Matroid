@@ -312,7 +312,7 @@ instance Rep.cocycleSpace_finiteDimensional [M.Finite] (v : M.Rep 𝔽 W) :
   classical
   rw [cocycleSpace_eq']
   have := v.supported_finiteDimensional
-  infer_instance
+  exact Module.Finite.map v.supportedCycleSpace.dualAnnihilator (Finsupp.dualSupportedFunMap 𝔽 M.E)
 
 -- lemma foo [M.Finite] (v : M.Rep 𝔽 W) :
 --     Module.finrank 𝔽 v.cocycleSpace + Module.finrank 𝔽 v.cycleSpace = M.E.ncard := by
