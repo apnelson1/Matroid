@@ -7,6 +7,9 @@ import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Finite
 import Matroid.Graph.Subgraph.Basic
 
+import Qq open Qq Lean Meta Elab Tactic
+
+
 -- simple is still broken
 -- import Matroid.Graph.Simple
 
@@ -356,9 +359,27 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
 
   have G_vertexSet_is_superset : V(min_comp) ∪ V(other_comp) ⊆ V(G) := by
     rw [union_subset_iff]; constructor <;> apply vertexSet_mono
-    -- This should honestly be more amenable to automation...
-    · exact min_comp_spec.1.le
-    · exact other_comp_spec.1.le
+    -- This works: it does exactly what the two following bulleted lines do:
+    /-
+     · exact min_comp_spec.1.le
+     · exact other_comp_spec.1.le
+    -/
+    -- But it does so without referring to names explicitly.
+    run_tacq
+      for ldecl in ← getLCtx do
+        let hyp := mkIdent ldecl.userName
+        let some ty := ← checkTypeQ (← whnf ldecl.type) q(Prop) | continue
+        if let ~q($p ∧ $q) := ty then
+          evalTactic (← `(tactic| try exact $hyp.1.le))
+    -- The type-checking is completely unnecessary, the following code would suffice as well:
+    /-
+    run_tacq
+      for ldecl in ← getLCtx do
+        let hyp := mkIdent ldecl.userName
+        evalTactic (← `(tactic| try exact $hyp.1.le))
+    -/
+    -- But the longer example above just shows how one might match on types in
+    -- more elaborate scenarios.
 
   have G_ncard_ge_sum : V(min_comp).ncard + V(other_comp).ncard ≤ V(G).ncard := by
     have : V(min_comp).ncard + V(other_comp).ncard = (V(min_comp) ∪ V(other_comp)).ncard := by
