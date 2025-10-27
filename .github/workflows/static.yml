@@ -1,9 +1,9 @@
 name: Build project and documentation
 
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 6  * * *' # runs at 06:00 UTC every day (01:00 EST)
+    - cron: '0 22 * * *' # runs at 22:00 UTC every day (17:00 EST)
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
