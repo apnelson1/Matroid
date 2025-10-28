@@ -7,6 +7,7 @@ import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Finite
 import Matroid.Graph.Subgraph.Basic
 
+
 -- simple is still broken
 -- import Matroid.Graph.Simple
 
@@ -209,8 +210,10 @@ lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hFinite : G.Finite)
 lemma isCompOf_subset (G H : Graph α β) (hHG : H.IsCompOf G) : V(H) ⊆ V(G) := by
   have hclo : H ≤c G := by
       --Richard already has a lemma for this
-      sorry
-  sorry
+      exact IsCompOf.isClosedSubgraph hHG
+      --sorry
+  exact IsClosedSubgraph.vertexSet_mono (IsCompOf.isClosedSubgraph hHG  )
+  --sorry
   -- Use IsClosedSubgraph.vertexSet_mono to finsih
 
 
@@ -279,6 +282,107 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
   obtain ⟨ w, hw, hwH ⟩ := hbig
   obtain ⟨ H₁, hH1, hvH1 ⟩ := missing w hw
   have : H ≠ H₁ := by sorry
+  sorry
+
+def IsIndependent (G : Graph α β) (S : Set (Set α)) : Prop :=
+  S ⊆ V(G) ∧ S.Pairwise (fun x y ↦ ¬ G.Adj x y)
+
+def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
+  ∀ S, G.IsIndependent S → S.encard ≤ n
+
+def IsMaxIndependent (G : Graph α β) (S : Set (Set α)) : Prop :=
+  IsIndependent G S ∧ (∀ A, IsIndependent G A → A.ncard ≤ S.ncard )
+
+def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
+  ∀ S, S.encard < k → (G - S).Connected
+
+--Avoids complete graph case but is not technically correct
+def IsSepSet (G : Graph α β) (S : Set (Set α)) : Prop :=
+  (S ⊆ V(G)) ∧ (¬ (G - S).Connected) ∧ (S ≠ V(G))
+
+def IsMinSepSet (G : Graph α β) (S : Set (Set α)) : Prop :=
+  IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.ncard ≤ A.ncard )
+
+lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
+    (S : Set (Set α)) (hS : IsSepSet G S)
+    (H : Graph α β ) (hH : IsCompOf H (G-S) )
+    (A : Set (Set α)) (hA : IsMaxIndependent G A) ( v : Set α ) (hx : v ∈ V(H) ∩ A )
+    : G.degree v + (A ∩ V(H)).ncard ≤ (V(H)).ncard + S.ncard := by
+    -- Need degree_eq_ncard_adj, will work after update
+  let Inc := {w | G.Adj v w}
+  let IncW := {w | G.Adj v w} ∩ V(H)
+
+  --For the following you need that the sets are disjoint
+  have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := sorry
+  have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := sorry
+  --Use degree_eq_ncard_adj
+  have hdeg : G.degree v = Inc.ncard := sorry
+  --This one should be straight forward
+  have h1 : Inc ∪ (A ∩ V(H)) = (IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) := sorry
+  --Again, disjoint sets
+  have hf3 : ((IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) ).ncard =
+      (IncW ∪ (A ∩ V(H))).ncard + (Inc\IncW).ncard
+    := sorry
+  --Very important
+  rw [←hf2,hdeg,←hf1,h1, hf3 ]
+
+  --Inequalities to finish
+  have hH : (IncW ∪ (A ∩ V(H))).ncard ≤ V(H).ncard := by
+    have hH1 : (IncW ∪ (A ∩ V(H))) ⊆ V(H) := sorry
+    sorry
+
+  have hS : (Inc\IncW).ncard ≤ S.ncard := by
+    have hH1 :(Inc\IncW) ⊆ S := sorry
+    sorry
+  linarith
+
+--Again, is missing when G is complete but whatever
+lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
+    (S : Set (Set α)) (HS : IsMinSepSet G S )
+    (A : Set (Set α)) (hA : IsMaxIndependent G A)
+    (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
+  --Important case
+  obtain ( HAS| he ) := Decidable.em (A ⊆ S)
+  · have : S.Finite := by sorry
+    exact ncard_le_ncard HAS this
+  have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
+  -- Add hDirac applyed to x. You won't need it immediatly but will need it in all cases
+
+  --We want to use ge_two_components_of_not_connected with G-S so we need:
+  have hxS: x ∈ V(G - S) := by sorry
+
+  have hNeBotS : (G - S).NeBot := by
+    apply NeBot_iff_vertexSet_nonempty.2
+    sorry
+
+  have hcomp := ge_two_components_of_not_connected hNeBotS sorry
+  have ⟨ H1, hccH1, hcH1 ⟩ : ∃ H, IsCompOf H (G-S) ∧ x ∈ V(H) := by
+    -- use (VertexConnected.refl x)
+    sorry
+
+  --Here are two options to finish the proof, either define H2 as follows, but it won't be conencted
+  let H2 := G - (V(H1) ∪ S)
+  --In this case use hcomp to get V(H2)≠ ∅
+
+  --Second option is to use and prove this
+  -- have ⟨ H2, hccH2, h12 ⟩  : ∃ H, IsCompOf H (G-S) ∧ H ≠ H1 := by
+  --   sorry
+  --see Richards proof using hcomp
+  --In this case you will need (V(H2)).ncard ≤ (V(G)\ (V(H1) ∪ S) ).ncard + S.ncard (or something)
+
+  -- Second annoying case
+  obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
+  · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by sorry
+    --Apply Bound_on_indepSet with modifications since H2 is not a connected component
+    -- You will nee hDirac applied to y
+    sorry
+
+  --Easy case
+  obtain ⟨y, yA2 ⟩ := nonempty_iff_ne_empty.mpr hAH1
+
+  --Use Bound_on_indepSet twice and linarith to conclude. You'll also need
+  have h1 : (V(H1)).ncard + S.ncard + (V(H2)).ncard + S.ncard = V(G).ncard + S.ncard := by sorry
+  -- Add hDirac applied to y
   sorry
 
 lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
