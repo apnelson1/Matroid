@@ -215,6 +215,20 @@ lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.conca
 lemma isPrefix_concat_self (w : WList α β) (e) (x) : w.IsPrefix (w.concat e x) :=
   isPrefix_refl.concat e x
 
+lemma IsPrefix.get_eq_of_length_ge (h : w₁.IsPrefix w₂) {n} (hn : n ≤ w₁.length) :
+    w₁.get n = w₂.get n := by
+  induction h generalizing n with | nil => simp_all | cons => induction n with simp_all
+
+lemma IsPrefix.idxOf_eq_of_mem [DecidableEq α] (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) :
+    w₁.idxOf x = w₂.idxOf x := by
+  induction h generalizing x with
+  | nil => simp_all
+  | cons y e w w' hw ih =>
+    obtain rfl | hne := eq_or_ne y x
+    · simp
+    simp only [mem_cons_iff, hne.symm, false_or] at hx
+    simp [hne, ih hx]
+
 /- ## Suffixes -/
 
 inductive IsSuffix : WList α β → WList α β → Prop
@@ -360,6 +374,13 @@ lemma prefixUntilVertex_first (w : WList α β) (x) [DecidableEq α] :
 lemma prefixUntilVertex_cons_of_ne [DecidableEq α] (w : WList α β) (hne : x ≠ y) (e : β) :
     (cons x e w).prefixUntilVertex y = cons x e (w.prefixUntilVertex y) := by
   simpa [prefixUntilVertex]
+
+lemma prefixUntilVertex_length [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) :
+    (w.prefixUntilVertex x).length = w.idxOf x := by
+  induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
+  obtain rfl | hu := eq_or_ne x u
+  · simp [prefixUntilVertex]
+  simp_all [prefixUntilVertex, hu.symm, idxOf_cons_ne hu.symm]
 
 /-- Take the suffix starting at the first vertex satisfying a predicate `P`,
 (or the `Nil` wList on the last vertex if nothing satisfies `P`) -/
@@ -529,6 +550,9 @@ lemma tail_vertex (hw : w.Nonempty) : w.tail.vertex = w.vertex.tail := by
 lemma tail_edge (w : WList α β) : w.tail.edge = w.edge.tail := by
   induction w with simp
 
+lemma tail_length (w : WList α β) : w.tail.length = w.length - 1 := by
+  induction w with simp
+
 lemma mem_tail_iff_of_nodup (hw : Nodup w.vertex) (hne : w.Nonempty) :
     x ∈ w.tail ↔ x ∈ w ∧ x ≠ w.first := by
   induction w with aesop
@@ -633,6 +657,9 @@ lemma dropLast_edge (w : WList α β) : (w.dropLast).edge = w.edge.dropLast := b
   rw [← reverse_tail_reverse, reverse_edge, tail_edge, reverse_edge, ← dropLast_reverse,
     List.reverse_reverse]
 
+lemma dropLast_length (w : WList α β) : w.dropLast.length = w.length - 1 := by
+  induction w with | nil => simp | cons u e w ih => cases w with simp_all
+
 lemma append_dropLast (w₁ : WList α β) (hw₂ : w₂.Nonempty) :
     (w₁ ++ w₂).dropLast = w₁ ++ w₂.dropLast := by
   induction w₁ with
@@ -704,8 +731,6 @@ lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) 
   rw [h_eq, ← hw.tail_lastEdge]
   exact Nonempty.lastEdge_mem (tail_nonempty hw)
 
-
-
 -- lemma Nontrivial.lastEdge_mem_tail (hw : w.Nontrivial) : hw.nonempty.lastEdge ∈ w.tail.edge := by
 --   rw [tail_lastE]
   -- cases hw withhC.isWalk.edgeSet_subset
@@ -714,6 +739,31 @@ lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) 
 
     -- Nonempty.lastEdge w (show w.Nonempty by rw [WList.nonempty_iff_]) ∈ w.tail.edge := sorry
 
+-- def take : WList α β → ℕ → WList α β
+--   | nil x, _ => nil x
+--   | cons x _ _, 0 => nil x
+--   | cons x e w, n+1 => cons x e (w.take n)
+
+-- @[simp]
+-- lemma take_nil (x : α) (n : ℕ) : (nil x (β := β)).take n = nil x := rfl
+
+-- @[simp]
+-- lemma take_zero (w : WList α β) : w.take 0 = nil w.first := by
+--   cases w with simp [take]
+
+-- @[simp]
+-- lemma take_cons_succ (x e) (w : WList α β) (n : ℕ) :
+--   (cons x e w).take (n+1) = cons x e (w.take n) := rfl
+
+lemma idxOf_eq_length_prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) :
+    w.idxOf x = (w.prefixUntilVertex x).length := by
+  induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
+  obtain rfl | hu := eq_or_ne x u
+  · simp [prefixUntilVertex]
+  simp only [mem_cons_iff, hu, false_or] at hx
+  simp only [hx, prefixUntilVertex, forall_const, ne_eq, hu.symm, not_false_eq_true, idxOf_cons_ne,
+    prefixUntil_cons, ↓reduceIte, cons_length, Nat.add_right_cancel_iff] at ih ⊢
+  assumption
 
 end drop
 

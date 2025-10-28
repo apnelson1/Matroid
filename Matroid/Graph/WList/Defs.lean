@@ -47,6 +47,14 @@ lemma nil_first : (nil x : WList α β).first = x := rfl
 @[simp]
 lemma first_cons : (cons x e w).first = x := rfl
 
+def second : WList α β → α
+| nil x => x
+| cons _ _ w => w.first
+
+@[simp] lemma second_nil : (nil x : WList α β).second = x := rfl
+@[simp] lemma second_cons : (cons x e w).second = w.first := rfl
+lemma second_cons_cons : (cons x e (cons y f w)).second = y := rfl
+
 def last : WList α β → α
   | nil x => x
   | cons _ _ w => w.last
@@ -147,8 +155,10 @@ instance [DecidableEq α] : Decidable (x ∈ w) :=
 @[simp] lemma first_mem : w.first ∈ w := by
   cases w with simp
 
-@[simp]
-lemma last_mem {w : WList α β} : w.last ∈ w := by
+@[simp] lemma second_mem : w.second ∈ w := by
+  cases w with simp
+
+@[simp] lemma last_mem {w : WList α β} : w.last ∈ w := by
   induction w with simp_all
 
 /-- `w.UniqueMem x` means that `x : α` appears in `w` exactly once. -/
@@ -158,8 +168,6 @@ protected inductive UniqueMem : WList α β → α → Prop
   | cons_ne {x u} (h : u ≠ x) e w (hw : w.UniqueMem x) : (cons u e w).UniqueMem x
 
 /-! ### Vertex/Edge Sets -/
-
-
 
 protected def vertexSet (w : WList α β) : Set α := {x | x ∈ w}
 
@@ -609,6 +617,7 @@ lemma idxOf_cons (u e) (w : WList α β) :
 lemma idxOf_cons_self (u e) (w : WList α β) : (cons u e w).idxOf u = 0 := by
   simp [idxOf_cons]
 
+@[simp]
 lemma idxOf_cons_ne (hne : u ≠ x) (e) (w : WList α β) :
     (cons u e w).idxOf x = w.idxOf x + 1 := by
   simp [idxOf_cons, hne]
