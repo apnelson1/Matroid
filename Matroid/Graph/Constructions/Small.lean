@@ -204,8 +204,12 @@ lemma banana_isloopAt_of_eq (ha : a ≠ ⊥) : (banana a a F).IsLoopAt e x ↔ e
   simp [ha, ← isLink_self_iff]
 
 @[simp]
-lemma banana_not_isloopAt_of_disjoint (ha : a ≠ ⊥) (hb : b ≠ ⊥) (hab : Disjoint a b) :
+lemma banana_not_isloopAt_of_disjoint (hab : Disjoint a b) :
     ¬ (banana a b F).IsLoopAt e x := by
+  obtain rfl | ha := eq_or_ne a ⊥
+  · simp [IsLoopAt]
+  obtain rfl | hb := eq_or_ne b ⊥
+  · simp [IsLoopAt]
   unfold IsLoopAt
   rw [banana_isLink_of_isPartition <| isPartition_pair_of_disjoint ha hb hab]
   aesop

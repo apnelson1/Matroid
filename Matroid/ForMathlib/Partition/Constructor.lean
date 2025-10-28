@@ -88,6 +88,7 @@ lemma pair_comm : pair a b = pair b a := by
   simp only [← mem_parts, pair_parts, Classical.ite_not]
   rw [Set.pair_comm, sup_comm, disjoint_comm]
 
+@[simp]
 lemma indiscrete'_le_left (a b : α) : indiscrete' a ≤ pair a b := by
   rintro x
   simp only [mem_indiscrete'_iff, ne_eq, and_imp]
@@ -97,6 +98,7 @@ lemma indiscrete'_le_left (a b : α) : indiscrete' a ≤ pair a b := by
     simpa [← mem_parts, hab]
   simp [← mem_parts, hab]
 
+@[simp]
 lemma indiscrete'_le_right (a b : α) : indiscrete' b ≤ pair a b := by
   rintro x
   simp only [mem_indiscrete'_iff, ne_eq, and_imp]

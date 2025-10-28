@@ -69,7 +69,7 @@ def mk' (V : Partition α) (l : β → α → α → Prop) : Graph α β :=
   mk_of_symm V (fun e => SymmClosure (l e))
 
 /-- The graph with vertex set `V` and no edges -/
-@[simps]
+@[simps vertexPartition vertexSet edgeSet]
 protected def noEdge (P : Partition α) (β : Type*) : Graph α β where
   vertexPartition := P
   edgeSet := ∅
@@ -78,6 +78,9 @@ protected def noEdge (P : Partition α) (β : Type*) : Graph α β where
   eq_or_eq_of_isLink_of_isLink := by simp
   edge_mem_iff_exists_isLink := by simp
   left_mem_of_isLink := by simp
+
+@[simp]
+lemma noEdge_isLink : (Graph.noEdge P β).IsLink e = ⊥ := rfl
 
 @[simp]
 lemma noEdge_le_iff : Graph.noEdge P β ≤ G ↔ P.parts ⊆ V(G) := by
@@ -102,7 +105,8 @@ lemma noEdge_not_adj : ¬ (Graph.noEdge P β).Adj x y := by
 
 lemma edgeSet_eq_empty_iff : E(G) = ∅ ↔ G = Graph.noEdge P(G) β := by
   refine ⟨fun h ↦ Graph.vertexPartition_ext rfl ?_, fun h ↦ by rw [h, noEdge_edgeSet]⟩
-  simp only [noEdge_isLink, iff_false]
+  simp only [noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet,
+    iff_false]
   refine fun e x y he ↦ ?_
   have := h ▸ he.edge_mem
   simp at this

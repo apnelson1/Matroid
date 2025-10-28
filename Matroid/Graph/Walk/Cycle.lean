@@ -61,6 +61,9 @@ lemma IsWalk.isCycle_of_closed_nodup (hC : G.IsWalk C) (hlen : 2 < C.length)
   isClosed := h_closed
   nodup := nodup
 
+lemma IsCycle.idxOf_get [DecidableEq α] (hC : G.IsCycle C) {n} (hn : n < C.length) :
+    C.idxOf (C.get n) = n := hC.isClosed.idxOf_get hC.nodup hn
+
 lemma IsCycle.isTrail (hC : G.IsCycle C) : G.IsTrail C where
   isWalk := hC.isWalk
   edge_nodup := hC.edge_nodup
@@ -211,6 +214,30 @@ lemma IsCycle.exists_isPath' (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e
     reverse_isPath_iff, reverse_last, mem_reverse] at ht'
   simp [cons_isPath_iff, hP, huP, ht'.2.1.symm, ht.2.1, hef]
 
+lemma IsCycle.exists_isPath_vertex [DecidableEq α] (hC : G.IsCycle C) (hnt : C.Nontrivial)
+    (hu : u ∈ C) : ∃ P e f, G.IsPath P ∧ u ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ e ≠ f ∧
+    C.rotate (C.idxOf u) = cons u e (P.concat f u) := by
+  obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hnt.nonempty hu
+  obtain ⟨P, u, e, f, hP, huP, heP, hfP, hne, hP'⟩ := (hC.rotate n).exists_isPath (hnt.rotate n)
+  use P, e, f, hP, ?_, heP, hfP, hne, ?_
+  · simpa [hP']
+  rw [hP', first_cons, ← hP']
+  congr
+  apply_fun WList.first at hP'
+  obtain rfl := by simpa [first_cons] using hP'
+  rw [C.rotate_first _ hn.le]
+  exact hC.idxOf_get hn
+
+lemma IsCycle.exists_isPath_edge (hC : G.IsCycle C) (hnt : C.Nontrivial)
+    (he : e ∈ C.edge) : ∃ n P, G.IsPath P ∧ e ∉ P.edge ∧ C.rotate n = cons P.last e P := by
+  obtain ⟨n, hn, hCne, rfl⟩ := exists_rotate_firstEdge_eq he
+  obtain ⟨P, u, e, f, heP, hPf, hne, hC'⟩ := (hC.rotate n).exists_isPath' (hnt.rotate n)
+  use n, P.concat f u, hPf, ?_, ?_
+  · have := by simpa using heP.edge_nodup
+    simp [hC', hne, this.1]
+  convert hC' using 1
+  simp [hC']
+
 lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
     (∃ x e, C = cons x e (nil x)) ∨ C.Nontrivial := by
   cases hC.nonempty with
@@ -241,8 +268,6 @@ lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
-
-
 
 
 end Graph

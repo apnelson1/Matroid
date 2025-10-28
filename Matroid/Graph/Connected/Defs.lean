@@ -70,7 +70,7 @@ lemma edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.righ
   · exact S.disjoint.notMem_of_mem_left hx hx'
   exact S.disjoint.notMem_of_mem_left hx hy'
 
-lemma eq_union (S : G.Separation) : G = G [S.left] ∪ G [S.right] := by
+lemma eq_union (S : G.Separation) : G = G[S.left] ∪ G[S.right] := by
   have : Agree {G[S.left], G[S.right]} := by use G, by simp
   refine Graph.ext ?_ fun e x y ↦ ?_
   · simp [← S.union_eq, inter_eq_right.mpr, this]
@@ -96,27 +96,28 @@ def Preconnected (G : Graph α β) : Prop := IsEmpty G.Separation
 /-- A graph has preconnectivityGe n, if for every n-vertex subset of the graph, `X`, there is no
     separation in `G - X`. -/
 def PreconnectivityGe (G : Graph α β) (n : ℕ) : Prop :=
-    ∀ X : Set α, X.encard ≤ ↑n → (G - X).Preconnected
+    ∀ X : Set α, X.encard < ↑n → (G - X).Preconnected
 
-lemma PreconnectivityGe.preconnected (h : G.PreconnectivityGe n) : G.Preconnected := by
-  simpa using (h ∅ (by simp))
+lemma PreconnectivityGe.preconnected (h : G.PreconnectivityGe n) (hn : n ≠ 0) : G.Preconnected := by
+  simpa using (h ∅ (by simp; omega))
 
 lemma PreconnectivityGe.anti_right (hle : n ≤ m) (h : G.PreconnectivityGe m) :
     G.PreconnectivityGe n := by
   intro X hX
-  have : X.encard ≤ (m : ℕ∞) := hX.trans <| by exact_mod_cast hle
+  have : X.encard < (m : ℕ∞) := lt_of_lt_of_le hX <| by exact_mod_cast hle
   exact h X this
 
 @[simp]
-lemma preconnectivityGe_zero : G.PreconnectivityGe 0 ↔ G.Preconnected :=
-  ⟨fun h => by simpa using (h ∅ (by simp)), fun h X hX => by simp_all⟩
+lemma preconnectivityGe_zero : G.PreconnectivityGe 1 ↔ G.Preconnected := by
+  refine ⟨fun h => by simpa using (h ∅ (by simp)), fun h X hX => ?_⟩
+  rw [cast_one, ENat.lt_one_iff_eq_zero, encard_eq_zero] at hX
+  simpa [hX]
 
-lemma vertexDelete_isPreconnected_iff (h : G.PreconnectivityGe (V(G) ∩ X).ncard)
+lemma vertexDelete_isPreconnected_iff (h : G.PreconnectivityGe (V(G) ∩ X).ncard.succ)
     (hX : (V(G) ∩ X).Finite) : (G - X).Preconnected := by
   rw [← vertexDelete_vertexSet_inter]
   apply h
-  rw [encard_le_coe_iff_finite_ncard_le]
-  simpa
+  simpa [ENat.lt_add_one_iff, encard_le_coe_iff_finite_ncard_le]
 
 lemma preconnected_of_vertexSet_subsingleton (hV : V(G).Subsingleton) : G.Preconnected := by
   contrapose! hV
@@ -294,6 +295,9 @@ lemma connected_bouquet (v : α) (hv : v ≠ ⊥) (F : Set β) : (bouquet v F).C
   obtain ⟨x, hx⟩ := hne
   obtain rfl := by simpa [hv] using vertexSet_mono hle.le hx
   exact hx
+
+def ConnectivityGe (G : Graph α β) (n : ℕ) : Prop :=
+  ∀ X : Set α, X.encard < ↑n → (G - X).Connected
 
 
 /-- Vertices `x` and `y` are connected if they belong to the same component. -/
@@ -500,6 +504,17 @@ lemma exists_separation_of_not_vertexConnected (hxV : x ∈ V(G)) (hyV : y ∈ V
     ⟨y, by aesop⟩, by simp +contextual [disjoint_left],
     by simp [Set.ext_iff, ← and_or_left, or_not],
     fun x' y' ⟨_, hx'⟩ ⟨_, hy'⟩ hxy' ↦  hy' <| hx'.trans hxy'.vertexConnected⟩, by simp_all⟩
+
+lemma preconnected_iff_forall_vertexConnected :
+    G.Preconnected ↔ ∀ x y, x ∈ V(G) → y ∈ V(G) → G.VertexConnected x y := by
+  rw [← not_iff_not]
+  simp only [Preconnected, not_isEmpty_iff, not_forall]
+  refine ⟨fun ⟨S⟩ => ?_, fun ⟨x, y, hx, hy, h⟩ => ?_⟩
+  · use S.nonempty_left.some, S.nonempty_right.some, S.left_subset S.nonempty_left.some_mem,
+      S.right_subset S.nonempty_right.some_mem, S.not_vertexConnected S.nonempty_left.some_mem
+      S.nonempty_right.some_mem
+  obtain ⟨S, hxL, hyR⟩ := exists_separation_of_not_vertexConnected hx hy h
+  exact ⟨S⟩
 
 lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
     Nonempty G.Separation := by

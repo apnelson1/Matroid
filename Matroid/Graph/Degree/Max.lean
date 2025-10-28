@@ -2,17 +2,15 @@ import Matroid.Graph.Tree
 import Matroid.Graph.Degree.Constructions
 import Matroid.Graph.Degree.Defs
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α}
-{d : ℕ}
+variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set α} {d : ℕ}
 
 open Set WList
 
 namespace Graph
 
 
-
 /-! ### Maximum degree -/
-
 
 /-- A nontrivial connected graph with max degree at most two is loopless. -/
 lemma Connected.loopless_of_maxDegreeLE_two (hG : G.Connected) (hmax : G.MaxDegreeLE 2)

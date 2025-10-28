@@ -60,6 +60,11 @@ lemma IsWalk.vertexSet_subset (hVd : G.IsWalk w) : V(w) ⊆ V(G) :=
 
 lemma IsWalk.edgeSet_subset (h : G.IsWalk w) : E(w) ⊆ E(G) := fun _ ↦ h.edge_mem_of_mem
 
+@[simp]
+lemma not_isWalk_bot : ¬ (⊥ : Graph α β).IsWalk w := by
+  rintro h
+  simpa using h.first_mem
+
 lemma IsWalk.mem_of_mem_edge_of_inc (hw : G.IsWalk w) (he : e ∈ w.edge) (h : G.Inc e u) :
     u ∈ w := by
   induction w with

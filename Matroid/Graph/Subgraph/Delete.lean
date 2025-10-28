@@ -129,6 +129,10 @@ lemma edgeDelete_le : G ＼ F ≤ G := by
   simp [edgeDelete_eq_edgeRestrict]
 
 @[simp]
+lemma edgeDelete_empty : G ＼ ∅ = G := by
+  simp [edgeDelete_eq_edgeRestrict]
+
+@[simp]
 lemma edgeDelete_inter_edgeSet : G ＼ (F ∩ E(G)) = G ＼ F := by
   rw [edgeDelete_eq_edgeRestrict, edgeDelete_eq_edgeRestrict, diff_inter_self_eq_diff]
 

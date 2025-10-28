@@ -9,6 +9,9 @@ open Set Function Partition
 
 namespace Graph
 
+@[simp]
+lemma fuzzyRel_eq_self : P(G).fuzzyRel (G.IsLink e) = G.IsLink e :=
+  fuzzyRel.eq_self.mpr forall_isLink_mem
 
 /-! ### Set unions -/
 
@@ -599,38 +602,21 @@ lemma Compatible.vertexDelete_contractunion (h : G.Compatible H) (hG' : G.Dup_ag
 --   exact Graph.contractiUnion_comp_eq_of_surj (f := Set.rangeFactorization f) _
 --surjective_onto_range
 
--- @[simp]
--- lemma noEdge_contractunion_eq_self : Graph.noEdge P β ∪ᶜ G = G ↔ P ≤ P(G) := by
---   refine ⟨fun h => ?_, fun h => ?_⟩
---   · rw [← h]
---     convert left_vertexPartition_le_contractunion
---     rfl
---   refine vertexPartition_ext (by simpa) fun e x y ↦ ?_
---   simp only [contractunion_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false,
---not_false_eq_true,
---     not_isLink_of_notMem_edgeSet, and_true, false_or, contractunion_vertexPartition,
---noEdge_vertexPartition,
---     h, sup_of_le_right]
---   refine ⟨?_, fun h => ⟨x, y, h, foo_eq_self_of_mem h.left_mem',
---     foo_eq_self_of_mem h.right_mem'⟩⟩
---   rintro ⟨u, v, h, rfl, rfl⟩
---   rwa [foo_eq_self_of_mem h.left_mem', foo_eq_self_of_mem h.right_mem']
+@[simp]
+lemma noEdge_contractunion_eq_self : Graph.noEdge P β ∪ᶜ G = G ↔ P ≤ P(G) := by
+  refine ⟨fun h => ?_, fun h => vertexPartition_ext (by simpa) fun e x y ↦ ?_⟩
+  · rw [← h]
+    convert left_vertexPartition_le_contractunion
+    rfl
+  simp [h, contractunion_isLink_not_agree]
 
--- @[simp]
--- lemma contractunion_noEdge_eq_self : G ∪ᶜ Graph.noEdge P β = G ↔ P ≤ P(G) := by
---   refine ⟨fun h => ?_, fun h => ?_⟩
---   · rw [← h]
---     convert right_vertexPartition_le_contractunion
---     rfl
---   refine vertexPartition_ext (by simpa) fun e x y ↦ ?_
---   simp only [contractunion_isLink_not_agree, noEdge_edgeSet, mem_empty_iff_false,
---not_false_eq_true,
---     not_isLink_of_notMem_edgeSet, false_and, or_false, contractunion_vertexPartition,
---     noEdge_vertexPartition, h, sup_of_le_left]
---   refine ⟨?_, fun h => ⟨x, y, h, foo_eq_self_of_mem h.left_mem',
---     foo_eq_self_of_mem h.right_mem'⟩⟩
---   rintro ⟨u, v, h, rfl, rfl⟩
---   rwa [foo_eq_self_of_mem h.left_mem', foo_eq_self_of_mem h.right_mem']
+@[simp]
+lemma contractunion_noEdge_eq_self : G ∪ᶜ Graph.noEdge P β = G ↔ P ≤ P(G) := by
+  refine ⟨fun h => ?_, fun h => vertexPartition_ext (by simpa) fun e x y ↦ ?_⟩
+  · rw [← h]
+    convert right_vertexPartition_le_contractunion
+    rfl
+  simp [h, contractunion_isLink_not_agree, edgeDelete_isLink_eq, show (fun _ _ ↦ False) = ⊥ by rfl]
 
 -- lemma sUnion_powerset_pairwise_dup_agree (hs : Gs.Pairwise Dup_agree) :
 --     (Graph.sUnion '' Gs.powerset).Pairwise Dup_agree := by

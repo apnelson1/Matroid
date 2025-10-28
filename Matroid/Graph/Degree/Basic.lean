@@ -1,5 +1,5 @@
 -- import Mathlib.Combinatorics.Graph.Basic
--- import Matroid.Graph.Simple
+import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Union
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Set.Card
@@ -321,17 +321,17 @@ lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
   simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
--- lemma eDegree_eq_encard_inc [G.Loopless] : G.eDegree x = {e | G.Inc e x}.encard := by
---   simp [eDegree_eq_encard_add_encard, not_isLoopAt, isNonloopAt_iff_inc_not_isLoopAt]
+lemma eDegree_eq_encard_inc [G.Loopless] : G.eDegree x = {e | G.Inc e x}.encard := by
+  simp [eDegree_eq_encard_add_encard, not_isLoopAt, isNonloopAt_iff_inc_not_isLoopAt]
 
--- lemma degree_eq_ncard_inc [G.Loopless] : G.degree x = {e | G.Inc e x}.ncard := by
---   simp [degree, eDegree_eq_encard_inc, ncard]
+lemma degree_eq_ncard_inc [G.Loopless] : G.degree x = {e | G.Inc e x}.ncard := by
+  simp [degree, eDegree_eq_encard_inc, ncard]
 
--- lemma eDegree_eq_encard_adj [G.Simple] : G.eDegree x = {y | G.Adj x y}.encard := by
---   simp only [encard, coe_setOf, ← ENat.card_congr (G.incAdjEquiv x), eDegree_eq_encard_inc]
+lemma eDegree_eq_encard_adj [G.Simple] : G.eDegree x = {y | G.Adj x y}.encard := by
+  simp only [encard, coe_setOf, ← ENat.card_congr (G.incAdjEquiv x), eDegree_eq_encard_inc]
 
--- lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
---   rw [degree, eDegree_eq_encard_adj, ncard]
+lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
+  rw [degree, eDegree_eq_encard_adj, ncard]
 
 /-! ### Subgraphs -/
 
