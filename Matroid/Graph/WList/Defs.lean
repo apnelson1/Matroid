@@ -24,6 +24,13 @@ inductive WList (α β : Type*) where
 
 namespace WList
 
+def repr_aux [Repr α] [Repr β] (w : WList α β) (n : Nat) : Std.Format := match w with
+| nil x => reprPrec x n
+| cons x e w => reprPrec x n ++ " --" ++ reprPrec e n ++ "-> " ++ repr_aux w n
+
+instance [Repr α] [Repr β] : Repr (WList α β) where
+  reprPrec w n := "P[" ++ repr_aux w n ++ "]"
+
 variable {w w₁ w₂ : WList α β}
 
 @[simp]
@@ -225,6 +232,20 @@ lemma vertex_toFinset_toSet [DecidableEq α] (w : WList α β) :
     ext
     simp [← ih]
 
+@[simp]
+lemma vertex_disjoint_iff : w₁.vertex.Disjoint w₂.vertex ↔ Disjoint V(w₁) V(w₂) := by
+  rw [disjoint_iff_forall_ne]
+  refine ⟨fun h x hx₁ y hy₂ heq => ?_, fun h x hx₁ hx₂ => h hx₁ hx₂ rfl⟩
+  subst y
+  exact h hx₁ hy₂
+
+@[simp]
+lemma edge_disjoint_iff : w₁.edge.Disjoint w₂.edge ↔ Disjoint E(w₁) E(w₂) := by
+  rw [disjoint_iff_forall_ne]
+  refine ⟨fun h x hx₁ y hy₂ heq => ?_, fun h x hx₁ hx₂ => h hx₁ hx₂ rfl⟩
+  subst y
+  exact h hx₁ hy₂
+
 /-! ## Emptiness -/
 
 /-- `Nil w` means that `w : WList α β` has no edges -/
@@ -294,6 +315,15 @@ lemma first_ne_last_iff (hnodup : w.vertex.Nodup) : w.first ≠ w.last ↔ w.Non
 
 lemma exists_eq_nil_or_nonempty (w : WList α β) : (∃ x, w = nil x) ∨ w.Nonempty := by
   induction w with simp
+
+instance DecidableNonempty (w : WList α β) : Decidable w.Nonempty := by
+  match w with
+  | nil _ =>
+    simp only [nil_not_nonempty]
+    exact instDecidableFalse
+  | cons v e w =>
+    simp only [cons_nonempty]
+    exact instDecidableTrue
 
 /-- The first edge of a nonempty `WList` -/
 def Nonempty.firstEdge : (w : WList α β) → (hw : w.Nonempty) → β

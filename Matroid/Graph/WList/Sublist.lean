@@ -43,6 +43,9 @@ lemma IsSublist.vertex_sublist (h : w₁.IsSublist w₂) : w₁.vertex <+ w₂.v
   | cons x e h ih => exact ih.trans <| by simp
   | cons₂ x e h ih => simpa
 
+lemma IsSublist.vertex_subset (h : w₁.IsSublist w₂) : V(w₁) ⊆ V(w₂) :=
+  fun _ hx ↦ (h.vertex_sublist.subset hx)
+
 lemma IsSublist.mem (h : w₁.IsSublist w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
   h.vertex_sublist.mem hx
 
@@ -170,6 +173,8 @@ lemma IsPrefix.isSublist (h : w₁.IsPrefix w₂) : w₁.IsSublist w₂ := by
 lemma IsPrefix.mem (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
   h.isSublist.mem hx
 
+lemma IsPrefix.subset (h : w₁.IsPrefix w₂) : V(w₁) ⊆ V(w₂) := fun _ ↦ h.mem
+
 @[simp]
 lemma isPrefix_refl : w.IsPrefix w := by
   induction w with
@@ -288,6 +293,8 @@ lemma IsSuffix.antisymm (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₁) : w�
 lemma IsSuffix.vertex_isSuffix (h : w₁.IsSuffix w₂) : w₁.vertex.IsSuffix w₂.vertex := by
   simpa using h.reverse_isPrefix_reverse.vertex_isPrefix
 
+lemma IsSuffix.subset (h : w₁.IsSuffix w₂) : V(w₁) ⊆ V(w₂) := fun _ ↦ h.mem
+
 lemma IsSuffix.cons (h : w₁.IsSuffix w₂) (x e) : w₁.IsSuffix (cons x e w₂) := by
   simpa using (h.reverse_isPrefix_reverse.concat e x).reverse_isSuffix_reverse
 
@@ -322,7 +329,8 @@ lemma prefixUntil_cons (w) :
     (cons x e w).prefixUntil P = if P x then nil x else cons x e (w.prefixUntil P) := rfl
 
 @[simp]
-lemma prefixUntil_first (w : WList α β) : (w.prefixUntil P).first = w.first := by
+lemma prefixUntil_first (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.prefixUntil P).first = w.first := by
   cases w with simp [apply_ite]
 
 lemma prefixUntil_prop_last {w : WList α β} (h : ∃ u ∈ w, P u) : P (w.prefixUntil P).last := by
@@ -332,7 +340,7 @@ lemma prefixUntil_prop_last {w : WList α β} (h : ∃ u ∈ w, P u) : P (w.pref
     obtain h | h : P u ∨ ∃ a ∈ W, P a := by simpa using h
     all_goals simp_all [apply_ite]
 
-lemma prefixUntil_not_prop (hx : x ∈ w.prefixUntil P) (hne : x ≠ (w.prefixUntil P).last) :
+lemma prefixUntil_not_prop (hx : x ∈ w.prefixUntil P) (hne : (w.prefixUntil P).last ≠ x) :
     ¬ P x := by
   induction w with
   | nil u => simp_all
@@ -340,6 +348,11 @@ lemma prefixUntil_not_prop (hx : x ∈ w.prefixUntil P) (hne : x ≠ (w.prefixUn
     refine (em (P u)).elim (fun _ ↦ by simp_all) fun hu ↦ ?_
     rw [prefixUntil_cons, if_neg hu, mem_cons_iff] at hx
     cases hx <;> simp_all
+
+lemma prefixUntil_last_eq_of_prop (hv : v ∈ w.prefixUntil P) (hvP : P v) :
+    (w.prefixUntil P).last = v := by
+  by_contra! hvne
+  exact prefixUntil_not_prop hv hvne hvP
 
 lemma Nonempty.prefixUntil_nil_iff (hw : Nonempty w) : (w.prefixUntil P).Nil ↔ P w.first := by
   induction w with | nil => simp at hw | cons => simp [apply_ite]
@@ -356,6 +369,48 @@ lemma prefixUntil_isPrefix (w : WList α β) (P : α → Prop) [DecidablePred P]
     by_cases hP : P u
     · simp [hP]
     simpa [hP] using ih.cons u e
+
+lemma prefixUntil_last_eq_iff_prop (h : ∃ u ∈ w, P u):
+    P v ∧ v ∈ w.prefixUntil P ↔ (w.prefixUntil P).last = v := by
+  refine ⟨fun ⟨hvP, hv⟩ ↦ prefixUntil_last_eq_of_prop hv hvP, ?_⟩
+  rintro rfl
+  exact ⟨prefixUntil_prop_last h, last_mem⟩
+
+lemma prefixUntil_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∀ u ∈ w, ¬ P u) : w.prefixUntil P = w := by
+  match w with
+  | nil u => simp
+  | cons u e w =>
+    simp_all only [mem_cons_iff, forall_eq_or_imp, prefixUntil_cons, ↓reduceIte, cons.injEq,
+      true_and]
+    exact prefixUntil_eq_self_of_forall w P h.2
+
+lemma prefixUntil_concat_of_exists (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∃ u ∈ w, P u) : (w.concat e x).prefixUntil P = w.prefixUntil P := by
+  match w with
+  | nil u => simp_all
+  | cons u e w =>
+    by_cases hP : P u
+    · simp [hP]
+    simp_all only [mem_cons_iff, exists_eq_or_imp, false_or, cons_concat, prefixUntil_cons,
+      ↓reduceIte, cons.injEq, true_and]
+    exact prefixUntil_concat_of_exists w P h
+
+lemma prefixUntil_concat_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∀ u ∈ w, ¬ P u) : (w.concat e x).prefixUntil P = w.concat e x := by
+  match w with
+  | nil u => simp_all
+  | cons u e w =>
+    simp_all only [mem_cons_iff, forall_eq_or_imp, cons_concat, prefixUntil_cons, ↓reduceIte,
+      cons.injEq, true_and]
+    exact prefixUntil_concat_of_forall w P h.2
+
+lemma prefixUntil_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.concat e x).prefixUntil P = if w.vertex.all (¬ P ·) then w.concat e x
+    else w.prefixUntil P := by
+  split_ifs with h
+  · exact prefixUntil_concat_of_forall w P (by simpa using h)
+  · exact prefixUntil_concat_of_exists w P (by simpa using h)
 
 /-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
 def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
@@ -417,6 +472,63 @@ lemma suffixFrom_isSuffix (w : WList α β) (P : α → Prop) [DecidablePred P] 
     · simp
     exact ih.trans (by simp)
 
+lemma suffixFrom_eq_nil_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∀ u ∈ w, ¬ P u) : w.suffixFrom P = nil w.last := by
+  match w with
+  | nil u => simp
+  | cons u e w =>
+    simp only [mem_cons_iff, forall_eq_or_imp] at h
+    simp only [suffixFrom_cons, h.1, ↓reduceIte, last_cons]
+    exact suffixFrom_eq_nil_of_forall w P h.2
+
+lemma suffixFrom_concat_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∀ u ∈ w, ¬ P u) : (w.concat e x).suffixFrom P = nil x := by
+  match w with
+  | nil u => simp_all
+  | cons u e w =>
+    simp_all only [mem_cons_iff, forall_eq_or_imp, cons_concat, suffixFrom_cons, ↓reduceIte]
+    exact suffixFrom_concat_of_forall w P h.2
+
+lemma suffixFrom_concat_of_exists (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∃ u ∈ w, P u) : (w.concat e x).suffixFrom P = (w.suffixFrom P).concat e x := by
+  match w with
+  | nil u => simp_all
+  | cons u e w =>
+    by_cases hP : P u
+    · simp [hP]
+    simp_all only [mem_cons_iff, exists_eq_or_imp, false_or, cons_concat, suffixFrom_cons,
+      ↓reduceIte]
+    exact suffixFrom_concat_of_exists w P h
+
+lemma suffixFrom_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.concat e x).suffixFrom P = if w.vertex.all (¬ P ·) then nil x
+    else (w.suffixFrom P).concat e x := by
+  split_ifs with h
+  · exact suffixFrom_concat_of_forall w P (by simpa using h)
+  · exact suffixFrom_concat_of_exists w P (by simpa using h)
+
+@[simp]
+lemma prefixUntil_append_suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.prefixUntil P ++ w.suffixFrom P = w := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [prefixUntil_cons, suffixFrom_cons]
+    split_ifs with hu
+    · simp
+    simpa
+
+@[simp]
+lemma prefixUntil_last_eq_suffixFrom_first (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.prefixUntil P).last = (w.suffixFrom P).first := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+    simp only [prefixUntil_cons, suffixFrom_cons]
+    split_ifs with hu
+    · simp
+    simpa
+
 /-- The suffix of `w` starting at the first occurence of a vertex `x`.
 Equal to `[w.last]` if `x ∉ w`. -/
 def suffixFromVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.suffixFrom (· = x)
@@ -433,20 +545,45 @@ lemma suffixFromVertex_last (w : WList α β) (x) [DecidableEq α] :
   suffixFrom_last ..
 
 @[simp]
-lemma prefixUntil_append_suffixFrom (w : WList α β) (P : α → Prop) [DecidablePred P] :
-    w.prefixUntil P ++ w.suffixFrom P = w := by
-  induction w with
-  | nil => simp
-  | cons u e w ih =>
-    simp only [prefixUntil_cons, suffixFrom_cons]
-    split_ifs with hu
-    · simp
-    simpa
-
-@[simp]
 lemma prefixUntilVertex_append_suffixFromVertex [DecidableEq α] (w : WList α β) (x : α) :
     w.prefixUntilVertex x ++ w.suffixFromVertex x = w :=
   prefixUntil_append_suffixFrom ..
+
+/-- Take the prefix of `w` ending at the last occurence of `x` in `w`.
+Equal to `w` if `x ∉ w`. -/
+def prefixUntilLast (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
+  (w.reverse.suffixFrom P).reverse
+
+@[simp]
+lemma prefixUntilLast_isPrefix (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.prefixUntilLast P).IsPrefix w := by
+  rw [← reverse_isSuffix_reverse_iff, prefixUntilLast, reverse_reverse]
+  apply suffixFrom_isSuffix
+
+lemma prefixUntilLast_prop_last (h : ∃ x ∈ w, P x) : P (w.prefixUntilLast P).last := by
+  rw [prefixUntilLast, reverse_last]
+  exact suffixFrom_prop_first (by simpa)
+
+@[simp]
+lemma prefixUntilLast_first (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.prefixUntilLast P).first = w.first := by
+  rw [prefixUntilLast, reverse_first, suffixFrom_last, reverse_last]
+
+/-- `w.prefixUntil P` is a prefix of `w.prefixUntilLast P` if `P` occurs in `w`.
+  Otherwise, `w.prefixUntil P = w` and `w.prefixUntilLast P = nil w.first`. -/
+@[simp]
+lemma prefixUntil_isPrefix_prefixUntilLast (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∃ x ∈ w, P x) : (w.prefixUntil P).IsPrefix (w.prefixUntilLast P) := by
+  match w with
+  | nil x => simp
+  | cons x e w =>
+    by_cases hP : P x
+    · simp [prefixUntil_cons, hP]
+    have h' : ¬(∀ u ∈ w, ¬ P u) := by simpa [hP] using h
+    simp only [prefixUntil_cons, hP, ↓reduceIte, prefixUntilLast, reverse_cons, suffixFrom_concat,
+      reverse_vertex, decide_not, all_reverse, all_eq_true, mem_vertex, Bool.not_eq_eq_eq_not,
+      Bool.not_true, decide_eq_false_iff_not, h', concat_reverse]
+    exact (prefixUntil_isPrefix_prefixUntilLast w P (by simpa using h')).cons x e
 
 /-- Take the suffix of `w` starting at the last occurence of `P` in `w`.
 If `P` never occurs, this is all of `w`. -/
@@ -462,6 +599,364 @@ lemma suffixFromLast_isSuffix (w : WList α β) (P : α → Prop) [DecidablePred
 lemma suffixFromLast_prop_first (h : ∃ x ∈ w, P x) : P (w.suffixFromLast P).first := by
   rw [suffixFromLast, reverse_first]
   exact prefixUntil_prop_last (by simpa)
+
+@[simp]
+lemma suffixFromLast_last (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.suffixFromLast P).last = w.last := by
+  rw [suffixFromLast, reverse_last, prefixUntil_first, reverse_first]
+
+lemma suffixFromLast_first_eq_of_prop (hv : v ∈ w.suffixFromLast P) (hvP : P v) :
+    (w.suffixFromLast P).first = v := by
+  rw [suffixFromLast, reverse_first, prefixUntil_last_eq_of_prop ?_ hvP]
+  unfold suffixFromLast at hv
+  rwa [mem_reverse] at hv
+
+lemma suffixFromLast_first_eq_iff_prop (h : ∃ x ∈ w, P x) :
+    P v ∧ v ∈ w.suffixFromLast P ↔ (w.suffixFromLast P).first = v := by
+  refine ⟨fun ⟨hvP, hv⟩ ↦ suffixFromLast_first_eq_of_prop hv hvP, ?_⟩
+  rintro rfl
+  exact ⟨suffixFromLast_prop_first h, first_mem⟩
+
+lemma suffixFromLast_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∀ x ∈ w, ¬ P x) : w.suffixFromLast P = w := by
+  rw [suffixFromLast, w.reverse.prefixUntil_eq_self_of_forall P (by simpa), reverse_reverse]
+
+@[simp]
+lemma suffixFrom_isSuffix_suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P]
+    (h : ∃ x ∈ w, P x) :
+    (w.suffixFromLast P).IsSuffix (w.suffixFrom P) := by
+  match w with
+  | nil x => simp [suffixFromLast]
+  | cons x e w =>
+    simp only [suffixFrom_cons, suffixFromLast, reverse_cons, prefixUntil_concat, reverse_vertex,
+      decide_not, all_reverse, all_eq_true, mem_vertex, Bool.not_eq_eq_eq_not, Bool.not_true,
+      decide_eq_false_iff_not]
+    split_ifs with hPx hPw hPw
+    · simp
+    · absurd h
+      simpa [hPw]
+    · exact (w.suffixFromLast_isSuffix P).cons x e
+    simp only [mem_cons_iff, exists_eq_or_imp, hPw, false_or] at h
+    exact suffixFrom_isSuffix_suffixFromLast w P h
+
+/- This is a subwalk of `w` from the last vertex in `S`, `s`, to the first vertex in `T` after
+  `s`, if any such vertex exists. Otherwise, it returns `w`.
+  In the case where `w` is a path with some vertex in `S` before some vertex in `T`,
+  its result satisfies `w.IsPathFrom S T`. -/
+def extractPathFrom (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : WList α β :=
+  (w.suffixFromLast (· ∈ S)).prefixUntil (· ∈ T)
+
+@[simp]
+lemma extractPathFrom_isSublist (w : WList α β) (S T : Set α) [DecidablePred (· ∈ S)]
+    [DecidablePred (· ∈ T)] : (w.extractPathFrom S T).IsSublist w :=
+  (prefixUntil_isPrefix _ _).isSublist.trans (w.suffixFromLast_isSuffix (· ∈ S)).isSublist
+
+lemma extractPathFrom_first_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ x ∈ w, x ∈ S) : (w.extractPathFrom S T).first ∈ S := by
+  rw [extractPathFrom, prefixUntil_first]
+  exact suffixFromLast_prop_first hw
+
+lemma extractPathFrom_first_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hv : v ∈ w.extractPathFrom S T) (hvS : v ∈ S) : (w.extractPathFrom S T).first = v := by
+  rw [extractPathFrom, prefixUntil_first]
+  exact suffixFromLast_first_eq_of_prop ((prefixUntil_isPrefix _ _).mem hv) hvS
+
+lemma extractPathFrom_first_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ x ∈ w, x ∈ S) :
+    (w.extractPathFrom S T).first = v ↔ v ∈ V(w.extractPathFrom S T) ∧ v ∈ S :=
+  ⟨fun h ↦ ⟨h ▸ first_mem, h ▸ extractPathFrom_first_mem hw⟩,
+    fun ⟨hv, hvS⟩ ↦ extractPathFrom_first_eq_of_mem hv hvS⟩
+
+/- When there are multiple `S` to `T` segments in `w`, `w.extractPathFrom S T` will return the
+  last such segment. This is an arbitrary choice and it means that `extractPathFrom_first_mem`
+  only requires having some vertex from `S` in `w`, whereas for this lemma, it is more strict. -/
+lemma extractPathFrom_last_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) : (w.extractPathFrom S T).last ∈ T := by
+  rw [extractPathFrom]
+  exact prefixUntil_prop_last hw
+
+lemma extractPathFrom_last_eq_of_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hv : v ∈ w.extractPathFrom S T) (hvT : v ∈ T) : (w.extractPathFrom S T).last = v :=
+  prefixUntil_last_eq_of_prop hv hvT
+
+lemma extractPathFrom_last_eq_iff_mem [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hw : ∃ u ∈ w.suffixFromLast (· ∈ S), u ∈ T) :
+    (w.extractPathFrom S T).last = v ↔ v ∈ V(w.extractPathFrom S T) ∧ v ∈ T :=
+  ⟨fun h ↦ ⟨h ▸ last_mem, h ▸ extractPathFrom_last_mem hw⟩,
+    fun ⟨hv, hvT⟩ ↦ extractPathFrom_last_eq_of_mem hv hvT⟩
+
+def breakAt_aux (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
+    (L : List (WList α β)) : List (WList α β) :=
+  match w with
+  | nil x => if P x then nil x :: (cons x e' w') :: L else (cons x e' w') :: L
+  | cons x e w => if P x
+    then breakAt_aux w P e (nil x) ((cons x e' w') :: L)
+    else breakAt_aux w P e (cons x e' w') L
+
+@[simp]
+lemma breakAt_aux_length (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
+    (L : List (WList α β)) :
+    (breakAt_aux w P e' w' L).length = w.vertex.countP P + L.length + 1 := by
+  match w with
+  | nil x => by_cases hPx : P x <;> unfold breakAt_aux <;> simp [hPx, add_comm]
+  | cons x e w =>
+    by_cases hPx : P x <;> unfold breakAt_aux <;> simp only [hPx, ↓reduceIte, cons_vertex,
+      decide_false, Bool.false_eq_true, not_false_eq_true, decide_true, countP_cons_of_pos,
+      countP_cons_of_neg] <;> rw [breakAt_aux_length]
+    simp only [length_cons, Nat.add_right_cancel_iff]
+    omega
+
+lemma breakAt_aux_lemma1 (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
+    (L : List (WList α β)) :
+    (breakAt_aux w P e' w' L) = breakAt_aux w P e' w' [] ++ L := by
+  match w with
+  | nil x => by_cases hPx : P x <;> unfold breakAt_aux <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> unfold breakAt_aux
+    · simp only [hPx, ↓reduceIte]
+      rw [breakAt_aux_lemma1, breakAt_aux_lemma1 w P (L := [cons x e' w'])]
+      simp
+    simp only [hPx, ↓reduceIte]
+    rw [breakAt_aux_lemma1]
+
+lemma breakAt_aux_eq_concat (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β)
+    (w' w'' : WList α β) :
+    (breakAt_aux w P e' w' [w'']) = (breakAt_aux w P e' w' []).concat w'' := by
+  rw [breakAt_aux_lemma1, concat_eq_append]
+
+@[simp]
+lemma breakAt_aux_foldl (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β):
+    (breakAt_aux w P e' w' []).foldl (· ++ ·) (nil x) = w.reverse.concat e' w'.first ++ w' := by
+  match w with
+  | nil x => by_cases hPx : P x <;> unfold breakAt_aux <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> unfold breakAt_aux <;> simp only [hPx, ↓reduceIte, reverse_cons] <;>
+    rw [breakAt_aux_lemma1, List.foldl_append, breakAt_aux_foldl] <;> simp
+
+lemma breakAt_aux_ne_nil' (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β)
+    (w' : WList α β) : (breakAt_aux w P e' w' []) ≠ [] := by
+  match w with
+  | nil x => by_cases hPx : P x <;> unfold breakAt_aux <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> unfold breakAt_aux <;> simp only [hPx, ↓reduceIte]
+    · rw [breakAt_aux_lemma1]
+      simp
+    exact breakAt_aux_ne_nil' w P e (cons x e' w')
+
+@[simp]
+lemma breakAt_aux_ne_nil (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β)
+    (L : List (WList α β)) : (breakAt_aux w P e' w' L) ≠ [] := by
+  rw [breakAt_aux_lemma1]
+  simp [breakAt_aux_ne_nil']
+
+lemma breakAt_aux_getLast (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β)
+    (w' : WList α β) : (breakAt_aux w P e' w' []).getLast (by simp) =
+    (w.prefixUntil P).reverse ++ cons w.first e' w' := by
+  match w with
+  | nil u => by_cases hPu : P u <;> unfold breakAt_aux <;> simp [hPu]
+  | cons u e w =>
+    by_cases hPu : P u <;> unfold breakAt_aux <;> simp only [hPu, ↓reduceIte, prefixUntil_cons,
+      reverse_nil, first_cons, nil_append]
+    · suffices (w.breakAt_aux P e (nil u) [] ++ [cons u e' w']).getLast (by simp) = cons u e' w' by
+        convert this using 2
+        rw [breakAt_aux_lemma1]
+      simp
+    rw [breakAt_aux_getLast]
+    simp
+
+lemma breakAt_aux_head (w : WList α β) (P : α → Prop) [DecidablePred P] (e' : β) (w' : WList α β) :
+    (breakAt_aux w P e' w' []).head (by simp) = if w.vertex.all (¬ P ·)
+    then (w.suffixFromLast P).reverse ++ cons w.first e' w' else (w.suffixFromLast P).reverse := by
+  match w with
+  | nil x => by_cases hPx : P x <;> unfold breakAt_aux suffixFromLast <;> simp [hPx]
+  | cons x e w =>
+    unfold breakAt_aux suffixFromLast
+    have h : (w.breakAt_aux P e (nil x) [cons x e' w']).head (by simp) =
+      if (w.vertex.all fun x ↦ decide ¬P x)
+      then (w.suffixFromLast P).reverse ++ cons w.first e (nil x)
+      else (w.suffixFromLast P).reverse := by
+      simp only [← breakAt_aux_head, breakAt_aux_lemma1 w P e (nil x) [cons x e' w'],
+        ne_eq, breakAt_aux_ne_nil, not_false_eq_true, head_append_of_ne_nil]
+    by_cases hPx : P x <;> by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPx, hPw, h]
+    · simp only [suffixFromLast, reverse_reverse, prefixUntil_concat, reverse_vertex, decide_not,
+      all_reverse, hPw, ↓reduceIte]
+      rw [WList.concat_eq_append, prefixUntil_eq_self_of_forall _ _ (by simpa using hPw)]
+      simp
+    · simp [suffixFromLast, prefixUntil_concat, hPw]
+    · rw [breakAt_aux_head]
+      simp only [decide_not, hPw, ↓reduceIte, suffixFromLast, reverse_reverse, prefixUntil_concat,
+        reverse_vertex, all_reverse, WList.concat_append, reverse_last]
+      rw [prefixUntil_eq_self_of_forall _ _ (by simpa using hPw)]
+    rw [breakAt_aux_head]
+    simp [hPw, suffixFromLast, prefixUntil_concat]
+
+lemma breakAt_aux_isChain_eq (w : WList α β) (P : α → Prop) [DecidablePred P] {e' : β}
+    {w' : WList α β} : (w.breakAt_aux P e' w' []).IsChain (·.last = ·.first) := by
+  unfold breakAt_aux
+  match w with
+  | nil u => by_cases hPu : P u <;> simp [hPu]
+  | cons u e w =>
+    by_cases hPu : P u <;> simp only [hPu, ↓reduceIte]
+    · rw [breakAt_aux_lemma1, List.isChain_append]
+      simp only [breakAt_aux_isChain_eq, IsChain.singleton, Option.mem_def, head?_cons,
+        Option.some.injEq, forall_eq', first_cons, true_and]
+      rw [getLast?_eq_getLast_of_ne_nil (by simp)]
+      simp [breakAt_aux_getLast]
+    exact w.breakAt_aux_isChain_eq P
+
+lemma nonempty_of_mem_breakAt_aux_tail (w : WList α β) (P : α → Prop) [DecidablePred P] {e' : β}
+    {w' Q : WList α β} (hQ : Q ∈ (w.breakAt_aux P e' w' []).tail) : Q.Nonempty := by
+  unfold breakAt_aux at hQ
+  match w with
+  | nil x => by_cases hPx : P x <;> simp_all
+  | cons x e w =>
+    by_cases hPx : P x <;> simp_all only [↓reduceIte]
+    · rw [breakAt_aux_lemma1] at hQ
+      obtain hQ | rfl := by simpa using hQ
+      · exact w.nonempty_of_mem_breakAt_aux_tail P hQ
+      simp
+    exact w.nonempty_of_mem_breakAt_aux_tail P hQ
+
+/-- The segmentation of `w` breaks `w` at every vertex satisfying `P` and returns
+  the list of segments. With the possible exception of the first and the last segment,
+  all segments have the endpoints satisfying `P`.
+  If `P` never occurs, this is `[w]`.
+  If `w.first` satisfies `P`, then the first segment is `nil w.first`.
+  Similarly, if `w.last` satisfies `P`, then the last segment is `nil w.last`. -/
+def breakAt (w : WList α β) (P : α → Prop) [DecidablePred P] : List (WList α β) :=
+  match w.reverse with
+  | nil x => if P x then [nil x, nil x] else [nil x]
+  | cons x e w => if P x
+    then breakAt_aux w P e (nil x) [nil x]
+    else breakAt_aux w P e (nil x) []
+
+@[simp]
+lemma breakAt_nil : (nil x (β := β)).breakAt P = if P x then [nil x, nil x] else [nil x] := rfl
+
+lemma breakAt_reverse_ne_nil (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    w.reverse.breakAt P ≠ [] := by
+  match w with
+  | nil u => by_cases hPu : P u <;> simp [hPu]
+  | cons u e w => by_cases hPu : P u <;> simp [breakAt, hPu]
+
+@[simp]
+lemma breakAt_ne_nil : w.breakAt P ≠ [] := by
+  rw [← w.reverse_reverse]
+  apply breakAt_reverse_ne_nil
+
+lemma breakAt_reverse_length (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.reverse.breakAt P).length = w.vertex.countP P + 1 := by
+  match w with
+  | nil x => by_cases hPx : P x <;> simp [hPx]
+  | cons x e w => by_cases hPx : P x <;> simp [breakAt, hPx, breakAt_aux_length]
+
+@[simp]
+lemma breakAt_length (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).length = w.vertex.countP P + 1 := by
+  conv_lhs => rw [← w.reverse_reverse]
+  rw [breakAt_reverse_length]
+  simp
+
+lemma breakAt_reverse_foldl_append_cancel (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.reverse.breakAt P).foldl (· ++ ·) (nil x) = w.reverse := by
+  unfold breakAt
+  rw [reverse_reverse]
+  match w with
+  | nil u => by_cases hPu : P u <;> simp [hPu]
+  | cons u e w =>
+    by_cases hPu : P u <;> simp only [hPu, ↓reduceIte, breakAt_aux_foldl, nil_first, concat_last,
+      append_nil, reverse_cons]
+    rw [breakAt_aux_lemma1, List.foldl_append, breakAt_aux_foldl]
+    simp
+
+@[simp]
+lemma breakAt_foldl_append_cancel (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).foldl (· ++ ·) (nil x) = w := by
+  rw [← w.reverse_reverse, breakAt_reverse_foldl_append_cancel]
+
+lemma breakAt_reverse_getLast (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.reverse.breakAt P).getLast (by simp) = (w.prefixUntil P).reverse := by
+  unfold breakAt
+  match w with
+  | nil u => by_cases hPu : P u <;> simp [hPu, prefixUntil]
+  | cons u e w =>
+    by_cases hPu : P u <;> simp only [reverse_cons, concat_reverse, reverse_reverse, hPu,
+      ↓reduceIte, prefixUntil]
+    · suffices (w.breakAt_aux P e (nil u) [] ++ [nil u]).getLast (by simp) = nil u by
+        convert this using 2
+        rw [breakAt_aux_lemma1]
+      simp
+    rw [breakAt_aux_getLast, WList.concat_eq_append]
+    simp
+
+lemma breakAt_getLast (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).getLast (by simp) = w.suffixFromLast P := by
+  rw [← w.reverse_reverse, breakAt_reverse_getLast, reverse_reverse]
+  rfl
+
+lemma breakAt_reverse_head (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.reverse.breakAt P).head (by simp) = (w.suffixFromLast P).reverse := by
+  unfold breakAt
+  match w with
+  | nil u => by_cases hPu : P u <;> simp [hPu, suffixFromLast]
+  | cons u e w =>
+    by_cases hPu : P u <;> simp only [reverse_cons, concat_reverse, reverse_reverse, hPu,
+      ↓reduceIte, suffixFromLast]
+    · suffices (w.breakAt_aux P e (nil u) [] ++ [nil u]).head (by simp) =
+        (w.reverse.concat e u).prefixUntil P by
+        convert this using 2
+        rw [breakAt_aux_lemma1]
+      simp only [ne_eq, breakAt_aux_ne_nil, not_false_eq_true, head_append_of_ne_nil,
+        breakAt_aux_head, decide_not, suffixFromLast, reverse_reverse]
+      by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPw, prefixUntil_concat]
+      simp [w.reverse.prefixUntil_eq_self_of_forall P (by simpa [mem_reverse] using hPw),
+        WList.concat_eq_append]
+    simp only [breakAt_aux_head, decide_not, suffixFromLast, reverse_reverse]
+    by_cases hPw : w.vertex.all fun x ↦ !decide (P x) <;> simp [hPw, prefixUntil_concat]
+    simp [WList.concat_eq_append, w.reverse.prefixUntil_eq_self_of_forall P (by simpa using hPw)]
+
+@[simp]
+lemma breakAt_head (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).head (by simp) = w.prefixUntil P := by
+  rw [← w.reverse_reverse, breakAt_reverse_head, suffixFromLast, reverse_reverse]
+
+lemma breakAt_reverse_isChain_eq (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.reverse.breakAt P).IsChain (·.last = ·.first) := by
+  simp only [breakAt, reverse_reverse]
+  match w with
+  | nil x => by_cases hPx : P x <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> simp only [hPx, ↓reduceIte]
+    · rw [breakAt_aux_lemma1, List.isChain_append]
+      simp only [breakAt_aux_isChain_eq, IsChain.singleton, Option.mem_def, head?_cons,
+        Option.some.injEq, forall_eq', nil_first, true_and]
+      rw [getLast?_eq_getLast_of_ne_nil (by simp)]
+      simp [breakAt_aux_getLast]
+    exact breakAt_aux_isChain_eq w P
+
+lemma nonempty_of_mem_breakAt_dropLast_tail' (w : WList α β) (P : α → Prop) [DecidablePred P]
+    {Q : WList α β} (hQ : Q ∈ (w.reverse.breakAt P).dropLast.tail) : Q.Nonempty := by
+  unfold breakAt at hQ
+  match w with
+  | nil x => by_cases hPx : P x <;> simp [hPx] at hQ
+  | cons x e w =>
+    by_cases hPx : P x <;> simp [hPx] at hQ
+    · rw [breakAt_aux_lemma1, ← concat_eq_append] at hQ
+      simp only [concat_eq_append, ne_eq, cons_ne_self, not_false_eq_true,
+        dropLast_append_of_ne_nil, dropLast_singleton, List.append_nil] at hQ
+      exact nonempty_of_mem_breakAt_aux_tail w P hQ
+    rw [tail_dropLast] at hQ
+    exact nonempty_of_mem_breakAt_aux_tail w P <| mem_of_mem_dropLast hQ
+
+lemma nonempty_of_mem_breakAt_dropLast_tail (w : WList α β) (P : α → Prop) [DecidablePred P]
+    {Q : WList α β} (hQ : Q ∈ (w.breakAt P).dropLast.tail) : Q.Nonempty := by
+  rw [← w.reverse_reverse] at hQ
+  exact nonempty_of_mem_breakAt_dropLast_tail' w.reverse P hQ
+
+-- lemma nil_mem_breakAt_iff (w : WList α β) (P : α → Prop) [DecidablePred P] (x : α) :
+--     nil x ∈ w.breakAt P ↔ (P w.first ∧ x = w.first) ∨ (P w.last ∧ x = w.last) := by
+--   sorry
 
 lemma IsSublist.exists_append_append {w₀ : WList α β} (hw₀ : w₀.IsSublist w) (hw : w.vertex.Nodup) :
     ∃ w₁ w₂, w₁.last = w₀.first ∧ w₀.last = w₂.first ∧ w = w₁ ++ w₀ ++ w₂ := by
@@ -643,6 +1138,10 @@ lemma dropLast_concat (w : WList α β) (e x) : (w.concat e x).dropLast = w := b
 lemma Nonempty.concat_dropLast (hw : w.Nonempty) : w.dropLast.concat hw.lastEdge w.last = w := by
   simpa [hw.firstEdge_reverse] using congr_arg WList.reverse hw.reverse.cons_tail
 
+lemma Nonempty.exists_concat (hw : w.Nonempty) :
+    ∃ (w' : WList α β) (e : β) (x : α), w'.concat e x = w :=
+  ⟨w.dropLast, hw.lastEdge, w.last, hw.concat_dropLast⟩
+
 @[simp]
 lemma dropLast_first (w : WList α β) : (w.dropLast).first = w.first := by
   rw [← reverse_last, ← reverse_tail, tail_last, reverse_last]
@@ -683,6 +1182,11 @@ lemma mem_dropLast_iff_of_nodup (hw : w.vertex.Nodup) (hne : w.Nonempty) :
 lemma dropLast_isPrefix (w : WList α β) : w.dropLast.IsPrefix w := by
   rw [← reverse_isSuffix_reverse_iff, ← reverse_tail]
   apply tail_isSuffix
+
+lemma dropLast_isPrefix_append_right (hw₁ : w₁.Nonempty) : w₁.dropLast.IsPrefix (w₁ ++ w₂) := by
+  obtain ⟨w', e, x, rfl⟩ := hw₁.exists_concat
+  simp only [dropLast_concat, WList.concat_append]
+  exact w'.isPrefix_append_right (by simp)
 
 lemma tail_dropLast (hw : w.length ≠ 1) : w.tail.dropLast = w.dropLast.tail := by
   induction w with | nil => simp | cons u e w ih => cases w with simp_all

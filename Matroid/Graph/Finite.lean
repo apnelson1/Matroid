@@ -94,11 +94,9 @@ lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
 -- instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
 --   G.finite_setOf_le.subset fun _ hH ↦ hH.le
 
--- omit [CompleteLattice α] in
--- instance {α : Type*} [Order.Frame α] {G H : Graph α β} [G.Finite] [H.Finite] :
---     (G ∪ H).Finite where
---   vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
---   edgeSet_finite := G.edgeSet_finite.union H.edgeSet_finite
+instance {G H : Graph α β} [G.Finite] [H.Finite] : (G ∪ H).Finite where
+  vertexSet_finite := by by_cases h : Agree {G, H} <;> simp [h]
+  edgeSet_finite := by by_cases h : Agree {G, H} <;> simp [h]
 
 /-- Used for well-founded induction on finite graphs by number of vertices -/
 lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) : V(G - {x}).encard < V(G).encard := by
