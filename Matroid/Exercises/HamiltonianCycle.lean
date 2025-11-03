@@ -6,6 +6,8 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Finite
 import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Connected.Component
 
 import Qq open Qq Lean Meta Elab Tactic
 -- simple is still broken
@@ -19,15 +21,10 @@ open WList Set
 -- we will be using a lot of LEM...
 open Classical
 
-namespace Graph
 
-variable {α β : Type*} {x y z u v : Set α} {e f : β} {G H : Graph α β}
+section NonGraphThings
 
-/- Theorem 10.1.1 (Dirac 1952)
-Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltonian cycle.
--/
-
--- INITIAL DEFINITIONS
+variable {α : Type*}
 
 lemma finite_of_ncard_nonzero {s : Set α} (h : s.ncard ≠ 0) : s.Finite := by
   by_contra hyp
@@ -37,6 +34,35 @@ lemma finite_of_ncard_nonzero {s : Set α} (h : s.ncard ≠ 0) : s.Finite := by
 
 lemma finite_of_ncard_positive {s : Set α} (h : 0 < s.ncard) : s.Finite := by
   apply finite_of_ncard_nonzero ; linarith
+
+lemma minimal_is_lower_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Minimal P x) :
+    ∀ y, P y → x ≤ y := by
+  intro y hy
+  simp [Minimal] at h
+  obtain (_|_) := le_total x y
+  · assumption
+  · tauto
+
+lemma minimalFor_is_lower_bound
+    {ι} [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι} (h : MinimalFor P f i) :
+    ∀ j, P j → f i ≤ f j := by
+  intro j hj
+  simp [MinimalFor] at h
+  obtain (_|_) := le_total (f i) (f j)
+  · assumption
+  · tauto
+
+end NonGraphThings
+
+namespace Graph
+
+variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β}
+
+/- Theorem 10.1.1 (Dirac 1952)
+Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltonian cycle.
+-/
+
+-- INITIAL DEFINITIONS
 
 def NeBot (G : Graph α β) : Prop :=
   G ≠ ⊥
@@ -80,7 +106,7 @@ lemma degreeSet_nonempty {G : Graph α β} (hNeBot : G ≠ ⊥) : G.degreeSet.No
 --   refine Set.Finite.exists_minimalFor G.degree V(G) vertexSet_finite ?_
 --   apply vertexSet_nonempty_of_NeBot; trivial
 
--- noncomputable def minDegreeVx (G : Graph α β) : Set α :=
+-- noncomputable def minDegreeVx (G : Graph α β) : α :=
 --   open Classical in
 --   if h : G.Finite ∧ G.NeBot then
 --     Classical.choose (G.exists_minDegreeVx h.1 h.2)
@@ -94,23 +120,6 @@ noncomputable def minDegree (G : Graph α β) : ℕ :=
     Classical.choose <|
     Set.Finite.exists_minimal (degreeSet_finite_of_finite h.1) (degreeSet_nonempty h.2)
   else 0
-
-lemma minimal_is_lower_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Minimal P x) :
-    ∀ y, P y → x ≤ y := by
-  intro y hy
-  simp [Minimal] at h
-  obtain (_|_) := le_total x y
-  · assumption
-  · tauto
-
-lemma minimalFor_is_lower_bound
-    {ι} [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι} (h : MinimalFor P f i) :
-    ∀ j, P j → f i ≤ f j := by
-  intro j hj
-  simp [MinimalFor] at h
-  obtain (_|_) := le_total (f i) (f j)
-  · assumption
-  · tauto
 
 -- this is the price we pay for choice
 @[simp]
@@ -158,44 +167,9 @@ lemma minDegree_le_degree (G : Graph α β) :
     use v
   · simp [G.minDegree_eq' p]
 
-
--- !!!! TEMP DEFINITIONS !!!!
--- REPLACE AS SOON AS THINGS START WORKING
-def Connected (G : Graph α β) : Prop := G.IsCompOf G
-def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
-
-@[simp]
-lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
-  simp [Components]
-
-@[simp]
-lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := sorry
-
-lemma components_pairwise_stronglyDisjoint (G : Graph α β) :
-    G.Components.Pairwise StronglyDisjoint := sorry
-
-lemma components_pairwise_disjoint (G : Graph α β) :
-    G.Components.Pairwise Disjoint := sorry
-
-lemma components_pairwise_compatible (G : Graph α β) : G.Components.Pairwise Compatible :=
-  sorry
-
--- Graph is the union of its components
--- eq_sUnion_components
-lemma eq_sUnion_components (G : Graph α β) : G = Graph.sUnion G.Components :=
-  sorry
-
-@[simp]
-lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := sorry
-
--- Simple graphs
-class Simple (G : Graph α β) : Prop where
-
-lemma Simple.mono (hG : G.Simple) (hle : H ≤ G) : H.Simple := sorry
-
 -- MORE THINGS
 
-lemma degree_lt_vertexCount {G : Graph α β} [G.Simple] {v : Set α} (h : v ∈ V(G)) :
+lemma degree_lt_vertexCount {G : Graph α β} [G.Simple] {v : α} (h : v ∈ V(G)) :
     G.degree v < V(G).ncard := by sorry
 
 lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot) :
@@ -265,7 +239,7 @@ lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) [G.Finite] (hHG : H
   rw [H.minDegree_eq' (not_and.mpr fun a ↦ hni)]
   exact Nat.zero_le G.minDegree
 
-lemma missing {G : Graph α β} (v : Set α) (hv : v ∈ V(G)) :
+lemma missing {G : Graph α β} (v : α) (hv : v ∈ V(G)) :
     ∃ H : Graph α β, H.IsCompOf G ∧ v ∈ V(H) := by
   sorry
 
@@ -293,29 +267,29 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
   have : H ≠ H₁ := by sorry
   sorry
 
-def IsIndependent (G : Graph α β) (S : Set (Set α)) : Prop :=
+def IsIndependent (G : Graph α β) (S : Set (α)) : Prop :=
   S ⊆ V(G) ∧ S.Pairwise (fun x y ↦ ¬ G.Adj x y)
 
 def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
   ∀ S, G.IsIndependent S → S.encard ≤ n
 
-def IsMaxIndependent (G : Graph α β) (S : Set (Set α)) : Prop :=
+def IsMaxIndependent (G : Graph α β) (S : Set (α)) : Prop :=
   IsIndependent G S ∧ (∀ A, IsIndependent G A → A.ncard ≤ S.ncard )
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 
 --Avoids complete graph case but is not technically correct
-def IsSepSet (G : Graph α β) (S : Set (Set α)) : Prop :=
+def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
   (S ⊆ V(G)) ∧ (¬ (G - S).Connected) ∧ (S ≠ V(G))
 
-def IsMinSepSet (G : Graph α β) (S : Set (Set α)) : Prop :=
+def IsMinSepSet (G : Graph α β) (S : Set (α)) : Prop :=
   IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.ncard ≤ A.ncard )
 
 lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
-    (S : Set (Set α)) (hS : IsSepSet G S)
+    (S : Set (α)) (hS : IsSepSet G S)
     (H : Graph α β ) (hH : IsCompOf H (G-S) )
-    (A : Set (Set α)) (hA : IsMaxIndependent G A) ( v : Set α ) (hx : v ∈ V(H) ∩ A )
+    (A : Set (α)) (hA : IsMaxIndependent G A) ( v : α ) (hx : v ∈ V(H) ∩ A )
     : G.degree v + (A ∩ V(H)).ncard ≤ (V(H)).ncard + S.ncard := by
     -- Need degree_eq_ncard_adj, will work after update
   let Inc := {w | G.Adj v w}
@@ -347,8 +321,8 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
 
 --Again, is missing when G is complete but whatever
 lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
-    (S : Set (Set α)) (HS : IsMinSepSet G S )
-    (A : Set (Set α)) (hA : IsMaxIndependent G A)
+    (S : Set (α)) (HS : IsMinSepSet G S )
+    (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
   --Important case
   obtain ( HAS| he ) := Decidable.em (A ⊆ S)
@@ -528,7 +502,7 @@ lemma pathSet_nonempty (G : Graph α β) (hNeBot : G.NeBot) :
     G.pathSet.Nonempty := by
   sorry
 
-def IsLongestPath (G : Graph α β) (p : WList (Set α) β) :=
+def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
   MaximalFor (· ∈ G.pathSet) (fun w => w.length) p
 
 lemma exists_longest_path
@@ -539,16 +513,16 @@ lemma exists_longest_path
 -- by maximality, each neighbour of is on the path
 lemma first_neighbors_mem_path
     (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
-    {P : WList (Set α) β} (hP : G.IsLongestPath P)
-    (x : Set α) (hx : G.Adj x P.first) :
+    {P : WList (α) β} (hP : G.IsLongestPath P)
+    (x : α) (hx : G.Adj x P.first) :
     x ∈ P := by
   sorry
 
 -- similarly, the same statement but reverse in direction
 lemma last_neighbors_mem_path
     (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
-    {P : WList (Set α) β} (hP : G.IsLongestPath P)
-    (x : Set α) (hx : G.Adj x P.last) :
+    {P : WList (α) β} (hP : G.IsLongestPath P)
+    (x : α) (hx : G.Adj x P.last) :
     x ∈ P := by
   sorry
 
