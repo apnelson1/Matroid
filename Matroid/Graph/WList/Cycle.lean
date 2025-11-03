@@ -2,10 +2,9 @@ import Matroid.Graph.WList.Sublist
 import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Data.List.Rotate
 
-variable {α β : Type*} {x y z u v : α} {e f : β} {w : WList α β} (m n : ℕ)
+variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} (m n : ℕ)
 
 open Set WList
-
 
 
 namespace WList
@@ -56,6 +55,29 @@ lemma IsClosed.length_eq_one_iff (hw : w.IsClosed) :
   cases w with
   | nil => simp
   | cons u e w => cases w with simp_all
+
+lemma IsClosed.dropLast_vertex_nodup (hw : w.IsClosed) (hw₁ : w.tail.vertex.Nodup) :
+    w.dropLast.vertex.Nodup := by
+  obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · simp
+  rw [tail_vertex hne] at hw₁
+  rw [dropLast_vertex hne]
+  apply hw₁.perm
+  have htail : w.vertex.tail ≠ [] := by simpa [← List.length_pos_iff]
+  have hdropLast : w.vertex.dropLast ≠ [] := by simpa [← List.length_pos_iff]
+  rw [← w.vertex.tail.dropLast_append_getLast htail, ← w.vertex.dropLast.cons_head_tail hdropLast]
+  simp only [List.getLast_tail, vertex_getLast, List.head_dropLast, vertex_head]
+  rw [← hw, w.vertex.tail_dropLast]
+  exact w.vertex.tail.dropLast.perm_append_singleton w.first
+
+lemma IsClosed.idxOf_get [DecidableEq α] (hw : w.IsClosed) (hw₁ : w.tail.vertex.Nodup) {n}
+    (hn : n < w.length) : w.idxOf (w.get n) = n := by
+  have hge : n ≤ w.dropLast.length := by
+    rw [w.dropLast_length]
+    omega
+  rw [← w.dropLast_isPrefix.get_eq_of_length_ge hge, ← w.dropLast_isPrefix.idxOf_eq_of_mem
+  <| w.dropLast.get_mem n]
+  exact WList.idxOf_get (hw.dropLast_vertex_nodup hw₁) hge
 
 /-! ### Rotations -/
 
@@ -226,9 +248,32 @@ lemma IsClosed.rotate_eq_mod (hw : w.IsClosed) (n) : w.rotate n = w.rotate (n % 
     omega
   rw [hc, Nat.add_mod_left, ← rotate_rotate, hw.rotate_length, hw.rotate_eq_mod]
 
+lemma IsClosed.rotate_first_mod (hw : w.IsClosed) (n) :
+    (w.rotate n).first = w.get (n % w.length) := by
+  obtain ⟨x, rfl⟩ | hne := w.exists_eq_nil_or_nonempty
+  · simp
+  rw [hw.rotate_eq_mod]
+  exact w.rotate_first _ (Nat.mod_lt _ hne.length_pos).le
+
+@[simp]
+lemma rotate_idxOf_first [DecidableEq α] (hx : x ∈ w) : (w.rotate (w.idxOf x)).first = x := by
+  rw [rotate_first _ _ (by simpa), get_idxOf _ hx]
+
 lemma exists_rotate_first_eq (hx : x ∈ w) : ∃ n ≤ w.length, (w.rotate n).first = x := by
   classical
-  exact ⟨w.idxOf x, by simpa, by rw [rotate_first _ _ (by simpa), get_idxOf _ hx]⟩
+  exact ⟨w.idxOf x, by simpa, rotate_idxOf_first hx⟩
+
+lemma IsClosed.exists_rotate_first_eq (hw : w.IsClosed) (hw' : w.Nonempty) (hx : x ∈ w) :
+    ∃ n < w.length, (w.rotate n).first = x := by
+  classical
+  use w.idxOf x, ?_, rotate_idxOf_first hx
+  refine lt_of_le_of_ne (by simpa) fun hlen ↦ ?_
+  rw [idxOf_eq_length_prefixUntilVertex _ _ hx] at hlen
+  have heqw := (w.prefixUntilVertex_isPrefix x).eq_of_length_ge hlen.ge
+  have hlast : (w.prefixUntilVertex x).last = x := prefixUntil_prop_last (P := (· = x)) ⟨x, hx, rfl⟩
+  rw [heqw, ← hw] at hlast
+  have : w.prefixUntilVertex x = _ := prefixUntil_eq_nil hlast
+  exact nil_not_nonempty (this ▸ heqw ▸ hw')
 
 lemma exists_rotate_firstEdge_eq (hx : e ∈ w.edge) :
     ∃ n < w.length, ∃ (hw : w.Nonempty), (hw.rotate n).firstEdge = e := by
@@ -240,11 +285,6 @@ lemma exists_rotate_firstEdge_eq (hx : e ∈ w.edge) :
 lemma firstEdge_rotate_one (hw : w.Nontrivial) :
     (hw.nonempty.rotate 1).firstEdge = hw.tail_nonempty.firstEdge := by
   cases hw with simp
-
-
-
-
-
 
 lemma IsClosed.rotate_one_dropLast (hw : w.IsClosed) : (w.rotate 1).dropLast = w.tail := by
   cases w with simp
@@ -309,6 +349,5 @@ lemma IsClosed.wellFormed_rotate_iff (h_closed : w.IsClosed) :
   refine ⟨fun h ↦ ?_, fun h ↦ h.rotate h_closed _⟩
   rw [← h_closed.rotate_intRotate_neg n]
   apply h.rotate (h_closed.rotate _) ..
-
 
 end WList

@@ -24,6 +24,13 @@ inductive WList (α β : Type*) where
 
 namespace WList
 
+def repr_aux [Repr α] [Repr β] (w : WList α β) (n : Nat) : Std.Format := match w with
+| nil x => reprPrec x n
+| cons x e w => reprPrec x n ++ " --" ++ reprPrec e n ++ "-> " ++ repr_aux w n
+
+instance [Repr α] [Repr β] : Repr (WList α β) where
+  reprPrec w n := "P[" ++ repr_aux w n ++ "]"
+
 variable {w w₁ w₂ : WList α β}
 
 @[simp]
@@ -46,6 +53,14 @@ lemma nil_first : (nil x : WList α β).first = x := rfl
 
 @[simp]
 lemma first_cons : (cons x e w).first = x := rfl
+
+def second : WList α β → α
+| nil x => x
+| cons _ _ w => w.first
+
+@[simp] lemma second_nil : (nil x : WList α β).second = x := rfl
+@[simp] lemma second_cons : (cons x e w).second = w.first := rfl
+lemma second_cons_cons : (cons x e (cons y f w)).second = y := rfl
 
 def last : WList α β → α
   | nil x => x
@@ -147,8 +162,10 @@ instance [DecidableEq α] : Decidable (x ∈ w) :=
 @[simp] lemma first_mem : w.first ∈ w := by
   cases w with simp
 
-@[simp]
-lemma last_mem {w : WList α β} : w.last ∈ w := by
+@[simp] lemma second_mem : w.second ∈ w := by
+  cases w with simp
+
+@[simp] lemma last_mem {w : WList α β} : w.last ∈ w := by
   induction w with simp_all
 
 /-- `w.UniqueMem x` means that `x : α` appears in `w` exactly once. -/
@@ -158,8 +175,6 @@ protected inductive UniqueMem : WList α β → α → Prop
   | cons_ne {x u} (h : u ≠ x) e w (hw : w.UniqueMem x) : (cons u e w).UniqueMem x
 
 /-! ### Vertex/Edge Sets -/
-
-
 
 protected def vertexSet (w : WList α β) : Set α := {x | x ∈ w}
 
@@ -216,6 +231,20 @@ lemma vertex_toFinset_toSet [DecidableEq α] (w : WList α β) :
   | cons u e W ih =>
     ext
     simp [← ih]
+
+@[simp]
+lemma vertex_disjoint_iff : w₁.vertex.Disjoint w₂.vertex ↔ Disjoint V(w₁) V(w₂) := by
+  rw [disjoint_iff_forall_ne]
+  refine ⟨fun h x hx₁ y hy₂ heq => ?_, fun h x hx₁ hx₂ => h hx₁ hx₂ rfl⟩
+  subst y
+  exact h hx₁ hy₂
+
+@[simp]
+lemma edge_disjoint_iff : w₁.edge.Disjoint w₂.edge ↔ Disjoint E(w₁) E(w₂) := by
+  rw [disjoint_iff_forall_ne]
+  refine ⟨fun h x hx₁ y hy₂ heq => ?_, fun h x hx₁ hx₂ => h hx₁ hx₂ rfl⟩
+  subst y
+  exact h hx₁ hy₂
 
 /-! ## Emptiness -/
 
@@ -286,6 +315,15 @@ lemma first_ne_last_iff (hnodup : w.vertex.Nodup) : w.first ≠ w.last ↔ w.Non
 
 lemma exists_eq_nil_or_nonempty (w : WList α β) : (∃ x, w = nil x) ∨ w.Nonempty := by
   induction w with simp
+
+instance DecidableNonempty (w : WList α β) : Decidable w.Nonempty := by
+  match w with
+  | nil _ =>
+    simp only [nil_not_nonempty]
+    exact instDecidableFalse
+  | cons v e w =>
+    simp only [cons_nonempty]
+    exact instDecidableTrue
 
 /-- The first edge of a nonempty `WList` -/
 def Nonempty.firstEdge : (w : WList α β) → (hw : w.Nonempty) → β
@@ -609,6 +647,7 @@ lemma idxOf_cons (u e) (w : WList α β) :
 lemma idxOf_cons_self (u e) (w : WList α β) : (cons u e w).idxOf u = 0 := by
   simp [idxOf_cons]
 
+@[simp]
 lemma idxOf_cons_ne (hne : u ≠ x) (e) (w : WList α β) :
     (cons u e w).idxOf x = w.idxOf x + 1 := by
   simp [idxOf_cons, hne]

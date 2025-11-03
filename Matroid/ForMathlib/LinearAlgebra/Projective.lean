@@ -169,7 +169,7 @@ lemma Projectivization.exists_smul_mk_rep_eq (K : Type*) {V : Type*} [DivisionRi
   obtain ⟨c, hc⟩ := exists_smul_eq_mk_rep K v hv
   exact ⟨c⁻¹, by simp [← hc]⟩
 
-lemma Projectivization.mem_submodule_iff (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V]
+lemma Projectivization.mem_submodule_iff' (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V]
     [Module K V] {v : V} {w : Projectivization K V} (hv : v ≠ 0) :
     v ∈ w.submodule ↔ mk K v hv = w := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
@@ -297,14 +297,14 @@ lemma Projectivization.Subspace.toSubmodule_coeSet_eq (W : Subspace K V) :
   simp only [Subspace.toSubmodule, SetLike.mem_coe, Subspace.mem_span_image_rep_iff _ _ hne,
     Subspace.span_coe, mem_insert_iff, hne, mem_iUnion, exists_prop, false_or]
   exact ⟨fun h ↦ ⟨_, h,by simp [Submodule.mem_span_singleton_self]⟩,
-    fun ⟨e, heW, hve⟩ ↦ by rwa [(mem_submodule_iff _ hne).1 hve] ⟩
+    fun ⟨e, heW, hve⟩ ↦ by rwa [(mem_submodule_iff' _ hne).1 hve] ⟩
 
 lemma Projectivization.Subspace.mem_toSubmodule_iff (W : Subspace K V) (x : V) :
     x ∈ W.toSubmodule ↔ x = 0 ∨ ∃ hx : x ≠ 0, Projectivization.mk K x hx ∈ W := by
   obtain rfl | hne := eq_or_ne x 0
   · simp
   rw [← SetLike.mem_coe, toSubmodule_coeSet_eq]
-  simp [mem_submodule_iff _ hne, hne]
+  simp [mem_submodule_iff' _ hne, hne]
 
 lemma Projectivization.Subspace.toSubmodule_eq_span (W : Subspace K V) : W.toSubmodule
     = Submodule.span K (Projectivization.rep '' (W : Set (Projectivization K V))) := by

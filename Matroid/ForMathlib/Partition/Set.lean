@@ -315,6 +315,13 @@ lemma eq_partOf_of_mem (ht : T ∈ P) (hxt : x ∈ T) : T = P.partOf x := by
   obtain ⟨y, hy, rfl⟩ := exists_partOf_iff_mem.mp ht
   exact fiber_eq_of_mem (by exact hxt) <| rel_of_mem_of_mem ht hxt hxt
 
+lemma eq_partOf_iff_mem (hxT : x ∈ T) : T = P.partOf x ↔ T ∈ P := by
+  refine ⟨?_, (eq_partOf_of_mem · hxT)⟩
+  rintro rfl
+  apply partOf_mem
+  rw [mem_partOf_iff] at hxT
+  exact rel_self_iff_mem_supp.mp hxT
+
 lemma rel_iff_of_partOf_mem {Q : Partition (Set α)} (h : P.partOf x ∈ Q) : P x y ↔ Q x y := by
   simp_rw [rel_iff_exists]
   refine ⟨fun ⟨t, htP, hxt, hyt⟩ => ⟨t, ?_, hxt, hyt⟩, fun ⟨t, htQ, hxt, hyt⟩ => ⟨t, ?_, hxt, hyt⟩⟩
@@ -480,19 +487,6 @@ lemma Agree.sup_rel_trans (h : P.Agree Q) (hab : (⇑P ⊔ ⇑Q) a b) (hbc : (�
 
 lemma inf_rel_trans (hab : (⇑P ⊓ ⇑Q) a b) (hbc : (⇑P ⊓ ⇑Q) b c) : (⇑P ⊓ ⇑Q) a c :=
   ⟨trans' hab.1 hbc.1, trans' hab.2 hbc.2⟩
-
-@[simp]
-lemma inter_rel (P Q : Partition (Set α)) : ⇑(P ∩ Q) = fun x y ↦ ∃ s ∈ P ∩ Q, x ∈ s ∧ y ∈ s := by
-  ext x y
-  rw [rel_iff_exists]
-
-@[simp]
-lemma infer_rel (P Q : Partition (Set α)) :
-    ⇑(P.infer Q) = fun x y ↦ ∃ t ∈ P, x ∈ t ∧ y ∈ t ∧ ∃ x ∈ Q, t ⊆ x := by
-  ext x y
-  rw [rel_iff_exists]
-  simp only [mem_infer_iff, le_eq_subset]
-  tauto
 
 end Rel
 
@@ -699,117 +693,51 @@ lemma agree_of_atomic (hP : P.Atomic) (hQ : Q.Atomic) : P.Agree Q := by
 
 end Discrete
 
-section foo
+section Flatten
 
-variable {P Q R : Partition (Set α)} {S T : Set α}
+variable [Order.Frame α] {P : Partition (Set α)} {Q : Partition α} (h : P.supp = Q.parts) {p q : α}
 
-def foo (P : Partition (Set α)) (S : Set α) : Set α :=
-  ⋃₀ (P.partOf '' S)
-
-@[simp]
-lemma foo_empty : foo P ∅ = ∅ := by
-  simp [foo]
-
-@[simp]
-lemma foo_subset_supp : foo P S ⊆ P.supp := by
-  simp only [foo, sUnion_image, iUnion_subset_iff]
-  exact fun _ _ ↦ partOf_subset_supp
-
-@[simp]
-lemma foo_eq_empty_iff : foo P S = ∅ ↔ Disjoint S P.supp := by
-  simp [foo, disjoint_left]
-
-lemma foo_subset_of_subset (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) : foo P S ⊆ T := by
-  simp only [foo, sUnion_image, iUnion_subset_iff]
-  intro x hxS y hy
-  rw [mem_partOf_iff] at hy
-  exact (rel_iff_right_mem_of_mem hT (hST ⟨hxS, hy.right_mem⟩)).mp hy.symm
-
-lemma subset_foo (hT : T ∈ P) : T ⊆ foo P S ↔ ¬ Disjoint S T := by
-  simp only [foo, sUnion_image, not_disjoint_iff]
-  refine ⟨fun h => ?_, fun ⟨x, hxS, hxT⟩ y hyT => ?_⟩
-  · have := P.nonempty_of_mem hT
-    obtain ⟨y, hyP, A, hAP, hA, hyA⟩ := by simpa using h this.some_mem
-    obtain rfl := P.eq_of_mem_of_mem hAP hT hA this.some_mem
-    use y, hyP, hyA
-  simp only [mem_iUnion, mem_partOf_iff, exists_prop]
-  use x, hxS
-  rwa [rel_iff_right_mem_of_mem hT hyT]
-
-lemma foo_eq_of_inter_subset (hS : (S ∩ P.supp).Nonempty) (hST : S ∩ P.supp ⊆ T) (hT : T ∈ P) :
-    foo P S = T := by
-  refine subset_antisymm (foo_subset_of_subset hST hT) <| (subset_foo hT).mpr ?_
-  rw [not_disjoint_iff]
-  use hS.some, hS.some_mem.1, hST hS.some_mem
+def flatten (P : Partition (Set α)) {Q : Partition α} (h : P.supp = Q.parts) : Partition α where
+  parts := sSup '' P.parts
+  indep := by
+    rintro a ⟨F, hF, rfl⟩
+    simp_rw [disjoint_sSup_iff, sSup_disjoint_iff]
+    rintro _ ⟨⟨S, hSP, rfl⟩, hSF⟩ f hf
+    rw [disjoint_sSup_iff]
+    rintro s hs
+    have hfs : f ≠ s := by
+      rintro rfl
+      obtain rfl := P.eq_of_mem_of_mem hSP hF hs hf
+      simp at hSF
+    refine Q.disjoint ?_ ?_ hfs <;> rw [← mem_parts, ← h, mem_supp_iff]
+    · use F, hF
+    · use S, hSP
+  bot_not_mem := by
+    rintro ⟨F, hF, hbot⟩
+    obtain ⟨a, ha⟩ := P.nonempty_of_mem hF
+    have hFa := Q.ne_bot_of_mem <| show a ∈ Q.parts from h ▸ ⟨F, hF, ha⟩
+    rw [← bot_lt_iff_ne_bot, ← hbot] at hFa
+    exact le_sSup ha |>.not_gt hFa
 
 @[simp]
-lemma foo_eq_of_indiscrete' : (indiscrete' S).foo S = S := by
-  obtain (h | h) := S.eq_empty_or_nonempty
-  · subst S
-    simp
-  exact foo_eq_of_inter_subset (by simpa) (by simp) (by simp [h.ne_empty])
-
-lemma inter_foo_eq_inter_supp : S ∩ foo P S = S ∩ P.supp := by
-  ext x
-  simp only [foo, sUnion_image, mem_inter_iff, mem_iUnion, mem_partOf_iff, exists_prop,
-    and_congr_right_iff]
-  exact fun hxS => ⟨fun ⟨y, hyS, hxy⟩ => hxy.left_mem, fun hx => ⟨x, hxS, rel_self_of_mem_supp hx⟩⟩
-
-lemma self_subset_foo_iff : S ⊆ foo P S ↔ S ⊆ P.supp := by
-  refine ⟨fun h x hxS => foo_subset_supp (h hxS), fun h => ?_⟩
-  have : S = S ∩ P.supp := left_eq_inter.mpr h
-  nth_rw 1 [this, ← inter_foo_eq_inter_supp]
-  exact inter_subset_right
-
-lemma foo_mem_iff : foo P S ∈ P ↔ (S ∩ P.supp).Nonempty ∧ ∃ T ∈ P, S ∩ P.supp ⊆ T := by
-  refine ⟨fun h => ⟨?_, P.foo S, h, ?_⟩,
-    fun ⟨hS, T, hTP, hST⟩ => foo_eq_of_inter_subset hS hST hTP ▸ hTP⟩
-  · by_contra! hS
-    rw [← disjoint_iff_inter_eq_empty, ← foo_eq_empty_iff] at hS
-    simpa [hS] using P.nonempty_of_mem h
-  rw [← inter_foo_eq_inter_supp]
-  exact inter_subset_right
-
-lemma subset_foo_of_le (hPQ : P ≤ Q) (hS : S ∈ P) : S ⊆ foo Q S := by
-  rintro x hxS
-  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop]
-  exact ⟨x, hxS, rel_le_of_le hPQ x x ⟨S, hS, hxS, hxS⟩⟩
-
-lemma foo_mem_of_le (hPQ : P ≤ Q) (hS : S ∈ P) : foo Q S ∈ Q := by
-  rw [foo_mem_iff]
-  obtain ⟨T, hTQ, hST⟩ := hPQ S hS
-  have : S ∩ Q.supp = S := inter_eq_left.mpr <| subset_trans hST (subset_of_mem hTQ)
-  simp only [this, P.nonempty_of_mem hS, true_and]
-  exact hPQ S hS
-
-lemma foo_eq_self_of_le (hS : S ∈ Q) (hPQ : P ≤ Q) (hSP : S ⊆ P.supp) : foo P S = S := by
-  ext a
-  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop]
-  exact ⟨fun ⟨b, hbS, hab⟩ => (Rel.forall (rel_le_of_le hPQ a b hab) hS).mpr hbS,
-    fun haS => ⟨a, haS, rel_self_iff_mem_supp.mpr (hSP haS)⟩⟩
-
-lemma foo_eq_self_of_subset (hPQ : P ⊆ Q) (hS : S ∈ P) : foo Q S = S :=
-  Q.eq_of_mem_of_mem (foo_mem_of_le (le_of_subset hPQ) hS) (hPQ hS)
-    (self_subset_foo_iff.mpr ((P.subset_of_mem hS).trans <| supp_le_of_subset hPQ)
-      (P.nonempty_of_mem hS).some_mem) (P.nonempty_of_mem hS).some_mem
+lemma flatten_parts (P : Partition (Set α)) (h : P.supp = Q.parts) :
+    (flatten P h).parts = sSup '' P.parts := rfl
 
 @[simp]
-lemma foo_eq_self_of_mem (hS : S ∈ P) : foo P S = S :=
-  foo_eq_self_of_subset (subset_refl P) hS
+lemma flatten_supp (P : Partition (Set α)) (h : P.supp = Q.parts) :
+    (flatten P h).supp = Q.supp := by
+  simp only [supp, flatten, ← h, sSup_eq_sUnion]
+  rw [sSup_image, sSup_sUnion]
 
-lemma foo_subset_foo_foo (hPQ : P ≤ Q) : foo Q (foo P S) ⊆ foo Q S := by
-  intro a
-  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop, iUnion_exists,
-    biUnion_and', forall_exists_index, and_imp]
-  exact fun b hbS c hPcb hQac ↦ ⟨b, hbS, hQac.trans (rel_le_of_le hPQ _ _ hPcb)⟩
+lemma le_flatten (P : Partition (Set α)) (h : P.supp = Q.parts) : Q ≤ P.flatten h := by
+  intro q hqQ
+  rw [← mem_parts, ← h, mem_supp_iff] at hqQ
+  obtain ⟨F, hF, hqF⟩ := hqQ
+  use sSup F, (by use F, hF), le_sSup hqF
 
-lemma foo_foo_eq_foo (hPQ : P ≤ Q) (hS : S ⊆ P.supp) : foo Q (foo P S) = foo Q S := by
-  refine subset_antisymm (foo_subset_foo_foo hPQ) fun a ↦ ?_
-  simp only [foo, sUnion_image, mem_iUnion, mem_partOf_iff, exists_prop, iUnion_exists,
-    biUnion_and', forall_exists_index, and_imp]
-  intro b hbS hQab
-  use b, hbS, b, rel_self_of_mem_supp (hS hbS)
 
-end foo
+
+end Flatten
+
 
 end Partition

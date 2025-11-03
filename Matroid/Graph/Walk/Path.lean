@@ -1,10 +1,28 @@
 import Matroid.Graph.Walk.Basic
 import Mathlib.Order.Minimal
 
-variable {α β : Type*} {x y z u v : Set α} {e f : β} {G H : Graph α β}
-  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList (Set α) β} {S T X : Set (Set α)} {Q : Partition (Set α)}
+variable {α β ι : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β}
+  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
 
-open WList Set
+open WList Set symmDiff
+
+lemma List.mem_dropLast_iff {x : ι} {l : List ι} (hnd : l.Nodup) (hne : l ≠ []) :
+    x ∈ l.dropLast ↔ x ∈ l ∧ x ≠ l.getLast hne := by
+  obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat
+  · simp at hne
+  simp only [concat_eq_append, nodup_append, nodup_cons, not_mem_nil, not_false_eq_true, nodup_nil,
+    and_self, mem_cons, or_false, ne_eq, forall_eq, true_and] at hnd
+  simp only [concat_eq_append, ne_eq, cons_ne_self, not_false_eq_true, dropLast_append_of_ne_nil,
+    dropLast_singleton, append_nil, mem_append, mem_cons, not_mem_nil, or_false,
+    getLast_append_of_ne_nil, getLast_singleton]
+  refine ⟨fun h => ?_, fun h => h.1.elim id (h.2 · |>.elim)⟩
+  simp [h, hnd.2 x h]
+
+lemma List.mem_dropLast_of_mem_ne {x : ι} {l : List ι} (hne : l ≠ []) (hmem : x ∈ l)
+    (hxne : x ≠ l.getLast hne) : x ∈ l.dropLast := by
+  obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat
+  · simp at hne
+  simp_all
 
 namespace Graph
 
@@ -12,7 +30,7 @@ namespace Graph
 
 /-- `G.IsTrail w` means that `w` is a walk of `G` with no repeated edges. -/
 @[mk_iff]
-structure IsTrail (G : Graph α β) (W : WList (Set α) β) : Prop where
+structure IsTrail (G : Graph α β) (W : WList α β) : Prop where
   isWalk : G.IsWalk W
   edge_nodup : W.edge.Nodup
 
@@ -49,22 +67,23 @@ lemma IsTrail.of_le (hw : G.IsTrail w) (hle : G ≤ H) : H.IsTrail w :=
 lemma IsTrail.vertexSet_subset (hw : G.IsTrail w) : V(w) ⊆ V(G) :=
   hw.isWalk.vertexSet_subset
 
-lemma IsTrail.induce (hw : G.IsTrail w) (hX : V(w) ⊆ Q) : G[Q].IsTrail w :=
+lemma IsTrail.induce (hw : G.IsTrail w) (hX : V(w) ⊆ X) : G[X].IsTrail w :=
   ⟨hw.isWalk.induce hX, hw.edge_nodup⟩
 
 /-- This is almost true without the `P ⊆ V(G)` assumption; the exception is where
 `w` is a nil walk on a vertex in `P \ V(G)`. -/
-lemma isTrail_induce_iff (hXV : Q ⊆ P(G)) : (G[Q]).IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ Q.parts :=
-  ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+lemma isTrail_induce : (G[X]).IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
+  refine ⟨fun h ↦ ⟨h.of_le G.induce_le, ?_⟩, fun h ↦ h.1.induce h.2⟩
+  have := h.vertexSet_subset
+  simp_all
 
-lemma isTrail_induce_iff' (hw : w.Nonempty) : G[Q].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ Q.parts := by
+lemma isTrail_induce_iff' (hw : w.Nonempty) : G[X].IsTrail w ↔ G.IsTrail w ∧ V(w) ⊆ X := by
   rw [isTrail_iff, isWalk_induce_iff' hw, and_assoc, isTrail_iff]
   tauto
 
 @[simp]
 lemma isTrail_vertexDelete_iff : (G - X).IsTrail w ↔ G.IsTrail w ∧ Disjoint V(w) X := by
-  rw [vertexDelete_def, isTrail_induce_iff diff_subset, Partition.delete_parts, subset_diff,
-    and_congr_right_iff, and_iff_right_iff_imp, G.vertexPartition_parts]
+  rw [vertexDelete_def, isTrail_induce, subset_diff, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
 lemma IsTrail.isTrail_le (h : G.IsTrail w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
@@ -107,7 +126,7 @@ lemma IsTrail.dInc_iff_eq_of_dInc (hW : G.IsTrail W) (he : W.DInc e u v) :
 /-- `G.IsPath P` means that `w` is a walk of `G` with no repeated vertices
 (and therefore no repeated edges). -/
 @[mk_iff]
-structure IsPath (G : Graph α β) (w : WList (Set α) β) : Prop where
+structure IsPath (G : Graph α β) (w : WList α β) : Prop where
   isWalk : G.IsWalk w
   nodup : w.vertex.Nodup
 
@@ -116,6 +135,18 @@ lemma nil_isPath (hx : x ∈ V(G)) : G.IsPath (nil x) :=
 
 @[simp] lemma nil_isPath_iff : G.IsPath (nil x) ↔ x ∈ V(G) := by
   simp [isPath_iff]
+
+@[simp]
+lemma IsPath.first_eq_last_iff (h : G.IsPath P) : P.first = P.last ↔ P.Nil := by
+  refine ⟨fun heq ↦ ?_, fun h ↦ h.first_eq_last⟩
+  match P with
+  | nil u => simp
+  | cons u e w =>
+    have := h.nodup
+    simp only [cons_vertex, List.nodup_cons, mem_vertex, first_cons, last_cons] at this heq
+    subst u
+    exact (this.1 last_mem).elim
+
 
 @[simp]
 lemma cons_isPath_iff : G.IsPath (cons x e P) ↔ G.IsPath P ∧ G.IsLink e x P.first ∧ x ∉ P := by
@@ -148,7 +179,7 @@ lemma concat_isPath_iff : G.IsPath (P.concat e x) ↔ G.IsPath P ∧ G.IsLink e 
   rw [← reverse_isPath_iff, concat_reverse, cons_isPath_iff]
   simp +contextual [iff_def, IsLink.symm]
 
-lemma IsWalk.dedup_isPath [DecidableEq (Set α)] (h : G.IsWalk P) : G.IsPath P.dedup :=
+lemma IsWalk.dedup_isPath [DecidableEq α] (h : G.IsWalk P) : G.IsPath P.dedup :=
   ⟨h.dedup, P.dedup_vertex_nodup⟩
 
 lemma IsLink.walk_isPath (h : G.IsLink e u v) (hne : u ≠ v) : G.IsPath h.walk :=
@@ -163,30 +194,33 @@ lemma IsPath.of_le (hP : G.IsPath P) (hle : G ≤ H) : H.IsPath P :=
 lemma IsPath.vertexSet_subset (hP : G.IsPath P) : V(P) ⊆ V(G) :=
   hP.isWalk.vertexSet_subset
 
-lemma IsPath.induce (hP : G.IsPath P) (hX : V(P) ⊆ Q.parts) : (G[Q]).IsPath P :=
+lemma IsPath.induce (hP : G.IsPath P) (hX : V(P) ⊆ X) : (G[X]).IsPath P :=
   ⟨hP.isWalk.induce hX, hP.nodup⟩
 
-lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ where
-  isWalk := hP.isWalk.prefix hP₀
-  nodup := hP.nodup.sublist hP₀.vertex_isPrefix.sublist
+lemma IsPath.sublist (hP : G.IsPath P) (hP₀ : P₀.IsSublist P) : G.IsPath P₀ where
+  isWalk := hP.isWalk.sublist hP₀
+  nodup := hP.nodup.sublist hP₀.vertex_sublist
 
-lemma IsPath.suffix (hP : G.IsPath P) (hP₀ : P₀.IsSuffix P) : G.IsPath P₀ where
-  isWalk := hP.isWalk.suffix hP₀
-  nodup := hP.nodup.sublist hP₀.vertex_isSuffix.sublist
+lemma IsPath.prefix (hP : G.IsPath P) (hP₀ : P₀.IsPrefix P) : G.IsPath P₀ :=
+  hP.sublist hP₀.isSublist
+
+lemma IsPath.suffix (hP : G.IsPath P) (hP₀ : P₀.IsSuffix P) : G.IsPath P₀ :=
+  hP.sublist hP₀.isSublist
 
 /-- This is almost true without the `X ⊆ V(G)` assumption; the exception is where
 `w` is a nil walk on a vertex in `X \ V(G)`. -/
-lemma isPath_induce_iff (hXV : Q ⊆ P(G)) : G[Q].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ Q.parts :=
-  ⟨fun h ↦ ⟨h.of_le (G.induce_le hXV), h.vertexSet_subset⟩, fun h ↦ h.1.induce h.2⟩
+lemma isPath_induce : G[X].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ X := by
+  refine ⟨fun h ↦ ⟨h.of_le G.induce_le, ?_⟩, fun h ↦ h.1.induce h.2⟩
+  have := h.vertexSet_subset
+  simp_all
 
-lemma isPath_induce_iff' (hP : P.Nonempty) : G[Q].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ Q.parts := by
+lemma isPath_induce_iff' (hP : P.Nonempty) : G[X].IsPath P ↔ G.IsPath P ∧ V(P) ⊆ X := by
   rw [isPath_iff, isWalk_induce_iff' hP, and_assoc, isPath_iff]
   tauto
 
 @[simp]
 lemma isPath_vertexDelete_iff : (G - X).IsPath P ↔ G.IsPath P ∧ Disjoint V(P) X := by
-  rw [vertexDelete_def, isPath_induce_iff diff_subset, Partition.delete_parts, subset_diff,
-    and_congr_right_iff, and_iff_right_iff_imp, G.vertexPartition_parts]
+  rw [vertexDelete_def, isPath_induce, subset_diff, and_congr_right_iff, and_iff_right_iff_imp]
   exact fun h _ ↦ h.vertexSet_subset
 
 lemma IsPath.isPath_le (h : G.IsPath w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
@@ -207,17 +241,15 @@ lemma isPath_edgeRestrict_iff {F : Set β} : (G ↾ F).IsPath P ↔ G.IsPath P �
 lemma isPath_edgeDelete_iff {F : Set β} : (G ＼ F).IsPath P ↔ G.IsPath P ∧ Disjoint E(P) F := by
   rw [isPath_iff, isWalk_edgeDelete_iff, isPath_iff, and_right_comm]
 
-lemma IsPath.append {P Q : WList (Set α) β} (hP : G.IsPath P) (hQ : G.IsPath Q)
+lemma IsPath.append {P Q : WList α β} (hP : G.IsPath P) (hQ : G.IsPath Q)
     (hPQ : P.last = Q.first) (h_inter : ∀ x, x ∈ P → x ∈ Q → x = P.last) : G.IsPath (P ++ Q) := by
   induction P with
   | nil u => simpa
   | cons u e w ih =>
     simp_all only [mem_cons_iff, true_or, last_mem, or_true, cons_isPath_iff, first_mem, or_false,
-      last_cons, forall_eq_or_imp, cons_append, implies_true, append_first_of_eq, true_and,
-      forall_const]
-    rw [← mem_vertexSet_iff, append_vertexSet hPQ, mem_union, not_or, mem_vertexSet_iff,
-      mem_vertexSet_iff]
-    refine ⟨hP.2.2, fun huQ ↦ ?_⟩
+      last_cons, forall_eq_or_imp, cons_append, implies_true, append_first_of_eq,
+      mem_append_iff_of_eq, false_or, true_and, forall_const]
+    intro huQ
     rw [← h_inter.1 huQ] at hPQ
     exact hP.2.2 (by simp [← hPQ])
 
@@ -245,16 +277,29 @@ lemma IsPath.vertexSet_nontrivial_iff (hP : G.IsPath P) : V(P).Nontrivial ↔ P.
   simp only [cons_isPath_iff] at hP
   exact nontrivial_of_exists_ne (mem_insert ..) ⟨P.first, by simp, fun h ↦ hP.2.2 (by simp [← h])⟩
 
+lemma IsPath.diff_Last_disjoint_of_append (hP : G.IsPath <| P₀ ++ P₁) :
+    Disjoint (V(P₀) \ {P₀.last}) V(P₁) := by
+  have hdj := List.disjoint_of_nodup_append <| by simpa [append_vertex] using hP.nodup
+  rw [disjoint_iff_forall_ne]
+  rintro x ⟨hxP₀, hxl⟩ y hyP₁ rfl
+  exact hdj (P₀.vertex.mem_dropLast_of_mem_ne (by simp)  hxP₀ (by simpa using hxl)) hyP₁
+
+lemma IsPath.disjoint_of_append_append (hP : G.IsPath <| P₀ ++ P₁ ++ P₂) (heq : P₀.last = P₁.first)
+    (hP₁ : P₁.Nonempty) : Disjoint V(P₀) V(P₂) := by
+  have hdj := List.disjoint_of_nodup_append <| by simpa [append_vertex' heq] using hP.nodup
+  rw [List.dropLast_append_of_ne_nil (by obtain ⟨u, e, w, rfl⟩ := hP₁.exists_cons; simp),
+    List.disjoint_append_left, vertex_disjoint_iff] at hdj
+  exact hdj.1
 
 /-! ### Fixed ends. (To be cleaned up) -/
 
 
 @[mk_iff]
-structure IsTrailFrom (G : Graph α β) (S T : Set (Set α)) (W : WList (Set α) β) : Prop extends
+structure IsTrailFrom (G : Graph α β) (S T : Set α) (W : WList α β) : Prop extends
   G.IsTrail W, G.IsWalkFrom S T W
 
 @[mk_iff]
-structure IsPathFrom (G : Graph α β) (S T : Set (Set α)) (P : WList (Set α) β) :
+structure IsPathFrom (G : Graph α β) (S T : Set α) (P : WList α β) :
   Prop extends G.IsPath P, G.IsWalkFrom S T P where
   eq_first_of_mem : ∀ ⦃x⦄, x ∈ P → x ∈ S → x = P.first
   eq_last_of_mem : ∀ ⦃y⦄, y ∈ P → y ∈ T → y = P.last
@@ -266,6 +311,34 @@ lemma IsPathFrom.isPath (h : G.IsPathFrom S T P) : G.IsPath P where
 @[simp] lemma nil_isPathFrom : G.IsPathFrom S T (nil x) ↔ x ∈ V(G) ∧ x ∈ S ∧ x ∈ T := by
   simp [isPathFrom_iff]
 
+lemma IsPathFrom.eq_first_iff_mem (h : G.IsPathFrom S T P) (v : α) :
+    v = P.first ↔ v ∈ V(P) ∧ v ∈ S :=
+  ⟨fun heq ↦ heq ▸ ⟨P.first_mem, h.first_mem⟩, fun ⟨hvP, hvS⟩ ↦ h.eq_first_of_mem hvP hvS⟩
+
+@[simp]
+lemma IsPathFrom.vertexSet_inter_left (h : G.IsPathFrom S T P) : V(P) ∩ S = {P.first} := by
+  ext v
+  exact (h.eq_first_iff_mem v).symm
+
+lemma IsPathFrom.eq_last_iff_mem (h : G.IsPathFrom S T P) (v : α) :
+    v = P.last ↔ v ∈ V(P) ∧ v ∈ T :=
+  ⟨fun heq ↦ heq ▸ ⟨P.last_mem, h.last_mem⟩, fun ⟨hvP, hvT⟩ ↦ h.eq_last_of_mem hvP hvT⟩
+
+@[simp]
+lemma IsPathFrom.vertexSet_inter_right (h : G.IsPathFrom S T P) : V(P) ∩ T = {P.last} := by
+  ext v
+  exact (h.eq_last_iff_mem v).symm
+
+@[simp]
+lemma IsPathFrom.last_mem_iff_nil (h : G.IsPathFrom S T P) : P.last ∈ S ↔ P.Nil := by
+  rw [← h.isPath.first_eq_last_iff, eq_comm, h.eq_first_iff_mem]
+  simp
+
+@[simp]
+lemma IsPathFrom.first_mem_iff_nil (h : G.IsPathFrom S T P) : P.first ∈ T ↔ P.Nil := by
+  rw [← h.isPath.first_eq_last_iff, h.eq_last_iff_mem]
+  simp
+
 lemma IsPathFrom.reverse (h : G.IsPathFrom S T w) : G.IsPathFrom T S w.reverse where
   isWalk := h.isWalk.reverse
   nodup := by simp [h.nodup]
@@ -274,7 +347,7 @@ lemma IsPathFrom.reverse (h : G.IsPathFrom S T w) : G.IsPathFrom T S w.reverse w
   eq_first_of_mem x hx hxT := by simp [h.eq_last_of_mem (y := x) (by simpa using hx) hxT]
   eq_last_of_mem x hx hxS := by simp [h.eq_first_of_mem (x := x) (by simpa using hx) hxS]
 
-lemma IsPathFrom.subset_left {S₀ : Set (Set α)} (hP : G.IsPathFrom S T P) (hS₀ : S₀ ⊆ S)
+lemma IsPathFrom.subset_left {S₀ : Set α} (hP : G.IsPathFrom S T P) (hS₀ : S₀ ⊆ S)
     (hx : P.first ∈ S₀) : G.IsPathFrom S₀ T P where
   isWalk := hP.isWalk
   nodup := hP.nodup
@@ -283,9 +356,59 @@ lemma IsPathFrom.subset_left {S₀ : Set (Set α)} (hP : G.IsPathFrom S T P) (hS
   eq_first_of_mem _ hxP hxS₀ := hP.eq_first_of_mem hxP <| hS₀ hxS₀
   eq_last_of_mem := hP.eq_last_of_mem
 
-lemma IsPathFrom.subset_right {T₀ : Set (Set α)} (hP : G.IsPathFrom S T P) (hT₀ : T₀ ⊆ T)
+lemma IsPathFrom.subset_right {T₀ : Set α} (hP : G.IsPathFrom S T P) (hT₀ : T₀ ⊆ T)
     (hx : P.last ∈ T₀) : G.IsPathFrom S T₀ P := by
   simpa using (hP.reverse.subset_left hT₀ (by simpa)).reverse
+
+lemma IsPathFrom.subset {S₀ T₀ : Set α} (hP : G.IsPathFrom S T P) (hS₀ : S₀ ⊆ S) (hT₀ : T₀ ⊆ T)
+    (hx : P.first ∈ S₀) (hy : P.last ∈ T₀) : G.IsPathFrom S₀ T₀ P :=
+  hP.subset_left hS₀ hx |>.subset_right hT₀ hy
+
+lemma IsPathFrom.diff_left_of_disjoint (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
+    G.IsPathFrom (S \ X) (T) P where
+  toIsPath := hP.isPath
+  first_mem := ⟨hP.first_mem, hdj.notMem_of_mem_left P.first_mem⟩
+  last_mem := hP.last_mem
+  eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS.1
+  eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT
+
+lemma IsPathFrom.diff_right_of_disjoint (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
+    G.IsPathFrom (S) (T \ X) P where
+  toIsPath := hP.isPath
+  first_mem := hP.first_mem
+  last_mem := ⟨hP.last_mem, hdj.notMem_of_mem_left P.last_mem⟩
+  eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS
+  eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT.1
+
+lemma IsPathFrom.left_of_symmdiff_disjoint {S₀ : Set α} (hP : G.IsPathFrom S T P)
+    (hA : Disjoint V(P) (S ∆ S₀)) : G.IsPathFrom S₀ T P where
+  toIsPath := hP.isPath
+  first_mem := by
+    have : _ ∈ S ⊔ S₀ := subset_union_left hP.first_mem
+    rw [← symmDiff_sup_inf S S₀] at this
+    exact this.elim (hA.notMem_of_mem_left WList.first_mem · |>.elim) (·.2)
+  last_mem := hP.last_mem
+  eq_first_of_mem _ hvP hvS := by
+    refine hP.eq_first_of_mem hvP ?_
+    have : _ ∈ S ⊔ S₀ := subset_union_right hvS
+    rw [← symmDiff_sup_inf S S₀] at this
+    exact this.elim (hA.notMem_of_mem_left hvP · |>.elim) (·.1)
+  eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT
+
+lemma IsPathFrom.right_of_symmdiff_disjoint {T₀ : Set α} (hP : G.IsPathFrom S T P)
+    (hA : Disjoint V(P) (T ∆ T₀)) : G.IsPathFrom S T₀ P where
+  toIsPath := hP.isPath
+  first_mem := hP.first_mem
+  last_mem := by
+    have : _ ∈ T ⊔ T₀ := subset_union_left hP.last_mem
+    rw [← symmDiff_sup_inf T T₀] at this
+    exact this.elim (hA.notMem_of_mem_left WList.last_mem · |>.elim) (·.2)
+  eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS
+  eq_last_of_mem _ hvP hvT := by
+    refine hP.eq_last_of_mem hvP ?_
+    have : _ ∈ T ⊔ T₀ := subset_union_right hvT
+    rw [← symmDiff_sup_inf T T₀] at this
+    exact this.elim (hA.notMem_of_mem_left hvP · |>.elim) (·.1)
 
 lemma IsPathFrom.of_le (h : H.IsPathFrom S T P) (hle : H ≤ G) : G.IsPathFrom S T P where
   isWalk := h.isWalk.of_le hle
@@ -303,6 +426,24 @@ lemma IsPathFrom.isPathFrom_le (h : G.IsPathFrom S T P) (hle : H ≤ G) (hss : E
   last_mem := h.last_mem
   eq_first_of_mem := h.eq_first_of_mem
   eq_last_of_mem := h.eq_last_of_mem
+
+lemma IsPathFrom.of_vertexDelete (hP : (G - X).IsPathFrom S T P) :
+    G.IsPathFrom (S ∪ X) (T ∪ X) P where
+  toIsPath := hP.isPath.of_le vertexDelete_le
+  first_mem := subset_union_left hP.first_mem
+  last_mem := subset_union_left hP.last_mem
+  eq_first_of_mem _ hvP hvS :=
+    hP.eq_first_of_mem hvP (Or.elim hvS id (False.elim <| hP.isPath.vertexSet_subset hvP |>.2.2 ·))
+  eq_last_of_mem _ hvP hvT :=
+    hP.eq_last_of_mem hvP (Or.elim hvT id (False.elim <| hP.isPath.vertexSet_subset hvP |>.2.2 ·))
+
+lemma IsPathFrom.vertexDelete_of_disjoint (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
+    (G - X).IsPathFrom S T P where
+  toIsPath := isPath_vertexDelete_iff.mpr ⟨hP.isPath, hdj⟩
+  first_mem := hP.first_mem
+  last_mem := hP.last_mem
+  eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS
+  eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT
 
 lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
     x ∈ S ∧ x ∉ T ∧ G.IsLink e x P.first ∧ Disjoint S V(P) ∧ G.IsPathFrom {P.first} T P := by
@@ -323,6 +464,39 @@ lemma isPathFrom_cons : G.IsPathFrom S T (cons x e P) ↔
     exact fun a haP haS ↦ (hdj.notMem_of_mem_left haS haP).elim
   simpa [hxT] using h.eq_last_of_mem
 
+lemma IsPathFrom.append_right (hP₀ : G.IsPathFrom S T P₀) (hP₁ : G.IsPath P₁) (h₁T : V(P₁) ⊆ T)
+    (h₁₂ : P₀.last = P₁.first) :
+    G.IsPathFrom (S \ (V(P₁) \ {P₁.first})) (T \ (V(P₁) \ {P₁.last})) (P₀ ++ P₁) where
+  toIsPath := hP₀.isPath.append hP₁ h₁₂ fun x hxP₀ hxP₁ ↦ hP₀.eq_last_of_mem hxP₀ (h₁T hxP₁)
+  first_mem := by
+    simp only [← h₁₂, append_first_of_eq, mem_diff, hP₀.first_mem, mem_vertexSet_iff,
+      mem_singleton_iff, not_and, not_not, true_and]
+    exact fun hf₁ ↦ hP₀.eq_last_of_mem P₀.first_mem (h₁T hf₁)
+  last_mem := by
+    simp only [append_last, mem_diff, mem_vertexSet_iff, WList.last_mem, mem_singleton_iff,
+      not_true_eq_false, and_false, not_false_eq_true, and_true]
+    exact h₁T P₁.last_mem
+  eq_first_of_mem := by
+    simp only [← h₁₂, mem_append_iff_of_eq, mem_diff, mem_vertexSet_iff, mem_singleton_iff, not_and,
+      not_not, append_first_of_eq, and_imp]
+    refine fun v hv hvS hv₁ ↦ hP₀.eq_first_of_mem (hv.elim id fun h ↦ ?_) hvS
+    rw [hv₁ h]
+    exact P₀.last_mem
+  eq_last_of_mem := by
+    simp only [h₁₂, mem_append_iff_of_eq, mem_diff, mem_vertexSet_iff, mem_singleton_iff, not_and,
+      not_not, append_last, and_imp]
+    refine fun v hv hvT hv₁ ↦ hv₁ (hv.elim (fun h ↦ ?_) id)
+    obtain rfl := h₁₂ ▸ hP₀.eq_last_of_mem h hvT
+    exact P₁.first_mem
+
+lemma IsPathFrom.append_left (hP₁ : G.IsPathFrom S T P₁) (hP₀ : G.IsPath P₀) (h₀S : V(P₀) ⊆ S)
+    (h₀₁ : P₀.last = P₁.first) :
+    G.IsPathFrom (S \ (V(P₀) \ {P₀.first})) (T \ (V(P₀) \ {P₀.last})) (P₀ ++ P₁) := by
+  have heq : P₁.reverse.last = P₀.reverse.first := by simp [h₀₁]
+  have := hP₁.reverse.append_right hP₀.reverse (by simpa) heq |>.reverse
+  simpa [reverse_vertexSet, reverse_last, reverse_first, reverse_append heq,
+    reverse_reverse] using this
+
 /-- A version of `isPathFrom_cons` where the source set is a subgraph `H`,
 and we get the additional condition that the first edge is not an edge of `H`. -/
 lemma isPathFrom_cons_subgraph (hle : H ≤ G) : G.IsPathFrom V(H) T (cons x e P) ↔
@@ -337,6 +511,15 @@ lemma IsPathFrom.notMem_left_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y
 
 lemma IsPathFrom.notMem_right_of_dInc (h : G.IsPathFrom S T P) (hP : P.DInc e x y) : x ∉ T :=
   fun hyT ↦ hP.ne_last h.nodup (h.eq_last_of_mem hP.left_mem hyT)
+
+lemma IsPath.extractPathFrom_isPathFrom [DecidablePred (· ∈ S)] [DecidablePred (· ∈ T)]
+    (hP : G.IsPath P) (hf : P.first ∈ S) (hl : P.last ∈ T) :
+    G.IsPathFrom S T (P.extractPathFrom S T) where
+  toIsPath := hP.sublist (P.extractPathFrom_isSublist S T)
+  first_mem := P.extractPathFrom_first_mem ⟨P.first, P.first_mem, hf⟩
+  last_mem := P.extractPathFrom_last_mem ⟨P.last, (P.suffixFromLast_last (· ∈ S)) ▸ last_mem, hl⟩
+  eq_first_of_mem _ := (Eq.symm <| P.extractPathFrom_first_eq_of_mem · ·)
+  eq_last_of_mem _ := (Eq.symm <| P.extractPathFrom_last_eq_of_mem · ·)
 
 lemma IsTrailFrom.isTrail (h : G.IsTrailFrom S T w) : G.IsTrail w where
   isWalk := h.isWalk
@@ -395,7 +578,6 @@ lemma cons_isTrailFrom : G.IsTrailFrom S T (cons x e w) ↔
 lemma nil_isTrailFrom : G.IsTrailFrom S T (nil x) ↔ x ∈ V(G) ∧ x ∈ S ∧ x ∈ T := by
   simp [isTrailFrom_iff]
 
-
 -- /-! ### The type of paths -/
 
 -- protected def Path (G : Graph α β) : Type _ := {P // G.IsPath P}
@@ -409,9 +591,6 @@ lemma mem_of_adj_first_of_maximal_isPath (hP : Maximal (fun P ↦ G.IsPath P) P)
   refine by_contra fun hcon ↦ hcon ?_
   rw [show P = cons x e P by simpa [hP.prop, he, hcon] using hP.eq_of_le (y := cons x e P)]
   simp
-
-
-
 
 
 end Graph

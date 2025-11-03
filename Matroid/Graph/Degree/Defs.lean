@@ -2,7 +2,7 @@ import Matroid.Graph.Degree.Basic
 
 open Set
 
-variable {α β : Type*} {x y z u v w : Set α} {e f : β} {G H : Graph α β} {d : ℕ}
+variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β} {d : ℕ}
 
 namespace Graph
 
@@ -50,7 +50,7 @@ lemma DegreePos.edgeSet_nonempty (hG : G.DegreePos) (hV : V(G).Nonempty) : E(G).
 /-- `G.MaxDegreeLE d` means that `G` has maximum degree at most `d`.  -/
 def MaxDegreeLE (G : Graph α β) (d : ℕ) : Prop := ∀ v, G.eDegree v ≤ d
 
-lemma MaxDegreeLE.degree_le (h : G.MaxDegreeLE d) (v : Set α) : G.degree v ≤ d :=
+lemma MaxDegreeLE.degree_le (h : G.MaxDegreeLE d) (v : α) : G.degree v ≤ d :=
   ENat.toNat_le_of_le_coe (h v)
 
 lemma MaxDegreeLE.mono (h : G.MaxDegreeLE d) (hle : H ≤ G) : H.MaxDegreeLE d :=

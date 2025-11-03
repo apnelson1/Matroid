@@ -24,7 +24,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Dict, Iterable, List, Set, Tuple, Optional
 
 IMPORT_RE = re.compile(r"^\s*(--\s*)?import\s+(Matroid\.[\w\.'-]+)\s*$")
 
@@ -96,7 +96,7 @@ def parse_existing_imports(matroid_lean_path: Path) -> Tuple[List[str], Dict[str
     return all_lines, by_module
 
 
-def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], *, comment: bool = False, uncomment: bool = False, root: Path = None, verbose: bool = False, workers: int = 8) -> Tuple[List[Tuple[str, str]], List[str]]:
+def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], *, comment: bool = False, uncomment: bool = False, root: Path = None, verbose: bool = False, workers: int = 8, test_only_modules: Optional[Set[str]] = None) -> Tuple[List[Tuple[str, str]], List[str]]:
     out: List[Tuple[str, str]] = []
     uncommented_modules: List[str] = []
     
@@ -108,7 +108,8 @@ def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], 
         if mod in existing:
             existing_line = existing[mod]
             if uncomment and existing_line.strip().startswith('-- import'):
-                commented_imports_to_test.append(mod)
+                if (test_only_modules is None) or (mod in test_only_modules):
+                    commented_imports_to_test.append(mod)
     
     # Test all commented imports in parallel
     test_results = {}
@@ -151,6 +152,48 @@ def merge_and_sort_imports(existing: Dict[str, str], discovered: Iterable[str], 
     return out, uncommented_modules
 
 
+def discover_changed_matroid_modules(root: Path, matroid_dir: Path, base_rev: str = 'HEAD~1', head_rev: str = 'HEAD') -> Set[str]:
+    """
+    Return Matroid module names whose corresponding `.lean` files changed between base_rev..head_rev.
+    Falls back to empty set on any git error.
+    """
+    try:
+        diff_range = f"{base_rev}..{head_rev}" if base_rev else head_rev
+        result = subprocess.run(
+            ['git', 'diff', '--name-only', diff_range],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        if result.returncode != 0:
+            return set()
+        changed_paths = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    except Exception:
+        return set()
+
+    try:
+        rel_prefix_path = matroid_dir.relative_to(root)
+    except Exception:
+        # Fallback to conventional path name
+        rel_prefix_path = Path('Matroid')
+
+    prefix = str(rel_prefix_path).rstrip('/') + '/'
+    modules: Set[str] = set()
+    for p in changed_paths:
+        if not p.endswith('.lean'):
+            continue
+        if not p.startswith(prefix):
+            continue
+        rel = Path(p).relative_to(rel_prefix_path)
+        parts = rel.with_suffix('').parts
+        if not parts:
+            continue
+        modules.add('Matroid.' + '.'.join(parts))
+    return modules
+
+
 def test_lean_file(module_name: str, root: Path, verbose: bool = False) -> bool:
     """
     Test a lean file by running `lake env lean` on it.
@@ -172,7 +215,7 @@ def test_lean_file(module_name: str, root: Path, verbose: bool = False) -> bool:
     try:
         # Run lake env lean on the file
         result = subprocess.run(
-            ['lake', 'env', 'lean', str(file_path)],
+            ['lake', 'lean', str(file_path)],
             cwd=root,
             capture_output=True,
             text=True,
@@ -243,6 +286,9 @@ def main() -> int:
     parser.add_argument('--workers', type=int, default=8, help='Number of parallel workers for compilation testing (default: 8).')
     parser.add_argument('--all', action='store_true', help='Do not apply ignore rules from .matroidignore (in scripts/); include all modules discovered.')
     parser.add_argument('--yes', '-y', action='store_true', help='Proceed without interactive confirmation (useful for CI).')
+    parser.add_argument('--test-scope', choices=['changed', 'all'], default='changed', help='Scope for testing commented imports in --uncomment mode (default: changed).')
+    parser.add_argument('--changed-base', type=str, default='HEAD~1', help='Base revision for changed-file detection (default: HEAD~1).')
+    parser.add_argument('--changed-rev', type=str, default='HEAD', help='Head revision for changed-file detection (default: HEAD).')
 
     args = parser.parse_args()
 
@@ -276,13 +322,35 @@ def main() -> int:
     print(f"Existing entries: {len(existing_map)}")
 
     # If in uncomment mode, show what we're about to test
+    test_only_modules: Optional[Set[str]] = None
     if args.uncomment:
-        commented_imports = [mod for mod, line in existing_map.items() if line.strip().startswith('-- import')]
-        print(f"Commented imports to test: {len(commented_imports)}")
-        if commented_imports:
+        if args.test_scope == 'changed':
+            test_only_modules = discover_changed_matroid_modules(root, matroid_dir, args.changed_base, args.changed_rev)
+        # Compute the exact set to test for display purposes
+        commented_imports = [
+            mod for mod, line in existing_map.items()
+            if line.strip().startswith('-- import') and mod in discovered_filtered
+        ]
+        if test_only_modules is not None:
+            to_test = [mod for mod in commented_imports if mod in test_only_modules]
+        else:
+            to_test = commented_imports
+        print(f"Commented imports to test: {len(to_test)} (scope: {args.test_scope})")
+        if args.test_scope == 'changed':
+            print(f"Changed Matroid modules detected: {len(test_only_modules or set())}")
+        if to_test:
             print("Testing commented imports...")
 
-    merged, uncommented_modules = merge_and_sort_imports(existing_map, discovered_filtered, comment=args.comment, uncomment=args.uncomment, root=root, verbose=args.uncomment, workers=args.workers)
+    merged, uncommented_modules = merge_and_sort_imports(
+        existing_map,
+        discovered_filtered,
+        comment=args.comment,
+        uncomment=args.uncomment,
+        root=root,
+        verbose=args.uncomment,
+        workers=args.workers,
+        test_only_modules=test_only_modules,
+    )
     new_content = build_new_file_content(merged)
 
     current_text = matroid_file.read_text(encoding='utf-8') if matroid_file.exists() else ''

@@ -129,6 +129,11 @@ protected lemma concat_eq_append (w : WList α β) (e) (x) :
   induction w with simp_all
 
 @[simp]
+protected lemma concat_append (w₁ w₂ : WList α β) (e) (x) :
+    w₁.concat e x ++ w₂ = w₁ ++ cons w₁.last e w₂ := by
+  rw [WList.concat_eq_append, append_assoc, cons_append, nil_append]
+
+@[simp]
 lemma append_edge {w₁ w₂ : WList α β} : (w₁ ++ w₂).edge = w₁.edge ++ w₂.edge := by
   induction w₁ with simp_all
 
@@ -161,12 +166,22 @@ lemma append_last : (w₁ ++ w₂).last = w₂.last := by
 lemma append_right_injective : Injective (w ++ ·) :=
   fun w₁ w₂ h ↦ by induction w with simp_all
 
-lemma append_vertexSet (h : w₁.last = w₂.first) : V(w₁ ++ w₂) = V(w₁) ∪ V(w₂) := by
+@[simp]
+lemma append_vertexSet_of_eq (h : w₁.last = w₂.first) : V(w₁ ++ w₂) = V(w₁) ∪ V(w₂) := by
   induction w₁ with
   | nil u => simp [insert_eq_of_mem, show u = w₂.first from h]
   | cons u e w ih =>
     simp only [last_cons] at h
     simp [ih h, insert_union]
+
+lemma mem_of_mem_append (hx : x ∈ w₁ ++ w₂) : x ∈ w₁ ∨ x ∈ w₂ := by
+  rw [← mem_vertex, append_vertex, List.mem_append] at hx
+  exact hx.imp (w₁.vertex.dropLast_subset ·) id
+
+@[simp]
+lemma mem_append_iff_of_eq (h : w₁.last = w₂.first) (x : α) : x ∈ w₁ ++ w₂ ↔ x ∈ w₁ ∨ x ∈ w₂ := by
+  rw [← mem_vertexSet_iff, append_vertexSet_of_eq h]
+  simp
 
 @[simp]
 lemma append_nonempty : (w₁ ++ w₂).Nonempty ↔ w₁.Nonempty ∨ w₂.Nonempty := by

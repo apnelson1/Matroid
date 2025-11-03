@@ -1,7 +1,7 @@
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Subgraph.Add
 
-variable {α β : Type*} {x y z u v w : Set α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β}
 
 open Set WList
 
@@ -13,7 +13,7 @@ namespace Graph
 
 /-- An `Isolated` vertex is one that is incident with no edge. -/
 @[mk_iff]
-structure Isolated (G : Graph α β) (x : Set α) : Prop where
+structure Isolated (G : Graph α β) (x : α) : Prop where
   not_inc : ∀ ⦃e⦄, ¬ G.Inc e x
   mem : x ∈ V(G)
 
@@ -49,7 +49,7 @@ lemma eq_of_le_of_edgeSet_subset_of_isolated (hle : H ≤ G) (hE : E(G) ⊆ E(H)
 
 /-- `G.IsPendant e x` means that `e` is a nonloop edge at `x`, and is also the only edge at `x`. -/
 @[mk_iff]
-structure IsPendant (G : Graph α β) (e : β) (x : Set α) : Prop where
+structure IsPendant (G : Graph α β) (e : β) (x : α) : Prop where
   isNonloopAt : G.IsNonloopAt e x
   edge_unique : ∀ ⦃f⦄, G.Inc f x → f = e
 
@@ -115,7 +115,7 @@ lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(
 --   simp
 
 /-- A leaf is a degree-one vertex. -/
-def IsLeaf (G : Graph α β) (v : Set α) : Prop := ∃ e, G.IsPendant e v
+def IsLeaf (G : Graph α β) (v : α) : Prop := ∃ e, G.IsPendant e v
 
 lemma IsPendant.isLeaf (h : G.IsPendant e x) : G.IsLeaf x :=
   ⟨e, h⟩

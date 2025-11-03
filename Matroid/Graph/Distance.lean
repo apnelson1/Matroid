@@ -1,9 +1,9 @@
-import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Defs
 
 open Set Function Nat
 
-variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
+variable {α β : Type*} [CompleteLattice α] {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α}
+  {e e' f g : β} {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
 open WList
 

@@ -1,7 +1,8 @@
 import Matroid.Graph.Basic
+import Matroid.ForMathlib.Partition.Foo
 
-variable {α β : Type*} {x y z u v w a b : Set α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
-  {X Y : Set (Set α)} {P Q : Partition (Set α)}
+variable {α β : Type*} [Order.Frame α] {x y z u v w a b : α} {e f : β} {G H : Graph α β}
+  {F F₁ F₂ : Set β} {X Y : Set α} {P Q : Partition (Set α)}
 
 open Set Function Relation Partition
 
@@ -9,51 +10,24 @@ open scoped Sym2
 
 namespace Graph
 
-/-! # Repartition -/
-/-- Given a graph `G` and a coarser partition `P'` of its vertex set, the repartition of `G` by `P'`
-is the graph obtained by identifying the vertices of `G` according to `P'`. -/
 @[simps]
-def repartition (G : Graph α β) (P' : Partition (Set α)) (h : P(G) ≤ P') : Graph α β where
-  vertexPartition := P'
-  IsLink e x y := ∃ u v, G.IsLink e u v ∧ P'.foo u = x ∧ P'.foo v = y
-  isLink_symm e he x y hxy := by
-    obtain ⟨u, v, hu, rfl, rfl⟩ := hxy
-    use v, u, hu.symm
-  edgeSet := E(G)
+def VertexIdentification (G : Graph α β) (P : Partition (Set α)) (h : P.supp = V(G)) :
+    Graph α β where
+  vertexPartition := P.flatten (G.vertexSet_eq_parts ▸ h)
+  IsLink e := (P.flatten (G.vertexSet_eq_parts ▸ h)).fuzzyRel (G.IsLink e)
+  edgeSet := G.edgeSet
   edge_mem_iff_exists_isLink e := by
-    rw [edge_mem_iff_exists_isLink]
-    refine ⟨fun ⟨x, y, hxy⟩ ↦ ?_, fun ⟨a, b, x, y, hxy, A, B⟩ ↦ ?_⟩
-    · use P'.foo x, P'.foo y, x, y
-    subst A B
-    use x, y
+    rw [G.edge_mem_iff_exists_isLink, ← fuzzyRel.stuff (le_flatten _ _)]
+    exact fun a b h ↦ ⟨h.left_mem', h.right_mem'⟩
+  isLink_symm e he := fuzzyRel.symmetric <| G.isLink_symm he
   eq_or_eq_of_isLink_of_isLink e a b c d := by
-    rintro ⟨u, v, huv, rfl, rfl⟩ ⟨w, x, hwx, rfl, rfl⟩
-    apply (G.eq_or_eq_of_isLink_of_isLink huv hwx).imp <;> rintro rfl <;> rfl
-  left_mem_of_isLink e x y hxy := by
-    obtain ⟨u, v, huv, rfl, rfl⟩ := hxy
-    exact mem_parts.mpr <| foo_mem_of_le h (huv.left_mem')
+    rintro ⟨ha, hb, x, y, hxy, hxa, hyb⟩ ⟨hc, hd, u, v, huv, huc, hvd⟩
+    apply (G.eq_or_eq_of_isLink_of_isLink hxy huv).imp <;> rintro rfl
+    <;> refine Partition.eq_of_not_disjoint ha (by assumption)
+    <| not_disjoint_of_le_le hxa (by assumption) (P(G).ne_bot_of_mem hxy.left_mem')
+  left_mem_of_isLink e x y hxy := hxy.1
 
 @[simp]
-lemma repartition_idem (hP : P(G) ≤ P) (hQ : P ≤ Q) :
-    (G.repartition P hP).repartition Q hQ = G.repartition Q (hP.trans hQ) := by
-  refine vertexPartition_ext (by simp) fun e x y ↦ ?_
-  have h : ∀ y ∈ P(G), Q.foo y = Q.foo (P.foo y) := by
-    refine fun y hy ↦ (foo_foo_eq_foo hQ ?_).symm
-    exact subset_trans (subset_of_mem hy) <| supp_le_of_le hP
-  simp_rw [repartition_isLink]
-  constructor
-  · rintro ⟨u, v, ⟨x, y, hxy, rfl, rfl⟩, rfl, rfl⟩
-    use x, y, hxy, h _ hxy.left_mem', h _ hxy.right_mem'
-  · rintro ⟨x, y, hxy, rfl, rfl⟩
-    use P.foo x, P.foo y, (by use x, y, hxy), (h _ hxy.left_mem').symm,
-      (h _ hxy.right_mem').symm
-
-@[simp]
-lemma repartition_inc (h : P(G) ≤ P) :
-    (G.repartition P h).Inc e x ↔ ∃ u, G.Inc e u ∧ P.foo u = x := by
-  simp_rw [Inc, repartition_isLink]
-  constructor
-  · rintro ⟨u, v, w, hvw, rfl, rfl⟩
-    use v, (by use w)
-  · rintro ⟨u, ⟨v, huv⟩, rfl⟩
-    use P.foo v, u, v
+lemma vertexIdentification_vertexPartition_supp (h : P.supp = V(G)) :
+    (G.VertexIdentification P h).vertexPartition.supp = P(G).supp := by
+  simp
