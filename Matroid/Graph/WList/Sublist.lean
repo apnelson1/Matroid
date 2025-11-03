@@ -370,11 +370,18 @@ lemma prefixUntil_isPrefix (w : WList α β) (P : α → Prop) [DecidablePred P]
     · simp [hP]
     simpa [hP] using ih.cons u e
 
-lemma prefixUntil_last_eq_iff_prop (h : ∃ u ∈ w, P u):
+lemma prefixUntil_last_eq_iff_prop (h : ∃ u ∈ w, P u) :
     P v ∧ v ∈ w.prefixUntil P ↔ (w.prefixUntil P).last = v := by
   refine ⟨fun ⟨hvP, hv⟩ ↦ prefixUntil_last_eq_of_prop hv hvP, ?_⟩
   rintro rfl
   exact ⟨prefixUntil_prop_last h, last_mem⟩
+
+lemma prefixUntil_inter_eq_last (w : WList α β) (S : Set α) [DecidablePred (· ∈ S)]
+    (h : ∃ u ∈ w, u ∈ S) :
+    S ∩ V(w.prefixUntil (· ∈ S)) = {(w.prefixUntil (· ∈ S)).last} := by
+  ext x
+  simp only [Set.mem_inter_iff, mem_vertexSet_iff, mem_singleton_iff]
+  rwa [eq_comm, w.prefixUntil_last_eq_iff_prop]
 
 lemma prefixUntil_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
     (h : ∀ u ∈ w, ¬ P u) : w.prefixUntil P = w := by
@@ -617,6 +624,13 @@ lemma suffixFromLast_first_eq_iff_prop (h : ∃ x ∈ w, P x) :
   rintro rfl
   exact ⟨suffixFromLast_prop_first h, first_mem⟩
 
+lemma suffixFromLast_inter_eq_first (w : WList α β) (S : Set α) [DecidablePred (· ∈ S)]
+    (h : ∃ u ∈ w, u ∈ S) :
+    S ∩ V(w.suffixFromLast (· ∈ S)) = {(w.suffixFromLast (· ∈ S)).first} := by
+  ext x
+  simp only [mem_inter_iff, mem_vertexSet_iff, mem_singleton_iff]
+  rw [eq_comm, suffixFromLast_first_eq_iff_prop h]
+
 lemma suffixFromLast_eq_self_of_forall (w : WList α β) (P : α → Prop) [DecidablePred P]
     (h : ∀ x ∈ w, ¬ P x) : w.suffixFromLast P = w := by
   rw [suffixFromLast, w.reverse.prefixUntil_eq_self_of_forall P (by simpa), reverse_reverse]
@@ -818,6 +832,20 @@ lemma nonempty_of_mem_breakAt_aux_tail (w : WList α β) (P : α → Prop) [Deci
       simp
     exact w.nonempty_of_mem_breakAt_aux_tail P hQ
 
+lemma breakAt_aux_map_first_eq_vertex_filter (w : WList α β) (P : α → Prop) [DecidablePred P]
+    {e' : β} {w' : WList α β} :
+    (w.breakAt_aux P e' w' []).tail.map (·.first) = (w.vertex.filter P).reverse := by
+  unfold breakAt_aux
+  match w with
+  | nil x => by_cases hPx : P x <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> simp [hPx, ↓reduceIte, -map_tail]
+    · rw [breakAt_aux_lemma1]
+      simp only [map_append, map_cons, first_cons, map_nil, ne_eq,
+        breakAt_aux_ne_nil, not_false_eq_true, tail_append_of_ne_nil]
+      rw [w.breakAt_aux_map_first_eq_vertex_filter P]
+    rw [breakAt_aux_map_first_eq_vertex_filter]
+
 /-- The segmentation of `w` breaks `w` at every vertex satisfying `P` and returns
   the list of segments. With the possible exception of the first and the last segment,
   all segments have the endpoints satisfying `P`.
@@ -935,6 +963,11 @@ lemma breakAt_reverse_isChain_eq (w : WList α β) (P : α → Prop) [DecidableP
       simp [breakAt_aux_getLast]
     exact breakAt_aux_isChain_eq w P
 
+lemma breakAt_isChain_eq (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).IsChain (·.last = ·.first) := by
+  rw [← w.reverse_reverse]
+  apply w.reverse.breakAt_reverse_isChain_eq
+
 lemma nonempty_of_mem_breakAt_dropLast_tail' (w : WList α β) (P : α → Prop) [DecidablePred P]
     {Q : WList α β} (hQ : Q ∈ (w.reverse.breakAt P).dropLast.tail) : Q.Nonempty := by
   unfold breakAt at hQ
@@ -953,6 +986,22 @@ lemma nonempty_of_mem_breakAt_dropLast_tail (w : WList α β) (P : α → Prop) 
     {Q : WList α β} (hQ : Q ∈ (w.breakAt P).dropLast.tail) : Q.Nonempty := by
   rw [← w.reverse_reverse] at hQ
   exact nonempty_of_mem_breakAt_dropLast_tail' w.reverse P hQ
+
+lemma breakAt_reverse_tail_map_first_eq_vertex_filter_reverse (w : WList α β) (P : α → Prop)
+    [DecidablePred P] : (w.reverse.breakAt P).tail.map (·.first) = w.reverse.vertex.filter P := by
+  unfold breakAt
+  match w with
+  | nil x => by_cases hPx : P x <;> simp [hPx]
+  | cons x e w =>
+    by_cases hPx : P x <;> conv_lhs => simp only [reverse_cons, concat_reverse, reverse_reverse,
+      hPx, ↓reduceIte]
+    · conv_lhs => simp [breakAt_aux_eq_concat, -map_tail]
+      simp [w.breakAt_aux_map_first_eq_vertex_filter P, hPx]
+    simpa [w.breakAt_aux_map_first_eq_vertex_filter P]
+
+lemma breakAt_tail_map_first_eq_vertex_filter (w : WList α β) (P : α → Prop) [DecidablePred P] :
+    (w.breakAt P).tail.map (·.first) = w.vertex.filter P := by
+  rw [← w.reverse_reverse, breakAt_reverse_tail_map_first_eq_vertex_filter_reverse, reverse_reverse]
 
 -- lemma nil_mem_breakAt_iff (w : WList α β) (P : α → Prop) [DecidablePred P] (x : α) :
 --     nil x ∈ w.breakAt P ↔ (P w.first ∧ x = w.first) ∨ (P w.last ∧ x = w.last) := by
