@@ -239,16 +239,12 @@ lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) [G.Finite] (hHG : H
   rw [H.minDegree_eq' (not_and.mpr fun a ↦ hni)]
   exact Nat.zero_le G.minDegree
 
-lemma missing {G : Graph α β} (v : α) (hv : v ∈ V(G)) :
-    ∃ H : Graph α β, H.IsCompOf G ∧ v ∈ V(H) := by
-  sorry
-
 lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h : ¬ G.Connected) :
     2 ≤ G.Components.encard := by
   -- G has a vertex
   obtain ⟨ v, hv ⟩ := vertexSet_nonempty_of_NeBot hNeBot
   -- I cheated here, but this lemma is missing and I'm guessing it should be in connected
-  obtain ⟨ H, hH, hvH ⟩ := missing v hv
+  obtain ⟨ H, hH, hvH ⟩ := G.exists_IsCompOf_vertex_mem hv
   have hbig : ∃ w ∈ V(G), w ∉ V(H) := by
     by_contra! hw
     --Our contradiction is that G is connected. The following have is the hardest.
@@ -263,7 +259,7 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
     -- Just state the contradiction
     sorry
   obtain ⟨ w, hw, hwH ⟩ := hbig
-  obtain ⟨ H₁, hH1, hvH1 ⟩ := missing w hw
+  obtain ⟨ H₁, hH1, hvH1 ⟩ := G.exists_IsCompOf_vertex_mem hw
   have : H ≠ H₁ := by sorry
   sorry
 
