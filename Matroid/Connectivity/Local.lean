@@ -25,7 +25,7 @@ lemma IsBasis'.encard_add_nullity_congr (hI : M.IsBasis' I X) (hI' : M.IsBasis' 
     ← hJ.project_eq_project, ← hJ'.project_eq_project, hI.nullity_project hI']
 
 /-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
-Defined to correctly describe the connectivity even when one or both sets has infinite rank.
+Defined to correctly describe the connectivity even 646when one or both sets has infinite rank.
 For a `ℕ`-valued version, see `Matroid.localConn`. -/
 noncomputable def eLocalConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
   let I := (M.exists_isBasis' X).choose
@@ -648,6 +648,18 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
+
+@[simp]
+lemma eConn_disjointSum_left_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
+    (M₁.disjointSum M₂ hdj).eConn M₁.E = 0 := by
+  rw [eConn, eLocalConn_eq_zero (by simp) (by tauto_set)]
+  simp [hdj.sdiff_eq_right, skew_disjointSum]
+
+@[simp]
+lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
+    (M₁.disjointSum M₂ hdj).eConn M₂.E = 0 := by
+  rw [disjointSum_comm]
+  simp
 
 end eConn
 
