@@ -437,7 +437,7 @@ lemma IsPathFrom.of_vertexDelete (hP : (G - X).IsPathFrom S T P) :
   eq_last_of_mem _ hvP hvT :=
     hP.eq_last_of_mem hvP (Or.elim hvT id (False.elim <| hP.isPath.vertexSet_subset hvP |>.2.2 ·))
 
-lemma IsPathFrom.vertexDelete_of_disjoint (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
+lemma IsPathFrom.vertexDelete (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
     (G - X).IsPathFrom S T P where
   toIsPath := isPath_vertexDelete_iff.mpr ⟨hP.isPath, hdj⟩
   first_mem := hP.first_mem

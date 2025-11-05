@@ -1,4 +1,5 @@
 import Matroid.Graph.Connected.Defs
+import Mathlib.Tactic.IntervalCases
 
 open Set Function Nat WList symmDiff
 
@@ -145,27 +146,114 @@ lemma SetPreconnectivityGe.subset (h : G.SetPreconnectivityGe S T n) (hS : S ⊆
     G.SetPreconnectivityGe S' T' n :=
   fun C ↦ h (C.subset hS hT)
 
-structure SetEnsemble (G : Graph α β) (S T : Set α) where
+structure SetEnsemble (G : Graph α β) where
   paths : Set (WList α β)
   disjoint : paths.Pairwise (Disjoint on WList.vertexSet)
-  valid : ∀ ⦃P⦄, P ∈ paths → G.IsPathFrom S T P
+  valid : ∀ ⦃P⦄, P ∈ paths → G.IsPath P
+
+variable {A : G.SetEnsemble}
+
+def SetEnsemble.between (A : G.SetEnsemble) (S T : Set α) :=
+    ∀ ⦃P⦄, P ∈ A.paths → G.IsPathFrom S T P
+
+def SetEnsemble.vertexPartition (A : G.SetEnsemble) : Partition (Set α) :=
+  Partition.ofPairwiseDisjoint' (parts := WList.vertexSet '' A.paths) (by
+    rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ hPQ
+    refine A.disjoint hP hQ (hPQ <| · ▸ rfl)) (by
+    rintro _ ⟨P, hP, rfl⟩
+    rw [bot_eq_empty, ← Set.nonempty_iff_ne_empty]
+    exact ⟨P.first, P.first_mem⟩)
+
+@[simp]
+lemma SetEnsemble.vertexSet_mem_vertexPartition (A : G.SetEnsemble) (hP : P ∈ A.paths) :
+    V(P) ∈ A.vertexPartition := by
+  use P
+
+def SetEnsemble.vertexSet (A : G.SetEnsemble) : Set α :=
+  A.vertexPartition.supp
+
+@[simp]
+lemma SetEnsemble.mem_vertexSet_iff (A : G.SetEnsemble) :
+    v ∈ A.vertexSet ↔ ∃ P ∈ A.paths, v ∈ P := by
+  refine ⟨fun ⟨V, hV, hv⟩ ↦ ?_, fun ⟨P, hP, hvP⟩ ↦ ⟨V(P), (by use P), hvP⟩⟩
+  obtain ⟨P, hP, rfl⟩ := by simpa [vertexPartition] using hV
+  use P, hP, hv
+
+@[simp]
+lemma SetEnsemble.subset_vertexSet_of_mem (hP : P ∈ A.paths) :
+    V(P) ⊆ A.vertexSet :=
+  fun _ hvP ↦ A.mem_vertexSet_iff.mpr ⟨P, hP, hvP⟩
+
+lemma SetEnsemble.vertexSet_subset (A : G.SetEnsemble) : A.vertexSet ⊆ V(G) := by
+  rintro v
+  simp only [mem_vertexSet_iff, forall_exists_index, and_imp]
+  exact fun _ hP hvP ↦ (A.valid hP).vertexSet_subset hvP
+
+lemma SetEnsemble.vertexSet_eq_biUnion (A : G.SetEnsemble) : A.vertexSet = ⋃ P ∈ A.paths, V(P) := by
+  ext v
+  simp
+
+lemma SetEnsemble.image_first_subset (A : G.SetEnsemble) : first '' A.paths ⊆ A.vertexSet := by
+  rintro _ ⟨P, hP, rfl⟩
+  simp only [mem_vertexSet_iff]
+  use P, hP, first_mem
+
+lemma SetEnsemble.image_last_subset (A : G.SetEnsemble) : last '' A.paths ⊆ A.vertexSet := by
+  rintro _ ⟨P, hP, rfl⟩
+  simp only [mem_vertexSet_iff]
+  use P, hP, last_mem
+
+noncomputable def SetEnsemble.of_vertex (A : G.SetEnsemble) (v : α) (hv : v ∈ A.vertexSet) :
+    WList α β :=
+  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose
+
+@[simp]
+lemma SetEnsemble.of_vertex_mem_setEnsemble (hv : v ∈ A.vertexSet) : A.of_vertex v hv ∈ A.paths :=
+  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.1
+
+@[simp]
+lemma SetEnsemble.mem_of_vertex (hv : v ∈ A.vertexSet) : v ∈ A.of_vertex v hv := by
+  have := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
+  have := this ▸ (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.2
+  rwa [← WList.mem_vertexSet_iff]
+
+lemma SetEnsemble.eq_of_vertex_mem (hv : v ∈ A.vertexSet) (hP : P ∈ A.paths) (hvP : v ∈ P) :
+    P = A.of_vertex v hv := by
+  refine A.disjoint.eq hP (A.of_vertex_mem_setEnsemble hv) ?_
+  rw [not_disjoint_iff]
+  use P.first, P.first_mem
+  let S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose
+  have : V(A.of_vertex v hv) = S :=
+    (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
+  have hS : V(P) = S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.2 V(P)
+    (by simp [hvP, hP])
+  rw [this, ← hS]
+  exact P.first_mem
 
 @[simps]
-def SetEnsemble.empty (G : Graph α β) (S T : Set α) : G.SetEnsemble S T where
+def SetEnsemble.empty (G : Graph α β) : G.SetEnsemble where
   paths := ∅
   disjoint := by simp
   valid := by simp
 
 @[simp]
-def SetEnsemble.single (G : Graph α β) (S T : Set α) (P : WList α β) (hP : G.IsPathFrom S T P) :
-    G.SetEnsemble S T where
+lemma SetEnsemble.empty_between (S T : Set α) : (SetEnsemble.empty G).between S T := by
+  simp [between]
+
+@[simp]
+def SetEnsemble.single (hP : G.IsPath P) : G.SetEnsemble where
   paths := {P}
   disjoint := by simp
   valid := by simp [hP]
 
+@[simp]
+lemma SetEnsemble.single_between (hP : G.IsPathFrom S T P) :
+    (SetEnsemble.single hP.isPath).between S T := by
+  simpa [between]
+
 lemma SetEnsemble.injOn_iff (f : WList α β → ι) :
-    (∀ P Q, G.IsPathFrom S T P → G.IsPathFrom S T Q → f P = f Q → ∃ x ∈ V(P), x ∈ V(Q)) ↔
-    ∀ A : G.SetEnsemble S T, A.paths.InjOn f := by
+    (∀ P Q, G.IsPath P → G.IsPath Q → f P = f Q → ∃ x ∈ V(P), x ∈ V(Q)) ↔
+    ∀ A : G.SetEnsemble, A.paths.InjOn f := by
   refine ⟨fun h A P hP Q hQ hPQ => A.disjoint.eq hP hQ ?_, fun h P Q hP hQ hPQ => ?_⟩
   · rw [not_disjoint_iff]
     exact h P Q (A.valid hP) (A.valid hQ) hPQ
@@ -179,266 +267,92 @@ lemma SetEnsemble.injOn_iff (f : WList α β → ι) :
   refine h {paths := {P, Q}, disjoint := ?_, valid := by simp [hP, hQ]} (by simp) (by simp) hPQ
   simp [Set.pairwise_pair, onFun, disjoint_comm, hdj]
 
-lemma SetEnsemble.injOn_of_isSublist (A : G.SetEnsemble S T) (f : WList α β → WList α β)
+lemma SetEnsemble.injOn_of_isSublist (A : G.SetEnsemble) {f : WList α β → WList α β}
     (hf : ∀ w, (f w).IsSublist w) : A.paths.InjOn f :=
   (SetEnsemble.injOn_iff f).mp (fun P Q _ _ hPQ ↦
     ⟨(f P).first, (hf P).vertex_subset first_mem, (hf Q).vertex_subset (hPQ ▸ first_mem)⟩) A
 
-lemma SetEnsemble.first_injOn (A : G.SetEnsemble S T) : A.paths.InjOn WList.first := by
+lemma SetEnsemble.first_injOn (A : G.SetEnsemble) : A.paths.InjOn WList.first := by
   intro P hP Q hQ h
   refine not_imp_comm.mp (A.disjoint hP hQ) ?_
   rw [not_disjoint_iff]
   use P.first, P.first_mem, h ▸ Q.first_mem
 
-lemma SetEnsemble.last_injOn (A : G.SetEnsemble S T) : A.paths.InjOn WList.last := by
+lemma SetEnsemble.last_injOn (A : G.SetEnsemble) : A.paths.InjOn WList.last := by
   intro P hP Q hQ h
   refine not_imp_comm.mp (A.disjoint hP hQ) ?_
   rw [not_disjoint_iff]
   use P.last, P.last_mem, h ▸ Q.last_mem
 
-def SetEnsemble.vertexPartition (A : G.SetEnsemble S T) : Partition (Set α) :=
-  Partition.ofPairwiseDisjoint' (parts := WList.vertexSet '' A.paths) (by
-    rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ hPQ
-    refine A.disjoint hP hQ (hPQ <| · ▸ rfl)) (by
-    rintro _ ⟨P, hP, rfl⟩
-    rw [bot_eq_empty, ← Set.nonempty_iff_ne_empty]
-    exact ⟨P.first, P.first_mem⟩)
-
-@[simp]
-lemma SetEnsemble.vertexSet_mem_vertexPartition (A : G.SetEnsemble S T) (hP : P ∈ A.paths) :
-    V(P) ∈ A.vertexPartition := by
-  use P
-
-def SetEnsemble.vertexSet (A : G.SetEnsemble S T) : Set α :=
-  A.vertexPartition.supp
-
-@[simp]
-lemma SetEnsemble.mem_vertexSet_iff (A : G.SetEnsemble S T) :
-    v ∈ A.vertexSet ↔ ∃ P ∈ A.paths, v ∈ P := by
-  refine ⟨fun ⟨V, hV, hv⟩ ↦ ?_, fun ⟨P, hP, hvP⟩ ↦ ⟨V(P), (by use P), hvP⟩⟩
-  obtain ⟨P, hP, rfl⟩ := by simpa [vertexPartition] using hV
-  use P, hP, hv
-
-@[simp]
-lemma SetEnsemble.subset_vertexSet_of_mem (A : G.SetEnsemble S T) (hP : P ∈ A.paths) :
-    V(P) ⊆ A.vertexSet :=
-  fun _ hvP ↦ A.mem_vertexSet_iff.mpr ⟨P, hP, hvP⟩
-
-lemma SetEnsemble.vertexSet_subset (A : G.SetEnsemble S T) : A.vertexSet ⊆ V(G) := by
-  rintro v
-  simp only [mem_vertexSet_iff, forall_exists_index, and_imp]
-  exact fun _ hP hvP ↦ (A.valid hP).vertexSet_subset hvP
-
-lemma SetEnsemble.vertexSet_eq_biUnion (A : G.SetEnsemble S T) :
-    A.vertexSet = ⋃ P ∈ A.paths, V(P) := by
-  ext v
-  simp
-
-lemma SetEnsemble.image_first_subset (A : G.SetEnsemble S T) : first '' A.paths ⊆ A.vertexSet := by
-  rintro _ ⟨P, hP, rfl⟩
-  simp only [mem_vertexSet_iff]
-  use P, hP, first_mem
-
-lemma SetEnsemble.image_last_subset (A : G.SetEnsemble S T) : last '' A.paths ⊆ A.vertexSet := by
-  rintro _ ⟨P, hP, rfl⟩
-  simp only [mem_vertexSet_iff]
-  use P, hP, last_mem
-
-noncomputable def SetEnsemble.of_vertex (A : G.SetEnsemble S T) (v : α) (hv : v ∈ A.vertexSet) :
-    WList α β :=
-  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose
-
-lemma SetEnsemble.of_vertex_mem_setEnsemble (A : G.SetEnsemble S T) (hv : v ∈ A.vertexSet) :
-    A.of_vertex v hv ∈ A.paths :=
-  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.1
-
-lemma SetEnsemble.of_vertex_mem (A : G.SetEnsemble S T) (hv : v ∈ A.vertexSet) :
-    v ∈ A.of_vertex v hv := by
-  have := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
-  have := this ▸ (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.2
-  rwa [← WList.mem_vertexSet_iff]
-
-lemma SetEnsemble.eq_of_vertex_mem (A : G.SetEnsemble S T) (hv : v ∈ A.vertexSet)
-    (hP : P ∈ A.paths) (hvP : v ∈ P) : P = A.of_vertex v hv := by
-  refine A.disjoint.eq hP (A.of_vertex_mem_setEnsemble hv) ?_
-  rw [not_disjoint_iff]
-  use P.first, P.first_mem
-  let S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose
-  have : V(A.of_vertex v hv) = S :=
-    (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
-  have hS : V(P) = S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.2 V(P)
-    (by simp [hvP, hP])
-  rw [this, ← hS]
-  exact P.first_mem
-
 /-! ### Operations on SetEnsembles -/
 
 @[simps]
-def SetEnsemble.congr (A : G.SetEnsemble S T) (hG : G = H) (hS : S = S') (hT : T = T') :
-    H.SetEnsemble S' T' where
+def SetEnsemble.congr (A : G.SetEnsemble) (hG : G = H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
-  valid _ hP := hG ▸ hS ▸ hT ▸ A.valid hP
+  valid _ hP := hG ▸ A.valid hP
 
 @[simp]
-lemma SetEnsemble.congr_vertexSet (A : G.SetEnsemble S T) (hG : G = H) (hS : S = S') (hT : T = T') :
-    (A.congr hG hS hT).vertexSet = A.vertexSet := by
+lemma SetEnsemble.congr_vertexSet (A : G.SetEnsemble) (hG : G = H) :
+    (A.congr hG).vertexSet = A.vertexSet := by
   rw [vertexSet_eq_biUnion, congr_paths, ← vertexSet_eq_biUnion]
 
 /-- Attaches the same set of paths to a larger graph. -/
 @[simps]
-def SetEnsemble.of_le (A : G.SetEnsemble S T) (hle : G ≤ H) : H.SetEnsemble S T where
+def SetEnsemble.of_le (A : G.SetEnsemble) (hle : G ≤ H) : H.SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
   valid _ hP := (A.valid hP).of_le hle
 
 @[simp]
-lemma SetEnsemble.of_le_vertexSet (A : G.SetEnsemble S T) (hle : G ≤ H) :
+lemma SetEnsemble.of_le_vertexSet (A : G.SetEnsemble) (hle : G ≤ H) :
     (A.of_le hle).vertexSet = A.vertexSet := by
   rw [vertexSet_eq_biUnion, of_le_paths, ← vertexSet_eq_biUnion]
 
-@[simps]
-def SetEnsemble.left_of_symmdiff_disjoint {S₀ : Set α} (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet (S ∆ S₀)) : G.SetEnsemble S₀ T where
-  paths := A.paths
-  disjoint := A.disjoint
-  valid _ hP := (A.valid hP).left_of_symmdiff_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
+@[simp]
+lemma SetEnsemble.between.left {S₀ : Set α} (hAST : A.between S T)
+    (hA : Disjoint A.vertexSet (S ∆ S₀)) : A.between S₀ T :=
+  fun _ hP ↦ (hAST hP).left_of_symmdiff_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
 
 @[simp]
-lemma SetEnsemble.left_of_symmdiff_disjoint_vertexSet {S₀ : Set α} (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet (S ∆ S₀)) :
-    (A.left_of_symmdiff_disjoint hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, left_of_symmdiff_disjoint_paths, ← vertexSet_eq_biUnion]
-
-@[simps]
-def SetEnsemble.right_of_symmdiff_disjoint {T₀ : Set α} (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet (T ∆ T₀)) : G.SetEnsemble S T₀ where
-  paths := A.paths
-  disjoint := A.disjoint
-  valid _ hP :=
-    (A.valid hP).right_of_symmdiff_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
-
-@[simp]
-lemma SetEnsemble.right_of_symmdiff_disjoint_vertexSet {T₀ : Set α} (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet (T ∆ T₀)) :
-    (A.right_of_symmdiff_disjoint hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, right_of_symmdiff_disjoint_paths, ← vertexSet_eq_biUnion]
-
-/-- Takes the suitable suffixes of the paths to get a SetEnsemble for larger `S`. -/
-@[simps]
-def SetEnsemble.subset_left (A : G.SetEnsemble S T) (hS : S ⊆ S') [DecidablePred (· ∈ S')] :
-    G.SetEnsemble S' T where
-  paths := (suffixFromLast · (· ∈ S')) '' A.paths
-  disjoint P hP Q hQ hPQ := by
-    obtain ⟨P', hP', rfl, rfl⟩ := hP
-    obtain ⟨Q', hQ', rfl, rfl⟩ := hQ
-    simp only at hPQ ⊢
-    apply (A.disjoint hP' hQ' ?_).mono
-    · exact (P'.suffixFromLast_isSuffix (· ∈ S')).subset
-    · exact (Q'.suffixFromLast_isSuffix (· ∈ S')).subset
-    rintro rfl
-    simp at hPQ
-  valid := by
-    rintro _ ⟨P', hP', rfl, rfl⟩
-    simp only
-    refine ⟨(A.valid hP').isPath.suffix (P'.suffixFromLast_isSuffix (· ∈ S')),
-      suffixFromLast_prop_first (by use P'.first, P'.first_mem, hS (A.valid hP').first_mem),
-      (P'.suffixFromLast_isSuffix (· ∈ S')).last_eq ▸ (A.valid hP').last_mem,
-      fun s hs hsS' ↦ (suffixFromLast_first_eq_of_prop hs hsS').symm, fun t ht htT ↦ ?_⟩
-    rw [(P'.suffixFromLast_isSuffix (· ∈ S')).last_eq]
-    exact (A.valid hP').eq_last_of_mem ((P'.suffixFromLast_isSuffix (· ∈ S')).mem ht) htT
-
-@[simp]
-lemma SetEnsemble.subset_left_paths_encard [DecidablePred (· ∈ S')] (A : G.SetEnsemble S T)
-    (hS : S ⊆ S') : (A.subset_left hS).paths.encard = A.paths.encard := by
-  simp only [subset_left_paths]
-  exact (A.injOn_of_isSublist _ (·.suffixFromLast_isSuffix (· ∈ S') |>.isSublist)).encard_image
-
-/-- Takes the suitable prefixes of the paths to get a SetEnsemble for larger `T`. -/
-@[simps]
-def SetEnsemble.subset_right (A : G.SetEnsemble S T) (hT : T ⊆ T') [DecidablePred (· ∈ T')] :
-    G.SetEnsemble S T' where
-  paths := (prefixUntil · (· ∈ T')) '' A.paths
-  disjoint P hP Q hQ hPQ := by
-    obtain ⟨P', hP', rfl, rfl⟩ := hP
-    obtain ⟨Q', hQ', rfl, rfl⟩ := hQ
-    simp only at hPQ
-    apply (A.disjoint hP' hQ' ?_).mono
-    · exact (P'.prefixUntil_isPrefix (· ∈ T')).subset
-    · exact (Q'.prefixUntil_isPrefix (· ∈ T')).subset
-    rintro rfl
-    simp at hPQ
-  valid := by
-    rintro _ ⟨P', hP', rfl, rfl⟩
-    simp only
-    refine ⟨(A.valid hP').isPath.prefix (P'.prefixUntil_isPrefix (· ∈ T')),
-      (P'.prefixUntil_first (· ∈ T')) ▸ (A.valid hP').first_mem,
-      prefixUntil_prop_last (by use P'.last, P'.last_mem, hT (A.valid hP').last_mem), ?_,
-      fun t ht htT' ↦ (prefixUntil_last_eq_of_prop ht htT').symm⟩
-    simp only [prefixUntil_first]
-    rintro s hs hsS'
-    exact (A.valid hP').eq_first_of_mem ((P'.prefixUntil_isPrefix (· ∈ T')).mem hs) hsS'
-
-@[simp]
-lemma SetEnsemble.subset_right_paths_encard [DecidablePred (· ∈ T')] (A : G.SetEnsemble S T)
-    (hT : T ⊆ T') : (A.subset_right hT).paths.encard = A.paths.encard := by
-  simp only [subset_right_paths]
-  exact InjOn.encard_image <| A.injOn_of_isSublist _ (·.prefixUntil_isPrefix (· ∈ T') |>.isSublist)
-
-/-- Takes the suitable infixes of the paths to get a SetEnsemble for larger `S` and `T`. -/
-@[simps!]
-def SetEnsemble.subset (A : G.SetEnsemble S T) (hS : S ⊆ S') (hT : T ⊆ T') [DecidablePred (· ∈ S')]
-    [DecidablePred (· ∈ T')] : G.SetEnsemble S' T' :=
-  A.subset_left hS |>.subset_right hT
+lemma SetEnsemble.between.right {T₀ : Set α} (hAST : A.between S T)
+    (hA : Disjoint A.vertexSet (T ∆ T₀)) : A.between S T₀ :=
+  fun _ hP ↦ (hAST hP).right_of_symmdiff_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `G - X`. -/
-@[simps!]
-def SetEnsemble.vertexDelete_of_disjoint (A : G.SetEnsemble S T) (hA : Disjoint A.vertexSet X) :
-    (G - X).SetEnsemble S T where
+@[simps]
+def SetEnsemble.vertexDelete (A : G.SetEnsemble) (hA : Disjoint A.vertexSet X) :
+    (G - X).SetEnsemble where
   paths := A.paths
   disjoint := A.disjoint
-  valid _ hP := (A.valid hP).vertexDelete_of_disjoint (hA.mono_left (A.subset_vertexSet_of_mem hP))
+  valid _ hP := by
+    rw [isPath_vertexDelete_iff]
+    use A.valid hP, hA.mono_left (A.subset_vertexSet_of_mem hP)
 
 @[simp]
-lemma SetEnsemble.vertexDelete_of_disjoint_vertexSet (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet X) : (A.vertexDelete_of_disjoint hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, vertexDelete_of_disjoint_paths, ← vertexSet_eq_biUnion]
+lemma SetEnsemble.vertexDelete_vertexSet (A : G.SetEnsemble)
+    (hA : Disjoint A.vertexSet X) : (A.vertexDelete hA).vertexSet = A.vertexSet := by
+  rw [vertexSet_eq_biUnion, vertexDelete_paths, ← vertexSet_eq_biUnion]
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `S \ X`. -/
-@[simps!]
-def SetEnsemble.diff_left_of_disjoint (A : G.SetEnsemble S T) (hA : Disjoint A.vertexSet X) :
-    G.SetEnsemble (S \ X) T where
-  paths := A.paths
-  disjoint := A.disjoint
-  valid _ hP := (A.valid hP).subset_left diff_subset <| ⟨(A.valid hP).first_mem,
-    ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left first_mem⟩
-
 @[simp]
-lemma SetEnsemble.diff_left_of_disjoint_vertexSet (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet X) : (A.diff_left_of_disjoint hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, diff_left_of_disjoint_paths, ← vertexSet_eq_biUnion]
+def SetEnsemble.between.diff_left (hAST : A.between S T) (hA : Disjoint A.vertexSet X) :
+    A.between (S \ X) T := fun _ hP ↦ (hAST hP).subset_left diff_subset <| ⟨(hAST hP).first_mem,
+    ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left first_mem⟩
 
 /-- Given a vertex set disjoint from a SetEnsemble, the same set of paths form a valid SetEnsmeble
   for `T \ X`. -/
-@[simps!]
-def SetEnsemble.diff_right_of_disjoint (A : G.SetEnsemble S T) (hA : Disjoint A.vertexSet X) :
-    G.SetEnsemble S (T \ X) where
-  paths := A.paths
-  disjoint := A.disjoint
-  valid _ hP := (A.valid hP).subset_right diff_subset <| ⟨(A.valid hP).last_mem,
-    ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left last_mem⟩
-
 @[simp]
-lemma SetEnsemble.diff_right_of_disjoint_vertexSet (A : G.SetEnsemble S T)
-    (hA : Disjoint A.vertexSet X) : (A.diff_right_of_disjoint hA).vertexSet = A.vertexSet := by
-  rw [vertexSet_eq_biUnion, diff_right_of_disjoint_paths, ← vertexSet_eq_biUnion]
+def SetEnsemble.between.diff_right (hAST : A.between S T) (hA : Disjoint A.vertexSet X):
+    A.between S (T \ X) := fun _ hP ↦ (hAST hP).subset_right diff_subset <| ⟨(hAST hP).last_mem,
+    ((hA.mono_left (A.subset_vertexSet_of_mem hP))).notMem_of_mem_left last_mem⟩
 
 /-- Inserts a new disjoint path into a SetEnsemble. -/
 @[simps]
-def SetEnsemble.insert_path (A : G.SetEnsemble S T) (P : WList α β) (hP : G.IsPathFrom S T P)
-    (hdj : Disjoint V(P) A.vertexSet) : G.SetEnsemble S T where
+def SetEnsemble.path_insert (A : G.SetEnsemble) (P : WList α β) (hP : G.IsPath P)
+    (hdj : Disjoint V(P) A.vertexSet) : G.SetEnsemble where
   paths := insert P A.paths
   disjoint := by
     refine A.disjoint.insert fun Q hQ hne ↦ ?_
@@ -450,75 +364,97 @@ def SetEnsemble.insert_path (A : G.SetEnsemble S T) (P : WList α β) (hP : G.Is
     exact A.valid hQ
 
 @[simp]
-lemma SetEnsemble.insert_path_paths_encard (A : G.SetEnsemble S T) (hP : G.IsPathFrom S T P)
-    (hdj : Disjoint V(P) A.vertexSet) :
-    (A.insert_path P hP hdj).paths.encard = A.paths.encard + 1 := by
-  rw [insert_path_paths, Set.encard_insert_of_notMem ?_]
+lemma SetEnsemble.path_insert_paths_encard (hP : G.IsPath P) (hdj : Disjoint V(P) A.vertexSet) :
+    (A.path_insert P hP hdj).paths.encard = A.paths.encard + 1 := by
+  rw [path_insert_paths, Set.encard_insert_of_notMem ?_]
   contrapose! hdj
   rw [not_disjoint_iff]
   exact ⟨P.last, P.last_mem, A.mem_vertexSet_iff.mpr ⟨P, hdj, P.last_mem⟩⟩
 
-/-- Takes a subset of the paths of a SetEnsemble. -/
 @[simps]
-def SetEnsemble.path_subset (A : G.SetEnsemble S T) (P : Set (WList α β)) (hP : P ⊆ A.paths) :
-    G.SetEnsemble S T where
-  paths := P
-  disjoint := A.disjoint.mono hP
-  valid _ hQ := A.valid (hP hQ)
+def SetEnsemble.path_remove (A : G.SetEnsemble) (P : WList α β) : G.SetEnsemble where
+  paths := A.paths \ {P}
+  disjoint := A.disjoint.mono diff_subset
+  valid _ hQ := A.valid (by simp_all)
+
+@[simp]
+lemma SetEnsemble.path_remove_vertexSet_disjoint (hP : P ∈ A.paths) :
+    Disjoint (A.path_remove P).vertexSet V(P) := by
+  simp only [vertexSet_eq_biUnion, disjoint_iUnion_left, path_remove_paths, mem_diff,
+    mem_singleton_iff, and_imp]
+  simp_rw [eq_comm, disjoint_comm]
+  exact A.disjoint hP
+
+@[simp]
+lemma SetEnsemble.path_remove_vertexSet (hP : P ∈ A.paths) :
+    (A.path_remove P).vertexSet = A.vertexSet \ V(P) := by
+  rw [vertexSet_eq_biUnion, path_remove_paths, vertexSet_eq_biUnion]
+  conv_rhs => rw [← insert_eq_of_mem hP , ← insert_diff_singleton, biUnion_insert,
+    union_diff_cancel_left (by
+    rw [subset_empty_iff, ← disjoint_iff_inter_eq_empty, ← path_remove_paths, ←vertexSet_eq_biUnion]
+    exact (A.path_remove_vertexSet_disjoint hP).symm)]
 
 /-! ### Extending a SetEnsemble by a path in `T` -/
 
 /-- `pathr` refers to the path `P` in `T`. -/
-lemma SetEnsemble.pathr_first_mem (A : G.SetEnsemble S T)
-    (hPfirst : A.vertexSet ∩ V(P) = {P.first}) : P.first ∈ A.vertexSet :=
-  singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left
+lemma SetEnsemble.pathr_first_mem (A : G.SetEnsemble) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) :
+    P.first ∈ A.vertexSet := singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left
 
-lemma SetEnsemble.pathr_first_eq_of_vertex_last (A : G.SetEnsemble S T)
+lemma SetEnsemble.pathr_first_eq_of_vertex_last (hAST : A.between S T)
     (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPT : V(P) ⊆ T) :
     (A.of_vertex P.first <| A.pathr_first_mem hPfirst).last = P.first :=
   let hfirst := A.pathr_first_mem hPfirst
-  A.valid (A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst)
-  |>.eq_last_of_mem (A.of_vertex_mem hfirst) (hPT P.first_mem) |>.symm
+  hAST (A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst)
+  |>.eq_last_of_mem (A.mem_of_vertex hfirst) (hPT P.first_mem) |>.symm
 
-lemma SetEnsemble.disjoint_pathr_of_ne_of_vertex (A : G.SetEnsemble S T)
+lemma SetEnsemble.disjoint_pathr_of_ne_of_vertex (hAST : A.between S T)
     (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPT : V(P) ⊆ T) (hQ : Q ∈ A.paths)
     (hQne : Q ≠ A.of_vertex P.first (A.pathr_first_mem hPfirst)) : Disjoint V(P) V(Q) := by
   contrapose! hQne
   apply A.disjoint.eq hQ (A.of_vertex_mem_setEnsemble (A.pathr_first_mem hPfirst))
   rw [not_disjoint_iff] at hQne ⊢
-  use P.first, ?_, A.of_vertex_mem (A.pathr_first_mem hPfirst)
+  use P.first, ?_, A.mem_of_vertex (A.pathr_first_mem hPfirst)
   obtain ⟨v, hvP, hvQ⟩ := hQne
-  obtain rfl := A.valid hQ |>.eq_last_of_mem hvQ (hPT hvP)
+  obtain rfl := hAST hQ |>.eq_last_of_mem hvQ (hPT hvP)
   convert hvQ using 1
   rw [eq_comm, ← mem_singleton_iff, ← hPfirst, mem_inter_iff, A.mem_vertexSet_iff]
   use ⟨Q, hQ, last_mem⟩, hvP
 
-@[simps]
-def SetEnsemble.extend_right (A : G.SetEnsemble S T) (P : WList α β) (hP : V(P) ⊆ T)
-    (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPP : G.IsPath P) :
-    G.SetEnsemble (S \ (V(P) \ {P.first})) (T \ (V(P) \ {P.last})) where
-  paths :=
-    let Q := A.of_vertex P.first (singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left)
-    insert (Q ++ P) (A.paths \ {Q})
-  disjoint := by
-    refine (A.disjoint.mono diff_subset).insert fun Q hQ hne ↦ ?_
-    simp only [onFun, A.pathr_first_eq_of_vertex_last hPfirst hP, append_vertexSet_of_eq,
-      disjoint_comm, disjoint_union_right, and_self]
-    exact ⟨(A.disjoint hQ.1 (A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst) hQ.2),
-      A.disjoint_pathr_of_ne_of_vertex hPfirst hP hQ.1 hQ.2⟩
-  valid := by
-    have hfirst : P.first ∈ A.vertexSet := singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left
-    rintro Q (rfl | hQ)
-    · exact (A.valid <| A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst).append_right hPP
-        hP <| A.pathr_first_eq_of_vertex_last hPfirst hP
-    have hdj := A.disjoint_pathr_of_ne_of_vertex hPfirst hP hQ.1 hQ.2 |>.symm
-    exact (A.valid hQ.1).diff_left_of_disjoint (hdj.mono_right diff_subset)
-    |>.diff_right_of_disjoint <| hdj.mono_right diff_subset
+@[simps!]
+def SetEnsemble.extend_right (A : G.SetEnsemble) (hAST : A.between S T) (P : WList α β)
+   (hPT : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
+   G.SetEnsemble := by
+  let Q := A.of_vertex P.first (singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left)
+  refine A.path_remove Q |>.path_insert (Q ++ P) ?_ ?_
+  · exact ((hAST <| A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst).append_right hP
+      hPT <| A.pathr_first_eq_of_vertex_last hAST hPfirst hPT).isPath
+  simp only [vertexSet_eq_biUnion, path_remove_paths, mem_diff, mem_singleton_iff,
+    disjoint_iUnion_right, and_imp, ← ne_eq]
+  rintro R hR hne
+  rw [append_vertexSet_of_eq <| A.pathr_first_eq_of_vertex_last hAST hPfirst hPT,
+    disjoint_union_left]
+  exact ⟨A.disjoint (A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst) hR hne.symm,
+    A.disjoint_pathr_of_ne_of_vertex hAST hPfirst hPT hR hne⟩
 
 @[simp]
-lemma SetEnsemble.extend_right_paths_encard (A : G.SetEnsemble S T) (hAFin : A.paths.Finite)
-    (hP : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPP : G.IsPath P) :
-    (A.extend_right P hP hPfirst hPP).paths.encard = A.paths.encard := by
+lemma SetEnsemble.between.extend_right (hAST : A.between S T) (hPT : V(P) ⊆ T)
+    (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
+    (A.extend_right hAST P hPT hPfirst hP).between (S \ (V(P) \ {P.first}))
+    (T \ (V(P) \ {P.last})) := by
+  rintro Q hQ
+  obtain rfl | ⟨hQ, hQne⟩ := (by simpa using hQ) ; clear hQ
+  · exact ((hAST <| A.of_vertex_mem_setEnsemble <| A.pathr_first_mem hPfirst).append_right hP
+      hPT <| A.pathr_first_eq_of_vertex_last hAST hPfirst hPT)
+  refine hAST hQ |>.diff_left_of_disjoint ?_ |>.diff_right_of_disjoint ?_
+  · refine Disjoint.mono_left (A.subset_vertexSet_of_mem hQ) ?_
+    rw [disjoint_comm, disjoint_diff_iff, inter_comm]
+    exact hPfirst.subset
+  exact (A.disjoint_pathr_of_ne_of_vertex hAST hPfirst hPT hQ hQne).symm.mono_right diff_subset
+
+@[simp]
+lemma SetEnsemble.extend_right_paths_encard (A : G.SetEnsemble) (hAST : A.between S T)
+    (hAFin : A.paths.Finite) (hPT : V(P) ⊆ T) (hPfirst : A.vertexSet ∩ V(P) = {P.first})
+    (hP : G.IsPath P) : (A.extend_right hAST P hPT hPfirst hP).paths.encard = A.paths.encard := by
   have hf := singleton_subset_iff.mp <| hPfirst ▸ inter_subset_left
   have : Finite ↑A.paths := hAFin
   have : Finite ↑(A.paths \ {A.of_vertex P.first hf}) :=
@@ -531,17 +467,17 @@ lemma SetEnsemble.extend_right_paths_encard (A : G.SetEnsemble S T) (hAFin : A.p
     rintro haA
     apply A.disjoint.eq haA (A.of_vertex_mem_setEnsemble (A.pathr_first_mem hPfirst)) ?_
     rw [not_disjoint_iff]
-    exact ⟨(A.of_vertex P.first hf).first, by simp [A.pathr_first_eq_of_vertex_last hPfirst hP],
-      first_mem⟩
+    exact ⟨(A.of_vertex P.first hf).first, by
+      simp [A.pathr_first_eq_of_vertex_last hAST hPfirst hPT], first_mem⟩
   rw [extend_right_paths, encard_insert_of_notMem hPfirstQ, encard_diff_singleton_of_mem
   <| A.of_vertex_mem_setEnsemble (A.pathr_first_mem hPfirst)]
   refine tsub_add_cancel_of_le ?_
   exact Order.one_le_iff_pos.mpr hAcard
 
 @[simp]
-lemma SetEnsemble.extend_right_vertexSet (A : G.SetEnsemble S T) (hP : V(P) ⊆ T)
-    (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hPP : G.IsPath P) :
-    (A.extend_right P hP hPfirst hPP).vertexSet = A.vertexSet ∪ V(P) := by
+lemma SetEnsemble.extend_right_vertexSet (hAST : A.between S T) (hPT : V(P) ⊆ T)
+    (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
+    (A.extend_right hAST P hPT hPfirst hP).vertexSet = A.vertexSet ∪ V(P) := by
   simp_rw [Set.ext_iff, mem_vertexSet_iff, extend_right_paths, mem_insert_iff, mem_diff,
     mem_singleton_iff, exists_eq_or_imp, mem_union, mem_append_iff_of_eq
     (A.pathr_first_eq_of_vertex_last hPfirst hP), or_comm, or_assoc]
@@ -650,3 +586,61 @@ lemma SetEnsemble.extend_right_two_vertexSet (A : G.SetEnsemble S T) (P : WList 
     (A.extend_right_two P hPT htwo hPP).vertexSet =
     A.vertexSet ∪ V(P.prefixUntil (· ∈ A.vertexSet)) ∪ V(P.suffixFromLast (· ∈ A.vertexSet)) := by
   simp [extend_right_two, extend_right_vertexSet]
+
+@[simp]
+lemma SetEnsemble.extend_right_two_paths_encard (A : G.SetEnsemble S T) (hAFin : A.paths.Finite)
+    (P : WList α β) (hPT : V(P) ⊆ T) [DecidablePred (· ∈ A.vertexSet)]
+    (htwo : P.vertex.countP (· ∈ A.vertexSet) = 2) (hPP : G.IsPath P) :
+    (A.extend_right_two P hPT htwo hPP).paths.encard = A.paths.encard := by
+  rw [extend_right_two, right_of_symmdiff_disjoint_paths, left_of_symmdiff_disjoint_paths,
+    extend_right_paths_encard, extend_right_paths_encard _ hAFin]
+  simp only [extend_right_paths, mem_vertexSet_iff, reverse_first,
+    prefixUntil_last_eq_suffixFrom_first, finite_insert]
+  exact hAFin.diff
+
+-- lemma SetEnsemble.extend_right_le_two (A : G.SetEnsemble S T) (hAFin : A.paths.Finite)
+--     (P : WList α β) (hPT : V(P) ⊆ T \ S) [DecidablePred (· ∈ A.vertexSet)] (hPP : G.IsPath P)
+--     (n : ℕ) (hletwo : n ≤ 2) (hn : P.vertex.countP (· ∈ A.vertexSet) = n) :
+--   ∃ B : G.SetEnsemble S (T \ (V(P) \ {P.first, P.last})), B.paths.encard = A.paths.encard ∧
+--     B.vertexSet ⊆ A.vertexSet ∪ V(P) := by
+--   rw [subset_diff] at hPT
+--   interval_cases n <;> clear hletwo
+--   · have hdj : Disjoint A.vertexSet V(P) := by
+--       rw [disjoint_iff_forall_ne]
+--       rintro x hxA y hyP rfl
+--       rw [List.countP_eq_zero] at hn
+--       exact hn x hyP (by simp [hxA])
+--     have h : Disjoint A.vertexSet (T ∆ (T \ (V(P) \ {P.first, P.last}))) := by
+--       nth_rw 2 [← T.diff_empty]
+--       rw [diff_symmDiff_diff, ← bot_eq_empty, bot_symmDiff]
+--       exact hdj.mono_right (inter_subset_right.trans diff_subset)
+--     exact ⟨A.right_of_symmdiff_disjoint h, by simp, by simp⟩
+--   · have hex := by simpa [-mem_vertexSet_iff] using List.one_le_countP_iff.mp hn.symm.le
+--     use A.extend_right (P.suffixFromLast (· ∈ A.vertexSet))
+--       ((P.suffixFromLast_isSuffix _).subset.trans hPT.1)
+--       (P.suffixFromLast_inter_eq_first A.vertexSet hex) (hPP.suffix <| P.suffixFromLast_isSuffix _)
+--       |>.left_of_symmdiff_disjoint ?_ |>.right_of_symmdiff_disjoint ?_, ?_, ?_
+--     · rw [extend_right_vertexSet]
+--       convert disjoint_empty _
+--       nth_rw 4 [← S.diff_empty]
+--       rw [diff_symmDiff_diff, ← bot_eq_empty, symmDiff_bot, bot_eq_empty,
+--         ← disjoint_iff_inter_eq_empty]
+--       exact hPT.2.symm.mono_right (diff_subset.trans (P.suffixFromLast_isSuffix _).subset)
+--     · rw [left_of_symmdiff_disjoint_vertexSet, extend_right_vertexSet, suffixFromLast_last,
+--         diff_symmDiff_diff, symmDiff_of_le sorry]
+--       sorry
+--     · rwa [right_of_symmdiff_disjoint_paths, left_of_symmdiff_disjoint_paths,
+--         extend_right_paths_encard]
+--     rw [right_of_symmdiff_disjoint_vertexSet, left_of_symmdiff_disjoint_vertexSet,
+--       extend_right_vertexSet]
+--     apply union_subset_union_right
+--     exact (P.suffixFromLast_isSuffix _).subset
+--   have hex : ∃ x ∈ P, x ∈ A.vertexSet := by
+--     simpa [-mem_vertexSet_iff] using List.one_le_countP_iff.mp (one_le_two.trans hn.symm.le)
+--   use A.extend_right_two P hPT.1 hn hPP |>.left_of_symmdiff_disjoint
+--     (by simp [(hPT.2.mono_left diff_subset).symm.sdiff_eq_left]), ?_, ?_
+--   · rw [left_of_symmdiff_disjoint_paths, extend_right_two_paths_encard _ hAFin]
+--   rw [left_of_symmdiff_disjoint_vertexSet, extend_right_two_vertexSet, union_assoc]
+--   apply union_subset_union_right
+--   rw [union_subset_iff]
+--   use (P.prefixUntil_isPrefix _).subset, (P.suffixFromLast_isSuffix _).subset

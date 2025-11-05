@@ -1,5 +1,5 @@
 import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Walk.toGraph
+-- import Matroid.Graph.Walk.toGraph
 
 open Set Function Nat WList
 
@@ -55,15 +55,20 @@ lemma union_not_connected_of_disjoint_vertexSet (hV : Disjoint V(G) V(H)) (hG : 
 /-- Two vertices of a cycle are connected after deleting any other vertex.  -/
 lemma IsCycle.vertexConnected_deleteVertex_of_mem_of_mem (hC : G.IsCycle C) (x : α) (hy₁ : y₁ ∈ C)
     (hy₂ : y₂ ∈ C) (hne₁ : y₁ ≠ x) (hne₂ : y₂ ≠ x) : (G - ({x} : Set α)).VertexConnected y₁ y₂ := by
+  classical
   obtain rfl | hne := eq_or_ne y₁ y₂
   · simpa [hC.vertexSet_subset hy₁]
   obtain ⟨u, e, rfl⟩ | hnt := hC.loop_or_nontrivial
   · simp_all
   by_cases hxC : x ∈ C
-  · obtain ⟨P, hP, hP_eq⟩ := hC.exists_isPath_toGraph_eq_delete_vertex hnt hxC
+  · obtain ⟨P, e, f, hP, hxP, heP, hfP, hne, hP_eq⟩ := hC.exists_isPath_vertex hnt hxC
+    have : V(P) = V(C) \ {x} := by
+      apply_fun WList.vertexSet at hP_eq
+      
+      sorry
     refine IsWalk.vertexConnected_of_mem_of_mem (W := P) ?_ ?_ ?_
-    · simp [hP.isWalk, ← mem_vertexSet_iff, ← toGraph_vertexSet, hP_eq]
-    all_goals simp_all [← mem_vertexSet_iff, ← toGraph_vertexSet, hP_eq]
+    · simp [hP.isWalk, hxP]
+    all_goals simp_all [← mem_vertexSet_iff]
   exact IsWalk.vertexConnected_of_mem_of_mem (W := C) (by simp [hxC, hC.isWalk]) hy₁ hy₂
 
 /-- Two vertices of a cycle are connected after deleting any edge. -/
