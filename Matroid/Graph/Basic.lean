@@ -153,6 +153,7 @@ lemma eq_or_disjoint_of_mem (hx : x ∈ V(G)) (hy : y ∈ V(G)) : x = y ∨ Disj
 lemma IsLink.edge_mem (h : G.IsLink e x y) : e ∈ E(G) :=
   (edge_mem_iff_exists_isLink ..).2 ⟨x, y, h⟩
 
+@[symm]
 protected lemma IsLink.symm (h : G.IsLink e x y) : G.IsLink e y x :=
   G.isLink_symm h.edge_mem h
 
@@ -380,6 +381,7 @@ lemma Inc.isLoopAt_or_isNonloopAt (h : G.Inc e x) : G.IsLoopAt e x ∨ G.IsNonlo
 /-- `G.Adj x y` means that `G` has an edge whose ends are the vertices `x` and `y`. -/
 def Adj (G : Graph α β) (x y : α) : Prop := ∃ e, G.IsLink e x y
 
+@[symm]
 protected lemma Adj.symm (h : G.Adj x y) : G.Adj y x :=
   ⟨_, h.choose_spec.symm⟩
 
