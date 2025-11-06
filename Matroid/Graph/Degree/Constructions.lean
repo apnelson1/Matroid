@@ -2,114 +2,105 @@ import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
 import Matroid.Graph.Constructions.Basic
 
-variable {α β : Type*} [CompleteLattice α] {x y z a b u v w : α} {e f : β} {G H : Graph α β}
-  {P C : WList α β}
+variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
 
-open Set WList Partition
+open Set WList
 
 namespace Graph
 
 /-! ### Constructions -/
 
 @[simp]
-lemma noEdge_eDegree (V : Partition α) (β : Type*) (x : α) :
-    (Graph.noEdge V β).eDegree x = 0 := by
+lemma noEdge_eDegree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).eDegree x = 0 := by
   simp [eDegree]
 
 @[simp]
-lemma noEdge_degree (V : Partition α) (β : Type*) (x : α) :
-    (Graph.noEdge V β).degree x = 0 := by
+lemma noEdge_degree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).degree x = 0 := by
   simp [degree]
 
-lemma singleEdge_eDegree_left (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
-    (Graph.singleEdge e x y).eDegree x = 1 := by
+lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) :
+    (Graph.singleEdge x y e).eDegree x = 1 := by
   rw [eDegree_eq_encard_add_encard, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
   · convert rfl
-    simp [singleEdge_isNonloopAt_left_of_isPartition hxy, hne]
-  simp [singleEdge_isLoopAt_left_of_isPartition hxy, hne]
+    suffices ∃ z, ¬z = x ∧ (z = y ∨ x = y ∧ z = x) by
+      simpa +contextual [iff_def, IsNonloopAt, Set.ext_iff]
+    exact ⟨y, hxy.symm, by simp [hxy]⟩
+  simp_rw [IsLoopAt, singleEdge_isLink_iff]
+  simp [hxy]
 
-lemma singleEdge_eDegree_right (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
-    (Graph.singleEdge e x y).eDegree y = 1 := by
-  rw [singleEdge_comm, singleEdge_eDegree_left ?_ hne.symm]
-  rwa [pair_comm]
+lemma singleEdge_eDegree_right (hxy : x ≠ y) (e : β) :
+    (Graph.singleEdge x y e).eDegree y = 1 := by
+  rw [singleEdge_comm, singleEdge_eDegree_left hxy.symm]
 
-lemma singleEdge_eDegree_of_ne (e : β) (hxy : IsPartition {x, y}) (hx : z ≠ x) (hy : z ≠ y) :
-    (Graph.singleEdge e x y).eDegree z = 0 := by
-  simpa [eDegree_eq_zero_iff_adj, hx, singleEdge_adj_of_isPartition hxy]
+lemma singleEdge_eDegree_of_ne (e : β) (hx : z ≠ x) (hy : z ≠ y) :
+    (Graph.singleEdge x y e).eDegree z = 0 := by
+  simpa [eDegree_eq_zero_iff_adj, hx]
 
-lemma singleEdge_degree_left (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
-    (Graph.singleEdge e x y).degree x = 1 := by
-  simp [degree, singleEdge_eDegree_left hxy hne]
+lemma singleEdge_degree_left (hxy : x ≠ y) (e : β) :
+    (Graph.singleEdge x y e).degree x = 1 := by
+  simp [degree, singleEdge_eDegree_left hxy]
 
-lemma singleEdge_degree_right (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
-    (Graph.singleEdge e x y).degree y = 1 := by
-  simp [degree, singleEdge_eDegree_right hxy hne]
+lemma singleEdge_degree_right (hxy : x ≠ y) (e : β) :
+    (Graph.singleEdge x y e).degree y = 1 := by
+  simp [degree, singleEdge_eDegree_right hxy]
 
-lemma singleEdge_degree_of_ne (e : β) (hxy : IsPartition {x, y}) (hx : z ≠ x) (hy : z ≠ y) :
-    (Graph.singleEdge e x y).degree z = 0 := by
-  simp [degree, singleEdge_eDegree_of_ne _ hxy hx hy]
+lemma singleEdge_degree_of_ne (e : β) (hx : z ≠ x) (hy : z ≠ y) :
+    (Graph.singleEdge x y e).degree z = 0 := by
+  simp [degree, singleEdge_eDegree_of_ne _ hx hy]
 
-lemma singleEdge_regular (hxy : IsPartition {x, y}) (hne : x ≠ y) (e : β) :
-    (Graph.singleEdge e x y).Regular 1 := by
-  intro z hz
-  obtain rfl | rfl := singleEdge_vertexSet_of_isPartition hxy ▸ hz
-  · rw [singleEdge_eDegree_left hxy hne, Nat.cast_one]
-  rw [singleEdge_eDegree_right hxy hne, Nat.cast_one]
+lemma singleEdge_regular (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).Regular 1 := by
+  rintro z (rfl | rfl)
+  · rw [singleEdge_eDegree_left hxy, Nat.cast_one]
+  rw [singleEdge_eDegree_right hxy, Nat.cast_one]
 
 @[simp]
-lemma singleEdge_self_eDegree (hx : x ≠ ⊥) (e : β) :
-    (Graph.singleEdge e x x).eDegree x = 2 := by
+lemma singleEdge_self_eDegree (x : α) (e : β) : (Graph.singleEdge x x e).eDegree x = 2 := by
   rw [eDegree_eq_encard_add_encard]
-  simp [← isLink_self_iff, IsNonloopAt, hx]
+  simp [← isLink_self_iff, IsNonloopAt]
 
 @[simp]
-lemma singleEdge_self_degree (hx : x ≠ ⊥) (e : β) : (Graph.singleEdge e x x).degree x = 2 := by
-  simp [degree, hx]
+lemma singleEdge_self_degree (x : α) (e : β) : (Graph.singleEdge x x e).degree x = 2 := by
+  simp [degree]
 
 
-lemma banana_eDegree_left (hab : IsPartition {a, b}) (hne : a ≠ b) (F : Set β) :
-    (banana a b F).eDegree a = F.encard := by
-  have := banana_loopless (hab.disjoint (by simp) (by simp) hne) F
-  simp [eDegree_eq_encard_inc, hab]
+lemma banana_eDegree_left (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree a = F.encard := by
+  have := banana_loopless hab F
+  simp [eDegree_eq_encard_inc]
 
-lemma banana_eDegree_right (hab : IsPartition {a, b}) (hne : a ≠ b) (F : Set β) :
-    (banana a b F).eDegree b = F.encard := by
-  rw [banana_comm, banana_eDegree_left (pair_comm a b ▸ hab) hne.symm]
+lemma banana_eDegree_right (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree b = F.encard := by
+  rw [banana_comm, banana_eDegree_left hab.symm]
 
-lemma banana_degree_left (hab : IsPartition {a, b}) (hne : a ≠ b) (F : Set β) :
-    (banana a b F).degree a = F.ncard := by
-  simp [degree, banana_eDegree_left hab hne, ncard]
+lemma banana_degree_left (hab : a ≠ b) (F : Set α) : (banana a b F).degree a = F.ncard := by
+  simp [degree, banana_eDegree_left hab, ncard]
 
-lemma banana_degree_right (hab : IsPartition {a, b}) (hne : a ≠ b) (F : Set β) :
-    (banana a b F).degree b = F.ncard := by
-  simp [degree, banana_eDegree_right hab hne, ncard]
+lemma banana_degree_right (hab : a ≠ b) (F : Set α) : (banana a b F).degree b = F.ncard := by
+  simp [degree, banana_eDegree_right hab, ncard]
 
 
-lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) (hGH : Agree {G, H}) :
-    (G ∪ H).incFun = G.incFun + H.incFun := by
+lemma union_incFun_eq (hdj : Disjoint E(G) E(H)) : (G ∪ H).incFun = G.incFun + H.incFun := by
   ext e x
   rw [Pi.add_apply, Finsupp.add_apply]
   by_cases heG : e ∈ E(G)
-  · rw [incFun_eq_of_le (Graph.left_le_union hGH) heG, Nat.left_eq_add, incFun_vertex_eq_zero_iff]
+  · rw [incFun_eq_of_le (Graph.left_le_union G H) heG, Nat.left_eq_add, incFun_vertex_eq_zero_iff]
     exact fun h ↦ hdj.notMem_of_mem_right h.edge_mem heG
   rw [incFun_eq_zero_of_notMem heG, Finsupp.coe_zero, Pi.zero_apply, zero_add]
   by_cases heH : e ∈ E(H)
-  · rw [incFun_eq_of_le (Graph.right_le_union hGH) heH]
-  rw [incFun_eq_zero_of_notMem (by simp [heH, heG, hGH]), incFun_eq_zero_of_notMem heH]
+  · rw [incFun_eq_of_le (Compatible.of_disjoint_edgeSet hdj).right_le_union heH]
+  rw [incFun_eq_zero_of_notMem (by simp [heH, heG]), incFun_eq_zero_of_notMem heH]
 
-lemma union_eDegree_eq (hdj : Disjoint E(G) E(H)) (hGH : Agree {G, H}) (x : α) :
+lemma union_eDegree_eq (hdj : Disjoint E(G) E(H)) (x : α) :
     (G ∪ H).eDegree x = G.eDegree x + H.eDegree x := by
-  simp [eDegree, union_incFun_eq hdj hGH, ENat.tsum_add]
+  simp [eDegree, union_incFun_eq hdj, ENat.tsum_add]
 
-lemma eDegree_addEdge_left (he : e ∉ E(G)) (hab : IsPartition {a, b}) :
+lemma eDegree_addEdge_left {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).eDegree a = G.eDegree a + 1 := by
-  rw [Graph.addEdge, union_eDegree_eq, add_comm, singleEdge_eDegree_left hab]
+  rw [Graph.addEdge, union_eDegree_eq (by simpa), add_comm, singleEdge_eDegree_left hab]
 
-lemma eDegree_addEdge_right (he : e ∉ E(G)) (hab : a ≠ b) :
+lemma eDegree_addEdge_right {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).eDegree b = G.eDegree b + 1 := by
   rw [Graph.addEdge, union_eDegree_eq (by simpa), add_comm, singleEdge_eDegree_right hab]
 
-lemma eDegree_addEdge_of_ne (he : e ∉ E(G)) (hxa : x ≠ a) (hxb : x ≠ b) :
+lemma eDegree_addEdge_of_ne {a b : α} (he : e ∉ E(G)) (hxa : x ≠ a) (hxb : x ≠ b) :
     (G.addEdge e a b).eDegree x = G.eDegree x := by
   rw [Graph.addEdge, union_eDegree_eq (by simpa), singleEdge_eDegree_of_ne _ hxa hxb, zero_add]
 
@@ -118,15 +109,15 @@ lemma union_degree_eq [G.LocallyFinite] [H.LocallyFinite] (hdj : Disjoint E(G) E
   simp only [degree, union_eDegree_eq hdj]
   rw [ENat.toNat_add (by simp) (by simp)]
 
-lemma degree_addEdge_left [G.LocallyFinite] (he : e ∉ E(G)) (hab : a ≠ b) :
+lemma degree_addEdge_left [G.LocallyFinite] {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).degree a = G.degree a + 1 := by
   rw [Graph.addEdge, union_degree_eq (by simpa), add_comm, singleEdge_degree_left hab]
 
-lemma degree_addEdge_right [G.LocallyFinite] (he : e ∉ E(G)) (hab : a ≠ b) :
+lemma degree_addEdge_right [G.LocallyFinite] {a b : α} (he : e ∉ E(G)) (hab : a ≠ b) :
     (G.addEdge e a b).degree b = G.degree b + 1 := by
   rw [Graph.addEdge, singleEdge_comm, ← Graph.addEdge, degree_addEdge_left he hab.symm]
 
-lemma degree_addEdge_of_ne (he : e ∉ E(G)) (hxa : x ≠ a) (hxb : x ≠ b) :
+lemma degree_addEdge_of_ne {a b : α} (he : e ∉ E(G)) (hxa : x ≠ a) (hxb : x ≠ b) :
     (G.addEdge e a b).degree x = G.degree x := by
   rw [degree, eDegree_addEdge_of_ne he hxa hxb, degree]
 
@@ -209,7 +200,7 @@ lemma IsPath.degree_toGraph_eq_two (hP : G.IsPath P) (hvP : v ∈ P) (hne_first 
     rw [toGraph_cons, union_degree_eq (by simpa using hPe.1)]
     obtain rfl | hne1 := eq_or_ne v P.first
     · rw [singleEdge_degree_right (Ne.symm hne_first), (hP.1.first_isLeaf_toGraph ?_).degree]
-      rwa [first_eq_last_iff hP.1.nodup, not_nil_iff] at hne_last
+      rwa [first_eq_last_iff hP.1, not_nil_iff] at hne_last
     rw [ singleEdge_degree_of_ne _ hne_first hne1, ih hP.1 hvP hne1 hne_last]
 
 /-! ### Cycles -/

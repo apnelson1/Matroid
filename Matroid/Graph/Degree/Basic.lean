@@ -1,6 +1,5 @@
--- import Mathlib.Combinatorics.Graph.Basic
+import Mathlib.Combinatorics.Graph.Basic
 import Matroid.Graph.Simple
-import Matroid.Graph.Subgraph.Union
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Set.Card
 import Matroid.Graph.Finite
@@ -14,8 +13,7 @@ import Matroid.ForMathlib.Topology.ENat
 
 open Set
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β}
-  {X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
 
 namespace Graph
@@ -58,12 +56,10 @@ lemma IsLink.incFun_support_eq [DecidableEq α] (h : G.IsLink e x y) :
     (G.incFun e).support = {x,y} := by
   simp [incFun, h.endSet_eq]
 
-omit [CompleteLattice α] in
 @[simp] lemma _root_.Set.singleton_inter_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
     {x} ∩ s = if x ∈ s then {x} else ∅ := by
   split_ifs <;> simpa
 
-omit [CompleteLattice α] in
 @[simp] lemma _root_.Set.inter_singleton_eq (x : α) (s : Set α) [Decidable (x ∈ s)] :
     s ∩ {x} = if x ∈ s then {x} else ∅ := by
   split_ifs <;> simpa

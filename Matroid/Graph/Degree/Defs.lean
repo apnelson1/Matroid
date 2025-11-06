@@ -2,7 +2,7 @@ import Matroid.Graph.Degree.Basic
 
 open Set
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β} {d : ℕ}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {d : ℕ}
 
 namespace Graph
 
@@ -81,8 +81,8 @@ lemma MaxDegreeLE.finite_of_vertexSet_finite (h : G.MaxDegreeLE d) (hV : V(G).Fi
   have := h.locallyFinite
   rwa [← vertexSet_finite_iff]
 
-lemma maxDegreeLE_zero_iff : G.MaxDegreeLE 0 ↔ G = Graph.noEdge P(G) β := by
-  refine ⟨fun h ↦ Graph.ext (by simp) fun e x y ↦ ?_, fun h ↦ ?_⟩
+lemma maxDegreeLE_zero_iff : G.MaxDegreeLE 0 ↔ G = Graph.noEdge V(G) β := by
+  refine ⟨fun h ↦ Graph.ext rfl fun e x y ↦ ?_, fun h ↦ ?_⟩
   · suffices ¬ G.IsLink e x y by simpa
     have hinc : ∀ f, ¬ G.Inc f x := by simpa [eDegree_eq_zero_iff_inc] using h x
     exact fun h ↦ hinc _ h.inc_left

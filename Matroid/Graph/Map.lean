@@ -23,7 +23,7 @@ def vertexMap {α' : Type*} (G : Graph α β) (f : α → α') : Graph α' β wh
   isLink_symm := by
     rintro e he - - ⟨x, y, h, rfl, rfl⟩
     exact ⟨y, x, h.symm, rfl, rfl⟩
-  dup_or_dup_of_isLink_of_isLink := by
+  eq_or_eq_of_isLink_of_isLink := by
     rintro e - - - - ⟨x, y, hxy, rfl, rfl⟩ ⟨z, w, hzw, rfl, rfl⟩
     obtain rfl | rfl := hxy.left_eq_or_eq hzw <;> simp
   edge_mem_iff_exists_isLink e := by
@@ -63,9 +63,9 @@ noncomputable def edgePreimg {β' : Type*} (G : Graph α β) (σ : β' → β) :
   isLink_symm := by
     rintro e he a b ⟨-, rfl, hbtw'⟩
     exact ⟨σ e, rfl, hbtw'.symm⟩
-  dup_or_dup_of_isLink_of_isLink := by
+  eq_or_eq_of_isLink_of_isLink := by
     rintro e a b c d ⟨-, rfl, hbtw₁⟩ ⟨-, rfl, hbtw₂⟩
-    exact G.Dup_or_dup_of_isLink_of_isLink hbtw₁ hbtw₂
+    exact G.eq_or_eq_of_isLink_of_isLink hbtw₁ hbtw₂
   edge_mem_iff_exists_isLink e := by
     simp [G.edge_mem_iff_exists_isLink]
   left_mem_of_isLink := by
@@ -78,7 +78,7 @@ variable {β' : Type*} {e' : β'} {σ : β' → β}
 
 @[simp]
 lemma edgePreimg_inc : (G.edgePreimg σ).Inc e' u ↔ ∃ e, σ e' = e ∧ G.Inc e u := by
-  simp [Inc, exists_eq_left']
+  simp [Inc]
 
 variable {β' : Type*} {σ : β → β'} {e' : β'}
 
@@ -91,9 +91,9 @@ def edgeMap (G : Graph α β) (σ : β → β')
   isLink_symm := by
     rintro e he x y ⟨f, rfl, hbtw⟩
     exact ⟨f, rfl, hbtw.symm⟩
-  dup_or_dup_of_isLink_of_isLink := by
+  eq_or_eq_of_isLink_of_isLink := by
     rintro e a b c d ⟨f, rfl, hbtw₁⟩ ⟨g, hfeqg, hbtw₂⟩
-    exact G.Dup_or_dup_of_isLink_of_isLink hbtw₁ <|
+    exact G.eq_or_eq_of_isLink_of_isLink hbtw₁ <|
       (hσ g hbtw₂.edge_mem f hbtw₁.edge_mem hfeqg) ▸ hbtw₂
   edge_mem_iff_exists_isLink := by
     simp only [mem_image, G.edge_mem_iff_exists_isLink]

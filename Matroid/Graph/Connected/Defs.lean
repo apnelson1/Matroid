@@ -6,7 +6,7 @@ import Matroid.ForMathlib.Set
 
 open Set Function Nat WList
 
-variable {α β : Type*} [CompleteLattice α] {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α}
+variable {α β : Type*} {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α}
   {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β}
 
 namespace Graph
@@ -70,14 +70,13 @@ lemma edge_induce_disjoint (S : G.Separation) : Disjoint E(G[S.left]) E(G[S.righ
   · exact S.disjoint.notMem_of_mem_left hx hx'
   exact S.disjoint.notMem_of_mem_left hx hy'
 
-lemma eq_union (S : G.Separation) : G = G[S.left] ∪ G[S.right] := by
-  have : Agree {G[S.left], G[S.right]} := by use G, by simp
-  refine Graph.ext ?_ fun e x y ↦ ?_
-  · simp [← S.union_eq, inter_eq_right.mpr, this]
-  rw [union_isLink this]
-  simp +contextual only [induce_isLink, ← and_or_left, iff_def, true_and, implies_true, and_true]
-  exact fun he ↦ (S.mem_or_mem he.left_mem).imp (fun hx ↦ ⟨hx, S.left_mem_of_adj hx he.adj⟩)
-    (fun hx ↦ ⟨hx, S.right_mem_of_adj hx he.adj⟩)
+-- lemma eq_union (S : G.Separation) : G = G[S.left] ∪ G[S.right] := by
+--   refine Graph.ext (by simp [← S.union_eq]) fun e x y ↦ ?_
+--   rw [union_isLink_iff]
+--   simp? +contextual
+--   simp +contextual only [induce_isLink, ← and_or_left, iff_def, true_and, implies_true, and_true]
+--   exact fun he ↦ (S.mem_or_mem he.left_mem).imp (fun hx ↦ ⟨hx, S.left_mem_of_adj hx he.adj⟩)
+--     (fun hx ↦ ⟨hx, S.right_mem_of_adj hx he.adj⟩)
 
 lemma vertexSet_nontrivial (S : G.Separation) : V(G).Nontrivial :=
   ⟨_, S.left_subset S.nonempty_left.some_mem, _, S.right_subset S.nonempty_right.some_mem,
@@ -252,24 +251,24 @@ lemma isCompOf_iff_maximal : H.IsCompOf G ↔ Maximal (fun K ↦ K.Connected ∧
   obtain ⟨K, hHK, hKG⟩ := h.prop.1.exists_isCompOf_ge h.prop.2
   rwa [← h.eq_of_ge ⟨hKG.connected, hKG.le⟩ hHK]
 
-lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : Agree {G, H})
-    (hi : (V(H) ∩ V(G)).Nonempty) : (G ∪ H).Connected := by
-  rw [connected_iff_forall_closed (hi.mono (inter_subset_left.trans (by simp [hcompat])))]
-  refine fun K hK hKne ↦ ?_
-  have hGle : G ≤ K ∨ Disjoint V(G) V(K) := by
-    simpa [Graph.left_le_union hcompat] using hG.le_or_le_compl (Graph.left_le_union hcompat) hK
-  have hHle := hH.le_or_le_compl (Graph.right_le_union hcompat) hK
-  simp only [le_vertexDelete_iff, Graph.right_le_union hcompat, true_and] at hHle
-  obtain hGK | hGK := disjoint_or_nonempty_inter V(G) V(K)
-  · obtain hHK | hHK := disjoint_or_nonempty_inter V(H) V(K)
-    · simpa [union_vertexSet hcompat, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
-        hHK.inter_eq, hKne.ne_empty.symm] using vertexSet_mono hK.le
-    rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hHK)] at hHle
-    simpa [hGK.symm.inter_eq] using hi.mono (inter_subset_inter_left _ (vertexSet_mono hHle))
-  rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hGK)] at hGle
-  have hne := hi.mono (inter_subset_inter_right _ (vertexSet_mono hGle))
-  rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hne)] at hHle
-  exact hK.le.antisymm (Graph.union_le hGle hHle)
+-- lemma Connected.union (hG : G.Connected) (hH : H.Connected) (hcompat : Agree {G, H})
+--     (hi : (V(H) ∩ V(G)).Nonempty) : (G ∪ H).Connected := by
+--   rw [connected_iff_forall_closed (hi.mono (inter_subset_left.trans (by simp [hcompat])))]
+--   refine fun K hK hKne ↦ ?_
+--   have hGle : G ≤ K ∨ Disjoint V(G) V(K) := by
+--     simpa [Graph.left_le_union hcompat] using hG.le_or_le_compl (Graph.left_le_union hcompat) hK
+--   have hHle := hH.le_or_le_compl (Graph.right_le_union hcompat) hK
+--   simp only [le_vertexDelete_iff, Graph.right_le_union hcompat, true_and] at hHle
+--   obtain hGK | hGK := disjoint_or_nonempty_inter V(G) V(K)
+--   · obtain hHK | hHK := disjoint_or_nonempty_inter V(H) V(K)
+--     · simpa [union_vertexSet hcompat, ← inter_eq_right, union_inter_distrib_right, hGK.inter_eq,
+--         hHK.inter_eq, hKne.ne_empty.symm] using vertexSet_mono hK.le
+--     rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hHK)] at hHle
+--     simpa [hGK.symm.inter_eq] using hi.mono (inter_subset_inter_left _ (vertexSet_mono hHle))
+--   rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hGK)] at hGle
+--   have hne := hi.mono (inter_subset_inter_right _ (vertexSet_mono hGle))
+--   rw [or_iff_left (not_disjoint_iff_nonempty_inter.2 hne)] at hHle
+--   exact hK.le.antisymm (Graph.union_le hGle hHle)
 
 lemma Connected.exists_inc_notMem_of_lt (hG : G.Connected) (hlt : H < G) (hne : V(H).Nonempty) :
     ∃ e x, G.Inc e x ∧ e ∉ E(H) ∧ x ∈ V(H) := by
@@ -285,15 +284,14 @@ lemma Connected.of_isSpanningSubgraph (hH : H.Connected) (hle : H ≤s G) : G.Co
     (by rwa [hle.vertexSet_eq, inter_eq_self_of_subset_right (vertexSet_mono hKG.le)])
 
 @[simp]
-lemma connected_bouquet (v : α) (hv : v ≠ ⊥) (F : Set β) : (bouquet v F).Connected := by
+lemma connected_bouquet (v : α) (F : Set β) : (bouquet v F).Connected := by
   suffices aux : (bouquet v (∅ : Set β)).Connected from
-    aux.of_isSpanningSubgraph <| bouquet_mono (empty_subset F)
-  rw [connected_iff_forall_closed_ge (by simp [hv])]
+    aux.of_isSpanningSubgraph <| bouquet_mono _ (empty_subset F)
+  rw [connected_iff_forall_closed_ge (by simp)]
   refine fun H hle hne ↦ ⟨?_, by simp⟩
-  simp only [bouquet_vertexSet, ne_eq, hv, not_false_eq_true, Partition.indiscrete'_eq_of_ne_bot,
-    Partition.indiscrete_parts, singleton_subset_iff]
+  simp only [bouquet_vertexSet, singleton_subset_iff]
   obtain ⟨x, hx⟩ := hne
-  obtain rfl := by simpa [hv] using vertexSet_mono hle.le hx
+  obtain rfl := by simpa using vertexSet_mono hle.le hx
   exact hx
 
 def ConnectivityGe (G : Graph α β) (n : ℕ) : Prop :=
@@ -428,7 +426,7 @@ lemma vertexConnected_induce_iff {X : Set α} (hx : x ∈ V(G)) :
     G[X].VertexConnected x y ↔ ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ V(P) ⊆ X := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
-    refine ⟨P, ?_, rfl, rfl, hP.vertexSet_subset.trans inter_subset_right⟩
+    refine ⟨P, ?_, rfl, rfl, hP.vertexSet_subset⟩
     cases P with
     | nil => simpa
     | cons u e W =>
@@ -472,11 +470,9 @@ lemma connected_iff_forall_exists_adj (hne : V(G).Nonempty) :
     G.Connected ↔ ∀ X ⊂ V(G), X.Nonempty → ∃ x ∈ X, ∃ y ∈ V(G) \ X, G.Adj x y := by
   refine ⟨fun h X hXV hXnem ↦ ?_, fun h ↦ by_contra fun hnc ↦ ?_⟩
   · by_contra! hnadj
-    have hGXcl : G[X] ≤c G := ⟨induce_le, fun e x ⟨y, hexy⟩ hxX =>
-      ⟨x, y, hexy, hxX.2, by_contra fun hyX => hnadj x hxX.2 y ⟨hexy.right_mem, hyX⟩ ⟨e, hexy⟩⟩⟩
-    have : V(G) ∩ X = X := by rw [inter_eq_right.mpr hXV.subset]
-    rw [← le_antisymm hGXcl.le <| h.2 ⟨hGXcl, by simpa [this]⟩ hGXcl.le, induce_vertexSet,
-      this] at hXV
+    have hGXcl : G[X] ≤c G := ⟨induce_le hXV.subset, fun e x ⟨y, hexy⟩ hxX =>
+      ⟨x, y, hexy, hxX, by_contra fun hyX => hnadj x hxX y ⟨hexy.right_mem, hyX⟩ ⟨e, hexy⟩⟩⟩
+    rw [← le_antisymm hGXcl.le <| h.2 ⟨hGXcl, by simpa⟩ hGXcl.le, induce_vertexSet] at hXV
     exact (and_not_self_iff (X ⊆ X)).mp hXV
   obtain ⟨X, hXV, hXne, h'⟩ := exists_of_not_connected hnc hne
   obtain ⟨x, hX, y, hy, hxy⟩ := h X hXV hXne

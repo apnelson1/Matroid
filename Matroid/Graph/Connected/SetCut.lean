@@ -3,7 +3,7 @@ import Mathlib.Tactic.IntervalCases
 
 open Set Function Nat WList symmDiff
 
-variable {α β ι : Type*} [CompleteLattice α] {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s t : α}
+variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s t : α}
   {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ∞}
 
 
@@ -480,7 +480,7 @@ lemma SetEnsemble.extend_right_vertexSet (hAST : A.between S T) (hPT : V(P) ⊆ 
     (A.extend_right hAST P hPT hPfirst hP).vertexSet = A.vertexSet ∪ V(P) := by
   simp_rw [Set.ext_iff, mem_vertexSet_iff, extend_right_paths, mem_insert_iff, mem_diff,
     mem_singleton_iff, exists_eq_or_imp, mem_union, mem_append_iff_of_eq
-    (A.pathr_first_eq_of_vertex_last hPfirst hP), or_comm, or_assoc]
+    (A.pathr_first_eq_of_vertex_last hAST hPfirst hPT), or_comm, or_assoc]
   apply fun v ↦ or_congr_right ?_
   by_cases hv : v ∈ A.of_vertex P.first (A.pathr_first_mem hPfirst)
   · simp only [hv, ne_eq, true_or, mem_vertexSet_iff, true_iff]
