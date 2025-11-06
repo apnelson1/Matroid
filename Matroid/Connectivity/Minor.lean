@@ -33,10 +33,10 @@ lemma eLocalConn_project_le_add (M : Matroid α) (X Y C : Set α) :
     (M.project C).eLocalConn X Y ≤ M.eLocalConn X Y + M.eRk C := by
   grw [eLocalConn_project_eq_eLocalConn_contract, eLocalConn_contract_le_add]
 
-lemma eLocalConn_le_eLocalConn_project_add (M : Matroid α) (X Y C : Set α) :
-    M.eLocalConn X Y ≤ (M.project C).eLocalConn X Y + M.eRk C := by
-  rw [eLocalConn_eq_multiConn, eLocalConn_eq_multiConn]
-  have := M.multiConn_le_
+-- lemma eLocalConn_le_eLocalConn_project_add (M : Matroid α) (X Y C : Set α) :
+--     M.eLocalConn X Y ≤ (M.project C).eLocalConn X Y + M.eRk C := by
+--   rw [eLocalConn_eq_multiConn, eLocalConn_eq_multiConn]
+--   have := M.multiConn_le_
 
 lemma eConn_delete_eq {X D : Set α} (hDX : D ⊆ X) (hX : X ⊆ M.closure (X \ D)) :
     (M ＼ D).eConn (X \ D) = M.eConn X := by
