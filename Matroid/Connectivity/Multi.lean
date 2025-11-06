@@ -1,4 +1,8 @@
-import Matroid.Connectivity.Local
+import Matroid.Rank.Skew
+import Matroid.ForMathlib.Matroid.Map
+import Matroid.ForMathlib.ENat
+import Matroid.Uniform
+import Mathlib.Tactic.TautoSet
 import Mathlib.Data.Set.Prod
 
 open Set Function
@@ -21,7 +25,6 @@ lemma injOn_prod_fst_mk_left_iff_pairwise_disjoint {α ι : Type*} (f : ι → S
   obtain rfl : x = y := hij
   obtain rfl | hne := eq_or_ne i j; simp
   exact ((h hne).notMem_of_mem_left hx hy).elim
-
 
 namespace Matroid
 
@@ -51,6 +54,12 @@ If the `X i` are not disjoint, then there is no simple formula in general, but f
 an expression using cardinality is given in `multiConn_cond`. -/
 noncomputable def multiConn (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
   (M.comap Prod.fst).multiConnAux fun i ↦ ((· , i) '' (X i ∩ M.E))
+
+/-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
+Defined to correctly describe the connectivity even when one or both sets has infinite rank.
+For a `ℕ`-valued version, see `Matroid.localConn`. -/
+noncomputable def eLocalConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
+  M.multiConn (fun b ↦ bif b then X else Y)
 
 lemma multiConn_inter_ground (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ (X i) ∩ M.E) = M.multiConn X := by
@@ -201,6 +210,14 @@ lemma multiConn_cond {I J X Y : Set α} (hIX : M.IsBasis' I X) (hJY : M.IsBasis'
   suffices J ⊆ M.closure (J ∪ I) by
     simpa [project_closure, preimage_preimage, image_union, hinv.image_image]
   refine M.subset_closure_of_subset' subset_union_left hJY.indep.subset_ground
+
+lemma IsBasis'.eLocalConn_eq {I J X Y : Set α} (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y) :
+    M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) := by
+  rw [eLocalConn, M.multiConn_cond hI hJ, union_comm, add_comm]
+
+lemma IsBasis.eLocalConn_eq {I J X Y : Set α}  (hI : M.IsBasis I X) (hJ : M.IsBasis J Y) :
+    M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) :=
+  hI.isBasis'.eLocalConn_eq hJ.isBasis'
 
 lemma multiConn_restrict (M : Matroid α) (X : ι → Set α) (R : Set α) :
     (M ↾ R).multiConn X = M.multiConn (fun i ↦ (X i ∩ R)) := by
@@ -444,6 +461,38 @@ lemma multiConn_project_aux (M : Matroid α) {C : Set α} (hI : ∀ i, M.IsBasis
   convert hrw using 4 with i
   rw [hC.nullity_project, (hI i).project_eq_project, (hI i).indep.nullity_project,
     union_comm, inter_comm]
+
+lemma project_multiConn_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set α) (C : Set α) :
+    (M.project C).multiConn X + ∑' i, M.eLocalConn (X i) C
+      = M.multiConn X + M.eLocalConn (⋃ i, X i) C := by
+  wlog hC : M.Indep C generalizing C with aux
+  · obtain ⟨I, hI⟩ := M.exists_isBasis' C
+    convert aux _ hI.indep using 2
+    · rw [hI.project_eq_project]
+    · convert rfl using 3 with i
+      obtain ⟨J, hJ⟩ := M.exists_isBasis' (X i)
+      rw [hJ.eLocalConn_eq hI, hJ.eLocalConn_eq hI.indep.isBasis_self.isBasis']
+    obtain ⟨J, hJ⟩ := M.exists_isBasis' (⋃ i, X i)
+    rw [hJ.eLocalConn_eq hI, hJ.eLocalConn_eq hI.indep.isBasis_self.isBasis']
+  have aux {Y : Set α} : M.eLocalConn Y C = (M.project Y).nullity C := by
+    obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+    rw [hJ.eLocalConn_eq hC.isBasis_self.isBasis', hJ.project_eq_project,
+      hJ.indep.nullity_project, union_comm, inter_comm, add_comm]
+  simp [aux]
+  apply M.multiConn_project_aux_indep hC
+
+-- lemma multiConn_le_multiConn_project_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
+--     M.multiConn X ≤ (M.project C).multiConn X + (ENat.card ι - 1) * M.eLocalConn (⋃ i, X i) C :=
+--   obtain hss | hnt := subsingleton_or_nontrivial ι
+--   · simp
+--   obtain hfin | hinf := eq_top_or_lt_top (M.eLocalConn (⋃ i, X i) C)
+--   · have hlt : 0 < ENat.card ι - 1 := by simp
+--     simp [hfin, ENat.mul_top hlt.ne.symm]
+--   obtain hc0 | hnz := eq_or_ne (M.eLocalConn (⋃ i, X i) C) 0
+--   · simp [hc0]
+--     sorry
+
+    -- rw [eLocalConn, multiConn_eq_zero_iff] at hc0
 
 
 lemma multiConn_project_le_multiConn_add (M : Matroid α) (X : ι → Set α) (C : Set α) :

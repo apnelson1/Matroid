@@ -1,4 +1,5 @@
 import Matroid.Connectivity.Separation
+import Matroid.Connectivity.Multi
 
 open Set
 
@@ -209,29 +210,29 @@ lemma IsInternallyConnected.IsTutteConnected (hM : M.IsInternallyConnected (k+1)
 
 
 
-lemma isTutteConnected_delete {D : Set α} (hD : D.Finite)
-    (h : M.IsTutteConnected (k + D.encard)) : (M ＼ D).IsTutteConnected k := by
-  classical
-  wlog hDE : D ⊆ M.E generalizing D with aux
-  · rw [← delete_inter_ground_eq]
-    refine aux (hD.inter_of_left M.E) (h.mono ?_) inter_subset_right
-    grw [add_le_add_left]
-    exact encard_le_encard inter_subset_left
+-- lemma isTutteConnected_delete {D : Set α} (hD : D.Finite)
+--     (h : M.IsTutteConnected (k + D.encard)) : (M ＼ D).IsTutteConnected k := by
+--   classical
+--   wlog hDE : D ⊆ M.E generalizing D with aux
+--   · rw [← delete_inter_ground_eq]
+--     refine aux (hD.inter_of_left M.E) (h.mono ?_) inter_subset_right
+--     grw [add_le_add_left]
+--     exact encard_le_encard inter_subset_left
 
 
 
 
 
-  contrapose! h
-  rw [not_isTutteConnected_iff'] at h ⊢
-  obtain ⟨X, j, hj, hXE, hX, hjX, hjX'⟩ := h
-  have hle : M.eConn (X ∪ D) ≤ ↑(j + hD.toFinset.card) := by
-    have := eLocalConn_un
-  refine ⟨X ∪ D, j + hD.toFinset.card, ?_, ?_, ?_, ?_⟩
-  · grw [← hj, Nat.cast_add, hD.encard_eq_coe_toFinset_card, add_right_comm]
-  · grw [hDE, hXE, delete_ground, union_eq_self_of_subset_left diff_subset]
-  ·
-  -- by_contra! hcon
-  -- simp only [IsTutteConnected, exists_prop, IsPredConnected, not_forall, not_le] at hcon
-  -- obtain ⟨P, hP, hPk⟩ := hcon
-  -- have := h (M.partition (P.left ∪ D))
+--   contrapose! h
+--   rw [not_isTutteConnected_iff'] at h ⊢
+--   obtain ⟨X, j, hj, hXE, hX, hjX, hjX'⟩ := h
+--   have hle : M.eConn (X ∪ D) ≤ ↑(j + hD.toFinset.card) := by
+--     have := eLocalConn_un
+--   refine ⟨X ∪ D, j + hD.toFinset.card, ?_, ?_, ?_, ?_⟩
+--   · grw [← hj, Nat.cast_add, hD.encard_eq_coe_toFinset_card, add_right_comm]
+--   · grw [hDE, hXE, delete_ground, union_eq_self_of_subset_left diff_subset]
+--   ·
+--   -- by_contra! hcon
+--   -- simp only [IsTutteConnected, exists_prop, IsPredConnected, not_forall, not_le] at hcon
+--   -- obtain ⟨P, hP, hPk⟩ := hcon
+--   -- have := h (M.partition (P.left ∪ D))
