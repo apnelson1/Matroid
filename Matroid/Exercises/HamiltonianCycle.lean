@@ -278,6 +278,7 @@ def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 
 --Avoids complete graph case but is not technically correct
+-- or maybe it is?
 def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
   (S ⊆ V(G)) ∧ (¬ (G - S).Connected) ∧ (S ≠ V(G))
 
@@ -318,31 +319,33 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
   linarith
 
 --Again, is missing when G is complete but whatever
-lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
+lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
     (S : Set (α)) (HS : IsMinSepSet G S )
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
-  --Important case
+  --Trivial case: Independent set is completely contained in the separator
   obtain ( HAS| he ) := Decidable.em (A ⊆ S)
-  · have : S.Finite := by sorry
+  · have : S.Finite := Set.Finite.subset vertexSet_finite HS.1.1
     exact ncard_le_ncard HAS this
   have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
   -- Add hDirac applyed to x. You won't need it immediatly but will need it in all cases
 
   --We want to use ge_two_components_of_not_connected with G-S so we need:
-  have hxS: x ∈ V(G - S) := by sorry
+  have hxS: x ∈ V(G - S) := by
+    simp
+    have := hA.1.1
+    tauto
 
   have hNeBotS : (G - S).NeBot := by
     apply NeBot_iff_vertexSet_nonempty.2
-    sorry
+    tauto
 
-  have hcomp := ge_two_components_of_not_connected hNeBotS sorry
+  have hcomp := ge_two_components_of_not_connected hNeBotS HS.1.2.1
   have ⟨ H1, hccH1, hcH1 ⟩ : ∃ H, IsCompOf H (G-S) ∧ x ∈ V(H) := by
-    -- use (VertexConnected.refl x)
-    sorry
+    exact exists_IsCompOf_vertex_mem hxS
 
   --Here are two options to finish the proof, either define H2 as follows, but it won't be conencted
-  let H2 := G - (V(H1) ∪ S)
+  --let H2 := G - (V(H1) ∪ S)
   --In this case use hcomp to get V(H2)≠ ∅
 
   --Second option is to use and prove this
@@ -351,11 +354,42 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
   --see Richards proof using hcomp
   --In this case you will need (V(H2)).ncard ≤ (V(G)\ (V(H1) ∪ S) ).ncard + S.ncard (or something)
 
+  have ⟨H2, ⟨H2comp, H2ne⟩⟩ :
+    ∃ H, H.IsCompOf (G - S) ∧ H ≠ H1 := by
+    have components_nonempty : (G - S).Components.Nonempty := by
+      apply nonempty_of_encard_ne_zero
+      intro h; rw [h] at hcomp; clear h
+      norm_num at hcomp
+    by_contra! hyp_contra
+    have is_singleton : (G - S).Components = {H1} := by
+      exact (Nonempty.subset_singleton_iff (components_nonempty)).mp hyp_contra
+    have : (G - S).Components.encard = 1 := by
+      simp [is_singleton]
+    rw [this] at hcomp; clear this
+    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.coe_le_coe.mp hcomp
+    linarith
+
   -- Second annoying case
   obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
-  · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by sorry
+  · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
+      have := H2comp.1.2
+      have : V(H2) \ A = V(H2) := by
+        ext x
+        refine ⟨?_, ?_⟩
+        · grind
+        intro hX
+        simp
+        refine ⟨by assumption, ?_⟩
+        rw [← Set.not_nonempty_iff_eq_empty] at Hemp
+        intro hXA
+        apply Hemp
+        tauto
+      rw [this]
+      assumption
     --Apply Bound_on_indepSet with modifications since H2 is not a connected component
     -- You will nee hDirac applied to y
+    have := Bound_on_indepSet S HS.1 H1 hccH1 A hA x (by tauto)
+
     sorry
 
   --Easy case
