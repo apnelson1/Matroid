@@ -125,7 +125,7 @@ lemma ENat.toNat_prod {ι : Type*} (s : Finset ι) (f : ι → ℕ∞) :
 instance : NoZeroDivisors ℕ∞ where
   eq_zero_or_eq_zero_of_mul_eq_zero := ENat.mul_eq_zero.1
 
-instance : OrderedCommMonoid ℕ∞ := CanonicallyOrderedAdd.toOrderedCommMonoid
+-- instance : OrderedCommMonoid ℕ∞ := CanonicallyOrderedAdd.toOrderedCommMonoid
 
 -- def ENat.pow' (m : ℕ∞) : ℕ∞ → ℕ∞ := ENat.recTopCoe (if m ≤ 1 then m else ⊤) (m ^ ·)
 -- -- | m, (n : ℕ) => m ^ n
@@ -272,7 +272,7 @@ protected theorem card_le_card_of_surjective {f : α → β} (hf : Surjective f)
   · have := @Fintype.ofFinite _ <| Finite.of_surjective _ hf
     simp only [card_eq_coe_fintypeCard, Nat.cast_le, ge_iff_le]
     exact Fintype.card_le_of_surjective f hf
-  simp [h.eNat_card_eq]
+  simp
 
 alias _root_.Function.Surjective.eNatCard_le := ENat.card_le_card_of_surjective
 
@@ -309,7 +309,7 @@ theorem _root_.Function.Surjective.bijective_of_eNatCard_le [Finite α] {f : α 
 theorem card_eq_zero_iff_isEmpty (α : Type*) : card α = 0 ↔ IsEmpty α := by
   obtain ⟨⟨hfin⟩⟩ | hinf := nonempty_fintype_or_infinite α
   · rw [card_eq_coe_fintypeCard, Nat.cast_eq_zero, Fintype.card_eq_zero_iff]
-  simp [hinf.eNat_card_eq]
+  simp
 
 @[simp]
 theorem card_eq_zero (α : Type*) [IsEmpty α] : card α = 0 := by
@@ -351,7 +351,7 @@ theorem card_image_of_injective {α β : Type*} (f : α → β) (s : Set α)
 theorem card_le_one_iff_subsingleton (α : Type*) : card α ≤ 1 ↔ Subsingleton α := by
   obtain ⟨⟨hfin⟩⟩ | hinf := nonempty_fintype_or_infinite α
   · rw [card_eq_coe_fintypeCard, Nat.cast_le_one, Fintype.card_le_one_iff_subsingleton]
-  exact iff_of_false (by simp [hinf.eNat_card_eq]) (not_subsingleton α)
+  exact iff_of_false (by simp) (not_subsingleton α)
 
 theorem one_lt_card_iff_nontrivial (α : Type*) : 1 < card α ↔ Nontrivial α := by
   rw [← not_le, card_le_one_iff_subsingleton, not_subsingleton_iff_nontrivial]
@@ -431,13 +431,13 @@ theorem card_pi {β : α → Type*} [Fintype α] : ENat.card (Π a, β a) = ∏ 
 --   simp only [card_eq_top_of_infinite]
 --   rw [ENat.pow_top ((one_lt_card_iff_nontrivial _).2 hβ')]
 
-theorem card_fun' [Fintype α] : card (α → β) = card β ^ Fintype.card α := by
-  classical
-  obtain hα | hα := isEmpty_or_nonempty α
-  · simp
-  obtain ⟨⟨hβ⟩⟩ | hβ := nonempty_fintype_or_infinite β
-  · rw [card_eq_coe_fintypeCard, Fintype.card_fun, card_eq_coe_fintypeCard, Nat.cast_pow]
-  rw [card_eq_top_of_infinite, card_eq_top_of_infinite, top_pow Fintype.card_pos]
+-- theorem card_fun' [Fintype α] : card (α → β) = card β ^ Fintype.card α := by
+--   classical
+--   obtain hα | hα := isEmpty_or_nonempty α
+--   · simp
+--   obtain ⟨⟨hβ⟩⟩ | hβ := nonempty_fintype_or_infinite β
+--   · rw [card_eq_coe_fintypeCard, Fintype.card_fun, card_eq_coe_fintypeCard, Nat.cast_pow]
+--   rw [card_eq_top_of_infinite, card_eq_top_of_infinite, top_pow Fintype.card_pos]
 
 end ENat
 
@@ -607,7 +607,7 @@ theorem card_of_subsingleton (a : α) [Subsingleton α] : Nat.card α = 1 := by
   exact ENat.card_of_subsingleton a
 
 theorem card_eq_one_iff_unique : Nat.card α = 1 ↔ Subsingleton α ∧ Nonempty α := by
-  simp [Nat.card, ENat.toNat_eq_iff, ENat.card_eq_one_iff]
+  simp [Nat.card, ENat.card_eq_one_iff]
 
 
 @[simp]

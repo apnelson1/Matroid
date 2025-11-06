@@ -303,6 +303,12 @@ lemma eLocalConn_contract_right_skew_left' {C Y : Set α} (hXC : M.Skew X C) (hC
     nullity_project_eq_nullity_contract, contract_contract, union_diff_cancel hCY,
     nullity_project_eq_nullity_contract]
 
+lemma eLocalConn_contract_skew_union {C : Set α} (h : M.Skew (X ∪ Y) C) :
+    (M ／ C).eLocalConn X Y = M.eLocalConn X Y := by
+  rw [← (M ／ C).eLocalConn_restrict_of_subset subset_union_left subset_union_right,
+    h.symm.contract_restrict_eq,
+    eLocalConn_restrict_of_subset _ subset_union_left subset_union_right]
+
 lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
     (heXY : e ∈ M.closure (X ∪ Y)) : M.eLocalConn (insert e X) Y = M.eLocalConn X Y + 1 := by
   have heE : e ∈ M.E := mem_ground_of_mem_closure heXY
@@ -396,6 +402,11 @@ lemma IsRkFinite.cast_localConn_left_eq (hY : M.IsRkFinite Y) :
     (M.localConn X Y : ℕ∞) = M.eLocalConn X Y := by
   rw [localConn_comm, hY.cast_localConn_right_eq, eLocalConn_comm]
 
+@[simp]
+lemma cast_localConn_eq (M : Matroid α) [M.RankFinite] (X Y : Set α) :
+    (M.localConn X Y : ℕ∞) = M.eLocalConn X Y :=
+  (M.isRkFinite_set Y).cast_localConn_left_eq
+
 lemma IsRkFinite.rk_add_rk_eq_rk_union_add_localConn (hX : M.IsRkFinite X) (hY : M.IsRkFinite Y) :
     M.rk X + M.rk Y = M.rk (X ∪ Y) + M.localConn X Y := by
   rw [← Nat.cast_inj (R := ℕ∞), Nat.cast_add, Nat.cast_add, hX.cast_localConn_right_eq,
@@ -416,6 +427,25 @@ lemma localConn_inter_ground_left (M : Matroid α) (X Y : Set α) :
 lemma localConn_inter_ground_right (M : Matroid α) (X Y : Set α) :
     M.localConn X (Y ∩ M.E) = M.localConn X Y := by
   simp [localConn]
+
+lemma IsRkFinite.localConn_le_rk_left (hX : M.IsRkFinite X) (Y : Set α) :
+    M.localConn X Y ≤ M.rk X := by
+  rw [← Nat.cast_le (α := ℕ∞), hX.cast_localConn_right_eq, hX.cast_rk_eq]
+  exact M.eLocalConn_le_eRk_left X Y
+
+lemma IsRkFinite.localConn_le_rk_right (hX : M.IsRkFinite Y) (X : Set α) :
+    M.localConn X Y ≤ M.rk Y := by
+  grw [localConn_comm, hX.localConn_le_rk_left]
+
+lemma localConn_le_ncard_left (M : Matroid α) (hX : X.Finite) (Y : Set α) :
+    M.localConn X Y ≤ X.ncard := by
+  grw [IsRkFinite.localConn_le_rk_left (M.isRkFinite_of_finite hX), ← Nat.cast_le (α := ℕ∞),
+    (M.isRkFinite_of_finite hX).cast_rk_eq, hX.cast_ncard_eq]
+  exact M.eRk_le_encard X
+
+lemma localConn_le_ncard_right (M : Matroid α) (hY : Y.Finite) (X : Set α) :
+    M.localConn X Y ≤ Y.ncard := by
+  grw [localConn_comm, localConn_le_ncard_left _ hY]
 
 /-- The formula for local connectivity of two finite-rank sets in terms of the rank function.
 This uses `ℕ` subtraction which never overflows. -/
@@ -698,6 +728,13 @@ lemma rk_add_rk_compl_eq (M : Matroid α) [RankFinite M] (X : Set α) :
 lemma conn_eq_rk_add_rk_sub_rank (M : Matroid α) [RankFinite M] (X : Set α) :
     M.conn X = M.rk X + M.rk (M.E \ X) - M.rank := by
   rw [conn_eq_localConn, localConn_eq_rk_add_rk_sub, union_diff_self, rk_eq_rank subset_union_right]
+
+lemma IsRankFinite.conn_le_rk (h : M.IsRkFinite X) : M.conn X ≤ M.rk X := by
+  have hwin := M.eConn_le_eRk X
+  rwa [eConn, ← h.cast_localConn_right_eq, ← conn_eq_localConn, ← h.cast_rk_eq, Nat.cast_le] at hwin
+
+lemma conn_le_ncard (M : Matroid α) (h : X.Finite) : M.conn X ≤ X.ncard := by
+  grw [conn_eq_localConn, localConn_le_ncard_left _ h]
 
 /-- A version of `Matroid.conn_eq_rk_add_rk_sub_rank` with `Int` subtraction,
 for use with `ring, linarith`, etc. -/

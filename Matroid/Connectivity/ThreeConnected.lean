@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Separation
+import Matroid.Connectivity.HigherConnected
 
 open Set
 
@@ -10,6 +10,6 @@ variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {a b e f : α} {A B X Y : 
 
 
 
-theorem bixby (M : Matroid α) (hM : M.TutteConnected 3) (he : e ∈ M.E) :
-    (M ／ {e}).InternallyConnected 3 ∨ (M ＼ {e}).InternallyConnected 3 := by
+theorem bixby (M : Matroid α) (hM : M.IsTutteConnected 3) (he : e ∈ M.E) :
+    (M ／ {e}).IsInternallyConnected 3 ∨ (M ＼ {e}).IsInternallyConnected 3 := by
   -- (WLOG `e ∈ M.E`.)

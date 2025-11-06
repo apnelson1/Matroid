@@ -38,19 +38,25 @@ protected lemma ext {P P' : M.Partition} (h_left : P.left = P'.left)
 @[simp] lemma P.union : P.left ∪ P.right = M.E :=
   P.union_eq
 
-@[simps] protected def symm (P : M.Partition) : M.Partition where
+@[simps]
+protected def symm (P : M.Partition) : M.Partition where
   left := P.2
   right := P.1
   disjoint := P.disjoint.symm
   union_eq := by rw [← P.union_eq, union_comm]
 
-@[simps] protected def dual (P : M.Partition) : M✶.Partition where
+@[simp]
+lemma symm_symm (P : M.Partition) : P.symm.symm = P := rfl
+
+@[simps]
+protected def dual (P : M.Partition) : M✶.Partition where
   left := P.1
   right := P.2
   disjoint := P.disjoint
   union_eq := P.union_eq
 
-@[simps] protected def ofDual (P : M✶.Partition) : M.Partition where
+@[simps]
+protected def ofDual (P : M✶.Partition) : M.Partition where
   left := P.1
   right := P.2
   disjoint := P.disjoint
@@ -109,6 +115,19 @@ lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Partition} :
     skew_iff_restrict_union_eq P.left_subset_ground P.right_subset_ground P.disjoint,
     P.union_eq, restrict_ground_eq_self]
 
+/-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
+noncomputable def conn (P : M.Partition) : ℕ := M.localConn P.1 P.2
+
+@[simp]
+lemma conn_symm (P : M.Partition) : P.symm.conn = P.conn := by
+  simp [conn, localConn_comm]
+
+lemma conn_eq_left (P : M.Partition) : P.conn = M.conn P.left := by
+  simp [conn, conn_eq_localConn, P.compl_left]
+
+lemma conn_eq_right (P : M.Partition) : P.conn = M.conn P.right := by
+  simp [conn, conn_eq_localConn, P.compl_right, localConn_comm]
+
 @[simps] protected def setCompl (M : Matroid α) [OnUniv M] (X : Set α) : M.Partition where
   left := X
   right := Xᶜ
@@ -161,152 +180,113 @@ lemma _root_.Matroid.eConn_partition (hA : A ⊆ M.E) : (M.partition A).eConn = 
 @[simp]
 lemma _root_.Matroid.partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
 
+/-- Intersect a partition with the ground set of a smaller matroid -/
+@[simps]
+def induce {N : Matroid α} (P : M.Partition) (hN : N.E ⊆ M.E) : N.Partition where
+  left := P.left ∩ N.E
+  right := P.right ∩ N.E
+  disjoint := P.disjoint.mono inter_subset_left inter_subset_left
+  union_eq := by rw [← union_inter_distrib_right, P.union_eq, inter_eq_self_of_subset_right hN]
+
+def contract (P : M.Partition) (C : Set α) : (M ／ C).Partition := P.induce diff_subset
+
+@[simp]
+lemma contract_left (P : M.Partition) (C : Set α) : (P.contract C).left = P.left \ C := by
+  simp only [contract, induce, contract_ground]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
+
+@[simp]
+lemma contract_symm (P : M.Partition) (C : Set α) : (P.contract C).symm = P.symm.contract C := rfl
+
+@[simp]
+lemma contract_right (P : M.Partition) (C : Set α) : (P.contract C).right = P.right \ C := by
+  rw [← symm_left, contract_symm, contract_left, symm_left]
+
+def delete (P : M.Partition) (D : Set α) : (M ＼ D).Partition := P.induce diff_subset
+
+@[simp]
+lemma delete_left (P : M.Partition) (D : Set α) : (P.delete D).left = P.left \ D := by
+  simp only [delete, induce, delete_ground]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
+
+@[simp]
+lemma delete_symm (P : M.Partition) (D : Set α) : (P.delete D).symm = P.symm.delete D := rfl
+
+@[simp]
+lemma delete_right (P : M.Partition) (D : Set α) : (P.delete D).right = P.right \ D := by
+  rw [← symm_left, delete_symm, delete_left, symm_left]
+
+section Cross
+
+/-- Cross two partitions by intersecting the left sets. -/
+@[simps]
+def inter (P Q : M.Partition) : M.Partition where
+  left := P.left ∩ Q.left
+  right := P.right ∪ Q.right
+  disjoint := by
+    nth_grw 1 [disjoint_union_right, inter_subset_left, inter_subset_right]
+    exact ⟨P.disjoint, Q.disjoint⟩
+  union_eq := by
+    rw [← P.compl_right, ← Q.compl_right, ← inter_diff_right_comm, union_comm P.right,
+      inter_eq_self_of_subset_right diff_subset, diff_diff, diff_union_self,
+      union_eq_self_of_subset_right (union_subset Q.right_subset_ground P.right_subset_ground)]
+
+/-- Cross two partitions by intersecting the right sets. -/
+def union (P Q : M.Partition) : M.Partition := (P.symm.inter Q.symm).symm
+
+@[simp]
+lemma union_left (P Q : M.Partition) : (P.union Q).left = P.left ∪ Q.left := rfl
+
+@[simp]
+lemma union_right (P Q : M.Partition) : (P.union Q).right = P.right ∩ Q.right := rfl
+
+@[simp]
+lemma inter_symm (P Q : M.Partition) : (P.inter Q).symm = P.symm.union Q.symm := rfl
+
+@[simp]
+lemma union_symm (P Q : M.Partition) : (P.union Q).symm = P.symm.inter Q.symm := rfl
+
+end Cross
+
 end Partition
 
+/-- Probably true for `eConn` as well -/
+theorem conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn
+    (M : Matroid α) [M.RankFinite] {C D X : Set α} (hC : Disjoint C X) (hXD : Disjoint D X) :
+    M.conn (C ∩ D) + M.conn (X ∪ C ∪ D) ≤ (M ／ X).conn C + (M ＼ X).conn D + M.conn X := by
+  have hsm1 := M.rk_submod (M.E \ C) (M.E \ (X ∪ D))
+  have hsm2 := M.rk_submod (C ∪ X) D
+  zify at *
+  simp only [intCast_conn_eq, contract_rk_cast_int_eq, contract_ground, contract_rank_cast_int_eq,
+    delete_ground]
+  rw [diff_diff_comm, diff_union_self, ← M.rk_inter_ground (M.E \ C ∪ X), union_inter_distrib_right,
+    inter_eq_self_of_subset_left diff_subset,
+    union_eq_self_of_subset_right (t := X ∩ M.E) (by tauto_set),
+    diff_diff, delete_rk_eq_of_disjoint M hXD, delete_rk_eq_of_disjoint _ (by tauto_set),
+    ← (M ＼ X).rk_ground, delete_ground, delete_rk_eq_of_disjoint _ disjoint_sdiff_left]
+  rw [diff_inter_diff, union_comm, union_right_comm, ← diff_inter, inter_union_distrib_left,
+    hC.inter_eq, empty_union] at hsm1
+  rw [union_inter_distrib_right, hXD.symm.inter_eq, union_empty, union_right_comm, union_comm,
+    ← union_assoc] at hsm2
+  linarith
+
+theorem bixbyCoullard_elem [M.RankFinite] {e : α} (C D : Set α) (heC : e ∉ C) (heD : e ∉ D) :
+    M.conn (C ∩ D) + M.conn (insert e (C ∪ D)) ≤ (M ／ {e}).conn C + (M ＼ {e}).conn D + 1 := by
+  grw [← singleton_union, ← union_assoc,
+    M.conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn (by simpa) (by simpa),
+    add_le_add_iff_left, conn_le_ncard _ (by simp), ncard_singleton]
 
 
 
--- /-- `IsPredSep P k cond` means that `P` is a separation with connectivity less than `k` in `M`,
--- and that both sides satisfy some nondegeneracy condition that can depend on `M` and `k`.
--- This generalizes Tutte, vertical and internal connectivity. -/
--- @[mk_iff]
--- structure IsPredSep (P : M.Partition) (cond : Matroid α → ℕ∞ → ℕ∞ → Set α → Prop) (k : ℕ∞) where
---   conn_lt : P.eConn < k
---   cond_left : cond M k P.eConn P.left
---   cond_right : cond M k P.eConn P.right
 
--- lemma IsPredSep.dual {cond} (hP : P.IsPredSep cond k)
---     (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) : P.dual.IsPredSep cond k := by
---   simp only [isPredSep_iff, dual_eConn, dual_left, dual_right] at hP ⊢
---   exact ⟨hP.1, h_cond hP.2.1, h_cond hP.2.2⟩
+  -- simp_rw [eConn, ← cast_localConn_eq, ← Nat.cast_one (R := ℕ∞), ← Nat.cast_add, Nat.cast_le]
+  -- zify
+  -- simp only [inter_left, inter_right, union_left, union_right, contract_left, contract_right,
+  --   delete_left, delete_right, localConn_intCast_eq, contract_rk_cast_int_eq, union_singleton,
+  --   insert_diff_singleton]
+  -- simp [insert_union_distrib]
 
--- lemma IsPredSep.ofDual {cond} {P : M✶.Partition}
---     (hP : P.IsPredSep cond k) (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
---     P.ofDual.IsPredSep cond k := by
---   simpa [isPredSep_iff] using hP.dual h_cond
 
--- lemma isPredSep_dual_iff {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
---     P.dual.IsPredSep cond k ↔ P.IsPredSep cond k :=
---   ⟨fun h ↦ h.ofDual h_cond, fun h ↦ h.dual h_cond⟩
-
--- lemma isPredSep_ofDual_iff {cond} {P : M✶.Partition}
---     (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
---     P.ofDual.IsPredSep cond k ↔ P.IsPredSep cond k := by
---   rw [← isPredSep_dual_iff h_cond, ofDual_dual]
-
--- lemma IsPredSep.symm {cond} (hP : P.IsPredSep cond k) : P.symm.IsPredSep cond k :=
---   ⟨by simpa using hP.conn_lt, by simpa using hP.cond_right, by simpa using hP.cond_left⟩
-
--- @[simp]
--- lemma isPredSep_symm_iff {cond} : P.symm.IsPredSep cond k ↔ P.IsPredSep cond k := by
---   simp [isPredSep_iff, and_comm]
-
--- lemma IsPredSep.zero_lt {cond} (h : P.IsPredSep cond k) : 0 < k :=
---   (zero_le _).trans_lt h.conn_lt
-
--- lemma isPredSep_one_iff {cond} :
---     P.IsPredSep cond 1 ↔ P.eConn = 0 ∧ cond M 1 0 P.left ∧ cond M 1 0 P.right := by
---   simp +contextual [isPredSep_iff]
-
--- lemma IsPredSep.imp {cond cond'} (h_imp : ∀ ⦃k j X⦄, cond M k j X → cond' M k j X)
---     (h : P.IsPredSep cond k) : P.IsPredSep cond' k :=
---   ⟨h.conn_lt, h_imp h.cond_left, h_imp h.cond_right⟩
-
--- lemma IsPredSep.eConn_lt {cond} (h : P.IsPredSep cond k) : P.eConn < k := h.1
-
--- lemma IsPredSep.eConn_lt_top {cond} (h : P.IsPredSep cond k) : P.eConn < ⊤ :=
---     h.1.trans_le (le_top)
-
--- lemma IsPredSep.eConn_add_one_le {cond} (h : P.IsPredSep cond k) : P.eConn + 1 ≤ k := by
---   rw [ENat.add_one_le_iff h.eConn_lt_top.ne]
---   exact h.eConn_lt
-
--- end Partition
-
--- def PredConnected (M : Matroid α) (cond) (k : ℕ∞) :=
---     ∀ ⦃j⦄ ⦃P : M.Partition⦄, P.IsPredSep cond j → k ≤ j
-
--- lemma PredConnected.dual {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j)
---     (h : M.PredConnected cond k) : M✶.PredConnected cond k :=
---   fun _ _ hP ↦ h <| hP.ofDual h_cond
-
--- lemma PredConnected.ofDual {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j)
---     (h : M✶.PredConnected cond k) : M.PredConnected cond k :=
---   by simpa using h.dual h_cond
-
--- lemma predConnected_dual_iff {cond} (h_cond : ∀ ⦃M X k j⦄, cond M X k j → cond M✶ X k j) :
---     M✶.PredConnected cond k ↔ M.PredConnected cond k :=
---   ⟨.ofDual h_cond, .dual h_cond⟩
-
--- lemma not_predConnected_iff_exists {cond} : ¬ M.PredConnected cond k ↔
---     ∃ j < k, ∃ (P : M.Partition),
---       P.eConn < j ∧ cond M j P.eConn P.left ∧ cond M j P.eConn P.right := by
---   simp only [PredConnected, Partition.isPredSep_iff, and_imp, not_forall, exists_prop, not_le]
---   aesop
-
--- lemma PredConnected.not_cond_or_not_cond {cond} (h : M.PredConnected cond k) {P : M.Partition}
---     (hjk : j < k) (hP : P.eConn < j) : ¬ cond M j P.eConn P.left ∨ ¬ cond M j P.eConn P.right := by
---   by_contra! hcon
---   exact hjk.not_ge <| h ⟨hP, hcon.1, hcon.2⟩
-
--- lemma PredConnected.mono {cond} (h : M.PredConnected cond k) (hjk : j ≤ k) :
---     M.PredConnected cond j :=
---   fun _ _ hP ↦ hjk.trans <| h hP
-
--- lemma PredConnected.not_predConnected_add_one_iff {k : ℕ} {cond} (h : M.PredConnected cond k) :
---     ¬ M.PredConnected cond (k+1) ↔ ∃ (P : M.Partition), P.IsPredSep cond k := by
---   simp only [PredConnected, not_forall, not_le, exists_prop, exists_and_right]
---   refine ⟨fun ⟨j, ⟨P, hP⟩, hlt⟩ ↦ ⟨P, ?_⟩, fun ⟨P, hP⟩ ↦ ⟨k, ⟨P, hP⟩, ?_⟩⟩
---   · have hkj : k ≤ j := h hP
---     enat_to_nat
---     rwa [hkj.antisymm (Nat.lt_add_one_iff.1 hlt)]
---   enat_to_nat
---   simp
-
--- @[simp]
--- lemma predConnected_zero {cond} : M.PredConnected cond 0 :=
---   fun _ _ _ ↦ zero_le _
-
--- @[simp]
--- lemma predConnected_one {cond} : M.PredConnected cond 1 := by
---   intro j P hP
---   rw [ENat.one_le_iff_ne_zero]
---   exact hP.zero_lt.ne.symm
-
--- lemma predConnected_two_iff {cond} : M.PredConnected cond 2 ↔
---     ∀ (P : M.Partition), P.eConn = 0 → ¬ cond M 1 0 P.left ∨ ¬ cond M 1 0 P.right := by
---   rw [← not_iff_not, show (2 : ℕ∞) = (1 : ℕ) + 1 by rfl,
---     predConnected_one.not_predConnected_add_one_iff, Nat.cast_one]
---   simp [Partition.isPredSep_one_iff]
-
--- lemma PredConnected.of_imp {cond cond'} (h : M.PredConnected cond k)
---     (h_imp : ∀ ⦃k j X⦄, cond' M k j X → cond M k j X) : M.PredConnected cond' k :=
---   fun _ _ hP ↦ h (hP.imp h_imp)
-
--- lemma PredConnected.le {cond} {j k} (h : M.PredConnected cond k) {P : M.Partition}
---     (hP : P.IsPredSep cond j) : k ≤ j :=
---   h hP
-
--- /-! ### Separation Notions-/
-
--- namespace Partition
-
--- def IsTutteSep (P : M.Partition) : ℕ∞ → Prop := P.IsPredSep (fun _ k _ X ↦ k ≤ X.encard)
-
--- def IsInternalSep (P : M.Partition) : ℕ∞ → Prop :=
---   P.IsPredSep (fun _ k j X ↦ k ≤ X.encard ∧ (j + 1 = k → k + 1 ≤ X.encard))
-
--- def IsVerticalSep (P : M.Partition) : ℕ∞ → Prop := P.IsPredSep (fun _ _ j X ↦ j ≤ M.eRk X)
-
--- lemma isTutteSep_iff :
---     P.IsTutteSep k ↔ P.eConn < k ∧ k ≤ P.left.encard ∧ k ≤ P.right.encard :=
---   isPredSep_iff ..
-
--- lemma IsTutteSep.drop (h : P.IsTutteSep k) (hj : P.eConn < j) (hjk : j ≤ k) : P.IsTutteSep j :=
---   ⟨hj, hjk.trans h.cond_left, hjk.trans h.cond_right⟩
-
--- lemma IsTutteSep.isTutteSep_eConn_add_one (h : P.IsTutteSep k) : P.IsTutteSep (P.eConn + 1) :=
---   h.drop ((ENat.lt_add_one_iff h.eConn_lt_top.ne).2 rfl.le) h.eConn_add_one_le
 
 
 
@@ -794,67 +774,3 @@ lemma IsMinor.eConnBetween_le {N : Matroid α} (hNM : N ≤m M) :
     N.eConnBetween X Y ≤ M.eConnBetween X Y := by
   obtain ⟨C, D, h, -, -, rfl⟩ := hNM
   exact le_trans ((M ／ C).eConnBetween_delete_le X Y D) <| (M.eConnBetween_contract_le X Y C)
-
--- -- -- lemma foo [M.RankFinite] (M : Matroid α) (X Y : Set α) (he : e ∈ M.E) (heX : e ∉ X)
--- -- --  (heY : e ∉ Y) :
--- -- --     (M ／ e).eConnBetween X Y = M.eConnBetween X Y ∨
--- -- --     (M ＼ e).eConnBetween X Y = M.eConnBetween X Y := by
--- -- --   sorry
-
--- -- section Nat
-
--- -- /-- The connectivity of a partition as a natural number. -/
--- -- noncomputable def Partition.conn (P : M.Partition) : ℕ := P.eConn.toNat
-
--- -- /-- The minimum connectivity of all partitions of `M` separating `X` and `Y`, as a natural number.-/
--- -- noncomputable def connBetween (M : Matroid α) (X Y : Set α) : ℕ :=
--- --   (M.eConnBetween X Y).toNat
-
--- -- lemma coe_connBetween (M : Matroid α) [RankFinite M] (X Y : Set α) (hdj : Disjoint X Y) :
--- --     (M.connBetween X Y : ℕ∞) = M.eConnBetween X Y := by
--- --   rw [connBetween, ENat.coe_toNat_eq_self, ← lt_top_iff_ne_top]
--- --   refine (M.eConnBetween_le_eConn_left hdj).trans_lt ?_
--- --   rw [← M.cast_conn_eq]
--- --   apply ENat.coe_lt_top
-
--- -- lemma exists_partition_conn_eq_connBetween (hXY : Disjoint X Y) (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) :
--- --     ∃ P : M.Partition, P.SepOf X Y ∧ P.conn = M.connBetween X Y := by
--- --   obtain ⟨P, hP, hconn⟩ := exists_partition_eConn_eq_eConnBetween hXY hXE hYE
--- --   exact ⟨P, hP, congr_arg _ hconn⟩
-
--- -- lemma Partition.SepOf.connBetween_le_conn [RankFinite M] (hP : P.SepOf X Y) :
--- --     M.connBetween X Y ≤ P.conn := by
--- --   rw [← Nat.cast_le (α := ℕ∞), coe_connBetween _ _ _ hP.disjoint, Partition.conn, P.eConn_eq_left,
--- --     ← cast_conn_eq, ENat.coe_toNat (ENat.coe_ne_top _), cast_conn_eq, ← P.eConn_eq_left]
--- --   · exact hP.eConnBetween_le
-
-
-
-
-
-
--- -- -- theorem foo (P : Matroid α → Prop) [M.Finite]
--- -- --(ih : ∀ M, M.Finite → (∀ N, N.E ⊂ M.E → P N) → P M) :
--- -- --     P M := by
--- -- --   obtain hE | ⟨e, he⟩ := M.E.eq_empty_or_nonempty
--- -- --   · exact ih M (by assumption) fun N hN ↦ by simp [hE, ssubset_iff_exists] at hN
--- -- --   have decr := M.ground_finite.encard_lt_encard <| diff_singleton_sSubset.2 he
-
-
--- --     -- simp [hE] at ih
-
-
--- -- -- theorem conn_del_lemma (M : Matroid α) [M.Finite] (e : α) (he : e ∈ M.E) (hXE : X ⊆ M.E)
--- -- --(hYE : Y ⊆ M.E)
--- -- --     (heX : e ∉ X) (heY : e ∉ Y) (hXY : k ≤ M.connBetween X Y) :
--- -- --     k ≤ (M ＼ e).connBetween X Y ∨ k ≤ (M ／ e).connBetween X Y := by
--- -- --   sorry
-
-
-
-
--- --   -- simp_rw [eConnBetween_eq_iInf hXY hXE hYE]
--- --   -- set α := {P : M.Partition // P.SepOf X Y}
--- --   -- have hne : Nonempty α := ⟨_, partition_sepOf hXY hXE hYE⟩
--- --   -- obtain ⟨⟨P,h⟩, hP⟩ := ENat.exists_eq_iInf (f := fun i : α ↦ i.1.eConn)
--- --   -- exact ⟨P, h, hP⟩
