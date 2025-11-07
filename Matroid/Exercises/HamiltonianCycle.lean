@@ -372,20 +372,9 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
   -- Second annoying case
   obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
   · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
-      have := H2comp.1.2
-      have : V(H2) \ A = V(H2) := by
-        ext x
-        refine ⟨?_, ?_⟩
-        · grind
-        intro hX
-        simp
-        refine ⟨by assumption, ?_⟩
-        rw [← Set.not_nonempty_iff_eq_empty] at Hemp
-        intro hXA
-        apply Hemp
-        tauto
-      rw [this]
-      assumption
+      -- Managed to simplify this part a lot - Noah
+      rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
+      exact H2comp.1.2
     --Apply Bound_on_indepSet with modifications since H2 is not a connected component
     -- You will nee hDirac applied to y
     have := Bound_on_indepSet S HS.1 H1 hccH1 A hA x (by tauto)
