@@ -624,7 +624,7 @@ lemma nonempty_unif_isoRestr_unifOn (a : ℕ) {b : ℕ} {E : Set α} (h : b ≤ 
       simp at h
     obtain ⟨f, hf, hfi⟩ :=
       finite_univ.exists_injOn_of_encard_le (α := Fin (b+1)) (β := E) (t := univ) (by simpa using h)
-    rw [← injective_iff_injOn_univ] at hfi
+    rw [injOn_univ] at hfi
     exact ⟨f ∘ Subtype.val, hfi.comp Subtype.val_injective⟩
   exact ⟨⟨f, hf, fun I ↦ by simp [Subtype.val_injective.encard_image, hf.encard_image]⟩⟩
 

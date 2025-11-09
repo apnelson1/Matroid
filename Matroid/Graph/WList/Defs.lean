@@ -135,10 +135,8 @@ lemma ext_vertex_edge {w₁ w₂ : WList α β} (h_vertex : w₁.vertex = w₂.v
 --   | cons u e {w x} (h : w.Mem x) : (cons u e w).Mem x
 
 
-
 instance : Membership α (WList α β) where
   mem w x := x ∈ w.vertex
-
 
 @[simp]
 lemma mem_vertex : (x ∈ w.vertex) = (x ∈ w) := rfl

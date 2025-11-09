@@ -103,7 +103,7 @@ variable {e f : α}
 theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set α} (hef : e ∈ S ↔ f ∈ S) :
     (Equiv.swap e f) '' S = S := by
   ext x
-  rw [image_equiv_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def]
+  rw [image_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def]
   split_ifs with hxe hxf
   · rwa [hxe, Iff.comm]
   · rwa [hxf]
@@ -112,7 +112,7 @@ theorem Equiv.swap_image_eq_self [DecidableEq α] {S : Set α} (hef : e ∈ S �
 theorem Equiv.swap_image_eq_exchange [DecidableEq α] {S : Set α} (he : e ∈ S) (hf : f ∉ S) :
     (Equiv.swap e f) '' S = insert f (S \ {e}) := by
   ext x
-  rw [image_equiv_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def,
+  rw [image_eq_preimage_symm, mem_preimage, Equiv.symm_swap, Equiv.swap_apply_def,
     mem_insert_iff, mem_diff]
   split_ifs with hxe hxf
   · subst hxe
