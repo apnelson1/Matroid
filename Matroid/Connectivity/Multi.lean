@@ -15,7 +15,7 @@ lemma disjoint_map_prod_left {α ι : Type*} {f : ι → Set α} :
     Pairwise (Disjoint on fun i ↦ (i, ·) '' f i) := by
   simp +contextual [Pairwise, disjoint_right]
 
--- generalize this more to remove some of the `aesop`s, and do the right version too.
+-- TODO : `Prod.snd` version.
 lemma injOn_prod_fst_mk_left_iff_pairwise_disjoint {α ι : Type*} (f : ι → Set α) :
     InjOn Prod.fst (⋃ i, (·, i) '' f i) ↔ Pairwise (Disjoint on f) := by
   refine ⟨fun h i j hij ↦ disjoint_left.2 fun x hxi hxj ↦ hij ?_, fun h i hi j hj hij ↦ ?_⟩
@@ -29,6 +29,8 @@ lemma injOn_prod_fst_mk_left_iff_pairwise_disjoint {α ι : Type*} (f : ι → S
 namespace Matroid
 
 variable {α : Type*} {M : Matroid α} {B B' I I' J J' K : Set α} {ι : Type*} {I X Y : ι → Set α}
+
+section Multi
 
 /-- An auxiliary version of multi-connectivity used in the real definition.
 If the sets are disjoint, then this is equal to `multiConn`, but otherwise it is badly behaved.-/
@@ -54,12 +56,6 @@ If the `X i` are not disjoint, then there is no simple formula in general, but f
 an expression using cardinality is given in `multiConn_cond`. -/
 noncomputable def multiConn (M : Matroid α) (X : ι → Set α) : ℕ∞ :=
   (M.comap Prod.fst).multiConnAux fun i ↦ ((· , i) '' (X i ∩ M.E))
-
-/-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
-Defined to correctly describe the connectivity even when one or both sets has infinite rank.
-For a `ℕ`-valued version, see `Matroid.localConn`. -/
-noncomputable def eLocalConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
-  M.multiConn (fun b ↦ bif b then X else Y)
 
 lemma multiConn_inter_ground (M : Matroid α) (X : ι → Set α) :
     M.multiConn (fun i ↦ (X i) ∩ M.E) = M.multiConn X := by
@@ -128,7 +124,11 @@ lemma multiConn_eq_nullity_iUnion' (hdj : Pairwise (Disjoint on I))
   by_contra hne
   exact (hdj hne).notMem_of_mem_left ha ha'
 
-lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
+lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on I))
+    (hIX : ∀ i, M.IsBasis (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) := by
+  rw [multiConn_eq_nullity_iUnion' hdj (fun i ↦ (hIX i).isBasis')]
+
+lemma multiConn_eq_nullity_iUnion'' (hdj : Pairwise (Disjoint on X))
     (hIX : ∀ i, M.IsBasis' (I i) (X i)) : M.multiConn X = M.nullity (⋃ i, I i) :=
   multiConn_eq_nullity_iUnion' (hdj.mono fun i j ↦ Disjoint.mono (hIX i).subset (hIX j).subset) hIX
 
@@ -136,7 +136,7 @@ lemma multiConn_eq_nullity_iUnion (hdj : Pairwise (Disjoint on X))
 lemma multiConn_subsingleton [Subsingleton ι] (M : Matroid α) (X : ι → Set α) :
     M.multiConn X = 0 := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  rw [multiConn_eq_nullity_iUnion Subsingleton.pairwise hI, nullity_eq_zero]
+  rw [multiConn_eq_nullity_iUnion'' Subsingleton.pairwise hI, nullity_eq_zero]
   obtain hι | ⟨⟨i⟩⟩ := isEmpty_or_nonempty ι
   · simp
   exact (hI i).indep.subset <| iUnion_subset_iff.2 fun j ↦ by rw [Subsingleton.elim i j]
@@ -144,7 +144,7 @@ lemma multiConn_subsingleton [Subsingleton ι] (M : Matroid α) (X : ι → Set 
 lemma multiconn_eq_comap_prod_multiConn (X : ι → Set α) :
     M.multiConn X = (M.comap Prod.fst).multiConn (fun i ↦ (· , i) '' X i) := by
   choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  rwa [multiConn_eq_nullity_iUnion (M := M.comap Prod.fst)
+  rwa [multiConn_eq_nullity_iUnion'' (M := M.comap Prod.fst)
     (I := fun i ↦ (·, i) '' I i) disjoint_map_prod_right,
     multiConn_eq_comap_nullity (I := I)]
   exact fun i ↦ (hI i).comap <| RightInverse.rightInvOn (congr_fun rfl) _
@@ -170,6 +170,7 @@ lemma multiConn_map_image {β : Type*} {f : α → β} (M : Matroid α) (hf : In
     (f := fun (x : β) ↦ {i : ι | x ∈ f '' (I i)}.encard - 1) (hf.mono hIE) with e i
   rw [hf.mem_image_iff (hI i).indep.subset_ground (hIE e.2)]
 
+@[simp]
 lemma multiConn_map {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f M.E) (X : ι → Set β) :
     (M.map f hf).multiConn X = (M.multiConn fun i ↦ f ⁻¹' (X i)) := by
   wlog hXss : ∀ i, X i ⊆ f '' M.E generalizing X with aux
@@ -186,6 +187,77 @@ lemma multiConn_map {β : Type*} {f : α → β} (M : Matroid α) (hf : InjOn f 
   refine fun i ↦ subset_antisymm (inter_subset_inter_left _ (subset_preimage_image ..))
     (subset_inter ?_ inter_subset_right)
   rw [hf.preimage_image_inter (hY.1 i)]
+
+lemma multiConn_closure (M : Matroid α) (X : ι → Set α) :
+    M.multiConn (fun i ↦ M.closure (X i)) = M.multiConn X := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rw [multiConn_eq_comap_nullity (I := I), multiConn_eq_comap_nullity (I := I) hI]
+  exact fun i ↦ (hI i).isBasis_closure_right.isBasis'
+
+lemma multiConn_closure_congr {X Y : ι → Set α} (hXY : ∀ i, M.closure (X i) = M.closure (Y i)) :
+    M.multiConn X = M.multiConn Y := by
+  rw [← M.multiConn_closure X, ← M.multiConn_closure Y]
+  simp [hXY]
+
+@[simp]
+lemma multiConn_comap {β : Type*} (M : Matroid β) (X : ι → Set α) (f : α → β) :
+    (M.comap f).multiConn X = M.multiConn (fun i ↦ f '' (X i)) := by
+  choose I hI using fun i ↦ (M.comap f).exists_isBasis' (X i)
+  rw [multiConn_eq_comap_nullity hI]
+  simp_rw [comap_isBasis'_iff, forall_and] at hI
+  simp_rw [multiConn_eq_comap_nullity hI.1, image_image]
+  have := (M.comap Prod.fst : Matroid (β × ι)).nullity_comap (X := ⋃ i, (· , i) '' I i)
+      (f := fun x : (α × ι) ↦ (f x.1, x.2)) ?_
+  · convert this
+    · simp_rw [comap_comap]
+      rfl
+    aesop
+  simp only [InjOn, mem_iUnion, mem_image, Prod.mk.injEq, and_imp, forall_exists_index, Prod.forall]
+  rintro a i j x hx rfl rfl y k l z hz rfl rfl hf rfl
+  rw [(hI.2.1 j).eq_iff hx hz] at hf
+  exact ⟨hf, rfl⟩
+
+lemma IsSkewFamily.multiConn (h : M.IsSkewFamily X) : M.multiConn X = 0 := by
+  obtain ⟨B, hB, hBX⟩ := h.isModularFamily.exists_isMutualBasis_isBase
+  rw [multiConn_eq_nullity_iUnion' (h.pairwise_disjoint_of_isBases hBX.isBasis_inter)
+    (fun i ↦ (hBX.isBasis_inter i).isBasis'), nullity_eq_zero]
+  exact hB.indep.subset <| by simp
+
+lemma multiConn_eq_zero_iff (hX : ∀ i, X i ⊆ M.E) :
+    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
+  choose I hI using fun i ↦ M.exists_isBasis' (X i)
+  rw [multiConn_eq_comap_nullity hI, nullity_eq_zero, comap_indep_iff, image_iUnion,
+    isSkewFamily_iff_cls_isSkewFamily hX]
+  simp only [image_image, image_id', ← (hI _).closure_eq_closure]
+  rw [← isSkewFamily_iff_cls_isSkewFamily (fun i ↦ (hI i).indep.subset_ground),
+    Indep.isSkewFamily_iff_pairwise_disjoint_union_indep (fun i ↦ (hI i).indep), and_comm,
+    injOn_prod_fst_mk_left_iff_pairwise_disjoint]
+
+/-- A version of `multiConn_eq_zero_iff` where the union is `M.E`,
+since this is a common application -/
+lemma multiConn_eq_zero_iff' (hX : ⋃ i, X i = M.E) :
+    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
+  rw [multiConn_eq_zero_iff (fun i ↦ by grw [← hX, ← subset_iUnion])]
+
+lemma tsum_eRk_eq_eRk_iUnion_add_multiConn :
+    ∑' i, M.eRk (X i) = M.eRk (⋃ i, X i) + M.multiConn X := by
+  wlog hX : ∀ i, M.Indep (X i) generalizing X with aux
+  · choose I hI using fun i ↦ M.exists_isBasis' (X i)
+    rw [← tsum_congr (fun i ↦ (hI i).eRk_eq_eRk), ← eRk_closure_eq,
+      closure_iUnion_congr _ _ (fun i ↦ (hI i).closure_eq_closure.symm), eRk_closure_eq,
+      ← multiConn_closure_congr (fun i ↦ (hI i).closure_eq_closure), aux (fun i ↦ (hI i).indep)]
+  rw [tsum_congr (fun i ↦ (hX i).eRk_eq_encard),
+    multiConn_eq_comap_nullity (fun i ↦ (hX i).isBasis_self.isBasis')]
+  have hrw := M.eRk_comap (α := α × ι) (f := Prod.fst) (⋃ i, (·,i) '' X i)
+  simp_rw [image_iUnion, image_image, image_id'] at hrw
+  rw [← hrw, eRk_add_nullity_eq_encard, ← ENat.tsum_encard_eq_encard_iUnion
+    disjoint_map_prod_right, tsum_congr (fun i ↦ InjOn.encard_image (by simp))]
+
+end Multi
+
+section Pair
+
+variable {X Y I J : Set α}
 
 /-- The local connectivity of a pair of sets `X,Y` is the nullity of `I ∪ J` plus the
 cardinality of `I ∩ J`, for any respective bases `I` and `J` for `X` and `Y`. -/
@@ -211,6 +283,12 @@ lemma multiConn_cond {I J X Y : Set α} (hIX : M.IsBasis' I X) (hJY : M.IsBasis'
     simpa [project_closure, preimage_preimage, image_union, hinv.image_image]
   refine M.subset_closure_of_subset' subset_union_left hJY.indep.subset_ground
 
+/-- The `ℕ∞`-valued local connectivity between two sets `X` and `Y`, often written `⊓ (X,Y)`.
+Defined to correctly describe the connectivity even when one or both sets has infinite rank.
+For a `ℕ`-valued version, see `Matroid.localConn`. -/
+noncomputable def eLocalConn (M : Matroid α) (X Y : Set α) : ℕ∞ :=
+  M.multiConn (fun b ↦ bif b then X else Y)
+
 lemma IsBasis'.eLocalConn_eq {I J X Y : Set α} (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y) :
     M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) := by
   rw [eLocalConn, M.multiConn_cond hI hJ, union_comm, add_comm]
@@ -219,416 +297,357 @@ lemma IsBasis.eLocalConn_eq {I J X Y : Set α}  (hI : M.IsBasis I X) (hJ : M.IsB
     M.eLocalConn X Y = (I ∩ J).encard + M.nullity (I ∪ J) :=
   hI.isBasis'.eLocalConn_eq hJ.isBasis'
 
-lemma multiConn_restrict (M : Matroid α) (X : ι → Set α) (R : Set α) :
-    (M ↾ R).multiConn X = M.multiConn (fun i ↦ (X i ∩ R)) := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i ∩ R)
-  have hIR (i) : I i ⊆ R := (hI i).subset.trans inter_subset_right
-  rw [multiConn_eq_comap_nullity (I := I), multiConn_eq_comap_nullity (I := I) hI,
-    comap_restrict, nullity_restrict_of_subset]
-  · simpa [preimage_preimage] using hIR
-  simpa [isBasis'_restrict_iff, hIR]
+lemma eLocalConn_comm (M : Matroid α) (X Y : Set α) : M.eLocalConn X Y = M.eLocalConn Y X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, hJ.eLocalConn_eq hI, inter_comm, union_comm]
 
-lemma multiConn_restrict_of_subset (M : Matroid α) {R : Set α} (hX : ∀ i, X i ⊆ R) :
-    (M ↾ R).multiConn X = M.multiConn X := by
-  simp_rw [multiConn_restrict,
-    show ∀ i, X i ∩ R = X i from fun i ↦ inter_eq_self_of_subset_left (hX i)]
+lemma eLocalConn_eq_multiConn (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn X Y = M.multiConn (fun b ↦ bif b then X else Y) := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [M.multiConn_cond hI hJ, hI.eLocalConn_eq hJ, add_comm]
 
-lemma multiConn_restrict_le (M : Matroid α) (X : ι → Set α) (R : Set α) :
-    (M ↾ R).multiConn (fun i ↦ (X i) ∩ R) ≤ M.multiConn X := by
-  rw [multiConn_restrict]
-  exact multiConn_mono _ fun i ↦ inter_subset_left.trans inter_subset_left
+lemma IsBasis'.eLocalConn_eq_nullity_project_right (hI : M.IsBasis' I X) (Y : Set α) :
+    M.eLocalConn X Y = (M.project Y).nullity I := by
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, add_comm, ← nullity_project_add_nullity_eq,
+    ← hJ.project_eq_project, hJ.indep.nullity_eq, add_zero]
 
-lemma multiConn_delete (M : Matroid α) (X : ι → Set α) (D : Set α) :
-    (M ＼ D).multiConn X = M.multiConn fun i ↦ (X i \ D) := by
-  rw [delete_eq_restrict, multiConn_restrict, eq_comm, ← multiConn_inter_ground]
-  convert rfl using 3 with i
-  tauto_set
+lemma IsBasis.eLocalConn_eq_nullity_project_right (hI : M.IsBasis I X) (Y : Set α) :
+    M.eLocalConn X Y = (M.project Y).nullity I :=
+  hI.isBasis'.eLocalConn_eq_nullity_project_right Y
 
-lemma multiConn_delete_of_disjoint (M : Matroid α) {D : Set α} (hXD : ∀ i, Disjoint (X i) D) :
-    (M ＼ D).multiConn X = M.multiConn X := by
-  simp_rw [multiConn_delete, (hXD _).sdiff_eq_left]
+lemma IsBasis'.eLocalConn_eq_nullity_project_left (hI : M.IsBasis' I Y) (X : Set α) :
+    M.eLocalConn X Y = (M.project X).nullity I := by
+  rw [eLocalConn_comm, hI.eLocalConn_eq_nullity_project_right]
 
-lemma multiConn_closure (M : Matroid α) (X : ι → Set α) :
-    M.multiConn (fun i ↦ M.closure (X i)) = M.multiConn X := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  rw [multiConn_eq_comap_nullity (I := I), multiConn_eq_comap_nullity (I := I) hI]
-  exact fun i ↦ (hI i).isBasis_closure_right.isBasis'
+lemma IsBasis.eLocalConn_eq_nullity_project_left (hI : M.IsBasis I Y) (X : Set α) :
+    M.eLocalConn X Y = (M.project X).nullity I := by
+  rw [eLocalConn_comm, hI.eLocalConn_eq_nullity_project_right]
 
-lemma multiConn_closure_congr {X Y : ι → Set α} (hXY : ∀ i, M.closure (X i) = M.closure (Y i)) :
-    M.multiConn X = M.multiConn Y := by
-  rw [← M.multiConn_closure X, ← M.multiConn_closure Y]
-  simp [hXY]
+lemma Indep.eLocalConn_eq_nullity_project_left (hI : M.Indep I) (X : Set α) :
+    M.eLocalConn I X = (M.project X).nullity I :=
+  hI.isBasis_self.eLocalConn_eq_nullity_project_right ..
 
-lemma multiConn_comap {β : Type*} (M : Matroid β) (X : ι → Set α) (f : α → β) :
-    (M.comap f).multiConn X = M.multiConn (fun i ↦ f '' (X i)) := by
-  choose I hI using fun i ↦ (M.comap f).exists_isBasis' (X i)
-  rw [multiConn_eq_comap_nullity hI]
-  simp_rw [comap_isBasis'_iff, forall_and] at hI
-  simp_rw [multiConn_eq_comap_nullity hI.1, image_image]
-  have := (M.comap Prod.fst : Matroid (β × ι)).nullity_comap (X := ⋃ i, (· , i) '' I i)
-      (f := fun x : (α × ι) ↦ (f x.1, x.2)) ?_
-  · convert this
-    · simp_rw [comap_comap]
-      rfl
-    aesop
-  simp only [InjOn, mem_iUnion, mem_image, Prod.mk.injEq, and_imp, forall_exists_index, Prod.forall]
-  rintro a i j x hx rfl rfl y k l z hz rfl rfl hf rfl
-  rw [(hI.2.1 j).eq_iff hx hz] at hf
-  exact ⟨hf, rfl⟩
+lemma Indep.eLocalConn_eq_nullity_project_right (hI : M.Indep I) (X : Set α) :
+    M.eLocalConn X I = (M.project X).nullity I :=
+  hI.isBasis_self.eLocalConn_eq_nullity_project_left ..
 
-lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
-    (hdj : Pairwise (Disjoint on X)) (D : Set α) :
-    M.multiConn X ≤ (M ＼ D).multiConn X + D.encard := by
-  choose I hI using fun i ↦ (M ＼ D).exists_isBasis' (X i)
-  choose J hJ using fun i ↦ (hI i).indep.of_delete.subset_isBasis'_of_subset (hI i).subset
-  have hID (i) : Disjoint (I i) D := (subset_diff.1 (hI i).indep.subset_ground).2
-  obtain rfl : I = fun i ↦ J i \ D := by
-    refine funext fun i ↦ (hI i).eq_of_subset_indep ?_ (subset_diff.2 ⟨(hJ i).2, hID i⟩)
-      (diff_subset.trans (hJ i).1.subset)
-    rw [delete_indep_iff, and_iff_left disjoint_sdiff_left]
-    exact (hJ i).1.indep.diff D
-  grw [multiConn_eq_nullity_iUnion hdj hI, multiConn_eq_nullity_iUnion hdj (fun i ↦ (hJ i).1),
-    nullity_delete_of_disjoint _ (by simp [disjoint_sdiff_left]),
-    ← iUnion_diff, ← nullity_union_le_nullity_add_encard, diff_union_self]
-  exact M.nullity_le_of_subset subset_union_left
+lemma Indep.eLocalConn_eq (hI : M.Indep I) (hJ : M.Indep J) :
+    M.eLocalConn I J = (I ∩ J).encard + M.nullity (I ∪ J) :=
+  hI.isBasis_self.eLocalConn_eq hJ.isBasis_self
 
-lemma multiConn_project_eq_multiConn_contract (M : Matroid α) (C : Set α) :
-    (M.project C).multiConn (ι := ι) = (M ／ C).multiConn := by
-  ext X
-  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
-  · rw [← multiConn_inter_ground, aux _ (by simp), ← multiConn_inter_ground, eq_comm,
-      ← multiConn_inter_ground]
-    simp [inter_assoc, inter_eq_self_of_subset_right diff_subset]
-  rwa [eq_comm, ← (M ／ C).multiConn_restrict_of_subset (R := M.E), project]
+lemma IsBasis'.eLocalConn_eq_of_disjoint' (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y)
+    (hIJ : Disjoint I J) : M.eLocalConn X Y = M.nullity (I ∪ J) := by
+  rw [hI.eLocalConn_eq hJ, hIJ.inter_eq, encard_empty, zero_add]
 
-lemma IsSkewFamily.multiConn (h : M.IsSkewFamily X) : M.multiConn X = 0 := by
-  obtain ⟨B, hB, hBX⟩ := h.isModularFamily.exists_isMutualBasis_isBase
-  rw [multiConn_eq_nullity_iUnion' (h.pairwise_disjoint_of_isBases hBX.isBasis_inter)
-    (fun i ↦ (hBX.isBasis_inter i).isBasis'), nullity_eq_zero]
-  exact hB.indep.subset <| by simp
+lemma IsBasis.eLocalConn_eq_of_disjoint' (hI : M.IsBasis I X) (hJ : M.IsBasis J Y)
+    (hIJ : Disjoint I J) : M.eLocalConn X Y = M.nullity (I ∪ J) := by
+  rw [hI.eLocalConn_eq hJ, hIJ.inter_eq, encard_empty, zero_add]
 
-lemma multiConn_eq_zero_iff (hX : ∀ i, X i ⊆ M.E) :
-    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  rw [multiConn_eq_comap_nullity hI, nullity_eq_zero, comap_indep_iff, image_iUnion,
-    isSkewFamily_iff_cls_isSkewFamily hX]
-  simp only [image_image, image_id', ← (hI _).closure_eq_closure]
-  rw [← isSkewFamily_iff_cls_isSkewFamily (fun i ↦ (hI i).indep.subset_ground),
-    Indep.isSkewFamily_iff_pairwise_disjoint_union_indep (fun i ↦ (hI i).indep), and_comm,
-    injOn_prod_fst_mk_left_iff_pairwise_disjoint]
+lemma IsBasis'.eLocalConn_eq_of_disjoint (hI : M.IsBasis' I X) (hJ : M.IsBasis' J Y)
+    (hXY : Disjoint X Y) : M.eLocalConn X Y = M.nullity (I ∪ J) := by
+  rw [hI.eLocalConn_eq hJ, (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
-/-- A version of `multiConn_eq_zero_iff` where the union is `M.E`,
-since this is a common application -/
-lemma multiConn_eq_zero_iff' (hX : ⋃ i, X i = M.E) :
-    M.multiConn X = 0 ↔ M.IsSkewFamily X := by
-  rw [multiConn_eq_zero_iff (fun i ↦ by grw [← hX, ← subset_iUnion])]
+lemma IsBasis.eLocalConn_eq_of_disjoint (hI : M.IsBasis I X) (hJ : M.IsBasis J Y)
+    (hXY : Disjoint X Y) : M.eLocalConn X Y = M.nullity (I ∪ J) := by
+  rw [hI.eLocalConn_eq hJ, (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
-lemma multiConn_dual_eq_eRank_project (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
-    (hI : ∀ i, (M.project (M.E \ X i)).IsBasis (I i) (X i)) :
-    M✶.multiConn X = (M.project (⋃ i, I i)).eRank := by
-  have hXE (i) : X i ⊆ M.E := by grw [← hu, ← subset_iUnion]
-  have hI' (i) : M✶.IsBasis (X i \ I i) (X i) := by
-    rw [← isBase_restrict_iff, ← delete_compl, ← dual_contract, dual_ground,
-      dual_isBase_iff _, ← isBasis_ground_iff, contract_ground, diff_diff_cancel_left (hXE i),
-      diff_diff_cancel_left (hI i).subset, ← project_isBasis_iff disjoint_sdiff_right]
-    · exact hI i
-    grw [contract_ground, diff_diff_cancel_left (hXE i), diff_subset]
-  rw [multiConn_eq_nullity_iUnion hdj (fun i ↦ (hI' i).isBasis'), nullity_eq_eRank_restrict_dual,
-    ← delete_compl, dual_delete_dual, dual_ground, eRank_project]
-  congr
-  grw [subset_antisymm_iff, diff_subset_iff, ← iUnion_union_distrib, subset_diff,
-    iUnion_congr (fun i ↦ diff_union_of_subset (hI i).subset), hu, and_iff_right rfl.subset,
-    ← hu, and_iff_right (iUnion_mono (fun i ↦ (hI i).subset)), disjoint_iUnion_right]
-  simp_rw [disjoint_iUnion_left]
-  intro i j
-  obtain rfl | hne := eq_or_ne i j
-  · exact disjoint_sdiff_right
-  exact (hdj hne).symm.mono (hI j).subset diff_subset
+lemma eLocalConn_eq_encard_of_diff {F : Set α} (hXY : Disjoint X Y) (hI : M.IsBasis' I X)
+    (hJ : M.IsBasis' J Y) (hFIJ : F ⊆ I ∪ J)  (hF : M.IsBasis' ((I ∪ J) \ F) (X ∪ Y)) :
+    M.eLocalConn X Y = F.encard := by
+  have hF' : M.IsBasis ((I ∪ J) \ F) (I ∪ J) := by
+    refine hF.isBasis_inter_ground.isBasis_subset diff_subset
+      (subset_inter (union_subset_union hI.subset hJ.subset)
+      (union_subset hI.indep.subset_ground hJ.indep.subset_ground))
+  rw [hI.eLocalConn_eq hJ, hF'.nullity_eq, diff_diff_cancel_left hFIJ,
+    (hXY.mono hI.subset hJ.subset).inter_eq, encard_empty, zero_add]
 
-lemma multiConn_dual_eq_eRank_contract (hdj : Pairwise (Disjoint on X)) (hu : ⋃ i, X i = M.E)
-    (hI : ∀ i, (M ／ (M.E \ X i)).IsBasis (I i) (X i)) :
-    M✶.multiConn X = (M ／ (⋃ i, I i)).eRank := by
-  rw [multiConn_dual_eq_eRank_project hdj hu, eRank_project]
-  intro i
-  rw [project_isBasis_iff disjoint_sdiff_right]
-  exact hI i
+lemma eLocalConn_eq_encard_of_diff' {F : Set α} (hXY : Disjoint X Y) (hI : M.IsBasis' I X)
+    (hJ : M.IsBasis' J Y) (hFI : F ⊆ I)  (hF : M.IsBasis' ((I \ F) ∪ J) (X ∪ Y)) :
+    M.eLocalConn X Y = F.encard := by
+  apply eLocalConn_eq_encard_of_diff hXY hI hJ (hFI.trans subset_union_left)
+  rwa [union_diff_distrib, (sdiff_eq_left (x := J)).2 ]
+  exact (hXY.symm.mono hJ.subset (hFI.trans hI.subset))
 
-private lemma multiConn_project_le_aux (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
-    (hdj : Pairwise (Disjoint on X)) (hC : M.Indep C) :
-    (M.project C).multiConn X ≤ M.multiConn X := by
-  choose I hI using fun i ↦ (hC.inter_left (X i)).subset_isBasis'_of_subset inter_subset_left
-  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
-  have hJ' (i) : (M.project C).IsBasis' (J i) (X i) := by
-    rw [isBasis'_iff_isBasis_closure, project_closure,
-      ← closure_union_congr_left (hI i).1.closure_eq_closure, ← project_closure]
-    exact ⟨(hJ i).isBasis_closure_right, (hJ i).subset.trans (hI i).1.subset⟩
-  grw [multiConn_eq_nullity_iUnion hdj hJ', multiConn_eq_nullity_iUnion hdj (fun i ↦ (hI i).1),
-    hC.nullity_project_of_disjoint, nullity_le_of_subset]
-  · refine union_subset ?_ (iUnion_mono (fun i ↦ (hJ i).subset))
-    rw [← inter_eq_self_of_subset_right hCX, iUnion_inter]
-    exact iUnion_mono fun i ↦ (hI i).2
-  exact disjoint_iUnion_right.2 fun i ↦ (hC.project_indep_iff.1 (hJ i).indep).1.symm
+@[simp] lemma eLocalConn_closure_right (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn X (M.closure Y) = M.eLocalConn X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [hI.eLocalConn_eq_nullity_project_right, project_closure_eq,
+    ← hI.eLocalConn_eq_nullity_project_right]
 
-lemma multiConn_project_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i) :
-    (M.project C).multiConn X ≤ M.multiConn X := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  obtain ⟨IC, hIC⟩ := M.exists_isBasis' C
-  obtain ⟨K, hKdj, rfl, hKX⟩ := exists_partition_of_subset_iUnion (hIC.subset.trans hC)
-  have hwin := multiConn_project_le_aux (M.comap Prod.fst) (X := fun i ↦ (·, i) '' (X i))
-    (C := ⋃ (i : ι), (·, i) '' (K i)) ?_ ?_ ?_; rotate_left
-  · exact iUnion_mono fun i ↦ image_mono (hKX i)
-  · exact disjoint_map_prod_right
-  · simp [image_iUnion, image_image, injOn_prod_fst_mk_left_iff_pairwise_disjoint, hKdj, hIC.indep]
-  simp only [← project_comap_image, image_iUnion, image_image, image_id'] at hwin
-  grw [hIC.project_eq_project, multiconn_eq_comap_prod_multiConn, hwin,
-    M.multiconn_eq_comap_prod_multiConn]
+@[simp] lemma eLocalConn_closure_left (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn (M.closure X) Y = M.eLocalConn X Y := by
+  rw [eLocalConn_comm, eLocalConn_closure_right, eLocalConn_comm]
 
-lemma multiConn_contract_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i) :
-    (M ／ C).multiConn X ≤ M.multiConn X := by
-  grw [← multiConn_project_eq_multiConn_contract, multiConn_project_le _ hC]
+@[simp] lemma eLocalConn_closure_closure (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn (M.closure X) (M.closure Y) = M.eLocalConn X Y := by
+  rw [eLocalConn_closure_left, eLocalConn_closure_right]
 
-lemma multiConn_project_aux_indep (M : Matroid α) {C : Set α} (hC : M.Indep C) (X : ι → Set α) :
-    (M.project C).multiConn X + ∑' i, (M.project (X i)).nullity C
-    = M.multiConn X + (M.project (⋃ i, X i)).nullity C := by
-  -- We may assume that `ι` is nonempty and `C` is independent.
-  obtain hι | hι := isEmpty_or_nonempty ι
-  · simp [hC.nullity_eq]
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
+lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn (X ∩ M.E) (Y ∩ M.E) = M.eLocalConn X Y := by
+  rw [← eLocalConn_closure_closure, closure_inter_ground, closure_inter_ground _ Y,
+    eLocalConn_closure_closure]
 
-  -- Choose `C'` to be an arbitrary injective preimage of `C`,
-  -- and prove that `C'` is a basis of the preimage of `C` in the comap.
-  set C' : Set (α × ι) := (· , Classical.arbitrary ι) '' C with hC'_def
-  have hC'bas : (M.comap Prod.fst).IsBasis' C' (Prod.fst ⁻¹' C) := by
-    suffices M.IsBasis' C (Prod.fst '' (Prod.fst ⁻¹' C)) by
-      simpa [hC'_def, image_image, InjOn, preimage_preimage]
-    rw [image_preimage_eq _ Prod.fst_surjective]
-    exact hC.isBasis_self.isBasis'
-  -- Each `J i` spans `X i` in `M.project C`, so is a basis.
-  have hJX (i) : (M.project C).IsBasis' (J i) (X i) := by
-    rw [isBasis'_iff_isBasis_closure, and_iff_left ((hJ i).subset.trans (hI i).subset)]
-    refine (hJ i).indep.isBasis_of_subset_of_subset_closure ?_ ?_
-    · grw [(hJ i).subset, ← closure_subset_closure _ (hI i).subset]
-      exact subset_closure _ _ (by simpa using (hI i).indep.subset_ground)
-    rw [(hJ i).closure_eq_closure, project_closure, project_closure,
-      ← closure_union_congr_left (hI i).closure_eq_closure]
-  -- the sum of cardinality term is equal to the cardinality of a union.
-  have hsrw (i) : (M.project (X i)).nullity C = (I i \ J i).encard := by
-    rw [(hI i).project_eq_project, ← add_zero (nullity ..), ← (hI i).indep.nullity_eq,
-      nullity_project_add_nullity_comm, hC.nullity_eq, add_zero, (hJ i).nullity_eq]
-  have hcard : ∑' i, (M.project (X i)).nullity C
-      = ((⋃ i, ((·, i) '' I i)) \ (⋃ i, ((·, i) '' J i))).encard := by
-    rw [tsum_congr hsrw, ← iUnion_diff_iUnion
-      (fun i ↦ (image_mono (hJ i).subset)) disjoint_map_prod_right,
-      ← ENat.tsum_encard_eq_encard_iUnion, tsum_congr]
-    · intro i
-      rw [← image_diff (Prod.mk_left_injective i), (Prod.mk_left_injective i).encard_image ]
-    exact (disjoint_map_prod_right (f := I)).mono fun _ _ ↦ Disjoint.mono diff_subset diff_subset
-  -- the union of the lifted `I`s is spanned by the union of the lifted `J`s in `M.project C`.
-  have hcl : ⋃ i, (·, i) '' I i ⊆ ((M.project C).comap Prod.fst).closure (⋃ i, (·, i) '' J i) := by
-    suffices ∀ (i : ι), I i ⊆ M.closure ((⋃ i, J i) ∪ C) by
-      simpa [preimage_preimage, image_iUnion, image_image]
-    intro i
-    rw [← project_closure, closure_iUnion_congr _ _ fun i ↦ (hJ i).closure_eq_closure]
-    exact subset_closure_of_subset' _ (subset_iUnion ..) (hI i).indep.subset_ground
-  -- We are now done by a calculation.
-  rw [multiConn_eq_comap_nullity hI, multiConn_eq_comap_nullity hJX, hcard,
-    ← nullity_eq_nullity_add_encard_diff (iUnion_mono fun i ↦ image_mono (hJ i).subset) hcl,
-    ← add_zero (nullity ..), ← hC'bas.indep.nullity_eq, project_comap _ _ _ (by simp),
-    hC'bas.project_eq_project, nullity_project_add_nullity_comm, ← project_comap_image]
-  simp only [image_iUnion, image_image, image_id']
-  rw [← project_closure_eq, closure_iUnion_congr _ _ (fun i ↦ (hI i).closure_eq_closure),
-    project_closure_eq, add_comm (nullity ..),  nullity_comap (X := C')]
-  · simp only [hC'_def, image_image, image_id']
-  simp [hC'_def, InjOn]
+@[simp] lemma eLocalConn_inter_ground_left (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn (X ∩ M.E) Y = M.eLocalConn X Y := by
+  rw [← eLocalConn_closure_left, closure_inter_ground, eLocalConn_closure_left]
 
+@[simp] lemma eLocalConn_inter_ground_right (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn X (Y ∩ M.E) = M.eLocalConn X Y := by
+  rw [← eLocalConn_closure_right, closure_inter_ground, eLocalConn_closure_right]
 
-/-- An auxiliary lemma used to numerically relate the `multiConn` in a matroid its projection,
-in terms of chosen bases.  -/
-lemma multiConn_project_aux (M : Matroid α) {C : Set α} (hI : ∀ i, M.IsBasis' (I i) (X i)) :
-    (M.project C).multiConn X + (M.project (⋃ i, X i)).eRk C + ∑' i, (M.project C).nullity (I i)
-    = M.multiConn X + M.eRk C := by
-  wlog hC : M.Indep C generalizing C with aux
-  · obtain ⟨K, hK⟩ := M.exists_isBasis' C
-    simp_rw [hK.project_eq_project, ← hK.eRk_eq_eRk]
-    convert aux hK.indep using 3
-    rw [← eRk_closure_eq, project_closure, ← closure_union_congr_left hK.closure_eq_closure,
-      ← project_closure, eRk_closure_eq]
-  have hrw := M.multiConn_project_aux_indep hC X
-  apply_fun (· + (M.project (⋃ i, X i)).eRk C) at hrw
-  rw [add_right_comm, add_right_comm (a := M.multiConn X), add_assoc (a := M.multiConn X),
-    eRk_add_nullity_eq_encard, ← hC.eRk_eq_encard] at hrw
-  convert hrw using 4 with i
-  rw [hC.nullity_project, (hI i).project_eq_project, (hI i).indep.nullity_project,
-    union_comm, inter_comm]
+@[simp] lemma eLocalConn_restrict_eq (M : Matroid α) (X Y R : Set α) :
+    (M ↾ R).eLocalConn X Y = M.eLocalConn (X ∩ R) (Y ∩ R) := by
+  obtain ⟨I, hI⟩ := (M ↾ R).exists_isBasis' X
+  obtain ⟨J, hJ⟩ := (M ↾ R).exists_isBasis' Y
+  have ⟨hI', hI'R⟩ := isBasis'_restrict_iff.1 hI
+  have ⟨hJ', hJ'R⟩ := isBasis'_restrict_iff.1 hJ
+  rw [hI.eLocalConn_eq hJ, hI'.eLocalConn_eq hJ',
+    nullity_restrict_of_subset _ (union_subset hI'R hJ'R)]
 
-lemma project_multiConn_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set α) (C : Set α) :
-    (M.project C).multiConn X + ∑' i, M.eLocalConn (X i) C
-      = M.multiConn X + M.eLocalConn (⋃ i, X i) C := by
+lemma eLocalConn_restrict_univ (M : Matroid α) (X Y : Set α) :
+    (M ↾ univ).eLocalConn X Y = M.eLocalConn X Y := by
+  simp
+
+lemma eRk_add_eRk_eq_eRk_union_add_eLocalConn (M : Matroid α) (X Y : Set α) :
+    M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eLocalConn X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, ← hI.encard_eq_eRk, ← hJ.encard_eq_eRk, ← eRk_closure_eq,
+    ← closure_union_congr_left hI.closure_eq_closure,
+    ← closure_union_congr_right hJ.closure_eq_closure, eRk_closure_eq, add_comm (I ∩ J).encard,
+    ← add_assoc, eRk_add_nullity_eq_encard, encard_union_add_encard_inter]
+
+lemma eRk_inter_le_eLocalConn (M : Matroid α) (X Y : Set α) : M.eRk (X ∩ Y) ≤ M.eLocalConn X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' (X ∩ Y)
+  obtain ⟨IX, hIX⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_left)
+  obtain ⟨IY, hIY⟩ := hI.indep.subset_isBasis'_of_subset (hI.subset.trans inter_subset_right)
+  rw [← hI.encard_eq_eRk, hIX.1.eLocalConn_eq hIY.1]
+  exact (encard_le_encard (subset_inter hIX.2 hIY.2)).trans le_self_add
+
+lemma eLocalConn_mono_left {X' : Set α} (M : Matroid α) (hX : X' ⊆ X) (Y : Set α) :
+    M.eLocalConn X' Y ≤ M.eLocalConn X Y := by
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  rw [hJ.eLocalConn_eq_nullity_project_left, hJ.eLocalConn_eq_nullity_project_left]
+  apply nullity_project_mono _ hX
+
+lemma eLocalConn_mono_right {Y' : Set α} (M : Matroid α) (X : Set α) (hY : Y' ⊆ Y) :
+    M.eLocalConn X Y' ≤ M.eLocalConn X Y := by
+  grw [eLocalConn_comm, eLocalConn_mono_left M hY, eLocalConn_comm]
+
+lemma eLocalConn_mono {X' Y' : Set α} (M : Matroid α) (hX : X' ⊆ X) (hY : Y' ⊆ Y) :
+    M.eLocalConn X' Y' ≤ M.eLocalConn X Y :=
+  ((M.eLocalConn_mono_left hX Y').trans (M.eLocalConn_mono_right _ hY))
+
+@[simp] lemma empty_eLocalConn (M : Matroid α) (X : Set α) : M.eLocalConn ∅ X = 0 := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [(M.empty_indep.isBasis_self.isBasis').eLocalConn_eq hI]
+  simp [hI.indep]
+
+@[simp] lemma eLocalConn_empty (M : Matroid α) (X : Set α) : M.eLocalConn X ∅ = 0 := by
+  rw [eLocalConn_comm, empty_eLocalConn]
+
+lemma eLocalConn_subset (M : Matroid α) (hXY : X ⊆ Y) : M.eLocalConn X Y = M.eRk X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [hI.eLocalConn_eq_nullity_project_right, hI.eRk_eq_encard, nullity_eq_encard]
+  grw [hI.isBasis_closure_right.subset, project_loops]
+  exact M.closure_mono hXY
+
+lemma eLocalConn_eq_zero (hX : X ⊆ M.E := by aesop_mat) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.eLocalConn X Y = 0 ↔ M.Skew X Y := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis Y
+  rw [skew_iff_closure_skew, ← eLocalConn_closure_closure, ← hI.closure_eq_closure,
+    ← hJ.closure_eq_closure, ← skew_iff_closure_skew, eLocalConn_closure_closure,
+    hI.indep.eLocalConn_eq hJ.indep]
+  simp [hI.indep.skew_iff_disjoint_union_indep hJ.indep, disjoint_iff_inter_eq_empty]
+
+lemma Skew.eLocalConn (hXY : M.Skew X Y) : M.eLocalConn X Y = 0 := by
+  rwa [eLocalConn_eq_zero]
+
+lemma eLocalConn_restrict_of_subset (M : Matroid α) {R : Set α} (hXR : X ⊆ R) (hYR : Y ⊆ R) :
+    (M ↾ R).eLocalConn X Y = M.eLocalConn X Y := by
+  rw [eLocalConn_restrict_eq, inter_eq_self_of_subset_left hXR, inter_eq_self_of_subset_left hYR]
+
+lemma eLocalConn_delete_eq (M : Matroid α) (X Y D : Set α) :
+    (M ＼ D).eLocalConn X Y = M.eLocalConn (X \ D) (Y \ D) := by
+  rw [delete_eq_restrict, eLocalConn_restrict_eq, ← inter_diff_assoc, inter_diff_right_comm,
+    ← inter_diff_assoc, inter_diff_right_comm, eLocalConn_inter_ground]
+
+lemma eLocalConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disjoint X D)
+    (hYD : Disjoint Y D) : (M ＼ D).eLocalConn X Y = M.eLocalConn X Y := by
+  rw [eLocalConn_delete_eq, hXD.sdiff_eq_left, hYD.sdiff_eq_left]
+
+@[simp]
+lemma eLocalConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : Set β) :
+    (M.map f hf).eLocalConn X Y = M.eLocalConn (f ⁻¹' X) (f ⁻¹' Y) := by
+  simp [eLocalConn, multiConn_map, Bool.apply_cond]
+
+@[simp]
+lemma eLocalConn_comap {β : Type*} (M : Matroid β) (f : α → β) (X Y : Set α) :
+    (M.comap f).eLocalConn X Y = M.eLocalConn (f '' X) (f '' Y) := by
+  simp [eLocalConn, multiConn_comap, Bool.apply_cond]
+
+@[simp] lemma eLocalConn_ground_eq (M : Matroid α) (X : Set α) : M.eLocalConn X M.E = M.eRk X := by
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · rw [← eLocalConn_inter_ground_left, aux _ inter_subset_right, eRk_inter_ground]
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_isBase_superset
+  rw [hI.eLocalConn_eq hB.isBasis_ground, hI.eRk_eq_encard, inter_eq_self_of_subset_left hIB,
+    union_eq_self_of_subset_left hIB, hB.indep.nullity_eq, add_zero]
+
+@[simp] lemma ground_eLocalConn_eq (M : Matroid α) (X : Set α) : M.eLocalConn M.E X = M.eRk X := by
+  rw [eLocalConn_comm, eLocalConn_ground_eq]
+
+lemma eLocalConn_le_eRk_left (M : Matroid α) (X Y : Set α) : M.eLocalConn X Y ≤ M.eRk X := by
+  grw [← eLocalConn_inter_ground_right, M.eLocalConn_mono_right X inter_subset_right,
+    eLocalConn_ground_eq]
+
+lemma eLocalConn_le_eRk_right (M : Matroid α) (X Y : Set α) : M.eLocalConn X Y ≤ M.eRk Y := by
+  rw [eLocalConn_comm]
+  apply eLocalConn_le_eRk_left
+
+lemma IsLoop.eLocalConn {e : α} (he : M.IsLoop e) (X : Set α) : M.eLocalConn {e} X = 0 := by
+  rw [← eLocalConn_closure_left, he.closure, loops, eLocalConn_closure_left]
+  simp
+
+lemma Indep.encard_inter_add_nullity_le_eLocalConn (hI : M.Indep I) (hIX : I ⊆ X) (hJ : M.Indep J)
+    (hJY : J ⊆ Y) : (I ∩ J).encard + M.nullity (I ∪ J) ≤ M.eLocalConn X Y := by
+  obtain ⟨I', hI', hII'⟩ := hI.subset_isBasis'_of_subset hIX
+  obtain ⟨J', hJ', hJJ'⟩ := hJ.subset_isBasis'_of_subset hJY
+  rw [hI'.eLocalConn_eq hJ']
+  exact add_le_add (encard_le_encard (inter_subset_inter hII' hJJ')) <|
+    M.nullity_le_of_subset <| union_subset_union hII' hJJ'
+
+lemma IsModularPair.eLocalConn_eq_eRk_inter (h : M.IsModularPair X Y) :
+    M.eLocalConn X Y = M.eRk (X ∩ Y) := by
+  obtain ⟨I, hIu, hIX, hIY, hIi⟩ := h.exists_common_isBasis
+  rw [hIX.eLocalConn_eq hIY, ← hIi.encard_eq_eRk, ← inter_inter_distrib_left,
+    ← inter_union_distrib_left, inter_eq_self_of_subset_left hIu.subset, hIu.indep.nullity_eq,
+    add_zero, inter_assoc]
+
+lemma eLocalConn_insert_left_eq_add_one {e : α} (heX : e ∉ M.closure X)
+    (heXY : e ∈ M.closure (X ∪ Y)) : M.eLocalConn (insert e X) Y = M.eLocalConn X Y + 1 := by
+  have heE : e ∈ M.E := mem_ground_of_mem_closure heXY
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · rw [← eLocalConn_inter_ground_left, insert_inter_of_mem heE,
+      aux (by simpa) _ inter_subset_right, eLocalConn_inter_ground_left]
+    rwa [← closure_inter_ground, union_inter_distrib_right, inter_assoc, inter_self,
+      ← union_inter_distrib_right, closure_inter_ground]
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
+  have hIe : M.IsBasis (insert e I) (insert e X) := by
+    refine hI.insert_isBasis_insert ?_
+    rw [hI.indep.insert_indep_iff, hI.closure_eq_closure]
+    exact .inl ⟨heE, heX⟩
+
+  rw [hI.isBasis'.eLocalConn_eq hJ, hIe.isBasis'.eLocalConn_eq hJ, insert_union]
+  have heI : e ∉ I := notMem_subset (hI.subset.trans (M.subset_closure X)) heX
+  by_cases heJ : e ∈ J
+  · rw [insert_inter_of_mem heJ, insert_eq_of_mem (mem_union_right _ heJ),
+      encard_insert_of_notMem (by simp [heI]), add_right_comm]
+
+  rw [insert_inter_of_notMem heJ, nullity_insert_eq_add_one
+    (by rwa [closure_union_congr_left hI.closure_eq_closure,
+      closure_union_congr_right hJ.closure_eq_closure]) (by simp [heI, heJ]), add_assoc]
+
+lemma eLocalConn_insert_right_eq_add_one {e : α} (heY : e ∉ M.closure Y)
+    (heXY : e ∈ M.closure (X ∪ Y)) : M.eLocalConn X (insert e Y) = M.eLocalConn X Y + 1 := by
+  rw [eLocalConn_comm, eLocalConn_insert_left_eq_add_one heY (by rwa [union_comm]),
+    eLocalConn_comm]
+
+lemma IsNonloop.eLocalConn_eq_zero_iff {e : α} (he : M.IsNonloop e) :
+    M.eLocalConn {e} X = 0 ↔ e ∉ M.closure X := by
+  rw [← M.closure_inter_ground, ← he.skew_left_iff, ← eLocalConn_inter_ground_right,
+    eLocalConn_eq_zero]
+
+lemma IsNonloop.eLocalConn_eq_one_iff {e : α} (he : M.IsNonloop e) :
+    M.eLocalConn {e} X = 1 ↔ e ∈ M.closure X := by
+  have h_eq (x : ℕ∞) (hx : x ≤ 1) : x = 1 ↔ x ≠ 0 := by
+    induction x with
+    | top => simp at hx
+    | coe a =>
+      simp only [Nat.cast_le_one, Nat.cast_eq_one, ne_eq, Nat.cast_eq_zero] at hx ⊢
+      omega
+  rw [h_eq _ (by simpa using (M.eLocalConn_le_eRk_left {e} (X ∩ M.E)).trans (M.eRk_le_encard {e})),
+    not_iff_comm, he.eLocalConn_eq_zero_iff]
+
+lemma IsNonloop.eLocalConn_eq_ite {e : α} (he : M.IsNonloop e) (X : Set α)
+    [Decidable (e ∈ M.closure X)] :
+    M.eLocalConn {e} X = if e ∈ M.closure X then 1 else 0 := by
+  split_ifs <;>
+  simpa [he.eLocalConn_eq_one_iff, he.eLocalConn_eq_zero_iff]
+
+lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
+    (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
+    M.IsModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by
+  refine ⟨fun h ↦ h.eLocalConn_eq_eRk_inter, fun h ↦ ?_⟩
+  obtain ⟨Ii, hIi⟩ := M.exists_isBasis (X ∩ Y)
+  obtain ⟨IX, hIX, hIX'⟩ := hIi.exists_isBasis_inter_eq_of_superset inter_subset_left
+  obtain ⟨IY, hIY, hIY'⟩ := hIi.exists_isBasis_inter_eq_of_superset inter_subset_right
+
+  have h_inter : Ii = IX ∩ IY
+  · exact hIi.eq_of_subset_indep (hIX.indep.inter_right _)
+      (subset_inter (by simp [← hIX']) (by simp [← hIY']))
+      (inter_subset_inter hIX.subset hIY.subset)
+
+  rw [hIX.eLocalConn_eq hIY, ← h_inter, hIi.encard_eq_eRk, ← add_zero (a := M.eRk _), add_assoc,
+    zero_add, WithTop.add_left_inj hX.inter_right.eRk_lt_top.ne, nullity_eq_zero] at h
+
+  exact h.isModularPair_of_union.of_isBasis_of_isBasis hIX hIY
+
+/-- For finite matroids, this is another rearrangement of the formula in
+`Matroid.eRk_add_eRk_eq_eRk_union_add_eLocalConn`.
+For infinite matroids it needs a separate proof. -/
+lemma eLocalConn_add_eRelRk_union_eq_eRk (M : Matroid α) (X Y : Set α) :
+    M.eLocalConn X Y + M.eRelRk Y (X ∪ Y) = M.eRk X := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  have hcl : (M.project Y).closure X = (M.project Y).closure I := by
+    simp [closure_union_congr_left hI.closure_eq_closure]
+  rw [hI.eLocalConn_eq_nullity_project_right, hI.eRk_eq_encard, ← eRelRk_eq_union_right,
+    eRelRk_eq_eRk_project, ← eRk_closure_eq, hcl, eRk_closure_eq, add_comm,
+    eRk_add_nullity_eq_encard]
+
+lemma IsHyperplane.eLocalConn_add_one_eq {H X : Set α} (hH : M.IsHyperplane H) (hXH : ¬ (X ⊆ H))
+    (hXE : X ⊆ M.E := by aesop_mat) : M.eLocalConn X H + 1 = M.eRk X := by
+  rw [← M.eLocalConn_add_eRelRk_union_eq_eRk X H, ← eRelRk_closure_right,
+    (hH.spanning_of_ssuperset (show H ⊂ X ∪ H by simpa)).closure_eq, hH.eRelRk_eq_one]
+
+@[simp]
+lemma removeLoops_eLocalConn (M : Matroid α) : M.removeLoops.eLocalConn = M.eLocalConn := by
+  ext _ _
+  rw [removeLoops_eq_restrict, eLocalConn_restrict_eq, ← eLocalConn_closure_closure]
+  simp
+
+/-- A submodularity-like equality with an explicit slack term in the form of local connectivity. -/
+lemma eRk_union_right_add_eRk_union_right_eq (M : Matroid α) (X Y C : Set α) :
+    M.eRk (X ∪ C) + M.eRk (Y ∪ C) = M.eRk (X ∪ Y ∪ C) + M.eRk C + (M.project C).eLocalConn X Y := by
   wlog hC : M.Indep C generalizing C with aux
   · obtain ⟨I, hI⟩ := M.exists_isBasis' C
-    convert aux _ hI.indep using 2
-    · rw [hI.project_eq_project]
-    · convert rfl using 3 with i
-      obtain ⟨J, hJ⟩ := M.exists_isBasis' (X i)
-      rw [hJ.eLocalConn_eq hI, hJ.eLocalConn_eq hI.indep.isBasis_self.isBasis']
-    obtain ⟨J, hJ⟩ := M.exists_isBasis' (⋃ i, X i)
-    rw [hJ.eLocalConn_eq hI, hJ.eLocalConn_eq hI.indep.isBasis_self.isBasis']
-  have aux {Y : Set α} : M.eLocalConn Y C = (M.project Y).nullity C := by
-    obtain ⟨J, hJ⟩ := M.exists_isBasis' Y
-    rw [hJ.eLocalConn_eq hC.isBasis_self.isBasis', hJ.project_eq_project,
-      hJ.indep.nullity_project, union_comm, inter_comm, add_comm]
-  simp [aux]
-  apply M.multiConn_project_aux_indep hC
+    rw [← eRk_closure_eq (X := _ ∪ C), ← eRk_closure_eq (X := _ ∪ C), ← eRk_closure_eq (X := _ ∪ C)]
+    simp_rw [← closure_union_congr_right hI.closure_eq_closure, hI.project_eq_project,
+      eRk_closure_eq, ← hI.eRk_eq_eRk]
+    exact aux _ hI.indep
+  obtain ⟨I, hI⟩ := (M.project C).exists_isBasis' X
+  obtain ⟨J, hJ⟩ := (M.project C).exists_isBasis' Y
+  rw [hI.eLocalConn_eq hJ, hC.eRk_eq_encard]
+  simp_rw [hC.project_isBasis'_iff, union_comm C] at hI hJ
+  have hdj := (hI.2.union_right hJ.2)
+  rw [hC.nullity_project_of_disjoint hdj, union_comm C]
+  rw [hI.1.eRk_eq_encard, hJ.1.eRk_eq_encard, ← eRk_closure_eq, union_union_distrib_right,
+    ← closure_union_congr_left hI.1.closure_eq_closure,
+    ← closure_union_congr_right hJ.1.closure_eq_closure, ← union_union_distrib_right,
+    eRk_closure_eq, ← encard_union_add_encard_inter, ← union_union_distrib_right,
+    ← inter_union_distrib_right,
+    encard_union_eq (hdj.symm.mono_left (show I ∩ J ⊆ I ∪ J by tauto_set))]
+  simp_rw [← add_assoc, add_comm _ (nullity _ _), ← add_assoc, add_comm (nullity ..) (eRk ..),
+    eRk_add_nullity_eq_encard, add_assoc, add_comm _ C.encard]
 
--- lemma multiConn_le_multiConn_project_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
---     M.multiConn X ≤ (M.project C).multiConn X + (ENat.card ι - 1) * M.eLocalConn (⋃ i, X i) C :=
---   obtain hss | hnt := subsingleton_or_nontrivial ι
---   · simp
---   obtain hfin | hinf := eq_top_or_lt_top (M.eLocalConn (⋃ i, X i) C)
---   · have hlt : 0 < ENat.card ι - 1 := by simp
---     simp [hfin, ENat.mul_top hlt.ne.symm]
---   obtain hc0 | hnz := eq_or_ne (M.eLocalConn (⋃ i, X i) C) 0
---   · simp [hc0]
---     sorry
+/-- A version of submodularity with an explicit slack term. -/
+lemma eRk_add_eRk_eq_eRk_union_add_eRk_inter_add_eLocalConn (M : Matroid α) (X Y : Set α) :
+    M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eRk (X ∩ Y) + (M.project (X ∩ Y)).eLocalConn X Y := by
+  convert M.eRk_union_right_add_eRk_union_right_eq X Y (X ∩ Y) using 4 <;> tauto_set
 
-    -- rw [eLocalConn, multiConn_eq_zero_iff] at hc0
-
-
-lemma multiConn_project_le_multiConn_add (M : Matroid α) (X : ι → Set α) (C : Set α) :
-    (M.project C).multiConn X ≤ M.multiConn X + M.eRk C := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  -- choose J hJ using fun i ↦ (M.project C).exists_isBasis' (I i)
-  rw [← M.multiConn_project_aux hI, add_assoc]
-  exact le_self_add
-
-lemma multiConn_project_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α} {C : Set α}
-    (hXfin : M.multiConn X ≠ ⊤) (hXE : ∀ i, X i ⊆ M.E) (hCfin : M.eRk C ≠ ⊤) (hCE : C ⊆ M.E):
-    (M.project C).multiConn X = M.multiConn X + M.eRk C ↔
-      C ⊆ M.closure (⋃ i, X i) ∧ ∀ i, M.Skew (X i) C := by
-  choose I hI using fun i ↦ M.exists_isBasis' (X i)
-  rw [← M.multiConn_project_aux hI, add_assoc, eq_comm]
-  simp only [ENat.add_eq_left_iff, add_eq_zero, ENat.tsum_eq_zero, nullity_eq_zero]
-  rw [or_iff_right, eRk_eq_zero_iff (by simpa using hCE), project_loops, and_congr_right_iff]
-  · have hrw (i) : M.Skew (X i) C ↔ (M.project C).Indep (I i) := by
-      rw [project_indep_eq, ← (hI i).indep.skew_iff_contract_indep hCE,
-        skew_iff_closure_skew_left (hXE i), skew_iff_closure_skew_left (hI i).indep.subset_ground,
-        (hI i).closure_eq_closure]
-    simp [hrw]
-  grw [← Ne, ← lt_top_iff_ne_top, multiConn_project_le_multiConn_add, lt_top_iff_ne_top,
-    Ne, ENat.add_eq_top, or_iff_right hXfin]
-  assumption
-
-lemma multiConn_projectElem_eq_multiConn_add_iff (M : Matroid α) {X : ι → Set α} {e : α}
-    (hXfin : M.multiConn X ≠ ⊤) (he : M.IsNonloop e) :
-    (M.project {e}).multiConn X = M.multiConn X + 1 ↔
-      e ∈ M.closure (⋃ i, X i) ∧ ∀ i, e ∉ M.closure (X i) := by
-  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
-  · rw [← multiConn_inter_ground, ← M.multiConn_inter_ground, project_ground, aux
-      (by rwa [multiConn_inter_ground]) (fun i ↦ inter_subset_right), ← iUnion_inter]
-    simp
-  rw [← he.eRk_eq, multiConn_project_eq_multiConn_add_iff _ hXfin hXE (by simp [he.eRk_eq])
-    (by simpa using he.mem_ground), singleton_subset_iff]
-  simp_rw [he.skew_right_iff (hXE _)]
-
-lemma ModularCut.multiconn_add_eq_multiConn_projectBy_add (U : M.ModularCut)
-    (X : ι → Set α) [DecidablePred (· ∈ U)] (hU : U ≠ ⊤) :
-    M.multiConn X + (if M.closure (⋃ i, X i) ∈ U then 1 else 0) =
-        (M.projectBy U).multiConn X + {a | M.closure (X a) ∈ U}.encard := by
-  classical
-  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
-  · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
-    · rw [multiConn_inter_ground]
-    · simp [← iUnion_inter]
-    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
-    simp
-  wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
-  · have ho := Option.some_injective α
-    specialize aux (U.map _ ho.injOn) (by simpa) (fun i ↦ .some '' X i) (fun i ↦ image_mono (hXE i))
-      ⟨none, by simp⟩
-    rw [multiConn_map_image _ _ _ (by simpa), U.projectBy_map, multiConn_map_image _ _ _ (by simpa),
-      ← image_iUnion] at aux
-    simp_rw [map_closure_eq, preimage_image_eq _ ho,
-      U.image_mem_map_iff _ _ (closure_subset_ground ..)] at aux
-    assumption
-  obtain ⟨e, he⟩ := h
-  have heX : e ∉ ⋃ i, X i := by simpa using fun i ↦ notMem_subset (hXE i) he
-  nth_rw 1 [← U.extendBy_contractElem he,  ← U.extendBy_deleteElem he,
-    multiConn_delete_of_disjoint _ (fun i ↦ disjoint_singleton_right.2 (notMem_subset (hXE i) he)),
-    ← multiConn_project_eq_multiConn_contract, ENat.encard_eq_tsum_ite, eq_comm]
-  simp only [mem_setOf_eq]
-  convert (M.extendBy e U).multiConn_project_aux_indep (C := {e}) (X := X)
-    (by rwa [indep_singleton, extendBy_isNonloop_iff]) with i
-  · simp [nullity_singleton_eq_ite, IsLoop, mem_closure_extendBy_iff U he,
-      or_iff_right (notMem_subset (hXE i) he)]
-  rw [nullity_singleton_eq_ite, IsLoop, project_loops, mem_closure_extendBy_iff U he,
-    or_iff_right heX]
-  congr
-
-/-- The formula relating the dual connectivity and the dual connectivity for the projection
-by a modular cut. -/
-lemma ModularCut.multiconn_dual_add_eq_multiConn_projectBy_dual_add (U : M.ModularCut)
-    (X : ι → Set α) [DecidablePred (· ∈ U)] (hU : U ≠ ⊥) :
-    M✶.multiConn X + {a | M.closure (M.E \ X a) ∉ U}.encard =
-        (M.projectBy U)✶.multiConn X + (if M.closure (M.E \ (⋃ i, X i)) ∈ U then 0 else 1) := by
-  classical
-  wlog hXE : ∀ i, X i ⊆ M.E generalizing X with aux
-  · convert aux (fun i ↦ X i ∩ M.E) (fun i ↦ inter_subset_right) using 2 with i
-    · rw [← M.dual_ground, multiConn_inter_ground]
-    · simp
-    · exact multiConn_inter_ground_congr <| by simp [inter_assoc]
-    simp [← iUnion_inter]
-  wlog h : ∃ e, e ∉ M.E generalizing α M X U with aux
-  · have ho := Option.some_injective α
-    specialize aux (U.map _ ho.injOn) (by simpa) (fun i ↦ .some '' X i) (fun i ↦ image_mono (hXE i))
-      ⟨none, by simp⟩
-    rw [map_dual, multiConn_map_image _ _ _ (by simpa), U.projectBy_map, map_ground,
-      map_dual, map_closure_eq, multiConn_map_image _ _ _ (by simpa)] at aux
-    simp_rw [← image_iUnion, ← image_diff ho, map_closure_eq, preimage_image_eq _ ho,
-      U.image_mem_map_iff _ _  (closure_subset_ground ..)] at aux
-    exact aux
-  obtain ⟨e, he⟩ := h
-  nth_rw 1 [← U.extendBy_deleteElem he, ← U.extendBy_contractElem he, dual_delete, dual_contract,
-    multiConn_delete_of_disjoint _ (fun i ↦ disjoint_singleton_right.2 (notMem_subset (hXE i) he)),
-    ← multiConn_project_eq_multiConn_contract, eq_comm, ← ite_not]
-  simp_rw [← U.mem_closure_extendBy_dual_iff he (hXE _),
-      ← U.mem_closure_extendBy_dual_iff he (iUnion_subset hXE), eq_comm (a := _ + ite ..),
-      ENat.encard_eq_tsum_ite, mem_setOf_eq]
-  have hni : (M.extendBy e U)✶.Indep {e} := by
-    rwa [indep_singleton, U.extendBy_isNonloop_dual_iff he]
-  convert (M.extendBy e U)✶.multiConn_project_aux_indep (C := {e}) (X := X) hni with i <;>
-  rw [nullity_singleton_eq_ite, isLoop_iff, project_loops]
-
-lemma ModularCut.multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.ModularCut)
-    (X : ι → Set α) : M✶.multiConn X ≤ (M.projectBy U)✶.multiConn X + 1 := by
-  classical
-  obtain rfl | hne := eq_or_ne U ⊥
-  · simp
-  have h_le := (U.multiconn_dual_add_eq_multiConn_projectBy_dual_add X hne).le
-  grw [← le_self_add] at h_le
-  grw [h_le, add_le_add_left]
-  split_ifs <;> simp
-
-lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff [Nonempty ι]
-    (U : M.ModularCut) (X : ι → Set α) (hX : M✶.multiConn X ≠ ⊤) :
-    M✶.multiConn X = (M.projectBy U)✶.multiConn X + 1 ↔
-      M.closure (M.E \ ⋃ i, X i) ∉ U ∧ ∀ a, M.closure (M.E \ X a) ∈ U := by
-  classical
-  obtain rfl | hne := eq_or_ne U ⊥
-  · simpa [eq_comm (a := M✶.multiConn X)] using hX.symm
-  have h_eq := U.multiconn_dual_add_eq_multiConn_projectBy_dual_add X hne
-  split_ifs at h_eq with h
-  · simp only [add_zero] at h_eq
-    rw [← h_eq, add_assoc, eq_comm]
-    simpa [h]
-  rw [← h_eq, eq_comm]
-  simp [hX, h, eq_empty_iff_forall_notMem]
-
-lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff' [Nonempty ι]
-    (U : M.ModularCut) (X : ι → Set α) : M✶.multiConn X = (M.projectBy U)✶.multiConn X + 1 ↔
-      (M✶.multiConn X = ⊤) ∨ (M.closure (M.E \ ⋃ i, X i) ∉ U ∧ ∀ a, M.closure (M.E \ X a) ∈ U) := by
-  obtain htop | hnot := eq_or_ne (M✶.multiConn X) ⊤
-  · simp only [htop, true_or, iff_true]
-    grw [eq_comm, ← top_le_iff, ← htop]
-    apply U.multiConn_dual_le_multiConn_projectBy_dual_add_one
-  rw [U.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff _ hnot, or_iff_right hnot]
+end Pair

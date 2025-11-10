@@ -98,6 +98,21 @@ lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
 lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
   simp [lt_add_left_iff]
 
+lemma add_sub_cancel_right (a : ℕ∞) (hb : b ≠ ⊤) : a + b - b = a := by
+  lift b to ℕ using hb
+  cases a with
+  | top => simp
+  | coe a =>
+    norm_cast
+    exact Nat.add_sub_cancel_right ..
+
+lemma add_sub_cancel_left (b : ℕ∞) (ha : a ≠ ⊤) : a + b - a = b := by
+  rw [add_comm, add_sub_cancel_right _ ha]
+
+lemma sub_eq_iff_eq_add {a k : ℕ∞} (hka : k ≤ a) (hne : k ≠ ⊤) : a - k = b ↔ a = b + k := by
+  obtain ⟨c, rfl⟩ := exists_add_of_le hka
+  rw [add_sub_cancel_left _ hne, add_comm, WithTop.add_right_inj hne]
+
 section Parity
 
 @[simp]
