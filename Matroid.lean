@@ -10,6 +10,7 @@ import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
 import Matroid.Connectivity.Basic
+-- import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.HigherConnected
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor
@@ -39,11 +40,12 @@ import Matroid.Graph.Basic
 import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
-import Matroid.Graph.Connected.Connectivity
--- import Matroid.Graph.Connected.Defs
--- import Matroid.Graph.Connected.Menger
--- import Matroid.Graph.Connected.SetCut
+import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Connected.Menger
+import Matroid.Graph.Connected.Set.Leg
+import Matroid.Graph.Connected.Set.SetEnsemble
 import Matroid.Graph.Connected.Subgraph
+-- import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Constructions.Basic
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Degree.Constructions

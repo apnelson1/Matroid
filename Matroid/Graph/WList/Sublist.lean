@@ -864,6 +864,23 @@ lemma prefixUntil_isPrefix_prefixUntilLast (w : WList α β) (P : α → Prop) [
       Bool.not_true, decide_eq_false_iff_not, h', concat_reverse]
     exact (prefixUntil_isPrefix_prefixUntilLast w P (by simpa using h')).cons x e
 
+-- lemma prefixUntilLast_eq_prefixUntil (w : WList α β) (P : α → Prop) [DecidablePred P]
+--     (h : w.vertex.countP P = 1) : w.prefixUntilLast P = w.prefixUntil P := by sorry
+
+lemma prefixUntilLast_eq_prefixUntil_of_nodup [DecidableEq α] (hnd : w.vertex.Nodup)
+    (h : w.vertex.count x = 1) : w.prefixUntilLast (· = x) = w.prefixUntilVertex x := by
+  rw [List.count_eq_length_filter, length_eq_one_iff] at h
+  obtain ⟨y, hy⟩ := h
+  have hwl := w.prefixUntilLast_isPrefix (· = x)
+  have hin : ∀ z, z ∈ w.vertex.filter (· == x) ↔ z = y := by simp [hy]
+  simp only [mem_filter, mem_vertex, beq_iff_eq] at hin
+  have hex : ∃ z ∈ w, z = x := ⟨y, hin y |>.mpr rfl⟩
+  refine (prefixUntil_isPrefix_prefixUntilLast w (· = x) hex).eq_of_last_mem
+    (hnd.sublist hwl.vertex_isPrefix.sublist) ?_ |>.symm
+  obtain rfl := (hin _).mp ⟨hwl.subset last_mem, (w.prefixUntilLast_prop_last hex)⟩
+  exact ((hin _).mp ⟨(w.prefixUntil_isPrefix (· = x)).subset last_mem,
+    (w.prefixUntil_prop_last hex)⟩) ▸ last_mem
+
 /-- Take the suffix of `w` starting at the last occurence of `P` in `w`.
 If `P` never occurs, this is all of `w`. -/
 def suffixFromLast (w : WList α β) (P : α → Prop) [DecidablePred P] : WList α β :=
@@ -924,6 +941,17 @@ lemma suffixFrom_isSuffix_suffixFromLast (w : WList α β) (P : α → Prop) [De
     · exact (w.suffixFromLast_isSuffix P).cons x e
     simp only [mem_cons_iff, exists_eq_or_imp, hPw, false_or] at h
     exact suffixFrom_isSuffix_suffixFromLast w P h
+
+lemma suffixFrom_eq_suffixFromLast_of_nodup [DecidableEq α] (hnd : w.vertex.Nodup)
+    (h : w.vertex.count x = 1) : w.suffixFrom (· = x) = w.suffixFromLast (· = x) := by
+  rw [← w.reverse_reverse] at h ⊢
+  rw [← reverse_inj_iff]
+  rw [reverse_vertex, List.count_reverse] at h
+  change (w.reverse.prefixUntilLast (· = x)) =
+    (w.reverse.reverse.reverse.prefixUntil (· = x)).reverse.reverse
+  simp only [reverse_reverse]
+  rw [← List.nodup_reverse, ← reverse_vertex] at hnd
+  exact prefixUntilLast_eq_prefixUntil_of_nodup hnd h
 
 /- This is a subwalk of `w` from the last vertex in `S`, `s`, to the first vertex in `T` after
   `s`, if any such vertex exists. Otherwise, it returns `w`.

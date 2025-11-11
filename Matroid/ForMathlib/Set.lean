@@ -126,6 +126,10 @@ theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f
 --   · simp only [iUnion_subset_iff]
 --     exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
 
+lemma disjoint_iff_forall_notMem (A B : Set α) : Disjoint A B ↔ ∀ ⦃x⦄, x ∈ A → x ∉ B := by
+  rw [disjoint_iff_forall_ne]
+  refine forall₂_congr fun a ha => ?_
+  aesop
 
 variable {s t r : Set α}
 

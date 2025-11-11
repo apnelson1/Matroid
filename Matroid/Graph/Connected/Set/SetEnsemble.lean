@@ -28,11 +28,6 @@ lemma Set.symmDiff_union_left (A B C : Set α) : (A ∪ B) ∆ (A ∪ C) = (B �
   simp only [symmDiff_def, sup_eq_union, mem_union, mem_diff]
   tauto
 
-lemma Set.disjoint_iff_forall_notMem (A B : Set α) : Disjoint A B ↔ ∀ ⦃x⦄, x ∈ A → x ∉ B := by
-  rw [disjoint_iff_forall_ne]
-  refine forall₂_congr fun a ha => ?_
-  aesop
-
 lemma Set.union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by
   ext x
   simp only [mem_diff, mem_union]
@@ -68,125 +63,6 @@ namespace Graph
 
 variable {S S' T T' : Set α}
 
-structure SetCut (G : Graph α β) (S T : Set α) where
-  carrier : Set α
-  carrier_subset : carrier ⊆ V(G)
-  ST_disconnects : ∀ s ∈ S, ∀ t ∈ T, ¬ (G - carrier).VertexConnected s t
-
-instance : SetLike (G.SetCut S T) α where
-  coe := (·.carrier)
-  coe_injective' C1 C2 h := by rwa [SetCut.mk.injEq]
-
-@[simp]
-lemma SetCut.coe_subset (C : G.SetCut S T) : ↑C ⊆ V(G) := C.carrier_subset
-
-@[simps]
-def setCut_of_left (G : Graph α β) (S T : Set α) : G.SetCut S T where
-  carrier := V(G) ∩ S
-  carrier_subset := Set.inter_subset_left
-  ST_disconnects s hs t ht h := by simpa [hs] using h.left_mem
-
-@[simps]
-def setCut_of_right (G : Graph α β) (S T : Set α) : G.SetCut S T where
-  carrier := V(G) ∩ T
-  carrier_subset := Set.inter_subset_left
-  ST_disconnects s hs t ht h := by simpa [ht] using h.right_mem
-
-@[simps]
-def SetCut.vertexDelete (C : G.SetCut S T) (X : Set α) : (G - X).SetCut S T where
-  carrier := C \ X
-  carrier_subset := by
-    rw [vertexDelete_vertexSet]
-    exact diff_subset_diff_left C.coe_subset
-  ST_disconnects s hs t ht h := by
-    apply C.ST_disconnects s hs t ht
-    simp only [vertexDelete_vertexDelete, union_diff_self] at h
-    apply h.of_le
-    rw [union_comm, ← vertexDelete_vertexDelete]
-    exact vertexDelete_le
-
-@[simps]
-def SetCut.subset (C : G.SetCut S T) (hS : S' ⊆ S) (hT : T' ⊆ T) : G.SetCut S' T' where
-  carrier := C
-  carrier_subset := C.coe_subset
-  ST_disconnects := fun s hs t ht h ↦ C.ST_disconnects s (hS hs) t (hT ht) h
-
-@[simps]
-def SetCut.of_vertexDelete (C : (G - X).SetCut S T) : G.SetCut S T where
-  carrier := (X ∩ V(G)) ∪ C
-  carrier_subset := by
-    simp only [union_subset_iff, inter_subset_right, true_and]
-    exact C.coe_subset.trans <| (G.vertexDelete_vertexSet X) ▸ diff_subset
-  ST_disconnects s hs t ht h := by
-    apply C.ST_disconnects s hs t ht
-    rw [vertexDelete_vertexDelete]
-    convert h using 1
-    rw [← vertexDelete_vertexSet_inter, inter_comm, union_inter_distrib_right]
-    congr
-    exact inter_eq_left.mpr <| C.coe_subset.trans <| (G.vertexDelete_vertexSet X) ▸ diff_subset
-
-@[simps]
-def SetCut.of_vertexDelete' (C : (G - X).SetCut S T) : G.SetCut (S ∪ X) (T ∪ X) where
-  carrier := (X ∩ V(G)) ∪ C
-  carrier_subset := by
-    simp only [union_subset_iff, inter_subset_right, true_and]
-    exact C.coe_subset.trans <| (G.vertexDelete_vertexSet X) ▸ diff_subset
-  ST_disconnects s hs t ht h := by
-    obtain hs | hs := hs.symm
-    · have := h.left_mem
-      simp only [vertexDelete_vertexSet, mem_diff, mem_union, mem_inter_iff, hs, true_and,
-        SetLike.mem_coe, not_or] at this
-      tauto
-    obtain ht | ht := ht.symm
-    · have := h.right_mem
-      simp only [vertexDelete_vertexSet, mem_diff, mem_union, mem_inter_iff, ht, true_and,
-        SetLike.mem_coe, not_or] at this
-      tauto
-    exact C.of_vertexDelete.ST_disconnects s hs t ht h
-
-def SetConnectivityGe (G : Graph α β) (S T : Set α) (n : ℕ∞) : Prop :=
-  ∀ C : G.SetCut S T, n ≤ (↑C : Set α).encard
-
-lemma SetConnectivityGe_zero (G : Graph α β) (S T : Set α) : G.SetConnectivityGe S T 0 := by
-  simp [SetConnectivityGe]
-
-lemma SetConnectivityGe.exists_vertexConnected (h : G.SetConnectivityGe S T n) (hn : n ≠ 0) :
-    ∃ s ∈ S, ∃ t ∈ T, G.VertexConnected s t := by
-  unfold SetConnectivityGe at h
-  contrapose! h
-  use ⟨∅, empty_subset _, by simpa⟩
-  change (∅ : Set α).encard < n
-  rw [encard_empty]
-  exact pos_of_ne_zero hn
-
-lemma SetConnectivityGe.exists_isPathFrom (h : G.SetConnectivityGe S T n) (hn : n ≠ 0) :
-    ∃ P, G.IsPathFrom S T P := by
-  classical
-  obtain ⟨s, hs, t, ht, hst⟩ := h.exists_vertexConnected hn
-  obtain ⟨P, hP, rfl, rfl⟩ := hst.exists_isPath
-  exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
-
-lemma SetConnectivityGe.vertexDelete (h : G.SetConnectivityGe S T n) (X : Set α) :
-    (G - X).SetConnectivityGe S T (n - (X ∩ V(G)).encard) := by
-  intro C
-  have := by simpa using h C.of_vertexDelete
-  have := this.trans <| encard_union_le _ _
-  exact tsub_le_iff_left.mpr this
-
-lemma SetConnectivityGe.vertexDelete' (h : G.SetConnectivityGe S T n) (X : Set α) :
-    (G - X).SetConnectivityGe (S \ X) (T \ X) (n - (X ∩ V(G)).encard) := by
-  intro C
-  have := by simpa using h ((C.of_vertexDelete').subset (by simp) (by simp))
-  have := this.trans <| encard_union_le _ _
-  exact tsub_le_iff_left.mpr this
-
-lemma SetConnectivityGe.downwards_closed (h : G.SetConnectivityGe S T n) (hle : m ≤ n) :
-    G.SetConnectivityGe S T m :=
-  fun C ↦ hle.trans (h C)
-
-lemma SetConnectivityGe.subset (h : G.SetConnectivityGe S T n) (hS : S ⊆ S') (hT : T ⊆ T') :
-    G.SetConnectivityGe S' T' n :=
-  fun C ↦ h (C.subset hS hT)
 
 structure SetEnsemble (G : Graph α β) where
   paths : Set (WList α β)
@@ -245,6 +121,24 @@ lemma image_last_subset (A : G.SetEnsemble) : last '' A.paths ⊆ A.vertexSet :=
   rintro _ ⟨P, hP, rfl⟩
   simp only [mem_vertexSet_iff]
   use P, hP, last_mem
+
+lemma between.image_last_eq_inter (hAST : A.between S T) :
+    last '' A.paths = T ∩ A.vertexSet := by
+  ext x
+  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
+  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxT, P, hPA, hxP⟩ => by use P, hPA,
+    (hAST hPA |>.eq_last_of_mem hxP hxT).symm⟩
+  subst x
+  use hAST hPA |>.last_mem, P, hPA, last_mem
+
+lemma between.image_first_eq_inter (hAST : A.between S T) :
+    first '' A.paths = S ∩ A.vertexSet := by
+  ext x
+  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
+  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxS, P, hPA, hxP⟩ => by use P, hPA,
+    (hAST hPA |>.eq_first_of_mem hxP hxS).symm⟩
+  subst x
+  use hAST hPA |>.first_mem, P, hPA, first_mem
 
 noncomputable def of_vertex (A : G.SetEnsemble) (v : α) (hv : v ∈ A.vertexSet) :
     WList α β :=
@@ -443,7 +337,12 @@ lemma path_remove_vertexSet (hP : P ∈ A.paths) :
     rw [subset_empty_iff, ← disjoint_iff_inter_eq_empty, ← path_remove_paths, ←vertexSet_eq_biUnion]
     exact (A.path_remove_vertexSet_disjoint hP).symm)]
 
-lemma between.path_remove (hAST : A.between S T) : (A.path_remove P).between S T :=
+@[simp]
+lemma path_remove_last (hP : P ∈ A.paths) :
+    last '' (A.path_remove P).paths = (last '' A.paths) \ {P.last} := by
+  rw [path_remove_paths, A.last_injOn.image_diff, inter_eq_right.mpr (by simpa), image_singleton]
+
+lemma between.path_remove (hAST : A.between S T) (P) : (A.path_remove P).between S T :=
   fun _ hQ ↦ hAST hQ.1
 
 @[simps!]
@@ -851,7 +750,7 @@ lemma extend_right_le_two_last_of_two (hAST : A.between S (T ∪ V(P))) (hP : G.
 
 lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPath P)
     [DecidablePred (· ∈ A.vertexSet)] (hAP : P.vertex.countP (· ∈ A.vertexSet) ≤ 2)
-    (hST : S ∩ V(P) ⊆ A.vertexSet) :
+    (hST : V(P) ∩ S ⊆ A.vertexSet) :
     (A.extend_right_le_two hAST hP hAP).between S ((T \ V(P)) ∪ {P.first, P.last}) := by
   simp only [SetEnsemble.extend_right_le_two]
   by_cases h0 : P.vertex.countP (· ∈ A.vertexSet) = 0
@@ -890,8 +789,8 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
     refine hAST.extend_right hP'su heq hP' |>.left ?_ |>.right ?_
     · convert disjoint_empty _
       change ((S \ (V(P') \ {P'.first})) ∆ S) = _
-      rw [diff_symmDiff, ← inter_diff_assoc, diff_eq_empty, ← heq]
-      exact subset_inter ((inter_subset_inter subset_rfl hP'sf.subset).trans hST) inter_subset_right
+      rw [diff_symmDiff, ← inter_diff_assoc, diff_eq_empty, ← heq, inter_comm]
+      exact subset_inter ((inter_subset_inter hP'sf.subset subset_rfl).trans hST) inter_subset_left
     rw [extend_right_vertexSet]
     change Disjoint (A.vertexSet ∪ V(P')) (((T ∪ V(P)) \ (V(P') \ {P'.last})) ∆
       (T \ V(P) ∪ {P.first, P.last}))
@@ -930,7 +829,7 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
   generalize_proofs hP'su
   refine hAST.extend_right_two hP'su h2 hP |>.left ?_ |>.right ?_
   · convert disjoint_empty _
-    rwa [diff_symmDiff, ← inter_diff_assoc, diff_eq_empty]
+    rwa [diff_symmDiff, ← inter_diff_assoc, diff_eq_empty, inter_comm]
   convert disjoint_empty _
   ext x
   simp +contextual only [union_insert, union_singleton, symmDiff_def, mem_diff, mem_union,
@@ -944,3 +843,4 @@ lemma between.extend_right_le_two (hAST : A.between S (T ∪ V(P))) (hP : G.IsPa
   exact (hxl (himp hxP hxf)).elim
 
 end SetEnsemble
+end Graph

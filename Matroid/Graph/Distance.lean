@@ -17,7 +17,7 @@ protected noncomputable def eDist (G : Graph α β) (x y : α) : ℕ∞ :=
   ⨅ (W : {W // G.IsWalk W ∧ W.first = x ∧ W.last = y}), (W.1.length : ℕ∞)
 
 lemma VertexConnected.eDist_lt_top (h : G.VertexConnected x y) : G.eDist x y < ⊤ := by
-  obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isWalk
+  obtain ⟨P, hP, rfl, rfl⟩ := h
   exact (iInf_le _ ⟨P, by simpa⟩).trans_lt (by simp)
 
 lemma IsWalk.eDist_le_length (hW : G.IsWalk W) : G.eDist W.first W.last ≤ W.length := by
@@ -37,7 +37,7 @@ lemma VertexConnected.exists_isPath_length_eq_eDist (h : G.VertexConnected x y) 
     ∃ P, G.IsPath P ∧ P.first = x ∧ P.last = y ∧ P.length = G.eDist x y := by
   have hd := h.eDist_lt_top
   have hne : Nonempty {W // G.IsWalk W ∧ W.first = x ∧ W.last = y} := by
-    obtain ⟨W, hW, rfl, rfl⟩ := h.exists_isWalk
+    obtain ⟨W, hW, rfl, rfl⟩ := h
     exact ⟨W, by simp [hW]⟩
   obtain ⟨⟨W,hWp, rfl, rfl⟩, hW : W.length = G.eDist _ _⟩ :=
     ENat.exists_eq_iInf (ι := {W // G.IsWalk W ∧ W.first = x ∧ W.last = y})

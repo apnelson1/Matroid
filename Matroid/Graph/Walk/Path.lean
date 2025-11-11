@@ -2,7 +2,7 @@ import Matroid.Graph.Walk.Basic
 import Mathlib.Order.Minimal
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
-  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S T X : Set α}
+  {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S S' T T' X : Set α}
 
 open WList Set symmDiff
 
@@ -291,6 +291,15 @@ lemma IsPath.disjoint_of_append_append (hP : G.IsPath <| P₀ ++ P₁ ++ P₂) (
     List.disjoint_append_left, vertex_disjoint_iff] at hdj
   exact hdj.1
 
+lemma IsPath.inter_eq_singleton_of_append (hP : G.IsPath <| P₀ ++ P₁) (heq : P₀.last = P₁.first) :
+    V(P₀) ∩ V(P₁) = {P₀.last} := by
+  have hdj := List.disjoint_of_nodup_append <| by simpa [append_vertex] using hP.nodup
+  simp only [eq_singleton_iff_unique_mem, mem_inter_iff, mem_vertexSet_iff, last_mem,
+    heq ▸ first_mem, and_self, and_imp, true_and]
+  rintro x hxP₀ hxP₁
+  by_contra! hne
+  exact hdj (P₀.vertex.mem_dropLast_of_mem_ne (by simp) hxP₀ (by simpa)) hxP₁
+
 /-! ### Fixed ends. (To be cleaned up) -/
 
 
@@ -437,6 +446,14 @@ lemma IsPathFrom.of_vertexDelete (hP : (G - X).IsPathFrom S T P) :
   eq_last_of_mem _ hvP hvT :=
     hP.eq_last_of_mem hvP (Or.elim hvT id (False.elim <| hP.isPath.vertexSet_subset hvP |>.2 ·))
 
+lemma IsPathFrom.of_vertexDelete' (hP : (G - X).IsPathFrom S T P) :
+    G.IsPathFrom S T P where
+  toIsPath := hP.isPath.of_le vertexDelete_le
+  first_mem := hP.first_mem
+  last_mem := hP.last_mem
+  eq_first_of_mem _ hvP hvS := hP.eq_first_of_mem hvP hvS
+  eq_last_of_mem _ hvP hvT := hP.eq_last_of_mem hvP hvT
+
 lemma IsPathFrom.vertexDelete (hP : G.IsPathFrom S T P) (hdj : Disjoint V(P) X) :
     (G - X).IsPathFrom S T P where
   toIsPath := isPath_vertexDelete_iff.mpr ⟨hP.isPath, hdj⟩
@@ -496,6 +513,28 @@ lemma IsPathFrom.append_left (hP₁ : G.IsPathFrom S T P₁) (hP₀ : G.IsPath P
   have := hP₁.reverse.append_right hP₀.reverse (by simpa) heq |>.reverse
   simpa [reverse_vertexSet, reverse_last, reverse_first, reverse_append heq,
     reverse_reverse] using this
+
+lemma IsPathFrom.prefixUntil (hP : G.IsPathFrom S T P) (h : ∃ x ∈ P, x ∈ T')
+    [DecidablePred (· ∈ T')] : G.IsPathFrom S T' (P.prefixUntil (· ∈ T')) where
+  toIsPath := hP.isPath.prefix (P.prefixUntil_isPrefix (· ∈ T'))
+  first_mem := (P.prefixUntil_first (· ∈ T')) ▸ hP.first_mem
+  last_mem := P.prefixUntil_prop_last h
+  eq_first_of_mem _ hxP hxS := by
+    rw [P.prefixUntil_first (· ∈ T')]
+    exact hP.eq_first_of_mem ((P.prefixUntil_isPrefix (· ∈ T')).subset hxP) hxS
+  eq_last_of_mem _ hxP hxT' := (prefixUntil_last_eq_of_prop hxP hxT').symm
+
+lemma IsPathFrom.suffixFromLast (hP : G.IsPathFrom S T P) (h : ∃ x ∈ P, x ∈ S')
+    [DecidablePred (· ∈ S')] : G.IsPathFrom S' T (P.suffixFromLast (· ∈ S')) where
+  toIsPath := hP.isPath.suffix (P.suffixFromLast_isSuffix (· ∈ S'))
+  first_mem := P.suffixFromLast_prop_first h
+  last_mem := by
+    rw [P.suffixFromLast_last]
+    exact hP.last_mem
+  eq_first_of_mem _ hxP hxS := (suffixFromLast_first_eq_of_prop hxP hxS).symm
+  eq_last_of_mem _ hxP hxT := by
+    rw [P.suffixFromLast_last]
+    exact hP.eq_last_of_mem ((P.suffixFromLast_isSuffix (· ∈ S')).subset hxP) hxT
 
 /-- A version of `isPathFrom_cons` where the source set is a subgraph `H`,
 and we get the additional condition that the first edge is not an edge of `H`. -/
