@@ -1,5 +1,5 @@
 import Matroid.Connectivity.Separation
-import Matroid.Connectivity.Multi
+import Matroid.Connectivity.Minor
 
 open Set
 
@@ -172,6 +172,13 @@ lemma not_isTutteConnected_iff' {k : ℕ∞} : ¬ M.IsTutteConnected k ↔ ∃ (
   rintro ⟨X, j, hlt, hX, hconn, h1, h2⟩
   exact ⟨M.partition X, j, by norm_cast, by simpa, by simpa, by simpa⟩
 
+lemma not_isTutteConnected_iff'' {k : ℕ∞} : ¬ M.IsTutteConnected k ↔ ∃ (X : Set α) (j : ℕ∞),
+    j + 2 ≤ k ∧ X ⊆ M.E ∧ M.eConn X = j ∧ j < X.encard ∧ j < (M.E \ X).encard := by
+  rw [not_isTutteConnected_iff']
+  refine ⟨fun ⟨X, j, h⟩ ↦ ⟨X, j, h⟩, fun ⟨X, j, h⟩ ↦ ?_⟩
+  lift j to ℕ using (h.2.2.2.1.trans_le le_top).ne
+  exact ⟨X, j, h⟩
+
 /- ### Internal Connectivity -/
 
 lemma IsInternallyConnected.dual (h : M.IsInternallyConnected k) : M✶.IsInternallyConnected k :=
@@ -202,16 +209,48 @@ lemma IsInternallyConnected.IsTutteConnected (hM : M.IsInternallyConnected (k+1)
   rw [← ENat.add_one_le_add_one_iff, add_assoc, one_add_one_eq_two]
   exact h_lt.le
 
+lemma isTutteConnected_contractElem (h : M.IsTutteConnected (k + 1)) (e : α) :
+    (M ／ {e}).IsTutteConnected k := by
+  wlog heX : e ∈ M.E with aux
+  · sorry
+  contrapose! h
+  rw [not_isTutteConnected_iff''] at h ⊢
+  obtain ⟨X, j, hj, hXE, rfl, hjX, hjX'⟩ := h
+  have heX : e ∉ X := sorry
+  by_cases heXcl : e ∈ M.closure (M.E \ insert e X)
+  · have hconn := M.eConn_eq_eConn_contract_subset_add (X := insert e X) (C := {e}) (by simp)
+    simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self heX] at hconn
+    refine ⟨insert e X, _, ?_, ?_, rfl, ?_, ?_⟩
+    · sorry
+    · sorry
+    · grw [hconn, encard_insert_of_notMem heX, eLocalConn_le_eRk_right, eRk_le_encard,
+        encard_singleton, ENat.add_lt_add_iff_right (by simp)]
+      assumption
+    grw [hconn, eLocalConn_le_eRk_right, eRk_singleton_le]
+
+
+
+
+  have := M.eConn_eq_eConn_contract_disjoint_add (X := X) (C := {e}) sorry
+
 -- lemma isTutteConnected_deleteElem (h : M.IsTutteConnected (k + 1)) (e : α) :
 --     (M ＼ {e}).IsTutteConnected k := by
 --   contrapose! h
---   rw [not_isTutteConnected_iff'] at h ⊢
---   obtain ⟨X, j, hj, hXE, hX, hjX, hjX'⟩ := h
+--   rw [not_isTutteConnected_iff''] at h ⊢
+--   obtain ⟨X, j, hj, hXE, rfl, hjX, hjX'⟩ := h
+--   refine ⟨insert e X, _, ?_, ?_, rfl, ?_, ?_⟩
+
+
+
 
 
 
 -- lemma isTutteConnected_delete {D : Set α} (hD : D.Finite)
 --     (h : M.IsTutteConnected (k + D.encard)) : (M ＼ D).IsTutteConnected k := by
+--   contrapose! h
+--   rw [not_isTutteConnected_iff'] at h ⊢
+--   obtain ⟨X, j, hjk, hXE, hXconn, hjX, hjXc⟩ := h
+
 --   classical
 --   wlog hDE : D ⊆ M.E generalizing D with aux
 --   · rw [← delete_inter_ground_eq]

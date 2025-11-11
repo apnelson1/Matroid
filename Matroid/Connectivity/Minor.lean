@@ -601,6 +601,44 @@ lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn 
   obtain ⟨C, D, -, -, -, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 
+lemma eConn_contract_diff_eq_eConn_project (M : Matroid α) (C X : Set α) :
+    (M ／ C).eConn (X \ C) = (M.project C).eConn X := by
+  rw [eConn_eq_eLocalConn, contract_ground, diff_diff_right, disjoint_sdiff_left.inter_eq,
+    union_empty, diff_diff_comm, ← eLocalConn_project_eq_eLocalConn_contract_diff,
+    eConn_eq_eLocalConn, project_ground]
+
+lemma eConn_eq_eConn_contract_subset_add (M : Matroid α) (hCX : C ⊆ X) :
+    M.eConn X = (M ／ C).eConn (X \ C) + M.eLocalConn (M.E \ X) C := by
+  rw [eConn_contract_diff_eq_eConn_project]
+  wlog hC : M.Indep C generalizing C with aux
+  · obtain ⟨I, hI⟩ := M.exists_isBasis' C
+    rw [hI.project_eq_project,
+      ← M.eLocalConn_closure_right, ← M.eLocalConn_closure_right (X := M.E \ X),
+      ← hI.closure_eq_closure, eLocalConn_closure_right, eLocalConn_closure_right,
+      aux (hI.subset.trans hCX) hI.indep]
+  have hrw := M.multiConn_project_add_disjoint (X := fun b ↦ bif b then X else M.E \ X)
+    (by simp [hC.subset_ground.trans subset_union_right])
+    (by simp [pairwise_disjoint_on_bool, disjoint_sdiff_right]) hC
+  grw [eq_comm, eConn_eq_eLocalConn, project_ground, eLocalConn_eq_multiConn,
+    eConn_eq_eLocalConn, eLocalConn_eq_multiConn (Y := M.E \ X), ← hrw]
+  simp only [tsum_bool, cond_false, (disjoint_sdiff_left.mono_right hCX).inter_eq,
+    project_empty, cond_true, inter_eq_self_of_subset_right hCX]
+  rw [← (M.project C).eLocalConn_closure_right,
+    show (M.project C).closure C = (M.project C).closure ∅ by simp, eLocalConn_closure_right,
+    eLocalConn_empty, add_zero]
+
+lemma eConn_eq_eConn_contract_disjoint_add (M : Matroid α) (hdj : Disjoint X C) :
+    M.eConn X = (M ／ C).eConn X + M.eLocalConn X C := by
+  wlog hC : C ⊆ M.E generalizing C with aux
+  · rw [← contract_inter_ground_eq, ← eLocalConn_inter_ground_right,
+      ← aux (hdj.mono_right inter_subset_left) inter_subset_right]
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · rw [← eConn_inter_ground, aux (hdj.mono_left inter_subset_left) inter_subset_right,
+      eLocalConn_inter_ground_left, ← eConn_inter_ground, eq_comm, ← eConn_inter_ground,
+      contract_ground, inter_assoc, inter_eq_self_of_subset_right diff_subset]
+  rw [← M.eConn_compl X, eConn_eq_eConn_contract_subset_add _ (subset_diff.2 ⟨hC, hdj.symm⟩),
+    diff_diff_cancel_left hX, diff_diff_comm, ← contract_ground, eConn_compl]
+
 lemma eConn_le_eConn_contract_add_eLocalConn (M : Matroid α) (X C : Set α) :
     M.eConn X ≤ (M ／ C).eConn X + M.eLocalConn X C := by
   wlog hC : C ⊆ M.E generalizing C with aux

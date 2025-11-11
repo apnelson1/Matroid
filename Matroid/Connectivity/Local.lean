@@ -169,7 +169,7 @@ lemma IsBasis.eConn_eq' (hIX : M.IsBasis I X) (hJX : M.IsBasis J Xᶜ) :
   exact ⟨hJX.indep.subset_ground, hJX.subset⟩
 
 lemma eConn_eq_eLocalConn' (M : Matroid α) (X : Set α) :
-    M.eConn X = M.eLocalConn (M.E ∩ X) (M.E \ X) := by
+    M.eConn X = M.eLocalConn (X ∩ M.E) (M.E \ X) := by
   rw [← eConn_inter_ground, eConn_eq_eLocalConn, diff_inter_self_eq_diff, inter_comm]
 
 @[simp]
