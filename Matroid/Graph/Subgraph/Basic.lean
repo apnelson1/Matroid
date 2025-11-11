@@ -270,6 +270,9 @@ lemma IsCompOf.le (h : H.IsCompOf G) : H ≤ G :=
 lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
   h.prop.2
 
+lemma IsCompOf.subsetV (h : H.IsCompOf G) : V(H) ⊆ V(G) :=
+  IsClosedSubgraph.vertexSet_mono h.isClosedSubgraph
+
 instance instvxNonemptyOfEdgeNonempty (G : Graph α β) [hE : Nonempty E(G)] : Nonempty V(G) := by
   obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet hE.some.prop
   use x, hbtw.left_mem

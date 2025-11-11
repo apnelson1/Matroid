@@ -277,14 +277,95 @@ def IsMaxIndependent (G : Graph α β) (S : Set (α)) : Prop :=
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 
---Avoids complete graph case but is not technically correct
 def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
-  (S ⊆ V(G)) ∧ (¬ (G - S).Connected) ∧ (S ≠ V(G))
+  (S ⊆ V(G)) ∧ ¬ (G - S).Connected
 
 def IsMinSepSet (G : Graph α β) (S : Set (α)) : Prop :=
-  IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.ncard ≤ A.ncard )
+  IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.encard ≤ A.encard )
 
-lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
+lemma MinSep_SepSet {G : Graph α β} (S : Set α) (S' : Set α) (hM : IsMinSepSet G S)
+    (hSS' : S'.encard < S.encard) : ¬  IsSepSet G S' := by
+  by_contra hc
+  have h1 := hM.2 S' hc
+  grw [h1] at hSS'
+  exact (lt_self_iff_false S'.encard).mp hSS'
+
+lemma IsSep_con {G : Graph α β} (S : Set (α)) (hV : S ⊆ V(G)) (hS : ¬ (G - S).Connected) :
+    IsSepSet G S := by
+  refine ⟨hV, hS ⟩
+
+lemma NeIsSep {G : Graph α β} (S : Set (α)) (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) :
+    (G - S).Connected := by
+  by_contra hc
+  exact hS (IsSep_con S hV hc)
+
+lemma MinSep_vertexSer_completeGraph {G : Graph α β} [G.Finite] (hV : IsMinSepSet G V(G))
+    : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w := by
+  intro v w hv hw hvw
+  by_contra hc
+  have hle : (V(G) \ {v,w}).encard < V(G).encard := by
+    refine Finite.encard_lt_encard (Finite.diff vertexSet_finite)
+     (HasSubset.Subset.diff_ssubset_of_nonempty (pair_subset hv hw ) (insert_nonempty v {w}))
+  have h2 := NeIsSep (V(G) \ {v, w}) (diff_subset ) (MinSep_SepSet V(G) (V(G)\{v,w}) hV hle )
+  have hvh : v ∈ V(G - (V(G) \ {v, w})) := by simpa
+  have hwh : w ∈ V(G - (V(G) \ {v, w})) := by simpa
+  have hnt : (V(G - (V(G) \ {v, w}))).Nontrivial := by
+    exact not_subsingleton_iff.mp fun a ↦ hvw (a hvh hwh)
+  have ⟨e, y, hye, hvy ⟩ := Connected.exists_isLink_of_mem h2 hnt hvh
+  have hwy : w = y := by
+    have hyyy : y ∈ V(G - (V(G) \ {v, w})) := IsLink.right_mem hye
+    simp at hyyy
+    have := hyyy.2
+    obtain (ha | hb) := hyyy.2
+    exact False.elim (hvy ha)
+    exact id (Eq.symm hb)
+  have h : G.Adj v w := by
+    have hrw : G[V(G) \ (V(G) \ {v, w})] =  G - (V(G) \ {v, w}) :=
+        vertexDelete_def G (V(G) \ {v, w})
+    have hee : e ∈ E(G[V(G) \ (V(G) \ {v, w})]) := by
+      rw [hrw]
+      exact IsLink.edge_mem hye
+    have he1 :  G[V(G) \ (V(G) \ {v, w})].IsLink e v w := by
+      rw [(hrw)]
+      exact (IsLink.isLink_iff_eq hye).mpr hwy
+    refine ⟨ e, ((induce_isLink_iff_of_mem_edgeSet hee).1 he1) ⟩
+  exact hc h
+
+lemma Connected_comp_Sep {G : Graph α β} (H : Graph α β) (S : Set (α))
+    (hH : H.IsCompOf (G - S )) (v w : α) (hv : v ∈ V(H)) (hwV : w ∈ V(G)) (hw : w ∉ V(H) ∪ S) :
+    ∃ T : (G - S).Separation, v ∈ T.left ∧ w ∈ T.right := by
+
+  refine ⟨⟨V(H), V(G-S)\V(H) , ⟨v, by simpa⟩ , ⟨w, ?_⟩, disjoint_sdiff_right , ?_, ?_ ⟩,?_⟩
+  · simp at hw
+    simp
+    refine ⟨ ⟨ hwV, hw.2 ⟩, hw.1 ⟩
+  simp
+  · have hh : V(H) ⊆ V(G - S) :=  (hH.isClosedSubgraph).vertexSet_mono
+    simp only [vertexDelete_vertexSet] at hh
+    exact hh
+  · intro x y hx hy
+    by_contra hc
+    exact (notMem_of_mem_diff hy ) (((hH.isClosedSubgraph).mem_iff_mem_of_adj hc).1 hx )
+  simp
+  simp at hw
+  refine ⟨ hv, ⟨ hwV, hw.2 ⟩, hw.1 ⟩
+
+lemma Del_connected_comp_Adj {G : Graph α β} (H : Graph α β) (S : Set (α))
+    (hH : H.IsCompOf (G - S )) (v w : α) (hv : v ∈ V(H)) (hw : w ∉ V(H) ∪ S) :
+    ¬ G.Adj v w := by
+  by_contra hc
+  simp only [mem_union, not_or] at hw
+  have hhe : (G - S).Adj v w := by
+    simp
+    refine ⟨hc, ?_, hw.2 ⟩
+    · have h1 : V(H) ⊆ V(G - S) := isCompOf_subset (G - S) H hH
+      have h :=  vertexDelete_vertexSet G S
+      rw [h] at h1
+      exact notMem_of_mem_diff (h1 hv)
+  exact hw.1 (((hH.isClosedSubgraph).mem_iff_mem_of_adj hhe).1 hv)
+
+
+lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     (S : Set (α)) (hS : IsSepSet G S)
     (H : Graph α β ) (hH : IsCompOf H (G-S) )
     (A : Set (α)) (hA : IsMaxIndependent G A) ( v : α ) (hx : v ∈ V(H) ∩ A )
@@ -293,27 +374,68 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple]
   let Inc := {w | G.Adj v w}
   let IncW := {w | G.Adj v w} ∩ V(H)
 
+  have disjoint : Inc ∩ (A ∩ V(H)) = ∅ := by
+    by_contra hcon
+    have ⟨ w, hw ⟩ : ∃ e, e ∈ Inc ∩ (A ∩ V(H)) := by
+      refine nonempty_def.mp (nonempty_iff_ne_empty.mpr hcon)
+    have hwvAdj: G.Adj v w := by
+      have h1 : w ∈ Inc := mem_of_mem_inter_left hw
+      exact h1
+    have hco : ¬ G.Adj v w := by
+      have hAindep : IsIndependent G A := by exact hA.1
+      have hvA : v ∈ A := mem_of_mem_inter_right hx
+      have hwA := mem_of_mem_inter_left ( mem_of_mem_inter_right hw)
+      apply hAindep.2 hvA hwA
+      by_contra hc
+      rw [hc] at hwvAdj
+      exact (not_adj_self G w) hwvAdj
+    exact hco hwvAdj
+
   --For the following you need that the sets are disjoint
-  have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := sorry
+  have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := by
+    -- have hfin2 : (A ∩ V(H)).Finite := by
+    --   have : (A ∩ V(H)) ⊆ V(G) := by
+    --     exact fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1)
+    --   have : V(G).Finite := by exact vertexSet_finite
+    --   exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
+    apply ncard_union_eq
+    exact disjoint_iff_inter_eq_empty.mpr disjoint
+    exact finite_setOf_adj G
+    exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
   have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := sorry
   --Use degree_eq_ncard_adj
   have hdeg : G.degree v = Inc.ncard := sorry
   --This one should be straight forward
-  have h1 : Inc ∪ (A ∩ V(H)) = (IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) := sorry
+  have h1 : Inc ∪ (A ∩ V(H)) = (IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) := by
+    have hinc : Inc = IncW ∪ (Inc\IncW) := by
+      refine Eq.symm (union_diff_cancel' (fun ⦃a⦄ a_1 ↦ a_1) inter_subset_left)
+    --conv => lhs ; rhs
+    nth_rewrite 1 [hinc]
+    exact union_right_comm IncW (Inc \ IncW) (A ∩ V(H))
   --Again, disjoint sets
   have hf3 : ((IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) ).ncard =
       (IncW ∪ (A ∩ V(H))).ncard + (Inc\IncW).ncard
-    := sorry
+    := by
+      sorry
   --Very important
   rw [←hf2,hdeg,←hf1,h1, hf3 ]
 
   --Inequalities to finish
   have hH : (IncW ∪ (A ∩ V(H))).ncard ≤ V(H).ncard := by
-    have hH1 : (IncW ∪ (A ∩ V(H))) ⊆ V(H) := sorry
-    sorry
+    have hH1 : (IncW ∪ (A ∩ V(H))) ⊆ V(H) := by
+      exact union_subset (inter_subset_right) (inter_subset_right)
+    refine ncard_le_ncard hH1 ?_
+    have hP : V(G-S) ⊆ V(G) :=
+      inter_eq_right.mp (congrArg (Inter.inter V(G)) (vertexDelete_vertexSet G S ))
+    exact Finite.subset (vertexSet_finite) (fun ⦃a⦄ a_1 ↦ hP ((isCompOf_subset (G - S) H hH ) a_1))
 
   have hS : (Inc\IncW).ncard ≤ S.ncard := by
-    have hH1 :(Inc\IncW) ⊆ S := sorry
+    have hH1 :(Inc\IncW) ⊆ S := by
+      intro w hwsub
+      have hAdj : G.Adj v w := by
+        have h : w ∈ Inc := mem_of_mem_inter_left hwsub
+        exact h
+      sorry
     sorry
   linarith
 
