@@ -263,7 +263,7 @@ lemma multiConn_project_add_tsum_eLocalConn_eq (M : Matroid α) (X : ι → Set 
 --     = M.multiConn X + M.eRk C := by
 --   sorry
 
-private lemma multiConn_project_add_disjoint_aux (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
+lemma multiConn_project_add_disjoint (M : Matroid α) {C : Set α} (hCX : C ⊆ ⋃ i, X i)
     (hdj : Pairwise (Disjoint on X)) (hC : M.Indep C) :
     (M.project C).multiConn X + ∑' i, (M.project (X i ∩ C)).eLocalConn (X i) C = M.multiConn X := by
   choose I hI using fun i ↦ (M.project (X i ∩ C)).exists_isBasis' (X i)
@@ -314,11 +314,11 @@ private lemma multiConn_project_add_disjoint_aux (M : Matroid α) {C : Set α} (
   exact hdj.mono fun i j ↦ Disjoint.mono ((hJ i).subset.trans (hI i).subset)
     ((hJ j).subset.trans (hI j).subset)
 
-lemma multiConn_project_add_disjoint (M : Matroid α) {C : ι → Set α} (hCX : ∀ i, C i ⊆ X i)
+lemma multiConn_project_add_of_subset (M : Matroid α) {C : ι → Set α} (hCX : ∀ i, C i ⊆ X i)
     (hdj : Pairwise (Disjoint on C)) (hi : M.Indep (⋃ i, C i)) : (M.project (⋃ i, C i)).multiConn X
     + ∑' i, (M.project (C i)).eLocalConn (X i) (⋃ i, C i) = M.multiConn X := by
   have hrw (j) : (·, j) '' X j ∩ ⋃ i, (·, i) '' (C i) = (·, j) '' C j := by aesop
-  convert (M.comap Prod.fst).multiConn_project_add_disjoint_aux (C := ⋃ i, (·, i) '' (C i))
+  convert (M.comap Prod.fst).multiConn_project_add_disjoint (C := ⋃ i, (·, i) '' (C i))
     (X := fun i ↦ (·, i) '' (X i)) (iUnion_mono fun i ↦ image_mono (hCX i)) _ _ with i
   · simp_rw [← project_comap_image, image_iUnion, image_image, image_id', multiConn_comap,
       image_image, image_id']
@@ -336,7 +336,7 @@ lemma multiConn_project_le (M : Matroid α) {C : Set α} (hC : C ⊆ ⋃ i, X i)
   choose! inds hinds using chooser
   have h_eq : ⋃ i, I ∩ inds ⁻¹' {i} = I := by
     rw [← inter_iUnion, ← preimage_iUnion, iUnion_of_singleton, preimage_univ, inter_univ]
-  rw [← M.multiConn_project_add_disjoint (C := fun i ↦ I ∩ inds ⁻¹' {i}) (X := X) ?_]
+  rw [← M.multiConn_project_add_of_subset (C := fun i ↦ I ∩ inds ⁻¹' {i}) (X := X) ?_]
   · grw [h_eq, hI.project_eq_project, ← le_self_add]
   · simp +contextual [Pairwise, disjoint_left]
   · rw [h_eq]
@@ -850,78 +850,3 @@ lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff' [Nonemp
   rw [U.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff _ hnot, or_iff_right hnot]
 
 end Extension
-
-section Submod
-
--- lemma IsBase.aux {B : Set α} (hB : M.IsBase B) (X : Set α) :
---     ∃ I ⊆ B, I.encard ≤ M.eConn X ∧ ∀ J ⊆ B \ I, (M ／ J).eConn X = M.eConn X := by
---   sorry
-
--- lemma aux_subset (M : Matroid α) (X : Set α) (k : ℕ∞) (hk : k ≤ M.eConn X) :
---     ∃ N : Matroid α, N ≤ M ∧ N.eConn X = k := sorry
-
--- lemma foo (M : Matroid α) (X Y : Set α) :
---     M.eConn (X ∪ Y) + M.eConn (X ∩ Y) ≤ M.eConn X + M.eConn Y := by
---   wlog hu : M.eConn (X ∪ Y) < ⊤ generalizing M with aux
---   · by_contra! hcon
---     simp only [not_lt, top_le_iff] at hu
---     obtain ⟨N, hNM, hconn⟩ := M.aux_subset (X ∪ Y) (M.eConn X + M.eConn Y + 1) (by simp [hu])
---     have hXY : M.eConn X + M.eConn Y < ⊤ := hcon.trans_le le_top
---     specialize aux N
---     grw [← le_self_add, hconn, hNM.eConn_le, hNM.eConn_le, ENat.add_one_le_iff hXY.ne,
---       ENat.add_lt_top] at aux
---     simp [hXY] at aux
---   wlog hi : M.eConn (X ∩ Y) < ⊤ generalizing M with aux
---   · by_contra! hcon
---     simp only [not_lt, top_le_iff] at hi
---     obtain ⟨N, hNM, hconn⟩ := M.aux_subset (X ∩ Y) (M.eConn X + M.eConn Y + 1) (by simp [hi])
---     have hXY : M.eConn X + M.eConn Y < ⊤ := hcon.trans_le le_top
---     specialize aux N ((hNM.eConn_le _).trans_lt hu)
---     grw [← le_add_self, hconn, hNM.eConn_le, hNM.eConn_le, ENat.add_one_le_iff hXY.ne,
---       ENat.add_lt_top] at aux
---     simp [hXY] at aux
---   by_contra! hlt
---   have hX : M.eConn X < ⊤ := by
---     grw [← le_self_add] at hlt
---     exact hlt.trans_le le_top
---   have hY : M.eConn Y < ⊤ := by
---     grw [← le_add_self] at hlt
---     exact hlt.trans_le le_top
-
---   obtain ⟨B, hB⟩ := M.exists_isBase
---   obtain ⟨IX, hIXB, hIXcard, hIX⟩ := hB.aux X
---   obtain ⟨IY, hIYB, hIYcard, hIY⟩ := hB.aux Y
---   obtain ⟨Ii, hIiB, hIiBcard, hIi⟩ := hB.aux (X ∩ Y)
---   obtain ⟨Iu, hIuB, hIuBcard, hIu⟩ := hB.aux (X ∪ Y)
-
---   set N := M ／ (B \ (IX ∪ IY ∪ Iu ∪ Ii)) with hN
---   have hbas : N.IsBase (IX ∪ IY ∪ Iu ∪ Ii) := by
---     rw [hN, (hB.indep.subset diff_subset).contract_isBase_iff, union_diff_cancel
---       (by simp [hIXB, hIYB, hIuB, hIiB])]
---     exact ⟨hB, disjoint_sdiff_right⟩
-
---   have hufin := encard_lt_top_iff.1 <| hIuBcard.trans_lt hu
---   have hifin := encard_lt_top_iff.1 <| hIiBcard.trans_lt hi
---   have hIXfin := encard_lt_top_iff.1 <| hIXcard.trans_lt hX
---   have hIYfin := encard_lt_top_iff.1 <| hIYcard.trans_lt hY
---   have hfin : RankFinite N := hbas.rankFinite_of_finite <| by simp [hIXfin, hIYfin, hifin, hufin]
-
---   have hcon := N.conn_submod X Y
---   rw [← Nat.cast_le (α := ℕ∞), Nat.cast_add, Nat.cast_add, cast_conn_eq,
---     cast_conn_eq, cast_conn_eq, cast_conn_eq, hN, hIi _ (by tauto_set), hIu _ (by tauto_set),
---     hIX _ (by tauto_set), hIY _ (by tauto_set), add_comm] at hcon
---   exact hlt.not_ge hcon
-
-
-  -- by_cases hinfu : M.eConn (X ∪ Y) = ⊤
-  -- · obtain ⟨N, hNM, hN⟩ := M.aux_subset (X ∪ Y) (M.eConn X + M.eConn Y + 1) (by simp [hinfu])
-  --   have hcon : N.eConn X + N.eConn Y < N.eConn (X ∪ Y) := by
-  --     grw [hNM.eConn_le, hNM.eConn_le, ← N.eConn_inter_ground, hN, ENat.lt_add_one_iff]
-  --     grw [← lt_top_iff_ne_top]
-  --     exact hcon.trans_le le_top
-
-
-
-
-
-end Submod
