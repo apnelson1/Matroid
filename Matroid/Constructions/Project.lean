@@ -34,6 +34,10 @@ lemma project_closure_eq_project_closure_union (M : Matroid α) (C X : Set α) :
     (M.project C).closure X = (M.project C).closure (X ∪ C) := by
   simp [union_assoc]
 
+lemma project_closure_congr (h : M.closure X = M.closure Y) (C : Set α) :
+    (M.project C).closure X = (M.project C).closure Y := by
+  simp [closure_union_congr_left h]
+
 lemma project_indep_iff : (M.project C).Indep I ↔ (M ／ C).Indep I := by
   simp only [project, restrict_indep_iff, and_iff_left_iff_imp]
   exact fun h ↦ h.of_contract.subset_ground

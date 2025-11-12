@@ -269,6 +269,55 @@ lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
 lemma eConn_le_eRk (M : Matroid α) (X : Set α) : M.eConn X ≤ M.eRk X :=
   eLocalConn_le_eRk_left _ _ _
 
+lemma eConn_le_encard (M : Matroid α) (X : Set α) : M.eConn X ≤ X.encard :=
+  (eConn_le_eRk ..).trans (eRk_le_encard ..)
+
+/-- The slack term in the inequality `λ(X) ≤ |X|` is the sum of the nullity and conullity of `X`.
+This needs `X ⊆ M.E`, for instance in the case where `X` is a single non-element. -/
+lemma eConn_add_nullity_add_nullity_dual (M : Matroid α) (X : Set α)
+  (hX : X ⊆ M.E := by aesop_mat) :
+    M.eConn X + M.nullity X + M✶.nullity X = X.encard := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis X
+  rw [M✶.nullity_eq_eRank_restrict_dual, ← delete_compl, ← dual_contract, dual_dual,
+    dual_ground, eConn_eq_eLocalConn, hI.eLocalConn_eq_nullity_project_right,
+    ← eRk_ground, contract_ground, diff_diff_cancel_left hX, ← eRk_closure_eq,
+    contract_closure_congr hI.closure_eq_closure.symm, eRk_closure_eq,
+    nullity_project_eq_nullity_contract, add_right_comm, add_comm (nullity ..),
+    eRk_add_nullity_eq_encard, hI.nullity_eq, add_comm, encard_diff_add_encard_of_subset hI.subset]
+
+lemma encard_le_eConn_iff (hX : X.Finite) : X.encard ≤ M.eConn X ↔ M.Indep X ∧ M✶.Indep X := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · simp only [show ¬M.Indep X from fun h ↦ hXE h.subset_ground, false_and, iff_false, not_le]
+    grw [← encard_diff_add_encard_inter X M.E, ← eConn_inter_ground, eConn_le_encard]
+    simp [ENat.lt_add_left_iff, diff_eq_empty, hXE, hX.subset inter_subset_left]
+  rw [← M.eConn_add_nullity_add_nullity_dual X, add_assoc]
+  simp only [ENat.add_le_left_iff, add_eq_zero, nullity_eq_zero, or_iff_right_iff_imp]
+  refine fun h ↦ (hX.not_infinite ?_).elim
+  simpa using h.symm.le.trans (M.eConn_le_encard X)
+
+lemma eConn_eq_encard_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X ∧ M✶.Indep X := by
+  rw [le_antisymm_iff, and_iff_right (M.eConn_le_encard ..), encard_le_eConn_iff hX]
+
+-- lemma eConn_eq_encard_iff' (hX : M.eConn X ≠ ⊤) :
+--     M.eConn X = X.encard ↔ M.Indep X ∧ M✶.Indep X := by
+--   wlog hXE : X ⊆ M.E generalizing X with aux
+--   · refine iff_of_false (fun h_eq ↦ hXE ?_) fun h ↦ hXE h.1.subset_ground
+--     have hle := h_eq.symm.le
+--     grw [← eConn_inter_ground, ← encard_diff_add_encard_inter X M.E, eConn_le_encard,
+--       ENat.add_le_right_iff, encard_eq_zero, diff_eq_empty, or_iff_right hXE] at hle
+
+
+
+    -- specialize aux (X := X ∩ M.E) (by simpa) inter_subset_right
+
+    -- (le_antisymm (M.eConn_le_encard ..) ?_)
+
+  -- obtain hX' | hX' := X.finite_or_infinite
+  -- · sorry
+  -- refine iff_of_false (fun h ↦ hX (by simpa [hX'.encard_eq] using h)) fun ⟨hi, hi'⟩ ↦ hX ?_
+  -- rw [← encard_eq_top_iff, eConn_add] at hX'
+
+
 
 @[simp]
 lemma eConn_disjointSum_left_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :

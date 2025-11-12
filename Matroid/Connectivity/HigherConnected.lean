@@ -136,7 +136,7 @@ lemma IsTutteConnected.of_dual (h : M✶.IsTutteConnected k) : M.IsTutteConnecte
 lemma isTutteConnected_dual_iff : M✶.IsTutteConnected k ↔ M.IsTutteConnected k :=
   ⟨IsTutteConnected.of_dual, IsTutteConnected.dual⟩
 
-lemma isTutteConnectted_two_iff [M.Nonempty] : M.IsTutteConnected 2 ↔ M.Connected := by
+lemma isTutteConnected_two_iff [M.Nonempty] : M.IsTutteConnected 2 ↔ M.Connected := by
   simp_rw [IsTutteConnected, isPredConnected_two_iff, Partition.eConn_eq_zero_iff_eq_disjointSum,
     Partition.isTutteSeparation_iff, not_and]
   refine ⟨fun h ↦ by_contra fun hconn ↦ ?_, fun h P hM hlt hlt' ↦ ?_⟩
@@ -179,6 +179,43 @@ lemma not_isTutteConnected_iff'' {k : ℕ∞} : ¬ M.IsTutteConnected k ↔ ∃ 
   lift j to ℕ using (h.2.2.2.1.trans_le le_top).ne
   exact ⟨X, j, h⟩
 
+lemma not_isTutteConnected_iff''' {k : ℕ∞} : ¬ M.IsTutteConnected k ↔ ∃ X ⊆ M.E,
+    M.eConn X + 2 ≤ k ∧ M.eConn X < X.encard ∧ M.eConn X < (M.E \ X).encard := by
+  rw [not_isTutteConnected_iff'']
+  refine ⟨fun ⟨X, j, h⟩ ↦ ⟨X, ?_⟩, fun ⟨X, h⟩ ↦ ⟨X, M.eConn X, by tauto⟩⟩
+  obtain rfl := h.2.2.1
+  tauto
+
+/-- This is probably the best version for exploiting non-connectivity,
+since the `<` works better with `k` infinite.  -/
+lemma not_isTutteConnected_iff_with_lt {k : ℕ∞} : ¬ M.IsTutteConnected k ↔ ∃ X ⊆ M.E,
+    M.eConn X + 1 < k ∧ M.eConn X < X.encard ∧ M.eConn X < (M.E \ X).encard := by
+  simp_rw [IsTutteConnected, not_isPredConnected_iff, Partition.isTutteSeparation_iff]
+  refine ⟨fun ⟨P, hP, hPk⟩ ↦ ⟨P.left, P.left_subset_ground, ?_⟩, fun ⟨X, hXE, hX⟩ ↦ ?_⟩
+  · rw [← P.eConn_eq_left, P.compl_left]
+    exact ⟨hPk, hP⟩
+  exact ⟨M.partition X, by simp [hX.2.1, hX.2, hX.1]⟩
+
+lemma exists_of_not_isTutteConnected (h : ¬ M.IsTutteConnected k) :
+    ∃ X ⊆ M.E, M.eConn X + 1 < k ∧ M.eConn X < X.encard ∧ X.encard ≤ (M.E \ X).encard := by
+  rw [not_isTutteConnected_iff_with_lt] at h
+  obtain ⟨Y, hY, hYconn, hYcard, hYc⟩ := h
+  obtain hle | hgt := le_or_gt Y.encard (M.E \ Y).encard
+  · exact ⟨Y, hY, hYconn, hYcard, hle⟩
+  exact ⟨M.E \ Y, diff_subset, by simpa, by simpa, by simpa [diff_diff_cancel_left hY] using hgt.le⟩
+
+lemma IsTutteConnected.encard_compl_lt (h : M.IsTutteConnected k) {X : Set α} (hXE : X ⊆ M.E)
+    (hX : M.eConn X + 1 < k) (hcard : M.eConn X < X.encard) : (M.E \ X).encard ≤ M.eConn X := by
+  contrapose! h
+  rw [not_isTutteConnected_iff_with_lt]
+  exact ⟨X, hXE, hX, hcard, h⟩
+
+lemma IsTutteConnected.encard_lt (h : M.IsTutteConnected k) {X : Set α} (hXE : X ⊆ M.E)
+    (hX : M.eConn X + 1 < k) (hcard : M.eConn X < (M.E \ X).encard) : X.encard ≤ M.eConn X := by
+  contrapose! h
+  rw [not_isTutteConnected_iff_with_lt]
+  exact ⟨X, hXE, hX, h, hcard⟩
+
 /- ### Internal Connectivity -/
 
 lemma IsInternallyConnected.dual (h : M.IsInternallyConnected k) : M✶.IsInternallyConnected k :=
@@ -209,69 +246,101 @@ lemma IsInternallyConnected.IsTutteConnected (hM : M.IsInternallyConnected (k+1)
   rw [← ENat.add_one_le_add_one_iff, add_assoc, one_add_one_eq_two]
   exact h_lt.le
 
-lemma isTutteConnected_contractElem (h : M.IsTutteConnected (k + 1)) (e : α) :
-    (M ／ {e}).IsTutteConnected k := by
-  wlog heX : e ∈ M.E with aux
-  · sorry
-  contrapose! h
-  rw [not_isTutteConnected_iff''] at h ⊢
-  obtain ⟨X, j, hj, hXE, rfl, hjX, hjX'⟩ := h
-  have heX : e ∉ X := sorry
-  by_cases heXcl : e ∈ M.closure (M.E \ insert e X)
-  · have hconn := M.eConn_eq_eConn_contract_subset_add (X := insert e X) (C := {e}) (by simp)
-    simp only [mem_singleton_iff, insert_diff_of_mem, diff_singleton_eq_self heX] at hconn
-    refine ⟨insert e X, _, ?_, ?_, rfl, ?_, ?_⟩
-    · sorry
-    · sorry
-    · grw [hconn, encard_insert_of_notMem heX, eLocalConn_le_eRk_right, eRk_le_encard,
-        encard_singleton, ENat.add_lt_add_iff_right (by simp)]
-      assumption
-    grw [hconn, eLocalConn_le_eRk_right, eRk_singleton_le]
+/-- This needs the cardinality hypothesis,
+since otherwise a triangle with `k = 2` would be a counterexample. -/
+lemma IsTutteConnected.contractElem (h : M.IsTutteConnected (k + 1)) (hcard : 2 * k ≤ M.E.encard)
+    (e : α) : (M ／ {e}).IsTutteConnected k := by
+  wlog heE : e ∈ M.E with aux
+  · rw [← contract_inter_ground_eq, singleton_inter_eq_empty.2 heE, contract_empty]
+    apply h.mono (by simp)
+  by_contra hcon
+  obtain ⟨X, hX, hXk, hXconn, hXcard⟩ := exists_of_not_isTutteConnected hcon
+  rw [contract_ground] at hXcard hX
+  obtain ⟨hXE, heX⟩ := subset_diff_singleton_iff.1 hX
+  have hXlt' : M.eConn X < k := by
+    grw [← eConn_le_eConn_contract_singleton_add_one] at hXk; assumption
+  have heXlt' : M.eConn (insert e X) < k := by
+    grw [← eConn_insert_le_eConn_contract_add_one] at hXk; assumption
+  have hconX := h.encard_compl_lt hXE (by simpa)
+  have hconXe := h.encard_compl_lt (insert_subset heE hXE) (by simpa)
+  obtain hX_eq | hX_lt := (M.eConn_le_encard X).eq_or_lt
+  · grw [← ENat.add_one_lt_add_one_iff, ← eConn_insert_le_eConn_contract_add_one,
+      ← encard_insert_of_notMem heX] at hXconn
+    have hne_top : M.eConn X + 1 ≠ ⊤ := by simpa using (hXlt'.trans_le le_top).ne
+    have hcon' := (ENat.add_lt_add_iff_left hne_top).2 heXlt'
+    nth_grw 1 [hX_eq, ← encard_insert_of_notMem heX, ← hconXe hXconn, add_comm,
+      encard_diff_add_encard_of_subset (insert_subset heE hXE), ← hcard,
+      Order.add_one_le_of_lt hXlt', two_mul] at hcon'
+    exact hcon'.ne rfl
+  grw [← hconX hX_lt, hXcard, diff_diff_comm] at hX_lt
+  exact hX_lt.not_ge <| encard_le_encard diff_subset
+
+lemma IsTutteConnected.deleteElem (h : M.IsTutteConnected (k + 1)) (hcard : 2 * k ≤ M.E.encard)
+    (e : α) : (M ＼ {e}).IsTutteConnected k := by
+  simpa [← isTutteConnected_dual_iff (M := M ＼ {e})] using h.dual.contractElem hcard e
+
+lemma IsTutteConnected.delete {D : Set α} (h : M.IsTutteConnected (k + D.encard))
+    (hDfin : D.Finite) (hcard : 2 * (k + D.encard) ≤ M.E.encard + 2) :
+    (M ＼ D).IsTutteConnected k := by
+  induction D, hDfin using Set.Finite.induction_on generalizing M with
+  | empty => simpa using h
+  | @insert e D heD hfin IH =>
+    rw [encard_insert_of_notMem heD, ← add_assoc] at h
+    rw [← singleton_union, ← delete_delete]
+    rw [encard_insert_of_notMem heD, ← add_assoc, mul_add, mul_one,
+      WithTop.add_le_add_iff_right (by simp)] at hcard
+    refine (IH <| h.deleteElem hcard e) ?_
+    grw [delete_ground, hcard, ← encard_diff_add_encard_inter (t := {e}),
+      encard_le_encard inter_subset_right, encard_singleton, show (1 : ℕ∞) ≤ 2 by norm_num]
+
+lemma IsTutteConnected.contract {C : Set α} (h : M.IsTutteConnected (k + C.encard))
+    (hCfin : C.Finite) (hcard : 2 * (k + C.encard) ≤ M.E.encard + 2) :
+    (M ／ C).IsTutteConnected k := by
+  simpa using (h.dual.delete hCfin (by simpa)).dual
+
+section Internal
+
+lemma IsTutteConnected.not_isInternallyConnected_iff (h : M.IsTutteConnected k) (hk : k ≠ ⊤) :
+    ¬ M.IsInternallyConnected (k + 1) ↔
+      ∃ X ⊆ M.E, M.eConn X + 1 = k ∧ k ≤ X.encard ∧ k ≤ (M.E \ X).encard := by
+  simp only [IsInternallyConnected, ← one_add_one_eq_two, ← add_assoc, ENat.add_one_le_add_one_iff,
+    not_isPredConnected_iff, ENat.add_one_lt_add_one_iff]
+  constructor
+  · rintro ⟨P, hP, hPk⟩
+    have ht : P.IsTutteSeparation :=
+      hP.elim Partition.IsInternalSeparation.IsTutteSeparation And.left
+    obtain rfl : k = P.eConn + 1 := (h ht).antisymm (Order.add_one_le_of_lt hPk)
+    exact ⟨P.left, P.left_subset_ground,
+      by rw [P.eConn_eq_left], Order.add_one_le_of_lt ht.eConn_lt_left,
+      by grw [Order.add_one_le_of_lt ht.eConn_lt_right, P.compl_left]⟩
+  rintro ⟨X, hXE, rfl, hkX, hkXc⟩
+  simp only [ne_eq, ENat.add_eq_top, ENat.one_ne_top, or_false] at hk
+  rw [ENat.add_one_le_iff hk] at hkX hkXc
+  exact ⟨M.partition X, by simpa [Partition.isTutteSeparation_iff, eConn_partition, hkX, hkXc]⟩
+
+-- lemma isTutteConnected_top_iff :
+--     M.IsTutteConnected ⊤ ↔
+--       ∀ X ⊆ M.E, M.eConn X < ⊤ → X.encard ≤ M.eConn X ∨ (M.E \ X).encard ≤ M.eConn X := by
+--   rw [← not_iff_not]
+--   simp [not_isTutteConnected_iff_with_lt]
 
 
 
-
-  have := M.eConn_eq_eConn_contract_disjoint_add (X := X) (C := {e}) sorry
-
--- lemma isTutteConnected_deleteElem (h : M.IsTutteConnected (k + 1)) (e : α) :
---     (M ＼ {e}).IsTutteConnected k := by
---   contrapose! h
---   rw [not_isTutteConnected_iff''] at h ⊢
---   obtain ⟨X, j, hj, hXE, rfl, hjX, hjX'⟩ := h
---   refine ⟨insert e X, _, ?_, ?_, rfl, ?_, ?_⟩
+-- lemma not_isInternallyConnected_iff :
+--     (¬ M.IsInternallyConnected (k + 1)) ↔ ¬ M.IsTutteConnected k ∨
+--     ∃ X ⊆ M.E, M.eConn X + 1 = k ∧ k ≤ X.encard ∧ k ≤ (M.E \ X).encard := by
+--   _
 
 
 
+-- lemma not_internallyConnected_iff_with_lt {k : ℕ∞} : ¬ M.IsInternallyConnected k ↔ ∃ X ⊆ M.E,
+--     M.eConn X + 1 < k ∧ M.eConn X + 1 < X.encard ∧ M.eConn X + 1 < (M.E \ X).encard := by
+--   simp only [IsInternallyConnected, Partition.isInternalSeparation_iff,
+--     Partition.isTutteSeparation_iff, not_isPredConnected_iff, Partition.eConn_eq_left]
+--   constructor
+--   · rintro ⟨P, ⟨hPleft, hPright⟩ | ⟨⟨hPleft, hPright⟩, hPk⟩, hPconn⟩
+--     · exact ⟨P.left, P.left_subset_ground, hPconn, hPleft, by simpa [P.compl_left]⟩
+--     refine ⟨P.left, P.left_subset_ground, ?_, ?_, ?_⟩
 
 
-
--- lemma isTutteConnected_delete {D : Set α} (hD : D.Finite)
---     (h : M.IsTutteConnected (k + D.encard)) : (M ＼ D).IsTutteConnected k := by
---   contrapose! h
---   rw [not_isTutteConnected_iff'] at h ⊢
---   obtain ⟨X, j, hjk, hXE, hXconn, hjX, hjXc⟩ := h
-
---   classical
---   wlog hDE : D ⊆ M.E generalizing D with aux
---   · rw [← delete_inter_ground_eq]
---     refine aux (hD.inter_of_left M.E) (h.mono ?_) inter_subset_right
---     grw [add_le_add_left]
---     exact encard_le_encard inter_subset_left
-
-
-
-
-
---   contrapose! h
---   rw [not_isTutteConnected_iff'] at h ⊢
---   obtain ⟨X, j, hj, hXE, hX, hjX, hjX'⟩ := h
---   have hle : M.eConn (X ∪ D) ≤ ↑(j + hD.toFinset.card) := by
---     have := eLocalConn_un
---   refine ⟨X ∪ D, j + hD.toFinset.card, ?_, ?_, ?_, ?_⟩
---   · grw [← hj, Nat.cast_add, hD.encard_eq_coe_toFinset_card, add_right_comm]
---   · grw [hDE, hXE, delete_ground, union_eq_self_of_subset_left diff_subset]
---   ·
---   -- by_contra! hcon
---   -- simp only [IsTutteConnected, exists_prop, IsPredConnected, not_forall, not_le] at hcon
---   -- obtain ⟨P, hP, hPk⟩ := hcon
---   -- have := h (M.partition (P.left ∪ D))
+end Internal

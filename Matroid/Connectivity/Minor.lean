@@ -607,6 +607,19 @@ lemma eConn_contract_diff_eq_eConn_project (M : Matroid α) (C X : Set α) :
     union_empty, diff_diff_comm, ← eLocalConn_project_eq_eLocalConn_contract_diff,
     eConn_eq_eLocalConn, project_ground]
 
+lemma eConn_contract_eq_eConn_project (M : Matroid α) (X C : Set α) :
+    (M ／ C).eConn X = (M.project C).eConn X := by
+  rw [← eConn_contract_diff_eq_eConn_project, ← eConn_inter_ground, eq_comm, ← eConn_inter_ground,
+    contract_ground, eq_comm, diff_inter_diff_right, inter_diff_assoc]
+
+lemma eConn_contract_eq_eConn_contract_diff (M : Matroid α) (X C : Set α) :
+    (M ／ C).eConn X = (M ／ C).eConn (X \ C) := by
+  rw [eConn_contract_diff_eq_eConn_project, eConn_contract_eq_eConn_project]
+
+lemma eConn_delete_eq_eConn_delete_diff (M : Matroid α) (X D : Set α) :
+    (M ＼ D).eConn X = (M ＼ D).eConn (X \ D) := by
+  rw [← eConn_dual, dual_delete, eConn_contract_eq_eConn_contract_diff, ← dual_delete, eConn_dual]
+
 lemma eConn_eq_eConn_contract_subset_add (M : Matroid α) (hCX : C ⊆ X) :
     M.eConn X = (M ／ C).eConn (X \ C) + M.eLocalConn (M.E \ X) C := by
   rw [eConn_contract_diff_eq_eConn_project]
@@ -639,6 +652,11 @@ lemma eConn_eq_eConn_contract_disjoint_add (M : Matroid α) (hdj : Disjoint X C)
   rw [← M.eConn_compl X, eConn_eq_eConn_contract_subset_add _ (subset_diff.2 ⟨hC, hdj.symm⟩),
     diff_diff_cancel_left hX, diff_diff_comm, ← contract_ground, eConn_compl]
 
+lemma eConn_union_eq_eConn_contract_add (M : Matroid α) (hdj : Disjoint X C) :
+    M.eConn (X ∪ C) = (M ／ C).eConn X + M.eLocalConn (M.E \ (X ∪ C)) C := by
+  rw [M.eConn_eq_eConn_contract_subset_add subset_union_right,
+    union_diff_cancel_right hdj.inter_eq.subset]
+
 lemma eConn_le_eConn_contract_add_eLocalConn (M : Matroid α) (X C : Set α) :
     M.eConn X ≤ (M ／ C).eConn X + M.eLocalConn X C := by
   wlog hC : C ⊆ M.E generalizing C with aux
@@ -649,6 +667,26 @@ lemma eConn_le_eConn_contract_add_eLocalConn (M : Matroid α) (X C : Set α) :
     project_closure_eq_project_closure_union, diff_diff_comm, diff_union_self,
     ← project_closure_eq_project_closure_union, eLocalConn_closure_right]
   rfl
+
+lemma eConn_insert_le_eConn_contract_add_one (M : Matroid α) (X : Set α) (e : α) :
+    M.eConn (insert e X) ≤ (M ／ {e}).eConn X + 1 := by
+  grw [eConn_le_eConn_contract_add_eLocalConn (C := {e}), eLocalConn_le_eRk_right,
+    eRk_singleton_le, eConn_contract_eq_eConn_contract_diff, insert_diff_of_mem _ (by simp),
+      ← eConn_contract_eq_eConn_contract_diff]
+
+lemma eConn_insert_le_eConn_delete_add_one (M : Matroid α) (X : Set α) (e : α) :
+    M.eConn (insert e X) ≤ (M ＼ {e}).eConn X + 1 := by
+  grw [← eConn_dual, eConn_insert_le_eConn_contract_add_one, ← dual_delete, eConn_dual]
+
+lemma eConn_le_eConn_contract_singleton_add_one (M : Matroid α) (X : Set α) (e : α) :
+    M.eConn X ≤ (M ／ {e}).eConn X + 1 := by
+  grw [eConn_le_eConn_contract_add_eLocalConn (C := {e}), eLocalConn_le_eRk_right,
+    eRk_singleton_le]
+
+lemma eConn_le_eConn_delete_singleton_add_one (M : Matroid α) (X : Set α) (e : α) :
+    M.eConn X ≤ (M ＼ {e}).eConn X + 1 := by
+  grw [← eConn_dual, eConn_le_eConn_contract_singleton_add_one _ _ e, ← eConn_dual,
+    dual_contract_dual]
 
 lemma eConn_le_eConn_contract_add_eRk (M : Matroid α) (X C : Set α) :
     M.eConn X ≤ (M ／ C).eConn X + M.eRk C := by
