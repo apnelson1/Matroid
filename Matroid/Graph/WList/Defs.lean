@@ -277,8 +277,8 @@ lemma first_eq_last_iff (hnodup : w.vertex.Nodup) : w.first = w.last ↔ w.Nil :
   ⟨fun h ↦ by cases w with simp_all, Nil.first_eq_last⟩
 
 /-- `Nonempty w` means that `w : WList α β` has at least one edge -/
-inductive Nonempty : WList α β → Prop
-  | cons (x e) (w : WList α β) : Nonempty (cons x e w)
+protected inductive Nonempty : WList α β → Prop
+  | cons (x e) (w : WList α β) : WList.Nonempty (cons x e w)
 
 @[simp]
 lemma cons_nonempty (x e) (w : WList α β) : (cons x e w).Nonempty := by

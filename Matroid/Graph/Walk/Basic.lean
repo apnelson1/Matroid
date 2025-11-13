@@ -339,6 +339,9 @@ lemma isWalk_edgeDelete_iff {F : Set β} : (G ＼ F).IsWalk w ↔ G.IsWalk w ∧
     and_iff_right_iff_imp]
   exact fun h _ ↦ h.edgeSet_subset
 
+lemma IsWalk.edgeDelete (hw : G.IsWalk w) (hdisj : Disjoint E(w) F) : (G ＼ F).IsWalk w := by
+  simp [hw, hdisj]
+
 lemma IsWalk.disjoint_of_edgeDelete (hw : (G ＼ F).IsWalk w) : Disjoint E(w) F :=
   (isWalk_edgeDelete_iff.mp hw).2
 
@@ -389,26 +392,6 @@ end Subgraph
 --   · simpa [h]
 --   · simpa
 
-
-
--- lemma append_isPath (h : w₁.last = w₂.first) (h₁ : G.IsPath w₁) (h₂ : G.IsPath w₂)
---     (hvertexSet : w₁.vertexSet ∩ w₂.vertexSet ⊆ {w₁.last}) : G.IsPath (w₁ ++ w₂) where
---   isWalk := append_isWalk h h₁.isWalk h₂.isWalk
---   nodup := by
---     simp only [Set.subset_singleton_iff, Set.mem_inter_iff, mem_vertexSet_iff,
--- and_imp, append_vertex,
---       nodup_append, h₁.nodup.sublist w₁.vertex.dropLast_sublist, h₂.nodup, true_and] at
--- hvertexSet ⊢
---     rintro x hx₁ hx₂
---     obtain rfl := hvertexSet x (List.mem_of_mem_dropLast hx₁) hx₂
---     /- This should be its own lemma -/
---     have aux {l : List α} (hl : l ≠ []) (hl' : l.Nodup) : l.getLast hl ∉ l.dropLast := by
---       rw [← dropLast_append_getLast hl, nodup_append] at hl'
---       obtain ⟨-, h'⟩ := by simpa using hl'
---       assumption
---     rw [last_eq_vertex_getLast] at hx₁
---     apply aux (by simp) h₁.nodup hx₁
-
 -- @[simp] lemma cons_isWalkFrom : G.IsWalkFrom S T (cons x e w) ↔
 --     G.IsWalk w ∧ G.IsLink e x w.first ∧ x ∈ S ∧ w.last ∈ T := by
 --   refine ⟨fun ⟨h, hS, hT⟩ ↦ ⟨?_, ?_, ?_, ?_⟩, fun ⟨hV, hS, hVd, hT⟩ ↦ ⟨?_, ?_, ?_⟩⟩
@@ -429,6 +412,16 @@ lemma reverse_isWalk_iff : G.IsWalk w.reverse ↔ G.IsWalk w :=
 
 lemma IsWalk.dedup [DecidableEq α] (h : G.IsWalk w) : G.IsWalk w.dedup :=
   h.sublist w.dedup_isSublist
+
+lemma IsWalk.nontrivial_of_ne_not_adj (h : G.IsWalk w) (hne : w.first ≠ w.last)
+    (hadj : ¬ G.Adj w.first w.last) : w.Nontrivial := by
+  match w with
+  | .nil u => simp at hne
+  | .cons u e (.nil v) =>
+    simp only [first_cons, last_cons, nil_last, cons_isWalk_iff, nil_first,
+      nil_isWalk_iff] at hadj h
+    exact (hadj ⟨e, h.1⟩).elim
+  | .cons u e (.cons v f w) => simp
 
 
 

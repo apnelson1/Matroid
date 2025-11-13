@@ -276,7 +276,7 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 
 
 
--- def vertexConnectedPartition (G : Graph α β) : Partition (V(G)) where
+-- def connectedBetweenPartition (G : Graph α β) : Partition (V(G)) where
 --   parts := {V(H.val) | H ∈ G.Components}
 --   indep := by
 --     rintro V ⟨H, hH, rfl⟩

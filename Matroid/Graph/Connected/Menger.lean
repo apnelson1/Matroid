@@ -1,9 +1,11 @@
 import Matroid.Graph.Connected.Set.Leg
+import Matroid.Graph.Connected.Vertex.VertexEnsemble
+import Matroid.Graph.Finite
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble
 
 variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s t : α}
-  {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ∞}
+  {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ}
 
 lemma Set.union_diff_eq_diff (A B C : Set α) (hBC : B ⊆ C) : (A ∪ B) \ C = A \ C := by
   ext x
@@ -33,8 +35,8 @@ lemma List.Nodup.countP_eq_card {l : List α} {P : α → Prop} [DecidableEq α]
 namespace Graph
 
 lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T ⊆ V(G))
-    {n : ℕ} (hconn : G.SetConnectivityGe S T n) {A : G.SetEnsemble}
-    (hA : A.between S T) (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
+    (hconn : G.SetConnectivityGe S T n) {A : G.SetEnsemble} (hA : A.between S T)
+    (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
     ∃ B : G.SetEnsemble, B.between S T ∧
     ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = (last '' B.paths) := by
   classical
@@ -47,7 +49,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
-    apply hconn.vertexDelete' (last '' A.paths) |>.subset diff_subset subset_rfl |>.downwards_closed
+    apply hconn.vertexDelete' (last '' A.paths) |>.subset diff_subset subset_rfl |>.anti_right
     rw [inter_eq_left.mpr hlast, A.last_injOn.encard_image]
     rw [← ENat.add_one_le_iff (by simpa)] at hAcard
     refine one_le_iff_ne_zero.mpr ?_
@@ -222,25 +224,49 @@ lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : �
   disjoint paths from `S` to `T`. -/
 theorem Menger'sTheorem [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ) :
     G.SetConnectivityGe S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
-  refine ⟨(Menger'sTheorem_aux' hS hT · n le_rfl), fun ⟨A, hA, hAcard⟩ C => ?_⟩
+  refine ⟨(Menger'sTheorem_aux' hS hT · n le_rfl), fun ⟨A, hA, hAcard⟩ C hC => ?_⟩
   match n with
   | 0 => exact StrictMono.minimal_preimage_bot (fun ⦃a b⦄ a_1 ↦ a_1) rfl _
   | n + 1 =>
   rw [← hAcard]
-  by_contra! hC
+  by_contra! hC'
   obtain ⟨P, hP, hdj⟩ : ∃ P ∈ A.paths, Disjoint V(P) C := by
-    contrapose! hC
-    simp_rw [not_disjoint_iff] at hC
+    contrapose! hC'
+    simp_rw [not_disjoint_iff] at hC'
     have hAFin : A.paths.Finite := finite_of_encard_eq_coe hAcard
-    let f : A.paths → C := fun P ↦ ⟨(hC P P.prop).choose, (hC P P.prop).choose_spec.2⟩
+    let f : A.paths → C := fun P ↦ ⟨(hC' P P.prop).choose, (hC' P P.prop).choose_spec.2⟩
     have hf : Injective f := by
       rintro P Q hPQ
       rw [← Subtype.val_inj] at hPQ ⊢
       exact A.disjoint.eq P.prop Q.prop <| not_disjoint_iff.mpr
-        ⟨(f P).val, (hC P P.prop).choose_spec.1, hPQ ▸ (hC Q Q.prop).choose_spec.1⟩
+        ⟨(f P).val, (hC' P P.prop).choose_spec.1, hPQ ▸ (hC' Q Q.prop).choose_spec.1⟩
     exact Embedding.encard_le ⟨f, hf⟩
 
-  apply C.ST_disconnects P.first (hA hP).first_mem P.last (hA hP).last_mem
-  use P, by simpa [A.valid hP |>.isWalk]
+  apply hC.ST_disconnects
+  simp only [SetConnected]
+  use P.first, (hA hP).first_mem, P.last, (hA hP).last_mem, P, by simpa [A.valid hP |>.isWalk]
+
+-- #print axioms Menger'sTheorem
+
+-- /-- For two vertices `s` and `t`, if every `s`-`t` cut has at least `n` vertices,
+--     then there are `n` internally disjoint paths from `s` to `t`. -/
+-- theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) [Finite ι]
+--     (hι : ENat.card ι = n) : G.ConnectivityBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι)
+-- := by
+--   by_cases hne : s = t
+--   · subst t
+--     simp only [hs, connectivityBetweenGe_self, true_iff]
+--     exact ⟨vertexEnsemble_nil ι hs⟩
+--   by_cases hadj : G.Adj s t
+--   · obtain ⟨e, he⟩ := hadj
+--     simp only [he.connectivityBetweenGe, true_iff]
+--     exact ⟨he.vertexEnsemble ι hne⟩
+
+--   refine ⟨fun h => ?_, fun h => ?_⟩
+--   · have hNl := h.le_left_neighborSet_encard hne hadj
+--     have hNr := h.le_right_neighborSet_encard hne hadj
+
+--     sorry
+--   sorry
 
 end Graph

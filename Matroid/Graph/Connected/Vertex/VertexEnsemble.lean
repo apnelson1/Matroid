@@ -1,30 +1,90 @@
-import Matroid.Graph.Connected.Defs
-
+import Matroid.Graph.Connected.Set.SetEnsemble
+import Matroid.Graph.Degree.Basic
 
 open Set Function Nat WList
 
-variable {α β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
-  {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β}
+variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
+  {C U V S T : Set α} {F F' R R': Set β} {W P Q : WList α β} {n m : ℕ}
 
 namespace Graph
 
-def internallyDisjoint (s t : α) {ι : Type*} (f : ι → G.Subgraph) : Prop :=
-  Pairwise (fun i j => V((f i).val) ∩ V((f j).val) = {s, t})
+-- @[simps]
+-- def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut N(G, s) N(G, t) C) (hne : s ≠ t)
+--     (hadj : ¬ G.Adj s t) : G.CutBetween s t where
+--   carrier := C
+--   carrier_subset := by
+--     have := by simpa [subset_diff] using hC.subset_vertexSet
+--     exact this.1
+--   left_not_mem := by
+--     have := by simpa [subset_diff] using hC.subset_vertexSet
+--     exact this.2.1
+--   right_not_mem := by
+--     have := by simpa [subset_diff] using hC.subset_vertexSet
+--     exact this.2.2
+--   not_connectedBetween h := by
+--     have := h.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)
+--     rw [vertexDelete_vertexDelete_comm] at this
+--     have hC' := hC.ST_disconnects
+--     sorry
 
-structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
-  f : ι → G.Subgraph
-  internallyDisjoint : G.internallyDisjoint s t f
-  stConnected : ∀ i, (f i).val.VertexConnected s t
+-- lemma connectivityBetweenGe_iff_setConnectivityGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
+--     G.ConnectivityBetweenGe s t n ↔ (G - {s, t}).SetConnectivityGe N(G, s) N(G, t) n := by
+--   refine ⟨fun h C hC => ?_, fun h C => ?_⟩
+--   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
+--     simpa using h (hC.cutBetween_of_neighbor hne hadj)
 
-def VertexEnsemble.of_le (P : H.VertexEnsemble s t ι) (hle : H ≤ G) : G.VertexEnsemble s t ι :=
-  ⟨(P.f ·|>.of_le hle), P.internallyDisjoint, P.stConnected⟩
+--   sorry
 
-def stEmsemble.precomp (P : G.VertexEnsemble s t ι) (f : ι' ↪ ι) : G.VertexEnsemble s t ι' :=
-  ⟨P.f ∘ f, P.internallyDisjoint.comp_of_injective f.injective, (P.stConnected <| f ·)⟩
+-- lemma ConnectivityBetweenGe.le_left_neighborSet_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+--     (hconn : G.ConnectivityBetweenGe s t n) : n ≤ N(G, s).encard := by
+--   by_contra h
+--   sorry
 
+-- lemma ConnectivityBetweenGe.le_right_neighborSet_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+--     (hconn : G.ConnectivityBetweenGe s t n) : n ≤ N(G, t).encard :=
+--   hconn.symm.le_left_neighborSet_encard hne.symm (by rwa [adj_comm])
 
+noncomputable def link (G : Graph α β) (x : α) : N(G, x) → β := fun y ↦ y.prop.1.choose
 
+@[simp]
+lemma link_isLink (y : N(G, x)) : G.IsLink (G.link x y) x y := y.prop.1.choose_spec
 
+@[simp]
+lemma link_mem {y : N(G, x)} : G.link x y ∈ E(G) := y.prop.1.choose_spec.edge_mem
 
-def STVxConnectivity (G : Graph α β) (s t : α) (n : Cardinal) :=
-  IsGreatest {m | m ≤ #V(G) ∧ G.stVxPreConn s t m} n
+noncomputable def ofSetEnsemble (x y : α) (hxy : x ≠ y) (A : (G - {x, y}).SetEnsemble)
+    (hA : A.between N(G, x) N(G, y)) : G.VertexEnsemble x y (first '' A.paths) where
+  f u := by
+    let a := u.prop.choose
+    let h : a ∈ _ ∧ a.first = u := u.prop.choose_spec
+    let hl := hA h.1 |>.last_mem
+    exact concat (cons x (G.link x ⟨u, h.2 ▸ (hA h.1).first_mem⟩) (A.of_vertex u (by
+    have hu := u.prop
+    nth_rw 1 [hA.image_first_eq_inter] at hu
+    exact inter_subset_right hu))) (G.link y ⟨_, hl⟩) y
+  isPath u := by
+    simp only [cons_concat, cons_isPath_iff, concat_isPath_iff, concat_first, mem_concat, not_or]
+    generalize_proofs hu huf hv huN
+    have := A.valid (A.of_vertex_mem_setEnsemble hu) |>.vertexSet_subset
+    simp only [vertexDelete_vertexSet, subset_diff, disjoint_insert_right, mem_vertexSet_iff,
+      disjoint_singleton_right] at this
+    refine ⟨⟨A.valid (A.of_vertex_mem_setEnsemble hu) |>.of_le vertexDelete_le, ?_, this.2.2⟩,
+      ?_, this.2.1, hxy⟩
+    · convert (link_isLink _).symm
+      rw [A.eq_of_vertex_mem hu huf.choose_spec.1]
+      convert first_mem
+      exact huf.choose_spec.2.symm
+    convert link_isLink _
+    obtain ⟨P, hP, hPu⟩ := huf
+    rw [← A.eq_of_vertex_mem hu hP (hPu ▸ first_mem)]
+    simpa
+  first u := by simp
+  last u := by simp
+  internallyDisjoint u v hne := by
+    simp only [cons_concat, cons_vertexSet, concat_vertexSet_eq, ← insert_inter_distrib]
+    generalize_proofs hu hv
+    suffices V(A.of_vertex ↑u hu) ∩ V(A.of_vertex ↑v hv) = ∅ by
+      simp [this]
+    rw [← disjoint_iff_inter_eq_empty]
+    apply A.disjoint (A.of_vertex_mem_setEnsemble hu) (A.of_vertex_mem_setEnsemble hv)
+    rwa [ne_eq, A.of_vertex_injOn_first u.prop v.prop, Subtype.coe_inj]

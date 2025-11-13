@@ -626,10 +626,10 @@ lemma prefixUntil_last_eq_of_prop (hv : v ∈ w.prefixUntil P) (hvP : P v) :
   by_contra! hvne
   exact prefixUntil_not_prop hv hvne hvP
 
-lemma Nonempty.prefixUntil_nil_iff (hw : Nonempty w) : (w.prefixUntil P).Nil ↔ P w.first := by
+lemma Nonempty.prefixUntil_nil_iff (hw : w.Nonempty) : (w.prefixUntil P).Nil ↔ P w.first := by
   induction w with | nil => simp at hw | cons => simp [apply_ite]
 
-lemma Nonempty.prefixUntil_nonempty_iff (hw : Nonempty w) :
+lemma Nonempty.prefixUntil_nonempty_iff (hw : w.Nonempty) :
     (w.prefixUntil P).Nonempty ↔ ¬ P w.first := by
   simp [← hw.prefixUntil_nil_iff (P := P)]
 
@@ -1507,6 +1507,13 @@ lemma Nonempty.concat_dropLast (hw : w.Nonempty) : w.dropLast.concat hw.lastEdge
 lemma Nonempty.exists_concat (hw : w.Nonempty) :
     ∃ (w' : WList α β) (e : β) (x : α), w'.concat e x = w :=
   ⟨w.dropLast, hw.lastEdge, w.last, hw.concat_dropLast⟩
+
+lemma Nontrivial.exists_cons_concat (hw : w.Nontrivial) :
+    ∃ x e w' f y, w = cons x e (concat w' f y) := by
+  obtain ⟨x, e, w1, rfl⟩ := hw.nonempty.exists_cons
+  rw [cons_nontrivial_iff] at hw
+  obtain ⟨w', f, y, rfl⟩ := hw.exists_concat
+  use x, e, w', f, y
 
 @[simp]
 lemma dropLast_first (w : WList α β) : (w.dropLast).first = w.first := by

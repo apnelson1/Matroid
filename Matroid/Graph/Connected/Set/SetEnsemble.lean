@@ -1,37 +1,10 @@
-import Matroid.Graph.Connected.Defs
-import Mathlib.Tactic.IntervalCases
+import Matroid.Graph.Connected.Set.Defs
+
 
 open Set Function Nat WList symmDiff
 
 variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s t : α}
   {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ∞}
-
-
-lemma Set.diff_symmDiff_diff (A B C : Set α) : (A \ B) ∆ (A \ C) = A ∩ (B ∆ C) := by
-  simp only [symmDiff_def, sup_eq_union]
-  aesop
-
-lemma Set.symmDiff_diff_distrib (A B C : Set α) : (A ∆ B) \ C = (A \ C) ∆ (B \ C) := by
-  simp [symmDiff_def]
-  aesop
-
-lemma Set.disjoint_diff_iff (A B C : Set α) : Disjoint (A \ B) C ↔ A ∩ C ⊆ B := by
-  rw [disjoint_iff_inter_eq_empty, diff_inter_right_comm]
-  exact diff_eq_empty
-
-lemma Set.diff_symmDiff (A B : Set α) : (A \ B) ∆ A = A ∩ B := by
-  ext x
-  simp [symmDiff_def]
-
-lemma Set.symmDiff_union_left (A B C : Set α) : (A ∪ B) ∆ (A ∪ C) = (B ∆ C) \ A := by
-  ext x
-  simp only [symmDiff_def, sup_eq_union, mem_union, mem_diff]
-  tauto
-
-lemma Set.union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by
-  ext x
-  simp only [mem_diff, mem_union]
-  tauto
 
 lemma List.eq_of_length_eq_zero {l : List α} (h : l.length = 0) : l = [] := by
   match l with
@@ -61,66 +34,8 @@ namespace Graph
 
 /-! ### ST-Connectivity -/
 
-variable {S S' T T' : Set α}
-
-
-structure SetEnsemble (G : Graph α β) where
-  paths : Set (WList α β)
-  disjoint : paths.Pairwise (Disjoint on WList.vertexSet)
-  valid : ∀ ⦃P⦄, P ∈ paths → G.IsPath P
-
 namespace SetEnsemble
 variable {A : G.SetEnsemble}
-
-def between (A : G.SetEnsemble) (S T : Set α) :=
-    ∀ ⦃P⦄, P ∈ A.paths → G.IsPathFrom S T P
-
-def vertexPartition (A : G.SetEnsemble) : Partition (Set α) :=
-  Partition.ofPairwiseDisjoint' (parts := WList.vertexSet '' A.paths) (by
-    rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ hPQ
-    refine A.disjoint hP hQ (hPQ <| · ▸ rfl)) (by
-    rintro _ ⟨P, hP, rfl⟩
-    rw [bot_eq_empty, ← Set.nonempty_iff_ne_empty]
-    exact ⟨P.first, P.first_mem⟩)
-
-@[simp]
-lemma vertexSet_mem_vertexPartition (A : G.SetEnsemble) (hP : P ∈ A.paths) :
-    V(P) ∈ A.vertexPartition := by
-  use P
-
-def vertexSet (A : G.SetEnsemble) : Set α :=
-  A.vertexPartition.supp
-
-@[simp]
-lemma mem_vertexSet_iff (A : G.SetEnsemble) :
-    v ∈ A.vertexSet ↔ ∃ P ∈ A.paths, v ∈ P := by
-  refine ⟨fun ⟨V, hV, hv⟩ ↦ ?_, fun ⟨P, hP, hvP⟩ ↦ ⟨V(P), (by use P), hvP⟩⟩
-  obtain ⟨P, hP, rfl⟩ := by simpa [vertexPartition] using hV
-  use P, hP, hv
-
-@[simp]
-lemma subset_vertexSet_of_mem (hP : P ∈ A.paths) :
-    V(P) ⊆ A.vertexSet :=
-  fun _ hvP ↦ A.mem_vertexSet_iff.mpr ⟨P, hP, hvP⟩
-
-lemma vertexSet_subset (A : G.SetEnsemble) : A.vertexSet ⊆ V(G) := by
-  rintro v
-  simp only [mem_vertexSet_iff, forall_exists_index, and_imp]
-  exact fun _ hP hvP ↦ (A.valid hP).vertexSet_subset hvP
-
-lemma vertexSet_eq_biUnion (A : G.SetEnsemble) : A.vertexSet = ⋃ P ∈ A.paths, V(P) := by
-  ext v
-  simp
-
-lemma image_first_subset (A : G.SetEnsemble) : first '' A.paths ⊆ A.vertexSet := by
-  rintro _ ⟨P, hP, rfl⟩
-  simp only [mem_vertexSet_iff]
-  use P, hP, first_mem
-
-lemma image_last_subset (A : G.SetEnsemble) : last '' A.paths ⊆ A.vertexSet := by
-  rintro _ ⟨P, hP, rfl⟩
-  simp only [mem_vertexSet_iff]
-  use P, hP, last_mem
 
 lemma between.image_last_eq_inter (hAST : A.between S T) :
     last '' A.paths = T ∩ A.vertexSet := by
@@ -139,54 +54,6 @@ lemma between.image_first_eq_inter (hAST : A.between S T) :
     (hAST hPA |>.eq_first_of_mem hxP hxS).symm⟩
   subst x
   use hAST hPA |>.first_mem, P, hPA, first_mem
-
-noncomputable def of_vertex (A : G.SetEnsemble) (v : α) (hv : v ∈ A.vertexSet) :
-    WList α β :=
-  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose
-
-@[simp]
-lemma of_vertex_mem_setEnsemble (hv : v ∈ A.vertexSet) : A.of_vertex v hv ∈ A.paths :=
-  (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.1
-
-@[simp]
-lemma mem_of_vertex (hv : v ∈ A.vertexSet) : v ∈ A.of_vertex v hv := by
-  have := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
-  have := this ▸ (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.2
-  rwa [← WList.mem_vertexSet_iff]
-
-lemma eq_of_vertex_mem (hv : v ∈ A.vertexSet) (hP : P ∈ A.paths) (hvP : v ∈ P) :
-    P = A.of_vertex v hv := by
-  refine A.disjoint.eq hP (A.of_vertex_mem_setEnsemble hv) ?_
-  rw [not_disjoint_iff]
-  use P.first, P.first_mem
-  let S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose
-  have : V(A.of_vertex v hv) = S :=
-    (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.1.1.choose_spec.2
-  have hS : V(P) = S := (A.vertexPartition.exists_unique_of_mem_supp hv).choose_spec.2 V(P)
-    (by simp [hvP, hP])
-  rw [this, ← hS]
-  exact P.first_mem
-
-@[simps]
-def empty (G : Graph α β) : G.SetEnsemble where
-  paths := ∅
-  disjoint := by simp
-  valid := by simp
-
-@[simp]
-lemma empty_between (S T : Set α) : (empty G).between S T := by
-  simp [between]
-
-@[simp]
-def single (hP : G.IsPath P) : G.SetEnsemble where
-  paths := {P}
-  disjoint := by simp
-  valid := by simp [hP]
-
-@[simp]
-lemma single_between (hP : G.IsPathFrom S T P) :
-    (single hP.isPath).between S T := by
-  simpa [between]
 
 lemma injOn_iff (f : WList α β → ι) :
     (∀ P Q, G.IsPath P → G.IsPath Q → f P = f Q → ∃ x ∈ V(P), x ∈ V(Q)) ↔

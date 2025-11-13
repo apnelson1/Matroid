@@ -230,7 +230,7 @@ lemma Bipartition.opp_first_get_iff (B : G.Bipartition) (hW : G.IsWalk W) (hn : 
 
 lemma Bipartition.same_iff_even_dist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
     (hy : y ∈ V(G)) : B.Same x y ↔ Even (G.dist x y) := by
-  obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hx hy).exists_isShortestPath
+  obtain ⟨P, hP, rfl, rfl⟩ := (hG.connectedBetween hx hy).exists_isShortestPath
   simp [← hP.length_eq_dist, ← B.same_first_get_iff hP.isPath.isWalk le_rfl]
 
 lemma Bipartition.opp_iff_odd_dist (B : G.Bipartition) (hG : G.Connected) (hx : x ∈ V(G))
@@ -280,7 +280,7 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
   · rw [add_comm]
     exact aux hxy.symm (not_le.1 hle).le
   obtain ⟨P, hP, hPfirst, hPlast⟩ :=
-    (hFt.connected.vertexConnected hxy.left_mem hr).exists_isShortestPath
+    (hFt.connected.connectedBetween hxy.left_mem hr).exists_isShortestPath
   have hPy : F.IsPath (WList.cons y e P)
   · suffices y ∉ P by simpa [cons_isPath_iff, hP.isPath, hPfirst, hxy.symm]
     intro hyP
@@ -310,7 +310,7 @@ lemma bipartite_iff_forall_cycle_even : G.Bipartite ↔ ∀ C, G.IsCycle C → E
   have hxT : x ∈ V(T) := (hTG.vertexSet_eq ▸ hexy.left_mem)
   have hyT : y ∈ V(T) := (hTG.vertexSet_eq ▸ hexy.right_mem)
   rw [B.opp_iff_odd_dist hT.connected hxT hyT]
-  obtain ⟨P, hP, rfl, rfl⟩ := (hT.connected.vertexConnected hxT hyT).exists_isShortestPath
+  obtain ⟨P, hP, rfl, rfl⟩ := (hT.connected.connectedBetween hxT hyT).exists_isShortestPath
   specialize h (cons P.last e P) ?_
   · exact (hP.isPath.of_le hTG.le).cons_isCycle hexy <| mt hP.isPath.isWalk.edge_mem_of_mem he
   rwa [cons_length, Nat.even_add_one, Nat.not_even_iff_odd, hP.length_eq_dist] at h

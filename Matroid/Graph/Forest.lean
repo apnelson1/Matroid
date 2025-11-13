@@ -136,7 +136,7 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
 
 lemma IsForest.isShortestPath_of_isPath (hG : G.IsForest) (hP : G.IsPath P) :
     G.IsShortestPath P := by
-  obtain ⟨Q, hQ, h1, h2⟩ := hP.isWalk.vertexConnected_first_last.exists_isShortestPath
+  obtain ⟨Q, hQ, h1, h2⟩ := hP.isWalk.connectedBetween_first_last.exists_isShortestPath
   rwa [hG.eq_of_isPath_eq_eq hP hQ.isPath h1.symm h2.symm]
 
 lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := by

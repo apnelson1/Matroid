@@ -131,3 +131,8 @@ def parallelClasses (G : Graph α β) : Partition (Set β) :=
   Partition.ofRel' G.parallel
 
 end parallel
+
+
+def neighborSet (G : Graph α β) (x : α) : Set α := {y | G.Adj x y ∧ x ≠ y}
+
+notation "N(" G ", " x ")" => neighborSet G x

@@ -1,8 +1,9 @@
 import Mathlib.Data.Set.Lattice.Image
+import Mathlib.Data.Set.SymmDiff
 
 variable {α ι : Type*}
 
-open Function
+open Function symmDiff
 namespace Set
 
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
@@ -130,6 +131,32 @@ lemma disjoint_iff_forall_notMem (A B : Set α) : Disjoint A B ↔ ∀ ⦃x⦄, 
   rw [disjoint_iff_forall_ne]
   refine forall₂_congr fun a ha => ?_
   aesop
+
+lemma diff_symmDiff_diff (A B C : Set α) : (A \ B) ∆ (A \ C) = A ∩ (B ∆ C) := by
+  simp only [symmDiff_def, sup_eq_union]
+  aesop
+
+lemma symmDiff_diff_distrib (A B C : Set α) : (A ∆ B) \ C = (A \ C) ∆ (B \ C) := by
+  simp [symmDiff_def]
+  aesop
+
+lemma disjoint_diff_iff (A B C : Set α) : Disjoint (A \ B) C ↔ A ∩ C ⊆ B := by
+  rw [disjoint_iff_inter_eq_empty, diff_inter_right_comm]
+  exact diff_eq_empty
+
+lemma diff_symmDiff (A B : Set α) : (A \ B) ∆ A = A ∩ B := by
+  ext x
+  simp [symmDiff_def]
+
+lemma symmDiff_union_left (A B C : Set α) : (A ∪ B) ∆ (A ∪ C) = (B ∆ C) \ A := by
+  ext x
+  simp only [symmDiff_def, sup_eq_union, mem_union, mem_diff]
+  tauto
+
+lemma union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by
+  ext x
+  simp only [mem_diff, mem_union]
+  tauto
 
 variable {s t r : Set α}
 

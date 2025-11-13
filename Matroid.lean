@@ -42,10 +42,12 @@ import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Menger
+import Matroid.Graph.Connected.Set.Defs
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Set.SetEnsemble
 import Matroid.Graph.Connected.Subgraph
--- import Matroid.Graph.Connected.Vertex.VertexEnsemble
+import Matroid.Graph.Connected.Vertex.Defs
+import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Constructions.Basic
 import Matroid.Graph.Degree.Basic
 import Matroid.Graph.Degree.Constructions

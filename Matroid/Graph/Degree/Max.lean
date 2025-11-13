@@ -42,7 +42,7 @@ lemma Connected.exists_isPath_of_leaves [G.Finite] (hG : G.Connected) (hmax : G.
     (hv : G.IsLeaf v) (hw : G.IsLeaf w) (hne : v ≠ w) :
     ∃ P, G.IsPath P ∧ P.first = v ∧ P.last = w ∧ G = P.toGraph := by
   have hlf := hmax.locallyFinite
-  obtain ⟨P, hP, rfl, rfl⟩ := (hG.vertexConnected hv.mem hw.mem).exists_isPath
+  obtain ⟨P, hP, rfl, rfl⟩ := (hG.connectedBetween hv.mem hw.mem).exists_isPath
   refine ⟨P, hP, rfl, rfl, Eq.symm ?_⟩
   refine eq_of_le_of_forall_degree_ge hG hP.isWalk.toGraph_le (by simp) fun x hx ↦ ?_
   have hPne : P.Nonempty := by rwa [first_ne_last_iff hP.nodup] at hne
