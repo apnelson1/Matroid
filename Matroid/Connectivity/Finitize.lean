@@ -174,15 +174,3 @@ lemma exists_finite_counterexample_of_lt_eConn {ι η : Type*} [Fintype ι] [Fin
   refine h_lt.trans_le (Finset.sum_le_sum fun i _ ↦ ?_)
   refine hVY i _ diff_subset _ diff_subset ?_ ?_ <;>
   exact disjoint_sdiff_left.mono_right <| subset_iUnion ..
-
-/-- Connectivity is submodular. -/
-lemma eConn_submod (M : Matroid α) (X Y : Set α) :
-    M.eConn (X ∪ Y) + M.eConn (X ∩ Y) ≤ M.eConn X + M.eConn Y := by
-  by_contra! hcon
-  obtain ⟨N, hNM, hNfin, hsum⟩ :=
-    M.exists_finite_counterexample_of_lt_eConn
-    (fun b ↦ bif b then X else Y) (fun b ↦ bif b then X ∪ Y else X ∩ Y) (by simpa)
-  have hbad : N.eConn X + N.eConn Y < N.eConn (X ∪ Y) + N.eConn (X ∩ Y) :=
-    by simpa using hsum
-  simp_rw [← cast_conn_eq, ← Nat.cast_add, Nat.cast_lt, add_comm (a := N.conn (X ∪ Y))] at hbad
-  exact (N.conn_submod X Y).not_gt hbad

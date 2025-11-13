@@ -745,6 +745,7 @@ theorem bixbyCoullard_elem [M.RankFinite] {e : α} (C D : Set α) (heC : e ∉ C
     M.conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn (by simpa) (by simpa),
     add_le_add_iff_left, conn_le_ncard _ (by simp), ncard_singleton]
 
+
 end Pair
 
 section Multi
