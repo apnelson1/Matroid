@@ -272,7 +272,7 @@ def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
   ∀ S, G.IsIndependent S → S.encard ≤ n
 
 def IsMaxIndependent (G : Graph α β) (S : Set (α)) : Prop :=
-  IsIndependent G S ∧ (∀ A, IsIndependent G A → A.ncard ≤ S.ncard )
+  IsIndependent G S ∧ (∀ A, IsIndependent G A → A.encard ≤ S.encard )
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
@@ -504,18 +504,52 @@ lemma IsCycle_length_bound {G : Graph α β} {C : WList α β} (hC : G.IsCycle C
     sorry
   sorry
 
+lemma foo (P : Prop) (Q : Prop ) (h : P ↔ Q) : ¬ P ↔ ¬ Q := by exact not_congr h
 
 lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
     (S : Set (α)) (HS : IsMinSepSet G S )
     (A : Set (α)) (hA : IsMaxIndependent G A)
-    (hAS : A.ncard ≤ S.ncard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
+    (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
 --grw
 
   --The following are needed to find a max cycle
-  have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by sorry
+  have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by
+    obtain ( hle2| h2 ) := Decidable.em (A.encard ≤ 1)
+    · have hcomplete : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w := by
+        intro x y hx hy hxy
+        by_contra hc
+        let ind : Set α := {x,y}
+        have hind : IsIndependent G ind := by
+          unfold IsIndependent
+          refine ⟨ (pair_subset hx hy ), ?_ ⟩
+          refine pairwise_pair.mpr ?_
+          intro hh
+          refine ⟨ hc, ?_ ⟩
+          by_contra hhc
+          have hconn : G.Adj x y := (adj_comm x y).2  hhc
+          exact hc hconn
+        have hleA : (ind).encard ≤ A.encard := by
+          exact hA.2 ind hind
+        have hle2A : 2 ≤ A.ncard := by sorry
+          --rwa [encard_pair hxy ] at hleA
+        have hlast : 2 ≤ 1 := by
+          have hh : ind.Finite := by sorry
+          have g := hh.encard_eq_coe
+          have g1 := ind.ncard_def
+          --Set.ncard_def
+          sorry
+        have : 1 < 2 := by exact Nat.one_lt_two
+        have : 1 < 1 := by sorry
+        exact (lt_self_iff_false 1).mp this
+      sorry
+    --Noah please do this sorry
+    simp at h2
+    sorry
   let S := {C : WList α β | G.IsCycle C }
-  have hsne : S.Nonempty := sorry
+  have hsne : S.Nonempty := by
+    exact nonempty_of_mem hC'
   have hsfin : ((length ) '' S).Finite := sorry
+  --THe following obtains a cycle of G that is maximal in length
   obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
   --Now that we got a max cycle, we have two cases
   obtain ( hn| hlen ) := Decidable.em (C.length = V(G).ncard  )
@@ -525,7 +559,12 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
   have hCle : C.length < V(G).ncard := by sorry
   let VC := {v ∈ V(G) | v ∈ C.vertex}
   --have ⟨v, hvV ⟩ : ∃ v, v ∉ C.vertex := sorry
-  have hG : V(G-(VC)).Nonempty := by sorry
+  have hG : V(G-(VC)).Nonempty := by
+    -- have hg : V(G) \ VC = ∅ := by sorry
+    -- have hg1 : VC ⊆ V(G) := by sorry
+    -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
+    -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
+    sorry
   have ⟨D, hD ⟩ := exists_IsCompOf hG
   let Neig := {v : α | v ∈ C.vertex ∧ (neighbour_of_Set G V(D) v) }
   --This is the second worst sorry
@@ -538,7 +577,9 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
     --Need to take path in D from w to w' and extend cycle
     sorry
   let NextNeigh := {v ∈ V(G) | ∃ w ∈ Neig, C.idxOf v = C.idxOf w + 1 }
-  have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := by sorry
+  have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := by
+    have : V(D).Nonempty := by sorry
+    sorry
   --I'm not sure how much you need this one
   --Worst sorry
   have hNNI : IsIndependent G NextNeigh := by sorry
