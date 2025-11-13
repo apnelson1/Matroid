@@ -120,24 +120,18 @@ lemma IsBase.exists_preserve_eConn_contract_delete_of_le (hB : M.IsBase B) (hk :
   · exact contract_isMinor_of_subset _ (subset_diff.2 ⟨hC, hCU⟩)
   grw [hD, contract_ground, diff_subset_diff_right diff_subset]
 
-/-- If an inequality involving sums of connectivites fails for some matroid,
-then it will also fail in some finite minor.
-This allows one to reduce inequalities that need intricate proofs to the rank calculations
-that work in the finite case.  -/
-lemma exists_finite_counterexample_of_lt_eConn {ι η : Type*} [Fintype ι] [Fintype η] (M : Matroid α)
-    (X : ι → Set α) (Y : η → Set α) (h_lt : ∑ i, M.eConn (X i) < ∑ i, M.eConn (Y i)) :
-    ∃ N, N ≤m M ∧ N.Finite ∧ ∑ i, N.eConn (X i) < ∑ i, N.eConn (Y i) := by
+/-- If an inequality of the form `∑ i, M.eConn (X i) ≤ g M` for some minor-monotone function `g`
+fails for some matroid, then it fails for a finite matroid.
+Can be used to reduce harder proofs for infinite matroids to numerical calculations where
+they work in the finite case.
+TODO : Allow the RHS to involve rank and nullity terms. -/
+lemma exists_finite_counterexample_of_lt_sum_eConn {ι : Type*} [Fintype ι]
+    (M : Matroid α) (g : Matroid α → ℕ∞) (hg : Monotone g) (X : ι → Set α)
+    (h_lt : g M < ∑ i, M.eConn (X i)) : ∃ N, N ≤m M ∧ N.Finite ∧ g N < ∑ i, N.eConn (X i) := by
   obtain ⟨B, hB⟩ := M.exists_isBase
-  have hfinX (i) : M.eConn (X i) < ⊤ := by
-    refine lt_of_le_of_lt ?_ (h_lt.trans_le le_top)
-    exact Finset.single_le_sum_of_canonicallyOrdered (f := fun i ↦ M.eConn (X i)) (by simp)
-  have hfinsumX : ∑ i, M.eConn (X i) < ⊤ := by
-    rw [WithTop.sum_lt_top]
-    simpa
-  obtain ⟨s, hs⟩ | hfinY := exists_or_forall_not (fun i ↦ M.eConn (Y i) = ⊤)
+  obtain ⟨s, hs⟩ | hfinY := exists_or_forall_not (fun i ↦ M.eConn (X i) = ⊤)
   · obtain ⟨U, V, hUV, hE, hVB, hUcard, hVcard, hconn⟩ :=
-      hB.exists_preserve_eConn_delete_contract (k := ∑ i, M.eConn (X i) + 1) (X := Y s)
-        (by simp [hs])
+      hB.exists_preserve_eConn_delete_contract (k := g M + 1) (X := X s) (by simp [hs])
     set N := M ／ (B \ U) ＼ ((M.E \ B) \ V) with hN_def
     have hNM : N ≤ M := contract_delete_isMinor ..
     have hNE : N.E = U ∪ V := by
@@ -145,16 +139,14 @@ lemma exists_finite_counterexample_of_lt_eConn {ι η : Type*} [Fintype ι] [Fin
       have := hB.subset_ground
       tauto_set
     refine ⟨N, hNM, ?_, ?_⟩
-    · rw [finite_iff, hNE, finite_union, ← encard_lt_top_iff, ← encard_lt_top_iff, hUcard,
-        hVcard]
-      simpa
-    grw [Finset.sum_le_sum (fun i _ ↦ (hNM.eConn_le (X i))),
-      ← Finset.single_le_sum_of_canonicallyOrdered (f := fun i ↦ N.eConn (Y i))
-      (Finset.mem_univ s), hconn,  ENat.lt_add_one_iff]
-    exact hfinsumX.ne
+    · rw [finite_iff, hNE, finite_union, ← encard_lt_top_iff, ← encard_lt_top_iff, hUcard, hVcard]
+      simpa using h_lt.trans_le le_top
+    grw [hg hNM, ← Finset.single_le_sum_of_canonicallyOrdered (f := fun i ↦ N.eConn (X i))
+      (Finset.mem_univ s), hconn]
+    simp [(h_lt.trans_le le_top).ne]
   simp_rw [← lt_top_iff_ne_top] at hfinY
   choose U V hYUB hYVE hYVdj hUYcard hVYcard hVY
-    using fun i ↦ hB.exists_preserve_eConn_contract_delete_of_le (X := Y i) rfl.le
+    using fun i ↦ hB.exists_preserve_eConn_contract_delete_of_le (X := X i) rfl.le
   set P := ⋃ i, U i with hP
   set Q := ⋃ i, V i with hQ
   have hPfin : P.Finite := by
@@ -170,7 +162,19 @@ lemma exists_finite_counterexample_of_lt_eConn {ι η : Type*} [Fintype ι] [Fin
   refine ⟨N, hNM, ⟨(hPfin.union hQfin).subset ?_⟩, ?_⟩
   · rw [hN, delete_ground, contract_ground]
     tauto_set
-  grw [Finset.sum_le_sum (fun i _ ↦ hNM.eConn_le (X i))]
-  refine h_lt.trans_le (Finset.sum_le_sum fun i _ ↦ ?_)
-  refine hVY i _ diff_subset _ diff_subset ?_ ?_ <;>
+  grw [hg hNM]
+  refine h_lt.trans_le <| Finset.sum_le_sum fun i _ ↦ hVY _ _ diff_subset _ diff_subset ?_ ?_ <;>
   exact disjoint_sdiff_left.mono_right <| subset_iUnion ..
+
+/-- If an inequality involving sums of connectivites fails for some matroid,
+then it will also fail in some finite minor.
+This allows one to reduce inequalities that need intricate proofs to the rank calculations
+that work in the finite case.  -/
+lemma exists_finite_counterexample_of_sum_eConn_lt_sum_eConn {ι η : Type*} [Fintype ι] [Fintype η]
+    (M : Matroid α) (X : ι → Set α) (Y : η → Set α)
+    (h_lt : ∑ i, M.eConn (X i) < ∑ i, M.eConn (Y i)) :
+    ∃ N, N ≤m M ∧ N.Finite ∧ ∑ i, N.eConn (X i) < ∑ i, N.eConn (Y i) :=
+  exists_finite_counterexample_of_lt_sum_eConn _ (fun M ↦ ∑ i, M.eConn (X i))
+    (fun _ _ hNM ↦ Finset.sum_le_sum fun _ _ ↦ IsMinor.eConn_le hNM _) _ h_lt
+
+end Matroid

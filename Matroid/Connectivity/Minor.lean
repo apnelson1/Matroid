@@ -652,6 +652,14 @@ lemma eConn_eq_eConn_contract_disjoint_add (M : Matroid α) (hdj : Disjoint X C)
   rw [← M.eConn_compl X, eConn_eq_eConn_contract_subset_add _ (subset_diff.2 ⟨hC, hdj.symm⟩),
     diff_diff_cancel_left hX, diff_diff_comm, ← contract_ground, eConn_compl]
 
+lemma eConn_eq_eConn_delete_subset_add (M : Matroid α) (hDX : D ⊆ X) :
+    M.eConn X = (M ＼ D).eConn (X \ D) + M✶.eLocalConn (M.E \ X) D := by
+  simp [← M.eConn_dual, M✶.eConn_eq_eConn_contract_subset_add hDX, ← (M✶ ／ D).eConn_dual]
+
+lemma eConn_eq_eConn_delete_disjoint_add (M : Matroid α) (hDX : Disjoint X D) :
+    M.eConn X = (M ＼ D).eConn X + M✶.eLocalConn X D := by
+  simp [← M.eConn_dual, M✶.eConn_eq_eConn_contract_disjoint_add hDX, ← (M✶ ／ D).eConn_dual]
+
 lemma eConn_union_eq_eConn_contract_add (M : Matroid α) (hdj : Disjoint X C) :
     M.eConn (X ∪ C) = (M ／ C).eConn X + M.eLocalConn (M.E \ (X ∪ C)) C := by
   rw [M.eConn_eq_eConn_contract_subset_add subset_union_right,
@@ -667,6 +675,15 @@ lemma eConn_le_eConn_contract_add_eLocalConn (M : Matroid α) (X C : Set α) :
     project_closure_eq_project_closure_union, diff_diff_comm, diff_union_self,
     ← project_closure_eq_project_closure_union, eLocalConn_closure_right]
   rfl
+
+lemma eConn_union_eq_eConn_contract_add_eConn_delete (M : Matroid α) (hXY : Disjoint X Y) :
+    M.eConn (X ∪ Y) = (M ／ X).eConn Y + (M ＼ Y).eConn X := by
+  rw [eConn_eq_eConn_contract_subset_add _ subset_union_left,
+    union_diff_cancel_left hXY.inter_eq.subset, (M ＼ Y).eConn_eq_eLocalConn, eq_comm,
+    delete_ground, diff_diff, union_comm, delete_eq_restrict, ← eLocalConn_inter_ground_left,
+    eLocalConn_restrict_of_subset _ (by simp) (diff_subset_diff_right subset_union_right),
+    restrict_ground_eq, ← inter_diff_assoc, (hXY.mono_left inter_subset_left).sdiff_eq_left,
+    eLocalConn_inter_ground_left, eLocalConn_comm]
 
 lemma eConn_insert_le_eConn_contract_add_one (M : Matroid α) (X : Set α) (e : α) :
     M.eConn (insert e X) ≤ (M ／ {e}).eConn X + 1 := by
@@ -688,6 +705,32 @@ lemma eConn_le_eConn_delete_singleton_add_one (M : Matroid α) (X : Set α) (e :
   grw [← eConn_dual, eConn_le_eConn_contract_singleton_add_one _ _ e, ← eConn_dual,
     dual_contract_dual]
 
+/-- Note : the lemma below is true with either `C ⊆ X` or `Disjoint C X` as a hypothesis,
+but not with both hypotheses removed, even if we insist that `X,C ⊆ M.E`.
+A counterexample is the direct sum of two parallel pairs, where `C` is one pair,
+and `X` is a transversal of the two. The versions with cardinality and rank are
+true unconditionally. -/
+lemma eConn_le_eConn_contract_add_eConn_of_subset (M : Matroid α) (hCX : C ⊆ X) :
+    M.eConn X ≤ (M ／ C).eConn (X \ C) + M.eConn C := by
+  grw [eConn_eq_eConn_contract_subset_add _ hCX, ← (M.delete_isMinor (X \ C)).eConn_le,
+    (M ＼ _).eConn_eq_eLocalConn, delete_ground, diff_diff, diff_union_of_subset hCX,
+    eLocalConn_comm, eLocalConn_delete_eq_of_disjoint _ disjoint_sdiff_right (by tauto_set)]
+
+lemma eConn_le_eConn_contract_add_eConn_of_disjoint (M : Matroid α) (hdj : Disjoint X C) :
+    M.eConn X ≤ (M ／ C).eConn X + M.eConn C := by
+  grw [eConn_eq_eConn_contract_disjoint_add _ hdj, M.eConn_eq_eLocalConn, eLocalConn_comm,
+  ← eLocalConn_inter_ground_right, eLocalConn_mono_right _ _ (show X ∩ M.E ⊆ M.E \ C by tauto_set)]
+
+lemma eConn_le_eConn_delete_add_eConn_of_subset (M : Matroid α) (hDX : D ⊆ X) :
+    M.eConn X ≤ (M ＼ D).eConn (X \ D) + M.eConn D := by
+  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual D,
+    ← eConn_le_eConn_contract_add_eConn_of_subset _ hDX, eConn_dual]
+
+lemma eConn_le_eConn_delete_add_eConn_of_disjoint (M : Matroid α) (hdj : Disjoint X D) :
+    M.eConn X ≤ (M ＼ D).eConn X + M.eConn D := by
+  grw [← dual_contract_dual, eConn_dual, ← M.eConn_dual D,
+    ← eConn_le_eConn_contract_add_eConn_of_disjoint _ hdj, eConn_dual]
+
 lemma eConn_le_eConn_contract_add_eRk (M : Matroid α) (X C : Set α) :
     M.eConn X ≤ (M ／ C).eConn X + M.eRk C := by
   grw [M.eConn_le_eConn_contract_add_eLocalConn X C, eLocalConn_le_eRk_right]
@@ -699,6 +742,17 @@ lemma eConn_le_eConn_contract_add_encard (M : Matroid α) (X C : Set α) :
 lemma eConn_le_eConn_delete_add_encard (M : Matroid α) (X D : Set α) :
     M.eConn X ≤ (M ＼ D).eConn X + D.encard := by
   grw [← eConn_dual, ← (M ＼ D).eConn_dual, dual_delete, eConn_le_eConn_contract_add_encard]
+
+lemma eConn_delete_le_eConn_contract_add (M : Matroid α) (X Y : Set α) :
+    (M ＼ Y).eConn X ≤ (M ／ Y).eConn X + M.eConn Y := by
+  grw [← eConn_inter_ground, eConn_delete_le,
+    eConn_le_eConn_contract_add_eConn_of_disjoint (C := Y) _ (by rw [delete_ground]; tauto_set),
+    ← (M ／ Y).eConn_inter_ground X, delete_ground, contract_ground]
+
+lemma eConn_contract_le_eConn_delete_add (M : Matroid α) (X Y : Set α) :
+    (M ／ Y).eConn X ≤ (M ＼ Y).eConn X + M.eConn Y := by
+  rw [← dual_delete_dual, ← M.dual_contract_dual, ← M.eConn_dual, eConn_dual, eConn_dual]
+  apply eConn_delete_le_eConn_contract_add
 
 /-- Contracting a subset of `Y` that is skew to `X` doesn't change the local connectivity
 between `X` and `Y`. -/
