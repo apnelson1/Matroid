@@ -91,10 +91,9 @@ lemma delete_isRestriction_of_subset (M : Matroid α) {D D' : Set α} (hDD' : D 
   convert (M ＼ D).delete_isRestriction D' using 1
   rw [delete_delete, union_eq_self_of_subset_left hDD']
 
-
--- lemma IsMinor.contract_isMinor_contract (h : N ≤m M) (C : Set α) : N ／ C ≤m M ／ C := by
---   obtain ⟨C', D, hCE, hDE, hCD, rfl⟩ := h.exists_eq_contract_delete_disjoint
---   rw [contract_delete_contract]
+lemma delete_contract_diff (M : Matroid α) (C D : Set α) : M ＼ D ／ C = M ＼ D ／ (C \ D) := by
+  rw [← dual_inj]
+  simp [contract_delete_diff]
 
 lemma IsMinor.delete_isMinor_delete (h : N ≤m M) {D : Set α} (hD : D ⊆ N.E) : N ＼ D ≤m M ＼ D := by
   obtain ⟨C, D', hCE, hDE, hCD, rfl⟩ := h.exists_eq_contract_delete_disjoint
@@ -103,6 +102,17 @@ lemma IsMinor.delete_isMinor_delete (h : N ≤m M) {D : Set α} (hD : D ⊆ N.E)
   grw [hD, delete_ground, contract_ground, disjoint_union_right, and_iff_right hCD,
     diff_subset]
   exact disjoint_sdiff_right
+
+lemma IsMinor.delete_isMinor_delete' (h : N ≤m M) {D : Set α} (hD : D ∩ M.E ⊆ N.E) :
+    N ＼ D ≤m M ＼ D := by
+  rw [← delete_inter_ground_eq, ← M.delete_inter_ground_eq, ← inter_eq_self_of_subset_left h.subset,
+    ← inter_assoc, inter_right_comm, inter_eq_self_of_subset_left hD]
+  exact h.delete_isMinor_delete hD
+
+lemma IsMinor.delete_isMinor_delete_of_subset (h : N ≤m M) {D D' : Set α} (hss : D ⊆ D')
+    (hD : D ∩ M.E ⊆ N.E) :
+    N ＼ D' ≤m M ＼ D :=
+  (delete_isRestriction_of_subset N hss).isMinor.trans (h.delete_isMinor_delete' hD)
 
 lemma restrict_isMinor (M : Matroid α) (hR : R ⊆ M.E := by aesop_mat) : (M ↾ R) ≤m M := by
   rw [← delete_compl]
@@ -187,6 +197,15 @@ lemma isStrictMinor_dual_iff_dual_isStrictMinor : N <m M✶ ↔ N✶ <m M := by
 lemma IsMinor.contract_isMinor_contract (h : N ≤m M) {C : Set α} (hC : C ⊆ N.E) :
     N ／ C ≤m M ／ C := by
   simpa using (h.dual.delete_isMinor_delete hC).dual
+
+lemma IsMinor.contract_isMinor_contract' (h : N ≤m M) {C : Set α} (hC : C ∩ M.E ⊆ N.E) :
+    N ／ C ≤m M ／ C := by
+  simpa using (h.dual.delete_isMinor_delete' hC).dual
+
+lemma IsMinor.contract_isMinor_contract_of_subset (h : N ≤m M) {C C' : Set α} (hss : C ⊆ C')
+    (hC : C ∩ M.E ⊆ N.E) :
+    N ／ C' ≤m M ／ C :=
+  (N.contract_isMinor_of_subset hss).trans (h.contract_isMinor_contract' hC)
 
 lemma IsColoop.of_isMinor (he : M.IsColoop e) (heN : e ∈ N.E) (hNM : N ≤m M) : N.IsColoop e := by
   rw [← dual_isLoop_iff_isColoop] at he ⊢
