@@ -22,6 +22,11 @@ noncomputable def nullity (M : Matroid α) (X : Set α) : ℕ∞ := (M ↾ X)✶
 lemma nullity_eq_eRank_restrict_dual (M : Matroid α) (X : Set α) :
     M.nullity X = (M ↾ X)✶.eRank := rfl
 
+lemma nullity_eq_eRank_dual_contract (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M.nullity X = (M✶ ／ (M.E \ X)).eRank := by
+  rw [← dual_delete, delete_compl]
+  rfl
+
 lemma nullity_restrict_of_subset (M : Matroid α) (hXY : X ⊆ Y) :
     (M ↾ Y).nullity X = M.nullity X := by
   rw [nullity, restrict_restrict_eq _ hXY, nullity]
@@ -41,11 +46,17 @@ lemma IsBasis'.nullity_eq (hIX : M.IsBasis' I X) : M.nullity X = (X \ I).encard 
 lemma IsBasis.nullity_eq (hIX : M.IsBasis I X) : M.nullity X = (X \ I).encard :=
   hIX.isBasis'.nullity_eq
 
+@[simp]
 lemma eRk_add_nullity_eq_encard (M : Matroid α) (X : Set α) :
     M.eRk X + M.nullity X = X.encard := by
   have h := (M ↾ X)✶.eRank_add_eRank_dual
   simp only [dual_dual, eRank_restrict, dual_ground, restrict_ground_eq] at h
   rw [← h, add_comm, nullity_eq_eRank_restrict_dual]
+
+@[simp]
+lemma nullity_add_eRk_add_eq_encard (M : Matroid α) (X : Set α) :
+    M.nullity X + M.eRk X = X.encard := by
+  simp [add_comm]
 
 lemma nullity_le_encard (M : Matroid α) (X : Set α) : M.nullity X ≤ X.encard := by
   grw [← M.eRk_add_nullity_eq_encard]

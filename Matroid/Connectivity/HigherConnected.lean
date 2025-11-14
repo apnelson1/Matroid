@@ -1,5 +1,6 @@
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Minor
+import Mathlib.Tactic.Peel
 
 open Set
 
@@ -237,7 +238,7 @@ lemma IsTutteConnected.isVerticallyConnected (hM : M.IsTutteConnected k) :
     M.IsVerticallyConnected k :=
   IsPredConnected.mono_prop hM <| fun _ _ ↦ Partition.IsVerticalSeparation.IsTutteSeparation
 
-lemma IsInternallyConnected.IsTutteConnected (hM : M.IsInternallyConnected (k+1)) :
+lemma IsInternallyConnected.isTutteConnected (hM : M.IsInternallyConnected (k+1)) :
     M.IsTutteConnected k := by
   refine fun P hP ↦ ?_
   obtain h_le | h_lt := le_or_gt (P.eConn + 2) (k+1)
@@ -318,11 +319,169 @@ lemma IsTutteConnected.not_isInternallyConnected_iff (h : M.IsTutteConnected k) 
   rw [ENat.add_one_le_iff hk] at hkX hkXc
   exact ⟨M.partition X, by simpa [Partition.isTutteSeparation_iff, eConn_partition, hkX, hkXc]⟩
 
--- lemma isTutteConnected_top_iff :
---     M.IsTutteConnected ⊤ ↔
---       ∀ X ⊆ M.E, M.eConn X < ⊤ → X.encard ≤ M.eConn X ∨ (M.E \ X).encard ≤ M.eConn X := by
---   rw [← not_iff_not]
---   simp [not_isTutteConnected_iff_with_lt]
+lemma spanning_dual_compl_iff {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Spanning (M.E \ X) ↔ M.Indep X := by
+  rw [← dual_coindep_iff, coindep_iff_compl_spanning, dual_ground]
+
+lemma spanning_dual_iff {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Spanning X ↔ M.Indep (M.E \ X) := by
+  rw [← spanning_dual_compl_iff, diff_diff_cancel_left hXE]
+
+/-- An infinitely Tutte-Connected matroid needs to be weird. -/
+lemma isTutteConnected_top_iff : M.IsTutteConnected ⊤ ↔ ∀ X ⊆ M.E, M.eConn X ≠ ⊤ →
+      (M.Indep X ∧ M.Coindep X) ∨ (M.Spanning X ∧ M.Indep (M.E \ X)) := by
+  rw [← not_iff_not]
+  simp only [not_isTutteConnected_iff_with_lt,
+    lt_iff_le_and_ne (b := encard ..), eConn_le_encard, ne_eq, true_and, not_forall,
+    not_or, exists_and_left, exists_prop, lt_top_iff_ne_top,
+    show ∀ Y, M.eConn Y ≤ (M.E \ Y).encard from fun Y ↦ by grw [← eConn_compl, eConn_le_encard]]
+  simp only [ENat.add_eq_top, ENat.one_ne_top, or_false, not_and]
+  refine ⟨fun ⟨X, hXE, hXconn, h1, h2⟩ ↦ ⟨X, fun hi hid ↦ h1 (hi.eConn_eq_encard_of_coindep hid),
+    hXconn, hXE, fun hs hi ↦ h2 ?_⟩, fun ⟨X, h1, hconn, hXE, h2⟩ ↦ ⟨X, hXE, hconn, ?_⟩⟩
+  · rwa [← eConn_compl, Indep.eConn_eq_encard_of_coindep]
+    rwa [coindep_iff_compl_spanning, diff_diff_cancel_left hXE]
+  rw [eConn_eq_encard_iff' hconn, ← eConn_compl, eConn_eq_encard_iff' (by simpa)]
+  rw [spanning_iff_compl_coindep] at h2
+  tauto
+
+lemma isUniform_of_isTutteConnected_top [M.RankFinite] (h : M.IsTutteConnected ⊤) :
+    M.IsUniform := by
+  rw [isTutteConnected_top_iff] at h
+  refine fun X hX ↦ (h X hX ?_).elim (.inl ∘ And.left) (.inr ∘ And.left)
+  grw [← lt_top_iff_ne_top, eConn_le_eRk]
+  exact eRk_lt_top
+
+/-- Todo : a version for when the Tutte Connectivity is much larger than the rank. -/
+lemma eq_unifOn_of_isTutteConnected_top [M.RankFinite] (h : M.IsTutteConnected ⊤) :
+    ∃ (E : Set α) (k : ℕ), M = unifOn E k ∧ E.encard ≤ 2 * k + 1 ∧ 2 * k ≤ E.encard + 1 := by
+  obtain ⟨E, k, hkE, rfl⟩ := (isUniform_of_isTutteConnected_top h).exists_eq_unifOn
+  refine ⟨E, k, rfl, ?_⟩
+  rw [isTutteConnected_top_iff] at h
+  simp +contextual [diff_subset, unifOn_coindep_iff'' hkE, unifOn_spanning_iff'' hkE] at h
+  refine ⟨le_of_not_gt fun hlt ↦ ?_, le_of_not_gt fun hlt ↦ ?_⟩
+  · obtain ⟨X, hXE, hXcard⟩ := exists_subset_encard_eq (k := k + 1) (s := E)
+      (by
+        generalize hl : E.encard = l at *
+        enat_to_nat
+        linarith)
+    have hEX : (E \ X).encard ≤ k := by simpa [hXcard] using h X hXE
+    grw [← encard_diff_add_encard_of_subset hXE, hXcard, hEX, ← add_assoc, two_mul] at hlt
+    exact hlt.ne rfl
+  obtain rfl | k := k
+  · simp at hlt
+  obtain ⟨X, hXE, hX⟩ := exists_subset_encard_eq (k := k) (s := E) (by grw [← hkE]; simp)
+  have hle : k + 1 ≤ (E \ X).encard := by simpa [hX] using h X hXE
+  grw [← encard_diff_add_encard_of_subset hXE, ← hle, hX] at hlt
+  enat_to_nat
+  linarith
+
+lemma isInternallyConnected_top_iff : M.IsInternallyConnected ⊤ ↔ M.IsTutteConnected ⊤ :=
+  ⟨fun h ↦ IsInternallyConnected.isTutteConnected (by simpa),
+    IsTutteConnected.isInternallyConnected⟩
+
+-- lemma not_isVerticallyConnected_iff :
+--     ¬ M.IsVerticallyConnected k ↔ ∃ X ⊆ M.E, M.eConn X + 1 < k ∧
+--       ¬ M.Spanning (M.E \ X) ∧ ¬ M.Spanning X := by
+--   simp_rw [IsVerticallyConnected, not_isPredConnected_iff, Partition.isVerticalSeparation_iff]
+--   refine ⟨fun ⟨P, ⟨hP1', hP2'⟩, hPconn⟩ ↦ ?_, fun ⟨X, hXE, hXconn, hX⟩ ↦ ?_⟩
+--   · by_contra! hcon
+--     have hP1 : M.Spanning P.left := hcon _ P.left_subset_ground (by rwa [← P.eConn_eq_left])
+--     have hP2 : M.Spanning P.right := hcon _ P.right_subset_ground (by rwa [← P.eConn_eq_right])
+--     obtain ⟨I1, hI1⟩ := M.exists_isBasis P.left
+--     grw [P.eConn_eq_left, hI1.eConn_eq_nullity_contract, P.compl_left, nullity_eq_encard,
+--       (hI1.isBase_of_spanning hP1).encard_eq_eRank] at hPconn
+--     · have h0 := hcon ∅ (empty_subset _) (lt_of_le_of_lt (by simp) hPconn)
+--       obtain ⟨E, rfl⟩ := spanning_empty_iff_eq_loopyOn.1 h0
+--       simp at hP1'
+--     simp [hP2.closure_eq, P.compl_right, hI1.subset]
+--   refine ⟨M.partition X hXE, ⟨lt_of_not_ge fun hle ↦ ?_, lt_of_not_ge fun hle ↦ ?_⟩, hXconn⟩
+--   · simp only [partition_left, eConn_partition] at hle
+--     have := (eConn_eq_eRk_iff ?_).1 (hle.antisymm' ?_)
+
+--     rw [eConn_eq_eRk_iff]
+
+      -- rw [spanning_empty_iff] at h0
+      -- rw [h0] at hP1'
+
+
+
+    -- obtain ⟨B1, hB1⟩ := M.exists_is
+
+
+  --   specialize h (B \ {e}) (diff_subset.trans hBE)
+  --   rw [← hBcard, ← encard_diff_singleton_add_one heB, or_iff_left] at h
+
+  --   ENat.add_le_left_iff,
+  --     ENat.add_le_left_iff, or_iff_left one_ne_zero, encard_diff_singleton_of_mem heB] at h
+
+
+  -- obtain rfl | hssu := hB.subset_ground.eq_or_ssubset
+  -- · obtain rfl | ⟨e, heB⟩ := B.eq_empty_or_nonempty
+  --   · simp [show k = 0 by simpa using hkE]
+  --   have := h (B \ {e}) diff_subset
+  --   rw [diff_diff_cancel_left (by simpa)] at this
+
+  -- · obtain rfl | hssu := hB.subset_ground.eq_or_ssubset
+    -- obtain h_empt | ⟨f, heB⟩ := (B.eq_empty_or_nonempty
+    -- rw [unifOn_isBase_iff hkE (by simp)] at hB
+    -- simp [unifOn_isBase_iff] at hB
+  -- obtain rfl | ⟨e, heE⟩ := E.eq_empty_or_nonempty
+  -- · simp [show k = 0 by simpa using h]
+  -- obtain h1 | h2 := h {e} (by simpa)
+  -- ·
+
+
+  -- obtain (hEk | hklt) := hkE.eq_or_lt
+  -- · obtain (rfl | rfl | k) := k
+  --   · simp [hEk.symm]
+  --   · simp [show E.encard = 1 by simpa using hEk.symm, one_add_one_eq_two]
+  --   obtain rfl | ⟨e, heE⟩ := E.eq_empty_or_nonempty
+  --   · simp at hEk
+  --   have := h {e}
+  --   simp at this
+    -- obtain rfl | ⟨e, heE⟩ := E.eq_empty_or_nonempty
+    -- · simp [show k = 0 by simpa using hEk]
+    -- have := h {e}
+    -- simp [heE, hEk] at this
+    -- simp at hEk
+    -- simp [he]
+    -- have := h ∅
+    -- simp [hEk] at this
+    -- cases k with
+    -- | zero => simp [← hEk]
+    -- | succ n =>
+    --   specialize h ∅
+    --   simp at h
+  -- by_contra! hcon
+
+  -- have h1 := h B hB.subset_ground (by simp)
+  --   -- (by grw [← lt_top_iff_ne_top, eConn_le_encard, hB.encard_eq_eRank]; simp)
+  -- rw [and_iff_right hB.indep, and_iff_right hB.spanning, unifOn_ground_eq] at h1
+  -- rw [unifOn_coindep_iff hBE hkE] at h1
+  -- have h2 := h (E \ B) diff_subset (by simp)
+  -- rw [unifOn_indep_iff, and_iff_left diff_subset, unifOn_coindep_iff diff_subset hkE,
+  --   unifOn_spanning_iff hkE diff_subset, unifOn_ground_eq, diff_diff_cancel_left hBE,
+  --   ] at h2
+  -- simp [diff_subset, hBE, disjoint_iff_inter_eq_empty,
+  --   inter_eq_self_of_subset_right] at h2
+
+  -- have h2 := h (E \ B) diff_subset ?_
+
+
+
+
+
+  -- obtain hlt | hge := lt_or_ge E.encard (2 * k)
+  -- · obtain ⟨
+  -- wlog hle : 2 * k ≤ E.encard generalizing k with aux
+  -- · rw [not_le] at hle
+  --   obtain ⟨c, hc⟩ := exists_add_of_le hle.le
+  --   have hlt : c ≠ ⊤ := by rintro rfl; simp [two_mul] at hc
+  --   lift c to ℕ using hlt
+  --   specialize aux c
+
+
+
 
 
 

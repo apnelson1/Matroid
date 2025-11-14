@@ -11,9 +11,9 @@ namespace Matroid
 
 /-- A `Paving` matroid is one whose truncation is uniform, or equivalently one where every
 dependent set is a single insertion away from being spanning. -/
-def Paving (M : Matroid α) : Prop := M.truncate.Uniform
+def Paving (M : Matroid α) : Prop := M.truncate.IsUniform
 
-lemma Paving.truncate_uniform (hM : M.Paving) : M.truncate.Uniform :=
+lemma Paving.truncate_uniform (hM : M.Paving) : M.truncate.IsUniform :=
   hM
 
 /-- A Paving matroid is one where every circuit is spanning or nearly-spanning. -/
@@ -111,7 +111,7 @@ lemma Paving.isBase_exchange_isCircuit_of_not_isBase (hM : M.Paving) (hB : M.IsB
     insert_diff_singleton, diff_singleton_eq_self (by simp [hef.symm, hfC]), insert_eq_of_mem heC]
 
 lemma Paving.restrict_uniform_of_nonspanning {R : Set α} (hM : M.Paving) (hRs : ¬ M.Spanning R)
-    (hRE : R ⊆ M.E := by aesop_mat) : (M ↾ R).Uniform := by
+    (hRE : R ⊆ M.E := by aesop_mat) : (M ↾ R).IsUniform := by
   intro X (hXR : X ⊆ R)
   rw [restrict_indep_iff, restrict_spanning_iff hXR, and_iff_left hXR, or_iff_not_imp_left,
     not_indep_iff]

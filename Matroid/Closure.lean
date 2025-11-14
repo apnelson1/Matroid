@@ -17,3 +17,15 @@ lemma IsRestriction.closure_subset_closure {M N : Matroid α} (h : M ≤r N) (X 
   grw [← closure_inter_ground, restrict_closure_eq _, inter_subset_left]
   · exact closure_mono _ inter_subset_left
   exact inter_subset_right
+
+lemma spanning_empty_iff_eq_loopyOn : M.Spanning ∅ ↔ ∃ E, M = loopyOn E := by
+  refine ⟨fun h ↦ ⟨M.E, ?_⟩, ?_⟩
+  · exact empty_isBase_iff.1 (M.empty_indep.isBase_of_spanning h)
+  rintro ⟨E, rfl⟩
+  simp only [loopyOn_spanning_iff, empty_subset]
+
+lemma spanning_empty_iff : M.Spanning ∅ ↔ M = loopyOn M.E := by
+  rw [spanning_empty_iff_eq_loopyOn]
+  refine ⟨?_, fun h ↦ ⟨M.E, h⟩⟩
+  rintro ⟨E, rfl⟩
+  rfl

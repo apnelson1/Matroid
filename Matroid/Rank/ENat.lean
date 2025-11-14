@@ -43,6 +43,13 @@ lemma eRank_lt_top [M.RankFinite] : M.eRank < ⊤ := by
   rw [← hB.encard_eq_eRank, encard_lt_top_iff]
   exact hB.finite
 
+@[simp]
+lemma eRk_lt_top [M.RankFinite] {X} : M.eRk X < ⊤ :=
+  (M.isRkFinite_set X).eRk_lt_top
+
+@[simp]
+lemma eRk_ne_top [M.RankFinite] {X} : M.eRk X ≠ ⊤ :=
+  (M.isRkFinite_set X).eRk_lt_top.ne
 
 -- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
   --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by

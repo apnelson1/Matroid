@@ -1,8 +1,8 @@
-import Matroid.Connectivity.Basic
-import Matroid.Connectivity.Local
+import Matroid.Connectivity.Core
+import Matroid.Connectivity.Nat
+import Matroid.Connectivity.Connected
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Matroid.Sum
-
 
 set_option linter.style.longLine false
 open Set
