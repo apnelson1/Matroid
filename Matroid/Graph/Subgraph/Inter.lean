@@ -1,15 +1,6 @@
 import Matroid.Graph.Subgraph.Compatible
 import Matroid.ForMathlib.Partition.Lattice
 
-@[simp]
-lemma Set.forall_mem_const {α : Type*} {p : Prop} {s : Set α} (hs : s.Nonempty) :
-    (∀ x ∈ s, p) ↔ p := ⟨fun h ↦ h _ hs.some_mem, fun hp _ _ ↦ hp⟩
-
-@[simp]
-lemma Set.forall_mem_and {α : Type*} {p q : α → Prop} {s : Set α} :
-    (∀ x ∈ s, p x ∧ q x) ↔ (∀ x ∈ s, p x) ∧ (∀ x ∈ s, q x) :=
-  ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun x hx ↦ (h x hx).2⟩,
-    fun ⟨hp, hq⟩ x hx ↦ ⟨hp x hx, hq x hx⟩⟩
 
 variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : α} {e f : β}
   {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
@@ -235,9 +226,6 @@ lemma inter_vertexSet (G H : Graph α β) : V(G ∩ H) = V(G) ∩ V(H) := rfl
 @[simp]
 lemma inter_isLink_iff : (G ∩ H).IsLink e x y ↔ G.IsLink e x y ∧ H.IsLink e x y := Iff.rfl
 
-protected lemma inter_comm (G H : Graph α β) : G ∩ H = H ∩ G :=
-  Graph.ext (Set.inter_comm ..) <| by simp [and_comm]
-
 lemma inter_edgeSet (G H : Graph α β) :
     E(G ∩ H) = {e ∈ E(G) ∩ E(H) | G.IsLink e = H.IsLink e} := by
   simp only [edgeSet_eq_setOf_exists_isLink, inter_isLink_iff, mem_inter_iff, mem_setOf_eq,
@@ -261,6 +249,18 @@ lemma inter_isLoopAt_iff : (G ∩ H).IsLoopAt e x ↔ G.IsLoopAt e x ∧ H.IsLoo
 lemma inter_isNonloopAt_iff :
     (G ∩ H).IsNonloopAt e x ↔ ∃ y ≠ x, G.IsLink e x y ∧ H.IsLink e x y := by
   simp [IsNonloopAt]
+
+protected lemma inter_comm (G H : Graph α β) : G ∩ H = H ∩ G :=
+  Graph.ext (Set.inter_comm ..) <| by simp [and_comm]
+
+instance : Std.Commutative (α := Graph α β) (· ∩ ·) where
+  comm := Graph.inter_comm
+
+protected lemma inter_assoc (G H I : Graph α β) : (G ∩ H) ∩ I = G ∩ (H ∩ I) :=
+  Graph.ext (Set.inter_assoc ..) <| by simp [and_assoc]
+
+instance : Std.Associative (α := Graph α β) (· ∩ ·) where
+  assoc := Graph.inter_assoc
 
 @[simp]
 protected lemma inter_le_left : G ∩ H ≤ G where
@@ -317,10 +317,12 @@ lemma le_of_inter_eq_self (h : G ∩ H = G) : G ≤ H := by
   rw [← h]
   exact Graph.inter_le_right
 
+@[gcongr]
 lemma inter_mono_left (hle : G₁ ≤ G₂) : G₁ ∩ H ≤ G₂ ∩ H := by
   rw [le_inter_iff]
   exact ⟨Graph.inter_le_left.trans hle, Graph.inter_le_right⟩
 
+@[gcongr]
 lemma inter_mono_right (hle : H₁ ≤ H₂) : G ∩ H₁ ≤ G ∩ H₂ := by
   rw [le_inter_iff]
   exact ⟨Graph.inter_le_left, Graph.inter_le_right.trans hle⟩
@@ -413,17 +415,3 @@ lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α �
   rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
 
 end Graph
-
--- protected lemma union_iInter [Nonempty ι] {H : ι → Graph α β} (hc : ∀ i, G.Compatible (H i))
---     (hH : Pairwise (Compatible on H)) :
---     G ∪ (Graph.iInter H hH) = Graph.iInter (fun i ↦ G ∪ (H i))
---     (by
---       refine fun i j hij ↦ (h)
---     )
-
---     := by
---   _
-
-  -- rw [Graph.sUnion, Graph.sUnion]
-  -- generalize_proofs h₁ h₂
-  -- rw [Graph.inter_distrib_iUnion _]

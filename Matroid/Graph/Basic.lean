@@ -13,6 +13,9 @@ namespace Graph
 For mathlib
 -/
 
+instance : IsSymm _ G.Adj where
+  symm _ _ := Adj.symm
+
 @[simp]
 lemma not_isLink_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
   mt IsLink.edge_mem he
@@ -136,3 +139,24 @@ end parallel
 def neighborSet (G : Graph α β) (x : α) : Set α := {y | G.Adj x y ∧ x ≠ y}
 
 notation "N(" G ", " x ")" => neighborSet G x
+
+@[simp]
+lemma neighborSet_subset (G : Graph α β) (x : α) : N(G, x) ⊆ V(G) := by
+  rintro y ⟨hy, hne⟩
+  exact hy.right_mem
+
+@[simp]
+lemma self_notMem_neighborSet (G : Graph α β) (x : α) : x ∉ N(G, x) := by
+  simp [neighborSet]
+
+@[simp]
+lemma notMem_neighborSet_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, x) := by
+  simp [neighborSet, hadj]
+
+lemma neighborSet_subset_of_ne_not_adj (hne : x ≠ y) (hadj : ¬ G.Adj x y) :
+    N(G, x) ⊆ V(G) \ {x, y} := by
+  rintro z ⟨hz, hne⟩
+  simp only [mem_diff, hz.right_mem, mem_insert_iff, hne.symm, mem_singleton_iff, false_or,
+    true_and]
+  rintro rfl
+  exact hadj hz

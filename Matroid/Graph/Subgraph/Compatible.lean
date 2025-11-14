@@ -119,6 +119,7 @@ lemma CompatibleAt.induce_left (h : CompatibleAt e G H) (X : Set α) : Compatibl
 lemma CompatibleAt.induce_right (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G H[X] :=
   (h.symm.induce_left X).symm
 
+@[gcongr]
 lemma CompatibleAt.induce (h : CompatibleAt e G H) (X : Set α) : CompatibleAt e G[X] H[X] :=
   (h.induce_left X).induce_right X
 
@@ -143,6 +144,13 @@ lemma set_pairwise_compatibleAt_of_compatible (h : s.Pairwise Compatible) (e : �
 lemma Compatible.isLink_eq (h : G.Compatible H) (heG : e ∈ E(G)) (heH : e ∈ E(H)) :
     G.IsLink e = H.IsLink e :=
   h ⟨heG, heH⟩
+
+@[simp]
+lemma compatible_self (G : Graph α β) : G.Compatible G :=
+  eqOn_refl ..
+
+instance : IsRefl (Graph α β) Compatible where
+  refl G := G.compatible_self
 
 lemma Compatible.symm (h : G.Compatible H) : H.Compatible G := by
   rwa [Compatible, inter_comm, eqOn_comm]
@@ -188,13 +196,6 @@ lemma IsNonloopAt.of_compatible (h : G.IsNonloopAt e x) (hGH : G.Compatible H) (
   obtain ⟨y, hne, hy⟩ := h
   exact ⟨y, hne, hy.of_compatible hGH heH⟩
 
-@[simp]
-lemma compatible_self (G : Graph α β) : G.Compatible G :=
-  eqOn_refl ..
-
-instance : IsRefl (Graph α β) Compatible where
-  refl G := G.compatible_self
-
 lemma Compatible.of_disjoint_edgeSet (h : Disjoint E(G) E(H)) : Compatible G H := by
   simp [Compatible, h.inter_eq]
 
@@ -235,19 +236,23 @@ lemma Compatible.induce_left (h : Compatible G H) (X : Set α) : G[X].Compatible
 lemma Compatible.induce_right (h : Compatible G H) (X : Set α) : G.Compatible H[X] :=
   (h.symm.induce_left X).symm
 
+@[gcongr]
 lemma Compatible.induce (h : Compatible G H) : G[X].Compatible H[X] :=
   (h.induce_left X).induce_right X
 
+@[gcongr]
 lemma Compatible.vertexDelete (h : Compatible G H) : (G - X).Compatible (H - X) :=
   h.mono vertexDelete_le vertexDelete_le
 
+@[gcongr]
 lemma Compatible.edgeDelete (h : Compatible G H) : (G ＼ F).Compatible (H ＼ F) :=
   h.mono edgeDelete_le edgeDelete_le
 
+@[gcongr]
 lemma Compatible.edgeRestrict (h : Compatible G H) : (G ↾ F).Compatible (H ↾ F) :=
   h.mono edgeRestrict_le edgeRestrict_le
 
-@[simp]
+@[simp, gcongr]
 lemma Compatible.induce_induce : G[X].Compatible G[Y] :=
   Compatible.induce_left (Compatible.induce_right G.compatible_self _) _
 

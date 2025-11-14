@@ -44,7 +44,7 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   · obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
     refine (hP.isWalk.toGraph_connected.of_isSpanningSubgraph ⟨?_, ?_⟩)
     · rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
-      exact edgeDelete_mono_left (by simp)
+      exact edgeDelete_mono_left (by simp) _
     rw [hPC]
     simp
   simp only [edgeDelete_induce, edgeDelete_edgeSet, edgeDelete_edgeDelete, union_diff_self,

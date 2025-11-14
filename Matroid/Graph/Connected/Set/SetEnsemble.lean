@@ -37,24 +37,6 @@ namespace Graph
 namespace SetEnsemble
 variable {A : G.SetEnsemble}
 
-lemma between.image_last_eq_inter (hAST : A.between S T) :
-    last '' A.paths = T ∩ A.vertexSet := by
-  ext x
-  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
-  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxT, P, hPA, hxP⟩ => by use P, hPA,
-    (hAST hPA |>.eq_last_of_mem hxP hxT).symm⟩
-  subst x
-  use hAST hPA |>.last_mem, P, hPA, last_mem
-
-lemma between.image_first_eq_inter (hAST : A.between S T) :
-    first '' A.paths = S ∩ A.vertexSet := by
-  ext x
-  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
-  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxS, P, hPA, hxP⟩ => by use P, hPA,
-    (hAST hPA |>.eq_first_of_mem hxP hxS).symm⟩
-  subst x
-  use hAST hPA |>.first_mem, P, hPA, first_mem
-
 lemma injOn_iff (f : WList α β → ι) :
     (∀ P Q, G.IsPath P → G.IsPath Q → f P = f Q → ∃ x ∈ V(P), x ∈ V(Q)) ↔
     ∀ A : G.SetEnsemble, A.paths.InjOn f := by

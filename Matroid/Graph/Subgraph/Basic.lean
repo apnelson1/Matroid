@@ -80,9 +80,11 @@ lemma IsNonloopAt.of_le (h : H.IsNonloopAt e x) (hle : H ≤ G) : G.IsNonloopAt 
 lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
   (h.choose_spec.of_le hle).adj
 
+@[gcongr]
 lemma vertexSet_mono (h : H ≤ G) : V(H) ⊆ V(G) :=
   h.1
 
+@[gcongr]
 lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
   refine fun e he ↦ ?_
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
@@ -153,6 +155,9 @@ lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE
     omega
 
+lemma neighborSet_mono (hle : G ≤ H) : N(G, x) ⊆ N(H, x) :=
+  fun _ ⟨hy, hne⟩ ↦ ⟨hy.of_le hle, hne⟩
+
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
   ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
 
@@ -169,6 +174,15 @@ structure IsSpanningSubgraph (H G : Graph α β) : Prop where
 
 /-- `H ≤s G` means that `H` is a spanning subgraph of `G`. -/
 infixl:50 " ≤s " => Graph.IsSpanningSubgraph
+
+lemma IsSpanningSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤s G₂) (h₂₃ : G₂ ≤s G₃) :
+    G₁ ≤s G₃ :=
+  ⟨h₁₂.le.trans h₂₃.le, h₁₂.vertexSet_eq.trans h₂₃.vertexSet_eq⟩
+
+instance : IsPartialOrder (Graph α β) (· ≤s ·) where
+  refl _ := ⟨le_rfl, rfl⟩
+  trans _ _ _ h₁ h₂ := h₁.trans h₂
+  antisymm _ _ h₁ h₂ := antisymm h₁.le h₂.le
 
 lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
     H ≤s K where
@@ -197,6 +211,11 @@ lemma IsInducedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤
   ⟨h₁₂.le.trans h₂₃.le, fun _ _ _ h hx hy ↦ h₁₂.isLink_of_mem_mem
     (h₂₃.isLink_of_mem_mem h (vertexSet_mono h₁₂.le hx) (vertexSet_mono h₁₂.le hy))
     hx hy⟩
+
+instance : IsPartialOrder (Graph α β) (· ≤i ·) where
+  refl _ := ⟨le_rfl, by tauto⟩
+  trans _ _ _ h₁ h₂ := h₁.trans h₂
+  antisymm _ _ h₁ h₂ := antisymm h₁.le h₂.le
 
 lemma isInducedSubgraph_iff :
     H ≤i G ↔ H ≤ G ∧ ∀ ⦃e x y⦄, G.IsLink e x y → x ∈ V(H) → y ∈ V(H) → H.IsLink e x y :=
@@ -229,6 +248,11 @@ lemma IsClosedSubgraph.isInducedSubgraph (h : H ≤c G) : H ≤i G where
 lemma IsClosedSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁ : G₁ ≤c G₂) (h₂ : G₂ ≤c G₃) : G₁ ≤c G₃ where
   le := h₁.le.trans h₂.le
   closed _ _ h hx :=  h₁.closed (h.of_le_of_mem h₂.le (h₂.closed h (h₁.vertexSet_mono hx))) hx
+
+instance : IsPartialOrder (Graph α β) (· ≤c ·) where
+  refl _ := ⟨le_rfl, fun _ _ h _ ↦ h.edge_mem⟩
+  trans _ _ _ h₁ h₂ := h₁.trans h₂
+  antisymm _ _ h₁ h₂ := antisymm h₁.le h₂.le
 
 @[simp]
 lemma isClosedSubgraph_self : G ≤c G where
@@ -302,31 +326,3 @@ lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
 instance instvxNonemptyOfEdgeNonempty (G : Graph α β) [hE : Nonempty E(G)] : Nonempty V(G) := by
   obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet hE.some.prop
   use x, hbtw.left_mem
-
-instance instWellFoundedLTGraph [Finite α] [Finite β] : WellFoundedLT (Graph α β) := by
-  let f : Graph α β → ℕ := fun G ↦ V(G).ncard + E(G).ncard
-  have hf : StrictMono f := by
-    rintro G H hlt
-    simp only [f]
-    obtain ⟨hle, hne⟩ := lt_iff_le_and_ne.mp hlt
-    obtain hV | hV := ssubset_or_eq_of_subset <| vertexSet_mono hle
-    · have hE' : E(G) ⊆ E(H) := edgeSet_mono hle
-      have hE'ncard : E(G).ncard ≤ E(H).ncard := ncard_le_ncard hE'
-      have hVncard : V(G).ncard < V(H).ncard := ncard_lt_ncard hV (toFinite V(H))
-      exact Nat.add_lt_add_of_lt_of_le hVncard hE'ncard
-    rw [hV]
-    obtain hE | hE := ssubset_or_eq_of_subset <| edgeSet_mono hle
-    · have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE (toFinite E(H))
-      exact Nat.add_lt_add_left hEncard V(H).ncard
-    obtain rfl := ext_of_le_le hle le_rfl hV hE
-    simp only [ne_eq, not_true_eq_false] at hne
-  exact hf.wellFoundedLT
-
-lemma minimal_exist {P : Graph α β → Prop} [Finite α] [Finite β] (h : P G) :
-    ∃ G : Graph α β, Minimal P G :=
-  exists_minimal_of_wellFoundedLT _ (by use G)
-
-lemma forall_of_minimal_not_exist {P : Graph α β → Prop} [Finite α] [Finite β]
-    (h : ¬ ∃ G : Graph α β, Minimal (¬ P ·) G) : P G := by
-  contrapose! h
-  exact minimal_exist h

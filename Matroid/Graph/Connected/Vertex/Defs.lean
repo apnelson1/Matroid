@@ -148,6 +148,19 @@ lemma CutBetween.ext (C1 C2 : G.CutBetween s t) (h : (C1 : Set α) = C2) : C1 = 
   cases C1; cases C2; simp_all
 
 @[simp]
+lemma CutBetween.coe_subset (C : G.CutBetween s t) : (C : Set α) ⊆ V(G) := C.carrier_subset
+
+@[simp]
+lemma CutBetween.left_notMem (C : G.CutBetween s t) : s ∉ C := C.left_not_mem
+
+@[simp]
+lemma CutBetween.right_notMem (C : G.CutBetween s t) : t ∉ C := C.right_not_mem
+
+@[simp]
+lemma CutBetween.not_connectedBetween' (C : G.CutBetween s t) : ¬ (G - C).ConnectedBetween s t :=
+  C.not_connectedBetween
+
+@[simp]
 lemma isEmtpy_cutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.CutBetween s s) := by
   by_contra! h
   obtain ⟨C, _, hsC, _, h⟩ := h
@@ -240,44 +253,44 @@ def internallyDisjoint (s t : α) {ι : Type*} (f : ι → WList α β) : Prop :
 structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
   f : ι → WList α β
   isPath : ∀ i, G.IsPath (f i)
-  first : ∀ i, (f i).first = s
-  last : ∀ i, (f i).last = t
+  first_eq : ∀ i, (f i).first = s
+  last_eq : ∀ i, (f i).last = t
   internallyDisjoint : internallyDisjoint s t f
 
 def vertexEnsemble_empty [h : IsEmpty ι] : G.VertexEnsemble s t ι where
   f := fun _ => nil s
   isPath := (h.elim ·)
-  first := (h.elim ·)
-  last := (h.elim ·)
+  first_eq := (h.elim ·)
+  last_eq := (h.elim ·)
   internallyDisjoint := (h.elim ·)
 
 def vertexEnsemble_nil (ι : Type*) (h : s ∈ V(G)) : G.VertexEnsemble s s ι where
   f _ := nil s
   isPath i := by simpa
-  first i := by simp
-  last i := by simp
+  first_eq i := by simp
+  last_eq i := by simp
   internallyDisjoint i j h := by simp
 
 def IsLink.vertexEnsemble (ι : Type*) (h : G.IsLink e s t) (hne : s ≠ t) :
     G.VertexEnsemble s t ι where
   f _ := cons s e (nil t)
   isPath i := by simpa [h, h.right_mem]
-  first i := by simp
-  last i := by simp
+  first_eq i := by simp
+  last_eq i := by simp
   internallyDisjoint i j h := by simp
 
 def IsPath.vertexEnsemble (h : G.IsPath P) : G.VertexEnsemble P.first P.last PUnit where
   f _ := P
   isPath i := h
-  first i := by simp
-  last i := by simp
+  first_eq i := by simp
+  last_eq i := by simp
   internallyDisjoint i j h := by simp at h
 
 def VertexEnsemble.comp (P : G.VertexEnsemble s t ι) (f : ι' ↪ ι) : G.VertexEnsemble s t ι' where
   f := P.f ∘ f
   isPath i := P.isPath (f i)
-  first i := P.first (f i)
-  last i := P.last (f i)
+  first_eq i := P.first_eq (f i)
+  last_eq i := P.last_eq (f i)
   internallyDisjoint i j h := P.internallyDisjoint (by simpa)
 
 -- def VertexEnsemble.of_le (P : H.VertexEnsemble s t ι) (hle : H ≤ G) : G.VertexEnsemble s t ι :=
@@ -299,12 +312,12 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
   isPath i := match i with
   | Sum.inl i => P.isPath i
   | Sum.inr i => Q.isPath i
-  first i := match i with
-  | Sum.inl i => P.first i
-  | Sum.inr i => Q.first i
-  last i := match i with
-  | Sum.inl i => P.last i
-  | Sum.inr i => Q.last i
+  first_eq i := match i with
+  | Sum.inl i => P.first_eq i
+  | Sum.inr i => Q.first_eq i
+  last_eq i := match i with
+  | Sum.inl i => P.last_eq i
+  | Sum.inr i => Q.last_eq i
   internallyDisjoint i j hne := match i, j with
   | Sum.inl i, Sum.inl j => P.internallyDisjoint (by simpa using hne)
   | Sum.inl i, Sum.inr j => by
@@ -313,16 +326,16 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
     rw [disjoint_iff_inter_eq_empty, diff_inter_diff_right, diff_eq_empty] at this
     apply this.antisymm
     simp only [subset_inter_iff]
-    exact ⟨by simp [← P.first i, first_mem, ← P.last i, last_mem, pair_subset],
-      by simp [← Q.first j, first_mem, ← Q.last j, last_mem, pair_subset]⟩
+    exact ⟨by simp [← P.first_eq i, first_mem, ← P.last_eq i, last_mem, pair_subset],
+      by simp [← Q.first_eq j, first_mem, ← Q.last_eq j, last_mem, pair_subset]⟩
   | Sum.inr i, Sum.inl j => by
     simp only
     have := h.mono (P.subset_vertexSet_of_mem j) (Q.subset_vertexSet_of_mem i)
     rw [disjoint_iff_inter_eq_empty, diff_inter_diff_right, diff_eq_empty, inter_comm] at this
     apply this.antisymm
     simp only [subset_inter_iff]
-    exact ⟨by simp [← Q.first i, first_mem, ← Q.last i, last_mem, pair_subset],
-      by simp [← P.first j, first_mem, ← P.last j, last_mem, pair_subset]⟩
+    exact ⟨by simp [← Q.first_eq i, first_mem, ← Q.last_eq i, last_mem, pair_subset],
+      by simp [← P.first_eq j, first_mem, ← P.last_eq j, last_mem, pair_subset]⟩
   | Sum.inr i, Sum.inr j => Q.internallyDisjoint (by simpa using hne)
 
 /-! ### k-connectivity between two vertices -/

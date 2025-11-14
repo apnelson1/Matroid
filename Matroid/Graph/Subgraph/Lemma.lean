@@ -289,6 +289,7 @@ lemma addEdge_le (hle : H ≤ G) (he : G.IsLink e x y) : H.addEdge e x y ≤ G :
 lemma le_addEdge (he : e ∉ E(G)) : G ≤ G.addEdge e x y :=
   Compatible.right_le_union <| by simp [he]
 
+@[gcongr]
 lemma addEdge_mono (hle : H ≤ G) : H.addEdge e x y ≤ G.addEdge e x y :=
   union_mono_right hle
 

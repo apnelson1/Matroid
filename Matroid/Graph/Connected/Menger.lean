@@ -1,6 +1,8 @@
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
+import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Finite
+import Mathlib.Data.Finite.Card
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble
 
@@ -222,7 +224,7 @@ lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : �
 /-- ## Menger's Theorem
   For vertex sets `S` and `T`, if every `S`-`T` cut has at least `n` vertices, then there are `n`
   disjoint paths from `S` to `T`. -/
-theorem Menger'sTheorem [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ) :
+theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ) :
     G.SetConnectivityGe S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
   refine ⟨(Menger'sTheorem_aux' hS hT · n le_rfl), fun ⟨A, hA, hAcard⟩ C hC => ?_⟩
   match n with
@@ -248,25 +250,59 @@ theorem Menger'sTheorem [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ)
 
 -- #print axioms Menger'sTheorem
 
--- /-- For two vertices `s` and `t`, if every `s`-`t` cut has at least `n` vertices,
---     then there are `n` internally disjoint paths from `s` to `t`. -/
--- theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) [Finite ι]
---     (hι : ENat.card ι = n) : G.ConnectivityBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι)
--- := by
---   by_cases hne : s = t
---   · subst t
---     simp only [hs, connectivityBetweenGe_self, true_iff]
---     exact ⟨vertexEnsemble_nil ι hs⟩
---   by_cases hadj : G.Adj s t
---   · obtain ⟨e, he⟩ := hadj
---     simp only [he.connectivityBetweenGe, true_iff]
---     exact ⟨he.vertexEnsemble ι hne⟩
+/-- For two vertices `s` and `t`, if every `s`-`t` cut has at least `n` vertices,
+    then there are `n` internally disjoint paths from `s` to `t`. -/
+theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
+    G.ConnectivityBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
+  have hιFin : Finite ι := ENat.card_lt_top.mp <| hι ▸ ENat.coe_lt_top n
+  obtain hne | hne := eq_or_ne s t
+  · subst t
+    simp only [hs, connectivityBetweenGe_self, true_iff]
+    exact ⟨vertexEnsemble_nil ι hs⟩
+  by_cases hadj : G.Adj s t
+  · obtain ⟨e, he⟩ := hadj
+    simp only [he.connectivityBetweenGe, true_iff]
+    exact ⟨he.vertexEnsemble ι hne⟩
+  refine ⟨fun h => ?_, fun ⟨A⟩ => ?_⟩
+  · rw [connectivityBetweenGe_iff_setConnectivityGe hne hadj, Menger'sTheorem_set
+    (by simp [subset_diff, hadj]) (by simp [subset_diff, not_symm_not hadj])] at h
+    obtain ⟨A, hA, hAcard⟩ := h
+    refine ⟨VertexEnsemble.ofSetEnsemble s t hne A hA |>.comp (ι' := ι) ?_⟩
+    rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
+    rw [← A.first_injOn.encard_image] at hAcard
+    have hAcardFin : (first '' A.paths).Finite := finite_of_encard_eq_coe hAcard
+    rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
+    exact (Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hAcard).symm |>.toEmbedding
+  unfold ConnectivityBetweenGe
+  by_contra! hC
+  obtain ⟨C, hC⟩ := hC
+  obtain ⟨i, hdj⟩ : ∃ i, Disjoint V(A.f i) C := by
+    contrapose! hC
+    simp_rw [not_disjoint_iff] at hC
+    let f : ι → C := fun i ↦ ⟨(hC i).choose, (hC i).choose_spec.2⟩
+    have hf : Injective f := by
+      rintro i j hij
+      apply A.internallyDisjoint.eq fun h ↦ ?_
+      have his : (f i).val ≠ s := (ne_of_mem_of_not_mem (hC i).choose_spec.2 C.left_not_mem)
+      have hit : (f i).val ≠ t := (ne_of_mem_of_not_mem (hC i).choose_spec.2 C.right_not_mem)
+      have : (f i).val ∈ V(A.f i) ∩ V(A.f j) := ⟨(hC i).choose_spec.1, hij ▸ (hC j).choose_spec.1⟩
+      simp [h, his, hit] at this
+    exact hι ▸ ENat.card_le_card_of_injective hf
+  apply C.not_connectedBetween
+  use A.f i, by simpa [(A.isPath i).isWalk], A.first_eq i, A.last_eq i
 
---   refine ⟨fun h => ?_, fun h => ?_⟩
---   · have hNl := h.le_left_neighborSet_encard hne hadj
---     have hNr := h.le_right_neighborSet_encard hne hadj
+-- #print axioms Menger'sTheorem_vertex
 
---     sorry
+theorem Menger'sTheorem_global [G.Finite] (hι : ENat.card ι = n) :
+    G.PreconnectivityGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
+  forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
+
+-- theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
+--     G.ConnectivityGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
+--     s ≠ t → Subsingleton {i | ¬ (A.f i).Nontrivial} := by
+--   rw [connectivityGe_iff_preconnectivityGe_le_card]
+--   refine ⟨fun ⟨hconn, hle⟩ s t hs ht => ?_, fun h => ?_⟩
+--   ·
 --   sorry
 
 end Graph

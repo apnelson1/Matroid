@@ -10,7 +10,8 @@ import Matroid.Circuit
 import Matroid.Clone
 import Matroid.Closure
 import Matroid.Connectivity.Basic
--- import Matroid.Connectivity.Finitize
+import Matroid.Connectivity.Finitize
+-- import Matroid.Connectivity.Global
 -- import Matroid.Connectivity.HigherConnected
 import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor

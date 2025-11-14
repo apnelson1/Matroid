@@ -24,6 +24,10 @@ lemma SetConnected.subset_right (h : G.SetConnected S T) (hT : T ⊆ T') : G.Set
   obtain ⟨s, hs, t, ht, hst⟩ := h
   exact ⟨s, hs, t, hT ht, hst.of_le (by simp)⟩
 
+lemma SetConnected.subset (h : G.SetConnected S T) (hS : S ⊆ S') (hT : T ⊆ T') :
+    G.SetConnected S' T' :=
+  h.subset_left hS |>.subset_right hT
+
 lemma IsWalkFrom.SetConnected (hW : G.IsWalkFrom S T W) : G.SetConnected S T := by
   use W.first, hW.first_mem, W.last, hW.last_mem, W, hW.isWalk
 
@@ -81,7 +85,7 @@ lemma IsSetCut.of_le (h : G.IsSetCut S T C) (hle : H ≤ G) : H.IsSetCut S T (V(
   subset_vertexSet := inter_subset_left
   ST_disconnects hH := by
     rw [vertexDelete_vertexSet_inter] at hH
-    exact h.ST_disconnects <| hH.of_le (vertexDelete_mono_left hle)
+    exact h.ST_disconnects <| hH.of_le (vertexDelete_mono_left hle C)
 
 lemma IsSetCut.subset_left (h : G.IsSetCut S T C) (hS : S' ⊆ S) : G.IsSetCut S' T C where
   subset_vertexSet := h.subset_vertexSet.trans (by simp)
@@ -157,6 +161,41 @@ lemma IsWalkFrom.exists_mem_isEdgeSetCut (hW : G.IsWalkFrom S T W) (hC : G.IsEdg
     ∃ e ∈ E(W), e ∈ F := by
   have := hW.not_disjoint_isEdgeSetCut hC
   rwa [not_disjoint_iff] at this
+
+lemma IsEdgeSetCut.disjoint (hF : G.IsEdgeSetCut S T F) : Disjoint V(G) (S ∩ T) := by
+  by_contra! h
+  rw [not_disjoint_iff] at h
+  obtain ⟨x, hx, hxS, hxT⟩ := h
+  exact hF.ST_disconnects ⟨x, hxS, x, hxT, by simpa⟩
+
+lemma not_isEdgeSetCut_of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) : ¬ G.IsEdgeSetCut S T F :=
+  mt IsEdgeSetCut.disjoint hdj
+
+private noncomputable def inc_vert (e : E(G)) : α :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose
+
+@[simp]
+private lemma inc_vert_inc (e : E(G)) : G.Inc e (inc_vert e) :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose_spec
+
+private lemma inc_vert_mem (e : E(G)) : inc_vert e ∈ V(G) :=
+  inc_vert_inc e |>.vertex_mem
+
+open Notation in
+private lemma inc_vert_foo : ∀ e ∈ E(G) ∩ F, ∃ x ∈ inc_vert '' (E(G) ↓∩ F), G.Inc e x := by
+  rintro e ⟨he, heF⟩
+  use inc_vert ⟨e, he⟩
+  simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, inc_vert_inc ⟨e, he⟩,
+    and_true]
+  use e, heF, he
+
+open Notation in
+noncomputable def IsEdgeSetCut.isSetCut (hF : G.IsEdgeSetCut S T F) :
+    G.IsSetCut S T (inc_vert '' (E(G) ↓∩ F)) where
+  subset_vertexSet := by
+    rintro x ⟨e, he, rfl⟩
+    exact inc_vert_mem e
+  ST_disconnects h := hF.ST_disconnects <| h.of_le <| G.vertexDelete_le_edgeDelete inc_vert_foo
 
 /-! ### Ensemble of paths between two sets -/
 
@@ -284,6 +323,24 @@ lemma of_vertex_injOn_last (hu : u ∈ last '' A.paths) (hv : v ∈ last '' A.pa
     ← A.eq_of_vertex_mem (image_last_subset A hv) hQ last_mem] at h
   exact h ▸ rfl
 
+lemma between.image_last_eq_inter (hAST : A.between S T) :
+    last '' A.paths = T ∩ A.vertexSet := by
+  ext x
+  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
+  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxT, P, hPA, hxP⟩ => by use P, hPA,
+    (hAST hPA |>.eq_last_of_mem hxP hxT).symm⟩
+  subst x
+  use hAST hPA |>.last_mem, P, hPA, last_mem
+
+lemma between.image_first_eq_inter (hAST : A.between S T) :
+    first '' A.paths = S ∩ A.vertexSet := by
+  ext x
+  simp only [mem_image, mem_inter_iff, mem_vertexSet_iff]
+  refine ⟨fun ⟨P, hPA, hx⟩ => ?_, fun ⟨hxS, P, hPA, hxP⟩ => by use P, hPA,
+    (hAST hPA |>.eq_first_of_mem hxP hxS).symm⟩
+  subst x
+  use hAST hPA |>.first_mem, P, hPA, first_mem
+
 end SetEnsemble
 
 /-! ### k-connectivity between two sets -/
@@ -349,8 +406,14 @@ lemma setConnectivityGe_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
   rw [Set.ncard_def, ENat.coe_toNat (by simpa)]
   exact encard_le_encard (hC.inter_subset)
 
+lemma SetConnectivityGe.left_encard_le (h : G.SetConnectivityGe S T n) : n ≤ (V(G) ∩ S).encard :=
+  h (left_isSetCut G S T)
+
+lemma SetConnectivityGe.right_encard_le (h : G.SetConnectivityGe S T n) : n ≤ (V(G) ∩ T).encard :=
+  h (right_isSetCut G S T)
+
 def EdgeSetConnectivityGe (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
-  ∀ ⦃C : Set β⦄, G.IsEdgeSetCut S T C → n ≤ C.encard
+  ∀ ⦃F : Set β⦄, G.IsEdgeSetCut S T F → n ≤ F.encard
 
 @[simp]
 lemma EdgeSetConnectivityGe_zero (G : Graph α β) (S T : Set α) : G.EdgeSetConnectivityGe S T 0 := by
@@ -358,15 +421,24 @@ lemma EdgeSetConnectivityGe_zero (G : Graph α β) (S T : Set α) : G.EdgeSetCon
 
 lemma EdgeSetConnectivityGe.anti_right (hle : n ≤ m) (h : G.EdgeSetConnectivityGe S T m) :
     G.EdgeSetConnectivityGe S T n :=
-  fun _ hC ↦ le_trans (by norm_cast) (h hC)
+  fun _ hF ↦ le_trans (by norm_cast) (h hF)
 
 @[simp]
 lemma EdgeSetConnectivityGe_one_iff : G.EdgeSetConnectivityGe S T 1 ↔ G.SetConnected S T := by
-  refine ⟨fun h => ?_, fun h C hC => ?_⟩
+  refine ⟨fun h => ?_, fun h F hF => ?_⟩
   · by_contra! hc
     simpa using h <| isEdgeSetCut_empty hc
   obtain ⟨s, hs, t, ht, w, hw, rfl, rfl⟩ := h
   have hwF : G.IsWalkFrom S T w := ⟨hw, hs, ht⟩
-  obtain ⟨x, hxw, hxC⟩ := hwF.exists_mem_isEdgeSetCut hC
+  obtain ⟨x, hxw, hxF⟩ := hwF.exists_mem_isEdgeSetCut hF
   simp only [cast_one, one_le_encard_iff_nonempty]
-  use x, hxC
+  use x, hxF
+
+lemma EdgeSetConnectivityGe.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) :
+    G.EdgeSetConnectivityGe S T n :=
+  fun _ hF ↦ (hdj hF.disjoint).elim
+
+lemma SetConnectivityGe.edgeSetConnectivityGe (h : G.SetConnectivityGe S T n) :
+    G.EdgeSetConnectivityGe S T n :=
+  fun _ hF ↦ h hF.isSetCut |>.trans (encard_image_le _ _)
+  |>.trans (encard_preimage_val_le_encard_right _ _)

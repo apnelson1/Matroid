@@ -199,3 +199,13 @@ lemma iUnion_diff_iUnion {ι α : Type*} {s t : ι → Set α} (hts : ∀ i, t i
     exact (hdj hne.symm).mono diff_subset (hts i)
   rw [iUnion_diff]
   exact iUnion_mono fun i ↦ diff_subset_diff_right <| subset_iUnion ..
+
+@[simp]
+lemma forall_mem_const {α : Type*} {p : Prop} {s : Set α} (hs : s.Nonempty) :
+    (∀ x ∈ s, p) ↔ p := ⟨fun h ↦ h _ hs.some_mem, fun hp _ _ ↦ hp⟩
+
+@[simp]
+lemma forall_mem_and {α : Type*} {p q : α → Prop} {s : Set α} :
+    (∀ x ∈ s, p x ∧ q x) ↔ (∀ x ∈ s, p x) ∧ (∀ x ∈ s, q x) :=
+  ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun x hx ↦ (h x hx).2⟩,
+    fun ⟨hp, hq⟩ x hx ↦ ⟨hp x hx, hq x hx⟩⟩

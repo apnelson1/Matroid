@@ -230,7 +230,7 @@ lemma union_le_iff {H₁ H₂ : Graph α β} : H₁ ∪ H₂ ≤ G ↔ H₁ ≤ 
 lemma union_mono_right (h : H₁ ≤ H₂) : G ∪ H₁ ≤ G ∪ H₂ := by
   simp only [union_eq_sUnion, Graph.sUnion_le_iff, mem_insert_iff, mem_singleton_iff,
     forall_eq_or_imp, forall_eq]
-  exact ⟨Graph.le_sUnion _ (by simp), le_trans (edgeDelete_mono_left h) <|
+  exact ⟨Graph.le_sUnion _ (by simp), le_trans (edgeDelete_mono_left h E(G)) <|
     Graph.le_sUnion _ (by simp : H₂ ＼ E(G) ∈ _)⟩
 
 @[simp]
@@ -241,6 +241,9 @@ protected lemma union_assoc (G₁ G₂ G₃ : Graph α β) : (G₁ ∪ G₂) ∪
   refine Graph.ext (Set.union_assoc ..) fun e x y ↦ ?_
   simp [union_isLink_iff]
   tauto
+
+instance : Std.Associative (α := Graph α β) (· ∪ ·) where
+  assoc := Graph.union_assoc
 
 lemma isLink_or_isLink_of_union (h : (G ∪ H).IsLink e x y) : G.IsLink e x y ∨ H.IsLink e x y :=
   (union_isLink_iff.1 h).elim .inl fun h' ↦ .inr h'.1

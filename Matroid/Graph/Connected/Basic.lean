@@ -7,15 +7,6 @@ variable {α β : Type*} {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : 
 
 namespace Graph
 
-@[simp]
-lemma bot_not_connected : ¬ (⊥ : Graph α β).Connected := by
-  unfold Graph.Connected
-  simp
-
-lemma Connected.ne_bot (hG : G.Connected) : G ≠ ⊥ := by
-  rintro rfl
-  exact bot_not_connected hG
-
 lemma IsCompOf.connected (h : H.IsCompOf G) : H.Connected :=
   h.of_le_le le_rfl h.le
 
@@ -168,17 +159,10 @@ lemma walkable_eq_induce_setOf_connectedBetween :
 lemma singleVertex_connected (hG : V(G) = {x}) : G.Connected := by
   simp [connected_iff, hG, preconnected_of_vertexSet_subsingleton]
 
-@[simp]
-lemma singleEdge_connected (e : β) (x y : α) : (Graph.singleEdge x y e).Connected := by
-  refine connected_of_vertex (u := x) (by simp) ?_
-  simp only [singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
-    connectedBetween_self, true_or, forall_eq, true_and]
-  exact Adj.connectedBetween <| by simp [Adj]
-
 lemma exists_of_not_connected (h : ¬ G.Connected) (hne : V(G).Nonempty) :
     ∃ X ⊂ V(G), X.Nonempty ∧ ∀ ⦃u v⦄, u ∈ X → G.Adj u v → v ∈ X := by
-  simp only [connected_iff, preconnected_iff_forall_connectedBetween, hne, true_and, not_forall,
-    exists_prop, exists_and_left] at h
+  simp only [connected_iff, hne, Preconnected, true_and, not_forall, exists_prop,
+    exists_and_left] at h
   obtain ⟨x, hx, y, hy, hxy⟩ := h
   refine ⟨{z | G.ConnectedBetween x z}, ?_, ⟨x, by simpa⟩,
     fun u v (h : G.ConnectedBetween x u) huv ↦ h.trans huv.connectedBetween⟩
@@ -197,26 +181,11 @@ lemma connected_iff_forall_exists_adj (hne : V(G).Nonempty) :
   exact hy.2 <| h' hX hxy
 
 
-lemma Separation.not_connected (S : G.Separation) : ¬ G.Connected := by
-  obtain ⟨x, hx⟩ := S.nonempty_left
-  obtain ⟨y, hy⟩ := S.nonempty_right
-  exact fun h ↦ S.not_connectedBetween hx hy <| h.connectedBetween (S.left_subset hx)
-    (S.right_subset hy)
-
-lemma Connected.isEmpty_separation (hG : G.Connected) : IsEmpty G.Separation :=
-  isEmpty_iff.2 fun S ↦ S.not_connected hG
-
-lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
-    Nonempty G.Separation := by
-  obtain ⟨x, y, hx, hy, hxy⟩ := by simpa only [preconnected_iff_forall_connectedBetween, hne,
-    connected_iff, true_and, not_forall] using hG
-  exact ⟨(exists_separation_of_not_connectedBetween hx hy hxy).choose⟩
-
 /-- A `WList` that is `WellFormed` produces a connected graph. -/
 lemma _root_.WList.WellFormed.toGraph_connected (hW : W.WellFormed) : W.toGraph.Connected := by
-  rw [connected_iff, preconnected_iff_forall_connectedBetween]
-  exact ⟨by simp, fun hx hy ↦ hW.isWalk_toGraph.connectedBetween_of_mem_of_mem (by simpa using hx)
-    (by simpa using hy)⟩
+  rw [connected_iff, Preconnected]
+  exact ⟨by simp, fun x y hx hy ↦ hW.isWalk_toGraph.connectedBetween_of_mem_of_mem
+    (by simpa using hx) (by simpa using hy)⟩
 
 lemma IsWalk.toGraph_connected (hW : G.IsWalk W) : W.toGraph.Connected :=
   hW.wellFormed.toGraph_connected

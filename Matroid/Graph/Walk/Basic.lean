@@ -327,7 +327,7 @@ lemma IsWalk.edgeRestrict (hw : G.IsWalk w) (hE : E(w) ⊆ F) : (G ↾ F).IsWalk
 
 @[simp]
 lemma isWalk_edgeRestrict_iff {F : Set β} : (G ↾ F).IsWalk w ↔ G.IsWalk w ∧ E(w) ⊆ F :=
-  ⟨fun h ↦ ⟨h.of_le (by simp), h.edgeSet_subset.trans inter_subset_left⟩,
+  ⟨fun h ↦ ⟨h.of_le (by simp), h.edgeSet_subset.trans inter_subset_right⟩,
     fun h ↦ h.1.edgeRestrict h.2⟩
 
 lemma IsWalk.edgeSet_subset_of_edgeRestrict (hw : (G ↾ F).IsWalk w) : E(w) ⊆ F :=
@@ -567,8 +567,8 @@ lemma IsWalk.toGraph_eq_induce_restrict (h : G.IsWalk w) : w.toGraph = G[V(w)] �
     · refine (edgeRestrict_le ..).trans (induce_le ?_)
       simp [insert_subset_iff, h.1.left_mem, h.2.vertexSet_subset]
     simp only [union_edgeSet, edgeRestrict_edgeSet, singleEdge_edgeSet, union_singleton]
-    rw [inter_eq_self_of_subset_left h.2.edgeSet_subset_induce_edgeSet,
-      inter_eq_self_of_subset_left hss']
+    rw [inter_eq_self_of_subset_right h.2.edgeSet_subset_induce_edgeSet,
+      inter_eq_self_of_subset_right hss']
 
 lemma IsWalk.le_of_edgeSet_subset (hw₁ : G.IsWalk w₁) (hne : w₁.Nonempty) (hw₂ : G.IsWalk w₂)
     (hss : E(w₁) ⊆ E(w₂)) : w₁.toGraph ≤ w₂.toGraph := by

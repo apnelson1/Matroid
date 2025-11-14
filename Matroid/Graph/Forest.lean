@@ -130,7 +130,7 @@ lemma isForest_of_minimal_connected (hF : Minimal (fun F ↦ (G ↾ F).Connected
     (G ↾ F).IsForest := by
   intro C hC
   obtain ⟨e, he⟩ := hC.nonempty.edgeSet_nonempty
-  refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).1
+  refine hF.notMem_of_prop_diff_singleton (x := e) ?_ (hC.isWalk.edgeSet_subset he).2
   rw [← edgeRestrict_edgeDelete]
   exact hF.prop.edgeDelete_singleton_connected <| hC.not_isBridge_of_mem he
 
@@ -163,7 +163,7 @@ lemma edgeRestrict_isForest_iff' :
     (G ↾ F).IsForest ↔ ∀ (C : WList α β), E(C) ⊆ F → ¬ G.IsCycle C := by
   refine ⟨fun h C hCF hC ↦ h C ?_, fun h C hC ↦ h C ?_ (hC.isCycle_of_ge <| by simp)⟩
   · exact hC.isCycle_of_le (by simp) <| by simp [hCF, hC.isWalk.edgeSet_subset]
-  exact hC.isWalk.edgeSet_subset.trans inter_subset_left
+  exact hC.isWalk.edgeSet_subset.trans inter_subset_right
 
 lemma edgeRestrict_isForest_iff (hF : F ⊆ E(G)) : (G ↾ F).IsForest ↔ G.IsAcyclicSet F := by
   rw [edgeRestrict_isForest_iff', IsAcyclicSet]

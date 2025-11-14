@@ -132,6 +132,7 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
 
 -- instance [G.Finite] : WellFoundedLT G.ClosedSubgraph := inferInstance
 
+
 /-! ### Local Finiteness -/
 
 /-- A graph is `LocallyFinite` if each of its vertices is incident with finitely many edges. -/
@@ -196,6 +197,34 @@ lemma vertexSet_finite_iff [G.LocallyFinite] : V(G).Finite ↔ G.Finite := by
   intro e he
   obtain ⟨x, y, hx⟩ := exists_isLink_of_mem_edgeSet he
   exact ⟨_, hx.left_mem, hx.inc_left⟩
+
+-- instance instWellFoundedLTGraph [Finite α] [Finite β] : WellFoundedLT (Graph α β) := by
+--   let f : Graph α β → ℕ := fun G ↦ V(G).ncard + E(G).ncard
+--   have hf : StrictMono f := by
+--     rintro G H hlt
+--     simp only [f]
+--     obtain ⟨hle, hne⟩ := lt_iff_le_and_ne.mp hlt
+--     obtain hV | hV := ssubset_or_eq_of_subset <| vertexSet_mono hle
+--     · have hE' : E(G) ⊆ E(H) := edgeSet_mono hle
+--       have hE'ncard : E(G).ncard ≤ E(H).ncard := ncard_le_ncard hE'
+--       have hVncard : V(G).ncard < V(H).ncard := ncard_lt_ncard hV (toFinite V(H))
+--       exact Nat.add_lt_add_of_lt_of_le hVncard hE'ncard
+--     rw [hV]
+--     obtain hE | hE := ssubset_or_eq_of_subset <| edgeSet_mono hle
+--     · have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE (toFinite E(H))
+--       exact Nat.add_lt_add_left hEncard V(H).ncard
+--     obtain rfl := ext_of_le_le hle le_rfl hV hE
+--     simp only [ne_eq, not_true_eq_false] at hne
+--   exact hf.wellFoundedLT
+
+-- lemma minimal_exist {P : Graph α β → Prop} [Finite α] [Finite β] (h : P G) :
+--     ∃ G : Graph α β, Minimal P G :=
+--   exists_minimal_of_wellFoundedLT _ (by use G)
+
+-- lemma forall_of_minimal_not_exist {P : Graph α β → Prop} [Finite α] [Finite β]
+--     (h : ¬ ∃ G : Graph α β, Minimal (¬ P ·) G) : P G := by
+--   contrapose! h
+--   exact minimal_exist h
 
 end Graph
 
