@@ -13,9 +13,7 @@ import Matroid.Connectivity.Basic
 import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Global
 -- import Matroid.Connectivity.HigherConnected
-import Matroid.Connectivity.Local
 import Matroid.Connectivity.Minor
-import Matroid.Connectivity.Multi
 import Matroid.Connectivity.Separation
 -- import Matroid.Connectivity.Separation_
 import Matroid.Connectivity.Skew

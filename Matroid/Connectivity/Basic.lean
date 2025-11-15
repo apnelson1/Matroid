@@ -635,6 +635,14 @@ lemma IsNonloop.eLocalConn_eq_ite {e : α} (he : M.IsNonloop e) (X : Set α)
   split_ifs <;>
   simpa [he.eLocalConn_eq_one_iff, he.eLocalConn_eq_zero_iff]
 
+lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : I.Nonempty)
+    (hIC : I ⊂ C) : M.eLocalConn I (C \ I) = 1 := by
+  obtain ⟨e, heC, heI⟩ := exists_of_ssubset hIC
+  have hi' : C \ I ⊂ C := by simpa [inter_eq_self_of_subset_right hIC.subset]
+  rw [(hC.ssubset_indep hIC).isBasis_self.eLocalConn_eq (hC.ssubset_indep hi').isBasis_self,
+    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
+    hC.nullity_eq]
+
 lemma IsRkFinite.isModularPair_iff_eLocalConn_eq_eRk_inter (hX : M.IsRkFinite X) (Y : Set α)
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.IsModularPair X Y ↔ M.eLocalConn X Y = M.eRk (X ∩ Y) := by

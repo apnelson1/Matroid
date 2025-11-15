@@ -116,13 +116,6 @@ lemma isModularPair_iff_localConn_eq_rk_inter [RankFinite M] (hXE : X ⊆ M.E :=
     (hYE : Y ⊆ M.E := by aesop_mat) : M.IsModularPair X Y ↔ M.localConn X Y = M.rk (X ∩ Y) :=
   (M.isRkFinite_set X).isModularPair_iff_localConn_eq_rk_inter _ hXE hYE
 
-lemma IsCircuit.eLocalConn_subset_compl {C : Set α} (hC : M.IsCircuit C) (hI : I.Nonempty)
-    (hIC : I ⊂ C) : M.eLocalConn I (C \ I) = 1 := by
-  obtain ⟨e, heC, heI⟩ := exists_of_ssubset hIC
-  have hi' : C \ I ⊂ C := by simpa [inter_eq_self_of_subset_right hIC.subset]
-  rw [(hC.ssubset_indep hIC).isBasis_self.eLocalConn_eq (hC.ssubset_indep hi').isBasis_self,
-    disjoint_sdiff_right.inter_eq, encard_empty, zero_add, union_diff_cancel hIC.subset,
-    hC.nullity_eq]
 
 end localConn
 

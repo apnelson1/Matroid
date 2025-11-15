@@ -1,5 +1,5 @@
 import Matroid.Modular.Flat
-import Matroid.Connectivity.Minor
+import Matroid.Connectivity.Extension
 import Matroid.Extension.Minor
 import Matroid.Extension.ProjectionBy
 import Matroid.Constructions.Project
