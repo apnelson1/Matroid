@@ -983,28 +983,16 @@ lemma eConn_lt_top' (M : Matroid α) [RankFinite M✶] (X : Set α) : M.eConn X 
 lemma eConn_ne_top' (M : Matroid α) [RankFinite M✶] (X : Set α) : M.eConn X ≠ ⊤ :=
   (eConn_lt_top' ..).ne
 
--- lemma eConn_eq_encard_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X ∧ M✶.Indep X := by
---   rw [le_antisymm_iff, and_iff_right (M.eConn_le_encard ..), encard_le_eConn_iff hX]
+lemma eConn_le_of_subset_of_subset_closure {Y : Set α} (M : Matroid α)
+    (hXY : X ⊆ Y) (hYX : Y ⊆ M.closure X) : M.eConn Y ≤ M.eConn X := by
+  grw [eConn_eq_eLocalConn, eLocalConn_mono_left _ hYX, eLocalConn_closure_left,
+    eLocalConn_mono_right _ _ (diff_subset_diff_right hXY), eConn_eq_eLocalConn]
 
-
-
---   ·
---
---     grw [← eConn_inter_ground, ← encard_diff_add_encard_inter X M.E, eConn_le_encard,
---       ENat.add_le_right_iff, encard_eq_zero, diff_eq_empty, or_iff_right hXE] at hle
-
-
-
-    -- specialize aux (X := X ∩ M.E) (by simpa) inter_subset_right
-
-    -- (le_antisymm (M.eConn_le_encard ..) ?_)
-
-  -- obtain hX' | hX' := X.finite_or_infinite
-  -- · sorry
-  -- refine iff_of_false (fun h ↦ hX (by simpa [hX'.encard_eq] using h)) fun ⟨hi, hi'⟩ ↦ hX ?_
-  -- rw [← encard_eq_top_iff, eConn_add] at hX'
-
-
+lemma eConn_closure_le (M : Matroid α) (X : Set α) : M.eConn (M.closure X) ≤ M.eConn X := by
+  wlog hX : X ⊆ M.E generalizing X with aux
+  · grw [← M.closure_inter_ground X, aux _ inter_subset_right, eConn_inter_ground]
+  grw [eConn_eq_eLocalConn, eLocalConn_closure_left, eConn_eq_eLocalConn,
+    M.eLocalConn_mono_right X (diff_subset_diff_right (M.subset_closure X))]
 
 @[simp]
 lemma eConn_disjointSum_left_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :

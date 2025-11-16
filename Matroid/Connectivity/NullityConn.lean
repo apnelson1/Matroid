@@ -129,7 +129,8 @@ lemma IsDConnected.mono (h : M.IsDConnected a b d k) (hj : j ≤ k) : M.IsDConne
 
 def IsTutteConnected (M : Matroid α) (k : ℕ∞) : Prop := M.IsDConnected 1 1 0 k
 
-lemma foo : M.IsTutteConnected k ↔ M.IsfDConnected 1 1 (fun t ↦ if t + 1 < k then 0 else ⊤) := by
+lemma isTutteConnected_iff_isfDConnected :
+    M.IsTutteConnected k ↔ M.IsfDConnected 1 1 (fun t ↦ if t + 1 < k then 0 else ⊤) := by
   simp [IsTutteConnected, IsDConnected, IsfDConnected]
   refine ⟨fun h P hP ↦ ?_, fun h P hP hsep ↦ h P (by simpa [hP])⟩
   split_ifs at hP with hlt
@@ -142,6 +143,13 @@ def IsInternallyConnected' (M : Matroid α) (k : ℕ∞) :=
 lemma ground_indep_iff_empty_isBase_dual : M.Indep M.E ↔ M✶.IsBase ∅ := by
   rw [ground_indep_iff_isBase, ← M.dual_dual, dual_isBase_iff, M✶.dual_ground, diff_self,
     dual_dual]
+
+
+/-- An internally `k`-connected matroid is a `(k-1)`-connected matroid where every set
+`A` with `λ(A) = k - 2` satisfies `|A| = k-1` or `|E - A| = k-1`. -/
+def IsInternallyConnected (M : Matroid α) (k : ℕ∞) :=
+    M.IsTutteConnected (k - 1) ∧ M.IsDConnected 1 1 1 k
+
 
 lemma isTutteConnected_two_iff [M.Nonempty] : M.IsTutteConnected 2 ↔ M.Connected := by
   simp only [IsTutteConnected, IsDConnected, ← one_add_one_eq_two,
@@ -171,9 +179,56 @@ lemma isTutteConnected_two_iff [M.Nonempty] : M.IsTutteConnected 2 ↔ M.Connect
   rw [← ground_nonempty_iff]
   exact hPsep.nonempty_right
 
-/-- An internally `k`-connected matroid is a `(k-1)`-connected matroid where every set
-`A` with `λ(A) = k - 2` satisfies `|A| = k-1` or `|E - A| = k-1`. -/
-def IsInternallyConnected (M : Matroid α) (k : ℕ∞) :=
-    M.IsTutteConnected (k - 1) ∧ M.IsDConnected 1 1 1 k
+/-- If `M` is not `k`-connected, then there is a separation `(X,E-X)` with both sides dependent,
+or in which `X` is a small independent cocircuit. -/
+lemma exists_dep_dep_or_small_of_not_isTutteConnected (h : ¬ M.IsTutteConnected k) :
+    ∃ X ⊆ M.E, M.eConn X + 1 < k ∧
+    ((M.Dep X ∧ M.Dep (M.E \ X)) ∨ (M.Indep X ∧ M.IsCocircuit X ∧ X.encard < k)) := by
+  by_contra! hcon
+  simp only [IsTutteConnected, IsDConnected, Partition.isDSeparation_one_one_zero_iff,
+    Partition.isTutteSeparation_iff_dep_or_dep, not_and, not_or, Partition.right_subset_ground,
+    not_dep_iff, dual_ground, not_forall, not_indep_iff, exists_prop] at h
+  obtain ⟨P, hPconn, h1, h2⟩ := h
+  have hc1 := P.compl_left ▸ hcon _ P.left_subset_ground (by simpa)
+  have hc2 := P.compl_right ▸ hcon _ P.right_subset_ground (by simpa)
+  wlog hi : M.Indep P.right generalizing P with aux
+  · rw [not_indep_iff] at hi
+    specialize aux P.symm (by simpa)
+    simp only [hi, not_true_eq_false, imp_false, Partition.left_subset_ground, not_dep_iff] at hc1
+    rw [or_iff_right hc1.1.not_dep] at h1
+    obtain ⟨hC : M.IsCocircuit P.left, hcard : P.left.encard < k⟩ := by
+      simpa [hc1.1, hi, h1] using aux
+    simp [hcard.not_ge, hC, hc1.1.not_dep] at hc1
+  obtain ⟨C, hCr, hC⟩ := (h2 hi).exists_isCircuit_subset
+  have hconn_le : M.eConn C + 1 ≤ P.eConn + 1 := by
+    rw [ENat.add_one_le_add_one_iff, ← P.eConn_left, ← eConn_dual, ← M.eConn_dual, ← eConn_compl,
+    ← P.compl_right]
+    refine eConn_le_of_subset_of_subset_closure _ (diff_subset_diff_right hCr) ?_
+    grw [← M.dual_ground, hi.coindep.compl_spanning.closure_eq, diff_subset]
+  have hcard := (hcon _ hC.subset_ground (lt_of_le_of_lt hconn_le hPconn)).2 (hi.subset hCr) hC
+  grw [← M.eConn_add_nullity_add_nullity_dual _ hC.subset_ground, hC.nullity_eq,
+    (hi.subset hCr).nullity_eq, add_zero, hconn_le] at hcard
+  exact hPconn.not_ge hcard
+
+lemma not_isTutteConnected_iff_exists_dep_dep_or_small (h_nt : 2 * k ≤ M.E.encard + 2) :
+    ¬ M.IsTutteConnected k ↔ ∃ X ⊆ M.E, M.eConn X + 1 < k ∧
+    ((M.Dep X ∧ M.Dep (M.E \ X)) ∨ (M.Indep X ∧ M.IsCocircuit X ∧ X.encard < k)) := by
+  refine ⟨exists_dep_dep_or_small_of_not_isTutteConnected, ?_⟩
+  rintro ⟨X, hXE, hXconn, hsep⟩ hconn
+  refine hconn (M.partition X hXE) (by simpa) ?_
+  simp only [Partition.isDSeparation_one_one_zero_iff, Partition.isTutteSeparation_iff_dep_or_dep,
+    partition_left, partition_right]
+  obtain ⟨hd, hd'⟩ | ⟨hi, hc, hcard⟩ := hsep
+  · simp [hd, hd']
+  rw [and_iff_right (.inr hc.dep), ← not_indep_iff, ← not_indep_iff,
+    ← Classical.not_and_iff_not_or_not, ← coindep_def, ← spanning_iff_compl_coindep]
+  rintro ⟨hic, hic'⟩
+  have h1 := hc.compl_isHyperplane.eRk_add_one_eq
+  rw [hic.eRk_eq_encard, ← hic'.eRk_eq, hi.eRk_eq_encard] at h1
+  grw [← encard_diff_add_encard_of_subset hi.subset_ground, add_right_comm] at h_nt
+  generalize ha : (M.E \ X).encard = a at *
+  generalize hb : X.encard = b at *
+  enat_to_nat
+  linarith
 
 end Matroid
