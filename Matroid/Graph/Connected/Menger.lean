@@ -258,7 +258,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
   obtain hne | hne := eq_or_ne s t
   · subst t
     simp only [hs, connectivityBetweenGe_self, true_iff]
-    exact ⟨vertexEnsemble_nil ι hs⟩
+    exact ⟨G.vertexEnsemble_nil hs ι⟩
   by_cases hadj : G.Adj s t
   · obtain ⟨e, he⟩ := hadj
     simp only [he.connectivityBetweenGe, true_iff]
@@ -283,8 +283,8 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     have hf : Injective f := by
       rintro i j hij
       apply A.internallyDisjoint.eq fun h ↦ ?_
-      have his : (f i).val ≠ s := (ne_of_mem_of_not_mem (hC i).choose_spec.2 C.left_not_mem)
-      have hit : (f i).val ≠ t := (ne_of_mem_of_not_mem (hC i).choose_spec.2 C.right_not_mem)
+      have his : (f i).val ≠ s := ne_of_mem_of_not_mem (hC i).choose_spec.2 C.left_not_mem
+      have hit : (f i).val ≠ t := ne_of_mem_of_not_mem (hC i).choose_spec.2 C.right_not_mem
       have : (f i).val ∈ V(A.f i) ∩ V(A.f j) := ⟨(hC i).choose_spec.1, hij ▸ (hC j).choose_spec.1⟩
       simp [h, his, hit] at this
     exact hι ▸ ENat.card_le_card_of_injective hf

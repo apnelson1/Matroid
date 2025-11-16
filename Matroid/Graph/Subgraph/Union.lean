@@ -4,7 +4,7 @@ variable {α β ι ι' : Type*} {x y z u v w : α} {e f : β} {F F₁ F₂ : Set
   {Gs Gs' Hs : Set (Graph α β)} {G G' G₁ G₂ H H' H₁ H₂ : Graph α β} {Gι Hι : ι → Graph α β}
   {Gι' Hι' : ι' → Graph α β}
 
-open Set Function Partition
+open Set Function
 
 namespace Graph
 /-! ### Indexed unions -/

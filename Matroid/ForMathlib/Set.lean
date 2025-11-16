@@ -188,7 +188,6 @@ lemma exists_partition_of_subset_iUnion {s : Set α} {t : ι → Set α} (hst : 
   rintro i e ⟨rfl, h⟩
   exact hf _ h
 
-
 lemma iUnion_diff_iUnion {ι α : Type*} {s t : ι → Set α} (hts : ∀ i, t i ⊆ s i)
     (hdj : Pairwise (Disjoint on s)) : ⋃ i, s i \ t i = (⋃ i, s i) \ ⋃ i, t i := by
   refine subset_antisymm (subset_diff.2 ⟨iUnion_mono fun i ↦ diff_subset, ?_⟩) ?_

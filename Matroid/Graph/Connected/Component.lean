@@ -118,7 +118,7 @@ lemma walkable_eq_walkable_of_mem (hx : x ∈ V(G.walkable u)) : G.walkable x = 
 lemma IsClosedSubgraph.walkable_le_of_mem (hcl : H ≤c G) (hx : x ∈ V(H)) : G.walkable x ≤ H := by
   rw [walkable_isClosedSubgraph.le_iff_vertexSet_subset hcl]
   rintro y ⟨W, hW, rfl, rfl⟩
-  exact hW.isWalk_isClosedSubgraph hcl hx |>.last_mem
+  exact hW.isWalk_isClosedSubgraph_of_first_mem hcl hx |>.last_mem
 
 lemma walkable_isCompOf (hx : x ∈ V(G)) : (G.walkable x).IsCompOf G := by
   refine ⟨⟨walkable_isClosedSubgraph, ⟨x, mem_walkable hx⟩⟩, fun H' ⟨hH'cl, hxH'⟩ hH'leH => ?_⟩

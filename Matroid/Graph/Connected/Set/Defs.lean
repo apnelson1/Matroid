@@ -52,7 +52,7 @@ lemma ConnectedBetween.neighbor_setConnected (h : G.ConnectedBetween s t) (hne :
   obtain ⟨x, e, w', f, y, rfl⟩ := (hw.isWalk.nontrivial_of_ne_not_adj hne hadj).exists_cons_concat
   obtain ⟨⟨hw', hf, hyw'⟩, he, hxw', hxy⟩ := by simpa using hw
   simp only [first_cons, last_cons, concat_last]
-  use w'.first, ⟨⟨e, he⟩, (hxw' <| · ▸ first_mem)⟩, w'.last, ⟨⟨f, hf.symm⟩, (hyw' <| · ▸ last_mem)⟩,
+  use w'.first, ⟨(hxw' <| · ▸ first_mem), ⟨e, he⟩⟩, w'.last, ⟨(hyw' <| · ▸ last_mem), ⟨f, hf.symm⟩⟩,
     w', by simp [hw'.isWalk, hxw', hyw']
 
 /-! ### Cut between two sets -/
@@ -170,16 +170,6 @@ lemma IsEdgeSetCut.disjoint (hF : G.IsEdgeSetCut S T F) : Disjoint V(G) (S ∩ T
 
 lemma not_isEdgeSetCut_of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) : ¬ G.IsEdgeSetCut S T F :=
   mt IsEdgeSetCut.disjoint hdj
-
-private noncomputable def inc_vert (e : E(G)) : α :=
-  exists_isLink_of_mem_edgeSet e.prop |>.choose
-
-@[simp]
-private lemma inc_vert_inc (e : E(G)) : G.Inc e (inc_vert e) :=
-  exists_isLink_of_mem_edgeSet e.prop |>.choose_spec
-
-private lemma inc_vert_mem (e : E(G)) : inc_vert e ∈ V(G) :=
-  inc_vert_inc e |>.vertex_mem
 
 open Notation in
 private lemma inc_vert_foo : ∀ e ∈ E(G) ∩ F, ∃ x ∈ inc_vert '' (E(G) ↓∩ F), G.Inc e x := by

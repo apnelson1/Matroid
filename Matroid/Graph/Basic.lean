@@ -1,5 +1,4 @@
 import Mathlib.Combinatorics.Graph.Basic
-import Matroid.ForMathlib.Partition.Lattice
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
@@ -8,10 +7,29 @@ open Set
 
 namespace Graph
 
+initialize_simps_projections Graph (IsLink → isLink)
 
 /-
 For mathlib
 -/
+
+@[simp]
+lemma IsLink.other_eq (h : G.IsLink e x y) : Inc.other ⟨y, h⟩ = y := by
+  have := h.inc_left.choose_spec
+  rwa [h.isLink_iff_eq] at this
+
+@[simp]
+lemma IsLoopAt.other_eq (h : G.IsLoopAt e x) : h.inc.other = x :=
+  IsLink.other_eq h
+
+@[simp]
+lemma IsNonloopAt.other_ne (h : G.IsNonloopAt e x) : h.inc.other ≠ x := by
+  obtain ⟨y, hne, h⟩ := h
+  exact ne_of_eq_of_ne h.other_eq hne
+
+@[simp]
+lemma Inc.other_mem (h : G.Inc e x) : h.other ∈ V(G) :=
+  h.choose_spec.right_mem
 
 instance : IsSymm _ G.Adj where
   symm _ _ := Adj.symm
@@ -130,33 +148,91 @@ lemma parallel.trans {g : β} (h : G.parallel e f) (h' : G.parallel f g) : G.par
 instance : IsTrans _ G.parallel where
   trans _ _ _ := parallel.trans
 
-def parallelClasses (G : Graph α β) : Partition (Set β) :=
-  Partition.ofRel' G.parallel
-
 end parallel
 
+section Neighborhood
 
-def neighborSet (G : Graph α β) (x : α) : Set α := {y | G.Adj x y ∧ x ≠ y}
+def Neighbor (G : Graph α β) (x : α) : Set α := {y | y ≠ x ∧ G.Adj x y}
 
-notation "N(" G ", " x ")" => neighborSet G x
+notation "N(" G ", " x ")" => Neighbor G x
 
 @[simp]
-lemma neighborSet_subset (G : Graph α β) (x : α) : N(G, x) ⊆ V(G) := by
-  rintro y ⟨hy, hne⟩
+lemma neighbor_subset (G : Graph α β) (x : α) : N(G, x) ⊆ V(G) := by
+  rintro y ⟨hne, hy⟩
   exact hy.right_mem
 
 @[simp]
-lemma self_notMem_neighborSet (G : Graph α β) (x : α) : x ∉ N(G, x) := by
-  simp [neighborSet]
+lemma self_notMem_Neighbor (G : Graph α β) (x : α) : x ∉ N(G, x) := by
+  simp [Neighbor]
 
 @[simp]
-lemma notMem_neighborSet_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, x) := by
-  simp [neighborSet, hadj]
+lemma notMem_neighbor_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, x) := by
+  simp [Neighbor, hadj]
 
-lemma neighborSet_subset_of_ne_not_adj (hne : x ≠ y) (hadj : ¬ G.Adj x y) :
+lemma neighbor_subset_of_ne_not_adj (hne : x ≠ y) (hadj : ¬ G.Adj x y) :
     N(G, x) ⊆ V(G) \ {x, y} := by
-  rintro z ⟨hz, hne⟩
-  simp only [mem_diff, hz.right_mem, mem_insert_iff, hne.symm, mem_singleton_iff, false_or,
+  rintro z ⟨hne, hz⟩
+  simp only [mem_diff, hz.right_mem, mem_insert_iff, hne, mem_singleton_iff, false_or,
     true_and]
   rintro rfl
   exact hadj hz
+
+def SetNeighbor (G : Graph α β) (S : Set α) : Set α := {y | y ∉ S ∧ ∃ x ∈ S, G.Adj x y}
+
+notation "N(" G ", " S ")" => SetNeighbor G S
+
+@[simp]
+lemma setNeighbor_subset (G : Graph α β) (S : Set α) : N(G, S) ⊆ V(G) := by
+  rintro y ⟨hyS, x, hxS, hadj⟩
+  exact hadj.right_mem
+
+@[simp]
+lemma setNeighbor_disjoint (G : Graph α β) (S : Set α) : Disjoint S N(G, S) := by
+  rw [disjoint_iff_forall_ne]
+  rintro a haS y ⟨hyS, x, hxS, hxy⟩
+  exact ne_of_mem_of_not_mem haS hyS
+
+@[simp]
+lemma notMem_setNeighbor_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, {x}) := by
+  simp [SetNeighbor, hadj]
+
+def IncidentEdges (G : Graph α β) (v : α) : Set β := {e | G.Inc e v}
+
+notation "E(" G ", " v ")" => IncidentEdges G v
+
+@[simp]
+lemma incidentEdges_subset (G : Graph α β) (v : α) : E(G, v) ⊆ E(G) := by
+  rintro e he
+  exact he.edge_mem
+
+def SetIncidentEdges (G : Graph α β) (S : Set α) : Set β := {e | ∃ x ∈ S, G.Inc e x}
+
+notation "E(" G ", " S ")" => SetIncidentEdges G S
+
+@[simp]
+lemma setIncidentEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) := by
+  rintro e ⟨x, hxS, he⟩
+  exact he.edge_mem
+
+end Neighborhood
+
+@[simps]
+def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
+  vertexSet := E(G)
+  edgeSet := Sym2.mk '' { (e, f) | ∃ x, G.Inc e x ∧ G.Inc f x }
+  IsLink a e f := (∃ x, G.Inc e x ∧ G.Inc f x) ∧ s(e, f) = a
+  edge_mem_iff_exists_isLink a := by simp only [mem_image, mem_setOf_eq, Prod.exists]
+  isLink_symm a ha e f hef := by
+    simp_all only [mem_image, mem_setOf_eq, Prod.exists]
+    simp_rw [and_comm, ← hef.2]
+    simp [hef.1]
+  eq_or_eq_of_isLink_of_isLink := by
+    rintro a e f g h ⟨hef, rfl⟩ ⟨hgf, heq⟩
+    simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
+    tauto
+  left_mem_of_isLink := by
+    rintro a e f ⟨⟨x, he, hf⟩, rfl⟩
+    exact he.edge_mem
+
+def IsStable (G : Graph α β) (S : Set α) : Prop :=
+  S.Pairwise (¬ G.Adj · ·)

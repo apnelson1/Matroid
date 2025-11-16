@@ -697,6 +697,7 @@ def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β 
 lemma prefixUntilVertex_isPrefix [DecidableEq α] (w : WList α β) (x : α) :
     (w.prefixUntilVertex x).IsPrefix w := prefixUntil_isPrefix ..
 
+@[simp]
 lemma prefixUntilVertex_last [DecidableEq α] (hxw : x ∈ w) : (w.prefixUntilVertex x).last = x :=
   prefixUntil_prop_last (P := (· = x)) ⟨_, hxw, rfl⟩
 
@@ -709,7 +710,8 @@ lemma prefixUntilVertex_cons_of_ne [DecidableEq α] (w : WList α β) (hne : x �
     (cons x e w).prefixUntilVertex y = cons x e (w.prefixUntilVertex y) := by
   simpa [prefixUntilVertex]
 
-lemma prefixUntilVertex_length [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) :
+@[simp]
+lemma prefixUntilVertex_length [DecidableEq α] (hx : x ∈ w) :
     (w.prefixUntilVertex x).length = w.idxOf x := by
   induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
   obtain rfl | hu := eq_or_ne x u
@@ -812,6 +814,7 @@ lemma prefixUntil_last_eq_suffixFrom_first (w : WList α β) (P : α → Prop) [
 Equal to `[w.last]` if `x ∉ w`. -/
 def suffixFromVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.suffixFrom (· = x)
 
+@[simp]
 lemma suffixFromVertex_first [DecidableEq α] (hxw : x ∈ w) : (w.suffixFromVertex x).first = x :=
   suffixFrom_prop_first (P := (· = x)) ⟨_, hxw, rfl⟩
 
@@ -827,6 +830,11 @@ lemma suffixFromVertex_last (w : WList α β) (x) [DecidableEq α] :
 lemma prefixUntilVertex_append_suffixFromVertex [DecidableEq α] (w : WList α β) (x : α) :
     w.prefixUntilVertex x ++ w.suffixFromVertex x = w :=
   prefixUntil_append_suffixFrom ..
+
+@[simp]
+lemma prefixUntilVertex_last_eq_suffixFromVertex_first [DecidableEq α] (hx : x ∈ w) :
+    (w.prefixUntilVertex x).last = (w.suffixFromVertex x).first := by
+  rw [prefixUntilVertex_last hx, suffixFromVertex_first hx]
 
 /-- Take the prefix of `w` ending at the last occurence of `x` in `w`.
 Equal to `w` if `x ∉ w`. -/

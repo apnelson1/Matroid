@@ -7,8 +7,6 @@ import Mathlib.Data.Set.Card
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H K : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α}
 
-initialize_simps_projections Graph (IsLink → isLink)
-
 open Set
 
 open scoped Sym2
@@ -84,11 +82,19 @@ lemma Adj.of_le (h : H.Adj x y) (hle : H ≤ G) : G.Adj x y :=
 lemma vertexSet_mono (h : H ≤ G) : V(H) ⊆ V(G) :=
   h.1
 
+@[simp]
+lemma vertexSet_monotone : Monotone (Graph.vertexSet (α := α) (β := β)) :=
+  fun _ _ ↦ vertexSet_mono
+
 @[gcongr]
 lemma edgeSet_mono (h : H ≤ G) : E(H) ⊆ E(G) := by
   refine fun e he ↦ ?_
   obtain ⟨x, y, h'⟩ := exists_isLink_of_mem_edgeSet he
   exact (h'.of_le h).edge_mem
+
+@[simp]
+lemma edgeSet_monotone : Monotone (Graph.edgeSet (α := α) (β := β)) :=
+  fun _ _ ↦ edgeSet_mono
 
 lemma le_iff : H ≤ G ↔ (V(H) ⊆ V(G)) ∧ ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
@@ -155,8 +161,8 @@ lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
     have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE
     omega
 
-lemma neighborSet_mono (hle : G ≤ H) : N(G, x) ⊆ N(H, x) :=
-  fun _ ⟨hy, hne⟩ ↦ ⟨hy.of_le hle, hne⟩
+lemma neighbor_mono (hle : G ≤ H) : N(G, x) ⊆ N(H, x) :=
+  fun _ ⟨hne, hy⟩ ↦ ⟨hne, hy.of_le hle⟩
 
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
   ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩

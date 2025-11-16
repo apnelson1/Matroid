@@ -166,9 +166,9 @@ lemma IsWalk.isWalk_isInducedSubgraph (h : G.IsWalk w) (hind : H ≤i G) (hX : V
     simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, and_true, forall_const]
     exact hind.isLink_of_mem_mem h hX.1 <| ih.first_mem
 
-lemma IsWalk.isWalk_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G) (hfirst : w.first ∈ V(H)) :
-    H.IsWalk w := by
-  refine h.isWalk_isInducedSubgraph hcl.isInducedSubgraph fun x hx => ?_
+lemma IsWalk.subset_of_first_mem_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G)
+    (hfirst : w.first ∈ V(H)) : V(w) ⊆ V(H) := by
+  rintro x hx
   induction h with
   | nil hx => simp_all
   | cons hw h ih =>
@@ -176,6 +176,28 @@ lemma IsWalk.isWalk_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G) (hfirst :
     obtain rfl | hx := hx
     · exact hfirst
     exact ih ((IsClosedSubgraph.mem_iff_mem_of_isLink hcl h).mp hfirst) hx
+
+lemma IsWalk.subset_of_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G)
+    (hx : ∃ x ∈ V(w), x ∈ V(H)) : V(w) ⊆ V(H) := by
+  classical
+  rw [← w.prefixUntil_append_suffixFrom (· ∈ V(H)), append_vertexSet_of_eq (by simp),
+    union_subset_iff]
+  refine ⟨?_, (h.suffix (w.suffixFrom_isSuffix _)).subset_of_first_mem_isClosedSubgraph hcl
+  <| suffixFrom_prop_first hx⟩
+  rw [← reverse_vertexSet]
+  apply (h.prefix (w.prefixUntil_isPrefix _) |>.reverse).subset_of_first_mem_isClosedSubgraph hcl
+  rw [reverse_first]
+  exact prefixUntil_prop_last hx
+
+lemma IsWalk.isWalk_isClosedSubgraph_of_first_mem (h : G.IsWalk w) (hcl : H ≤c G)
+    (hfirst : w.first ∈ V(H)) : H.IsWalk w :=
+  h.isWalk_isInducedSubgraph hcl.isInducedSubgraph
+  <| h.subset_of_first_mem_isClosedSubgraph hcl hfirst
+
+lemma IsWalk.isWalk_isClosedSubgraph (h : G.IsWalk w) (hcl : H ≤c G)
+    (hx : ∃ x ∈ V(w), x ∈ V(H)) : H.IsWalk w :=
+  h.isWalk_isInducedSubgraph hcl.isInducedSubgraph
+  <| h.subset_of_isClosedSubgraph hcl hx
 
 lemma IsWalk.isWalk_le_of_nonempty (h : G.IsWalk w) (hle : H ≤ G) (hE : E(w) ⊆ E(H))
     (hne : w.Nonempty) : H.IsWalk w := by

@@ -1,4 +1,3 @@
-import Matroid.Graph.Lattice
 import Matroid.Graph.Walk.Path
 
 open Set Function Nat WList
@@ -8,6 +7,15 @@ variable {α β ι ι' : Type*} {G H K : Graph α β} {s t u v x x₁ x₂ y y�
 
 namespace Graph
 
+noncomputable def inc_vert (e : E(G)) : α :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose
+
+@[simp]
+lemma inc_vert_inc (e : E(G)) : G.Inc e (inc_vert e) :=
+  exists_isLink_of_mem_edgeSet e.prop |>.choose_spec
+
+lemma inc_vert_mem (e : E(G)) : inc_vert e ∈ V(G) :=
+  inc_vert_inc e |>.vertex_mem
 
 /-! ### Connectivity between two vertices -/
 
@@ -86,27 +94,6 @@ lemma IsWalk.connectedBetween_of_mem_of_mem (hW : G.IsWalk W) (hx : x ∈ W) (hy
     · exact h.connectedBetween.trans <| by simpa only [last_cons] using ih <| by simp
     simpa using ih hz
 
-lemma IsWalk.isWalk_or_isWalk_compl_of_closedSubgraph (H : G.ClosedSubgraph) (hW : G.IsWalk W) :
-    H.val.IsWalk W ∨ Hᶜ.val.IsWalk W := by
-  by_cases hx : W.first ∈ V(H.val)
-  · exact .inl <| hW.isWalk_isClosedSubgraph H.prop hx
-  exact .inr <| hW.isWalk_isClosedSubgraph Hᶜ.prop <| by simp [hx, hW.first_mem]
-
-lemma ConnectedBetween.mem_vertexSet_iff (H : G.ClosedSubgraph) :
-    ∀ {x y : α}, G.ConnectedBetween x y → (x ∈ V(H.val) ↔ y ∈ V(H.val)) := by
-  suffices ∀ x y, G.ConnectedBetween x y → x ∈ V(H.val) → y ∈ V(H.val) by
-    exact fun x y h => ⟨fun hx => this x y h hx, fun hy => this y x h.symm hy⟩
-  rintro x y ⟨w, hw, rfl, rfl⟩ hx
-  refine hw.isWalk_or_isWalk_compl_of_closedSubgraph H |>.resolve_right (fun h ↦ ?_) |>.last_mem
-  simpa [hx] using h.first_mem
-
-lemma IsWalk.isWalk_or_isWalk_of_union_of_disjoint (h : G.StronglyDisjoint H)
-    (hW : (G ∪ H).IsWalk W) : G.IsWalk W ∨ H.IsWalk W := by
-  obtain hCG | hCH := hW.isWalk_or_isWalk_compl_of_closedSubgraph ⟨G, h.isClosedSubgraph_union_left⟩
-  · exact .inl hCG
-  rw [ClosedSubgraph.compl_eq_of_stronglyDisjoint_union h] at hCH
-  exact .inr hCH
-
 lemma IsWalk.connectedBetween_first_last (hW : G.IsWalk W) : G.ConnectedBetween W.first W.last :=
   hW.connectedBetween_of_mem_of_mem (by simp) <| by simp
 
@@ -129,15 +116,26 @@ lemma connectedBetween_induce_iff {X : Set α} (hx : x ∈ V(G)) :
     simp_all only [cons_isPath_iff, first_cons, cons_vertexSet, cons_isWalk_iff, true_and, and_true]
     exact h.1.isWalk
 
+lemma IsComplete.connectedBetween (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
+    G.ConnectedBetween s t := by
+  obtain rfl | hne := eq_or_ne s t
+  · simp [hs]
+  exact (h s hs t ht hne).connectedBetween
+
+lemma ConnectedBetween.isClosedSubgraph (h : G.ConnectedBetween x y) (hle : H ≤c G) (hx : x ∈ V(H))
+    : H.ConnectedBetween x y := by
+  obtain ⟨W, hW, rfl, rfl⟩ := h
+  use W, hW.isWalk_isClosedSubgraph_of_first_mem hle hx
 
 /-! ### Cut between two vertices -/
 
+-- Beware that `CutBetween` does not check if `s` and `t` are in the graph.
 structure CutBetween (G : Graph α β) (s t : α) where
   carrier : Set α
   carrier_subset : carrier ⊆ V(G)
   left_not_mem : s ∉ carrier
   right_not_mem : t ∉ carrier
-  not_connectedBetween : ¬ (G - carrier).ConnectedBetween s t
+  not_connectedBetween' : ¬ (G - carrier).ConnectedBetween s t
 
 instance : SetLike (G.CutBetween s t) α where
   coe := (·.carrier)
@@ -157,8 +155,8 @@ lemma CutBetween.left_notMem (C : G.CutBetween s t) : s ∉ C := C.left_not_mem
 lemma CutBetween.right_notMem (C : G.CutBetween s t) : t ∉ C := C.right_not_mem
 
 @[simp]
-lemma CutBetween.not_connectedBetween' (C : G.CutBetween s t) : ¬ (G - C).ConnectedBetween s t :=
-  C.not_connectedBetween
+lemma CutBetween.not_connectedBetween (C : G.CutBetween s t) : ¬ (G - C).ConnectedBetween s t :=
+  C.not_connectedBetween'
 
 @[simp]
 lemma isEmtpy_cutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.CutBetween s s) := by
@@ -177,7 +175,7 @@ def cutBetween_empty (h : ¬ G.ConnectedBetween s t) : G.CutBetween s t where
   carrier_subset := empty_subset _
   left_not_mem := by simp
   right_not_mem := by simp
-  not_connectedBetween := by simpa
+  not_connectedBetween' := by simpa
 
 @[simp]
 lemma cutBetween_empty_coe (h : ¬ G.ConnectedBetween s t) : (cutBetween_empty h : Set α) = ∅ := rfl
@@ -187,7 +185,7 @@ def CutBetween.symm (C : G.CutBetween s t) : G.CutBetween t s where
   carrier_subset := C.carrier_subset
   left_not_mem := C.right_not_mem
   right_not_mem := C.left_not_mem
-  not_connectedBetween := by
+  not_connectedBetween' := by
     rw [← connectedBetween_comm]
     exact C.not_connectedBetween
 
@@ -198,6 +196,19 @@ lemma CutBetween.symm_coe (C : G.CutBetween s t) : (C.symm : Set α) = C := rfl
 lemma CutBetween.symm_symm (C : G.CutBetween s t) : C.symm.symm = C := by
   ext x
   simp
+
+def CutBetween.of_le (C : G.CutBetween s t) (hle : H ≤ G) : H.CutBetween s t where
+  carrier := V(H) ∩ C
+  carrier_subset := inter_subset_left
+  left_not_mem := by simp [C.left_notMem]
+  right_not_mem := by simp [C.right_notMem]
+  not_connectedBetween' := by
+    rw [vertexDelete_vertexSet_inter]
+    exact mt (ConnectedBetween.of_le · (by gcongr)) C.not_connectedBetween
+
+@[simp]
+lemma CutBetween.of_le_coe (C : G.CutBetween s t) (hle : H ≤ G) :
+    (C.of_le hle : Set α) = V(H) ∩ C := rfl
 
 lemma IsWalk.not_disjoint_cutBetween (hW : G.IsWalk W) (C : G.CutBetween W.first W.last) :
     ¬ Disjoint V(W) C := by
@@ -210,14 +221,33 @@ lemma IsWalk.exists_mem_cutBetween (hW : G.IsWalk W) (C : G.CutBetween W.first W
   have := hW.not_disjoint_cutBetween C
   rwa [not_disjoint_iff] at this
 
+lemma IsComplete.cutBetween_isEmpty (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
+    IsEmpty (G.CutBetween s t) := by
+  by_contra! hc
+  obtain ⟨C, hCG, hsC, htC, hconn⟩ := hc
+  apply hconn
+  obtain rfl | hne := eq_or_ne s t
+  · simp [hsC, hs]
+  apply Adj.connectedBetween
+  simp only [vertexDelete_adj_iff]
+  use h s hs t ht hne
+
 structure EdgeCutBetween (G : Graph α β) (s t : α) where
   carrier : Set β
   carrier_subset : carrier ⊆ E(G)
-  not_connectedBetween : ¬ (G ＼ carrier).ConnectedBetween s t
+  not_connectedBetween' : ¬ (G ＼ carrier).ConnectedBetween s t
 
 instance : SetLike (G.EdgeCutBetween s t) β where
   coe := (·.carrier)
   coe_injective' C1 C2 h := by rwa [EdgeCutBetween.mk.injEq]
+
+@[simp]
+lemma EdgeCutBetween.coe_subset (C : G.EdgeCutBetween s t) : (C : Set β) ⊆ E(G) := C.carrier_subset
+
+@[simp]
+lemma EdgeCutBetween.not_connectedBetween (C : G.EdgeCutBetween s t) :
+    ¬ (G ＼ C).ConnectedBetween s t :=
+  C.not_connectedBetween'
 
 @[simp]
 lemma isEmpty_edgeCutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.EdgeCutBetween s s) := by
@@ -228,11 +258,22 @@ lemma isEmpty_edgeCutBetween_self (hs : s ∈ V(G)) : IsEmpty (G.EdgeCutBetween 
 def edgeCutBetween_empty (h : ¬ G.ConnectedBetween s t) : G.EdgeCutBetween s t where
   carrier := ∅
   carrier_subset := empty_subset _
-  not_connectedBetween := by simpa
+  not_connectedBetween' := by simpa
 
 @[simp]
 lemma edgeCutBetween_empty_coe (h : ¬ G.ConnectedBetween s t) :
     (edgeCutBetween_empty h : Set β) = ∅ := rfl
+
+def EdgeCutBetween.of_le (C : G.EdgeCutBetween s t) (hle : H ≤ G) : H.EdgeCutBetween s t where
+  carrier := E(H) ∩ C
+  carrier_subset := inter_subset_left
+  not_connectedBetween' := by
+    rw [edgeDelete_edgeSet_inter]
+    exact mt (ConnectedBetween.of_le · (by gcongr)) C.not_connectedBetween
+
+@[simp]
+lemma EdgeCutBetween.of_le_coe (C : G.EdgeCutBetween s t) (hle : H ≤ G) :
+    (C.of_le hle : Set β) = E(H) ∩ C := rfl
 
 lemma IsWalk.not_disjoint_edgeCutBetween (hW : G.IsWalk W) (C : G.EdgeCutBetween W.first W.last) :
     ¬ Disjoint E(W) C := by
@@ -257,20 +298,37 @@ structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
   last_eq : ∀ i, (f i).last = t
   internallyDisjoint : internallyDisjoint s t f
 
-def vertexEnsemble_empty [h : IsEmpty ι] : G.VertexEnsemble s t ι where
-  f := fun _ => nil s
+def VertexEnsemble.edgeDisjoint (P : G.VertexEnsemble s t ι) : Prop :=
+  Pairwise (Disjoint on WList.edgeSet on P.f)
+
+@[simps]
+def vertexEnsemble_empty (G : Graph α β) (s t : α) (ι : Type*) [h : IsEmpty ι] :
+    G.VertexEnsemble s t ι where
+  f _ := nil s
   isPath := (h.elim ·)
   first_eq := (h.elim ·)
   last_eq := (h.elim ·)
   internallyDisjoint := (h.elim ·)
 
-def vertexEnsemble_nil (ι : Type*) (h : s ∈ V(G)) : G.VertexEnsemble s s ι where
+@[simp]
+lemma vertexEnsemble_empty_edgeDisjoint [h : IsEmpty ι] :
+    (G.vertexEnsemble_empty s t ι).edgeDisjoint := by
+  simp [VertexEnsemble.edgeDisjoint]
+
+@[simps]
+def vertexEnsemble_nil (G : Graph α β) (h : s ∈ V(G)) (ι : Type*) : G.VertexEnsemble s s ι where
   f _ := nil s
   isPath i := by simpa
   first_eq i := by simp
   last_eq i := by simp
   internallyDisjoint i j h := by simp
 
+@[simp]
+lemma vertexEnsemble_nil_edgeDisjoint (h : s ∈ V(G)) :
+    (G.vertexEnsemble_nil h ι).edgeDisjoint :=
+  fun _ _ _ ↦ by simp [vertexEnsemble_nil]
+
+@[simps]
 def IsLink.vertexEnsemble (ι : Type*) (h : G.IsLink e s t) (hne : s ≠ t) :
     G.VertexEnsemble s t ι where
   f _ := cons s e (nil t)
@@ -279,6 +337,7 @@ def IsLink.vertexEnsemble (ι : Type*) (h : G.IsLink e s t) (hne : s ≠ t) :
   last_eq i := by simp
   internallyDisjoint i j h := by simp
 
+@[simps]
 def IsPath.vertexEnsemble (h : G.IsPath P) : G.VertexEnsemble P.first P.last PUnit where
   f _ := P
   isPath i := h
@@ -286,6 +345,11 @@ def IsPath.vertexEnsemble (h : G.IsPath P) : G.VertexEnsemble P.first P.last PUn
   last_eq i := by simp
   internallyDisjoint i j h := by simp at h
 
+@[simp]
+lemma IsPath.vertexEnsemble_edgeDisjoint (h : G.IsPath P) : (h.vertexEnsemble).edgeDisjoint :=
+  fun _ _ hne ↦ (hne rfl).elim
+
+@[simps]
 def VertexEnsemble.comp (P : G.VertexEnsemble s t ι) (f : ι' ↪ ι) : G.VertexEnsemble s t ι' where
   f := P.f ∘ f
   isPath i := P.isPath (f i)
@@ -293,8 +357,25 @@ def VertexEnsemble.comp (P : G.VertexEnsemble s t ι) (f : ι' ↪ ι) : G.Verte
   last_eq i := P.last_eq (f i)
   internallyDisjoint i j h := P.internallyDisjoint (by simpa)
 
--- def VertexEnsemble.of_le (P : H.VertexEnsemble s t ι) (hle : H ≤ G) : G.VertexEnsemble s t ι :=
---   ⟨(P.f ·|>.of_le hle), P.internallyDisjoint, P.stConnected⟩
+@[simp]
+lemma VertexEnsemble.comp_edgeDisjoint {P : G.VertexEnsemble s t ι} (hP : P.edgeDisjoint)
+    (f : ι' ↪ ι) : (P.comp f).edgeDisjoint := by
+  rintro i j hne
+  simp only [onFun, comp, comp_apply]
+  exact hP (f.inj'.ne hne)
+
+@[simps]
+def VertexEnsemble.of_le (P : H.VertexEnsemble s t ι) (hle : H ≤ G) : G.VertexEnsemble s t ι where
+  f := P.f
+  isPath i := P.isPath i |>.of_le hle
+  first_eq i := P.first_eq i
+  last_eq i := P.last_eq i
+  internallyDisjoint _ _ h := P.internallyDisjoint h
+
+@[simp]
+lemma VertexEnsemble.of_le_edgeDisjoint {P : H.VertexEnsemble s t ι} (hP : P.edgeDisjoint)
+    (hle : H ≤ G) : (P.of_le hle).edgeDisjoint :=
+  hP
 
 /-- internal vertex set of a vertex ensemble -/
 def VertexEnsemble.vertexSet (P : G.VertexEnsemble s t ι) : Set α :=
@@ -304,11 +385,10 @@ lemma VertexEnsemble.subset_vertexSet_of_mem (P : G.VertexEnsemble s t ι) (i : 
     V(P.f i) \ {s, t} ⊆ P.vertexSet :=
   diff_subset_diff_left <| subset_iUnion (fun i ↦ V(P.f i)) i
 
+@[simps]
 def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t ι')
     (h : Disjoint P.vertexSet Q.vertexSet) : G.VertexEnsemble s t (ι ⊕ ι') where
-  f i := match i with
-  | Sum.inl i => P.f i
-  | Sum.inr i => Q.f i
+  f i := i.elim P.f Q.f
   isPath i := match i with
   | Sum.inl i => P.isPath i
   | Sum.inr i => Q.isPath i
@@ -376,6 +456,16 @@ lemma connectivityBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnectivityBet
 lemma IsLink.connectivityBetweenGe (h : G.IsLink e s t) (n : ℕ) : G.ConnectivityBetweenGe s t n :=
   (isEmpty_cutBetween_isLink h).elim
 
+lemma ConnectivityBetweenGe.of_le (h : H.ConnectivityBetweenGe s t n) (hle : H ≤ G) :
+    G.ConnectivityBetweenGe s t n := by
+  rintro C
+  have := by simpa using h (C.of_le hle)
+  exact this.trans <| encard_le_encard inter_subset_right
+
+lemma IsComplete.connectivityBetweenGe (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) (n : ℕ) :
+    G.ConnectivityBetweenGe s t n :=
+  h.cutBetween_isEmpty hs ht |>.elim
+
 def EdgeConnectivityBetweenGe (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ C : G.EdgeCutBetween s t, n ≤ (↑C : Set β).encard
 
@@ -402,3 +492,9 @@ lemma edgeConnectivityBetweenGe_one_iff :
 lemma edgeConnectivityBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) :
     G.EdgeConnectivityBetweenGe s s n :=
   (isEmpty_edgeCutBetween_self hs).elim
+
+lemma EdgeConnectivityBetweenGe.of_le (h : H.EdgeConnectivityBetweenGe s t n) (hle : H ≤ G) :
+    G.EdgeConnectivityBetweenGe s t n := by
+  rintro C
+  have := by simpa using h (C.of_le hle)
+  exact this.trans <| encard_le_encard inter_subset_right

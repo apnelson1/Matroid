@@ -167,6 +167,11 @@ lemma bouquet_isLoopAt : (bouquet v F).IsLoopAt e x ↔ e ∈ F ∧ x = v := by
 lemma bouquet_not_isNonloopAt : ¬ (bouquet v F).IsNonloopAt e x := by
   simp +contextual [IsNonloopAt, eq_comm]
 
+@[simp]
+lemma bouquet_adj_iff : (bouquet v F).Adj x y ↔ F.Nonempty ∧ x = v ∧ y = v := by
+  simp only [Adj, bouquet_isLink, exists_and_right, and_congr_left_iff, and_imp]
+  exact fun _ _ ↦ Iff.rfl
+
 /-- Every graph on just one vertex is a bouquet on that vertex-/
 lemma eq_bouquet (hv : v ∈ V(G)) (hss : V(G).Subsingleton) : G = bouquet v E(G) := by
   have hrw := hss.eq_singleton_of_mem hv
@@ -225,6 +230,11 @@ lemma banana_isLoopAt_iff :
   aesop
 
 @[simp]
+lemma banana_adj_iff : (banana a b F).Adj x y ↔ F.Nonempty ∧ (x = a ∧ y = b ∨ x = b ∧ y = a) := by
+  simp only [Adj, banana_isLink, exists_and_right, and_congr_left_iff]
+  exact fun _ ↦ Iff.rfl
+
+@[simp]
 lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
   ext <;> rfl
 
@@ -256,17 +266,41 @@ def CompleteGraph (n : ℕ) : Graph ℕ (Sym2 ℕ) where
   left_mem_of_isLink e x y h := h.1
 
 @[simp]
-lemma CompleteGraph_adj (n : ℕ) (x y : ℕ) (hx : x < n) (hy : y < n) :
+lemma CompleteGraph_adj (n x y : ℕ) (hx : x < n) (hy : y < n) :
     (CompleteGraph n).Adj x y ↔ x ≠ y := by
   unfold Adj
   simp [hx, hy]
 
 def IsComplete (G : Graph α β) : Prop := ∀ x ∈ V(G), ∀ y ∈ V(G), x ≠ y → G.Adj x y
 
+@[simp]
 lemma completeGraph_isComplete (n : ℕ+) : (CompleteGraph n).IsComplete := by
   rintro u hu v hv hne
   use s(u, v)
   simp_all
+
+@[simp]
+lemma bot_isComplete : (⊥ : Graph α β).IsComplete := by
+  simp [IsComplete]
+
+@[simp]
+lemma bouquet_isComplete (v : α) (F : Set β) : (bouquet v F).IsComplete := by
+  rintro a ha b hb hne
+  simp only [bouquet_vertexSet, mem_singleton_iff] at ha hb
+  subst a b
+  exact (hne rfl).elim
+
+@[simp]
+lemma singleEdge_isComplete (u v : α) (e : β) : (Graph.singleEdge u v e).IsComplete := by
+  rintro a ha b hb hne
+  simp only [singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff] at ha hb
+  obtain rfl | rfl := ha <;> obtain rfl | rfl := hb <;> simp at hne ⊢
+
+@[simp]
+lemma banana_isComplete (a b : α) (hF : F.Nonempty) : (banana a b F).IsComplete := by
+  rintro x hx y hy hne
+  simp only [banana_vertexSet, mem_insert_iff, mem_singleton_iff] at hx hy
+  obtain rfl | rfl := hx <;> obtain rfl | rfl := hy <;> simp [hF] at hne ⊢
 
 /-- The star graph with `n` leaves with center `v` -/
 @[simps]
