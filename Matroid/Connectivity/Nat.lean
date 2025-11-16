@@ -199,8 +199,7 @@ theorem conn_inter_add_conn_union_union_le (M : Matroid α) [M.RankFinite] {C D 
     ← union_assoc] at hsm2
   linarith
 
-/-- The function `M.conn` is submodular.
-This is also true for `eConn` without `RankFinite`, but the proof will be more difficult. TODO. -/
+/-- The function `M.conn` is submodular. -/
 lemma conn_submod (M : Matroid α) [RankFinite M] (X Y : Set α) :
     M.conn (X ∩ Y) + M.conn (X ∪ Y) ≤ M.conn X + M.conn Y := by
   simpa using M.conn_inter_add_conn_union_union_le (disjoint_empty X) (disjoint_empty Y)

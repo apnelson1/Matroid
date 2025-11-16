@@ -99,21 +99,24 @@ lemma eConn_eq_left (P : M.Partition) : P.eConn = M.eConn P.1 := by
 lemma eConn_eq_right (P : M.Partition) : P.eConn = M.eConn P.2 := by
   rw [← P.eConn_symm, P.symm.eConn_eq_left, symm_left]
 
+@[simp]
+lemma eConn_left (P : M.Partition) : M.eConn P.1 = P.eConn := by
+  rw [eConn, ← compl_left]
+  rfl
+
+@[simp]
+lemma eConn_right (P : M.Partition) : M.eConn P.2 = P.eConn := by
+  rw [← P.eConn_symm, ← eConn_left, symm_left]
+
 @[simp] lemma dual_eConn (P : M.Partition) : P.dual.eConn = P.eConn := by
-  rw [P.dual.eConn_eq_left, M.eConn_dual, P.dual_left, ← P.eConn_eq_left]
+  rw [← P.dual.eConn_left, M.eConn_dual, P.dual_left, P.eConn_left]
 
 @[simp] lemma ofDual_eConn (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← dual_eConn]
   simp
 
-lemma eConn_eq_zero_iff_skew {P : M.Partition} : P.eConn = 0 ↔ M.Skew P.1 P.2 :=
-  M.eLocalConn_eq_zero P.left_subset_ground P.right_subset_ground
 
-lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Partition} :
-    P.eConn = 0 ↔ M = (M ↾ P.1).disjointSum (M ↾ P.2) P.disjoint := by
-  rw [eConn_eq_zero_iff_skew,
-    skew_iff_restrict_union_eq P.left_subset_ground P.right_subset_ground P.disjoint,
-    P.union_eq, restrict_ground_eq_self]
+
 
 /-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
 noncomputable def conn (P : M.Partition) : ℕ := M.localConn P.1 P.2
@@ -248,33 +251,57 @@ lemma union_symm (P Q : M.Partition) : (P.union Q).symm = P.symm.inter Q.symm :=
 
 end Cross
 
+
+lemma eConn_eq_zero_iff_skew {P : M.Partition} : P.eConn = 0 ↔ M.Skew P.1 P.2 :=
+  M.eLocalConn_eq_zero P.left_subset_ground P.right_subset_ground
+
+lemma eConn_eq_zero_iff_eq_disjointSum {P : M.Partition} :
+    P.eConn = 0 ↔ M = (M ↾ P.1).disjointSum (M ↾ P.2) P.disjoint := by
+  rw [eConn_eq_zero_iff_skew,
+    skew_iff_restrict_union_eq P.left_subset_ground P.right_subset_ground P.disjoint,
+    P.union_eq, restrict_ground_eq_self]
+
+lemma exists_partition_of_not_connected [M.Nonempty] (h : ¬ M.Connected) :
+    ∃ P : M.Partition, P.left.Nonempty ∧ P.right.Nonempty ∧ P.eConn = 0 := by
+  obtain ⟨M₁, M₂, hdj, hM₁, hM₂, rfl⟩ := eq_disjointSum_of_not_connected h
+  exact ⟨Matroid.partition _ M₁.E,
+    by simp [hM₁.ground_nonempty, hdj.sdiff_eq_right, hM₂.ground_nonempty]⟩
+
+lemma exists_partition_iff_not_connected [M.Nonempty] :
+    ¬ M.Connected ↔ ∃ P : M.Partition, P.left.Nonempty ∧ P.right.Nonempty ∧ P.eConn = 0 := by
+  refine ⟨exists_partition_of_not_connected, fun ⟨P, hPleft, hPright, hP⟩ ↦ ?_⟩
+  rw [eConn_eq_zero_iff_eq_disjointSum] at hP
+  rw [hP]
+  apply disjointSum_not_connected <;>
+  simpa [← ground_nonempty_iff]
+
 end Partition
 
-/-- Probably true for `eConn` as well -/
-theorem conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn
-    (M : Matroid α) [M.RankFinite] {C D X : Set α} (hC : Disjoint C X) (hXD : Disjoint D X) :
-    M.conn (C ∩ D) + M.conn (X ∪ C ∪ D) ≤ (M ／ X).conn C + (M ＼ X).conn D + M.conn X := by
-  have hsm1 := M.rk_submod (M.E \ C) (M.E \ (X ∪ D))
-  have hsm2 := M.rk_submod (C ∪ X) D
-  zify at *
-  simp only [intCast_conn_eq, contract_rk_cast_int_eq, contract_ground, contract_rank_cast_int_eq,
-    delete_ground]
-  rw [diff_diff_comm, diff_union_self, ← M.rk_inter_ground (M.E \ C ∪ X), union_inter_distrib_right,
-    inter_eq_self_of_subset_left diff_subset,
-    union_eq_self_of_subset_right (t := X ∩ M.E) (by tauto_set),
-    diff_diff, delete_rk_eq_of_disjoint M hXD, delete_rk_eq_of_disjoint _ (by tauto_set),
-    ← (M ＼ X).rk_ground, delete_ground, delete_rk_eq_of_disjoint _ disjoint_sdiff_left]
-  rw [diff_inter_diff, union_comm, union_right_comm, ← diff_inter, inter_union_distrib_left,
-    hC.inter_eq, empty_union] at hsm1
-  rw [union_inter_distrib_right, hXD.symm.inter_eq, union_empty, union_right_comm, union_comm,
-    ← union_assoc] at hsm2
-  linarith
+-- /-- Probably true for `eConn` as well -/
+-- theorem conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn
+--     (M : Matroid α) [M.RankFinite] {C D X : Set α} (hC : Disjoint C X) (hXD : Disjoint D X) :
+--     M.conn (C ∩ D) + M.conn (X ∪ C ∪ D) ≤ (M ／ X).conn C + (M ＼ X).conn D + M.conn X := by
+--   have hsm1 := M.rk_submod (M.E \ C) (M.E \ (X ∪ D))
+--   have hsm2 := M.rk_submod (C ∪ X) D
+--   zify at *
+--   simp only [intCast_conn_eq, contract_rk_cast_int_eq, contract_ground, contract_rank_cast_int_eq,
+--     delete_ground]
+--   rw [diff_diff_comm, diff_union_self, ← M.rk_inter_ground (M.E \ C ∪ X), union_inter_distrib_right,
+--     inter_eq_self_of_subset_left diff_subset,
+--     union_eq_self_of_subset_right (t := X ∩ M.E) (by tauto_set),
+--     diff_diff, delete_rk_eq_of_disjoint M hXD, delete_rk_eq_of_disjoint _ (by tauto_set),
+--     ← (M ＼ X).rk_ground, delete_ground, delete_rk_eq_of_disjoint _ disjoint_sdiff_left]
+--   rw [diff_inter_diff, union_comm, union_right_comm, ← diff_inter, inter_union_distrib_left,
+--     hC.inter_eq, empty_union] at hsm1
+--   rw [union_inter_distrib_right, hXD.symm.inter_eq, union_empty, union_right_comm, union_comm,
+--     ← union_assoc] at hsm2
+--   linarith
 
-theorem bixbyCoullard_elem [M.RankFinite] {e : α} (C D : Set α) (heC : e ∉ C) (heD : e ∉ D) :
-    M.conn (C ∩ D) + M.conn (insert e (C ∪ D)) ≤ (M ／ {e}).conn C + (M ＼ {e}).conn D + 1 := by
-  grw [← singleton_union, ← union_assoc,
-    M.conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn (by simpa) (by simpa),
-    add_le_add_iff_left, conn_le_ncard _ (by simp), ncard_singleton]
+-- theorem bixbyCoullard_elem [M.RankFinite] {e : α} (C D : Set α) (heC : e ∉ C) (heD : e ∉ D) :
+--     M.conn (C ∩ D) + M.conn (insert e (C ∪ D)) ≤ (M ／ {e}).conn C + (M ＼ {e}).conn D + 1 := by
+--   grw [← singleton_union, ← union_assoc,
+--     M.conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn (by simpa) (by simpa),
+--     add_le_add_iff_left, conn_le_ncard _ (by simp), ncard_singleton]
 
 
 
@@ -636,7 +663,7 @@ lemma eConnBetween_eq_iInf (hXY : Disjoint X Y) (hX : X ⊆ M.E) (hY : Y ⊆ M.E
   · simpa [Partition.sepOf_iff_left _ hY, disjoint_sdiff_left, subset_diff]
   rw [eConn_partition, ← eConn_core, core_diff, core_union, ← M.core_core X,
     union_eq_self_of_subset_right (M.core_subset_core hP.1), sdiff_eq_left.2, eConn_core,
-    P.eConn_eq_left]
+    P.eConn_left]
   exact hP.disjoint_left.mono_left (M.core_subset ..)
 
 lemma le_eConnBetween_iff_forall_sepOf {k : ℕ∞} (hdj : Disjoint X Y) (hX : X ⊆ M.E) (hY : Y ⊆ M.E) :
@@ -734,7 +761,7 @@ lemma eConnBetween_removeLoops_eq (M : Matroid α) :
       simp only [removeLoops_core, partition_left, subset_inter_iff, hP.1, true_and]
       rw [← removeLoops_core, and_iff_right (core_subset_ground ..)]
       exact P.disjoint.mono inter_subset_left hP.2
-    simp only [eConn_partition, removeLoops_eConn, ← hP_eq, P.eConn_eq_left]
+    simp only [eConn_partition, removeLoops_eConn, ← hP_eq, ← P.eConn_left]
     rw [← removeLoops_eConn, eConn_inter_ground]
   obtain ⟨P, hP, hP_eq⟩ := M.removeLoops.exists_partition_eConn_eq_eConnBetween_core (by simpa)
   refine iInf_le_of_le ⟨M.partition P.left ?_, ?_⟩ ?_
@@ -743,7 +770,8 @@ lemma eConnBetween_removeLoops_eq (M : Matroid α) :
     simp only [partition_left]
     simp only [removeLoops_core] at hP
     exact ⟨hP.1, hP.disjoint_left⟩
-  simp [← hP_eq, P.eConn_eq_left]
+  simp only [eConn_partition, hP_eq.symm, ← P.eConn_left, removeLoops_eConn]
+  exact rfl.le
 
 lemma eConnBetween_restrict_le (M : Matroid α) (X Y R : Set α) :
     (M ↾ R).eConnBetween X Y ≤ M.eConnBetween X Y := by

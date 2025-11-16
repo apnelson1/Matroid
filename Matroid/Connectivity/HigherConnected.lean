@@ -16,6 +16,7 @@ structure IsTutteSeparation (P : M.Partition) : Prop where
   eConn_lt_left : P.eConn < P.left.encard
   eConn_lt_right : P.eConn < P.right.encard
 
+
 lemma IsTutteSeparation.dual (hP : P.IsTutteSeparation) : P.dual.IsTutteSeparation :=
   ⟨by simpa using hP.eConn_lt_left, by simpa using hP.eConn_lt_right⟩
 
@@ -66,6 +67,10 @@ lemma IsCircuit.isTutteSeparation {C : Set α} (hC : M.IsCircuit C) (hfin : C.Fi
 lemma IsCocircuit.isTutteSeparation {C : Set α} (hC : M.IsCocircuit C) (hfin : C.Finite)
     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSeparation := by
   simpa using (IsCircuit.isTutteSeparation hC hfin (by simpa)).of_dual
+
+-- lemma isVerticalSeparation_iff_of_eConn_ne_top (hP : P.eConn ≠ ⊤) :
+--     P.IsVerticalSeparation ↔ ¬ M.Spanning P.left ∧ ¬ M.Spanning P.right := by
+--   sorry
 
 end Partition
 
@@ -381,9 +386,13 @@ lemma isInternallyConnected_top_iff : M.IsInternallyConnected ⊤ ↔ M.IsTutteC
 
 -- lemma not_isVerticallyConnected_iff :
 --     ¬ M.IsVerticallyConnected k ↔ ∃ X ⊆ M.E, M.eConn X + 1 < k ∧
---       ¬ M.Spanning (M.E \ X) ∧ ¬ M.Spanning X := by
+--     ¬ M.Spanning X ∧ ¬ M.Spanning (M.E \ X) := by
+
 --   simp_rw [IsVerticallyConnected, not_isPredConnected_iff, Partition.isVerticalSeparation_iff]
---   refine ⟨fun ⟨P, ⟨hP1', hP2'⟩, hPconn⟩ ↦ ?_, fun ⟨X, hXE, hXconn, hX⟩ ↦ ?_⟩
+--   refine ⟨fun ⟨P, ⟨hP1', hP2'⟩, hPconn⟩ ↦ ⟨_, P.left_subset_ground, by rwa [← P.eConn_eq_left],
+--     fun hsp ↦ ?_, fun hsp ↦ ?_⟩,
+--     fun ⟨X, hXE, hXconn, hX⟩ ↦ ?_⟩
+--   ·
 --   · by_contra! hcon
 --     have hP1 : M.Spanning P.left := hcon _ P.left_subset_ground (by rwa [← P.eConn_eq_left])
 --     have hP2 : M.Spanning P.right := hcon _ P.right_subset_ground (by rwa [← P.eConn_eq_right])

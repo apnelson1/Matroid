@@ -920,7 +920,7 @@ lemma eConn_eq_encard_iff' (hX : M.eConn X ≠ ⊤) :
     contradiction
   simp [← M.eConn_add_nullity_add_nullity_dual X, add_assoc, hX]
 
-lemma encard_le_eConn_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X ∧ M.Coindep X := by
+lemma eConn_eq_encard_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X ∧ M.Coindep X := by
   apply eConn_eq_encard_iff'
   grw [← lt_top_iff_ne_top, eConn_le_encard]
   exact hX.encard_lt_top
@@ -935,10 +935,36 @@ lemma Coindep.eConn_eq (hI : M.Coindep I) : M.eConn I = M.eRk I := by
 lemma Spanning.eConn_eq (h : M.Spanning X) : M.eConn X = M.eRk (M.E \ X) := by
   rw [← h.compl_coindep.eConn_eq, eConn_compl]
 
+lemma eConn_eq_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.eConn X = M.eRk (M.E \ X) ↔ M.Spanning X := by
+  rw [← eConn_compl, eConn_eq_eRk_iff (by simpa), ← coindep_def, ← spanning_iff_compl_coindep]
+
 lemma Indep.eConn_eq_encard_of_coindep (hI : M.Indep I) (hI' : M.Coindep I) :
     M.eConn I = I.encard := by
   rw [hI.eConn_eq, hI'.indep.eRk_eq_encard]
 
+lemma eConn_lt_encard_iff' (hX : M.eConn X ≠ ⊤) :
+    M.eConn X < X.encard ↔ ¬ M.Indep X ∨ ¬ M.Coindep X := by
+  rw [lt_iff_le_and_ne, and_iff_right (eConn_le_encard ..), Ne, eConn_eq_encard_iff' hX,
+    Classical.not_and_iff_not_or_not]
+
+lemma eConn_lt_encard_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.eConn X < X.encard ↔ M.Dep X ∨ M✶.Dep X := by
+  rw [eConn_lt_encard_iff' hX, coindep_def, not_indep_iff, not_indep_iff]
+
+lemma eConn_lt_encard_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.eConn X < (M.E \ X).encard ↔ ¬ M✶.Spanning X ∨ ¬ M.Spanning X := by
+  rw [← eConn_compl, eConn_lt_encard_iff' (by simpa), coindep_iff_compl_spanning,
+    diff_diff_cancel_left hXE, ← dual_coindep_iff, ← dual_ground, ← spanning_iff_compl_coindep]
+
+lemma eConn_lt_eRk_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.eConn X < M.eRk X ↔ ¬ M.Spanning (M.E \ X) := by
+  rw [lt_iff_le_and_ne, and_iff_right (eConn_le_eRk ..), Ne, eConn_eq_eRk_iff hX, ← coindep_def,
+    coindep_iff_compl_spanning]
+
+lemma eConn_lt_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.eConn X < M.eRk (M.E \ X) ↔ ¬ M.Spanning X := by
+  rw [← eConn_compl, eConn_lt_eRk_iff (by simpa), diff_diff_cancel_left hXE]
 
 @[simp]
 lemma eConn_lt_top (M : Matroid α) [RankFinite M] (X : Set α) : M.eConn X < ⊤ :=

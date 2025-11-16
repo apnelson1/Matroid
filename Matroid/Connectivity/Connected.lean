@@ -208,7 +208,6 @@ lemma not_connected_iff_exists [hne : M.Nonempty] :
     ConnectedTo]
   aesop
 
-
 lemma eq_disjointSum_of_not_connected [hne : M.Nonempty] (h : ¬ M.Connected) :
     ∃ (M₁ M₂ : Matroid α) (hdj : Disjoint M₁.E M₂.E),
       M₁.Nonempty ∧ M₂.Nonempty ∧ M = M₁.disjointSum M₂ hdj := by
