@@ -1,9 +1,5 @@
 import Matroid.Graph.Simple
-import Matroid.Graph.Finite
 import Mathlib.Data.Finsupp.Basic
-import Matroid.ForMathlib.Card
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Matroid.ForMathlib.Topology.ENat
 
 open Set

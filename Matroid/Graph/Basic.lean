@@ -2,7 +2,6 @@ import Mathlib.Combinatorics.Graph.Basic
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
-
 open Set
 
 namespace Graph

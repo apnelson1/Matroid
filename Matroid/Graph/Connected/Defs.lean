@@ -407,6 +407,10 @@ lemma PreconnectivityGe.isSpanningSubgraph (hconn : H.PreconnectivityGe n) (hsle
 lemma IsComplete.preconnectivityGe (h : G.IsComplete) (n : ℕ) : G.PreconnectivityGe n :=
   fun _ _ hs ht ↦ h.connectivityBetweenGe hs ht n
 
+lemma preconnectivityGe_of_forall_setConnected (h : ∀ S T : Set α, G.SetConnectivityGe S T n) :
+    G.PreconnectivityGe n :=
+  fun _ _ _ _ C ↦ h _ _ C.isSetCut
+
 -- lemma PreconnectivityGe.edgeDelete_singleton_of_not_isComplete (h : G.PreconnectivityGe n)
 --     (hne : ¬ G.IsComplete) (e : β) : (G ＼ {e}).PreconnectivityGe (n - 1) := by
 --   obtain he | he := (em <| e ∈ E(G)).symm

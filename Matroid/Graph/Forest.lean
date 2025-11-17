@@ -1,8 +1,5 @@
 import Matroid.Graph.Distance
-import Matroid.Graph.Simple
 import Matroid.Graph.Connected.Subgraph
-import Mathlib.Data.Set.Subsingleton
-import Mathlib.Order.Minimal
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
 {P C Q : WList α β}

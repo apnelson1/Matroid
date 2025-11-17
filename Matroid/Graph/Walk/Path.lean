@@ -1,5 +1,4 @@
 import Matroid.Graph.Walk.Basic
-import Mathlib.Order.Minimal
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {W w w₀ w₁ w₂ P P₀ P₁ P₂ : WList α β} {S S' T T' X : Set α}

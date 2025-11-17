@@ -1,6 +1,4 @@
 import Matroid.Graph.Finite
-import Matroid.Graph.Basic
-import Matroid.Graph.Constructions.Basic
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α} {G H : Graph α β} {P : WList α β}

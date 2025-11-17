@@ -18,6 +18,7 @@ import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.HigherConnected
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
+import Matroid.Connectivity.NullityConn
 import Matroid.Connectivity.Separation
 -- import Matroid.Connectivity.Separation_
 import Matroid.Connectivity.Skew

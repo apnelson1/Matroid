@@ -1,7 +1,6 @@
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Finite
 import Mathlib.Data.Finite.Card
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble

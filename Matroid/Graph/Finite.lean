@@ -1,9 +1,7 @@
 import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Constructions.Basic
 import Matroid.Graph.Lattice
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
-import Mathlib.Data.Set.Card
 
 variable {α β : Type*} {G H T F : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
 {P C Q : WList α β} {F : Set β}

@@ -1,7 +1,4 @@
-import Matroid.Graph.Lattice
-import Mathlib.Data.Set.Lattice
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Set.Card
+import Matroid.Graph.Subgraph.Delete
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
   {X Y : Set α}
@@ -110,22 +107,57 @@ lemma vertexMap_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   simp only [vertexMap_isLink, edgeDelete_isLink]
   tauto
 
-structure vertexEnd (G : Graph α β) where
+structure Retr (G : Graph α β) where
   f : α → α
-  mapsTo : Set.MapsTo f V(G) V(G)
-  idem : ∀ v ∈ V(G), f (f v) = f v
+  mapsTo' : Set.MapsTo f V(G) V(G)
+  idem' : ∀ v ∈ V(G), f (f v) = f v
 
-instance : FunLike (vertexEnd G) α α where
+variable {F : Retr G} {F' : Retr H}
+
+instance : FunLike (Retr G) α α where
   coe F := F.f
   coe_injective' := by
     rintro ⟨f, hmapsTo, hidem⟩ ⟨g, hmapsTo', hidem'⟩ hfg
     simp_all
 
-variable {F F' : vertexEnd G}
+lemma Retr.mapsTo (F : Retr G) : Set.MapsTo F V(G) V(G) := F.mapsTo'
+lemma Retr.idem (F : Retr G) : ∀ v ∈ V(G), F (F v) = F v := F.idem'
+
+@[simp]
+lemma Retr.vertexSet_subset (F : Retr G) : V(F ''ᴳ G) ⊆ V(G) :=
+  F.mapsTo.image_subset
+
+@[simps]
+def retrId (G : Graph α β) : Retr G where
+  f := id
+  mapsTo' x := by simp
+  idem' := by simp
+
+@[ext]
+lemma Retr.ext (F G : Retr H) (h : F.f = G.f) : F = G := by
+  cases F; cases G
+  simpa
+
+lemma Retr.eqOn_id_of_vertexMap_eq (h : F ''ᴳ G = G) : V(G).EqOn F id := by
+  rintro x hx
+  simp only [id_eq]
+  have hV := by simpa using congr_arg vertexSet h
+  rw [← hV] at hx
+  obtain ⟨y, hy, rfl⟩ := hx
+  exact F.idem y hy
+
+lemma Retr.vertexMap_eq_self_iff : F ''ᴳ G = G ↔ V(G).EqOn F id :=
+  ⟨Retr.eqOn_id_of_vertexMap_eq, fun h ↦ by simpa using vertexMap_eq_vertexMap_of_eqOn h⟩
 
 
+-- lemma le_vertexMap_antisymm (hGH : G ≤ F' ''ᴳ H) (hHG : H ≤ F ''ᴳ G) : G = H := by
 
--- lemma vertexMap_le_antisymm (hGH : F ''ᴳ G ≤ H) (hHG : F' ''ᴳ H ≤ G) : G = H := by
+--   have hHFG := vertexMap_vertexSet _ _ ▸ hHG.vertex_subset
+--   have hGF'H := vertexMap_vertexSet _ _ ▸ hGH.vertex_subset
+--   have hFGG := F.mapsTo.image_subset
+--   have hF'HH := F'.mapsTo.image_subset
+--   have hV := antisymm (hGF'H.trans hF'HH) (hHFG.trans hFGG)
+
 
 
 @[simps]

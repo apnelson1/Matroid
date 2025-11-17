@@ -1,6 +1,4 @@
-import Mathlib.Combinatorics.Graph.Basic
 import Matroid.Graph.Basic
-import Mathlib.Data.Set.Insert
 import Mathlib.Tactic.TFAE
 import Mathlib.Data.Set.Card
 
