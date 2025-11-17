@@ -7,7 +7,6 @@ open Set WList
 
 namespace Graph
 
-
 /-- If `P` and `Q` are distinct paths with the same ends, their union contains a cycle. -/
 theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.first = Q.first)
     (h1 : P.last = Q.last) : ∃ C, G.IsCycle C ∧ E(C) ⊆ E(P) ∪ E(Q) := by

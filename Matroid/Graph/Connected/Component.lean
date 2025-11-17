@@ -1,6 +1,6 @@
 import Matroid.ForMathlib.Lattice
 import Matroid.Graph.Lattice
-import Matroid.Graph.Degree.Constructions
+import Matroid.Graph.Walk.Basic
 
 open Set Function Nat WList
 

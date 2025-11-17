@@ -1,4 +1,5 @@
 import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Degree.Constructions
 
 open Set Function Nat WList
 

@@ -1,4 +1,5 @@
 import Matroid.Graph.Connected.Defs
+import Matroid.ForMathlib.ENat
 
 open Set Function Nat
 
