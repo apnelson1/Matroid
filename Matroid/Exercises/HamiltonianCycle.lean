@@ -467,11 +467,6 @@ lemma Hamiltonian_to_cyle {G : Graph α β}
   exact hC.1
 
 
-lemma prefixUntilVertex_suffixFromVertex_length [DecidableEq α] (w : WList α β) (x : α)
-    (hx : x ∈ w) :
-    (w.prefixUntilVertex x).length + (w.suffixFromVertex x).length = w.length := by
-  rw [prefixUntilVertex_length w x hx, ←sufixFromVertex_length w x hx ]
-  linarith
 
 lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
     ∃ P₀ P₁, G.IsPath P₀ ∧ G.IsPath P₁ ∧ u = P₀.last ∧ u = P₁.first ∧
