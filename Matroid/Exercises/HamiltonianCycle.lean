@@ -384,16 +384,15 @@ lemma minEDegree_ge_one_of_connected_nontrivial
   by_contra! hyp; obtain ⟨x, hxG, hx⟩ := hyp
   rw [ENat.lt_one_iff_eq_zero] at hx
   rw [connected_iff_forall_exists_adj] at hConn
+    <;> [skip; use x]
   specialize hConn {x}
   have : {x} ⊂ V(G) := by
     refine ⟨by simp; tauto, ?_⟩
     intro bad
     have := Set.encard_le_encard bad
     have := hNontrivial.trans_le this
-    norm_num at this
+    simp at this
   simp at hConn
-  swap
-  · use x
   specialize hConn this; clear this
   obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := hConn
   rw [eDegree_eq_zero_iff_adj] at hx
@@ -419,9 +418,8 @@ lemma unique_neighbor_of_eDegree_eq_one
   obtain ⟨e, he⟩ := heq
   have setOf_inc_le : {e | G.Inc e x} ⊆ {e} := by
     simp [inc_iff_isLoopAt_or_isNonloopAt]
-    rintro f (h|h)
-    · exfalso
-      suffices f ∈ {e | G.IsLoopAt e x} by simp_all
+    rintro f (h|h) <;> [exfalso; skip]
+    · suffices f ∈ {e | G.IsLoopAt e x} by simp_all
       exact h
     suffices f ∈ {e | G.IsNonloopAt e x} by simp_all
     exact h
@@ -439,9 +437,9 @@ lemma exists_isSepSet_of_isTree
     ∃ S, IsSepSet T S ∧ S.encard = 1 := by
   have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := by
     refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_
-    suffices : (1 : ℕ∞) < 3
-    · exact this.trans_le hV
-    norm_num
+    suffices (1 : ℕ∞) < 3 by
+      exact this.trans_le hV
+    simp
   -- we show there exists a vertex x of degree at least 2, in which case
   -- the singleton {x} is exactly our sepset
   have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
@@ -452,13 +450,12 @@ lemma exists_isSepSet_of_isTree
       specialize hMinDeg _ hxT
       change T.eDegree x < 1 + 1 at hyp
       rw [ENat.lt_add_one_iff] at hyp
-      exact hyp.antisymm hMinDeg
-      simp
+        <;> [exact hyp.antisymm hMinDeg; simp]
     clear hMinDeg
     have hT_nonempty : V(T).Nonempty := by
       simp only [←Set.encard_pos]
-      suffices : (0 : ℕ∞) < 3
-      · exact this.trans_le hV
+      suffices (0 : ℕ∞) < 3 by
+        exact this.trans_le hV
       simp
     have ⟨x, hxT⟩ := hT_nonempty
     have hx_ssub : {x} ⊂ V(T) := by
@@ -484,12 +481,11 @@ lemma exists_isSepSet_of_isTree
     have hz := hconn _ hxy_ssub (by simp)
     obtain ⟨x', hx', z, hz⟩ := hz
     apply hz.1.2
-    simp at hx'; obtain (hx'|hx') := hx' <;> symm at hx' <;> subst hx'
-    · right; simp
-      exact unique_neighbor_of_eDegree_eq_one (hyp x ‹_›) hz.2 ‹_›
-    · left
-      symm at hadj
-      exact unique_neighbor_of_eDegree_eq_one (hyp y ‹_›) hz.2 ‹_›
+    simp at hx'; obtain (hx'|hx') := hx'
+      <;> symm at hx'
+      <;> subst hx'
+      <;> [(right; simp); (left; symm at hadj)]
+      <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
   -- now we have our vertex x of degree ≥ 2
   use {x}
   refine ⟨?_, by simp⟩
@@ -508,17 +504,15 @@ lemma exists_isSepSet_of_isTree
   have ⟨hyT', hzT'⟩ : y ∈ V(T - {x}) ∧ z ∈ V(T - {x}) := by
     simp
     have := hT.isForest.loopless
-    refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩ <;>
-      rintro rfl <;>
-      apply T.not_adj_self <;> assumption
+    refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩
+      <;> rintro rfl <;> apply T.not_adj_self <;> assumption
   obtain ⟨P, hP, hP_first, hP_last⟩ := (bad.vertexConnected hyT' hzT').exists_isPath
   obtain ⟨xy, hxy⟩ := hy
   obtain ⟨xz, hxz⟩ := hz
   let Q' := cons x xy P
   have hQ'_isPath : T.IsPath Q' := by
     simp [Q']
-    refine ⟨hP.of_le vertexDelete_le, ?_, ?_⟩
-    · rwa [hP_first]
+    refine ⟨hP.of_le vertexDelete_le, by rwa [hP_first], ?_⟩
     intro bad
     replace hP := hP.vertexSet_subset
     apply hP at bad
