@@ -307,6 +307,7 @@ def VertexConnected (G : Graph α β) (x y : α) : Prop :=
 lemma VertexConnected.refl (hx : x ∈ V(G)) : G.VertexConnected x x :=
   ⟨G.walkable x, walkable_isCompOf hx, mem_walkable hx, mem_walkable hx⟩
 
+@[symm]
 lemma VertexConnected.symm (h : G.VertexConnected x y) : G.VertexConnected y x := by
   obtain ⟨H, hH, hx, hy⟩ := h
   exact ⟨H, hH, hy, hx⟩
