@@ -9,6 +9,9 @@ import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Component
 
+-- Tree is currently not building, because Matroid.Graph.Walk.toGraph is broken
+-- import Matroid.Graph.Tree
+
 import Matroid.Graph.WList.Defs
 
 import Qq open Qq Lean Meta Elab Tactic
@@ -283,6 +286,17 @@ def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
 def IsMinSepSet (G : Graph α β) (S : Set (α)) : Prop :=
   IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.encard ≤ A.encard )
 
+-- Temporary, Tree is broken
+def IsForest (G : Graph α β) : Prop := ∀ C, ¬ G.IsCycle C
+
+@[mk_iff]
+structure IsTree (T : Graph α β) : Prop where
+  isForest : T.IsForest
+  connected : T.Connected
+
+lemma IsForest.simple (hG : G.IsForest) : G.Simple := sorry
+lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := sorry
+
 lemma MinSep_SepSet {G : Graph α β} (S : Set α) (S' : Set α) (hM : IsMinSepSet G S)
     (hSS' : S'.encard < S.encard) : ¬  IsSepSet G S' := by
   by_contra hc
@@ -364,6 +378,165 @@ lemma Del_connected_comp_Adj {G : Graph α β} (H : Graph α β) (S : Set (α))
       exact notMem_of_mem_diff (h1 hv)
   exact hw.1 (((hH.isClosedSubgraph).mem_iff_mem_of_adj hhe).1 hv)
 
+lemma minEDegree_ge_one_of_connected_nontrivial
+    {G : Graph α β} (hConn : G.Connected) (hNontrivial : 1 < V(G).encard) :
+    ∀ x ∈ V(G), 1 ≤ G.eDegree x := by
+  by_contra! hyp; obtain ⟨x, hxG, hx⟩ := hyp
+  rw [ENat.lt_one_iff_eq_zero] at hx
+  rw [connected_iff_forall_exists_adj] at hConn
+  specialize hConn {x}
+  have : {x} ⊂ V(G) := by
+    refine ⟨by simp; tauto, ?_⟩
+    intro bad
+    have := Set.encard_le_encard bad
+    have := hNontrivial.trans_le this
+    norm_num at this
+  simp at hConn
+  swap
+  · use x
+  specialize hConn this; clear this
+  obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := hConn
+  rw [eDegree_eq_zero_iff_adj] at hx
+  exact hx y hadj
+
+lemma unique_neighbor_of_eDegree_eq_one
+    {G : Graph α β} {x : α} (hx : G.eDegree x = 1)
+    {y z : α} (hxy : G.Adj x y) (hxz : G.Adj x z) :
+    y = z := by
+  have heq := G.eDegree_eq_encard_add_encard x
+  rw [hx] at heq
+  have no_loops : {e | G.IsLoopAt e x}.encard = 0 := by
+    by_contra! hyp
+    rw [←ENat.one_le_iff_ne_zero] at hyp
+    replace hyp : 2 ≤ 2 * {e | G.IsLoopAt e x}.encard :=
+      le_mul_of_one_le_right' hyp
+    have hle : 2 * {e | G.IsLoopAt e x}.encard ≤ 1 := by
+      simp [heq]
+    have := hyp.trans hle
+    simp at this
+  rw [no_loops] at heq; simp at heq; symm at heq
+  rw [Set.encard_eq_one] at heq
+  obtain ⟨e, he⟩ := heq
+  have setOf_inc_le : {e | G.Inc e x} ⊆ {e} := by
+    simp [inc_iff_isLoopAt_or_isNonloopAt]
+    rintro f (h|h)
+    · exfalso
+      suffices f ∈ {e | G.IsLoopAt e x} by simp_all
+      exact h
+    suffices f ∈ {e | G.IsNonloopAt e x} by simp_all
+    exact h
+  simp at setOf_inc_le
+  obtain ⟨xy, hxy⟩ := hxy
+  obtain ⟨xz, hxz⟩ := hxz
+  suffices xy = xz by
+    subst this; exact IsLink.right_unique hxy hxz
+  have hxy' : xy = e := setOf_inc_le _ hxy.inc_left
+  have hxz' : xz = e := setOf_inc_le _ hxz.inc_left
+  simp_all
+
+lemma exists_isSepSet_of_isTree
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := by
+    refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_
+    suffices : (1 : ℕ∞) < 3
+    · exact this.trans_le hV
+    norm_num
+  -- we show there exists a vertex x of degree at least 2, in which case
+  -- the singleton {x} is exactly our sepset
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
+    by_contra! hyp
+    replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
+      intro x hxT
+      specialize hyp _ hxT
+      specialize hMinDeg _ hxT
+      change T.eDegree x < 1 + 1 at hyp
+      rw [ENat.lt_add_one_iff] at hyp
+      exact hyp.antisymm hMinDeg
+      simp
+    clear hMinDeg
+    have hT_nonempty : V(T).Nonempty := by
+      simp only [←Set.encard_pos]
+      suffices : (0 : ℕ∞) < 3
+      · exact this.trans_le hV
+      simp
+    have ⟨x, hxT⟩ := hT_nonempty
+    have hx_ssub : {x} ⊂ V(T) := by
+      refine ⟨by simp; tauto, ?_⟩
+      intro bad
+      have := Set.encard_le_encard bad
+      have := hV.trans this
+      simp at this
+    have hconn := hT.connected
+    rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
+    have hy := hconn _ hx_ssub (by simp)
+    simp at hy
+    obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := hy
+    have hxy_ssub : {x,y} ⊂ V(T) := by
+      refine ⟨?_, ?_⟩
+      · simp [pair_subset_iff]; tauto
+      intro bad
+      have := Set.encard_le_encard bad
+      have := hV.trans this
+      replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
+      simp [Set.encard_pair hne] at this
+      norm_num at this
+    have hz := hconn _ hxy_ssub (by simp)
+    obtain ⟨x', hx', z, hz⟩ := hz
+    apply hz.1.2
+    simp at hx'; obtain (hx'|hx') := hx' <;> symm at hx' <;> subst hx'
+    · right; simp
+      exact unique_neighbor_of_eDegree_eq_one (hyp x ‹_›) hz.2 ‹_›
+    · left
+      symm at hadj
+      exact unique_neighbor_of_eDegree_eq_one (hyp y ‹_›) hz.2 ‹_›
+  -- now we have our vertex x of degree ≥ 2
+  use {x}
+  refine ⟨?_, by simp⟩
+  simp [IsSepSet]
+  refine ⟨by assumption, ?_⟩
+  -- choose any two neighbors of x; they must be separated by x
+  intro bad
+  have T_simple := hT.isForest.simple
+  rw [eDegree_eq_encard_adj] at hx
+  have ⟨N, hN_sub, hN_encard⟩ := Set.exists_subset_encard_eq hx
+  rw [Set.encard_eq_two] at hN_encard
+  obtain ⟨y,z,hne,rfl⟩ := hN_encard
+  -- pick a path between y and z which does not go through x
+  obtain ⟨hy, hz⟩ : T.Adj x y ∧ T.Adj x z := by
+    refine ⟨hN_sub ?_, hN_sub ?_⟩ <;> simp
+  have ⟨hyT', hzT'⟩ : y ∈ V(T - {x}) ∧ z ∈ V(T - {x}) := by
+    simp
+    have := hT.isForest.loopless
+    refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩ <;>
+      rintro rfl <;>
+      apply T.not_adj_self <;> assumption
+  obtain ⟨P, hP, hP_first, hP_last⟩ := (bad.vertexConnected hyT' hzT').exists_isPath
+  obtain ⟨xy, hxy⟩ := hy
+  obtain ⟨xz, hxz⟩ := hz
+  let Q' := cons x xy P
+  have hQ'_isPath : T.IsPath Q' := by
+    simp [Q']
+    refine ⟨hP.of_le vertexDelete_le, ?_, ?_⟩
+    · rwa [hP_first]
+    intro bad
+    replace hP := hP.vertexSet_subset
+    apply hP at bad
+    rw [vertexDelete_vertexSet] at bad
+    apply bad.2
+    simp
+  let Q := cons z xz Q'
+  have hQ_isCycle : T.IsCycle Q := by
+    simp [Q]
+    have := hQ'_isPath.cons_isCycle_of_nontrivial (G := T) (P := Q') (e := xz)
+    simp [Q', hP_last, hxz] at this
+    apply this
+    by_contra! bad
+    simp at bad
+    apply hne
+    rw [←hP_first, ←hP_last]
+    exact Nil.first_eq_last bad
+  exact hT.isForest _ hQ_isCycle
 
 lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     (S : Set (α)) (hS : IsSepSet G S)
