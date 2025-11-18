@@ -115,8 +115,17 @@ lemma eConn_right (P : M.Partition) : M.eConn P.2 = P.eConn := by
   rw [← P.dual_ofDual, ← dual_eConn]
   simp
 
+lemma coindep_left_iff : M.Coindep P.left ↔ M.Spanning P.right := by
+  rw [← compl_right, ← spanning_iff_compl_coindep]
 
+lemma coindep_right_iff : M.Coindep P.right ↔ M.Spanning P.left := by
+  rw [← compl_left, ← spanning_iff_compl_coindep]
 
+lemma dual_dep_left_iff : M✶.Dep P.left ↔ ¬ M.Spanning P.right := by
+  rw [← not_indep_iff, ← coindep_def, coindep_left_iff]
+
+lemma dual_dep_right_iff : M✶.Dep P.right ↔ ¬ M.Spanning P.left := by
+  rw [← not_indep_iff, ← coindep_def, coindep_right_iff]
 
 /-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
 noncomputable def conn (P : M.Partition) : ℕ := M.localConn P.1 P.2

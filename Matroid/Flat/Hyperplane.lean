@@ -1,4 +1,5 @@
 import Matroid.Flat.Lattice
+import Matroid.ForMathlib.Matroid.Closure
 
 variable {α : Type*} {M : Matroid α} {I F X Y F' F₀ F₁ F₂ P L H H₁ H₂ H' B C K : Set α} {e f : α}
 
@@ -71,6 +72,8 @@ lemma isHyperplane_iff_maximal_nonspanning :
     (fun S ⟨hS, hSE⟩ ↦ ⟨M.closure S, M.subset_closure S, M.closure_isFlat S,
       (M.closure_subset_ground _).ssubset_of_ne ?_⟩)
   rwa [spanning_iff, and_iff_left hSE] at hS
+
+
 
 @[simp] lemma compl_isCocircuit_iff_isHyperplane (hH : H ⊆ M.E := by aesop_mat) :
     M.IsCocircuit (M.E \ H) ↔ M.IsHyperplane H := by
@@ -332,5 +335,7 @@ lemma Spanning.isHyperplane_restrict_iff {S : Set α} (hS : M.Spanning S) :
   apply hh.inter_isHyperplane_spanning_restrict hS (closure_subset_closure_of_subset_closure ?_)
   rw [← hcl]
   exact M.subset_closure _ (hcl.subset.trans (inter_subset_right.trans hS.subset_ground))
+
+
 
 end IsHyperplane

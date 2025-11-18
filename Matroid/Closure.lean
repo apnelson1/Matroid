@@ -29,3 +29,19 @@ lemma spanning_empty_iff : M.Spanning ∅ ↔ M = loopyOn M.E := by
   refine ⟨?_, fun h ↦ ⟨M.E, h⟩⟩
   rintro ⟨E, rfl⟩
   rfl
+
+lemma dep_dual_iff_compl_not_spanning {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Dep X ↔ ¬ M.Spanning (M.E \ X) := by
+  rw [← not_indep_iff, ← coindep_iff_compl_spanning]
+
+lemma dep_compl_dual_iff_not_spanning {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Dep (M.E \ X) ↔ ¬ M.Spanning X := by
+  rw [← not_indep_iff, ← coindep_def, spanning_iff_compl_coindep]
+
+lemma spanning_dual_iff {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Spanning X ↔ M.Indep (M.E \ X) := by
+  rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground]
+
+lemma spanning_compl_dual_iff {X : Set α} (hXE : X ⊆ M.E := by aesop_mat) :
+    M✶.Spanning (M.E \ X) ↔ M.Indep X := by
+  rw [spanning_iff_compl_coindep, dual_coindep_iff, dual_ground, diff_diff_cancel_left hXE]
