@@ -1,5 +1,6 @@
 import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.Order.Closure
+import Mathlib.Data.List.Chain
 
 open Set Function
 
@@ -469,8 +470,27 @@ instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊔ s) := by
 instance [IsSymm α r] [IsSymm α s] : IsSymm α (r ⊓ s) :=
   ⟨fun a b ⟨hr, hs⟩ ↦ by simp [symm hr, symm hs]⟩
 
+instance [IsRefl α r] : IsRefl α rᵀ where
+  refl := refl_of r
+
 instance [IsSymm α r] : IsSymm α rᵀ where
   symm _ _ := symm_of r
+
+instance [IsTrans α r] : IsTrans α rᵀ where
+  trans _ _ _ := flip (trans_of r)
+
+instance [IsAntisymm α r] : IsAntisymm α rᵀ where
+  antisymm _ _ := flip (antisymm_of r)
+
+instance [IsPreorder α r] : IsPreorder α rᵀ where
+  refl := refl_of r
+  trans _ _ _ := flip (trans_of r)
+
+-- instance [IsPartialOrder α r] : IsPartialOrder α rᵀ where
+--   antisymm _ _ := flip (antisymm_of r)
+
+instance [IsLinearOrder α r] : IsLinearOrder α rᵀ where
+  total a b := (total_of r b a)
 
 lemma sSup_symmtric {s : Set (α → α → Prop)} (hs : ∀ r ∈ s, IsSymm α r) : Symmetric (sSup s) := by
   rintro a b h
@@ -932,3 +952,44 @@ lemma restrict_singleton_of_refl (r : α → α → Prop) [IsRefl α r] (a : α)
 -- lemma comply_le {s t : α → α → Prop} (h1 : restrict s (reflSet r) ≤ t)
 --     (h2 : comply r t ≤ t) : comply r s ≤ t :=
 --   (restrict_comply_eq_comply r _) ▸ comply_mono r h1 |>.trans h2
+
+end Relation
+
+namespace List.IsChain
+
+lemma head_rel {α : Type*} {r : α → α → Prop} [IsPreorder α r] {l : List α}
+    (h : l.IsChain r) (hne : l ≠ []) : ∀ x ∈ l, r (l.head hne) x := by
+  rintro x hx
+  match l with
+  | [] => simp at hne
+  | a :: [] =>
+    simp_all only [singleton, mem_cons, not_mem_nil, or_false, head_cons]
+    exact refl _
+  | a :: b :: as =>
+    simp only [isChain_cons_cons, head_cons] at h ⊢
+    rw [mem_cons] at hx
+    obtain rfl | hx := hx
+    · exact refl _
+    exact trans' h.1 <| by simpa using h.2.head_rel (by simp) x hx
+
+lemma rel_last {α : Type*} {r : α → α → Prop} [IsPreorder α r] {l : List α}
+    (h : l.IsChain r) (hne : l ≠ []) : ∀ x ∈ l, r x (l.getLast hne) := by
+  rw [← l.reverse_reverse, isChain_reverse] at h
+  have := by simpa using h.head_rel (by simpa)
+  rwa [List.head_reverse] at this
+
+lemma eq_head_of_antisymm {α : Type*} {r : α → α → Prop} [IsPartialOrder α r]
+    {l : List α} (h : l.IsChain r) (hne : l ≠ []) (hend : l.head hne = l.getLast hne) :
+    ∀ x ∈ l, x = l.head hne :=
+  fun x hx ↦ antisymm (hend ▸ h.rel_last hne x hx) <| h.head_rel hne x hx
+
+lemma antisymm {α : Type*} {r : α → α → Prop} [IsPartialOrder α r]
+    {l : List α} (h : l.IsChain r) (hend : l.head = l.getLast) : ∀ x ∈ l, ∀ y ∈ l, x = y := by
+  by_cases hne : l = []
+  · subst l
+    simp
+  rintro x hx y hy
+  obtain rfl := h.eq_head_of_antisymm hne (congr_fun hend _) x hx
+  exact h.eq_head_of_antisymm hne (congr_fun hend _) y hy |>.symm
+
+end List.IsChain

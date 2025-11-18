@@ -1,6 +1,4 @@
-import Matroid.Graph.Tree
-import Matroid.Graph.Degree.Constructions
-import Matroid.Graph.Degree.Defs
+import Matroid.Graph.Forest
 
 variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α}
 {d : ℕ}

@@ -1,15 +1,11 @@
 import Matroid.Graph.Distance
-import Matroid.Graph.Simple
 import Matroid.Graph.Connected.Subgraph
-import Mathlib.Data.Set.Subsingleton
-import Mathlib.Order.Minimal
 
 variable {α β : Type*} {G H T : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α} {F : Set β}
 {P C Q : WList α β}
 open Set WList
 
 namespace Graph
-
 
 /-- If `P` and `Q` are distinct paths with the same ends, their union contains a cycle. -/
 theorem twoPaths (hP : G.IsPath P) (hQ : G.IsPath Q) (hPQ : P ≠ Q) (h0 : P.first = Q.first)

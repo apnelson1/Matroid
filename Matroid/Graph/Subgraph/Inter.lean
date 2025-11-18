@@ -1,5 +1,4 @@
 import Matroid.Graph.Subgraph.Compatible
-import Matroid.ForMathlib.Partition.Lattice
 
 
 variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : α} {e f : β}

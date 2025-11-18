@@ -1,5 +1,4 @@
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Constructions.Basic
 import Matroid.Graph.Subgraph.Lemma
 
 /-

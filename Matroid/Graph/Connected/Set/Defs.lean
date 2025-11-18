@@ -1,4 +1,5 @@
 import Matroid.Graph.Connected.Vertex.Defs
+import Matroid.ForMathlib.Partition.Set
 
 open Set Function Nat WList
 
@@ -11,6 +12,13 @@ namespace Graph
 
 def SetConnected (G : Graph α β) (S T : Set α) : Prop :=
   ∃ s ∈ S, ∃ t ∈ T, G.ConnectedBetween s t
+
+@[simp]
+lemma SetConnected_singleton (G : Graph α β) (s t : α) :
+    G.SetConnected {s} {t} ↔ G.ConnectedBetween s t := by
+  refine ⟨?_, fun h => ⟨s, rfl, t, rfl, h⟩⟩
+  rintro ⟨s, rfl, t, rfl, hst⟩
+  exact hst
 
 lemma SetConnected.of_le (h : G.SetConnected S T) (hle : G ≤ H) : H.SetConnected S T := by
   obtain ⟨s, hs, t, ht, hst⟩ := h
@@ -27,6 +35,19 @@ lemma SetConnected.subset_right (h : G.SetConnected S T) (hT : T ⊆ T') : G.Set
 lemma SetConnected.subset (h : G.SetConnected S T) (hS : S ⊆ S') (hT : T ⊆ T') :
     G.SetConnected S' T' :=
   h.subset_left hS |>.subset_right hT
+
+lemma SetConnected.vertexSet_inter_left (h : G.SetConnected S T) : G.SetConnected (V(G) ∩ S) T := by
+  obtain ⟨s, hs, t, ht, hst⟩ := h
+  exact ⟨s, ⟨hst.left_mem, hs⟩, t, ht, hst.of_le (by simp)⟩
+
+lemma SetConnected.vertexSet_inter_right (h : G.SetConnected S T) :
+    G.SetConnected S (V(G) ∩ T) := by
+  obtain ⟨s, hs, t, ht, hst⟩ := h
+  exact ⟨s, hs, t, ⟨hst.right_mem, ht⟩, hst.of_le (by simp)⟩
+
+lemma SetConnected.vertexSet_inter (h : G.SetConnected S T) :
+    G.SetConnected (V(G) ∩ S) (V(G) ∩ T) :=
+  h.vertexSet_inter_left.vertexSet_inter_right
 
 lemma IsWalkFrom.SetConnected (hW : G.IsWalkFrom S T W) : G.SetConnected S T := by
   use W.first, hW.first_mem, W.last, hW.last_mem, W, hW.isWalk
@@ -142,6 +163,19 @@ lemma IsSetCut.inter_subset (hC : G.IsSetCut S T C) : V(G) ∩ S ∩ T ⊆ C := 
   have hw : G.IsWalkFrom S T (nil x) := ⟨by simpa, hxS, hxT⟩
   obtain ⟨v, hv, hvC⟩ := hw.exists_mem_isSetCut hC
   simp_all
+
+lemma CutBetween.isSetCut (C : G.CutBetween s t) : G.IsSetCut (insert s C) (insert t C) C where
+  subset_vertexSet x hxC := C.coe_subset hxC
+  ST_disconnects h := by
+    have hs : (V(G - C) ∩ insert s ↑C) ⊆ {s} := by
+      rintro x
+      simp +contextual
+    have ht : (V(G - C) ∩ insert t ↑C) ⊆ {t} := by
+      rintro x
+      simp +contextual
+    have := h.vertexSet_inter.subset hs ht
+    rw [SetConnected_singleton] at this
+    exact C.not_connectedBetween this
 
 structure IsEdgeSetCut (G : Graph α β) (S T : Set α) (C : Set β) where
   subset_edgeSet : C ⊆ E(G)

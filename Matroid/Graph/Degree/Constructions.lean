@@ -1,6 +1,5 @@
 import Matroid.Graph.Degree.Defs
 import Matroid.Graph.Degree.Leaf
-import Matroid.Graph.Constructions.Basic
 
 variable {α β : Type*} {x y z a b u v w : α} {e f : β} {G H : Graph α β} {P C : WList α β}
 
