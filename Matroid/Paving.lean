@@ -199,7 +199,7 @@ lemma SparsePaving.isCircuit_of_dep_of_not_spanning (hM : M.SparsePaving) (hC : 
 
 lemma SparsePaving.isHyperplane_of_dep_of_not_spanning {H : Set α} (hM : M.SparsePaving)
     (hH : M.Dep H) (hHs : ¬ M.Spanning H) : M.IsHyperplane H := by
-  rw [← compl_isCocircuit_iff_isHyperplane, IsCocircuit]
+  rw [← isCocircuit_compl_iff_isHyperplane, IsCocircuit]
   apply hM.dual.isCircuit_of_dep_of_not_spanning
   · rwa [← not_indep_iff, ← coindep_def, coindep_iff_compl_spanning,
       diff_diff_cancel_left hH.subset_ground]
@@ -218,8 +218,8 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane :
   · refine ⟨fun h X hX ↦ h.indep_or_spanning_or_isCircuit_isHyperplane hX,
       fun h ↦ ⟨aux M h, aux M✶ fun X hX ↦ ?_⟩⟩
     rw [← coindep_def, coindep_iff_compl_spanning, M✶.spanning_iff_compl_coindep,
-      dual_coindep_iff, dual_ground, ← isCocircuit_def, ← compl_isHyperplane_iff_isCocircuit,
-      ← M✶.compl_isCocircuit_iff_isHyperplane, dual_ground, dual_isCocircuit_iff]
+      dual_coindep_iff, dual_ground, ← isCocircuit_def, ← isHyperplane_compl_iff_isCocircuit,
+      ← M✶.isCocircuit_compl_iff_isHyperplane, dual_ground, dual_isCocircuit_iff]
     specialize h (M.E \ X) diff_subset
     tauto
   clear! M

@@ -5,7 +5,7 @@ namespace Matroid
 
 open Set
 
-variable {α : Type*} {M : Matroid α} {X : Set α} {e : α}
+variable {α : Type*} {M : Matroid α} {X Y : Set α} {e : α}
 
 
 lemma compl_bijOn_coindep : BijOn (M.E \ ·) {S | M.Spanning S} {I | M.Coindep I} := by
@@ -45,10 +45,35 @@ lemma codep_compl_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M.Codep (M.E \ X) ↔ M.Nonspanning X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_dual, dep_dual_iff, dual_ground]
 
+lemma Nonspanning.codep_compl (h : M.Nonspanning X) : M.Codep (M.E \ X) := by
+  rwa [codep_compl_iff]
+
 lemma nonspanning_compl_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M.Nonspanning (M.E \ X) ↔ M.Codep X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_ground, dual_ground, dual_dual, dep_dual_iff,
     dual_ground, diff_diff_cancel_left hXE]
+
+lemma Codep.nonspanning_compl (h : M.Codep X) : M.Nonspanning (M.E \ X) := by
+  rwa [nonspanning_compl_iff]
+
+lemma Nonspanning.subset (h : M.Nonspanning X) (hYX : Y ⊆ X) : M.Nonspanning Y :=
+  ⟨fun hY ↦ h.not_spanning (hY.superset hYX), hYX.trans h.subset_ground⟩
+
+lemma not_nonspanning_iff (hXE : X ⊆ M.E := by aesop_mat) :
+    ¬ M.Nonspanning X ↔ M.Spanning X := by
+  rw [nonspanning_iff, and_iff_left hXE, not_not]
+
+lemma not_spanning_iff (hXE : X ⊆ M.E := by aesop_mat) :
+    ¬ M.Spanning X ↔ M.Nonspanning X := by
+  rw [nonspanning_iff, and_iff_left hXE]
+
+@[simp]
+lemma compl_not_spanning_iff : ¬ M.Spanning (M.E \ X) ↔ M.Nonspanning (M.E \ X) := by
+  rw [not_spanning_iff]
+
+@[simp]
+lemma compl_not_nonspanning_iff : ¬ M.Nonspanning (M.E \ X) ↔ M.Spanning (M.E \ X) := by
+  rw [not_nonspanning_iff]
 
 
 -- lemma closure_iUnion_closure_eq_closure_iUnion'

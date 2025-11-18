@@ -216,10 +216,10 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
     simp
   -- Each such closure is the complement of a hyperplane, so is a cocircuit. We're done.
   refine ⟨_, _, ?_, ?_, hdj, hucl⟩
-  · rw [← compl_isHyperplane_iff_isCocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
+  · rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_diff_left, hdj.sdiff_eq_right,
       ← pair_diff_left hab]
     exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
-  rw [← compl_isHyperplane_iff_isCocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
+  rw [← isHyperplane_compl_iff_isCocircuit, ← hucl, union_diff_right, hdj.sdiff_eq_left,
     ← pair_diff_right hab]
   exact hIM.isHyperplane_of_closure_diff_singleton (by simp)
 

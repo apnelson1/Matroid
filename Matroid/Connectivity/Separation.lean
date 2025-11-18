@@ -82,13 +82,16 @@ protected lemma right_subset_ground (P : M.Partition) : P.2 ⊆ M.E := by
 
 noncomputable abbrev eConn (P : M.Partition) : ℕ∞ := M.eLocalConn P.1 P.2
 
-@[simp] lemma eConn_symm (P : M.Partition) : P.symm.eConn = P.eConn :=
+@[simp]
+lemma eConn_symm (P : M.Partition) : P.symm.eConn = P.eConn :=
   M.eLocalConn_comm _ _
 
+@[simp]
 lemma compl_left (P : M.Partition) : M.E \ P.1 = P.2 := by
   rw [← P.union_eq, union_diff_left, sdiff_eq_left]
   exact P.symm.disjoint
 
+@[simp]
 lemma compl_right (P : M.Partition) : M.E \ P.2 = P.1 := by
   rw [← symm_left, compl_left, symm_right]
 
@@ -108,12 +111,62 @@ lemma eConn_left (P : M.Partition) : M.eConn P.1 = P.eConn := by
 lemma eConn_right (P : M.Partition) : M.eConn P.2 = P.eConn := by
   rw [← P.eConn_symm, ← eConn_left, symm_left]
 
-@[simp] lemma dual_eConn (P : M.Partition) : P.dual.eConn = P.eConn := by
+@[simp]
+lemma dual_eConn (P : M.Partition) : P.dual.eConn = P.eConn := by
   rw [← P.dual.eConn_left, M.eConn_dual, P.dual_left, P.eConn_left]
 
-@[simp] lemma ofDual_eConn (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
+@[simp]
+lemma ofDual_eConn (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← dual_eConn]
   simp
+
+@[simp]
+lemma not_indep_left_iff : ¬ M.Indep P.left ↔ M.Dep P.left := by
+  rw [not_indep_iff]
+
+@[simp]
+lemma not_indep_right_iff : ¬ M.Indep P.right ↔ M.Dep P.right := by
+  rw [not_indep_iff]
+
+@[simp]
+lemma not_dep_left_iff : ¬ M.Dep P.left ↔ M.Indep P.left := by
+  rw [not_dep_iff]
+
+@[simp]
+lemma not_dep_right_iff : ¬ M.Dep P.right ↔ M.Indep P.right := by
+  rw [not_dep_iff]
+
+@[simp]
+lemma not_coindep_left_iff : ¬ M.Coindep P.left ↔ M.Codep P.left := by
+  rw [not_coindep_iff]
+
+@[simp]
+lemma not_coindep_right_iff : ¬ M.Coindep P.right ↔ M.Codep P.right := by
+  rw [not_coindep_iff]
+
+@[simp]
+lemma not_indep_dual_left_iff : ¬ M✶.Indep P.left ↔ M.Codep P.left := by
+  rw [not_coindep_iff]
+
+@[simp]
+lemma not_indep_dual_right_iff : ¬ M✶.Indep P.right ↔ M.Codep P.right := by
+  rw [not_coindep_iff]
+
+@[simp]
+lemma not_spanning_left_iff : ¬ M.Spanning P.left ↔ M.Nonspanning P.left := by
+  rw [not_spanning_iff]
+
+@[simp]
+lemma not_spanning_right_iff : ¬ M.Spanning P.right ↔ M.Nonspanning P.right := by
+  rw [not_spanning_iff]
+
+@[simp]
+lemma not_nonspanning_left_iff : ¬ M.Nonspanning P.left ↔ M.Spanning P.left := by
+  rw [not_nonspanning_iff]
+
+@[simp]
+lemma not_nonspanning_right_iff : ¬ M.Nonspanning P.right ↔ M.Spanning P.right := by
+  rw [not_nonspanning_iff]
 
 lemma coindep_left_iff : M.Coindep P.left ↔ M.Spanning P.right := by
   rw [← compl_right, ← spanning_iff_compl_coindep]
@@ -121,11 +174,33 @@ lemma coindep_left_iff : M.Coindep P.left ↔ M.Spanning P.right := by
 lemma coindep_right_iff : M.Coindep P.right ↔ M.Spanning P.left := by
   rw [← compl_left, ← spanning_iff_compl_coindep]
 
-lemma dual_dep_left_iff : M✶.Dep P.left ↔ ¬ M.Spanning P.right := by
-  rw [← not_indep_iff, ← coindep_def, coindep_left_iff]
+lemma codep_left_iff : M.Codep P.left ↔ M.Nonspanning P.right := by
+  rw [← not_coindep_left_iff, coindep_left_iff, not_spanning_right_iff]
 
-lemma dual_dep_right_iff : M✶.Dep P.right ↔ ¬ M.Spanning P.left := by
-  rw [← not_indep_iff, ← coindep_def, coindep_right_iff]
+lemma codep_right_iff : M.Codep P.right ↔ M.Nonspanning P.left := by
+  rw [← symm_right, ← codep_left_iff, symm_left]
+
+lemma isCocircuit_left_iff : M.IsCocircuit P.left ↔ M.IsHyperplane P.right := by
+  rw [← isHyperplane_compl_iff_isCocircuit, P.compl_left]
+
+lemma isCocircuit_right_iff : M.IsCocircuit P.right ↔ M.IsHyperplane P.left := by
+  rw [← isHyperplane_compl_iff_isCocircuit, P.compl_right]
+
+@[simp]
+lemma spanning_dual_left_iff : M✶.Spanning P.left ↔ M.Indep P.right := by
+  simp [spanning_dual_iff]
+
+@[simp]
+lemma spanning_dual_right_iff : M✶.Spanning P.right ↔ M.Indep P.left := by
+  simp [spanning_dual_iff]
+
+@[simp]
+lemma nonspanning_dual_left_iff : M✶.Nonspanning P.left ↔ M.Dep P.right := by
+  rw [← not_spanning_iff, spanning_dual_left_iff, not_indep_iff]
+
+@[simp]
+lemma nonspanning_dual_right_iff : M✶.Nonspanning P.right ↔ M.Dep P.left :=
+  nonspanning_dual_left_iff (P := P.symm)
 
 /-- The connectivity of a partition as a natural number. Takes a value of `0` if infinite. -/
 noncomputable def conn (P : M.Partition) : ℕ := M.localConn P.1 P.2
@@ -284,280 +359,41 @@ lemma exists_partition_iff_not_connected [M.Nonempty] :
   apply disjointSum_not_connected <;>
   simpa [← ground_nonempty_iff]
 
+section wlog
+
+
+protected lemma wlog_symm (motive : {N : Matroid α} → (P : N.Partition) → Prop)
+    (property : Matroid α → Set α → Prop)
+    (h_symm : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.symm → motive P)
+    (h_some : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, property N P.left → motive P)
+    (h_not : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, ¬ property N P.left → ¬ property N P.right → motive P)
+    (P₀ : M.Partition) : motive P₀ := by
+  by_cases h1 : property M P₀.left
+  · exact h_some h1
+  by_cases h2 : property M P₀.right
+  · exact h_symm <| h_some (P := P₀.symm) (by simpa)
+  exact h_not h1 h2
+
+protected lemma wlog_symm_dual (motive : {N : Matroid α} → (P : N.Partition) → Prop)
+    (property : Matroid α → Set α → Prop)
+    (h_symm : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.symm → motive P)
+    (h_dual : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, motive P.dual → motive P)
+    (h_some : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, property N P.left → motive P)
+    (h_not : ∀ ⦃N⦄ ⦃P : Matroid.Partition N⦄, ¬ property N P.left → ¬ property N P.right →
+      ¬ property N✶ P.left → ¬ property N✶ P.right → motive P) (P₀ : M.Partition) : motive P₀ := by
+  by_cases h1 : property M P₀.left
+  · exact h_some h1
+  by_cases h2 : property M P₀.right
+  · exact h_symm <| h_some (P := P₀.symm) (by simpa)
+  by_cases h1' : property M✶ P₀.left
+  · exact h_dual <| h_some (N := M✶) (P := P₀.dual) (by simpa)
+  by_cases h2' : property M✶ P₀.right
+  · exact h_symm <| h_dual <| h_some (N := M✶) (P := P₀.symm.dual) (by simpa)
+  exact h_not h1 h2 h1' h2'
+
+end wlog
+
 end Partition
-
--- /-- Probably true for `eConn` as well -/
--- theorem conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn
---     (M : Matroid α) [M.RankFinite] {C D X : Set α} (hC : Disjoint C X) (hXD : Disjoint D X) :
---     M.conn (C ∩ D) + M.conn (X ∪ C ∪ D) ≤ (M ／ X).conn C + (M ＼ X).conn D + M.conn X := by
---   have hsm1 := M.rk_submod (M.E \ C) (M.E \ (X ∪ D))
---   have hsm2 := M.rk_submod (C ∪ X) D
---   zify at *
---   simp only [intCast_conn_eq, contract_rk_cast_int_eq, contract_ground, contract_rank_cast_int_eq,
---     delete_ground]
---   rw [diff_diff_comm, diff_union_self, ← M.rk_inter_ground (M.E \ C ∪ X), union_inter_distrib_right,
---     inter_eq_self_of_subset_left diff_subset,
---     union_eq_self_of_subset_right (t := X ∩ M.E) (by tauto_set),
---     diff_diff, delete_rk_eq_of_disjoint M hXD, delete_rk_eq_of_disjoint _ (by tauto_set),
---     ← (M ＼ X).rk_ground, delete_ground, delete_rk_eq_of_disjoint _ disjoint_sdiff_left]
---   rw [diff_inter_diff, union_comm, union_right_comm, ← diff_inter, inter_union_distrib_left,
---     hC.inter_eq, empty_union] at hsm1
---   rw [union_inter_distrib_right, hXD.symm.inter_eq, union_empty, union_right_comm, union_comm,
---     ← union_assoc] at hsm2
---   linarith
-
--- theorem bixbyCoullard_elem [M.RankFinite] {e : α} (C D : Set α) (heC : e ∉ C) (heD : e ∉ D) :
---     M.conn (C ∩ D) + M.conn (insert e (C ∪ D)) ≤ (M ／ {e}).conn C + (M ＼ {e}).conn D + 1 := by
---   grw [← singleton_union, ← union_assoc,
---     M.conn_inter_add_conn_union_le_conn_contract_add_conn_delete_add_conn (by simpa) (by simpa),
---     add_le_add_iff_left, conn_le_ncard _ (by simp), ncard_singleton]
-
-
-
-
-  -- simp_rw [eConn, ← cast_localConn_eq, ← Nat.cast_one (R := ℕ∞), ← Nat.cast_add, Nat.cast_le]
-  -- zify
-  -- simp only [inter_left, inter_right, union_left, union_right, contract_left, contract_right,
-  --   delete_left, delete_right, localConn_intCast_eq, contract_rk_cast_int_eq, union_singleton,
-  --   insert_diff_singleton]
-  -- simp [insert_union_distrib]
-
-
-
-
-
-
-
--- -- lemma isInternalSep_iff :
--- --     P.IsInternalSep k ↔ P.eConn < k ∧ k + 1 ≤ P.left.encard ∧ k + 1 ≤ P.right.encard :=
--- --   isPredSep_iff ..
-
--- -- lemma isVerticalSep_iff :
--- --     P.IsVerticalSep k ↔ P.eConn < k ∧ k ≤ M.eRk P.left ∧ k ≤ M.eRk P.right :=
--- --   isPredSep_iff ..
-
--- lemma IsTutteSep.dual {k : ℕ∞} (h : P.IsTutteSep k) : P.dual.IsTutteSep k :=
---   IsPredSep.dual h <| by simp
-
--- @[simp]
--- lemma isTutteSep_dual_iff {k : ℕ∞} : P.dual.IsTutteSep k ↔ P.IsTutteSep k :=
---   isPredSep_dual_iff <| by simp
-
--- @[simp]
--- lemma isTutteSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} : P.ofDual.IsTutteSep k ↔ P.IsTutteSep k :=
---   isPredSep_ofDual_iff <| by simp
-
--- def IsInternalSep.dual (h : P.IsInternalSep k) : P.dual.IsInternalSep k :=
---   IsPredSep.dual h <| by simp
-
--- @[simp]
--- lemma isInternalSep_dual_iff {k : ℕ∞} : P.dual.IsInternalSep k ↔ P.IsInternalSep k :=
---   isPredSep_dual_iff <| by simp
-
--- @[simp]
--- lemma isInternalSep_ofDual_iff {P : M✶.Partition} {k : ℕ∞} :
---     P.ofDual.IsInternalSep k ↔ P.IsInternalSep k :=
---   isPredSep_ofDual_iff <| by simp
-
--- lemma IsInternalSep.isTutteSep (hP : P.IsInternalSep k) : P.IsTutteSep k :=
---   IsPredSep.imp (fun _ _ _ ↦ And.left) hP
-
--- lemma IsTutteSep.isInternalSep_of_lt (hP : P.IsTutteSep k) (hjk : j < k) (hPj : P.eConn < j) :
---     P.IsInternalSep j := by
---   have hne := hP.eConn_lt_top.ne
---   refine ⟨hPj, ⟨hjk.le.trans hP.2, ?_⟩, ⟨hjk.le.trans hP.3, ?_⟩⟩
---   · rintro rfl
---     grw [ENat.add_one_le_iff (by simpa), ← hP.2]
---     exact hjk
---   rintro rfl
---   grw [ENat.add_one_le_iff (by simpa), ← hP.3]
---   exact hjk
-
--- lemma IsTutteSep.isInternalSep (hP : P.IsTutteSep k) (h_lt : P.eConn + 1 < k) :
---     P.IsInternalSep (P.eConn + 1) :=
---   hP.isInternalSep_of_lt h_lt <| by simpa using hP.eConn_lt_top.ne
-
--- lemma IsTutteSep.isInternalSep_of_gt (hP : P.IsTutteSep k) (hjk : k < j)
---     (h_left : j ≤ P.left.encard) (h_right : j ≤ P.right.encard) : P.IsInternalSep j := by
---   refine ⟨hP.eConn_lt.trans hjk, ⟨h_left, ?_⟩, ⟨h_right, ?_⟩⟩ <;>
---   · rintro rfl
---     grw [ENat.lt_add_one_iff (hP.eConn_lt_top.ne)] at hjk
---     exact (hP.1.not_ge hjk).elim
-
--- end Partition
-
--- /-! ### Connectivity Notions -/
-
--- def TutteConnected (M : Matroid α) : ℕ∞ → Prop := M.PredConnected (fun _ j _ X ↦ j ≤ X.encard)
-
-
--- --   simp_rw [TutteConnected, PredConnected, Partition.isPredSep_iff]
--- --   simp only [top_le_iff, and_imp, iff_false, not_forall, exists_prop]
--- --   refine
-
--- lemma tutteConnected_iff :
---     M.TutteConnected k ↔ ∀ (P : M.Partition),
---       P.eConn + 1 < k → P.left.encard ≤ P.eConn ∨ P.right.encard ≤ P.eConn := by
---   refine ⟨fun h P hlt ↦ ?_, fun h j P hP ↦ not_lt.1 fun hlt ↦ ?_⟩
---   · contrapose! hlt
---     have hne : P.eConn ≠ ⊤ := by aesop
---     rw [← ENat.add_one_le_iff hne, ← ENat.add_one_le_iff hne] at hlt
---     exact h ⟨by simpa, hlt.1, hlt.2⟩
---   obtain hle | hle := h P (hP.eConn_add_one_le.trans_lt hlt)
---   · exact ((hP.2.trans hle).trans_lt hP.conn_lt).ne rfl
---   exact ((hP.3.trans hle).trans_lt hP.conn_lt).ne rfl
-
--- lemma tutteConnected_iff_forall_isTutteSep :
---     M.TutteConnected k ↔ ∀ (j : ℕ∞) (P : M.Partition), P.IsTutteSep j → k ≤ j := Iff.rfl
-
--- lemma IsCircuit.isTutteSep {C : Set α} (hC : M.IsCircuit C) (hfin : C.Finite)
---     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
---   simp only [Partition.isTutteSep_iff, eConn_partition, partition_left, partition_right,
---     and_iff_right rfl.le]
---   refine ⟨(M.eConn_le_eRk C).trans_lt ?_, ?_⟩
---   · rw [← hC.eRk_add_one_eq, ENat.lt_add_one_iff]
---     rw [eRk_ne_top_iff]
---     exact isRkFinite_of_finite M hfin
---   rwa [← encard_diff_add_encard_of_subset hC.subset_ground, two_mul,
---     WithTop.add_le_add_iff_right] at hcard
---   rwa [encard_ne_top_iff]
-
--- lemma IsCircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCircuit C)
---     (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
---   convert hC.isTutteSep (by simp) ?_ <;>
---   simp [hcard]
-
--- lemma IsCocircuit.isTutteSep {C : Set α} (hC : M.IsCocircuit C) (hfin : C.Finite)
---     (hcard : 2 * C.encard ≤ M.E.encard) : (M.partition C).IsTutteSep C.encard := by
---   simpa [partition_dual] using hC.isCircuit.isTutteSep hfin hcard
-
--- lemma IsCocircuit.isTutteSep_finset {C : Finset α} (hC : M.IsCocircuit C)
---     (hcard : 2 * C.card ≤ M.E.encard) : (M.partition C).IsTutteSep C.card := by
---   convert hC.isTutteSep (by simp) ?_ <;>
---   simp [hcard]
-
-
--- -- ∀ ⦃j⦄ ⦃P : M.Partition⦄, P.IsTutteSep j → k ≤ j
-
--- lemma TutteConnected.le (h : M.TutteConnected k) {P : M.Partition} (hP : P.IsTutteSep j) : k ≤ j :=
---   h hP
-
--- lemma TutteConnected.mono {k : ℕ∞} (h : M.TutteConnected k) (hjk : j ≤ k) : M.TutteConnected j :=
---   PredConnected.mono h hjk
-
--- lemma TutteConnected.dual {k : ℕ∞} (h : M.TutteConnected k) : M✶.TutteConnected k :=
---   PredConnected.dual (by simp) h
-
--- @[simp] lemma tutteConnected_dual_iff {k : ℕ∞} : M✶.TutteConnected k ↔ M.TutteConnected k :=
---   predConnected_dual_iff (by simp)
---   -- ⟨fun h ↦ by simpa using h.dual, TutteConnected.dual⟩
-
--- @[simp] lemma tutteConnected_one (M : Matroid α) : M.TutteConnected 1 :=
---   fun _ _ h ↦ Order.one_le_iff_pos.2 h.zero_lt
-
--- @[simp] lemma tutteConnected_zero (M : Matroid α) : M.TutteConnected 0 :=
---   M.tutteConnected_one.mono <| zero_le _
-
--- @[simp] lemma tutteConnected_two_iff [M.Nonempty] : M.TutteConnected 2 ↔ M.Connected := by
---   simp only [TutteConnected, predConnected_two_iff, Partition.eConn_eq_zero_iff_eq_disjointSum,
---     one_le_encard_iff_nonempty]
---   refine ⟨fun h ↦ by_contra fun hcon ↦ ?_, fun h P hP ↦ ?_⟩
---   · obtain ⟨M₁, M₂, hdj, hne₁, hne₂, rfl⟩ := eq_disjointSum_of_not_connected hcon
---     specialize h (Matroid.partition _ M₁.E)
---     simp [hne₁.ground_nonempty, hdj.sdiff_eq_right, hne₂.ground_nonempty] at h
---   rw [hP] at h
---   by_contra! hcon
---   exact disjointSum_not_connected ⟨hcon.1⟩ ⟨hcon.2⟩ _ h
-
--- lemma IsCircuit.encard_ge_of_tutteConnected {C : Set α} (hC : M.IsCircuit C)
---     (hM : 2*k ≤ M.E.encard + 2) (hconn : M.TutteConnected k) : k ≤ C.encard := by
---   obtain hinf | hfin := C.finite_or_infinite.symm
---   · simp [hinf.encard_eq]
---   refine le_of_not_gt fun hlt ↦ ?_
---   have hle : C.encard + 1 ≤ k := by rwa [ENat.add_one_le_iff (by rwa [encard_ne_top_iff])]
---   have hle' := (mul_le_mul_left' hle 2).trans hM
---   rw [mul_add, mul_one, WithTop.add_le_add_iff_right (by norm_num)] at hle'
---   exact hlt.not_ge <| hconn (hC.isTutteSep hfin hle')
-
--- lemma TutteConnected.le_girth (h : M.TutteConnected k) (hk : 2*k ≤ M.E.encard + 2) :
---     k ≤ M.girth := by
---   simp_rw [le_girth_iff]
---   exact fun C hC ↦ hC.encard_ge_of_tutteConnected hk h
-
--- lemma TutteConnected.loopless (h : M.TutteConnected 2) (hM : M.E.Nontrivial) : M.Loopless := by
---   have : M.Nonempty := ⟨hM.nonempty⟩
---   exact Connected.loopless (tutteConnected_two_iff.1 h) hM
-
--- lemma TutteConnected.simple (h : M.TutteConnected 3) (hM : 4 ≤ M.E.encard) : M.Simple := by
---   simpa [← three_le_girth_iff, (show (2 : ℕ∞) * 3 = 4 + 2 by norm_num),
---     WithTop.add_le_add_iff_right (show (2 : ℕ∞) ≠ ⊤ by norm_num), imp_iff_right hM] using h.le_girth
-
--- def InternallyConnected (M : Matroid α) : ℕ∞ → Prop :=
---   M.PredConnected (fun _ k j X ↦ k ≤ X.encard ∧ (j + 1 = k → k + 1 ≤ X.encard))
-
--- lemma internallyConnected_iff_forall_isInternalSep :
---     M.InternallyConnected k ↔ ∀ (j : ℕ∞) (P : M.Partition), P.IsInternalSep j → k ≤ j := Iff.rfl
-
-
-
---   -- rintro j P ⟨hPconn, hP1, hP2⟩
---   -- specialize h (j := j) (P := P) ⟨hPconn, ⟨hP1, ?_⟩, ⟨hP2, ?_⟩⟩
---   -- enat_to_nat
---   -- linarith
-
--- lemma InternallyConnected.le (h : M.InternallyConnected k) (hP : P.IsInternalSep j) : k ≤ j :=
---   h hP
-
--- -- lemma InternallyConnected.le_of_isTutteSep (h : M.InternallyConnected (k+1)) (hP : P.IsTutteSep j) :
--- --     k ≤ j :=
--- --   h.tutteConnected.le hP
-
--- -- lemma InternallyConnected.eq_of_isTutteSep (h : M.InternallyConnected (k+1)) (hP : P.IsTutteSep k)
--- --     (hlt : k < ⊤) : P.eConn + 1 = k ∧ (P.left.encard = k ∨ P.right.encard = k) := by
--- --   lift k to ℕ using hlt.ne
--- --   have h_eq := (h.tutteConnected.le hP.isTutteSep_eConn_add_one).antisymm hP.eConn_add_one_le
--- --   have h' : P.eConn + 1 ≤ P.left.encard → P.right.encard < P.eConn + 1 := by
--- --     simpa [Partition.isPredSep_iff, h_eq, ENat.lt_add_right_iff, hP.eConn_lt_top.ne] using
--- --       h (j := P.eConn + 1) (P := P)
--- --   rw [ENat.lt_add_one_iff hP.eConn_lt_top.ne, imp_iff_not_or, not_le,
--- --     ENat.lt_add_one_iff hP.eConn_lt_top.ne] at h'
--- --   rw [and_iff_right h_eq.symm, le_antisymm_iff, and_iff_left hP.cond_left, le_antisymm_iff,
--- --     and_iff_left hP.cond_right, h_eq]
--- --   exact h'.elim (fun h ↦ .inl (h.trans le_self_add)) (fun h ↦ .inr (h.trans le_self_add))
-
-
--- -- lemma foo (hlt : k < ⊤) : M.InternallyConnected (k+1) ↔ M.TutteConnected k ∧
--- --     ∀ (P : M.Partition), P.IsTutteSep k → P.left.encard = k ∨ P.right.encard = k := by
-
--- --   refine ⟨fun h ↦ ⟨h.tutteConnected, fun P hP ↦ (h.eq_of_isTutteSep hP hlt).2⟩,
--- --     fun ⟨h, h'⟩ ↦ fun j P (hP' : Partition.IsInternalSep ..) ↦ ?_⟩
--- --   rw [ENat.add_one_le_iff hlt.ne, ← not_le]
--- --   intro hjk
--- --   have := hP'.conn_lt
--- --   have := hP'.cond_left
--- --   -- have := h.le (P := P) (j := j)
--- --   -- refine ⟨fun h ↦ ⟨fun a P hP ↦ h.le_of_isTutteSep hP, fun P hP ↦ (h.eq_of_isTutteSep hP hlt).2⟩
--- --   --   fun ⟨ht, h⟩ ↦ ?_⟩
--- --   -- simp [InternallyConnected, PredConnected, Partition.isPredSep_iff]
--- --   -- intro j P hlt' hjle
--- --   -- simp [hlt'.ne]
--- --   -- intro hjright
-
--- -- --   rw [ENat.add_one_le_iff hlt.ne, lt_iff_not_ge]
--- -- --   intro hjk
--- -- --   have := h P ⟨(hlt'.trans_le hjk), ?_, ?_⟩
-
--- --     -- refine h.eq_of_isTutteSep (P := P) hlt ⟨?_, ?_, ?_⟩
-
-
-
--- -- -- lemma InternallyConnected.not_tutteConnected_iff (h : M.InternallyConnected k) :
--- -- --     ¬ M.TutteConnected k ↔ ∃ j < k, ∃ (P : M.Partition), P.eConn = j ∧ P.left.encard = j := by
--- -- --   sorry
-
--- -- section Global
-
--- -- variable {X X' Y Y' : Set α} {P : M.Partition} {e : α}
 
 @[mk_iff]
 structure Partition.SepOf (P : M.Partition) (X Y : Set α) : Prop where
