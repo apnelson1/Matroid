@@ -281,8 +281,8 @@ lemma IsForest.bipartite {F : Graph α β} (hF : IsForest F) : F.Bipartite := by
     exact aux hxy.symm (not_le.1 hle).le
   obtain ⟨P, hP, hPfirst, hPlast⟩ :=
     (hFt.connected.connectedBetween hxy.left_mem hr).exists_isShortestPath
-  have hPy : F.IsPath (WList.cons y e P)
-  · suffices y ∉ P by simpa [cons_isPath_iff, hP.isPath, hPfirst, hxy.symm]
+  have hPy : F.IsPath (WList.cons y e P) := by
+    suffices y ∉ P by simpa [cons_isPath_iff, hP.isPath, hPfirst, hxy.symm]
     intro hyP
     subst hPfirst hPlast
     have hle' := (hP.isPath.suffix <| P.suffixFromVertex_isSuffix y).isWalk.dist_le_length

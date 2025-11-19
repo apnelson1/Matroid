@@ -37,7 +37,11 @@ lemma copy_eq_self (G : Graph α β) {V : Set α} {E : Set β} {IsLink : β → 
     G.copy hV hE h_isLink = G := by
   ext <;> simp_all
 
-/-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`. -/
+/-- `IsSubgraph H G` means that `V(H) ⊆ V(G)`, and every link in `H` is a link in `G`.
+
+  One way to view is that `vertex_subset` ensures the vertices are a subset and `isLink_of_isLink`
+  for the vertices. Alternativly, if a vertex has an incident edge, it's existance in guranteed by
+  `isLink` condition so the vertex condition exists to handle the isolated vertices. -/
 structure IsSubgraph (H G : Graph α β) : Prop where
   vertex_subset : V(H) ⊆ V(G)
   isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
@@ -173,31 +177,43 @@ Also, what about functional `≤` versions? -/
 /-- A spanning subgraph of `G` is a subgraph of `G` with the same vertex set. -/
 @[mk_iff]
 structure IsSpanningSubgraph (H G : Graph α β) : Prop where
-  le : H ≤ G
   vertexSet_eq : V(H) = V(G)
+  isLink_of_isLink : ∀ ⦃e x y⦄, H.IsLink e x y → G.IsLink e x y
 
 /-- `H ≤s G` means that `H` is a spanning subgraph of `G`. -/
 infixl:50 " ≤s " => Graph.IsSpanningSubgraph
 
-lemma IsSpanningSubgraph.trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤s G₂) (h₂₃ : G₂ ≤s G₃) :
-    G₁ ≤s G₃ :=
-  ⟨h₁₂.le.trans h₂₃.le, h₁₂.vertexSet_eq.trans h₂₃.vertexSet_eq⟩
+namespace IsSpanningSubgraph
+
+@[simp]
+lemma le (h : G ≤s H) : G ≤ H where
+  vertex_subset := h.vertexSet_eq.subset
+  isLink_of_isLink := h.isLink_of_isLink
+
+lemma isSpanningSubgraph_iff_le_vertexSet_eq : G ≤s H ↔ G ≤ H ∧ V(G) = V(H) :=
+  ⟨fun h ↦ ⟨h.le, h.vertexSet_eq⟩, fun h ↦ ⟨h.2, h.1.isLink_of_isLink⟩⟩
+
+lemma trans {G₁ G₂ G₃ : Graph α β} (h₁₂ : G₁ ≤s G₂) (h₂₃ : G₂ ≤s G₃) : G₁ ≤s G₃ :=
+  ⟨h₁₂.vertexSet_eq.trans h₂₃.vertexSet_eq, (h₁₂.le.trans h₂₃.le).isLink_of_isLink⟩
 
 instance : IsPartialOrder (Graph α β) (· ≤s ·) where
-  refl _ := ⟨le_rfl, rfl⟩
+  refl _ := ⟨rfl, fun _ _ _ ↦ id⟩
   trans _ _ _ h₁ h₂ := h₁.trans h₂
   antisymm _ _ h₁ h₂ := antisymm h₁.le h₂.le
 
-lemma IsSpanningSubgraph.of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
-    H ≤s K where
-  le := hHK
+lemma of_isSpanningSubgraph_left (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) : H ≤s K where
   vertexSet_eq := (vertexSet_mono hHK).antisymm ((vertexSet_mono hKG).trans_eq h.vertexSet_eq.symm)
+  isLink_of_isLink := hHK.isLink_of_isLink
 
-lemma IsSpanningSubgraph.of_isSpanningSubgraph_right (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) :
-    K ≤s G where
-  le := hKG
-  vertexSet_eq := (vertexSet_mono hKG).antisymm <|
-    h.vertexSet_eq.symm.le.trans <| vertexSet_mono hHK
+lemma of_isSpanningSubgraph_right (h : H ≤s G) (hHK : H ≤ K) (hKG : K ≤ G) : K ≤s G where
+  vertexSet_eq := (vertexSet_mono hKG).antisymm <| h.vertexSet_eq.symm.le.trans
+  <| vertexSet_mono hHK
+  isLink_of_isLink := hKG.isLink_of_isLink
+
+lemma eq_of_edgeSet (h : H ≤s G) (hE : E(H) = E(G)) : H = G :=
+  ext_of_le_le h.le le_rfl h.vertexSet_eq hE
+
+end IsSpanningSubgraph
 
 /-! ### Induced Subgraphs -/
 
@@ -229,6 +245,11 @@ lemma IsInducedSubgraph.adj_of_adj (h : H ≤i G) (hxy : G.Adj x y) (hx : x ∈ 
     H.Adj x y := by
   obtain ⟨e, hxy⟩ := hxy
   exact (h.isLink_of_mem_mem hxy hx hy).adj
+
+lemma IsInducedSubgraph.eq_of_vertexSet (h : H ≤i G) (hV : V(H) = V(G)) : H = G :=
+  ext_of_le_le h.le le_rfl hV <| antisymm (edgeSet_mono h.le) <| fun e he ↦ by
+    obtain ⟨_, _, hxy⟩ := G.exists_isLink_of_mem_edgeSet he
+    exact h.isLink_of_mem_mem hxy (hV ▸ hxy.left_mem) (hV ▸ hxy.right_mem) |>.edge_mem
 
 /-! ### Closed Subgraphs -/
 

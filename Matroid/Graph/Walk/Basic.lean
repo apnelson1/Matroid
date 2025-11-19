@@ -1,5 +1,5 @@
 import Matroid.Graph.WList.Sublist
-import Matroid.Graph.Subgraph.Lemma
+import Matroid.Graph.Subgraph.Delete
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
@@ -308,7 +308,7 @@ lemma IsWalk.induce (hw : G.IsWalk w) (hX : V(w) ⊆ X) : G[X].IsWalk w := by
   induction hw with
   | nil => simp_all
   | @cons x e w hw h ih =>
-    simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, induce_isLink_iff, true_and,
+    simp_all only [cons_vertexSet, insert_subset_iff, cons_isWalk_iff, induce_isLink, true_and,
       and_true, forall_const]
     refine hX.2 <| by simp
 
@@ -318,7 +318,7 @@ lemma isWalk_induce_iff' (hw : w.Nonempty) : G[X].IsWalk w ↔ G.IsWalk w ∧ V(
   | nil => simp at hw
   | cons u e w ih => cases w with
     | nil v =>
-      simp only [cons_isWalk_iff, nil_first, induce_isLink_iff, nil_isWalk_iff,
+      simp only [cons_isWalk_iff, nil_first, induce_isLink, nil_isWalk_iff,
         induce_vertexSet] at h ⊢
       exact ⟨h.1.1, h.1.1.right_mem⟩
     | cons v f w => simp_all
@@ -559,7 +559,7 @@ lemma _root_.WList.WellFormed.toGraph_le_iff (hW : W.WellFormed) : W.toGraph ≤
     rw [toGraph_cons, Compatible.union_le_iff] at hle
     · simp only [singleEdge_le_iff] at hle
       refine ⟨hle.2, IH hW.1 hle.1⟩
-    rw [compatible_comm, singleEdge_compatible_iff, toGraph_edgeSet, mem_edgeSet_iff]
+    rw [comm_of Compatible, singleEdge_compatible_iff, toGraph_edgeSet, mem_edgeSet_iff]
     intro he
     obtain ⟨x, y, hexy⟩ := exists_isLink_of_mem_edge he
     have := hW.2 _ _ hexy

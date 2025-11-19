@@ -111,7 +111,7 @@ instance : (G - X).Simple := ‹G.Simple›.mono vertexDelete_le
 
 instance : G[X].Simple where
   eq_of_isLink e f x y := by
-    simp only [induce_isLink_iff, and_imp]
+    simp only [induce_isLink, and_imp]
     exact fun h _ _ h' _ _ ↦ h.unique_edge h'
 
 instance (V : Set α) : (Graph.noEdge V β).Simple where

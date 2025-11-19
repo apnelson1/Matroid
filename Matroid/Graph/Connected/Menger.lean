@@ -1,6 +1,7 @@
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
 import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Finite
 import Mathlib.Data.Finite.Card
 
 open Set Function Nat WList symmDiff Graph.SetEnsemble
@@ -36,7 +37,7 @@ lemma List.Nodup.countP_eq_card {l : List α} {P : α → Prop} [DecidableEq α]
 namespace Graph
 
 lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T ⊆ V(G))
-    (hconn : G.SetConnectivityGe S T n) {A : G.SetEnsemble} (hA : A.between S T)
+    (hconn : G.SetConnGe S T n) {A : G.SetEnsemble} (hA : A.between S T)
     (hAFin : A.paths.Finite) (hAcard : A.paths.encard < n) :
     ∃ B : G.SetEnsemble, B.between S T ∧
     ∃ x ∉ last '' A.paths, insert x (last '' A.paths) = (last '' B.paths) := by
@@ -46,7 +47,7 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
 
   /- Since we have less paths than the connectivity, the last ends of the paths is not an ST cut.
     Therefore, there is an S-(T \ last '' A.paths) path. -/
-  have h1 : (G - (last '' A.paths)).SetConnectivityGe S (T \ last '' A.paths) 1 := by
+  have h1 : (G - (last '' A.paths)).SetConnGe S (T \ last '' A.paths) 1 := by
     have hlast : last '' A.paths ⊆ V(G) := by
       rintro _ ⟨P, hP, rfl⟩
       exact hT <| hA hP |>.last_mem
@@ -202,7 +203,7 @@ decreasing_by
   use (hP'P.subset.trans hGP.vertexSet_subset) first_mem, Or.inr (R.first_mem_bQ2)
 
 lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : ℕ}
-    (hconn : G.SetConnectivityGe S T n) :
+    (hconn : G.SetConnGe S T n) :
     ∀ m ≤ n, ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = m := by
   rintro m hn
   match m with
@@ -224,7 +225,7 @@ lemma Menger'sTheorem_aux' [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) {n : �
   For vertex sets `S` and `T`, if every `S`-`T` cut has at least `n` vertices, then there are `n`
   disjoint paths from `S` to `T`. -/
 theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : ℕ) :
-    G.SetConnectivityGe S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
+    G.SetConnGe S T n ↔ ∃ A : G.SetEnsemble, A.between S T ∧ A.paths.encard = n := by
   refine ⟨(Menger'sTheorem_aux' hS hT · n le_rfl), fun ⟨A, hA, hAcard⟩ C hC => ?_⟩
   match n with
   | 0 => exact StrictMono.minimal_preimage_bot (fun ⦃a b⦄ a_1 ↦ a_1) rfl _
@@ -252,18 +253,18 @@ theorem Menger'sTheorem_set [G.Finite] (hS : S ⊆ V(G)) (hT : T ⊆ V(G)) (n : 
 /-- For two vertices `s` and `t`, if every `s`-`t` cut has at least `n` vertices,
     then there are `n` internally disjoint paths from `s` to `t`. -/
 theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
-    G.ConnectivityBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
+    G.ConnBetweenGe s t n ↔ Nonempty (G.VertexEnsemble s t ι) := by
   have hιFin : Finite ι := ENat.card_lt_top.mp <| hι ▸ ENat.coe_lt_top n
   obtain hne | hne := eq_or_ne s t
   · subst t
-    simp only [hs, connectivityBetweenGe_self, true_iff]
+    simp only [hs, connBetweenGe_self, true_iff]
     exact ⟨G.vertexEnsemble_nil hs ι⟩
   by_cases hadj : G.Adj s t
   · obtain ⟨e, he⟩ := hadj
-    simp only [he.connectivityBetweenGe, true_iff]
+    simp only [he.connBetweenGe, true_iff]
     exact ⟨he.vertexEnsemble ι hne⟩
   refine ⟨fun h => ?_, fun ⟨A⟩ => ?_⟩
-  · rw [connectivityBetweenGe_iff_setConnectivityGe hne hadj, Menger'sTheorem_set
+  · rw [connBetweenGe_iff_setConnGe hne hadj, Menger'sTheorem_set
     (by simp [subset_diff, hadj]) (by simp [subset_diff, not_symm_not hadj])] at h
     obtain ⟨A, hA, hAcard⟩ := h
     refine ⟨VertexEnsemble.ofSetEnsemble s t hne A hA |>.comp (ι' := ι) ?_⟩
@@ -272,7 +273,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     have hAcardFin : (first '' A.paths).Finite := finite_of_encard_eq_coe hAcard
     rw [← hAcardFin.cast_ncard_eq, ENat.coe_inj] at hAcard
     exact (Finite.equivFinOfCardEq hι).trans (hAcardFin.equivFinOfCardEq hAcard).symm |>.toEmbedding
-  unfold ConnectivityBetweenGe
+  unfold ConnBetweenGe
   by_contra! hC
   obtain ⟨C, hC⟩ := hC
   obtain ⟨i, hdj⟩ : ∃ i, Disjoint V(A.f i) C := by
@@ -292,16 +293,64 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
 
 -- #print axioms Menger'sTheorem_vertex
 
-theorem Menger'sTheorem_global [G.Finite] (hι : ENat.card ι = n) :
-    G.PreconnectivityGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
+theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
+    G.PreconnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
--- theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
---     G.ConnectivityGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
---     s ≠ t → Subsingleton {i | ¬ (A.f i).Nontrivial} := by
---   rw [connectivityGe_iff_preconnectivityGe_le_card]
---   refine ⟨fun ⟨hconn, hle⟩ s t hs ht => ?_, fun h => ?_⟩
---   ·
+
+@[simps]
+def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
+  vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
+  edgeSet := {(a, b) | G.Inc b a}
+  IsLink e x y := G.Inc e.2 e.1 ∧ s(Sum.inl e.1, Sum.inr e.2) = s(x, y)
+  isLink_symm e he x y h := ⟨h.1, by simp [h.2]⟩
+  eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
+    have := by simpa using hab.2.symm.trans hcd.2
+    tauto
+  left_mem_of_isLink e x y h := by
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := by simpa using h.2
+    · simp [h.1.vertex_mem]
+    simp [h.1.edge_mem]
+  edge_mem_iff_exists_isLink e := by simp
+
+-- lemma mixedLineGraph_vertexDelete_connected_of_connected (h : (G - X ＼ F).Connected) :
+--     (G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' F)).Connected := by
+--   obtain ⟨W, hW, rfl, rfl⟩ := h.connectedBetween (by simp) (by simp)
+
+
+-- -- ¬(G.mixedLineGraph - (Sum.inl '' C.vertexSet ∪ Sum.inr '' C.edgeSet)).Connected
+-- -- this : ¬(G - C.vertexSet ＼ C.edgeSet).Connected
+
+-- def MixedCut.toCutMixedLineGraph (C : G.MixedCut) : G.mixedLineGraph.Cut where
+--   carrier := Sum.inl '' C.vertexSet ∪ Sum.inr '' C.edgeSet
+--   carrier_subset := by
+--     simp only [mixedLineGraph_vertexSet, union_subset_iff]
+--     exact ⟨(image_mono C.vertexSet_subset).trans subset_union_left,
+--       (image_mono C.edgeSet_subset).trans subset_union_right⟩
+--   not_connected' := by
+--     have := C.not_conn'
+--     simp
+--     sorry
+
+
+-- theorem Menger'sTheorem_mixed [G.Finite] (hι : ENat.card ι = n) :
+--     G.ConnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → ∃ A : G.VertexEnsemble s t ι,
+--A.edgeDisjoint := by
 --   sorry
+
+variable {α' β' : Type*} {H H' : Graph α' β'}
+
+def Walk (G : Graph α β) := {w // G.IsWalk w}
+
+def Walk.IsPrefix (w w' : G.Walk) : Prop := w.val.IsPrefix w'.val
+
+def Walk.reverse (w : G.Walk) : G.Walk := ⟨w.val.reverse, w.prop.reverse⟩
+
+structure WalkHom (G : Graph α β) (H : Graph α' β') where
+  walkMap : G.Walk → H.Walk
+  IsPrefix' ⦃w w' : G.Walk⦄ : w.IsPrefix w' → (walkMap w).IsPrefix (walkMap w')
+  reverse' ⦃w⦄ : walkMap w.reverse = (walkMap w).reverse
+
+-- def vxMap (F : G.WalkHom H) : α → α'
 
 end Graph

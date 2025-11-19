@@ -449,8 +449,8 @@ def IsCompOf.separation_of_ne (h : H.IsCompOf G) (hne : H ≠ G) : G.Separation 
   left := V(H)
   right := V(G) \ V(H)
   nonempty_left := h.connected.nonempty
-  nonempty_right := diff_nonempty.2 fun hss ↦ hne <|
-    h.isInducedSubgraph.eq_of_isSpanningSubgraph ⟨h.le, hss.antisymm' (vertexSet_mono h.le)⟩
+  nonempty_right := diff_nonempty.2 fun hss ↦ hne <| h.isInducedSubgraph.eq_of_isSpanningSubgraph
+    ⟨hss.antisymm' (vertexSet_mono h.le), h.le.isLink_of_isLink⟩
   disjoint := disjoint_sdiff_right
   union_eq := by simp [vertexSet_mono h.le]
   not_adj x y hx hy hxy := hy.2 <| (h.isClosedSubgraph.adj_of_adj_of_mem hx hxy).right_mem
