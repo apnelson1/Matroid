@@ -25,6 +25,7 @@ def ConnectedBetween (G : Graph α β) (x y : α) : Prop :=
 lemma ConnectedBetween.refl (hx : x ∈ V(G)) : G.ConnectedBetween x x :=
   ⟨nil x, by simpa, rfl, rfl⟩
 
+@[symm]
 lemma ConnectedBetween.symm (h : G.ConnectedBetween x y) : G.ConnectedBetween y x := by
   obtain ⟨w, hw, hx, hy⟩ := h
   exact ⟨w.reverse, hw.reverse, by simpa, by simpa⟩
