@@ -193,8 +193,8 @@ lemma bouquet_empty (v : α) : bouquet v ∅ = Graph.noEdge {v} β := by
   ext <;> simp
 
 lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bouquet v Y where
-  le := ⟨by simp, by simp +contextual [subset_def ▸ hss]⟩
   vertexSet_eq := rfl
+  isLink_of_isLink := by simp +contextual [subset_def ▸ hss]
 
 /-! ### Two vertices -/
 
@@ -239,8 +239,12 @@ lemma banana_singleton (e : β) : banana a b {e} = Graph.singleEdge a b e := by
   ext <;> rfl
 
 lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b Y where
-  le := ⟨by simp, by simp +contextual [subset_def ▸ hXY]⟩
   vertexSet_eq := rfl
+  isLink_of_isLink := by simp +contextual [subset_def ▸ hXY]
+
+@[simp]
+lemma banana_eq_bouquet : banana a a F = bouquet a F := by
+  ext a b c <;> simp
 
 /-! ### Complete graphs -/
 
@@ -296,11 +300,20 @@ lemma singleEdge_isComplete (u v : α) (e : β) : (Graph.singleEdge u v e).IsCom
   simp only [singleEdge_vertexSet, mem_insert_iff, mem_singleton_iff] at ha hb
   obtain rfl | rfl := ha <;> obtain rfl | rfl := hb <;> simp at hne ⊢
 
-@[simp]
 lemma banana_isComplete (a b : α) (hF : F.Nonempty) : (banana a b F).IsComplete := by
   rintro x hx y hy hne
   simp only [banana_vertexSet, mem_insert_iff, mem_singleton_iff] at hx hy
   obtain rfl | rfl := hx <;> obtain rfl | rfl := hy <;> simp [hF] at hne ⊢
+
+@[simp]
+lemma banana_isComplete_iff (a b : α) (F : Set β ) :
+    (banana a b F).IsComplete ↔ a = b ∨ F.Nonempty := by
+  obtain rfl | hne := eq_or_ne a b
+  · simp only [true_or, iff_true]
+    intro x
+    simp +contextual
+  simp only [hne, false_or]
+  exact ⟨fun h ↦ ⟨_, h a (by simp) b (by simp) hne |>.choose_spec.edge_mem⟩, banana_isComplete a b⟩
 
 /-- The star graph with `n` leaves with center `v` -/
 @[simps]

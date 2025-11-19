@@ -369,19 +369,19 @@ end SetEnsemble
 
 /-! ### k-connectivity between two sets -/
 
-def SetConnectivityGe (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
+def SetConnGe (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
   ∀ ⦃C : Set α⦄, G.IsSetCut S T C → n ≤ C.encard
 
 @[simp]
-lemma SetConnectivityGe_zero (G : Graph α β) (S T : Set α) : G.SetConnectivityGe S T 0 := by
-  simp [SetConnectivityGe]
+lemma SetConnGe_zero (G : Graph α β) (S T : Set α) : G.SetConnGe S T 0 := by
+  simp [SetConnGe]
 
-lemma SetConnectivityGe.anti_right (hle : n ≤ m) (h : G.SetConnectivityGe S T m) :
-    G.SetConnectivityGe S T n :=
+lemma SetConnGe.anti_right (hle : n ≤ m) (h : G.SetConnGe S T m) :
+    G.SetConnGe S T n :=
   fun _ hC ↦ le_trans (by norm_cast) (h hC)
 
 @[simp]
-lemma setConnectivityGe_one_iff : G.SetConnectivityGe S T 1 ↔ G.SetConnected S T := by
+lemma setConnGe_one_iff : G.SetConnGe S T 1 ↔ G.SetConnected S T := by
   refine ⟨fun h => ?_, fun h C hC => ?_⟩
   · by_contra hc
     simpa using h <| isSetCut_empty hc
@@ -391,9 +391,9 @@ lemma setConnectivityGe_one_iff : G.SetConnectivityGe S T 1 ↔ G.SetConnected S
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxC
 
-lemma SetConnectivityGe.SetConnected (h : G.SetConnectivityGe S T n) (hn : n ≠ 0) :
+lemma SetConnGe.SetConnected (h : G.SetConnGe S T n) (hn : n ≠ 0) :
     G.SetConnected S T := by
-  unfold SetConnectivityGe at h
+  unfold SetConnGe at h
   contrapose! h
   use ∅, isSetCut_empty h
   change (∅ : Set α).encard < n
@@ -401,54 +401,54 @@ lemma SetConnectivityGe.SetConnected (h : G.SetConnectivityGe S T n) (hn : n ≠
   norm_cast
   exact pos_of_ne_zero hn
 
-lemma SetConnectivityGe.exists_isPathFrom (h : G.SetConnectivityGe S T n) (hn : n ≠ 0) :
+lemma SetConnGe.exists_isPathFrom (h : G.SetConnGe S T n) (hn : n ≠ 0) :
     ∃ P, G.IsPathFrom S T P := by
   classical
   obtain ⟨s, hs, t, ht, hst⟩ := h.SetConnected hn
   obtain ⟨P, hP, rfl, rfl⟩ := hst.exists_isPath
   exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
 
-lemma SetConnectivityGe.vertexDelete (h : G.SetConnectivityGe S T n) (X : Set α) :
-    (G - X).SetConnectivityGe S T (n - (X ∩ V(G)).encard).toNat := by
+lemma SetConnGe.vertexDelete (h : G.SetConnGe S T n) (X : Set α) :
+    (G - X).SetConnGe S T (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
   have := by simpa using h (hC.of_vertexDelete)
   exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
 
-lemma SetConnectivityGe.vertexDelete' (h : G.SetConnectivityGe S T n) (X : Set α) :
-    (G - X).SetConnectivityGe (S \ X) (T \ X) (n - (X ∩ V(G)).encard).toNat := by
+lemma SetConnGe.vertexDelete' (h : G.SetConnGe S T n) (X : Set α) :
+    (G - X).SetConnGe (S \ X) (T \ X) (n - (X ∩ V(G)).encard).toNat := by
   intro C hC
   have := by simpa using h ((hC.of_vertexDelete').subset (by simp) (by simp))
   exact (ENat.coe_toNat_le_self _).trans <| tsub_le_iff_left.mpr <| this.trans <| encard_union_le ..
 
-lemma SetConnectivityGe.subset (h : G.SetConnectivityGe S T n) (hS : S ⊆ S') (hT : T ⊆ T') :
-    G.SetConnectivityGe S' T' n :=
+lemma SetConnGe.subset (h : G.SetConnGe S T n) (hS : S ⊆ S') (hT : T ⊆ T') :
+    G.SetConnGe S' T' n :=
   fun _ hC ↦ h (hC.subset hS hT)
 
-lemma setConnectivityGe_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
-    G.SetConnectivityGe S T (V(G) ∩ S ∩ T).ncard := by
+lemma setConnGe_inter_ncard (hFin : (V(G) ∩ S ∩ T).Finite) :
+    G.SetConnGe S T (V(G) ∩ S ∩ T).ncard := by
   intro C hC
   rw [Set.ncard_def, ENat.coe_toNat (by simpa)]
   exact encard_le_encard (hC.inter_subset)
 
-lemma SetConnectivityGe.left_encard_le (h : G.SetConnectivityGe S T n) : n ≤ (V(G) ∩ S).encard :=
+lemma SetConnGe.left_encard_le (h : G.SetConnGe S T n) : n ≤ (V(G) ∩ S).encard :=
   h (left_isSetCut G S T)
 
-lemma SetConnectivityGe.right_encard_le (h : G.SetConnectivityGe S T n) : n ≤ (V(G) ∩ T).encard :=
+lemma SetConnGe.right_encard_le (h : G.SetConnGe S T n) : n ≤ (V(G) ∩ T).encard :=
   h (right_isSetCut G S T)
 
-def EdgeSetConnectivityGe (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
+def EdgeSetConnGe (G : Graph α β) (S T : Set α) (n : ℕ) : Prop :=
   ∀ ⦃F : Set β⦄, G.IsEdgeSetCut S T F → n ≤ F.encard
 
 @[simp]
-lemma EdgeSetConnectivityGe_zero (G : Graph α β) (S T : Set α) : G.EdgeSetConnectivityGe S T 0 := by
-  simp [EdgeSetConnectivityGe]
+lemma EdgeSetConnGe_zero (G : Graph α β) (S T : Set α) : G.EdgeSetConnGe S T 0 := by
+  simp [EdgeSetConnGe]
 
-lemma EdgeSetConnectivityGe.anti_right (hle : n ≤ m) (h : G.EdgeSetConnectivityGe S T m) :
-    G.EdgeSetConnectivityGe S T n :=
+lemma EdgeSetConnGe.anti_right (hle : n ≤ m) (h : G.EdgeSetConnGe S T m) :
+    G.EdgeSetConnGe S T n :=
   fun _ hF ↦ le_trans (by norm_cast) (h hF)
 
 @[simp]
-lemma EdgeSetConnectivityGe_one_iff : G.EdgeSetConnectivityGe S T 1 ↔ G.SetConnected S T := by
+lemma EdgeSetConnGe_one_iff : G.EdgeSetConnGe S T 1 ↔ G.SetConnected S T := by
   refine ⟨fun h => ?_, fun h F hF => ?_⟩
   · by_contra! hc
     simpa using h <| isEdgeSetCut_empty hc
@@ -458,11 +458,11 @@ lemma EdgeSetConnectivityGe_one_iff : G.EdgeSetConnectivityGe S T 1 ↔ G.SetCon
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxF
 
-lemma EdgeSetConnectivityGe.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) :
-    G.EdgeSetConnectivityGe S T n :=
+lemma EdgeSetConnGe.of_not_disjoint (hdj : ¬ Disjoint V(G) (S ∩ T)) :
+    G.EdgeSetConnGe S T n :=
   fun _ hF ↦ (hdj hF.disjoint).elim
 
-lemma SetConnectivityGe.edgeSetConnectivityGe (h : G.SetConnectivityGe S T n) :
-    G.EdgeSetConnectivityGe S T n :=
+lemma SetConnGe.edgeSetConnGe (h : G.SetConnGe S T n) :
+    G.EdgeSetConnGe S T n :=
   fun _ hF ↦ h hF.isSetCut |>.trans (encard_image_le _ _)
   |>.trans (encard_preimage_val_le_encard_right _ _)

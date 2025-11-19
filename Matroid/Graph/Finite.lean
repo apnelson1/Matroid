@@ -164,7 +164,7 @@ lemma LocallyFinite.mono (hG : G.LocallyFinite) (hle : H ≤ G) : H.LocallyFinit
   finite _ := G.finite_setOf_inc.subset fun _ he ↦ he.of_le hle
 
 instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
-  finite _ := G.finite_setOf_inc.subset fun _ ⟨_, he⟩ ↦ (induce_isLink_iff.1 he).1.inc_left
+  finite _ := G.finite_setOf_inc.subset fun _ ⟨_, he⟩ ↦ ((induce_isLink ..) ▸ he).1.inc_left
 
 instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
   ‹G.LocallyFinite›.mono vertexDelete_le

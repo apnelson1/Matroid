@@ -1,41 +1,12 @@
-import Matroid.Graph.Subgraph.Compatible
+import Matroid.Graph.Subgraph.Defs
 
-
-variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : α} {e f : β}
-  {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {s t : Set (Graph α β)}
+variable {α β ι ι' : Type*} {a b c : α} {x y z u v w : α} {e f : β} {Gι Hι : ι → Graph α β}
+  {G G₁ G₂ H H₁ H₂ : Graph α β} {F F₁ F₂ : Set β} {X Y : Set α} {Gs Hs : Set (Graph α β)}
 
 open Set Function
 
 namespace Graph
 /-! ### Indexed Intersections -/
-
-/-- The intersection of a nonempty family of pairwise compatible graphs.
-  Remove any disagreeing edges. -/
-@[simps]
-protected def iInter [Nonempty ι] (G : ι → Graph α β) : Graph α β where
-  vertexSet := ⋂ i, V(G i)
-  edgeSet := {e | ∃ x y, ∀ i, (G i).IsLink e x y}
-  IsLink e x y := ∀ i, (G i).IsLink e x y
-  isLink_symm e he x y := by simp [isLink_comm]
-  eq_or_eq_of_isLink_of_isLink e _ _ _ _ h h' :=
-    (h (Classical.arbitrary ι)).left_eq_or_eq (h' (Classical.arbitrary ι))
-  edge_mem_iff_exists_isLink e := by simp
-  left_mem_of_isLink e x y h := mem_iInter.2 fun i ↦ (h i).left_mem
-
-protected lemma iInter_le {G : ι → Graph α β} [Nonempty ι] (i : ι) : Graph.iInter G ≤ G i where
-  vertex_subset := iInter_subset (fun i ↦ V(G i)) i
-  isLink_of_isLink _ _ _ h := h i
-
-@[simp]
-lemma le_iInter_iff [Nonempty ι] {G : ι → Graph α β} :
-    H ≤ Graph.iInter G ↔ ∀ i, H ≤ G i := by
-  let j := Classical.arbitrary ι
-  refine ⟨fun h i ↦ h.trans <| Graph.iInter_le .., fun h ↦ ?_⟩
-  apply le_of_le_le_subset_subset (h j) (Graph.iInter_le ..) ?_ fun e he ↦ ?_
-  · simp [fun i ↦ vertexSet_mono (h i)]
-  simp only [iInter_edgeSet, mem_setOf_eq]
-  obtain ⟨x, y, hbtw⟩ := exists_isLink_of_mem_edgeSet he
-  use x, y, fun i ↦ hbtw.of_le (h i)
 
 @[simp]
 protected lemma iInter_const [Nonempty ι] (G : Graph α β) :
@@ -109,22 +80,8 @@ lemma edgeRestrict_iInter [Nonempty ι] {G : ι → Graph α β} (F : Set β) :
 
 /-! ### Set Intersections -/
 
-/-- The intersection of a nonempty set of pairwise compatible graphs. -/
-@[simps!]
-protected def sInter (s : Set (Graph α β)) (hne : s.Nonempty) : Graph α β :=
-  @Graph.iInter _ _ _ hne.to_subtype (fun G : s ↦ G.1)
-
-protected lemma sInter_le (hG : G ∈ s) : Graph.sInter s ⟨G, hG⟩ ≤ G := by
-  rw [Graph.sInter]
-  generalize_proofs h
-  exact Graph.iInter_le (⟨G, hG⟩ : s)
-
-@[simp]
-protected lemma le_sInter_iff (hne : s.Nonempty) : H ≤ Graph.sInter s hne ↔ ∀ G ∈ s, H ≤ G := by
-  simp [Graph.sInter]
-
-protected lemma sInter_anti (hne : s.Nonempty) (hne' : t.Nonempty) (hle : s ⊆ t) :
-    Graph.sInter t hne' ≤ Graph.sInter s hne := by
+protected lemma sInter_anti (hne : Gs.Nonempty) (hne' : Hs.Nonempty) (hle : Gs ⊆ Hs) :
+    Graph.sInter Hs hne' ≤ Graph.sInter Gs hne := by
   rw [Graph.le_sInter_iff hne]
   exact fun G hGs ↦ Graph.sInter_le (hle hGs)
 
@@ -132,9 +89,9 @@ def Equiv.insert_option {s : Set α} [DecidablePred fun (x : α) => x ∈ s] (a 
     Option s ≃ (insert a s : Set α) :=
   (Equiv.optionEquivSumPUnit _).trans (Equiv.Set.insert has).symm
 
-protected lemma sInter_insert_eq_iInter [DecidablePred (· ∈ s)]
-    (hGs : G ∉ s) : Graph.sInter (insert G s) (by simp) = Graph.iInter
-    ((fun G : (insert G s : Set _) ↦ G.1) ∘ (Equiv.insert_option G hGs)) :=
+protected lemma sInter_insert_eq_iInter [DecidablePred (· ∈ Gs)]
+    (hGs : G ∉ Gs) : Graph.sInter (insert G Gs) (by simp) = Graph.iInter
+    ((fun G : (insert G Gs : Set _) ↦ G.1) ∘ (Equiv.insert_option G hGs)) :=
   Graph.iInter_comp_eq_of_surj <| Equiv.surjective (Equiv.insert_option G hGs)
 
 protected lemma sInter_image {s : Set ι} (hne : s.Nonempty) (f : ι → Graph α β) :
@@ -156,82 +113,53 @@ protected lemma sInter_singleton (G : Graph α β) : Graph.sInter {G} (by simp) 
   exact fun G_2 a ↦ Eq.ge a
 
 @[simp]
-lemma sInter_inc_iff (hs : s.Nonempty) :
-    (Graph.sInter s hs).Inc e x ↔ ∃ y, ∀ G ∈ s, G.IsLink e x y := by
+lemma sInter_inc_iff (hs : Gs.Nonempty) :
+    (Graph.sInter Gs hs).Inc e x ↔ ∃ y, ∀ G ∈ Gs, G.IsLink e x y := by
   simp only [Inc, sInter_isLink]
 
 @[simp]
-lemma sInter_isLoopAt_iff (hs : s.Nonempty) :
-    (Graph.sInter s hs).IsLoopAt e x ↔ ∀ G ∈ s, G.IsLoopAt e x := by
+lemma sInter_isLoopAt_iff (hs : Gs.Nonempty) :
+    (Graph.sInter Gs hs).IsLoopAt e x ↔ ∀ G ∈ Gs, G.IsLoopAt e x := by
   simp only [IsLoopAt, sInter_isLink]
 
 @[simp]
-lemma sInter_isNonloopAt_iff (hs : s.Nonempty) :
-    (Graph.sInter s hs).IsNonloopAt e x ↔ ∃ y ≠ x, ∀ G ∈ s, G.IsLink e x y := by
+lemma sInter_isNonloopAt_iff (hs : Gs.Nonempty) :
+    (Graph.sInter Gs hs).IsNonloopAt e x ↔ ∃ y ≠ x, ∀ G ∈ Gs, G.IsLink e x y := by
   simp only [IsNonloopAt, sInter_isLink]
 
 @[simp]
-lemma induce_sInter (hs : s.Nonempty) (X : Set α) :
-    (Graph.sInter s hs)[X] = .sInter ((·[X]) '' s) (by simpa) := by
+lemma induce_sInter (hs : Gs.Nonempty) (X : Set α) :
+    (Graph.sInter Gs hs)[X] = .sInter ((·[X]) '' Gs) (by simpa) := by
   refine Graph.ext (by simp; exact (biInter_const hs X).symm) fun e x y ↦ ?_
-  simp +contextual only [induce_isLink_iff, sInter_isLink, mem_image, forall_exists_index, and_imp,
+  simp +contextual only [induce_isLink, sInter_isLink, mem_image, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, iff_def, and_self, implies_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).right
 
 @[simp]
-lemma vertexDelete_sInter (hs : s.Nonempty) (X : Set α) :
-    (Graph.sInter s hs) - X = .sInter ((· - X) '' s) (by simpa) := by
+lemma vertexDelete_sInter (hs : Gs.Nonempty) (X : Set α) :
+    (Graph.sInter Gs hs) - X = .sInter ((· - X) '' Gs) (by simpa) := by
   refine Graph.ext (by simp [biInter_diff_distrib hs]) fun e x y ↦ ?_
   simp +contextual only [vertexDelete_isLink_iff, sInter_isLink, mem_image, forall_exists_index,
     and_imp, forall_apply_eq_imp_iff₂, iff_def, not_false_eq_true, and_self, implies_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).right
 
 @[simp]
-lemma edgeDelete_sInter (hs : s.Nonempty) (F : Set β) :
-    (Graph.sInter s hs) ＼ F = .sInter ((· ＼ F) '' s) (by simpa) :=
+lemma edgeDelete_sInter (hs : Gs.Nonempty) (F : Set β) :
+    (Graph.sInter Gs hs) ＼ F = .sInter ((· ＼ F) '' Gs) (by simpa) :=
   Graph.ext (by simp) fun e x y ↦ by
   simp +contextual only [edgeDelete_isLink, sInter_isLink, mem_image, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, iff_def, not_false_eq_true, and_self, implies_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).right
 
 @[simp]
-lemma edgeRestrict_sInter (hs : s.Nonempty) (F : Set β) :
-    (Graph.sInter s hs) ↾ F = .sInter ((· ↾ F) '' s) (by simpa) :=
+lemma edgeRestrict_sInter (hs : Gs.Nonempty) (F : Set β) :
+    (Graph.sInter Gs hs) ↾ F = .sInter ((· ↾ F) '' Gs) (by simpa) :=
   Graph.ext (by simp) fun e x y ↦ by
   simp +contextual only [edgeRestrict_isLink, sInter_isLink, mem_image, forall_exists_index,
     and_imp, forall_apply_eq_imp_iff₂, iff_def, and_self, implies_true, and_true, true_and]
   exact fun h ↦ (h _ hs.some_mem).left
 
 /-! ### Intersections -/
-
-/-- The intersection of two graphs `G` and `H`. There seems to be no good way to
-defined junk values so that this has the right edge and vertex set, so the
-edges are precisely those on which `G` and `H` agree, and the edge set is a subset
-of `E(G) ∩ E(H)`,
-with equality if `G` and `H` are compatible.   -/
-protected def inter (G H : Graph α β) : Graph α β where
-  vertexSet := V(G) ∩ V(H)
-  IsLink e x y := G.IsLink e x y ∧ H.IsLink e x y
-  isLink_symm _ _ _ _ h := ⟨h.1.symm, h.2.symm⟩
-  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.1.left_eq_or_eq h'.1
-  edge_mem_iff_exists_isLink e := by simp
-  left_mem_of_isLink e x y h := ⟨h.1.left_mem, h.2.left_mem⟩
-
-instance : Inter (Graph α β) where inter := Graph.inter
-
-@[simp]
-lemma inter_vertexSet (G H : Graph α β) : V(G ∩ H) = V(G) ∩ V(H) := rfl
-
-@[simp]
-lemma inter_isLink_iff : (G ∩ H).IsLink e x y ↔ G.IsLink e x y ∧ H.IsLink e x y := Iff.rfl
-
-lemma inter_edgeSet (G H : Graph α β) :
-    E(G ∩ H) = {e ∈ E(G) ∩ E(H) | G.IsLink e = H.IsLink e} := by
-  simp only [edgeSet_eq_setOf_exists_isLink, inter_isLink_iff, mem_inter_iff, mem_setOf_eq,
-    funext_iff, eq_iff_iff, Set.ext_iff]
-  exact fun e ↦ ⟨fun ⟨x, y, hfG, hfH⟩ ↦ ⟨⟨⟨_, _, hfG⟩, ⟨_, _, hfH⟩⟩,
-    fun z w ↦ by rw [hfG.isLink_iff_sym2_eq, hfH.isLink_iff_sym2_eq]⟩,
-    fun ⟨⟨⟨x, y, hexy⟩, ⟨z, w, hezw⟩⟩, h⟩ ↦ ⟨x, y, hexy, by rwa [← h]⟩⟩
 
 lemma inter_edgeSet_subset : E(G ∩ H) ⊆ E(G) ∩ E(H) := by
   simp +contextual [inter_edgeSet, subset_def]
@@ -248,37 +176,6 @@ lemma inter_isLoopAt_iff : (G ∩ H).IsLoopAt e x ↔ G.IsLoopAt e x ∧ H.IsLoo
 lemma inter_isNonloopAt_iff :
     (G ∩ H).IsNonloopAt e x ↔ ∃ y ≠ x, G.IsLink e x y ∧ H.IsLink e x y := by
   simp [IsNonloopAt]
-
-protected lemma inter_comm (G H : Graph α β) : G ∩ H = H ∩ G :=
-  Graph.ext (Set.inter_comm ..) <| by simp [and_comm]
-
-instance : Std.Commutative (α := Graph α β) (· ∩ ·) where
-  comm := Graph.inter_comm
-
-protected lemma inter_assoc (G H I : Graph α β) : (G ∩ H) ∩ I = G ∩ (H ∩ I) :=
-  Graph.ext (Set.inter_assoc ..) <| by simp [and_assoc]
-
-instance : Std.Associative (α := Graph α β) (· ∩ ·) where
-  assoc := Graph.inter_assoc
-
-@[simp]
-protected lemma inter_le_left : G ∩ H ≤ G where
-  vertex_subset := inter_subset_left
-  isLink_of_isLink := by simp +contextual
-
-@[simp]
-protected lemma inter_le_right : G ∩ H ≤ H :=
-  Graph.inter_comm _ _ ▸ Graph.inter_le_left
-
-protected lemma le_inter (h₁ : H ≤ G₁) (h₂ : H ≤ G₂) : H ≤ G₁ ∩ G₂ where
-  vertex_subset := subset_inter (vertexSet_mono h₁) (vertexSet_mono h₂)
-  isLink_of_isLink e x y h := by simp [h.of_le h₁, h.of_le h₂]
-
-instance : SemilatticeInf (Graph α β) where
-  inf := Graph.inter
-  inf_le_left _ _ := Graph.inter_le_left
-  inf_le_right _ _ := Graph.inter_le_right
-  le_inf _ _ _ := Graph.le_inter
 
 @[simp]
 lemma inf_eq_inter : H₁ ⊓ H₂ = H₁ ∩ H₂ := rfl
@@ -329,24 +226,18 @@ lemma inter_mono_right (hle : H₁ ≤ H₂) : G ∩ H₁ ≤ G ∩ H₂ := by
 lemma inter_mono (hleG : G₁ ≤ G₂) (hleH : H₁ ≤ H₂) : G₁ ∩ H₁ ≤ G₂ ∩ H₂ :=
   (inter_mono_right hleH).trans (inter_mono_left hleG)
 
-lemma stronglyDisjoint_iff_disjoint_of_compatible (h : H₁.Compatible H₂) :
-    StronglyDisjoint H₁ H₂ ↔ Disjoint H₁ H₂ := by
-  rw [stronglyDisjoint_iff_vertexSet_disjoint_compatible, Set.disjoint_iff_inter_eq_empty,
-    disjoint_iff, ← vertexSet_eq_empty_iff]
-  simp [h]
-
 lemma edgeSet_induce_inter_eq_edgeSet_induce_of_le (h : G ≤ H) : E(G) ∩ E(H[X]) = E(G[X]) :=
   Set.ext fun _ ↦ ⟨fun ⟨he, x, y, hl, hx, hy⟩ => ⟨x, y, hl.of_le_of_mem h he, hx, hy⟩,
     fun ⟨x, y, hl, hx, hy⟩ => ⟨hl.edge_mem, x, y, hl.of_le h, hx, hy⟩⟩
 
 lemma induce_inter (X Y : Set α) : G[X ∩ Y] = G[X] ∩ G[Y] :=
   Graph.ext (by simp) fun e x y ↦ by
-  simp +contextual only [induce_isLink_iff, mem_inter_iff, inter_isLink_iff, iff_def, and_self,
+  simp +contextual only [induce_isLink, mem_inter_iff, inter_isLink_iff, iff_def, and_self,
     implies_true]
 
 lemma induce_inter_distrib (X : Set α) : (G ∩ H)[X] = G[X] ∩ H[X] :=
   Graph.ext (by simp) fun e x y ↦ by
-  simp +contextual only [induce_isLink_iff, inter_isLink_iff, iff_def, and_self, implies_true]
+  simp +contextual only [induce_isLink, inter_isLink_iff, iff_def, and_self, implies_true]
 
 lemma vertexDelete_union (X Y : Set α) : G - (X ∪ Y) = (G - X) ∩ (G - Y) :=
   Graph.ext (by simp [diff_inter_diff]) fun e x y ↦ by
@@ -407,10 +298,47 @@ protected lemma sInter_insert {s : Set (Graph α β)} (G : Graph α β) (hne : s
     Graph.sInter (insert G s) (by simp) = G ∩ Graph.sInter s hne := by
   ext v <;> simp
 
-lemma iInter_option_eq_sInter_insert {G₁ : Graph α β} {G : ι → Graph α β} :
-    Graph.iInter (Option.elim · G₁ G) = Graph.sInter (insert G₁ (range G)) (by simp) := by
-  obtain hι | hι := isEmpty_or_nonempty ι
-  · simp [range_eq_empty G]
-  rw [Graph.sInter_insert _ (range_nonempty _), Graph.sInter_range, Graph.iInter_option]
+protected lemma iInter_le_of_forall_le [Nonempty ι] (h : ∀ i : ι, Hι i ≤ G) :
+    Graph.iInter Hι ≤ G :=
+  (Graph.iInter_le (Classical.arbitrary ι)).trans <| h _
+
+protected lemma sInter_le_of_forall_le (h : ∀ ⦃H⦄, H ∈ Gs → H ≤ G) (hne : Gs.Nonempty) :
+    Graph.sInter Gs hne ≤ G :=
+  have := hne.to_subtype
+  Graph.iInter_le_of_forall_le (by simpa)
+
+/-- A nonempty intersection of induced subgraphs `G` is an induced subgraph of `G`-/
+lemma iInter_isInducedSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤i G) :
+    Graph.iInter Hι ≤i G where
+  le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
+  isLink_of_mem_mem := by
+    simp only [iInter_vertexSet, mem_iInter, iInter_isLink]
+    exact fun e x y he hx hy i ↦ (h i).isLink_of_mem_mem he (hx i) (hy i)
+
+/-- A nonempty intersection of spanning subgraphs of `G` is a spanning subgraph of `G`.-/
+lemma iInter_isSpanningSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤s G) :
+    Graph.iInter Hι ≤s G where
+  vertexSet_eq := iInter_eq_const fun i ↦ (h i).vertexSet_eq
+  isLink_of_isLink := (Graph.iInter_le_of_forall_le fun i ↦ (h i).le).isLink_of_isLink
+
+/-- A nonempty intersection of closed subgraphs `G` is an induced subgraph of `G`-/
+lemma iInter_isClosedSubgraph [Nonempty ι] (h : ∀ i, Hι i ≤c G) :
+    Graph.iInter Hι ≤c G where
+  le := Graph.iInter_le_of_forall_le fun i ↦ (h i).le
+  closed e x he := by
+    simp only [iInter_vertexSet, mem_iInter, iInter_edgeSet, mem_setOf_eq]
+    rintro hx
+    obtain ⟨y, hy⟩ := he
+    use x, y, fun i ↦ by rwa [(h i).isLink_iff_of_mem (hx i)]
+
+lemma sInter_isInducedSubgraph (hs : ∀ ⦃H⦄, H ∈ Gs → H ≤i G) (hne : Gs.Nonempty) :
+    Graph.sInter Gs hne ≤i G :=
+  have := hne.to_subtype
+  iInter_isInducedSubgraph <| by simpa
+
+lemma sInter_isClosedSubgraph (hs : ∀ ⦃H⦄, H ∈ Gs → H ≤c G) (hne : Gs.Nonempty) :
+    Graph.sInter Gs hne ≤c G :=
+  have := hne.to_subtype
+  iInter_isClosedSubgraph <| by simpa
 
 end Graph

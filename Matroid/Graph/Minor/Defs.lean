@@ -16,7 +16,7 @@ private lemma contract_vertexSet_lemma [DecidableEq α] (he : G.Inc e x) :
     V(map ''ᴳ G ＼ {e}) = insert x (V(G) \ {he.other}) := by
   rintro map
   ext a
-  simp only [vertexMap_vertexSet, edgeDelete_vertexSet, mem_image, mem_insert_iff, mem_diff,
+  simp only [Map_vertexSet, edgeDelete_vertexSet, mem_image, mem_insert_iff, mem_diff,
     mem_singleton_iff]
   constructor
   · rintro ⟨b, hb, rfl⟩
@@ -31,7 +31,7 @@ private lemma contract_isLink_lemma [DecidableEq α] (he : G.Inc e x) :
     (a = he.other ∧ x = u ∨ a ≠ he.other ∧ a = u) ∧
     (b = he.other ∧ x = v ∨ b ≠ he.other ∧ b = v) := by
   rintro map
-  simp only [vertexMap_isLink, edgeDelete_isLink, mem_singleton_iff, ne_eq]
+  simp only [Map_isLink, edgeDelete_isLink, mem_singleton_iff, ne_eq]
   refine exists₂_congr (fun a b ↦ and_congr_right fun _ ↦ ?_)
   rw [eq_comm (a := u), eq_comm (a := v)]
   refine and_congr ?_ ?_ <;> simp [map, ite_eq_iff]
@@ -66,9 +66,9 @@ lemma Inc.contract_eq_map_edgeDelete [DecidableEq α] (he : G.Inc e x) :
 @[simp]
 lemma IsLoopAt.contract_eq (he : G.IsLoopAt e x) : he.inc.contract = G ＼ {e} := by
   classical
-  conv_rhs => rw [← (G ＼ {e}).vertexMap_id]
+  conv_rhs => rw [← (G ＼ {e}).map_id]
   rw [he.inc.contract_eq_map_edgeDelete]
-  refine vertexMap_eq_vertexMap_of_eqOn fun u hu ↦ ?_
+  refine map_congr_left_of_eqOn fun u hu ↦ ?_
   simp only [he.other_eq, id_eq, ite_eq_right_iff]
   exact (·.symm)
 
@@ -112,38 +112,38 @@ variable {φ φ' τ : α → α'} {C C' D : Set β}
 
 @[simp]
 lemma contract_inc {x : α'} : G /[φ, C].Inc e x ↔ e ∉ C ∧ ∃ v, G.Inc e v ∧ φ v = x := by
-  simp +contextual only [Contract, edgeDelete_inc_iff, vertexMap_inc, iff_def, not_false_eq_true,
+  simp +contextual only [Contract, edgeDelete_inc_iff, map_inc, iff_def, not_false_eq_true,
     true_and, and_imp, forall_exists_index, and_true]
   tauto
 
 lemma IsLink.contract (φ : α → α') (heC : e ∉ C) (hbtw : G.IsLink e u v) :
     G /[φ, C].IsLink e (φ u) (φ v) := by
-  simp only [Contract, edgeDelete_isLink, vertexMap_isLink, heC, not_false_eq_true, and_true]
+  simp only [Contract, edgeDelete_isLink, Map_isLink, heC, not_false_eq_true, and_true]
   use u, v
 
 @[gcongr]
 lemma contract_mono (h : G ≤ H) : G /[φ, C] ≤ H /[φ, C] :=
-  edgeDelete_mono_left (vertexMap_mono h) C
+  edgeDelete_mono_left (map_mono h) C
 
 @[gcongr]
 lemma contract_isSpanningSubgraph (h : G ≤s H) : G /[φ, C] ≤s H /[φ, C] :=
-  (vertexMap_isSpanningSubgraph h).edgeDelete C
+  (map_isSpanningSubgraph h).edgeDelete C
 
 @[simp]
 lemma contract_contract {φ' : α' → α''} : (G /[φ, C]) /[φ', C'] = G /[φ' ∘ φ, C ∪ C'] := by
   unfold Contract
-  rw [vertexMap_edgeDelete_comm, vertexMap_vertexMap, edgeDelete_edgeDelete]
+  rw [map_edgeDelete_comm, map_map, edgeDelete_edgeDelete]
 
 lemma edgeSet_disjoint_of_le_contract {φ : α → α} (h : G ≤ G /[φ, C]) : Disjoint E(G) C := by
   apply_fun edgeSet (α := α) (β := β) at h using edgeSet_monotone (α := α) (β := β)
   simpa [subset_diff] using h
 
 @[simp]
-lemma contract_eq_vertexMap_of_disjoint (hdj : Disjoint E(G) C) : G /[φ, C] = φ ''ᴳ G := by
+lemma contract_eq_Map_of_disjoint (hdj : Disjoint E(G) C) : G /[φ, C] = φ ''ᴳ G := by
   unfold Contract
   rw [edgeDelete_eq_self _ (by simpa)]
 
-lemma vertexMap_eq_self_of_contract_eq_self {φ : α → α} (h : G /[φ, C] = G) : (φ ''ᴳ G) = G := by
+lemma Map_eq_self_of_contract_eq_self {φ : α → α} (h : G /[φ, C] = G) : (φ ''ᴳ G) = G := by
   unfold Contract at h
   rwa [edgeDelete_eq_self _ (by simp [edgeSet_disjoint_of_le_contract h.ge])] at h
 
@@ -155,7 +155,7 @@ namespace Contract
 
     This property ensures that contraction preserves the structure of the graph
     in a well-defined way. -/
-def ValidIn (G : Graph α β) (φ : α → α') (C : Set β) :=
+def _root_.Graph.ValidIn (G : Graph α β) (φ : α → α') (C : Set β) :=
   ∀ v ∈ V(G), G[φ ⁻¹' {φ v}].IsCompOf (G ↾ C)
 
 @[simp]
@@ -167,12 +167,30 @@ lemma ValidIn.of_inter_eq (hC : ValidIn G φ C) (h : E(G) ∩ C = E(G) ∩ D) :
   rwa [ValidIn, ← (G.edgeRestrict_eq_edgeRestrict_iff C D).mpr h]
 
 def IsMinor (G H : Graph α β) :=
-  ∃ (φ : α → α) (C : Set β), (∀ v ∈ V(H), φ (φ v) = φ v) ∧ Set.MapsTo φ V(H) V(H) ∧ G ≤ H /[φ, C]
+  ∃ (φ : H.Retr) (C : Set β), H.ValidIn φ C ∧ G ≤ H /[φ, C]
 
 notation G " ≤ₘ " H => IsMinor G H
 
-instance : IsRefl (Graph α β) IsMinor where
-  refl G := ⟨id, ∅, by simp, fun ⦃x⦄ a ↦ a, by simp [Contract]⟩
+-- instance : IsRefl (Graph α β) IsMinor where
+--   refl G := ⟨id, ∅, by simp, by simp, fun ⦃x⦄ a ↦ a, by simp [Contract]⟩
+
+-- instance : IsTrans (Graph α β) IsMinor where
+--   trans G H I hGH hHI := by
+--     obtain ⟨φ, C, hφ, hle⟩ := hGH
+--     obtain ⟨φ', C', hφ', hle'⟩ := hHI
+--     refine ⟨⟨φ ∘ φ', ?_, ?_⟩, C' ∪ C, ?_, hle.trans <| contract_contract ▸ contract_mono hle'⟩
+--     · intro x hx
+--       simp only [comp_apply]
+--       have := φ'.mapsTo hx
+--       have := by simpa using vertexSet_mono hle'
+--       have := φ.mapsTo.image_subset.trans this
+
+
+--       sorry
+--     · rintro x hx
+--       simp
+--       sorry
+--     sorry
 
 -- instance : IsAntisymm (Graph α β) IsMinor where
 --   antisymm G H hGH hHG := by
@@ -182,7 +200,7 @@ instance : IsRefl (Graph α β) IsMinor where
 --     rw [contract_contract] at hLe
 --     have hdj := edgeSet_disjoint_of_le_contract hLe
 --     rw [disjoint_union_right] at hdj
---     rw [contract_eq_vertexMap_of_disjoint hdj.1] at hle'
---     rw [contract_eq_vertexMap_of_disjoint (hdj.2.mono_left <| by simpa using edgeSet_mono hle')]
+--     rw [contract_eq_Map_of_disjoint hdj.1] at hle'
+--     rw [contract_eq_Map_of_disjoint (hdj.2.mono_left <| by simpa using edgeSet_mono hle')]
 --at hle
 --     clear hdj hLe C C'

@@ -1,5 +1,4 @@
 import Matroid.Graph.Connected.Set.Defs
-import Matroid.Graph.Degree.Basic
 
 open Set Function Nat WList
 
@@ -25,8 +24,8 @@ def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut N(G, s) N(G, t) 
       (h.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
       (neighbor_mono vertexDelete_le) (neighbor_mono vertexDelete_le)
 
-lemma connectivityBetweenGe_iff_setConnectivityGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
-    G.ConnectivityBetweenGe s t n ↔ (G - {s, t}).SetConnectivityGe N(G, s) N(G, t) n := by
+lemma connBetweenGe_iff_setConnGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
+    G.ConnBetweenGe s t n ↔ (G - {s, t}).SetConnGe N(G, s) N(G, t) n := by
   refine ⟨fun h C hC => ?_, fun h C => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
     simpa using h (hC.cutBetween_of_neighbor hne hadj)
@@ -42,14 +41,14 @@ lemma connectivityBetweenGe_iff_setConnectivityGe (hne : s ≠ t) (hadj : ¬ G.A
   exact (hsa'.connectedBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).of_le
     vertexDelete_le)).trans htb'.connectedBetween.symm
 
-lemma ConnectivityBetweenGe.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnectivityBetweenGe s t n) : n ≤ N(G, s).encard := by
-  rw [connectivityBetweenGe_iff_setConnectivityGe hne hadj] at hconn
+lemma ConnBetweenGe.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+    (hconn : G.ConnBetweenGe s t n) : n ≤ N(G, s).encard := by
+  rw [connBetweenGe_iff_setConnGe hne hadj] at hconn
   have := hconn.left_encard_le
   rwa [inter_eq_right.mpr (by simp [neighbor_subset_of_ne_not_adj hne hadj])] at this
 
-lemma ConnectivityBetweenGe.le_right_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnectivityBetweenGe s t n) : n ≤ N(G, t).encard :=
+lemma ConnBetweenGe.le_right_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
+    (hconn : G.ConnBetweenGe s t n) : n ≤ N(G, t).encard :=
   hconn.symm.le_left_Neighbor_encard hne.symm (by rwa [adj_comm])
 
 noncomputable def link (G : Graph α β) (x : α) : N(G, x) → β := fun y ↦ y.prop.2.choose

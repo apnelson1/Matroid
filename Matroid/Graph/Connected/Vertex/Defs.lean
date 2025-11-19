@@ -420,28 +420,28 @@ def VertexEnsemble.sum (P : G.VertexEnsemble s t ι) (Q : G.VertexEnsemble s t �
 
 /-! ### k-connectivity between two vertices -/
 
-def ConnectivityBetweenGe (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
+def ConnBetweenGe (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ C : G.CutBetween s t, n ≤ (↑C : Set α).encard
 
 @[simp]
-lemma connectivityBetweenGe_zero (G : Graph α β) (s t : α) : G.ConnectivityBetweenGe s t 0 := by
-  simp [ConnectivityBetweenGe]
+lemma connBetweenGe_zero (G : Graph α β) (s t : α) : G.ConnBetweenGe s t 0 := by
+  simp [ConnBetweenGe]
 
-lemma ConnectivityBetweenGe.anti_right (hle : n ≤ m) (h : G.ConnectivityBetweenGe s t m) :
-    G.ConnectivityBetweenGe s t n :=
+lemma ConnBetweenGe.anti_right (hle : n ≤ m) (h : G.ConnBetweenGe s t m) :
+    G.ConnBetweenGe s t n :=
   fun C ↦ le_trans (by norm_cast) (h C)
 
-lemma ConnectivityBetweenGe.symm (h : G.ConnectivityBetweenGe s t n) :
-    G.ConnectivityBetweenGe t s n := (h <| ·.symm)
+lemma ConnBetweenGe.symm (h : G.ConnBetweenGe s t n) :
+    G.ConnBetweenGe t s n := (h <| ·.symm)
 
-instance : IsSymm _ (G.ConnectivityBetweenGe · · n) where
-  symm _ _ := ConnectivityBetweenGe.symm
+instance : IsSymm _ (G.ConnBetweenGe · · n) where
+  symm _ _ := ConnBetweenGe.symm
 
-lemma connectivityBetweenGe_comm : G.ConnectivityBetweenGe s t n ↔ G.ConnectivityBetweenGe t s n :=
-  ⟨ConnectivityBetweenGe.symm, ConnectivityBetweenGe.symm⟩
+lemma connBetweenGe_comm : G.ConnBetweenGe s t n ↔ G.ConnBetweenGe t s n :=
+  ⟨ConnBetweenGe.symm, ConnBetweenGe.symm⟩
 
 @[simp]
-lemma connectivityBetweenGe_one_iff : G.ConnectivityBetweenGe s t 1 ↔ G.ConnectedBetween s t := by
+lemma connBetweenGe_one_iff : G.ConnBetweenGe s t 1 ↔ G.ConnectedBetween s t := by
   refine ⟨fun h => ?_, fun h C => ?_⟩
   · by_contra hc
     simpa using h <| cutBetween_empty hc
@@ -450,36 +450,36 @@ lemma connectivityBetweenGe_one_iff : G.ConnectivityBetweenGe s t 1 ↔ G.Connec
   simp only [cast_one, one_le_encard_iff_nonempty]
   use x, hxC
 
-lemma connectivityBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnectivityBetweenGe s s n :=
+lemma connBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) : G.ConnBetweenGe s s n :=
   (isEmtpy_cutBetween_self hs).elim
 
-lemma IsLink.connectivityBetweenGe (h : G.IsLink e s t) (n : ℕ) : G.ConnectivityBetweenGe s t n :=
+lemma IsLink.connBetweenGe (h : G.IsLink e s t) (n : ℕ) : G.ConnBetweenGe s t n :=
   (isEmpty_cutBetween_isLink h).elim
 
-lemma ConnectivityBetweenGe.of_le (h : H.ConnectivityBetweenGe s t n) (hle : H ≤ G) :
-    G.ConnectivityBetweenGe s t n := by
+lemma ConnBetweenGe.of_le (h : H.ConnBetweenGe s t n) (hle : H ≤ G) :
+    G.ConnBetweenGe s t n := by
   rintro C
   have := by simpa using h (C.of_le hle)
   exact this.trans <| encard_le_encard inter_subset_right
 
-lemma IsComplete.connectivityBetweenGe (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) (n : ℕ) :
-    G.ConnectivityBetweenGe s t n :=
+lemma IsComplete.connBetweenGe (h : G.IsComplete) (hs : s ∈ V(G)) (ht : t ∈ V(G)) (n : ℕ) :
+    G.ConnBetweenGe s t n :=
   h.cutBetween_isEmpty hs ht |>.elim
 
-def EdgeConnectivityBetweenGe (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
+def EdgeConnBetweenGe (G : Graph α β) (s t : α) (n : ℕ) : Prop :=
   ∀ C : G.EdgeCutBetween s t, n ≤ (↑C : Set β).encard
 
 @[simp]
-lemma EdgeConnectivityBetweenGe_zero (G : Graph α β) (s t : α) :
-    G.EdgeConnectivityBetweenGe s t 0 := by
-  simp [EdgeConnectivityBetweenGe]
+lemma EdgeConnBetweenGe_zero (G : Graph α β) (s t : α) :
+    G.EdgeConnBetweenGe s t 0 := by
+  simp [EdgeConnBetweenGe]
 
-lemma EdgeConnectivityBetweenGe.anti_right (hle : n ≤ m) (h : G.EdgeConnectivityBetweenGe s t m) :
-    G.EdgeConnectivityBetweenGe s t n :=
+lemma EdgeConnBetweenGe.anti_right (hle : n ≤ m) (h : G.EdgeConnBetweenGe s t m) :
+    G.EdgeConnBetweenGe s t n :=
   fun C ↦ le_trans (by norm_cast) (h C)
 
-lemma edgeConnectivityBetweenGe_one_iff :
-    G.EdgeConnectivityBetweenGe s t 1 ↔ G.ConnectedBetween s t := by
+lemma edgeConnBetweenGe_one_iff :
+    G.EdgeConnBetweenGe s t 1 ↔ G.ConnectedBetween s t := by
   refine ⟨fun h => ?_, fun h C => ?_⟩
   · by_contra hc
     simpa using h <| edgeCutBetween_empty hc
@@ -489,12 +489,12 @@ lemma edgeConnectivityBetweenGe_one_iff :
   use x, hxC
 
 @[simp]
-lemma edgeConnectivityBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) :
-    G.EdgeConnectivityBetweenGe s s n :=
+lemma edgeConnBetweenGe_self (hs : s ∈ V(G)) (n : ℕ) :
+    G.EdgeConnBetweenGe s s n :=
   (isEmpty_edgeCutBetween_self hs).elim
 
-lemma EdgeConnectivityBetweenGe.of_le (h : H.EdgeConnectivityBetweenGe s t n) (hle : H ≤ G) :
-    G.EdgeConnectivityBetweenGe s t n := by
+lemma EdgeConnBetweenGe.of_le (h : H.EdgeConnBetweenGe s t n) (hle : H ≤ G) :
+    G.EdgeConnBetweenGe s t n := by
   rintro C
   have := by simpa using h (C.of_le hle)
   exact this.trans <| encard_le_encard inter_subset_right

@@ -42,11 +42,9 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   refine Compatible.union_connected_of_forall (G.compatible_of_le_le ?_ (by simp)) ?_ ?_
   · exact le_trans (induce_le (by simp [hC.vertexSet_subset])) edgeDelete_le
   · obtain ⟨P, hP, hPC⟩ := hC.exists_isPath_toGraph_eq_delete_edge heC
-    refine (hP.isWalk.toGraph_connected.of_isSpanningSubgraph ⟨?_, ?_⟩)
-    · rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
-      exact edgeDelete_mono_left (by simp) _
-    rw [hPC]
-    simp
+    refine (hP.isWalk.toGraph_connected.of_isSpanningSubgraph ⟨by simp [hPC], ?_⟩)
+    rw [hPC, edgeDelete_induce, hC.isWalk.toGraph_eq_induce_restrict]
+    exact edgeDelete_mono_left (by simp) _ |>.isLink_of_isLink
   simp only [edgeDelete_induce, edgeDelete_edgeSet, edgeDelete_edgeDelete, union_diff_self,
     singleton_union, edgeDelete_vertexSet, induce_vertexSet, mem_vertexSet_iff]
   intro x hx
