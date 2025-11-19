@@ -701,39 +701,92 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
     (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
 --grw
 
-  --The following are needed to find a max cycle
+  -- To find a longest cycle, we first need to show the existence of some cycle C'
   have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by
-    obtain ( hle2| h2 ) := Decidable.em (A.encard ≤ 1)
-    · have hcomplete : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w := by
-        intro x y hx hy hxy
-        by_contra hc
-        let ind : Set α := {x,y}
-        have hind : IsIndependent G ind := by
-          unfold IsIndependent
-          refine ⟨ (pair_subset hx hy ), ?_ ⟩
-          refine pairwise_pair.mpr ?_
-          intro hh
-          refine ⟨ hc, ?_ ⟩
-          by_contra hhc
-          have hconn : G.Adj x y := (adj_comm x y).2  hhc
-          exact hc hconn
-        have hleA : (ind).encard ≤ A.encard := by
-          exact hA.2 ind hind
-        have hle2A : 2 ≤ A.ncard := by sorry
-          --rwa [encard_pair hxy ] at hleA
-        have hlast : 2 ≤ 1 := by
-          have hh : ind.Finite := by sorry
-          have g := hh.encard_eq_coe
-          have g1 := ind.ncard_def
-          --Set.ncard_def
-          sorry
-        have : 1 < 2 := by exact Nat.one_lt_two
-        have : 1 < 1 := by sorry
-        exact (lt_self_iff_false 1).mp this
+    by_contra! hCon
+    -- if there is no cycle, then since G is a forest, any vertex v of degree >= 2 is a separating set
+    obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+    · -- So, S.encard = 1, and thus A.encard <= 1
+      have ⟨v, ⟨hvG, hv⟩⟩ := h1
+      have vSep : G.IsSepSet {v} := by
+        refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
+        -- since v has degree at least 2, we can obtain two neighbours
+        have hn2 : 1 < {x | G.Adj v x}.ncard := by
+          rw [← G.degree_eq_ncard_adj]
+          assumption
+        have nsFinite : {x | G.Adj v x}.Finite := by
+          have : G.Finite := Simple.vertexSet_finite_iff.mp $ finite_of_ncard_nonzero $ Nat.ne_zero_of_lt h3
+          exact G.finite_setOf_adj
+        rw [one_lt_ncard_iff nsFinite] at hn2
+        have ⟨a, b, ha, hb, hab⟩ := hn2
+        simp_all
+        -- those two neighbours a and b are not connected in G - {v}, because otherwise there would be a cycle
+        -- for a contradiction, let's construct the cycle
+        by_contra! hCon
+        have aVGv : a ∈ V(G - {v}) := by
+          have := Adj.right_mem ha
+          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+          exact fun a_1 ↦ (Adj.ne ha) (id (Eq.symm a_1))
+        have bVGv : b ∈ V(G - {v}) := by
+          have := Adj.right_mem hb
+          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+          exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
+        have abCon : (G - {v}).VertexConnected a b := Connected.vertexConnected hCon aVGv bVGv
+        have ⟨abPath, habPath⟩ := VertexConnected.exists_isPath abCon
+        have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
+        -- need to first add v to the ab path
+        rw [Adj.eq_1 G] at ha
+        have ⟨e, eLink⟩ := ha
+        have ⟨e2, e2Link⟩ := hb
+        have e2LinkOrig := e2Link
+        have enee2 : e ≠ e2 := by
+          by_contra!
+          rw [← this] at e2Link
+          rw [IsLink.isLink_iff eLink] at e2Link
+          cases e2Link
+          · simp_all only [not_true_eq_false]
+          simp_all only [isLink_self_iff, not_isLoopAt, exists_false]
+        have vnP : v ∉ abPath := by simp_all
+        rw [← habPath.2.1] at eLink
+        have vbPath := cons_isPath_iff.2 ⟨abPathG, eLink, vnP⟩
+        rw [Adj.eq_1 G] at hb
+        have vfirst : v = (cons v e abPath).first := rfl
+        have blast : b = (cons v e abPath).last := by tauto
+        rw [vfirst, blast] at e2Link
+        have e2npe : e2 ∉ (cons v e abPath).edge := by
+          simp
+          refine ⟨by tauto, ?_⟩
+          by_contra!
+          have := IsWalk.edge_mem_of_mem habPath.1.isWalk this
+          have := (IsLink.mem_vertexDelete_iff e2LinkOrig).1 this
+          tauto
+        -- then link it up to a cycle, contradicting that G doesn't have any cycle
+        have := IsPath.cons_isCycle vbPath e2Link e2npe
+        tauto
+      -- finally, we have that {v} is a separating set in G
+      -- But then the two neighbours of v cannot be adjacent, because otherwise there would be a cycle
+      -- So, A.encard >= 2, contradiction
       sorry
-    --Noah please do this sorry
-    simp at h2
-    sorry
+
+    -- If every vertex has degree <= 1, then S.encard = 0, so we are done
+    have : ¬G.Connected := by sorry
+    have Sempty : S.encard = 0 := by
+      have esSep : IsSepSet G ∅ := by
+        refine ⟨empty_subset V(G), ?_⟩
+        rw [vertexDelete_empty]
+        assumption
+      have : S.encard = (∅ : Set α).encard := by
+        have := HS.2 ∅ esSep
+        simp_all
+      simp_all
+    have Vnz : V(G).ncard ≠ 0 := by linarith
+    simp at Vnz
+    rw [ncard_eq_zero (finite_of_ncard_nonzero Vnz)] at Vnz
+    have ⟨v, hv⟩ : ∃ v, v ∈ V(G) := by grind only [= mem_empty_iff_false]
+    have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
+    have := hA.2 {v} hGI
+    simp_all
+
   let S := {C : WList α β | G.IsCycle C }
   have hsne : S.Nonempty := by
     exact nonempty_of_mem hC'
