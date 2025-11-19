@@ -566,6 +566,8 @@ lemma cyclicallyConnected_top_iff :
   specialize h X hX
   rwa [spanning_dual_iff, spanning_compl_dual_iff, or_comm]
 
+/-- This needs the lower bound on co-rank; otherwise an extenssion of a large free matroid by
+a loop would be a counterexample for any `k`. -/
 lemma CyclicallyConnected.le_girth (h : M.CyclicallyConnected k) (hlt : k ≤ M✶.eRank) :
     k ≤ M.girth := by
   rw [← not_lt, girth_lt_iff, not_exists]
