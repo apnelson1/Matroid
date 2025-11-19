@@ -3,6 +3,7 @@ import Mathlib.Combinatorics.Matroid.Rank.Finite
 import Matroid.Loop
 import Matroid.OnUniv
 import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Matroid.Closure
 import Matroid.ForMathlib.Matroid.Sum
 import Mathlib.Tactic.TautoSet
 
@@ -143,3 +144,12 @@ lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X 
 @[simp]
 lemma eRk_restrict_univ (M : Matroid α) (X : Set α) : (M ↾ univ).eRk X = M.eRk (X) := by
   rw [eRk_restrict, inter_univ]
+
+lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X ↔ M.eRk X < M.eRank := by
+  rw [← not_spanning_iff, spanning_iff_eRk, not_le]
+
+lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X := by
+  rw [← not_spanning_iff]
+  exact fun h ↦ hX h.eRk_eq
