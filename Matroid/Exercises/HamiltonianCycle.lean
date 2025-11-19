@@ -704,23 +704,26 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
   -- To find a longest cycle, we first need to show the existence of some cycle C'
   have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by
     by_contra! hCon
-    -- if there is no cycle, then since G is a forest, any vertex v of degree >= 2 is a separating set
+    -- if there is no cycle, then since G is a forest,
+    -- any vertex v of degree >= 2 is a separating set
     obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
     · -- So, S.encard = 1, and thus A.encard <= 1
       have ⟨v, ⟨hvG, hv⟩⟩ := h1
+      -- since v has degree at least 2, we can obtain two neighbours
+      have hn2 : 1 < {x | G.Adj v x}.ncard := by
+        rw [← G.degree_eq_ncard_adj]
+        assumption
+      have nsFinite : {x | G.Adj v x}.Finite := by
+        have := Simple.vertexSet_finite_iff.mp $ finite_of_ncard_nonzero $ Nat.ne_zero_of_lt h3
+        exact G.finite_setOf_adj
+      rw [one_lt_ncard_iff nsFinite] at hn2
+      have ⟨a, b, ha, hb, hab⟩ := hn2
+      simp_all
+      -- Show that {v} is a separating set
       have vSep : G.IsSepSet {v} := by
         refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
-        -- since v has degree at least 2, we can obtain two neighbours
-        have hn2 : 1 < {x | G.Adj v x}.ncard := by
-          rw [← G.degree_eq_ncard_adj]
-          assumption
-        have nsFinite : {x | G.Adj v x}.Finite := by
-          have : G.Finite := Simple.vertexSet_finite_iff.mp $ finite_of_ncard_nonzero $ Nat.ne_zero_of_lt h3
-          exact G.finite_setOf_adj
-        rw [one_lt_ncard_iff nsFinite] at hn2
-        have ⟨a, b, ha, hb, hab⟩ := hn2
-        simp_all
-        -- those two neighbours a and b are not connected in G - {v}, because otherwise there would be a cycle
+        -- those two neighbours a and b are not connected in G - {v},
+        -- because otherwise there would be a cycle
         -- for a contradiction, let's construct the cycle
         by_contra! hCon
         have aVGv : a ∈ V(G - {v}) := by
@@ -764,12 +767,80 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
         have := IsPath.cons_isCycle vbPath e2Link e2npe
         tauto
       -- finally, we have that {v} is a separating set in G
-      -- But then the two neighbours of v cannot be adjacent, because otherwise there would be a cycle
+      have hS1 : S.encard ≤ 1 := by
+        have := HS.2 {v} vSep
+        simp_all only [encard_singleton]
+      -- But then the two neighbours of v cannot be adjacent,
+      -- because otherwise there would be a cycle
       -- So, A.encard >= 2, contradiction
-      sorry
+      have anev : ¬a = v := by
+        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v a ha
+        rw [ne_comm, ne_eq] at this
+        assumption
+      have bnev : ¬b = v := by
+        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
+        rw [ne_comm, ne_eq] at this
+        assumption
+      obtain (h3 | h4) := Decidable.em (G.Adj a b)
+      · -- First, the case where a and b are adjacent
+        -- Need to construct the cycle a-b-v
+        have ⟨e, eLink⟩ := ha
+        have ⟨e2, e2Link⟩ := hb
+        have ⟨e3, e3Link⟩ := h3
+        have avPath := cons_isPath_iff.2 ⟨nil_isPath hvG, ⟨IsLink.symm eLink, by
+          rw [mem_nil_iff]
+          assumption⟩⟩
+        have bavPath := cons_isPath_iff.2 ⟨avPath, ⟨IsLink.symm e3Link, by
+          simp_all [mem_cons_iff]
+          tauto⟩⟩
+        let bav := (cons b e3 (cons a e (nil v)))
+        have flLink : G.IsLink e2 bav.first bav.last := by
+          simp_all
+          exact id (IsLink.symm e2Link)
+        have eDis : e2 ∉ (cons b e3 (cons a e (nil v))).edge := by
+          simp_all
+          refine ⟨?_, ?_⟩
+          · by_contra!
+            simp_all
+            have := G.eq_or_eq_of_isLink_of_isLink e2Link e3Link
+            tauto
+          by_contra!
+          simp_all
+          have := IsLink.eq_and_eq_or_eq_and_eq eLink e2Link
+          tauto
+        have := IsPath.cons_isCycle bavPath flLink eDis
+        tauto
+      -- Now, a and b are not adjacent
+      -- We show {a, b} is independent for a contradiction
+      have hI : G.IsIndependent {a, b} := by
+        refine ⟨?_, ?_⟩
+        · have : a ∈ V(G) := ha.right_mem
+          have : b ∈ V(G) := hb.right_mem
+          grind only [= subset_def, usr subset_insert, = singleton_subset_iff, = mem_insert_iff,
+            = setOf_true, = mem_singleton_iff, = setOf_false, cases Or]
+        intro x hx y hy hxy
+        simp_all only [mem_insert_iff, mem_singleton_iff, ne_eq]
+        have : ¬G.Adj b a := by exact fun a_1 ↦ h4 (id (Adj.symm a_1))
+        grind only [= setOf_true, = setOf_false, cases Or]
+      have Age2 : 2 ≤ A.encard := by
+        have hA2 := hA.2 {a, b} hI
+        have : ({a, b} : Set α).encard = 2 := encard_pair hab
+        rw [this] at hA2
+        exact hA2
+      have Ale1 : A.encard ≤ 1 := Std.IsPreorder.le_trans A.encard S.encard 1 hAS hS1
+      have : 2 ≤ (1 : ℕ∞) := Std.IsPreorder.le_trans 2 A.encard 1 Age2 Ale1
+      simp_all only [Nat.not_ofNat_le_one]
 
     -- If every vertex has degree <= 1, then S.encard = 0, so we are done
-    have : ¬G.Connected := by sorry
+    have Vnz : V(G).ncard ≠ 0 := by linarith
+    simp at Vnz
+    rw [ncard_eq_zero (finite_of_ncard_nonzero Vnz)] at Vnz
+    have ⟨v, hv⟩ : ∃ v, v ∈ V(G) := by grind only [= mem_empty_iff_false]
+    have : ¬G.Connected := by
+      -- We know there are ≥ 3 vertices
+      -- But all have degree ≤ 1
+      have : G.degree v ≤ 1 := by grind only
+      sorry
     have Sempty : S.encard = 0 := by
       have esSep : IsSepSet G ∅ := by
         refine ⟨empty_subset V(G), ?_⟩
@@ -779,10 +850,6 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
         have := HS.2 ∅ esSep
         simp_all
       simp_all
-    have Vnz : V(G).ncard ≠ 0 := by linarith
-    simp at Vnz
-    rw [ncard_eq_zero (finite_of_ncard_nonzero Vnz)] at Vnz
-    have ⟨v, hv⟩ : ∃ v, v ∈ V(G) := by grind only [= mem_empty_iff_false]
     have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
     have := hA.2 {v} hGI
     simp_all
