@@ -33,6 +33,17 @@ lemma Inc.other_mem (h : G.Inc e x) : h.other ∈ V(G) :=
 instance : IsSymm _ G.Adj where
   symm _ _ := Adj.symm
 
+/- these two commands should be incorporated directly into the declarations
+of `Adj.symm` and `IsLink.symm`, like so:
+```
+@[symm]
+protected lemma Adj.symm (h : G.Adj x y) : G.Adj y x :=
+  ⟨_, h.choose_spec.symm⟩
+```
+-/
+attribute [symm] Adj.symm
+attribute [symm] IsLink.symm
+
 @[simp]
 lemma not_isLink_of_notMem_edgeSet (he : e ∉ E(G)) : ¬ G.IsLink e x y :=
   mt IsLink.edge_mem he
@@ -130,6 +141,7 @@ lemma parallel.inc_eq (h : G.parallel e f) : G.Inc e = G.Inc f := by
   obtain ⟨he, hf, h⟩ := G.parallel_iff_inc_eq e f |>.mp h
   exact h
 
+@[symm]
 lemma parallel.symm (h : G.parallel e f) : G.parallel f e := by
   obtain ⟨he, hf, h⟩ := h
   exact ⟨hf, he, h.symm⟩
