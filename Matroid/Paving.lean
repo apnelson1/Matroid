@@ -62,13 +62,13 @@ lemma Paving.insert_spanning_of_dep_of_notMem_closure (hM : M.Paving) (hD : M.De
 
 lemma Paving.closure_isHyperplane_of_dep_of_not_spanning (hM : M.Paving) (hD : M.Dep D)
     (hDs : ¬ M.Spanning D) : M.IsHyperplane (M.closure D) := by
-  rw [isHyperplane_iff_maximal_nonspanning, maximal_iff_forall_insert, spanning_iff_closure_eq,
-    closure_closure, ← spanning_iff_closure_eq, and_iff_right hDs,
-    and_iff_right (M.closure_subset_ground D)]
+  rw [isHyperplane_iff_maximal_nonspanning, maximal_iff_forall_insert,
+    ← not_spanning_iff, spanning_iff_closure_eq,
+    closure_closure, ← spanning_iff_closure_eq, and_iff_right hDs]
   · refine fun e he' h ↦ h.1 ?_
+    have heE : e ∈ M.E := h.subset_ground (.inl rfl)
     rw [spanning_iff_closure_eq, closure_insert_closure_eq_closure_insert,
-      (hM.insert_spanning_of_dep_of_notMem_closure hD ⟨?_, he'⟩).closure_eq]
-    exact h.2 <| .inl rfl
+      (hM.insert_spanning_of_dep_of_notMem_closure hD ⟨heE, he'⟩).closure_eq]
   exact fun S T ⟨hT, hTE⟩ hST ↦ ⟨fun hS ↦ hT <| hS.superset hST, hST.trans hTE⟩
 
 lemma Paving.isBase_exchange_isCircuit_of_not_isBase (hM : M.Paving) (hB : M.IsBase B)

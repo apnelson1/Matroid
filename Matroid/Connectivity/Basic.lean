@@ -935,6 +935,19 @@ lemma Coindep.eConn_eq (hI : M.Coindep I) : M.eConn I = M.eRk I := by
 lemma Spanning.eConn_eq (h : M.Spanning X) : M.eConn X = M.eRk (M.E \ X) := by
   rw [← h.compl_coindep.eConn_eq, eConn_compl]
 
+lemma IsHyperplane.eConn_add_one_eq {H : Set α} (hH : M.IsHyperplane H) :
+    M.eConn H + 1 = M.eRk (M.E \ H) := by
+  rw [← eConn_compl, ← M.eConn_add_nullity_dual_eq_eRk (M.E \ H), nullity_compl_dual_eq,
+    hH.eRelRk_eq_one]
+
+lemma IsCocircuit.eConn_add_one_eq {C : Set α} (hC : M.IsCocircuit C) :
+    M.eConn C + 1 = M.eRk C := by
+  rw [← eConn_compl, hC.compl_isHyperplane.eConn_add_one_eq, diff_diff_cancel_left hC.subset_ground]
+
+lemma IsCircuit.eConn_add_one_eq {C : Set α} (hC : M.IsCircuit C) :
+    M.eConn C + 1 = M✶.eRk C := by
+  rw [← hC.isCocircuit.eConn_add_one_eq, eConn_dual]
+
 lemma eConn_eq_eRk_compl_iff (hX : M.eConn X ≠ ⊤) (hXE : X ⊆ M.E := by aesop_mat) :
     M.eConn X = M.eRk (M.E \ X) ↔ M.Spanning X := by
   rw [← eConn_compl, eConn_eq_eRk_iff (by simpa), ← coindep_def, ← spanning_iff_compl_coindep]
