@@ -10,8 +10,7 @@ import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Component
 
 import Matroid.Graph.Independent
--- Tree is currently not building, because Matroid.Graph.Walk.toGraph is broken
--- import Matroid.Graph.Tree
+import Matroid.Graph.Tree
 
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Cycle
@@ -274,17 +273,6 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
-
--- Temporary, Tree is broken
-def IsForest (G : Graph α β) : Prop := ∀ C, ¬ G.IsCycle C
-
-@[mk_iff]
-structure IsTree (T : Graph α β) : Prop where
-  isForest : T.IsForest
-  connected : T.Connected
-
-lemma IsForest.simple (hG : G.IsForest) : G.Simple := sorry
-lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := sorry
 
 lemma minEDegree_ge_one_of_connected_nontrivial
     {G : Graph α β} (hConn : G.Connected) (hNontrivial : 1 < V(G).encard) :
