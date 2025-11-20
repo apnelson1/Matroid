@@ -26,10 +26,6 @@ import Qq open Qq Lean Meta Elab Tactic
 
 open WList Set
 
--- we will be using a lot of LEM...
-open Classical
-
-
 section NonGraphThings
 
 variable {α β : Type*} {P₀ P₁ : WList α β} {e f : β}
@@ -509,7 +505,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
   --Trivial case: Independent set is completely contained in the separator
-  obtain ( HAS| he ) := Decidable.em (A ⊆ S)
+  obtain ( HAS| he ) := Classical.em (A ⊆ S)
   · have : S.Finite := Set.Finite.subset vertexSet_finite HS.1.1
     exact ncard_le_ncard HAS this
   have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
@@ -555,7 +551,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     linarith
 
   -- Second annoying case
-  obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
+  obtain ( Hemp| hAH1 ) := Classical.em ( A ∩ V(H2) = ∅)
   · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
       -- Managed to simplify this part a lot - Noah
       rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
@@ -866,7 +862,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     by_contra! hCon
     -- if there is no cycle, then since G is a forest,
     -- any vertex v of degree >= 2 is a separating set
-    obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+    obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
     · -- So, S.encard = 1, and thus A.encard <= 1
       have ⟨v, ⟨hvG, hv⟩⟩ := h1
       -- since v has degree at least 2, we can obtain two neighbours
@@ -940,7 +936,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
         have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
         rw [ne_comm, ne_eq] at this
         assumption
-      obtain (h3 | h4) := Decidable.em (G.Adj a b)
+      obtain (h3 | h4) := Classical.em (G.Adj a b)
       · -- First, the case where a and b are adjacent
         -- Need to construct the cycle a-b-v
         have ⟨e, eLink⟩ := ha
@@ -1022,7 +1018,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
   --The following obtains a cycle of G that is maximal in length
   obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
   --Now that we got a max cycle, we have two cases
-  obtain ( hn| hlen ) := Decidable.em (V(C).encard = V(G).encard  )
+  obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
   · use C
     apply Is_hamiltonian_encard G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
@@ -1041,7 +1037,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     rw[vertexDelete_vertexSet] at hc
     have hconcl : V(G) ⊆ V(C) := by
       intro v hv
-      obtain h1 | h2 := Decidable.em (v ∈ V(C))
+      obtain h1 | h2 := Classical.em (v ∈ V(C))
       · exact h1
       by_contra
       have hh : v ∈ V(G)\V(C) := by exact mem_diff_of_mem hv h2
