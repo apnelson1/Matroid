@@ -9,10 +9,13 @@ import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Component
 
+import Matroid.Graph.Independent
 -- Tree is currently not building, because Matroid.Graph.Walk.toGraph is broken
 -- import Matroid.Graph.Tree
 
 import Matroid.Graph.WList.Defs
+import Matroid.Graph.WList.Cycle
+import Matroid.Graph.Connected.Separating
 
 import Qq open Qq Lean Meta Elab Tactic
 -- simple is still broken
@@ -29,7 +32,7 @@ open Classical
 
 section NonGraphThings
 
-variable {α : Type*}
+variable {α β : Type*} {P₀ P₁ : WList α β} {e f : β}
 
 lemma finite_of_ncard_nonzero {s : Set α} (h : s.ncard ≠ 0) : s.Finite := by
   by_contra hyp
@@ -267,15 +270,6 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
   obtain ⟨ H₁, hH1, hvH1 ⟩ := G.exists_IsCompOf_vertex_mem hw
   have : H ≠ H₁ := by sorry
   sorry
-
-def IsIndependent (G : Graph α β) (S : Set (α)) : Prop :=
-  S ⊆ V(G) ∧ S.Pairwise (fun x y ↦ ¬ G.Adj x y)
-
-def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
-  ∀ S, G.IsIndependent S → S.encard ≤ n
-
-def IsMaxIndependent (G : Graph α β) (S : Set (α)) : Prop :=
-  IsIndependent G S ∧ (∀ A, IsIndependent G A → A.encard ≤ S.encard )
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
@@ -680,24 +674,287 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
 def Is_hamiltonian_cycle (G : Graph α β) (C : WList α β) : Prop :=
   G.IsCycle C ∧ C.length = V(G).ncard
 
+lemma Is_hamiltonian_encard (G : Graph α β) (C : WList α β) (hC : G.IsCycle C )
+    (hen : C.vertexSet.encard = V(G).encard ) : Is_hamiltonian_cycle G C := by sorry
+
 def neighbour_of_Set (G : Graph α β) (H : Set α) (v : α ) : Prop :=
     ∃ w, w ∈ H ∧  Adj G v w
 
+
 --I think this lemma is important and useful for us
 
+lemma IsCycle_length_to_vertex {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
+    C.length = V(C).encard := by
+
+  sorry
+
 lemma IsCycle_length_bound {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
-    C.length ≤ V(G).ncard := by
+    C.length ≤ V(G).encard := by
 
   have hsubs := hC.isWalk.vertexSet_subset
-  have : C.length = V(C).ncard := by
+  have : C.length = V(C).encard := by
     sorry
   sorry
 
-lemma foo (P : Prop) (Q : Prop ) (h : P ↔ Q) : ¬ P ↔ ¬ Q := by exact not_congr h
 
-lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
-    (S : Set (α)) (HS : IsMinSepSet G S )
-    (A : Set (α)) (hA : IsMaxIndependent G A)
+
+lemma Adj_exists_edge (G : Graph α β) (x y : α) (hA : G.Adj x y) : ∃ e, G.IsLink e x y := hA
+
+--Noah, here is the lemma thats not liking me
+lemma Complete_to_cycle {G : Graph α β} [G.Finite] (n : ℕ) (hn : n + 3 ≤ V(G).encard)
+    (hcomplete : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w)
+    : ∃ C : WList α β, G.IsCycle C ∧ V(C).encard = n + 3 := by
+  induction n with
+  | zero =>
+    simp
+    have ⟨ T, hT, hT3 ⟩ := V(G).exists_subset_encard_eq hn
+    have ⟨ v, u, w, hvu, hvw, huw, hTel ⟩ := (T.encard_eq_three).1 hT3
+    have hv : v ∈ V(G) := by sorry
+    have hu : u ∈ V(G) := by sorry
+    have hw : w ∈ V(G) := by sorry
+    have ⟨ euv, heuv ⟩ := Adj_exists_edge G v u (hcomplete v u hv hu hvu )
+    have ⟨ euw, heuw ⟩ := Adj_exists_edge G u w (hcomplete u w hu hw huw )
+    have ⟨ ewv, hewv ⟩ := Adj_exists_edge G w v (hcomplete w v hw hv hvw.symm )
+    --have : G.IsWalk [ v ] := by sorry
+    · have hv : v ∈ V(G) := by
+        have : v ∈ T := by
+          rw[hTel]
+          exact mem_insert v {u, w}
+        exact hT this
+      have hu : u ∈ V(G) := by
+        have : u ∈ T := by
+          rw[hTel]
+          refine mem_insert_of_mem v (mem_insert u {w})
+        exact hT this
+      have hw : w ∈ V(G) := by
+        have : w ∈ T := by
+          rw[hTel]
+          refine mem_insert_of_mem v (mem_insert_of_mem u rfl)
+        exact hT this
+      --have ⟨euv, hh ⟩ : ∃ evu, G.IsLink evu v u := hcomplete v u hv hu hvu
+      --use [u v w]
+      sorry
+
+  | succ n IH =>
+
+    sorry
+
+lemma Hamiltonian_to_cyle {G : Graph α β}
+    (hham : ∃ C : WList α β, Is_hamiltonian_cycle G C)
+    : ∃ C : WList α β, G.IsCycle C  := by
+  obtain ⟨ C, hC ⟩ := hham
+  use C
+  exact hC.1
+
+lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
+    ∃ P₀ P₁, G.IsPath P₀ ∧ G.IsPath P₁ ∧ u = P₀.last ∧ u = P₁.first ∧
+    P₀.length + P₁.length = P.length ∧ P = (P₀ ++ P₁) := by
+  set Pre : WList α β := prefixUntilVertex P u with h_pre
+  set Suf : WList α β := suffixFromVertex P u with h_suf
+  use Pre
+  use Suf
+  rw [h_pre,h_suf]
+  refine ⟨ IsPath.prefix hP (prefixUntilVertex_isPrefix P u),
+  (IsPath.suffix hP (suffixFromVertex_isSuffix P u)),
+  Eq.symm (prefixUntilVertex_last hu) , Eq.symm (suffixFromVertex_first hu),
+  prefixUntilVertex_suffixFromVertex_length P u hu,
+  Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
+
+lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
+    (w.concat e y).idxOf x = w.idxOf x := by
+  induction w with
+  | nil u => simp_all
+  | cons u f w ih =>
+  simp
+  obtain rfl | hu := eq_or_ne x u
+  · rw [idxOf_cons_self, idxOf_cons_self]
+  rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
+  simp_all
+
+lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
+    : v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
+  simp at hCP
+  obtain (rfl | h2 | rfl) := hCP
+  · exact False.elim (huv rfl)
+  · refine ⟨ h2, ?_ ⟩
+    rw [idxOf_cons_ne huv.symm e (P.concat f u) ]
+    simp
+    --refine Eq.symm (IsPrefix.idxOf_eq_of_mem ?_ h2)
+    rwa [idxOf_concat_ne P f ]
+  · exact False.elim (huv rfl)
+
+lemma prefixUntilVertex_index [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w)
+    (hle : w.idxOf y ≤ w.idxOf x ) :
+    w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
+  induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
+  simp at hx
+  obtain rfl | hu := eq_or_ne x u
+  · obtain rfl | hxy := eq_or_ne x y
+    simp
+    have h1 : (cons x e w).first = x := by exact rfl
+    rw [←prefixUntilVertex_first (cons x e w) x] at h1
+    have h := idxOf_first ((cons x e w).prefixUntilVertex x)
+    nth_rw 3 [←h1]
+    exact id (Eq.symm h)
+    · simp at hle
+      rw [hle]
+      rw [idxOf_cons_ne hxy] at hle
+      by_contra!
+      have hcon : 0 ≤ w.idxOf y := by exact Nat.zero_le (w.idxOf y)
+      rw [←hle ] at hcon
+      linarith
+  simp_all [prefixUntilVertex, hu.symm, idxOf_cons_ne hu.symm]
+  obtain rfl | huy := eq_or_ne y u
+  · simp
+  simp_all [ idxOf_cons_ne huy.symm]
+
+lemma prefixUntilVertex_Nil [DecidableEq α] (w : WList α β) (x : α) :
+    Nil ((cons x e w).prefixUntilVertex x) := by
+  refine length_eq_zero.mp ?_
+  rw [prefixUntilVertex_length (cons x e w)]
+  exact idxOf_cons_self x e w
+  simp
+
+lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
+    (cons x e w).prefixUntilVertex x = .nil x := by
+  refine Nil.eq_nil_of_mem (prefixUntilVertex_Nil w x) ?_
+  have h1 : x = ((cons x e w).prefixUntilVertex x).first := by
+    rw [prefixUntilVertex_first (cons x e w) x]
+    exact rfl
+  have h2 : ((cons x e w).prefixUntilVertex x).first ∈ (cons x e w).prefixUntilVertex x := by
+    exact first_mem
+  rwa [←h1 ] at h2
+
+lemma prefixUntilVertex_index_iff [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) (hy : y ∈ w)
+    : y ∈ (w.prefixUntilVertex x) ↔  w.idxOf y ≤ w.idxOf x := by
+refine ⟨ ?_, ?_ ⟩
+· intro hyP
+  induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
+  obtain rfl | hu := eq_or_ne x u
+  · simp
+    rw [prefixUntilVertex_nil w x] at hyP
+    simp at hyP
+    rw[hyP]
+    simp
+  simp [hu] at hx
+  obtain rfl | huy := eq_or_ne y u
+  · simp
+  simp [huy] at hy
+  simp [idxOf_cons u e w, huy.symm, hu.symm]
+  rw [prefixUntilVertex_cons_of_ne w hu.symm] at hyP
+  simp only [mem_cons_iff, huy, false_or] at hyP
+  exact ih hx hy hyP
+intro hle
+by_contra hc
+have h1 := idxOf_notMem hc
+rw [prefixUntilVertex_length w x hx, ←prefixUntilVertex_index w x hx hle] at h1
+linarith
+
+lemma idx_Of_tail [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
+    (ha : a ∈ w) :
+    (w.tail).idxOf a + 1 = w.idxOf a := by
+  induction w with
+  | nil w =>
+  simp
+  rw [nil_first] at haf
+  exact haf (mem_nil_iff.1 ha).symm
+  | cons u e w ih =>
+  simp
+  obtain rfl | hu := eq_or_ne a u
+  simp
+  exact haf rfl
+  simp [hu.symm]
+
+lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w) :
+    (w.dropLast).idxOf a = w.idxOf a := by
+  induction w with
+  | nil w => rfl
+  | cons u e w ih =>
+  obtain he | hwN := exists_eq_nil_or_nonempty w
+  obtain ⟨x, hx ⟩ := he
+  rw [hx]
+  simp
+  obtain rfl | hu := eq_or_ne a u
+  simp
+  simp [hu.symm]
+  simp [hu, hx] at ha
+  exact id (Eq.symm ha)
+  rw [hwN.dropLast_cons]
+  obtain rfl | hu := eq_or_ne a u
+  simp_all
+  simp [hu.symm ]
+  simp_all
+
+lemma IsCycle.rotate_one {C : WList α β} (hC : G.IsCycle C)
+    : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
+  set e := hC.nonempty.firstEdge
+  use e
+  have hCn : C = cons C.first e C.tail := by
+    exact Eq.symm (Nonempty.cons_tail hC.nonempty)
+  nth_rw 1 [hCn]
+  rw [cons_rotate_one ]
+
+lemma IsCycle.idxOf_rotate_one {a  : α} {C : WList α β} (hC : G.IsCycle C)
+    (hnt : C.Nonempty) (h1 : C.first ≠ a ) (ha : a ∈ C) :
+    (C.rotate 1).idxOf a + 1 = C.idxOf a := by
+  obtain ⟨e, h ⟩ :=  hC.rotate_one
+  have hat : a ∈ C.tail := by
+    obtain hfirst | h1 := eq_first_or_mem_tail ha
+    · by_contra
+      exact h1 (id (Eq.symm hfirst))
+    exact h1
+  have := idx_Of_tail hnt h1 ha
+  rwa [h, idxOf_concat_ne C.tail e hat]
+
+lemma IsCycle.idxOf_rotate_first {a  : α} {n : ℕ} {C : WList α β} (hC : G.IsCycle C)
+    (hn : n < C.length) (hle : n + 1 ≤ C.idxOf a ) : (C.rotate n).first ≠ a := by
+  rw [rotate_first C n (Nat.le_of_succ_le hn) ]
+  by_contra hc
+  rw[←hc] at hle
+  rw [idxOf_get hC hn ] at hle
+  linarith
+
+lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} (C : WList α β) (hC : G.IsCycle C)
+    (hnt : C.Nonempty) (ha : a ∈ C) (hn : n < C.length)
+    (hle : n + 1 ≤ C.idxOf a ) :
+    (C.rotate n).idxOf a + n  = C.idxOf a := by
+  induction n with
+  | zero =>
+  simp_all
+  -- have h1 : C.first ≠ a := by
+  --   by_contra hc
+  --   rw[←hc, idxOf_first ] at hle
+  --   linarith
+  -- exact hC.idxOf_rotate_one C hnt h1 ha
+  | succ n hi =>
+  rw[←rotate_rotate C n 1]
+  have hlen : n ≤ C.length := by
+    linarith
+  have hle' : n + 1 ≤ C.idxOf a := by
+    linarith
+  have han : (C.rotate n).first ≠ a := by
+    rw [rotate_first C n hlen ]
+    by_contra hc
+    rw[←hc, idxOf_get hC (Nat.lt_of_succ_lt hn) ] at hle
+    linarith
+  have hf := (rotate hC n ).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hnt )
+      han (((hC.isClosed).mem_rotate).2 ha)
+  have := hi (Nat.lt_of_succ_lt hn) hle'
+  linarith
+
+lemma IsCycle.idxOf_rotate_one_first {a  : α} {C : WList α β} (hC : G.IsCycle C)
+    (hnt : C.Nonempty) (h1 : C.first = a ) (ha : a ∈ C) :
+    (C.rotate 1).idxOf a = C.length := by sorry
+
+lemma IsCycle.idxOf_rotate_n {a  : α} {n : ℕ} (C : WList α β) (hC : G.IsCycle C)
+    (hnt : C.Nonempty) (ha : a ∈ C) (hn : n < C.length)
+    (hle : C.idxOf a < n ) : (C.rotate n).idxOf a + n = C.length + 1 + C.idxOf a := by sorry
+
+
+
+lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
+    (S : Set α) (HS : IsMinSepSet G S )
+    (A : Set α) (hA : IsMaxIndependent G A)
     (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
 --grw
 
@@ -857,25 +1114,48 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
   let S := {C : WList α β | G.IsCycle C }
   have hsne : S.Nonempty := by
     exact nonempty_of_mem hC'
-  have hsfin : ((length ) '' S).Finite := sorry
-  --THe following obtains a cycle of G that is maximal in length
+  have hsfin : ((length ) '' S).Finite := by sorry
+
+  --The following obtains a cycle of G that is maximal in length
   obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
   --Now that we got a max cycle, we have two cases
-  obtain ( hn| hlen ) := Decidable.em (C.length = V(G).ncard  )
+  obtain ( hn| hlen ) := Decidable.em (V(C).encard = V(G).encard  )
   · use C
-    refine ⟨ hCs.prop , hn ⟩
+    apply Is_hamiltonian_encard G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
-  have hCle : C.length < V(G).ncard := by sorry
-  let VC := {v ∈ V(G) | v ∈ C.vertex}
+  have hCle : V(C).encard < V(G).encard := by
+    have hVCG : V(C) ⊆ V(G) := by sorry
+    refine Finite.encard_lt_encard ?_ ?_
+    --have := hlen (congrArg encard a)
+      --simp [hlen]
+    exact WList.vertexSet_finite C
+    exact HasSubset.Subset.ssubset_of_ne hVCG fun a ↦ hlen (congrArg encard a)
+--VC = V(C)
   --have ⟨v, hvV ⟩ : ∃ v, v ∉ C.vertex := sorry
-  have hG : V(G-(VC)).Nonempty := by
+  have hG : V(G-V(C)).Nonempty := by
+    by_contra hc
+    have hg1 : V(C) ⊆ V(G) := by sorry
+    rw[vertexDelete_vertexSet] at hc
+    have hconcl : V(G) ⊆ V(C) := by
+      intro v hv
+      obtain h1 | h2 := Decidable.em (v ∈ V(C))
+      · exact h1
+      by_contra
+      have hh : v ∈ V(G)\V(C) := by exact mem_diff_of_mem hv h2
+      have hhh : (V(G)\ V(C)).Nonempty := by
+        use v
+      exact hc hhh
+      --rw [←NeBot_iff_vertexSet_nonempty ] at hc
+    have hconclusion : V(G) = V(C)  := by exact hconcl.antisymm hg1
+    rw[ hconclusion ] at hCle
+    exact hlen (congrArg encard (id (Eq.symm hconclusion)))
+    --obtain ⟨v, hv ⟩ := hc
     -- have hg : V(G) \ VC = ∅ := by sorry
     -- have hg1 : VC ⊆ V(G) := by sorry
     -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
     -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
-    sorry
   have ⟨D, hD ⟩ := exists_IsCompOf hG
-  let Neig := {v : α | v ∈ C.vertex ∧ (neighbour_of_Set G V(D) v) }
+  set Neig : Set α := {v : α | v ∈ C ∧ (neighbour_of_Set G V(D) v) } with h_neig
   --This is the second worst sorry
   have hDadj : ∀ v, v ∈ Neig → ∀ u, u ∈ Neig
       → C.idxOf v ≠ C.idxOf u + 1 := by
@@ -885,25 +1165,106 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncar
     obtain ⟨ w', huD, huad ⟩ := huN.2
     --Need to take path in D from w to w' and extend cycle
     sorry
-  let NextNeigh := {v ∈ V(G) | ∃ w ∈ Neig, C.idxOf v = C.idxOf w + 1 }
-  have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := by
-    have : V(D).Nonempty := by sorry
+  set NextNeigh : Set α := {v ∈ C | ∃ w ∈ Neig, C.idxOf v + 1 = C.idxOf w  } with h_NN
+  have hNNV : NextNeigh ⊆ V(G) :=
+    fun ⦃a⦄ b ↦ ((IsCycle.isTrail hCs.prop ).vertexSet_subset)
+        ((sep_subset (fun x ↦ List.Mem x C.vertex)
+        fun x ↦ ∃ w ∈ Neig, C.idxOf x + 1 = C.idxOf w) b)
+
+    --sep_subset V(G) fun x ↦ ∃ w ∈ Neig, C.idxOf x = C.idxOf w + 1
+  have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := IsCompOf.nonempty hD
+
+  have hCNT : C.Nontrivial := by sorry
+  --Worst sorry, I will take this one
+  have hNNI : IsIndependent G NextNeigh := by
+    by_contra hc
+    obtain ⟨a, b, ha, hb, hab⟩ := IsIndepndent_nee hNNV hc
+    --rw[h_NN] at ha
+    obtain ⟨P,e,f, hPath, haP, heP, hfP, hef, hC ⟩ :=
+        IsCycle.exists_isPath_vertex hCs.prop hCNT ha.1
+    have hbP : b ∈ P := by
+      have hhh : b ∈ C.rotate (C.idxOf a)  := by
+        refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
+      rw [hC] at hhh
+      exact (Cycle_conc_index (hab.ne).symm hhh).1
+
+    obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
+    obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
+    have hab₁ : b₁ ≠ a := by sorry
+    --Basically if b₁ = a then a ∈ Neigh and a,a₁ are adj
+    --obtain ⟨P₀,P₁,hP₁,hP₂,hP₀last,hP₀first,hP01d,hP01 ⟩ := IsPath.exists_isPath_vertex P hPath hbP
+    set P₀ : WList α β := prefixUntilVertex P b with h_pre
+    set P₁ : WList α β := suffixFromVertex P b with h_suf
+    have hP₀ := IsPath.prefix hPath (prefixUntilVertex_isPrefix P b)
+    have hP₁ := IsPath.suffix hPath (suffixFromVertex_isSuffix P b)
+    --have hP₀P₁ := Eq.symm (prefixUntilVertex_append_suffixFromVertex P b)
+    rw [←h_pre] at hP₀
+    rw [←h_suf] at hP₁
+    --rw [←h_pre, ←h_suf] at hP₀P₁
+    have hb1P' : b₁ ∈ P := by
+        have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+          refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+        rw [hC] at hhh
+        exact (Cycle_conc_index hab₁ hhh).1
+    have hb1P1 : b₁ ∈ P₁ := by
+      have hb1P : b₁ ∈ P := by
+        have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+          refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+        rw [hC] at hhh
+        exact (Cycle_conc_index hab₁ hhh).1
+      rw [Eq.symm (prefixUntilVertex_append_suffixFromVertex P b),←h_pre, ←h_suf] at hb1P
+      obtain (hf | hg ):= mem_of_mem_append hb1P
+      · rw [h_pre] at hf
+        --rw [←Eq.symm (prefixUntilVertex_append_suffixFromVertex P b)] at hb1P
+        have hcon := (prefixUntilVertex_index_iff P b hbP hb1P').1 hf
+        have hbindP : P.idxOf b + 1 = P.idxOf b₁ := by
+          have hhh : b ∈ C.rotate (C.idxOf a)  := by
+            refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
+          rw[hC] at hhh
+          have hg1 := (Cycle_conc_index (hab.ne).symm hhh).2
+          have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+            refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+          rw[hC] at hhh
+          have hg2 := (Cycle_conc_index (hab₁) hhh).2
+          rw [←hC] at hg1
+          rw [←hC] at hg2
+
+          sorry
+        rw [←hbindP ] at hcon
+        linarith
+      exact hg
+    set P₂ : WList α β := prefixUntilVertex P₁ b₁ with h_pre2
+    set P₃ : WList α β := suffixFromVertex P₁ b₁ with h_suf2
+    have hP₂ := IsPath.prefix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
+        (prefixUntilVertex_isPrefix P₁ b₁)
+    have hP₃ := IsPath.suffix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
+        (suffixFromVertex_isSuffix P₁ b₁)
+    --have hP₂P₃ := Eq.symm (prefixUntilVertex_append_suffixFromVertex P₁ b₁)
+    rw [←h_pre2] at hP₂
+    rw [←h_suf2] at hP₃
+    --rw [←h_pre2, ←h_suf2] at hP₂P₃
+    --append_length
+
+
+    --rw [h_pre,h_suf]
+      -- refine ⟨ IsPath.prefix hP (prefixUntilVertex_isPrefix P u),
+      -- (IsPath.suffix hP (suffixFromVertex_isSuffix P u)),
+      -- Eq.symm (prefixUntilVertex_last hu) , Eq.symm (suffixFromVertex_first hu),
+      -- prefixUntilVertex_suffixFromVertex_length P u hu,
+      -- Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
+
+
+    --have ⟨ P,  := hCs.prop.exists_isPath_edge hNonTC
+
+    --IsPath.append
+    --IsPath.cons_isCycle
+
+
     sorry
-  --I'm not sure how much you need this one
-  --Worst sorry
-  have hNNI : IsIndependent G NextNeigh := by sorry
-  have hNNIv : IsIndependent G ( insert v NextNeigh) := by sorry
+  have hNNIv : IsIndependent G ( insert v NextNeigh) := by
+    --Should not be too bad doing cases
+    sorry
   --Finish
-
-
-
-
-
-
-
-
-
-
   sorry
 
 

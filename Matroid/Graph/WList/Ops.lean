@@ -66,6 +66,17 @@ lemma concat_nonempty (w : WList α β) (e x) : (w.concat e x).Nonempty := by
 lemma concat_vertexSet_eq (w : WList α β) (e x) : V(w.concat e x) = insert x V(w) := by
   induction w with | nil => simp [pair_comm] | cons _ _ _ ih => simp [ih, insert_comm]
 
+lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
+    (w.concat e y).idxOf x = w.idxOf x := by
+  induction w with
+  | nil u => simp_all
+  | cons u f w ih =>
+  simp
+  obtain rfl | hu := eq_or_ne x u
+  · rw [idxOf_cons_self, idxOf_cons_self]
+  rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
+  simp_all
+
 lemma get_concat (w : WList α β) (e x) {n} (hn : n ≤ w.length) :
     (w.concat e x).get n = w.get n := by
   induction n generalizing w with
