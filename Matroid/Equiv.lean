@@ -66,10 +66,10 @@ lemma Iso.image_symm_image (e : M ≂ N) (X : Set N.E) : e '' (e.symm '' X) = X 
   Equiv.image_symm_image e.toEquiv X
 
 @[simp] lemma Iso.image_symm_eq_preimage (e : M ≂ N) (X : Set N.E) : e.symm '' X = e ⁻¹' X :=
-  Eq.symm <| preimage_equiv_eq_image_symm X e.toEquiv
+  e.toEquiv.image_symm_eq_preimage X
 
 @[simp] lemma Iso.preimage_symm_eq_image (e : M ≂ N) (X : Set M.E) : e.symm ⁻¹' X = e '' X :=
-  (e.toEquiv.image_eq_preimage X).symm
+  (e.toEquiv.image_eq_preimage_symm X).symm
 
 @[simp] lemma Iso.preimage_image (e : M ≂ N) (X : Set M.E) : e ⁻¹' (e '' X) = X := by
   rw [← e.image_symm_eq_preimage, e.symm_image_image]

@@ -1,7 +1,6 @@
 import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Subgraph.Add
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v w : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
 open Set WList
 
@@ -95,24 +94,24 @@ lemma IsPendant.edgeSet_delete_vertex_eq (h : G.IsPendant e x) : E(G - {x}) = E(
   · exact h.edge_unique ((h_eq ▸ hzw).inc_left)
   exact h.edge_unique (h_eq ▸ hzw.inc_right)
 
--- lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
---     ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G-{x}) ∧ G = (G - {x}).addEdge e x y := by
---   obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
---   refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
---   · rw [h.edgeSet_delete_vertex_eq]
---     simp
---   · exact Graph.union_le (by simpa) (by simp)
---   · rw [addEdge_vertexSet, vertexDelete_vertexSet, ← union_singleton, union_assoc]
---     simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
---   rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
---     insert_eq_of_mem hexy.edge_mem]
+lemma IsPendant.eq_addEdge (h : G.IsPendant e x) :
+    ∃ y ∈ V(G), G.IsLink e x y ∧ y ≠ x ∧ e ∉ E(G-{x}) ∧ G = (G - {x}).addEdge e x y := by
+  obtain ⟨y, hne, hexy⟩ := h.isNonloopAt
+  refine ⟨y, hexy.right_mem, hexy, hne, ?_, ext_of_le_le le_rfl ?_ ?_ ?_⟩
+  · rw [h.edgeSet_delete_vertex_eq]
+    simp
+  · exact Graph.union_le (by simpa) (by simp)
+  · rw [addEdge_vertexSet, vertexDelete_vertexSet, ← union_singleton, union_assoc]
+    simp [insert_eq_of_mem hexy.right_mem, insert_eq_of_mem hexy.left_mem]
+  rw [addEdge_edgeSet, h.edgeSet_delete_vertex_eq, insert_diff_singleton,
+    insert_eq_of_mem hexy.edge_mem]
 
--- lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
---     ∃ (y : α) (H : Graph α β), x ∉ V(H) ∧ y ∈ V(H) ∧ e ∉ E(H) ∧ G = H.addEdge e x y := by
---   obtain ⟨y, hyV, -, hyx, -, h_eq⟩ := h.eq_addEdge
---   refine ⟨y, _, by simp, by simp [hyV, hyx], ?_, h_eq⟩
---   rw [h.edgeSet_delete_vertex_eq]
---   simp
+lemma IsPendant.exists_eq_addEdge (h : G.IsPendant e x) :
+    ∃ (y : α) (H : Graph α β), x ∉ V(H) ∧ y ∈ V(H) ∧ e ∉ E(H) ∧ G = H.addEdge e x y := by
+  obtain ⟨y, hyV, -, hyx, -, h_eq⟩ := h.eq_addEdge
+  refine ⟨y, _, by simp, by simp [hyV, hyx], ?_, h_eq⟩
+  rw [h.edgeSet_delete_vertex_eq]
+  simp
 
 /-- A leaf is a degree-one vertex. -/
 def IsLeaf (G : Graph α β) (v : α) : Prop := ∃ e, G.IsPendant e v
@@ -159,7 +158,7 @@ lemma IsLeaf.eq_of_adj_adj (h : G.IsLeaf x) (hu : G.Adj x u) (hv : G.Adj x v) :
   obtain ⟨y, hy, hun⟩ := h.exists_unique_adj
   rw [hun u hu, hun v hv]
 
-lemma IsLeaf.dup_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
+lemma IsLeaf.eq_of_inc_inc (h : G.IsLeaf x) (he : G.Inc e x) (hf : G.Inc f x) :
     e = f := by
   obtain ⟨g, hg, hun⟩ := h.exists_unique_inc
   rw [hun e he, hun f hf]

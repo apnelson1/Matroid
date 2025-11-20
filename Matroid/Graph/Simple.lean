@@ -1,9 +1,7 @@
 import Matroid.Graph.Finite
-import Matroid.Graph.Basic
-import Matroid.Graph.Constructions.Small
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v w a b : α} {e f : β} {G H : Graph α β}
-  {F F₁ F₂ : Set β} {X Y : Set α} {P : WList α β}
+variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
+    {X Y : Set α} {G H : Graph α β} {P : WList α β}
 
 open Set Function WList
 
@@ -56,19 +54,18 @@ instance [G.Loopless] (F : Set β) : (G ＼ F).Loopless :=
   ‹G.Loopless›.mono edgeDelete_le
 
 lemma eq_noEdge_or_vertexSet_nontrivial (G : Graph α β) [G.Loopless] :
-    (G = ⊥) ∨ (∃ x, G = Graph.noEdge (Partition.indiscrete' x) β) ∨ V(G).Nontrivial := by
+    (G = ⊥) ∨ (∃ x, G = Graph.noEdge {x} β) ∨ V(G).Nontrivial := by
   obtain rfl | ⟨v, hv⟩ := G.eq_bot_or_vertexSet_nonempty
   · simp
   obtain h | h := eq_singleton_or_nontrivial hv
-  · refine .inr <| .inl ⟨v, Graph.ext (by simpa [G.ne_bot_of_mem hv]) fun e x y ↦ ?_⟩
-    simp only [noEdge_edgeSet, mem_empty_iff_false, not_false_eq_true, not_isLink_of_notMem_edgeSet,
-      iff_false]
+  · refine .inr <| .inl ⟨v, Graph.ext (by simpa) fun e x y ↦ ?_⟩
+    simp only [noEdge_isLink, iff_false]
     refine fun he ↦ he.adj.ne ?_
     rw [show x = v by simpa [h] using he.left_mem, show y = v by simpa [h] using he.right_mem]
   simp [h]
 
-lemma Loopless.union [G.Loopless] [H.Loopless] (hG' : Agree {G, H}) : (G ∪ H).Loopless where
-  not_isLoopAt := by simp [union_isLoopAt hG']
+instance Loopless.union [G.Loopless] [H.Loopless] : (G ∪ H).Loopless where
+  not_isLoopAt := by simp [union_isLoopAt_iff]
 
 section Simple
 
@@ -117,9 +114,15 @@ instance : G[X].Simple where
     simp only [induce_isLink, and_imp]
     exact fun h _ _ h' _ _ ↦ h.unique_edge h'
 
-instance (V : Partition (Set α)) : (Graph.noEdge V β).Simple where
+instance (V : Set α) : (Graph.noEdge V β).Simple where
   not_isLoopAt := by simp
   eq_of_isLink := by simp
+
+lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simple where
+  not_isLoopAt f z := by
+    simp only [← isLink_self_iff, singleEdge_isLink, not_and, not_or]
+    aesop
+  eq_of_isLink := by aesop
 
 /-- In a simple graph, the bijection between edges at `x` and neighbours of `x`. -/
 noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :
@@ -159,65 +162,68 @@ lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).sym
 
 /-! ### Operations -/
 
-lemma Simple.union [H.Simple] (hG' : Agree {G, H})
-    (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) : (G ∪ H).Simple where
+lemma Simple.union [H.Simple] (h : ∀ ⦃e f x y⦄, G.IsLink e x y → H.IsLink f x y → e = f) :
+    (G ∪ H).Simple where
   eq_of_isLink e f x y he hf := by
-    rw [union_isLink hG'] at he hf
+    rw [union_isLink_iff] at he hf
     obtain hf | hf := hf
     · obtain he | he := he
       · exact he.unique_edge hf
-      rw [h hf he]
+      rw [h hf he.1]
     obtain he | he := he
-    · exact h he hf
-    exact he.unique_edge hf
-  not_isLoopAt := (Loopless.union hG').not_isLoopAt
+    · exact h he hf.1
+    exact he.1.unique_edge hf.1
 
--- omit [G.Simple] in
--- lemma IsPath.toGraph_simple {P : WList (Set α) β} (hP : G.IsPath P) : P.toGraph.Simple where
---   not_isLoopAt e x h := by
---     rw [← isLink_self_iff, hP.isWalk.wellFormed.toGraph_isLink] at h
---     induction P with
---     | nil => simp at h
---     | cons u f P ih =>
---       simp only [cons_isPath_iff] at hP
---       simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
---         and_comm, or_self] at h
---       aesop
---   eq_of_isLink e f x y he hf := by
---     rw [hP.isWalk.wellFormed.toGraph_isLink] at he hf
---     induction P with
---     | nil => simp_all
---     | cons u g P ih =>
---     · simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
---         Prod.swap_prod_mk] at he hf
---       simp only [cons_isPath_iff] at hP
---       have hrw (v' e') : ¬ P.IsLink e' u v' := fun h ↦ hP.2.2 h.left_mem
---       have hrw' (v' e') : ¬ P.IsLink e' v' u := fun h ↦ hP.2.2 h.right_mem
---       obtain rfl | hne := eq_or_ne x u
---       · simp_all
---       obtain rfl | hne' := eq_or_ne y u
---       · simp_all
---       exact ih hP.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
+omit [G.Simple] in
+lemma IsPath.toGraph_simple {P : WList α β} (hP : G.IsPath P) : P.toGraph.Simple where
+  not_isLoopAt e x h := by
+    rw [← isLink_self_iff, hP.isWalk.wellFormed.toGraph_isLink] at h
+    induction P with
+    | nil => simp at h
+    | cons u f P ih =>
+      simp only [cons_isPath_iff] at hP
+      simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk,
+        and_comm, or_self] at h
+      aesop
+  eq_of_isLink e f x y he hf := by
+    rw [hP.isWalk.wellFormed.toGraph_isLink] at he hf
+    induction P with
+    | nil => simp_all
+    | cons u g P ih =>
+    · simp only [isLink_cons_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+        Prod.swap_prod_mk] at he hf
+      simp only [cons_isPath_iff] at hP
+      have hrw (v' e') : ¬ P.IsLink e' u v' := fun h ↦ hP.2.2 h.left_mem
+      have hrw' (v' e') : ¬ P.IsLink e' v' u := fun h ↦ hP.2.2 h.right_mem
+      obtain rfl | hne := eq_or_ne x u
+      · simp_all
+      obtain rfl | hne' := eq_or_ne y u
+      · simp_all
+      exact ih hP.1 (by simpa [hne, hne'] using he) (by simpa [hne, hne'] using hf)
 
 end Simple
 
 /-! ### Small Graphs -/
 
-lemma eq_banana [G.Loopless] (hV : V(G) = {a, b}) : G = banana a b E(G) := by
-  have : Partition.IsPartition {a, b} := by use P(G), by rwa [G.vertexPartition_parts]
-  refine Graph.ext_inc ?_ fun e x ↦ ?_
-  · simp [this, hV]
-  rw [banana_inc_of_isPartition this]; clear this
-  refine ⟨fun h => (by use h.edge_mem, by simpa [hV] using h.vertex_mem), fun ⟨he, hx⟩ ↦ ?_⟩
-  wlog h : x = a
-  · exact this (pair_comm a b ▸ hV) e x ⟨he, hx.symm⟩ he hx.symm <| hx.resolve_left h
-  subst x
-  obtain ⟨u, v, he⟩ := exists_isLink_of_mem_edgeSet he
-  obtain rfl | rfl := by simpa using hV ▸ he.left_mem
-  · exact ⟨v, he⟩
-  obtain rfl | rfl := by simpa using hV ▸ he.right_mem
-  · use u, he.symm
-  simpa using he.ne
+lemma eq_banana [G.Loopless] (hV : V(G) = {a,b}) : G = banana a b E(G) := by
+  refine Graph.ext_inc (by simpa) fun e x ↦ ?_
+  simp only [banana_inc_iff]
+  refine ⟨fun h ↦ ⟨h.edge_mem, by simpa using (show x ∈ {a,b} from hV ▸ h.vertex_mem)⟩, ?_⟩
+  suffices aux : ∀ c, V(G) = {x,c} → e ∈ E(G) → G.Inc e x by
+    rintro ⟨he, rfl | rfl⟩
+    · exact aux _ hV he
+    exact aux _ (pair_comm _ _ ▸ hV) he
+  intro c hC he
+  obtain ⟨z,w, hezw⟩ := exists_isLink_of_mem_edgeSet he
+  obtain rfl | hzx := eq_or_ne z x
+  · exact hezw.inc_left
+  obtain rfl | hwx := eq_or_ne w x
+  · exact hezw.inc_right
+  have h1 := hC ▸ hezw.left_mem
+  have h2 := hC ▸ hezw.right_mem
+  obtain rfl : z = c := by simpa [hzx] using h1
+  obtain rfl : w = z := by simpa [hwx] using h2
+  exact (hezw.adj.ne rfl).elim
 
 lemma exists_eq_banana [G.Loopless] (hV : V(G) = {a,b}) : ∃ F, G = banana a b F :=
   ⟨_, eq_banana hV⟩
@@ -227,9 +233,5 @@ lemma exists_eq_banana_of_encard [G.Loopless] (hV : V(G).encard = 2) :
   obtain ⟨a, b, hab, hV⟩ := encard_eq_two.1 hV
   exact ⟨a, b, E(G), hab, eq_banana hV⟩
 
-lemma banana_loopless (hab : Disjoint a b) (F : Set β) : (banana a b F).Loopless where
-  not_isLoopAt _ _ := banana_not_isloopAt_of_disjoint hab
-
-lemma singleEdge_simple (e : β) (hxy : Disjoint x y) : (Graph.singleEdge e x y).Simple where
-  not_isLoopAt _ _ := banana_not_isloopAt_of_disjoint hxy
-  eq_of_isLink := by aesop
+lemma banana_loopless (hab : a ≠ b) (F : Set α) : (banana a b F).Loopless where
+  not_isLoopAt e x := by simp [hab]

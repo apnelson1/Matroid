@@ -45,7 +45,7 @@ lemma Connected.isTree_of_maximal_isAcyclicSet (hG : G.Connected) (hF : Maximal 
     Graph.union_assoc, ← S.eq_union]
   refine le_of_le_le_subset_subset (G := G) (by simp) (Graph.union_le (by simpa) (by simp))
     (by simp) ?_
-  simp [inter_eq_self_of_subset_left hins, inter_eq_self_of_subset_left hF.prop.1]
+  simp [inter_eq_self_of_subset_right hins, inter_eq_self_of_subset_right hF.prop.1]
 
 /-- Every connected graph has a spanning tree -/
 lemma Connected.exists_isTree_spanningSubgraph (hG : G.Connected) : ∃ T, T.IsTree ∧ T ≤s G := by

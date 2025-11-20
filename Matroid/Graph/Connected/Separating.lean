@@ -1,14 +1,14 @@
 import Matroid.Graph.Simple
 import Matroid.Graph.WList.Sublist
 import Matroid.Graph.Subgraph.Delete
-import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Connected.Basic
 
 
 /-
 This file defined predicates stating that an abstract walk `w` is a walk/trail/path of a graph `G`.
 -/
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β} {A : Set β}
+variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {A : Set β}
   {W w w₁ w₂ : WList α β} {S T : Set α}
 
 open Graph WList Set

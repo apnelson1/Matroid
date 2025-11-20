@@ -166,7 +166,7 @@ lemma Quotient.dual (hQ : M₂ ≤q M₁) : M₁✶ ≤q M₂✶ := by
   refine quotient_of_forall_cyclic_of_isCircuit hQ.ground_eq fun C hC ↦ ?_
   rw [cyclic_iff_compl_isFlat_dual
     (show C ⊆ M₁✶.E from hC.subset_ground.trans hQ.ground_eq.subset), dual_dual, dual_ground]
-  rw [← isCocircuit_def, ← compl_isHyperplane_iff_isCocircuit, hQ.ground_eq] at hC
+  rw [← isCocircuit_def, ← isHyperplane_compl_iff_isCocircuit, hQ.ground_eq] at hC
   exact hQ.isFlat_of_isFlat hC.isFlat
 
 lemma Quotient.of_dual (hQ : M₂✶ ≤q M₁✶) : M₁ ≤q M₂ := by

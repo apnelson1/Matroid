@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Local
+import Matroid.Connectivity.Basic
 import Matroid.ForMathlib.Data.Set.Finite
 
 namespace Matroid

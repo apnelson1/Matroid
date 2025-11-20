@@ -1,10 +1,15 @@
 import Matroid.Graph.Walk.Path
 import Matroid.Graph.WList.Cycle
 
-variable {α β : Type*} [CompleteLattice α] {x y z u v : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
   {w w₁ w₂ C C₁ C₂ : WList α β} {S T : Set α}
 
 open WList
+
+lemma WList.WellFormed.rotate_toGraph (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
+    (w.rotate n).toGraph = w.toGraph := by
+  refine Graph.ext (by simp [h_closed.rotate_vertexSet]) fun e x y ↦ ?_
+  rw [(hw.rotate h_closed n).toGraph_isLink, h_closed.isLink_rotate_iff, hw.toGraph_isLink]
 
 namespace Graph
 
@@ -153,6 +158,9 @@ lemma IsCycle.eq_loop_of_isLink_self (h : G.IsCycle C) (hC : C.IsLink e x x) :
     rw [List.nodup_iff_sublist] at hnd
     exact False.elim <| hnd x h'.sublist
 
+lemma IsCycle.isCycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycle C :=
+  hC.isCycle_of_le hC.isWalk.toGraph_le <| by simp
+
 lemma IsCycle.ne_of_isLink (hC : G.IsCycle C) (hnt : C.Nontrivial) (hinc : C.IsLink e x y) :
     x ≠ y := by
   rintro rfl
@@ -243,10 +251,57 @@ lemma IsCycle.loop_or_nontrivial (hC : G.IsCycle C) :
   cases hC.nonempty with
   | cons x e w => cases w with | nil u => simp [show x = u from hC.isClosed] | cons => simp
 
+lemma IsCycle.toGraph_vertexDelete_first_eq (hC : G.IsCycle C) (hnt : C.Nontrivial) :
+    C.toGraph - ({C.first} : Set α) = C.tail.dropLast.toGraph := by
+  obtain ⟨P, u, e, f, hP, huP, heP, hfP, hef, rfl⟩ := hC.exists_isPath hnt
+  refine Graph.ext (by simpa) fun g x y ↦ ?_
+  have h1 : P.IsLink g x y → x ∈ P := fun h ↦ h.left_mem
+  have h2 : P.IsLink g x y → y ∈ P := fun h ↦ h.right_mem
+  simp only [vertexDelete_isLink_iff, hC.isWalk.wellFormed.toGraph_isLink, isLink_cons_iff',
+    concat_first, isLink_concat_iff, tail_cons, dropLast_concat,
+    hP.isWalk.wellFormed.toGraph_isLink]
+  aesop
+
 lemma IsCycle.vertexSet_nontrivial (hC : G.IsCycle C) (hnt : C.Nontrivial) : V(C).Nontrivial := by
   obtain ⟨P, u, -, -, -, huP, -, -, -, rfl⟩ := hC.exists_isPath hnt
   refine Set.nontrivial_of_exists_ne (x := u) (by simp) ⟨P.first, ?_⟩
   simp [show P.first ≠ u by rintro rfl; simp at huP]
+
+/-- Deleting a vertex from the graph of a nontrivial cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_vertex (hC : G.IsCycle C) (hnt : C.Nontrivial)
+    (hx : x ∈ C) : ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph - ({x} : Set α) := by
+  wlog hxC : x = C.first generalizing C with aux
+  · obtain ⟨n, -, rfl⟩ := exists_rotate_first_eq hx
+    obtain ⟨P, hP, hP'⟩ := aux (C := C.rotate n) (hC.rotate n) (hnt.rotate n) (by simp) rfl
+    exact ⟨P, hP, by rw [hP', WellFormed.rotate_toGraph hC.isWalk.wellFormed hC.isClosed]⟩
+  exact ⟨_, hC.tail_dropLast_isPath, by rw [hxC, hC.toGraph_vertexDelete_first_eq hnt]⟩
+
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge_of_isLink (hC : G.IsCycle C)
+    (he : C.IsLink e x y) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} ∧ P.first = x ∧ P.last = y := by
+  wlog he' : C.DInc e y x with aux
+  · obtain hxy | hxy := isLink_iff_dInc.1 he.symm
+    · exact aux hC he hxy
+    obtain ⟨P, hP, hPC, rfl, rfl⟩ := aux hC he.symm hxy
+    exact ⟨P.reverse, hP.reverse, by rwa [hP.isWalk.wellFormed.reverse_toGraph], by simp⟩
+  clear he
+  wlog hxC : e = hC.nonempty.firstEdge generalizing C with aux
+  · obtain ⟨n, -, _, rfl⟩ := exists_rotate_firstEdge_eq he'.edge_mem
+    simpa [hC.isWalk.wellFormed.rotate_toGraph hC.isClosed] using
+      aux (hC.rotate n) (hC.isClosed.dInc_rotate he' n) rfl
+  refine ⟨C.tail, hC.tail_isPath, Graph.ext (by simp [hC.isClosed.vertexSet_tail])
+    fun f z z' ↦ ?_, ?_⟩
+  · rw [hC.tail_isPath.isWalk.wellFormed.toGraph_isLink, edgeDelete_isLink, Set.mem_singleton_iff,
+      hC.isWalk.wellFormed.toGraph_isLink, hC.nonempty.tail_isLink_iff hC.edge_nodup, ← hxC]
+  rw [tail_last, ← hC.isClosed.eq, and_comm, ← hC.toIsTrail.dInc_iff_eq_of_dInc he', hxC]
+  cases C with | _ => simp_all
+
+/-- Deleting an edge from the graph of a cycle gives the graph of a path. -/
+lemma IsCycle.exists_isPath_toGraph_eq_delete_edge (hC : G.IsCycle C) (heC : e ∈ C.edge) :
+    ∃ P, G.IsPath P ∧ P.toGraph = C.toGraph ＼ {e} := by
+  obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edge heC
+  obtain ⟨P, hP, hPC, -, -⟩ := hC.exists_isPath_toGraph_eq_delete_edge_of_isLink h
+  exact ⟨P, hP, hPC⟩
 
 lemma IsPath.cons_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.first P.last)
     (heP : e ∉ P.edge) : G.IsCycle (cons P.last e P) where
@@ -268,6 +323,5 @@ lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
-
 
 end Graph

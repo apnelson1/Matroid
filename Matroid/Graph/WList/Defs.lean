@@ -135,10 +135,8 @@ lemma ext_vertex_edge {w₁ w₂ : WList α β} (h_vertex : w₁.vertex = w₂.v
 --   | cons u e {w x} (h : w.Mem x) : (cons u e w).Mem x
 
 
-
 instance : Membership α (WList α β) where
   mem w x := x ∈ w.vertex
-
 
 @[simp]
 lemma mem_vertex : (x ∈ w.vertex) = (x ∈ w) := rfl
@@ -279,8 +277,8 @@ lemma first_eq_last_iff (hnodup : w.vertex.Nodup) : w.first = w.last ↔ w.Nil :
   ⟨fun h ↦ by cases w with simp_all, Nil.first_eq_last⟩
 
 /-- `Nonempty w` means that `w : WList α β` has at least one edge -/
-inductive Nonempty : WList α β → Prop
-  | cons (x e) (w : WList α β) : Nonempty (cons x e w)
+protected inductive Nonempty : WList α β → Prop
+  | cons (x e) (w : WList α β) : WList.Nonempty (cons x e w)
 
 @[simp]
 lemma cons_nonempty (x e) (w : WList α β) : (cons x e w).Nonempty := by
@@ -417,6 +415,24 @@ lemma two_le_length_iff : 2 ≤ w.length ↔ w.Nontrivial := by
 
 lemma Nontrivial.one_lt_length (hw : w.Nontrivial) : 1 < w.length := by
   simpa
+
+lemma vertex_toFinset_card_le [DecidableEq α] (w : WList α β) :
+    w.vertex.toFinset.card ≤ w.length + 1 := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [cons_vertex, toFinset_cons, cons_length]
+    grw [Finset.card_insert_le]
+    simpa
+
+lemma edge_toFinset_card_le [DecidableEq β] (w : WList α β) :
+    w.edge.toFinset.card ≤ w.length := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [cons_edge, toFinset_cons, cons_length]
+    grw [Finset.card_insert_le, Nat.add_le_add_iff_right]
+    assumption
 
 /-- `w.DInc e x y` means that `w` contains `[x,e,y]` as a contiguous sublist.
 (`DInc` stands for 'directed incidence')` -/

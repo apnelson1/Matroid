@@ -1,5 +1,5 @@
 import Matroid.Modular.Flat
-import Matroid.Connectivity.Multi
+import Matroid.Connectivity.Extension
 import Matroid.Extension.Minor
 import Matroid.Extension.ProjectionBy
 import Matroid.Constructions.Project
@@ -164,13 +164,6 @@ theorem exists_contract_skew_delete_eq_of_card_eq_dual_multiConn (M : Matroid α
         ModularCut.extendBy_deleteElem _ haE]
     rwa [Finset.coe_cons, ← singleton_union, ← contract_contract]
 
--- theorem bar {M P : Matroid α} (X : ι → Set α) {A : Set α} (h_con : P ／ A = M)
---     (h_del : (P ＼ A).IsSkewFamily X) : M.multiConn X ≤ A.encard := by
---   rw [isSkewFamily_delete_iff_of_disjoint] at h_del
---   · grw [← h_con, ← multiConn_project_eq_multiConn_contract, multiConn_project_le_multiConn_add,
---       h_del.multiConn, zero_add, eRk_le_encard]
---   exact fun i ↦ (subset_diff.1 <| h_del.subset_ground_of_mem i).2
-
 theorem multiConn_dual_le_encard_of_delete_isSkewFamily {X : ι → Set α} (hX : ⋃ i, X i = M.E)
     (hdj : Pairwise (Disjoint on X)) {A : Set α} (h_del : P ＼ A = M)
     (h_con : (P ／ A).IsSkewFamily X) : M✶.multiConn X ≤ A.encard := by
@@ -182,15 +175,3 @@ theorem multiConn_dual_le_encard_of_delete_isSkewFamily {X : ι → Set α} (hX 
   · grw [← iUnion_subset_iff, hX, delete_ground, dual_ground, diff_subset]
   grw [← disjoint_iUnion_left, hX, delete_ground]
   exact disjoint_sdiff_left
-
-
-
-  -- ENat.add_le_right_iff, encard_eq_top_iff]
-  -- have hle := P✶.multiConn_project_le_multiConn_add (C := A) (X := X)
-  -- rw [multiConn_project_eq_multiConn_contract] at hle
-
-  -- grw [bar (M := M✶) (P := P✶) X]
-  -- · rw [← h_del, dual_delete]
-  -- rwa [← dual_contract, dual_isSkewFamily_iff hdj]
-  -- rw [hX, contract_ground, ← h_del, delete_ground]
-  -- -- ·

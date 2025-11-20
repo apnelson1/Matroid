@@ -352,7 +352,7 @@ lemma Rep.IsStandard.image_val_support_eq {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv :
 lemma Rep.IsStandard.isCocircuit_insert_support {v : M.Rep 𝔽 (B →₀ 𝔽)} (hv : v.IsStandard) (e : B) :
     M.IsCocircuit (v · e).support := by
   suffices h_eq : (v · e).support = M.E \ M.closure (B \ {e.1}) by
-    rw [h_eq, compl_isCocircuit_iff_isHyperplane]
+    rw [h_eq, isCocircuit_compl_iff_isHyperplane]
     exact hv.isBase.isHyperplane_of_closure_diff_singleton e.2
   ext x
   simp only [mem_support, ne_eq, mem_diff]

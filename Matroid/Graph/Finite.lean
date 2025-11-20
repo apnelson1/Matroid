@@ -1,12 +1,10 @@
 import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Subgraph.Union
--- import Matroid.Graph.Lattice
+import Matroid.Graph.Lattice
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
-import Mathlib.Data.Set.Card
 
-variable {α β : Type*} [CompleteLattice α] {G H T F : Graph α β} {u v x y z : α} {e e' f g : β}
-  {X : Set α} {F : Set β} {P C Q : WList α β}
+variable {α β : Type*} {G H T F : Graph α β} {u v x y z : α} {e e' f g : β} {X : Set α}
+{P C Q : WList α β} {F : Set β}
 
 open Set
 
@@ -47,8 +45,8 @@ instance [G.Finite] (F : Set β) : (G ↾ F).Finite :=
 instance [G.Finite] (F : Set β) : (G ＼ F).Finite :=
   ‹G.Finite›.mono edgeDelete_le
 
-lemma Finite.induce (hG : G.Finite) : G[X].Finite where
-  vertexSet_finite := hG.vertexSet_finite.subset (by simp)
+lemma Finite.induce (hG : G.Finite) (hX : X ⊆ V(G)) : G[X].Finite where
+  vertexSet_finite := hG.vertexSet_finite.subset hX
   edgeSet_finite := hG.edgeSet_finite.subset (by simp)
 
 @[simp]
@@ -89,17 +87,26 @@ lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
   simp only [Prod.mk.injEq] at h_eq
   exact G.ext_of_le_le h₁ h₂ h_eq.1 h_eq.2
 
--- instance (G : Graph α β) [G.Finite] : Finite G.Subgraph := finite_setOf_le G
+instance (G : Graph α β) [G.Finite] : Finite G.Subgraph := finite_setOf_le G
 
--- instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
---   G.finite_setOf_le.subset fun _ hH ↦ hH.le
+instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
+  G.finite_setOf_le.subset fun _ hH ↦ hH.le
 
-instance {G H : Graph α β} [G.Finite] [H.Finite] : (G ∪ H).Finite where
-  vertexSet_finite := by by_cases h : Agree {G, H} <;> simp [h]
-  edgeSet_finite := by by_cases h : Agree {G, H} <;> simp [h]
+instance [G.Finite] [H.Finite] : (G ∪ H).Finite where
+  vertexSet_finite := G.vertexSet_finite.union H.vertexSet_finite
+  edgeSet_finite := G.edgeSet_finite.union H.edgeSet_finite
+
+instance : (Graph.singleEdge x y e).Finite where
+  vertexSet_finite := by simp
+  edgeSet_finite := by simp
+
+instance (W : WList α β) : W.toGraph.Finite where
+  vertexSet_finite := by simp
+  edgeSet_finite := by simp
 
 /-- Used for well-founded induction on finite graphs by number of vertices -/
-lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) : V(G - {x}).encard < V(G).encard := by
+lemma encard_delete_vertex_lt [G.Finite] (hx : x ∈ V(G)) :
+    V(G - {x}).encard < V(G).encard := by
   rw [vertexDelete_vertexSet]
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
@@ -109,11 +116,12 @@ lemma encard_delete_vertexSet_lt [G.Finite] (hX : (V(G) ∩ X).Nonempty) :
   exact (G.vertexSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
 /-- Used for well-founded induction on finite graphs by number of edges -/
-lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) : E(G ＼ {e}).encard < E(G).encard := by
+lemma encard_delete_edge_lt [G.Finite] (he : e ∈ E(G)) :
+    E(G ＼ {e}).encard < E(G).encard := by
   rw [edgeDelete_edgeSet]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
 
-lemma encard_delete_edgeSet_lt {G : Graph α β} [G.Finite] {F : Set β} (hF : (E(G) ∩ F).Nonempty) :
+lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
     E(G ＼ F).encard < E(G).encard := by
   rw [edgeDelete_edgeSet]
   exact (G.edgeSet_finite.subset diff_subset).encard_lt_encard (by simpa)
@@ -121,6 +129,7 @@ lemma encard_delete_edgeSet_lt {G : Graph α β} [G.Finite] {F : Set β} (hF : (
 -- instance [G.Finite] : WellFoundedLT G.Subgraph := inferInstance
 
 -- instance [G.Finite] : WellFoundedLT G.ClosedSubgraph := inferInstance
+
 
 /-! ### Local Finiteness -/
 
@@ -155,7 +164,7 @@ lemma LocallyFinite.mono (hG : G.LocallyFinite) (hle : H ≤ G) : H.LocallyFinit
   finite _ := G.finite_setOf_inc.subset fun _ he ↦ he.of_le hle
 
 instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
-  finite _ := G.finite_setOf_inc.subset fun _ ⟨_, he⟩ ↦ ((G.induce_isLink _ _ _ _) ▸ he).1.inc_left
+  finite _ := G.finite_setOf_inc.subset fun _ ⟨_, he⟩ ↦ ((induce_isLink ..) ▸ he).1.inc_left
 
 instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
   ‹G.LocallyFinite›.mono vertexDelete_le
@@ -169,15 +178,13 @@ instance [G.LocallyFinite] (F : Set β) : (G ＼ F).LocallyFinite :=
 instance [G.Finite] : G.LocallyFinite where
   finite _ := G.edgeSet_finite.subset fun _ ↦ Inc.edge_mem
 
--- not true without Dup_agree
-instance {α : Type*} [Order.Frame α] {G H : Graph α β} [G.LocallyFinite] [H.LocallyFinite]
-    (hGH : Agree {G, H}) : (G ∪ H).LocallyFinite where
+instance [G.LocallyFinite] [H.LocallyFinite] : (G ∪ H).LocallyFinite where
   finite x := by
     refine ((G.finite_setOf_inc (x := x)).union (H.finite_setOf_inc (x := x))).subset ?_
-    simp_rw [union_inc hGH, subset_def]
+    simp_rw [union_inc_iff, subset_def]
     aesop
 
-instance (V : Partition (Set α)) : (Graph.noEdge V β).LocallyFinite where
+instance (V : Set α) : (Graph.noEdge V β).LocallyFinite where
   finite := by simp
 
 @[simp]
@@ -188,6 +195,34 @@ lemma vertexSet_finite_iff [G.LocallyFinite] : V(G).Finite ↔ G.Finite := by
   intro e he
   obtain ⟨x, y, hx⟩ := exists_isLink_of_mem_edgeSet he
   exact ⟨_, hx.left_mem, hx.inc_left⟩
+
+-- instance instWellFoundedLTGraph [Finite α] [Finite β] : WellFoundedLT (Graph α β) := by
+--   let f : Graph α β → ℕ := fun G ↦ V(G).ncard + E(G).ncard
+--   have hf : StrictMono f := by
+--     rintro G H hlt
+--     simp only [f]
+--     obtain ⟨hle, hne⟩ := lt_iff_le_and_ne.mp hlt
+--     obtain hV | hV := ssubset_or_eq_of_subset <| vertexSet_mono hle
+--     · have hE' : E(G) ⊆ E(H) := edgeSet_mono hle
+--       have hE'ncard : E(G).ncard ≤ E(H).ncard := ncard_le_ncard hE'
+--       have hVncard : V(G).ncard < V(H).ncard := ncard_lt_ncard hV (toFinite V(H))
+--       exact Nat.add_lt_add_of_lt_of_le hVncard hE'ncard
+--     rw [hV]
+--     obtain hE | hE := ssubset_or_eq_of_subset <| edgeSet_mono hle
+--     · have hEncard : E(G).ncard < E(H).ncard := ncard_lt_ncard hE (toFinite E(H))
+--       exact Nat.add_lt_add_left hEncard V(H).ncard
+--     obtain rfl := ext_of_le_le hle le_rfl hV hE
+--     simp only [ne_eq, not_true_eq_false] at hne
+--   exact hf.wellFoundedLT
+
+-- lemma minimal_exist {P : Graph α β → Prop} [Finite α] [Finite β] (h : P G) :
+--     ∃ G : Graph α β, Minimal P G :=
+--   exists_minimal_of_wellFoundedLT _ (by use G)
+
+-- lemma forall_of_minimal_not_exist {P : Graph α β → Prop} [Finite α] [Finite β]
+--     (h : ¬ ∃ G : Graph α β, Minimal (¬ P ·) G) : P G := by
+--   contrapose! h
+--   exact minimal_exist h
 
 end Graph
 

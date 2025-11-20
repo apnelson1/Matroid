@@ -30,6 +30,12 @@ theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) 
   obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)
   exact ⟨t, by simpa, by simp [encard_coe_eq_coe_finsetCard, hcard, Nat.cast_lt, - Nat.cast_add]⟩
 
+/-- a version of `Set.Infinite.exists_finite_subset_encard_gt` with `b` of type `ℕ∞`-/
+theorem Set.Infinite.exists_finite_subset_encard_gt' (hs : s.Infinite) {b : ℕ∞} (hb : b ≠ ⊤) :
+    ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
+  lift b to ℕ using hb
+  exact hs.exists_finite_subset_encard_gt b
+
 theorem Set.coe_le_encard_iff : n ≤ s.encard ↔ (s.Finite → n ≤ s.ncard) := by
   obtain (hfin | hinf) := s.finite_or_infinite
   · rw [← hfin.cast_ncard_eq, iff_true_intro hfin, Nat.cast_le, true_imp_iff]
