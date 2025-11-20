@@ -1,4 +1,6 @@
 import Matroid.Loop
+import Matroid.ForMathlib.Matroid.Dual
+import Matroid.ForMathlib.Matroid.Closure
 import Mathlib.Combinatorics.Matroid.Minor.Delete
 
 open Set
@@ -82,6 +84,16 @@ lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
 lemma isRestriction_emptyOn_iff : M ≤r emptyOn α ↔ M = emptyOn α := by
   simp [isRestriction_iff_exists]
 
+lemma Coindep.delete_nonspanning_iff (hD : M.Coindep D) :
+    (M ＼ D).Nonspanning X ↔  M.Nonspanning X ∧ Disjoint X D := by
+  wlog hX : X ⊆ (M ＼ D).E generalizing with aux
+  · exact iff_of_false (fun h ↦ hX h.subset_ground)
+      fun h ↦ hX <| subset_diff.2 ⟨h.1.subset_ground, h.2⟩
+  obtain ⟨hXE, hdj⟩ := subset_diff.1 hX
+  rw [and_iff_left hdj, ← not_spanning_iff, hD.delete_spanning_iff, and_iff_left hdj,
+    not_spanning_iff]
 
+lemma girth_le_girth_delete (M : Matroid α) (D : Set α) : M.girth ≤ (M ＼ D).girth :=
+    (delete_isRestriction ..).girth_ge
 
 end Delete

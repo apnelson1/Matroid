@@ -364,6 +364,11 @@ lemma restrictSubtype_ground_isCircuit_iff {C : Set M.E} :
 @[simp] lemma emptyOn_not_isCircuit : ¬ (emptyOn α).IsCircuit C := by
   simp [← freeOn_empty]
 
+lemma IsCircuit.of_isRestriction {N : Matroid α} (hC : N.IsCircuit C) (hNM : N ≤r M) :
+    M.IsCircuit C := by
+  obtain ⟨R, hR, rfl⟩ := hNM
+  rw [restrict_isCircuit_iff] at hC
+  exact hC.1
 
 section Girth
 
@@ -441,6 +446,19 @@ lemma indep_of_card_lt_girth (hI : I.encard < M.girth) (hIE : I ⊆ M.E := by ae
     M.Indep I := by
   rw [indep_iff_forall_subset_not_isCircuit]
   exact fun C hCI hC ↦ ((hC.girth_le_card.trans (encard_mono hCI)).trans_lt hI).ne rfl
+
+lemma indep_of_eRk_add_one_lt_girth (hI : M.eRk I + 1 < M.girth) (hIE : I ⊆ M.E := by aesop_mat) :
+    M.Indep I := by
+  rw [indep_iff_forall_subset_not_isCircuit]
+  refine fun C hCI hC ↦ ?_
+  grw [hC.girth_le_card, ← hC.eRk_add_one_eq, M.eRk_mono hCI] at hI
+  exact hI.ne rfl
+
+lemma IsRestriction.girth_ge {N M : Matroid α} (h : N ≤r M) : M.girth ≤ N.girth :=
+  le_girth_iff.2 fun _ hC ↦ IsCircuit.girth_le_card <| hC.of_isRestriction h
+
+lemma girth_le_girth_restrict (M : Matroid α) (hR : R ⊆ M.E) : M.girth ≤ (M ↾ R).girth :=
+  (restrict_isRestriction _ _ hR).girth_ge
 
 end Girth
 section IsBasisExchange

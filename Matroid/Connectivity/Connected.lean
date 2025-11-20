@@ -199,6 +199,12 @@ lemma Connected.exists_isCircuit (h : M.Connected) (hM : M.E.Nontrivial) (he : e
     exact ⟨C, hC, heC, heC⟩
   exact (h.2 he hf).exists_isCircuit_of_ne hne
 
+lemma Connected.rankPos (h : M.Connected) (hM : M.E.Nontrivial) : M.RankPos := by
+  by_contra hcon
+  have hnl := (h.loopless hM)
+  rw [M.not_rankPos_iff.1 hcon] at hnl
+  simp [hM.nonempty.ne_empty] at hnl
+
 lemma singleton_connected (hM : M.E = {e}) : M.Connected :=
   ⟨⟨by simp [hM]⟩, by simp [hM]⟩
 

@@ -12,11 +12,14 @@ lemma Set.diff_bijOn_subset (s : Set α) : BijOn (s \ ·) (Iic s) (Iic s) :=
 
 namespace Matroid
 
+lemma Coindep.subset {I J : Set α} (h : M.Coindep I) (hJI : J ⊆ I) : M.Coindep J :=
+  Indep.subset h hJI
 
 /-- `M.Codep D` means that `D` is a subset of `M.E` that is dependent in `M✶`. -/
 def Codep (M : Matroid α) (D : Set α) : Prop := M✶.Dep D
 
-
+lemma Coindep.not_codep (hD : M.Coindep D) : ¬ M.Codep D :=
+  Indep.not_dep hD
 
 @[aesop unsafe 20% (rule_sets := [Matroid])]
 lemma Codep.subset_ground (h : M.Codep D) : D ⊆ M.E :=

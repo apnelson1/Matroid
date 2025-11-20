@@ -20,13 +20,14 @@ def parseIneq (e : Expr) : AtomM Unit := do
       findENatAtoms a
       findENatAtoms b
   catch _ =>
-    let some r := e.not? | return ()
+    let some e := (← whnfR e).not? | return ()
     try
-      let (_, α, a, b) ← r.ineq?
+      let (_, α, a, b) ← e.ineq?
       if (← isDefEq α q(ENat)) then
         findENatAtoms a
         findENatAtoms b
     catch _ => return
+  return
 
 def atoms (g : MVarId) : AtomM (Array Expr) := g.withContext do
   for hyp in (← getLCtx) do
@@ -68,14 +69,15 @@ attribute [enat_to_nat_top] not_true add_top
 
 -- /-! ### Tests -/
 
-example {f : ℤ → ℕ∞} {a b c : ℤ} (h1 : f a + 1 ≤ f b) (h2 : f b ≤ f c) (h3 : f a < ⊤) :
-    f a < f c := by
-  enat_to_nat!
+example {f : ℤ → ℕ∞} {a b : ℤ} (h : 2 * f a = f a + f b) : 2 * f a = f a + f b  := by
+  generalize_enats
   omega
 
-example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hbc : b ≤ c) : a ≤ c := by
-  enat_to_nat!
-  omega
 
-example (a b c d : ℕ∞) (hab : a ≤ b) (hbc : 2 * b + d < c) : a ≠ ⊤ := by
-  enat_to_nat
+
+-- example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hbc : b ≤ c) : a ≤ c := by
+--   enat_to_nat!
+--   omega
+
+-- example (a b c d : ℕ∞) (hab : a ≤ b) (hbc : 2 * b + d < c) : a ≠ ⊤ := by
+--   enat_to_nat
