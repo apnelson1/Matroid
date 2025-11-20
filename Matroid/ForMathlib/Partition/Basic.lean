@@ -5,87 +5,7 @@ import Matroid.ForMathlib.Function -- for Function.onFun_comp
 
 open Set Function
 
-section Pairwise
-
-variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {g : ι' → ι} {x y : α}
-
-lemma Pairwise.of_refl [IsRefl α r] (h : Pairwise (r on f)) (i j : ι) : r (f i) (f j) :=
-  (eq_or_ne i j).elim (fun hij ↦ hij ▸ refl (f i)) fun hne ↦ h hne
-
-lemma Pairwise.true_of_refl [IsRefl α r] (hr : Pairwise r) : r x y := by
-  by_cases hf : x = y
-  · exact hf ▸ refl x
-  · exact hr hf
-
-lemma true_pairwise : Pairwise (⊤ : α → α → _) := by tauto
-
-lemma Pairwise.iff_top_of_refl [IsRefl α r] : Pairwise r ↔ r = ⊤ := by
-  refine ⟨fun hr ↦ ?_, ?_⟩
-  · ext x y
-    simp [hr.true_of_refl]
-  · rintro rfl
-    exact fun ⦃i j⦄ a ↦ trivial
-
-lemma Pairwise.iff_true_of_refl [IsRefl α r] : Pairwise r ↔ ∀ x y, r x y := by
-  rw [iff_top_of_refl]
-  aesop
-
-lemma Pairwise.onFun_of_refl [IsRefl α r] (hr : Pairwise r) (f : ι → α) : Pairwise (r on f) := by
-  rintro i j hne
-  rw [Pairwise.iff_top_of_refl] at hr
-  subst r
-  trivial
-
-lemma Set.pairwise_image_of_refl {s : Set ι} [IsRefl α r] :
-    (f '' s).Pairwise r ↔ s.Pairwise (r on f) :=
-  ⟨fun h i hi j hj _ => h.of_refl (by use i : f i ∈ f '' s) (by use j : f j ∈ f '' s),
-    Pairwise.image⟩
-
-lemma Pairwise.onFun_comp_of_refl [IsRefl α r] (hr : Pairwise (r on f)) (g : ι' → ι) :
-    Pairwise (r on (f ∘ g)) := Pairwise.onFun_of_refl hr g
-
-instance [PartialOrder α] [OrderBot α] : IsSymm α Disjoint where
-  symm := Disjoint.symm
-
-lemma pairwiseDisjoint_pair {ι : Type*} {i j : ι} {f : ι → α} [PartialOrder α] [OrderBot α]
-    (hab : (Disjoint on f) i j) : PairwiseDisjoint {i, j} f := by
-  rintro a (rfl | rfl) b (rfl | rfl) <;> simp [hab, symm hab]
-
-lemma pairwiseDisjoint_pair_iff {ι : Type*} {i j : ι} {f : ι → α} [PartialOrder α] [OrderBot α] :
-    PairwiseDisjoint {i, j} f ↔ i = j ∨ (Disjoint on f) i j := by
-  refine ⟨fun h ↦ or_iff_not_imp_left.mpr <| h (by simp) (by simp), ?_⟩
-  rintro (rfl | h)
-  · simp
-  · exact pairwiseDisjoint_pair h
-
-@[simp]
-lemma Pairwise.const_of_refl [IsRefl α r] (x : α) : Pairwise (r on fun (_ : ι) ↦ x) := by
-  simp [Pairwise, refl]
-
-lemma pairwise_pair_of_symm [IsSymm α r] (hxy : r x y) : ({x, y} : Set α).Pairwise r := by
-  rintro a (rfl | rfl) b (rfl | rfl) <;> simp [hxy, symm hxy]
-
-lemma Set.Pairwise.range_of_injective (hf : Function.Injective f) :
-    Pairwise (r on f) ↔ (range f).Pairwise r := by
-  refine ⟨fun h ↦ ?_, fun h i j hne ↦ @h (f i) ⟨i, rfl⟩ (f j) ⟨j, rfl⟩ <| fun a ↦ hne (hf a)⟩
-  rintro _ ⟨i, _, rfl⟩ _ ⟨j, _, rfl⟩ hne
-  exact h fun a ↦ hne (congrArg f a)
-
-lemma Pairwise.restrict {s : Set ι} : Pairwise (r on (f · : s → α)) ↔ s.Pairwise (r on f) :=
-  ⟨fun h i his j hjs hne ↦ @h ⟨i, his⟩ ⟨j, hjs⟩ (by simpa),
-  fun h i j hne ↦ h i.prop j.prop (by rwa [Subtype.coe_ne_coe])⟩
-
-lemma Pairwise.sum_left {γ : Type*} {G : ι → γ} {H : ι' → γ} {r : γ → γ → Prop}
-    (h : Pairwise (r on Sum.elim G H)) : Pairwise (r on G) := by
-  rw [← Sum.elim_comp_inl G H, onFun_comp]
-  exact h.comp_of_injective Sum.inl_injective
-
-lemma Pairwise.sum_right {γ : Type*} {G : ι → γ} {H : ι' → γ} {r : γ → γ → Prop}
-    (h : Pairwise (r on Sum.elim G H)) : Pairwise (r on H) := by
-  rw [← Sum.elim_comp_inr G H, onFun_comp]
-  exact h.comp_of_injective Sum.inr_injective
-
-end Pairwise
+variable {α β ι ι' : Type*} {r : α → α → Prop} {f : ι → α} {g : ι' → ι} {s t x y z : α}
 
 lemma sSupIndep.image {α : Type*} [CompleteLattice α] {S : Set α} (hS : sSupIndep S) {f : α → α}
     (hf : ∀ i, f i ≤ i) : sSupIndep (f '' S) := by
@@ -103,14 +23,6 @@ lemma sSupIndep_subsingleton {α : Type*} [CompleteLattice α] {S : Set α} (hs 
   obtain (rfl | ⟨a, rfl⟩) := hs.eq_empty_or_singleton
   · exact sSupIndep_empty
   exact sSupIndep_singleton a
-
-lemma Set.subsingleton_image {α β : Type*} {f : α → β} {S : Set α} (hS : S.Subsingleton) :
-    (f '' S).Subsingleton := by
-  rintro a ⟨x, hxS, rfl⟩ b ⟨y, hyS, rfl⟩
-  exact (hS hxS hyS) ▸ rfl
-
-
-variable {α β : Type*} {s t x y z : α}
 
 structure Partition (α : Type*) [CompleteLattice α] where
   parts : Set α

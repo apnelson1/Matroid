@@ -106,6 +106,20 @@ lemma isLink_concat_iff : (w.concat f u).IsLink e x y ↔
   rw [isLink_iff_dInc, dInc_concat_iff, dInc_concat_iff, isLink_iff_dInc]
   tauto
 
+protected lemma concat_inj_left : w₁.concat e x = w₂.concat e x ↔ w₁ = w₂ := by
+  refine ⟨fun h ↦ ext_vertex_edge ?_ ?_, fun h ↦ h ▸ rfl⟩
+  · apply_fun WList.vertex at h
+    simpa using h
+  apply_fun WList.edge at h
+  simpa using h
+
+lemma concat_injective : Injective (WList.concat · e x : WList α β → WList α β) :=
+  fun _ _ ↦ WList.concat_inj_left.1
+
+protected lemma concat_inj_right : w.concat e x = w.concat e y ↔ x = y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  apply_fun WList.vertex at h
+  simpa using h
 
 /- Properties of append operation -/
 @[simp]
@@ -119,6 +133,9 @@ lemma cons_append : cons x e w₁ ++ w₂ = cons x e (w₁ ++ w₂) := rfl
 
 lemma append_assoc (w₁ w₂ w₃ : WList α β) : (w₁ ++ w₂) ++ w₃ = w₁ ++ (w₂ ++ w₃) := by
   induction w₁ with simp_all
+
+instance : Std.Associative (· ++ · : WList α β → WList α β → WList α β) where
+  assoc := append_assoc
 
 @[simp]
 lemma append_vertex : (w₁ ++ w₂).vertex = w₁.vertex.dropLast ++ w₂.vertex := by
@@ -161,13 +178,11 @@ lemma append_nil (h : w.last = x) : w ++ (nil x) = w := by
   induction w with simp_all
 
 @[simp]
-lemma append_first_of_eq (h : w₁.last = w₂.first):
-  (w₁ ++ w₂).first = w₁.first := by
+lemma append_first_of_eq (h : w₁.last = w₂.first) : (w₁ ++ w₂).first = w₁.first := by
   induction w₁ with simp_all
 
 @[simp]
-lemma append_first_of_nonempty (h : w₁.Nonempty) :
-  (w₁ ++ w₂).first = w₁.first := by
+lemma append_first_of_nonempty (h : w₁.Nonempty) : (w₁ ++ w₂).first = w₁.first := by
   induction w₁ with simp_all
 
 @[simp]
@@ -184,6 +199,11 @@ lemma append_vertexSet_of_eq (h : w₁.last = w₂.first) : V(w₁ ++ w₂) = V(
   | cons u e w ih =>
     simp only [last_cons] at h
     simp [ih h, insert_union]
+
+lemma edgeSet_disjoint_of_append_nodup (h : (w₁ ++ w₂).edge.Nodup) : Disjoint E(w₁) E(w₂) := by
+  rw [append_edge, List.nodup_append] at h
+  rw [disjoint_iff_forall_ne]
+  exact h.2.2
 
 lemma mem_of_mem_append (hx : x ∈ w₁ ++ w₂) : x ∈ w₁ ∨ x ∈ w₂ := by
   rw [← mem_vertex, append_vertex, List.mem_append] at hx
@@ -348,6 +368,10 @@ lemma reverse_inj (h : w₁.reverse = w₂.reverse) : w₁ = w₂ := by
 @[simp]
 lemma reverse_inj_iff : w₁.reverse = w₂.reverse ↔ w₁ = w₂ :=
   ⟨reverse_inj, fun h ↦ by rw [h]⟩
+
+@[simp]
+lemma reverse_injective : Injective (reverse : WList α β → WList α β) :=
+  fun _ _ ↦ reverse_inj
 
 lemma reverse_eq_comm : w₁.reverse = w₂ ↔ w₁ = w₂.reverse := by
   rw [← reverse_reverse w₂, reverse_inj_iff, reverse_reverse]

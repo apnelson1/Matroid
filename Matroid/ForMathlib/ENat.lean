@@ -68,6 +68,14 @@ lemma one_add_le_one_add_iff {a b : ℕ∞} : 1 + a ≤ 1 + b ↔ a ≤ b :=
   WithTop.add_le_add_iff_left (by simp)
 
 @[simp]
+lemma add_one_lt_add_one_iff {a b : ℕ∞} : a + 1 < b + 1 ↔ a < b :=
+  WithTop.add_lt_add_iff_right (by simp)
+
+@[simp]
+lemma one_add_lt_one_add_iff {a b : ℕ∞} : 1 + a < 1 + b ↔ a < b :=
+  WithTop.add_lt_add_iff_left (by simp)
+
+@[simp]
 lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
   WithTop.add_right_inj (by simp)
 
@@ -97,6 +105,28 @@ lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
 @[simp]
 lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
   simp [lt_add_left_iff]
+
+lemma add_sub_cancel_right (a : ℕ∞) (hb : b ≠ ⊤) : a + b - b = a := by
+  lift b to ℕ using hb
+  cases a with
+  | top => simp
+  | coe a =>
+    norm_cast
+    exact Nat.add_sub_cancel_right ..
+
+lemma add_sub_cancel_left (b : ℕ∞) (ha : a ≠ ⊤) : a + b - a = b := by
+  rw [add_comm, add_sub_cancel_right _ ha]
+
+lemma sub_eq_iff_eq_add {a k : ℕ∞} (hka : k ≤ a) (hne : k ≠ ⊤) : a - k = b ↔ a = b + k := by
+  obtain ⟨c, rfl⟩ := exists_add_of_le hka
+  rw [add_sub_cancel_left _ hne, add_comm, WithTop.add_right_inj hne]
+
+protected lemma mul_lt_mul_right_iff (hc0 : c ≠ 0) (hc : c ≠ ⊤) : a * c < b * c ↔ a < b := by
+  rw [lt_iff_le_and_ne, ENat.mul_le_mul_right_iff hc0 hc, Ne,
+    (ENat.mul_left_strictMono hc0 hc).injective.eq_iff, lt_iff_le_and_ne]
+
+protected lemma mul_lt_mul_left_iff (hc0 : c ≠ 0) (hc : c ≠ ⊤) : c * a < c * b ↔ a < b := by
+  simp_rw [mul_comm c, ENat.mul_lt_mul_right_iff hc0 hc]
 
 section Parity
 

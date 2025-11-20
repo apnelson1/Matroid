@@ -1006,6 +1006,14 @@ lemma skew_iff_restrict_union_eq (hXE : X ⊆ M.E) (hYE : Y ⊆ M.E) (hdj : Disj
   · simpa [pairwise_on_bool Disjoint.symm]
   simp [hXE, hYE]
 
+lemma skew_disjointSum {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E M₂.E) :
+    (disjointSum M₁ M₂ hdj).Skew M₁.E M₂.E := by
+  rw [skew_iff_forall_isCircuit hdj]
+  simp_rw [disjointSum_isCircuit_iff]
+  rintro C (h | h) -
+  · exact .inl h.subset_ground
+  exact .inr h.subset_ground
+
 section ModularCompl
 
 

@@ -31,3 +31,7 @@ lemma contract_comap {β : Type*} (M : Matroid β) (f : α → β) {C : Set β} 
     (M ／ C).comap f = M.comap f ／ (f ⁻¹' C) := by
   obtain ⟨C, rfl⟩ := subset_range_iff_exists_image_eq.1 hC
   exact ext_closure fun X ↦ by simp [image_union, image_preimage_image]
+
+lemma contract_closure_congr (h : M.closure X = M.closure Y) (C : Set α) :
+    (M ／ C).closure X = (M ／ C).closure Y := by
+  rw [contract_closure_eq, contract_closure_eq, closure_union_congr_left h]

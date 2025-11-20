@@ -300,6 +300,8 @@ lemma range_rk_bddAbove (M : Matroid α) [RankFinite M] : BddAbove (range M.rk) 
 lemma range_rk_finite (M : Matroid α) [RankFinite M] : (range M.rk).Finite :=
    M.range_rk_bddAbove.finite
 
+-- lemma intCast_rk_dual (M : Matroid α) [RankFinite M] :
+--     (M✶.rk X : ℤ) = X.ncard -
 
 
 

@@ -3,6 +3,7 @@ import Mathlib.Combinatorics.Matroid.Rank.Finite
 import Matroid.Loop
 import Matroid.OnUniv
 import Matroid.ForMathlib.Other
+import Matroid.ForMathlib.Matroid.Closure
 import Matroid.ForMathlib.Matroid.Sum
 import Mathlib.Tactic.TautoSet
 
@@ -43,6 +44,13 @@ lemma eRank_lt_top [M.RankFinite] : M.eRank < ⊤ := by
   rw [← hB.encard_eq_eRank, encard_lt_top_iff]
   exact hB.finite
 
+@[simp]
+lemma eRk_lt_top [M.RankFinite] {X} : M.eRk X < ⊤ :=
+  (M.isRkFinite_set X).eRk_lt_top
+
+@[simp]
+lemma eRk_ne_top [M.RankFinite] {X} : M.eRk X ≠ ⊤ :=
+  (M.isRkFinite_set X).eRk_lt_top.ne
 
 -- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
   --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
@@ -136,3 +144,12 @@ lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X 
 @[simp]
 lemma eRk_restrict_univ (M : Matroid α) (X : Set α) : (M ↾ univ).eRk X = M.eRk (X) := by
   rw [eRk_restrict, inter_univ]
+
+lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X ↔ M.eRk X < M.eRank := by
+  rw [← not_spanning_iff, spanning_iff_eRk, not_le]
+
+lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X := by
+  rw [← not_spanning_iff]
+  exact fun h ↦ hX h.eRk_eq

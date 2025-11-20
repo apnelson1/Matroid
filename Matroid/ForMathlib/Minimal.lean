@@ -10,6 +10,7 @@ theorem minimal_congr (h : ∀ x, P x ↔ Q x) : Minimal P x ↔ Minimal Q x := 
 theorem maximal_congr (h : ∀ x, P x ↔ Q x) : Maximal P x ↔ Maximal Q x := by
   rw [show P = Q from funext fun x ↦ propext (h _)]
 
+
 @[simp]
 theorem maximal_top_iff {α : Type*} [LE α] [OrderTop α] {P : α → Prop} : Maximal P ⊤ ↔ P ⊤ := by
   simp [Maximal]

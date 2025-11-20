@@ -83,6 +83,11 @@ protected theorem tsum_insert {s : Set α} {a : α} (h : a ∉ s) :
   rw [← singleton_union, ENat.tsum_union_disjoint, tsum_singleton]
   rwa [disjoint_singleton_left]
 
+protected theorem tsum_singleton_add_tsum_ne {a : α} :
+    f a + (∑' (x : {x // x ≠ a}), f x) = ∑' x, f x := by
+  rw [eq_comm, ← tsum_univ, show univ = insert a {a}ᶜ by ext; simp [em]]
+  exact ENat.tsum_insert (by simp)
+
 protected theorem tsum_sub (hfin : ∑' a, g a ≠ ⊤) (h : g ≤ f) :
     ∑' a, (f a - g a) = ∑' a, f a - ∑' a, g a := by
   rw [← WithTop.add_right_inj hfin, ← ENat.tsum_add,

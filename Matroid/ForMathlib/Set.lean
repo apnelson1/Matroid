@@ -1,8 +1,9 @@
 import Mathlib.Data.Set.Lattice.Image
+import Mathlib.Data.Set.SymmDiff
 
 variable {α ι : Type*}
 
-open Function
+open Function symmDiff
 namespace Set
 
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
@@ -114,6 +115,43 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
   subset_antisymm (by simp) (image_mono (subset_preimage_image _ _))
 
+lemma ssubset_diff_iff {s t r : Set α} : s ⊂ t \ r ↔ s ⊆ t ∧ Disjoint s r ∧ ¬ (t ⊆ s ∪ r) := by
+  rw [ssubset_iff_subset_not_subset, diff_subset_iff, subset_diff, union_comm, and_assoc]
+
+lemma diff_ssubset_diff {s t r : Set α} (hst : s ⊂ t) (hstr : ¬ (t ⊆ s ∪ r)) : s \ r ⊂ t \ r := by
+  rwa [ssubset_diff_iff, and_iff_right disjoint_sdiff_left, diff_union_self, diff_subset_iff,
+    and_iff_right (hst.subset.trans subset_union_right)]
+
+lemma diff_ssubset_diff_right {s t r : Set α} (htr : t ⊆ r) (hst : s ⊂ t) :
+    r \ t ⊂ r \ s := by
+  grw [ssubset_diff_iff, and_iff_right diff_subset,
+    and_iff_right (disjoint_sdiff_left.mono_right hst.subset)]
+  exact fun hss ↦ hst.not_subset <| by grind
+
+lemma diff_ssubset_diff_right' {s t r : Set α} (hstr : s ∩ r ⊂ t ∩ r) : r \ t ⊂ r \ s := by
+  rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := s)]
+  exact diff_ssubset_diff_right inter_subset_right hstr
+
+lemma diff_ssubset_diff_iff (A B C : Set α) : A \ B ⊂ A \ C ↔ A ∩ C ⊂ A ∩ B := by
+  rw [ssubset_iff_exists, ssubset_iff_exists]
+  refine ⟨fun ⟨hle, x, ⟨hxA, hxC⟩, hxB⟩ => ⟨?_, ?_⟩, fun ⟨hle, x, hxB, hxC⟩ => ⟨?_, ?_⟩⟩
+  · rintro a ⟨haA, haC⟩
+    simp only [mem_inter_iff, haA, true_and]
+    by_contra! haB
+    exact hle ⟨haA, haB⟩ |>.2 haC
+  · simp only [mem_diff, hxA, true_and, not_not] at hxB
+    use x, ⟨hxA, hxB⟩, by simp [hxC]
+  · rintro a ⟨haA, haB⟩
+    use haA, fun haC ↦ haB (hle ⟨haA, haC⟩).2
+  use x
+  simp only [mem_inter_iff, not_and] at hxC
+  simp [hxB.1, hxB.2, hxC]
+
+lemma union_diff_eq_diff {A B C : Set α} (hBC : B ⊆ C) : (A ∪ B) \ C = A \ C := by
+  ext x
+  simp only [mem_diff, mem_union, and_congr_left_iff, or_iff_left_iff_imp]
+  exact fun a a_1 ↦ (a (hBC a_1)).elim
+
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
 --   choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp
@@ -126,6 +164,36 @@ theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f
 --   · simp only [iUnion_subset_iff]
 --     exact fun i x hxi ↦ mem_iUnion.2 ⟨f x (mem_iUnion_of_mem i hxi), by simp [hf x _]⟩
 
+lemma disjoint_iff_forall_notMem (A B : Set α) : Disjoint A B ↔ ∀ ⦃x⦄, x ∈ A → x ∉ B := by
+  rw [disjoint_iff_forall_ne]
+  refine forall₂_congr fun a ha => ?_
+  aesop
+
+lemma diff_symmDiff_diff (A B C : Set α) : (A \ B) ∆ (A \ C) = A ∩ (B ∆ C) := by
+  simp only [symmDiff_def, sup_eq_union]
+  aesop
+
+lemma symmDiff_diff_distrib (A B C : Set α) : (A ∆ B) \ C = (A \ C) ∆ (B \ C) := by
+  simp [symmDiff_def]
+  aesop
+
+lemma disjoint_diff_iff (A B C : Set α) : Disjoint (A \ B) C ↔ A ∩ C ⊆ B := by
+  rw [disjoint_iff_inter_eq_empty, diff_inter_right_comm]
+  exact diff_eq_empty
+
+lemma diff_symmDiff (A B : Set α) : (A \ B) ∆ A = A ∩ B := by
+  ext x
+  simp [symmDiff_def]
+
+lemma symmDiff_union_left (A B C : Set α) : (A ∪ B) ∆ (A ∪ C) = (B ∆ C) \ A := by
+  ext x
+  simp only [symmDiff_def, sup_eq_union, mem_union, mem_diff]
+  tauto
+
+lemma union_diff_diff (A B : Set α) : (A ∪ B) \ (A \ B) = B := by
+  ext x
+  simp only [mem_diff, mem_union]
+  tauto
 
 variable {s t r : Set α}
 
@@ -157,7 +225,6 @@ lemma exists_partition_of_subset_iUnion {s : Set α} {t : ι → Set α} (hst : 
   rintro i e ⟨rfl, h⟩
   exact hf _ h
 
-
 lemma iUnion_diff_iUnion {ι α : Type*} {s t : ι → Set α} (hts : ∀ i, t i ⊆ s i)
     (hdj : Pairwise (Disjoint on s)) : ⋃ i, s i \ t i = (⋃ i, s i) \ ⋃ i, t i := by
   refine subset_antisymm (subset_diff.2 ⟨iUnion_mono fun i ↦ diff_subset, ?_⟩) ?_
@@ -168,3 +235,13 @@ lemma iUnion_diff_iUnion {ι α : Type*} {s t : ι → Set α} (hts : ∀ i, t i
     exact (hdj hne.symm).mono diff_subset (hts i)
   rw [iUnion_diff]
   exact iUnion_mono fun i ↦ diff_subset_diff_right <| subset_iUnion ..
+
+@[simp]
+lemma forall_mem_const {α : Type*} {p : Prop} {s : Set α} (hs : s.Nonempty) :
+    (∀ x ∈ s, p) ↔ p := ⟨fun h ↦ h _ hs.some_mem, fun hp _ _ ↦ hp⟩
+
+@[simp]
+lemma forall_mem_and {α : Type*} {p q : α → Prop} {s : Set α} :
+    (∀ x ∈ s, p x ∧ q x) ↔ (∀ x ∈ s, p x) ∧ (∀ x ∈ s, q x) :=
+  ⟨fun h ↦ ⟨fun x hx ↦ (h x hx).1, fun x hx ↦ (h x hx).2⟩,
+    fun ⟨hp, hq⟩ x hx ↦ ⟨hp x hx, hq x hx⟩⟩

@@ -397,6 +397,11 @@ lemma exists_isCircuit_girth (M : Matroid α) [RankPos M✶] :
       (fun C ↦ (C : Set α).encard)
   exact ⟨C, hC, by rw [hC', girth, iInf_subtype']⟩
 
+lemma girth_le_eRank_add_one (M : Matroid α) [RankPos M✶] :
+    M.girth ≤ M.eRank + 1 := by
+  obtain ⟨C, hC, hcard⟩ := M.exists_isCircuit_girth
+  grw [← hcard, ← M.eRk_le_eRank C, hC.eRk_add_one_eq]
+
 @[simp] lemma girth_emptyOn : girth (emptyOn α) = ⊤ := by
   simp [girth]
 
