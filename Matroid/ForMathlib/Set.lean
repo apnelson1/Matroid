@@ -115,6 +115,24 @@ lemma diff_ssubset {s t : Set α} (hst : s ⊆ t) (hs : s.Nonempty) : t \ s ⊂ 
 theorem image_preimage_image {β : Type*} {s : Set α} {f : α → β} : f '' (f ⁻¹' (f '' s)) = f '' s :=
   subset_antisymm (by simp) (image_mono (subset_preimage_image _ _))
 
+lemma ssubset_diff_iff {s t r : Set α} : s ⊂ t \ r ↔ s ⊆ t ∧ Disjoint s r ∧ ¬ (t ⊆ s ∪ r) := by
+  rw [ssubset_iff_subset_not_subset, diff_subset_iff, subset_diff, union_comm, and_assoc]
+
+lemma diff_ssubset_diff {s t r : Set α} (hst : s ⊂ t) (hstr : ¬ (t ⊆ s ∪ r)) : s \ r ⊂ t \ r := by
+  rwa [ssubset_diff_iff, and_iff_right disjoint_sdiff_left, diff_union_self, diff_subset_iff,
+    and_iff_right (hst.subset.trans subset_union_right)]
+
+lemma diff_ssubset_diff_right {s t r : Set α} (htr : t ⊆ r) (hst : s ⊂ t) :
+    r \ t ⊂ r \ s := by
+  grw [ssubset_diff_iff, and_iff_right diff_subset,
+    and_iff_right (disjoint_sdiff_left.mono_right hst.subset)]
+  exact fun hss ↦ hst.not_subset <| by grind
+
+lemma diff_ssubset_diff_right' {s t r : Set α} (hstr : s ∩ r ⊂ t ∩ r) : r \ t ⊂ r \ s := by
+  rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := s)]
+  exact diff_ssubset_diff_right inter_subset_right hstr
+
+
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by
 --   choose f hf using show ∀ x ∈ ⋃ i, s i, ∃ i, x ∈ s i by simp

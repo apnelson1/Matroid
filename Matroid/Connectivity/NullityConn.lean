@@ -656,51 +656,86 @@ lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < 
     fun ⟨hv, hc⟩ ↦ by_contra fun h ↦ ?_⟩
   obtain ⟨P, hPconn, hP, (hPs | ⟨hcard, hP'⟩)⟩ := exists_strong_or_small_of_not_tutteConnected h
   · exact hv.not_isVerticalSeparation hPconn hPs.isVerticalSeparation
-
-  -- have := hP.isVerticalSeparation.not_verticallyConnected
-  -- obtain ⟨P, hP, hPconn⟩ := not_tutteConnected_iff_exists.1 h
+  wlog hi : M.Indep P.left generalizing M P with aux
+  · rw [or_iff_right (by simp [hi])] at hP'
+    specialize aux (M := M✶) (by simpa) (by simp [hc, hv]) (by simpa) (by simpa) (by simpa) P.dual
+      (by simpa) (by simpa) (by simpa)
+    simp [hi, ← coindep_def, P.coindep_left_iff, hP'.2, isHyperplane_dual_iff, hP'.1] at aux
+  rw [or_iff_left (fun h ↦ h.1.not_indep hi), and_iff_right hi] at hP'
   have hnv := hv.not_isVerticalSeparation hPconn
   have hnc := hc.not_isCyclicSeparation hPconn
   have hPconn_ne : P.eConn ≠ ⊤ := fun h ↦ by enat_to_nat!
   simp only [P.isCyclicSeparation_iff, not_and, Partition.right_subset_ground, not_dep_iff] at hnc
   simp only [P.isVerticalSeparation_iff, not_and, Partition.not_nonspanning_right_iff] at hnv
-  obtain ⟨hi, hh⟩ | ⟨hc, hs⟩ := hP'
-  · rw [imp_iff_not hh.not_spanning, not_nonspanning_iff] at hnv
-    obtain ⟨C, hCr, hC⟩ := (hP.dep_of_spanning_left hnv).exists_isCircuit_subset
-    have hb := hi.isBase_of_spanning hnv
-    refine hc.not_isCyclicSeparation (P := M.partition C) ?_ ?_
-    · grw [eConn_partition, eConn_le_eRk, eRk_mono _ hCr, ← one_add_one_eq_two, ← add_assoc,
-        hh.eRk_add_one_eq, ← hb.encard_eq_eRank]
-      assumption
-    obtain rfl | hssu := hCr.eq_or_ssubset
-    · rw [← P.union_eq, encard_union_eq P.disjoint] at hlt
-      have := hb.encard_eq_eRank ▸ hh.eRk_add_one_eq ▸ hC.eRk_add_one_eq
-      enat_to_nat!
-      omega
+  rw [imp_iff_not hP'.not_spanning, not_nonspanning_iff] at hnv
+  obtain ⟨C, hCr, hC⟩ := (hP.dep_of_spanning_left hnv).exists_isCircuit_subset
+  have hb := hi.isBase_of_spanning hnv
+  refine hc.not_isCyclicSeparation (P := M.partition C) ?_ ?_
+  · grw [eConn_partition, eConn_le_eRk, eRk_mono _ hCr, ← one_add_one_eq_two, ← add_assoc,
+      hP'.eRk_add_one_eq, ← hb.encard_eq_eRank]
+    assumption
+  obtain rfl | hssu := hCr.eq_or_ssubset
+  · rw [← P.union_eq, encard_union_eq P.disjoint] at hlt
+    have := hb.encard_eq_eRank ▸ hP'.eRk_add_one_eq ▸ hC.eRk_add_one_eq
+    enat_to_nat!
+    omega
+  refine hC.dep.partition_isCyclicSeparation (hb.dep_of_ssubset ?_)
+  exact P.compl_right ▸ diff_ssubset_diff_right P.right_subset_ground hssu
+
+lemma TutteConnected.contractElem (h : M.TutteConnected (k+1)) (e : α) :
+    (M ／ {e}).TutteConnected k := by
+  obtain (heE | heE) := em' <| e ∈ M.E
+  · rw [← contract_inter_ground_eq, singleton_inter_eq_empty.2 heE, contract_empty]
+    exact h.mono (by simp)
+  by_contra hcon
+  obtain ⟨P, hPconn, hP, hP'⟩ := exists_strong_or_small_of_not_tutteConnected hcon
+  have hl := P.eConn_left ▸ hPconn
+  have hr := P.eConn_right ▸ hPconn
+  have hP1E : P.left ⊆ M.E := P.left_subset_ground.trans diff_subset
+  have hP2E : P.right ⊆ M.E := P.right_subset_ground.trans diff_subset
+  have hcon1 := h.not_isTutteSeparation (P := M.partition P.left)
+  have hcon2 := h.not_isTutteSeparation (P := M.partition P.right)
+
+  grw [eConn_partition, eConn_le_eConn_contract_singleton_add_one _ _ e, imp_iff_right
+    (by enat_to_nat!; omega)] at hcon1 hcon2
+  simp [Partition.isTutteSeparation_iff_nullity, show M.E \ P.left = insert e P.right from sorry,
+    show M.E \ P.right = insert e P.left from sorry] at hcon1 hcon2 hP
+  rw [← nullity_project_eq_nullity_contract, nullity_delete_of_disjoint _ sorry,
+    nullity_delete_of_disjoint _ sorry] at hP
+  have := M.nullity_project_of_disjoint (show Disjoint P.left {e} from sorry)
 
 
-    refine hC.dep.partition_isCyclicSeparation (hb.dep_of_ssubset ?_)
-    rw [← P.compl_right, ssubset_iff_subset_ne, and_iff_left diff_subset_diff_right ]
+  -- obtain (hP' | ⟨hcard, (hP' | hP')⟩) := hP'
+  -- · refine hcon1 <| (Nonspanning.partition_isVerticalSeparation ?_ ?_).isTutteSeparation
+  --   · rw [← not_spanning_iff]
+  --     refine fun h ↦ hP'.isVerticalSeparation.nonspanning_left.not_spanning ?_
+  --     grw [contract_spanning_iff, and_iff_right (h.superset subset_union_left),
+  --       P.left_subset_ground]
+  --     simp
+  --   rw [← not_spanning_iff]
+  --   refine fun h ↦ hP'.isVerticalSeparation.nonspanning_right.not_spanning ?_
+  --   grw [contract_spanning_iff]
+  --   refine ⟨h.superset ?_, by grw [P.right_subset_ground]; simp⟩
+  --   rw [union_comm, ← diff_subset_iff, diff_diff_comm, ← P.compl_left]
+  --   rfl
+  -- ·
+
+
+    -- refine hcon1 <| Dep.partition_isTutteSeparation_of_nonspanning ?_ ?_
+    -- · have := hP'.isCyclicSeparation.dep_left.of_contract
+  -- simp [Partition.isTutteSeparation_iff] at hP hcon1 hcon2
 
 
 
-  -- · simp
-  -- · simp
-  -- · simp
 
 
-  -- rw [P.isCyclicSeparation_iff_nullity, Classical.not_and_iff_not_or_not, not_le, not_le] at hnc
+-- lemma VerticallyConnected.contractElem (h : M.VerticallyConnected (k+1)) (e : α) :
+--     (M ／ {e}).VerticallyConnected k := by
+--   by_contra hcon
+--   obtain ⟨P, hPconn, hP⟩ := not_verticallyConnected_iff_exists.1 hcon
 
 
 
-
-  -- rw [Partition.isVerticalSeparation_iff_eRk hPconn_ne, Classical.not_and_iff_not_or_not,
-  --   not_lt, not_lt] at hnv
-  -- rw [Partition.isCyclicSeparation_iff_eRk_dual hPconn_ne, Classical.not_and_iff_not_or_not,
-  --   not_lt, not_lt] at hnc
-
-
-/-! #-/
 
 
 
