@@ -1,29 +1,24 @@
 import Mathlib.Tactic
 import Mathlib.Data.Set.Finite.Basic
 
-import Matroid.Graph.Walk.Path
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Finite
-import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Connected.Component
-
-import Matroid.Graph.Independent
-import Matroid.Graph.Tree
-
-import Matroid.Graph.WList.Defs
-import Matroid.Graph.WList.Cycle
-import Matroid.Graph.Connected.Separating
+import Qq
+-- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
-import Qq open Qq Lean Meta Elab Tactic
--- simple is still broken
--- import Matroid.Graph.Simple
+import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Component
+import Matroid.Graph.Connected.Separating
+import Matroid.Graph.Finite
+import Matroid.Graph.Degree.Basic
+import Matroid.Graph.Independent
+import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Tree
+import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Walk.Path
+import Matroid.Graph.WList.Defs
+import Matroid.Graph.WList.Cycle
 
--- connectivity is still broken
--- import Matroid.Graph.Connected.Component
-
+open Qq Lean Meta Elab Tactic
 open WList Set
 
 section NonGraphThings
