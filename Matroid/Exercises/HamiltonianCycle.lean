@@ -885,9 +885,8 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
       have hn2 : 1 < {x | G.Adj v x}.ncard := by
         rw [← G.degree_eq_ncard_adj]
         assumption
-      have nsFinite : {x | G.Adj v x}.Finite := by
-        have := Simple.vertexSet_finite_iff.mp $ finite_of_ncard_nonzero $ Nat.ne_zero_of_lt h3
-        exact G.finite_setOf_adj
+      have nsFinite : {x | G.Adj v x}.Finite :=
+        G.finite_setOf_adj
       rw [one_lt_ncard_iff nsFinite] at hn2
       have ⟨a, b, ha, hb, hab⟩ := hn2
       simp_all
@@ -906,8 +905,8 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
           have := Adj.right_mem hb
           simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
           exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
-        have abCon : (G - {v}).VertexConnected a b := Connected.vertexConnected hCon aVGv bVGv
-        have ⟨abPath, habPath⟩ := VertexConnected.exists_isPath abCon
+        have abCon : (G - {v}).ConnectedBetween a b := Connected.connectedBetween hCon aVGv bVGv
+        have ⟨abPath, habPath⟩ := ConnectedBetween.exists_isPath abCon
         have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
         -- need to first add v to the ab path
         rw [Adj.eq_1 G] at ha
@@ -1004,10 +1003,11 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
       simp_all only [Nat.not_ofNat_le_one]
 
     -- If every vertex has degree <= 1, then S.encard = 0, so we are done
-    have Vnz : V(G).ncard ≠ 0 := by linarith
-    simp at Vnz
-    rw [ncard_eq_zero (finite_of_ncard_nonzero Vnz)] at Vnz
-    have ⟨v, hv⟩ : ∃ v, v ∈ V(G) := by grind only [= mem_empty_iff_false]
+    have Vnz : V(G).Nonempty := by
+      rw [←encard_pos]
+      suffices (0 : ℕ∞) < 3 by exact this.trans_le h3
+      simp
+    obtain ⟨v, hv⟩ : ∃ v, v ∈ V(G) := Vnz
     have : ¬G.Connected := by
       -- We know there are ≥ 3 vertices
       -- But all have degree ≤ 1
