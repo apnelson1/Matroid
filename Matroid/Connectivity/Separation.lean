@@ -25,7 +25,6 @@ protected structure Partition (M : Matroid α) where
 variable {P : M.Partition}
 
 namespace Partition
-
 protected lemma ext {P P' : M.Partition} (h_left : P.left = P'.left)
     (h_right : P.right = P'.right) : P = P' := by
   cases P
@@ -117,7 +116,7 @@ lemma dual_eConn (P : M.Partition) : P.dual.eConn = P.eConn := by
   rw [← P.dual.eConn_left, M.eConn_dual, P.dual_left, P.eConn_left]
 
 @[simp]
-lemma ofDual_eConn (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
+lemma eConn_ofDual (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← dual_eConn]
   simp
 
@@ -247,7 +246,7 @@ lemma eConn_restrict_eq (P : M.Partition) (R : Set α) :
   disjoint := P.disjoint
   union_eq := P.union_eq.trans (by simp [h_eq])
 
-@[simp] lemma copy_eConn {M' : Matroid α} (P : M.Partition) (h_eq : M = M') :
+@[simp] lemma eConn_copy {M' : Matroid α} (P : M.Partition) (h_eq : M = M') :
     (P.copy (congr_arg Matroid.E h_eq)).eConn = P.eConn := by
   obtain rfl := h_eq
   rfl
@@ -275,34 +274,6 @@ def induce {N : Matroid α} (P : M.Partition) (hN : N.E ⊆ M.E) : N.Partition w
   right := P.right ∩ N.E
   disjoint := P.disjoint.mono inter_subset_left inter_subset_left
   union_eq := by rw [← union_inter_distrib_right, P.union_eq, inter_eq_self_of_subset_right hN]
-
-def contract (P : M.Partition) (C : Set α) : (M ／ C).Partition := P.induce diff_subset
-
-@[simp]
-lemma contract_left (P : M.Partition) (C : Set α) : (P.contract C).left = P.left \ C := by
-  simp only [contract, induce, contract_ground]
-  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
-
-@[simp]
-lemma contract_symm (P : M.Partition) (C : Set α) : (P.contract C).symm = P.symm.contract C := rfl
-
-@[simp]
-lemma contract_right (P : M.Partition) (C : Set α) : (P.contract C).right = P.right \ C := by
-  rw [← symm_left, contract_symm, contract_left, symm_left]
-
-def delete (P : M.Partition) (D : Set α) : (M ＼ D).Partition := P.induce diff_subset
-
-@[simp]
-lemma delete_left (P : M.Partition) (D : Set α) : (P.delete D).left = P.left \ D := by
-  simp only [delete, induce, delete_ground]
-  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
-
-@[simp]
-lemma delete_symm (P : M.Partition) (D : Set α) : (P.delete D).symm = P.symm.delete D := rfl
-
-@[simp]
-lemma delete_right (P : M.Partition) (D : Set α) : (P.delete D).right = P.right \ D := by
-  rw [← symm_left, delete_symm, delete_left, symm_left]
 
 section Cross
 
@@ -340,6 +311,75 @@ section Minor
 
 variable {C D : Set α} {e f : α}
 
+/-- Contract the elements of `C` to take a partition of `M` to a partition of `M ／ C`. -/
+def contract (P : M.Partition) (C : Set α) : (M ／ C).Partition := P.induce diff_subset
+
+@[simp]
+lemma contract_left (P : M.Partition) (C : Set α) : (P.contract C).left = P.left \ C := by
+  simp only [contract, induce, contract_ground]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
+
+@[simp]
+lemma contract_symm (P : M.Partition) (C : Set α) : (P.contract C).symm = P.symm.contract C := rfl
+
+@[simp]
+lemma contract_right (P : M.Partition) (C : Set α) : (P.contract C).right = P.right \ C := by
+  rw [← symm_left, contract_symm, contract_left, symm_left]
+
+lemma contract_contract (P : M.Partition) (C₁ C₂ : Set α) :
+    (P.contract C₁).contract C₂ = (P.contract (C₁ ∪ C₂)).copy (by simp) := by
+  apply Partition.ext <;> simp [diff_diff]
+
+lemma contract_congr (P : M.Partition) {C₁ C₂ : Set α} (h : C₁ ∩ M.E = C₂ ∩ M.E) :
+    P.contract C₁ = (P.contract C₂).copy
+      (by rw [← contract_inter_ground_eq, ← h, contract_inter_ground_eq]) := by
+  have h1 := P.left_subset_ground
+  have h2 := P.right_subset_ground
+  refine Partition.ext ?_ ?_ <;>
+  · simp only [contract_left, copy_left, contract_right, copy_right]
+    tauto_set
+
+lemma contract_inter_ground (P : M.Partition) (C : Set α) :
+    (P.contract (C ∩ M.E)) = (P.contract C).copy (by simp) := by
+  have h1 := P.left_subset_ground
+  have h2 := P.right_subset_ground
+  exact Partition.ext (by grind [contract_left, copy_left]) (by grind [contract_right, copy_right])
+
+/-- Delete the elements of `D` to take a partition of `M` to a partition of `M ＼ D`. -/
+def delete (P : M.Partition) (D : Set α) : (M ＼ D).Partition := P.induce diff_subset
+
+@[simp]
+lemma delete_left (P : M.Partition) (D : Set α) : (P.delete D).left = P.left \ D := by
+  simp only [delete, induce, delete_ground]
+  rw [← inter_diff_assoc, inter_eq_self_of_subset_left P.left_subset_ground]
+
+@[simp]
+lemma delete_symm (P : M.Partition) (D : Set α) : (P.delete D).symm = P.symm.delete D := rfl
+
+@[simp]
+lemma delete_right (P : M.Partition) (D : Set α) : (P.delete D).right = P.right \ D := by
+  rw [← symm_left, delete_symm, delete_left, symm_left]
+
+lemma delete_delete (P : M.Partition) (D₁ D₂ : Set α) :
+    (P.delete D₁).delete D₂ = (P.delete (D₁ ∪ D₂)).copy (by simp) := by
+  apply Partition.ext <;> simp [diff_diff]
+
+@[simp]
+lemma contract_dual (P : M.Partition) (C : Set α) :
+    (P.contract C).dual = (P.dual.delete C).copy (by simp) :=
+  Partition.ext rfl rfl
+
+@[simp]
+lemma delete_dual (P : M.Partition) (D : Set α) :
+    (P.delete D).dual = (P.dual.contract D).copy (by simp) :=
+  Partition.ext rfl rfl
+
+lemma delete_inter_ground (P : M.Partition) (D : Set α) :
+    (P.delete (D ∩ M.E)) = (P.delete D).copy (by simp) := by
+  have h1 := P.left_subset_ground
+  have h2 := P.right_subset_ground
+  exact Partition.ext (by grind [delete_left, copy_left]) (by grind [delete_right, copy_right])
+
 @[simp]
 lemma disjoint_left_contract (P : (M ／ C).Partition) : Disjoint P.left C := by
   grw [P.left_subset_ground]
@@ -359,10 +399,10 @@ lemma disjoint_right_delete (P : (M ＼ D).Partition) : Disjoint P.right D :=
   P.symm.disjoint_left_delete
 
 @[simps!]
-def contractDual (P : (M ／ C).Partition) : (M✶ ＼ C).Partition := P.dual.copy rfl
+abbrev contractDual (P : (M ／ C).Partition) : (M✶ ＼ C).Partition := P.dual.copy rfl
 
 @[simps!]
-def deleteDual (P : (M ＼ D).Partition) : (M✶ ／ D).Partition := P.dual.copy rfl
+abbrev deleteDual (P : (M ＼ D).Partition) : (M✶ ／ D).Partition := P.dual.copy rfl
 
 /-- Extend a partition of `M ／ C` to a partition of `M` by adding `C` to the left side. -/
 @[simps]
@@ -422,6 +462,42 @@ lemma ofContractLeft_dual (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_
 lemma ofContractRight_dual (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
     P.ofContractRight.dual = P.contractDual.ofDeleteRight := rfl
 
+@[simp]
+lemma ofContractLeft_contract (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
+    P.ofContractLeft.contract C = P := by
+  apply Partition.ext <;> simp
+
+@[simp]
+lemma ofContractRight_contract (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
+    P.ofContractRight.contract C = P := by
+  apply Partition.ext <;> simp
+
+lemma contract_ofContractLeft (P : M.Partition) (hC : C ⊆ P.left) :
+    (P.contract C).ofContractLeft = P :=
+  Partition.ext (by simpa) <| by simp [P.disjoint.symm.mono_right hC]
+
+lemma contract_ofContractRight (P : M.Partition) (hC : C ⊆ P.right) :
+    (P.contract C).ofContractRight = P :=
+  Partition.ext (by simp [P.disjoint.mono_right hC]) <| by simpa
+
+lemma delete_ofDeleteLeft (P : M.Partition) (hD : D ⊆ P.left) :
+    (P.delete D).ofDeleteLeft = P :=
+  Partition.ext (by simpa) <| by simp [P.disjoint.symm.mono_right hD]
+
+lemma delete_ofDeleteRight (P : M.Partition) (hD : D ⊆ P.right) :
+    (P.delete D).ofDeleteRight = P :=
+  Partition.ext (by simp [P.disjoint.mono_right hD]) <| by simpa
+
+@[simp]
+lemma ofDeleteLeft_delete (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
+    P.ofDeleteLeft.delete D = P := by
+  apply Partition.ext <;> simp
+
+@[simp]
+lemma ofDeleteRight_delete (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
+    P.ofDeleteRight.delete D = P := by
+  apply Partition.ext <;> simp
+
 lemma compl_left_delete (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
     M.E \ P.left = P.right ∪ D := by
   grw [← P.compl_left, delete_ground, diff_diff_comm, diff_union_self, eq_comm, union_eq_left,
@@ -440,6 +516,22 @@ lemma compl_right_contract (P : (M ／ C).Partition) (hD : C ⊆ M.E := by aesop
     M.E \ P.right = P.left ∪ C :=
   P.symm.compl_left_contract
 
+@[simp]
+lemma compl_union_contract_left (P : (M ／ C).Partition) : M.E \ (P.left ∪ C) = P.right := by
+  rw [← P.compl_left, union_comm, contract_ground, diff_diff]
+
+@[simp]
+lemma compl_union_contract_right (P : (M ／ C).Partition) : M.E \ (P.right ∪ C) = P.left :=
+  P.symm.compl_union_contract_left
+
+@[simp]
+lemma compl_union_delete_left (P : (M ＼ D).Partition) : M.E \ (P.left ∪ D) = P.right := by
+  rw [← P.compl_left, union_comm, delete_ground, diff_diff]
+
+@[simp]
+lemma compl_union_delete_right (P : (M ＼ D).Partition) : M.E \ (P.right ∪ D) = P.left :=
+  P.symm.compl_union_delete_left
+
 lemma compl_left_delete_singleton (P : (M ＼ {e}).Partition) (he : e ∈ M.E := by aesop_mat) :
     M.E \ P.left = insert e P.right := by
   simp [P.compl_left_delete]
@@ -457,23 +549,65 @@ lemma compl_right_contract_singleton (P : (M ／ {e}).Partition) (he : e ∈ M.E
     M.E \ P.right = insert e P.left :=
   P.symm.compl_left_contract_singleton
 
-lemma ofContractLeft_eConn (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
+lemma eConn_ofContractLeft (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
     P.ofContractLeft.eConn = P.eConn + M.eLocalConn P.right C := by
   simp only [← eConn_left, ofContractLeft_left]
   rw [eConn_union_eq_eConn_contract_add _ P.disjoint_left_contract, ← P.compl_right_contract,
     diff_diff_cancel_left]
   grw [P.right_subset_ground, contract_ground, diff_subset]
 
-lemma ofContractRight_eConn (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
+lemma eConn_ofContractRight (P : (M ／ C).Partition) (hC : C ⊆ M.E := by aesop_mat) :
     P.ofContractRight.eConn = P.eConn + M.eLocalConn P.left C := by
-  rw [← eConn_symm, P.ofContractRight_symm, ofContractLeft_eConn, eConn_symm, symm_right]
+  rw [← eConn_symm, P.ofContractRight_symm, eConn_ofContractLeft, eConn_symm, symm_right]
+
+lemma eConn_ofDeleteLeft (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
+    P.ofDeleteLeft.eConn = P.eConn + M✶.eLocalConn P.right D := by
+  rw [← dual_eConn, ofDeleteLeft_dual, eConn_ofContractLeft]
+  simp
+
+lemma eConn_ofDeleteRight (P : (M ＼ D).Partition) (hD : D ⊆ M.E := by aesop_mat) :
+    P.ofDeleteRight.eConn = P.eConn + M✶.eLocalConn P.left D := by
+  rw [← eConn_symm, P.ofDeleteRight_symm, eConn_ofDeleteLeft, eConn_symm, symm_right]
+
+lemma eConn_induce_le_of_isMinor {N : Matroid α} (P : M.Partition) (hNM : N ≤m M) :
+    (P.induce hNM.subset).eConn ≤ P.eConn := by
+  rw [← eConn_left, induce_left, ← eConn_left, eConn_inter_ground]
+  exact hNM.eConn_le _
+
+lemma eConn_contract_le (P : M.Partition) (C : Set α) : (P.contract C).eConn ≤ P.eConn :=
+  eConn_induce_le_of_isMinor P <| contract_isMinor ..
+
+lemma eConn_delete_le (P : M.Partition) (D : Set α) : (P.delete D).eConn ≤ P.eConn :=
+  eConn_induce_le_of_isMinor P <| delete_isMinor ..
+
+lemma eConn_eq_eConn_contract_add_left (P : M.Partition) (hC : C ⊆ P.left) :
+    P.eConn = (P.contract C).eConn + M.eLocalConn P.right C := by
+  rw [← P.contract_ofContractLeft hC, eConn_ofContractLeft]
+  simp
+
+lemma eConn_eq_eConn_contract_add_right (P : M.Partition) (hC : C ⊆ P.right) :
+    P.eConn = (P.contract C).eConn + M.eLocalConn P.left C := by
+  rw [← P.contract_ofContractRight hC, eConn_ofContractRight]
+  simp
+
+lemma eConn_le_eConn_contract_add (P : M.Partition) (C : Set α) :
+    P.eConn ≤ (P.contract C).eConn + M.eRk C := by
+  wlog hCE : C ⊆ M.E generalizing C with aux
+  · convert aux (C ∩ M.E) inter_subset_right using 2
+    · simp [contract_inter_ground]
+    simp
+  grw [eConn_eq_eConn_contract_add_left (C := C ∩ P.left) _ inter_subset_right,
+    eConn_eq_eConn_contract_add_right (C := C ∩ P.right), eLocalConn_le_eRk_right,
+    eLocalConn_le_eRk_right, add_assoc, ← eRelRk_eq_eRk_contract, eRelRk_add_eRk_eq, union_comm,
+    contract_contract, eConn_copy .., ← eConn_left, ← inter_union_distrib_left, P.union_eq,
+    contract_left, ← eConn_left, contract_left, contract_inter_ground_eq, eRk_inter_ground]
+
 
 
 
 
 
 end Minor
-
 
 lemma eConn_eq_zero_iff_skew {P : M.Partition} : P.eConn = 0 ↔ M.Skew P.1 P.2 :=
   M.eLocalConn_eq_zero P.left_subset_ground P.right_subset_ground
@@ -499,7 +633,6 @@ lemma exists_partition_iff_not_connected [M.Nonempty] :
   simpa [← ground_nonempty_iff]
 
 section wlog
-
 
 protected lemma wlog_symm (motive : {N : Matroid α} → (P : N.Partition) → Prop)
     (property : Matroid α → Set α → Prop)
