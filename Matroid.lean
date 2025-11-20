@@ -46,6 +46,7 @@ import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Menger
+import Matroid.Graph.Connected.Separating
 import Matroid.Graph.Connected.Set.Defs
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Set.SetEnsemble
@@ -62,6 +63,7 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
+import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
 import Matroid.Graph.Minor.Defs
@@ -121,3 +123,5 @@ import Matroid.Representation.Uniform
 import Matroid.Simple
 import Matroid.Spikes
 import Matroid.Uniform
+
+import Matroid.Exercises.HamiltonianCycle
