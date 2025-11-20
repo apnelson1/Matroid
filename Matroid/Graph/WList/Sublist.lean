@@ -1,44 +1,11 @@
-import Matroid.Graph.WList.Ops
 import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
-
+import Matroid.Graph.WList.Ops
+import Matroid.ForMathlib.List
 
 open Set Function List Nat WList
 
 variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
   {F F' : Set β} {w w₁ w₂ w₃ l l₁ l₂ l₃ : WList α β}
-
-lemma List.op_foldl_eq_foldl_op_of_assoc {f : α → α → α} [Std.Associative f] :
-    ∀ a b l, (foldl f (f a b) l) = f a (foldl f b l)
-  | _, _, nil => rfl
-  | a, b, c :: l => by
-    simp only [foldl_cons]
-    simp_rw [Std.Associative.assoc a b c]
-    rw [op_foldl_eq_foldl_op_of_assoc ..]
-
-lemma List.Nodup.eq_singleton_iff_head_getLast {l : List α} (hnd : l.Nodup) (hne : l ≠ []) :
-    l.head hne = l.getLast hne ↔ ∃ x, l = [x] := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · match l with
-  | [] => simp at hne
-  | head :: tail =>
-    simp only [head_cons, nodup_cons, cons.injEq] at h hnd ⊢
-    by_contra! htail
-    simp_all
-  obtain ⟨x, rfl⟩ := h
-  simp
-
-lemma List.IsSuffix.eq_of_first_mem {l₁ l₂ : List α} (h : l₁.IsSuffix l₂) (hnd : l₂.Nodup)
-    (hne : l₂ ≠ []) (hl : l₂.head hne ∈ l₁) : l₁ = l₂ := by
-  match h with | .intro w h => ?_
-  subst l₂
-  rw [self_eq_append_left]
-  match w with
-  | [] => rfl
-  | a :: as => simp_all
-
-lemma List.IsPrefix.eq_of_last_mem {l₁ l₂ : List α} (h : l₁.IsPrefix l₂) (hnd : l₂.Nodup)
-    (hne : l₂ ≠ []) (hl : l₂.getLast hne ∈ l₁) : l₁ = l₂ := by
-  simpa using h.reverse.eq_of_first_mem (by simpa) (by simpa) (by simpa)
 
 namespace WList
 

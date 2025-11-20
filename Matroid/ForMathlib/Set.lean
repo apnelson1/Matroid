@@ -132,6 +132,25 @@ lemma diff_ssubset_diff_right' {s t r : Set α} (hstr : s ∩ r ⊂ t ∩ r) : r
   rw [← diff_inter_self_eq_diff, ← diff_inter_self_eq_diff (t := s)]
   exact diff_ssubset_diff_right inter_subset_right hstr
 
+lemma diff_ssubset_diff_iff (A B C : Set α) : A \ B ⊂ A \ C ↔ A ∩ C ⊂ A ∩ B := by
+  rw [ssubset_iff_exists, ssubset_iff_exists]
+  refine ⟨fun ⟨hle, x, ⟨hxA, hxC⟩, hxB⟩ => ⟨?_, ?_⟩, fun ⟨hle, x, hxB, hxC⟩ => ⟨?_, ?_⟩⟩
+  · rintro a ⟨haA, haC⟩
+    simp only [mem_inter_iff, haA, true_and]
+    by_contra! haB
+    exact hle ⟨haA, haB⟩ |>.2 haC
+  · simp only [mem_diff, hxA, true_and, not_not] at hxB
+    use x, ⟨hxA, hxB⟩, by simp [hxC]
+  · rintro a ⟨haA, haB⟩
+    use haA, fun haC ↦ haB (hle ⟨haA, haC⟩).2
+  use x
+  simp only [mem_inter_iff, not_and] at hxC
+  simp [hxB.1, hxB.2, hxC]
+
+lemma union_diff_eq_diff {A B C : Set α} (hBC : B ⊆ C) : (A ∪ B) \ C = A \ C := by
+  ext x
+  simp only [mem_diff, mem_union, and_congr_left_iff, or_iff_left_iff_imp]
+  exact fun a a_1 ↦ (a (hBC a_1)).elim
 
 -- theorem exists_pairwiseDisjoint_iUnion_eq (s : ι → Set α) :
 --     ∃ t : ι → Set α, Pairwise (Disjoint on t) ∧ ⋃ i, t i = ⋃ i, s i ∧ ∀ i, t i ⊆ s i:= by

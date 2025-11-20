@@ -173,6 +173,17 @@ lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
     E(G - X) = {e | ∃ x y, G.IsLink e x y ∧ x ∉ X ∧ y ∉ X} := by
   simp [edgeSet_eq_setOf_exists_isLink]
 
+lemma vertexDelete_edgeSet_diff (G : Graph α β) (X : Set α) : E(G - X) = E(G) \ E(G, X) := by
+  ext e
+  simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, edge_mem_iff_exists_isLink,
+    mem_setIncidentEdges_iff, not_exists, not_and]
+  refine ⟨fun ⟨x, y, hexy, hx, hy⟩ ↦ ⟨?_, fun z hz hez ↦ ?_⟩, fun ⟨⟨x, y, h⟩, h2⟩ ↦ ?_⟩
+  · use x, y
+  · obtain rfl | rfl := hez.eq_or_eq_of_isLink hexy <;> tauto
+  have hxX := mt (h2 x) (not_not.mpr h.inc_left)
+  have hyX := mt (h2 y) (not_not.mpr h.inc_right)
+  use x, y
+
 @[simp]
 lemma vertexDelete_empty (G : Graph α β) : G - ∅ = G := by
   simp [vertexDelete_def]

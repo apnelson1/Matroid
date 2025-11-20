@@ -5,24 +5,6 @@ variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
 
 open WList Set symmDiff
 
-lemma List.mem_dropLast_iff {x : ι} {l : List ι} (hnd : l.Nodup) (hne : l ≠ []) :
-    x ∈ l.dropLast ↔ x ∈ l ∧ x ≠ l.getLast hne := by
-  obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat
-  · simp at hne
-  simp only [concat_eq_append, nodup_append, nodup_cons, not_mem_nil, not_false_eq_true, nodup_nil,
-    and_self, mem_cons, or_false, ne_eq, forall_eq, true_and] at hnd
-  simp only [concat_eq_append, ne_eq, cons_ne_self, not_false_eq_true, dropLast_append_of_ne_nil,
-    dropLast_singleton, append_nil, mem_append, mem_cons, not_mem_nil, or_false,
-    getLast_append_of_ne_nil, getLast_singleton]
-  refine ⟨fun h => ?_, fun h => h.1.elim id (h.2 · |>.elim)⟩
-  simp [h, hnd.2 x h]
-
-lemma List.mem_dropLast_of_mem_ne {x : ι} {l : List ι} (hne : l ≠ []) (hmem : x ∈ l)
-    (hxne : x ≠ l.getLast hne) : x ∈ l.dropLast := by
-  obtain rfl | ⟨l', y, rfl⟩ := l.eq_nil_or_concat
-  · simp at hne
-  simp_all
-
 namespace Graph
 
 /-! ### Trails -/

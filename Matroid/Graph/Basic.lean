@@ -225,6 +225,11 @@ lemma setIncidentEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) 
   rintro e ⟨x, hxS, he⟩
   exact he.edge_mem
 
+@[simp]
+lemma mem_setIncidentEdges_iff (G : Graph α β) (S : Set α) :
+    e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
+  simp [SetIncidentEdges]
+
 end Neighborhood
 
 @[simps]

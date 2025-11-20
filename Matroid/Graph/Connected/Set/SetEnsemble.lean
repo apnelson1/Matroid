@@ -6,29 +6,6 @@ open Set Function Nat WList symmDiff
 variable {α β ι : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z s t : α}
   {e e' f g : β} {U V S T X Y : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ∞}
 
-lemma List.eq_of_length_eq_zero {l : List α} (h : l.length = 0) : l = [] := by
-  match l with
-  | [] => rfl
-  | head :: tail => simp at h
-
-lemma List.eq_of_length_eq_one {l : List α} (h : l.length = 1) : l = [l[0]] := by
-  match l with
-  | [] => simp at h
-  | head :: tail => simpa using h
-
-lemma List.eq_of_length_eq_two {l : List α} (h : l.length = 2) : l = [l[0], l[1]] := by
-  match l with
-  | [] => simp at h
-  | head :: [tail] => simp
-  | head :: tail :: tail' => simpa using h
-
-lemma List.eq_of_length_eq_three {l : List α} (h : l.length = 3) : l = [l[0], l[1], l[2]] := by
-  match l with
-  | [] => simp at h
-  | head :: [tail] => simp at h
-  | head :: tail :: [tail'] => simp
-  | head :: tail :: tail' :: tail'' => simpa using h
-
 namespace Graph
 
 
