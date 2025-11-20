@@ -10,6 +10,9 @@ import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Component
 
 import Matroid.Graph.Independent
+-- Tree is currently not building, because Matroid.Graph.Walk.toGraph is broken
+-- import Matroid.Graph.Tree
+
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Cycle
 import Matroid.Graph.Connected.Separating
@@ -271,6 +274,257 @@ lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 
+def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
+  (S ⊆ V(G)) ∧ ¬ (G - S).Connected
+
+def IsMinSepSet (G : Graph α β) (S : Set (α)) : Prop :=
+  IsSepSet G S  ∧ ( ∀ A, IsSepSet G A → S.encard ≤ A.encard )
+
+-- Temporary, Tree is broken
+def IsForest (G : Graph α β) : Prop := ∀ C, ¬ G.IsCycle C
+
+@[mk_iff]
+structure IsTree (T : Graph α β) : Prop where
+  isForest : T.IsForest
+  connected : T.Connected
+
+lemma IsForest.simple (hG : G.IsForest) : G.Simple := sorry
+lemma IsForest.loopless (hG : G.IsForest) : G.Loopless := sorry
+
+lemma MinSep_SepSet {G : Graph α β} (S : Set α) (S' : Set α) (hM : IsMinSepSet G S)
+    (hSS' : S'.encard < S.encard) : ¬  IsSepSet G S' := by
+  by_contra hc
+  have h1 := hM.2 S' hc
+  grw [h1] at hSS'
+  exact (lt_self_iff_false S'.encard).mp hSS'
+
+lemma IsSep_con {G : Graph α β} (S : Set (α)) (hV : S ⊆ V(G)) (hS : ¬ (G - S).Connected) :
+    IsSepSet G S := by
+  refine ⟨hV, hS ⟩
+
+lemma NeIsSep {G : Graph α β} (S : Set (α)) (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) :
+    (G - S).Connected := by
+  by_contra hc
+  exact hS (IsSep_con S hV hc)
+
+lemma MinSep_vertexSer_completeGraph {G : Graph α β} [G.Finite] (hV : IsMinSepSet G V(G))
+    : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w := by
+  intro v w hv hw hvw
+  by_contra hc
+  have hle : (V(G) \ {v,w}).encard < V(G).encard := by
+    refine Finite.encard_lt_encard (Finite.diff vertexSet_finite)
+     (HasSubset.Subset.diff_ssubset_of_nonempty (pair_subset hv hw ) (insert_nonempty v {w}))
+  have h2 := NeIsSep (V(G) \ {v, w}) (diff_subset ) (MinSep_SepSet V(G) (V(G)\{v,w}) hV hle )
+  have hvh : v ∈ V(G - (V(G) \ {v, w})) := by simpa
+  have hwh : w ∈ V(G - (V(G) \ {v, w})) := by simpa
+  have hnt : (V(G - (V(G) \ {v, w}))).Nontrivial := by
+    exact not_subsingleton_iff.mp fun a ↦ hvw (a hvh hwh)
+  have ⟨e, y, hye, hvy ⟩ := Connected.exists_isLink_of_mem h2 hnt hvh
+  have hwy : w = y := by
+    have hyyy : y ∈ V(G - (V(G) \ {v, w})) := IsLink.right_mem hye
+    simp at hyyy
+    have := hyyy.2
+    obtain (ha | hb) := hyyy.2
+    exact False.elim (hvy ha)
+    exact id (Eq.symm hb)
+  have h : G.Adj v w := by
+    have hrw : G[V(G) \ (V(G) \ {v, w})] =  G - (V(G) \ {v, w}) :=
+        vertexDelete_def G (V(G) \ {v, w})
+    have hee : e ∈ E(G[V(G) \ (V(G) \ {v, w})]) := by
+      rw [hrw]
+      exact IsLink.edge_mem hye
+    have he1 :  G[V(G) \ (V(G) \ {v, w})].IsLink e v w := by
+      rw [(hrw)]
+      exact (IsLink.isLink_iff_eq hye).mpr hwy
+    refine ⟨ e, ((induce_isLink_iff_of_mem_edgeSet hee).1 he1) ⟩
+  exact hc h
+
+lemma Connected_comp_Sep {G : Graph α β} (H : Graph α β) (S : Set (α))
+    (hH : H.IsCompOf (G - S )) (v w : α) (hv : v ∈ V(H)) (hwV : w ∈ V(G)) (hw : w ∉ V(H) ∪ S) :
+    ∃ T : (G - S).Separation, v ∈ T.left ∧ w ∈ T.right := by
+
+  refine ⟨⟨V(H), V(G-S)\V(H) , ⟨v, by simpa⟩ , ⟨w, ?_⟩, disjoint_sdiff_right , ?_, ?_ ⟩,?_⟩
+  · simp at hw
+    simp
+    refine ⟨ ⟨ hwV, hw.2 ⟩, hw.1 ⟩
+  simp
+  · have hh : V(H) ⊆ V(G - S) :=  (hH.isClosedSubgraph).vertexSet_mono
+    simp only [vertexDelete_vertexSet] at hh
+    exact hh
+  · intro x y hx hy
+    by_contra hc
+    exact (notMem_of_mem_diff hy ) (((hH.isClosedSubgraph).mem_iff_mem_of_adj hc).1 hx )
+  simp
+  simp at hw
+  refine ⟨ hv, ⟨ hwV, hw.2 ⟩, hw.1 ⟩
+
+lemma Del_connected_comp_Adj {G : Graph α β} (H : Graph α β) (S : Set (α))
+    (hH : H.IsCompOf (G - S )) (v w : α) (hv : v ∈ V(H)) (hw : w ∉ V(H) ∪ S) :
+    ¬ G.Adj v w := by
+  by_contra hc
+  simp only [mem_union, not_or] at hw
+  have hhe : (G - S).Adj v w := by
+    simp
+    refine ⟨hc, ?_, hw.2 ⟩
+    · have h1 : V(H) ⊆ V(G - S) := isCompOf_subset (G - S) H hH
+      have h :=  vertexDelete_vertexSet G S
+      rw [h] at h1
+      exact notMem_of_mem_diff (h1 hv)
+  exact hw.1 (((hH.isClosedSubgraph).mem_iff_mem_of_adj hhe).1 hv)
+
+lemma minEDegree_ge_one_of_connected_nontrivial
+    {G : Graph α β} (hConn : G.Connected) (hNontrivial : 1 < V(G).encard) :
+    ∀ x ∈ V(G), 1 ≤ G.eDegree x := by
+  by_contra! hyp; obtain ⟨x, hxG, hx⟩ := hyp
+  rw [ENat.lt_one_iff_eq_zero] at hx
+  rw [connected_iff_forall_exists_adj] at hConn
+    <;> [skip; use x]
+  specialize hConn {x}
+  have : {x} ⊂ V(G) := by
+    refine ⟨by simp; tauto, ?_⟩
+    intro bad
+    have := Set.encard_le_encard bad
+    have := hNontrivial.trans_le this
+    simp at this
+  simp at hConn
+  specialize hConn this; clear this
+  obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := hConn
+  rw [eDegree_eq_zero_iff_adj] at hx
+  exact hx y hadj
+
+lemma unique_neighbor_of_eDegree_eq_one
+    {G : Graph α β} {x : α} (hx : G.eDegree x = 1)
+    {y z : α} (hxy : G.Adj x y) (hxz : G.Adj x z) :
+    y = z := by
+  have heq := G.eDegree_eq_encard_add_encard x
+  rw [hx] at heq
+  have no_loops : {e | G.IsLoopAt e x}.encard = 0 := by
+    by_contra! hyp
+    rw [←ENat.one_le_iff_ne_zero] at hyp
+    replace hyp : 2 ≤ 2 * {e | G.IsLoopAt e x}.encard :=
+      le_mul_of_one_le_right' hyp
+    have hle : 2 * {e | G.IsLoopAt e x}.encard ≤ 1 := by
+      simp [heq]
+    have := hyp.trans hle
+    simp at this
+  rw [no_loops] at heq; simp at heq; symm at heq
+  rw [Set.encard_eq_one] at heq
+  obtain ⟨e, he⟩ := heq
+  have setOf_inc_le : {e | G.Inc e x} ⊆ {e} := by
+    simp [inc_iff_isLoopAt_or_isNonloopAt]
+    rintro f (h|h) <;> [exfalso; skip]
+    · suffices f ∈ {e | G.IsLoopAt e x} by simp_all
+      exact h
+    suffices f ∈ {e | G.IsNonloopAt e x} by simp_all
+    exact h
+  simp at setOf_inc_le
+  obtain ⟨xy, hxy⟩ := hxy
+  obtain ⟨xz, hxz⟩ := hxz
+  suffices xy = xz by
+    subst this; exact IsLink.right_unique hxy hxz
+  have hxy' : xy = e := setOf_inc_le _ hxy.inc_left
+  have hxz' : xz = e := setOf_inc_le _ hxz.inc_left
+  simp_all
+
+lemma exists_isSepSet_of_isTree
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := by
+    refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_
+    suffices (1 : ℕ∞) < 3 by
+      exact this.trans_le hV
+    simp
+  -- we show there exists a vertex x of degree at least 2, in which case
+  -- the singleton {x} is exactly our sepset
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
+    by_contra! hyp
+    replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
+      intro x hxT
+      specialize hyp _ hxT
+      specialize hMinDeg _ hxT
+      change T.eDegree x < 1 + 1 at hyp
+      rw [ENat.lt_add_one_iff] at hyp
+        <;> [exact hyp.antisymm hMinDeg; simp]
+    clear hMinDeg
+    have hT_nonempty : V(T).Nonempty := by
+      simp only [←Set.encard_pos]
+      suffices (0 : ℕ∞) < 3 by
+        exact this.trans_le hV
+      simp
+    have ⟨x, hxT⟩ := hT_nonempty
+    have hx_ssub : {x} ⊂ V(T) := by
+      refine ⟨by simp; tauto, ?_⟩
+      intro bad
+      have := Set.encard_le_encard bad
+      have := hV.trans this
+      simp at this
+    have hconn := hT.connected
+    rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
+    have hy := hconn _ hx_ssub (by simp)
+    simp at hy
+    obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := hy
+    have hxy_ssub : {x,y} ⊂ V(T) := by
+      refine ⟨?_, ?_⟩
+      · simp [pair_subset_iff]; tauto
+      intro bad
+      have := Set.encard_le_encard bad
+      have := hV.trans this
+      replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
+      simp [Set.encard_pair hne] at this
+      norm_num at this
+    have hz := hconn _ hxy_ssub (by simp)
+    obtain ⟨x', hx', z, hz⟩ := hz
+    apply hz.1.2
+    simp at hx'; obtain (hx'|hx') := hx'
+      <;> symm at hx'
+      <;> subst hx'
+      <;> [(right; simp); (left; symm at hadj)]
+      <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
+  -- now we have our vertex x of degree ≥ 2
+  use {x}
+  refine ⟨?_, by simp⟩
+  simp [IsSepSet]
+  refine ⟨by assumption, ?_⟩
+  -- choose any two neighbors of x; they must be separated by x
+  intro bad
+  have T_simple := hT.isForest.simple
+  rw [eDegree_eq_encard_adj] at hx
+  have ⟨N, hN_sub, hN_encard⟩ := Set.exists_subset_encard_eq hx
+  rw [Set.encard_eq_two] at hN_encard
+  obtain ⟨y,z,hne,rfl⟩ := hN_encard
+  -- pick a path between y and z which does not go through x
+  obtain ⟨hy, hz⟩ : T.Adj x y ∧ T.Adj x z := by
+    refine ⟨hN_sub ?_, hN_sub ?_⟩ <;> simp
+  have ⟨hyT', hzT'⟩ : y ∈ V(T - {x}) ∧ z ∈ V(T - {x}) := by
+    simp
+    have := hT.isForest.loopless
+    refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩
+      <;> rintro rfl <;> apply T.not_adj_self <;> assumption
+  obtain ⟨P, hP, hP_first, hP_last⟩ := (bad.vertexConnected hyT' hzT').exists_isPath
+  obtain ⟨xy, hxy⟩ := hy
+  obtain ⟨xz, hxz⟩ := hz
+  let Q' := cons x xy P
+  have hQ'_isPath : T.IsPath Q' := by
+    simp [Q']
+    refine ⟨hP.of_le vertexDelete_le, by rwa [hP_first], ?_⟩
+    intro bad
+    replace hP := hP.vertexSet_subset
+    apply hP at bad
+    rw [vertexDelete_vertexSet] at bad
+    apply bad.2
+    simp
+  let Q := cons z xz Q'
+  have hQ_isCycle : T.IsCycle Q := by
+    simp [Q]
+    have := hQ'_isPath.cons_isCycle_of_nontrivial (G := T) (P := Q') (e := xz)
+    simp [Q', hP_last, hxz] at this
+    apply this
+    by_contra! bad
+    simp at bad
+    apply hne
+    rw [←hP_first, ←hP_last]
+    exact Nil.first_eq_last bad
+  exact hT.isForest _ hQ_isCycle
 
 lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     (S : Set (α)) (hS : IsSepSet G S)
@@ -347,31 +601,33 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
   linarith
 
 --Again, is missing when G is complete but whatever
-lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
+lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
     (S : Set (α)) (HS : IsMinSepSet G S )
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
-  --Important case
+  --Trivial case: Independent set is completely contained in the separator
   obtain ( HAS| he ) := Decidable.em (A ⊆ S)
-  · have : S.Finite := by sorry
+  · have : S.Finite := Set.Finite.subset vertexSet_finite HS.1.1
     exact ncard_le_ncard HAS this
   have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
   -- Add hDirac applyed to x. You won't need it immediatly but will need it in all cases
 
   --We want to use ge_two_components_of_not_connected with G-S so we need:
-  have hxS: x ∈ V(G - S) := by sorry
+  have hxS: x ∈ V(G - S) := by
+    simp
+    have := hA.1.1
+    tauto
 
   have hNeBotS : (G - S).NeBot := by
     apply NeBot_iff_vertexSet_nonempty.2
-    sorry
+    tauto
 
   have hcomp := ge_two_components_of_not_connected hNeBotS sorry
   have ⟨ H1, hccH1, hcH1 ⟩ : ∃ H, IsCompOf H (G-S) ∧ x ∈ V(H) := by
-    -- use (VertexConnected.refl x)
-    sorry
+    exact exists_IsCompOf_vertex_mem hxS
 
   --Here are two options to finish the proof, either define H2 as follows, but it won't be conencted
-  let H2 := G - (V(H1) ∪ S)
+  --let H2 := G - (V(H1) ∪ S)
   --In this case use hcomp to get V(H2)≠ ∅
 
   --Second option is to use and prove this
@@ -380,11 +636,31 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] (h3 : 3 ≤ V(G).ncard)
   --see Richards proof using hcomp
   --In this case you will need (V(H2)).ncard ≤ (V(G)\ (V(H1) ∪ S) ).ncard + S.ncard (or something)
 
+  have ⟨H2, ⟨H2comp, H2ne⟩⟩ :
+    ∃ H, H.IsCompOf (G - S) ∧ H ≠ H1 := by
+    have components_nonempty : (G - S).Components.Nonempty := by
+      apply nonempty_of_encard_ne_zero
+      intro h; rw [h] at hcomp; clear h
+      norm_num at hcomp
+    by_contra! hyp_contra
+    have is_singleton : (G - S).Components = {H1} := by
+      exact (Nonempty.subset_singleton_iff (components_nonempty)).mp hyp_contra
+    have : (G - S).Components.encard = 1 := by
+      simp [is_singleton]
+    rw [this] at hcomp; clear this
+    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.coe_le_coe.mp hcomp
+    linarith
+
   -- Second annoying case
   obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
-  · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by sorry
+  · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
+      -- Managed to simplify this part a lot - Noah
+      rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
+      exact H2comp.1.2
     --Apply Bound_on_indepSet with modifications since H2 is not a connected component
     -- You will nee hDirac applied to y
+    have := Bound_on_indepSet S HS.1 H1 hccH1 A hA x (by tauto)
+
     sorry
 
   --Easy case
@@ -682,58 +958,159 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
 --grw
 
-  --The following are needed to find a max cycle
+  -- To find a longest cycle, we first need to show the existence of some cycle C'
   have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by
-    obtain ( hle2| h2 ) := Decidable.em (A.encard ≤ 1)
-    · have hcomplete : ∀ v w, v ∈ V(G) → w ∈ V(G) → v ≠ w → G.Adj v w := by
-        intro x y hx hy hxy
-        by_contra hc
-        set ind : Set α := {x,y} with h_ind
-        have hind : IsIndependent G ind := by
-          rwa [h_ind, isIndependent_pair_iff_of_ne hxy hx hy]
-          --Betty, Peter moved this part of the proof to a separate lemma, please see Independent.
-          -- simp [ind]
-          -- unfold IsIndependent
-          -- refine ⟨ (pair_subset hx hy ), ?_ ⟩
-          -- refine pairwise_pair.mpr ?_
-          -- intro hh
-          -- refine ⟨ hc, ?_ ⟩
-          -- by_contra hhc
-          -- have hconn : G.Adj x y := (adj_comm x y).2  hhc
-          -- exact hc hconn
-        have := hA.2 _ hind
-        --Betty, instead of suffering with contradictions,
-        --Peter got grw to work, it just rewrites inequalities
-        grw [h_ind, hle2, encard_pair hxy] at this
-        simp at this
-        -- have hleA : (ind).encard ≤ A.encard := by
-        --   exact hA.2 ind hind
-        -- have hle2A : 2 ≤ A.ncard := by sorry
-        --   --rwa [encard_pair hxy ] at hleA
-        -- have hlast : 2 ≤ 1 := by
-        --   have hh : ind.Finite := by sorry
-        --   have g := hh.encard_eq_coe
-        --   have g1 := ind.ncard_def
-        --   --Set.ncard_def
-        --   sorry
-        -- have : 1 < 2 := by exact Nat.one_lt_two
-        -- have : 1 < 1 := by sorry
-        -- exact (lt_self_iff_false 1).mp this
+    by_contra! hCon
+    -- if there is no cycle, then since G is a forest,
+    -- any vertex v of degree >= 2 is a separating set
+    obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+    · -- So, S.encard = 1, and thus A.encard <= 1
+      have ⟨v, ⟨hvG, hv⟩⟩ := h1
+      -- since v has degree at least 2, we can obtain two neighbours
+      have hn2 : 1 < {x | G.Adj v x}.ncard := by
+        rw [← G.degree_eq_ncard_adj]
+        assumption
+      have nsFinite : {x | G.Adj v x}.Finite := by
+        have := Simple.vertexSet_finite_iff.mp $ finite_of_ncard_nonzero $ Nat.ne_zero_of_lt h3
+        exact G.finite_setOf_adj
+      rw [one_lt_ncard_iff nsFinite] at hn2
+      have ⟨a, b, ha, hb, hab⟩ := hn2
+      simp_all
+      -- Show that {v} is a separating set
+      have vSep : G.IsSepSet {v} := by
+        refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
+        -- those two neighbours a and b are not connected in G - {v},
+        -- because otherwise there would be a cycle
+        -- for a contradiction, let's construct the cycle
+        by_contra! hCon
+        have aVGv : a ∈ V(G - {v}) := by
+          have := Adj.right_mem ha
+          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+          exact fun a_1 ↦ (Adj.ne ha) (id (Eq.symm a_1))
+        have bVGv : b ∈ V(G - {v}) := by
+          have := Adj.right_mem hb
+          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+          exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
+        have abCon : (G - {v}).VertexConnected a b := Connected.vertexConnected hCon aVGv bVGv
+        have ⟨abPath, habPath⟩ := VertexConnected.exists_isPath abCon
+        have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
+        -- need to first add v to the ab path
+        rw [Adj.eq_1 G] at ha
+        have ⟨e, eLink⟩ := ha
+        have ⟨e2, e2Link⟩ := hb
+        have e2LinkOrig := e2Link
+        have enee2 : e ≠ e2 := by
+          by_contra!
+          rw [← this] at e2Link
+          rw [IsLink.isLink_iff eLink] at e2Link
+          cases e2Link
+          · simp_all only [not_true_eq_false]
+          simp_all only [isLink_self_iff, not_isLoopAt, exists_false]
+        have vnP : v ∉ abPath := by simp_all
+        rw [← habPath.2.1] at eLink
+        have vbPath := cons_isPath_iff.2 ⟨abPathG, eLink, vnP⟩
+        rw [Adj.eq_1 G] at hb
+        have vfirst : v = (cons v e abPath).first := rfl
+        have blast : b = (cons v e abPath).last := by tauto
+        rw [vfirst, blast] at e2Link
+        have e2npe : e2 ∉ (cons v e abPath).edge := by
+          simp
+          refine ⟨by tauto, ?_⟩
+          by_contra!
+          have := IsWalk.edge_mem_of_mem habPath.1.isWalk this
+          have := (IsLink.mem_vertexDelete_iff e2LinkOrig).1 this
+          tauto
+        -- then link it up to a cycle, contradicting that G doesn't have any cycle
+        have := IsPath.cons_isCycle vbPath e2Link e2npe
+        tauto
+      -- finally, we have that {v} is a separating set in G
+      have hS1 : S.encard ≤ 1 := by
+        have := HS.2 {v} vSep
+        simp_all only [encard_singleton]
+      -- But then the two neighbours of v cannot be adjacent,
+      -- because otherwise there would be a cycle
+      -- So, A.encard >= 2, contradiction
+      have anev : ¬a = v := by
+        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v a ha
+        rw [ne_comm, ne_eq] at this
+        assumption
+      have bnev : ¬b = v := by
+        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
+        rw [ne_comm, ne_eq] at this
+        assumption
+      obtain (h3 | h4) := Decidable.em (G.Adj a b)
+      · -- First, the case where a and b are adjacent
+        -- Need to construct the cycle a-b-v
+        have ⟨e, eLink⟩ := ha
+        have ⟨e2, e2Link⟩ := hb
+        have ⟨e3, e3Link⟩ := h3
+        have avPath := cons_isPath_iff.2 ⟨nil_isPath hvG, ⟨IsLink.symm eLink, by
+          rw [mem_nil_iff]
+          assumption⟩⟩
+        have bavPath := cons_isPath_iff.2 ⟨avPath, ⟨IsLink.symm e3Link, by
+          simp_all [mem_cons_iff]
+          tauto⟩⟩
+        let bav := (cons b e3 (cons a e (nil v)))
+        have flLink : G.IsLink e2 bav.first bav.last := by
+          simp_all
+          exact id (IsLink.symm e2Link)
+        have eDis : e2 ∉ (cons b e3 (cons a e (nil v))).edge := by
+          simp_all
+          refine ⟨?_, ?_⟩
+          · by_contra!
+            simp_all
+            have := G.eq_or_eq_of_isLink_of_isLink e2Link e3Link
+            tauto
+          by_contra!
+          simp_all
+          have := IsLink.eq_and_eq_or_eq_and_eq eLink e2Link
+          tauto
+        have := IsPath.cons_isCycle bavPath flLink eDis
+        tauto
+      -- Now, a and b are not adjacent
+      -- We show {a, b} is independent for a contradiction
+      have hI : G.IsIndependent {a, b} := by
+        refine ⟨?_, ?_⟩
+        · have : a ∈ V(G) := ha.right_mem
+          have : b ∈ V(G) := hb.right_mem
+          grind only [= subset_def, usr subset_insert, = singleton_subset_iff, = mem_insert_iff,
+            = setOf_true, = mem_singleton_iff, = setOf_false, cases Or]
+        intro x hx y hy hxy
+        simp_all only [mem_insert_iff, mem_singleton_iff, ne_eq]
+        have : ¬G.Adj b a := by exact fun a_1 ↦ h4 (id (Adj.symm a_1))
+        grind only [= setOf_true, = setOf_false, cases Or]
+      have Age2 : 2 ≤ A.encard := by
+        have hA2 := hA.2 {a, b} hI
+        have : ({a, b} : Set α).encard = 2 := encard_pair hab
+        rw [this] at hA2
+        exact hA2
+      have Ale1 : A.encard ≤ 1 := Std.IsPreorder.le_trans A.encard S.encard 1 hAS hS1
+      have : 2 ≤ (1 : ℕ∞) := Std.IsPreorder.le_trans 2 A.encard 1 Age2 Ale1
+      simp_all only [Nat.not_ofNat_le_one]
 
-      --Now we need to prove a complete graph has a hamiltonian cycle, this will be a separate lemma
-      obtain ⟨ C, hC, hCC ⟩ := (Complete_to_cycle 0 h3 hcomplete)
-      simp at hCC
-      use C
-    --Hard one
-    simp at h2
-    grw [hAS] at h2
-    by_contra hforest
-    -- To avoid using Mengers we will use trees
-    --What we need: G is connected
-    -- G is a tree
-    -- Add lemma that says that a tree with 3 vertices has a separating vertex
+    -- If every vertex has degree <= 1, then S.encard = 0, so we are done
+    have Vnz : V(G).ncard ≠ 0 := by linarith
+    simp at Vnz
+    rw [ncard_eq_zero (finite_of_ncard_nonzero Vnz)] at Vnz
+    have ⟨v, hv⟩ : ∃ v, v ∈ V(G) := by grind only [= mem_empty_iff_false]
+    have : ¬G.Connected := by
+      -- We know there are ≥ 3 vertices
+      -- But all have degree ≤ 1
+      have : G.degree v ≤ 1 := by grind only
+      sorry
+    have Sempty : S.encard = 0 := by
+      have esSep : IsSepSet G ∅ := by
+        refine ⟨empty_subset V(G), ?_⟩
+        rw [vertexDelete_empty]
+        assumption
+      have : S.encard = (∅ : Set α).encard := by
+        have := HS.2 ∅ esSep
+        simp_all
+      simp_all
+    have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
+    have := hA.2 {v} hGI
+    simp_all
 
-    sorry
   let S := {C : WList α β | G.IsCycle C }
   have hsne : S.Nonempty := by
     exact nonempty_of_mem hC'
