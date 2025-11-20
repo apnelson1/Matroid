@@ -816,7 +816,7 @@ lemma sufixFromVertex_length [DecidableEq α] (w : WList α β) (x : α) (hx : x
 lemma prefixUntilVertex_suffixFromVertex_length [DecidableEq α] (w : WList α β) (x : α)
     (hx : x ∈ w) :
     (w.prefixUntilVertex x).length + (w.suffixFromVertex x).length = w.length := by
-  rw [prefixUntilVertex_length w x hx, ←sufixFromVertex_length w x hx, add_comm ]
+  rw [prefixUntilVertex_length hx, ←sufixFromVertex_length w x hx, add_comm]
 
 @[simp]
 lemma prefixUntilVertex_last_eq_suffixFromVertex_first [DecidableEq α] (hx : x ∈ w) :
