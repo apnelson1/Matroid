@@ -68,10 +68,17 @@ macro "enat_to_nat!" " with" e:(ppSpace colGt ident)* : tactic =>
 attribute [enat_to_nat_top] not_true add_top
 
 -- /-! ### Tests -/
+variable {f : ℤ → ℕ∞}
 
-example {f : ℤ → ℕ∞} {a b : ℤ} (h : 2 * f a = f a + f b) : 2 * f a = f a + f b  := by
-  generalize_enats
-  omega
+example {a b c : ℕ∞} {x : ℤ} (h : 2 * (a + b) < f x) : a ≠ ⊤ := by
+
+
+  enat_to_nat
+
+-- example {f : ℤ → ℕ∞} {a b c d e : ℤ} (h : 2 * f e = f a + f b) : 2 * f a = f a + f b  := by
+--   generalize_enats
+
+--   omega
 
 
 
@@ -81,3 +88,34 @@ example {f : ℤ → ℕ∞} {a b : ℤ} (h : 2 * f a = f a + f b) : 2 * f a = f
 
 -- example (a b c d : ℕ∞) (hab : a ≤ b) (hbc : 2 * b + d < c) : a ≠ ⊤ := by
 --   enat_to_nat
+
+-- WTF : from `Matroid.Connectivity.Higher`. Look into this.
+
+-- lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))
+--     (hnt : 2 * (k + M.eRk C) < M.E.encard + 1) (e : α) : (M ／ C).TutteConnected (k + 1) := by
+--   obtain rfl | hne := eq_or_ne k 0
+--   · simp
+--   wlog hCE : C ⊆ M.E generalizing C with aux
+--   · specialize aux (C := C ∩ M.E)
+--     grw [M.eRk_mono inter_subset_left, imp_iff_right inter_subset_right,
+--       contract_inter_ground_eq] at aux
+--     exact aux h hnt
+--   have hnt' := Order.le_of_lt_add_one hnt
+--   have hgirth := h.le_girth hnt'
+--   have hC : M.Indep C := by
+--     apply indep_of_eRk_add_one_lt_girth _ hCE
+--     enat_to_nat! <;> omega
+--   rw [tutteConnected_iff_verticallyConnected_girth]
+--   refine ⟨(h.verticallyConnected.mono ?_).contract, ?_⟩
+--   · grw [add_right_comm]
+--   · have hle := hgirth.trans (M.girth_le_girth_contract_add C)
+--     · rwa [add_right_comm, WithTop.add_le_add_iff_right] at hle
+--       generalize M.eRk C = x at *
+--       clear h hle hC hgirth hnt' hCE hne e C
+--       generalize M.E.encard = y at *
+--       enat_to_nat
+--       -- enat_to_nat is behaving absurdly here : `extract_goal` makes it work fine.
+--       Something fishy.
+--       sorry
+--       sorry
+--   sorry
