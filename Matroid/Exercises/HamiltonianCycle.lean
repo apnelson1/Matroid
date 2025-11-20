@@ -628,7 +628,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     apply NeBot_iff_vertexSet_nonempty.2
     tauto
 
-  have hcomp := ge_two_components_of_not_connected hNeBotS HS.1.2.1
+  have hcomp := ge_two_components_of_not_connected hNeBotS sorry
   have ⟨ H1, hccH1, hcH1 ⟩ : ∃ H, IsCompOf H (G-S) ∧ x ∈ V(H) := by
     exact exists_IsCompOf_vertex_mem hxS
 
