@@ -776,7 +776,6 @@ lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonemp
   obtain he | hwN := exists_eq_nil_or_nonempty w
   obtain ⟨x, hx ⟩ := he
   rw [hx]
-  simp
   obtain rfl | hu := eq_or_ne a u
   simp
   simp [hu.symm]
@@ -817,23 +816,18 @@ lemma IsCycle.idxOf_rotate_first {a  : α} {n : ℕ} {C : WList α β} (hC : G.I
   rw [idxOf_get hC hn ] at hle
   linarith
 
-lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} (C : WList α β) (hC : G.IsCycle C)
-    (hnt : C.Nonempty) (ha : a ∈ C) (hn : n < C.length)
-    (hle : n + 1 ≤ C.idxOf a ) :
+lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} {C : WList α β} (hC : G.IsCycle C)
+    (ha : a ∈ C) (hn : n < C.length)
+    (hnt : C.Nonempty) (hle : n ≤ C.idxOf a ) :
     (C.rotate n).idxOf a + n  = C.idxOf a := by
   induction n with
   | zero =>
   simp_all
-  -- have h1 : C.first ≠ a := by
-  --   by_contra hc
-  --   rw[←hc, idxOf_first ] at hle
-  --   linarith
-  -- exact hC.idxOf_rotate_one C hnt h1 ha
   | succ n hi =>
   rw[←rotate_rotate C n 1]
   have hlen : n ≤ C.length := by
     linarith
-  have hle' : n + 1 ≤ C.idxOf a := by
+  have hle' : n ≤ C.idxOf a := by
     linarith
   have han : (C.rotate n).first ≠ a := by
     rw [rotate_first C n hlen ]
@@ -845,13 +839,57 @@ lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} (C : WList α β) (hC : G.Is
   have := hi (Nat.lt_of_succ_lt hn) hle'
   linarith
 
+
 lemma IsCycle.idxOf_rotate_one_first {a  : α} {C : WList α β} (hC : G.IsCycle C)
-    (hnt : C.Nonempty) (h1 : C.first = a ) (ha : a ∈ C) :
-    (C.rotate 1).idxOf a = C.length := by sorry
+    (h1 : C.first = a ) (ha : a ∈ C) :
+    (C.rotate 1).idxOf a + 1 = C.length := by
+  obtain ⟨e, hrC ⟩ := hC.rotate_one
+  have hft : C.first = C.last := (hC.isClosed).eq
+  rw [h1] at hft
+  rw [hrC, idxOf_concat_ne C.tail e ((hC.isClosed).mem_tail_iff.2 ha ), hft, (tail_last C).symm ,
+  idxOf_last C.tail (hC.nodup), tail_length]
+  sorry
+
+lemma IsCycle.idxOf_rotate_untilfirst {a  : α} {C : WList α β} (hC : G.IsCycle C) (ha : a ∈ C) :
+    (C.rotate (C.idxOf a + 1)).idxOf a + 1 = C.length := by
+  have hfirst : a = (C.rotate (C.idxOf a)).first := by
+    exact Eq.symm (rotate_idxOf_first ha)
+  have ha' : a ∈ (C.rotate (C.idxOf a)) := by
+    refine (IsClosed.mem_rotate (hC.isClosed)).mpr ha
+  rw[←rotate_rotate C (C.idxOf a) 1, (rotate hC (C.idxOf a)).idxOf_rotate_one_first
+    (Eq.symm (rotate_idxOf_first ha)).symm ha' ]
+  simp
 
 lemma IsCycle.idxOf_rotate_n {a  : α} {n : ℕ} (C : WList α β) (hC : G.IsCycle C)
     (hnt : C.Nonempty) (ha : a ∈ C) (hn : n < C.length)
-    (hle : C.idxOf a < n ) : (C.rotate n).idxOf a + n = C.length + 1 + C.idxOf a := by sorry
+    (hle : C.idxOf a < n ) : (C.rotate n).idxOf a + n = C.length + C.idxOf a := by
+  induction n with
+  | zero =>
+  simp_all
+  | succ n hi =>
+  obtain han | hu := eq_or_ne (C.idxOf a) n
+  · rw [←han]
+    have hle' : C.idxOf a < C.length := by
+      rw[han]
+      exact Nat.lt_of_succ_lt hn
+    have := hC.idxOf_rotate_untilfirst ha
+    linarith
+  rw[←rotate_rotate C n 1]
+  have hg : n < C.length := by exact Nat.lt_of_succ_lt hn
+  have hii := hi hg (Nat.lt_of_le_of_ne (Nat.le_of_lt_succ hle ) hu )
+  have hnf : (C.rotate n).first ≠ a := by
+    by_contra hc
+    have hia : (C.rotate n).idxOf a = 0 := by
+      rw[←hc]
+      exact idxOf_first (C.rotate n)
+    rw [hia] at hii
+    simp at hii
+    rw [hii] at hg
+    linarith
+  have ha' : a ∈ C.rotate n := by
+    refine (IsClosed.mem_rotate (hC.isClosed)).mpr ha
+  have hf := (rotate hC n ).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hnt) hnf ha'
+  linarith
 
 
 
@@ -1131,7 +1169,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
           have hg2 := (Cycle_conc_index (hab₁) hhh).2
           rw [←hC] at hg1
           rw [←hC] at hg2
-
+          -- Use lemmas I added by cases on idxOf a ≤ idxOf b along with hg2, hg1 and haind
           sorry
         rw [←hbindP ] at hcon
         linarith
@@ -1145,30 +1183,35 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     --have hP₂P₃ := Eq.symm (prefixUntilVertex_append_suffixFromVertex P₁ b₁)
     rw [←h_pre2] at hP₂
     rw [←h_suf2] at hP₃
-    --rw [←h_pre2, ←h_suf2] at hP₂P₃
-    --append_length
-
-
-    --rw [h_pre,h_suf]
-      -- refine ⟨ IsPath.prefix hP (prefixUntilVertex_isPrefix P u),
-      -- (IsPath.suffix hP (suffixFromVertex_isSuffix P u)),
-      -- Eq.symm (prefixUntilVertex_last hu) , Eq.symm (suffixFromVertex_first hu),
-      -- prefixUntilVertex_suffixFromVertex_length P u hu,
-      -- Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
-
-
-    --have ⟨ P,  := hCs.prop.exists_isPath_edge hNonTC
-
-    --IsPath.append
-    --IsPath.cons_isCycle
-
-
     sorry
   have hNNIv : IsIndependent G ( insert v NextNeigh) := by
     --Should not be too bad doing cases
     sorry
   --Finish
   sorry
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
