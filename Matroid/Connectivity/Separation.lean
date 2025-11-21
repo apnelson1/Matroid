@@ -72,20 +72,6 @@ protected def ofDual (P : M✶.Partition) : M.Partition where
   left_inv P := by simp
   right_inv P := by simp
 
-@[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-protected lemma left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
-  rw [← P.union_eq]; apply subset_union_left
-
-@[simp, aesop unsafe 10% (rule_sets := [Matroid])]
-protected lemma right_subset_ground (P : M.Partition) : P.2 ⊆ M.E := by
-  rw [← P.union_eq]; apply subset_union_right
-
-noncomputable abbrev eConn (P : M.Partition) : ℕ∞ := M.eLocalConn P.1 P.2
-
-@[simp]
-lemma eConn_symm (P : M.Partition) : P.symm.eConn = P.eConn :=
-  M.eLocalConn_comm _ _
-
 @[simp]
 lemma compl_left (P : M.Partition) : M.E \ P.1 = P.2 := by
   rw [← P.union_eq, union_diff_left, sdiff_eq_left]
@@ -94,6 +80,48 @@ lemma compl_left (P : M.Partition) : M.E \ P.1 = P.2 := by
 @[simp]
 lemma compl_right (P : M.Partition) : M.E \ P.2 = P.1 := by
   rw [← symm_left, compl_left, symm_right]
+
+@[simp, aesop unsafe 10% (rule_sets := [Matroid])]
+protected lemma left_subset_ground (P : M.Partition) : P.1 ⊆ M.E := by
+  rw [← P.union_eq]; apply subset_union_left
+
+@[simp, aesop unsafe 10% (rule_sets := [Matroid])]
+protected lemma right_subset_ground (P : M.Partition) : P.2 ⊆ M.E := by
+  rw [← P.union_eq]; apply subset_union_right
+
+/-- A partition is trivial if one side is empty. -/
+protected def Trivial (P : M.Partition) : Prop := P.left = ∅ ∨ P.right = ∅
+
+lemma trivial_of_left_eq_empty (h : P.left = ∅) : P.Trivial := .inl h
+
+lemma trivial_of_right_eq_empty (h : P.right = ∅) : P.Trivial := .inr h
+
+lemma trivial_of_left_eq_ground (h : P.left = M.E) : P.Trivial :=
+  .inr <| by simp [← P.compl_left, h]
+
+lemma trivial_of_right_eq_ground (h : P.right = M.E) : P.Trivial :=
+  .inl <| by simp [← P.compl_right, h]
+
+protected lemma trivial_def : P.Trivial ↔ P.left = ∅ ∨ P.right = ∅ := Iff.rfl
+
+protected lemma trivial_def' : P.Trivial ↔ P.left = M.E ∨ P.right = M.E := by
+  rw [← P.compl_left, sdiff_eq_left, ← P.compl_right, sdiff_eq_left, P.compl_right,
+    disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right P.right_subset_ground,
+    disjoint_iff_inter_eq_empty, inter_eq_self_of_subset_right P.left_subset_ground, or_comm,
+    P.trivial_def]
+
+lemma Trivial.eq_ground_or_eq_ground (h : P.Trivial) : P.left = M.E ∨ P.right = M.E := by
+  rwa [← P.trivial_def']
+
+lemma trivial_of_ground_subsingleton (P : M.Partition) (h : M.E.Subsingleton) : P.Trivial := by
+  sorry
+
+noncomputable abbrev eConn (P : M.Partition) : ℕ∞ := M.eLocalConn P.1 P.2
+
+@[simp]
+lemma eConn_symm (P : M.Partition) : P.symm.eConn = P.eConn :=
+  M.eLocalConn_comm _ _
+
 
 lemma eConn_eq_left (P : M.Partition) : P.eConn = M.eConn P.1 := by
   rw [eConn, ← compl_left]
@@ -119,6 +147,11 @@ lemma eConn_dual (P : M.Partition) : P.dual.eConn = P.eConn := by
 lemma eConn_ofDual (P : M✶.Partition) : P.ofDual.eConn = P.eConn := by
   rw [← P.dual_ofDual, ← eConn_dual]
   simp
+
+lemma Trivial.eConn (h : P.Trivial) : P.eConn = 0 := by
+  obtain h | h := h
+  · simp [← P.eConn_left, h]
+  simp [← P.eConn_right, h]
 
 @[simp]
 lemma not_indep_left_iff : ¬ M.Indep P.left ↔ M.Dep P.left := by
@@ -286,6 +319,11 @@ lemma _root_.Matroid.eConn_partition (hA : A ⊆ M.E) : (M.partition A).eConn = 
 
 @[simp]
 lemma _root_.Matroid.partition_dual (hA : A ⊆ M.E) : M✶.partition A hA = (M.partition A).dual := rfl
+
+lemma Trivial.eq_or_eq (h : P.Trivial) : P = M.partition ∅ ∨ P = M.partition M.E := by
+  obtain h | h := h
+  · exact .inl <| Partition.ext h (by simp [← P.compl_left, h])
+  exact .inr <| Partition.ext (by simp [← P.compl_right, h]) (by simpa)
 
 /-- Intersect a partition with the ground set of a smaller matroid -/
 @[simps]

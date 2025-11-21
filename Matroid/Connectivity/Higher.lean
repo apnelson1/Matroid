@@ -414,7 +414,9 @@ lemma PredConnected.dual (hdegen : ∀ ⦃k M X⦄, X ⊆ M.E → dg k M X → d
 /-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
 connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
 has a degenerate side in the of a specified `dg`.
-Unlike `PredConnected`, this is required to be symmetric in the two sides. -/
+Unlike `PredConnected`, this is required to be symmetric in the two sides.
+Internal connectivity is not an example of this, since it has a nondegeneracy condition that
+depends on the connectivity. -/
 def NumConnected (M : Matroid α) (dg : Matroid α → Set α → Prop) (k : ℕ∞) : Prop :=
     M.PredConnected (fun j M X ↦ j + 1 + 1 ≤ k → dg M X) (fun j M X ↦ j + 1 + 1 ≤ k → dg M X)
 
@@ -427,10 +429,62 @@ lemma numConnected_iff_forall {dg} : M.NumConnected dg (k+1) ↔
     isPredSeparation_iff, not_and, not_not]
   simp_rw [or_iff_not_imp_left]
 
+lemma NumConnected.not_isPredSeparation {dg} (h : M.NumConnected dg (k+1)) (hP : P.eConn + 1 ≤ k) :
+    ¬ P.IsPredSeparation dg dg := by
+  rw [numConnected_iff_forall] at h
+  exact h P hP
+
 lemma exists_of_not_numConnected {dg} (h : ¬ M.NumConnected dg (k+1)) :
     ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg := by
   simpa [numConnected_iff_forall] using h
 
+lemma not_numConnected_iff_exists {dg} : ¬ M.NumConnected dg (k+1) ↔
+    ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg := by
+  simp [numConnected_iff_forall]
+
+lemma Partition.IsPredSeparation.not_numConnected {dg} (h : P.IsPredSeparation dg dg) :
+    ¬ M.NumConnected dg (P.eConn + 1 + 1) :=
+  fun hM ↦ hM.not_isPredSeparation rfl.le h
+
+@[simp]
+lemma numConnected_zero (M : Matroid α) (dg) : M.NumConnected dg 0 := by
+  simp [NumConnected, PredConnected]
+
+@[simp]
+lemma numConnected_one (M : Matroid α) (dg) : M.NumConnected dg 1 := by
+  simp [NumConnected, PredConnected]
+
+lemma NumConnected.compl_degen {dg} (h : M.NumConnected dg k) :
+    M.NumConnected (fun M X ↦ dg M (M.E \ X)) k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  simpa [numConnected_iff_forall, isPredSeparation_iff, not_imp_comm] using h
+
+lemma NumConnected.mono_degen {dg dg'} (h : M.NumConnected dg k)
+    (hdg : ∀ ⦃X⦄, X ⊆ M.E → dg M X → dg' M X) : M.NumConnected dg' k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [numConnected_iff_forall] at h ⊢
+  exact fun P hPc hP ↦ h P hPc ⟨mt (hdg P.left_subset_ground) hP.1,
+    mt (hdg P.right_subset_ground) hP.2⟩
+
+lemma NumConnected.congr_degen {dg dg'} (hdg : ∀ ⦃X⦄, X ⊆ M.E → (dg M X ↔ dg' M X)) :
+    M.NumConnected dg = M.NumConnected dg' := by
+  ext k
+  exact ⟨fun h ↦ h.mono_degen fun X hX ↦ (hdg hX).1, fun h ↦ h.mono_degen fun X hX ↦ (hdg hX).2⟩
+
+lemma NumConnected.dual {dg} (h : M.NumConnected dg k) : M✶.NumConnected (fun M X ↦ dg M✶ X) k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [numConnected_iff_forall] at h ⊢
+  exact fun P hPc hP ↦ h P.ofDual (by simpa) ⟨(by simpa using hP.1), (by simpa using hP.2)⟩
+
+lemma NumConnected.of_dual {dg} (h : M✶.NumConnected dg k) :
+    M.NumConnected (fun M X ↦ dg M✶ X) k := by
+  simpa using h.dual
+
+lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg : dg M ∅) :
+    M.NumConnected dg k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [numConnected_iff_forall]
+  refine fun P hPconn hP ↦ ?_
 
 
 /-! ### Tutte Connectivity -/
@@ -441,45 +495,37 @@ The term has always been defined this way, but the difference of two is very awk
 
 For this reason, we use `TutteConnected (k+1)` in the API in all places except where
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
-def TutteConnected (M : Matroid α) (k : ℕ∞) := M.PredConnected
-    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
-    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
+def TutteConnected (M : Matroid α) (k : ℕ∞) := M.NumConnected (fun M X ↦ M.Indep X ∧ M.Coindep X) k
 
-lemma not_tutteConnected_iff_exists :
-    ¬ M.TutteConnected (k + 1) ↔ ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation := by
-  simp [TutteConnected, not_predConnected_iff, Partition.IsTutteSeparation,
-    Partition.isPredSeparation_iff, ← and_and_left, ← one_add_one_eq_two, ← add_assoc]
 
-lemma tutteConnected_iff_forall :
-    M.TutteConnected (k + 1) ↔ ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation := by
-  rw [← not_iff_not]
-  simp [not_tutteConnected_iff_exists]
+lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
+    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation :=
+  not_numConnected_iff_exists
 
-lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k := by
-  refine PredConnected.dual (fun t N X hX h' hle ↦ ?_) h
-  rw [dual_coindep_iff, and_comm]
-  exact h' hle
+lemma tutteConnected_iff_forall : M.TutteConnected (k + 1) ↔
+    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation :=
+  numConnected_iff_forall
+
+lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k :=
+  (NumConnected.dual h).mono_degen <| by simp +contextual [coindep_def]
 
 lemma TutteConnected.of_dual (h : M✶.TutteConnected k) : M.TutteConnected k :=
   M.dual_dual ▸ h.dual
 
 lemma TutteConnected.mono (h : M.TutteConnected k) (hjk : j ≤ k) : M.TutteConnected j :=
-  PredConnected.mono (fun _ _ _ _ h' hle ↦ h' (hle.trans hjk)) h
+  NumConnected.mono h hjk
 
 @[gcongr]
 lemma TutteConnected.mono'
     (hjk : j ≤ k) (h : M.TutteConnected k) : M.TutteConnected j := h.mono hjk
 
 @[simp]
-lemma tutteConnected_one (M : Matroid α) : M.TutteConnected 1 := by
-  rw [← zero_add 1]
-  by_contra! hcon
-  obtain ⟨P, hPle, -⟩ := not_tutteConnected_iff_exists.1 hcon
-  enat_to_nat!; linarith
+lemma tutteConnected_one (M : Matroid α) : M.TutteConnected 1 :=
+  numConnected_one M _
 
 @[simp]
 lemma tutteConnected_zero (M : Matroid α) : M.TutteConnected 0 :=
-  M.tutteConnected_one.mono <| zero_le ..
+  numConnected_zero M _
 
 lemma tutteConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.TutteConnected k := by
   obtain rfl | rfl : k = 0 ∨ k = 1 := by enat_to_nat; omega
@@ -924,6 +970,7 @@ extension of a nontrivial sparse paving matroid by `e`.  -/
 lemma TutteConnected.deleteElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.E.encard + 1)
     (e : α) : (M ＼ {e}).TutteConnected k := by
   simpa using (h.dual.contractElem (by simpa) e).dual
+
 
 end Minor
 

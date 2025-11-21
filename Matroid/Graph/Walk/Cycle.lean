@@ -34,6 +34,7 @@ lemma IsClosed.isWalk_rotate_iff (hc : w.IsClosed) {n} : G.IsWalk (w.rotate n) �
   have h' := h.intRotate (hc.rotate _) (-n)
   rwa [← hc.intRotate_eq_rotate, hc.intRotate_intRotate, add_neg_cancel, intRotate_zero] at h'
 
+
 /-- `G.IsCycle C` means that `C` is a nonempty closed walk with no repeated vertices or edges. -/
 @[mk_iff]
 structure IsCycle (G : Graph α β) (C : WList α β) : Prop extends G.IsTrail C where
@@ -323,5 +324,7 @@ lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
+
+
 
 end Graph

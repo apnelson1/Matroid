@@ -88,27 +88,27 @@ lemma NeBot_of_ncard_positive {G : Graph α β} (h : 0 < V(G).ncard) : G.NeBot :
 lemma eDegree_eq_top (hx : G.eDegree x = ⊤) : ¬ G.LocallyFinite :=
   fun _ ↦ eDegree_ne_top hx
 
-lemma locallyFinite_of_eDegree_ne_top (hG : ∀ x, G.eDegree x ≠ ⊤) : G.LocallyFinite := by
-  by_contra! hcon
-  simp [locallyFinite_iff] at hcon
-  obtain ⟨x, hx⟩ := hcon
-  refine hG x ?_
-  rw [eq_top_iff]
-  suffices {e | G.Inc e x}.encard = ⊤ by
-   rw [←this]
-   exact G.encard_setOf_inc_le_eDegree x
-  simpa
+-- lemma locallyFinite_of_eDegree_ne_top (hG : ∀ x, G.eDegree x ≠ ⊤) : G.LocallyFinite := by
+--   by_contra! hcon
+--   simp [locallyFinite_iff] at hcon
+--   obtain ⟨x, hx⟩ := hcon
+--   refine hG x ?_
+--   rw [eq_top_iff]
+--   suffices {e | G.Inc e x}.encard = ⊤ by
+--    rw [←this]
+--    exact G.encard_setOf_inc_le_eDegree x
+--   simpa
 
-lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFinite :=
-  ⟨locallyFinite_of_eDegree_ne_top, fun _ _ ↦ eDegree_ne_top⟩
+-- lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFinite :=
+--   ⟨locallyFinite_of_eDegree_ne_top, fun _ _ ↦ eDegree_ne_top⟩
 
-lemma exists_eDegree_eq_top_of_not_locallyFinite (hG : ¬ G.LocallyFinite) :
-    ∃ x, G.eDegree x = ⊤ := by
-  simp [←forall_eDegree_ne_top_iff] at hG
-  assumption
+-- lemma exists_eDegree_eq_top_of_not_locallyFinite (hG : ¬ G.LocallyFinite) :
+--     ∃ x, G.eDegree x = ⊤ := by
+--   simp [←forall_eDegree_ne_top_iff] at hG
+--   assumption
 
-lemma exists_eDegree_eq_top_iff : (∃ x, G.eDegree x = ⊤) ↔ ¬ G.LocallyFinite := by
-  refine ⟨fun ⟨_, hx⟩ ↦ eDegree_eq_top hx, exists_eDegree_eq_top_of_not_locallyFinite⟩
+-- lemma exists_eDegree_eq_top_iff : (∃ x, G.eDegree x = ⊤) ↔ ¬ G.LocallyFinite := by
+--   refine ⟨fun ⟨_, hx⟩ ↦ eDegree_eq_top hx, exists_eDegree_eq_top_of_not_locallyFinite⟩
 
 noncomputable def minEDegree (G : Graph α β) : ℕ∞ :=
   ⨅ x ∈ V(G), G.eDegree x
@@ -662,17 +662,6 @@ lemma IsPath.exists_isPath_vertex (P : WList α β) (hP : G.IsPath P) (hu : u �
   prefixUntilVertex_suffixFromVertex_length P u hu,
   Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
 
-lemma idxOf_concat_ne (w : WList α β) (e) (hx : x ∈ w) :
-    (w.concat e y).idxOf x = w.idxOf x := by
-  induction w with
-  | nil u => simp_all
-  | cons u f w ih =>
-  simp
-  obtain rfl | hu := eq_or_ne x u
-  · rw [idxOf_cons_self, idxOf_cons_self]
-  rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
-  simp_all
-
 lemma Cycle_conc_index
     (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
     : v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
@@ -682,7 +671,7 @@ lemma Cycle_conc_index
   · refine ⟨ h2, ?_ ⟩
     rw [idxOf_cons_ne huv.symm e (P.concat f u) ]
     simp
-    rwa [idxOf_concat_ne P f ]
+    rwa [idxOf_concat_of_mem]
   · exact False.elim (huv rfl)
 
 lemma prefixUntilVertex_index (w : WList α β) (x : α) (hx : x ∈ w)
@@ -806,7 +795,7 @@ lemma IsCycle.idxOf_rotate_one {a  : α} {C : WList α β} (hC : G.IsCycle C)
       exact h1 (id (Eq.symm hfirst))
     exact h1
   have := idx_Of_tail hnt h1 ha
-  rwa [h, idxOf_concat_ne C.tail e hat]
+  rwa [h, idxOf_concat_of_mem hat]
 
 lemma IsCycle.idxOf_rotate_first {a  : α} {n : ℕ} {C : WList α β} (hC : G.IsCycle C)
     (hn : n < C.length) (hle : n + 1 ≤ C.idxOf a ) : (C.rotate n).first ≠ a := by
@@ -817,9 +806,8 @@ lemma IsCycle.idxOf_rotate_first {a  : α} {n : ℕ} {C : WList α β} (hC : G.I
   linarith
 
 lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} {C : WList α β} (hC : G.IsCycle C)
-    (ha : a ∈ C) (hn : n < C.length)
-    (hnt : C.Nonempty) (hle : n ≤ C.idxOf a ) :
-    (C.rotate n).idxOf a + n  = C.idxOf a := by
+    (ha : a ∈ C) (hle : n ≤ C.idxOf a) : (C.rotate n).idxOf a + n  = C.idxOf a := by
+  have hn := hle.trans_lt <| hC.isClosed.idxOf_lt_length ha hC.nonempty
   induction n with
   | zero =>
   simp_all
@@ -834,21 +822,29 @@ lemma IsCycle.idxOf_rotate_n_le {a  : α} {n : ℕ} {C : WList α β} (hC : G.Is
     by_contra hc
     rw[←hc, idxOf_get hC (Nat.lt_of_succ_lt hn) ] at hle
     linarith
-  have hf := (rotate hC n ).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hnt )
+  have hf := (rotate hC n ).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hC.nonempty )
       han (((hC.isClosed).mem_rotate).2 ha)
-  have := hi (Nat.lt_of_succ_lt hn) hle'
+  have := hi hle' (by linarith)
   linarith
 
 
+lemma IsCycle.idxOf_rotate_one_first' {C : WList α β} (hC : G.IsCycle C) :
+    (C.rotate 1).idxOf C.first + 1 = C.length := by
+  obtain ⟨e, hrC⟩ := hC.rotate_one
+  rw [hrC, idxOf_concat_of_mem, hC.isClosed.eq, ← tail_last, idxOf_last _ hC.nodup, tail_length,
+    Nat.sub_add_cancel hC.nonempty.length_pos]
+  rw [hC.isClosed.mem_tail_iff]
+  exact first_mem
+
 lemma IsCycle.idxOf_rotate_one_first {a  : α} {C : WList α β} (hC : G.IsCycle C)
-    (h1 : C.first = a ) (ha : a ∈ C) :
-    (C.rotate 1).idxOf a + 1 = C.length := by
+    (h1 : C.first = a) (ha : a ∈ C) : (C.rotate 1).idxOf a + 1 = C.length := by
   obtain ⟨e, hrC ⟩ := hC.rotate_one
   have hft : C.first = C.last := (hC.isClosed).eq
   rw [h1] at hft
-  rw [hrC, idxOf_concat_ne C.tail e ((hC.isClosed).mem_tail_iff.2 ha ), hft, (tail_last C).symm ,
+  rw [hrC, idxOf_concat_of_mem ((hC.isClosed).mem_tail_iff.2 ha ), hft, (tail_last C).symm ,
   idxOf_last C.tail (hC.nodup), tail_length]
-  sorry
+  have := hC.nonempty.length_pos
+  omega
 
 lemma IsCycle.idxOf_rotate_untilfirst {a  : α} {C : WList α β} (hC : G.IsCycle C) (ha : a ∈ C) :
     (C.rotate (C.idxOf a + 1)).idxOf a + 1 = C.length := by
@@ -859,6 +855,17 @@ lemma IsCycle.idxOf_rotate_untilfirst {a  : α} {C : WList α β} (hC : G.IsCycl
   rw[←rotate_rotate C (C.idxOf a) 1, (rotate hC (C.idxOf a)).idxOf_rotate_one_first
     (Eq.symm (rotate_idxOf_first ha)).symm ha' ]
   simp
+
+/-! #EXAMPLE of wlog tactic
+-- example (M : Matroid α) (hconn : M.TutteConnected 17) : 100 < M.E.encard := by
+--   -- we may assume that `M` has lower rank than corank, because the statement is self-dual
+--   wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
+--   · specialize aux M✶ (by simpa) ?_
+--     · simp
+--       exact (not_le.1 hle).le
+--     simpa using aux
+--   -- prove the theorem with an added assumption
+-/
 
 lemma IsCycle.idxOf_rotate_n {a  : α} {n : ℕ} (C : WList α β) (hC : G.IsCycle C)
     (hnt : C.Nonempty) (ha : a ∈ C) (hn : n < C.length)

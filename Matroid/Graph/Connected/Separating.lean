@@ -15,6 +15,11 @@ open Graph WList Set
 
 namespace Graph
 
+-- @[mk_iff]
+-- structure IsSepSet (G : Graph α β) (S : Set α) : Prop where
+--   subset_vx : S ⊆ V(G)
+--   not_connected : ¬ (G - S).Connected
+
 def IsSepSet (G : Graph α β) (S : Set (α)) : Prop :=
   (S ⊆ V(G)) ∧ ¬ (G - S).Connected
 

@@ -723,6 +723,7 @@ lemma idxOf_last (w : WList α β) (hw : w.vertex.Nodup) : w.idxOf w.last = w.le
   simp
   exact ih (Nodup.of_cons hw)
 
+
 end indices
 
 end WList
