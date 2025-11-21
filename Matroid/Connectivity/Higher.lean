@@ -322,10 +322,12 @@ lemma IsStrongSeparation.isTutteSeparation (h : P.IsStrongSeparation) : P.IsTutt
   h.isVerticalSeparation.isTutteSeparation
 
 lemma isStrongSeparation_iff : P.IsStrongSeparation ↔
+    M.Dep P.left ∧ M.Codep P.left ∧ M.Dep P.right ∧ M.Codep P.right := by
+  simp [IsStrongSeparation, isPredSeparation_iff, and_assoc]
+
+lemma isStrongSeparation_iff' : P.IsStrongSeparation ↔
     M.Dep P.left ∧ M.Dep P.right ∧ M.Nonspanning P.left ∧ M.Nonspanning P.right := by
-  simp only [IsStrongSeparation, isPredSeparation_iff, not_or, Partition.left_subset_ground,
-    not_indep_iff, dual_ground, dep_dual_iff, ← nonspanning_compl_iff, compl_left,
-    Partition.right_subset_ground, compl_right]
+  rw [isStrongSeparation_iff, P.codep_left_iff, P.codep_right_iff]
   tauto
 
 end Partition
@@ -353,7 +355,7 @@ lemma Dep.partition_isCyclicSeparation (hX : M.Dep X) (hXc : M.Dep (M.E \ X)) :
 lemma Dep.partition_isStrongSeparation (hX : M.Dep X) (hns : M.Nonspanning X)
     (hXc : M.Dep (M.E \ X)) (hXsc : M.Nonspanning (M.E \ X)) :
     (M.partition X).IsStrongSeparation := by
-  simp_all [Partition.isStrongSeparation_iff]
+  simp_all [Partition.isStrongSeparation_iff']
 
 variable {dg dg' : ℕ∞ → Matroid α → Set α → Prop}
 
@@ -408,6 +410,29 @@ lemma PredConnected.dual (hdegen : ∀ ⦃k M X⦄, X ⊆ M.E → dg k M X → d
     (h : M.PredConnected dg dg) : M✶.PredConnected dg' dg' :=
   fun P ↦ by simpa using h.mono (dg' := fun k N Y ↦ dg' k N✶ Y) (by simpa) P.ofDual
 
+
+/-- A slightly more concrete notion of connectivity that still abstracts Tutte, vertical and cyclic
+connectivity. `M.numConnected dg (k+1)` means that every separation of connectivity less than `k`
+has a degenerate side in the of a specified `dg`.
+Unlike `PredConnected`, this is required to be symmetric in the two sides. -/
+def NumConnected (M : Matroid α) (dg : Matroid α → Set α → Prop) (k : ℕ∞) : Prop :=
+    M.PredConnected (fun j M X ↦ j + 1 + 1 ≤ k → dg M X) (fun j M X ↦ j + 1 + 1 ≤ k → dg M X)
+
+lemma NumConnected.mono {dg} (h : M.NumConnected dg k) (hjk : j ≤ k) : M.NumConnected dg j :=
+  PredConnected.mono (fun _ _ _ _ h hle ↦ h (hle.trans hjk)) h
+
+lemma numConnected_iff_forall {dg} : M.NumConnected dg (k+1) ↔
+    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsPredSeparation dg dg := by
+  simp only [NumConnected, PredConnected, ENat.add_one_le_add_one_iff, ← imp_or,
+    isPredSeparation_iff, not_and, not_not]
+  simp_rw [or_iff_not_imp_left]
+
+lemma exists_of_not_numConnected {dg} (h : ¬ M.NumConnected dg (k+1)) :
+    ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg := by
+  simpa [numConnected_iff_forall] using h
+
+
+
 /-! ### Tutte Connectivity -/
 
 /-- `M` is `k`-connected if the connectivity of every Tutte separation strictly exceeds `k - 2`.
@@ -416,9 +441,9 @@ The term has always been defined this way, but the difference of two is very awk
 
 For this reason, we use `TutteConnected (k+1)` in the API in all places except where
 no convenience is lost. Vertical and Cyclic connectivities have the same issues. -/
-def TutteConnected (M : Matroid α) (k : ℕ∞) :=
-    M.PredConnected (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
-      (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
+def TutteConnected (M : Matroid α) (k : ℕ∞) := M.PredConnected
+    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
+    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∧ M.Coindep X)
 
 lemma not_tutteConnected_iff_exists :
     ¬ M.TutteConnected (k + 1) ↔ ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsTutteSeparation := by
@@ -521,7 +546,7 @@ lemma exists_strong_or_small_of_not_tutteConnected (h : ¬ M.TutteConnected (k +
   refine fun N Q h1 h2 h3 h4 ⟨hQconn, hQ⟩ ↦ ⟨Q, hQconn, hQ, .inl ?_⟩
   simp only [Partition.left_subset_ground, not_indep_iff, Partition.right_subset_ground,
     dual_ground, dep_dual_iff, Q.codep_left_iff, Q.codep_right_iff] at h1 h2 h3 h4
-  simp [Partition.isStrongSeparation_iff, h1, h2, h3, h4]
+  simp [Partition.isStrongSeparation_iff', h1, h2, h3, h4]
 
 /-! ### Vertical Connectivity -/
 
@@ -665,6 +690,18 @@ lemma CyclicallyConnected.not_isCyclicSeparation (h : M.CyclicallyConnected k)
     (hP : P.eConn + 1 + 1 ≤ k) : ¬ P.IsCyclicSeparation :=
   fun h' ↦ h'.not_cyclicallyConnected <| h.mono hP
 
+@[simp]
+lemma cyclicallyConnected_zero (M : Matroid α) : M.CyclicallyConnected 0 :=
+    M.tutteConnected_zero.cyclicallyConnected
+
+@[simp]
+lemma cyclicallyConnected_one (M : Matroid α) : M.CyclicallyConnected 1 :=
+    M.tutteConnected_one.cyclicallyConnected
+
+@[simp]
+lemma cyclicallyConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.CyclicallyConnected k :=
+    (M.tutteConnected_of_le_one hk).cyclicallyConnected
+
 lemma cyclicallyConnected_top_iff :
     M.CyclicallyConnected ⊤ ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Indep (M.E \ X) := by
   simp_rw [← verticallyConnected_dual_iff, verticallyConnected_top_iff, dual_ground]
@@ -718,7 +755,6 @@ lemma TutteConnected.le_girth (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.
 for `k = ⊤`. This is also false for matroids like `U₂,₅` if there is no lower bound on size. -/
 lemma tutteConnected_iff_verticallyConnected_girth (hlt : 2 * k < M.E.encard + 1) :
     M.TutteConnected (k + 1) ↔ M.VerticallyConnected (k + 1) ∧ k + 1 ≤ M.girth := by
-  -- obtain (rfl | ⟨k, rfl⟩) := k.eq_zero_or_exists_eq_add_one; simp [M.one_le_girth]
   have hk : k ≠ ⊤ := by rintro rfl; simp at hlt
   refine ⟨fun h ↦ ⟨h.verticallyConnected, h.le_girth ?_⟩, fun ⟨h', hle⟩ ↦ by_contra fun h ↦ ?_⟩
   · enat_to_nat!
@@ -767,6 +803,67 @@ lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < 
   refine hC.dep.partition_isCyclicSeparation (hb.dep_of_ssubset ?_)
   exact P.compl_right ▸ diff_ssubset_diff_right P.right_subset_ground hssu
 
+/-! ### Internal Connectivity -/
+
+/-- A weakly `(k+1)`-connected matroid is one with no strong separation of order less than `k`. -/
+def WeaklyConnected (M : Matroid α) (k : ℕ∞) : Prop := M.PredConnected
+    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∨ M.Coindep X)
+    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∨ M.Coindep X)
+
+lemma weaklyConnected_iff_forall : M.WeaklyConnected (k + 1) ↔
+    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation := by
+  simp only [WeaklyConnected, PredConnected, ← one_add_one_eq_two, ← add_assoc,
+    ENat.add_one_le_add_one_iff, ← imp_or, isStrongSeparation_iff, not_and, not_codep_right_iff]
+  simp [or_iff_not_imp_left]
+
+@[simp]
+lemma weaklyConnected_zero (M : Matroid α) : M.WeaklyConnected 0 := by
+  simp [WeaklyConnected, PredConnected]
+
+@[simp]
+lemma weaklyConnected_one (M : Matroid α) : M.WeaklyConnected 1 := by
+  simp [WeaklyConnected, PredConnected,
+    show ∀ x : ℕ∞, ¬ (x + 2 ≤ 1) from fun x h ↦ by enat_to_nat; omega]
+
+/-- `M` is internally `(k+1)`-connected if it is weakly `(k+1)`-connected and `k`-Tutte-connected.-/
+structure InternallyConnected (M : Matroid α) (k : ℕ∞) : Prop where
+    weaklyConnected : M.WeaklyConnected k
+    tutteConnected' : M.TutteConnected (k-1)
+
+lemma InternallyConnected.tutteConnected (h : M.InternallyConnected (k+1)) :
+    M.TutteConnected k := by
+  have h' := h.2
+  enat_to_nat <;> simpa using h'
+
+lemma internallyConnected_iff' :
+    M.InternallyConnected k ↔ M.WeaklyConnected k ∧ M.TutteConnected (k-1) :=
+  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+lemma internallyConnected_iff :
+    M.InternallyConnected (k + 1) ↔ M.WeaklyConnected (k + 1) ∧ M.TutteConnected k := by
+  rw [internallyConnected_iff', ENat.add_sub_cancel_right _ (by simp)]
+
+@[simp]
+lemma internallyConnected_zero (M : Matroid α) : M.InternallyConnected 0 := by
+  simp [internallyConnected_iff']
+
+@[simp]
+lemma internallyConnected_one (M : Matroid α) : M.InternallyConnected 1 := by
+  simp [internallyConnected_iff']
+
+lemma internallyConnected_iff_forall : M.InternallyConnected (k + 1) ↔
+    ∀ (P : M.Partition), (P.eConn + 1 + 1 ≤ k → ¬ P.IsTutteSeparation) ∧
+      (P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation) := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  simp only [internallyConnected_iff, weaklyConnected_iff_forall, ENat.add_one_le_add_one_iff,
+    tutteConnected_iff_forall]
+  grind
+
+-- lemma InternallyConnected.not_isStrongSeparation (h : M.InternallyConnected (k + 1))
+--     (hP : P.eConn + 1 ≤ k) : ¬ P.IsStrongSeparation := by
+--   have := (internallyConnected_iff_forall.1 h)
+
+
 section Minor
 
 lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + M.eRk C)) :
@@ -788,12 +885,9 @@ lemma VerticallyConnected.contract_of_top (h : M.VerticallyConnected ⊤) (C : S
     (M ／ C).VerticallyConnected ⊤ :=
   (h.mono le_top).contract
 
-/-- I believe that this is false for `k` infinite, since there could be a single element coblocking
-an infinite Tutte separation : hence the strict inequality.  -/
 lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))
     (hnt : 2 * (k + M.eRk C) < M.E.encard + 1) : (M ／ C).TutteConnected (k + 1) := by
-  obtain rfl | hne := eq_or_ne k 0
-  · simp
+  obtain rfl | hne := eq_or_ne k 0; simp
   wlog hCE : C ⊆ M.E generalizing C with aux
   · specialize aux (C := C ∩ M.E)
     grw [M.eRk_mono inter_subset_left, imp_iff_right inter_subset_right,
@@ -801,9 +895,7 @@ lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 
     exact aux h hnt
   have hnt' := Order.le_of_lt_add_one hnt
   have hgirth := h.le_girth hnt'
-  have hC : M.Indep C := by
-    apply indep_of_eRk_add_one_lt_girth _ hCE
-    enat_to_nat! <;> omega
+  have hC : M.Indep C := indep_of_eRk_add_one_lt_girth (by enat_to_nat! <;> omega) hCE
   have hfin : C.Finite := not_infinite.1 fun hinf ↦ by
     simp [hC.eRk_eq_encard, hinf.encard_eq] at hnt
   rw [tutteConnected_iff_verticallyConnected_girth]
@@ -821,12 +913,14 @@ lemma TutteConnected.delete {D : Set α} (h : M.TutteConnected (k + M✶.eRk D +
 
 lemma TutteConnected.contractElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.E.encard + 1)
     (e : α) : (M ／ {e}).TutteConnected k := by
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
-  · simp
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   refine TutteConnected.contract (h.mono (by grw [eRk_singleton_le])) ?_
   grw [eRk_singleton_le]
   assumption
 
+
+/-- I believe that this is false for `k` infinite, such as in the case where `M` is a free
+extension of a nontrivial sparse paving matroid by `e`.  -/
 lemma TutteConnected.deleteElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.E.encard + 1)
     (e : α) : (M ＼ {e}).TutteConnected k := by
   simpa using (h.dual.contractElem (by simpa) e).dual

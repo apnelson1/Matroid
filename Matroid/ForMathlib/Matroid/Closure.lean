@@ -67,6 +67,11 @@ lemma not_spanning_iff (hXE : X ⊆ M.E := by aesop_mat) :
     ¬ M.Spanning X ↔ M.Nonspanning X := by
   rw [nonspanning_iff, and_iff_left hXE]
 
+lemma spanning_or_nonspanning (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Spanning X ∨ M.Nonspanning X := by
+  rw [← not_spanning_iff]
+  apply em
+
 @[simp]
 lemma compl_not_spanning_iff : ¬ M.Spanning (M.E \ X) ↔ M.Nonspanning (M.E \ X) := by
   rw [not_spanning_iff]

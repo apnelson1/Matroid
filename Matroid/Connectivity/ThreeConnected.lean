@@ -1,4 +1,4 @@
-import Matroid.Connectivity.HigherConnected
+import Matroid.Connectivity.Higher
 
 open Set
 

@@ -145,6 +145,14 @@ lemma not_coindep_right_iff : ¬ M.Coindep P.right ↔ M.Codep P.right := by
   rw [not_coindep_iff]
 
 @[simp]
+lemma not_codep_left_iff : ¬ M.Codep P.left ↔ M.Coindep P.left := by
+  rw [← not_coindep_iff, not_not]
+
+@[simp]
+lemma not_codep_right_iff : ¬ M.Codep P.right ↔ M.Coindep P.right := by
+  rw [← not_coindep_iff, not_not]
+
+@[simp]
 lemma not_indep_dual_left_iff : ¬ M✶.Indep P.left ↔ M.Codep P.left := by
   rw [not_coindep_iff]
 
