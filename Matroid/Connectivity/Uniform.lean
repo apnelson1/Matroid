@@ -22,7 +22,7 @@ lemma Paving.cyclicallyConnected_of_verticallyConnected (h : M.Paving)
   rw [Partition.isCyclicSeparation_iff] at hP
   wlog hs : M.Spanning P.left generalizing P with aux
   · refine hconn.not_isVerticalSeparation (P := P) (by simpa) ?_
-    rw [Partition.isVerticalSeparation_iff, ← not_spanning_iff, and_iff_right hs,
+    rw [Partition.isVerticalSeparation_iff_nonspanning, ← not_spanning_iff, and_iff_right hs,
       ← not_spanning_iff]
     exact aux P.symm (by simpa) ⟨hP.2, hP.1⟩
   grw [← hPconn, ← P.eConn_left, hs.eConn_eq, P.compl_left,
@@ -45,3 +45,22 @@ lemma SparsePaving.tutteConnected_of_eRank_gt_eRank_dual_ge (h : M.SparsePaving)
 lemma SparsePaving.tutteConnected_of_eRank_ge_eRank_dual_gt (h : M.SparsePaving)
     (h1 : k ≤ M.eRank) (h2 : k < M✶.eRank) : M.TutteConnected k :=
   by simpa using (h.dual.tutteConnected_of_eRank_gt_eRank_dual_ge h2 (by simpa)).dual
+
+lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  rw [tutteConnected_top_iff_forall]
+  refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
+  grw [← P.eConn_left, eConn_le_eRk, eRk_le_eRank, hle]
+
+lemma TutteConnected.tutteConnected_top_of_eRank_dual_add_one_le
+    (h : M.TutteConnected (k + 1)) (hle : M✶.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
+  simpa using h.dual.tutteConnected_top_of_eRank_add_one_le hle
+
+lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
+    (h : M.TutteConnected (k + 1)) (hlt : M.E.encard + 1 ≤ 2 * k) : M.TutteConnected ⊤ := by
+  wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
+  · simpa using aux h.dual (by simpa) (by simpa using (not_le.1 hle).le)
+  obtain hle | hlt' := le_or_gt (M.eRank + 1) k
+  · exact h.tutteConnected_top_of_eRank_add_one_le hle
+  grw [← M.eRank_add_eRank_dual] at hlt
+  enat_to_nat!; omega

@@ -25,6 +25,14 @@ theorem Set.Finite.encard_union_eq_add_encard_iff_disjoint (h : (s ∪ t).Finite
     simp
   rw [encard_pair hne]
 
+lemma two_le_encard_iff_nontrivial : 2 ≤ s.encard ↔ s.Nontrivial := by
+  rw [← s.one_lt_encard_iff_nontrivial, ← one_add_one_eq_two, ENat.add_one_le_iff (by simp)]
+
+lemma Set.Subsingleton.eq_or_eq_of_subset (h : s.Subsingleton) (hts : t ⊆ s) : t = ∅ ∨ t = s := by
+  obtain rfl | ⟨x, rfl⟩ := (h.anti hts).eq_empty_or_singleton
+  · simp
+  simp [h.eq_singleton_of_mem (by simpa using hts)]
+
 theorem Set.Infinite.exists_finite_subset_encard_gt (hs : s.Infinite) (b : ℕ) :
     ∃ t ⊆ s, b < t.encard ∧ t.Finite := by
   obtain ⟨t, hts, hcard⟩ := hs.exists_subset_card_eq (b + 1)

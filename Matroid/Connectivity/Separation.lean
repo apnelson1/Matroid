@@ -5,7 +5,6 @@ import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Matroid.Sum
 
-set_option linter.style.longLine false
 open Set
 
 namespace Matroid
@@ -113,8 +112,9 @@ protected lemma trivial_def' : P.Trivial ↔ P.left = M.E ∨ P.right = M.E := b
 lemma Trivial.eq_ground_or_eq_ground (h : P.Trivial) : P.left = M.E ∨ P.right = M.E := by
   rwa [← P.trivial_def']
 
-lemma trivial_of_ground_subsingleton (P : M.Partition) (h : M.E.Subsingleton) : P.Trivial := by
-  sorry
+lemma trivial_of_ground_subsingleton (P : M.Partition) (h : M.E.Subsingleton) : P.Trivial :=
+  (h.eq_or_eq_of_subset P.left_subset_ground).elim trivial_of_left_eq_empty
+    trivial_of_left_eq_ground
 
 noncomputable abbrev eConn (P : M.Partition) : ℕ∞ := M.eLocalConn P.1 P.2
 

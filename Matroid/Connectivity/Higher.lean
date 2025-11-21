@@ -204,7 +204,7 @@ lemma IsTutteSeparation.exists_of_indep_left (h : P.IsTutteSeparation) (hi : M.I
 
 /-- A vertical separation is one with both sides nonspanning. -/
 abbrev IsVerticalSeparation (P : M.Partition) : Prop :=
-  IsPredSeparation Matroid.Spanning Matroid.Spanning P
+  IsPredSeparation Matroid.Coindep Matroid.Coindep P
 
 @[simp]
 lemma isVerticalSeparation_symm : P.symm.IsVerticalSeparation = P.IsVerticalSeparation :=
@@ -212,17 +212,20 @@ lemma isVerticalSeparation_symm : P.symm.IsVerticalSeparation = P.IsVerticalSepa
 
 lemma IsVerticalSeparation.isTutteSeparation (h : P.IsVerticalSeparation) :
     P.IsTutteSeparation :=
-  h.mono_symm fun _ _ _ hsp ↦ hsp.2.compl_spanning
+  h.mono fun _ _ _ ↦ And.right
 
-lemma isVerticalSeparation_iff :
-    P.IsVerticalSeparation ↔ M.Nonspanning P.left ∧ M.Nonspanning P.right := by
+lemma isVerticalSeparation_iff : P.IsVerticalSeparation ↔ M.Codep P.left ∧ M.Codep P.right := by
   simp [IsVerticalSeparation, isPredSeparation_iff]
 
+lemma isVerticalSeparation_iff_nonspanning :
+    P.IsVerticalSeparation ↔ M.Nonspanning P.left ∧ M.Nonspanning P.right := by
+  rw [isVerticalSeparation_iff, P.codep_left_iff, P.codep_right_iff, and_comm]
+
 lemma IsVerticalSeparation.nonspanning_left (h : P.IsVerticalSeparation) : M.Nonspanning P.left :=
-  (isVerticalSeparation_iff.1 h).1
+  (isVerticalSeparation_iff_nonspanning.1 h).1
 
 lemma IsVerticalSeparation.nonspanning_right (h : P.IsVerticalSeparation) : M.Nonspanning P.right :=
-  (isVerticalSeparation_iff.1 h).2
+  (isVerticalSeparation_iff_nonspanning.1 h).2
 
 lemma isVerticalSeparation_iff_eRk (h : P.eConn ≠ ⊤) :
     P.IsVerticalSeparation ↔ P.eConn < M.eRk P.left ∧ P.eConn < M.eRk P.right := by
@@ -232,7 +235,7 @@ lemma isVerticalSeparation_iff_eRk (h : P.eConn ≠ ⊤) :
 
 lemma isVerticalSeparation_iff_nullity_dual :
     P.IsVerticalSeparation ↔ 1 ≤ M✶.nullity P.left ∧ 1 ≤ M✶.nullity P.right := by
-  simp [ENat.one_le_iff_ne_zero, isVerticalSeparation_iff, Partition.codep_left_iff,
+  simp [ENat.one_le_iff_ne_zero, isVerticalSeparation_iff_nonspanning, Partition.codep_left_iff,
     Partition.codep_right_iff, and_comm]
 
 lemma isVerticalSeparation_of_lt_lt (h_left : P.eConn < M.eRk P.left)
@@ -249,10 +252,10 @@ lemma isCyclicSeparation_symm : P.symm.IsCyclicSeparation = P.IsCyclicSeparation
   isPredSeparation_symm
 
 lemma IsVerticalSeparation.dual (h : P.IsVerticalSeparation) : P.dual.IsCyclicSeparation :=
-  h.dual_compl fun _ _ _ hsp ↦ hsp.coindep.compl_spanning
+  IsPredSeparation.dual (by simp) h
 
 lemma IsCyclicSeparation.dual (h : P.IsCyclicSeparation) : P.dual.IsVerticalSeparation :=
-  h.dual_compl fun _ _ _ hd ↦ hd.compl_coindep
+  IsPredSeparation.dual (by simp) h
 
 lemma IsCyclicSeparation.isTutteSeparation (h : P.IsCyclicSeparation) :
     P.IsTutteSeparation :=
@@ -269,11 +272,13 @@ lemma IsCyclicSeparation.dep_right (h : P.IsCyclicSeparation) : M.Dep P.right :=
 
 @[simp]
 lemma isCyclicSeparation_dual_iff : P.dual.IsCyclicSeparation ↔ P.IsVerticalSeparation := by
-  simp [isCyclicSeparation_iff, isVerticalSeparation_iff, ← nonspanning_compl_iff, and_comm]
+  simp [isCyclicSeparation_iff, isVerticalSeparation_iff_nonspanning, ← nonspanning_compl_iff,
+    and_comm]
 
 @[simp]
 lemma isVerticalSeparation_dual_iff : P.dual.IsVerticalSeparation ↔ P.IsCyclicSeparation := by
-  simp [isCyclicSeparation_iff, isVerticalSeparation_iff, nonspanning_dual_iff, and_comm]
+  simp [isCyclicSeparation_iff, isVerticalSeparation_iff_nonspanning, nonspanning_dual_iff,
+    and_comm]
 
 @[simp]
 lemma isCyclicSeparation_ofDual_iff {P : M✶.Partition} :
@@ -330,6 +335,77 @@ lemma isStrongSeparation_iff' : P.IsStrongSeparation ↔
   rw [isStrongSeparation_iff, P.codep_left_iff, P.codep_right_iff]
   tauto
 
+/-- An internal separation is the type of separation required by internal connectivity.
+For finite connectivity, is it equivalent to both sides of the separation having cardinality
+exceeding the connectivity by at least two. -/
+def IsInternalSeparation (P : M.Partition) := P.IsPredSeparation
+  (fun M X ↦ M.nullity X + M✶.nullity X ≤ 1) (fun M X ↦ M.nullity X + M✶.nullity X ≤ 1)
+
+lemma isInternalSeparation_iff : P.IsInternalSeparation ↔
+    1 < M.nullity P.left + M✶.nullity P.left ∧ 1 < M.nullity P.right + M✶.nullity P.right := by
+  simp [IsInternalSeparation, isPredSeparation_iff]
+
+lemma IsStrongSeparation.isInternalSeparation (h : P.IsStrongSeparation) :
+    P.IsInternalSeparation := by
+  refine IsPredSeparation.mono (fun N X hX hle ↦ ?_) h
+  rw [← nullity_eq_zero, coindep_def, ← nullity_eq_zero]
+  enat_to_nat!; omega
+
+lemma isInternalSeparation_iff_encard (hP : P.eConn ≠ ⊤) :
+    P.IsInternalSeparation ↔ P.eConn + 1 < P.left.encard ∧ P.eConn + 1 < P.right.encard := by
+  rw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left, add_assoc,
+    ← M.eConn_add_nullity_add_nullity_dual P.right, P.eConn_right, add_assoc,
+    WithTop.add_lt_add_iff_left hP, WithTop.add_lt_add_iff_left hP,
+    IsInternalSeparation, isPredSeparation_iff, not_le, not_le]
+
+lemma IsInternalSeparation.isTutteSeparation (h : P.IsInternalSeparation) :
+    P.IsTutteSeparation := by
+  rw [isTutteSeparation_iff_nullity]
+  rw [isInternalSeparation_iff] at h
+  exact ⟨h.1.le, h.2.le⟩
+
+lemma IsInternalSeparation.encard_eq_or_eq_of_not_isTutteSeparation (h : P.IsInternalSeparation)
+    (h_not : ¬ P.IsTutteSeparation) :
+    P.left.encard = P.eConn + 1 ∨ P.right.encard = P.eConn + 1 := by
+  obtain htop | hne := eq_or_ne P.eConn ⊤
+  · rw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left]
+    simp [htop]
+  simp [isTutteSeparation_iff_lt_encard hne] at h_not
+  rw [isInternalSeparation_iff_encard hne] at h
+  grw [← h_not (le_self_add.trans_lt h.1)] at h
+  exact (h.2.not_ge le_self_add).elim
+  -- enat_to_nat is again being weird here.
+
+lemma IsInternalSeparation.encard_left_ge (hP : P.IsInternalSeparation) :
+    P.eConn + 1 + 1 ≤ P.left.encard := by
+  grw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left]
+  rw [isInternalSeparation_iff] at hP
+  obtain ⟨hP1, hP2⟩ := hP
+  generalize P.eConn = x
+  -- this generalize line shouldn't be needed, but is. Bug in `generalize_enats`.
+  enat_to_nat! <;> omega
+
+lemma IsInternalSeparation.encard_right_ge (hP : P.IsInternalSeparation) :
+    P.eConn + 1 + 1 ≤ P.right.encard := by
+  simpa using IsInternalSeparation.encard_left_ge hP.symm
+
+lemma IsInternalSeparation.symm (hP : P.IsInternalSeparation) : P.symm.IsInternalSeparation :=
+  IsPredSeparation.symm hP
+
+lemma IsInternalSeparation.dual (hP : P.IsInternalSeparation) : P.dual.IsInternalSeparation :=
+  IsPredSeparation.dual (by simp +contextual [add_comm]) hP
+
+lemma IsInternalSeparation.of_dual (hP : P.dual.IsInternalSeparation) : P.IsInternalSeparation :=
+  IsPredSeparation.of_dual (by simp +contextual [add_comm]) hP
+
+@[simp]
+lemma isInternalSeparation_dual_iff : P.dual.IsInternalSeparation ↔ P.IsInternalSeparation :=
+  ⟨IsInternalSeparation.of_dual, IsInternalSeparation.dual⟩
+
+@[simp]
+lemma isInternalSeparation_symm_iff : P.symm.IsInternalSeparation ↔ P.IsInternalSeparation :=
+  ⟨IsInternalSeparation.symm, IsInternalSeparation.symm⟩
+
 end Partition
 
 lemma Dep.partition_isTutteSeparation_of_nonspanning (hX : M.Dep X) (hX' : M.Nonspanning X) :
@@ -338,11 +414,11 @@ lemma Dep.partition_isTutteSeparation_of_nonspanning (hX : M.Dep X) (hX' : M.Non
 
 lemma Nonspanning.partition_isVerticalSeparation (hX : M.Nonspanning X)
     (hXc : M.Nonspanning (M.E \ X)) : (M.partition X).IsVerticalSeparation := by
-  simp [Partition.isVerticalSeparation_iff, hX, hXc]
+  simp [Partition.isVerticalSeparation_iff_nonspanning, hX, hXc]
 
 lemma Codep.partition_isVerticalSeparation (hX : M.Codep X) (hXc : M.Nonspanning X) :
     (M.partition X).IsVerticalSeparation := by
-  simp [Partition.isVerticalSeparation_iff, hXc, hX.nonspanning_compl]
+  simp [Partition.isVerticalSeparation_iff_nonspanning, hXc, hX.nonspanning_compl]
 
 lemma Codep.partition_isTutteSeparation_of_dep_compl (hX : M.Codep X) (hXc : M.Dep (M.E \ X)) :
     (M.partition X).IsTutteSeparation := by
@@ -423,11 +499,29 @@ def NumConnected (M : Matroid α) (dg : Matroid α → Set α → Prop) (k : ℕ
 lemma NumConnected.mono {dg} (h : M.NumConnected dg k) (hjk : j ≤ k) : M.NumConnected dg j :=
   PredConnected.mono (fun _ _ _ _ h hle ↦ h (hle.trans hjk)) h
 
+/-- A version with `k`-connectedness rather than `(k+1)`. Usually the latter is preferred-/
+lemma numConnected_iff_forall' {dg} : M.NumConnected dg k ↔
+    ∀ (P : M.Partition), P.eConn + 1 + 1 ≤ k → ¬ P.IsPredSeparation dg dg := by
+  simp only [NumConnected, PredConnected, ← imp_or, isPredSeparation_iff, not_and, not_not]
+  simp_rw [or_iff_not_imp_left]
+
 lemma numConnected_iff_forall {dg} : M.NumConnected dg (k+1) ↔
     ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsPredSeparation dg dg := by
-  simp only [NumConnected, PredConnected, ENat.add_one_le_add_one_iff, ← imp_or,
-    isPredSeparation_iff, not_and, not_not]
-  simp_rw [or_iff_not_imp_left]
+  simp [numConnected_iff_forall']
+
+lemma numConnected_iff_forall_set {dg} : M.NumConnected dg (k+1) ↔
+    ∀ X ⊆ M.E, M.eConn X + 1 ≤ k → dg M X ∨ dg M (M.E \ X) := by
+  simp only [numConnected_iff_forall, isPredSeparation_iff, Classical.not_and_iff_not_or_not]
+  exact ⟨fun h X hXE hX ↦ by simpa using h (M.partition X) (by simpa),
+    fun h P hP ↦ by simpa using h _ P.left_subset_ground (by simpa)⟩
+
+lemma numConnected_top_iff {dg} : M.NumConnected dg ⊤ ↔ ∀ (P : M.Partition),
+    ¬ P.IsPredSeparation dg dg := by
+  simp [numConnected_iff_forall']
+
+lemma numConnected_top_iff' {dg} : M.NumConnected dg ⊤ ↔ ∀ X ⊆ M.E, dg M X ∨ dg M (M.E \ X) := by
+  rw [← top_add (a := 1), numConnected_iff_forall_set]
+  simp
 
 lemma NumConnected.not_isPredSeparation {dg} (h : M.NumConnected dg (k+1)) (hP : P.eConn + 1 ≤ k) :
     ¬ P.IsPredSeparation dg dg := by
@@ -485,7 +579,9 @@ lemma numConnected_of_subsingleton {dg} (h : M.E.Subsingleton) (k : ℕ∞) (hdg
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   rw [numConnected_iff_forall]
   refine fun P hPconn hP ↦ ?_
-
+  obtain hl | hr := P.trivial_of_ground_subsingleton h
+  · exact hP.1 (by rwa [hl])
+  exact hP.2 (by rwa [hr])
 
 /-! ### Tutte Connectivity -/
 
@@ -505,6 +601,10 @@ lemma not_tutteConnected_iff_exists : ¬ M.TutteConnected (k + 1) ↔
 lemma tutteConnected_iff_forall : M.TutteConnected (k + 1) ↔
     ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsTutteSeparation :=
   numConnected_iff_forall
+
+lemma tutteConnected_top_iff_forall : M.TutteConnected ⊤ ↔
+    ∀ (P : M.Partition), ¬ P.IsTutteSeparation :=
+  numConnected_top_iff ..
 
 lemma TutteConnected.dual (h : M.TutteConnected k) : M✶.TutteConnected k :=
   (NumConnected.dual h).mono_degen <| by simp +contextual [coindep_def]
@@ -554,16 +654,8 @@ lemma TutteConnected.not_isVerticalSeparation (h : M.TutteConnected (k + 1))
     (hP : P.eConn + 1 ≤ k) : ¬ P.IsVerticalSeparation :=
   fun hP' ↦ h.not_isTutteSeparation hP hP'.isTutteSeparation
 
-lemma tutteConnected_of_subsingleton (h : M.E.Subsingleton) (k : ℕ∞) : M.TutteConnected k := by
-  obtain (rfl | ⟨k,rfl⟩) := k.eq_zero_or_exists_eq_add_one
-  · simp
-  by_contra! hcon
-  obtain ⟨P, -, hP⟩ := not_tutteConnected_iff_exists.1 hcon
-  grw [← encard_le_one_iff_subsingleton,
-    ← encard_diff_add_encard_of_subset P.left_subset_ground, P.compl_left] at h
-  have h1 := hP.nonempty_left.encard_pos
-  have h2 := hP.nonempty_right.encard_pos
-  enat_to_nat! <;> omega
+lemma tutteConnected_of_subsingleton (h : M.E.Subsingleton) (k : ℕ∞) : M.TutteConnected k :=
+  numConnected_of_subsingleton h _ <| by simp
 
 /-- In a matroid that isn't `(k + 1)`-connected, there is either a strong separation, or
 a separation arising from a small circuit or cocircuit. -/
@@ -596,26 +688,22 @@ lemma exists_strong_or_small_of_not_tutteConnected (h : ¬ M.TutteConnected (k +
 
 /-! ### Vertical Connectivity -/
 
-def VerticallyConnected (M : Matroid α) (k : ℕ∞) :=
-    M.PredConnected (fun j M X ↦ j + 2 ≤ k → M.Spanning X) (fun j M X ↦ j + 2 ≤ k → M.Spanning X)
-
-def CyclicallyConnected (M : Matroid α) (k : ℕ∞) := M✶.VerticallyConnected k
+def VerticallyConnected (M : Matroid α) := M.NumConnected Matroid.Coindep
 
 lemma VerticallyConnected.mono (h : M.VerticallyConnected k) (hjk : j ≤ k) :
     M.VerticallyConnected j :=
-  PredConnected.mono (fun _ _ _ _ h' hle ↦ h' (hle.trans hjk)) h
+  NumConnected.mono h hjk
 
 @[gcongr]
-lemma VerticallyConnected.mono'
-    (hjk : j ≤ k) (h : M.VerticallyConnected k) : M.VerticallyConnected j := h.mono hjk
+lemma VerticallyConnected.mono' (hjk : j ≤ k) (h : M.VerticallyConnected k) :
+    M.VerticallyConnected j := h.mono hjk
 
 lemma TutteConnected.verticallyConnected (h : M.TutteConnected k) : M.VerticallyConnected k :=
-  PredConnected.mono_compl (fun _ _ _ _ h1 h2 ↦ (h1 h2).2.compl_spanning) h
+  NumConnected.mono_degen h <| fun _ _ ↦ And.right
 
 lemma not_verticallyConnected_iff_exists : ¬ M.VerticallyConnected (k+1) ↔
-    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsVerticalSeparation := by
-  simp [VerticallyConnected, not_predConnected_iff, Partition.IsVerticalSeparation,
-    Partition.isPredSeparation_iff, ← and_and_left, ← one_add_one_eq_two, ← add_assoc]
+    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsVerticalSeparation :=
+  not_numConnected_iff_exists
 
 lemma verticallyConnected_iff_forall : M.VerticallyConnected (k + 1) ↔
     ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsVerticalSeparation := by
@@ -633,9 +721,11 @@ lemma VerticallyConnected.not_isVerticalSeparation (h : M.VerticallyConnected k)
 
 lemma verticallyConnected_top_iff :
     M.VerticallyConnected ⊤ ↔ ∀ X ⊆ M.E, M.Spanning X ∨ M.Spanning (M.E \ X) := by
-  simp only [VerticallyConnected, PredConnected, le_top, forall_const]
+  rw [← top_add (a := 1), verticallyConnected_iff_forall]
+  simp only [le_top, isVerticalSeparation_iff_nonspanning, forall_const,
+    Classical.not_and_iff_not_or_not, not_nonspanning_left_iff, not_nonspanning_right_iff]
   exact ⟨fun h X hX ↦ by simpa using h (M.partition X),
-    fun h P ↦ by simpa [P.compl_left] using h _ P.left_subset_ground⟩
+    fun h P ↦ by simpa using h _ P.left_subset_ground⟩
 
 @[simp]
 lemma verticallyConnected_loopyOn (E : Set α) (k : ℕ∞) : (loopyOn E).VerticallyConnected k :=
@@ -664,7 +754,7 @@ lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
   obtain ⟨x, hx, y, hy, hne⟩ := hE
   refine h.not_isVerticalSeparation (P := (freeOn E).partition {x} (by simpa))
     (by simp [← loopyOn_dual_eq]) ?_
-  suffices ¬ {x} = E by simpa [Partition.isVerticalSeparation_iff, nonspanning_iff, hx]
+  suffices ¬ {x} = E by simpa [Partition.isVerticalSeparation_iff_nonspanning, nonspanning_iff, hx]
   rintro rfl
   exact hne.symm (by simpa using hy)
 
@@ -697,35 +787,42 @@ lemma TutteConnected.connected [M.Nonempty] (hM : M.TutteConnected k) (hk : 2 �
 
 /-! ### Cyclic connectivity -/
 
+def CyclicallyConnected (M : Matroid α) := M.NumConnected Matroid.Indep
+
+lemma CyclicallyConnected.dual_verticallyConnected (h : M.CyclicallyConnected k) :
+    M✶.VerticallyConnected k :=
+  NumConnected.dual h
+
+lemma VerticallyConnected.dual_cyclicallyConnected (h : M.VerticallyConnected k) :
+    M✶.CyclicallyConnected k :=
+  (NumConnected.dual h).mono_degen <| by simp
+
 @[simp]
-lemma verticallyConnected_dual_iff : M✶.VerticallyConnected k ↔ M.CyclicallyConnected k := by
-  simp [CyclicallyConnected]
+lemma verticallyConnected_dual_iff : M✶.VerticallyConnected k ↔ M.CyclicallyConnected k :=
+  ⟨fun h ↦ dual_dual M ▸ h.dual_cyclicallyConnected, CyclicallyConnected.dual_verticallyConnected⟩
 
 @[simp]
 lemma cyclicallyConnected_dual_iff : M✶.CyclicallyConnected k ↔ M.VerticallyConnected k := by
-  simp [CyclicallyConnected]
+  rw [← verticallyConnected_dual_iff, dual_dual]
 
 lemma CyclicallyConnected.mono (h : M.CyclicallyConnected k) (hjk : j ≤ k) :
     M.CyclicallyConnected j :=
-  VerticallyConnected.mono h hjk
+  dual_dual M ▸ (h.dual_verticallyConnected.mono hjk).dual_cyclicallyConnected
 
 @[gcongr]
 lemma CyclicallyConnected.mono' (hjk : j ≤ k) (h : M.CyclicallyConnected k) :
   M.CyclicallyConnected j := h.mono hjk
 
-lemma TutteConnected.cyclicallyConnected (h : M.TutteConnected k) : M.CyclicallyConnected k :=
-  h.dual.verticallyConnected
+lemma TutteConnected.cyclicallyConnected (h : M.TutteConnected k) : M.CyclicallyConnected k := by
+  simpa using h.dual.verticallyConnected
 
 lemma not_cyclicallyConnected_iff_exists : ¬ M.CyclicallyConnected (k + 1) ↔
-    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsCyclicSeparation := by
-  simp only [CyclicallyConnected, not_verticallyConnected_iff_exists]
-  exact ⟨fun ⟨P, h, hP⟩ ↦ ⟨P.ofDual, by simpa, by simpa⟩,
-    fun ⟨P, h, hP⟩ ↦ ⟨P.dual, by simpa, by simpa⟩⟩
+    ∃ P : M.Partition, P.eConn + 1 ≤ k ∧ P.IsCyclicSeparation :=
+  not_numConnected_iff_exists
 
 lemma cyclicallyConnected_iff_forall : M.CyclicallyConnected (k + 1) ↔
-    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsCyclicSeparation := by
-  rw [← not_iff_not]
-  simp [not_cyclicallyConnected_iff_exists]
+    ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsCyclicSeparation :=
+  numConnected_iff_forall
 
 lemma Partition.IsCyclicSeparation.not_cyclicallyConnected (hP : P.IsCyclicSeparation) :
     ¬ M.CyclicallyConnected (P.eConn + 1 + 1) := by
@@ -750,12 +847,7 @@ lemma cyclicallyConnected_of_le_one (M : Matroid α) (hk : k ≤ 1) : M.Cyclical
 
 lemma cyclicallyConnected_top_iff :
     M.CyclicallyConnected ⊤ ↔ ∀ X ⊆ M.E, M.Indep X ∨ M.Indep (M.E \ X) := by
-  simp_rw [← verticallyConnected_dual_iff, verticallyConnected_top_iff, dual_ground]
-  refine ⟨fun h X hX ↦ ?_, fun h X hX ↦ ?_⟩
-  · specialize h X hX
-    rwa [spanning_dual_iff, spanning_compl_dual_iff, or_comm] at h
-  specialize h X hX
-  rwa [spanning_dual_iff, spanning_compl_dual_iff, or_comm]
+  rw [CyclicallyConnected, numConnected_top_iff']
 
 lemma IsLoop.not_tutteConnected {e : α} (he : M.IsLoop e) (hME : M.E.Nontrivial) (hk : 1 ≤ k) :
     ¬ M.TutteConnected (k + 1) := by
@@ -809,7 +901,7 @@ lemma tutteConnected_iff_verticallyConnected_girth (hlt : 2 * k < M.E.encard + 1
     exists_strong_or_small_of_not_tutteConnected h
   · exact h'.not_isVerticalSeparation (by simpa) hPs.isVerticalSeparation
   · refine h'.not_isVerticalSeparation (by simpa) ?_
-    rw [P.isVerticalSeparation_iff, and_iff_left hh.nonspanning, ← not_spanning_iff]
+    rw [P.isVerticalSeparation_iff_nonspanning, and_iff_left hh.nonspanning, ← not_spanning_iff]
     intro hPs
     obtain ⟨C, hCP, hC⟩ := (hP.dep_of_spanning_left hPs).exists_isCircuit_subset
     grw [hC.girth_le_card, ← hC.eRk_add_one_eq, M.eRk_mono hCP, ← hcard, hh.eRk_add_one_eq,
@@ -834,7 +926,8 @@ lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < 
   have hnc := hc.not_isCyclicSeparation (by simpa)
   have hPconn_ne : P.eConn ≠ ⊤ := fun h ↦ by enat_to_nat!
   simp only [P.isCyclicSeparation_iff, not_and, Partition.right_subset_ground, not_dep_iff] at hnc
-  simp only [P.isVerticalSeparation_iff, not_and, Partition.not_nonspanning_right_iff] at hnv
+  simp only [P.isVerticalSeparation_iff_nonspanning, not_and,
+    Partition.not_nonspanning_right_iff] at hnv
   rw [imp_iff_not hP'.not_spanning, not_nonspanning_iff] at hnv
   obtain ⟨C, hCr, hC⟩ := (hP.dep_of_spanning_left hnv).exists_isCircuit_subset
   have hb := hi.isBase_of_spanning hnv
@@ -852,28 +945,47 @@ lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < 
 /-! ### Internal Connectivity -/
 
 /-- A weakly `(k+1)`-connected matroid is one with no strong separation of order less than `k`. -/
-def WeaklyConnected (M : Matroid α) (k : ℕ∞) : Prop := M.PredConnected
-    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∨ M.Coindep X)
-    (fun j M X ↦ j + 2 ≤ k → M.Indep X ∨ M.Coindep X)
+def WeaklyConnected (M : Matroid α) := M.NumConnected (fun M X ↦ M.Indep X ∨ M.Coindep X)
 
 lemma weaklyConnected_iff_forall : M.WeaklyConnected (k + 1) ↔
     ∀ (P : M.Partition), P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation := by
-  simp only [WeaklyConnected, PredConnected, ← one_add_one_eq_two, ← add_assoc,
-    ENat.add_one_le_add_one_iff, ← imp_or, isStrongSeparation_iff, not_and, not_codep_right_iff]
-  simp [or_iff_not_imp_left]
+  simp [WeaklyConnected, numConnected_iff_forall]
 
 @[simp]
 lemma weaklyConnected_zero (M : Matroid α) : M.WeaklyConnected 0 := by
-  simp [WeaklyConnected, PredConnected]
+  simp [WeaklyConnected]
 
 @[simp]
 lemma weaklyConnected_one (M : Matroid α) : M.WeaklyConnected 1 := by
-  simp [WeaklyConnected, PredConnected,
-    show ∀ x : ℕ∞, ¬ (x + 2 ≤ 1) from fun x h ↦ by enat_to_nat; omega]
+  simp [WeaklyConnected]
+
+lemma CyclicallyConnected.weaklyConnected (h : M.CyclicallyConnected k) : M.WeaklyConnected k :=
+  NumConnected.mono_degen h fun _ _ ↦ Or.inl
+
+lemma VerticallyConnected.weaklyConnected (h : M.VerticallyConnected k) : M.WeaklyConnected k :=
+  NumConnected.mono_degen h fun _ _ ↦ Or.inr
+
+lemma TutteConnected.weaklyConnected (h : M.TutteConnected k) : M.WeaklyConnected k :=
+  h.verticallyConnected.weaklyConnected
+
+/-- A matroid is weakly internally `(k+1)` connected if all separations of order at most `k-1`
+are degenerate in the sense that one side is 'nearly' independent and coindependent.
+Internal `(k+1)`-connectivity is the conjunction of weak internal `(k+1)`-connectivity and
+Tutte `k`-connectivity. -/
+def WeaklyInternallyConnected (M : Matroid α) :=
+    M.NumConnected (fun M X ↦ M.nullity X + M✶.nullity X ≤ 1)
+
+lemma weaklyInternallyConnected_iff_forall : M.WeaklyInternallyConnected (k + 1) ↔
+    ∀ P : M.Partition, P.eConn + 1 ≤ k → ¬ P.IsInternalSeparation :=
+  numConnected_iff_forall
+
+lemma TutteConnected.weaklyInternallyConnected (h : M.TutteConnected k) :
+    M.WeaklyInternallyConnected k :=
+  NumConnected.mono_degen h <| by simp +contextual [← nullity_eq_zero]
 
 /-- `M` is internally `(k+1)`-connected if it is weakly `(k+1)`-connected and `k`-Tutte-connected.-/
 structure InternallyConnected (M : Matroid α) (k : ℕ∞) : Prop where
-    weaklyConnected : M.WeaklyConnected k
+    weaklyInternallyConnected : M.WeaklyInternallyConnected k
     tutteConnected' : M.TutteConnected (k-1)
 
 lemma InternallyConnected.tutteConnected (h : M.InternallyConnected (k+1)) :
@@ -882,12 +994,14 @@ lemma InternallyConnected.tutteConnected (h : M.InternallyConnected (k+1)) :
   enat_to_nat <;> simpa using h'
 
 lemma internallyConnected_iff' :
-    M.InternallyConnected k ↔ M.WeaklyConnected k ∧ M.TutteConnected (k-1) :=
+    M.InternallyConnected k ↔ M.NumConnected (fun M X ↦ M.nullity X + M✶.nullity X ≤ 1) k ∧
+      M.TutteConnected (k-1) :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 lemma internallyConnected_iff :
-    M.InternallyConnected (k + 1) ↔ M.WeaklyConnected (k + 1) ∧ M.TutteConnected k := by
+    M.InternallyConnected (k + 1) ↔ M.WeaklyInternallyConnected (k + 1) ∧ M.TutteConnected k := by
   rw [internallyConnected_iff', ENat.add_sub_cancel_right _ (by simp)]
+  rfl
 
 @[simp]
 lemma internallyConnected_zero (M : Matroid α) : M.InternallyConnected 0 := by
@@ -899,16 +1013,40 @@ lemma internallyConnected_one (M : Matroid α) : M.InternallyConnected 1 := by
 
 lemma internallyConnected_iff_forall : M.InternallyConnected (k + 1) ↔
     ∀ (P : M.Partition), (P.eConn + 1 + 1 ≤ k → ¬ P.IsTutteSeparation) ∧
-      (P.eConn + 1 ≤ k → ¬ P.IsStrongSeparation) := by
+      (P.eConn + 1 = k → ¬ P.IsInternalSeparation) := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  simp only [internallyConnected_iff, weaklyConnected_iff_forall, ENat.add_one_le_add_one_iff,
-    tutteConnected_iff_forall]
-  grind
+  simp only [ENat.add_one_le_add_one_iff, ENat.add_one_inj, internallyConnected_iff,
+    tutteConnected_iff_forall, weaklyInternallyConnected_iff_forall]
+  refine ⟨fun h P ↦ ⟨fun hPc ↦ h.2 P hPc, fun hPc ↦ h.1 P hPc.le⟩,
+    fun h ↦ ⟨fun P hP hPi ↦ ?_, fun P hP ↦ (h P).1 hP⟩⟩
+  obtain rfl | hlt := hP.eq_or_lt
+  · simpa [hPi] using h P
+  exact (h P).1 (Order.add_one_le_of_lt hlt) hPi.isTutteSeparation
 
--- lemma InternallyConnected.not_isStrongSeparation (h : M.InternallyConnected (k + 1))
---     (hP : P.eConn + 1 ≤ k) : ¬ P.IsStrongSeparation := by
---   have := (internallyConnected_iff_forall.1 h)
+lemma InternallyConnected.not_isTutteSeparation (h : M.InternallyConnected (k + 1))
+    (hP : P.eConn + 1 + 1 ≤ k) : ¬ P.IsTutteSeparation :=
+  ((internallyConnected_iff_forall.1 h) P).1 hP
 
+lemma InternallyConnected.not_isInternalSeparation (h : M.InternallyConnected (k + 1))
+    (hP : P.eConn + 1 ≤ k) : ¬ P.IsInternalSeparation := by
+  obtain hlt | rfl := hP.lt_or_eq
+  · exact fun h' ↦ h.not_isTutteSeparation (Order.add_one_le_of_lt hlt) h'.isTutteSeparation
+  rw [internallyConnected_iff_forall] at h
+  exact (h P).2 rfl
+
+lemma TutteConnected.internallyConnected (h : M.TutteConnected k) : M.InternallyConnected k :=
+  ⟨h.weaklyInternallyConnected, h.mono tsub_le_self⟩
+
+lemma TutteConnected.internallyConnected_iff_forall (h : M.TutteConnected k) :
+    M.InternallyConnected (k + 1) ↔
+    ∀ P : M.Partition, P.eConn + 1 = k → ¬ P.IsInternalSeparation := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  rw [tutteConnected_iff_forall] at h
+  simp only [internallyConnected_iff_forall, ENat.add_one_le_add_one_iff, ENat.add_one_inj,
+    forall_and, and_iff_right_iff_imp]
+  exact fun _ ↦ h
+
+-- lemma foo (h : M.InternallyConnected (k+1)) (hnot : ¬ M.TutteConnected (k+1)) :
 
 section Minor
 
@@ -923,8 +1061,9 @@ lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + 
   have hl := h.not_isVerticalSeparation (P := P.ofContractLeft)
     (by grw [ENat.add_one_le_add_one_iff, eConn_ofContractLeft, eLocalConn_le_eRk_right,
     add_right_comm, hPconn])
-  rw [isVerticalSeparation_iff, ofContractLeft_left, ofContractLeft_right] at hl
-  rw [isVerticalSeparation_iff, contract_nonspanning_iff, contract_nonspanning_iff] at hP
+  rw [isVerticalSeparation_iff_nonspanning, ofContractLeft_left, ofContractLeft_right] at hl
+  rw [isVerticalSeparation_iff_nonspanning, contract_nonspanning_iff,
+    contract_nonspanning_iff] at hP
   simp [hP.1.1, hP.2.1.subset subset_union_left] at hl
 
 lemma VerticallyConnected.contract_of_top (h : M.VerticallyConnected ⊤) (C : Set α) :
@@ -964,9 +1103,8 @@ lemma TutteConnected.contractElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.
   grw [eRk_singleton_le]
   assumption
 
-
-/-- I believe that this is false for `k` infinite, such as in the case where `M` is a free
-extension of a nontrivial sparse paving matroid by `e`.  -/
+/-- I believe that this is false if the assumption is relaxed to `2 * k ≤ M.E.encard`
+in the case where `k = ⊤` and `M` is a free extension of a nontrivial sparse paving matroid by `e`-/
 lemma TutteConnected.deleteElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.E.encard + 1)
     (e : α) : (M ＼ {e}).TutteConnected k := by
   simpa using (h.dual.contractElem (by simpa) e).dual
