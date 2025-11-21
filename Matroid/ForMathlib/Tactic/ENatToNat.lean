@@ -73,27 +73,18 @@ variable {f : ℤ → ℕ∞}
 example {a : ℤ} (h : 3 ≤ f a) : f a ≠ 0 := by
   enat_to_nat!; omega
 
+example {a b c : ℕ∞} {x : ℤ} (h : 2 * (f x + b) < f x) : a ≠ ⊤ := by
+  enat_to_nat! <;> omega
 
-  -- omega
+example {f : ℤ → ℕ∞} {a b e : ℤ} (h : 2 * f e + f a + f b ≤ f a) : 2 * f a ≤ 3 * f a + f b := by
+  enat_to_nat!; omega
 
--- example {a b c : ℕ∞} {x y : ℤ} (h : 2 * (f x + b) < f x) : a ≠ ⊤ := by
+example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hbc : b ≤ c) : a ≤ c := by
+  enat_to_nat!
+  omega
 
-
-  -- enat_to_nat
-
--- example {f : ℤ → ℕ∞} {a b c d e : ℤ} (h : 2 * f e = f a + f b) : 2 * f a = f a + f b  := by
---   generalize_enats
-
---   omega
-
-
-
--- example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hbc : b ≤ c) : a ≤ c := by
---   enat_to_nat!
---   omega
-
--- example (a b c d : ℕ∞) (hab : a ≤ b) (hbc : 2 * b + d < c) : a ≠ ⊤ := by
---   enat_to_nat
+example (a b c d : ℕ∞) (x : ℤ) (hab : a ≤ b) (hbc : 2 * f x + d < c) : f x ≠ ⊤ := by
+  enat_to_nat!
 
 -- WTF : from `Matroid.Connectivity.Higher`. Look into this.
 
