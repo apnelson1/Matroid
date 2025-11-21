@@ -798,6 +798,25 @@ lemma prefixUntilVertex_append_suffixFromVertex [DecidableEq α] (w : WList α �
     w.prefixUntilVertex x ++ w.suffixFromVertex x = w :=
   prefixUntil_append_suffixFrom ..
 
+lemma sufixFromVertex_length [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) :
+    (w.suffixFromVertex x).length + w.idxOf x = w.length := by
+  induction w with | nil => simp_all [suffixFromVertex] | cons u e w ih =>
+  obtain rfl | hu := eq_or_ne x u
+  · simp [suffixFromVertex]
+  simp_all [idxOf_cons_ne hu.symm ]
+  have he : (cons u e w).suffixFromVertex x = w.suffixFromVertex x := by
+    simp_all [suffixFromVertex, suffixFrom_cons w]
+    intro h
+    by_contra
+    exact hu (id (Eq.symm h))
+  rw [he]
+  exact Eq.symm ((fun {m k n} ↦ Nat.add_left_inj.mpr) (id (Eq.symm ih)))
+
+lemma prefixUntilVertex_suffixFromVertex_length [DecidableEq α] (w : WList α β) (x : α)
+    (hx : x ∈ w) :
+    (w.prefixUntilVertex x).length + (w.suffixFromVertex x).length = w.length := by
+  rw [prefixUntilVertex_length hx, ←sufixFromVertex_length w x hx, add_comm]
+
 @[simp]
 lemma prefixUntilVertex_last_eq_suffixFromVertex_first [DecidableEq α] (hx : x ∈ w) :
     (w.prefixUntilVertex x).last = (w.suffixFromVertex x).first := by
