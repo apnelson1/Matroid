@@ -1,34 +1,25 @@
 import Mathlib.Tactic
 import Mathlib.Data.Set.Finite.Basic
 
-import Matroid.Graph.Walk.Path
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Finite
-import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Connected.Component
-
-import Matroid.Graph.Independent
-import Matroid.Graph.Tree
-
-import Matroid.Graph.WList.Defs
-import Matroid.Graph.WList.Cycle
-import Matroid.Graph.Connected.Separating
+import Qq
+-- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
-import Qq open Qq Lean Meta Elab Tactic
--- simple is still broken
--- import Matroid.Graph.Simple
+import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Component
+import Matroid.Graph.Connected.Separating
+import Matroid.Graph.Finite
+import Matroid.Graph.Degree.Basic
+import Matroid.Graph.Independent
+import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Tree
+import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Walk.Path
+import Matroid.Graph.WList.Defs
+import Matroid.Graph.WList.Cycle
 
--- connectivity is still broken
--- import Matroid.Graph.Connected.Component
-
+open Qq Lean Meta Elab Tactic
 open WList Set
-
--- we will be using a lot of LEM...
-open Classical
-
 
 section NonGraphThings
 
@@ -93,97 +84,104 @@ lemma NeBot_of_ncard_positive {G : Graph α β} (h : 0 < V(G).ncard) : G.NeBot :
   apply nonempty_of_ncard_ne_zero
   linarith
 
-def degreeSet (G : Graph α β) : Set ℕ :=
-  G.degree '' V(G)
-
 @[simp]
-lemma degreeSet_eq {G : Graph α β} :
-    G.degreeSet = G.degree '' V(G) := rfl
+lemma eDegree_eq_top (hx : G.eDegree x = ⊤) : ¬ G.LocallyFinite :=
+  fun _ ↦ eDegree_ne_top hx
 
-lemma degreeSet_finite_of_finite {G : Graph α β} (hFinite : G.Finite) :
-    G.degreeSet.Finite := by
-  simp [degreeSet]
-  refine Set.Finite.image ?_ ?_
-  exact vertexSet_finite
+lemma locallyFinite_of_eDegree_ne_top (hG : ∀ x, G.eDegree x ≠ ⊤) : G.LocallyFinite := by
+  by_contra! hcon
+  simp [locallyFinite_iff] at hcon
+  obtain ⟨x, hx⟩ := hcon
+  refine hG x ?_
+  rw [eq_top_iff]
+  suffices {e | G.Inc e x}.encard = ⊤ by
+   rw [←this]
+   exact G.encard_setOf_inc_le_eDegree x
+  simpa
 
-lemma degreeSet_nonempty {G : Graph α β} (hNeBot : G ≠ ⊥) : G.degreeSet.Nonempty := by
-  simpa [degreeSet]
+lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFinite :=
+  ⟨locallyFinite_of_eDegree_ne_top, fun _ _ ↦ eDegree_ne_top⟩
 
--- lemma exists_minDegreeVx (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
---     ∃ v, MinimalFor (· ∈ V(G)) G.degree v := by
---   refine Set.Finite.exists_minimalFor G.degree V(G) vertexSet_finite ?_
---   apply vertexSet_nonempty_of_NeBot; trivial
+lemma exists_eDegree_eq_top_of_not_locallyFinite (hG : ¬ G.LocallyFinite) :
+    ∃ x, G.eDegree x = ⊤ := by
+  simp [←forall_eDegree_ne_top_iff] at hG
+  assumption
 
--- noncomputable def minDegreeVx (G : Graph α β) : α :=
---   open Classical in
---   if h : G.Finite ∧ G.NeBot then
---     Classical.choose (G.exists_minDegreeVx h.1 h.2)
---   else
---     ∅
+lemma exists_eDegree_eq_top_iff : (∃ x, G.eDegree x = ⊤) ↔ ¬ G.LocallyFinite := by
+  refine ⟨fun ⟨_, hx⟩ ↦ eDegree_eq_top hx, exists_eDegree_eq_top_of_not_locallyFinite⟩
+
+noncomputable def minEDegree (G : Graph α β) : ℕ∞ :=
+  ⨅ x ∈ V(G), G.eDegree x
 
 -- G.minDegree returns the minimum degree of its vertices if G is finite, else it returns 0
 noncomputable def minDegree (G : Graph α β) : ℕ :=
-  open Classical in
-  if h : G.Finite ∧ G.NeBot then
-    Classical.choose <|
-    Set.Finite.exists_minimal (degreeSet_finite_of_finite h.1) (degreeSet_nonempty h.2)
-  else 0
+  G.minEDegree.toNat
 
--- this is the price we pay for choice
-@[simp]
-lemma minDegree_eq (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
-    G.minDegree =
-    (Classical.choose <|
-    Set.Finite.exists_minimal
-      (degreeSet_finite_of_finite hFinite)
-      (degreeSet_nonempty hNeBot)) := by
-  have : G.Finite ∧ G.NeBot = True := by
-    simp
-    refine ⟨?_, ?_⟩ <;> assumption
-  simp only [minDegree]
-  simp only [this, and_self, ↓reduceDIte, degreeSet_eq, mem_image]
+-- if G is Nonempty and LocallyFinite, then the two definitions agree
+lemma natCast_minDegree_eq (G : Graph α β) [G.LocallyFinite] (hG : G.NeBot) :
+    (G.minDegree : ℕ∞) = G.minEDegree := by
+  simp [minDegree, minEDegree]
+  rw [NeBot_iff_vertexSet_nonempty] at hG
+  exact hG
 
-@[simp]
-lemma minDegree_eq' (G : Graph α β) (h : ¬ (G.Finite ∧ G.NeBot)) :
+lemma minEDegree_eq_top_of_empty (hG : G = ⊥) :
+    G.minEDegree = ⊤ := by
+  simp only [minEDegree]
+  have : V(G) = ∅ := by simpa
+  simp [this]
+
+lemma minEDegree_eq_top (hG : G.minEDegree = ⊤) :
+    G = ⊥ ∨ ¬ G.LocallyFinite := by
+  by_contra! hcon
+  obtain ⟨hcon₁, hcon₂⟩ := hcon
+  have ⟨x, hx⟩ : V(G).Nonempty := by
+    rw [←NeBot_iff_vertexSet_nonempty]
+    exact hcon₁
+  simp [minEDegree] at hG
+  specialize hG _ hx
+  assumption
+
+lemma minDegree_eq_zero_of_empty (hG : G = ⊥) :
     G.minDegree = 0 := by
-  simp [minDegree]
+  unfold minDegree
+  simp [minEDegree_eq_top_of_empty hG]
+
+-- minEDegree is minimal among all degrees
+lemma minEDegree_le_eDegree (hx : x ∈ V(G)) :
+    G.minEDegree ≤ G.eDegree x := by
+  exact biInf_le G.eDegree hx
+
+lemma minDegree_le_degree [G.LocallyFinite] (hx : x ∈ V(G)) :
+    G.minDegree ≤ G.degree x := by
+  simp [minDegree,  minEDegree, degree]
+  refine ENat.toNat_le_toNat (minEDegree_le_eDegree hx) eDegree_ne_top
+
+-- TODO: shuffle into ENat
+lemma ENat.exists_eq_biInf {ι} {S : Set ι} (hS : S.Nonempty) (f : ι → ℕ∞) :
+    ∃ a ∈ S, f a = ⨅ x ∈ S, f x := by
+  rw [←sInf_image]
+  exact csInf_mem (hS.image f)
+
+lemma exists_vertex_minEDegree (hG : G ≠ ⊥) : ∃ x ∈ V(G), G.eDegree x = G.minEDegree := by
+  unfold minEDegree
+  apply ENat.exists_eq_biInf
+  simpa
+
+lemma exists_vertex_minDegree (hG : G ≠ ⊥) : ∃ x ∈ V(G), G.degree x = G.minDegree := by
+  obtain ⟨x, hxG, hx⟩ := exists_vertex_minEDegree hG
+  refine ⟨x, hxG, ?_⟩
+  simp [degree, minDegree]
   tauto
-
-lemma minDegree_spec (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
-    Minimal (· ∈ G.degreeSet) G.minDegree := by
-  have hspec :=
-    Classical.choose_spec <|
-    Set.Finite.exists_minimal (degreeSet_finite_of_finite hFinite) (degreeSet_nonempty hNeBot)
-  rw [minDegree_eq] <;> assumption
-
-lemma exists_minDegreeVx (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
-    ∃ v ∈ V(G), G.minDegree = G.degree v := by
-  have ⟨⟨v, vspec⟩, dspec⟩ := G.minDegree_spec hFinite hNeBot
-  use v
-  tauto
-
--- minDegree is indeed a lower bound
-lemma minDegree_le_degree (G : Graph α β) :
-    ∀ v ∈ V(G), G.minDegree ≤ G.degree v := by
-  intro v hv
-  obtain (p|p) := Classical.em (G.Finite ∧ G.NeBot)
-  · have hspec := G.minDegree_spec p.1 p.2
-    suffices h : G.degree v ∈ G.degreeSet by
-      refine minimal_is_lower_bound hspec ?_ ?_
-      assumption
-    simp
-    use v
-  · simp [G.minDegree_eq' p]
 
 -- MORE THINGS
 
 lemma degree_lt_vertexCount {G : Graph α β} [G.Simple] {v : α} (h : v ∈ V(G)) :
     G.degree v < V(G).ncard := by sorry
 
-lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot) :
+lemma minDegree_lt_vertexCount {G : Graph α β} [G.Simple] (hNeBot : G.NeBot) :
     G.minDegree < V(G).ncard := by
-  have ⟨v,vspec⟩ := G.exists_minDegreeVx hFinite hNeBot
-  rw [vspec.2]
+  have ⟨v,hvG, vspec⟩ := G.exists_vertex_minDegree hNeBot
+  rw [←vspec]
   apply degree_lt_vertexCount
   tauto
 
@@ -199,10 +197,9 @@ lemma isCompOf_subset (G H : Graph α β) (hHG : H.IsCompOf G) : V(H) ⊆ V(G) :
 
 lemma minDegree_le_minDegree_of_isCompOf (G H : Graph α β) [G.Finite] (hHG : H.IsCompOf G) :
     G.minDegree ≤ H.minDegree := by
-    obtain ⟨v, hv, hveq⟩ := H.exists_minDegreeVx
-      (finite_of_le hHG.le)
+    obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree
       (NeBot_iff_vertexSet_nonempty.2 hHG.nonempty)
-    rw [hveq]
+    rw [←hveq]
     have hvG : v ∈ V(G) := by
       --I cheated and added the lemma above
       have hcheat : V(H) ⊆ V(G) := isCompOf_subset G H hHG
@@ -215,7 +212,7 @@ lemma minDegree_le_minDegree_of_isCompOf (G H : Graph α β) [G.Finite] (hHG : H
       --Use IsClosedSubgraph.degree_eq
       exact IsClosedSubgraph.degree_eq hHG.isClosedSubgraph hv
     rw [heq]
-    exact minDegree_le_degree G v hvG
+    exact minDegree_le_degree hvG
 
   --Somhow I did this exercise instead
 lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) [G.Finite] (hHG : H ≤s G) :
@@ -229,22 +226,22 @@ lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) [G.Finite] (hHG : H
       rw [NeBot_iff_vertexSet_nonempty] at hne
       have VHseVG : V(H) ⊆ V(G) := hHG.le.vertex_subset
       exact Nonempty.mono VHseVG hne
-    obtain ⟨v, hv, hveq⟩ := H.exists_minDegreeVx Hfin hne
-    rw [hveq]
+    obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hne
+    rw [←hveq]
     have hvG: v ∈ V(G) := hHG.le.vertex_subset hv
-    obtain ⟨w, gw, gweq⟩ := G.exists_minDegreeVx ‹G.Finite› gne
+    obtain ⟨w, gw, gweq⟩ := G.exists_vertex_minDegree gne
     have wvH: w ∈ V(H) := by
       rw [hHG.vertexSet_eq]
       exact gw
     have h1 : H.degree w ≤ G.degree w := degree_mono hHG.le w
-    rw [gweq]
-    rw [← hveq]
-    have h2 : H.minDegree ≤ H.degree w := minDegree_le_degree H w wvH
+    rw [← gweq, hveq]
+    have h2 : H.minDegree ≤ H.degree w := minDegree_le_degree wvH
     linarith
+
 
   --This is the case the graph is empty. Richard has a nice lemma that if the graph is
   --empty or infinite then the min degree is 0. We just need to rw that
-  rw [H.minDegree_eq' (not_and.mpr fun a ↦ hni)]
+  rw [H.minDegree_eq_zero_of_empty (by simp at hni; assumption)]
   exact Nat.zero_le G.minDegree
 
 lemma ge_two_components_of_not_connected {G : Graph α β} (hNeBot : G.NeBot) (h : ¬ G.Connected) :
@@ -509,7 +506,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
   --Trivial case: Independent set is completely contained in the separator
-  obtain ( HAS| he ) := Decidable.em (A ⊆ S)
+  obtain ( HAS| he ) := Classical.em (A ⊆ S)
   · have : S.Finite := Set.Finite.subset vertexSet_finite HS.1.1
     exact ncard_le_ncard HAS this
   have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
@@ -555,7 +552,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     linarith
 
   -- Second annoying case
-  obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
+  obtain ( Hemp| hAH1 ) := Classical.em ( A ∩ V(H2) = ∅)
   · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
       -- Managed to simplify this part a lot - Noah
       rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
@@ -649,7 +646,9 @@ lemma Hamiltonian_to_cyle {G : Graph α β}
   use C
   exact hC.1
 
-lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
+variable [DecidableEq α]
+
+lemma IsPath.exists_isPath_vertex (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
     ∃ P₀ P₁, G.IsPath P₀ ∧ G.IsPath P₁ ∧ u = P₀.last ∧ u = P₁.first ∧
     P₀.length + P₁.length = P.length ∧ P = (P₀ ++ P₁) := by
   set Pre : WList α β := prefixUntilVertex P u with h_pre
@@ -663,7 +662,7 @@ lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsP
   prefixUntilVertex_suffixFromVertex_length P u hu,
   Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
 
-lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
+lemma idxOf_concat_ne (w : WList α β) (e) (hx : x ∈ w) :
     (w.concat e y).idxOf x = w.idxOf x := by
   induction w with
   | nil u => simp_all
@@ -674,7 +673,8 @@ lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
   rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
   simp_all
 
-lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
+lemma Cycle_conc_index
+    (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
     : v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
   simp at hCP
   obtain (rfl | h2 | rfl) := hCP
@@ -685,7 +685,7 @@ lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (
     rwa [idxOf_concat_ne P f ]
   · exact False.elim (huv rfl)
 
-lemma prefixUntilVertex_index [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w)
+lemma prefixUntilVertex_index (w : WList α β) (x : α) (hx : x ∈ w)
     (hle : w.idxOf y ≤ w.idxOf x ) :
     w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
   induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
@@ -710,14 +710,14 @@ lemma prefixUntilVertex_index [DecidableEq α] (w : WList α β) (x : α) (hx : 
   · simp
   simp_all [ idxOf_cons_ne huy.symm]
 
-lemma prefixUntilVertex_Nil [DecidableEq α] (w : WList α β) (x : α) :
+lemma prefixUntilVertex_Nil (w : WList α β) (x : α) :
     Nil ((cons x e w).prefixUntilVertex x) := by
   refine length_eq_zero.mp ?_
   rw [prefixUntilVertex_length (w := cons x e w)]
   exact idxOf_cons_self x e w
   simp
 
-lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
+lemma prefixUntilVertex_nil (w : WList α β) (x : α) :
     (cons x e w).prefixUntilVertex x = .nil x := by
   refine Nil.eq_nil_of_mem (prefixUntilVertex_Nil w x) ?_
   have h1 : x = ((cons x e w).prefixUntilVertex x).first := by
@@ -727,7 +727,7 @@ lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
     exact first_mem
   rwa [←h1 ] at h2
 
-lemma prefixUntilVertex_index_iff [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) (hy : y ∈ w)
+lemma prefixUntilVertex_index_iff (w : WList α β) (x : α) (hx : x ∈ w) (hy : y ∈ w)
     : y ∈ (w.prefixUntilVertex x) ↔  w.idxOf y ≤ w.idxOf x := by
 refine ⟨ ?_, ?_ ⟩
 · intro hyP
@@ -752,7 +752,7 @@ have h1 := idxOf_notMem hc
 rw [prefixUntilVertex_length hx, ←prefixUntilVertex_index w x hx hle] at h1
 linarith
 
-lemma idx_Of_tail [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
+lemma idx_Of_tail {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
     (ha : a ∈ w) :
     (w.tail).idxOf a + 1 = w.idxOf a := by
   induction w with
@@ -767,7 +767,7 @@ lemma idx_Of_tail [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) 
   exact haf rfl
   simp [hu.symm]
 
-lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w) :
+lemma idx_Of_dropLast {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w) :
     (w.dropLast).idxOf a = w.idxOf a := by
   induction w with
   | nil w => rfl
@@ -786,6 +786,7 @@ lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonemp
   simp [hu.symm ]
   simp_all
 
+omit [DecidableEq α] in
 lemma IsCycle.rotate_one {C : WList α β} (hC : G.IsCycle C)
     : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
   set e := hC.nonempty.firstEdge
@@ -903,7 +904,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     by_contra! hCon
     -- if there is no cycle, then since G is a forest,
     -- any vertex v of degree >= 2 is a separating set
-    obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+    obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
     · -- So, S.encard = 1, and thus A.encard <= 1
       have ⟨v, ⟨hvG, hv⟩⟩ := h1
       -- since v has degree at least 2, we can obtain two neighbours
@@ -977,7 +978,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
         have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
         rw [ne_comm, ne_eq] at this
         assumption
-      obtain (h3 | h4) := Decidable.em (G.Adj a b)
+      obtain (h3 | h4) := Classical.em (G.Adj a b)
       · -- First, the case where a and b are adjacent
         -- Need to construct the cycle a-b-v
         have ⟨e, eLink⟩ := ha
@@ -1059,7 +1060,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
   --The following obtains a cycle of G that is maximal in length
   obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
   --Now that we got a max cycle, we have two cases
-  obtain ( hn| hlen ) := Decidable.em (V(C).encard = V(G).encard  )
+  obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
   · use C
     apply Is_hamiltonian_encard G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
@@ -1078,7 +1079,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     rw[vertexDelete_vertexSet] at hc
     have hconcl : V(G) ⊆ V(C) := by
       intro v hv
-      obtain h1 | h2 := Decidable.em (v ∈ V(C))
+      obtain h1 | h2 := Classical.em (v ∈ V(C))
       · exact h1
       by_contra
       have hh : v ∈ V(G)\V(C) := by exact mem_diff_of_mem hv h2
@@ -1330,10 +1331,9 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith
   have hlt : min_comp.minDegree < V(min_comp).ncard := by
     have min_comp_simple : min_comp.Simple := sorry
-    refine minDegree_lt_vertexCount ?_ ?_
-    · exact Finite.mono hFinite min_comp_spec.1.le
-    · rw [NeBot_iff_vertexSet_nonempty]
-      exact min_comp_spec.1.nonempty
+    refine minDegree_lt_vertexCount ?_
+    rw [NeBot_iff_vertexSet_nonempty]
+    exact min_comp_spec.1.nonempty
 
   linarith
 
