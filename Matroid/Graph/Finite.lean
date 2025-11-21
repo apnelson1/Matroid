@@ -134,6 +134,7 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
 /-! ### Local Finiteness -/
 
 /-- A graph is `LocallyFinite` if each of its vertices is incident with finitely many edges. -/
+@[mk_iff]
 protected class LocallyFinite (G : Graph α β) where
   finite : ∀ x, {e | G.Inc e x}.Finite
 
