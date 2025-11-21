@@ -93,6 +93,8 @@ lemma IsClosed.idxOf_lt_length {C : WList α β} [DecidableEq α] (hC : C.IsClos
     grw [idxOf_concat_of_mem hxw, concat_length, idxOf_mem_le hxw]
     exact Nat.lt_add_one w.length
 
+
+
 /-! ### Rotations -/
 
 /-- Rotate a WList `n` vertices to the left.

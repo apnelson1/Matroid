@@ -189,6 +189,12 @@ lemma IsCycle.length_eq_two_iff (h : G.IsCycle C) :
         simpa [he, show u = w.last from h.isClosed, show w.last ≠ v by rintro rfl; simp_all]
       exact ⟨Nil.eq_nil_last, fun h ↦ by rw [h]; simp⟩
 
+lemma IsCycle.encard_vxSet (h : G.IsCycle C) : V(C).encard = C.length := by
+  rw [← h.nonempty.cons_tail, cons_length, cons_vertexSet, Set.insert_eq_of_mem,
+    encard_vxSet_of_nodup h.nodup, Nat.cast_add, Nat.cast_one]
+  rw [h.isClosed.eq, ← tail_last, mem_vertexSet_iff]
+  exact last_mem
+
 lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e f,
     G.IsPath P ∧ u ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ e ≠ f ∧ C = cons u e (P.concat f u) := by
   refine ⟨C.tail.dropLast, C.first, hC.nonempty.firstEdge, hC.nonempty.lastEdge,

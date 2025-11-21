@@ -1,6 +1,7 @@
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Finset.Dedup
 import Mathlib.Data.Sym.Sym2
+import Mathlib.Data.Set.Card
 
 open Set Function List Nat
 
@@ -404,6 +405,14 @@ lemma one_le_length_iff : 1 ≤ w.length ↔ w.Nonempty := by
 
 lemma Nonempty.length_pos (hw : w.Nonempty) : 0 < w.length :=
   length_pos_iff.2 hw
+
+lemma encard_vxSet_of_nodup (h : w.vertex.Nodup) : V(w).encard = w.length + 1 := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+  · simp only [cons_vertex, nodup_cons, mem_vertex] at h
+    simp only [cons_vertexSet, cons_length, cast_add, cast_one]
+    rw [encard_insert_of_notMem (by simpa using h.1), ih h.2]
 
 @[simp]
 lemma one_lt_length_iff : 1 < w.length ↔ w.Nontrivial := by
