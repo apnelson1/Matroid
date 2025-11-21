@@ -70,10 +70,16 @@ attribute [enat_to_nat_top] not_true add_top
 -- /-! ### Tests -/
 variable {f : ℤ → ℕ∞}
 
-example {a b c : ℕ∞} {x : ℤ} (h : 2 * (a + b) < f x) : a ≠ ⊤ := by
+example {a : ℤ} (h : 3 ≤ f a) : f a ≠ 0 := by
+  enat_to_nat!; omega
 
 
-  enat_to_nat
+  -- omega
+
+-- example {a b c : ℕ∞} {x y : ℤ} (h : 2 * (f x + b) < f x) : a ≠ ⊤ := by
+
+
+  -- enat_to_nat
 
 -- example {f : ℤ → ℕ∞} {a b c d e : ℤ} (h : 2 * f e = f a + f b) : 2 * f a = f a + f b  := by
 --   generalize_enats
