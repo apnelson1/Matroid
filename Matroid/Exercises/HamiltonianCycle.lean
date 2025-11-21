@@ -1289,10 +1289,9 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith
   have hlt : min_comp.minDegree < V(min_comp).ncard := by
     have min_comp_simple : min_comp.Simple := sorry
-    refine minDegree_lt_vertexCount ?_ ?_
-    · exact Finite.mono hFinite min_comp_spec.1.le
-    · rw [NeBot_iff_vertexSet_nonempty]
-      exact min_comp_spec.1.nonempty
+    refine minDegree_lt_vertexCount ?_
+    rw [NeBot_iff_vertexSet_nonempty]
+    exact min_comp_spec.1.nonempty
 
   linarith
 
