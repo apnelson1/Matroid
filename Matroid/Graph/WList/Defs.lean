@@ -711,6 +711,18 @@ lemma idxOf_get (hw : w.vertex.Nodup) {n} (hn : n ≤ w.length) : w.idxOf (w.get
     ← List.idxOf_getElem hw n (by simpa [Nat.lt_add_one_iff])]
   simp
 
+lemma idxOf_last (w : WList α β) (hw : w.vertex.Nodup) : w.idxOf w.last = w.length := by
+  induction w with
+  | nil => simp
+  | cons u e w ih =>
+  simp
+  have hfl : u ≠ w.last := by
+    unfold Nodup at hw
+    simp_all only [ne_eq, cons_vertex, pairwise_cons, mem_vertex, last_mem, not_false_eq_true]
+  rw [idxOf_cons_ne hfl ]
+  simp
+  exact ih (Nodup.of_cons hw)
+
 end indices
 
 end WList
