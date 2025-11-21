@@ -145,7 +145,7 @@ protected def ofNonSpanningCircuit
     IsCircuit C := IsNonspanningCircuit C ∨
       (C.Finite ∧ C.ncard = r + 1 ∧ C ⊆ E ∧ (∀ C₀ ⊆ C, ¬ IsNonspanningCircuit C₀))
     empty_not_isCircuit := by
-      simp only [finite_empty, ncard_empty, Nat.right_eq_add, Nat.add_eq_zero, one_ne_zero,
+      simp only [finite_empty, ncard_empty, Nat.right_eq_add, Nat.add_eq_zero_iff, one_ne_zero,
         and_false, subset_empty_iff, forall_eq, false_and, or_false]
       exact empty_not_isCircuit
     circuit_antichain := by

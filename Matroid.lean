@@ -45,7 +45,7 @@ import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Connected.Menger
+-- import Matroid.Graph.Connected.Menger
 import Matroid.Graph.Connected.Set.Defs
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Set.SetEnsemble

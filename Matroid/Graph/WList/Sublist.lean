@@ -484,7 +484,7 @@ lemma append_cons_iff (heq : w.last = w'.first) (hL : L ≠ []) :
     simp [h.append, appendList, L'.op_foldl_eq_foldl_op_of_assoc]
   simp only [isChain_cons, Option.mem_def, h.chain_eq, and_true]
   rintro l hl
-  rw [head?_eq_head hL, Option.some_inj] at hl
+  rw [head?_eq_some_head hL, Option.some_inj] at hl
   rw [heq, ← h.head_first_eq_first, hl]
 
 lemma head_isPrefix (h : w.DecomposeTo L) : (L.head h.nonempty).IsPrefix w := by
@@ -1107,7 +1107,7 @@ lemma breakAt_aux_isChain_eq (w : WList α β) (P : α → Prop) [DecidablePred 
   | cons u e w =>
     by_cases hPu : P u <;> simp only [hPu, ↓reduceIte]
     · rw [breakAt_aux_append, List.isChain_append]
-      simp only [breakAt_aux_isChain_eq, IsChain.singleton, Option.mem_def, head?_cons,
+      simp only [breakAt_aux_isChain_eq, Option.mem_def, head?_cons,
         Option.some.injEq, forall_eq', first_cons, true_and]
       rw [getLast?_eq_getLast_of_ne_nil (by simp)]
       simp [breakAt_aux_getLast]
@@ -1255,7 +1255,7 @@ lemma breakAt_reverse_isChain_eq (w : WList α β) (P : α → Prop) [DecidableP
   | cons x e w =>
     by_cases hPx : P x <;> simp only [hPx, ↓reduceIte]
     · rw [breakAt_aux_append, List.isChain_append]
-      simp only [breakAt_aux_isChain_eq, IsChain.singleton, Option.mem_def, head?_cons,
+      simp only [breakAt_aux_isChain_eq, Option.mem_def, head?_cons,
         Option.some.injEq, forall_eq', nil_first, true_and]
       rw [getLast?_eq_getLast_of_ne_nil (by simp)]
       simp [breakAt_aux_getLast]

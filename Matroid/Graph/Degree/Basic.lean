@@ -123,7 +123,7 @@ lemma sum_incFun_eq_two (he : e ∈ E(G)) : (G.incFun e).sum (fun _ x ↦ x) = 2
 @[simp]
 lemma incFun_vertex_eq_zero_iff : G.incFun e x = 0 ↔ ¬ G.Inc e x := by
   refine ⟨fun h hinc ↦ hinc.incFun_ne_zero h, fun h ↦ ?_⟩
-  simp only [incFun, Finsupp.coe_mk, Nat.add_eq_zero]
+  simp only [incFun, Finsupp.coe_mk, Nat.add_eq_zero_iff]
   have hrw (y) : ¬ G.IsLink e x y := mt IsLink.inc_left h
   simp [hrw]
 
