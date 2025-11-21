@@ -1,34 +1,25 @@
 import Mathlib.Tactic
 import Mathlib.Data.Set.Finite.Basic
 
-import Matroid.Graph.Walk.Path
-import Matroid.Graph.Walk.Cycle
-import Matroid.Graph.Degree.Basic
-import Matroid.Graph.Finite
-import Matroid.Graph.Subgraph.Basic
-import Matroid.Graph.Connected.Defs
-import Matroid.Graph.Connected.Component
-
-import Matroid.Graph.Independent
-import Matroid.Graph.Tree
-
-import Matroid.Graph.WList.Defs
-import Matroid.Graph.WList.Cycle
-import Matroid.Graph.Connected.Separating
+import Qq
+-- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
-import Qq open Qq Lean Meta Elab Tactic
--- simple is still broken
--- import Matroid.Graph.Simple
+import Matroid.Graph.Connected.Basic
+import Matroid.Graph.Connected.Component
+import Matroid.Graph.Connected.Separating
+import Matroid.Graph.Finite
+import Matroid.Graph.Degree.Basic
+import Matroid.Graph.Independent
+import Matroid.Graph.Subgraph.Basic
+import Matroid.Graph.Tree
+import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Walk.Path
+import Matroid.Graph.WList.Defs
+import Matroid.Graph.WList.Cycle
 
--- connectivity is still broken
--- import Matroid.Graph.Connected.Component
-
+open Qq Lean Meta Elab Tactic
 open WList Set
-
--- we will be using a lot of LEM...
-open Classical
-
 
 section NonGraphThings
 
@@ -509,7 +500,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     (A : Set (α)) (hA : IsMaxIndependent G A)
     (hDirac : V(G).ncard ≤ 2 * G.minDegree ) : A.ncard ≤ S.ncard := by
   --Trivial case: Independent set is completely contained in the separator
-  obtain ( HAS| he ) := Decidable.em (A ⊆ S)
+  obtain ( HAS| he ) := Classical.em (A ⊆ S)
   · have : S.Finite := Set.Finite.subset vertexSet_finite HS.1.1
     exact ncard_le_ncard HAS this
   have ⟨x, hxA, hvS ⟩ : ∃ x ∈ A, x ∉ S := by exact not_subset.mp he
@@ -555,7 +546,7 @@ lemma indep_to_Dirac {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).nc
     linarith
 
   -- Second annoying case
-  obtain ( Hemp| hAH1 ) := Decidable.em ( A ∩ V(H2) = ∅)
+  obtain ( Hemp| hAH1 ) := Classical.em ( A ∩ V(H2) = ∅)
   · have ⟨y, hy ⟩ : ∃ y, y ∈ V(H2) \ A := by
       -- Managed to simplify this part a lot - Noah
       rw [← Set.diff_self_inter, Set.inter_comm, Hemp, Set.diff_empty]
@@ -649,7 +640,9 @@ lemma Hamiltonian_to_cyle {G : Graph α β}
   use C
   exact hC.1
 
-lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
+variable [DecidableEq α]
+
+lemma IsPath.exists_isPath_vertex (P : WList α β) (hP : G.IsPath P) (hu : u ∈ P) :
     ∃ P₀ P₁, G.IsPath P₀ ∧ G.IsPath P₁ ∧ u = P₀.last ∧ u = P₁.first ∧
     P₀.length + P₁.length = P.length ∧ P = (P₀ ++ P₁) := by
   set Pre : WList α β := prefixUntilVertex P u with h_pre
@@ -663,7 +656,7 @@ lemma IsPath.exists_isPath_vertex [DecidableEq α] (P : WList α β) (hP : G.IsP
   prefixUntilVertex_suffixFromVertex_length P u hu,
   Eq.symm (prefixUntilVertex_append_suffixFromVertex P u) ⟩
 
-lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
+lemma idxOf_concat_ne (w : WList α β) (e) (hx : x ∈ w) :
     (w.concat e y).idxOf x = w.idxOf x := by
   induction w with
   | nil u => simp_all
@@ -674,7 +667,8 @@ lemma idxOf_concat_ne [DecidableEq α] (w : WList α β) (e) (hx : x ∈ w) :
   rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
   simp_all
 
-lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
+lemma Cycle_conc_index
+    (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (P.concat f u))
     : v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
   simp at hCP
   obtain (rfl | h2 | rfl) := hCP
@@ -686,7 +680,7 @@ lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (
     rwa [idxOf_concat_ne P f ]
   · exact False.elim (huv rfl)
 
-lemma prefixUntilVertex_index [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w)
+lemma prefixUntilVertex_index (w : WList α β) (x : α) (hx : x ∈ w)
     (hle : w.idxOf y ≤ w.idxOf x ) :
     w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
   induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
@@ -711,14 +705,14 @@ lemma prefixUntilVertex_index [DecidableEq α] (w : WList α β) (x : α) (hx : 
   · simp
   simp_all [ idxOf_cons_ne huy.symm]
 
-lemma prefixUntilVertex_Nil [DecidableEq α] (w : WList α β) (x : α) :
+lemma prefixUntilVertex_Nil (w : WList α β) (x : α) :
     Nil ((cons x e w).prefixUntilVertex x) := by
   refine length_eq_zero.mp ?_
   rw [prefixUntilVertex_length (w := cons x e w)]
   exact idxOf_cons_self x e w
   simp
 
-lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
+lemma prefixUntilVertex_nil (w : WList α β) (x : α) :
     (cons x e w).prefixUntilVertex x = .nil x := by
   refine Nil.eq_nil_of_mem (prefixUntilVertex_Nil w x) ?_
   have h1 : x = ((cons x e w).prefixUntilVertex x).first := by
@@ -728,7 +722,7 @@ lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
     exact first_mem
   rwa [←h1 ] at h2
 
-lemma prefixUntilVertex_index_iff [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) (hy : y ∈ w)
+lemma prefixUntilVertex_index_iff (w : WList α β) (x : α) (hx : x ∈ w) (hy : y ∈ w)
     : y ∈ (w.prefixUntilVertex x) ↔  w.idxOf y ≤ w.idxOf x := by
 refine ⟨ ?_, ?_ ⟩
 · intro hyP
@@ -753,7 +747,7 @@ have h1 := idxOf_notMem hc
 rw [prefixUntilVertex_length hx, ←prefixUntilVertex_index w x hx hle] at h1
 linarith
 
-lemma idx_Of_tail [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
+lemma idx_Of_tail {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
     (ha : a ∈ w) :
     (w.tail).idxOf a + 1 = w.idxOf a := by
   induction w with
@@ -768,7 +762,7 @@ lemma idx_Of_tail [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) 
   exact haf rfl
   simp [hu.symm]
 
-lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w) :
+lemma idx_Of_dropLast {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w) :
     (w.dropLast).idxOf a = w.idxOf a := by
   induction w with
   | nil w => rfl
@@ -788,6 +782,7 @@ lemma idx_Of_dropLast [DecidableEq α] {w : WList α β} {a : α} (hw : w.Nonemp
   simp [hu.symm ]
   simp_all
 
+omit [DecidableEq α] in
 lemma IsCycle.rotate_one {C : WList α β} (hC : G.IsCycle C)
     : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
   set e := hC.nonempty.firstEdge
@@ -866,7 +861,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     by_contra! hCon
     -- if there is no cycle, then since G is a forest,
     -- any vertex v of degree >= 2 is a separating set
-    obtain (h1 | h2) := Decidable.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+    obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
     · -- So, S.encard = 1, and thus A.encard <= 1
       have ⟨v, ⟨hvG, hv⟩⟩ := h1
       -- since v has degree at least 2, we can obtain two neighbours
@@ -940,7 +935,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
         have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
         rw [ne_comm, ne_eq] at this
         assumption
-      obtain (h3 | h4) := Decidable.em (G.Adj a b)
+      obtain (h3 | h4) := Classical.em (G.Adj a b)
       · -- First, the case where a and b are adjacent
         -- Need to construct the cycle a-b-v
         have ⟨e, eLink⟩ := ha
@@ -1022,7 +1017,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
   --The following obtains a cycle of G that is maximal in length
   obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
   --Now that we got a max cycle, we have two cases
-  obtain ( hn| hlen ) := Decidable.em (V(C).encard = V(G).encard  )
+  obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
   · use C
     apply Is_hamiltonian_encard G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
@@ -1041,7 +1036,7 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
     rw[vertexDelete_vertexSet] at hc
     have hconcl : V(G) ⊆ V(C) := by
       intro v hv
-      obtain h1 | h2 := Decidable.em (v ∈ V(C))
+      obtain h1 | h2 := Classical.em (v ∈ V(C))
       · exact h1
       by_contra
       have hh : v ∈ V(G)\V(C) := by exact mem_diff_of_mem hv h2
