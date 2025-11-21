@@ -682,7 +682,6 @@ lemma Cycle_conc_index (huv : v ≠ u) {P : WList α β} (hCP : v ∈ cons u e (
   · refine ⟨ h2, ?_ ⟩
     rw [idxOf_cons_ne huv.symm e (P.concat f u) ]
     simp
-    --refine Eq.symm (IsPrefix.idxOf_eq_of_mem ?_ h2)
     rwa [idxOf_concat_ne P f ]
   · exact False.elim (huv rfl)
 
