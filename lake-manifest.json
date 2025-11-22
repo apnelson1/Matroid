@@ -18,7 +18,7 @@
    "rev": "0ac13cd97d030b989151359429f9061c12faf0f6",
    "name": "loogle",
    "manifestFile": "lake-manifest.json",
-   "inputRev": null,
+   "inputRev": "master",
    "inherited": false,
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/plausible",

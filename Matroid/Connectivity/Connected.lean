@@ -1,6 +1,7 @@
 import Matroid.Minor.Rank
 import Matroid.Modular.Basic
 import Matroid.ForMathlib.Data.Set.Finite
+import Mathlib.Tactic.Cases
 
 open Set
 

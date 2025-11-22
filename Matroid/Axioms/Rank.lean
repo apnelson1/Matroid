@@ -1,7 +1,8 @@
 import Matroid.ForMathlib.Other
 import Matroid.Minor.Rank
-import Mathlib.Tactic.Linarith
 import Mathlib.Data.ENat.Basic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Cases
 
 open Set
 

@@ -1,5 +1,7 @@
 import Matroid.Connectivity.Basic
 import Matroid.ForMathlib.Data.Set.Finite
+import Mathlib.Tactic.Cases
+import Mathlib.Order.Interval.Set.Infinite
 
 namespace Matroid
 

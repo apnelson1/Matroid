@@ -44,9 +44,10 @@ lemma Menger'sTheorem_aux [G.Finite] {S T : Set α} (hS : S ⊆ V(G)) (hT : T �
       hP.last_mem.1).isPath hdj.symm
     refine ⟨A', hA.path_insert (hP.of_vertexDelete.subset subset_union_left (by simp) hP.first_mem
         hP.last_mem.1) hdj.symm, P.last, ?_, by simp [A', image_insert_eq]⟩
-    contrapose! hdj
+    by_contra! hdj'
+    absurd hdj
     rw [not_disjoint_iff]
-    exact ⟨P.last, last_mem, A.image_last_subset hdj⟩
+    exact ⟨P.last, last_mem, A.image_last_subset hdj'⟩
   rw [not_disjoint_iff] at hdj
 
   have hGP : G.IsPathFrom S T P := by

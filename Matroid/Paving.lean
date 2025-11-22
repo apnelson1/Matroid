@@ -1,5 +1,6 @@
 import Matroid.Uniform
 import Matroid.ForMathlib.Matroid.Basic
+import Matroid.Closure
 import Matroid.ForMathlib.Matroid.Closure
 
 open Set

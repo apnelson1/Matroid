@@ -1,9 +1,11 @@
 import Matroid.ForMathlib.Card
 import Mathlib.Combinatorics.Matroid.Circuit
+import Mathlib.Combinatorics.Matroid.Rank.ENat
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Matroid.Sum
 import Matroid.ForMathlib.Set
-import Mathlib.Tactic.TFAE
+import Mathlib.Data.ENat.Lattice
+import Mathlib.Data.Set.Subset
 
 /-!
   A `Circuit` of a matroid is a minimal dependent set.
@@ -22,8 +24,8 @@ variable {B : Set α}
 
 lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsBasis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.IsBasis J₀ (M.closure I₀)) : M.IsBasis ((I \ I₀) ∪ J₀) X := by
-  have hdj : Disjoint (I \ I₀) J₀
-  · rw [disjoint_iff_forall_ne]
+  have hdj : Disjoint (I \ I₀) J₀ := by
+    rw [disjoint_iff_forall_ne]
     rintro e heII₀ _ heJ₀ rfl
     refine hIX.indep.notMem_closure_diff_of_mem heII₀.1 ?_
     refine mem_of_mem_of_subset ?_ <| M.closure_subset_closure <|

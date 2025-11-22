@@ -23,55 +23,37 @@ def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
 def IsMaxIndependent (G : Graph α β) (S : Set α) : Prop :=
   IsIndependent G S ∧ (∀ A, IsIndependent G A → A.encard ≤ S.encard )
 
-lemma Indep_Adje {G : Graph α β } {S : Set α} (hS : G.IsIndependent S) :
-    ∀ x y : α, x ∈ S → y ∈ S → x ≠ y → ¬ G.Adj x y := by
-  exact fun x y hx hy hxy ↦ hS.2 hx hy hxy
+lemma Indep_Adje (hS : G.IsIndependent S) :
+    ∀ x y : α, x ∈ S → y ∈ S → x ≠ y → ¬ G.Adj x y :=
+  fun _ _ hx hy ↦ hS.2 hx hy
 
-lemma Indep_Adje_simp {G : Graph α β } {S : Set α} [G.Simple] (hS : G.IsIndependent S) :
-    ∀ x y : α, x ∈ S → y ∈ S → ¬ G.Adj x y := by
-  intro x y hx hy
-  obtain (h_eq | hnee ) := eq_or_ne x y
-  rw [h_eq]
-  exact not_adj_self G y
-  exact Indep_Adje hS x y hx hy hnee
+lemma Indep_Adje_simp [G.Simple] (hS : G.IsIndependent S) :
+    ∀ ⦃x⦄, x ∈ S → ∀ ⦃y⦄, y ∈ S → ¬ G.Adj x y := by
+  intro x hx y hy
+  obtain (rfl | hnee) := eq_or_ne x y
+  · exact G.not_adj_self x
+  · exact hS.2 hx hy hnee
 
-lemma Indep_le_1 {G : Graph α β } {S : Set α} [G.Simple] (hSV : S ⊆ V(G)) (hS : S.encard ≤ 1) :
-    G.IsIndependent S := by
-  obtain (h0 | h1 ) := Decidable.em (S.encard = 1 )
-  · have ⟨v, hvS ⟩: ∃ v, S = {v} := by exact encard_eq_one.mp h0
-    refine ⟨ hSV, ?_ ⟩
-    rw[ hvS ]
-    simp
-  rw [encard_eq_one] at h1
-  rw [Set.encard_le_one_iff_eq] at hS
-  obtain ( ha | hb ) := hS
-  · rw [ha]
-    refine ⟨ empty_subset V(G) , (pairwise_empty fun x y ↦ ¬G.Adj x y ) ⟩
-  by_contra
-  exact h1 hb
+@[simp]
+lemma isIndependent_empty : G.IsIndependent ∅ := ⟨empty_subset _, pairwise_empty _⟩
 
-lemma IsIndepndent_nee {G : Graph α β } {S : Set α} [G.Simple] (hSV : S ⊆ V(G))
-    (hS : ¬G.IsIndependent S) :
-    ∃ u v : α, u ∈ S ∧ v ∈ S ∧ G.Adj u v := by
-  obtain (h1 | h2 ) := Decidable.em (S.encard ≤ 1 )
-  · by_contra hc
-    exact hS (Indep_le_1 hSV h1 )
-  unfold IsIndependent at hS
-  simp at hS
-  by_contra hc
-  simp at hc
-  simp at h2
-  exact (hS hSV) (fun a ha b hb hab ↦ hc a ha b hb )
+@[simp]
+lemma isIndependent_singleton : G.IsIndependent {v} ↔ v ∈ V(G) :=
+  ⟨fun h => by simpa using h.1, fun h => ⟨(by simpa), pairwise_singleton ..⟩⟩
 
+lemma Indep_le_1 [G.Simple] (hSV : S ⊆ V(G)) (hS : S.encard ≤ 1) : G.IsIndependent S := by
+  obtain (rfl | ⟨v, rfl⟩) := encard_le_one_iff_eq.mp hS
+  · simp
+  exact ⟨hSV, pairwise_singleton ..⟩
+
+lemma IsIndepndent_nee [G.Simple] (hSV : S ⊆ V(G)) (hS : ¬G.IsIndependent S) :
+    ∃ u ∈ S, ∃ v ∈ S, G.Adj u v := by
+  simp only [IsIndependent, not_and, Set.Pairwise] at hS
+  by_contra! hc
+  exact (hS hSV) (fun a ha b hb _ ↦ hc a ha b hb)
+
+@[simp]
 lemma isIndependent_pair_iff_of_ne (h_ne : x ≠ y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     G.IsIndependent {x, y} ↔ ¬ G.Adj x y := by
-  set ind : Set α := {x,y} with h_ind
-  refine ⟨ fun h ↦ (Indep_Adje h x y (mem_insert x {y} ) (mem_insert_of_mem x rfl) h_ne ), ?_ ⟩
-  intro hc
-  refine ⟨ ?_, ?_ ⟩
-  refine pair_subset hx hy
-  refine pairwise_pair.mpr ?_
-  intro hh
-  refine ⟨ hc, ?_ ⟩
-  --Betty, instead of contradiction we can just rw an if and only if
-  rwa [adj_comm]
+  refine ⟨fun h ↦ (h.2 (mem_insert x {y}) (mem_insert_of_mem x rfl) h_ne), ?_⟩
+  exact fun hc ↦ ⟨pair_subset hx hy, pairwise_pair.mpr fun _ ↦ ⟨hc, not_symm_not hc⟩⟩

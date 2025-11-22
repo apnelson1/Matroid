@@ -1,5 +1,5 @@
 import Mathlib.Combinatorics.Matroid.Closure
-import Mathlib.Tactic
+import Mathlib.Tactic.Have
 
 open Set
 

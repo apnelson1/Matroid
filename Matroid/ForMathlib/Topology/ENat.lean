@@ -1,12 +1,9 @@
 import Mathlib.Topology.Instances.ENat
-import Mathlib.Data.ENat.Lattice
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
-import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Topology.Order.T5
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Topology.Order.Monotone
 import Mathlib.Tactic.ENatToNat
-import Mathlib.Data.Set.Card
 import Matroid.ForMathlib.ENat
 import Matroid.ForMathlib.Card
 import Mathlib.Algebra.Group.Pointwise.Finset.BigOperators

@@ -684,10 +684,9 @@ lemma compl_eq_of_stronglyDisjoint_union {H₁ H₂ : Graph α β}
   simp only [compl_vertexSet, union_vertexSet, union_diff_left, sdiff_eq_left]
   exact hdisj.vertex.symm
 
-lemma isAtom_iff_isCompOf (H : G.ClosedSubgraph) :
-    IsAtom H ↔ H.val.IsCompOf G := by
+lemma isAtom_iff_isCompOf (H : G.ClosedSubgraph) : IsAtom H ↔ H.val.IsCompOf G := by
   simp only [IsAtom, ne_eq, Subtype.forall, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, IsCompOf,
-    Minimal, vertexSet_nonempty_iff, Subtype.coe_eq_bot_iff, ge_iff_le, and_imp]
+    Minimal, ← ne_bot_iff, Subtype.coe_eq_bot_iff, ge_iff_le, and_imp]
   apply and_congr (not_iff_not.mp ?_) <| forall₂_congr fun H' hH'cl => ?_
   · simp [H.prop]
   rw [lt_iff_le_and_ne, ← and_imp, and_comm (a := ¬H' = ⊥), and_imp, and_imp]

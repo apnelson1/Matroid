@@ -396,8 +396,8 @@ lemma IsSimplification.delete (hN : N.IsSimplification M) (hD : D ⊆ N.E) :
     mem_diff, delete_parallel_iff, and_imp, mem_setOf_eq]
   refine ⟨?_, fun e he hcl ↦ ?_⟩
   · obtain ⟨R, hR, rfl⟩ := hN.restriction.exists_eq_restrict
-    have hD_eq : D = (⋃ e ∈ D, {f | M.Parallel e f}) ∩ (M ↾ R).E
-    · refine (subset_inter ?_ hD).antisymm ?_
+    have hD_eq : D = (⋃ e ∈ D, {f | M.Parallel e f}) ∩ (M ↾ R).E := by
+      refine (subset_inter ?_ hD).antisymm ?_
       · nth_rw 1 [← biUnion_of_singleton D]
         refine biUnion_mono rfl.subset fun e heD ↦ ?_
         simp [(hN.simple.isNonloop_of_mem (hD heD)).of_restrict]

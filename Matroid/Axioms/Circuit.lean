@@ -162,9 +162,9 @@ protected def ofNonSpanningCircuit
           have hcard : r + 1 ≤ C₁.ncard := by
             rw [←hS.2.1]
             exact ncard_le_ncard hcon (h1.1)
-          linarith
+          omega
         · by_contra! hcon
-          have hcard : C₁.ncard ≤ C.ncard := by linarith
+          have hcard : C₁.ncard ≤ C.ncard := by omega
           refine hCC₁ (eq_of_subset_of_ncard_le hcon hcard hS1.1)
 
     circuit_elimination := by

@@ -1,5 +1,5 @@
 import Mathlib.Logic.Embedding.Set
-import Mathlib.Tactic
+import Mathlib.Tactic.NthRewrite
 import Mathlib.Data.Set.Subset
 
 open Set Function Set.Notation
