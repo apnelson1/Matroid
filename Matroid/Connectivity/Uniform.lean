@@ -3,7 +3,7 @@ import Matroid.Paving
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Partition} {k : ℕ∞}
 
-open Set
+open Set Matroid.Partition
 
 namespace Matroid
 
@@ -64,3 +64,35 @@ lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
   · exact h.tutteConnected_top_of_eRank_add_one_le hle
   grw [← M.eRank_add_eRank_dual] at hlt
   enat_to_nat!; omega
+
+lemma TutteConnected.isUniform (h : M.TutteConnected ⊤) : M.IsUniform := by
+  intro B hB
+  rw [← top_add (a := 1)] at h
+  have hcon := h.not_isTutteSeparation (P := M.partition B)
+  rw [imp_iff_right le_top, not_isTutteSeparation_iff', partition_left ..,
+    partition_right ..] at hcon
+  exact hcon.elim (.inl ∘ And.left) (.inr ∘ And.left)
+
+
+
+-- lemma tutteConnected_top_iff : M.TutteConnected ⊤ ↔
+--     ∀ B, M✶.IsBase B → M.IsBase B ∨ M.IsCircuit B ∨ M.IsHyperplane B := by
+--   refine ⟨fun h B hBd ↦ ?_, fun h ↦ ?_⟩
+--   · have hBE : B ⊆ M.E := hB.subset_ground
+--     obtain (hi | hs) := h.isUniform.indep_or_spanning B
+--     · obtain ⟨B', hB', hBB'⟩ := hi.exists_isBase_superset
+--       · obtain rfl | hssu := hBB'.eq_or_ssubset
+--         · simp [hB']
+--         obtain (hi' | hs') := h.isUniform.indep_or_spanning (M.E \ B')
+--         · have := hBd.compl_isBase_of_dual
+--         rw [tutteConnected_top_iff_forall] at h
+
+--         specialize h (M.partition B')
+--         simp [not_isTutteSeparation_iff', hB'.indep, hB'.spanning] at h
+--         have := hBd.compl_isBase_of_dual
+
+
+--     have := h (M.partition B hBd.subset_ground)
+--     have hi := hBd.compl_isBase_of_dual
+--     simp only [Partition.isTutteSeparation_iff, partition_left, partition_right, not_and, not_or,
+--       not_dep_compl_iff, hi.indep, not_codep_compl_iff, true_and] at this

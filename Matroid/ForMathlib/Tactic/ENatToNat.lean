@@ -49,6 +49,18 @@ def generalizeAtoms (ns : Array Name) (g : MVarId) : MetaM MVarId := do
   let (_, _, g') ← g.generalizeHyp args ((← getLocalHyps).map (·.fvarId!))
   return g'
 
+-- open Qq Lean Elab Tactic Term Meta in
+-- partial def foo (toRecurse : List Expr) (g : MVarId) : TacticM MVarId := g.withContext do
+--   match toRecurse with
+--   | [] => return g
+--   | a :: vars =>
+--     let some n := a.name? | return g
+--     let x := mkIdent n
+--     evalTactic
+--       (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+--     let bar ← foo toRecurse g
+
+
 elab "generalize_enats" " with" e:(ppSpace colGt ident)* : tactic => do
   let names := e.map TSyntax.getId
   Elab.Tactic.liftMetaTactic' (generalizeAtoms names)
@@ -85,6 +97,54 @@ example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hb
 
 example (a b c d : ℕ∞) (x : ℤ) (hab : a ≤ b) (hbc : 2 * f x + d < c) : f x ≠ ⊤ := by
   enat_to_nat!
+
+/-! ### Replacing `enat_to_nat`. -/
+
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- elab "foo" : tactic => do
+--   let g ← getMainGoal
+--   g.withContext do
+--     _
+
+
+
+open Qq Lean Elab Tactic Term Meta in
+/-- Finds the first `ENat` in the context and applies the `cases` tactic to it.
+Then simplifies expressions involving `⊤` using the `enat_to_nat_top` simp set. -/
+elab "cases_first_enat" : tactic => focus do
+  let g ← getMainGoal
+  g.withContext do
+    let ctx ← getLCtx
+    let decl? ← ctx.findDeclM? fun decl => do
+      if ← (isExprDefEq (← inferType decl.toExpr) q(ENat)) then
+        return Option.some decl
+      else
+        return Option.none
+    let some decl := decl? | throwError "No ENats"
+    let isInaccessible := ctx.inaccessibleFVars.find? (·.fvarId == decl.fvarId) |>.isSome
+    if isInaccessible then
+      let name : Name := `enat_to_nat_aux
+      setGoals [← g.rename decl.fvarId name]
+      let x := mkIdent name
+      evalTactic (← `(tactic| cases $x:ident using ENat.recTopCoe))
+    else
+      let x := mkIdent decl.userName
+      evalTactic
+        (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+    evalTactic (← `(tactic| all_goals try simp only [enat_to_nat_top] at *))
+/-
+/-- `enat_to_nat` shifts all `ENat`s in the context to `Nat`, rewriting propositions about them.
+A typical use case is `enat_to_nat; omega`. -/
+macro "enat_to_nat" : tactic => `(tactic| focus (
+    (repeat' cases_first_enat) <;>
+    (try simp only [enat_to_nat_top, enat_to_nat_coe] at *)
+  )
+)
+-/
+
+
+/-! ### Oddities -/
 
 -- WTF : from `Matroid.Connectivity.Higher`. Look into this.
 
