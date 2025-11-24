@@ -152,12 +152,51 @@ lemma exists_vertex_minDegree' (hG : V(G).Nonempty) : ∃ x ∈ V(G), G.degree x
 
 -- MORE THINGS
 
-lemma degree_lt_vertexCount [G.Simple] (h : v ∈ V(G)) :
-    G.degree v < V(G).ncard := by sorry
+lemma setOf_adj_subset {G : Graph α β} (x : α) : {y | G.Adj x y} ⊆ V(G) := by
+  intro y hy
+  simp at hy
+  exact hy.right_mem
 
-lemma minDegree_lt_vertexCount [G.Simple] (hNeBot : G.NeBot) : G.minDegree < V(G).ncard := by
+-- maybe this should be `Neighbor`?
+lemma encard_setOf_adj_le {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
+    {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
+  have : ({x} : Set α).encard = 1 := by simp
+  rw [← this]; clear this
+  rw [←Set.encard_union_eq]
+  swap
+  · simp; apply not_adj_self
+  apply encard_le_encard
+  simp
+  refine insert_subset h ?_
+  exact setOf_adj_subset _
+
+-- by incAdjEquiv
+lemma eDegree_le_encard {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
+    G.eDegree x + 1 ≤ V(G).encard := by
+  have solver := G.incAdjEquiv x
+  simp [eDegree_eq_encard_inc]
+  change {e // e ∈ {e | G.Inc e x}} ≃ {y // y ∈ {y | G.Adj x y}} at solver
+  repeat rw [←coe_eq_subtype] at solver
+  rw [solver.encard_eq]
+  exact encard_setOf_adj_le h
+
+lemma degree_le_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
+    G.degree x + 1 ≤ V(G).ncard := by
+  suffices hyp : G.eDegree x + 1 ≤ V(G).encard
+  · rw [←natCast_degree_eq, ←Set.Finite.cast_ncard_eq vertexSet_finite] at hyp
+    enat_to_nat!; assumption
+  exact eDegree_le_encard h
+
+lemma degree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
+    G.degree x < V(G).ncard := by
+  linarith [degree_le_ncard h]
+
+lemma minDegree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
+    G.minDegree < V(G).ncard := by
   have ⟨v,hvG, vspec⟩ := G.exists_vertex_minDegree hNeBot
-  exact vspec ▸ degree_lt_vertexCount hvG
+  rw [←vspec]
+  apply degree_lt_ncard
+  tauto
 
 --The exercises start here
 --I added this lemma. Seems important. Do we need to prove it or already exists but is not working?
@@ -1515,12 +1554,12 @@ lemma thm1_1_connected [G.Simple] [hFinite : G.Finite]
 
   -- G, min_comp, other_comp have finite vertexSets
   have G_finite_vertexSet : V(G).Finite := vertexSet_finite
-  have min_comp_finite_vertexSet : V(min_comp).Finite := by
-    suffices min_comp.Finite by exact vertexSet_finite
-    exact Finite.mono hFinite min_comp_spec.1.le
-  have other_comp_finite_vertexSet : V(other_comp).Finite := by
-    suffices other_comp.Finite by exact vertexSet_finite
-    exact Finite.mono hFinite other_comp_spec.1.le
+  have min_comp_finite : min_comp.Finite := hFinite.mono min_comp_spec.1.le
+  have min_comp_finite_vertexSet : V(min_comp).Finite :=
+    vertexSet_finite
+  have other_comp_finite : other_comp.Finite := hFinite.mono other_comp_spec.1.le
+  have other_comp_finite_vertexSet : V(other_comp).Finite :=
+    vertexSet_finite
 
   -- other_comp has at least as many vertices as min_comp
   have other_comp_larger : V(min_comp).ncard ≤ V(other_comp).ncard := by
@@ -1577,8 +1616,8 @@ lemma thm1_1_connected [G.Simple] [hFinite : G.Finite]
     exact min_comp_spec.1
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith
   have hlt : min_comp.minDegree < V(min_comp).ncard := by
-    have min_comp_simple : min_comp.Simple := sorry
-    refine minDegree_lt_vertexCount ?_
+    have min_comp_simple : min_comp.Simple := ‹G.Simple›.mono min_comp_spec.1.le
+    refine minDegree_lt_ncard ?_
     rw [NeBot_iff_vertexSet_nonempty]
     exact min_comp_spec.1.nonempty
 
