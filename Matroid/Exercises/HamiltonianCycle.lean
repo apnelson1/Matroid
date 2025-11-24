@@ -244,6 +244,8 @@ lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected)
   obtain ⟨ H₁, hH1, hvH1 ⟩ := G.exists_IsCompOf_vertex_mem hw
   have : H ≠ H₁ := by sorry
   sorry
+  -- Set.Nontrivial, Set.Subsingleton
+
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
@@ -1662,3 +1664,59 @@ lemma exists_left_edge
     (w : WList α β) {x : α} (hxw : x ∈ w) (hx : x ≠ w.first) :
     ∃ e y, w.DInc e y x := by
   sorry
+
+-- cycles in simple graphs are nontrivial
+omit [DecidableEq α] in
+lemma IsCycle.nontrivial_of_simple
+    [G.Simple]
+    {P} (hP : G.IsCycle P) : P.Nontrivial := by
+  obtain (h|h) := hP.loop_or_nontrivial
+  swap; assumption
+  exfalso
+  obtain ⟨x,e,rfl⟩ := h
+  replace hP := hP.isTrail
+  rw [cons_isTrail_iff] at hP
+  apply hP.2.1.ne; simp
+
+-- cycles in simple graphs are of length at least 3
+lemma IsCycle.cycle_length_ge_3_of_simple
+    [G.Simple]
+    {P} (hP : G.IsCycle P) :
+    3 ≤ P.length := by
+  by_contra! hyp_contra
+  replace hyp_contra : P.length = 2 := by
+    suffices 2 ≤ P.length by linarith
+    have P_nontrivial := hP.nontrivial_of_simple
+    linarith [P_nontrivial.one_lt_length]
+  rw [hP.length_eq_two_iff] at hyp_contra
+  obtain ⟨x,y,e,f,_, hne, rfl⟩ := hyp_contra
+  have h_e_link : G.IsLink e x y := by
+    replace hP := hP.isTrail
+    simp_all
+  have h_f_link : G.IsLink f y x := by
+    replace hP := hP.isTrail
+    simp_all
+  symm at h_f_link
+  apply hne
+  have := IsLink.unique_edge h_e_link h_f_link
+  assumption
+
+/- gist of the proof of the next part:
+Goal: there's a cycle which contains the vertices of the longest path (which we will call P)
+Proof:
+- first, note that each neighbour of P.first must be on P by maximality of P
+- symmetrically, each neighbour of P.last must be on P as well
+- each neighbour of P.first has an edge of P to its left,
+  each neighbour of P.last has an edge of P to its right
+- since min degree >= n/2, there are n/2 edges of P with a neighbour of
+  of P.first on its right and n/2 edges of P with a neighbour of P.last on its left
+- P can only have at most n - 1 edges, so by pigeonhole, there must be at least
+  one edge of P with a neighbour of P.last on its left and a neighbour of P.first on
+  its right, say x - e - y with (G.Adj P.first x), (G.Adj P.last y)
+- so if we let:
+  * u := P.first
+  * v := P.last
+  * P₁ be the prefix u ... x,
+  * P₂ be the suffix y ... v,
+  then P₁ + xv - P₂ + yu is a cycle containing all of V(P)
+-/
