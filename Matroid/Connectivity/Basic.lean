@@ -889,6 +889,17 @@ lemma eConn_add_nullity_eq_eRk_dual (M : Matroid α) (X : Set α) (hX : X ⊆ M.
 lemma Indep.eConn_eq_eRk_dual (hI : M.Indep I) : M.eConn I = M✶.eRk I := by
   rw [← eConn_add_nullity_eq_eRk_dual _ I hI.subset_ground, hI.nullity_eq, add_zero]
 
+lemma eConn_add_eRank_eq (M : Matroid α) : M.eConn X + M.eRank = M.eRk X + M.eRk (M.E \ X) := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [← eConn_inter_ground, aux inter_subset_right, eRk_inter_ground, diff_inter_self_eq_diff]
+  rw [M.eRk_add_eRk_eq_eRk_union_add_eLocalConn, ← eConn_eq_eLocalConn, union_diff_cancel hXE,
+    eRk_ground, add_comm]
+
+lemma Indep.eConn_eq_of_compl_indep (hI : M.Indep I) (hI' : M.Indep (M.E \ I)) :
+    M.eConn I = M✶.eRank := by
+  rw [hI.eConn_eq_eRk_dual, ← hI'.coindep.compl_spanning.eRk_eq, dual_ground,
+    diff_diff_cancel_left hI.subset_ground]
+
 /-- The slack term in the inequality `λ(X) ≤ |X|` is the sum of the nullity and conullity of `X`.
 This needs `X ⊆ M.E`, for instance in the case where `X` is a single non-element. -/
 lemma eConn_add_nullity_add_nullity_dual (M : Matroid α) (X : Set α)
@@ -1018,7 +1029,6 @@ lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E
     (M₁.disjointSum M₂ hdj).eConn M₂.E = 0 := by
   rw [disjointSum_comm]
   simp
-
 
 lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
   rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,

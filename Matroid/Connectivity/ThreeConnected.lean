@@ -13,7 +13,9 @@ variable {α : Type*} {M : Matroid α} {j k : ℕ∞} {a b e f : α} {A B X Y : 
 -- abbrev InternallyThreeConnected (M : Matroid α) := M.IsInternallyConnected 3
 
 -- Cardinality hypothesis shouldn't be needed.
-theorem bixby (hM : M.TutteConnected 3) (hnt : 4 ≤ M.E.encard) (e : α) :
+-- Bixby's lemma.
+theorem TutteConnected.internallyConnected_three_contract_or_delete (hM : M.TutteConnected 3)
+    (hnt : 4 ≤ M.E.encard) (e : α) :
     (M ／ {e}).InternallyConnected 3 ∨ (M ＼ {e}).InternallyConnected 3 := by
   wlog he : e ∈ M.E generalizing with aux
   · rw [← contract_inter_ground_eq, singleton_inter_eq_empty.2 he, contract_empty]

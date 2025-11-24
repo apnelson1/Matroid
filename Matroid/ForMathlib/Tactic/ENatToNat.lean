@@ -49,18 +49,6 @@ def generalizeAtoms (ns : Array Name) (g : MVarId) : MetaM MVarId := do
   let (_, _, g') ← g.generalizeHyp args ((← getLocalHyps).map (·.fvarId!))
   return g'
 
--- open Qq Lean Elab Tactic Term Meta in
--- partial def foo (toRecurse : List Expr) (g : MVarId) : TacticM MVarId := g.withContext do
---   match toRecurse with
---   | [] => return g
---   | a :: vars =>
---     let some n := a.name? | return g
---     let x := mkIdent n
---     evalTactic
---       (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
---     let bar ← foo toRecurse g
-
-
 elab "generalize_enats" " with" e:(ppSpace colGt ident)* : tactic => do
   let names := e.map TSyntax.getId
   Elab.Tactic.liftMetaTactic' (generalizeAtoms names)
@@ -77,7 +65,9 @@ macro "enat_to_nat!" " with" e:(ppSpace colGt ident)* : tactic =>
   `(tactic | (generalize_enats with $e*; enat_to_nat))
 
 -- Missing lemmas from the `enat_to_nat` simpset.
-attribute [enat_to_nat_top] not_true add_top
+attribute [enat_to_nat_top] not_true add_top and_true true_and or_false false_or imp_false
+  false_iff true_iff iff_true iff_false true_or or_true Nat.cast_le Nat.cast_lt false_imp_iff
+  true_imp_iff
 
 -- /-! ### Tests -/
 variable {f : ℤ → ℕ∞}
@@ -107,41 +97,79 @@ example (a b c d : ℕ∞) (x : ℤ) (hab : a ≤ b) (hbc : 2 * f x + d < c) : f
 --   g.withContext do
 --     _
 
+-- open Qq Lean Elab Tactic Term Meta in
+-- /-- Finds the first `ENat` in the context and applies the `cases` tactic to it.
+-- Then simplifies expressions involving `⊤` using the `enat_to_nat_top` simp set. -/
+-- elab "cases_first_enat" : tactic => focus do
+--   let g ← getMainGoal
+--   g.withContext do
+--     let ctx ← getLCtx
+--     let decl? ← ctx.findDeclM? fun decl => do
+--       if ← (isExprDefEq (← inferType decl.toExpr) q(ENat)) then
+--         return Option.some decl
+--       else
+--         return Option.none
+--     let some decl := decl? | throwError "No ENats"
+--     let isInaccessible := ctx.inaccessibleFVars.find? (·.fvarId == decl.fvarId) |>.isSome
+--     if isInaccessible then
+--       let name : Name := `enat_to_nat_aux
+--       setGoals [← g.rename decl.fvarId name]
+--       let x := mkIdent name
+--       evalTactic (← `(tactic| cases $x:ident using ENat.recTopCoe))
+--     else
+--       let x := mkIdent decl.userName
+--       evalTactic
+--         (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+--     evalTactic (← `(tactic| all_goals try simp only [enat_to_nat_top] at *))
+-- /-
+-- `enat_to_nat` shifts all `ENat`s in the context to `Nat`, rewriting propositions about them.
+-- A typical use case is `enat_to_nat; omega`. -/
+-- macro "enat_to_nat" : tactic => `(tactic| focus (
+--     (repeat' cases_first_enat) <;>
+--     (try simp only [enat_to_nat_top, enat_to_nat_coe] at *)
+--   )
+-- )
+--
+
+/-! ### Tinkering -/
 
 
-open Qq Lean Elab Tactic Term Meta in
-/-- Finds the first `ENat` in the context and applies the `cases` tactic to it.
-Then simplifies expressions involving `⊤` using the `enat_to_nat_top` simp set. -/
-elab "cases_first_enat" : tactic => focus do
-  let g ← getMainGoal
-  g.withContext do
-    let ctx ← getLCtx
-    let decl? ← ctx.findDeclM? fun decl => do
-      if ← (isExprDefEq (← inferType decl.toExpr) q(ENat)) then
-        return Option.some decl
-      else
-        return Option.none
-    let some decl := decl? | throwError "No ENats"
-    let isInaccessible := ctx.inaccessibleFVars.find? (·.fvarId == decl.fvarId) |>.isSome
-    if isInaccessible then
-      let name : Name := `enat_to_nat_aux
-      setGoals [← g.rename decl.fvarId name]
-      let x := mkIdent name
-      evalTactic (← `(tactic| cases $x:ident using ENat.recTopCoe))
-    else
-      let x := mkIdent decl.userName
-      evalTactic
-        (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
-    evalTactic (← `(tactic| all_goals try simp only [enat_to_nat_top] at *))
-/-
-/-- `enat_to_nat` shifts all `ENat`s in the context to `Nat`, rewriting propositions about them.
-A typical use case is `enat_to_nat; omega`. -/
-macro "enat_to_nat" : tactic => `(tactic| focus (
-    (repeat' cases_first_enat) <;>
-    (try simp only [enat_to_nat_top, enat_to_nat_coe] at *)
-  )
-)
--/
+-- open Qq Lean Elab Tactic Term Meta in
+-- def foo (toRecurse : List Expr) (g : MVarId) : TacticM MVarId := g.withContext do
+--   Lean.logInfo m!"input : {toRecurse}"
+--   match toRecurse with
+--   | [] => return g
+--   | a :: vars =>
+--     Lean.logInfo m!"now : {a}, {vars}"
+--     let some n := a.name? | return g
+--     let x := mkIdent n
+--     evalTactic
+--       (← `(tactic | have h : 0 = 0 := rfl))
+--     evalTactic
+--       (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+--     foo vars g
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- def bar (g : MVarId) : TacticM MVarId := g.withContext do
+--   let atoms ← AtomM.run .reducible (atoms g)
+--   -- Lean.logInfo m!"{atoms}"
+--   let atoms₁ := atoms.filter Expr.isFVar
+--   let g' ← foo atoms₁.toList g
+--   return g'
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- elab "test'" : tactic => do
+--   let g ← getMainGoal
+--   g.withContext do
+--     let g' ← bar g
+
+
+--   evalTactic (← `(tactic| have h : 0 = 0 := rfl))
+
+
+
+-- example {a b : ℕ∞} (hab : a ≤ b)  : 0 ≤ a := by
+--   test'
 
 
 /-! ### Oddities -/
