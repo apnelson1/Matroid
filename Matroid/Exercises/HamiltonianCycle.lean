@@ -1246,21 +1246,41 @@ lemma Hamiltonian_alpha_kappa {G : Graph α β} [G.Simple] [G.Finite] (h3 : 3 �
 
 
 
+omit [DecidableEq α] in
+lemma components_encard_le (G : Graph α β)
+    : G.Components.encard ≤ V(G).encard := by
+  have h_disj := G.components_pairwise_stronglyDisjoint
+  have h_eq := G.eq_sUnion_components
+  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
+    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
+    simp_all
+  let surj : V(G) → G.Components := by
+    rintro ⟨x, hx⟩
+    refine ⟨G.walkable x, walkable_isCompOf hx⟩
+  have surj_surjective : Function.Surjective surj := by
+    rintro ⟨H, H_spec⟩
+    have H_nonempty := H_spec.1.2
+    have ⟨x, hxH⟩ := H_nonempty
+    have hxG : x ∈ V(G) := H_spec.1.1.le.vertex_subset hxH
+    use ⟨x, hxG⟩
+    simp [surj]
+    simp [H_spec.eq_walkable_of_mem_walkable hxH]
+  have inj_spec := Function.injective_surjInv surj_surjective
+  set inj := Function.surjInv surj_surjective
+  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
 
-
-
-
-
+omit [DecidableEq α] in
 lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
-  G.Components.Finite := by
-  sorry
+    G.Components.Finite := by
+  refine hFinite.vertexSet_finite.finite_of_encard_le ?_
+  exact G.components_encard_le
 
 /- Step 1: WTS G is connected.
 Proof: Suppose not. Then the degree of any vertex in the smallest component C of G
 would be less than |C| ≤ n/2.
 -/
 
-
+omit [DecidableEq α] in
 lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
   (hV : 3 ≤ V(G).ncard) (hDegree : V(G).ncard ≤ 2 * G.minDegree) :
   G.Connected := by
