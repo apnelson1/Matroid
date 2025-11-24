@@ -1644,27 +1644,105 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
 
   linarith
 
-def pathSet (G : Graph α β) := {p | IsPath G p}
+omit [DecidableEq α]
 
-lemma pathSet_finite (G : Graph α β) (hFinite : G.Finite) :
-    G.pathSet.Finite := by
-  sorry
+def PathSet (G : Graph α β) := {p | IsPath G p}
+
+lemma IsWalk.eq_of_vertex_eq
+    {G : Graph α β} [G.Simple]
+    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : p.vertex = q.vertex) :
+    p = q := by
+  induction q generalizing p with
+  | nil x =>
+      cases p <;> simp_all
+  | cons x e w IH =>
+      induction p <;> simp_all
+      case cons x' e' w' =>
+        exact IsLink.unique_edge (G := G) hp hq.1
+
+private
+lemma IsWalk.vertex_mem_of_mem' {p} (hp : G.IsWalk p) (x) (hx : x ∈ p.vertex) : x ∈ V(G) :=
+  hp.vertex_mem_of_mem hx
+
+def IsWalk.vertex_coe {p} (hp : G.IsWalk p) : List ↑V(G) :=
+  p.vertex.attachWith V(G) (vertex_mem_of_mem' hp)
+
+lemma IsWalk.vertex_coe_inj [G.Simple]
+    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : hp.vertex_coe = hq.vertex_coe) :
+    p = q := by
+  apply congr_arg (List.map Subtype.val) at heq
+  replace heq : p.vertex = q.vertex := by
+    simp [vertex_coe] at heq
+    have rw1 := p.vertex.unattach_attachWith (p := V(G)) (H := hp.vertex_mem_of_mem')
+    have rw2 := q.vertex.unattach_attachWith (p := V(G)) (H := hq.vertex_mem_of_mem')
+    simp [rw1, rw2] at heq
+    assumption
+  exact IsWalk.eq_of_vertex_eq hp hq heq
+
+lemma IsPath.vertex_coe_nodup {p} (hp : G.IsPath p) :
+    hp.isWalk.vertex_coe.Nodup := by
+  simp [IsWalk.vertex_coe]
+  exact hp.nodup
+
+lemma IsWalk.vertex_coe_length_eq {p} (hp : G.IsWalk p) :
+    hp.vertex_coe.length = p.vertex.length := by
+  simp [vertex_coe]
+
+lemma IsPath.vertex_length_le_vertexSet_encard {G : Graph α β} {p} (hp : G.IsPath p) :
+    p.vertex.length ≤ V(G).encard := by
+  obtain (eqTop|neTop) := Classical.em $ V(G).encard = ⊤
+  · simp_all
+  simp at neTop
+  rw [←hp.isWalk.vertex_coe_length_eq]
+  have hfintype : Fintype V(G) := neTop.fintype
+  rw [← Set.coe_fintypeCard]
+  enat_to_nat
+  exact hp.vertex_coe_nodup.length_le_card
+
+lemma pathSet_finite (G : Graph α β) [G.Simple] [G.Finite] :
+    G.PathSet.Finite := by
+  -- the number of G-paths IN A SIMPLE GRAPH is directly upper-bounded by the number of
+  -- nodup lists with elements in V(G).
+  -- Note that in a non-simple graph, we could have infinitely many edges between just two vertices,
+  -- hence infinitely many paths.
+  have isInG {p} (hp : G.IsPath p) (x) (h : x ∈ p.vertex) : x ∈ V(G) := by
+    exact hp.isWalk.vertex_mem_of_mem h
+  let inj : G.PathSet → List V(G) := fun ⟨_, hp⟩ ↦ hp.isWalk.vertex_coe
+  have inj_injective : Function.Injective inj := by
+    intro ⟨p, hp⟩ ⟨q, hq⟩ heq
+    simp [inj] at heq ⊢
+    exact IsWalk.vertex_coe_inj hp.isWalk hq.isWalk heq
+  -- refine ‹G.Finite›.vertexSet_finite.finite_of_encard_le ?_
+  have vx_finite : Finite V(G) := vertexSet_finite
+  have ⟨n, hn⟩ := G.vertexSet_finite.exists_encard_eq_coe
+  have h_subset : range inj ⊆ {l : List V(G) | l.length ≤ n} := by
+    intro l hl
+    simp [inj] at hl ⊢
+    obtain ⟨p, hp, rfl⟩ := hl
+    have := hp.vertex_length_le_vertexSet_encard
+    rw [hp.isWalk.vertex_coe_length_eq]
+    enat_to_nat!; omega
+  change Finite G.PathSet
+  rw [←Set.finite_range_iff inj_injective]
+  refine Set.Finite.subset (List.finite_length_le V(G) n) h_subset
 
 lemma pathSet_nonempty (G : Graph α β) (hNeBot : G.NeBot) :
-    G.pathSet.Nonempty := by
-  sorry
+    G.PathSet.Nonempty := by
+  have hnonempty : V(G).Nonempty := by rwa [←NeBot_iff_vertexSet_nonempty]
+  obtain ⟨x, hx⟩ := hnonempty
+  use nil x
+  simpa [PathSet]
 
 def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
-  MaximalFor (· ∈ G.pathSet) (fun w => w.length) p
+  MaximalFor G.IsPath (fun w => w.length) p
 
-omit [DecidableEq α] in
 @[simp]
 lemma IsLongestPath.isPath {p} (h : G.IsLongestPath p) : G.IsPath p := h.1
 
 lemma exists_longest_path
-    (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
+    (G : Graph α β) [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
     ∃ p, G.IsLongestPath p :=
-  Set.Finite.exists_maximalFor _ _ (G.pathSet_finite hFinite) (G.pathSet_nonempty hNeBot)
+  Set.Finite.exists_maximalFor _ _ (G.pathSet_finite) (G.pathSet_nonempty hNeBot)
 
 -- by maximality, each neighbour of is on the path
 lemma first_neighbors_mem_path
@@ -1680,7 +1758,7 @@ lemma first_neighbors_mem_path
   symm at Q_def
   have hQ : G.IsPath Q := by simp_all
   have hQ_len : Q.length = P.length + 1 := by simp_all
-  have hQ_path : Q ∈ G.pathSet := hQ
+  have hQ_path : Q ∈ G.PathSet := hQ
   have maximality := maximalFor_is_upper_bound _ hP _ hQ_path
   linarith
 
@@ -1698,7 +1776,6 @@ lemma exists_left_edge
   sorry
 
 -- cycles in simple graphs are nontrivial
-omit [DecidableEq α] in
 lemma IsCycle.nontrivial_of_simple
     [G.Simple]
     {P} (hP : G.IsCycle P) : P.Nontrivial := by
