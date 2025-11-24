@@ -378,22 +378,17 @@ lemma exists_isSepSet_of_isTree
       intro x hxT
       specialize hyp _ hxT
       specialize hMinDeg _ hxT
-      change T.eDegree x < 1 + 1 at hyp
-      rw [ENat.lt_add_one_iff] at hyp
-        <;> [exact hyp.antisymm hMinDeg; simp]
+      enat_to_nat! <;> omega
     clear hMinDeg
     have hT_nonempty : V(T).Nonempty := by
       simp only [←Set.encard_pos]
-      suffices (0 : ℕ∞) < 3 by
-        exact this.trans_le hV
-      simp
+      enat_to_nat!; omega
     have ⟨x, hxT⟩ := hT_nonempty
     have hx_ssub : {x} ⊂ V(T) := by
       refine ⟨by simp; tauto, ?_⟩
       intro bad
       have := Set.encard_le_encard bad
-      have := hV.trans this
-      simp at this
+      simp at this; enat_to_nat!; omega
     have hconn := hT.connected
     rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
     have hy := hconn _ hx_ssub (by simp)
@@ -1320,8 +1315,7 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
     have : G.Components.encard = 1 := by
       simp [is_singleton]
     rw [this] at num_components_ge_2; clear this
-    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.coe_le_coe.mp num_components_ge_2
-    linarith
+    enat_to_nat; omega
 
   -- G, min_comp, other_comp have finite vertexSets
   have G_finite_vertexSet : V(G).Finite := vertexSet_finite
