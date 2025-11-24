@@ -38,6 +38,23 @@ lemma minimalFor_is_lower_bound [LinearOrder α] {P : ι → Prop} (f : ι → �
   · assumption
   · tauto
 
+lemma maximal_is_upper_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Maximal P x) :
+    ∀ y, P y → y ≤ x := by
+  intro y hy
+  simp [Maximal] at h
+  obtain (_|_) := le_total y x
+  · assumption
+  · tauto
+
+lemma maximalFor_is_upper_bound
+    {ι} [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι} (h : MaximalFor P f i) :
+    ∀ j, P j → f j ≤ f i := by
+  intro j hj
+  simp [MaximalFor] at h
+  obtain (_|_) := le_total (f j) (f i)
+  · assumption
+  · tauto
+
 end NonGraphThings
 
 namespace Graph
@@ -1629,7 +1646,7 @@ lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
 
 def pathSet (G : Graph α β) := {p | IsPath G p}
 
-lemma pathSet_finite (G : Graph α β) [G.Simple] (hFinite : G.Finite) :
+lemma pathSet_finite (G : Graph α β) (hFinite : G.Finite) :
     G.pathSet.Finite := by
   sorry
 
@@ -1640,22 +1657,36 @@ lemma pathSet_nonempty (G : Graph α β) (hNeBot : G.NeBot) :
 def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
   MaximalFor (· ∈ G.pathSet) (fun w => w.length) p
 
+omit [DecidableEq α] in
+@[simp]
+lemma IsLongestPath.isPath {p} (h : G.IsLongestPath p) : G.IsPath p := h.1
+
 lemma exists_longest_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot) :
+    (G : Graph α β) (hFinite : G.Finite) (hNeBot : G.NeBot) :
     ∃ p, G.IsLongestPath p :=
   Set.Finite.exists_maximalFor _ _ (G.pathSet_finite hFinite) (G.pathSet_nonempty hNeBot)
 
 -- by maximality, each neighbour of is on the path
 lemma first_neighbors_mem_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
+    (G : Graph α β) [G.Simple]
     {P : WList (α) β} (hP : G.IsLongestPath P)
     (x : α) (hx : G.Adj x P.first) :
     x ∈ P := by
-  sorry
+  -- suppose not.
+  -- then, we will try constructing a longer path by prepending this neighbour
+  by_contra! hyp
+  obtain ⟨e, he⟩ := hx
+  generalize Q_def : cons x e P = Q
+  symm at Q_def
+  have hQ : G.IsPath Q := by simp_all
+  have hQ_len : Q.length = P.length + 1 := by simp_all
+  have hQ_path : Q ∈ G.pathSet := hQ
+  have maximality := maximalFor_is_upper_bound _ hP _ hQ_path
+  linarith
 
 -- similarly, the same statement but reverse in direction
 lemma last_neighbors_mem_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
+    (G : Graph α β) [G.Simple]
     {P : WList (α) β} (hP : G.IsLongestPath P)
     (x : α) (hx : G.Adj x P.last) :
     x ∈ P := by
