@@ -167,7 +167,7 @@ lemma ValidIn.of_inter_eq (hC : ValidIn G φ C) (h : E(G) ∩ C = E(G) ∩ D) :
   rwa [ValidIn, ← (G.edgeRestrict_eq_edgeRestrict_iff C D).mpr h]
 
 def IsMinor (G H : Graph α β) :=
-  ∃ (φ : H.Retr) (C : Set β), H.ValidIn φ C ∧ G ≤ H /[φ, C]
+  ∃ (φ : α → α) (C : Set β), G.IsRetr φ ∧ H.ValidIn φ C ∧ G ≤ H /[φ, C]
 
 notation G " ≤ₘ " H => IsMinor G H
 

@@ -8,11 +8,9 @@ namespace Matroid
 
 variable {α ι : Type*} {M : Matroid α} {e f x y : α} {C D : Set α}
 
-
 section Multi
 
 variable {I X : ι → Set α}
-
 
 lemma multiConn_le_multiConn_delete_add_encard (M : Matroid α)
     (hdj : Pairwise (Disjoint on X)) (D : Set α) :
@@ -332,7 +330,7 @@ lemma multiConn_le_multiConn_project_add_mul_eLocalConn
     simp
   have hle := (M.multiConn_project_add_tsum_eLocalConn_ne_eq X C a).symm.le
   grw [← le_self_add] at hle
-  grw [hle, add_le_add_left]
+  grw [hle, add_le_add_right]
   grw [ENat.tsum_le_tsum (g := fun i ↦ M.eLocalConn (⋃ j, X j) C)
     fun i ↦ eLocalConn_mono_left _ (by simp [subset_iUnion]) _, ENat.tsum_const, hcard, mul_comm]
 
@@ -395,7 +393,7 @@ lemma eLocalConn_le_eLocalConn_project_add_left (M : Matroid α) (X Y C : Set α
   have hle :=
     (M.multiConn_project_add_tsum_eLocalConn_ne_eq (fun b ↦ bif b then X else Y) C false).symm.le
   grw [← le_self_add] at hle
-  grw [eLocalConn, eLocalConn, hle, add_le_add_left]
+  grw [eLocalConn, eLocalConn, hle, add_le_add_right]
   have hrw : {i : Bool | i ≠ false} = {true} := by ext; simp
   rw [tsum_congr_set_coe (f := fun x ↦ M.eLocalConn (bif x then X else Y) C) hrw,
     tsum_singleton (f := fun x ↦ M.eLocalConn (bif x then X else Y) C)]

@@ -109,7 +109,7 @@ theorem Set.encard_biUnion_le {ι : Type*} (I : Finset ι) (s : ι → Set α) :
   classical
   induction I using Finset.induction_on with | empty => simp | insert x J hx IH
   rw [J.set_biUnion_insert, Finset.sum_insert hx]
-  exact (encard_union_le _ _).trans <| add_le_add_left IH _
+  exact (encard_union_le _ _).trans <| add_le_add_right IH _
 
 theorem encard_iUnion_le {ι : Type*} [Fintype ι] (s : ι → Set α) :
     encard (⋃ i : ι, s i) ≤ ∑ i, encard (s i) := by
@@ -126,7 +126,7 @@ theorem Finset.pairwiseDisjoint_of_sum_encard_le_encard_biUnion {ι : Type*} {I 
     rw [← Finset.sdiff_union_of_subset hK, Finset.sum_union Finset.sdiff_disjoint,
       Finset.set_biUnion_union] at hsum
     replace hsum := (hsum.trans (encard_union_le _ _)).trans
-      (add_le_add_right (encard_biUnion_le _ s) _)
+      (add_le_add_left (encard_biUnion_le _ s) _)
     exact WithTop.le_of_add_le_add_left
       (WithTop.sum_ne_top.2 <| fun i hi ↦ (hfin i (Finset.mem_sdiff.1 hi).1).encard_lt_top.ne) hsum
   rw [PairwiseDisjoint, Finset.coe_insert,

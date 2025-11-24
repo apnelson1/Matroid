@@ -102,7 +102,7 @@ lemma Adj.eDist_le_add_one (hxy : G.Adj x y) (z : α) : G.eDist x z ≤ G.eDist 
   · obtain ⟨P, hP, rfl, rfl, hl⟩ := hyz.exists_isPath_length_eq_eDist
     refine (G.eDist_triangle x P.first P.last).trans ?_
     rw [add_comm, eDist_comm]
-    exact add_le_add_left hxy.eDist_le_one _
+    exact add_le_add_right hxy.eDist_le_one _
   simp [eDist_eq_top_iff.2 hyz]
 
 /-- If `x` and `y` are eDistinct vertices that are connected in `G`,
@@ -121,7 +121,7 @@ lemma ConnectedBetween.exists_adj_eDist_eq_add_one (hconn : G.ConnectedBetween x
       and_iff_left hP.1.isWalk.eDist_le_length]
     have ht := G.eDist_triangle u P.first P.last
     rw [eDist_comm, hl] at ht
-    replace ht := ht.trans (add_le_add_right hP.2.1.adj.eDist_le_one _)
+    replace ht := ht.trans (add_le_add_left hP.2.1.adj.eDist_le_one _)
     rwa [add_comm, WithTop.add_le_add_iff_left (by simp)] at ht
 
 lemma exists_adj_of_eDist_eq_add_one {n : ℕ} (hxy : G.eDist x y = n + 1) :

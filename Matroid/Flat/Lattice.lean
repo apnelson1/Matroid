@@ -458,8 +458,8 @@ lemma IsFlat.covBy_and_covBy_of_ssubset_of_ssubset_of_eRelRk_eq_two (hF₀ : M.I
     intro h'; rw [h'] at h; norm_cast at h
   have h1top : M.eRelRk F F₁ ≠ ⊤ := by
     intro h'; rw [h', add_top] at h; norm_cast at h
-  have hle1 := WithTop.le_of_add_le_add_left h0top <| h.le.trans (add_le_add_right h0le 1)
-  have hle0 := WithTop.le_of_add_le_add_right h1top <| h.le.trans (add_le_add_left h1le 1)
+  have hle1 := WithTop.le_of_add_le_add_left h0top <| h.le.trans (add_le_add_left h0le 1)
+  have hle0 := WithTop.le_of_add_le_add_right h1top <| h.le.trans (add_le_add_right h1le 1)
   rw [hF₀.covBy_iff_eRelRk_eq_one hF, hF.covBy_iff_eRelRk_eq_one hF₁,
     and_iff_right h₀.subset, and_iff_right h₁.subset]
   exact ⟨hle0.antisymm h0le, hle1.antisymm h1le⟩

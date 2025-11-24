@@ -241,13 +241,13 @@ lemma rk_insert_le : M.r (insert e X) ≤ M.r X + M.r {e} := by
   linarith [M.rk_insert_insert X e f]
 
 lemma rk_insert_le_add_one : M.r (insert e X) ≤ M.r X + 1 := by
-  refine rk_insert_le.trans (add_le_add_left (M.rk_singleton e) _)
+  refine rk_insert_le.trans (add_le_add_right (M.rk_singleton e) _)
 
 lemma rk_le_card : M.r X ≤ X.card := by
   induction' X using Finset.induction with e X heX hX
   · simp [rk_empty]
   rw [Finset.card_insert_of_notMem (by simpa)]
-  exact rk_insert_le_add_one.trans (add_le_add_right hX 1)
+  exact rk_insert_le_add_one.trans (add_le_add_left hX 1)
 
 lemma indep_empty : M.r ∅ = (∅ : Finset α).card :=
   le_antisymm M.rk_le_card <| by simp
@@ -301,7 +301,7 @@ lemma indep_aug (hI : M.r I = I.card) (hJ : M.r J = J.card) (hlt : I.card < J.ca
 lemma indep_support (hI : M.r I = I.card) : (I : Set α) ⊆ M.E := by
   refine fun e heI ↦ by_contra fun heE ↦ ?_
   have hle := (rk_insert_le (X := I.erase e) (e := e)).trans
-    (add_le_add_right M.rk_le_card _)
+    (add_le_add_left M.rk_le_card _)
   rw [Finset.insert_erase (by simpa using heI), M.rk_singleton_of_notMem_ground e heE,
     add_zero, hI, ← Finset.card_erase_add_one (by simpa using heI)] at hle
   simp at hle

@@ -67,7 +67,7 @@ lemma encard_diff_le_encard_diff {I₀ B₀ : Set α} (h : M₁✶ ≤w M₂✶)
 
   rw [← hcalc1, ← encard_diff_add_encard_inter (t := B), add_comm, inter_comm, ← hrw2,
     diff_inter_self_eq_diff]
-  refine add_le_add_right (encard_le_encard ?_) _
+  refine add_le_add_left (encard_le_encard ?_) _
   exact inter_subset_inter_right _ (diff_subset_diff_left hIB')
 
 structure BasisPair (N M : Matroid α) (X : Set α) where
