@@ -2140,9 +2140,10 @@ lemma IsLongestPath.nontrivial_of_connected_of_encard_ge_three
   omega
 
 lemma dirac_exists_cycle
-    [G.Simple] [G.Finite] {P} (hP : G.IsLongestPath P)
+    [G.Simple] [G.Finite]
     (hNontrivial : 3 ≤ V(G).encard)
-    (hDegree : V(G).encard ≤ 2 * G.minEDegree) :
+    (hDegree : V(G).encard ≤ 2 * G.minEDegree)
+    {P} (hP : G.IsLongestPath P) :
     ∃ C, G.IsCycle C ∧ V(C) = V(P) := by
 
   -- every max-length path in G must be of length at least 2
@@ -2432,3 +2433,110 @@ lemma dirac_exists_cycle
     rw [← P.prefixUntilVertex_last h_dinc.left_mem]
     exact WList.last_mem
   right; assumption
+
+lemma dirac_isHamiltonianCycle
+    [G.Simple] [G.Finite] {P}
+    (hNontrivial : 3 ≤ V(G).encard)
+    (hDegree : V(G).encard ≤ 2 * G.minEDegree)
+    (hP : G.IsLongestPath P)
+    {C} (hC : G.IsCycle C ∧ V(C) = V(P)) :
+    G.IsHamiltonianCycle C := by
+  -- Suppose not. Then there exists some x ∈ V(G) - V(C).
+  -- Since G is connected, we can find a path from x to C, say Q.
+  -- Let z be the last element of Q which is not in C.
+  -- Then we can extend P by z to contradict the maximality of P.
+  by_contra! hcon
+  have vx_finite : V(G).Finite := vertexSet_finite
+  have decEqα := Classical.decEq α
+  obtain ⟨hC, hCP⟩ := hC
+  simp [IsHamiltonianCycle] at hcon
+  simp_all
+  have hCG : V(C) ⊆ V(G) := hC.isWalk.vertexSet_subset
+  rw [hC.length_eq_vertexSet_ncard] at hcon
+  have hCG_ssub : V(C) ⊂ V(G) := by
+    refine ⟨hCG, ?_⟩
+    intro bad
+    replace bad := bad.antisymm hCG
+    rw [bad] at hcon
+    contradiction
+  rw [ssubset_iff_of_subset hCG] at hCG_ssub
+  -- we now have our element x ∈ V(G - C)
+  obtain ⟨x, hxG, hnxC⟩ := hCG_ssub
+
+  -- pick up any element of C
+  have ⟨y, hy⟩ : V(C).Nonempty :=
+    C.vertexSet_nonempty
+
+  have hConn := dirac_connected hNontrivial hDegree
+  -- find a path between x, y
+  have hyG : y ∈ V(G) := hCG hy
+  have ⟨Q, hQ, hQ_first, hQ_last⟩ := (hConn.connectedBetween hxG hyG).exists_isPath
+  symm at hQ_first hQ_last
+  have decpred : DecidablePred V(C) := Classical.decPred _
+  let pref := Q.prefixUntil V(C)
+  have pref_isPath : G.IsPath pref := hQ.prefix (Q.prefixUntil_isPrefix V(C))
+  have pref_last : V(C) pref.last := by
+    apply Q.prefixUntil_prop_last
+    refine ⟨y, ?_, hy⟩
+    rw [hQ_last]
+    exact Q.last_mem
+  have last_ne_first : pref.last ≠ pref.first := by
+    conv => rhs; simp only [pref]
+    intro heq
+    rw [Q.prefixUntil_first V(C)] at heq
+    rw [heq, ← hQ_first] at pref_last
+    contradiction
+  -- choose the last element which is not on C
+  have ⟨e, z, h_dinc⟩ := pref.exists_left_edge pref.last_mem last_ne_first
+  have z_ne_last : z ≠ pref.last := by
+    exact (pref_isPath.isWalk.isLink_of_dInc h_dinc).adj.ne
+  have hnzC : ¬ V(C) z := by
+    refine prefixUntil_not_prop (P := V(C)) ?_ z_ne_last.symm
+    exact h_dinc.left_mem
+  have C_nontrivial : C.Nontrivial := by
+    rw [←one_lt_length_iff]
+    have := hC.three_le_length_of_simple
+    omega
+  have ⟨P', f, f', hP', hP'_last, hP'_f, hP'_f', f_ne_f', heq⟩ :=
+    hC.exists_isPath_vertex C_nontrivial pref_last
+  generalize P''_def : P'.concat f' pref.last = P''; symm at P''_def
+  have h_isCycle : G.IsCycle (cons pref.last f P'') := by
+    rw [P''_def, ←heq]
+    exact hC.rotate (C.idxOf pref.last)
+  have P''_isPath : G.IsPath P'' := by
+    have := h_isCycle.tail_isPath
+    simp at this
+    assumption
+  have P''_vertexSet_eq : V(P'') = V(P) := by
+    rw [← hCP]
+    apply congr_arg WList.vertexSet at heq
+    rw [← P''_def, hC.isClosed.rotate_vertexSet] at heq
+    rw [heq, ← h_isCycle.isClosed.vertexSet_tail]
+    simp
+  -- e x t e n d
+  generalize P'''_def : P''.concat e z = P'''; symm at P'''_def
+  have P'''_isPath : G.IsPath P''' := by
+    simp [P'''_def]
+    refine ⟨P''_isPath, ?_, ?_⟩
+    · simp [P''_def]
+      exact (pref_isPath.isWalk.isLink_of_dInc h_dinc).symm
+    change z ∉ V(P'')
+    rw [P''_vertexSet_eq, ←hCP]
+    exact hnzC
+  have P'''_length : P'''.length = P''.length + 1 := by
+    simp [P'''_def]
+  rw [← length_vertex P'', P''_isPath.vertex_length_eq_vertexSet_ncard,
+       P''_vertexSet_eq, ← hP.isPath.vertex_length_eq_vertexSet_ncard, length_vertex P]
+     at P'''_length
+  have := maximalFor_is_upper_bound WList.length hP _ P'''_isPath
+  omega
+
+lemma dirac [G.Simple] [G.Finite]
+    (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree) :
+    ∃ C, G.IsHamiltonianCycle C := by
+  have hnonempty : G.NeBot := by
+    rw [NeBot_iff_encard_positive]
+    enat_to_nat! <;> omega
+  have ⟨P, hP⟩ := G.exists_longest_path hnonempty
+  have ⟨C, hC⟩ := dirac_exists_cycle hV hDegree hP
+  exact ⟨C, dirac_isHamiltonianCycle hV hDegree hP hC⟩
