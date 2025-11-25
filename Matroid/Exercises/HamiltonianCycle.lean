@@ -376,6 +376,15 @@ lemma IsTree.exists_length_two_path
   have hne_xz : x ≠ z := hez.adj.ne
   tauto
 
+-- the same as previous lemma, just reworded
+lemma IsTree.exists_nontrivial_path
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ P, T.IsPath P ∧ P.Nontrivial := by
+  obtain ⟨P, P_isPath, P_length⟩ := hT.exists_length_two_path hV
+  refine ⟨P, P_isPath, ?_⟩
+  rw [←WList.two_le_length_iff]
+  omega
+
 lemma IsTree.exists_isSepSet
     {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
     ∃ S, IsSepSet T S ∧ S.encard = 1 := by
