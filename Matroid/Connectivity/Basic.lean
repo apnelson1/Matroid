@@ -282,6 +282,16 @@ lemma multiConn_delete (M : Matroid α) (X : ι → Set α) (D : Set α) :
   convert rfl using 3 with i
   tauto_set
 
+lemma IsRestriction.multiConn {N : Matroid α} (hNM : N ≤r M) :
+    N.multiConn X = M.multiConn fun i ↦ (X i ∩ N.E) := by
+  obtain ⟨R, hRE, rfl⟩ := hNM
+  rw [multiConn_restrict, restrict_ground_eq]
+
+lemma IsRestriction.multiConn_of_subset {N : Matroid α} (hNM : N ≤r M) (hX : ∀ i, X i ⊆ N.E) :
+    N.multiConn X = M.multiConn X := by
+  rw [hNM.multiConn]
+  simp [fun i ↦ inter_eq_self_of_subset_left (hX i)]
+
 lemma multiConn_delete_of_disjoint (M : Matroid α) {D : Set α} (hXD : ∀ i, Disjoint (X i) D) :
     (M ＼ D).multiConn X = M.multiConn X := by
   simp_rw [multiConn_delete, (hXD _).sdiff_eq_left]
@@ -450,6 +460,16 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
 lemma eLocalConn_restrict_univ (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).eLocalConn X Y = M.eLocalConn X Y := by
   simp
+
+lemma IsRestriction.eLocalConn_eq {N : Matroid α} (hNM : N ≤r M) (X Y : Set α) :
+    N.eLocalConn X Y = M.eLocalConn (X ∩ N.E) (Y ∩ N.E) := by
+  rw [eLocalConn, hNM.multiConn, eLocalConn]
+  simp_rw [Bool.apply_cond (f := fun X ↦ X ∩ N.E)]
+
+lemma IsRestriction.eLocalConn_eq_of_subset {N : Matroid α} (hNM : N ≤r M)
+    (hXE : X ⊆ N.E := by aesop_mat) (hYE : Y ⊆ N.E := by aesop_mat) :
+    N.eLocalConn X Y = M.eLocalConn X Y := by
+  rw [eLocalConn, hNM.multiConn_of_subset (by simp [hXE, hYE]), eLocalConn]
 
 lemma eRk_add_eRk_eq_eRk_union_add_eLocalConn (M : Matroid α) (X Y : Set α) :
     M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eLocalConn X Y := by

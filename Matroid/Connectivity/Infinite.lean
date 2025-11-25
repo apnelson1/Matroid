@@ -85,7 +85,7 @@ lemma TutteConnected.tutteConnected_top_of_encard_add_one_le
   obtain hle | hlt' := le_or_gt (M.eRank + 1) k
   · exact h.tutteConnected_top_of_eRank_add_one_le hle
   grw [← M.eRank_add_eRank_dual] at hlt
-  enat_to_nat!; omega
+  eomega
 
 lemma TutteConnected.isUniform (h : M.TutteConnected ⊤) : M.IsUniform :=
   TutteConnected.isUniform_of_encard_le (k := ⊤) (by simpa) (by simp)
@@ -139,8 +139,7 @@ lemma CyclicallyConnected.encard_le (h : M.CyclicallyConnected ⊤) :
     exists_subset_encard_eq (k := M.eRank + 1) (s := M.E) (by enat_to_nat!; omega)
   have hle' : M.eRank + 1 ≤ (M.E \ D).encard := by
     rw [← encard_diff_add_encard_of_subset hDE] at hlt
-    enat_to_nat!
-    omega
+    eomega
   obtain ⟨D', hD'E, hD'⟩ := exists_subset_encard_eq hle'
   have hrt : ¬ M.RankInfinite := by rw [← eRank_eq_top_iff]; enat_to_nat!
   refine (h.inter_nonempty_of_dep_dep ?_ ?_).not_disjoint (disjoint_sdiff_right.mono_right hD'E)
@@ -165,7 +164,7 @@ lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard
     (unifOn E k).TutteConnected ⊤ ↔
     (E.encard = 2 * k ∨ E.encard + 1 = 2 * k ∨ E.encard = 2 * k + 1) := by
   have aux (s t : ℕ∞) : ((s = 2 * t) ∨ (s + 1 = 2 * t) ∨ (s = 2 * t + 1)) ↔
-      (2 * t ≤ s + 1 ∧ s ≤ 2 * t + 1) := by enat_to_nat; omega
+      (2 * t ≤ s + 1 ∧ s ≤ 2 * t + 1) := by eomega
   rw [aux]
   clear aux
   refine ⟨fun h ↦ ?_, fun ⟨hle, hle'⟩ ↦ ?_⟩
@@ -199,10 +198,8 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
   · exact hconn.mono le_top
   obtain ⟨hkr, hkrE⟩ := (or_iff_left hconn).1 h
   rw [unifOn_tutteConnected_top_iff hrE] at hconn
-  have : 2 * k + 2 ≤ E.encard := by
-    enat_to_nat!
-    omega
-  rw [tutteConnected_iff_verticallyConnected_girth (by rw [unifOn_ground_eq]; enat_to_nat!; omega),
+  have : 2 * k + 2 ≤ E.encard := by eomega
+  rw [tutteConnected_iff_verticallyConnected_girth (by rw [unifOn_ground_eq]; eomega),
     le_girth_iff, verticallyConnected_iff_forall]
   refine ⟨fun P hPconn hPsep ↦ ?_, fun C hC ↦ ?_⟩
   · rw [isVerticalSeparation_iff_nonspanning, ← not_spanning_iff P.right_subset_ground,
@@ -211,7 +208,7 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
     rw [← (unifOn_ground_eq E (k := r)), ← eRank_add_eRank_dual,
       ← Indep.eConn_eq_of_compl_indep (I := P.left), P.eConn_left, unifOn_eRank_eq,
       min_eq_right hrE, add_comm, WithTop.add_le_add_iff_left (ENat.coe_ne_top r)] at hkrE
-    · enat_to_nat! <;> omega
+    · eomega
     · simpa [hPsep.1.le] using P.left_subset_ground
     rw [P.compl_left]
     simpa [hPsep.2.le] using P.right_subset_ground
@@ -234,7 +231,7 @@ lemma IsUniform.tutteConnected_iff [M.Tame] (h : M.IsUniform) :
     exact h.sparsePaving.rankFinite_or_rankFinite_dual.elim (False.elim ∘ hfin) id
   have hrle := M.eRank_lt_top
   have hr := M.eRank_add_eRank_dual
-  rw [tutteConnected_iff_verticallyConnected_girth (by enat_to_nat!; omega), le_girth_iff,
+  rw [tutteConnected_iff_verticallyConnected_girth (by eomega), le_girth_iff,
     verticallyConnected_iff_forall]
   refine ⟨fun P hP hsep ↦ ?_, fun C hC ↦ ?_⟩
   · rw [isVerticalSeparation_iff_nonspanning] at hsep
@@ -261,13 +258,13 @@ lemma TutteConnected.finite_of_tame [M.Tame] (hM : M.TutteConnected ⊤) : M.Fin
   enat_to_nat!
 
 lemma tutteConnected_top_iff_of_tame [M.Tame] : M.TutteConnected ⊤ ↔
-    M.IsUniform ∧ M.Finite ∧ M.E.encard ≤ 2 * M.eRank + 1 ∧ 2 * M.eRank ≤ M.E.encard + 1  := by
+    M.IsUniform ∧ M.Finite ∧ M.E.encard ≤ 2 * M.eRank + 1 ∧ 2 * M.eRank ≤ M.E.encard + 1 := by
   refine ⟨fun h ↦ ⟨h.isUniform, h.finite_of_tame, ?_⟩, fun ⟨hU, hfin, hle, hle'⟩ ↦ ?_⟩
   · exact ⟨h.cyclicallyConnected.encard_le, h.verticallyConnected.two_mul_eRank_le⟩
   obtain ⟨E, k, hkE, rfl⟩ := hU.exists_eq_unifOn
   rw [unifOn_tutteConnected_top_iff hkE]
   rw [unifOn_ground_eq, unifOn_eRank_eq' hkE] at hle hle'
-  enat_to_nat!; omega
+  eomega
 
 lemma Paving.cyclicallyConnected (h : M.Paving) (hk : k < M.eRank) : M.CyclicallyConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp

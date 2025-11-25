@@ -160,9 +160,7 @@ lemma Paving.encard_eq_or_eq_of_isCircuit (hM : M.Paving) (hC : M.IsCircuit C) :
     C.encard = M.eRank ∨ C.encard = M.eRank + 1 := by
   have := hM.eRelRk_ground_le_of_dep hC.dep
   rw [← eRk_ground, ← M.eRelRk_add_eRk_of_subset hC.subset_ground, ← hC.eRk_add_one_eq]
-  generalize M.eRk C = a
-  enat_to_nat!
-  omega
+  eomega
 
 /-- Every base in a non-free paving matroid is nearly a circuit. -/
 lemma Paving.exists_isCircuit_of_isBase [M✶.RankPos] (hM : M.Paving) (hB : M.IsBase B) :

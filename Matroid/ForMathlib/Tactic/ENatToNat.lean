@@ -13,26 +13,57 @@ partial def findENatAtoms (e : Q(ENat)) : AtomM Unit := do
   | ~q(⊤) => return ()
   | _ => let _ ← AtomM.addAtom e
 
-def parseIneq (e : Expr) : AtomM Unit := do
+@[inline] def Lean.Expr.or? (p : Expr) : Option (Expr × Expr) :=
+  p.app2? ``Or
+
+-- Parse an expr that is a logical combination of (in)equalities
+partial def parse (e : Expr) : AtomM Unit := do
   try
-    let (_, α, a, b) ← e.ineq?
+    let (_, _, α, a, b) ← e.ineqOrNotIneq?
     if (← isDefEq α q(ENat)) then
       findENatAtoms a
       findENatAtoms b
   catch _ =>
-    let some e := (← whnfR e).not? | return ()
-    try
-      let (_, α, a, b) ← e.ineq?
-      if (← isDefEq α q(ENat)) then
-        findENatAtoms a
-        findENatAtoms b
-    catch _ => return
+  let e' ← whnfR e
+  match e'.and? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.or? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.not? with
+  | some a => parse a; return
+  | none =>
+  match e'.arrow? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.iff? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
   return
+
+-- def parseIneq (e : Expr) : AtomM Unit := do
+--   try
+--     let (_, α, a, b) ← e.ineq?
+--     if (← isDefEq α q(ENat)) then
+--       findENatAtoms a
+--       findENatAtoms b
+--   catch _ =>
+--     let some e := (← whnfR e).not? | return ()
+--     try
+--       let (_, α, a, b) ← e.ineq?
+--       if (← isDefEq α q(ENat)) then
+--         findENatAtoms a
+--         findENatAtoms b
+--     catch _ => return
+--   return
 
 def atoms (g : MVarId) : AtomM (Array Expr) := g.withContext do
   for hyp in (← getLCtx) do
-    parseIneq (← inferType hyp.toExpr)
-  parseIneq (← g.getType')
+    parse (← inferType hyp.toExpr)
+  -- let g' ← g.getType
+  -- logInfo m!"{g'}"
+  parse (← g.getType)
   let r ← get
   return r.atoms
 
@@ -60,6 +91,9 @@ elab "generalize_enats" : tactic => do
 macro "enat_to_nat!": tactic =>
   `(tactic | (generalize_enats; enat_to_nat))
 
+macro "eomega": tactic =>
+  `(tactic | (generalize_enats; enat_to_nat <;> omega))
+
 -- this might give weird errors if the `generalize_enats` fails
 macro "enat_to_nat!" " with" e:(ppSpace colGt ident)* : tactic =>
   `(tactic | (generalize_enats with $e*; enat_to_nat))
@@ -67,7 +101,7 @@ macro "enat_to_nat!" " with" e:(ppSpace colGt ident)* : tactic =>
 -- Missing lemmas from the `enat_to_nat` simpset.
 attribute [enat_to_nat_top] not_true add_top and_true true_and or_false false_or imp_false
   false_iff true_iff iff_true iff_false true_or or_true Nat.cast_le Nat.cast_lt false_imp_iff
-  true_imp_iff
+  true_imp_iff false_and and_false
 
 -- /-! ### Tests -/
 variable {f : ℤ → ℕ∞}
@@ -87,6 +121,14 @@ example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hb
 
 example (a b c d : ℕ∞) (x : ℤ) (hab : a ≤ b) (hbc : 2 * f x + d < c) : f x ≠ ⊤ := by
   enat_to_nat!
+
+example {a : ℤ} : 0 ≤ f a := by
+  enat_to_nat!
+  omega
+
+example {a b : ℤ} (h1 : ¬ (f a ≠ 0 ∧ 1 ≤ f a)): 0 ≤ f b := by
+  enat_to_nat!
+  omega
 
 /-! ### Replacing `enat_to_nat`. -/
 

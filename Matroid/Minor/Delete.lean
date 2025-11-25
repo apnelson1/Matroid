@@ -75,6 +75,8 @@ lemma indep_iff_restrict_eq_freeOn : M.Indep I ↔ (M ↾ I = freeOn I) := by
   have h' := restrict_indep_iff (M := M) (I := I) (R := I)
   rwa [h, freeOn_indep_iff, iff_true_intro Subset.rfl, and_true, true_iff] at h'
 
+lemma deleteElem_of_notMem_ground (h : e ∉ M.E) : M ＼ {e} = M := by
+  rw [← delete_inter_ground_eq, singleton_inter_eq_empty.2 h, delete_empty]
 
 -- These belong in `Restrict`.
 @[simp] lemma emptyOn_isRestriction (M : Matroid α) : emptyOn α ≤r M :=

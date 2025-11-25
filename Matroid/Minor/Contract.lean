@@ -38,6 +38,9 @@ lemma contract_closure_congr (h : M.closure X = M.closure Y) (C : Set α) :
 lemma contract_codep_iff {C X : Set α} : (M ／ C).Codep X ↔ M.Codep X ∧ Disjoint X C := by
   rw [codep_def, dual_contract, delete_dep_iff, codep_def]
 
+lemma contractElem_of_notMem_ground (he : e ∉ M.E) : M ／ {e} = M := by
+  rw [← dual_delete_dual, deleteElem_of_notMem_ground (by simpa), dual_dual]
+
 lemma contract_nonspanning_iff (hC : C ⊆ M.E := by aesop_mat) :
     (M ／ C).Nonspanning X ↔ M.Nonspanning (X ∪ C) ∧ Disjoint X C := by
   wlog hXC : X ⊆ (M ／ C).E generalizing X with aux

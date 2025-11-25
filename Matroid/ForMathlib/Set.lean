@@ -6,9 +6,6 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
-lemma foo {s : Set α} {a : α} (has : a ∉ s) : (insert a s) \ {a} = s := by
-  exact?
-
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
   (sInter_subset_of_mem hs.some_mem).trans (subset_sUnion_of_mem hs.some_mem)
 
@@ -206,16 +203,11 @@ variable {s t r : Set α}
 @[simp] lemma iInter_bool {s : Bool → Set α} : ⋂ i, s i = s true ∩ s false :=
   Set.ext <| by simp [and_comm]
 
-
 @[simp] lemma pair_nontrivial_iff {x y : α} : ({x,y} : Set α).Nontrivial ↔ x ≠ y :=
   ⟨by rintro h rfl; simp at h, nontrivial_pair⟩
 
 lemma diff_singleton_diff_eq (s t : Set α) (x : α) : (s \ {x}) \ t = s \ (insert x t) := by
   rw [diff_diff, singleton_union]
-
-lemma Subsingleton.elim {x y} {s : Set α} (hs : s.Subsingleton) (hxs : x ∈ s) (hys : y ∈ s) :
-    x = y := by
-  obtain rfl | ⟨a, rfl⟩ := hs.eq_empty_or_singleton <;> simp_all
 
 lemma exists_partition_of_subset_iUnion {s : Set α} {t : ι → Set α} (hst : s ⊆ ⋃ i, t i) :
     ∃ (r : ι → Set α), Pairwise (Disjoint on r) ∧ ⋃ i, r i = s ∧ (∀ i, r i ⊆ t i) := by

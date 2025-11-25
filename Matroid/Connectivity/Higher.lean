@@ -79,6 +79,16 @@ lemma IsPredSeparation.mono_symm {dg dg' : Matroid α → Set α → Prop}
   simpa [isPredSeparation_iff] using (hP.mono (dg' := fun M X ↦ dg' M (M.E \ X))
     (fun M X hX h' ↦ diff_diff_cancel_left hX ▸ h_imp diff_subset h')).symm
 
+/- If degeneracy is monotone under taking subsets and minors, then a separation in a minor
+-- gives a separation in the matroid. -/
+-- lemma IsPredSeparation.of_minor {dg} {N M : Matroid α} {Q : N.Partition} {P : M.Partition}
+--     (hNM : N ≤m M) (h_mono : ∀ ⦃M X Y⦄, dg M X → Y ⊆ X → dg M Y)
+--     (h_minor : ∀ ⦃N M X⦄, N ≤m M → X ⊆ N.E → dg M X → dg N X)
+--     (hQ : Q.IsPredSeparation dg dg) (subset_left : Q.1 ⊆ P.1) (subset_right : Q.2 ⊆ P.2) :
+--     P.IsPredSeparation dg dg :=
+--   ⟨fun hdg ↦ hQ.1 <| h_minor hNM Q.left_subset_ground <| h_mono hdg subset_left,
+--     fun hdg ↦ hQ.2 <| h_minor hNM Q.right_subset_ground <| h_mono hdg subset_right⟩
+
 /-! ### Tutte Separations -/
 
 abbrev IsTutteSeparation (P : M.Partition) :=
@@ -398,9 +408,7 @@ lemma IsInternalSeparation.encard_left_ge (hP : P.IsInternalSeparation) :
   grw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left]
   rw [isInternalSeparation_iff] at hP
   obtain ⟨hP1, hP2⟩ := hP
-  generalize P.eConn = x
-  -- this generalize line shouldn't be needed, but is. Bug in `generalize_enats`.
-  enat_to_nat! <;> omega
+  eomega
 
 lemma IsInternalSeparation.encard_right_ge (hP : P.IsInternalSeparation) :
     P.eConn + 1 + 1 ≤ P.right.encard := by
@@ -549,6 +557,22 @@ lemma NumConnected.not_isPredSeparation {dg} (h : M.NumConnected dg (k+1)) (hP :
 lemma exists_of_not_numConnected {dg} (h : ¬ M.NumConnected dg (k+1)) :
     ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg := by
   simpa [numConnected_iff_forall] using h
+
+/-- By symmetry, we can choose a separation so that the LHS is 'smaller' in some specified sense.
+Maybe useful for reducing case analysis.  -/
+lemma exists_left_le_of_not_numConnected {β : Type*} [LinearOrder β] {dg}
+    (h : ¬ M.NumConnected dg (k+1)) (f : Set α → β) :
+    ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg ∧ f P.left ≤ f P.right := by
+  obtain ⟨P', hP'le, hP'⟩ := exists_of_not_numConnected h
+  obtain hle | hlt := le_or_gt (f P'.left) (f P'.right)
+  · exact ⟨P', hP'le, hP', hle⟩
+  exact ⟨P'.symm, by simpa, hP'.symm, hlt.le⟩
+
+lemma exists_right_le_of_not_numConnected {β : Type*} [LinearOrder β] {dg}
+    (h : ¬ M.NumConnected dg (k+1)) (f : Set α → β) :
+    ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg ∧ f P.right ≤ f P.left := by
+  obtain ⟨P, hPle, hP, hPf⟩ := exists_left_le_of_not_numConnected h f
+  exact ⟨P.symm, by simpa, hP.symm, by simpa⟩
 
 lemma not_numConnected_iff_exists {dg} : ¬ M.NumConnected dg (k+1) ↔
     ∃ (P : M.Partition), P.eConn + 1 ≤ k ∧ P.IsPredSeparation dg dg := by
@@ -703,6 +727,16 @@ lemma exists_strong_or_small_of_not_tutteConnected (h : ¬ M.TutteConnected (k +
   simp only [Partition.left_subset_ground, not_indep_iff, Partition.right_subset_ground,
     dual_ground, dep_dual_iff, Q.codep_left_iff, Q.codep_right_iff] at h1 h2 h3 h4
   simp [Partition.isStrongSeparation_iff', h1, h2, h3, h4]
+
+lemma tutteConnected_iff_numConnected_encard (hk : k ≠ ⊤) :
+    M.TutteConnected k ↔ M.NumConnected (fun M X ↦ X.encard ≤ M.eConn X) k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  simp only [tutteConnected_iff_forall, numConnected_iff_forall,
+    isPredSeparation_iff (degen_left := fun M X ↦ X.encard ≤ M.eConn X), eConn_left, not_le,
+    eConn_right]
+  refine ⟨fun h P hPle hP ↦ h P hPle ?_, fun h P hPle hP ↦ h P hPle ?_⟩
+  · rwa [isTutteSeparation_iff_lt_encard (by enat_to_nat!)]
+  rwa [← isTutteSeparation_iff_lt_encard (by enat_to_nat!)]
 
 /-! ### Vertical Connectivity -/
 
@@ -915,7 +949,7 @@ lemma TutteConnected.le_girth (h : M.TutteConnected (k + 1)) (hlt : 2 * k ≤ M.
     exact Order.le_of_lt_add_one hCcard
   refine hC.dep.partition_isTutteSeparation_of_nonspanning ?_
   grw [← eRank_add_eRank_dual] at hlt
-  have hle : k ≤ M.eRank := by enat_to_nat!; linarith
+  have hle : k ≤ M.eRank := by eomega
   grw [hle, ← hC.eRk_add_one_eq, ENat.add_one_lt_add_one_iff] at hCcard
   exact nonspanning_of_eRk_ne hCcard.ne
 
@@ -924,9 +958,8 @@ for `k = ⊤`. This is also false for matroids like `U₂,₅` if there is no lo
 lemma tutteConnected_iff_verticallyConnected_girth (hlt : 2 * k < M.E.encard + 1) :
     M.TutteConnected (k + 1) ↔ M.VerticallyConnected (k + 1) ∧ k + 1 ≤ M.girth := by
   have hk : k ≠ ⊤ := by rintro rfl; simp at hlt
-  refine ⟨fun h ↦ ⟨h.verticallyConnected, h.le_girth ?_⟩, fun ⟨h', hle⟩ ↦ by_contra fun h ↦ ?_⟩
-  · enat_to_nat!
-    omega
+  refine ⟨fun h ↦ ⟨h.verticallyConnected, h.le_girth (by eomega)⟩,
+    fun ⟨h', hle⟩ ↦ by_contra fun h ↦ ?_⟩
   obtain ⟨P, hPconn, hP, (hPs | ⟨hcard, ⟨hi, hh⟩ | ⟨hc, hs⟩⟩)⟩ :=
     exists_strong_or_small_of_not_tutteConnected h
   · exact h'.not_isVerticalSeparation (by simpa) hPs.isVerticalSeparation
@@ -967,8 +1000,7 @@ lemma tutteConnected_iff_verticallyConnected_cyclicallyConnected (hlt : 2 * k < 
   obtain rfl | hssu := hCr.eq_or_ssubset
   · rw [← P.union_eq, encard_union_eq P.disjoint] at hlt
     have := hb.encard_eq_eRank ▸ hP'.eRk_add_one_eq ▸ hC.eRk_add_one_eq
-    enat_to_nat!
-    omega
+    eomega
   refine hC.dep.partition_isCyclicSeparation (hb.dep_of_ssubset ?_)
   exact P.compl_right ▸ diff_ssubset_diff_right P.right_subset_ground hssu
 
@@ -1028,6 +1060,15 @@ lemma weaklyInternallyConnected_iff_forall : M.WeaklyInternallyConnected (k + 1)
 lemma TutteConnected.weaklyInternallyConnected (h : M.TutteConnected k) :
     M.WeaklyInternallyConnected k :=
   NumConnected.mono_degen h <| by simp +contextual [← nullity_eq_zero]
+
+lemma weaklyInternallyConnected_iff_numConnected_encard (hk : k ≠ ⊤) :
+    M.WeaklyInternallyConnected k ↔ M.NumConnected (fun M X ↦ X.encard ≤ M.eConn X + 1) k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp [WeaklyInternallyConnected]
+  simp only [weaklyInternallyConnected_iff_forall, numConnected_iff_forall, isPredSeparation_iff,
+    eConn_left, not_le, eConn_right]
+  refine ⟨fun h P hPk hP ↦ h P hPk ?_, fun h P hPk hP ↦ h P hPk ?_⟩
+  · rwa [isInternalSeparation_iff_encard (by enat_to_nat!)]
+  rwa [← isInternalSeparation_iff_encard (by enat_to_nat!)]
 
 /-- `M` is internally `(k+1)`-connected if it is weakly `(k+1)`-connected and `k`-Tutte-connected.-/
 structure InternallyConnected (M : Matroid α) (k : ℕ∞) : Prop where

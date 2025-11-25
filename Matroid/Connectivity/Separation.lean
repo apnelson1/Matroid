@@ -65,6 +65,8 @@ protected def ofDual (P : M✶.Partition) : M.Partition where
 
 @[simp] lemma ofDual_dual (P : M✶.Partition) : P.ofDual.dual = P := rfl
 
+attribute [simp] Partition.disjoint Partition.union_eq
+
 @[simps] def dualEquiv (M : Matroid α) : M.Partition ≃ M✶.Partition where
   toFun := Partition.dual
   invFun := Partition.ofDual
@@ -362,6 +364,38 @@ lemma inter_symm (P Q : M.Partition) : (P.inter Q).symm = P.symm.union Q.symm :=
 
 @[simp]
 lemma union_symm (P Q : M.Partition) : (P.union Q).symm = P.symm.inter Q.symm := rfl
+
+@[simp]
+lemma disjoint_inter_right (P : M.Partition) {X Y : Set α} : Disjoint (P.1 ∩ X) (P.2 ∩ Y) :=
+  P.disjoint.mono inter_subset_left inter_subset_left
+
+@[simp]
+lemma disjoint_inter_left (P : M.Partition) {X Y : Set α} : Disjoint (X ∩ P.1) (Y ∩ P.2) :=
+  P.disjoint.mono inter_subset_right inter_subset_right
+
+@[simp]
+lemma inter_ground_right (P : M.Partition) : P.right ∩ M.E = P.right :=
+  inter_eq_self_of_subset_left P.right_subset_ground
+
+@[simp]
+lemma inter_ground_left (P : M.Partition) : P.left ∩ M.E = P.left :=
+  inter_eq_self_of_subset_left P.left_subset_ground
+
+lemma union_inter_right' (P : M.Partition) (X : Set α) : (P.1 ∩ X) ∪ (P.2 ∩ X) = X ∩ M.E := by
+  rw [← union_inter_distrib_right, P.union_eq, inter_comm]
+
+lemma union_inter_left' (P : M.Partition) (X : Set α) : (X ∩ P.1) ∪ (X ∩ P.2) = X ∩ M.E := by
+  rw [← inter_union_distrib_left, P.union_eq, inter_comm]
+
+@[simp]
+lemma union_inter_right (P : M.Partition) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    (P.1 ∩ X) ∪ (P.2 ∩ X) = X := by
+  rw [union_inter_right', inter_eq_self_of_subset_left hX]
+
+@[simp]
+lemma union_inter_left (P : M.Partition) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    (X ∩ P.1) ∪ (X ∩ P.2) = X := by
+  rw [union_inter_left', inter_eq_self_of_subset_left hX]
 
 protected lemma eConn_inter_add_eConn_union_le (P Q : M.Partition) :
     (P.inter Q).eConn + (P.union Q).eConn ≤ P.eConn + Q.eConn := by
@@ -718,6 +752,17 @@ lemma eConn_ofDeleteRight_singleton_le_eConn_add_one (P : (M ＼ {e}).Partition)
     (he : e ∈ M.E := by aesop_mat) :
     P.ofDeleteRight.eConn ≤ P.eConn + 1 := by
   grw [eConn_ofDeleteRight, eLocalConn_le_eRk_right, eRk_singleton_le]
+
+lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Partition}
+    {P : M.Partition} (hNM : N ≤r M) (subset_left : Q.1 ⊆ P.1) (subset_right : Q.2 ⊆ P.2)
+    (subset_closure_left : P.1 ⊆ M.closure Q.1) (subset_closure_right : P.2 ⊆ M.closure Q.2) :
+    P.eConn = Q.eConn := by
+  simp_rw [eConn_eq_left, eConn_eq_eLocalConn, Partition.compl_left]
+  rw [hNM.eLocalConn_eq_of_subset Q.left_subset_ground Q.right_subset_ground]
+  refine le_antisymm ?_ ?_
+  · rw [← eLocalConn_closure_closure (X := Q.left)]
+    exact eLocalConn_mono _ subset_closure_left subset_closure_right
+  exact eLocalConn_mono _ subset_left subset_right
 
 end Minor
 
