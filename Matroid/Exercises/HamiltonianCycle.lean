@@ -2270,6 +2270,9 @@ lemma dirac_exists_cycle
   obtain ⟨x, ex, hx⟩ := x
   simp at h_dinc
   have decEqα := Classical.decEq α
+  clear left_edge_spec left_edge_inj left_edge_range_le he_left left_edge
+  clear right_edge_spec right_edge_inj right_edge_range_le he_right right_edge
+  clear equiv_first equiv_last
 
   -- Two trivial cases: when ex ∈ P.edge or when ey ∈ P.edge.
   -- In either case, we can directly close the path up.
