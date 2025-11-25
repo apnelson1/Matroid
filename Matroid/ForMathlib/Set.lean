@@ -6,6 +6,9 @@ variable {α ι : Type*}
 open Function symmDiff
 namespace Set
 
+lemma foo {s : Set α} {a : α} (has : a ∉ s) : (insert a s) \ {a} = s := by
+  exact?
+
 lemma sInter_subset_sUnion {s : Set (Set α)} (hs : s.Nonempty) : ⋂₀ s ⊆ ⋃₀ s :=
   (sInter_subset_of_mem hs.some_mem).trans (subset_sUnion_of_mem hs.some_mem)
 
