@@ -1335,15 +1335,18 @@ would be less than |C| ≤ n/2.
 -/
 
 omit [DecidableEq α] in
-lemma thm1_1_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
-  (hV : 3 ≤ V(G).ncard) (hDegree : V(G).ncard ≤ 2 * G.minDegree) :
+lemma dirac_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
+  (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree) :
   G.Connected := by
   have encard_eq_ncard : V(G).encard = ↑V(G).ncard := by
     rw [Set.Finite.cast_ncard_eq]
     exact vertexSet_finite
   have hNeBot : G.NeBot := by
-    apply NeBot_of_ncard_positive
-    linarith
+    rw [NeBot_iff_encard_positive]
+    enat_to_nat! <;> omega
+  simp [← G.natCast_minDegree_eq hNeBot] at hDegree
+  rw [encard_eq_ncard] at hV hDegree
+  enat_to_nat
 
   -- Suppose not.
   by_contra! hyp_contra
