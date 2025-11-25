@@ -148,6 +148,14 @@ theorem unifOn_contract_finset_eq {C : Finset α} (hCE : (C : Set α) ⊆ E) :
   rw [← WithTop.add_le_add_iff_right (x := I.encard) (z := C.card) (by simp),
     tsub_add_cancel_of_le (by simpa)]
 
+theorem unifOn_contractElem (heE : e ∈ E) : (unifOn E (k+1)) ／ {e} = unifOn (E \ {e}) k := by
+  simpa using unifOn_contract_finset_eq (C := {e}) (E := E) (k := (k+1)) (by simpa)
+
+theorem unifOn_insert_contractElem (he : e ∉ E) :
+    (unifOn (insert e E) (k+1)) ／ {e} = unifOn E k := by
+  rw [unifOn_contractElem (mem_insert ..), insert_diff_of_mem _ (by simp),
+    diff_singleton_eq_self he]
+
 -- @[simp] theorem unifOn_contract_eq {k : ℕ} :
 --     ((unifOn E k) ／ C) = unifOn (E \ C) (k - (E ∩ C).encard) :=
 --   unifOn_contract_eq' E C WithTop.coe_ne_top

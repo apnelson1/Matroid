@@ -866,6 +866,10 @@ lemma eConn_le_eRk (M : Matroid α) (X : Set α) : M.eConn X ≤ M.eRk X :=
 lemma eConn_le_encard (M : Matroid α) (X : Set α) : M.eConn X ≤ X.encard :=
   (eConn_le_eRk ..).trans (eRk_le_encard ..)
 
+@[simp]
+lemma freeOn_eConn (E X : Set α) : (freeOn E).eConn X = 0 := by
+  rw [← eConn_dual, freeOn_dual_eq, loopyOn_eConn]
+
 /-- The slack term in the inequality `λ(X) ≤ r(X)` is co-nullity -/
 lemma eConn_add_nullity_dual_eq_eRk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.eConn X + M✶.nullity X = M.eRk X := by
@@ -1044,7 +1048,7 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
   apply eConn_delete_le
 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
-  obtain ⟨C, D, -, -, -, rfl⟩ := hNM
+  obtain ⟨C, D, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 
 end Global

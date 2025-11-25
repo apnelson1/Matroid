@@ -159,29 +159,6 @@ lemma CyclicallyConnected.compl_indep_of_dep (h : M.CyclicallyConnected ⊤) (hX
   rw [cyclicallyConnected_top_iff] at h
   simpa [hX.not_indep] using h X hX.subset_ground
 
--- lemma IsUniform.tutteConnected_top_iff [M.RankFinite] (h : M.IsUniform) :
---     M.TutteConnected ⊤ ↔ 2 * M.eRank ≤ M.E.encard + 1 ∧ 2 * M✶.eRank ≤ M.E.encard + 1 := by
---   -- wlog himp : M.VerticallyConnected ⊤ → M.CyclicallyConnected ⊤ generalizing M with aux
---   -- · rw [Classical.not_imp] at himp
---   --   rw [← tutteConnected_dual_iff, aux h.dual (by simp [himp.1.dual_cyclicallyConnected]),
---   --     and_comm, dual_dual, dual_ground]
---   rw [tutteConnected_top_iff_verticallyConnected_cyclicallyConnected_isUniform, and_iff_left h]
---   refine ⟨fun h ↦ ⟨h.1.two_mul_eRank_le, h.2.two_mul_dual_eRank_le⟩, fun ⟨h1, h2⟩ ↦ ?_⟩
---   rw [verticallyConnected_top_iff, cyclicallyConnected_top_iff]
-
---   -- suffices hv : M.VerticallyConnected ⊤ from ⟨hv, himp hv⟩
---   -- rw [verticallyConnected_top_iff]
---   by_contra! hcon
---   obtain ⟨X, hXE, hd, hd'⟩ := hcon
---   rw [not_spanning_iff] at hd hd'
---   have hi := h.indep_of_nonspanning hd
---   have hi' := h.indep_of_nonspanning hd'
---   nth_grw 1 [← encard_diff_add_encard_of_subset hi.subset_ground, ← hi.eRk_eq_encard,
---     ← hi'.eRk_eq_encard, two_mul, ← hd.eRk_add_one_le, ← hd'.eRk_add_one_le] at h1
---   have h1 := M.eRk_lt_top (X := X)
---   have h2 := M.eRk_lt_top (X := (M.E \ X))
---   enat_to_nat! <;> omega
-
 /-- A rank-`k` uniform matroid is infinitely Tutte-connected if and only if its
 cardinality is `2k-1`, `2k` or `2k+1`.  -/
 lemma unifOn_tutteConnected_top_iff {E : Set α} {k : ℕ} (hkE : k ≤ E.encard) :
@@ -282,6 +259,15 @@ lemma TutteConnected.finite_of_tame [M.Tame] (hM : M.TutteConnected ⊤) : M.Fin
   grw [finite_iff, ← encard_lt_top_iff, hM.cyclicallyConnected.encard_le]
   have := M.eRank_lt_top
   enat_to_nat!
+
+lemma tutteConnected_top_iff_of_tame [M.Tame] : M.TutteConnected ⊤ ↔
+    M.IsUniform ∧ M.Finite ∧ M.E.encard ≤ 2 * M.eRank + 1 ∧ 2 * M.eRank ≤ M.E.encard + 1  := by
+  refine ⟨fun h ↦ ⟨h.isUniform, h.finite_of_tame, ?_⟩, fun ⟨hU, hfin, hle, hle'⟩ ↦ ?_⟩
+  · exact ⟨h.cyclicallyConnected.encard_le, h.verticallyConnected.two_mul_eRank_le⟩
+  obtain ⟨E, k, hkE, rfl⟩ := hU.exists_eq_unifOn
+  rw [unifOn_tutteConnected_top_iff hkE]
+  rw [unifOn_ground_eq, unifOn_eRank_eq' hkE] at hle hle'
+  enat_to_nat!; omega
 
 lemma Paving.cyclicallyConnected (h : M.Paving) (hk : k < M.eRank) : M.CyclicallyConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
