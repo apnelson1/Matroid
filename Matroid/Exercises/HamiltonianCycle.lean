@@ -748,6 +748,8 @@ lemma IsTree.exists_isSepSet
 
 section WalkLemmas
 
+variable {w p : WList α β}
+
 def PathSet (G : Graph α β) := {p | IsPath G p}
 
 lemma IsWalk.eq_of_vertex_eq
@@ -789,6 +791,17 @@ lemma IsPath.vertex_coe_nodup {p} (hp : G.IsPath p) :
 lemma IsWalk.vertex_coe_length_eq {p} (hp : G.IsWalk p) :
     hp.vertex_coe.length = p.vertex.length := by
   simp [vertex_coe]
+
+lemma IsPath.vertex_length_eq_vertexSet_ncard (hp : G.IsPath p) :
+    p.vertex.length = V(p).ncard := by
+  induction p with simp_all
+
+lemma IsPath.vertex_length_eq_vertexSet_encard (hp : G.IsPath p) :
+    p.vertex.length = V(p).encard := by
+  have vx_finite : V(p).Finite := p.vertexSet_finite
+  rw [← vx_finite.cast_ncard_eq]
+  enat_to_nat
+  exact hp.vertex_length_eq_vertexSet_ncard
 
 lemma IsPath.vertex_length_le_encard {G : Graph α β} {p} (hp : G.IsPath p) :
     p.vertex.length ≤ V(G).encard := by
@@ -926,7 +939,7 @@ lemma IsCycle.nontrivial_of_simple
   apply hP.2.1.ne; simp
 
 -- cycles in simple graphs are of length at least 3
-lemma IsCycle.cycle_length_ge_3_of_simple
+lemma IsCycle.three_le_length_of_simple
     [G.Simple]
     {P} (hP : G.IsCycle P) :
     3 ≤ P.length := by
@@ -1184,10 +1197,20 @@ lemma IsCycle.length_eq_tail_vertex_length {C} (hC : G.IsCycle C) :
     C.length = C.tail.vertex.length := by
   induction C with simp_all
 
-lemma IsCycle_length_to_vertex {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
+lemma IsCycle.length_eq_vertexSet_encard {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
     C.length = V(C).encard := by
-  rw [hC.length_eq_tail_vertex_length]
-  sorry
+  rw [hC.length_eq_tail_vertex_length,
+      ← hC.isClosed.vertexSet_tail]
+  have : G.IsPath C.tail := hC.tail_isPath
+  exact this.vertex_length_eq_vertexSet_encard
+
+lemma IsCycle.length_eq_vertexSet_ncard {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
+    C.length = V(C).ncard := by
+  have vx_finite : V(C).Finite := C.vertexSet_finite
+  have := hC.length_eq_vertexSet_encard
+  rw [←vx_finite.cast_ncard_eq] at this
+  enat_to_nat; assumption
+
 
 lemma IsCycle_length_bound {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
     C.length ≤ V(G).encard := by
@@ -1201,7 +1224,14 @@ def IsHamiltonianCycle (G : Graph α β) (C : WList α β) : Prop :=
   G.IsCycle C ∧ C.length = V(G).ncard
 
 lemma IsHamiltonianCycle.vertexSet_encard_eq (G : Graph α β) (C : WList α β) (hC : G.IsCycle C )
-    (hen : C.vertexSet.encard = V(G).encard ) : IsHamiltonianCycle G C := by sorry
+    (hen : V(C).encard = V(G).encard) : IsHamiltonianCycle G C := by
+  refine ⟨hC, ?_⟩
+  have C_vx_finite : V(C).Finite := C.vertexSet_finite
+  have vx_finite : V(G).Finite := by
+    exact (finite_iff_finite_of_encard_eq_encard hen).mp C_vx_finite
+  rw [← vx_finite.cast_ncard_eq, ← C_vx_finite.cast_ncard_eq,
+     ←hC.length_eq_vertexSet_ncard] at hen
+  enat_to_nat; assumption
 
 end WalkLemmas
 
