@@ -381,55 +381,86 @@ lemma unique_neighbor_of_eDegree_eq_one
   have hxz' : xz = e := setOf_inc_le _ hxz.inc_left
   simp_all
 
-lemma exists_isSepSet_of_isTree
+lemma IsTree.exists_vertex_eDegree_ge_two
     {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
-    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+    ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
   have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := by
     refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_
     suffices (1 : ℕ∞) < 3 by
       exact this.trans_le hV
     simp
+  by_contra! hyp
+  replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
+    intro x hxT
+    specialize hyp _ hxT
+    specialize hMinDeg _ hxT
+    enat_to_nat! <;> omega
+  clear hMinDeg
+  have hT_nonempty : V(T).Nonempty := by
+    simp only [←Set.encard_pos]
+    enat_to_nat!; omega
+  have ⟨x, hxT⟩ := hT_nonempty
+  have hx_ssub : {x} ⊂ V(T) := by
+    refine ⟨by simp; tauto, ?_⟩
+    intro bad
+    have := Set.encard_le_encard bad
+    simp at this; enat_to_nat!; omega
+  have hconn := hT.connected
+  rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
+  have hy := hconn _ hx_ssub (by simp)
+  simp at hy
+  obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := hy
+  have hxy_ssub : {x,y} ⊂ V(T) := by
+    refine ⟨?_, ?_⟩
+    · simp [pair_subset_iff]; tauto
+    intro bad
+    have := Set.encard_le_encard bad
+    have := hV.trans this
+    replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
+    simp [Set.encard_pair hne] at this
+    norm_num at this
+  have hz := hconn _ hxy_ssub (by simp)
+  obtain ⟨x', hx', z, hz⟩ := hz
+  apply hz.1.2
+  simp at hx'; obtain (hx'|hx') := hx'
+    <;> symm at hx'
+    <;> subst hx'
+    <;> [(right; simp); (left; symm at hadj)]
+    <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
+
+lemma IsTree.exists_length_two_path
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ P, T.IsPath P ∧ P.length = 2 := by
+  have T_simple := hT.isForest.simple
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x :=
+    hT.exists_vertex_eDegree_ge_two hV
+  rw [eDegree_eq_encard_adj] at hx
+  have ⟨N, hN_sub, hN_encard⟩ := Set.exists_subset_encard_eq hx
+  rw [Set.encard_eq_two] at hN_encard
+  obtain ⟨y,z,hne,rfl⟩ := hN_encard
+  -- pick a path between y and z which does not go through x
+  obtain ⟨hy, hz⟩ : T.Adj x y ∧ T.Adj x z := by
+    refine ⟨hN_sub ?_, hN_sub ?_⟩ <;> simp
+  have ⟨hyT, hzT⟩ : y ∈ V(T) ∧ z ∈ V(T) := by
+    have := T.setOf_adj_subset x
+    refine ⟨?_, ?_⟩  <;>
+      apply this <;> assumption
+  obtain ⟨ey, hey⟩ := hy
+  obtain ⟨ez, hez⟩ := hz
+  refine ⟨cons y ey (cons x ez (nil z)), ?_, by simp⟩
+  simp
+  have hne_xy : x ≠ y := hey.adj.ne
+  have hne_xz : x ≠ z := hez.adj.ne
+  tauto
+
+lemma IsTree.exists_isSepSet
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
   -- we show there exists a vertex x of degree at least 2, in which case
   -- the singleton {x} is exactly our sepset
-  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
-    by_contra! hyp
-    replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
-      intro x hxT
-      specialize hyp _ hxT
-      specialize hMinDeg _ hxT
-      enat_to_nat! <;> omega
-    clear hMinDeg
-    have hT_nonempty : V(T).Nonempty := by
-      simp only [←Set.encard_pos]
-      enat_to_nat!; omega
-    have ⟨x, hxT⟩ := hT_nonempty
-    have hx_ssub : {x} ⊂ V(T) := by
-      refine ⟨by simp; tauto, ?_⟩
-      intro bad
-      have := Set.encard_le_encard bad
-      simp at this; enat_to_nat!; omega
-    have hconn := hT.connected
-    rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
-    have hy := hconn _ hx_ssub (by simp)
-    simp at hy
-    obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := hy
-    have hxy_ssub : {x,y} ⊂ V(T) := by
-      refine ⟨?_, ?_⟩
-      · simp [pair_subset_iff]; tauto
-      intro bad
-      have := Set.encard_le_encard bad
-      have := hV.trans this
-      replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
-      simp [Set.encard_pair hne] at this
-      norm_num at this
-    have hz := hconn _ hxy_ssub (by simp)
-    obtain ⟨x', hx', z, hz⟩ := hz
-    apply hz.1.2
-    simp at hx'; obtain (hx'|hx') := hx'
-      <;> symm at hx'
-      <;> subst hx'
-      <;> [(right; simp); (left; symm at hadj)]
-      <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x :=
+    hT.exists_vertex_eDegree_ge_two hV
+
   -- now we have our vertex x of degree ≥ 2
   use {x}
   refine ⟨?_, by simp⟩
