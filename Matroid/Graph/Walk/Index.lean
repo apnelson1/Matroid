@@ -32,6 +32,31 @@ namespace WList
 
 variable {α β : Type*}  {P₀ P₁ w p : WList α β} {x y u v : α} {e f : β}
 
+--This is in Oops in the main brand
+lemma idxOf_concat_of_mem [DecidableEq α] (hx : x ∈ w) : (w.concat e y).idxOf x = w.idxOf x := by
+  induction w with
+  | nil u => simp_all
+  | cons u f w ih =>
+  rw [cons_concat]
+  obtain rfl | hu := eq_or_ne x u
+  · rw [idxOf_cons_self, idxOf_cons_self]
+  rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
+  simp_all
+
+--This one is in WList Cycle
+lemma IsClosed.idxOf_lt_length {C : WList α β} [DecidableEq α] (hC : C.IsClosed) (hx : x ∈ C)
+    (hne : C.Nonempty) : C.idxOf x < C.length := by
+  induction C using concat_induction with
+  | nil u => simp at hne
+  | @concat w f y ih =>
+  · obtain rfl : y = w.first := by simpa using hC
+    have hxw : x ∈ w := by
+      obtain hxw | rfl := mem_concat.1 hx
+      · assumption
+      simp
+    grw [idxOf_concat_of_mem hxw, concat_length, idxOf_mem_le hxw]
+    exact Nat.lt_add_one w.length
+
 lemma suffixFromVertex_from_first_eq
     [DecidableEq α]
     (w : WList α β) :
