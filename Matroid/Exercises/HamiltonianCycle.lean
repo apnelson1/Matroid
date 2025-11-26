@@ -18,7 +18,7 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Cycle
-import Matroid.Graph.Walk.index
+import Matroid.Graph.Walk.Index
 
 open Qq Lean Meta Elab Tactic
 open WList Set
@@ -1514,7 +1514,8 @@ lemma Adj_exists_edge (G : Graph α β) (x y : α) (hA : G.Adj x y) : ∃ e, G.I
   --         exact first_mem
   --       by_contra hc
   --       exact (hAdb.ne.symm) (Prefix_Sufix_int hP₁ hbPre hc hb1P1 )
-  --   have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
+  --   have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse)
+  --:= by
   --     apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_
   --     · simp
   --       rw[h_pre]
