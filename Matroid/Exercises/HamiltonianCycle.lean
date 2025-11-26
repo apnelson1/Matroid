@@ -18,6 +18,7 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.Graph.Walk.Path
 import Matroid.Graph.WList.Defs
 import Matroid.Graph.WList.Cycle
+import Matroid.Graph.Walk.index
 
 open Qq Lean Meta Elab Tactic
 open WList Set
