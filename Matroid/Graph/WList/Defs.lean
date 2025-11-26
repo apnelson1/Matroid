@@ -732,6 +732,16 @@ lemma idxOf_last (w : WList α β) (hw : w.vertex.Nodup) : w.idxOf w.last = w.le
   simp
   exact ih (Nodup.of_cons hw)
 
+@[simp]
+lemma range_get (w : WList α β) : Set.range w.get = V(w) := by
+  induction w with
+  | nil u => simp
+  | cons u e w ih =>
+    simp only [cons_vertexSet, Set.ext_iff, Set.mem_range, Set.mem_insert_iff, mem_vertexSet_iff]
+    refine fun x ↦ ⟨by rintro ⟨(rfl | y), rfl⟩ <;> simp , ?_⟩
+    rintro (rfl | hx)
+    · exact ⟨0, by simp⟩
+    exact ⟨w.idxOf x + 1, by simp [get_idxOf _ hx]⟩
 
 end indices
 

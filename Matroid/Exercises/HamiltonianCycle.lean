@@ -4,6 +4,7 @@ import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Separating
 import Matroid.Graph.Independent
 import Matroid.Graph.Tree
+import Matroid.ForMathlib.Minimal
 -- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
@@ -485,7 +486,7 @@ def Is_hamiltonian_cycle (G : Graph α β) (C : WList α β) : Prop :=
 lemma Is_hamiltonian_encard (G : Graph α β) (C : WList α β) (hC : G.IsCycle C )
     (hen : C.vertexSet.encard = V(G).encard ) : Is_hamiltonian_cycle G C := by sorry
 
-def neighbour_of_Set (G : Graph α β) (H : Set α) (v : α ) : Prop :=
+def SetVxAdj (G : Graph α β) (H : Set α) (v : α ) : Prop :=
     ∃ w, w ∈ H ∧  Adj G v w
 
 
@@ -1001,776 +1002,880 @@ lemma IsCycle.idxOf_Adj_rotate {a b : α} {n : ℕ } {C : WList α β} (hC : G.I
   rw [hC.idxOf_rotate_n hb hn hltb] at hh
   omega
 
+omit [DecidableEq α] in
 lemma IsCompOf.exist_pathh (hHco : H.IsCompOf G) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
     ∃ P, H.IsPath P ∧ P.first = x ∧ P.last = y := by
   apply ConnectedBetween.exists_isPath
   rw[hHco.eq_walkable_of_mem_walkable hx  ] at hy
   exact (connectedBetween_iff_mem_walkable_of_mem.2 hy).isClosedSubgraph hHco.isClosedSubgraph hx
 
+lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
+    (S : Set α) (HS : IsMinSepSet G S )
+    (A : Set α) (hA : IsMaxIndependent G A)
+    (hAS : A.encard ≤ S.encard ) : ∃ C, G.IsCycle C := by
+  by_contra! hCon
+  -- if there is no cycle, then since G is a forest,
+  -- any vertex v of degree >= 2 is a separating set
+  obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
+  · -- So, S.encard = 1, and thus A.encard <= 1
+    have ⟨v, ⟨hvG, hv⟩⟩ := h1
+    -- since v has degree at least 2, we can obtain two neighbours
+    have hn2 : 1 < {x | G.Adj v x}.ncard := by
+      rw [← G.degree_eq_ncard_adj]
+      assumption
+    have nsFinite : {x | G.Adj v x}.Finite :=
+      G.finite_setOf_adj
+    rw [one_lt_ncard_iff nsFinite] at hn2
+    have ⟨a, b, ha, hb, hab⟩ := hn2
+    simp_all
+    -- Show that {v} is a separating set
+    have vSep : G.IsSepSet {v} := by
+      refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
+      -- those two neighbours a and b are not connected in G - {v},
+      -- because otherwise there would be a cycle
+      -- for a contradiction, let's construct the cycle
+      by_contra! hCon
+      have aVGv : a ∈ V(G - {v}) := by
+        have := Adj.right_mem ha
+        simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+        exact fun a_1 ↦ (Adj.ne ha) (id (Eq.symm a_1))
+      have bVGv : b ∈ V(G - {v}) := by
+        have := Adj.right_mem hb
+        simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
+        exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
+      have abCon : (G - {v}).ConnectedBetween a b := Connected.connectedBetween hCon aVGv bVGv
+      have ⟨abPath, habPath⟩ := ConnectedBetween.exists_isPath abCon
+      have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
+      -- need to first add v to the ab path
+      rw [Adj.eq_1 G] at ha
+      have ⟨e, eLink⟩ := ha
+      have ⟨e2, e2Link⟩ := hb
+      have e2LinkOrig := e2Link
+      have enee2 : e ≠ e2 := by
+        by_contra!
+        rw [← this] at e2Link
+        rw [IsLink.isLink_iff eLink] at e2Link
+        cases e2Link
+        · simp_all only [not_true_eq_false]
+        simp_all only [isLink_self_iff, not_isLoopAt, exists_false]
+      have vnP : v ∉ abPath := by simp_all
+      rw [← habPath.2.1] at eLink
+      have vbPath := cons_isPath_iff.2 ⟨abPathG, eLink, vnP⟩
+      rw [Adj.eq_1 G] at hb
+      have vfirst : v = (cons v e abPath).first := rfl
+      have blast : b = (cons v e abPath).last := by tauto
+      rw [vfirst, blast] at e2Link
+      have e2npe : e2 ∉ (cons v e abPath).edge := by
+        simp
+        refine ⟨by tauto, ?_⟩
+        by_contra!
+        have := IsWalk.edge_mem_of_mem habPath.1.isWalk this
+        have := (IsLink.mem_vertexDelete_iff e2LinkOrig).1 this
+        tauto
+      -- then link it up to a cycle, contradicting that G doesn't have any cycle
+      have := IsPath.cons_isCycle vbPath e2Link e2npe
+      tauto
+    -- finally, we have that {v} is a separating set in G
+    have hS1 : S.encard ≤ 1 := by
+      have := HS.2 {v} vSep
+      simp_all only [encard_singleton]
+    -- But then the two neighbours of v cannot be adjacent,
+    -- because otherwise there would be a cycle
+    -- So, A.encard >= 2, contradiction
+    have anev : ¬a = v := by
+      have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v a ha
+      rw [ne_comm, ne_eq] at this
+      assumption
+    have bnev : ¬b = v := by
+      have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
+      rw [ne_comm, ne_eq] at this
+      assumption
+    obtain (h3 | h4) := Classical.em (G.Adj a b)
+    · -- First, the case where a and b are adjacent
+      -- Need to construct the cycle a-b-v
+      have ⟨e, eLink⟩ := ha
+      have ⟨e2, e2Link⟩ := hb
+      have ⟨e3, e3Link⟩ := h3
+      have avPath := cons_isPath_iff.2 ⟨nil_isPath hvG, ⟨IsLink.symm eLink, by
+        rw [mem_nil_iff]
+        assumption⟩⟩
+      have bavPath := cons_isPath_iff.2 ⟨avPath, ⟨IsLink.symm e3Link, by
+        simp_all [mem_cons_iff]
+        tauto⟩⟩
+      let bav := (cons b e3 (cons a e (nil v)))
+      have flLink : G.IsLink e2 bav.first bav.last := by
+        simp_all
+        exact id (IsLink.symm e2Link)
+      have eDis : e2 ∉ (cons b e3 (cons a e (nil v))).edge := by
+        simp_all
+        refine ⟨?_, ?_⟩
+        · by_contra!
+          simp_all
+          have := G.eq_or_eq_of_isLink_of_isLink e2Link e3Link
+          tauto
+        by_contra!
+        simp_all
+        have := IsLink.eq_and_eq_or_eq_and_eq eLink e2Link
+        tauto
+      have := IsPath.cons_isCycle bavPath flLink eDis
+      tauto
+    -- Now, a and b are not adjacent
+    -- We show {a, b} is independent for a contradiction
+    have hI : G.IsIndependent {a, b} := by
+      refine ⟨?_, ?_⟩
+      · have : a ∈ V(G) := ha.right_mem
+        have : b ∈ V(G) := hb.right_mem
+        grind only [= subset_def, usr subset_insert, = singleton_subset_iff, = mem_insert_iff,
+          = setOf_true, = mem_singleton_iff, = setOf_false, cases Or]
+      intro x hx y hy hxy
+      simp_all only [mem_insert_iff, mem_singleton_iff, ne_eq]
+      have : ¬G.Adj b a := by exact fun a_1 ↦ h4 (id (Adj.symm a_1))
+      grind only [= setOf_true, = setOf_false, cases Or]
+    have Age2 : 2 ≤ A.encard := by
+      have hA2 := hA.2 {a, b} hI
+      have : ({a, b} : Set α).encard = 2 := encard_pair hab
+      rw [this] at hA2
+      exact hA2
+    have Ale1 : A.encard ≤ 1 := Std.IsPreorder.le_trans A.encard S.encard 1 hAS hS1
+    have : 2 ≤ (1 : ℕ∞) := Std.IsPreorder.le_trans 2 A.encard 1 Age2 Ale1
+    simp_all only [Nat.not_ofNat_le_one]
+
+  -- If every vertex has degree <= 1, then S.encard = 0, so we are done
+  have Vnz : V(G).Nonempty := by
+    rw [←encard_pos]
+    suffices (0 : ℕ∞) < 3 by exact this.trans_le h3
+    simp
+  obtain ⟨v, hv⟩ : ∃ v, v ∈ V(G) := Vnz
+  have : ¬G.Connected := by
+    -- We know there are ≥ 3 vertices
+    -- But all have degree ≤ 1
+    have : G.degree v ≤ 1 := by grind only
+    sorry
+  have Sempty : S.encard = 0 := by
+    have esSep : IsSepSet G ∅ := by
+      refine ⟨empty_subset V(G), ?_⟩
+      rw [vertexDelete_empty]
+      assumption
+    have : S.encard = (∅ : Set α).encard := by
+      have := HS.2 ∅ esSep
+      simp_all
+    simp_all
+  have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
+  have := hA.2 {v} hGI
+  simp_all
+
+-- What hypotheses does this really need?
+lemma get_rotate (w : WList α β) {a b : ℕ} (hab : a + b < w.length) :
+    (w.rotate a).get b = w.get (a + b) := by
+  sorry
+
+
+lemma indep_nbrs [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
+    (hC : MaximalFor G.IsCycle length C) (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
+    G.IsIndependent <| C.get '' {i < C.length | G.SetVxAdj V(D) (C.get i)} := by
+  rw [isIndependent_iff (by grw [image_subset_range, range_get, hC.prop.vertexSet_subset])]
+  simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
+  rintro _ _ i hi hiD rfl j hj hjD rfl hij hadj
+  wlog hlt : i ≤ j generalizing i j with aux
+  · exact aux j hj hjD i hi hiD (Ne.symm hij) hadj.symm (not_le.1 hlt).le
+  obtain ⟨d, rfl⟩ := exists_add_of_le hlt
+
+  wlog hi0 : i = 0 generalizing i d C with aux
+  · refine aux (C := C.rotate i) ?_ ?_ 0 ?_ ?_ d ?_ ?_ ?_ ?_ ?_ ?_
+    · rwa [maximalFor_congr_val (y := C) (by simp) (by simp [hC.prop, hC.prop.rotate])]
+    · rwa [hC.prop.isClosed.rotate_vertexSet]
+    · simp [hC.prop.nonempty]
+    · rwa [get_zero, rotate_first _ _ hi.le]
+    · simp only [zero_add, length_rotate]
+      omega
+    · simp only [zero_add]
+      rwa [get_rotate _ hj]
+    · simp only [get_zero, zero_add]
+      rwa [get_rotate _ hj, rotate_first _ _ hi.le]
+    · simp only [get_zero, zero_add]
+      rwa [rotate_first _ _ hi.le, get_rotate _ hj]
+    · simp
+    rfl
+  obtain rfl := hi0
+  -- now `i` is zero!
+  sorry
+
+
+
+
+
+
+
+
+
+
+
+
+lemma foo2 [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
+    (hC : MaximalFor G.IsCycle length C) (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
+    G.IsIndependent <| C.get '' ((· + 1) '' {i < C.length | G.SetVxAdj V(D) (C.get i)}) := by
+  sorry
+
+
+-- (h3 : 3 ≤ V(G).encard)
+--     (S : Set α) (HS : IsMinSepSet G S )
+--     (A : Set α) (hA : IsMaxIndependent G A)
+
 lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     (S : Set α) (HS : IsMinSepSet G S )
     (A : Set α) (hA : IsMaxIndependent G A)
     (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
 --grw
+  -- Hi Richard!
+  -- The existence of a cycle here should not be proved inside this lemma.
+  -- I've moved the statement to a separate lemma above.
+  -- The proof should be an easy combination of a few things:
+  -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
+  -- 2 : In a bipartite graph, the `MaxIndependentSet` contains at least half the vertices.
+  -- 3 : Trees are bipartite.
+  -- 4 : Therefore, in a tree on at least three vertices, the hypothesis `A.encard ≤ S.encard` is
+  --      impossible.
+  -- 5 : Therefore, `G` has a cycle.
 
   -- To find a longest cycle, we first need to show the existence of some cycle C'
-  have ⟨ C', hC'⟩ : ∃ C, G.IsCycle C := by
-    by_contra! hCon
-    -- if there is no cycle, then since G is a forest,
-    -- any vertex v of degree >= 2 is a separating set
-    obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
-    · -- So, S.encard = 1, and thus A.encard <= 1
-      have ⟨v, ⟨hvG, hv⟩⟩ := h1
-      -- since v has degree at least 2, we can obtain two neighbours
-      have hn2 : 1 < {x | G.Adj v x}.ncard := by
-        rw [← G.degree_eq_ncard_adj]
-        assumption
-      have nsFinite : {x | G.Adj v x}.Finite :=
-        G.finite_setOf_adj
-      rw [one_lt_ncard_iff nsFinite] at hn2
-      have ⟨a, b, ha, hb, hab⟩ := hn2
-      simp_all
-      -- Show that {v} is a separating set
-      have vSep : G.IsSepSet {v} := by
-        refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
-        -- those two neighbours a and b are not connected in G - {v},
-        -- because otherwise there would be a cycle
-        -- for a contradiction, let's construct the cycle
-        by_contra! hCon
-        have aVGv : a ∈ V(G - {v}) := by
-          have := Adj.right_mem ha
-          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
-          exact fun a_1 ↦ (Adj.ne ha) (id (Eq.symm a_1))
-        have bVGv : b ∈ V(G - {v}) := by
-          have := Adj.right_mem hb
-          simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
-          exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
-        have abCon : (G - {v}).ConnectedBetween a b := Connected.connectedBetween hCon aVGv bVGv
-        have ⟨abPath, habPath⟩ := ConnectedBetween.exists_isPath abCon
-        have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
-        -- need to first add v to the ab path
-        rw [Adj.eq_1 G] at ha
-        have ⟨e, eLink⟩ := ha
-        have ⟨e2, e2Link⟩ := hb
-        have e2LinkOrig := e2Link
-        have enee2 : e ≠ e2 := by
-          by_contra!
-          rw [← this] at e2Link
-          rw [IsLink.isLink_iff eLink] at e2Link
-          cases e2Link
-          · simp_all only [not_true_eq_false]
-          simp_all only [isLink_self_iff, not_isLoopAt, exists_false]
-        have vnP : v ∉ abPath := by simp_all
-        rw [← habPath.2.1] at eLink
-        have vbPath := cons_isPath_iff.2 ⟨abPathG, eLink, vnP⟩
-        rw [Adj.eq_1 G] at hb
-        have vfirst : v = (cons v e abPath).first := rfl
-        have blast : b = (cons v e abPath).last := by tauto
-        rw [vfirst, blast] at e2Link
-        have e2npe : e2 ∉ (cons v e abPath).edge := by
-          simp
-          refine ⟨by tauto, ?_⟩
-          by_contra!
-          have := IsWalk.edge_mem_of_mem habPath.1.isWalk this
-          have := (IsLink.mem_vertexDelete_iff e2LinkOrig).1 this
-          tauto
-        -- then link it up to a cycle, contradicting that G doesn't have any cycle
-        have := IsPath.cons_isCycle vbPath e2Link e2npe
-        tauto
-      -- finally, we have that {v} is a separating set in G
-      have hS1 : S.encard ≤ 1 := by
-        have := HS.2 {v} vSep
-        simp_all only [encard_singleton]
-      -- But then the two neighbours of v cannot be adjacent,
-      -- because otherwise there would be a cycle
-      -- So, A.encard >= 2, contradiction
-      have anev : ¬a = v := by
-        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v a ha
-        rw [ne_comm, ne_eq] at this
-        assumption
-      have bnev : ¬b = v := by
-        have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
-        rw [ne_comm, ne_eq] at this
-        assumption
-      obtain (h3 | h4) := Classical.em (G.Adj a b)
-      · -- First, the case where a and b are adjacent
-        -- Need to construct the cycle a-b-v
-        have ⟨e, eLink⟩ := ha
-        have ⟨e2, e2Link⟩ := hb
-        have ⟨e3, e3Link⟩ := h3
-        have avPath := cons_isPath_iff.2 ⟨nil_isPath hvG, ⟨IsLink.symm eLink, by
-          rw [mem_nil_iff]
-          assumption⟩⟩
-        have bavPath := cons_isPath_iff.2 ⟨avPath, ⟨IsLink.symm e3Link, by
-          simp_all [mem_cons_iff]
-          tauto⟩⟩
-        let bav := (cons b e3 (cons a e (nil v)))
-        have flLink : G.IsLink e2 bav.first bav.last := by
-          simp_all
-          exact id (IsLink.symm e2Link)
-        have eDis : e2 ∉ (cons b e3 (cons a e (nil v))).edge := by
-          simp_all
-          refine ⟨?_, ?_⟩
-          · by_contra!
-            simp_all
-            have := G.eq_or_eq_of_isLink_of_isLink e2Link e3Link
-            tauto
-          by_contra!
-          simp_all
-          have := IsLink.eq_and_eq_or_eq_and_eq eLink e2Link
-          tauto
-        have := IsPath.cons_isCycle bavPath flLink eDis
-        tauto
-      -- Now, a and b are not adjacent
-      -- We show {a, b} is independent for a contradiction
-      have hI : G.IsIndependent {a, b} := by
-        refine ⟨?_, ?_⟩
-        · have : a ∈ V(G) := ha.right_mem
-          have : b ∈ V(G) := hb.right_mem
-          grind only [= subset_def, usr subset_insert, = singleton_subset_iff, = mem_insert_iff,
-            = setOf_true, = mem_singleton_iff, = setOf_false, cases Or]
-        intro x hx y hy hxy
-        simp_all only [mem_insert_iff, mem_singleton_iff, ne_eq]
-        have : ¬G.Adj b a := by exact fun a_1 ↦ h4 (id (Adj.symm a_1))
-        grind only [= setOf_true, = setOf_false, cases Or]
-      have Age2 : 2 ≤ A.encard := by
-        have hA2 := hA.2 {a, b} hI
-        have : ({a, b} : Set α).encard = 2 := encard_pair hab
-        rw [this] at hA2
-        exact hA2
-      have Ale1 : A.encard ≤ 1 := Std.IsPreorder.le_trans A.encard S.encard 1 hAS hS1
-      have : 2 ≤ (1 : ℕ∞) := Std.IsPreorder.le_trans 2 A.encard 1 Age2 Ale1
-      simp_all only [Nat.not_ofNat_le_one]
+  have ⟨C', hC'⟩ : ∃ C, G.IsCycle C :=
+    Hamiltonian_alpha_kappa_exists_cycle h3 S HS A hA hAS
+  -- have := Finite.exists_maximalFor
 
-    -- If every vertex has degree <= 1, then S.encard = 0, so we are done
-    have Vnz : V(G).Nonempty := by
-      rw [←encard_pos]
-      suffices (0 : ℕ∞) < 3 by exact this.trans_le h3
-      simp
-    obtain ⟨v, hv⟩ : ∃ v, v ∈ V(G) := Vnz
-    have : ¬G.Connected := by
-      -- We know there are ≥ 3 vertices
-      -- But all have degree ≤ 1
-      have : G.degree v ≤ 1 := by grind only
-      sorry
-    have Sempty : S.encard = 0 := by
-      have esSep : IsSepSet G ∅ := by
-        refine ⟨empty_subset V(G), ?_⟩
-        rw [vertexDelete_empty]
-        assumption
-      have : S.encard = (∅ : Set α).encard := by
-        have := HS.2 ∅ esSep
-        simp_all
-      simp_all
-    have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
-    have := hA.2 {v} hGI
-    simp_all
 
-  let S := {C : WList α β | G.IsCycle C }
-  have hsne : S.Nonempty := by
-    exact nonempty_of_mem hC'
-  have hsfin : ((length ) '' S).Finite := by sorry
+  have hsne : {C : WList α β | G.IsCycle C}.Nonempty := nonempty_of_mem hC'
+  have hsfin : ((length ) '' {C : WList α β | G.IsCycle C}).Finite := by sorry
+  -- Make this a lemma
 
   --The following obtains a cycle of G that is maximal in length
-  obtain ⟨C, hCs⟩ := hsfin.exists_maximalFor' _ _ hsne
+  -- have := hsfin.exists_maximalFor' _ _ hsne
+
+  obtain ⟨C, hCs : MaximalFor G.IsCycle length C⟩ := hsfin.exists_maximalFor' _ _ hsne
+
+  -- simp? [S] at hCs
   --Now that we got a max cycle, we have two cases
-  obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
-  · use C
-    apply Is_hamiltonian_encard G C (hCs.prop) hn
+
+  obtain h_eq | hssu := hCs.prop.vertexSet_subset.eq_or_ssubset
+  · sorry
+  have hG : V(G - V(C)).Nonempty := by
+    rw [vertexDelete_vertexSet, diff_nonempty]
+    exact hssu.not_subset
+
+    -- `C` is a Hamilton cycle
+
+    -- apply Is_hamiltonian_encard G C (hCs.prop) hn
+  -- obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
+  -- · use C
+  --   apply Is_hamiltonian_encard G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
   have hC : G.IsCycle C := (hCs.prop)
-  have hCle : V(C).encard < V(G).encard := by
-    have hVCG : V(C) ⊆ V(G) := by sorry
-    refine Finite.encard_lt_encard ?_ ?_
-    --have := hlen (congrArg encard a)
-      --simp [hlen]
-    exact WList.vertexSet_finite C
-    exact HasSubset.Subset.ssubset_of_ne hVCG fun a ↦ hlen (congrArg encard a)
+  -- have hCle : V(C).encard < V(G).encard := by
+  --   have hVCG : V(C) ⊆ V(G) := by sorry
+  --   refine Finite.encard_lt_encard ?_ ?_
+  --   --have := hlen (congrArg encard a)
+  --     --simp [hlen]
+  --   exact WList.vertexSet_finite C
+  --   exact HasSubset.Subset.ssubset_of_ne hVCG fun a ↦ hlen (congrArg encard a)
 --VC = V(C)
   --have ⟨v, hvV ⟩ : ∃ v, v ∉ C.vertex := sorry
-  have hG : V(G-V(C)).Nonempty := by
-    by_contra hc
-    have hg1 : V(C) ⊆ V(G) := by sorry
-    rw[vertexDelete_vertexSet] at hc
-    have hconcl : V(G) ⊆ V(C) := by
-      intro v hv
-      obtain h1 | h2 := Classical.em (v ∈ V(C))
-      · exact h1
-      by_contra
-      have hh : v ∈ V(G)\V(C) := by exact mem_diff_of_mem hv h2
-      have hhh : (V(G)\ V(C)).Nonempty := by
-        use v
-      exact hc hhh
-      --rw [←NeBot_iff_vertexSet_nonempty ] at hc
-    have hconclusion : V(G) = V(C)  := by exact hconcl.antisymm hg1
-    rw[ hconclusion ] at hCle
-    exact hlen (congrArg encard (id (Eq.symm hconclusion)))
+
     --obtain ⟨v, hv ⟩ := hc
     -- have hg : V(G) \ VC = ∅ := by sorry
     -- have hg1 : VC ⊆ V(G) := by sorry
     -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
     -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
   have ⟨D, hD ⟩ := exists_IsCompOf hG
-  set Neig : Set α := {v : α | v ∈ C ∧ (neighbour_of_Set G V(D) v) } with h_neig
-  --This is the second worst sorry
-  have hDadj : ∀ v, v ∈ Neig → ∀ u, u ∈ Neig
-      → C.idxOf v ≠ C.idxOf u + 1 ∧ (C.idxOf v + C.length ≠ C.idxOf u + 1) := by
-    intro v hvN u huN
-    by_contra hcon
-    obtain ⟨ w, hwD, hwad ⟩ := hvN.2
-    obtain ⟨ w', huD, huad ⟩ := huN.2
-    --Need to take path in D from w to w' and extend cycle
-    sorry
-  set NextNeigh : Set α := {v ∈ C | ∃ w ∈ Neig, C.idxOf v + 1 = C.idxOf w ∨
-  (C.idxOf v = C.length - 1 ∧ C.idxOf w = 0 )} with h_NN
+  set nbrIndices := {i | i < C.length ∧ G.SetVxAdj V(D) (C.get i)}
+  obtain h_not | h_ind := em' <| G.IsIndependent (C.get '' nbrIndices)
+  · rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])] at h_not
+    simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp, not_forall,
+      exists_prop, not_not, ↓existsAndEq, true_and, exists_and_left, nbrIndices] at h_not
+    obtain ⟨i, hi, hi', j, hj, hj', hij, hadj⟩ := h_not
 
 
-  have hNNV : NextNeigh ⊆ V(G) :=
-    fun ⦃a⦄ b ↦ ((IsCycle.isTrail hCs.prop ).vertexSet_subset)
-        ((sep_subset (fun x ↦ List.Mem x C.vertex)
-        fun x ↦ ∃ w ∈ Neig, C.idxOf x + 1 = C.idxOf w ∨
-      (C.idxOf x = C.length - 1 ∧ C.idxOf w = 0 )) b)
+    -- ·
+    -- wlog h : 0 ∈ nbrIndices generalizing C with aux
 
-    --sep_subset V(G) fun x ↦ ∃ w ∈ Neig, C.idxOf x = C.idxOf w + 1
-  have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := IsCompOf.nonempty hD
+  -- wlog h0 : 0 ∈ nbrIndices generalizing C with aux
+  set succIndices := (· + 1) '' nbrIndices
+  have nbrs_independent : G.IsIndependent (C.get '' nbrIndices) := by
 
-  have hCNT : C.Nontrivial := by sorry
-  --Worst sorry, I will take this one
-  have hNNI : IsIndependent G NextNeigh := by
-    by_contra hc
-    obtain ⟨a, ha, b, hb, hab⟩ := IsIndepndent_nee hNNV hc
-    wlog ha0 : C.idxOf a = 0 generalizing C with aux
-    · specialize aux (C.rotate (C.idxOf a)) ?_ ?_ (IsCycle.rotate hC (C.idxOf a))
-        ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-      · have : length (C.rotate (C.idxOf a)) = length C := by
-          exact length_rotate C (C.idxOf a)
-        sorry
-      · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
-        exact hlen
-      · rw [(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a)]
-        exact hCle
-      · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
-        exact hG
-      · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
-        exact hD
-      · simp
-      · simp
-        intro v hvr hDv u hur hDu
-        rw[ (hCs.prop).isClosed.mem_rotate ] at hur
-        rw[ (hCs.prop).isClosed.mem_rotate ] at hvr
-        constructor
-        · by_contra hc
-          have haClength : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-            (WList.Nontrivial.nonempty hCNT)
-          obtain hle | hlt := le_or_gt (C.idxOf a) (C.idxOf v)
-          · have hvle := hC.idxOf_rotate_n_le hvr hle
-            obtain hmiss | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
-            · --have hmiss : C.idxOf a ≤ C.idxOf u := by sorry
-              have := hC.idxOf_rotate_n_le hur hmiss
-
-              have hfin : C.idxOf v = C.idxOf u + 1 := by omega
-              exact (hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).1 hfin
-            have := hC.idxOf_rotate_n hur haClength hltu
-            rw[hc, add_assoc, add_comm 1, ←add_assoc, this ] at hvle
-            have : C.idxOf v < C.length + 1 := by
-              have := idxOf_mem_le hvr
-              omega
-            omega
-          · have hi := hC.idxOf_rotate_n hvr haClength hlt
-            obtain hmiss | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
-            · have := hC.idxOf_rotate_n_le hur hmiss
-              rw[hc, add_assoc, add_comm 1, ←add_assoc, this ] at hi
-              have := (hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).2
-              rw [hi, add_comm ] at this
-              exact this rfl
-            have hiu := hC.idxOf_rotate_n hur haClength hltu
-            rw[hc, add_assoc, add_comm 1, ←add_assoc, hiu ] at hi
-            exact ((hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).1)
-              (id ((Nat.add_left_cancel (id (Eq.symm hi)))))
-        by_contra hc
-        have : C.length ≤ (C.rotate (C.idxOf a)).idxOf v + C.length := by
-          exact Nat.le_add_left C.length ((C.rotate (C.idxOf a)).idxOf v)
-        have : (C.rotate (C.idxOf a)).idxOf u < C.length := by
-          rw [Eq.symm (length_rotate C (C.idxOf a))]
-          have hvrr : u ∈ (C.rotate (C.idxOf a)) := by
-            apply (hC.isClosed).mem_rotate.2 hur
-          have hntr : (C.rotate (C.idxOf a)).Nonempty := by
-            apply (WList.Nontrivial.nonempty hCNT).rotate
-          exact ((hC.rotate (C.idxOf a)).isClosed).idxOf_lt_length hvrr hntr
-        have : C.length =  (C.rotate (C.idxOf a)).idxOf v + C.length := by omega
-        have h1u : (C.rotate (C.idxOf a)).idxOf u + (C.idxOf a) = C.length - 1 + (C.idxOf a):= by
-          omega
-        have h1v : (C.rotate (C.idxOf a)).idxOf v + (C.idxOf a) = (C.idxOf a) := by omega
-        have hccc : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-          (WList.Nontrivial.nonempty hCNT)
-        have hf := hDadj v (mem_sep hvr hDv ) u (mem_sep hur hDu )
-        have hn : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-            (WList.Nontrivial.nonempty hCNT)
-        obtain hle | hlt := le_or_gt (C.idxOf a) (C.idxOf v)
-        · rw [ hC.idxOf_rotate_n_le hvr hle] at h1v
-          rw[h1v ] at hf
-          obtain hleu | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
-          · rw [ hC.idxOf_rotate_n_le hur hleu, ←h1v ] at h1u
-            omega
-          rw [hC.idxOf_rotate_n hur hn hltu] at h1u
-          omega
-        rw [hC.idxOf_rotate_n hvr hn hlt, add_comm] at h1v
-        rw[h1v ] at hf
-        omega
-      · simp
-      · exact fun v hv ↦ ((hC.isTrail.vertexSet_subset  )
-          (((hCs.prop).isClosed.mem_rotate).1 hv.1 ))
-      · exact (rotate_nontrivial_iff (C.idxOf a)).mpr hCNT
-      · obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
-        obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
-        simp
-        by_contra hc
-        have hnadj : ¬G.Adj a b := by
-          apply Indep_Adje hc
-          simp
-          refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha.1 ), a₁,
-          ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha1N.1 ), ha1N.2 ⟩, ?_⟩
-          rw [hC.idxOf_rotate_idxOf ha.1 ]
-          simp
-          have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-            (WList.Nontrivial.nonempty hCNT)
-          left
-          obtain h1 | h2 := haind
-          · have hle : C.idxOf a ≤ C.idxOf a₁ := by
-              omega
-            have := hC.idxOf_rotate_n_le ha1N.1 hle
-            omega
-          have hle : C.idxOf a₁ < C.idxOf a := by
-            omega
-          have := hC.idxOf_rotate_n ha1N.1 hnt hle
-          nth_rw 2 [h2.1] at this
-          rw [h2.2] at this
-          omega
-          refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb.1 ), b₁,
-          ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb1N.1 ), hb1N.2 ⟩, ?_⟩
-          have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-            (WList.Nontrivial.nonempty hCNT)
-          have : C.idxOf b₁ = C.idxOf b + 1 ∨ C.idxOf b₁ = 0 ∧ C.idxOf b = C.length - 1 := by omega
-          have := (hC.idxOf_Adj_rotate hb.1 hb1N.1 hnt).1 this
-          omega
-          exact hab.ne
-        exact hnadj hab
-      · simp
-        obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
-        refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha.1 ), a₁,
-          ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha1N.1 ), ha1N.2 ⟩, ?_⟩
-        rw [hC.idxOf_rotate_idxOf ha.1 ]
-        simp
-        left
-        obtain h1 | h2 := haind
-        · have hle : C.idxOf a ≤ C.idxOf a₁ := by
-              omega
-          have := hC.idxOf_rotate_n_le ha1N.1 hle
-          omega
-        have hle : C.idxOf a₁ < C.idxOf a := by
-          omega
-        have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-          (WList.Nontrivial.nonempty hCNT)
-        have := hC.idxOf_rotate_n ha1N.1 hnt hle
-        nth_rw 2 [h2.1] at this
-        rw [h2.2] at this
-        omega
-      · obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
-        refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb.1 ), b₁,
-        ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb1N.1 ), hb1N.2 ⟩, ?_⟩
-        have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
-          (WList.Nontrivial.nonempty hCNT)
-        simp
-        have : C.idxOf b₁ = C.idxOf b + 1 ∨ C.idxOf b₁ = 0 ∧ C.idxOf b = C.length - 1 := by omega
-        have := (hC.idxOf_Adj_rotate hb.1 hb1N.1 hnt).1 this
-        omega
-      · have := hC.idxOf_rotate_n_le ha.1 (Nat.le_refl (C.idxOf a) )
-        omega
-      exact aux
-    --We can now assume nice things
-    -- prove the theorem with an added assumption
-
-    obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
-    obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
-    obtain ⟨P,e,f, hPath, haP, heP, hfP, hef, hC'⟩ :=
-        IsCycle.exists_isPath_vertex hCs.prop hCNT ha.1
-    have hbP : b ∈ P := by
-      have hhh : b ∈ C.rotate (C.idxOf a)  := by
-        refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
-      rw [hC'] at hhh
-      exact (Cycle_conc_index (hab.ne).symm hhh).1
-    have hab₁ : b₁ ≠ a := by
-      by_contra hcc
-      rw[←hcc] at haind
-      have hcon := hDadj a₁ ha1N b₁ hb1N
-      have : ¬ (C.idxOf a₁ ≠ C.idxOf b₁ + 1 ∧ C.idxOf a₁ + C.length ≠ C.idxOf b₁ + 1) := by
-        simp
-        intro h
-        obtain htrue | hfalse := haind
-        · exact False.elim (h (id (Eq.symm htrue)))
-        rw[hfalse.2]
-        simp
-        rw[hfalse.1]
-        refine (Nat.sub_eq_iff_eq_add (one_le_length_iff.mpr
-          (WList.Nontrivial.nonempty hCNT))).mp rfl
-      exact this (hDadj a₁ ha1N b₁ hb1N)
-    --obtain ⟨P₀,P₁,hP₁,hP₂,hP₀last,hP₀first,hP01d,hP01 ⟩ := IsPath.exists_isPath_vertex P hPath hbP
-    set P₀ : WList α β := prefixUntilVertex P b with h_pre
-    set P₁ : WList α β := suffixFromVertex P b with h_suf
-    have hP₀ := IsPath.prefix hPath (prefixUntilVertex_isPrefix P b)
-    have hP₁ := IsPath.suffix hPath (suffixFromVertex_isSuffix P b)
-    rw [←h_pre] at hP₀
-    rw [←h_suf] at hP₁
-    have hb1P' : b₁ ∈ P := by
-        have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
-          refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
-        rw [hC'] at hhh
-        exact (Cycle_conc_index hab₁ hhh).1
-    have hb1P1 : b₁ ∈ P₁ := by
-      have hb1P : b₁ ∈ P := by
-        have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
-          refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
-        rw [hC'] at hhh
-        exact (Cycle_conc_index hab₁ hhh).1
-      rw [Eq.symm (prefixUntilVertex_append_suffixFromVertex P b),←h_pre, ←h_suf] at hb1P
-      obtain (hf | hg ):= mem_of_mem_append hb1P
-      · rw [h_pre] at hf
-        have hcon := (prefixUntilVertex_index_iff P b hbP hb1P').1 hf
-        have hbindP : P.idxOf b + 1 = P.idxOf b₁ := by
-          have hhh : b ∈ C.rotate (C.idxOf a)  := by
-            refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
-          rw[hC'] at hhh
-          have hg1 := (Cycle_conc_index (hab.ne).symm hhh).2
-          have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
-            refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
-          rw[hC'] at hhh
-          have hg2 := (Cycle_conc_index (hab₁) hhh).2
-          rw [←hC', ha0, rotate_zero] at hg1
-          rw [←hC', ha0, rotate_zero] at hg2
-          rw[ha0, rotate_zero ] at hC'
-          omega
-        rw [←hbindP ] at hcon
-        linarith
-      exact hg
-    rw[ha0, rotate_zero ] at hC'
-    set P₂ : WList α β := prefixUntilVertex P₁ b₁ with h_pre2
-    set P₃ : WList α β := suffixFromVertex P₁ b₁ with h_suf2
-    have hP₂ := IsPath.prefix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
-        (prefixUntilVertex_isPrefix P₁ b₁)
-    have hP₃ := IsPath.suffix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
-        (suffixFromVertex_isSuffix P₁ b₁)
-    rw [←h_pre2] at hP₂
-    rw [←h_suf2] at hP₃
-    rw[h_neig] at hb1N
-    rw[h_neig] at ha1N
-    obtain ⟨ wb, hwb, hwb2 ⟩ := hb1N.2
-    obtain ⟨ wa, hwa, hwa2 ⟩ := ha1N.2
-    obtain ⟨PD, hPD, hPD1,hPD2 ⟩ := hD.exist_pathh hwa hwb
-    obtain ⟨e₁, he1 ⟩ := hwb2.symm
-    have hPc1 : G.IsPath (PD.concat e₁ b₁) := by
-      apply concat_isPath_iff.2
-      refine ⟨hPD.of_le (Std.IsPreorder.le_trans D (G - V(C)) G hD.le vertexDelete_le), ?_, ?_ ⟩
-      · rw[←hPD2] at he1
-        exact he1
-      have : b₁ ∉ V(D) := by
-        by_contra hc
-        exact (((hD.subsetV ) hc).2) (hb1N.1 )
-      exact fun b ↦ this ((IsPath.vertexSet_subset hPD ) b)
-    have hAdb : Adj G b b₁ := by
-      have : G.IsTrail C := by exact hC.toIsTrail
-      obtain hgood | hannoying := hbind
-      · exact idxOf_Adj (hC.toIsTrail ) hb.1 hb1N.1 hgood.symm
-      have hbb1 : b ≠ b₁ := by
-        by_contra hc
-        rw[←hc] at hannoying
-        rw[hannoying.2] at hannoying
-        simp at hannoying
-        have : C.length > 1 := by exact Nontrivial.one_lt_length hCNT
-        omega
-      exact (hC.idxOf_Adj_first hbb1.symm hannoying.2 hannoying.1).symm
-    obtain ⟨e₂, he2 ⟩ := hAdb.symm
-    have hPlast : (PD.concat e₁ b₁).last = b₁ := by simp
-    have hPfirst : P₃.first = b₁ := by
-      exact suffixFromVertex_first hb1P1
-    have hQ₁ : G.IsPath ((PD.concat e₁ b₁) ++ P₃) := by
-      apply hPc1.append hP₃ ?_ ?_
-      · rw[hPlast, hPfirst]
-      intro x hx hx3
-      simp
-      simp at hx
-      obtain hfalse | hgood := hx
-      · by_contra h
-        have hP3C : V(P₃) ⊆ V(C) := by
-          have : V(P) ⊆ V(C) := by
-            rw[hC']
-            simp
-          rw[h_suf2, h_suf]
-          have h1 : V((P.suffixFromVertex b).suffixFromVertex b₁) ⊆ V(P) := by
-            exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
-              ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
-          exact fun ⦃a⦄ a_1 ↦ this (h1 a_1)
-        have : x ∉ V(C) := by
-          have hob : V(D) ⊆ V(G) \ V(C) := by
-            have := (hD.subsetV )
-            simp at this
-            exact this
-          have : x ∈ V(G) \ V(C) := by exact hob (IsPath.vertexSet_subset hPD hfalse)
-          simp at this
-          exact this.2
-        exact this (hP3C hx3)
-      exact hgood
-    have hQ₂ : G.IsPath (((PD.concat e₁ b₁) ++ P₃).concat f a) := by
-      apply concat_isPath_iff.2
-      refine ⟨ hQ₁, ?_, ?_ ⟩
-      · simp
-        have h3last : P₃.last = P.last := by
-          rw [h_suf2]
-          simp
-          rw[h_suf]
-          simp
-        rw[h3last]
-        have hpcon : G.IsPath (P.concat f a) := by
-          rw[hC'] at hC
-          have := hC.tail_isPath
-          rwa[tail_cons] at this
-        exact (concat_isPath_iff.1 hpcon).2.1
-      simp
-      have ha1D : a ∉ V(D) := by
-            by_contra hc
-            exact (((hD.subsetV ) hc).2) (ha.1 )
-      --have : V(PD) ⊆ V(D) := by exact IsPath.vertexSet_subset hPD
-      refine ⟨ ?_, ?_, ?_ ⟩
-      · by_contra hc
-        exact ha1D ((IsPath.vertexSet_subset hPD) hc)
-      · by_contra hc
-        have hcc : PD.last ∈ V(PD) := by exact last_mem
-        rw[←hc] at hcc
-        exact ha1D ((IsPath.vertexSet_subset hPD) hcc)
-      rw[h_suf2, h_suf]
-      have h1 : V((P.suffixFromVertex b).suffixFromVertex b₁) ⊆ V(P) := by
-            exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
-              ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
-      by_contra hc
-      exact haP (h1 hc)
-    have hab' := hab
-    obtain ⟨eab, heab ⟩ := hab
-    have hQ₃ : G.IsPath ((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) := by
-      apply concat_isPath_iff.2
-      refine ⟨hQ₂, ?_, ?_ ⟩
-      · have : ((PD.concat e₁ b₁ ++ P₃).concat f a).last = a := by simp
-        rwa[this]
-      simp
-      have hb1D : b ∉ V(D) := by
-            by_contra hc
-            exact (((hD.subsetV ) hc).2) (hb.1 )
-      refine ⟨ ⟨?_, ?_, ?_⟩, (ne_of_mem_of_not_mem hbP haP ) ⟩
-      · by_contra hc
-        exact hb1D ((IsPath.vertexSet_subset hPD) hc)
-      · by_contra hc
-        have hcc : PD.last ∈ V(PD) := by exact last_mem
-        rw[←hc] at hcc
-        exact hb1D ((IsPath.vertexSet_subset hPD) hcc)
-      · rw[h_suf2 ]
-        have hbPre : b ∈ P₁.prefixUntilVertex b₁ := by
-          rw[h_suf ]
-          have : b = ((P.suffixFromVertex b).prefixUntilVertex b₁).first := by
-            simp
-            exact Eq.symm (suffixFromVertex_first hbP)
-          rw [this]
-          nth_rw 1 [←this]
-          exact first_mem
-        by_contra hc
-        exact (hAdb.ne.symm) (Prefix_Sufix_int hP₁ hbPre hc hb1P1 )
-    have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
-      apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_
-      · simp
-        rw[h_pre]
-        exact Eq.symm (prefixUntilVertex_last hbP)
-      intro x hx hxx
-      simp
-      simp at hx
-      obtain h1 | h2 := hx
-      · have hsi : x ∉ PD := by
-          by_contra hc
-          have hxC : x ∈ V(C) := by
-            rw[hC']
-            rw[h_pre] at hxx
-            simp at hxx
-            simp
-            right
-            exact ((prefixUntilVertex_vertex P b ) hxx )
-          have hxD : x ∉ V(D) := by
-            by_contra hcc
-            exact (((hD.subsetV ) hcc).2) (hxC )
-          exact hxD ((IsPath.vertexSet_subset hPD) hc)
-        simp [hsi] at h1
-        obtain h3 | h4 := h1
-        · obtain h5 | h6 := h3
-          · have : PD.last ∈ PD := by exact last_mem
-            by_contra h
-            rw[←h5] at this
-            exact hsi this
-          rw[h_suf2,h_suf ] at h6
-          have hxx2 := mem_reverse.2 hxx
-          simp at hxx2
-          rw[h_pre] at hxx2
-          have hh : x ∈ (P.suffixFromVertex b) := by exact
-            (suffixFromVertex_vertex (P.suffixFromVertex b) b₁) h6
-          have hxP : b ∈ P := by
-            have hbC := hb.1
-            rw[hC'] at hbC
-            simp [(hab'.ne ).symm] at hbC
-            exact hbP
-          exact (Prefix_Sufix_int hPath hxx2 hh hxP).symm
-        rw[h4,h_pre] at hxx
-        simp at hxx
-        exact False.elim (haP (((prefixUntilVertex_vertex P b ) ) hxx))
-      exact h2
-    obtain ⟨ef, hef ⟩:= hwa2.symm
-    set Q : WList α β := (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse)
-        with h_Q
-    have hCB : G.IsCycle (cons Q.last ef Q) := by
-      apply hQ₄.cons_isCycle ?_ ?_
-      · have hqfirst : Q.first = wa := by
-          rw[h_Q]
-          simp
-          exact hPD1
-        have hqlast : Q.last = a₁ := by
-          rw[h_Q, h_pre]
-          simp
-          have hget : C.get (1) = P.get (0) := by
-            rw[hC']
-            rw[get_cons_add]
-            simp
-          rw[(get_idxOf P first_mem).symm, idxOf_first P, ←hget ]
-
-          have : C.idxOf a₁ = 1 := by
-            obtain hgood | hfalse := haind
-            · rw[← hgood]
-              simp
-              exact ha0
-            by_contra
-            rw[ha0] at hfalse
-            have hcc : C.length -1 ≠ 0 := by
-              refine Nat.sub_ne_zero_iff_lt.mpr (Nontrivial.one_lt_length hCNT )
-            exact hcc (hfalse.1).symm
-          rw[←this]
-          exact get_idxOf C ha1N.1
-        rw[hqfirst, hqlast]
-        exact hef
-      rw[h_Q]
-      simp
-      have hefC : ef ∉ E(C) := by
-        by_contra hcef
-        exact ((isCompOf_subset hD ) hwa ).2 (hC.toIsTrail.isWalk.vertex_mem_of_edge_mem hcef
-            (IsLink.inc_left hef ))
-      refine ⟨ ?_, ?_, ?_, ?_, ?_, ?_ ⟩
-      · by_contra hefc
-        have hefneq : ef ∉ E(D) := by
-          by_contra hc
-          exact (hef.mem_vertexDelete_iff.1 ((hD.isClosedSubgraph.edgeSet_mono) hc)).2 ha1N.1
-        exact (fun a ↦ hefneq ((hPD.isWalk).edgeSet_subset hefc)) hefc
-      · by_contra hc
-        rw[←hc] at he1
-        obtain haw | h2 := hef.right_eq_or_eq he1
-        · have ha1D : a₁ ∉ V(D) := by
-            by_contra hc
-            exact (((hD.subsetV ) hc).2) (ha1N.1 )
-          rw[haw] at ha1D
-          exact ha1D hwb
-        have ht2 : a₁ ≠ b₁ := by
-          have hleght0 : ¬  (0 = C.length - 1 ∧ C.idxOf b₁ = 0) := by
-            simp
-            intro h
-            by_contra
-            exact (Nat.sub_ne_zero_iff_lt.mpr (Nontrivial.one_lt_length hCNT )) (id (Eq.symm h))
-          by_contra hc
-          rw[ha0, hc] at haind
-          simp at haind
-          simp [hleght0] at haind
-          obtain hc1 | hc2 := hbind
-          · have habeq : a = b := by
-              rw[←haind] at hc1
-              simp at hc1
-              rw[←ha0] at hc1
-              exact idxOf_eq C ha.1 hc1.symm
-            have := (hab'.ne)
-            exact (hab'.ne) habeq
-          rw[←hc,←ha0] at hc2
-          rw[←hc, (idxOf_eq C ha1N.1 hc2.2), ha0 ] at haind
-          omega
-        exact ht2 h2
-      · by_contra hc
-        have := mem_edgeSet_iff.2 hc
-        have hP3C : E(P₃) ⊆ E(C) := by
-          rw[h_suf2]
-          have hP1C : E(P₁) ⊆ E(C) := by
-            have hEPC : E(P) ⊆ E(C) := by
-              rw[hC']
-              simp
-              exact fun g hg ↦ (mem_insert_of_mem e (mem_insert_of_mem f hg))
-            have hP1s : E(P₁) ⊆ E(P) := by
-              rw[h_suf]
-              exact suffixFromVertex_edge P b
-            exact fun ⦃a⦄ a_1 ↦ hEPC (hP1s a_1)
-          have := suffixFromVertex_edge P₁ b₁
-          exact fun ⦃a⦄ a_1 ↦ hP1C ((suffixFromVertex_edge P₁ b₁) a_1)
-        exact hefC (hP3C hc)
-      · have hfC : f ∈ E(C) := by
-          rw[hC']
-          simp
-        by_contra hc
-        rw[←hc] at hfC
-        exact hefC hfC
-      · by_contra hc
-        rw[← hc] at heab
-        obtain haw | h2 := hef.left_eq_or_eq heab
-        · have ha1D : a ∉ V(D) := by
-            by_contra hc
-            exact (((hD.subsetV ) hc).2) (ha.1 )
-          rw[←haw] at ha1D
-          exact ha1D hwa
-        have ha1D : b ∉ V(D) := by
-          by_contra hc
-          exact (((hD.subsetV ) hc).2) (hb.1 )
-        rw[←h2] at ha1D
-        exact ha1D hwa
-      · by_contra hc
-        have hcon := mem_edgeSet_iff.2 hc
-        rw[h_pre ] at hcon
-        have h2 : E(P) ⊆ E(C) := by
-          rw[hC']
-          simp
-          exact fun g hg ↦ (mem_insert_of_mem e (mem_insert_of_mem f hg))
-        exact hefC (h2 (prefixUntilVertex_edge P b  hc) )
-    have hlength : C.length < (cons Q.last ef Q).length := by
-      rw[h_Q]
-      simp
-      rw[h_suf2, h_pre ]
-      have : PD.length + ((P₁.suffixFromVertex b₁).length + 1) +
-          ((P.prefixUntilVertex b).length + 1 + 1) + 1
-          = PD.length + (P₁.suffixFromVertex b₁).length  + (P.prefixUntilVertex b).length + 4 := by
-        omega
-      rw [this]
-      have hsb : (P.suffixFromVertex b).idxOf b₁ = 1 := by sorry
-      have : C.length + P₁.idxOf b₁ < PD.length + ((P₁.suffixFromVertex b₁).length + P₁.idxOf b₁)
-          + (P.prefixUntilVertex b).length + 4 := by
-        rw[sufixFromVertex_length P₁ b₁ hb1P1, h_suf,
-        (add_assoc PD.length ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
-        (add_comm ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
-        prefixUntilVertex_suffixFromVertex_length P b hbP  ]
-        rw[hC',hsb]
-        simp
-        omega
-      omega
-    sorry
+    -- wlog h0 : 0 ∈ nbrIndices with aux
+    -- ·
+    rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])]
+    simp only [mem_image, ne_eq, forall_exists_index, and_imp]
+    rintro x y i hi rfl j hj rfl hne hij
+    apply hne
+    simp [nbrIndices] at *
+    wlog hi0 : i = 0 generalizing C with aux
 
 
-  have hNNIv : IsIndependent G ( insert v NextNeigh) := by
-    --Should not be too bad doing cases
-    sorry
-  --Finish
   sorry
+
+  -- set Neig : Set α := {v : α | v ∈ C ∧ (SetVxAdj G V(D) v) } with h_neig
+  -- --This is the second worst sorry
+  -- have hDadj : ∀ v, v ∈ Neig → ∀ u, u ∈ Neig
+  --     → C.idxOf v ≠ C.idxOf u + 1 ∧ (C.idxOf v + C.length ≠ C.idxOf u + 1) := by
+  --   intro v hvN u huN
+  --   by_contra hcon
+  --   obtain ⟨ w, hwD, hwad ⟩ := hvN.2
+  --   obtain ⟨ w', huD, huad ⟩ := huN.2
+  --   --Need to take path in D from w to w' and extend cycle
+  --   sorry
+  -- set NextNeigh : Set α := {v ∈ C | ∃ w ∈ Neig, C.idxOf v + 1 = C.idxOf w ∨
+  -- (C.idxOf v = C.length - 1 ∧ C.idxOf w = 0 )} with h_NN
+
+
+  -- have hNNV : NextNeigh ⊆ V(G) :=
+  --   fun ⦃a⦄ b ↦ ((IsCycle.isTrail hCs.prop ).vertexSet_subset)
+  --       ((sep_subset (fun x ↦ List.Mem x C.vertex)
+  --       fun x ↦ ∃ w ∈ Neig, C.idxOf x + 1 = C.idxOf w ∨
+  --     (C.idxOf x = C.length - 1 ∧ C.idxOf w = 0 )) b)
+
+  --   --sep_subset V(G) fun x ↦ ∃ w ∈ Neig, C.idxOf x = C.idxOf w + 1
+  -- have ⟨ v, hvD ⟩ : ∃ v, v ∈ V(D) := IsCompOf.nonempty hD
+
+  -- have hCNT : C.Nontrivial := by sorry
+  -- --Worst sorry, I will take this one
+  -- have hNNI : IsIndependent G NextNeigh := by
+  --   by_contra hc
+  --   obtain ⟨a, ha, b, hb, hab⟩ := IsIndepndent_nee hNNV hc
+  --   wlog ha0 : C.idxOf a = 0 generalizing C with aux
+
+  --   · specialize aux (C.rotate (C.idxOf a)) ?_ ?_ (IsCycle.rotate hC (C.idxOf a))
+  --       ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  --     · simp [MaximalFor]
+  --       simp [MaximalFor] at hCs
+
+  --       have : length (C.rotate (C.idxOf a)) = length C := by
+  --         exact length_rotate C (C.idxOf a)
+  --       sorry
+  --     · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
+  --       exact hlen
+  --     · rw [(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a)]
+  --       exact hCle
+  --     · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
+  --       exact hG
+  --     · rw[(hCs.prop).isClosed.rotate_vertexSet (C.idxOf a) ]
+  --       exact hD
+  --     · simp
+  --     · simp
+  --       intro v hvr hDv u hur hDu
+  --       rw[ (hCs.prop).isClosed.mem_rotate ] at hur
+  --       rw[ (hCs.prop).isClosed.mem_rotate ] at hvr
+  --       constructor
+  --       · by_contra hc
+  --         have haClength : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --           (WList.Nontrivial.nonempty hCNT)
+  --         obtain hle | hlt := le_or_gt (C.idxOf a) (C.idxOf v)
+  --         · have hvle := hC.idxOf_rotate_n_le hvr hle
+  --           obtain hmiss | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
+  --           · --have hmiss : C.idxOf a ≤ C.idxOf u := by sorry
+  --             have := hC.idxOf_rotate_n_le hur hmiss
+
+  --             have hfin : C.idxOf v = C.idxOf u + 1 := by omega
+  --             exact (hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).1 hfin
+  --           have := hC.idxOf_rotate_n hur haClength hltu
+  --           rw[hc, add_assoc, add_comm 1, ←add_assoc, this ] at hvle
+  --           have : C.idxOf v < C.length + 1 := by
+  --             have := idxOf_mem_le hvr
+  --             omega
+  --           omega
+  --         · have hi := hC.idxOf_rotate_n hvr haClength hlt
+  --           obtain hmiss | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
+  --           · have := hC.idxOf_rotate_n_le hur hmiss
+  --             rw[hc, add_assoc, add_comm 1, ←add_assoc, this ] at hi
+  --             have := (hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).2
+  --             rw [hi, add_comm ] at this
+  --             exact this rfl
+  --           have hiu := hC.idxOf_rotate_n hur haClength hltu
+  --           rw[hc, add_assoc, add_comm 1, ←add_assoc, hiu ] at hi
+  --           exact ((hDadj v (mem_sep hvr hDv  ) u (mem_sep hur hDu  )).1)
+  --             (id ((Nat.add_left_cancel (id (Eq.symm hi)))))
+  --       by_contra hc
+  --       have : C.length ≤ (C.rotate (C.idxOf a)).idxOf v + C.length := by
+  --         exact Nat.le_add_left C.length ((C.rotate (C.idxOf a)).idxOf v)
+  --       have : (C.rotate (C.idxOf a)).idxOf u < C.length := by
+  --         rw [Eq.symm (length_rotate C (C.idxOf a))]
+  --         have hvrr : u ∈ (C.rotate (C.idxOf a)) := by
+  --           apply (hC.isClosed).mem_rotate.2 hur
+  --         have hntr : (C.rotate (C.idxOf a)).Nonempty := by
+  --           apply (WList.Nontrivial.nonempty hCNT).rotate
+  --         exact ((hC.rotate (C.idxOf a)).isClosed).idxOf_lt_length hvrr hntr
+  --       have : C.length =  (C.rotate (C.idxOf a)).idxOf v + C.length := by omega
+  --       have h1u : (C.rotate (C.idxOf a)).idxOf u + (C.idxOf a) = C.length - 1 + (C.idxOf a):= by
+  --         omega
+  --       have h1v : (C.rotate (C.idxOf a)).idxOf v + (C.idxOf a) = (C.idxOf a) := by omega
+  --       have hccc : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --         (WList.Nontrivial.nonempty hCNT)
+  --       have hf := hDadj v (mem_sep hvr hDv ) u (mem_sep hur hDu )
+  --       have hn : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --           (WList.Nontrivial.nonempty hCNT)
+  --       obtain hle | hlt := le_or_gt (C.idxOf a) (C.idxOf v)
+  --       · rw [ hC.idxOf_rotate_n_le hvr hle] at h1v
+  --         rw[h1v ] at hf
+  --         obtain hleu | hltu := le_or_gt (C.idxOf a) (C.idxOf u)
+  --         · rw [ hC.idxOf_rotate_n_le hur hleu, ←h1v ] at h1u
+  --           omega
+  --         rw [hC.idxOf_rotate_n hur hn hltu] at h1u
+  --         omega
+  --       rw [hC.idxOf_rotate_n hvr hn hlt, add_comm] at h1v
+  --       rw[h1v ] at hf
+  --       omega
+  --     · simp
+  --     · exact fun v hv ↦ ((hC.isTrail.vertexSet_subset  )
+  --         (((hCs.prop).isClosed.mem_rotate).1 hv.1 ))
+  --     · exact (rotate_nontrivial_iff (C.idxOf a)).mpr hCNT
+  --     · obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
+  --       obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
+  --       simp
+  --       by_contra hc
+  --       have hnadj : ¬G.Adj a b := by
+  --         apply Indep_Adje hc
+  --         simp
+  --         refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha.1 ), a₁,
+  --         ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha1N.1 ), ha1N.2 ⟩, ?_⟩
+  --         rw [hC.idxOf_rotate_idxOf ha.1 ]
+  --         simp
+  --         have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --           (WList.Nontrivial.nonempty hCNT)
+  --         left
+  --         obtain h1 | h2 := haind
+  --         · have hle : C.idxOf a ≤ C.idxOf a₁ := by
+  --             omega
+  --           have := hC.idxOf_rotate_n_le ha1N.1 hle
+  --           omega
+  --         have hle : C.idxOf a₁ < C.idxOf a := by
+  --           omega
+  --         have := hC.idxOf_rotate_n ha1N.1 hnt hle
+  --         nth_rw 2 [h2.1] at this
+  --         rw [h2.2] at this
+  --         omega
+  --         refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb.1 ), b₁,
+  --         ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb1N.1 ), hb1N.2 ⟩, ?_⟩
+  --         have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --           (WList.Nontrivial.nonempty hCNT)
+  --         have : C.idxOf b₁ = C.idxOf b + 1 ∨ C.idxOf b₁ = 0 ∧ C.idxOf b = C.length - 1 := by omega
+  --         have := (hC.idxOf_Adj_rotate hb.1 hb1N.1 hnt).1 this
+  --         omega
+  --         exact hab.ne
+  --       exact hnadj hab
+  --     · simp
+  --       obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
+  --       refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha.1 ), a₁,
+  --         ⟨ (((hCs.prop).isClosed.mem_rotate).2 ha1N.1 ), ha1N.2 ⟩, ?_⟩
+  --       rw [hC.idxOf_rotate_idxOf ha.1 ]
+  --       simp
+  --       left
+  --       obtain h1 | h2 := haind
+  --       · have hle : C.idxOf a ≤ C.idxOf a₁ := by
+  --             omega
+  --         have := hC.idxOf_rotate_n_le ha1N.1 hle
+  --         omega
+  --       have hle : C.idxOf a₁ < C.idxOf a := by
+  --         omega
+  --       have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --         (WList.Nontrivial.nonempty hCNT)
+  --       have := hC.idxOf_rotate_n ha1N.1 hnt hle
+  --       nth_rw 2 [h2.1] at this
+  --       rw [h2.2] at this
+  --       omega
+  --     · obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
+  --       refine ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb.1 ), b₁,
+  --       ⟨ (((hCs.prop).isClosed.mem_rotate).2 hb1N.1 ), hb1N.2 ⟩, ?_⟩
+  --       have hnt : (C.idxOf a) < C.length := (hCs.prop).isClosed.idxOf_lt_length ha.1
+  --         (WList.Nontrivial.nonempty hCNT)
+  --       simp
+  --       have : C.idxOf b₁ = C.idxOf b + 1 ∨ C.idxOf b₁ = 0 ∧ C.idxOf b = C.length - 1 := by omega
+  --       have := (hC.idxOf_Adj_rotate hb.1 hb1N.1 hnt).1 this
+  --       omega
+  --     · have := hC.idxOf_rotate_n_le ha.1 (Nat.le_refl (C.idxOf a) )
+  --       omega
+  --     exact aux
+  --   --We can now assume nice things
+  --   -- prove the theorem with an added assumption
+
+  --   obtain ⟨ b₁, hb1N, hbind ⟩ := hb.2
+  --   obtain ⟨ a₁, ha1N, haind ⟩ := ha.2
+  --   obtain ⟨P,e,f, hPath, haP, heP, hfP, hef, hC'⟩ :=
+  --       IsCycle.exists_isPath_vertex hCs.prop hCNT ha.1
+  --   have hbP : b ∈ P := by
+  --     have hhh : b ∈ C.rotate (C.idxOf a)  := by
+  --       refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
+  --     rw [hC'] at hhh
+  --     exact (Cycle_conc_index (hab.ne).symm hhh).1
+  --   have hab₁ : b₁ ≠ a := by
+  --     by_contra hcc
+  --     rw[←hcc] at haind
+  --     have hcon := hDadj a₁ ha1N b₁ hb1N
+  --     have : ¬ (C.idxOf a₁ ≠ C.idxOf b₁ + 1 ∧ C.idxOf a₁ + C.length ≠ C.idxOf b₁ + 1) := by
+  --       simp
+  --       intro h
+  --       obtain htrue | hfalse := haind
+  --       · exact False.elim (h (id (Eq.symm htrue)))
+  --       rw[hfalse.2]
+  --       simp
+  --       rw[hfalse.1]
+  --       refine (Nat.sub_eq_iff_eq_add (one_le_length_iff.mpr
+  --         (WList.Nontrivial.nonempty hCNT))).mp rfl
+  --     exact this (hDadj a₁ ha1N b₁ hb1N)
+  --   --obtain ⟨P₀,P₁,hP₁,hP₂,hP₀last,hP₀first,hP01d,hP01 ⟩ := IsPath.exists_isPath_vertex P hPath hbP
+  --   set P₀ : WList α β := prefixUntilVertex P b with h_pre
+  --   set P₁ : WList α β := suffixFromVertex P b with h_suf
+  --   have hP₀ := IsPath.prefix hPath (prefixUntilVertex_isPrefix P b)
+  --   have hP₁ := IsPath.suffix hPath (suffixFromVertex_isSuffix P b)
+  --   rw [←h_pre] at hP₀
+  --   rw [←h_suf] at hP₁
+  --   have hb1P' : b₁ ∈ P := by
+  --       have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+  --         refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+  --       rw [hC'] at hhh
+  --       exact (Cycle_conc_index hab₁ hhh).1
+  --   have hb1P1 : b₁ ∈ P₁ := by
+  --     have hb1P : b₁ ∈ P := by
+  --       have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+  --         refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+  --       rw [hC'] at hhh
+  --       exact (Cycle_conc_index hab₁ hhh).1
+  --     rw [Eq.symm (prefixUntilVertex_append_suffixFromVertex P b),←h_pre, ←h_suf] at hb1P
+  --     obtain (hf | hg ):= mem_of_mem_append hb1P
+  --     · rw [h_pre] at hf
+  --       have hcon := (prefixUntilVertex_index_iff P b hbP hb1P').1 hf
+  --       have hbindP : P.idxOf b + 1 = P.idxOf b₁ := by
+  --         have hhh : b ∈ C.rotate (C.idxOf a)  := by
+  --           refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb.1
+  --         rw[hC'] at hhh
+  --         have hg1 := (Cycle_conc_index (hab.ne).symm hhh).2
+  --         have hhh : b₁ ∈ C.rotate (C.idxOf a)  := by
+  --           refine (IsClosed.mem_rotate ((hCs.prop).isClosed )).mpr hb1N.1
+  --         rw[hC'] at hhh
+  --         have hg2 := (Cycle_conc_index (hab₁) hhh).2
+  --         rw [←hC', ha0, rotate_zero] at hg1
+  --         rw [←hC', ha0, rotate_zero] at hg2
+  --         rw[ha0, rotate_zero ] at hC'
+  --         omega
+  --       rw [←hbindP ] at hcon
+  --       linarith
+  --     exact hg
+  --   rw[ha0, rotate_zero ] at hC'
+  --   set P₂ : WList α β := prefixUntilVertex P₁ b₁ with h_pre2
+  --   set P₃ : WList α β := suffixFromVertex P₁ b₁ with h_suf2
+  --   have hP₂ := IsPath.prefix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
+  --       (prefixUntilVertex_isPrefix P₁ b₁)
+  --   have hP₃ := IsPath.suffix (IsPath.suffix hPath (suffixFromVertex_isSuffix P b))
+  --       (suffixFromVertex_isSuffix P₁ b₁)
+  --   rw [←h_pre2] at hP₂
+  --   rw [←h_suf2] at hP₃
+  --   rw[h_neig] at hb1N
+  --   rw[h_neig] at ha1N
+  --   obtain ⟨ wb, hwb, hwb2 ⟩ := hb1N.2
+  --   obtain ⟨ wa, hwa, hwa2 ⟩ := ha1N.2
+  --   obtain ⟨PD, hPD, hPD1,hPD2 ⟩ := hD.exist_pathh hwa hwb
+  --   obtain ⟨e₁, he1 ⟩ := hwb2.symm
+  --   have hPc1 : G.IsPath (PD.concat e₁ b₁) := by
+  --     apply concat_isPath_iff.2
+  --     refine ⟨hPD.of_le (Std.IsPreorder.le_trans D (G - V(C)) G hD.le vertexDelete_le), ?_, ?_ ⟩
+  --     · rw[←hPD2] at he1
+  --       exact he1
+  --     have : b₁ ∉ V(D) := by
+  --       by_contra hc
+  --       exact (((hD.subsetV ) hc).2) (hb1N.1 )
+  --     exact fun b ↦ this ((IsPath.vertexSet_subset hPD ) b)
+  --   have hAdb : Adj G b b₁ := by
+  --     have : G.IsTrail C := by exact hC.toIsTrail
+  --     obtain hgood | hannoying := hbind
+  --     · exact idxOf_Adj (hC.toIsTrail ) hb.1 hb1N.1 hgood.symm
+  --     have hbb1 : b ≠ b₁ := by
+  --       by_contra hc
+  --       rw[←hc] at hannoying
+  --       rw[hannoying.2] at hannoying
+  --       simp at hannoying
+  --       have : C.length > 1 := by exact Nontrivial.one_lt_length hCNT
+  --       omega
+  --     exact (hC.idxOf_Adj_first hbb1.symm hannoying.2 hannoying.1).symm
+  --   obtain ⟨e₂, he2 ⟩ := hAdb.symm
+  --   have hPlast : (PD.concat e₁ b₁).last = b₁ := by simp
+  --   have hPfirst : P₃.first = b₁ := by
+  --     exact suffixFromVertex_first hb1P1
+  --   have hQ₁ : G.IsPath ((PD.concat e₁ b₁) ++ P₃) := by
+  --     apply hPc1.append hP₃ ?_ ?_
+  --     · rw[hPlast, hPfirst]
+  --     intro x hx hx3
+  --     simp
+  --     simp at hx
+  --     obtain hfalse | hgood := hx
+  --     · by_contra h
+  --       have hP3C : V(P₃) ⊆ V(C) := by
+  --         have : V(P) ⊆ V(C) := by
+  --           rw[hC']
+  --           simp
+  --         rw[h_suf2, h_suf]
+  --         have h1 : V((P.suffixFromVertex b).suffixFromVertex b₁) ⊆ V(P) := by
+  --           exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
+  --             ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
+  --         exact fun ⦃a⦄ a_1 ↦ this (h1 a_1)
+  --       have : x ∉ V(C) := by
+  --         have hob : V(D) ⊆ V(G) \ V(C) := by
+  --           have := (hD.subsetV )
+  --           simp at this
+  --           exact this
+  --         have : x ∈ V(G) \ V(C) := by exact hob (IsPath.vertexSet_subset hPD hfalse)
+  --         simp at this
+  --         exact this.2
+  --       exact this (hP3C hx3)
+  --     exact hgood
+  --   have hQ₂ : G.IsPath (((PD.concat e₁ b₁) ++ P₃).concat f a) := by
+  --     apply concat_isPath_iff.2
+  --     refine ⟨ hQ₁, ?_, ?_ ⟩
+  --     · simp
+  --       have h3last : P₃.last = P.last := by
+  --         rw [h_suf2]
+  --         simp
+  --         rw[h_suf]
+  --         simp
+  --       rw[h3last]
+  --       have hpcon : G.IsPath (P.concat f a) := by
+  --         rw[hC'] at hC
+  --         have := hC.tail_isPath
+  --         rwa[tail_cons] at this
+  --       exact (concat_isPath_iff.1 hpcon).2.1
+  --     simp
+  --     have ha1D : a ∉ V(D) := by
+  --           by_contra hc
+  --           exact (((hD.subsetV ) hc).2) (ha.1 )
+  --     --have : V(PD) ⊆ V(D) := by exact IsPath.vertexSet_subset hPD
+  --     refine ⟨ ?_, ?_, ?_ ⟩
+  --     · by_contra hc
+  --       exact ha1D ((IsPath.vertexSet_subset hPD) hc)
+  --     · by_contra hc
+  --       have hcc : PD.last ∈ V(PD) := by exact last_mem
+  --       rw[←hc] at hcc
+  --       exact ha1D ((IsPath.vertexSet_subset hPD) hcc)
+  --     rw[h_suf2, h_suf]
+  --     have h1 : V((P.suffixFromVertex b).suffixFromVertex b₁) ⊆ V(P) := by
+  --           exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
+  --             ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
+  --     by_contra hc
+  --     exact haP (h1 hc)
+  --   have hab' := hab
+  --   obtain ⟨eab, heab ⟩ := hab
+  --   have hQ₃ : G.IsPath ((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) := by
+  --     apply concat_isPath_iff.2
+  --     refine ⟨hQ₂, ?_, ?_ ⟩
+  --     · have : ((PD.concat e₁ b₁ ++ P₃).concat f a).last = a := by simp
+  --       rwa[this]
+  --     simp
+  --     have hb1D : b ∉ V(D) := by
+  --           by_contra hc
+  --           exact (((hD.subsetV ) hc).2) (hb.1 )
+  --     refine ⟨ ⟨?_, ?_, ?_⟩, (ne_of_mem_of_not_mem hbP haP ) ⟩
+  --     · by_contra hc
+  --       exact hb1D ((IsPath.vertexSet_subset hPD) hc)
+  --     · by_contra hc
+  --       have hcc : PD.last ∈ V(PD) := by exact last_mem
+  --       rw[←hc] at hcc
+  --       exact hb1D ((IsPath.vertexSet_subset hPD) hcc)
+  --     · rw[h_suf2 ]
+  --       have hbPre : b ∈ P₁.prefixUntilVertex b₁ := by
+  --         rw[h_suf ]
+  --         have : b = ((P.suffixFromVertex b).prefixUntilVertex b₁).first := by
+  --           simp
+  --           exact Eq.symm (suffixFromVertex_first hbP)
+  --         rw [this]
+  --         nth_rw 1 [←this]
+  --         exact first_mem
+  --       by_contra hc
+  --       exact (hAdb.ne.symm) (Prefix_Sufix_int hP₁ hbPre hc hb1P1 )
+  --   have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
+  --     apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_
+  --     · simp
+  --       rw[h_pre]
+  --       exact Eq.symm (prefixUntilVertex_last hbP)
+  --     intro x hx hxx
+  --     simp
+  --     simp at hx
+  --     obtain h1 | h2 := hx
+  --     · have hsi : x ∉ PD := by
+  --         by_contra hc
+  --         have hxC : x ∈ V(C) := by
+  --           rw[hC']
+  --           rw[h_pre] at hxx
+  --           simp at hxx
+  --           simp
+  --           right
+  --           exact ((prefixUntilVertex_vertex P b ) hxx )
+  --         have hxD : x ∉ V(D) := by
+  --           by_contra hcc
+  --           exact (((hD.subsetV ) hcc).2) (hxC )
+  --         exact hxD ((IsPath.vertexSet_subset hPD) hc)
+  --       simp [hsi] at h1
+  --       obtain h3 | h4 := h1
+  --       · obtain h5 | h6 := h3
+  --         · have : PD.last ∈ PD := by exact last_mem
+  --           by_contra h
+  --           rw[←h5] at this
+  --           exact hsi this
+  --         rw[h_suf2,h_suf ] at h6
+  --         have hxx2 := mem_reverse.2 hxx
+  --         simp at hxx2
+  --         rw[h_pre] at hxx2
+  --         have hh : x ∈ (P.suffixFromVertex b) := by exact
+  --           (suffixFromVertex_vertex (P.suffixFromVertex b) b₁) h6
+  --         have hxP : b ∈ P := by
+  --           have hbC := hb.1
+  --           rw[hC'] at hbC
+  --           simp [(hab'.ne ).symm] at hbC
+  --           exact hbP
+  --         exact (Prefix_Sufix_int hPath hxx2 hh hxP).symm
+  --       rw[h4,h_pre] at hxx
+  --       simp at hxx
+  --       exact False.elim (haP (((prefixUntilVertex_vertex P b ) ) hxx))
+  --     exact h2
+  --   obtain ⟨ef, hef ⟩:= hwa2.symm
+  --   set Q : WList α β := (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse)
+  --       with h_Q
+  --   have hCB : G.IsCycle (cons Q.last ef Q) := by
+  --     apply hQ₄.cons_isCycle ?_ ?_
+  --     · have hqfirst : Q.first = wa := by
+  --         rw[h_Q]
+  --         simp
+  --         exact hPD1
+  --       have hqlast : Q.last = a₁ := by
+  --         rw[h_Q, h_pre]
+  --         simp
+  --         have hget : C.get (1) = P.get (0) := by
+  --           rw[hC']
+  --           rw[get_cons_add]
+  --           simp
+  --         rw[(get_idxOf P first_mem).symm, idxOf_first P, ←hget ]
+
+  --         have : C.idxOf a₁ = 1 := by
+  --           obtain hgood | hfalse := haind
+  --           · rw[← hgood]
+  --             simp
+  --             exact ha0
+  --           by_contra
+  --           rw[ha0] at hfalse
+  --           have hcc : C.length -1 ≠ 0 := by
+  --             refine Nat.sub_ne_zero_iff_lt.mpr (Nontrivial.one_lt_length hCNT )
+  --           exact hcc (hfalse.1).symm
+  --         rw[←this]
+  --         exact get_idxOf C ha1N.1
+  --       rw[hqfirst, hqlast]
+  --       exact hef
+  --     rw[h_Q]
+  --     simp
+  --     have hefC : ef ∉ E(C) := by
+  --       by_contra hcef
+  --       exact ((isCompOf_subset hD ) hwa ).2 (hC.toIsTrail.isWalk.vertex_mem_of_edge_mem hcef
+  --           (IsLink.inc_left hef ))
+  --     refine ⟨ ?_, ?_, ?_, ?_, ?_, ?_ ⟩
+  --     · by_contra hefc
+  --       have hefneq : ef ∉ E(D) := by
+  --         by_contra hc
+  --         exact (hef.mem_vertexDelete_iff.1 ((hD.isClosedSubgraph.edgeSet_mono) hc)).2 ha1N.1
+  --       exact (fun a ↦ hefneq ((hPD.isWalk).edgeSet_subset hefc)) hefc
+  --     · by_contra hc
+  --       rw[←hc] at he1
+  --       obtain haw | h2 := hef.right_eq_or_eq he1
+  --       · have ha1D : a₁ ∉ V(D) := by
+  --           by_contra hc
+  --           exact (((hD.subsetV ) hc).2) (ha1N.1 )
+  --         rw[haw] at ha1D
+  --         exact ha1D hwb
+  --       have ht2 : a₁ ≠ b₁ := by
+  --         have hleght0 : ¬  (0 = C.length - 1 ∧ C.idxOf b₁ = 0) := by
+  --           simp
+  --           intro h
+  --           by_contra
+  --           exact (Nat.sub_ne_zero_iff_lt.mpr (Nontrivial.one_lt_length hCNT )) (id (Eq.symm h))
+  --         by_contra hc
+  --         rw[ha0, hc] at haind
+  --         simp at haind
+  --         simp [hleght0] at haind
+  --         obtain hc1 | hc2 := hbind
+  --         · have habeq : a = b := by
+  --             rw[←haind] at hc1
+  --             simp at hc1
+  --             rw[←ha0] at hc1
+  --             exact idxOf_eq C ha.1 hc1.symm
+  --           have := (hab'.ne)
+  --           exact (hab'.ne) habeq
+  --         rw[←hc,←ha0] at hc2
+  --         rw[←hc, (idxOf_eq C ha1N.1 hc2.2), ha0 ] at haind
+  --         omega
+  --       exact ht2 h2
+  --     · by_contra hc
+  --       have := mem_edgeSet_iff.2 hc
+  --       have hP3C : E(P₃) ⊆ E(C) := by
+  --         rw[h_suf2]
+  --         have hP1C : E(P₁) ⊆ E(C) := by
+  --           have hEPC : E(P) ⊆ E(C) := by
+  --             rw[hC']
+  --             simp
+  --             exact fun g hg ↦ (mem_insert_of_mem e (mem_insert_of_mem f hg))
+  --           have hP1s : E(P₁) ⊆ E(P) := by
+  --             rw[h_suf]
+  --             exact suffixFromVertex_edge P b
+  --           exact fun ⦃a⦄ a_1 ↦ hEPC (hP1s a_1)
+  --         have := suffixFromVertex_edge P₁ b₁
+  --         exact fun ⦃a⦄ a_1 ↦ hP1C ((suffixFromVertex_edge P₁ b₁) a_1)
+  --       exact hefC (hP3C hc)
+  --     · have hfC : f ∈ E(C) := by
+  --         rw[hC']
+  --         simp
+  --       by_contra hc
+  --       rw[←hc] at hfC
+  --       exact hefC hfC
+  --     · by_contra hc
+  --       rw[← hc] at heab
+  --       obtain haw | h2 := hef.left_eq_or_eq heab
+  --       · have ha1D : a ∉ V(D) := by
+  --           by_contra hc
+  --           exact (((hD.subsetV ) hc).2) (ha.1 )
+  --         rw[←haw] at ha1D
+  --         exact ha1D hwa
+  --       have ha1D : b ∉ V(D) := by
+  --         by_contra hc
+  --         exact (((hD.subsetV ) hc).2) (hb.1 )
+  --       rw[←h2] at ha1D
+  --       exact ha1D hwa
+  --     · by_contra hc
+  --       have hcon := mem_edgeSet_iff.2 hc
+  --       rw[h_pre ] at hcon
+  --       have h2 : E(P) ⊆ E(C) := by
+  --         rw[hC']
+  --         simp
+  --         exact fun g hg ↦ (mem_insert_of_mem e (mem_insert_of_mem f hg))
+  --       exact hefC (h2 (prefixUntilVertex_edge P b  hc) )
+  --   have hlength : C.length < (cons Q.last ef Q).length := by
+  --     rw[h_Q]
+  --     simp
+  --     rw[h_suf2, h_pre ]
+  --     have : PD.length + ((P₁.suffixFromVertex b₁).length + 1) +
+  --         ((P.prefixUntilVertex b).length + 1 + 1) + 1
+  --         = PD.length + (P₁.suffixFromVertex b₁).length  + (P.prefixUntilVertex b).length + 4 := by
+  --       omega
+  --     rw [this]
+  --     have hsb : (P.suffixFromVertex b).idxOf b₁ = 1 := by sorry
+  --     have : C.length + P₁.idxOf b₁ < PD.length + ((P₁.suffixFromVertex b₁).length + P₁.idxOf b₁)
+  --         + (P.prefixUntilVertex b).length + 4 := by
+  --       rw[sufixFromVertex_length P₁ b₁ hb1P1, h_suf,
+  --       (add_assoc PD.length ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
+  --       (add_comm ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
+  --       prefixUntilVertex_suffixFromVertex_length P b hbP  ]
+  --       rw[hC',hsb]
+  --       simp
+  --       omega
+  --     omega
+  --   sorry
+
+
+  -- have hNNIv : IsIndependent G ( insert v NextNeigh) := by
+  --   --Should not be too bad doing cases
+  --   sorry
+  -- --Finish
+  -- sorry
 
 
 

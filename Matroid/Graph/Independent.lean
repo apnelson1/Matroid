@@ -14,8 +14,20 @@ open Graph WList Set
 
 namespace Graph
 
-def IsIndependent (G : Graph α β) (S : Set α) : Prop :=
-  S ⊆ V(G) ∧ S.Pairwise (fun x y ↦ ¬ G.Adj x y)
+@[mk_iff isIndependent_iff']
+structure IsIndependent (G : Graph α β) (S : Set α) : Prop where
+  subset_vxSet : S ⊆ V(G)
+  pairwise_nonadj : S.Pairwise (fun x y ↦ ¬ G.Adj x y)
+
+lemma isIndependent_iff (hS : S ⊆ V(G)) :
+    G.IsIndependent S ↔ ∀ ⦃x y⦄, x ∈ S → y ∈ S → x ≠ y → ¬ G.Adj x y := by
+  rw [isIndependent_iff', and_iff_right hS]
+  simp +contextual [Set.Pairwise, iff_def]
+
+lemma isIndependent_iff_forall_eq_of_adj (hS : S ⊆ V(G)) :
+    G.IsIndependent S ↔ ∀ ⦃x y⦄, G.Adj x y → x ∈ S → y ∈ S → x = y := by
+  rw [isIndependent_iff hS]
+  grind
 
 def IndepNumLE (G : Graph α β) (n : ℕ∞) : Prop :=
   ∀ S, G.IsIndependent S → S.encard ≤ n
@@ -48,9 +60,8 @@ lemma Indep_le_1 [G.Simple] (hSV : S ⊆ V(G)) (hS : S.encard ≤ 1) : G.IsIndep
 
 lemma IsIndepndent_nee [G.Simple] (hSV : S ⊆ V(G)) (hS : ¬G.IsIndependent S) :
     ∃ u ∈ S, ∃ v ∈ S, G.Adj u v := by
-  simp only [IsIndependent, not_and, Set.Pairwise] at hS
-  by_contra! hc
-  exact (hS hSV) (fun a ha b hb _ ↦ hc a ha b hb)
+  simp only [isIndependent_iff hSV] at hS
+  grind
 
 @[simp]
 lemma isIndependent_pair_iff_of_ne (h_ne : x ≠ y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :

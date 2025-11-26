@@ -189,6 +189,61 @@ theorem TutteConnected.internallyConnected_three_contractElem_or_deleteElem
     (by generalize P'.eConn = a at *; enat_to_nat), hP'conn, hPr,
     one_add_one_eq_two, and_iff_left hle.2, ← encard_le_encard hPl, hle.1]
 
+lemma InternallyConnected.foo (hdel : (M ＼ {e}).InternallyConnected 3) (hM : M.Connected)
+    (hnt : M.E.Nontrivial) (hM3 : ¬ M.InternallyConnected 3) :
+    ∃ T, e ∈ T ∧ T.encard = 3 ∧ M.eRk T = 2 ∧ M.eRelRk (M.E \ T) M.E = 1 := by
+  have heE : e ∈ M.E := by_contra fun h' ↦ hM3 (by rwa [deleteElem_eq_self h'] at hdel)
+  rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
+  simp only [hM.tutteConnected_one_add_one.internallyConnected_iff_forall, ENat.add_one_inj,
+    not_forall, exists_prop, not_not] at hM3
+  obtain ⟨P, hPconn, hP⟩ := hM3
+  -- rw [isInternalSeparation_iff_encard (by enat_to_nat!)] at hP
+  wlog hel : e ∈ P.left generalizing P with aux
+  · rw [← compl_right, mem_diff, and_iff_right heE, not_not] at hel
+    exact aux P.symm (by simpa) (by simpa) (by simpa)
+  have hle := P.eConn_delete_le {e}
+  have hns := hdel.not_isInternalSeparation (P := P.delete {e})
+    (by grw [ENat.add_one_le_add_one_iff, ← hPconn, hle])
+  have her : e ∉ P.right := by grw [← compl_left, diff_subset_compl, notMem_compl_iff]; assumption
+  grw [isInternalSeparation_iff_encard (by enat_to_nat!), hPconn,
+    ← encard_diff_singleton_add_one hel, ENat.add_one_lt_add_one_iff,
+    ← ENat.add_one_le_iff (by simp)] at hP
+  grw [isInternalSeparation_iff_encard (by enat_to_nat!), P.eConn_delete_le, hPconn, delete_left,
+    delete_right, diff_singleton_eq_self her, and_iff_left hP.2, not_lt] at hns
+  replace hns : (P.left \ {e}).encard = 1 + 1 := hns.antisymm hP.1
+
+  -- have hPl : P.left.encard = 1 + 1 + 1 := by
+  --   rw [← hns.antisymm hP.1, encard_diff_singleton_add_one hel]
+  obtain h_lt | h_eq := hle.lt_or_eq
+  · simp only [hPconn, ENat.lt_one_iff] at h_lt
+    refine False.elim <| hdel.not_isTutteSeparation (P := P.delete {e}) (by simp [h_lt]) ?_
+    simp only [isTutteSeparation_iff_lt_encard (show (P.delete { e }).eConn ≠ ⊤ by simp [h_lt]),
+      h_lt, delete_left, delete_right, diff_singleton_eq_self her]
+    grw [hns, ← hP.2]
+    simp
+  refine ⟨P.left, hel, ?_, ?_⟩
+  · rwa [← encard_diff_singleton_add_one hel, ENat.add_one_inj]
+  sorry
+  -- rw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left, hPconn, add_assoc, add_comm,
+  --   ENat.add_one_inj] at hPl
+
+
+  -- have := hdel.tutteConnected.not_isTutteSeparation (P := P.delete {e})
+  -- have := hM.tutteConnected_one_add_one.not_isTutteSeparation P
+
+
+
+
+
+
+
+
+
+
+
+  -- rw [internallyConnected_iff] at hM
+
+
 -- lemma IsSimplification.foo (hN : N.IsSimplification M) (P : M.Partition) :
 --     P.1 ⊆ M.closure (P.induce hN.isRestriction.subset).1 := by
 --   intro e heP

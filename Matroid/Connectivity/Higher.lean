@@ -848,6 +848,13 @@ lemma emptyOn_tutteConnected (α : Type*) (k : ℕ∞) : (emptyOn α).TutteConne
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   simp [← freeOn_empty, freeOn_tutteConnected_iff]
 
+lemma Connected.tutteConnected_two (hM : M.Connected) : (M.TutteConnected 2) := by
+  obtain rfl | hne := M.eq_emptyOn_or_nonempty; simp
+  rwa [tutteConnected_two_iff]
+
+lemma Connected.tutteConnected_one_add_one (hM : M.Connected) : (M.TutteConnected (1 + 1)) :=
+  hM.tutteConnected_two
+
 /-! ### Cyclic connectivity -/
 
 def CyclicallyConnected (M : Matroid α) := M.NumConnected Matroid.Indep
