@@ -29,7 +29,6 @@ variable {α β : Type*} {P₀ P₁ : WList α β} {e f : β}
 
 namespace WList
 
-
 variable {α β : Type*}  {P₀ P₁ w p : WList α β} {x y u v : α} {e f : β}
 
 --This is in Oops in the main brand
