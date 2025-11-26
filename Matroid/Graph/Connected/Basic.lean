@@ -375,11 +375,11 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
   · refine .inl <| hC.isCycle_of_le (Graph.left_le_union ..) fun e heC ↦ ?_
     obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
     · exact hxy.edge_mem
-    exact False.elim <| hne <| hi.elim ⟨hCG hxC, hxy.left_mem⟩ ⟨hCG hyC, hxy.right_mem⟩
+    exact False.elim <| hne <| hi ⟨hCG hxC, hxy.left_mem⟩ ⟨hCG hyC, hxy.right_mem⟩
   by_cases hCH : V(C) ⊆ V(H)
   · refine .inr <| hC.isCycle_of_le hcompat.right_le_union fun e heC ↦ ?_
     obtain ⟨x, y, hne, hxC, hyC, hxy | hxy⟩ := aux1 e heC
-    · exact False.elim <| hne <| hi.elim ⟨hxy.left_mem, hCH hxC⟩ ⟨hxy.right_mem, hCH hyC⟩
+    · exact False.elim <| hne <| hi ⟨hxy.left_mem, hCH hxC⟩ ⟨hxy.right_mem, hCH hyC⟩
     exact hxy.edge_mem
   -- Take a path from a vertex `x` of `C ∩ (G \ H)` to a vertex `y` of `C ∩ (H \ G)`.
   -- This path must intersect `V(G) ∩ V(H)` in a vertex `a`.
@@ -400,7 +400,7 @@ lemma IsCycle.isCycle_or_isCycle_of_union_of_subsingleton_inter (hC : (G ∪ H).
     hW'.exists_mem_mem_of_union first_mem last_mem (by simp [h1', hxG, hxa])
       (by simp [h2', hyH, hya])
   rw [vertexDelete_vertexSet, mem_diff, mem_singleton_iff] at hbG hbH
-  refine False.elim <| hbG.2 (hi.elim ?_ ?_) <;> simp_all
+  refine False.elim <| hbG.2 (hi ?_ ?_) <;> simp_all
 
 lemma Compatible.isCycle_union_iff_of_subsingleton_inter (hcompat : G.Compatible H)
     (hi : (V(G) ∩ V(H)).Subsingleton) : (G ∪ H).IsCycle C ↔ G.IsCycle C ∨ H.IsCycle C :=

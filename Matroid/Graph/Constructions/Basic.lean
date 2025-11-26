@@ -334,8 +334,38 @@ def StarGraph (v : α) (f : β →. α) : Graph α β where
       singleton_union, mem_insert_iff] at h ⊢
     obtain ⟨he, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := h <;> tauto
 
+@[simp]
+lemma starGraph_inc_iff (v : α) (f : β →. α) (e : β) (x : α) :
+    (StarGraph v f).Inc e x ↔ v = x ∧ e ∈ f.Dom ∨ x ∈ f e := by
+  simp only [Inc, StarGraph_isLink, PFun.fn_apply, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    Prod.swap_prod_mk, PFun.mem_dom]
+  refine ⟨fun ⟨e', ⟨a, ha⟩, h⟩ ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := h
+    · left
+      simp [Exists.intro a ha]
+    right
+    apply Part.get_mem
+  obtain ⟨rfl, y, hy⟩ | hx := h
+  · use y, ⟨y, hy⟩
+    simp [Part.get_eq_of_mem hy]
+  · use v, ⟨x, hx⟩
+    simp [Part.get_eq_of_mem hx]
 
-/-! ### Graph constructor from a list of pairs of vertices -/
+@[simp]
+lemma starGraph_adj_iff (v : α) (f : β →. α) (x y : α) :
+    (StarGraph v f).Adj x y ↔ (v = x ∧ y ∈ f.ran ∨ v = y ∧ x ∈ f.ran) := by
+  simp only [Adj, StarGraph_isLink, PFun.fn_apply, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    Prod.swap_prod_mk, PFun.mem_dom]
+  refine ⟨fun ⟨e, ⟨a, ha⟩, h⟩ ↦ ?_, fun h ↦ ?_⟩
+  · apply h.imp (fun h ↦ ?_) (fun h ↦ ?_) <;>
+    · use h.1, e
+      rw [← h.2]
+      apply Part.get_mem
+  obtain ⟨rfl, e, h⟩ | ⟨rfl, e, h⟩ := h <;>
+  · use e, ⟨_, h⟩
+    simp [Part.get_eq_of_mem h]
+
+-- /-! ### Graph constructor from a list of pairs of vertices -/
 
 /-- The graph with vertex set `S` and edges over `ℕ` between pairs of vertices according to the list
   `l`.-/
@@ -363,3 +393,99 @@ def fromList (S : Set α) (l : List (α × α)) : Graph α ℕ where
     · use y, x, ?_, by tauto
       rw [← Prod.swap_eq_iff_eq_swap] at hp
       exact List.mem_of_getElem? <| hp ▸ hep
+
+
+/-- The line graph of a graph `G` is the graph with the same vertices as `G` and edges
+    given by the pairs of edges in `G` that have a common vertex. -/
+@[simps]
+def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
+  vertexSet := E(G)
+  edgeSet := Sym2.mk '' { (e, f) | ∃ x, G.Inc e x ∧ G.Inc f x }
+  IsLink a e f := (∃ x, G.Inc e x ∧ G.Inc f x) ∧ s(e, f) = a
+  edge_mem_iff_exists_isLink a := by simp only [mem_image, mem_setOf_eq, Prod.exists]
+  isLink_symm a ha e f hef := by
+    simp_all only [mem_image, mem_setOf_eq, Prod.exists]
+    simp_rw [and_comm, ← hef.2]
+    simp [hef.1]
+  eq_or_eq_of_isLink_of_isLink := by
+    rintro a e f g h ⟨hef, rfl⟩ ⟨hgf, heq⟩
+    simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
+    tauto
+  left_mem_of_isLink := by
+    rintro a e f ⟨⟨x, he, hf⟩, rfl⟩
+    exact he.edge_mem
+
+scoped notation "L(" G ")" => LineGraph G
+
+@[simp]
+lemma lineGraph_inc (G : Graph α β) (s : Sym2 β) (e : β) : L(G).Inc s e ↔ s ∈ E(L(G)) ∧ e ∈ s := by
+  unfold Inc
+  simp +contextual only [LineGraph_isLink, LineGraph_edgeSet, mem_image, mem_setOf_eq, Prod.exists,
+    iff_def, forall_exists_index, and_imp]
+  refine ⟨fun a x he ha hs ↦ ?_, fun a b x ha hb hs hes ↦ ?_⟩ <;> subst s
+  · exact ⟨⟨e, a, ⟨x, he, ha⟩, rfl⟩, by simp⟩
+  obtain rfl | rfl := by simpa using hes
+  · use b, (by use x)
+  use a, (by use x), Sym2.eq_swap
+
+@[simp]
+lemma lineGraph_adj_iff (G : Graph α β) (e f : β) : L(G).Adj e f ↔ ∃ x, G.Inc e x ∧ G.Inc f x := by
+  simp [Adj]
+
+lemma lineGraph_bouquet_isComplete (v : α) (F : Set β) : L(bouquet v F).IsComplete := by
+  rintro a ha b hb hne
+  simp_all
+
+lemma lineGraph_banana_isComplete (a b : α) (F : Set β) : L(banana a b F).IsComplete := by
+  rintro e f hne
+  simp_all
+
+lemma lineGraph_singleEdge_isComplete (u v : α) (e : β) : L(Graph.singleEdge u v e).IsComplete := by
+  rintro a ha b hb hne
+  simp_all
+
+lemma lineGraph_starGraph_isComplete (v : α) (f : β →. α) : L(StarGraph v f).IsComplete := by
+  rintro e h e'
+  simp_all only [LineGraph_vertexSet, StarGraph_edgeSet, PFun.mem_dom, ne_eq, lineGraph_adj_iff,
+    starGraph_inc_iff, and_true, forall_exists_index]
+  intro _ _ _
+  use v
+  simp
+
+@[simps]
+def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
+  vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
+  edgeSet := {(a, b) | G.Inc b a}
+  IsLink e x y := G.Inc e.2 e.1 ∧ s(Sum.inl e.1, Sum.inr e.2) = s(x, y)
+  isLink_symm e he x y h := ⟨h.1, by simp [h.2]⟩
+  eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
+    have := by simpa using hab.2.symm.trans hcd.2
+    tauto
+  left_mem_of_isLink e x y h := by
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := by simpa using h.2
+    · simp [h.1.vertex_mem]
+    simp [h.1.edge_mem]
+  edge_mem_iff_exists_isLink e := by simp
+
+scoped notation "L'(" G ")" => mixedLineGraph G
+
+@[simp]
+lemma mixedLineGraph_inc (G : Graph α β) (e : α × β) (a : α ⊕ β) :
+    L'(G).Inc e a ↔ G.Inc e.2 e.1 ∧ (Sum.inr e.2 = a ∨ Sum.inl e.1 = a) := by
+  simp [Inc]
+
+lemma mixedLineGraph_adj (G : Graph α β) (a b : α ⊕ β) :
+    L'(G).Adj a b ↔ ∃ x e, G.Inc e x ∧ s(Sum.inl x, Sum.inr e) = s(a, b) := by
+  simp [Adj]
+
+@[simp]
+lemma mixedLineGraph_vertex_not_adj (G : Graph α β) (x y : α) :
+    ¬ L'(G).Adj (Sum.inl x) (Sum.inl y) := by
+  intro ⟨e, h⟩
+  simp at h
+
+@[simp]
+lemma mixedLineGraph_edge_not_adj (G : Graph α β) (e f : β) :
+    ¬ L'(G).Adj (Sum.inr e) (Sum.inr f) := by
+  intro ⟨e, h⟩
+  simp at h
