@@ -8,6 +8,15 @@ namespace ENat
 
 variable {a b c x y m n : ℕ∞}
 
+def recTopZeroCoe {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (coe : (a : ℕ) → C ↑(a + 1)) (n : ℕ∞) :
+    C n := by
+  cases n with
+  | top => assumption
+  | coe n =>
+  · cases n with
+  | zero => assumption
+  | succ n => exact coe n
+
 -- this won't fire as `simp` without an explicit `ENat` version.
 @[simp]
 protected theorem add_eq_top : x + y = ⊤ ↔ x = ⊤ ∨ y = ⊤ :=
