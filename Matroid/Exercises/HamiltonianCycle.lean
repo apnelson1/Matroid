@@ -1387,7 +1387,8 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     rintro x y i hi rfl j hj rfl hne hij
     apply hne
     simp [nbrIndices] at *
-    wlog hi0 : i = 0 generalizing C with aux
+    sorry
+    --wlog hi0 : i = 0 generalizing C with aux
 
 
   sorry
