@@ -713,6 +713,16 @@ lemma idx_Of_dropLast {w : WList α β} {a : α} (hw : w.Nonempty) (ha : a ∈ w
   simp_all
 
 omit [DecidableEq α] in
+lemma rotate_one {C : WList α β} (hCne : C.Nonempty)
+    : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
+  set e := hCne.firstEdge
+  use e
+  have hCn : C = cons C.first e C.tail := by
+    exact Eq.symm (Nonempty.cons_tail hCne)
+  nth_rw 1 [hCn]
+  rw [cons_rotate_one ]
+
+omit [DecidableEq α] in
 lemma IsCycle.rotate_one {C : WList α β} (hC : G.IsCycle C)
     : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
   set e := hC.nonempty.firstEdge
@@ -1164,9 +1174,40 @@ lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G
   have := hA.2 {v} hGI
   simp_all
 
+-- lemma get_concat_add (e) (w : WList α β) (n : ℕ) (hnl : n ≤ w.length - 1) :
+--   (w.concat e w.first).get n = w.get n
+--   := by
+
+--   sorry
+
+  --sorry
+
 -- What hypotheses does this really need?
-lemma get_rotate (w : WList α β) {a b : ℕ} (hab : a + b < w.length) :
+lemma get_rotate (w : WList α β) {a b : ℕ} (hab : a + b ≤ w.length) :
     (w.rotate a).get b = w.get (a + b) := by
+  induction w generalizing a b with simp_all
+  | cons u e w IH =>
+    sorry
+
+-- lemma IsClosed.get_rotate_one {C : WList α β} {b : ℕ} (hb : b ≤ C.length -1 ) (hC : C.IsClosed )
+--   (hCne : C.Nonempty) :
+--   (C.rotate 1).get b = C.get (b + 1) := by
+-- have hCn : C = cons C.first hCne.firstEdge C.tail := by
+--     exact Eq.symm (Nonempty.cons_tail hCne)
+-- nth_rw 2 [hCn]
+-- simp only [get_cons_add]
+-- obtain ⟨e, h ⟩ := rotate_one hCne
+-- rw[h,get_concat_add ]
+
+lemma IsClosed.get_rotate {C : WList α β} {a b : ℕ} (hC : C.IsClosed ) :
+    (C.rotate a).get b = C.get (a + b) := by
+  induction a with
+  | zero => simp
+  | succ n hn =>
+  rw[← rotate_rotate C n 1]
+  have : ((C.rotate n).rotate 1).get b = (C.rotate n).get (b + 1) := by
+
+    sorry
   sorry
 
 
@@ -1189,11 +1230,14 @@ lemma indep_nbrs [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
     · simp only [zero_add, length_rotate]
       omega
     · simp only [zero_add]
-      rwa [get_rotate _ hj]
+      --rwa [get_rotate _ hj]
+      sorry
     · simp only [get_zero, zero_add]
-      rwa [get_rotate _ hj, rotate_first _ _ hi.le]
+      --rwa [get_rotate _ hj, rotate_first _ _ hi.le]
+      sorry
     · simp only [get_zero, zero_add]
-      rwa [rotate_first _ _ hi.le, get_rotate _ hj]
+      --rwa [rotate_first _ _ hi.le, get_rotate _ hj]
+      sorry
     · simp
     rfl
   obtain rfl := hi0
@@ -1211,9 +1255,44 @@ lemma indep_nbrs [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
 
 
 
-lemma foo2 [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
+lemma indep_nbrsnext [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
     (hC : MaximalFor G.IsCycle length C) (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
-    G.IsIndependent <| C.get '' ((· + 1) '' {i < C.length | G.SetVxAdj V(D) (C.get i)}) := by
+    G.IsIndependent <| C.get '' {i  < C.length  | G.SetVxAdj V(D) (C.get (i + 1))} := by
+    --G.IsIndependent <| C.get '' ((· + 1) '' {i < C.length | G.SetVxAdj V(D) (C.get i)}) := by
+  rw [isIndependent_iff (by grw [image_subset_range, range_get, hC.prop.vertexSet_subset])]
+  simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
+  rintro _ _ i hi hiD rfl j hj hjD rfl hij hadj
+  -- _ _ i hi hiD rfl j hj hjD rfl hij hadj
+  wlog hlt : i ≤ j generalizing i j with aux
+  · exact aux j hj hjD i hi hiD (Ne.symm hij) hadj.symm (not_le.1 hlt).le
+  obtain ⟨d, rfl⟩ := exists_add_of_le hlt
+  wlog hi0 : i = 0 generalizing i d C with aux
+  · refine aux (C := C.rotate i) ?_ ?_ 0 ?_ ?_ d ?_ ?_ ?_ ?_ ?_ ?_
+    · rwa [maximalFor_congr_val (y := C) (by simp) (by simp [hC.prop, hC.prop.rotate])]
+    · rwa [hC.prop.isClosed.rotate_vertexSet]
+    · --have := hC.prop.nonempty
+      simp [hC.prop.nonempty]
+    · simp only [zero_add]
+      rw[get_rotate]
+      sorry
+      omega
+      --rwa [get_zero, rotate_first _ _ hi.le]
+
+    · simp only [zero_add, length_rotate]
+      omega
+    · simp only [zero_add]
+      --rwa [get_rotate _ hj]
+      sorry
+    · simp only [get_zero, zero_add]
+      --rwa [get_rotate _ hj, rotate_first _ _ hi.le]
+      sorry
+    · simp only [get_zero, zero_add]
+      --rwa [rotate_first _ _ hi.le, get_rotate _ hj]
+      sorry
+    · simp
+    rfl
+  obtain rfl := hi0
+
   sorry
 
 
@@ -1291,6 +1370,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp, not_forall,
       exists_prop, not_not, ↓existsAndEq, true_and, exists_and_left, nbrIndices] at h_not
     obtain ⟨i, hi, hi', j, hj, hj', hij, hadj⟩ := h_not
+    sorry
 
 
     -- ·
@@ -1307,7 +1387,8 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     rintro x y i hi rfl j hj rfl hne hij
     apply hne
     simp [nbrIndices] at *
-    wlog hi0 : i = 0 generalizing C with aux
+    sorry
+    --wlog hi0 : i = 0 generalizing C with aux
 
 
   sorry
