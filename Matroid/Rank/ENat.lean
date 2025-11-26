@@ -35,6 +35,13 @@ lemma spanning_iff_eRk [RankFinite M] (hX : X ⊆ M.E := by aesop_mat) :
     M.Spanning X ↔ M.eRank ≤ M.eRk X := by
   rw [spanning_iff_eRk', and_iff_left hX]
 
+lemma Nonspanning.eRk_add_one_le (h : M.Nonspanning X) : M.eRk X + 1 ≤ M.eRank := by
+  obtain hM | hM := M.rankFinite_or_rankInfinite
+  · have hXE := h.subset_ground
+    rw [← not_spanning_iff, spanning_iff_eRk, not_le] at h
+    exact Order.add_one_le_of_lt h
+  simp
+
 lemma IsLoopEquiv.eRk_eq_eRk (h : M.IsLoopEquiv X Y) : M.eRk X = M.eRk Y := by
   rw [← M.eRk_closure_eq, h.closure_eq_closure, M.eRk_closure_eq]
 
@@ -51,6 +58,39 @@ lemma eRk_lt_top [M.RankFinite] {X} : M.eRk X < ⊤ :=
 @[simp]
 lemma eRk_ne_top [M.RankFinite] {X} : M.eRk X ≠ ⊤ :=
   (M.isRkFinite_set X).eRk_lt_top.ne
+
+lemma Nonspanning.eRk_lt [M.RankFinite] (h : M.Nonspanning X) : M.eRk X < M.eRank := by
+  rw [← ENat.add_one_le_iff]
+  · exact h.eRk_add_one_le
+  exact ((M.eRk_le_eRank X).trans_lt M.eRank_lt_top).ne
+
+lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X ↔ M.eRk X < M.eRank :=
+  ⟨Nonspanning.eRk_lt, fun h ↦ by rwa [← not_spanning_iff, spanning_iff_eRk, not_le]⟩
+
+lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning X := by
+  rw [← not_spanning_iff]
+  exact fun h ↦ hX h.eRk_eq
+
+lemma eRank_pos (M : Matroid α) [M.RankPos] : 0 < M.eRank := by
+  obtain ⟨B, hB⟩ := M.exists_isBase
+  rw [← hB.encard_eq_eRank, encard_pos]
+  exact hB.nonempty
+
+lemma eRank_ne_zero (M : Matroid α) [M.RankPos] : M.eRank ≠ 0 :=
+  M.eRank_pos.ne.symm
+
+instance [M.RankInfinite] : M.RankPos where
+  empty_not_isBase := fun h ↦ by simpa using h.infinite
+
+lemma Dep.eRk_add_one_le_encard (h : M.Dep X) : M.eRk X + 1 ≤ X.encard := by
+  obtain hinf | hfin := X.finite_or_infinite.symm
+  · simp [hinf.encard_eq]
+  by_contra! hlt
+  have hi := (M.isRkFinite_of_finite hfin).indep_of_encard_le_eRk (Order.le_of_lt_add_one hlt)
+  exact hi.not_dep h
+
 
 -- lemma dual_eRk_add_eRank (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
   --   M✶.eRk X + M.eRank = M.eRk (M.E \ X) + X.encard := by
@@ -144,12 +184,3 @@ lemma eRk_restrict (M : Matroid α) (R X : Set α) : (M ↾ R).eRk X = M.eRk (X 
 @[simp]
 lemma eRk_restrict_univ (M : Matroid α) (X : Set α) : (M ↾ univ).eRk X = M.eRk (X) := by
   rw [eRk_restrict, inter_univ]
-
-lemma nonspanning_iff_eRk_lt [M.RankFinite] (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Nonspanning X ↔ M.eRk X < M.eRank := by
-  rw [← not_spanning_iff, spanning_iff_eRk, not_le]
-
-lemma nonspanning_of_eRk_ne (hX : M.eRk X ≠ M.eRank) (hXE : X ⊆ M.E := by aesop_mat) :
-    M.Nonspanning X := by
-  rw [← not_spanning_iff]
-  exact fun h ↦ hX h.eRk_eq

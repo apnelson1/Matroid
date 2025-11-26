@@ -13,26 +13,57 @@ partial def findENatAtoms (e : Q(ENat)) : AtomM Unit := do
   | ~q(⊤) => return ()
   | _ => let _ ← AtomM.addAtom e
 
-def parseIneq (e : Expr) : AtomM Unit := do
+@[inline] def Lean.Expr.or? (p : Expr) : Option (Expr × Expr) :=
+  p.app2? ``Or
+
+-- Parse an expr that is a logical combination of (in)equalities
+partial def parse (e : Expr) : AtomM Unit := do
   try
-    let (_, α, a, b) ← e.ineq?
+    let (_, _, α, a, b) ← e.ineqOrNotIneq?
     if (← isDefEq α q(ENat)) then
       findENatAtoms a
       findENatAtoms b
   catch _ =>
-    let some e := (← whnfR e).not? | return ()
-    try
-      let (_, α, a, b) ← e.ineq?
-      if (← isDefEq α q(ENat)) then
-        findENatAtoms a
-        findENatAtoms b
-    catch _ => return
+  let e' ← whnfR e
+  match e'.and? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.or? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.not? with
+  | some a => parse a; return
+  | none =>
+  match e'.arrow? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
+  match e'.iff? with
+  | some (a,b) => parse a; parse b; return
+  | none =>
   return
+
+-- def parseIneq (e : Expr) : AtomM Unit := do
+--   try
+--     let (_, α, a, b) ← e.ineq?
+--     if (← isDefEq α q(ENat)) then
+--       findENatAtoms a
+--       findENatAtoms b
+--   catch _ =>
+--     let some e := (← whnfR e).not? | return ()
+--     try
+--       let (_, α, a, b) ← e.ineq?
+--       if (← isDefEq α q(ENat)) then
+--         findENatAtoms a
+--         findENatAtoms b
+--     catch _ => return
+--   return
 
 def atoms (g : MVarId) : AtomM (Array Expr) := g.withContext do
   for hyp in (← getLCtx) do
-    parseIneq (← inferType hyp.toExpr)
-  parseIneq (← g.getType')
+    parse (← inferType hyp.toExpr)
+  -- let g' ← g.getType
+  -- logInfo m!"{g'}"
+  parse (← g.getType)
   let r ← get
   return r.atoms
 
@@ -60,12 +91,17 @@ elab "generalize_enats" : tactic => do
 macro "enat_to_nat!": tactic =>
   `(tactic | (generalize_enats; enat_to_nat))
 
+macro "eomega": tactic =>
+  `(tactic | (generalize_enats; enat_to_nat <;> omega))
+
 -- this might give weird errors if the `generalize_enats` fails
 macro "enat_to_nat!" " with" e:(ppSpace colGt ident)* : tactic =>
   `(tactic | (generalize_enats with $e*; enat_to_nat))
 
 -- Missing lemmas from the `enat_to_nat` simpset.
-attribute [enat_to_nat_top] not_true add_top
+attribute [enat_to_nat_top] not_true add_top and_true true_and or_false false_or imp_false
+  false_iff true_iff iff_true iff_false true_or or_true Nat.cast_le Nat.cast_lt false_imp_iff
+  true_imp_iff false_and and_false
 
 -- /-! ### Tests -/
 variable {f : ℤ → ℕ∞}
@@ -85,6 +121,100 @@ example {P : ℕ∞ → Prop} {a b c : ℕ∞} (ha : ¬ P a) (hab : a ≤ b) (hb
 
 example (a b c d : ℕ∞) (x : ℤ) (hab : a ≤ b) (hbc : 2 * f x + d < c) : f x ≠ ⊤ := by
   enat_to_nat!
+
+example {a : ℤ} : 0 ≤ f a := by
+  enat_to_nat!
+  omega
+
+example {a b : ℤ} (h1 : ¬ (f a ≠ 0 ∧ 1 ≤ f a)): 0 ≤ f b := by
+  enat_to_nat!
+  omega
+
+/-! ### Replacing `enat_to_nat`. -/
+
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- elab "foo" : tactic => do
+--   let g ← getMainGoal
+--   g.withContext do
+--     _
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- /-- Finds the first `ENat` in the context and applies the `cases` tactic to it.
+-- Then simplifies expressions involving `⊤` using the `enat_to_nat_top` simp set. -/
+-- elab "cases_first_enat" : tactic => focus do
+--   let g ← getMainGoal
+--   g.withContext do
+--     let ctx ← getLCtx
+--     let decl? ← ctx.findDeclM? fun decl => do
+--       if ← (isExprDefEq (← inferType decl.toExpr) q(ENat)) then
+--         return Option.some decl
+--       else
+--         return Option.none
+--     let some decl := decl? | throwError "No ENats"
+--     let isInaccessible := ctx.inaccessibleFVars.find? (·.fvarId == decl.fvarId) |>.isSome
+--     if isInaccessible then
+--       let name : Name := `enat_to_nat_aux
+--       setGoals [← g.rename decl.fvarId name]
+--       let x := mkIdent name
+--       evalTactic (← `(tactic| cases $x:ident using ENat.recTopCoe))
+--     else
+--       let x := mkIdent decl.userName
+--       evalTactic
+--         (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+--     evalTactic (← `(tactic| all_goals try simp only [enat_to_nat_top] at *))
+-- /-
+-- `enat_to_nat` shifts all `ENat`s in the context to `Nat`, rewriting propositions about them.
+-- A typical use case is `enat_to_nat; omega`. -/
+-- macro "enat_to_nat" : tactic => `(tactic| focus (
+--     (repeat' cases_first_enat) <;>
+--     (try simp only [enat_to_nat_top, enat_to_nat_coe] at *)
+--   )
+-- )
+--
+
+/-! ### Tinkering -/
+
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- def foo (toRecurse : List Expr) (g : MVarId) : TacticM MVarId := g.withContext do
+--   Lean.logInfo m!"input : {toRecurse}"
+--   match toRecurse with
+--   | [] => return g
+--   | a :: vars =>
+--     Lean.logInfo m!"now : {a}, {vars}"
+--     let some n := a.name? | return g
+--     let x := mkIdent n
+--     evalTactic
+--       (← `(tactic | have h : 0 = 0 := rfl))
+--     evalTactic
+--       (← `(tactic| cases $x:ident using ENat.recTopCoe with | top => _ | coe $x:ident => _))
+--     foo vars g
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- def bar (g : MVarId) : TacticM MVarId := g.withContext do
+--   let atoms ← AtomM.run .reducible (atoms g)
+--   -- Lean.logInfo m!"{atoms}"
+--   let atoms₁ := atoms.filter Expr.isFVar
+--   let g' ← foo atoms₁.toList g
+--   return g'
+
+-- open Qq Lean Elab Tactic Term Meta in
+-- elab "test'" : tactic => do
+--   let g ← getMainGoal
+--   g.withContext do
+--     let g' ← bar g
+
+
+--   evalTactic (← `(tactic| have h : 0 = 0 := rfl))
+
+
+
+-- example {a b : ℕ∞} (hab : a ≤ b)  : 0 ≤ a := by
+--   test'
+
+
+/-! ### Oddities -/
 
 -- WTF : from `Matroid.Connectivity.Higher`. Look into this.
 

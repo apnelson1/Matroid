@@ -368,9 +368,9 @@ lemma eRelRk_union_add_eRelRk_union_le_eRelRk_inter_union (X Y : Set α) :
   nth_rewrite 1 [← M.eRelRk_add_cancel inter_subset_left subset_union_left,
     ← M.eRelRk_add_cancel inter_subset_right subset_union_right]
   simp_rw [← add_assoc, add_comm (M.eRelRk (X ∩ Y) _)]
-  apply add_le_add_right
+  apply add_le_add_left
   rw [add_assoc, add_assoc]
-  refine add_le_add_left (add_le_add ?_ ?_) _
+  refine add_le_add_right (add_le_add ?_ ?_) _
   · apply eRelRk_union_le_eRelRk_inter_left
   apply eRelRk_union_le_eRelRk_inter_right
 

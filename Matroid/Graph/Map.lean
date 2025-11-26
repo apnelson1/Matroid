@@ -141,23 +141,23 @@ lemma surjOn_of_le_map {G} (h : G ≤ f ''ᴳ H) : SurjOn f V(H) V(G) := by
 
 lemma exists_map_eq_of_le_map {G} (h : G ≤ f ''ᴳ H) : ∃ H' ≤ H, f ''ᴳ H' = G := by
   use H[V(H) ∩ f ⁻¹' V(G)] ↾ E(G), .trans edgeRestrict_le <| induce_le inter_subset_left, ?_
-  apply ext_of_le_le ?_ h ?_ ?_
+  refine ext_of_le_le ?_ h ?_ ?_
   · gcongr
     exact .trans edgeRestrict_le <| induce_le inter_subset_left
-  · simp only [Map_vertexSet, edgeRestrict_vertexSet, induce_vertexSet]
-    ext x
-    simp only [mem_image, mem_inter_iff, mem_preimage]
+  · ext x
+    simp only [Map_vertexSet, edgeRestrict_vertexSet, induce_vertexSet, mem_image, mem_inter_iff,
+      mem_preimage]
     refine ⟨?_, fun hx ↦ ?_⟩
     · rintro ⟨y, ⟨hyH, hy⟩, rfl⟩
       exact hy
     obtain ⟨y, hy, rfl⟩ := by simpa using vertexSet_mono h hx
     use y
-  simp only [Map_edgeSet, edgeRestrict_edgeSet, inter_eq_right, induce_edgeSet]
+  simp only [Map_edgeSet, edgeRestrict_edgeSet, inter_eq_right, induce_edgeSet, mem_inter_iff,
+    mem_preimage]
   intro e he
-  simp only [mem_inter_iff, mem_preimage, mem_setOf_eq]
   obtain ⟨x', y', hxy'⟩ := exists_isLink_of_mem_edgeSet <| edgeSet_mono h he
-  have hxy'' := hxy'.of_le_of_mem h he
   obtain ⟨x, y, hxy, rfl, rfl⟩ := by simpa using hxy'
+  have hxy'' := hxy'.of_le_of_mem h he
   use x, y, hxy, ⟨hxy.left_mem, hxy''.left_mem⟩, hxy.right_mem, hxy''.right_mem
 
 lemma exists_le_map_comm {G} : (∃ f : α → α', G ≤ f ''ᴳ H) ↔ ∃ f H', H' ≤ H ∧ f ''ᴳ H' = G := by
@@ -166,63 +166,86 @@ lemma exists_le_map_comm {G} : (∃ f : α → α', G ≤ f ''ᴳ H) ↔ ∃ f H
   use f
   grw [hH']
 
-structure Retr (G : Graph α β) where
-  f : α → α
-  mapsTo' : Set.MapsTo f V(G) V(G)
-  idem' : ∀ v ∈ V(G), f (f v) = f v
+structure IsRetr (G : Graph α β) (f : α → α) where
+  mapsTo : Set.MapsTo f V(G) V(G)
+  isIdem : ∀ v ∈ V(G), f (f v) = f v
 
-variable {F : Retr G} {F' : Retr H}
+variable {f f' : α → α}
 
-instance : FunLike (Retr G) α α where
-  coe F := F.f
-  coe_injective' := by
-    rintro ⟨f, hmapsTo, hidem⟩ ⟨g, hmapsTo', hidem'⟩ hfg
-    simp_all
-
-lemma Retr.mapsTo (F : Retr G) : Set.MapsTo F V(G) V(G) := F.mapsTo'
-lemma Retr.idem (F : Retr G) : ∀ v ∈ V(G), F (F v) = F v := F.idem'
+namespace IsRetr
 
 @[simp]
-lemma Retr.vertexSet_subset (F : Retr G) : V(F ''ᴳ G) ⊆ V(G) :=
-  F.mapsTo.image_subset
+lemma vertexSet_subset (hf : G.IsRetr f) : V(f ''ᴳ G) ⊆ V(G) :=
+  hf.mapsTo.image_subset
 
-@[simps]
-def retrId (G : Graph α β) : Retr G where
-  f := id
-  mapsTo' x := by simp
-  idem' := by simp
+lemma mem (hf : G.IsRetr f) (ha : a ∈ V(G)) : f a ∈ V(G) :=
+  hf.vertexSet_subset (by use a)
 
-@[ext]
-lemma Retr.ext (F G : Retr H) (h : F.f = G.f) : F = G := by
-  cases F; cases G
-  simpa
+@[simp]
+lemma idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
+  ext a b c
+  · simp only [map_map, Map_vertexSet, comp_apply, mem_image]
+    refine exists_congr fun x ↦ and_congr_right fun hx ↦ ?_
+    rw [hf.isIdem x hx]
+  simp only [map_map, Map_isLink, comp_apply]
+  refine exists₂_congr fun x y ↦ and_congr_right fun hxy ↦ ?_
+  rw [hf.isIdem x hxy.left_mem, hf.isIdem y hxy.right_mem]
 
-lemma Retr.eqOn_id_of_Map_eq (h : F ''ᴳ G = G) : V(G).EqOn F id := by
+lemma eq_of_mem_range (hf : G.IsRetr f) (ha : a ∈ f '' V(G)) : f a = a := by
+  obtain ⟨b, hb, rfl⟩ := ha
+  exact hf.isIdem b hb
+
+lemma eqOn_of_image_eq (hf : G.IsRetr f) (hV : f '' V(G) = V(G)) : V(G).EqOn f id := by
   rintro x hx
-  simp only [id_eq]
-  have hV := by simpa using congr_arg vertexSet h
   rw [← hV] at hx
   obtain ⟨y, hy, rfl⟩ := hx
-  exact F.idem y hy
+  exact hf.isIdem y hy
 
-lemma Retr.Map_eq_self_iff : F ''ᴳ G = G ↔ V(G).EqOn F id :=
-  ⟨Retr.eqOn_id_of_Map_eq, fun h ↦ by simpa using map_congr_left_of_eqOn h⟩
+lemma image_eq_iff_eqOn (hf : G.IsRetr f) : f '' V(G) = V(G) ↔ V(G).EqOn f id :=
+  ⟨hf.eqOn_of_image_eq, fun h ↦ by simpa using h.image_eq⟩
 
-lemma Map_eq_of_le_Map_le_Map (hGH : G ≤ F' ''ᴳ H) (hHG : H ≤ F ''ᴳ G) :
-    G = F' ''ᴳ H ∧ H = F ''ᴳ G := by
-  have hV : V(G) = V(H) := antisymm (vertexSet_mono hGH |>.trans F'.mapsTo.image_subset)
-    (vertexSet_mono hHG |>.trans F.mapsTo.image_subset)
-  have hFG : F '' V(G) = V(G) :=
-    F.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hHG
-  have hF'H : F' '' V(H) = V(H) :=
-    F'.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hGH
+lemma map_eq_self_iff (hf : G.IsRetr f) : f ''ᴳ G = G ↔ V(G).EqOn f id :=
+  ⟨fun h ↦ hf.eqOn_of_image_eq (congr_arg vertexSet h), (by simpa using map_congr_left_of_eqOn ·)⟩
+
+lemma map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH : G ≤ f' ''ᴳ H)
+    (hHG : H ≤ f ''ᴳ G) : G = f' ''ᴳ H ∧ H = f ''ᴳ G := by
+  have hV : V(G) = V(H) := antisymm (vertexSet_mono hGH |>.trans hf'.mapsTo.image_subset)
+    (vertexSet_mono hHG |>.trans hf.mapsTo.image_subset)
+  have hFG : f '' V(G) = V(G) :=
+    hf.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hHG
+  have hF'H : f' '' V(H) = V(H) :=
+    hf'.mapsTo.image_subset.antisymm <| by simpa [hV] using vertexSet_mono hGH
   have hE : E(G) = E(H) := by
     apply_fun edgeSet (α := α) (β := β) at hHG hGH using edgeSet_monotone (α := α) (β := β)
     simp only [Map_edgeSet, le_eq_subset] at hHG hGH
     exact hGH.antisymm hHG
   refine ⟨?_, ?_⟩
-  · apply ext_of_le_le hGH le_rfl (by simp [hF'H, hV]) (by simpa)
-  · apply ext_of_le_le hHG le_rfl (by simp [hFG, ← hV]) (by simp [hE])
+  · exact ext_of_le_le hGH le_rfl (by simp [hF'H, hV]) (by simpa)
+  · exact ext_of_le_le hHG le_rfl (by simp [hFG, ← hV]) (by simp [hE])
+
+@[simp]
+lemma map_le_self_iff (hf : G.IsRetr f) : f ''ᴳ G ≤ G ↔ (f ''ᴳ G).IsLink = G.IsLink := by
+  refine ⟨fun hle ↦ ?_, fun heq ↦ ⟨hf.vertexSet_subset, ?_⟩⟩
+  · ext e u v
+    exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle (by simp [h.edge_mem])⟩
+  simp_rw [heq]
+  tauto
+
+lemma comp (hf : G.IsRetr f) (hf' : (f ''ᴳ G).IsRetr f') : G.IsRetr (f' ∘ f) where
+  mapsTo x hx := hf'.mapsTo.image_subset.trans hf.mapsTo.image_subset (by simp; use x)
+  isIdem x hx := by
+    simp only [comp_apply]
+    rw [hf.eq_of_mem_range (hf'.mem (by use x)), hf'.eq_of_mem_range]
+    use f x, (by use x)
+
+end IsRetr
+
+@[simp]
+lemma id_isRetr : G.IsRetr id where
+  mapsTo _ := id
+  isIdem _ _ := rfl
+
+
 
 
 @[simps]

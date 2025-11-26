@@ -80,6 +80,15 @@ lemma compl_not_spanning_iff : ¬ M.Spanning (M.E \ X) ↔ M.Nonspanning (M.E \ 
 lemma compl_not_nonspanning_iff : ¬ M.Nonspanning (M.E \ X) ↔ M.Spanning (M.E \ X) := by
   rw [not_nonspanning_iff]
 
+lemma Spanning.insert_dep (h : M.Spanning X) (heX : e ∉ X) (heE : e ∈ M.E) :
+    M.Dep (insert e X) := by
+  obtain ⟨B, hB, hBX⟩ := h.exists_isBase_subset
+  exact (hB.insert_dep ⟨heE, notMem_subset hBX heX⟩).superset <| insert_subset_insert hBX
+
+lemma Spanning.dep_of_ssuperset (h : M.Spanning X) (hssu : X ⊂ Y) (hY : Y ⊆ M.E := by aesop_mat) :
+    M.Dep Y := by
+  obtain ⟨B, hB, hBX⟩ := h.exists_isBase_subset
+  exact hB.dep_of_ssubset (hBX.trans_ssubset hssu)
 
 -- lemma closure_iUnion_closure_eq_closure_iUnion'
 

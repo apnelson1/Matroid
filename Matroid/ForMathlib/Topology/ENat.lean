@@ -73,7 +73,7 @@ protected theorem tsum_le_of_subset {s t : Set α} (h : s ⊆ t) :
 protected theorem tsum_union_le (s t : Set α) :
     ∑' (x : ↑(s ∪ t)), f (x : α) ≤ ∑' (x : s), f x + ∑' (x : t), f x := by
   rw [← diff_union_self, ENat.tsum_union_disjoint disjoint_sdiff_left]
-  exact add_le_add_right (ENat.tsum_le_of_subset diff_subset) _
+  exact add_le_add_left (ENat.tsum_le_of_subset diff_subset) _
 
 protected theorem tsum_insert {s : Set α} {a : α} (h : a ∉ s) :
     ∑' (x : ↑(insert a s)), f x = f a + ∑' (x : s), f x := by
@@ -278,7 +278,7 @@ theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
   have h2 := biUnion_insert a (t \ {a}) s
   rw [insert_diff_self_of_mem ha] at h2
   simp only at h1
-  have hle := add_le_add_left (encard_biUnion_le_tsum_encard (s := s) (I := t \ {a}))  (s a).encard
+  have hle := add_le_add_right (encard_biUnion_le_tsum_encard (s := s) (I := t \ {a}))  (s a).encard
   rw [← h1, ← encard_union_add_encard_inter, h2, add_le_left_iff, encard_eq_top_iff,
     encard_eq_zero, ← disjoint_iff_inter_eq_empty, disjoint_left, ← h2,
     or_iff_right hfin.not_infinite] at hle

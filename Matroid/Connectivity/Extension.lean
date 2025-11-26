@@ -85,7 +85,7 @@ lemma ModularCut.multiConn_dual_le_multiConn_projectBy_dual_add_one (U : M.Modul
   · simp
   have h_le := (U.multiconn_dual_add_eq_multiConn_projectBy_dual_add X hne).le
   grw [← le_self_add] at h_le
-  grw [h_le, add_le_add_left]
+  grw [h_le, add_le_add_right]
   split_ifs <;> simp
 
 lemma ModularCut.multiConn_dual_eq_multiConn_projectBy_dual_add_one_iff [Nonempty ι]

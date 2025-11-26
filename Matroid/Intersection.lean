@@ -111,7 +111,7 @@ theorem exists_common_ind_with_isFlat_left (M₁ M₂ : Matroid α) [M₁.Finite
   obtain ⟨I,X, -, h1,h2, h⟩ := exists_common_ind_aux M₁ M₂ hE
   refine ⟨I, _, M₁.closure_isFlat X, h1, h2, (h1.ncard_le_rk_add_rk h2 _).antisymm ?_⟩
   rw [rk_closure_eq, h, ← diff_inter_self_eq_diff (t := X), ← hE]
-  exact add_le_add_left (M₂.rk_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
+  exact add_le_add_right (M₂.rk_mono (diff_subset_diff_right <| inter_ground_subset_closure M₁ X)) _
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. -/
 noncomputable def maxCommonInd (M₁ M₂ : Matroid α) : ℕ :=

@@ -2,6 +2,7 @@ import Matroid.Uniform
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.Closure
 import Matroid.ForMathlib.Matroid.Closure
+import Matroid.ForMathlib.Tactic.TautoSet
 
 open Set
 
@@ -155,16 +156,58 @@ lemma Paving.exists_diff_indep_of_nonspanning (hM : M✶.Paving) (hXs : M.Nonspa
   simp only [dual_ground, sdiff_sdiff_right_self, inf_eq_inter, mem_inter_iff] at hf
   exact ⟨f, hf.2, h⟩
 
+lemma Paving.encard_eq_or_eq_of_isCircuit (hM : M.Paving) (hC : M.IsCircuit C) :
+    C.encard = M.eRank ∨ C.encard = M.eRank + 1 := by
+  have := hM.eRelRk_ground_le_of_dep hC.dep
+  rw [← eRk_ground, ← M.eRelRk_add_eRk_of_subset hC.subset_ground, ← hC.eRk_add_one_eq]
+  eomega
+
+/-- Every base in a non-free paving matroid is nearly a circuit. -/
+lemma Paving.exists_isCircuit_of_isBase [M✶.RankPos] (hM : M.Paving) (hB : M.IsBase B) :
+    ∃ C, M.IsCircuit C ∧ (C \ B).Subsingleton ∧ (B \ C).Subsingleton := by
+  obtain rfl | hssu := hB.subset_ground.eq_or_ssubset
+  · exact (M✶.eRank_ne_zero (by simp [← hB.compl_isBase_dual.encard_eq_eRank])).elim
+  obtain ⟨e, heE, heB⟩ := exists_of_ssubset hssu
+  obtain ⟨C, hCss, hC⟩ := (hB.insert_dep ⟨heE, heB⟩).exists_isCircuit_subset
+  refine ⟨C, hC, ?_, ?_⟩
+  · exact Subsingleton.anti (by simp [insert_diff_eq_singleton heB]) (diff_subset_diff_left hCss)
+  rw [show B \ C = B \ (C \ {e}) by tauto_set!, ← encard_le_one_iff_subsingleton,
+    ← hB.indep.eRelRk_of_subset (by simpa [diff_subset_iff]), ← eRelRk_closure_left,
+    hC.closure_diff_singleton_eq, eRelRk_closure_left, ← eRelRk_closure_right, hB.closure_eq]
+  exact hM.eRelRk_ground_le_of_dep hC.dep
+
+/-- Every spanning set in a non-free paving matroid nearly contains a circuit. -/
+lemma Paving.exists_isCircuit_of_spanning [M✶.RankPos] (hM : M.Paving) (hX : M.Spanning X) :
+    ∃ C, M.IsCircuit C ∧ (C \ X).Subsingleton := by
+  obtain ⟨B, hB, hBX⟩ := hX.exists_isBase_subset
+  obtain ⟨C, hC, h, -⟩ := hM.exists_isCircuit_of_isBase hB
+  exact ⟨C, hC, h.anti <| diff_subset_diff_right hBX⟩
+
+/-- Every independent set in a non-free paving matroid is nearly contained in a circuit. -/
+lemma Paving.exists_isCircuit_of_indep {I : Set α} [M✶.RankPos] (hM : M.Paving) (hI : M.Indep I) :
+    ∃ C, M.IsCircuit C ∧ (I \ C).Subsingleton := by
+  obtain ⟨B, hB, hIB⟩ := hI.exists_isBase_superset
+  obtain ⟨C, hC, -, h⟩ := hM.exists_isCircuit_of_isBase hB
+  exact ⟨C, hC, h.anti <| diff_subset_diff_left hIB⟩
+
 /-- A `SparsePaving` matroid is a paving matroid with paving dual,
 or equivalently one where every nonspanning dependent set is a circuit-hyperplane. -/
-def SparsePaving (M : Matroid α) := M.Paving ∧ M✶.Paving
+@[mk_iff]
+structure SparsePaving (M : Matroid α) : Prop where
+  paving : M.Paving
+  paving_dual : M✶.Paving
 
 theorem SparsePaving.dual (h : M.SparsePaving) : M✶.SparsePaving := by
-  rwa [SparsePaving, dual_dual, and_comm]
+  rwa [sparsePaving_iff, dual_dual, and_comm, ← sparsePaving_iff]
+
+@[simp]
+lemma dual_sparsePaving_iff : M✶.SparsePaving ↔ M.SparsePaving :=
+  ⟨fun h ↦ by simpa using h.dual, SparsePaving.dual⟩
 
 theorem SparsePaving.minor (h : M.SparsePaving) (hNM : N ≤m M) : N.SparsePaving :=
   ⟨h.1.minor hNM, h.dual.1.minor hNM.dual⟩
 
+/-- This probably can be golfed with a nullity / relative rank argument. -/
 lemma SparsePaving.isCircuit_of_dep_of_nonspanning (hM : M.SparsePaving) (hC : M.Dep C)
     (hCs : M.Nonspanning C) : M.IsCircuit C := by
 
@@ -240,25 +283,9 @@ theorem sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane :
   rw [← spanning_iff_closure_eq] at hcl
   exact .inr ⟨e, he.1, hcl⟩
 
+lemma IsUniform.sparsePaving (h : M.IsUniform) : M.SparsePaving := by
+  rw [sparsePaving_iff_forall_indep_or_spanning_or_isCircuit_isHyperplane]
+  rw [isUniform_iff] at h
+  grind
+
 section exp
-
--- def Pav (M : Matroid α) := ∀ C, M.IsCircuit C → M.eRelRk C M.E ≤ 1
-
-
--- lemma pav_iff_foo : M.Paving ↔ ∀ C, M.IsCircuit C → M.eRelRk C M.E ≤ 1 := by
---   -- rw [paving_iff_forall_isCircuit]
---   obtain rfl | hne := M.eq_emptyOn_or_nonempty
---   · simp
---   simp_rw [eRelRk_le_one_iff M.ground_nonempty]
---   refine ⟨fun h C hC ↦ ?_, fun h C hC ↦ ?_⟩
---   · obtain ⟨e, he⟩ := h C hC
-
-  -- refine ⟨fun h C hC ↦ ?_, fun h ↦ ?_⟩
-  -- ·
-  --   obtain ⟨e, he, hsp⟩ := h.exists_insert_of_dep hC.dep
-
-
-
-
--- lemma foo (hM : M.Pav) (hdu : M✶.Pav) (hC : M.Dep C) (hD : ¬ M.Spanning C) : M.IsCircuit C := by
---   obtain ⟨

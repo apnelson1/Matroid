@@ -75,10 +75,10 @@ private theorem Quotient.eRelRk_le_aux (hQ : M₂ ≤q M₁) {X : Set α} (hXY :
 
     have hycard1 : M₁.eRelRk (insert y X) Y + 1 ≤ M₁.eRelRk X Y := by
       exact Order.add_one_le_of_lt hycard
-    have h1 := (add_le_add_right ht 1).trans hycard1
+    have h1 := (add_le_add_left ht 1).trans hycard1
     refine le_trans ?_ h1
     rw [← hrw, add_comm]
-    apply add_le_add_left <| eRelRk_insert_le M₂ X y
+    apply add_le_add_right <| eRelRk_insert_le M₂ X y
   refine le_top.trans hinf
 termination_by M₁.eRelRk X Y
 

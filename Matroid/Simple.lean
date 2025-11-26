@@ -309,7 +309,7 @@ lemma Simple.exists_subset_isSimplification (hX : (M ↾ X).Simple) :
   rw [← image_id X, ← hf.image_eq]
   exact image_mono hX.subset_isNonloops
 
-lemma IsSimplification.restriction (h : N.IsSimplification M) : N ≤r M := by
+lemma IsSimplification.isRestriction (h : N.IsSimplification M) : N ≤r M := by
   obtain ⟨f, rfl⟩ := h
   refine restrict_isRestriction _ _ ?_
   rintro _ ⟨x,hx,rfl⟩
@@ -320,12 +320,12 @@ lemma Simple.exists_isRestriction_isSimplification_of_isRestriction (hN : Simple
   obtain ⟨R, -, rfl⟩ := h.exists_eq_restrict
   obtain ⟨M', hM', hRM'⟩ := hN.exists_subset_isSimplification
   refine ⟨M', hM', ?_⟩
-  obtain ⟨R', -, rfl⟩ := hM'.restriction.exists_eq_restrict
+  obtain ⟨R', -, rfl⟩ := hM'.isRestriction.exists_eq_restrict
   exact ⟨R, hRM', by rw [restrict_restrict_eq _ (show R ⊆ R' from hRM')]⟩
 
 lemma IsSimplification.repFun_injOn (h : N.IsSimplification M) : N.E.InjOn h.repFun := by
   apply Simple.repFun_injOn
-  rw [h.restriction.eq_restrict]
+  rw [h.isRestriction.eq_restrict]
   exact h.simple
 
 lemma IsSimplification.eq_self_iff (h : N.IsSimplification M) : N = M ↔ M.Simple := by
@@ -336,7 +336,7 @@ lemma IsSimplification.eq_self_iff (h : N.IsSimplification M) : N = M ↔ M.Simp
 
 lemma IsSimplification.isNonloop_of_mem (h : N.IsSimplification M) (heN : e ∈ N.E) :
     M.IsNonloop e :=
-  (h.simple.isNonloop_of_mem heN).of_isRestriction h.restriction
+  (h.simple.isNonloop_of_mem heN).of_isRestriction h.isRestriction
 
 lemma IsSimplification.exists_unique (h : N.IsSimplification M) (he : M.IsNonloop e) :
     ∃! f ∈ N.E, M.Parallel e f := by
@@ -349,14 +349,14 @@ lemma IsSimplification.eq_of_parallel (h : N.IsSimplification M) (he : e ∈ N.E
     (hef : M.Parallel e f) : e = f := by
   have := h.simple
   apply Parallel.eq (M := N)
-  obtain ⟨R, hR, rfl⟩ := h.restriction
+  obtain ⟨R, hR, rfl⟩ := h.isRestriction
   rwa [restrict_parallel_iff, and_iff_left (show f ∈ R from hf), and_iff_left (show e ∈ R from he)]
 
 /-- A simplification of `M` is the restriction of `M` to a transversal of its parallel classes. -/
 lemma isSimplification_iff : N.IsSimplification M ↔ N.Loopless ∧ N ≤r M ∧
     ∀ ⦃e⦄, M.IsNonloop e → ∃! f ∈ N.E, M.Parallel e f := by
   classical
-  refine ⟨fun h ↦ ⟨h.simple.loopless, h.restriction, fun e he ↦ h.exists_unique he⟩,
+  refine ⟨fun h ↦ ⟨h.simple.loopless, h.isRestriction, fun e he ↦ h.exists_unique he⟩,
     fun ⟨h, hr, h'⟩ ↦ ?_⟩
   choose f hf using h'
   refine ⟨Partition.RepFun.mk (fun x ↦ if hx : M.IsNonloop x then f hx else x)
@@ -395,7 +395,7 @@ lemma IsSimplification.delete (hN : N.IsSimplification M) (hD : D ⊆ N.E) :
   simp only [delete_isNonloop_iff, mem_iUnion, exists_prop, not_exists, not_and, delete_ground,
     mem_diff, delete_parallel_iff, and_imp, mem_setOf_eq]
   refine ⟨?_, fun e he hcl ↦ ?_⟩
-  · obtain ⟨R, hR, rfl⟩ := hN.restriction.exists_eq_restrict
+  · obtain ⟨R, hR, rfl⟩ := hN.isRestriction.exists_eq_restrict
     have hD_eq : D = (⋃ e ∈ D, {f | M.Parallel e f}) ∩ (M ↾ R).E := by
       refine (subset_inter ?_ hD).antisymm ?_
       · nth_rw 1 [← biUnion_of_singleton D]
@@ -423,12 +423,12 @@ noncomputable def IsSimplification.iso {N N' : Matroid α} (hN : N.IsSimplificat
       right_inv := by
         simp [Function.LeftInverse, Function.RightInverse, hN'.ground_eq_image_repFun] })
   (indep_image_iff' := by
-    simp only [Equiv.coe_fn_mk, hN.restriction.indep_iff, hN'.restriction.indep_iff,
+    simp only [Equiv.coe_fn_mk, hN.isRestriction.indep_iff, hN'.isRestriction.indep_iff,
       image_subset_iff, Subtype.coe_preimage_self, subset_univ, and_true]
     intro I
     rw [image_image, image_val_image_eq, indep_image_iff_of_injOn_paraMap]
     · refine (Simple.repFun_injOn ?_ hN'.repFun).mono (show ↑I ⊆ N.E by simp)
-      rw [hN.restriction.eq_restrict]
+      rw [hN.isRestriction.eq_restrict]
       exact hN.simple
     simp only [mem_image, Subtype.exists, exists_and_right, exists_eq_right, forall_exists_index]
     exact fun e he _ ↦ Parallel.parallel' (hN'.repFun.rel_apply
@@ -445,7 +445,7 @@ lemma IsSimplification.exists_of_isStrictRestriction (hN : N.IsSimplification M)
   exact ⟨e, he, rfl⟩
 
 lemma IsSimplification.ground_spanning (hN : N.IsSimplification M) : M.Spanning N.E := by
-  rw [spanning_iff_ground_subset_closure hN.restriction.subset]
+  rw [spanning_iff_ground_subset_closure hN.isRestriction.subset]
   intro e he
   obtain he' | he' := M.isLoop_or_isNonloop e
   · apply he'.mem_closure
@@ -454,10 +454,10 @@ lemma IsSimplification.ground_spanning (hN : N.IsSimplification M) : M.Spanning 
 
 lemma IsSimplification.isBase_of_isBase {B : Set α} (hN : N.IsSimplification M) (hB : N.IsBase B) :
     M.IsBase B :=
-  (IsBase.isBasis_of_isRestriction hB hN.restriction).isBase_of_spanning hN.ground_spanning
+  (IsBase.isBasis_of_isRestriction hB hN.isRestriction).isBase_of_spanning hN.ground_spanning
 
 lemma IsSimplification.eRank_eq (hN : N.IsSimplification M) : N.eRank = M.eRank := by
-  obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hN.restriction
+  obtain ⟨R, hR : R ⊆ M.E, rfl⟩ := hN.isRestriction
   exact hN.ground_spanning.eRank_restrict
 
 lemma IsSimplification.ground_eq_biUnion_setOf_parallel [M.Loopless] (hNM : N.IsSimplification M) :
@@ -550,7 +550,7 @@ lemma simplification_delete_eq_of_subset_loops (M : Matroid α) (hX : X ⊆ M.lo
   exact M.simplification_simple
 
 lemma simplification_isRestriction (M : Matroid α) : M.simplification ≤r M :=
-  M.simplification_isSimplification.restriction
+  M.simplification_isSimplification.isRestriction
 
 @[simp] lemma simplification_eRank_eq (M : Matroid α) : M.simplification.eRank = M.eRank := by
   rw [M.simplification_isSimplification.eRank_eq]

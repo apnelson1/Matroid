@@ -282,6 +282,16 @@ lemma multiConn_delete (M : Matroid α) (X : ι → Set α) (D : Set α) :
   convert rfl using 3 with i
   tauto_set
 
+lemma IsRestriction.multiConn {N : Matroid α} (hNM : N ≤r M) :
+    N.multiConn X = M.multiConn fun i ↦ (X i ∩ N.E) := by
+  obtain ⟨R, hRE, rfl⟩ := hNM
+  rw [multiConn_restrict, restrict_ground_eq]
+
+lemma IsRestriction.multiConn_of_subset {N : Matroid α} (hNM : N ≤r M) (hX : ∀ i, X i ⊆ N.E) :
+    N.multiConn X = M.multiConn X := by
+  rw [hNM.multiConn]
+  simp [fun i ↦ inter_eq_self_of_subset_left (hX i)]
+
 lemma multiConn_delete_of_disjoint (M : Matroid α) {D : Set α} (hXD : ∀ i, Disjoint (X i) D) :
     (M ＼ D).multiConn X = M.multiConn X := by
   simp_rw [multiConn_delete, (hXD _).sdiff_eq_left]
@@ -450,6 +460,16 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
 lemma eLocalConn_restrict_univ (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).eLocalConn X Y = M.eLocalConn X Y := by
   simp
+
+lemma IsRestriction.eLocalConn_eq {N : Matroid α} (hNM : N ≤r M) (X Y : Set α) :
+    N.eLocalConn X Y = M.eLocalConn (X ∩ N.E) (Y ∩ N.E) := by
+  rw [eLocalConn, hNM.multiConn, eLocalConn]
+  simp_rw [Bool.apply_cond (f := fun X ↦ X ∩ N.E)]
+
+lemma IsRestriction.eLocalConn_eq_of_subset {N : Matroid α} (hNM : N ≤r M)
+    (hXE : X ⊆ N.E := by aesop_mat) (hYE : Y ⊆ N.E := by aesop_mat) :
+    N.eLocalConn X Y = M.eLocalConn X Y := by
+  rw [eLocalConn, hNM.multiConn_of_subset (by simp [hXE, hYE]), eLocalConn]
 
 lemma eRk_add_eRk_eq_eRk_union_add_eLocalConn (M : Matroid α) (X Y : Set α) :
     M.eRk X + M.eRk Y = M.eRk (X ∪ Y) + M.eLocalConn X Y := by
@@ -866,6 +886,10 @@ lemma eConn_le_eRk (M : Matroid α) (X : Set α) : M.eConn X ≤ M.eRk X :=
 lemma eConn_le_encard (M : Matroid α) (X : Set α) : M.eConn X ≤ X.encard :=
   (eConn_le_eRk ..).trans (eRk_le_encard ..)
 
+@[simp]
+lemma freeOn_eConn (E X : Set α) : (freeOn E).eConn X = 0 := by
+  rw [← eConn_dual, freeOn_dual_eq, loopyOn_eConn]
+
 /-- The slack term in the inequality `λ(X) ≤ r(X)` is co-nullity -/
 lemma eConn_add_nullity_dual_eq_eRk (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
     M.eConn X + M✶.nullity X = M.eRk X := by
@@ -888,6 +912,17 @@ lemma eConn_add_nullity_eq_eRk_dual (M : Matroid α) (X : Set α) (hX : X ⊆ M.
 
 lemma Indep.eConn_eq_eRk_dual (hI : M.Indep I) : M.eConn I = M✶.eRk I := by
   rw [← eConn_add_nullity_eq_eRk_dual _ I hI.subset_ground, hI.nullity_eq, add_zero]
+
+lemma eConn_add_eRank_eq (M : Matroid α) : M.eConn X + M.eRank = M.eRk X + M.eRk (M.E \ X) := by
+  wlog hXE : X ⊆ M.E generalizing X with aux
+  · rw [← eConn_inter_ground, aux inter_subset_right, eRk_inter_ground, diff_inter_self_eq_diff]
+  rw [M.eRk_add_eRk_eq_eRk_union_add_eLocalConn, ← eConn_eq_eLocalConn, union_diff_cancel hXE,
+    eRk_ground, add_comm]
+
+lemma Indep.eConn_eq_of_compl_indep (hI : M.Indep I) (hI' : M.Indep (M.E \ I)) :
+    M.eConn I = M✶.eRank := by
+  rw [hI.eConn_eq_eRk_dual, ← hI'.coindep.compl_spanning.eRk_eq, dual_ground,
+    diff_diff_cancel_left hI.subset_ground]
 
 /-- The slack term in the inequality `λ(X) ≤ |X|` is the sum of the nullity and conullity of `X`.
 This needs `X ⊆ M.E`, for instance in the case where `X` is a single non-element. -/
@@ -1019,7 +1054,6 @@ lemma eConn_disjointSum_right_eq {M₁ M₂ : Matroid α} (hdj : Disjoint M₁.E
   rw [disjointSum_comm]
   simp
 
-
 lemma eConn_restrict_le (M : Matroid α) (X R : Set α) : (M ↾ R).eConn X ≤ M.eConn X := by
   rw [eConn_eq_eLocalConn, eLocalConn_restrict_eq, eConn_eq_eLocalConn, restrict_ground_eq,
     ← eLocalConn_inter_ground_right]
@@ -1034,7 +1068,7 @@ lemma eConn_contract_le (M : Matroid α) (X C : Set α) : (M ／ C).eConn X ≤ 
   apply eConn_delete_le
 
 lemma IsMinor.eConn_le {N : Matroid α} (hNM : N ≤m M) (X : Set α) : N.eConn X ≤ M.eConn X := by
-  obtain ⟨C, D, -, -, -, rfl⟩ := hNM
+  obtain ⟨C, D, rfl⟩ := hNM
   exact ((M ／ C).eConn_delete_le X D).trans <| M.eConn_contract_le X C
 
 end Global
