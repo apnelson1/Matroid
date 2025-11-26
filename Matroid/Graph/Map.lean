@@ -172,12 +172,17 @@ structure IsRetr (G : Graph α β) (f : α → α) where
 
 variable {f f' : α → α}
 
-@[simp]
-lemma IsRetr.vertexSet_subset (hf : G.IsRetr f) : V(f ''ᴳ G) ⊆ V(G) :=
-  hf.mapsTo.image_subset
+namespace IsRetr
 
 @[simp]
-lemma IsRetr.idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
+lemma vertexSet_subset (hf : G.IsRetr f) : V(f ''ᴳ G) ⊆ V(G) :=
+  hf.mapsTo.image_subset
+
+lemma mem (hf : G.IsRetr f) (ha : a ∈ V(G)) : f a ∈ V(G) :=
+  hf.vertexSet_subset (by use a)
+
+@[simp]
+lemma idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
   ext a b c
   · simp only [map_map, Map_vertexSet, comp_apply, mem_image]
     refine exists_congr fun x ↦ and_congr_right fun hx ↦ ?_
@@ -186,18 +191,23 @@ lemma IsRetr.idem (hf : G.IsRetr f) : f ''ᴳ (f ''ᴳ G) = f ''ᴳ G := by
   refine exists₂_congr fun x y ↦ and_congr_right fun hxy ↦ ?_
   rw [hf.isIdem x hxy.left_mem, hf.isIdem y hxy.right_mem]
 
-lemma IsRetr.eqOn_id_of_Map_eq (hf : G.IsRetr f) (h : f ''ᴳ G = G) : V(G).EqOn f id := by
+lemma eq_of_mem_range (hf : G.IsRetr f) (ha : a ∈ f '' V(G)) : f a = a := by
+  obtain ⟨b, hb, rfl⟩ := ha
+  exact hf.isIdem b hb
+
+lemma eqOn_of_image_eq (hf : G.IsRetr f) (hV : f '' V(G) = V(G)) : V(G).EqOn f id := by
   rintro x hx
-  simp only [id_eq]
-  have hV := by simpa using congr_arg vertexSet h
   rw [← hV] at hx
   obtain ⟨y, hy, rfl⟩ := hx
   exact hf.isIdem y hy
 
-lemma IsRetr.Map_eq_self_iff (hf : G.IsRetr f) : f ''ᴳ G = G ↔ V(G).EqOn f id :=
-  ⟨hf.eqOn_id_of_Map_eq, fun h ↦ by simpa using map_congr_left_of_eqOn h⟩
+lemma image_eq_iff_eqOn (hf : G.IsRetr f) : f '' V(G) = V(G) ↔ V(G).EqOn f id :=
+  ⟨hf.eqOn_of_image_eq, fun h ↦ by simpa using h.image_eq⟩
 
-lemma IsRetr.map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH : G ≤ f' ''ᴳ H)
+lemma map_eq_self_iff (hf : G.IsRetr f) : f ''ᴳ G = G ↔ V(G).EqOn f id :=
+  ⟨fun h ↦ hf.eqOn_of_image_eq (congr_arg vertexSet h), (by simpa using map_congr_left_of_eqOn ·)⟩
+
+lemma map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH : G ≤ f' ''ᴳ H)
     (hHG : H ≤ f ''ᴳ G) : G = f' ''ᴳ H ∧ H = f ''ᴳ G := by
   have hV : V(G) = V(H) := antisymm (vertexSet_mono hGH |>.trans hf'.mapsTo.image_subset)
     (vertexSet_mono hHG |>.trans hf.mapsTo.image_subset)
@@ -214,12 +224,29 @@ lemma IsRetr.map_eq_of_le_map_le_map (hf : G.IsRetr f) (hf' : H.IsRetr f') (hGH 
   · exact ext_of_le_le hHG le_rfl (by simp [hFG, ← hV]) (by simp [hE])
 
 @[simp]
-lemma IsRetr.map_le_self_iff (hf : G.IsRetr f) : f ''ᴳ G ≤ G ↔ (f ''ᴳ G).IsLink = G.IsLink := by
+lemma map_le_self_iff (hf : G.IsRetr f) : f ''ᴳ G ≤ G ↔ (f ''ᴳ G).IsLink = G.IsLink := by
   refine ⟨fun hle ↦ ?_, fun heq ↦ ⟨hf.vertexSet_subset, ?_⟩⟩
   · ext e u v
     exact ⟨fun h ↦ h.of_le hle, fun h ↦ h.of_le_of_mem hle (by simp [h.edge_mem])⟩
   simp_rw [heq]
   tauto
+
+lemma comp (hf : G.IsRetr f) (hf' : (f ''ᴳ G).IsRetr f') : G.IsRetr (f' ∘ f) where
+  mapsTo x hx := hf'.mapsTo.image_subset.trans hf.mapsTo.image_subset (by simp; use x)
+  isIdem x hx := by
+    simp only [comp_apply]
+    rw [hf.eq_of_mem_range (hf'.mem (by use x)), hf'.eq_of_mem_range]
+    use f x, (by use x)
+
+end IsRetr
+
+@[simp]
+lemma id_isRetr : G.IsRetr id where
+  mapsTo _ := id
+  isIdem _ _ := rfl
+
+
+
 
 @[simps]
 noncomputable def edgePreimg {β' : Type*} (G : Graph α β) (σ : β' → β) : Graph α β' where

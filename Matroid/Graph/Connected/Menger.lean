@@ -274,37 +274,6 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
 
-@[simps]
-def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
-  vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
-  edgeSet := {(a, b) | G.Inc b a}
-  IsLink e x y := G.Inc e.2 e.1 ∧ s(Sum.inl e.1, Sum.inr e.2) = s(x, y)
-  isLink_symm e he x y h := ⟨h.1, by simp [h.2]⟩
-  eq_or_eq_of_isLink_of_isLink e a b c d hab hcd := by
-    have := by simpa using hab.2.symm.trans hcd.2
-    tauto
-  left_mem_of_isLink e x y h := by
-    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := by simpa using h.2
-    · simp [h.1.vertex_mem]
-    simp [h.1.edge_mem]
-  edge_mem_iff_exists_isLink e := by simp
-
-@[simp]
-lemma mixedLineGraph_edgeDelete (G : Graph α β) (F : Set β) :
-    (G ＼ F).mixedLineGraph = G.mixedLineGraph - (Sum.inr '' F) := by
-  refine Graph.ext ?_ fun e x y ↦ ?_
-  · simp only [mixedLineGraph_vertexSet, edgeDelete_vertexSet, edgeDelete_edgeSet,
-    vertexDelete_vertexSet]
-    grind
-  simp only [mixedLineGraph_isLink, edgeDelete_inc_iff, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
-    Prod.swap_prod_mk, vertexDelete_isLink_iff, mem_image, not_exists, not_and, ne_eq]
-  grind
-
-@[simp]
--- lemma mixedLineGraph_vertexDelete (G : Graph α β) (X : Set α) :
---     (G - X).mixedLineGraph = G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' E(G[X])) := by
---   refine Graph.ext ?_ fun e x y ↦ ?_
---   · simp only [mixedLineGraph_vertexSet, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
 
 def Walk (G : Graph α β) := {w // G.IsWalk w}
 
@@ -326,8 +295,7 @@ lemma mixedLineGraph_walkMap_last : (mixedLineGraph_walkMap W).last = Sum.inl W.
   | cons x e w ih => simpa
 
 @[simp]
-lemma mixedLineGraph_walkMap_isWalk (hW : G.IsWalk W) :
-    G.mixedLineGraph.IsWalk (mixedLineGraph_walkMap W) := by
+lemma mixedLineGraph_walkMap_isWalk (hW : G.IsWalk W) :L'(G).IsWalk (mixedLineGraph_walkMap W) := by
   induction hW with
   | nil hx => simpa
   | cons hw h ih => simp [ih, h.inc_left, h.inc_right]

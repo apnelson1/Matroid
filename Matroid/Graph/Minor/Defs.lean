@@ -156,23 +156,38 @@ namespace Contract
     This property ensures that contraction preserves the structure of the graph
     in a well-defined way. -/
 def _root_.Graph.ValidIn (G : Graph α β) (φ : α → α') (C : Set β) :=
-  ∀ v ∈ V(G), G[φ ⁻¹' {φ v}].IsCompOf (G ↾ C)
+  ∀ v ∈ V(G), (G ↾ C)[φ ⁻¹' {φ v}].IsCompOf (G ↾ C)
 
 @[simp]
 lemma map_mem (φ : α → α') (C : Set β) (hx : u ∈ V(G)) : φ u ∈ V(G /[φ, C]) := by
   use u
 
-lemma ValidIn.of_inter_eq (hC : ValidIn G φ C) (h : E(G) ∩ C = E(G) ∩ D) :
+lemma _root_.Graph.ValidIn.of_inter_eq (hC : ValidIn G φ C) (h : E(G) ∩ C = E(G) ∩ D) :
     ValidIn G φ D := by
   rwa [ValidIn, ← (G.edgeRestrict_eq_edgeRestrict_iff C D).mpr h]
 
+@[simp]
+lemma _root_.Graph.validIn_id_empty : ValidIn G id ∅ := by
+  intro v hv
+  simp only [id_eq, preimage_id_eq]
+  unfold IsCompOf Minimal
+  refine ⟨⟨⟨?_, by simp⟩, by simp⟩, ?_⟩
+  · simp only [edgeRestrict_induce, le_edgeRestrict_iff, edgeRestrict_edgeSet, inter_empty,
+    subset_refl, and_true]
+    exact _root_.trans edgeRestrict_le <| induce_le (by simpa)
+  simp only [edgeRestrict_induce, ge_iff_le, le_edgeRestrict_iff, subset_empty_iff, and_imp]
+  intro H hcle hV hle hE
+  refine ⟨?_, by simp⟩
+  obtain rfl := by simpa using vertexSet_mono hle hV.choose_spec
+  simp [hV.choose_spec]
+
 def IsMinor (G H : Graph α β) :=
-  ∃ (φ : α → α) (C : Set β), G.IsRetr φ ∧ H.ValidIn φ C ∧ G ≤ H /[φ, C]
+  ∃ (φ : α → α) (C : Set β), H.IsRetr φ ∧ H.ValidIn φ C ∧ G ≤ H /[φ, C]
 
 notation G " ≤ₘ " H => IsMinor G H
 
--- instance : IsRefl (Graph α β) IsMinor where
---   refl G := ⟨id, ∅, by simp, by simp, fun ⦃x⦄ a ↦ a, by simp [Contract]⟩
+instance : IsRefl (Graph α β) IsMinor where
+  refl G := ⟨id, ∅, id_isRetr, validIn_id_empty, by simp⟩
 
 -- instance : IsTrans (Graph α β) IsMinor where
 --   trans G H I hGH hHI := by
@@ -192,15 +207,18 @@ notation G " ≤ₘ " H => IsMinor G H
 --       sorry
 --     sorry
 
--- instance : IsAntisymm (Graph α β) IsMinor where
---   antisymm G H hGH hHG := by
---     obtain ⟨φ, C, hφidem, hφto, hle⟩ := hGH
---     obtain ⟨φ', C', hφ'idem, hφ'to, hle'⟩ := hHG
---     have hLe := hle.trans <| contract_mono hle'
---     rw [contract_contract] at hLe
---     have hdj := edgeSet_disjoint_of_le_contract hLe
---     rw [disjoint_union_right] at hdj
---     rw [contract_eq_Map_of_disjoint hdj.1] at hle'
---     rw [contract_eq_Map_of_disjoint (hdj.2.mono_left <| by simpa using edgeSet_mono hle')]
---at hle
---     clear hdj hLe C C'
+instance : IsAntisymm (Graph α β) IsMinor where
+  antisymm G H hGH hHG := by
+    obtain ⟨φ, C, hφ, hφVd, hle⟩ := hGH
+    obtain ⟨φ', C', hφ', hφ'Vd, hle'⟩ := hHG
+    have hLe := hle.trans <| contract_mono hle'
+    rw [contract_contract] at hLe
+    have hdj := edgeSet_disjoint_of_le_contract hLe
+    rw [disjoint_union_right] at hdj
+    rw [contract_eq_Map_of_disjoint hdj.1] at hle'
+    rw [contract_eq_Map_of_disjoint (hdj.2.mono_left <| by simpa using edgeSet_mono hle')] at hle
+    obtain ⟨rfl, hG⟩ := hφ.map_eq_of_le_map_le_map hφ' hle' hle
+    clear hle' hle hLe hdj hφ'Vd hφVd
+    rw [eq_comm, hφ'.map_eq_self_iff, ← hφ'.image_eq_iff_eqOn]
+    apply antisymm hφ'.vertexSet_subset
+    simpa only [map_map, Map_vertexSet, comp_apply, ← hG] using hφ.vertexSet_subset

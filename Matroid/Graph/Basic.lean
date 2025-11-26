@@ -232,23 +232,5 @@ lemma mem_setIncidentEdges_iff (G : Graph α β) (S : Set α) :
 
 end Neighborhood
 
-@[simps]
-def LineGraph (G : Graph α β) : Graph β (Sym2 β) where
-  vertexSet := E(G)
-  edgeSet := Sym2.mk '' { (e, f) | ∃ x, G.Inc e x ∧ G.Inc f x }
-  IsLink a e f := (∃ x, G.Inc e x ∧ G.Inc f x) ∧ s(e, f) = a
-  edge_mem_iff_exists_isLink a := by simp only [mem_image, mem_setOf_eq, Prod.exists]
-  isLink_symm a ha e f hef := by
-    simp_all only [mem_image, mem_setOf_eq, Prod.exists]
-    simp_rw [and_comm, ← hef.2]
-    simp [hef.1]
-  eq_or_eq_of_isLink_of_isLink := by
-    rintro a e f g h ⟨hef, rfl⟩ ⟨hgf, heq⟩
-    simp only [Sym2.eq, Sym2.rel_iff', Prod.mk.injEq, Prod.swap_prod_mk] at heq
-    tauto
-  left_mem_of_isLink := by
-    rintro a e f ⟨⟨x, he, hf⟩, rfl⟩
-    exact he.edge_mem
-
 def IsStable (G : Graph α β) (S : Set α) : Prop :=
   S.Pairwise (¬ G.Adj · ·)
