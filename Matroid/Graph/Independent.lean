@@ -57,3 +57,7 @@ lemma isIndependent_pair_iff_of_ne (h_ne : x ≠ y) (hx : x ∈ V(G)) (hy : y �
     G.IsIndependent {x, y} ↔ ¬ G.Adj x y := by
   refine ⟨fun h ↦ (h.2 (mem_insert x {y}) (mem_insert_of_mem x rfl) h_ne), ?_⟩
   exact fun hc ↦ ⟨pair_subset hx hy, pairwise_pair.mpr fun _ ↦ ⟨hc, not_symm_not hc⟩⟩
+
+-- lemma nee_IsIndepndent {S : Set α} {x : α} {y : α } (hai : x ∈ S) (hb : y ∈ S)
+    --(hadj : G.Adj x y ) :
+--     ¬ IsIndependent G S := by sorry

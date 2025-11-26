@@ -665,6 +665,18 @@ have h1 := idxOf_notMem hc
 rw [prefixUntilVertex_length hx, ←prefixUntilVertex_index w x hx hle] at h1
 linarith
 
+lemma Prefix_Sufix_int {P : WList α β} {x b : α} (hP : G.IsPath P) (hp : b ∈ P.prefixUntilVertex x)
+    (hs : b ∈ P.suffixFromVertex x) (hx : x ∈ P) : x = b := by
+  rw[←prefixUntilVertex_append_suffixFromVertex P x] at hP
+  have hPf : x = (P.suffixFromVertex x).first := by exact (suffixFromVertex_first hx).symm
+  nth_rw 1 [(prefixUntilVertex_last hx).symm] at hPf
+  have := hP.inter_eq_singleton_of_append hPf
+  have hint : b ∈  V(P.prefixUntilVertex x) ∩ V(P.suffixFromVertex x) := by exact mem_inter hp hs
+  rw[hP.inter_eq_singleton_of_append hPf ] at hint
+  simp at hint
+  rw[← ((prefixUntilVertex_last hx).symm)] at hint
+  exact id (Eq.symm hint)
+
 lemma idx_Of_tail {w : WList α β} {a : α} (hw : w.Nonempty) (haf : w.first ≠ a)
     (ha : a ∈ w) :
     (w.tail).idxOf a + 1 = w.idxOf a := by
@@ -871,6 +883,47 @@ lemma idxOf_Adj {a b : α} {w : WList α β} (hw : G.IsTrail w)
   simp [hau] at hb
   simp [idxOf_cons_ne hu.symm, idxOf_cons_ne hau.symm ] at he
   exact ih ha hb he
+
+lemma IsCycle.idxOf_Adj_first {a b : α} {C : WList α β} (hC : G.IsCycle C) (hab : a ≠ b)
+    (ha : C.idxOf a = 0 ) (hb : C.idxOf b = C.length - 1): G.Adj a b := by
+
+  have haC : a ∈ C := by
+    have hlea : C.idxOf a ≤ C.length := by
+      rw[ha]
+      exact Nat.zero_le C.length
+    exact idxOf_le_length_iff_mem.1 hlea
+  have hbC : b ∈ C := by
+    have hle : C.idxOf b ≤ C.length := by
+      rw[hb]
+      omega
+    exact idxOf_le_length_iff_mem.1 hle
+  obtain h0 | hnt := DecidableNonempty C
+  · simp at h0
+    by_contra
+    have := length_eq_zero.2 h0
+    rw[this] at hb
+    simp at hb
+    rw[←ha ] at hb
+    exact hab (idxOf_eq C haC hb.symm)
+  obtain h1 | hle := le_or_gt C.length 1
+  · rw[Eq.symm (Nat.le_antisymm (one_le_length_iff.mpr hnt ) h1)] at hb
+    simp at hb
+    rw[← ha] at hb
+    by_contra
+    exact hab (idxOf_eq C haC hb.symm)
+  have hn : C.idxOf b < C.length := by
+    rw[hb]
+    omega
+  have hab : C.idxOf a < C.idxOf b := by
+    rw[ha,hb]
+    refine Nat.zero_lt_sub_of_lt hle
+  have := hC.idxOf_rotate_idxOf hbC
+  have hf := hC.idxOf_rotate_n haC hn hab
+  rw[ha, ←this] at hf
+  nth_rw 2 [hb] at hf
+  have hlast : (C.rotate (C.idxOf b)).idxOf a  = (C.rotate (C.idxOf b)).idxOf b + 1 := by omega
+  exact (idxOf_Adj ((hC.rotate (C.idxOf b)).isTrail) (hC.isClosed.mem_rotate.2 hbC )
+    (hC.isClosed.mem_rotate.2 haC) hlast).symm
 
 lemma IsCycle.idxOf_rotate {a  : α} {n : ℕ} {C : WList α β} (hC : G.IsCycle C)
     (ha : a ∈ C) (hn : n < C.length)
@@ -1348,10 +1401,19 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
       exact (Cycle_conc_index (hab.ne).symm hhh).1
     have hab₁ : b₁ ≠ a := by
       by_contra hcc
-      -- use ha1N and hb1N to have that a₁ and b₁ are in Neig and contradict that a₁ (a = b₁) are
-      --adjecent (this follows from the indices)
-      sorry
-    --Basically if b₁ = a then a ∈ Neigh and a,a₁ are adj
+      rw[←hcc] at haind
+      have hcon := hDadj a₁ ha1N b₁ hb1N
+      have : ¬ (C.idxOf a₁ ≠ C.idxOf b₁ + 1 ∧ C.idxOf a₁ + C.length ≠ C.idxOf b₁ + 1) := by
+        simp
+        intro h
+        obtain htrue | hfalse := haind
+        · exact False.elim (h (id (Eq.symm htrue)))
+        rw[hfalse.2]
+        simp
+        rw[hfalse.1]
+        refine (Nat.sub_eq_iff_eq_add (one_le_length_iff.mpr
+          (WList.Nontrivial.nonempty hCNT))).mp rfl
+      exact this (hDadj a₁ ha1N b₁ hb1N)
     --obtain ⟨P₀,P₁,hP₁,hP₂,hP₀last,hP₀first,hP01d,hP01 ⟩ := IsPath.exists_isPath_vertex P hPath hbP
     set P₀ : WList α β := prefixUntilVertex P b with h_pre
     set P₁ : WList α β := suffixFromVertex P b with h_suf
@@ -1418,13 +1480,18 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
       have : G.IsTrail C := by exact hC.toIsTrail
       obtain hgood | hannoying := hbind
       · exact idxOf_Adj (hC.toIsTrail ) hb.1 hb1N.1 hgood.symm
-      sorry
+      have hbb1 : b ≠ b₁ := by
+        by_contra hc
+        rw[←hc] at hannoying
+        rw[hannoying.2] at hannoying
+        simp at hannoying
+        have : C.length > 1 := by exact Nontrivial.one_lt_length hCNT
+        omega
+      exact (hC.idxOf_Adj_first hbb1.symm hannoying.2 hannoying.1).symm
     obtain ⟨e₂, he2 ⟩ := hAdb.symm
     have hPlast : (PD.concat e₁ b₁).last = b₁ := by simp
     have hPfirst : P₃.first = b₁ := by
       exact suffixFromVertex_first hb1P1
-      --rw [reverse_first]
-      --exact prefixUntilVertex_last hb1P1
     have hQ₁ : G.IsPath ((PD.concat e₁ b₁) ++ P₃) := by
       apply hPc1.append hP₃ ?_ ?_
       · rw[hPlast, hPfirst]
@@ -1442,9 +1509,6 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
             exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
               ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
           exact fun ⦃a⦄ a_1 ↦ this (h1 a_1)
-        -- have : V(PD) ⊆ V(D) := by
-        --   exact IsPath.vertexSet_subset hPD
-        -- have : x ∈ V(C) := by exact hP3C hx3
         have : x ∉ V(C) := by
           have hob : V(D) ⊆ V(G) \ V(C) := by
             have := (hD.subsetV )
@@ -1471,14 +1535,52 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
           rwa[tail_cons] at this
         exact (concat_isPath_iff.1 hpcon).2.1
       simp
-      sorry
+      have ha1D : a ∉ V(D) := by
+            by_contra hc
+            exact (((hD.subsetV ) hc).2) (ha.1 )
+      --have : V(PD) ⊆ V(D) := by exact IsPath.vertexSet_subset hPD
+      refine ⟨ ?_, ?_, ?_ ⟩
+      · by_contra hc
+        exact ha1D ((IsPath.vertexSet_subset hPD) hc)
+      · by_contra hc
+        have hcc : PD.last ∈ V(PD) := by exact last_mem
+        rw[←hc] at hcc
+        exact ha1D ((IsPath.vertexSet_subset hPD) hcc)
+      rw[h_suf2, h_suf]
+      have h1 : V((P.suffixFromVertex b).suffixFromVertex b₁) ⊆ V(P) := by
+            exact fun ⦃a⦄ a_1 ↦ (suffixFromVertex_vertex P b  )
+              ((suffixFromVertex_vertex (P.suffixFromVertex b) b₁) a_1)
+      by_contra hc
+      exact haP (h1 hc)
+    have hab' := hab
     obtain ⟨eab, heab ⟩ := hab
     have hQ₃ : G.IsPath ((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) := by
       apply concat_isPath_iff.2
       refine ⟨hQ₂, ?_, ?_ ⟩
       · have : ((PD.concat e₁ b₁ ++ P₃).concat f a).last = a := by simp
         rwa[this]
-      sorry
+      simp
+      have hb1D : b ∉ V(D) := by
+            by_contra hc
+            exact (((hD.subsetV ) hc).2) (hb.1 )
+      refine ⟨ ⟨?_, ?_, ?_⟩, (ne_of_mem_of_not_mem hbP haP ) ⟩
+      · by_contra hc
+        exact hb1D ((IsPath.vertexSet_subset hPD) hc)
+      · by_contra hc
+        have hcc : PD.last ∈ V(PD) := by exact last_mem
+        rw[←hc] at hcc
+        exact hb1D ((IsPath.vertexSet_subset hPD) hcc)
+      · rw[h_suf2 ]
+        have hbPre : b ∈ P₁.prefixUntilVertex b₁ := by
+          rw[h_suf ]
+          have : b = ((P.suffixFromVertex b).prefixUntilVertex b₁).first := by
+            simp
+            exact Eq.symm (suffixFromVertex_first hbP)
+          rw [this]
+          nth_rw 1 [←this]
+          exact first_mem
+        by_contra hc
+        exact (hAdb.ne.symm) (Prefix_Sufix_int hP₁ hbPre hc hb1P1 )
     have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
       apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_
       · simp
@@ -1488,9 +1590,41 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
       simp
       simp at hx
       obtain h1 | h2 := hx
-      · have hsi : x ∉ PD := by sorry
+      · have hsi : x ∉ PD := by
+          by_contra hc
+          have hxC : x ∈ V(C) := by
+            rw[hC']
+            rw[h_pre] at hxx
+            simp at hxx
+            simp
+            right
+            exact ((prefixUntilVertex_vertex P b ) hxx )
+          have hxD : x ∉ V(D) := by
+            by_contra hcc
+            exact (((hD.subsetV ) hcc).2) (hxC )
+          exact hxD ((IsPath.vertexSet_subset hPD) hc)
         simp [hsi] at h1
-        sorry
+        obtain h3 | h4 := h1
+        · obtain h5 | h6 := h3
+          · have : PD.last ∈ PD := by exact last_mem
+            by_contra h
+            rw[←h5] at this
+            exact hsi this
+          rw[h_suf2,h_suf ] at h6
+          have hxx2 := mem_reverse.2 hxx
+          simp at hxx2
+          rw[h_pre] at hxx2
+          have hh : x ∈ (P.suffixFromVertex b) := by exact
+            (suffixFromVertex_vertex (P.suffixFromVertex b) b₁) h6
+          have hxP : b ∈ P := by
+            have hbC := hb.1
+            rw[hC'] at hbC
+            simp [(hab'.ne ).symm] at hbC
+            exact hbP
+          exact (Prefix_Sufix_int hPath hxx2 hh hxP).symm
+        rw[h4,h_pre] at hxx
+        simp at hxx
+        exact False.elim (haP (((prefixUntilVertex_vertex P b ) ) hxx))
       exact h2
     obtain ⟨ef, hef ⟩:= hwa2.symm
     set Q : WList α β := (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse)
@@ -1536,17 +1670,36 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
           by_contra hc
           exact (hef.mem_vertexDelete_iff.1 ((hD.isClosedSubgraph.edgeSet_mono) hc)).2 ha1N.1
         exact (fun a ↦ hefneq ((hPD.isWalk).edgeSet_subset hefc)) hefc
-        --exact fun a ↦ hefC (this a)
       · by_contra hc
         rw[←hc] at he1
-        have := hef.right_eq_or_eq he1
-        have : a₁ ≠ wb := by sorry
-        have : a₁ ≠ b₁ := by
+        obtain haw | h2 := hef.right_eq_or_eq he1
+        · have ha1D : a₁ ∉ V(D) := by
+            by_contra hc
+            exact (((hD.subsetV ) hc).2) (ha1N.1 )
+          rw[haw] at ha1D
+          exact ha1D hwb
+        have ht2 : a₁ ≠ b₁ := by
+          have hleght0 : ¬  (0 = C.length - 1 ∧ C.idxOf b₁ = 0) := by
+            simp
+            intro h
+            by_contra
+            exact (Nat.sub_ne_zero_iff_lt.mpr (Nontrivial.one_lt_length hCNT )) (id (Eq.symm h))
           by_contra hc
-          rw[hc] at haind
-          sorry
-        have : ¬ (a₁ = wb ∨ a₁ = b₁) := by (expose_names; exact not_or_intro this_2 this)
-        (expose_names; exact this this_1)
+          rw[ha0, hc] at haind
+          simp at haind
+          simp [hleght0] at haind
+          obtain hc1 | hc2 := hbind
+          · have habeq : a = b := by
+              rw[←haind] at hc1
+              simp at hc1
+              rw[←ha0] at hc1
+              exact idxOf_eq C ha.1 hc1.symm
+            have := (hab'.ne)
+            exact (hab'.ne) habeq
+          rw[←hc,←ha0] at hc2
+          rw[←hc, (idxOf_eq C ha1N.1 hc2.2), ha0 ] at haind
+          omega
+        exact ht2 h2
       · by_contra hc
         have := mem_edgeSet_iff.2 hc
         have hP3C : E(P₃) ⊆ E(C) := by
@@ -1563,10 +1716,53 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
           have := suffixFromVertex_edge P₁ b₁
           exact fun ⦃a⦄ a_1 ↦ hP1C ((suffixFromVertex_edge P₁ b₁) a_1)
         exact hefC (hP3C hc)
-      ·
-        sorry
-      · sorry
-      · sorry
+      · have hfC : f ∈ E(C) := by
+          rw[hC']
+          simp
+        by_contra hc
+        rw[←hc] at hfC
+        exact hefC hfC
+      · by_contra hc
+        rw[← hc] at heab
+        obtain haw | h2 := hef.left_eq_or_eq heab
+        · have ha1D : a ∉ V(D) := by
+            by_contra hc
+            exact (((hD.subsetV ) hc).2) (ha.1 )
+          rw[←haw] at ha1D
+          exact ha1D hwa
+        have ha1D : b ∉ V(D) := by
+          by_contra hc
+          exact (((hD.subsetV ) hc).2) (hb.1 )
+        rw[←h2] at ha1D
+        exact ha1D hwa
+      · by_contra hc
+        have hcon := mem_edgeSet_iff.2 hc
+        rw[h_pre ] at hcon
+        have h2 : E(P) ⊆ E(C) := by
+          rw[hC']
+          simp
+          exact fun g hg ↦ (mem_insert_of_mem e (mem_insert_of_mem f hg))
+        exact hefC (h2 (prefixUntilVertex_edge P b  hc) )
+    have hlength : C.length < (cons Q.last ef Q).length := by
+      rw[h_Q]
+      simp
+      rw[h_suf2, h_pre ]
+      have : PD.length + ((P₁.suffixFromVertex b₁).length + 1) +
+          ((P.prefixUntilVertex b).length + 1 + 1) + 1
+          = PD.length + (P₁.suffixFromVertex b₁).length  + (P.prefixUntilVertex b).length + 4 := by
+        omega
+      rw [this]
+      have hsb : (P.suffixFromVertex b).idxOf b₁ = 1 := by sorry
+      have : C.length + P₁.idxOf b₁ < PD.length + ((P₁.suffixFromVertex b₁).length + P₁.idxOf b₁)
+          + (P.prefixUntilVertex b).length + 4 := by
+        rw[sufixFromVertex_length P₁ b₁ hb1P1, h_suf,
+        (add_assoc PD.length ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
+        (add_comm ((P.suffixFromVertex b).length) ((P.prefixUntilVertex b).length)),
+        prefixUntilVertex_suffixFromVertex_length P b hbP  ]
+        rw[hC',hsb]
+        simp
+        omega
+      omega
     sorry
 
 
