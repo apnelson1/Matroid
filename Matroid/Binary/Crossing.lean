@@ -1,4 +1,5 @@
 import Matroid.Tame
+import Matroid.ForMathlib.Data.Set.Subsingleton
 
 open Set.Notation
 open Set
@@ -109,8 +110,8 @@ lemma exist_isCocircuits_of_rank_two (hr : M.eRank = 2) (hel : ¬ M.IsColoop e) 
     rw [setOf_parallel_eq_closure_diff_loops, he.loopless_of_singleton.loops_eq_empty,
       he.isFlat.closure, diff_empty]
   -- Since `M` has no `U_{2,4}`-minor, we have `|N| ≤ 3` and so `|N \ e| ≤ 2`.
-  replace hU := hU.minor hN.restriction.isMinor
-  rw [no_line_minor_iff_of_eRank_le_two (hN.restriction.isMinor.eRank_le.trans_eq hr),
+  replace hU := hU.minor hN.isRestriction.isMinor
+  rw [no_line_minor_iff_of_eRank_le_two (hN.isRestriction.isMinor.eRank_le.trans_eq hr),
     hN.simple.simplification_eq_self, show ((4 : ℕ) : ℕ∞) = (2 : ℕ∞) + 1 + 1 by norm_num,
     ENat.lt_add_one_iff (by norm_num),
     ← encard_diff_singleton_add_one (he.mem_simplification hN),
