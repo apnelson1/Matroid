@@ -1,17 +1,14 @@
-import Mathlib.Data.ENat.Lattice
+import Mathlib.Data.ENat.Basic
+import Matroid.ForMathlib.Tactic.ENatGrindAttr
 
-variable {a b c : ℕ∞}
-
+set_option linter.style.longLine false
 namespace ENat
 
-def recTopZeroSucc {C : ℕ∞ → Sort*} (top : C ⊤) (zero : C 0) (succ : (a : ℕ) → C (a + 1)) (n : ℕ∞) :
-    C n := by
-  cases n with
-  | top => assumption
-  | coe n =>
-  · cases n with
-  | zero => assumption
-  | succ n => exact succ n
+section ENat
+
+variable {a b : ℕ∞}
+
+-- Some `ENat` lemmas that should exist anyway.
 
 protected theorem top_mul_eq_ite (a : ℕ∞) : ⊤ * a = if a = 0 then 0 else ⊤ := by
   split_ifs with h
@@ -37,217 +34,304 @@ protected theorem add_eq_top : a + b = ⊤ ↔ a = ⊤ ∨ b = ⊤ := WithTop.ad
 protected theorem add_one_eq_top : a + 1 = ⊤ ↔ a = ⊤ := by
   simp [ENat.add_eq_top]
 
-lemma mul_top_eq_iff : a * ⊤ = b ↔ (a = 0 ∧ b = 0) ∨ (a ≠ 0 ∧ b = ⊤) := by
-  cases b using ENat.recTopZeroSucc with
-  | top => simp [ENat.mul_top_eq_ite]
-  | zero => simp
-  | succ b =>
-    suffices ¬ (if a = 0 then 0 else (⊤ : ℕ∞)) = b + 1 by simpa [ENat.mul_top_eq_ite]
-    split_ifs <;> {rw [eq_comm]; simp}
+-- The lemmas below can be used in a first pass to rephrase some
+-- low-hanging fruit in terms of zero/top equalities.
 
-lemma top_mul_eq_iff : ⊤ * a = b ↔ (a = 0 ∧ b = 0) ∨ (a ≠ 0 ∧ b = ⊤) := by
-  rw [mul_comm, mul_top_eq_iff]
+protected theorem add_le_left_iff : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
+  cases a with
+  | top => simp
+  | coe a => cases b with
+    | top => simp
+    | coe b => norm_cast; simp
 
+protected theorem add_le_right_iff : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
+  rw [add_comm, ENat.add_le_left_iff, or_comm]
+
+protected theorem add_eq_left_iff : a + b = a ↔ a = ⊤ ∨ b = 0 := by
+  rw [← ENat.add_le_left_iff, le_antisymm_iff, and_iff_left (self_le_add_right ..)]
+
+protected theorem add_eq_right_iff : a + b = b ↔ a = 0 ∨ b = ⊤ := by
+  rw [← add_comm, ENat.add_eq_left_iff, or_comm]
+
+protected theorem eq_left_add_iff : a = a + b ↔ a = ⊤ ∨ b = 0 := by
+  rw [eq_comm, ENat.add_eq_left_iff]
+
+protected theorem eq_right_add_iff : b = a + b ↔ b = ⊤ ∨ a = 0 := by
+  rw [eq_comm, ENat.add_eq_right_iff, or_comm]
+
+protected theorem lt_add_left_iff : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  simp [lt_iff_le_and_ne, ENat.eq_left_add_iff]
+
+protected theorem lt_add_right_iff : a < b + a ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  rw [add_comm, ENat.lt_add_left_iff, and_comm]
+
+attribute [enat_grind_presimp] ENat.add_le_right_iff ENat.add_le_left_iff ENat.add_eq_right_iff
+  ENat.add_eq_left_iff ENat.eq_left_add_iff ENat.eq_right_add_iff ENat.lt_add_left_iff
+  ENat.lt_add_right_iff
+
+end ENat
 
 namespace Grind
 
--- @[enat_to_nat_top]
--- protected theorem add_eq_top_iff :
---     a + b = ⊤ ↔ (a = ⊤ ∧ b ≠ ⊤) ∨ (a ≠ ⊤ ∧ b = ⊤) ∨ (a = ⊤ ∧ b = ⊤) := by
---   rw [WithTop.add_eq_top]
---   grind
+variable {a b : ℕ∞}
 
--- @[enat_to_nat_top]
--- protected theorem mul_eq_top_iff : a * b = ⊤ ↔
---     (a = ⊤ ∧ b ≠ 0 ∧ b ≠ ⊤) ∨
---     (a ≠ 0 ∧ a ≠ ⊤ ∧ b = ⊤) ∨
---     (a = ⊤ ∧ b = ⊤) := by
---   grind [ENat.zero_ne_top, ENat.mul_eq_top_iff]
+/-
+The idea is that we take every `ℕ∞` (inequality) `h`, and rephrase it in the form
+`h₀ ∨ h₁`, where `h₀` is the statement that `h` holds and all relevant terms are finite,
+and `h₁` is some boolean combination of terms of the form `x ≠ ⊤` and `x = 0`.
 
--- @[enat_to_nat_top]
--- protected theorem sub_eq_top_iff : a - b = ⊤ ↔ a = ⊤ ∧ b ≠ ⊤ := by simp
+This
+-/
+
+--the predicates for `ℕ∞` corresponding to the properties of being finite, and being zero.
+/-- `a : ℕ∞` is finite. -/
+def IsNat (a : ℕ∞) := a ≠ ⊤
+
+/-- `a : ℕ∞` is zero. -/
+def IsZero (a : ℕ∞) := a = 0
+
+lemma isNat_add_iff : IsNat (a + b) ↔ IsNat a ∧ IsNat b := by
+  simp [IsNat, ENat.add_eq_top]
+
+lemma isNat_mul_iff : IsNat (a * b) ↔ (IsNat a ∧ IsNat b) ∨ IsZero a ∨ IsZero b := by
+  grind [IsNat, ENat.mul_eq_top_iff, IsZero, ENat.top_ne_zero]
+
+lemma isNat_zero : IsNat 0 := zero_ne_top
+
+lemma isNat_one : IsNat 1 := one_ne_top
+
+lemma isNat_ofNat (a : ℕ) [a.AtLeastTwo] : IsNat ofNat(a) := by
+  simp [IsNat]
+
+lemma isNat_coe {a : ℕ} : IsNat a := by
+  simp [IsNat]
+
+lemma not_isNat_top : ¬ IsNat ⊤ := by
+  simp [IsNat]
+
+lemma isZero_zero : IsZero 0 := rfl
+
+lemma IsZero.isNat (h : IsZero a) : IsNat a := by
+  obtain rfl := h
+  simp [IsNat]
+
+lemma not_isZero_one : ¬ IsZero 1 := by
+  simp [IsZero]
+
+lemma not_isZero_ofNat {a : ℕ} [a.AtLeastTwo] : ¬ IsZero ofNat(a) := by
+  simp [IsZero]
+
+lemma isZero_coe {a : ℕ} : IsZero a ↔ a = 0 := by
+  simp [IsZero]
+
+def NatCmp (r : ℕ → ℕ → Prop) (a b : ℕ∞) := ∃ a₀ b₀, r a₀ b₀ ∧ a₀ = a ∧ b₀ = b
+
+lemma NatCmp.isNat_left {r} (h : NatCmp r a b) : IsNat a := by
+  obtain ⟨a₀, -, -, rfl, -⟩ := h
+  simp [IsNat]
+
+lemma NatCmp.isNat_right {r} (h : NatCmp r a b) : IsNat b := by
+  obtain ⟨-, b₀, -, -, rfl⟩ := h
+  simp [IsNat]
+
+lemma NatCmp.ne_left {r} (h : NatCmp r a b) : a ≠ ⊤ := by
+  obtain ⟨a₀, -, -, rfl, -⟩ := h
+  simp
+
+lemma NatCmp.ne_right {r} (h : NatCmp r a b) : b ≠ ⊤ := by
+  obtain ⟨-, b₀, -, -, rfl⟩ := h
+  simp
+
+lemma not_natCmp_left {r} : ¬ NatCmp r ⊤ a :=
+  fun h ↦ h.ne_left rfl
+
+lemma not_natCmp_right {r} : ¬ NatCmp r a ⊤ :=
+  fun h ↦ h.ne_right rfl
+
+lemma natCmp_coe_coe {r} {a b : ℕ} : NatCmp r a b ↔ r a b := by
+  simp [NatCmp]
+
+lemma natCmp_ofNat {r} {a b : ℕ} [a.AtLeastTwo] [b.AtLeastTwo] :
+    NatCmp r ofNat(a) ofNat(b) ↔ r a b :=
+  ⟨fun ⟨a₀, b₀, hr, ha, hb⟩ ↦ by rwa [← coe_inj.1 ha, ← coe_inj.1 hb],
+    fun hr ↦ ⟨a, b, hr, rfl, rfl⟩⟩
+
+lemma natCmp_ofNat_coe {r} {a b : ℕ} [a.AtLeastTwo] : NatCmp r ofNat(a) b ↔ r a b :=
+  ⟨fun ⟨a₀, b₀, hr, ha, hb⟩ ↦ by rwa [← coe_inj.1 ha, ← coe_inj.1 hb],
+    fun hr ↦ ⟨a, b, hr, rfl, rfl⟩⟩
+
+lemma natCmp_coe_ofNat {r} {a b : ℕ} [b.AtLeastTwo] : NatCmp r a ofNat(b) ↔ r a b :=
+  ⟨fun ⟨a₀, b₀, hr, ha, hb⟩ ↦ by rwa [← coe_inj.1 ha, ← coe_inj.1 hb],
+    fun hr ↦ ⟨a, b, hr, rfl, rfl⟩⟩
+
+lemma natCmp_one_coe {r} {a : ℕ} : NatCmp r 1 a ↔ r 1 a := by
+  simp [NatCmp]
+
+lemma natCmp_zero_coe {r} {a : ℕ} : NatCmp r 0 a ↔ r 0 a := by
+  simp [NatCmp]
+
+lemma natCmp_coe_one {r} {a : ℕ} : NatCmp r a 1 ↔ r a 1 := by
+  simp [NatCmp]
+
+lemma natCmp_coe_zero {r} {a : ℕ} : NatCmp r a 0 ↔ r a 0 := by
+  simp [NatCmp]
+
+lemma natCmp_eq_zero : NatCmp (· = ·) a 0 ↔ IsZero a := by
+  cases a with simp +contextual [NatCmp, IsZero]
+
+lemma natCmp_zero_eq : NatCmp (· = ·) 0 a ↔ IsZero a := by
+  cases a with simp +contextual [NatCmp, IsZero, eq_comm]
+
+lemma natCmp_zero_le : NatCmp (· ≤ ·) 0 a ↔ IsNat a := by
+  cases a with simp +contextual [NatCmp, IsNat]
+
+lemma natCmp_one_le : NatCmp (· ≤ ·) 1 a ↔ IsNat a ∧ ¬ IsZero a := by
+  cases a with simp [NatCmp, IsNat, IsZero, Nat.one_le_iff_ne_zero]
+
+lemma natCmp_zero_lt : NatCmp (· < ·) 0 a ↔ IsNat a ∧ ¬ IsZero a := by
+  cases a with simp [NatCmp, IsNat, IsZero, Nat.pos_iff_ne_zero]
+
+lemma natCmp_le_zero : NatCmp (· ≤ ·) a 0 ↔ IsZero a := by
+  cases a with simp [NatCmp, IsZero, eq_comm]
+
+lemma natCmp_lt_one : NatCmp (· < ·) a 1 ↔ IsZero a := by
+  cases a with simp [NatCmp, IsZero, eq_comm]
+
+lemma natCmp_ne_zero : NatCmp (· ≠ ·) a 0 ↔ ¬ IsZero a ∧ IsNat a := by
+  cases a with simp [NatCmp, IsNat, IsZero]
+
+lemma natCmp_zero_ne : NatCmp (· ≠ ·) 0 a ↔ ¬ IsZero a ∧ IsNat a := by
+  cases a with simp [NatCmp, IsNat, IsZero, eq_comm]
+
+lemma NatCmp.not_isZero_of_ofNat_le {a : ℕ} [a.AtLeastTwo] (h : NatCmp (· ≤ ·) ofNat(a) b) :
+    ¬ IsZero b := by
+  cases b with
+  | top => simp [IsZero]
+  | coe b =>
+    simp only [IsZero, Nat.cast_eq_zero]
+    rintro rfl
+    simp [NatCmp] at h
+
+lemma NatCmp.not_isZero_of_lt (h : NatCmp (· < ·) a b) : ¬ IsZero b := by
+  rintro rfl
+  simp [NatCmp] at h
+
+@[enat_grind_canonize]
+protected theorem le_iff :
+    a ≤ b ↔ ¬ IsNat b ∨ NatCmp (· ≤ ·) a b ∧ IsNat a ∧ IsNat b := by
+  cases a with cases b with simp [NatCmp, IsNat]
+
+@[enat_grind_canonize]
+protected theorem eq_iff :
+    a = b ↔ ¬ IsNat a ∧ ¬ IsNat b ∨ NatCmp (· = ·) a b ∧ IsNat a ∧ IsNat b := by
+  cases a with cases b with simp [NatCmp, IsNat]
+
+@[enat_grind_canonize]
+protected theorem lt_iff :
+    a < b ↔ (IsNat a ∧ ¬ IsNat b) ∨ NatCmp (· < ·) a b ∧ IsNat a ∧ IsNat b := by
+  cases a with cases b with simp [NatCmp, IsNat]
+
+@[enat_grind_canonize]
+protected theorem ne_iff : a ≠ b ↔ (IsNat a ∧ ¬ IsNat b) ∨
+    (IsNat b ∧ ¬ IsNat a) ∨ NatCmp (· ≠ ·) a b := by
+  cases a with cases b with simp [NatCmp, IsNat]
+
+-- These next four lemmas are workarounds for the norm_cast bug.
+@[enat_grind_canonize]
+lemma ofNat_mul_cast (a : ℕ) (b : ℕ) [a.AtLeastTwo] : ofNat(a) * (b : ℕ∞) = a * b := by
+  rfl
+
+@[enat_grind_canonize]
+lemma mul_cast_ofNat (a : ℕ) (b : ℕ) [b.AtLeastTwo] : (a : ℕ∞) * ofNat(b) = a * b := by
+  rfl
+
+@[enat_grind_canonize]
+lemma ofNat_add_cast (a : ℕ) (b : ℕ) [a.AtLeastTwo] : ofNat(a) + (b : ℕ∞) = a + b := by
+  rfl
+
+@[enat_grind_canonize]
+lemma add_cast_ofNat (a : ℕ) (b : ℕ) [b.AtLeastTwo] : (a : ℕ∞) + ofNat(b) = a + b := by
+  rfl
+
+attribute [grind.] NatCmp.ne_left NatCmp.ne_right not_natCmp_left not_natCmp_right IsZero.isNat
+  NatCmp.isNat_left NatCmp.isNat_right NatCmp.not_isZero_of_ofNat_le NatCmp.not_isZero_of_lt
+
+attribute [enat_grind_canonize] isNat_add_iff isNat_mul_iff isNat_zero isNat_one
+  isNat_ofNat isNat_coe not_isNat_top isZero_zero not_isZero_one not_isZero_ofNat isZero_coe
+  natCmp_ofNat natCmp_coe_coe natCmp_coe_coe natCmp_zero_lt natCmp_one_le natCmp_lt_one
+  natCmp_le_zero natCmp_one_le natCmp_zero_le natCmp_zero_ne natCmp_ne_zero natCmp_eq_zero
+  natCmp_zero_eq not_natCmp_left not_natCmp_right natCmp_one_coe natCmp_zero_coe
+  natCmp_coe_one natCmp_coe_zero natCmp_coe_ofNat natCmp_ofNat_coe
+
+attribute [enat_grind_canonize] le_top not_false or_false false_or false_and and_false and_true
+  true_and not_false_iff not_true true_or not_not
+
+
+lemma IsNat.exists_eq_coe (h :IsNat a) : ∃ a₀ : ℕ, a = a₀ := by
+  lift a to ℕ using h
+  simp
+
+lemma eq_top_of_not_isNat (h : ¬ IsNat a) : a = ⊤ := by
+  simpa [IsNat] using h
 
 
 
-def NatEq (a b : ℕ∞) : Prop := a = b ∧ a ≠ ⊤ ∧ b ≠ ⊤
-
-def NatLE (a b : ℕ∞) : Prop := a ≤ b ∧ a ≠ ⊤ ∧ b ≠ ⊤
-
-def NatLT (a b : ℕ∞) : Prop := a < b ∧ a ≠ ⊤ ∧ b ≠ ⊤
-
-def NatNe (a b : ℕ∞) : Prop := a ≠ b ∧ a ≠ ⊤ ∧ b ≠ ⊤
-
-def EqTop (a : ℕ∞) : Prop := a = ⊤
-
-def NeTop (a : ℕ∞) : Prop := a ≠ ⊤
-
-def EqZero (a : ℕ∞) : Prop := a = 0
-
-protected theorem NatEq.neTop_left (h : NatEq a b) : NeTop a := h.2.1
-
-protected theorem NatEq.neTop_right (h : NatEq a b) : NeTop b := h.2.2
-
-@[enat_to_nat_top]
-protected theorem neTop_iff (a : ℕ∞) : NeTop a ↔ ¬ EqTop a := sorry
-
-@[enat_to_nat_top]
-protected theorem le_iff : a ≤ b ↔ EqTop b ∨ (NatLE a b ∧ NeTop a ∧ NeTop b) := sorry
-
-@[enat_to_nat_top]
-protected theorem eq_iff : a = b ↔ (EqTop a ∧ EqTop b) ∨ (NatEq a b ∧ NeTop a ∧ NeTop b) := sorry
-
-@[enat_to_nat_top]
-protected theorem lt_iff : a < b ↔ (NeTop a ∧ EqTop b) ∨ (NatLT a b ∧ NeTop a ∧ NeTop b) := sorry
-
-@[enat_to_nat_top]
-protected theorem ne_iff : a ≠ b ↔ (EqTop a ∧ NeTop b) ∨ (EqTop b ∧ NeTop a) ∨
-    (NatNe a b ∧ NeTop a ∧ NeTop b) := sorry
-
-@[enat_to_nat_top]
-protected theorem eqTop_add : EqTop (a + b) ↔ EqTop a ∨ EqTop b := sorry
-
-@[enat_to_nat_top]
-protected theorem eqTop_mul :
-  EqTop (a * b) ↔ (EqTop a ∧ ¬ EqZero b) ∨ (¬ EqZero a ∧ EqTop b) := sorry
-
-@[enat_to_nat_top, grind.]
-protected theorem EqTop.not_eqZero (h : EqTop a) : ¬ EqZero a := sorry
-
-@[enat_to_nat_top, grind.]
-protected theorem EqZero.not_eqTop (h : EqZero a) : ¬ EqTop a := sorry
-
-@[enat_to_nat_top]
-protected theorem not_eqTop_zero : ¬ EqTop 0 := sorry
-
-@[enat_to_nat_top]
-protected theorem not_eqTop_one : ¬ EqTop 1 := sorry
-
-@[enat_to_nat_top]
-protected theorem not_eqTop_cast {n : ℕ} : ¬ EqTop n := sorry
-
-@[enat_to_nat_top]
-protected theorem eqTop_top : EqTop ⊤ := sorry
-
-@[enat_to_nat_top]
-protected theorem natNe_zero : NatNe b 0 ↔ ¬ EqZero b := sorry
-
-@[enat_to_nat_top]
-protected theorem zero_natNe : NatNe 0 b ↔ ¬ EqZero b := sorry
+-- protected theorem coe_mul_symm (a b : ℕ) : (a : ℕ∞) * (b : ℕ∞) =
 
 -- attribute [grind.]
 --  ENat.Grind.eqTop_top ENat.Grind.not_eqTop_cast ENat.Grind.not_eqTop_one
 --     ENat.Grind.not_eqTop_zero ENat.Grind.eqTop_mul
 -- lemma natEq_expand (a b : ℕ∞) : NatEq a b ↔ NatEq a b
 
-variable {a b d e f g : ℕ∞}
-
-attribute [enat_to_nat_top] le_top not_false or_false false_or false_and and_false and_true true_and
-  not_false_iff
-
-macro "prepro": tactic =>
-  `(tactic | (simp only [enat_to_nat_top] at *))
-
-example (h1 : a * b = c) (h2 : c < d) (h3 : b ≠ 0) : False := by
-  prepro
-  have ha : ¬ EqTop a := by grind
-  simp [ha] at *
-  have hc : ¬ EqTop c := by grind
-  simp [hc] at *
+-- variable {a b d e f g : ℕ∞}
 
 
+macro "preprocess" : tactic => `(tactic | simp only [enat_grind_presimp] at *)
+
+/-- `process` applies `enat_to_nat_top` lemmas everywhere to canonicalize `ℕ∞` equalities and
+inequalities into boolean combinations of `EqTop` and `NatLE`/`NatLT`/`NatNe`/`NatEq`.
+It will also convert `ENat` literals into coerced `Nat` literals,
+and use `norm_cast` to simplify coercions. -/
+macro "process" : tactic => `(tactic| focus (
+    -- (try simp only [← Nat.cast_add, ← Nat.cast_mul] at *);
+    (try simp only [enat_grind_canonize, ← Nat.cast_add, ← Nat.cast_mul] at *)
+  )
+)
+
+end Grind
+
+
+open Grind
+
+section Examples
+variable {a b c d e f : ℕ∞}
 
 
 
+/-- The hypotheses imply that `a` is finite. -/
+example (h1 : a * b = c) (h2 : c < d) (h3 : b ≠ 0) : a ≠ ⊤ := by
+  process
+  grind
 
+example (hb : 2 ≤ b) : b ≠ 0 := by
+  process
+  grind
 
+example (h1 : a * b = c) (h2 : 2 ≤ a) (h3 : 3 ≤ b) (h4 : c < 4 * a + 5 * b) : 6 ≤ c := by
+  try preprocess
+  process
+  have ha : IsNat a := by grind
+  have hb : IsNat b := by grind
+  have hc : IsNat c := by grind
+  obtain ⟨a,rfl⟩ := ha.exists_eq_coe
+  obtain ⟨b,rfl⟩ := hb.exists_eq_coe
+  obtain ⟨c,rfl⟩ := hc.exists_eq_coe
+  process
+  -- nice `Nat` goal now. Unfortunately `omega` can't handle it.
+  exact h1 ▸ Nat.mul_le_mul h2 h3
 
--- @[enat_to_nat_top]
--- protected theorem add_eq_iff : a + b = c ↔
---     (a = ⊤ ∧ b = ⊤ ∧ c = ⊤) ∨
---     (a = ⊤ ∧ b ≠ ⊤ ∧ c = ⊤) ∨
---     (a ≠ ⊤ ∧ b = ⊤ ∧ c = ⊤) ∨
---     (a + b = c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   cases c with
---   | top => grind [WithTop.add_eq_top]
---   | coe c => simp +contextual [imp_and, imp_not_comm (a := _ + _ = _)]
+example (h1 : a + b * c ≠ ⊤) : a ≠ ⊤ := by
+  process
+  grind
 
--- @[enat_to_nat_top]
--- protected theorem eq_add_iff : a = b + c ↔
---     (a = ⊤ ∧ c = ⊤) ∨
---     (a = ⊤ ∧ b = ⊤) ∨
---     (a = b + c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   rw [eq_comm, ENat.Grind.add_eq_iff]
---   tauto
-
--- @[enat_to_nat_top]
--- protected theorem mul_eq_iff : a * b = c ↔
---     (a = ⊤ ∧ b ≠ 0 ∧ c = ⊤) ∨
---     (a ≠ 0 ∧ b = ⊤ ∧ c = ⊤) ∨
---     (a = 0 ∧ c = 0)          ∨
---     (b = 0 ∧ c = 0)          ∨
---     (a * b = c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   cases c using ENat.recTopZeroSucc with
---   | top => grind [ENat.zero_ne_top, ENat.mul_eq_top_iff]
---   | zero => grind [ENat.zero_ne_top, Nat.cast_zero, mul_eq_zero]
---   | succ c => simp +contextual [imp_and, imp_not_comm (b := _ = ⊤), top_mul_eq_iff, mul_top_eq_iff]
-
--- @[enat_to_nat_top]
--- protected theorem add_le_iff : a + b ≤ c ↔
---     (c = ⊤) ∨ (a + b ≤ c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   cases c with
---   | top => grind [le_top]
---   | coe c => simp +contextual [imp_and, imp_not_comm (b := _ = ⊤)]
-
--- @[enat_to_nat_top]
--- protected theorem le_add_iff : a ≤ b + c ↔
---     (b = ⊤) ∨ (c = ⊤) ∨ (a ≤ b + c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   cases c with
---   | top => simp
---   | coe c =>
---   simp only [coe_ne_top, ne_eq, not_false_eq_true, and_true, false_or]
---   cases b with
---   | top => simp
---   | coe b => simp +contextual [imp_not_comm (b := _ = ⊤), ← Nat.cast_add]
-
--- @[enat_to_nat_top]
--- protected theorem mul_le_iff : a * b ≤ c ↔
---     (c = ⊤) ∨ (a = 0) ∨ (b = 0) ∨ (a * b ≤ c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   cases c using ENat.recTopZeroSucc with
---   | top => simp
---   | zero => grind [nonpos_iff_eq_zero, mul_eq_zero, zero_ne_top]
---   | succ c =>
---   cases a with
---   | top =>
---     suffices (if b = 0 then 0 else (⊤ : ℕ∞)) ≤ c + 1 ↔ b = 0 by simpa [ENat.top_mul_eq_ite]
---     split_ifs <;> simpa
---   | coe a =>
---   cases b with
---   | top =>
---     suffices (if a = 0 then 0 else ⊤ : ℕ∞) ≤ c + 1 ↔ a = 0 by simpa [ENat.mul_top_eq_ite]
---     split_ifs <;> simpa
---   | coe b => simp +contextual [iff_def, or_imp]
-
--- @[enat_to_nat_top]
--- protected theorem le_mul_iff : a ≤ b * c ↔
---     (b = ⊤ ∧ c ≠ 0) ∨ (b ≠ 0 ∧ c = ⊤) ∨ (a = 0) ∨ (a ≤ b * c ∧ a ≠ ⊤ ∧ b ≠ ⊤ ∧ c ≠ ⊤) := by
---   have aux {x y : ℕ} : x ≤ y * (⊤ : ℕ∞) ↔ y ≠ 0 ∨ x = 0 := by
---     simp_rw [ENat.mul_top_eq_ite, Nat.cast_eq_zero]
---     split_ifs with h <;> simp [h]
---   cases a with
---   | top => simp [ENat.mul_eq_top_iff]
---   | coe a =>
---   cases b with
---   | top =>
---     cases c with
---     | top => simp
---     | coe c => simp [mul_comm ⊤, aux]
---   | coe b =>
---   cases c with
---   | top => simp [aux]
---   | coe c => simp +contextual [iff_def, or_imp]
-
-
--- -- @[enat_to_nat_top]
--- -- protected theorem lt_add_iff : a < b + c ↔
-
--- -- example {a b c d : ℕ∞} (h1 : a + 2 * b = c + d) (h2 : )
+end Examples
