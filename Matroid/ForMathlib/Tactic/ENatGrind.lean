@@ -1,15 +1,16 @@
 import Mathlib.Data.ENat.Basic
+import Matroid.ForMathlib.ENat
 import Matroid.ForMathlib.Tactic.ENatGrindPrelude
 
 set_option linter.style.longLine false
 
 namespace ENat.Grind
 
-variable {a b : ℕ∞}
+variable {a b : ℕ∞} {r : ℕ → ℕ → Prop}
 
 /- These lemmas look for low-hanging fruit in the existing `ENat` (in)equalities to deduce
 logical information about variables being `⊤` or `0`. For instance, `a + b ≤ a + c` will
-be simplified to `b ≤ c ∨ a = ⊤`. Arguably many of these could be `@[simp]` lemmas unconditionally.
+be simplified to `b ≤ c ∨ a = ⊤`.
 
 This is run as a preprocessing step; after the loop in the tactic has started running,
 the hypotheses will not be in a form that these lemmas can see, so there is no point trying
@@ -39,80 +40,111 @@ For example, `a < b` will become `(Rel (· < ·) a b ∧ IsNat a ∧ IsNat b) �
 Once this is done, there is a good amount of transparent logical information on which variables
 are known to be zero/nonzero and finite/infinite. From here, we use `grind` to attempt to
 deduce that individual variables are (non)zero or (in)finite. Whenever we can do this for
-a variable, we can substitute it out and repeat. The standard use case is where the goal is
+a variable, we can substitute it out and repeat.
+
+The standard use case is where the goal is
 trivial in all cases except where every variable is `Nat`; if this is the case, then
 this process should end with a purely `Nat` goal. -/
 
 /-- `a : ℕ∞` is finite. -/
-def IsNat (a : ℕ∞) := a ≠ ⊤
+def IsNat (a : ℕ∞) := ∃ a₀ : ℕ, a = a₀
 
 /-- `a : ℕ∞` is zero. -/
 def IsZero (a : ℕ∞) := a = 0
 
+lemma isNat_iff : IsNat a ↔ a ≠ ⊤ := by cases a with simp [IsNat]
+
 -- simp lemmas
-lemma isNat_add_iff : IsNat (a + b) ↔ IsNat a ∧ IsNat b := by
-  simp [IsNat, ENat.add_eq_top]
+lemma isNat_add_iff : IsNat (a + b) ↔ IsNat a ∧ IsNat b := by simp [isNat_iff, ENat.add_eq_top]
 lemma isNat_mul_iff : IsNat (a * b) ↔ (IsNat a ∧ IsNat b) ∨ IsZero a ∨ IsZero b := by
-  grind [IsNat, ENat.mul_eq_top_iff, IsZero, ENat.top_ne_zero]
+  grind [isNat_iff, ENat.mul_eq_top_iff, IsZero, ENat.top_ne_zero]
 lemma isNat_sub_iff : IsNat (a - b) ↔ IsNat a ∨ ¬ IsNat b := by
-  grind [IsNat, sub_eq_top_iff]
-lemma isNat_zero : IsNat 0 := zero_ne_top
-lemma isNat_one : IsNat 1 := one_ne_top
-lemma isNat_ofNat (a : ℕ) [a.AtLeastTwo] : IsNat ofNat(a) := by simp [IsNat]
+  grind [isNat_iff, sub_eq_top_iff]
+lemma isNat_pow_iff {b : ℕ} : IsNat (a ^ b) ↔ IsNat a ∨ b = 0 := by
+  grind [isNat_iff, pow_eq_top_iff]
+lemma isZero_add_iff : IsZero (a + b) ↔ IsZero a ∧ IsZero b := by simp [IsZero]
+lemma isZero_mul_iff : IsZero (a * b) ↔ IsZero a ∨ IsZero b := by simp [IsZero]
+lemma isZero_sub_iff : IsZero (a - b) ↔ a ≤ b := by
+  cases a <;> cases b <;> simp [← ENat.coe_sub, IsZero, Nat.sub_eq_zero_iff_le]
+lemma isZero_pow_iff {b : ℕ} : IsZero (a ^ b) ↔ IsZero a ∧ b ≠ 0 := by simp [IsZero]
+lemma isNat_zero : IsNat 0 := isNat_iff.2 zero_ne_top
+lemma isNat_one : IsNat 1 := isNat_iff.2 one_ne_top
+lemma isNat_ofNat (a : ℕ) [a.AtLeastTwo] : IsNat ofNat(a) := by simp [isNat_iff]
 lemma isNat_coe {a : ℕ} : IsNat a := by simp [IsNat]
 lemma not_isNat_top : ¬ IsNat ⊤ := by simp [IsNat]
+lemma not_isZero_top : ¬ IsZero ⊤ := by simp [IsZero]
 lemma isZero_zero : IsZero 0 := rfl
 lemma not_isZero_one : ¬ IsZero 1 := by simp [IsZero]
 lemma not_isZero_ofNat {a : ℕ} [a.AtLeastTwo] : ¬ IsZero ofNat(a) := by simp [IsZero]
 lemma isZero_coe {a : ℕ} : IsZero a ↔ a = 0 := by simp [IsZero]
 
 attribute [enat_grind_canonize] isNat_zero isNat_one isNat_ofNat isNat_coe not_isNat_top isZero_zero
-isNat_add_iff isNat_mul_iff isNat_sub_iff not_isZero_one not_isZero_ofNat isZero_coe
+isNat_add_iff isNat_mul_iff isNat_sub_iff isNat_pow_iff not_isZero_one not_isZero_ofNat isZero_coe
+not_isZero_top isZero_add_iff isZero_mul_iff isZero_sub_iff isZero_pow_iff
 
 -- grind lemmaa
 @[grind.]
-lemma IsZero.isNat (h : IsZero a) : IsNat a := by obtain rfl := h; simp [IsNat]
+lemma IsZero.isNat (h : IsZero a) : IsNat a := by obtain rfl := h; simp [isNat_iff]
 
-/-- for a relation `r` on `ℕ`, `Rel r` is a wrapper for the lift of `r` to `ℕ∞`.
-It will appear only in conjunction with proofs that `a` and `b` are not `⊤`. -/
+/-- for a relation `r` on `ℕ`, `Rel r` is a wrapper for the lift of `r` to `ℕ∞`. -/
 @[mk_iff]
 structure Rel (r : ℕ → ℕ → Prop) (a b : ℕ∞) : Prop where
   ne_left : a ≠ ⊤
   ne_right : b ≠ ⊤
   rel : r a.toNat b.toNat
 
--- simp lemmas for the interaction of `Rel` with coercions, numerals, zeroes and ones.
-lemma rel_coe_coe {r} {a b : ℕ} : Rel r a b ↔ r a b := by simp [rel_iff]
-lemma rel_ofNat_coe {r} {a b : ℕ} [a.AtLeastTwo] : Rel r ofNat(a) b ↔ r a b := by simp [rel_iff]
-lemma rel_coe_ofNat {r} {a b : ℕ} [b.AtLeastTwo] : Rel r a ofNat(b) ↔ r a b := by simp [rel_iff]
-lemma rel_ofNat_ofNat {r} {a b : ℕ} [a.AtLeastTwo] [b.AtLeastTwo] :
+-- simp lemmas for the interaction of `Rel` with coercions, infinities, numerals, zeroes and ones.
+lemma rel_swap : Rel r a b ↔ Rel (Function.swap r) b a := by grind only [rel_iff]
+lemma not_rel_top_left : ¬ Rel r ⊤ a := fun h ↦ h.ne_left rfl
+lemma not_rel_top_right : ¬ Rel r a ⊤ := fun h ↦ h.ne_right rfl
+lemma rel_coe_coe {a b : ℕ} : Rel r a b ↔ r a b := by simp [rel_iff]
+lemma rel_ofNat_coe {a b : ℕ} [a.AtLeastTwo] : Rel r ofNat(a) b ↔ r a b := by simp [rel_iff]
+lemma rel_coe_ofNat {a b : ℕ} [b.AtLeastTwo] : Rel r a ofNat(b) ↔ r a b := by simp [rel_iff]
+lemma rel_ofNat_ofNat {a b : ℕ} [a.AtLeastTwo] [b.AtLeastTwo] :
     Rel r ofNat(a) ofNat(b) ↔ r a b := by simp [rel_iff]
-lemma rel_one_ofNat {r} {a : ℕ} [a.AtLeastTwo] : Rel r 1 ofNat(a) ↔ r 1 a := by simp [rel_iff]
-lemma rel_ofNat_one {r} {a : ℕ} [a.AtLeastTwo] : Rel r 1 ofNat(a) ↔ r 1 a := by simp [rel_iff]
-lemma rel_one_coe {r} {a : ℕ} : Rel r 1 a ↔ r 1 a := by simp [rel_iff]
-lemma rel_coe_one {r} {a : ℕ} : Rel r 1 a ↔ r 1 a := by simp [rel_iff]
-lemma rel_zero_le {a : ℕ∞} : Rel (· ≤ ·) 0 a ↔ IsNat a := by simp [IsNat, rel_iff]
-lemma rel_one_le {a : ℕ∞} : Rel (· ≤ ·) 1 a ↔ ¬ IsZero a ∧ IsNat a := by
-  simp [rel_iff, IsZero, Nat.one_le_iff_ne_zero, IsNat]
-lemma rel_zero_lt {a : ℕ} : Rel (· < ·) 0 a ↔ ¬ IsZero a ∧ IsNat a := by
-  simp [rel_iff, IsZero, Nat.pos_iff_ne_zero, IsNat]
-lemma rel_zero_ne {a : ℕ∞} : Rel (· ≠ ·) 0 a ↔ ¬ IsZero a ∧ IsNat a :=  by
-  simp [rel_iff, IsZero, eq_comm, IsNat]
-lemma rel_ne_zero {a : ℕ∞} : Rel (· ≠ ·) a 0 ↔ ¬ IsZero a ∧ IsNat a := by
-  simp [rel_iff, IsZero, IsNat]
-lemma rel_lt_zero {a : ℕ∞} : ¬ Rel (· < ·) a 0 := by simp [rel_iff]
-lemma rel_le_zero {a : ℕ∞} : Rel (· ≤ ·) a 0 ↔ IsZero a := by
-  simp +contextual [rel_iff, IsZero, iff_def]
-lemma rel_eq_zero {a : ℕ∞} : Rel (· = ·) a 0 ↔ IsZero a := by
-  simp +contextual [rel_iff, IsZero, iff_def]
-lemma rel_zero_eq {a : ℕ∞} : Rel (· = ·) 0 a ↔ IsZero a := by
+lemma rel_one_ofNat {a : ℕ} [a.AtLeastTwo] : Rel r 1 ofNat(a) ↔ r 1 a := by simp [rel_iff]
+lemma rel_ofNat_one {a : ℕ} [a.AtLeastTwo] : Rel r 1 ofNat(a) ↔ r 1 a := by simp [rel_iff]
+lemma rel_one_coe {a : ℕ} : Rel r 1 a ↔ r 1 a := by simp [rel_iff]
+lemma rel_coe_one {a : ℕ} : Rel r 1 a ↔ r 1 a := by simp [rel_iff]
+lemma rel_zero_le {a : ℕ∞} : Rel (· ≤ ·) 0 a ↔ IsNat a := by simp [isNat_iff, rel_iff]
+lemma rel_one_le : Rel (· ≤ ·) 1 a ↔ ¬ IsZero a ∧ IsNat a := by
+  simp [rel_iff, IsZero, Nat.one_le_iff_ne_zero, isNat_iff]
+lemma rel_zero_lt : Rel (· < ·) 0 a ↔ ¬ IsZero a ∧ IsNat a := by
+  simp [rel_iff, IsZero, Nat.pos_iff_ne_zero, isNat_iff]
+lemma rel_zero_ne : Rel (· ≠ ·) 0 a ↔ ¬ IsZero a ∧ IsNat a :=  by
+  simp [rel_iff, IsZero, eq_comm, isNat_iff]
+lemma rel_ne_zero : Rel (· ≠ ·) a 0 ↔ ¬ IsZero a ∧ IsNat a := by
+  simp [rel_iff, IsZero, isNat_iff]
+lemma rel_lt_zero : ¬ Rel (· < ·) a 0 := by simp [rel_iff]
+lemma rel_lt_one : Rel (· < ·) a 1 ↔ IsZero a := by simp +contextual [rel_iff, IsZero, iff_def]
+lemma rel_le_zero : Rel (· ≤ ·) a 0 ↔ IsZero a := by simp +contextual [rel_iff, IsZero, iff_def]
+lemma rel_eq_zero : Rel (· = ·) a 0 ↔ IsZero a := by simp +contextual [rel_iff, IsZero, iff_def]
+lemma rel_zero_eq : Rel (· = ·) 0 a ↔ IsZero a := by
   simp +contextual [rel_iff, IsZero, iff_def, eq_comm]
+lemma rel_top_mul_left {a b : ℕ∞} : Rel r (⊤ * a) b ↔ IsZero a ∧ Rel r 0 b := by
+  obtain rfl | (hne : ¬ IsZero a) := eq_or_ne a 0
+  · simp [isZero_zero]
+  simp [top_mul hne, hne, rel_iff]
+lemma rel_top_mul_right {a b : ℕ∞} : Rel r a (⊤ * b) ↔ IsZero b ∧ Rel r a 0 := by
+  rw [← rel_swap, rel_top_mul_left, rel_swap]
+lemma rel_mul_top_left {a b : ℕ∞} : Rel r (a * ⊤) b ↔ IsZero a ∧ Rel r 0 b := by
+  rw [mul_comm, rel_top_mul_left]
+lemma rel_mul_top_right {a b : ℕ∞} : Rel r a (b * ⊤) ↔ IsZero b ∧ Rel r a 0 := by
+  rw [mul_comm, rel_top_mul_right]
+lemma rel_top_sub_left {a b : ℕ∞} : Rel r (⊤ - a) b ↔ ¬ IsNat a ∧ Rel r 0 b := by
+  cases a with
+  | top => simp [not_isNat_top]
+  | coe a => simp [rel_iff, isNat_iff]
+lemma rel_top_sub_right {a b : ℕ∞} : Rel r a (⊤ - b) ↔ ¬ IsNat b ∧ Rel r a 0 := by
+  rw [← rel_swap, rel_top_sub_left, rel_swap]
 
 attribute [enat_grind_canonize] rel_coe_coe rel_ofNat_coe rel_coe_ofNat rel_one_ofNat rel_ofNat_one
-rel_one_coe rel_coe_one rel_zero_le rel_zero_lt rel_zero_ne rel_ne_zero rel_lt_zero rel_le_zero
-rel_eq_zero rel_zero_eq
+rel_one_coe rel_coe_one rel_zero_le rel_zero_lt rel_one_le rel_zero_ne rel_ne_zero rel_lt_zero
+rel_lt_one rel_le_zero rel_eq_zero rel_zero_eq rel_top_mul_left rel_top_mul_right rel_mul_top_left
+rel_mul_top_right rel_top_sub_left rel_top_sub_right not_rel_top_left not_rel_top_right
 
--- grind lemmas for `Rel`
+-- grind lemmas for `Rel` + `IsZero`. I don't think we need these for `Rel` + `IsNat`,
+-- since `Rel` is always given in conjunction with explicit `IsNat` proofs.
 /-- If `2 ≤ a`, and `a ≤ b`, then -/
 @[grind.] lemma Rel.not_isZero_of_ofNat_le {a : ℕ} [a.AtLeastTwo] (h : Rel (· ≤ ·) ofNat(a) b) :
     ¬ IsZero b := by
@@ -122,6 +154,9 @@ rel_eq_zero rel_zero_eq
 @[grind.] lemma Rel.not_isZero_of_lt (h : Rel (· < ·) a b) : ¬ IsZero b := by
   rintro rfl
   simp [rel_lt_zero] at h
+
+@[grind.] lemma Rel.isZero_of_le (h : Rel (· ≤ ·) a b) (hb : IsZero b) : IsZero a :=
+  rel_le_zero.1 <| hb ▸ h
 
 -- Canonizing lemmas for `Rel`. These take (in)equalities in `ℕ∞` and convert them to
 -- statements in terms of `Rel` and `IsNat`/`IsZero`.
@@ -154,13 +189,9 @@ lemma add_cast_ofNat (a : ℕ) (b : ℕ) [b.AtLeastTwo] : (a : ℕ∞) + ofNat(b
 
 attribute [enat_grind_canonize] ofNat_mul_cast mul_cast_ofNat ofNat_add_cast add_cast_ofNat
 
--- lemmas to simplify once a variable is known to be finite/infinite.
-lemma IsNat.exists_eq_coe (h : IsNat a) : ∃ a₀ : ℕ, a = a₀ := by
-  lift a to ℕ using h
-  simp
-
+-- lemma to simplify once a variable is known to be infinite.
 lemma eq_top_of_not_isNat (h : ¬ IsNat a) : a = ⊤ := by
-  simpa [IsNat] using h
+  simpa [isNat_iff] using h
 
 
 macro "preprocess" : tactic => `(tactic | simp only [enat_grind_presimp] at *)
@@ -176,6 +207,22 @@ macro "process" : tactic => `(tactic| focus (
 end ENat.Grind
 
 open ENat.Grind
+
+/-
+Tactic pseudocode :
+
+`try preprocess`
+repeat :
+  `process`
+  try to resolve the goal by `grind`
+  if goal is all `Nat`, try to resolve by `omega`.
+  repeat :
+    let `a` be an `ENat` in the context, in the goal if possible.
+    try to show `IsNat a`/`IsZero a`/`¬ IsNat a` by `grind`.
+    If successful, then substitute out `a`.
+  if above loop is unsuccessful, pick an `ENat` `a` in the context, in the goal if possible.
+  case split on `IsNat a`.
+-/
 
 section Examples
 variable {a b c d e f : ℕ∞}
@@ -198,7 +245,7 @@ example (h1 : a + 2 ≤ a) : a = ⊤ := by
   process
   -- this is the case split.
   by_cases ha : IsNat a
-  · obtain ⟨a, rfl⟩ := ha.exists_eq_coe
+  · obtain ⟨a, rfl⟩ := ha
     process
     omega
   grind
@@ -210,21 +257,46 @@ example (h1 : a + b ≤ a + c) (h2 : d + c ≤ d) (ha : a < ⊤) (hd : d ≠ ⊤
   process
   grind
 
+example (h1 : a + b * c ≠ ⊤) (hc : 1 ≤ c) : b ≠ ⊤ := by
+  process
+  grind
+
+example (h : a + b = 0) : a ≤ b := by
+  process
+  obtain rfl : IsZero a := by grind
+  process
+  grind
+
 example (h1 : a * b = c) (h2 : 2 ≤ a) (h3 : 3 ≤ b) (h4 : c < 4 * a + 5 * b) : 6 ≤ c := by
   try preprocess -- does nothing
   process
   have ha : IsNat a := by grind
   have hb : IsNat b := by grind
   have hc : IsNat c := by grind
-  obtain ⟨a,rfl⟩ := ha.exists_eq_coe
-  obtain ⟨b,rfl⟩ := hb.exists_eq_coe
-  obtain ⟨c,rfl⟩ := hc.exists_eq_coe
+  obtain ⟨a,rfl⟩ := ha
+  obtain ⟨b,rfl⟩ := hb
+  obtain ⟨c,rfl⟩ := hc
   process
   -- nice `Nat` goal now. Unfortunately `omega` can't handle it.
   exact h1 ▸ Nat.mul_le_mul h2 h3
 
-example (h1 : a + b * c ≠ ⊤) : a ≠ ⊤ := by
+-- The same example with branching.
+example (h1 : a * b = c) (h2 : 2 ≤ a) (h3 : 3 ≤ b) (h4 : c < 4 * a + 5 * b) : 6 ≤ c := by
   process
-  grind
+  cases a with
+  | top => process; grind
+  | coe a =>
+  process
+  cases b with
+  | top => process; grind
+  | coe b =>
+  process
+  cases c with
+  | top => process
+  | coe c =>
+  process
+  -- Nat goal
+  exact h1 ▸ Nat.mul_le_mul h2 h3
+
 
 end Examples

@@ -43,30 +43,30 @@ theorem mul_eq_top_iff : a * b = ⊤ ↔ (a = ⊤ ∧ b ≠ 0) ∨ (a ≠ 0 ∧ 
     ← coe_mul]
 
 @[simp]
-theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by
+protected theorem add_eq_left_iff {a b : ℕ∞} : a + b = a ↔ a = ⊤ ∨ b = 0 := by
   cases a with
   | top => simp
   | coe a => cases b with | top => simp | coe b => norm_cast; simp
 
 @[simp]
-theorem add_eq_right_iff {a b : ℕ∞} : a + b = b ↔ a = 0 ∨ b = ⊤ := by
-  rw [add_comm, add_eq_left_iff, or_comm]
+protected theorem add_eq_right_iff {a b : ℕ∞} : a + b = b ↔ a = 0 ∨ b = ⊤ := by
+  rw [add_comm, ENat.add_eq_left_iff, or_comm]
 
 @[simp]
-theorem eq_add_right_iff {a b : ℕ∞} : b = a + b ↔ a = 0 ∨ b = ⊤ := by
-  rw [eq_comm, add_eq_right_iff]
+protected theorem eq_add_right_iff {a b : ℕ∞} : b = a + b ↔ a = 0 ∨ b = ⊤ := by
+  rw [eq_comm, ENat.add_eq_right_iff]
 
 @[simp]
-theorem eq_add_left_iff {a b : ℕ∞} : a = a + b ↔ b = 0 ∨ a = ⊤ := by
-  rw [eq_comm, add_eq_left_iff, or_comm]
+protected theorem eq_add_left_iff {a b : ℕ∞} : a = a + b ↔ b = 0 ∨ a = ⊤ := by
+  rw [eq_comm, ENat.add_eq_left_iff, or_comm]
 
 @[simp]
-theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
-  rw [← add_eq_left_iff, le_antisymm_iff, and_iff_left (by simp)]
+protected theorem add_le_left_iff {a b : ℕ∞} : a + b ≤ a ↔ a = ⊤ ∨ b = 0 := by
+  rw [← ENat.add_eq_left_iff, le_antisymm_iff, and_iff_left (by simp)]
 
 @[simp]
-theorem add_le_right_iff {a b : ℕ∞} : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
-  rw [add_comm, add_le_left_iff, or_comm]
+protected theorem add_le_right_iff {a b : ℕ∞} : a + b ≤ b ↔ a = 0 ∨ b = ⊤ := by
+  rw [add_comm, ENat.add_le_left_iff, or_comm]
 
 @[simp]
 lemma add_one_le_add_one_iff {a b : ℕ∞} : a + 1 ≤ b + 1 ↔ a ≤ b :=
@@ -85,35 +85,60 @@ lemma one_add_lt_one_add_iff {a b : ℕ∞} : 1 + a < 1 + b ↔ a < b :=
   WithTop.add_lt_add_iff_left (by simp)
 
 @[simp]
-lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
+protected lemma add_one_inj {a b : ℕ∞} : a + 1 = b + 1 ↔ a = b :=
   WithTop.add_right_inj (by simp)
 
 @[simp]
-lemma one_add_inj {a b : ℕ∞} : 1 + a = 1 + b ↔ a = b :=
+protected lemma one_add_inj {a b : ℕ∞} : 1 + a = 1 + b ↔ a = b :=
   WithTop.add_left_inj (by simp)
 
-lemma lt_add_right_iff {a b : ℕ∞} : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := by
-  obtain rfl | hne := eq_zero_or_pos b
-  · simp
-  cases a with
-  | top => simp
-  | coe a =>
-  · cases b with
-    | top => simp
-    | coe b =>
-    · norm_cast at *
-      simp [hne, hne.ne.symm]
-
-lemma lt_add_left_iff {a b : ℕ∞} : b < a + b ↔ b ≠ ⊤ ∧ a ≠ 0 := by
-  rw [add_comm, lt_add_right_iff]
+@[simp]
+protected theorem eq_left_add_iff : a = a + b ↔ a = ⊤ ∨ b = 0 := by
+  rw [eq_comm, ENat.add_eq_left_iff]
 
 @[simp]
-lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
-  simp [lt_add_right_iff]
+protected theorem eq_right_add_iff : b = a + b ↔ b = ⊤ ∨ a = 0 := by
+  rw [eq_comm, ENat.add_eq_right_iff, or_comm]
 
 @[simp]
-lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
-  simp [lt_add_left_iff]
+protected theorem lt_add_left_iff : a < a + b ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  simp [lt_iff_le_and_ne, and_comm]
+
+@[simp]
+protected theorem lt_add_right_iff : a < b + a ↔ a ≠ ⊤ ∧ b ≠ 0 := by
+  rw [add_comm, ENat.lt_add_left_iff, and_comm]
+
+@[simp]
+protected lemma add_eq_add_left_iff : a + b = a + c ↔ b = c ∨ a = ⊤ := by
+  cases a with simp [WithTop.add_left_inj (ENat.coe_ne_top _)]
+
+@[simp]
+protected lemma add_eq_add_right_iff : a + c = b + c ↔ a = b ∨ c = ⊤ := by
+  simp [add_comm _ c, ENat.add_eq_add_left_iff]
+
+@[simp]
+protected lemma add_le_add_left_iff : a + b ≤ a + c ↔ b ≤ c ∨ a = ⊤ := by
+  cases a with simp [WithTop.add_le_add_iff_left (ENat.coe_ne_top _)]
+
+@[simp]
+protected lemma add_le_add_right_iff : a + c ≤ b + c ↔ a ≤ b ∨ c = ⊤ := by
+  simp [add_comm _ c, ENat.add_le_add_left_iff]
+
+@[simp]
+protected lemma add_lt_add_left_iff : a + b < a + c ↔ b < c ∧ a ≠ ⊤ := by
+  cases a with simp [WithTop.add_lt_add_iff_left (ENat.coe_ne_top _)]
+
+@[simp]
+protected lemma add_lt_add_right_iff : a + c < b + c ↔ a < b ∧ c ≠ ⊤ := by
+  simp [add_comm _ c, ENat.add_lt_add_left_iff]
+
+@[simp]
+protected lemma lt_add_one_self_iff {a : ℕ∞} : a < a + 1 ↔ a ≠ ⊤ := by
+  simp
+
+@[simp]
+protected lemma lt_one_add_self_iff {a : ℕ∞} : a < 1 + a ↔ a ≠ ⊤ := by
+  simp
 
 lemma add_sub_cancel_right (a : ℕ∞) (hb : b ≠ ⊤) : a + b - b = a := by
   lift b to ℕ using hb

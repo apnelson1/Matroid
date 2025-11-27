@@ -279,7 +279,7 @@ theorem tsum_encard_eq_encard_biUnion_iff {ι} {s : ι → Set α} {t : Set ι}
   rw [insert_diff_self_of_mem ha] at h2
   simp only at h1
   have hle := add_le_add_right (encard_biUnion_le_tsum_encard (s := s) (I := t \ {a}))  (s a).encard
-  rw [← h1, ← encard_union_add_encard_inter, h2, add_le_left_iff, encard_eq_top_iff,
+  rw [← h1, ← encard_union_add_encard_inter, h2, ENat.add_le_left_iff, encard_eq_top_iff,
     encard_eq_zero, ← disjoint_iff_inter_eq_empty, disjoint_left, ← h2,
     or_iff_right hfin.not_infinite] at hle
   simp only [mem_diff, mem_singleton_iff, mem_iUnion, exists_prop, not_exists, not_and,
