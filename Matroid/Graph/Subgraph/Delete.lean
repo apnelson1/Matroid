@@ -277,6 +277,9 @@ lemma IsInducedSubgraph.eq_of_isSpanningSubgraph (hi : H ≤i G) (hs : H ≤s G)
 lemma induce_isInducedSubgraph_iff : G[X] ≤i G ↔ X ⊆ V(G) := by
   simp +contextual [isInducedSubgraph_iff]
 
+@[simp]
+lemma vertexDelete_isInducedSubgraph (G : Graph α β) (X : Set α) : G - X ≤i G :=
+  ⟨vertexDelete_le, by simp_all⟩
 
 lemma vertexDelete_eq_bot_iff (G : Graph α β) (X : Set α) : G - X = ⊥ ↔ V(G) ⊆ X := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩

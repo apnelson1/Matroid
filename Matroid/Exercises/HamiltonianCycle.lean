@@ -1,7 +1,6 @@
 import Mathlib.Tactic
 import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Connected.Separating
 import Matroid.Graph.Independent
 import Matroid.Graph.Tree
 import Matroid.ForMathlib.Minimal
@@ -293,7 +292,7 @@ lemma exists_isSepSet_of_isTree {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(
       <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
   -- now we have our vertex x of degree ≥ 2
   refine ⟨{x}, ?_, by simp⟩
-  simp only [IsSepSet, singleton_subset_iff]
+  simp only [isSepSet_iff, singleton_subset_iff]
   refine ⟨hxT, ?_⟩
   -- choose any two neighbors of x; they must be separated by x
   intro bad
@@ -843,7 +842,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     -- have hg1 : VC ⊆ V(G) := by sorry
     -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
     -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
-  have ⟨D, hD ⟩ := exists_IsCompOf hG
+  have ⟨D, hD⟩ := exists_IsCompOf hG
   set nbrIndices := {i | i < C.length ∧ G.SetVxAdj V(D) (C.get i)}
   obtain h_not | h_ind := em' <| G.IsIndependent (C.get '' nbrIndices)
   · rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])] at h_not

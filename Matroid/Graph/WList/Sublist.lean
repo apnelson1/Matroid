@@ -407,7 +407,7 @@ lemma appendList_reverse [Inhabited α] {L : List (WList α β)} (h : L.IsChain 
       rw [appendList_first (by simp) (isChain_of_isChain_cons h)]
       exact h.rel_head
     apply_fun reverse using reverse_injective
-    rw [reverse_reverse, appendList_cons hrel, map_cons, List.reverse_cons', appendList_concat,
+    rw [reverse_reverse, appendList_cons hrel, List.map_cons, List.reverse_cons', appendList_concat,
       reverse_append ?_, reverse_reverse, ← appendList_reverse (isChain_of_isChain_cons h),
       reverse_reverse]
     rw [← appendList_reverse (isChain_of_isChain_cons h)]
@@ -426,7 +426,7 @@ lemma appendList_edge [Inhabited α] (L : List (WList α β)) :
   | [l] => simp
   | l₁ :: l₂ :: L =>
     have := appendList_edge (l₂ :: L)
-    simp only [appendList, foldl_cons, nil_append, map_cons, List.nil_append] at this ⊢
+    simp only [appendList, foldl_cons, nil_append, List.map_cons, List.nil_append] at this ⊢
     rw [op_foldl_eq_foldl_op_of_assoc, op_foldl_eq_foldl_op_of_assoc, append_edge, ← this]
 
 
@@ -1135,7 +1135,7 @@ lemma breakAt_aux_map_first_eq_vertex_filter (w : WList α β) (P : α → Prop)
   | cons x e w =>
     by_cases hPx : P x <;> simp [hPx, ↓reduceIte, -map_tail]
     · rw [breakAt_aux_append]
-      simp only [map_append, map_cons, first_cons, map_nil, ne_eq,
+      simp only [List.map_append, List.map_cons, first_cons, List.map_nil, ne_eq,
         breakAt_aux_ne_nil, not_false_eq_true, tail_append_of_ne_nil]
       rw [w.breakAt_aux_map_first_eq_vertex_filter P]
     rw [breakAt_aux_map_first_eq_vertex_filter]

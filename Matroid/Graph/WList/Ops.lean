@@ -439,4 +439,162 @@ lemma lastEdge_concat (w : WList α β) (e : β) (x : α) : (concat_nonempty w e
 lemma Nonempty.lastEdge_mem (hw : w.Nonempty) : hw.lastEdge w ∈ w.edge := by
   simpa [firstEdge_reverse hw] using hw.reverse.firstEdge_mem
 
+
+variable {α' : Type*} {f : α → α'}
+
+def map (f : α → α') : WList α β → WList α' β
+| nil x => nil (f x)
+| cons x e w => cons (f x) e (w.map f)
+
+@[simp]
+lemma map_nil (f : α → α') : (nil x : WList α β).map f = nil (f x) := rfl
+
+@[simp]
+lemma map_cons (f : α → α') (x : α) (e : β) (w : WList α β) :
+    (cons x e w).map f = cons (f x) e (w.map f) := rfl
+
+@[simp]
+lemma map_concat (w : WList α β) (f : α → α') (e : β) (x : α) :
+    (w.concat e x).map f = (w.map f).concat e (f x) := by
+  induction w with
+  | nil u => simp [concat, map]
+  | cons u g w ih => simp [concat, map, ih]
+
+@[simp]
+lemma map_append (w₁ w₂ : WList α β) (f : α → α') : (w₁ ++ w₂).map f = w₁.map f ++ w₂.map f := by
+  induction w₁ with
+  | nil u => simp [map]
+  | cons u e w ih => simp [map, ih]
+
+@[simp]
+lemma map_reverse (w : WList α β) (f : α → α') : (w.reverse).map f = (w.map f).reverse := by
+  induction w with
+  | nil x => simp [reverse, map]
+  | cons x e w ih => simp [reverse, map_concat, ih]
+
+@[simp]
+lemma map_first (w : WList α β) (f : α → α') : (w.map f).first = f w.first := by
+  induction w with
+  | nil x => simp [map]
+  | cons x e w ih => simp [map]
+
+@[simp]
+lemma map_last (w : WList α β) (f : α → α') : (w.map f).last = f w.last := by
+  induction w with
+  | nil x => simp [map]
+  | cons x e w ih => simp [map, ih]
+
+@[simp]
+lemma map_vertex (w : WList α β) (f : α → α') : (w.map f).vertex = w.vertex.map f := by
+  induction w with
+  | nil x => simp [map]
+  | cons x e w ih => simp [map, ih]
+
+@[simp]
+lemma map_edge (w : WList α β) (f : α → α') : (w.map f).edge = w.edge := by
+  induction w with
+  | nil x => simp [map]
+  | cons x e w ih => simp [map, ih]
+
+@[simp]
+lemma map_edgeSet (w : WList α β) (f : α → α') : E(w.map f) = E(w) := by
+  ext e
+  simp [WList.edgeSet, map_edge]
+
+@[simp]
+lemma map_length (w : WList α β) (f : α → α') : (w.map f).length = w.length := by
+  induction w with
+  | nil x => simp [map]
+  | cons x e w ih => simp [map, ih]
+
+variable {β' : Type*}
+
+def edgeMap (k : β → β') : WList α β → WList α β'
+| nil x => nil x
+| cons x e w => cons x (k e) (w.edgeMap k)
+
+@[simp]
+lemma edgeMap_nil (k : β → β') (x : α) : (nil x : WList α β).edgeMap k = nil x := rfl
+
+@[simp]
+lemma edgeMap_cons (k : β → β') (x : α) (e : β) (w : WList α β) :
+    (cons x e w).edgeMap k = cons x (k e) (w.edgeMap k) := rfl
+
+@[simp]
+lemma edgeMap_concat (w : WList α β) (k : β → β') (e : β) (x : α) :
+    (w.concat e x).edgeMap k = (w.edgeMap k).concat (k e) x := by
+  induction w with
+  | nil u => simp [concat, edgeMap]
+  | cons u g w ih => simp [concat, edgeMap, ih]
+
+@[simp]
+lemma edgeMap_append (w₁ w₂ : WList α β) (k : β → β') :
+    (w₁ ++ w₂).edgeMap k = w₁.edgeMap k ++ w₂.edgeMap k := by
+  induction w₁ with
+  | nil u => simp [edgeMap]
+  | cons u e w ih => simp [edgeMap, ih]
+
+@[simp]
+lemma edgeMap_reverse (w : WList α β) (k : β → β') :
+    (w.reverse).edgeMap k = (w.edgeMap k).reverse := by
+  induction w with
+  | nil x => simp [reverse, edgeMap]
+  | cons x e w ih => simp [reverse, edgeMap_concat, ih]
+
+@[simp]
+lemma edgeMap_first (w : WList α β) (k : β → β') : (w.edgeMap k).first = w.first := by
+  induction w with
+  | nil x => simp [edgeMap]
+  | cons x e w ih => simp [edgeMap]
+
+@[simp]
+lemma edgeMap_last (w : WList α β) (k : β → β') : (w.edgeMap k).last = w.last := by
+  induction w with
+  | nil x => simp [edgeMap]
+  | cons x e w ih => simp [edgeMap, ih]
+
+@[simp]
+lemma edgeMap_vertex (w : WList α β) (k : β → β') : (w.edgeMap k).vertex = w.vertex := by
+  induction w with
+  | nil x => simp [edgeMap]
+  | cons x e w ih => simp [edgeMap, ih]
+
+@[simp]
+lemma edgeMap_edge (w : WList α β) (k : β → β') : (w.edgeMap k).edge = w.edge.map k := by
+  induction w with
+  | nil x => simp [edgeMap]
+  | cons x e w ih => simp [edgeMap, ih]
+
+@[simp]
+lemma edgeMap_edgeSet (w : WList α β) (k : β → β') : E(w.edgeMap k) = k '' E(w) := by
+  ext e
+  constructor
+  · intro he
+    have : e ∈ w.edge.map k := by simpa [WList.edgeSet, edgeMap_edge] using he
+    obtain ⟨e', he', rfl⟩ := List.mem_map.mp this
+    exact ⟨e', by simpa [WList.edgeSet] using he', rfl⟩
+  · rintro ⟨e', he', rfl⟩
+    have : k e' ∈ w.edge.map k := by
+      refine List.mem_map.mpr ?_
+      exact ⟨e', by simpa [WList.edgeSet] using he', rfl⟩
+    simpa [WList.edgeSet, edgeMap_edge]
+
+@[simp]
+lemma edgeMap_length (w : WList α β) (k : β → β') : (w.edgeMap k).length = w.length := by
+  induction w with
+  | nil x => simp [edgeMap]
+  | cons x e w ih => simp [edgeMap, ih]
+
+@[simp]
+lemma map_edgeMap (w : WList α β) (f : α → α') (k : β → β') :
+    (w.edgeMap k).map f = (w.map f).edgeMap k := by
+  induction w with
+  | nil x => simp [edgeMap, map]
+  | cons x e w ih => simp [edgeMap, map, ih]
+
+@[simp]
+lemma mem_edgeMap (w : WList α β) (k : β → β') (x : α) : x ∈ w.edgeMap k ↔ x ∈ w := by
+  change x ∈ (w.edgeMap k).vertex ↔ x ∈ w.vertex
+  simp [edgeMap_vertex]
+
 end WList
