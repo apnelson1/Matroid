@@ -8,6 +8,7 @@ import Matroid.Graph.Walk.Index
 import Matroid.ForMathlib.Tactic.ENatToNat
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
+import Matroid.Exercises.HamiltonianCycle.NeBot
 -- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
@@ -22,24 +23,6 @@ Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltoni
 -/
 
 -- INITIAL DEFINITIONS
-
-def NeBot (G : Graph α β) : Prop :=
-  G ≠ ⊥
-
-@[simp]
-lemma NeBot_iff_vertexSet_nonempty : G.NeBot ↔ V(G).Nonempty := by
-  simp [NeBot, ne_bot_iff]
-
-lemma vertexSet_nonempty_of_NeBot (h : G.NeBot) : V(G).Nonempty := by
-  rwa [←NeBot_iff_vertexSet_nonempty]
-
-lemma NeBot_iff_encard_positive : G.NeBot ↔ 0 < V(G).encard := by
-  simp
-
-lemma NeBot_of_ncard_positive (h : 0 < V(G).ncard) : G.NeBot := by
-  rw [NeBot, ne_eq, ←vertexSet_eq_empty_iff, ←ne_eq, ←Set.nonempty_iff_ne_empty]
-  apply nonempty_of_ncard_ne_zero
-  linarith
 
 @[simp]
 lemma eDegree_eq_top (hx : G.eDegree x = ⊤) : ¬ G.LocallyFinite :=
