@@ -584,11 +584,11 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
   -- Add hDirac applied to y
   sorry
 
-def Is_hamiltonian_cycle (G : Graph α β) (C : WList α β) : Prop :=
+def IsHamiltonianCycle (G : Graph α β) (C : WList α β) : Prop :=
   G.IsCycle C ∧ C.length = V(G).ncard
 
-lemma Is_hamiltonian_encard (G : Graph α β) (C : WList α β) (hC : G.IsCycle C )
-    (hen : C.vertexSet.encard = V(G).encard ) : Is_hamiltonian_cycle G C := by sorry
+lemma IsHamilonianCycle.vertexSet_encard_eq (G : Graph α β) (C : WList α β) (hC : G.IsCycle C )
+    (hen : V(C).encard = V(G).encard) : G.IsHamiltonianCycle C := by sorry
 
 def SetVxAdj (G : Graph α β) (H : Set α) (v : α ) : Prop :=
     ∃ w, w ∈ H ∧  Adj G v w
@@ -616,7 +616,7 @@ lemma Adj_exists_edge (G : Graph α β) (x y : α) (hA : G.Adj x y) : ∃ e, G.I
 --Noah, here is the lemma thats not liking me
 
 lemma Hamiltonian_to_cyle {G : Graph α β}
-    (hham : ∃ C : WList α β, Is_hamiltonian_cycle G C)
+    (hham : ∃ C : WList α β, IsHamiltonianCycle G C)
     : ∃ C : WList α β, G.IsCycle C  := by
   obtain ⟨ C, hC ⟩ := hham
   use C
@@ -886,7 +886,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
 lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     (S : Set α) (HS : IsMinSepSet G S )
     (A : Set α) (hA : IsMaxIndependent G A)
-    (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, Is_hamiltonian_cycle G C := by
+    (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, IsHamiltonianCycle G C := by
 --grw
   -- Hi Richard!
   -- The existence of a cycle here should not be proved inside this lemma.
@@ -925,10 +925,10 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
 
     -- `C` is a Hamilton cycle
 
-    -- apply Is_hamiltonian_encard G C (hCs.prop) hn
+    -- apply IsHamiltonianCycle.vertexSet_encard_eq G C (hCs.prop) hn
   -- obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
   -- · use C
-  --   apply Is_hamiltonian_encard G C (hCs.prop) hn
+  --   apply IsHamiltonianCycle.vertexSet_encard_eq G C (hCs.prop) hn
   --There should be an obvious bound on the size of a cycle
   have hC : G.IsCycle C := (hCs.prop)
   -- have hCle : V(C).encard < V(G).encard := by
