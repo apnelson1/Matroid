@@ -55,20 +55,6 @@ lemma minDegree_le_minDegree_of_Subgraph [G.Finite] (hHG : H ≤s G) : H.minDegr
   have h2 : H.minDegree ≤ H.degree w := minDegree_le_degree <| hHG.vertexSet_eq ▸ gw
   omega
 
-lemma finite_components_of_finite [G.Finite] : G.Components.Finite :=
-  G.vertexSet_finite.finite_of_encard_le G.components_encard_le
-
-lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected) :
-    2 ≤ G.Components.encard := by
-  -- This is very easy by `components_subsingleton_iff`.
-  by_contra! hcon
-  replace hcon : G.Components.Subsingleton := by
-    rw [← encard_le_one_iff_subsingleton]
-    enat_to_nat!
-    omega
-  rw [components_subsingleton_iff_connected] at hcon
-  tauto
-
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 

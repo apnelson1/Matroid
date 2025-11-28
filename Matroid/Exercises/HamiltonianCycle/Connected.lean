@@ -18,6 +18,23 @@ namespace Graph
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
 variable {S A : Set α}
 
+-- COMPONENTS
+lemma finite_components_of_finite [G.Finite] : G.Components.Finite :=
+  G.vertexSet_finite.finite_of_encard_le G.components_encard_le
+
+lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected) :
+    2 ≤ G.Components.encard := by
+  -- This is very easy by `components_subsingleton_iff`.
+  by_contra! hcon
+  replace hcon : G.Components.Subsingleton := by
+    rw [← encard_le_one_iff_subsingleton]
+    enat_to_nat!
+    omega
+  rw [components_subsingleton_iff_connected] at hcon
+  tauto
+
+-- ISSEPSET
+
 lemma IsMinSepSet.isSepSet (hS : G.IsMinSepSet S) : G.IsSepSet S := hS.toIsSepSet
 
 lemma IsSepSet.eq_empty (hS : G.IsSepSet S) (h : S = ∅) : ¬ G.Connected := by
