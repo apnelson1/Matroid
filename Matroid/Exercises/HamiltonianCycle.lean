@@ -79,43 +79,6 @@ lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected)
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
 
-lemma minEDegree_ge_one_of_connected_nontrivial (hConn : G.Connected)
-    (hNontrivial : 1 < V(G).encard) : ∀ x ∈ V(G), 1 ≤ G.eDegree x := by
-  have hnt : V(G).Nontrivial := one_lt_encard_iff_nontrivial.mp hNontrivial
-  by_contra! hyp
-  obtain ⟨x, hxG, hx⟩ := hyp
-  rw [connected_iff_forall_exists_adj (by use x)] at hConn
-  have : {x} ⊂ V(G) := ⟨by simpa, (not_nontrivial_singleton <| hnt.mono ·)⟩
-  obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := by simpa using hConn _ this
-  rw [ENat.lt_one_iff_eq_zero, eDegree_eq_zero_iff_adj] at hx
-  exact hx y hadj
-
-lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y) (hxz : G.Adj x z) :
-    y = z := by
-  have heq := hx ▸ G.eDegree_eq_encard_add_encard x
-  have no_loops : {e | G.IsLoopAt e x}.encard = 0 := by
-    by_contra! hyp
-    rw [←ENat.one_le_iff_ne_zero] at hyp
-    replace hyp : 2 ≤ 2 * {e | G.IsLoopAt e x}.encard := le_mul_of_one_le_right' hyp
-    have hle : 2 * {e | G.IsLoopAt e x}.encard ≤ 1 := by
-      simp [heq]
-    simpa using hyp.trans hle
-  rw [no_loops, mul_zero, zero_add, eq_comm, encard_eq_one] at heq
-  obtain ⟨e, he⟩ := heq
-  have setOf_inc_le : {e | G.Inc e x} ⊆ {e} := by
-    simp only [inc_iff_isLoopAt_or_isNonloopAt, subset_singleton_iff, mem_setOf_eq]
-    rintro f (h|h)
-    · suffices f ∈ {e | G.IsLoopAt e x} by simp_all
-      exact h
-    suffices f ∈ {e | G.IsNonloopAt e x} by simp_all
-    exact h
-  simp only [subset_singleton_iff, mem_setOf_eq] at setOf_inc_le
-  obtain ⟨xy, hxy⟩ := hxy
-  obtain ⟨xz, hxz⟩ := hxz
-  obtain rfl : xy = e := setOf_inc_le _ hxy.inc_left
-  obtain rfl : xz = xy := setOf_inc_le _ hxz.inc_left
-  exact hxy.right_unique hxz
-
 lemma IsTree.exists_vertex_eDegree_ge_two
     {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
     ∃ x ∈ V(T), 2 ≤ T.eDegree x := by

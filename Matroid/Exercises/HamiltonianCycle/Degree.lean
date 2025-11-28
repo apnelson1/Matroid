@@ -81,8 +81,8 @@ lemma ENat.exists_eq_biInf {S : Set ι} (hS : S.Nonempty) (f : ι → ℕ∞) :
   rw [←sInf_image]
   exact csInf_mem (hS.image f)
 
--- TODO: the prime versions of these lemmas only currently exist because
--- Graph.Nonempty doesn't exist.
+-- TODO: the prime versions of these lemmas only currently exist because Graph.Nonempty
+-- doesn't exist.
 lemma exists_vertex_minEDegree (hG : G ≠ ⊥) : ∃ x ∈ V(G), G.eDegree x = G.minEDegree := by
   apply ENat.exists_eq_biInf
   exact ne_bot_iff.mp hG
@@ -106,6 +106,7 @@ lemma setOf_adj_subset {G : Graph α β} (x : α) : {y | G.Adj x y} ⊆ V(G) := 
   simp at hy
   exact hy.right_mem
 
+-- TODO: this should be moved to Graph.Basic
 -- maybe this should be `Neighbor`?
 lemma encard_setOf_adj_le {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
     {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
@@ -119,7 +120,6 @@ lemma encard_setOf_adj_le {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G))
   refine insert_subset h ?_
   exact setOf_adj_subset _
 
--- by incAdjEquiv
 lemma eDegree_le_encard {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
     G.eDegree x + 1 ≤ V(G).encard := by
   have solver := G.incAdjEquiv x
@@ -146,3 +146,40 @@ lemma minDegree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] (hNeBot : G.NeB
   rw [←vspec]
   apply degree_lt_ncard
   tauto
+
+lemma minEDegree_ge_one_of_connected_nontrivial (hConn : G.Connected)
+    (hNontrivial : 1 < V(G).encard) : ∀ x ∈ V(G), 1 ≤ G.eDegree x := by
+  have hnt : V(G).Nontrivial := one_lt_encard_iff_nontrivial.mp hNontrivial
+  by_contra! hyp
+  obtain ⟨x, hxG, hx⟩ := hyp
+  rw [connected_iff_forall_exists_adj (by use x)] at hConn
+  have : {x} ⊂ V(G) := ⟨by simpa, (not_nontrivial_singleton <| hnt.mono ·)⟩
+  obtain ⟨y, ⟨hyG, hne⟩, hadj⟩ := by simpa using hConn _ this
+  rw [ENat.lt_one_iff_eq_zero, eDegree_eq_zero_iff_adj] at hx
+  exact hx y hadj
+
+lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y) (hxz : G.Adj x z) :
+    y = z := by
+  have heq := hx ▸ G.eDegree_eq_encard_add_encard x
+  have no_loops : {e | G.IsLoopAt e x}.encard = 0 := by
+    by_contra! hyp
+    rw [←ENat.one_le_iff_ne_zero] at hyp
+    replace hyp : 2 ≤ 2 * {e | G.IsLoopAt e x}.encard := le_mul_of_one_le_right' hyp
+    have hle : 2 * {e | G.IsLoopAt e x}.encard ≤ 1 := by
+      simp [heq]
+    simpa using hyp.trans hle
+  rw [no_loops, mul_zero, zero_add, eq_comm, encard_eq_one] at heq
+  obtain ⟨e, he⟩ := heq
+  have setOf_inc_le : {e | G.Inc e x} ⊆ {e} := by
+    simp only [inc_iff_isLoopAt_or_isNonloopAt, subset_singleton_iff, mem_setOf_eq]
+    rintro f (h|h)
+    · suffices f ∈ {e | G.IsLoopAt e x} by simp_all
+      exact h
+    suffices f ∈ {e | G.IsNonloopAt e x} by simp_all
+    exact h
+  simp only [subset_singleton_iff, mem_setOf_eq] at setOf_inc_le
+  obtain ⟨xy, hxy⟩ := hxy
+  obtain ⟨xz, hxz⟩ := hxz
+  obtain rfl : xy = e := setOf_inc_le _ hxy.inc_left
+  obtain rfl : xz = xy := setOf_inc_le _ hxz.inc_left
+  exact hxy.right_unique hxz
