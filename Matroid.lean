@@ -129,3 +129,5 @@ import Matroid.Simple
 import Matroid.Spikes
 -- import Matroid.Tame
 import Matroid.Uniform
+
+import Matroid.Exercises.HamiltonianCycle
