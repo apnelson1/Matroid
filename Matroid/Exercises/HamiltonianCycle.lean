@@ -11,6 +11,7 @@ import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
 import Matroid.Exercises.HamiltonianCycle.NeBot
 import Matroid.Exercises.HamiltonianCycle.Degree
 import Matroid.Exercises.HamiltonianCycle.Walk
+import Matroid.Exercises.HamiltonianCycle.Connected
 
 -- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
@@ -254,6 +255,16 @@ lemma IsTree.exists_isSepSet
     rw [←hP_first, ←hP_last]
     exact Nil.first_eq_last bad
   exact hT.isForest _ hQ_isCycle
+
+lemma IsTree.exists_isMinSepSet
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ S, IsMinSepSet T S ∧ S.encard = 1 := by
+  obtain ⟨S, hS, hS_encard⟩ := hT.exists_isSepSet hV
+  refine ⟨S, ⟨hS, ?_⟩, hS_encard⟩
+  intro A hA
+  by_contra! hcon
+  replace hcon : A.encard = 0 := by enat_to_nat! <;> omega
+  exact hA.encard_eq_zero hcon hT.connected
 
 lemma Bound_on_indepSet [G.Simple] [G.Finite]
     (S : Set (α)) (hS : IsSepSet G S)
