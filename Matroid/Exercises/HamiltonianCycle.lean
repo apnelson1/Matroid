@@ -15,13 +15,6 @@ section NonGraphThings
 
 variable {α β ι : Type*} {P₀ P₁ : WList α β} {e f : β}
 
-lemma finite_of_ncard_nonzero {s : Set α} (h : s.ncard ≠ 0) : s.Finite := by
-  simpa using mt Infinite.ncard h
-
-lemma finite_of_ncard_positive {s : Set α} (h : 0 < s.ncard) : s.Finite := by
-  apply finite_of_ncard_nonzero
-  exact Nat.ne_zero_of_lt h
-
 lemma minimal_is_lower_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Minimal P x) :
     ∀ y, P y → x ≤ y := by
   intro y hy
