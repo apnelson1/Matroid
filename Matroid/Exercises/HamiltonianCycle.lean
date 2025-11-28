@@ -5,6 +5,7 @@ import Matroid.Graph.Independent
 import Matroid.Graph.Tree
 import Matroid.ForMathlib.Minimal
 import Matroid.Graph.Walk.Index
+import Matroid.ForMathlib.Tactic.ENatToNat
 -- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
@@ -34,6 +35,23 @@ lemma minimalFor_is_lower_bound [LinearOrder α] {P : ι → Prop} (f : ι → �
   intro j hj
   simp only [MinimalFor] at h
   obtain (_|_) := le_total (f i) (f j)
+  · assumption
+  · tauto
+
+lemma maximal_is_upper_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Maximal P x) :
+    ∀ y, P y → y ≤ x := by
+  intro y hy
+  simp [Maximal] at h
+  obtain (_|_) := le_total y x
+  · assumption
+  · tauto
+
+lemma maximalFor_is_upper_bound
+    {ι} [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι} (h : MaximalFor P f i) :
+    ∀ j, P j → f j ≤ f i := by
+  intro j hj
+  simp [MaximalFor] at h
+  obtain (_|_) := le_total (f j) (f i)
   · assumption
   · tauto
 
@@ -152,12 +170,51 @@ lemma exists_vertex_minDegree' (hG : V(G).Nonempty) : ∃ x ∈ V(G), G.degree x
 
 -- MORE THINGS
 
-lemma degree_lt_vertexCount [G.Simple] (h : v ∈ V(G)) :
-    G.degree v < V(G).ncard := by sorry
+lemma setOf_adj_subset {G : Graph α β} (x : α) : {y | G.Adj x y} ⊆ V(G) := by
+  intro y hy
+  simp at hy
+  exact hy.right_mem
 
-lemma minDegree_lt_vertexCount [G.Simple] (hNeBot : G.NeBot) : G.minDegree < V(G).ncard := by
+-- maybe this should be `Neighbor`?
+lemma encard_setOf_adj_le {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
+    {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
+  have : ({x} : Set α).encard = 1 := by simp
+  rw [← this]; clear this
+  rw [←Set.encard_union_eq]
+  swap
+  · simp; apply not_adj_self
+  apply encard_le_encard
+  simp
+  refine insert_subset h ?_
+  exact setOf_adj_subset _
+
+-- by incAdjEquiv
+lemma eDegree_le_encard {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
+    G.eDegree x + 1 ≤ V(G).encard := by
+  have solver := G.incAdjEquiv x
+  simp [eDegree_eq_encard_inc]
+  change {e // e ∈ {e | G.Inc e x}} ≃ {y // y ∈ {y | G.Adj x y}} at solver
+  repeat rw [←coe_eq_subtype] at solver
+  rw [solver.encard_eq]
+  exact encard_setOf_adj_le h
+
+lemma degree_le_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
+    G.degree x + 1 ≤ V(G).ncard := by
+  suffices hyp : G.eDegree x + 1 ≤ V(G).encard
+  · rw [←natCast_degree_eq, ←Set.Finite.cast_ncard_eq vertexSet_finite] at hyp
+    enat_to_nat!; assumption
+  exact eDegree_le_encard h
+
+lemma degree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
+    G.degree x < V(G).ncard := by
+  linarith [degree_le_ncard h]
+
+lemma minDegree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
+    G.minDegree < V(G).ncard := by
   have ⟨v,hvG, vspec⟩ := G.exists_vertex_minDegree hNeBot
-  exact vspec ▸ degree_lt_vertexCount hvG
+  rw [←vspec]
+  apply degree_lt_ncard
+  tauto
 
 --The exercises start here
 --I added this lemma. Seems important. Do we need to prove it or already exists but is not working?
@@ -205,6 +262,8 @@ lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected)
   obtain ⟨ H₁, hH1, hvH1 ⟩ := G.exists_IsCompOf_vertex_mem hw
   have : H ≠ H₁ := by sorry
   sorry
+  -- Set.Nontrivial, Set.Subsingleton
+
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
@@ -246,50 +305,95 @@ lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y)
   obtain rfl : xz = xy := setOf_inc_le _ hxz.inc_left
   exact hxy.right_unique hxz
 
-lemma exists_isSepSet_of_isTree {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+lemma IsTree.exists_vertex_eDegree_ge_two
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
+  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := by
+    refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_
+    suffices (1 : ℕ∞) < 3 by
+      exact this.trans_le hV
+    simp
+  by_contra! hyp
+  replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
+    intro x hxT
+    specialize hyp _ hxT
+    specialize hMinDeg _ hxT
+    enat_to_nat! <;> omega
+  clear hMinDeg
+  have hT_nonempty : V(T).Nonempty := by
+    simp only [←Set.encard_pos]
+    enat_to_nat!; omega
+  have ⟨x, hxT⟩ := hT_nonempty
+  have hx_ssub : {x} ⊂ V(T) := by
+    refine ⟨by simp; tauto, ?_⟩
+    intro bad
+    have := Set.encard_le_encard bad
+    simp at this; enat_to_nat!; omega
+  have hconn := hT.connected
+  rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
+  have hy := hconn _ hx_ssub (by simp)
+  simp at hy
+  obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := hy
+  have hxy_ssub : {x,y} ⊂ V(T) := by
+    refine ⟨?_, ?_⟩
+    · simp [pair_subset_iff]; tauto
+    intro bad
+    have := Set.encard_le_encard bad
+    have := hV.trans this
+    replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
+    simp [Set.encard_pair hne] at this
+    norm_num at this
+  have hz := hconn _ hxy_ssub (by simp)
+  obtain ⟨x', hx', z, hz⟩ := hz
+  apply hz.1.2
+  simp at hx'; obtain (hx'|hx') := hx'
+    <;> symm at hx'
+    <;> subst hx'
+    <;> [(right; simp); (left; symm at hadj)]
+    <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
+
+lemma IsTree.exists_length_two_path
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ P, T.IsPath P ∧ P.length = 2 := by
+  have T_simple := hT.isForest.simple
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x :=
+    hT.exists_vertex_eDegree_ge_two hV
+  rw [eDegree_eq_encard_adj] at hx
+  have ⟨N, hN_sub, hN_encard⟩ := Set.exists_subset_encard_eq hx
+  rw [Set.encard_eq_two] at hN_encard
+  obtain ⟨y,z,hne,rfl⟩ := hN_encard
+  -- pick a path between y and z which does not go through x
+  obtain ⟨hy, hz⟩ : T.Adj x y ∧ T.Adj x z := by
+    refine ⟨hN_sub ?_, hN_sub ?_⟩ <;> simp
+  have ⟨hyT, hzT⟩ : y ∈ V(T) ∧ z ∈ V(T) := by
+    have := T.setOf_adj_subset x
+    refine ⟨?_, ?_⟩  <;>
+      apply this <;> assumption
+  obtain ⟨ey, hey⟩ := hy
+  obtain ⟨ez, hez⟩ := hz
+  refine ⟨cons y ey (cons x ez (nil z)), ?_, by simp⟩
+  simp
+  have hne_xy : x ≠ y := hey.adj.ne
+  have hne_xz : x ≠ z := hez.adj.ne
+  tauto
+
+-- the same as previous lemma, just reworded
+lemma IsTree.exists_nontrivial_path
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+    ∃ P, T.IsPath P ∧ P.Nontrivial := by
+  obtain ⟨P, P_isPath, P_length⟩ := hT.exists_length_two_path hV
+  refine ⟨P, P_isPath, ?_⟩
+  rw [←WList.two_le_length_iff]
+  omega
+
+lemma IsTree.exists_isSepSet
+    {T : Graph α β} (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
     ∃ S, IsSepSet T S ∧ S.encard = 1 := by
   -- we show there exists a vertex x of degree at least 2, in which case
   -- the singleton {x} is exactly our sepset
-  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
-    by_contra! hyp
-    replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
-      intro x hxT
-      specialize hyp _ hxT
-      have hMinDeg : 1 ≤ T.eDegree x := by
-        refine minEDegree_ge_one_of_connected_nontrivial hT.connected ?_ _ hxT
-        suffices (1 : ℕ∞) < 3 by
-          exact this.trans_le hV
-        simp
-      change T.eDegree x < 1 + 1 at hyp
-      rw [ENat.lt_add_one_iff] at hyp <;> [exact hyp.antisymm hMinDeg; simp]
-    have hT_nonempty : V(T).Nonempty := by
-      simp only [←Set.encard_pos]
-      suffices (0 : ℕ∞) < 3 by
-        exact this.trans_le hV
-      simp
-    have ⟨x, hxT⟩ := hT_nonempty
-    have hx_ssub : {x} ⊂ V(T) := by
-      refine ⟨by simpa, fun bad ↦ ?_⟩
-      simpa using hV.trans <| encard_le_encard bad
-    have hconn := hT.connected
-    rw [connected_iff_forall_exists_adj hT_nonempty] at hconn
-    obtain ⟨y, ⟨hyT, hne⟩, hadj⟩ := by simpa using hconn _ hx_ssub (by simp)
-    have hxy_ssub : {x, y} ⊂ V(T) := by
-      refine ⟨?_, fun bad ↦ ?_⟩
-      · simp [pair_subset_iff, hxT, hyT]
-      have := Set.encard_le_encard bad
-      have := hV.trans this
-      replace hne : x ≠ y := fun a ↦ hne (id (Eq.symm a))
-      simp [Set.encard_pair hne] at this
-      norm_num at this
-    have hz := hconn _ hxy_ssub (by simp)
-    obtain ⟨x', hx', z, hz⟩ := hz
-    apply hz.1.2
-    simp at hx'; obtain (hx'|hx') := hx'
-      <;> symm at hx'
-      <;> subst hx'
-      <;> [(right; simp); (left; symm at hadj)]
-      <;> exact unique_neighbor_of_eDegree_eq_one (hyp _ ‹_›) hz.2 ‹_›
+  have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x :=
+    hT.exists_vertex_eDegree_ge_two hV
+
   -- now we have our vertex x of degree ≥ 2
   refine ⟨{x}, ?_, by simp⟩
   simp only [isSepSet_iff, singleton_subset_iff]
@@ -1444,42 +1548,53 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
 
 
 
+omit [DecidableEq α] in
+lemma components_encard_le (G : Graph α β)
+    : G.Components.encard ≤ V(G).encard := by
+  have h_disj := G.components_pairwise_stronglyDisjoint
+  have h_eq := G.eq_sUnion_components
+  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
+    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
+    simp_all
+  let surj : V(G) → G.Components := by
+    rintro ⟨x, hx⟩
+    refine ⟨G.walkable x, walkable_isCompOf hx⟩
+  have surj_surjective : Function.Surjective surj := by
+    rintro ⟨H, H_spec⟩
+    have H_nonempty := H_spec.1.2
+    have ⟨x, hxH⟩ := H_nonempty
+    have hxG : x ∈ V(G) := H_spec.1.1.le.vertex_subset hxH
+    use ⟨x, hxG⟩
+    simp [surj]
+    simp [H_spec.eq_walkable_of_mem_walkable hxH]
+  have inj_spec := Function.injective_surjInv surj_surjective
+  set inj := Function.surjInv surj_surjective
+  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-lemma finite_components_of_finite (hFinite : G.Finite) :
-  G.Components.Finite := by
-  sorry
+omit [DecidableEq α] in
+lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
+    G.Components.Finite := by
+  refine hFinite.vertexSet_finite.finite_of_encard_le ?_
+  exact G.components_encard_le
 
 /- Step 1: WTS G is connected.
 Proof: Suppose not. Then the degree of any vertex in the smallest component C of G
 would be less than |C| ≤ n/2.
 -/
 
-
-lemma thm1_1_connected [G.Simple] [hFinite : G.Finite]
-  (hV : 3 ≤ V(G).ncard) (hDegree : V(G).ncard ≤ 2 * G.minDegree) :
+omit [DecidableEq α] in
+lemma dirac_connected {G : Graph α β} [G.Simple] [hFinite : G.Finite]
+  (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree) :
   G.Connected := by
   have encard_eq_ncard : V(G).encard = ↑V(G).ncard := by
     rw [Set.Finite.cast_ncard_eq]
     exact vertexSet_finite
   have hNeBot : G.NeBot := by
-    apply NeBot_of_ncard_positive
-    linarith
+    rw [NeBot_iff_encard_positive]
+    enat_to_nat! <;> omega
+  simp [← G.natCast_minDegree_eq hNeBot] at hDegree
+  rw [encard_eq_ncard] at hV hDegree
+  enat_to_nat
 
   -- Suppose not.
   by_contra! hyp_contra
@@ -1510,17 +1625,16 @@ lemma thm1_1_connected [G.Simple] [hFinite : G.Finite]
     have : G.Components.encard = 1 := by
       simp [is_singleton]
     rw [this] at num_components_ge_2; clear this
-    have : (2 : ℕ) ≤ (1 : ℕ) := by exact ENat.coe_le_coe.mp num_components_ge_2
-    linarith
+    enat_to_nat; omega
 
   -- G, min_comp, other_comp have finite vertexSets
   have G_finite_vertexSet : V(G).Finite := vertexSet_finite
-  have min_comp_finite_vertexSet : V(min_comp).Finite := by
-    suffices min_comp.Finite by exact vertexSet_finite
-    exact Finite.mono hFinite min_comp_spec.1.le
-  have other_comp_finite_vertexSet : V(other_comp).Finite := by
-    suffices other_comp.Finite by exact vertexSet_finite
-    exact Finite.mono hFinite other_comp_spec.1.le
+  have min_comp_finite : min_comp.Finite := hFinite.mono min_comp_spec.1.le
+  have min_comp_finite_vertexSet : V(min_comp).Finite :=
+    vertexSet_finite
+  have other_comp_finite : other_comp.Finite := hFinite.mono other_comp_spec.1.le
+  have other_comp_finite_vertexSet : V(other_comp).Finite :=
+    vertexSet_finite
 
   -- other_comp has at least as many vertices as min_comp
   have other_comp_larger : V(min_comp).ncard ≤ V(other_comp).ncard := by
@@ -1577,48 +1691,851 @@ lemma thm1_1_connected [G.Simple] [hFinite : G.Finite]
     exact min_comp_spec.1
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith
   have hlt : min_comp.minDegree < V(min_comp).ncard := by
-    have min_comp_simple : min_comp.Simple := sorry
-    refine minDegree_lt_vertexCount ?_
+    have min_comp_simple : min_comp.Simple := ‹G.Simple›.mono min_comp_spec.1.le
+    refine minDegree_lt_ncard ?_
     rw [NeBot_iff_vertexSet_nonempty]
     exact min_comp_spec.1.nonempty
 
   linarith
 
-def pathSet (G : Graph α β) := {p | IsPath G p}
+omit [DecidableEq α]
 
-lemma pathSet_finite (G : Graph α β) [G.Simple] (hFinite : G.Finite) :
-    G.pathSet.Finite := by
-  sorry
+def PathSet (G : Graph α β) := {p | IsPath G p}
+
+lemma IsWalk.eq_of_vertex_eq
+    {G : Graph α β} [G.Simple]
+    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : p.vertex = q.vertex) :
+    p = q := by
+  induction q generalizing p with
+  | nil x =>
+      cases p <;> simp_all
+  | cons x e w IH =>
+      induction p <;> simp_all
+      case cons x' e' w' =>
+        exact IsLink.unique_edge (G := G) hp hq.1
+
+private
+lemma IsWalk.vertex_mem_of_mem' {p} (hp : G.IsWalk p) (x) (hx : x ∈ p.vertex) : x ∈ V(G) :=
+  hp.vertex_mem_of_mem hx
+
+def IsWalk.vertex_coe {p} (hp : G.IsWalk p) : List ↑V(G) :=
+  p.vertex.attachWith V(G) (vertex_mem_of_mem' hp)
+
+lemma IsWalk.vertex_coe_inj [G.Simple]
+    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : hp.vertex_coe = hq.vertex_coe) :
+    p = q := by
+  apply congr_arg (List.map Subtype.val) at heq
+  replace heq : p.vertex = q.vertex := by
+    simp [vertex_coe] at heq
+    have rw1 := p.vertex.unattach_attachWith (p := V(G)) (H := hp.vertex_mem_of_mem')
+    have rw2 := q.vertex.unattach_attachWith (p := V(G)) (H := hq.vertex_mem_of_mem')
+    simp [rw1, rw2] at heq
+    assumption
+  exact IsWalk.eq_of_vertex_eq hp hq heq
+
+lemma IsPath.vertex_coe_nodup {p} (hp : G.IsPath p) :
+    hp.isWalk.vertex_coe.Nodup := by
+  simp [IsWalk.vertex_coe]
+  exact hp.nodup
+
+lemma IsWalk.vertex_coe_length_eq {p} (hp : G.IsWalk p) :
+    hp.vertex_coe.length = p.vertex.length := by
+  simp [vertex_coe]
+
+lemma IsPath.vertex_length_le_encard {G : Graph α β} {p} (hp : G.IsPath p) :
+    p.vertex.length ≤ V(G).encard := by
+  obtain (eqTop|neTop) := Classical.em $ V(G).encard = ⊤
+  · simp_all
+  simp at neTop
+  rw [←hp.isWalk.vertex_coe_length_eq]
+  have hfintype : Fintype V(G) := neTop.fintype
+  rw [← Set.coe_fintypeCard]
+  enat_to_nat
+  exact hp.vertex_coe_nodup.length_le_card
+
+lemma IsPath.vertex_length_le_ncard [G.Finite] {p} (hp : G.IsPath p) :
+    p.vertex.length ≤ V(G).ncard := by
+  have vx_finite := ‹G.Finite›.vertexSet_finite
+  have := hp.vertex_length_le_encard
+  rw [←vx_finite.cast_ncard_eq] at this
+  enat_to_nat; assumption
+
+-- every path in a graph has at most V(G) - 1 edges
+lemma IsPath.length_le_encard
+    {p} (hp : G.IsPath p) :
+    p.length + 1 ≤ V(G).encard := by
+  have := hp.vertex_length_le_encard
+  simp at this
+  assumption
+
+lemma IsPath.length_le_ncard
+    [G.Finite] {p} (hp : G.IsPath p) :
+    p.length + 1 ≤ V(G).ncard := by
+  have vx_finite := ‹G.Finite›.vertexSet_finite
+  have := hp.length_le_encard
+  rw [←vx_finite.cast_ncard_eq] at this
+  enat_to_nat; assumption
+
+lemma IsTrail.edge_encard_eq_length
+    [DecidableEq β] {p} (hp : G.IsTrail p) :
+    E(p).encard = p.length := by
+  rw [←p.length_edge]
+  have edge_nodup : p.edge.Nodup := hp.edge_nodup
+  rw [←p.edgeSet_finite.cast_ncard_eq]
+  enat_to_nat
+  change {e | e ∈ p.edge}.ncard = p.edge.length
+  rw [←p.edge.toFinset_card_of_nodup edge_nodup, ←p.edge.coe_toFinset, ncard_coe_finset]
+
+lemma IsTrail.edge_ncard_eq_length
+    [DecidableEq β] {p} (hp : G.IsTrail p) :
+    E(p).ncard = p.length := by
+  have := hp.edge_encard_eq_length
+  rw [←p.edgeSet_finite.cast_ncard_eq] at this
+  enat_to_nat; assumption
+
+lemma pathSet_finite (G : Graph α β) [G.Simple] [G.Finite] :
+    G.PathSet.Finite := by
+  -- the number of G-paths IN A SIMPLE GRAPH is directly upper-bounded by the number of
+  -- nodup lists with elements in V(G).
+  -- Note that in a non-simple graph, we could have infinitely many edges between just two vertices,
+  -- hence infinitely many paths.
+  have isInG {p} (hp : G.IsPath p) (x) (h : x ∈ p.vertex) : x ∈ V(G) := by
+    exact hp.isWalk.vertex_mem_of_mem h
+  let inj : G.PathSet → List V(G) := fun ⟨_, hp⟩ ↦ hp.isWalk.vertex_coe
+  have inj_injective : Function.Injective inj := by
+    intro ⟨p, hp⟩ ⟨q, hq⟩ heq
+    simp [inj] at heq ⊢
+    exact IsWalk.vertex_coe_inj hp.isWalk hq.isWalk heq
+  -- refine ‹G.Finite›.vertexSet_finite.finite_of_encard_le ?_
+  have vx_finite : Finite V(G) := vertexSet_finite
+  have ⟨n, hn⟩ := G.vertexSet_finite.exists_encard_eq_coe
+  have h_subset : range inj ⊆ {l : List V(G) | l.length ≤ n} := by
+    intro l hl
+    simp [inj] at hl ⊢
+    obtain ⟨p, hp, rfl⟩ := hl
+    have := hp.vertex_length_le_encard
+    rw [hp.isWalk.vertex_coe_length_eq]
+    enat_to_nat!; omega
+  change Finite G.PathSet
+  rw [←Set.finite_range_iff inj_injective]
+  refine Set.Finite.subset (List.finite_length_le V(G) n) h_subset
 
 lemma pathSet_nonempty (G : Graph α β) (hNeBot : G.NeBot) :
-    G.pathSet.Nonempty := by
-  sorry
+    G.PathSet.Nonempty := by
+  have hnonempty : V(G).Nonempty := by rwa [←NeBot_iff_vertexSet_nonempty]
+  obtain ⟨x, hx⟩ := hnonempty
+  use nil x
+  simpa [PathSet]
 
 def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
-  MaximalFor (· ∈ G.pathSet) (fun w => w.length) p
+  MaximalFor G.IsPath (fun w => w.length) p
+
+@[simp]
+lemma IsLongestPath.isPath {p} (h : G.IsLongestPath p) : G.IsPath p := h.1
 
 lemma exists_longest_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot) :
+    (G : Graph α β) [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
     ∃ p, G.IsLongestPath p :=
-  Set.Finite.exists_maximalFor _ _ (G.pathSet_finite hFinite) (G.pathSet_nonempty hNeBot)
+  Set.Finite.exists_maximalFor _ _ (G.pathSet_finite) (G.pathSet_nonempty hNeBot)
 
 -- by maximality, each neighbour of is on the path
 lemma first_neighbors_mem_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
+    (G : Graph α β) [G.Simple]
     {P : WList (α) β} (hP : G.IsLongestPath P)
-    (x : α) (hx : G.Adj x P.first) :
+    (x : α) (hx : G.Adj P.first x) :
     x ∈ P := by
-  sorry
+  -- suppose not.
+  -- then, we will try constructing a longer path by prepending this neighbour
+  by_contra! hyp
+  obtain ⟨e, he⟩ := hx
+  generalize Q_def : cons x e P = Q
+  symm at Q_def
+  symm at he
+  have hQ : G.IsPath Q := by simp_all
+  have hQ_len : Q.length = P.length + 1 := by simp_all
+  have hQ_path : Q ∈ G.PathSet := hQ
+  have maximality := maximalFor_is_upper_bound _ hP _ hQ_path
+  linarith
 
 -- similarly, the same statement but reverse in direction
 lemma last_neighbors_mem_path
-    (G : Graph α β) [G.Simple] (hFinite : G.Finite) (hNeBot : G.NeBot)
+    (G : Graph α β) [G.Simple]
     {P : WList (α) β} (hP : G.IsLongestPath P)
-    (x : α) (hx : G.Adj x P.last) :
+    (x : α) (hx : G.Adj P.last x) :
     x ∈ P := by
   sorry
 
+-- cycles in simple graphs are nontrivial
+lemma IsCycle.nontrivial_of_simple
+    [G.Simple]
+    {P} (hP : G.IsCycle P) : P.Nontrivial := by
+  obtain (h|h) := hP.loop_or_nontrivial
+  swap; assumption
+  exfalso
+  obtain ⟨x,e,rfl⟩ := h
+  replace hP := hP.isTrail
+  rw [cons_isTrail_iff] at hP
+  apply hP.2.1.ne; simp
+
+-- cycles in simple graphs are of length at least 3
+lemma IsCycle.cycle_length_ge_3_of_simple
+    [G.Simple]
+    {P} (hP : G.IsCycle P) :
+    3 ≤ P.length := by
+  by_contra! hyp_contra
+  replace hyp_contra : P.length = 2 := by
+    suffices 2 ≤ P.length by linarith
+    have P_nontrivial := hP.nontrivial_of_simple
+    linarith [P_nontrivial.one_lt_length]
+  rw [hP.length_eq_two_iff] at hyp_contra
+  obtain ⟨x,y,e,f,_, hne, rfl⟩ := hyp_contra
+  have h_e_link : G.IsLink e x y := by
+    replace hP := hP.isTrail
+    simp_all
+  have h_f_link : G.IsLink f y x := by
+    replace hP := hP.isTrail
+    simp_all
+  symm at h_f_link
+  apply hne
+  have := IsLink.unique_edge h_e_link h_f_link
+  assumption
+
+/- gist of the proof of the next part:
+Goal: there's a cycle which contains the vertices of the longest path (which we will call P)
+Proof:
+- first, note that each neighbour of P.first must be on P by maximality of P
+- symmetrically, each neighbour of P.last must be on P as well
+- each neighbour of P.first has an edge of P to its left,
+  each neighbour of P.last has an edge of P to its right
+- since min degree >= n/2, there are n/2 edges of P with a neighbour of
+  of P.first on its right and n/2 edges of P with a neighbour of P.last on its left
+- P can only have at most n - 1 edges, so by pigeonhole, there must be at least
+  one edge of P with a neighbour of P.last on its left and a neighbour of P.first on
+  its right, say x - e - y with (G.Adj P.first x), (G.Adj P.last y)
+- so if we let:
+  * u := P.first
+  * v := P.last
+  * P₁ be the prefix u ... x,
+  * P₂ be the suffix y ... v,
+  then P₁ + xv - P₂ + yu is a cycle containing all of V(P)
+-/
+
+-- in a WList with no repeated edges, each edge is part of exactly one DInc triplet
+lemma dInc_iff_eq_of_dInc_of_edge_nodup {w : WList α β} (hw : w.edge.Nodup) (he : w.DInc e u v) :
+    w.DInc e x y ↔ x = u ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with
+  | nil => simp_all
+  | cons z f w IH =>
+    simp at hw h he
+    obtain ⟨rfl, rfl, rfl⟩ | h := h
+    · obtain ⟨rfl, he, rfl⟩ | he := he; try tauto
+      exfalso; apply hw.1; apply he.edge_mem
+    obtain ⟨rfl, rfl, rfl⟩ | he := he
+    · exfalso; apply hw.1; apply h.edge_mem
+    apply IH <;> first | assumption | tauto
+
+lemma dInc_iff_eq_of_dInc_of_vertex_nodup_left
+    {w : WList α β} (hw : w.vertex.Nodup) (hu : w.DInc e u v) :
+    w.DInc f u y ↔ f = e ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with
+  | nil _ => simp_all
+  | cons u' f' w IH =>
+    simp_all
+    obtain ⟨rfl, rfl, rfl⟩ | h := h
+    · obtain ⟨hu, rfl, rfl⟩ | hu := hu; try tauto
+      exfalso; apply hw.1; apply hu.left_mem
+    obtain ⟨rfl, rfl, rfl⟩ | hu := hu
+    · exfalso; apply hw.1; apply h.left_mem
+    apply IH <;> assumption
+
+lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right
+    {w : WList α β} (hw : w.vertex.Nodup) (hv : w.DInc e u v) :
+    w.DInc f x v ↔ f = e ∧ x = u := by
+  generalize hw_def' : w.reverse = w'
+  have hw' : w'.vertex.Nodup := by rwa [← hw_def', reverse_vertex, List.nodup_reverse]
+  have hv' : w'.DInc e v u := by simpa [← hw_def']
+  have := dInc_iff_eq_of_dInc_of_vertex_nodup_left (f := f) (v := u) (y := x) hw' hv'
+  rwa [← hw_def', dInc_reverse_iff] at this
+
 lemma exists_left_edge
-    (w : WList α β) {x : α} (hxw : x ∈ w) (hx : x ≠ w.first) :
-    ∃ e y, w.DInc e y x := by
-  sorry
+    (w : WList α β) {y : α} (hyw : y ∈ w) (hy : y ≠ w.first) :
+    ∃ e x, w.DInc e x y := by
+  induction w generalizing y with simp_all
+  | cons u e w IH =>
+    obtain (hne|heq) := Classical.decEq _ y w.first
+    · obtain ⟨f, x, h⟩ := IH hyw hne
+      use f, x
+      right; assumption
+    use e, u
+    left; tauto
+
+lemma existsUnique_left_edge
+    {w : WList α β} (hw : G.IsPath w) {y : α} (hyw : y ∈ w) (hy : y ≠ w.first) :
+    ∃! e, ∃ x, w.DInc e x y := by
+  obtain ⟨e, x, h⟩ := exists_left_edge w hyw hy
+  refine ⟨e, ⟨x, h⟩, ?_⟩
+  simp
+  intro e' x' h'
+  simp [dInc_iff_eq_of_dInc_of_vertex_nodup_right hw.nodup h] at h'
+  tauto
+
+lemma exists_right_edge
+    (w : WList α β) {x : α} (hxw : x ∈ w) (hx : x ≠ w.last) :
+    ∃ e y, w.DInc e x y := by
+  generalize hw'_def : w.reverse = w'; symm at hw'_def
+  have hx' : x ≠ w'.first := by simp_all
+  have hxw' : x ∈ w' := by simp_all
+  obtain ⟨e, y, h⟩ := exists_left_edge w' hxw' hx'
+  use e, y
+  simp_all
+
+lemma existsUnique_right_edge
+    {w : WList α β} (hw : G.IsPath w) {x : α} (hxw : x ∈ w) (hx : x ≠ w.last) :
+    ∃! e, ∃ y, w.DInc e x y := by
+  generalize hw'_def : w.reverse = w'; symm at hw'_def
+  have hw' : G.IsPath w' := by simp_all
+  have hx' : x ≠ w'.first := by simp_all
+  have hxw' : x ∈ w' := by simp_all
+  obtain ⟨e, he⟩ := existsUnique_left_edge hw' hxw' hx'
+  simp_all
+  refine ⟨e, he.1, ?_⟩
+  simp
+  exact he.2
+
+lemma WList.suffixFromVertex_from_first_eq
+    [DecidableEq α]
+    (w : WList α β) :
+    w.suffixFromVertex w.first = w := by
+  induction w with (simp_all [suffixFromVertex])
+
+lemma WList.suffixFromVertex_from_second_eq
+    [DecidableEq α]
+    (w : WList α β) (e) (hx : x ≠ w.first) :
+    (cons x e w).suffixFromVertex w.first = w := by
+  simp_all [suffixFromVertex]
+  exact suffixFromVertex_from_first_eq w
+
+lemma WList.suffixFromVertex_nil
+    [DecidableEq α]
+    {u x : α} : (WList.nil (β := β) u).suffixFromVertex x = WList.nil u := by
+  simp [suffixFromVertex]
+
+lemma WList.suffixFromVertex_cons_or
+    [DecidableEq α]
+    (u e) (w : WList α β) (x) :
+    (u = x ∧ (cons u e w).suffixFromVertex x = cons u e w) ∨
+    (u ≠ x ∧ (cons u e w).suffixFromVertex x = w.suffixFromVertex x) := by
+  obtain (h|h) := Classical.em (u = x) <;>
+    simp_all [suffixFromVertex]
+
+lemma WList.IsSublist.mem_edge
+    {w₁ w₂ : WList α β}
+    (h : w₁.IsSublist w₂) (he : e ∈ w₁.edge) :
+    e ∈ w₂.edge := by
+  have := h.edgeSet_subset
+  exact this he
+
+lemma WList.IsSuffix.mem_edge
+    {w₁ w₂ : WList α β}
+    (h : w₁.IsSuffix w₂) (he : e ∈ w₁.edge) :
+    e ∈ w₂.edge := by
+  refine WList.IsSublist.mem_edge ?_ he
+  exact h.isSublist
+
+lemma WList.IsPrefix.mem_edge
+    {w₁ w₂ : WList α β}
+    (h : w₁.IsPrefix w₂) (he : e ∈ w₁.edge) :
+    e ∈ w₂.edge := by
+  refine WList.IsSublist.mem_edge ?_ he
+  exact h.isSublist
+
+lemma IsPath.suffixFromVertex_idempotent
+    [DecidableEq α]
+    {p} (hp : G.IsPath p) (x) :
+    (p.suffixFromVertex x).suffixFromVertex x = p.suffixFromVertex x := by
+  induction p generalizing x with
+  | nil u =>
+    simp_all [suffixFromVertex]
+  | cons x' e p IH =>
+      simp_all
+      obtain (rfl|hne) := Classical.em (x = x')
+      · simp_all [suffixFromVertex]
+      replace hne : ¬ x' = x := fun a ↦ hne a.symm
+      simp_all [suffixFromVertex]
+
+lemma IsPath.dInc_suffixFromVertex
+    [DecidableEq α]
+    {p} (hp : G.IsPath p) (h : p.DInc e x y) :
+    p.suffixFromVertex x = cons x e (p.suffixFromVertex y) := by
+  induction p generalizing e x y with
+  | nil =>
+      simp_all
+  | cons x' e' p IH =>
+      rw [dInc_cons_iff] at h
+      have x'_nin : x' ∉ p := by simp at hp; tauto
+      obtain (h|h) := h
+      · obtain ⟨rfl, rfl, rfl⟩ := h
+        have x'_first : x' = (cons x' e' p).first := by simp
+        conv => left; right; rw [x'_first]
+        rw [WList.suffixFromVertex_from_first_eq (cons x' e' p)]
+        rw [WList.suffixFromVertex_from_second_eq]
+        intro rfl
+        have := p.first_mem
+        contradiction
+      specialize IH hp.of_cons h
+      have x'_ne_y : ¬ x' = y := by
+        intro rfl
+        have := h.right_mem
+        contradiction
+      have x'_ne_x : ¬ x' = x := by
+        intro rfl
+        have := h.left_mem
+        contradiction
+      simp_all [suffixFromVertex]
+
+lemma IsPath.prefixUntilVertex_dInc_suffixFromVertex
+    [DecidableEq α]
+    {p} (hp : G.IsPath p) (h : p.DInc e x y) :
+    (p.prefixUntilVertex x) ++ cons x e (p.suffixFromVertex y) = p := by
+  rw [← hp.dInc_suffixFromVertex h]
+  exact prefixUntilVertex_append_suffixFromVertex p x
+
+lemma IsPath.first_in_suffixFromVertex_iff
+    [DecidableEq α]
+    {p} (hp : G.IsPath p) {x} (hx : x ∈ p) :
+    p.first ∈ p.suffixFromVertex x ↔ p.first = x := by
+  refine ⟨?_, ?_⟩
+  swap
+  · rintro rfl
+    simp [WList.suffixFromVertex_from_first_eq p]
+  induction p generalizing x with simp_all
+  | cons u e w IH =>
+      obtain (rfl|hx) := hx
+      · simp_all [suffixFromVertex]
+      obtain (h|h) := WList.suffixFromVertex_cons_or u e w x
+      · obtain ⟨rfl, h⟩ := h
+        tauto
+      rw [h.2]
+      intro bad
+      exfalso
+      apply hp.2.2
+      exact (w.suffixFromVertex_isSuffix x).mem bad
+
+lemma IsLongestPath.nontrivial_of_connected_of_encard_ge_three
+    {P} (hP : G.IsLongestPath P)
+    (hConn : G.Connected)
+    (hNontrivial : 3 ≤ V(G).encard) :
+    P.Nontrivial := by
+  -- we will just leverage our result on trees
+  obtain ⟨T, hT, hles⟩ := hConn.exists_isTree_spanningSubgraph
+  have hT_encard : 3 ≤ V(T).encard := by
+    simpa [hles.vertexSet_eq]
+  have ⟨Q, hQ, hQ_length⟩ := hT.exists_length_two_path hT_encard
+  replace hQ : G.IsPath Q := hQ.of_le hles.le
+  rw [← WList.two_le_length_iff]
+  have solver := maximalFor_is_upper_bound WList.length hP _ hQ
+  omega
+
+lemma dirac_exists_cycle
+    [G.Simple] [G.Finite]
+    (hNontrivial : 3 ≤ V(G).encard)
+    (hDegree : V(G).encard ≤ 2 * G.minEDegree)
+    {P} (hP : G.IsLongestPath P) :
+    ∃ C, G.IsCycle C ∧ V(C) = V(P) := by
+
+  -- every max-length path in G must be of length at least 2
+  have P_nontrivial : P.Nontrivial :=
+    hP.nontrivial_of_connected_of_encard_ge_three
+      (dirac_connected hNontrivial hDegree)
+      hNontrivial
+
+  -- enat_to_nat away encard → ncard
+  have G_nonempty : V(G).Nonempty := by
+    rw [←encard_ne_zero]
+    enat_to_nat! <;> omega
+  have G_nebot : G.NeBot := by
+    rwa [NeBot_iff_vertexSet_nonempty]
+  have vx_finite : V(G).Finite := vertexSet_finite
+  simp [←vx_finite.cast_ncard_eq] at hDegree hNontrivial
+  simp [← G.natCast_minDegree_eq G_nebot] at hDegree
+  enat_to_nat
+
+
+
+  have first_edge (y : {y // G.Adj P.first y}) :
+      ∃! e, ∃ x, P.DInc e x y := by
+    obtain ⟨y, hy⟩ := y
+    have ne_first : y ≠ P.first := hy.ne.symm
+    refine existsUnique_left_edge hP.isPath ?_ ne_first
+    exact G.first_neighbors_mem_path hP _ hy
+  have last_edge (x : {x // G.Adj P.last x}) :
+      ∃! e, ∃ y, P.DInc e x y := by
+    obtain ⟨x, hx⟩ := x
+    have ne_last : x ≠ P.last := hx.ne.symm
+    refine existsUnique_right_edge hP.isPath ?_ ne_last
+    exact G.last_neighbors_mem_path hP _ hx
+  rw [forall_existsUnique_iff] at first_edge last_edge
+  obtain ⟨left_edge, left_edge_spec⟩ := first_edge
+  obtain ⟨right_edge, right_edge_spec⟩ := last_edge
+  have left_edge_inj : Function.Injective left_edge := by
+    intro ⟨y, hy⟩ ⟨y', hy'⟩ heq
+    simp
+    generalize e_def : left_edge ⟨y, hy⟩ = e
+    generalize e'_def : left_edge ⟨y', hy'⟩ = e'
+    replace heq : e = e' := (e_def.symm.trans heq).trans e'_def
+    rw [←left_edge_spec] at e_def
+    obtain ⟨x, hx⟩ := e_def
+    rw [← heq, ←left_edge_spec] at e'_def
+    obtain ⟨x', hx'⟩ := e'_def
+    rw [hP.isPath.isTrail.dInc_iff_eq_of_dInc hx (x := x') (y := y')] at hx'
+    tauto
+  have right_edge_inj : Function.Injective right_edge := by
+    intro ⟨x, hx⟩ ⟨x', hx'⟩ heq
+    simp
+    generalize e_def : right_edge ⟨x, hx⟩ = e
+    generalize e'_def : right_edge ⟨x', hx'⟩ = e'
+    replace heq : e = e' := (e_def.symm.trans heq).trans e'_def
+    rw [←right_edge_spec] at e_def
+    obtain ⟨y, hy⟩ := e_def
+    rw [← heq, ←right_edge_spec] at e'_def
+    obtain ⟨y', hy'⟩ := e'_def
+    rw [hP.isPath.isTrail.dInc_iff_eq_of_dInc hy (x := x') (y := y')] at hy'
+    tauto
+  have left_edge_range_le : Set.range left_edge ⊆ E(P) := by
+    intro e ⟨y, hy⟩
+    rw [←left_edge_spec] at hy
+    obtain ⟨x, h⟩ := hy
+    exact h.edge_mem
+  have right_edge_range_le : Set.range right_edge ⊆ E(P) := by
+    intro e ⟨x, hx⟩
+    rw [←right_edge_spec] at hx
+    obtain ⟨y, h⟩ := hx
+    exact h.edge_mem
+  let equiv_first := G.incAdjEquiv P.first
+  let equiv_last := G.incAdjEquiv P.last
+
+  -- there exists some edge which is both a left edge and a right edge
+  have ⟨e, he⟩ : (range left_edge ∩ range right_edge).Nonempty := by
+    rw [←not_disjoint_iff_nonempty_inter]
+    intro h_disj
+    have P_edge_finite : E(P).Finite := by
+      refine ‹G.Finite›.edgeSet_finite.subset ?_
+      exact hP.isPath.isWalk.edgeSet_subset
+    have left_edge_range_finite : (range left_edge).Finite :=
+      P_edge_finite.subset left_edge_range_le
+    have right_edge_range_finite : (range right_edge).Finite :=
+      P_edge_finite.subset right_edge_range_le
+    have left_edge_range_card : (range left_edge).ncard = G.degree P.first := by
+      rw [←Nat.card_coe_set_eq, Nat.card_range_of_injective, Nat.card_congr equiv_first.symm]
+        <;> [skip ; assumption]
+      change Nat.card {e | G.Inc e P.first} = G.degree P.first
+      rw [Nat.card_coe_set_eq]
+      exact degree_eq_ncard_inc.symm
+    have right_edge_range_card : (range right_edge).ncard = G.degree P.last := by
+      rw [←Nat.card_coe_set_eq, Nat.card_range_of_injective, Nat.card_congr equiv_last.symm]
+        <;> [skip ; assumption]
+      change Nat.card {e | G.Inc e P.last} = G.degree P.last
+      rw [Nat.card_coe_set_eq]
+      exact degree_eq_ncard_inc.symm
+    have sum :
+        ((range left_edge) ∪ (range right_edge)).ncard = G.degree P.first + G.degree P.last := by
+      rw [ncard_union_eq h_disj left_edge_range_finite right_edge_range_finite]
+      rw [left_edge_range_card, right_edge_range_card]
+    replace sum : V(G).ncard ≤ (range left_edge ∪ range right_edge).ncard := by
+      have le₁ : G.minDegree ≤ G.degree P.first :=
+        minDegree_le_degree hP.isPath.isWalk.first_mem
+      have le₂ : G.minDegree ≤ G.degree P.last :=
+        minDegree_le_degree hP.isPath.isWalk.last_mem
+      omega
+    have killer₁ : E(P).ncard + 1 ≤ V(G).ncard := by
+      have : DecidableEq β := Classical.decEq β
+      rw [hP.isPath.isTrail.edge_ncard_eq_length]
+      exact hP.isPath.length_le_ncard
+    have killer₂ : (range left_edge ∪ range right_edge).ncard ≤ E(P).ncard := by
+      refine ncard_le_ncard ?_ P_edge_finite
+      simp
+      tauto
+    omega
+
+  obtain ⟨⟨y, he_left⟩, ⟨x, he_right⟩⟩ := he
+  have h_dinc : P.DInc e x y := by
+    rw [←left_edge_spec] at he_left
+    rw [←right_edge_spec] at he_right
+    obtain ⟨x', hx'⟩ := he_left
+    obtain ⟨y', hy'⟩ := he_right
+    rw [hP.isPath.isTrail.dInc_iff_eq_of_dInc hy' (x := x') (y := y)] at hx'
+    obtain ⟨rfl, rfl⟩ := hx'
+    assumption
+  obtain ⟨y, ey, hy⟩ := y
+  obtain ⟨x, ex, hx⟩ := x
+  simp at h_dinc
+  have decEqα := Classical.decEq α
+  clear left_edge_spec left_edge_inj left_edge_range_le he_left left_edge
+  clear right_edge_spec right_edge_inj right_edge_range_le he_right right_edge
+  clear equiv_first equiv_last
+
+  -- Two trivial cases: when ex ∈ P.edge or when ey ∈ P.edge.
+  -- In either case, we can directly close the path up.
+  obtain (hey|ey_notMem) := Classical.em (ey ∈ P.edge)
+  · -- In this case, we must have P.DInc ey P.first y.
+    -- But we already know P.DInc e x y, so we must have x = P.first.
+    -- Thus, we can directly close up the loop with ex.
+    have h_dinc' : P.DInc ey P.first y := by
+      have h_isLink' : P.IsLink ey P.first y := by
+        simpa [hP.isPath.isWalk.isLink_iff_isLink_of_mem hey]
+      rw [isLink_iff_dInc] at h_isLink'
+      obtain (h|h) := h_isLink'
+        <;> [assumption; exfalso]
+      -- this is impossible, can't have P.first as RHS of DInc.
+      have := h.ne_first hP.isPath.nodup
+      contradiction
+    rw [dInc_iff_eq_of_dInc_of_vertex_nodup_right hP.isPath.nodup h_dinc (f := ey) (x := P.first)]
+      at h_dinc'
+    obtain ⟨rfl, rfl⟩ := h_dinc'
+    have hC : G.IsCycle (cons P.last ex P) :=
+      hP.isPath.cons_isCycle_of_nontrivial hx.symm P_nontrivial
+    refine ⟨cons P.last ex P, hC, ?_⟩
+    simp [←hC.isClosed.vertexSet_tail]
+  -- ditto for ex ∈ P.edge
+  obtain (hex|ex_notMem) := Classical.em (ex ∈ P.edge)
+  · have h_dinc' : P.DInc ex x P.last := by
+      have h_isLink' : P.IsLink ex P.last x := by
+        simpa [hP.isPath.isWalk.isLink_iff_isLink_of_mem hex]
+      rw [isLink_iff_dInc] at h_isLink'
+      obtain (h|h) := h_isLink'
+        <;> [exfalso; assumption]
+      have := h.ne_last hP.isPath.nodup
+      contradiction
+    rw [dInc_iff_eq_of_dInc_of_vertex_nodup_left hP.isPath.nodup h_dinc (f := ex) (y := P.last)]
+      at h_dinc'
+    obtain ⟨rfl, rfl⟩ := h_dinc'
+    have hC : G.IsCycle (cons P.last ey P) :=
+      hP.isPath.cons_isCycle_of_nontrivial hy P_nontrivial
+    refine ⟨cons P.last ey P, hC, ?_⟩
+    simp [←hC.isClosed.vertexSet_tail]
+
+  -- we now do surgery on a grape
+  let pref := P.prefixUntilVertex x
+  let suff := P.suffixFromVertex y
+  have pref_dinc_suff_eq : pref ++ cons x e suff = P := by
+    simp only [pref, suff, IsPath.prefixUntilVertex_dInc_suffixFromVertex hP.isPath h_dinc]
+  have x_notMem_suff : x ∉ suff := by
+    have h_isPath := hP.isPath
+    have h_isSuff : (cons x e suff).IsSuffix P := by
+      rw [← pref_dinc_suff_eq]
+      exact WList.isSuffix_append_left _ _
+    apply h_isPath.suffix at h_isSuff
+    simp at h_isSuff; tauto
+
+  have h_disj : Disjoint V(pref) V(suff) := by
+    by_contra! hcon
+    rw [not_disjoint_iff_nonempty_inter] at hcon
+    obtain ⟨u, hu_pref, hu_suff⟩ := hcon
+    have h_isPath := hP.isPath.reverse
+    rw [← pref_dinc_suff_eq, WList.reverse_append] at h_isPath
+      <;> [skip ; exact P.prefixUntilVertex_last h_dinc.left_mem]
+    rw [reverse_cons] at h_isPath
+    have disj := h_isPath.diff_Last_disjoint_of_append
+    simp [x_notMem_suff] at disj
+    exact disj.notMem_of_mem_right hu_pref hu_suff
+
+  have y_notMem_pref : y ∉ pref := by
+    intro h_y_pref
+    have h_y_suff : y ∈ suff := by
+      simp [suff]; nth_rewrite 2 [←P.suffixFromVertex_first h_dinc.right_mem]
+      exact WList.first_mem
+    exact h_disj.notMem_of_mem_left h_y_pref h_y_suff
+  have notMem_pref_edge_of_notMem_edge {e} (h : e ∉ P.edge) : e ∉ pref.edge := by
+    intro bad
+    simp [pref] at bad
+    have := WList.IsPrefix.mem_edge (P.prefixUntilVertex_isPrefix x) bad
+    contradiction
+  have notMem_suff_edge_of_notMem_edge {e} (h : e ∉ P.edge) : e ∉ suff.edge := by
+    intro bad
+    simp [suff] at bad
+    have := WList.IsSuffix.mem_edge (P.suffixFromVertex_isSuffix y) bad
+    contradiction
+
+  have h₁ : G.IsPath (cons P.first ey suff) := by
+    simp
+    refine ⟨?_, ?_, ?_⟩
+    · refine hP.isPath.suffix (P.suffixFromVertex_isSuffix y)
+    · suffices suff.first = y by simpa [this]
+      refine suffixFromVertex_first h_dinc.right_mem
+    intro bad
+    have := IsPath.first_in_suffixFromVertex_iff hP.isPath h_dinc.right_mem
+    simp [suff, this] at bad
+    exact hy.ne bad
+  have h₂ : G.IsPath (pref.reverse ++ (cons P.first ey suff)) := by
+    have pref'_isPath : G.IsPath pref.reverse := by
+      refine IsPath.reverse ?_
+      refine hP.isPath.prefix (P.prefixUntilVertex_isPrefix x)
+    refine IsPath.append pref'_isPath h₁ (by simp [pref, suff]) ?_
+    intro u hu_pref' hu_cons
+    simp at hu_cons
+    obtain (h|h) := hu_cons
+    · simpa [pref]
+    change u ∈ V(suff) at h
+    replace hu_pref' : u ∈ V(pref) := by
+      rw [WList.mem_reverse] at hu_pref'
+      exact hu_pref'
+    exfalso
+    exact h_disj.notMem_of_mem_left hu_pref' h
+  have h₃ : G.IsCycle (cons P.last ex (pref.reverse ++ (cons P.first ey suff))) := by
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · simp
+      refine ⟨h₂.isTrail, ?_, ?_⟩
+      · simpa [pref, P.prefixUntilVertex_last h_dinc.left_mem]
+      refine ⟨by tauto, ?_, by tauto⟩
+      intro rfl
+      suffices : P.first = P.last
+      · rw [WList.first_eq_last_iff hP.isPath.nodup] at this
+        rw [←WList.length_eq_zero] at this
+        rw [←WList.two_le_length_iff] at P_nontrivial
+        omega
+      obtain (h|h) := hx.eq_and_eq_or_eq_and_eq hy
+        <;> [exact h.1.symm; exfalso]
+      apply ex_notMem
+      rw [←h.2] at hy
+      have e_isLink : G.IsLink e x y :=
+        hP.isPath.isWalk.isLink_of_isLink h_dinc.isLink
+      rw [hy.unique_edge e_isLink]
+      exact h_dinc.edge_mem
+    · simp
+    · simp
+      show P.last = suff.last
+      simp [suff]
+    simp only [tail_cons]
+    exact h₂.nodup
+  refine ⟨cons P.last ex (pref.reverse ++ cons P.first ey suff), h₃, ?_⟩
+  simp [←h₃.isClosed.vertexSet_tail]
+  rw [WList.append_vertexSet_of_eq (by simp [pref]),
+      WList.reverse_vertexSet]
+  nth_rewrite 2 [← pref_dinc_suff_eq]
+  rw [WList.append_vertexSet_of_eq]
+  swap
+  · simp [pref]
+    exact P.prefixUntilVertex_last h_dinc.left_mem
+  simp
+  ext u
+  refine ⟨?_, ?_⟩
+  · rintro (rfl|hu)
+    · right; left
+      rw [← P.prefixUntilVertex_first x]
+      exact WList.first_mem
+    right; assumption
+  rintro (hu|hu)
+  · symm at hu; obtain rfl := hu
+    right; left
+    rw [← P.prefixUntilVertex_last h_dinc.left_mem]
+    exact WList.last_mem
+  right; assumption
+
+lemma dirac_isHamiltonianCycle
+    [G.Simple] [G.Finite] {P}
+    (hNontrivial : 3 ≤ V(G).encard)
+    (hDegree : V(G).encard ≤ 2 * G.minEDegree)
+    (hP : G.IsLongestPath P)
+    {C} (hC : G.IsCycle C ∧ V(C) = V(P)) :
+    G.IsHamiltonianCycle C := by
+  -- Suppose not. Then there exists some x ∈ V(G) - V(C).
+  -- Since G is connected, we can find a path from x to C, say Q.
+  -- Let z be the last element of Q which is not in C.
+  -- Then we can extend P by z to contradict the maximality of P.
+  by_contra! hcon
+  have vx_finite : V(G).Finite := vertexSet_finite
+  have decEqα := Classical.decEq α
+  obtain ⟨hC, hCP⟩ := hC
+  simp [IsHamiltonianCycle] at hcon
+  simp_all
+  have hCG : V(C) ⊆ V(G) := hC.isWalk.vertexSet_subset
+  rw [hC.length_eq_vertexSet_ncard] at hcon
+  have hCG_ssub : V(C) ⊂ V(G) := by
+    refine ⟨hCG, ?_⟩
+    intro bad
+    replace bad := bad.antisymm hCG
+    rw [bad] at hcon
+    contradiction
+  rw [ssubset_iff_of_subset hCG] at hCG_ssub
+  -- we now have our element x ∈ V(G - C)
+  obtain ⟨x, hxG, hnxC⟩ := hCG_ssub
+
+  -- pick up any element of C
+  have ⟨y, hy⟩ : V(C).Nonempty :=
+    C.vertexSet_nonempty
+
+  have hConn := dirac_connected hNontrivial hDegree
+  -- find a path between x, y
+  have hyG : y ∈ V(G) := hCG hy
+  have ⟨Q, hQ, hQ_first, hQ_last⟩ := (hConn.connectedBetween hxG hyG).exists_isPath
+  symm at hQ_first hQ_last
+  have decpred : DecidablePred V(C) := Classical.decPred _
+  let pref := Q.prefixUntil V(C)
+  have pref_isPath : G.IsPath pref := hQ.prefix (Q.prefixUntil_isPrefix V(C))
+  have pref_last : V(C) pref.last := by
+    apply Q.prefixUntil_prop_last
+    refine ⟨y, ?_, hy⟩
+    rw [hQ_last]
+    exact Q.last_mem
+  have last_ne_first : pref.last ≠ pref.first := by
+    conv => rhs; simp only [pref]
+    intro heq
+    rw [Q.prefixUntil_first V(C)] at heq
+    rw [heq, ← hQ_first] at pref_last
+    contradiction
+  -- choose the last element which is not on C
+  have ⟨e, z, h_dinc⟩ := pref.exists_left_edge pref.last_mem last_ne_first
+  have z_ne_last : z ≠ pref.last := by
+    exact (pref_isPath.isWalk.isLink_of_dInc h_dinc).adj.ne
+  have hnzC : ¬ V(C) z := by
+    refine prefixUntil_not_prop (P := V(C)) ?_ z_ne_last.symm
+    exact h_dinc.left_mem
+  have C_nontrivial : C.Nontrivial := by
+    rw [←one_lt_length_iff]
+    have := hC.three_le_length_of_simple
+    omega
+  have ⟨P', f, f', hP', hP'_last, hP'_f, hP'_f', f_ne_f', heq⟩ :=
+    hC.exists_isPath_vertex C_nontrivial pref_last
+  generalize P''_def : P'.concat f' pref.last = P''; symm at P''_def
+  have h_isCycle : G.IsCycle (cons pref.last f P'') := by
+    rw [P''_def, ←heq]
+    exact hC.rotate (C.idxOf pref.last)
+  have P''_isPath : G.IsPath P'' := by
+    have := h_isCycle.tail_isPath
+    simp at this
+    assumption
+  have P''_vertexSet_eq : V(P'') = V(P) := by
+    rw [← hCP]
+    apply congr_arg WList.vertexSet at heq
+    rw [← P''_def, hC.isClosed.rotate_vertexSet] at heq
+    rw [heq, ← h_isCycle.isClosed.vertexSet_tail]
+    simp
+  -- e x t e n d
+  generalize P'''_def : P''.concat e z = P'''; symm at P'''_def
+  have P'''_isPath : G.IsPath P''' := by
+    simp [P'''_def]
+    refine ⟨P''_isPath, ?_, ?_⟩
+    · simp [P''_def]
+      exact (pref_isPath.isWalk.isLink_of_dInc h_dinc).symm
+    change z ∉ V(P'')
+    rw [P''_vertexSet_eq, ←hCP]
+    exact hnzC
+  have P'''_length : P'''.length = P''.length + 1 := by
+    simp [P'''_def]
+  rw [← length_vertex P'', P''_isPath.vertex_length_eq_vertexSet_ncard,
+       P''_vertexSet_eq, ← hP.isPath.vertex_length_eq_vertexSet_ncard, length_vertex P]
+     at P'''_length
+  have := maximalFor_is_upper_bound WList.length hP _ P'''_isPath
+  omega
+
+lemma dirac [G.Simple] [G.Finite]
+    (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree) :
+    ∃ C, G.IsHamiltonianCycle C := by
+  have hnonempty : G.NeBot := by
+    rw [NeBot_iff_encard_positive]
+    enat_to_nat! <;> omega
+  have ⟨P, hP⟩ := G.exists_longest_path hnonempty
+  have ⟨C, hC⟩ := dirac_exists_cycle hV hDegree hP
+  exact ⟨C, dirac_isHamiltonianCycle hV hDegree hP hC⟩
