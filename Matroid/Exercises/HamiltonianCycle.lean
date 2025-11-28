@@ -52,30 +52,72 @@ lemma minDegree_le_minDegree_of_Subgraph (G H : Graph α β) [G.Finite] (hHG : H
   have h2 : H.minDegree ≤ H.degree w := minDegree_le_degree <| hHG.vertexSet_eq ▸ gw
   omega
 
+lemma components_encard_le (G : Graph α β)
+    : G.Components.encard ≤ V(G).encard := by
+  have h_disj := G.components_pairwise_stronglyDisjoint
+  have h_eq := G.eq_sUnion_components
+  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
+    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
+    simp_all
+  let surj : V(G) → G.Components := by
+    rintro ⟨x, hx⟩
+    refine ⟨G.walkable x, walkable_isCompOf hx⟩
+  have surj_surjective : Function.Surjective surj := by
+    rintro ⟨H, H_spec⟩
+    have H_nonempty := H_spec.1.2
+    have ⟨x, hxH⟩ := H_nonempty
+    have hxG : x ∈ V(G) := H_spec.1.1.le.vertex_subset hxH
+    use ⟨x, hxG⟩
+    simp [surj]
+    simp [H_spec.eq_walkable_of_mem_walkable hxH]
+  have inj_spec := Function.injective_surjInv surj_surjective
+  set inj := Function.surjInv surj_surjective
+  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
+
+lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
+    G.Components.Finite := by
+  refine hFinite.vertexSet_finite.finite_of_encard_le ?_
+  exact G.components_encard_le
+
+lemma components_eq_singleton_iff : (∃ H, G.Components = {H}) ↔ G.Connected := by
+  refine ⟨?_, ?_⟩
+  · intro ⟨H, hH⟩
+    have := G.eq_sUnion_components
+    simp only [hH, Graph.sUnion_singleton] at this
+    subst G
+    change H.IsCompOf H
+    rw [←mem_components_iff_isCompOf]
+    simp_all only [mem_singleton_iff]
+  intro hyp
+  obtain ⟨x, hx⟩ := hyp.nonempty
+  refine ⟨G.walkable x, ?_⟩
+  have h₁ := hyp.components_subsingleton
+  have h₂ : G.walkable x ∈ G.Components := walkable_isCompOf hx
+  rwa [subsingleton_iff_singleton h₂] at h₁
+
+lemma components_subsingleton_iff : G.Components.Subsingleton ↔ G = ⊥ ∨ G.Connected := by
+  refine ⟨?_, ?_⟩
+  · intro hyp
+    apply Subsingleton.eq_empty_or_singleton at hyp
+    obtain (hyp|⟨H, hH⟩) := hyp
+      <;> [left ; right]
+    · rwa [← components_eq_empty_iff]
+    exact components_eq_singleton_iff.mp ⟨H, hH⟩
+  rintro (hyp|hyp)
+  · rw [← components_eq_empty_iff] at hyp
+    rw [hyp]
+    exact subsingleton_empty
+  exact hyp.components_subsingleton
+
 lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected) :
     2 ≤ G.Components.encard := by
-  -- G has a vertex
-  obtain ⟨ v, hv ⟩ := vertexSet_nonempty_of_NeBot hNeBot
-  -- I cheated here, but this lemma is missing and I'm guessing it should be in connected
-  obtain ⟨ H, hH, hvH ⟩ := G.exists_IsCompOf_vertex_mem hv
-  have hbig : ∃ w ∈ V(G), w ∉ V(H) := by
-    by_contra! hw
-    --Our contradiction is that G is connected. The following have is the hardest.
-    obtain rfl : G = H := by
-    -- I think I went overboard on this refine, try refine ext_inc ?_ ?_ and see what happens
-      refine ext_inc (Subset.antisymm_iff.mpr ⟨hw, isCompOf_subset hH⟩) ?_
-      intro e x
-      -- Here is a one line proof, try to write this in steps.
-      refine ⟨ fun hh ↦ (Inc.of_isClosedSubgraph_of_mem hh (IsCompOf.isClosedSubgraph hH)
-          (hw x (Inc.vertex_mem hh))), fun hh ↦ (Inc.of_le hh (IsCompOf.le hH)) ⟩
-    -- Just state the contradiction
-    sorry
-  obtain ⟨ w, hw, hwH ⟩ := hbig
-  obtain ⟨ H₁, hH1, hvH1 ⟩ := G.exists_IsCompOf_vertex_mem hw
-  have : H ≠ H₁ := by sorry
-  sorry
-  -- Set.Nontrivial, Set.Subsingleton
-
+  -- This is very easy by `components_subsingleton_iff`.
+  by_contra! hcon
+  replace hcon : G.Components.Subsingleton := by
+    rw [← encard_le_one_iff_subsingleton]
+    enat_to_nat!; omega
+  rw [components_subsingleton_iff] at hcon
+  tauto
 
 def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
   ∀ S, S.encard < k → (G - S).Connected
@@ -1314,35 +1356,6 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
 
 
 
-
-omit [DecidableEq α] in
-lemma components_encard_le (G : Graph α β)
-    : G.Components.encard ≤ V(G).encard := by
-  have h_disj := G.components_pairwise_stronglyDisjoint
-  have h_eq := G.eq_sUnion_components
-  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
-    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
-    simp_all
-  let surj : V(G) → G.Components := by
-    rintro ⟨x, hx⟩
-    refine ⟨G.walkable x, walkable_isCompOf hx⟩
-  have surj_surjective : Function.Surjective surj := by
-    rintro ⟨H, H_spec⟩
-    have H_nonempty := H_spec.1.2
-    have ⟨x, hxH⟩ := H_nonempty
-    have hxG : x ∈ V(G) := H_spec.1.1.le.vertex_subset hxH
-    use ⟨x, hxG⟩
-    simp [surj]
-    simp [H_spec.eq_walkable_of_mem_walkable hxH]
-  have inj_spec := Function.injective_surjInv surj_surjective
-  set inj := Function.surjInv surj_surjective
-  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
-
-omit [DecidableEq α] in
-lemma finite_components_of_finite {G : Graph α β} (hFinite : G.Finite) :
-    G.Components.Finite := by
-  refine hFinite.vertexSet_finite.finite_of_encard_le ?_
-  exact G.components_encard_le
 
 /- Step 1: WTS G is connected.
 Proof: Suppose not. Then the degree of any vertex in the smallest component C of G
