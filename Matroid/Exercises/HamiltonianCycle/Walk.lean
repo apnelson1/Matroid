@@ -16,7 +16,7 @@ open WList Set
 
 namespace Graph
 
-variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β}
+variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {w p q P Q C : WList α β}
 
 -- In a simple graph, walks are completely dictated by their vertices
 lemma IsWalk.eq_of_vertex_eq
@@ -193,6 +193,10 @@ lemma exists_longest_path
     ∃ p, G.IsLongestPath p :=
   Set.Finite.exists_maximalFor _ _ (G.pathSet_finite) (G.pathSet_nonempty hNeBot)
 
+@[simp]
+lemma IsLongestPath.reverse (hp : G.IsLongestPath p) : G.IsLongestPath p.reverse := by
+  simp only [IsLongestPath, MaximalFor, reverse_isPath_iff, reverse_length]
+  exact hp
 
 -- TODO: this already exists in library.
 -- by maximality, each neighbour of is on the path
@@ -220,7 +224,12 @@ lemma last_neighbors_mem_path
     {P : WList (α) β} (hP : G.IsLongestPath P)
     (x : α) (hx : G.Adj P.last x) :
     x ∈ P := by
-  sorry
+  -- just reverse `first_neighbors_mem_path`
+  set P' := P.reverse with P'_def
+  have hx' : G.Adj P'.first x := by simp_all only [reverse_first]
+  have hP' : G.IsLongestPath P' := hP.reverse
+  have := first_neighbors_mem_path G hP' x hx'
+  simp_all only [mem_reverse]
 
 ------- Lemmas on cycles in simple graphs?
 
