@@ -143,6 +143,7 @@ lemma isCompOf_iff_exists_walkable : H.IsCompOf G ↔ ∃ x ∈ V(H), G.walkable
     exact (IsCompOf.eq_walkable_of_mem_walkable h hy).symm
   · subst H
     exact walkable_isCompOf <| mem_walkable_self_iff.mp hx
+alias ⟨IsCompOf.exists_walkable, _⟩ := isCompOf_iff_exists_walkable
 
 lemma exists_IsCompOf_vertex_mem (hx : x ∈ V(G)) : ∃ (H : Graph α β), H.IsCompOf G ∧ x ∈ V(H) :=
   ⟨_, walkable_isCompOf hx, by simpa⟩
@@ -152,6 +153,12 @@ lemma IsCompOf.le_of_mem_mem (hH₁ : H₁.IsCompOf G) (hH₂cl : H₂ ≤c G)
   rw [hH₁.eq_walkable_of_mem_walkable hx₁]
   exact hH₂cl.walkable_le_of_mem hx₂
 
+lemma IsCompOf.eq_of_not_disjoint (hH₁co : H₁.IsCompOf G) (hH₂co : H₂.IsCompOf G)
+    (hV : ¬ Disjoint V(H₁) V(H₂)) : H₁ = H₂ := by
+  rw [not_disjoint_iff] at hV
+  obtain ⟨x, hx₁, hx₂⟩ := hV
+  obtain rfl := hH₂co.eq_walkable_of_mem_walkable hx₂
+  exact hH₁co.eq_walkable_of_mem_walkable hx₁
 
 
 def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
@@ -197,16 +204,33 @@ lemma components_eq_empty_iff : G.Components = ∅ ↔ G = ⊥ := by
   ext H
   simp
 
+lemma components_encard_le (G : Graph α β) : G.Components.encard ≤ V(G).encard := by
+  have h_disj := G.components_pairwise_stronglyDisjoint
+  have h_eq := G.eq_sUnion_components
+  replace h_eq : V(G) = ⋃ H ∈ G.Components, V(H) := by
+    apply congr_arg (fun H : Graph α β ↦ V(H)) at h_eq
+    simp_all
+  let surj : V(G) → G.Components := by
+    rintro ⟨x, hx⟩
+    refine ⟨G.walkable x, walkable_isCompOf hx⟩
+  have surj_surjective : Function.Surjective surj := by
+    rintro ⟨H, H_spec⟩
+    have ⟨x, hxH⟩ := H_spec.1.2
+    use ⟨x, H_spec.1.1.le.vertex_subset hxH⟩
+    simp [surj, H_spec.eq_walkable_of_mem_walkable hxH]
+  have inj_spec := Function.injective_surjInv surj_surjective
+  set inj := Function.surjInv surj_surjective
+  exact Function.Embedding.encard_le ⟨inj, inj_spec⟩
+
 lemma IsClosedSubgraph.components_subset_components (hcl : H ≤c G) :
     H.Components ⊆ G.Components := by
   rintro H' hH'
   rw [mem_components_iff_isCompOf] at hH' ⊢
   exact hH'.of_isClosedSubgraph hcl
 
-
 def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
     G.ClosedSubgraph ≃o Set {a : G.ClosedSubgraph | IsAtom a} :=
-  orderIsoSetOfAtoms
+  CompleteAtomicBooleanAlgebra.toSetOfIsAtom
 
 -- def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
 --   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)

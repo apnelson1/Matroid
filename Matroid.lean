@@ -30,6 +30,7 @@ import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
+import Matroid.Exercises.HamiltonianCycle
 import Matroid.Extension.ExtendBy
 import Matroid.Extension.Guts
 import Matroid.Extension.Minor
@@ -129,5 +130,3 @@ import Matroid.Simple
 import Matroid.Spikes
 -- import Matroid.Tame
 import Matroid.Uniform
-
-import Matroid.Exercises.HamiltonianCycle

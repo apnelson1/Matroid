@@ -313,6 +313,24 @@ lemma mem_mixedLineGraph_walkMap_iff {x} : x ∈ mixedLineGraph_walkMap W ↔ (�
   rw [← WList.mem_vertexSet_iff]
   simp
 
+-- If e is not a loop, then we could even get a path rather than a walk.
+lemma Preconnected.exists_isWalk_first_lastEdge (h : G.Preconnected) (hx : x ∈ V(G))
+    (he : e ∈ E(G)) : ∃ (P : WList α β) (hP : P.Nonempty), G.IsWalk P ∧ P.first = x ∧
+    hP.lastEdge = e := by
+  have ⟨a, b, he⟩ := G.exists_isLink_of_mem_edgeSet he
+  obtain ⟨P, hP, rfl, rfl⟩ := h x a hx he.left_mem
+  use P.concat e b
+  simp [hP, he]
+
+lemma Preconnected.exists_isWalk_firstEdge_lastEdge (h : G.Preconnected) (he : e ∈ E(G))
+    (hf : f ∈ E(G)) : ∃ (W : WList α β) (hW : W.Nonempty), G.IsWalk W ∧ hW.firstEdge = e ∧
+    hW.lastEdge = f := by
+  have ⟨a, b, he⟩ := G.exists_isLink_of_mem_edgeSet he
+  have ⟨c, d, hf⟩ := G.exists_isLink_of_mem_edgeSet hf
+  obtain ⟨P, hP, rfl, rfl⟩ := h b c he.right_mem hf.left_mem
+  use (P.cons a e).concat f d
+  simp [hP, he, hf, Nonempty.lastEdge_cons]
+
 -- def sublist_of_mixedLineGraph_walkMap {W' : WList (α ⊕ β) (α × β)}
 --     (hW' : G.mixedLineGraph.IsWalk W') :
 --     ∃ W : WList α β, W'.IsSublist (mixedLineGraph_walkMap W) := by
@@ -334,15 +352,21 @@ lemma mem_mixedLineGraph_walkMap_iff {x} : x ∈ mixedLineGraph_walkMap W ↔ (�
 --     ·
 --     sorry
 
+lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) ↔ x ∉ S := by
+  aesop
+
 -- lemma mixedLineGraph_vertexDelete_preconnected_of_preconnected (h : (G - X ＼ F).Preconnected) :
 --     (G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' F)).Preconnected := by
 --   intro s t hs ht
 --   simp only [vertexDelete_vertexSet, mixedLineGraph_vertexSet, mem_diff, mem_union, mem_image,
 --     not_or, not_exists, not_and, ne_eq] at hs ht
---   obtain ⟨hs, hsX, hsF⟩ := hs
---   obtain ⟨ht, htX, htF⟩ := ht
+--   obtain ⟨(⟨u, hu, rfl⟩ | ⟨f, hf, rfl⟩), hsX, hsF⟩ := hs
+--   obtain ⟨(⟨v, hv, rfl⟩ | ⟨g, hg, rfl⟩), htX, htF⟩ := ht
+--   · simp_all only [Sum.inl.injEq, reduceCtorEq, not_false_eq_true, implies_true, ← ne_eq]
+--     rw [notMem_iff_forall_mem_ne X _] at htX hsX
+--     obtain hconn := h u v (by simp [hu, hsX]) (by simp [hv, htX])
+--     sorry
 
---   obtain ⟨W, hW, rfl, rfl⟩ := h.ConnectedBetween (by simp) (by simp)
 
 -- lemma mixedLineGraph_vertexDelete_connected_of_connected (h : (G - X ＼ F).Connected) :
 --     (G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' F)).Connected := by

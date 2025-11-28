@@ -273,6 +273,10 @@ lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ G.Preconnected :=
   ⟨fun h => ⟨h.nonempty, h.pre⟩,
     fun ⟨hne, h⟩ => connected_of_vertex hne.some_mem (fun _ b => h _ _ b hne.some_mem)⟩
 
+lemma preconnected_iff : G.Preconnected ↔ G = ⊥ ∨ G.Connected := by
+  rw [connected_iff]
+  obtain h | h := G.eq_bot_or_vertexSet_nonempty <;> simp [h, G.ne_bot_iff]
+
 lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
     Nonempty G.Separation := by
   obtain ⟨x, y, hx, hy, hxy⟩ := by simpa only [Preconnected, hne,
@@ -366,48 +370,29 @@ lemma connected_of_not_isSepSet (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) : (G - 
   by_contra hc
   exact hS ⟨hV, hc⟩
 
-lemma Connected_comp_Sep (hH : H.IsCompOf (G - S)) (hv : v ∈ V(H)) (huV : u ∈ V(G))
-    (hu : u ∉ V(H) ∪ S) : ∃ T : (G - S).Separation, v ∈ T.left ∧ u ∈ T.right := by
-  refine ⟨⟨V(H), V(G-S)\V(H), ⟨v, by simpa⟩, ⟨u, by simp_all⟩, disjoint_sdiff_right, ?_, ?_⟩, ?_⟩
-  · simpa using (hH.isClosedSubgraph).vertexSet_mono
-  · intro x y hx hy
-    by_contra hc
-    exact (notMem_of_mem_diff hy) (((hH.isClosedSubgraph).mem_iff_mem_of_adj hc).1 hx)
-  simp only [mem_union, not_or] at hu
-  simp_all
-
-lemma Del_connected_comp_Adj (hH : H.IsCompOf (G - S)) (hv : v ∈ V(H)) (hu : u ∉ V(H) ∪ S) :
-    ¬ G.Adj v u := by
-  by_contra hc
-  simp only [mem_union, not_or] at hu
-  have hhe : (G - S).Adj v u := by
-    rw [vertexDelete_adj_iff]
-    exact ⟨hc, notMem_of_mem_diff (hH.subsetV hv), hu.2⟩
-  exact hu.1 (((hH.isClosedSubgraph).mem_iff_mem_of_adj hhe).1 hv)
-
 structure Sep (G : Graph α β) where
   left : Set α
   right : Set α
   carrier : Set α
   nonempty_left : left.Nonempty
   nonempty_right : right.Nonempty
-  carrier_subset : carrier ⊆ V(G)
   disjoint_left_right : Disjoint left right
   disjoint_left_carrier : Disjoint left carrier
   disjoint_right_carrier : Disjoint right carrier
   union_eq : left ∪ carrier ∪ right = V(G)
   not_adj : ∀ ⦃x y⦄, x ∈ left → y ∈ right → ¬ G.Adj x y
 
-def IsCompOf.Sep (hH : H.IsCompOf (G - S)) (huV : u ∈ V(G)) (hu : u ∉ S ∪ V(H)) : G.Sep where
+@[simps]
+def IsClosedSubgraph.Sep (hH : H ≤c (G - S)) (hVH : V(H).Nonempty) (huV : u ∈ V(G))
+    (hu : u ∉ S ∪ V(H)) : G.Sep where
   left := V(H)
   right := V(G - S) \ V(H)
   carrier := V(G) ∩ S
-  nonempty_left := hH.nonempty
+  nonempty_left := hVH
   nonempty_right := ⟨u, by simpa [huV] using hu⟩
-  carrier_subset := inter_subset_left
   disjoint_left_right := disjoint_sdiff_right
   disjoint_left_carrier := by
-    have := by simpa [subset_diff] using hH.subsetV
+    have := by simpa [subset_diff] using hH.vertexSet_mono
     exact this.2.mono_right inter_subset_right
   disjoint_right_carrier := by
     simp only [vertexDelete_vertexSet]
@@ -417,13 +402,17 @@ def IsCompOf.Sep (hH : H.IsCompOf (G - S)) (huV : u ∈ V(G)) (hu : u ∉ S ∪ 
     simp only [vertexDelete_vertexSet, mem_union, mem_inter_iff, mem_diff, iff_def]
     refine ⟨fun h => ?_, fun h => ?_⟩
     · obtain ((h | h) | h) := h
-      · exact hH.subsetV h |>.1
+      · exact hH.vertexSet_mono h |>.1
       all_goals simp_all only
     by_cases hx : x ∈ S <;> simp_all [em (x ∈ V(H))]
   not_adj x y hx hy hadj := by
-    have hadj' := G.vertexDelete_isInducedSubgraph S |>.adj_of_adj hadj (hH.subsetV hx) hy.1
-    rw [hH.isClosedSubgraph.mem_iff_mem_of_adj hadj'] at hx
+    have hadj' := G.vertexDelete_isInducedSubgraph S |>.adj_of_adj hadj (hH.vertexSet_mono hx) hy.1
+    rw [hH.mem_iff_mem_of_adj hadj'] at hx
     exact hy.2 hx
+
+@[simps!]
+def IsCompOf.Sep (hH : H.IsCompOf (G - S)) (huV : u ∈ V(G)) (hu : u ∉ S ∪ V(H)) : G.Sep :=
+  hH.isClosedSubgraph.Sep hH.nonempty huV hu
 
 structure EdgeCut (G : Graph α β) where
   carrier : Set β

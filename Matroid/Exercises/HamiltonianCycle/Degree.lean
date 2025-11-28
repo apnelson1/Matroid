@@ -101,51 +101,35 @@ lemma exists_vertex_minDegree' (hG : V(G).Nonempty) : ∃ x ∈ V(G), G.degree x
   simp [degree, minDegree, hx]
 
 -- TODO: this should be moved to Graph.Basic
-lemma setOf_adj_subset {G : Graph α β} (x : α) : {y | G.Adj x y} ⊆ V(G) := by
-  intro y hy
-  simp at hy
-  exact hy.right_mem
+lemma setOf_adj_subset (x : α) : {y | G.Adj x y} ⊆ V(G) :=
+  fun _ hy ↦ hy.right_mem
 
 -- TODO: this should be moved to Graph.Basic
 -- maybe this should be `Neighbor`?
-lemma encard_setOf_adj_le {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
-    {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
-  have : ({x} : Set α).encard = 1 := by simp
-  rw [← this]; clear this
-  rw [←Set.encard_union_eq]
-  swap
-  · simp; apply not_adj_self
-  apply encard_le_encard
-  simp
-  refine insert_subset h ?_
-  exact setOf_adj_subset _
+lemma encard_setOf_adj_le [G.Simple] (h : x ∈ V(G)) : {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
+  rw [show 1 = ({x} : Set α).encard by simp, ← Set.encard_union_eq (by simp [not_adj_self])]
+  exact encard_le_encard <| union_subset (setOf_adj_subset _) (by simpa)
 
-lemma eDegree_le_encard {G : Graph α β} [G.Simple] {x : α} (h : x ∈ V(G)) :
-    G.eDegree x + 1 ≤ V(G).encard := by
-  have solver := G.incAdjEquiv x
-  simp [eDegree_eq_encard_inc]
-  change {e // e ∈ {e | G.Inc e x}} ≃ {y // y ∈ {y | G.Adj x y}} at solver
+lemma eDegree_le_encard [G.Simple] (h : x ∈ V(G)) : G.eDegree x + 1 ≤ V(G).encard := by
+  have solver : {e // e ∈ {e | G.Inc e x}} ≃ {y // y ∈ {y | G.Adj x y}} := G.incAdjEquiv x
+  simp only [eDegree_eq_encard_inc, ge_iff_le]
   repeat rw [←coe_eq_subtype] at solver
   rw [solver.encard_eq]
   exact encard_setOf_adj_le h
 
-lemma degree_le_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
-    G.degree x + 1 ≤ V(G).ncard := by
-  suffices hyp : G.eDegree x + 1 ≤ V(G).encard
-  · rw [←natCast_degree_eq, ←Set.Finite.cast_ncard_eq vertexSet_finite] at hyp
+lemma degree_le_ncard [G.Simple] [G.Finite] (h : x ∈ V(G)) : G.degree x + 1 ≤ V(G).ncard := by
+  suffices hyp : G.eDegree x + 1 ≤ V(G).encard by
+    rw [←natCast_degree_eq, ←Set.Finite.cast_ncard_eq vertexSet_finite] at hyp
     enat_to_nat!; assumption
   exact eDegree_le_encard h
 
-lemma degree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] {x : α} (h : x ∈ V(G)) :
-    G.degree x < V(G).ncard := by
+lemma degree_lt_ncard [G.Simple] [G.Finite] (h : x ∈ V(G)) : G.degree x < V(G).ncard := by
   linarith [degree_le_ncard h]
 
-lemma minDegree_lt_ncard {G : Graph α β} [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
-    G.minDegree < V(G).ncard := by
-  have ⟨v,hvG, vspec⟩ := G.exists_vertex_minDegree hNeBot
-  rw [←vspec]
-  apply degree_lt_ncard
-  tauto
+lemma minDegree_lt_ncard [G.Simple] [G.Finite] (hNeBot : G.NeBot) : G.minDegree < V(G).ncard := by
+  have ⟨v, hvG, vspec⟩ := G.exists_vertex_minDegree hNeBot
+  rw [← vspec]
+  exact degree_lt_ncard hvG
 
 lemma minEDegree_ge_one_of_connected_nontrivial (hConn : G.Connected)
     (hNontrivial : 1 < V(G).encard) : ∀ x ∈ V(G), 1 ≤ G.eDegree x := by

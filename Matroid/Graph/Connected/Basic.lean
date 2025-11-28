@@ -4,7 +4,7 @@ import Matroid.ForMathlib.Data.Set.Subsingleton
 
 open Set Function Nat WList
 
-variable {α β : Type*} {G H K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
+variable {α β : Type*} {G H H₁ H₂ K : Graph α β} {u v x x₁ x₂ y y₁ y₂ z : α} {e e' f g : β}
   {U V S T : Set α} {F F' R R': Set β} {C W P Q : WList α β} {n m : ℕ}
 
 namespace Graph
@@ -15,20 +15,52 @@ lemma IsCompOf.connected (h : H.IsCompOf G) : H.Connected :=
 lemma walkable_connected (hx : x ∈ V(G)) : (G.walkable x).Connected :=
   (walkable_isCompOf hx).connected
 
-lemma Connected.components_subsingleton (hG : G.Connected) : G.Components.Subsingleton := by
-  rintro H₁ hH₁ H₂ hH₂
-  rw [mem_components_iff_isCompOf] at hH₁ hH₂
-  have hH₁bot := hH₁.ne_bot
-  have hH₂bot := hH₂.ne_bot
-  by_cases hGbot : G = ⊥
-  · subst G
-    simp at hG
-  have := hG.isSimpleOrder hGbot
-  let H₁' : G.ClosedSubgraph := ⟨H₁, hH₁.isClosedSubgraph⟩
-  let H₂' : G.ClosedSubgraph := ⟨H₂, hH₂.isClosedSubgraph⟩
-  change H₁'.val = H₂'.val
-  rw [eq_bot_or_eq_top H₁' |>.resolve_left ?_, eq_bot_or_eq_top H₂' |>.resolve_left ?_] <;>
-    rwa [← Subtype.coe_inj]
+lemma Preconnected.components_subsingleton (h : G.Preconnected) : G.Components.Subsingleton := by
+  intro H₁ hH₁ H₂ hH₂
+  obtain ⟨x, hx, rfl⟩ := hH₁.exists_walkable
+  obtain ⟨y, hy, rfl⟩ := hH₂.exists_walkable
+  exact walkable_eq_walkable_of_mem <| h y x (hH₂.subset hy) (hH₁.subset hx)
+
+lemma components_subsingleton_iff : G.Components.Subsingleton ↔ G.Preconnected := by
+  refine ⟨fun h x y hx hy ↦ ?_, Preconnected.components_subsingleton⟩
+  rw [connectedBetween_iff_mem_walkable_of_mem, h (G.walkable_isCompOf hx) (G.walkable_isCompOf hy)]
+  exact mem_walkable_self_iff.mpr hy
+
+lemma Connected.components_subsingleton (hG : G.Connected) : G.Components.Subsingleton :=
+  hG.pre.components_subsingleton
+
+-- @[simp]
+-- lemma components_eq_singleton_iff : G.Components = {H} ↔ G = H ∧ G.Connected := by
+--   refine ⟨fun h ↦ ?_, ?_⟩
+--   · have hcomp : H.IsCompOf G := by
+--       change H ∈ G.Components
+--       simp [h]
+--     suffices G = H by
+--       subst G
+--       simpa
+--     convert G.eq_sUnion_components
+--     simp [h]
+--   rintro ⟨rfl, h⟩
+--   exact h.components_subsingleton.eq_singleton_of_mem h
+
+lemma components_eq_singleton_iff : (∃ H, G.Components = {H}) ↔ G.Connected := by
+  refine ⟨?_, ?_⟩
+  · intro ⟨H, hH⟩
+    have := G.eq_sUnion_components
+    simp only [hH, Graph.sUnion_singleton] at this
+    subst G
+    change H.IsCompOf H
+    rw [←mem_components_iff_isCompOf]
+    simp_all only [mem_singleton_iff]
+  intro hyp
+  obtain ⟨x, hx⟩ := hyp.nonempty
+  refine ⟨G.walkable x, ?_⟩
+  have h₁ := hyp.components_subsingleton
+  have h₂ : G.walkable x ∈ G.Components := walkable_isCompOf hx
+  rwa [subsingleton_iff_singleton h₂] at h₁
+
+lemma components_subsingleton_iff_connected : G.Components.Subsingleton ↔ G = ⊥ ∨ G.Connected := by
+  rw [components_subsingleton_iff, preconnected_iff]
 
 lemma IsClosedSubgraph.isCompOf_of_isCompOf_compl (h : H ≤c G) (hK : K.IsCompOf G) :
     K.IsCompOf H ∨ K.IsCompOf (G - V(H)) := by
