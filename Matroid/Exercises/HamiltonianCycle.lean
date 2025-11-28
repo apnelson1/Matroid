@@ -6,49 +6,12 @@ import Matroid.Graph.Tree
 import Matroid.ForMathlib.Minimal
 import Matroid.Graph.Walk.Index
 import Matroid.ForMathlib.Tactic.ENatToNat
+
+import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
 -- TODO: remember to remove this Loogle import at the end of the project
 import Loogle.Find
 
 open Qq Lean Meta Elab Tactic WList Set
-
-section NonGraphThings
-
-variable {α β ι : Type*} {P₀ P₁ : WList α β} {e f : β}
-
-lemma minimal_is_lower_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Minimal P x) :
-    ∀ y, P y → x ≤ y := by
-  intro y hy
-  simp only [Minimal] at h
-  obtain (_|_) := le_total x y
-  · assumption
-  · tauto
-
-lemma minimalFor_is_lower_bound [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι}
-    (h : MinimalFor P f i) : ∀ j, P j → f i ≤ f j := by
-  intro j hj
-  simp only [MinimalFor] at h
-  obtain (_|_) := le_total (f i) (f j)
-  · assumption
-  · tauto
-
-lemma maximal_is_upper_bound [LinearOrder α] {P : α → Prop} {x : α} (h : Maximal P x) :
-    ∀ y, P y → y ≤ x := by
-  intro y hy
-  simp [Maximal] at h
-  obtain (_|_) := le_total y x
-  · assumption
-  · tauto
-
-lemma maximalFor_is_upper_bound
-    {ι} [LinearOrder α] {P : ι → Prop} (f : ι → α) {i : ι} (h : MaximalFor P f i) :
-    ∀ j, P j → f j ≤ f i := by
-  intro j hj
-  simp [MaximalFor] at h
-  obtain (_|_) := le_total (f j) (f i)
-  · assumption
-  · tauto
-
-end NonGraphThings
 
 namespace Graph
 
