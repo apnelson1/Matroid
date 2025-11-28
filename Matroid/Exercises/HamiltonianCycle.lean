@@ -593,13 +593,35 @@ lemma IsHamilonianCycle.vertexSet_encard_eq (G : Graph α β) (C : WList α β) 
 def SetVxAdj (G : Graph α β) (H : Set α) (v : α ) : Prop :=
     ∃ w, w ∈ H ∧  Adj G v w
 
+-- this should be with `IsPath.vertex_length_le_encard`...
 
---I think this lemma is important and useful for us
+lemma IsPath.vertex_length_eq_vertexSet_ncard {p} (hp : G.IsPath p) :
+    p.vertex.length = V(p).ncard := by
+  induction p with simp_all
 
-lemma IsCycle_length_to_vertex {C : WList α β} (hC : G.IsCycle C ) :
+lemma IsPath.vertex_length_eq_vertexSet_encard {p} (hp : G.IsPath p) :
+    p.vertex.length = V(p).encard := by
+  have vx_finite : V(p).Finite := p.vertexSet_finite
+  rw [← vx_finite.cast_ncard_eq]
+  enat_to_nat
+  exact hp.vertex_length_eq_vertexSet_ncard
+
+lemma IsCycle.length_eq_tail_vertex_length {C} (hC : G.IsCycle C) :
+    C.length = C.tail.vertex.length := by
+  induction C with simp_all
+
+lemma IsCycle.length_eq_vertexSet_encard {C : WList α β} (hC : G.IsCycle C ) :
     C.length = V(C).encard := by
+  rw [hC.length_eq_tail_vertex_length, ← hC.isClosed.vertexSet_tail]
+  have : G.IsPath C.tail := hC.tail_isPath
+  exact this.vertex_length_eq_vertexSet_encard
 
-  sorry
+lemma IsCycle.length_eq_vertexSet_ncard {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
+    C.length = V(C).ncard := by
+  have vx_finite : V(C).Finite := C.vertexSet_finite
+  have := hC.length_eq_vertexSet_encard
+  rw [←vx_finite.cast_ncard_eq] at this
+  enat_to_nat; assumption
 
 lemma IsCycle_length_bound {C : WList α β} (hC : G.IsCycle C ) :
     C.length ≤ V(G).encard := by
@@ -1878,7 +1900,7 @@ lemma IsCycle.nontrivial_of_simple
   apply hP.2.1.ne; simp
 
 -- cycles in simple graphs are of length at least 3
-lemma IsCycle.cycle_length_ge_3_of_simple
+lemma IsCycle.three_le_length_of_simple
     [G.Simple]
     {P} (hP : G.IsCycle P) :
     3 ≤ P.length := by
