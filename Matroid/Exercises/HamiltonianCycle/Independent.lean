@@ -21,5 +21,24 @@ variable {S A : Set α}
 lemma IsIndependent.mono (hS : G.IsIndependent S) (hle : A ⊆ S) : G.IsIndependent A :=
   ⟨hle.trans hS.subset_vxSet, hS.pairwise_nonadj.mono hle⟩
 
+lemma IsIndependent.subset (hS : G.IsIndependent S) : S ⊆ V(G) := hS.1
+
 lemma IsMaxIndependent.isIndependent (hS : G.IsMaxIndependent S) : G.IsIndependent S :=
   hS.1
+
+lemma IsMaxIndependent.subset (hS : G.IsMaxIndependent S) : S ⊆ V(G) := hS.isIndependent.subset
+
+lemma IsMaxIndependent.encard_eq_zero_iff_vertexSet_empty (hS : G.IsMaxIndependent S) :
+    S.encard = 0 ↔ V(G) = ∅ := by
+  refine ⟨?_, ?_⟩
+  · intro hyp
+    by_contra! hcon
+    obtain ⟨x, hx⟩ := hcon
+    rw [← isIndependent_singleton] at hx
+    have := hS.2 _ hx
+    simp_all
+  rw [encard_eq_zero]
+  by_contra! hcon
+  rw [←not_nonempty_iff_eq_empty] at hcon
+  obtain ⟨x, hx⟩ := hcon.2
+  exact hcon.1 ⟨x, hS.subset hx⟩

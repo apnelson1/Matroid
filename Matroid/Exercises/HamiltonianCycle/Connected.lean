@@ -46,3 +46,14 @@ lemma IsMinSepSet.eq_empty_iff (hS : G.IsMinSepSet S) : S = ∅ ↔ ¬ G.Connect
 lemma IsMinSepSet.encard_pos_iff (hS : G.IsMinSepSet S) : 0 < S.encard ↔ G.Connected := by
   rw [Set.encard_pos, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
   exact hS.encard_eq_zero_iff
+
+lemma IsMinSepSet.encard_ne_zero_iff (hS : G.IsMinSepSet S) : S.encard ≠ 0 ↔ G.Connected := by
+  rw [encard_ne_zero, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
+  exact hS.encard_eq_zero_iff
+
+-- any two MinSepSets have the same encard
+lemma IsMinSepSet.encard_eq_encard_of_isMinSepSet (hS : G.IsMinSepSet S) (hA : G.IsMinSepSet A) :
+    S.encard = A.encard := by
+  have h₁ := hS.minimal _ hA.isSepSet
+  have h₂ := hA.minimal _ hS.isSepSet
+  exact h₁.antisymm h₂

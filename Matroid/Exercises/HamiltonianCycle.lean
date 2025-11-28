@@ -470,162 +470,43 @@ lemma IsCompOf.exist_pathh (hHco : H.IsCompOf G) (hx : x ∈ V(H)) (hy : y ∈ V
   rw[hHco.eq_walkable_of_mem_walkable hx  ] at hy
   exact (connectedBetween_iff_mem_walkable_of_mem.2 hy).isClosedSubgraph hHco.isClosedSubgraph hx
 
+omit [DecidableEq α] in
 lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
-    (S : Set α) (HS : IsMinSepSet G S )
+    (S : Set α) (hS : IsMinSepSet G S )
     (A : Set α) (hA : IsMaxIndependent G A)
     (hAS : A.encard ≤ S.encard ) : ∃ C, G.IsCycle C := by
-  by_contra! hCon
-  -- if there is no cycle, then since G is a forest,
-  -- any vertex v of degree >= 2 is a separating set
-  obtain (h1 | h2) := Classical.em (∃ v, v ∈ V(G) ∧ G.degree v ≥ 2)
-  · -- So, S.encard = 1, and thus A.encard <= 1
-    have ⟨v, ⟨hvG, hv⟩⟩ := h1
-    -- since v has degree at least 2, we can obtain two neighbours
-    have hn2 : 1 < {x | G.Adj v x}.ncard := by
-      rw [← G.degree_eq_ncard_adj]
-      assumption
-    have nsFinite : {x | G.Adj v x}.Finite :=
-      G.finite_setOf_adj
-    rw [one_lt_ncard_iff nsFinite] at hn2
-    have ⟨a, b, ha, hb, hab⟩ := hn2
-    simp_all
-    -- Show that {v} is a separating set
-    have vSep : G.IsSepSet {v} := by
-      refine ⟨singleton_subset_iff.mpr hvG, ?_⟩
-      -- those two neighbours a and b are not connected in G - {v},
-      -- because otherwise there would be a cycle
-      -- for a contradiction, let's construct the cycle
-      by_contra! hCon
-      have aVGv : a ∈ V(G - {v}) := by
-        have := Adj.right_mem ha
-        simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
-        exact fun a_1 ↦ (Adj.ne ha) (id (Eq.symm a_1))
-      have bVGv : b ∈ V(G - {v}) := by
-        have := Adj.right_mem hb
-        simp_all only [ne_eq, vertexDelete_vertexSet, mem_diff, mem_singleton_iff, true_and]
-        exact fun a_1 ↦ (Adj.ne hb) (id (Eq.symm a_1))
-      have abCon : (G - {v}).ConnectedBetween a b := Connected.connectedBetween hCon aVGv bVGv
-      have ⟨abPath, habPath⟩ := ConnectedBetween.exists_isPath abCon
-      have ⟨abPathG, vnP⟩ := (isPath_vertexDelete_iff.1 habPath.1)
-      -- need to first add v to the ab path
-      rw [Adj.eq_1 G] at ha
-      have ⟨e, eLink⟩ := ha
-      have ⟨e2, e2Link⟩ := hb
-      have e2LinkOrig := e2Link
-      have enee2 : e ≠ e2 := by
-        by_contra!
-        rw [← this] at e2Link
-        rw [IsLink.isLink_iff eLink] at e2Link
-        cases e2Link
-        · simp_all only [not_true_eq_false]
-        simp_all only [isLink_self_iff, not_isLoopAt, exists_false]
-      have vnP : v ∉ abPath := by simp_all
-      rw [← habPath.2.1] at eLink
-      have vbPath := cons_isPath_iff.2 ⟨abPathG, eLink, vnP⟩
-      rw [Adj.eq_1 G] at hb
-      have vfirst : v = (cons v e abPath).first := rfl
-      have blast : b = (cons v e abPath).last := by tauto
-      rw [vfirst, blast] at e2Link
-      have e2npe : e2 ∉ (cons v e abPath).edge := by
-        simp
-        refine ⟨by tauto, ?_⟩
-        by_contra!
-        have := IsWalk.edge_mem_of_mem habPath.1.isWalk this
-        have := (IsLink.mem_vertexDelete_iff e2LinkOrig).1 this
-        tauto
-      -- then link it up to a cycle, contradicting that G doesn't have any cycle
-      have := IsPath.cons_isCycle vbPath e2Link e2npe
-      tauto
-    -- finally, we have that {v} is a separating set in G
-    have hS1 : S.encard ≤ 1 := by
-      have := HS.2 {v} vSep
-      simp_all only [encard_singleton]
-    -- But then the two neighbours of v cannot be adjacent,
-    -- because otherwise there would be a cycle
-    -- So, A.encard >= 2, contradiction
-    have anev : ¬a = v := by
-      have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v a ha
-      rw [ne_comm, ne_eq] at this
-      assumption
-    have bnev : ¬b = v := by
-      have := loopless_iff_forall_ne_of_adj.1 (IsForest.loopless hCon) v b hb
-      rw [ne_comm, ne_eq] at this
-      assumption
-    obtain (h3 | h4) := Classical.em (G.Adj a b)
-    · -- First, the case where a and b are adjacent
-      -- Need to construct the cycle a-b-v
-      have ⟨e, eLink⟩ := ha
-      have ⟨e2, e2Link⟩ := hb
-      have ⟨e3, e3Link⟩ := h3
-      have avPath := cons_isPath_iff.2 ⟨nil_isPath hvG, ⟨IsLink.symm eLink, by
-        rw [mem_nil_iff]
-        assumption⟩⟩
-      have bavPath := cons_isPath_iff.2 ⟨avPath, ⟨IsLink.symm e3Link, by
-        simp_all [mem_cons_iff]
-        tauto⟩⟩
-      let bav := (cons b e3 (cons a e (nil v)))
-      have flLink : G.IsLink e2 bav.first bav.last := by
-        simp_all
-        exact id (IsLink.symm e2Link)
-      have eDis : e2 ∉ (cons b e3 (cons a e (nil v))).edge := by
-        simp_all
-        refine ⟨?_, ?_⟩
-        · by_contra!
-          simp_all
-          have := G.eq_or_eq_of_isLink_of_isLink e2Link e3Link
-          tauto
-        by_contra!
-        simp_all
-        have := IsLink.eq_and_eq_or_eq_and_eq eLink e2Link
-        tauto
-      have := IsPath.cons_isCycle bavPath flLink eDis
-      tauto
-    -- Now, a and b are not adjacent
-    -- We show {a, b} is independent for a contradiction
-    have hI : G.IsIndependent {a, b} := by
-      refine ⟨?_, ?_⟩
-      · have : a ∈ V(G) := ha.right_mem
-        have : b ∈ V(G) := hb.right_mem
-        grind only [= subset_def, usr subset_insert, = singleton_subset_iff, = mem_insert_iff,
-          = setOf_true, = mem_singleton_iff, = setOf_false, cases Or]
-      intro x hx y hy hxy
-      simp_all only [mem_insert_iff, mem_singleton_iff, ne_eq]
-      have : ¬G.Adj b a := by exact fun a_1 ↦ h4 (id (Adj.symm a_1))
-      grind only [= setOf_true, = setOf_false, cases Or]
-    have Age2 : 2 ≤ A.encard := by
-      have hA2 := hA.2 {a, b} hI
-      have : ({a, b} : Set α).encard = 2 := encard_pair hab
-      rw [this] at hA2
-      exact hA2
-    have Ale1 : A.encard ≤ 1 := Std.IsPreorder.le_trans A.encard S.encard 1 hAS hS1
-    have : 2 ≤ (1 : ℕ∞) := Std.IsPreorder.le_trans 2 A.encard 1 Age2 Ale1
-    simp_all only [Nat.not_ofNat_le_one]
+  -- The proof should be an easy combination of a few things:
+  -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
+  -- 2 : In a bipartite graph, the `MaxIndependentSet` contains at least half the vertices.
+  -- 3 : Trees are bipartite.
+  -- 4 : Therefore, in a tree on at least three vertices, the hypothesis `A.encard ≤ S.encard` is
+  --      impossible.
+  -- 5 : Therefore, `G` has a cycle.
 
-  -- If every vertex has degree <= 1, then S.encard = 0, so we are done
-  have Vnz : V(G).Nonempty := by
-    rw [←encard_pos]
-    suffices (0 : ℕ∞) < 3 by exact this.trans_le h3
-    simp
-  obtain ⟨v, hv⟩ : ∃ v, v ∈ V(G) := Vnz
-  have : ¬G.Connected := by
-    -- We know there are ≥ 3 vertices
-    -- But all have degree ≤ 1
-    have : G.degree v ≤ 1 := by grind only
-    sorry
-  have Sempty : S.encard = 0 := by
-    have esSep : IsSepSet G ∅ := by
-      refine ⟨empty_subset V(G), ?_⟩
-      rw [vertexDelete_empty]
-      assumption
-    have : S.encard = (∅ : Set α).encard := by
-      have := HS.2 ∅ esSep
-      simp_all
-    simp_all
-  have hGI : G.IsIndependent {v} := ⟨by simp_all, by simp_all⟩
-  have := hA.2 {v} hGI
-  simp_all
+  -- First, we show that it must be connected.
+  obtain (h|hConn) := Classical.em (S.encard = 0)
+  · exfalso
+    replace h : A.encard = 0 := by enat_to_nat! <;> omega
+    rw [hA.encard_eq_zero_iff_vertexSet_empty, ←encard_eq_zero] at h
+    enat_to_nat! <;> omega
+  rw [←ne_eq, hS.encard_ne_zero_iff] at hConn
 
--- What hypotheses does this really need?
+  -- Now, proceed by contradiction.
+  by_contra! h_isForest
+  have h_isTree : G.IsTree := ⟨h_isForest, hConn⟩
+
+  -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
+  have S_encard : S.encard = 1 := by
+    obtain ⟨S', hS', hS'_encard⟩ := h_isTree.exists_isMinSepSet h3
+    rw [←hS'_encard]
+    exact hS.encard_eq_encard_of_isMinSepSet hS'
+  -- 3 : Trees are bipartite.
+  have ⟨B⟩ := IsForest.bipartite h_isForest
+  -- 2 : In a bipartite graph, the `MaxIndependentSet` contains at least half the vertices.
+  have A_encard : V(G).encard ≤ 2 * A.encard := B.isMaxIndependent_encard_ge hA
+  -- 4 : Therefore, in a tree on at least three vertices, the hypothesis `A.encard ≤ S.encard` is
+  --      impossible.
+  enat_to_nat!; omega
 
 
 lemma indep_nbrs [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
