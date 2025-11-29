@@ -547,9 +547,9 @@ lemma prefixUntilVertex_tail [DecidableEq α] (w : WList α β) (hv : v ≠ w.fi
     nth_rw 3 [this]
     rw[prefixUntilLast (w.concat f v) hw ]
 
-lemma IsCycle.prefixUntilVertex_tail [DecidableEq α] {C : WList α β} (hC : G.IsCycle C)
-    (hv : v ≠ C.first) (hvC : v ∈ C) :
-    C.tail.prefixUntilVertex v = (C.prefixUntilVertex v).tail := by sorry
+-- lemma IsCycle.prefixUntilVertex_tail [DecidableEq α] {C : WList α β} (hC : G.IsCycle C)
+--     (hv : v ≠ C.first) (hvC : v ∈ C) :
+--     C.tail.prefixUntilVertex v = (C.prefixUntilVertex v).tail := by sorry
 
 lemma suffixFromVertex_concat_of_exists [DecidableEq α]  (w : WList α β) (hb : v ∈ w ):
     (w.concat e x).suffixFromVertex v = (w.suffixFromVertex v).concat e x := by
@@ -573,10 +573,6 @@ lemma suffixFromLastVertex [DecidableEq α] {u : α} (w : WList α β) (hw : w.v
   induction w with
   | nil u =>
   simp
-  -- have hrw : (nil u (β := β)).suffixFromVertex u = (nil u (β := β)).suffixFrom (· = u) := by
-  --   exact rfl
-  -- have : (nil u (β := β)).suffixFrom (· = u) = nil u := by exact hrw
-  -- rw[hrw, this ]
   | cons y e w ih =>
   have hyn : y ≠ (cons y e w).last := by
     sorry

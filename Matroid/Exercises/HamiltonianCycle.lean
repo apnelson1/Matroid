@@ -2195,7 +2195,7 @@ lemma dirac_exists_cycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).encard)
 
 lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).encard)
     (hDegree : V(G).encard ≤ 2 * G.minEDegree) (hP : G.IsLongestPath P)
-    (hC : G.IsCycle C ∧ V(C) = V(P)) : G.IsHamiltonianCycle C := by
+    (hC : G.IsCycle C ∧ V(C) = V(P)) : G.IsHamiltonCycle C := by
   classical
   -- Suppose not. Then there exists some x ∈ V(G) - V(C).
   -- Since G is connected, we can find a path from x to C, say Q.
@@ -2204,7 +2204,7 @@ lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).e
   by_contra! hcon
   have vx_finite : V(G).Finite := vertexSet_finite
   obtain ⟨hC, hCP⟩ := hC
-  simp only [IsHamiltonianCycle, not_and] at hcon
+  simp only [IsHamiltonCycle, not_and] at hcon
   simp_all only [vertexSet_finite, forall_const]
   have hCG : V(C) ⊆ V(G) := hC.isWalk.vertexSet_subset
   have hCG_ssub : V(C) ⊂ V(G) := ⟨hCG, by rwa [hCP]⟩
@@ -2276,7 +2276,7 @@ lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).e
   omega
 
 lemma dirac [G.Simple] [G.Finite] (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree):
-    ∃ C, G.IsHamiltonianCycle C := by
+    ∃ C, G.IsHamiltonCycle C := by
   have hnonempty : V(G).Nonempty := by
     rw [← Set.encard_pos]
     enat_to_nat! <;> omega
