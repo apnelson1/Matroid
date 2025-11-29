@@ -122,8 +122,13 @@ lemma IsTree.exists_nontrivial_path (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
   omega
 
 -- This should use Menger and assume IsForest rather than IsTree
-lemma IsTree.exists_isSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
     ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+  -- If T is not connected (ie. not a tree), then the result is """vacuously""" true.
+  obtain (h | hConn) := em' T.Connected
+  · exact exists_isSepSet_size_one_of_not_connected hV h
+  replace hT : T.IsTree := ⟨hT, hConn⟩
+
   -- we show there exists a vertex x of degree at least 2, in which case
   -- the singleton {x} is exactly our sepset
   have ⟨x, hxT, hx⟩ : ∃ x ∈ V(T), 2 ≤ T.eDegree x :=
@@ -175,7 +180,7 @@ lemma IsTree.exists_isSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
 
 lemma IsTree.exists_isMinSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
     ∃ S, IsMinSepSet T S ∧ S.encard = 1 := by
-  obtain ⟨S, hS, hS_encard⟩ := hT.exists_isSepSet hV
+  obtain ⟨S, hS, hS_encard⟩ := hT.isForest.exists_isSepSet hV
   refine ⟨S, ⟨hS, ?_⟩, hS_encard⟩
   intro A hA
   by_contra! hcon
