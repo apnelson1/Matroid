@@ -404,12 +404,6 @@ lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G
   -- Now, proceed by contradiction.
   by_contra! h_isForest
   have h_isTree : G.IsTree := ⟨h_isForest, hConn⟩
-
-omit [DecidableEq α] in
-lemma Connected.exist_path {D : Graph α β } (hDconn : D.Connected) (hx : x ∈ V(D)) (hy : y ∈ V(D)) :
-    ∃ P, D.IsPath P ∧ P.first = x ∧ P.last = y := by
-  apply ConnectedBetween.exists_isPath
-  exact hDconn.connectedBetween hx hy
   -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
   have S_encard : S.encard = 1 := by
     obtain ⟨S', hS', hS'_encard⟩ := h_isTree.exists_isMinSepSet h3
@@ -422,6 +416,13 @@ lemma Connected.exist_path {D : Graph α β } (hDconn : D.Connected) (hx : x ∈
   -- 4 : Therefore, in a tree on at least three vertices, the hypothesis `A.encard ≤ S.encard` is
   --      impossible.
   enat_to_nat!; omega
+
+omit [DecidableEq α] in
+lemma Connected.exist_path {D : Graph α β } (hDconn : D.Connected) (hx : x ∈ V(D)) (hy : y ∈ V(D)) :
+    ∃ P, D.IsPath P ∧ P.first = x ∧ P.last = y := by
+  apply ConnectedBetween.exists_isPath
+  exact hDconn.connectedBetween hx hy
+
 
 
 lemma indep_nbrs [G.Simple] [G.Finite] {i j : ℕ} {G D : Graph α β} {C : WList α β}
@@ -453,75 +454,8 @@ lemma indep_nbrs [G.Simple] [G.Finite] {i j : ℕ} {G D : Graph α β} {C : WLis
     · omega
     · omega
     omega
-
-lemma indep_nbrs [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.IsCycle length C)
-    (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
-    G.IsIndependent <| C.get '' {i < C.length | G.SetVxAdj V(D) (C.get i)} := by
-  rw [isIndependent_iff (by grw [image_subset_range, range_get, hC.prop.vertexSet_subset])]
-  simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
-  rintro _ _ i hi hiD rfl j hj hjD rfl hij hadj
-  wlog hlt : i ≤ j generalizing i j with aux
-  · exact aux j hj hjD i hi hiD (Ne.symm hij) hadj.symm (not_le.1 hlt).le
-  obtain ⟨d, rfl⟩ := exists_add_of_le hlt
-
-  wlog hi0 : i = 0 generalizing i d C with aux
-  · refine aux (C := C.rotate i) ?_ ?_ 0 ?_ ?_ d ?_ ?_ ?_ ?_ ?_ ?_
-    · rwa [maximalFor_congr_val (y := C) (by simp) (by simp [hC.prop, hC.prop.rotate])]
-    · rwa [hC.prop.isClosed.rotate_vertexSet]
-    · simp [hC.prop.nonempty]
-    · rwa [get_zero, rotate_first _ _ hi.le]
-    · simp only [zero_add, length_rotate]
-      omega
-    · simp only [zero_add]
-      --rwa [get_rotate _ hj]
-      sorry
-    · simp only [get_zero, zero_add]
-      --rwa [get_rotate _ hj, rotate_first _ _ hi.le]
-      sorry
-    · simp only [get_zero, zero_add]
-      --rwa [rotate_first _ _ hi.le, get_rotate _ hj]
-      sorry
-    · simp
-    rfl
-  obtain rfl := hi0
-  simp at hindex
-  simp_all only [le_vertexDelete_iff, mem_setOf_eq, one_le_length_iff, true_and, zero_le]
-  set a : α := C.get (0) with h_a
-  set b : α := C.get (1) with h_b
-  have ha : a ∈ C := by exact get_mem C 0
-  have hb : b ∈ C := by exact get_mem C 1
-  obtain ⟨ wb, h1D, hadjaw ⟩ := hi
-  obtain ⟨ wa, h2D, hadjbw ⟩ := hj
-  have hC : G.IsCycle C := by exact hCs.prop
-  have hCNT : C.Nontrivial := by sorry
-  have : G.Loopless := by sorry
-  -- set P : WList α β  := C.tail.dropLast with h_P
-  -- set e : β := hC.nonempty.firstEdge with h_e
-  -- set f : β := hC.nonempty.lastEdge with h_f
-  -- have hP := hC.tail_dropLast_isPath
-  have hafirst : a = C.first := by exact get_zero C
-  --rw[←hafirst] at hadj
-  have halast : a = C.last := by
-    rw[←hC.isClosed]
-    exact hafirst
-  obtain ⟨P,e,f, hPath, haP, heP, hfP, hef, hC'⟩ :=
-      IsCycle.exists_isPath_vertex hCs.prop hCNT (get_mem C 0 )
-  rw[ hC.idxOf_get (Nonempty.length_pos hnt) ] at hC'
-  simp only [rotate_zero, get_zero] at hC'
-  rw[←hafirst] at hC'
-  have : a ≠ b := by
-
-    sorry
-    -- Apply IsCycle.idxOf_Adj
-
-
   sorry
 
-
-
-
-  -- rw[hHco.eq_walkable_of_mem_walkable hx  ] at hy
-  -- exact (connectedBetween_iff_mem_walkable_of_mem.2 hy).isClosedSubgraph hHco.isClosedSubgraph hx
 
 -- lemma indep_nbrs [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
 --     (hCs : MaximalFor G.IsCycle length C) (hDC : D ≤ G - V(C)) (hDconn : D.Connected)
@@ -593,10 +527,11 @@ lemma indep_nbrs [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.IsCy
 -- lemma indep_nbrsnext [G.Simple] [G.Finite] {G D : Graph α β} {C : WList α β}
 --     (hCs : MaximalFor G.IsCycle length C) (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
 --     G.IsIndependent <| C.get '' {i < C.length | G.SetVxAdj V(D) (C.get (i + 1))} := by
-lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.IsCycle length C)
+lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G.IsCycle length C)
     (hDC : D ≤ G - V(C)) (hDconn : D.Connected) :
     G.IsIndependent <| C.get '' {i  < C.length  | G.SetVxAdj V(D) (C.get (i + 1))} := by
     --G.IsIndependent <| C.get '' ((· + 1) '' {i < C.length | G.SetVxAdj V(D) (C.get i)}) := by
+
   rw [isIndependent_iff (by grw [image_subset_range, range_get, hCs.prop.vertexSet_subset])]
   simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp]
   rintro _ _ i hi haD rfl j hj hbD rfl hij hadj
@@ -746,7 +681,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.
     rw [Eq.symm (prefixUntilVertex_append_suffixFromVertex P b),←h_pre, ←h_suf] at hb1P
     obtain (hf | hg ):= mem_of_mem_append hb1P
     · rw [h_pre] at hf
-      have hcon := (prefixUntilVertex_index_iff P b hbP hb1P').1 hf
+      have hcon := (prefixUntilVertex_index_iff hbP hb1P').1 hf
       have hbindP : P.idxOf b + 1 = P.idxOf b₁ := by
         rw[hC',←hafirst] at hb
         have hg1 := (Cycle_conc_index (hadj.ne).symm hb).2
@@ -874,7 +809,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.
         exact first_mem
       by_contra hc
       exact (idxOf_Adj (hC.isTrail) hb hb₁ hbindices.symm).ne.symm
-        (Prefix_Sufix_int hP₁ hbPre hc hb1P1 )
+        (Prefix_Suffix_int hP₁ hbPre hc hb1P1 )
   have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
     apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_
     · simp only [WList.concat_append, concat_last, reverse_first]
@@ -917,7 +852,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.
           rw[hC'] at hbC
           --simp [(hab'.ne ).symm] at hbC
           exact hbP
-        exact (Prefix_Sufix_int hPath hxx2 hh hxP).symm
+        exact (Prefix_Suffix_int hPath hxx2 hh hxP).symm
       rw[h4,h_pre] at hxx
       simp only [mem_reverse] at hxx
       exact False.elim (haP (((prefixUntilVertex_vertex P b ) ) hxx))
@@ -969,7 +904,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.
         by_contra hc
         rw[ hc, ←hbindices] at haindices
         simp only [Nat.add_right_cancel_iff] at haindices
-        exact (hab'.ne) (idxOf_eq C ha haindices)
+        exact (hab'.ne) (idxOf_eq ha haindices)
       exact ht2 h2
     · by_contra hc
       have := mem_edgeSet_iff.2 hc
@@ -1036,17 +971,6 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hC : MaximalFor G.
       omega
     omega
   sorry
-
-
-
-
-
-
-
-
--- (h3 : 3 ≤ V(G).encard)
---     (S : Set α) (HS : IsMinSepSet G S )
---     (A : Set α) (hA : IsMaxIndependent G A)
 
 lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     (S : Set α) (HS : IsMinSepSet G S )

@@ -334,6 +334,7 @@ lemma IsTrail.idxOf_Adj [DecidableEq α] {a b : α} {w : WList α β} (hw : G.Is
   simp_all
   | cons u e w ih =>
   simp_all
+  sorry
 
 lemma idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
     (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
@@ -400,7 +401,7 @@ lemma IsCycle.idxOf_Adj_first [DecidableEq α] (hC : G.IsCycle C) (hab : a ≠ b
   rw [ha, ←this] at hf
   nth_rw 2 [hb] at hf
   have hlast : (C.rotate (C.idxOf b)).idxOf a  = (C.rotate (C.idxOf b)).idxOf b + 1 := by omega
-  exact (idxOf_Adj ((hC.rotate (C.idxOf b)).isTrail) (hC.isClosed.mem_rotate.2 hbC)
+  exact (idxOf_Adj (rotate hC (C.idxOf b)) (hC.isClosed.mem_rotate.2 hbC)
     (hC.isClosed.mem_rotate.2 haC) hlast).symm
 
 lemma IsCycle.idxOf_rotate [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) (hn : n < C.length) :
@@ -572,10 +573,10 @@ lemma suffixFromLastVertex [DecidableEq α] {u : α} (w : WList α β) (hw : w.v
   induction w with
   | nil u =>
   simp
-  have hrw : (nil u (β := β)).suffixFromVertex u = (nil u (β := β)).suffixFrom (· = u) := by
-    exact rfl
-  have : (nil u (β := β)).suffixFrom (· = u) = nil u := by exact hrw
-  rw[hrw, this ]
+  -- have hrw : (nil u (β := β)).suffixFromVertex u = (nil u (β := β)).suffixFrom (· = u) := by
+  --   exact rfl
+  -- have : (nil u (β := β)).suffixFrom (· = u) = nil u := by exact hrw
+  -- rw[hrw, this ]
   | cons y e w ih =>
   have hyn : y ≠ (cons y e w).last := by
     sorry
@@ -618,7 +619,7 @@ lemma SuffixFromVertex_get [DecidableEq α] (w : WList α β) {a : ℕ } (hne : 
       have hrw : (nil y (β := β)).suffixFromVertex y = (nil y (β := β)).suffixFrom (· = y) := by
         exact rfl
       have : (nil y (β := β)).suffixFrom (· = y) = nil y := by exact hrw
-      rw[hrw, this, suffixFromVertex_cons ]
+      rw[ suffixFromVertex_cons ]
       simp
     have hb : (w.concat f y).get (a + 1) ∈ w := by
       rw[get_concat w f y haalength]
@@ -654,7 +655,7 @@ lemma rotate_pre_suff [DecidableEq α] (w : WList α β) {a : ℕ } (hnt : w.Non
 induction a with
 | zero =>
 simp
-rw[suffixFromVertex_from_first_eq w, prefixUntilLast w hw ]
+rw[ prefixUntilLast w hw ]
 | succ n IH =>
 have hwnd : (w.rotate n).vertex.Nodup := by sorry
 have hwnt : (w.rotate n).Nonempty := by sorry
