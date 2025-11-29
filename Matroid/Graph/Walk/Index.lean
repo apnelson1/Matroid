@@ -697,5 +697,17 @@ sorry
 
 
 lemma get_rotate [DecidableEq α] (w : WList α β) {a b : ℕ} (hab : a + b ≤ w.length) :
-  (w.rotate a).get b = w.get (a + b) := by
-sorry
+    (w.rotate a).get b = w.get (a + b) := by
+  induction b generalizing w a with
+  | zero => simp_all; exact w.rotate_first a hab
+  | succ b IH =>
+      show (w.rotate a).get (b + 1) = w.get (a + (b + 1))
+      calc
+        (w.rotate a).get (b + 1) = (w.rotate a).get (1 + b) := by
+          rw [add_comm]
+        _ = (w.rotate (a + 1)).get b := by
+          rw [← IH (w.rotate a) (by simp; omega), w.rotate_rotate]
+        _ = w.get ((a + 1) + b) := by
+          rw [IH _ (by omega)]
+        _ = w.get (a + (b + 1)) := by
+          rw [show ((a + 1) + b = a + (b + 1)) by omega]
