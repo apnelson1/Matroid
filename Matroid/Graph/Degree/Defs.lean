@@ -22,14 +22,13 @@ lemma DegreePos.one_le_degree [G.LocallyFinite] (hG : G.DegreePos) (hx : x ∈ V
 lemma degreePos_iff' : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.eDegree x ≠ 0 := by
   simp_rw [← ENat.one_le_iff_ne_zero]
   refine ⟨fun h _ ↦ h.one_le_eDegree, fun h x hx ↦ ?_⟩
-  suffices hcard : {e | G.Inc e x}.encard ≠ 0 by simpa [eq_empty_iff_forall_notMem] using hcard
+  suffices hcard : E(G, x).encard ≠ 0 by simpa [eq_empty_iff_forall_notMem] using hcard
   exact fun h0 ↦ by simpa [h0] using (h hx).trans <| G.eDegree_le_two_mul_encard_setOf_inc x
 
 lemma degreePos_iff [G.LocallyFinite] : G.DegreePos ↔ ∀ ⦃x⦄, x ∈ V(G) → G.degree x ≠ 0 := by
   simp [Ne, ← @Nat.cast_inj ℕ∞, natCast_degree_eq, degreePos_iff']
 
-lemma DegreePos.finite_of_edgeSet_finite (hG : G.DegreePos) (hE : E(G).Finite) :
-    G.Finite where
+lemma DegreePos.finite_of_edgeSet_finite (hG : G.DegreePos) (hE : E(G).Finite) : G.Finite where
   vertexSet_finite := by
     have hle := ENat.tsum_le_tsum (f := fun x : V(G) ↦ 1) (g := fun x : V(G) ↦ G.eDegree x)
     simp only [Pi.le_def, Subtype.coe_prop, (fun x ↦ hG.one_le_eDegree), implies_true,

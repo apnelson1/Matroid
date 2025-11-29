@@ -241,8 +241,17 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     exact ⟨he.vertexEnsemble ι hne⟩
   refine ⟨fun h => ?_, fun ⟨A⟩ => ?_⟩
   · rw [connBetweenGe_iff_setConnGe hne hadj, Menger'sTheorem_set
-    (by simp [subset_diff, hadj]) (by simp [subset_diff, not_symm_not hadj])] at h
+    (by simpa [subset_diff, hadj] using (G.neighbor_subset s).trans <| subset_insert ..)
+    (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
+    <| subset_insert ..)] at h
     obtain ⟨A, hA, hAcard⟩ := h
+    have hAdj := A.of_vertexDelete
+    replace hA := hA.left (S₀ := N(G, s)) <| by
+      rw [diff_symmDiff]
+      exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
+    replace hA := hA.right (T₀ := N(G, t)) <| by
+      rw [diff_symmDiff]
+      exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
     refine ⟨VertexEnsemble.ofSetEnsemble s t hne A hA |>.comp (ι' := ι) ?_⟩
     rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
     rw [← A.first_injOn.encard_image] at hAcard
@@ -299,7 +308,7 @@ lemma mixedLineGraph_vertexDelete : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.in
       simp
     rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
   cases b <;> cases c <;> simp only [mixedLineGraph_isLink, vertexDelete_inc_iff,
-    mem_setIncidentEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    mem_setIncEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
     Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, vertexDelete_isLink_iff,
     mem_union, mem_image, exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq,
     exists_eq_right, false_or, not_exists, not_and]

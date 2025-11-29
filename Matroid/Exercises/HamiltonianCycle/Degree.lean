@@ -56,21 +56,15 @@ lemma exists_vertex_minDegree (hG : V(G).Nonempty) : ∃ x ∈ V(G), G.degree x 
   simp [degree, minDegree, hx]
 
 -- TODO: this should be moved to Graph.Basic
-lemma setOf_adj_subset (x : α) : {y | G.Adj x y} ⊆ V(G) :=
-  fun _ hy ↦ hy.right_mem
-
--- TODO: this should be moved to Graph.Basic
--- maybe this should be `Neighbor`?
-lemma encard_setOf_adj_le [G.Simple] (h : x ∈ V(G)) : {y | G.Adj x y}.encard + 1 ≤ V(G).encard := by
+lemma encard_neighors_le [G.Simple] (h : x ∈ V(G)) : N(G, x).encard + 1 ≤ V(G).encard := by
   rw [show 1 = ({x} : Set α).encard by simp, ← Set.encard_union_eq (by simp [not_adj_self])]
-  exact encard_le_encard <| union_subset (setOf_adj_subset _) (by simpa)
+  exact encard_le_encard <| union_subset (neighbor_subset ..) (by simpa)
 
 lemma eDegree_le_encard [G.Simple] (h : x ∈ V(G)) : G.eDegree x + 1 ≤ V(G).encard := by
-  have solver : {e // e ∈ {e | G.Inc e x}} ≃ {y // y ∈ {y | G.Adj x y}} := G.incAdjEquiv x
+  have solver : E(G, x) ≃ N(G, x) := G.incAdjEquiv x
   simp only [eDegree_eq_encard_inc, ge_iff_le]
-  repeat rw [←coe_eq_subtype] at solver
   rw [solver.encard_eq]
-  exact encard_setOf_adj_le h
+  exact encard_neighors_le h
 
 lemma degree_le_ncard [G.Simple] [G.Finite] (h : x ∈ V(G)) : G.degree x + 1 ≤ V(G).ncard := by
   suffices hyp : G.eDegree x + 1 ≤ V(G).encard by
@@ -115,7 +109,7 @@ lemma unique_neighbor_of_eDegree_eq_one (hx : G.eDegree x = 1) (hxy : G.Adj x y)
     intro e he f hf
     simp only [inc_iff_isLoopAt_or_isNonloopAt, no_loops, false_or, mem_setOf_eq] at he hf
     exact encard_le_one_iff.mp heq.le e f he hf
-  have hh : {y | G.Adj x y}.Subsingleton := by
+  have hh : N(G, x).Subsingleton := by
     rw [← encard_le_one_iff_subsingleton] at h ⊢
     exact encard_adj_le_encard_inc.trans h
   exact hh hxy hxz

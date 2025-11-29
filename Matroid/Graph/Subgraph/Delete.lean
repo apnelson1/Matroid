@@ -301,7 +301,7 @@ lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x �
     and_iff_right hG.right_mem]
 
 lemma IsLink.not_mem_incidentEdges (h : (G - X).IsLink e x y) : e ∉ E(G, X) := by
-  simp only [mem_setIncidentEdges_iff, not_exists, not_and]
+  simp only [mem_setIncEdges_iff, not_exists, not_and]
   rintro z hzX hz
   obtain rfl | rfl := hz.eq_or_eq_of_isLink (h.of_le vertexDelete_le)
   · simpa [hzX] using h.left_mem

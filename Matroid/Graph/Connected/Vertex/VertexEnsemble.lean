@@ -8,8 +8,8 @@ variable {α β ι ι' : Type*} {G H : Graph α β} {s t u v x x₁ x₂ y y₁ 
 namespace Graph
 
 @[simps]
-def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut N(G, s) N(G, t) C) (hne : s ≠ t)
-    (hadj : ¬ G.Adj s t) : G.CutBetween s t where
+def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut (N(G, s) \ {s}) (N(G, t) \ {t}) C)
+    (hne : s ≠ t) (hadj : ¬ G.Adj s t) : G.CutBetween s t where
   carrier := C
   carrier_subset := by
     have := by simpa [subset_diff] using hC.subset_vertexSet
@@ -22,10 +22,10 @@ def IsSetCut.cutBetween_of_neighbor (hC : (G - {s, t}).IsSetCut N(G, s) N(G, t) 
     exact this.2.2
   not_connectedBetween' h := hC.ST_disconnects <| G.vertexDelete_vertexDelete_comm _ _ ▸
       (h.neighbor_setConnected hne <| (hadj <| ·.of_le vertexDelete_le)).subset
-      (neighbor_mono vertexDelete_le) (neighbor_mono vertexDelete_le)
+      (by grw [neighbor_mono vertexDelete_le]) (by grw [neighbor_mono vertexDelete_le])
 
 lemma connBetweenGe_iff_setConnGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
-    G.ConnBetweenGe s t n ↔ (G - {s, t}).SetConnGe N(G, s) N(G, t) n := by
+    G.ConnBetweenGe s t n ↔ (G - {s, t}).SetConnGe (N(G, s) \ {s}) (N(G, t) \ {t}) n := by
   refine ⟨fun h C hC => ?_, fun h C => ?_⟩
   · obtain ⟨hCsub, hCs, hCt⟩ := by simpa [subset_diff] using hC.subset_vertexSet
     simpa using h (hC.cutBetween_of_neighbor hne hadj)
@@ -35,29 +35,29 @@ lemma connBetweenGe_iff_setConnGe (hne : s ≠ t) (hadj : ¬ G.Adj s t) :
     exact ⟨C.carrier_subset, C.left_not_mem, C.right_not_mem⟩
   have hh := C.not_connectedBetween
   contrapose! hh
-  obtain ⟨a, ⟨hsane, hsa⟩, b, ⟨htbne, htb⟩, hab⟩ := hh
+  obtain ⟨a, ⟨hsa, hsane⟩, b, ⟨htb, htbne⟩, hab⟩ := hh
   have hsa' := (G.vertexDelete_adj_iff C).mpr ⟨hsa, C.left_not_mem, hab.left_mem.2⟩
   have htb' := (G.vertexDelete_adj_iff C).mpr ⟨htb, C.right_not_mem, hab.right_mem.2⟩
   exact (hsa'.connectedBetween.trans ((G.vertexDelete_vertexDelete_comm _ _ ▸ hab).of_le
     vertexDelete_le)).trans htb'.connectedBetween.symm
 
 lemma ConnBetweenGe.le_left_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnBetweenGe s t n) : n ≤ N(G, s).encard := by
+    (hconn : G.ConnBetweenGe s t n) : n ≤ (N(G, s) \ {s}).encard := by
   rw [connBetweenGe_iff_setConnGe hne hadj] at hconn
   have := hconn.left_encard_le
   rwa [inter_eq_right.mpr (by simp [neighbor_subset_of_ne_not_adj hne hadj])] at this
 
 lemma ConnBetweenGe.le_right_Neighbor_encard (hne : s ≠ t) (hadj : ¬ G.Adj s t)
-    (hconn : G.ConnBetweenGe s t n) : n ≤ N(G, t).encard :=
+    (hconn : G.ConnBetweenGe s t n) : n ≤ (N(G, t) \ {t}).encard :=
   hconn.symm.le_left_Neighbor_encard hne.symm (by rwa [adj_comm])
 
-noncomputable def link (G : Graph α β) (x : α) : N(G, x) → β := fun y ↦ y.prop.2.choose
+noncomputable def link (G : Graph α β) (x : α) : N(G, x) → β := fun y ↦ y.prop.choose
 
 @[simp]
-lemma link_isLink (y : N(G, x)) : G.IsLink (G.link x y) x y := y.prop.2.choose_spec
+lemma link_isLink (y : N(G, x)) : G.IsLink (G.link x y) x y := y.prop.choose_spec
 
 @[simp]
-lemma link_mem {y : N(G, x)} : G.link x y ∈ E(G) := y.prop.2.choose_spec.edge_mem
+lemma link_mem {y : N(G, x)} : G.link x y ∈ E(G) := y.prop.choose_spec.edge_mem
 
 noncomputable def VertexEnsemble.ofSetEnsemble (x y : α) (hxy : x ≠ y)
     (A : (G - {x, y}).SetEnsemble) (hA : A.between N(G, x) N(G, y)) :

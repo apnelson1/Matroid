@@ -115,7 +115,7 @@ lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simp
     aesop
   eq_of_isLink := by aesop
 
-noncomputable def adjIncFun (G : Graph α β) (x : α) : {y | G.Adj x y} → {e | G.Inc e x} :=
+noncomputable def adjIncFun (G : Graph α β) (x : α) : N(G, x) → E(G, x) :=
   fun y ↦ ⟨y.2.choose, _, y.2.choose_spec⟩
 
 lemma adjIncFun_injective (G : Graph α β) (x : α) : Function.Injective (G.adjIncFun x) := by
@@ -126,38 +126,38 @@ lemma adjIncFun_injective (G : Graph α β) (x : α) : Function.Injective (G.adj
 
 /-- In a simple graph, the bijection between edges at `x` and neighbours of `x`. -/
 noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :
-    {e // G.Inc e x} ≃ {y // G.Adj x y} where
+    E(G, x) ≃ N(G, x) where
   toFun e := ⟨e.2.choose, _, e.2.choose_spec⟩
-  invFun y := ⟨y.2.choose, _, y.2.choose_spec⟩
+  invFun y := G.adjIncFun x y
   left_inv := by
     rintro ⟨e, he⟩
-    simp only [Subtype.mk.injEq]
+    simp only [Subtype.mk.injEq, adjIncFun]
     generalize_proofs h h'
     exact (h.choose_spec.unique_edge h'.choose_spec).symm
   right_inv := by
     rintro ⟨y, hy⟩
-    simp only [Subtype.mk.injEq]
+    simp only [Subtype.mk.injEq, adjIncFun]
     generalize_proofs h h'
     exact (h.choose_spec.right_unique h'.choose_spec).symm
 
 @[simp]
-lemma isLink_incAdjEquiv (e : {e // G.Inc e x}) : G.IsLink e.1 x (G.incAdjEquiv x e) := by
+lemma isLink_incAdjEquiv (e : E(G, x)) : G.IsLink e.1 x (G.incAdjEquiv x e) := by
   simp only [incAdjEquiv, Equiv.coe_fn_mk]
   generalize_proofs h
   exact h.choose_spec
 
 @[simp]
-lemma adj_incAdjEquiv (e : {e // G.Inc e x}) : G.Adj x (G.incAdjEquiv x e) :=
+lemma adj_incAdjEquiv (e : E(G, x)) : G.Adj x (G.incAdjEquiv x e) :=
   (isLink_incAdjEquiv e).adj
 
 @[simp]
-lemma isLink_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.IsLink ((G.incAdjEquiv x).symm y) x y := by
-  simp only [incAdjEquiv, Equiv.coe_fn_symm_mk]
+lemma isLink_incAdjEquiv_symm (y : N(G, x)) : G.IsLink ((G.incAdjEquiv x).symm y) x y := by
+  simp only [incAdjEquiv, Equiv.coe_fn_symm_mk, adjIncFun]
   generalize_proofs h
   exact h.choose_spec
 
 @[simp]
-lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).symm y) x :=
+lemma inc_incAdjEquiv_symm (y : N(G, x)) : G.Inc ((G.incAdjEquiv x).symm y) x :=
   (isLink_incAdjEquiv_symm y).inc_left
 
 /-! ### Operations -/

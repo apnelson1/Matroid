@@ -55,6 +55,11 @@ lemma le_noEdge_iff : G ≤ Graph.noEdge X β ↔ V(G) ⊆ X ∧ E(G) = ∅ :=
   ⟨fun h ↦ ⟨vertexSet_mono h, subset_empty_iff.1 (edgeSet_mono h)⟩,
     fun h ↦ ⟨h.1, fun e x y he ↦ by simpa [h] using he.edge_mem⟩⟩
 
+@[simp]
+lemma noEdge_incEdges : E(Graph.noEdge X β, x) = ∅ := by
+  ext e
+  simp
+
 instance : OrderBot (Graph α β) where
   bot := Graph.noEdge ∅ β
   bot_le := by simp
@@ -196,6 +201,11 @@ lemma bouquet_mono (v : α) {X Y : Set β} (hss : X ⊆ Y) : bouquet v X ≤s bo
   vertexSet_eq := rfl
   isLink_of_isLink := by simp +contextual [subset_def ▸ hss]
 
+@[simp]
+lemma bouquet_incEdges : E(bouquet v F, v) = F := by
+  ext e
+  simp
+
 /-! ### Two vertices -/
 
 /-- A graph with exactly two vertices and no loops. -/
@@ -245,6 +255,16 @@ lemma banana_mono {X Y : Set β} (hXY : X ⊆ Y) : banana a b X ≤s banana a b 
 @[simp]
 lemma banana_eq_bouquet : banana a a F = bouquet a F := by
   ext a b c <;> simp
+
+@[simp]
+lemma banana_incEdges_left : E(banana a b F, a) = F := by
+  ext e
+  simp
+
+@[simp]
+lemma banana_incEdges_right : E(banana a b F, b) = F := by
+  ext e
+  simp
 
 /-! ### Complete graphs -/
 

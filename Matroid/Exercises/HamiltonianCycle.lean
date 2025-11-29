@@ -211,7 +211,7 @@ lemma Bound_on_indepSet [G.Simple] [G.Finite] {S A} (hS : IsSepSet G S) (hH : Is
     --   exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
     apply ncard_union_eq
     exact disjoint_iff_inter_eq_empty.mpr disjoint
-    exact finite_setOf_adj G
+    exact finite_neighbors G
     exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
   have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := sorry
   --Use degree_eq_ncard_adj
@@ -1433,12 +1433,12 @@ lemma dirac_exists_cycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).encard)
   simp only [← G.natCast_minDegree_eq G_nonempty] at hDegree
   enat_to_nat
 
-  have first_edge (y : {y // G.Adj P.first y}) : ∃! e, ∃ x, P.DInc e x y := by
+  have first_edge (y : N(G, P.first)) : ∃! e, ∃ x, P.DInc e x y := by
     obtain ⟨y, hy⟩ := y
     have ne_first : y ≠ P.first := hy.ne.symm
     refine existsUnique_left_edge hP.isPath ?_ ne_first
     exact G.first_neighbors_mem_path hP hy
-  have last_edge (x : {x // G.Adj P.last x}) : ∃! e, ∃ y, P.DInc e x y := by
+  have last_edge (x : N(G, P.last)) : ∃! e, ∃ y, P.DInc e x y := by
     obtain ⟨x, hx⟩ := x
     have ne_last : x ≠ P.last := hx.ne.symm
     refine existsUnique_right_edge hP.isPath ?_ ne_last

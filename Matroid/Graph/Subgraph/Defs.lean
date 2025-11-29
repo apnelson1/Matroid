@@ -176,7 +176,7 @@ lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
 lemma vertexDelete_edgeSet_diff (G : Graph α β) (X : Set α) : E(G - X) = E(G) \ E(G, X) := by
   ext e
   simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, edge_mem_iff_exists_isLink,
-    mem_setIncidentEdges_iff, not_exists, not_and]
+    mem_setIncEdges_iff, not_exists, not_and]
   refine ⟨fun ⟨x, y, hexy, hx, hy⟩ ↦ ⟨?_, fun z hz hez ↦ ?_⟩, fun ⟨⟨x, y, h⟩, h2⟩ ↦ ?_⟩
   · use x, y
   · obtain rfl | rfl := hez.eq_or_eq_of_isLink hexy <;> tauto
