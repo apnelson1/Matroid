@@ -321,29 +321,29 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
   -- Add hDirac applied to y
   sorry
 
-def IsHamiltonianCycle (G : Graph α β) (C : WList α β) : Prop :=
+def IsHamiltonCycle (G : Graph α β) (C : WList α β) : Prop :=
   G.IsCycle C ∧ V(G) ⊆ V(C)
 
-lemma IsHamiltonianCycle.isCycle (hC : G.IsHamiltonianCycle C) : G.IsCycle C := hC.1
-lemma IsHamiltonianCycle.vertexSet_supset (hC : G.IsHamiltonianCycle C) : V(G) ⊆ V(C) := hC.2
+lemma IsHamiltonCycle.isCycle (hC : G.IsHamiltonCycle C) : G.IsCycle C := hC.1
+lemma IsHamiltonCycle.vertexSet_supset (hC : G.IsHamiltonCycle C) : V(G) ⊆ V(C) := hC.2
 
-lemma IsHamiltonianCycle.vertexSet_eq (hC : G.IsHamiltonianCycle C) : V(C) = V(G) := by
+lemma IsHamiltonCycle.vertexSet_eq (hC : G.IsHamiltonCycle C) : V(C) = V(G) := by
   refine hC.isCycle.vertexSet_subset.antisymm hC.vertexSet_supset
 
-lemma IsHamiltonianCycle.vertexSet_encard_eq
-    (hC : G.IsHamiltonianCycle C) : V(C).encard = V(G).encard :=
+lemma IsHamiltonCycle.vertexSet_encard_eq
+    (hC : G.IsHamiltonCycle C) : V(C).encard = V(G).encard :=
   congr_arg Set.encard hC.vertexSet_eq
 
-lemma isHamiltonianCycle_iff : G.IsHamiltonianCycle C ↔ G.IsCycle C ∧ V(G) = V(C) :=
+lemma isHamiltonianCycle_iff : G.IsHamiltonCycle C ↔ G.IsCycle C ∧ V(G) = V(C) :=
   ⟨fun h ↦ ⟨h.isCycle, h.vertexSet_eq.symm⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂.subset⟩⟩
 
 protected
-lemma IsCycle.isHamiltonianCycle_iff (hC : G.IsCycle C) : G.IsHamiltonianCycle C ↔ V(G) = V(C) :=
+lemma IsCycle.isHamiltonianCycle_iff (hC : G.IsCycle C) : G.IsHamiltonCycle C ↔ V(G) = V(C) :=
   ⟨fun h ↦ (isHamiltonianCycle_iff.mp h).2, fun h ↦ ⟨hC, h.le⟩⟩
 
 -- Note: this is always true because WLists are finite
 lemma isHamilonianCycle_of_vertexSet_encard_eq
-    (hC : G.IsCycle C) (hen : V(C).encard = V(G).encard) : G.IsHamiltonianCycle C := by
+    (hC : G.IsCycle C) (hen : V(C).encard = V(G).encard) : G.IsHamiltonCycle C := by
   refine ⟨hC, Eq.subset ?_⟩
   symm
   exact Set.Finite.eq_of_subset_of_encard_le C.vertexSet_finite hC.vertexSet_subset hen.symm.le
@@ -359,7 +359,7 @@ lemma IsCycle_length_bound (hC : G.IsCycle C) : C.length ≤ V(G).encard := by
 
 --Noah, here is the lemma thats not liking me
 
-lemma Hamiltonian_to_cycle (hham : ∃ C, G.IsHamiltonianCycle C) : ∃ C, G.IsCycle C  := by
+lemma Hamiltonian_to_cycle (hham : ∃ C, G.IsHamiltonCycle C) : ∃ C, G.IsCycle C  := by
   obtain ⟨C, hC⟩ := hham
   exact ⟨C, hC.1⟩
 
@@ -975,49 +975,28 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
 lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     (S : Set α) (HS : IsMinSepSet G S )
     (A : Set α) (hA : IsMaxIndependent G A)
-    (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, IsHamiltonianCycle G C := by
+    (hAS : A.encard ≤ S.encard ) : ∃ C : WList α β, IsHamiltonCycle G C := by
 --grw
-  -- Hi Richard!
-  -- The existence of a cycle here should not be proved inside this lemma.
-  -- I've moved the statement to a separate lemma above.
-  -- The proof should be an easy combination of a few things:
-  -- 1 : In a tree on at least three vertices, the `MinSepSet` has size `1`.
-  -- 2 : In a bipartite graph, the `MaxIndependentSet` contains at least half the vertices.
-  -- 3 : Trees are bipartite.
-  -- 4 : Therefore, in a tree on at least three vertices, the hypothesis `A.encard ≤ S.encard` is
-  --      impossible.
-  -- 5 : Therefore, `G` has a cycle.
-
   -- To find a longest cycle, we first need to show the existence of some cycle C'
   have ⟨C', hC'⟩ : ∃ C, G.IsCycle C :=
     Hamiltonian_alpha_kappa_exists_cycle h3 HS hA hAS
   -- have := Finite.exists_maximalFor
 
-
   have hsne : {C : WList α β | G.IsCycle C}.Nonempty := nonempty_of_mem hC'
   have hsfin : ((length ) '' {C : WList α β | G.IsCycle C}).Finite := by sorry
-  -- Make this a lemma
-
   --The following obtains a cycle of G that is maximal in length
-  -- have := hsfin.exists_maximalFor' _ _ hsne
 
   obtain ⟨C, hCs : MaximalFor G.IsCycle length C⟩ := hsfin.exists_maximalFor' _ _ hsne
 
-  -- simp? [S] at hCs
   --Now that we got a max cycle, we have two cases
 
   obtain h_eq | hssu := hCs.prop.vertexSet_subset.eq_or_ssubset
-  · sorry
+  · use C
+    refine ⟨ hCs.prop, Eq.subset (id (Eq.symm h_eq)) ⟩
   have hG : V(G - V(C)).Nonempty := by
     rw [vertexDelete_vertexSet, diff_nonempty]
     exact hssu.not_subset
-
-    -- `C` is a Hamilton cycle
-
-    -- apply IsHamiltonianCycle.vertexSet_encard_eq G C (hCs.prop) hn
-  -- obtain ( hn| hlen ) := Classical.em (V(C).encard = V(G).encard  )
-  -- · use C
-  --   apply IsHamiltonianCycle.vertexSet_encard_eq G C (hCs.prop) hn
+  -- `C` is a Hamilton cycle
   --There should be an obvious bound on the size of a cycle
   have hC : G.IsCycle C := (hCs.prop)
   -- have hCle : V(C).encard < V(G).encard := by
@@ -1036,34 +1015,82 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     -- have hconcl : V(G) ⊆ VC  := by exact diff_eq_empty.mp hg
     -- have hconclusion : V(G) = VC  := by exact Subset.antisymm hconcl hg1
   have ⟨D, hD⟩ := exists_IsCompOf hG
-  set nbrIndices := {i | i < C.length ∧ G.SetVxAdj V(D) (C.get i)}
-  obtain h_not | h_ind := em' <| G.IsIndependent (C.get '' nbrIndices)
-  · rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])] at h_not
-    simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp, not_forall,
-      exists_prop, not_not, ↓existsAndEq, true_and, exists_and_left, nbrIndices] at h_not
-    obtain ⟨i, hi, hi', j, hj, hj', hij, hadj⟩ := h_not
-    sorry
+  --{i ≤ C.length | G.SetVxAdj V(D) (C.get i)}
+
+
+  --set nbrIndices := {i | i < C.length ∧ G.SetVxAdj V(D) (C.get i)}
+  have hDC : D ≤ G - V(C) := by exact IsCompOf.le hD
+  have hDconn : D.Connected := by exact IsCompOf.connected hD
+  have hindep := indep_nbrsnext hCs hDC hDconn
+  set nbrIndepSet :=  (C.get '' {i | i < C.length ∧ G.SetVxAdj V(D) (C.get (i + 1))})
+  have ⟨d, hdD ⟩ : ∃ d, d ∈ V(D) := by
+    have := hD.nonempty
+    exact this
+  have hI : G.IsIndependent (insert d nbrIndepSet) := by sorry
+  --Solve and use isIndependent_insert (It's in Independent.lean)
+  have hS : G.IsSepSet nbrIndepSet := by
+    have hVn : nbrIndepSet ⊆ V(G) := by exact hindep.subset
+    have hnconn : ¬ (G - nbrIndepSet).Connected := by
+      by_contra hcon
+      --You want to use connected_iff_forall_closed
+      have hne: V(G - nbrIndepSet).Nonempty := by sorry
+      have hDcG : D ≤c G - nbrIndepSet := by sorry
+      have := ((connected_iff_forall_closed hne).1 hcon) hDcG (hD.nonempty )
+      have ⟨x, hx ⟩ : ∃ x, x ∈ V(G - nbrIndepSet) \ V(D) := by sorry
+      have : G - nbrIndepSet ≠ D := by
+        sorry
+      sorry
+    exact { subset_vx := hVn, not_connected := hnconn }
+
+  have hsize : nbrIndepSet.encard < (insert d nbrIndepSet).encard := by sorry
+  have hcontra : S.encard < A.encard := by sorry
+  by_contra hc
+  grw[hAS] at hcontra
+  exact (lt_self_iff_false S.encard).mp hcontra
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  -- obtain h_not | h_ind := em' <| G.IsIndependent (C.get '' nbrIndices)
+  -- · rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])] at h_not
+  --   simp only [mem_image, mem_setOf_eq, ne_eq, forall_exists_index, and_imp, not_forall,
+  --     exists_prop, not_not, ↓existsAndEq, true_and, exists_and_left, nbrIndices] at h_not
+  --   obtain ⟨i, hi, hi', j, hj, hj', hij, hadj⟩ := h_not
+  --   sorry
 
 
     -- ·
     -- wlog h : 0 ∈ nbrIndices generalizing C with aux
 
   -- wlog h0 : 0 ∈ nbrIndices generalizing C with aux
-  set succIndices := (· + 1) '' nbrIndices
-  have nbrs_independent : G.IsIndependent (C.get '' nbrIndices) := by
+  -- set succIndices := (· + 1) '' nbrIndices
+  -- have nbrs_independent : G.IsIndependent (C.get '' nbrIndices) := by
 
-    -- wlog h0 : 0 ∈ nbrIndices with aux
-    -- ·
-    rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])]
-    simp only [mem_image, ne_eq, forall_exists_index, and_imp]
-    rintro x y i hi rfl j hj rfl hne hij
-    apply hne
-    simp [nbrIndices] at *
-    sorry
+  --   -- wlog h0 : 0 ∈ nbrIndices with aux
+  --   -- ·
+  --   rw [isIndependent_iff (by grw [← hC.vertexSet_subset, image_subset_range, range_get])]
+  --   simp only [mem_image, ne_eq, forall_exists_index, and_imp]
+  --   rintro x y i hi rfl j hj rfl hne hij
+  --   apply hne
+  --   simp [nbrIndices] at *
+  --   sorry
     --wlog hi0 : i = 0 generalizing C with aux
 
 
-  sorry
 
   -- set Neig : Set α := {v : α | v ∈ C ∧ (SetVxAdj G V(D) v) } with h_neig
   -- --This is the second worst sorry
