@@ -91,3 +91,25 @@ lemma IsMaxIndependent.empty_iff (hS : G.IsMaxIndependent S) : S = ∅ ↔ G = �
   refine ⟨?_, ?_⟩ <;>
   · rintro rfl
     simpa using hS
+
+lemma isIndependent_insert [G.Simple] {S : Set α} {s : α} (hS : G.IsIndependent S) (hs : s ∈ V(G)) :
+  G.IsIndependent (insert s S) ↔ ∀ x, x ∈ S → ¬ G.Adj x y := by
+refine ⟨?_, ?_ ⟩
+· intro h x hxS
+  -- Need to use h.not_adj_of_simple
+  sorry
+intro h
+have hV : (insert s S) ⊆ V(G) := by sorry
+apply (isIndependent_iff_forall_eq_of_adj hV).2
+intro x y hAdj hx hy
+simp only [mem_insert_iff] at hx
+simp only [mem_insert_iff] at hy
+obtain rfl | hxS := hx
+· obtain rfl | hyS := hy
+  · sorry
+  sorry
+obtain rfl | hyS := hy
+· sorry
+sorry
+
+--You are going to need to use (isIndependent_iff_forall_eq_of_adj hS.subset).1
