@@ -1,4 +1,5 @@
 import Matroid.Graph.Walk.Cycle
+import Matroid.Graph.Simple
 import Matroid.Graph.Lattice
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Data.Finite.Prod
@@ -87,6 +88,16 @@ lemma finite_setOf_le (G : Graph α β) [G.Finite] : {H | H ≤ G}.Finite := by
   simp only [Prod.mk.injEq] at h_eq
   exact G.ext_of_le_le h₁ h₂ h_eq.1 h_eq.2
 
+lemma finite_of_vertexSet_finite [G.Simple] (h : V(G).Finite) : G.Finite where
+  vertexSet_finite := h
+  edgeSet_finite := by
+    change Finite _ at *
+    exact Finite.of_injective _ G.ends_injective
+
+@[simp]
+lemma Simple.vertexSet_finite_iff [G.Simple] : V(G).Finite ↔ G.Finite :=
+  ⟨finite_of_vertexSet_finite, fun _ ↦ Finite.vertexSet_finite⟩
+
 instance (G : Graph α β) [G.Finite] : Finite G.Subgraph := finite_setOf_le G
 
 instance (G : Graph α β) [G.Finite] : Finite G.ClosedSubgraph :=
@@ -134,6 +145,7 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
 /-! ### Local Finiteness -/
 
 /-- A graph is `LocallyFinite` if each of its vertices is incident with finitely many edges. -/
+@[mk_iff]
 protected class LocallyFinite (G : Graph α β) where
   finite : ∀ x, {e | G.Inc e x}.Finite
 

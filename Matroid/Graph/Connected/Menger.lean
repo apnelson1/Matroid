@@ -277,6 +277,43 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
 
 def Walk (G : Graph α β) := {w // G.IsWalk w}
 
+lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F) := by
+  ext a b c
+  · simp only [mixedLineGraph_vertexSet, edgeDelete_vertexSet, edgeDelete_edgeSet,
+      vertexDelete_vertexSet, image_diff Sum.inr_injective, union_diff_distrib]
+    convert Iff.rfl
+    apply Disjoint.sdiff_eq_left
+    simp
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, edgeDelete_inc_iff, Sym2.eq,
+    Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk,
+    or_self, vertexDelete_isLink_iff, mem_image, exists_false, not_false_eq_true, and_self,
+    and_true, Sum.inr.injEq, false_and, or_self, and_false, exists_eq_right] <;> aesop
+
+lemma mixedLineGraph_vertexDelete : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
+  ext a b c
+  · simp only [mixedLineGraph_vertexSet, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
+    rw [image_diff Sum.inl_injective, union_diff_distrib, ← diff_diff, ← diff_diff]
+    convert Iff.rfl using 3
+    · apply Disjoint.sdiff_eq_left
+      rw [← image_diff Sum.inl_injective]
+      simp
+    rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, vertexDelete_inc_iff,
+    mem_setIncidentEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, vertexDelete_isLink_iff,
+    mem_union, mem_image, exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq,
+    exists_eq_right, false_or, not_exists, not_and]
+  · refine ⟨?_, ?_⟩
+    · rintro ⟨⟨hav, ha2⟩, rfl, rfl⟩
+      simpa [hav, and_self, true_and, mt (ha2 a.1) (not_not_intro hav)]
+    rintro ⟨⟨hinc, rfl, rfl⟩, ha1, hX⟩
+    simpa [hinc]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨⟨hinc, hX⟩, rfl, rfl⟩
+    simpa [hinc, mt (hX a.1)]
+  rintro ⟨⟨hinc, rfl, rfl⟩, hX, ha1⟩
+  simpa [hinc]
+
 @[simp]
 def mixedLineGraph_walkMap : WList α β → WList (α ⊕ β) (α × β)
 | nil x => nil (Sum.inl x)
@@ -365,6 +402,7 @@ lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) �
 --   · simp_all only [Sum.inl.injEq, reduceCtorEq, not_false_eq_true, implies_true, ← ne_eq]
 --     rw [notMem_iff_forall_mem_ne X _] at htX hsX
 --     obtain hconn := h u v (by simp [hu, hsX]) (by simp [hv, htX])
+
 --     sorry
 
 

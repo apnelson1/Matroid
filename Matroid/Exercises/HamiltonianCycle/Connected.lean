@@ -1,5 +1,3 @@
-import Mathlib.Tactic
-import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Independent
 import Matroid.Graph.Tree
@@ -7,7 +5,6 @@ import Matroid.ForMathlib.Minimal
 import Matroid.Graph.Walk.Index
 import Matroid.ForMathlib.Tactic.ENatToNat
 
-import Matroid.Exercises.HamiltonianCycle.NeBot
 import Matroid.Exercises.HamiltonianCycle.Degree
 import Matroid.Exercises.HamiltonianCycle.Walk
 
@@ -22,7 +19,7 @@ variable {S A : Set α}
 lemma finite_components_of_finite [G.Finite] : G.Components.Finite :=
   G.vertexSet_finite.finite_of_encard_le G.components_encard_le
 
-lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected) :
+lemma ge_two_components_of_not_connected (hNeBot : V(G).Nonempty) (h : ¬ G.Connected) :
     2 ≤ G.Components.encard := by
   -- This is very easy by `components_subsingleton_iff`.
   by_contra! hcon
@@ -31,6 +28,7 @@ lemma ge_two_components_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected)
     enat_to_nat!
     omega
   rw [components_subsingleton_iff_connected] at hcon
+  rw [← ne_bot_iff] at hNeBot
   tauto
 
 lemma components_encard_eq_one_iff : G.Components.encard = 1 ↔ G.Connected := by
@@ -46,14 +44,12 @@ lemma not_connected_of_components_encard_ge_two (h : 2 ≤ G.Components.encard) 
   rw [two_le_encard_iff_nontrivial] at h
   exact not_connected_of_nontrivial_components h
 
-lemma components_nontrivial_of_not_connected (hNeBot : G.NeBot) (h : ¬ G.Connected)
+lemma components_nontrivial_of_not_connected (hNeBot : V(G).Nonempty) (h : ¬ G.Connected)
     : G.Components.Nontrivial := by
   rw [← two_le_encard_iff_nontrivial]
   exact ge_two_components_of_not_connected hNeBot h
 
-
-protected
-lemma Connected.components_eq_singleton_self (h : G.Connected) : G.Components = {G} := by
+protected lemma Connected.components_eq_singleton_self (h : G.Connected) : G.Components = {G} := by
   have h_subsingleton := components_subsingleton_iff_connected.mpr (Or.inr h)
   exact h_subsingleton.eq_singleton_of_mem h
 
@@ -67,46 +63,50 @@ lemma components_eq_singleton_self_iff : H.Components = {H} ↔ H.Connected :=
 
 lemma IsMinSepSet.isSepSet (hS : G.IsMinSepSet S) : G.IsSepSet S := hS.toIsSepSet
 
-lemma IsSepSet.eq_empty (hS : G.IsSepSet S) (h : S = ∅) : ¬ G.Connected := by
-  have := hS.not_connected
+lemma empty_isSepset (h : ¬ G.Connected) : G.IsSepSet ∅ where
+  subset_vx := empty_subset _
+  not_connected := by simpa
+
+lemma IsSepSet.not_connected_of_empty (h : G.IsSepSet ∅) : ¬ G.Connected := by
+  have := h.not_connected
   simp_all only [vertexDelete_empty, not_false_eq_true]
 
-lemma IsSepSet.encard_eq_zero (hS : G.IsSepSet S) (h : S.encard = 0) : ¬ G.Connected := by
-  refine hS.eq_empty ?_
-  simp_all only [Set.encard_eq_zero]
+@[simp]
+lemma empty_isSepSet_iff : G.IsSepSet ∅ ↔ ¬ G.Connected :=
+  ⟨IsSepSet.not_connected_of_empty, empty_isSepset⟩
 
-lemma IsMinSepSet.encard_eq_zero_iff (hS : G.IsMinSepSet S) : S.encard = 0 ↔ ¬ G.Connected := by
-  refine ⟨fun h ↦ hS.isSepSet.encard_eq_zero h, ?_⟩
-  by_contra! hcon
-  obtain ⟨hG, hS_encard⟩ := hcon
-  replace hS_encard : 0 < S.encard := by enat_to_nat!; omega
-  have empty_isSepSet : G.IsSepSet ∅ := by
-    refine ⟨?_, ?_⟩ <;> simp_all
-  have := hS.minimal ∅ empty_isSepSet
-  simp only [encard_empty] at this
-  enat_to_nat!; omega
-
+@[simp]
 lemma IsMinSepSet.eq_empty_iff (hS : G.IsMinSepSet S) : S = ∅ ↔ ¬ G.Connected := by
-  rw [←Set.encard_eq_zero]
-  exact hS.encard_eq_zero_iff
+  refine ⟨fun h ↦ (h ▸ hS).toIsSepSet.not_connected_of_empty, ?_⟩
+  by_contra! hcon
+  obtain ⟨hG, hSne⟩ := hcon
+  obtain rfl := by simpa using hS.minimal ∅ <| empty_isSepset hG
+  simp at hSne
 
-lemma IsMinSepSet.encard_pos_iff (hS : G.IsMinSepSet S) : 0 < S.encard ↔ G.Connected := by
-  rw [Set.encard_pos, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
-  exact hS.encard_eq_zero_iff
+@[simp]
+lemma empty_isMinSepSet_iff : G.IsMinSepSet ∅ ↔ ¬ G.Connected :=
+  ⟨fun h ↦ h.toIsSepSet.not_connected_of_empty, fun h ↦ ⟨empty_isSepset h, by simp⟩⟩
 
-lemma IsMinSepSet.encard_ne_zero_iff (hS : G.IsMinSepSet S) : S.encard ≠ 0 ↔ G.Connected := by
-  rw [encard_ne_zero, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
-  exact hS.encard_eq_zero_iff
+lemma IsMinSepSet.connected_iff (hS : G.IsMinSepSet S) : G.Connected ↔ S.Nonempty := by
+  simpa [nonempty_iff_ne_empty] using hS.eq_empty_iff.not.symm
+
+-- lemma IsMinSepSet.encard_pos_iff (hS : G.IsMinSepSet S) : 0 < S.encard ↔ G.Connected := by
+--   rw [Set.encard_pos, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
+--   exact hS.encard_eq_zero_iff
+
+-- lemma IsMinSepSet.encard_ne_zero_iff (hS : G.IsMinSepSet S) : S.encard ≠ 0 ↔ G.Connected := by
+--   rw [encard_ne_zero, ←not_iff_not, Set.not_nonempty_iff_eq_empty, ←Set.encard_eq_zero]
+--   exact hS.encard_eq_zero_iff
 
 -- any two MinSepSets have the same encard
 lemma IsMinSepSet.encard_eq_encard_of_isMinSepSet (hS : G.IsMinSepSet S) (hA : G.IsMinSepSet A) :
     S.encard = A.encard := by
-  have h₁ := hS.minimal _ hA.isSepSet
-  have h₂ := hA.minimal _ hS.isSepSet
+  have h₁ := hS.minimal _ hA.toIsSepSet
+  have h₂ := hA.minimal _ hS.toIsSepSet
   exact h₁.antisymm h₂
 
 lemma isSepSet_empty_iff_not_connected : G.IsSepSet ∅ ↔ ¬ G.Connected := by
-  refine ⟨fun h ↦ h.eq_empty rfl, ?_⟩
+  refine ⟨fun h ↦ h.not_connected_of_empty, ?_⟩
   intro hyp
   refine ⟨by simp only [empty_subset], by simpa only [vertexDelete_empty]⟩
 
@@ -198,9 +198,6 @@ lemma IsCompOf.isCompOf_compl_of_disjoint
 lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
     (hH : H.IsCompOf G) (hG : ¬ G.Connected) (hssub : S ⊂ V(H)) : G.IsSepSet S := by
   refine ⟨hssub.le.trans hH.subset, ?_⟩
-  have hNeBot : G.NeBot := by
-    simp only [NeBot_iff_vertexSet_nonempty]
-    exact hH.nonempty.mono hH.subset
   rw [ssubset_iff_exists] at hssub
   obtain ⟨hSH, x, hxH, hxnS⟩ := hssub
   have hxHS : x ∈ V(H - S) := by
@@ -213,7 +210,8 @@ lemma IsCompOf.isSepSet_of_not_connected_of_ssubset
   have hxCx : x ∈ V(Cx) := by
     refine Graph.vertexSet_mono hCx_ge ?_
     exact mem_walkable_self_iff.mpr hxHS
-  replace hG : G.Components.Nontrivial := components_nontrivial_of_not_connected hNeBot hG
+  replace hG : G.Components.Nontrivial := components_nontrivial_of_not_connected
+    (hH.nonempty.mono hH.subset) hG
   obtain ⟨K, K_isCompOf_G, hne⟩ := hG.exists_ne H
   have K_isCompOf_GS : K.IsCompOf (G - S) := by
     refine K_isCompOf_G.isCompOf_compl_of_disjoint ?_
@@ -261,8 +259,8 @@ lemma exists_isSepSet_size_one_of_not_connected (hG : 3 ≤ V(G).encard) (h : ¬
   -- This is actually a little subtle.
   -- I'm guessing there's probably machinery to better deal with this.
 
-  have hNeBot : G.NeBot := by
-    rw [NeBot_iff_encard_positive]
+  have hNeBot : V(G).Nonempty := by
+    rw [← encard_pos]
     suffices aux : (0 : ℕ∞) < 3 by exact aux.trans_le hG
     enat_to_nat; omega
   -- Casework on whether every component is a singleton or not.

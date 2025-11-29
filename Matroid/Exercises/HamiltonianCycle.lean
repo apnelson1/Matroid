@@ -1,18 +1,11 @@
-import Mathlib.Tactic
-import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Independent
-import Matroid.Graph.Tree
 import Matroid.ForMathlib.Minimal
 import Matroid.Graph.Walk.Index
-import Matroid.ForMathlib.Tactic.ENatToNat
-import Matroid.Graph.Bipartite
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
-import Matroid.Exercises.HamiltonianCycle.NeBot
 import Matroid.Exercises.HamiltonianCycle.Degree
 import Matroid.Exercises.HamiltonianCycle.Walk
 import Matroid.Exercises.HamiltonianCycle.Connected
-import Matroid.Exercises.HamiltonianCycle.Independent
 import Matroid.Exercises.HamiltonianCycle.Bipartite
 
 -- TODO: remember to remove this Loogle import at the end of the project
@@ -29,9 +22,6 @@ variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H T : Graph α β} {P
 Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltonian cycle.
 -/
 
--- INITIAL DEFINITIONS
-
-
 --The exercises start here
 @[deprecated "use IsCompOf.subset" (since := "2025-11-28")]
 lemma isCompOf_subset (hHG : H.IsCompOf G) : V(H) ⊆ V(G) :=
@@ -39,7 +29,7 @@ lemma isCompOf_subset (hHG : H.IsCompOf G) : V(H) ⊆ V(G) :=
 
 lemma minDegree_le_minDegree_of_isCompOf [G.Finite] (hHG : H.IsCompOf G) :
     G.minDegree ≤ H.minDegree := by
-  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree (NeBot_iff_vertexSet_nonempty.2 hHG.nonempty)
+  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hHG.nonempty
   rw [←hveq, hHG.isClosedSubgraph.degree_eq hv]
   exact minDegree_le_degree <| hHG.subset hv
 
@@ -49,8 +39,8 @@ lemma minDegree_le_minDegree_of_Subgraph [G.Finite] (hHG : H ≤s G) : H.minDegr
   have Hfin: H.Finite := finite_of_le hHG.le
   obtain rfl | hH := H.eq_bot_or_vertexSet_nonempty
   · simp
-  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree' hH
-  obtain ⟨w, gw, gweq⟩ := G.exists_vertex_minDegree' (hHG.vertexSet_eq ▸ hH)
+  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hH
+  obtain ⟨w, gw, gweq⟩ := G.exists_vertex_minDegree (hHG.vertexSet_eq ▸ hH)
   have h1 : H.degree w ≤ G.degree w := degree_mono hHG.le w
   have h2 : H.minDegree ≤ H.degree w := minDegree_le_degree <| hHG.vertexSet_eq ▸ gw
   omega
@@ -60,8 +50,8 @@ def ConnectivityGE (G : Graph α β) (k : ℕ∞) : Prop :=
 
 lemma Connected.exists_vertex_eDegree_ge_two (hT : T.Connected) (hV : 3 ≤ V(T).encard) :
     ∃ x ∈ V(T), 2 ≤ T.eDegree x := by
-  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x :=
-    minEDegree_ge_one_of_connected_nontrivial hT <| lt_of_lt_of_le (by simp) hV
+  have hMinDeg : ∀ x ∈ V(T), 1 ≤ T.eDegree x := hT.minEDegree_ge_one_of_nontrivial (by
+    rw [← one_lt_encard_iff_nontrivial]; enat_to_nat!; omega)
   by_contra! hyp
   replace hyp : ∀ x ∈ V(T), T.eDegree x = 1 := by
     intro x hxT
@@ -185,7 +175,8 @@ lemma IsTree.exists_isMinSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
   intro A hA
   by_contra! hcon
   replace hcon : A.encard = 0 := by enat_to_nat! <;> omega
-  exact hA.encard_eq_zero hcon hT.connected
+  obtain rfl := by simpa using hcon
+  simp [hT.connected] at hA
 
 lemma Bound_on_indepSet [G.Simple] [G.Finite] {S A} (hS : IsSepSet G S) (hH : IsCompOf H (G-S))
     (hA : IsMaxIndependent G A) (hx : v ∈ V(H) ∩ A) :
@@ -248,7 +239,7 @@ lemma Bound_on_indepSet [G.Simple] [G.Finite] {S A} (hS : IsSepSet G S) (hH : Is
     have hP : V(G-S) ⊆ V(G) := by
       simp [vertexDelete_vertexSet]
       exact diff_subset
-    exact Finite.subset (vertexSet_finite) (fun ⦃a⦄ a_1 ↦ hP ((isCompOf_subset hH) a_1))
+    exact Finite.subset (vertexSet_finite) (fun ⦃a⦄ a_1 ↦ hP (hH.subset a_1))
 
   have hS : (Inc\IncW).ncard ≤ S.ncard := by
     have hH1 :(Inc\IncW) ⊆ S := by
@@ -278,8 +269,7 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
     have := hA.1.1
     tauto
 
-  have hNeBotS : (G - S).NeBot := by
-    apply NeBot_iff_vertexSet_nonempty.2
+  have hNeBotS : V(G - S).Nonempty := by
     tauto
 
   have hcomp := ge_two_components_of_not_connected hNeBotS sorry
@@ -405,12 +395,11 @@ lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G
   -- 5 : Therefore, `G` has a cycle.
 
   -- First, we show that it must be connected.
-  obtain (h | hConn) := Classical.em (S.encard = 0)
-  · exfalso
-    replace h : A.encard = 0 := by enat_to_nat! <;> omega
-    rw [hA.encard_eq_zero_iff_vertexSet_empty, ←encard_eq_zero] at h
-    enat_to_nat! <;> omega
-  rw [←ne_eq, hS.encard_ne_zero_iff] at hConn
+  obtain (rfl | hConn) := S.eq_empty_or_nonempty
+  · obtain rfl := by simpa using hAS
+    obtain rfl := by simpa using hA
+    simp at h3
+  rw [← hS.connected_iff] at hConn
 
   -- Now, proceed by contradiction.
   by_contra! h_isForest
@@ -1183,8 +1172,8 @@ lemma dirac_connected [G.Simple] [hFinite : G.Finite] (hV : 3 ≤ V(G).encard)
   have encard_eq_ncard : V(G).encard = ↑V(G).ncard := by
     rw [Set.Finite.cast_ncard_eq]
     exact vertexSet_finite
-  have hNeBot : G.NeBot := by
-    rw [NeBot_iff_encard_positive]
+  have hNeBot : V(G).Nonempty := by
+    rw [← Set.encard_pos]
     enat_to_nat! <;> omega
   simp only [← G.natCast_minDegree_eq hNeBot] at hDegree
   rw [encard_eq_ncard] at hV hDegree
@@ -1281,9 +1270,7 @@ lemma dirac_connected [G.Simple] [hFinite : G.Finite] (hV : 3 ≤ V(G).encard)
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith
   have hlt : min_comp.minDegree < V(min_comp).ncard := by
     have min_comp_simple : min_comp.Simple := ‹G.Simple›.mono min_comp_spec.1.le
-    refine minDegree_lt_ncard ?_
-    rw [NeBot_iff_vertexSet_nonempty]
-    exact min_comp_spec.1.nonempty
+    exact minDegree_lt_ncard min_comp_spec.1.nonempty
 
   linarith
 
@@ -1441,23 +1428,21 @@ lemma dirac_exists_cycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).encard)
   have G_nonempty : V(G).Nonempty := by
     rw [←encard_ne_zero]
     enat_to_nat! <;> omega
-  have G_nebot : G.NeBot := by
-    rwa [NeBot_iff_vertexSet_nonempty]
   have vx_finite : V(G).Finite := vertexSet_finite
   simp only [← vx_finite.cast_ncard_eq, Nat.ofNat_le_cast] at hDegree hNontrivial
-  simp only [← G.natCast_minDegree_eq G_nebot] at hDegree
+  simp only [← G.natCast_minDegree_eq G_nonempty] at hDegree
   enat_to_nat
 
   have first_edge (y : {y // G.Adj P.first y}) : ∃! e, ∃ x, P.DInc e x y := by
     obtain ⟨y, hy⟩ := y
     have ne_first : y ≠ P.first := hy.ne.symm
     refine existsUnique_left_edge hP.isPath ?_ ne_first
-    exact G.first_neighbors_mem_path hP _ hy
+    exact G.first_neighbors_mem_path hP hy
   have last_edge (x : {x // G.Adj P.last x}) : ∃! e, ∃ y, P.DInc e x y := by
     obtain ⟨x, hx⟩ := x
     have ne_last : x ≠ P.last := hx.ne.symm
     refine existsUnique_right_edge hP.isPath ?_ ne_last
-    exact G.last_neighbors_mem_path hP _ hx
+    exact G.last_neighbors_mem_path hP hx
   rw [forall_existsUnique_iff] at first_edge last_edge
   obtain ⟨left_edge, left_edge_spec⟩ := first_edge
   obtain ⟨right_edge, right_edge_spec⟩ := last_edge
@@ -1789,8 +1774,8 @@ lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).e
 
 lemma dirac [G.Simple] [G.Finite] (hV : 3 ≤ V(G).encard) (hDegree : V(G).encard ≤ 2 * G.minEDegree):
     ∃ C, G.IsHamiltonianCycle C := by
-  have hnonempty : G.NeBot := by
-    rw [NeBot_iff_encard_positive]
+  have hnonempty : V(G).Nonempty := by
+    rw [← Set.encard_pos]
     enat_to_nat! <;> omega
   have ⟨P, hP⟩ := G.exists_longest_path hnonempty
   have ⟨C, hC⟩ := dirac_exists_cycle hV hDegree hP

@@ -195,6 +195,13 @@ lemma vertexDelete_vertexSet_self (G : Graph α β) : G - V(G) = ⊥ := by
 @[simp]
 lemma vertexDelete_le : G - X ≤ G := G.induce_le diff_subset
 
+lemma vertexDelete_isLink_iff' (G : Graph α β) (X : Set α) :
+    (G - X).IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(G, X) := by
+  refine ⟨fun h ↦ ⟨h.of_le vertexDelete_le, (G.vertexDelete_edgeSet_diff X ▸ h.edge_mem).2⟩,
+    fun ⟨h, he⟩ ↦ h.of_le_of_mem vertexDelete_le ?_⟩
+  rw [vertexDelete_edgeSet_diff]
+  use h.edge_mem
+
 /-! ### Strongly disjointness -/
 
 /-- Two graphs are strongly disjoint if their edge sets and vertex sets are disjoint.

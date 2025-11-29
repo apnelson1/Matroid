@@ -6,7 +6,6 @@ import Matroid.Graph.Walk.Cycle
 import Matroid.ForMathlib.Tactic.ENatToNat
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
-import Matroid.Exercises.HamiltonianCycle.NeBot
 import Matroid.Exercises.HamiltonianCycle.Degree
 
 -- This file contains all relevant lemmas on walks/paths/cycles.
@@ -173,9 +172,7 @@ lemma pathSet_finite (G : Graph α β) [G.Simple] [G.Finite] :
   rw [←Set.finite_range_iff inj_injective]
   refine Set.Finite.subset (List.finite_length_le V(G) n) h_subset
 
-lemma pathSet_nonempty (G : Graph α β) (hNeBot : G.NeBot) :
-    G.PathSet.Nonempty := by
-  have hnonempty : V(G).Nonempty := by rwa [←NeBot_iff_vertexSet_nonempty]
+lemma pathSet_nonempty (G : Graph α β) (hnonempty : V(G).Nonempty) : G.PathSet.Nonempty := by
   obtain ⟨x, hx⟩ := hnonempty
   use nil x
   simpa [PathSet]
@@ -188,10 +185,9 @@ def IsLongestPath (G : Graph α β) (p : WList (α) β) :=
 @[simp]
 lemma IsLongestPath.isPath {p} (h : G.IsLongestPath p) : G.IsPath p := h.1
 
-lemma exists_longest_path
-    (G : Graph α β) [G.Simple] [G.Finite] (hNeBot : G.NeBot) :
+lemma exists_longest_path [G.Simple] [G.Finite] (hNeBot : V(G).Nonempty) :
     ∃ p, G.IsLongestPath p :=
-  Set.Finite.exists_maximalFor _ _ (G.pathSet_finite) (G.pathSet_nonempty hNeBot)
+  G.pathSet_finite.exists_maximalFor _ _ (G.pathSet_nonempty hNeBot)
 
 @[simp]
 lemma IsLongestPath.reverse (hp : G.IsLongestPath p) : G.IsLongestPath p.reverse := by
@@ -200,63 +196,44 @@ lemma IsLongestPath.reverse (hp : G.IsLongestPath p) : G.IsLongestPath p.reverse
 
 -- TODO: this already exists in library.
 -- by maximality, each neighbour of is on the path
-lemma first_neighbors_mem_path
-    (G : Graph α β) [G.Simple]
-    {P : WList (α) β} (hP : G.IsLongestPath P)
-    (x : α) (hx : G.Adj P.first x) :
+lemma first_neighbors_mem_path [G.Simple] (hP : G.IsLongestPath P) (hx : G.Adj P.first x) :
     x ∈ P := by
   -- suppose not.
   -- then, we will try constructing a longer path by prepending this neighbour
   by_contra! hyp
   obtain ⟨e, he⟩ := hx
-  generalize Q_def : cons x e P = Q
-  symm at Q_def
-  symm at he
-  have hQ : G.IsPath Q := by simp_all
-  have hQ_len : Q.length = P.length + 1 := by simp_all
-  have hQ_path : Q ∈ G.PathSet := hQ
-  have maximality := maximalFor_is_upper_bound _ hP _ hQ_path
+  have hQ : G.IsPath (cons x e P) := by simp_all [he.symm]
+  have hQ_len : (cons x e P).length = P.length + 1 := by simp_all
+  have maximality := maximalFor_is_upper_bound _ hP _ hQ
   linarith
 
 -- similarly, the same statement but reverse in direction
-lemma last_neighbors_mem_path
-    (G : Graph α β) [G.Simple]
-    {P : WList (α) β} (hP : G.IsLongestPath P)
-    (x : α) (hx : G.Adj P.last x) :
-    x ∈ P := by
+lemma last_neighbors_mem_path [G.Simple] (hP : G.IsLongestPath P) (hx : G.Adj P.last x) :x ∈ P := by
   -- just reverse `first_neighbors_mem_path`
   set P' := P.reverse with P'_def
   have hx' : G.Adj P'.first x := by simp_all only [reverse_first]
   have hP' : G.IsLongestPath P' := hP.reverse
-  have := first_neighbors_mem_path G hP' x hx'
+  have := first_neighbors_mem_path hP' hx'
   simp_all only [mem_reverse]
 
 ------- Lemmas on cycles in simple graphs?
 
 -- cycles in simple graphs are nontrivial
-lemma IsCycle.nontrivial_of_simple
-    [G.Simple]
-    {P} (hP : G.IsCycle P) : P.Nontrivial := by
-  obtain (h|h) := hP.loop_or_nontrivial
-  swap; assumption
+lemma IsCycle.nontrivial_of_simple [G.Simple] (hP : G.IsCycle P) : P.Nontrivial := by
+  apply hP.loop_or_nontrivial.elim (fun h ↦ ?_) id
   exfalso
-  obtain ⟨x,e,rfl⟩ := h
-  replace hP := hP.isTrail
-  rw [cons_isTrail_iff] at hP
-  apply hP.2.1.ne; simp
+  obtain ⟨x, e, rfl⟩ := h
+  simpa using cons_isTrail_iff.1 hP.isTrail
 
 -- cycles in simple graphs are of length at least 3
-lemma IsCycle.three_le_length_of_simple
-    [G.Simple]
-    {P} (hP : G.IsCycle P) :
-    3 ≤ P.length := by
+lemma IsCycle.three_le_length_of_simple [G.Simple] (hP : G.IsCycle P) : 3 ≤ P.length := by
   by_contra! hyp_contra
   replace hyp_contra : P.length = 2 := by
     suffices 2 ≤ P.length by linarith
     have P_nontrivial := hP.nontrivial_of_simple
     linarith [P_nontrivial.one_lt_length]
   rw [hP.length_eq_two_iff] at hyp_contra
-  obtain ⟨x,y,e,f,_, hne, rfl⟩ := hyp_contra
+  obtain ⟨x, y, e, f,_ , hne, rfl⟩ := hyp_contra
   have h_e_link : G.IsLink e x y := by
     replace hP := hP.isTrail
     simp_all

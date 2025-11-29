@@ -1,6 +1,7 @@
-import Matroid.Graph.Simple
+import Matroid.Graph.Finite
 import Mathlib.Data.Finsupp.Basic
 import Matroid.ForMathlib.Topology.ENat
+import Matroid.ForMathlib.Tactic.ENatToNat
 
 open Set
 
@@ -8,6 +9,10 @@ variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
 
 
 namespace Graph
+
+lemma disjoint_isLoopAt_isNonLoopAt : Disjoint {e | G.IsLoopAt e x} {e | G.IsNonloopAt e x} := by
+  simp +contextual only [disjoint_left, mem_setOf_eq]
+  exact fun e h ↦ h.not_isNonloopAt _
 
 lemma endSet_encard_le (G : Graph α β) (e : β) : (G.endSet e).encard ≤ 2 := by
   by_cases heE : e ∈ E(G)
@@ -165,6 +170,10 @@ lemma eDegree_lt_top [G.LocallyFinite] : G.eDegree x < ⊤ := by
 lemma eDegree_ne_top [G.LocallyFinite] : G.eDegree x ≠ ⊤ :=
   eDegree_lt_top.ne
 
+@[simp]
+lemma eDegree_eq_top (hx : G.eDegree x = ⊤) : ¬ G.LocallyFinite :=
+  fun _ ↦ eDegree_ne_top hx
+
 lemma eDegree_eq_zero_iff_inc : G.eDegree v = 0 ↔ ∀ e, ¬ G.Inc e v := by
   simp [eDegree]
 
@@ -285,13 +294,10 @@ lemma eDegree_eq_encard_add_encard (G : Graph α β) (x : α) : G.eDegree x =
   have hrw : {e | G.Inc e x} = {e | G.IsLoopAt e x} ∪ {e | G.IsNonloopAt e x} := by
     simp +contextual [iff_def, Set.ext_iff, Inc.isLoopAt_or_isNonloopAt, or_imp,
       IsLoopAt.inc, IsNonloopAt.inc]
-  have hdj : Disjoint {e | G.IsLoopAt e x} {e | G.IsNonloopAt e x} := by
-    simp +contextual only [disjoint_left, mem_setOf_eq]
-    exact fun e h ↦ h.not_isNonloopAt _
   rw [eDegree_eq_tsum_mem]
   rw [tsum_congr_set_coe (fun e ↦ (G.incFun e x : ℕ∞)) hrw,
-    Summable.tsum_union_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞))) hdj ENat.summable
-      ENat.summable]
+    Summable.tsum_union_disjoint (f := (fun e ↦ (G.incFun e x : ℕ∞)))
+    disjoint_isLoopAt_isNonLoopAt ENat.summable ENat.summable]
   have hrw2 : ∀ e : {e | G.IsLoopAt e x}, (G.incFun e x : ℕ∞) = 2 :=
     fun ⟨e, he⟩ ↦ by simp [he.incFun_eq_two]
   have hrw1 : ∀ e : {e | G.IsNonloopAt e x}, (G.incFun e x : ℕ∞) = 1 :=
@@ -308,6 +314,19 @@ lemma degree_eq_ncard_add_ncard (G : Graph α β) [G.LocallyFinite] (x : α) :
   rw [← Nat.cast_inj (R := ℕ∞), natCast_degree_eq, eDegree_eq_encard_add_encard]
   simp [G.finite_setOf_isLoopAt.cast_ncard_eq, G.finite_setOf_isNonloopAt.cast_ncard_eq]
 
+lemma adj_eq_isLoopAt_union_isNonloopAt :
+    {e | G.Inc e y} = {e | G.IsLoopAt e y} ∪ {e | G.IsNonloopAt e y} := by
+  simp +contextual only [inc_iff_isLoopAt_or_isNonloopAt, Set.ext_iff, mem_setOf_eq, mem_union,
+    implies_true]
+
+lemma encard_adj_le_encard_inc : {y | G.Adj x y}.encard ≤ {e | G.Inc e x}.encard :=
+  Function.Embedding.encard_le ⟨G.adjIncFun x, G.adjIncFun_injective x⟩
+
+lemma encard_inc_le_eDegree : {e | G.Inc e x}.encard ≤ G.eDegree x := by
+  rw [eDegree_eq_encard_add_encard, adj_eq_isLoopAt_union_isNonloopAt,
+    encard_union_eq disjoint_isLoopAt_isNonLoopAt]
+  enat_to_nat! <;> omega
+
 lemma eDegree_eq_encard_inc [G.Loopless] : G.eDegree x = {e | G.Inc e x}.encard := by
   simp [eDegree_eq_encard_add_encard, not_isLoopAt, isNonloopAt_iff_inc_not_isLoopAt]
 
@@ -319,6 +338,20 @@ lemma eDegree_eq_encard_adj [G.Simple] : G.eDegree x = {y | G.Adj x y}.encard :=
 
 lemma degree_eq_ncard_adj [G.Simple] : G.degree x = {y | G.Adj x y}.ncard := by
   rw [degree, eDegree_eq_encard_adj, ncard]
+
+lemma locallyFinite_of_eDegree_ne_top (hG : ∀ x, G.eDegree x ≠ ⊤) : G.LocallyFinite := by
+  contrapose! hG
+  obtain ⟨x, hx⟩ := by simpa [locallyFinite_iff] using hG
+  use x
+  rw [eq_top_iff]
+  convert ← G.encard_setOf_inc_le_eDegree x
+  simpa
+
+lemma forall_eDegree_ne_top_iff : (∀ x, G.eDegree x ≠ ⊤) ↔ G.LocallyFinite :=
+  ⟨locallyFinite_of_eDegree_ne_top, fun _ _ ↦ eDegree_ne_top⟩
+
+lemma exists_eDegree_eq_top_iff : (∃ x, G.eDegree x = ⊤) ↔ ¬ G.LocallyFinite := by
+  simpa using forall_eDegree_ne_top_iff.not
 
 /-! ### Subgraphs -/
 

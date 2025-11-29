@@ -1,4 +1,5 @@
-import Matroid.Graph.Finite
+import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Walk.Path
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α} {G H : Graph α β} {P : WList α β}
@@ -90,16 +91,6 @@ lemma ends_injective (G : Graph α β) [G.Simple] : Function.Injective G.ends :=
   · simp [hxy.unique_edge hzw]
   simp [hxy.unique_edge hzw.symm]
 
-lemma finite_of_vertexSet_finite (h : V(G).Finite) : G.Finite where
-  vertexSet_finite := h
-  edgeSet_finite := by
-    change Finite _ at *
-    exact Finite.of_injective _ G.ends_injective
-
-@[simp]
-lemma Simple.vertexSet_finite_iff : V(G).Finite ↔ G.Finite :=
-  ⟨finite_of_vertexSet_finite, fun _ ↦ Finite.vertexSet_finite⟩
-
 omit [G.Simple] in
 lemma Simple.mono (hG : G.Simple) (hle : H ≤ G) : H.Simple where
   not_isLoopAt e x := by simp [hG.toLoopless.mono hle]
@@ -123,6 +114,15 @@ lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simp
     simp only [← isLink_self_iff, singleEdge_isLink, not_and, not_or]
     aesop
   eq_of_isLink := by aesop
+
+noncomputable def adjIncFun (G : Graph α β) (x : α) : {y | G.Adj x y} → {e | G.Inc e x} :=
+  fun y ↦ ⟨y.2.choose, _, y.2.choose_spec⟩
+
+lemma adjIncFun_injective (G : Graph α β) (x : α) : Function.Injective (G.adjIncFun x) := by
+  intro y z hyz
+  have hy : G.IsLink (adjIncFun G x y) x y := y.2.choose_spec
+  have hz : G.IsLink (adjIncFun G x y) x z := hyz ▸ z.2.choose_spec
+  exact SetCoe.ext <| hz.isLink_iff_eq.mp hy
 
 /-- In a simple graph, the bijection between edges at `x` and neighbours of `x`. -/
 noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :

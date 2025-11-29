@@ -181,7 +181,7 @@ lemma Adj.induce (h : G.Adj x y) (hx : x ∈ X) (hy : y ∈ X) : G[X].Adj x y :=
 
 @[simp]
 lemma induce_edgeSet_subset (G : Graph α β) (X : Set α) : E(G.induce X) ⊆ E(G) := by
-  rintro e ⟨x,y,h, -, -⟩
+  rintro e ⟨x, y, h, -, -⟩
   exact h.edge_mem
 
 lemma IsLink.mem_induce_iff (hG : G.IsLink e x y) : e ∈ E(G[X]) ↔ x ∈ X ∧ y ∈ X := by
@@ -296,10 +296,37 @@ lemma vertexDelete_adj_iff (G : Graph α β) (X : Set α) :
 lemma vertexDelete_vertexSet_inter (G : Graph α β) (X : Set α) : G - (V(G) ∩ X) = G - X := by
   simp [vertexDelete_def]
 
-lemma IsLink.mem_vertexDelete_iff {X : Set α} (hG : G.IsLink e x y) :
-    e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
+lemma IsLink.mem_vertexDelete_iff (hG : G.IsLink e x y) : e ∈ E(G - X) ↔ x ∉ X ∧ y ∉ X := by
   rw [vertexDelete_def, hG.mem_induce_iff, mem_diff, mem_diff, and_iff_right hG.left_mem,
     and_iff_right hG.right_mem]
+
+lemma IsLink.not_mem_incidentEdges (h : (G - X).IsLink e x y) : e ∉ E(G, X) := by
+  simp only [mem_setIncidentEdges_iff, not_exists, not_and]
+  rintro z hzX hz
+  obtain rfl | rfl := hz.eq_or_eq_of_isLink (h.of_le vertexDelete_le)
+  · simpa [hzX] using h.left_mem
+  simpa [hzX] using h.right_mem
+
+@[simp]
+lemma Inc.not_mem_of_mem (h : G.Inc e x) (hx : x ∈ X) : e ∉ E(G - X) := by
+  simp only [vertexDelete_edgeSet, mem_setOf_eq, not_exists, not_and, not_not]
+  rintro u v huv hu
+  obtain rfl := h.eq_of_isLink_of_ne_left huv (fun h ↦ (hu <| h ▸ hx).elim)
+  exact hx
+
+lemma Inc.not_mem_incidentEdges (h : (G - X).Inc e x) : e ∉ E(G, X) :=
+  h.choose_spec.not_mem_incidentEdges
+
+lemma Inc.not_mem_of_vertexDelete (h : (G - X).Inc e x) : x ∉ X :=
+  (h.choose_spec.of_le vertexDelete_le).mem_vertexDelete_iff.mp h.edge_mem |>.1
+
+@[simp]
+lemma vertexDelete_inc_iff (G : Graph α β) (X : Set α) :
+    (G - X).Inc e x ↔ G.Inc e x ∧ e ∉ E(G, X) := by
+  refine ⟨fun h ↦ ⟨h.of_le vertexDelete_le, h.not_mem_incidentEdges⟩,
+    fun ⟨hex, he⟩ ↦ hex.of_le_of_mem vertexDelete_le ?_⟩
+  rw [vertexDelete_edgeSet_diff, mem_diff]
+  exact ⟨hex.edge_mem, he⟩
 
 @[gcongr]
 lemma vertexDelete_mono_left (h : H ≤ G) (X : Set α) : H - X ≤ G - X :=
