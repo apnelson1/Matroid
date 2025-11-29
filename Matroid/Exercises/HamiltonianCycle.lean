@@ -332,10 +332,31 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
   sorry
 
 def IsHamiltonianCycle (G : Graph α β) (C : WList α β) : Prop :=
-  G.IsCycle C ∧ C.length = V(G).ncard
+  G.IsCycle C ∧ V(G) ⊆ V(C)
 
-lemma IsHamilonianCycle.vertexSet_encard_eq (hC : G.IsCycle C) (hen : V(C).encard = V(G).encard) :
-    G.IsHamiltonianCycle C := by sorry
+lemma IsHamiltonianCycle.isCycle (hC : G.IsHamiltonianCycle C) : G.IsCycle C := hC.1
+lemma IsHamiltonianCycle.vertexSet_supset (hC : G.IsHamiltonianCycle C) : V(G) ⊆ V(C) := hC.2
+
+lemma IsHamiltonianCycle.vertexSet_eq (hC : G.IsHamiltonianCycle C) : V(C) = V(G) := by
+  refine hC.isCycle.vertexSet_subset.antisymm hC.vertexSet_supset
+
+lemma IsHamiltonianCycle.vertexSet_encard_eq
+    (hC : G.IsHamiltonianCycle C) : V(C).encard = V(G).encard :=
+  congr_arg Set.encard hC.vertexSet_eq
+
+lemma isHamiltonianCycle_iff : G.IsHamiltonianCycle C ↔ G.IsCycle C ∧ V(G) = V(C) :=
+  ⟨fun h ↦ ⟨h.isCycle, h.vertexSet_eq.symm⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₁, h₂.subset⟩⟩
+
+protected
+lemma IsCycle.isHamiltonianCycle_iff (hC : G.IsCycle C) : G.IsHamiltonianCycle C ↔ V(G) = V(C) :=
+  ⟨fun h ↦ (isHamiltonianCycle_iff.mp h).2, fun h ↦ ⟨hC, h.le⟩⟩
+
+-- Note: this is always true because WLists are finite
+lemma isHamilonianCycle_of_vertexSet_encard_eq
+    (hC : G.IsCycle C) (hen : V(C).encard = V(G).encard) : G.IsHamiltonianCycle C := by
+  refine ⟨hC, Eq.subset ?_⟩
+  symm
+  exact Set.Finite.eq_of_subset_of_encard_le C.vertexSet_finite hC.vertexSet_subset hen.symm.le
 
 def SetVxAdj (G : Graph α β) (H : Set α) (v : α) : Prop :=
     ∃ w, w ∈ H ∧ G.Adj v w
@@ -1698,11 +1719,7 @@ lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).e
   simp only [IsHamiltonianCycle, not_and] at hcon
   simp_all only [vertexSet_finite, forall_const]
   have hCG : V(C) ⊆ V(G) := hC.isWalk.vertexSet_subset
-  rw [hC.length_eq_vertexSet_ncard] at hcon
-  have hCG_ssub : V(C) ⊂ V(G) := by
-    refine ⟨hCG, fun bad ↦ ?_⟩
-    rw [bad.antisymm hCG] at hcon
-    contradiction
+  have hCG_ssub : V(C) ⊂ V(G) := ⟨hCG, by rwa [hCP]⟩
   rw [ssubset_iff_of_subset hCG] at hCG_ssub
   -- we now have our element x ∈ V(G - C)
   obtain ⟨x, hxG, hnxC⟩ := hCG_ssub
