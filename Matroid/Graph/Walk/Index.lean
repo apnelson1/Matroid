@@ -468,11 +468,6 @@ lemma IsCycle.idxOf_Adj_rotate [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C
   rw [hC.idxOf_rotate_n ha hn hlt, hC.idxOf_rotate_n hb hn hltb] at hh
   omega
 
--- lemma rotate_pre_suf [DecidableEq α] (w : WList α β) {a : ℕ} :
---     (w.rotate a).suffixFromVertex (w.get a) = w.suffixFromVertex (w.get a) := by sorry
-
-
-
 lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (w : WList α β)
     (h : v ∈ w ) : (w.concat e x).prefixUntilVertex v = w.prefixUntilVertex v:= by
   have hrw : (w.concat e x).prefixUntilVertex v = (w.concat e x).prefixUntil (· = v) := by exact rfl
@@ -546,10 +541,6 @@ lemma prefixUntilVertex_tail [DecidableEq α] (w : WList α β) (hv : v ≠ w.fi
     rw[prefixUntilLast (w.concat f v).tail hw' ]
     nth_rw 3 [this]
     rw[prefixUntilLast (w.concat f v) hw ]
-
--- lemma IsCycle.prefixUntilVertex_tail [DecidableEq α] {C : WList α β} (hC : G.IsCycle C)
---     (hv : v ≠ C.first) (hvC : v ∈ C) :
---     C.tail.prefixUntilVertex v = (C.prefixUntilVertex v).tail := by sorry
 
 lemma suffixFromVertex_concat_of_exists [DecidableEq α]  (w : WList α β) (hb : v ∈ w ):
     (w.concat e x).suffixFromVertex v = (w.suffixFromVertex v).concat e x := by
