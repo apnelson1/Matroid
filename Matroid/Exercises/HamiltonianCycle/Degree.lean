@@ -56,7 +56,7 @@ lemma exists_vertex_minDegree (hG : V(G).Nonempty) : ∃ x ∈ V(G), G.degree x 
   simp [degree, minDegree, hx]
 
 -- TODO: this should be moved to Graph.Basic
-lemma encard_neighors_le [G.Simple] (h : x ∈ V(G)) : N(G, x).encard + 1 ≤ V(G).encard := by
+lemma encard_neighbors_le [G.Simple] (h : x ∈ V(G)) : N(G, x).encard + 1 ≤ V(G).encard := by
   rw [show 1 = ({x} : Set α).encard by simp, ← Set.encard_union_eq (by simp [not_adj_self])]
   exact encard_le_encard <| union_subset (neighbor_subset ..) (by simpa)
 
@@ -64,7 +64,7 @@ lemma eDegree_le_encard [G.Simple] (h : x ∈ V(G)) : G.eDegree x + 1 ≤ V(G).e
   have solver : E(G, x) ≃ N(G, x) := G.incAdjEquiv x
   simp only [eDegree_eq_encard_inc, ge_iff_le]
   rw [solver.encard_eq]
-  exact encard_neighors_le h
+  exact encard_neighbors_le h
 
 lemma degree_le_ncard [G.Simple] [G.Finite] (h : x ∈ V(G)) : G.degree x + 1 ≤ V(G).ncard := by
   suffices hyp : G.eDegree x + 1 ≤ V(G).encard by
