@@ -1,12 +1,12 @@
 import Mathlib.Tactic
 import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Connected.Basic
-import Matroid.Graph.Walk.Index
 import Matroid.Graph.Walk.Cycle
 import Matroid.ForMathlib.Tactic.ENatToNat
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
 import Matroid.Exercises.HamiltonianCycle.Degree
+import Matroid.Exercises.HamiltonianCycle.WList
 
 -- This file contains all relevant lemmas on walks/paths/cycles.
 -- All three are included together for convenience.
@@ -15,7 +15,8 @@ open WList Set
 
 namespace Graph
 
-variable {α β ι : Type*} {x y z u v : α} {e f : β} {G H : Graph α β} {w p q P Q C : WList α β}
+variable {α β ι : Type*} {x y z u v a b : α} {e f : β} {G H : Graph α β} {w p q P Q C : WList α β}
+         {m n : ℕ}
 
 -- In a simple graph, walks are completely dictated by their vertices
 lemma IsWalk.eq_of_vertex_eq
@@ -319,3 +320,269 @@ lemma IsPath.first_in_suffixFromVertex_iff
       exfalso
       apply hp.2.2
       exact (w.suffixFromVertex_isSuffix x).mem bad
+
+lemma Prefix_Suffix_int [DecidableEq α] (hP : G.IsPath P) (hp : b ∈ P.prefixUntilVertex x)
+    (hs : b ∈ P.suffixFromVertex x) (hx : x ∈ P) : x = b := by
+  rw [← prefixUntilVertex_append_suffixFromVertex P x] at hP
+  have hPf : x = (P.suffixFromVertex x).first := (suffixFromVertex_first hx).symm
+  nth_rw 1 [(prefixUntilVertex_last hx).symm] at hPf
+  have hint : b ∈ V(P.prefixUntilVertex x) ∩ V(P.suffixFromVertex x) := mem_inter hp hs
+  rw [hP.inter_eq_singleton_of_append hPf] at hint
+  simp only [prefixUntilVertex_last hx, mem_singleton_iff] at hint
+  exact hint.symm
+
+
+--- ROTATE
+
+lemma IsCycle.rotate_one (hC : G.IsCycle C) :
+    ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
+  use hC.nonempty.firstEdge
+  nth_rw 1 [Eq.symm (Nonempty.cons_tail hC.nonempty)]
+  rw [cons_rotate_one]
+
+lemma IsCycle.idxOf_rotate_one [DecidableEq α] (hC : G.IsCycle C) (hnt : C.Nonempty)
+    (h1 : C.first ≠ a) (ha : a ∈ C) : (C.rotate 1).idxOf a + 1 = C.idxOf a := by
+  obtain ⟨e, h⟩ := hC.rotate_one
+  have hat : a ∈ C.tail := by
+    obtain hfirst | h1 := eq_first_or_mem_tail ha
+    · by_contra
+      exact h1 hfirst.symm
+    exact h1
+  have := idx_Of_tail hnt h1 ha
+  rwa [h, idxOf_concat_of_mem hat]
+
+lemma IsCycle.idxOf_rotate_first [DecidableEq α] (hC : G.IsCycle C) (hn : n < C.length)
+    (hle : n + 1 ≤ C.idxOf a ) : (C.rotate n).first ≠ a := by
+  rw [C.rotate_first n (Nat.le_of_succ_le hn)]
+  by_contra hc
+  rw [← hc, idxOf_get hC hn] at hle
+  linarith
+
+lemma IsCycle.idxOf_rotate_n_le [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C)
+    (hle : n ≤ C.idxOf a) : (C.rotate n).idxOf a + n = C.idxOf a := by
+  have hn := hle.trans_lt <| hC.isClosed.idxOf_lt_length ha hC.nonempty
+  induction n with | zero => simp_all | succ n hi =>
+  rw [← rotate_rotate C n 1]
+  have han : (C.rotate n).first ≠ a := by
+    rw [rotate_first C n (by linarith)]
+    by_contra hc
+    rw [← hc, idxOf_get hC (Nat.lt_of_succ_lt hn)] at hle
+    linarith
+  have hf := (rotate hC n).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hC.nonempty) han
+    (hC.isClosed.mem_rotate.2 ha)
+  have := hi (by linarith) (by linarith)
+  linarith
+
+lemma IsCycle.idxOf_rotate_one_first' [DecidableEq α] (hC : G.IsCycle C) :
+    (C.rotate 1).idxOf C.first + 1 = C.length := by
+  obtain ⟨e, hrC⟩ := hC.rotate_one
+  rw [hrC, idxOf_concat_of_mem, hC.isClosed.eq, ← tail_last, idxOf_last _ hC.nodup, tail_length,
+    Nat.sub_add_cancel hC.nonempty.length_pos]
+  rw [hC.isClosed.mem_tail_iff]
+  exact first_mem
+
+lemma IsCycle.idxOf_rotate_one_first [DecidableEq α] (hC : G.IsCycle C) (h1 : C.first = a)
+    (ha : a ∈ C) : (C.rotate 1).idxOf a + 1 = C.length := by
+  obtain ⟨e, hrC⟩ := hC.rotate_one
+  have hft := h1 ▸ hC.isClosed.eq
+  rw [hrC, idxOf_concat_of_mem (hC.isClosed.mem_tail_iff.2 ha), hft, (tail_last C).symm,
+    idxOf_last C.tail (hC.nodup), tail_length]
+  have := hC.nonempty.length_pos
+  omega
+
+lemma IsCycle.idxOf_rotate_untilfirst [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) :
+    (C.rotate (C.idxOf a + 1)).idxOf a + 1 = C.length := by
+  rw [← rotate_rotate C (C.idxOf a) 1, (hC.rotate (C.idxOf a)).idxOf_rotate_one_first
+    (rotate_idxOf_first ha) (hC.isClosed.mem_rotate.mpr ha), length_rotate]
+
+--@[simp]
+lemma IsCycle.idxOf_rotate_idxOf [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) :
+    (C.rotate (C.idxOf a)).idxOf a = 0 := by
+  simpa using hC.idxOf_rotate_n_le ha le_rfl
+
+lemma IsCycle.idxOf_rotate_n [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) (hn : n < C.length)
+    (hle : C.idxOf a < n) : (C.rotate n).idxOf a + n = C.length + C.idxOf a := by
+  obtain ⟨x, rfl⟩ | hnt := exists_eq_nil_or_nonempty C
+  · simp_all
+  induction n with | zero => simp_all | succ n hi =>
+  obtain han | hu := eq_or_ne (C.idxOf a) n
+  · rw [← han]
+    have hle' : C.idxOf a < C.length := by
+      rw [han]
+      exact Nat.lt_of_succ_lt hn
+    have := hC.idxOf_rotate_untilfirst ha
+    linarith
+  rw [← C.rotate_rotate n 1]
+  have hg : n < C.length := Nat.lt_of_succ_lt hn
+  have hii := hi hg (Nat.lt_of_le_of_ne (Nat.le_of_lt_succ hle) hu)
+  have hnf : (C.rotate n).first ≠ a := by
+    by_contra hc
+    have hia : (C.rotate n).idxOf a = 0 := by
+      rw [← hc]
+      exact idxOf_first (C.rotate n)
+    rw [hia, zero_add] at hii
+    rw [hii] at hg
+    linarith
+  have ha' : a ∈ C.rotate n := (IsClosed.mem_rotate (hC.isClosed)).mpr ha
+  have hf := (rotate hC n).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hnt) hnf ha'
+  linarith
+
+lemma IsTrail.idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
+    (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
+  induction w with | nil w => simp_all | cons u e w ih =>
+  simp_all only [cons_isTrail_iff, mem_cons_iff, forall_const]
+  obtain rfl | hu := eq_or_ne a u
+  · simp_all only [true_or, idxOf_cons_self, zero_add]
+    obtain rfl | hbb := eq_or_ne a b
+    · simp at he
+    simp [idxOf_cons a e w, hbb] at he
+    simp [hbb.symm] at hb
+    have : b = w.first := by
+      have h1 := w.get_idxOf hb
+      rw[he ] at h1
+      --have : w.first ∈ w := by exact first_mem
+      have h2 := w.get_idxOf first_mem
+      rw [idxOf_first w, h1] at h2
+      exact h2
+    rw [this]
+    use e
+    exact hw.2.1
+  simp only [hu, false_or] at ha
+  obtain rfl | hau := eq_or_ne b u
+  simp_all
+  simp [hau] at hb
+  simp [idxOf_cons_ne hu.symm, idxOf_cons_ne hau.symm ] at he
+  exact ih ha hb he
+
+lemma IsCycle.idxOf_Adj [DecidableEq α] {a b : α} {C : WList α β} (hC : G.IsCycle C)
+    (ha : a ∈ C) (hb : b ∈ C) (he : C.idxOf b = C.idxOf a + 1) : G.Adj a b :=
+  (hC.toIsTrail).idxOf_Adj ha hb he
+
+-- lemma IsCycle.idxOf_Adj_first [DecidableEq α] {a b : α} {C : WList α β} (hC : G.IsCycle C)
+--     (hab : a ≠ b)
+--     (ha : C.idxOf a = 0 ) (hb : C.idxOf b = C.length - 1): G.Adj a b := by
+
+lemma IsCycle.idxOf_Adj_first [DecidableEq α] (hC : G.IsCycle C) (hab : a ≠ b) (ha : C.idxOf a = 0)
+    (hb : C.idxOf b = C.length - 1) : G.Adj a b := by
+  have haC : a ∈ C := by
+    have hlea : C.idxOf a ≤ C.length := by
+      rw [ha]
+      exact Nat.zero_le C.length
+    exact idxOf_le_length_iff_mem.mp hlea
+  have hbC : b ∈ C := by
+    have hle : C.idxOf b ≤ C.length := by
+      rw [hb]
+      omega
+    exact idxOf_le_length_iff_mem.mp hle
+  obtain h0 | hnt := DecidableNonempty C
+  · simp only [WList.not_nonempty_iff] at h0
+    rw [length_eq_zero.2 h0, zero_tsub, ← ha] at hb
+    exact hab (C.idxOf_eq haC hb.symm) |>.elim
+  obtain h1 | hle := le_or_gt C.length 1
+  · rw [h1.antisymm (one_le_length_iff.mpr hnt), tsub_self, ← ha] at hb
+    exact hab (C.idxOf_eq haC hb.symm) |>.elim
+  have hn : C.idxOf b < C.length := by
+    rw [hb]
+    omega
+  have hab : C.idxOf a < C.idxOf b := by
+    rw [ha, hb]
+    exact Nat.zero_lt_sub_of_lt hle
+  have := hC.idxOf_rotate_idxOf hbC
+  have hf := hC.idxOf_rotate_n haC hn hab
+  rw [ha, ←this] at hf
+  nth_rw 2 [hb] at hf
+  have hlast : (C.rotate (C.idxOf b)).idxOf a  = (C.rotate (C.idxOf b)).idxOf b + 1 := by omega
+  exact (idxOf_Adj (rotate hC (C.idxOf b)) (hC.isClosed.mem_rotate.2 hbC)
+    (hC.isClosed.mem_rotate.2 haC) hlast).symm
+
+lemma IsCycle.idxOf_rotate [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) (hn : n < C.length) :
+    ((C.rotate n).idxOf a + n) % C.length = C.idxOf a := by
+  obtain ⟨x, rfl⟩ | hne := exists_eq_nil_or_nonempty C
+  · simp_all
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  · rw [hC.idxOf_rotate_n_le ha hle]
+    exact Nat.mod_eq_of_lt (hC.isClosed.idxOf_lt_length ha hne)
+  rw [hC.idxOf_rotate_n ha hn hlt]
+  simp only [Nat.add_mod_left]
+  exact Nat.mod_eq_of_lt (hC.isClosed.idxOf_lt_length ha hne)
+
+lemma IsCycle.idxOf_Adj_rotate [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) (hb : b ∈ C)
+    (hn : n < C.length) : C.idxOf b = C.idxOf a + 1 ∨ (C.idxOf b = 0 ∧ C.idxOf a = C.length - 1)
+    ↔ (C.rotate n).idxOf b = (C.rotate n).idxOf a + 1 ∨
+    ((C.rotate n).idxOf b = 0 ∧ (C.rotate n).idxOf a = C.length - 1) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  have := hC.idxOf_rotate_n_le ha hle
+  · obtain hleb | hltb := le_or_gt n (C.idxOf b)
+    · have := hC.idxOf_rotate_n_le hb hleb
+      omega
+    have := hC.idxOf_rotate_n hb hn hltb
+    omega
+  obtain hleb | hltb := le_or_gt n (C.idxOf b)
+  · have := hC.idxOf_rotate_n ha hn hlt
+    have := hC.idxOf_rotate_n_le hb hleb
+    omega
+  have := hC.idxOf_rotate_n ha hn hlt
+  have := hC.idxOf_rotate_n hb hn hltb
+  omega
+
+  have hne := hC.nonempty
+  have hh : (C.rotate n).idxOf b + n = (C.rotate n).idxOf a + n + 1
+      ∨ (C.rotate n).idxOf b + n = n ∧ (C.rotate n).idxOf a + n = C.length - 1 + n := by
+    omega
+  obtain hle | hlt := le_or_gt n (C.idxOf a)
+  rw [hC.idxOf_rotate_n_le ha hle] at hh
+  · obtain hleb | hltb := le_or_gt n (C.idxOf b)
+    · rw [hC.idxOf_rotate_n_le hb hleb] at hh
+      obtain hgood | hf := hh
+      · omega
+      have := (hC.isClosed).idxOf_lt_length ha hne
+      rw[hf.2] at this
+      by_contra
+      omega
+    rw [hC.idxOf_rotate_n hb hn hltb] at hh
+    have := (hC.isClosed).idxOf_lt_length ha hne
+    have : C.length ≤ C.length + C.idxOf b := Nat.le_add_right C.length (C.idxOf b)
+    obtain haa | haaa : C.length + C.idxOf b = C.length ∨ C.length + C.idxOf b = C.length + 1 := by
+      omega
+    · simp only [Nat.add_eq_left] at haa
+      rw [haa] at hh
+      omega
+    simp only [Nat.add_left_cancel_iff] at haaa
+    simp only [haaa, Nat.add_right_cancel_iff] at hh
+    omega
+  obtain hleb | hltb := le_or_gt n (C.idxOf b)
+  rw [hC.idxOf_rotate_n_le hb hleb] at hh
+  · rw [hC.idxOf_rotate_n ha hn hlt] at hh
+    have := (hC.isClosed).idxOf_lt_length hb hne
+    omega
+  rw [hC.idxOf_rotate_n ha hn hlt, hC.idxOf_rotate_n hb hn hltb] at hh
+  omega
+
+-- lemma rotate_pre_suf [DecidableEq α] (w : WList α β) {a : ℕ} :
+--     (w.rotate a).suffixFromVertex (w.get a) = w.suffixFromVertex (w.get a) := by sorry
+
+-- lemma IsCycle.rotate_pre_suff [DecidableEq α] {C : WList α β} (hC : G.IsCycle C) {a : ℕ }
+--   (hnt : C.Nonempty) (hla : a ≤ C.length) (ha : 1 ≤ a ) :
+--   (C.rotate a).prefixUntilVertex (C.last ) = C.suffixFromVertex (C.get a) := by
+-- induction a with
+-- | zero =>
+-- simp
+-- by_contra
+-- exact Nat.not_succ_le_zero 0 ha
+-- | succ n IH =>
+-- have hwnt : (C.rotate n).Nonempty := by sorry
+-- rw[←rotate_rotate C n 1] --SuffixFromVertex_get C hnt hla hw ]
+-- -- obtain ⟨e, hC ⟩ := rotate_one hwnt
+-- -- rw[hC]
+-- -- set w' := (w.rotate n) with h_w'
+-- -- have : ((w.rotate n).tail.concat e (w.rotate n).tail.first).prefixUntilVertex w.last
+-- --     = ((w.rotate n).prefixUntilVertex w.last).tail := by
+-- --   rw[←h_w']
+-- --   have hlin : w.last ∈ w'.tail := by sorry
+-- --   rw[prefixUntilVertex_concat_of_exists w'.tail hlin, prefixUntilVertex_tail w']
+-- --   rw[h_w']
+-- --   sorry
+-- --   sorry
+-- --   exact hwnd
+-- sorry
