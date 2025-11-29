@@ -1,9 +1,10 @@
 import Matroid.Graph.Subgraph.Delete
+import Matroid.Graph.Walk.Basic
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
-  {X Y : Set α}
+  {X Y : Set α} {W : WList α β}
 
-open Set Function
+open Set Function WList
 
 open scoped Sym2
 
@@ -61,6 +62,11 @@ lemma map_inc : (f ''ᴳ G).Inc e x ↔ ∃ v, G.Inc e v ∧ x = f v := by
   simp only [Inc, Map_isLink]
   tauto
 
+@[simp]
+lemma map_vertexSet_subset (h : X ⊆ V(G)) : f '' X ⊆ V(f ''ᴳ G) := by
+  rw [Map_vertexSet]
+  gcongr
+
 lemma IsLink.Map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f u) (f v) := by
   simp only [Map_isLink]
   use u, v, h
@@ -110,6 +116,20 @@ lemma map_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   · simp
   simp only [Map_isLink, edgeDelete_isLink]
   tauto
+
+@[simp]
+lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) :
+    (f ''ᴳ G).IsWalk (w.map f) := by
+  refine hw.recOn ?hnil ?hcons
+  · intro x hx
+    have hx' : f x ∈ V(f ''ᴳ G) := by
+      simpa [Map_vertexSet] using Set.mem_image_of_mem f hx
+    simpa [WList.map] using Graph.IsWalk.nil (G := f ''ᴳ G) (x := f x) hx'
+  · intro x e w hw hlink ih
+    have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
+      simpa [WList.map_first] using IsLink.Map hlink f
+    simpa [WList.map, WList.map_first] using
+      Graph.IsWalk.cons (G := f ''ᴳ G) (x := f x) (e := e) (w := w.map f) ih hlink'
 
 lemma induce_map_isSpanningSubgraph : f ''ᴳ (G[X]) ≤s (f ''ᴳ G)[f '' X] where
   vertexSet_eq := by simp

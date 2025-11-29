@@ -17,8 +17,7 @@ lemma noEdge_eDegree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).eD
 lemma noEdge_degree (V : Set α) (β : Type*) (x : α) : (Graph.noEdge V β).degree x = 0 := by
   simp [degree]
 
-lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) :
-    (Graph.singleEdge x y e).eDegree x = 1 := by
+lemma singleEdge_eDegree_left (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).eDegree x = 1 := by
   rw [eDegree_eq_encard_add_encard, encard_eq_zero.2, ← encard_singleton e, mul_zero, zero_add]
   · convert rfl
     suffices ∃ z, ¬z = x ∧ (z = y ∨ x = y ∧ z = x) by
@@ -60,7 +59,6 @@ lemma singleEdge_self_eDegree (x : α) (e : β) : (Graph.singleEdge x x e).eDegr
 @[simp]
 lemma singleEdge_self_degree (x : α) (e : β) : (Graph.singleEdge x x e).degree x = 2 := by
   simp [degree]
-
 
 lemma banana_eDegree_left (hab : a ≠ b) (F : Set α) : (banana a b F).eDegree a = F.encard := by
   have := banana_loopless hab F

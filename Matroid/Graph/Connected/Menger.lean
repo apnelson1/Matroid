@@ -241,8 +241,17 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
     exact ⟨he.vertexEnsemble ι hne⟩
   refine ⟨fun h => ?_, fun ⟨A⟩ => ?_⟩
   · rw [connBetweenGe_iff_setConnGe hne hadj, Menger'sTheorem_set
-    (by simp [subset_diff, hadj]) (by simp [subset_diff, not_symm_not hadj])] at h
+    (by simpa [subset_diff, hadj] using (G.neighbor_subset s).trans <| subset_insert ..)
+    (by simpa [subset_diff, not_symm_not hadj] using (G.neighbor_subset t).trans
+    <| subset_insert ..)] at h
     obtain ⟨A, hA, hAcard⟩ := h
+    have hAdj := A.of_vertexDelete
+    replace hA := hA.left (S₀ := N(G, s)) <| by
+      rw [diff_symmDiff]
+      exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
+    replace hA := hA.right (T₀ := N(G, t)) <| by
+      rw [diff_symmDiff]
+      exact (hAdj.mono_right (by simp)).mono_right inter_subset_right
     refine ⟨VertexEnsemble.ofSetEnsemble s t hne A hA |>.comp (ι' := ι) ?_⟩
     rw [ENat.card_eq_coe_natCard, ENat.coe_inj] at hι
     rw [← A.first_injOn.encard_image] at hAcard
@@ -276,6 +285,43 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
 
 
 def Walk (G : Graph α β) := {w // G.IsWalk w}
+
+lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F) := by
+  ext a b c
+  · simp only [mixedLineGraph_vertexSet, edgeDelete_vertexSet, edgeDelete_edgeSet,
+      vertexDelete_vertexSet, image_diff Sum.inr_injective, union_diff_distrib]
+    convert Iff.rfl
+    apply Disjoint.sdiff_eq_left
+    simp
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, edgeDelete_inc_iff, Sym2.eq,
+    Sym2.rel_iff', Prod.mk.injEq, Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk,
+    or_self, vertexDelete_isLink_iff, mem_image, exists_false, not_false_eq_true, and_self,
+    and_true, Sum.inr.injEq, false_and, or_self, and_false, exists_eq_right] <;> aesop
+
+lemma mixedLineGraph_vertexDelete : L'(G - X) = L'(G) - (Sum.inl '' X ∪ Sum.inr '' E(G, X)) := by
+  ext a b c
+  · simp only [mixedLineGraph_vertexSet, vertexDelete_vertexSet, vertexDelete_edgeSet_diff]
+    rw [image_diff Sum.inl_injective, union_diff_distrib, ← diff_diff, ← diff_diff]
+    convert Iff.rfl using 3
+    · apply Disjoint.sdiff_eq_left
+      rw [← image_diff Sum.inl_injective]
+      simp
+    rw [disjoint_image_inl_image_inr.symm.sdiff_eq_left, ← image_diff Sum.inr_injective]
+  cases b <;> cases c <;> simp only [mixedLineGraph_isLink, vertexDelete_inc_iff,
+    mem_setIncEdges_iff, not_exists, not_and, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+    Sum.inl.injEq, reduceCtorEq, and_false, Prod.swap_prod_mk, or_self, vertexDelete_isLink_iff,
+    mem_union, mem_image, exists_eq_right, exists_false, or_false, false_and, Sum.inr.injEq,
+    exists_eq_right, false_or, not_exists, not_and]
+  · refine ⟨?_, ?_⟩
+    · rintro ⟨⟨hav, ha2⟩, rfl, rfl⟩
+      simpa [hav, and_self, true_and, mt (ha2 a.1) (not_not_intro hav)]
+    rintro ⟨⟨hinc, rfl, rfl⟩, ha1, hX⟩
+    simpa [hinc]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨⟨hinc, hX⟩, rfl, rfl⟩
+    simpa [hinc, mt (hX a.1)]
+  rintro ⟨⟨hinc, rfl, rfl⟩, hX, ha1⟩
+  simpa [hinc]
 
 @[simp]
 def mixedLineGraph_walkMap : WList α β → WList (α ⊕ β) (α × β)
@@ -313,6 +359,24 @@ lemma mem_mixedLineGraph_walkMap_iff {x} : x ∈ mixedLineGraph_walkMap W ↔ (�
   rw [← WList.mem_vertexSet_iff]
   simp
 
+-- If e is not a loop, then we could even get a path rather than a walk.
+lemma Preconnected.exists_isWalk_first_lastEdge (h : G.Preconnected) (hx : x ∈ V(G))
+    (he : e ∈ E(G)) : ∃ (P : WList α β) (hP : P.Nonempty), G.IsWalk P ∧ P.first = x ∧
+    hP.lastEdge = e := by
+  have ⟨a, b, he⟩ := G.exists_isLink_of_mem_edgeSet he
+  obtain ⟨P, hP, rfl, rfl⟩ := h x a hx he.left_mem
+  use P.concat e b
+  simp [hP, he]
+
+lemma Preconnected.exists_isWalk_firstEdge_lastEdge (h : G.Preconnected) (he : e ∈ E(G))
+    (hf : f ∈ E(G)) : ∃ (W : WList α β) (hW : W.Nonempty), G.IsWalk W ∧ hW.firstEdge = e ∧
+    hW.lastEdge = f := by
+  have ⟨a, b, he⟩ := G.exists_isLink_of_mem_edgeSet he
+  have ⟨c, d, hf⟩ := G.exists_isLink_of_mem_edgeSet hf
+  obtain ⟨P, hP, rfl, rfl⟩ := h b c he.right_mem hf.left_mem
+  use (P.cons a e).concat f d
+  simp [hP, he, hf, Nonempty.lastEdge_cons]
+
 -- def sublist_of_mixedLineGraph_walkMap {W' : WList (α ⊕ β) (α × β)}
 --     (hW' : G.mixedLineGraph.IsWalk W') :
 --     ∃ W : WList α β, W'.IsSublist (mixedLineGraph_walkMap W) := by
@@ -334,15 +398,22 @@ lemma mem_mixedLineGraph_walkMap_iff {x} : x ∈ mixedLineGraph_walkMap W ↔ (�
 --     ·
 --     sorry
 
+lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) ↔ x ∉ S := by
+  aesop
+
 -- lemma mixedLineGraph_vertexDelete_preconnected_of_preconnected (h : (G - X ＼ F).Preconnected) :
 --     (G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' F)).Preconnected := by
 --   intro s t hs ht
 --   simp only [vertexDelete_vertexSet, mixedLineGraph_vertexSet, mem_diff, mem_union, mem_image,
 --     not_or, not_exists, not_and, ne_eq] at hs ht
---   obtain ⟨hs, hsX, hsF⟩ := hs
---   obtain ⟨ht, htX, htF⟩ := ht
+--   obtain ⟨(⟨u, hu, rfl⟩ | ⟨f, hf, rfl⟩), hsX, hsF⟩ := hs
+--   obtain ⟨(⟨v, hv, rfl⟩ | ⟨g, hg, rfl⟩), htX, htF⟩ := ht
+--   · simp_all only [Sum.inl.injEq, reduceCtorEq, not_false_eq_true, implies_true, ← ne_eq]
+--     rw [notMem_iff_forall_mem_ne X _] at htX hsX
+--     obtain hconn := h u v (by simp [hu, hsX]) (by simp [hv, htX])
 
---   obtain ⟨W, hW, rfl, rfl⟩ := h.ConnectedBetween (by simp) (by simp)
+--     sorry
+
 
 -- lemma mixedLineGraph_vertexDelete_connected_of_connected (h : (G - X ＼ F).Connected) :
 --     (G.mixedLineGraph - (Sum.inl '' X ∪ Sum.inr '' F)).Connected := by

@@ -15,7 +15,9 @@ import Matroid.Connectivity.Basic
 -- import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Global
+-- import Matroid.Connectivity.Higher
 -- import Matroid.Connectivity.HigherConnected
+-- import Matroid.Connectivity.Infinite
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
 -- import Matroid.Connectivity.NullityConn
@@ -28,6 +30,7 @@ import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
+import Matroid.Exercises.HamiltonianCycle
 import Matroid.Extension.ExtendBy
 import Matroid.Extension.Guts
 import Matroid.Extension.Minor
@@ -44,8 +47,10 @@ import Matroid.Graph.Basic
 import Matroid.Graph.Bipartite
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Connected.Component
+-- import Matroid.Graph.Connected.Construction
 import Matroid.Graph.Connected.Defs
 import Matroid.Graph.Connected.Menger
+-- import Matroid.Graph.Connected.Minor
 import Matroid.Graph.Connected.Set.Defs
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Set.SetEnsemble
@@ -62,12 +67,14 @@ import Matroid.Graph.Degree.Max
 import Matroid.Graph.Distance
 import Matroid.Graph.Finite
 import Matroid.Graph.Forest
+-- import Matroid.Graph.Independent
 import Matroid.Graph.Lattice
 import Matroid.Graph.Map
 import Matroid.Graph.Minor.Defs
 import Matroid.Graph.Simple
 import Matroid.Graph.Subgraph.Basic
 import Matroid.Graph.Subgraph.Compatible
+-- import Matroid.Graph.Subgraph.Defs
 import Matroid.Graph.Subgraph.Delete
 import Matroid.Graph.Subgraph.Inter
 import Matroid.Graph.Subgraph.Lemma
@@ -79,6 +86,7 @@ import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
+-- import Matroid.Graph.Walk.Index
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
 -- import Matroid.Induction
@@ -120,4 +128,5 @@ import Matroid.Representation.StandardRep
 import Matroid.Representation.Uniform
 import Matroid.Simple
 import Matroid.Spikes
+-- import Matroid.Tame
 import Matroid.Uniform

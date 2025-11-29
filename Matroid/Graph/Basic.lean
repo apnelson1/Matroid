@@ -163,7 +163,7 @@ end parallel
 
 section Neighborhood
 
-def Neighbor (G : Graph α β) (x : α) : Set α := {y | y ≠ x ∧ G.Adj x y}
+def Neighbor (G : Graph α β) (x : α) : Set α := {y | G.Adj x y}
 
 notation "N(" G ", " x ")" => Neighbor G x
 
@@ -173,16 +173,13 @@ lemma neighbor_subset (G : Graph α β) (x : α) : N(G, x) ⊆ V(G) := by
   exact hy.right_mem
 
 @[simp]
-lemma self_notMem_Neighbor (G : Graph α β) (x : α) : x ∉ N(G, x) := by
-  simp [Neighbor]
-
-@[simp]
 lemma notMem_neighbor_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, x) := by
   simp [Neighbor, hadj]
 
 lemma neighbor_subset_of_ne_not_adj (hne : x ≠ y) (hadj : ¬ G.Adj x y) :
-    N(G, x) ⊆ V(G) \ {x, y} := by
-  rintro z ⟨hne, hz⟩
+    N(G, x) \ {x} ⊆ V(G) \ {x, y} := by
+  rintro z ⟨hz, hne⟩
+  rw [mem_singleton_iff] at hne
   simp only [mem_diff, hz.right_mem, mem_insert_iff, hne, mem_singleton_iff, false_or,
     true_and]
   rintro rfl
@@ -207,30 +204,29 @@ lemma setNeighbor_disjoint (G : Graph α β) (S : Set α) : Disjoint S N(G, S) :
 lemma notMem_setNeighbor_of_not_adj (hadj : ¬ G.Adj x y) : y ∉ N(G, {x}) := by
   simp [SetNeighbor, hadj]
 
-def IncidentEdges (G : Graph α β) (v : α) : Set β := {e | G.Inc e v}
+def IncEdges (G : Graph α β) (v : α) : Set β := {e | G.Inc e v}
 
-notation "E(" G ", " v ")" => IncidentEdges G v
+notation "E(" G ", " v ")" => IncEdges G v
 
 @[simp]
-lemma incidentEdges_subset (G : Graph α β) (v : α) : E(G, v) ⊆ E(G) := by
+lemma incEdges_subset (G : Graph α β) (v : α) : E(G, v) ⊆ E(G) := by
   rintro e he
   exact he.edge_mem
 
-def SetIncidentEdges (G : Graph α β) (S : Set α) : Set β := {e | ∃ x ∈ S, G.Inc e x}
+@[simp]
+lemma mem_incEdges_iff (G : Graph α β) (v : α) (e : β) : e ∈ E(G, v) ↔ G.Inc e v := Iff.rfl
 
-notation "E(" G ", " S ")" => SetIncidentEdges G S
+def SetIncEdges (G : Graph α β) (S : Set α) : Set β := {e | ∃ x ∈ S, G.Inc e x}
+
+notation "E(" G ", " S ")" => SetIncEdges G S
 
 @[simp]
-lemma setIncidentEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) := by
+lemma setIncEdges_subset (G : Graph α β) (S : Set α) : E(G, S) ⊆ E(G) := by
   rintro e ⟨x, hxS, he⟩
   exact he.edge_mem
 
 @[simp]
-lemma mem_setIncidentEdges_iff (G : Graph α β) (S : Set α) :
-    e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
-  simp [SetIncidentEdges]
+lemma mem_setIncEdges_iff (G : Graph α β) (S : Set α) : e ∈ E(G, S) ↔ ∃ x ∈ S, G.Inc e x := by
+  simp [SetIncEdges]
 
 end Neighborhood
-
-def IsStable (G : Graph α β) (S : Set α) : Prop :=
-  S.Pairwise (¬ G.Adj · ·)

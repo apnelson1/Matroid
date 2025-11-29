@@ -8,6 +8,8 @@ open Set BigOperators Function
 
 variable {α β : Type*} {s t : Set α} {n : ℕ}
 
+attribute [push] encard_ne_zero
+
 theorem Set.Finite.disjoint_of_sum_encard_le (h : (s ∪ t).Finite)
     (hle : s.encard + t.encard ≤ (s ∪ t).encard) : Disjoint s t := by
   rwa [← add_zero (encard (s ∪ t)), ← encard_union_add_encard_inter,

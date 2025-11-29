@@ -1,4 +1,5 @@
-import Matroid.Graph.Finite
+import Matroid.Graph.Subgraph.Union
+import Matroid.Graph.Walk.Path
 
 variable {α β : Type*} {x y z u v w a b : α} {e f : β} {G H : Graph α β} {F F₁ F₂ : Set β}
     {X Y : Set α} {G H : Graph α β} {P : WList α β}
@@ -90,16 +91,6 @@ lemma ends_injective (G : Graph α β) [G.Simple] : Function.Injective G.ends :=
   · simp [hxy.unique_edge hzw]
   simp [hxy.unique_edge hzw.symm]
 
-lemma finite_of_vertexSet_finite (h : V(G).Finite) : G.Finite where
-  vertexSet_finite := h
-  edgeSet_finite := by
-    change Finite _ at *
-    exact Finite.of_injective _ G.ends_injective
-
-@[simp]
-lemma Simple.vertexSet_finite_iff : V(G).Finite ↔ G.Finite :=
-  ⟨finite_of_vertexSet_finite, fun _ ↦ Finite.vertexSet_finite⟩
-
 omit [G.Simple] in
 lemma Simple.mono (hG : G.Simple) (hle : H ≤ G) : H.Simple where
   not_isLoopAt e x := by simp [hG.toLoopless.mono hle]
@@ -124,40 +115,49 @@ lemma singleEdge_simple (hne : x ≠ y) (e : β) : (Graph.singleEdge x y e).Simp
     aesop
   eq_of_isLink := by aesop
 
+noncomputable def adjIncFun (G : Graph α β) (x : α) : N(G, x) → E(G, x) :=
+  fun y ↦ ⟨y.2.choose, _, y.2.choose_spec⟩
+
+lemma adjIncFun_injective (G : Graph α β) (x : α) : Function.Injective (G.adjIncFun x) := by
+  intro y z hyz
+  have hy : G.IsLink (adjIncFun G x y) x y := y.2.choose_spec
+  have hz : G.IsLink (adjIncFun G x y) x z := hyz ▸ z.2.choose_spec
+  exact SetCoe.ext <| hz.isLink_iff_eq.mp hy
+
 /-- In a simple graph, the bijection between edges at `x` and neighbours of `x`. -/
 noncomputable def incAdjEquiv (G : Graph α β) [G.Simple] (x : α) :
-    {e // G.Inc e x} ≃ {y // G.Adj x y} where
+    E(G, x) ≃ N(G, x) where
   toFun e := ⟨e.2.choose, _, e.2.choose_spec⟩
-  invFun y := ⟨y.2.choose, _, y.2.choose_spec⟩
+  invFun y := G.adjIncFun x y
   left_inv := by
     rintro ⟨e, he⟩
-    simp only [Subtype.mk.injEq]
+    simp only [Subtype.mk.injEq, adjIncFun]
     generalize_proofs h h'
     exact (h.choose_spec.unique_edge h'.choose_spec).symm
   right_inv := by
     rintro ⟨y, hy⟩
-    simp only [Subtype.mk.injEq]
+    simp only [Subtype.mk.injEq, adjIncFun]
     generalize_proofs h h'
     exact (h.choose_spec.right_unique h'.choose_spec).symm
 
 @[simp]
-lemma isLink_incAdjEquiv (e : {e // G.Inc e x}) : G.IsLink e.1 x (G.incAdjEquiv x e) := by
+lemma isLink_incAdjEquiv (e : E(G, x)) : G.IsLink e.1 x (G.incAdjEquiv x e) := by
   simp only [incAdjEquiv, Equiv.coe_fn_mk]
   generalize_proofs h
   exact h.choose_spec
 
 @[simp]
-lemma adj_incAdjEquiv (e : {e // G.Inc e x}) : G.Adj x (G.incAdjEquiv x e) :=
+lemma adj_incAdjEquiv (e : E(G, x)) : G.Adj x (G.incAdjEquiv x e) :=
   (isLink_incAdjEquiv e).adj
 
 @[simp]
-lemma isLink_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.IsLink ((G.incAdjEquiv x).symm y) x y := by
-  simp only [incAdjEquiv, Equiv.coe_fn_symm_mk]
+lemma isLink_incAdjEquiv_symm (y : N(G, x)) : G.IsLink ((G.incAdjEquiv x).symm y) x y := by
+  simp only [incAdjEquiv, Equiv.coe_fn_symm_mk, adjIncFun]
   generalize_proofs h
   exact h.choose_spec
 
 @[simp]
-lemma inc_incAdjEquiv_symm (y : {y // G.Adj x y}) : G.Inc ((G.incAdjEquiv x).symm y) x :=
+lemma inc_incAdjEquiv_symm (y : N(G, x)) : G.Inc ((G.incAdjEquiv x).symm y) x :=
   (isLink_incAdjEquiv_symm y).inc_left
 
 /-! ### Operations -/

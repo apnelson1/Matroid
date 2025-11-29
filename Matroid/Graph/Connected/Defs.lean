@@ -1,3 +1,4 @@
+import Mathlib.Tactic.TautoSet
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Set.Defs
 
@@ -272,6 +273,10 @@ lemma connected_iff : G.Connected ↔ V(G).Nonempty ∧ G.Preconnected :=
   ⟨fun h => ⟨h.nonempty, h.pre⟩,
     fun ⟨hne, h⟩ => connected_of_vertex hne.some_mem (fun _ b => h _ _ b hne.some_mem)⟩
 
+lemma preconnected_iff : G.Preconnected ↔ G = ⊥ ∨ G.Connected := by
+  rw [connected_iff]
+  obtain h | h := G.eq_bot_or_vertexSet_nonempty <;> simp [h, G.ne_bot_iff]
+
 lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Connected) :
     Nonempty G.Separation := by
   obtain ⟨x, y, hx, hy, hxy⟩ := by simpa only [Preconnected, hne,
@@ -346,6 +351,69 @@ def Cut.of_isSpanningSubgraph (hsle : H ≤s G) (C : G.Cut) : H.Cut where
   carrier_subset := by simp [hsle.vertexSet_eq]
   not_connected' h := C.not_connected (h.isSpanningSubgraph <| by gcongr)
 
+@[mk_iff]
+structure IsSepSet (G : Graph α β) (S : Set α) : Prop where
+  subset_vx : S ⊆ V(G)
+  not_connected : ¬ (G - S).Connected
+
+@[mk_iff]
+structure IsMinSepSet (G : Graph α β) (S : Set α) : Prop extends IsSepSet G S where
+  minimal : ∀ A, IsSepSet G A → S.encard ≤ A.encard
+
+lemma IsMinSepSet.not_isSepSet_of_encard_lt (hM : IsMinSepSet G S) (hSS' : S'.encard < S.encard) :
+    ¬ IsSepSet G S' := by
+  by_contra hc
+  grw [hM.2 S' hc, lt_self_iff_false S'.encard] at hSS'
+  exact hSS'
+
+lemma connected_of_not_isSepSet (hV : S ⊆ V(G)) (hS : ¬ IsSepSet G S) : (G - S).Connected := by
+  by_contra hc
+  exact hS ⟨hV, hc⟩
+
+structure Sep (G : Graph α β) where
+  left : Set α
+  right : Set α
+  carrier : Set α
+  nonempty_left : left.Nonempty
+  nonempty_right : right.Nonempty
+  disjoint_left_right : Disjoint left right
+  disjoint_left_carrier : Disjoint left carrier
+  disjoint_right_carrier : Disjoint right carrier
+  union_eq : left ∪ carrier ∪ right = V(G)
+  not_adj : ∀ ⦃x y⦄, x ∈ left → y ∈ right → ¬ G.Adj x y
+
+@[simps]
+def IsClosedSubgraph.Sep (hH : H ≤c (G - S)) (hVH : V(H).Nonempty) (huV : u ∈ V(G))
+    (hu : u ∉ S ∪ V(H)) : G.Sep where
+  left := V(H)
+  right := V(G - S) \ V(H)
+  carrier := V(G) ∩ S
+  nonempty_left := hVH
+  nonempty_right := ⟨u, by simpa [huV] using hu⟩
+  disjoint_left_right := disjoint_sdiff_right
+  disjoint_left_carrier := by
+    have := by simpa [subset_diff] using hH.vertexSet_mono
+    exact this.2.mono_right inter_subset_right
+  disjoint_right_carrier := by
+    simp only [vertexDelete_vertexSet]
+    exact disjoint_sdiff_inter.mono_left diff_subset
+  union_eq := by
+    ext x
+    simp only [vertexDelete_vertexSet, mem_union, mem_inter_iff, mem_diff, iff_def]
+    refine ⟨fun h => ?_, fun h => ?_⟩
+    · obtain ((h | h) | h) := h
+      · exact hH.vertexSet_mono h |>.1
+      all_goals simp_all only
+    by_cases hx : x ∈ S <;> simp_all [em (x ∈ V(H))]
+  not_adj x y hx hy hadj := by
+    have hadj' := G.vertexDelete_isInducedSubgraph S |>.adj_of_adj hadj (hH.vertexSet_mono hx) hy.1
+    rw [hH.mem_iff_mem_of_adj hadj'] at hx
+    exact hy.2 hx
+
+@[simps!]
+def IsCompOf.Sep (hH : H.IsCompOf (G - S)) (huV : u ∈ V(G)) (hu : u ∉ S ∪ V(H)) : G.Sep :=
+  hH.isClosedSubgraph.Sep hH.nonempty huV hu
+
 structure EdgeCut (G : Graph α β) where
   carrier : Set β
   carrier_subset : carrier ⊆ E(G)
@@ -374,7 +442,7 @@ structure MixedCut (G : Graph α β) where
   edgeSet : Set β
   vertexSet_subset : vertexSet ⊆ V(G)
   edgeSet_subset : edgeSet ⊆ E(G)
-  not_conn' : ¬ (G - vertexSet ＼ edgeSet).Connected
+  not_conn' : ¬ ((G ＼ edgeSet)- vertexSet).Connected
 
 @[simps]
 def mixedCut_of_cut (C : G.Cut) : G.MixedCut where
@@ -391,6 +459,19 @@ def mixedCut_of_edgeCut (F : G.EdgeCut) : G.MixedCut where
   vertexSet_subset := empty_subset _
   edgeSet_subset := F.coe_subset
   not_conn' := by simp
+
+@[simps]
+def MixedCut.of_isSpanningSubgraph (C : G.MixedCut) (hle : H ≤s G) : H.MixedCut where
+  vertexSet := V(H) ∩ C.vertexSet
+  edgeSet := E(H) ∩ C.edgeSet
+  vertexSet_subset := inter_subset_left
+  edgeSet_subset := inter_subset_left
+  not_conn' := by
+    rw [edgeDelete_edgeSet_inter, ← edgeDelete_vertexSet, vertexDelete_vertexSet_inter]
+    have := C.not_conn'
+    contrapose! this
+    apply this.isSpanningSubgraph
+    gcongr
 
 /-- A graph has `PreconnGe n`, if for every pair of vertices `s` and `t`, there is no
     `n`-vertex cut between them.
@@ -508,22 +589,14 @@ lemma ConnGe.le_card (h : G.ConnGe n) : n ≤ ENat.card V(G) := by
 
 --   sorry
 
--- lemma connGe_iff_preconnGe_le_card :
---     G.ConnGe n ↔ G.PreconnGe n ∧ n ≤ V(G).encard := by
---   refine ⟨fun h => ⟨h.pre, h.le_card⟩, fun ⟨h1, h2⟩ => ?_⟩
---   rw [connGe_iff_forall_connected]
---   intro X hX
---   rw [connected_iff]
---   rw [preconnGe_iff_forall_preconnected] at h1
---   exact ⟨by simpa using diff_nonempty_of_encard_lt_encard <| lt_of_lt_of_le hX h2, h1 hX⟩
+lemma ConnGe.isSpanningSubgraph (h : H.ConnGe n) (hsle : H ≤s G) : G.ConnGe n := by
+  intro C
+  have := by simpa using h <| C.of_isSpanningSubgraph hsle
+  exact this.trans <| add_le_add (encard_le_encard inter_subset_right)
+    (encard_le_encard inter_subset_right)
 
--- lemma ConnGe.isSpanningSubgraph (h : H.ConnGe n) (hsle : H ≤s G) :
---     G.ConnGe n := by
---   rw [connGe_iff_preconnGe_le_card] at h ⊢
---   exact ⟨h.1.isSpanningSubgraph hsle, hsle.vertexSet_eq ▸ h.2⟩
-
--- lemma ConnGe.of_edgeDelete (h : (G ＼ F).ConnGe n) : G.ConnGe n :=
---   h.isSpanningSubgraph edgeDelete_isSpanningSubgraph
+lemma ConnGe.of_edgeDelete (h : (G ＼ F).ConnGe n) : G.ConnGe n :=
+  h.isSpanningSubgraph edgeDelete_isSpanningSubgraph
 
 -- lemma ConnGe.mt (h : G.ConnGe n) (hconn : ¬ (G - X).Connected) :
 --     n ≤ X.encard := by
@@ -538,11 +611,6 @@ lemma ConnGe.le_card (h : G.ConnGe n) : n ≤ ENat.card V(G) := by
 --   rw [ENat.coe_toNat (by simp), lt_tsub_iff_right] at hC
 --   rw [← G.vertexDelete_vertexSet_inter X, vertexDelete_vertexDelete, union_comm]
 --   exact h <| lt_of_le_of_lt (encard_union_le _ _) hC
-
--- lemma ConnGe.edgeDelete_connBetweenGe_of_isLink (h : G.ConnGe n)
---     (hK : ¬ G.IsComplete) (hlink : G.IsLink e s t) :
---     (G ＼ {e}).ConnBetweenGe s t (n - 1) := by
---   sorry
 
 @[simp]
 lemma EdgeConnGe_zero : G.EdgeConnGe 0 := by

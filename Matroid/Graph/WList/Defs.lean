@@ -30,7 +30,7 @@ def repr_aux [Repr α] [Repr β] (w : WList α β) (n : Nat) : Std.Format := mat
 | cons x e w => reprPrec x n ++ " --" ++ reprPrec e n ++ "-> " ++ repr_aux w n
 
 instance [Repr α] [Repr β] : Repr (WList α β) where
-  reprPrec w n := "P[" ++ repr_aux w n ++ "]"
+  reprPrec w n := "W[" ++ repr_aux w n ++ "]"
 
 variable {w w₁ w₂ : WList α β}
 

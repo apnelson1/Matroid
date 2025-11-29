@@ -1,0 +1,4 @@
+import Mathlib.Tactic.Attr.Register
+
+register_simp_attr enat_grind_presimp
+register_simp_attr enat_grind_canonize
