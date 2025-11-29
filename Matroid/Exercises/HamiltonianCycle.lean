@@ -1,6 +1,5 @@
 import Matroid.Graph.Independent
 import Matroid.ForMathlib.Minimal
-import Matroid.Graph.Walk.Index
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
 import Matroid.Exercises.HamiltonianCycle.Degree
@@ -715,7 +714,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
     have : V(PD) ⊆ V(G) \ V(C) :=
       fun ⦃a⦄ a_1 ↦ (hDC.vertex_subset) ((hPD.vertexSet_subset ) a_1)
     exact (((this) hc).2) (hb₁ )
-  obtain ⟨e₂, he2 ⟩ := hC.idxOf_Adj hb hb₁ hbindices.symm
+  obtain ⟨e₂, he2 ⟩ := (hC.toIsTrail).idxOf_Adj  hb hb₁ hbindices.symm
   have hPlast : (PD.concat e₁ b₁).last = b₁ := by simp
   have hPfirst : P₃.first = b₁ := by
     exact suffixFromVertex_first hb1P1
@@ -808,7 +807,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
         nth_rw 1 [←this]
         exact first_mem
       by_contra hc
-      exact (hC.idxOf_Adj hb hb₁ hbindices.symm).ne.symm
+      exact ((hC.isTrail).idxOf_Adj hb hb₁ hbindices.symm).ne.symm
         (Prefix_Suffix_int hP₁ hbPre hc hb1P1 )
   have hQ₄ : G.IsPath (((((PD.concat e₁ b₁) ++ P₃).concat f a).concat eab b) ++ P₀.reverse) := by
     apply hQ₃.append (reverse_isPath_iff.mpr hP₀ ) ?_ ?_

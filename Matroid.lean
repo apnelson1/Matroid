@@ -86,7 +86,6 @@ import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
--- import Matroid.Graph.Walk.Index
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
 -- import Matroid.Induction
