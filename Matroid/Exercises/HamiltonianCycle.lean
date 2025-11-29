@@ -959,7 +959,18 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
         = PD.length + (P₁.suffixFromVertex b₁).length  + (P.prefixUntilVertex b).length + 4 := by
       omega
     rw [this]
-    have hsb : (P.suffixFromVertex b).idxOf b₁ = 1 := by sorry
+    have hsb : (P.suffixFromVertex b).idxOf b₁ = 1 := by
+      have hb₁ := get_mem C (d + 1)
+      rw[←h_b1, hC', ←hafirst] at hb₁
+      have hb := get_mem C (d)
+      rw[←h_b, hC', ←hafirst] at hb
+      have hPb1ind := (Cycle_conc_index hab₁ hb₁ ).2
+      have hPind := (Cycle_conc_index (hab'.ne).symm hb ).2
+      rw[hafirst, ← hC'] at hPb1ind
+      rw[hafirst, ← hC'] at hPind
+      have hle : P.idxOf b ≤ P.idxOf b₁ := by omega
+      have := suffixFromVertex_index hbP hle
+      omega
     have : C.length + P₁.idxOf b₁ < PD.length + ((P₁.suffixFromVertex b₁).length + P₁.idxOf b₁)
         + (P.prefixUntilVertex b).length + 4 := by
       rw[sufixFromVertex_length P₁ b₁ hb1P1, h_suf,

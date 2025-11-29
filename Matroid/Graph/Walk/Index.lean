@@ -327,16 +327,16 @@ lemma IsCycle.idxOf_rotate_n [DecidableEq α] (hC : G.IsCycle C) (ha : a ∈ C) 
   have hf := (rotate hC n).idxOf_rotate_one ((rotate_nonempty_iff n).mpr hnt) hnf ha'
   linarith
 
-lemma IsTrail.idxOf_Adj [DecidableEq α] {a b : α} {w : WList α β} (hw : G.IsTrail w)
-    (ha : a ∈ w) (hb : b ∈ w) (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
-  induction w with
-  | nil w =>
-  simp_all
-  | cons u e w ih =>
-  simp_all
-  sorry
+-- lemma IsTrail.idxOf_Adj [DecidableEq α] {a b : α} {w : WList α β} (hw : G.IsTrail w)
+--     (ha : a ∈ w) (hb : b ∈ w) (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
+--   induction w with
+--   | nil w =>
+--   simp_all
+--   | cons u e w ih =>
+--   simp_all
+--   sorry
 
-lemma idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
+lemma IsTrail.idxOf_Adj [DecidableEq α] (hw : G.IsTrail w) (ha : a ∈ w) (hb : b ∈ w)
     (he : w.idxOf b = w.idxOf a + 1) : G.Adj a b := by
   induction w with | nil w => simp_all | cons u e w ih =>
   simp_all only [cons_isTrail_iff, mem_cons_iff, forall_const]
@@ -567,6 +567,38 @@ lemma suffixFromVertex_concat_of_forall [DecidableEq α]  (w : WList α β) (hb 
 
 lemma suffixFromVertex_cons [DecidableEq α]  (w : WList α β):
     (cons x e w).suffixFromVertex v = if x = v then cons x e w else w.suffixFromVertex v := rfl
+
+lemma suffixFromVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf x ≤ w.idxOf y) :
+    w.idxOf y = (w.suffixFromVertex x).idxOf y + w.idxOf x := by
+  induction w with
+  | nil u =>
+  simp only [idxOf_nil, suffixFromVertex_nil, Nat.left_eq_add, ite_eq_left_iff, one_ne_zero,
+    imp_false, Decidable.not_not]
+  simp only [mem_nil_iff] at hx
+  exact hx.symm
+  | cons a e w ih =>
+  simp only [mem_cons_iff] at hx
+  obtain rfl | haw := eq_or_ne x a
+  · obtain rfl | hxy := eq_or_ne y x
+    · rw[idxOf_cons, suffixFromVertex_cons]
+      simp only [↓reduceIte, add_zero, idxOf_cons_self]
+    rw[idxOf_cons, suffixFromVertex_cons]
+    simp only [↓reduceIte, idxOf_cons_self, add_zero, hxy.symm]
+    rw[idxOf_cons]
+    simp [hxy.symm]
+  rw[idxOf_cons, suffixFromVertex_cons]
+  simp [haw.symm]
+  obtain rfl | hay := eq_or_ne y a
+  · simp only [↓reduceIte]
+    simp only [idxOf_cons_self, nonpos_iff_eq_zero] at hle
+    rw[idxOf_cons] at hle
+    simp [haw.symm] at hle
+  simp [hay.symm]
+  rw[idxOf_cons,idxOf_cons] at hle
+  simp [haw.symm, hay.symm] at hle
+  simp [haw] at hx
+  rw[ih hx hle]
+  omega
 
 lemma suffixFromLastVertex [DecidableEq α] {u : α} (w : WList α β) (hw : w.vertex.Nodup) :
    w.suffixFromVertex w.last = nil w.last := by
