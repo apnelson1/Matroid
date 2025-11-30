@@ -903,7 +903,7 @@ lemma indep_nbrsnext [G.Simple] [G.Finite] {D : Graph α β} (hCs : MaximalFor G
         by_contra hc
         rw[ hc, ←hbindices] at haindices
         simp only [Nat.add_right_cancel_iff] at haindices
-        exact (hab'.ne) (idxOf_eq ha haindices)
+        exact hab'.ne <| idxOf_inj_of_left_mem ha haindices
       exact ht2 h2
     · by_contra hc
       have := mem_edgeSet_iff.2 hc

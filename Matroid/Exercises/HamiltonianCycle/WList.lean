@@ -9,7 +9,7 @@ open WList Set
 
 namespace WList
 
-variable {α β ι : Type*} {x y z u v a b : α} {e f : β} {w w₁ w₂ p q P Q C : WList α β} {m n : ℕ}
+variable {α β ι : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ p q P Q C : WList α β} {m n : ℕ}
 
 ---- prefix / suffix lemmas
 
@@ -367,34 +367,58 @@ lemma Cycle_conc_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P
   · exact ⟨h2, by simp [idxOf_cons_ne huv.symm, idxOf_concat_of_mem h2]⟩
   · contradiction
 
-lemma idx_Of_tail [DecidableEq α] (hw : w.Nonempty) (haf : w.first ≠ a) (ha : a ∈ w) :
-    (w.tail).idxOf a + 1 = w.idxOf a := by
+lemma idx_Of_tail [DecidableEq α] (hw : w.Nonempty) (hxf : w.first ≠ x) (hx : x ∈ w) :
+    (w.tail).idxOf x + 1 = w.idxOf x := by
   induction w with
-  | nil w => simp [(mem_nil_iff.1 ha).symm] at haf
+  | nil w => simp [(mem_nil_iff.1 hx).symm] at hxf
   | cons u e w ih =>
-    obtain rfl | hu := eq_or_ne a u
-    · simp at haf
+    obtain rfl | hu := eq_or_ne x u
+    · simp at hxf
     simp [hu.symm]
 
-lemma idx_Of_dropLast [DecidableEq α] (hw : w.Nonempty) (ha : a ∈ w) :
-    (w.dropLast).idxOf a = w.idxOf a := by
+lemma idx_Of_dropLast [DecidableEq α] (hw : w.Nonempty) (hx : x ∈ w) :
+    (w.dropLast).idxOf x = w.idxOf x := by
   induction w with
   | nil w => rfl
   | cons u e w ih =>
-    obtain ⟨x, rfl⟩ | hwN := exists_eq_nil_or_nonempty w
-    · obtain rfl | hu := eq_or_ne u a
+    obtain ⟨v, rfl⟩ | hwN := exists_eq_nil_or_nonempty w
+    · obtain rfl | hu := eq_or_ne u x
       · simp
-      obtain rfl := by simpa [hu.symm] using ha
+      obtain rfl := by simpa [hu.symm] using hx
       simp [hu]
     rw [hwN.dropLast_cons]
-    obtain rfl | hu := eq_or_ne u a
+    obtain rfl | hu := eq_or_ne u x
     · simp_all
     simp_all [hu.symm]
 
-lemma idxOf_eq [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) :
-    x = y := by
+-- idxOf is injective if either element is in the list
+lemma idxOf_inj_of_left_mem [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
   have hy : y ∈ w := idxOf_le_length_iff_mem.mp (heq ▸ idxOf_le_length_iff_mem.mpr hx)
   rw [← get_idxOf w hx, ← get_idxOf w hy, heq]
+
+lemma idxOf_inj_of_right_mem [DecidableEq α] (hy : y ∈ w) (heq : w.idxOf x = w.idxOf y) :
+    x = y := by
+  symm at heq ⊢
+  exact idxOf_inj_of_left_mem hy heq
+
+lemma idxOf_inj [DecidableEq α] (hmem : x ∈ w ∨ y ∈ w) : w.idxOf x = w.idxOf y ↔ x = y :=
+  ⟨hmem.elim idxOf_inj_of_left_mem idxOf_inj_of_right_mem, by tauto⟩
+
+lemma idxOf_get_le [DecidableEq α] (w : WList α β) (n : ℕ) : w.idxOf (w.get n) ≤ n := by
+  generalize x_def : w.get n = x
+  fun_induction w.get n with simp_all
+  | case3 u e w n IH =>
+      simp [w.idxOf_cons u e]
+      obtain (rfl|hne) := em (u = x) <;> simp_all
+
+-- idxOf is the first occurence of a value; all values before it must not be equal
+lemma ne_of_idx_lt_idxOf [DecidableEq α] (hlt : n < w.idxOf x) : w.get n ≠ x := by
+  rintro rfl
+  have := w.idxOf_get_le n; omega
+
+-- this is somehow not present??
+lemma idxOf_le [DecidableEq α] (w : WList α β) (x : α) : w.idxOf x ≤ w.length + 1 := by
+  fun_induction w.idxOf x with simp_all
 
 --get_idxOf (w : WList α β) (hxw : x ∈ w) : w.get (w.idxOf x) = x := by
 /-! #EXAMPLE of wlog tactic
@@ -408,12 +432,58 @@ lemma idxOf_eq [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) :
 --   -- prove the theorem with an added assumption
 -/
 
+-- lemma idxOf_get_lt [DecidableEq α] (hlt : n < w.idxOf x) : w.idxOf
+
 --------- rotate lemmas
 
-lemma rotate_one (hCne : C.Nonempty) : ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
+lemma Nonempty.rotate_one (hCne : C.Nonempty) :
+    ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
   use hCne.firstEdge
   nth_rw 1 [Eq.symm (Nonempty.cons_tail hCne)]
   rw [cons_rotate_one]
+
+lemma Nonempty.idxOf_rotate_one [DecidableEq α] (hw : w.Nonempty) (h1 : w.first ≠ x) (hx : x ∈ w) :
+    (w.rotate 1).idxOf x + 1 = w.idxOf x := by
+  obtain ⟨e, h⟩ := hw.rotate_one
+  have hxt : x ∈ w.tail := by
+    obtain hfirst | h1 := eq_first_or_mem_tail hx
+    · by_contra
+      exact h1 hfirst.symm
+    exact h1
+  have := idx_Of_tail hw h1 hx
+  rwa [h, idxOf_concat_of_mem hxt]
+
+lemma mem_rotate_n_of_n_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.idxOf x) :
+    x ∈ w.rotate n := by
+  fun_induction WList.rotate with simp_all
+  | case3 u e w n IH =>
+    obtain (rfl|hne) := em (u = x)
+    · simp at hle
+    replace hx : x ∈ w := by tauto
+    refine IH (Or.inl hx) ?_
+    simp_all
+    rwa [idxOf_concat_of_mem hx]
+
+lemma idxOf_rotate_n_of_n_le_idxOf [DecidableEq α] (hx : x ∈ w) (hle : n ≤ w.idxOf x) :
+    (w.rotate n).idxOf x + n = w.idxOf x := by
+  obtain (h | hNonempty) := em' w.Nonempty
+  · simp only [not_nonempty_iff, nil_iff_eq_nil] at h
+    -- TODO: nil_iff_eq_nil should be made into a @[simp] lemma.
+    obtain ⟨y, rfl⟩ := h
+    simp_all
+  fun_induction w.rotate n with simp_all
+  | case3 u e w n IH =>
+    obtain (rfl|hne) := em (u = x)
+    · simp at hle
+    replace hx : x ∈ w := by tauto
+    simp_all
+    -- TODO: idxOf_concat_of_mem should be made into a @[simp] lemma.
+    simp only [← add_assoc, IH (by rwa [idxOf_concat_of_mem hx]), idxOf_concat_of_mem hx]
+
+lemma idxOf_rotate_first_ne_of_lt [DecidableEq α] (hlt : n < w.idxOf x) :
+    (w.rotate n).first ≠ x := by
+  rw [w.rotate_first n (by have := w.idxOf_le x; omega)]
+  exact ne_of_idx_lt_idxOf hlt
 
 lemma get_rotate [DecidableEq α] (w : WList α β) {a b : ℕ} (hab : a + b ≤ w.length) :
     (w.rotate a).get b = w.get (a + b) := by
@@ -442,7 +512,7 @@ lemma rotate_pre_suff [DecidableEq α] (w : WList α β) {a : ℕ} (hnt : w.None
   have hwnd : (w.rotate n).vertex.Nodup := by sorry
   have hwnt : (w.rotate n).Nonempty := by sorry
   rw[←rotate_rotate w n 1, SuffixFromVertex_get w hnt hla hw ]
-  obtain ⟨e, hC ⟩ := rotate_one hwnt
+  obtain ⟨e, hC ⟩ := hwnt.rotate_one
   rw[hC]
   set w' := (w.rotate n) with h_w'
   have : ((w.rotate n).tail.concat e (w.rotate n).tail.first).prefixUntilVertex w.last
