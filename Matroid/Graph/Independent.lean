@@ -92,24 +92,22 @@ lemma IsMaxIndependent.empty_iff (hS : G.IsMaxIndependent S) : S = ∅ ↔ G = �
   · rintro rfl
     simpa using hS
 
-lemma isIndependent_insert [G.Simple] {S : Set α} {s : α} (hS : G.IsIndependent S) (hs : s ∈ V(G)) :
-  G.IsIndependent (insert s S) ↔ ∀ x, x ∈ S → ¬ G.Adj x y := by
-refine ⟨?_, ?_ ⟩
-· intro h x hxS
-  -- Need to use h.not_adj_of_simple
-  sorry
-intro h
-have hV : (insert s S) ⊆ V(G) := by sorry
-apply (isIndependent_iff_forall_eq_of_adj hV).2
-intro x y hAdj hx hy
-simp only [mem_insert_iff] at hx
-simp only [mem_insert_iff] at hy
-obtain rfl | hxS := hx
-· obtain rfl | hyS := hy
-  · sorry
-  sorry
-obtain rfl | hyS := hy
-· sorry
-sorry
-
---You are going to need to use (isIndependent_iff_forall_eq_of_adj hS.subset).1
+lemma isIndependent_insert_iff [G.Loopless] (hx : x ∈ V(G)) :
+  G.IsIndependent (insert x S) ↔ G.IsIndependent S ∧ ∀ y, y ∈ S → ¬ G.Adj x y := by
+  refine ⟨?_, ?_ ⟩
+  · intro hS'
+    refine ⟨hS'.mono (subset_insert _ _), ?_⟩
+    intro y hyS hadj
+    exact (hS'.pairwise_nonadj (mem_insert x _) (mem_insert_of_mem _ hyS) hadj.ne) hadj
+  intro ⟨hS, h⟩
+  rw [isIndependent_iff']
+  refine ⟨insert_subset hx hS.subset, ?_⟩
+  intro y hy z hz hne
+  wlog hyS : y ∈ S generalizing y z with aux
+  · obtain rfl : y = x := by simp at hy; tauto
+    have hzS : z ∈ S := by simp at hz; tauto
+    intro hadj
+    exact aux hz hy hne.symm hzS hadj.symm
+  obtain (rfl | hzS) := hz
+  · intro hadj; exact h _ hyS hadj.symm
+  exact hS.pairwise_nonadj hyS hzS hne

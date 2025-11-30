@@ -1037,7 +1037,7 @@ lemma Hamiltonian_alpha_kappa [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
     have := hD.nonempty
     exact this
   have hI : G.IsIndependent (insert d nbrIndepSet) := by sorry
-  --Solve and use isIndependent_insert (It's in Independent.lean)
+  -- Use isIndependent_insert_iff (It's in Matroid/Graph/Independent.lean)
   have hS : G.IsSepSet nbrIndepSet := by
     have hVn : nbrIndepSet ⊆ V(G) := by exact hindep.subset
     have hnconn : ¬ (G - nbrIndepSet).Connected := by
