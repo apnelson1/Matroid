@@ -11,6 +11,139 @@ namespace WList
 
 variable {α β ι : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ p q P Q C : WList α β} {m n : ℕ}
 
+-------- DInc lemmas
+
+
+-- in a WList with no repeated edges, each edge is part of exactly one DInc triplet
+lemma dInc_iff_eq_of_dInc_of_edge_nodup (hw : w.edge.Nodup) (he : w.DInc e u v) :
+    w.DInc e x y ↔ x = u ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with
+  | nil => simp_all
+  | cons z f w IH =>
+    simp at hw h he
+    obtain ⟨rfl, rfl, rfl⟩ | h := h
+    · obtain ⟨rfl, he, rfl⟩ | he := he; try tauto
+      exact hw.1 he.edge_mem |>.elim
+    obtain ⟨rfl, rfl, rfl⟩ | he := he
+    · exact hw.1 h.edge_mem |>.elim
+    apply IH <;> first | assumption | tauto
+
+lemma dInc_iff_eq_of_dInc_of_vertex_nodup_left (hw : w.vertex.Nodup) (hu : w.DInc e u v) :
+    w.DInc f u y ↔ f = e ∧ y = v := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
+  induction w with
+  | nil _ => simp_all
+  | cons u' f' w IH =>
+    simp_all only [cons_vertex, List.nodup_cons, mem_vertex, dInc_cons_iff, forall_const]
+    obtain ⟨rfl, rfl, rfl⟩ | h := h <;> obtain ⟨hu, rfl, rfl⟩ | hu := hu
+    · tauto
+    · exact hw.1 hu.left_mem |>.elim
+    · exact hw.1 (hu ▸ h.left_mem) |>.elim
+    apply IH <;> assumption
+
+lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right (hw : w.vertex.Nodup) (hv : w.DInc e u v) :
+    w.DInc f x v ↔ f = e ∧ x = u := by
+  generalize hw_def' : w.reverse = w'
+  have hw' : w'.vertex.Nodup := by rwa [← hw_def', reverse_vertex, List.nodup_reverse]
+  have hv' : w'.DInc e v u := by simpa [← hw_def']
+  have := dInc_iff_eq_of_dInc_of_vertex_nodup_left (f := f) (v := u) (y := x) hw' hv'
+  rwa [← hw_def', dInc_reverse_iff] at this
+
+lemma exists_left_edge (hyw : y ∈ w) (hy : y ≠ w.first) : ∃ e x, w.DInc e x y := by
+  induction w generalizing y with simp_all
+  | cons u e w IH =>
+    obtain (rfl | hne) := eq_or_ne y w.first
+    · use e, u
+      tauto
+    · obtain ⟨f, x, h⟩ := IH hyw hne
+      use f, x, Or.inr h
+
+lemma exists_right_edge (hxw : x ∈ w) (hx : x ≠ w.last) : ∃ e y, w.DInc e x y := by
+  generalize hw'_def : w.reverse = w'; symm at hw'_def
+  have hx' : x ≠ w'.first := by simp_all
+  have hxw' : x ∈ w' := by simp_all
+  obtain ⟨e, y, h⟩ := exists_left_edge hxw' hx'
+  use e, y
+  simp_all
+
+---- IdxOf
+
+lemma Cycle_conc_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P.concat f u)) :
+    v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
+  simp only [mem_cons_iff, mem_concat] at hCP
+  obtain (rfl | h2 | rfl) := hCP
+  · contradiction
+  · exact ⟨h2, by simp [idxOf_cons_ne huv.symm, idxOf_concat_of_mem h2]⟩
+  · contradiction
+
+lemma idx_Of_tail [DecidableEq α] (hw : w.Nonempty) (hxf : w.first ≠ x) (hx : x ∈ w) :
+    (w.tail).idxOf x + 1 = w.idxOf x := by
+  induction w with
+  | nil w => simp [(mem_nil_iff.1 hx).symm] at hxf
+  | cons u e w ih =>
+    obtain rfl | hu := eq_or_ne x u
+    · simp at hxf
+    simp [hu.symm]
+
+lemma idx_Of_dropLast [DecidableEq α] (hw : w.Nonempty) (hx : x ∈ w) :
+    (w.dropLast).idxOf x = w.idxOf x := by
+  induction w with
+  | nil w => rfl
+  | cons u e w ih =>
+    obtain ⟨v, rfl⟩ | hwN := exists_eq_nil_or_nonempty w
+    · obtain rfl | hu := eq_or_ne u x
+      · simp
+      obtain rfl := by simpa [hu.symm] using hx
+      simp [hu]
+    rw [hwN.dropLast_cons]
+    obtain rfl | hu := eq_or_ne u x
+    · simp_all
+    simp_all [hu.symm]
+
+-- idxOf is injective if either element is in the list
+lemma idxOf_inj_of_left_mem [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
+  have hy : y ∈ w := idxOf_le_length_iff_mem.mp (heq ▸ idxOf_le_length_iff_mem.mpr hx)
+  rw [← get_idxOf w hx, ← get_idxOf w hy, heq]
+
+lemma idxOf_inj_of_right_mem [DecidableEq α] (hy : y ∈ w) (heq : w.idxOf x = w.idxOf y) :
+    x = y := by
+  symm at heq ⊢
+  exact idxOf_inj_of_left_mem hy heq
+
+lemma idxOf_inj [DecidableEq α] (hmem : x ∈ w ∨ y ∈ w) : w.idxOf x = w.idxOf y ↔ x = y :=
+  ⟨hmem.elim idxOf_inj_of_left_mem idxOf_inj_of_right_mem, by tauto⟩
+
+lemma idxOf_get_le [DecidableEq α] (w : WList α β) (n : ℕ) : w.idxOf (w.get n) ≤ n := by
+  generalize x_def : w.get n = x
+  fun_induction w.get n with simp_all
+  | case3 u e w n IH =>
+      simp [w.idxOf_cons u e]
+      obtain (rfl|hne) := em (u = x) <;> simp_all
+
+-- idxOf is the first occurence of a value; all values before it must not be equal
+lemma ne_of_idx_lt_idxOf [DecidableEq α] (hlt : n < w.idxOf x) : w.get n ≠ x := by
+  rintro rfl
+  have := w.idxOf_get_le n; omega
+
+-- this is somehow not present??
+lemma idxOf_le [DecidableEq α] (w : WList α β) (x : α) : w.idxOf x ≤ w.length + 1 := by
+  fun_induction w.idxOf x with simp_all
+
+--get_idxOf (w : WList α β) (hxw : x ∈ w) : w.get (w.idxOf x) = x := by
+/-! #EXAMPLE of wlog tactic
+-- example (M : Matroid α) (hconn : M.TutteConnected 17) : 100 < M.E.encard := by
+--   -- we may assume that `M` has lower rank than corank, because the statement is self-dual
+--   wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
+--   · specialize aux M✶ (by simpa) ?_
+--     · simp
+--       exact (not_le.1 hle).le
+--     simpa using aux
+--   -- prove the theorem with an added assumption
+-/
+
+-- lemma idxOf_get_lt [DecidableEq α] (hlt : n < w.idxOf x) : w.idxOf
+
 ---- prefix / suffix lemmas
 
 @[simp]
@@ -300,139 +433,6 @@ lemma suffixFromVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf x �
   simp [haw] at hx
   rw[ih hx hle]
   omega
-
--------- DInc lemmas
-
-
--- in a WList with no repeated edges, each edge is part of exactly one DInc triplet
-lemma dInc_iff_eq_of_dInc_of_edge_nodup (hw : w.edge.Nodup) (he : w.DInc e u v) :
-    w.DInc e x y ↔ x = u ∧ y = v := by
-  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
-  induction w with
-  | nil => simp_all
-  | cons z f w IH =>
-    simp at hw h he
-    obtain ⟨rfl, rfl, rfl⟩ | h := h
-    · obtain ⟨rfl, he, rfl⟩ | he := he; try tauto
-      exact hw.1 he.edge_mem |>.elim
-    obtain ⟨rfl, rfl, rfl⟩ | he := he
-    · exact hw.1 h.edge_mem |>.elim
-    apply IH <;> first | assumption | tauto
-
-lemma dInc_iff_eq_of_dInc_of_vertex_nodup_left (hw : w.vertex.Nodup) (hu : w.DInc e u v) :
-    w.DInc f u y ↔ f = e ∧ y = v := by
-  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
-  induction w with
-  | nil _ => simp_all
-  | cons u' f' w IH =>
-    simp_all only [cons_vertex, List.nodup_cons, mem_vertex, dInc_cons_iff, forall_const]
-    obtain ⟨rfl, rfl, rfl⟩ | h := h <;> obtain ⟨hu, rfl, rfl⟩ | hu := hu
-    · tauto
-    · exact hw.1 hu.left_mem |>.elim
-    · exact hw.1 (hu ▸ h.left_mem) |>.elim
-    apply IH <;> assumption
-
-lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right (hw : w.vertex.Nodup) (hv : w.DInc e u v) :
-    w.DInc f x v ↔ f = e ∧ x = u := by
-  generalize hw_def' : w.reverse = w'
-  have hw' : w'.vertex.Nodup := by rwa [← hw_def', reverse_vertex, List.nodup_reverse]
-  have hv' : w'.DInc e v u := by simpa [← hw_def']
-  have := dInc_iff_eq_of_dInc_of_vertex_nodup_left (f := f) (v := u) (y := x) hw' hv'
-  rwa [← hw_def', dInc_reverse_iff] at this
-
-lemma exists_left_edge (hyw : y ∈ w) (hy : y ≠ w.first) : ∃ e x, w.DInc e x y := by
-  induction w generalizing y with simp_all
-  | cons u e w IH =>
-    obtain (rfl | hne) := eq_or_ne y w.first
-    · use e, u
-      tauto
-    · obtain ⟨f, x, h⟩ := IH hyw hne
-      use f, x, Or.inr h
-
-lemma exists_right_edge (hxw : x ∈ w) (hx : x ≠ w.last) : ∃ e y, w.DInc e x y := by
-  generalize hw'_def : w.reverse = w'; symm at hw'_def
-  have hx' : x ≠ w'.first := by simp_all
-  have hxw' : x ∈ w' := by simp_all
-  obtain ⟨e, y, h⟩ := exists_left_edge hxw' hx'
-  use e, y
-  simp_all
-
----- IdxOf
-
-lemma Cycle_conc_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P.concat f u)) :
-    v ∈ P ∧ (cons u e (P.concat f u)).idxOf v = P.idxOf v + 1 := by
-  simp only [mem_cons_iff, mem_concat] at hCP
-  obtain (rfl | h2 | rfl) := hCP
-  · contradiction
-  · exact ⟨h2, by simp [idxOf_cons_ne huv.symm, idxOf_concat_of_mem h2]⟩
-  · contradiction
-
-lemma idx_Of_tail [DecidableEq α] (hw : w.Nonempty) (hxf : w.first ≠ x) (hx : x ∈ w) :
-    (w.tail).idxOf x + 1 = w.idxOf x := by
-  induction w with
-  | nil w => simp [(mem_nil_iff.1 hx).symm] at hxf
-  | cons u e w ih =>
-    obtain rfl | hu := eq_or_ne x u
-    · simp at hxf
-    simp [hu.symm]
-
-lemma idx_Of_dropLast [DecidableEq α] (hw : w.Nonempty) (hx : x ∈ w) :
-    (w.dropLast).idxOf x = w.idxOf x := by
-  induction w with
-  | nil w => rfl
-  | cons u e w ih =>
-    obtain ⟨v, rfl⟩ | hwN := exists_eq_nil_or_nonempty w
-    · obtain rfl | hu := eq_or_ne u x
-      · simp
-      obtain rfl := by simpa [hu.symm] using hx
-      simp [hu]
-    rw [hwN.dropLast_cons]
-    obtain rfl | hu := eq_or_ne u x
-    · simp_all
-    simp_all [hu.symm]
-
--- idxOf is injective if either element is in the list
-lemma idxOf_inj_of_left_mem [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
-  have hy : y ∈ w := idxOf_le_length_iff_mem.mp (heq ▸ idxOf_le_length_iff_mem.mpr hx)
-  rw [← get_idxOf w hx, ← get_idxOf w hy, heq]
-
-lemma idxOf_inj_of_right_mem [DecidableEq α] (hy : y ∈ w) (heq : w.idxOf x = w.idxOf y) :
-    x = y := by
-  symm at heq ⊢
-  exact idxOf_inj_of_left_mem hy heq
-
-lemma idxOf_inj [DecidableEq α] (hmem : x ∈ w ∨ y ∈ w) : w.idxOf x = w.idxOf y ↔ x = y :=
-  ⟨hmem.elim idxOf_inj_of_left_mem idxOf_inj_of_right_mem, by tauto⟩
-
-lemma idxOf_get_le [DecidableEq α] (w : WList α β) (n : ℕ) : w.idxOf (w.get n) ≤ n := by
-  generalize x_def : w.get n = x
-  fun_induction w.get n with simp_all
-  | case3 u e w n IH =>
-      simp [w.idxOf_cons u e]
-      obtain (rfl|hne) := em (u = x) <;> simp_all
-
--- idxOf is the first occurence of a value; all values before it must not be equal
-lemma ne_of_idx_lt_idxOf [DecidableEq α] (hlt : n < w.idxOf x) : w.get n ≠ x := by
-  rintro rfl
-  have := w.idxOf_get_le n; omega
-
--- this is somehow not present??
-lemma idxOf_le [DecidableEq α] (w : WList α β) (x : α) : w.idxOf x ≤ w.length + 1 := by
-  fun_induction w.idxOf x with simp_all
-
---get_idxOf (w : WList α β) (hxw : x ∈ w) : w.get (w.idxOf x) = x := by
-/-! #EXAMPLE of wlog tactic
--- example (M : Matroid α) (hconn : M.TutteConnected 17) : 100 < M.E.encard := by
---   -- we may assume that `M` has lower rank than corank, because the statement is self-dual
---   wlog hle : M.eRank ≤ M✶.eRank generalizing M with aux
---   · specialize aux M✶ (by simpa) ?_
---     · simp
---       exact (not_le.1 hle).le
---     simpa using aux
---   -- prove the theorem with an added assumption
--/
-
--- lemma idxOf_get_lt [DecidableEq α] (hlt : n < w.idxOf x) : w.idxOf
 
 --------- rotate lemmas
 
