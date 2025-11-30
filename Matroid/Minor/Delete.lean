@@ -33,6 +33,9 @@ lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
   rw [removeLoops_eq_delete, delete_delete, removeLoops_eq_delete, loops, delete_closure_eq,
     empty_diff, union_diff_self, closure_empty, union_eq_self_of_subset_left h]
 
+lemma Dep.delete_of_disjoint (hX : M.Dep X) (hXD : Disjoint X D) : (M ＼ D).Dep X := by
+  rwa [delete_dep_iff, and_iff_left hXD]
+
 @[simp]
 lemma loopyOn_delete (E X : Set α) : (loopyOn E) ＼ X = loopyOn (E \ X) := by
   rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]

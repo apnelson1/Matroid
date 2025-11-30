@@ -76,6 +76,14 @@ lemma nullity_eq_zero : M.nullity I = 0 ↔ M.Indep I := by
   rw [hJI.nullity_eq, encard_eq_zero, diff_eq_empty]
   exact hJI.indep.subset
 
+lemma Dep.one_le_nullity (hX : M.Dep X) : 1 ≤ M.nullity X := by
+  rw [← not_lt, ENat.lt_one_iff, nullity_eq_zero]
+  exact hX.not_indep
+
+lemma one_le_nullity_iff (hX : X ⊆ M.E := by aesop_mat) :
+    1 ≤ M.nullity X ↔ M.Dep X := by
+  rw [← not_lt, ENat.lt_one_iff, nullity_eq_zero, not_indep_iff]
+
 lemma nullity_eq_encard (hX : X ⊆ M.loops) : M.nullity X = X.encard := by
   rw [(empty_isBasis_iff.mpr hX).nullity_eq, diff_empty]
 

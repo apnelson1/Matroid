@@ -881,7 +881,10 @@ lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     ← eRk_inter_ground, inter_eq_self_of_subset_right subset_union_right, eRank_def]
 
 lemma eConn_le_eRk (M : Matroid α) (X : Set α) : M.eConn X ≤ M.eRk X :=
-  eLocalConn_le_eRk_left _ _ _
+  eLocalConn_le_eRk_left ..
+
+lemma eConn_le_eRk_dual (M : Matroid α) (X : Set α) : M.eConn X ≤ M✶.eRk X :=
+  by grw [← eConn_dual, eConn_le_eRk]
 
 lemma eConn_le_encard (M : Matroid α) (X : Set α) : M.eConn X ≤ X.encard :=
   (eConn_le_eRk ..).trans (eRk_le_encard ..)
@@ -959,6 +962,11 @@ lemma eConn_eq_encard_iff (hX : X.Finite) : M.eConn X = X.encard ↔ M.Indep X �
   apply eConn_eq_encard_iff'
   grw [← lt_top_iff_ne_top, eConn_le_encard]
   exact hX.encard_lt_top
+
+lemma eRk_add_eRk_dual_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by aesop_mat) :
+    M.eRk X + M✶.eRk X = M.eConn X + X.encard := by
+  rw [← M.eRk_add_nullity_eq_encard X, add_comm _ (nullity ..), ← add_assoc,
+    M.eConn_add_nullity_eq_eRk_dual X, add_comm]
 
 lemma Indep.eConn_eq (hI : M.Indep I) : M.eConn I = M✶.eRk I := by
   rw [← M✶.eConn_add_nullity_dual_eq_eRk _ hI.subset_ground, dual_dual, hI.nullity_eq, add_zero,

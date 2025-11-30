@@ -8,6 +8,9 @@ namespace Matroid
 
 section separation
 
+set_option linter.style.longLine false
+
+
 variable {α : Type*} {N M : Matroid α} {j k : ℕ∞} {a b e f : α} {A B X Y : Set α}
 
 -- abbrev ThreeConnected (M : Matroid α) := M.IsTutteConnected 3
@@ -189,192 +192,124 @@ theorem TutteConnected.internallyConnected_three_contractElem_or_deleteElem
     (by generalize P'.eConn = a at *; enat_to_nat), hP'conn, hPr,
     one_add_one_eq_two, and_iff_left hle.2, ← encard_le_encard hPl, hle.1]
 
-lemma InternallyConnected.foo (hdel : (M ＼ {e}).InternallyConnected 3) (hM : M.Connected)
-    (hnt : M.E.Nontrivial) (hM3 : ¬ M.InternallyConnected 3) :
-    ∃ T, e ∈ T ∧ T.encard = 3 ∧ M.eRk T = 2 ∧ M.eRelRk (M.E \ T) M.E = 1 := by
-  have heE : e ∈ M.E := by_contra fun h' ↦ hM3 (by rwa [deleteElem_eq_self h'] at hdel)
-  rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
-  simp only [hM.tutteConnected_one_add_one.internallyConnected_iff_forall, ENat.add_one_inj,
-    not_forall, exists_prop, not_not] at hM3
-  obtain ⟨P, hPconn, hP⟩ := hM3
-  -- rw [isInternalSeparation_iff_encard (by enat_to_nat!)] at hP
-  wlog hel : e ∈ P.left generalizing P with aux
-  · rw [← compl_right, mem_diff, and_iff_right heE, not_not] at hel
-    exact aux P.symm (by simpa) (by simpa) (by simpa)
-  have hle := P.eConn_delete_le {e}
-  have hns := hdel.not_isInternalSeparation (P := P.delete {e})
-    (by grw [ENat.add_one_le_add_one_iff, ← hPconn, hle])
-  have her : e ∉ P.right := by grw [← compl_left, diff_subset_compl, notMem_compl_iff]; assumption
-  grw [isInternalSeparation_iff_encard (by enat_to_nat!), hPconn,
-    ← encard_diff_singleton_add_one hel, ENat.add_one_lt_add_one_iff,
-    ← ENat.add_one_le_iff (by simp)] at hP
-  grw [isInternalSeparation_iff_encard (by enat_to_nat!), P.eConn_delete_le, hPconn, delete_left,
-    delete_right, diff_singleton_eq_self her, and_iff_left hP.2, not_lt] at hns
-  replace hns : (P.left \ {e}).encard = 1 + 1 := hns.antisymm hP.1
+/-- If `e` is an element of a `2`-connected matroid `M` such that `M / e` is weakly `3`-connected,
+but `M` is not, then `e` belongs to a `2`-separating line (i.e. a rank-2 cocircuit ).
+TODO : Does this generalize to `k + 1` rather than `3`? -/
+lemma TutteConnected.exists_of_weaklyConnected_three_contract_not_weaklyConnected_three
+    (hM : M.TutteConnected (1 + 1)) (h_not_3conn : ¬ M.WeaklyConnected (2 + 1))
+    (h_3conn : (M ／ {e}).WeaklyConnected (2 + 1)) :
+    ∃ K, M.IsCocircuit K ∧ M.eRk K = 2 ∧ e ∈ K := by
+  -- We can assume that `e` is in `M`, since otherwise `M / {e} = M`.
+  have heE : e ∈ M.E := by_contra fun heE ↦ h_not_3conn <| by rwa [← contractElem_eq_self heE]
+  -- Since `M` is `2`-connectd but not weakly 3-connected, there is a strong separation `P` with
+  -- connectivity `1`. We may assume `e ∈ P.left`.
+  simp only [show (2 : ℕ∞) + 1 = 1 + 1 + 1 from rfl, hM.weaklyConnected_add_one_iff, not_forall,
+    exists_prop, not_not] at h_not_3conn
+  obtain ⟨P, hPconn, hP⟩ := h_not_3conn
+  wlog heP : e ∈ P.left generalizing P with aux
+  · exact aux P.symm (by simpa) (by simpa) <| by
+      rwa [P.symm_left, ← P.compl_left, mem_diff, and_iff_left heP]
+  have hePr : e ∉ P.right := by rwa [← compl_left, mem_diff, and_iff_right heE, not_not]
+  -- Since `M` is connected, we can also assume that `e` is a nonloop.
+  have henl : M.IsNonloop e := by
+    rw [← not_isLoop_iff]
+    refine fun hl ↦ hl.not_tutteConnected ?_ rfl.le hM
+    obtain (he | he) := M.E.subsingleton_or_nontrivial
+    · simp [(trivial_of_ground_subsingleton P he).eConn] at hPconn
+    assumption
+  -- Since `P` is a strong separation of `M`, it follows that `P.right` is dependent and codependent
+  -- in `M ／ e`, and that `P.left ＼ e` is dependent in `M ／ e`. Since `P \ e` fails to be a strong
+  -- separation in `M`, all that can go wrong is that `P.left \ e` is coindependent in `M`.
+  have h_coindep : M.Coindep (P.left \ {e}) := by
+    have hstrong := weaklyConnected_iff_forall.1 h_3conn (P.contract {e})
+      (by grw [P.eConn_contract_le, hPconn, one_add_one_eq_two])
+    rw [isStrongSeparation_iff] at hstrong
+    have hcd := hP.codep_right.delete_of_disjoint (D := {e}) (by simpa)
+    rw [← dual_contract, dep_dual_iff] at hcd
+    have hld := hP.dep_left.contract_of_indep (I := {e}) (henl.indep.inter_left _)
+    simp only [contract_left, hld, contract_right, diff_singleton_eq_self hePr,
+      hP.dep_right.contract_of_disjoint (C := {e}) (by simpa), hcd, and_self,
+      and_true, true_and] at hstrong
+    rwa [not_codep_iff, coindep_contract_iff, and_iff_left disjoint_sdiff_left] at hstrong
+  -- Since `P.left \ e` is coindependent and `P.left` is codependent in `M`, we see that
+  -- `P.left \ e` cospans `e` in `M`. Therefore there is a cocircuit `K` with `e ∈ K ⊆ P.left`.
+  have hcl : e ∈ M✶.closure (P.left \ {e}) := by
+    rw [h_coindep.indep.mem_closure_iff_of_notMem (by simp), insert_diff_self_of_mem heP]
+    exact hP.codep_left
+  obtain ⟨K, hKss, hK : M.IsCocircuit K, heK⟩ := exists_isCircuit_of_mem_closure hcl (by simp)
+  have hKE := hK.subset_ground
+  -- Nullity/connectivity arguments now give that `K` must have rank at most `2`.
+  refine ⟨K, hK, le_antisymm ?_ ?_, heK⟩
+  · grw [M.eRk_mono hKss, insert_diff_self_of_mem heP, ← M.eConn_add_nullity_dual_eq_eRk P.left,
+      P.eConn_left, hPconn, ← insert_diff_self_of_mem heP, nullity_insert_eq_add_one hcl (by simp),
+      h_coindep.nullity_eq]
+    rfl
+  rw [← M.eConn_add_nullity_dual_eq_eRk K, hK.nullity_eq, ← one_add_one_eq_two,
+    ENat.add_one_le_add_one_iff, ← not_lt, ENat.lt_one_iff_eq_zero]
+  refine fun h0 ↦ hM.not_isTutteSeparation (P := M.partition K hK.subset_ground) (by simp [h0]) ?_
+  rw [isTutteSeparation_iff, partition_left .., partition_right ..]
+  refine ⟨.inr hK.dep, .inl <| hP.dep_right.superset ?_ diff_subset⟩
+  grw [← P.compl_left, hKss, insert_diff_self_of_mem heP]
 
-  -- have hPl : P.left.encard = 1 + 1 + 1 := by
-  --   rw [← hns.antisymm hP.1, encard_diff_singleton_add_one hel]
-  obtain h_lt | h_eq := hle.lt_or_eq
-  · simp only [hPconn, ENat.lt_one_iff] at h_lt
-    refine False.elim <| hdel.not_isTutteSeparation (P := P.delete {e}) (by simp [h_lt]) ?_
-    simp only [isTutteSeparation_iff_lt_encard (show (P.delete { e }).eConn ≠ ⊤ by simp [h_lt]),
-      h_lt, delete_left, delete_right, diff_singleton_eq_self her]
-    grw [hns, ← hP.2]
-    simp
-  refine ⟨P.left, hel, ?_, ?_⟩
-  · rwa [← encard_diff_singleton_add_one hel, ENat.add_one_inj]
-  sorry
-  -- rw [← M.eConn_add_nullity_add_nullity_dual P.left, P.eConn_left, hPconn, add_assoc, add_comm,
-  --   ENat.add_one_inj] at hPl
+/-- If `e` is an element of a `k`-connected matroid `M`
+such that `M / e` is weakly `(k + 1)`-connected but `M` is not,
+then `e` belongs to a rank-`k` cocircuit of `M`. -/
+lemma TutteConnected.exists_of_weaklyConnected' (hk : 2 ≤ k)
+    (hM : M.TutteConnected k) (h_not_conn : ¬ M.WeaklyConnected (k + 1))
+    (h_conn : (M ／ {e}).WeaklyConnected (k + 1)) :
+    ∃ K, M.IsCocircuit K ∧ M.eRk K = k ∧ e ∈ K := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
+  · simp at h_not_conn
 
-
-  -- have := hdel.tutteConnected.not_isTutteSeparation (P := P.delete {e})
-  -- have := hM.tutteConnected_one_add_one.not_isTutteSeparation P
-
-
-
-
-
-
-
-
-
-
-
-  -- rw [internallyConnected_iff] at hM
-
-
--- lemma IsSimplification.foo (hN : N.IsSimplification M) (P : M.Partition) :
---     P.1 ⊆ M.closure (P.induce hN.isRestriction.subset).1 := by
---   intro e heP
-
--- lemma NumConnected.numConnected_of_isSimplification [M.Loopless]
---     {dg : Matroid α → Set α → Prop} (hdg : ∀ ⦃X Y⦄, Y ⊆ M.E → dg M Y → dg N X)
---     (h : M.NumConnected dg k) (hNM : N.IsSimplification M) : N.NumConnected dg k := by
---   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
---   simp only [numConnected_iff_forall] at h ⊢
---   intro P hPle hPsep
---   set X := ⋃ e ∈ P.left, {f | M.Parallel f e} with hX
---   have hXE : X ⊆ M.E := iUnion₂_subset fun _ _ _ ↦ Parallel.mem_ground_left
---   set Q := M.partition (X \ P.right) with hQ
---   have hPQ1 : P.1 ⊆ Q.1 := by
---     simp only [partition_left, subset_diff, disjoint, and_true, Q, X]
---     refine fun e he ↦ mem_biUnion (x := e) he <| ?_
---     simpa using hNM.isNonloop_of_mem (P.left_subset_ground he)
---   have hPQ2 : P.2 ⊆ Q.2 := by
---     simp [Q, X, diff_diff_right,
---       inter_eq_self_of_subset_right (P.right_subset_ground.trans hNM.isRestriction.subset)]
---   have hQconn : Q.eConn = P.eConn := by
---     apply Partition.eConn_eq_of_subset_closure_of_isRestriction hNM.isRestriction hPQ1 hPQ2
---     · refine diff_subset.trans ?_
---       simp only [hX, iUnion_subset_iff]
---       refine fun e he f hf ↦ ?_
---       grw [← singleton_subset_iff.2 he]
---       exact Parallel.mem_closure hf
---     simp only [hX, partition_right, diff_diff_right, inter_comm M.E, union_subset_iff,
---       diff_subset_iff, inter_ground_subset_closure, and_true, hQ]
---     simp only [subset_def, mem_union, mem_iUnion, mem_setOf_eq, exists_prop]
---     intro e heE
---     obtain ⟨f, ⟨hfE, hef⟩, -⟩ := hNM.exists_unique (isNonloop_of_loopless heE)
---     obtain (hfP | hfP) := P.union_eq ▸ hfE
---     · exact .inl ⟨f, hfP, hef⟩
---     refine .inr ?_
---     grw [← singleton_subset_iff.2 hfP]
---     exact hef.mem_closure
---   exact h Q (by rwa [hQconn]) ⟨fun h' ↦ hPsep.1 (hdg hPQ1 Q.left_subset_ground h'),
---     fun h' ↦ hPsep.2 (hdg hPQ2 Q.right_subset_ground h')⟩
-
-
-
-
-/- This is presumably true for infinite `k` as well. -/
--- lemma InternallyConnected.internallyConnected_of_isSimplification [M.Loopless]
---     (h : M.InternallyConnected k) (hN : N.IsSimplification M) (hk : k ≠ ⊤) :
---     N.InternallyConnected k := by
---   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
---   rw [internallyConnected_iff, tutteConnected_iff_numConnected_encard (by simpa using hk),
---     weaklyInternallyConnected_iff_numConnected_encard (by simpa using hk)] at h ⊢
---   refine ⟨h.1.numConnected_of_isSimplification (fun X Y hXY hYE hY) hN,
---     h.2.numConnected_of_isSimplification ?_ hN⟩
-  -- obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  -- simp only [internallyConnected_iff_forall] at h ⊢
-  -- intro P
-  -- set X := ⋃ e ∈ P.left, {f | M.Parallel f e} with hX
-  -- have hXE : X ⊆ M.E := iUnion₂_subset fun _ _ _ ↦ Parallel.mem_ground_left
-  -- set Q := M.partition (X \ P.right) with hQ
-  -- have hPQ1 : P.1 ⊆ Q.1 := by
-  --   simp only [partition_left, subset_diff, disjoint, and_true, Q, X]
-  --   refine fun e he ↦ mem_biUnion (x := e) he <| ?_
-  --   simpa using hN.isNonloop_of_mem (P.left_subset_ground he)
-  -- have hPQ2 : P.2 ⊆ Q.2 := by
-  --   simp [Q, X, diff_diff_right,
-  --     inter_eq_self_of_subset_right (P.right_subset_ground.trans hN.isRestriction.subset)]
-  -- have hQconn : Q.eConn = P.eConn := by
-  --   apply Partition.eConn_eq_of_subset_closure_of_isRestriction hN.isRestriction hPQ1 hPQ2
-  --   · refine diff_subset.trans ?_
-  --     simp only [hX, iUnion_subset_iff]
-  --     refine fun e he f hf ↦ ?_
-  --     grw [← singleton_subset_iff.2 he]
-  --     exact Parallel.mem_closure hf
-  --   simp only [hX, partition_right, diff_diff_right, inter_comm M.E, union_subset_iff,
-  --     diff_subset_iff, inter_ground_subset_closure, and_true, hQ]
-  --   simp only [subset_def, mem_union, mem_iUnion, mem_setOf_eq, exists_prop]
-  --   intro e heE
-  --   obtain ⟨f, ⟨hfE, hef⟩, -⟩ := hN.exists_unique (isNonloop_of_loopless heE)
-  --   obtain (hfP | hfP) := P.union_eq ▸ hfE
-  --   · exact .inl ⟨f, hfP, hef⟩
-  --   refine .inr ?_
-  --   grw [← singleton_subset_iff.2 hfP]
-  --   exact hef.mem_closure
-  -- refine ⟨fun h0 hP ↦ (h Q).1 (by rwa [hQconn]) ?_,
-  --   fun h1 hP ↦ (h Q).2 (by rwa [hQconn]) ?_⟩
-  -- · rw [isTutteSeparation_iff_add_one_le_encard (by eomega)] at hP ⊢
-  --   nth_grw 1 [hQconn, hQconn, hP.1, hP.2, hPQ1, hPQ2]
-  --   simp
-  -- rw [isInternalSeparation_iff_encard (by eomega)] at hP ⊢
-  -- grw [← hPQ1, ← hPQ2, hQconn]
-  -- assumption
-
--- lemma IsSimplification.internallyConnected_three_iff (hM : M.Loopless)
---     (hN : N.IsSimplification M) : M.InternallyConnected 3 ↔ N.InternallyConnected 3 := by
---   rw [show (3 : ℕ∞) = 1 + 1 + 1 from rfl] at *
---   refine ⟨fun h ↦ h.internallyConnected_of_isSimplification hN (by simp), fun h ↦ ?_⟩
---   simp only [internallyConnected_iff_forall, ENat.add_one_le_add_one_iff, ENat.add_le_right_iff,
---     ENat.one_ne_top, or_false, ENat.add_one_inj] at h ⊢
---   intro P
-
-
-
-
-
-                  -- simp only [hX]
-
-
-
-                -- rw [← P.eConn_left, ← Q.eConn_left, eConn_eq_eLocalConn, eConn_eq_eLocalConn]
-                -- simp only [hQ, hX, partition_left, compl_left, diff_diff_right,
-          --   inter_eq_self_of_subset_right (P.right_subset_ground.trans hN.isRestriction.subset)]
-                -- refine le_antisymm ?_ ?_
-                -- · sorry
-
-
-
-
-
-
-
-      -- · rw [isTutteSeparation_iff_add_one_le_encard]
-        -- grw [← closure_subset_closure (s := {f})]
-
-
-
-
-          -- simp only [hX]
-
-
-
-        -- rw [← P.eConn_left, ← Q.eConn_left, eConn_eq_eLocalConn, eConn_eq_eLocalConn]
-        -- simp only [hQ, hX, partition_left, compl_left, diff_diff_right,
-        --   inter_eq_self_of_subset_right (P.right_subset_ground.trans hN.isRestriction.subset)]
-        -- refine le_antisymm ?_ ?_
-        -- · sorry
+  -- We can assume that `e` is in `M`, since otherwise `M / {e} = M`.
+  have heE : e ∈ M.E := by_contra fun heE ↦ h_not_conn <| by rwa [← contractElem_eq_self heE]
+  -- Since `M` is `2`-connectd but not weakly 3-connected, there is a strong separation `P` with
+  -- connectivity `1`. We may assume `e ∈ P.left`.
+  simp only [hM.weaklyConnected_add_one_iff, not_forall, exists_prop, not_not] at h_not_conn
+  obtain ⟨P, hPconn, hP⟩ := h_not_conn
+  wlog heP : e ∈ P.left generalizing P with aux
+  · exact aux P.symm (by simpa) (by simpa) <| by
+      rwa [P.symm_left, ← P.compl_left, mem_diff, and_iff_left heP]
+  have hePr : e ∉ P.right := by rwa [← compl_left, mem_diff, and_iff_right heE, not_not]
+  -- -- Since `M` is connected, we can also assume that `e` is a nonloop.
+  have henl : M.IsNonloop e := by
+    rw [← not_isLoop_iff]
+    refine fun hl ↦ hl.not_tutteConnected ?_ (by eomega) hM
+    obtain (he | he) := M.E.subsingleton_or_nontrivial
+    · simp [show 0 ≠ k by eomega, (trivial_of_ground_subsingleton P he).eConn] at hPconn
+    assumption
+  -- Since `P` is a strong separation of `M`, it follows that `P.right` is dependent and codependent
+  -- in `M ／ e`, and that `P.left ＼ e` is dependent in `M ／ e`. Since `P \ e` fails to be a strong
+  -- separation in `M`, all that can go wrong is that `P.left \ e` is coindependent in `M`.
+  have h_coindep : M.Coindep (P.left \ {e}) := by
+    have hstrong := weaklyConnected_iff_forall.1 h_conn (P.contract {e})
+      (by grw [P.eConn_contract_le, hPconn])
+    rw [isStrongSeparation_iff] at hstrong
+    have hcd := hP.codep_right.delete_of_disjoint (D := {e}) (by simpa)
+    rw [← dual_contract, dep_dual_iff] at hcd
+    have hld := hP.dep_left.contract_of_indep (I := {e}) (henl.indep.inter_left _)
+    simp only [contract_left, hld, contract_right, diff_singleton_eq_self hePr,
+      hP.dep_right.contract_of_disjoint (C := {e}) (by simpa), hcd, and_self,
+      and_true, true_and] at hstrong
+    rwa [not_codep_iff, coindep_contract_iff, and_iff_left disjoint_sdiff_left] at hstrong
+  -- Since `P.left \ e` is coindependent and `P.left` is codependent in `M`, we see that
+  -- `P.left \ e` cospans `e` in `M`. Therefore there is a cocircuit `K` with `e ∈ K ⊆ P.left`.
+  have hcl : e ∈ M✶.closure (P.left \ {e}) := by
+    rw [h_coindep.indep.mem_closure_iff_of_notMem (by simp), insert_diff_self_of_mem heP]
+    exact hP.codep_left
+  obtain ⟨K, hKss, hK : M.IsCocircuit K, heK⟩ := exists_isCircuit_of_mem_closure hcl (by simp)
+  have hKE := hK.subset_ground
+  -- Nullity/connectivity arguments now give that `K` must have rank at most `2`.
+  refine ⟨K, hK, le_antisymm ?_ ?_, heK⟩
+  · grw [M.eRk_mono hKss, insert_diff_self_of_mem heP, ← M.eConn_add_nullity_dual_eq_eRk P.left,
+      P.eConn_left, hPconn, ← insert_diff_self_of_mem heP, nullity_insert_eq_add_one hcl (by simp),
+      h_coindep.nullity_eq]
+    rfl
+  by_contra! hlt
+  refine hM.not_isTutteSeparation (P := M.partition K hK.subset_ground) ?_ ?_
+  · simp only [eConn_partition]
+    rw [← M.eConn_add_nullity_dual_eq_eRk K, hK.nullity_eq, ENat.add_one_lt_add_one_iff] at hlt
+    exact Order.add_one_le_of_lt hlt
+  rw [isTutteSeparation_iff, partition_left .., partition_right .., and_iff_right (.inr hK.dep)]
+  refine .inl <| hP.dep_right.superset ?_ diff_subset
+  grw [← P.compl_left, hKss, insert_diff_self_of_mem heP]

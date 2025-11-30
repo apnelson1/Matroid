@@ -61,3 +61,24 @@ lemma girth_le_girth_contract_add (M : Matroid α) (C : Set α) :
   obtain ⟨K, hK, hKg⟩ := (M ／ C).exists_isCircuit_girth
   obtain ⟨K', hK'ss, hK'⟩ := (hC.contract_dep_iff.1 hK.dep).2.exists_isCircuit_subset
   grw [hK'.girth_le_card, ← hKg, ← encard_union_le, encard_le_encard hK'ss]
+
+lemma Dep.contract_of_delete {D : Set α} (hX : (M ＼ X).Dep (D \ X)) : (M ／ X).Dep (D \ X) := by
+  obtain ⟨I, hI⟩ := M.exists_isBasis' X
+  rw [delete_dep_iff] at hX
+  rw [hI.contract_dep_iff, and_iff_left disjoint_sdiff_right]
+  exact hX.1.superset subset_union_left (union_subset hX.1.subset_ground hI.indep.subset_ground)
+
+lemma Dep.contract_of_disjoint {D : Set α} (hD : M.Dep D) (hDC : Disjoint D C) :
+    (M ／ C).Dep D := by
+  have aux : (M ＼ C).Dep (D \ C) := by
+    rwa [delete_dep_iff, and_iff_left disjoint_sdiff_left, hDC.sdiff_eq_left]
+  exact hDC.sdiff_eq_left ▸ aux.contract_of_delete
+
+/-- Contracting a set whose intersection with `D` is independent never turns a dependent set `D`
+into an independent set. -/
+lemma Dep.contract_of_indep {D : Set α} (hD : M.Dep D) (hI : M.Indep (D ∩ I)) :
+    (M ／ I).Dep (D \ I) := by
+  nth_rw 1 [← inter_union_diff I D, inter_comm, ← contract_contract]
+  refine Dep.contract_of_disjoint ?_ disjoint_sdiff_sdiff
+  rwa [hI.isBasis_self.contract_dep_iff, diff_union_inter, disjoint_comm,
+    and_iff_left disjoint_sdiff_inter]
