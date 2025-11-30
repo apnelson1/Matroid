@@ -84,7 +84,7 @@ lemma IsClosed.idxOf_lt_length {C : WList α β} [DecidableEq α] (hC : C.IsClos
     (hne : C.Nonempty) : C.idxOf x < C.length := by
   induction C using concat_induction with
   | nil u => simp at hne
-  | @concat w f y ih =>
+  | concat w f y ih =>
   · obtain rfl : y = w.first := by simpa using hC
     have hxw : x ∈ w := by
       obtain hxw | rfl := mem_concat.1 hx
