@@ -1,17 +1,10 @@
-import Mathlib.Tactic
-import Mathlib.Data.Set.Finite.Basic
-import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Independent
-import Matroid.Graph.Tree
 import Matroid.ForMathlib.Minimal
-import Matroid.Graph.Walk.Index
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.Graph.Bipartite
 
-import Matroid.Exercises.HamiltonianCycle.NeBot
 import Matroid.Exercises.HamiltonianCycle.Degree
 import Matroid.Exercises.HamiltonianCycle.Walk
-import Matroid.Exercises.HamiltonianCycle.Independent
 
 open Set
 

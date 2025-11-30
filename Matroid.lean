@@ -30,6 +30,7 @@ import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
+import Matroid.Exercises.HamiltonianCycle
 import Matroid.Extension.ExtendBy
 import Matroid.Extension.Guts
 import Matroid.Extension.Minor
@@ -85,7 +86,6 @@ import Matroid.Graph.WList.Ops
 import Matroid.Graph.WList.Sublist
 import Matroid.Graph.Walk.Basic
 import Matroid.Graph.Walk.Cycle
--- import Matroid.Graph.Walk.Index
 import Matroid.Graph.Walk.Path
 import Matroid.Graphic
 -- import Matroid.Induction
@@ -129,5 +129,3 @@ import Matroid.Simple
 import Matroid.Spikes
 -- import Matroid.Tame
 import Matroid.Uniform
-
-import Matroid.Exercises.HamiltonianCycle

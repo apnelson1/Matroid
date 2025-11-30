@@ -22,11 +22,10 @@ lemma map_vertexDelete_preimage (f : α → α') (C : Set α') :
   · rintro ⟨⟨u, hu, rfl⟩, hC⟩
     exact ⟨u, ⟨hu, by simpa using hC⟩, rfl⟩
   · rintro ⟨a, b, h, rfl, rfl⟩
-    obtain ⟨hG, ha, hb⟩ := (vertexDelete_isLink_iff (G := G) (X := f ⁻¹' C)).1 h
-    exact (vertexDelete_isLink_iff (G := f ''ᴳ G) (X := C)).2
-      ⟨hG.Map f, by simpa using ha, by simpa using hb⟩
+    obtain ⟨hG, ha, hb⟩ := (G.vertexDelete_isLink_iff _).1 h
+    exact (vertexDelete_isLink_iff _ C).2 ⟨hG.Map f, by simpa using ha, by simpa using hb⟩
   · intro h
-    obtain ⟨⟨a, b, hG, rfl, rfl⟩, hx, hy⟩ := (vertexDelete_isLink_iff (G := f ''ᴳ G) (X := C)).1 h
+    obtain ⟨⟨a, b, hG, rfl, rfl⟩, hx, hy⟩ := (vertexDelete_isLink_iff _ C).mp h
     exact ⟨a, b, (vertexDelete_isLink_iff (G := G) (X := f ⁻¹' C)).2
       ⟨hG, by simpa using hx, by simpa using hy⟩, rfl, rfl⟩
 
@@ -38,8 +37,8 @@ lemma Preconnected.map (f : α → α') (h : G.Preconnected) : (f ''ᴳ G).Preco
 
 @[simp]
 lemma Connected.map (f : α → α') (h : G.Connected) : (f ''ᴳ G).Connected := by
-  obtain ⟨⟨v, hv⟩, hpre⟩ := (Graph.connected_iff).1 h
-  refine (Graph.connected_iff).2 ⟨⟨f v, by simpa [Map_vertexSet] using Set.mem_image_of_mem f hv⟩,
+  obtain ⟨⟨v, hv⟩, hpre⟩ := connected_iff.mp h
+  exact connected_iff.mpr ⟨⟨f v, by simpa [Map_vertexSet] using Set.mem_image_of_mem f hv⟩,
       hpre.map f⟩
 
 @[simps]

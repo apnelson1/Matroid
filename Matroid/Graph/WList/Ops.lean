@@ -77,6 +77,22 @@ lemma idxOf_concat_of_mem [DecidableEq α] (hx : x ∈ w) : (w.concat e y).idxOf
   rw[idxOf_cons_ne hu.symm, idxOf_cons_ne hu.symm ]
   simp_all
 
+lemma idxOf_concat_of_nonmem [DecidableEq α] (hx : x ∉ w) : (w.concat e x).idxOf x = w.length + 1
+    := by
+  induction w with
+  | nil u =>
+  simp only [nil_concat, nil_length, zero_add]
+  rw[idxOf_cons ]
+  simp [(ne_of_not_mem_cons hx ).symm]
+  | cons u f w ih =>
+  simp only [cons_concat, cons_length]
+  simp at hx
+  rw[idxOf_cons ]
+  have : x ≠ u := by
+    exact hx.1
+  simp [this.symm]
+  exact ih hx.2
+
 lemma get_concat (w : WList α β) (e x) {n} (hn : n ≤ w.length) :
     (w.concat e x).get n = w.get n := by
   induction n generalizing w with

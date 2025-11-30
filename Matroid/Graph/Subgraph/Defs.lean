@@ -176,7 +176,7 @@ lemma vertexDelete_edgeSet (G : Graph α β) (X : Set α) :
 lemma vertexDelete_edgeSet_diff (G : Graph α β) (X : Set α) : E(G - X) = E(G) \ E(G, X) := by
   ext e
   simp only [vertexDelete_edgeSet, mem_setOf_eq, mem_diff, edge_mem_iff_exists_isLink,
-    mem_setIncidentEdges_iff, not_exists, not_and]
+    mem_setIncEdges_iff, not_exists, not_and]
   refine ⟨fun ⟨x, y, hexy, hx, hy⟩ ↦ ⟨?_, fun z hz hez ↦ ?_⟩, fun ⟨⟨x, y, h⟩, h2⟩ ↦ ?_⟩
   · use x, y
   · obtain rfl | rfl := hez.eq_or_eq_of_isLink hexy <;> tauto
@@ -194,6 +194,13 @@ lemma vertexDelete_vertexSet_self (G : Graph α β) : G - V(G) = ⊥ := by
 
 @[simp]
 lemma vertexDelete_le : G - X ≤ G := G.induce_le diff_subset
+
+lemma vertexDelete_isLink_iff' (G : Graph α β) (X : Set α) :
+    (G - X).IsLink e x y ↔ G.IsLink e x y ∧ e ∉ E(G, X) := by
+  refine ⟨fun h ↦ ⟨h.of_le vertexDelete_le, (G.vertexDelete_edgeSet_diff X ▸ h.edge_mem).2⟩,
+    fun ⟨h, he⟩ ↦ h.of_le_of_mem vertexDelete_le ?_⟩
+  rw [vertexDelete_edgeSet_diff]
+  use h.edge_mem
 
 /-! ### Strongly disjointness -/
 
