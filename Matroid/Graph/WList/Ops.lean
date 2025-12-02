@@ -455,6 +455,14 @@ lemma lastEdge_concat (w : WList α β) (e : β) (x : α) : (concat_nonempty w e
 lemma Nonempty.lastEdge_mem (hw : w.Nonempty) : hw.lastEdge w ∈ w.edge := by
   simpa [firstEdge_reverse hw] using hw.reverse.firstEdge_mem
 
+-- simp path way to auto find lastEdge given an explicit WList.
+@[simp]
+lemma lastEdge_cons_cons :
+    (cons_nonempty x e (cons y f w)).lastEdge = (cons_nonempty y f w).lastEdge :=
+  (cons_nonempty y f w).lastEdge_cons
+
+@[simp]
+lemma lastEdge_cons_nil : (cons_nonempty x e (nil y)).lastEdge = e := lastEdge_concat (nil x) e y
 
 variable {α' : Type*} {f : α → α'}
 

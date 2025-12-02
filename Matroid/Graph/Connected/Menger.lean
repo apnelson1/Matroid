@@ -340,8 +340,31 @@ lemma mixedLineGraph_walkMap_last : (mixedLineGraph_walkMap W).last = Sum.inl W.
   | nil x => simp
   | cons x e w ih => simpa
 
+-- @[simp]
+-- lemma mixedLineGraph_walkMap_cons (x : α) (e : β) (w) : (mixedLineGraph_walkMap <| cons x e w) =
+--     cons (Sum.inl x) (x, e) (cons (Sum.inr e) (w.first, e) (mixedLineGraph_walkMap w)) := by
+--   simp
+
 @[simp]
-lemma mixedLineGraph_walkMap_isWalk (hW : G.IsWalk W) :L'(G).IsWalk (mixedLineGraph_walkMap W) := by
+lemma mixedLineGraph_walkMap_concat (x : α) (e : β) (w) : (mixedLineGraph_walkMap <| w.concat e x) =
+    ((mixedLineGraph_walkMap w).concat (w.last, e) (Sum.inr e)).concat (x, e) (Sum.inl x) := by
+  match w with
+  | nil a => simp
+  | cons a b w =>
+    simp only [cons_concat, mixedLineGraph_walkMap, concat_first, last_cons, cons.injEq, true_and]
+    exact mixedLineGraph_walkMap_concat ..
+
+@[simp]
+lemma mixedLineGraph_walkmap_reverse (W : WList α β) :
+    mixedLineGraph_walkMap W.reverse = (mixedLineGraph_walkMap W).reverse := by
+  match W with
+  | nil x => simp
+  | cons x e w =>
+    simp only [mixedLineGraph_walkMap, reverse_cons, mixedLineGraph_walkMap_concat, reverse_last]
+    rw [mixedLineGraph_walkmap_reverse w]
+
+@[simp]
+lemma IsWalk.mixedLineGraph_walkMap (hW : G.IsWalk W) :L'(G).IsWalk (mixedLineGraph_walkMap W) := by
   induction hW with
   | nil hx => simpa
   | cons hw h ih => simp [ih, h.inc_left, h.inc_right]
@@ -360,9 +383,8 @@ lemma mem_mixedLineGraph_walkMap_iff {x} : x ∈ mixedLineGraph_walkMap W ↔ (�
   simp
 
 -- If e is not a loop, then we could even get a path rather than a walk.
-lemma Preconnected.exists_isWalk_first_lastEdge (h : G.Preconnected) (hx : x ∈ V(G))
-    (he : e ∈ E(G)) : ∃ (P : WList α β) (hP : P.Nonempty), G.IsWalk P ∧ P.first = x ∧
-    hP.lastEdge = e := by
+lemma Preconnected.exists_isWalk_first_lastEdge (h : G.Preconnected) (hx : x ∈ V(G))(he : e ∈ E(G)):
+    ∃ (P : WList α β) (hP : P.Nonempty), G.IsWalk P ∧ P.first = x ∧ hP.lastEdge = e := by
   have ⟨a, b, he⟩ := G.exists_isLink_of_mem_edgeSet he
   obtain ⟨P, hP, rfl, rfl⟩ := h x a hx he.left_mem
   use P.concat e b
@@ -377,26 +399,32 @@ lemma Preconnected.exists_isWalk_firstEdge_lastEdge (h : G.Preconnected) (he : e
   use (P.cons a e).concat f d
   simp [hP, he, hf, Nonempty.lastEdge_cons]
 
--- def sublist_of_mixedLineGraph_walkMap {W' : WList (α ⊕ β) (α × β)}
---     (hW' : G.mixedLineGraph.IsWalk W') :
---     ∃ W : WList α β, W'.IsSublist (mixedLineGraph_walkMap W) := by
---   induction hW' with
---   | nil hx =>
---     expose_names
---     obtain ⟨v, hv, rfl⟩ | ⟨e, he, rfl⟩ := (by
---       simpa [mixedLineGraph_vertexSet, mem_union, mem_image] using hx)
---     <;> simp only [nil_isSublist_iff, mem_mixedLineGraph_walkMap_iff, reduceCtorEq, and_false,
---       exists_false, mem_edgeSet_iff, Sum.inr.injEq, exists_eq_right, false_or, Sum.inl.injEq,
---     or_false]
---     · use nil v, by simp
---     obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet he
---     use huv.walk, by simp
---   | cons hw h ih =>
---     simp only [mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
---Prod.swap_prod_mk] at h
---     obtain ⟨he, ⟨rfl, hwf⟩ | ⟨hwf, rfl⟩⟩ := h
---     ·
---     sorry
+lemma Preconnected.mixedLineGraph (h : G.Preconnected) : L'(G).Preconnected := by
+  rintro (a | a) (b | b) ha hb <;> simp only [mixedLineGraph_vertexSet, mem_union, mem_image,
+    Sum.inl.injEq, Sum.inr.injEq, exists_eq_right, reduceCtorEq, and_false, exists_false, or_false,
+    false_or] at ha hb
+  · obtain ⟨W, hW, rfl, rfl⟩ := h a b ha hb
+    use mixedLineGraph_walkMap W, hW.mixedLineGraph_walkMap
+    simp
+  · obtain ⟨W, hWne, hW, rfl, rfl⟩ := h.exists_isWalk_first_lastEdge ha hb
+    use (mixedLineGraph_walkMap W).dropLast, (hW.mixedLineGraph_walkMap).dropLast, by simp
+    obtain ⟨w, e, x, rfl⟩ := hWne.exists_concat
+    simp
+  · obtain ⟨W, hWne, hW, rfl, rfl⟩ := h.exists_isWalk_first_lastEdge hb ha
+    use (mixedLineGraph_walkMap W).dropLast.reverse, (hW.mixedLineGraph_walkMap).dropLast.reverse,
+      ?_, by simp
+    obtain ⟨w, e, x, rfl⟩ := hWne.exists_concat
+    simp
+  · obtain ⟨W, ⟨x, e, w⟩, hW, rfl, rfl⟩ := h.exists_isWalk_firstEdge_lastEdge ha hb
+    use (mixedLineGraph_walkMap (cons x e w)).tail.dropLast,
+    (hW.mixedLineGraph_walkMap).tail.dropLast, by simp, ?_
+    simp only [mixedLineGraph_walkMap, tail_cons]
+    obtain ⟨y, rfl⟩ | h := w.exists_eq_nil_or_nonempty
+    · simp
+    obtain ⟨w, f, y, rfl⟩ := h.exists_concat
+    simp only [concat_first, mixedLineGraph_walkMap_concat]
+    rw [← cons_concat, dropLast_concat]
+    simp [(w.concat_nonempty f y).lastEdge_cons]
 
 lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) ↔ x ∉ S := by
   aesop
