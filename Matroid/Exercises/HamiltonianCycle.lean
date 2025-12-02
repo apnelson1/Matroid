@@ -228,13 +228,14 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     exact hco hvw
 
   have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := by
-    -- have : (A ∩ V(H)).Finite := by
-      -- have : (A ∩ V(H)) ⊆ V(G) := by
-      --   -- have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
-      --   -- -- H is a component of G
-      --   -- have : A ⊆ V(G) := by
-      --   --   exact hA.1.1
-      --   exact fun ⦃a⦄ a_1 ↦ hA.1.1 (inter_subset_left a_1)
+    have finite : (A ∩ V(H)).Finite := by
+      have : (A ∩ V(H)) ⊆ V(G) := by
+        have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
+        -- H is a component of G
+        have : A ⊆ V(G) := by
+          exact hA.1.1
+        exact fun ⦃a⦄ a_1 ↦ hA.1.1 (inter_subset_left a_1)
+      exact Finite.inter_of_right hfin A
     apply ncard_union_eq
     exact disjoint_iff_inter_eq_empty.mpr disjoint
     exact finite_setOf_adj G
@@ -250,9 +251,9 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
       -- hH: H is comp of G - S
       rcases hw with ⟨ hwH, hwS ⟩
       -- have hHsubset : V(H) ⊆ V(G - S) := by
-      --   exact isCompOf_subset (G - S) H hH
+      --   exact IsCompOf.subset hH
       have hwnotinS : w ∈ V(G - S) := by
-        exact (isCompOf_subset (G - S) H hH) hwH
+        exact (IsCompOf.subset hH) hwH
       have hwnotinS1 : w ∉ S := by
         rw [vertexDelete_vertexSet] at hwnotinS
         simp at hwnotinS
@@ -344,7 +345,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     have hs : V(G-S) ⊆ V(G) := by
       rw [vertexDelete_vertexSet]
       exact diff_subset
-    have : V(H) ⊆ V(G) := by exact fun ⦃a⦄ a_1 ↦ hs (isCompOf_subset (G - S) H hH a_1)
+    have : V(H) ⊆ V(G) := by exact fun ⦃a⦄ a_1 ↦ hs (IsCompOf.subset hH a_1)
     have gfin : V(G).Finite := by exact vertexSet_finite
     exact Finite.subset gfin this
 
@@ -362,6 +363,7 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
         exact hwnotinIncW (mem_inter hwInc hcon1)
       -- need w ∈ S
       -- if w not in V(H) ⊆ V(G - S), then w must be in S?
+
       sorry
     refine ncard_le_ncard hH1 (Finite.subset gfin hS.1)
     -- exact Finite.subset gfin hS.1
