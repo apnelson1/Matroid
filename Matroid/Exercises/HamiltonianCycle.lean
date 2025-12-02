@@ -177,77 +177,194 @@ lemma IsTree.exists_isMinSepSet (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
   obtain rfl := by simpa using hcon
   simp [hT.connected] at hA
 
-lemma Bound_on_indepSet [G.Simple] [G.Finite] {S A} (hS : IsSepSet G S) (hH : IsCompOf H (G-S))
-    (hA : IsMaxIndependent G A) (hx : v ∈ V(H) ∩ A) :
-    G.degree v + (A ∩ V(H)).ncard ≤ (V(H)).ncard + S.ncard := by
+lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
+    (S : Set (α)) (hS : IsSepSet G S)
+    (H : Graph α β ) (hH : IsCompOf H (G-S) )
+    (A : Set (α)) (hA : IsMaxIndependent G A) ( v : α ) (hx : v ∈ V(H) ∩ A )
+    : G.degree v + (A ∩ V(H)).ncard ≤ (V(H)).ncard + S.ncard := by
     -- Need degree_eq_ncard_adj, will work after update
   let Inc := {w | G.Adj v w}
   let IncW := {w | G.Adj v w} ∩ V(H)
-
+  have gfin : V(G).Finite := by exact vertexSet_finite
+  have hc1 : IncW ⊆ V(H) := by
+    exact inter_subset_right
+  have hc2 : (A ∩ V(H)) ⊆ V(H) := by
+    exact inter_subset_right
+  have hfin1 : IncW ∪ (A∩ V(H))  ⊆ V(H) := by exact union_subset hc1 hc2
+  have hfin : V(H).Finite := by
+    have : V(H) ⊆ V(G) := by
+      have := (hH.isClosedSubgraph).vertexSet_mono
+      rw [vertexDelete_vertexSet] at this
+      -- have : V(G) \ S ⊆ V(G) := by
+      --   exact diff_subset
+      (expose_names; exact fun ⦃a⦄ a_1 ↦ diff_subset (this a_1))
+      -- sorry -- look up set difference is subset
+      --IsClosedSubgraph.vertexSet_mono
+    exact Finite.subset gfin this
+  --For the following you need that the sets are disjoint
   have disjoint : Inc ∩ (A ∩ V(H)) = ∅ := by
     by_contra hcon
-    have ⟨ w, hw ⟩ : ∃ e, e ∈ Inc ∩ (A ∩ V(H)) := by
+    have ⟨ w, hw ⟩  : ∃ e, e ∈ Inc ∩ (A ∩ V(H)) := by
       refine nonempty_def.mp (nonempty_iff_ne_empty.mpr hcon)
-    have hwvAdj: G.Adj v w := by
-      have h1 : w ∈ Inc := mem_of_mem_inter_left hw
+      -- exact nonempty_iff_ne_empty.mpr hcon
+    have hvw : G.Adj v w := by
+      have h1 : w ∈ Inc := by exact mem_of_mem_inter_left hw
       exact h1
-    have hco : ¬ G.Adj v w := by
-      have hAindep : IsIndependent G A := by exact hA.1
-      have hvA : v ∈ A := mem_of_mem_inter_right hx
-      have hwA := mem_of_mem_inter_left ( mem_of_mem_inter_right hw)
-      apply hAindep.2 hvA hwA
+    -- want contradiction: w and v are not adjacent
+    have hco: ¬ G.Adj v w := by
+      have h2 : IsIndependent G A := by exact hA.1
+      -- want v ∈ A and w ∈ A
+      have hvA : v ∈ A := by exact mem_of_mem_inter_right hx
+      have hwA : w ∈ A := by
+        have hwAVH : w ∈ A ∩ V(H) := by exact mem_of_mem_inter_right hw
+        exact mem_of_mem_inter_left hwAVH
+      apply h2.2
+      exact hvA
+      exact hwA
       by_contra hc
-      rw [hc] at hwvAdj
-      exact (not_adj_self G w) hwvAdj
-    exact hco hwvAdj
+      rw [hc] at hvw
+      -- have : ¬ G.Adj w w := by exact not_adj_self G w
+      exact (not_adj_self G w) hvw
+    exact hco hvw
 
-  --For the following you need that the sets are disjoint
   have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := by
-    -- have hfin2 : (A ∩ V(H)).Finite := by
-    --   have : (A ∩ V(H)) ⊆ V(G) := by
-    --     exact fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1)
-    --   have : V(G).Finite := by exact vertexSet_finite
-    --   exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
+    -- have : (A ∩ V(H)).Finite := by
+      -- have : (A ∩ V(H)) ⊆ V(G) := by
+      --   -- have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
+      --   -- -- H is a component of G
+      --   -- have : A ⊆ V(G) := by
+      --   --   exact hA.1.1
+      --   exact fun ⦃a⦄ a_1 ↦ hA.1.1 (inter_subset_left a_1)
     apply ncard_union_eq
     exact disjoint_iff_inter_eq_empty.mpr disjoint
-    exact finite_neighbors G
-    exact Finite.subset vertexSet_finite (fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
-  have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := sorry
+    exact finite_setOf_adj G
+    exact Finite.subset gfin ( fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
+
+-- S: separating set such that V(G) - S is not connected
+  have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := by
+    have hsdisjoint : V(H) ∩ S = ∅ := by
+      by_contra hcon
+      have ⟨ w, hw ⟩ : ∃ e, e ∈ V(H) ∩ S := by
+        refine nonempty_def.mp (nonempty_iff_ne_empty.mpr hcon)
+        -- exact nonempty_iff_ne_empty.mpr hcon
+      -- hH: H is comp of G - S
+      rcases hw with ⟨ hwH, hwS ⟩
+      -- have hHsubset : V(H) ⊆ V(G - S) := by
+      --   exact isCompOf_subset (G - S) H hH
+      have hwnotinS : w ∈ V(G - S) := by
+        exact (isCompOf_subset (G - S) H hH) hwH
+      have hwnotinS1 : w ∉ S := by
+        rw [vertexDelete_vertexSet] at hwnotinS
+        simp at hwnotinS
+        exact notMem_of_mem_diff hwnotinS
+      exact hwnotinS1 hwS
+    -- have hfin : V(H).Finite := by
+    --   have : V(H) ⊆ V(G) := by
+    --     have := (hH.isClosedSubgraph).vertexSet_mono
+    --     rw [vertexDelete_vertexSet] at this
+    --     sorry -- look up set difference is subset
+    --     --IsClosedSubgraph.vertexSet_mono
+    --   exact Finite.subset gfin this
+    apply ncard_union_eq
+    exact disjoint_iff_inter_eq_empty.mpr hsdisjoint
+    -- have sfin : S.Finite := by exact Finite.subset gfin hS.1
+    exact hfin
+    exact Finite.subset gfin hS.1
   --Use degree_eq_ncard_adj
-  have hdeg : G.degree v = Inc.ncard := sorry
+  -- should be the same as hf1
+
+  -- deg of v is the cardinality of Inc
+  have hdeg : G.degree v = Inc.ncard := by exact degree_eq_ncard_adj
   --This one should be straight forward
+
   have h1 : Inc ∪ (A ∩ V(H)) = (IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) := by
     have hinc : Inc = IncW ∪ (Inc\IncW) := by
       refine Eq.symm (union_diff_cancel' (fun ⦃a⦄ a_1 ↦ a_1) inter_subset_left)
-    --conv => lhs ; rhs
     nth_rewrite 1 [hinc]
     exact union_right_comm IncW (Inc \ IncW) (A ∩ V(H))
-  --Again, disjoint sets
+
+ --Again, disjoint sets
   have hf3 : ((IncW ∪ (A ∩ V(H))) ∪ (Inc\IncW) ).ncard =
       (IncW ∪ (A ∩ V(H))).ncard + (Inc\IncW).ncard
     := by
-      sorry
+      have disjoint : (IncW ∪ (A ∩ V(H))) ∩ (Inc\IncW) = ∅ := by
+        by_contra hcon
+        have ⟨ w, hw ⟩ : ∃ e, e ∈ (IncW ∪ (A ∩ V(H))) ∩ (Inc\IncW) := by
+          refine nonempty_def.mp (nonempty_iff_ne_empty.mpr hcon)
+        -- elements in IncW are in Inc ∩ V(H), so elements in Inc\IncW are not in V(H)
+        --have hw1 : w ∈ (IncW ∪ A ∩ V(H)) := by exact mem_of_mem_inter_left hw
+        --have hw2 := by exact mem_of_mem_inter_right hw
+        rcases hw with ⟨ hw1, hw2 ⟩
+        -- prove that in (Inc\IncW), w ∉ V(H)
+        have wnotinInc : w ∉ IncW := by exact notMem_of_mem_diff hw2
+        have wnotinH : w ∉ V(H) := by
+          intro winH
+          have winInc : w ∈ IncW := by
+            exact ⟨ hw2.left, winH ⟩
+          exact wnotinInc winInc
+        -- rcases hw1 with ⟨ hw1inc, hw2a ⟩
+        -- have wnotinInc : w ∉ IncW := by exact notMem_of_mem_diff hw2
+        -- -- prove that in (IncW ∪ (A ∩ V(H))), w ∈ V(H)??
+        have winH : w ∈ V(H) := by
+          exact hfin1 hw1
+        exact wnotinH winH
+      refine ncard_union_eq (disjoint_iff_inter_eq_empty.mpr disjoint) ?_ ?_
+      -- exact disjoint_iff_inter_eq_empty.mpr disjoint
+      have incWfin : IncW.Finite := by
+        refine Finite.inter_of_right ?_ {w | G.Adj v w}
+        exact hfin
+      have incfin : (IncW ∪ (A ∩ V(H))).Finite := by
+        have : (A ∩ V(H)).Finite := by
+          have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
+          have : A ⊆ V(G) := by exact hA.1.1
+          have : (A ∩ V(H)) ⊆ V(G) := by (expose_names; exact fun ⦃a⦄ a_1 ↦ this (this_1 a_1))
+          exact Finite.subset gfin this -- clean this up later
+        exact Finite.union incWfin this
+      exact incfin
+
+      have : (Inc \ IncW) ⊆ V(G) := by
+        have : (Inc \ IncW) ⊆ Inc := by exact diff_subset
+        have : Inc ⊆ V(G) := by
+          intro u hu
+          exact hu.right_mem
+        (expose_names; exact fun ⦃a⦄ a_1 ↦ this (this_1 a_1))
+      exact Finite.subset gfin this
   --Very important
   rw [←hf2,hdeg,←hf1,h1, hf3 ]
 
   --Inequalities to finish
+  -- IncW ∪ (A ∩ V(H)) is
   have hH : (IncW ∪ (A ∩ V(H))).ncard ≤ V(H).ncard := by
     have hH1 : (IncW ∪ (A ∩ V(H))) ⊆ V(H) := by
-      exact union_subset (inter_subset_right) (inter_subset_right)
+      -- have : (A ∩ V(H)) ⊆ V(H) := by exact inter_subset_right
+      -- have : IncW ⊆ V(H) := by exact inter_subset_right
+      exact union_subset inter_subset_right inter_subset_right
     refine ncard_le_ncard hH1 ?_
-    have hP : V(G-S) ⊆ V(G) := by
-      simp [vertexDelete_vertexSet]
+    -- have : V(H) ⊆ V(G-S) := by exact isCompOf_subset (G - S) H hH
+    have hs : V(G-S) ⊆ V(G) := by
+      rw [vertexDelete_vertexSet]
       exact diff_subset
-    exact Finite.subset (vertexSet_finite) (fun ⦃a⦄ a_1 ↦ hP (hH.subset a_1))
+    have : V(H) ⊆ V(G) := by exact fun ⦃a⦄ a_1 ↦ hs (isCompOf_subset (G - S) H hH a_1)
+    have gfin : V(G).Finite := by exact vertexSet_finite
+    exact Finite.subset gfin this
 
   have hS : (Inc\IncW).ncard ≤ S.ncard := by
     have hH1 :(Inc\IncW) ⊆ S := by
-      intro w hwsub
-      have hAdj : G.Adj v w := by
-        have h : w ∈ Inc := mem_of_mem_inter_left hwsub
-        exact h
+      -- want to prove that w ∈ Inc\IncW => w ∈ S
+      -- things in Inc cannot be in H?, look for lemma in connected file
+      -- by cases: if Inc, then in IncW, otherwise contradiction from connectedness
+      intro w hw
+      rcases hw with ⟨ hwInc, hwnotinIncW ⟩
+      -- if w is in Inc and not in IncW, then w is also not in V(H) since IncW = Inc ∩ V(H)
+      have hwnotinH : w ∉ V(H) := by
+        by_contra hcon1
+        -- have : w ∈ IncW := by exact mem_inter hwInc hcon1
+        exact hwnotinIncW (mem_inter hwInc hcon1)
+      -- need w ∈ S
+      -- if w not in V(H) ⊆ V(G - S), then w must be in S?
       sorry
-    sorry
+    refine ncard_le_ncard hH1 (Finite.subset gfin hS.1)
+    -- exact Finite.subset gfin hS.1
   linarith
 
 --Again, is missing when G is complete but whatever
