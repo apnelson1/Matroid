@@ -228,18 +228,22 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     exact hco hvw
 
   have hf1 : (Inc ∪ (A ∩ V(H))).ncard = Inc.ncard + (A ∩ V(H)).ncard := by
-    have finite : (A ∩ V(H)).Finite := by
-      have : (A ∩ V(H)) ⊆ V(G) := by
-        have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
-        -- H is a component of G
-        have : A ⊆ V(G) := by
-          exact hA.1.1
-        exact fun ⦃a⦄ a_1 ↦ hA.1.1 (inter_subset_left a_1)
-      exact Finite.inter_of_right hfin A
+    -- have finite : (A ∩ V(H)).Finite := by
+    --   have : (A ∩ V(H)) ⊆ V(G) := by
+    --     have : (A ∩ V(H)) ⊆ A := by exact inter_subset_left
+    --     -- H is a component of G
+    --     have : A ⊆ V(G) := by
+    --       exact hA.1.1
+    --     exact fun ⦃a⦄ a_1 ↦ hA.1.1 (inter_subset_left a_1)
+    --   exact Finite.inter_of_right hfin A
     apply ncard_union_eq
     exact disjoint_iff_inter_eq_empty.mpr disjoint
-    exact finite_setOf_adj G
-    exact Finite.subset gfin ( fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
+    have incfin : Inc.Finite := by
+      refine Set.Finite.subset ?_ (G.neighbor_subset v)
+      exact gfin
+    -- exact finite_setOf_adj G
+    -- exact Finite.subset gfin ( fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
+    exact incfin
 
 -- S: separating set such that V(G) - S is not connected
   have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := by
@@ -427,7 +431,7 @@ lemma indep_to_Dirac [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).ncard)
       exact H2comp.1.2
     --Apply Bound_on_indepSet with modifications since H2 is not a connected component
     -- You will nee hDirac applied to y
-    have := Bound_on_indepSet HS.1 hccH1 hA (by tauto)
+    have := Bound_on_indepSet _ HS.1 _ hccH1 _ hA (by tauto)
 
     sorry
 
@@ -572,6 +576,7 @@ lemma indep_nbrs [G.Simple] [G.Finite] {i j : ℕ} {G D : Graph α β} {C : WLis
     · omega
     · omega
     omega
+
   sorry
 
 
