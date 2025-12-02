@@ -1810,53 +1810,6 @@ Proof:
   then P₁ + xv - P₂ + yu is a cycle containing all of V(P)
 -/
 
--- in a WList with no repeated edges, each edge is part of exactly one DInc triplet
-lemma dInc_iff_eq_of_dInc_of_edge_nodup {w : WList α β} (hw : w.edge.Nodup) (he : w.DInc e u v) :
-    w.DInc e x y ↔ x = u ∧ y = v := by
-  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
-  induction w with
-  | nil => simp_all
-  | cons z f w IH =>
-    simp only [cons_edge, List.nodup_cons, dInc_cons_iff] at hw h he
-    obtain ⟨rfl, rfl, rfl⟩ | h := h
-    · obtain ⟨rfl, he, rfl⟩ | he := he; try tauto
-      exact (hw.1 he.edge_mem).elim
-    obtain ⟨rfl, rfl, rfl⟩ | he := he
-    · exact (hw.1 h.edge_mem).elim
-    apply IH <;> first | assumption | tauto
-
-lemma dInc_iff_eq_of_dInc_of_vertex_nodup_left (hw : w.vertex.Nodup) (hu : w.DInc e u v) :
-    w.DInc f u y ↔ f = e ∧ y = v := by
-  refine ⟨fun h ↦ ?_, by rintro ⟨rfl, rfl⟩; assumption⟩
-  induction w with
-  | nil _ => simp_all
-  | cons u' f' w IH =>
-    simp_all only [cons_vertex, List.nodup_cons, mem_vertex, dInc_cons_iff, forall_const]
-    obtain ⟨rfl, rfl, rfl⟩ | h := h
-    · obtain ⟨hu, rfl, rfl⟩ | hu := hu; try tauto
-      exact (hw.1 hu.left_mem).elim
-    obtain ⟨rfl, rfl, rfl⟩ | hu := hu
-    · exact (hw.1 h.left_mem).elim
-    apply IH <;> assumption
-
-lemma dInc_iff_eq_of_dInc_of_vertex_nodup_right (hw : w.vertex.Nodup) (hv : w.DInc e u v) :
-    w.DInc f x v ↔ f = e ∧ x = u := by
-  generalize hw_def' : w.reverse = w'
-  have hw' : w'.vertex.Nodup := by rwa [← hw_def', reverse_vertex, List.nodup_reverse]
-  have hv' : w'.DInc e v u := by simpa [← hw_def']
-  have := dInc_iff_eq_of_dInc_of_vertex_nodup_left (f := f) (y := x) hw' hv'
-  rwa [← hw_def', dInc_reverse_iff] at this
-
-lemma exists_left_edge (hyw : y ∈ w) (hy : y ≠ w.first) : ∃ e x, w.DInc e x y := by
-  induction w generalizing y with simp_all
-  | cons u e w IH =>
-    obtain (hne|heq) := Classical.decEq _ y w.first
-    · obtain ⟨f, x, h⟩ := IH hyw hne
-      use f, x
-      tauto
-    use e, u
-    tauto
-
 lemma existsUnique_left_edge (hw : G.IsPath w) (hyw : y ∈ w) (hy : y ≠ w.first) :
     ∃! e, ∃ x, w.DInc e x y := by
   obtain ⟨e, x, h⟩ := exists_left_edge hyw hy
@@ -1865,15 +1818,6 @@ lemma existsUnique_left_edge (hw : G.IsPath w) (hyw : y ∈ w) (hy : y ≠ w.fir
   intro e' x' h'
   simp only [dInc_iff_eq_of_dInc_of_vertex_nodup_right hw.nodup h] at h'
   tauto
-
-lemma exists_right_edge (hxw : x ∈ w) (hx : x ≠ w.last) : ∃ e y, w.DInc e x y := by
-  generalize hw'_def : w.reverse = w'
-  symm at hw'_def
-  have hx' : x ≠ w'.first := by simp_all
-  have hxw' : x ∈ w' := by simp_all
-  obtain ⟨e, y, h⟩ := exists_left_edge hxw' hx'
-  use e, y
-  simp_all
 
 lemma existsUnique_right_edge (hw : G.IsPath w) (hxw : x ∈ w) (hx : x ≠ w.last) :
     ∃! e, ∃ y, w.DInc e x y := by
@@ -1888,35 +1832,6 @@ lemma existsUnique_right_edge (hw : G.IsPath w) (hxw : x ∈ w) (hx : x ≠ w.la
   refine ⟨e, he.1, ?_⟩
   simp only [forall_exists_index]
   exact he.2
-
-@[simp]
-lemma WList.suffixFromVertex_from_first_eq [DecidableEq α] (w : WList α β) :
-    w.suffixFromVertex w.first = w := by
-  induction w with (simp_all [suffixFromVertex])
-
-lemma WList.suffixFromVertex_from_second_eq [DecidableEq α] (w : WList α β) (e) (hx : x ≠ w.first) :
-    (cons x e w).suffixFromVertex w.first = w := by
-  simp_all only [ne_eq, suffixFromVertex, suffixFrom_cons, ↓reduceIte]
-  exact suffixFromVertex_from_first_eq w
-
-@[simp]
-lemma WList.suffixFromVertex_nil [DecidableEq α] : (nil (β := β) u).suffixFromVertex x = nil u := by
-  simp [suffixFromVertex]
-
-lemma WList.suffixFromVertex_cons_or [DecidableEq α] (u e) (w : WList α β) (x) :
-    (u = x ∧ (cons u e w).suffixFromVertex x = cons u e w) ∨
-    (u ≠ x ∧ (cons u e w).suffixFromVertex x = w.suffixFromVertex x) := by
-  obtain (h|h) := Classical.em (u = x) <;> simp_all [suffixFromVertex]
-
-lemma WList.IsSublist.mem_edge (h : w₁.IsSublist w₂) (he : e ∈ w₁.edge) : e ∈ w₂.edge :=
-  h.edgeSet_subset he
-
-lemma WList.IsSuffix.mem_edge (h : w₁.IsSuffix w₂) (he : e ∈ w₁.edge) : e ∈ w₂.edge :=
-  WList.IsSublist.mem_edge h.isSublist he
-
-lemma WList.IsPrefix.mem_edge (h : w₁.IsPrefix w₂) (he : e ∈ w₁.edge) : e ∈ w₂.edge :=
-  WList.IsSublist.mem_edge h.isSublist he
-
 
 lemma IsLongestPath.nontrivial_of_connected_of_encard_ge_three (hP : G.IsLongestPath P)
     (hConn : G.Connected) (hNontrivial : 3 ≤ V(G).encard) : P.Nontrivial := by
