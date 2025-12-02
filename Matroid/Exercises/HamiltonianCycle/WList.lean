@@ -79,27 +79,16 @@ lemma Cycle_conc_index [DecidableEq α] (huv : v ≠ u) (hCP : v ∈ cons u e (P
 
 lemma idx_Of_tail [DecidableEq α] (hw : w.Nonempty) (hxf : w.first ≠ x) (hx : x ∈ w) :
     (w.tail).idxOf x + 1 = w.idxOf x := by
-  induction w with
-  | nil w => simp [(mem_nil_iff.1 hx).symm] at hxf
-  | cons u e w ih =>
-    obtain rfl | hu := eq_or_ne x u
-    · simp at hxf
-    simp [hu.symm]
+  fun_induction WList.idxOf with simp_all
 
 lemma idx_Of_dropLast [DecidableEq α] (hw : w.Nonempty) (hx : x ∈ w) :
     (w.dropLast).idxOf x = w.idxOf x := by
-  induction w with
-  | nil w => rfl
-  | cons u e w ih =>
-    obtain ⟨v, rfl⟩ | hwN := exists_eq_nil_or_nonempty w
-    · obtain rfl | hu := eq_or_ne u x
-      · simp
-      obtain rfl := by simpa [hu.symm] using hx
-      simp [hu]
-    rw [hwN.dropLast_cons]
-    obtain rfl | hu := eq_or_ne u x
-    · simp_all
-    simp_all [hu.symm]
+  induction w using concat_induction with simp_all
+  | concat w e u IH =>
+     obtain (h_mem|h_notMem) := em (x ∈ w)
+     · exact (idxOf_concat_of_mem h_mem).symm
+     replace hx : x = u := by tauto
+     fun_induction w.idxOf x with simp_all
 
 -- idxOf is injective if either element is in the list
 lemma idxOf_inj_of_left_mem [DecidableEq α] (hx : x ∈ w) (heq : w.idxOf x = w.idxOf y) : x = y := by
@@ -130,6 +119,24 @@ lemma ne_of_idx_lt_idxOf [DecidableEq α] (hlt : n < w.idxOf x) : w.get n ≠ x 
 lemma idxOf_le [DecidableEq α] (w : WList α β) (x : α) : w.idxOf x ≤ w.length + 1 := by
   fun_induction w.idxOf x with simp_all
 
+lemma idxOf_eq_zero_iff [DecidableEq α] : w.idxOf x = 0 ↔ x = w.first := by
+  fun_induction WList.idxOf with simp_all [Ne.symm]
+
+lemma idxOf_cons_eq_one_iff [DecidableEq α] : (cons u e w).idxOf x = 1 ↔ u ≠ x ∧ x = w.first := by
+  generalize w'_def : cons u e w = w'
+  fun_induction WList.idxOf with simp_all [idxOf_eq_zero_iff]
+
+lemma idxOf_eq_succ_length_iff [DecidableEq α] : w.idxOf x = w.length + 1 ↔ x ∉ w := by
+  fun_induction WList.idxOf with simp_all [Ne.symm]
+
+lemma idxOf_eq_length [DecidableEq α] (h : w.idxOf x = w.length) : x = w.last := by
+  fun_induction WList.idxOf with simp_all
+
+lemma idxOf_eq_length_iff [DecidableEq α] (h : w.vertex.Nodup) :
+    w.idxOf x = w.length ↔ x = w.last := by
+  fun_induction WList.idxOf with simp_all [Ne.symm]
+  | case3 e w u => rintro rfl; exact h.1 w.last_mem
+
 --get_idxOf (w : WList α β) (hxw : x ∈ w) : w.get (w.idxOf x) = x := by
 /-! #EXAMPLE of wlog tactic
 -- example (M : Matroid α) (hconn : M.TutteConnected 17) : 100 < M.E.encard := by
@@ -143,6 +150,36 @@ lemma idxOf_le [DecidableEq α] (w : WList α β) (x : α) : w.idxOf x ≤ w.len
 -/
 
 -- lemma idxOf_get_lt [DecidableEq α] (hlt : n < w.idxOf x) : w.idxOf
+
+------ reverse lemmas
+
+lemma nodup_reverse_vertex_iff : w.reverse.vertex.Nodup ↔ w.vertex.Nodup := by
+  simp only [reverse_vertex, List.nodup_reverse]
+
+lemma idxOf_reverse [DecidableEq α] (hw : w.vertex.Nodup) (hx : x ∈ w) :
+    w.reverse.idxOf x = w.length - w.idxOf x := by
+  fun_induction WList.idxOf with simp_all
+  | case3 e w x =>
+    have heq : (w.reverse.concat e x).vertex = w.vertex.reverse.concat x := by simp
+    have hw' : (w.reverse.concat e x).vertex.Nodup := by
+      rw [heq, List.nodup_concat]
+      simp; tauto
+    rw [← reverse_length, ← @concat_length _ _ x e w.reverse, idxOf_eq_length_iff hw']
+    simp
+  | case4 u e w x hne IH =>
+    replace hx : x ∈ w := by tauto
+    rw [← IH hx]
+    refine idxOf_concat_of_mem (by simpa)
+
+lemma idxOf_reverse_add_idxOf [DecidableEq α] (hw : w.vertex.Nodup) (hx : x ∈ w) :
+    w.reverse.idxOf x + w.idxOf x = w.length := by
+  have h₁ := idxOf_reverse hw hx
+  have h₂ : w.idxOf x ≤ w.length := idxOf_mem_le hx
+  omega
+
+lemma idxOf_add_idxOf_reverse [DecidableEq α] (hw : w.vertex.Nodup) (hx : x ∈ w) :
+    w.idxOf x + w.reverse.idxOf x = w.length := by
+  rw [add_comm]; exact idxOf_reverse_add_idxOf hw hx
 
 ---- prefix / suffix lemmas
 
@@ -192,21 +229,11 @@ lemma suffixFromVertex_vertex [DecidableEq α] (w : WList α β) (x : α) :
 
 lemma prefixUntilVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf y ≤ w.idxOf x) :
     w.idxOf y = (w.prefixUntilVertex x).idxOf y := by
-  induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
-  obtain rfl | hu := eq_or_ne x u
-  · obtain rfl | hxy := eq_or_ne x y
-    · simp only [idxOf_cons_self]
-      have h1 : ((cons x e w).prefixUntilVertex x).first = x :=
-        prefixUntilVertex_first (cons x e w) x
-      nth_rw 3 [←h1]
-      exact (idxOf_first ((cons x e w).prefixUntilVertex x)).symm
-    · simp only [idxOf_cons_self, nonpos_iff_eq_zero, idxOf_cons_ne hxy] at hle
-      omega
-  simp_all only [prefixUntilVertex, mem_cons_iff, false_or, idxOf_cons_ne hu.symm, ne_eq,
-    prefixUntil_cons, hu.symm, ↓reduceIte, forall_const]
-  obtain rfl | huy := eq_or_ne y u
-  · simp
-  simp_all [idxOf_cons_ne huy.symm]
+  simp only [prefixUntilVertex]
+  fun_induction WList.prefixUntil with simp_all [idxOf_eq_zero_iff]
+  | case3 u e w hne IH =>
+    replace hx : x ∈ w := by tauto
+    obtain (rfl|hne') := em (u = y) <;> simp_all
 
 lemma prefixUntilVertex_Nil [DecidableEq α] (w : WList α β) (x : α) :
     Nil ((cons x e w).prefixUntilVertex x) :=
@@ -220,21 +247,15 @@ lemma prefixUntilVertex_nil [DecidableEq α] (w : WList α β) (x : α) :
 
 lemma prefixUntilVertex_index_iff [DecidableEq α] (hx : x ∈ w) (hy : y ∈ w) :
     y ∈ (w.prefixUntilVertex x) ↔  w.idxOf y ≤ w.idxOf x := by
-  refine ⟨fun hyP ↦ ?_, fun hle ↦ ?_⟩
-  · induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
-    obtain rfl | hu := eq_or_ne x u
-    · rw [prefixUntilVertex_nil w x, mem_nil_iff] at hyP
-      rw [hyP]
-    simp only [mem_cons_iff, hu, false_or] at hx
-    obtain rfl | huy := eq_or_ne y u
+  simp only [prefixUntilVertex]
+  fun_induction WList.prefixUntil with simp_all [idxOf_eq_zero_iff]
+  | case3 u e w hne IH =>
+    replace hx : x ∈ w := by tauto
+    obtain (rfl|hne') := em (u = y)
     · simp
-    simp only [mem_cons_iff, huy, false_or] at hy
-    simp only [prefixUntilVertex_cons_of_ne w hu.symm, mem_cons_iff, huy, false_or] at hyP
-    simp [idxOf_cons u e w, huy.symm, hu.symm, ih hx hy hyP]
-  by_contra hc
-  have h1 := idxOf_notMem hc
-  rw [prefixUntilVertex_length hx, ←prefixUntilVertex_index hx hle] at h1
-  linarith
+    replace hy : y ∈ w := by tauto
+    simp_all
+    tauto
 
 lemma prefixUntilVertex_concat_of_exists [DecidableEq α] (w : WList α β)
     (h : v ∈ w) : (w.concat e x).prefixUntilVertex v = w.prefixUntilVertex v:= by
@@ -264,50 +285,18 @@ lemma prefixUntilVertex_last_eq_self [DecidableEq α] (w : WList α β) (hw : w.
   simp [hlu]
   exact ih (List.Nodup.of_cons hw)
 
-lemma prefixUntilVertex_tail [DecidableEq α] (w : WList α β) (hv : v ≠ w.first) (hvw : v ∈ w)
-  (hw : w.vertex.Nodup) :
+lemma prefixUntilVertex_tail [DecidableEq α] (w : WList α β) (hv : v ≠ w.first) (hvw : v ∈ w) :
     w.tail.prefixUntilVertex v = (w.prefixUntilVertex v).tail := by
-  induction w using concat_induction with
-    | nil u =>
-    simp only [tail_nil]
-    by_contra hc
-    exact hc rfl
-    | @concat w f y ih =>
-    simp only [mem_concat] at hvw
-    obtain he | hwne := (exists_eq_nil_or_nonempty w)
-    · obtain ⟨x, hx ⟩ := he
-      rw[hx]
-      simp only [nil_concat, tail_cons]
-      have h : (nil y (β := β)).prefixUntilVertex v = (nil y (β := β)).prefixUntil (· = v) := rfl
-      rw[h, prefixUntil_nil]
-      simp only [concat_first, ne_eq] at hv
-      rw[hx] at hv
-      have : x ≠ v := by
-        by_contra hc
-        rw[hc] at hx
-        have : v = w.first := by
-          rw[hx]
-          exact rfl
-        exact hv (id (Eq.symm hc))
-      rw[prefixUntilVertex_cons (nil y)]
-      simp [this]
-      exact h
-    obtain heasy | rfl := hvw
-    · have hw' : w.vertex.Nodup := by sorry
-      rw[concat_first] at hv
-      have hvtail : v ∈ w.tail := by
-        refine (mem_tail_iff_of_nodup hw' hwne).mpr ?_
-        exact Decidable.not_imp_iff_and_not.mp fun a ↦ hv (a heasy)
-      rw[tail_concat hwne, prefixUntilVertex_concat_of_exists w heasy ,
-      prefixUntilVertex_concat_of_exists w.tail hvtail, ih hv heasy hw' ]
-    have hw' : (w.concat f v).tail.vertex.Nodup := by sorry
-    have : v = (w.concat f v).tail.last := by
-      simp only [tail_last, concat_last]
-    nth_rw 2 [this]
-    have : v = (w.concat f v).last := by exact Eq.symm concat_last
-    rw[prefixUntilVertex_last_eq_self (w.concat f v).tail hw' ]
-    nth_rw 3 [this]
-    rw[prefixUntilVertex_last_eq_self (w.concat f v) hw ]
+  induction w with simp_all
+  | cons u e w IH =>
+    simp only [prefixUntilVertex]
+    fun_induction WList.prefixUntil with
+    | case1 | case2 => simp_all; split_ifs <;> simp
+    | case3 x f w hne IH =>
+      replace hvw : v ∈ w := by simp at hvw; tauto
+      simp [hvw] at IH
+      split_ifs at IH <;> [tauto; skip]
+      simp_all
 
 lemma suffixFromVertex_concat_of_exists [DecidableEq α]  (w : WList α β) (hb : v ∈ w ):
     (w.concat e x).suffixFromVertex v = (w.suffixFromVertex v).concat e x := by
@@ -404,37 +393,14 @@ lemma SuffixFromVertex_get [DecidableEq α] (w : WList α β) {a : ℕ } (hne : 
 
 lemma suffixFromVertex_index [DecidableEq α] (hx : x ∈ w) (hle : w.idxOf x ≤ w.idxOf y) :
     w.idxOf y = (w.suffixFromVertex x).idxOf y + w.idxOf x := by
-  induction w with
-  | nil u =>
-  simp only [idxOf_nil, suffixFromVertex_nil, Nat.left_eq_add, ite_eq_left_iff, one_ne_zero,
-    imp_false, Decidable.not_not]
-  simp only [mem_nil_iff] at hx
-  exact hx.symm
-  | cons a e w ih =>
-  simp only [mem_cons_iff] at hx
-  obtain rfl | haw := eq_or_ne x a
-  · obtain rfl | hxy := eq_or_ne y x
-    · rw[idxOf_cons, suffixFromVertex_cons]
-      simp only [↓reduceIte, add_zero, idxOf_cons_self]
-    rw[idxOf_cons, suffixFromVertex_cons]
-    simp only [↓reduceIte, idxOf_cons_self, add_zero, hxy.symm]
-    rw[idxOf_cons]
-    simp [hxy.symm]
-  rw[idxOf_cons, suffixFromVertex_cons]
-  simp [haw.symm]
-  obtain rfl | hay := eq_or_ne y a
-  · simp only [↓reduceIte]
-    simp only [idxOf_cons_self, nonpos_iff_eq_zero] at hle
-    rw[idxOf_cons] at hle
-    simp [haw.symm] at hle
-  simp [hay.symm]
-  rw[idxOf_cons,idxOf_cons] at hle
-  simp [haw.symm, hay.symm] at hle
-  simp [haw] at hx
-  rw[ih hx hle]
-  omega
+  simp only [suffixFromVertex]
+  fun_induction WList.suffixFrom with simp_all
+  | case3 u e w hne IH =>
+    replace hx : x ∈ w := by tauto
+    obtain (rfl|hne') := em (u = y) <;> simp_all
+    omega
 
---------- rotate lemmas
+ --------- rotate lemmas
 
 lemma Nonempty.rotate_one (hCne : C.Nonempty) :
     ∃ e, (C.rotate 1) = (C.tail).concat e (C.tail.first) := by
@@ -523,5 +489,5 @@ lemma rotate_pre_suff [DecidableEq α] (w : WList α β) {a : ℕ} (hnt : w.None
     rw[h_w']
     sorry
     sorry
-    exact hwnd
+    -- exact hwnd
   sorry
