@@ -244,6 +244,8 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
     -- exact finite_setOf_adj G
     -- exact Finite.subset gfin ( fun ⦃a⦄ a_1 ↦ (hA.1.1) (inter_subset_left a_1))
     exact incfin
+    exact Finite.inter_of_right hfin A
+
 
 -- S: separating set such that V(G) - S is not connected
   have hf2 : (V(H) ∪ S).ncard = V(H).ncard + S.ncard := by
