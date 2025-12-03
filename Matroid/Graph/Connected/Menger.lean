@@ -283,7 +283,6 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
 
-
 def Walk (G : Graph α β) := {w // G.IsWalk w}
 
 lemma mixedLineGraph_edgeDelete : L'(G ＼ F) = L'(G) - (Sum.inr '' F) := by

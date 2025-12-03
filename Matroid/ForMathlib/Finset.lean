@@ -1,6 +1,6 @@
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Fintype.Lattice
+import Mathlib.Data.Set.Finite.Basic -- inefficient import
+import Mathlib.Data.Finset.Powerset -- inefficient import
+-- import Mathlib.Data.Fintype.Lattice -- inefficient import
 -- import Mathlib.Data.Int.Cast.Basic
 -- import Mathlib.Algebra.Group.Int
 -- import Mathlib.Algebra.Ring.Int

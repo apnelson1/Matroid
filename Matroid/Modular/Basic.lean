@@ -2,8 +2,6 @@ import Matroid.Flat.Lattice
 import Matroid.Simple
 import Matroid.ForMathlib.Card
 import Matroid.ForMathlib.Matroid.Basic
-import Mathlib.Order.ModularLattice
-import Mathlib.Order.Zorn
 
 open Set BigOperators Set.Notation
 

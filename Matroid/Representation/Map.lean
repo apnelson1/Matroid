@@ -1,4 +1,4 @@
-
+import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Matroid.Representation.Basic
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]

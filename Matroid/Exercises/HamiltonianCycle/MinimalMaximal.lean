@@ -1,4 +1,6 @@
-import Mathlib.Tactic
+import Mathlib.Order.Defs.LinearOrder
+import Mathlib.Order.Defs.Unbundled
+import Mathlib.Order.Bounds.Defs
 
 open Set
 

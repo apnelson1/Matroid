@@ -1,7 +1,4 @@
 import Matroid.Graph.WList.Defs
-import Mathlib.Data.List.Nodup
-import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
-import Mathlib.Data.Finset.Disjoint
 
 open Set Function List Nat WList
 variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}

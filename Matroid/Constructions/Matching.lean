@@ -1,6 +1,5 @@
 
-import Mathlib.Combinatorics.Matroid.Minor.Restrict
-import Mathlib.Data.Fintype.Basic
+import Mathlib.Combinatorics.Matroid.Minor.Restrict -- inefficient import
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Function
 import Matroid.ForMathlib.Matroid.Basic

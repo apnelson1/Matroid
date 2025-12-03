@@ -1,5 +1,5 @@
 import Matroid.ForMathlib.Partition.Basic
-import Mathlib.Data.Set.Lattice.Image
+import Mathlib.Data.Set.Lattice.Image -- inefficient import
 
 variable {α β ι ι' : Type*} {s t S T : Set α} {a b c x y : α}
 

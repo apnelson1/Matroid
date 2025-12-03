@@ -1,12 +1,7 @@
 import Matroid.Paving
 import Matroid.Connectivity.Skew
-import Mathlib.Tactic.ENatToNat
-import Mathlib.Tactic.TautoSet
 
-open Set.Notation
-
-
-open Set
+open Set Set.Notation
 
 namespace Matroid
 

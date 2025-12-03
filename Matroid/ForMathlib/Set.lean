@@ -1,5 +1,4 @@
 import Mathlib.Data.Set.Lattice.Image
-import Mathlib.Data.Set.SymmDiff
 
 variable {α ι : Type*}
 

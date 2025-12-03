@@ -1,4 +1,4 @@
-import Mathlib.Order.Minimal
+import Mathlib.Data.Set.Image -- inefficient import
 
 open Set
 

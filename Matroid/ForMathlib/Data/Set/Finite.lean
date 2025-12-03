@@ -1,5 +1,5 @@
-import Mathlib.Data.Set.Finite.Lattice
-import Mathlib.Data.Set.Notation
+import Mathlib.Data.Set.Finite.Lattice -- inefficient import
+import Mathlib.Data.Set.Notation -- inefficient import
 
 open Set
 
@@ -53,7 +53,6 @@ lemma Set.Finite.subset_iUnion_mono_iff {ι : Type*} [LE ι] [IsDirected ι (· 
 @[simp] lemma insert_infinite_iff {x : α} {s : Set α} : (insert x s).Infinite ↔ s.Infinite := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.mono (subset_insert _ _)⟩
   contrapose! h
-  rw [not_infinite] at h ⊢
   exact h.insert x
 
 /-- Every directed family of sets containing a finite set contains its intersection. -/

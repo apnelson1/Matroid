@@ -1,3 +1,6 @@
+import Mathlib.Data.Fin.VecNotation
+import Mathlib.Logic.Function.CompTypeclasses
+
 import Matroid.Extension.Minor
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.Order.Quotient

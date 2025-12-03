@@ -1,10 +1,9 @@
 import Matroid.ForMathlib.Card
-import Mathlib.Combinatorics.Matroid.Circuit
+import Mathlib.Combinatorics.Matroid.Circuit -- inefficient import
 import Mathlib.Combinatorics.Matroid.Rank.ENat
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Matroid.Sum
 import Matroid.ForMathlib.Set
-import Mathlib.Data.ENat.Lattice
 import Mathlib.Data.Set.Subset
 
 /-!
@@ -16,11 +15,9 @@ variable {α : Type*} {M : Matroid α} {C C' I X K C₁ C₂ R E D : Set α} {e 
 open Set Set.Notation Function
 namespace Matroid
 
-
 section Dual
 
 variable {B : Set α}
-
 
 lemma IsBasis.switch_subset_of_isBasis_closure {I₀ J₀ : Set α} (hIX : M.IsBasis I X) (hI₀ : I₀ ⊆ I)
     (hJ₀X : J₀ ⊆ X) (hJ₀ : M.IsBasis J₀ (M.closure I₀)) : M.IsBasis ((I \ I₀) ∪ J₀) X := by

@@ -3,7 +3,7 @@ import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Matroid.Constructions
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.Tactic.TautoSet
-import Mathlib.Tactic.Peel
+import Mathlib.Tactic.Peel -- inefficient import
 
 
 lemma add_one_add_one {R : Type*} [AddMonoidWithOne R] (a : R) : (a + 1) + 1 = a + 2 := by

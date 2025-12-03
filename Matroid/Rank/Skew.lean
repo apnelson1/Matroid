@@ -101,7 +101,7 @@ lemma nullity_union_eq_iff (hdj : Disjoint X Y) (hfin : M.nullity (X ∪ Y) ≠ 
     (hXE : X ⊆ M.E := by aesop_mat) (hYE : Y ⊆ M.E := by aesop_mat) :
     M.nullity (X ∪ Y) = M.nullity X + M.nullity Y ↔ M.Skew X Y := by
   rw [Skew, ← tsum_nullity_eq_nullity_iUnion_iff_isSkewFamily]
-  · simp [tsum_bool, add_comm]
+  · simp
   · rwa [pairwise_on_bool Disjoint.symm]
   · simp [hXE, hYE]
   simpa [lt_top_iff_ne_top]

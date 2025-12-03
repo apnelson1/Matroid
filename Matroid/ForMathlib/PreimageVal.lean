@@ -1,5 +1,5 @@
-
-import Mathlib.Data.Set.Subset
+import Mathlib.Data.Set.Image
+import Mathlib.Data.Set.Notation
 
 open Function Set.Notation
 

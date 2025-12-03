@@ -1,11 +1,10 @@
-import Mathlib.Combinatorics.Matroid.Rank.ENat
-import Mathlib.Combinatorics.Matroid.Rank.Finite
+import Mathlib.Combinatorics.Matroid.Rank.ENat -- inefficient import
+import Mathlib.Combinatorics.Matroid.Rank.Finite -- inefficient import
 import Matroid.Loop
 import Matroid.OnUniv
 import Matroid.ForMathlib.Other
 import Matroid.ForMathlib.Matroid.Closure
 import Matroid.ForMathlib.Matroid.Sum
-import Mathlib.Tactic.TautoSet
 
 /- The rank `M.eRk X` of a set `X` in a matroid `M` is the size of one of its bases,
 as a term in `ℕ∞`.

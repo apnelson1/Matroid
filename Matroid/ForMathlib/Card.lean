@@ -1,6 +1,6 @@
 import Mathlib.Data.Set.Card
-import Mathlib.Data.Set.Finite.Lattice
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Data.Set.Finite.Lattice -- inefficient import
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset -- inefficient import
 import Mathlib.Algebra.BigOperators.WithTop
 import Mathlib.Algebra.BigOperators.Finprod
 

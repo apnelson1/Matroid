@@ -1,6 +1,5 @@
 import Matroid.ForMathlib.Other
 import Matroid.Minor.Rank
-import Mathlib.Data.ENat.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Cases
 

@@ -1,5 +1,5 @@
 import Matroid.ForMathlib.ENat
-import Mathlib.Data.ENat.Lattice
+import Mathlib.Data.ENat.Lattice -- inefficient import
 
 namespace ENat
 

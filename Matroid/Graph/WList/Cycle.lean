@@ -1,6 +1,4 @@
 import Matroid.Graph.WList.Sublist
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Data.List.Rotate
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} (m n : ℕ)
 

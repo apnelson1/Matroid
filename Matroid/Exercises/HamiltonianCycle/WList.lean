@@ -1,5 +1,3 @@
-import Mathlib.Tactic
-import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.ForMathlib.Tactic.ENatToNat
 

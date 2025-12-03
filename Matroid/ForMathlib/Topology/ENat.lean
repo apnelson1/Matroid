@@ -2,11 +2,11 @@ import Mathlib.Topology.Instances.ENat
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Order.T5
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Mathlib.Topology.Order.Monotone
-import Mathlib.Tactic.ENatToNat
+import Mathlib.Topology.Order.Monotone -- inefficient import
+import Mathlib.Tactic.ENatToNat -- inefficient import
 import Matroid.ForMathlib.ENat
 import Matroid.ForMathlib.Card
-import Mathlib.Algebra.Group.Pointwise.Finset.BigOperators
+import Mathlib.Algebra.Group.Pointwise.Finset.BigOperators -- inefficient import
 
 open Set Set.Notation Function
 
@@ -205,7 +205,7 @@ section Card
 @[simp] protected theorem tsum_const (c : ℕ∞) : ∑' _ : ι, c = c * ENat.card ι := by
   obtain hι | hι := finite_or_infinite ι
   · have := Fintype.ofFinite ι
-    simp [tsum_eq_sum (s := Finset.univ) (by simp), mul_comm]
+    simp [mul_comm]
   obtain rfl | hne := eq_or_ne c 0
   · simp
   rw [ENat.tsum_eq_top_of_support_infinite, card_eq_top_of_infinite, mul_top hne]
