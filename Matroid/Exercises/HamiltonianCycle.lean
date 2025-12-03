@@ -367,10 +367,23 @@ lemma Bound_on_indepSet {G : Graph α β} [G.Simple] [G.Finite]
         by_contra hcon1
         -- have : w ∈ IncW := by exact mem_inter hwInc hcon1
         exact hwnotinIncW (mem_inter hwInc hcon1)
-      -- need w ∈ S
       -- if w not in V(H) ⊆ V(G - S), then w must be in S?
-
-      sorry
+      have hsubset : V(H) ⊆ V(G - S) := by (expose_names; exact IsCompOf.subset hH_1)
+      have hvH : v ∈ V(H) := by exact mem_of_mem_inter_left hx
+      by_contra hcon2 -- we want w ∈ S, so assume w ∉ S
+      have hvnotS : v ∉ S := by
+        exact Set.notMem_of_mem_diff (hsubset hvH)
+      have hvwadj : (G-S).Adj v w := by
+        refine (vertexDelete_adj_iff G S).mpr ?_
+        refine and_assoc.mp ?_
+        exact Classical.not_imp.mp fun a ↦ hcon2 (a (Classical.not_imp.mp fun a ↦ hvnotS (a hwInc)))
+      have : w ∈ V(H) := by
+        have : H.IsCompOf G - S := by (expose_names; exact hH_1)
+        -- have v and w are adj in G - S, V(H) is a connected component in G - S
+        -- so w must be in H also
+        have hclosed : H ≤c G - S := by (expose_names; exact IsCompOf.isClosedSubgraph hH_1)
+        exact (IsClosedSubgraph.mem_iff_mem_of_adj hclosed hvwadj).mp hvH
+      exact hwnotinH this
     refine ncard_le_ncard hH1 (Finite.subset gfin hS.1)
     -- exact Finite.subset gfin hS.1
   linarith
