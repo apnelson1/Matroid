@@ -1,5 +1,5 @@
-import Mathlib.Algebra.Module.Submodule.Map
-import Mathlib.LinearAlgebra.Dimension.Finrank
+import Mathlib.Algebra.Module.Submodule.Map -- inefficient import
+import Mathlib.LinearAlgebra.Dimension.Finrank -- inefficient import
 
 theorem LinearEquiv.map_coe {R M₁ M₂ : Type*} [CommSemiring R]
     [AddCommMonoid M₁] [AddCommMonoid M₂] [Module R M₁] [Module R M₂] (e : M₁ ≃ₗ[R] M₂)

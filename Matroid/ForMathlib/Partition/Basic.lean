@@ -1,4 +1,5 @@
 import Mathlib.Order.CompactlyGenerated.Basic
+import Mathlib.Tactic.ApplyFun
 import Matroid.ForMathlib.Lattice
 import Matroid.ForMathlib.Relation
 import Matroid.ForMathlib.Function -- for Function.onFun_comp

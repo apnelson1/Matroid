@@ -1,15 +1,12 @@
 import Mathlib.Logic.Embedding.Set
 import Mathlib.Tactic.NthRewrite
-import Mathlib.Data.Set.Subset
+import Mathlib.Logic.Equiv.Set
 
 open Set Function Set.Notation
 
 section embeddingInsert
 
 variable {α β γ : Type*} {a : α} {b : β} {s : Set α} {f : s ↪ β}
-
-
-
 
 
 @[simp] theorem Equiv.ofInjective_image (f : α → β) (hf : f.Injective) (s : Set α) :

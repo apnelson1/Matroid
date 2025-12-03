@@ -1,11 +1,8 @@
 import Matroid.ForMathlib.PartialEquiv
-import Mathlib.Data.Set.Card
-import Mathlib.Data.Matrix.Basic
 
 variable {α β : Type*} {s s₁ s₂ t t' : Set α} {f : α → β }
 
 open Set Function
-
 
 section ENat
 

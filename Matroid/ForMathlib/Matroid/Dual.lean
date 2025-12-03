@@ -1,4 +1,4 @@
-import Mathlib.Combinatorics.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
 
 variable {α : Type*} {X Y D : Set α} {M : Matroid α}
 

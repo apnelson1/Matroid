@@ -1,5 +1,5 @@
 import Matroid.Circuit
-import Mathlib.Combinatorics.Matroid.Loop
+import Mathlib.Combinatorics.Matroid.Loop -- inefficient import
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Matroid.Closure
 import Matroid.OnUniv

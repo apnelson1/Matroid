@@ -975,7 +975,7 @@ lemma head_rel {α : Type*} {r : α → α → Prop} [IsPreorder α r] {l : List
 lemma rel_last {α : Type*} {r : α → α → Prop} [IsPreorder α r] {l : List α}
     (h : l.IsChain r) (hne : l ≠ []) : ∀ x ∈ l, r x (l.getLast hne) := by
   rw [← l.reverse_reverse, isChain_reverse] at h
-  have := IsPreorder.swap r
+  have : IsPreorder α fun a b ↦ r b a := Relation.instIsPreorderFlip_matroid
   have := by simpa using h.head_rel (by simpa)
   rwa [List.head_reverse] at this
 

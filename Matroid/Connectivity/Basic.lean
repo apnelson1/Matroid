@@ -2,8 +2,6 @@ import Matroid.Rank.Skew
 import Matroid.ForMathlib.Matroid.Map
 import Matroid.ForMathlib.ENat
 import Matroid.Uniform
-import Mathlib.Tactic.TautoSet
-import Mathlib.Data.Set.Prod
 
 open Set Function
 

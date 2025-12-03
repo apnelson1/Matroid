@@ -1,7 +1,7 @@
 import Matroid.Representation.StandardRep
 import Matroid.Order.Quotient
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.LinearAlgebra.Matrix.Determinant.Basic -- inefficient import
+import Mathlib.LinearAlgebra.FiniteDimensional.Defs -- inefficient import
 
 -- Experiments with getting duality to work nicely.
 

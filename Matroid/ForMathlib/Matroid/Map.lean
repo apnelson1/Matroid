@@ -1,4 +1,4 @@
-import Mathlib.Combinatorics.Matroid.Map
+import Mathlib.Combinatorics.Matroid.Map -- inefficient import
 import Matroid.ForMathlib.Matroid.Basic
 import Matroid.ForMathlib.Function
 

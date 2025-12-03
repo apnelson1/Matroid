@@ -1,5 +1,5 @@
 import Matroid.Graph.Finite
-import Mathlib.Data.Finsupp.Basic
+import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Matroid.ForMathlib.Topology.ENat
 import Matroid.ForMathlib.Tactic.ENatToNat
 

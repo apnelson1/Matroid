@@ -1,4 +1,3 @@
-import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 import Matroid.Graph.WList.Ops
 import Matroid.ForMathlib.List
 

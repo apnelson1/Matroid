@@ -1,8 +1,8 @@
-import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.FractionRing -- inefficient import
 import Mathlib.LinearAlgebra.Vandermonde
 import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import Mathlib.Algebra.Algebra.Basic
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition -- inefficient import
+import Mathlib.Algebra.Algebra.Basic -- inefficient import
 
 set_option linter.style.longLine false
 

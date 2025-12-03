@@ -1,4 +1,4 @@
-import Mathlib.Combinatorics.Matroid.Closure
+import Mathlib.Combinatorics.Matroid.Closure -- inefficient import
 import Matroid.Constructions.Project
 
 open Set

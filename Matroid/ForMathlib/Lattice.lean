@@ -1,6 +1,6 @@
-import Mathlib.Order.SupIndep
+import Mathlib.Order.SupIndep -- inefficient import
 import Mathlib.Order.Atoms
-import Mathlib.Tactic.ApplyFun
+-- import Mathlib.Tactic.ApplyFun -- inefficient import
 
 open Set
 

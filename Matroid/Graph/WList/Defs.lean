@@ -1,5 +1,3 @@
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Finset.Dedup
 import Mathlib.Data.Sym.Sym2
 import Mathlib.Data.Set.Card
 
@@ -717,7 +715,7 @@ lemma get_idxOf (w : WList α β) (hxw : x ∈ w) : w.get (w.idxOf x) = x := by
 
 lemma idxOf_get (hw : w.vertex.Nodup) {n} (hn : n ≤ w.length) : w.idxOf (w.get n) = n := by
   rw [get_eq_getD_vertex, idxOf_eq_idxOf_vertex, ← vertex_getLast, getD_eq_getElem?_getD,
-    ← List.Nodup.idxOf_getElem hw n (by simpa [Nat.lt_add_one_iff])]
+    ← hw.idxOf_getElem n (by simpa [Nat.lt_add_one_iff])]
   simp
 
 lemma idxOf_last (w : WList α β) (hw : w.vertex.Nodup) : w.idxOf w.last = w.length := by

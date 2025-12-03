@@ -1,5 +1,5 @@
 -- import Mathlib.LinearAlgebra.LinearIndependent
-import Mathlib.LinearAlgebra.Projectivization.Basic
+-- import Mathlib.LinearAlgebra.Projectivization.Basic
 import Matroid.Connectivity.Skew
 -- import Matroid.ForMathlib.LinearAlgebra.LinearIndependent
 import Matroid.ForMathlib.LinearAlgebra.LinearIndepOn

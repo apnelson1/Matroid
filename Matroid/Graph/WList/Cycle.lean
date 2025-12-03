@@ -1,6 +1,4 @@
 import Matroid.Graph.WList.Sublist
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Data.List.Rotate
 
 variable {α β : Type*} {x y z u v : α} {e f : β} {w w₁ w₂ : WList α β} (m n : ℕ)
 
@@ -84,7 +82,7 @@ lemma IsClosed.idxOf_lt_length {C : WList α β} [DecidableEq α] (hC : C.IsClos
     (hne : C.Nonempty) : C.idxOf x < C.length := by
   induction C using concat_induction with
   | nil u => simp at hne
-  | @concat w f y ih =>
+  | concat w f y ih =>
   · obtain rfl : y = w.first := by simpa using hC
     have hxw : x ∈ w := by
       obtain hxw | rfl := mem_concat.1 hx

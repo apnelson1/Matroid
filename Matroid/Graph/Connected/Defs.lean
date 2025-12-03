@@ -1,4 +1,3 @@
-import Mathlib.Tactic.TautoSet
 import Matroid.Graph.Connected.Component
 import Matroid.Graph.Connected.Set.Defs
 

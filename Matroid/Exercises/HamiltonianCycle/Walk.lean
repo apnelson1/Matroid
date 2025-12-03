@@ -1,5 +1,3 @@
-import Mathlib.Tactic
-import Mathlib.Data.Set.Finite.Basic
 import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Walk.Cycle
 import Matroid.ForMathlib.Tactic.ENatToNat
@@ -19,10 +17,8 @@ variable {α β ι : Type*} {x y z u v a b : α} {e f : β} {G H : Graph α β} 
          {m n : ℕ}
 
 -- In a simple graph, walks are completely dictated by their vertices
-lemma IsWalk.eq_of_vertex_eq
-    {G : Graph α β} [G.Simple]
-    {p q} (hp : G.IsWalk p) (hq : G.IsWalk q) (heq : p.vertex = q.vertex) :
-    p = q := by
+lemma IsWalk.eq_of_vertex_eq [G.Simple] (hp : G.IsWalk p) (hq : G.IsWalk q)
+    (heq : p.vertex = q.vertex) : p = q := by
   induction q generalizing p with
   | nil x =>
       cases p <;> simp_all
@@ -31,43 +27,38 @@ lemma IsWalk.eq_of_vertex_eq
       case cons x' e' w' =>
         exact IsLink.unique_edge (G := G) hp hq.1
 
-lemma IsPath.vertex_length_eq_vertexSet_ncard {p} (hp : G.IsPath p) :
-    p.vertex.length = V(p).ncard := by
+lemma IsPath.vertex_length_eq_vertexSet_ncard (hp : G.IsPath p) : p.vertex.length = V(p).ncard := by
   induction p with simp_all
 
-lemma IsPath.vertex_length_eq_vertexSet_encard {p} (hp : G.IsPath p) :
+lemma IsPath.vertex_length_eq_vertexSet_encard (hp : G.IsPath p) :
     p.vertex.length = V(p).encard := by
   have vx_finite : V(p).Finite := p.vertexSet_finite
   rw [← vx_finite.cast_ncard_eq]
   enat_to_nat
   exact hp.vertex_length_eq_vertexSet_ncard
 
-lemma IsCycle.length_eq_tail_vertex_length {C} (hC : G.IsCycle C) :
+lemma IsCycle.length_eq_tail_vertex_length (hC : G.IsCycle C) :
     C.length = C.tail.vertex.length := by
   induction C with simp_all
 
-lemma IsCycle.length_eq_vertexSet_encard {C : WList α β} (hC : G.IsCycle C ) :
-    C.length = V(C).encard := by
+lemma IsCycle.length_eq_vertexSet_encard (hC : G.IsCycle C) : C.length = V(C).encard := by
   rw [hC.length_eq_tail_vertex_length, ← hC.isClosed.vertexSet_tail]
   have : G.IsPath C.tail := hC.tail_isPath
   exact this.vertex_length_eq_vertexSet_encard
 
-lemma IsCycle.length_eq_vertexSet_ncard {G : Graph α β} {C : WList α β} (hC : G.IsCycle C ) :
-    C.length = V(C).ncard := by
+lemma IsCycle.length_eq_vertexSet_ncard (hC : G.IsCycle C) : C.length = V(C).ncard := by
   have vx_finite : V(C).Finite := C.vertexSet_finite
   have := hC.length_eq_vertexSet_encard
   rw [←vx_finite.cast_ncard_eq] at this
   enat_to_nat; assumption
 
-
-private
-lemma IsWalk.vertex_mem_of_mem' {p} (hp : G.IsWalk p) (x) (hx : x ∈ p.vertex) : x ∈ V(G) :=
+private lemma IsWalk.vertex_mem_of_mem' (hp : G.IsWalk p) (x) (hx : x ∈ p.vertex) : x ∈ V(G) :=
   hp.vertex_mem_of_mem hx
 
 --------- vertex_coe
 
 -- Important def: for any graph G, we have an embedding {p // G.IsWalk p} ↪ List V(G)
-def IsWalk.vertex_coe {p} (hp : G.IsWalk p) : List ↑V(G) :=
+def IsWalk.vertex_coe (hp : G.IsWalk p) : List ↑V(G) :=
   p.vertex.attachWith V(G) (vertex_mem_of_mem' hp)
 
 lemma IsWalk.vertex_coe_inj [G.Simple]

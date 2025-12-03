@@ -1,5 +1,5 @@
-import Mathlib.Data.Set.Finite.Lattice
-import Mathlib.Data.Set.Notation
+import Mathlib.Data.Set.Finite.Lattice -- inefficient import
+import Mathlib.Data.Set.Notation -- inefficient import
 
 open Set
 

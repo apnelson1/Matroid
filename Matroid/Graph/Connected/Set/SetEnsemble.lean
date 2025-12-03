@@ -296,15 +296,15 @@ lemma extend_right_last (A : G.SetEnsemble) (hAST : A.between S T) (hPT : V(P) �
     (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
     last '' (A.extend_right hAST P hPT hPfirst hP).paths =
     insert P.last ((last '' A.paths) \ V(P)) := by
-  simp only [extend_right_paths, image_insert_eq, append_last, A.last_injOn.image_diff]
-  rw [inter_eq_right.mpr (by simp)]
+  simp only [extend_right_paths, image_insert_eq, append_last, A.last_injOn.image_diff,
+    of_vertex_mem_setEnsemble, inter_singleton_of_mem, image_singleton]
   congr 1
   have hl : last '' A.paths ∩ V(P) = {P.first} := by
     apply subset_antisymm (hPfirst ▸ Set.inter_subset_inter_left _ A.image_last_subset)
     simp only [subset_inter_iff, singleton_subset_iff, mem_image, WList.mem_vertexSet_iff,
       P.first_mem, and_true]
     exact ⟨_, by simp, A.pathr_first_eq_of_vertex_last hAST hPfirst hPT⟩
-  rw [diff_eq_diff_iff_inter_eq_inter, V(P).inter_comm, hl,
+  rw [diff_eq_diff_iff_inter_eq_inter, V(P).inter_comm, hl, ← image_singleton,
     ← A.last_injOn.image_inter (by simp) subset_rfl, inter_eq_left.mpr (by simp)]
   simp only [image_singleton, singleton_eq_singleton_iff]
   exact pathr_first_eq_of_vertex_last hAST hPfirst hPT

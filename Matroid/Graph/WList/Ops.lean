@@ -1,7 +1,4 @@
 import Matroid.Graph.WList.Defs
-import Mathlib.Data.List.Nodup
-import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
-import Mathlib.Data.Finset.Disjoint
 
 open Set Function List Nat WList
 variable {α β : Type*} {u v x y z : α} {e e' f g : β} {S T U: Set α}
@@ -424,12 +421,12 @@ lemma isLink_reverse_iff : w.reverse.IsLink e x y ↔ w.IsLink e x y := by
   simp [isLink_iff_dInc, or_comm]
 
 lemma concat_induction {motive : WList α β → Prop} (nil : ∀ u, motive (nil u))
-    (concat : ∀ {w} e x, motive w → motive (w.concat e x)) (w : WList α β) : motive w := by
+    (concat : ∀ w e x, motive w → motive (w.concat e x)) (w : WList α β) : motive w := by
   suffices h : ∀ (w' : WList α β), motive w'.reverse by simpa using (h w.reverse)
   intro w'
   induction w' with
   | nil u => exact nil u
-  | cons u e w ih => exact concat _ _ ih
+  | cons u e w ih => exact concat _ _ _ ih
 
 lemma wellFormed_reverse_iff : w.reverse.WellFormed ↔ w.WellFormed := by
   simp [WellFormed]

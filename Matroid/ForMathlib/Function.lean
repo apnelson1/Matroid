@@ -1,6 +1,6 @@
 
-import Mathlib.Data.Set.Pairwise.Basic
-import Mathlib.Data.Set.Subset
+import Mathlib.Data.Set.Pairwise.Basic -- inefficient import
+import Mathlib.Data.Set.Subset -- inefficient import
 import Matroid.ForMathlib.Relation
 
 open Function Set Set.Notation

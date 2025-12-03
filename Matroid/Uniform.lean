@@ -1,8 +1,6 @@
 import Matroid.Constructions.Truncate
 import Matroid.ForMathlib.FinDiff
-import Mathlib.Tactic.Linarith
-import Mathlib.Combinatorics.Matroid.Sum
-import Mathlib.Data.Finset.SDiff
+import Mathlib.Combinatorics.Matroid.Sum -- inefficient import
 import Matroid.Simple
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.Minor.Iso
