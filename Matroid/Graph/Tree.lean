@@ -117,9 +117,7 @@ lemma IsForest.ncard_edgeSet_lt [G.Finite] (hG : G.IsForest) (hne : V(G).Nonempt
 
 lemma Connected.encard_vertexSet_le (hG : G.Connected) : V(G).encard ≤ E(G).encard + 1 := by
   obtain ⟨T, hT, hTG⟩ := hG.exists_isTree_spanningSubgraph
-  rw [← hTG.vertexSet_eq, hT.encard_vertexSet]
-  gcongr
-  exact encard_le_encard <| edgeSet_mono hTG.le
+  grw [← hTG.vertexSet_eq, hT.encard_vertexSet, hTG.le]
 
 lemma Connected.ncard_vertexSet_le [G.Finite] (hG : G.Connected) : V(G).ncard ≤ E(G).ncard + 1 := by
   rw [← @Nat.cast_le ℕ∞, Nat.cast_add, G.vertexSet_finite.cast_ncard_eq,
