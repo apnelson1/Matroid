@@ -296,7 +296,7 @@ lemma extend_right_last (A : G.SetEnsemble) (hAST : A.between S T) (hPT : V(P) �
     (hPfirst : A.vertexSet ∩ V(P) = {P.first}) (hP : G.IsPath P) :
     last '' (A.extend_right hAST P hPT hPfirst hP).paths =
     insert P.last ((last '' A.paths) \ V(P)) := by
-  simp [extend_right_paths, image_insert_eq, A.last_injOn.image_diff]
+  simp only [extend_right_paths, image_insert_eq, append_last, A.last_injOn.image_diff]
   rw [inter_eq_right.mpr (by simp)]
   congr 1
   have hl : last '' A.paths ∩ V(P) = {P.first} := by

@@ -1,6 +1,7 @@
 import Matroid.Circuit
 import Mathlib.Combinatorics.Matroid.Loop
 import Matroid.ForMathlib.Finset
+import Matroid.ForMathlib.Matroid.Closure
 import Matroid.OnUniv
 
 /-
@@ -10,12 +11,94 @@ import Matroid.OnUniv
 -/
 
 
-variable {α β : Type*} {M N : Matroid α} {e f : α} {B L L' I X Y Z F C K : Set α}
+variable {α β : Type*} {M N : Matroid α} {e f : α} {B D L L' I X Y Z F C K : Set α}
 
 open Set
 open scoped symmDiff
 
 namespace Matroid
+
+lemma removeLoops_ground_eq_diff : M.removeLoops.E = M.E \ M.loops := by
+  ext x
+  simp only [removeLoops_ground_eq, isNonloop_iff, mem_setOf_eq, mem_diff]
+  rw [and_comm]
+  rfl
+
+/-- remove the coloops of a matroid `M`. -/
+def removeColoops (M : Matroid α) := M✶.removeLoops✶
+
+lemma removeLoops_dual : M.removeLoops✶ = M✶.removeColoops := by
+  rw [removeColoops, dual_dual]
+
+lemma removeColoops_dual : M.removeColoops✶ = M✶.removeLoops := by
+  rw [removeColoops, dual_dual]
+
+@[simp]
+lemma removeColoops_coloops : M.removeColoops.coloops = ∅ := by
+  simp [removeColoops, dual_coloops]
+
+lemma union_dep_iff_dep_of_subset_coloops (hX : X ⊆ M.coloops) : M.Dep (D ∪ X) ↔ M.Dep D := by
+  rw [Dep, union_indep_iff_indep_of_subset_coloops hX, Dep, union_subset_iff,
+    and_iff_left (hX.trans M.coloops_subset_ground)]
+
+lemma diff_dep_iff_dep_of_subset_coloops (hX : X ⊆ M.coloops) : M.Dep (D \ X) ↔ M.Dep D := by
+  rwa [← union_dep_iff_dep_of_subset_coloops hX, diff_union_self,
+    union_dep_iff_dep_of_subset_coloops]
+
+attribute [simp] union_coloops_indep_iff
+
+@[simp]
+lemma union_coloops_dep_iff : M.Dep (X ∪ M.coloops) ↔ M.Dep X :=
+  union_dep_iff_dep_of_subset_coloops rfl.subset
+
+lemma union_coindep_iff_coindep_of_subset_loops (hX : X ⊆ M.loops) :
+    M.Coindep (I ∪ X) ↔ M.Coindep I :=
+  M✶.union_indep_iff_indep_of_subset_coloops (K := X) (by rwa [dual_coloops])
+
+@[simp]
+lemma union_loops_coindep_iff : M.Coindep (X ∪ M.loops) ↔ M.Coindep X :=
+  union_coindep_iff_coindep_of_subset_loops rfl.subset
+
+lemma union_codep_iff_codep_of_subset_loops (hX : X ⊆ M.loops) :
+    M.Codep (I ∪ X) ↔ M.Codep I :=
+  M✶.union_dep_iff_dep_of_subset_coloops (X := X) (by rwa [dual_coloops])
+
+@[simp]
+lemma union_loops_codep_iff : M.Codep (X ∪ M.loops) ↔ M.Codep X :=
+  union_codep_iff_codep_of_subset_loops rfl.subset
+
+lemma eRk_union_eq_of_subset_coloops (X : Set α) (hK : K ⊆ M.coloops) :
+    M.eRk (X ∪ K) = M.eRk X + (K \ X).encard := by
+  obtain ⟨I, hI, hssu⟩ :=
+    ((M.coloops_indep.subset hK).inter_left X).subset_isBasis'_of_subset inter_subset_left
+  have := hI.subset
+  rw [← eRk_union_closure_left_eq, ← hI.closure_eq_closure, eRk_union_closure_left_eq,
+    Indep.eRk_eq_encard, hI.eRk_eq_encard, ← union_diff_self, encard_union_eq disjoint_sdiff_right,
+      show K \ I = K \ X by tauto_set]
+  rw [union_indep_iff_indep_of_subset_coloops hK]
+  exact hI.indep
+
+@[simp]
+lemma loops_indep_iff : M.Indep M.loops ↔ M.Loopless := by
+  rw [loopless_iff_forall_not_isLoop]
+  exact ⟨fun h e heE he ↦ (h.isNonloop_of_mem he).not_isLoop he,
+    fun h ↦ M.empty_indep.subset fun e (he : M.IsLoop e) ↦ (h e he.mem_ground he).elim⟩
+
+@[simp]
+lemma loops_dep_iff : M.Dep M.loops ↔ M.loops.Nonempty := by
+  rw [← not_indep_iff, loops_indep_iff, loopless_iff, nonempty_iff_ne_empty]
+
+@[simp]
+lemma coloops_coindep_iff : M.Coindep M.coloops ↔ M✶.Loopless :=
+  loops_indep_iff
+
+@[simp]
+lemma coloops_codep_iff : M.Codep M.coloops ↔ M.coloops.Nonempty :=
+  loops_dep_iff
+
+@[simp]
+lemma closure_coloops (M : Matroid α) : M.closure M.coloops = M.coloops ∪ M.loops :=
+  closure_eq_of_subset_coloops rfl.subset
 
 section IsLoopEquiv
 
@@ -127,6 +210,8 @@ end IsLoopEquiv
 
 section Loopless
 
+instance freeOn_loopless (E : Set α) : Loopless (freeOn E) := by
+  simp [loopless_iff_forall_not_isLoop]
 
 @[simp]
 lemma OnUniv.toIsNonloop [Loopless M] [OnUniv M] (e : α) : M.IsNonloop e :=
@@ -146,12 +231,19 @@ lemma OnUniv.toIsNonloop [Loopless M] [OnUniv M] (e : α) : M.IsNonloop e :=
 @[simp] lemma two_le_girth_iff : 2 ≤ M.girth ↔ M.Loopless := by
   rw [show (2 : ℕ∞) = 1 + 1 from rfl, ENat.add_one_le_iff (by simp), one_lt_girth_iff]
 
-
 @[simp]
 lemma removeLoops_isNonloop_iff : M.removeLoops.IsNonloop e ↔ M.IsNonloop e := by
   rw [removeLoops_eq_restrict, restrict_isNonloop_iff, mem_setOf, and_self]
 
 end Loopless
+
+@[simp]
+lemma loopyOn_loops (E : Set α) : (loopyOn E).loops = E := by
+  simp [loops]
+
+@[simp]
+lemma loopyOn_coloops (E : Set α) : (loopyOn E).coloops = ∅ := by
+  simp [coloops]
 
 @[simp]
 lemma removeLoops_isColoop_eq (M : Matroid α) : M.removeLoops.IsColoop = M.IsColoop := by
@@ -162,6 +254,10 @@ lemma removeLoops_isColoop_eq (M : Matroid α) : M.removeLoops.IsColoop = M.IsCo
 lemma removeLoops_coloops_eq (M : Matroid α) : M.removeLoops.coloops = M.coloops := by
   ext e
   rw [← isColoop_iff_mem_coloops, removeLoops_isColoop_eq, isColoop_iff_mem_coloops]
+
+@[simp]
+lemma removeColoops_loops_eq (M : Matroid α) : M.removeColoops.loops = M.loops := by
+  rw [← dual_coloops, removeColoops_dual, removeLoops_coloops_eq, dual_coloops]
 
 lemma restrict_removeLoops (R : Set α) : (M ↾ R).removeLoops = (M ↾ (R ∩ M.E)).removeLoops := by
   rw [removeLoops_eq_restrict, restrict_restrict_eq _ (by simp [subset_def]),
@@ -186,10 +282,22 @@ lemma eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.loops ∪ M.coloops) 
   rw [subset_diff, and_iff_right hB.subset_ground]
   exact hB.indep.disjoint_loops
 
+lemma exists_eq_uniqueBaseOn_of_loops_union_coloops (hE : M.E = M.loops ∪ M.coloops) :
+    ∃ B E, B ⊆ E ∧ M = uniqueBaseOn B E :=
+  ⟨M.coloops, M.E, M.coloops_subset_ground, eq_uniqueBaseOn_of_loops_union_coloops hE⟩
+
+lemma exists_eq_uniqueBaseOn_or_removeColoops_rankPos (M : Matroid α) :
+    (∃ B E, B ⊆ E ∧ M = uniqueBaseOn B E) ∨ M.removeColoops.RankPos := by
+  obtain h1 | ⟨L, hL⟩ := M.removeColoops.eq_loopyOn_or_rankPos'.symm; exact .inr h1
+  refine .inl <| exists_eq_uniqueBaseOn_of_loops_union_coloops <| subset_antisymm ?_ (by aesop_mat)
+  rw [union_comm, ← diff_subset_iff, ← dual_ground, ← dual_loops, ← removeLoops_ground_eq_diff,
+    ← dual_ground, ← removeColoops, hL, loopyOn_ground, ← removeColoops_loops_eq, hL, loopyOn_loops]
+
 lemma uniqueBaseOn_loops_eq (I E : Set α) : (uniqueBaseOn I E).loops = E \ I := by
   simp [loops]
 
-@[simp] lemma uniqueBaseOn_coloops_eq' (I E : Set α) : (uniqueBaseOn I E).coloops = I ∩ E := by
+@[simp]
+lemma uniqueBaseOn_coloops_eq' (I E : Set α) : (uniqueBaseOn I E).coloops = I ∩ E := by
   simp [coloops, loops, inter_comm I]
 
 lemma uniqueBaseOn_coloops_eq {I E : Set α} (h : I ⊆ E) : (uniqueBaseOn I E).coloops = I := by

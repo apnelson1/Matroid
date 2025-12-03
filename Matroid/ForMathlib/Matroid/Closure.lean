@@ -41,6 +41,10 @@ lemma nonspanning_compl_dual_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M✶.Nonspanning (M.E \ X) ↔ M.Dep X := by
   rw [nonspanning_dual_iff, diff_diff_cancel_left hXE]
 
+lemma Nonspanning.closure_nonspanning (h : M.Nonspanning X) : M.Nonspanning (M.closure X) := by
+  rw [nonspanning_iff, closure_spanning_iff, and_iff_left <| M.closure_subset_ground ..]
+  exact h.not_spanning
+
 lemma codep_compl_iff (hXE : X ⊆ M.E := by aesop_mat) :
     M.Codep (M.E \ X) ↔ M.Nonspanning X := by
   rw [← M.dual_dual, nonspanning_dual_iff, dual_dual, dep_dual_iff, dual_ground]
@@ -66,6 +70,11 @@ lemma not_nonspanning_iff (hXE : X ⊆ M.E := by aesop_mat) :
 lemma not_spanning_iff (hXE : X ⊆ M.E := by aesop_mat) :
     ¬ M.Spanning X ↔ M.Nonspanning X := by
   rw [nonspanning_iff, and_iff_left hXE]
+
+lemma nonspanning_closure_iff (hXE : X ⊆ M.E := by aesop_mat) :
+    M.Nonspanning (M.closure X) ↔ M.Nonspanning X := by
+  rw [nonspanning_iff, closure_spanning_iff, and_iff_left (M.closure_subset_ground ..),
+    not_spanning_iff]
 
 lemma spanning_or_nonspanning (M : Matroid α) (X : Set α) (hXE : X ⊆ M.E := by aesop_mat) :
     M.Spanning X ∨ M.Nonspanning X := by

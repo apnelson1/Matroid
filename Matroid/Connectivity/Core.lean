@@ -49,8 +49,8 @@ lemma removeLoops_core (M : Matroid α) (X : Set α) : M.removeLoops.core X = M.
 
 @[simp]
 lemma eConn_core (M : Matroid α) : M.eConn (M.core X) = M.eConn X := by
-  rw [Matroid.core, eConn_inter_ground, eConn_diff_of_subset_coloops _ rfl.subset,
-    eConn_diff_of_subset_loops _ rfl.subset]
+  rw [Matroid.core, eConn_inter_ground, eConn_diff_of_subset_coloops rfl.subset,
+    eConn_diff_of_subset_loops rfl.subset]
 
 @[simp]
 lemma core_core (M : Matroid α) (X : Set α) : M.core (M.core X) = M.core X := by

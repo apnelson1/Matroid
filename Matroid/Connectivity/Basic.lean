@@ -448,6 +448,17 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
     M.eLocalConn X (Y ∩ M.E) = M.eLocalConn X Y := by
   rw [← eLocalConn_closure_right, closure_inter_ground, eLocalConn_closure_right]
 
+lemma eLocalConn_of_subset_coloops (M : Matroid α) (X : Set α) (hY : Y ⊆ M.coloops) :
+    M.eLocalConn X Y = (X ∩ Y).encard := by
+  nth_rw 1 [(M.coloops_indep.subset hY).isBasis_self.eLocalConn_eq_nullity_project_left X,
+    ← diff_union_inter Y X, nullity_union_eq_nullity_add_encard_diff,
+    disjoint_sdiff_inter.symm.sdiff_eq_left, inter_comm, Indep.nullity_eq, zero_add]
+  · rw [project_indep_iff]
+    exact (M ／ X).coloops_indep.subset <| by grw [contract_coloops_eq, hY]
+  grw [project_closure, diff_union_self, M.subset_closure (Y ∩ X) _, inter_comm,
+    inter_subset_left, ← subset_union_right]
+  grw [inter_subset_left, hY, coloops_subset_ground]
+
 @[simp] lemma eLocalConn_restrict_eq (M : Matroid α) (X Y R : Set α) :
     (M ↾ R).eLocalConn X Y = M.eLocalConn (X ∩ R) (Y ∩ R) := by
   obtain ⟨I, hI⟩ := (M ↾ R).exists_isBasis' X
@@ -460,6 +471,24 @@ lemma eLocalConn_inter_ground (M : Matroid α) (X Y : Set α) :
 lemma eLocalConn_restrict_univ (M : Matroid α) (X Y : Set α) :
     (M ↾ univ).eLocalConn X Y = M.eLocalConn X Y := by
   simp
+
+lemma eLocalConn_union_left_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    M.eLocalConn (X ∪ L) Y = M.eLocalConn X Y := by
+  rw [← eLocalConn_closure_left, closure_union_congr_right (closure_eq_loops_of_subset hL),
+    union_empty, eLocalConn_closure_left]
+
+lemma eLocalConn_union_right_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    M.eLocalConn X (Y ∪ L) = M.eLocalConn X Y := by
+  rw [eLocalConn_comm, eLocalConn_union_left_of_subset_loops hL, eLocalConn_comm]
+
+lemma eLocalConn_diff_left_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    M.eLocalConn (X \ L) Y = M.eLocalConn X Y := by
+  rw [← eLocalConn_union_left_of_subset_loops hL, diff_union_self,
+    eLocalConn_union_left_of_subset_loops hL]
+
+lemma eLocalConn_diff_right_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    M.eLocalConn X (Y \ L) = M.eLocalConn X Y := by
+  rw [eLocalConn_comm, eLocalConn_diff_left_of_subset_loops hL, eLocalConn_comm]
 
 lemma IsRestriction.eLocalConn_eq {N : Matroid α} (hNM : N ≤r M) (X Y : Set α) :
     N.eLocalConn X Y = M.eLocalConn (X ∩ N.E) (Y ∩ N.E) := by
@@ -539,6 +568,11 @@ lemma eLocalConn_delete_eq (M : Matroid α) (X Y D : Set α) :
 lemma eLocalConn_delete_eq_of_disjoint (M : Matroid α) {D : Set α} (hXD : Disjoint X D)
     (hYD : Disjoint Y D) : (M ＼ D).eLocalConn X Y = M.eLocalConn X Y := by
   rw [eLocalConn_delete_eq, hXD.sdiff_eq_left, hYD.sdiff_eq_left]
+
+lemma eLocalConn_delete_eq_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    (M ＼ L).eLocalConn X Y = M.eLocalConn X Y := by
+  rw [eLocalConn_delete_eq, eLocalConn_diff_left_of_subset_loops hL,
+    eLocalConn_diff_right_of_subset_loops hL]
 
 @[simp]
 lemma eLocalConn_map {β : Type*} (M : Matroid α) (f : α → β) (hf) (X Y : Set β) :
@@ -786,15 +820,15 @@ lemma removeLoops_eConn (M : Matroid α) : M.removeLoops.eConn = M.eConn := by
     diff_eq_compl_inter, closure_inter_setOf_isNonloop_eq, ← closure_inter_ground,
     ← diff_eq_compl_inter, eLocalConn_closure_right]
 
-lemma eConn_union_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.loops) :
+lemma eConn_union_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X ∪ L) = M.eConn X := by
   rw [← removeLoops_eConn, ← eConn_inter_ground, removeLoops_ground_eq, setOf_isNonloop_eq,
     show (X ∪ L) ∩ (M.E \ M.loops) = X ∩ (M.E \ M.loops) by tauto_set,
     ← setOf_isNonloop_eq, ← removeLoops_ground_eq, eConn_inter_ground]
 
-lemma eConn_diff_of_subset_loops (X : Set α) {L : Set α} (hL : L ⊆ M.loops) :
+lemma eConn_diff_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
     M.eConn (X \ L) = M.eConn X := by
-  rw [← eConn_union_of_subset_loops _ hL, diff_union_self, eConn_union_of_subset_loops _ hL]
+  rw [← eConn_union_of_subset_loops hL, diff_union_self, eConn_union_of_subset_loops hL]
 
 lemma Indep.nullity_union_le_eConn (hI : M.Indep I) (hJ : M.Indep J) (hIX : I ⊆ X)
     (hJX : Disjoint J X) : M.nullity (I ∪ J) ≤ M.eConn X := by
@@ -867,13 +901,68 @@ lemma eConn_dual (M : Matroid α) (X : Set α) : M✶.eConn X = M.eConn X := by
     OnUniv.ground_diff_eq]
   exact congr_arg _ <| by tauto_set
 
-lemma eConn_union_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M.coloops) :
+lemma eConn_union_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
     M.eConn (X ∪ L) = M.eConn X := by
-  rw [← eConn_dual, eConn_union_of_subset_loops _ hL, eConn_dual]
+  rw [← eConn_dual, eConn_union_of_subset_loops hL, eConn_dual]
 
-lemma eConn_diff_of_subset_coloops (X : Set α) {L : Set α} (hL : L ⊆ M.coloops) :
+lemma eConn_diff_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
     M.eConn (X \ L) = M.eConn X := by
-  rw [← eConn_dual, eConn_diff_of_subset_loops _ hL, eConn_dual]
+  rw [← eConn_dual, eConn_diff_of_subset_loops hL, eConn_dual]
+
+lemma eConn_delete_eq_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    (M ＼ L).eConn X = M.eConn X := by
+  rw [eConn_eq_eLocalConn, eLocalConn_delete_eq_of_subset_loops hL, delete_ground, diff_diff_comm,
+    eLocalConn_diff_right_of_subset_loops hL, eConn_eq_eLocalConn]
+
+lemma eConn_delete_eq_diff_of_subset_loops {L : Set α} (hL : L ⊆ M.loops) :
+    (M ＼ L).eConn X = M.eConn (X \ L) := by
+  rw [eConn_delete_eq_of_subset_loops hL, eConn_diff_of_subset_loops hL]
+
+lemma eConn_contract_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
+    (M ／ L).eConn X = M.eConn X := by
+  rw [← eConn_dual, dual_contract, eConn_delete_eq_of_subset_loops hL, eConn_dual]
+
+lemma eConn_contract_eq_diff_of_subset_coloops {L : Set α} (hL : L ⊆ M.coloops) :
+    (M ／ L).eConn X = M.eConn (X \ L) := by
+  rw [← eConn_dual, dual_contract, eConn_delete_eq_diff_of_subset_loops hL, eConn_dual]
+
+@[simp]
+lemma eConn_loops (M : Matroid α) : M.eConn M.loops = 0 := by
+  rw [← eConn_diff_of_subset_loops rfl.subset]
+  simp
+
+@[simp]
+lemma eConn_coloops (M : Matroid α) : M.eConn M.coloops = 0 := by
+  rw [← eConn_dual, ← dual_loops, eConn_loops]
+
+@[simp]
+lemma eConn_union_loops (M : Matroid α) (X : Set α) : M.eConn (X ∪ M.loops) = M.eConn X :=
+  eConn_union_of_subset_loops rfl.subset
+
+@[simp]
+lemma eConn_union_coloops (M : Matroid α) (X : Set α) : M.eConn (X ∪ M.coloops) = M.eConn X :=
+  eConn_union_of_subset_coloops rfl.subset
+
+lemma eConn_subset_loops (h : X ⊆ M.loops) : M.eConn X = 0 := by
+  rw [← empty_union X, eConn_union_of_subset_loops h, eConn_empty]
+
+lemma eConn_subset_coloops (h : X ⊆ M.coloops) : M.eConn X = 0 := by
+  rw [← empty_union X, eConn_union_of_subset_coloops h, eConn_empty]
+
+lemma eConn_of_subset_loops_union_coloops (h : X ⊆ M.loops ∪ M.coloops) :
+    M.eConn X = 0 := by
+  rw [← diff_union_inter X M.coloops, eConn_union_of_subset_coloops inter_subset_right,
+    eConn_subset_loops]
+  rwa [diff_subset_iff, union_comm]
+
+@[simp]
+lemma uniqueBaseon_eConn (E B X : Set α) : (uniqueBaseOn B E).eConn X = 0 := by
+  have hrw : X ∩ (uniqueBaseOn B E).E =
+    ((X ∩ (uniqueBaseOn B E).loops) ∪ (X ∩ (uniqueBaseOn B E).coloops)) := by
+    simp only [uniqueBaseOn_ground, uniqueBaseOn_loops_eq, uniqueBaseOn_coloops_eq']
+    tauto_set
+  rw [← eConn_inter_ground, hrw, eConn_union_of_subset_coloops inter_subset_right,
+    eConn_subset_loops inter_subset_right]
 
 lemma eRk_add_eRk_compl_eq (M : Matroid α) (X : Set α) :
     M.eRk X + M.eRk (M.E \ X) = M.eRank + M.eConn X := by
@@ -927,6 +1016,18 @@ lemma Indep.eConn_eq_of_compl_indep (hI : M.Indep I) (hI' : M.Indep (M.E \ I)) :
   rw [hI.eConn_eq_eRk_dual, ← hI'.coindep.compl_spanning.eRk_eq, dual_ground,
     diff_diff_cancel_left hI.subset_ground]
 
+lemma eConn_union_eq_of_subset_loops {Y : Set α} (X : Set α) (hY : Y ⊆ M.loops) :
+    M.eConn (X ∪ Y) = M.eConn X := by
+  rw [eConn_eq_eLocalConn, ← diff_diff, ← eLocalConn_closure_closure, ← union_empty (a := _ \ _),
+    ← closure_union_congr_right (closure_eq_loops_of_subset hY), diff_union_self,
+    closure_union_congr_right (closure_eq_loops_of_subset hY),
+    closure_union_congr_right (closure_eq_loops_of_subset hY), union_empty, union_empty,
+    eLocalConn_closure_closure, ← eConn_eq_eLocalConn]
+
+lemma eConn_union_eq_of_subset_coloops {Y : Set α} (X : Set α) (hY : Y ⊆ M.coloops) :
+    M.eConn (X ∪ Y) = M.eConn X := by
+  rw [← eConn_dual, eConn_union_eq_of_subset_loops _ (by simpa), eConn_dual]
+
 /-- The slack term in the inequality `λ(X) ≤ |X|` is the sum of the nullity and conullity of `X`.
 This needs `X ⊆ M.E`, for instance in the case where `X` is a single non-element. -/
 lemma eConn_add_nullity_add_nullity_dual (M : Matroid α) (X : Set α)
@@ -971,6 +1072,12 @@ lemma eRk_add_eRk_dual_eq (M : Matroid α) (X : Set α) (hX : X ⊆ M.E := by ae
 lemma Indep.eConn_eq (hI : M.Indep I) : M.eConn I = M✶.eRk I := by
   rw [← M✶.eConn_add_nullity_dual_eq_eRk _ hI.subset_ground, dual_dual, hI.nullity_eq, add_zero,
     eConn_dual]
+
+lemma Indep.eConn_eq_zero_iff (hI : M.Indep I) : M.eConn I = 0 ↔ I ⊆ M.coloops := by
+  rw [coloops, ← eRk_eq_zero_iff, hI.eConn_eq]
+
+lemma Coindep.eConn_eq_zero_iff (hI : M.Coindep I) : M.eConn I = 0 ↔ I ⊆ M.loops := by
+  rw [← eConn_dual, Indep.eConn_eq_zero_iff hI, dual_coloops]
 
 lemma Coindep.eConn_eq (hI : M.Coindep I) : M.eConn I = M.eRk I := by
   simpa using Indep.eConn_eq hI

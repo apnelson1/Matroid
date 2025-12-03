@@ -82,3 +82,23 @@ lemma Dep.contract_of_indep {D : Set α} (hD : M.Dep D) (hI : M.Indep (D ∩ I))
   refine Dep.contract_of_disjoint ?_ disjoint_sdiff_sdiff
   rwa [hI.isBasis_self.contract_dep_iff, diff_union_inter, disjoint_comm,
     and_iff_left disjoint_sdiff_inter]
+
+lemma Codep.of_contract (h : (M ／ C).Codep X) : M.Codep X :=
+  (dual_contract _ _ ▸ h.dep_dual).of_delete
+
+lemma Coindep.of_contract (h : (M ／ C).Coindep I) : M.Coindep I :=
+  (dual_contract _ _ ▸ h.indep).of_delete
+
+lemma Codep.of_delete {D : Set α} (h : (M ＼ D).Codep X) (hD : D ⊆ M.E := by aesop_mat) :
+    M.Codep (X ∪ D) := by
+  rw [← dep_dual_iff, dual_delete] at h
+  exact union_comm _ _ ▸ h.of_contract
+
+lemma removeLoops_eq_contract (M : Matroid α) : M.removeLoops = M ／ M.loops := by
+  rw [contract_eq_delete_of_subset_loops rfl.subset, removeLoops_eq_delete]
+
+lemma removeColoops_eq_contract (M : Matroid α) : M.removeColoops = M ／ M.coloops := by
+  rw [removeColoops, removeLoops_eq_delete, dual_delete, dual_dual, dual_loops]
+
+lemma removeColoops_eq_delete (M : Matroid α) : M.removeColoops = M ＼ M.coloops := by
+  rw [removeColoops, removeLoops_eq_contract, dual_contract, dual_dual, dual_loops]

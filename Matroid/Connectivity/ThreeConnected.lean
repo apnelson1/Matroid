@@ -66,7 +66,7 @@ lemma TutteConnected.delete {D : Set α} (h : M.TutteConnected (k + M✶.eRk D +
     (hnt : 2 * (k + M✶.eRk D) < M.E.encard + 1) : (M ＼ D).TutteConnected (k + 1) :=
   dual_contract_dual .. ▸ (h.dual.contract (by simpa)).dual
 
-lemma TutteConnected.contractElem (h : M.TutteConnected (k+1)) (hnt : 2 * k < M.E.encard + 1)
+lemma TutteConnected.contractElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.E.encard + 1)
     (e : α) : (M ／ {e}).TutteConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   refine TutteConnected.contract (h.mono (by grw [eRk_singleton_le])) ?_
@@ -192,92 +192,24 @@ theorem TutteConnected.internallyConnected_three_contractElem_or_deleteElem
     (by generalize P'.eConn = a at *; enat_to_nat), hP'conn, hPr,
     one_add_one_eq_two, and_iff_left hle.2, ← encard_le_encard hPl, hle.1]
 
-/-- If `e` is an element of a `2`-connected matroid `M` such that `M / e` is weakly `3`-connected,
-but `M` is not, then `e` belongs to a `2`-separating line (i.e. a rank-2 cocircuit ).
-TODO : Does this generalize to `k + 1` rather than `3`? -/
-lemma TutteConnected.exists_of_weaklyConnected_three_contract_not_weaklyConnected_three
-    (hM : M.TutteConnected (1 + 1)) (h_not_3conn : ¬ M.WeaklyConnected (2 + 1))
-    (h_3conn : (M ／ {e}).WeaklyConnected (2 + 1)) :
-    ∃ K, M.IsCocircuit K ∧ M.eRk K = 2 ∧ e ∈ K := by
-  -- We can assume that `e` is in `M`, since otherwise `M / {e} = M`.
-  have heE : e ∈ M.E := by_contra fun heE ↦ h_not_3conn <| by rwa [← contractElem_eq_self heE]
-  -- Since `M` is `2`-connectd but not weakly 3-connected, there is a strong separation `P` with
-  -- connectivity `1`. We may assume `e ∈ P.left`.
-  simp only [show (2 : ℕ∞) + 1 = 1 + 1 + 1 from rfl, hM.weaklyConnected_add_one_iff, not_forall,
-    exists_prop, not_not] at h_not_3conn
-  obtain ⟨P, hPconn, hP⟩ := h_not_3conn
-  wlog heP : e ∈ P.left generalizing P with aux
-  · exact aux P.symm (by simpa) (by simpa) <| by
-      rwa [P.symm_left, ← P.compl_left, mem_diff, and_iff_left heP]
-  have hePr : e ∉ P.right := by rwa [← compl_left, mem_diff, and_iff_right heE, not_not]
-  -- Since `M` is connected, we can also assume that `e` is a nonloop.
-  have henl : M.IsNonloop e := by
-    rw [← not_isLoop_iff]
-    refine fun hl ↦ hl.not_tutteConnected ?_ rfl.le hM
-    obtain (he | he) := M.E.subsingleton_or_nontrivial
-    · simp [(trivial_of_ground_subsingleton P he).eConn] at hPconn
-    assumption
-  -- Since `P` is a strong separation of `M`, it follows that `P.right` is dependent and codependent
-  -- in `M ／ e`, and that `P.left ＼ e` is dependent in `M ／ e`. Since `P \ e` fails to be a strong
-  -- separation in `M`, all that can go wrong is that `P.left \ e` is coindependent in `M`.
-  have h_coindep : M.Coindep (P.left \ {e}) := by
-    have hstrong := weaklyConnected_iff_forall.1 h_3conn (P.contract {e})
-      (by grw [P.eConn_contract_le, hPconn, one_add_one_eq_two])
-    rw [isStrongSeparation_iff] at hstrong
-    have hcd := hP.codep_right.delete_of_disjoint (D := {e}) (by simpa)
-    rw [← dual_contract, dep_dual_iff] at hcd
-    have hld := hP.dep_left.contract_of_indep (I := {e}) (henl.indep.inter_left _)
-    simp only [contract_left, hld, contract_right, diff_singleton_eq_self hePr,
-      hP.dep_right.contract_of_disjoint (C := {e}) (by simpa), hcd, and_self,
-      and_true, true_and] at hstrong
-    rwa [not_codep_iff, coindep_contract_iff, and_iff_left disjoint_sdiff_left] at hstrong
-  -- Since `P.left \ e` is coindependent and `P.left` is codependent in `M`, we see that
-  -- `P.left \ e` cospans `e` in `M`. Therefore there is a cocircuit `K` with `e ∈ K ⊆ P.left`.
-  have hcl : e ∈ M✶.closure (P.left \ {e}) := by
-    rw [h_coindep.indep.mem_closure_iff_of_notMem (by simp), insert_diff_self_of_mem heP]
-    exact hP.codep_left
-  obtain ⟨K, hKss, hK : M.IsCocircuit K, heK⟩ := exists_isCircuit_of_mem_closure hcl (by simp)
-  have hKE := hK.subset_ground
-  -- Nullity/connectivity arguments now give that `K` must have rank at most `2`.
-  refine ⟨K, hK, le_antisymm ?_ ?_, heK⟩
-  · grw [M.eRk_mono hKss, insert_diff_self_of_mem heP, ← M.eConn_add_nullity_dual_eq_eRk P.left,
-      P.eConn_left, hPconn, ← insert_diff_self_of_mem heP, nullity_insert_eq_add_one hcl (by simp),
-      h_coindep.nullity_eq]
-    rfl
-  rw [← M.eConn_add_nullity_dual_eq_eRk K, hK.nullity_eq, ← one_add_one_eq_two,
-    ENat.add_one_le_add_one_iff, ← not_lt, ENat.lt_one_iff_eq_zero]
-  refine fun h0 ↦ hM.not_isTutteSeparation (P := M.partition K hK.subset_ground) (by simp [h0]) ?_
-  rw [isTutteSeparation_iff, partition_left .., partition_right ..]
-  refine ⟨.inr hK.dep, .inl <| hP.dep_right.superset ?_ diff_subset⟩
-  grw [← P.compl_left, hKss, insert_diff_self_of_mem heP]
-
-/-- If `e` is an element of a `k`-connected matroid `M`
+/-- If `e` is a nonloop element of a `k`-connected matroid `M`
 such that `M / e` is weakly `(k + 1)`-connected but `M` is not,
 then `e` belongs to a rank-`k` cocircuit of `M`. -/
-lemma TutteConnected.exists_of_weaklyConnected' (hk : 2 ≤ k)
-    (hM : M.TutteConnected k) (h_not_conn : ¬ M.WeaklyConnected (k + 1))
-    (h_conn : (M ／ {e}).WeaklyConnected (k + 1)) :
+lemma TutteConnected.exists_of_weaklyConnected (hM : M.TutteConnected k) (he : M.IsNonloop e)
+    (h_not_conn : ¬ M.WeaklyConnected (k + 1)) (h_conn : (M ／ {e}).WeaklyConnected (k + 1)) :
     ∃ K, M.IsCocircuit K ∧ M.eRk K = k ∧ e ∈ K := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one
   · simp at h_not_conn
-
   -- We can assume that `e` is in `M`, since otherwise `M / {e} = M`.
-  have heE : e ∈ M.E := by_contra fun heE ↦ h_not_conn <| by rwa [← contractElem_eq_self heE]
   -- Since `M` is `2`-connectd but not weakly 3-connected, there is a strong separation `P` with
   -- connectivity `1`. We may assume `e ∈ P.left`.
   simp only [hM.weaklyConnected_add_one_iff, not_forall, exists_prop, not_not] at h_not_conn
   obtain ⟨P, hPconn, hP⟩ := h_not_conn
+  have heE := he.mem_ground
   wlog heP : e ∈ P.left generalizing P with aux
   · exact aux P.symm (by simpa) (by simpa) <| by
       rwa [P.symm_left, ← P.compl_left, mem_diff, and_iff_left heP]
   have hePr : e ∉ P.right := by rwa [← compl_left, mem_diff, and_iff_right heE, not_not]
-  -- -- Since `M` is connected, we can also assume that `e` is a nonloop.
-  have henl : M.IsNonloop e := by
-    rw [← not_isLoop_iff]
-    refine fun hl ↦ hl.not_tutteConnected ?_ (by eomega) hM
-    obtain (he | he) := M.E.subsingleton_or_nontrivial
-    · simp [show 0 ≠ k by eomega, (trivial_of_ground_subsingleton P he).eConn] at hPconn
-    assumption
   -- Since `P` is a strong separation of `M`, it follows that `P.right` is dependent and codependent
   -- in `M ／ e`, and that `P.left ＼ e` is dependent in `M ／ e`. Since `P \ e` fails to be a strong
   -- separation in `M`, all that can go wrong is that `P.left \ e` is coindependent in `M`.
@@ -287,7 +219,7 @@ lemma TutteConnected.exists_of_weaklyConnected' (hk : 2 ≤ k)
     rw [isStrongSeparation_iff] at hstrong
     have hcd := hP.codep_right.delete_of_disjoint (D := {e}) (by simpa)
     rw [← dual_contract, dep_dual_iff] at hcd
-    have hld := hP.dep_left.contract_of_indep (I := {e}) (henl.indep.inter_left _)
+    have hld := hP.dep_left.contract_of_indep (I := {e}) (he.indep.inter_left _)
     simp only [contract_left, hld, contract_right, diff_singleton_eq_self hePr,
       hP.dep_right.contract_of_disjoint (C := {e}) (by simpa), hcd, and_self,
       and_true, true_and] at hstrong
@@ -313,3 +245,10 @@ lemma TutteConnected.exists_of_weaklyConnected' (hk : 2 ≤ k)
   rw [isTutteSeparation_iff, partition_left .., partition_right .., and_iff_right (.inr hK.dep)]
   refine .inl <| hP.dep_right.superset ?_ diff_subset
   grw [← P.compl_left, hKss, insert_diff_self_of_mem heP]
+
+-- lemma TutteConnected.exists_deleteElement_weaklyConnected_three [M.Finite]
+--     (h : M.TutteConnected 3) : ∃ e ∈ M.E, (M ＼ {e}).WeaklyConnected 3 := by
+--   by_contra! hcon
+--   rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
+--   have aux (e : α) : ∃ x, (M ＼ {e} ／ {x}).WeaklyConnected (2 + 1) := by
+--     have h' :

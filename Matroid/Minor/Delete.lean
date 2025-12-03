@@ -36,6 +36,9 @@ lemma removeLoops_del_eq_removeLoops (h : X ⊆ M.loops) :
 lemma Dep.delete_of_disjoint (hX : M.Dep X) (hXD : Disjoint X D) : (M ＼ D).Dep X := by
   rwa [delete_dep_iff, and_iff_left hXD]
 
+lemma Dep.of_delete (h : (M ＼ D).Dep X) : M.Dep X :=
+  (delete_dep_iff.1 h).1
+
 @[simp]
 lemma loopyOn_delete (E X : Set α) : (loopyOn E) ＼ X = loopyOn (E \ X) := by
   rw [← restrict_compl, loopyOn_restrict, loopyOn_ground]
@@ -90,7 +93,7 @@ lemma isRestriction_emptyOn_iff : M ≤r emptyOn α ↔ M = emptyOn α := by
   simp [isRestriction_iff_exists]
 
 lemma Coindep.delete_nonspanning_iff (hD : M.Coindep D) :
-    (M ＼ D).Nonspanning X ↔  M.Nonspanning X ∧ Disjoint X D := by
+    (M ＼ D).Nonspanning X ↔ M.Nonspanning X ∧ Disjoint X D := by
   wlog hX : X ⊆ (M ＼ D).E generalizing with aux
   · exact iff_of_false (fun h ↦ hX h.subset_ground)
       fun h ↦ hX <| subset_diff.2 ⟨h.1.subset_ground, h.2⟩
@@ -100,5 +103,15 @@ lemma Coindep.delete_nonspanning_iff (hD : M.Coindep D) :
 
 lemma girth_le_girth_delete (M : Matroid α) (D : Set α) : M.girth ≤ (M ＼ D).girth :=
     (delete_isRestriction ..).girth_ge
+
+lemma Nonspanning.of_delete (h : (M ＼ D).Nonspanning X) : M.Nonspanning X := by
+  rw [nonspanning_iff, spanning_iff_closure_eq] at *
+  rw [delete_closure_eq, delete_ground, subset_diff, h.2.2.sdiff_eq_left] at h
+  grind
+
+lemma Nonspanning.of_isRestriction (h : N.Nonspanning X) (hNM : N ≤r M) :
+    M.Nonspanning X := by
+  obtain ⟨D, hD, rfl⟩ := hNM.exists_eq_delete
+  exact h.of_delete
 
 end Delete

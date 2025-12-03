@@ -524,7 +524,7 @@ lemma reverse (h : w.DecomposeTo L) : w.reverse.DecomposeTo (L.map reverse).reve
   refine ⟨by simp [h.nonempty], h.append ▸ appendList_reverse h.chain_eq, ?_⟩
   rw [isChain_reverse]
   refine isChain_map_of_isChain _ ?_ h.chain_eq
-  simp [flip, eq_comm]
+  simp [eq_comm]
 
 lemma getLast_isSuffix (h : w.DecomposeTo L) : (L.getLast h.nonempty).IsSuffix w := by
   simpa using h.reverse.head_isPrefix

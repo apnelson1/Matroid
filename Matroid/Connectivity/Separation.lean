@@ -141,6 +141,9 @@ lemma eConn_left (P : M.Partition) : M.eConn P.1 = P.eConn := by
 lemma eConn_right (P : M.Partition) : M.eConn P.2 = P.eConn := by
   rw [← P.eConn_symm, ← eConn_left, symm_left]
 
+lemma eConn_eq_eLocalConn (P : M.Partition) : P.eConn = M.eLocalConn P.1 P.2 := by
+  rw [← eConn_left, Matroid.eConn_eq_eLocalConn, P.compl_left]
+
 @[simp]
 lemma eConn_dual (P : M.Partition) : P.dual.eConn = P.eConn := by
   rw [← P.dual.eConn_left, M.eConn_dual, P.dual_left, P.eConn_left]
@@ -757,12 +760,15 @@ lemma eConn_eq_of_subset_closure_of_isRestriction {N : Matroid α} {Q : N.Partit
     {P : M.Partition} (hNM : N ≤r M) (subset_left : Q.1 ⊆ P.1) (subset_right : Q.2 ⊆ P.2)
     (subset_closure_left : P.1 ⊆ M.closure Q.1) (subset_closure_right : P.2 ⊆ M.closure Q.2) :
     P.eConn = Q.eConn := by
-  simp_rw [eConn_eq_left, eConn_eq_eLocalConn, Partition.compl_left]
+  simp_rw [eConn_eq_left, Matroid.eConn_eq_eLocalConn, Partition.compl_left]
   rw [hNM.eLocalConn_eq_of_subset Q.left_subset_ground Q.right_subset_ground]
   refine le_antisymm ?_ ?_
   · rw [← eLocalConn_closure_closure (X := Q.left)]
     exact eLocalConn_mono _ subset_closure_left subset_closure_right
   exact eLocalConn_mono _ subset_left subset_right
+
+
+
 
 end Minor
 
@@ -790,6 +796,7 @@ lemma exists_partition_iff_not_connected [M.Nonempty] :
   simpa [← ground_nonempty_iff]
 
 section wlog
+
 
 protected lemma wlog_symm (motive : {N : Matroid α} → (P : N.Partition) → Prop)
     (property : Matroid α → Set α → Prop)

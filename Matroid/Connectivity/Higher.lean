@@ -1,6 +1,7 @@
 import Matroid.Connectivity.Separation
 import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Matroid.Constructions
+import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.Tactic.TautoSet
 import Mathlib.Tactic.Peel
@@ -431,7 +432,28 @@ lemma isStrongSeparation_iff_eRk (hP : P.eConn ≠ ⊤) : P.IsStrongSeparation �
     Partition.left_subset_ground, not_indep_iff, dep_dual_iff,
     Partition.right_subset_ground, isStrongSeparation_iff]
 
+-- lemma IsTutteSeparation.isStrong_separation_or_small (h : P.IsTutteSeparation)
+--     (hPconn : P.eConn ≠ ⊤) :
+--     P.IsStrongSeparation ∨
+--       (M.eRk P.left ≤ P.eConn ∨ M.eRk P.right ≤ P.eConn ∨
+--       M✶.eRk P.left ≤ P.eConn ∨ M✶.eRk P.right ≤ P.eConn)
 
+
+-- lemma IsTutte (hP : P.eConn = 0) :
+--     P.IsTutteSeparation ↔ P.IsStrongSeparation ∨ (P.left.Nonempty ∧ P.right.Nonempty ∧
+--       (M.eRk P.left = P.eConn ∨ P.left ⊆ M.coloops ∨ P.right ⊆ M.loops ∨ P.right ⊆ M.coloops))
+
+/-- A Tutte separation with connectivity zero is either a strong separation, or has one side
+only loops or coloops. -/
+lemma isTutteSeparation_iff_isStrongSeparation_of_zero (hP : P.eConn = 0) :
+    P.IsTutteSeparation ↔ P.IsStrongSeparation ∨ (P.left.Nonempty ∧ P.right.Nonempty ∧
+      (P.left ⊆ M.loops ∨ P.left ⊆ M.coloops ∨ P.right ⊆ M.loops ∨ P.right ⊆ M.coloops)) := by
+  rw [isStrongSeparation_iff_eRk (by simp [hP]), isTutteSeparation_iff_lt_encard (by simp [hP]),
+    hP, ← not_iff_not]
+  simp only [← not_le, nonpos_iff_eq_zero, encard_eq_zero, not_and, not_not,
+    Partition.left_subset_ground, eRk_eq_zero_iff, Partition.right_subset_ground, dual_ground,
+    dual_loops, nonempty_iff_ne_empty]
+  by_cases h : P.left = ∅ <;> grind
 
 /-- An internal separation is the type of separation required by internal connectivity.
 For finite connectivity, is it equivalent to both sides of the separation having cardinality
@@ -888,13 +910,21 @@ lemma verticallyConnected_freeOn_iff (E : Set α) (k : ℕ∞) :
   exact hne.symm (by simpa using hy)
 
 @[simp]
+lemma uniqueBaseOn_tutteConnected_iff {B E : Set α} :
+    (uniqueBaseOn B E).TutteConnected (k + 1) ↔ E.Subsingleton ∨ k = 0 := by
+  obtain hE | hE := E.subsingleton_or_nontrivial
+  · simp [(uniqueBaseOn B E).tutteConnected_of_subsingleton hE, hE]
+  obtain (rfl | ⟨k,rfl⟩) := k.eq_zero_or_exists_eq_add_one; simp
+  refine iff_of_false (fun ht ↦ ?_) (by simp [hE.not_subsingleton])
+  obtain ⟨e, he⟩ := hE.nonempty
+  refine ht.not_isTutteSeparation (P := Matroid.partition _ {e}) (by simp) ?_
+  rw [isTutteSeparation_iff_add_one_le_encard (by simp [← Partition.eConn_left])]
+  simp [hE.diff_singleton_nonempty e]
+
+@[simp]
 lemma loopyOn_tutteConnected_iff (E : Set α) :
     (loopyOn E).TutteConnected (k + 1) ↔ E.Subsingleton ∨ k = 0 := by
-  rw [← tutteConnected_dual_iff, loopyOn_dual_eq]
-  refine ⟨fun h ↦ (verticallyConnected_freeOn_iff E k).1 h.verticallyConnected, ?_⟩
-  rintro (h | rfl)
-  · exact tutteConnected_of_subsingleton h _
-  simp
+  simp [← uniqueBaseOn_empty]
 
 @[simp]
 lemma freeOn_tutteConnected_iff (E : Set α) :
@@ -1116,6 +1146,17 @@ lemma weaklyConnected_zero (M : Matroid α) : M.WeaklyConnected 0 := by
 lemma weaklyConnected_one (M : Matroid α) : M.WeaklyConnected 1 := by
   simp [WeaklyConnected]
 
+lemma WeaklyConnected.mono (h : M.WeaklyConnected k) (hjk : j ≤ k) : M.WeaklyConnected j :=
+  NumConnected.mono h hjk
+
+lemma weaklyConnected_dual_iff : M✶.WeaklyConnected k ↔ M.WeaklyConnected k := by
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  simp only [weaklyConnected_iff_forall]
+  exact ⟨fun h P hP hP' ↦ h P.dual (by simpa) (by simpa),
+    fun h P hP hP' ↦ h P.ofDual (by simpa) (by simpa)⟩
+
+alias ⟨WeaklyConnected.of_dual, WeaklyConnected.dual⟩ := weaklyConnected_dual_iff
+
 lemma CyclicallyConnected.weaklyConnected (h : M.CyclicallyConnected k) : M.WeaklyConnected k :=
   NumConnected.mono_degen h fun _ _ ↦ Or.inl
 
@@ -1125,6 +1166,71 @@ lemma VerticallyConnected.weaklyConnected (h : M.VerticallyConnected k) : M.Weak
 lemma TutteConnected.weaklyConnected (h : M.TutteConnected k) : M.WeaklyConnected k :=
   h.verticallyConnected.weaklyConnected
 
+lemma WeaklyConnected.not_isStrongSeparation (h : M.WeaklyConnected (k + 1))
+    (hPconn : P.eConn + 1 ≤ k) : ¬ P.IsStrongSeparation :=
+  h.not_isPredSeparation hPconn
+
+/-- A weakly 2-connected matroid having both a loop and a coloop is structurally trivial. -/
+lemma WeaklyConnected.eq_uniqueBaseOn_of_isLoop_isColoop {e f : α} (hM : M.WeaklyConnected 2)
+    (he : M.IsLoop e) (hf : M.IsColoop f) :
+    ∃ E, e ∈ E ∧ f ∈ E ∧ (M = uniqueBaseOn {f} E ∨ M = uniqueBaseOn (E \ {e}) E) := by
+  rw [← one_add_one_eq_two] at hM
+  replace hM := hM.not_isStrongSeparation (P := M.partition {e,f})
+  simp only [eConn_partition, ENat.add_le_right_iff, ENat.one_ne_top, or_false,
+    isStrongSeparation_iff, partition_left, partition_right, not_and, not_codep_compl_iff] at hM
+  have heE := he.mem_ground
+  have hfE := hf.mem_ground
+  rw [eConn_of_subset_loops_union_coloops
+    (by simp [pair_subset_iff, show e ∈ M.loops from he, show f ∈ M.coloops from hf]),
+    imp_iff_right rfl, imp_iff_right (he.dep_of_mem (by simp)), ← dep_dual_iff,
+    imp_iff_right (hf.dual_isLoop.dep_of_mem (by simp))] at hM
+  obtain h1 | h2 := M.indep_or_dep (X := M.E \ {e,f})
+  · refine ⟨M.E, heE, hfE, .inr <| ext_indep rfl fun I hIE ↦ ?_⟩
+    simp +contextual only [uniqueBaseOn_indep_iff', subset_inter_iff, subset_diff_singleton_iff,
+      and_right_comm, and_self, iff_def, Indep.subset_ground, true_and, and_imp]
+    refine ⟨fun hI heI ↦ (he.not_indep_of_mem heI) hI, fun hIE heI ↦ ?_⟩
+    rw [← diff_indep_iff_indep_of_subset_coloops (K := {f}) (by simpa)]
+    exact h1.subset <| by simp [subset_diff, heI, hIE.trans <| subset_insert ..]
+  refine ⟨M.E, heE, hfE, .inl <| ext_indep rfl fun I hI ↦ ?_⟩
+  rw [uniqueBaseOn_indep_iff (by simpa)]
+  specialize hM h2
+  refine ⟨fun h x hxI ↦ ?_, fun h ↦ hf.isNonloop.indep.subset h⟩
+  rw [← spanning_iff_compl_coindep, spanning_iff, pair_comm,
+    closure_insert_congr_right he.closure, insert_empty_eq, closure_eq_of_subset_coloops
+    (by simpa), singleton_union] at hM
+  have hx := hM.1 ▸ (h.subset_ground hxI)
+  rwa [mem_insert_iff, ← isLoop_iff, or_iff_left (h.isNonloop_of_mem hxI).not_isLoop] at hx
+
+lemma WeaklyConnected.subsingleton_loops_or_coloops (h : M.WeaklyConnected 2) :
+    M.loops.Subsingleton ∨ M.coloops.Subsingleton := by
+  by_contra! hcon
+  obtain ⟨e, he⟩ := hcon.1.nonempty
+  obtain ⟨f, hf⟩ := hcon.2.nonempty
+  obtain ⟨E, heE, hfE, rfl | rfl⟩ := h.eq_uniqueBaseOn_of_isLoop_isColoop he hf
+  · simp [uniqueBaseOn_coloops_eq', ← not_subsingleton_iff,
+      subsingleton_singleton.anti inter_subset_left] at hcon
+  simp [uniqueBaseOn_loops_eq, ← not_subsingleton_iff,
+      subsingleton_singleton.anti inter_subset_right] at hcon
+
+lemma weaklyConnected_uniqueBaseOn_iff {B E : Set α} (hBE : B ⊆ E) (hk : k ≠ 0) :
+    (uniqueBaseOn B E).WeaklyConnected (k + 1) ↔ B.Subsingleton ∨ (E \ B).Subsingleton := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · simpa [inter_eq_self_of_subset_left hBE, uniqueBaseOn_loops_eq] using
+      (h.mono (show 2 ≤ k + 1 by eomega)).subsingleton_loops_or_coloops.symm
+  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp at hk
+  simp only [weaklyConnected_iff_forall, ENat.add_le_add_right_iff, ENat.one_ne_top, or_false,
+    isStrongSeparation_iff, uniqueBaseOn_dep_iff, ← dep_dual_iff, uniqueBaseOn_dual_eq, not_and,
+    and_imp]
+  simp +contextual only [not_subset, mem_diff, not_and, not_not, ← compl_left, uniqueBaseOn_ground,
+    diff_nonempty, forall_exists_index, and_imp, forall_const]
+  rintro (hB | hB)
+  · rintro P - - - - - - x hx hxB - - - - - - - - y hy hy1 hyB
+    obtain rfl := hB.elim hyB (hxB (P.left_subset_ground hx))
+    contradiction
+  rintro P - - x hx hxB - - - - - - - y hyE hy hyB
+  obtain rfl := hB.elim ⟨P.left_subset_ground hx, hxB⟩ ⟨hyE, hyB⟩
+  contradiction
+
 lemma TutteConnected.weaklyConnected_add_one_iff (h : M.TutteConnected (k + 1)) :
     M.WeaklyConnected (k + 1 + 1) ↔ ∀ (P : M.Partition), P.eConn = k → ¬ P.IsStrongSeparation := by
   simp only [weaklyConnected_iff_forall, ENat.add_le_add_right_iff, ENat.one_ne_top, or_false]
@@ -1133,31 +1239,59 @@ lemma TutteConnected.weaklyConnected_add_one_iff (h : M.TutteConnected (k + 1)) 
   · rfl
   exact False.elim <| h.not_isTutteSeparation (Order.add_one_le_of_lt hlt) hP.isTutteSeparation
 
--- lemma weaklyConnected_two_iff :
---     M.WeaklyConnected 2 ↔ M.removeLoops.TutteConnected 2 ∨ M✶.removeLoops.TutteConnected 2 := by
---   rw [show (2 : ℕ∞) = 1 + 1 from rfl]
---   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
---   · by_contra! hcon
---     simp only [removeLoops_eq_delete, not_tutteConnected_iff_exists, ENat.add_le_right_iff,
---       ENat.one_ne_top, or_false, isTutteSeparation_iff, delete_dep_iff, disjoint_left_delete,
---       and_true, disjoint_right_delete, dual_loops, codep_def] at hcon
---     simp [dual_delete, dep_dual_iff, dual_dual, M.coloops_indep.contract_dep_iff,
---       disjoint_left_delete, true_and, disjoint_right_delete,
---       (dual_coloops ▸ M✶.coloops_indep).contract_dep_iff] at hcon
---     -- simp_rw [Dep, union_indep_iff_indep_of_subset_coloops rfl.subset,
---     --   union_subset_iff, and_iff_left M.coloops_subset_ground] at hcon
+lemma TutteConnected.weaklyConnected_of_delete_of_subset_loops {D : Set α}
+    (h : (M ＼ D).TutteConnected 2) (hD : D ⊆ M.loops) : M.WeaklyConnected 2 := by
+  rw [show (2 : ℕ∞) = 1 + 1 from rfl] at *
+  simp only [weaklyConnected_iff_forall, ENat.add_le_right_iff, ENat.one_ne_top, or_false]
+  intro P hP0 hP
+  refine h.not_isTutteSeparation (P := P.delete D) (by grw [P.eConn_delete_le, hP0, zero_add]) ?_
+  simp only [isTutteSeparation_iff, delete_left, delete_dep_iff, disjoint_sdiff_left, delete_right]
+  rw [isStrongSeparation_iff] at hP
+  have hcd := hP.2.1.contract_of_indep (I := D)
+    (M✶.coloops_indep.subset (by grw [dual_coloops, inter_subset_right, hD]))
+  have hcd' := hP.2.2.2.contract_of_indep (I := D)
+    (M✶.coloops_indep.subset (by grw [dual_coloops, inter_subset_right, hD]))
+  rw [← dual_delete, dep_dual_iff] at hcd hcd'
+  simp [hcd, hcd']
 
---     obtain ⟨⟨P, hP0, hP⟩, Q, hQ0, hQ⟩ := hcon
---     have hP1E : P.1 ⊆ M.E := P.left_subset_ground.trans diff_subset
---     have hQ1E : Q.1 ⊆ M.E := Q.left_subset_ground.trans diff_subset
---     have hP2E : P.2 ⊆ M.E := P.right_subset_ground.trans diff_subset
---     have hQ2E : Q.2 ⊆ M.E := Q.right_subset_ground.trans diff_subset
---     rw [← not_indep_iff, ← not_indep_iff, union_indep_iff_indep_of_subset_coloops rfl.subset,
---       union_indep_iff_indep_of_subset_coloops rfl.subset, not_indep_iff, not_indep_iff] at hQ
---     -- rw [dual_delete_dual, M.coloops_indep.contract_dep_iff, and_iff_left ] at hQ
-    -- rw [Dep, union_indep_iff_indep_of_subset_coloops rfl.subset] at hQ
-
-    -- rw [← not_indep_iff, ← not_indep_iff, ← not_codep_iff] at hQ
+/-- A matroid is weakly 2-connected if and only if it is 2-connected after removing the
+loops or coloops. -/
+lemma weaklyConnected_two_iff :
+    M.WeaklyConnected 2 ↔ M.removeLoops.TutteConnected 2 ∨ M.removeColoops.TutteConnected 2 := by
+  rw [← one_add_one_eq_two, iff_comm]
+  refine ⟨fun h ↦ h.elim (fun h' ↦ ?_) (fun h' ↦ ?_), fun h ↦ ?_⟩
+  · rw [removeLoops_eq_delete] at h'
+    exact TutteConnected.weaklyConnected_of_delete_of_subset_loops h' rfl.subset
+  · rw [← tutteConnected_dual_iff, removeColoops_dual, removeLoops_eq_delete] at h'
+    exact (h'.weaklyConnected_of_delete_of_subset_loops rfl.subset).of_dual
+  wlog hlps : M.loops.Nonempty → M.coloops.Nonempty generalizing M with aux
+  · rw [← tutteConnected_dual_iff, removeLoops_dual, or_comm, ← tutteConnected_dual_iff,
+      removeColoops_dual]
+    exact aux h.dual (by simp [Classical.not_imp.1 hlps])
+  obtain hLe | hLne := M.loops.eq_empty_or_nonempty
+  · right
+    simp only [removeColoops_eq_delete, tutteConnected_iff_forall, ENat.add_le_right_iff,
+      ENat.one_ne_top, or_false]
+    rintro P hP0 hP
+    refine h.not_isStrongSeparation (P := P.ofDeleteLeft) ?_ ?_
+    · simpa [eConn_ofDeleteLeft, ← dual_loops, loops, eLocalConn_closure_right]
+    simp only [isStrongSeparation_iff, ofDeleteLeft_left, union_coloops_dep_iff, ofDeleteLeft_right]
+    obtain hs | h0 := (isTutteSeparation_iff_isStrongSeparation_of_zero hP0).1 hP
+    · refine ⟨hs.dep_left.of_delete, hs.codep_left.of_delete, hs.dep_right.of_delete, ?_⟩
+      have h' := hs.codep_right
+      simp_rw [← removeColoops_eq_delete, removeColoops_eq_contract] at h'
+      exact h'.of_contract
+    simp only [nonempty_iff_ne_empty, ne_eq, ← removeColoops_eq_delete, removeColoops_loops_eq, hLe,
+      subset_empty_iff, removeColoops_coloops, or_self, or_self_left] at h0
+    tauto
+  obtain ⟨f, hf : M.IsColoop f⟩ := hlps hLne
+  obtain ⟨e, he : M.IsLoop e⟩ := hLne
+  obtain ⟨E, heE, hfE, rfl | rfl⟩ := h.eq_uniqueBaseOn_of_isLoop_isColoop he hf
+  · refine .inl <| tutteConnected_of_subsingleton ?_ _
+    simp [removeLoops_eq_delete, uniqueBaseOn_loops_eq,
+      subsingleton_singleton.anti inter_subset_right]
+  refine .inr <| tutteConnected_of_subsingleton ?_ _
+  simp [removeColoops_eq_delete, subsingleton_singleton.anti inter_subset_right]
 
 
 -- /-- This lemma is most relevant when `k = 1`; it means that a connected matroid is weakly
@@ -1284,6 +1418,89 @@ lemma TutteConnected.internallyConnected_iff_forall (h : M.TutteConnected k) :
   simp only [internallyConnected_iff_forall, ENat.add_one_le_add_one_iff, ENat.add_one_inj,
     forall_and, and_iff_right_iff_imp]
   exact fun _ ↦ h
+
+lemma WeaklyConnected.weaklyConnected_of_isRestriction {N : Matroid α} (h : M.WeaklyConnected k)
+    (hN : N ≤r M) (hNM : ∀ e, M.IsNonloop e → e ∉ N.E → ∃ f ∈ N.E, e ∈ M.closure {f}) :
+    N.WeaklyConnected k := by
+  obtain rfl | ⟨k,rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
+  obtain hNe | ⟨f₀, hf₀⟩ := N.E.eq_empty_or_nonempty
+  · exact numConnected_of_subsingleton (by simp [hNe]) _ (by simp)
+  replace hNM : ∀ e ∈ M.E, ∃ f ∈ N.E, e ∈ M.closure {f} ∧ (e ∈ N.E → e = f) := by
+    intro e he
+    by_cases heN : e ∈ N.E
+    · exact ⟨e, heN, M.mem_closure_of_mem rfl, by simp⟩
+    obtain he' | he' := M.isLoop_or_isNonloop e
+    · exact ⟨f₀, hf₀, he'.mem_closure {f₀}, by simp [heN]⟩ 
+    obtain ⟨f, hf, hef⟩ := hNM e he' heN 
+    exact ⟨f, hf, hef, by simp [heN]⟩ 
+  choose! φ hφ using hNM
+  rw [weaklyConnected_iff_forall] at *
+  intro P hPk hP
+  let Q := M.partition (φ ⁻¹' P.1 ∩ M.E)
+  have hQl : Q.1 = φ ⁻¹' P.1 ∩ M.E := rfl
+  have h' : φ ⁻¹' N.E ∩ M.E = M.E := inter_eq_right.2 fun x hx ↦ (hφ x hx).1
+  have hQr : Q.2 = φ ⁻¹' P.2 ∩ M.E := by
+    rw [← Q.compl_left, hQl, diff_inter_self_eq_diff, ← P.compl_left, preimage_diff,
+      diff_inter_right_comm, h']
+  have hss1 : P.1 ⊆ φ ⁻¹' P.1 := fun x hx ↦ by rwa [mem_preimage,
+    ← (hφ x (hN.subset (P.left_subset_ground hx))).2.2 (P.left_subset_ground hx)]
+  have hss2 : P.2 ⊆ φ ⁻¹' P.2 := fun x hx ↦ by rwa [mem_preimage,
+    ← (hφ x (hN.subset (P.right_subset_ground hx))).2.2 (P.right_subset_ground hx)]
+  have hcl2 : Q.2 ⊆ M.closure P.2 := by
+    rw [hQr]
+    rintro x ⟨hx : φ x ∈ P.right, hxE : x ∈ M.E⟩
+    grw [← singleton_subset_iff.2 hx]
+    exact (hφ x hxE).2.1
+  have hcl1 : Q.1 ⊆ M.closure P.1 := by
+    rintro x ⟨hx : φ x ∈ P.left, hxE : x ∈ M.E⟩
+    grw [← singleton_subset_iff.2 hx]
+    exact (hφ x hxE).2.1
+  refine h Q ?_ ?_
+  · grw [← hPk, Partition.eConn_eq_eLocalConn, eLocalConn_mono _ hcl1 hcl2,
+      eLocalConn_closure_closure, P.eConn_eq_eLocalConn, hN.eLocalConn_eq_of_subset]
+  rw [isStrongSeparation_iff']
+  refine ⟨(hP.dep_left.of_isRestriction hN).superset ?_,
+    (hP.dep_right.of_isRestriction hN).superset ?_, 
+    (hP.isVerticalSeparation.nonspanning_left.of_isRestriction hN).closure_nonspanning.subset hcl1, 
+    (hP.isVerticalSeparation.nonspanning_right.of_isRestriction hN).closure_nonspanning.subset hcl2⟩
+  · grw [hQl, subset_inter_iff, and_iff_right hss1, P.left_subset_ground, hN.subset]
+  grw [hQr, subset_inter_iff, and_iff_right hss2, P.right_subset_ground, hN.subset]
+
+lemma WeaklyConnected.delete_of_forall_exists_parallel (h : M.WeaklyConnected k)
+    {D : Set α} (hD : ∀ e ∈ D, M.IsNonloop e → ∃ f ∉ D, M.Parallel e f) :
+    (M ＼ D).WeaklyConnected k := by
+  by_cases hDE : M.E ⊆ D
+  · exact numConnected_of_subsingleton (by simp [diff_eq_empty.2 hDE]) _ (by simp)
+  obtain ⟨f', hf'⟩ := not_subset.1 hDE  
+  refine h.weaklyConnected_of_isRestriction (delete_isRestriction ..) fun e henl heD ↦ ?_
+  replace heD := show e ∈ D by simpa [henl.mem_ground] using heD
+  obtain ⟨f, hf⟩ := hD e heD henl
+  exact ⟨f, ⟨hf.2.mem_ground_right, hf.1⟩, hf.2.mem_closure⟩  
+
+lemma WeaklyConnected.delete_weaklyConnected_of_parallel {e f : α} (h : M.WeaklyConnected k)
+    (hef : M.Parallel e f) (hne : e ≠ f) : (M ＼ {e}).WeaklyConnected k :=
+  h.delete_of_forall_exists_parallel <| by grind
+
+lemma WeaklyConnected.weaklyConnected_of_isSimplification {N : Matroid α} (h : M.WeaklyConnected k)
+    (hN : N.IsSimplification M) : N.WeaklyConnected k := by
+  refine h.weaklyConnected_of_isRestriction hN.isRestriction fun e henl _ ↦ ?_
+  obtain ⟨f, hf, -⟩ := hN.exists_unique henl
+  exact ⟨f, hf.1, hf.2.mem_closure⟩ 
+
+  
+  
+  
+
+
+
+
+
+      -- P.right_subset_ground, inter_subset_left, delete_ground,
+      -- diff_union_of_subset hDE, and_iff_right rfl.subset, subset_diff, inter_subset_left,
+      -- P.right_subset_ground, delete_ground]
+  --   rw [← compl_left, subset_antisymm_iff, diff_subset_iff, ← P.compl_left, delete_ground, hQ]
+  --   simp
+
 
 -- lemma foo (h : M.InternallyConnected (k+1)) (hnot : ¬ M.TutteConnected (k+1)) :
 
