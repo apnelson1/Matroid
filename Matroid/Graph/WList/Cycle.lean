@@ -103,12 +103,8 @@ protected def rotate : WList α β → ℕ → WList α β
   | cons _ e w, n + 1 => (w.concat e w.first).rotate n
 
 @[simp]
-lemma cons_rotate_one : (cons x e w).rotate 1 = w.concat e w.first := by
+lemma rotate_zero (w : WList α β) : w.rotate 0 = w := by
   simp [WList.rotate]
-
-@[simp]
-lemma rotate_cons_succ (w : WList α β) (x e) (n : ℕ) :
-  (cons x e w).rotate (n+1) = (w.concat e w.first).rotate n := rfl
 
 @[simp]
 lemma rotate_nil (x : α) (n : ℕ) : (nil x (β := β)).rotate n = nil x := by
@@ -116,8 +112,25 @@ lemma rotate_nil (x : α) (n : ℕ) : (nil x (β := β)).rotate n = nil x := by
   aesop
 
 @[simp]
-lemma rotate_zero (w : WList α β) : w.rotate 0 = w := by
+lemma cons_rotate_one : (cons x e w).rotate 1 = w.concat e w.first := by
   simp [WList.rotate]
+
+@[simp]
+lemma rotate_cons_succ (w : WList α β) (x e) (n : ℕ) :
+  (cons x e w).rotate (n+1) = (w.concat e w.first).rotate n := rfl
+
+-- maybe we do need index-based take and drop instead of pred/vertex based take and drop...
+lemma rotate_eq_append {w₁ w₂ : WList α β} (h : w₁.first = w₂.last) (h' : w₁.last = w₂.first) :
+    (w₁ ++ w₂).rotate w₁.length = w₂ ++ w₁ := by
+  match w₁ with
+  | .nil u =>
+    obtain rfl := by simpa using h
+    simp
+  | .cons u e w =>
+    obtain rfl := by simpa using h
+    simp only [cons_append, cons_length, rotate_cons_succ]
+    rw [← WList.append_concat, ← WList.concat_append]
+    apply rotate_eq_append <;> simp_all
 
 @[simp]
 lemma rotate_rotate : ∀ (w : WList α β) (m n : ℕ), (w.rotate m).rotate n = w.rotate (m + n)
@@ -234,6 +247,7 @@ lemma IsClosed.isLink_rotate (hw : w.IsClosed) (h : w.IsLink e x y) (n) :
 lemma rotate_edgeSet (w : WList α β) (n) : E(w.rotate n) = E(w) := by
   simp [WList.edgeSet, rotate_edge]
 
+@[simp]
 lemma IsClosed.rotate_length (hw : w.IsClosed) : w.rotate w.length = w := by
   refine ext_vertex_edge ?_ (by rw [rotate_edge, ← length_edge, List.rotate_length])
   cases w with
@@ -303,6 +317,43 @@ lemma firstEdge_rotate_one (hw : w.Nontrivial) :
 lemma IsClosed.rotate_one_dropLast (hw : w.IsClosed) : (w.rotate 1).dropLast = w.tail := by
   cases w with simp
 
+-- theorem WList.IsSuffix.exists_isPrefix_rotate.extracted_1_5  (w₁ w₂ : WList α β)
+--     (hne : w₂.Nonempty) (n : ℕ) (hn : n ≤ w₂.length) (hpfx : w₁.IsPrefix (w₂.rotate n)) :
+--     (w₁.concat e x).IsPrefix ((w₂.concat e x).rotate n) := by
+--   obtain ⟨w₂', hj, h⟩ := hpfx.exists_eq_append
+
+--   sorry
+
+-- lemma IsSuffix.exists_isPrefix_rotate {w₁ w₂ : WList α β} (hw : w₁.IsSuffix w₂)
+--     (hw₂ne : w₂.Nonempty) : ∃ n ≤ w₂.length, w₁.IsPrefix (w₂.rotate n) := by
+--   match hw with
+--   | .nil w =>
+--     obtain ⟨x, e, w⟩ := hw₂ne
+--     simp only [cons_length, last_cons, nil_isPrefix_iff]
+--     use w.length +1, by omega
+--     rw [rotate_first _ _ (by simp), ← cons_length, get_length, WList.last_cons]
+--   | .concat e x w₁ w₂ h =>
+--     obtain ⟨x, rfl⟩ | hne := w₂.exists_eq_nil_or_nonempty
+--     · use 0
+--       simp_all
+--     obtain ⟨n, hn, hpfx⟩ := h |>.exists_isPrefix_rotate hne
+--     use n, by simp [hn.trans (Nat.le_succ _)], ?_
+--     extract_goal
+
+-- lemma exists_rotate_first_dInc (hC : w.IsClosed) (hCwf : w.WellFormed) (he : w.DInc e x y) :
+--     ∃ n < w.length, ∃ w', w.rotate n = cons x e w' ∧ w'.first = y := by
+--   sorry
+
+-- lemma IsClosed.exists_first_of_dInc (hC : w.IsClosed) (hCwf : w.WellFormed)
+--     (he : w.DInc e x y) : ∃ w', E(w) = E(cons x e w') ∧ w'.first = y := by
+--   sorry
+
+-- lemma IsClosed.exists_first_of_isLink (hC : w.IsClosed) (hCwf : w.WellFormed)
+--     (he : w.IsLink e x y) : ∃ w', E(w) = E(cons x e w') ∧ w'.first = y := by
+--   obtain (h | h) := isLink_iff_dInc.mp he
+--   · exact hC.exists_first_of_dInc hCwf h
+--   sorry
+
 /-- Rotate by an integer amount. -/
 def intRotate (w : WList α β) (n : ℤ) : WList α β :=
   w.rotate (n.natMod w.length)
@@ -345,11 +396,13 @@ lemma IsClosed.dInc_intRotate (hw : w.IsClosed) (n : ℤ) (h : w.DInc e x y) :
     (w.intRotate n).DInc e x y :=
   hw.dInc_rotate h ..
 
+@[simp]
 lemma IsClosed.dInc_rotate_iff (hw : w.IsClosed) : (w.rotate n).DInc e x y ↔ w.DInc e x y := by
   refine ⟨fun h ↦ ?_, fun h ↦ hw.dInc_rotate h _⟩
   rw [← hw.rotate_intRotate_neg n]
   exact (hw.rotate n).dInc_intRotate (-n) h
 
+@[simp]
 lemma IsClosed.isLink_rotate_iff (hw : w.IsClosed) :
     (w.rotate n).IsLink e x y ↔ w.IsLink e x y := by
   rw [isLink_iff_dInc, isLink_iff_dInc, hw.dInc_rotate_iff, hw.dInc_rotate_iff]
@@ -358,6 +411,7 @@ lemma WellFormed.rotate (hw : w.WellFormed) (h_closed : w.IsClosed) (n : ℕ) :
     (w.rotate n).WellFormed := by
   simpa [WellFormed, h_closed.isLink_rotate_iff] using hw
 
+@[simp]
 lemma IsClosed.wellFormed_rotate_iff (h_closed : w.IsClosed) :
     (w.rotate n).WellFormed ↔ w.WellFormed := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.rotate h_closed _⟩

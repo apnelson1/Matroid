@@ -76,6 +76,7 @@ lemma IsPath.toGraph_isForest (hG : G.IsPath P) : P.toGraph.IsForest := by
 
 lemma IsCycle.toGraph_not_isForest (hC : G.IsCycle C) : ¬ C.toGraph.IsForest :=
   fun h ↦ h C hC.isCycle_toGraph
+
 @[simp]
 lemma singleEdge_isForest (hxy : x ≠ y) (e : β) : (Graph.singleEdge x y e).IsForest := by
   intro C hC

@@ -92,51 +92,51 @@ lemma IsMaxIndependent.empty_iff (hS : G.IsMaxIndependent S) : S = ∅ ↔ G = �
   · rintro rfl
     simpa using hS
 
---I left he missing things at the end, try to do it with the comments and
---if you get stuck, look at the lines commented at the end
-lemma isIndependent_insert_iff [G.Loopless] (hx : x ∈ V(G)) :
-  G.IsIndependent (insert x S) ↔ G.IsIndependent S ∧ ∀ y, y ∈ S → ¬ G.Adj x y := by
-  --This divides the iff into two directions
-  refine ⟨?_, ?_ ⟩
-  · intro hS'
-    --the next line divides your goal into into by spliting ∧
-    refine ⟨?_, ?_⟩
-    · --For this use hS'.mono and subset_insert
-      sorry
-    intro y hyS hadj
-    --Now use pairwise_nonadj, you may also need the following haves:
-    have hxi : x ∈ insert x S := by sorry
-    have hyi : y ∈ insert y S := by sorry
-    have : x ≠ y := by sorry
-    sorry
-  intro ⟨hS, h⟩
-  rw [isIndependent_iff']
-  refine ⟨?_, ?_⟩
-  · -- use insert_subset
-    sorry
-  intro y hy z hz hne
-  --The following part is to prove a wlog y ∈ S.
-  -- This is because if hy and hz both say that either y (z) is in S or is equal to x
-  -- Since y ≠ z, both of them cant be x
-  wlog hyS : y ∈ S generalizing y z with aux
-  · --Now you have a new hypothesis that says that y ∉ S
-    obtain rfl : y = x := by simp at hy; tauto
-    have hzS : z ∈ S := by simp at hz; tauto
-    intro hadj
-    -- aux is used to say that
-    sorry
-  --Now that the wlog has been solved, you need cases on z = x or z ∈ S
-  obtain (rfl | hzS) := hz
-  · --by contradiction
-    intro hadj
-    --look at the statement in h
-    sorry
-  --finish with pairwise_nonadj applied to set S
-  sorry
+-- --I left he missing things at the end, try to do it with the comments and
+-- --if you get stuck, look at the lines commented at the end
+-- lemma isIndependent_insert_iff [G.Loopless] (hx : x ∈ V(G)) :
+--   G.IsIndependent (insert x S) ↔ G.IsIndependent S ∧ ∀ y, y ∈ S → ¬ G.Adj x y := by
+--   --This divides the iff into two directions
+--   refine ⟨?_, ?_ ⟩
+--   · intro hS'
+--     --the next line divides your goal into into by spliting ∧
+--     refine ⟨?_, ?_⟩
+--     · --For this use hS'.mono and subset_insert
+--       sorry
+--     intro y hyS hadj
+--     --Now use pairwise_nonadj, you may also need the following haves:
+--     have hxi : x ∈ insert x S := by sorry
+--     have hyi : y ∈ insert y S := by sorry
+--     have : x ≠ y := by sorry
+--     sorry
+--   intro ⟨hS, h⟩
+--   rw [isIndependent_iff']
+--   refine ⟨?_, ?_⟩
+--   · -- use insert_subset
+--     sorry
+--   intro y hy z hz hne
+--   --The following part is to prove a wlog y ∈ S.
+--   -- This is because if hy and hz both say that either y (z) is in S or is equal to x
+--   -- Since y ≠ z, both of them cant be x
+--   wlog hyS : y ∈ S generalizing y z with aux
+--   · --Now you have a new hypothesis that says that y ∉ S
+--     obtain rfl : y = x := by simp at hy; tauto
+--     have hzS : z ∈ S := by simp at hz; tauto
+--     intro hadj
+--     -- aux is used to say that
+--     sorry
+--   --Now that the wlog has been solved, you need cases on z = x or z ∈ S
+--   obtain (rfl | hzS) := hz
+--   · --by contradiction
+--     intro hadj
+--     --look at the statement in h
+--     sorry
+--   --finish with pairwise_nonadj applied to set S
+--   sorry
 
-  --hS'.mono (subset_insert _ _)
-  --exact (hS'.pairwise_nonadj (mem_insert x _) (mem_insert_of_mem _ hyS) hadj.ne) hadj
-  --insert_subset hx hS.subset
-  --exact aux hz hy hne.symm hzS hadj.symm
-  --intro hadj; exact h _ hyS hadj.symm
-  --exact hS.pairwise_nonadj hyS hzS hne
+--   --hS'.mono (subset_insert _ _)
+--   --exact (hS'.pairwise_nonadj (mem_insert x _) (mem_insert_of_mem _ hyS) hadj.ne) hadj
+--   --insert_subset hx hS.subset
+--   --exact aux hz hy hne.symm hzS hadj.symm
+--   --intro hadj; exact h _ hyS hadj.symm
+--   --exact hS.pairwise_nonadj hyS hzS hne
