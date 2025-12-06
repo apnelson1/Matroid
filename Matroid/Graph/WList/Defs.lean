@@ -291,14 +291,14 @@ lemma nil_injective : Injective (nil : α → WList α β) := by
   rintro x y h
   rwa [nil.injEq] at h
 
-@[simp] lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
+@[simp,  push] lemma not_nonempty_iff : ¬ w.Nonempty ↔ w.Nil := by
   induction w with
   | nil u => simp
   | cons u e w ih =>
   simp only [cons_nonempty, not_true_eq_false, false_iff]
   rintro ⟨_⟩
 
-@[simp] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
+@[simp, push] lemma not_nil_iff : ¬ w.Nil ↔ w.Nonempty := by
   rw [← not_nonempty_iff, not_not]
 
 lemma Nonempty.exists_cons (hw : w.Nonempty) : ∃ x e w', w = .cons x e w' := by
@@ -309,6 +309,9 @@ lemma nonempty_iff_exists_cons : w.Nonempty ↔ ∃ x e w', w = cons x e w' := b
 
 lemma first_ne_last_iff (hnodup : w.vertex.Nodup) : w.first ≠ w.last ↔ w.Nonempty := by
   simp [first_eq_last_iff hnodup]
+
+lemma nil_or_nonempty (w : WList α β) : w.Nil ∨ w.Nonempty := by
+  induction w with simp
 
 lemma exists_eq_nil_or_nonempty (w : WList α β) : (∃ x, w = nil x) ∨ w.Nonempty := by
   induction w with simp

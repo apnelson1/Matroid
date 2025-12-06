@@ -86,7 +86,7 @@ lemma Connected.isCycleGraph_of_regular [G.Finite] (hG : G.Connected) (hreg : G.
     simpa [hx.degree] using hreg.degree hx.mem
   obtain ⟨C, hC : G.IsCycle C⟩ := by simpa [IsForest] using hF
   rw [← hG.eq_of_le_of_forall_degree_ge hC.isWalk.toGraph_le (by simp) ?_]
-  exact isCycleGraph_of_cycle_toGraph hC
+  · exact isCycleGraph_of_cycle_toGraph hC
   simp +contextual only [toGraph_vertexSet, mem_vertexSet_iff, hC.toGraph_regular.degree]
   exact fun x hxC ↦ (hreg.degree (hC.isWalk.vertex_mem_of_mem hxC)).le
 

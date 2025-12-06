@@ -470,6 +470,7 @@ lemma lineGraph_starGraph_isComplete (v : α) (f : β →. α) : L(StarGraph v f
   use v
   simp
 
+/-- Note: a loop becomes a leaf. -/
 @[simps]
 def mixedLineGraph (G : Graph α β) : Graph (α ⊕ β) (α × β) where
   vertexSet := Sum.inl '' V(G) ∪ Sum.inr '' E(G)
