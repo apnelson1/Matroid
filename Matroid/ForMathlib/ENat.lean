@@ -1,6 +1,4 @@
 import Mathlib.Data.ENat.Lattice -- inefficient import
-import Mathlib.Order.SuccPred.CompleteLinearOrder -- inefficient import
-
 
 open WithTop
 

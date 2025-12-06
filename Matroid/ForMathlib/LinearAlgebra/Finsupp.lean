@@ -1,6 +1,3 @@
-import Mathlib.LinearAlgebra.Finsupp.Supported -- inefficient import
-import Mathlib.LinearAlgebra.Pi -- inefficient import
-import Mathlib.Data.Set.Card -- inefficient import
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dual.Defs
 

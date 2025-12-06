@@ -4,7 +4,6 @@ import Matroid.ForMathlib.Matroid.Constructions
 import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.Tactic.TautoSet
-import Mathlib.Tactic.Peel -- inefficient import
 
 
 lemma add_one_add_one {R : Type*} [AddMonoidWithOne R] (a : R) : (a + 1) + 1 = a + 2 := by
@@ -1430,9 +1429,9 @@ lemma WeaklyConnected.weaklyConnected_of_isRestriction {N : Matroid α} (h : M.W
     by_cases heN : e ∈ N.E
     · exact ⟨e, heN, M.mem_closure_of_mem rfl, by simp⟩
     obtain he' | he' := M.isLoop_or_isNonloop e
-    · exact ⟨f₀, hf₀, he'.mem_closure {f₀}, by simp [heN]⟩ 
-    obtain ⟨f, hf, hef⟩ := hNM e he' heN 
-    exact ⟨f, hf, hef, by simp [heN]⟩ 
+    · exact ⟨f₀, hf₀, he'.mem_closure {f₀}, by simp [heN]⟩
+    obtain ⟨f, hf, hef⟩ := hNM e he' heN
+    exact ⟨f, hf, hef, by simp [heN]⟩
   choose! φ hφ using hNM
   rw [weaklyConnected_iff_forall] at *
   intro P hPk hP
@@ -1460,8 +1459,8 @@ lemma WeaklyConnected.weaklyConnected_of_isRestriction {N : Matroid α} (h : M.W
       eLocalConn_closure_closure, P.eConn_eq_eLocalConn, hN.eLocalConn_eq_of_subset]
   rw [isStrongSeparation_iff']
   refine ⟨(hP.dep_left.of_isRestriction hN).superset ?_,
-    (hP.dep_right.of_isRestriction hN).superset ?_, 
-    (hP.isVerticalSeparation.nonspanning_left.of_isRestriction hN).closure_nonspanning.subset hcl1, 
+    (hP.dep_right.of_isRestriction hN).superset ?_,
+    (hP.isVerticalSeparation.nonspanning_left.of_isRestriction hN).closure_nonspanning.subset hcl1,
     (hP.isVerticalSeparation.nonspanning_right.of_isRestriction hN).closure_nonspanning.subset hcl2⟩
   · grw [hQl, subset_inter_iff, and_iff_right hss1, P.left_subset_ground, hN.subset]
   grw [hQr, subset_inter_iff, and_iff_right hss2, P.right_subset_ground, hN.subset]
@@ -1471,11 +1470,11 @@ lemma WeaklyConnected.delete_of_forall_exists_parallel (h : M.WeaklyConnected k)
     (M ＼ D).WeaklyConnected k := by
   by_cases hDE : M.E ⊆ D
   · exact numConnected_of_subsingleton (by simp [diff_eq_empty.2 hDE]) _ (by simp)
-  obtain ⟨f', hf'⟩ := not_subset.1 hDE  
+  obtain ⟨f', hf'⟩ := not_subset.1 hDE
   refine h.weaklyConnected_of_isRestriction (delete_isRestriction ..) fun e henl heD ↦ ?_
   replace heD := show e ∈ D by simpa [henl.mem_ground] using heD
   obtain ⟨f, hf⟩ := hD e heD henl
-  exact ⟨f, ⟨hf.2.mem_ground_right, hf.1⟩, hf.2.mem_closure⟩  
+  exact ⟨f, ⟨hf.2.mem_ground_right, hf.1⟩, hf.2.mem_closure⟩
 
 lemma WeaklyConnected.delete_weaklyConnected_of_parallel {e f : α} (h : M.WeaklyConnected k)
     (hef : M.Parallel e f) (hne : e ≠ f) : (M ＼ {e}).WeaklyConnected k :=
@@ -1485,11 +1484,11 @@ lemma WeaklyConnected.weaklyConnected_of_isSimplification {N : Matroid α} (h : 
     (hN : N.IsSimplification M) : N.WeaklyConnected k := by
   refine h.weaklyConnected_of_isRestriction hN.isRestriction fun e henl _ ↦ ?_
   obtain ⟨f, hf, -⟩ := hN.exists_unique henl
-  exact ⟨f, hf.1, hf.2.mem_closure⟩ 
+  exact ⟨f, hf.1, hf.2.mem_closure⟩
 
-  
-  
-  
+
+
+
 
 
 

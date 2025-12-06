@@ -2,11 +2,9 @@ import Mathlib.Topology.Instances.ENat
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Order.T5
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Mathlib.Topology.Order.Monotone -- inefficient import
-import Mathlib.Tactic.ENatToNat -- inefficient import
+import Mathlib.Tactic.ENatToNat
 import Matroid.ForMathlib.ENat
 import Matroid.ForMathlib.Card
-import Mathlib.Algebra.Group.Pointwise.Finset.BigOperators -- inefficient import
 
 open Set Set.Notation Function
 

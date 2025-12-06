@@ -1,5 +1,4 @@
 import Matroid.Representation.StandardRep
-import Mathlib.LinearAlgebra.Projectivization.Cardinality -- inefficient import
 import Matroid.Uniform
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]
