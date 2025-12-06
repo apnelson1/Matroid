@@ -1,6 +1,6 @@
 import Matroid.Graph.Connected.Set.Leg
 import Matroid.Graph.Connected.Vertex.VertexEnsemble
-import Matroid.Graph.Connected.Defs
+import Matroid.Graph.Connected.MixedLineGraph
 import Matroid.Graph.Finite
 import Mathlib.Data.Finite.Card
 
@@ -281,5 +281,30 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
 theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
     G.PreconnGe n ↔ ∀ ⦃s t⦄, s ∈ V(G) → t ∈ V(G) → Nonempty (G.VertexEnsemble s t ι) :=
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
+
+theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
+    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnectedBetween s t →
+    n ≤ X.encard + F.encard) ↔ ∃ A : G.VertexEnsemble s t ι, A.edgeDisjoint := by
+  convert (L'(G)).Menger'sTheorem_vertex (by simpa : Sum.inl s ∈ _) (by simpa : Sum.inl t ∈ _) hι
+  · refine ⟨fun h ⟨C, hC, hsC, htC, hCconn⟩ ↦ ?_, fun h X hX ⟨hsX, htX⟩ F hF hXF ↦ ?_⟩
+    · change n ≤ C.encard
+      rw [← image_preimage_inl_union_image_preimage_inr C, encard_union_eq (by simp),
+      Sum.inl_injective.encard_image, Sum.inr_injective.encard_image]
+      refine h (Sum.inl ⁻¹' C) ?_ (by tauto) (Sum.inr ⁻¹' C) ?_ ?_
+      · exact preimage_subset_iff.mpr fun x hxC ↦ by simpa using hC hxC
+      · exact preimage_subset_iff.mpr fun e heC ↦ by simpa using hC heC
+      contrapose! hCconn
+      rwa [← connBetween_mixedLineGraph_del_iff,
+        image_preimage_inl_union_image_preimage_inr] at hCconn
+    specialize h ⟨Sum.inl '' X ∪ Sum.inr '' F, ?_, by simpa, by simpa, ?_⟩
+    · simp [Sum.inl_injective.preimage_image, Sum.inr_injective.preimage_image, hX, hF]
+    · contrapose! hXF
+      rwa [← connBetween_mixedLineGraph_del_iff]
+    change n ≤ (Sum.inl '' X ∪ Sum.inr '' F).encard at h
+    rwa [encard_union_eq (by simp), Sum.inl_injective.encard_image,
+      Sum.inr_injective.encard_image] at h
+  refine ⟨fun ⟨A, hA⟩ ↦ ⟨mixedLineEnsembleMap A hA⟩, fun ⟨A⟩ ↦ ?_⟩
+  classical
+  use mixedLineOfEnsembleMap A, mixedLineOfEnsembleMap_edgeDisjoint A
 
 end Graph

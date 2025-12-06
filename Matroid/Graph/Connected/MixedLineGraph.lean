@@ -1,6 +1,5 @@
-import Matroid.Graph.Connected.Menger
+import Matroid.Graph.Connected.Basic
 import Matroid.Graph.Degree.Leaf
-import Mathlib.Tactic
 
 open Set Function Nat WList Sum
 
@@ -295,6 +294,50 @@ lemma WalkOfMixedLineGraph_last [DecidableEq α] {w : WList (α ⊕ β) (α × �
       exact WalkOfMixedLineGraph_last hw hh.symm hl
     exact WalkOfMixedLineGraph_last hw hh.symm hl
 
+@[simp]
+lemma mem_walkOfMixedLineGraph_iff [DecidableEq α] {w : WList (α ⊕ β) (α × β)} {s t}
+    (h : L'(G).IsWalk w) (hf : w.first = inl s) (hl : w.last = inl t) :
+    x ∈ WalkOfMixedLineGraph w h hf hl ↔ inl x ∈ w := by
+  match w with
+  | .nil (inl s) => simp
+  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) (a, b) (.cons v (c, d) w) =>
+    simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
+      Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
+    obtain ⟨⟨hds, rfl, rfl⟩, ⟨hdc, hh⟩, hw⟩ := h
+    simp only [first_cons, inl.injEq, reduceCtorEq, false_and, inr.injEq, false_or,
+      Graph.WalkOfMixedLineGraph] at hf hh ⊢
+    obtain ⟨hh, rfl⟩ := hh
+    subst a
+    split_ifs with hsc
+    · subst c
+      simp only [mem_walkOfMixedLineGraph_iff, mem_cons_iff, inl.injEq, reduceCtorEq, false_or,
+        iff_or_self]
+      exact fun h ↦ (h ▸ hh) ▸ first_mem
+    simp [mem_walkOfMixedLineGraph_iff]
+
+@[simp]
+lemma mem_of_mem_walkOfMixedLineGraph_edge [DecidableEq α] {w : WList (α ⊕ β) (α × β)} {s t}
+    (h : L'(G).IsWalk w) (hf : w.first = inl s) (hl : w.last = inl t)
+    (he : e ∈ (WalkOfMixedLineGraph w h hf hl).edge) : inr e ∈ w := by
+  match w with
+  | .nil (inl s) => simp at he
+  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) (a, b) (.cons v (c, d) w) =>
+    simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
+      Prod.mk.injEq, inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at h
+    obtain ⟨⟨hds, rfl, rfl⟩, ⟨hdc, hh⟩, hw⟩ := h
+    simp only [first_cons, inl.injEq, reduceCtorEq, false_and, inr.injEq, false_or, last_cons,
+      WalkOfMixedLineGraph, mem_cons_iff] at hf hh hl he ⊢
+    obtain ⟨hh, rfl⟩ := hh
+    subst a
+    split_ifs at he with hsc
+    · subst c
+      right
+      exact mem_of_mem_walkOfMixedLineGraph_edge hw hh.symm hl he
+    simp only [cons_edge, List.mem_cons] at he
+    exact he.imp id (mem_of_mem_walkOfMixedLineGraph_edge hw hh.symm hl ·)
+
 lemma IsWalk.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α × β)} (h : L'(G).IsWalk w)
     {s t} (hf : w.first = inl s) (hl : w.last = inl t) :
     G.IsWalk (WalkOfMixedLineGraph w h hf hl) := by
@@ -314,6 +357,28 @@ lemma IsWalk.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
       apply hw.WalkOfMixedLineGraph
     simp only [cons_isWalk_iff, WalkOfMixedLineGraph_first]
     exact ⟨hds.isLink_of_inc_of_ne hdc hsc, hw.WalkOfMixedLineGraph _ hl⟩
+
+lemma IsPath.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α × β)} (h : L'(G).IsPath w)
+    {s t} (hf : w.first = inl s) (hl : w.last = inl t) :
+    G.IsPath (WalkOfMixedLineGraph w h.isWalk hf hl) := by
+  use h.isWalk.WalkOfMixedLineGraph hf hl
+  match w with
+  | .nil (inl s) => simp
+  | .cons (inl s) e (.nil (inl t)) => simp at h
+  | .cons (inl s) (a, b) (.cons v (c, d) w) =>
+    simp only [cons_isPath_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
+      Prod.swap_prod_mk, first_cons, inl.injEq, reduceCtorEq, and_false, or_false, mem_cons_iff,
+      not_or, ne_eq] at h
+    obtain ⟨⟨hw, ⟨hdc, hh⟩, hbw⟩, ⟨hbs, rfl, rfl⟩, -, hsw⟩ := h
+    simp only [first_cons, inl.injEq, reduceCtorEq, false_and, inr.injEq, false_or,
+      Graph.WalkOfMixedLineGraph] at hf hh ⊢
+    obtain ⟨hcw, rfl⟩ := hh
+    subst a
+    split_ifs with hsc
+    · subst c
+      exact hw.WalkOfMixedLineGraph hcw.symm hl |>.nodup
+    simp only [cons_vertex, List.nodup_cons, mem_vertex]
+    use by simpa, (hw.WalkOfMixedLineGraph hcw.symm hl |>.nodup)
 
 lemma IsWalk.connBetween_of_mixedLineGraph {w : WList (α ⊕ β) (α × β)} {s t} (h : L'(G).IsWalk w)
     (hf : w.first = Sum.inl s) (hl : w.last = Sum.inl t) : G.ConnectedBetween s t := by
@@ -356,6 +421,31 @@ lemma connBetween_mixedLineGraph_del_iff :
   refine h.of_le ?_
   rw [← vertexDelete_vertexDelete, ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm]
   exact vertexDelete_le
+
+@[simps]
+def mixedLineOfEnsembleMap [DecidableEq α] (A : L'(G).VertexEnsemble (inl s) (inl t) ι) :
+    G.VertexEnsemble s t ι where
+  f i := WalkOfMixedLineGraph (A.f i) (A.isPath i).isWalk (A.first_eq i) (A.last_eq i)
+  isPath i := (A.isPath i).WalkOfMixedLineGraph (A.first_eq i) (A.last_eq i)
+  first_eq i := by simp
+  last_eq i := by simp
+  internallyDisjoint i j hne := by
+    ext x
+    have := Set.ext_iff.mp (A.internallyDisjoint hne) (inl x)
+    simpa
+
+lemma mixedLineOfEnsembleMap_edgeDisjoint [DecidableEq α]
+    (A : L'(G).VertexEnsemble (inl s) (inl t) ι) : (mixedLineOfEnsembleMap A).edgeDisjoint := by
+  classical
+  rintro i j hne
+  simp only [onFun, mixedLineOfEnsembleMap, disjoint_iff_forall_notMem, mem_edgeSet_iff]
+  intro e hei hej
+  have h1 := mem_of_mem_walkOfMixedLineGraph_edge (A.isPath i).isWalk (A.first_eq i) (A.last_eq i)
+    hei
+  have h2 := mem_of_mem_walkOfMixedLineGraph_edge (A.isPath j).isWalk (A.first_eq j) (A.last_eq j)
+    hej
+  have := A.internallyDisjoint hne ▸ (show inr e ∈ V(A.f i) ∩ V(A.f j) by simp [h1, h2])
+  simp at this
 
 -- If e is not a loop, then we could even get a path rather than a walk.
 lemma Preconnected.exists_isWalk_first_lastEdge (h : G.Preconnected) (hx : x ∈ V(G))(he : e ∈ E(G)):
@@ -403,99 +493,5 @@ lemma Preconnected.mixedLineGraph (h : G.Preconnected) : L'(G).Preconnected := b
 
 lemma notMem_iff_forall_mem_ne (S : Set α) (x : α) : (∀ y ∈ S, y ≠ x) ↔ x ∉ S := by
   aesop
-
--- lemma alternates {a b e w} (hP : L'(G).IsWalk (cons (Sum.inl x) a (cons e b w))) :
---     Sum.isRight e := by
---   simp only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
---     Prod.mk.injEq, Sum.inl.injEq, Prod.swap_prod_mk, reduceCtorEq, and_false, or_false] at hP
---   obtain ⟨⟨ha, rfl, hab⟩, ⟨hb, (⟨rfl, hwf⟩ | ⟨hwf, rfl⟩)⟩, hw⟩ := hP
---   · simp at hab
---   simp
-
--- lemma match_stuff {w : WList (α ⊕ β) (α × β)} (hP : L'(G).IsWalk w) (hwf : Sum.isLeft w.first)
---     (hwl : Sum.isLeft w.last) : (∃ x : α, w = nil (Sum.inl x)) ∨
---     ∃ x e y w', w = cons (Sum.inl x) (x, e) (cons (Sum.inr e) (y, e) w') ∧ w'.first = Sum.inl y :=by
---   match w with
---   | .nil (Sum.inl x) => simp
---   | .cons (Sum.inl x) (a, b) (nil (Sum.inl y)) => simp at hP
---   | .cons (Sum.inl x) (a, b) (cons c d w') =>
---     have := alternates hP
---     match c with
---     | Sum.inr e =>
---     simp_all only [cons_isWalk_iff, first_cons, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff',
---       Prod.mk.injEq, Sum.inl.injEq, Sum.inr.injEq, Prod.swap_prod_mk, reduceCtorEq, and_self,
---       or_false, false_and, false_or, Sum.isLeft_inl, last_cons, Sum.isRight_inr, exists_false,
---       cons.injEq, ↓existsAndEq, and_true, true_and, and_self_left]
---     obtain ⟨⟨hda, rfl, rfl⟩, ⟨hd, hwf, rfl⟩, hw⟩ := hP
---     use d.1, rfl, hwf.symm
-
--- def bar [DecidableEq α] :
---     {P // L'(G).IsPath P ∧ Sum.isLeft P.first ∧ Sum.isLeft P.last} → {P // G.IsPath P} := by
---   rintro ⟨P, hP, hPf, hPl⟩
---   match P with
---   | .nil (Sum.inl u) =>
---     simp only [nil_isPath_iff, mixedLineGraph_vertexSet, mem_union, mem_image, Sum.inl.injEq,
---       exists_eq_right, reduceCtorEq, and_false, exists_false, or_false] at hP
---     use nil u, by simpa, by simp
---   | .cons (Sum.inl x) (a, b) (nil (Sum.inl y)) => simp at hP
---   | .cons (Sum.inl u) (a, b) (cons c d w) =>
---     have := alternates hP.isWalk
---     match c with
---     | Sum.inr e =>
---     simp only [cons_isPath_iff, mixedLineGraph_isLink, Sym2.eq, Sym2.rel_iff', Prod.mk.injEq,
---       reduceCtorEq, false_and, Prod.swap_prod_mk, Sum.inr.injEq, false_or, first_cons,
---       Sum.inl.injEq, and_self, or_false, mem_cons_iff] at hP
---     obtain ⟨⟨hw, ⟨hd, hwf, rfl⟩, hdw⟩, ⟨hda, rfl, rfl⟩, haw⟩ := hP
---     obtain ⟨P', hP'⟩ := bar ⟨w, hw, by sorry, by simpa using hPl⟩
---     use cons a d.2 P'
---     simp [hP']
---     sorry
-
--- def EquivPathmixedLineGraphPath :
---     {P // G.IsPath P} ≃ {P // L'(G).IsPath P ∧ Sum.isLeft P.first ∧ Sum.isLeft P.last} where
---   toFun P := by
---     obtain ⟨P, hP⟩ := P
---     use mixedLineGraph_walkMap P, hP.mixedLineGraph_walkMap, by simp, by simp
---   invFun P := by
---     obtain ⟨P, hP, hPf, hPl⟩ := P
-
-theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
-    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnectedBetween s t →
-    n ≤ X.encard + F.encard) ↔ ∃ A : G.VertexEnsemble s t ι, A.edgeDisjoint := by
-  convert (L'(G)).Menger'sTheorem_vertex (by simpa : Sum.inl s ∈ _) (by simpa : Sum.inl t ∈ _) hι
-  · refine ⟨fun h ⟨C, hC, hsC, htC, hCconn⟩ ↦ ?_, fun h X hX ⟨hsX, htX⟩ F hF hXF ↦ ?_⟩
-    · change n ≤ C.encard
-      rw [← image_preimage_inl_union_image_preimage_inr C, encard_union_eq (by simp),
-      Sum.inl_injective.encard_image, Sum.inr_injective.encard_image]
-      refine h (Sum.inl ⁻¹' C) ?_ (by tauto) (Sum.inr ⁻¹' C) ?_ ?_
-      · exact preimage_subset_iff.mpr fun x hxC ↦ by simpa using hC hxC
-      · exact preimage_subset_iff.mpr fun e heC ↦ by simpa using hC heC
-      contrapose! hCconn
-      rwa [← connBetween_mixedLineGraph_del_iff,
-        image_preimage_inl_union_image_preimage_inr] at hCconn
-    specialize h ⟨Sum.inl '' X ∪ Sum.inr '' F, ?_, by simpa, by simpa, ?_⟩
-    · simp [Sum.inl_injective.preimage_image, Sum.inr_injective.preimage_image, hX, hF]
-    · contrapose! hXF
-      rwa [← connBetween_mixedLineGraph_del_iff]
-    change n ≤ (Sum.inl '' X ∪ Sum.inr '' F).encard at h
-    rwa [encard_union_eq (by simp), Sum.inl_injective.encard_image,
-      Sum.inr_injective.encard_image] at h
-  refine ⟨fun ⟨A, hA⟩ ↦ ⟨?_⟩, fun ⟨h⟩ ↦ ?_⟩
-  ·
-    sorry
-  sorry
-
-variable {α' β' : Type*} {H H' : Graph α' β'}
-
--- def Walk.IsPrefix (w w' : G.Walk) : Prop := w.val.IsPrefix w'.val
-
--- def Walk.reverse (w : G.Walk) : G.Walk := ⟨w.val.reverse, w.prop.reverse⟩
-
--- structure WalkHom (G : Graph α β) (H : Graph α' β') where
---   walkMap : G.Walk → H.Walk
---   IsPrefix' ⦃w w' : G.Walk⦄ : w.IsPrefix w' → (walkMap w).IsPrefix (walkMap w')
---   reverse' ⦃w⦄ : walkMap w.reverse = (walkMap w).reverse
-
--- def vxMap (F : G.WalkHom H) : α → α'
 
 end Graph
