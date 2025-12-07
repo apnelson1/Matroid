@@ -252,3 +252,68 @@ lemma TutteConnected.exists_of_weaklyConnected (hM : M.TutteConnected k) (he : M
 --   rw [show (3 : ℕ∞) = 2 + 1 from rfl] at *
 --   have aux (e : α) : ∃ x, (M ＼ {e} ／ {x}).WeaklyConnected (2 + 1) := by
 --     have h' :
+
+-- `x` element of a matroid `M` => if either `N = M ／ x` or `N = M ＼ x` has a separation
+-- `(A,B)` with `λ = k`, then either `A` or `B` has a partition into two sets,
+-- where `λ(A₁) ≤ k` or `λ(A₂) ≤ k` in `M`.
+
+variable {N : Matroid α}
+
+def Partition.AdherentIn (P : N.Partition) (M : Matroid α) : Prop :=
+    ∃ (X Y : Set α), Disjoint X Y ∧ M.eConn X = N.eConn X ∧ M.eConn Y = N.eConn Y ∧
+    (X ∪ Y = P.left ∨ X ∪ Y = P.right)
+
+lemma Partition.AdherentIn.symm {P : N.Partition} (h : P.AdherentIn M) : P.symm.AdherentIn M := by
+  obtain ⟨X, Y, hdj, hX, hY, hXY | hXY⟩ := h
+  · exact ⟨Y, X, hdj.symm, hY, hX, .inr (union_comm _ _ ▸ hXY)⟩
+  exact ⟨Y, X, hdj.symm, hY, hX, .inl (union_comm _ _ ▸ hXY)⟩
+
+@[simp]
+lemma Partition.adherentIn_symm_iff {P : N.Partition} : P.symm.AdherentIn M ↔ P.AdherentIn M :=
+  ⟨fun h ↦ by simpa using h.symm, Partition.AdherentIn.symm⟩
+
+lemma Partition.AdherentIn.dual {P : N.Partition} (hP : P.AdherentIn M) : P.dual.AdherentIn M✶ := by
+  obtain ⟨X, Y, hXY, hX, hY, h | h⟩ := hP
+  · exact ⟨X, Y, hXY, by simpa, by simpa, .inl h⟩
+  exact ⟨X, Y, hXY, by simpa, by simpa, .inr h⟩
+
+lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) :
+    P.AdherentIn M✶ := by
+  obtain ⟨X, Y, hXY, hX, hY, h | h⟩ := hP
+  · exact ⟨X, Y, hXY, by simpa using hX, by simpa using hY, .inl h⟩
+  exact ⟨X, Y, hXY, by simpa using hX, by simpa using hY, .inr h⟩
+
+@[simp]
+lemma Partition.adherentIn_dual_iff {P : N.Partition} : P.dual.AdherentIn M ↔ P.AdherentIn M✶ :=
+  ⟨Partition.AdherentIn.of_dual, fun h ↦ by simpa using h.dual⟩
+
+@[simp]
+lemma Partition.copy_adherentIn_iff {N N' : Matroid α} {P : N.Partition} (h_eq : N = N') :
+    (P.copy h_eq).AdherentIn M ↔ P.AdherentIn M := by
+  simp [AdherentIn, h_eq]
+
+def AdheresTo (N M : Matroid α) : Prop := ∀ (P : N.Partition), P.AdherentIn M
+
+@[simp] lemma adheresTo_self (M : Matroid α) : M.AdheresTo M :=
+  fun P ↦ ⟨P.left, ∅, by simp⟩
+
+lemma contractElem_or_deleteElem_adheresTo (M : Matroid α) (e : α) :
+    (N ／ {e}).AdheresTo M ∨ (N ＼ {e}).AdheresTo M := by
+  simp only [AdheresTo]
+  by_contra! hcon
+  obtain ⟨⟨P, hP⟩, Q, hQ⟩ := hcon
+  wlog hle1 : M.eConn (P.1 ∩ Q.2) ≤ M.eConn (P.2 ∩ Q.2) generalizing M N with aux
+  · push_neg at hle1
+    refine aux (M := M✶) (N := N✶) (Q.dual.copy (by simp)) (by simpa) (P.dual.copy (by simp))
+      (by simpa) ?_
+    simp
+  wlog hle1 : M.eConn (P.1 ∩ Q.1) ≤ M.eConn (P.2 ∩ Q.2) generalizing P Q with aux
+  · push_neg at hle1
+    exact aux P.symm (by simpa) Q.symm (by simpa) (by simpa using hle1.le)
+
+
+    -- apply aux P.symm (fun X Y hdk h1 h2 ↦ ?_)
+
+    -- rw [symm_left, symm_right, and_comm]
+
+  sorry
