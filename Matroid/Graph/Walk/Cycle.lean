@@ -195,6 +195,43 @@ lemma IsCycle.encard_vxSet (h : G.IsCycle C) : V(C).encard = C.length := by
   rw [h.isClosed.eq, ← tail_last, mem_vertexSet_iff]
   exact last_mem
 
+@[simp]
+lemma rotate_toGraph {n : ℕ} (hC : C.IsClosed) (hCwf : C.WellFormed) :
+    (C.rotate n).toGraph = C.toGraph := by
+  ext a b c
+  · simp [hC.mem_rotate]
+  simp [hCwf.toGraph_isLink, (hCwf.rotate hC n).toGraph_isLink, hC]
+
+def IsCycleGraph (G : Graph α β) := ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C)
+
+lemma isCycleGraph_of_cycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycleGraph :=
+  ⟨C, hC.isCycle_toGraph, by simp, by simp⟩
+
+lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
+    ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x := by
+  obtain ⟨C, hC, hV, hE⟩ := hG
+  obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hC.nonempty (hV hx)
+  use (C.rotate n), hC.rotate n
+  simp [hC.isClosed.rotate_vertexSet, hE, hV]
+
+-- lemma IsCycleGraph.exists_cycle_of_isLink (hG : G.IsCycleGraph) (he : G.IsLink e x y) :
+--     ∃ C, G.IsCycle (cons x e C) ∧ V(G) ⊆ V(cons x e C) ∧ E(G) ⊆ E(cons x e C) ∧ C.first = y := by
+--   sorry
+
+-- lemma IsCycleGraph.exists_cycle_of_adj (hG : G.IsCycleGraph) (hadj : G.Adj x y) :
+--     ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x ∧ C.get 1 = y := by
+--   obtain ⟨e, he⟩ := hadj
+--   obtain ⟨C, hC, hV, hE, rfl⟩ := hG.exists_cycle_of_isLink he
+--   use (cons x e C), hC, hV, hE, by simp, by simp
+
+/-- List of vertices in the cycle graph is the cyclic order-/
+noncomputable def IsCycleGraph.vertices (hG : G.IsCycleGraph) (hx : x ∈ V(G)) : List α :=
+  hG.exists_cycle_from hx |>.choose.vertex.dropLast
+
+-- lemma IsCycleGraph.encard_eq : V(G).encard = E(G).encard := by
+--   sorry
+
+
 lemma IsCycle.exists_isPath (hC : G.IsCycle C) (hnt : C.Nontrivial) : ∃ P u e f,
     G.IsPath P ∧ u ∉ P ∧ e ∉ P.edge ∧ f ∉ P.edge ∧ e ≠ f ∧ C = cons u e (P.concat f u) := by
   refine ⟨C.tail.dropLast, C.first, hC.nonempty.firstEdge, hC.nonempty.lastEdge,
@@ -330,7 +367,5 @@ lemma IsPath.cons_isCycle_of_nontrivial {P : WList α β} (hP : G.IsPath P)
 lemma IsPath.concat_isCycle {P : WList α β} (hP : G.IsPath P) (he : G.IsLink e P.last P.first)
     (heP : e ∉ P.edge) : G.IsCycle (P.concat e P.first) := by
   simpa using (hP.reverse.cons_isCycle (e := e) (by simpa using he) (by simpa)).reverse
-
-
 
 end Graph

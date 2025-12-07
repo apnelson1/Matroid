@@ -1,8 +1,8 @@
-import Mathlib.LinearAlgebra.LinearIndependent.Defs -- inefficient import
-import Mathlib.LinearAlgebra.Basis.Basic -- inefficient import
-import Mathlib.LinearAlgebra.Dimension.Constructions -- inefficient import
-import Mathlib.Data.Set.Card -- inefficient import
-
+import Mathlib.LinearAlgebra.Finsupp.Pi
+import Mathlib.LinearAlgebra.Basis.Basic
+import Mathlib.LinearAlgebra.DirectSum.Finsupp
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+import Mathlib.LinearAlgebra.FreeModule.Basic
 
 variable {ι ι' : Type*} {R : Type*} {K : Type*} {s : Set ι} {M M' V : Type*} {v : ι → M}
 

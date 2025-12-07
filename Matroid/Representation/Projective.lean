@@ -1,8 +1,7 @@
 import Matroid.Representation.Minor
 import Matroid.Rank.Cardinal
 import Mathlib.FieldTheory.Finite.GaloisField
-import Mathlib.LinearAlgebra.Dimension.Basic -- inefficient import
-import Mathlib.LinearAlgebra.Projectivization.Subspace -- inefficient import
+import Mathlib.LinearAlgebra.Projectivization.Cardinality
 import Matroid.ForMathlib.LinearAlgebra.Projective
 
 variable {α β W W' 𝔽 R : Type*} {e f x : α} {I E B X Y : Set α} {M : Matroid α} [DivisionRing 𝔽]

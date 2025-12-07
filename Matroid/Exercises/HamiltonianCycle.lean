@@ -1,4 +1,5 @@
 import Matroid.Graph.Independent
+import Matroid.Graph.Connected.Menger
 import Matroid.ForMathlib.Minimal
 
 import Matroid.Exercises.HamiltonianCycle.MinimalMaximal
@@ -26,16 +27,23 @@ Every graph with n >= 3 vertices and minimum degree at least n/2 has a Hamiltoni
 lemma isCompOf_subset (hHG : H.IsCompOf G) : V(H) ⊆ V(G) :=
   hHG.isClosedSubgraph.vertexSet_mono
 
-lemma minDegree_le_minDegree_of_isCompOf [G.Finite] (hHG : H.IsCompOf G) :
-    G.minDegree ≤ H.minDegree := by
-  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hHG.nonempty
-  rw [←hveq, hHG.isClosedSubgraph.degree_eq hv]
-  exact minDegree_le_degree <| hHG.subset hv
+@[gcongr]
+lemma IsClosedSubgraph.minDegree_le_minDegree [G.LocallyFinite] (hHG : H ≤c G)
+    (hHne : V(H).Nonempty) : G.minDegree ≤ H.minDegree := by
+  obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hHne
+  rw [←hveq, hHG.degree_eq hv]
+  exact minDegree_le_degree <| hHG.vertexSet_mono hv
 
-lemma minDegree_le_minDegree_of_Subgraph [G.Finite] (hHG : H ≤s G) : H.minDegree ≤ G.minDegree := by
+@[gcongr]
+lemma IsCompOf.minDegree_le_minDegree [G.LocallyFinite] (hHG : H.IsCompOf G) :
+    G.minDegree ≤ H.minDegree :=
+  hHG.isClosedSubgraph.minDegree_le_minDegree hHG.nonempty
+
+lemma IsSpanningSubgraph.minDegree_le_minDegree [G.LocallyFinite] (hHG : H ≤s G) :
+    H.minDegree ≤ G.minDegree := by
     --The following two haves are used in the obtain.
     --First one follows from H being a component of a finite graph
-  have Hfin: H.Finite := finite_of_le hHG.le
+  have Hfin : H.LocallyFinite := LocallyFinite.mono (by assumption) hHG.le
   obtain rfl | hH := H.eq_bot_or_vertexSet_nonempty
   · simp
   obtain ⟨v, hv, hveq⟩ := H.exists_vertex_minDegree hH
@@ -110,7 +118,16 @@ lemma IsTree.exists_nontrivial_path (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
   rw [←WList.two_le_length_iff]
   omega
 
--- This should use Menger and assume IsForest rather than IsTree
+-- lemma IsForest.exists_not_adj (hT : T.IsTree) (hV : 3 ≤ V(T).encard) :
+--     ∃ x ∈ V(G), ∃ y ∈ V(G), ¬ T.Adj x y := by
+--   by_contra! h
+--   have ⟨x, hx⟩ : V(T).Nonempty := nonempty_of_encard_ne_zero (by sorry)
+
+lemma IsForest.exists_isSepSet' (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
+    ∃ S, IsSepSet T S ∧ S.encard = 1 := by
+
+  sorry
+
 lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
     ∃ S, IsSepSet T S ∧ S.encard = 1 := by
   -- If T is not connected (ie. not a tree), then the result is """vacuously""" true.
@@ -1903,7 +1920,7 @@ lemma dirac_connected [G.Simple] [hFinite : G.Finite] (hV : 3 ≤ V(G).encard)
   -- some manipulations left over
   have hle : V(min_comp).ncard ≤ G.minDegree := by linarith
   have hle2 : G.minDegree ≤ min_comp.minDegree := by
-    apply minDegree_le_minDegree_of_isCompOf
+    apply IsCompOf.minDegree_le_minDegree
     rw [←mem_components_iff_isCompOf]
     exact min_comp_spec.1
   replace hle : V(min_comp).ncard ≤ min_comp.minDegree := by linarith

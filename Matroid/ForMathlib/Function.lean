@@ -1,5 +1,5 @@
 
-import Mathlib.Data.Set.Pairwise.Basic -- inefficient import
+-- import Mathlib.Data.Set.Pairwise.Basic -- inefficient import
 import Mathlib.Data.Set.Subset -- inefficient import
 import Matroid.ForMathlib.Relation
 

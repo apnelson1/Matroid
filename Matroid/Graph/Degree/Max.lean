@@ -32,7 +32,7 @@ lemma Connected.loopless_of_maxDegreeLE_two (hG : G.Connected) (hmax : G.MaxDegr
 
 def IsPathGraph (G : Graph α β) : Prop := ∃ P, G.IsPath P ∧ G = P.toGraph
 
-def IsCycleGraph (G : Graph α β) : Prop := ∃ C, G.IsCycle C ∧ G = C.toGraph
+-- def IsCycleGraph (G : Graph α β) : Prop := ∃ C, G.IsCycle C ∧ G = C.toGraph
 
 /-- If `v` and `w` are leaves of a connected graph `G` with maximum degree at most `2`,
 then `G` is a path from `v` to `w`. -/
@@ -85,7 +85,8 @@ lemma Connected.isCycleGraph_of_regular [G.Finite] (hG : G.Connected) (hreg : G.
   · obtain ⟨x, hx⟩ := hF.exists_isLeaf hE
     simpa [hx.degree] using hreg.degree hx.mem
   obtain ⟨C, hC : G.IsCycle C⟩ := by simpa [IsForest] using hF
-  refine ⟨C, hC, Eq.symm <| hG.eq_of_le_of_forall_degree_ge hC.isWalk.toGraph_le (by simp) ?_⟩
+  rw [← hG.eq_of_le_of_forall_degree_ge hC.isWalk.toGraph_le (by simp) ?_]
+  · exact isCycleGraph_of_cycle_toGraph hC
   simp +contextual only [toGraph_vertexSet, mem_vertexSet_iff, hC.toGraph_regular.degree]
   exact fun x hxC ↦ (hreg.degree (hC.isWalk.vertex_mem_of_mem hxC)).le
 

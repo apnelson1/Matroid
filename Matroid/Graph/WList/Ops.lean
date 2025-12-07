@@ -202,6 +202,11 @@ lemma append_first_of_nonempty (h : w₁.Nonempty) : (w₁ ++ w₂).first = w₁
 lemma append_last : (w₁ ++ w₂).last = w₂.last := by
   induction w₁ with simp_all
 
+@[simp]
+protected lemma append_concat (w₁ w₂ : WList α β) (e) (x) :
+    w₁ ++ (w₂.concat e x) = (w₁ ++ w₂).concat e x := by
+  rw [WList.concat_eq_append, WList.concat_eq_append, ← append_assoc, append_last]
+
 lemma append_right_injective : Injective (w ++ ·) :=
   fun w₁ w₂ h ↦ by induction w with simp_all
 

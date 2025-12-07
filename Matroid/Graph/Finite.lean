@@ -149,12 +149,12 @@ lemma encard_delete_edgeSet_lt [G.Finite] (hF : (E(G) ∩ F).Nonempty) :
 protected class LocallyFinite (G : Graph α β) where
   finite : ∀ x : α, Set.Finite E(G, x)
 
-lemma finite_incEdges (G : Graph α β) [G.LocallyFinite] : E(G, x).Finite :=
+lemma finite_incEdges (G : Graph α β) [G.LocallyFinite] (x : α) : E(G, x).Finite :=
   LocallyFinite.finite x
 
 lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := by
   change Finite N(G, x)
-  have : Finite E(G, x) := G.finite_incEdges
+  have : Finite E(G, x) := G.finite_incEdges x
   refine Finite.of_injective (β := E(G, x))
     (fun y ↦ ⟨y.2.choose, y.2.choose_spec.inc_left⟩) fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ ?_
   simp only [Subtype.mk.injEq]
@@ -164,19 +164,19 @@ lemma finite_neighbors (G : Graph α β) [G.LocallyFinite] : N(G, x).Finite := b
   exact h₂.choose_spec
 
 lemma finite_setOf_isNonloopAt (G : Graph α β) [G.LocallyFinite] :
-  {e | G.IsNonloopAt e x}.Finite := G.finite_incEdges.subset fun _ he ↦ he.inc
+  {e | G.IsNonloopAt e x}.Finite := (G.finite_incEdges x).subset fun _ he ↦ he.inc
 
 lemma finite_setOf_isLoopAt (G : Graph α β) [G.LocallyFinite] :
-  {e | G.IsLoopAt e x}.Finite := G.finite_incEdges.subset fun _ he ↦ he.inc
+  {e | G.IsLoopAt e x}.Finite := (G.finite_incEdges x).subset fun _ he ↦ he.inc
 
 instance [Finite β] (G : Graph α β) : G.LocallyFinite where
   finite _ := toFinite ..
 
 lemma LocallyFinite.mono (hG : G.LocallyFinite) (hle : H ≤ G) : H.LocallyFinite where
-  finite _ := G.finite_incEdges.subset fun _ he ↦ he.of_le hle
+  finite _ := (G.finite_incEdges _).subset fun _ he ↦ he.of_le hle
 
 instance [G.LocallyFinite] (X : Set α) : G[X].LocallyFinite where
-  finite _ := G.finite_incEdges.subset fun _ ⟨_, he⟩ ↦ ((induce_isLink ..) ▸ he).1.inc_left
+  finite _ := (G.finite_incEdges _).subset fun _ ⟨_, he⟩ ↦ ((induce_isLink ..) ▸ he).1.inc_left
 
 instance [G.LocallyFinite] (X : Set α) : (G - X).LocallyFinite :=
   ‹G.LocallyFinite›.mono vertexDelete_le

@@ -302,6 +302,11 @@ structure VertexEnsemble (G : Graph α β) (s t : α) (ι : Type*) where
 def VertexEnsemble.edgeDisjoint (P : G.VertexEnsemble s t ι) : Prop :=
   Pairwise (Disjoint on WList.edgeSet on P.f)
 
+lemma VertexEnsemble.eq_or_eq_of_mem {i j} (P : G.VertexEnsemble s t ι) (hxi : x ∈ V(P.f i))
+    (hxj : x ∈ V(P.f j)) (hne : i ≠ j) : x = s ∨ x = t := by
+  have := P.internallyDisjoint hne ▸ (show x ∈ V(P.f i) ∩ V(P.f j) by simp [hxi, hxj])
+  simpa
+
 @[simps]
 def vertexEnsemble_empty (G : Graph α β) (s t : α) (ι : Type*) [h : IsEmpty ι] :
     G.VertexEnsemble s t ι where

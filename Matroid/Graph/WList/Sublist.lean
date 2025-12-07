@@ -82,6 +82,11 @@ lemma IsSublist.trans (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₃) : w�
 lemma IsSublist.antisymm (h : w₁.IsSublist w₂) (h' : w₂.IsSublist w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
+instance : IsPartialOrder (WList α β) IsSublist where
+  refl := isSublist_refl
+  trans _ _ _ := IsSublist.trans
+  antisymm _ _ := IsSublist.antisymm
+
 @[simp]
 lemma isSublist_cons_self (w : WList α β) (x : α) (e : β) : w.IsSublist (cons x e w) :=
   (isSublist_refl (w := w)).cons ..
@@ -92,6 +97,7 @@ lemma IsSublist.concat (h : w₁.IsSublist w₂) (e : β) (x : α) : w₁.IsSubl
   | cons y f h ih => simpa using ih.cons ..
   | cons₂ y f h h_eq ih => exact ih.cons₂ _ _ (by simpa)
 
+@[gcongr]
 lemma IsSublist.concat₂ (h : w₁.IsSublist w₂) (hlast : w₁.last = w₂.last) (e : β) (x : α) :
     (w₁.concat e x).IsSublist (w₂.concat e x) := by
   induction h with
@@ -105,6 +111,7 @@ lemma IsSublist.concat₂ (h : w₁.IsSublist w₂) (hlast : w₁.last = w₂.la
 lemma isSublist_concat_self (w : WList α β) (e : β) (x : α) : w.IsSublist (w.concat e x) :=
   (isSublist_refl (w := w)).concat ..
 
+@[gcongr]
 lemma IsSublist.reverse (h : w₁.IsSublist w₂) : w₁.reverse.IsSublist w₂.reverse := by
   induction h with
   | nil => simpa
@@ -175,14 +182,14 @@ lemma IsPrefix.mem (h : w₁.IsPrefix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
 lemma IsPrefix.subset (h : w₁.IsPrefix w₂) : V(w₁) ⊆ V(w₂) := fun _ ↦ h.mem
 
 @[simp]
-lemma isPrefix_refl : w.IsPrefix w := by
+lemma isPrefix_refl (w : WList α β) : w.IsPrefix w := by
   induction w with
   | nil u => exact IsPrefix.nil <| nil u
   | cons _ _ _ ih => apply ih.cons
 
 @[simp]
 lemma isPrefix_nil_iff : w.IsPrefix (nil x) ↔ w = nil x :=
-  ⟨fun h ↦ isSublist_nil_iff.1 h.isSublist, fun h ↦ h ▸ isPrefix_refl⟩
+  ⟨fun h ↦ isSublist_nil_iff.1 h.isSublist, fun h ↦ h ▸ isPrefix_refl _⟩
 
 @[simp]
 lemma nil_isPrefix_iff : (nil x).IsPrefix w ↔ w.first = x :=
@@ -212,12 +219,17 @@ lemma IsPrefix.length_le (h : w₁.IsPrefix w₂) : w₁.length ≤ w₂.length 
 lemma IsPrefix.antisymm (h : w₁.IsPrefix w₂) (h' : w₂.IsPrefix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
+instance : IsPartialOrder (WList α β) IsPrefix where
+  refl := isPrefix_refl
+  trans _ _ _ := IsPrefix.trans
+  antisymm _ _ := IsPrefix.antisymm
+
 lemma IsPrefix.concat (h : w₁.IsPrefix w₂) (e x) : w₁.IsPrefix (w₂.concat e x) := by
   induction h with | nil => simp | cons y f w₁ w₂ h ih => exact ih.cons y f
 
 @[simp]
 lemma isPrefix_concat_self (w : WList α β) (e) (x) : w.IsPrefix (w.concat e x) :=
-  isPrefix_refl.concat e x
+  (isPrefix_refl _).concat e x
 
 lemma IsPrefix.get_eq_of_length_ge (h : w₁.IsPrefix w₂) {n} (hn : n ≤ w₁.length) :
     w₁.get n = w₂.get n := by
@@ -268,7 +280,7 @@ lemma reverse_isSuffix_reverse_iff : w₁.reverse.IsSuffix w₂.reverse ↔ w₁
   rw [reverse_isPrefix_reverse_iff]
 
 @[simp]
-lemma isSuffix_refl : w.IsSuffix w := by
+lemma isSuffix_refl (w : WList α β) : w.IsSuffix w := by
   simpa using (isPrefix_refl (w := w.reverse)).reverse_isSuffix_reverse
 
 lemma IsSuffix.isSublist (h : w₁.IsSuffix w₂) : w₁.IsSublist w₂ :=
@@ -279,7 +291,7 @@ lemma IsSuffix.mem (h : w₁.IsSuffix w₂) (hx : x ∈ w₁) : x ∈ w₂ :=
 
 @[simp]
 lemma isSuffix_nil_iff : w.IsSuffix (nil x) ↔ w = nil x :=
-  ⟨fun h ↦ isSublist_nil_iff.1 h.isSublist, fun h ↦ h ▸ isSuffix_refl⟩
+  ⟨fun h ↦ isSublist_nil_iff.1 h.isSublist, fun h ↦ h ▸ isSuffix_refl _⟩
 
 @[simp]
 lemma nil_isSuffix_iff : (nil x).IsSuffix w ↔ w.last = x := by
@@ -300,6 +312,11 @@ lemma IsSuffix.eq_of_length_ge (h : w₁.IsSuffix w₂) (hge : w₂.length ≤ w
 lemma IsSuffix.antisymm (h : w₁.IsSuffix w₂) (h' : w₂.IsSuffix w₁) : w₁ = w₂ :=
   h.eq_of_length_ge h'.length_le
 
+instance : IsPartialOrder (WList α β) IsSuffix where
+  refl := isSuffix_refl
+  trans _ _ _ := IsSuffix.trans
+  antisymm _ _ := IsSuffix.antisymm
+
 lemma IsSuffix.vertex_isSuffix (h : w₁.IsSuffix w₂) : w₁.vertex.IsSuffix w₂.vertex := by
   simpa using h.reverse_isPrefix_reverse.vertex_isPrefix
 
@@ -310,7 +327,7 @@ lemma IsSuffix.cons (h : w₁.IsSuffix w₂) (x e) : w₁.IsSuffix (cons x e w�
 
 @[simp]
 lemma isSuffix_cons_self (w : WList α β) (e) (x) : w.IsSuffix (cons x e w) :=
-  isSuffix_refl.cons ..
+  (isSuffix_refl _).cons ..
 
 @[simp]
 lemma isSuffix_append_left (w₁ w₂ : WList α β) : w₂.IsSuffix (w₁ ++ w₂) := by
@@ -324,6 +341,16 @@ lemma IsSuffix.eq_of_first_mem (h : w₁.IsSuffix w₂) (hnd : w₂.vertex.Nodup
     exact (Nil.eq_nil_last hl).symm
   | concat e x w₁ w₂ h ih =>
     simp_all [List.nodup_append]
+
+lemma DInc.exists_isSuffix {w} (h : w.DInc e x y) :
+    ∃ w', IsSuffix (WList.cons x e w') w ∧ w'.first = y := by
+  match w with
+  | .nil u => simp at h
+  | .cons u e w =>
+    obtain ⟨rfl, rfl, rfl⟩ | h := by simpa using h
+    · use w, refl _
+    obtain ⟨W, hW, rfl⟩ := h.exists_isSuffix
+    use W, hW.trans <| w.isSuffix_cons_self e u
 
 /-! ## Decomposed wLists -/
 
