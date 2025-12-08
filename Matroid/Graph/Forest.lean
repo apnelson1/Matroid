@@ -191,7 +191,7 @@ lemma IsForest.exists_isPendant [G.Finite] (hG : G.IsForest) (hne : E(G).Nonempt
   · exact Simple.eq_of_isLink he hfuP
   have hP' := IsPath.prefix hmax.prop ((cons u f P).prefixUntilVertex_isPrefix w)
   refine False.elim <| hG _ <| (hP'.cons_isCycle_of_nontrivial (e := e) ?_ ?_)
-  · simpa [prefixUntilVertex_last hwP]
+  · simpa only [prefixUntilVertex_first, first_cons, prefixUntilVertex_last hwP]
   rw [prefixUntilVertex_cons_of_ne _ he.adj.ne, cons_nontrivial_iff, ← not_nil_iff]
   contrapose! hne
   replace hne := hne.first_eq_last

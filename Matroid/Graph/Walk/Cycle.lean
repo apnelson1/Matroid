@@ -207,12 +207,12 @@ def IsCycleGraph (G : Graph α β) := ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E
 lemma isCycleGraph_of_cycle_toGraph (hC : G.IsCycle C) : C.toGraph.IsCycleGraph :=
   ⟨C, hC.isCycle_toGraph, by simp, by simp⟩
 
-lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
-    ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x := by
-  obtain ⟨C, hC, hV, hE⟩ := hG
-  obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hC.nonempty (hV hx)
-  use (C.rotate n), hC.rotate n
-  simp [hC.isClosed.rotate_vertexSet, hE, hV]
+-- lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
+--     ∃ C, G.IsCycle C ∧ V(G) ⊆ V(C) ∧ E(G) ⊆ E(C) ∧ C.first = x := by
+--   obtain ⟨C, hC, hV, hE⟩ := hG
+--   obtain ⟨n, hn, rfl⟩ := hC.isClosed.exists_rotate_first_eq hC.nonempty (hV hx)
+--   use (C.rotate n), hC.rotate n
+--   simp [hC.isClosed.rotate_vertexSet, hE, hV]
 
 -- lemma IsCycleGraph.exists_cycle_of_isLink (hG : G.IsCycleGraph) (he : G.IsLink e x y) :
 --     ∃ C, G.IsCycle (cons x e C) ∧ V(G) ⊆ V(cons x e C) ∧ E(G) ⊆ E(cons x e C) ∧ C.first = y := by
@@ -224,9 +224,9 @@ lemma IsCycleGraph.exists_cycle_from (hG : G.IsCycleGraph) (hx : x ∈ V(G)) :
 --   obtain ⟨C, hC, hV, hE, rfl⟩ := hG.exists_cycle_of_isLink he
 --   use (cons x e C), hC, hV, hE, by simp, by simp
 
-/-- List of vertices in the cycle graph is the cyclic order-/
-noncomputable def IsCycleGraph.vertices (hG : G.IsCycleGraph) (hx : x ∈ V(G)) : List α :=
-  hG.exists_cycle_from hx |>.choose.vertex.dropLast
+-- /-- List of vertices in the cycle graph is the cyclic order-/
+-- noncomputable def IsCycleGraph.vertices (hG : G.IsCycleGraph) (hx : x ∈ V(G)) : List α :=
+--   hG.exists_cycle_from hx |>.choose.vertex.dropLast
 
 -- lemma IsCycleGraph.encard_eq : V(G).encard = E(G).encard := by
 --   sorry

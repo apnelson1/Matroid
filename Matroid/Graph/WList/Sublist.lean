@@ -687,7 +687,6 @@ lemma prefixUntil_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
 /-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
 def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
 
-@[simp]
 lemma prefixUntilVertex_cons [DecidableEq α] (u e) (w : WList α β) :
     (cons u e w).prefixUntilVertex x = if u = x then nil u else
     cons u e (w.prefixUntilVertex x) := by
