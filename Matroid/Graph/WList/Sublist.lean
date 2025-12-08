@@ -687,6 +687,12 @@ lemma prefixUntil_concat (w : WList α β) (P : α → Prop) [DecidablePred P] :
 /-- The prefix of `w` ending at a vertex `x`. Equal to `w` if `x ∉ w`. -/
 def prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.prefixUntil (· = x)
 
+@[simp]
+lemma prefixUntilVertex_cons [DecidableEq α] (u e) (w : WList α β) :
+    (cons u e w).prefixUntilVertex x = if u = x then nil u else
+    cons u e (w.prefixUntilVertex x) := by
+  simp [prefixUntilVertex, prefixUntil]
+
 lemma prefixUntilVertex_isPrefix [DecidableEq α] (w : WList α β) (x : α) :
     (w.prefixUntilVertex x).IsPrefix w := prefixUntil_isPrefix ..
 
@@ -806,6 +812,10 @@ lemma prefixUntil_last_eq_suffixFrom_first (w : WList α β) (P : α → Prop) [
 /-- The suffix of `w` starting at the first occurence of a vertex `x`.
 Equal to `[w.last]` if `x ∉ w`. -/
 def suffixFromVertex [DecidableEq α] (w : WList α β) (x : α) : WList α β := w.suffixFrom (· = x)
+
+lemma suffixFromVertex_cons_of_ne [DecidableEq α] (w : WList α β) (hne : x ≠ y) (e : β) :
+    (cons x e w).suffixFromVertex y = (w.suffixFromVertex y) := by
+  simp [suffixFromVertex, hne]
 
 @[simp]
 lemma suffixFromVertex_first [DecidableEq α] (hxw : x ∈ w) : (w.suffixFromVertex x).first = x :=
@@ -1636,23 +1646,425 @@ lemma Nontrivial.firstEdge_ne_lastEdge (hw : w.Nontrivial) (hnd : w.edge.Nodup) 
 
     -- Nonempty.lastEdge w (show w.Nonempty by rw [WList.nonempty_iff_]) ∈ w.tail.edge := sorry
 
--- def take : WList α β → ℕ → WList α β
---   | nil x, _ => nil x
---   | cons x _ _, 0 => nil x
---   | cons x e w, n+1 => cons x e (w.take n)
+variable {n m : ℕ}
+
+/-- Take the first `n` vertices from a `WList`. Returns the entire list if `n ≥ w.length + 1`. -/
+def take : WList α β → ℕ → WList α β
+  | nil x, _ => nil x
+  | cons x _ _, 0 => nil x
+  | cons x e w, n+1 => cons x e (w.take n)
+
+@[simp]
+lemma take_nil (x : α) (n : ℕ) : (nil x (β := β)).take n = nil x := rfl
+
+@[simp]
+lemma take_zero (w : WList α β) : w.take 0 = nil w.first := by
+  cases w with simp [take]
+
+@[simp]
+lemma take_cons_succ (x e) (w : WList α β) (n : ℕ) :
+  (cons x e w).take (n+1) = cons x e (w.take n) := rfl
+
+@[simp]
+lemma take_length (w : WList α β) (n : ℕ) : (w.take n).length = min n w.length := by
+  induction n generalizing w with
+  | zero => simp
+  | succ n IH => cases w with simp [take, IH]
+
+@[simp]
+lemma take_length_le (w : WList α β) (n : ℕ) : (w.take n).length ≤ n := by simp
+
+@[simp]
+lemma take_length_le' (w : WList α β) (n : ℕ) : (w.take n).length ≤ w.length := by simp
+
+@[simp]
+lemma take_eq_self (w : WList α β) : w.take w.length = w := by
+  induction w <;> simp_all
+
+@[simp]
+lemma take_first (w : WList α β) (n : ℕ) : (w.take n).first = w.first := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    cases w with
+    | nil => simp
+    | cons => simp
+
+@[simp]
+lemma take_last (hn : n ≤ w.length) : (w.take n).last = w.get n := by
+  induction n generalizing w with
+  | zero => simp [get_zero]
+  | succ n IH =>
+    cases w with
+    | nil => simp at hn
+    | cons x e w =>
+      simp only [take_cons_succ, last_cons, cons_length, Nat.add_le_add_iff_right] at hn ⊢
+      exact IH hn
+
+@[simp]
+lemma take_vertex (w : WList α β) (n : ℕ) : (w.take n).vertex = w.vertex.take (n + 1) := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.take_vertex n]
+
+@[simp]
+lemma take_edge (w : WList α β) (n : ℕ) : (w.take n).edge = w.edge.take n := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.take_edge n]
+
+lemma take_concat (w : WList α β) (e : β) (x : α) (n : ℕ) :
+    (w.concat e x).take n = if n ≤ w.length then w.take n else w.concat e x := by
+  match w, n with
+  | nil x, 0 => simp
+  | nil x, n + 1 => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 =>
+    simp only [cons_concat, take_cons_succ, take_concat, cons_length, add_le_add_iff_right]
+    split_ifs with h <;> rfl
+
+@[simp]
+lemma take_take (w : WList α β) (m n : ℕ) : (w.take n).take m = w.take (min m n) := by
+  match w, m, n with
+  | nil x, m, n => simp
+  | cons x e w, 0, n => simp
+  | cons x e w, m + 1, 0 => simp
+  | cons x e w, m + 1, n + 1 => simp [w.take_take m n]
+
+lemma take_take_comm (w : WList α β) (m n : ℕ) : (w.take n).take m = (w.take m).take n := by
+  rw [take_take w m n, take_take w n m, min_comm]
+
+/-- Drop the first `n` vertices from a `WList`. Returns `nil w.last` if `n ≥ w.length + 1`. -/
+def drop : WList α β → ℕ → WList α β
+  | w, 0 => w
+  | nil x, _ => nil x
+  | cons _ _ w, n+1 => w.drop n
+
+@[simp]
+lemma drop_zero (w : WList α β) : w.drop 0 = w := by
+  match w with
+  | .nil u => rfl
+  | .cons u e w => rfl
+
+@[simp]
+lemma drop_nil (x : α) (n : ℕ) : (nil x (β := β)).drop n = nil x := by
+  match n with
+  | 0 => rfl
+  | n + 1 => rfl
+
+@[simp]
+lemma drop_cons_succ (x e) (w : WList α β) (n : ℕ) :
+  (cons x e w).drop (n+1) = w.drop n := rfl
+
+@[simp]
+lemma drop_length (w : WList α β) (n : ℕ) : (w.drop n).length = w.length - n := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.drop_length n]
+
+lemma drop_eq_nil_of_length_le {w : WList α β} {n} (h : w.length ≤ n) :
+    w.drop n = nil w.last := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp at h
+  | cons x e w, n + 1 =>
+    simp_all only [cons_length, add_le_add_iff_right, drop_cons_succ, last_cons]
+    exact drop_eq_nil_of_length_le h
+
+@[simp]
+lemma drop_first {w : WList α β} {n} (hn : n ≤ w.length) :
+    (w.drop n).first = w.get n := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.drop_first (by simpa using hn)]
+
+lemma drop_first_of_length_lt (w : WList α β) (n : ℕ) (h : w.length < n) :
+    (w.drop n).first = w.last := by
+  rw [drop_eq_nil_of_length_le (by omega)]
+  simp
+
+@[simp]
+lemma drop_last (w : WList α β) (n : ℕ) : (w.drop n).last = w.last := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.drop_last n]
 
 -- @[simp]
--- lemma take_nil (x : α) (n : ℕ) : (nil x (β := β)).take n = nil x := rfl
+-- lemma drop_vertex (w : WList α β) (n : ℕ) : (w.drop n).vertex = w.vertex.drop n := by
+--   induction n generalizing w
+--   case zero => simp
+--   case succ n IH =>
+--     cases w with
+--     | nil => simp [drop]
+--     | cons x e w =>
+--       simp only [drop_cons_succ, cons_vertex, List.drop_succ_cons, IH]
+
+@[simp]
+lemma drop_edge (w : WList α β) (n : ℕ) : (w.drop n).edge = w.edge.drop n := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.drop_edge n]
 
 -- @[simp]
--- lemma take_zero (w : WList α β) : w.take 0 = nil w.first := by
---   cases w with simp [take]
+-- lemma drop_concat (w : WList α β) (e : β) (x : α) (n : ℕ) :
+--     (w.concat e x).drop n = if n ≤ w.length then w.drop n else nil x := by
+--   split_ifs with h
+--   · induction n generalizing w
+--     case zero => simp
+--     case succ n IH =>
+--       cases w with
+--       | nil => simp at h
+--       | cons u f w =>
+--         simp only [drop_cons_succ, cons_concat, cons_length, Nat.add_le_add_iff_right] at h ⊢
+--         rw [IH _ h]
+--   · rw [drop_eq_nil_of_length_le]
+--     simp only [concat_length, not_le] at h
+--     omega
 
 -- @[simp]
--- lemma take_cons_succ (x e) (w : WList α β) (n : ℕ) :
---   (cons x e w).take (n+1) = cons x e (w.take n) := rfl
+-- lemma drop_append (w₁ w₂ : WList α β) (n : ℕ) :
+--     (w₁ ++ w₂).drop n = if n ≤ w₁.length then w₁.drop n ++ w₂ else w₂.drop (n - w₁.length) := by
+--   split_ifs with h
+--   · induction n generalizing w₁
+--     case zero => simp
+--     case succ n IH =>
+--       cases w₁ with
+--       | nil => simp
+--       | cons x e w₁ =>
+--         simp only [drop_cons_succ, cons_append, cons_length, Nat.add_le_add_iff_right] at h ⊢
+--         rw [IH _ h]
+--   · induction w₁ generalizing n
+--     case nil => simp
+--     case cons x e w₁ ih =>
+--       simp only [cons_append, cons_length, drop_cons_succ]
+--       have : n > w₁.length + 1 := by omega
+--       rw [ih (by omega)]
+--       simp [Nat.sub_add_eq]
 
-lemma idxOf_eq_length_prefixUntilVertex [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w) :
+@[simp]
+lemma drop_drop (w : WList α β) (m n : ℕ) : (w.drop n).drop m = w.drop (m + n) := by
+  match w, n, m with
+  | nil x, n, m => simp
+  | cons x e w, 0, m => simp
+  | cons x e w, n + 1, m =>
+    rw [← add_assoc]
+    simp [w.drop_drop m n]
+
+-- lemma take_reverse (w : WList α β) (n : ℕ) :
+--     (w.reverse).take n = (w.drop ((w.length + 1) - n)).reverse := by
+--   match w, n with
+--   | nil x, n => simp
+--   | cons x e w, 0 => simp
+--   | cons x e w, n + 1 => simp [w.take_reverse n]
+
+@[simp]
+lemma take_drop (w : WList α β) (n : ℕ) : w.take n ++ w.drop n = w := by
+  match w, n with
+  | nil x, n => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => simp [w.take_drop n]
+
+@[simp]
+lemma dropLast_take {w : WList α β} {n} (hn : n ≤ w.length) :
+    (w.take n).dropLast = w.take (n - 1) := by
+  match w, n with
+  | nil x, _ => simp
+  | cons x e w, 0 => simp
+  | cons x e (nil y), n + 1 => simp_all
+  | cons x e (cons y f w), 1 => simp
+  | cons x e (cons y f w), n + 1 + 1 =>
+    simp only [take_cons_succ, dropLast_cons_cons, add_tsub_cancel_right, cons.injEq, true_and]
+    rw [← take_cons_succ, dropLast_take (by simpa using hn)]
+    simp
+
+@[simp]
+lemma drop_one (w : WList α β) : w.drop 1 = w.tail := by
+  cases w <;> simp [drop, tail]
+
+@[simp]
+lemma drop_length_eq_zero_iff (w : WList α β) (n : ℕ) : (w.drop n).length = 0 ↔ w.length ≤ n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [drop_length, Nat.sub_eq_zero_iff_le] at h
+    omega
+  rw [drop_eq_nil_of_length_le h, nil_length]
+
+-- lemma take_drop_comm (w : WList α β) (m n : ℕ) :
+--     (w.take m).drop n = (w.drop n).take (m - n) := by
+--   by_cases h : n ≤ m
+--   · induction n generalizing m w
+--     case zero => simp
+--     case succ n IH =>
+--       cases m with
+--       | zero => simp at h
+--       | succ m =>
+--         cases w with
+--         | nil => simp [take, drop]
+--         | cons x e w =>
+--           simp only [take_cons_succ, drop_cons_succ, cons_length]
+--           have : n ≤ m := by omega
+--           rw [IH _ this, drop_cons_succ, take_cons_succ]
+--           simp [Nat.sub_succ]
+--   · have hlt : m < n := by omega
+--     rw [Nat.sub_eq_zero_of_le (by omega), take_zero]
+--     by_cases hw : m ≤ w.length
+--     · have : n > (w.take m).length := by
+--         rw [take_length]
+--         omega
+--       rw [drop_eq_nil_of_length_le (by omega), take_last _ _ hw]
+--       simp
+--     · have : w.length < m := by omega
+--       rw [take_eq_self_of_length_le (by omega), drop_eq_nil_of_length_le]
+--       · simp
+--       · omega
+
+/-! ### Relationships with prefixUntil and suffixFrom -/
+
+lemma IsPrefix.take_eq (h : w₁.IsPrefix w₂) : w₂.take w₁.length = w₁ := by
+  induction h
+  case nil => simp
+  case cons x e w₁ w₂ h ih => simp [take_cons_succ, ih]
+
+lemma take_isPrefix (w : WList α β) (n : ℕ) : (w.take n).IsPrefix w := by
+  match w, n with
+  | nil x, _ => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => apply (take_isPrefix w n).cons
+
+@[simp]
+lemma take_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
+    w.take (w.idxOf x) = w.prefixUntilVertex x := by
+  induction w with
+  | nil u =>
+    simp only [mem_nil_iff] at hx
+    subst hx
+    simp [take, prefixUntilVertex, prefixUntil]
+  | cons u e w ih =>
+    obtain rfl | hne := eq_or_ne x u
+    · simp [prefixUntilVertex, prefixUntil, idxOf_cons_self]
+    · simp only [mem_cons_iff, hne, false_or] at hx
+      simp only [idxOf_cons_ne hne.symm, take_cons_succ, prefixUntilVertex_cons_of_ne _ hne.symm,
+        cons.injEq, true_and]
+      exact ih hx
+
+lemma drop_isSuffix (w : WList α β) (n : ℕ) : (w.drop n).IsSuffix w := by
+  match w, n with
+  | nil x, _ => simp
+  | cons x e w, 0 => simp
+  | cons x e w, n + 1 => apply (drop_isSuffix w n).cons
+
+@[simp]
+lemma drop_suffixFromVertex [DecidableEq α] (hx : x ∈ w) :
+    w.drop (w.idxOf x) = w.suffixFromVertex x := by
+  induction w with
+  | nil u =>
+    simp only [mem_nil_iff] at hx
+    subst hx
+    simp [suffixFromVertex]
+  | cons u e w ih =>
+    obtain rfl | hne := eq_or_ne x u
+    · simp [suffixFromVertex, idxOf_cons_self]
+    · simp only [mem_cons_iff, hne, false_or] at hx
+      simp only [drop_cons_succ, idxOf_cons_ne hne.symm, suffixFromVertex_cons_of_ne _ hne.symm]
+      exact ih hx
+
+lemma drop_eq_suffixFromVertex_of_idxOf [DecidableEq α] (hx : x ∈ w) (hn : n = w.idxOf x) :
+    w.drop n = w.suffixFromVertex x := by
+  rw [hn, drop_suffixFromVertex hx]
+
+@[simp]
+lemma prefixUntilVertex_take [DecidableEq α] {w : WList α β} (hx : x ∈ w) {n} (hn : w.idxOf x ≤ n)
+    (hn' : n ≤ w.length) : (w.take n).prefixUntilVertex x = w.prefixUntilVertex x := by
+  match w, n with
+  | nil x, n => simp
+  | cons y e w, 0 => simpa [prefixUntilVertex] using hn
+  | cons y e w, n + 1 =>
+    simp_all only [mem_cons_iff, cons_length, add_le_add_iff_right, take_cons_succ,
+      prefixUntilVertex_cons]
+    split_ifs with hyx
+    · subst y
+      simp
+    simp only [cons.injEq, true_and]
+    apply prefixUntilVertex_take (hx.resolve_left (hyx ·.symm)) ?_ (by omega)
+    simpa [idxOf_cons_ne hyx] using hn
+
+-- @[simp]
+-- lemma suffixFromVertex_drop [DecidableEq α] {w : WList α β} (hx : x ∈ w) (hn : n ≤ w.idxOf x) :
+--     (w.drop n).suffixFromVertex x = w.suffixFromVertex x := by
+--   match w, n with
+--   | nil x, n => simp
+--   | cons y e w, 0 => simp
+--   | cons y e w, n + 1 =>
+--     simp_all only [mem_cons_iff, suffixFromVertex, drop_cons_succ, suffixFrom_cons]
+--     split_ifs with hyx
+--     · subst y
+--       simp
+
+-- lemma drop_suffixFrom [DecidablePred P] (w : WList α β) (h : ∃ u ∈ w, P u) :
+--     w.drop ((w.length + 1) - (w.suffixFrom P).length) = w.suffixFrom P := by
+--   -- This requires more careful calculation of the index
+--   sorry
+
+-- lemma prefixUntil_take [DecidablePred P] (w : WList α β) (n : ℕ) (hn : n ≤ w.length)
+--     (h : ∃ u ∈ w.take n, P u) :
+--     (w.take n).prefixUntil P = w.prefixUntil P := by
+--   have hpfx := prefixUntil_isPrefix w P
+--   have hpfx' := prefixUntil_isPrefix (w.take n) P
+--   refine hpfx'.eq_of_length_ge ?_
+--   rw [hpfx.length_le, take_length]
+--   omega
+
+-- lemma suffixFrom_drop [DecidablePred P] (w : WList α β) (n : ℕ) (hn : n ≤ w.length)
+--     (h : ∃ u ∈ w.drop n, P u) :
+--     (w.drop n).suffixFrom P = w.suffixFrom P := by
+--   -- This requires showing that the first occurrence of P in w.drop n is the same as in w
+--   sorry
+
+-- @[simp]
+-- lemma dropLast_prefixUntil [DecidablePred P] (w : WList α β) (hne : w.Nonempty)
+--     (h : ∃ u ∈ w.dropLast, P u) :
+--     (w.dropLast).prefixUntil P = w.prefixUntil P := by
+--   have hpfx := prefixUntil_isPrefix w P
+--   have hpfx' := prefixUntil_isPrefix w.dropLast P
+--   refine hpfx'.eq_of_length_ge ?_
+--   rw [hpfx.length_le, dropLast_length]
+--   omega
+
+-- @[simp]
+-- lemma dropLast_suffixFrom [DecidablePred P] (w : WList α β) (hne : w.Nonempty)
+--     (h : ∃ u ∈ w.dropLast, P u) :
+--     (w.dropLast).suffixFrom P = w.suffixFrom P := by
+--   -- This requires more careful handling
+--   sorry
+
+-- @[simp]
+-- lemma prefixUntilVertex_dropLast [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w.dropLast)
+--     (hne : w.Nonempty) :
+--     (w.dropLast).prefixUntilVertex x = w.prefixUntilVertex x := by
+--   have hxw : x ∈ w := by
+--     rw [mem_iff_eq_mem_dropLast_or_eq_last] at hx
+--     exact hx.elim id (fun heq => heq ▸ last_mem)
+--   rw [← take_prefixUntilVertex w x hxw, ← take_prefixUntilVertex w.dropLast x hx]
+--   rw [take_dropLast]
+--   exact hne.length_pos.le
+
+-- @[simp]
+-- lemma suffixFromVertex_dropLast [DecidableEq α] (w : WList α β) (x : α) (hx : x ∈ w.dropLast)
+--     (hne : w.Nonempty) :
+--     (w.dropLast).suffixFromVertex x = w.suffixFromVertex x := by
+--   -- This requires showing the index is the same
+--   sorry
+
+lemma take_length_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
+    w.take (w.prefixUntilVertex x).length = w.prefixUntilVertex x := by
+  rw [prefixUntilVertex_length hx, take_prefixUntilVertex hx]
+
+lemma idxOf_eq_length_prefixUntilVertex [DecidableEq α] (hx : x ∈ w) :
     w.idxOf x = (w.prefixUntilVertex x).length := by
   induction w with | nil => simp_all [prefixUntilVertex] | cons u e w ih =>
   obtain rfl | hu := eq_or_ne x u

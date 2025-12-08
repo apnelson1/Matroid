@@ -674,6 +674,10 @@ lemma idxOf_cons_self (u e) (w : WList α β) : (cons u e w).idxOf u = 0 := by
   simp [idxOf_cons]
 
 @[simp]
+lemma idxOf_cons_eq_zero (w) : (cons u e w).idxOf x = 0 ↔ u = x := by
+  simp [idxOf_cons]
+
+@[simp]
 lemma idxOf_cons_ne (hne : u ≠ x) (e) (w : WList α β) :
     (cons u e w).idxOf x = w.idxOf x + 1 := by
   simp [idxOf_cons, hne]
