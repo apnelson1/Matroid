@@ -670,6 +670,8 @@ lemma eConn_inter_add_eConn_union_le (M : Matroid α) (X Y : Set α) :
     M.eConn (X ∩ Y) + M.eConn (X ∪ Y) ≤ M.eConn X + M.eConn Y := by
   simpa using M.eConn_inter_add_eConn_union_union_le (disjoint_empty X) (disjoint_empty Y)
 
+alias eConn_submod := eConn_inter_add_eConn_union_le
+
 /-- The Bixby-Coullard inequality for `ℕ∞` -/
 theorem eConn_inter_add_eConn_insert_union_le (M : Matroid α) (heC : e ∉ C) (heD : e ∉ D) :
     M.eConn (C ∩ D) + M.eConn (insert e (C ∪ D)) ≤ (M ／ {e}).eConn C + (M ＼ {e}).eConn D + 1 := by

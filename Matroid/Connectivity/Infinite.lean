@@ -1,4 +1,4 @@
-import Matroid.Connectivity.Higher
+import Matroid.Connectivity.Vertical
 import Matroid.Tame
 
 variable {α : Type*} {M : Matroid α} {X Y : Set α} {e f : α} {P : M.Partition} {k : ℕ∞}
@@ -70,7 +70,7 @@ lemma TutteConnected.tutteConnected_top_of_eRank_add_one_le
     (h : M.TutteConnected (k + 1)) (hle : M.eRank + 1 ≤ k) : M.TutteConnected ⊤ := by
   rw [tutteConnected_top_iff_forall]
   refine fun P hP ↦ h.not_isTutteSeparation ?_ hP
-  grw [← P.eConn_left, eConn_le_eRk, eRk_le_eRank, hle]
+  grw [← P.eConn_eq true, eConn_le_eRk, eRk_le_eRank, hle]
 
 /-- `U₅,₈` (for example) is `(3 + 1)`-connected with corank `3`, but not infinitely connected.
 hence the bound is tight. -/
@@ -202,16 +202,15 @@ lemma unifOn_tutteConnected_iff {E : Set α} {r : ℕ} (hrE : r ≤ E.encard) :
   rw [tutteConnected_iff_verticallyConnected_girth (by rw [unifOn_ground_eq]; eomega),
     le_girth_iff, verticallyConnected_iff_forall]
   refine ⟨fun P hPconn hPsep ↦ ?_, fun C hC ↦ ?_⟩
-  · rw [isVerticalSeparation_iff_nonspanning, ← not_spanning_iff P.right_subset_ground,
-      ← not_spanning_iff P.left_subset_ground, unifOn_spanning_iff hrE P.left_subset_ground,
-      unifOn_spanning_iff hrE P.right_subset_ground, not_le, not_le] at hPsep
+  · simp_rw [isVerticalSeparation_iff_forall_nonspanning, ← Partition.not_spanning_iff,
+      unifOn_spanning_iff hrE (P.subset_ground _), not_le] at hPsep
     rw [← (unifOn_ground_eq E (k := r)), ← eRank_add_eRank_dual,
-      ← Indep.eConn_eq_of_compl_indep (I := P.left), P.eConn_left, unifOn_eRank_eq,
+      ← Indep.eConn_eq_of_compl_indep (I := P true), P.eConn_eq, unifOn_eRank_eq,
       min_eq_right hrE, add_comm, WithTop.add_le_add_iff_left (ENat.coe_ne_top r)] at hkrE
     · eomega
-    · simpa [hPsep.1.le] using P.left_subset_ground
-    rw [P.compl_left]
-    simpa [hPsep.2.le] using P.right_subset_ground
+    · simpa [(hPsep true).le] using P.subset_ground _
+    rw [P.compl_true]
+    simpa [(hPsep false).le] using P.subset_ground _
   rw [unifOn_isCircuit_iff] at hC
   simpa [hC.1]
 
@@ -234,15 +233,15 @@ lemma IsUniform.tutteConnected_iff [M.Tame] (h : M.IsUniform) :
   rw [tutteConnected_iff_verticallyConnected_girth (by eomega), le_girth_iff,
     verticallyConnected_iff_forall]
   refine ⟨fun P hP hsep ↦ ?_, fun C hC ↦ ?_⟩
-  · rw [isVerticalSeparation_iff_nonspanning] at hsep
-    have h1 := h.indep_of_nonspanning hsep.1
-    have h2 := h.indep_of_nonspanning hsep.2
-    have hr1 := hsep.1.eRk_add_one_le
-    have hr2 := hsep.2.eRk_add_one_le
+  · rw [isVerticalSeparation_iff_forall_nonspanning] at hsep
+    have h1 := h.indep_of_nonspanning <| hsep true
+    have h2 := h.indep_of_nonspanning <| hsep false
+    have hr1 := (hsep true).eRk_add_one_le
+    have hr2 := (hsep false).eRk_add_one_le
     replace hr := hr.le
     grw [← hle', ← P.union_eq, encard_union_le, ← h1.eRk_eq_encard, ← h2.eRk_eq_encard] at hr
-    have hconn := M.eConn_add_eRank_eq (X := P.left)
-    rw [P.eConn_left, P.compl_left] at hconn
+    have hconn := M.eConn_add_eRank_eq (X := P true)
+    rw [P.eConn_eq, P.compl_eq, Bool.not_true] at hconn
     enat_to_nat! <;> omega
   rwa [← hC.eRk_add_one_eq, (h.spanning_of_dep hC.dep).eRk_eq, ENat.add_one_le_add_one_iff]
 
@@ -269,23 +268,23 @@ lemma tutteConnected_top_iff_of_tame [M.Tame] : M.TutteConnected ⊤ ↔
 lemma Paving.cyclicallyConnected (h : M.Paving) (hk : k < M.eRank) : M.CyclicallyConnected k := by
   obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
   refine cyclicallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
-  rw [Partition.isCyclicSeparation_iff] at hP
-  nth_grw 1 [h.eRank_le_eRk_add_one_of_dep hP.2, ← hPconn, ← h.eRelRk_ground_le_of_dep hP.1,
-    ← P.compl_right, ← nullity_dual_eq _ _, ← P.eConn_right,
-    M.eConn_add_nullity_dual_eq_eRk P.right] at hk
+  rw [Partition.isCyclicSeparation_iff_forall] at hP
+  nth_grw 1 [h.eRank_le_eRk_add_one_of_dep (hP false), ← hPconn,
+    ← h.eRelRk_ground_le_of_dep (hP true), ← P.compl_false, ← nullity_dual_eq ..,
+    ← P.eConn_eq false, M.eConn_add_nullity_dual_eq_eRk (P false)] at hk
   exact hk.ne rfl
 
 lemma Paving.cyclicallyConnected_of_verticallyConnected (h : M.Paving)
     (hconn : M.VerticallyConnected (k + 1)) (hk : k < M.eRank) : M.CyclicallyConnected (k + 1) := by
   refine cyclicallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
-  rw [Partition.isCyclicSeparation_iff] at hP
-  wlog hs : M.Spanning P.left generalizing P with aux
+  rw [Partition.isCyclicSeparation_iff_forall] at hP
+  wlog hs : M.Spanning (P true) generalizing P with aux
   · refine hconn.not_isVerticalSeparation (P := P) (by simpa) ?_
-    rw [Partition.isVerticalSeparation_iff_nonspanning, ← not_spanning_iff, and_iff_right hs,
-      ← not_spanning_iff]
-    exact aux P.symm (by simpa) ⟨hP.2, hP.1⟩
-  grw [← hPconn, ← P.eConn_left, hs.eConn_eq, P.compl_left,
-    h.eRank_le_eRk_add_one_of_dep hP.2] at hk
+    simp_rw [Partition.isVerticalSeparation_iff_forall_nonspanning, ← Partition.not_spanning_iff,
+      Bool.forall_bool, and_iff_left hs]
+    exact aux P.symm (by simpa) <| by simpa [and_comm] using Bool.forall_bool.1 hP
+  grw [← hPconn, ← P.eConn_eq true, hs.eConn_eq, P.compl_true,
+    h.eRank_le_eRk_add_one_of_dep (hP false)] at hk
   exact hk.ne rfl
 
 lemma SparsePaving.tutteConnected_of_eRank_gt_eRank_dual_ge (h : M.SparsePaving)

@@ -20,58 +20,73 @@ variable {α : Type*} {N M : Matroid α} {j k : ℕ∞} {a b e f : α} {A B X Y 
 
 section Minor
 
-lemma VerticallyConnected.contract {C : Set α} (h : M.VerticallyConnected (k + M.eRk C)) :
-    (M ／ C).VerticallyConnected k := by
-  wlog hCE : C ⊆ M.E generalizing C with aux
-  · rw [← M.contract_inter_ground_eq]
-    exact aux (h.mono (by grw [eRk_mono _ inter_subset_left])) inter_subset_right
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  rw [add_right_comm] at h
-  refine verticallyConnected_iff_forall.2 fun P hPconn hP ↦ ?_
-  have hl := h.not_isVerticalSeparation (P := P.ofContractLeft)
-    (by grw [ENat.add_one_le_add_one_iff, eConn_ofContractLeft, eLocalConn_le_eRk_right,
-    add_right_comm, hPconn])
-  rw [isVerticalSeparation_iff_nonspanning, ofContractLeft_left, ofContractLeft_right] at hl
-  rw [isVerticalSeparation_iff_nonspanning, contract_nonspanning_iff,
-    contract_nonspanning_iff] at hP
-  simp [hP.1.1, hP.2.1.subset subset_union_left] at hl
 
-lemma VerticallyConnected.contract_of_top (h : M.VerticallyConnected ⊤) (C : Set α) :
-    (M ／ C).VerticallyConnected ⊤ :=
-  (h.mono le_top).contract
+variable {N : Matroid α}
 
-lemma TutteConnected.contract {C : Set α} (h : M.TutteConnected (k + M.eRk C + 1))
-    (hnt : 2 * (k + M.eRk C) < M.E.encard + 1) : (M ／ C).TutteConnected (k + 1) := by
-  obtain rfl | hne := eq_or_ne k 0; simp
-  wlog hCE : C ⊆ M.E generalizing C with aux
-  · specialize aux (C := C ∩ M.E)
-    grw [M.eRk_mono inter_subset_left, imp_iff_right inter_subset_right,
-      contract_inter_ground_eq] at aux
-    exact aux h hnt
-  have hnt' := Order.le_of_lt_add_one hnt
-  have hgirth := h.le_girth hnt'
-  have hC : M.Indep C := indep_of_eRk_add_one_lt_girth (by enat_to_nat! <;> omega) hCE
-  have hfin : C.Finite := not_infinite.1 fun hinf ↦ by
-    simp [hC.eRk_eq_encard, hinf.encard_eq] at hnt
-  rw [tutteConnected_iff_verticallyConnected_girth]
-  refine ⟨(h.verticallyConnected.mono ?_).contract, ?_⟩
-  · grw [add_right_comm]
-  · have hle := hgirth.trans (M.girth_le_girth_contract_add C)
-    · rwa [add_right_comm, WithTop.add_le_add_iff_right
-        (M.isRkFinite_of_finite hfin).eRk_lt_top.ne] at hle
-  grw [hC.eRk_eq_encard, ← encard_diff_add_encard_of_subset hCE, ← contract_ground] at hnt
-  enat_to_nat! <;> omega
+def Partition.AdherentIn (P : N.Partition) (M : Matroid α) : Prop :=
+    ∃ (b : Bool) (Q : (N ↾ P b).Partition), ∀ i, M.eConn (Q i) = N.eConn (Q i)
+    -- ∃ X Y b, Disjoint X Y ∧ (X ∪ Y = P b) ∧ M.eConn X = N.eConn X ∧ M.eConn Y = N.eConn Y
 
-lemma TutteConnected.delete {D : Set α} (h : M.TutteConnected (k + M✶.eRk D + 1))
-    (hnt : 2 * (k + M✶.eRk D) < M.E.encard + 1) : (M ＼ D).TutteConnected (k + 1) :=
-  dual_contract_dual .. ▸ (h.dual.contract (by simpa)).dual
 
-lemma TutteConnected.contractElem (h : M.TutteConnected (k + 1)) (hnt : 2 * k < M.E.encard + 1)
-    (e : α) : (M ／ {e}).TutteConnected k := by
-  obtain rfl | ⟨k, rfl⟩ := k.eq_zero_or_exists_eq_add_one; simp
-  refine TutteConnected.contract (h.mono (by grw [eRk_singleton_le])) ?_
-  grw [eRk_singleton_le]
-  assumption
+lemma Partition.AdherentIn.symm {P : N.Partition} (h : P.AdherentIn M) : P.symm.AdherentIn M := by
+  obtain ⟨b, Q, hQ⟩ := h
+  exact ⟨!b, Q.copy (by simp), fun i ↦ hQ i⟩
+
+@[simp]
+lemma Partition.adherentIn_symm_iff {P : N.Partition} : P.symm.AdherentIn M ↔ P.AdherentIn M :=
+  ⟨fun h ↦ by simpa using h.symm, Partition.AdherentIn.symm⟩
+
+lemma Partition.AdherentIn.dual {P : N.Partition} (hP : P.AdherentIn M) : P.dual.AdherentIn M✶ := by
+  obtain ⟨b, Q, hQ⟩ := hP
+  exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
+
+lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) :
+    P.AdherentIn M✶ := by
+  obtain ⟨b, Q, hQ⟩ := hP
+  exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
+
+@[simp]
+lemma Partition.adherentIn_dual_iff {P : N.Partition} : P.dual.AdherentIn M ↔ P.AdherentIn M✶ :=
+  ⟨Partition.AdherentIn.of_dual, fun h ↦ by simpa using h.dual⟩
+
+@[simp]
+lemma Partition.copy_adherentIn_iff {N N' : Matroid α} {P : N.Partition} (h_eq : N = N') :
+    (P.copy h_eq).AdherentIn M ↔ P.AdherentIn M := by
+  obtain rfl := h_eq
+  simp [AdherentIn]
+
+def AdheresTo (N M : Matroid α) : Prop := ∀ (P : N.Partition), P.AdherentIn M
+
+@[simp] lemma adheresTo_self (M : Matroid α) : M.AdheresTo M :=
+  fun P ↦ ⟨true, (M ↾ P true).partition ∅ true, by simp⟩
+
+lemma contractElem_or_deleteElem_adheresTo (M : Matroid α) (e : α) :
+    (N ／ {e}).AdheresTo M ∨ (N ＼ {e}).AdheresTo M := by
+
+  simp only [AdheresTo, AdherentIn]
+  by_contra! hcon
+
+  obtain ⟨⟨Pc, hPc⟩, Pd, hPd⟩ := hcon
+  obtain ⟨⟨i,j⟩, h⟩ :=
+    exists_eq_ciSup_of_finite (f := fun (p : Bool × Bool) ↦ M.eConn (Pc p.1 ∩ Pd p.2))
+  simp [eq_ciSup_if] at h
+
+  -- wlog hle1 : M.eConn (P.1 ∩ Q.2) ≤ M.eConn (P.2 ∩ Q.2) generalizing M N with aux
+  -- · push_neg at hle1
+  --   refine aux (M := M✶) (N := N✶) (Q.dual.copy (by simp)) (by simpa) (P.dual.copy (by simp))
+  --     (by simpa) ?_
+  --   simp
+  -- wlog hle1 : M.eConn (P.1 ∩ Q.1) ≤ M.eConn (P.2 ∩ Q.2) generalizing P Q with aux
+  -- · push_neg at hle1
+  --   exact aux P.symm (by simpa) Q.symm (by simpa) (by simpa using hle1.le)
+
+
+    -- apply aux P.symm (fun X Y hdk h1 h2 ↦ ?_)
+
+    -- rw [symm_left, symm_right, and_comm]
+
+  sorry
+
 
 /-- I believe that this is false if the assumption is relaxed to `2 * k ≤ M.E.encard`
 in the case where `k = ⊤` and `M` is a free extension of a nontrivial sparse paving matroid by `e`-/
@@ -118,20 +133,20 @@ lemma IsUniform.contract_or_delete_tutteConnected_of_tutteConnected [M.Tame] (hM
   rw [unifOn_tutteConnected_iff (by simpa using Order.add_one_le_of_lt hlt)]
   eomega
 
-/-- If `(P₁, P₂)` and `(Q₁, Q₂)` are partitions of matroids with the same ground set and both
-with sides of size at least `k`, then either `P₁ ∩ Q₁` and `P₂ ∩ Q₂` both have size at least `k/2`,
-or `P₁ ∩ Q₂` and `P₂ ∩ Q₁` both have size at least `k/2`. -/
-lemma Partition.exists_large_diagonal {M N : Matroid α} (hNM : M.E = N.E) {P : M.Partition}
-    {Q : N.Partition} (hP1 : 2 * k + 1 ≤ P.1.encard) (hP2 : 2 * k + 1 ≤ P.2.encard)
-    (hQ1 : 2 * k + 1 ≤ Q.1.encard) (hQ2 : 2 * k + 1 ≤ Q.2.encard) :
-      (k + 1 ≤ (P.1 ∩ Q.1).encard ∧ k + 1 ≤ (P.2 ∩ Q.2).encard)
-    ∨ (k + 1 ≤ (P.1 ∩ Q.2).encard ∧ k + 1 ≤ (P.2 ∩ Q.1).encard) := by
-  rw [← Q.union_inter_left P.left (P.left_subset_ground.trans_eq hNM)] at hP1
-  rw [← Q.union_inter_left P.right (P.right_subset_ground.trans_eq hNM)] at hP2
-  rw [← P.union_inter_right Q.left (Q.left_subset_ground.trans_eq hNM.symm)] at hQ1
-  rw [← P.union_inter_right Q.right (Q.right_subset_ground.trans_eq hNM.symm)] at hQ2
-  rw [encard_union_eq (by simp)] at hP1 hP2 hQ1 hQ2
-  eomega
+-- /-- If `(P₁, P₂)` and `(Q₁, Q₂)` are partitions of matroids with the same ground set and both
+-- with sides of size at least `k`, then either `P₁ ∩ Q₁` and `P₂ ∩ Q₂` both have size at least `k/2`,
+-- or `P₁ ∩ Q₂` and `P₂ ∩ Q₁` both have size at least `k/2`. -/
+-- lemma Partition.exists_large_diagonal {M N : Matroid α} (hNM : M.E = N.E) {P : M.Partition}
+--     {Q : N.Partition} (hP1 : 2 * k + 1 ≤ P.1.encard) (hP2 : 2 * k + 1 ≤ P.2.encard)
+--     (hQ1 : 2 * k + 1 ≤ Q.1.encard) (hQ2 : 2 * k + 1 ≤ Q.2.encard) :
+--       (k + 1 ≤ (P.1 ∩ Q.1).encard ∧ k + 1 ≤ (P.2 ∩ Q.2).encard)
+--     ∨ (k + 1 ≤ (P.1 ∩ Q.2).encard ∧ k + 1 ≤ (P.2 ∩ Q.1).encard) := by
+--   rw [← Q.union_inter_left P.left (P.left_subset_ground.trans_eq hNM)] at hP1
+--   rw [← Q.union_inter_left P.right (P.right_subset_ground.trans_eq hNM)] at hP2
+--   rw [← P.union_inter_right Q.left (Q.left_subset_ground.trans_eq hNM.symm)] at hQ1
+--   rw [← P.union_inter_right Q.right (Q.right_subset_ground.trans_eq hNM.symm)] at hQ2
+--   rw [encard_union_eq (by simp)] at hP1 hP2 hQ1 hQ2
+--   eomega
 
 -- Bixby's lemma.
 set_option maxHeartbeats 1000000 in
@@ -256,64 +271,3 @@ lemma TutteConnected.exists_of_weaklyConnected (hM : M.TutteConnected k) (he : M
 -- `x` element of a matroid `M` => if either `N = M ／ x` or `N = M ＼ x` has a separation
 -- `(A,B)` with `λ = k`, then either `A` or `B` has a partition into two sets,
 -- where `λ(A₁) ≤ k` or `λ(A₂) ≤ k` in `M`.
-
-variable {N : Matroid α}
-
-def Partition.AdherentIn (P : N.Partition) (M : Matroid α) : Prop :=
-    ∃ (X Y : Set α), Disjoint X Y ∧ M.eConn X = N.eConn X ∧ M.eConn Y = N.eConn Y ∧
-    (X ∪ Y = P.left ∨ X ∪ Y = P.right)
-
-lemma Partition.AdherentIn.symm {P : N.Partition} (h : P.AdherentIn M) : P.symm.AdherentIn M := by
-  obtain ⟨X, Y, hdj, hX, hY, hXY | hXY⟩ := h
-  · exact ⟨Y, X, hdj.symm, hY, hX, .inr (union_comm _ _ ▸ hXY)⟩
-  exact ⟨Y, X, hdj.symm, hY, hX, .inl (union_comm _ _ ▸ hXY)⟩
-
-@[simp]
-lemma Partition.adherentIn_symm_iff {P : N.Partition} : P.symm.AdherentIn M ↔ P.AdherentIn M :=
-  ⟨fun h ↦ by simpa using h.symm, Partition.AdherentIn.symm⟩
-
-lemma Partition.AdherentIn.dual {P : N.Partition} (hP : P.AdherentIn M) : P.dual.AdherentIn M✶ := by
-  obtain ⟨X, Y, hXY, hX, hY, h | h⟩ := hP
-  · exact ⟨X, Y, hXY, by simpa, by simpa, .inl h⟩
-  exact ⟨X, Y, hXY, by simpa, by simpa, .inr h⟩
-
-lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) :
-    P.AdherentIn M✶ := by
-  obtain ⟨X, Y, hXY, hX, hY, h | h⟩ := hP
-  · exact ⟨X, Y, hXY, by simpa using hX, by simpa using hY, .inl h⟩
-  exact ⟨X, Y, hXY, by simpa using hX, by simpa using hY, .inr h⟩
-
-@[simp]
-lemma Partition.adherentIn_dual_iff {P : N.Partition} : P.dual.AdherentIn M ↔ P.AdherentIn M✶ :=
-  ⟨Partition.AdherentIn.of_dual, fun h ↦ by simpa using h.dual⟩
-
-@[simp]
-lemma Partition.copy_adherentIn_iff {N N' : Matroid α} {P : N.Partition} (h_eq : N = N') :
-    (P.copy h_eq).AdherentIn M ↔ P.AdherentIn M := by
-  simp [AdherentIn, h_eq]
-
-def AdheresTo (N M : Matroid α) : Prop := ∀ (P : N.Partition), P.AdherentIn M
-
-@[simp] lemma adheresTo_self (M : Matroid α) : M.AdheresTo M :=
-  fun P ↦ ⟨P.left, ∅, by simp⟩
-
-lemma contractElem_or_deleteElem_adheresTo (M : Matroid α) (e : α) :
-    (N ／ {e}).AdheresTo M ∨ (N ＼ {e}).AdheresTo M := by
-  simp only [AdheresTo]
-  by_contra! hcon
-  obtain ⟨⟨P, hP⟩, Q, hQ⟩ := hcon
-  wlog hle1 : M.eConn (P.1 ∩ Q.2) ≤ M.eConn (P.2 ∩ Q.2) generalizing M N with aux
-  · push_neg at hle1
-    refine aux (M := M✶) (N := N✶) (Q.dual.copy (by simp)) (by simpa) (P.dual.copy (by simp))
-      (by simpa) ?_
-    simp
-  wlog hle1 : M.eConn (P.1 ∩ Q.1) ≤ M.eConn (P.2 ∩ Q.2) generalizing P Q with aux
-  · push_neg at hle1
-    exact aux P.symm (by simpa) Q.symm (by simpa) (by simpa using hle1.le)
-
-
-    -- apply aux P.symm (fun X Y hdk h1 h2 ↦ ?_)
-
-    -- rw [symm_left, symm_right, and_comm]
-
-  sorry
