@@ -1,6 +1,6 @@
 import Mathlib.Combinatorics.Graph.Basic
 
-variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β}
+variable {α β : Type*} {x y z u v w : α} {e f : β} {G H : Graph α β} {F : Set β}
 
 open Set
 
@@ -64,10 +64,12 @@ lemma isLink_eq_isLink_iff_exists_isLink_of_mem_edgeSet (heG : e ∈ E(G)) :
 /-- The set of ends of an edge `e`. -/
 def endSet (G : Graph α β) (e : β) : Set α := {x | G.Inc e x}
 
-@[simp]
-lemma mem_endSet_iff : x ∈ G.endSet e ↔ G.Inc e x := Iff.rfl
+notation "V(" G ", " e ")" => Graph.endSet G e
 
-lemma IsLink.endSet_eq (h : G.IsLink e x y) : G.endSet e = {x,y} := by
+@[simp]
+lemma mem_endSet_iff : x ∈ V(G, e) ↔ G.Inc e x := Iff.rfl
+
+lemma IsLink.endSet_eq (h : G.IsLink e x y) : V(G, e) = {x,y} := by
   ext a
   simp only [mem_endSet_iff, mem_insert_iff, mem_singleton_iff]
   refine ⟨fun h' ↦ h'.eq_or_eq_of_isLink h, ?_⟩
@@ -75,15 +77,30 @@ lemma IsLink.endSet_eq (h : G.IsLink e x y) : G.endSet e = {x,y} := by
   · exact h.inc_left
   exact h.inc_right
 
-lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : G.endSet e = {x} := by
+lemma IsLoopAt.endSet_eq (h : G.IsLoopAt e x) : V(G, e) = {x} := by
   rw [IsLink.endSet_eq h, pair_eq_singleton]
 
-lemma endSet_eq_of_notMem_edgeSet (he : e ∉ E(G)) : G.endSet e = ∅ := by
+lemma endSet_eq_of_notMem_edgeSet (he : e ∉ E(G)) : V(G, e) = ∅ := by
   simp only [endSet, eq_empty_iff_forall_notMem, mem_setOf_eq]
   exact fun x hx ↦ he hx.edge_mem
 
 lemma inc_iff_isLoopAt_or_isNonloopAt : G.Inc e x ↔ G.IsLoopAt e x ∨ G.IsNonloopAt e x :=
   ⟨Inc.isLoopAt_or_isNonloopAt, fun h ↦ h.elim IsLoopAt.inc IsNonloopAt.inc⟩
+
+-- Terrible name
+def endSetSet (G : Graph α β) (F : Set β) : Set α := {x | ∃ e ∈ F, G.Inc e x}
+
+notation "V(" G ", " F ")" => Graph.endSetSet G F
+
+@[simp]
+lemma mem_endSetSet_iff : x ∈ V(G, F) ↔ ∃ e ∈ F, G.Inc e x := Iff.rfl
+
+@[simp]
+lemma endSetSet_subset : V(G, F) ⊆ V(G) := by
+  rintro x ⟨e, hS, he⟩
+  exact he.vertex_mem
+
+
 
 /-- The function which maps a term in the subtype of edges of `G` to an unordered pair of
 elements in the subtype of vertices of `G`.

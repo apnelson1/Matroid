@@ -104,6 +104,9 @@ lemma isLink_iff_isLink_of_le_of_mem (hle : H ≤ G) (he : e ∈ E(H)) :
     G.IsLink e x y ↔ H.IsLink e x y :=
   ⟨fun h ↦ h.of_le_of_mem hle he, fun h ↦ h.of_le hle⟩
 
+lemma isLink_iff_isLink_and_mem_of_le (hle : H ≤ G) : H.IsLink e x y ↔ G.IsLink e x y ∧ e ∈ E(H) :=
+  ⟨fun h ↦ ⟨h.of_le hle, h.edge_mem⟩, fun h ↦ h.1.of_le_of_mem hle h.2⟩
+
 lemma le_of_le_le_subset_subset {H₁ H₂ : Graph α β} (h₁ : H₁ ≤ G) (h₂ : H₂ ≤ G) (hV : V(H₁) ⊆ V(H₂))
     (hE : E(H₁) ⊆ E(H₂)) : H₁ ≤ H₂ where
   vertex_subset := hV
@@ -164,6 +167,9 @@ lemma sum_ncard_lt_of_lt [Finite α] [Finite β] (h : G < H) :
 
 lemma neighbor_mono (hle : G ≤ H) : N(G, x) ⊆ N(H, x) :=
   fun _ ⟨hne, hy⟩ ↦ ⟨hne, hy.of_le hle⟩
+
+lemma endSetSet_subset_of_subset_of_le (hle : G ≤ H) (hF : F ⊆ E(G)) : V(H, F) ⊆ V(G) :=
+  fun _ ⟨_, he, hx⟩ ↦ hx.of_le_of_mem hle (hF he) |>.vertex_mem
 
 instance [Finite α] [Finite β] : WellFoundedLT (Graph α β) :=
   ⟨Subrelation.wf sum_ncard_lt_of_lt (measure fun (G : Graph α β) => V(G).ncard + E(G).ncard).2⟩
