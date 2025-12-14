@@ -15,22 +15,20 @@ import Matroid.Connectivity.Basic
 -- import Matroid.Connectivity.Extension
 import Matroid.Connectivity.Finitize
 -- import Matroid.Connectivity.Global
--- import Matroid.Connectivity.Higher
--- import Matroid.Connectivity.HigherConnected
 -- import Matroid.Connectivity.Infinite
+-- import Matroid.Connectivity.Internal
 import Matroid.Connectivity.Minor
 import Matroid.Connectivity.Nat
--- import Matroid.Connectivity.NullityConn
 import Matroid.Connectivity.Separation
--- import Matroid.Connectivity.Separation_
 import Matroid.Connectivity.Skew
 -- import Matroid.Connectivity.ThreeConnected
+-- import Matroid.Connectivity.Tutte
+-- import Matroid.Connectivity.Vertical
 import Matroid.Constructions.Matching
 import Matroid.Constructions.Project
 import Matroid.Constructions.Relax
 import Matroid.Constructions.Truncate
 import Matroid.Equiv
--- import Matroid.Exercises.HamiltonianCycle
 import Matroid.Extension.ExtendBy
 import Matroid.Extension.Guts
 import Matroid.Extension.Minor

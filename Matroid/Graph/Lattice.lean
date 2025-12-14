@@ -392,18 +392,33 @@ lemma compl_le_iff : H₁ᶜ ≤ H₂ ↔ V(G) \ V(H₁.val) ⊆ V(H₂.val) ∧
   have := coe_top ▸ endSetSet_subset_of_le_subset ⊤ H2
   grw [this, endSetSet_subset]
 
-lemma vertexSet_inter_comple_vertexSet :
-    V(H₁.val) ∩ V(H₁ᶜ.val) = V(H₁.val) ∩ V(G, E(G) \ E(H₁.val)) := by
+
+def sep (H : G.Subgraph) : Set α := V(H.val) ∩ V(G, E(G) \ E(H.val))
+
+@[simp]
+lemma mem_sep_iff (H : G.Subgraph) (x : α) :
+    x ∈ H.sep ↔ x ∈ V(H.val) ∧ ∃ e ∈ E(G) \ E(H.val), G.Inc e x := Iff.rfl
+
+@[simp]
+lemma sep_subset (H : G.Subgraph) : H.sep ⊆ V(H.val) := by
+  rintro x ⟨hx, _⟩
+  exact hx
+
+lemma sep_eq_vertexSet_inter_compl : H₁.sep = V(H₁.val) ∩ V(H₁ᶜ.val) := by
   ext x
   rw [compl_vertexSet, inter_union_distrib_left, mem_union]
-  simp only [inter_diff_self, mem_empty_iff_false, mem_inter_iff, mem_endSetSet_iff, mem_diff,
-    false_or]
+  simp only [mem_sep_iff, mem_diff, inter_diff_self, mem_empty_iff_false, mem_inter_iff,
+    mem_endSetSet_iff, false_or]
+
+@[simp]
+lemma sep_subset_compl (H : G.Subgraph) : H.sep ⊆ V(Hᶜ.val) := by
+  simp [sep_eq_vertexSet_inter_compl]
 
 lemma inf_compl_eq_bot_iff : H₁ ⊓ H₁ᶜ = ⊥ ↔ H₁.val ≤c G := by
   refine ⟨fun h => ⟨H₁.prop, fun e x hex hxH ↦ ?_⟩, fun h => ?_⟩
   · by_contra! he
     apply_fun Graph.vertexSet ∘ Subtype.val at h
-    simp only [comp_apply, coe_inf, inter_vertexSet, vertexSet_inter_comple_vertexSet, coe_bot,
+    simp only [comp_apply, coe_inf, inter_vertexSet, ← sep_eq_vertexSet_inter_compl, coe_bot,
       bot_vertexSet, eq_empty_iff_forall_notMem] at h
     exact h x ⟨hxH, by use e, ⟨hex.edge_mem, he⟩⟩
   refine Subtype.ext ?_
