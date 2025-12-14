@@ -29,3 +29,8 @@ lemma Subsingleton.disjoint_iff_left (hs : s.Subsingleton) : Disjoint s t ↔ (s
 
 lemma Subsingleton.disjoint_iff_right (hs : s.Subsingleton) : Disjoint t s ↔ (s ⊆ t → s = ∅) := by
   rw [disjoint_comm, hs.disjoint_iff_left]
+
+lemma Subsingleton.eq_or_eq_of_subset (h : s.Subsingleton) (hts : t ⊆ s) : t = ∅ ∨ t = s := by
+  obtain rfl | ⟨x, rfl⟩ := (h.anti hts).eq_empty_or_singleton
+  · simp
+  simp [h.eq_singleton_of_mem (by simpa using hts)]

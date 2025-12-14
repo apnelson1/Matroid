@@ -21,7 +21,7 @@ variable {α : Type*} {N M : Matroid α} {j k : ℕ∞} {a b e f : α} {A B X Y 
 section Minor
 
 
-variable {N : Matroid α}
+variable {N : Matroid α} {b i j : Bool}
 
 def Partition.AdherentIn (P : N.Partition) (M : Matroid α) : Prop :=
     ∃ (b : Bool) (Q : (N ↾ P b).Partition), ∀ i, M.eConn (Q i) = N.eConn (Q i)
@@ -40,8 +40,15 @@ lemma Partition.AdherentIn.dual {P : N.Partition} (hP : P.AdherentIn M) : P.dual
   obtain ⟨b, Q, hQ⟩ := hP
   exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
 
+@[simp]
+lemma Partition.copy_adherentIn_iff {N N' : Matroid α} {P : N.Partition} (h_eq : N = N') :
+    (P.copy h_eq).AdherentIn M ↔ P.AdherentIn M := by
+  obtain rfl := h_eq
+  simp [AdherentIn]
+
 lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) :
     P.AdherentIn M✶ := by
+  simp [Partition.dual] at hP
   obtain ⟨b, Q, hQ⟩ := hP
   exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
 
@@ -49,11 +56,20 @@ lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) 
 lemma Partition.adherentIn_dual_iff {P : N.Partition} : P.dual.AdherentIn M ↔ P.AdherentIn M✶ :=
   ⟨Partition.AdherentIn.of_dual, fun h ↦ by simpa using h.dual⟩
 
-@[simp]
-lemma Partition.copy_adherentIn_iff {N N' : Matroid α} {P : N.Partition} (h_eq : N = N') :
-    (P.copy h_eq).AdherentIn M ↔ P.AdherentIn M := by
-  obtain rfl := h_eq
-  simp [AdherentIn]
+lemma exists_lt_of_not_adherentIn {P : N.Partition} (hP : ¬ P.AdherentIn M) (hNM : N ≤m M)
+    (Q : (N ↾ P b).Partition) : ∃ i, N.eConn (Q i) < M.eConn (Q i) := by
+  simp only [AdherentIn, not_exists, not_forall] at hP
+  obtain ⟨i, hne⟩ := hP b Q
+  exact ⟨i, (hNM.eConn_le _).lt_of_ne' hne⟩
+
+lemma lt_or_lt_of_not_adherentIn {P : N.Partition} (hP : ¬ P.AdherentIn M) (hNM : N ≤m M)
+    (hX : X ⊆ P b) : N.eConn X < M.eConn X ∨ N.eConn (P b \ X) < M.eConn (P b \ X) := by
+  obtain ⟨i, hi⟩ := exists_lt_of_not_adherentIn hP hNM (Matroid.partition _ X b)
+  obtain rfl | rfl := i.eq_or_eq_not b
+  · left
+    simpa using hi
+  right
+  simpa using hi
 
 def AdheresTo (N M : Matroid α) : Prop := ∀ (P : N.Partition), P.AdherentIn M
 
@@ -61,15 +77,24 @@ def AdheresTo (N M : Matroid α) : Prop := ∀ (P : N.Partition), P.AdherentIn M
   fun P ↦ ⟨true, (M ↾ P true).partition ∅ true, by simp⟩
 
 lemma contractElem_or_deleteElem_adheresTo (M : Matroid α) (e : α) :
-    (N ／ {e}).AdheresTo M ∨ (N ＼ {e}).AdheresTo M := by
+    (M ／ {e}).AdheresTo M ∨ (M ＼ {e}).AdheresTo M := by
 
-  simp only [AdheresTo, AdherentIn]
+  simp only [AdheresTo]
   by_contra! hcon
 
   obtain ⟨⟨Pc, hPc⟩, Pd, hPd⟩ := hcon
-  obtain ⟨⟨i,j⟩, h⟩ :=
-    exists_eq_ciSup_of_finite (f := fun (p : Bool × Bool) ↦ M.eConn (Pc p.1 ∩ Pd p.2))
-  simp [eq_ciSup_if] at h
+  obtain ⟨bc, bd, hmin⟩ := Pc.exists_smallest_inter Pd M.eConn
+  -- have := Pc.eConn_inter_add_eConn_inter_not_le' Pd bc bd
+
+  have hgt1 : Pc.eConn < M.eConn (Pc bc ∩ Pd bd) := by
+    have := lt_or_lt_of_not_adherentIn hPc (contract_isMinor ..) (X := Pc bc ∩ Pd bd) (b := bc)
+      inter_subset_left
+    rw [← Pc.eConn_eq bc]
+
+
+  -- obtain ⟨⟨i,j⟩, h⟩ :=
+  --   exists_eq_ciSup_of_finite (f := fun (p : Bool × Bool) ↦ M.eConn (Pc p.1 ∩ Pd p.2))
+  -- simp [eq_ciSup_if] at h
 
   -- wlog hle1 : M.eConn (P.1 ∩ Q.2) ≤ M.eConn (P.2 ∩ Q.2) generalizing M N with aux
   -- · push_neg at hle1
