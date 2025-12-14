@@ -202,7 +202,7 @@ protected lemma union_bool_eq' (b : Bool) : P (!b) ∪ P b = s := by
 
 @[simp]
 protected lemma disjoint_true_false : Disjoint (P true) (P false) := by
-  rw [← pairwise_disjoint_on_bool]
+  rw [← pairwise_disjoint_on_bool']
   apply P.pairwise_disjoint
 
 @[simp]
@@ -223,7 +223,7 @@ protected lemma compl_not_eq (P : s.Bipartition) (b : Bool) : s \ (P (!b)) = P b
 protected def _root_.Set.Disjoint.toBipartition (disjoint : Disjoint r s) (union_eq : r ∪ s = t) :
     t.Bipartition where
   toFun b := bif b then r else s
-  pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool]
+  pairwise_disjoint' := by rwa [pairwise_disjoint_on_bool']
   iUnion_eq' := by simpa
 
 @[simp]

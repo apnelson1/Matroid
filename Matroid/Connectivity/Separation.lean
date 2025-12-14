@@ -4,6 +4,8 @@ import Matroid.Connectivity.Connected
 import Matroid.Connectivity.Minor
 import Matroid.ForMathlib.Finset
 import Matroid.ForMathlib.Matroid.Sum
+import Matroid.ForMathlib.Data.Set.Subsingleton
+-- import Matroid.ForMathlib.Data.Set.IndexedPartitiom
 
 open Set Function
 
@@ -14,7 +16,7 @@ lemma pairwise_on_bool' {α : Type*} {r : α → α → Prop} {f : Bool → α} 
 
 lemma pairwise_disjoint_on_bool' {α : Type*} {f : Bool → Set α} (b : Bool) :
     Pairwise (Disjoint on f) ↔ Disjoint (f b) (f !b) := by
-  rw [pairwise_on_bool', disjoint_comm, and_self]
+  rw [_root_.pairwise_on_bool', disjoint_comm, and_self]
 
 lemma iUnion_bool' {α : Type*} (f : Bool → Set α) (b : Bool) : ⋃ i, f i = f b ∪ f !b := by
   cases b <;> simp [iUnion_bool, union_comm]
@@ -449,12 +451,12 @@ variable {Q : M.Partition}
 protected def cross (P Q : M.Partition) (b : Bool) : M.Partition where
   toFun i := bif (i == b) then P i ∩ Q i else P i ∪ Q i
   pairwise_disjoint' := by
-    simp only [pairwise_on_bool' b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false,
+    simp only [_root_.pairwise_on_bool' b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false,
       disjoint_union_right, disjoint_union_left]
     refine ⟨⟨(P.disjoint_bool b).mono_left ?_, (Q.disjoint_bool b).mono_left ?_⟩,
       (P.disjoint_bool b).symm.mono_right ?_, (Q.disjoint_bool b).symm.mono_right ?_⟩ <;> simp
   iUnion_eq' := by
-    simp only [iUnion_bool' _ b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false]
+    simp only [_root_.iUnion_bool' _ b, BEq.rfl, cond_true, Bool.not_beq_self, cond_false]
     rw [← P.compl_eq, ← Q.compl_eq, ← inter_eq_self_of_subset_left (P.subset_ground b),
       ← inter_eq_self_of_subset_left (Q.subset_ground b)]
     tauto_set

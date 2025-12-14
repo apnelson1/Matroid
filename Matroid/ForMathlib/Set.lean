@@ -210,11 +210,11 @@ lemma pairwise_on_bool' {α : Type*} {r : α → α → Prop} {f : Bool → α} 
   simp_rw [Pairwise, b.forall_bool']
   simp
 
-lemma pairwise_disjoint_on_bool {α : Type*} {f : Bool → Set α} :
+lemma pairwise_disjoint_on_bool' {α : Type*} {f : Bool → Set α} :
     Pairwise (Disjoint on f) ↔ Disjoint (f true) (f false) := by
   rw [pairwise_on_bool' true, Bool.not_true, disjoint_comm, and_self]
 
-lemma pairwise_disjoint_on_bool' {α : Type*} {f : Bool → Set α} (b : Bool) :
+lemma pairwise_disjoint_on_bool'' {α : Type*} {f : Bool → Set α} (b : Bool) :
     Pairwise (Disjoint on f) ↔ Disjoint (f b) (f !b) := by
   rw [pairwise_on_bool', disjoint_comm, and_self]
 

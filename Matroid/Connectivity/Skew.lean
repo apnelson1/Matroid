@@ -2,6 +2,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Matroid.Modular.Basic
 import Matroid.Order.Quotient
 import Matroid.Constructions.Project
+import Matroid.ForMathlib.Set
 
 universe u
 
@@ -474,14 +475,9 @@ lemma skew_iff_exist_isBases {X Y : Set α} :
     M.Skew X Y ↔
     ∃ I J, Disjoint I J ∧ M.IsBasis (I ∪ J) (X ∪ Y) ∧ M.IsBasis I X ∧ M.IsBasis J Y := by
   simp only [Skew, isSkewFamily_iff_exist_isBases, Bool.forall_bool, cond_false, cond_true,
-    ← pairwise_disjoint_on_bool]
-  refine ⟨fun ⟨Is, h1, h2, h3⟩ ↦ ?_, fun ⟨I, J, h1, h2, h3X, h3Y⟩ ↦ ?_⟩
-  · refine ⟨Is true, Is false, ?_, ?_, h3.symm⟩
-    · convert h1 with b
-      cases b <;> rfl
-    convert h2 <;> simp
-  refine ⟨fun i ↦ bif i then I else J, h1, ?_, by simpa, by simpa⟩
-  convert h2 <;> simp
+    pairwise_disjoint_on_bool', iUnion_bool]
+  exact ⟨fun ⟨Is, h1, h2, h3⟩ ↦ ⟨Is true, Is false, h1, h2, h3.symm⟩,
+    fun ⟨I, J, h1, h2, h3X, h3Y⟩ ↦ ⟨fun i ↦ bif i then I else J, h1, h2, by simpa, by simpa⟩⟩
 
 lemma Skew.closure_skew (h : M.Skew X Y) : M.Skew (M.closure X) (M.closure Y) := by
   have h' := IsSkewFamily.cls_isSkewFamily h
