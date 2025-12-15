@@ -71,16 +71,24 @@ protected def copy (P : s.IndexedPartition ι) (h_eq : s = t) : t.IndexedPartiti
   iUnion_eq' := h_eq ▸ P.iUnion_eq
 
 @[simp]
-lemma copy_apply (P : s.IndexedPartition ι) (h_eq : s = t) (i : ι) : P.copy h_eq i = P i := rfl
+protected lemma copy_apply (P : s.IndexedPartition ι) (h_eq : s = t) (i : ι) :
+  P.copy h_eq i = P i := rfl
+
+@[simps]
+protected def copyEquiv (h_eq : s = t) : s.IndexedPartition ι ≃ t.IndexedPartition ι where
+  toFun P := P.copy h_eq
+  invFun P := P.copy h_eq.symm
+  left_inv _ := IndexedPartition.ext fun _ ↦ rfl
+  right_inv _ := IndexedPartition.ext fun _ ↦ rfl
 
 /-- Intersect a partition with a smaller set -/
-def induce (P : s.IndexedPartition ι) (hts : t ⊆ s) : t.IndexedPartition ι where
+protected def induce (P : s.IndexedPartition ι) (hts : t ⊆ s) : t.IndexedPartition ι where
   toFun i := P i ∩ t
   pairwise_disjoint' := P.pairwise_disjoint.mono <| by grind
   iUnion_eq' := by rw [← iUnion_inter, P.iUnion_eq, inter_eq_self_of_subset_right hts]
 
 @[simp]
-lemma induce_apply {P : s.IndexedPartition ι} {hts : t ⊆ s} {i : ι} :
+protected lemma induce_apply {P : s.IndexedPartition ι} {hts : t ⊆ s} {i : ι} :
   (P.induce hts) i = P i ∩ t := rfl
 
 protected def union (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) (hdj : Disjoint s t) :
@@ -119,15 +127,15 @@ protected def shift [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i
 
 protected lemma shift_apply [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i : ι) :
     P.shift t i i = (P i ∩ t) ∪ (t \ s) := by
-  simp only [IndexedPartition.shift, copy_apply, IndexedPartition.union_apply, induce_apply,
-    IndexedPartition.single_apply]
+  simp only [IndexedPartition.shift, IndexedPartition.copy_apply,
+    IndexedPartition.union_apply, IndexedPartition.induce_apply, IndexedPartition.single_apply]
   have := P.subset (i := i)
   grind
 
 protected lemma shift_apply_of_ne [DecidableEq ι] (P : s.IndexedPartition ι) {t : Set α}
     (hne : i ≠ j) : P.shift t i j = P j ∩ t := by
-  simp only [IndexedPartition.shift, copy_apply, IndexedPartition.union_apply, induce_apply,
-    IndexedPartition.single_apply_of_ne _ hne.symm, union_empty]
+  simp only [IndexedPartition.shift, IndexedPartition.copy_apply, IndexedPartition.union_apply,
+    IndexedPartition.induce_apply, IndexedPartition.single_apply_of_ne _ hne.symm, union_empty]
   rw [← inter_assoc, inter_right_comm, inter_eq_self_of_subset_left P.subset]
 
 protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPartition ι :=
@@ -135,7 +143,7 @@ protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPar
 
 @[simp]
 lemma diff_apply (P : s.IndexedPartition ι) (t : Set α) (i : ι) : (P.diff t) i = P i \ t := by
-  rw [IndexedPartition.diff, induce_apply, ← inter_diff_assoc,
+  rw [IndexedPartition.diff, IndexedPartition.induce_apply, ← inter_diff_assoc,
     inter_eq_self_of_subset_left P.subset]
 
 @[simp]
@@ -304,6 +312,10 @@ protected lemma trivial_def' : P.Trivial ↔ P true = s ∨ P false = s := by
 
 lemma Trivial.exists_eq (h : P.Trivial) : ∃ b, P b = s := h
 
+lemma Trivial.exists_eq_empty (h : P.Trivial) : ∃ b, P b = ∅ := by
+  rw [Bool.exists_bool]
+  rwa [Bipartition.trivial_def, or_comm] at h
+
 /-- Intersect a partition with a smaller set -/
 def induce (P : s.Bipartition) (h : t ⊆ s) : t.Bipartition := IndexedPartition.induce P h
 
@@ -311,8 +323,13 @@ def induce (P : s.Bipartition) (h : t ⊆ s) : t.Bipartition := IndexedPartition
 lemma induce_apply (P : s.Bipartition) (h : t ⊆ s) (b) : P.induce h b = (P b) ∩ t := rfl
 
 @[simp]
-lemma induce_symm (P : s.Bipartition) (hN : t ⊆ s) : (P.induce hN).symm = P.symm.induce hN :=
+lemma induce_symm (P : s.Bipartition) (h : t ⊆ s) : (P.induce h).symm = P.symm.induce h :=
   Bipartition.ext rfl
+
+@[simp]
+lemma induce_induce (P : s.Bipartition) (hts : t ⊆ s) (hrt : r ⊆ t) :
+    (P.induce hts).induce hrt = P.induce (hrt.trans hts) :=
+  Bipartition.ext <| by simp [inter_assoc, inter_eq_self_of_subset_right hrt]
 
 protected def diff (P : s.Bipartition) (t : Set α) : (s \ t).Bipartition := P.induce diff_subset
 
