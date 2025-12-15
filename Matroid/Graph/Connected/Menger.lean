@@ -273,7 +273,7 @@ theorem Menger'sTheorem_vertex [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (h
       have : (f i).val ∈ V(A.f i) ∩ V(A.f j) := ⟨(hC i).choose_spec.1, hij ▸ (hC j).choose_spec.1⟩
       simp [h, his, hit] at this
     exact hι ▸ ENat.card_le_card_of_injective hf
-  apply C.not_connectedBetween
+  apply C.not_connBetween
   use A.f i, by simpa [(A.isPath i).isWalk], A.first_eq i, A.last_eq i
 
 -- #print axioms Menger'sTheorem_vertex
@@ -283,7 +283,7 @@ theorem Menger'sTheorem [G.Finite] (hι : ENat.card ι = n) :
   forall₄_congr fun _ _ hs ht ↦ Menger'sTheorem_vertex hs ht hι
 
 theorem Menger'sTheorem_mixed [G.Finite] (hs : s ∈ V(G)) (ht : t ∈ V(G)) (hι : ENat.card ι = n) :
-    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnectedBetween s t →
+    (∀ X ⊆ V(G), s ∉ X ∧ t ∉ X → ∀ F ⊆ E(G), ¬ (G - X ＼ F).ConnBetween s t →
     n ≤ X.encard + F.encard) ↔ ∃ A : G.VertexEnsemble s t ι, A.edgeDisjoint := by
   convert (L'(G)).Menger'sTheorem_vertex (by simpa : Sum.inl s ∈ _) (by simpa : Sum.inl t ∈ _) hι
   · refine ⟨fun h ⟨C, hC, hsC, htC, hCconn⟩ ↦ ?_, fun h X hX ⟨hsX, htX⟩ F hF hXF ↦ ?_⟩

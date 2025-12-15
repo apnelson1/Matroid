@@ -11,11 +11,11 @@ namespace Graph
 /-! ### Connectivity between two sets -/
 
 def SetConnected (G : Graph α β) (S T : Set α) : Prop :=
-  ∃ s ∈ S, ∃ t ∈ T, G.ConnectedBetween s t
+  ∃ s ∈ S, ∃ t ∈ T, G.ConnBetween s t
 
 @[simp]
 lemma SetConnected_singleton (G : Graph α β) (s t : α) :
-    G.SetConnected {s} {t} ↔ G.ConnectedBetween s t := by
+    G.SetConnected {s} {t} ↔ G.ConnBetween s t := by
   refine ⟨?_, fun h => ⟨s, rfl, t, rfl, h⟩⟩
   rintro ⟨s, rfl, t, rfl, hst⟩
   exact hst
@@ -67,7 +67,7 @@ lemma setConnected_iff_exists_isPathFrom (S T : Set α) :
   obtain ⟨P, hP, rfl, rfl⟩ := h.exists_isPath
   exact ⟨P.extractPathFrom S T, hP.extractPathFrom_isPathFrom hs ht⟩
 
-lemma ConnectedBetween.neighbor_setConnected (h : G.ConnectedBetween s t) (hne : s ≠ t)
+lemma ConnBetween.neighbor_setConnected (h : G.ConnBetween s t) (hne : s ≠ t)
     (hadj : ¬ G.Adj s t) : (G - {s, t}).SetConnected (N(G, s) \ {s}) (N(G, t) \ {t}) := by
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   obtain ⟨x, e, w', f, y, rfl⟩ := (hw.isWalk.nontrivial_of_ne_not_adj hne hadj).exists_cons_concat
@@ -175,7 +175,7 @@ lemma CutBetween.isSetCut (C : G.CutBetween s t) : G.IsSetCut (insert s C) (inse
       simp +contextual
     have := h.vertexSet_inter.subset hs ht
     rw [SetConnected_singleton] at this
-    exact C.not_connectedBetween this
+    exact C.not_connBetween this
 
 structure IsEdgeSetCut (G : Graph α β) (S T : Set α) (C : Set β) where
   subset_edgeSet : C ⊆ E(G)

@@ -341,15 +341,19 @@ lemma not_isClosedSubgraph_iff_of_IsInducedSubgraph (hle : H ≤i G) : ¬ H ≤c
 /-- A component of `G` is a minimal nonempty closed subgraph of `G`. -/
 def IsCompOf (H G : Graph α β) : Prop := Minimal (fun H ↦ H ≤c G ∧ V(H).Nonempty) H
 
+@[simp]
 lemma IsCompOf.isClosedSubgraph (h : H.IsCompOf G) : H ≤c G :=
   h.prop.1
 
+@[simp]
 lemma IsCompOf.isInducedSubgraph (hHco : H.IsCompOf G) : H ≤i G :=
   hHco.isClosedSubgraph.isInducedSubgraph
 
+@[simp]
 lemma IsCompOf.le (h : H.IsCompOf G) : H ≤ G :=
   h.isClosedSubgraph.le
 
+@[simp]
 lemma IsCompOf.nonempty (h : H.IsCompOf G) : V(H).Nonempty :=
   h.prop.2
 

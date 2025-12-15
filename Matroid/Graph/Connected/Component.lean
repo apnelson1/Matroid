@@ -1,4 +1,5 @@
 import Matroid.ForMathlib.Lattice
+import Matroid.ForMathlib.Partition.Set
 import Matroid.Graph.Lattice
 import Matroid.Graph.Walk.Basic
 
@@ -163,6 +164,22 @@ lemma IsCompOf.eq_of_not_disjoint (hH₁co : H₁.IsCompOf G) (hH₂co : H₂.Is
 
 def Components (G : Graph α β) : Set (Graph α β) := {H | H.IsCompOf G}
 
+@[simps!]
+def compPartition (G : Graph α β) : Partition (G.Subgraph) := by
+  refine Partition.ofPairwiseDisjoint' (parts := {H | H.val.IsCompOf G}) ?_ ?_
+  · rintro H₁ hH₁ H₂ hH₂ hne
+    exact H₁.disjoint_iff H₂ |>.mpr
+    <| hH₁.stronglyDisjoint_of_ne hH₂ (by rwa [Subtype.coe_ne_coe])
+  intro H hH
+  simp only [ne_eq, Subgraph.ne_bot_iff]
+  exact hH.1.2
+
+@[simp]
+lemma compPartition_parts_eq_components (G : Graph α β) :
+    Subtype.val '' G.compPartition.parts = G.Components := by
+  ext H
+  simp +contextual [Components]
+
 @[simp]
 lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
   simp [Components]
@@ -170,6 +187,38 @@ lemma mem_components_iff_isCompOf : H ∈ G.Components ↔ H.IsCompOf G := by
 @[simp]
 lemma bot_notMem_components (G : Graph α β) : ⊥ ∉ G.Components := by
   simp [Components]
+
+@[simps]
+def connPartition (G : Graph α β) : Partition (Set α) where
+  parts := (fun x : Graph α β ↦ V(x)) '' G.Components
+  indep := by
+    rintro _ ⟨H, hH, rfl⟩
+    simp only [sSup_eq_sUnion, disjoint_sUnion_right, mem_diff, mem_image,
+      mem_components_iff_isCompOf, mem_singleton_iff, and_imp, forall_exists_index,
+      forall_apply_eq_imp_iff₂]
+    rintro H₀ hH₀co hne
+    contrapose! hne
+    obtain rfl := IsCompOf.eq_of_not_disjoint hH hH₀co hne
+    rfl
+  bot_not_mem := by simp
+
+@[simp]
+lemma induce_connPartition_parts_eq_components (G : Graph α β) :
+    (G[·]) '' G.connPartition.parts = G.Components := by
+  ext H
+  simp +contextual only [connPartition, mem_image, mem_components_iff_isCompOf,
+    exists_exists_and_eq_and]
+  refine ⟨fun ⟨H', hH', heq⟩ => ?_, fun h => ?_⟩
+  · rwa [← heq, hH'.isInducedSubgraph.induce_vertexSet_eq]
+  use H, h, h.isInducedSubgraph.induce_vertexSet_eq
+
+@[simp]
+lemma connPartition_supp (G : Graph α β) : G.connPartition.supp = V(G) := by
+  ext x
+  simp only [Partition.supp, connPartition_parts, sSup_eq_sUnion, sUnion_image,
+    mem_components_iff_isCompOf, mem_iUnion, exists_prop]
+  exact ⟨fun ⟨H, hH, hx⟩ => vertexSet_mono hH.le hx,
+    fun hx => ⟨G.walkable x, walkable_isCompOf hx, by simpa⟩⟩
 
 lemma components_pairwise_stronglyDisjoint (G : Graph α β) :
     G.Components.Pairwise StronglyDisjoint :=
@@ -232,24 +281,21 @@ def ClosedSubgraph.orderIso_set_components (G : Graph α β) :
     G.ClosedSubgraph ≃o Set {a : G.ClosedSubgraph | IsAtom a} :=
   CompleteAtomicBooleanAlgebra.toSetOfIsAtom
 
--- def ComponentsPartition (G : Graph α β) : Partition (⊤ : G.ClosedSubgraph) :=
---   Partition.ofPairwiseDisjoint' G.components_pairwiseDisjoint_id (fun _ hH => hH.1)
---     sSup_atoms_eq_top.symm
-
 @[simp]
 lemma ClosedSubgraph.orderIso_set_components_sSup (H : G.ClosedSubgraph) :
     sSup (Subtype.val '' (ClosedSubgraph.orderIso_set_components G H)) = H :=
   orderIsoSetOfAtoms_sSup H
-
--- lemma ClosedSubgraph.orderIso_set_components_subset (H : G.ClosedSubgraph) :
---     Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) ⊆ G.Components :=
---   fun _ ⟨H', _, h⟩ => h ▸ H'.prop
 
 lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph) :
     H' ∈ Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) → H' ≤ H := by
   rintro ⟨H', hH'cl, rfl⟩
   rw [← orderIso_set_components_sSup H]
   exact CompleteLattice.le_sSup _ H'.val <| mem_image_of_mem Subtype.val hH'cl
+
+
+-- lemma ClosedSubgraph.orderIso_set_components_subset (H : G.ClosedSubgraph) :
+--     Subtype.val '' (ClosedSubgraph.orderIso_set_components G H) ⊆ G.Components :=
+--   fun _ ⟨H', _, h⟩ => h ▸ H'.prop
 
 -- lemma ClosedSubgraph.orderIso_set_components_apply (G : Graph α β) (H : G.ClosedSubgraph) :
 --     Subtype.val '' (Subtype.val '' (ClosedSubgraph.orderIso_set_components G H)) =
@@ -299,7 +345,7 @@ lemma ClosedSubgraph.le_of_mem_orderIso_set_components (H H' : G.ClosedSubgraph)
 
 
 
--- def connectedBetweenPartition (G : Graph α β) : Partition (V(G)) where
+-- def connBetweenPartition (G : Graph α β) : Partition (V(G)) where
 --   parts := {V(H.val) | H ∈ G.Components}
 --   indep := by
 --     rintro V ⟨H, hH, rfl⟩

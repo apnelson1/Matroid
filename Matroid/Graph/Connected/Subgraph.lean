@@ -22,8 +22,8 @@ lemma IsCycle.not_isBridge_of_mem (hC : G.IsCycle C) (heC : e ∈ C.edge) : ¬ G
   rw [not_isBridge (hC.isWalk.edgeSet_subset heC)]
   exact ⟨C, hC, heC⟩
 
-lemma IsLink.isBridge_iff_not_connectedBetween (he : G.IsLink e x y) :
-    G.IsBridge e ↔ ¬ (G ＼ {e}).ConnectedBetween x y := by
+lemma IsLink.isBridge_iff_not_connBetween (he : G.IsLink e x y) :
+    G.IsBridge e ↔ ¬ (G ＼ {e}).ConnBetween x y := by
   refine ⟨fun h hconn ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨P, hP, rfl, rfl⟩ := hconn.exists_isPath
     simp only [isPath_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
@@ -31,7 +31,7 @@ lemma IsLink.isBridge_iff_not_connectedBetween (he : G.IsLink e x y) :
   contrapose! h
   obtain ⟨C, hC, heC⟩ := (not_isBridge he.edge_mem).1 h
   rw [← hC.isWalk.isLink_iff_isLink_of_mem heC] at he
-  exact hC.connectedBetween_deleteEdge_of_mem_of_mem _ he.left_mem he.right_mem
+  exact hC.connBetween_deleteEdge_of_mem_of_mem _ he.left_mem he.right_mem
 
 lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsBridge e) :
     (G ＼ {e}).Connected := by
@@ -48,7 +48,7 @@ lemma Connected.edgeDelete_singleton_connected (hG : G.Connected) (he : ¬ G.IsB
   simp only [edgeDelete_induce, edgeDelete_edgeSet, edgeDelete_edgeDelete, union_diff_self,
     singleton_union, edgeDelete_vertexSet, induce_vertexSet, mem_vertexSet_iff]
   intro x hx
-  obtain ⟨y, hy, hconn⟩ := hG.exists_connectedBetween_deleteEdge_set (X := V(C))
+  obtain ⟨y, hy, hconn⟩ := hG.exists_connBetween_deleteEdge_set (X := V(C))
     (by simp [inter_eq_self_of_subset_left hC.vertexSet_subset]) hx
   refine ⟨y, hy, ?_⟩
   rwa [insert_eq_of_mem (hC.isWalk.edgeSet_subset_induce_edgeSet heC )]
@@ -59,7 +59,7 @@ lemma Connected.edgeDelete_singleton_connected_iff (hG : G.Connected) :
   · simp [edgeDelete_eq_self G (F := {e}) (by simpa), hG, isBridge_iff, heE]
   refine ⟨fun h hbr ↦ ?_, hG.edgeDelete_singleton_connected⟩
   obtain ⟨x, y, hxy⟩ := exists_isLink_of_mem_edgeSet heE
-  obtain ⟨P, hP, rfl, rfl⟩ := (h.connectedBetween hxy.left_mem hxy.right_mem).exists_isPath
+  obtain ⟨P, hP, rfl, rfl⟩ := (h.connBetween hxy.left_mem hxy.right_mem).exists_isPath
   simp only [isPath_edgeDelete_iff, disjoint_singleton_right, mem_edgeSet_iff] at hP
   simpa using hbr.notMem_cycle <| hP.1.cons_isCycle hxy hP.2
 
@@ -110,8 +110,8 @@ lemma IsLeaf.eq_first_or_eq_last_of_mem_path {P : WList α β} (hx : G.IsLeaf x)
 lemma IsLeaf.delete_connected (hx : G.IsLeaf x) (hG : G.Connected) : (G - {x}).Connected := by
   obtain ⟨y, hy : G.Adj x y, hu⟩ := hx.exists_unique_adj
   refine connected_of_vertex ⟨hy.right_mem, fun h : y = x ↦ hx.not_adj_self (h ▸ hy)⟩ fun z hz ↦ ?_
-  obtain ⟨P, hP, rfl, rfl⟩ := (hG.connectedBetween hz.1 hy.right_mem).exists_isPath
-  refine IsWalk.connectedBetween_first_last <| isWalk_vertexDelete_iff.2 ⟨hP.isWalk, ?_⟩
+  obtain ⟨P, hP, rfl, rfl⟩ := (hG.connBetween hz.1 hy.right_mem).exists_isPath
+  refine IsWalk.connBetween_first_last <| isWalk_vertexDelete_iff.2 ⟨hP.isWalk, ?_⟩
   simp only [disjoint_singleton_right, mem_vertexSet_iff]
   intro hxP
   obtain rfl | rfl := hx.eq_first_or_eq_last_of_mem_path hP hxP

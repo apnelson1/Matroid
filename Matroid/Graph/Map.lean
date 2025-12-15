@@ -67,7 +67,7 @@ lemma map_vertexSet_subset (h : X ⊆ V(G)) : f '' X ⊆ V(f ''ᴳ G) := by
   rw [Map_vertexSet]
   gcongr
 
-lemma IsLink.Map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f u) (f v) := by
+lemma IsLink.map (h : G.IsLink e u v) (f : α → α') : (f ''ᴳ G).IsLink e (f u) (f v) := by
   simp only [Map_isLink]
   use u, v, h
 
@@ -118,8 +118,7 @@ lemma map_edgeDelete_comm : f ''ᴳ (G ＼ F) = (f ''ᴳ G) ＼ F := by
   tauto
 
 @[simp]
-lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) :
-    (f ''ᴳ G).IsWalk (w.map f) := by
+lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) : (f ''ᴳ G).IsWalk (w.map f) := by
   refine hw.recOn ?hnil ?hcons
   · intro x hx
     have hx' : f x ∈ V(f ''ᴳ G) := by
@@ -127,7 +126,7 @@ lemma IsWalk.map (f : α → α') {w : WList α β} (hw : G.IsWalk w) :
     simpa [WList.map] using Graph.IsWalk.nil (G := f ''ᴳ G) (x := f x) hx'
   · intro x e w hw hlink ih
     have hlink' : (f ''ᴳ G).IsLink e (f x) (w.map f).first := by
-      simpa [WList.map_first] using IsLink.Map hlink f
+      simpa [WList.map_first] using IsLink.map hlink f
     simpa [WList.map, WList.map_first] using
       Graph.IsWalk.cons (G := f ''ᴳ G) (x := f x) (e := e) (w := w.map f) ih hlink'
 

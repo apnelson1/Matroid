@@ -26,7 +26,7 @@ lemma Inc.isLink_of_inc_of_ne (h1 : G.Inc e x) (h2 : G.Inc e y) (hne : x ≠ y) 
   obtain rfl | h := h1.eq_or_isLink_of_inc h2 <;> tauto
 
 lemma connBetween_vertexDelete_iff_of_degree_le_one (hX : ∀ x ∈ X, G.eDegree x ≤ 1) (hs : s ∉ X)
-    (ht : t ∉ X) : (G - X).ConnectedBetween s t ↔ G.ConnectedBetween s t := by
+    (ht : t ∉ X) : (G - X).ConnBetween s t ↔ G.ConnBetween s t := by
   refine ⟨fun h ↦ h.of_le vertexDelete_le, fun h ↦ ?_⟩
   obtain ⟨w, hw, rfl, rfl⟩ := h.exists_isPath
   use w, by simp [hw.isWalk, hw.disjoint_of_degree_le_one hX hs ht]
@@ -381,13 +381,13 @@ lemma IsPath.WalkOfMixedLineGraph [DecidableEq α] {w : WList (α ⊕ β) (α ×
     use by simpa, (hw.WalkOfMixedLineGraph hcw.symm hl |>.nodup)
 
 lemma IsWalk.connBetween_of_mixedLineGraph {w : WList (α ⊕ β) (α × β)} {s t} (h : L'(G).IsWalk w)
-    (hf : w.first = Sum.inl s) (hl : w.last = Sum.inl t) : G.ConnectedBetween s t := by
+    (hf : w.first = Sum.inl s) (hl : w.last = Sum.inl t) : G.ConnBetween s t := by
   classical
   use Graph.WalkOfMixedLineGraph w h hf hl, h.WalkOfMixedLineGraph hf hl, by simp, by simp
 
 @[simp]
 lemma connBetween_mixedLineGraph_iff :
-    L'(G).ConnectedBetween (Sum.inl s) (Sum.inl t) ↔ G.ConnectedBetween s t := by
+    L'(G).ConnBetween (Sum.inl s) (Sum.inl t) ↔ G.ConnBetween s t := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨w, hw, hf, hl⟩ := h
     exact hw.connBetween_of_mixedLineGraph hf hl
@@ -395,8 +395,8 @@ lemma connBetween_mixedLineGraph_iff :
   use mixedLineGraph_walkMap w, hw.mixedLineGraph_walkMap, by simp, by simp
 
 lemma connBetween_mixedLineGraph_del_iff :
-    (L'(G) - (Sum.inl '' X ∪ Sum.inr '' F)).ConnectedBetween (Sum.inl s) (Sum.inl t) ↔
-    (G - X ＼ F).ConnectedBetween s t := by
+    (L'(G) - (Sum.inl '' X ∪ Sum.inr '' F)).ConnBetween (Sum.inl s) (Sum.inl t) ↔
+    (G - X ＼ F).ConnBetween s t := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rwa [← connBetween_vertexDelete_iff_of_degree_le_one (X := inr '' E(G, X)) ?_ (by simp)
     (by simp), ← vertexDelete_vertexDelete, vertexDelete_vertexDelete_comm,

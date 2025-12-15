@@ -159,7 +159,7 @@ lemma IsForest.exists_isSepSet (hT : T.IsForest) (hV : 3 ≤ V(T).encard) :
     have := hT.isForest.loopless
     refine ⟨⟨hy.right_mem, ?_⟩, ⟨hz.right_mem, ?_⟩⟩
       <;> rintro rfl <;> apply T.not_adj_self <;> assumption
-  obtain ⟨P, hP, hP_first, hP_last⟩ := (bad.connectedBetween hyT' hzT').exists_isPath
+  obtain ⟨P, hP, hP_first, hP_last⟩ := (bad.connBetween hyT' hzT').exists_isPath
   obtain ⟨xy, hxy⟩ := hy
   obtain ⟨xz, hxz⟩ := hz
   let Q' := cons x xy P
@@ -519,9 +519,9 @@ lemma IsPath.exists_isPath_vertex (hP : G.IsPath P) (hu : u ∈ P) :
 omit [DecidableEq α] in
 lemma IsCompOf.exists_path (hHco : H.IsCompOf G) (hx : x ∈ V(H)) (hy : y ∈ V(H)) :
     ∃ P, H.IsPath P ∧ P.first = x ∧ P.last = y := by
-  apply ConnectedBetween.exists_isPath
+  apply ConnBetween.exists_isPath
   rw [hHco.eq_walkable_of_mem_walkable hx] at hy
-  exact (connectedBetween_iff_mem_walkable_of_mem.2 hy).isClosedSubgraph hHco.isClosedSubgraph hx
+  exact (connBetween_iff_mem_walkable_of_mem.2 hy).isClosedSubgraph hHco.isClosedSubgraph hx
 
 omit [DecidableEq α] in
 lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G).encard)
@@ -561,8 +561,8 @@ lemma Hamiltonian_alpha_kappa_exists_cycle [G.Simple] [G.Finite] (h3 : 3 ≤ V(G
 omit [DecidableEq α] in
 lemma Connected.exist_path {D : Graph α β } (hDconn : D.Connected) (hx : x ∈ V(D)) (hy : y ∈ V(D)) :
     ∃ P, D.IsPath P ∧ P.first = x ∧ P.last = y := by
-  apply ConnectedBetween.exists_isPath
-  exact hDconn.connectedBetween hx hy
+  apply ConnBetween.exists_isPath
+  exact hDconn.connBetween hx hy
 
 
 
@@ -2286,7 +2286,7 @@ lemma dirac_isHamiltonianCycle [G.Simple] [G.Finite] (hNontrivial : 3 ≤ V(G).e
   have hConn := dirac_connected hNontrivial hDegree
   -- find a path between x, y
   have hyG : y ∈ V(G) := hCG hy
-  have ⟨Q, hQ, hQ_first, hQ_last⟩ := (hConn.connectedBetween hxG hyG).exists_isPath
+  have ⟨Q, hQ, hQ_first, hQ_last⟩ := (hConn.connBetween hxG hyG).exists_isPath
   symm at hQ_first hQ_last
   let pref := Q.prefixUntil V(C)
   have pref_isPath : G.IsPath pref := hQ.prefix (Q.prefixUntil_isPrefix V(C))

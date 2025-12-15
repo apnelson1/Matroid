@@ -241,6 +241,11 @@ lemma coe_top : ((⊤ : G.Subgraph) : Graph α β) = G := rfl
 @[simp]
 lemma coe_bot : ((⊥ : G.Subgraph) : Graph α β) = ⊥ := rfl
 
+@[simp, push]
+lemma ne_bot_iff : H ≠ ⊥ ↔ V(H.val).Nonempty := by
+  rw [← Graph.ne_bot_iff]
+  simp
+
 lemma coe_iInf (H : ι → G.Subgraph) :
     (⨅ i, H i : G.Subgraph) = Graph.iInter (Option.elim · G (H ·)) := by
   change Graph.sInter _ (by simp) = _
@@ -743,6 +748,11 @@ lemma eq_ambient_of_subset_vertexSet (h : V(G) ⊆ V(H.val)) : H = ⊤ := by
   rw [← Subtype.coe_le_coe, ← H.coe_eq_induce, ← hV, induce_vertexSet_self]
   rfl
 
+@[simp, push]
+lemma ne_bot_iff : H ≠ ⊥ ↔ V(H.val).Nonempty := by
+  rw [← Graph.ne_bot_iff]
+  simp
+
 lemma le_iff_vertexSet_subset : H₁ ≤ H₂ ↔ V(H₁.val) ⊆ V(H₂.val) := by
   rw [← Subtype.coe_le_coe, ← H₁.coe_eq_induce, ← H₂.coe_eq_induce]
   exact induce_mono_right_iff G
@@ -791,7 +801,7 @@ lemma compl_eq_of_stronglyDisjoint_union {H₁ H₂ : Graph α β}
 
 lemma isAtom_iff_isCompOf (H : G.ClosedSubgraph) : IsAtom H ↔ H.val.IsCompOf G := by
   simp only [IsAtom, ne_eq, Subtype.forall, bot_isClosedSubgraph, Subtype.mk_eq_bot_iff, IsCompOf,
-    Minimal, ← ne_bot_iff, Subtype.coe_eq_bot_iff, ge_iff_le, and_imp]
+    Minimal, ← Graph.ne_bot_iff, Subtype.coe_eq_bot_iff, ge_iff_le, and_imp]
   apply and_congr (not_iff_not.mp ?_) <| forall₂_congr fun H' hH'cl => ?_
   · simp [H.prop]
   rw [lt_iff_le_and_ne, ← and_imp, and_comm (a := ¬H' = ⊥), and_imp, and_imp]

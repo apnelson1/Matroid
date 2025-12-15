@@ -103,10 +103,10 @@ lemma induce_left_isClosedSubgraph (S : G.Separation) : G[S.left].IsClosedSubgra
     simp only [induce_vertexSet] at this ⊢
     rwa [S.not_left_mem_iff hex.vertex_mem]
 
-def of_not_connectedBetween (h : ¬ G.ConnectedBetween x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+def of_not_connBetween (h : ¬ G.ConnBetween x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
     G.Separation where
-  left := {y ∈ V(G) | G.ConnectedBetween x y}
-  right := {y ∈ V(G) | ¬ G.ConnectedBetween x y}
+  left := {y ∈ V(G) | G.ConnBetween x y}
+  right := {y ∈ V(G) | ¬ G.ConnBetween x y}
   nonempty_left := ⟨x, by simpa⟩
   nonempty_right := ⟨y, by simpa [h]⟩
   disjoint := by
@@ -115,13 +115,13 @@ def of_not_connectedBetween (h : ¬ G.ConnectedBetween x y) (hx : x ∈ V(G)) (h
     exact hyz hxz
   union_eq := by
     ext z
-    by_cases hz : G.ConnectedBetween x z <;> simp [hz]
+    by_cases hz : G.ConnBetween x z <;> simp [hz]
   not_adj a b ha hb hab := by
     simp only [mem_setOf_eq] at ha hb
-    exact hb.2 <| ha.2.trans hab.connectedBetween
+    exact hb.2 <| ha.2.trans hab.connBetween
 
-lemma not_connectedBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right) :
-    ¬ G.ConnectedBetween x y := by
+lemma not_connBetween (S : G.Separation) (hx : x ∈ S.left) (hy : y ∈ S.right) :
+    ¬ G.ConnBetween x y := by
   rintro ⟨W, hW, rfl, rfl⟩
   rw [← S.not_left_mem_iff (S.right_subset hy)] at hy
   obtain ⟨e, x, y, hinc, hx, hy⟩ := exists_dInc_prop_not_prop hx hy
@@ -133,9 +133,9 @@ def cutBetween_of_vertexDelete (S : (G - X).Separation) (hx : x ∈ S.left)
   carrier_subset := inter_subset_left
   left_not_mem := by simp [(S.left_subset hx).2]
   right_not_mem := by simp [(S.right_subset hy).2]
-  not_connectedBetween' := by
+  not_connBetween' := by
     rw [vertexDelete_vertexSet_inter]
-    exact S.not_connectedBetween hx hy
+    exact S.not_connBetween hx hy
 
 @[simp]
 lemma cutBetween_of_vertexDelete_coe (S : (G - X).Separation) (hx : x ∈ S.left)
@@ -145,23 +145,23 @@ end Separation
 
 /-- A graph is preconnected if for every pair of vertices, there is a path between them. -/
 def Preconnected (G : Graph α β) : Prop :=
-  ∀ x y, x ∈ V(G) → y ∈ V(G) → G.ConnectedBetween x y
+  ∀ x y, x ∈ V(G) → y ∈ V(G) → G.ConnBetween x y
 
-lemma exists_separation_of_not_connectedBetween (hxV : x ∈ V(G)) (hyV : y ∈ V(G))
-    (hxy : ¬ G.ConnectedBetween x y) : ∃ S : G.Separation, x ∈ S.left ∧ y ∈ S.right :=
-  ⟨⟨{w ∈ V(G) | G.ConnectedBetween x w}, {w ∈ V(G) | ¬ G.ConnectedBetween x w}, ⟨x, by simpa⟩,
+lemma exists_separation_of_not_connBetween (hxV : x ∈ V(G)) (hyV : y ∈ V(G))
+    (hxy : ¬ G.ConnBetween x y) : ∃ S : G.Separation, x ∈ S.left ∧ y ∈ S.right :=
+  ⟨⟨{w ∈ V(G) | G.ConnBetween x w}, {w ∈ V(G) | ¬ G.ConnBetween x w}, ⟨x, by simpa⟩,
     ⟨y, by aesop⟩, by simp +contextual [disjoint_left],
     by simp [Set.ext_iff, ← and_or_left, or_not],
-    fun x' y' ⟨_, hx'⟩ ⟨_, hy'⟩ hxy' ↦  hy' <| hx'.trans hxy'.connectedBetween⟩, by simp_all⟩
+    fun x' y' ⟨_, hx'⟩ ⟨_, hy'⟩ hxy' ↦  hy' <| hx'.trans hxy'.connBetween⟩, by simp_all⟩
 
 lemma preconnected_iff_isEmpty_separation : G.Preconnected ↔ IsEmpty G.Separation := by
   rw [← not_iff_not]
   simp only [Preconnected, not_isEmpty_iff, not_forall]
   refine ⟨fun ⟨x, y, hx, hy, h⟩ => ?_, fun ⟨S⟩ => ?_⟩
-  · obtain ⟨S, hxL, hyR⟩ := exists_separation_of_not_connectedBetween hx hy h
+  · obtain ⟨S, hxL, hyR⟩ := exists_separation_of_not_connBetween hx hy h
     exact ⟨S⟩
   use S.nonempty_left.some, S.nonempty_right.some, S.left_subset S.nonempty_left.some_mem,
-    S.right_subset S.nonempty_right.some_mem, S.not_connectedBetween S.nonempty_left.some_mem
+    S.right_subset S.nonempty_right.some_mem, S.not_connBetween S.nonempty_left.some_mem
     S.nonempty_right.some_mem
 alias ⟨Preconnected.separation_isEmpty, _⟩ := preconnected_iff_isEmpty_separation
 
@@ -179,7 +179,7 @@ lemma IsComplete.preconnected (h : G.IsComplete) : G.Preconnected := by
   intro s t hs ht
   obtain rfl | hne := eq_or_ne s t
   · simpa
-  exact h s hs t ht hne |>.connectedBetween
+  exact h s hs t ht hne |>.connBetween
 
 /- ### Connectedness -/
 
@@ -242,28 +242,28 @@ lemma IsCompOf.of_le_le (h : K.IsCompOf G) (hKH : K ≤ H) (hHG : H ≤ G) : K.I
   refine ⟨⟨h.isClosedSubgraph.of_le_of_le hKH hHG, h.nonempty⟩, fun K' ⟨hK'H, hK'ne⟩ hK'K ↦ ?_⟩
   exact h.le_of_le ⟨(hK'H.of_le_of_le hK'K hKH).trans h.isClosedSubgraph, hK'ne⟩ hK'K
 
-lemma ConnectedBetween.mem_walkable (h : G.ConnectedBetween x y) : y ∈ V(G.walkable x) := h
+lemma ConnBetween.mem_walkable (h : G.ConnBetween x y) : y ∈ V(G.walkable x) := h
 
 /-- If `G` has one vertex connected to all others, then `G` is connected. -/
-lemma connected_of_vertex (hu : u ∈ V(G)) (h : ∀ y ∈ V(G), G.ConnectedBetween y u) :
+lemma connected_of_vertex (hu : u ∈ V(G)) (h : ∀ y ∈ V(G), G.ConnBetween y u) :
     G.Connected := by
   have hco := walkable_isCompOf hu
   rwa [walkable_isClosedSubgraph.eq_ambient_of_subset_vertexSet (h · · |>.symm)] at hco
 
-lemma connectedBetween_iff_mem_walkable_of_mem :
-    G.ConnectedBetween x y ↔ y ∈ V(G.walkable x) := Iff.rfl
+lemma connBetween_iff_mem_walkable_of_mem :
+    G.ConnBetween x y ↔ y ∈ V(G.walkable x) := Iff.rfl
 
-lemma Connected.connectedBetween (h : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
-    G.ConnectedBetween x y := by
-  rwa [connectedBetween_iff_mem_walkable_of_mem, ← h.eq_walkable_of_mem_walkable hx]
+lemma Connected.connBetween (h : G.Connected) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    G.ConnBetween x y := by
+  rwa [connBetween_iff_mem_walkable_of_mem, ← h.eq_walkable_of_mem_walkable hx]
 
 lemma Connected.pre (h : G.Connected) : G.Preconnected :=
-  fun _ _ ↦ h.connectedBetween
+  fun _ _ ↦ h.connBetween
 
 lemma Separation.not_connected (S : G.Separation) : ¬ G.Connected := by
   obtain ⟨x, hx⟩ := S.nonempty_left
   obtain ⟨y, hy⟩ := S.nonempty_right
-  exact fun h ↦ S.not_connectedBetween hx hy <| h.connectedBetween (S.left_subset hx)
+  exact fun h ↦ S.not_connBetween hx hy <| h.connBetween (S.left_subset hx)
     (S.right_subset hy)
 
 lemma Connected.isEmpty_separation (hG : G.Connected) : IsEmpty G.Separation :=
@@ -281,7 +281,7 @@ lemma nonempty_separation_of_not_connected (hne : V(G).Nonempty) (hG : ¬ G.Conn
     Nonempty G.Separation := by
   obtain ⟨x, y, hx, hy, hxy⟩ := by simpa only [Preconnected, hne,
     connected_iff, true_and, not_forall] using hG
-  exact ⟨(exists_separation_of_not_connectedBetween hx hy hxy).choose⟩
+  exact ⟨(exists_separation_of_not_connBetween hx hy hxy).choose⟩
 
 lemma Connected.isSpanningSubgraph (h : H.Connected) (hsle : H ≤s G) : G.Connected := by
   rw [connected_iff] at h ⊢
@@ -458,7 +458,7 @@ lemma preconnGe_iff_forall_preconnected :
     simp only [Separation.cutBetween_of_vertexDelete_coe] at this
     exact this.trans (encard_le_encard inter_subset_right) |>.not_gt hX
   · by_contra! hC
-    exact C.not_connectedBetween' <| h hC _ _ (by simpa) (by simpa)
+    exact C.not_connBetween' <| h hC _ _ (by simpa) (by simpa)
 
 lemma preconnGe_iff_forall_setConnGe : G.PreconnGe n ↔ ∀ S T : Set α, S ⊆ V(G) → T ⊆ V(G) →
     G.SetConnGe S T (min ↑n (min S.encard T.encard)).toNat := by

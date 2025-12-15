@@ -121,6 +121,20 @@ lemma RepFun.apply_mem (f : P.RepFun) (ha : a ∈ P.supp) : f a ∈ P.supp :=
 lemma RepFun.apply_mem' (f : P.RepFun) {p : α → Prop} (hP : ∀ {x}, x ∈ P.supp ↔ p x) (ha : p a) :
     p (f a) := hP.mp <| f.apply_mem <| hP.mpr ha
 
+lemma RepFun.image_subset_self (f : P.RepFun) : f '' P.supp ⊆ P.supp := by
+  rintro _ ⟨a, ha, rfl⟩
+  exact f.apply_mem ha
+
+lemma RepFun.mapsTo (f : P.RepFun) : Set.MapsTo f P.supp P.supp := by
+  intro a ha
+  exact f.apply_mem ha
+
+@[simp]
+lemma RepFun.apply_mem_iff (f : P.RepFun) : f a ∈ P.supp ↔ a ∈ P.supp := by
+  refine ⟨fun h ↦ ?_, f.apply_mem⟩
+  by_contra ha
+  exact ha <| f.apply_of_notMem ha ▸ h
+
 lemma RepFun.apply_eq_apply (f : P.RepFun) (hab : P a b) : f a = f b :=
   f.apply_eq_of_rel a b hab
 
@@ -149,9 +163,6 @@ lemma RepFun.apply_eq_apply_iff_rel_of_ne (f : P.RepFun) (hne : a ≠ b) : f a =
   · rw [eq_comm, f.apply_eq_apply_iff_rel ha]
     exact f.rel_apply ha
   simp_rw [f.apply_of_notMem ha]
-
-lemma RepFun.image_subset_self (f : P.RepFun) : f '' P.supp ⊆ P.supp := by
-  rintro _ ⟨a,ha,rfl⟩; exact f.apply_mem ha
 
 /-- Any partially defined `RepFun` extends to a complete one. -/
 lemma exists_extend_partial_repFun (P : Partition (Set α)) {t : Set α} (f₀ : t → α)

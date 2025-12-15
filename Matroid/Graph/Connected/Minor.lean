@@ -8,8 +8,8 @@ variable {α α' β : Type*} {G H : Graph α β} {u v x x₁ x₂ y y₁ y₂ z 
 
 namespace Graph
 
-lemma ConnectedBetween.map (f : α → α') (h : G.ConnectedBetween x y) :
-    (f ''ᴳ G).ConnectedBetween (f x) (f y) := by
+lemma ConnBetween.map (f : α → α') (h : G.ConnBetween x y) :
+    (f ''ᴳ G).ConnBetween (f x) (f y) := by
   obtain ⟨W, hW, rfl, rfl⟩ := h
   exact ⟨W.map f, hW.map f, by simp, by simp⟩
 
