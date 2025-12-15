@@ -24,20 +24,20 @@ section Minor
 variable {N : Matroid α} {b i j : Bool}
 
 def Partition.AdherentIn (P : N.Partition) (M : Matroid α) : Prop :=
-    ∃ (b : Bool) (Q : (N ↾ P b).Partition), ∀ i, M.eConn (Q i) = N.eConn (Q i)
+    ∃ (b : Bool) (X : Set α), X ⊆ P b ∧ M.eConn X = P.eConn ∧ M.eConn (P b \ X) = P.eConn
     -- ∃ X Y b, Disjoint X Y ∧ (X ∪ Y = P b) ∧ M.eConn X = N.eConn X ∧ M.eConn Y = N.eConn Y
 
 
 lemma Partition.AdherentIn.symm {P : N.Partition} (h : P.AdherentIn M) : P.symm.AdherentIn M := by
-  obtain ⟨b, Q, hQ⟩ := h
-  exact ⟨!b, Q.copy (by simp), fun i ↦ hQ i⟩
+  obtain ⟨b, X, hXss, hX, hXc⟩ := h
+  exact ⟨!b, X, by simpa, by simpa, by simpa⟩
 
 @[simp]
 lemma Partition.adherentIn_symm_iff {P : N.Partition} : P.symm.AdherentIn M ↔ P.AdherentIn M :=
   ⟨fun h ↦ by simpa using h.symm, Partition.AdherentIn.symm⟩
 
 lemma Partition.AdherentIn.dual {P : N.Partition} (hP : P.AdherentIn M) : P.dual.AdherentIn M✶ := by
-  obtain ⟨b, Q, hQ⟩ := hP
+  obtain ⟨b, X, hQ⟩ := hP
   exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
 
 @[simp]
@@ -50,7 +50,15 @@ lemma Partition.AdherentIn.of_dual {P : N.Partition} (hP : P.dual.AdherentIn M) 
     P.AdherentIn M✶ := by
   simp [Partition.dual] at hP
   obtain ⟨b, Q, hQ⟩ := hP
-  exact ⟨b, Q.copy' rfl, fun i ↦ by simpa using hQ i⟩
+  refine ⟨b, Q.dual.copy ?_, fun i ↦ ?_⟩
+  simp
+  sorry
+
+
+
+
+
+
 
 @[simp]
 lemma Partition.adherentIn_dual_iff {P : N.Partition} : P.dual.AdherentIn M ↔ P.AdherentIn M✶ :=
