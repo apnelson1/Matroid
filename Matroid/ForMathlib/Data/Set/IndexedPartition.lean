@@ -2,6 +2,7 @@ import Mathlib.Data.Set.Lattice
 import Mathlib.Logic.Pairwise
 import Matroid.ForMathlib.Data.Set.Subsingleton
 import Matroid.ForMathlib.Set
+import Matroid.ForMathlib.Tactic.Init
 -- import Mathlib.Tactic.DepRewrite
 import Mathlib.Tactic.NthRewrite
 
@@ -70,7 +71,7 @@ protected def copy (P : s.IndexedPartition ι) (h_eq : s = t) : t.IndexedPartiti
   pairwise_disjoint' := P.pairwise_disjoint
   iUnion_eq' := h_eq ▸ P.iUnion_eq
 
-@[simp]
+@[simp, psimp]
 protected lemma copy_apply (P : s.IndexedPartition ι) (h_eq : s = t) (i : ι) :
   P.copy h_eq i = P i := rfl
 
@@ -87,7 +88,7 @@ protected def induce (P : s.IndexedPartition ι) (hts : t ⊆ s) : t.IndexedPart
   pairwise_disjoint' := P.pairwise_disjoint.mono <| by grind
   iUnion_eq' := by rw [← iUnion_inter, P.iUnion_eq, inter_eq_self_of_subset_right hts]
 
-@[simp]
+@[simp, psimp]
 protected lemma induce_apply {P : s.IndexedPartition ι} {hts : t ⊆ s} {i : ι} :
   (P.induce hts) i = P i ∩ t := rfl
 
@@ -101,7 +102,7 @@ protected def union (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) (hdj
       hdj.mono P.subset Q.subset, Q.pairwise_disjoint hne⟩
   iUnion_eq' := by simp_rw [← P.iUnion_eq, ← Q.iUnion_eq, iUnion_union_distrib]
 
-@[simp]
+@[simp, psimp]
 protected lemma union_apply (P : s.IndexedPartition ι) (Q : t.IndexedPartition ι) {hdj} :
     (P.union Q hdj) i = P i ∪ Q i := rfl
 
@@ -125,6 +126,7 @@ protected def shift [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i
   ((P.induce inter_subset_right).union (IndexedPartition.single (t \ s) i)
     disjoint_sdiff_inter.symm).copy (by simp)
 
+@[simp]
 protected lemma shift_apply [DecidableEq ι] (P : s.IndexedPartition ι) (t : Set α) (i : ι) :
     P.shift t i i = (P i ∩ t) ∪ (t \ s) := by
   simp only [IndexedPartition.shift, IndexedPartition.copy_apply,
@@ -133,10 +135,50 @@ protected lemma shift_apply [DecidableEq ι] (P : s.IndexedPartition ι) (t : Se
   grind
 
 protected lemma shift_apply_of_ne [DecidableEq ι] (P : s.IndexedPartition ι) {t : Set α}
-    (hne : i ≠ j) : P.shift t i j = P j ∩ t := by
+    (hne : j ≠ i) : P.shift t i j = P j ∩ t := by
   simp only [IndexedPartition.shift, IndexedPartition.copy_apply, IndexedPartition.union_apply,
-    IndexedPartition.induce_apply, IndexedPartition.single_apply_of_ne _ hne.symm, union_empty]
+    IndexedPartition.induce_apply, IndexedPartition.single_apply_of_ne _ hne, union_empty]
   rw [← inter_assoc, inter_right_comm, inter_eq_self_of_subset_left P.subset]
+
+@[simp]
+protected lemma shift_copy [DecidableEq ι] (P : s.IndexedPartition ι) {t' : Set α} (h : t = t')
+    (i : ι) : (P.shift t i).copy h = P.shift t' i := by
+  subst h
+  exact IndexedPartition.ext <| by simp
+
+@[simp]
+protected lemma copy_shift [DecidableEq ι] (P : s.IndexedPartition ι) {s' : Set α} (h : s = s')
+    (i : ι) : (P.copy h).shift t i = P.shift t i := by
+  subst h
+  refine IndexedPartition.ext fun j ↦ ?_
+  obtain rfl | hne := eq_or_ne j i
+  · simp
+  simp [IndexedPartition.shift_apply_of_ne _ hne]
+
+/-- A version of `shift` where the new ground set is required to be a superset.
+Has better simp lemmas than `shift`. -/
+protected def expand [DecidableEq ι] (P : s.IndexedPartition ι) (_ : s ⊆ t) (i : ι) :
+    t.IndexedPartition ι := P.shift t i
+
+@[simp]
+protected lemma expand_apply [DecidableEq ι] (P : s.IndexedPartition ι) (h : s ⊆ t) (i : ι) :
+    P.expand h i i = (P i) ∪ (t \ s) := by
+  rw [IndexedPartition.expand, P.shift_apply, inter_eq_self_of_subset_left (P.subset.trans h)]
+
+protected lemma expand_apply_of_ne [DecidableEq ι] (P : s.IndexedPartition ι) (h : s ⊆ t)
+    (hne : j ≠ i) : P.expand h i j = P j := by
+  rw [IndexedPartition.expand, P.shift_apply_of_ne hne, inter_eq_self_of_subset_left
+    (P.subset.trans h)]
+
+@[simp]
+protected lemma expand_copy [DecidableEq ι] (P : s.IndexedPartition ι) {t' : Set α} (hst : s ⊆ t)
+    (h : t = t') (i : ι) : (P.expand hst i).copy h = P.expand (hst.trans_eq h) i := by
+  simp [IndexedPartition.expand]
+
+@[simp]
+protected lemma copy_expand [DecidableEq ι] (P : s.IndexedPartition ι) {s' : Set α} (h : s = s')
+    (hst : s' ⊆ t) (i : ι) : (P.copy h).expand hst i = P.expand (h.trans_subset hst) i :=
+  P.copy_shift ..
 
 protected def diff (P : s.IndexedPartition ι) (t : Set α) : (s \ t).IndexedPartition ι :=
   P.induce diff_subset
@@ -283,7 +325,7 @@ like `eConn_copy` can be `@[simp]`. -/
   iUnion_eq' := h_eq ▸ P.iUnion_eq
 
 @[simp]
-lemma copy'_apply (P : s.Bipartition) (h_eq : s = t) (b : Bool) : P.copy h_eq b = P b := rfl
+lemma copy_apply (P : s.Bipartition) (h_eq : s = t) (b : Bool) : P.copy h_eq b = P b := rfl
 
 
 /-- A partition is trivial if one side is empty. -/
@@ -336,6 +378,55 @@ protected def diff (P : s.Bipartition) (t : Set α) : (s \ t).Bipartition := P.i
 @[simp]
 lemma diff_apply (P : s.Bipartition) (t : Set α) (i : Bool) : (P.diff t) i = P i \ t := by
   rw [Bipartition.diff, induce_apply, ← inter_diff_assoc, inter_eq_self_of_subset_left P.subset]
+
+/-- Move a partition of `s` to a partition of a superset `t`.
+The elements of `t \ s` go on side `i`. -/
+protected def expand (P : s.Bipartition) (h : s ⊆ t) (i : Bool) :
+    t.Bipartition := IndexedPartition.expand P h i
+
+@[simp]
+protected lemma expand_apply (P : s.Bipartition) (h : s ⊆ t) (i : Bool) :
+    P.expand h i i = P i ∪ (t \ s) :=
+  IndexedPartition.expand_apply P h i
+
+protected lemma expand_apply_of_ne (P : s.Bipartition) (h : s ⊆ t) (hne : j ≠ i) :
+    P.expand h i j = P j :=
+  IndexedPartition.expand_apply_of_ne P h hne
+
+@[simp]
+protected lemma expand_apply_not (P : s.Bipartition) (h : s ⊆ t) (i : Bool) :
+    P.expand h i (!i) = P (!i) :=
+  P.expand_apply_of_ne h <| by simp
+
+@[simp]
+protected lemma expand_not_apply (P : s.Bipartition) (h : s ⊆ t) (i : Bool) :
+    P.expand h (!i) i = P i :=
+  P.expand_apply_of_ne h <| (by simp)
+
+@[simp]
+protected lemma expand_false_true (P : s.Bipartition) (h : s ⊆ t) :
+    P.expand h false true = P true :=
+  P.expand_not_apply h ..
+
+@[simp]
+protected lemma expand_true_false (P : s.Bipartition) (h : s ⊆ t) :
+    P.expand h true false = P false :=
+  P.expand_not_apply h ..
+
+@[simp]
+protected lemma expand_symm (P : s.Bipartition) (h : s ⊆ t) (i : Bool) :
+    (P.expand h i).symm = P.symm.expand h !i :=
+  Bipartition.ext_bool (i := i) <| by simp
+
+@[simp]
+protected lemma expand_copy (P : s.Bipartition) {t' : Set α} (hst : s ⊆ t) (h : t = t') :
+    (P.expand hst i).copy h = P.expand (hst.trans_eq h) i :=
+  IndexedPartition.expand_copy P hst h i
+
+@[simp]
+protected lemma copy_expand (P : s.Bipartition) {s' : Set α} (h : s = s') (hst : s' ⊆ t)
+    (i : Bool) : (P.copy h).expand hst i = P.expand (h.trans_subset hst) i :=
+  IndexedPartition.copy_expand P h hst i
 
 section Cross
 

@@ -1,3 +1,3 @@
-import Aesop
+import Mathlib.Combinatorics.Matroid.Basic
 
-declare_aesop_rule_sets [Matroid]
+register_simp_attr conn_simp
